@@ -80,8 +80,14 @@
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
 
+/* Define to 1 if you have the `eng' library (-leng). */
+#undef HAVE_LIBENG
+
 /* Define to 1 if you have the `metis' library (-lmetis). */
 #undef HAVE_LIBMETIS
+
+/* Define to 1 if you have the `mx' library (-lmx). */
+#undef HAVE_LIBMX
 
 /* Define to 1 if you have the `parmetis' library (-lparmetis). */
 #undef HAVE_LIBPARMETIS
@@ -184,6 +190,9 @@
 
 /* define if compiling for ASCI Red, aka TFLOP */
 #undef TFLOP
+
+/* use older function call for Matlab versions < 6.5 */
+#undef USE_ENGPUTARRAY
 
 /* Version number of package */
 #undef VERSION

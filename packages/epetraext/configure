@@ -2008,7 +2008,8 @@ INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 # configure.
 
 
-# ------------------------------------------------------------------------# Check to see if MPI enabled and if any special configuration done
+# ------------------------------------------------------------------------
+# Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------
 
 
@@ -3819,7 +3820,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3822:" \
+echo "$as_me:3823:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6922,7 +6923,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6925: \"$ac_link\") >&5
+(eval echo $as_me:6926: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7000,7 +7001,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7003: \"$ac_link\") >&5
+(eval echo $as_me:7004: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10075,6 +10076,367 @@ fi
 
 fi
 
+if test "X$ac_cv_use_epetraext_matlab" != "Xno"; then
+
+     echo "$as_me:$LINENO: checking for engine.h" >&5
+echo $ECHO_N "checking for engine.h... $ECHO_C" >&6
+     cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "engine.h"
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	 echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+	 echo "-----"
+     	 echo "Cannot find Matlab libeng header file engine.h."
+	 echo "For informatin on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README."
+     	 echo "Use --with-incdirs=-I<DIR> to specify the include directory containing engine.h."
+     	 echo "-----"
+     	 { { echo "$as_me:$LINENO: error: Matlab header file engine.h not found" >&5
+echo "$as_me: error: Matlab header file engine.h not found" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+rm -f conftest.err conftest.$ac_ext
+
+
+     echo "$as_me:$LINENO: checking for mex.h" >&5
+echo $ECHO_N "checking for mex.h... $ECHO_C" >&6
+     cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "mex.h"
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	 echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+	 echo "-----"
+     	 echo "Cannot find Matlab libmx header file mex.h."
+	 echo "For informatin on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README."
+     	 echo "Use --with-incdirs=-I<DIR> to specify the include directory containing mex.h."
+     	 echo "-----"
+     	 { { echo "$as_me:$LINENO: error: Matlab header file engine.h not found" >&5
+echo "$as_me: error: Matlab header file engine.h not found" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+rm -f conftest.err conftest.$ac_ext
+
+
+echo "$as_me:$LINENO: checking for engPutVariable in -leng" >&5
+echo $ECHO_N "checking for engPutVariable in -leng... $ECHO_C" >&6
+if test "${ac_cv_lib_eng_engPutVariable+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-leng  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char engPutVariable ();
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+engPutVariable ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_eng_engPutVariable=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_eng_engPutVariable=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_eng_engPutVariable" >&5
+echo "${ECHO_T}$ac_cv_lib_eng_engPutVariable" >&6
+if test $ac_cv_lib_eng_engPutVariable = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBENG 1
+_ACEOF
+
+  LIBS="-leng $LIBS"
+
+else
+
+     	echo "$as_me:$LINENO: checking for engPutArray in -leng" >&5
+echo $ECHO_N "checking for engPutArray in -leng... $ECHO_C" >&6
+if test "${ac_cv_lib_eng_engPutArray+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-leng  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char engPutArray ();
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+engPutArray ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_eng_engPutArray=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_eng_engPutArray=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_eng_engPutArray" >&5
+echo "${ECHO_T}$ac_cv_lib_eng_engPutArray" >&6
+if test $ac_cv_lib_eng_engPutArray = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_ENGPUTARRAY
+_ACEOF
+
+                      LIBS="$LIBS -leng"
+else
+  { { echo "$as_me:$LINENO: error: Cannot find libeng.a library needed for Matlab subpkg, specify using --with-libs=-L<DIR> For informatin on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.REAME" >&5
+echo "$as_me: error: Cannot find libeng.a library needed for Matlab subpkg, specify using --with-libs=-L<DIR> For informatin on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.REAME" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+
+
+fi
+
+
+
+echo "$as_me:$LINENO: checking for mxCreateDoubleMatrix in -lmx" >&5
+echo $ECHO_N "checking for mxCreateDoubleMatrix in -lmx... $ECHO_C" >&6
+if test "${ac_cv_lib_mx_mxCreateDoubleMatrix+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmx  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char mxCreateDoubleMatrix ();
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+mxCreateDoubleMatrix ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_mx_mxCreateDoubleMatrix=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_mx_mxCreateDoubleMatrix=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_mx_mxCreateDoubleMatrix" >&5
+echo "${ECHO_T}$ac_cv_lib_mx_mxCreateDoubleMatrix" >&6
+if test $ac_cv_lib_mx_mxCreateDoubleMatrix = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBMX 1
+_ACEOF
+
+  LIBS="-lmx $LIBS"
+
+else
+  { { echo "$as_me:$LINENO: error: Cannot find libmx.a library needed for Matlab subpkg, specify using --with-libs=-L<DIR> For informatin on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README." >&5
+echo "$as_me: error: Cannot find libmx.a library needed for Matlab subpkg, specify using --with-libs=-L<DIR> For informatin on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+fi
+
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
 # ------------------------------------------------------------------------
@@ -10135,7 +10497,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10138: \"$ac_link\") >&5
+(eval echo $as_me:10500: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10213,7 +10575,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10216: \"$ac_link\") >&5
+(eval echo $as_me:10578: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
