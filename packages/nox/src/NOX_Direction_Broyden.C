@@ -269,7 +269,7 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
 
   // Compute inexact forcing term if requested.
   inexactNewtonUtils.computeForcingTerm(soln, 
-					*oldJacobianGrpPtr,
+					solver.getPreviousSolutionGroup(),
 					solver.getNumIterations(),
 					solver);
 
