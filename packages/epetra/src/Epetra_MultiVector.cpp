@@ -24,6 +24,7 @@
 
 
 #include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 #include "Epetra_Comm.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
@@ -213,12 +214,18 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_MultiV
 Epetra_MultiVector::~Epetra_MultiVector(){
 
   if (!Allocated_) return;
+
+  for (int i=0; i<NumVectors_; i++) if (Vectors_[i]!=0) delete Vectors_[i];
+
+  delete [] Vectors_;
+
   if (!UserAllocated_) delete [] Values_;
 
   delete [] Pointers_;
 
   delete [] DoubleTemp_;
   delete [] IntTemp_;
+
 
 }
 
@@ -237,6 +244,9 @@ int Epetra_MultiVector::AllocateForCopy(void)
 
   DoubleTemp_ = new double[NumVectors_];
   IntTemp_ = new int[NumVectors_];
+
+  Vectors_ = new Epetra_Vector *[NumVectors_];
+  for (int i=0; i<NumVectors_; i++) Vectors_[i] = 0;
   
   if (DistributedGlobal_)
     Seed_ = 2*Comm_->MyPID() + 1;
@@ -282,6 +292,9 @@ int Epetra_MultiVector::AllocateForView(void)
   DoubleTemp_ = new double[NumVectors_];
   IntTemp_ = new int[NumVectors_];
 
+  Vectors_ = new Epetra_Vector *[NumVectors_];
+  for (int i=0; i<NumVectors_; i++) Vectors_[i] = 0;
+  
   if (DistributedGlobal_)
     Seed_ = 2*Comm_->MyPID() + 1;
   else
@@ -321,8 +334,85 @@ int Epetra_MultiVector::DoView(void)
   return(0);
 }
 //=========================================================================
-int Epetra_MultiVector::Random(void)
-{
+int Epetra_MultiVector::ReplaceGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue) {
+
+ // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalRow, 0, VectorIndex, ScalarValue, false));
+}
+//=========================================================================
+int Epetra_MultiVector::ReplaceGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
+					   int VectorIndex, double ScalarValue) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, false)); 
+}
+//=========================================================================
+int Epetra_MultiVector::SumIntoGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue) {
+
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalRow, 0, VectorIndex, ScalarValue, true)); 
+  return(0);
+}
+//=========================================================================
+int Epetra_MultiVector::SumIntoGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
+					   int VectorIndex, double ScalarValue) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeGlobalValue(GlobalBlockRow, BlockRowOffset, VectorIndex, ScalarValue, true));
+  return(0);
+}
+//=========================================================================
+int Epetra_MultiVector::ReplaceMyValue(int MyRow, int VectorIndex, double ScalarValue) {
+
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeMyValue(MyRow, 0, VectorIndex, ScalarValue, false)); 
+  return(0);
+}
+//=========================================================================
+int Epetra_MultiVector::ReplaceMyValue(int MyBlockRow, int BlockRowOffset, 
+					   int VectorIndex, double ScalarValue) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeMyValue(MyBlockRow, BlockRowOffset, VectorIndex, ScalarValue, false)); 
+  return(0);
+}
+//=========================================================================
+int Epetra_MultiVector::SumIntoMyValue(int MyRow, int VectorIndex, double ScalarValue) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeMyValue(MyRow, 0, VectorIndex, ScalarValue, true)); 
+  return(0);
+}
+//=========================================================================
+int Epetra_MultiVector::SumIntoMyValue(int MyBlockRow, int BlockRowOffset, 
+					   int VectorIndex, double ScalarValue) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeMyValue(MyBlockRow, BlockRowOffset, VectorIndex, ScalarValue, true));
+  return(0);
+}
+//=========================================================================
+int Epetra_MultiVector::ChangeGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
+				     int VectorIndex, double ScalarValue, bool SumInto) {
+
+  // Convert GID to LID and call LID version
+  EPETRA_CHK_ERR(ChangeMyValue(Map().LID(GlobalBlockRow), BlockRowOffset, VectorIndex, ScalarValue, SumInto));
+  return(0);
+}
+//=========================================================================
+int Epetra_MultiVector::ChangeMyValue(int MyBlockRow, int BlockRowOffset, 
+				     int VectorIndex, double ScalarValue, bool SumInto) {
+  
+  if (!Map().MyLID(MyBlockRow)) EPETRA_CHK_ERR(1); // I don't own this one, return a warning flag
+  if (VectorIndex>= NumVectors_) EPETRA_CHK_ERR(-1); // Consider this a real error
+  if (BlockRowOffset<0 || BlockRowOffset>=Map().ElementSize(MyBlockRow)) EPETRA_CHK_ERR(-2); // Offset is out-of-range
+
+  int entry = Map().FirstPointInElement(MyBlockRow);
+
+  if (SumInto)
+    Pointers_[VectorIndex][entry+BlockRowOffset] += ScalarValue;
+  else
+    Pointers_[VectorIndex][entry+BlockRowOffset] = ScalarValue;
+
+  return(0);
+}
+//=========================================================================
+int Epetra_MultiVector::Random(void) {
   // Generate random numbers drawn from a uniform distribution on
   // the interval (-1,1) using a multiplicative congruential generator
   // with modulus 2^31 - 1.
@@ -1495,6 +1585,8 @@ double*& Epetra_MultiVector::operator [] (int index)  {
   
   //  Epetra_MultiVector::operator [] --- return non-const reference 
   
+  if (index < 0 || index >=NumVectors_) 
+    throw ReportError("Vector index = " + toString(index) + "is out of range. Number of Vectors = " + toString(NumVectors_), -1);
   return(Pointers_[index]);
 }
 
@@ -1502,7 +1594,40 @@ double*& Epetra_MultiVector::operator [] (int index)  {
 const double*& Epetra_MultiVector::operator [] (int index) const {
   
   //  Epetra_MultiVector::operator [] --- return non-const reference 
+
+  if (index < 0 || index >=NumVectors_) 
+    throw ReportError("Vector index = " + toString(index) + "is out of range. Number of Vectors = " + toString(NumVectors_), -1);
+
   const double * & temp = (const double * &) (Pointers_[index]);
+  return(temp);
+}
+
+//=======================================================================
+Epetra_Vector *& Epetra_MultiVector::operator () (int index)  {
+  
+  //  Epetra_MultiVector::operator [] --- return non-const reference 
+  
+  if (index < 0 || index >=NumVectors_) 
+    throw ReportError("Vector index = " + toString(index) + "is out of range. Number of Vectors = " + toString(NumVectors_), -1);
+
+  // Create a new Epetra_Vector that is a view of ith vector, if not already present
+  if (Vectors_[index]==0)
+    Vectors_[index] = new Epetra_Vector(View, Map(), Pointers_[index]);
+  return(Vectors_[index]);
+}
+
+//=======================================================================
+const Epetra_Vector *& Epetra_MultiVector::operator () (int index) const {
+  
+  //  Epetra_MultiVector::operator [] --- return non-const reference 
+
+  if (index < 0 || index >=NumVectors_) 
+    throw ReportError("Vector index = " + toString(index) + "is out of range. Number of Vectors = " + toString(NumVectors_), -1);
+
+  if (Vectors_[index]==0)
+    Vectors_[index] = new Epetra_Vector(View, Map(), Pointers_[index]);
+
+  const Epetra_Vector * & temp = (const Epetra_Vector * &) (Vectors_[index]);
   return(temp);
 }
 

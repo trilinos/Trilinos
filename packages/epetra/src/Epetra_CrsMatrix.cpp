@@ -725,7 +725,7 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
     if (Importer()!=0) {
       if (ImportVector_!=0) {
-	if (ImportVector_->NumVectors()<NumVectors) { delete ImportVector_; ImportVector_= 0;}
+	if (ImportVector_->NumVectors()!=NumVectors) { delete ImportVector_; ImportVector_= 0;}
       }
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ImportMap(),NumVectors); // Create import vector if needed
       ImportVector_->Import(X, *Importer(), Insert);
@@ -735,7 +735,7 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
     if (Exporter()!=0) {
       if (ExportVector_!=0) {
-	if (ExportVector_->NumVectors()<NumVectors) { delete ExportVector_; ExportVector_= 0;}
+	if (ExportVector_->NumVectors()!=NumVectors) { delete ExportVector_; ExportVector_= 0;}
       }
       if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),NumVectors); // Create Export vector if needed
       Yp = (double**)ExportVector_->Pointers();
@@ -762,7 +762,7 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 
     if (Exporter()!=0) {
       if (ExportVector_!=0) {
-	if (ExportVector_->NumVectors()<NumVectors) { delete ExportVector_; ExportVector_= 0;}
+	if (ExportVector_->NumVectors()!=NumVectors) { delete ExportVector_; ExportVector_= 0;}
       }
       if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),NumVectors); // Create Export vector if needed
       ExportVector_->Import(X, *Exporter(), Insert);
@@ -772,7 +772,7 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
     if (Importer()!=0) {
       if (ImportVector_!=0) {
-	if (ImportVector_->NumVectors()<NumVectors) { delete ImportVector_; ImportVector_= 0;}
+	if (ImportVector_->NumVectors()!=NumVectors) { delete ImportVector_; ImportVector_= 0;}
       }
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ImportMap(),NumVectors); // Create import vector if needed
       Yp = (double**)ImportVector_->Pointers();

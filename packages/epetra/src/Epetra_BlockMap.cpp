@@ -576,6 +576,21 @@ int * Epetra_BlockMap::MyGlobalElements() const {
   
 }
 //==============================================================================
+int Epetra_BlockMap::FirstPointInElement(int LID) const
+{
+  if (!MyLID(LID)) EPETRA_CHK_ERR(-1);
+
+  int entry;
+
+  if (ConstantElementSize())
+    entry = MaxElementSize()*LID; // convert to vector entry
+  else {
+    int * entrylist = FirstPointInElementList(); // get entry list
+    entry = entrylist[LID];
+  }
+  return(entry);
+}
+//==============================================================================
 int Epetra_BlockMap::FirstPointInElementList(int * FirstPointInElementList) const
 {
   // If the first element entry list is not create, then do so.  

@@ -2,6 +2,7 @@
 #include "ExecuteTestProblems.h"
 #include "BuildTestProblems.h"
 #include "Epetra_Comm.h"
+#include "Epetra_Vector.h"
   int MatrixTests(const Epetra_BlockMap & Map, const Epetra_LocalMap & LocalMap, int NumVectors,
 		      bool verbose)
   {
@@ -376,7 +377,307 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   delete [] maxval_A;
   delete [] meanval_A;
   delete [] residual;
+
+  //*******************************************************************
+  // Post-construction modification tests
+  //*******************************************************************
   
+  if (verbose) cout <<  "\n\nXXXXX Testing Post-construction modification of a multivector"
+		    <<endl<<endl;
+
+  err = 0;
+
+  Epetra_MultiVector X(Map, NumVectors);
+  X.Random();
+
+  // Pick middle range values for GID, LID and Vector Index
+  int testGID = Map.NumGlobalElements()/2;
+  int testVecIndex = NumVectors/2;
+
+  int GIDSize = 1;
+  int LIDOfGID = 0;
+  int FirstEntryOfGID = 0;
+
+  if (Map.MyGID(testGID)) {
+    LIDOfGID = Map.LID(testGID);
+    GIDSize = Map.ElementSize(LIDOfGID);
+    FirstEntryOfGID = Map.FirstPointInElement(LIDOfGID);
+  }
+
+  // ========================================================================
+  // Test int ReplaceGlobalValue (int GlobalRow, int VectorIndex, double ScalarValue)
+  // ========================================================================
+
+  double newGIDValue = 4.0;
+  int locerr = X.ReplaceGlobalValue(testGID, testVecIndex, newGIDValue);
+
+  if (Map.MyGID(testGID)) {
+    if (X[testVecIndex][FirstEntryOfGID]!=newGIDValue) err++;
+    if (verbose) cout << "X["<<testVecIndex<<"]["<<FirstEntryOfGID<<"] = "
+		      <<  X[testVecIndex][FirstEntryOfGID]
+		      << " should = " << newGIDValue << endl;
+  }
+  else
+    if (locerr!=1) err++; // Test for GID out of range error (=1)
+
+  // ========================================================================
+  // Test int ReplaceGlobalValue (int GlobalRow, intBlockRowOffset, int VectorIndex, double ScalarValue)
+  // ========================================================================
+  newGIDValue = 8.0;
+  locerr = X.ReplaceGlobalValue(testGID, GIDSize-1, testVecIndex, newGIDValue);
+
+  if (Map.MyGID(testGID)) {
+    if (X[testVecIndex][FirstEntryOfGID+GIDSize-1]!=newGIDValue) err++;
+    if (verbose) cout << "X["<<testVecIndex<<"]["<<FirstEntryOfGID+GIDSize-1<<"] = "
+		      <<  X[testVecIndex][FirstEntryOfGID+GIDSize-1]
+		      << " should = " << newGIDValue << endl;
+  }
+  else
+    if (locerr!=1) err++; // Test for GID out of range error (=1)
+  
+  // ========================================================================
+  // Test int SumIntoGlobalValue (int GlobalRow, int VectorIndex, double ScalarValue)
+  // ========================================================================
+
+  newGIDValue = 1.0;
+  locerr = X.ReplaceGlobalValue(testGID, testVecIndex, newGIDValue);
+  locerr = X.SumIntoGlobalValue(testGID, testVecIndex, newGIDValue);
+  if (Map.MyGID(testGID)) {
+    if (X[testVecIndex][FirstEntryOfGID]!=(newGIDValue+newGIDValue)) err++;
+    if (verbose) cout << "X["<<testVecIndex<<"]["<<FirstEntryOfGID<<"] = "
+		      <<  X[testVecIndex][FirstEntryOfGID]
+		      << " should = " << newGIDValue << endl;
+  }
+  else 
+    if (locerr!=1) err++; // Test for GID out of range error (=1)
+    
+  // ========================================================================
+  // Test int SumIntoGlobalValue (int GlobalRow, intBlockRowOffset, int VectorIndex, double ScalarValue)
+  // ========================================================================
+    
+  newGIDValue = 1.0;
+  locerr = X.ReplaceGlobalValue(testGID, GIDSize-1, testVecIndex, newGIDValue);
+  locerr = X.SumIntoGlobalValue(testGID, GIDSize-1, testVecIndex, newGIDValue);
+
+  if (Map.MyGID(testGID)) {
+    if (X[testVecIndex][FirstEntryOfGID+GIDSize-1]!=(newGIDValue+newGIDValue)) err++;
+    if (verbose) cout << "X["<<testVecIndex<<"]["<<FirstEntryOfGID+GIDSize-1<<"] = "
+		      <<  X[testVecIndex][FirstEntryOfGID+GIDSize-1]
+		      << " should = " << newGIDValue << endl;
+  }
+  else
+    if (locerr!=1) err++; // Test for GID out of range error (=1)
+
+  // ========================================================================
+  // Test Local "My" versions of same routine (less complicated)
+  // ========================================================================
+  
+  // Pick middle range values for LID
+  int testLID = Map.NumMyElements()/2;
+
+  int LIDSize = Map.ElementSize(testLID);
+  int FirstEntryOfLID = Map.FirstPointInElement(testLID);
+
+
+  double newLIDValue = 4.0;
+  locerr = X.ReplaceMyValue(testLID, testVecIndex, newLIDValue);
+
+  if (X[testVecIndex][FirstEntryOfLID]!=newLIDValue) err++;
+  if (verbose) cout << "X["<<testVecIndex<<"]["<<FirstEntryOfLID<<"] = "
+		    <<  X[testVecIndex][FirstEntryOfLID]
+		    << " should = " << newLIDValue << endl;
+  
+  newLIDValue = 8.0;
+  locerr = X.ReplaceMyValue(testLID, LIDSize-1, testVecIndex, newLIDValue);
+  if (X[testVecIndex][FirstEntryOfLID+LIDSize-1]!=newLIDValue) err++;
+  if (verbose) cout << "X["<<testVecIndex<<"]["<<FirstEntryOfLID+LIDSize-1<<"] = "
+		    <<  X[testVecIndex][FirstEntryOfLID+LIDSize-1]
+		    << " should = " << newLIDValue << endl;
+  newLIDValue = 1.0;
+  locerr = X.ReplaceMyValue(testLID, testVecIndex, newLIDValue);
+  locerr = X.SumIntoMyValue(testLID, testVecIndex, newLIDValue);
+  if (X[testVecIndex][FirstEntryOfLID]!=(newLIDValue+newLIDValue)) err++;
+  if (verbose) cout << "X["<<testVecIndex<<"]["<<FirstEntryOfLID<<"] = "
+		    <<  X[testVecIndex][FirstEntryOfLID]
+		    << " should = " << newLIDValue << endl;
+  newLIDValue = 2.0;
+  locerr = X.ReplaceMyValue(testLID, LIDSize-1, testVecIndex, newLIDValue);
+  locerr = X.SumIntoMyValue(testLID, LIDSize-1, testVecIndex, newLIDValue);
+  if (verbose) cout << "X["<<testVecIndex<<"]["<<FirstEntryOfLID+LIDSize-1<<"] = "
+		    <<  X[testVecIndex][FirstEntryOfLID+LIDSize-1]
+		    << " should = " << newLIDValue << endl;
+  if (X[testVecIndex][FirstEntryOfLID+LIDSize-1]!=(newLIDValue+newLIDValue)) err++;
+
+  ierr += err;
+
+  // ========================================================================
+  // Test Post-construction modification of an Epetra_Vector using a vector
+  // our multivector X
+  // ========================================================================
+
+  if (verbose) cout <<  "\n\nXXXXX Testing Post-construction modification of a vector"
+		    << endl << endl;
+
+  Epetra_Vector * x = X(testVecIndex);
+
+  int NumEntries = 2;
+  double * VecValues = new double[NumEntries];
+  int * VecGIDs = new int[NumEntries];
+  VecGIDs[0] = testGID;
+  VecGIDs[1] = testGID+1; // Some pathological chance that these GIDs are not valid
+
+  // ========================================================================
+  // Test int ReplaceGlobalValues (int NumEntries, double *Values, int *Indices)
+  // ========================================================================
+
+  VecValues[0] = 2.0; VecValues[1] = 4.0;
+  locerr = x->ReplaceGlobalValues(NumEntries, VecValues, VecGIDs);
+
+  for (int i=0; i<NumEntries; i++) {
+    testGID = VecGIDs[i];
+    if (Map.MyGID(testGID)) {
+      LIDOfGID = Map.LID(testGID);
+      GIDSize = EPETRA_MIN(GIDSize,Map.ElementSize(LIDOfGID)); // Need this value below
+      FirstEntryOfGID = Map.FirstPointInElement(LIDOfGID);
+      if ((*x)[FirstEntryOfGID]!=VecValues[i]) err++;
+      if (verbose) cout << "x["<<FirstEntryOfGID<<"] = "
+			<< (*x)[FirstEntryOfGID] 
+			<< " should = " << VecValues[i] << endl;
+    }
+    else
+      if (locerr!=1) err++; // Test for GID out of range error (=1)
+  }
+
+
+  // ========================================================================
+  // Test int ReplaceGlobalValues (int NumEntries, int BlockOffset, double *Values, int *Indices)
+  // ========================================================================
+
+  VecValues[0] = 4.0; VecValues[1] = 8.0;
+  locerr = x->ReplaceGlobalValues(NumEntries, GIDSize-1, VecValues, VecGIDs);
+
+  for (int i=0; i<NumEntries; i++) {
+    testGID = VecGIDs[i];
+    if (Map.MyGID(testGID)) {
+      LIDOfGID = Map.LID(testGID);
+      FirstEntryOfGID = Map.FirstPointInElement(LIDOfGID);
+      if ((*x)[FirstEntryOfGID+GIDSize-1]!=VecValues[i]) err++;
+      if (verbose) cout << "x["<<FirstEntryOfGID+GIDSize-1<<"] = "
+			<< (*x)[FirstEntryOfGID+GIDSize-1] 
+			<< " should = " << VecValues[i] << endl;
+    }
+    else
+      if (locerr!=1) err++; // Test for GID out of range error (=1)
+  }
+
+  // ========================================================================
+  // Test int SumIntoGlobalValues (int NumEntries, double *Values, int *Indices)
+  // ========================================================================
+
+  VecValues[0] = 1.0; VecValues[1] = 2.0;
+  locerr = x->ReplaceGlobalValues(NumEntries, VecValues, VecGIDs);
+  locerr = x->SumIntoGlobalValues(NumEntries, VecValues, VecGIDs);
+
+  for (int i=0; i<NumEntries; i++) {
+    testGID = VecGIDs[i];
+    if (Map.MyGID(testGID)) {
+      LIDOfGID = Map.LID(testGID);
+      FirstEntryOfGID = Map.FirstPointInElement(LIDOfGID);
+      if ((*x)[FirstEntryOfGID]!=(VecValues[i]+VecValues[i])) err++;
+      if (verbose) cout << "x["<<FirstEntryOfGID<<"] = "
+			<< (*x)[FirstEntryOfGID] 
+			<< " should = " << (VecValues[i]+VecValues[i]) << endl;
+    }
+    else
+      if (locerr!=1) err++; // Test for GID out of range error (=1)
+  }
+  // ========================================================================
+  // Test int ReplaceGlobalValues (int NumEntries, int BlockOffset, double *Values, int *Indices)
+  // ========================================================================
+
+  VecValues[0] = 1.0; VecValues[1] = 2.0;
+  locerr = x->ReplaceGlobalValues(NumEntries, GIDSize-1, VecValues, VecGIDs);
+  locerr = x->SumIntoGlobalValues(NumEntries, GIDSize-1, VecValues, VecGIDs);
+
+  for (int i=0; i<NumEntries; i++) {
+    testGID = VecGIDs[i];
+    if (Map.MyGID(testGID)) {
+      LIDOfGID = Map.LID(testGID);
+      FirstEntryOfGID = Map.FirstPointInElement(LIDOfGID);
+      if ((*x)[FirstEntryOfGID+GIDSize-1]!=(VecValues[i]+VecValues[i])) err++;
+      if (verbose) cout << "x["<<FirstEntryOfGID+GIDSize-1<<"] = "
+			<< (*x)[FirstEntryOfGID+GIDSize-1] 
+			<< " should = " << (VecValues[i]+VecValues[i]) << endl;
+    }
+    else
+      if (locerr!=1) err++; // Test for GID out of range error (=1)
+  }
+
+  // ========================================================================
+  // Test Local "My" versions of same routine (less complicated)
+  // ========================================================================
+  int * VecLIDs = new int[NumEntries];
+  VecLIDs[0] = testLID;
+  VecLIDs[1] = testLID+1; // Some pathological chance that these LIDs are not valid
+
+  VecValues[0] = 2.0; VecValues[1] = 4.0;
+  locerr = x->ReplaceMyValues(NumEntries, VecValues, VecLIDs);
+
+  for (int i=0; i<NumEntries; i++) {
+    testLID = VecLIDs[i];
+    LIDSize = EPETRA_MIN(LIDSize,Map.ElementSize(testLID)); // Need this value below
+    FirstEntryOfLID = Map.FirstPointInElement(testLID);
+    if ((*x)[FirstEntryOfLID]!=VecValues[i]) err++;
+    if (verbose) cout << "x["<<FirstEntryOfLID<<"] = "
+		      << (*x)[FirstEntryOfLID] 
+		      << " should = " << VecValues[i] << endl;
+  }
+
+  VecValues[0] = 4.0; VecValues[1] = 8.0;
+  locerr = x->ReplaceMyValues(NumEntries, LIDSize-1, VecValues, VecLIDs);
+
+  for (int i=0; i<NumEntries; i++) {
+    testLID = VecLIDs[i];
+    LIDSize = EPETRA_MIN(LIDSize,Map.ElementSize(testLID)); // Need this value below
+    FirstEntryOfLID = Map.FirstPointInElement(testLID);
+    if ((*x)[FirstEntryOfLID+LIDSize-1]!=VecValues[i]) err++;
+    if (verbose) cout << "x["<<FirstEntryOfLID+LIDSize-1<<"] = "
+		      << (*x)[FirstEntryOfLID+LIDSize-1] 
+		      << " should = " << VecValues[i] << endl;
+  }
+
+  VecValues[0] = 1.0; VecValues[1] = 1.0;
+  locerr = x->ReplaceMyValues(NumEntries, VecValues, VecLIDs);
+  locerr = x->SumIntoMyValues(NumEntries, VecValues, VecLIDs);
+
+  for (int i=0; i<NumEntries; i++) {
+    testLID = VecLIDs[i];
+    LIDSize = EPETRA_MIN(LIDSize,Map.ElementSize(testLID)); // Need this value below
+    FirstEntryOfLID = Map.FirstPointInElement(testLID);
+    if ((*x)[FirstEntryOfLID]!=(VecValues[i]+VecValues[i])) err++;
+    if (verbose) cout << "x["<<FirstEntryOfLID<<"] = "
+		      << (*x)[FirstEntryOfLID] 
+		      << " should = " << (VecValues[i]+VecValues[i]) << endl;
+  }
+
+  VecValues[0] = 2.0; VecValues[1] = 4.0;
+  locerr = x->ReplaceMyValues(NumEntries, LIDSize-1, VecValues, VecLIDs);
+  locerr = x->SumIntoMyValues(NumEntries, LIDSize-1, VecValues, VecLIDs);
+
+  for (int i=0; i<NumEntries; i++) {
+    testLID = VecLIDs[i];
+    LIDSize = EPETRA_MIN(LIDSize,Map.ElementSize(testLID)); // Need this value below
+    FirstEntryOfLID = Map.FirstPointInElement(testLID);
+    if ((*x)[FirstEntryOfLID+LIDSize-1]!=(VecValues[i]+VecValues[i])) err++;
+    if (verbose) cout << "x["<<FirstEntryOfLID+LIDSize-1<<"] = "
+		      << (*x)[FirstEntryOfLID+LIDSize-1] 
+		      << " should = " << (VecValues[i]+VecValues[i]) << endl;
+  }
+
+    delete [] VecValues;
+    delete [] VecGIDs;
+    delete [] VecLIDs;
+
   return(ierr);
 }
 

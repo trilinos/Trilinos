@@ -68,11 +68,89 @@ int Epetra_Vector::ExtractView(double **V)
 //=========================================================================
 double& Epetra_Vector::operator [] (int Index)  {
 
-   return(Values_[Index - IndexBase_]);
+   return(Values_[Index]);
 }
 
 //=========================================================================
 const double& Epetra_Vector::operator [] (int Index) const  {
 
-   return(Values_[Index - IndexBase_]);
+   return(Values_[Index]);
+}
+//=========================================================================
+int Epetra_Vector::ReplaceGlobalValues(int NumEntries, double * Values, int * Indices) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeValues(NumEntries, 0, Values, Indices, true, false));
+  return(0);
+}
+//=========================================================================
+int Epetra_Vector::ReplaceMyValues(int NumEntries, double * Values, int * Indices) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeValues(NumEntries, 0, Values, Indices, false, false));
+  return(0);
+}
+//=========================================================================
+int Epetra_Vector::SumIntoGlobalValues(int NumEntries, double * Values, int * Indices) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeValues(NumEntries, 0, Values, Indices, true, true));
+  return(0);
+}
+//=========================================================================
+int Epetra_Vector::SumIntoMyValues(int NumEntries, double * Values, int * Indices) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeValues(NumEntries, 0, Values, Indices, false, true));
+  return(0);
+}
+//=========================================================================
+int Epetra_Vector::ReplaceGlobalValues(int NumEntries, int BlockOffset, double * Values, int * Indices) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeValues(NumEntries, BlockOffset, Values, Indices, true, false));
+  return(0);
+}
+//=========================================================================
+int Epetra_Vector::ReplaceMyValues(int NumEntries, int BlockOffset, double * Values, int * Indices) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeValues(NumEntries, BlockOffset, Values, Indices, false, false));
+  return(0);
+}
+//=========================================================================
+int Epetra_Vector::SumIntoGlobalValues(int NumEntries, int BlockOffset, double * Values, int * Indices) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeValues(NumEntries, BlockOffset, Values, Indices, true, true));
+  return(0);
+}
+//=========================================================================
+int Epetra_Vector::SumIntoMyValues(int NumEntries, int BlockOffset, double * Values, int * Indices) {
+  // Use the more general method below
+  EPETRA_CHK_ERR(ChangeValues(NumEntries, BlockOffset, Values, Indices, false, true));
+  return(0);
+}
+//=========================================================================
+int Epetra_Vector::ChangeValues(int NumEntries, int BlockOffset, double * Values, int * Indices,
+				bool IndicesGlobal, bool SumInto) {
+
+  int cur_index;
+  int ierr = 0;
+  int ierr1 = 0;
+  if (BlockOffset<0) EPETRA_CHK_ERR(-1); // Offset is out-of-range
+
+  for (int i=0; i<NumEntries; i++) {
+    if (IndicesGlobal) 
+      cur_index = Map().LID(Indices[i]);
+    else
+      cur_index = Indices[i];
+    
+    if (Map().MyLID(cur_index)) {
+      if (BlockOffset>=Map().ElementSize(cur_index)) EPETRA_CHK_ERR(-1); // Offset is out-of-range
+      int entry = Map().FirstPointInElement(cur_index);
+
+      if (SumInto)
+	Values_[entry+BlockOffset] += Values[i];
+      else
+	Values_[entry+BlockOffset] = Values[i];
+    }
+    else ierr = 1;
+  }
+
+  EPETRA_CHK_ERR(ierr);
+  return(0);
 }

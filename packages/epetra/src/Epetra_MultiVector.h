@@ -31,6 +31,7 @@ class Epetra_Map;
 class Epetra_Import;
 class Epetra_Export;
 class Epetra_Distributor;
+class Epetra_Vector;
 #include "Epetra_DistObject.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
@@ -162,6 +163,7 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
   public:
 
+  //@{ \name Constructors/destructors.
   //! Basic Epetra_MultiVector constuctor.
   /*! Creates a Epetra_MultiVector object and fills with zero values.  
 
@@ -264,6 +266,196 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   
   //! Epetra_MultiVector destructor.  
   virtual ~Epetra_MultiVector();
+  //@}
+  
+  //@{ \name Post-construction modification routines.
+
+  //! Replace current value  at the specified (GlobalRow, VectorIndex) location with ScalarValue.
+  /*!
+    Replaces the  existing value for a single entry in the multivector.  The
+    specified global row must correspond to a GID owned by the map of the multivector on the
+    calling processor.  In other words, this method does not perform cross-processor communication.
+
+    If the map associated with this multivector is an Epetra_BlockMap, only the first point entry associated
+    with the global row will be modified.  To modify a different point entry, use the other version of
+    this method
+
+    \param In
+           GlobalRow - Row of Multivector to modify in global index space.
+    \param In
+           VectorIndex - Vector within MultiVector that should to modify.
+    \param In
+           ScalarValue - Value to add to existing value.
+
+    \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
+            set to -1 if VectorIndex >= NumVectors().
+  */
+  int ReplaceGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue);
+
+
+  //! Replace current value at the specified (GlobalBlockRow, BlockRowOffset, VectorIndex) location with ScalarValue.
+  /*!
+    Replaces the existing value for a single entry in the multivector.  The
+    specified global block row and block row offset 
+    must correspond to a GID owned by the map of the multivector on the
+    calling processor.  In other words, this method does not perform cross-processor communication.
+
+    \param In
+           GlobalBlockRow - BlockRow of Multivector to modify in global index space.
+    \param In
+           BlockRowOffset - Offset into BlockRow of Multivector to modify in global index space.
+    \param In
+           VectorIndex - Vector within MultiVector that should to modify.
+    \param In
+           ScalarValue - Value to add to existing value.
+
+    \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
+            set to -1 if VectorIndex >= NumVectors(), set to -2 if BlockRowOffset is out-of-range.
+  */
+  int ReplaceGlobalValue(int GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
+
+
+  //! Adds ScalarValue to existing value at the specified (GlobalRow, VectorIndex) location.
+  /*!
+    Sums the given value into the existing value for a single entry in the multivector.  The
+    specified global row must correspond to a GID owned by the map of the multivector on the
+    calling processor.  In other words, this method does not perform cross-processor communication.
+
+    If the map associated with this multivector is an Epetra_BlockMap, only the first point entry associated
+    with the global row will be modified.  To modify a different point entry, use the other version of
+    this method
+
+    \param In
+           GlobalRow - Row of Multivector to modify in global index space.
+    \param In
+           VectorIndex - Vector within MultiVector that should to modify.
+    \param In
+           ScalarValue - Value to add to existing value.
+
+    \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
+            set to -1 if VectorIndex >= NumVectors().
+  */
+  int SumIntoGlobalValue(int GlobalRow, int VectorIndex, double ScalarValue);
+
+
+  //! Adds ScalarValue to existing value at the specified (GlobalBlockRow, BlockRowOffset, VectorIndex) location.
+  /*!
+    Sums the given value into the existing value for a single entry in the multivector.  The
+    specified global block row and block row offset 
+    must correspond to a GID owned by the map of the multivector on the
+    calling processor.  In other words, this method does not perform cross-processor communication.
+
+    \param In
+           GlobalBlockRow - BlockRow of Multivector to modify in global index space.
+    \param In
+           BlockRowOffset - Offset into BlockRow of Multivector to modify in global index space.
+    \param In
+           VectorIndex - Vector within MultiVector that should to modify.
+    \param In
+           ScalarValue - Value to add to existing value.
+
+    \return Integer error code, set to 0 if successful, set to 1 if GlobalRow not associated with calling processor
+            set to -1 if VectorIndex >= NumVectors(), set to -2 if BlockRowOffset is out-of-range.
+  */
+  int SumIntoGlobalValue(int GlobalBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
+
+  //! Replace current value  at the specified (MyRow, VectorIndex) location with ScalarValue.
+  /*!
+    Replaces the existing value for a single entry in the multivector.  The
+    specified local row must correspond to a GID owned by the map of the multivector on the
+    calling processor.  In other words, this method does not perform cross-processor communication.
+
+    If the map associated with this multivector is an Epetra_BlockMap, only the first point entry associated
+    with the local row will be modified.  To modify a different point entry, use the other version of
+    this method
+
+    \param In
+           MyRow - Row of Multivector to modify in local index space.
+    \param In
+           VectorIndex - Vector within MultiVector that should to modify.
+    \param In
+           ScalarValue - Value to add to existing value.
+
+    \return Integer error code, set to 0 if successful, set to 1 if MyRow not associated with calling processor
+            set to -1 if VectorIndex >= NumVectors().
+  */
+  int ReplaceMyValue(int MyRow, int VectorIndex, double ScalarValue);
+
+
+  //! Replace current value at the specified (MyBlockRow, BlockRowOffset, VectorIndex) location with ScalarValue.
+  /*!
+    Replaces the existing value for a single entry in the multivector.  The
+    specified local block row and block row offset 
+    must correspond to a GID owned by the map of the multivector on the
+    calling processor.  In other words, this method does not perform cross-processor communication.
+
+    \param In
+           MyBlockRow - BlockRow of Multivector to modify in local index space.
+    \param In
+           BlockRowOffset - Offset into BlockRow of Multivector to modify in local index space.
+    \param In
+           VectorIndex - Vector within MultiVector that should to modify.
+    \param In
+           ScalarValue - Value to add to existing value.
+
+    \return Integer error code, set to 0 if successful, set to 1 if MyRow not associated with calling processor
+            set to -1 if VectorIndex >= NumVectors(), set to -2 if BlockRowOffset is out-of-range.
+  */
+  int ReplaceMyValue(int MyBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
+
+
+  //! Adds ScalarValue to existing value at the specified (MyRow, VectorIndex) location.
+  /*!
+    Sums the given value into the existing value for a single entry in the multivector.  The
+    specified local row must correspond to a GID owned by the map of the multivector on the
+    calling processor.  In other words, this method does not perform cross-processor communication.
+
+    If the map associated with this multivector is an Epetra_BlockMap, only the first point entry associated
+    with the local row will be modified.  To modify a different point entry, use the other version of
+    this method
+
+    \param In
+           MyRow - Row of Multivector to modify in local index space.
+    \param In
+           VectorIndex - Vector within MultiVector that should to modify.
+    \param In
+           ScalarValue - Value to add to existing value.
+
+    \return Integer error code, set to 0 if successful, set to 1 if MyRow not associated with calling processor
+            set to -1 if VectorIndex >= NumVectors().
+  */
+  int SumIntoMyValue(int MyRow, int VectorIndex, double ScalarValue);
+
+
+  //! Adds ScalarValue to existing value at the specified (MyBlockRow, BlockRowOffset, VectorIndex) location.
+  /*!
+    Sums the given value into the existing value for a single entry in the multivector.  The
+    specified local block row and block row offset 
+    must correspond to a GID owned by the map of the multivector on the
+    calling processor.  In other words, this method does not perform cross-processor communication.
+
+    \param In
+           MyBlockRow - BlockRow of Multivector to modify in local index space.
+    \param In
+           BlockRowOffset - Offset into BlockRow of Multivector to modify in local index space.
+    \param In
+           VectorIndex - Vector within MultiVector that should to modify.
+    \param In
+           ScalarValue - Value to add to existing value.
+
+    \return Integer error code, set to 0 if successful, set to 1 if MyRow not associated with calling processor
+            set to -1 if VectorIndex >= NumVectors(), set to -2 if BlockRowOffset is out-of-range.
+  */
+  int SumIntoMyValue(int MyBlockRow, int BlockRowOffset, int VectorIndex, double ScalarValue);
+
+  //! Initialize all values in a multi-vector with constant value.
+  /*!
+    \param In
+           ScalarConstant - Value to use.
+
+    \return Integer error code, set to 0 if successful.
+  */
+  int PutScalar (double ScalarConstant);
   
   //! Set multi-vector values to random numbers.
   /*!
@@ -271,6 +463,10 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
   */
    int Random();
+
+  //@}
+
+  //@{ \name Extraction methods
 
   //! Put multi-vector values into user-provided two-dimensional array.
   /*!
@@ -335,17 +531,9 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   */
   int ExtractView(double ***ArrayOfPointers) const;
 
+  //@}
 
-
-  //! Initialize all values in a multi-vector with constant value.
-  /*!
-    \param In
-           ScalarConstant - Value to use.
-
-    \return Integer error code, set to 0 if successful.
-  */
-  int PutScalar (double ScalarConstant);
-  // Mathematical functions.
+  //@{ \name Mathematical methods.
 
   //! Computes dot product of each corresponding pair of vectors.
   /*!
@@ -600,8 +788,9 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   int ReciprocalMultiply(double ScalarAB, const Epetra_MultiVector& A, const Epetra_MultiVector& B,
 		       double ScalarThis );
 
+  //@}
 
-  // Random number utilities
+  //@{ \name Random number utilities
 
 
   //! Set seed for Random function.
@@ -619,6 +808,10 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   */
   double Seed(){return(Seed_);};
 
+  //@}
+
+  //@{ \name Overloaded operators
+
   //! = Operator.
   /*!
     \param In
@@ -634,16 +827,29 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
   //! Vector access function.
   /*!
-    \return Pointer to vector in multi-vector specified by Index.
+    \return Pointer to the array of doubles containing the local values of the ith vector in the multi-vector.
   */
-  double*& operator [] (int Index);
+  double*& operator [] (int i);
   //! Vector access function.
   /*!
-    \return Pointer to vector in multi-vector specified by Index.
+    \return Pointer to the array of doubles containing the local values of the ith vector in the multi-vector.
   */
-  const double*& operator [] (int Index) const;
+  const double*& operator [] (int i) const;
 
-  // Attribute access functions
+  //! Vector access function.
+  /*!
+    \return An Epetra_Vector pointer to the ith vector in the multi-vector.
+  */
+  Epetra_Vector * & operator () (int i);
+  //! Vector access function.
+  /*!
+    \return An Epetra_Vector pointer to the ith vector in the multi-vector.
+  */
+  const Epetra_Vector * & operator () (int i) const;
+
+  //@}
+
+  //@{ \name Attribute access functions
   
   //! Returns the number of vectors in the multi-vector.
   int NumVectors() const {return(NumVectors_);};
@@ -659,10 +865,14 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   
   //! Returns true if this multi-vector has constant stride between vectors.
   bool ConstantStride() const {return(ConstantStride_);};
+  //@}
+
+  //@{ \name I/O methods
 
   //! Print method
   virtual void Print(ostream & os) const;
-  
+    //@}
+
  protected:
 
   //! Get pointer to MultiVector values
@@ -691,7 +901,10 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   int DoCopy(void);
   int AllocateForView(void);
   int DoView(void);
-  
+  int ChangeGlobalValue(int GlobalBlockRow, int BlockRowOffset, 
+			int VectorIndex, double ScalarValue, bool SumInto);
+  int ChangeMyValue(int MyBlockRow, int BlockRowOffset, 
+			int VectorIndex, double ScalarValue, bool SumInto);
   int CheckSizes(const Epetra_DistObject& A);
   int CopyAndPermute(const Epetra_DistObject & Source, int NumSameIDs, 
 			 int NumPermuteIDs, int * PermuteToLIDs, int * PermuteFromLIDs);
@@ -718,6 +931,7 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   double Seed_;
   double * DoubleTemp_;
   int * IntTemp_;
+  Epetra_Vector ** Vectors_;
 
 };
 

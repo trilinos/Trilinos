@@ -382,6 +382,12 @@ class Epetra_BlockMap: public Epetra_Object {
     
   //! Size of element for specified LID.
   int  ElementSize(int LID) const;
+    
+  //! Returns the requested entry in the FirstPointInElementList; see FirstPointInElementList() for details.
+  /*! This function provides similar functionality to FirstPointInElementList(), but for simple maps may avoid
+      the explicit construction of the FirstPointInElementList array.  Returns -1 if LID is out-of-range.
+  */
+  int  FirstPointInElement(int LID) const;
   
   //! Index base for this map.
   int  IndexBase() const {return(IndexBase_);};

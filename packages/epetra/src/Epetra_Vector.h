@@ -123,6 +123,7 @@ class Epetra_Vector : public Epetra_MultiVector {
 
   public:
 
+  //@{ \name Constructors/destructors.
   //! Basic Epetra_Vector constuctor.
   /*! Creates a Epetra_Vector object and fills with zero values.  
 
@@ -176,6 +177,163 @@ class Epetra_Vector : public Epetra_MultiVector {
 
   //! Epetra_Vector destructor.  
     virtual ~Epetra_Vector ();
+  //@}
+  
+  //@{ \name Post-construction modification routines.
+
+  //! Replace values in a vector with a given indexed list of values, indices are in global index space.
+  /*!
+     Replace the Indices[i] entry in the \e this object with Values[i], for i=0; i<NumEntries.  The indices
+     are in global index space.
+
+    \param In
+           NumEntries - Number of vector entries to modify.
+    \param In
+           Values - Values which will replace existing values in vector, of length NumEntries.
+    \param In
+           Indices - Indices in global index space corresponding to Values.
+
+    \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
+  */
+  int ReplaceGlobalValues(int NumEntries, double * Values, int * Indices);
+
+  //! Replace values in a vector with a given indexed list of values, indices are in local index space.
+  /*!
+     Replace the Indices[i] entry in the \e this object with Values[i], for i=0; i<NumEntries.  The indices
+     are in local index space.
+
+    \param In
+           NumEntries - Number of vector entries to modify.
+    \param In
+           Values - Values which will replace existing values in vector, of length NumEntries.
+    \param In
+           Indices - Indices in local index space corresponding to Values.
+
+    \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
+  */
+  int ReplaceMyValues(int NumEntries, double * Values, int * Indices);
+
+  //! Sum values into a vector with a given indexed list of values, indices are in global index space.
+  /*!
+     Sum Values[i] into the Indices[i] entry in the \e this object, for i=0; i<NumEntries.  The indices
+     are in global index space.
+
+    \param In
+           NumEntries - Number of vector entries to modify.
+    \param In
+           Values - Values which will replace existing values in vector, of length NumEntries.
+    \param In
+           Indices - Indices in global index space corresponding to Values.
+
+    \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
+  */
+  int SumIntoGlobalValues(int NumEntries, double * Values, int * Indices);
+
+  //! Sum values into a vector with a given indexed list of values, indices are in local index space.
+  /*!
+     Sum Values[i] into the Indices[i] entry in the \e this object, for i=0; i<NumEntries.  The indices
+     are in local index space.
+
+    \param In
+           NumEntries - Number of vector entries to modify.
+    \param In
+           Values - Values which will replace existing values in vector, of length NumEntries.
+    \param In
+           Indices - Indices in local index space corresponding to Values.
+
+    \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
+  */
+  int SumIntoMyValues(int NumEntries, double * Values, int * Indices);
+
+  // Blockmap Versions
+
+  //! Replace values in a vector with a given indexed list of values at the specified BlockOffset, indices are in global index space.
+  /*!
+     Replace the Indices[i] entry in the \e this object with Values[i], for i=0; i<NumEntries.  The indices
+     are in global index space.  This method is intended for vector that are defined using block maps.  In this situation, 
+     an index value is associated with one or more vector entries, depending on the element size of the given index.
+     The BlockOffset argument indicates which vector entry to modify as an offset from the first vector entry associated with
+     the given index.  The offset is used for each entry in the input list.
+
+    \param In
+           NumEntries - Number of vector entries to modify.
+    \param In
+           BlockOffset - Offset from the first vector entry associated with each of the given indices.
+    \param In
+           Values - Values which will replace existing values in vector, of length NumEntries.
+    \param In
+           Indices - Indices in global index space corresponding to Values.
+
+    \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
+  */
+  int ReplaceGlobalValues(int NumEntries, int BlockOffset, double * Values, int * Indices);
+
+  //! Replace values in a vector with a given indexed list of values at the specified BlockOffset, indices are in local index space.
+  /*!
+     Replace the (Indices[i], BlockOffset) entry in the \e this object with Values[i], for i=0; i<NumEntries.  The indices
+     are in local index space.  This method is intended for vector that are defined using block maps.  In this situation, 
+     an index value is associated with one or more vector entries, depending on the element size of the given index.
+     The BlockOffset argument indicates which vector entry to modify as an offset from the first vector entry associated with
+     the given index.  The offset is used for each entry in the input list.
+
+    \param In
+           NumEntries - Number of vector entries to modify.
+    \param In
+           BlockOffset - Offset from the first vector entry associated with each of the given indices.
+    \param In
+           Values - Values which will replace existing values in vector, of length NumEntries.
+    \param In
+           Indices - Indices in local index space corresponding to Values.
+
+    \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
+  */
+  int ReplaceMyValues(int NumEntries, int BlockOffset, double * Values, int * Indices);
+
+  //! Sum values into a vector with a given indexed list of values at the specified BlockOffset, indices are in global index space.
+  /*!
+     Sum Values[i] into the Indices[i] entry in the \e this object, for i=0; i<NumEntries.  The indices
+     are in global index space.  This method is intended for vector that are defined using block maps.  In this situation, 
+     an index value is associated with one or more vector entries, depending on the element size of the given index.
+     The BlockOffset argument indicates which vector entry to modify as an offset from the first vector entry associated with
+     the given index.  The offset is used for each entry in the input list.
+
+    \param In
+           NumEntries - Number of vector entries to modify.
+    \param In
+           BlockOffset - Offset from the first vector entry associated with each of the given indices.
+    \param In
+           Values - Values which will replace existing values in vector, of length NumEntries.
+    \param In
+           Indices - Indices in global index space corresponding to Values.
+
+    \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
+  */
+  int SumIntoGlobalValues(int NumEntries, int BlockOffset, double * Values, int * Indices);
+
+  //! Sum values into a vector with a given indexed list of values at the specified BlockOffset, indices are in local index space.
+  /*!
+     Sum Values[i] into the Indices[i] entry in the \e this object, for i=0; i<NumEntries.  The indices
+     are in local index space.  This method is intended for vector that are defined using block maps.  In this situation, 
+     an index value is associated with one or more vector entries, depending on the element size of the given index.
+     The BlockOffset argument indicates which vector entry to modify as an offset from the first vector entry associated with
+     the given index.  The offset is used for each entry in the input list.
+
+    \param In
+           NumEntries - Number of vector entries to modify.
+    \param In
+           BlockOffset - Offset from the first vector entry associated with each of the given indices.
+    \param In
+           Values - Values which will replace existing values in vector, of length NumEntries.
+    \param In
+           Indices - Indices in local index space corresponding to Values.
+
+    \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
+  */
+  int SumIntoMyValues(int NumEntries, int BlockOffset, double * Values, int * Indices);
+  //@}
+
+  //@{ \name Extraction methods
+
 
   //! Put vector values into user-provided array.
   /*!
@@ -194,6 +352,9 @@ class Epetra_Vector : public Epetra_MultiVector {
     \return Integer error code, set to 0 if successful.
   */
   int ExtractView(double **V);
+  //@}
+
+  //@{ \name Overloaded operators
 
   //! Element access function.
   /*!
@@ -205,7 +366,12 @@ class Epetra_Vector : public Epetra_MultiVector {
     \return V[Index].
   */
     const double& operator [] (int index) const;
+    //@}
     
+ private:
+
+    int ChangeValues(int NumEntries, int BlockOffset, double * Values, int * Indices, bool IndicesGlobal, bool SumInto);
+
 };
 
 #endif /* _EPETRA_VECTOR_H_ */

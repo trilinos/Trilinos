@@ -161,27 +161,29 @@ int main(int argc, char *argv[])
   //solver.SetAztecOption(AZ_overlap, 1);
   //solver.SetAztecOption(AZ_poly_ord, 9);
   solver.SetAztecParam(AZ_ilut_fill, 1.0);
-  solver.SetAztecParam(AZ_drop, 0.0);
-  //double rthresh = 1.0;
+  //solver.SetAztecParam(AZ_drop, 0.0);
+  double rthresh = 1.4;
   //cout << "Rel threshold = " << rthresh << endl;
-  //solver.SetAztecParam(AZ_rthresh, rthresh);
-  //double athresh = 1.0e-4;
+  solver.SetAztecParam(AZ_rthresh, rthresh);
+  double athresh = 10.0;
   //cout << "Abs threshold = " << athresh << endl;
-  //solver.SetAztecParam(AZ_athresh, athresh);
+  solver.SetAztecParam(AZ_athresh, athresh);
+  solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
+
 
   
 
   //solver.SetAztecOption(AZ_reorder, 2);
 
-  int Niters = 1200;
-  solver.SetAztecOption(AZ_kspace, Niters);
+  int Niters = 320;
+  solver.SetAztecOption(AZ_kspace, 160);
    
   double norminf = A.NormInf();
   double normone = A.NormOne();
   if (comm.MyPID()==0) 
     cout << "\n Inf-norm of A before scaling = " << norminf 
 	 << "\n One-norm of A before scaling = " << normone<< endl << endl;
-  solver.Iterate(Niters, 5.0e-16);
+  solver.Iterate(Niters, 0.0e-100);
   norminf = A.NormInf();
   normone = A.NormOne(); 
   if (comm.MyPID()==0) 
