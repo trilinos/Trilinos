@@ -42,6 +42,8 @@
 #endif
 #include "Epetra_Map.h"
 
+#include "ModeLaplace1DQ1.h"
+
 int main(int argc, char *argv[]) 
 {
   int i, info = 0;
@@ -76,17 +78,19 @@ int main(int argc, char *argv[])
   //  Create default output manager 
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > om = Teuchos::rcp( new Anasazi::OutputManager<double>() );
 
-  //  Dimension of the multivector
-  int NumGlobalElements = 99;
-  int NumColumns = 7;
-  
-  // Construct a Map that puts approximately the same number of
-  // equations on each processor.
-  Epetra_Map Map(NumGlobalElements, 0, Comm);
-  
-  int NumMyElements = Map.NumMyElements();
-  std::vector<int> MyGlobalElements(NumMyElements);
-  Map.MyGlobalElements(&MyGlobalElements[0]);
+  //  Problem information
+  int space_dim = 1;
+  std::vector<double> brick_dim( space_dim );
+  brick_dim[0] = 1.0;
+  std::vector<int> elements( space_dim );
+  elements[0] = 50;
+
+  // Create problem
+  ModalProblem *testCase = new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]);
+
+  // Get the stiffness and mass matrices
+  const Epetra_Operator *K = testCase->getStiffness();
+  const Epetra_Operator *M = testCase->getMass();
   
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;

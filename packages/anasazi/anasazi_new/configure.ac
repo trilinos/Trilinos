@@ -401,11 +401,12 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		example/Makefile
-		example/ModeLaplace/Makefile
 		example/BlockKrylovSchur/Makefile
 		test/Makefile
 		test/ModalSolverUtils/Makefile
 		test/BlockDavidson/Makefile
+		util/Makefile
+		util/ModeLaplace/Makefile
 		])
 
 AC_OUTPUT()

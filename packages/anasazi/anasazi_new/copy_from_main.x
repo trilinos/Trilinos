@@ -14,9 +14,6 @@ cp ../src/Makefile* ./src/.
 cp ../src/*.in ./src/.
 
 cp ../example/Makefile* ./example/.
-cp ../example/ModeLaplace/Makefile* ./example/ModeLaplace/.
-cp ../example/ModeLaplace/*.cpp ./example/ModeLaplace/.
-cp ../example/ModeLaplace/*.h ./example/ModeLaplace/.
 cp ../example/BlockKrylovSchur/Makefile* ./example/BlockKrylovSchur/.
 cp ../example/BlockKrylovSchur/*.cpp ./example/BlockKrylovSchur/.
 
@@ -25,6 +22,11 @@ cp ../test/ModalSolverUtils/Makefile* ./test/ModalSolverUtils/.
 cp ../test/ModalSolverUtils/*.cpp ./test/ModalSolverUtils/.
 cp ../test/BlockDavidson/Makefile* ./test/BlockDavidson/.
 cp ../test/BlockDavidson/*.cpp ./test/BlockDavidson/.
+
+cp ../util/Makefile* ./util/.
+cp ../util/ModeLaplace/Makefile* ./util/ModeLaplace/.
+cp ../util/ModeLaplace/*.cpp ./util/ModeLaplace/.
+cp ../util/ModeLaplace/*.h ./util/ModeLaplace/.
 
 # Remove files from main so that they are not commited
 ./remove_from_main.x

@@ -49,7 +49,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-subdir = example/ModeLaplace
+subdir = util/ModeLaplace
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -83,7 +83,8 @@ LIBRARIES = $(noinst_LIBRARIES)
 libModeLaplace_a_DEPENDENCIES =
 am__objects_1 = ModeLaplace1DQ1.$(OBJEXT) ModeLaplace1DQ2.$(OBJEXT) \
 	ModeLaplace2DQ1.$(OBJEXT) ModeLaplace2DQ2.$(OBJEXT) \
-	ModeLaplace3DQ1.$(OBJEXT) ModeLaplace3DQ2.$(OBJEXT)
+	ModeLaplace3DQ1.$(OBJEXT) ModeLaplace3DQ2.$(OBJEXT) \
+	CheckingTools.$(OBJEXT) SortingTools.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
 am_libModeLaplace_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -93,12 +94,14 @@ libModeLaplace_a_OBJECTS = $(am_libModeLaplace_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ModeLaplace1DQ1.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/CheckingTools.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ModeLaplace1DQ1.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ModeLaplace1DQ2.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ModeLaplace2DQ1.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ModeLaplace2DQ2.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ModeLaplace3DQ1.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ModeLaplace3DQ2.Po
+@AMDEP_TRUE@	./$(DEPDIR)/ModeLaplace3DQ2.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/SortingTools.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -252,7 +255,9 @@ CORE_H = \
 	$(srcdir)/ModeLaplace3DQ1.h \
 	$(srcdir)/ModeLaplace3DQ2.h \
 	$(srcdir)/ModalProblem.h \
-	$(srcdir)/ModeLaplace.h
+	$(srcdir)/ModeLaplace.h \
+	$(srcdir)/CheckingTools.h \
+	$(srcdir)/SortingTools.h
 
 CORE = \
 	$(srcdir)/ModeLaplace1DQ1.cpp \
@@ -260,7 +265,9 @@ CORE = \
 	$(srcdir)/ModeLaplace2DQ1.cpp \
 	$(srcdir)/ModeLaplace2DQ2.cpp \
 	$(srcdir)/ModeLaplace3DQ1.cpp \
-	$(srcdir)/ModeLaplace3DQ2.cpp
+	$(srcdir)/ModeLaplace3DQ2.cpp \
+	$(srcdir)/CheckingTools.cpp \
+	$(srcdir)/SortingTools.cpp
 
 UTIL_H = 
 UTIL = 
@@ -407,9 +414,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/ModeLaplace/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  util/ModeLaplace/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/ModeLaplace/Makefile
+	  $(AUTOMAKE) --foreign  util/ModeLaplace/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -441,12 +448,14 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CheckingTools.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ModeLaplace1DQ1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ModeLaplace1DQ2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ModeLaplace2DQ1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ModeLaplace2DQ2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ModeLaplace3DQ1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ModeLaplace3DQ2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SortingTools.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -559,6 +568,38 @@ ModeLaplace3DQ2.obj: $(srcdir)/ModeLaplace3DQ2.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ModeLaplace3DQ2.Po' tmpdepfile='$(DEPDIR)/ModeLaplace3DQ2.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ModeLaplace3DQ2.obj `if test -f '$(srcdir)/ModeLaplace3DQ2.cpp'; then $(CYGPATH_W) '$(srcdir)/ModeLaplace3DQ2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ModeLaplace3DQ2.cpp'; fi`
+
+CheckingTools.o: $(srcdir)/CheckingTools.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CheckingTools.o -MD -MP -MF "$(DEPDIR)/CheckingTools.Tpo" -c -o CheckingTools.o `test -f '$(srcdir)/CheckingTools.cpp' || echo '$(srcdir)/'`$(srcdir)/CheckingTools.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CheckingTools.Tpo" "$(DEPDIR)/CheckingTools.Po"; else rm -f "$(DEPDIR)/CheckingTools.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CheckingTools.cpp' object='CheckingTools.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CheckingTools.Po' tmpdepfile='$(DEPDIR)/CheckingTools.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CheckingTools.o `test -f '$(srcdir)/CheckingTools.cpp' || echo '$(srcdir)/'`$(srcdir)/CheckingTools.cpp
+
+CheckingTools.obj: $(srcdir)/CheckingTools.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CheckingTools.obj -MD -MP -MF "$(DEPDIR)/CheckingTools.Tpo" -c -o CheckingTools.obj `if test -f '$(srcdir)/CheckingTools.cpp'; then $(CYGPATH_W) '$(srcdir)/CheckingTools.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CheckingTools.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CheckingTools.Tpo" "$(DEPDIR)/CheckingTools.Po"; else rm -f "$(DEPDIR)/CheckingTools.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CheckingTools.cpp' object='CheckingTools.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CheckingTools.Po' tmpdepfile='$(DEPDIR)/CheckingTools.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CheckingTools.obj `if test -f '$(srcdir)/CheckingTools.cpp'; then $(CYGPATH_W) '$(srcdir)/CheckingTools.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CheckingTools.cpp'; fi`
+
+SortingTools.o: $(srcdir)/SortingTools.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SortingTools.o -MD -MP -MF "$(DEPDIR)/SortingTools.Tpo" -c -o SortingTools.o `test -f '$(srcdir)/SortingTools.cpp' || echo '$(srcdir)/'`$(srcdir)/SortingTools.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SortingTools.Tpo" "$(DEPDIR)/SortingTools.Po"; else rm -f "$(DEPDIR)/SortingTools.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SortingTools.cpp' object='SortingTools.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SortingTools.Po' tmpdepfile='$(DEPDIR)/SortingTools.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SortingTools.o `test -f '$(srcdir)/SortingTools.cpp' || echo '$(srcdir)/'`$(srcdir)/SortingTools.cpp
+
+SortingTools.obj: $(srcdir)/SortingTools.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SortingTools.obj -MD -MP -MF "$(DEPDIR)/SortingTools.Tpo" -c -o SortingTools.obj `if test -f '$(srcdir)/SortingTools.cpp'; then $(CYGPATH_W) '$(srcdir)/SortingTools.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SortingTools.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SortingTools.Tpo" "$(DEPDIR)/SortingTools.Po"; else rm -f "$(DEPDIR)/SortingTools.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SortingTools.cpp' object='SortingTools.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SortingTools.Po' tmpdepfile='$(DEPDIR)/SortingTools.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SortingTools.obj `if test -f '$(srcdir)/SortingTools.cpp'; then $(CYGPATH_W) '$(srcdir)/SortingTools.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SortingTools.cpp'; fi`
 uninstall-info-am:
 install-nodist_execincludeHEADERS: $(nodist_execinclude_HEADERS)
 	@$(NORMAL_INSTALL)

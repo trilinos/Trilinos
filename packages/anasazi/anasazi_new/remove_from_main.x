@@ -14,10 +14,6 @@ rm ../src/Makefile*
 rm ../src/*.in
 
 rm ../example/Makefile*
-rm ../example/ModeLaplace/Makefile*
-rm ../example/ModeLaplace/*.cpp
-rm ../example/ModeLaplace/*.h
-rm -rf ../example/ModeLaplace
 rm ../example/BlockKrylovSchur/Makefile*
 rm ../example/BlockKrylovSchur/*.cpp
 rm -rf ../example/BlockKrylovSchur
@@ -27,3 +23,10 @@ rm ../test/ModalSolverUtils/Makefile*
 rm ../test/ModalSolverUtils/*.cpp
 rm -rf ../test/ModalSolverUtils
 rm -rf ../test
+
+rm ../util/Makefile*
+rm ../util/ModeLaplace/Makefile*
+rm ../util/ModeLaplace/*.cpp
+rm ../util/ModeLaplace/*.h
+rm -rf ../util/ModeLaplace
+rm -rf ../util

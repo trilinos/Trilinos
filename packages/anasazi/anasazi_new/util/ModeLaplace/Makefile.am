@@ -25,7 +25,9 @@ CORE_H = \
 	$(srcdir)/ModeLaplace3DQ1.h \
 	$(srcdir)/ModeLaplace3DQ2.h \
 	$(srcdir)/ModalProblem.h \
-	$(srcdir)/ModeLaplace.h
+	$(srcdir)/ModeLaplace.h \
+	$(srcdir)/CheckingTools.h \
+	$(srcdir)/SortingTools.h
 
 CORE = \
 	$(srcdir)/ModeLaplace1DQ1.cpp \
@@ -33,7 +35,9 @@ CORE = \
 	$(srcdir)/ModeLaplace2DQ1.cpp \
 	$(srcdir)/ModeLaplace2DQ2.cpp \
 	$(srcdir)/ModeLaplace3DQ1.cpp \
-	$(srcdir)/ModeLaplace3DQ2.cpp
+	$(srcdir)/ModeLaplace3DQ2.cpp \
+	$(srcdir)/CheckingTools.cpp \
+	$(srcdir)/SortingTools.cpp
 
 UTIL_H = 
 
