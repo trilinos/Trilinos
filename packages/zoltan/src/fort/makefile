@@ -1,30 +1,45 @@
-all: cwrap.o ztypes.o lb_user_const.o fwrap.o
+ZOD = $(ZOLTAN_OBJ_DIR)
 
-fwrap.o: fwrap.f90 ztypes.o lb_user_const.o
-	$(F90) -c fwrap.f90
+all: 			$(ZOD)/cwrap.o $(ZOD)/ztypes.o \
+			$(ZOD)/lb_user_const.o $(ZOD)/fwrap.o
 
-fwrap.f90: fwrap.fpp sppr sppr_header
-	./sppr < fwrap.fpp > fwrap.f90
+$(ZOD)/fwrap.o: 	$(ZOD)/fwrap.f90 \
+			$(ZOD)/ztypes.o  \
+			$(ZOD)/lb_user_const.o
+	$(F90) -c $(ZOLTAN_MOD_DIR) $(ZOD)/fwrap.f90
+	/bin/mv *.o *.mod $(ZOD)
 
-lb_user_const.o: lb_user_const.f90 ztypes.o
-	$(F90) -c lb_user_const.f90
+$(ZOD)/fwrap.f90: 	fwrap.fpp $(ZOD)/sppr $(ZOD)/sppr_header
+	$(ZOD)/sppr < fwrap.fpp > $(ZOD)/fwrap.f90
 
-ztypes.o: ztypes.f90
-	$(F90) -c ztypes.f90
+$(ZOD)/lb_user_const.o:	lb_user_const.f90 \
+			$(ZOD)/ztypes.o
+	$(F90) -c  $(ZOLTAN_MOD_DIR) lb_user_const.f90
+	/bin/mv *.o *.mod $(ZOD)
 
-ztypes.f90: ztypes.fpp sppr sppr_header
-	./sppr < ztypes.fpp > ztypes.f90
+$(ZOD)/ztypes.o: 	$(ZOD)/ztypes.f90
+	$(F90) -c  $(ZOLTAN_MOD_DIR) $(ZOD)/ztypes.f90
+	/bin/mv *.o *.mod $(ZOD)
 
-sppr_header: $(SPPR_HEAD)
-	cp $(SPPR_HEAD) sppr_header
+$(ZOD)/ztypes.f90:	ztypes.fpp $(ZOD)/sppr $(ZOD)/sppr_header
+	$(ZOD)/sppr < ztypes.fpp > $(ZOD)/ztypes.f90
 
-cwrap.o: cwrap.c
+$(ZOD)/sppr_header: $(SPPR_HEAD)
+	cp $(SPPR_HEAD) $(ZOD)/sppr_header
+
+$(ZOD)/cwrap.o: cwrap.c
 	$(CC) -c cwrap.c
+	/bin/mv *.o $(ZOD)
 
-sppr: sppr.f90
-	/usr/sbin/f90 -o sppr sppr.f90
+$(ZOD)/sppr: sppr.f90
+	$(LOCAL_F90) -o $(ZOD)/sppr sppr.f90
+	/bin/mv *.vo $(ZOD)
 
 clean:
-	rm -f *.o fwrap.f90 ztypes.f90 *.mod debug V* *.vo *.dbg zfdriver sppr \
-	      sppr_header fwrap.F90 ztypes.F90
+	rm -f $(ZOD)/*.f90 $(ZOD)/*.mod debug V* $(ZOD)/*.vo \
+	      $(ZOD)/cwrap.o \
+	      $(ZOD)/fwrap.o \
+	      $(ZOD)/ztypes.o \
+	      $(ZOD)/lb_user_const.o \
+              *.dbg $(ZOD)/zfdrive $(ZOD)/sppr $(ZOD)/sppr_header
 	rm -Rf album
