@@ -5,15 +5,15 @@
 /* Government.                                                               */
 /*****************************************************************************/
 
-/*****************************************************************************/
-/* Sample driver for AZTEC/ML package. 
+/*****************************************************************************
+   Sample driver for AZTEC/ML package. 
    this driver comes together with the examples in the directories
 
    ExampleMatrices/shell_vb_intersection/ (<-under construction)
    ExampleMatrices/shell_vb_lineal/       
    
    Each directory holds a file "inputfile" specifying ML-options and
-   a couple of data*.txt files specifiying the variable block system of equations
+   a couple of data*.txt files specifying the variable block system of equations
 
    usage is :
    ml_example_elasticity.exe ExampleMatrices/shell_vb_lineal
@@ -22,11 +22,12 @@
 
    These are small examples derived elasticity problems using finite element
    shell elements with 6 degrees of freedom per node
-   The *_vb_* (Variable Block) directories contain matrices with condensed Dirichlet-boundary conditions,
+   The *_vb_* (Variable Block) directories contain matrices with condensed
+   Dirichlet-boundary conditions,
    so the blocks size (default 6x6) is NOT constant.
    They are supposed to be used applying the type of aggregation
    "VBMetis" which can handle variable AND constant blocked matrices
-/*****************************************************************************/
+ *****************************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
