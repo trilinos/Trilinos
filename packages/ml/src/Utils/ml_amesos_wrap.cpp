@@ -86,6 +86,11 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 
   assert( N_nodes==Nrows );
   assert( Nnodes_global == Nrows_global ) ; 
+
+  if( EpetraComm.MyPID() == 0 && ML_Get_PrintLevel() > 2 )
+    cout << "ML_Gen_Smoother_Amesos : Coarse matrix dimension = "
+	 << Nnodes_global << endl;
+
   int num_global_rows;
   EpetraComm.SumAll( &N_nodes, &num_global_rows, 1 ) ;
 
@@ -135,13 +140,24 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
     }
     // MS // check out how many nonzeros we have
     // MS // NOTE: this may result in a non-symmetric patter for Amesos_CrsMatrix
+    
     NumNonzeros = 0;
     for (int j = 0; j < ncnt; j++) {
+      int itemp; // check this out
+      double dtemp;
       if (colVal[j] != 0.0) {
-	colInd[NumNonzeros] = global_nodes_as_int[colInd[j]];
-	colVal[NumNonzeros] = colVal[j];
+	itemp = global_nodes_as_int[colInd[j]];
+	colInd[NumNonzeros] = itemp;
+	dtemp = colVal[j];
+	colVal[NumNonzeros] = dtemp;
 	NumNonzeros++;
       }
+    }
+    if( NumNonzeros == 0 ) {
+      // insert a 1 on the diagonal
+      colInd[NumNonzeros] = global_nodes_as_int[i];
+      colVal[NumNonzeros] = 1.0;
+      NumNonzeros++;
     }
     Amesos_CrsMatrix->InsertGlobalValues( global_rows_as_int[i], NumNonzeros, 
 					  colVal, colInd);
@@ -153,7 +169,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   // MS // introduce support for Amesos_BaseFactory to
   // MS // allow different Amesos_Solvers
   
-  assert(Amesos_CrsMatrix->TransformToLocal()==0);
+  assert(Amesos_CrsMatrix->FillComplete()==0);
 
   Epetra_LinearProblem *Amesos_LinearProblem = new Epetra_LinearProblem;
   Amesos_LinearProblem->SetOperator( Amesos_CrsMatrix ) ; 
@@ -185,34 +201,43 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   }
   
   Amesos_BaseSolver* A_Base;
-  
   Amesos_Factory A_Factory;
 
+  // I got the impression that small problems are "safer"
+  // in other hands than superludist ones.
+  // Certo che 'stp superludist e` proprio 'na schifezza ;)
+  // ????? brrrrr, what the hell is this ???????
+  if( Nrows_global < 4*MaxProcs || Nrows_global < 16 ) choice = ML_AMESOS_KLU;
+  
   switch( choice ) {
 
   case ML_AMESOS_UMFPACK:
-    if( EpetraComm.MyPID() == 0 )
+    if( EpetraComm.MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "ML_Gen_Smoother_Amesos : building UMFPACK\n";
-    A_Base = A_Factory.Create( AMESOS_UMFPACK, *Amesos_LinearProblem, ParamList );
+    A_Base = A_Factory.Create(AMESOS_UMFPACK, *Amesos_LinearProblem, ParamList );
+    assert(A_Base!=0);
     break;
 
   case ML_AMESOS_SUPERLUDIST:
-    if( EpetraComm.MyPID() == 0 )
+    if( EpetraComm.MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "ML_Gen_Smoother_Amesos : building SUPERLUDIST\n";
     A_Base = A_Factory.Create( AMESOS_SUPERLUDIST, *Amesos_LinearProblem, ParamList );
+    
+    assert(A_Base!=0);
     break;
 
   case ML_AMESOS_KLU:
   default:
-    if( EpetraComm.MyPID() == 0 )
+    if( EpetraComm.MyPID() == 0 && ML_Get_PrintLevel()>2 )
       cout << "ML_Gen_Smoother_Amesos : building KLU\n";
-    A_Base = A_Factory.Create( AMESOS_KLU, *Amesos_LinearProblem, ParamList );
+    A_Base = A_Factory.Create(AMESOS_KLU, *Amesos_LinearProblem, ParamList );
+    assert(A_Base!=0);
     break;
   }
-  
+
   A_Base->SymbolicFactorization();
   A_Base->NumericFactorization();
-
+    
   ML_free(global_nodes_as_int);
   ML_free(global_rows_as_int);
   ML_free(global_rows);
