@@ -98,7 +98,7 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
    ML_Init_Amatrix(ml_handle, level,isize, osize, (void *) context);
 
    if (Amat->matrix_type == AZ_VBR_MATRIX) {
-     vbr_mat = (struct ML_vbrdata *) AZ_allocate(sizeof(struct ML_vbrdata));
+     vbr_mat = (struct ML_vbrdata *) ML_allocate(sizeof(struct ML_vbrdata));
      vbr_mat->bindx       = Amat->bindx;
      vbr_mat->val         = Amat->val;
      vbr_mat->bpntr       = Amat->bpntr;
