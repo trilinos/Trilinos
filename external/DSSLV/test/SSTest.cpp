@@ -122,7 +122,8 @@ main(int argc, char **argv)
       cerr << "    transpose = 1 means test A^T x = b instead of Ax = b" << endl ; 
       cerr << "    maxerror = maximum allowed error  < 0 == no check " << endl ; 
       cerr << "    maxresid = maximum allowed residual < 0 == no check" << endl ; 
-      cerr << "    if maxerror == -2 and maxresid == -2, failure is expected" << endl ; 
+      cerr << "    if maxerror == -2 and maxresid == -2, failure (hang or abort) is expected" << endl ; 
+      cerr << "    if maxerror == 1e30 and maxresid == 1e30, the solver is expected to finish but prodcue incorrect results" << endl ; 
       
     }
 #ifdef EPETRA_MPI

@@ -1,10 +1,11 @@
+#!/bin/csh
 #
 #  DSSLV.csh, the Direct Sparse Solver Regresion Test, tests and times the 
 #  direct sparse solvers supported by the DSS interface.  At present, it 
 #  tests two direct solvers:  Kundert and SuperLU MPI.  It also tests an 
 #  indirect solver, AZTEC, for comparison.  
 #
-#  RETURNS 0 if the test succeeds and 1 if the test fails.
+#  RETURNS 0 if the test succeeds and 1 if the test fails 
 #
 #  Each call to cxx_DSS_mpi.exe performs one or more sovles on a particular 
 #  matrix using a particular solver and prints a single line to SST.summary.
@@ -27,7 +28,7 @@
 #
 #
 #  A typical call to cxx_DSS_mpi.exe is:
-#     mpirun -np 1 cxx_DSS_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-14 1e-14
+#COMMENT       mpirun -np 1 cxx_DSS_mpi.exe SuperLUdist SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
 #     SuperLUdist SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -43,7 +44,26 @@
 #
 
 cat >>DSS.summary <SST.summary 
-echo "OK Start DSSLV.csh, the Direct Sparse Solver Regresion Test" > SST.summary 
+echo "COMMENT Start DSSLV.csh, the Direct Sparse Solver Regresion Test" > SST.summary 
+echo "COMMENT column 1 - machine name " >> SST.summary 
+echo "COMMENT column 2 - solver name " >> SST.summary 
+echo "COMMENT column 3 - timestamp" >> SST.summary 
+echo "COMMENT column 4 - matrix file " >> SST.summary 
+echo "COMMENT column 5 - Matrix type  " >> SST.summary 
+echo "COMMENT column 6 - Special - only used for SuperLU serial " >> SST.summary 
+echo "COMMENT column 7 - Number of processes " >> SST.summary 
+echo "COMMENT column 8 - Number of right hand sides (-1 means multiple solves) " >> SST.summary 
+echo "COMMENT column 9 - Tranpose (1 == solve A^t x = b)" >> SST.summary 
+echo "COMMENT column 10 - Norm of the matrix " >> SST.summary 
+echo "COMMENT column 11 - relative error - i.e. error/norm(X) " >> SST.summary 
+echo "COMMENT column 12 - residual error - i.e. residual/norm(B) " >> SST.summary 
+echo "COMMENT column 13 - total_time " >> SST.summary 
+echo "COMMENT column 14 - Wall clock time " >> SST.summary 
+echo "COMMENT column 15 - undocumented " >> SST.summary 
+echo "COMMENT column 16 - undocumented " >> SST.summary 
+echo "COMMENT column 17 - undocumented " >> SST.summary 
+echo "COMMENT column 18+ - summary " >> SST.summary 
+
 
 #
 #  Test one process, three processes and three processes transpose, tiny serial matrix, on SuperLUdist
@@ -80,11 +100,39 @@ mpirun -np 4 cxx_DSS_mpi.exe SuperLUdist   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST
 mpirun -np 1 cxx_DSS_mpi.exe SuperLUdist   bcsstk18.rsa 1 1 1 0 1e-10 1e-4  >>SST.stdout
 mpirun -np 4 cxx_DSS_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 1 0 1e-10 1e-4  >>SST.stdout
 
-echo "\nOK End DSSLV.csh" >> SST.summary 
+#
+#  Test some tranpose solves
+#
+mpirun -np 4 cxx_DSS_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 1 1 1e-10 1e-4  >>SST.stdout
+mpirun -np 4 cxx_DSS_mpi.exe SuperLUdist   bcsstk18.rsa 1 1 1 1 1e-10 1e-4  >>SST.stdout
 
 #
-#  Prints out success or failure and 
+#  Test some solves on Aztec
 #
-grep -v OK SST.summary | grep " " > /dev/null || echo "Direct Sparse Solver Regression Test passed" 
-grep -v OK SST.summary | grep " " && echo "Direct Sparse Solver Regression Test FAILED" 
+mpirun -np 1 cxx_DSS_mpi.exe AZTEC   SuperLU.rua  0 1 1 0 1e-14 1e-14 >>SST.stdout
+mpirun -np 1 cxx_DSS_mpi.exe AZTEC   ImpcolA.rua  0 1 1 0 1e30 1e30 >>&SST.stdout
+mpirun -np 1 cxx_DSS_mpi.exe AZTEC   bcsstk18.rsa 0 1 1 0 1e30 1e30  >>SST.stdout
+mpirun -np 1 cxx_DSS_mpi.exe AZTEC   bcsstk24.rsa 1 1 1 0 1e30 1e30  >>SST.stdout
+
+
+echo "\nCOMMENT End DSSLV.csh" >> SST.summary 
+
+#
+#  Make sure that the tests ran 
+#
+set expected_lines = `grep mpirun DSSLV.csh | grep -v COMMENT | wc`
+set results = `grep OK SST.summary | wc`
+if ($results[1] != $expected_lines[1] ) then
+    echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 
+    grep -v OK SST.summary | grep " " && echo "Direct Sparse Solver Regression Test FAILED" 
+    exit(1)
+endif
+#
+#  Prints out success or failure and exit 
+#
+grep -v OK SST.summary | grep -v COMMENT | grep " " > /dev/null || echo "Direct Sparse Solver Regression Test passed" 
+#
+#  This should not generaly print anything as errors should have been caught in the if test above
+#
+grep -v OK SST.summary  | grep -v COMMENT | grep " " && echo "Direct Sparse Solver Regression Test FAILED" 
 exit($status == 0)

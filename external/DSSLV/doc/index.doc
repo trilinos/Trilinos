@@ -1,17 +1,17 @@
-/*! \mainpage Trilinos/DSS:  Direct Sparse Solver Package.
+/*! \mainpage Trilinos/DSSLV:  Direct Sparse Solver Package.
 \htmlonly
 \endhtmlonly
 
 \section intro Introduction 
-DSS provides an object-oriented interface
+DSSLV provides an object-oriented interface
 to several direct sparse solvers.  The first direct sparse solver to
-be added to DSS is SuperLU MPI, the distributed memory version of
-SuperLU.  DSS allows flexible construction of matrix and vector
+be added to DSSLV is SuperLUdist, the distributed memory version of
+SuperLU.  DSSLV allows flexible construction of matrix and vector
 arguments via Epetra matrix and vector classes.  
 
-\section startup Overview of DSS.
+\section startup Overview of DSSLV.
 
-DSS contains one class:
+DSSLV contains one class:
 
 <ul> 
 

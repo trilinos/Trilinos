@@ -217,6 +217,7 @@ void TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #endif
   } else { 
     SparseDirectTimingVars::log_file << "Solver not implemented yet" << endl ;
+    cerr << "\n\n####################  Requested solver not available on this platform #####################\n" << endl ;
   }
 
   SparseDirectTimingVars::SS_Result.Set_Total_Time( TotalTime.ElapsedTime() ); 
