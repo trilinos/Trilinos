@@ -1205,7 +1205,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    /* Note: the current fine grid is located in                   */
    /*       ag->begin_level - ag->cur_level                       */
 
-   relative_level = (int) fabs(double (ag->begin_level - ag->cur_level));
+   relative_level = (int) fabs((double) (ag->begin_level - ag->cur_level));
    /* && ((ag->nodal_coord)[relative_level] != NULL)*/
    if ((ag->nodal_coord != NULL)){
 
@@ -2178,7 +2178,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 
   if (ag != NULL)
   {
-    j = ((int) fabs(double(ag->begin_level - ag->cur_level))) + 1;
+    j = ((int) fabs((double)(ag->begin_level - ag->cur_level))) + 1;
 /*
     printf("(pid %d, level %d):  ag->begin_level = %d, ag->cur_level = %d, j = %d\n",
             ml->comm->ML_mypid, fine,ag->begin_level, ag->cur_level,j);
@@ -2217,7 +2217,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
      {
        if (ag->nullspace_dim != 1)
          pr_error("repartitioning of coordinates does not work with null space greater than one.\n");
-       j = ((int) fabs(double(ag->begin_level - ag->cur_level))) + 1;
+       j = ((int) fabs((double)(ag->begin_level - ag->cur_level))) + 1;
        /*
        printf("repartitioning coords %u %u %u\n",xcoord,ycoord,zcoord);
        */
