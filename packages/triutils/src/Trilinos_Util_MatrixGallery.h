@@ -30,26 +30,25 @@
 #ifndef __TRILINOS_UTILS_GALLERY_H
 #define __TRILINOS_UTILS_GALLERY_H
 
-#ifdef HAVE_MPI
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_Map.h"
-#include "Epetra_BlockMap.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_Export.h"
-#include "Trilinos_Util_ShellOptions.h"
+class Epetra_Comm;
+class Epetra_Map;
+class Epetra_BlockMap;
+class Vector;
+class Epetra_CrsMatrix;
+class Epetra_VbrMatrix;
+class Epetra_Export;
+class Epetra_LinearProblem;
 
 #include <string>
 
 // NOTE: on some architectures (e.g., west), it may be difficult to
 // use STL, required by ShellOptions. In this case, undefine
 // the variable below. MatrixGallery will no longer use ShellOptions.
-#define TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
+//#define TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
+
+#ifdef TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
+class Trilinos_Util_ShellOptions;
+#endif
 
 class Trilinos_Util_MatrixGallery 
 {
@@ -62,15 +61,15 @@ public:
   \param In
   name - identity the problem to be generated. At this time, one can
 
-  - eye: Creates an identity matrix. The dimension of the problem is set
+  - \c eye: Creates an identity matrix. The dimension of the problem is set
   using Set("problem size", IntValue), or, alternatively, by Set("nx",
   IntValue).
 
-  - diag: Creates a diagonal matrix. The elements on the diagonal can
+  - \c diag: Creates a diagonal matrix. The elements on the diagonal can
   set using Set("a",value), where value is either a double, or an
   Epetra_Vector. Problem size set as for "eye."
 
-  - tridiag: Creates a tridiagonal matrix. The diagonal element is set
+  - \c tridiag: Creates a tridiagonal matrix. The diagonal element is set
   using Set("a", DiagValue), the subdiagonal using
   Set("b",SubDiagValue), and the superdiagonal using
   Set("c",SupDiagValue).  DiagValue, SubDiagValue, and SupDiagValue can
@@ -78,17 +77,17 @@ public:
   have the same number of elements. Elements i will be use to define row
   i. Problem size specified as for "eye."
 
-  - laplace 1d: Create the classical tridiagonal matrix with stencil
+  - \c laplace_1d: Create the classical tridiagonal matrix with stencil
   [-1, 2, -1].  Problem size specified as for "eye."
 
-  - laplace 2d: Creates a matrix corresponding to the stencil of a 2D
+  - \c laplace_2d: Creates a matrix corresponding to the stencil of a 2D
   Laplacian operator on a structured cartesian grid. Problem size is
   specified using Set("problem size", IntValue). In this case, IntValue
   must be a square number. Alternatively, one can set the number of
   nodes along the x-axis and y-axis, using Set("nx",IntValue) and
   Set("ny",IntValue).
 
-  - cross stencil 2d: Creates a matrix with the same stencil of "laplace
+  - \c cross_stencil_2d: Creates a matrix with the same stencil of "laplace
   2d", but with arbitrary values. The stencil is
   \[
   A = \begin{tabular}{ccc}
@@ -100,43 +99,43 @@ public:
   and each value can be either a double, or and Epetra_Vector. Problem
   size specified as in "laplace 2d."
 
-  - laplace 3d: Creates a matrix corresponding to the stencil of a 3D
+  - \c laplace_3d: Creates a matrix corresponding to the stencil of a 3D
   Laplacian operator on a structured cartesian grid. Problem size
   specified using Set("problme size",IntValue). In this case, IntValue
   must be a cube. Alternatively, one can specify the number of nodes
   along the axis, using Set("nx",IntValue), Set("ny",IntValue), and
   Set("nz",IntValue).
 
-  - cross stencil 3d: Similar to the 2D case. The matrix stencil
+  - \c cross_stencil_3d: Similar to the 2D case. The matrix stencil
   correspond to that of a 3D Laplace operator on a structured grid. On a
   given x-y plane, the stencil is a in "laplace 2d". The value on the
   plane below is set using Set("f",F), and in the plane above with
   Set("g",G"). Problem size specifed as in "laplace3d."
 
-  - hb: The matrix is read from file. File name is specified by
+  - \c hb: The matrix is read from file. File name is specified by
   Set("file name", FileName). FileName is a C++ string. Problem size is
   automatically read from file.
 
-  - lehmer: Returns a symmetric positive definite matrix, such that
+  - \c lehmer: Returns a symmetric positive definite matrix, such that
   A(i,j) = (i+1)/(j+1) (for j>=i), and (j+1)/(i+1) (for j<j). This
   matrix has three properties:
-  - is totally nonnegative;
-  - the inverse is tridiagonal and esplicitly known;
-  - The condition number is bounded as n <= cond(A) <= 4*n (n is the problem size).
+     - is totally nonnegative;
+     - the inverse is tridiagonal and esplicitly known;
+     - The condition number is bounded as n <= cond(A) <= 4*n (n is the problem size).
 
-  - minij: Returns the symmetric positive definite matrix defined sd
+  - \c minij: Returns the symmetric positive definite matrix defined sd
   A(i,j) = min(i+1,j+1). More information can be found in the help of
   MATLAB's gallery function.
 
-  - ris: Returns a symmetric Hankel matrix with elements A(i,j) =
+  - \c ris: Returns a symmetric Hankel matrix with elements A(i,j) =
   0.5/(n-(i+1)-(j+1)+1.5),
   with n equals problem size. (i and j start from 0.)
   The eigenvalues of A cluster around -pi/2 and pi/2.
 
-  - hilbert: This is a famous example of a badly conditioned matrix. The
+  - \c hilbert: This is a famous example of a badly conditioned matrix. The
   elements are defined as 1/((i+1)+(j+1)-1). (i and j start from 0.)
 
-  - jordblock: Creates a Jordan block with eigenvalue set via Set("a",DoubleVal).
+  - \c jordblock: Creates a Jordan block with eigenvalue set via Set("a",DoubleVal).
 
   An example of program using this class is reported below.
 
@@ -204,7 +203,7 @@ return 0 ;
   \param In
   comm - Epetra communicator
   */
-  Trilinos_Util_MatrixGallery( string name, Epetra_Comm & comm );
+  Trilinos_Util_MatrixGallery( const string name, const Epetra_Comm & comm );
 
   //! Creates an Triutils_Gallery object using a given map.
   /*! Create a Triutils_Gallery object using an Epetra_Map.
@@ -216,7 +215,7 @@ return 0 ;
     \param In
     map - Epetra_Map
   */
-  Trilinos_Util_MatrixGallery( string name, Epetra_Map & map );
+  Trilinos_Util_MatrixGallery( const string name, const Epetra_Map & map );
   
   //! Triutils_Gallery destructor
   ~Trilinos_Util_MatrixGallery();
@@ -226,23 +225,23 @@ return 0 ;
   //@{ \name Setting methods
  
   //! Sets a gallery options using an interger value.
-  int Set(string parameter, int value);
+  int Set(const string parameter, const int value);
 
   //!  Sets a gallery options using a C++ string .
-  int Set(string parameter, string value );
+  int Set(const string parameter, const string value );
 
   //! Sets a gallery options using an double value.
-  int Set(string parameter, double value);
+  int Set(const string parameter, const double value);
 
   //! Sets a gallery options using an Epetra_Vector.
   /*! Sets a gallery options using an Epetra_Vector. The Epetra_Vector
   is copied into internal structures, and freed by the destructor.
   */
-  int Set(string parameter, Epetra_Vector & value);
+  int Set(const string parameter, const Epetra_Vector & value);
 
   //! Sets gallery options using values passed from the shell
 #ifdef TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
-  int Set(Trilinos_Util_ShellOptions & ShellOptions);
+  int Set(const Trilinos_Util_ShellOptions & ShellOptions);
 #endif
 
   //@}
@@ -273,18 +272,14 @@ return 0 ;
   */
   Epetra_Vector * GetStartingSolution();
   
+  //! Returns a pointer to the starting solution for Vbr problems
+  Epetra_Vector * GetVbrStartingSolution();
+
   //! Returns a pointer to the rhs corresponding to the selected exact solution.
   Epetra_Vector * GetRHS();
 
   //! Returns a pointer the internally stored Map.
   const Epetra_Map & GetMap();
-
-  //! Computes the 2-norm of the residual
-  int ComputeResidual(double & residual);
-
-  //! Computes the 2-norm of the difference between the starting solution and the exact solution
-  
-  int ComputeDiffBetweenStartingAndExactSolutions(double & residual);
   
   // ========= //
   // VBR STUFF //
@@ -300,7 +295,7 @@ return 0 ;
     num_PDE_eqns times (this value is passed in input, or set via Set("num pde
     eqns",IntValue)).
   */
-  Epetra_VbrMatrix * GetVbrMatrix(int NumPDEEqns);
+  Epetra_VbrMatrix * GetVbrMatrix(const int NumPDEEqns);
 
   //! Returns a VbrMatrix, starting from the CsrMatrix.
   Epetra_VbrMatrix * GetVbrMatrix();
@@ -313,11 +308,26 @@ return 0 ;
   //! Returns a pointer to the selected Vbr exact solution
   Epetra_Vector * GetVbrExactSolution();
 
+  // ==================== //
+  // LINEAR PROBLEM STUFF //
+  // ==================== //
+
+  //! Returns a pointer to Epetra_LinearProblem
+  Epetra_LinearProblem * GetLinearProblem();
+
+  //! Returns a pointer to Epetra_LinearProblem for VBR
+  Epetra_LinearProblem * GetVbrLinearProblem();
+
+  //! Computes the 2-norm of the residual
+  int ComputeResidual(double & residual);
+
+  //! Computes the 2-norm of the difference between the starting solution and the exact solution
+  int ComputeDiffBetweenStartingAndExactSolutions(double & residual);
+
   //! Computes the 2-norm of the residual for the VBR problem
   int ComputeResidualVbr(double & residual);
 
-  //! Computes the 2-norm of the difference between the starting solution and the exact solution for the VBR problem
-  
+  //! Computes the 2-norm of the difference between the starting solution and the exact solution for the VBR problem  
   int ComputeDiffBetweenStartingAndExactSolutionsVbr(double & residual);
 
   //@}
@@ -350,12 +360,14 @@ private:
   //! Creates the exact solution.
   void CreateExactSolution();
 
-  //! Creates the starting solution.
-  void CreateStartingSolution();
-
   //! Creates the exact solution for a Epetra_VbrMatrix.
   void CreateVbrExactSolution(void);
 
+  //! Creates the starting solution.
+  void CreateStartingSolution();
+
+  //! Creates the starting solution for Vbr.
+  void CreateVbrStartingSolution();
   
   //! Create the RHS corresponding to the desired exact solution.  
   void CreateRHS();
@@ -432,6 +444,10 @@ private:
   Epetra_Vector * StartingSolution_;
   Epetra_Vector * rhs_;
   Epetra_Map * map_;
+
+  // linear problem
+  Epetra_LinearProblem * LinearProblem_;
+  Epetra_LinearProblem * VbrLinearProblem_;
 
   // matrix and vectors (vbr)
   Epetra_VbrMatrix * VbrMatrix_;
