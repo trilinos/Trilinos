@@ -24,9 +24,9 @@ GDEFINES = -DDEBUG
 #
 #   Paths to submodules
 #
-SUBVPATH=
-SUBINCPATH=
-SUBDIRS= Obj_sgi10k Obj_smos Obj_sun Obj_tflop 
+SUBVPATH=../all ../lb ../par ../rcb
+SUBINCPATH=-I../all -I../lb -I../par -I../rcb
+SUBDIRS= all lb par rcb Obj_sgi10k Obj_smos Obj_sun Obj_tflop 
 
 #source code from SCCS projects
 
@@ -47,10 +47,16 @@ ALL_INC=all_const.h all_allo_const.h
 LB_CSRC=lb.c
 LB_INC=lb_const.h lb.h lbi_const.h
 
+RCB_CSRC=rcb.c rcb_util.c 
+RCB_INC=rcb.h
+
+PAR_CSRC=
+PAR_INC=par_const.h par.h
+
 # machine independent routines
-INC          = $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) 
+INC          = $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) $(RCB_INC)
 #LIB_SRC_C    = $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) 
-LIB_SRC_C    = $(LB_CSRC) $(ALL_CSRC) 
+LIB_SRC_C    = $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC)
 LIB_SRC_OBJ  = $(LIB_SRC_C:.c=.o) 
 
 #library paths for different machines
@@ -76,7 +82,8 @@ TFLOP_INC_PATH   =   -I$(TFLOP_PATH)/include $(SUBINCPATH)
 #
 smos:
 	@cd Obj_smos; \
-	$(MAKE) dlb "SMOS_OBJ=$(LIB_SRC_OBJ)" "INC=$(SMOS_INC)" "TARGET=dlb" \
+	$(MAKE) dlb "SMOS_OBJ=$(LIB_SRC_OBJ)" "INC=$(INC)" \
+        "TARGET=dlb" \
 	"LIB=$(LIB)" "SMOS_LIB_PATH=$(SMOS_LIB_PATH)" \
 	"SMOS_INC_PATH=$(SMOS_INC_PATH)" "VPATH=$(SUBVPATH)" \
         "GDEFINES=$(GDEFINES)"
