@@ -454,8 +454,19 @@ overhead.
 
 Other important notes about the configure and build processes:
 \begin{itemize}
-\item Any code that links to Trilinos should define 
+\begin{minipage}[c]{\textwidth}
+                                                                                
+\begin{minipage}[l]{.6\textwidth}
+                                                                                
+\item Any code that links to Trilinos must define
 \InlineCommand{HAVE\_CONFIG\_H}.
+\end{minipage}\hfill
+\framebox{\begin{minipage}[r]{.35\textwidth}{
+{\bf Key Point:}
+Any code that links to Trilinos must define
+\InlineCommand{HAVE\_CONFIG\_H}.
+}\end{minipage}}
+\end{minipage}
 
 \item Do not attempt to specify optimization flags using the 
 \InlineCommand{--with-cxxflags}, \InlineCommand{--with-cflags}, or 
