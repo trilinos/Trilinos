@@ -41,8 +41,6 @@ public:
   NLS_Group& getSolutionGroup() const;
   bool getProfileInfo(string& name, NLS_Parameter& p) const;
 
-  static NLS_Utilities util;
-
 private:
 
   //! Pointer to the solver object

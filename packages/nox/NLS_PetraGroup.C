@@ -72,7 +72,7 @@ NLS_Group& NLS_PetraGroup::copy(const NLS_Group& source)
 NLS_Group& NLS_PetraGroup::copy(const NLS_PetraGroup& copyFrom)
 {
   // Update the xVector
-  xVector.copy(copyFrom.xVector, 1.0);
+  xVector.copy(copyFrom.xVector);
   
   // Don't copy Jacobian
   isValidJacobian = false;
@@ -95,10 +95,10 @@ NLS_Group& NLS_PetraGroup::copy(const NLS_PetraGroup& copyFrom)
 
 const NLS_Vector& NLS_PetraGroup::computeX(const NLS_Group& grp, const NLS_Vector& d, double step) 
 {
- computeX(dynamic_cast<const NLS_PetraGroup&> (grp),
-	  dynamic_cast<const NLS_PetraVector&> (d),
-	  step); 
- return xVector;
+  computeX(dynamic_cast<const NLS_PetraGroup&> (grp),
+	   dynamic_cast<const NLS_PetraVector&> (d),
+	   step); 
+  return xVector;
 }
 
 //! Compute and return solution vector

@@ -8,40 +8,37 @@
 
 #include "NLS_Utilities.H"
 
-NLS_Utilities::NLS_Utilities() 
-{
-
-}
-
-NLS_Utilities::~NLS_Utilities() 
-{
-  
-}
+int NLS_Utilities::myPID = 0;
+int NLS_Utilities::outputLevel = 2;
+int NLS_Utilities::printProc = 0;
 
 void NLS_Utilities::setUtilities(NLS_ParameterList& p)
 {
   outputLevel = p.getParameter("Output Level", 2);
-  myPID = p.getParameter("MyPID",0);
+  myPID = p.getParameter("MyPID", 0);
   printProc = p.getParameter("Print Processor", 0);
 
-  if (isPrintProc() && isOutput(4)) 
+  if (doPrint(4))
     cout << "Output Level " << outputLevel << "." << endl; 
 
-  if (isOutput(5)) cout << "NLS_Utilities: Processor " << myPID << 
-		     " is online." << endl;  
-
+  if (doPrint(5)) 
+    cout << "NLS_Utilities: Processor " << myPID 
+	 << " is online." << endl;  
 }
 
 bool NLS_Utilities::isPrintProc()
 {
-  if (printProc == myPID) return true;
-  return false;
+  return (printProc == myPID);
 }
 
-bool NLS_Utilities::isOutput(int printLevel)
+bool NLS_Utilities::doPrint(int printLevel)
 {
-  if (printLevel <= outputLevel) return true;
-  return false;
+  return ((printProc == myPID) && (printLevel <= outputLevel));
+}
+
+bool NLS_Utilities::doAllPrint(int printLevel)
+{
+  return (printLevel <= outputLevel);
 }
 
 int NLS_Utilities::getMyPID()
