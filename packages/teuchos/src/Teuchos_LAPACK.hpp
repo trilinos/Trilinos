@@ -1388,7 +1388,7 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, complex<double> >::POCON(const char UPLO, const OrdinalType n, const complex<double>* A, const OrdinalType lda, double anorm, double* rcond, complex<double>* WORK, double* RWORK, OrdinalType* info) const
+  void LAPACK<OrdinalType, complex<double> >::POCON(const char UPLO, const OrdinalType n, const complex<double>* A, const OrdinalType lda, const double anorm, double* rcond, complex<double>* WORK, double* RWORK, OrdinalType* info) const
   {
     ZPOCON_F77(CHAR_MACRO(UPLO), &n, A, &lda, &anorm, rcond, WORK, RWORK, info);
   }
