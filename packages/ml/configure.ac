@@ -315,15 +315,19 @@ TAC_ARG_WITH_PACKAGE(ml_parmetis2x, [Enable ParMETIS support, version 2.x. See n
 TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable ParMETIS support, version 3.x. See notes for --with-ml_metis.], ML_PARMETIS_3x, no) 
 #
 TAC_ARG_WITH_PACKAGE(ml_amesos, [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and other. Amesos requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_AMESOS, no)
+AM_CONDITIONAL(ML_USING_AMESOS, test "X$ac_cv_use_ml_amesos" = "Xyes")
 #
 TAC_ARG_WITH_PACKAGE(ml_ifpack, [Enable IFPACK support. Ifpack, a Trilinos package, can provide incomplete factorization smoothers to ML. Ifpack requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_IFPACK, no)
+AM_CONDITIONAL(ML_USING_IFPACK, test "X$ac_cv_use_ml_ifpack" = "Xyes")
 #
 TAC_ARG_WITH_PACKAGE(ml_teuchos, [Enable TEUCHOS support. Teuchos, a Trilinos package, is required by the class Epetra_ML_Preconditioner. Teuchos requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_TEUCHOS, no)
 AM_CONDITIONAL(ML_USING_TEUCHOS, test "X$ac_cv_use_ml_teuchos" = "Xyes")
 #
 TAC_ARG_WITH_PACKAGE(ml_anasazi, [Enable ANASAZI support. Anasazi, a Trilinos package, can be used for eigenvalue estimates. Anasazi requires --with-ml_epetra and --with-ml_teuchos.], ML_ANASAZI, no)
+AM_CONDITIONAL(ML_USING_ANASAZI, test "X$ac_cv_use_ml_anasazi" = "Xyes")
 #
 TAC_ARG_WITH_PACKAGE(ml_triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used if some ML examples to construct the linear system. Triutils requires --with-ml_epetra.], ML_TRIUTILS, no)
+AM_CONDITIONAL(ML_USING_TRIUTILS, test "X$ac_cv_use_ml_triutils" = "Xyes")
 #
 AC_ARG_WITH(ml-64bit-integer,
 [AC_HELP_STRING([--with-ml-64bit-integer],[Support for 64-bit integers; required if ML used

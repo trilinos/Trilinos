@@ -131,9 +131,41 @@ ml_libs = $(top_builddir)/src/libml.a        \
                 $(FLIBS)
 else
 mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+
+if ML_USING_AMESOS
+amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
+else
+amesos_lib = 
+endif
+if ML_USING_ANASAZI
+anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
+else
+anasazi_lib = 
+endif
+if ML_USING_TEUCHOS
+teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
+else
+teuchos_lib =
+endif
+if ML_USING_TRIUTILS
+triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
+else
+triutils_lib =
+endif
+if ML_USING_IFPACK
+ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
+else
+ifpack_lib =
+endif
+#
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(top_builddir)/../aztecoo/src/libaztecoo.a        \
-                $(top_builddir)/../epetra/src/libepetra.a         \
+                $(top_builddir)/../epetra/src/libepetra.a \
+                ${ifpack_lib} \
+                ${amesos_lib} \
+                ${anasazi_lib} \
+                ${teuchos_lib} \
+                ${triutils_lib} \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \
