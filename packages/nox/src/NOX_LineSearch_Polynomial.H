@@ -40,12 +40,19 @@
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
 
 namespace NOX {
+  namespace Parameter {
+    class UserNorm;
+    class MeritFunction;
+  }
+}
+
+namespace NOX {
 namespace LineSearch {
 
 //! Use quad/cubic polynomial fit from Dennis & Schnabel Sec. 6.3.2 with modifications for Homer Walker's Ared/Pred inexact Newton methods.
 /*!
   
-  This line search is based on materials in the following books:
+  This line search is based on materials in the following materials:
 
   - Section 6.3.2 and Algorithm 6.3.1 of "Numerical Methods for
     Unconstrained Optimization and Nonlinear Equations," J. E. Dennis
@@ -64,12 +71,15 @@ namespace LineSearch {
   -# Old solution group: \f$ x_{\rm old} \f$ 
   -# Direction vector: \f$ s \f$ 
 
-  The line search attempts to minimize the merit function:  
+  The line search attempts to minimize the merit function \f$ \phi \f$ along a line in the direction \f$ s \f$ by controlling the step length \f$ \lambda \f$. The merit function can be defined in one of two choices:<br><br>
+  - "Norm-F Squared"  
+ 
   \f[ 
-  \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||_2^2 
+  \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||^2 
   \f]
 
-  where \f$ \lambda \f$ is the step length.  
+  - User defined object derived from the NOX::Parameter::MeritFunction class 
+    (see NOX::Parameter::MeritFunction for implementation details).
 
   We compute \f$ \lambda \f$ based on polynomial fits to information
   on \f$ \phi \f$ and its derivative \f$ \phi' \f$ at the old solution and
@@ -95,7 +105,7 @@ namespace LineSearch {
   -\phi'(0) \lambda_{k-1} \right]} 
   \f]
 
-  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$.
+  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$ if using "Norm-F Squared" as the merit function.  Otherwise it is defined by the user.
 
   If we are using a \b cubic \b model, the \f$k\f$-th step (\f$ k>1
   \f$) approximation is calculated as
@@ -123,11 +133,11 @@ namespace LineSearch {
   The line search iterates over the computation of \f$ \lambda \f$ until:
 
 - The "Sufficient Decrease Condition" is met (the user has two choices): 
-  -# "Armijo-Goldstein" conditions: \f$ \phi (x_{n-1}+ \lambda s) \le
-     \phi (x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
+  -# "Armijo-Goldstein" conditions: \f$ \phi(x_{n-1}+ \lambda s) \le
+     \phi(x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
   -# "Ared/Pred" conditions: \f$ \| F(x_{\rm old}+ \lambda s) \| \le
-     \| F(x_{\rm old}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear
-     solve tolerance in the inexact Newton method. 
+     \| F(x_{\rm old}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the 
+     linear solve tolerance in the inexact Newton method. 
   -# "None" - If "Force Interpolation" is true, accept the result of
      the first interpolation. Otherwise, accept the default step.
 - The maximum iterations are reached. This is considered a failure
@@ -168,6 +178,16 @@ namespace LineSearch {
     -# "Armijo-Goldstein" 
     -# "Ared/Pred" 
     -# "None"
+
+  - "User Defined Norm" - The user can redefine the norm that is used
+    in the Ared/Pred sufficient decrease condition by supplying a
+    NOX::Parameter::UserNorm derived object in the parameter list with
+    this key (see NOX::Parameter::UserNorm for implementation details). 
+
+  - "User Defined Merit Function" - NOX::Parameter::MeritFunction derived 
+    object - an object derived from the NOX::Parameter::MeritFunction 
+    class that allows the user to define their own merit function
+    (see NOX::Parameter::MeritFunction for implementation details).
 
   - "Alpha Factor" - Used in Armijo-Goldstein stopping criteria \f$
     \alpha \f$ (defaults to 1.0e-4)
@@ -261,15 +281,21 @@ protected:
     F_{\rm new} \leq F_{\rm old} + (1 - \alpha (1 - \eta))
     \f]
   */
-  bool isSufficientDecrease(double newf, double oldf, double step, double slope, double eta, const NOX::Abstract::Group& oldGrp, const NOX::Abstract::Group& newGrp) const;
+  bool isSufficientDecrease(double step, double eta) const;
+
+  //! Updates the newGrpand computes the values of newf_1, newf_2 and newf_interp
+  bool computeNewF(NOX::Abstract::Group& newGrp, 
+		   const NOX::Abstract::Group& oldGrp,
+		   const NOX::Abstract::Vector& dir, 
+		   double step);
 
   //! Provides a check to see if a step leading to an increase in the residual is allowed
-  bool isIncreaseAllowed(double newf, double oldf, int nOuterIters) const;
+  bool isIncreaseAllowed(int nOuterIters) const;
 
 protected:
 
-  //! Algorithms used to determine convergence of the line search
-  enum ConvergenceCriteriaType {
+  //! Algorithms used to determine termination of the line search
+  enum SufficientDecreaseType {
     //! Sufficient decrease condition
     ArmijoGoldstein, 
     //! Ared/Pred condition
@@ -286,8 +312,8 @@ protected:
     Cubic
   };
 
-  //! Choice of convergence criteria
-  ConvergenceCriteriaType convCriteria;
+  //! Choice for sufficient decrease condition
+  SufficientDecreaseType suffDecrCond;
 
   //! Choice of interpolation type
   InterpolationType interpolationType;
@@ -336,6 +362,27 @@ protected:
 
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slopeObj;
+
+  //! Norm of \f$ F(x) \f$ at the old solution.
+  double normFOld;
+
+  //! Value of the merit function at the old solution.
+  double meritFuncOld;
+
+  //! Slope of the merit function at theold solution.
+  double slopeOld;
+
+  //! Norm of \f$ F(x) \f$ at the new solution.
+  double normFNew;
+
+  //! Value of the merit function at the new solution.
+  double meritFuncNew;
+
+  //! Pointer to a user supplied norm.
+  NOX::Parameter::UserNorm* userNormPtr;
+
+  //! Pointer to a user supplied merit function.
+  NOX::Parameter::MeritFunction* meritFuncPtr;
 
 };
 } // namespace LineSearch

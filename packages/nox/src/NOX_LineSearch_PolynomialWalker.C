@@ -160,10 +160,10 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp,
   counter.incrementNumLineSearches();
 
 
-  // Get Old group
+  // Get Old Group
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
 
-  // Compute ||F(0)|| for Ared/Pred condition
+  // Compute ||F(0)|| only for Ared/Pred condition
   if (suffDecrCond == AredPred) {
     if (userNormPtr != 0)
       normFOld = userNormPtr->norm(oldGrp.getF());
@@ -284,7 +284,7 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp,
       /*
       if (fabs(a) < 1.e-12) 
       {
-	tempStep = -slope / (2.0 * b);
+	tempStep = -slopeOld / (2.0 * b);
       }
       else 
       {
@@ -351,6 +351,7 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp,
     print.printStep(nIters, step, normFOld, normFNew, message, false);
   else
     print.printStep(nIters, step, meritFuncOld, meritFuncNew, message);
+
   paramsPtr->setParameter("Adjusted Tolerance", eta);
   counter.setValues(*paramsPtr);
   return (!isFailed);
