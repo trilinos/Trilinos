@@ -71,11 +71,11 @@ rosenbrock_LDADD = -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample 
 
 if USE_ALTERNATE_AR
 
-libnox_a_AR = $(ALTERNATE_AR)
+libnoxexample_a_AR = $(ALTERNATE_AR)
 
 else
 
-libnox_a_AR = $(AR) cru
+libnoxexample_a_AR = $(AR) cru
 
 endif
 

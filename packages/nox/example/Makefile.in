@@ -144,8 +144,8 @@ rosenbrock_LDADD = -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample 
 # SPECIAL NOTE: Why is the "else" there?  For some reason, automake
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
-@USE_ALTERNATE_AR_TRUE@libnox_a_AR = $(ALTERNATE_AR)
-@USE_ALTERNATE_AR_FALSE@libnox_a_AR = $(AR) cru
+@USE_ALTERNATE_AR_TRUE@libnoxexample_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_FALSE@libnoxexample_a_AR = $(AR) cru
 
 MAINTAINERCLEANFILES = Makefile.in 
 subdir = example
@@ -154,7 +154,6 @@ CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libnoxexample_a_AR = $(AR) cru
 libnoxexample_a_LIBADD =
 am_libnoxexample_a_OBJECTS = \
 	libnoxexample_a-NOX_Example_Vector.$(OBJEXT) \
