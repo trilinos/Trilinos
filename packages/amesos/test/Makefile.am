@@ -22,12 +22,14 @@ noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort
 	AmesosUmfpack AmesosUmfpackShort AmesosUmfpackSerial AmesosMumps \
 	AmesosKlu AmesosKluShort AmesosKluSerial \
 	AmesosSuperludist AmesosSuperludistShort AmesosSuperludistSerial \
-	A_Superludist  B_Superludist  C_Superludist 
+	A_Superludist  B_Superludist  C_Superludist Timings DscpackTiming 
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
 A_Superludist_SOURCES = $(srcdir)/A_Superludist
 B_Superludist_SOURCES = $(srcdir)/B_Superludist
 C_Superludist_SOURCES = $(srcdir)/C_Superludist
+Timings_SOURCES = $(srcdir)/Timings
+DscpTiming_SOURCES = $(srcdir)/DscpTiming
 AmesosDscpack_SOURCES = $(srcdir)/AmesosDscpack
 AmesosDscpackShort_SOURCES = $(srcdir)/AmesosDscpackShort
 AmesosMumps_SOURCES = $(srcdir)/AmesosMumps
@@ -60,6 +62,12 @@ B_Superludist$(EXEEXT): $(srcdir)/B_Superludist
 
 C_Superludist$(EXEEXT): $(srcdir)/C_Superludist
 	cp  $(srcdir)/C_Superludist  C_Superludist$(EXEEXT)
+
+Timings$(EXEEXT): $(srcdir)/Timings
+	cp  $(srcdir)/Timings  Timings$(EXEEXT)
+
+DscpackTiming$(EXEEXT): $(srcdir)/DscpackTiming
+	cp  $(srcdir)/DscpackTiming  DscpackTiming$(EXEEXT)
 
 AmesosDscpack$(EXEEXT): $(srcdir)/AmesosDscpack
 	cp  $(srcdir)/AmesosDscpack  AmesosDscpack$(EXEEXT)
