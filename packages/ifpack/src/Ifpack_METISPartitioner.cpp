@@ -10,8 +10,8 @@
 #include "Epetra_Map.h"
 #include "Teuchos_ParameterList.hpp"
 
-#ifdef HAVE_IFPACK_METIS
 typedef int idxtype;
+#ifdef HAVE_IFPACK_METIS
 extern "C" {
   void METIS_EstimateMemory(int *, idxtype *, idxtype *, int *, int *, int *);
   void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, 
