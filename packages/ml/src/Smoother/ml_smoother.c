@@ -3011,12 +3011,17 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
 
 #ifdef MatrixProductHiptmair
 int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
-                                 ML_Operator *Tmat, ML_Operator *Tmat_trans)
+                                 ML_Operator *Tmat, ML_Operator *Tmat_trans,
+                                 ML_Operator *Tmat_bc, int BClength,
+                                 int *BCindices)
 {
    ML_Sm_Hiptmair_Data *dataptr;
-   ML_Operator *tmpmat;
+   ML_Operator *tmpmat, *tmpmat2;
    ML_1Level *mylevel;
-   ML_Krylov   *kdata; 
+   ML_Krylov   *kdata;
+   struct ML_CSR_MSRdata *matdata;
+   int *row_ptr, *bindx, i, j, k;
+   double *val_ptr, *vals=NULL;
 #ifdef ML_TIMING_DETAILED
    double t0;
 
@@ -3037,6 +3042,11 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    dataptr->max_eig = ML_Krylov_Get_MaxEigenvalue(kdata);
    dataptr->omega = 1.0 / dataptr->max_eig;
    ML_Krylov_Destroy(&kdata);
+/*
+   printf("in ML_Smoother_Gen_Hiptmair_Data: not calculating max eigenvalue\n");
+   dataptr->max_eig = 1.0;
+   dataptr->omega = 1.0 ;
+*/
 
    /* Check matrix dimensions. */
 
@@ -3068,7 +3078,33 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    /* Triple matrix product T^{*}AT. */
 
    tmpmat = ML_Operator_Create(Amat->comm);
-   ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_CSR_MATRIX);
+   if (Tmat_bc != NULL)
+   {
+      tmpmat2 = ML_Operator_Create(Amat->comm);
+      /* Calculate matrix product Ke * T.  Postprocess to get (alsmost)
+         the same result matrix as bc(Ke) * T, where bc(Ke) is Ke with
+         Dirichlet b.c. applied to both rows and columns of Ke.  The
+         only differences will be the b.c.  rows themselves. */
+      ML_matmat_mult(Amat,Tmat_bc,&tmpmat2);
+      matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
+      row_ptr = matdata->rowptr;
+      bindx = matdata->columns;
+      val_ptr = matdata->values;
+
+      for (i=0; i < BClength; i++)
+      {
+         j = BCindices[i];
+         /* Zero out corresponding row in product Ke * T. */
+         for (k = row_ptr[j]; k < row_ptr[j+1]; k++)
+            val_ptr[k] = 0.0;
+      }
+      ML_matmat_mult(Tmat_trans,tmpmat2,&tmpmat);
+      ML_Operator_Destroy(tmpmat2);
+   }
+   else
+   {
+      ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_CSR_MATRIX);
+   }
 
    /* Create ML_Smoother data structure for nodes.
       This is used in symmetric GS sweep over nodes. */
@@ -5683,19 +5719,23 @@ void ML_Smoother_Clean_ParaSails(void *data)
 *******************************************************************************/
 
 int ML_Smoother_Reinit(ML_Smoother *pre_smoother, ML_Smoother *post_smoother,
-                       ML_1Level *SingleLevel, int N_levels)
+                       ML_CSolve *csolve, ML_1Level *SingleLevel, int N_levels)
 {
     int             i;
     char            str[80];
 
     for (i = 0; i < N_levels; i++)
     {
+       ML_CSolve_Init( &(csolve[i]) );
+       ML_CSolve_Set_1Level( &(csolve[i]), &(SingleLevel[i]) );
        ML_Smoother_Init( &(pre_smoother[i]), &(SingleLevel[i]) );
        ML_Smoother_Init( &(post_smoother[i]), &(SingleLevel[i]) );
        sprintf(str,"PreS_%d",i);
        ML_Smoother_Set_Label( &(pre_smoother[i]),str);
        sprintf(str,"PostS_%d",i);
        ML_Smoother_Set_Label( &(post_smoother[i]),str);
+       sprintf(str,"Solve_%d",i);
+       ML_CSolve_Set_Label(&(csolve[i]),str);
     }
     return 0;
 }
