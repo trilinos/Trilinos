@@ -29,23 +29,6 @@ static double pcoord[3];           /* Sum of octant position-volume products */
 
 /*****************************************************************************/
 /*
- * void LB_dfs_set_visit_criterion(int visit)
- *
- * sets criterion for visiting subtree. default is use dfs ordering
- */
-void LB_dfs_set_visit_criterion(int visit) {
-  if((visit < 0) || (visit > 1)) {
-    fprintf(stderr, "%s\n%s\n", 
-      "Warning: invalid visit criterion passed to LB_dfs_set_visit_criterion.",
-      "Using default method of visiting octants. (CLOSE = 0)");
-  }
-  else {
-    CLOSE = visit;
-  }
-}
-
-/*****************************************************************************/
-/*
  * void LB_dfs_partition()
  * 
  * This function calls the different subfunctions to partition the octree 

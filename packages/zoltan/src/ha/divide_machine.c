@@ -35,13 +35,12 @@ int LB_divide_machine(
    be a more complicated routine taking into account the architecture of
    the machine and communication network. */
 
-   int ierr;           /* error flag */
 
    /* assume for now that processors coming in are in a contiguously
       numbered set and we will divide them into two roughly equal
       contiguously numbered sets */
 
-   ierr = MPI_Allreduce(&proc, proclower, 1, MPI_INT, MPI_MIN, comm);
+   MPI_Allreduce(&proc, proclower, 1, MPI_INT, MPI_MIN, comm);
 
    *procmid = *proclower + (*num_procs - 1)/2 + 1;
 

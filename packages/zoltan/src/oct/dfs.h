@@ -11,7 +11,6 @@
 
 #include "dfs_const.h"
 
-extern void LB_dfs_set_visit_criterion(int visit);
 extern int  LB_dfs_SetIds(pOctant oct, int nprevoct);
 extern void LB_visit_all_subtrees(OCT_Global_Info *OCT_info);
 extern void LB_visit(OCT_Global_Info *OCT_info,pOctant octant);

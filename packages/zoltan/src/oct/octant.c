@@ -230,15 +230,6 @@ void POC_setchildnum(pOctant oct, int childnum)
 { oct->which=childnum; }
 
 /*****************************************************************************/
-/* 
- * int POC_childnum(pOctant octant)
- * 
- * returns the child number of the octant
- */
-int POC_childnum(pOctant oct)
-{ return(oct->which); }
-
-/*****************************************************************************/
 /*
  * void POC_setcild(pOctant octant, int childnumber, pOctant child)
  *
@@ -247,21 +238,6 @@ int POC_childnum(pOctant oct)
 void POC_setchild(pOctant oct, int i, pOctant child) {
   oct->child[i]=child;         /* need to make sure child's info is correct */
   oct->numChild++;
-}
-
-/*****************************************************************************/
-/*
- * void POC_setchildren(pOctant octant, pOctant children[8],
- *                      int child_processor_ids[8])
- *
- * sets each child pointer of the octant to each of the children
- * in the array children[8]
- */
-void POC_setchildren(pOctant oct, pOctant children[8], int cpids[8]) {
-  int i;                                                    /* index counter */
-  
-  for (i=0; i<8; i++)
-    POC_setchild(oct,i,children[i]);
 }
 
 /*****************************************************************************/
@@ -379,32 +355,6 @@ void POC_addRegion(pOctant oct, pRegion region) {
 
 /*****************************************************************************/
 /*
- * void POC_remRegion(pOctant octant, pRegion region)
- * remove a region from an oct's list
- */
-void POC_remRegion(pOctant oct, pRegion region) { 
-  pRegion tmp,                       /* temp var used for iterating */
-          prev;                      /* pointer to previous region looked at */
-  
-  tmp = oct->list;
-  /* iterate through region list to find region to be removed */
-  while(tmp != NULL) {
-    if (LB_EQ_GID(tmp->Tag.Global_ID, region->Tag.Global_ID)) {
-      if(tmp == oct->list)
-	oct->list = tmp->next;
-      else
-	prev->next = tmp->next;
-      LB_FREE(&tmp);
-    }
-    else {
-      prev = tmp;
-      tmp = tmp->next;
-    }
-  }
-}
-
-/*****************************************************************************/
-/*
  * void POC_clearRegions(pOctant octant)
  * erase all of a oct's regions
  */
@@ -479,17 +429,6 @@ void POC_modify_cost(pOctant oct, float cost)
 void POC_modify_newpid(pOctant oct, int newpid)
 {
   oct->npid = newpid;
-}
-
-/*****************************************************************************/
-/*
- * float POC_data_cost(pOctant octant)
- *
- * returns the cost of the octant
- */
-float POC_data_cost(pOctant oct)
-{
-  return(oct->cost);
 }
 
 /*****************************************************************************/

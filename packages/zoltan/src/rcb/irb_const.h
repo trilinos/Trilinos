@@ -44,4 +44,13 @@ extern int LB_IRB_Build_Structure(LB *, int *, int *, int);
 extern void LB_IRB_Free_Structure(LB *);
 extern int LB_Set_IRB_Param(char *, char *);
 
+/* function prototypes */
+
+extern int LB_inertial1d(struct irb_dot *, int, int, double *, double *,
+                         double *);
+extern int LB_inertial2d(struct irb_dot *, int, int, double *, double *,
+                         double *, MPI_Comm);
+extern int LB_inertial3d(struct irb_dot *, int, int, double *, double *,
+                         double *, MPI_Comm);
+
 #endif

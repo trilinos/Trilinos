@@ -40,14 +40,6 @@
 
 #define IRB_DEFAULT_OVERALLOC 1.0
 
-/* function prototypes */
-
-int LB_inertial1d(struct irb_dot *, int, int, double *, double *,double *);
-int LB_inertial2d(struct irb_dot *, int, int, double *, double *,double *,
-                  MPI_Comm);
-int LB_inertial3d(struct irb_dot *, int, int, double *, double *,double *,
-                  MPI_Comm);
-
 static void IRB_check(LB *, struct irb_dot *, int, int);
 static void IRB_stats(LB *, double, struct irb_dot *,int, double *, int *, int);
 

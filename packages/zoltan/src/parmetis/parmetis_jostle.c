@@ -287,13 +287,12 @@ static int LB_ParMetis_Jostle(
 {
   static char *yo = "LB_ParMetis_Jostle";
   int i, j, jj, ierr, packet_size, offset, tmp, flag, ndims; 
-  int obj_wgt_dim, comm_wgt_dim, nnodes, check_graph;
+  int obj_wgt_dim, comm_wgt_dim, check_graph;
   int num_obj, nedges, num_edges, cross_edges, max_edges, edgecut;
   int *nbors_proc, *plist;
   int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *ewgt, *part;
-  int network[4] = {0, 1, 1, 1};
   int nonint_wgt;
   float *float_vwgt, *xyz, scale, sum_wgt, sum_wgt_local; 
   double geom_vec[6];
@@ -309,6 +308,10 @@ static int LB_ParMetis_Jostle(
   MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
                                    /* change our lb struct.                   */
   int i99;                         /* Variables used for debugging.           */
+#ifdef LB_JOSTLE
+  int nnodes;
+  int network[4] = {0, 1, 1, 1};
+#endif
 
   LB_TRACE_ENTER(lb, yo);
 
@@ -913,6 +916,7 @@ static int LB_ParMetis_Jostle(
     }
 
   if (strcmp(alg, "JOSTLE") == 0){
+#ifdef LB_JOSTLE
     offset = 0;            /* Index of the first object/node. */
     j = 0;                 /* Dummy variable for Jostle */
     nnodes = vtxdist[lb->Num_Proc]; /* Global number of objects */ 
@@ -926,7 +930,6 @@ static int LB_ParMetis_Jostle(
     for (i=0; i<lb->Num_Proc; i++){
       vtxdist[i] = vtxdist[i+1] - vtxdist[i];
     }
-#ifdef LB_JOSTLE
     LB_TRACE_DETAIL(lb, yo, "Calling the Jostle library");
     jostle_env("format = contiguous");
     if (check_graph >= 2){
