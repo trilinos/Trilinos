@@ -256,7 +256,7 @@ int read_hypergraph_file(
     return 0;
   }
 
-  ZOLTAN_FREE((void **) &vwgts);
+  safe_free((void **) &vwgts);
   safe_free((void **) &ch_ewgts);
   safe_free((void **) &ch_vwgts);
   safe_free((void **) &ch_x);
