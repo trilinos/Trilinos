@@ -766,12 +766,27 @@ void get_child_elements(void *data, int num_gid_entries, int num_lid_entries,
 int get_partition(void *data, int num_gid_entries, int num_lid_entries,
                   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *ierr)
 {
-int proc;
+  ELEM_INFO *elem;
+  ELEM_INFO *current_elem;
+  MESH_INFO_PTR mesh;
+  int idx;
+  int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
 
-/* For now, partition == processor ID. */
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return -1;
+  }
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-  return proc;
+  mesh = (MESH_INFO_PTR) data;
+  elem = mesh->elements;
+  current_elem = (num_lid_entries 
+                    ? &elem[local_id[lid]] 
+                    : search_by_global_id(mesh, global_id[gid], &idx));
+
+
+  *ierr = ZOLTAN_OK;
+  return current_elem->my_part;
 }
 
 /*****************************************************************************/
