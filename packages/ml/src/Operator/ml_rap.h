@@ -85,7 +85,7 @@ extern void ML_rap_check(ML *ml, ML_Operator *RAP, ML_Operator *R,
                          ML_Operator *A, ML_Operator *P, int iNvec,
                          int oNvec);
 
-extern void ML_set_message_info(int N_external, int external[], 
+extern void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[], 
                                 int max_per_proc, ML_Operator *omatrix);
 
 extern void ML_sum_duplicates(int accum_col[],double accum_val[],int *Ncols);
