@@ -50,5 +50,6 @@ ostream& operator<<(ostream& os, StatusType type)
     os << "**";
     break;
   }
+  os << setiosflags(ios::right) << setfill(' ');
   return os;
 }
