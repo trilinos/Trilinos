@@ -44,7 +44,7 @@ Epetra_Vector::Epetra_Vector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, d
   SetLabel("Epetra::Vector");
 }
 //=============================================================================
-Epetra_Vector::Epetra_Vector(Epetra_DataAccess CV, const Epetra_Vector& Source, int Index)
+Epetra_Vector::Epetra_Vector(Epetra_DataAccess CV, const Epetra_MultiVector& Source, int Index)
   : Epetra_MultiVector(CV, Source, Index, 1) // Vector is just special case of MultiVector
 {
   SetLabel("Epetra::Vector");

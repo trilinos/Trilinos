@@ -35,7 +35,7 @@
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int *NumBlockEntriesPerRow) 
   : Epetra_DistObject(RowMap, "Epetra::VbrMatrix"),
-    Epetra_Flops(),
+    Epetra_CompObject(),
     Epetra_BLAS(),
     Graph_(0),
     Allocated_(false),
@@ -51,7 +51,7 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int NumBlockEntriesPerRow) 
   : Epetra_DistObject(RowMap, "Epetra::VbrMatrix"),
-    Epetra_Flops(),
+    Epetra_CompObject(),
     Epetra_BLAS(),
     Graph_(0),
     Allocated_(false),
@@ -66,7 +66,7 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph & Graph) 
   : Epetra_DistObject(Graph.RowMap(), "Epetra::VbrMatrix"),
-    Epetra_Flops(),
+    Epetra_CompObject(),
     Epetra_BLAS(),
     Graph_((Epetra_CrsGraph*) &Graph),
     Allocated_(false),
@@ -81,7 +81,7 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph &
 //==============================================================================
 Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix & Source) 
   : Epetra_DistObject(Source),
-    Epetra_Flops(),
+    Epetra_CompObject(),
     Epetra_BLAS(),
     Graph_(Source.Graph_),
     Allocated_(Source.Allocated_),

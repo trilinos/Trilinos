@@ -26,7 +26,7 @@
 #define _EPETRA_VBRMATRIX_H_
 
 #include "Epetra_DistObject.h" 
-#include "Epetra_Flops.h"
+#include "Epetra_CompObject.h" 
 #include "Epetra_BLAS.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Operator.h"
@@ -69,7 +69,7 @@ numbers.  The ResetFlops() function resets the floating point counter.
 
 */    
 
-class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_Flops, public Epetra_BLAS, public virtual Epetra_RowMatrix {
+class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, public Epetra_BLAS, public virtual Epetra_RowMatrix {
       
  public:
 

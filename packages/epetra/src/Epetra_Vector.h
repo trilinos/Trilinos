@@ -165,7 +165,7 @@ class Epetra_Vector : public Epetra_MultiVector {
     \param In 
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
     \param In
-           Source - An existing fully constructed Epetra_Vector.
+           Source - An existing fully constructed Epetra_MultiVector.
     \param In
            Index - Index of vector to access.  
 
@@ -173,7 +173,7 @@ class Epetra_Vector : public Epetra_MultiVector {
 
 	   See Detailed Description section for further discussion.
   */
-  Epetra_Vector(Epetra_DataAccess CV, const Epetra_Vector& Source, int Index);
+  Epetra_Vector(Epetra_DataAccess CV, const Epetra_MultiVector& Source, int Index);
 
   //! Epetra_Vector destructor.  
     virtual ~Epetra_Vector ();
