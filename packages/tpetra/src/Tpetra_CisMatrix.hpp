@@ -190,37 +190,34 @@ public:
       if(!getSecondaryDist().isMyGlobalIndex(index))
         throw reportError("Global secondary index " + toString(myRowOrColumn) + "is not owned by this image.", 1);
 
-    // only do the insertion if value is non-zero
-    if(value != Teuchos::ScalarTraits<ScalarType>::zero()) {
-      // create a map for that row/column if it doesn't exist
-      if(CisMatrixData_->indicesAndValues_.find(myRowOrColumn) == CisMatrixData_->indicesAndValues_.end()) {
-        std::map<OrdinalType, ScalarType> temp;
-        CisMatrixData_->indicesAndValues_[myRowOrColumn] = temp;
-      }
-      
-      // then submit the actual value
-      std::map<OrdinalType, ScalarType>& innerMap = CisMatrixData_->indicesAndValues_[myRowOrColumn];
-      if(CM == Add) {
-        // innerMap[index] += value; // will this work??
-        if(innerMap.find(index) != innerMap.end())
-          innerMap[index] = innerMap[index] + value;
-        else
-          innerMap[index] = value;
-
-        // update flops counter: 1
-        updateFlops(Teuchos::OrdinalTraits<OrdinalType>::one());
-      }
-      else if(CM == Replace) {
-        innerMap[index] = value;
-      }
-      else if(CM == Insert) {
-        innerMap[index] = value; // change this to a call to insert
-      }
-      else
-        throw reportError("Unknown Combine Mode.", 2);
-      
-      data().numMyNonzeros_++;
+    // create a map for that row/column if it doesn't exist
+    if(CisMatrixData_->indicesAndValues_.find(myRowOrColumn) == CisMatrixData_->indicesAndValues_.end()) {
+      std::map<OrdinalType, ScalarType> temp;
+      CisMatrixData_->indicesAndValues_[myRowOrColumn] = temp;
     }
+    
+    // then submit the actual value
+    std::map<OrdinalType, ScalarType>& innerMap = CisMatrixData_->indicesAndValues_[myRowOrColumn];
+    if(CM == Add) {
+      // innerMap[index] += value; // will this work??
+      if(innerMap.find(index) != innerMap.end())
+        innerMap[index] = innerMap[index] + value;
+      else
+        innerMap[index] = value;
+
+      // update flops counter: 1
+      updateFlops(Teuchos::OrdinalTraits<OrdinalType>::one());
+    }
+    else if(CM == Replace) {
+      innerMap[index] = value;
+    }
+    else if(CM == Insert) {
+      innerMap[index] = value; // change this to a call to insert
+    }
+    else
+      throw reportError("Unknown Combine Mode.", 2);
+      
+    data().numMyNonzeros_++;
   }
   
   //! Signals that data entry is complete. Matrix data is converted into a more optimized form.
