@@ -125,7 +125,7 @@ static int global_ran (
   Partition part
 )
 { 
-  int i, ierr, number, temp, *order=NULL;
+  int i, ierr, *order=NULL;
   char *yo = "global_ran" ;
 
   if (!(order  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
@@ -137,12 +137,7 @@ static int global_ran (
     order[i] = i;
 
   /* Randomly permute order array */
-  for (i=hg->nVtx; i>0; i--)
-  { number=Zoltan_HG_Rand()%i;
-    temp = order[number];
-    order[number] = order[i-1];
-    order[i-1] = temp;
-  }
+  Zoltan_HG_Rand_Perm_Int(order, hg->nVtx);
  
   /* Call sequence partitioning with random order array. */
   ierr = seq_part( zz, hg, order, p, part);
@@ -170,7 +165,7 @@ static int bfs_order (
 )
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, next_vtx, *rank; 
-  int first, last;
+  int first, last, num_edges, *randperm;
   int ierr=ZOLTAN_OK;
   float weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
   char msg[128], *mark_edge;
@@ -195,7 +190,7 @@ static int bfs_order (
   bfsnumber = 0;  /* Assign next vertex this bfs number */
   pnumber = 0;    /* Assign next vertex this partition number */
 
-  /* Allocate rank and mark_edge arrays. */
+  /* Allocate arrays. */
   if (!(rank  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ierr =  ZOLTAN_MEMERR;
@@ -204,7 +199,14 @@ static int bfs_order (
   for (i=0; i<hg->nVtx; i++)
     rank[i] = -1;  /* -1 means this vtx has not yet been numbered */
    
-  if (!(mark_edge  = (char *)   ZOLTAN_CALLOC (hg->nEdge, sizeof (char)))) {
+  /* array randperm only needs to be of size maximum #edges for any vtx */
+  num_edges = 0;
+  for (i=0; i<hg->nVtx; i++)
+    if (hg->vindex[i+1] - hg->vindex[i] > num_edges)
+      num_edges = hg->vindex[i+1] - hg->vindex[i];
+  
+  if (!(mark_edge  = (char *)  ZOLTAN_CALLOC (hg->nEdge, sizeof (char))) ||
+      !(randperm   = (int *)   ZOLTAN_CALLOC (num_edges, sizeof (int)))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ierr =  ZOLTAN_MEMERR;
     goto error;
@@ -231,17 +233,17 @@ static int bfs_order (
   first = bfsnumber;
   last = first+1;
   order[first] = start_vtx;
-  next_vtx = 0; /* Next unmarked vertex */
+  next_vtx = (start_vtx+1 == hg->nVtx ? 0 : start_vtx+1); 
 
   while (bfsnumber < hg->nVtx ) {
     /* Is queue empty? */
     if (last == first){
-      /* ZOLTAN_PRINT_WARN(0, yo, "Queue is empty; hypergraph must be disconnected"); */
-
+      /* ZOLTAN_PRINT_WARN(-1, yo, "Queue is empty; hypergraph must be disconnected"); */
       /* Find an unmarked vertex to put in queue */
-      while (next_vtx<hg->nVtx && rank[next_vtx]>=0) next_vtx++;
-      if (next_vtx==hg->nVtx){
-        ZOLTAN_PRINT_ERROR(0, yo, "All vertices looks to be visited, but that cant be!");
+      while (next_vtx != start_vtx && rank[next_vtx]>=0) 
+        if (++next_vtx == hg->nVtx) next_vtx = 0; /* wrap-around */
+      if (next_vtx==start_vtx){
+        ZOLTAN_PRINT_ERROR(-1, yo, "All vertices seem to be visited, but that cant be!");
         ierr = ZOLTAN_FATAL;
         goto error;
       }
@@ -253,9 +255,9 @@ static int bfs_order (
       rank[vtx] = bfsnumber++;
     else{
       sprintf(msg, "Vertex %d in queue already labeled", vtx);
-      ZOLTAN_PRINT_ERROR(0, yo, msg);
+      ZOLTAN_PRINT_ERROR(-1, yo, msg);
       sprintf(msg, "bfsnumber=%d, rank[vtx] = %d", bfsnumber, rank[vtx]);
-      ZOLTAN_PRINT_ERROR(0, yo, msg);
+      ZOLTAN_PRINT_ERROR(-1, yo, msg);
       ierr = ZOLTAN_FATAL;
       goto error;
     }
@@ -295,9 +297,15 @@ static int bfs_order (
     }
      
     /* Add nbors to queue. */
+    /* Pick edges in random order. */
     /* Possible variation: pick heaviest edge first. */
-    for (j=hg->vindex[vtx]; j<hg->vindex[vtx+1]; j++){
-      edge = hg->vedge[j];
+    num_edges = hg->vindex[vtx+1] - hg->vindex[vtx];
+    for (i=0; i<num_edges; i++)
+      randperm[i] = i;
+    Zoltan_HG_Rand_Perm_Int(randperm, num_edges);
+
+    for (j=0; j<num_edges; j++){
+      edge = hg->vedge[hg->vindex[vtx]+randperm[j]];
       if (!mark_edge[edge]){
         mark_edge[edge] = 1;
         for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
@@ -305,7 +313,7 @@ static int bfs_order (
           if (rank[nbor] == -1){
             order[last++] = nbor;
             if (last > hg->nVtx) {
-              ZOLTAN_PRINT_ERROR(0, yo, "Queue is full");
+              ZOLTAN_PRINT_ERROR(-1, yo, "Queue is full");
               ierr = ZOLTAN_FATAL;
               goto error;
             }
@@ -320,12 +328,13 @@ static int bfs_order (
   for (i=0; i<hg->nVtx; i++){
     if (rank[i]>=0) 
       if (order[rank[i]] != i)
-         ZOLTAN_PRINT_WARN(0, yo, "Arrays order and rank are inconsistent.");
+         ZOLTAN_PRINT_WARN(-1, yo, "Arrays order and rank are inconsistent.");
   }
 
 error:
   ZOLTAN_FREE ((void **) &rank);
   ZOLTAN_FREE ((void **) &mark_edge);
+  ZOLTAN_FREE ((void **) &randperm);
   return ierr;
 }
 

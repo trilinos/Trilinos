@@ -137,6 +137,7 @@ int Zoltan_HG_Graph_to_HGraph(ZZ *, Graph *, HGraph *);
 
 unsigned long Zoltan_HG_Rand (void) ;
 void          Zoltan_HG_Srand (unsigned long) ;
+void          Zoltan_HG_Rand_Perm_Int (int *, int);
 
 /* Hypergraph read from file */
 int HG_Readfile (ZZ *, HGraph *, char *hgraphfile);

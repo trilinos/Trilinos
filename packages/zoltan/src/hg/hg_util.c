@@ -703,6 +703,18 @@ void Zoltan_HG_Srand (unsigned long seed)
    }
 
 
+/* Randomly permute an array of ints. */
+void Zoltan_HG_Rand_Perm_Int (int *data, int n)
+{
+  int i, number, temp;
+
+  for (i=n; i>0; i--)
+  { number=Zoltan_HG_Rand()%i;
+    temp = data[number];
+    data[number] = data[i-1];
+    data[i-1] = temp;
+  }
+}
 
 
 
