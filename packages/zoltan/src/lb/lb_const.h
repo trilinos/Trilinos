@@ -1,10 +1,29 @@
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+
+#include "par_const.h"
 #include "lbi_const.h"
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/*
+ *  Type definitions.
+ */
+
+typedef struct LB_Struct LB;
+typedef struct LB_Comm_Struct LB_COMM;
+
+typedef void LB_FN(LB *, int*, int*);
+typedef void LB_COMM_BUILD_REQUEST_PROCLIST_FN_TYPE(LB *, int n_cells_orig, int *n_requests);
+typedef void LB_COMM_BUILD_SEND_REQUEST_LIST_FN_TYPE(LB *, int n_cells_orig);
+typedef int  LB_COMM_OBJ_DATA_SIZE_FN_TYPE(int object_type);
+typedef void LB_COMM_MIGRATE_OBJ_DATA_FN_TYPE(LB_ID object, char *start_pos_in_buffer);
 
 /*
  *  Define the possible load balancing methods allowed.
- *  The order of this type MUST be the same as the LB_Method_Strings array
- *  defined in lb.h.
  */
 
 typedef enum LB_Method {
@@ -13,11 +32,89 @@ typedef enum LB_Method {
   LB_MAX_METHODS                  /*  This entry should always be last.      */
 } LB_METHOD;
 
-extern char *LB_Method_Strings[];
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+
+
+/* 
+ *  Define a communication structure for load balancing results.  This
+ *  structure will be used by Steve Plimpton's and Bruce Hendrickson's
+ *  communication library.
+ */
+
+struct LB_Comm_Struct {
+  /*  
+   *  Pointers to routines that depend on the LB Data_Structure field, and,
+   *  thus, on the balancing method used.
+   */
+  LB_COMM_BUILD_REQUEST_PROCLIST_FN_TYPE *Build_Request_Proclist;
+                                       /* Routine that build a list of procs
+                                          from which object data are needed.
+                                          There is one entry in the list for
+                                          each remote object.  The value of
+                                          the entry is the processor number
+                                          of the processor owning the object
+                                          when the load balancer was invoked.*/
+  LB_COMM_BUILD_SEND_REQUEST_LIST_FN_TYPE *Build_Send_Request_List;
+                                       /* Routine that build a list of objects
+                                          needed from other processors. 
+                                          Each entry contains the tracking 
+                                          data built before the load balancing
+                                          was invoked.                       */
+
+  /*
+   *  Pointers to routines that depend on the application.
+   */
+
+  LB_COMM_OBJ_DATA_SIZE_FN_TYPE *Get_Obj_Data_Size;
+                                       /* Function that returns the size of
+                                          contiguous memory needed to store
+                                          the data for a single object for
+                                          migration.                         */
+  LB_COMM_MIGRATE_OBJ_DATA_FN_TYPE *Pack_Obj_Data;
+                                       /* Routine that packs object data for
+                                          a given object into contiguous 
+                                          memory for migration.              */
+  LB_COMM_MIGRATE_OBJ_DATA_FN_TYPE *Unpack_Obj_Data;
+                                       /* Routine that unpacks object data for
+                                          a given object from contiguous 
+                                          memory after migration.            */
+                                        
+  /*
+   *  Pointers to temporary storage for communication.
+   */
+
+  int *Proc_List;                      /* Array of processor numbers for
+                                          requesting and sending objects.
+                                          There is one entry per requested
+                                          or sent object; its value is the
+                                          processor number to which the 
+                                          request or object is sent.         */
+  struct Request_Struct *Send_Request; /* Array of requests for objects on
+                                          other processors.
+                                          There is one entry per requested 
+                                          object; each entry contains the
+                                          tracking data giving the object's
+                                          original location.                 */
+  struct Request_Struct *Recv_Request; /* Array of requests for objects
+                                          needed by other processors.  
+                                          There is one entry per requested 
+                                          object; each entry contains the
+                                          tracking data giving the object's
+                                          original location.                 */
+  char *Send_Data;                     /* Buffer containing object data to 
+                                          be sent to other processors.       */
+  char *Recv_Data;                     /* Buffer containing object data to 
+                                          be received from other processors. */
+
+};
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+
 
 /*
  *  Define a load balancing object.  It will contain pointers to the
@@ -25,11 +122,24 @@ extern char *LB_Method_Strings[];
  *  pointers to the data structure used for load balancing.
  */
 
-typedef struct LB_Struct {
+struct LB_Struct {
   LB_METHOD Method;               /*  Method to be used for load balancing.  */
+  LB_FN *LB_Fn;                   /*  Pointer to the function that performs
+                                      the load balancing; this ptr is set
+                                      based on the method used.              */
+  double *Params;                 /*  Array of parameters passed to the 
+                                      load balancing function.               */
   double Tolerance;               /*  Tolerance to which to load balance;
                                       tolerance = 0.9 implies 10% imbalance
                                       is acceptable.                         */
+  int Object_Type;                /*  The application-specified object type
+                                      for objects being balanced.  The
+                                      application can use this value to 
+                                      distinguish which objects (e.g.,
+                                      elements or surfaces) are being used
+                                      in this load-balancing object.  This
+                                      value is not used specifically by the
+                                      load balancer.                         */
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */
@@ -58,4 +168,15 @@ typedef struct LB_Struct {
   LB_NEXT_BORDER_OBJ_FN *Get_Next_Border_Obj;  /* Fn ptr to get the next 
                                                   object sharing a border 
                                                   with a given processor.    */
-} LB;
+  LB_COMM LB_Comm;                             /* Communication struct for
+                                                  load balancing results.    */
+};
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/* PROTOTYPES */
+
+extern LB_FN lb_rcb;
+extern LB_FN lb_wheat;
+

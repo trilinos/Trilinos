@@ -4,7 +4,6 @@
  *  application and the load balancing tool.
  */
 
-
 /*
  *  Enumerated type used to indicate which function is to be set by
  *  LB_Set_LB_Fn.
@@ -26,7 +25,6 @@ enum LB_Fn_Type {
 };
 
 typedef enum LB_Fn_Type LB_FN_TYPE;
-
 
 /*
  *  Other common definitions:
@@ -83,17 +81,16 @@ typedef void LB_EDGE_LIST_FN(LB_ID, LB_OBJECT_TYPE, LB_ID *);
 
 /*****************************************************************************/
 /*
- *  Function to return, for the object with a given ID and object type,
- *  the object's number of geometry fields (e.g., the number of values
+ *  Function to return, for a given object type,
+ *  the number of geometry fields per object (e.g., the number of values
  *  used to express the coordinates of the object).
  *  Input:  
- *    LB_ID             --  the ID for the object
  *    LB_OBJECT_TYPE    --  the object type for the object
  *  Returned value:
  *    int               --  the number of geometry fields.
  */
 
-typedef int LB_NUM_GEOM_FN(LB_ID, LB_OBJECT_TYPE);
+typedef int LB_NUM_GEOM_FN(LB_OBJECT_TYPE);
 
 /*****************************************************************************/
 /*
@@ -201,7 +198,7 @@ typedef LB_ID LB_NEXT_BORDER_OBJ_FN(LB_ID, LB_OBJECT_TYPE, int);
  *  If the application does not use MPI, this function calls MPI_Init for
  *  use by the load balancer.
  */
-void LB_Initialize(int argc, char **argv);
+extern void LB_Initialize(int *argc, char ***argv);
 
 /*****************************************************************************/
 /*
@@ -211,7 +208,7 @@ void LB_Initialize(int argc, char **argv);
  *  Returned value:
  *    void *             --  Pointer to a LB object.
  */
-void *LB_Create_LB_Object();
+extern void *LB_Create_LB_Object();
 
 /*****************************************************************************/
 /*
@@ -224,7 +221,7 @@ void *LB_Create_LB_Object();
  *  Output:
  *    void *            --  Appropriate field set to value in void *().
  */
-void LB_Set_LB_Fn(void *, LB_FN_TYPE, void *());
+extern void LB_Set_LB_Fn(void *, LB_FN_TYPE, void *());
 
 /*****************************************************************************/
 /*
@@ -233,12 +230,12 @@ void LB_Set_LB_Fn(void *, LB_FN_TYPE, void *());
  *    void *             --  The load balancing object to which this method
  *                           applies.
  *    char *             --  String specifying the desired method.
- *    int *              --  Params needed by desired method.  (This field
+ *    double *           --  Params needed by desired method.  (This field
  *                           will be better defined later.)
  *  Output:
  *    void *             --  Appropriate fields set to designated values.
  */
-void LB_Set_LB_Method(void *, char *, int *);
+extern void LB_Set_LB_Method(void *, char *, double *);
 
 /*****************************************************************************/
 /*
@@ -253,6 +250,20 @@ void LB_Set_LB_Method(void *, char *, int *);
  *  Output:
  *    void *             --  Appropriate fields set to designated value.
  */
-void LB_Set_LB_Tolerance(void *, double);
+extern void LB_Set_LB_Tolerance(void *, double);
 
-
+/*****************************************************************************/
+/*
+ *  Function to set the object type for objects to be balanced.
+ *  The object type is an integer value.  It can be used to help distinguish
+ *  between the IDs for, say, elements and surfaces.
+ *  This value is used only by the application; it is optional as far
+ *  as the load-balancer is concerned.
+ *  Input:
+ *    void *             --  The load balancing object to which this tolerance
+ *                           applies.
+ *    int                --  An integer representing the object type.
+ *  Output:
+ *    void *             --  Appropriate fields set to designated type.
+ */
+extern void LB_Set_LB_Object_Type(void *, int);

@@ -1,14 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
-
-#include "all_allo_const.h"
-#include "par_const.h"
-#include "par.h"
 #include "lb_const.h"
 #include "lb.h"
+#include "all_allo_const.h"
+#include "par.h"
 
-void LB_Initialize(int argc, char **argv)
+void LB_Initialize(int *argc, char ***argv)
 {
 /*
  *  Function to initialize values needed in load balancing tools.
@@ -70,8 +65,11 @@ LB *lb;
    */
 
   lb->Method = RCB;    
+  lb->LB_Fn = lb_rcb;
+  lb->Params = NULL;
   lb->Tolerance = 0.9;
   lb->Data_Structure = NULL;
+  lb->Object_Type = 0;
 
   lb->Get_Obj_Weight = NULL;
   lb->Get_Num_Edges = NULL;
@@ -157,7 +155,7 @@ LB *lb = (LB *) lbv;
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Set_LB_Method(void *lbv, char *method_name, int *params)
+void LB_Set_LB_Method(void *lbv, char *method_name, double *params)
 {
 /*
  *  Function to set the load balancing method to be used.
@@ -177,32 +175,38 @@ int i;
 
   /*
    *  Compare method_name string with standard strings for methods.
-   *  If a match is found, set lb->Method.
+   *  If a match is found, set lb->Method and other pointers.
    */
 
-  for (i = 0; i < LB_MAX_METHODS; i++) {
-    if (strcasecmp(method_name, LB_Method_Strings[i]) == 0) {
-      lb->Method = i;
-      if (Proc == 0) {
-        printf("LB:  Load balancing method = %d (%s)\n", i, method_name);
-      }
-      break;
-    }
+  if (strcasecmp(method_name, "RCB") == 0) {
+    lb->Method = RCB;
+    lb->LB_Fn = lb_rcb;
+/*
+    lb->LB_Comm->Build_Request_Proclist = rcb_build_request_proclist;
+    lb->LB_Comm->Build_Send_Request_List = rcb_build_send_request_list;
+*/
   }
 
-  if (i == LB_MAX_METHODS) {
+  /*
+   *  SET OTHER METHODS HERE!!
+   */
+
+  else {  
     fprintf(stderr, "Error from %s:  Invalid LB method specified:  %s\n", 
             yo, method_name);
     exit(-1);
   }
 
+  if (Proc == 0) {
+    printf("LB:  Load balancing method = %d (%s)\n", i, method_name);
+  }
+
   /*
-   *  For now, don't know how params should be defined.  It will probably
-   *  depend on the method.  We'll ignore it for now.
+   *  Set the parameters pointer if the application specifies parameters.
    */
 
   if (params != NULL) {
-    fprintf(stderr, "Warning from %s:  Params array ignored.\n", yo);
+    lb->Params = params;
   }
 }
 
@@ -248,4 +252,55 @@ LB *lb = (LB *) lbv;
   if (Proc == 0) {
     printf("LB:  Load balancing tolerance = %f\n", tolerance);
   }
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+void LB_Set_LB_Object_Type(void *lbv, int object_type)
+{
+/*
+ *  Function to set the object type for objects to be balanced.
+ *  The object type is an integer value.  It can be used to help distinguish
+ *  between the IDs for, say, elements and surfaces.
+ *  This value is used only by the application; it is optional as far
+ *  as the load-balancer is concerned.
+ *  Input:
+ *    void *             --  The load balancing object to which this tolerance
+ *                           applies.
+ *    int                --  An integer representing the object type.
+ *  Output:
+ *    void *             --  Appropriate fields set to designated type.
+ */
+
+LB *lb = (LB *) lbv;
+
+  lb->Object_Type = object_type;
+  if (Proc == 0) {
+    printf("LB:  Load balancing object type = %d\n", object_type);
+  }
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+void LB_Balance(void *lbv)
+{
+LB *lb = (LB *) lbv;
+int num_objs;                  /* Set to the new number of objects on 
+                                  the processor.                            */
+int num_keep;                  /* Set to the number of objects the processor
+                                  keeps from the old decomposition.         */
+
+  perform_error_checking(lb);  /* make sure required functions are defined
+                                  for given method.   Num_Objs, comm rtns 
+                                  should be
+                                  defined for all methods.  */
+
+  lb->LB_Fn(lb, &num_objs, &num_keep);
+
+  help_migrate(lb);
+  clean_up(lb->LB_Comm);
 }
