@@ -23,16 +23,17 @@ int LB_Reftree_Sum_Weights_pairs(LB *lb);
 int LB_Reftree_Sum_Weights_bcast(LB *lb);
 void LB_Reftree_Sum_My_Weights(LB *lb, LB_REFTREE *subroot, int *count, int wdim);
 void LB_Reftree_Sum_All_Weights(LB *lb, LB_REFTREE *subroot, int wdim);
-void LB_Reftree_List_Other_Leaves(LB_REFTREE *subroot, LB_GID *list, int *count);
-int LB_Reftree_Partition(LB *lb, int *num_export, LB_GID **export_global_ids,
-                         LB_LID **export_local_ids, int **export_procs);
+void LB_Reftree_List_Other_Leaves(LB *lb, LB_REFTREE *subroot, LB_ID_PTR list, 
+                                  int *count);
+int LB_Reftree_Partition(LB *lb, int *num_export, LB_ID_PTR *export_global_ids,
+                         LB_ID_PTR *export_local_ids, int **export_procs);
 void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
                                float *current_size, int *num_exp, float *cutoff,
                                float partition_size, float eps);
 void LB_Reftree_Mark_and_Count(LB_REFTREE *subroot, int part, int *num_exp);
 void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, int *num_export,
-                            LB_GID **export_global_ids,
-                            LB_LID **export_local_ids, int **export_procs);
+                            LB_ID_PTR *export_global_ids,
+                            LB_ID_PTR *export_local_ids, int **export_procs);
 int is_power_of_2(int n);
 
 /*****************************************************************************/
@@ -41,15 +42,15 @@ int is_power_of_2(int n);
 
 int LB_Reftree_Part(
 
-  LB *lb,                     /* The load-balancing structure */
-  int *num_import,            /* Not computed, set to -1 */
-  LB_GID **import_global_ids, /* Not computed */
-  LB_LID **import_local_ids,  /* Not computed */
-  int **import_procs,         /* Not computed */
-  int *num_export,            /* Number of objects to be exported */
-  LB_GID **export_global_ids, /* global ids of objects to be exported */
-  LB_LID **export_local_ids,  /* local  ids of objects to be exported */
-  int **export_procs          /* list of processors to export to */
+  LB *lb,                       /* The load-balancing structure */
+  int *num_import,              /* Not computed, set to -1 */
+  LB_ID_PTR *import_global_ids, /* Not computed */
+  LB_ID_PTR *import_local_ids,  /* Not computed */
+  int **import_procs,           /* Not computed */
+  int *num_export,              /* Number of objects to be exported */
+  LB_ID_PTR *export_global_ids, /* global ids of objects to be exported */
+  LB_ID_PTR *export_local_ids,  /* local  ids of objects to be exported */
+  int **export_procs            /* list of processors to export to */
 )
 {
 char *yo = "LB_Reftree_Part";
@@ -187,8 +188,10 @@ LB_REFTREE *root;         /* Root of the refinement tree */
 int wdim;                 /* Dimension of the weight array */
 int i,j;                  /* loop counters */
 int count;                /* counter */
-LB_GID *leaf_list;        /* leaves for which some proc requests weight */
-LB_GID *all_leaflist;     /* leaf_list from all processors */
+LB_ID_PTR leaf_list = NULL;      
+                          /* leaves for which some proc requests weight */
+LB_ID_PTR all_leaflist = NULL;   
+                          /* leaf_list from all processors */
 int reqsize;              /* length of leaf_list */
 int *reqsize_all;         /* reqsize from all processors */
 int sum_reqsize;          /* sum of all reqsize */
@@ -200,6 +203,7 @@ struct LB_reftree_hash_node **hashtab; /* hash table */
 int hashsize;             /* dimension of hash table */
 float *send_float;        /* sending message of floats */
 float *req_weights;       /* the requested weights */
+int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
 
   /*
    * set the root and hash table
@@ -239,16 +243,16 @@ float *req_weights;       /* the requested weights */
    */
 
   if (count == 0)
-    leaf_list = (LB_GID *) LB_MALLOC(sizeof(LB_GID));
+    leaf_list = LB_MALLOC_GID(lb);
   else
-    leaf_list = (LB_GID *) LB_MALLOC(count*sizeof(LB_GID));
+    leaf_list = LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(LB_MEMERR);
   }
 
   count = 0;
-  LB_Reftree_List_Other_Leaves(root,leaf_list,&count);
+  LB_Reftree_List_Other_Leaves(lb, root,leaf_list,&count);
 
   /*
    * Get the unknown leaf weights from other processors.
@@ -298,7 +302,7 @@ float *req_weights;       /* the requested weights */
    * Gather the request list from all processors
    */
 
-    all_leaflist = (LB_GID *) LB_MALLOC(sum_reqsize*sizeof(LB_GID));
+    all_leaflist = LB_MALLOC_GID_ARRAY(lb, sum_reqsize);
     if (all_leaflist == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&all_leaflist);
@@ -308,23 +312,22 @@ float *req_weights;       /* the requested weights */
       return(LB_MEMERR);
     }
 
-/* TEMP sending this as bytes won't work if the parallel machine consists
-        of machines with different representations (e.g. different byte
-        ordering) of whatever LB_GID is, but what else can we do? */
+    /* KDDKDD Changed MPI_BYTE to LB_ID_MPI_TYPE  */
 
+    /* Account for number of array entries in an ID. */
     for (i=0; i<nproc; i++) {
-      reqsize_all[i] = reqsize_all[i]*sizeof(LB_GID);
-      displs[i] = displs[i]*sizeof(LB_GID);
+      reqsize_all[i] = reqsize_all[i]*num_gid_entries;
+      displs[i] = displs[i]*num_gid_entries;
     }
 
-    MPI_Allgatherv((void *)leaf_list,reqsize*sizeof(LB_GID),MPI_BYTE,
-                   (void *)all_leaflist,reqsize_all,displs,MPI_BYTE,
+    MPI_Allgatherv((void *)leaf_list,reqsize*num_gid_entries,LB_ID_MPI_TYPE,
+                   (void *)all_leaflist,reqsize_all,displs,LB_ID_MPI_TYPE,
                    lb->Communicator);
 
     LB_FREE(&displs);
     LB_FREE(&leaf_list);
 
-    for (i=0; i<nproc; i++) reqsize_all[i] = reqsize_all[i]/sizeof(LB_GID);
+    for (i=0; i<nproc; i++) reqsize_all[i] = reqsize_all[i]/num_gid_entries;
 
   /* 
    * Create a list with the partial sums this processor has
@@ -340,7 +343,9 @@ float *req_weights;       /* the requested weights */
     }
 
     for (i=0; i<sum_reqsize; i++) {
-      node = LB_Reftree_hash_lookup(hashtab,all_leaflist[i],hashsize);
+      node = LB_Reftree_hash_lookup(lb, hashtab,
+                                    &(all_leaflist[i*num_gid_entries]),
+                                    hashsize);
       if (node == NULL)
          for (j=0; j<wdim; j++) send_float[i*wdim+j] = 0.0;
       else
@@ -375,7 +380,9 @@ float *req_weights;       /* the requested weights */
    */
 
     for (i=0; i<count; i++) {
-      node = LB_Reftree_hash_lookup(hashtab,all_leaflist[i+my_start],hashsize);
+      node = LB_Reftree_hash_lookup(lb, hashtab,
+                                  &(all_leaflist[(i+my_start)*num_gid_entries]),
+                                  hashsize);
       for (j=0; j<wdim; j++) node->summed_weight[j] = req_weights[i*wdim+j];
     }
 
@@ -418,9 +425,10 @@ LB_REFTREE *root;         /* Root of the refinement tree */
 int wdim;                 /* Dimension of the weight array */
 int i,j,comm_loop;        /* loop counters */
 int count;                /* counter */
-LB_GID *leaf_list;        /* leaves for which some proc requests weight */
+LB_ID_PTR leaf_list = NULL; 
+                          /* leaves for which some proc requests weight */
 int reqsize;              /* length of leaf_list */
-LB_GID *newlist;          /* building concatinated leaf_list of all procs */
+LB_ID_PTR newlist = NULL; /* building concatinated leaf_list of all procs */
 int newsize;              /* new length of leaf_list */
 int my_start;             /* position in leaf_list of this proc's list */
 int nproc;                /* number of processors */
@@ -433,6 +441,8 @@ struct LB_reftree_hash_node **hashtab; /* hash table */
 int hashsize;             /* dimension of hash table */
 float *send_float;        /* sending message of floats */
 float *req_weights;       /* the requested weights */
+int gid_off;              /* offset into array of global IDs. */
+int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
 
   /*
    * set the root and hash table
@@ -472,16 +482,16 @@ float *req_weights;       /* the requested weights */
    */
 
   if (count == 0)
-    leaf_list = (LB_GID *) LB_MALLOC(sizeof(LB_GID));
+    leaf_list = LB_MALLOC_GID(lb);
   else
-    leaf_list = (LB_GID *) LB_MALLOC(count*sizeof(LB_GID));
+    leaf_list = LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(LB_MEMERR);
   }
 
   count = 0;
-  LB_Reftree_List_Other_Leaves(root,leaf_list,&count);
+  LB_Reftree_List_Other_Leaves(lb, root,leaf_list,&count);
 
   /*
    * Get the unknown leaf weights from other processors.
@@ -524,19 +534,25 @@ float *req_weights;       /* the requested weights */
    */
 
     if (reqsize+newsize == 0)
-      newlist = (LB_GID *) LB_MALLOC(sizeof(LB_GID));
+      newlist = LB_MALLOC_GID(lb);
     else
-      newlist = (LB_GID *) LB_MALLOC((reqsize+newsize)*sizeof(LB_GID));
+      newlist = LB_MALLOC_GID_ARRAY(lb, (reqsize+newsize));
     if (newlist == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&leaf_list);
       return(LB_MEMERR);
     }
     if (myproc < other_proc) {
-      for (i=0; i<reqsize; i++) LB_SET_GID(newlist[i],leaf_list[i]);
+      for (i=0; i<reqsize; i++) {
+        gid_off = i * num_gid_entries;
+        LB_SET_GID(lb, &(newlist[gid_off]),&(leaf_list[gid_off]));
+      }
     }
     else {
-      for (i=0; i<reqsize; i++) LB_SET_GID(newlist[i+newsize],leaf_list[i]);
+      for (i=0; i<reqsize; i++) {
+        LB_SET_GID(lb, &(newlist[(i+newsize)*num_gid_entries]),
+                       &(leaf_list[i*num_gid_entries]));
+      }
       my_start += newsize;
     }
     LB_FREE(&leaf_list);
@@ -545,21 +561,20 @@ float *req_weights;       /* the requested weights */
   /*
    * Finally, exchange the lists
    */
-/* TEMP sending this as bytes won't work if the parallel machine consists
-        of machines with different representations (e.g. different byte
-        ordering) of whatever LB_GID is, but what else can we do? */
-
+    /* KDDKDD Changed MPI_BYTE to LB_ID_MPI_TYPE  */
 
     if (myproc < other_proc) {
-      MPI_Send((void *)leaf_list,reqsize*sizeof(LB_GID),MPI_BYTE,other_proc,
-               200+comm_loop,lb->Communicator);
-      MPI_Recv((void *)&(leaf_list[reqsize]),newsize*sizeof(LB_GID),MPI_BYTE,
+      MPI_Send((void *)leaf_list,reqsize*num_gid_entries,LB_ID_MPI_TYPE,
+               other_proc, 200+comm_loop,lb->Communicator);
+      MPI_Recv((void *)&(leaf_list[reqsize*num_gid_entries]),
+               newsize*num_gid_entries,LB_ID_MPI_TYPE,
                other_proc,200+comm_loop,lb->Communicator,&mess_status);
     }
     else {
-      MPI_Send((void *)&(leaf_list[newsize]),reqsize*sizeof(LB_GID),MPI_BYTE,
+      MPI_Send((void *)&(leaf_list[newsize*num_gid_entries]),
+                reqsize*num_gid_entries,LB_ID_MPI_TYPE,
                other_proc,200+comm_loop,lb->Communicator);
-      MPI_Recv((void *)leaf_list,newsize*sizeof(LB_GID),MPI_BYTE,
+      MPI_Recv((void *)leaf_list,newsize*num_gid_entries,LB_ID_MPI_TYPE,
                other_proc,200+comm_loop,lb->Communicator,&mess_status);
     }
 
@@ -578,7 +593,8 @@ float *req_weights;       /* the requested weights */
   }
 
   for (i=0; i<reqsize; i++) {
-    node = LB_Reftree_hash_lookup(hashtab,leaf_list[i],hashsize);
+    node = LB_Reftree_hash_lookup(lb, hashtab, &(leaf_list[i*num_gid_entries]),
+                                  hashsize);
     if (node == NULL)
        for (j=0; j<wdim; j++) send_float[i*wdim+j] = 0.0;
     else
@@ -608,7 +624,8 @@ float *req_weights;       /* the requested weights */
    */
 
   for (i=0; i<count; i++) {
-    node = LB_Reftree_hash_lookup(hashtab,leaf_list[i+my_start],hashsize);
+    node = LB_Reftree_hash_lookup(lb, hashtab,
+              &(leaf_list[(i+my_start)*num_gid_entries]),hashsize);
     for (j=0; j<wdim; j++) node->summed_weight[j] = req_weights[(i+my_start)*wdim+j];
   }
 
@@ -649,17 +666,19 @@ LB_REFTREE *root;         /* Root of the refinement tree */
 int wdim;                 /* Dimension of the weight array */
 int i,j,comm_loop,rproc;  /* loop counters */
 int count;                /* counter */
-LB_GID *leaf_list;        /* list of the leaves not assigned to this proc */
+LB_ID_PTR leaf_list = NULL; 
+                          /* list of the leaves not assigned to this proc */
 int nproc;                /* number of processors */
 int myproc;               /* this processor's processor number */
 MPI_Status mess_status;   /* status of an MPI message */
 int reqsize;              /* number of leaves for which weights are requested */
-LB_GID *recv_gid;         /* received message of LB_GIDs */
+LB_ID_PTR recv_gid = NULL;/* received message of global ids */
 LB_REFTREE *node;         /* a node in the refinement tree */
 struct LB_reftree_hash_node **hashtab; /* hash table */
 int hashsize;             /* dimension of hash table */
 float *send_float;        /* sending message of floats */
 float *recv_float;        /* received message of floats */
+int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
 
   /*
    * set the root and hash table
@@ -699,16 +718,16 @@ float *recv_float;        /* received message of floats */
    */
 
   if (count == 0)
-    leaf_list = (LB_GID *) LB_MALLOC(sizeof(LB_GID));
+    leaf_list = LB_MALLOC_GID(lb);
   else
-    leaf_list = (LB_GID *) LB_MALLOC(count*sizeof(LB_GID));
+    leaf_list = LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(LB_MEMERR);
   }
 
   count = 0;
-  LB_Reftree_List_Other_Leaves(root,leaf_list,&count);
+  LB_Reftree_List_Other_Leaves(lb, root,leaf_list,&count);
 
   /*
    * Get the unknown leaf weights from other processors.
@@ -741,7 +760,7 @@ float *recv_float;        /* received message of floats */
    */
 
       if (myproc != comm_loop) {
-        recv_gid = (LB_GID *)LB_MALLOC(reqsize*sizeof(LB_GID));
+        recv_gid = LB_MALLOC_GID_ARRAY(lb, reqsize);
         if (recv_gid == NULL) {
           LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           LB_FREE(&leaf_list);
@@ -753,16 +772,14 @@ float *recv_float;        /* received message of floats */
    * broadcast the list of leaves processor comm_loop needs to know
    */
 
-/* TEMP sending this as bytes won't work if the parallel machine consists
-        of machines with different representations (e.g. different byte
-        ordering) of whatever LB_GID is, but what else can we do? */
+      /* KDDKDD Changed MPI_BYTE to LB_ID_MPI_TYPE  */
 
       if (myproc == comm_loop)
-        MPI_Bcast((void *)leaf_list,reqsize*sizeof(LB_GID),MPI_BYTE,comm_loop,
-                  lb->Communicator);
+        MPI_Bcast((void *)leaf_list,reqsize*num_gid_entries,LB_ID_MPI_TYPE,
+                   comm_loop, lb->Communicator);
       else
-        MPI_Bcast((void *)recv_gid,reqsize*sizeof(LB_GID),MPI_BYTE,comm_loop,
-                  lb->Communicator);
+        MPI_Bcast((void *)recv_gid,reqsize*num_gid_entries,LB_ID_MPI_TYPE,
+                   comm_loop, lb->Communicator);
 
   /*
    *  Reply with any weights I have, and 0. where I don't have it
@@ -779,7 +796,9 @@ float *recv_float;        /* received message of floats */
         }
 
         for (i=0; i<reqsize; i++) {
-          node = LB_Reftree_hash_lookup(hashtab,recv_gid[i],hashsize);
+          node = LB_Reftree_hash_lookup(lb, hashtab,
+                                        &(recv_gid[i*num_gid_entries]),
+                                        hashsize);
           if (node == NULL)
              for (j=0; j<wdim; j++) send_float[i*wdim+j] = 0.0;
           else
@@ -809,7 +828,9 @@ float *recv_float;        /* received message of floats */
                    100+comm_loop, lb->Communicator,&mess_status);
 
           for (i=0; i<reqsize; i++) {
-            node = LB_Reftree_hash_lookup(hashtab,leaf_list[i],hashsize);
+            node = LB_Reftree_hash_lookup(lb, hashtab,
+                                          &(leaf_list[i*num_gid_entries]),
+                                          hashsize);
             for (j=0; j<wdim; j++) node->summed_weight[j] += recv_float[i];
           }
         }
@@ -937,7 +958,8 @@ int i, j;   /* loop counter */
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Reftree_List_Other_Leaves(LB_REFTREE *subroot, LB_GID *list, int *count)
+void LB_Reftree_List_Other_Leaves(LB *lb, LB_REFTREE *subroot, LB_ID_PTR list, 
+                                  int *count)
 
 {
 /*
@@ -953,7 +975,7 @@ int j;   /* loop counter */
    */
 
     if (!subroot->assigned_to_me) {
-      LB_SET_GID(list[*count],subroot->global_id);
+      LB_SET_GID(lb, &(list[(*count)*lb->Num_GID]),subroot->global_id);
       *count += 1;
     }
 
@@ -965,7 +987,7 @@ int j;   /* loop counter */
    */
 
     for (j=0; j<subroot->num_child; j++) {
-      LB_Reftree_List_Other_Leaves(&(subroot->children[j]),list,count);
+      LB_Reftree_List_Other_Leaves(lb, &(subroot->children[j]),list,count);
     }
   }
 }
@@ -973,8 +995,8 @@ int j;   /* loop counter */
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Reftree_Partition(LB *lb, int *num_export, LB_GID **export_global_ids,
-                         LB_LID **export_local_ids, int **export_procs)
+int LB_Reftree_Partition(LB *lb, int *num_export, LB_ID_PTR *export_global_ids,
+                         LB_ID_PTR *export_local_ids, int **export_procs)
 
 {
 /*
@@ -1176,8 +1198,8 @@ int i;
 /*****************************************************************************/
 
 void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, int *num_export,
-                            LB_GID **export_global_ids,
-                            LB_LID **export_local_ids, int **export_procs)
+                            LB_ID_PTR *export_global_ids,
+                            LB_ID_PTR *export_local_ids, int **export_procs)
 {
 /*
  * Function to build the export lists
@@ -1198,8 +1220,10 @@ int i;
  * if this is a leaf, put it on the export lists
  */
 
-    LB_SET_GID((*export_global_ids)[*num_export],subroot->global_id);
-    LB_SET_LID((*export_local_ids)[*num_export],subroot->local_id);
+    LB_SET_GID(lb, &((*export_global_ids)[(*num_export)*lb->Num_GID]),
+               subroot->global_id);
+    LB_SET_LID(lb, &((*export_local_ids)[(*num_export)*lb->Num_LID]),
+               subroot->local_id);
     (*export_procs)[*num_export] = subroot->partition;
     *num_export += 1;
 

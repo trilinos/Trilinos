@@ -23,8 +23,8 @@
 /* The main refinement tree structure */
 
 struct LB_Reftree_Struct {
-   LB_GID global_id;     /* global ID of the corresponding element */
-   LB_LID local_id;      /* local ID of the corresponding element */
+   LB_ID_PTR global_id;  /* global ID of the corresponding element */
+   LB_ID_PTR local_id;   /* local ID of the corresponding element */
    struct LB_Reftree_Struct *children; /* array of the children in the tree */
    int num_child;        /* number of children */
    float *weight;        /* weight of the node; dimension Obj_Weight_Dim */
@@ -52,7 +52,7 @@ typedef struct LB_Reftree_Struct LB_REFTREE;
 /* Hash table structures */
 
 struct LB_reftree_hash_node {
-  LB_GID gid;               /* Global id */
+  LB_ID_PTR gid;            /* Global id */
   LB_REFTREE *reftree_node; /* pointer to a node of the refinement tree */
   struct LB_reftree_hash_node *next;
 };
@@ -76,11 +76,14 @@ extern void LB_Reftree_Print(LB *lb,LB_REFTREE *subroot, int level);
 
 extern int LB_Reftree_Sum_Weights(LB *lb);
 
-extern LB_REFTREE* LB_Reftree_hash_lookup(struct LB_reftree_hash_node **hashtab,
-                                          LB_GID key, int n);
-extern void LB_Reftree_Hash_Insert(LB_REFTREE *reftree_node,
+extern LB_REFTREE* LB_Reftree_hash_lookup(LB *lb, 
+                                          struct LB_reftree_hash_node **hashtab,
+                                          LB_ID_PTR key, int n);
+extern void LB_Reftree_Hash_Insert(LB *lb, LB_REFTREE *reftree_node,
                             struct LB_reftree_hash_node **hashtab, int size);
 extern void LB_Reftree_Clear_Hash_Table(struct LB_reftree_hash_node **hashtab,
                                  int size);
+
+extern void LB_Get_Child_Order(LB *lb, int *order, int *ierr); /* TEMP child_order */
 
 #endif /* __REFTREE_CONST_H */
