@@ -8,6 +8,39 @@
 #define __cplusplus
 #endif
 
+/*
+ * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
+ * be undef'd here to avoid warnings when this file is included from another package.
+ * KL 11/25/02
+ */   
+#ifdef PACKAGE
+#undef PACKAGE
+#endif
+
+#ifdef PACKAGE_NAME
+#undef PACKAGE_NAME
+#endif
+
+#ifdef PACKAGE_BUGREPORT
+#undef PACKAGE_BUGREPORT
+#endif
+
+#ifdef PACKAGE_STRING
+#undef PACKAGE_STRING
+#endif
+
+#ifdef PACKAGE_TARNAME
+#undef PACKAGE_TARNAME
+#endif
+
+#ifdef PACKAGE_VERSION
+#undef PACKAGE_VERSION
+#endif
+
+#ifdef VERSION
+#undef VERSION
+#endif
+
 #ifdef HAVE_CONFIG_H
 #include "Teuchos_config.h"
 #endif
@@ -34,43 +67,77 @@
 
 // end of ScalarTraits configs
 
-#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT)
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
+#ifdef HAVE_IOSTREAM
 #include <iostream>
-#include <math.h>
-#include <string>
-using namespace std;
-
-#elif defined(TFLOP)
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <string>
-using std::string;
-#include <iostream>
+#elif defined(HAVE_IOSTREAM_H)
+#include <iostream.h>
+#endif
+  
+#ifdef HAVE_IOMANIP
 #include <iomanip>
+#else
+#include <iomanip.h>
+#endif
+
+#ifdef HAVE_CSTDIO
+#include <cstdio>
+#else
+#include <stdio.h>   
+#endif
+
+#ifdef HAVE_CSTDLIB
+#include <cstdlib>
+#else
+#include <stdlib.h>   
+#endif
+
+#ifdef HAVE_CASSERT
+#include <cassert>
+#else
+#include <assert.h>   
+#endif
+
+#ifdef HAVE_VECTOR
+#include <vector>
+#endif
+
+#ifdef HAVE_ALGORITHM
+#include <algorithm>
+#endif
+
+#ifdef HAVE_STRING
+#include <string>
+#else 
+#include <string.h>
+#endif
+
+#ifndef TFLOP
+#ifdef HAVE_CMATH
+#include <cmath>
+#else
+#include <math.h>  
+#endif
+#else /* TFLOP defined */
+#ifdef HAVE_IOMANIP
+#include <iomanip>
+#else
+#include <iomanip.h>  
+#endif
+#ifdef HAVE_STRING
+using std::string;
+#endif
+#ifdef HAVE_IOSTREAM
 using std::istream;
-using std::ostream;
+using std::ostream;  
+using std::cerr;
+using std::cout;
 using std::cerr;
 using std::cout;
 using std::endl;
+using std::swap;  
+#endif
 
-#else
-
-#include <cstdlib>
-#include <cstdio>
-#include <cassert>
-#include <iostream>
-#include <cmath>
-#include <string>
-using namespace std;
-
-#endif // end of SGI || SGI64 || SGI32 || CPLANT
-
+#endif
 
 #ifdef TEUCHOS_SIMULATE_BOOL
 
