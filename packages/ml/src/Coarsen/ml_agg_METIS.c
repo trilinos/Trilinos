@@ -1000,47 +1000,42 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
       /* Then, call METIS.                                                  */
       /* ****************************************************************** */
 
+#ifdef HAVE_ML_METIS
       if( N_parts < 8 ) {
 
 	i = 1; /* optype in the METIS manual */
 	numflag = 0;
-#ifdef HAVE_ML_METIS
 	METIS_EstimateMemory( &NrowsMETIS, xadj, adjncy, &numflag,
 			      &i, &nbytes );
 	
 	METIS_PartGraphRecursive (&NrowsMETIS, xadj, adjncy, vwgt, adjwgt,
 				  wgtflag, &numflag, &N_parts, options,
 				  &edgecut, part);
-#else
-	fprintf( stderr,
-		 "*ML*ERR* Compile with metis...\n");
-	exit( EXIT_FAILURE );
-#endif
       } else {
 	
 	i = 2;
 	numflag = 0;
-#ifdef HAVE_ML_METIS
+
 	METIS_EstimateMemory( &NrowsMETIS, xadj, adjncy, &numflag,
 			      &i, &nbytes );
-
+	
 	METIS_PartGraphKway (&NrowsMETIS, xadj, adjncy, vwgt, adjwgt,
 			     wgtflag, &numflag, &N_parts, options,
 			     &edgecut, part);
-#else
-	if( Amatrix->comm->ML_mypid == 0 ) {
-	  fprintf( stderr,
-		   "*ML*WRN* This function has been compiled without the configure\n"
-		   "*ML*WRN* option --with-ml_metis or --with-ml_metis\n"
-		   "*ML*WRN* I will put all the nodes in the same aggregate, this time...\n"
-		   "*ML*WRN* (file %s, line %d)\n",
-		   __FILE__,
-		   __LINE__);
-	}
-	for( i=0 ; i<NrowsMETIS ; i++ ) part[i] = 0;
-	N_parts = 1;
-#endif
       }
+#else
+      if( Amatrix->comm->ML_mypid == 0 ) {
+	fprintf( stderr,
+		 "*ML*WRN* This function has been compiled without the configure\n"
+		 "*ML*WRN* option --with-ml_metis\n"
+		 "*ML*WRN* I will put all the nodes in the same aggregate, this time...\n"
+		 "*ML*WRN* (file %s, line %d)\n",
+		 __FILE__,
+		 __LINE__);
+      }
+      for( i=0 ; i<NrowsMETIS ; i++ ) part[i] = 0;
+      N_parts = 1;
+#endif
       
       /* **************************************************************** */
       /* perform some checks. If aggregates with zero assigned nodes      */
