@@ -91,6 +91,16 @@ int main()
   //lineSearchParameters.setParameter("Method","More'-Thuente");
   lineSearchParameters.setParameter("Method","Full Step");
 
+  // Create the newton and  linear solver parameters sublist
+  NOX::Parameter::List& directionParameters = solverParameters.sublist("Direction");
+  NOX::Parameter::List& newtonParameters = directionParameters.sublist("Newton");
+  NOX::Parameter::List& linearSolverParameters = newtonParameters.sublist("Linear Solver");
+  linearSolverParameters.setParameter("Bifurcation Solve", "Default");
+// The following non-Default choices are still unproven research ideas
+//  linearSolverParameters.setParameter("Bifurcation Solve", "Nic");
+//  linearSolverParameters.setParameter("Bifurcation Solve", "NicDay");
+//  linearSolverParameters.setParameter("Bifurcation Solve", "Iterative Refinement");
+
   // Create the solver
   NOX::Solver::Manager solver(tpgrp, statusTestsCombo, solverParameters);
 

@@ -40,6 +40,7 @@ int main()
   int n = 100;
   double alpha = 0.0;
   double beta = 1.0;
+  int maxNewtonIters = 20;
 
   try {
 
@@ -72,7 +73,7 @@ int main()
     stepperList.setParameter("Initial Value", alpha);
     stepperList.setParameter("Final Value", 5.0);
     stepperList.setParameter("Max Continuation Steps", 100);
-    stepperList.setParameter("Max Nonlinear Iterations", 20);
+    stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
@@ -112,7 +113,7 @@ int main()
 
     // Set up the status tests
     NOX::StatusTest::NormF statusTestA(grp, 1.0e-8);
-    NOX::StatusTest::MaxIters statusTestB(20);
+    NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
     // Create the stepper  
