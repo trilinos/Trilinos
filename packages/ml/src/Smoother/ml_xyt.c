@@ -246,21 +246,36 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
 
   /* local variables */
 
+  int   *sums, *itmp, i;
+  int   node, nprocs;
+#ifdef not_any_more
   int   type;             /* type of next message */
   int   partner;          /* processor I exchange with */
   int   mask;             /* bit pattern identifying partner */
   int   hbit;             /* largest nonzero bit in nprocs */
   int   nprocs_small;     /* largest power of 2 <= nprocs */
-  int   node, nprocs;
   char *yo = "ML_gpartial_sum_int: ";
   int   partial_sum = 0, temp;
 
   USR_REQ     request;  /* Message handle */
+#endif
 
   /*********************** first executable statment *****************/
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
+  sums = (int *) ML_allocate(sizeof(int)*nprocs);
+  itmp = (int *) ML_allocate(sizeof(int)*nprocs);
+  for (i = 0; i < nprocs; i++) sums[i] = 0;
+  sums[node] = val;
+  ML_gsum_vec_int(&sums, &itmp, nprocs, comm );
+  val = 0;
+  for (i = 0; i < node; i++) val+= sums[i];
+  ML_free(itmp);
+  ML_free(sums);
+  return val;
+
+#ifdef not_any_more
 
   type            = 1998;
 
@@ -372,7 +387,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
     }
   }
   return(partial_sum);
-
+#endif
 } /* ML_gpartial_sum_int */
 
 
