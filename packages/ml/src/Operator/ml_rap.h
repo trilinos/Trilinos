@@ -49,6 +49,8 @@ extern void ML_get_matrix_row(ML_Operator *input_matrix,int N_requested_rows,
                               int **columns, double **values, 
                               int row_lengths[], int index);
 
+extern void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc);
+
 extern void ML_matmat_mult(ML_Operator *Amat, ML_Operator *Bmat, 
                            ML_Operator **Cmat);
 extern void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
