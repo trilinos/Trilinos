@@ -112,7 +112,7 @@ print <<ENDHTML;
 
 <!-- The following line actually invokes the download -->
 
-<META HTTP-EQUIV="Refresh" CONTENT="0;URL=$downloadfile">
+<META HTTP-EQUIV="Refresh" CONTENT="3;URL=$downloadfile">
 </HEAD>
 
 <!-- The "thank you" page, using SNL template. -->
@@ -169,6 +169,9 @@ Return to $pkg pages</a></font></b></td>
 <td VALIGN=TOP><!--MAIN CONTENT AREA STARTS HERE--><!----------------THIS IS A CHANGE AREA----------------><!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------><b><font face="Verdana, Arial, Helvetica"><font size=+2>Download Page&nbsp;</font></font></b>
 <p><!---------------END OF THIS CHANGE AREA---------------><!----------------THIS IS A CHANGE AREA----------------><!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
 <hr width="100%">
+<b>
+Download will begin in 3 seconds. <br>
+<b>
 <b>
 Thank you for downloading 
 <a href="$pkghome">$pkg</a>.
