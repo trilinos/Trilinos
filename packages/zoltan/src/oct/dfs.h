@@ -11,6 +11,6 @@
 
 #include "dfs_const.h"
 
-extern int  LB_dfs_SetIds(pOctant oct, int nprevoct);
+extern int  LB_dfs_SetIds(OCT_Global_Info *OCT_info, pOctant oct, int nprevoct);
 
 #endif

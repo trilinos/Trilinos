@@ -7,7 +7,7 @@
  ****************************************************************************/
 
 #include "lb_const.h"
-#include "octant_const.h"
+#include "octree_const.h"
 #include "costs.h"
 #include "octupdate_const.h"
 
@@ -18,7 +18,7 @@
  * all subtrees.
  */
 
-static void LB_costs_init(OCT_Global_Info *OCT_info,pOctant octant);
+static void  LB_costs_init(OCT_Global_Info *OCT_info,pOctant octant);
 static float LB_costs_subtree_compute(OCT_Global_Info *OCT_info,pOctant octant, int *seq);
 static float LB_costs_weight(pOctant octant);
 
@@ -29,24 +29,17 @@ static float LB_costs_weight(pOctant octant);
  * ATTN: This function may not be necessary anymore
  */
 static void LB_costs_init(OCT_Global_Info *OCT_info,pOctant octant) {
+
   pOctant children[8];                 /* children of the octant */
-/*
-  float *data;
-*/
   int i;                               /* index counter */
 
-  /*  OEN_attachDataI(octant, "NPID", -1);
-      SAFE_MALLOC(data,float*,sizeof(float));
-      OEN_attachDataP(octant, "COST", data);
-   */
-  POC_modify_newpid(octant, OCT_info->OCT_localpid);
-  POC_modify_cost(octant, 0);
+  LB_Oct_modify_newpid(octant, OCT_info->OCT_localpid);
+  LB_Oct_modify_cost(octant, 0);
   
-  if (!POC_isTerminal(octant)) {
-    POC_children(octant,children);
+  if (!LB_Oct_isTerminal(octant)) {
+    LB_Oct_children(octant,children);
     for (i=0; i<8; i++) {
-      /* if (POC_local(children[i])) */
-      if(POC_local(OCT_info, octant, i))
+      if(LB_POct_local(OCT_info, octant, i))
 	LB_costs_init(OCT_info,children[i]);
     }
   }
@@ -61,15 +54,12 @@ void LB_costs_free(OCT_Global_Info *OCT_info,pOctant octant) {
   pOctant children[8];                       /* children of the octant */
   int i;                                     /* index counter */
 
-  /* should free seq number? */
-  /* POC_modify_newpid(octant, OCT_localpid); */
-  POC_modify_cost(octant, 0);
+  LB_Oct_modify_cost(octant, 0);
 
-  if (!POC_isTerminal(octant)) {
-    POC_children(octant,children);
+  if (!LB_Oct_isTerminal(octant)) {
+    LB_Oct_children(octant,children);
     for (i=0; i<8; i++)
-      /* if (POC_local(children[i])) */
-      if(POC_local(OCT_info, octant, i))
+      if(LB_POct_local(OCT_info, octant, i))
 	LB_costs_free(OCT_info,children[i]);
   }
 }
@@ -87,30 +77,26 @@ void LB_costs_free(OCT_Global_Info *OCT_info,pOctant octant) {
  */
 static float LB_costs_subtree_compute(OCT_Global_Info *OCT_info,pOctant octant, int *seq) {
   pOctant children[8];                       /* the children of the octant */
-  float c;                                   /* cost of each subtree */
-  int i;                                     /* index counter */
+  float c = 0;                               /* cost of each subtree */
+  int i = 0;                                 /* index counter */
 
-#ifdef LGG_MIGOCT
-  POC_setID(octant,(*seq)++);               /* set new ID for local ordering */
-#endif /* LGG_MIGOCT */
-  c=0;                                           /* initialize cost variable */
+/* #ifdef LGG_MIGOCT */
+  LB_Oct_setID(octant,(*seq)++);               /* set new ID for local ordering */
+/* #endif  */ /* LGG_MIGOCT */
 
-  if (!POC_isTerminal(octant)) {
+  if (!LB_Oct_isTerminal(octant)) {
     /* get the children of each octant */
-    POC_children(octant,children);
-    
+    LB_Oct_children(octant,children);   
     /* sum the cost for each child to get octant's cost */
-    for (i=0; i<8; i++) {
-      /* if (children[i] && (POC_local(children[i]))) */
-      if(children[i] && POC_local(OCT_info, octant, i))
-	c += LB_costs_subtree_compute(OCT_info,children[i], seq);
-    }
+    for (i=0; i<8; i++) 
+      if(children[i] && LB_POct_local(OCT_info, octant, i))
+	c += LB_costs_subtree_compute(OCT_info,children[i], seq); 
   }
   else                                                           /* terminal */
     c=LB_costs_weight(octant);
 
-  /* attach the cost data to the octant */
-  POC_modify_cost(octant, c);
+  /* set the cost data to the octant */
+  LB_Oct_modify_cost(octant, c);
   return(c);
 }  
 
@@ -132,49 +118,19 @@ float LB_costs_value(pOctant oct)
  * subtrees in. 
  */
 float LB_costs_global_compute(OCT_Global_Info *OCT_info) {
-  int seq;                                    /* sequencing number */
-  float totcost;                              /* total cost local octree */
-#ifdef LGG_MIGOCT
-  int i;                                      /* index counter */
-  int nroot;                                  /* number of local roots */
-  pOctant *root;                              /* root of a subtree */
-#endif
-  pRList lroots;                              /* list of all local roots */
+  pRList  RootList;                           /* list of all local roots */
+  pOctant RootOct;
+  int     seq = 0;                            /* sequencing number */
+  float   totcost= 0;                         /* total cost local octree */
 
-  /* initialize variables */
-  seq=0;
-  totcost=0;
-
-#ifdef LGG_MIGOCT
-  /* get the roots in order */
-  LB_oct_roots_in_order(&root,&nroot);
-  {
-    for (i=0; i<nroot; i++) {
-      /* initialize octants for COST and NPID data tags */
-      LB_costs_init(OCT_info,root[i]);
-      /* calculate cost of all the subtree */
-      totcost+=LB_costs_subtree_compute(OCT_info,root[i], &seq);
-      /* fprintf(stderr, "Computing costs on local root %d.%d seq=%d tot=%f\n",
-       *         OCT_localpid, POC_id(root[i]), seq, totcost);
-       */
-    }
+  /* initialize octants for COST and NPID data tags */
+  /* and calculate cost of all the subtree */
+/*   LB_POct_printResults(OCT_info); */
+  RootList = LB_POct_localroots(OCT_info);
+  while((RootOct = RL_nextRootOctant(&RootList))) {
+    LB_costs_init(OCT_info, RootOct);
+    totcost+=LB_costs_subtree_compute(OCT_info, RootOct, &seq);
   }
-  LB_FREE(&root);
-#else
-  lroots = POC_localroots(OCT_info);
-  while(lroots != NULL) {
-    /* initialize octants for COST and NPID data tags */
-    LB_costs_init(OCT_info,lroots->oct);
-    /* calculate cost of all the subtree */
-    totcost+=LB_costs_subtree_compute(OCT_info,lroots->oct, &seq);
-    /* fprintf(stderr, "Computing costs on local root %d.%d seq=%d tot=%f\n",
-     *         OCT_localpid, POC_id(lroots->oct), seq, totcost);
-     */
-    lroots = lroots->next;
-  }
-
-#endif /* LGG_MIGOCT */
-
   return(totcost);
 }
 
@@ -187,7 +143,7 @@ static float LB_costs_weight(pOctant octant) {
   pRegion region;                                  /* a region from the list */
   float cost;                                      /* cost of the octant */
 
-  region = POC_regionlist(octant);
+  region = LB_Oct_regionlist(octant);
   cost=0;
 
   /* iterate through the region list, summing each of their weights */
@@ -195,6 +151,5 @@ static float LB_costs_weight(pOctant octant) {
     cost += region->Weight;
     region = region->next;
   }
-  
   return cost;
 }

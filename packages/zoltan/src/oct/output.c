@@ -108,6 +108,14 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   if (STATS_TYPE == 2)
     printf("    Proc %d max objs = %d\n",proc,counters[3]);
 
+  counters[3] += (counters[2] - counters[1]);
+  MPI_Allreduce(&counters[3],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&counters[3],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&counters[3],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
+  ave = ((double) sum)/nprocs;
+  if (proc == print_proc) 
+    printf(" Max objs on Proc: ave = %g, min = %d, max = %d\n",ave,min,max);
+
   MPI_Allreduce(&c[0],&sum1,1,MPI_FLOAT,MPI_SUM,lb->Communicator);
   MPI_Allreduce(&c[0],&min1,1,MPI_FLOAT,MPI_MIN,lb->Communicator);
   MPI_Allreduce(&c[0],&max1,1,MPI_FLOAT,MPI_MAX,lb->Communicator);

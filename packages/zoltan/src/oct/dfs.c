@@ -7,11 +7,12 @@
  ****************************************************************************/
 
 #include "lb_const.h"
-#include "octant_const.h"
+#include "octree_const.h"
 #include "dfs.h"
 #include "costs_const.h"
 #include "msg_const.h"
 #include "migoct_const.h"
+#include "migtags_const.h"
 #include "oct_util_const.h"
 
 static int CLOSE = 0;           /* determines criterion for visiting octants */
@@ -24,10 +25,10 @@ static float optcost;              /* Optimal partition cost */
 static float pmass;                /* octant volume for partition */
 static double pcoord[3];           /* Sum of octant position-volume products */
 
-static void LB_visit(OCT_Global_Info *OCT_info,pOctant octant);
-static void LB_visit_all_subtrees(OCT_Global_Info *OCT_info);
+static void LB_visit(LB *lb,pOctant octant);
+static void LB_visit_all_subtrees(LB *lb);
 static void LB_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int part);
-static void LB_visit_by_dist(OCT_Global_Info *OCT_info,pOctant octant, pOctant children[8]);
+static void LB_visit_by_dist(LB *lb,pOctant octant, pOctant children[8]);
 
 
 
@@ -38,31 +39,30 @@ static void LB_visit_by_dist(OCT_Global_Info *OCT_info,pOctant octant, pOctant c
  * This function calls the different subfunctions to partition the octree 
  */
 void LB_dfs_partition(LB *lb, int *counter, float *c1) {
-  float mycost,                     /* cost of the octant */
-        globalcost,                 /* costs of all the octants */
-        prefcost;                   /* sum of costs from previous processors */
-#ifdef LGG_MIGOCT
+  float mycost;                     /* cost of the octant */
+  float globalcost;                 /* costs of all the octants */
+  float prefcost;                   /* sum of costs from previous processors */
+/* #ifdef LGG_MIGOCT */
   int nprevoct;                     /* the number of previous octants */
-  pRList localroots;                /* list of the local roots */
-#endif
- OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  pRList RootList;                  /* list of the local roots */
+  pOctant RootOct;
+/* #endif */
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
 
   DFS_Part_Count = 0;
   *c1 = mycost = LB_costs_global_compute(OCT_info);
  
-#ifdef LGG_MIGOCT
+/* #ifdef LGG_MIGOCT */
   /* gets the number of octants from the previous processors */
-  nprevoct=LB_msg_int_scan(lb->Communicator, lb->Proc, POC_nOctants());
+  nprevoct=LB_msg_int_scan(lb->Communicator, lb->Proc, LB_Oct_nOctants());
 
-  /* add nprevoct to the id counter */
-  localroots = POC_localroots(OCT_info);                  /* get the local root list */
   /* iterate through, and advance each id by nprevocts */
   /* this is trying to make all the octant id's to be unquie globally */
-  while(localroots != NULL) {
-    LB_dfs_SetIds(localroots->oct, nprevoct);
-    localroots = localroots->next;
-  }
-#endif /* LGG_MIGOCT */
+  RootList = LB_POct_localroots(OCT_info);   
+  while((RootOct = RL_nextRootOctant(&RootList))) 
+    LB_dfs_SetIds(OCT_info, RootOct, nprevoct);
+  
+/* #endif */ /* LGG_MIGOCT */
 
   /* Sum a value from each processor, and return sum to all processors */
   MPI_Allreduce(&mycost,&globalcost,1,MPI_FLOAT,MPI_SUM,lb->Communicator);
@@ -70,7 +70,10 @@ void LB_dfs_partition(LB *lb, int *counter, float *c1) {
   
   /* Initialize static vars */
   optcost=globalcost/lb->Num_Proc;               /* Optimal partition size */
-  partition=(int)(prefcost/optcost);         /* Start work on this partition */
+  if(optcost > 0)
+    partition=(int)(prefcost/optcost);        /* Start work on this partition */
+  else
+    partition=0;
   if (partition==lb->Num_Proc)
     partition=lb->Num_Proc-1;
 
@@ -80,46 +83,41 @@ void LB_dfs_partition(LB *lb, int *counter, float *c1) {
   pmass=0.0;                            /* initialize octant volume variable */
   vector_set_comp(pcoord,0,0,0);
 
-#if 0 
-    LB_Print_Sync_Start(lb->Communicator, TRUE);
-    printf("Global %6.1f  Pref %6.1f  Opt %6.1f  Pnum %2d  Pcost %8.2f\n",
-	   globalcost,prefcost,optcost,partition,pcost);
-    LB_Print_Sync_End(lb->Communicator, TRUE);
-#endif
-
-  LB_visit_all_subtrees(OCT_info);
+  LB_visit_all_subtrees(lb);
 
   (*counter) = DFS_Part_Count;
 }
 
 
-#ifdef LGG_MIGOCT
+/* #ifdef LGG_MIGOCT */
 /*
  * int LB_dfs_SetIds(pOctant octant, int number_of_previous_octants)
  *
  * sets the ids of all the octants so that there is a global numbering
  */
-int LB_dfs_SetIds(pOctant oct, int nprevoct) {
+int LB_dfs_SetIds(OCT_Global_Info *OCT_info, pOctant oct, int nprevoct) {
   int id,                                      /* the id number of an octant */
       i;                                       /* index counter */
+  int pid;
   pOctant child;                               /* ith child of an octant */
 
-  if(POC_isTerminal(oct)) {
-    id = POC_id(oct);
-    POC_setID(oct, id+nprevoct);                     /* now have global id's */
+  if(LB_Oct_isTerminal(oct)) {
+    id = LB_Oct_id(oct);
+    LB_Oct_setID(oct, id+nprevoct);                     /* now have global id's */
   }
   else {
     for(i=0; i<8; i++) {
-      child = POC_child(oct, i);
-      if (child != NULL)
-	LB_dfs_SetIds(child, nprevoct);
+      child = LB_Oct_child(oct, i);
+      pid = LB_Oct_Cpid(oct,i);
+      if ((pid == OCT_info->OCT_localpid) && child != NULL)
+	LB_dfs_SetIds(OCT_info,child, nprevoct);
     }
-    id = POC_id(oct);
-    POC_setID(oct, id+nprevoct);                     /* now have global id's */
+    id = LB_Oct_id(oct);
+    LB_Oct_setID(oct, id+nprevoct);                     /* now have global id's */
   }
   return 0;
 }
-#endif /* LGG_MIGOCT */
+/* #endif */ /* LGG_MIGOCT */
 
 /*****************************************************************************/
 /*
@@ -127,20 +125,19 @@ int LB_dfs_SetIds(pOctant oct, int nprevoct) {
  *
  * visits each of the subtrees that are on the local processor
  */
-static void LB_visit_all_subtrees(OCT_Global_Info *OCT_info) {
-  pRList localroots;                              /* list of all local roots */
+static void LB_visit_all_subtrees(LB *lb) {
+  pRList  RootList;                           /* list of all local roots */
+  pOctant RootOct;
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
 
   /* get the list of all the local roots */
-  localroots = POC_localroots(OCT_info);
-
-  /* iterate through each root in localroot list */
-  while (localroots != NULL) {
-    LB_visit(OCT_info,localroots->oct);   /* mark each subtree as being LB_visited */
-#if 0
-    /* clear attached cost data (is it needed?) */
-    LB_costs_free(OCT_info,localroots->oct);
-#endif
-    localroots = localroots->next;
+  /* iterate through each root in localroot list */ 
+  /* mark each subtree as being LB_visited */
+  /* and free the costs */
+  RootList = LB_POct_localroots(OCT_info);
+  while ((RootOct = RL_nextRootOctant(&RootList))) {
+    LB_visit(lb, RootOct);  
+    LB_costs_free(OCT_info, RootOct);
   }
 }
 
@@ -155,7 +152,7 @@ static void LB_visit_all_subtrees(OCT_Global_Info *OCT_info) {
  *   pcost     - (RW) partition cost for current partition
  *   optcost   - (RO) optimal partition cost
  */
-static void LB_visit(OCT_Global_Info *OCT_info,pOctant octant) {
+static void LB_visit(LB *lb, pOctant octant) {
   float cost;                 /* Cost of this octant */
   float togo;                 /* Remaining room in current partition */
   float behind;               /* How many to make up for from all prev parts */
@@ -164,6 +161,7 @@ static void LB_visit(OCT_Global_Info *OCT_info,pOctant octant) {
   COORD origin;               /* center of the octant */
   double volume;              /* volume of the octant */
   double prod[3];             /* product of octant origin and its volume */
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
 
   DFS_Part_Count++;
   cost = LB_costs_value(octant);               /* get the cost of the octant */
@@ -174,7 +172,7 @@ static void LB_visit(OCT_Global_Info *OCT_info,pOctant octant) {
     LB_tag_subtree(OCT_info,octant,partition);
     pcost+=cost;
     
-    POC_origin_volume(octant, origin, &volume);
+    LB_Oct_origin_volume(octant, origin, &volume);
     
     vector_cmult(prod,volume,origin);
     pmass+=volume;
@@ -188,20 +186,19 @@ static void LB_visit(OCT_Global_Info *OCT_info,pOctant octant) {
    * visit them.
    */
   
-  if (!POC_isTerminal(octant)) {
-    POC_modify_newpid(octant, partition);                         /* Nonterm */
-    POC_children(octant,children);
+  if (!LB_Oct_isTerminal(octant)) {
+    LB_Oct_modify_newpid(octant, partition);                         /* Nonterm */
+    LB_Oct_children(octant,children);
 
     /* currently CLOSE is defined to be 0, a functionality not used */
     if (CLOSE) {
       i=0;
-      LB_visit_by_dist(OCT_info,octant,children);
+      LB_visit_by_dist(lb, octant, children);
     }
     else
       for (i=0; i<8; i++)                    /* Simple - just visit in order */
-	/* if (children[i] && POC_local(children[i])) */
-	if(children[i] && POC_local(OCT_info, octant,i))
-	  LB_visit(OCT_info,children[i]);
+	if(children[i] && LB_POct_local(OCT_info, octant,i))
+	  LB_visit(lb,children[i]);
     return;
   }
   
@@ -212,7 +209,7 @@ static void LB_visit(OCT_Global_Info *OCT_info,pOctant octant) {
    */
   togo = behind + optcost - pcost;
 
-  if ((cost-togo) >= togo ) {
+  if ((cost-togo) >= togo) {
     /*
      * End current partition and start new one. We are more "over" than "under"
      */
@@ -224,11 +221,10 @@ static void LB_visit(OCT_Global_Info *OCT_info,pOctant octant) {
   }
 
   /*** Add terminal octant to current partition */
-  POC_modify_newpid(octant, partition);
+  LB_Oct_modify_newpid(octant, partition);
   pcost += cost;
 
-  /* POC_size_and_origin(octant, size, origin); */
-  POC_origin_volume(octant, origin, &volume);
+  LB_Oct_origin_volume(octant, origin, &volume);
 
   vector_cmult(prod,volume,origin);
   pmass += volume;
@@ -246,17 +242,17 @@ static void LB_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int part) {
   int i;                                               /* index counter */
 
   /* modify NPID so octant know where to migrate to */
-  POC_modify_newpid(octant, part);
+  LB_Oct_modify_newpid(octant, part);
 
-  if (POC_isTerminal(octant))
+  if (LB_Oct_isTerminal(octant))
     return;
 
   /* if octant has children, have to tag them too */
-  POC_children(octant,children);
+  LB_Oct_children(octant,children);
   
   for (i=0; i<8; i++)                        /* Simple - just visit in order */
-    /* if (children[i] && POC_local(OCT_info, children[i])) */
-    if(children[i] && POC_local(OCT_info, octant,i))
+    /* if (children[i] && LB_Oct_local(OCT_info, children[i])) */
+    if(children[i] && LB_POct_local(OCT_info, octant,i))
       LB_tag_subtree(OCT_info,children[i],part);
 }
 
@@ -272,23 +268,25 @@ void LB_dfs_migrate(LB *lb, int *nsentags,
 		    pRegion *import_regs, int *nrectags, 
 		    float *c2, float *c3, int *counter3, int *counter4) 
 {
-  pRList lroots;                              /* list of all local roots */
+  pRList RootList;                  /* list of the local roots */
   pOctant oct;                                /* octree octant */
   pOctant *docts = NULL;                      /* array of octants being sent */
   int *dpids = NULL;                          /* array of octant pids */
   int dcount;                                 /* count of octants being sent */
   int pid;                                    /* processor id */
+  int nrecocts;
   OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  char *yo = "LB_dfs_migrate";
 
-  if(POC_nOctants()) {          /* allocate space for octants being migrated */
-    docts = (pOctant *) LB_MALLOC(POC_nOctants() * sizeof(pOctant));
+  if(LB_Oct_nOctants()) {        /* allocate space for octants being migrated */
+    docts = (pOctant *) LB_MALLOC(LB_Oct_nOctants() * sizeof(pOctant));
     if(!docts) {
-      fprintf(stderr, "Dfs_Migrate: cannot allocate arrays.\n");
+      LB_PRINT_ERROR(lb->Proc, yo, "cannot allocate arrays.");
       abort();
     }
-    dpids = (int *) LB_MALLOC(POC_nOctants() * sizeof(int));
+    dpids = (int *) LB_MALLOC(LB_Oct_nOctants() * sizeof(int));
     if(!dpids) {
-      fprintf(stderr, "Dfs_Migrate: cannot allocate arrays.\n");
+      LB_PRINT_ERROR(lb->Proc, yo, "cannot allocate arrays.");
       LB_FREE(&docts);
       abort();
     }
@@ -297,57 +295,36 @@ void LB_dfs_migrate(LB *lb, int *nsentags,
   dcount=0;
 
   /* go through the local octants and make sure each has a valid npid */
-  lroots = POC_localroots(OCT_info);
-  while(lroots != NULL) { 
-    for (oct=lroots->oct; oct; oct=POC_nextDfs(oct)) {
-      pid = POC_data_newpid(oct);
+  RootList = LB_POct_localroots(OCT_info);  
+
+  while((oct = RL_nextRootOctant(&RootList))) 
+    while(oct) {
+      pid = LB_Oct_data_newpid(oct);
       if (pid<0 || pid>=lb->Num_Proc) {
 	fprintf(stderr,"%d LB_dfs_migrate: bad dest pid %d\n", lb->Proc, pid);
 	abort();
       }
-      docts[dcount]=oct;
-      dpids[dcount++]=pid;
+      if (dcount<LB_Oct_nOctants()) {   
+	docts[dcount]=oct;
+	dpids[dcount]=pid;
+      }
+      oct=LB_POct_nextDfs(OCT_info, oct);
+      dcount++;
     }
-    lroots = lroots->next;
-  }
 
-  if (dcount!=POC_nOctants()) {
-    fprintf(stderr, "ERROR: in LB_dfs_migrate, octant count mismatch\n");
-    abort();
+  if (dcount!=LB_Oct_nOctants()) {
+    fprintf(stderr, "ERROR: in LB_dfs_migrate, octant count mismatch (I counted %d but there should be %d)\n",dcount, LB_Oct_nOctants());
+ /*    dcount=LB_Oct_nOctants();  */
+ /*    abort(); */
   }
 
   /* setup the import_regs */
-  LB_migrate_regions(lb, docts, dpids, dcount, nsentags, 
-		     import_regs, nrectags, c2, c3, counter3, counter4);
+  LB_Migrate_Objects(lb, docts, dpids, dcount, nsentags,
+                     import_regs, nrectags, c2, c3, counter3, counter4);
+  LB_Migrate_Octants(lb, dpids, docts, dcount, &nrecocts);
 
   LB_FREE(&docts);
   LB_FREE(&dpids);
-  
-#if 0
-  LB_Print_Sync_Start(lb->Communicator, TRUE);
-    printf("LB_dfs_migrate: sending %d regions\n",nregions);
-  LB_Print_Sync_End(lb->Communicator, TRUE);
-  {
-    pMesh mesh;
-    int local_meshregions, global_meshregions;
-    int global_migrate;
-
-    mesh=pmdb_get_pmesh(pmeshpb);
-    local_meshregions=M_nRegion(mesh);
-    global_meshregions=msg_int_sum(local_meshregions);
-
-    global_migrate=msg_int_sum(nregions);
-    
-    if(lb->Proc == 0) { 
-      printf("OCTPART volume: %8d of %8d = %.3f\n",
-	     global_migrate,global_meshregions,
-	     (double)global_migrate/global_meshregions);
-    }
-  }
-  
-  LB_migreg_migrate_regions(lb, pmeshpb,migregions,nregions,TRUE);
-  LB_FREE(&migregions);
-#endif
 }
 
 /*****************************************************************************/
@@ -356,7 +333,7 @@ void LB_dfs_migrate(LB *lb, int *nsentags,
  *
  * tries to find the closest child to add to the partition 
  */
-static void LB_visit_by_dist(OCT_Global_Info *OCT_info,pOctant octant, pOctant children[8])
+static void LB_visit_by_dist(LB *lb,pOctant octant, pOctant children[8])
 {
   COORD min,                    /* min bounds of the octant */
         max;                    /* max bounds of the octant */
@@ -367,16 +344,17 @@ static void LB_visit_by_dist(OCT_Global_Info *OCT_info,pOctant octant, pOctant c
   COORD pcentroid;              /* centroid of the octant */
   int i;                        /* index counter */
   int minchild;                 /* lowest numbered child */
-  double dist,                  /* distance */
-         mindist;               /* lowest distance */
+  double dist;                  /* distance */
+  double mindist;               /* lowest distance */
   int visited[8];               /* flag showing which child has been visited */
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
 
   /* initializing data */
   mindist=0;
   pcentroid[0] = pcentroid[1] = pcentroid[2] = 0;
 
   /* get the bounds of the octant */
-  POC_bounds(octant,min,max);
+  LB_Oct_bounds(octant,min,max);
 
   /* use bounds to find octant's origin */
   LB_bounds_to_origin(min,max,origin);
@@ -388,8 +366,8 @@ static void LB_visit_by_dist(OCT_Global_Info *OCT_info,pOctant octant, pOctant c
     LB_bounds_to_origin(cmin[i],cmax[i],corigin[i]);
   }
   
- 
-  for(minchild=0; minchild>=0; ) {        /* Visit child closest to centroid */
+  /* Visit child closest to centroid */
+  for(minchild=0; minchild>=0; ) {      
     minchild= -1;
     
     if (pmass>0)
@@ -397,8 +375,8 @@ static void LB_visit_by_dist(OCT_Global_Info *OCT_info,pOctant octant, pOctant c
     
     /* for each of the child, find the one with the closest distance */
     for (i=0; i<8; i++)
-      /* if ((POC_local(children[i])) && (!visited[i])) { */
-      if(POC_local(OCT_info, octant, i) && !visited[i]) {
+      /* if ((LB_POct_local(children[i])) && (!visited[i])) { */
+      if(LB_POct_local(OCT_info, octant, i) && !visited[i]) {
 	dist=vector_dist(pcentroid,corigin[i]);
 	if (pmass==0 || minchild<0 || dist<mindist) {
 	  mindist=dist;
@@ -408,8 +386,9 @@ static void LB_visit_by_dist(OCT_Global_Info *OCT_info,pOctant octant, pOctant c
 
     if (minchild>=0) {
       /* visit that child, so that it can be pu into the partition */
-      LB_visit(OCT_info,children[minchild]);
-      visited[minchild]=1;          /* mark the child as having been visited */
+      LB_visit(lb, children[minchild]);
+      /* mark the child as having been visited */
+      visited[minchild]=1;        
     }
   }
 }

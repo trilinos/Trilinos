@@ -21,5 +21,6 @@ static void    LB_oct_global_dref(LB *, OCT_Global_Info *OCT_info);
 static int     LB_oct_subtree_dref(LB *, OCT_Global_Info *OCT_info,pOctant oct);
 static void    LB_oct_terminal_coarsen(LB *, OCT_Global_Info *OCT_info,pOctant oct);
 static void    LB_oct_set_maxregions(int max);
-
+static void    LB_oct_set_minregions(int min);
+static void    LB_oct_global_clear(OCT_Global_Info * OCT_info);
 #endif

@@ -8,475 +8,653 @@
 
 #include <unistd.h>
 #include "lb_const.h"
-#include "octant_const.h"
+#include "octree_const.h"
 #include "migoct_const.h"
 #include "comm_const.h"
 #include "all_allo_const.h"
 
 /* function prototypes */
-/* static void tag_regions(pOctant *octs, int *newpids, int nocts,
-                        LB_TAG **export_tags, int *nsentags, int **tag_pids,
-                        LB_TAG **kept_tags, int *nkeptags); */
-static void tag_regions(LB *, pOctant *octs, int *newpids, int nocts,
-                        Region **export_tags, LB_ID_PTR *export_gids, LB_ID_PTR *export_lids, int *nsentags, int **tag_pids,
-                        Region **prev_tags, LB_ID_PTR *prev_gids, LB_ID_PTR *prev_lids, int *npimtags, float *c2,
-                        int *max_objs);
 
-/* static void malloc_new_objects(int ntags, LB_TAG *tags, int *tag_pids,
-                               int *nrectags, LB_TAG **import_tags,
-                               LB_TAG *kept_tags, int nkeptags); */
-static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
-                               LB_ID_PTR export_gids, LB_ID_PTR export_lids,
-                               int *tag_pids, int *nrectags,
-                               pRegion *import_tags, pRegion prev_tags,
-                               LB_ID_PTR prev_gids, LB_ID_PTR prev_lids,
-                               int npimtags, float *c3);
+static int LB_Update_Connections(LB *lb, pOctant *octs, int *newpids, pOctant *newocts, int nocts);
 
-/* void LB_fix_tags(LB_TAG **export_tags, int *nsentags, LB_TAG **import_tags,
- *	            int *nrectags, LB_TAG *prev_regs, int npimregs,
- *	            pRegion import_regs, pRegion export_regs);
- */
+static int LB_Final_Migration(LB *lb, pOctant *octs, int *newpids, pOctant *newocts, int nocts, int nrecocts);
 
-/* 
- * void LB_migrate_regions(LB *lb, pOctant *octants, int *newpids, 
- *                         int number_of_octants,
- *                         LB_TAG **export_tags, int *number_of_sent_tags,
- *                         LB_TAG **import_tags, int *number_of_received_tags)
- *
- * sets up the export_tags, and import_tags for the application that called
- * this load balancing routine 
- */
-void LB_migrate_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
-		        int *nsenregs, 
-		        pRegion *import_regions, int *nrecregs,
-		        float *c2, float *c3, int *counter3, int *counter4)
+#define MigOctCommCreate 32760
+#define MigOctCommDo 32761
+#define MigOctCommReverse 32762
+#define MigUpdCommCreate 32763
+#define MigUpdCommDo 32764
+#define MigFinCommCreate 32765
+#define MigFinCommDo 32766
+#define RootListCommCreate 32767
+#define RootListCommDo  32768
+
+
+typedef struct
 {
-  int i    ;                /* index counter */
-  int *tag_pids;            /* array of which processors to send information */
-  int npimregs;             /* number of regions previously imported */
-  Region *pimreg;           /* previously imported regions */
-  LB_ID_PTR pim_gids;       /* global IDs of previously imported regions */
-  LB_ID_PTR pim_lids;       /* local IDs of previously imported regions */
-  LB_ID_PTR export_gids, export_lids;
-  Region *export_regions;
-  int max_objs;
+  int num;           /* requestor's number for this request */
+  pOctant ptr;       /* pointer that requestor asked for */
+} OCTNEW_msg;
 
-  *import_regions = export_regions = NULL;
+typedef struct
+{
+  pOctant oct;                /* Update link of oct */
+  int     childnum;           /* Update child (0-7) or parent (-1) */
+  pOctant newptr;             /* New pointer for child or parent */
+  int     newpid;             /* New pid for child or parent */
+} Update_msg;
 
-  /* tag all the regions to be exported */
-  tag_regions(lb, octs, newpids, nocts, &export_regions, &export_gids, &export_lids, nsenregs, &tag_pids, 
-	      &pimreg, &pim_gids, &pim_lids, &npimregs, c2, &max_objs);
+#define FILLUPDATEMSG(msg, octant, chnum, nptr, npid) { msg.oct = octant; \
+                                                        msg.childnum = chnum; \
+                                                        msg.newptr = nptr; \
+                                                        msg.newpid = npid; }
 
-  /* get all the region tags that are being imported */
-  malloc_new_objects(lb, *nsenregs, export_regions, export_gids, export_lids, tag_pids, nrecregs, 
-		     import_regions, pimreg, pim_gids, pim_lids, npimregs, c3);
+typedef struct
+{
+  pOctant ptr;            /* New location */
 
-  if(npimregs > 0){
-    LB_FREE(&pimreg);
-    LB_FREE(&pim_gids);
-    LB_FREE(&pim_lids);
+  int ppid;
+  pOctant parent;
+  int childnum;
+  int cpids[8];
+  pOctant children[8];
+
+  double min[3];
+  double max[3];
+
+  int id;              
+  int dir;
+  int mapidx;
+  int from;
+} Migrate_msg;
+
+#define FILLMIGRATEMSG(oct, NEW_OCTANTPTR, msg, proc)  { msg.ptr=NEW_OCTANTPTR; \
+                                            msg.parent = LB_Oct_parent(oct); \
+				            msg.ppid   = LB_Oct_Ppid(oct); \
+				            msg.childnum = LB_Oct_childnum(oct);  \
+				            msg.id = LB_Oct_id(oct); \
+				            msg.dir = LB_Oct_dir(oct); \
+				            LB_Oct_children(oct,msg.children);  \
+				            LB_Oct_cpids(oct,msg.cpids);  \
+				            LB_Oct_bounds(oct,msg.min,msg.max); \
+                                            msg.mapidx = LB_Oct_mapidx(oct); \
+                                            msg.from = proc; } 
+
+#define SETOCTFROMMIGRATEMSG(OCT_info, msg)  { LB_Oct_setID(msg.ptr,msg.id); \
+                                               LB_POct_setparent(OCT_info, msg.ptr, msg.parent, msg.ppid); \
+                                               LB_Oct_setchildnum(msg.ptr,msg.childnum); \
+                                               LB_Oct_setchildren(msg.ptr, msg.children, msg.cpids); \
+                                               LB_Oct_setbounds(msg.ptr, msg.min, msg.max); \
+                                               LB_Oct_setID(msg.ptr,msg.id); \
+                                               LB_Oct_setDir(msg.ptr,msg.dir); \
+                                               LB_Oct_setMapIdx(msg.ptr,msg.mapidx); }
+      
+int LB_Migrate_Octants(LB *lb, int *newpids, pOctant *octs, int nocts, int *nrecocts) {
+  int i,j = 0;
+  int nsends = 0;
+  int nreceives = 0;
+  int *despid = NULL;
+  OCTNEW_msg *snd_reply = NULL;
+  OCTNEW_msg *rcv_reply = NULL;
+  int ierr = LB_OK;
+  COMM_OBJ *comm_plan;        /* Object returned by communication routines */
+  char *yo = "LB_Migrate_Octants";
+  pOctant *newocts = NULL;                          /* New foreign octant pointers */
+
+  double time1;
+
+  time1 = MPI_Wtime();
+  if((newocts = (pOctant *) LB_MALLOC(sizeof(pOctant)*(nocts+10))) == NULL) {
+    LB_TRACE_EXIT(lb, yo);
+    return LB_MEMERR;
   }
 
-  LB_FREE(&export_regions);
-  LB_FREE(&export_gids);
-  LB_FREE(&export_lids);
+  for (i=0; i<nocts; i++)
+    newocts[i]=NULL;
 
-  if(max_objs > (*counter3))
-   (*counter3) = max_objs;
-   i = (max_objs - (*nsenregs) + (*nrecregs) - npimregs);
-   if(i > (*counter3))
-     (*counter3) = i;
-   (*counter4) = (*nrecregs) - npimregs;
 
-  /*  fprintf(stderr,"(%d) nrectags = %d\n", lb->Proc, (*nrecregs));
-   *  for(i=0; i<(*nrecregs); i++)
-   *    fprintf(stderr,"%d\n", (*import_regions)[i].Proc);
-   */
-  LB_FREE(&tag_pids);
+  /* count number of sends */
+
+  nsends=0;
+  for (i=0; i<nocts; i++)            
+    if (newpids[i]!=lb->Proc) 
+      nsends++;
+
+  /* build message array */
+
+/*   if(nsends > 0) { */
+    if((snd_reply = (OCTNEW_msg *) LB_MALLOC((nsends + 1) * sizeof(OCTNEW_msg))) == NULL) {
+      LB_TRACE_EXIT(lb, yo);
+      return LB_MEMERR;
+    }
+    if((despid = (int *) LB_MALLOC((nsends+10) * sizeof(int))) == NULL) {
+      LB_TRACE_EXIT(lb, yo);
+      LB_FREE(&snd_reply);
+      return LB_MEMERR;
+    }
+/*   } */
+/*   else { */
+/*     snd_reply = NULL; */
+/*     despid = NULL; */
+/*   } */
+
+  j = 0;
+  for (i=0; i<nocts; i++)                    
+    if (newpids[i]!=lb->Proc) {  
+      snd_reply[j].num = i;
+      despid[j++] = newpids[i];
+    }
+   
+  /* send messages */
+
+  ierr = LB_Comm_Create(&comm_plan, nsends, despid, lb->Communicator, MigOctCommCreate, &nreceives);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&snd_reply);
+    LB_FREE(&despid);
+    return (ierr);
+  }
+
+  if((rcv_reply = (OCTNEW_msg *) LB_MALLOC((nreceives + 1) * sizeof(OCTNEW_msg))) == NULL) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&snd_reply);
+    LB_FREE(&despid);
+    LB_FREE(&rcv_reply);
+    return LB_MEMERR;
+  }
+
+  ierr = LB_Comm_Do(comm_plan, MigOctCommDo, (char *) snd_reply,
+		    sizeof(OCTNEW_msg), (char *) rcv_reply);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&snd_reply);
+    LB_FREE(&despid);
+    LB_FREE(&rcv_reply);
+    return (ierr);
+  }
+    /* Reply to malloc requests and Receive malloc replies */
+    
+  for (i=0; i< nreceives; i++) {  
+    rcv_reply[i].ptr = LB_POct_new((OCT_Global_Info *) (lb->Data_Structure)); 
+  }
+;
+  ierr = LB_Comm_Do_Reverse(comm_plan, MigOctCommReverse, (char *) rcv_reply,
+			    sizeof(OCTNEW_msg), NULL, (char *) snd_reply);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&snd_reply);
+    LB_FREE(&despid);
+    LB_FREE(&rcv_reply);
+    return (ierr);
+  }
+  
+
+
+  /* store remote pointers locally for future migration */
+  for (i=0; i<nsends; i++) {                  
+    newocts[snd_reply[i].num] = snd_reply[i].ptr;
+  }
+    
+  ierr = LB_Comm_Destroy(&comm_plan);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&snd_reply);
+    LB_FREE(&despid);
+    LB_FREE(&rcv_reply);
+    return (ierr);
+  }
+
+
+  LB_FREE(&snd_reply);
+  LB_FREE(&despid);
+  LB_FREE(&rcv_reply);
+
+  /* set return value */
+
+  *nrecocts = nreceives;
+  ierr = LB_Update_Connections(lb, octs, newpids, newocts, nocts);
+  if(ierr != LB_OK && ierr != LB_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    abort();
+    return (ierr);
+  }
+  ierr = LB_Final_Migration(lb, octs,newpids,newocts,nocts, *nrecocts);
+  if(ierr != LB_OK && ierr != LB_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    abort();
+    return (ierr);
+  }
+  
+  LB_Update_Map(lb);
+
+  LB_FREE(&newocts);
+  return ierr;
 }
 
 /*
- * void tag_regions()
- * Iterates through the list of octants on the processor and finds which
- * are to be migrated. It then looks at the region list for those octants 
- * and stores the migrating regions into the export_tags array.
- */
-static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts, 
-			Region **export_tags, LB_ID_PTR *export_gids, LB_ID_PTR *export_lids, int *nsentags, int **tag_pids,
-			Region **prev_tags, LB_ID_PTR *prev_gids, LB_ID_PTR *prev_lids, int *npimtags, float *c2,
-			int *max_objs)
-{
-  char *yo = "tag_regions";
-  int i;            /* index counter */
-  pRegion regionlist;   /* list of region on this processor */
-  int index;            /* index counter */
-  int index2;           /* yet another index counter */
-  int count;            /* count of objects exported form this processor */
-  int count2;           /* count of objects that are kept on processor */
-  int *export_pids;     /* array of pids where regions are being exported to */
-  pRegion mtags;        /* object tags of objects to be migrated */
-  pRegion ptags;        /* tags of objects that were previously migrated */
-  float ex_load;
-  int num_gid_entries = lb->Num_GID;
-  int num_lid_entries = lb->Num_LID;
-
-  ex_load = 0;
-  (*max_objs) = 0;
-
-  /* check for migrating, pointer should not be larger than an int */
-#ifdef KDDKDD
-/* KDD  Don't know why this test is needed   6/2000 */
-  if (sizeof(int)<sizeof(pOctant)) {
-    fprintf(stderr,"OCT %s: Fatal error, sizeof(int)<sizeof(ptr)\n", yo);
-    abort();
-  }
-#endif
-
-  if (!nsentags) 
-    return;
-
-  /* find how many objects are being sent */
-  count = 0;
-  count2 = 0;
-  
-  for (i=0; i<nocts; i++) {
-    /* if newpids != lb->Proc, then it is being migrated */
-    if(POC_isTerminal(octs[i])) {
-      (*max_objs) += POC_nRegions(octs[i]);
-      if (newpids[i]!=lb->Proc) {
-	count+=POC_nRegions(octs[i]);
-      }
-      else {
-	pRegion regions;
-
-	regions = POC_regionlist(octs[i]);
-	while(regions != NULL) {
-	  if(regions->Proc != lb->Proc)
-	    count2++;
-	  regions = regions->next;
-	}
-      }
-    }
-  }
-  
-  /* set up the return pointers */
-  *nsentags = count;
-  *npimtags = count2;
-  
-  if (!export_tags) {
-    fprintf(stderr, "OCT %s: return code reached\n", yo);
-    return;
-  }
-
-  if (count > 0) {
-    /* allocate some space */
-    mtags = (pRegion) LB_MALLOC((unsigned)count * sizeof(Region));
-    export_pids = (int *) LB_MALLOC((unsigned)count * sizeof(int));
-    if(export_pids == NULL) {
-      fprintf(stderr, "OCT ERROR: unable to malloc export_pids in %s\n", yo);
-      abort();
-    }
-    if(mtags == NULL) {
-      fprintf(stderr, "OCT ERROR: unable to malloc mtags in %s\n", yo);
-      abort();
-    }
-    *export_gids = LB_MALLOC_GID_ARRAY(lb, count);
-    *export_lids = LB_MALLOC_LID_ARRAY(lb, count);
-    if(!(*export_gids) || (num_lid_entries && !(*export_lids))) {
-      fprintf(stderr, "OCT ERROR: Insuffcient memory in %s\n", yo);
-      abort();
-    }
-  }
-  else {
-    mtags = NULL;
-    export_pids = NULL;
-    *export_gids = NULL;
-    *export_lids = NULL;
-  }
-  /* set up return pointers */
-  *export_tags=mtags;
-  *tag_pids = export_pids;
-  
-  if (count2 > 0) {
-    /* allocate some space */
-    ptags = (pRegion) LB_MALLOC((unsigned)count2 * sizeof(Region));
-    if(ptags == NULL) {
-      fprintf(stderr, "OCT (%d)ERROR: unable to malloc %d ptags in %s\n",
-	      lb->Proc, count2, yo);
-      abort();
-    }
-    *prev_gids = LB_MALLOC_GID_ARRAY(lb, count2);
-    *prev_lids = LB_MALLOC_LID_ARRAY(lb, count2);
-    if(!(*prev_gids) || (num_lid_entries && !(*prev_lids))) {
-      fprintf(stderr, "OCT ERROR: Insufficient memory in %s\n", yo);
-      abort();
-    }
-  }
-  else {
-    ptags = NULL;
-    *prev_gids = NULL;
-    *prev_lids = NULL;
-  }
-  
-  /* set up return pointers */
-  *prev_tags=ptags;
-  
-  index = index2 = 0;
-  for (i=0; i<nocts; i++) {
-    if(POC_isTerminal(octs[i])) {
-      if(newpids[i] != lb->Proc) {       /* octant being sent off processor */
-	/* get regions associated with the octant */
-	regionlist = POC_regionlist(octs[i]);
-	while(regionlist != NULL) {
-	  /* place information in the appropritate array */
-	  mtags[index] = *regionlist;
-          LB_SET_GID(lb, &((*export_gids)[index*num_gid_entries]), regionlist->Global_ID);
-          LB_SET_LID(lb, &((*export_lids)[index*num_lid_entries]), regionlist->Local_ID);
-	  ex_load += (float)(regionlist->Weight);
-	  export_pids[index] = newpids[i];
-	  index++;                                      /* increment counter */
-	  regionlist = regionlist->next;                  /* get next region */
-	}
-      }
-      else if(count2 > 0){               /* octant is kept on this processor */
-	/* get regions associated with the octant */
-	regionlist=POC_regionlist(octs[i]);
-	while(regionlist != NULL) {
-	  if(regionlist->Proc != lb->Proc) {
-	    ptags[index2] = *regionlist;	   /* get region information */
-            LB_SET_GID(lb, &((*prev_gids)[index2*num_gid_entries]), regionlist->Global_ID);
-            LB_SET_LID(lb, &((*prev_lids)[index2*num_lid_entries]), regionlist->Local_ID);
-	    index2++;                                   /* increment counter */
-	  }
-	  regionlist = regionlist->next;                  /* get next region */
-	}
-      }
-    }
-  }
-  
-  if (index!=count) {                                         /* error check */
-    fprintf(stderr, "OCT ERROR in %s, inconsistent number of regions.", yo);
-    abort();
-  }
-  *c2 = ex_load;
-}
-
-/*
- * void malloc_new_objects(LB *lb, int number_of_sent_tags, LB_TAG *export_tags,
- *                         int *tag_pids, int *number_of_received_tags,
- *                         LB_TAG **import_tags)
+ * update_connections(octs,newpids,newocts,nocts)
  *
- * gets the tags being imported into this processor, and sets up the
- * import_tags array, and the nrectags array.
+ * Now that the new pid and pointer for each octant is known,
+ * send that data to the parent and children so that they can
+ * update their links.  Note: must delay handling of local pointers
+ * until all sends are complete, otherwise necessary info wil
+ * be overwritten.  After this function returns, all octants
+ * will have correct pointers for the post-migrated locations,
+ * and all that remains is to actually migrate the octants.
+ * 
  */
-static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags, 
-                               LB_ID_PTR export_gids, LB_ID_PTR export_lids,
-			       int *tag_pids, int *nrectags,
-			       pRegion *import_tags, pRegion prev_tags,
-                               LB_ID_PTR prev_gids, LB_ID_PTR prev_lids,
-			       int npimtags, float *c3)
+
+
+static int LB_Update_Connections(lb, octs,newpids,newocts,nocts)
+LB *lb;
+pOctant *octs;      /* octs[nocts]    */
+int *newpids;       /* newpids[nocts] */
+pOctant *newocts;   /* newocts[nocts] */
+int nocts;          /* number of octants leaving this processor */
 {
-  char *yo = "malloc_new_objects";
-  int i;                                  /* index counter */
-  int nreceives;                          /* number of messages received */
-  pRegion imp;                            /* array of tags being imported */
-  pRegion tmp = NULL;
-  LB_ID_PTR tmp_gids = NULL;
-  LB_ID_PTR tmp_lids = NULL;
-  int msgtag, msgtag2;
-  int j;
-  int ierr;
-  int num_gid_entries = lb->Num_GID;
-  int num_lid_entries = lb->Num_LID;
-  float im_load;
+  int i, j;
+  int nsends;
+  int nlocal;
+  int nreceives;
+  pOctant parent;
+  pOctant child;
+  int ppid;
+  int cpid;
+  int childnum;
+  int *despid = NULL;
+  Update_msg umsg;
+  Update_msg *localumsg = NULL;
+  Update_msg *remoteumsg = NULL;
+  Update_msg *rcv_umsg = NULL;
+  int localcount;
+  int remotecount;
+  int ierr = LB_OK;
+
+
   COMM_OBJ *comm_plan;           /* Object returned by communication routines */
+  char *yo = "LB_Update_Connections";
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *) lb->Data_Structure;
+  localcount=0;
+  remotecount=0;
 
-  im_load = 0;
-  msgtag = 32767;
-  ierr = LB_Comm_Create(&comm_plan, nsentags, tag_pids, lb->Communicator, 
-         msgtag, &nreceives);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    abort();
-  }
+  /* count number of sends */
+  nsends = 0;
+  for (i=0; i<nocts; i++)              
+    if (newpids[i]!=lb->Proc)
+      nsends++;
 
-  if (nreceives > 0) {
-    tmp = (pRegion) LB_MALLOC(nreceives * sizeof(Region));
-    tmp_gids = LB_MALLOC_GID_ARRAY(lb, nreceives);
-    tmp_lids = LB_MALLOC_LID_ARRAY(lb, nreceives);
-    if(tmp == NULL || !tmp_gids || (num_lid_entries && !tmp_lids)) {
-      fprintf(stderr,"OCT %s ERROR cannot allocate memory for import_objs.",yo);
-      abort();
+  nlocal = nocts-nsends;
+
+  if(nocts > 0) {
+    if((remoteumsg = (Update_msg *) LB_MALLOC((nocts+1) * sizeof(Update_msg)*9)) == NULL) {
+      LB_TRACE_EXIT(lb, yo);
+      return LB_MEMERR;
+    }
+    
+    if((localumsg  = (Update_msg *) LB_MALLOC((nocts+1) * sizeof(Update_msg)*9)) == NULL) {
+      LB_TRACE_EXIT(lb, yo);
+      LB_FREE(&remoteumsg);
+      return LB_MEMERR;
+    }
+    
+    if((despid = (int *) LB_MALLOC((nocts+1) * sizeof(int)*9)) == NULL) {
+      LB_TRACE_EXIT(lb, yo);
+      LB_FREE(&remoteumsg);
+      LB_FREE(&localumsg);
+      return LB_MEMERR;
     }
   }
-  
-  msgtag2 = 32766;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_tags, sizeof(Region),
-         (char *) tmp);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_FREE(&tmp);
-    LB_FREE(&tmp_gids);
-    LB_FREE(&tmp_lids);
-    abort();
+  else {
+    remoteumsg = NULL;
+    localumsg = NULL;
+    despid = NULL;
   }
+  localcount = 0;
+  remotecount = 0;
 
-  msgtag2--;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_gids, 
-                    sizeof(LB_ID_TYPE)*num_gid_entries, (char *) tmp_gids);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_FREE(&tmp);
-    LB_FREE(&tmp_gids);
-    LB_FREE(&tmp_lids);
-    abort();
-  }
-
-  if (num_lid_entries > 0) {
-    msgtag2--;
-    ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_lids, 
-                      sizeof(LB_ID_TYPE)*num_lid_entries, (char *) tmp_lids);
-    if (ierr != COMM_OK && ierr != COMM_WARN) {
-      fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
-              (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-      LB_FREE(&tmp);
-      LB_FREE(&tmp_gids);
-      LB_FREE(&tmp_lids);
-      abort();
+  for (i=0; i<nocts; i++)                       /* Send connection updates */
+    if (newpids[i]!=lb->Proc) {
+	parent = LB_Oct_parent(octs[i]); ppid   = LB_Oct_Ppid(octs[i]); childnum = LB_Oct_childnum(octs[i]);
+	if (parent) {                            /* Let parent of oct[i] know that it's moving   */
+	  if (ppid==lb->Proc) {
+	    FILLUPDATEMSG(localumsg[localcount], parent, childnum, newocts[i], newpids[i]);
+	    localcount++;
+	  }
+	  else {
+	    FILLUPDATEMSG(remoteumsg[remotecount], parent, childnum, newocts[i], newpids[i]);
+	    despid[remotecount++] = ppid;
+	  }
+	}
+	for (j=0; j<8; j++) {
+	  child = LB_Oct_child(octs[i],j);
+	  cpid = octs[i]->cpid[j];
+	  /* Tell child of oct[i] that it is moving */
+	  if (child) {
+	    if (cpid==lb->Proc) {
+	      /* NOTE: -1 signals PARENT   */
+	      FILLUPDATEMSG(localumsg[localcount], child, -1, newocts[i], newpids[i]);
+	      localcount++;
+	    }
+	    else {
+	      /* NOTE: -1 signals PARENT   */
+	      FILLUPDATEMSG(remoteumsg[remotecount], child, -1, newocts[i], newpids[i]); 
+	      despid[remotecount++] = cpid;
+	    }
+	  }
+	}
     }
+
+  ierr = LB_Comm_Create(&comm_plan, remotecount, despid, lb->Communicator,
+			MigUpdCommCreate, &nreceives);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&remoteumsg);
+    LB_FREE(&localumsg);
+    LB_FREE(&despid);
+    return (ierr);
   }
 
-  LB_Comm_Destroy(&comm_plan);
 
-  /* get each message sent, and store region in import array */
-  j=0;
-  for (i=0; i<nreceives; i++) {
-    im_load += tmp[i].Weight;
-    if(tmp[i].Proc != lb->Proc) {
-      j++;
+/*   if(nreceives > 0) { */
+    if((rcv_umsg = (Update_msg *) LB_MALLOC((nreceives +1) * sizeof(Update_msg)*9)) == NULL) {
+      LB_TRACE_EXIT(lb, yo);
+      LB_FREE(&remoteumsg);
+      LB_FREE(&localumsg);
+      LB_FREE(&despid);
+      return LB_MEMERR;
     }
-  }
-  
-  if((j + npimtags) != 0) {                   /* malloc import array */
-    imp = (pRegion) LB_MALLOC((j + npimtags) * sizeof(Region));
-    if(imp == NULL) {
-      fprintf(stderr, "OCT %s ERROR unable to malloc import array.", yo);
-      abort();
+
+    
+    ierr = LB_Comm_Do(comm_plan, MigUpdCommDo, (char *) remoteumsg,
+		      sizeof(Update_msg), (char *) rcv_umsg);
+    if(ierr != COMM_OK && ierr != COMM_WARN) {
+      LB_TRACE_EXIT(lb, yo);
+      LB_FREE(&remoteumsg);
+      LB_FREE(&localumsg);
+      LB_FREE(&despid);
+      LB_FREE(&rcv_umsg);
+      return (ierr);
     }
-  }
-  else
-    imp = NULL;
 
-  /* setup return pointer */
-  (*import_tags) = imp;
-
-  j=0;
-  for (i=0; i<nreceives; i++) {
-    if(tmp[i].Proc != lb->Proc) {
-      imp[j] = tmp[i];
-      imp[j].Global_ID = LB_MALLOC_GID(lb);
-      imp[j].Local_ID  = LB_MALLOC_LID(lb);
-      if (!(imp[j].Global_ID) || (num_lid_entries && !(imp[j].Local_ID))) {
-        fprintf(stderr, "OCT %s ERROR unable to malloc import array.", yo);
-        abort();
+/*   } */
+/*   else { */
+/*     rcv_umsg = NULL; */
+/*   } */
+  /* update new octants */
+  for (i=0; i< (localcount+nreceives); i++)  {   
+    if (i<localcount) 
+      umsg=localumsg[i];
+    else 
+      umsg=rcv_umsg[i-localcount];
+    if (umsg.childnum>=0) {
+      LB_Oct_setchild(umsg.oct,umsg.childnum,umsg.newptr);
+      LB_Oct_setCpid(umsg.oct,umsg.childnum,umsg.newpid);
+    }
+    else {
+      if((LB_Oct_data_newpid(umsg.oct) ==  OCT_info->OCT_localpid) ||
+	 ((LB_Oct_data_newpid(umsg.oct) !=  OCT_info->OCT_localpid) && (umsg.newpid == OCT_info->OCT_localpid)))
+	LB_POct_setparent(OCT_info, umsg.oct,umsg.newptr,umsg.newpid);
+      else {
+	umsg.oct->ppid = umsg.newpid;
+	umsg.oct->parent = umsg.newptr;
       }
-      LB_SET_GID(lb, imp[j].Global_ID, &(tmp_gids[i*num_gid_entries]));
-      LB_SET_LID(lb, imp[j].Local_ID,  &(tmp_lids[i*num_lid_entries]));
-      j++;
     }
   }
-  
-  if(npimtags > 0) {
-    for(i=0; i<npimtags; i++) {
-      imp[j] = prev_tags[i];
-      imp[j].Global_ID = LB_MALLOC_GID(lb);
-      imp[j].Local_ID  = LB_MALLOC_LID(lb);
-      if (!(imp[j].Global_ID) || (num_lid_entries && !(imp[j].Local_ID))) {
-        fprintf(stderr, "OCT %s ERROR unable to malloc import array.", yo);
-        abort();
-      }
-      LB_SET_GID(lb, imp[j].Global_ID, &(prev_gids[i*num_gid_entries]));
-      LB_SET_LID(lb, imp[j].Local_ID,  &(prev_lids[i*num_lid_entries]));
-      j++;
-    }
-  }
-  *nrectags = j;
 
-  LB_FREE(&tmp);
-  LB_FREE(&tmp_gids);
-  LB_FREE(&tmp_lids);
-
-  /*
-   * fprintf(stderr,
-   *     "(%d) nrectags = %d, nreceives = %d, nsentags = %d, nkeptags = %d\n", 
-   *     lb->Proc, (*nrectags), nreceives, nsentags, nkeptags);
-   */
-
-  if((*nrectags == 0) && (*import_tags != NULL)) {
-    fprintf(stderr, "OCT %s (%d) ERROR: import tags not empty but no tags "
-                    "received\n", yo, lb->Proc);
-    exit(1);
+  ierr = LB_Comm_Destroy(&comm_plan);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&remoteumsg);
+    LB_FREE(&localumsg);
+    LB_FREE(&despid);
+    LB_FREE(&rcv_umsg);
+    return (ierr);
   }
 
-  /*  for(i=0; i<(*nrectags); i++) {
-   *    fprintf(stderr,"%d -> %d\n", (*import_tags)[i].Proc, lb->Proc);
-   *  }
-   */  
-  *c3 = im_load;
+  LB_FREE(&remoteumsg);
+  LB_FREE(&localumsg);
+  LB_FREE(&rcv_umsg);
+  LB_FREE(&despid);
+  return ierr;
 }
 
-/*****************************************************************************/
 /*
- * void LB_fix_tags(LB_TAG **export_tags, int *number_of_sent_tags,
- *                  LB_TAG **import_tags, int *number_of_reveived_tags,
- *                  LB_TAG *kept_tags, int number_of_kept_tags)
+ * final_migration(octs,newpids,newocts,nocts,nrecocts)
  *
- * fixes the import tags so that region tags that were previously
- * exported aren't counted when imported back.
+ * send updated octants to their new processors and delete them
+ * locally
+ *
  */
-void LB_fix_tags(LB *lb, 
-                 LB_ID_PTR *import_global_ids, LB_ID_PTR *import_local_ids,
-                 int **import_procs, int nrectags, pRegion import_regs)
+
+static int LB_Final_Migration(lb, octs,newpids,newocts,nocts,nrecocts)
+LB *lb;
+pOctant *octs;      /* octs[nocts]    */
+int *newpids;       /* newpids[nocts] */
+pOctant *newocts;   /* newocts[nocts] */
+int nocts;          /* number of octants leaving this processor */
+int nrecocts;       /* number of octants received in this processor */
 {
-  char *yo = "LB_fix_tags";
-  int i;                                  /* index counter */
-  int num_gid_entries = lb->Num_GID;
-  int num_lid_entries = lb->Num_LID;
+  int i;
+  Migrate_msg *msnd = NULL, *mrcv = NULL;
+  int remotecount;
+  int nsends;
+  int nreceives;
+  int *despid = NULL;
+  int ierr = LB_OK;
+  COMM_OBJ *comm_plan;           /* Object returned by communication routines */
+  char *yo = "LB_Final_Migration";
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *) lb->Data_Structure;
 
-    /* allocate memory */
+  /* count number of sends */
+  nsends=0;
+  for (i=0; i<nocts; i++)              
+    if (newpids[i]!=lb->Proc)
+      nsends++;
 
-    if (!LB_Special_Malloc(lb,(void **)import_global_ids,nrectags,
-                           LB_SPECIAL_MALLOC_GID)) {
-      LB_TRACE_EXIT(lb, yo);
-      fprintf(stderr,"OCT %s ERROR, unable to allocate space\n", yo);
-      /* return LB_MEMERR; */ abort();
-    }
-    if (!LB_Special_Malloc(lb,(void **)import_local_ids,nrectags,
-                           LB_SPECIAL_MALLOC_LID)) {
-      LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
-      LB_TRACE_EXIT(lb, yo);
-      fprintf(stderr,"OCT %s ERROR, unable to allocate space\n", yo);
-      /* return LB_MEMERR; */ abort();
-    }
-    if (!LB_Special_Malloc(lb,(void **)import_procs,nrectags,
-                           LB_SPECIAL_MALLOC_INT)) {
-      LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
-      LB_Special_Free(lb,(void **)import_local_ids,LB_SPECIAL_MALLOC_LID);
-      LB_TRACE_EXIT(lb, yo);
-      fprintf(stderr,"OCT %s ERROR, unable to allocate space\n", yo);
-      /* return LB_MEMERR; */ abort();
-    }
+  if((despid = (int *) LB_MALLOC((nocts+10) * sizeof(int))) == NULL) {
+    LB_TRACE_EXIT(lb, yo);
+    return LB_MEMERR;
+  }
 
-    /* for each region imported, look at its originating processor */
-    for(i=0; i<nrectags; i++) {
-      LB_SET_GID(lb, &((*import_global_ids)[i*num_gid_entries]), 
-                 import_regs[i].Global_ID);
-      LB_SET_LID(lb, &((*import_local_ids)[i*num_lid_entries]),
-                 import_regs[i].Local_ID);
-      (*import_procs)[i]      = import_regs[i].Proc;
-    }
+  if((msnd   = (Migrate_msg *) LB_MALLOC((nocts+10) * sizeof(Migrate_msg))) == NULL) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&despid);
+    return LB_MEMERR;
+  }
+
+  remotecount = 0;
+  for (i=0; i<nocts; i++)                          /* Send and free */
+    if (newpids[i]!=lb->Proc)
+      { 
+	FILLMIGRATEMSG(octs[i], newocts[i], msnd[remotecount], lb->Proc); /* bug */
+	despid[remotecount++] = newpids[i];
+	LB_Oct_clearRegions(octs[i]);
+	LB_POct_free(OCT_info, octs[i]);
+      }
+
+  ierr = LB_Comm_Create(&comm_plan, remotecount, despid, lb->Communicator,
+			MigFinCommCreate, &nreceives);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&despid);
+    LB_FREE(&msnd);
+    return (ierr);
+  }
+
+  if((mrcv = (Migrate_msg *) LB_MALLOC((nreceives+10) * sizeof(Migrate_msg))) == NULL) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&despid);
+    LB_FREE(&msnd);
+    return LB_MEMERR;
+  }
+
+  ierr = LB_Comm_Do(comm_plan, MigFinCommDo, (char *) msnd,
+		    sizeof(Migrate_msg), (char *) mrcv);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&despid);
+    LB_FREE(&msnd);
+    LB_FREE(&mrcv);
+    return (ierr);
+  }
+
+  for (i=0; i<nreceives; i++) {                     /* Receive new parocts */
+/*     LB_Oct_setID(mrcv[i].ptr,mrcv[i].id); */
+/*     LB_POct_setparent(OCT_info, mrcv[i].ptr, mrcv[i].parent, mrcv[i].ppid);  */
+    SETOCTFROMMIGRATEMSG(OCT_info, mrcv[i]); 
+/*     LB_Oct_setchildnum(mrcv[i].ptr,mrcv[i].childnum);  */
+/*     LB_Oct_setchildren(mrcv[i].ptr, mrcv[i].children, mrcv[i].cpids);  */
+/*     LB_Oct_setbounds(mrcv[i].ptr, mrcv[i].min, mrcv[i].max);   */
+/*     LB_Oct_setDir(mrcv[i].ptr,mrcv[i].dir); */
+/*     LB_Oct_setMapIdx(mrcv[i].ptr,mrcv[i].mapidx); */
+  }
+
+  ierr = LB_Comm_Destroy(&comm_plan);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&despid);
+    LB_FREE(&msnd);
+    LB_FREE(&mrcv);
+    return (ierr);
+  }
+
+  LB_FREE(&despid);
+  LB_FREE(&msnd);
+  LB_FREE(&mrcv);
+
+  return ierr;
 }
 
+
+int LB_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int *size) {
+  int i,j, k;
+  int *despid = NULL;
+  int nroots, nreceives;
+  pRList  RootList;                  /* list of the local roots */
+  pOctant RootOct;
+  Migrate_msg *snd_rmsg = NULL;
+  Migrate_msg *rcv_rmsg = NULL;
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+/*Map *array = OCT_info->map;*/
+  COMM_OBJ *comm_plan;                /* Object returned by communication routines */
+
+  int ierr = LB_OK;
+  char *yo = "LB_build_global_rootlist";
+ 
+  nroots = RL_numRootOctants(LB_POct_localroots(OCT_info));
+
+  if((despid = (int *) LB_MALLOC((lb->Num_Proc)*nroots * sizeof(int))) == NULL) {
+    LB_TRACE_EXIT(lb, yo);
+    return LB_MEMERR;
+  }
+
+  if((snd_rmsg = (Migrate_msg *) LB_MALLOC((lb->Num_Proc)*nroots * sizeof(Migrate_msg))) == NULL) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&despid);
+    return LB_MEMERR;
+  }
+  
+  i = 0; k = 0;
+  for (j=0; j<lb->Num_Proc; j++) {
+    RootList = LB_POct_localroots(OCT_info);
+    while((RootOct = RL_nextRootOctant(&RootList))) {	
+ /*      if(array[LB_Oct_mapidx(RootOct)].npid > 0) { */
+	FILLMIGRATEMSG(RootOct, RootOct, snd_rmsg[k], lb->Proc);
+	despid[k] = j;
+	k++;
+/*       } */
+    }
+  }
+  
+  ierr = LB_Comm_Create(&comm_plan, k, despid, lb->Communicator,
+			RootListCommCreate, &nreceives);
+
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&despid);
+    LB_FREE(&snd_rmsg);
+    return (ierr);
+  }
+
+  if((rcv_rmsg = (Migrate_msg *) LB_MALLOC(nreceives * sizeof(Migrate_msg))) == NULL) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&despid);
+    LB_FREE(&snd_rmsg);
+    return LB_MEMERR;
+  }
+
+  
+
+  ierr = LB_Comm_Do(comm_plan, RootListCommDo, (char *) snd_rmsg, sizeof(Migrate_msg), (char *) rcv_rmsg);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    LB_FREE(&despid);
+    LB_FREE(&snd_rmsg);
+    LB_FREE(&rcv_rmsg);
+    return (ierr);
+  }
+
+  LB_FREE(&despid);
+  LB_FREE(&snd_rmsg);
+
+
+  ierr = LB_Comm_Destroy(&comm_plan);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    return (ierr);
+  }
+
+  *ret_rmsg = rcv_rmsg;
+  *size = nreceives;
+
+  return ierr;
+}
+
+int LB_Update_Map(LB *lb) {
+  int i;
+  double x,y;
+  pRList  RootList;                
+  pOctant RootOct;
+  pOctant remoteoctant;
+  Migrate_msg *rootlists = NULL;
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  Map *array = OCT_info->map;
+  int mapsize = OCT_info->mapsize;
+  int rlsize = 0;
+  int ierr = LB_OK;
+  char *yo = "LB_Update_Map";
+
+  if((ierr = LB_build_global_rootlist(lb, &rootlists, &rlsize)) != LB_OK) {
+    LB_TRACE_EXIT(lb, yo);
+    return ierr;
+  }
+
+
+  for(i = 0; i < mapsize; i++) {
+    RootList = array[i].list;
+    while((RootOct = RL_nextRootOctant(&RootList))) 
+      LB_Oct_free(RootOct);
+    RL_clearRootOctants(array[i].list);
+  }
+  
+  for(i = 0; i < rlsize; i++) {
+    remoteoctant = LB_Oct_newremote();
+    remoteoctant->remoteptr = rootlists[i].ptr;
+    x = rootlists[i].max[0] - rootlists[i].min[0];
+    y = rootlists[i].max[1] - rootlists[i].min[1];
+    remoteoctant->area = x*y;
+    remoteoctant->ppid = rootlists[i].ppid;
+    remoteoctant->npid = rootlists[i].from;
+    LB_Oct_setID(remoteoctant,rootlists[i].id); 
+    LB_Oct_setchildnum(remoteoctant,rootlists[i].childnum); 
+    LB_Oct_setchildren(remoteoctant, rootlists[i].children, rootlists[i].cpids); 
+    LB_Oct_setbounds(remoteoctant, rootlists[i].min, rootlists[i].max);  
+    LB_Oct_setDir(remoteoctant,rootlists[i].dir);
+    LB_Oct_setMapIdx(remoteoctant,rootlists[i].mapidx);
+    RL_addRootOctant(array[LB_Oct_mapidx(remoteoctant)].list, remoteoctant);	
+  }
+
+  if(rlsize > 0)
+    LB_FREE(&rootlists);
+  return ierr;
+}

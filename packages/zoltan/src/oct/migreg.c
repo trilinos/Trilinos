@@ -7,12 +7,16 @@
  ****************************************************************************/
 
 #include "migreg.h"
-#include "hilbert_const.h"
 #include "comm_const.h"
 #include "dfs_const.h"
+#include "oct_util_const.h"
+#include "octree_const.h"
 
-static void LB_insert_orphan(LB *lb, Region reg);
-static void LB_copy_info(LB *, pRegion src, pRegion *dest);
+#define MIGMIGREGCommCreate 32767
+#define MIGMIGREGCommDo     32766
+
+static int LB_insert_orphan(LB *lb, Region reg);
+static int LB_copy_info(LB *lb, pRegion src, pRegion *dest);
 /*
  * LB_migreg_migrate_regions(Message *message_Array, int number_of_regions)
  *
@@ -21,14 +25,14 @@ static void LB_copy_info(LB *, pRegion src, pRegion *dest);
  * the local subtree.
  */
 
-void LB_migreg_migrate_regions(LB *lb, Region *regions, LB_ID_PTR gids, 
-                               LB_ID_PTR lids, int *npids, 
-			       int nregions, int *c2) {
+int LB_migreg_migrate_regions(LB *lb, Region *regions, 
+                              LB_ID_PTR gids, LB_ID_PTR lids,
+                              int *npids, int nregions, int *c2) 
+{
   char *yo = "LB_migreg_migrate_regions";
   int i;                         /* index counter */
-  int ierr;
+  int ierr = LB_OK;
   int n_import;
-  int msgtag, msgtag2;
   COMM_OBJ *comm_plan;           /* Object returned by communication routines */
   Region *import_objs = NULL;    /* Array of import objects used to request 
 				    the objs from other processors. */
@@ -37,13 +41,12 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, LB_ID_PTR gids,
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
 
-  msgtag = 32767;
   ierr = LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, 
-            msgtag, &n_import);
+                        MIGMIGREGCommCreate, &n_import);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
-    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    abort();
+    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Create");
+    LB_TRACE_EXIT(lb, yo);
+    return (ierr);
   }
   *c2 = n_import;
   if (n_import > 0) {
@@ -52,50 +55,45 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, LB_ID_PTR gids,
     import_lids = LB_MALLOC_LID_ARRAY(lb, n_import);
 
     if (!import_objs || !import_gids || (num_lid_entries && !import_lids)) {
-      fprintf(stderr,"ERROR in %s: Insufficient memory %d.\n", 
-              yo, __LINE__);
-      abort();
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      LB_TRACE_EXIT(lb, yo);
+      return LB_MEMERR;
     }
   }
-
-  msgtag2 = 32766;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) regions, sizeof(Region), 
+  ierr = LB_Comm_Do(comm_plan, MIGMIGREGCommDo, (char *) regions, sizeof(Region), 
                    (char *) import_objs);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
-    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+    LB_TRACE_EXIT(lb, yo);
     LB_FREE(&import_objs);
     LB_FREE(&import_gids);
     LB_FREE(&import_lids);
-    abort();
+    return (ierr);
   }
 
-  msgtag2--;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) gids, 
+  ierr = LB_Comm_Do(comm_plan, MIGMIGREGCommDo-1, (char *) gids, 
                     sizeof(LB_ID_TYPE)*num_gid_entries, (char *) import_gids);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
-    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+    LB_TRACE_EXIT(lb, yo);
     LB_FREE(&import_objs);
     LB_FREE(&import_gids);
     LB_FREE(&import_lids);
-    abort();
+    return (ierr);
   }
 
   if (num_lid_entries > 0) {
-    msgtag2--;
-    ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) lids, 
+    ierr = LB_Comm_Do(comm_plan, MIGMIGREGCommDo-2, (char *) lids, 
                       sizeof(LB_ID_TYPE)*num_lid_entries, (char *) import_lids);
     if (ierr != COMM_OK && ierr != COMM_WARN) {
-      fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo, 
-              (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+      LB_TRACE_EXIT(lb, yo);
       LB_FREE(&import_objs);
       LB_FREE(&import_gids);
       LB_FREE(&import_lids);
-      abort();
+      return (ierr);
     }
   }
-
   for (i=0; i<n_import; i++) {
     import_objs[i].Global_ID = &(import_gids[i*num_gid_entries]);
     import_objs[i].Local_ID = (num_lid_entries 
@@ -103,11 +101,17 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, LB_ID_PTR gids,
                                  : NULL);
     LB_insert_orphan(lb, import_objs[i]);
   }
-
+  
   LB_FREE(&import_objs);
   LB_FREE(&import_gids);
   LB_FREE(&import_lids);
-  LB_Comm_Destroy(&comm_plan);
+
+  ierr = LB_Comm_Destroy(&comm_plan);
+  if(ierr != COMM_OK && ierr != COMM_WARN) {
+    LB_TRACE_EXIT(lb, yo);
+    return (ierr);
+  }
+  return ierr;
 }
 
 /*
@@ -116,17 +120,16 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, LB_ID_PTR gids,
  * Insert orphan regions migrated from off processors, or to insert
  * regions that lie on the boundary.
  */
-static void LB_insert_orphan(LB *lb, Region reg) {
-  pRList rootlist;                 /* list of all local roots */
+static int LB_insert_orphan(LB *lb, Region reg) {
+  pRList  RootList;                /* list of all local roots */
+  pOctant RootOct;
   int rflag;                       /* flag to indicate region fits in octant */
   int i, j;                        /* index counters */
   double upper,                    /* upper bounds of the octant */
          lower;                    /* lower bounds of the octant */
   OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
-
-  rootlist = POC_localroots(OCT_info);                 /* get a list all local roots */
-  if(rootlist == NULL)                                        /* error check */
-    fprintf(stderr,"ERROR in LB_insert_orphans(), rootlist is NULL\n");
+  char *yo = "LB_insert_orphan";
+  int ierr = LB_OK;
 
   if (OCT_info->OCT_dimension == 2)
     i = 2;                                           /* ignore z coordinates */
@@ -134,75 +137,79 @@ static void LB_insert_orphan(LB *lb, Region reg) {
     i = 3;
 
   rflag = 0;
-  while(rootlist != NULL) {
+  RootList = LB_POct_localroots(OCT_info);               /* get a list all local roots */
+  while((RootOct = RL_nextRootOctant(&RootList))) {
     rflag = 1;
-    /* if(LB_Proc == 1)
-     *   fprintf(stderr, "(%d) %lf %lf %lf in (%lf %lf %lf, %lf %lf %lf)\n",
-     *     LB_Proc, reg.Coord[0], reg.Coord[1], reg.Coord[2],
-     *     (rootlist->oct)->min[0], (rootlist->oct)->min[1], 
-     *     (rootlist->oct)->min[2], (rootlist->oct)->max[0],
-     *     (rootlist->oct)->max[1], (rootlist->oct)->max[2]);
-     */     
-    /* for each of the x,y,z-coordinates check if region fits in the octant */
     for (j=0; j<i; j++) {
-      lower = rootlist->oct->min[j];
-      upper = rootlist->oct->max[j];
+      lower = RootOct->min[j];
+      upper = RootOct->max[j];
       if (reg.Coord[j]<lower || reg.Coord[j]>upper) {
 	/* if region coord lie outside bounds, then cannot fit */
 	rflag = 0;
 	break;
       }
     }
-    if(rflag == 1)                              /* region fits inside octant */
-      break;
-    rootlist = rootlist->next;
+    if(rflag == 1) { 
+      /* region fits inside octant */
+      /* found a place to insert region */
+      LB_oct_subtree_insert(lb, RootOct, &reg);
+      return ierr;
+    }
   }
+  ierr = LB_WARN;
+  LB_TRACE_DETAIL(lb, yo, "could not insert region");
   
-  if(rootlist == NULL) {                                      /* error check */
-    fprintf(stderr,
-	    "(%d) ERROR: LB_migreg_migrate_regions could not insert region\n",
-	    lb->Proc);
-    abort();
-  }
-  else                                     /* found a place to insert region */
-    LB_oct_subtree_insert(lb, rootlist->oct, &reg);
+  fprintf(stderr,"%s failed to insert %f %f %f on proc %d\n",yo, reg.Coord[0], reg.Coord[1], reg.Coord[2], lb->Proc);
+
+  RootList = LB_POct_localroots(OCT_info); 
+  RL_printRootOctants(RootList);
+  return ierr;
 }
 
-
-/*
- * void LB_migreg_migrate_orphans(pRegion RegionList, int number_of_regions,
- *                                int level_of_refinement, Map *map_array)
- *
- * Migrate regions that are not attached to an octant to the processor owning
- * the octant where their centroid is.
- */
-void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
+int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
                                int level, Map *array, int *c1, int *c2) {
   int     i, j, k;                    /* index counters */
   pRegion ptr;                        /* region in the mesh */
   COORD   origin;                     /* centroid coordinate information */
-  pRegion *regions;                   /* an array of regions */
-  int     *npids;
-  Region  *regions2;                  /* an array of regions */
-  int     *npids2;
+  pRegion *regions = NULL;            /* an array of regions */
+  int     *npids = NULL;
+  Region  *regions2 = NULL;           /* an array of regions */
+  int     *npids2 = NULL;
   int     nreg;                       /* number of regions */
   COORD   min,                        /* minimum bounds of an octant */
           max;                        /* maximum bounds of an octant */
   COORD   cmin,                       /* minimum bounds of a child octant */
           cmax;                       /* maximum bounds of a child octant */
+  COORD   rmin,                       /* minimum bounds of a remote octant */
+          rmax;                       /* maximum bounds of a remote octant */
   int     new_num;
   int     n;
+  int     dir = 0;
+  pRList  RootList;              
+  pOctant RootOct;
   OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  char *yo = "LB_migreg_migrate_orphans_static";
+  int ierr = LB_OK;
   LB_ID_PTR gids2, lids2;
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
 
-  /* create the array of messages to be sent to other processors */
-  /* Array = (Message *) LB_MALLOC(nregions * sizeof(Message)); */
-
-  regions = (pRegion *) LB_MALLOC(nregions * sizeof(pRegion));
-  npids = (int *) LB_MALLOC(nregions * sizeof(int));
-
+  if(nregions > 0) {
+    /* create the array of messages to be sent to other processors */
+    /* Array = (Message *) LB_MALLOC(nregions * sizeof(Message)); */
+    
+    if((regions = (pRegion *) LB_MALLOC(nregions * sizeof(pRegion))) == NULL) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      LB_TRACE_EXIT(lb, yo);
+      return LB_MEMERR;
+    }
+    if((npids = (int *) LB_MALLOC(nregions * sizeof(int))) == NULL) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      LB_TRACE_EXIT(lb, yo);
+      LB_FREE(&regions);
+      return LB_MEMERR;
+    }
+  }
   ptr = RegionList;
   n = nreg = 0;
   while((ptr != NULL) && (nregions > 0)) {
@@ -212,12 +219,9 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
       continue;
     }
 
-    /*
-     * fprintf(stderr,"(%d) %lf %lf %lf\n", LB_Proc,
-     *	    ptr->Coord[0], ptr->Coord[1], ptr->Coord[2]);
-     */
     /* region not attached, have to find which processor to send to */
     j=0;
+    dir = 0;
     vector_set(min, OCT_info->OCT_gmin);
     vector_set(max, OCT_info->OCT_gmax);
     /* 
@@ -231,34 +235,29 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
       else
 	j = j * 8;
       k = LB_child_which(OCT_info,origin, ptr->Coord);
-      if(OCT_info->HILBERT) {
-	if(OCT_info->OCT_dimension == 3) 
-	  new_num = LB_change_to_hilbert(OCT_info,min, max, origin, k);
-	else 
-	  new_num = LB_change_to_hilbert2d(OCT_info,min, max, origin, k);
-      }
-      else if(OCT_info->GRAY)
-	new_num = LB_convert_to_gray(k);
-      else
-	new_num = k;
-
+      new_num = LB_convert_idx_from_map(OCT_info, dir, k);
+      dir = LB_get_child_dir(OCT_info, dir, new_num);
       j += new_num;
       LB_child_bounds(min, max, origin, k, cmin, cmax);
       vector_set(min, cmin);
       vector_set(max, cmax);
     }
-    
     /* inform message which processor to send to */
-    if(array[j].npid != -1) {
-      npids[n] = array[j].npid;
+    npids[n] = array[j].npid;
+    RootList = array[j].list;
+    while((RootOct = RL_nextRootOctant(&RootList))) {
+      LB_Oct_bounds(RootOct,rmin,rmax);
+      if (LB_in_box_closure(OCT_info, ptr->Coord ,rmin, rmax)) {
+	npids[n] = RootOct->npid;
+	break;
+      }
+    }
+    if((npids[n] != -1) && (npids[n] != lb->Proc)) {
       LB_copy_info(lb, ptr, &(regions[n++]));
     }
     else {
       LB_insert_orphan(lb, *ptr);
-    }    
-    /* copy region info to the message array */
-    /* LB_copy_info(&(Array[nreg].region), ptr); */
-  
+    }
     nreg++;                                      /* increment region counter */
     ptr = ptr->next;                                  /* look at next region */
   }
@@ -268,10 +267,8 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
    * then there is an error
    */
   if (nreg!=nregions) {
-    fprintf(stderr,"%d LB_migreg_migrate_orphans: "
-	    "%d regions found != %d expected\n",
-	    lb->Proc,nreg,nregions);
-    abort();
+    LB_PRINT_ERROR(lb->Proc, yo, "regions found != to expected number of regions");
+    return LB_FATAL;
   }
 
   regions2 = (Region *) LB_MALLOC(n * sizeof(Region));
@@ -279,7 +276,6 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   lids2 = LB_MALLOC_LID_ARRAY(lb, n);
   npids2 = (int *) LB_MALLOC(n * sizeof(int));
   
-  /* fprintf(stderr,"(%d) n = %d\n", LB_Proc, n); */
   for(i=0; i<n; i++) {
     npids2[i] = npids[i];
     vector_set(regions2[i].Coord, regions[i]->Coord);
@@ -309,6 +305,8 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   LB_FREE(&gids2);
   LB_FREE(&lids2);
   LB_FREE(&npids2);
+
+  return ierr;
 }
 
 /*
@@ -316,20 +314,22 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
  *
  * Copies region information from the source to the destination
  */
-static void LB_copy_info(LB *lb, pRegion src, pRegion *dest) {
+static int LB_copy_info(LB *lb, pRegion src, pRegion *dest) {
   pRegion copy;
+  char *yo = "LB_copy_info";
+  int ierr = LB_OK;
 
   /* mallloc space for destination */
   copy = (pRegion) LB_MALLOC(sizeof(Region));
   if(copy == NULL) {
-    fprintf(stderr,"ERROR in LB_copy_info, cannot allocate memory\n");
-    abort();
+    LB_TRACE_EXIT(lb, yo);
+    return LB_MEMERR;
   }
   copy->Global_ID = LB_MALLOC_GID(lb);
   copy->Local_ID  = LB_MALLOC_LID(lb);
   if (copy->Global_ID == NULL || (lb->Num_LID && copy->Local_ID == NULL)) {
-    fprintf(stderr,"ERROR in LB_copy_info, cannot allocate memory\n");
-    abort();
+    LB_TRACE_EXIT(lb, yo);
+    return LB_MEMERR;
   }
   
   /* set up return pointer */
@@ -342,4 +342,5 @@ static void LB_copy_info(LB *lb, pRegion src, pRegion *dest) {
   LB_SET_LID(lb, copy->Local_ID, src->Local_ID);
   copy->Proc = src->Proc;
   copy->attached = 0;
+  return ierr;
 }
