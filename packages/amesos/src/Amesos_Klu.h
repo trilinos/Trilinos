@@ -32,6 +32,7 @@
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_Time.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -248,9 +249,16 @@ revert to their default values.
     \return Integer error code, set to 0 if successful. 
    */
   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
+
+  //! Print timing information
+  void PrintTiming();
+  
+  //! Print information about the factorization and solution phases.
+  void PrintStatus();
+  
   //@}
 
- private:  
+private:  
   /*
   ConvertToSerial - Convert matrix to a serial Epetra_CrsMatrix
     Preconditions:
@@ -347,8 +355,30 @@ revert to their default values.
 #endif                                         //  the values passed to Klu
                                      
 
-  bool UseTranspose_;      //  Set by 
+  bool UseTranspose_;
   const Epetra_LinearProblem * Problem_;
 
+  bool PrintTiming_;
+  bool PrintStatus_;
+  bool ComputeVectorNorms_;
+  bool ComputeTrueResidual_;
+  
+  int verbose_;
+  int debug_;
+
+  // some timing internal, copied from MUMPS
+  double ConTime_;                        // time to convert to KLU format
+  double SymTime_;                        // time for symbolic factorization
+  double NumTime_;                        // time for numeric factorization
+  double SolTime_;                        // time for solution
+  double VecTime_;                        // time to redistribute vectors
+  double MatTime_;                        // time to redistribute matrix
+  
+  int NumSymbolicFact_;
+  int NumNumericFact_;
+  int NumSolve_;  
+
+  Epetra_Time Time;
+  
 };  // End of  class Amesos_Klu  
 #endif /* _AMESOS_KLU_H_ */

@@ -34,6 +34,7 @@
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_Time.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -216,6 +217,12 @@ revert to their default values.
    */
   int SetParameters( Teuchos::ParameterList &ParameterList ) ;
 
+  //! Print timing information
+  void PrintTiming();
+  
+  //! Print information about the factorization and solution phases.
+  void PrintStatus();
+  
   //@}
 
  private:  
@@ -287,6 +294,28 @@ revert to their default values.
 
   bool UseTranspose_;     
   const Epetra_LinearProblem * Problem_;
+  
+  bool PrintTiming_;
+  bool PrintStatus_;
+  bool ComputeVectorNorms_;
+  bool ComputeTrueResidual_;
+  
+  int verbose_;
+  int debug_;
 
+  // some timing internal to MUMPS
+  double ConTime_;                        // time to convert to MUMPS format
+  double SymTime_;                        // time for symbolic factorization
+  double NumTime_;                        // time for numeric factorization
+  double SolTime_;                        // time for solution
+  double VecTime_;                        // time to redistribute vectors
+  double MatTime_;                        // time to redistribute matrix
+  
+  int NumSymbolicFact_;
+  int NumNumericFact_;
+  int NumSolve_;  
+
+  Epetra_Time Time;
+  
 };  // End of  class Amesos_Scalapack  
 #endif /* _AMESOS_SCALAPACK_H_ */

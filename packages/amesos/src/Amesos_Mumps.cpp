@@ -1175,6 +1175,10 @@ void Amesos_Mumps::PrintStatus()
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Mumps : Matrix has " << NumGlobalRows() << " rows"
        << " and " << NumGlobalNonzeros() << " nonzeros" << endl;
+  cout << "Amesos_Mumps : Nonzero elements per row = "
+       << 1.0*NumGlobalNonzeros()/NumGlobalRows() << endl;
+  cout << "Amesos_Mumps : Percentage of nonzero elements = "
+       << 100.0*NumGlobalNonzeros()/(pow(NumGlobalRows(),2.0)) << endl;
   cout << "Amesos_Mumps : Use transpose = " << UseTranspose_ << endl;
   cout << "Amesos_Mumps : Available process(es) = " << Comm().NumProc() << endl;
   cout << "Amesos_Mumps : Using " << MaxProcs_ << " process(es)" << endl;

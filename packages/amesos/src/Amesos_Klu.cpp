@@ -61,20 +61,38 @@ public:
 } ;
 
 
-  //=============================================================================
+//=============================================================================
 Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   PrivateKluData_( new Amesos_Klu_Pimpl() ),
-  SerialCrsMatrixA_(0), 
   SerialMap_(0), 
+  SerialCrsMatrixA_(0), 
   SerialMatrix_(0), 
   TransposeMatrix_(0),
+  Matrix_(0),
   UseTranspose_(false),
-  Matrix_(0) {
-  
-  
-  Problem_ = &prob ; 
+  Problem_(&prob), 
+  PrintTiming_(false),
+  PrintStatus_(false),
+  ComputeVectorNorms_(false),
+  ComputeTrueResidual_(false),
+  verbose_(1),
+  debug_(0),
+  ConTime_(0.0),
+  SymTime_(0.0),
+  NumTime_(0.0),
+  SolTime_(0.0),
+  VecTime_(0.0),
+  MatTime_(0.0),
+  NumSymbolicFact_(0),
+  NumNumericFact_(0),
+  NumSolve_(0),
+  Time(Comm())
+{
+  // MS // move declaration of Problem_ above because I need it
+  // MS // set up before calling Comm()
   Teuchos::ParameterList ParamList ;
-  SetParameters( ParamList ) ; 
+  SetParameters( ParamList ) ;
+
 }
 
 //=============================================================================
@@ -85,10 +103,18 @@ Amesos_Klu::~Amesos_Klu(void) {
   if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
   delete PrivateKluData_; 
 
+  // print out some information if required by the user
+  if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
+  if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
+  
 }
 //  See  pre and post conditions in Amesos_Klu.h
 
 int Amesos_Klu::ConvertToSerial() { 
+
+  if( debug_ == 1 ) cout << "Entering `ConvertToSerial()'" << endl;
+
+  Time.ResetStartTime();
   
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
@@ -141,6 +167,8 @@ int Amesos_Klu::ConvertToSerial() {
     SerialMatrix_ = SerialCrsMatrixA_ ;
   }
 
+  MatTime_ += Time.ElapsedTime();
+
   return 0;
 } 
 
@@ -166,6 +194,10 @@ int Amesos_Klu::ConvertToSerial() {
 //    in epetra (or epetraext).
 //
 int Amesos_Klu::ConvertToKluCRS(bool firsttime){
+
+  if( debug_ == 1 ) cout << "Entering `ConvertToKluCRSt()'" << endl;
+
+  Time.ResetStartTime();
   
   if ( UseTranspose() ) { 
     Matrix_ = SerialMatrix_ ; 
@@ -227,34 +259,94 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
     Ap[MyRow] = Ai_index ; 
   }
 
-  
+  ConTime_ += Time.ElapsedTime(); 
+
   return 0;
 }   
 
 
 int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
+  // MS // Ken, I commented it out because I can't get it compiled
+  // on atlantis
+  //  if( &ParameterList == 0 ) return 0;
 
-  if( &ParameterList == 0 ) return 0;
+  if( debug_ == 1 ) cout << "Entering `SetParameters()' ..." << endl;
+  
+  // ========================================= //
+  // retrive KLU's parameters from list.       //
+  // default values defined in the constructor //
+  // ========================================= //
+  
+  // retrive general parameters
 
+  // solve problem with transpose
+  if( ParameterList.isParameter("UseTranspose") )
+    SetUseTranspose(ParameterList.get("UseTranspose",false));
+
+  // print some timing information (on process 0)
+  if( ParameterList.isParameter("PrintTiming") )
+    PrintTiming_ = ParameterList.get("PrintTiming", false);
+
+  // print some statistics (on process 0). Do not include timing
+  if( ParameterList.isParameter("PrintStatus") )
+    PrintStatus_ = ParameterList.get("PrintStatus", false);
+
+  // compute norms of some vectors
+  if( ParameterList.isParameter("ComputeVectorNorms") )
+    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",false);
+
+  // compute the true residual Ax-b after solution
+  if( ParameterList.isParameter("ComputeTrueResidual") )
+    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
+
+  // some verbose output:
+  // 0 - no output at all
+  // 1 - output as specified by other parameters
+  // 2 - all possible output
+  if( ParameterList.isParameter("OutputLevel") )
+    verbose_ = ParameterList.get("OutputLevel",1);
+
+  // possible debug statements
+  // 0 - no debug
+  // 1 - debug
+  if( ParameterList.isParameter("DebugLevel") )
+    debug_ = ParameterList.get("DebugLevel",0);
+  
+  // MS // now comment it out, if we have parameters for KLU sublist
+  // MS // uncomment it
+  /*
   if (ParameterList.isSublist("Klu") ) {
     Teuchos::ParameterList KluParams = ParameterList.sublist("Klu") ;
-  }  
+  }
+  */
+  
   return 0;
 }
 
 
 int Amesos_Klu::PerformSymbolicFactorization() {
 
+  if( debug_ == 1 ) cout << "Entering `PerformSymbolicFactorization()'" << endl;
+
+  Time.ResetStartTime();  
+
   if ( iam == 0 ) { 
     PrivateKluData_->Symbolic_ = klu_btf_analyze (NumGlobalElements_, &Ap[0], &Ai[0] ) ;
     if ( PrivateKluData_->Symbolic_ == 0 ) EPETRA_CHK_ERR( 1 ) ; 
   }
+
+  SymTime_ += Time.ElapsedTime();
+
   return 0;
 }
 
 int Amesos_Klu::PerformNumericFactorization( ) {
+  
+  if( debug_ == 1 ) cout << "Entering `PerformNumericFactorization()'" << endl;
 
+  Time.ResetStartTime();
+  
   if ( iam == 0 ) {
 
     const double tol = 0.001; //  At some point we need to expose this to the user 
@@ -264,7 +356,9 @@ int Amesos_Klu::PerformNumericFactorization( ) {
     if ( PrivateKluData_->Numeric_ == 0 ) EPETRA_CHK_ERR( 2 ) ; 
     
   }
-  
+
+  NumTime_ += Time.ElapsedTime();
+
   return 0;
 }
 
@@ -281,7 +375,11 @@ bool Amesos_Klu::MatrixShapeOK() const {
 
 
 int Amesos_Klu::SymbolicFactorization() {
+  
+  if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()'" << endl;
 
+  NumSymbolicFact_++;  
+  
   ConvertToSerial() ; 
   
   ConvertToKluCRS(true);
@@ -292,7 +390,11 @@ int Amesos_Klu::SymbolicFactorization() {
 }
 
 int Amesos_Klu::NumericFactorization() {
+
+  if( debug_ == 1 ) cout << "Entering `NumericFactorization()'" << endl;
   
+  NumNumericFact_++;
+
   ConvertToSerial() ; 
   ConvertToKluCRS(false);
 
@@ -303,6 +405,10 @@ int Amesos_Klu::NumericFactorization() {
 
 int Amesos_Klu::Solve() { 
 
+  if( debug_ == 1 ) cout << "Entering `Solve()'" << endl;
+
+  NumSolve_++;
+  
   Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
   Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
 
@@ -329,7 +435,8 @@ int Amesos_Klu::Solve() {
   Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
   Epetra_MultiVector *SerialXextract = 0;
   Epetra_MultiVector *SerialBextract = 0;
-    
+
+  Time.ResetStartTime(); // track time to broadcast vectors
   //
   //  Copy B to the serial version of B
   //
@@ -348,13 +455,16 @@ int Amesos_Klu::Solve() {
     SerialX = SerialXextract ; 
   } 
 
+  VecTime_ += Time.ElapsedTime();
+    
   //
   //  Call KLU to perform the solve
   //
 
-  
   SerialX->Scale(1.0, *SerialB) ;
 
+  Time.ResetStartTime(); // tract time to solve
+  
   int SerialXlda ; 
   if ( iam == 0 ) {
     assert( SerialX->ExtractView( &SerialXvalues, &SerialXlda ) == 0 ) ; 
@@ -369,11 +479,14 @@ int Amesos_Klu::Solve() {
     }
   }
     
-
+  SolTime_ += Time.ElapsedTime();
+    
    
   //
   //  Copy X back to the original vector
   // 
+
+  Time.ResetStartTime();  // track time to broadcast vectors
 
   if ( IsLocal_ == 0 ) { 
     const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
@@ -384,6 +497,92 @@ int Amesos_Klu::Solve() {
   } else {
     assert( SerialBextract == 0 ) ;
     assert( SerialXextract == 0 ) ;
-  }  
+  }
+
+  VecTime_ += Time.ElapsedTime();
+
+  // MS // compute vector norms
+  if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
+    double NormLHS, NormRHS;
+    for( int i=0 ; i<nrhs ; ++i ) {
+      assert((*vecX)(i)->Norm2(&NormLHS)==0);
+      assert((*vecB)(i)->Norm2(&NormRHS)==0);
+      if( verbose_ && Comm().MyPID() == 0 ) {
+	cout << "Amesos_Klu : vector " << i << ", ||x|| = " << NormLHS
+	     << ", ||b|| = " << NormRHS << endl;
+      }
+    }
+  }
+  
+  // MS // compute true residual
+  if( ComputeTrueResidual_ == true || verbose_ == 2  ) {
+    double Norm;
+    Epetra_MultiVector Ax(vecB->Map(),nrhs);
+    for( int i=0 ; i<nrhs ; ++i ) {
+      (Problem_->GetMatrix()->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
+      (Ax.Update(1.0, *((*vecB)(i)), -1.0));
+      (Ax.Norm2(&Norm));
+      
+      if( verbose_ && Comm().MyPID() == 0 ) {
+	cout << "Amesos_Klu : vector " << i << ", ||Ax - b|| = " << Norm << endl;
+      }
+    }
+  }
+
   return(0) ; 
+}
+
+// ================================================ ====== ==== ==== == =
+
+void Amesos_Klu::PrintStatus() 
+{
+
+  if( Comm().MyPID() != 0  ) return;
+
+  cout << "----------------------------------------------------------------------------" << endl;
+  cout << "Amesos_Klu : Matrix has " << Problem_->GetMatrix()->NumGlobalRows() << " rows"
+       << " and " << Problem_->GetMatrix()->NumGlobalNonzeros() << " nonzeros" << endl;
+  cout << "Amesos_Klu : Nonzero elements per row = "
+       << 1.0*Problem_->GetMatrix()->NumGlobalNonzeros()/Problem_->GetMatrix()->NumGlobalRows() << endl;
+  cout << "Amesos_Klu : Percentage of nonzero elements = "
+       << 100.0*Problem_->GetMatrix()->NumGlobalNonzeros()/
+    (pow(Problem_->GetMatrix()->NumGlobalRows(),2.0)) << endl;
+  cout << "Amesos_Klu : Use transpose = " << UseTranspose_ << endl;
+  cout << "----------------------------------------------------------------------------" << endl;
+
+  return;
+  
+}
+
+// ================================================ ====== ==== ==== == =
+
+void Amesos_Klu::PrintTiming()
+{
+  if( Comm().MyPID() ) return;
+  
+  cout << "----------------------------------------------------------------------------" << endl;
+  cout << "Amesos_Klu : Time to convert matrix to KLU format = "
+       << ConTime_ << " (s)" << endl;
+  cout << "Amesos_Klu : Time to redistribute matrix = "
+       << MatTime_ << " (s)" << endl;
+  cout << "Amesos_Klu : Time to redistribute vectors = "
+       << VecTime_ << " (s)" << endl;
+  cout << "Amesos_Klu : Number of symbolic factorizations = "
+       << NumSymbolicFact_ << endl;
+  cout << "Amesos_Klu : Time for sym fact = "
+       << SymTime_ << " (s), avg = " << SymTime_/NumSymbolicFact_
+       << " (s)" << endl;
+  cout << "Amesos_Klu : Number of numeric factorizations = "
+       << NumNumericFact_ << endl;
+  cout << "Amesos_Klu : Time for num fact = "
+       << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
+       << " (s)" << endl;
+  cout << "Amesos_Klu : Number of solve phases = "
+       << NumSolve_ << endl;
+  cout << "Amesos_Klu : Time for solve = "
+       << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
+       << " (s)" << endl;
+  cout << "----------------------------------------------------------------------------" << endl;
+   
+  return;
 }

@@ -980,7 +980,15 @@ void Amesos_Superludist::PrintStatus()
   if( Comm().MyPID() ) return;
   
   cout << "----------------------------------------------------------------------------" << endl;
-
+  cout << "Amesos_Superludist : Matrix has " << Problem_->GetMatrix()->NumGlobalRows() << " rows"
+       << " and " << Problem_->GetMatrix()->NumGlobalNonzeros()
+       << " nonzeros" << endl;
+  cout << "Amesos_Superludist : Nonzero elements per row = "
+       << 1.0*Problem_->GetMatrix()->NumGlobalNonzeros()/Problem_->GetMatrix()->NumGlobalRows() << endl;
+  cout << "Amesos_Superludist : Percentage of nonzero elements = "
+       << 100.0*Problem_->GetMatrix()->NumGlobalNonzeros() /
+       pow(Problem_->GetMatrix()->NumGlobalRows(), 2.0) << endl;
+  cout << "Amesos_Superludist : Use transpose = " << UseTranspose_ << endl;
   cout << "Amesos_Superludist : Redistribute = " << Redistribute_ << endl;
   cout << "Amesos_Superludist : # available processes = " << Comm().NumProc() << endl;
   cout << "Amesos_Superludist : # processes used in computation = " << nprow_*npcol_

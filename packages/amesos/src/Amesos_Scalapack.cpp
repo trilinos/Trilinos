@@ -36,16 +36,34 @@
 #include "CrsMatrixTranspose.h"
 
 
-  //=============================================================================
-  Amesos_Scalapack::Amesos_Scalapack(const Epetra_LinearProblem &prob ):
-    ScaLAPACK1DMap_(0), 
-    ScaLAPACK1DMatrix_(0), 
-    SerialMap_(0),
-    ictxt_(-1313),
-    UseTranspose_(false) {
+//=============================================================================
+Amesos_Scalapack::Amesos_Scalapack(const Epetra_LinearProblem &prob ):
+  ictxt_(-1313),
+  ScaLAPACK1DMap_(0), 
+  ScaLAPACK1DMatrix_(0), 
+  SerialMap_(0),
+  UseTranspose_(false),
+  Problem_(&prob), 
+  PrintTiming_(false),
+  PrintStatus_(false),
+  ComputeVectorNorms_(false),
+  ComputeTrueResidual_(false),
+  verbose_(1),
+  debug_(0),
+  ConTime_(0.0),
+  SymTime_(0.0),
+  NumTime_(0.0),
+  SolTime_(0.0),
+  VecTime_(0.0),
+  MatTime_(0.0),
+  NumSymbolicFact_(0),
+  NumNumericFact_(0),
+  NumSolve_(0),
+  Time(Comm())
+{
+  // MS // Ken, I moved Problem_ above because I need it to be set
+  // MS // before calling Comm()
     
-    
-    Problem_ = &prob ; 
     Teuchos::ParameterList ParamList ;
     SetParameters( ParamList ) ; 
 }
@@ -56,6 +74,10 @@ Amesos_Scalapack::~Amesos_Scalapack(void) {
   if ( ScaLAPACK1DMap_ ) delete ScaLAPACK1DMap_ ; 
   if ( ScaLAPACK1DMatrix_ ) delete ScaLAPACK1DMatrix_ ; 
 
+  // print out some information if required by the user
+  if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
+  if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
+  
 }
 //  See  pre and post conditions in Amesos_Scalapack.h
 
@@ -114,6 +136,10 @@ Amesos_Scalapack::~Amesos_Scalapack(void) {
 //
 int Amesos_Scalapack::RedistributeA( ) {
 
+  if( debug_ == 1 ) cout << "Entering `RedistributeA()'" << endl;
+
+  Time.ResetStartTime();
+  
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
 
@@ -189,6 +215,8 @@ int Amesos_Scalapack::RedistributeA( ) {
     DescA_[0] = -13;
     assert( nprow == -1 ) ; 
   }
+
+  MatTime_ += Time.ElapsedTime();
   
   return 0;
 }
@@ -208,7 +236,12 @@ int Amesos_Scalapack::ConvertToScalapack(){
   //  For now, we simply treat X and B as serial matrices (as viewed from epetra)
   //  though ScaLAPACK treats them as distributed matrices. 
   //
-  //  int MyActualFirstElement = ScaLAPACK1DMatrix_->RowMatrixRowMap().MinMyGID() ; 
+  //  int MyActualFirstElement = ScaLAPACK1DMatrix_->RowMatrixRowMap().MinMyGID() ;
+
+  if( debug_ == 1 ) cout << "Entering `ConvertToScalapack()'" << endl;
+
+  Time.ResetStartTime();
+  
   int NumMyElements = ScaLAPACK1DMatrix_->NumMyRows() ; 
   Comm().Barrier();
   if ( iam_ < nprow_ * npcol_ ) { 
@@ -217,7 +250,7 @@ int Amesos_Scalapack::ConvertToScalapack(){
     assert( NumGlobalElements_ ==ScaLAPACK1DMatrix_->NumGlobalRows());
     assert( NumGlobalElements_ ==ScaLAPACK1DMatrix_->NumGlobalCols());
     DenseA_.resize( NumGlobalElements_ * NumMyElements ) ;
-    for ( int i = 0 ; i < DenseA_.size() ; i++ ) DenseA_[i] = 0 ; 
+    for ( int i = 0 ; i < (int)DenseA_.size() ; i++ ) DenseA_[i] = 0 ; 
     
     int NzThisRow ;
     int MyRow;
@@ -266,29 +299,92 @@ int Amesos_Scalapack::ConvertToScalapack(){
   
   if (SerialMap_) { delete SerialMap_ ; SerialMap_ = 0 ; } 
   SerialMap_ = new Epetra_Map( NumGlobalElements_, NumMyElements_, 0, Comm() );
+
+  ConTime_ += Time.ElapsedTime();
   
   return 0;
 }   
 
 
 int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
+
+  if( debug_ == 1 ) cout << "Entering `SetParameters()'" << endl;
+
   //
   //  We have to set these to their defaults here because user codes 
   //  are not guaranteed to have a "Scalapack" parameter list.
   //
   MaxProcesses_ = - 1; 
 
-  if( &ParameterList == 0 ) return 0;
+  // MS // comment is out to allow compilation on SGI (atlantis)
+  //  if( &ParameterList == 0 ) return 0;
 
+  // MS // now comment it out (only because the list if empty).
+  // MS // When we will have parameters for KLU sublist
+  // MS // uncomment it
+
+  // define on how many processes matrix should be converted into ScaLAPCK
+  // format. (this value must be less than available procs)
+  if( ParameterList.isParameter("MaxProcs") )
+    MaxProcesses_ = ParameterList.get("MaxProcs",-1);
+  
+  // ========================================= //
+  // retrive ScaLAPACK's parameters from list. //
+  // default values defined in the constructor //
+  // ========================================= //
+  
+  // retrive general parameters
+
+  // solve problem with transpose
+  if( ParameterList.isParameter("UseTranspose") )
+    SetUseTranspose(ParameterList.get("UseTranspose",false));
+
+  // print some timing information (on process 0)
+  if( ParameterList.isParameter("PrintTiming") )
+    PrintTiming_ = ParameterList.get("PrintTiming", false);
+
+  // print some statistics (on process 0). Do not include timing
+  if( ParameterList.isParameter("PrintStatus") )
+    PrintStatus_ = ParameterList.get("PrintStatus", false);
+
+  // compute norms of some vectors
+  if( ParameterList.isParameter("ComputeVectorNorms") )
+    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",false);
+
+  // compute the true residual Ax-b after solution
+  if( ParameterList.isParameter("ComputeTrueResidual") )
+    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
+
+  // some verbose output:
+  // 0 - no output at all
+  // 1 - output as specified by other parameters
+  // 2 - all possible output
+  if( ParameterList.isParameter("OutputLevel") )
+    verbose_ = ParameterList.get("OutputLevel",1);
+
+  // possible debug statements
+  // 0 - no debug
+  // 1 - debug
+  if( ParameterList.isParameter("DebugLevel") )
+    debug_ = ParameterList.get("DebugLevel",0);
+  
+  // MS // now comment it out, if we have parameters for KLU sublist
+  // MS // uncomment it
+  /*
   if (ParameterList.isSublist("Scalapack") ) {
     Teuchos::ParameterList ScalapackParams = ParameterList.sublist("Scalapack") ;
     MaxProcesses_ = ScalapackParams.get("MaxProcesses",MaxProcesses_);
   }  
+  */
   
   return 0;
 }
 
 int Amesos_Scalapack::PerformNumericFactorization( ) {
+
+  if( debug_ == 1 ) cout << "Entering `PerformNumericFactorization()'" << endl;
+  
+  Time.ResetStartTime();  
 
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   const Epetra_Map &OriginalMap = RowMatrixA->RowMatrixRowMap() ; 
@@ -312,6 +408,8 @@ int Amesos_Scalapack::PerformNumericFactorization( ) {
   if ( nprow_ * npcol_ < Comm().NumProc() ) 
     Comm().Broadcast( Ierr, 1, 0 ) ; 
 
+  NumTime_ += Time.ElapsedTime();
+
   return Ierr[0];
 }
 
@@ -329,11 +427,19 @@ bool Amesos_Scalapack::MatrixShapeOK() const {
 
 int Amesos_Scalapack::SymbolicFactorization() {
 
+  if( debug_ == 1 ) cout << "Entering `PerformSymbolicFactorization()'" << endl;
+
+  NumSymbolicFact_++;
+  
   return 0;
 }
 
 int Amesos_Scalapack::NumericFactorization() {
-  
+
+  if( debug_ == 1 ) cout << "Entering `NumericFactorization()'" << endl;
+
+  NumNumericFact_++;
+
   iam_ = Comm().MyPID();
   
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
@@ -348,6 +454,10 @@ int Amesos_Scalapack::NumericFactorization() {
 
 
 int Amesos_Scalapack::Solve() { 
+
+  if( debug_ == 1 ) cout << "Entering `Solve()'" << endl;
+
+  NumSolve_++;
 
   Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
   Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
@@ -374,7 +484,7 @@ int Amesos_Scalapack::Solve() {
 
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
-    
+  Time.ResetStartTime(); // track time to broadcast vectors
   //
   //  Copy B to the serial version of B
   //
@@ -387,6 +497,8 @@ int Amesos_Scalapack::Solve() {
   SerialB = SerialBextract ; 
   SerialX = SerialXextract ; 
 
+  VecTime_ += Time.ElapsedTime();
+
   //
   //  Call SCALAPACKs PDGETRS to perform the solve
   //
@@ -396,6 +508,8 @@ int Amesos_Scalapack::Solve() {
   SerialX->Scale(1.0, *SerialB) ;  
 
   int SerialXlda ; 
+
+  Time.ResetStartTime(); // tract time to solve
 
   //
   //  Setup DescX 
@@ -445,6 +559,9 @@ int Amesos_Scalapack::Solve() {
 		Ierr ) ;
   }
 
+  SolTime_ += Time.ElapsedTime();
+
+  Time.ResetStartTime();  // track time to broadcast vectors
   //
   //  Copy X back to the original vector
   // 
@@ -453,10 +570,96 @@ int Amesos_Scalapack::Solve() {
   delete SerialBextract ;
   delete SerialXextract ;
 
+  VecTime_ += Time.ElapsedTime();
+
   //  All processes should return the same error code
   if ( nprow_ * npcol_ < Comm().NumProc() ) 
     Comm().Broadcast( Ierr, 1, 0 ) ; 
 
+  // MS // compute vector norms
+  if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
+    double NormLHS, NormRHS;
+    for( int i=0 ; i<nrhs ; ++i ) {
+      assert((*vecX)(i)->Norm2(&NormLHS)==0);
+      assert((*vecB)(i)->Norm2(&NormRHS)==0);
+      if( verbose_ && Comm().MyPID() == 0 ) {
+	cout << "Amesos_Scalapack : vector " << i << ", ||x|| = " << NormLHS
+	     << ", ||b|| = " << NormRHS << endl;
+      }
+    }
+  }
+  
+  // MS // compute true residual
+  if( ComputeTrueResidual_ == true || verbose_ == 2  ) {
+    double Norm;
+    Epetra_MultiVector Ax(vecB->Map(),nrhs);
+    for( int i=0 ; i<nrhs ; ++i ) {
+      (Problem_->GetMatrix()->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
+      (Ax.Update(1.0, *((*vecB)(i)), -1.0));
+      (Ax.Norm2(&Norm));
+      
+      if( verbose_ && Comm().MyPID() == 0 ) {
+	cout << "Amesos_Scalapack : vector " << i << ", ||Ax - b|| = " << Norm << endl;
+      }
+    }
+  }
+  
   return Ierr[0];
 
+}
+
+
+// ================================================ ====== ==== ==== == =
+
+void Amesos_Scalapack::PrintStatus() 
+{
+
+  if( Comm().MyPID() != 0  ) return;
+
+  cout << "----------------------------------------------------------------------------" << endl;
+  cout << "Amesos_Scalapack : Matrix has " << Problem_->GetMatrix()->NumGlobalRows() << " rows"
+       << " and " << Problem_->GetMatrix()->NumGlobalNonzeros() << " nonzeros" << endl;
+  cout << "Amesos_Scalapack : Nonzero elements per row = "
+       << 1.0*Problem_->GetMatrix()->NumGlobalNonzeros()/Problem_->GetMatrix()->NumGlobalRows() << endl;
+  cout << "Amesos_Scalapack : Percentage of nonzero elements = "
+       << 100.0*Problem_->GetMatrix()->NumGlobalNonzeros()/
+    (pow(Problem_->GetMatrix()->NumGlobalRows(),2.0)) << endl;
+  cout << "Amesos_Scalapack : Use transpose = " << UseTranspose_ << endl;
+  cout << "----------------------------------------------------------------------------" << endl;
+
+  return;
+  
+}
+
+// ================================================ ====== ==== ==== == =
+
+void Amesos_Scalapack::PrintTiming()
+{
+  if( Comm().MyPID() ) return;
+  
+  cout << "----------------------------------------------------------------------------" << endl;
+  cout << "Amesos_Scalapack : Time to convert matrix to ScaLAPACK format = "
+       << ConTime_ << " (s)" << endl;
+  cout << "Amesos_Scalapack : Time to redistribute matrix = "
+       << MatTime_ << " (s)" << endl;
+  cout << "Amesos_Scalapack : Time to redistribute vectors = "
+       << VecTime_ << " (s)" << endl;
+  cout << "Amesos_Scalapack : Number of symbolic factorizations = "
+       << NumSymbolicFact_ << endl;
+  cout << "Amesos_Scalapack : Time for sym fact = "
+       << SymTime_ << " (s), avg = " << SymTime_/NumSymbolicFact_
+       << " (s)" << endl;
+  cout << "Amesos_Scalapack : Number of numeric factorizations = "
+       << NumNumericFact_ << endl;
+  cout << "Amesos_Scalapack : Time for num fact = "
+       << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
+       << " (s)" << endl;
+  cout << "Amesos_Scalapack : Number of solve phases = "
+       << NumSolve_ << endl;
+  cout << "Amesos_Scalapack : Time for solve = "
+       << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
+       << " (s)" << endl;
+  cout << "----------------------------------------------------------------------------" << endl;
+   
+  return;
 }
