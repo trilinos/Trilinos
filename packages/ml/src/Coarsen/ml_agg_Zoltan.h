@@ -29,6 +29,13 @@ extern "C" {
 
   extern int ML_Aggregate_Get_UseDropping();
   
+  extern int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
+				  int N_parts,
+				  int graph_decomposition[],
+				  double bdry_nodes[],
+				  double [], double [], double [],
+				  int);
+  
 #ifndef ML_CPP
 #ifdef __cplusplus
 }

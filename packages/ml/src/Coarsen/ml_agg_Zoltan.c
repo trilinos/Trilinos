@@ -47,13 +47,6 @@ extern int ML_ApplyQ(int StartingNumElements,
 		     double* ReorderedVectors);
 
 extern void ML_DestroyQ(void);
-  
-int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
-				  int N_parts,
-				  int graph_decomposition[],
-				  double bdry_nodes[],
-				  double [], double [], double [],
-				  int);
 
 extern int OPTIMAL_VALUE;
 extern int PARMETIS_DEBUG_LEVEL;
