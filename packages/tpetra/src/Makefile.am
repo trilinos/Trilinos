@@ -45,7 +45,8 @@ CORE =
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp
 
-UTIL = 
+UTIL = \
+	$(srcdir)/Tpetra_Version.cpp
 
 ENUM_H = 
 

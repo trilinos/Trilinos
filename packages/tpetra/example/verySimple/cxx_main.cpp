@@ -29,10 +29,13 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_SerialComm.hpp"
 #include "Tpetra_SerialPlatform.hpp"
+#include "Tpetra_Version.cpp"
 
 int main(int argc, char *argv[])
 {
 	cout << "*** Starting verySimple example..." << endl;
+
+	cout << Tpetra::Tpetra_Version() << endl;
 
 	// test Object
 	cout << "*** Creating Object..." << endl;
