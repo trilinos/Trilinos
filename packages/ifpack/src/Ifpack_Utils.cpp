@@ -11,6 +11,7 @@
 #include "Epetra_Vector.h"
 #include <vector>
 
+//============================================================================
 void Ifpack_BreakForDebugger(Epetra_Comm& Comm)
 {
   char hostname[80];
@@ -214,3 +215,48 @@ int Ifpack_PrintResidual(const int iter, const Epetra_RowMatrix& A,
 
   return(0);
 }
+
+//============================================================================
+void Ifpack_PrintSparsity(Epetra_RowMatrix& A)
+{
+  int MaxEntries = A.MaxNumEntries();
+  vector<int> Indices(MaxEntries);
+  vector<double> Values(MaxEntries);
+  vector<bool> FullRow(A.NumMyRows());
+
+  cout << "+-";
+  for (int j = 0 ; j < A.NumMyRows() ; ++j)
+    cout << '-';
+  cout << "-+" << endl;
+
+  for (int i = 0 ; i < A.NumMyRows() ; ++i) {
+
+    int Length;
+    A.ExtractMyRowCopy(i,MaxEntries,Length,
+                       &Values[0], &Indices[0]);
+
+    for (int j = 0 ; j < A.NumMyRows() ; ++j)
+      FullRow[j] = false;
+
+    for (int j = 0 ; j < Length ; ++j) {
+      FullRow[Indices[j]] = true;
+    }
+
+    cout << "| ";
+    for (int j = 0 ; j < A.NumMyRows() ; ++j) {
+      if (FullRow[j])
+        cout << '*';
+      else
+        cout << ' ';
+    }
+    cout << " |" << endl;
+  }
+
+  cout << "+-";
+  for (int j = 0 ; j < A.NumMyRows() ; ++j)
+    cout << '-';
+  cout << "-+" << endl << endl;
+
+}
+
+

@@ -32,4 +32,6 @@ int Ifpack_PrintResidual(char* Label,  const Epetra_RowMatrix& A,
 int Ifpack_PrintResidual(int iter, const Epetra_RowMatrix& A,
                          const Epetra_MultiVector& X, const Epetra_MultiVector&Y);
 
+void Ifpack_PrintSparsity(Epetra_RowMatrix& A);
+
 #endif // IFPACK_UTILS_H
