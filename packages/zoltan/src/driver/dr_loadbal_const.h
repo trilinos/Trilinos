@@ -13,9 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_dr_loadbal_const = "$Id$";
-#endif
 
 #ifndef _DR_LOADBAL_CONST_H_
 #define _DR_LOADBAL_CONST_H_

@@ -13,9 +13,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_dr_main = "$Id$";
-#endif
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Driver for dynamic load-balance library, ZOLTAN.                */

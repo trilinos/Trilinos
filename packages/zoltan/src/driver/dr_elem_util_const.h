@@ -16,9 +16,6 @@
 
 #ifndef _DR_ELEM_UTIL_CONST_H_
 #define _DR_ELEM_UTIL_CONST_H_
-#ifndef lint
-static char *cvs_elem_util_ch_id = "$Id$";
-#endif
 
 #include "dr_const.h"
 

@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_dr_elem_util = "$Id$";
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>

@@ -16,9 +16,6 @@
 
 #ifndef _DR_ELM_CONST_H
 #define _DR_ELM_CONST_H
-#ifndef lint
-static char *cvs_elemch_id = "$Id$";
-#endif
 
 /* Define element types */
 typedef enum {E_TYPE_ERROR=-1, SPHERE, BAR1, BAR2, QUAD1, S_QUAD2, QUAD2,
@@ -28,7 +25,7 @@ typedef enum {E_TYPE_ERROR=-1, SPHERE, BAR1, BAR2, QUAD1, S_QUAD2, QUAD2,
 
 extern
 E_Type get_elem_type(
-  const char *elem_name,	/* ExodusII element name */
+  char       *elem_name,	/* ExodusII element name */
   const int   num_nodes,	/* Number of nodes in the element */
   const int   num_dim		/* Number of dimensions of the mesh */
 );
@@ -42,10 +39,10 @@ int get_elem_info(
 
 extern
 int get_side_id(
-  const E_Type  etype,		/* The element type */
+  E_Type     etype,		/* The element type */
   const int *conn,		/* The element connectivity */
   const int  nsnodes,		/* The number of side nodes */
-  int  side_nodes[]		/* The list of side node IDs */
+  int        side_nodes[]	/* The list of side node IDs */
 );
 
 extern

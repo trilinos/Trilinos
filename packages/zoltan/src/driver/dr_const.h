@@ -16,11 +16,6 @@
 #ifndef _DR_CONST_H
 #define _DR_CONST_H
 
-#ifndef lint
-static char *cvs_dr_const_id = "$Id$";
-#endif
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include "lbi_const.h"

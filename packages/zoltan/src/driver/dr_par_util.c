@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_dr_par_util = "$Id$";
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -146,7 +143,7 @@ void boundary_exchange(
   int *recv_vec          /* Vector of values to be received.                 */
 )
 {
-int i, ierr, offset;
+int i, offset;
 int msg_type = 111;
 
 MPI_Status  *status = NULL;
@@ -158,17 +155,17 @@ MPI_Request *req = NULL;
   /* Post receives */
   offset = 0;
   for (i = 0; i < Mesh.necmap; i++) {
-    ierr = MPI_Irecv(&(recv_vec[offset]), Mesh.ecmap_cnt[i], MPI_INT, 
-                     Mesh.ecmap_id[i], msg_type, MPI_COMM_WORLD, &(req[i]));
-    offset += Mesh.ecmap_cnt[i];
+    MPI_Irecv(&(recv_vec[offset]), Mesh.ecmap_cnt[i]*vec_len, MPI_INT, 
+              Mesh.ecmap_id[i], msg_type, MPI_COMM_WORLD, &(req[i]));
+    offset += Mesh.ecmap_cnt[i]*vec_len;
   }
 
   /* Send messages */
   offset = 0;
   for (i = 0; i < Mesh.necmap; i++) {
-    ierr = MPI_Send(&(send_vec[offset]), Mesh.ecmap_cnt[i], MPI_INT, 
-                    Mesh.ecmap_id[i], msg_type, MPI_COMM_WORLD);
-    offset += Mesh.ecmap_cnt[i];
+    MPI_Send(&(send_vec[offset]), Mesh.ecmap_cnt[i]*vec_len, MPI_INT, 
+             Mesh.ecmap_id[i], msg_type, MPI_COMM_WORLD);
+    offset += Mesh.ecmap_cnt[i]*vec_len;
   }
 
   /* Receive messages */

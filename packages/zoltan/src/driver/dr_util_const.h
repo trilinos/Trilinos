@@ -16,9 +16,6 @@
 
 #ifndef _DR_UTIL_CONST_H_
 #define _DR_UTIL_CONST_H_
-#ifndef lint
-static char *cvs_util_ch_id = "$Id$";
-#endif
 
 /* Function prototypes */
 extern

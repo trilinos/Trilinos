@@ -17,10 +17,6 @@
 #ifndef _DR_ERR_CONST_H_
 #define _DR_ERR_CONST_H_
 
-#ifndef lint
-static char *cvs_errch_id = "$Id$";
-#endif
-
 #define MAX_ERR_MSG 1024
 
 /* Structure to store an error message */

@@ -13,9 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_output = "$Id$";
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>

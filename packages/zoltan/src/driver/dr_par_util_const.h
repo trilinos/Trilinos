@@ -16,9 +16,6 @@
 
 #ifndef _DR_PAR_UTIL_CONST_H_
 #define _DR_PAR_UTIL_CONST_H_
-#ifndef lint
-static char *cvs_par_util_ch = "$Id$";
-#endif
 
 extern
 void print_sync_start (
