@@ -92,7 +92,7 @@ include $(DEPEND)
 
 # Generate a C++ wrapper and proxy file from a SWIG interface
 %_wrap.cxx %.py: %.i
-	$(SWIG) $(COMMON_INCLUDE) $(TRILINOS_INCLUDE1) -noruntime -python -c++ -shadow $<
+	$(SWIG) $(COMMON_INCLUDE) $(TRILINOS_INCLUDE1) -noruntime -python -c++ $<
 
 # Generate an object file from a C++ file and its header
 %.o: %.cxx %.h

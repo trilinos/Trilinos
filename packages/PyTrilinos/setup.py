@@ -88,8 +88,8 @@ EpetraExt = Extension("PyTrilinos._EpetraExt",
                       )
 
 # NOX_Epetra extension module
-NOX_Epetra = Extension("PyTrilinos._NOX_Epetra",
-                       ["src/NOX_Epetra_wrap.cxx",
+NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
+                       ["src/NOX/Epetra_wrap.cxx",
                         "src/Callback.cxx",
                         "src/Epetra_VectorHelper.cxx",
                         "src/NumPyArray.cxx",

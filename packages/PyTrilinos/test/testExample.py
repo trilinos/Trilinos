@@ -9,7 +9,6 @@ import setpath
 from PyTrilinos import Epetra
 from PyTrilinos import EpetraExt
 from PyTrilinos import NOX
-from PyTrilinos import NOX_Epetra
 
 ########################################################################
 
@@ -118,7 +117,7 @@ def main():
     lsParams.setParameter("Preconditioning",  "AztecOO: Jacobian Matrix")
 
     # Create the interface between the Problem and the NOX nonlinear solver
-    interface = NOX_Epetra.PyInterface(problem)
+    interface = NOX.Epetra.PyInterface(problem)
     problem.setInterface(interface)
 
     # Generate a color map from the problem graph
@@ -129,12 +128,12 @@ def main():
     columns       = colorMapIndex(problem.getGraph())
 
     # Create the finite difference coloring object
-    fdc = NOX_Epetra.FiniteDifferenceColoring(interface, soln,    \
+    fdc = NOX.Epetra.FiniteDifferenceColoring(interface, soln,    \
                                               problem.getGraph(), \
                                               colorMap, columns)
 
     # Create the group
-    group = NOX_Epetra.Group(printParams, lsParams, interface, soln, fdc)
+    group = NOX.Epetra.Group(printParams, lsParams, interface, soln, fdc)
 
     # Create the convergence tests
     absresid  = NOX.StatusTest.NormF(1.0e-6)

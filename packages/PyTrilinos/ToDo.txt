@@ -55,7 +55,7 @@
 
 ****** Get rid of NOX_Parameter_List warnings
 
-****** Move NOX_Epetra into NOX directory
+[Done] Move NOX_Epetra into NOX directory
 
 [Done] Inside setup.py, change NOX Extensions to have NOX_ prefix
 

@@ -7,22 +7,39 @@
 #include <vector>
 
 // Epetra includes
+#include "Epetra_Object.h"
+#include "Epetra_SrcDistObject.h"
+#include "Epetra_DistObject.h"
 #include "Epetra_CrsGraph.h"
+#include "Epetra_IntVector.h"
 #include "Epetra_MapColoring.h"
 
-// Epetraext includes
+// EpetraExt includes
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 %}
 
 // Ignore directives
-%ignore Epetra_CompObject::operator=(const Epetra_CompObject &);
+%ignore Epetra_CrsGraph::operator[](int);
+%ignore Epetra_CrsGraph::operator[](int) const;
+%ignore Epetra_CrsGraph::operator=(const Epetra_CrsGraph &);
+%ignore Epetra_IntVector::operator=(const Epetra_IntVector &);
+%ignore Epetra_IntVector::operator[](int);
+%ignore Epetra_IntVector::operator[](int) const;
+%ignore Epetra_MapColoring::operator[](int);
+%ignore Epetra_MapColoring::operator[](int) const;
 
 // SWIG library includes
 %include "std_vector.i"
 
 // Epetra interface import
-%import "RawEpetra.i"
+//%import "RawEpetra.i"
+%import "Epetra_Object.h"
+%import "Epetra_SrcDistObject.h"
+%import "Epetra_DistObject.h"
+%import "Epetra_CrsGraph.h"
+%import "Epetra_IntVector.h"
+%import "Epetra_MapColoring.h"
 
 // Epetra interface includes
 %include "EpetraExt_Transform.h"

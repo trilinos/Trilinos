@@ -2,7 +2,7 @@
 ROOT       := ../../
 
 # The interface files
-INTERFACES := Abstract.i Parameter.i Solver.i StatusTest.i
+INTERFACES := Abstract.i Epetra.i Parameter.i Solver.i StatusTest.i
 
 # Common Makefile macros
 include $(ROOT)common.mk

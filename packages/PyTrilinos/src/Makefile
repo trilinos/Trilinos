@@ -8,7 +8,8 @@ SRC        := Callback.cxx            \
 	      PyInterface.cxx
 
 # The interface files
-INTERFACES := RawEpetra.i EpetraExt.i NOX_Epetra.i
+#INTERFACES := RawEpetra.i EpetraExt.i NOX_Epetra.i
+INTERFACES := RawEpetra.i EpetraExt.i
 
 # Sub-directories
 SUBDIRS    := NOX
