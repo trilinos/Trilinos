@@ -28,6 +28,8 @@
 double computeNorm(const Epetra_Vector & x);
 double computeDiffNorm(const Epetra_Vector & x, const Epetra_Vector & y);
 void perturbDiag(Epetra_CrsMatrix *A, const Epetra_Vector & diagA, double scaleFactor);
+void compareSolutions(const Epetra_CrsMatrix & A, const Epetra_MultiVector & X, 
+		      const Epetra_MultiVector & XX);
 void compareSolutions(const Epetra_CrsMatrix & A, const Epetra_Vector & x, const Epetra_Vector & xx);
 
 int main(int argc, char *argv[])
@@ -151,16 +153,29 @@ int main(int argc, char *argv[])
   compareSolutions(A, x, xx);
 
   cout << endl << endl << "*************************************************" << endl;
-  cout << "Doing the same thing again, should have similar timings" << endl;
+  cout << "Doing the same thing again, but with three RHS" << endl;
   perturbDiag(&A, diagA, 1.2); // Perturb diagonal a bit to make matrix different
 
-  A.Multiply(false, xx, bb); // Modify RHS to match perturbed matrix
+  Epetra_MultiVector XX(xx.Map(),3);
+  Epetra_MultiVector BB(XX);
+  XX.Random();
+  Epetra_MultiVector X(XX);
+  problem.SetLHS(&XX);
+  problem.SetRHS(&BB);
+  A.Multiply(false, XX, BB); // Modify RHS to match perturbed matrix
   cout << "One Norm of third matrix = " << A.NormOne() << endl;
   start = timer.ElapsedTime();
   solver.Solve();
   double spFactorAndSolveTime2 = timer.ElapsedTime() - start;
 
-  compareSolutions(A, x, xx);
+  compareSolutions(A, X, XX);
+
+  start = timer.ElapsedTime();
+  solver.Solve(false);
+  double spSolveOnlyTime = timer.ElapsedTime() - start;
+
+  compareSolutions(A, X, XX);
+
 
   cout << endl
        << "*************************************************" << endl
@@ -169,8 +184,11 @@ int main(int argc, char *argv[])
        << "Total time for first solve                     = " << spOrderAndFactorTime+spSolveTime 
        << endl <<endl
        << "Time for second factor/solve (no ordering)     = " << spFactorAndSolveTime1 << endl <<endl
-       << "Time for third factor/solve (identical to 2nd) = " << spFactorAndSolveTime1 << endl <<endl
+       << "Time for third factor/solve using 3 RHS        = " << spFactorAndSolveTime2 << endl <<endl
+       << "Time for forward/back solve only using 3 RHS   = " << spSolveOnlyTime << endl <<endl
        << "*************************************************" << endl;
+
+
   free ((void *) xguess);
   free ((void *) b);
   free ((void *) xexact);
@@ -211,6 +229,16 @@ void perturbDiag(Epetra_CrsMatrix *A, const Epetra_Vector & diagA, double scaleF
   for (int i=0; i< NumMyRows; i++) {
     double newDiagValue = diagA[i]*scaleFactor;
     A->ReplaceMyValues(i, 1, &newDiagValue, &i);
+  }
+}
+
+void compareSolutions(const Epetra_CrsMatrix & A, const Epetra_MultiVector & X, 
+		      const Epetra_MultiVector & XX) {
+
+  for (int i=0; i<XX.NumVectors(); i++) {
+    const Epetra_Vector * & Xi = X(i);
+    const Epetra_Vector * & XXi = XX(i);
+    compareSolutions(A, *Xi, *XXi);
   }
 }
 
