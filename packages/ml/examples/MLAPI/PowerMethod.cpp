@@ -27,22 +27,11 @@
 //@HEADER
 
 #include "ml_config.h"
+#include "ml_common.h"
+#if defined(HAVE_ML_MLAPI)
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
-
-#ifdef HAVE_MPI
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_RowMatrix.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
-#include "ml_include.h"
 #include "MLAPI.h"
 
-using namespace Teuchos;
-using namespace Trilinos_Util;
 using namespace MLAPI;
 
 // ============== //
@@ -52,59 +41,78 @@ using namespace MLAPI;
 int main(int argc, char *argv[])
 {
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
 #endif
 
   try {
 
-    // must be a square number
+    // initialize the MLAPI workspace
+    
+    Init();
+
+    // Global dimension of our problem. It must be a square number
+    
     int NumGlobalRows = 16;
 
-    // initialize the MLAPI workspace
-    MLAPI::Init();
-
     // Create the space in which vectors and operators live
-    MLAPI::Space MySpace(NumGlobalRows);
+    
+    Space MySpace(NumGlobalRows);
 
-    // Define vectors and operator
-    MLAPI::MultiVector x(MySpace), y(MySpace);
-    MLAPI::Operator A = Gallery("laplace_1d", MySpace);
+    // Define vectors and operator, based on `MySpace'. The linear system
+    // matrix is created using the MLAPI Gallery, which is only a 
+    // convenient wrapper of the Triutils gallery.
+    
+    MultiVector x(MySpace), y(MySpace);
+    Operator A = Gallery("laplace_1d", MySpace);
 
     // We can now start coding the power method. We want a random vector of
     // unitary 2-norm. First, we set random elements in the vector. Then,
     // we divide each element by the 2-norm of the vector, computed as
     // x * x. For two general vectors, x * y represents the scalar product
     // between x and y (defined on the same space).
+    
     x.Random();
     x = x / sqrt(x * x);
 
-    // loop for power method.
-    int MaxIters = 20;
+    // ==================== //
+    // loop of power method //
+    // ==================== //
+    
+    int MaxIters = 10;
+
     for (int i = 0 ; i < MaxIters ; ++i) {
-      // matrix-vector product
-      y = A * x;
+
+      y = A * x;  // matrix-vector product
+
       // note that you need parenthesis in the following expression
-      // and that x * y is a global operation
+      // and that x * y is a global operation (therefore all
+      // processes must execute it)
+      
       double RQ = (y * x) / (x * x);
       if (GetMyPID() == 0)
         cout << "iter = " << i << ", RQ = " << RQ << endl;
+
       x = y / sqrt(y * y);
+
     }
 
-    MLAPI::Finalize();
+    // finalize the MLAPI workspace
+
+    Finalize();
+
   } 
   catch (exception& e) {
     cout << e.what() << endl;
+  } 
+  catch (int e) {
+    cout << "Integer exception, code = " << e << endl;
   } 
   catch (...) {
     cout << "problems here..." << endl;
   }
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
@@ -114,14 +122,26 @@ int main(int argc, char *argv[])
 
 #else
 
-#include <stdlib.h>
-#include <stdio.h>
+#include "ml_include.h"
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
 
-  return 0;
+  puts("The ML API requires the following configuration options:");
+  puts("\t--enable-epetra");
+  puts("\t--enable-teuchos");
+  puts("\t--enable-ifpack");
+  puts("\t--enable-amesos");
+  puts("Please check your configure line.");
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+
+  return(0);
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif // #if defined(HAVE_ML_MLAPI)

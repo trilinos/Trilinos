@@ -28,8 +28,8 @@
 //@HEADER
 
 #include "ml_config.h"
-
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#include "ml_common.h"
+#if defined(HAVE_ML_MLAPI)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -49,7 +49,7 @@ using namespace MLAPI;
 // 2-level additive Schwarz preconditioner //
 // ======================================= //
 
-class TwoLevelDDAdditive : public Preconditioner {
+class TwoLevelDDAdditive : public BaseOperator {
 
 public:
   // Constructor assumes that all operators and inverse operators are already
@@ -86,7 +86,7 @@ public:
     return(*this);
   }
     
-  int Solve(const MultiVector& r_f, MultiVector& x_f) const
+  int Apply(const MultiVector& r_f, MultiVector& x_f) const
   {
     
     MultiVector r_c(FineSolver_.GetDomainSpace());
@@ -176,16 +176,10 @@ int main(int argc, char *argv[])
 
     int NumGlobalElements = 10000;
     // define the space for fine level vectors and operators.
-    Space FineSpace(NumGlobalElements);
+    Space FineSpace(-1, NumGlobalElements);
 
     // define the linear system matrix, solution and RHS
-    //Operator FineMatrix = Gallery("laplace_2d", FineSpace);
-
-  Trilinos_Util::CrsMatrixGallery Gallery("laplace_2d", GetEpetra_Comm());
-  Gallery.Set("problem_size", NumGlobalElements);
-  // `false' as last argument means that the user will deallocate
-  // the matrix, not MLAPI
-  Operator FineMatrix(FineSpace,FineSpace,Gallery.GetMatrix(),false);
+    Operator FineMatrix = Gallery("laplace_2d", FineSpace);
 
     MultiVector LHS(FineSpace);
     MultiVector RHS(FineSpace);
@@ -216,16 +210,12 @@ int main(int argc, char *argv[])
     MLList.set("aggregation: type","Uncoupled");
 #endif
 
-    AggregationDataBase  ADB(MLList);
-    SmootherDataBase     SDB(MLList);
-    CoarseSolverDataBase CDB(MLList);
+    GetPtent(FineMatrix,MLList,P);
+    R = GetTranspose(P);
 
-    BuildPtent(FineMatrix,ADB,P);
-    R = Transpose(P);
-
-    CoarseMatrix = RAP(R,FineMatrix,P);
-    FineSolver.Reshape(FineMatrix,SDB);
-    CoarseSolver.Reshape(CoarseMatrix,CDB);
+    CoarseMatrix = GetRAP(R,FineMatrix,P);
+    FineSolver.Reshape(FineMatrix,"symmetric Gauss-Seidel", MLList);
+    CoarseSolver.Reshape(CoarseMatrix,"Amesos-KLU", MLList);
 
     // We can now construct a Preconditioner-derived object, that
     // implements the 2-level hybrid domain decomposition preconditioner.
@@ -233,13 +223,12 @@ int main(int argc, char *argv[])
     // `TwoLevelDDAdditive' to define an purely additive preconditioner.
     TwoLevelDDAdditive MLAPIPrec(FineMatrix,FineSolver,CoarseSolver,R,P);
 
-    MLList.set("max iterations", 1550);
-    MLList.set("tolerance", 1e-9);
-    MLList.set("solver",  "gmres");
-    MLList.set("output", 16);
+    MLList.set("krylov: max iterations", 1550);
+    MLList.set("krylov: tolerance", 1e-9);
+    MLList.set("krylov: type",  "gmres");
+    MLList.set("krylov: output", 16);
 
-    KrylovDataBase KDB; // set default options
-    Krylov(FineMatrix, LHS, RHS, MLAPIPrec, KDB);
+    Krylov(FineMatrix, LHS, RHS, MLAPIPrec, MLList);
     
   }
   catch (const char e[]) {
@@ -266,9 +255,14 @@ int main(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
-  
-  return 0;
+  puts("The ML API requires the following configuration options:");
+  puts("\t--enable-epetra");
+  puts("\t--enable-teuchos");
+  puts("\t--enable-ifpack");
+  puts("\t--enable-amesos");
+  puts("Please check your configure line.");
+
+  return(0);
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif // #if defined(HAVE_ML_MLAPI)

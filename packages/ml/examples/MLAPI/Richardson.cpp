@@ -31,6 +31,7 @@
 #include "ml_common.h"
 
 #if defined(HAVE_ML_MLAPI)
+
 #include "MLAPI.h"
 
 using namespace Teuchos;
@@ -50,20 +51,20 @@ int main(int argc, char *argv[])
   try {
 
     // Initialize the workspace and set the output level
+    
     Init();
 
+    // global dimension of the problem
+    
     int NumGlobalElements = 10000;
 
     // define the space for fine level vectors and operators.
-    Space FineSpace(NumGlobalElements);
+    
+    Space S(NumGlobalElements);
 
-    // define the linear system matrix, solution and RHS
-    Operator FineMatrix = Gallery("laplace_1d", FineSpace);
-    MultiVector LHS(FineSpace);
-    MultiVector RHS(FineSpace);
-
-    LHS = 0.0;
-    RHS.Random();
+    // define the linear system matrix.
+    
+    Operator A = Gallery("laplace_2d", S);
 
     // set parameters for aggregation and smoothers
     // NOTE: only a limited subset of the parameters accepted by
@@ -72,41 +73,86 @@ int main(int argc, char *argv[])
     
     Teuchos::ParameterList MLList;
     MLList.set("max levels",3);
-    MLList.set("increasing or decreasing","increasing");
     MLList.set("aggregation: type", "Uncoupled");
     MLList.set("aggregation: damping factor", 0.0);
     MLList.set("smoother: type","symmetric Gauss-Seidel");
     MLList.set("smoother: sweeps",1);
     MLList.set("smoother: damping factor",1.0);
     MLList.set("coarse: max size",3);
-    MLList.set("smoother: pre or post", "both");
     MLList.set("coarse: type","Amesos-KLU");
 
-    MultiLevelSA Prec(FineMatrix, MLList);
+    MultiLevelSA P(A, MLList);
 
-    // solve with GMRES (through AztecOO)
-    MLList.set("krylov: solver", "gmres");
-    MLList.set("krylov: max iterations", 1550);
-    MLList.set("krylov: tolerance", 1e-9);
-    MLList.set("krylov: output", 16);
-    Krylov(FineMatrix, LHS, RHS, Prec, MLList);
+    // Here we define a simple Richardson method for the
+    // solution of A x = b. The preconditioner is P,
+    // the exact solution (x_ex) is a random vector, the
+    // starting solution (x) is the zero vector. 
+    
+    MultiVector x_ex(S);
+    MultiVector x(S);
+    MultiVector b(S);
+    MultiVector r(S);
+    MultiVector z(S);
 
-    cout << Prec;
+    x_ex.Random();
+    b = A * x_ex;
+    x = 0.0;
+    
+    double OldNorm   = 1.0;
+    double Tolerance = 1e-13;
+    int    MaxIters  = 30;
+
+    // ================ //
+    // Richardson cycle //
+    // ================ //
+
+    for (int i = 0 ; i < MaxIters ; ++i) {
+
+      r = b - A * x; // new residual
+      z = P * r;     // apply preconditioner with zero initial guess
+      x = x + z;     // update solution
+
+      // compute the A-norm of the error
+
+      double NewNorm = sqrt((x - x_ex) * (A * (x - x_ex)));
+
+      if (GetMyPID() == 0 && i) {
+        cout << "||x - x_ex||_A = ";
+        cout.width(15);
+        cout << NewNorm << ", ";
+        cout << "reduction = ";
+        cout.width(15);
+        cout << NewNorm / OldNorm << endl;
+      }
+
+      if (NewNorm < Tolerance)
+        break;
+
+      OldNorm = NewNorm;
+
+    }
+
+    // finalize the MLAPI workspace
+    
+    Finalize();
+
   }
-  catch (const char e[]) {
-    cerr << "Caught exception: " << e << endl;
-  }
+  catch (exception& e) {
+    cout << e.what() << endl;
+  } 
+  catch (int e) {
+    cout << "Integer exception, code = " << e << endl;
+  } 
   catch (...) {
-    cerr << "Caught exception..." << endl;
+    cout << "problems here..." << endl;
   }
-
-  Finalize();
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
   return(0);
+
 }
 
 #else
@@ -133,4 +179,4 @@ int main(int argc, char *argv[])
   return(0);
 }
 
-#endif // #if defined(HAVE_ML_MLAPI)
+#endif // if defined(HAVE_ML_MLAPI)

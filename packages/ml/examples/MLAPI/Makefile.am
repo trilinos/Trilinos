@@ -14,7 +14,9 @@ EXEEXT = .exe
 noinst_PROGRAMS = Blackboard           \
                   PowerMethod          \
                   TwoLevelDDAdditive   \
-                  MultiLevel         
+                  MultiLevel           \
+                  Richardson           \
+                  AdaptiveSA
 
 Blackboard_SOURCES  = $(srcdir)/Blackboard.cpp
 Blackboard_CPPFLAGS = ${ml_common_include_locations}
@@ -39,3 +41,15 @@ MultiLevel_CPPFLAGS = ${ml_common_include_locations}
 MultiLevel_CXXFLAGS = ${ml_common_include_locations}
 MultiLevel_LDADD    = ${ml_libs} 
 MultiLevel_LINK     = ${mllink}
+
+AdaptiveSA_SOURCES  = $(srcdir)/AdaptiveSA.cpp
+AdaptiveSA_CPPFLAGS = ${ml_common_include_locations}
+AdaptiveSA_CXXFLAGS = ${ml_common_include_locations}
+AdaptiveSA_LDADD    = ${ml_libs} 
+AdaptiveSA_LINK     = ${mllink}
+
+Richardson_SOURCES  = $(srcdir)/Richardson.cpp
+Richardson_CPPFLAGS = ${ml_common_include_locations}
+Richardson_CXXFLAGS = ${ml_common_include_locations}
+Richardson_LDADD    = ${ml_libs} 
+Richardson_LINK     = ${mllink}
