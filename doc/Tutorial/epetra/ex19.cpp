@@ -31,8 +31,6 @@
 // -----------------
 // Create a Crs matrix corresponding to a 2D Laplacian problem
 // on a cartesian mesh.
-//
-// Marzio Sala, SNL, 9214, 20-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI

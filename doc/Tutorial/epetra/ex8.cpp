@@ -32,8 +32,6 @@
 // Epetra_Vectors in View mode; use of ResetView.
 //
 // (output reported at the end of the file)
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI

@@ -32,8 +32,6 @@
 // Print out some information about a CRS matrix
 //
 // (output reported at the end of the file)
-//
-// Marzio Sala, SNL, 9214, 20-Nov-2003
 
 #include "float.h"
 #include "Epetra_config.h"

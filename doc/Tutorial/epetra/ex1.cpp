@@ -31,10 +31,10 @@
 // -----------------
 // Basic definition of communicator.
 // This code should be run with at least two processes
+// However, not that the SAME code works even if Epetra
+// has been configured without MPI!
 //
 // (output reported at the end of the file)
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI
@@ -72,12 +72,10 @@ int main(int argc, char *argv[])
   double dvalue, dvalue2, dvalues[NumProc], dvalues2[NumProc];
   int root = 0;
   
-  // MPI_Barrier
+  // equivalent to MPI_Barrier
   
   Comm.Barrier();
-  
-  // MPI_Broadcast
-  
+   
   if( MyPID == root ) dvalue = 12.0;
 
   // on input, the root processor contains the list of values
@@ -85,6 +83,8 @@ int main(int argc, char *argv[])
   // have he same list of values. Note that all values must be allocated
   // vefore the broadcast
   
+  // equivalent to  MPI_Broadcast
+    
   Comm.Broadcast( &dvalue, 1, root );
 
   // as before, but with integer values. As C++ can bind to the appropriate
@@ -92,21 +92,21 @@ int main(int argc, char *argv[])
   
   Comm.Broadcast( &ivalue, 1, root );
 
-  // MPI_Allgather
+  // equivalent MPI_Allgather
 
   Comm.GatherAll( dvalues, dvalues2, 1);
 
-  // MPI_Allreduce with MPI_SUM
+  // equivalent to MPI_Allreduce with MPI_SUM
 
   dvalue = 1.0*MyPID;
 
   Comm.SumAll( &dvalue, dvalues, 1 );
 
-  // MPI_Allreduce with MPI_SUM
+  // equivalent to MPI_Allreduce with MPI_SUM
 
   Comm.MaxAll( &dvalue, dvalues, 1 );
 
-  // MPI_Scan with MPI_SUM
+  // equiavant to MPI_Scan with MPI_SUM
 
   dvalue = 1.0*MyPID;
   

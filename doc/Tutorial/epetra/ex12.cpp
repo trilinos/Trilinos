@@ -37,8 +37,6 @@
 //     |            -1  2  |
 //
 // (output reported at the end of the file)
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI
@@ -63,10 +61,13 @@ int main(int argc, char *argv[])
 
   // set global dimension of the matrix to 5, could be any number
   int NumGlobalElements = 5;
+  
   // create a map
   Epetra_Map Map(NumGlobalElements,0,Comm);
+  
   // local number of rows
   int NumMyElements = Map.NumMyElements();
+  
   // get update list
   int * MyGlobalElements = Map.MyGlobalElements( );
 
@@ -86,9 +87,9 @@ int main(int argc, char *argv[])
       NumNz[i] = 3;
 
   // Create a Epetra_Matrix
-
   Epetra_CrsMatrix A(Copy,Map,NumNz);
-
+  // (NOTE: constructor `Epetra_CrsMatrix A(Copy,Map,3);' was ok too.)
+  
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1, diagonal term 2

@@ -38,8 +38,6 @@
 //
 // (`*' being a nonzero block). The block size of block-row
 // is will be i+1.
-//
-// Marzio Sala, SNL, 9214, 20-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI

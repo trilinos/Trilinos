@@ -33,8 +33,6 @@
 // This code should be run with one process
 //
 // (output reported at the end of the file)
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI
@@ -55,10 +53,13 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif  
 
-  // Total number of elements in matrix A
+  // declare two dense matrix, whose dimensions are still not specified
+  Epetra_SerialDenseMatrix A, B;
+  
+  // Total number of rows ans columns for dense matrix A
   int NumRowsA = 2, NumColsA = 2;
 
-  Epetra_SerialDenseMatrix A, B;
+  // shape A
   A.Shape( NumRowsA, NumColsA );
 
   // set the element of A using the () operator.
@@ -67,8 +68,10 @@ int main(int argc, char *argv[])
     for( int j=0 ; j<NumColsA ; ++j ) 
       A(i,j) = i+100*j;
 
+  // Epetra_SerialDenseMatrix overloads the << operator
   cout << A;
 
+  // get matrix norms
   cout << "Inf norm of A = " << A.OneNorm() << endl;
   cout << "One norm of A = " << A.InfNorm() << endl;
 

@@ -48,8 +48,6 @@
 // Note: The grid information are hardwired, but they can easily
 // be replaced by I/O functions.
 // This code must be run with two processes.
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI

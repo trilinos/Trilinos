@@ -33,8 +33,6 @@
 // This code should be run with at least two processes
 //
 // (output reported at the end of the file)
-//
-// Marzio Sala, SNL, 9214, 20-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI

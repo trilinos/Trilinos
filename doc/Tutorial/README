@@ -24,18 +24,33 @@
 # 
 # ************************************************************************
 
+
 This directory contains the example files used in the Trilinos Tutorial.
 Details on the installation are reported in this document. Please
 note that the environment variable
-TRILINOS_HOME
-TRILINOS_ARCH
-TRILINOS_LIB
+  TRILINOS_HOME
+  TRILINOS_ARCH
+  TRILINOS_LIB
 must have been defined. (This is not required by Trilinos, nor strictly
 necessary. You could avoid those definitions; however, in this case you
 will have to modify the Makefiles contained in each subdirectory.)
 
-Tutorial files have not been autotool'd.
+
+Tutorial files have not been autotool'd. 
+
 
 The subdirectory `latex' contains the source files of the tutorial.
+
+
+IMPORTANT NOTE:
+==============
+
+It is almost impossible to prepare Makefile's for all the installations.
+The exact linker line depends on how Trilinos has been configured, 
+compiled, and installed on a given machine. Packages like Amesos and ML will
+require different linking options. The user is likely to be required to
+modify Makefile.in to fix linking problems.
+
+
 
 Send bugs or suggestions to msala@sandia.gov

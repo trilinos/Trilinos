@@ -32,8 +32,6 @@
 // Definition of Epetra_Map
 //
 // (output reported at the end of the file)
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI
@@ -54,18 +52,17 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // create a map given the global number of points (any positive number)  
+  // global number of points in the map
   int NumGlobalPoint = 4;
 
+  // create a map given the global number of points (any positive number)  
   Epetra_Map Map1(NumGlobalPoint,0,Comm);
 
   // Epetra_Map overloads the << operator
   cout << Map1;
 
   // now create a map given the local number of points
-
   int NumMyPoints = Comm.MyPID();
-  
   Epetra_Map Map2(-1,NumMyPoints,0,Comm);
 
   cout << Map2;
