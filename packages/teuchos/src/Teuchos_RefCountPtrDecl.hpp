@@ -288,10 +288,15 @@ public:
 
 };	// end class RefCountPtr<...>
 
-/** Return a \c RefCountPtr object properly typed.
+/** Return a <tt>RefCountPtr</tt> object properly typed.
  *
- * The client should only create a RefCountPtr object given a pointer
- * return by \c new by calling this function.
+ * @param  p  [in] Pointer to an object allocated with <tt>new</tt> only.
+ *
+ * If the pointer <tt>p</tt> did not come from <tt>new</tt> do not use
+ * this function!
+ *
+ * The client should only create a <tt>RefCountPtr</tt> object given a
+ * pointer return by <tt>new</tt> by calling this function.
  *
  * KL 10/07/03: The original code sensibly made owns_mem an optional
  * argument that defaulted to true, but that did not compile on Solaris.
@@ -302,10 +307,26 @@ template<class T>
 RefCountPtr<T> rcp( T* p );
 
 ///
-/** Return a \c RefCountPtr object properly typed.
+/** Return a <tt>RefCountPtr</tt> object properly typed.
  *
- * The client should only create a RefCountPtr object given a pointer
- * return by \c new by calling this function.
+ * @param  p  [in] Pointer to an object to be reference counted.
+ * @param owns_mem
+ *            [in] If <tt>owns_mem==true</tt>  then <tt>delete p</tt>
+ *            will be called when the last reference to this object
+ *            is removed.  If <tt>owns_mem==false</tt> then nothing
+ *            will happen to delete the the object pointed to by
+ *            <tt>p</tt> when the last reference is removed.
+ *
+ * Preconditions:<ul>
+ * <li> If <tt>owns_mem==true</tt> then <tt>p</tt> must have been
+ *      created by calling <tt>new</tt> to create the object since
+ *      <tt>delete p</tt> will be called eventually.
+ * </ul>
+ *
+ * If the pointer <tt>p</tt> did not come from <tt>new</tt> then
+ * either the client should use the version of <tt>rcp()</tt> that
+ * that uses a deallocator policy object or should pass in 
+ * <tt>owns_mem = false</tt>.
  *
  * KL 10/07/03: The original code sensibly made owns_mem an optional
  * argument that defaulted to true, but that did not compile on Solaris.
