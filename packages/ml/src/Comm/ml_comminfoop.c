@@ -269,6 +269,10 @@ ML_CommInfoOP *ML_CommInfoOP_Create()
    comm_info->minimum_vec_size = 0;
    comm_info->remap_length = 0;
    comm_info->remap_max = 0;
+   comm_info->time = 0.0;
+   comm_info->NumActiveProc = 0;
+   comm_info->proc_active = 0;
+   comm_info->comm = NULL;
    return (comm_info);
 }
 
@@ -276,14 +280,47 @@ ML_CommInfoOP *ML_CommInfoOP_Create()
 /* destructor                                                           */
 /* -------------------------------------------------------------------- */
 
+extern char* ML_mylabel;
 void ML_CommInfoOP_Destroy(ML_CommInfoOP **comm_info)
 {
    int i;
    ML_CommInfoOP *c_info;
-
+#ifdef ML_TIMING_DETAILED
+   double t1;
+   int proc_active;
+   int NumActiveProc;
+   ML_Comm *comm;
+#endif
    c_info = *comm_info;
    if (c_info != NULL) 
    {
+#ifdef ML_TIMING_DETAILED
+      if (ML_mylabel != NULL) {
+      comm = c_info->comm;
+      NumActiveProc = c_info->NumActiveProc;
+      proc_active = c_info->proc_active;
+      /*printf("%s:  NumActiveProc = %d, proc_active = * %d\n",ML_mylabel,NumActiveProc,proc_active);*/
+      t1 = ML_gsum_double( (proc_active ? c_info->time : 0.0), comm);
+      /*printf("(%s) %d's apply time = %e (active = %d)\n",ML_mylabel,comm->ML_mypid,c_info->time,proc_active);*/
+      t1 = t1/((double) NumActiveProc);
+      if (comm->ML_mypid == 0)
+         printf(" Exchange boundary time for %s (average) \t= %e\n",ML_mylabel,t1);
+      t1 = ML_gmax_double( (proc_active ? c_info->time: 0.0), comm);
+      i =ML_gmax_int((t1 == c_info->time ? comm->ML_mypid:0),comm);
+      if (comm->ML_mypid == 0)
+         printf(" Exchange boundary time for %s (maximum %d) \t= %e\n",ML_mylabel,i,t1);
+      t1 = - c_info->time;
+      t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), comm);
+      t1 = - t1;
+      i =ML_gmax_int((t1 == c_info->time ? comm->ML_mypid:0),comm);
+      if (comm->ML_mypid == 0)
+         printf(" Exchange boundary time for %s (minimum %d) \t= %e\n",ML_mylabel,i,t1);
+      t1 = ML_Global_Standard_Deviation(c_info->time, NumActiveProc,
+                                            proc_active, comm);
+      if (comm->ML_mypid == 0)
+         printf(" Exchange boundary time for %s (std dev) \t= %e\n",ML_mylabel,t1);
+      }
+#endif
       if (c_info->remap != NULL) ML_free(c_info->remap);
       for (i = 0; i < c_info->N_neighbors; i++)
 	  {
@@ -511,7 +548,7 @@ int ML_CommInfoOP_Set_neighbors(ML_CommInfoOP **c_info, int N_neighbors,
      exit(1);
   }
 
-  comm_info = (ML_CommInfoOP *) ML_allocate(sizeof(ML_CommInfoOP));
+  comm_info = ML_CommInfoOP_Create();
   *c_info   = comm_info;
   comm_info->total_rcv_length   = 0;
   comm_info->minimum_vec_size   = 0;
@@ -997,8 +1034,11 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
   int              type, N_neighbors, *temp, i, j, k, rtype;
   USR_REQ         *request;
   ML_NeighborList *neighbor;
-
+#if defined(ML_TIMING)
+   double t0;
   /**************************** execution begins ******************************/
+   t0 = GetClock();
+#endif
   if (comm_info == NULL) return;
   N_neighbors              = comm_info->N_neighbors;
   if (N_neighbors == 0) return;
@@ -1106,6 +1146,10 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
      for (i = 0; i < comm_info->remap_max; i++) x[i] = tempv[i];
      ML_free(tempv);
   }
+
+#if defined(ML_TIMING)
+  comm_info->time += (GetClock() - t0);
+#endif
 } /* ML_exchange_bdry */
 
 int ML_CommInfoOP_Compute_TotalRcvLength(ML_CommInfoOP *comm_info)
