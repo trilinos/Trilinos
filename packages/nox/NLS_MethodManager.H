@@ -21,12 +21,12 @@ public:
   ~NLS_MethodManager();
 
 
-  virtual void resetParameters(NLS_ParameterList& p);
-  virtual bool isConverged();
-  virtual int iterate();
-  virtual int solve();
-  virtual NLS_Group& getSolutionGroup() const;
-  virtual bool getProfileInfo(string& name, NLS_Parameter& p) const;
+  void resetParameters(NLS_ParameterList& p);
+  bool isConverged();
+  int iterate();
+  int solve();
+  NLS_Group& getSolutionGroup() const;
+  bool getProfileInfo(string& name, NLS_Parameter& p) const;
 
 
 private:
