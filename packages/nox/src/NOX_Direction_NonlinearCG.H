@@ -38,44 +38,64 @@
 namespace NOX {
 namespace Direction {
 
-//! Nonlinear Conjugate Gradient method with Linesearch
+//! Calculates a search direction using the Nonlinear Conjugate Gradient method
 /*!
-  
-The following parameters are valid for this solver:
 
-- "Direction" -  Allows descent direction to be computed
-  as either the negative of the residual using "Richardson" \f${\bf
-  d}=-{\bf r} \f$ or as the Steepest Descent direction (default) using
-  "Steepest Descent" \f${\bf d}= -{\bf J}^T{\bf r}\f$.  The latter assumes
-  the objective function to be minimized is \f$f\equiv\frac{1}{2}{\bf
-  r}^T {\bf r}\f$.
+Calculates the direction
+\f[
+s = - M^{-1}(x) F(x) + \beta s_{prev}
+\f]
 
-- "Diagonal Precondition" - Either "On" or "Off" (default), determines
-  whether or not to scale the Descent Vector \f${\bf d}\f$ by the inverse of 
-  the diagonal of the current Jacobian.  When "Off", \f${\bf z} = {\bf d}\f$, 
-  and when "On" \f${\bf z} = \left({\rm diag} {\bf J}\right)^{-1} 
-  {\bf r}\f$.  This means of preconditioning is similar to that described in
-  Sandia Report, SAND81-0084J, J. H. Biffle, "The Solution of Quasi-Static
-  Nonlinear Mechanics Problems by the Nonlinear Conjugate Gradient Method"
+  where \f$ M \f$ is a preconditioner and \f$ \beta \f$ is an orthogonalization
+  parameter which can be computed in various ways (see below).
 
-- "Orthogonalize" -  Determines which expression to use for the 
-  orthogonalization parameter \f$\beta\f$ which is used to obtain a new search
-  direction by \f${\bf s}_{k+1} = {\bf z}_{k+1}+\beta{\bf s}_k\f$.  Currently,
-  two choices are available: "Fletcher-Reeves" (default) for which 
-  \f$\beta = \frac{{{\bf d}_{k+1}}^T{\bf d}_{k+1}}{{{\bf d}_k}^T{\bf d}_k}\f$
-  or "Polak-Ribiere" for which 
-  \f$\beta = \frac{{{\bf d}_{k+1}}^T({\bf d}_{k+1}-{\bf d}_k)}{{{\bf d}_k}^T
-  {\bf d}_k}\f$.  For more details, see chapter 5 of Nocedal & Wright, 
-  "Numerical Optimization", Springer-Verlag, New York, 1999.
+  To use this direction, specify that the "Method" is "NonlinearCG" in the
+  "Direction" sublist of the parameters that are passed to the solver
+  (see NOX::Direction::Manager for more information on choosing the
+  search direction).
 
--  "Restart Frequency" - Number of nonlinear iterations between restarts
-   (default = 10).  Restart corresponds to setting \f$\beta = 0\f$.
+  The following options may be specified in the "Direction" sublist of
+  the solver parameters.
 
-- "Output Frequency" - Number of nonlinear iterations between outputs
-  (default = 10)
+<ul>
+<li> "Orthogonalize" can be either of:
 
-- "Line Search" - Sublist of the line search parameters, passed to the
-  NOX::Linesearch::Manager constructor. Defaults to an empty list.
+    <ul>
+    <li>"Fletcher-Reeves" [default] - \f$ \beta =  \frac{F(x)^T M^{-1}(x)
+    F(x)}{F(x_{prev})^T M^{-1}(x_{prev}) F(x_{prev})}\f$ 
+
+    <li>"Polak-Ribiere" - \f$ \beta =  \frac{F(x)^T \left[M^{-1}(x) F(x)
+    - M^{-1}(x_{prev}) F(x_{prev})\right]}{F(x_{prev})^T M^{-1}(x_{prev})
+    F(x_{prev})}\f$
+
+    </ul>
+
+  For more details, see chapter 5 of Nocedal & Wright, "Numerical
+  Optimization", Springer-Verlag, New York, 1999.
+
+<li> "Precondition" can be either "On" or "Off" [default]:
+  determines whether or not to compute and apply preconditioner \f$ M \f$.
+  If "Off" is selected, no preconditioner is computed and the behavior is
+  equivalent to \f$ M = I \f$ where \f$ I \f$ is the identity matrix.
+  If "On", \f$ M \f$ is computed and applied as determined by the
+  underlying implementation.  Currently, NOX::Epetra only supports the
+  inverse of the diagonal of the current Jacobian, ie \f$ M = \left({\rm
+  diag} {\bf J}\right)^{-1} \f$.  This limits preconditioning to jacobi
+  (diagonal), but more general and robust choices will become available
+  shortly.  NOX::Petsc supports the full suite provided in the
+  user's Petsc installation and can be set by proper specification in
+  the .petscrc file.
+
+
+<li> "Restart Frequency" - An integer specification of the number of nonlinear 
+  iterations between restarts [default = 10].  Restart corresponds to
+  setting \f$\beta = 0\f$.  A good heuristic is to limit this value to
+  the number of problem degrees of freedom.  Setting this value to 1
+  forces \f$ \beta = 0 \f$ for every nonlinear iteration and corresponds
+  to a variant of NOX::Direction::SteepestDescent in which \f$ \nabla f(x)
+  \f$ is equivalent to \f$ F(x) \f$.
+
+</ul>
 
 */
 
@@ -83,115 +103,53 @@ class NonlinearCG : public Generic {
 
 public:
 
-  //! %NonlinearCG-method constructor. 
+  //! Constructor. 
   NonlinearCG(Parameter::List& params);
 
-  //! Destructor
+  //! Destructor.
   virtual ~NonlinearCG();
 
+  //! derived
   virtual bool reset(Parameter::List& p);
-//  virtual StatusTest::StatusType getStatus();
+
+  //! derived
   virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
                        const Solver::Generic& solver);
-//  virtual StatusTest::StatusType solve();
-//  virtual const Abstract::Group& getSolutionGroup() const;
-//  virtual const Abstract::Group& getPreviousSolutionGroup() const;
-//  virtual int getNumIterations() const;
-//  virtual const Parameter::List& getOutputParameters() const;
 
-protected:
+private:
   
-  //! Print out initialization information and calcuation the RHS.
-  //virtual void init();
+  //! Previous solution pointer. 
+  const Abstract::Group* oldSolnPtr;	
 
-  //! Prints the current iteration information.
-  //virtual void printUpdate();
-
-protected:
-  
-  //! Current solution.
-  Abstract::Group* solnptr;		
-
+  //! Temporary vector used in applying preconditioner.
   Abstract::Vector* tmpVecPtr;
 
-  //! Previous solution pointer. 
-  /*! We have both a pointer and a reference because we need to create
-    a DERIVED object and then want to have a reference to it. */
-  const Abstract::Group* oldsolnptr;	
-  //! Previous solution reference.
-//  Abstract::Group& oldSoln;	
-
-  //! Current search direction.pointer.
-  /*! We have both a pointer and a reference because we need to create
-    a DERIVED object and then want to have a reference to it. */
-//  Abstract::Vector* dirptr;
-  //! Current search direction.reference.
-//  Abstract::Vector& dir;
-
-  //! Previous search direction.pointer.
-  /*! The current search direction is found by computing the steepest
-      descent direction and then orthogonalizing using this previous
-      search direction.  We have both a pointer and a reference because
-      we need to create a DERIVED object and then want to have a reference
-      to it. */
+  //! Previous search direction pointer.
+  /*! The current search direction is found by orthogonalizing against the
+      previous search direction.  This vector provides storage for the 
+      old search direction. */
   Abstract::Vector* oldDirPtr;
 
   //! Pointer to previous descent direction.
-  /*! This pointer points into the previous solution Abstract::Group to the 
-      descent direction based on the choice of "Richardson" or "Steepest
-      Descent" determined by Orthogonalization in the Parameter::List. */
+  /*! This vector stores the old descent direction which was orthogonalized
+      to determine the old search direction.  It is needed in the numerator
+      of the expression for Polak-Ribiere \f$ \beta \f$. */
   Abstract::Vector* oldDescentDirPtr;  
 
-  //! Pointer to current preconditioned direction.
-  /*! Currently, preconditioning is done using only Jacobi (diagonal)
-      scaling as described above.  If preconditioning is turned off, this
-      vector is equal to the direction vector. */
-  Abstract::Vector* preconditionedDirptr;  
-
-  //! Pointer to previous descent direction preconditioned with current Jacobian.
-  /*! This pointer is to the vector needed for the preconditioned Polak-Ribiere
-      calculation of /f$\beta/f$ as described above.  Currently, 
-      preconditioning is done using only Jacobi (diagonal) scaling.  
-      If preconditioning is turned off, this vector is equal to the 
-      descent direction from the previous nonlinear iteration. */
-  Abstract::Vector* preconditionedOldDirptr;  
-
-  //! Vector pointer to difference between current and previous descent directions.
-  /*! This pointer is to the vector needed for the preconditioned Polak-Ribiere
-      calculation of /f$\beta/f$ as described above.  
-      If preconditioning is turned off, this vector is equal to the 
-      difference between the current and previous descent directions. */
+  //! Temporary vector used in computing the numerator of Polak-Ribiere \f$ \beta \f$.
   Abstract::Vector* diffVecPtr;  
-
-  //! Stopping test.
-  //StatusTest::Generic* testptr;		
 
   //! Input parameters.
   Parameter::List& iparams;	
 
-  //! Output paramters.
-  //mutable Parameter::List oparams; 
-
-  //! Orthogonalization parameter
+  //! Orthogonalization parameter \f$ \beta \f$.
   double beta;			
-
-  //! Linesearch. 
-  //LineSearch::Manager linesearch; 
-
-  //! Current step.
-  //double step;			
 
   //! Number of nonlinear iterations.
   int niter;                    
 
-  //! Restart frequency --> use Steepest descent direction by setting beta = 0
+  //! Restart frequency.
   int restartFrequency;                    
-
-  //! Output frequency 
-  //int outputFrequency;                    
-
-  //! %Status of nonlinear solver.
-  //StatusTest::StatusType status;
 
 };
 } // namespace Direction

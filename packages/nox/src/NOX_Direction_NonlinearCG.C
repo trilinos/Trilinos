@@ -58,11 +58,12 @@ using namespace NOX;
 using namespace NOX::Direction;
 
 NonlinearCG::NonlinearCG(Parameter::List& params) :
+  oldSolnPtr(NULL),			// pointer to old Soln Grp
   tmpVecPtr(NULL),			// reference to xgrp
   diffVecPtr(NULL),			// reference to xgrp
-  oldDescentDirPtr(NULL),			// reference to xgrp
+  oldDescentDirPtr(NULL),		// reference to xgrp
   oldDirPtr(NULL),			// reference to xgrp
-  restartFrequency(params.getParameter("Restart Frequency", 100)),
+  restartFrequency(params.getParameter("Restart Frequency", 10)),
   iparams(params)			// copy p
 {
   reset(iparams);
@@ -71,12 +72,6 @@ NonlinearCG::NonlinearCG(Parameter::List& params) :
 
 bool NonlinearCG::reset(Parameter::List& params) 
 {
-//  solnptr = &xgrp;
-//  testptr = &t;
-//  linesearch.reset(iparams.sublist("Line Search"));
-//  niter = 0;
-//  status = StatusTest::Unconverged;
-//  init();
   return true;
 }
 
@@ -94,6 +89,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 {
   bool status = false;
 
+  // Initialize vector memory if haven't already
   if(oldDirPtr==NULL)
     oldDirPtr = soln.getX().clone(NOX::ShapeCopy);
   if(oldDescentDirPtr==NULL)
@@ -103,13 +99,15 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
   if(tmpVecPtr==NULL)
     tmpVecPtr = soln.getX().clone(NOX::ShapeCopy);
 
+  // Create references to vectors for convenience
   Abstract::Vector& oldDir(*oldDirPtr);
   Abstract::Vector& oldDescentDir(*oldDescentDirPtr);
   Abstract::Vector& diffVec(*diffVecPtr);
   Abstract::Vector& tmpVec(*tmpVecPtr);
 
   // Get a reference to the old solution group (const)
-  oldsolnptr = &solver.getPreviousSolutionGroup();
+  oldSolnPtr = &solver.getPreviousSolutionGroup();
+  const Abstract::Group& oldSoln(*oldSolnPtr);
 
   niter = solver.getNumIterations();
 
@@ -142,9 +140,9 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 //                     Polak-Ribiere beta
 
       diffVec = dir;
-      diffVec.update(1.0, oldDescentDir, -1.0); 
+      diffVec.update(-1.0, oldDescentDir, 1.0); 
 
-      double denominator = oldDescentDir.dot(oldsolnptr->getF());
+      double denominator = oldDescentDir.dot(oldSoln.getF());
 
       beta = diffVec.dot(soln.getF()) / denominator;
 
@@ -159,7 +157,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     {
 //                     Fletcher-Reeves beta
 
-      double denominator = oldDescentDir.dot(oldsolnptr->getF());
+      double denominator = oldDescentDir.dot(oldSoln.getF());
 
       beta = dir.dot(soln.getF()) / denominator;
 
@@ -180,8 +178,6 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
   oldDescentDir = dir;
 
- // cout << "Debug:  beta --> " << beta << endl;
-  
   dir.update(beta, oldDir, 1.0);
 
   oldDir = dir;
@@ -190,8 +186,4 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
   return status;
 }
-
-
-
-
 
