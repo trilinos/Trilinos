@@ -1,6 +1,5 @@
 // $Id$ 
 // $Source$ 
-
 //@HEADER
 // ************************************************************************
 // 
@@ -29,6 +28,8 @@
 // 
 // ************************************************************************
 //@HEADER
+
+#ifdef WITH_PRERELEASE
 
 #include "NOX_LineSearch_Quadratic.H"   // class definition
 
@@ -98,13 +99,19 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   double oldfprime = tmpvecptr->dot(oldgrp.getF());
   delete tmpvecptr;
 
-  double newf, prevf;
-  double tempStep, previousStep;
-  bool isfailed = false;
+  double oldfprime2 = computeSlope(oldgrp.getNewton(), oldgrp);
+
+  cout << "fTJs = " << oldfprime << "   newfprime = " << oldfprime2 << endl; 
 
   step = defaultStep;
   newgrp.computeX(oldgrp, dir, step);
   newgrp.computeF();    
+
+  double newf = 0.0; 
+  double prevf = 0.0;;
+  double tempStep = 0.0;
+  double previousStep = step;
+  bool isfailed = false;
 
   // f = 0.5 * 2-Norm(F) * 2-Norm(F)
   newf = 0.5 * newgrp.getNormF() * newgrp.getNormF();  
@@ -153,20 +160,22 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
     totalNumIterations += 1;
     
     // Compute a new step length
-    tempStep = -oldfprime/(2.0 * (newf - oldf - oldfprime));
+    tempStep = -(oldfprime * step * step)/(2.0 * (newf - oldf - oldfprime * step));
+
+    cout << "tempStep = " << tempStep << endl;
 
     //   Enforce bounds on minimum step size
-    if (tempStep < minBoundFactor) 
-      tempStep = minBoundFactor;
+    if (tempStep < minBoundFactor * step) 
+    tempStep = minBoundFactor*step;
 
     //   Enforce bounds on maximum step size
-    if (tempStep > maxBoundFactor) 
-      tempStep = maxBoundFactor;
+    if (tempStep > maxBoundFactor * step) 
+    tempStep = maxBoundFactor*step;
 
 
     // RPP: this was moved above eta calculation.  We were doing this wrong!
     // Compute the actual step
-    tempStep *= step;
+    //tempStep *= step;
 
     // Safeguard while loop termination for by adjusting eta during "Ared/Pred".
     // The "Direction" also needs to use this eta in the next computation
@@ -253,3 +262,5 @@ bool Quadratic::setOutputParameters() {
   outputList.setParameter("Total Number of Line Search Inner Iterations", totalNumIterations);
   return true;
 }
+
+#endif //WITHPRERELEASE

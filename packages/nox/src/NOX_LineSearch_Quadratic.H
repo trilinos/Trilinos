@@ -1,6 +1,5 @@
 // $Id$ 
 // $Source$ 
-
 //@HEADER
 // ************************************************************************
 // 
@@ -30,10 +29,12 @@
 // ************************************************************************
 //@HEADER
 
+#ifdef WITH_PRERELEASE
+
 #ifndef NOX_LINESEARCH_QUADRATIC_H
 #define NOX_LINESEARCH_QUADRATIC_H
 
-#include "NOX_LineSearch_Generic.H" // base class
+#include "NOX_LineSearch_Common.H" // base class
 
 namespace NOX {
 namespace LineSearch {
@@ -111,7 +112,7 @@ A sublist for output parameters will be created called "Output" in the parameter
   \author Roger Pawlowski, Org. 9233, Sandia National Labs
 */
 
-class Quadratic : public Generic {
+class Quadratic : public Common {
 
 public:
 
@@ -181,3 +182,5 @@ protected:
 } // namespace LineSearch
 } // namespace NOX
 #endif
+
+#endif //WITH_PRERELEASE

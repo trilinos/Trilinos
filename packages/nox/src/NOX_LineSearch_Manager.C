@@ -77,8 +77,10 @@ bool Manager::reset(Parameter::List& params)
       ptr = new Backtrack(params);
     else if (method == "Polynomial")
       ptr = new Polynomial(params);
+#ifdef WITH_PRERELEASE
     else if (method == "Quadratic")
       ptr = new Quadratic(params);
+#endif
     else if (method == "More'-Thuente")
       ptr = new MoreThuente(params);
     else if (method == "Secant")
