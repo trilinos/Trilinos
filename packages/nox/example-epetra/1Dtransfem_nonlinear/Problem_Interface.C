@@ -42,40 +42,26 @@ Problem_Interface::Problem_Interface(FiniteElementProblem& Problem) :
 Problem_Interface::~Problem_Interface()
 { }
 
-bool Problem_Interface::reset(const Epetra_Vector& x)
+bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, 
+                       NOX::EpetraNew::Interface::Required::FillType fillType) 
 {
-  return problem.reset(x);
+  return problem.evaluate(fillType, &x, &FVec);
 }
 
-bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec, FillType flag)
+bool Problem_Interface::computeJacobian(const Epetra_Vector& x)
 {
-  return problem.evaluate(F_ONLY, &x, &FVec, NULL);
-}
-
-bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
-{
-  Epetra_RowMatrix* Jacobian = dynamic_cast<Epetra_RowMatrix*>(&Jac);
-  if (Jacobian == NULL) {
-    cout << "ERROR: Problem_Interface::computeJacobian() - The supplied"
-	 << "Epetra_Operator is NOT an Epetra_RowMatrix!" << endl;
-    throw;
-  }
-  return problem.evaluate(MATRIX_ONLY, &x, NULL, Jacobian);
+  return problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, NULL);
 }
 
 bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M)
 {
-  Epetra_RowMatrix* precMatrix = dynamic_cast<Epetra_RowMatrix*>(&M);
-  if (precMatrix == NULL) {
-    cout << "ERROR: Problem_Interface::computePreconditioner() - The supplied"
-	 << "Epetra_Operator is NOT an Epetra_RowMatrix!" << endl;
-    throw;
-  }
-  return problem.evaluate(MATRIX_ONLY, &x, NULL, precMatrix);
+  cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << endl;
+  throw 1;
 }
-bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M)
+
+bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, NOX::Parameter::List* p)
 {
-  cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jaciban only for this test problem!" << endl;
+  cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << endl;
   throw 1;
 }
 //-----------------------------------------------------------------------------

@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Output Frequency", 50);    
   //lsParams.setParameter("Preconditioning", "None");   
-  lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
+  lsParams.setParameter("Preconditioner", "AztecOO");
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
   //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
   //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
@@ -221,22 +221,28 @@ int main(int argc, char *argv[])
   // 4. Jacobi Preconditioner
   //NOX::Epetra::JacobiPreconditioner Prec(soln);
 
+  NOX::EpetraNew::Interface::Required& iReq = interface;
+
+  NOX::EpetraNew::Interface::Jacobian& iJac = interface;
+  //NOX::EpetraNew::Interface::Jacobian& iJac = FDC;
+
+  // Create the Linear System
+  NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
+                                             iReq, iJac, A, soln);
+                                             //&scaling);
+  
   // Create the Group
-  NOX::Epetra::Group grp(printParams, lsParams, interface, soln, A); 
+  NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
+  NOX::EpetraNew::Group grp(printParams, iReq, initialGuess, linSys);
   grp.computeF();
-
-  // Use an Epetra Scaling object if desired
-  Epetra_Vector scaleVec(soln);
-  NOX::Epetra::Scaling scaling;
-  scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
-  //grp.setLinearSolveScaling(scaling);
-
+  
+  // Create the convergence tests
   // ATOL vector if using NOX::StatusTest::WRMS
   NOX::Epetra::Vector weights(soln);
   weights.scale(1.0e-8);
 
   // Create the convergence tests
-  NOX::StatusTest::NormF absresid(1.0e-8);
+  NOX::StatusTest::NormF absresid(1.0e-8, NOX::StatusTest::NormF::Unscaled);
   NOX::StatusTest::NormF relresid(grp, 1.0e-2);
   NOX::StatusTest::NormUpdate update(1.0e-5);
   NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
@@ -246,7 +252,7 @@ int main(int argc, char *argv[])
   converged.addStatusTest(relresid);
   converged.addStatusTest(wrms);
   converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(80);
+  NOX::StatusTest::MaxIters maxiters(25);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(converged);
   combo.addStatusTest(maxiters);
@@ -285,7 +291,7 @@ int main(int argc, char *argv[])
         cout << "Nonlinear solver failed to converge!" << endl;
 
     // Get the Epetra_Vector with the final solution from the solver
-    const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+    const NOX::EpetraNew::Group& finalGroup = dynamic_cast<const NOX::EpetraNew::Group&>(solver.getSolutionGroup());
     const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
     Epetra_Vector& exactSolution = Problem.getExactSoln(time);
 

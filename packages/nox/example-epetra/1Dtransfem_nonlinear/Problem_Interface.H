@@ -31,7 +31,7 @@
 #ifndef Problem_Interface_H
 #define Problem_Interface_H
 
-// Interface to the NOX_EpetraGroup to provide for 
+// Interface to the NOX_Epetra_Group to provide for 
 // residual and matrix fill routines.
 
 // ---------- Standard Includes ----------
@@ -39,31 +39,33 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
-#include "NOX_Epetra_Interface.H"
+#include "NOX_EpetraNew_Interface_Required.H" // base class
+#include "NOX_EpetraNew_Interface_Jacobian.H" // base class
+#include "NOX_EpetraNew_Interface_Preconditioner.H" // base class
 
 // ---------- Forward Declarations ----------
 class FiniteElementProblem;
 
-class  Problem_Interface : public NOX::Epetra::Interface
+class Problem_Interface : public NOX::EpetraNew::Interface::Required,
+                          public NOX::EpetraNew::Interface::Jacobian,
+                          public NOX::EpetraNew::Interface::Preconditioner
 {
 public:
   Problem_Interface(FiniteElementProblem& Problem);
   ~Problem_Interface();
 
-  //! Reset problem for next parameter (time) step
-  bool reset(const Epetra_Vector& x);
-
   //! Compute and return F
-  bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec, FillType flag = F);
+  bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec, 
+                NOX::EpetraNew::Interface::Required::FillType fillType);
 
   //! Compute an explicit Jacobian
-  bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
+  bool computeJacobian(const Epetra_Vector& x);
 
   //! Compute the Epetra_RowMatrix M, that will be used by the Aztec preconditioner instead of the Jacobian.  This is used when there is no explicit Jacobian present (i.e. Matrix-Free Newton-Krylov).  This MUST BE an Epetra_RowMatrix since the Aztec preconditioners need to know the sparsity pattern of the matrix.  Returns true if computation was successful.
   bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M);
   
   //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
-  bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M);
+  bool computePreconditioner(const Epetra_Vector& x, NOX::Parameter::List* p);
 
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 

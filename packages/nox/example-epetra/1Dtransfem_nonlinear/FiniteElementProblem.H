@@ -41,6 +41,8 @@
 #ifndef _NOX_EXAMPLE_EPETRA_NONLINEAR_FINITEELEMENTPROBLEM_H
 #define _NOX_EXAMPLE_EPETRA_NONLINEAR_FINITEELEMENTPROBLEM_H
 
+#include "NOX_EpetraNew_Interface_Required.H"
+
 // Forward Declarations
 class Epetra_Comm;
 class Epetra_Map; 
@@ -50,7 +52,7 @@ class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 
 // Flag to tell the evaluate routine what objects to fill
-enum FillType {F_ONLY, MATRIX_ONLY, ALL}; 
+enum Type {F_ONLY, MATRIX_ONLY, ALL}; 
 
 // Finite Element Problem Class
 class FiniteElementProblem { 
@@ -72,8 +74,8 @@ public:
   
   // Evaluates the function (F) and/or the Jacobian using the solution 
   // values in solnVector.
-  bool evaluate(FillType f, const Epetra_Vector *solnVector, 
-		Epetra_Vector *rhsVector, Epetra_RowMatrix *matrix);
+  bool evaluate( NOX::EpetraNew::Interface::Required::FillType fillType,
+                 const Epetra_Vector *solnVector, Epetra_Vector *rhsVector);
 
   // Return a reference to the Epetra_Vector with the exact analytic solution
   Epetra_Vector& getExactSoln(double time);
@@ -108,7 +110,7 @@ private:
   double dx; 
   double dt; 
 
-  FillType flag;
+  Type flag;
   Epetra_Map *StandardMap; 
   Epetra_Map *OverlapMap;
   Epetra_Import *Importer;

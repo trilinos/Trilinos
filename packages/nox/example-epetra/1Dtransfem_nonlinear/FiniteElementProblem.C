@@ -157,25 +157,17 @@ bool FiniteElementProblem::initializeSoln()
 }
 
 // Matrix and Residual Fills
-bool FiniteElementProblem::evaluate(FillType f, 
-				    const Epetra_Vector* soln, 
-				    Epetra_Vector* tmp_rhs, 
-				    Epetra_RowMatrix* tmp_matrix)
+bool FiniteElementProblem::evaluate(
+             NOX::EpetraNew::Interface::Required::FillType fillType,
+             const Epetra_Vector* soln, 
+             Epetra_Vector* tmp_rhs) 
 {
-  flag = f;
+  flag = MATRIX_ONLY;
 
-  // Set the incoming linear objects
-  if (flag == F_ONLY) {
+  if ( tmp_rhs ) {
+    flag = F_ONLY;
     rhs = tmp_rhs;
-  } else if (flag == MATRIX_ONLY) {
-    A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
-  } else if (flag == ALL) { 
-    rhs = tmp_rhs;
-    A = dynamic_cast<Epetra_CrsMatrix*> (tmp_matrix);
-  } else {
-    cout << "ERROR: FiniteElementProblem::fillMatrix() - FillType flag is broken" << endl;
-    throw;
-  }
+  } 
 
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
@@ -284,7 +276,8 @@ bool FiniteElementProblem::evaluate(FillType f,
   // Sync up processors to be safe
   Comm->Barrier();
  
-  A->TransformToLocal();
+  if ((flag == MATRIX_ONLY) || (flag == ALL))
+    A->TransformToLocal();
 
   return true;
 }
