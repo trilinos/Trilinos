@@ -158,8 +158,11 @@ namespace Anasazi {
     //
     // Internal storage for eigensolver
     //
-    Teuchos::RefCountPtr<MV> _X, _MX, _KX, _R;
-    Teuchos::SerialDenseMatrix<int,STYPE> _KK, _S;
+    Teuchos::RefCountPtr<MV> _Xvec;
+    Teuchos::RefCountPtr<MV> _MXvec;
+    Teuchos::RefCountPtr<MV> _KXvec; 
+    Teuchos::RefCountPtr<MV> _Rvec;
+    Teuchos::SerialDenseMatrix<int,STYPE> _KKsdm, _Ssdm;
     std::vector<STYPE> _theta, _normR, _work;
 
     typedef MultiVecTraits<STYPE,MV> MVT;
@@ -210,25 +213,25 @@ namespace Anasazi {
     // R = Residuals
     //
     _dimSearch = _blockSize*_numBlocks;
-    _X = MVT::Clone( *iVec, _dimSearch + _blockSize );
-    _KX = MVT::Clone( *iVec, _blockSize );
-    _R = MVT::Clone( *iVec, _blockSize );
+    _Xvec = MVT::Clone( *iVec, _dimSearch + _blockSize );
+    _KXvec = MVT::Clone( *iVec, _blockSize );
+    _Rvec = MVT::Clone( *iVec, _blockSize );
     //
     // Check to see if there is a mass matrix, so we know how much space is required.
-    // [ If there isn't a mass matrix we can use a view of _X.]
+    // [ If there isn't a mass matrix we can use a view of _Xvec.]
     //
     if (_BOp.get())
-      _MX = MVT::Clone( *iVec, _blockSize );
+      _MXvec = MVT::Clone( *iVec, _blockSize );
     else {
       std::vector<int> index( _blockSize );
       for (int i=0; i<_blockSize; i++)
 	index[i] = i;
-      _MX = MVT::CloneView( *_X, &index[0], _blockSize );
+      _MXvec = MVT::CloneView( *_Xvec, &index[0], _blockSize );
     }
     //
     // Initialize the workspace.
     //
-    MVT::MvRandom( *_X );
+    MVT::MvRandom( *_Xvec );
     //
     // Define dense local matrices and arrays
     //
@@ -244,8 +247,8 @@ namespace Anasazi {
     _theta.resize( _dimSearch );
     _normR.resize( _blockSize );
     //    
-    _KK.shape( _dimSearch, _dimSearch );
-    _S.shape( _dimSearch, _dimSearch );
+    _KKsdm.shape( _dimSearch, _dimSearch );
+    _Ssdm.shape( _dimSearch, _dimSearch );
         
   }
 
@@ -321,36 +324,36 @@ namespace Anasazi {
 	for (i=0; i < _blockSize; i++)
 	  index[i] = localSize + _knownEV + i;
 	//
-	Xcurrent = MVT::CloneView( *_X, &index[0], _blockSize );
+	Xcurrent = MVT::CloneView( *_Xvec, &index[0], _blockSize );
 	//
 	if (_knownEV + localSize > 0) {
 	  index.resize( _knownEV + localSize );
 	  for (i=0; i < _knownEV + localSize; i++)
 	    index[i] = i;
 	  
-	  Xprev = MVT::CloneView( *_X, &index[0], _knownEV + localSize );
+	  Xprev = MVT::CloneView( *_Xvec, &index[0], _knownEV + localSize );
 	}
 	//
 	// Apply the mass matrix.
 	//	
 	if (_BOp.get())
-	  OPT::Apply( *_BOp, *Xcurrent, *_MX );
+	  OPT::Apply( *_BOp, *Xcurrent, *_MXvec );
 	//
 	// Orthonormalize Xcurrent again the known eigenvectors and previous vectors.
 	//
 	if (nb == bStart) {
 	  if (nFound > 0) {
 	    if (_knownEV == 0) {
-	      info = _MSUtils.massOrthonormalize( *Xcurrent, *_MX, _BOp.get(), *Xcurrent, nFound, 2 );
+	      info = _MSUtils.massOrthonormalize( *Xcurrent, *_MXvec, _BOp.get(), *Xcurrent, nFound, 2 );
 	    }
 	    else {
-	      info = _MSUtils.massOrthonormalize( *Xcurrent, *_MX, _BOp.get(), *Xprev, nFound, 0 );
+	      info = _MSUtils.massOrthonormalize( *Xcurrent, *_MXvec, _BOp.get(), *Xprev, nFound, 0 );
 	    }
 	  }
 	  nFound = 0;
 	} 
 	else {
-	  info = _MSUtils.massOrthonormalize( *Xcurrent, *_MX, _BOp.get(), *Xprev, _blockSize, 0 );
+	  info = _MSUtils.massOrthonormalize( *Xcurrent, *_MXvec, _BOp.get(), *Xprev, _blockSize, 0 );
 	}
 	//
 	// Exit the code if there has been a problem.
@@ -362,14 +365,14 @@ namespace Anasazi {
 	//
 	if (_om->doOutput(0) ) {
 	  if (localSize > 0)
-	    accuracyCheck( Xcurrent.get(), _MX.get(), Xprev.get() );
+	    accuracyCheck( Xcurrent.get(), _MXvec.get(), Xprev.get() );
 	  else
-	    accuracyCheck( Xcurrent.get(), _MX.get(), NULL );
+	    accuracyCheck( Xcurrent.get(), _MXvec.get(), NULL );
 	}
 	//
 	// Apply the stiffness matrix.
 	//
-	OPT::Apply( *_Op, *Xcurrent, *_KX );
+	OPT::Apply( *_Op, *Xcurrent, *_KXvec );
 	//
 	// Update the local stiffness matrix ( Xtotal^T * K * Xcurrent where Xtotal = [Xprev Xcurrent] )
 	// Note:  Only the upper half of the matrix is stored in KK
@@ -377,13 +380,13 @@ namespace Anasazi {
 	index.resize( localSize + _blockSize );
 	for (i=0; i < localSize + _blockSize; i++)
 	  index[i] = _knownEV + i;
-	Xtotal = MVT::CloneView( *_X, &index[0], localSize + _blockSize );
-	Teuchos::SerialDenseMatrix<int,STYPE> subKK( Teuchos::View, _KK, localSize+_blockSize, _blockSize, 0, localSize );
-	MVT::MvTransMv( one, *Xtotal, *_KX, subKK );
+	Xtotal = MVT::CloneView( *_Xvec, &index[0], localSize + _blockSize );
+	Teuchos::SerialDenseMatrix<int,STYPE> subKK( Teuchos::View, _KKsdm, localSize+_blockSize, _blockSize, 0, localSize );
+	MVT::MvTransMv( one, *Xtotal, *_KXvec, subKK );
 	//
 	// Perform spectral decomposition
 	//
-	info = _MSUtils.directSolver(localSize+_blockSize, _KK, 0, &_S, &_theta, localSize+_blockSize, 10);
+	info = _MSUtils.directSolver(localSize+_blockSize, _KKsdm, 0, &_Ssdm, &_theta, localSize+_blockSize, 10);
 	//
 	// Exit the code if there has been a problem.
 	//
@@ -404,7 +407,7 @@ namespace Anasazi {
 	  index.resize( _blockSize );
 	  for (i=0; i<_blockSize; i++)
 	    index[i] = _knownEV + i;
-	  Teuchos::RefCountPtr<MV> Xinit = MVT::CloneView( *_X, &index[0], _blockSize );
+	  Teuchos::RefCountPtr<MV> Xinit = MVT::CloneView( *_Xvec, &index[0], _blockSize );
 	  MVT::MvRandom( *Xinit );
 	  nFound = _blockSize;
 	  bStart = 0;
@@ -414,17 +417,17 @@ namespace Anasazi {
 	// Update the search space :
 	// KX = Xtotal * S where S is the eigenvectors of the projected problem.
 	//
-	Teuchos::SerialDenseMatrix<int,STYPE> subS( Teuchos::View, _S, localSize+_blockSize, _blockSize );
-	MVT::MvTimesMatAddMv( one, *Xtotal, subS, zero, *_KX );
+	Teuchos::SerialDenseMatrix<int,STYPE> subS( Teuchos::View, _Ssdm, localSize+_blockSize, _blockSize );
+	MVT::MvTimesMatAddMv( one, *Xtotal, subS, zero, *_KXvec );
 	//
 	// Apply the mass matrix for the next block
 	// 
 	if (_BOp.get())
-	  OPT::Apply( *_BOp, *_KX, *_MX );
+	  OPT::Apply( *_BOp, *_KXvec, *_MXvec );
 	//
 	// Apply the stiffness matrix for the next block
 	//
-	OPT::Apply( *_Op, *_KX, *_R );
+	OPT::Apply( *_Op, *_KXvec, *_Rvec );
 	//
 	// Compute the residual :
 	// R = KX - diag(theta)*MX
@@ -434,12 +437,12 @@ namespace Anasazi {
 	  D(i,i) = -_theta[i];
 	//
 	if (_BOp.get()) {
-	  MVT::MvTimesMatAddMv( one, *_MX, D, one, *_R );
+	  MVT::MvTimesMatAddMv( one, *_MXvec, D, one, *_Rvec );
 	}
 	else {
-	  MVT::MvTimesMatAddMv( one, *_KX, D, one, *_R );
+	  MVT::MvTimesMatAddMv( one, *_KXvec, D, one, *_Rvec );
 	}
-	_problem->MvNorm( *_R, &_normR[0] );
+	_problem->MvNorm( *_Rvec, &_normR[0] );
 	//
 	// Scale the norms of residuals with the eigenvalues and check for converged eigenvectors.
 	//
@@ -488,14 +491,14 @@ namespace Anasazi {
 	//
 	if (maxBlock == 1) {
 	  if (_Prec.get()) {
-	    OPT::Apply( *_Prec, *_R, *Xcurrent );
+	    OPT::Apply( *_Prec, *_Rvec, *Xcurrent );
 	  }
 	  else
-	    MVT::MvAddMv( one, *_R, zero, *_R, *Xcurrent );
+	    MVT::MvAddMv( one, *_Rvec, zero, *_Rvec, *Xcurrent );
 	  //
 	  // Update the preconditioned residual 
 	  //
-	  MVT::MvAddMv( one, *_KX, -one, *Xcurrent, *Xcurrent );
+	  MVT::MvAddMv( one, *_KXvec, -one, *Xcurrent, *Xcurrent );
 	  break;
 	} // if (maxBlock == 1)
 
@@ -509,12 +512,12 @@ namespace Anasazi {
 	index.resize( _blockSize );
 	for( i=0; i<_blockSize; i++) 
 	  index[i] = _knownEV + localSize + _blockSize + i;
-	Xnext = MVT::CloneView( *_X, &index[0], _blockSize );
+	Xnext = MVT::CloneView( *_Xvec, &index[0], _blockSize );
 	if (_Prec.get()) {
-	  OPT::Apply( *_Prec, *_R, *Xnext );
+	  OPT::Apply( *_Prec, *_Rvec, *Xnext );
 	}
 	else 
-	  MVT::MvAddMv( one, *_R, zero, *_R, *Xnext );
+	  MVT::MvAddMv( one, *_Rvec, zero, *_Rvec, *Xnext );
 	
       } // for (nb = bStart; nv < maxBlock; nb++)
 
@@ -540,9 +543,9 @@ namespace Anasazi {
 	for (j=0; j<_blockSize; j++) {
 	    if (_normR[j] < _residual_tolerance) {
 	      index[0] = j;
-	      Teuchos::RefCountPtr<MV> tmp_KX = MVT::CloneView( *_KX, &index[0], 1 );
+	      Teuchos::RefCountPtr<MV> tmp_KXvec = MVT::CloneView( *_KXvec, &index[0], 1 );
 	      index[0] = _knownEV;
-	      MVT::SetBlock( *tmp_KX, &index[0], 1, *_evecs );
+	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_evecs );
 	      _evals[_knownEV] = _theta[j];
 	      _knownEV++;
 	    }
@@ -565,25 +568,25 @@ namespace Anasazi {
 	    // Get a view of the current prospective eigenvector.
 	    //
 	    index[0] = j;
-	    Teuchos::RefCountPtr<MV> tmp_KX = MVT::CloneView( *_KX, &index[0], 1 );
+	    Teuchos::RefCountPtr<MV> tmp_KXvec = MVT::CloneView( *_KXvec, &index[0], 1 );
 	    if (_normR[j] < _residual_tolerance) {
 	      index[0] = _knownEV;
-	      MVT::SetBlock( *tmp_KX, &index[0], 1, *_X );	      
-	      MVT::SetBlock( *tmp_KX, &index[0], 1, *_evecs );	      
+	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_Xvec );	      
+	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_evecs );	      
 	      _evals[_knownEV] = _theta[j];
 	      _knownEV++;
 	      nFound++;	      
 	    }
 	    else {
 	      index[0] = tmp_ptr + (j-nFound);
-	      MVT::SetBlock( *tmp_KX, &index[0], 1, *_X );
+	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_Xvec );
 	    }
 	  } // for (j=0; j<_blockSize; j++)
 	  //
 	  index.resize( nFound );
 	  for (i=0; i<nFound; i++) 
 	    index[i] = _knownEV + _blockSize - nFound + i;
-	  Xnext = MVT::CloneView( *_X, &index[0], nFound );
+	  Xnext = MVT::CloneView( *_Xvec, &index[0], nFound );
 	  MVT::MvRandom( *Xnext );
 	}
 	else {
@@ -618,9 +621,9 @@ namespace Anasazi {
 	      //
 	      // Swap and j-th and firstIndex-th position
 	      //
-	      blas.COPY(nb*_blockSize, _S[ j ], 1, &tmp_swap_vec[0], 1);
-	      blas.COPY(nb*_blockSize, _S[ firstIndex ], 1, _S[ j ], 1 );
-	      blas.COPY(nb*_blockSize, &tmp_swap_vec[0], 1, _S[ firstIndex ], 1 );
+	      blas.COPY(nb*_blockSize, _Ssdm[ j ], 1, &tmp_swap_vec[0], 1);
+	      blas.COPY(nb*_blockSize, _Ssdm[ firstIndex ], 1, _Ssdm[ j ], 1 );
+	      blas.COPY(nb*_blockSize, &tmp_swap_vec[0], 1, _Ssdm[ firstIndex ], 1 );
 	      // Swap _theta
 	      tmp_swap = _theta[j];
 	      _theta[j] = _theta[firstIndex];
@@ -652,9 +655,9 @@ namespace Anasazi {
       //
       // Define the restarting space and local stiffness matrix
       //
-      _KK.putScalar( zero );
+      _KKsdm.putScalar( zero );
       for (j=0; j<bStart*_blockSize; j++)
-	_KK(j,j) = _theta[j + nFound];
+	_KKsdm(j,j) = _theta[j + nFound];
       //
       // Form the restarting space
       //
@@ -662,17 +665,17 @@ namespace Anasazi {
       int newCol = nFound + (bStart+1)*_blockSize;
       newCol = (newCol > oldCol) ? oldCol : newCol;
       std::vector<int> index( oldCol );
-      lapack.GEQRF(oldCol, newCol, _S.values(), _S.stride(), &_theta[0], &_work[0], _lwork, &info);
-      lapack.ORGQR(oldCol, newCol, newCol, _S.values(), _S.stride(), &_theta[0], &_work[0], _lwork, &info);      
+      lapack.GEQRF(oldCol, newCol, _Ssdm.values(), _Ssdm.stride(), &_theta[0], &_work[0], _lwork, &info);
+      lapack.ORGQR(oldCol, newCol, newCol, _Ssdm.values(), _Ssdm.stride(), &_theta[0], &_work[0], _lwork, &info);      
       for (i=0; i<oldCol; i++)
 	index[i] = _knownEV + i;
-      Teuchos::RefCountPtr<MV> oldX = MVT::CloneView( *_X, &index[0], oldCol );
+      Teuchos::RefCountPtr<MV> oldX = MVT::CloneView( *_Xvec, &index[0], oldCol );
       index.resize( newCol );
       for (i=0; i<newCol; i++)
 	index[i] = _knownEV + i; 
-      Teuchos::RefCountPtr<MV> newX = MVT::CloneView( *_X, &index[0], newCol );
-      Teuchos::RefCountPtr<MV> temp_newX = MVT::Clone( *_X, newCol );
-      Teuchos::SerialDenseMatrix<int,STYPE> _Sview( Teuchos::View, _S, oldCol, newCol );
+      Teuchos::RefCountPtr<MV> newX = MVT::CloneView( *_Xvec, &index[0], newCol );
+      Teuchos::RefCountPtr<MV> temp_newX = MVT::Clone( *_Xvec, newCol );
+      Teuchos::SerialDenseMatrix<int,STYPE> _Sview( Teuchos::View, _Ssdm, oldCol, newCol );
       MVT::MvTimesMatAddMv( one, *oldX, _Sview, zero, *temp_newX );
       MVT::MvAddMv( one, *temp_newX, zero, *temp_newX, *newX ); 
       
@@ -689,7 +692,7 @@ namespace Anasazi {
 	index.resize( nFound );
 	for (i=0; i<nFound; i++)
 	  index[i] = _knownEV + _blockSize - nFound + i;
-	Xnext = MVT::CloneView( *_X, &index[0], nFound );
+	Xnext = MVT::CloneView( *_Xvec, &index[0], nFound );
 	MVT::MvRandom( *Xnext );
 	continue;
       }
