@@ -77,7 +77,6 @@ typedef struct HSFC_Data {
    double     bbox_hi[3];        /* smallest bounding box, high point */
    double     bbox_lo[3];        /* smallest bounding box, low point */
    double     bbox_extent[3];    /* length of each side of bounding box */
-   int        nloops;            /* number of loops for load balancing */
    int        ndimension;        /* number of dimensions in problem (2 or 3) */
    double    (*fhsfc)(ZZ*, double*);  /* space filling curve function */
    } HSFC_Data;                  /* data preserved for point & box drop later */

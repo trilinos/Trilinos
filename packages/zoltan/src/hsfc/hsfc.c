@@ -92,7 +92,7 @@ int Zoltan_HSFC(
    int        done, out_of_tolerance;    /* binary flags */
    Partition *p = NULL;
    int        loop;
-   double     actual, desired, correction, x;
+   double     actual, desired, correction;
    double     temp, in[9], out[9];
    int        err;
    int        param;
@@ -105,7 +105,7 @@ int Zoltan_HSFC(
    MPI_Op_create(&Zoltan_HSFC_mpi_sum_max_min, 1, &mpi_op); /* register method */
    
    if (sizeof (int) != 4)
-      ZOLTAN_HSFC_WARNING(zz->Proc, yo, "HSFC tested only for 32 bit integers");
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "HSFC tested only for 32 bit integers");
 
    /* allocate persistant storage required by box assign and point assign */
    Zoltan_HSFC_Free_Structure (zz);
@@ -332,8 +332,7 @@ int Zoltan_HSFC(
    if (zz->Obj_Weight_Dim > 1)
       ZOLTAN_FREE (&work_fraction);
 
-   d->nloops = loop;                 /* remember work required to balance */
-   d->final_partition = (Partition*) ZOLTAN_MALLOC(sizeof(Partition)
+    d->final_partition = (Partition*) ZOLTAN_MALLOC(sizeof(Partition)
     * zz->LB.Num_Global_Parts);
    if (d->final_partition == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Unable to malloc final_partition");
@@ -345,38 +344,49 @@ int Zoltan_HSFC(
       d->final_partition[k].index = k;
       d->final_partition[k].l = 0.0;
       }
+
    actual = desired = total_weight;
-   x = 0.0;
-   k = 0;
+   i = k = 0;
    correction = 1.0;
-   for (i = 0; i < pcount; i++) {
-      temp = correction * target[k];
-      if (tsum[k] +  temp_weight[i] <= temp)
-          tsum[k] += temp_weight[i];
+   while (1)  {
+      if (k >= zz->LB.Num_Global_Parts  ||  i >= pcount)
+         break;
 
-      /* stop summing to set new partition, greedy algorithm */
-      else if (temp - tsum[k] >  tsum[k] + temp_weight[i] - temp) {
-         tsum[k] += temp_weight[i];
-         actual  -= tsum[k];
-         desired -= target[k];
-
-         if (d->final_partition[k].l == 0.0)
-             d->final_partition[k].l = x;
-         x = d->final_partition[k].r = grand_partition[i].r;
-         if (k+1 < zz->LB.Num_Global_Parts)
-            k++;
+      /* case:  current partition should remain empty */
+      if (target[k] == 0.0)  {
+         d->final_partition[k].r = grand_partition[i].l;
+         k++;
+         if (k < zz->LB.Num_Global_Parts)
+            d->final_partition[k].l = grand_partition[i].l;
+         continue;
          }
-      else  { /* don't include weight of current grand partition in current sum */
+
+      /* case: current bin weights fit into current partition */
+      temp = correction * target[k];
+      if (tsum[k] + temp_weight[i] <= temp)  {
+         tsum[k] += temp_weight[i];
+         i++;
+         continue;
+         }
+
+      /* case: current bin weights overfill current partition */
+      if (temp - tsum[k] > tsum[k] + temp_weight[i] - temp)  {
+         tsum[k] += temp_weight[i];
          actual  -= tsum[k];
          desired -= target[k];
-
-         if (d->final_partition[k].l == 0.0)
-             d->final_partition[k].l = x;
-         x = d->final_partition[k].r = grand_partition[i].l;
-         if (k+1 < zz->LB.Num_Global_Parts)
-            k++;
-
-         tsum[k] += temp_weight[i];
+         d->final_partition[k].r = grand_partition[i].r;
+         k++;
+         if (k < zz->LB.Num_Global_Parts)
+            d->final_partition[k].l = grand_partition[i].r;
+         i++;
+         }
+      else    { /* don't include current bin weight in current partition */
+         actual  -= tsum[k];
+         desired -= target[k];
+         d->final_partition[k].r = grand_partition[i].l;
+         k++;
+         if (k < zz->LB.Num_Global_Parts)
+            d->final_partition[k].l = grand_partition[i].l;
          }
 
       /* correct target[]s for cumulative partitioning errors (Bruce H.) */
@@ -384,10 +394,11 @@ int Zoltan_HSFC(
       }
 
    /* if last partition(s) is empty, loop stops w/o setting final_partition(s) */
-   for (i = k; i < zz->LB.Num_Global_Parts; i++)
+   for (i = k; i < zz->LB.Num_Global_Parts; i++)  {
+      d->final_partition[i].r = 1.0;
       if (d->final_partition[i].l == 0.0)
-          d->final_partition[i].l = x;
-   d->final_partition[zz->LB.Num_Global_Parts-1].r = 1.0;
+          d->final_partition[i].l = 1.0;
+      }
 
    out_of_tolerance = 0;
    for (k = 0; k < zz->LB.Num_Global_Parts; k++)
