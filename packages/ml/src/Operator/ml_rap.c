@@ -20,13 +20,12 @@
 /*    Rmat, Amat, Pmat - On input, sparse matrices.                     */
 /*    Result           - On input, an empty sparse matrix.              */
 /*                     - On output, Result = Rmat * Amat * Pmat.        */
-/*    N_input_vector   - On input, when performing the matrix-vector    */
-/*                     - product  Result * v, N_input_vector gives the  */
-/*                     - length of the local vector 'v'.                */
+/*    matrix_type      - On input, indicates whether the resulting      */
+/*                       matrix should be CSR or MSR.                   */
 /* -------------------------------------------------------------------- */
 
 void ML_rap(ML_Operator *Rmat, ML_Operator *Amat, 
-            ML_Operator *Pmat, ML_Operator *Result)
+            ML_Operator *Pmat, ML_Operator *Result, int matrix_type)
 {
   int         max_per_proc, i, j, N_input_vector;
    ML_Operator *APmat, *RAPmat, *Pcomm, *RAPcomm, *APcomm, *AP2comm, *tptr;
@@ -127,7 +126,11 @@ void ML_rap(ML_Operator *Rmat, ML_Operator *Amat,
 
    RAPcomm->num_PDEs = Amat->num_PDEs;
    RAPcomm->num_rigid = Amat->num_rigid;
-   ML_back_to_local(RAPcomm,Result, max_per_proc);
+   if (matrix_type == ML_MSR_MATRIX)
+     ML_back_to_local(RAPcomm, Result, max_per_proc);
+   else if (matrix_type == ML_CSR_MATRIX)
+     ML_back_to_csrlocal(RAPcomm, Result, max_per_proc);
+   else pr_error("ML_RAP: unknown matrix type\n");
 
    ML_RECUR_CSR_MSRdata_Destroy(RAPcomm);
    ML_Operator_Destroy(RAPcomm);
