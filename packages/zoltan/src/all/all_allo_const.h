@@ -40,7 +40,11 @@ static char *cvs_all_allo_h =
 
 /* function declarations for dynamic array allocation */
 
+#ifdef __STDC__
 extern double *LB_array_alloc(char *file, int lineno, int numdim, ...);
+#else
+extern double *LB_array_alloc();
+#endif
 extern void LB_safe_free(void **ptr);
 extern double *LB_smalloc(int n, char *file, int lineno);
 extern double *LB_srealloc(void *ptr, int n, char *filename, int lineno);
