@@ -151,6 +151,7 @@ int main( int argc, char* argv[] )
 		if(verbose) std::cout << "  time = " << timer.totalElapsedTime() << " sec\n";
 
     if(verbose) {
+      Teuchos::print_memory_usage_stats(Teuchos::get_default_workspace_store().get(),std::cout);
       std::cout
         << "\nRelative time (lower is better):"
         << "\n   raw new/delete      = " << (raw_time/workspace_time)

@@ -32,7 +32,7 @@ namespace {
 Teuchos::RefCountPtr<Teuchos::WorkspaceStore>  default_workspace_store(Teuchos::null);
 }
 
-// Static functions
+// Global functions
 
 void Teuchos::set_default_workspace_store( const Teuchos::RefCountPtr<WorkspaceStore> &default_workspace_store_in )
 {
@@ -44,16 +44,40 @@ Teuchos::RefCountPtr<Teuchos::WorkspaceStore> Teuchos::get_default_workspace_sto
   return default_workspace_store;
 }
 
+void Teuchos::print_memory_usage_stats( const WorkspaceStore* workspace_store, std::ostream& out )
+{
+  if( workspace_store ) {
+    out
+			<< "\n*** Statistics for autmatic array workspace:"
+			<< "\n  Number of megabytes of preallocated workspace                = "
+			<< (workspace_store->num_bytes_total()*1e-6)
+			<< "\n  Number of megabytes needed                                   = "
+			<< (workspace_store->num_max_bytes_needed()*1e-6)
+			<< "\n  Number of allocations using preallocated workspace           = "
+			<< workspace_store->num_static_allocations()
+			<< "\n  Number of dynamic allocations beyond preallocated workspace  = "
+			<< workspace_store->num_dyn_allocations()
+      << std::endl;
+  }
+  else {
+    out
+			<< "\n*** Statistics for autmatic array workspace:"
+			<< "\n  No workspace storage was allocated!\n";
+  }
+}
+
 namespace Teuchos {
 
 // WorkspaceStore
 
 WorkspaceStore::WorkspaceStore(size_t num_bytes)
-	: workspace_begin_(NULL)
-	, workspace_end_(NULL)
-	, curr_ws_ptr_(NULL)
-	, num_static_allocations_(0)
-	, num_dyn_allocations_(0)
+  : workspace_begin_(NULL)
+  , workspace_end_(NULL)
+  , curr_ws_ptr_(NULL)
+  , num_static_allocations_(0)
+  , num_dyn_allocations_(0)
+  , num_current_bytes_total_(0)
+  , num_max_bytes_needed_(0)
 {
 	if(num_bytes)
 		protected_initialize(num_bytes);
@@ -76,6 +100,8 @@ void WorkspaceStore::protected_initialize(size_t num_bytes)
 	curr_ws_ptr_            = workspace_begin_;
 	num_static_allocations_ = 0;
 	num_dyn_allocations_    = 0;
+  num_current_bytes_total_= 0;
+  num_max_bytes_needed_   = 0;
 } 
 
 // RawWorkspace
@@ -106,10 +132,17 @@ RawWorkspace::RawWorkspace(WorkspaceStore* workspace_store, size_t num_bytes)
 		workspace_end_   = NULL;
 		owns_memory_     = false;
 	}
+  if(workspace_store_) {
+    workspace_store_->num_current_bytes_total_ += num_bytes;
+    if( workspace_store_->num_current_bytes_total_ > workspace_store_->num_max_bytes_needed_ )
+      workspace_store_->num_max_bytes_needed_ = workspace_store_->num_current_bytes_total_;
+  }
 }
 
 RawWorkspace::~RawWorkspace()
 {
+  if(workspace_store_)
+    workspace_store_->num_current_bytes_total_ -= this->num_bytes();
 	if(owns_memory_) {
 		if(workspace_begin_) delete [] workspace_begin_;
 	}

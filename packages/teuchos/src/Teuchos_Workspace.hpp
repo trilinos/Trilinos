@@ -76,6 +76,16 @@ void set_default_workspace_store( const Teuchos::RefCountPtr<WorkspaceStore> &de
 Teuchos::RefCountPtr<WorkspaceStore> get_default_workspace_store();
 
 ///
+/** Print statistics on memory usage.
+ *
+ * @param  workspace_store [in] If <tt>workspace_store!=NULL</tt> then statistics
+ *                         about its memory usage to this point are printed to
+ *                         <tt>out</tt>.
+ * @param  out              [in/out] Stream used for printing to.
+ */
+void print_memory_usage_stats( const WorkspaceStore* workspace_store, std::ostream& out );
+
+///
 /** Encapulsation object for raw temporary workspace that has been allocated.
  * These objects can only be created on the stack and should not be included
  * as the member of any other classes.
@@ -265,6 +275,16 @@ public:
 	 * to satisfy the request and dynamic memory had to be created.
 	 */
 	int num_dyn_allocations() const;
+  ///
+  /** Return the total number of bytes currently allocated..  This is the
+   * total number of bytes currently being used.
+   */
+  size_t num_current_bytes_total();
+  ///
+  /** Return the maximum storage in bytes needed.  This is the maximum
+   * total amount of * storage that was needed at any one time.
+   */
+  size_t num_max_bytes_needed() const;
 protected:
 	///
 	WorkspaceStore(size_t num_bytes);
@@ -282,6 +302,8 @@ private:
 	int     num_dyn_allocations_; // Number of workspace allocations using dynamic
                              // memory because the current workspace store was
                              // overridden
+  size_t  num_current_bytes_total_; // Total bytes currently being used
+  size_t  num_max_bytes_needed_; // Maximum number of bytes of storage needed
 	// Not definted and not to be called
 	WorkspaceStore(const WorkspaceStore&);
 	WorkspaceStore& operator=(const WorkspaceStore&);
@@ -320,7 +342,7 @@ public:
 // Inline members for Workspace<T>
 
 template<class T>
-//inline
+inline
 Workspace<T>::Workspace(WorkspaceStore* workspace_store, size_t num_elements, bool call_constructors)
 	: raw_workspace_(workspace_store,sizeof(T)*num_elements), call_constructors_(call_constructors)
 {
@@ -332,7 +354,7 @@ Workspace<T>::Workspace(WorkspaceStore* workspace_store, size_t num_elements, bo
 }
 
 template<class T>
-//inline
+inline
 Workspace<T>::~Workspace()
 {
 	if(call_constructors_) {
@@ -410,6 +432,18 @@ inline
 int WorkspaceStore::num_dyn_allocations() const
 {
 	return num_dyn_allocations_;
+}
+
+inline
+size_t WorkspaceStore::num_current_bytes_total()
+{
+  return num_current_bytes_total_;
+}
+
+inline
+size_t WorkspaceStore::num_max_bytes_needed() const
+{
+  return num_max_bytes_needed_;
 }
 
 // /////////////////////////////////////////////////
