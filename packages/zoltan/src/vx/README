@@ -1,9 +1,0 @@
-
-VX DIRECTORY -- Code for manipulating vertices of a graph.
----------------------------------------------------------
-
-Note:  This code is not currently compiled into Zoltan.
-It works with the code in subdirectory gr.
-
-vx.c          --  Routines for creating new vertices and freeing old vertices.
-vx_const.h    --  Data structure definition for vertices of a graph.
