@@ -8,7 +8,7 @@ CPPFLAGS="-Wc,-tlocal -tp=k8-64" \
 --enable-tsfcoreutils \
 --enable-tsfcore --disable-tsf --enable-ml \
 --disable-tsfextended --disable-meros --enable-tsfcore-epetra \
---disable-anasazi --enable-tpetra --enable-epetraext \
+--enable-anasazi --enable-tpetra --enable-epetraext \
 --enable-kokkos --enable-amesos --enable-amesos-klu \
---enable-nox --disable-loca \
---disable-nox-epetra-examples --enable-nox-lapack-examples
+--enable-nox --enable-loca --enable-ml \
+--enable-nox-epetra-examples --enable-nox-lapack-examples
