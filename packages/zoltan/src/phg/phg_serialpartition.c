@@ -266,7 +266,7 @@ static int timer_cpart=-1, timer_gather=-1;
       /* Decide if candidate is in the top tier or not. */
       /* Selection criteria should be the same as in pick_best()! */
       bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, new_part); 
-      bestvals[new_cand] = Zoltan_PHG_hcut_size_links(shg->comm, 
+      bestvals[new_cand] = Zoltan_PHG_Compute_ConCut(shg->comm, 
              shg, new_part, numPart);
       if (i<NUM_PART_KEEP)
         new_cand = i+1;
@@ -1060,13 +1060,13 @@ float cut, bal;
 
   mybest = 0;
   local[0].val = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart);
-  local[1].val = Zoltan_PHG_hcut_size_links(shg->comm, shg, spart, numPart);
+  local[1].val = Zoltan_PHG_Compute_ConCut(shg->comm, shg, spart, numPart);
   local[0].rank = local[1].rank = phg_comm->myProc;
 
   /* What do we say is "best"?   For now, say lowest cut size. */
   for (i=1; i<numLocalCandidates; i++){
     bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart+i*(shg->nVtx)); 
-    cut = Zoltan_PHG_hcut_size_links(shg->comm, shg, 
+    cut = Zoltan_PHG_Compute_ConCut(shg->comm, shg, 
              spart+i*(shg->nVtx), numPart);
     if (cut < local[1].val){
       mybest = i;

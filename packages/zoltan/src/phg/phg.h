@@ -227,8 +227,8 @@ extern int Zoltan_PHG_rdivide (int,  int, Partition, ZZ *, HGraph *,
 extern int Zoltan_PHG_Set_Part_Options(ZZ*, PHGPartParams*);
 extern int Zoltan_PHG_Partition(ZZ*, HGraph*, int, float *, Partition, 
                                 PHGPartParams*, int);
-extern double Zoltan_PHG_hcut_size_total(PHGComm*, HGraph*, Partition, int);
-extern double Zoltan_PHG_hcut_size_links(PHGComm*, HGraph*, Partition, int);    
+extern double Zoltan_PHG_Compute_NetCut(PHGComm*, HGraph*, Partition, int);
+extern double Zoltan_PHG_Compute_ConCut(PHGComm*, HGraph*, Partition, int);    
 extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, int, Partition);
 
 extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZPHG**, Partition*, PHGPartParams*);

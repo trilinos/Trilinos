@@ -437,7 +437,7 @@ static int refine_fm2 (ZZ *zz,
         
 #ifdef _DEBUG
     /* Just for debugging */
-        best_cutsize = Zoltan_PHG_hcut_size_total(hgc, hg, part, p);
+        best_cutsize = Zoltan_PHG_Compute_NetCut(hgc, hg, part, p);
         if (best_cutsize!=cutsize) {
             errexit("%s: Initial cutsize=%.2lf Verify: total=%.2lf\n", uMe(hgc), cutsize,
                best_cutsize);
@@ -622,7 +622,7 @@ static int refine_fm2 (ZZ *zz,
             successivefails = 0; 
 #ifdef _DEBUG
     /* Just for debugging */
-        best_cutsize = Zoltan_PHG_hcut_size_total(hgc, hg, part, p);
+        best_cutsize = Zoltan_PHG_Compute_NetCut(hgc, hg, part, p);
         imbal = (targetw0 == 0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
         printf("%s End of Pass %d Comp.Cut=%.2lf RealCut=%.2lf W[%5.0lf, %5.0lf] Imbal=%.2lf\n", uMe(hgc), passcnt, cutsize, best_cutsize, weights[0], weights[1], imbal);
         if (cutsize<best_cutsize) {

@@ -181,7 +181,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
        "bal=%.2f cutl=%.2f\n", hg->info, hg->nVtx, hg->nEdge, hg->nPins,
        hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, p,
        Zoltan_PHG_Compute_Balance(zz, hg, p, parts),
-       Zoltan_PHG_hcut_size_links(hg->comm, hg, parts, p));
+       Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p));
         
     if (err != ZOLTAN_OK)  {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
@@ -221,7 +221,7 @@ End:
   {HGraph *hg = &zoltan_hg->PHG;
    double bal = Zoltan_PHG_Compute_Balance(zz, hg, zz->LB.Num_Global_Parts,
                                            parts);
-   double cutl= Zoltan_PHG_hcut_size_links(hg->comm, hg, parts,
+   double cutl= Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts,
                                            zz->LB.Num_Global_Parts);
    if (zz->Proc == 0)
      uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |Z|=%6d %s/%s/%s p=%d "
