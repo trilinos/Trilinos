@@ -158,9 +158,9 @@ int ierr = ZOLTAN_OK;
                                 (void *) hgp->redm_str);
   Zoltan_Bind_Param(HG_params, "HG_LOCAL_REFINEMENT", 
                                 (void *) hgp->local_str);
-  Zoltan_Bind_Param(HG_params, "HG_GLOBAL_PARTITIONING", 
+  Zoltan_Bind_Param(HG_params, "HG_GLOBAL_PARTITIONING",
                                 (void *) hgp->global_str);
-  Zoltan_Bind_Param(HG_params, "CHECK_GRAPH", 
+  Zoltan_Bind_Param(HG_params, "CHECK_GRAPH",
                                 (void *) &(hgp->check_graph));
 
   /* Set default values */
@@ -177,7 +177,7 @@ int ierr = ZOLTAN_OK;
   /* Convert strings to function pointers. */
 
   ierr = Zoltan_HG_Set_Options(zz, hgp);
- 
+
   return ierr;
 }
 
@@ -199,8 +199,8 @@ char *val)                      /* value of variable */
 /*****************************************************************************/
 
 static int Zoltan_HG_Return_Lists(
-  ZZ *zz, 
-  struct Zoltan_HGraph *zoltan_hg, 
+  ZZ *zz,
+  struct Zoltan_HGraph *zoltan_hg,
   Partition output_parts,
   int *num_exp,
   ZOLTAN_ID_PTR *exp_gids,
@@ -226,16 +226,16 @@ ZOLTAN_ID_PTR lids = zoltan_hg->Local_IDs;
 
     /* Count number of objects with new partitions. */
     *num_exp = 0;
-    for (i = 0; i < nVtx; i++) 
+    for (i = 0; i < nVtx; i++)
       if (output_parts[i] != input_parts[i])
         (*num_exp)++;
-  
+
     /* Allocate memory for return lists. */
     if (*num_exp > 0) {
       if (!Zoltan_Special_Malloc(zz, (void **)exp_gids, *num_exp,
                                  ZOLTAN_SPECIAL_MALLOC_GID) ||
           !Zoltan_Special_Malloc(zz, (void **)exp_lids, *num_exp,
-                                 ZOLTAN_SPECIAL_MALLOC_LID) || 
+                                 ZOLTAN_SPECIAL_MALLOC_LID) ||
           !Zoltan_Special_Malloc(zz, (void **)exp_procs, *num_exp,
                                  ZOLTAN_SPECIAL_MALLOC_INT) ||
           !Zoltan_Special_Malloc(zz, (void **)exp_to_part, *num_exp,
@@ -249,7 +249,7 @@ ZOLTAN_ID_PTR lids = zoltan_hg->Local_IDs;
 
       for (j = 0, i = 0; i < nVtx; i++) {
         eproc = Zoltan_LB_Part_To_Proc(zz, output_parts[i]);
-        if (output_parts[i] != input_parts[i] || 
+        if (output_parts[i] != input_parts[i] ||
             eproc != zz->Proc) {
           ZOLTAN_SET_GID(zz, &((*exp_gids)[j*num_gid_entries]),
                              &(gids[i*num_gid_entries]));

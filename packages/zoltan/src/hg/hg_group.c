@@ -22,15 +22,21 @@ static ZOLTAN_HG_GROUPING_FN grouping_mxg;  /* maximal grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_reg;  /* random edge grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_heg;  /* heavy edge grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_grg;  /* greedy grouping */
-/* static ZOLTAN_HG_GROUPING_FN grouping_lhp; */ /* locally heaviest packing */
-/* static ZOLTAN_HG_GROUPING_FN grouping_pgp; */ /* path growing packing */
 static ZOLTAN_HG_GROUPING_FN grouping_deg;  /* decreasing grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_rrg;  /* random vertex, random edge grouping */
+
 
 /****************************************************************************/
 
 ZOLTAN_HG_GROUPING_FN *Zoltan_HG_Set_Grouping_Fn(char *str)
 {
+  static int srand_set ;
+
+  if (srand_set == 0)
+     {
+     srand_set = 1 ;
+     srand ((unsigned long) RANDOM_SEED) ;
+     }
 
   if      (strcasecmp(str, "mxg") == 0)  return grouping_mxg;
   else if (strcasecmp(str, "reg") == 0)  return grouping_reg;
@@ -39,13 +45,9 @@ ZOLTAN_HG_GROUPING_FN *Zoltan_HG_Set_Grouping_Fn(char *str)
   else if (strcasecmp(str, "deg") == 0)  return grouping_deg;
   else if (strcasecmp(str, "rrg") == 0)  return grouping_rrg;
 
-/*
-  else if (strcasecmp(str, "lhp") == 0)  return grouping_lhp;
-  else if (strcasecmp(str, "pgp") == 0)  return grouping_pgp;
-*/
-
   else                                   return NULL;
 }
+
 
 /****************************************************************************/
 
@@ -86,6 +88,7 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGParams *hgp)
   return ierr;
 }
 
+
 /****************************************************************************/
 
 static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack)
@@ -109,6 +112,7 @@ static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack)
             }
    return ZOLTAN_OK ;
    }
+
 
 /****************************************************************************/
 
@@ -148,6 +152,7 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack)
    ZOLTAN_FREE ((void **) &edges) ;
    return ZOLTAN_OK ;
    }
+
 
 /****************************************************************************/
 
@@ -192,6 +197,7 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack)
    ZOLTAN_FREE ((void **) &vertices) ;
    return ZOLTAN_OK ;
    }
+
 
 /****************************************************************************/
 
@@ -261,6 +267,7 @@ static int grouping_heg (ZZ *zz, HGraph *hg, Packing pack)
    return ZOLTAN_OK ;
 }
 
+
 /****************************************************************************/
 
 static void quickpart_dec_float_int (float *val1, int *val2, int *sorted,
@@ -299,6 +306,7 @@ int start, int end)
     quicksort_dec_float_int (val1,val2,sorted,smaller,end);
   }
 }
+
 
 /****************************************************************************/
 
@@ -342,155 +350,6 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack)
   return ZOLTAN_OK;
   }
 
-/****************************************************************************/
-
-static int lhp_pack (ZZ *zz, HGraph *hg, int edge, int *del_edge, int *Vindex,
-                     Packing pack)
-{ int	i, j, vertex, *Vindex_old, next_edge, done=0;
-  char *yo = "lhp_pack" ;
-
-  Vindex_old = (int *) ZOLTAN_MALLOC (sizeof (int)
-   * (hg->hindex[edge+1]-hg->hindex[edge]));
-  if (Vindex_old == NULL)
-     {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
-  for (i=0; i<hg->hindex[edge+1]-hg->hindex[edge]; i++)
-    Vindex_old[i] = Vindex[hg->hvertex[i+hg->hindex[edge]]];
-
-  while (hg->ewgt && del_edge[edge]==0 && done==0)
-  { done = 1;
-    for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++)
-    { vertex = hg->hvertex[i];
-      if (Vindex[vertex] < hg->vindex[vertex+1])
-      { next_edge = hg->vedge[Vindex[vertex]];
-        (Vindex[vertex])++;
-        if (hg->ewgt[next_edge] > hg->ewgt[edge])
-          lhp_pack(zz,hg,next_edge,del_edge,Vindex,pack);
-        done=0;
-  } } }
-
-  if (del_edge[edge] == 0)
-  { for (i=hg->hindex[edge]; i<hg->hindex[edge+1]-1; i++)
-      pack[hg->hvertex[i]] = hg->hvertex[i+1];
-    pack[hg->hvertex[i]] = hg->hvertex[hg->hindex[edge]];
-    for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++)
-    { vertex = hg->hvertex[i];
-      for (j=hg->vindex[vertex]; j<hg->vindex[vertex+1]; j++)
-        del_edge[hg->vedge[j]] = 1;
-    }
-  }
-  else
-    for (i=0; i<hg->hindex[edge+1]-hg->hindex[edge]; i++)
-    { vertex = hg->hvertex[i+hg->hindex[edge]];
-      if (pack[vertex] == vertex)
-        Vindex[vertex] = Vindex_old[i];
-    }
-
-  ZOLTAN_FREE((void **) &Vindex_old);
-  return ZOLTAN_OK;
-}
-
-/****************************************************************************/
-
-static int grouping_lhp (ZZ *zz, HGraph *hg, Packing pack)
-{ int	i, *Vindex=NULL, *del_edge=NULL;
-  char *yo = "grouping_lhp" ;
-
-  for (i=0; i<hg->nVtx; i++)
-    pack[i] = i;
-
-  del_edge = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge);
-  Vindex   = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nVtx+1));
-  if (del_edge == NULL || Vindex == NULL)
-     {
-     ZOLTAN_FREE ((void **) &del_edge) ;
-     ZOLTAN_FREE ((void **) &Vindex) ;
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
-  for (i=0; i<hg->nEdge; i++)
-     del_edge[i] = 0 ;
-  memcpy(Vindex,hg->vindex,(hg->nVtx+1)*sizeof(int));
-
-  for (i=0; i<hg->nEdge; i++)
-    if (del_edge[i] == 0)
-      lhp_pack(zz,hg,i,del_edge,Vindex,pack);
-
-  ZOLTAN_FREE ((void **) &del_edge);
-  ZOLTAN_FREE ((void **) &Vindex);
-  return ZOLTAN_OK;
-}
-
-/****************************************************************************/
-
-static int grouping_pgp (ZZ *zz, HGraph *hg, Packing pack)
-{ int   i, j, k, vertex, edge, *pack1=pack, *pack2=NULL, *Pack=pack,
-        *taken_edge=NULL, *taken_vertex=NULL, cur_edge, best_edge;
-  float	best_weight, w1=0.0, w2=0.0;
-  char *yo = "grouping_pgp" ;
-
-  pack2        = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx);
-  taken_edge   = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge);
-  taken_vertex = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx);
-  if (pack2 == NULL || taken_edge == NULL || taken_vertex == NULL)
-     {
-     ZOLTAN_FREE ((void **) &pack2) ;
-     ZOLTAN_FREE ((void **) &taken_edge) ;
-     ZOLTAN_FREE ((void **) &taken_vertex) ;
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
-  for (i=0; i<hg->nEdge; i++)
-     taken_edge[i]=0 ;
-  for (i=0; i< hg->nVtx; i++)
-     taken_vertex[i]=0 ;
-  for (i=0; i<hg->nVtx; i++)
-     pack1[i] = pack2[i] = i;
-
-  for (i=0; i<hg->nEdge; i++)
-    if (taken_edge[i] == 0)
-    { cur_edge = i;
-      taken_edge[cur_edge] = 1;
-      while (cur_edge >= 0)
-      { for (j=hg->hindex[cur_edge]; j<hg->hindex[cur_edge+1]-1; j++)
-          Pack[hg->hvertex[j]] = hg->hvertex[j+1];
-        Pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[cur_edge]];
-        if (Pack == pack1)
-        { w1 += (hg->ewgt?hg->ewgt[cur_edge]:1.0);
-          Pack = pack2;
-        }
-        else
-        { w2 += (hg->ewgt?hg->ewgt[cur_edge]:1.0);
-          Pack = pack1;
-        }
-
-        best_weight = 0.0;
-        best_edge = -1;
-        for (j=hg->hindex[cur_edge]; j<hg->hindex[cur_edge+1]; j++)
-          if (taken_vertex[(vertex=hg->hvertex[j])] == 0)
-          { for (k=hg->vindex[vertex]; k<hg->vindex[vertex+1]; k++)
-              if (taken_edge[(edge=hg->vedge[k])]==0)
-              { if ((hg->ewgt?hg->ewgt[edge]:1.0)>best_weight)
-                { best_edge = edge;
-                  best_weight = (hg->ewgt?hg->ewgt[best_edge]:1.0);
-                }
-                taken_edge[edge] = 1;
-              }
-            taken_vertex[vertex] = 1;
-          }
-        cur_edge = best_edge;
-    } }
-
-  if (w1 < w2)
-    memcpy(pack,pack2,(hg->nVtx) * sizeof(int));
-
-  ZOLTAN_FREE ((void **) &pack2);
-  ZOLTAN_FREE ((void **) &taken_edge);
-  ZOLTAN_FREE ((void **) &taken_vertex);
-  return ZOLTAN_OK;
-}
 
 /****************************************************************************/
 

@@ -31,6 +31,14 @@ static ZOLTAN_HG_PACKING_FN packing_rrp;  /* random vertex, random edge packing 
 
 ZOLTAN_HG_PACKING_FN *Zoltan_HG_Set_Packing_Fn(char *str)
 {
+  static int srand_set ;
+
+  if (srand_set == 0)
+     {
+     srand_set = 1 ;
+     srand ((unsigned long) RANDOM_SEED) ;
+     }
+
   if      (strcasecmp(str, "pgp") == 0)  return packing_pgp;
   else if (strcasecmp(str, "mxp") == 0)  return packing_mxp;
   else if (strcasecmp(str, "rep") == 0)  return packing_rep;
@@ -96,7 +104,7 @@ static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack)
       for (j = hg->hindex[i] ; j < hg->hindex[i+1] ; j++)
          if (pack[hg->hvertex[j]] != hg->hvertex[j])
             break ;
-      if (j == hg->hindex[i+1])
+      if (j == hg->hindex[i+1])    /* if true, all vertices free for packing */
          {
          for (j = hg->hindex[i] ; j < hg->hindex[i+1]-1 ; j++)
             pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
@@ -133,7 +141,7 @@ static int packing_rep (ZZ *zz, HGraph *hg, Packing pack)
       for (j = hg->hindex[edge] ; j < hg->hindex[edge+1] ; j++)
          if (pack[hg->hvertex[j]] != hg->hvertex[j])
             break ;
-      if (j == hg->hindex[edge+1])
+      if (j == hg->hindex[edge+1])   /* if true, all vertices free for packing */
          {
          for (j = hg->hindex[edge] ; j < hg->hindex[edge+1]-1 ; j++)
             pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
@@ -245,10 +253,13 @@ static int packing_hep (ZZ *zz, HGraph *hg, Packing pack)
       best_edge = best_size = -1;
       best_ewgt = -1.0 ;
       for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
-      { edge = hg->vedge[j];
-        if (del_edges[edge]==0 &&
-             (hg->ewgt && (hg->ewgt[edge]>best_ewgt || (hg->ewgt[edge]==best_ewgt && hg->hindex[edge+1]-hg->hindex[edge]<best_size))) ||
-             (hg->ewgt==NULL && hg->hindex[edge+1]-hg->hindex[edge]<best_size))
+      {
+         int size ;
+         edge = hg->vedge[j];
+         size = hg->hindex[edge+1] - hg->hindex[edge] ;
+         if (del_edges[edge]==0 && ((hg->ewgt == NULL  && size < best_size)
+          || (hg->ewgt && (hg->ewgt[edge] >  best_ewgt
+                       || (hg->ewgt[edge] == best_ewgt && size < best_size)))))
             {
             best_edge = edge ;
             best_ewgt = hg->ewgt[best_edge] ;

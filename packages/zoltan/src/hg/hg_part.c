@@ -29,25 +29,17 @@ int Zoltan_HG_Set_Options(ZZ *zz, HGParams *hgp)
 char *yo = "Zoltan_HG_Set_Options";
 int ierr = ZOLTAN_OK;
 
-  srand ((unsigned long) RANDOM_SEED) ;
-
   /* Set reduction method.  Check for packing first; then matching; then grouping. */
-  hgp->matching = NULL;
-  hgp->grouping = NULL;
-  hgp->packing  = Zoltan_HG_Set_Packing_Fn(hgp->redm_str);
-  if (hgp->packing == NULL)
-    {
-    hgp->matching = Zoltan_HG_Set_Matching_Fn(hgp->redm_str);
-    if (hgp->matching == NULL)
-       {
-       hgp->grouping = Zoltan_HG_Set_Grouping_Fn(hgp->redm_str);
-       if (hgp->grouping == NULL)
-          {
-          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid HG_REDUCTION_METHOD.");
-          ierr = ZOLTAN_FATAL;
-          }
-       }
-    }
+  hgp->packing  = NULL ;
+  hgp->matching = NULL ;
+  hgp->grouping = NULL ;
+  if ((hgp->packing  = Zoltan_HG_Set_Packing_Fn  (hgp->redm_str)) == NULL
+   && (hgp->matching = Zoltan_HG_Set_Matching_Fn (hgp->redm_str)) == NULL
+   && (hgp->grouping = Zoltan_HG_Set_Grouping_Fn (hgp->redm_str)) == NULL)
+      {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid HG_REDUCTION_METHOD.");
+      ierr = ZOLTAN_FATAL;
+      }
 
   /* Set global partitioning method */
   hgp->global_part = Zoltan_HG_Set_Global_Part_Fn(hgp->global_str);

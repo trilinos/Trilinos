@@ -29,39 +29,34 @@ static ZOLTAN_HG_MATCHING_FN matching_w3;       /* post matching optimizer */
 
 /*****************************************************************************/
 
-ZOLTAN_HG_MATCHING_FN *Zoltan_HG_Set_Matching_Fn(char *str) 
+ZOLTAN_HG_MATCHING_FN *Zoltan_HG_Set_Matching_Fn(char *str)
 {
-  if (strcasecmp(str, "mxm") == 0) {
-    return matching_mxm;
-  }
-  else if (strcasecmp(str, "rem") == 0) {
-    return matching_rem;
-  }
-  else if (strcasecmp(str, "hem") == 0) {
-    return matching_hem;
-  }
-  else if (strcasecmp(str, "grm") == 0) {
-    return matching_grm;
-  }
-  else if (strcasecmp(str, "lhm") == 0) {
-    return matching_lhm;
-  }
-  else if (strcasecmp(str, "pgm") == 0) {
-    return matching_pgm;
-  }
-  else
-    return NULL;
+  static int srand_set ;
+
+  if (srand_set == 0)
+     {
+     srand_set = 1 ;
+     srand ((unsigned long) RANDOM_SEED) ;
+     }
+
+  if      (strcasecmp(str, "mxm") == 0)  return matching_mxm;
+  else if (strcasecmp(str, "rem") == 0)  return matching_rem;
+  else if (strcasecmp(str, "hem") == 0)  return matching_hem;
+  else if (strcasecmp(str, "grm") == 0)  return matching_grm;
+  else if (strcasecmp(str, "lhm") == 0)  return matching_lhm;
+  else if (strcasecmp(str, "pgm") == 0)  return matching_pgm;
+
+  else                                   return NULL;
 }
 
 
 /*****************************************************************************/
 
-
 int Zoltan_HG_Matching (
   ZZ *zz,
   Graph *g,
   Matching match,
-  HGParams *hgp, 
+  HGParams *hgp,
   int limit)
 { int	i, j;
   char *yo = "Zoltan_HG_Matching";
@@ -89,8 +84,6 @@ int Zoltan_HG_Matching (
 
   /* Optimization */
   ierr = matching_w3 (zz,g,match,limit);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-    goto End;
 
 
 End:
@@ -99,6 +92,8 @@ End:
   return ierr;
 }
 
+
+/*****************************************************************************/
 
 static int matching_mxm (ZZ *zz, Graph *g, Matching match, int limit)
 { int   i, j, size=0;
@@ -116,6 +111,8 @@ static int matching_mxm (ZZ *zz, Graph *g, Matching match, int limit)
   return ZOLTAN_OK;
 }
 
+
+/*****************************************************************************/
 
 static int matching_rem (ZZ *zz, Graph *g, Matching match, int limit)
 { int   i, j, size=0, *vertices, vertex, vertex_deg, number, neighbor=0;
@@ -150,6 +147,8 @@ static int matching_rem (ZZ *zz, Graph *g, Matching match, int limit)
   return ZOLTAN_OK;
 }
 
+
+/*****************************************************************************/
 
 static int matching_hem (ZZ *zz, Graph *g, Matching match, int limit)
 { int   i, j, size=0, *vertices, vertex, number, best_neighbor=0;
@@ -187,6 +186,8 @@ static int matching_hem (ZZ *zz, Graph *g, Matching match, int limit)
   return ZOLTAN_OK;
 }
 
+
+/*****************************************************************************/
 
 static void quickpart_dec_float (float *val, int* sorted, int start, int end,
  int* equal, int* smaller)
@@ -259,6 +260,8 @@ static int matching_grm (ZZ *zz, Graph *g, Matching match, int limit)
   return ZOLTAN_OK;
 }
 
+
+/*****************************************************************************/
 
 #undef LAM_ORIG
 
@@ -340,6 +343,8 @@ static int matching_lhm (ZZ *zz, Graph *g, Matching match, int limit)
 }
 
 
+/*****************************************************************************/
+
 static int matching_pgm (ZZ *zz, Graph *g, Matching match, int limit)
 { int	i, j, vertex, *match1=match, *match2, *M, size1=0, size2=0, neighbor, next_vertex;
   float	w1=0.0, w2=0.0, weight;
@@ -396,6 +401,8 @@ static int matching_pgm (ZZ *zz, Graph *g, Matching match, int limit)
   return ZOLTAN_OK;
 }
 
+
+/*****************************************************************************/
 
 static int matching_w3 (ZZ *zz, Graph *g, Matching match, int limit)
 { int		i, j, k, size=0, *stack, free_p=0, best_2=-1, best_near=-1,
