@@ -27,10 +27,15 @@ public:
     failed). */
   enum STATUS {
     NotConverged = 0,
-    ConvergedAbsTol = 1,
-    ConvergedRelTol = 2,
-    MaxItersExceeded = -1,
-    OtherError = -2
+    Converged = 1,
+    ConvAbsResidTol = 2,
+    ConvRelResidTol = 3,
+    ConvMaxResidTol = 4,
+    ConvAbsUpdateTol = 5,
+    ConvRelUpdateTol = 6,
+    Failed = -1,
+    MaxItersExceeded = -2,
+    TooSlowConv = -3
   };
 
   //! Constructor 

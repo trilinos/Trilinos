@@ -13,6 +13,7 @@
 
 #include "NLS_Method.H"		// base class
 #include "NLS_LineSearchManager.H" // line search
+#include "NLS_StatusTest.H"	// status test for convergence
 
 //! Implementation of plain Newton solver
 class NLS_Newton : public NLS_Method {
@@ -40,16 +41,13 @@ protected:
   NLS_Group& oldsoln;		//!< Old solution
   NLS_ParameterList& params;    //!< Parameter List
   NLS_LineSearchManager linesearch; //!< Line search manager
+  NLS_StatusTest statustest;	// !< Status tester
   double step;			//!< Step length for last iteration
   double defaultstep;		//!< Default step length
 
   // Statistics
   int niter;                    //!< Number of nonlinear iterations
 
-  // Parameter List
-  int maxiter;			//!< Max. # of nonlinear iterations
-  double reltol;                //!< Relative Tolerance
-  double abstol;                //!< Absolute Tolerance
 };
 
 

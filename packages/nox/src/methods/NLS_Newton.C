@@ -31,10 +31,11 @@ NLS_Newton::NLS_Newton(NLS_Group& initialguess, NLS_Group& workspace, NLS_Parame
     cout << "NLS_Utilities: Processor " << NLS_Utilities::myPID 
 	 << " is online." << endl;  
 
-  maxiter = params.getParameter("Max Iterations", 15);
-  abstol = params.getParameter("Absolute Tolerance", 1.0e-9);
-  reltol = params.getParameter("Relative Tolerance", 1.0e-4);
+  //  maxiter = params.getParameter("Max Iterations", 15);
+  //  abstol = params.getParameter("Absolute Tolerance", 1.0e-9);
+  //  reltol = params.getParameter("Relative Tolerance", 1.0e-4);
   soln.computeRHS();
+  statustest.setup(p.sublist("Convergence Tests"), soln.getNormRHS());
   step = 0;
   //NLS_ParameterList& tmp = params.sublist("Line Search Parameters");
   //defaultstep = tmp.getParameter("Default Step", 1.0);
@@ -51,39 +52,28 @@ void NLS_Newton::resetParameters(NLS_ParameterList& p)
 
 NLS_Method::STATUS NLS_Newton::getStatus() 
 {
-  // Compute norm of Newton step 
-  double normupdate = step * soln.getNewton().norm();
+  
 
   if (NLS_Utilities::doPrint(1)) {
-   cout.setf(ios::scientific);
+    cout.setf(ios::scientific);
     cout.precision(NLS_Utilities::precision);
-     cout << "\n" << stars;
+    cout << "\n" << stars;
     cout << "Newton Step " << niter 
 	 << " : Residual Norm = " << setw(NLS_Utilities::precision + 6) << soln.getNormRHS()
 	 << "  Step = " << setw(NLS_Utilities::precision + 6) << step
-	 << "  Update Norm = " << setw(NLS_Utilities::precision + 6) << normupdate;
+	 << "  Update Norm = " << setw(NLS_Utilities::precision + 6) << oldsoln.getNewton().norm();
     cout << "\n" << stars << endl;
     cout.unsetf(ios::scientific);
   }
-
-  NLS_Method::STATUS status = NLS_Method::NotConverged;
-
-  if (soln.getNormRHS() < abstol)
-    status = NLS_Method::ConvergedAbsTol;
-
-  if ((niter > 0) && (normupdate < reltol))
-    status = NLS_Method::ConvergedRelTol;
-
-  if (niter >= maxiter) {
-    status = NLS_Method::MaxItersExceeded;
-  }
-
+  
+  NLS_Method::STATUS status = statustest(oldsoln, soln, oldsoln.getNewton(), step, niter);
+  
   if ((status > 0) && (NLS_Utilities::doPrint(1)))
     cout << "\n" << "Solution is CONVERGED!" << "\n" << endl;
-
+  
   if ((status < 0) && (NLS_Utilities::doPrint(1)))
     cout << "\n" << "Nonlinear solver failed." << "\n" << endl;
-
+  
   return status;
 }
 

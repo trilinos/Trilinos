@@ -71,6 +71,17 @@ NLS_Vector& NLS_PetraVector::abs(const NLS_PetraVector& base)
   return *this;
 }
 
+NLS_Vector& NLS_PetraVector::reciprocal(const NLS_Vector& base)
+{
+  return reciprocal(dynamic_cast<const NLS_PetraVector&>(base));
+}
+
+NLS_Vector& NLS_PetraVector::reciprocal(const NLS_PetraVector& base)
+{
+  petraVec->Reciprocal(base.getPetraVector());
+  return *this;
+}
+
 NLS_Vector& NLS_PetraVector::scale(double alpha)
 {
   petraVec->Scale(alpha);
@@ -107,7 +118,7 @@ NLS_Vector& NLS_PetraVector::update(double alpha, const NLS_PetraVector& a,
 }
 
 
-NLS_Vector* NLS_PetraVector::newcopy() const
+NLS_Vector* NLS_PetraVector::clone() const
 {
   NLS_PetraVector* newVec = new NLS_PetraVector(*petraVec);
   return newVec;
@@ -163,6 +174,11 @@ double NLS_PetraVector::dot(const NLS_PetraVector& y) const
   double dot;
   petraVec->Dot(y.getPetraVector(), &dot);
   return dot;
+}
+
+int NLS_PetraVector::length() const
+{
+  return petraVec->GlobalLength();
 }
 
 void NLS_PetraVector::print() const

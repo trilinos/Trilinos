@@ -134,11 +134,15 @@ int main(int argc, char *argv[])
 
   NLS_ParameterList nlParams;
   nlParams.setParameter("Nonlinear Solver", "Newton");   
-  nlParams.setParameter("Max Iterations", 10);  
-  nlParams.setParameter("Absolute Tolerance", 1.0e-8); 
-  nlParams.setParameter("Relative Tolerance", 1.0e-4); 
   nlParams.setParameter("Output Level", 4);
   nlParams.setParameter("MyPID", MyPID); 
+
+  // Sublist for convergence tests
+  NLS_ParameterList& convParams = nlParams.sublist("Convergence Tests");
+  convParams.setParameter("Max Iterations", 10);  
+  convParams.setParameter("Absolute Residual Tolerance", 1.0e-6); 
+  convParams.setParameter("Relative Residual Tolerance", 1.0e-4); 
+
   
   // Sublist for linear solver
   NLS_ParameterList& lsParams = nlParams.sublist("Linear Solver Parameters");

@@ -59,6 +59,12 @@ class NLS_PetraVector : public NLS_Vector {
   //! See above 
   virtual NLS_Vector& abs(const NLS_PetraVector& y);
 
+  virtual NLS_Vector& reciprocal(const NLS_Vector& a);
+
+  //! See above
+  virtual NLS_Vector& reciprocal(const NLS_PetraVector& a);
+
+
   //@}
 
   //@{ \name Update methods
@@ -84,7 +90,7 @@ class NLS_PetraVector : public NLS_Vector {
 
   //@{ \name Creating new NLS_Vectors 
 
-  virtual NLS_Vector* newcopy() const;
+  virtual NLS_Vector* clone() const;
 
   //@}
 
@@ -101,12 +107,16 @@ class NLS_PetraVector : public NLS_Vector {
 
   //@{ \name Dot products
 
-  double dot(const NLS_Vector& y) const;
+  virtual double dot(const NLS_Vector& y) const;
 
   //! See above for definition.
-  double dot(const NLS_PetraVector& y) const;
+  virtual double dot(const NLS_PetraVector& y) const;
 
   //@}
+
+  //! Return length of vector
+  virtual int length() const;
+
 
   //! Print Function
   void print() const;

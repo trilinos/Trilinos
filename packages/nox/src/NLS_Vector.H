@@ -43,6 +43,9 @@ public:
   //! Copies y into "this".
   virtual NLS_Vector& operator=(const NLS_Vector& y) = 0;
 
+  //! this = element-wise reciprocal of a
+  virtual NLS_Vector& reciprocal(const NLS_Vector& a) = 0;
+
   //@}
 
   //@{ \name Update methods
@@ -57,14 +60,13 @@ public:
   virtual NLS_Vector& update(double alpha, const NLS_Vector& a, 
 			     double beta, const NLS_Vector& b,
 			     double gamma = 0.0) = 0;
-
   //@}
 
   //@{ \name Creating new NLS_Vectors 
 
   //! Create a \b new NLS_Vector by copying this one. 
   //! Return a pointer to the new vector. 
-  virtual NLS_Vector* newcopy() const = 0;
+  virtual NLS_Vector* clone() const = 0;
 
   //@}
 
@@ -84,6 +86,10 @@ public:
   virtual double dot(const NLS_Vector& y) const = 0;
   
   //@}
+
+  //! Return length of vector
+  virtual int length() const = 0;
+
 
 };
 

@@ -54,17 +54,19 @@ NLS_LineSearchManager.o : ../src/NLS_Group.H ../src/NLS_LineSearch.H \
 	$(CXX) -c $(CXXFLAGS) ../src/linesearches/NLS_LineSearchManager.C -o $@
 
 NLS_MethodManager.o : ../src/NLS_Group.H ../src/NLS_LineSearch.H \
-	../src/NLS_Vector.H ../src/linesearches/NLS_LineSearchManager.H \
-	../src/methods/NLS_Method.H ../src/methods/NLS_MethodManager.H \
-	../src/methods/NLS_Newton.H ../src/utils/NLS_Parameter.H \
+	../src/NLS_Method.H ../src/NLS_Vector.H \
+	../src/linesearches/NLS_LineSearchManager.H \
+	../src/methods/NLS_MethodManager.H ../src/methods/NLS_Newton.H \
+	../src/methods/NLS_StatusTest.H ../src/utils/NLS_Parameter.H \
 	../src/utils/NLS_ParameterList.H ../src/utils/NLS_Utilities.H \
 	../src/methods/NLS_MethodManager.C 
 	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_MethodManager.C -o $@
 
 NLS_Newton.o : ../src/NLS_Group.H ../src/NLS_LineSearch.H \
-	../src/NLS_Vector.H ../src/linesearches/NLS_LineSearchManager.H \
-	../src/methods/NLS_AdaptiveTolerance.H ../src/methods/NLS_Method.H \
-	../src/methods/NLS_Newton.H ../src/utils/NLS_Parameter.H \
+	../src/NLS_Method.H ../src/NLS_Vector.H \
+	../src/linesearches/NLS_LineSearchManager.H \
+	../src/methods/NLS_AdaptiveTolerance.H ../src/methods/NLS_Newton.H \
+	../src/methods/NLS_StatusTest.H ../src/utils/NLS_Parameter.H \
 	../src/utils/NLS_ParameterList.H ../src/utils/NLS_Utilities.H \
 	../src/methods/NLS_Newton.C 
 	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_Newton.C -o $@
@@ -73,4 +75,10 @@ NLS_AdaptiveTolerance.o : ../src/methods/NLS_AdaptiveTolerance.H \
 	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
 	../src/utils/NLS_Utilities.H ../src/methods/NLS_AdaptiveTolerance.C 
 	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_AdaptiveTolerance.C -o $@
+
+NLS_StatusTest.o : ../src/NLS_Group.H ../src/NLS_Method.H \
+	../src/NLS_Vector.H ../src/methods/NLS_StatusTest.H \
+	../src/utils/NLS_Parameter.H ../src/utils/NLS_ParameterList.H \
+	../src/methods/NLS_StatusTest.C 
+	$(CXX) -c $(CXXFLAGS) ../src/methods/NLS_StatusTest.C -o $@
 
