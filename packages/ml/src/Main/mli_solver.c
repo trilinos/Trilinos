@@ -256,8 +256,10 @@ MLI_Solver *MLI_Solver_Create( MPI_Comm comm )
     solver->post_sweeps   = 2;
     solver->jacobi_wt     = 0.0;  /* default damping factor */
     solver->ml_ag         = NULL;
+    solver->ml_amg        = NULL;
     solver->ag_threshold  = 0.08; /* threshold for aggregation */
     solver->ag_coarsen    = 1;    /* 1 = Uncoupled */
+    solver->ag_method     = 1;    /* 1 = AMG */
     solver->contxt        = NULL; /* context for matvec */
     solver->ndiag         = 0;    /* for scaling the matrix */
     solver->diag_scale    = NULL;
@@ -285,6 +287,7 @@ int MLI_Solver_Destroy( MLI_Solver *solver )
     MLI_CSRMatrix *Amat;
 
     if ( solver->ml_ag  != NULL ) ML_Aggregate_Destroy( &(solver->ml_ag) );
+    if ( solver->ml_amg != NULL ) ML_AMG_Destroy( &(solver->ml_amg) );
     if ( solver->ml_ptr != NULL ) ML_Destroy( &(solver->ml_ptr) );
     if ( solver->contxt->partition != NULL ) free( solver->contxt->partition );
     if ( solver->contxt->Amat != NULL )
@@ -372,7 +375,9 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
     rhs    = solver->rhs  ;
     MLI_Solver_Construct_CSRMatrix(localEqns,mat_ia,mat_ja,mat_a,mli_mat,
                             solver, context->partition,context); 
-    for ( i = 0; i < localEqns; i++ ) rhs[i] *= solver->diag_scale[i];
+
+    if ( solver->ag_method == 2 ) /* scaling for smoothed aggregation */
+       for ( i = 0; i < localEqns; i++ ) rhs[i] *= solver->diag_scale[i];
 
     /* -------------------------------------------------------- */ 
     /* set up the ML communicator information                   */
@@ -396,36 +401,54 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
     ML_Set_Amatrix_Getrow(ml,nlevels-1,MLI_CSRGetRow,MLI_CSRExchBdry,length);
 
     /* -------------------------------------------------------- */ 
-    /* create an aggregate context                              */
+    /* set up the mg method                                     */
     /* -------------------------------------------------------- */ 
 
-    ML_Aggregate_Create(&(solver->ml_ag));
-    ML_Aggregate_Set_MaxLevels( solver->ml_ag, solver->nlevels );
-    ML_Aggregate_Set_Threshold( solver->ml_ag, solver->ag_threshold );
-    if ( solver->ag_coarsen == 1 )
-       ML_Aggregate_Set_CoarsenScheme_Uncoupled( solver->ml_ag);
-    else
-       ML_Aggregate_Set_CoarsenScheme_Coupled( solver->ml_ag);
-    dble_array = (double*) malloc( localEqns * sizeof(double));
-    if ( dble_array == NULL )
+    if ( solver->ag_method == 2 )
     {
-       printf("memory allocation problem in MLI_Solver_Setup %d.\n",localEqns);
-       exit(1);
-    }
-    for ( i = 0; i < localEqns; i++ )
-       dble_array[i] = 1.0 / solver->diag_scale[i];
-    dble_array = solver->nullSpace;
-    nPDE = solver->nPDE;
-    nullDim = solver->nNullVectors;
-    ML_Aggregate_Set_NullSpace(solver->ml_ag,nPDE,nullDim,dble_array,localEqns);
-    free(dble_array);
+       /* ----------------------------------------------------- */ 
+       /* create an aggregate context                           */
+       /* ----------------------------------------------------- */ 
 
-    /* -------------------------------------------------------- */ 
-    /* perform aggregation                                      */
-    /* -------------------------------------------------------- */ 
+       ML_Aggregate_Create(&(solver->ml_ag));
+       ML_Aggregate_Set_MaxLevels( solver->ml_ag, solver->nlevels );
+       ML_Aggregate_Set_Threshold( solver->ml_ag, solver->ag_threshold );
+       if ( solver->ag_coarsen == 1 )
+          ML_Aggregate_Set_CoarsenScheme_Uncoupled( solver->ml_ag);
+       else
+          ML_Aggregate_Set_CoarsenScheme_Coupled( solver->ml_ag);
+       dble_array = (double*) malloc( localEqns * sizeof(double));
+       if ( dble_array == NULL )
+       {
+          printf("memory allocation problem in MLI_Solver_Setup %d.\n",localEqns);
+          exit(1);
+       }
+       for ( i = 0; i < localEqns; i++ )
+          dble_array[i] = 1.0 / solver->diag_scale[i];
+       dble_array = solver->nullSpace;
+       nPDE = solver->nPDE;
+       nullDim = solver->nNullVectors;
+       ML_Aggregate_Set_NullSpace(solver->ml_ag,nPDE,nullDim,dble_array,localEqns);
+       free(dble_array);
 
-    coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, nlevels-1, 
+       /* ----------------------------------------------------- */ 
+       /* perform aggregation                                   */
+       /* ----------------------------------------------------- */ 
+
+       coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, nlevels-1, 
                                         ML_DECREASING, solver->ml_ag);
+    }
+    else if ( solver->ag_method == 1 )
+    {
+       /* ----------------------------------------------------- */ 
+       /* create an AMG context                                 */
+       /* ----------------------------------------------------- */ 
+
+       ML_AMG_Create(&(solver->ml_amg));
+       ML_AMG_Set_MaxLevels( solver->ml_amg, solver->nlevels );
+       coarsest_level = ML_Gen_MGHierarchy_UsingAMG(ml, nlevels-1,
+                                        ML_DECREASING, solver->ml_amg);
+    }
     if ( my_id == 0 )
        printf("ML : number of levels = %d\n", coarsest_level);
 
@@ -437,8 +460,11 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
 
     if ( nlevels - 1 != coarsest_level )
     {
+#ifdef SUPERLU
        ML_Gen_CoarseSolverSuperLU(ml, coarsest_level);
-       /*ML_Gen_Smoother_GaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 100);*/
+#else
+       ML_Gen_Smoother_GaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 10, 1.0);
+#endif
     } else
        ML_Gen_Smoother_OverlappedDDILUT(ml,coarsest_level,ML_PRESMOOTHER);
 
@@ -662,8 +688,8 @@ int MLI_Solver_Solve( MLI_Solver *solver)
        printf("====> Solve Time = %e\n", elapsed_time);
     ML_Krylov_Destroy(&ml_kry);
   
-    for ( i = 0; i < leng; i++ )
-       sol[i] *= diag_scale[i];
+    if ( solver->ag_method == 2 )
+       for ( i = 0; i < leng; i++ ) sol[i] *= diag_scale[i];
     return 0;
 }
 
@@ -758,7 +784,7 @@ int MLI_Solver_Set_NumPostSmoothings( MLI_Solver *solver, int num_sweeps  )
 }
 
 /****************************************************************************/
-/* MLI_Solver_Set_PreSmoother                                             */
+/* MLI_Solver_Set_PreSmoother                                               */
 /*--------------------------------------------------------------------------*/
 
 int MLI_Solver_Set_PreSmoother( MLI_Solver *solver, int smoother_type  )
@@ -776,7 +802,7 @@ int MLI_Solver_Set_PreSmoother( MLI_Solver *solver, int smoother_type  )
 }
 
 /****************************************************************************/
-/* MLI_Solver_Set_PostSmoother                                            */
+/* MLI_Solver_Set_PostSmoother                                              */
 /*--------------------------------------------------------------------------*/
 
 int MLI_Solver_Set_PostSmoother( MLI_Solver *solver, int smoother_type  )
@@ -794,7 +820,7 @@ int MLI_Solver_Set_PostSmoother( MLI_Solver *solver, int smoother_type  )
 }
 
 /****************************************************************************/
-/* MLI_Solver_Set_DampingFactor                                           */
+/* MLI_Solver_Set_DampingFactor                                             */
 /*--------------------------------------------------------------------------*/
 
 int MLI_Solver_Set_DampingFactor( MLI_Solver *solver, double factor  )
@@ -812,7 +838,7 @@ int MLI_Solver_Set_DampingFactor( MLI_Solver *solver, double factor  )
 }
 
 /****************************************************************************/
-/* MLI_Solver_Set_DampingFactor                                           */
+/* MLI_Solver_Set_CoarsenScheme                                             */
 /*--------------------------------------------------------------------------*/
 
 int MLI_Solver_Set_CoarsenScheme( MLI_Solver *solver, int scheme  )
@@ -825,6 +851,24 @@ int MLI_Solver_Set_CoarsenScheme( MLI_Solver *solver, int scheme  )
     else
     {
        solver->ag_coarsen = scheme;
+    } 
+    return( 0 );
+}
+
+/****************************************************************************/
+/* MLI_Solver_Set_MGMethod                                                  */
+/*--------------------------------------------------------------------------*/
+
+int MLI_Solver_Set_MGMethod( MLI_Solver *solver, int method  )
+{
+    if ( method != 1 && method != 2 )
+    {
+       printf("MLI_Solver_Set_MGMethod error : method set to AMG.\n");
+       solver->ag_method  = 1;
+    } 
+    else
+    {
+       solver->ag_method = method;
     } 
     return( 0 );
 }

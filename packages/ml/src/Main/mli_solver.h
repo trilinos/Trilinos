@@ -13,7 +13,9 @@
 #ifndef _MLSOLVERIFACE_
 #define _MLSOLVERIFACE_
 
-#include "ml_include.h"
+#include "ml_comm.h"
+#include "ml_aggregate.h"
+#include "ml_amg.h"
 
 typedef struct
 {
@@ -56,9 +58,11 @@ typedef struct
     double       jacobi_wt;
     double       ag_threshold;
     int          ag_coarsen;
+    int          ag_method;
     int          ndiag;
     double       *diag_scale;
     ML_Aggregate *ml_ag;
+    ML_AMG       *ml_amg;
     MLI_Context  *contxt;
     int          nRows;
     int          *mat_ia;
@@ -89,6 +93,7 @@ int  MLI_Solver_Set_NumPostSmoothings( MLI_Solver *, int num_sweeps );
 int  MLI_Solver_Set_PreSmoother( MLI_Solver *, int smoother_type );
 int  MLI_Solver_Set_PostSmoother( MLI_Solver *, int smoother_type );
 int  MLI_Solver_Set_DampingFactor( MLI_Solver *, double factor );
+int  MLI_Solver_Set_MGMethod( MLI_Solver *, int );
 int  MLI_Solver_Set_CoarsenScheme( MLI_Solver *, int );
 int  MLI_Solver_Get_IJAFromFile(MLI_Solver *, char *matfile, char *rhsfile);
 int  MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *, char *rbmfile);
