@@ -2993,7 +2993,7 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel)
     if (appendlabel != NULL)
       mat->label = origlabel;
   }
-  if  (mat->label == NULL && ML_Get_PrintLevel() > 0)
+  if  (mat->label == NULL && ML_Get_PrintLevel() > 0 && comm->ML_mypid == 0)
     printf("%s: Matrix label  is not set, not printing statistics\n",
            ML_FUNCTION_NAME);
 
