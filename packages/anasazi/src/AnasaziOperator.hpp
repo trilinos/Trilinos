@@ -33,8 +33,6 @@
 #include "AnasaziReturnType.hpp"
 #include "AnasaziConfigDefs.hpp"
 
-namespace Anasazi {
-
 /*!	\class Anasazi::Operator
 
 	\brief Anasazi's templated virtual class for constructing the operator that is
@@ -46,19 +44,17 @@ namespace Anasazi {
 	\author Rich Lehoucq, Heidi Thornquist
 */
 
+namespace Anasazi {
+
 template <class TYPE>
 class Operator {
 public:
 	//@{ \name Constructor/Destructor.
 	//! %Anasazi::Operator constructor.
-	Operator() {
-//		cout << "ctor:Anasazi::Operator " << this << endl; 
-	}
+	Operator() {}
 
 	//! %Anasazi::Operator destructor.
-	virtual ~Operator(void) {
-//		cout << "dtor:Anasazi::Operator " << this << endl; 
-	};
+	virtual ~Operator(void) {}
 	//@}
 
 	//@{ \name Matrix/Operator application method.

@@ -36,6 +36,16 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 
+/*! \class Anasazi::Eigenproblem
+    \brief This class defines the standard or generalized eigenvalue problem
+	to be solved.
+
+	The type of eigenproblem is determined by the constructor used.  This
+	class is passed to the solver and is responsible for providing the solver
+	with the essential operations.
+*/
+ 	
+
 namespace Anasazi {
 
 template<class TYPE>
@@ -45,9 +55,7 @@ class Eigenproblem {
 
 	//@{ \name Constructors/Destructor.
 
-	/*! Empty constructor - allows Anasazi::Eigenproblem to be described
-		at a later time through "Set Methods".
-	*/
+	//! Empty constructor - allows Anasazi::Eigenproblem to be described at a later time through "Set Methods".
 	Eigenproblem(void);
 
 	//! Standard Eigenvalue Problem Constructor
@@ -77,25 +85,27 @@ class Eigenproblem {
 
 	//@{ \name Set Methods.
 
-	/*! Set the initial guess.  This vector is required to create all the space needed 
+	/*! \brief Set the initial guess.  This vector is required to create all the space needed 
 	by Anasazi to solve the eigenvalue problem.  Even if an initial guess is not known
 	by the user, an initial vector must be passed in.  Sets the pointer to the input
 	%Anasazi::MultiVec, so no copy is made.  
 	*/
 	void SetInitVec( MultiVec<TYPE>* Ivec ) { _InitVec = Ivec; };
 
-	/*! Set the operator for which eigenvalues will be computed.  This may be different
+	/*! \brief Set the operator for which eigenvalues will be computed.  This may be different
 	from the matrix \c A if a spectral transformation is employed, for example.  Sets
 	the operator pointer to the input %Anasazi::MultiVec, so no copy is made.
 	*/
 	void SetOperator( Operator<TYPE>* Op ) { _Op = Op; };
 
-	//! Set the matrix A (stiffness matrix) of the eigenvalue problem AX = BX\lambda.
-	//! Sets the pointer to the input %Anasazi::Matrix, so no copy is made.
+	/*! \brief Set the matrix A (stiffness matrix) of the eigenvalue problem AX = BX\lambda.
+	Sets the pointer to the input %Anasazi::Matrix, so no copy is made.
+	*/
 	void SetMatrixA( Matrix<TYPE>* A ) { _Amat = A; };
 
-	//! Set the matrix B (mass matrix) of the eigenvalue problem AX = BX\lambda.
-	//! Sets the pointer to the input %Anasazi::Matrix, so no copy is made.
+	/*! \brief Set the matrix B (mass matrix) of the eigenvalue problem AX = BX\lambda.
+	Sets the pointer to the input %Anasazi::Matrix, so no copy is made.
+	*/
 	void SetMatrixB( Matrix<TYPE>* B ) { _Bmat = B; }
 
 	//@}

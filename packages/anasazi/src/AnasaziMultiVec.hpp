@@ -32,8 +32,6 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "AnasaziConfigDefs.hpp"
 
-namespace Anasazi {
-
 /*! 	\class Anasazi::MultiVec
 
 	\brief Anasazi's templated pure virtual class for constructing multivectors that 
@@ -44,6 +42,8 @@ namespace Anasazi {
 
 	\author Rich Lehoucq, Heidi Thornquist
 */
+
+namespace Anasazi {
 
 template <class TYPE>
 class MultiVec {

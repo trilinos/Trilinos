@@ -1,18 +1,19 @@
-Date:  June 9, 2003
+Date:  February 18, 2004
 
 CURRENT STATUS OF ANASAZI
 --------------------------------------------
 
-NOTE:  	HTML Documentation for Anasazi can be created through doxygen using the doxygen_config file.  
-	in the "doc" directory.  This is only partially completed right now.
+NOTE:  	HTML Documentation for Anasazi can be created through doxygen using the Doxyfile configuration file  
+	in the "doc" directory (command:  make -f classicMakefile).  LaTEX documentation for the modal analysis 
+	solvers can be created using the userGuide.tex file and pdflatex in the "doc" directory 
+	(command:  make -f classicMakefile userGuide).
 
 Source files (found in anasazi/src):
 -----------------------------
 AnasaziBlockArnoldi.hpp	
 	(block Arnoldi solver) 
-	This solver can compute the eigenvalues and eigenvectors of a nonsymmetric operator.
-	A restarting technique has been implemented, and has passed initial testing.  It can be used
-	at this time with caution, i.e. look at debugging output.  Debugging routines have been 
+	This solver can compute the eigenvalues and eigenvectors of a nonsymmetric or symmetric operator.
+	An explicit restarting technique has been implemented.  Debugging routines have been 
 	implemented to track the convergence of requested eigenvalues and validity of the orthogonal basis.  
 	The parameters will be discussed below, the default arguments of the constructor are in parentheses.  
 	This method is written using templates, so TYPE refers to the template argument <TYPE> which
@@ -35,7 +36,7 @@ AnasaziBlockArnoldi.hpp
 				"SI" - smallest imaginary part
 		step 	- (int) the number of steps to take in the expansion phase before checking
 			  for convergence.  This allows the user to check for convergence sooner than
-			  every restart.
+			  every restart. (25)
 		restarts- (int) the number of restarts allows. (0) 
 			  Note: restarting block Arnoldi is not recommended at this time.
 
@@ -70,10 +71,16 @@ AnasaziBlockArnoldi.hpp
 
 AnasaziMultiVec.hpp
 AnasaziMatrix.hpp
-	(multivec/matrix virtual interfaces)	
+AnasaziOperator.hpp
+	(multivec/matrix/operator virtual interfaces)	
 	These files define the virtual interfaces that AnasaziBlockArnoldi rely on.  These
 	interfaces must be filled out by the user to describe the underlying vector spaces.
 	Two interfaces are provided at this time for Epetra and LOCA (see below).
+
+AnasaziEigenproblem.hpp
+	This is an interface to standard/generalized eigenproblems.  It holds the information
+	about the eigenproblem, eigenvalues/eigenvectors, symmetry of the problem, and is responsible
+	for applying the operator in the eigensolver. 
 
 AnasaziPetraInterface.hpp
 	This interface allows AnasaziBlockArnoldi to operate on Epetra multivecs and
@@ -85,29 +92,20 @@ AnasaziLOCAInterface.hpp
 	vectors and use the NOX abstract group to apply the inverse Jacobian function.
 	
 
-Utilities (found in anasazi/utils):
------------------------------
-
-read_hb_matrix.cpp
-distrib_msr_matrix.cpp
-	These routines are needed for reading a matrix from a Harwell-Boeing
-	data set and distributing the matrix across the processors.  These are
-	both modified versions of those routines found in TrilinosUtils.
-
-AnasaziLAPACK.hpp
-AnasaziLAPACK.cpp
-AnasaziLAPACKwrappers.hpp
-AnasaziBLAS.hpp
-AnasaziBLAS.cpp
-AnasaziBLASwrappers.hpp
-	(LAPACK wrappers)
-	These routines are needed internally for calculations on the subspace computed by
-	block Arnoldi.
-
 Examples (found in anasazi/example):
 -----------------------------
 BlockArnoldiPetraEx.cpp
-	This example computes the eigenvalues of a discretized 1D Laplacian.  It shows
-	the construction of an Epetra matrix and initialization of an AnasaziMatrix and 
-	AnasaziMultiVec.  This example also demonstrates how the solver can be iterated
-	or solved and how to extract information from the solver.
+	This example computes the eigenvalues of a discretized 2D convection-diffusion
+	equation.  It shows the construction of an Epetra matrix and initialization of 
+	an AnasaziMatrix and AnasaziMultiVec.  This example also demonstrates how the 
+	solver can be iterated or solved and how to extract information from the solver.
+BlockArnoldiPetraExGen.cpp
+	This example computes the eigenvalues of a 1D Laplacian discretized by linear
+	finite elements.  This creates a generalized eigenvalue problem for Anasazi to
+	solve.  It shows the construction of an Epetra matrix and initialize of an
+	AnasaziMatrix and AnasaziMultiVec.  It also shows the BelosEpetraOperator can
+	be used for the inner iteration within Anasazi.
+BlockArnoldiPetraExHb.cpp
+	This example computes the eigenvalues of a Harwell-Boeing matrix which is given
+	as input.  This matrix is converted into an Epetra Matrix, then used with the
+	Anasazi-Epetra interface.
