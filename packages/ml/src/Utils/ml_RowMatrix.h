@@ -44,7 +44,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
     //! Constructor, constructs Comm object if not provided
     RowMatrix(ML_Operator* Op, const Epetra_Comm* Comm = 0,
               const bool cheap = false, const USR_COMM =
-#ifdef ML_MPI
+#ifdef HAVE_MPI
               MPI_COMM_WORLD
 #else
               0

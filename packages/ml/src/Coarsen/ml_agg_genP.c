@@ -2224,7 +2224,6 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
         printf("\n");
         printf("Operator has inlen = %d and outlen = %d\n",
                data->invec_leng, data->outvec_leng);
-        //exit(EXIT_FAILURE);
       }
         
       dist = 1.0 / dist;
