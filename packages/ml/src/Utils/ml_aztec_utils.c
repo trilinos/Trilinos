@@ -1223,6 +1223,813 @@ void wrapper_DCSR_matvec(double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
    free(temp_ptr);
 }
 
+/*****************************************************************************/
+extern int AZ_using_fortran;
+
+void AZ_transform_norowreordering(int proc_config[], int *external[],
+			int bindx[], double val[],
+            int update[], int *update_index[], int *extern_index[],
+            int *data_org[], int N_update, int indx[], int bnptr[],
+            int rnptr[], int *cnptr[], int mat_type)
+
+/*******************************************************************************
+
+  Convert a global distributed matrix to a parallel local distributed matrix.
+  This includes the following steps:
+      1) reorder matrix rows so that all the rows corresponding to internal
+         points preceed all the rows corresponding to border points.
+      2) replace global indicies by local indicies.
+      3) make a list of the external unknowns and store them in external[].
+      4) make a list of processors which update each external unknown and store
+         this list in extern_proc where extern_proc[i] is the processor that
+         updates external[i].
+      5) make 2 arrays (update_index[], extern_index[]) which define the mapping
+         between global and local indicies. In particular, global index
+         update[i] corresponds to the locally numbered variable update_index[i]
+         and global index external[i] corresponds to the locally numbered
+         variable extern_index[i].
+      6) Initialize all the quanities in data_org[] to their appropriate values
+         (so that communication can properly occur).
+
+  Author:          Ray S. Tuminaro, SNL, 1422
+  =======
+
+  Return code:     void
+  ============
+
+  Parameter list:
+  ===============
+
+  proc_config:     Processor information corresponding to:
+                      proc_config[AZ_node] = name of this processor
+                      proc_config[AZ_N_procs] = # of processors used
+
+  external:        On output, list of external blocks
+
+  update:          On input, list of pts to be updated on this node
+
+  update_index,    On output, ordering of update and external locally on this
+  extern_index:    processor. For example  'update_index[i]' gives the index
+                   location of the block which has the global index 'update[i]'.
+
+  data_org:        On output, indicates how the data is set out on this node.
+                   For example, data_org[] contains information on how many
+                   unknowns are internal, external and border unknowns as well
+                   as which points need to be communicated. See Aztec User's
+                   guide for more details.
+
+  N_update         Number of points to be updated on this node.
+
+  val,bindx        On input, global distributed matrix (MSR or VBR) arrays
+  indx, bnptr,     holding matrix values. On output, local renumbered matrix
+  rnptr, cnptr:    (DMSR or DMVBR).
+
+  mat_type:        Type of matrix (AZ_MSR_MATRIX or AZ_VBR_MATRIX).
+
+*******************************************************************************/
+
+{
+  int        i, ii, j;
+  static int mat_name = 1;
+
+  int         N_extern;   /* Number of pts needed by this processor for
+                             matrix-vector multiply but not updated by this
+                             processor.  */
+  int         N_internal, /* Number of pts which can be updated without
+                             communication */
+              N_border;   /* Number of pts to be updated requiring communication
+                           */
+  int        *extern_proc;
+  int        *tcnptr = NULL;
+
+  AZ__MPI_comm_space_ok();
+#ifdef AZ_MPI
+  if ( proc_config[AZ_Comm_Set] != AZ_Done_by_User) {
+      printf("Error: Communicator not set. Use AZ_set_comm()\n");
+      printf("       (e.g. AZ_set_comm(proc_config,MPI_COMM_WORLD)).\n");
+      exit(1);
+  }
+#endif
+
+  /*
+   * Compute the external points and change the global indices to
+   * local indices. That is,
+   *   On input:                        On output:
+   *      bindx[k] = update[j]      ==>   bindx[k] = j
+   *      bindx[k] = external[j]    ==>   bindx[k] = j + N_update
+   */
+
+  AZ_find_local_indices(N_update, bindx, update, external, &N_extern, mat_type,
+                        bnptr);
+
+  /* compute the cnptr array for VBR matrices */
+
+  if (mat_type == AZ_VBR_MATRIX) {
+    if (!AZ_using_fortran) {
+      *cnptr = (int *) AZ_allocate((N_update + N_extern + 1)*sizeof(int));
+      if (*cnptr == NULL) {
+         printf("Out of memory in AZ_transform\n");
+         exit(1);
+      }
+    }
+
+    tcnptr = *cnptr;
+    for (i = 0 ; i < N_update + N_extern + 1; i++) tcnptr[i] = 0;
+
+    for (i = 0; i < N_update; i++) tcnptr[i] = rnptr[i+1] - rnptr[i];
+
+    for (i = 0; i < N_update; i++) {
+      for (j = bnptr[i]; j < bnptr[i+1]; j++) {
+        ii = bindx[j];
+
+        if ((ii >= N_update) && ( tcnptr[ii] == 0)) {
+          tcnptr[ii] = (indx[j+1]-indx[j]) / (rnptr[i+1]-rnptr[i]);
+        }
+      }
+    }
+
+    AZ_convert_values_to_ptrs(tcnptr, N_update + N_extern, 0);
+  }
+
+  /*
+   * Read or compute (and sort) the processor numbers of the processors which
+   * update the external points.
+   */
+
+  i                = AZ_using_fortran;
+  AZ_using_fortran = AZ_FALSE;
+
+  AZ_find_procs_for_externs(N_update, update, *external, N_extern, proc_config,
+                            &extern_proc);
+  AZ_using_fortran = i;
+
+  /*
+   * Determine a new ordering for the points:
+   *    a) lowest numbers for internal points,
+   *    b) next lowest numbers for border points
+   *    c) highest nubers for the external points
+   *       NOTE: external points updated by the same processor are consecutively
+   *             ordered.
+   */
+
+  if (!AZ_using_fortran) {
+    *update_index = (int *) AZ_allocate((N_update + 1)*sizeof(int));
+    *extern_index = (int *) AZ_allocate((N_extern + 1)*sizeof(int));
+  }
+
+  if (*extern_index == NULL)  {
+    (void) fprintf(stderr,
+                   "Error: Not enough space in main() for extern_index[]\n");
+    exit(1);
+  }
+
+  AZ_order_ele(*update_index, *extern_index, &N_internal, &N_border, N_update,
+               bnptr, bindx, extern_proc, N_extern, AZ_EXTERNS, mat_type);
+
+  /*
+   * Permute the matrix using the new ordering.  IMPORTANT: This routine assumes
+   * that update_index[] contains 2 sequencies that are ordered but
+   * intertwined. See AZ_reorder_matrix().
+   */
+
+  AZ_reorder_matrix(N_update, bindx, val, *update_index, *extern_index,
+                    indx, rnptr, bnptr, N_extern, tcnptr, AZ_EXTERNS,mat_type);
+
+  /*
+   * Initialize 'data_org' so that local information can be exchanged to update
+   * the external points.
+   */
+
+  AZ_set_message_info(N_extern, *extern_index, N_update, *external, extern_proc,
+                      update, *update_index, proc_config, tcnptr, data_org,
+                      mat_type);
+
+  (*data_org)[AZ_name]       = mat_name;
+  (*data_org)[AZ_N_int_blk]  = N_internal;
+  (*data_org)[AZ_N_bord_blk] = N_border;
+  (*data_org)[AZ_N_ext_blk]  = N_extern;
+
+  if (mat_type == AZ_VBR_MATRIX) {
+    (*data_org)[AZ_N_internal] = rnptr[N_internal];
+    (*data_org)[AZ_N_external] = tcnptr[N_update + N_extern] - rnptr[N_update];
+    (*data_org)[AZ_N_border]   = rnptr[N_update] - rnptr[N_internal];
+  }
+
+  else {
+    (*data_org)[AZ_N_internal] = N_internal;
+    (*data_org)[AZ_N_external] = N_extern;
+    (*data_org)[AZ_N_border]   = N_border;
+  }
+
+  mat_name++;
+  AZ_free(extern_proc);
+
+} /* AZ_transform */
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+void AZ_input_msr_matrix_nodiag(char datafile[], int update[], double **val, int **bindx, 
+												 int N_update, int proc_config[])
+
+/*******************************************************************************
+
+Exactly the same as AZ_read_msr_matrix except it reads that data in from a 
+file specified by the input argument datafile instead from a file called
+.data
+
+*******************************************************************************/
+
+{
+
+  /* local variables */
+
+  int    nz_ptr;
+  char  *str;
+  int    i,j,k, jjj;
+  int    current;
+  int    st, pnode;
+  int    temp, *lil;
+  double dtemp;
+  int   *requests;
+  int    total;
+  FILE  *dfp = NULL;
+  int    proc, nprocs;
+  int    type, type2;
+  unsigned int buf_len = 1000;
+  int    msr_len;
+  int    count = 0;
+  int    kkk, m_one = -1, need_request = 0;
+  int    column0 = 0;
+  MPI_AZRequest request;  /* Message handle */
+  int    totalN;
+
+  char   *tchar;
+  extern int AZ_sys_msg_type;
+
+  /**************************** execution begins ******************************/
+
+  AZ__MPI_comm_space_ok();
+  type            = AZ_sys_msg_type;
+  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+  type2           = AZ_sys_msg_type;
+  AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
+
+  proc   = proc_config[AZ_node];
+  nprocs = proc_config[AZ_N_procs];
+
+  totalN = AZ_gsum_int(N_update, proc_config);
+  str    = (char *) AZ_allocate((buf_len+1)*sizeof(char));
+  if (str == NULL) {
+    printf("ERROR: NOT enough dynamic memory in AZ_input_msr_matrix_nodiag\n");
+    exit(-1);
+  }
+  msr_len = 8*N_update+2;
+  if (!AZ_using_fortran) {
+    *bindx = (int *)    AZ_allocate(msr_len*sizeof(int));
+    *val   = (double *) AZ_allocate(msr_len*sizeof(double));
+  }
+
+  if (*val == NULL) {
+    (void) fprintf(stderr,
+                   "ERROR: NOT enough dynamic memory in AZ_input_msr_matrix_nodiag\n");
+    exit(-1);
+  }
+  if (!AZ_using_fortran) {
+     for (i = 0 ; i < msr_len; i++) (*bindx)[i] = 0;
+     for (i = 0 ; i < msr_len; i++) (*val)[i] = 0;
+  }
+
+  nz_ptr      = N_update + 1;
+  (*bindx)[0] = nz_ptr;
+  current     = 0;
+
+  if (proc != 0) {
+
+    /*
+     * Send requests to processor 0.  When the response is received add the
+     * corresponding row to the matrix and make another request.  When all the
+     * requests are done, send -1 as a request to signal processor 0 that we are
+     * finished.
+     */
+
+    for (i = 0; i < N_update; i++ ) {
+      mdwrap_write((void *) &(update[i]), sizeof(int), 0, type, &st);
+      pnode = 0;
+      mdwrap_iread(str, buf_len, &pnode, &type2, &request);
+      j = mdwrap_wait(str, buf_len, &pnode, &type2, &st, &request);
+      while (j == sizeof(int)) {
+        lil = (int *) str;
+        buf_len = (unsigned int) lil[0];
+        str = (char *) AZ_realloc(str,buf_len*sizeof(char));
+        if (str == 0) {
+          (void) fprintf(stderr,
+                         "ERROR: Not enough dynamic memory in AZ_input_msr()\n");
+          exit(-1);
+        }
+        mdwrap_iread(str, buf_len, &pnode, &type2, &request);
+        j = mdwrap_wait(str, buf_len, &pnode, &type2, &st, &request);
+      }
+
+      AZ_add_new_row_nodiag(update[i], &nz_ptr, &current, val, bindx, str, dfp,
+                     &msr_len,&column0);
+    }
+
+    temp = -1;
+    mdwrap_write((void *) &temp, sizeof(int), 0, type, &st);
+  }
+
+  else {
+#ifdef binary
+    dfp = fopen(datafile, "rb");
+#else
+    dfp = fopen(datafile, "r");
+#endif
+    if (dfp == NULL) {
+      (void) fprintf(stderr, "ERROR: Matrix data file %s not found\n", datafile);
+      exit(-1);
+    }
+    (void) fprintf(stdout, " reading matrix (current version is very slow) .");
+    (void) fflush(stdout);
+
+    /* read in number of blks */
+    /*
+      fscanf(dfp, "%d", &total);
+      for (i = 0; i <= total; i++ ) fscanf(dfp, "%d", &temp);
+      */
+
+    /* read past cnptr info (not used) */
+
+#ifdef binary
+    kkk = fread(&total, sizeof(int), 1, dfp);
+#else
+    kkk = fscanf(dfp, "%d", &total);  /* read in number of elements */
+#endif
+
+    if (kkk <= 0) {
+       (void) fprintf(stderr,"data file %s is empty\n", datafile);
+       exit(1);
+    }
+
+    if (total != totalN) {
+       (void) fprintf(stderr,"\nError: data file %s contains %d rows ",datafile, total);
+       (void) fprintf(stderr,"while the user's input\n     requires %d rows.\n",
+                      totalN);
+       exit(1);
+    }
+
+    /* get the first requests from all the processors */
+
+    requests    = (int *) AZ_allocate(nprocs*sizeof(int));
+    requests[0] = -1;
+    for (i = 1; i < nprocs; i++) {
+      pnode = -1;
+      mdwrap_iread((void *) &temp, sizeof(int), &pnode, &type, &request);
+      mdwrap_wait((void *) &temp, sizeof(int), &pnode, &type, &st, &request);
+      requests[pnode] = temp;
+    }
+
+    /*
+     * Go through all the rows, for those rows that we own add them to our local
+     * matrix.  Otherwise, read the row into a string, determine which processor
+     * has requested the row, send the string to this processor, and receive
+     * another request from this processor.
+     */
+
+    for (i = 0; i < total; i++) {
+      count++;
+      if (count%1000 == 0) {
+        (void) fprintf(stdout, ".");
+        (void) fflush(stdout);
+      }
+      if ((current < N_update) && (i == update[current])) {
+        AZ_add_new_row_nodiag(i, &nz_ptr, &current, val, bindx, 0, dfp, &msr_len,
+		       &column0);
+      }
+      else {
+#ifdef binary
+        kkk = fread(&temp, sizeof(int), 1, dfp);
+#else
+        kkk = fscanf(dfp, "%d", &temp);
+#endif
+        if (kkk <= 0) {
+           (void) fprintf(stderr,"\nError: AZ_input_msr(), end-of-file reached");
+           (void) fprintf(stderr," while reading row %d.\n",i);
+           exit(1);
+        }
+        if (temp == 0) column0 = 1;
+
+        j = 0;
+
+        while (temp != -1) {
+#ifdef binary
+          kkk = fread(&dtemp, sizeof(double), 1, dfp);
+#else
+          kkk = fscanf(dfp, "%lf", &dtemp);
+#endif
+          if (kkk <= 0) {
+           (void) fprintf(stderr,"\nError: AZ_input_msr(), end-of-file reached");
+           (void) fprintf(stderr," while reading row %d.\n",i);
+           exit(1);
+          }
+
+          if (j + 30 > (int) buf_len) {
+            buf_len = 2*buf_len + 30;
+            str = (char *) AZ_realloc(str,buf_len*sizeof(char));
+
+            if (str == 0) {
+              (void) fprintf(stderr,"ERROR: Not Enough dynamic memory in "
+                             "AZ_input_msr()\n");
+              exit(-1);
+            }
+            if (need_request != 0)  {
+               mdwrap_iread((void *) &(requests[need_request]), 
+		        sizeof(int), &need_request,&type,&request);
+               mdwrap_wait((void *) &(requests[need_request]), 
+		        sizeof(int), &need_request,&type,&st,&request);
+               need_request = 0;
+            }
+            for (jjj = 1; jjj < nprocs; jjj++) {
+              if (requests[jjj] != -1) 
+                 mdwrap_write((void *) &buf_len, sizeof(int), jjj, type2, &st);
+	    }
+          }
+
+          /* put 'temp' and 'dtemp' into 'str' so that they can be sent */
+          /* to another processor.                                      */
+
+          tchar = (char *) &temp;
+          for (kkk = 0 ; kkk < (int)sizeof(int); kkk++) str[j+kkk] = tchar[kkk];
+          j += sizeof(int);
+          tchar = (char *) &dtemp;
+          for (kkk = 0 ; kkk < (int) sizeof(double); kkk++ ) 
+             str[j+kkk] = tchar[kkk];
+          j += sizeof(double);
+#ifdef binary
+          kkk = fread(&temp, sizeof(int), 1, dfp);
+#else
+          kkk = fscanf(dfp, "%d", &temp);
+#endif
+          if (kkk <= 0) {
+           (void) fprintf(stderr,"\nError: AZ_input_msr(), end-of-file reached");
+           (void) fprintf(stderr," while reading row %d.\n",i);
+           exit(1);
+          }
+          if (temp == 0) column0 = 1;
+        }
+        tchar = (char *) &m_one;
+        for (kkk = 0 ; kkk < (int)sizeof(int) ; kkk++ ) str[j+kkk] = tchar[kkk];
+        j += sizeof(int);
+
+        k = 0;
+        if (need_request != 0)  {
+           mdwrap_iread((void *) &(requests[need_request]), sizeof(int), 
+		    &need_request,&type,&request);
+           mdwrap_wait((void *) &(requests[need_request]), sizeof(int), 
+		    &need_request,&type,&st, &request);
+           need_request = 0;
+        }
+
+        while ((k < nprocs) && (requests[k] != i)) k++;
+        if (k == nprocs) {
+           (void) fprintf(stderr,"\nError: AZ_input_msr(), input file contains");
+           (void) fprintf(stderr," a row (%d)\n       that is not ",i);
+           (void) fprintf(stderr,"assigned to any processor?\n");
+           exit(1);
+        }
+        mdwrap_write((void *) str, (unsigned int) j, k, type2, &st);
+        need_request = k;  /* read is deferred until we will need it */
+      }
+    }
+    if (need_request != 0)  {
+       mdwrap_iread((void *) &(requests[need_request]), sizeof(int), 
+		&need_request,&type,&request);
+       mdwrap_wait((void *) &(requests[need_request]), sizeof(int), 
+		&need_request,&type,&st,&request);
+       need_request = 0;
+    }
+
+    /* at this point all the requests should be -1 */
+
+    for (k = 0 ; k < nprocs ; k++ ) {
+       if (requests[k] != -1) {
+          (void) fprintf(stderr,"\nError: AZ_input_msr(), processor %d ",k);
+          (void) fprintf(stderr,"requested  but never received\n       ");
+          (void) fprintf(stderr,"matrix row %d. Check data file.\n",
+                         requests[k]);
+          exit(1);
+       }
+    }
+
+    if (column0 == 0) {
+       (void) fprintf(stderr,"\nWARNING: AZ_input_msr(), column 0 contains ");
+       (void) fprintf(stderr,"no off-diagonal elements.\n         Are you ");
+       (void) fprintf(stderr,"sure that you numbered the matrix rows/columns");
+       (void) fprintf(stderr," from\n         0 to n-1 (and not 1 to n).\n");
+    }
+
+
+    AZ_free(requests);
+    fclose(dfp);
+    (void) fprintf(stdout, "\n");
+  }
+
+  AZ_free(str);
+
+} /* AZ_input_msr_matrix_nodiag */
+
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+void AZ_add_new_row_nodiag(int therow, int *nz_ptr, int *current, double **val,
+                    int **bindx, char *input, FILE *dfp, int *msr_len,
+		    int *column0)
+
+/*******************************************************************************
+
+  Add a new row to the matrix.  If input = 0, the new matrix is read from file
+  pointer dfp.  Otherwise, it is read from the string 'input'.  The form of the
+  input is as follows:
+
+         col_num1 entry1 col_num2 entry2
+         col_num3 entry3 -1
+
+  On output, val[] and  bindx[] are updated to incorporate the new row.
+
+  Author:          Ray S. Tuminaro, SNL, 1422
+  =======
+
+  Return code:     void
+  ============
+
+  Parameter list:
+  ===============
+
+  therow:          The global index of the row being added.
+
+  nz_ptr:          The next available space in val[] and bindx[] for storing
+                   nonzero offdiagonals.
+
+  current:         The next available space in a[] to store the matrix diagonal.
+
+  val, bindx:      MSR matrix arrays that will be updated to incorporate new
+                   row. See User's Guide.
+
+  input:           Contains the information describing the row to be added (if
+                   input == 0, the row information is read from standard input).
+
+*******************************************************************************/
+
+{
+
+  /* local variables */
+
+  int    old_nz;
+  double sum = 0.0;
+  int    temp;
+  double dtemp;
+  int    k = 0, kk;
+  char   *tchar;
+
+  /**************************** execution begins ******************************/
+
+  old_nz = *nz_ptr;
+
+  if (input == 0) { 
+#ifdef binary
+    kk  = fread(&temp,sizeof(int),1,dfp);
+#else
+    kk  = fscanf(dfp, "%d", &temp);
+#endif
+
+    if (kk <= 0) {
+         (void) fprintf(stderr,"\nError: format error in '.data' file ");
+         (void) fprintf(stderr,"on row '%d'\n",*current);
+         (void) fprintf(stderr,"      This can be caused if exponents are\n");
+         (void) fprintf(stderr,"      given using 'D' instead of 'E'. \n");
+       exit(1);
+    }
+    if (temp == 0) *column0 = 1;
+  }
+  else {
+    tchar = (char *) &temp;
+    for (kk = 0 ; kk < (int) sizeof(int) ; kk++ ) tchar[kk] = input[kk];
+    k    += sizeof(int);
+  }
+
+  while (temp != -1) {
+    if (input == 0) {
+#ifdef binary
+       kk = fread(&dtemp, sizeof(double), 1, dfp);
+#else
+       kk = fscanf(dfp, "%lf", &dtemp);
+#endif
+       if (kk <= 0) {
+         (void) fprintf(stderr,"\nError: format error in '.data' file ");
+         (void) fprintf(stderr,"on row '%d'\n",*current);
+         (void) fprintf(stderr,"       This can be caused if exponents are\n");
+         (void) fprintf(stderr,"       given using 'D' instead of 'E'. \n");
+         exit(1);
+       }
+    }
+    else {
+      tchar = (char *) &dtemp;
+      for (kk = 0 ; kk < (int) sizeof(double) ; kk++ ) tchar[kk] = input[k+kk];
+      k += sizeof(double);
+    }
+
+      if (*nz_ptr >= *msr_len) {
+        *msr_len = (int) ( 1.5 * (double) *msr_len);
+        if (!AZ_using_fortran) {
+          *bindx = (int *) AZ_realloc(*bindx,*msr_len*sizeof(int));
+          *val   = (double *) AZ_realloc(*val,*msr_len*sizeof(double));
+        }
+        if (*val == 0) {
+          (void) fprintf(stderr,
+                         "ERROR: Not enough dynamic memory in AZ_read_msr()\n");
+          exit(-1);
+        }
+      }
+      (*bindx)[*nz_ptr] =  temp;
+      (*val)[*nz_ptr]   = dtemp;
+      (*nz_ptr)++;
+
+    if (input == 0) {
+#ifdef binary
+       kk  = fread(&temp,sizeof(int),1,dfp);
+#else
+       kk = fscanf(dfp, "%d", &temp);
+#endif
+       if (kk <= 0) {
+         (void) fprintf(stderr,"\nError: format error in '.data' file ");
+         (void) fprintf(stderr,"on row '%d'\n",*current);
+         (void) fprintf(stderr,"       This can be caused if exponents are\n");
+         (void) fprintf(stderr,"       given using 'D' instead of 'E'. \n");
+         exit(1);
+       }
+       if (temp == 0) *column0 = 1;
+    }
+    else {
+      tchar = (char *) &temp;
+      for (kk = 0 ; kk < (int) sizeof(int) ; kk++ ) tchar[kk] = input[kk+k];
+      k    += sizeof(int);
+    }
+  }
+
+  (*val)[*current]     = sum;
+  (*bindx)[*current+1] = (*bindx)[*current] + (*nz_ptr - old_nz);
+  (*current)++;
+
+} /* AZ_add_new_row_nodiag */
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+void ML_find_local_indices(int N_update, int bindx[], int update[],
+                           int *sorted_ext, int N_external, int map[],
+			   int start, int end)
+
+/*******************************************************************************
+
+  Given the global column indices for the matrix and a list of elements updated
+  on this processor, compute the external elements and store them in the list
+  'external' and change the global column indices to local column indices. In
+  particular,
+
+  On input, the column index bindx[k] is converted to j on output where
+
+          update[j] = bindx[k]
+   or
+          external[j - N_update] = bindx[k]
+
+  Author:          Ray S. Tuminaro, SNL, 1422
+  =======
+
+  Return code:     void
+  ============
+
+  Parameter list:
+  ===============
+
+  N_update:        Number of elements updated on this processor.
+
+  bindx:           MSR or VBR column indices. On input, they refer to global
+                   column indices. On output, they refer to local column indices
+                   as described above. See User's Guide for more information.
+
+  update:          List (global indices) of elements updated on this node.
+
+  external:        List (global indices) of external elements on this node.
+
+  N_external:      Number of external elements on this processor.
+
+  mat_type:        Indicates whether this is an MSR (= AZ_MSR_MATRIX) or a
+                   VBR (= AZ_VBR_MATRIX).
+
+  bnptr:           'bpntr[N_update]' indicates the location of the
+                   last VBR nonzero.
+
+*******************************************************************************/
+
+{
+
+  /* local variables */
+
+  int  j, k;
+  int *bins,shift;
+  /*  int  start,end; */
+
+  /**************************** execution begins ******************************/
+
+  /* set up some bins so that we will be able to use AZ_quick_find() */
+
+  bins = (int *) ML_allocate((N_update / 4 + 10)*sizeof(int));
+  if  (bins == NULL) {
+    (void) fprintf(stderr, "ERROR: Not enough temp space\n");
+    exit(-1);
+  }
+
+  AZ_init_quick_find(update, N_update, &shift, bins);
+
+  /*
+   * Compute the location of the first and last column index that is stored in
+   * the bindx[].
+   */
+  /*
+  start = bindx[0]; end = bindx[bindx[0]-1]; 
+  */
+  
+  /*
+   * Estimate the amount of space we will need by counting the number of
+   * references to columns not found among 'update[]'.  At the same time replace
+   * column indices found in update[] by the appropriate index into update[].
+   * Add N_update to columns not found in 'update[]' (this effectively marks
+   * them as external elements).
+   *
+   * Note the space estimate will be an over-estimate as we do not take into
+   * account that there will be duplicates in the external list.
+   */
+
+  for (j = start; j < end; j++) {
+    k = AZ_quick_find(bindx[j], update, N_update,shift,bins);
+
+    if (k != -1) bindx[j] = k;
+    else {
+       k = AZ_find_index(bindx[j], sorted_ext,N_external);
+       if (k != -1) bindx[j] = map[k];
+       else {
+        (void) fprintf(stderr, "ERROR: column number not found %d\n",
+                       bindx[j]);
+        exit(-1);
+      }
+    }
+  }
+
+  ML_free((char *) bins);
+
+} /* ML_find_local_indices */
+
+
+void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *reordered_node_externs,
+			    int Tmat_bindx[], double Tmat_val[], int rowptr[], int Nlocal_nodes,
+			    int global_node_inds[], ML_Comm *comm, int Nlocal_edges,
+			    ML_Operator **Tmat)
+{
+  int *sorted_ext, *map, i;
+  struct ML_CSR_MSRdata *csr_data;
+
+  /* Take the global MSR matrix and replace global column indices by */
+  /* local column indices                                            */
+
+  sorted_ext = (int *) ML_allocate(sizeof(int)*(Nexterns+1));
+  map        = (int *) ML_allocate(sizeof(int)*(Nexterns+1));
+  for (i = 0; i < Nexterns; i++) {
+    sorted_ext[i] = global_node_externs[i];
+    map[i] = reordered_node_externs[i];
+  }
+  AZ_sort(sorted_ext, Nexterns, map, NULL);
+
+  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
+							  ML_CSR_MSRdata));
+  csr_data->columns = Tmat_bindx;
+  csr_data->values  = Tmat_val;
+  csr_data->rowptr = rowptr;
+
+
+  ML_find_local_indices(Nlocal_nodes,Tmat_bindx, global_node_inds,sorted_ext,
+                        Nexterns, map, csr_data->rowptr[0], csr_data->rowptr[Nlocal_edges]);
+
+
+  *Tmat = ML_Operator_Create(comm);
+  ML_Operator_Set_ApplyFuncData( *Tmat, Nlocal_nodes, Nlocal_edges, 
+                                  ML_EMPTY, csr_data, Nlocal_edges, NULL, 0);
+  ML_Operator_Set_Getrow(*Tmat, ML_EXTERNAL, Nlocal_edges, CSR_getrows);
+  ML_Operator_Set_ApplyFunc(*Tmat, ML_INTERNAL, CSR_matvec);
+
+}
 
 #else
 
@@ -1230,4 +2037,3 @@ void wrapper_DCSR_matvec(double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
 int ML_empty;
 
 #endif
-
