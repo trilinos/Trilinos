@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+#$Id$
+"""
+scan lines for unique values
+the regexp "filter" selects the compare part
+the dictionary contains the count of repetitions
+"""
+import re, os, sys, getopt
+
+def print_help():
+    print  """  
+    Usage: track_ifdefs
+    -f filename --ifdef_file filename: 
+        file name of grepped ifdefs default: stdin
+    
+    If none of the flags below are set all three forms of output are produced.
+    
+    -c --ifdef_counts: output ifdefs with count
+    -i --total_ifdefs_in_file: output file names with total number of ifdefs
+    -p --files_using_ifdef: output file names that use the particular ifdef
+    """
+    
+if __name__ == "__main__":
+    #use the pre 2.3 getopt lib
+    opts_list, remaining_args = getopt.getopt(sys.argv[1:],"chipf:", \
+            ["help", "ifdef_counts", "total_ifdefs_in_file", \
+             "files_using_ifdef", "ifdef_file="])
+    opts_dict = {}
+    for opt in opts_list:
+        opts_dict[opt[0]] = opt[1]
+    if (opts_dict.has_key("-h") or opts_dict.has_key("--help")):
+        print_help()
+        sys.exit(0)
+    counts = (opts_dict.has_key("-c") or opts_dict.has_key("--ifdef_counts"))
+    ifdefs_per_file = (opts_dict.has_key("-i") or \
+                       opts_dict.has_key("--total_ifdefs_in_file"))
+    ifdef_files = (opts_dict.has_key("-p") or \
+                   opts_dict.has_key("--files_using_ifdef"))
+    if (opts_dict.has_key("-f")):
+        filename = opts_dict["-f"]
+    elif (opts_dict.has_key("--ifdef_file")):
+        filename = opts_dict["--ifdef_file"]
+ 
+    if (filename):
+        f = open(filename,'r')
+    else:
+        f = sys.stdin
+    all = (not (counts or ifdefs_per_file or ifdef_files))
+    count = {}
+    files = {}
+    count_per_file = {}
+    lines = f.readlines()
+    f.close();
+    for line in lines:
+        p = re.findall(r'(^\S+?):#ifdef\s*(\S*)',line)
+        if (len(p)):
+            filename = p[0][0]
+            name = p[0][1]
+            if count.has_key(name):
+                count[name] = count[name] + 1
+                if (not files[name].has_key(filename)):
+                    files[name][filename] = 0
+                files[name][filename] = files[name][filename] + 1
+            else:
+                count[name] = 1
+                files[name] = {}
+                files[name][filename] = 1
+            #count total number of ifdefs for a file
+            if (count_per_file.has_key(filename)):
+                count_per_file[filename] = count_per_file[filename] + 1
+            else:
+                count_per_file[filename] = 1
+    line_list = count.keys()
+    line_list.sort()
+    if (counts or ifdef_files or all):
+        print "total: %d" %len(lines)
+        print "total unique: %d" %len(line_list)
+        for line in line_list:
+            print "%s\t%d" %(line, count[line])
+            if (ifdef_files or all):
+                for filename in files[line].keys():
+                    print "     %s  %d" %(filename, files[line][filename])
+    if ((counts and ifdefs_per_file) or all):
+        print "\n-----------------------------------------------------------------------------\n"
+    if (ifdefs_per_file or all):
+        file_list = count_per_file.keys()
+        file_list.sort()
+        for file in file_list:
+            print "%s   %d" %(file, count_per_file[file])
+
+
