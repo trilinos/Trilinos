@@ -1466,7 +1466,11 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
             if ( index != label ) 
             { 
                label = index;
-               Lrecv_list[lcount++] = lcount;
+               /* JJH */
+               /*Lrecv_list[lcount++] = lcount;*/
+               Lrecv_list[lcount] = lcount;
+               lcount++;
+               /* --JJH */
             }
             dbuf[count+j] = (double) lcount;
          }
