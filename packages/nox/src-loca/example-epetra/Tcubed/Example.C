@@ -1,11 +1,12 @@
 // 1D Finite Element Test Problem
-/* Solves the nonlinear equation:
+/* Solves continuation problem (Parameter c="Right BC")
  *
  * d2u 
- * --- - k * u**2 = 0
+ * --- + a * u**3 = 0
  * dx2
  *
- * subject to @ x=0, u=1
+ * subject to @ x=0, u=b
+ * subject to @ x=1, u=c
  */
 
 // LOCA Objects
@@ -103,7 +104,18 @@ int main(int argc, char *argv[])
   locaStepperList.setParameter("Min Scale Factor", 1.0e-8);
   locaStepperList.setParameter("Min Tangent Factor", 0.8);
   locaStepperList.setParameter("Tangent Factor Exponent",1.5);
+
+  // Create Anasazi Eigensolver sublist (needs --enable-loca-anasazi)
   locaStepperList.setParameter("Compute Eigenvalues",true);
+  NOX::Parameter::List& aList = locaStepperList.sublist("Anasazi");
+  aList.setParameter("Block Size", 1);
+  aList.setParameter("Arnoldi Size", 10);
+  aList.setParameter("NEV", 3);
+  aList.setParameter("Tol", 2.0e-7);
+  aList.setParameter("Convergence Check", 1);
+  aList.setParameter("Restarts",2);
+  aList.setParameter("Frequency",2);
+  aList.setParameter("Debug Level",1);
   
   // Create predictor sublist
   NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
