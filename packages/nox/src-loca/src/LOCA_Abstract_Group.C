@@ -212,7 +212,7 @@ LOCA::Abstract::Group::operator=(
 }
 
 void
-LOCA::Abstract::Group::setParams(const vector<int>& paramIDs, 
+LOCA::Abstract::Group::setParamsMulti(const vector<int>& paramIDs, 
 		const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   for (unsigned int i=0; i<paramIDs.size(); i++)

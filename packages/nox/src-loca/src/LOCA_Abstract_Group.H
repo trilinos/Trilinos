@@ -285,8 +285,8 @@ namespace LOCA {
 
       //! Set parameters indexed by (integer) paramIDs
       virtual void 
-      setParams(const vector<int>& paramIDs, 
-		const NOX::Abstract::MultiVector::DenseMatrix& vals);
+      setParamsMulti(const vector<int>& paramIDs, 
+		     const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
       //@}
 

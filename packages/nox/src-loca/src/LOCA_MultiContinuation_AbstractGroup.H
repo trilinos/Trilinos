@@ -73,7 +73,7 @@ namespace LOCA {
       virtual AbstractGroup& operator=(const AbstractGroup& source) = 0;
 
        //! Set parameters indexed by (integer) paramIDs
-      virtual void setParams(
+      virtual void setParamsMulti(
 		     const vector<int>& paramIDs, 
 		     const NOX::Abstract::MultiVector::DenseMatrix& vals) = 0;
 

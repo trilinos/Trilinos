@@ -220,7 +220,7 @@ LOCA::MultiContinuation::ExtendedGroup::setX(const NOX::Abstract::Vector& y)
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(y);
 
   grpPtr->setX( my.getXVec() );
-  grpPtr->setParams(conParamIDs, my.getScalars());
+  grpPtr->setParamsMulti(conParamIDs, my.getScalars());
   *xVec = my;
 
   resetIsValid();
@@ -239,7 +239,7 @@ LOCA::MultiContinuation::ExtendedGroup::computeX(
 
   grpPtr->computeX(*(mg.grpPtr), md.getXVec(), step);
   xVec->update(1.0, mg.getX(), step, md, 0.0);
-  grpPtr->setParams(conParamIDs, xVec->getScalars());
+  grpPtr->setParamsMulti(conParamIDs, xVec->getScalars());
 
   resetIsValid();
 }
