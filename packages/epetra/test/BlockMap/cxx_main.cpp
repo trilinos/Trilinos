@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
   int NumGlobalEquations = 0;
   for (i = 0; i<NumMyElements; i++) 
     {
-      ElementSizeList[i] = i%6+2; // elementsizes go from 2 to 7
+      ElementSizeList[i] = i%6 + 2; // elementsizes go from 2 to 7
       NumMyEquations += ElementSizeList[i];
     }
   ElementSize = 7; // Set to maximum for use in checkmap

@@ -44,6 +44,11 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
 	  MaxSize = MyElementSizeList[i];
 	if (MyElementSizeList[i] < MinSize)
 	  MinSize = MyElementSizeList[i];
+
+	// Test ElementSize(int LID) method	
+
+	if (Map.ElementSize(Map.LID(MyGlobalElements[i])) != ElementSizeList[i])
+	  return(-51);
       }
       if (MaxSize !=Map.MaxMyElementSize()) return(-53);
       if (MinSize !=Map.MinMyElementSize()) return(-55);

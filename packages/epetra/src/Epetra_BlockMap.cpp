@@ -687,7 +687,7 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
 
   if (NumGlobalElements_==0) return; // Nothing to do
 
-  else if (LinearMap() || (!DistributedGlobal()) || NumMyElements_==0) {
+  else if (LinearMap() || NumMyElements_==0) {
     if (Directory_ ==0) Directory_ = Comm().CreateDirectory(*this); // Make directory
     return; // Nothing else to do
   }
@@ -713,7 +713,6 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
 int Epetra_BlockMap::LID(int GID) const {
 
   if (GID<MinMyGID_ || GID > MaxMyGID_) return(-1); // Out of range
-  else if (!DistributedGlobal()) return(GID-IndexBase_); // I own all indices
   else if (LinearMap()) return(GID-MinMyGID_); // Can compute with an offset
   else return(LID_[GID-MinMyGID_]); // Find it in LID array
 }
@@ -721,7 +720,6 @@ int Epetra_BlockMap::LID(int GID) const {
 int Epetra_BlockMap::GID(int LID) const {
 
   if (LID<MinLID_ || LID>MaxLID_) return(IndexBase_-1); // Out of range
-  else if (!DistributedGlobal()) return(LID+IndexBase_); // I own all indices
   else if (LinearMap()) return(LID+MinMyGID_); // Can compute with an offset
   else return(MyGlobalElements_[LID]); // Find it in MyGlobalElements array
 }
