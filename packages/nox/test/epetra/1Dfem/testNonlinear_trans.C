@@ -384,6 +384,8 @@ int main(int argc, char *argv[])
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
   TransientInterface interface(NumGlobalElements, Comm, -20.0, 20.0);
+  double dt = 0.10;
+  interface.setdt(dt);
 
   // Set the PDE nonlinear coefficient for this problem
   interface.setPDEfactor(1.0);
@@ -509,8 +511,6 @@ int main(int argc, char *argv[])
   int maxTimeSteps = 10;
   int timeStep = 0;
   double time = 0.0;
-  double dt = 0.10;
-  interface.setdt(dt);
 
 #ifdef PRINT_RESULTS_TO_FILES
   // Print initial solution
