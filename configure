@@ -2254,6 +2254,8 @@ fi
 
 if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" ||
+	test "X$ac_cv_use_tsfcore" != "Xno" ||
+	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno"; then
   BUILD_TEUCHOS_TRUE=
@@ -2340,6 +2342,8 @@ fi
 
 if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" ||
+	test "X$ac_cv_use_tsfcore" != "Xno" ||
+	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
 

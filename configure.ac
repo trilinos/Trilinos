@@ -90,6 +90,8 @@ AM_CONDITIONAL(BUILD_TPETRA, test "X$ac_cv_use_tpetra" != "Xno")
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
 AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" || 
+	test "X$ac_cv_use_tsfcore" != "Xno" || 
+	test "X$ac_cv_use_tsfcoreutils" != "Xno" || 
 	test "X$ac_cv_use_belos" != "Xno" || 
 	test "X$ac_cv_use_anasazi" != "Xno") 
 
@@ -103,6 +105,8 @@ AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
 
 if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" ||
+	test "X$ac_cv_use_tsfcore" != "Xno" ||
+	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/teuchos])
