@@ -39,7 +39,7 @@
 
 // Bifurcation groups
 #include "LOCA_Bifurcation_TPBord_ExtendedVector.H"
-#include "LOCA_Bifurcation_TPBord_ExtendedMultiVector.H"
+//#include "LOCA_Bifurcation_TPBord_ExtendedMultiVector.H"
 #include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
 #include "LOCA_Bifurcation_TPBord_ExtendedGroup.H"
 #include "LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.H"

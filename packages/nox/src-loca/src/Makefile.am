@@ -94,7 +94,6 @@ LOCA_SINGULARSOLVE = \
 
 LOCA_BIFURCATION_H = \
         $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.H \
-	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.H \
@@ -112,7 +111,6 @@ LOCA_BIFURCATION_H = \
 
 LOCA_BIFURCATION = \
         $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedVector.C \
-	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_AbstractGroup.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.C \
