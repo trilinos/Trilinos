@@ -164,6 +164,7 @@ int main(int argc, char *argv[])
   //NOX::Epetra::MatrixFree A(interface, soln);
   // 3. Finite Difference (Epetra_RowMatrix)
   //NOX::Epetra::FiniteDifference A(interface, soln);
+  //  A.setDifferenceMethod(NOX::Epetra::FiniteDifference::Backward);
   // 4. Jacobi Preconditioner
   //NOX::Epetra::JacobiPreconditioner Prec(soln);
 
