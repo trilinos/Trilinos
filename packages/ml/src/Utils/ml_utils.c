@@ -2654,7 +2654,7 @@ int ML_gmin_int(int val, ML_Comm *comm)
 #ifdef HAVE_MPI
   MPI_Allreduce(&val, &min, 1, MPI_INT, MPI_MIN, comm->USR_comm );
 #else
-  printf("cannot use without MPI\n");
+  min = val;
 #endif
   return min;
 }
@@ -2665,7 +2665,7 @@ double ML_gmin_double(double val, ML_Comm *comm)
 #ifdef HAVE_MPI
   MPI_Allreduce(&val, &min, 1, MPI_DOUBLE, MPI_MIN, comm->USR_comm );
 #else
-  printf("cannot use without MPI\n");
+  min = val;
 #endif
   return min;
 }
