@@ -113,7 +113,7 @@ class Epetra_IntVector : public Epetra_DistObject {
 
   //@{ \name Constructors/destructors.
   //! Basic Epetra_IntVector constuctor.
-  /*! Creates a Epetra_IntVector object and fills with zero values.  
+  /*! Creates a Epetra_IntVector object and, by default, fills with zero values.  
 
     \param In 
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
@@ -121,11 +121,15 @@ class Epetra_IntVector : public Epetra_DistObject {
 	   \warning Note that, because Epetra_LocalMap
 	   derives from Epetra_Map and Epetra_Map derives from Epetra_BlockMap, this constructor works
 	   for all three types of Epetra map classes.
+  \param In
+  zeroOut - If <tt>true</tt> then the allocated memory will be zeroed
+            out initialy.  If <tt>false</tt> then this memory will not
+            be touched which can be significantly faster.
 
     \return Pointer to a Epetra_IntVector.
 
   */
-  Epetra_IntVector(const Epetra_BlockMap& Map);
+  Epetra_IntVector(const Epetra_BlockMap& Map, bool zeroOut = true);
 
   //! Epetra_IntVector copy constructor.
   

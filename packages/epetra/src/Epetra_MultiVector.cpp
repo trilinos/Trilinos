@@ -1701,7 +1701,8 @@ void Epetra_MultiVector::Assign(const Epetra_MultiVector& A) {
     // Global reduction on each entry of a Replicated Local MultiVector
 
     int i, j;
-    double * source = new double[MyLength_*NumVectors_];
+    double * source = 0;
+      if (MyLength_>0) source = new double[MyLength_*NumVectors_];
     double * target = 0;
     bool packed = (ConstantStride_ && (Stride_==MyLength_));
     if (packed) {
@@ -1714,18 +1715,18 @@ void Epetra_MultiVector::Assign(const Epetra_MultiVector& A) {
          double * tmp2 = Pointers_[i];
          for (j=0; j< MyLength_; j++) *tmp1++ = *tmp2++;
        }
-       target = new double[MyLength_*NumVectors_];
+       if (MyLength_>0) target = new double[MyLength_*NumVectors_];
     }
 
     Comm_->SumAll(source, target, MyLength_*NumVectors_);
-    delete [] source;
+    if (MyLength_>0) delete [] source;
     if (!packed) {
        double * tmp2 = target;
        for (i = 0; i < NumVectors_; i++) {
          double * tmp1 = Pointers_[i];
          for (j=0; j< MyLength_; j++) *tmp1++ = *tmp2++;
        }
-       delete [] target;
+       if (MyLength_>0) delete [] target;
     }
     // UpdateFlops(0);  No serial Flops in this function
     return(0);

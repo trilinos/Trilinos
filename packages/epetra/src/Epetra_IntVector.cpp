@@ -31,12 +31,13 @@
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 //=============================================================================
-Epetra_IntVector::Epetra_IntVector(const Epetra_BlockMap& Map)
+Epetra_IntVector::Epetra_IntVector(const Epetra_BlockMap& Map, bool zeroOut)
   : Epetra_DistObject(Map, "Epetra::IntVector"),
     UserAllocated_(false),
     Allocated_(false)
 {
   AllocateForCopy();
+  if(zeroOut) PutValue(0); // Zero out values
 }
 //=============================================================================
 Epetra_IntVector::Epetra_IntVector(const Epetra_IntVector& Source)
@@ -66,7 +67,7 @@ Epetra_IntVector::Epetra_IntVector(Epetra_DataAccess CV, const Epetra_BlockMap& 
 Epetra_IntVector::~Epetra_IntVector(){
 
 
- if (Allocated_ && (!UserAllocated_)) delete [] Values_;
+ if (Allocated_ && (!UserAllocated_) && Values_!=0) delete [] Values_;
 }
 
 //=========================================================================
@@ -75,7 +76,11 @@ int Epetra_IntVector::AllocateForCopy()
   
   if (Allocated_) return(0);
     
-  Values_ = new int[MyLength()];
+  int myLength = MyLength();
+  if (myLength>0)
+    Values_ = new int[myLength];
+  else
+    Values_ = 0;
 
   Allocated_ = true;
   UserAllocated_ = false;

@@ -174,7 +174,7 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
   //@{ \name Constructors/destructors.
   //! Basic Epetra_MultiVector constuctor.
-  /*! Creates a Epetra_MultiVector object and fills with zero values.  
+  /*! Creates a Epetra_MultiVector object and, by default, fills with zero values.  
 
   \param In 
   Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
