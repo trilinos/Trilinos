@@ -109,9 +109,6 @@ int ML_Operator_Clean( ML_Operator *mat)
 #endif
 
    if (mat == NULL) return 0;
-   if (mat->halfclone == ML_TRUE) {
-     return ML_Operator_halfClone_Clean(mat);
-   }
 #ifdef ML_TIMING_DETAILED
    if ( (mat->label != NULL) && ( mat->build_time != 0.0)) 
    {
@@ -160,6 +157,9 @@ int ML_Operator_Clean( ML_Operator *mat)
    }
 #endif   
 #endif
+   if (mat->halfclone == ML_TRUE) {
+     return ML_Operator_halfClone_Clean(mat);
+   }
 
    if (mat->sub_matrix != NULL) ML_Operator_Destroy(&(mat->sub_matrix));
    if ((mat->subspace != NULL) && (mat->subspace->data_destroy != NULL))
@@ -482,7 +482,6 @@ int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag)
 /* ******************************************************************** */
 /* apply the operator to a vector                                       */
 /************************************************************************/
-
 int ML_Operator_Apply(ML_Operator *Op, int inlen, double din[], int olen,
                       double dout[])
 {
@@ -497,6 +496,7 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, double din[], int olen,
    if (Op->matvec->ML_id == ML_EXTERNAL)
         Op->matvec->external(Op->data, inlen, din, olen, dout);
    else Op->matvec->internal(Op,       inlen, din, olen, dout);
+
 #if defined(ML_TIMING) || defined(ML_FLOPS)
    Op->apply_time += (GetClock() - t0);
 #endif
