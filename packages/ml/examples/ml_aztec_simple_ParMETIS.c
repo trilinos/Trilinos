@@ -111,6 +111,9 @@ int main(int argc, char *argv[])
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);
 #endif
+  /* This example requires ParMETIS, do nothing otherwise                 */
+
+#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
   AZ_set_proc_config(proc_config, COMMUNICATOR);
   
   ML_Set_PrintLevel(10);   /* set ML's output level: 0 gives least output */
@@ -217,10 +220,14 @@ int main(int argc, char *argv[])
   if( x != NULL ) ML_free( x );
   if( y != NULL ) ML_free( y );
 
+#else
+  puts("Please configure ml with --with-ml_parmetis2x or");
+  puts("--with-ml_parmetis3x to run this example");
+#endif
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
-  return 0;
+  return(0);
 }
 
 /* Assign unknowns to processors */
