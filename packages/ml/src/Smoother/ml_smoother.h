@@ -135,6 +135,8 @@ extern  int ML_Smoother_Set(ML_Smoother *, int, void *,
                  int, double, char *);
 extern  int ML_Smoother_Jacobi(void *, int, double *x, int, double *);
 extern  int ML_Smoother_GaussSeidel(void *, int, double *, int, double *);
+extern  int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
+                            double rhs[]);
 extern  int ML_Smoother_SGS(void *, int, double *, int, double *);
 extern  int ML_Smoother_BlockGS(void *, int, double *, int, double *);
 extern  int ML_Smoother_ParaSails(void *, int, double *, int, double *);
