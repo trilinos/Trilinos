@@ -7,9 +7,17 @@
  *
  * $Author$
  *
+<<<<<<< rcb.c
  * $Date$
+=======
+ * $Date$
+>>>>>>> 1.43
  *
+<<<<<<< rcb.c
  * $Revision$
+=======
+ * $Revision$
+>>>>>>> 1.43
  *
  *====================================================================*/
 
@@ -42,6 +50,7 @@
 #include "par_const.h"
 #include "params_const.h"
 #include "timer_const.h"
+#include "create_proc_list.h"
 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
@@ -51,7 +60,6 @@
 
 /* function prototypes */
 
-static void RCB_error(LB *, int);
 static void RCB_check(LB *, struct rcb_dot *, int, int, struct rcb_box *);
 static void RCB_stats(LB *, double, struct rcb_dot *,int, double *, 
  		      int *, struct rcb_box *, int, int);
@@ -189,7 +197,7 @@ static int rcb(
   struct rcb_dot *dotbuf, *dotpt;   /* local dot arrays */
   struct rcb_box boxtmp;            /* tmp rcb box */
   int     keep, outgoing;           /* message exchange counters */
-  int     incoming, incoming2;      /* message exchange counters */
+  int     incoming;                 /* message exchange counters */
   int     pdotnum;                  /* # of dots - decomposition changes it */
   int     pdottop;                  /* dots >= this index are new */
   int    *dotmark = NULL;           /* which side of median for each dot */
@@ -199,8 +207,6 @@ static int rcb(
   int     dotnew;                   /* # of new dots after send/recv */
   int     proclower, procupper;     /* lower/upper proc in partition */
   int     procmid;                  /* 1st proc in upper half of part */
-  int     procpartner, procpartner2; /* proc(s) to exchange with */
-  int     readnumber;               /* # of proc partner(s) to read from */
   int     markactive;               /* which side of cut is active = 0/1 */
   int     dim;                      /* which of 3 axes median cut is on */
   int     ierr;                     /* error flag. */
@@ -227,10 +233,13 @@ static int rcb(
 				      5 = # of times a previous cut is re-used
 				      6 = # of reallocs of dot array */
   int     i,ii,j,k;                 /* local variables */
+  struct Comm_Obj *cobj = NULL;     /* pointer for communication object */
+  int     message_tag;              /* message tag */
+  int    *proc_list = NULL;         /* list of processors to send dots to */
 
-  RCB_STRUCT *rcb;                 /* Pointer to data structures for RCB.  */
-  struct rcb_box *rcbbox;          /* bounding box of final RCB sub-domain */
-  struct rcb_tree *treept;         /* tree of RCB cuts - only single cut on 
+  RCB_STRUCT *rcb = NULL;           /* Pointer to data structures for RCB.  */
+  struct rcb_box *rcbbox = NULL;    /* bounding box of final RCB sub-domain */
+  struct rcb_tree *treept = NULL;   /* tree of RCB cuts - only single cut on 
                                       exit */
 
   double start_time, end_time;
@@ -302,17 +311,17 @@ static int rcb(
   if (dotmax > 0) {
     dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
     if (dotmark == NULL)
-      RCB_error(lb, dotmax*sizeof(int));
+      return LB_MEMERR;
     coord = (double *) LB_MALLOC(dotmax*sizeof(double));
     if (coord == NULL) {
       LB_FREE(&dotmark);
-      RCB_error(lb, dotmax*sizeof(int));
+      return LB_MEMERR;
     }
     wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
     if (wgts == NULL) {
       LB_FREE(&dotmark);
       LB_FREE(&coord);
-      RCB_error(lb, dotmax*sizeof(int));
+      return LB_MEMERR;
     }
   }
   else {
@@ -384,23 +393,6 @@ static int rcb(
 
     procmid = proclower + (procupper - proclower) / 2 + 1;
 
-    /* determine communication partner(s) */
-
-    if (proc < procmid)
-      procpartner = proc + (procmid - proclower);
-    else
-      procpartner = proc - (procmid - proclower);
-    
-    readnumber = 1;
-    if (procpartner > procupper) {
-      readnumber = 0;
-      procpartner--;
-    }
-    if (proc == procupper && procpartner != procmid - 1) {
-      readnumber = 2;
-      procpartner2 = procpartner + 1;
-    }
-    
     /* fractionlo = desired fraction of weight in lower half of partition */
 
     fractionlo = ((double) (procmid - proclower)) / 
@@ -428,17 +420,17 @@ static int rcb(
       LB_FREE(&wgts);
       dotmark = (int *) LB_Malloc(dotmax*sizeof(int), __FILE__, __LINE__);
       if (dotmark == NULL)
-        RCB_error(lb, dotmax*sizeof(int));
+        return LB_MEMERR;
       coord = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
       if (coord == NULL) {
         LB_FREE(&dotmark);
-        RCB_error(lb, dotmax*sizeof(int));
+        return LB_MEMERR;
       }
       wgts = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
       if (wgts == NULL) {
         LB_FREE(&dotmark);
         LB_FREE(&coord);
-        RCB_error(lb, dotmax*sizeof(int));
+        return LB_MEMERR;
       }
     }
 
@@ -483,25 +475,46 @@ static int rcb(
     /* outgoing = number of dots to ship to partner */
     /* dottop = number of dots that have never migrated */
 
-    markactive = (proc < procpartner);
+    markactive = (proc < procmid);
     for (i = 0, keep = 0, outgoing = 0; i < dotnum; i++)
       if (dotmark[i] == markactive)
 	outgoing++;
       else if (i < dottop)
 	keep++;
     dottop = keep;
-    
-    /* alert partner how many dots I'll send, read how many I'll recv */
 
-    MPI_Send(&outgoing,1,MPI_INT,procpartner,0,lb->Communicator);
-    incoming = 0;
-    if (readnumber) {
-      MPI_Recv(&incoming,1,MPI_INT,procpartner,0,lb->Communicator,&status);
-      if (readnumber == 2) {
-	MPI_Recv(&incoming2,1,MPI_INT,procpartner2,0,lb->Communicator,&status);
-	incoming += incoming2;
-      }
+    if (outgoing)
+       if ((proc_list = (int *) LB_Malloc(outgoing*sizeof(int), __FILE__,
+             __LINE__)) == NULL) {
+          LB_FREE(&dotmark);
+          LB_FREE(&coord);
+          LB_FREE(&wgts);
+          return LB_MEMERR;
+       }
+
+    ierr = LB_Create_Proc_List(proc, procmid, proclower, procupper, dotnum,
+          outgoing, proc_list, local_comm);
+    if (ierr != LB_OK) {
+       LB_FREE(&proc_list);
+       LB_FREE(&dotmark);
+       LB_FREE(&coord);
+       LB_FREE(&wgts);
+       return (ierr);
     }
+
+    incoming = 0;
+    message_tag = 1;
+    ierr = LB_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag,
+                             &incoming);
+    if (ierr != LB_OK) {
+       LB_FREE(&proc_list);
+       LB_FREE(&dotmark);
+       LB_FREE(&coord);
+       LB_FREE(&wgts);
+       return (ierr);
+    }
+
+    if (outgoing) LB_FREE(&proc_list);
 
     /* check if need to malloc more space */
 
@@ -513,7 +526,12 @@ static int rcb(
       if (dotmax < dotnew) dotmax = dotnew;
       dotpt = (struct rcb_dot *) 
 	LB_REALLOC(dotpt,(unsigned) dotmax * sizeof(struct rcb_dot));
-      if (dotpt == NULL) RCB_error(lb, dotmax*sizeof(struct rcb_dot));
+      if (dotpt == NULL) {
+        LB_FREE(&dotmark);
+        LB_FREE(&coord);
+        LB_FREE(&wgts);
+        return LB_MEMERR;
+      }
       rcb->Dots = dotpt;
       if (stats) counters[6]++;
     }
@@ -531,7 +549,10 @@ static int rcb(
       dotbuf = (struct rcb_dot *) LB_Malloc(outgoing*sizeof(struct rcb_dot),
 	  __FILE__, __LINE__);
       if (dotbuf == NULL) {
-        RCB_error(lb, outgoing*sizeof(struct rcb_dot));
+        LB_FREE(&dotmark);
+        LB_FREE(&coord);
+        LB_FREE(&wgts);
+        return LB_MEMERR;
       }
     }
     else 
@@ -550,43 +571,20 @@ static int rcb(
                sizeof(struct rcb_dot));
     }
 
-    /* post receives for dot data */
-
-    if (readnumber > 0) {
-      length = incoming * sizeof(struct rcb_dot);
-      MPI_Irecv(&dotpt[keep],length,MPI_CHAR,
-			   procpartner,1,lb->Communicator,&request);
-      if (readnumber == 2) {
-	keep += incoming - incoming2;
-	length = incoming2 * sizeof(struct rcb_dot);
-	MPI_Irecv(&dotpt[keep],length,MPI_CHAR,
-			      procpartner2,1,lb->Communicator,&request2);
-      }
+    ierr = LB_Comm_Do(cobj, message_tag, dotbuf, sizeof(struct rcb_dot),
+                       &dotpt[keep]);
+    if (ierr != LB_OK) {
+       LB_FREE(&dotmark);
+       LB_FREE(&coord);
+       LB_FREE(&wgts);
+       return (ierr);
     }
-    
-    /* handshake before sending data to insure recvs have been posted */
-    
-    if (readnumber > 0) {
-      MPI_Send(NULL,0,MPI_INT,procpartner,0,lb->Communicator);
-      if (readnumber == 2)
-	MPI_Send(NULL,0,MPI_INT,procpartner2,0,lb->Communicator);
-    }
-    MPI_Recv(NULL,0,MPI_INT,procpartner,0,lb->Communicator,&status);
 
-    /* send dot data to partner */
+    ierr = LB_Comm_Destroy(&cobj);
 
-    length = outgoing * sizeof(struct rcb_dot);
-    MPI_Rsend(dotbuf,length,MPI_CHAR,procpartner,1,lb->Communicator);
     LB_FREE(&dotbuf);
     
     dotnum = dotnew;
-
-    /* wait until all dots are received */
-
-    if (readnumber > 0) {
-      MPI_Wait(&request,&status);
-      if (readnumber == 2) MPI_Wait(&request2,&status);
-    }
 
     /* cut partition in half, create new communicators of 1/2 size */
 
@@ -651,18 +649,19 @@ static int rcb(
   if (*num_import > 0) {
     if (!LB_Special_Malloc(lb,(void **)import_global_ids,*num_import,
                            LB_SPECIAL_MALLOC_GID))
-      RCB_error(lb, *num_import*sizeof(LB_GID));
+      return LB_MEMERR;
     if (!LB_Special_Malloc(lb,(void **)import_local_ids,*num_import,
                            LB_SPECIAL_MALLOC_LID)) {
       LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
-      RCB_error(lb, *num_import*sizeof(LB_LID));
-}
+      return LB_MEMERR;
+    }
     if (!LB_Special_Malloc(lb,(void **)import_procs,*num_import,
                            LB_SPECIAL_MALLOC_INT)) {
       LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
       LB_Special_Free(lb,(void **)import_local_ids,LB_SPECIAL_MALLOC_LID);
-      RCB_error(lb, *num_import*sizeof(int));
+      return LB_MEMERR;
     }
+
 
     for (i = 0; i < *num_import; i++) {
       ii = i + dottop;
@@ -714,19 +713,6 @@ static int rcb(
 
 
 /* ----------------------------------------------------------------------- */
-
-/* error message for malloc/realloc overflow */
-
-static void RCB_error(LB *lb, int size)
-
-{
-  int proc;
-
-  MPI_Comm_rank(lb->Communicator,&proc);
-  printf("RCB ERROR: proc = %d could not malloc/realloc %d bytes",proc,size);
-  exit(1);
-}
-
 
 /* MPI user-defined reduce operations */
 
