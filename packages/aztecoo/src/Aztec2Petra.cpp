@@ -194,7 +194,7 @@ int Aztec2Petra(int * proc_config,
   //b = new Epetra_Vector (View, A->OperatorRangeMap(), az_b);
   b = new Epetra_Vector (View, *map, az_b);
 
-  global_indices = 0; // Assume return array will be empty
+  *global_indices = 0; // Assume return array will be empty
   if (!Amat->has_global_indices) {
    AZ_free((void *) update);
    if (Amat->data_org[AZ_matrix_type] != AZ_VBR_MATRIX)
