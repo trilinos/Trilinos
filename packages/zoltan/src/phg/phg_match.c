@@ -224,7 +224,8 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
                     if (lips[v2]==0.0)   /* v2 is a new neighbor */
                         adj[nadj++] = v2;
                     /* Check for vertex scaling. For efficiency we may 
-                       have to move the 'if' test out of the inner loop. */
+                       have to move the 'if' test out of the inner loop. 
+                       Only scale for v2 not v1 to save flops.              */ 
                     if (hgp->vtx_scal)
                       lips[v2] += hgp->vtx_scal[v2]*
                                   (hg->ewgt ? hg->ewgt[edge] : 1.0);
@@ -606,14 +607,18 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
         count = *r++;                        /* count of following hyperedges */
         
         /* now compute the row's nVtx inner products for kth candidate */
-        if (hg->ewgt == NULL)
+        if ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
           for (i = 0; i < count; r++, i++)
             for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++)
               sums [hg->hvertex[j]] += 1.0;
         else
           for (i = 0; i < count; i++)
             for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++)
-              sums [hg->hvertex[j]] += hg->ewgt [*r];             
+              if (hgp->vtx_scal)
+                sums [hg->hvertex[j]] += hgp->vtx_scal[hg->hvertex[j]] * 
+                                         (hg->ewgt ? hg->ewgt [*r] : 1.0);
+              else
+                sums [hg->hvertex[j]] += hg->ewgt [*r];
                                  
         /* if local vtx, remove self inner product (useless maximum) */
         if (VTX_TO_PROC_X (hg, gno) == hgc->myProc_x)
