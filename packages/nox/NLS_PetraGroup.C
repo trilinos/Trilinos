@@ -111,8 +111,23 @@ const NLS_Vector& NLS_PetraGroup::computeX(const NLS_PetraGroup& grp,
 
 const NLS_Vector& NLS_PetraGroup::computeRHS() 
 {
+  
+  //cout << "Printing XVector" << endl; 
+  //xVector.print();
+  
+  //cout << "Printing RHSVector" << endl; 
+  //RHSVector.print();
+
+
   Interface.computeRHS(xVector.getPetraVector(), RHSVector.getPetraVector());
   isValidRHS = true;
+
+  //cout << "Printing RHSVector" << endl; 
+
+
+  RHSVector.print();
+
+
   return RHSVector;
 }
 

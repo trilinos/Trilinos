@@ -187,6 +187,6 @@ double NLS_PetraVector::dot(const NLS_PetraVector& y) const
 
 void NLS_PetraVector::print() const
 {
-  cout << petraVec << endl;
+  cout << *petraVec << endl;
 }
 

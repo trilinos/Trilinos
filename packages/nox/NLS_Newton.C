@@ -26,21 +26,35 @@ NLS_Newton::~NLS_Newton()
 
 void NLS_Newton::resetParameters(NLS_ParameterList& p)
 {
-
 }
 
 bool NLS_Newton::isConverged() 
 {
+  //Compute norms
+  normrhs = soln.getRHS().norm();
   double normupdate = soln.getNewton().norm();
-  cout << "RHS Norm = " << normrhs << "  Update Norm = " << normupdate << endl;
+
+  // Output 
+  if ((params.getParameter("MyPID",0)==0) && 
+      (params.getParameter("Output Level",4) >= 2)) {
+    cout << "**************************************************************"
+	 << endl;
+    cout << "Newton Step " << niter << " : Residual Norm = " << normrhs 
+	 << "  Update Norm = " << normupdate << endl;
+    cout << "**************************************************************"
+	 << endl;
+  }
+
   if ((normrhs < params.getParameter("Absolute Tolerance",1.0e-10))
       &&(normupdate < params.getParameter("Relative Tolerance",1.0e-6))) {
-    cout << "Solution is CONVERGED!" << endl;
+    if (params.getParameter("MyPID",0)==0) 
+      cout << "Solution is CONVERGED!" << endl;
     return true;
   }
   return false;
 }
 
+      
 int NLS_Newton::iterate()
 {
   // compute Jacobian at current solution
@@ -70,9 +84,14 @@ int NLS_Newton::iterate()
 
 int NLS_Newton::solve()
 {
+  cout << "Beginning nonlinear solve with Newtons method" << endl;
+  // Check for convergence of initial guess
+  isConverged();
+
+  const NLS_Vector& RHS = soln.getX();
+
   // Get Parameters
   int maxit = params.getParameter("Max Nonlinear Iterations", 15);
-  cout << "Beginning nonlinear solve with Newtons method" << endl;
   for (int i=0; i<maxit; i++) {
     iterate();
     if (isConverged()) break;
