@@ -10,7 +10,8 @@ Contents of this README file are:
 5) organization and scope of the tests
 6) how to submit bugs
 7) mailing lists
-8) copyright notice
+8) how to cite ML
+9) copyright notice
 
 ------------------------------------------------------------------------------
 section 0: where you should look for ML documentation
@@ -90,9 +91,13 @@ README                      this file
 src/                        ML source files
 util/                       various utility programs, such as file converters
 
+
 ------------------------------------------------------------------------------
 section 4: organization of the examples
 ------------------------------------------------------------------------------
+
+please refer to the README files in the examples subdirectories.
+
 
 ------------------------------------------------------------------------------
 section 5: organization and scope of the tests
@@ -113,7 +118,8 @@ Bugs and enhancements can be submitted through bugzilla at the web page
    http://software.sandia.gov/bugzilla
 
 (select ML in the list of packages).
-You will need to create a bugzilla account.
+You will need to create a bugzilla account. Otherwise, simply e-mail
+to one of the developers.
 
 
 ------------------------------------------------------------------------------
@@ -144,7 +150,7 @@ ML can be cited using the following BiBTeX entry:
 
 
 ------------------------------------------------------------------------------
-section 9: mailing lists
+section 9: copyright
 ------------------------------------------------------------------------------
 
                ML: A Multilevel Preconditioner Package
@@ -173,4 +179,4 @@ Please submit ML bugs with at software.sandia.gov/buzgilla, or
 report bugs to jhu@sandia.gov.
 	
 ------------------------------------------------------------------------------
-(This file was last updated on Nov-04).
+(This file was last updated on 19-Jan-05)

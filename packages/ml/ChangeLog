@@ -32,7 +32,33 @@ report bugs to jhu@sandia.gov.
 
 ------------------------------------------------------------------------------
 	
-Nov 2004
+Jan 2005
+
+        * The first cut of the MLAPI is now available. MLAPI is the 
+          MATLAB-like parallel programming module of ML. Right now only
+          a limited subset of ML functionalities is available.
+        * Improved the MultiLevelPreconditioner class (now derived from
+          Epetra_Operator and no longer from Epetra_RowMatrix). Updated the
+          filtering/GGB algorithm, which now supports only Anasazi and the
+          non-symmetric cycle. Some never-used methods have been deleted
+          (like scaling). 
+        * Improved compilation on several machines; now ML *should* compile
+          with no warnings on Linux using `-g -ansi -pedantic -Wall
+          -Wno-format-extra-args'.
+
+------------------------------------------------------------------------------
+	
+Dec 2004
+
+        * improved the organization of the examples, introduces more
+          detailed comments and some README files. Deleted some outdated
+          examples.
+        * bug fixes to the auxiliary matrix algorithm for problems defined
+          on stretched grids.
+
+------------------------------------------------------------------------------
+	
+Nov 2004 (current version 3.1)
 
         * ML now supports Zoltan as coarsening scheme (RCB only). Zoltan
           can be used to create the aggregates, but also to redistribute
