@@ -54,7 +54,7 @@ NOX::LineSearch::MoreThuente::~MoreThuente()
 bool NOX::LineSearch::MoreThuente::reset(Parameter::List& params)
 { 
   paramsPtr = &params;
-  NOX::Parameter::List& p = params.sublist("More'-Thuente2");
+  NOX::Parameter::List& p = params.sublist("More'-Thuente");
   ftol = p.getParameter("Sufficient Decrease", 1.0e-4);
   gtol = p.getParameter("Curvature Condition", 0.9999);
   xtol = p.getParameter("Interval Width", 1.0e-15);
