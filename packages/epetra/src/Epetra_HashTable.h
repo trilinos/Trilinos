@@ -25,7 +25,7 @@ class Epetra_HashTable
   Epetra_HashTable( const int size, const unsigned int seed = (2654435761U) )
   : Size_(size), Seed_(seed)
   {
-    Container_ = new (Node*)[size];
+    Container_ = new Node * [size];
     for( int i = 0; i < size; ++i ) Container_[i] = 0;
   }
 
@@ -33,7 +33,7 @@ class Epetra_HashTable
   : Size_(obj.Size_),
     Seed_(obj.Seed_)
   {
-    Container_ = new (Node*)[Size_];
+    Container_ = new Node * [Size_];
     for( int i = 0; i < Size_; ++i ) Container_[i] = 0;
     for( int i = 0; i < Size_; ++i )
     {
