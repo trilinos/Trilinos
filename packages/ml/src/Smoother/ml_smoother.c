@@ -145,6 +145,8 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    ML_Sm_Schwarz_Data *schwarz_data;
 #endif
 
+   if (ml_sm == NULL) return 0;
+
 #ifdef ML_TIMING_DETAILED
 
      /* some processors may have been dropped out of calculation */
