@@ -21,11 +21,6 @@
 #include "zoltan_id.h"
 #include "zoltan_util.h"
 
-
-#ifndef ZOLTAN_ALIGN    /* Plauger alignment algorithm, The Standard C Library*/
-#define ZOLTAN_ALIGN 7U /* to force malloc'ed variable size struct alignment  */
-#endif                  /* values are 0,1,3,7U depending upon machine         */
-
 #define ZOLTAN_DD_HASH_TABLE_COUNT  503   /* default # of linked list heads */
 #define ZOLTAN_DD_NO_PROC           -1    /* not a possible processor #     */
 

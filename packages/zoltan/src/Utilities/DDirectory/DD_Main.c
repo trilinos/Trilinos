@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "DD_Const.h"
+#include "zoltan_align.h"
 
 
 #define DD_TEST_NAME_NUMERIC 100  /* arbitrary starting value for defines */
@@ -90,7 +91,6 @@ int main (int argc, char *argv[])
    int   errcount ;
    int   loop ;
 
-   const unsigned int align = 7u ;
 
    char str[100] ;      /* for building output messages */
    char *yo = "DD_Main" ;
@@ -108,8 +108,9 @@ int main (int argc, char *argv[])
    if (err != ZOLTAN_DD_NORMAL_RETURN)
       ZOLTAN_PRINT_ERROR (myproc, yo, "Failed return from DD Create") ;
 
-   param.slen = sizeof (Data) + param.glen + param.llen + param.ulen ;
-   param.slen = (align + param.slen) & ~align ;
+   param.slen = sizeof (Data) 
+              + (param.glen + param.llen + param.ulen) * sizeof(ZOLTAN_ID_TYPE);
+   param.slen = Zoltan_Align(param.slen);
    store = (char *) ZOLTAN_MALLOC (param.count * param.slen) ;
 
    /* allocate storage for various lists */
@@ -118,11 +119,11 @@ int main (int argc, char *argv[])
    plist = (int *)     ZOLTAN_MALLOC (sizeof (int)        * param.count) ;
    olist = (int *)     ZOLTAN_MALLOC (sizeof (int)        * param.count) ;
    if (param.llen != 0)
-      llist = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC (sizeof (ZOLTAN_ID_TYPE) * param.count 
-                                                                 * param.llen) ;
+      llist = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC (sizeof (ZOLTAN_ID_TYPE) * 
+                                             param.count * param.llen) ;
    if (param.ulen != 0)
-      ulist = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC (sizeof (ZOLTAN_ID_TYPE) * param.count 
-                                                                 * param.ulen) ;
+      ulist = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC (sizeof (ZOLTAN_ID_TYPE) * 
+                                             param.count * param.ulen) ;
 
 
    if (store == NULL || glist == NULL

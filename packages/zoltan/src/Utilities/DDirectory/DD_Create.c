@@ -16,6 +16,7 @@
 #include <stdlib.h>
 
 #include "DD_Const.h"
+#include "zoltan_align.h"
 
 
 
@@ -38,7 +39,6 @@ int Zoltan_DD_Create (
    {
    int size ;
    int my_proc;
-   unsigned int align ;
    char *yo = "Zoltan_DD_Create" ;
 
    if (MPI_Comm_rank(comm, &my_proc) != MPI_SUCCESS) 
@@ -95,11 +95,10 @@ int Zoltan_DD_Create (
    size = (user_length + (*dd)->max_id_length) * sizeof (ZOLTAN_ID_PTR) ;
    (*dd)->find_msg_size   = size + sizeof (DD_Find_Msg) ;
 
-   /* force alignment, algorithm from Plauger, The Standard C Library    */
-   align = ZOLTAN_ALIGN ;
-   (*dd)->update_msg_size = (align + (*dd)->update_msg_size) & ~align ;
-   (*dd)->remove_msg_size = (align + (*dd)->remove_msg_size) & ~align ;
-   (*dd)->find_msg_size   = (align + (*dd)->find_msg_size)   & ~align ;
+   /* force alignment */
+   (*dd)->update_msg_size = Zoltan_Align((*dd)->update_msg_size);
+   (*dd)->remove_msg_size = Zoltan_Align((*dd)->remove_msg_size);
+   (*dd)->find_msg_size   = Zoltan_Align((*dd)->find_msg_size);
 
    /* duplicate MPI comm to prevent future comm changes from disrupting  */
    /* directory communications & save the associated comm size & rank    */
