@@ -15,7 +15,7 @@ if( "$5" == "True" ) then # $5 is an optional parameter indicating if
     echo "Test options: " $1 ", " $2 ", " >>& $file
     echo "    " $3 ", " $4 >>& $file
 else
-    set file = log.`eval date +%d%b%Y:%T`
+    set file = log.`eval date +%d%b%Y_%H%M%S`
     rm -f $file
 endif
 echo $file

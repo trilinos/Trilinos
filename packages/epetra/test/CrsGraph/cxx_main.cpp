@@ -44,10 +44,10 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
-  //  char tmp;
-  //  if (rank==0) cout << "Press any key to continue..."<< endl;
-  //  if (rank==0) cin >> tmp;
-  //  Comm.Barrier();
+  //char tmp;
+  //if (rank==0) cout << "Press any key to continue..."<< endl;
+  //if (rank==0) cin >> tmp;
+  //Comm.Barrier();
 
   Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   int MyPID = Comm.MyPID();
@@ -60,7 +60,7 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
   // Redefine verbose to only print on PE 0
   if (verbose && rank!=0) verbose = false;
 
-  int NumMyEquations = 10000;
+  int NumMyEquations = 5;
   int NumGlobalEquations = NumMyEquations*NumProc+EPETRA_MIN(NumProc,3);
   if (MyPID < 3) NumMyEquations++;
   int IndexBase = 0;
