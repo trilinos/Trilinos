@@ -395,7 +395,9 @@ if test "X$ac_cv_use_epetraext_matlab" != "Xno"; then
 	
      AC_CHECK_LIB(eng,engPutVariable,[],[
      	AC_CHECK_LIB(eng,engPutArray,
-		    [AC_DEFINE(USE_ENGPUTARRAY,[],[use older function call for Matlab versions < 6.5])
+		    [
+#AC_DEFINE(USE_ENGPUTARRAY,[],[use older function call for Matlab versions < 6.5])
+CXXFLAGS="$CXXFLAGS -DUSE_ENGPUTARRAY"
                       LIBS="$LIBS -leng"],
                     [AC_MSG_ERROR([Cannot find libeng.a library needed for Matlab subpkg, specify using --with-libs=-L<DIR> For informatin on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.REAME])]
                     )

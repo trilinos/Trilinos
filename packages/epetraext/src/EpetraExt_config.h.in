@@ -191,9 +191,6 @@
 /* define if compiling for ASCI Red, aka TFLOP */
 #undef TFLOP
 
-/* use older function call for Matlab versions < 6.5 */
-#undef USE_ENGPUTARRAY
-
 /* Version number of package */
 #undef VERSION
 
