@@ -120,6 +120,7 @@
   The following people have contributed code to %NOX and/or %LOCA:
   
   <ul>
+  <li> Brett Bader, Sandia National Labs, bwbader@sandia.gov
   <li> Russ Hooper, Sandia National Labs, rhoope@sandia.gov
   <li> <a href="http://csmr.ca.sandia.gov/~tgkolda/">Tammy Kolda</a>,  
   Sandia National Labs, 
@@ -127,7 +128,6 @@
   <li> Roger Pawlowski, Sandia National Labs, rppawlo@sandia.gov (%NOX Project Lead)
   <li> Eric Phipps, Sandia National Labs, etphipp@sandia.gov
   <li> Andy Salinger, Sandia National Labs, agsalin@sandia.gov (LOCA Project Lead)
-  <li> Brett Bader (Visiting researcher, Summer 2002)
   </ul>
   
   \section questions For All Other Questions and Comments...
