@@ -62,19 +62,19 @@ public:
 
 
   //=============================================================================
-  Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob, 
-				 const Teuchos::ParameterList &ParameterList ) :  
-    PrivateKluData_( new Amesos_Klu_Pimpl() ),
-    SerialCrsMatrixA_(0), 
-    SerialMap_(0), 
-    SerialMatrix_(0), 
-    TransposeMatrix_(0),
-    UseTranspose_(false),
-    Matrix_(0) {
-
-
+Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
+  PrivateKluData_( new Amesos_Klu_Pimpl() ),
+  SerialCrsMatrixA_(0), 
+  SerialMap_(0), 
+  SerialMatrix_(0), 
+  TransposeMatrix_(0),
+  UseTranspose_(false),
+  Matrix_(0) {
+  
+  
   Problem_ = &prob ; 
-  ParameterList_ = &ParameterList ; 
+  Teuchos::ParameterList ParamList ;
+  SetParameters( ParamList ) ; 
 }
 
 //=============================================================================
@@ -232,9 +232,13 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
 }   
 
 
-int Amesos_Klu::ReadParameterList() {
-  if (ParameterList_->isSublist("Klu") ) {
-    Teuchos::ParameterList KluParams = ParameterList_->sublist("Klu") ;
+int Amesos_Klu::SetParameters( const Teuchos::ParameterList &ParameterList ) {
+
+
+  if( &ParameterList == 0 ) return 0;
+
+  if (ParameterList.isSublist("Klu") ) {
+    Teuchos::ParameterList KluParams = ParameterList.sublist("Klu") ;
   }  
   return 0;
 }

@@ -74,8 +74,7 @@ class Amesos_EpetraBaseSolver : public Amesos_BaseSolver {
   
 public:
   
-  Amesos_EpetraBaseSolver(const Epetra_LinearProblem & Problem,
-			  const Teuchos::ParameterList &ParameterList);
+  Amesos_EpetraBaseSolver(const Epetra_LinearProblem & Problem);
   
   ~Amesos_EpetraBaseSolver();
 
@@ -254,7 +253,6 @@ public:
   bool MatrixShapeOK() const;  
 
 protected:
-  Teuchos::ParameterList * ParameterList_;
 
 private:
 

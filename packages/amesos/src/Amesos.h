@@ -31,23 +31,42 @@
 #ifndef _AMESOS_FACTORY_H_
 #define _AMESOS_FACTORY_H_
 #include "Amesos_BaseSolver.h"
-#include "AmesosClassType.h"
 
-//! Amesos_Factory:  A method for creating Amesos classes
-/*!  Amesos_Factory allows a code to delay the decision about which
-concrete class to use to implement the Amesos_BaseSolver interface.  
+//! Amesos:  A method for binding a third party direct solver to an Epetra_LinearProblem.
+/*!  Amesos creates an instance of a solver, binding a third party direct 
+solver to an Epetra_LinearProblem, allowing access to the specified third 
+party solver through the Amesos interface (i.e. Numeric Factorization 
+SymbolicFactrozation(), Solve() and support functions.)
 */
 //
-class Amesos_Factory { 
+class Amesos { 
 
   //@{ \name Creation method
-  //! Amesos_Factory Create method
+  //! Amesos Create method
   /*! Creates an instance of the Amesos_BaseSolver class specified by 
-    ClassType 
+    ClassType.
+
+      <br \>Preconditions:<ul>
+      <li>ClassType must be one of the recognized class types.
+Return 0 on failure.
+      </li>
+      <li>ClassType must specify a third party solver that has been 
+linked with this particular implementation.  Return 0 on failure.
+      </li>
+      <li>Epetra_LinearProblem may be empty.  Although the linear problem 
+is not checked at the time of construction, the operator must be an Epetra_RowMatrix, or derived from an Epetra_RowMatrix.
+
+      </li>
+      </ul>
+
+      <br \>Postconditions:<ul> 
+      <li>If Create() returns a non-null pointer, that pointer points to an 
+Amesos solver. 
+      </li>
+      </ul>
   */
 public: 
-  Amesos_BaseSolver *Create( AmesosClassType ClassType, 
-			     const Epetra_LinearProblem& LinearProblem, 
-			     Teuchos::ParameterList &ParameterList );
-};  // End of  class Amesos_Factory  
+  Amesos_BaseSolver *Create( char *ClassType, 
+			     const Epetra_LinearProblem& LinearProblem );
+};  // End of  class Amesos  
 #endif /* _AMESOS_FACTORY_H_ */

@@ -230,9 +230,9 @@ COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 
 FACTORY_H = \
-	$(srcdir)/Amesos_Factory.h
+	$(srcdir)/Amesos.h
 FACTORY = \
-	$(srcdir)/Amesos_Factory.cpp
+	$(srcdir)/Amesos.cpp
 
 #
 #  I turned off the addition of external/slu to the include path 
@@ -282,7 +282,6 @@ AMESOS_H = \
 	$(SLUSERIAL_H) \
 	$(KUNDERT_H) \
 	$(COMP_H) \
-	$(srcdir)/AmesosClassType.h \
 	$(srcdir)/Amesos_BaseSolver.h
 
 

@@ -55,21 +55,20 @@ struct SLUData
 
 
   //=============================================================================
-  Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob, 
-				 const Teuchos::ParameterList &ParameterList ) :  
+  Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
     SerialCrsMatrixA_(0), 
     SerialMap_(0), 
     SerialMatrix_(0), 
     FactorizationDone_(false),
     FactorizationOK_(false),
-    UseTranspose_(false) {
+    UseTranspose_(false),
+    iam_(-1) {
 
   using namespace SLU;
 
   data_ = new SLUData();
 
   Problem_ = &prob ; 
-  ParameterList_ = &ParameterList ; 
   DestroyBandX_ = true;
 
   dCreate_Dense_Matrix( &(data_->X), 
@@ -86,6 +85,10 @@ struct SLUData
 			0, 
 			SLU_DN, SLU_D, SLU_GE);
     
+
+  Teuchos::ParameterList ParamList ;
+  SetParameters( ParamList ) ; 
+
 }
 
 //=============================================================================
@@ -96,9 +99,9 @@ Amesos_Superlu::~Amesos_Superlu(void) {
   if ( SerialMap_ ) delete SerialMap_ ; 
   if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
 
+  Destroy_SuperMatrix_Store(&data_->B);
+  Destroy_SuperMatrix_Store(&data_->X);
   if ( iam_ == 0 ) { 
-    Destroy_SuperMatrix_Store(&data_->B);
-    Destroy_SuperMatrix_Store(&data_->X);
     if ( FactorizationDone_ ) { 
       Destroy_SuperMatrix_Store(&data_->A);
       Destroy_SuperNode_Matrix(&data_->L);
@@ -338,13 +341,12 @@ int Amesos_Superlu::Factor(){
   return 0;
 }   
 
+int Amesos_Superlu::SetParameters( const Teuchos::ParameterList &ParameterList ) {
 
-int Amesos_Superlu::ReadParameterList() {
+  if( &ParameterList == 0 ) return 0;
 
-  data_->refactor_option = SLU::SamePattern ; 
-
-  if (ParameterList_->isSublist("Superlu") ) {
-    Teuchos::ParameterList SuperluParams = ParameterList_->sublist("Superlu") ;
+  if (ParameterList.isSublist("Superlu") ) {
+    Teuchos::ParameterList SuperluParams = ParameterList.sublist("Superlu") ;
   }  
   return 0;
 }

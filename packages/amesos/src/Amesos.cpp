@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Amesos_config.h"
-#include "Amesos_Factory.h"
+#include "Amesos.h"
 #include "Amesos_Klu.h"
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
@@ -49,63 +49,66 @@
 #endif
 #include "Epetra_Object.h"
 
+bool verbose = false ; 
 
-Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType, 
-			     const Epetra_LinearProblem& LinearProblem, 
-			     Teuchos::ParameterList &ParameterList ) {
 
-  switch( ClassType ) {
-  case AMESOS_MUMPS:
+
+Amesos_BaseSolver* Amesos::Create( char* ClassType, 
+				   const Epetra_LinearProblem& LinearProblem ) { 
+
+  string CT = ClassType; 
+
+  if ( CT == "Amesos_Mumps" ) { 
 #ifdef HAVE_AMESOS_MUMPS
-    return new Amesos_Mumps(LinearProblem,ParameterList); 
+    return new Amesos_Mumps(LinearProblem); 
 #else
-    cerr << "Amesos_Mumps is not implemented" << endl ; 
+    if ( verbose ) cerr << "Amesos_Mumps is not implemented" << endl ; 
     return 0 ; 
 #endif
-  case AMESOS_SCALAPACK:
+  } else   if ( CT == "Amesos_Scalapack" ) { 
 #ifdef HAVE_AMESOS_SCALAPACK
-    return new Amesos_Scalapack(LinearProblem,ParameterList); 
+    return new Amesos_Scalapack(LinearProblem); 
 #else
-    cerr << "Amesos_Scalapack is not implemented" << endl ; 
+    if ( verbose ) cerr << "Amesos_Scalapack is not implemented" << endl ; 
     return 0 ; 
 #endif
-  case AMESOS_UMFPACK:
+  } else   if ( CT == "Amesos_Umfpack" ) { 
 #ifdef HAVE_AMESOS_UMFPACK
-    return new Amesos_Umfpack(LinearProblem,ParameterList); 
+    return new Amesos_Umfpack(LinearProblem); 
 #else
-    cerr << "Amesos_Umfpack is not implemented" << endl ; 
+    if ( verbose ) cerr << "Amesos_Umfpack is not implemented" << endl ; 
     return 0 ; 
 #endif
-  case AMESOS_DSCPACK:
+  } else   if ( CT == "Amesos_Dscpack" ) { 
 #ifdef HAVE_AMESOS_DSCPACK
-    return new Amesos_Dscpack(LinearProblem,ParameterList); 
+    return new Amesos_Dscpack(LinearProblem); 
 #else
-    cerr << "Amesos_Dscpack is not implemented" << endl ; 
+    if ( verbose ) cerr << "Amesos_Dscpack is not implemented" << endl ; 
     return 0 ; 
 #endif
-  case AMESOS_KLU:
+  } else   if ( CT == "Amesos_Klu" ) { 
 #ifdef HAVE_AMESOS_KLU
-    return new Amesos_Klu(LinearProblem,ParameterList); 
+    return new Amesos_Klu(LinearProblem); 
 #else
-    cerr << "Amesos_Klu is not implemented" << endl ; 
+    if ( verbose ) cerr << "Amesos_Klu is not implemented" << endl ; 
     return 0 ; 
 #endif
-  case AMESOS_SUPERLUDIST:
+  } else   if ( CT == "Amesos_Superludist" ) { 
 #ifdef HAVE_AMESOS_SUPERLUDIST
-    return new Amesos_Superludist(LinearProblem,ParameterList); 
+    return new Amesos_Superludist(LinearProblem); 
 #else
-    cerr << "Amesos_Superludist is not implemented" << endl ; 
+    if ( verbose ) cerr << "Amesos_Superludist is not implemented" << endl ; 
     return 0 ; 
 #endif
-  case AMESOS_SUPERLU:
+  } else   if ( CT == "Amesos_Superlu" ) { 
 #ifdef HAVE_AMESOS_SUPERLU
-    return new Amesos_Superlu(LinearProblem,ParameterList); 
+    return new Amesos_Superlu(LinearProblem); 
 #else
-    cerr << "Amesos_Superlu is not implemented" << endl ; 
+    if ( verbose ) cerr << "Amesos_Superlu is not implemented" << endl ; 
     return 0 ; 
 #endif
-  default:
-    cerr << "Unknown class type" << endl ; 
+  } else {
+    if ( verbose ) cerr << "Unknown class type:" << ClassType << endl ; 
     return 0 ; 
   }
 }

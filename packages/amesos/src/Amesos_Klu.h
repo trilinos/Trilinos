@@ -107,7 +107,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Klu(const Epetra_LinearProblem& LinearProblem, const Teuchos::ParameterList &ParameterList );
+  Amesos_Klu(const Epetra_LinearProblem& LinearProblem );
 
   //! Amesos_Klu Destructor.
   /*! Completely deletes an Amesos_Klu object.  
@@ -201,9 +201,6 @@ public:
   //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
-  //! Get a pointer to the ParameterList.
-  const Teuchos::ParameterList *GetParameterList() const { return(ParameterList_); };
-
   //! Returns true if KLU can handle this matrix shape 
   /*! Returns true if the matrix shape is one that KLU can
     handle. KLU only works with square matrices.  
@@ -233,12 +230,24 @@ public:
   //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
-  //! Reads the parameter list and updates internal variables. 
-  /*!
-    ReadParameterList is called by SymbolicFactorization.  Hence, few codes 
-    will need to make an explicit call to ReadParameterList.
+  //!  Updates internal variables. 
+  /*!  
+      <br \>Preconditions:<ul>
+      <li>None.</li>
+      </ul>
+
+      <br \>Postconditions:<ul> 
+      <li>Internal variables controlling the factorization and solve will
+      be updated and take effect on all subsequent calls to NumericFactorization() 
+      and Solve().</li>
+      <li>All parameters whose value are to differ from the default values must 
+be included in ParameterList.  Parameters not specified in ParameterList 
+revert to their default values.
+      </ul>
+
+    \return Integer error code, set to 0 if successful. 
    */
-  int ReadParameterList() ;
+  int SetParameters( const Teuchos::ParameterList &ParameterList )  ;
   //@}
 
  private:  
@@ -298,11 +307,6 @@ public:
   */
   int PerformNumericFactorization(); 
 
-  const Teuchos::ParameterList* getList() const
-  {
-    return (const Teuchos::ParameterList *) &ParameterList_;
-  }
-  
  protected:
 
     int *Lp, *Li, *Up, *Ui, *P ;	
@@ -345,7 +349,6 @@ public:
 
   bool UseTranspose_;      //  Set by 
   const Epetra_LinearProblem * Problem_;
-  const Teuchos::ParameterList * ParameterList_ ; 
 
 };  // End of  class Amesos_Klu  
 #endif /* _AMESOS_KLU_H_ */

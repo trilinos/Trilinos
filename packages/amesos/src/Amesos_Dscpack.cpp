@@ -48,13 +48,15 @@ At present, either USE_LOCAL or USE_STL_SORT is required
 #endif
 
   //=============================================================================
-  Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob, const Teuchos::ParameterList &ParameterList ) : DscGraph_(0), SymbolicFactorizationOK_(false), NumericFactorizationOK_(false)  {
+  Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) : 
+    DscGraph_(0), 
+    SymbolicFactorizationOK_(false), 
+    NumericFactorizationOK_(false)  {
 
 
   Problem_ = &prob ; 
   A_and_LU_built = false ; 
   FirstCallToSolve_ = true ; 
-  ParameterList_ = &ParameterList ; 
   MyDSCObject = DSC_Begin() ; 
 }
 
@@ -70,9 +72,13 @@ Amesos_Dscpack::~Amesos_Dscpack(void) {
   delete DscGraph_;  // This might not exist, is it dangerous to delete it?
 }
 
-int Amesos_Dscpack::ReadParameterList() {
-  if (ParameterList_->isSublist("Dscpack") ) {
-    Teuchos::ParameterList DscpackParams = ParameterList_->sublist("Dscpack") ;
+int Amesos_Dscpack::SetParameters( const Teuchos::ParameterList &ParameterList ) 
+{
+
+  if( (int) &ParameterList == 0 ) return 0;
+
+  if (ParameterList.isSublist("Dscpack") ) {
+    Teuchos::ParameterList DscpackParams = ParameterList.sublist("Dscpack") ;
   }  
   return 0;
 }

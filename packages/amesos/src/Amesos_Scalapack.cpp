@@ -37,16 +37,17 @@
 
 
   //=============================================================================
-  Amesos_Scalapack::Amesos_Scalapack(const Epetra_LinearProblem &prob, 
-				 const Teuchos::ParameterList &ParameterList ) :  
+  Amesos_Scalapack::Amesos_Scalapack(const Epetra_LinearProblem &prob ):
     ScaLAPACK1DMap_(0), 
     ScaLAPACK1DMatrix_(0), 
     SerialMap_(0),
     ictxt_(-1313),
     UseTranspose_(false) {
-
-  Problem_ = &prob ; 
-  ParameterList_ = &ParameterList ; 
+    
+    
+    Problem_ = &prob ; 
+    Teuchos::ParameterList ParamList ;
+    SetParameters( ParamList ) ; 
 }
 
 //=============================================================================
@@ -270,18 +271,20 @@ int Amesos_Scalapack::ConvertToScalapack(){
 }   
 
 
-int Amesos_Scalapack::ReadParameterList() {
-
+int Amesos_Scalapack::SetParameters( const Teuchos::ParameterList &ParameterList ) {
   //
   //  We have to set these to their defaults here because user codes 
   //  are not guaranteed to have a "Scalapack" parameter list.
   //
   MaxProcesses_ = - 1; 
-  
-  if (ParameterList_->isSublist("Scalapack") ) {
-    Teuchos::ParameterList ScalapackParams = ParameterList_->sublist("Scalapack") ;
+
+  if( &ParameterList == 0 ) return 0;
+
+  if (ParameterList.isSublist("Scalapack") ) {
+    Teuchos::ParameterList ScalapackParams = ParameterList.sublist("Scalapack") ;
     MaxProcesses_ = ScalapackParams.get("MaxProcesses",MaxProcesses_);
   }  
+  
   return 0;
 }
 
@@ -325,8 +328,6 @@ bool Amesos_Scalapack::MatrixShapeOK() const {
 
 
 int Amesos_Scalapack::SymbolicFactorization() {
-
-  ReadParameterList();
 
   return 0;
 }

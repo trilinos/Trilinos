@@ -61,9 +61,7 @@ int Superludist_NumProcRows( int NumProcs ) {
 }
 
   //=============================================================================
-  Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob, 
-					 Teuchos::ParameterList &ParameterList ) :  
-
+Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob ) :
     GridCreated_(0), 
     FactorizationDone_(0), 
     NumRows_(0), 
@@ -92,7 +90,8 @@ int Superludist_NumProcRows( int NumProcs ) {
 {
 
   Problem_ = &prob ; 
-  ParameterList_ = &ParameterList ; 
+  Teuchos::ParameterList ParamList ;
+  SetParameters( ParamList ) ; 
 }
 
 //=============================================================================
@@ -126,7 +125,7 @@ Amesos_Superludist::~Amesos_Superludist(void) {
 }
 
 //
-//  ReadParameterList
+//  SetParameters
 //
 //    Preconditions:
 //       None
@@ -135,8 +134,13 @@ Amesos_Superludist::~Amesos_Superludist(void) {
 //       MaxProcesses_, Redistribute_, AddZeroToDiag_, FactOption_ and 
 //       ReuseSymbolic_ set according to ParameterList_ values.
 //
-int Amesos_Superludist::ReadParameterList() {
+int Amesos_Superludist::SetParameters( const Teuchos::ParameterList &ParameterList ) {
 
+  if( (int) &ParameterList == 0 ) return 0;
+
+  if (ParameterList.isSublist("Superludist") ) {
+    Teuchos::ParameterList SuperludistParams = ParameterList.sublist("Superludist") ;
+  }  
   //
   //  We have to set these to their defaults here because user codes 
   //  are not guaranteed to have a "Superludist" parameter list.
@@ -252,7 +256,6 @@ int Amesos_Superludist::ReadParameterList() {
 //  RedistributeA
 //
 //    Preconditions:
-//       ReadParameters() 
 //
 //    Postconditions:
 //       nprow_, npcol_
@@ -356,7 +359,6 @@ int Amesos_Superludist::RedistributeA( ) {
 //  Factor
 //
 //    Preconditions:
-//       ReadParameters() 
 //       Problem_
 //         ->GetOperator() must be a RowMatrix else return -1
 //         If Redistribute_ is not set, ->GetOperator()->RowMatrixRowMap() 
@@ -601,8 +603,8 @@ int Amesos_Superludist::Factor( ) {
 //         the same number of columns that it did on the previous call to Factor()
 //         and returns -4 if a discrepancy is found.  However, that check does not
 //         guarantee that no change was made to the non-zero structure of the matrix.
-//       No call to ReadParameters should be made between the call to Factor()
-//         and the call to Refactor().  If the user does not call ReadParameters, 
+//       No call to SetParameters should be made between the call to Factor()
+//         and the call to Refactor().  If the user does not call SetParameters, 
 //         as they need never do, they are safe on this.
 //
 //     Postconditions:
@@ -702,7 +704,6 @@ bool Amesos_Superludist::MatrixShapeOK() const {
 
 int Amesos_Superludist::SymbolicFactorization() {
 
-  EPETRA_CHK_ERR(ReadParameterList());
   FactorizationOK_ = false ; 
 
   return 0;

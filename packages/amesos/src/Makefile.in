@@ -127,7 +127,7 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/DscpackOO.cpp \
 	$(srcdir)/Amesos_Umfpack.cpp $(srcdir)/Amesos_Scalapack.cpp \
 	$(srcdir)/Amesos_Mumps.cpp \
 	$(srcdir)/Amesos_EpetraBaseSolver.cpp \
-	$(srcdir)/EpetraExt_Redistor.cpp $(srcdir)/Amesos_Factory.cpp \
+	$(srcdir)/EpetraExt_Redistor.cpp $(srcdir)/Amesos.cpp \
 	$(srcdir)/Amesos_Superlu.cpp $(srcdir)/Amesos_Superludist.cpp \
 	$(srcdir)/SuperludistOO.cpp $(srcdir)/Superludist2_OO.cpp \
 	$(srcdir)/Epetra_SLU.cpp $(srcdir)/Epetra_CrsKundertSparse.cpp \
@@ -159,7 +159,7 @@ am__objects_1 =
 @HAVE_AMESOS_MUMPS_TRUE@am__objects_6 = Amesos_Mumps.$(OBJEXT) \
 @HAVE_AMESOS_MUMPS_TRUE@	Amesos_EpetraBaseSolver.$(OBJEXT) \
 @HAVE_AMESOS_MUMPS_TRUE@	EpetraExt_Redistor.$(OBJEXT)
-am__objects_7 = Amesos_Factory.$(OBJEXT)
+am__objects_7 = Amesos.$(OBJEXT)
 @HAVE_AMESOS_SUPERLU_TRUE@am__objects_8 = Amesos_Superlu.$(OBJEXT)
 @HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_9 =  \
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	Amesos_Superludist.$(OBJEXT)
@@ -184,9 +184,9 @@ libamesos_a_OBJECTS = $(am_libamesos_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Amesos_Dscpack.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Amesos.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Amesos_Dscpack.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_EpetraBaseSolver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Amesos_Factory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Klu.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Mumps.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Scalapack.Po \
@@ -234,12 +234,12 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/Amesos_Umfpack.h $(srcdir)/Amesos_Scalapack.h \
 	$(srcdir)/Amesos_Klu.h $(srcdir)/Amesos_Mumps.h \
 	$(srcdir)/Amesos_EpetraBaseSolver.h \
-	$(srcdir)/EpetraExt_Redistor.h $(srcdir)/Amesos_Factory.h \
+	$(srcdir)/EpetraExt_Redistor.h $(srcdir)/Amesos.h \
 	$(srcdir)/Amesos_Superlu.h $(srcdir)/Amesos_Superludist.h \
 	$(srcdir)/SuperludistOO.h $(srcdir)/Superludist2_OO.h \
 	$(srcdir)/Epetra_SLU.h $(srcdir)/Epetra_CrsKundertSparse.h \
 	Amesos_BaseSolver.h Amesos_ConfigDefs.h \
-	$(srcdir)/AmesosClassType.h $(srcdir)/Amesos_BaseSolver.h
+	$(srcdir)/Amesos_BaseSolver.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -555,10 +555,10 @@ COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 
 FACTORY_H = \
-	$(srcdir)/Amesos_Factory.h
+	$(srcdir)/Amesos.h
 
 FACTORY = \
-	$(srcdir)/Amesos_Factory.cpp
+	$(srcdir)/Amesos.cpp
 
 @HAVE_AMESOS_KUNDERT_FALSE@KUNDERT_CPPFLAGS = 
 
@@ -602,7 +602,6 @@ AMESOS_H = \
 	$(SLUSERIAL_H) \
 	$(KUNDERT_H) \
 	$(COMP_H) \
-	$(srcdir)/AmesosClassType.h \
 	$(srcdir)/Amesos_BaseSolver.h
 
 libamesos_a_SOURCES = \
@@ -762,9 +761,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Dscpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_EpetraBaseSolver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Klu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Mumps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Scalapack.Po@am__quote@
@@ -1313,21 +1312,21 @@ EpetraExt_Redistor.obj: $(srcdir)/EpetraExt_Redistor.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_Redistor.obj `if test -f '$(srcdir)/EpetraExt_Redistor.cpp'; then $(CYGPATH_W) '$(srcdir)/EpetraExt_Redistor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/EpetraExt_Redistor.cpp'; fi`
 
-Amesos_Factory.o: $(srcdir)/Amesos_Factory.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Factory.o -MD -MP -MF "$(DEPDIR)/Amesos_Factory.Tpo" -c -o Amesos_Factory.o `test -f '$(srcdir)/Amesos_Factory.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Factory.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Factory.Tpo" "$(DEPDIR)/Amesos_Factory.Po"; else rm -f "$(DEPDIR)/Amesos_Factory.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Factory.cpp' object='Amesos_Factory.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Factory.Po' tmpdepfile='$(DEPDIR)/Amesos_Factory.TPo' @AMDEPBACKSLASH@
+Amesos.o: $(srcdir)/Amesos.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos.o -MD -MP -MF "$(DEPDIR)/Amesos.Tpo" -c -o Amesos.o `test -f '$(srcdir)/Amesos.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos.Tpo" "$(DEPDIR)/Amesos.Po"; else rm -f "$(DEPDIR)/Amesos.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos.cpp' object='Amesos.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos.Po' tmpdepfile='$(DEPDIR)/Amesos.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Factory.o `test -f '$(srcdir)/Amesos_Factory.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Factory.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos.o `test -f '$(srcdir)/Amesos.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos.cpp
 
-Amesos_Factory.obj: $(srcdir)/Amesos_Factory.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Factory.obj -MD -MP -MF "$(DEPDIR)/Amesos_Factory.Tpo" -c -o Amesos_Factory.obj `if test -f '$(srcdir)/Amesos_Factory.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Factory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Factory.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos_Factory.Tpo" "$(DEPDIR)/Amesos_Factory.Po"; else rm -f "$(DEPDIR)/Amesos_Factory.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_Factory.cpp' object='Amesos_Factory.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Factory.Po' tmpdepfile='$(DEPDIR)/Amesos_Factory.TPo' @AMDEPBACKSLASH@
+Amesos.obj: $(srcdir)/Amesos.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos.obj -MD -MP -MF "$(DEPDIR)/Amesos.Tpo" -c -o Amesos.obj `if test -f '$(srcdir)/Amesos.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Amesos.Tpo" "$(DEPDIR)/Amesos.Po"; else rm -f "$(DEPDIR)/Amesos.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos.cpp' object='Amesos.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos.Po' tmpdepfile='$(DEPDIR)/Amesos.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Factory.obj `if test -f '$(srcdir)/Amesos_Factory.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Factory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Factory.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos.obj `if test -f '$(srcdir)/Amesos.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos.cpp'; fi`
 
 Amesos_Superlu.o: $(srcdir)/Amesos_Superlu.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Amesos_Superlu.o -MD -MP -MF "$(DEPDIR)/Amesos_Superlu.Tpo" -c -o Amesos_Superlu.o `test -f '$(srcdir)/Amesos_Superlu.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Superlu.cpp; \

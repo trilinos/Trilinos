@@ -73,7 +73,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Superludist(const Epetra_LinearProblem& LinearProblem, Teuchos::ParameterList &ParameterList );
+  Amesos_Superludist(const Epetra_LinearProblem& LinearProblem);
 
   //! Amesos_Superludist Destructor.
   /*! Completely deletes an Amesos_Superludist object.  
@@ -182,9 +182,6 @@ public:
   //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
-  //! Get a pointer to the ParameterList.
-  const Teuchos::ParameterList *GetParameterList() const { return(ParameterList_); };
-
   //! Returns true if SUPERLUDIST can handle this matrix shape 
   /*! Returns true if the matrix shape is one that SUPERLUDIST can
     handle. SUPERLUDIST only works with square matrices.  
@@ -198,11 +195,21 @@ public:
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
   //@}
 
-  //! Reads the parameter list and updates internal variables. 
-  /*!
-    ReadParameterList is called by SymbolicFactorization.  Hence, few codes 
-    will need to make an explicit call to ReadParameterList.  DEPRECATED.
-    This routine will soon be renamed SetParameters()
+  //!  Updates internal variables. 
+  /*!  
+      <br \>Preconditions:<ul>
+      <li>None.</li>
+      </ul>
+
+      <br \>Postconditions:<ul> 
+      <li>Internal variables controlling the factorization and solve will
+      be updated and take effect on all subsequent calls to NumericFactorization() 
+      and Solve().</li>
+      <li>All parameters whose value are to differ from the default values must 
+be included in ParameterList.  Parameters not specified in ParameterList 
+revert to their default values.
+      </ul>
+
     Amesos_Superludist accepts the following parameters:
     <ul>
     <li>"AddZeroToDiag" - boolean:false - Adds zero to the diagonal, only active if Redistribute is true 
@@ -212,12 +219,8 @@ public:
 
 
    */
-  int ReadParameterList() ;
+  int SetParameters( const Teuchos::ParameterList &ParameterList ) = 0 ;
 
-  const Teuchos::ParameterList* getList() const
-  {
-    return (const Teuchos::ParameterList *) &ParameterList_;
-  }
 
   //! Print various information about the parameters used by Superludist.
   int PrintStatistics();
@@ -313,7 +316,6 @@ public:
 
   bool UseTranspose_;      // Set by SetUseTranpose() 
   const Epetra_LinearProblem * Problem_;
-  Teuchos::ParameterList * ParameterList_ ; 
   bool PrintStatistics_;            // print some information in the destruction phase
                                     // (defaulted to false)
   

@@ -68,7 +68,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Umfpack(const Epetra_LinearProblem& LinearProblem, const Teuchos::ParameterList &ParameterList );
+  Amesos_Umfpack( const Epetra_LinearProblem& LinearProblem );
 
   //! Amesos_Umfpack Destructor.
   /*! Completely deletes an Amesos_Umfpack object.  
@@ -162,9 +162,6 @@ public:
   //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
-  //! Get a pointer to the ParameterList.
-  const Teuchos::ParameterList *GetParameterList() const { return(ParameterList_); };
-
   //! Returns true if UMFPACK can handle this matrix shape 
   /*! Returns true if the matrix shape is one that UMFPACK can
     handle. UMFPACK only works with square matrices.  
@@ -187,12 +184,24 @@ public:
    */
   double GetRcond() const {return(Rcond_);}; 
 
-  //! Reads the parameter list and updates internal variables. 
-  /*!
-    ReadParameterList is called by SymbolicFactorization.  Hence, few codes 
-    will need to make an explicit call to ReadParameterList.
+  //!  Updates internal variables. 
+  /*!  
+      <br \>Preconditions:<ul>
+      <li>None.</li>
+      </ul>
+
+      <br \>Postconditions:<ul> 
+      <li>Internal variables controlling the factorization and solve will
+      be updated and take effect on all subsequent calls to NumericFactorization() 
+      and Solve().</li>
+      <li>All parameters whose value are to differ from the default values must 
+be included in ParameterList.  Parameters not specified in ParameterList 
+revert to their default values.
+      </ul>
+
+    \return Integer error code, set to 0 if successful. 
    */
-  int ReadParameterList() ;
+  int SetParameters( const Teuchos::ParameterList &ParameterList ) ;
   //@}
 
  private:  
@@ -252,11 +261,6 @@ public:
   */
   int PerformNumericFactorization(); 
 
-  const Teuchos::ParameterList* getList() const
-  {
-    return (const Teuchos::ParameterList *) &ParameterList_;
-  }
-  
  protected:
 
   bool SymbolicFactorizationOK_;   // True if SymbolicFactorization has been done
@@ -289,7 +293,6 @@ public:
 
   bool UseTranspose_;      //  Set by SetUseTranspose
   const Epetra_LinearProblem * Problem_;
-  const Teuchos::ParameterList * ParameterList_ ; 
 
   double Rcond_;  // Reciprocal condition number estimate 
 };  // End of  class Amesos_Umfpack  

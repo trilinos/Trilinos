@@ -42,12 +42,10 @@
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Amesos_EpetraBaseSolver.h"
-#include "Teuchos_ParameterList.hpp"
 
 //=============================================================================
 
-Amesos_EpetraBaseSolver::Amesos_EpetraBaseSolver(const Epetra_LinearProblem & Problem,
-					         const Teuchos::ParameterList &ParameterList) :
+Amesos_EpetraBaseSolver::Amesos_EpetraBaseSolver(const Epetra_LinearProblem & Problem):
   RowIndices_(0),
   ColIndices_(0),
   Values_(0),
@@ -70,7 +68,6 @@ Amesos_EpetraBaseSolver::Amesos_EpetraBaseSolver(const Epetra_LinearProblem & Pr
   ConvTime_(0.0),
   MatrixProperty_(AMESOS_UNSYM)
 {
-  ParameterList_ = const_cast<Teuchos::ParameterList *>(& ParameterList);
 }
  
 //=============================================================================

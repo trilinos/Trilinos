@@ -51,21 +51,21 @@ extern "C" {
 #include <algorithm>
 #endif
 
-  //=============================================================================
-  Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob, 
-				 const Teuchos::ParameterList &ParameterList ) :  
-    Rcond_(0.0), 
-    Symbolic(0),
-    Numeric(0),
-    SerialCrsMatrixA_(0), 
-    SerialMap_(0), 
-    SerialMatrix_(0), 
-    SymbolicFactorizationOK_(false), 
-    NumericFactorizationOK_(false)  {
-
-
+//=============================================================================
+Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
+  Rcond_(0.0), 
+  Symbolic(0),
+  Numeric(0),
+  SerialCrsMatrixA_(0), 
+  SerialMap_(0), 
+  SerialMatrix_(0), 
+  SymbolicFactorizationOK_(false), 
+  NumericFactorizationOK_(false)  {
+  
+  
   Problem_ = &prob ; 
-  ParameterList_ = &ParameterList ; 
+  Teuchos::ParameterList ParamList ;
+  SetParameters( ParamList ) ; 
 }
 
 //=============================================================================
@@ -161,9 +161,12 @@ int Amesos_Umfpack::ConvertToUmfpackCRS(){
 }   
 
 
-int Amesos_Umfpack::ReadParameterList() {
-  if (ParameterList_->isSublist("Umfpack") ) {
-    Teuchos::ParameterList UmfpackParams = ParameterList_->sublist("Umfpack") ;
+int Amesos_Umfpack::SetParameters( const Teuchos::ParameterList &ParameterList ) {
+
+  if(  (int) &ParameterList == 0 ) return 0;
+
+  if (ParameterList.isSublist("Umfpack") ) {
+    Teuchos::ParameterList UmfpackParams = ParameterList.sublist("Umfpack") ;
   }  
   return 0;
 }

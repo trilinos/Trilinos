@@ -101,7 +101,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Superlu(const Epetra_LinearProblem& LinearProblem, const Teuchos::ParameterList &ParameterList );
+  Amesos_Superlu(const Epetra_LinearProblem& LinearProblem );
 
   //! Amesos_Superlu Destructor.
   /*! Completely deletes an Amesos_Superlu object.  
@@ -195,9 +195,6 @@ public:
   //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
-  //! Get a pointer to the ParameterList.
-  const Teuchos::ParameterList *GetParameterList() const { return(ParameterList_); };
-
   //! Returns true if SUPERLU can handle this matrix shape 
   /*! Returns true if the matrix shape is one that SUPERLU can
     handle. SUPERLU only works with square matrices.  
@@ -227,8 +224,21 @@ public:
   //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
-  //! Reads the parameter list and updates internal variables. 
-  /*!
+  //!  Updates internal variables. 
+  /*!  
+      <br \>Preconditions:<ul>
+      <li>None.</li>
+      </ul>
+
+      <br \>Postconditions:<ul> 
+      <li>Internal variables controlling the factorization and solve will
+      be updated and take effect on all subsequent calls to NumericFactorization() 
+      and Solve().</li>
+      <li>All parameters whose value are to differ from the default values must 
+be included in ParameterList.  Parameters not specified in ParameterList 
+revert to their default values.
+      </ul>
+
     Amesos_Superlu accepts the following parameters:
     <ul>
       <li>"Verbose" - boolean:false - If true prints out some debug information
@@ -246,16 +256,11 @@ public:
     </ul>
 
     
-
+    \return Integer error code, set to 0 if successful. 
 
    */
-  int ReadParameterList() ;
+  int SetParameters( const Teuchos::ParameterList &ParameterList )  ;
 
-  const Teuchos::ParameterList* getList() const
-  {
-    return (const Teuchos::ParameterList *) &ParameterList_;
-  }
-  
   //@}
 
  private:  
@@ -334,7 +339,6 @@ public:
                                          //  IsLocal==1 - Points to the original matix 
                                          //  IsLocal==0 - Points to SerialCrsMatrixA
   const Epetra_LinearProblem * Problem_;
-  const Teuchos::ParameterList * ParameterList_ ; 
 
 #ifdef NOVEC
   int* ColIndicesV_;

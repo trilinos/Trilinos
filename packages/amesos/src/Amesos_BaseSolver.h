@@ -102,8 +102,7 @@ class Epetra_Comm;
 
     <H2>Constructor requirements</H2>
     Every Amesos_SolverName class should accept an
-    Epetra_LinearProblem and an Teuchos::ParameterList in the primary
-    constructor.
+    Epetra_LinearProblem 
 
     <H2>Mathematical methods</H2> Three mathematical methods are
     defined in the base class Amesos_BaseSolver:
@@ -139,8 +138,8 @@ class Epetra_Comm;
     <H2>Named Parameters</H2>
     
 
-    Parameters can be changed or added at any time by adding to or
-    changing the parameter list. 
+    Parameters can be changed or added at any time by calling 
+    SetParameters(ParamList) with the new parameters specified in ParamList.
 
 
     It is left to the user to be sure that changes made to the
@@ -239,24 +238,24 @@ class Amesos_BaseSolver {
            this implementation does not support transpose.
   */
     virtual int SetUseTranspose(bool UseTranspose) = 0;
-  //! Reads the parameter list and updates internal variables. 
-  /*!  ReadParameterList is called by SymbolicFactorization().
-    Changing parameter values after the call to
-    SymbolicFactorization() may lead to implementation dependent
-    results.  Hence, few codes will need to make an explicit call to
-    ReadParameterList.
-
+  //!  Updates internal variables. 
+  /*!  
       <br \>Preconditions:<ul>
       <li>None.</li>
+      </ul>
 
       <br \>Postconditions:<ul> 
       <li>Internal variables controlling the factorization and solve will
       be updated and take effect on all subseuent calls to NumericFactorization() 
-      and Solve().
+      and Solve().</li>
+      <li>All parameters whose value are to differ from the default values must 
+be included in ParameterList.  Parameters not specified in ParameterList 
+revert to their default values.
+      </ul>
 
     \return Integer error code, set to 0 if successful. 
    */
-    virtual int ReadParameterList() = 0 ;
+    virtual int SetParameters( const Teuchos::ParameterList &ParameterList ) = 0 ;
 
   //@}
   
@@ -340,9 +339,6 @@ class Amesos_BaseSolver {
 
     //! Returns the Epetra_LinearProblem
     virtual const Epetra_LinearProblem* GetProblem() const = 0;
-
-    //! Returns the parameter list
-    //    virtual const Teuchos::ParameterList* getList() const = 0;
 
 #if 0
     //! Returns a character string describing the operator

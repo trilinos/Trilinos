@@ -86,7 +86,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Scalapack(const Epetra_LinearProblem& LinearProblem, const Teuchos::ParameterList &ParameterList );
+  Amesos_Scalapack( const Epetra_LinearProblem& LinearProblem );
 
   //! Amesos_Scalapack Destructor.
   /*! Completely deletes an Amesos_Scalapack object.  
@@ -170,9 +170,6 @@ heuristic for the number of processes to use is overridden, nb >= 200).  assert(
   //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
-  //! Get a pointer to the ParameterList.
-  const Teuchos::ParameterList *GetParameterList() const { return(ParameterList_); };
-
   //! Returns true if SCALAPACK can handle this matrix shape 
   /*! Returns true if the matrix shape is one that SCALAPACK can
     handle. SCALAPACK only works with square matrices.  
@@ -200,18 +197,25 @@ heuristic for the number of processes to use is overridden, nb >= 200).  assert(
   //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
-  //! Reads the parameter list and updates internal variables. 
-  /*!
-    ReadParameterList is called by SymbolicFactorization.  Hence, few codes 
-    will need to make an explicit call to ReadParameterList.
-   */
-  int ReadParameterList() ;
+  //!  Updates internal variables. 
+  /*!  
+      <br \>Preconditions:<ul>
+      <li>None.</li>
+      </ul>
 
-  const Teuchos::ParameterList* getList() const
-  {
-    return (const Teuchos::ParameterList *) &ParameterList_;
-  }
-  
+      <br \>Postconditions:<ul> 
+      <li>Internal variables controlling the factorization and solve will
+      be updated and take effect on all subsequent calls to NumericFactorization() 
+      and Solve().</li>
+      <li>All parameters whose value are to differ from the default values must 
+be included in ParameterList.  Parameters not specified in ParameterList 
+revert to their default values.
+      </ul>
+
+    \return Integer error code, set to 0 if successful. 
+   */
+  int SetParameters( const Teuchos::ParameterList &ParameterList ) ;
+
   //@}
 
  private:  
@@ -219,7 +223,7 @@ heuristic for the number of processes to use is overridden, nb >= 200).  assert(
   RedistributeA - Convert matrix to a dense ScaLAPACK matrix
     Preconditions:
       Problem_ must be set 
-      ReadParameterList() 
+      SetParameters() 
       ScaLAPACK1DMap and ScaLAPACK1DMatrix must either be 0 or be pointers to 
         appropriatly allocate objects.  If they are non-zero, those objects
 	will be deleted and recreated.  
@@ -283,7 +287,6 @@ heuristic for the number of processes to use is overridden, nb >= 200).  assert(
 
   bool UseTranspose_;     
   const Epetra_LinearProblem * Problem_;
-  const Teuchos::ParameterList * ParameterList_ ; 
 
 };  // End of  class Amesos_Scalapack  
 #endif /* _AMESOS_SCALAPACK_H_ */
