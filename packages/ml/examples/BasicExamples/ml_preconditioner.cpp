@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 #endif
 
   int WhichArguments = 0;
-  if (argc > 0)
+  if (argc > 1)
     if (strcmp(argv[1],"set1") == 0)
       WhichArguments = 1;
   // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
