@@ -3,11 +3,12 @@ function f90LB_Set_Geom_Fn0s(lb,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Geom_Fn0s
 type(LB_Struct) INTENT_IN lb
 interface
-  subroutine fn_ptr(num_gid_entries, num_lid_entries, global_id, &
+  subroutine fn_ptr(dummy, num_gid_entries, num_lid_entries, global_id, &
     local_id, geom_vec, ierr)
   use zoltan_types
+  integer(LB_INT), intent(in)  :: dummy(*)
   integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: global_id, local_id
   real(LB_DOUBLE), intent(out) :: geom_vec(*)
   integer(LB_INT), intent(out) :: ierr
   end subroutine fn_ptr
@@ -35,7 +36,7 @@ interface
   use zoltan_types
   integer(LB_INT) INTENT_IN data(*)
   integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: global_id, local_id
   real(LB_DOUBLE), intent(out) :: geom_vec(*)
   integer(LB_INT), intent(out) :: ierr
   end subroutine fn_ptr
@@ -64,7 +65,7 @@ interface
   use zoltan_types
   real(LB_FLOAT) INTENT_IN data(*)
   integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: global_id, local_id
   real(LB_DOUBLE), intent(out) :: geom_vec(*)
   integer(LB_INT), intent(out) :: ierr
   end subroutine fn_ptr
@@ -93,7 +94,7 @@ interface
   use zoltan_types
   real(LB_DOUBLE) INTENT_IN data(*)
   integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: global_id, local_id
   real(LB_DOUBLE), intent(out) :: geom_vec(*)
   integer(LB_INT), intent(out) :: ierr
   end subroutine fn_ptr
@@ -123,7 +124,7 @@ interface
   use lb_user_const
   type(LB_User_Data_1) INTENT_IN data
   integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: global_id, local_id
   real(LB_DOUBLE), intent(out) :: geom_vec(*)
   integer(LB_INT), intent(out) :: ierr
   end subroutine fn_ptr
@@ -153,7 +154,7 @@ interface
   use lb_user_const
   type(LB_User_Data_2) INTENT_IN data
   integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: global_id, local_id
   real(LB_DOUBLE), intent(out) :: geom_vec(*)
   integer(LB_INT), intent(out) :: ierr
   end subroutine fn_ptr
@@ -183,7 +184,7 @@ interface
   use lb_user_const
   type(LB_User_Data_3) INTENT_IN data
   integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: global_id, local_id
   real(LB_DOUBLE), intent(out) :: geom_vec(*)
   integer(LB_INT), intent(out) :: ierr
   end subroutine fn_ptr
@@ -213,7 +214,7 @@ interface
   use lb_user_const
   type(LB_User_Data_4) INTENT_IN data
   integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: global_id, local_id
   real(LB_DOUBLE), intent(out) :: geom_vec(*)
   integer(LB_INT), intent(out) :: ierr
   end subroutine fn_ptr

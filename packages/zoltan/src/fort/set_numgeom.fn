@@ -3,9 +3,10 @@ function f90LB_Set_Num_Geom_Fn0f(lb,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Num_Geom_Fn0f
 type(LB_Struct) INTENT_IN lb
 interface
-  function fn_ptr(ierr)
+  function fn_ptr(dummy, ierr)
   use zoltan_types
   integer(LB_INT) :: fn_ptr
+  integer(LB_INT), intent(in)  :: dummy(*)
   integer(LB_INT), intent(out) :: ierr
   end function fn_ptr
 end interface

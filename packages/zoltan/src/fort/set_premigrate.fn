@@ -3,10 +3,11 @@ function f90LB_Set_Pre_Migrate_Fn0s(lb,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Pre_Migrate_Fn0s
 type(LB_Struct) INTENT_IN lb
 interface
-  subroutine fn_ptr(num_gid_entries, num_lid_entries, &
+  subroutine fn_ptr(dummy, num_gid_entries, num_lid_entries, &
     num_import, imp_gids, imp_lids, imp_procs, &
     num_export, exp_gids, exp_lids, exp_procs, ierr)
   use zoltan_types
+  integer(LB_INT), intent(in)  :: dummy(*)
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(LB_INT), intent(in)  :: num_import, num_export
   integer(LB_INT), intent(in)  :: imp_gids(*), imp_lids(*), imp_procs(*)

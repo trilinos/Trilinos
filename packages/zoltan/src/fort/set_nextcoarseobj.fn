@@ -3,14 +3,15 @@ function f90LB_Set_Next_Coarse_Obj_Fn0f(lb,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Next_Coarse_Obj_Fn0f
 type(LB_Struct) INTENT_IN lb
 interface
-  function fn_ptr(num_gid_entries, num_lid_entries, global_id, local_id, &
+  function fn_ptr(dummy, num_gid_entries, num_lid_entries, global_id, local_id, &
     next_global_id, next_local_id, &
     assigned, num_vert, vertices, in_vertex, out_vertex, ierr)
   use zoltan_types
   integer(LB_INT) :: fn_ptr
+  integer(LB_INT), intent(in)  :: dummy(*)
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in)  :: global_id(*), local_id(*)
-  integer(LB_INT), intent(out) :: next_global_id(*), next_local_id(*)
+  integer(LB_INT), intent(in)  :: global_id, local_id
+  integer(LB_INT), intent(out) :: next_global_id, next_local_id
   integer(LB_INT), intent(out) :: assigned, num_vert
   integer(LB_INT), intent(out) :: in_vertex, out_vertex
   integer(LB_INT), intent(out) :: vertices(*)
@@ -42,8 +43,8 @@ interface
   integer(LB_INT) :: fn_ptr
   integer(LB_INT) INTENT_IN data(*)
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in)  :: global_id(*), local_id(*)
-  integer(LB_INT), intent(out) :: next_global_id(*), next_local_id(*)
+  integer(LB_INT), intent(in)  :: global_id, local_id
+  integer(LB_INT), intent(out) :: next_global_id, next_local_id
   integer(LB_INT), intent(out) :: assigned, num_vert 
   integer(LB_INT), intent(out) :: in_vertex, out_vertex
   integer(LB_INT), intent(out) :: vertices(*)
@@ -76,8 +77,8 @@ interface
   integer(LB_INT) :: fn_ptr
   real(LB_FLOAT) INTENT_IN data(*)
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in)  :: global_id(*), local_id(*)
-  integer(LB_INT), intent(out) :: next_global_id(*), next_local_id(*)
+  integer(LB_INT), intent(in)  :: global_id, local_id
+  integer(LB_INT), intent(out) :: next_global_id, next_local_id
   integer(LB_INT), intent(out) :: assigned, num_vert
   integer(LB_INT), intent(out) :: in_vertex, out_vertex
   integer(LB_INT), intent(out) :: vertices(*)
@@ -110,8 +111,8 @@ interface
   integer(LB_INT) :: fn_ptr
   real(LB_DOUBLE) INTENT_IN data(*)
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in)  :: global_id(*), local_id(*)
-  integer(LB_INT), intent(out) :: next_global_id(*), next_local_id(*)
+  integer(LB_INT), intent(in)  :: global_id, local_id
+  integer(LB_INT), intent(out) :: next_global_id, next_local_id
   integer(LB_INT), intent(out) :: assigned, num_vert
   integer(LB_INT), intent(out) :: in_vertex, out_vertex
   integer(LB_INT), intent(out) :: vertices(*)
@@ -145,8 +146,8 @@ interface
   integer(LB_INT) :: fn_ptr
   type(LB_User_Data_1) INTENT_IN data
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in)  :: global_id(*), local_id(*)
-  integer(LB_INT), intent(out) :: next_global_id(*), next_local_id(*)
+  integer(LB_INT), intent(in)  :: global_id, local_id
+  integer(LB_INT), intent(out) :: next_global_id, next_local_id
   integer(LB_INT), intent(out) :: assigned, num_vert
   integer(LB_INT), intent(out) :: in_vertex, out_vertex
   integer(LB_INT), intent(out) :: vertices(*)
@@ -180,8 +181,8 @@ interface
   integer(LB_INT) :: fn_ptr
   type(LB_User_Data_2) INTENT_IN data
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in)  :: global_id(*), local_id(*)
-  integer(LB_INT), intent(out) :: next_global_id(*), next_local_id(*)
+  integer(LB_INT), intent(in)  :: global_id, local_id
+  integer(LB_INT), intent(out) :: next_global_id, next_local_id
   integer(LB_INT), intent(out) :: assigned, num_vert
   integer(LB_INT), intent(out) :: in_vertex, out_vertex
   integer(LB_INT), intent(out) :: vertices(*)
@@ -215,8 +216,8 @@ interface
   integer(LB_INT) :: fn_ptr
   type(LB_User_Data_3) INTENT_IN data
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in)  :: global_id(*), local_id(*)
-  integer(LB_INT), intent(out) :: next_global_id(*), next_local_id(*)
+  integer(LB_INT), intent(in)  :: global_id, local_id
+  integer(LB_INT), intent(out) :: next_global_id, next_local_id
   integer(LB_INT), intent(out) :: assigned, num_vert
   integer(LB_INT), intent(out) :: in_vertex, out_vertex
   integer(LB_INT), intent(out) :: vertices(*)
@@ -250,8 +251,8 @@ interface
   integer(LB_INT) :: fn_ptr
   type(LB_User_Data_4) INTENT_IN data
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(in)  :: global_id(*), local_id(*)
-  integer(LB_INT), intent(out) :: next_global_id(*), next_local_id(*)
+  integer(LB_INT), intent(in)  :: global_id, local_id
+  integer(LB_INT), intent(out) :: next_global_id, next_local_id
   integer(LB_INT), intent(out) :: assigned, num_vert
   integer(LB_INT), intent(out) :: in_vertex, out_vertex
   integer(LB_INT), intent(out) :: vertices(*)

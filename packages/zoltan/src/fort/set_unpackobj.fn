@@ -3,8 +3,9 @@ function f90LB_Set_Unpack_Obj_Fn0s(lb,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Unpack_Obj_Fn0s
 type(LB_Struct) INTENT_IN lb
 interface
-  subroutine fn_ptr(num_gid_entries, global_id, size, buf, ierr)
+  subroutine fn_ptr(dummy, num_gid_entries, global_id, size, buf, ierr)
   use zoltan_types
+  integer(LB_INT), intent(in)  :: dummy(*)
   integer(LB_INT), intent(in) :: num_gid_entries
   integer(LB_INT), intent(in) :: global_id(*)
   integer(LB_INT), intent(in) :: size

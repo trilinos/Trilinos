@@ -3,10 +3,11 @@ function f90LB_Set_Coarse_Obj_List_Fn0s(lb,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Coarse_Obj_List_Fn0s
 type(LB_Struct) INTENT_IN lb
 interface
-  subroutine fn_ptr(num_gid_entries, num_lid_entries, global_id, &
+  subroutine fn_ptr(dummy, num_gid_entries, num_lid_entries, global_id, &
     local_id, assigned, num_vert, vertices, in_order, &
     in_vertex, out_vertex, ierr)
   use zoltan_types
+  integer(LB_INT), intent(in)  :: dummy(*)
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(LB_INT), intent(out) :: global_id(*), local_id(*)
   integer(LB_INT), intent(out) :: assigned(*), num_vert(*), vertices(*)

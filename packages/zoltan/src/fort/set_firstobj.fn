@@ -3,12 +3,13 @@ function f90LB_Set_First_Obj_Fn0f(lb,fn_ptr)
 integer(LB_INT) :: f90LB_Set_First_Obj_Fn0f
 type(LB_Struct) INTENT_IN lb
 interface
-  function fn_ptr(num_gid_entries, num_lid_entries, global_id, local_id, &
+  function fn_ptr(dummy, num_gid_entries, num_lid_entries, global_id, local_id, &
     wdim, objwgts, ierr)
   use zoltan_types
   integer(LB_INT) :: fn_ptr
+  integer(LB_INT), intent(in)  :: dummy(*)
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(out) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(out) :: global_id, local_id
   integer(LB_INT), intent(in)  :: wdim
   real(LB_FLOAT),  intent(out) :: objwgts(*)
   integer(LB_INT), intent(out) :: ierr
@@ -38,7 +39,7 @@ interface
   integer(LB_INT) :: fn_ptr
   integer(LB_INT) INTENT_IN data(*)
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(out) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(out) :: global_id, local_id
   integer(LB_INT), intent(in)  :: wdim
   real(LB_FLOAT),  intent(out) :: objwgts(*)
   integer(LB_INT), intent(out) :: ierr
@@ -69,7 +70,7 @@ interface
   integer(LB_INT) :: fn_ptr
   real(LB_FLOAT) INTENT_IN data(*)
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(out) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(out) :: global_id, local_id
   integer(LB_INT), intent(in)  :: wdim
   real(LB_FLOAT),  intent(out) :: objwgts(*)
   integer(LB_INT), intent(out) :: ierr
@@ -100,7 +101,7 @@ interface
   integer(LB_INT) :: fn_ptr
   real(LB_DOUBLE) INTENT_IN data(*)
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(out) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(out) :: global_id, local_id
   integer(LB_INT), intent(in)  :: wdim
   real(LB_FLOAT),  intent(out) :: objwgts(*)
   integer(LB_INT), intent(out) :: ierr
@@ -132,7 +133,7 @@ interface
   integer(LB_INT) :: fn_ptr
   type(LB_User_Data_1) INTENT_IN data
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(out) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(out) :: global_id, local_id
   integer(LB_INT), intent(in)  :: wdim
   real(LB_FLOAT),  intent(out) :: objwgts(*)
   integer(LB_INT), intent(out) :: ierr
@@ -164,7 +165,7 @@ interface
   integer(LB_INT) :: fn_ptr
   type(LB_User_Data_2) INTENT_IN data
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(out) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(out) :: global_id, local_id
   integer(LB_INT), intent(in)  :: wdim
   real(LB_FLOAT),  intent(out) :: objwgts(*)
   integer(LB_INT), intent(out) :: ierr
@@ -196,7 +197,7 @@ interface
   integer(LB_INT) :: fn_ptr
   type(LB_User_Data_3) INTENT_IN data
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(out) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(out) :: global_id, local_id
   integer(LB_INT), intent(in)  :: wdim
   real(LB_FLOAT),  intent(out) :: objwgts(*)
   integer(LB_INT), intent(out) :: ierr
@@ -228,7 +229,7 @@ interface
   integer(LB_INT) :: fn_ptr
   type(LB_User_Data_4) INTENT_IN data
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
-  integer(LB_INT), intent(out) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(out) :: global_id, local_id
   integer(LB_INT), intent(in)  :: wdim
   real(LB_FLOAT),  intent(out) :: objwgts(*)
   integer(LB_INT), intent(out) :: ierr

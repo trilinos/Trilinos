@@ -3,9 +3,10 @@ function f90LB_Set_Obj_Size_Fn0f(lb,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Obj_Size_Fn0f
 type(LB_Struct) INTENT_IN lb
 interface
-  function fn_ptr(num_gid_entries, num_lid_entries, global_id, local_id, ierr)
+  function fn_ptr(dummy, num_gid_entries, num_lid_entries, global_id, local_id, ierr)
   use zoltan_types
   integer(LB_INT) :: fn_ptr
+  integer(LB_INT), intent(in)  :: dummy(*)
   integer(LB_INT), intent(in)  :: num_gid_entries, num_lid_entries
   integer(LB_INT), intent(in)  :: global_id(*), local_id(*)
   integer(LB_INT), intent(out) :: ierr
