@@ -39,18 +39,18 @@ public:
 	void GetSolutions(AnasaziMultiVec<TYPE>& soln);
 	void SetInitGuess(AnasaziMultiVec<TYPE>& iguess);
 	void SetDebugLevel(const int);
-	void SetCGBlkTols();
-    void SetUpBlocks(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, int);
-	void ExtractCurSolnBlock(AnasaziMultiVec<TYPE>&, int);
-    void Solve(bool);
-	void QRFactorDef(AnasaziMultiVec<TYPE>&, AnasaziDenseMatrix<TYPE>&, bool&,int,
-		                 int[],int&,bool);
-    void TrueResiduals(bool);
+    	void Solve(bool);
+    	void TrueResiduals(bool);
 	void PrintResids(bool)const;
 private:
-    void CheckCGOrth(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, bool);
+	void SetCGBlkTols();
+    	void SetUpBlocks(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, int);
+	void ExtractCurSolnBlock(AnasaziMultiVec<TYPE>&, int);
+	void QRFactorDef(AnasaziMultiVec<TYPE>&, AnasaziDenseMatrix<TYPE>&, bool&,int,
+		                 int[],int&,bool);
+    	void CheckCGOrth(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, bool);
 	void PrintCGIterInfo(int[], int, int[], int, int[], int);
-	void CheckCGResids(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, bool)const;
+	void CheckCGResids(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, bool) const;
 	AnasaziMatrix<TYPE> &_amat; // must be passed in by the user
 	AnasaziPrecondition<TYPE> &_precond; // must be passed in by user
 	AnasaziMultiVec<TYPE> &_rhs, *_basisvecs, *_solutions, *_residvecs;
@@ -98,6 +98,10 @@ BlockCG<TYPE>::BlockCG(AnasaziMatrix<TYPE> & mat,
 		//if (vb) cout << "BlockCG:ctor " << _maxits << _blocksize << _basisvecs << endl;
 		exit(-1);
 	}
+	//
+	// Set the block orthogonality tolerances
+	//
+	SetCGBlkTols();
 }
 
 

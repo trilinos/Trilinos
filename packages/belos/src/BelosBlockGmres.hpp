@@ -39,18 +39,18 @@ public:
 	void SetInitGuess(AnasaziMultiVec<TYPE>& iguess);
 	void SetRestart(const int);
 	void SetDebugLevel(const int);
+	void Solve(bool);
+	void TrueResiduals(bool);
+	void PrintResids(bool)const;
+private:
 	void SetGmresBlkTols();
 	void SetUpBlocks(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, int);
 	void ExtractCurSolnBlock(AnasaziMultiVec<TYPE>&, int);
-	void Solve(bool);
 	bool BlockReduction(bool&, bool);
 	bool QRFactorAug(AnasaziMultiVec<TYPE>&, AnasaziDenseMatrix<TYPE>&,
 		                 bool, bool);
 	bool BlkOrth(AnasaziMultiVec<TYPE>&, bool);
 	bool BlkOrthSing(AnasaziMultiVec<TYPE>&, bool);
-	void TrueResiduals(bool);
-	void PrintResids(bool)const;
-private:
 	void CheckGmresOrth(const int, bool);
 	void CheckBlkArnRed(const int, bool);
 	void CheckGmresResids(AnasaziMultiVec<TYPE> &, AnasaziMultiVec<TYPE> &,
@@ -109,6 +109,10 @@ BlockGmres<TYPE>::BlockGmres(AnasaziMatrix<TYPE> & mat, AnasaziPrecondition<TYPE
 		 cout << "BlockGmres:ctor " << _maxits << _blocksize << _basisvecs <<  endl;
 		exit(-1);
 	}
+	//
+	// Set up the block orthogonality tolerances
+	//
+	SetGmresBlkTols();	
 }
 
 template <class TYPE>
