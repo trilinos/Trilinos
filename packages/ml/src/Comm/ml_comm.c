@@ -314,8 +314,12 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
 #ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
    int     i;
    USR_REQ Request;
+#ifdef ML_MPI
   MPI_Allreduce((void *) &idata,(void *) &i, 1, MPI_INT, MPI_SUM,
                 MPI_COMM_WORLD);
+#else
+  i = idata;
+#endif
   return i;
 #else
    int     mask, partner, hbit, msgtype, msgbase=246;
