@@ -23,6 +23,7 @@
 #include "ml_lapack.h"
 #include "ml_utils.h"
 
+
 /* ************************************************************************* */
 /* internal function defined later on in this file                           */
 /* ------------------------------------------------------------------------- */
@@ -251,10 +252,18 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    nvblockflag = 0;
    if ( nvblocks == 0 )
    {
+#ifdef	MB_MODIF
+      nvblocks = Nrows/ml_ag->num_PDE_eqns;
+#else
       nvblocks = Nrows;
+#endif
       nbytes   = nvblocks * sizeof(int);
       ML_memory_alloc((void**) &vblock_info,nbytes,"AVE");
+#ifdef	MB_MODIF
+      for ( i = 0; i < nvblocks; i++ ) vblock_info[i] = ml_ag->num_PDE_eqns;
+#else
       for ( i = 0; i < nvblocks; i++ ) vblock_info[i] = 1;
+#endif
       nvblockflag = 1;
    }    
    nbytes = (nz_cnt + 1) * sizeof( int ); /* probably excessive */
@@ -616,6 +625,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       for (j = 0; j < agg_sizes[i]; j++)
       {
          largest = 0.0; thesign = 1.;
+/* this is a bad bug. -mb.
          for (k = 0; k < nullspace_dim; k++) 
          {
             if ( ML_dabs(qr_tmp[k*agg_sizes[i]+j]) > largest )
@@ -625,6 +635,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
                else thesign = 1.;
             }
          }
+*/
          for (k = 0; k < nullspace_dim; k++) 
          {
             index = new_ia[rows_in_aggs[i][j]] + k;
@@ -1184,6 +1195,8 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                  aggr_stat[index] != ML_AGGR_BDRY ) 
                supernode->list[supernode->length++] = index;
          }
+if ( supernode->length > 1 )
+{
          for ( j = 0; j < supernode->length; j++ ) 
          {
             jnode = supernode->list[j];
@@ -1213,6 +1226,15 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                aggr_cnt_array[k] = itmp_array[k];
             ML_memory_free((void**) &itmp_array);
          }
+}
+else
+{
+for ( j = 0; j < supernode->length; j++ ) 
+{
+jnode = supernode->list[j];
+aggr_stat[jnode] = ML_AGGR_BDRY;
+}
+}
       }
    }
 
