@@ -31,12 +31,8 @@
 
 The Amesos package provides an object-oriented interface to several
 direct sparse solvers. Amesos will solve (using a direct factorization
-method) the linear systems of equations
-\begin{equation}
-\label{eq:amesos_ls}
-A X = B
-\end{equation}
-where $A$ is stored as an Epetra\_RowMatrix object, and $X$ and $B$ are
+method) the linear systems of equations (\ref{eq:linear_sys}) where $A$
+is stored as an Epetra\_RowMatrix object, and $X$ and $B$ are
 Epetra\_MultiVector objects.
 
 The Amesos package has been designed to face some of the challenges of
@@ -59,26 +55,24 @@ necessary.
 Amesos contains several classes: 
 \begin{itemize}
 \item \verb!Amesos_KLU!: Interface to Amesos's internal solver
-  KLU~\cite{KLU}, described in Section~\ref{sec:klu}.
+  KLU~\cite{KLU};
 \item \verb!Amesos_Umfpack!: Interface to Tim Davis's
-  UMFPACK~\cite{umfpack-home-page}. Section~\ref{sec:umfpack} presents the basic
+  UMFPACK~\cite{umfpack-home-page};
   functionalities of this class.
 \item \verb!Amesos_Dscpack!: Interface to Padma Raghavan's
-  DSCPACK~\cite{dscpack-home-page}, presented in Section~\ref{sec:DSCPACK}.
+  DSCPACK~\cite{dscpack-home-page};
 \item \verb!Amesos_Superludist!: Interface to Xiaoye S.~Li's SuperLU
   solver suite, including SuperLU, SuperLU\_DIST 1.0 and SuperLU\_DIST
-  2.0~\cite{superlu-home-page}. The SuperLU\_DIST 2.0 interface is
+  2.0~\cite{superlu-home-page};
   presented in Section~\ref{sec:superludist}.
-\item \verb!Amesos_Mumps!: Interface to MUMPS 4.3.1~\cite{mumps-home-page}, see
-  Section~\ref{sec:mumps}.
-\item \verb!Amesos_Scalapack!: Interface to ScaLAPACK~\cite{scalapack}, 
-  presented in Section~\ref{sec:scalapack}.
+\item \verb!Amesos_Mumps!: Interface to MUMPS 4.3.1~\cite{mumps-home-page};
+\item \verb!Amesos_Scalapack!: Interface to ScaLAPACK~\cite{scalapack}.
 \end{itemize}
 
 
 Note that Amesos does {\sl not} contain interfaces to LAPACK routines.
 Other Trilinos packages already offer those routines (Epetra and
-Kokkos).
+Teuchos).
 
 All the Amesos classes are derived from a base class mode,
 \verb!Amesos_BaseSolver!. This abstract interface provides the basic
@@ -87,7 +81,7 @@ different direct solvers very easily -- by changing an input scalar
 parameter. See Section~\ref{sec:amesos_generic} for more details.
 
 In this Chapter, we will suppose that matrix $A$ in
-equation~(\ref{eq:linear_system}) is defined as an Epetra\_RowMatrix, in
+equation~(\ref{eq:linear_sys}) is defined as an Epetra\_RowMatrix, in
 principle with nonzero entries on all the processes defined in the
 Epetra\_Comm communicator in use. $X$ and $B$, instead, are
 Epetra\_MultiVector, defined on the same communicator.  Some of the
@@ -158,8 +152,7 @@ $ ./configure --prefix=${TRILINOS_HOME}/LINUX_MPI \
   "${TRILINOS_3PL}/SuperLU_DIST_2.0/libsuperlu_LINUX.a"
 \end{verbatim}
 (This command is followed by \verb!make! and \verb!make install!, as
-usual.)  This will enable UMFPACK and SuperLU\_DIST, which are the two
-packages covered in this Chapter.
+usual.)  This will enable UMFPACK and SuperLU\_DIST.
 
 For more details about the configuration options of Amesos, please refer
 to Amesos documentation.

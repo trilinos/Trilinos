@@ -28,16 +28,6 @@
 
 \section{Introduction}
 
-The Trilinos Project is an effort to facilitate the design, development,
-integration and ongoing support of mathematical software libraries.  The
-goal of the Trilinos Project is develop parallel solver algorithms and
-libraries within an object-oriented software framework for the solution
-of large-scale, complex multiphysics engineering and scientific
-applications. The emphasis is on developing robust, scalable algorithms
-in a software framework, using abstract interfaces for flexible
-interoperability of components while providing a full-featured set of
-concrete classes that implement all the abstract interfaces.
-
 %%%
 %%%
 %%%
@@ -46,33 +36,35 @@ concrete classes that implement all the abstract interfaces.
 \label{sec:getting}
 
 The Trilinos Project uses a two-level software structure designed around
-collections of packages. A Trilinos package is an integral unit, usually
-developed to solve a specific task, by a (relatively) small group of
-experts.  Packages exist underneath the Trilinos top level, which
-provides a common look-and-feel. Each package has its own structure,
-documentation and set of examples. A Trilinos packages may also be
-available as an independent package. However, each package is even more
+collections of {\sl packages}. A Trilinos package is an integral unit,
+usually developed to solve a specific task, by a (relatively) small
+group of experts.  Packages exist underneath the Trilinos top level,
+which provides a common look-and-feel. Each package has its own
+structure, documentation and set of examples, and it is possibly
+available independently of Trilinos. However, each package is even more
 valuable when combined with other Trilinos packages.
 
 \smallskip
 
-Trilinos is a large software project, and currently includes about
-twenty packages are included. Fully understanding all the
-functionalities of the Trilinos packages requires time. The entire set
-of packages covers a wide range of numerical methods for large scale
-computing, as well as a large set of utilities to improve the
-development of software for scientific computing.
+Trilinos is a large software project, and currently about twenty
+packages are included.  The entire set of packages covers a wide range
+of numerical methods for large scale computing, as well as a large set
+of utilities to improve the development of software for scientific
+computing. 
 
-Each package offers sophisticated features, that cannot be ``unleashed''
-initially.  For each package, we will outline only the basic features,
-and we refer to the documentation of each package for a more involved
-usage. Our goal is to present enough material so that the reader can
-successfully use the described packages.  In fact, for new users, it is
-neither easy, nor necessary, to manage all the Trilinos functionalities.
-At the beginning, it is more important to understand how to manipulate
-the basic classes, such as vector, matrix and linear system classes.
-However, for fine-tuning, users still must look through individual
-package's documentation and examples.
+Clearly, a fully understanding all the functionalities of the Trilinos
+packages requires time.  Each package offers sophisticated features,
+difficult to ``unleashed'' at a first sight.  Besides that, a detailed
+description of each Trilinos package is beyond the scope of this
+document: the reader is referred to the documentation contained in each
+package. For those reasons, we will limit ourselves to the basic (and
+intermediate) features. Our goal is to present enough material so that
+the reader can be sufficiently familiar with the described packages.  In
+fact, for new users, it is neither easy, nor necessary, to manage all
+the Trilinos functionalities.  At the beginning, it is more important to
+understand how to manipulate the basic classes, such as vector, matrix
+and linear system classes.  For a successive fine-tuning phase, users
+still must look through individual package's documentation and examples.
 
 \medskip
 
@@ -85,14 +77,19 @@ We will describe the following subset of the Trilinos packages.
   languages). Each Trilinos package accepts as input Epetra objects.
   This allows powerful combinations among the various Trilinos
   functionalities.
+\item {\bf Triutils}. This is a collection of utilities, that can be
+  useful in some phases of software development. Here, we present a
+  command line parser and a matrix generator, that are used throughout
+  this document to define example matrices.
 \item {\bf AztecOO}. This is a linear solve package based on
   preconditioned Krylov methods. It supports all the Aztec interfaces
   and functionality, but also provides significant new functionality.
 \item {\bf IFPACK}. The package performs various incomplete
   factorizations, and is here used with AztecOO.
-\item {\bf ML}. The algebraic multilevel preconditioner package provides
-  scalable preconditioning capabilities for a variety of problem
-  classes. It is here used with AztecOO.
+\item {\bf ML}. The algebraic multilevel and domain decomposition
+  preconditioner package provides scalable preconditioning capabilities
+  for a variety of problem classes. It is here used as a preconditioner
+  for AztecOO solvers.
 \item {\bf Amesos}. The package provides a common interface to certain
   sparse direct linear solvers (generally available outside the Trilinos
   framework), both sequential and parallel.
@@ -103,44 +100,57 @@ We will describe the following subset of the Trilinos packages.
   be easily integrated into an application and used with many different
   linear solvers.
 \item {\bf Teuchos}. This is a collection of classes that can be
-  essential for code development.
-\item {\bf Triutils}. This is a collection of utilities, that
-  can be useful in some phases of software development.
+  essential for advanced code development.
 \end{itemize}
 
 Table~\ref{tab:tripackages} gives a partial overview of what can be
 accomplished using Trilinos.
 \begin{table}[htbp]
   \centering
-  \begin{tabular}{| p{10cm} | p{3cm} |}
+  \begin{tabular}{| p{8cm} | p{2.5cm} | p{3cm} |}
     \hline
-    {\bf Task} & {\bf Package} \\
+    {\bf Task} & {\bf Package} & {\bf Tutorial}\\
     \hline
-    Light-weight interface to BLAS and LAPACK: & Epetra, Teuchos \\\hline
-    Definition of serial dense or sparse matrices: & Epetra \\\hline
-    Utilities for Epetra vectors and sparse matrices: & EpetraExt \\\hline
-    Definition of distributed sparse matrices:& Epetra \\\hline
+    Definition of serial dense or sparse matrices: & Epetra 
+    & Chapter \ref{chap:epetra_mat} \\
+    Utilities for Epetra vectors and sparse matrices: & EpetraExt & -- 
+    \\
+    Templated distributed vectors and sparse matrices: & Tpetra$^\star$
+    & -- \\
+    Definition of distributed sparse matrices:& Epetra & -- \\
     Solve a linear system with preconditioned Krylov accelerators, like
-    CG, GMRES, Bi-CGSTAB, TFQMR:& AztecOO, Belos$^\star$ \\\hline
-    Definition of incomplete factorizations:& AztecOO, \newline IFPACK \\\hline
-    Definition of a multilevel preconditioner:& ML \\\hline
+    CG, GMRES, Bi-CGSTAB, TFQMR:& AztecOO, Belos$^\star$ &
+    Chapter \ref{chap:aztecoo} \\
+    Definition of incomplete factorizations:& AztecOO, \newline IFPACK &
+    Chapter \ref{chap:ifpack} \\
+    Definition of a multilevel preconditioner:& ML & Chapter
+    \ref{chap:ml} \\
+    Definition of black-box smoothed aggregation:& ML & Section
+    \ref{ML_Preconditioner} \\
     Definition of a one-level Schwarz preconditioner (overlapping domain
-    decomposition):& AztecOO, \newline IFPACK \\\hline
+    decomposition):& AztecOO, \newline IFPACK & Chapter \ref{chap:ifpack} \\
     Definition a two-level Schwarz preconditioner, with coarse grid based on
-    aggregation:& AztecOO+ML \\\hline
-    Solution of  systems of nonlinear equations:& NOX \\\hline
+    aggregation:& AztecOO+ML & Section \ref{sec:ml_DD} \\
+    Solution of  systems of nonlinear equations:& NOX & Chapter \ref{chap:nox} \\
     Interface with various direct solvers, as UMFPACK, MUMPS, SuperLU
-    and others :& Amesos \\\hline
-    Computation of eigenvalue of large, sparse matrices:& Anasazi
-    \\\hline
+    and others :& Amesos & Chapter \ref{chap:amesos} \\
+    Computation of eigenvalue of large, sparse matrices:& Anasazi &
+    Chapter \ref{chap:anasazi} 
+    \\
     Solution of complex linear equations (using equivalent real formulation):&
-    Komplex$^\star$ \\\hline
+    Komplex$^\star$ & -- \\
     Definition of segregated preconditioners and block preconditioners (for
     instance, for the incompressible Navier-Stokes equations):&
-    Meros$^\star$ \\\hline
+    Meros$^\star$ & -- \\
+    Light-weight interface to BLAS and LAPACK: & Epetra 
+    & Chapter \ref{chap:epetra_mat} \\
     Templated interface to BLAS and LAPACK, arbitrary-precision
-    arithmetic, parameters; list, smart pointers:& Teuchos \\\hline
-    Definition of abstract interfaces to vectors, linear operators, and solvers:& TSF$^\star$, TSFCore$^\star$, TSFExtended$^\star$    \\
+    arithmetic, parameters; list, smart pointers:& Teuchos &
+    Section \ref{sec:teuchos:LAPACK} \\
+    Definition of abstract interfaces to vectors, linear operators, and
+    solvers:& TSF$^\star$, TSFCore$^\star$, TSFExtended$^\star$   & --
+    \\
+    Generation of matrices & Triutils & Section~\ref{sec:triutils:gallery} \\
     \hline
   \end{tabular}
   \caption{Partial overview of intended uses of  Trilinos. $\star$:
@@ -153,16 +163,22 @@ accomplished using Trilinos.
   language'' spoken by all the Trilinos packages, and are a natural
   starting point for new users. Therefore we suggest to read Chapters
   \ref{chap:epetra_vec}-\ref{chap:epetra_others} before considering
-  other Trilinos packages. Also, Chapter~\ref{chap:aztecoo} should be
-  read before Chapters~\ref{chap:ifpack} and~\ref{chap:ml} (even if both
-  IFPACK and ML can be compiled and run without AztecOO).
+  other Trilinos packages. Chapter~\ref{chap:triutils} is not essential
+  to understand Trilinos, but the functionalities there presented are
+  used in this document as a starting point for many examples.
+  Chapter~\ref{chap:aztecoo} should be read before
+  Chapters~\ref{chap:ifpack} and~\ref{chap:ml} (even if both IFPACK and
+  ML can be compiled and run without AztecOO).
 \end{remark}
 
 The only prerequisites assumed in this tutorial are some familiarities
-with numerical methods for PDEs, and iterative linear and nonlinear
+with numerical methods for PDEs, and with iterative linear and nonlinear
 solvers. Although not strictly necessary, the reader is assumed to have
 some familiarity with distributed memory computing and, to a lesser
-extent, with MPI.
+extent, with MPI\footnote{Although almost no explicit MPI instructions
+  are required in a Trilinos code, the reader should be aware of the
+  basic concepts of message passing, like the definition of a
+  communicator.}.
 
 \smallskip
 
@@ -195,10 +211,11 @@ http://software.sandia.gov/Trilinos
 \end{verbatim}
 
 Trilinos has been compiled on a variety of architectures, including
-Linux, Sun Solaris, SGI Irix, DEC, and many others. Trilinos has been
-designed to support parallel applications. However, it can be compiled
-and run on serial computer.  Detailed comments on the installation, and
-an exhaustive list of FAQs, can be found at the web pages:
+various flavors of Linux, Sun Solaris, SGI Irix, DEC, ASCI Red, and many
+others. Trilinos has been designed to support parallel applications.
+However, it can be compiled and run on serial computer.  Detailed
+comments on the installation, and an exhaustive list of FAQs, can be
+found at the web pages:
 \begin{verbatim}
 http://software.sandia.gov/Trilinos/installing_manual.html
 http://software.sandia.gov/Trilinos/faq.html
@@ -223,22 +240,23 @@ can be places in the users' \verb!.bashrc! file.
 
 Each Trilinos' package can be enabled or disabled at configuration time.
 A procedure one may follow in order to compile Trilinos with AztecOO,
-ML, IFPACK, ANASAZI, NOX, and triutil is reported below. \%indicates the
+ML, IFPACK, Anasazi, NOX, and Triutils is reported below. \$ indicates the
 shell prompt. The \verb!tee! command is used to write the output to
 standard output and to the specified file, and can be omitted.  More
 details about the installation of Trilinos can be found in
 \cite{Trilinos-Users-Guide}.
 \begin{verbatim}
-% cd ${TRILINOS_HOME}
-% mkdir ${TRILINOS_ARCH}
-% cd ${TRILINOS_ARCH}
-% ../configure --prefix=${TRILINOS_HOME}/${TRILINOS_ARCH} \
+$ cd ${TRILINOS_HOME}
+$ mkdir ${TRILINOS_ARCH}
+$ cd ${TRILINOS_ARCH}
+$ ../configure --prefix=${TRILINOS_HOME}/${TRILINOS_ARCH} \
   --enable-mpi --with-mpi-compilers \
   --enable-triutils --enable-aztecoo \
   --enable-ifpack --enable-anasazi \
-  --enable-ml --enable-nox | tee configure_${TRILINOS_ARCH}.log
-% make | tee make_${TRILINOS_ARCH}.log
-% make install | tee make_install_${TRILINOS_ARCH}.log
+  --enable-ml --enable-nox  \
+  --enable-nox-epetra | tee configure_${TRILINOS_ARCH}.log
+$ make | tee make_${TRILINOS_ARCH}.log
+$ make install | tee make_install_${TRILINOS_ARCH}.log
 \end{verbatim}
 For serial configuration, set
 \begin{verbatim}
@@ -248,7 +266,7 @@ and delete the \verb!--enable-mpi --with-mpi-compilers! options.
 \begin{remark}
   All Trilinos packages can be build to run with or without MPI. If MPI
   is enabled (using \verb!--enable-mpi!), the users must know the
-  procedure for beginning MPI jobs on their computer system(s). If maybe
+  procedure for beginning MPI jobs on their computer system(s). It may be
   necessary to specify on the configure line the location of MPI include
   files and libraries.
 \end{remark}
@@ -261,10 +279,11 @@ and delete the \verb!--enable-mpi --with-mpi-compilers! options.
 \label{sec:intro_compiling}
 
 In order to compile and link a code that makes use of Trilinos, the user
-may decide to use a Makefile similar to the one reported below. 
-Suppose that our code requires Epetra, AztecOO and IFPACK, and that
-the procedure outlined in Section~\ref{sec:installing} has been followed.
-The UNIX makefile can be as follows:
+may decide to use a Makefile similar to the one reported below.  Suppose
+that our code requires Epetra, AztecOO and IFPACK, and that the
+procedure outlined in Section~\ref{sec:installing} has been followed.
+The UNIX makefile can be as follows (line number are reported for
+reader's convenience):
 \begin{verbatim}
  1: TRILINOS_HOME = /home/msala/Trilinos/
  2: TRILINOS_ARCH - LINUX_MPI
@@ -283,18 +302,16 @@ The UNIX makefile can be as follows:
 16:         $(CXX)     ex1.cpp $(MY_COMPILER_FLAGS)
 17:         $(LINKER)  ex1.o   $(MY_LINKER_FLAGS)    -o ex1.exe
 \end{verbatim}
-
-Line number are reported for reader's convenience.
-
 Here we assume that the reader knows about UNIX makefiles.  Line 5
-includes basic definitions of Trilinos. (Note that, on some
-architectures, one may need to use \verb!gmake! instead of \verb!make!.)
-In line 7, the variable \verb!HAVE_CONFIG_H! is defined. Linker flags of
-lines 10-13 defines the library to link (other libraries may be needed).
-The variable \verb!ARCH_LIBS! is defined in line 5.
+includes basic definitions of Trilinos. (On some architectures, one may
+need to use \verb!gmake! instead of \verb!make!.)  In line 7, the
+variable \verb!HAVE_CONFIG_H! is defined.  This definition is extremely
+important, and must not be omitted.  Linker flags of lines 10-13 defines
+the library to link (other libraries may be needed).  The variable
+\verb!ARCH_LIBS! is defined in line 5.
 
-The name of the executable is \verb!ex1.exe!. 
-The command to run this example on 2 processors is often
+In this example, the name of the executable is \verb!ex1.exe!.  The
+command to run this example on 2 processors is often
 \begin{verbatim}
 $ mpirun -np 2 ./ex1.exe
 \end{verbatim}
@@ -345,11 +362,11 @@ It is responsibility of the user to understand these requirements.
 \label{sec:language}
 
 Trilinos is written in C++ (for most packages), and in C. Some
-interfaces are provided to FORTRAN code (mainly BLAS and LAPACK
+interfaces are provided to FORTRAN codes (mainly BLAS and LAPACK
 routines). Even if limited support is included for C programs (and a
 more limited for FORTRAN code), to unleash the full power of Trilinos we
 recommend C++. All the example programs contained in this tutorial are
-in C++; some packages contain examples in C.
+in C++; some packages (like ML) contain examples in C.
 
 %%%
 %%%
@@ -395,9 +412,9 @@ number = "SAND2003-2952",
 year = 2003}
 \end{verbatim}
 The BiBTeX information is available at the web page
-\begin{verb}
+\begin{verbatim}
 http://software.sandia.gov/Trilinos/citing.html
-\end{verb}
+\end{verbatim}
 
 %%%
 %%%
@@ -417,14 +434,18 @@ ${TRILINOS_HOME}/packages/<package-name>/examples
 ${TRILINOS_HOME}/packages/<package-name>/test
 ${TRILINOS_HOME}/packages/<package-name>/doc
 \end{verbatim}
-Trilinos developers use Doxygen\footnote{Copyright \copyright 1997-2003
-  by Dimitri van Heesch. More information can by found at the web
-  address {\tt http://www.stack.nl/~dimitri/doxygen/}.}. The command
-to create For instance, to create the documentation for Epetra are
+Developers' documentation is written using Doxygen\footnote{Copyright
+  \copyright 1997-2003 by Dimitri van Heesch. More information can by
+  found at the web address {\tt
+    http://www.stack.nl/~dimitri/doxygen/}.}. The command to create For
+instance, to create the documentation for Epetra are
 \begin{verbatim}
 $ cd ${TRILINOS_HOME}/packages/epetra/doc
-Generally, both HTML and \LaTeX documentation is created by Doxygen. To
-compile the \LaTeX sources, the commands are:
+$ doxygen
+\end{verbatim}
+Generally, both HTML and \LaTeX documentation are created by Doxygen.
+The browser of choice can be used to walk through the HTML
+documentation.  To compile the \LaTeX sources, the commands are:
 \begin{verbatim}
 $ cd ${TRILINOS_HOME}/packages/epetra/doc/latex
 $ make

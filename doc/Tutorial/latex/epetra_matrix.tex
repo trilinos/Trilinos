@@ -53,13 +53,13 @@ Epetra\_RowMatrix is a pure virtual class.  Various classes are derived
 \end{itemize}
 
 This Chapter will show the fundamental Trilinos capabilities to work
-with matrices. During the Chapter, the user be introduced to:
+with matrices. During the Chapter, the user will be introduced to:
 \begin{itemize}
-\item Create (serial) dense matrices (in Section~\ref{sec:dense_mat});
-\item Create sparse point matrices (in Section~\ref{sec:sparse_mat});
-\item Create sparse block matrices (in Section~\ref{sec:sparse_vbr});
-\item Insert non-local elements using finite-element matrices (in
-  Section~\ref{sec:fematrix}).
+\item The creation of (serial) dense matrices (in Section~\ref{sec:dense_mat});
+\item The creation of sparse point matrices (in Section~\ref{sec:sparse_mat});
+\item The creation of sparse block matrices (in Section~\ref{sec:sparse_vbr});
+\item The insertion of non-local elements using finite-element matrices
+  (in Section~\ref{sec:fematrix}).
 \end{itemize}
 
 %%%
@@ -73,6 +73,7 @@ Epetra provides functionalities for sequential dense matrices with the
 class Epetra\_SerialDenseMatrix.  A possible way to create a serial
 dense matrix \verb!D! of dimension \verb!n!  by \verb!m! is
 \begin{verbatim}
+#include "Epetra_SerialDenseMatrix.h"
 Epetra_SerialDenseMatrix D(n,m);
 \end{verbatim}
 One could also create a zero-size object, 
@@ -86,18 +87,19 @@ D.Shape(n,m);
 ({\tt D} could be reshaped using \verb!ReShape()!.)
 
 Epetra\_SerialDenseMatrix are stored in a column-major order in the
-usual FORTRAN style. This class is built on the top of the BLAS
-library, and is derived from Epetra\_Blas. Epetra\_SerialDenseMatrix is
-intended to provide a very basic support for dense rectangular matrices.
+usual FORTRAN style. This class is built on the top of the BLAS library,
+and is derived from Epetra\_Blas (not covered in this tutorial).
+Epetra\_SerialDenseMatrix is intended to provide a very basic support
+for dense rectangular matrices.
 
 \smallskip
 
 To access the matrix element at the i-th row and the j-th column, it is
 possible to use the parenthesis operator (\verb!A(i,j)!), or the bracket
-operator (\verb!A[j][i]!, note that i and j are reversed). The bracket
-approach is in general faster, as the compiler can inline the
-corresponding function. Instead, some compiler have problems to inline
-the parenthesis operator.
+operator (\verb!A[j][i]!, note that i and j are reversed)\footnote{The
+  bracket approach is in general faster, as the compiler can inline the
+  corresponding function. Instead, some compiler have problems to inline
+  the parenthesis operator.}.
 
 As an example of the use of this class, in the following code we
 consider a matrix-matrix product between two rectangular matrices
@@ -125,9 +127,26 @@ B^{opA}$, where $A$ replaced by $A^T$ if the first input parameter is
 
 To solve a linear system with a dense matrix, one has to create an
 Epetra\_SerialDenseSolver. This class uses the most sophisticated
-techniques available in the LAPACK library. The class is
-built on the top of BLAS and LAPACK, and thus has excellent performances
-and numerical capabilities.
+techniques available in the LAPACK library. The class is built on the
+top of BLAS and LAPACK, and thus has excellent performances and
+numerical capabilities\footnote{Another package, Teuchos, covered in
+  Chapter~\ref{chap:teuchos}, allows a templated access to LAPACK.
+  ScaLAPACK are supported through Amesos, see
+  Chapter~\ref{chap:amesos}.}.
+
+The primary difference is that Epetra\_LAPACK is a ``thin'' layer on the
+top of LAPACK, while Epetra\_SerialDenseSolver attempts to provide easy
+access to the more sophisticated aspects of solving dense linear
+systems.
+
+As a general rule, we can say that Epetra\_LAPACK should be preferred
+when the user is looking for a convenient wrapper around the FORTRAN
+LAPACK routines, and the problem at hand is well-conditioned. Instead,
+when the user wants (or potentially wants to) solve ill-conditioned
+problems or want to work with a more object-oriented interface, he/she
+will probably use Epetra\_SerialDenseMatrix.
+
+\smallskip
 
 Given an Epetra\_SerialDenseMatrix and two Epetra\_DSerialDenseVectors
 {\tt x} and {\tt b}, the general approach is as follows:
@@ -147,21 +166,6 @@ if not computed).
 
 File \TriExe{epetra/ex11.cpp} outlines some of the capabilities of the
 Epetra\_SerialDenseSolver class.
-
-\smallskip
-
-Another Epetra class provides functionality similar to those of
-Epetra\_SerialDenseSolver: Epetra\_LAPACK. The primary difference is
-that Epetra\_LAPACK is a ``thin'' layer on the top of LAPACK, while
-Epetra\_SerialDenseSolver attempts to provide easy access to the more
-sophisticated aspects of solving dense linear systems.
-
-As a general rule, we can say that Epetra\_LAPACK should be preferred
-when the user is looking for a convenient wrapper around the FORTRAN
-LAPACK routines, and the problem at hand is well-conditioned. Instead,
-when the user wants (or potentially wants to) solve ill-conditioned
-problems or want to work with a more object-oriented interface, he/she
-will probably use Epetra\_SerialDenseMatrix.
 
 %%%
 %%%
@@ -236,8 +240,8 @@ number):
 \begin{verbatim}
 int NumGlobalElements = 5;
 \end{verbatim}
-We create a map, and define the local number of rows and the
-global numbering for each local row:
+We create a map (for the sake of simplicity linear), and define the
+local number of rows and the global numbering for each local row:
 \begin{verbatim}
 Epetra_Map Map(NumGlobalElements,0,Comm);
 int NumMyElements = Map.NumMyElements();
@@ -253,7 +257,16 @@ of nonzeros per row. In general, this can be done in two ways:
   \verb!NumMyElements()!, containing the nonzero elements of each row.
 \end{itemize}
 
-The second approach can be coded as follows:
+The first approach is trivial: the matrix is create with the simple
+instruction
+\begin{verbatim}
+Epetra_CrsMatrix A(Copy,Map,3);
+\end{verbatim}
+(Note the \verb!Copy! keyword, see Section~\ref{sec:distr_vec}.) In this
+case, Epetra considers the number 3 as a ``suggestion,'' in the sense
+that the user can still add more than 3 elements per row (at the price
+of a possible performance decay).  The second approach can be coded as
+follows:
 \begin{verbatim}
 int * NumNz = new int[NumMyElements];
 for( int i=0 ; i<NumMyElements ; i++ )
@@ -263,10 +276,10 @@ if( MyGlobalElements[i]==0 ||
 else
   NumNz[i] = 3;
 \end{verbatim}
-We are building a tridiagonal matrix where each row has (-1 2 -1). So we
-need 2 off-diagonal terms (except for the first and last equation). Here
+We are building a tridiagonal matrix where each row has (-1 2 -1).  Here
 \verb!NumNz[i]! is the Number of nonzero terms in the i-th global
-equation on this process.
+equation on this process (2 off-diagonal terms (except for the first and
+last equation).
 
 Now, we create an Epetra\_CsrMatrix as
 \begin{verbatim}
@@ -274,9 +287,9 @@ Epetra_CrsMatrix A(Copy,Map,NumNz);
 \end{verbatim}
 and we add rows one-at-a-time. \verb!A! has been created in Copy mode,
 and relies on the specified map. To fill its values, we need some
-additional variables: \verb!Indexes! and \verb!Values!. Those will
-contain the global column number and the values of the nonzeros for each
-row.
+additional variables: let us call them \verb!Indexes! and \verb!Values!.
+Those variables will contain the global column number and the values of
+the nonzeros for each row.
 \begin{verbatim}
 double *Values = new double[2];
 Values[0] = -1.0; Values[1] = -1.0;
@@ -311,19 +324,15 @@ and other matrix operations.
 \begin{verbatim}
 A.FillComplete();
 \end{verbatim}
-
-We have just presented a rather common situation: In a parallel
-matrix-vector product
-\[
-A X = B ,
-\]
-the map used to define the parallel distribution of the matrix, is the
-same of the multi-vectors $X$ and $B$.  This means that the rows of
-$A$ are distributed among the processes in the same way of the elements
-of $X$ and $B$.  However, Epetra allows the user to handle the more
-general case of a matrix defined using a Map, is different from that of
-$X$ and that of $B$. In fact, each Epetra matrix is defined by {\sl
-  four} maps:
+This call to \verb!FillComplete()! will reorganize the internally stored
+data so that each process knows the set of internal, border and external
+elements. Also, the communication pattern is established. As we have
+specified just one map, Epetra considers that the the rows of $A$ are
+distributed among the processes in the same way of the elements of $X$
+and $B$.  Although very common, this approach is only a particular case.
+Epetra allows the user to handle the more general case of a matrix
+defined using a Map, is different from that of $X$ and that of $B$. In
+fact, each Epetra matrix is defined by {\sl four} maps:
 \begin{itemize}
 \item Two maps, called RowMap and ColumnMap, are used to determine the
   set of rows and the columns of the elements assigned to a given
@@ -465,12 +474,12 @@ block has a small dimension with respect to the dimension of the entire
 matrix)\footnote{Trilinos offers capabilities to deal with matrices
   composed by few large blocks, like for instance matrices arising from
   the discretization of the incompressible Navier-Stokes equations,
-  through the Meros package.}. This format has been designed for PDE
-problems with more than one unknown per grid node.  The resulting matrix
-has a sparse block structure, and the size of each dense block equals
-the number of PDE equations defined on that block.  This format is quite
-general, and can handle matrices with variable block size, as it is done
-is the following example.
+  through the Meros package (not covered in this tutorial).}. This
+format has been designed for PDE problems with more than one unknown per
+grid node.  The resulting matrix has a sparse block structure, and the
+size of each dense block equals the number of PDE equations defined on
+that block.  This format is quite general, and can handle matrices with
+variable block size, as it is done is the following example.
 
 First, we create a map, containing the distribution of the blocks:
 \begin{verbatim}
@@ -600,11 +609,5 @@ can be used to verify the data exchange.
 %%%
 %%%
 
-\subsection{Concluding Remarks on Epetra Matrices}
-\label{sec:epetra_mat_conclusions}
-
-Teuchos::BLAS and Teuchos::LAPACK provide functionalities similar to
-Epetra\_BLAS, Epetra\_SerialDenseSolver and Epetra\_LAPACK; see
-Section~(\ref{sec:teuchos:lapack}).
 
 

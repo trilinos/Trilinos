@@ -43,8 +43,10 @@ form
   A \; X = B ,
 \end{equation}
 when $A \in \mathbb{R}^{n \times n}$ is the linear system matrix, $X$
-the solution, and $B$ the right-hand side. Both $X$ and $B$ are
-Epetra\_Vector objects.
+the solution, and $B$ the right-hand side. Although AztecOO can live
+independently of Epetra, in this tutorial it is supposed that $A$ is an
+Epetra\_RowMatrix, and both $X$ and $B$ are Epetra\_Vector or
+Epetra\_MultiVector objects.
 
 In this Chapter, we  will:
 \begin{itemize}
@@ -68,7 +70,8 @@ In this Chapter, we  will:
 Aim of this Section is to briefly present some aspects of the iterative
 solution of linear systems, to establish a notation. The Section is not
 supposed to be exhaustive, nor complete on this subject. The reader is
-referred to the existing literature for a rigorous presentation.
+referred to the existing literature for a rigorous presentation (see,
+for instance, \cite{axelsson94iterative,saad96iterative}).
 
 \medskip
 
@@ -77,13 +80,14 @@ solution of a linear system. The first one in the particular
 acceleration technique for a sequence of iterations vectors, that is a
 technique used to construct a new approximation for the solution, with
 information from previous approximations.  This leads to specific
-iteration methods, like conjugate gradient or GMRES. The second aspect
-is the transformation of the given system to one that can be more
-efficiently solved by a particular iteration method. This is called {\em
-  preconditioning}.  A good preconditioner improves the convergence of
-the iterative method, sufficiently to overcome the extra cost of its
-construction and application. Indeed, without a preconditioner the
-iterative method may even fail to converge in practice. 
+iteration methods, generally of Krylov type, such as conjugate gradient
+or GMRES. The second aspect is the transformation of the given system to
+one that can be more efficiently solved by a particular iteration
+method. This is called {\em preconditioning}.  A good preconditioner
+improves the convergence of the iterative method, sufficiently to
+overcome the extra cost of its construction and application. Indeed,
+without a preconditioner the iterative method may even fail to converge
+in practice.
 
 The convergence of iterative methods depends on the spectral properties
 of the linear system matrix. The basic idea is to replace the original
@@ -121,9 +125,9 @@ properties:
 
 It should be stressed that computing the inverse of $P$ is not
 mandatory; actually, the role of $P$ is to ``preconditioning'' the
-residual $r_m$ through the solution of the additional system $P
-z_m = r_m$. This system $P z_m = {r}_m$ should be much
-easier to solve than the original system. 
+residual at step $m$, $r_m$, through the solution of the additional
+system $P z_m = r_m$. This system $P z_m = {r}_m$ should be much easier
+to solve than the original system.
 
 \smallskip
 
@@ -194,25 +198,24 @@ creating \verb!options! and \verb!params!, using the AztecOO methods
 For instance,
 \begin{verbatim}
 Solver.SetAztecOption( AZ_precond, AZ_Jacobi );
-Solver.SetAztecParams( AZ_tol, 1e-12 );
 \end{verbatim}
 to specify a point Jacobi preconditioner, and a tolerance of $10^{-12}$.
 (We refer to the Aztec documentation for more details about the various
 Aztec settings.)
 
-To solve the linear system the user may call
+To solve the linear system, with maximum number of 1550 iterations and a
+tolerance of $1o^{-9}$, the user may call
 \begin{verbatim}
-Solver.Iterate(1000,1E-9);
+Solver.Iterate(1550,1E-9);
 \end{verbatim}
 The complete code is in \TriExe{aztec/ex1.cpp}.
 
-Note that the matrix must be in local coordinates (that is, the command
-\verb!A.FillComplete()! has been called before attempting to solve
-the linear system).  Note also that the procedure to solve a linear
-system with AztecOO is identical for sequential and parallel runs.
-However (for certain choices of the preconditioners), the convergence
-rate can change as the number of processes used in the computation
-varies.
+Note that the matrix must be in local form (that is, the command
+\verb!A.FillComplete()! has been called before attempting to solve the
+linear system).  Note also that the procedure to solve a linear system
+with AztecOO is identical for sequential and parallel runs.  However
+(for certain choices of the preconditioners), the convergence rate can
+change as the number of processes used in the computation varies.
 
 When this function returns, one can retrieve the number of iterations
 performed by the linear solver using \verb!Solver.NumIters()!, while
@@ -253,9 +256,16 @@ Solver.SetAztecOption( AZ_precond, AZ_dom_decomp );
 followed by the choice of incomplete factorization (and possibly with
 that of corresponding parameters, for instance the level-of-fill),
 \begin{verbatim}
-Solver.SetAztecOption( AZ_ilu, AZ_subdomain_solve );
+Solver.SetAztecOption( AZ_subdomain_solve, AZ_ilu );
 Solver.SetAztecOption( AZ_graph_fill, 1 );
 \end{verbatim}
+Exact subdomain solves can be used setting\footnote{AztecOO must be
+  configured with the option {\tt --enable-aztecoo-azlu}, and the
+  package Y12M is required.}
+\begin{verbatim}
+Solver.SetAztecOption( AZ_subdomain_solve, AZ_lu );
+\end{verbatim}
+
 By default, AztecOO will consider zero-overlap among the rows of
 $A$\footnote{For point matrices arising from the FE discretization of
   the PDE problem with local functions, this is equivalent to one mesh

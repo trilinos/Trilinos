@@ -26,99 +26,27 @@
 % ***********************************************************************
 % @HEADER
 
-\section{TriUtils}
+\section{Generating Linear Systems with Triutils}
 \label{chap:triutils}
 
-Triutils is a collection of various utilities, that can help development
-and testing. Mainly, triutils contains functions or classes to generate
-matrices in various formats (MSR, VBR, Epetra), to read matrices (in HB
-or COO format), to convert matrices from one format to another, and to
-process the command line. Programs using triutils should include the
-file \verb!Trilinos_Util.h!.
-
-\medskip
-
-In this Chapter, we will present:
+This Chapter presents two functionalities of Triutils, that will be
+extensively used in the examples of the later chapters: 
 \begin{itemize}
-\item How to read a matrix (and possibly right-hand side and solution
-  vectors) from an Harwell/Boeing file format (in
-  Section~\ref{sec:triutils:reading});
-\item How to retrive a parameter specified on the command line (in
-  Section~\ref{sec:triutils:shell}). 
+\item the Triutils command line parser (in
+  Section~\ref{sec:triutils:CLP});
+\item the Triutils matrix generator (in \ref{sec:triutils:gallery}).
 \end{itemize}
+The reader not interested in the examples may decide to skip this chapter.
 
 %%%
 %%%
 %%%
 
-\subsection{Reading a HB problem}
-\label{sec:triutils:reading}
-
-It is possible to read matrix, solution and right-hand side, from a file
-written in the Harwell/Boeing format. This is done in \newline
-\TriExe{triutils/ex1.cpp}. The key instructions are the following.
-
-First, we define pointers to Epetra\_Vector and Epetra\_Matrix objects:
-\begin{verbatim}
-// Pointers because of Trilinos_Util_ReadHb2Epetra
-Epetra_Map * readMap;
-Epetra_CrsMatrix * readA; 
-Epetra_Vector * readx; 
-Epetra_Vector * readb;
-Epetra_Vector * readxexact;
-\end{verbatim}
-The HB problem is read with the instruction
-\begin{verbatim}
-Trilinos_Util_ReadHb2Epetra(FileName, Comm, readMap, readA, readx, 
-                            readb, readxexact);   
-\end{verbatim}
-Here, \verb!Comm! is an Epetra\_SerialComm or Epetra\_MpiComm object,
-and \verb!FileName! an array of character containing the name of the HB
-file.
-
-This creates an Epetra\_Matrix and two Epetra\_Vectors, with all the
-elements assigned to processor zero. This is because the HB file does
-not contain any information about the distribution of the elements to
-the processors.  Should the user need to solve the linear problem in
-parallel, thus he has to redistributed \verb!readA!. In this case, the
-first step is to specify a map.  For instance, we can use a linear map:
-\begin{verbatim}
-int NumGlobalElements = readMap->NumGlobalElements();
-Epetra_Map map(NumGlobalElements,0,Comm);
-\end{verbatim}
-and create and exporter to distribute read-in matrix and vectors:
-\begin{verbatim}
-Epetra_Export exporter(*readMap, map);
-Epetra_CrsMatrix A(Copy, map, 0);
-Epetra_Vector x(map);
-Epetra_Vector b(map);
-Epetra_Vector xexact(map);
-// this is the data distribution phase
-x.Export(*readx, exporter, Add);
-b.Export(*readb, exporter, Add);
-xexact.Export(*readxexact, exporter, Add);
-A.Export(*readA, exporter, Add);
-\end{verbatim}
-Finally, we can destroy the objects used to store the non-distributed HB
-problem:
-\begin{verbatim}
-delete readA;
-delete readx;
-delete readb;
-delete readxexact;
-delete readMap;
-\end{verbatim}
-and solve the distributed linear system with the method of choice.
-
-%%%
-%%%
-%%%
-
-\subsection{Trilinos\_Util\_ShellOptions}
+\subsection{Trilinos\_Util\_CommandLineParser}
 \label{sec:triutils:shell}
 
-\verb!Trilinos\_Util\_ShellOptions! is a class to manage the input
-arguments and shell variables.  With this class, it is easy to handle
+\verb!Trilinos\_Util\_CommandLineParser! is a class to parse the command
+line.  With this class, it is easy to handle
 input line arguments and shell variables. For instance, the user can
 write
 \begin{verbatim}
@@ -131,11 +59,11 @@ A simple code using this class is as follows:
 int main(int argc, char *argv[])
 {
 
-  Trilinos_Util_ShellOptions Args(argc,argv);
-  int nx = Args.GetIntOption("-nx", 123);
-  int ny = Args.GetIntOption("-ny", 145);
-  double tol = Args.GetDoubleOption("-tol", 1e-12);
-  string solver = Args.GetIntOption("-solver");
+  Trilinos_Util_CommandLineParser CLP(argc,argv);
+  int nx = CLP.Get("-nx", 123);
+  int ny = CLP.Get("-ny", 145);
+  double tol = CLP.Get("-tol", 1e-12);
+  string solver = CLP.Get("-solver","gmres");
 
   cout << "nx = " << nx << endl;
   cout << "ny = " << ny << " (default value)" << endl;
@@ -157,16 +85,14 @@ name of the option and \verb!1e-12! its value. Both choices are valid:
 Option names must begin with one or more dashes (`\verb!-!'). Each option
 cannot have more than one value.
 
-To use this class, the user has to build the database using the 
-\verb!argc,argv! input arguments. Then, to retrieve the option value, the user
- has to use one of the following functions:
-\verb!GetIntOption!, \verb!GetDoubleOption!, and \verb!GetStringOption!.
+To use this class, the user has to build the database using the
+\verb!argc,argv! input arguments. Then, to retrieve the option value,
+the user has the overloaded function \verb!Get!.
  
-If option name is not found in the database, a value of 0, 0.0 or an
- empty string is returned. If needed, the user can also specify a
- default value to return when the option name is not found in the
- database. Method \verb!HaveOption! can be used to query the database for
- an option.
+If option name is not found in the database, the default value is
+returned. If needed, the user can also specify a default value to return
+when the option name is not found in the database. Method
+\verb!HaveOption! can be used to query the database for an option.
 
 File \TriExe{triutils/ex2.cpp} gives an example of the usage of this class.
  
@@ -174,14 +100,20 @@ File \TriExe{triutils/ex2.cpp} gives an example of the usage of this class.
 %%%
 %%%
 
-\subsection{Trilinos\_Util\_MatrixGallery}
+\subsection{Trilinos\_Util\_CrsMatrixGallery}
 \label{sec:triutils:gallery}
 
-\verb!Trilinos\_Util\_MatrixGallery! is a class to define linear
-problems. It is meant to provide  functionalities  similar to the
-MATLAB's \verb!gallery! function. A typical constructor requires the
-problem type and an Epetra\_Comm, and it is followed by a set of
-instructions to specify the problem. For instance, we may have:
+\verb!Trilinos_Util_CrsMatrixGallery! is a class to Epetra\_CrsMatrix
+and Epetra\_LinearProblem. It is meant to provide functionalities
+similar to the MATLAB's \verb!gallery! function. Many of the matrices
+that can be created using Trilinos\_Util\_CrsMatrixGallery are indeed
+equivalent to those provided by MATLAB\copyright. In these cases, the
+reader is referred to the MATLAB documentation for more details about
+the matrices' properties. 
+
+A typical constructor requires the problem type and an Epetra\_Comm, and
+it is followed by a set of instructions to specify the problem. For
+instance, we may have:
 \begin{verbatim}
 Trilinos_Util_MatrixGallery Gallery("laplace_2d", Comm);
 Gallery.set("problem_size",100);
@@ -192,44 +124,48 @@ which creates a matrix corresponding to the discretization of a 2D
 Laplacian on a Cartesian grid with 100 points. The nodes are decomposed
 linearly, and the exact solution is a random vector.
 
-A list of currently avaialble problems is reported below.
+A list of currently avaialble problems is reported below. By notation,
+\verb!IntValue! refers to a generic positive integer, \verb!a,b,c! to
+double-precision values.
 
 \vskip .1 in
 
 \choicebox{\tt eye}{Creates an identity matrix. The dimension of the
-  problem is set using Set("problem size", IntValue), or, alternatively,
-  by Set("nx", IntValue).}
+  problem is set using {\tt Set("problem size", IntValue)}, or,
+  alternatively, by {\tt Set("nx", IntValue)}.}
 
-\choicebox{\tt diag}{Creates a diagonal matrix. The elements on the diagonal
-  can set using Set("a",value), where value is either a double, or an
-  Epetra\_Vector. Problem size set as for "eye."}
+\choicebox{\tt diag}{Creates a diagonal matrix. The elements on the
+  diagonal can be set using {\tt Set("a",value)}, where value is either a
+  double, or an Epetra\_Vector. Problem size set as for {\tt eye}.}
 
-\choicebox{\tt tridiag}{ Creates a tridiagonal matrix. The diagonal element
-  is set using Set("a", DiagValue), the subdiagonal using
-  Set("b",SubDiagValue), and the superdiagonal using
-  Set("c",SupDiagValue).  DiagValue, SubDiagValue, and SupDiagValue can
+\choicebox{\tt tridiag}{ Creates a tridiagonal matrix. The diagonal
+  element is set using {\tt Set("a", DiagValue)}, the subdiagonal using
+  {\tt Set("b",SubDiagValue)}, and the superdiagonal using
+  {\tt Set("c",SupDiagValue)}.  DiagValue, SubDiagValue, and SupDiagValue can
   be scalar or Epetra vectors.  In the latter case, all vectors must
   have the same number of elements. Elements i will be use to define row
-  i. Problem size specified as for "eye."}
+  i. Problem size specified as for {\tt eye}.}
 
-\choicebox{\tt laplace\_1d}{ Create the classical tridiagonal matrix with
-  stencil [-1, 2, -1].  Problem size specified as for "eye."}
+\choicebox{\tt laplace\_1d}{ Create the classical tridiagonal matrix
+  with stencil [-1, 2, -1].  Problem size specified as for {\tt eye}.}
 
-\choicebox{\tt laplace\_2d}{Creates a matrix corresponding to the stencil of
-  a 2D Laplacian operator on a structured cartesian grid. Problem size
-  is specified using Set("problem size", IntValue). In this case,
-  IntValue must be a square number. Alternatively, one can set the
-  number of nodes along the x-axis and y-axis, using Set("nx",IntValue)
-  and Set("ny",IntValue).}
+\choicebox{\tt laplace\_2d}{Creates a matrix corresponding to the
+  stencil of a 2D Laplacian operator on a structured cartesian grid.
+  Problem size is specified using {\tt Set("problem size", IntValue)}.
+  In this case, IntValue must be a square number. Alternatively, one can
+  set the number of nodes along the x-axis and y-axis, using {\tt
+    Set("nx",IntValue)} and {\tt Set("ny",IntValue)}.}
 
 \choicebox{\tt cross\_stencil\_2d}{Creates a matrix with the same stencil of
   "laplace\_2d", but with arbitrary values. The stencil is
   \[
-  A = \begin{tabular}{ccc}
+  A =   \left[
+    \begin{tabular}{ccc}
     & e &  \\
   b & a & c \\
     & d &   \\
   \end{tabular}
+  \right]
   \]
   and each value can be either a double, or and Epetra\_Vector. Problem
   size specified as in "laplace\_2d."}
@@ -238,23 +174,23 @@ A list of currently avaialble problems is reported below.
   a 3D Laplacian operator on a structured cartesian grid. Problem size
   specified using Set("problme size",IntValue). In this case, IntValue
   must be a cube. Alternatively, one can specify the number of nodes
-  along the axis, using Set("nx",IntValue), Set("ny",IntValue), and
-  Set("nz",IntValue).}
+  along the axis, using {\tt Set("nx",IntValue), Set("ny",IntValue)}, and
+  {\tt Set("nz",IntValue)}.}
 
 \choicebox{\tt cross\_stencil\_3d}{Similar to the 2D case. The matrix stencil
   correspond to that of a 3D Laplace operator on a structured grid. On a
-  given x-y plane, the stencil is a in "laplace 2d". The value on the
+  given x-y plane, the stencil is a in {\tt laplace 2d}. The value on the
   plane below is set using Set("f",F), and in the plane above with
-  Set("g",G"). Problem size specifed as in "laplace3d."}
+  {\tt Set("g",G")}. Problem size specifed as in {\tt laplace3d}.}
 
-\choicebox{\tt hb}{The matrix is read from file. File name is specified by
-  Set("file name", FileName). FileName is a C++ string. Problem size is
-  automatically read from file.}
+\choicebox{\tt hb}{The matrix is read from file. File name is specified
+  by {\tt Set("file name", FileName)}. {\tt FileName} is a C++ string.
+  Problem size is automatically read from file.}
 
 \choicebox{\tt lehmer}{Returns a symmetric positive definite matrix, such
   that A(i,j) = (i+1)/(j+1) (for j>=i), and (j+1)/(i+1) (for j<j). This
-  matrix has three properties: - is totally nonnegative; - the inverse
-  is tridiagonal and esplicitly known; - The condition number is bounded
+  matrix has three properties: is totally nonnegative, the inverse
+  is tridiagonal and esplicitly known, The condition number is bounded
   as n <= cond(A) <= 4*n (n is the problem size).}
 
 \choicebox{\tt minij}{Returns the symmetric positive definite matrix
@@ -263,14 +199,52 @@ A list of currently avaialble problems is reported below.
 
 \choicebox{\tt ris}{Returns a symmetric Hankel matrix with elements
   A(i,j) = 0.5/(n-(i+1)-(j+1)+1.5), with n equals problem size. (i and j
-  start from 0.)  The eigenvalues of A cluster around -pi/2 and pi/2.}
+  start from 0.)  The eigenvalues of A cluster around -$\pi/2$ and
+  $\pi/2$.}
 
 \choicebox{\tt hilbert}{This is a famous example of a badly conditioned
   matrix. The elements are defined as 1/((i+1)+(j+1)-1). (i and j start
   from 0.)}
 
 \choicebox{\tt jordblock}{Creates a Jordan block with eigenvalue set via
-  Set("a",DoubleVal).}
+  {Set("a",DoubleVal)}.}
+
+\choicebox{\tt  cauchy}{Creates a particular instance of a Cauchy matrix with
+  elements A(i,j) = 1/(i+j) (where i and j range from 1 to
+  NumGlobalElements).  Explicit formulas are known for the inverse and
+  determinand of a Cauchy matrix. For this particular Cauchy matrix, the
+  determinant is nonzero and the matrix is totally positive.}
+
+\choicebox{\tt fiedler}{Creates a matrix whose element are A(i,j) = | i - j |.
+  The matrix is symmetric, and has a dominant positive eigenvalue, and
+  all the other eigenvalues are negative.}
+
+\choicebox{\tt hanowa}{Creates a matrix whoe eigenvalues lie on a vertical line
+  in the complex plane. The matrix has the 2x2 block structure
+  \[
+  A = \left[
+    \begin{tabular}{cc} a * eye(n/2) & -diag(1:m) \\
+        diag(1:m) &     a * eye(n/2) \\
+\end{tabular}
+      \right].
+        \]
+  The complex eigenvalues are of the form a +- k*i, for 1 <= k <= n/2.
+  The default value for a is -1.}
+
+\choicebox{\tt kms}{Create the n-by-n Kac-Murdock-Szego Toepliz matrix
+  such that A(i,j) = rho\^(abs(i-j)) (for real rho only). Default value
+  for rho is 0.5.  The inverse of this matrix is tridiagonal, and it is
+  positive definite if and only if 0 < abs(rho) < 1.}
+
+\choicebox{\tt parter}{Creates a matrix A(i,j) = 1/(i-j+0.5). A is a
+  Cauchy and a Toeplliz matrix. Most of the singular values of A are
+  very close to $\pi$.}
+
+\choicebox{\tt pei}{Creates the matrix $\alpha$ * eye(n) + ones(n). This
+  matrix is singular for $\alpha = 0$ or -n.}
+
+\choicebox{\tt vander}{Create the Vandermonde matrix whose second last
+  column is the vector c. The j-th column is given by $A(:,j) = C^{(n-j)}$.}
 
 \medskip
 
@@ -284,7 +258,7 @@ Set("exact solution", value). value can be:
 \choicebox{\tt random}{Create a random solution vector}
 
 \choicebox{\tt linear}{Set value at node i is defined as alpha*i. The
-  double value alpha can be set via Set("alpha",DoubleVal).}
+  double value alpha can be set via {\tt Set("alpha",DoubleVal)}.}
 
 \medskip
 
@@ -297,8 +271,9 @@ using Set("map",value). Value is a string, defined as reported below.
   continuous chunks among the processors.}
 
 \choicebox{\tt box}{Used for problems defined on cartesian grids over a
-  square. The nodes is subdivided into mx x my subdomains. mx and my are
-  specified via Set("mx",IntValue) and Set("my",IntValue).}
+  square. The nodes is subdivided into {\tt mx x my} subdomains. {\tt
+    mx} and {\tt my} are specified via {\tt Set("mx",IntValue)} and {\tt
+    Set("my",IntValue)}.}
 
 \choicebox{\tt interlaces}{Elements are subdivided so that element i is
   assigned to process i\%NumProcs.}
@@ -347,3 +322,59 @@ input, or set via Set("num pde eqns",IntValue)).
 A pointer to the linear problem defined by the Vbr matrix is returned by
 method \verb!GetVbrLinearProblem()!.
 
+\medskip
+
+Trilinos\_Util\_CrsMatrixGallery can be used in conjuction with
+Trilinos\_Util\_CommandLineParser as in the following code:
+\begin{verbatim}
+int main(int argc, char *argv[]) 
+{
+ #ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  Epetra_Time Time(Comm);
+
+  Trilinos_Util_CommandLineParser CLP(argc,argv);
+  Trilinos_Util_CrsMatrixGallery Gallery("", Comm);
+
+  Gallery.Set(CLP);
+
+  // get matrix
+  Epetra_CrsMatrix * Matrix = Gallery.GetMatrix();
+  Epetra_Vector * LHS = Gallery.GetLHS();
+  Epetra_Vector * StartingSolution = Gallery.GetStartingSolution();
+  Epetra_Vector * ExactSolution = Gallery.GetExactSolution();
+  Epetra_LinearProblem * Problem =  Gallery.GetLinearProblem();
+
+  // various computatons...
+
+  // check that computed solution (in StartingSolution) 
+  // is close enough the ExactSolution
+
+  double residual, diff;
+
+  Gallery.ComputeResidual(residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
+  
+  if( Comm.MyPID()==0 ) 
+    cout << "||b-Ax||_2 = " << residual << endl;
+
+  if( Comm.MyPID()==0 ) 
+    cout << "||x_exact - x||_2 = " << diff << endl;
+
+#ifdef HAVE_MPI
+  MPI_Finalize() ;
+#endif
+
+  return 0 ;
+
+}
+\end{verbatim}
+This program may be ran with the following command line:
+\begin{verbatim}
+$ ex1.exe -problem_type=laplace_2d -problem_size=10000
+\end{verbatim}

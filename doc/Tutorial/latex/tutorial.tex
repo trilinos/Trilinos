@@ -26,7 +26,7 @@
 % ***********************************************************************
 % @HEADER
 
-\documentclass[11pt,relax]{SANDreport}
+\documentclass[12pt,relax]{SANDreport}
 \usepackage{graphicx}
 \usepackage{amsmath,amsfonts,amsthm}
 \usepackage{amssymb}
@@ -63,25 +63,38 @@ Marzio Sala and Michael Heroux}
 
 \begin{abstract}
   
-  This document introduces the use of \Trilinos{}, version 3.1.
-  \Trilinos{} has been written to support, in a rigorous manner, the
-  solver needs of the engineering and scientific applications at Sandia
-  National Laboratories.
+  The Trilinos Project is an effort to facilitate the design,
+  development, integration and ongoing support of mathematical software
+  libraries.  The goal of the Trilinos Project is develop parallel
+  solver algorithms and libraries within an object-oriented software
+  framework for the solution of large-scale, complex multiphysics
+  engineering and scientific applications. The emphasis is on developing
+  robust, scalable algorithms in a software framework, using abstract
+  interfaces for flexible interoperability of components while providing
+  a full-featured set of concrete classes that implement all the
+  abstract interfaces.
 
   \medskip
   
-  The aim of this manuscript is to present the basic features of some of
-  the Trilinos packages. The presented material includes the definition
-  of distributed matrices and vectors with Epetra, the iterative
-  solution of linear systems with AztecOO, incomplete factorizations
-  with IFPACK, multilevel methods with ML, direct solution of linear
-  system with Amesos, eigenvalues and eigenvectors computations with
-  Anasazi, and iterative solution of nonlinear systems with NOX, and a
-  description of several utility classes provided by other Trilinos
-  packages.  With the help of several examples, some of the most
-  important classes and methods are explained to the unexperienced user.
-  For the most part, each example is largely annotated.  Other comments
-  can be found in the source of each example.
+  This document introduces the use of \Trilinos{}, version 4.0.
+  \Trilinos{} has been written to support, in a rigorous manner, the
+  solver needs of the engineering and scientific (massively parallel)
+  applications at the Sandia National Laboratories.
+
+  \medskip
+  
+  The aim of this manuscript is to present the basic features of
+  Trilinos. The presented material includes the definition of
+  distributed matrices and vectors with Epetra, the iterative solution
+  of linear systems with AztecOO, incomplete factorizations with IFPACK,
+  multilevel and domain decomposition preconditioners with ML, direct
+  solution of linear system with Amesos, eigenvalues and eigenvectors
+  computations with Anasazi, and iterative solution of nonlinear systems
+  with NOX, and a description of several utility classes provided by
+  other Trilinos packages.  With the help of several examples, some of
+  the most important classes and methods are explained to the
+  unexperienced user.  For the most part, each example is largely
+  annotated.  Other comments can be found in the source of each example.
 
   \medskip
   
@@ -133,6 +146,10 @@ have never been possible.
 
 \clearpage
 \newpage
+\include{triutils}
+
+\clearpage
+\newpage
 \include{aztecoo}
 
 \clearpage
@@ -159,11 +176,7 @@ have never been possible.
 \newpage
 \include{teuchos}
 
-\clearpage
-\newpage
-\include{triutils}
-
 \bibliographystyle{plain}
-\bibliography{../../CommonFiles/TrilinosBibliography}
+\bibliography{../../CommonFiles/TrilinosBibliography,tutorial_biblio}
 
 \end{document}

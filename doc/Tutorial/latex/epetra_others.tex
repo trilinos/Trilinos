@@ -50,24 +50,22 @@ To retrieve elapsed and wall-clock time can be problematic because of
 several platform-dependent and language-dependent issues. To avoid those
 problems, Epetra furnishes the Epetra\_Time class.  Epetra\_Time is
 meant to insulate the user from the specifics of timing among a variety
-of platforms.
-
-Using Epetra\_Time, it is possible to measure the elapsed time. This is
-the time elapsed between two phases of a program.
+of platforms.  Using Epetra\_Time, it is possible to measure the elapsed
+time. This is the time elapsed between two phases of a program.
 
 An Epetra\_Time object is defined as
 \begin{verbatim}
 Epetra_Time time(Comm);
 \end{verbatim}
-To compute the elapsed time required by a piece of code, then user
+(\verb!Comm! being an Epetra\_Comm object, see Section~\ref{sec:comm}.)
+To compute the elapsed time required by a given piece of code, then user
 should put the instruction
 \begin{verbatim}
 time.ResetStartTime();
 \end{verbatim}
-before the code to the timed. Then, the methods \verb!ElapsedTime()! and
-\verb!WallTime()! will return the elapsed time and wall-clock time,
-respectively. \verb!ElapsedTime()!  returns the elapsed time from the
-creation of {\sl this} object.
+before the code to be timed. \verb!ElapsedTime()!  returns the elapsed
+time from the creation of {\sl this} object or from the last call to
+\verb!ResetStartTime()!.
 
 %%%
 %%%

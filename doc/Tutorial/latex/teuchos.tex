@@ -26,8 +26,8 @@
 % ************************************************************************
 %@HEADER
 
-\section{Teuchos}
-\label{chap:triutils}
+\section{The Teuchos Utility Classes}
+\label{chap:teuchos}
 
 Teuchos is a collection of high-level C++ classes, meant to 
 help the development of scientific codes. Teuchos (pronounced
@@ -38,9 +38,9 @@ the Teuchos documentation.
 Teuchos classed have been divided between a "standard" build and an
 "extended" build. The "standard" build has shown to be a portable subset
 of the Teuchos tools and is built by default when Teuchos is enabled
-(--enable-teuchos). The "extended" build is also portable, but contains
-more special purpose tools like XML parsing and communicators
-(--enable-teuchos-extended). 
+(\verb!--enable-teuchos!). The "extended" build is also portable, but
+contains more special purpose tools like XML parsing and communicators
+(\verb!--enable-teuchos-extended!).
 
 Standard classes in the Teuchos namespace include low-level math functions ({\tt BLAS}
 and {\tt LAPACK}, thin layers of C++ code wrapping BLAS and
@@ -63,14 +63,12 @@ and \verb!ContainerComm!).
 
 In this Chapter, we will present the following classes:
 \begin{itemize}
-\item \verb!Teuchos::ParameterList! class, in
-  Section~\ref{sec:teuchos:ParameterList}). ParameterList is a very
-  handy container, that can be used to group all the parameters required
-  by a piece of code;
+\item \verb!Teuchos::ParameterList! class. ParameterList is a very handy
+  container, that can be used to group all the parameters required by a
+  piece of code (in Section~\ref{sec:teuchos:ParameterList});
 \item \verb!Teuchos::RefCountPtr! class, a smart reference-counted
   pointer class, which provides functionalities similar to the garbage
-  collector of Java. It is presented
-  Section~\ref{sec:teuchos:RefCountPtr});
+  collector of Java (in Section~\ref{sec:teuchos:RefCountPtr});
 \item \verb!Teuchos::TimeMonitor! is briefly described in
   Section~\ref{sec:teuchos:TimeMonitor};
 \item \verb!Teuchos::LAPACK! is introduced in
@@ -119,7 +117,7 @@ parameters can be retrived with method \verb!unused()!.
   \verb!Teuchos::ParameterList! is currently used by several Trilinos
   packages. For instance, all parameters for Amesos objects~(see Chapter
   \ref{chap:amesos}) and the smoothed aggregation preconditioning class
-  \verb!Epetra_ML_Preconditioner! (see Section~\ref{sec:SA}) are set
+  \verb!ML_Epetra::Preconditioner! (see Section~\ref{sec:ml_prec}) are set
   through a parameters' list.
 \end{remark}
 
