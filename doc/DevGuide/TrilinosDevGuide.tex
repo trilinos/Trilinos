@@ -132,7 +132,7 @@ formulations~\cite{DayHero2000}, built on top of Epetra and AztecOO.
 
 \item[Meros]
 Segregated preconditioning package.  Provides scalable block
-preconditioning for problems that coupled simultaneous solution
+preconditioning for problems that couple simultaneous solution
 variables such as Navier-Stokes problems.
 
 \item[ML]
@@ -218,9 +218,9 @@ this guide supports three types of development activities:
 \item New Project: Development of a new package using little or no
 existing software as a base.  All sections of this guide are
 appropriate reading.
-\item Integration of an existing third-party software: In this case,
-existing software is being imported into the Trilinos framework.  In
-this case, Section~\ref{Section:IntegratingPackages} is particularly
+\item Integration of existing third-party software: In this case,
+existing software is being imported into the Trilinos framework.  
+Section~\ref{Section:IntegratingPackages} is particularly
 important, as are Sections~\ref{Section:AvailableServices},
 ~\ref{Section:PackageRequirements} and~\ref{Section:EpetraAndTSF}.
 \item Ongoing development:  For existing Trilinos package developers,
@@ -256,8 +256,42 @@ Optional parameters. \\ \hline
 \section{Getting Started}
 \label{Section:GettingStarted}
 This chapter covers some of the basics that a developer will need to know when 
-beginning to work on the Trilinos project.  We address how to configure and 
-build Trilinos, as well as how to add files to an existing package.
+beginning to work on the Trilinos project.  We address how to obtain, 
+configure and build Trilinos, as well as how to add files to an 
+existing package.
+
+\subsection{Obtaining a Copy of Trilinos}
+
+Trilinos can be obtained in two different ways.  Developers should obtain a 
+copy of Trilinos via the Trilinos CVS repository.  
+To access the repository, an account on software.sandia.gov is required.  
+To get an account, contact the Trilinos Project leader.  The following two 
+environment variables must be set to access the repository:
+
+\DisplayCommand{CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS}
+\DisplayCommand{CVS\_RSH ssh}
+
+(Replace ``your\_user\_name'' with your user name on software.)
+
+To checkout a working copy of the development branch of Trilinos in the 
+current directory, type
+
+\DisplayCommand{cvs checkout Trilinos}
+
+To checkout a working copy of only one package of Trilinos in the 
+current directory, type
+
+\DisplayCommand{cvs checkout <package\_name>}
+
+(Replace ``package\_name'' with the name of the package.)
+
+For those not familiar with CVS, a brief discussion covering some of the most 
+common CVS commands is available in Section~\ref{Section:CVS}.  For a more 
+complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
+
+Trilinos can also be obtained in the form of a tarball from the Trilinos 
+website at 
+\InlineDirectory{http://software.sandia.gov/trilinos/downloads.html}.  
 
 \subsection{Recommended Build Directory Structure}
 
@@ -307,10 +341,10 @@ Figure~\ref{Figure:TrilinosDirectoryStructure} illustrates the
 \label{Figure:TrilinosDirectoryStructure}
 \caption{Recommended Layout for Trilinos Build Directories}
 \end{figure}recommended layout.  First, from the highest 
-directory in the source tree (Trilinos for a repository copy, Trilinos-3.0.1 
+directory in the source tree (Trilinos for a repository copy, Trilinos-3.0.2 
 for a distribution), make a new directory - for an MPI build
 on a Linux platform, a 
-typical name could be \InlineDirectory{LINUX\_MPI}.  
+typical name is \InlineDirectory{LINUX\_MPI}.  
 Finally, from the new dirctory, type
 
 \DisplayCommand{../configure --with-mpi-compilers}
@@ -378,19 +412,16 @@ packages are built by default and which ones aren't, simply cd to the Trilinos h
 {\bf NOTES:} 
 \begin{enumerate}
 \item {\bf Ifpack versions:} 
-Ifpack is divided into old and new versions.  Future ifpack developments 
-will replace all of old ifpack, but at this time some users will need to append
+Ifpack is divided into old and new versions.  Future Ifpack developments 
+will replace all of Old Ifpack, but at this time some users will need to append
 \InlineCommand{--enable-oldifpack} to the configure line.
 
 \item {\bf Enabling/Disabling package builds:} 
 The configure process is set up to detect when a 
 \InlineCommand{--disable-<package>} option would break a package dependency.  
-For example, ifpack depends on epetra, so if a user wants to build ifpack, but 
+For example, Ifpack depends on Epetra, so if a user wants to build Ifpack, but 
 types \InlineCommand{--disable-epetra}, epetra will be configured and built 
-anyway.  However, some of the tests and examples have different dependencies 
-than the core package.  It is possible that not all of these dependencies have 
-been accounted for.  Please submit a bug report for any problems found with 
-this matter.
+anyway.  
 
 \item {\bf Installing libraries and header files:}
 To install libraries and header files in a particular location, 
@@ -405,7 +436,8 @@ cannot find.  Also, if autotools selects, for example, the wrong
 BLAS library by default, the user must indicate which blas library to use.  
 More obscure issues such as standards 
 non-compliance are also dealt with here.  If all required libraries (often 
-the BLAS and LAPACK) are located in standard places, try configuring without
+the BLAS and LAPACK) are located in standard places and no special 
+compiler flags are required, try configuring without
 providing additional information.
 
 \item {\bf Sample configure invocation scripts:}
@@ -415,7 +447,7 @@ place to look for examples is  \newline
 configure invocation scripts here for various platforms.  These scripts are 
 named using the following convention:
 \InlineCommand{arch\_comm\_machine}.
-For example \InlineCommand{sgi64\_mpi\_atlantis}.  Note that these scripts are 
+For example, \InlineCommand{sgi64\_mpi\_atlantis}.  Note that these scripts are 
 examples only and are primarily useful for the values of options such as 
 \InlineCommand{LDFLAGS}, \InlineCommand{CPPFLAGS}, 
 and \InlineCommand{CXXFLAGS}.  Users should not expect to be able to find a 
@@ -605,9 +637,8 @@ with Autotools in a directory that contains a classic build will not work.
 Before attempting an autotools build, the classic build object, library, and 
 executable files within the source tree should be removed.
 
-\item Pavel Bochev has discovered the the build process will fail on OSX if 
-``DropZip'' is used to unzip the Trilinos tarball.  This utility truncates 
-long file names.
+\item The build process will fail on OSX if ``DropZip'' is used to 
+unzip the Trilinos tarball.  This utility truncates long file names.
 
 \end{itemize}
 
@@ -645,7 +676,7 @@ be merged back into the development branch.
 
 The section frequently mentions various CVS commands.  For more information on 
 these CVS commands, see Section~\ref{Section:CVS}.   For a 
-more complete listing of CVS commands, see the Gnu CVS Home Page~\cite{CVS}.
+more complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
  
 \begin{enumerate}
 \item Obtain the supported versions of Autoconf and Automake.
@@ -689,13 +720,12 @@ Note that directories cannot be removed from the repository using
 
 New source files should be placed into a category in the appropriate 
 Makefile.am.  Typically, the directory in which the new files are located will 
-contain a Makefile.am.  If not, the appropriate Makefile.am will be found in 
-the Makefile.am that is in the parent directory directly above the directory 
-in which the new files are located.  When adding a new directory that will
-require a Makefile (for example, when adding a new test directory), create a 
-new Makefile.am.  Usually a developer can find a Makefile.am to use as a 
-template in the new\_package package.  To remove files from the build process, 
-delete the file names from the appropriate Makefile.am.
+contain a Makefile.am, but sometimes source files are listed in the 
+Makefile.am one directory above the files.  When adding a new directory that 
+will require a Makefile (for example, when adding a new test directory), 
+create a new Makefile.am.  Usually a developer can find a Makefile.am to use 
+as a template in the new\_package package.  To remove files from the build 
+process, delete the file names from the appropriate Makefile.am.
 
 \item If adding a new Makefile.am, update configure.ac and the parent 
 Makefile.am
@@ -759,10 +789,10 @@ A second reason to update again before committing changes is to avoid
 confusion.  After a bootstrap, all of the generated files will get an updated 
 timestamp, but in most cases only some of the files will actually be 
 modified.  If a developer commits changes before updating, all of the 
-generated files will be viewed as having been modified.  This is bad for 
+generated files will be considered to have been modified.  This is bad for 
 several reasons.  One of the most important is that when committing changes, a 
 developer should always verify that the list of files that are about to be 
-committed makes sense. A cvs update will check to 
+committed makes sense. A \InlineCommand{cvs update} will check to 
 see if the file has really been changed or if it simply has a new timestamp.
 
 \item Commit the changes to the Trilinos repository
@@ -777,7 +807,7 @@ message.  Developers who are unfamiliar with the process of committing changes
 should see Section~\ref{Section:CVS} for a more detailed description of this 
 process.
 
-Finally, save the file, and exit the CVS editor to commit the changes.
+Finally, save the file and exit the CVS editor to commit the changes.
 
 When using the above process to commit new source code, the new source must 
 be functioning properly, otherwise the repository will not be stable.  
@@ -824,9 +854,7 @@ to, can get a jump start by using a Trilinos package called
 ``new\_package''.  This trivial package exists for one primary purpose.  
 It walks a developer through the process of setting up a package to 
 configure and build using autotools.  General instructions for how to get 
-started can be found in Section~\ref{Section:IntegratingPackages}.  Please 
-note that new\_package is a work in progess, suggestions and contributions are 
-welcome, especially for FAQ's.
+started can be found in Section~\ref{Section:IntegratingPackages}.
 
 Trilinos provides a set of M4~\cite{M4} macros that can be used by any other
 package when its Autoconf and Automake configure and build system is being 
@@ -844,7 +872,7 @@ testing capabilities.  Within a number of Trilinos packages, we employ
 used and probed.  In the future, Trilinos will perform ``black box'' testing
 of packages via the Trilinos Solver Framework (TSF) virtual class
 interfaces.  Any package that implements the TSF interfaces (see
-Section~\ref{subsect:InteropTSF} below) will be tested via this black box
+Section~\ref{subsect:InteropTSF}) will be tested via this black box
 test environment.
 
 Trilinos encourages packages to have comprehensive regression tests by 
@@ -866,11 +894,11 @@ of two components.
 
 One part of the test harness is used to run nightly tests on a number of 
 platforms.  This portion of the test harness performs a 
-\InlineCommand{cvs update} (gets the most recent source code) every night and 
-then builds the libraries and runs any tests that have been integrated into 
+\InlineCommand{cvs update} (gets the most recent source code), builds the 
+libraries and runs any tests that have been integrated into 
 the test harness.  
 
-Tests that are added as ``daily'' tests are run six time a week, while 
+Tests that are added as ``daily'' tests are run six times a week, while 
 ``weekly'' tests are run once a week.  Currently the nightly test harness only 
 runs on Linux, IRIX64, Solaris and DEC/OSF1, but it will eventually run on 5-8 
 platforms.  Packages that have not ported to a particular platform can be 
@@ -894,17 +922,14 @@ Please note that this document is a work in progress.
 
 Trilinos source code is maintained in a CVS~\cite{CVS} repository.  It is 
 very easy to add new packages to the repository.  Packages that already use 
-CVS can even retain their CVS history!  To access the repository, one must 
-have an account on software.sandia.gov.  Once an account has been granted, 
-set the following two environment variables (replace ``your\_user\_name'' 
-with your user name on software):
-
-\DisplayCommand{CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS}
-\DisplayCommand{CVS\_RSH ssh}
+CVS can even retain their CVS history!  Instructions for obtaining a copy of 
+Trilinos via the CVS repository can be found in 
+Section~\ref{Section:GettingStarted}
 
 For those not familiar with CVS, a brief discussion covering some of the most 
-common CVS commands is available in~\ref{Section:CVS}.  For a more complete 
-listing of CVS commands, see the Gnu CVS Home Page~\cite{CVS}.
+common CVS commands is available in Section~\ref{Section:CVS}.  
+For a more complete listing of CVS commands, see the GNU 
+CVS Home Page~\cite{CVS}.
 
 \subsection{Bonsai}
 
@@ -1022,8 +1047,10 @@ leaders lists for individual packages.
 
 %**Consider an example showing how tools can work together to fix bugs.**
 
-	\subsection{Portable Interface to BLAS and LAPACK}
-%	**(See Overview Doc pg 12)**
+%\subsection{Website...}
+%\label{subsect:Website}
+
+\subsection{Portable Interface to BLAS and LAPACK}
 
 Portable interface to BLAS and LAPACK: The Basic Linear Algebra
 Subprograms (BLAS)~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}
@@ -1373,7 +1400,7 @@ In general, we will be very slow to omit a package, or version of a package,
 that is in use unless there is equivalent interface and functionality support 
 from a new package.
 
-\section{Epetra and TSF: Two Special Trilinos Packages}
+\section{Petra and TSF: Two Special Trilinos Packages}
 \label{Section:EpetraAndTSF}
 In order to understand what Trilinos provides beyond the software
 engineering tools and the
@@ -1692,16 +1719,36 @@ collection of Trilinos packages depend on each other.
 \appendix
 \section{Commonly Used CVS Commands}
 \label{Section:CVS}
+To access the Trilinos CVS repository, an account on software.sandia.gov is 
+required.  To get an account, contact the Trilinos Project leader.  
+The following two 
+environment variables must be set to access the repository:
+
+\DisplayCommand{CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS}
+\DisplayCommand{CVS\_RSH ssh}
+
+(Replace ``your\_user\_name'' with your user name on software.)
+
 Below is a brief description of the most commonly used CVS commands.  For a 
-more complete listing of CVS commands, see the Gnu CVS Home Page~\cite{CVS}.
+more complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
 
 \begin{itemize}
 \item {\bf Checking Out a Working Copy:}
-To get started, checkout a working copy of the development branch from the CVS 
-repository.  (Releases branches can be obtained by by checking out the 
-appropriate tagged version of the repository.  More about this below.)
+To checkout a working copy of the development branch of Trilinos in the 
+current directory from the CVS repository, type
 
 \DisplayCommand{cvs checkout Trilinos}
+
+To checkout a working copy of only one package of Trilinos in the 
+current directory, type
+
+\DisplayCommand{cvs checkout <package\_name>}
+
+(Replace ``package\_name'' with the name of the package.)
+
+To checkout a different branch or a tagged version of Trilinos, type
+
+\DisplayCommand{cvs checkout -r <name\_of\_branch\_or\_tag> Trilinos}
 
 \item {\bf Updating a Working Copy:}
 To update after a version has been obtained use the \InlineCommand{cvs update} 
