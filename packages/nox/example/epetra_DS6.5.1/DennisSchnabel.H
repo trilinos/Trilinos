@@ -26,10 +26,10 @@ class DennisSchnabel {
 public:
 
   // Constructor
-  DennisSchnabel::DennisSchnabel(int NumGlobalElements, 
-					     Epetra_Comm& Comm);
-  // Dstructor
-  DennisSchnabel::~DennisSchnabel();
+  DennisSchnabel(int NumGlobalElements, Epetra_Comm& Comm);
+
+  // Destructor
+  ~DennisSchnabel();
 
   // Evaluates the function (RHS) and/or the Jacobian using the solution 
   // values in solnVector.
