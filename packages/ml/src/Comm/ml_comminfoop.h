@@ -63,6 +63,10 @@ struct ML_CommInfoOP_Struct {
    int             *remap;
    int             total_rcv_length;
    int             minimum_vec_size, remap_length, remap_max;
+   double          time;
+   int             NumActiveProc;
+   int             proc_active;
+   ML_Comm         *comm;
 };
 
 /* -------------------------------------------------------------------- 
