@@ -31,6 +31,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example_epetra_preconditioner \
                   ml_example_epetra_preconditioner_2level \
                   ml_example_epetra_operator \
+                  ml_example_epetra_preconditioner_AztecMSR \
                   ml_filtering \
                   ml_test_bench
 else
@@ -44,6 +45,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example_epetra_preconditioner \
                   ml_example_epetra_preconditioner_2level \
                   ml_example_epetra_operator \
+                  ml_example_epetra_preconditioner_AztecMSR \
                   ml_filtering \
                   ml_test_bench
 
@@ -59,6 +61,7 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   ml_example_epetra_preconditioner \
                   ml_example_epetra_preconditioner_2level \
                   ml_example_epetra_operator \
+                  ml_example_epetra_preconditioner_AztecMSR \
                   ml_filtering \
                   ml_test_bench
 
@@ -93,6 +96,7 @@ ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
 ml_example_epetra_preconditioner_SOURCES = $(srcdir)/ml_example_epetra_preconditioner.cpp
 ml_example_epetra_preconditioner_2level_SOURCES = $(srcdir)/ml_example_epetra_preconditioner_2level.cpp
 ml_example_epetra_operator_SOURCES = $(srcdir)/ml_example_epetra_operator.cpp
+ml_example_epetra_preconditioner_AztecMSR_SOURCES = $(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp
 ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
 ml_test_bench_SOURCES = $(srcdir)/ml_test_bench.cpp
 
@@ -275,6 +279,11 @@ ml_example_epetra_preconditioner_2level_CPPFLAGS = ${ml_common_include_locations
 ml_example_epetra_preconditioner_2level_CXXFLAGS = ${ml_common_include_locations}
 ml_example_epetra_preconditioner_2level_LDADD = ${ml_libs} 
 ml_example_epetra_preconditioner_2level_LINK = ${mllink}
+
+ml_example_epetra_preconditioner_AztecMSR_CPPFLAGS = ${ml_common_include_locations}
+ml_example_epetra_preconditioner_AztecMSR_CXXFLAGS = ${ml_common_include_locations}
+ml_example_epetra_preconditioner_AztecMSR_LDADD = ${ml_libs} 
+ml_example_epetra_preconditioner_AztecMSR_LINK = ${mllink}
 
 ml_example_epetra_operator_CPPFLAGS = ${ml_common_include_locations}
 ml_example_epetra_operator_CXXFLAGS = ${ml_common_include_locations}
