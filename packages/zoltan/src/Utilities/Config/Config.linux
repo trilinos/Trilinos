@@ -94,6 +94,7 @@ RANLIB			= ranlib
 AR			= ar r
 
 CC			= mpicc -Wall
+CPPC			= mpiCC -Wall
 
 # ifeq "$(MPI_VERSION)" "lam"
 # INCLUDE_PATH		= -I$(LAMHOME)/include

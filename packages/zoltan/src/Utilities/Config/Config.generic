@@ -49,6 +49,10 @@ AR			= ar r
 # C Compiler
 CC			= mpicc
 
+# C++ Compiler
+CPPC                    = mpiCC 
+
+
 # Include paths needed for the C compiler; prefix all paths with -I.
 # This path should include the path for MPI, if it is not a default path.
 INCLUDE_PATH		=
