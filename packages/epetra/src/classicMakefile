@@ -47,7 +47,7 @@ EPETRA_CC = Epetra_SerialComm.cpp \
             Epetra_LAPACK.cpp \
             Epetra_LinearProblem.cpp \
             Epetra_Time.cpp Epetra_Object.cpp Epetra_Util.cpp Epetra_Flops.cpp \
-            Epetra_CrsSingletonFilter.cpp \
+            Epetra_CrsSingletonFilter_new.cpp \
             Epetra_IntVector.cpp \
             Epetra_MapColoring.cpp \
             Epetra_RowMatrixTransposer.cpp \

@@ -565,6 +565,8 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
   // Now create a vector that contains the global indices of the Source Epetra_MultiVector
   Epetra_IntVector SourceIndices(View, ContiguousSourceMap, SourceMap->MyGlobalElements());
 
+  cout << "Contiguous Source Map " << ContiguousSourceMap << endl
+       << "Contiguous Target Map " << ContiguousTargetMap << endl;
   // Create an exporter to send the SourceMap global IDs to the target distribution
   Epetra_Export Exporter(ContiguousSourceMap, ContiguousTargetMap);
   
