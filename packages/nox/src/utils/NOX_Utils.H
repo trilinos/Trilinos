@@ -20,6 +20,9 @@ class Utils {
 
 public:
 
+  //! Repeat the given character n times to the given stream.
+  static ostream& repeat(ostream& stream, int n, char c = '*');
+
   //! Set the parameters in the utilities class.
   static void setUtils(Parameter::List& p);
 
@@ -52,10 +55,42 @@ public:
   /*! Returns the rank of calling process */
   static int getMyPID();
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
+  class Fill {
+  public:
+    Fill() {};
+    ~Fill() {};
+    int n;
+    char c;
+  };
+
+  class Sci {
+  public:
+    Sci() {};
+    ~Sci() {};
+    double d;
+  };
+
+  static Fill fillobj;
+  static Sci sciobj;
+
+#endif
+
+  /*! \brief We can use it to put in an arbitrary number of stars or
+   *  any specified fill character.  cout << Utils::fill(10); cout <<
+   *  Utils::fill(10,'-'); */
+
+  static Fill& fill(int filln, char fillc = '*');
+
+  /*! \brief We can use it to put a formated double onto the output
+   *  with cout << sci(d); Note: There can only be ONE of these per line. 
+   *  \todo Fix so that there can be more than one per line. */
+
+  static Sci& sci(double dval);
+
 public:
   
-  //! String of stars.
-  static string stars;
 
   //! Output precision for floats and doubles.
   static int precision;
@@ -70,6 +105,11 @@ public:
   static int printProc;
 
 };
-};
+
+}
+
+ostream& operator<<(ostream&, const NOX::Utils::Fill&);
+ostream& operator<<(ostream&, const NOX::Utils::Sci&);
+
 
 #endif

@@ -167,18 +167,21 @@ List& List::sublist(const string& name)
   
 ostream& List::print(ostream& stream, int indent = 0) const
 {
-  for (int j = 0; j < indent; j ++)
-    stream << ' ';
-  stream << "-- List Entries --\n";
-  for (PCConstIterator i = params.begin(); i != params.end(); ++i) {
+  if (params.begin() == params.end()) {
     for (int j = 0; j < indent; j ++)
       stream << ' ';
-    stream << i->first << " = " << i->second << endl;
-    if (i->second.isList()) 
-      i->second.getListValue().print(stream, indent + 2);
+    stream << "[empty list]" << endl;
   }
-  for (int j = 0; j < indent; j ++)
-    stream << ' ';
-  stream << "-- End Of List --\n";
+  else 
+    for (PCConstIterator i = params.begin(); i != params.end(); ++i) {
+      for (int j = 0; j < indent; j ++)
+	stream << ' ';
+      if (i->second.isList()) {
+	stream << i->first << " -> " << endl;
+	i->second.getListValue().print(stream, indent + 2);
+      }
+      else
+	stream << i->first << " = " << i->second << endl;
+    }
   return stream;
 }

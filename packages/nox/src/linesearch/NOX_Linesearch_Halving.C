@@ -37,7 +37,6 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
 {
   double oldf = oldgrp.getNormRHS();
   double newf;
-  int precision = Utils::precision;
 
   step = defaultstep;
   newgrp.computeX(oldgrp, dir, step);
@@ -45,23 +44,26 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
   newf = newgrp.getNormRHS();
 
   if (Utils::doPrint(1)) {
-    cout.setf(ios::scientific);
-    cout.precision(precision);
-    cout << "\n" << Utils::stars << "Interval Halving Line Search ->\n";
+   cout << "\n" << Utils::fill(72) << "\n" << " -- Interval Halving Line Search -- \n";
   }
   while (newf >= oldf) {
 
     if (Utils::doPrint(1)) {
-      cout << " step = " << setw(precision + 6) << step
-	   << " oldf = " << setw(precision + 6) << oldf
-	   << " newf = " << setw(precision + 6) << newf
-	   << endl;
+      cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
+      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(oldf);
+      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(newf);
+      cout << endl;
     }
 
     step = step * 0.5;
 
-    if (step < minstep)
+    if (step < minstep) {
+      if (Utils::doPrint(1)) {
+	cout << "--Linesearch Failed!--" << endl;
+	cout << Utils::fill(72) << "\n" << endl;
+      }
       return false;
+    }
 
     newgrp.computeX(oldgrp, dir, step);
     newgrp.computeRHS();    
@@ -70,14 +72,12 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
 
   
   if (Utils::doPrint(1)) {
-    cout << " step = " << setw(precision + 6) << step
-	 << " oldf = " << setw(precision + 6) << oldf
-	 << " newf = " << setw(precision + 6) << newf
-	 << " (STEP ACCEPTED!)"
-	 << "\n" 
-	 << Utils::stars << endl;
-
-    cout.unsetf(ios::scientific);
+    cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
+    cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(oldf);
+    cout << Utils::fill(1,' ') << "newf = " << Utils::sci(newf);
+    cout << endl;
+    cout << "--Step Accepted!--" << endl;
+    cout << Utils::fill(72) << "\n" << endl;
   }
 
   return true;

@@ -227,14 +227,6 @@ const Abstract::Vector& Group::computeNewton(NOX::Parameter::List& p)
   int maxit = p.getParameter("Max Iterations", 400);
   double tol = p.getParameter("Tolerance", 1.0e-6);
 
-  if (Utils::doPrint(3)) {
-    cout << "      *********************************************" << "\n";
-    cout << "      Group::computeNewton "<< "\n";
-    cout << "           Max Linear Iterations    = " << maxit << "\n";
-    cout << "           Linear Solver Tolerance  = " << tol << "\n";
-    cout << "      *********************************************" << "\n" << endl;
-  }
-
   // Solve Aztex problem
   aztec.Iterate(maxit, tol);
 

@@ -9,12 +9,44 @@
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
 #include "NOX_Utils.H"
+#include <iomanip>
 
 int NOX::Utils::myPID = 0;
 int NOX::Utils::outputLevel = 2;
 int NOX::Utils::printProc = 0;
 int NOX::Utils::precision = 4;
-string NOX::Utils::stars = "***********************************************************************\n";
+
+NOX::Utils::Fill NOX::Utils::fillobj;
+NOX::Utils::Sci NOX::Utils::sciobj;
+
+NOX::Utils::Fill& NOX::Utils::fill(int filln, char fillc) 
+{
+  fillobj.n = filln; 
+  fillobj.c = fillc;
+  return fillobj;
+}
+
+ostream& operator<<(ostream& os, const NOX::Utils::Fill& f)
+{
+  for (int i = 0; i < f.n; i ++)
+    os << f.c;
+  return os;
+}
+
+NOX::Utils::Sci& NOX::Utils::sci(double dval)
+{
+  sciobj.d = dval;
+}
+
+ostream& operator<<(ostream& os, const NOX::Utils::Sci& s)
+{
+  os.setf(ios::scientific);
+  os.precision(NOX::Utils::precision);
+  os << setw(NOX::Utils::precision + 6) << s.d;
+  cout.unsetf(ios::scientific);
+  return os;
+}
+
 
 void NOX::Utils::setUtils(NOX::Parameter::List& p)
 {

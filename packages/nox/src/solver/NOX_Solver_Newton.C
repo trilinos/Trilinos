@@ -34,11 +34,17 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) :
   // Set up utilities for printing, etc.
   Utils::setUtils(iparams);
 
-  if (Utils::doPrint(4))
-    cout << "NOX Output Level " << Utils::outputLevel << "." << endl; 
+  // Print out initialization information
+  if (Utils::doPrint(1)) {
 
-  if (Utils::doPrint(5)) 
-    cout << "NOX Processor " << Utils::myPID << " is online." << endl;  
+    cout << "\n" << Utils::fill(72) << "\n";
+    cout << "\n-- Parameters Passed to Nonlinear Solver on Print Processor--\n\n";
+    iparams.print(cout,5);
+    cout << "\n-- Status Tests Passed to Nonlinear Solver on Print Processor--\n\n";
+    test.print(cout, 5);
+    cout <<"\n" << Utils::fill(72) << "\n";
+
+  }
 
   // Compute RHS of initital guess
   soln.computeRHS();
@@ -69,6 +75,7 @@ Status::StatusType Newton::iterate()
   soln.computeJacobian();
 
   // Compute Newton direction for current solution.
+  /* NOTE FROM TAMMY: Need to check the return status! */
   soln.computeNewton(iparams.sublist("Linear Solver"));
 
   // Set search direction.
@@ -78,6 +85,7 @@ Status::StatusType Newton::iterate()
   oldsoln = soln;
 
   // Do line search and compute new soln.
+  /* NOTE FROM TAMMY: Need to check the return status! */
   linesearch(soln, step, oldsoln, dir);
 
   // Compute RHS for new current solution.
@@ -95,9 +103,6 @@ Status::StatusType Newton::iterate()
 
 Status::StatusType Newton::solve()
 {
-  if (Utils::doPrint(2)) 
-    cout << "\n" << "Beginning nonlinear solve with Newton's method!" << endl;
-
   status = test(*this);
   printUpdate();
 
@@ -146,15 +151,12 @@ void Newton::printUpdate()
 
   // ...But only the print processors actually prints the result.
   if (Utils::doPrint(1)) {
-    cout.setf(ios::scientific);
-    cout.precision(Utils::precision);
-    cout << "\n" << Utils::stars;
-    cout << "Newton Step " << niter 
-	 << " : Residual Norm = " << setw(Utils::precision + 6) << norm_k
-	 << "  Step = " << setw(Utils::precision + 6) << step
-	 << "  Update Norm = " << setw(Utils::precision + 6) << norm_newton;
-    cout << "\n" << Utils::stars << endl;
-    cout.unsetf(ios::scientific);
+    cout << "\n" << Utils::fill(72) << "\n";
+    cout << "Newton Step " << niter;
+    cout << " : Residual Norm = " << Utils::sci(norm_k);
+    cout << "  Step = " << Utils::sci(step);
+    cout << "  Update Norm = " << Utils::sci(norm_newton);
+    cout << "\n" << Utils::fill(72) << "\n" << endl;
   }
   
   if ((status > 0) && (Utils::doPrint(1)))

@@ -187,29 +187,26 @@ bool Entry::isUsed() const
 
 ostream& Entry::leftshift(ostream& stream) const
 {
-  const string sep = ",";
-  stream << "<"; 
+  string sep = "     ";
   switch(type) {
   case BOOL: 
-    stream << "boolean" << sep << (bval ? "true" : "false");
+    stream << (bval ? "true" : "false");
     break;
   case INT:
-    stream << "integer" << sep << ival;
+    stream << ival;
     break;
   case DOUBLE:
-    stream << "double" << sep << dval;
+    stream << dval;
     break;
   case STRING:
-    stream << "string" << sep << "\"" << sval << "\"";
+    stream << "\"" << sval << "\"";
     break;
   case LIST:
-    stream << "sublist";
     break;
   default:
-    stream << "NONE";
+    stream << "(empty non-typed parameter)";
     break;
   }
-  stream << ">";
   return stream;
 }
 
