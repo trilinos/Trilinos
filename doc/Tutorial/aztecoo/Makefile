@@ -45,5 +45,10 @@ ex2: ex2.cpp
 	$(LINKER)  ex2.o   $(MY_LINKER_FLAGS)    -o ex2.exe
 	/bin/rm -r ex2.o
 
+ex3: ex3.cpp
+	$(CXX)     ex3.cpp $(MY_COMPILER_FLAGS) 
+	$(LINKER)  ex3.o   $(MY_LINKER_FLAGS)    -o ex3.exe
+	/bin/rm -r ex3.o
+
 clean:
 	/bin/rm -f *.o ex?.exe
