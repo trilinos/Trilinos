@@ -123,12 +123,12 @@ TAC_ARG_CHECK_MPI
 #NOTE: This section still needs to be updated for Tpetra, it is still 
 # code from Epetra (via new_package)
 # ------------------------------------------------------------------------
-# Checks for header files - used in Epetra_ConfigDefs.h 
+# Checks for header files - used in Tpetra_ConfigDefs.hpp
 # ------------------------------------------------------------------------
 
 AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
 AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
-AC_CHECK_HEADERS([string string.h],,,)
+AC_CHECK_HEADERS([string string.h map map.h],,,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Tpetra requires at least one or the other.]])
@@ -142,24 +142,25 @@ if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != 
   AC_MSG_ERROR([[Cannot find cassert or assert.h.  Tpetra requires at least one or the other.]])
 fi
 
-if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find string or string.h.  Tpetra requires at least one or the other.]])
+if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cmath or math.h.  Tpetra requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Tpetra requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Tpetra requires at least one or the other.]])
 fi
 
-if test "X${host}" != "Xtflop"; then
-  if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find cmath or math.h.  Tpetra requires at least one or the other.]])
-  fi
-else
-  # TFLOP
-  if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Tpetra requires at least one or the other.]])
-  fi
-fi  
+if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find string or string.h.  Tpetra requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_map" != "Xyes" && test "X$ac_cv_header_map_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find map or map.h.  Tpetra requires at least one or the other.]])
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -177,7 +178,6 @@ AC_CXX_MUTABLE
 # These are pretty obscure
 # ---------------------------------------------------------------------
 AC_CXX_NEW_FOR_SCOPING
-#AC_CXX_STD_IOS_BASE_FMTFLAGS
 AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------

@@ -1,9 +1,9 @@
 #ifndef _TPETRA_OBJECT_HPP_
 #define _TPETRA_OBJECT_HPP_
 
-#include "Tpetra_ConfigDefs.hpp"
-#include <Teuchos_CombineMode.hpp>
-#include <Teuchos_DataAccess.hpp>
+#include "Tpetra_ConfigDefs.hpp" // for iostream
+//#include <Teuchos_CombineMode.hpp>
+//#include <Teuchos_DataAccess.hpp>
 
 namespace Tpetra
 {
@@ -23,22 +23,43 @@ class Object
       are derived from it, directly or indirectly.  This class is seldom
       used explictly.
   */
-  Object(int tracebackModeIn = -1);
+  Object(int tracebackModeIn = -1) 
+		: label_(0)
+	{
+	  setLabel("Tpetra::Object");
+		tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
+	};
 
   //! Object Constructor.
   /*! Creates an Object with the given label.
   */
-  Object(const char* const label, int tracebackModeIn = -1);
+  Object(const char* const label, int tracebackModeIn = -1)
+		: label_(0)
+	{
+	  setLabel(label);
+		tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
+	};
 
   //! Object Copy Constructor.
   /*! Makes an exact copy of an existing Object instance.
   */
-  Object(const Object& obj);
+  Object(const Object& obj)
+		: label_(0)
+	{
+	  setLabel(obj.label());
+	};
 
   //! Object Destructor.
   /*! Completely deletes an Object object.  
   */
-  virtual ~Object();
+  virtual ~Object()
+	{
+		if (label_!=0) {
+			delete[] label_;
+			label_ = 0;
+		}
+	};
+	
   //@}
   
   //@{ \name Attribute set/get methods.
@@ -46,12 +67,21 @@ class Object
   //! Object Label definition using char*.
   /*! Defines the label used to describe the \e this object.  
   */
-  virtual void setLabel(const char* const label);
+  virtual void setLabel(const char* const label)
+	{ 
+		if(label_ != 0)
+			delete[] label_;
+		label_ = new char[strlen(label) + 1];
+		strcpy(label_, label);
+	};
 
   //! Object Label access funtion.
   /*! Returns the string used to define this object.  
   */
-  virtual char* label() const;
+  virtual char* label() const
+	{
+		return(label_);
+	};
 
   //! Set the value of the Object error traceback report mode.
   /*! Sets the integer error traceback behavior.  
@@ -66,27 +96,40 @@ class Object
 
       Default is set to 1.
   */
-  static void setTracebackMode(int tracebackModeValue);
-
+  static void setTracebackMode(int tracebackModeValue)
+	{
+		if (tracebackModeValue < 0)
+			tracebackModeValue = 0;
+		Object tempObject(tracebackModeValue);
+	};
+	
   //! Get the value of the Object error report mode.
-  static int getTracebackMode();
+  static int getTracebackMode()
+	{
+		int temp = Object::tracebackMode;
+		if (temp == -1)
+			temp = Tpetra_DefaultTracebackMode;
+		return(temp);
+	};
+	
   //@}
 
   //@{ \name Miscellaneous
 
   //! Print object to an output stream
   //! Print method
-  virtual void print(ostream& os) const;
+  virtual void print(ostream& os) const
+	{
+		  // os << label_; // No need to print label, since ostream does it already
+	};
 
 	//! Error reporting method.
 	virtual int reportError(const string message, int errorCode) const {
   // NOTE:  We are extracting a C-style string from Message because 
   //        the SGI compiler does not have a real string class with 
   //        the << operator.  Some day we should get rid of ".c_str()"
-#ifndef TPETRA_NO_ERROR_REPORTS
 		cerr << endl << "Error in Tpetra Object with label: " << label_ << endl 
 				 << "Tpetra Error:  " << message.c_str() << "  Error Code:  " << errorCode << endl;
-#endif
 		return(errorCode);
 	}
   
@@ -101,91 +144,30 @@ class Object
   static int tracebackMode;
 
 
- protected:
+protected:
   string toString(const int& x) const
-{
-     char s[100];
-     sprintf(s, "%d", x);
-     return string(s);
-}
-
+	{
+		char s[100];
+		sprintf(s, "%d", x);
+		return string(s);
+	}
+	
   string toString(const double& x) const {
-     char s[100];
-     sprintf(s, "%g", x);
-     return string(s);
-}
+		char s[100];
+		sprintf(s, "%g", x);
+		return string(s);
+	}
   
-
- private:
-
+	
+private:
+	
   char* label_;
-
+	
 }; // class Object
 
 
-// begin Tpetra_Object.cpp
-//=============================================================================
-Object::Object(int tracebackModeIn) : label_(0)
-{
-  setLabel("Tpetra::Object");
-  tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
-}
-//=============================================================================
-Object::Object(const char* const label, int tracebackModeIn) : label_(0)
-{
-  setLabel(label);
-  tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
-}
-//=============================================================================
-Object::Object(const Object& Obj) : label_(0)
-{
-  setLabel(Obj.label());
-}
 // Set TracebackMode value to default
 int Object::tracebackMode(-1);
-
-void Object::setTracebackMode(int tracebackModeValue)
-{
-  if (tracebackModeValue < 0)
-    tracebackModeValue = 0;
-  Object tempObject(tracebackModeValue);
-}
-
-int Object::getTracebackMode()
-{
-  int temp = Object::tracebackMode;
-  if (temp == -1)
-    temp = Tpetra_DefaultTracebackMode;
-  return(temp);
-}
-//=============================================================================
-void Object::print(ostream& os) const
-{
-  // os << label_; // No need to print label, since ostream does it already
-}
-//=============================================================================
-Object::~Object()  
-{
-  if (label_!=0) {
-    delete [] label_;
-		label_ = 0;
-	}
-}
-//=============================================================================
-char* Object::label() const
-{
-  return(label_);
-}
-//=============================================================================
-void Object::setLabel(const char* const label)
-{ 
-  if (label_ != 0)
-    delete [] label_;
-  label_ = new char[strlen(label) + 1];
-  strcpy(label_, label);
-}
-//=============================================================================
-// end Tpetra_Object.cpp
 
 } // namespace Tpetra
 

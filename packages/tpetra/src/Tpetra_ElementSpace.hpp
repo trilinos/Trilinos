@@ -3,7 +3,7 @@
 
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Directory.hpp"
-#include <map>
+#include "Tpetra_ConfigDefs.hpp" // for map
 #include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_ElementSpaceData.hpp"
 #include "Tpetra_Platform.hpp"

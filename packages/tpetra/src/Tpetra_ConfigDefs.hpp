@@ -81,6 +81,12 @@
 #include <math.h>
 #endif // ifdef HAVE_CMATH
 
+#ifdef HAVE_MAP
+#include <map>
+#else
+#include <map.h>
+#endif // ifdef HAVE_MAP
+
 /* 
 this "using namespace" is a bad thing. (Not a Bad Thing, mind you, just a bad thing.) 
 replace real soon now.

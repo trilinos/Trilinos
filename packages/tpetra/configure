@@ -4187,7 +4187,7 @@ fi
 #NOTE: This section still needs to be updated for Tpetra, it is still
 # code from Epetra (via new_package)
 # ------------------------------------------------------------------------
-# Checks for header files - used in Epetra_ConfigDefs.h
+# Checks for header files - used in Tpetra_ConfigDefs.hpp
 # ------------------------------------------------------------------------
 
 echo "$as_me:$LINENO: checking for egrep" >&5
@@ -4724,7 +4724,9 @@ done
 
 
 
-for ac_header in string string.h
+
+
+for ac_header in string string.h map map.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -4884,9 +4886,15 @@ echo "$as_me: error: Cannot find cassert or assert.h.  Tpetra requires at least 
    { (exit 1); exit 1; }; }
 fi
 
-if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  { { echo "$as_me:$LINENO: error: Cannot find string or string.h.  Tpetra requires at least one or the other." >&5
-echo "$as_me: error: Cannot find string or string.h.  Tpetra requires at least one or the other." >&2;}
+if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
+  { { echo "$as_me:$LINENO: error: Cannot find cmath or math.h.  Tpetra requires at least one or the other." >&5
+echo "$as_me: error: Cannot find cmath or math.h.  Tpetra requires at least one or the other." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
+  { { echo "$as_me:$LINENO: error: Cannot find iomanip or iomanip.h.  Tpetra requires at least one or the other." >&5
+echo "$as_me: error: Cannot find iomanip or iomanip.h.  Tpetra requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -4896,19 +4904,16 @@ echo "$as_me: error: Cannot find iostream or iostream.h.  Tpetra requires at lea
    { (exit 1); exit 1; }; }
 fi
 
-if test "X${host}" != "Xtflop"; then
-  if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    { { echo "$as_me:$LINENO: error: Cannot find cmath or math.h.  Tpetra requires at least one or the other." >&5
-echo "$as_me: error: Cannot find cmath or math.h.  Tpetra requires at least one or the other." >&2;}
+if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
+  { { echo "$as_me:$LINENO: error: Cannot find string or string.h.  Tpetra requires at least one or the other." >&5
+echo "$as_me: error: Cannot find string or string.h.  Tpetra requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
-  fi
-else
-  # TFLOP
-  if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-    { { echo "$as_me:$LINENO: error: Cannot find iomanip or iomanip.h.  Tpetra requires at least one or the other." >&5
-echo "$as_me: error: Cannot find iomanip or iomanip.h.  Tpetra requires at least one or the other." >&2;}
+fi
+
+if test "X$ac_cv_header_map" != "Xyes" && test "X$ac_cv_header_map_h" != "Xyes"; then
+  { { echo "$as_me:$LINENO: error: Cannot find map or map.h.  Tpetra requires at least one or the other." >&5
+echo "$as_me: error: Cannot find map or map.h.  Tpetra requires at least one or the other." >&2;}
    { (exit 1); exit 1; }; }
-  fi
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -5432,7 +5437,6 @@ _ACEOF
 
 fi
 
-#AC_CXX_STD_IOS_BASE_FMTFLAGS
 echo "$as_me:$LINENO: checking whether the compiler recognizes std::sprintf as supported IO function" >&5
 echo $ECHO_N "checking whether the compiler recognizes std::sprintf as supported IO function... $ECHO_C" >&6
 if test "${ac_cv_cxx_std_sprintf+set}" = set; then
@@ -5734,7 +5738,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5737: \"$ac_link\") >&5
+(eval echo $as_me:5741: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5814,7 +5818,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5817: \"$ac_link\") >&5
+(eval echo $as_me:5821: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7947,7 +7951,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7950: \"$ac_link\") >&5
+(eval echo $as_me:7954: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8027,7 +8031,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8030: \"$ac_link\") >&5
+(eval echo $as_me:8034: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
