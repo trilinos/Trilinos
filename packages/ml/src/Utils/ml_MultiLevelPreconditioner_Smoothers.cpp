@@ -28,6 +28,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "ml_ifpack_wrap.h"
+#include "ml_self_wrap.h"
 #include "Teuchos_ParameterList.hpp"
 #include "ml_epetra.h"
 #include "ml_MultiLevelPreconditioner.h"
@@ -325,7 +326,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // (if not, these values are ignored).
       IfpackList.set("partitioner: local parts", NumAggr);
       IfpackList.set("partitioner: map", AggrMap);
-      double Omega = IfpackList.get("relaxation: damping factor", -1.0);
+      double Omega = IfpackList.get("relaxation: damping factor", 1.0);
       if (Omega == -1.0)
         IfpackList.set("relaxation: damping factor", 1.0);
 
@@ -377,6 +378,29 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       cerr << ErrorMsg_ << "IFPACK not available." << endl
 	   << ErrorMsg_ << "ML must be configure with --enable-ifpack" << endl
 	   << ErrorMsg_ << "to use IFPACK as a smoother" << endl
+	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
+#endif
+
+    } else if( Smoother == "self" ) {
+
+#ifdef HAVE_ML_IFPACK
+      int IfpackOverlap = List_.get("smoother: self overlap",0);
+      
+      if( verbose_ ) {
+	cout << msg << "ML as self-smoother, " << endl
+	     << msg << PreOrPostSmoother
+	     << ", Overlap = " << IfpackOverlap << endl;
+      }
+
+      Teuchos::ParameterList& SelfList = List_.sublist("smoother: self list");
+
+      ML_Gen_Smoother_Self(ml, IfpackOverlap, LevelID_[level], pre_or_post,
+                           SelfList,*Comm_);
+      
+#else
+      cerr << ErrorMsg_ << "IFPACK not available." << endl
+	   << ErrorMsg_ << "ML must be configure with --enable-ifpack" << endl
+	   << ErrorMsg_ << "to use ML as a smoother" << endl
 	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
 #endif
 
