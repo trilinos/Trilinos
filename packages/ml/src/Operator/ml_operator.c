@@ -341,6 +341,57 @@ int ML_Operator_Getrow(ML_Operator *Amat, int N_requested_rows,
 }
 
 /* ******************************************************************** */
+/* get matrix diagonal                                                  */
+/* ******************************************************************** */
+
+int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag)
+{
+   int allocated_space, *cols, i, j, n;
+   double *vals, *tdiag;
+
+   if (Amat->diagonal == NULL)
+   {
+      if (Amat->getrow->ML_id == ML_EMPTY)
+         pr_error("Error(ML_Operator_Get_Diag): diagonal not available\n");
+      else
+      {
+         allocated_space = 30;
+         cols = (int    *) malloc(allocated_space*sizeof(int   ));
+         vals = (double *) malloc(allocated_space*sizeof(double));
+         tdiag = (double *) malloc(length*sizeof(double));
+         if (tdiag == NULL) 
+            pr_error("Error(ML_Operator_Get_Diag): not enough space\n");
+         for (i = 0; i < length; i++) tdiag[i] = 0.;
+         for (i = 0; i < length; i++)
+         {
+            while(ML_Operator_Getrow(Amat,1,&i,allocated_space,
+                                     cols,vals,&n) == 0)
+            {
+               allocated_space = 2*allocated_space + 1;
+               free(vals); free(cols);
+               cols = (int    *) malloc(allocated_space*sizeof(int   ));
+               vals = (double *) malloc(allocated_space*sizeof(double));
+               if (vals == NULL)
+               {
+                  printf("Not enough space to get matrix row. Row length of\n");
+                  printf("%d was not sufficient\n",(allocated_space-1)/2);
+                  exit(1);
+               }
+            }
+            for (j = 0; j < n; j++)
+               if (cols[j] == i) tdiag[i] = vals[j];
+         }
+         free(cols); free(vals);
+         ML_Operator_Set_Diag(Amat, length, tdiag);
+         free(tdiag);
+      }
+   }
+   ML_DVector_GetDataPtr( Amat->diagonal, diag);
+   return 0;
+}
+
+
+/* ******************************************************************** */
 /* apply the operator to a vector                                       */
 /************************************************************************/
 

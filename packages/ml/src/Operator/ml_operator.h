@@ -136,6 +136,8 @@ extern int ML_Operator_Set_Getrow(ML_Operator *, int, int,
 
 extern int ML_Operator_Getrow(ML_Operator *, int, int *, int, int *, 
                               double *, int*);
+extern int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag);
+
 extern int ML_Operator_Apply(ML_Operator *, int, double *, int, double *);
 extern int ML_Operator_ApplyAndResetBdryPts(ML_Operator *, int, double *,
                                             int olen, double *);
