@@ -3435,6 +3435,8 @@ int ML_Solve_AMGV( ML *ml , double *din, double *dout)
    multigrid call to make the entire preconditioner symmetric.
 
    Note!  We assume that there are no more than 3 modes to project out.
+   If there are more, then the constant ML_MAX_SUBSPACE_DIM and loop
+   lengths in varios places need to be changed.
 
    Here is the algorithm, where V' = transpose(V).
    
@@ -3454,7 +3456,8 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    int dimV, lengV, *pivots;
    double **Av, *VAV;
    int i,j;
-   double rhs[3], x1[3], x3[3];
+   double rhs[ML_MAX_SUBSPACE_DIM], x1[ML_MAX_SUBSPACE_DIM],
+          x3[ML_MAX_SUBSPACE_DIM];
    double *res1,*res2;
    double *vec1, *vec2;
    int info;
@@ -3530,12 +3533,10 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    **** 2) Calculate a residual r1 = f - A*V*x1.
    *********************************************/
 
-   res1 = (double *) ML_allocate(Amat->outvec_leng * sizeof(double) );
-   res2 = (double *) ML_allocate(Amat->outvec_leng * sizeof(double) );
-   vec1 = (double *) ML_allocate((Amat->outvec_leng + Amat->invec_leng) *
-                                 sizeof(double) );
-   vec2 = (double *) ML_allocate((Amat->outvec_leng + Amat->invec_leng) *
-                                 sizeof(double) );
+   res1 = Amat->subspace->res1;
+   res2 = Amat->subspace->res2;
+   vec1 = Amat->subspace->vec1;
+   vec2 = Amat->subspace->vec2;
    /* vec1 = V*x1 */
    for (i=0; i<lengV; i++) {
      vec1[i] = 0.0;
@@ -3576,7 +3577,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    /* see man page for description of arguments */
    MLFORTRAN(dgetrs)(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);
    if (info < 0) {
-     printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ",-info);
+     printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ",info);
      printf("illegal value\n");
      abort();
    }
@@ -3593,11 +3594,6 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    }
    for (i=0; i<Amat->outvec_leng; i++)
      dout[i] += vec2[i] + vec1[i];
-
-   ML_free(res1);
-   ML_free(res2);
-   ML_free(vec1);
-   ML_free(vec2);
 
    return 0;
 }
