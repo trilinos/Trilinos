@@ -149,6 +149,56 @@ const string& List::getParameter(const string& name, const string& nominal) cons
   return nominal;
 }
   
+bool List::isParameterBool(const string& name) const
+{
+  PCConstIterator i = params.find(name);
+
+  if (i != params.end())
+    return (ITER second.isBool());
+
+  return false;
+}
+
+bool List::isParameterInt(const string& name) const
+{
+  PCConstIterator i = params.find(name);
+
+  if (i != params.end())
+    return (ITER second.isInt());
+
+  return false;
+}
+
+bool List::isParameterDouble(const string& name) const
+{
+  PCConstIterator i = params.find(name);
+
+  if (i != params.end())
+    return (ITER second.isDouble());
+
+  return false;
+}
+
+bool List::isParameterString(const string& name) const
+{
+  PCConstIterator i = params.find(name);
+
+  if (i != params.end())
+    return (ITER second.isString());
+
+  return false;
+}
+
+bool List::isParameterSublist(const string& name) const
+{
+  PCConstIterator i = params.find(name);
+
+  if (i != params.end())
+    return (ITER second.isList());
+
+  return false;
+}
+
 bool List::isParameter(const string& name) const
 {
   return (params.find(name) != params.end());
@@ -207,11 +257,31 @@ List& List::sublist(const string& name)
       return (ITER second.getListValue());
     else
       cerr << "ERROR: Parameter " << name << " is not a list." << endl;
-      throw;
+      throw "NOX Error";
   }
 
   // If it does not exist, create a new empty list and return a reference
   return params[name].setList();
+}
+
+const List& List::sublist(const string& name) const
+{
+  // Find name in list, if it exists.
+  PCConstIterator i = params.find(name);
+
+  // If it does not exist, throw an error
+  if (i == params.end()) {
+    cerr << "ERROR: Parameter " << name << " is not a valid list." << endl;
+    throw "NOX Error";
+  }
+
+  // If it does exist and is a list, return the list value.
+  if (ITER second.isList()) 
+    return (ITER second.getListValue());
+
+  // Otherwise, the parameter exists but is not a list. Throw an error.
+  cerr << "ERROR: Parameter " << name << " is not a list." << endl;
+  throw "NOX Error";
 }
   
 ostream& List::print(ostream& stream, int indent) const

@@ -73,12 +73,20 @@ public:
   //! sublist. If the name exists but is not a sublist, throws an error.
   List& sublist(const string& name);
 
+  //! Returns a const reference to the sublist
+  /*! 
+    If the list does not already exist, throws an error. If the name
+    exists but is not a sublist, throws an error.
+  */
+  const List& sublist(const string& name) const;
+
   /** @name Setting Parameters 
-   *
-   * Sets different types of parameters. The type depends on the
-   * second entry. Be sure to use static_cast<type>() when the type is
-   * ambiguous. Both char* and string map to are stored as strings
-   * internally. Sets the parameter as "unused". */
+   
+    Sets different types of parameters. The type depends on the second
+    entry. Be sure to use static_cast<type>() when the type is
+    ambiguous. Both char* and string map to are stored as strings
+    internally. Sets the parameter as "unused".
+  */
   //@{
   void setParameter(const string& name, bool value);
   void setParameter(const string& name, int value);
@@ -88,12 +96,13 @@ public:
   //@}
 
   /** @name Getting Parameters 
-   *
-   * Get different types of parameters. The type depends on the second
-   * entry. Returns the nominal value if that parameter has not been *
-   * specified. Be sure to use static_cast<type>() when the type is *
-   * ambiguous. Both char* and string map return string values.  Sets
-   * the parameters as "used". */
+   
+    Get different types of parameters. The type depends on the second
+    entry. Returns the nominal value if that parameter has not been *
+    specified. Be sure to use static_cast<type>() when the type is *
+    ambiguous. Both char* and string map return string values.  Sets
+    the parameters as "used".
+  */
   //@{
   bool getParameter(const string& name, bool nominal) const;
   int getParameter(const string& name, int nominal) const;
@@ -106,11 +115,24 @@ public:
   bool isParameter(const string& name) const;
 
 
+  /** @name Is Parameter of the Specified Type?
+   
+    Returns true if the specified parameter exists AND is of the
+    specified type.
+  */
+  //@{
+  bool isParameterBool(const string& name) const;
+  bool isParameterInt(const string& name) const;
+  bool isParameterDouble(const string& name) const;
+  bool isParameterString(const string& name) const;
+  bool isParameterSublist(const string& name) const;
+  //@}
+
   /** @name Is Parameter Equal Value?
-   *
-   * Returns true if the specified parameter exists AND is equal to
-   * the specified value.  (Not value for List
-   * parameters.) */
+   
+    Returns true if the specified parameter exists AND is equal to the
+    specified value.  (Not value for List parameters.)
+  */
   //@{
   bool isParameterEqual(const string& name, bool value) const;
   bool isParameterEqual(const string& name, int value) const;
