@@ -1601,9 +1601,10 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
  int GlobalId_RowsStaying_WithMe;
 #endif
  int mypid, nprocs, Nglobal, i, j, the_length;
- /*,int oldj, *the_list = NULL, offset, itemp, Nnonzero,
-  * oldNnonzero, *itemp = NULL
-  * double * d2vec */
+#if !defined(HAVE_ML_PARMETIS_2x) && !defined(HAVE_ML_PARMETIS_3x)
+ int oldj, *the_list = NULL, offset, Nnonzero, oldNnonzero, *itemp = NULL;
+  double * d2vec;
+#endif
  int *remote_offsets = NULL, *iwork = NULL;
  int *ttemp = NULL, *Procs_WhoGive_TheirUnPermuted_Rows = NULL;
  int Nprocs_WhoGive_TheirUnPermuted_Rows, msgtype, prev;
