@@ -3629,11 +3629,6 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    dataptr->Tmat = Tmat;
    dataptr->output_level = 2.0;
    dataptr->omega = 1.0;
-   if ((edge_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
-       (edge_smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) ||
-       (edge_smoother == (void *) ML_Gen_Smoother_MLS))
-      dataptr->reduced_smoother =
-                        *((int *) ML_Smoother_Arglist_Get(edge_args,2));
 
    /* Get maximum eigenvalue for damping parameter. */
 
