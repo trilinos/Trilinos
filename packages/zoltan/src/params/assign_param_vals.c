@@ -43,7 +43,7 @@ static void Zoltan_Print_Assigned_Param_Vals(PARAM_VARS * );
 /*****************************************************************************/
 
 int      Zoltan_Assign_Param_Vals(
-PARAM_LIST * change_list,		/* list of parameter values being changed */
+PARAM_LIST * change_list,	/* list of parameter values being changed */
 PARAM_VARS * params,		/* structure describing parameters        */
 int debug_level,                /* level for output of debugging info     */
 int proc,                       /* processor # (controls debug printing)  */
@@ -103,10 +103,10 @@ int print_proc                  /* processor that should perform printing */
 
           if (ierr == ZOLTAN_OK) { /* OK so far. */
 
+            if (index == -1)
+              index = param_ptr->length;  /* Set all entries in a vector. */
             if (index == 0) 
               index = 1;                  /* Scalar parameter. */
-            else if (index == -1)
-              index = param_ptr->length;  /* Set all entries in a vector. */
 
 	    /* Figure out what type it is and read value. */
 	    if (!strcmp(param_ptr->type, "INT") || 
@@ -181,6 +181,11 @@ param_ptr = params;
             printf("ZOLTAN Parameter %s = %d\n", 
                     param_ptr->name, *((int *) param_ptr->ptr));
                 
+        }
+        else if (!strcmp(param_ptr->type, "FLOAT") ||
+                 !strcmp(param_ptr->type, "REAL")) {
+            printf("ZOLTAN Parameter %s = %f\n", 
+                    param_ptr->name, *((float *) param_ptr->ptr));
         }
         else if (!strcmp(param_ptr->type, "DOUBLE")) {
             printf("ZOLTAN Parameter %s = %f\n", 

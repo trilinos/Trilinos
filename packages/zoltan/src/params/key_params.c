@@ -93,7 +93,7 @@ int  idx 			/* index of vector param, -1 if scalar */
         }
         else if (idx == -1){
           /* Set all entries to the same value. */
-          for (idx=0; idx<zz->LB.Imb_Tol_Len; idx++);
+          for (idx=0; idx<zz->LB.Imb_Tol_Len; idx++)
 	    zz->LB.Imbalance_Tol[idx] = result.fval;
         }
         else

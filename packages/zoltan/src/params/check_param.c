@@ -80,6 +80,7 @@ int *matched_index)		/* where in struct the match occurs */
 	}
 
 	else if ((!strcmp(params->type, "FLOAT")) ||
+	         (!strcmp(params->type, "REAL")) ||
                  (!strcmp(params->type, "DOUBLE"))) {
 	    /* Check that there's a digit here */
 	    for (i = strlen(val); i >= 0; i--)

@@ -122,6 +122,8 @@ int index			/* index of vector parameter; -1 if scalar */
     status = Zoltan_Set_Key_Param(zz, name, val, index);
 
     /* Now call all the other parameter setting routines. */
+    /* Note that we don't pass on the index since vector parameters
+       are currently only supported for key parameters. */
     for (func = Param_func; (status == 1) && (*func != NULL); func++) {
         status = (**func)(name, val);
     }
@@ -177,10 +179,12 @@ int index			/* index of vector parameter; -1 if scalar */
     PARAM_LIST *ptr;             	/* loops through parameter list */
     PARAM_LIST *param;		/* parameter entry in list */
 
+    /* printf("Debug: Adding parameter %s with value %s and index %d\n",
+      name, val, index); */
 
     ptr = zz->Params;
     while (ptr != NULL) {
-	if (!strcmp(name, ptr->name) && (index == ptr->index)){	
+	if ((!strcmp(name, ptr->name)) && (index == ptr->index)){	
 	    /* string and index match */
 	    ZOLTAN_FREE(&(ptr->new_val));
 	    ptr->new_val = val;
@@ -221,8 +225,9 @@ int index 			/* index for vector param; -1 for scalars */
     oldptr = NULL;
     ptr = zz->Params;
     while (ptr != NULL) {
-	if (!strcmp(name, ptr->name) && (index == ptr->index)){
-	    /* string and index match */
+	if ((!strcmp(name, ptr->name)) && 
+            ((index == ptr->index) || (index == -1))){
+	    /* String and index match. (Index -1 matches anything.) */
             /* Remove parameter from list */
             if (oldptr == NULL)
                zz->Params = ptr->next;
