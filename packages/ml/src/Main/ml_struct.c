@@ -59,7 +59,8 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->max_iterations  = 1000;
 
    ML_Comm_Create( &((*ml_ptr)->comm) );
-   global_comm = (*ml_ptr)->comm;
+   if (global_comm == NULL) 
+     global_comm = (*ml_ptr)->comm;
 
    ML_memory_alloc((void**) &pre_smoother, sizeof(ML_Smoother)*Nlevels,"MS1");
    ML_memory_alloc((void**) &post_smoother,sizeof(ML_Smoother)*Nlevels,"MS2");
@@ -3465,7 +3466,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    char trans[2];
    int nrhs=1;
    unsigned int itmp=0;
-   
+
    Amat = &(ml->Amat[ml->ML_finest_level]);
    V = Amat->subspace->basis_vectors;
    dimV = Amat->subspace->dimension;
@@ -3547,6 +3548,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    for (i=0; i<Amat->outvec_leng; i++)
      res1[i] = din[i] - res1[i];
 
+
    /************************************************
    **** 3) Solve A * x2 = r1 via a multigrid cycle.
    ************************************************/
@@ -3597,7 +3599,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    /* Recall that vec2 = V*x1 + x2  and vec1 = V*x3 */
    for (i=0; i<Amat->outvec_leng; i++)
      dout[i] = vec2[i] + vec1[i];
-   
+
    return 0;
 }
 
