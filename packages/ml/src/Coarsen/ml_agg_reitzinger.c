@@ -1,4 +1,5 @@
 #include "ml_agg_reitzinger.h"
+#define NEW_T_PE
 #ifdef GREG
 #define NEW_T_PE
 #endif
