@@ -1381,7 +1381,7 @@ static int serial_rcb(
   double weighthi[RB_MAX_WGTS];      /* weight in upper half */
   double weightlo_best[RB_MAX_WGTS]; /* temp weightlo */
   double weighthi_best[RB_MAX_WGTS]; /* temp weighthi */
-  int set0, set1, breakflag, one_cut_dir, tfs_disregard_results;
+  int set0, set1, breakflag, one_cut_dir;
   struct rcb_box tmpbox;
   int *dotmark0 = NULL;             /* temp dotmark array */
   int *dotmark_best = NULL;         /* temp dotmark array */
@@ -1437,16 +1437,9 @@ static int serial_rcb(
       }
       else {
         /* Do not cut along this dimension if box is too thin. */
-        /* EBEB Do we need the tfs_disregard_results special case? */
-        if (zz->Tflops_Special) tfs_disregard_results = 0;
 
-        if (rcbbox->hi[dim] - rcbbox->lo[dim] < max_box/max_aspect_ratio) {
-          if (zz->Tflops_Special)/* All procs must participate in find_bisector;
-                                    compute cut but don't use the results. */
-            tfs_disregard_results = 1;
-          else 
-            continue;
-        }
+        if (rcbbox->hi[dim] - rcbbox->lo[dim] < max_box/max_aspect_ratio) 
+          continue;
 
         /* Restore original dotmark array. */
         for (j=0; j<dotnum; j++)
@@ -1505,7 +1498,7 @@ static int serial_rcb(
         /* test for better balance */
         if ((!one_cut_dir) && 
             ((norm_best<0.) ||
-              (!tfs_disregard_results && (norm_max < norm_best)))) {
+             (norm_max < norm_best))) {
           norm_best = norm_max; 
           dim_best = dim;
           for (j=0; j<wgtflag; j++){
