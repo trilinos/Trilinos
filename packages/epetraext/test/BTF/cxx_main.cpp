@@ -29,6 +29,7 @@
 // CrsGraph_BTF Test routine
 
 #include <EpetraExt_ConfigDefs.h>
+#include "EpetraExt_Version.h"
 
 #include "Epetra_Time.h"
 #ifdef EPETRA_MPI
@@ -80,7 +81,10 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
-  if (verbose) cout << Comm << endl << flush;
+  if (verbose) {
+    cout << EpetraExt::EpetraExt_Version() << endl << endl;
+    cout << Comm << endl << flush;
+  }
 
   Comm.Barrier();
   bool verbose1 = verbose;

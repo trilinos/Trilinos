@@ -28,6 +28,7 @@
 
 //SingletonFilter Test routine
 #include <Epetra_ConfigDefs.h>
+#include "EpetraExt_Version.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -80,12 +81,18 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
-  if (verbose) cout << Comm << endl << flush;
-
-  Comm.Barrier();
   bool verbose1 = verbose;
 
   if (verbose) verbose = (MyPID==0);
+
+  if (verbose)
+    cout << EpetraExt::EpetraExt_Version() << endl << endl;
+
+  Comm.Barrier();
+
+  if (verbose1) cout << Comm << endl << flush;
+                                                                                
+  Comm.Barrier();
 
   int NumMyElements = 10000;
   int NumGlobalElements = NumMyElements*NumProc+EPETRA_MIN(NumProc,3);

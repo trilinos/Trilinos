@@ -29,6 +29,7 @@
 // Transform_Composite Test routine
 
 #include <EpetraExt_ConfigDefs.h>
+#include "EpetraExt_Version.h"
 
 #include "Epetra_SerialComm.h"
 #include "Epetra_Time.h"
@@ -95,6 +96,9 @@ int main(int argc, char *argv[]) {
 
   bool verbose1 = verbose;
   if( verbose ) verbose = (MyPID==0);
+
+  if ( verbose )
+    cout << EpetraExt::EpetraExt_Version() << endl << endl;
 
   Comm.Barrier();
 

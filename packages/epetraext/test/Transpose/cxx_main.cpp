@@ -28,6 +28,8 @@
 
 // Epetra_BlockMap Test routine
 
+#include "EpetraExt_Version.h"
+
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_Vector.h"
@@ -76,6 +78,9 @@ int main(int argc, char *argv[])
 
   bool verbose1 = verbose;
   if (verbose) verbose = (comm.MyPID()==0);
+
+  if (verbose)
+    cout << EpetraExt::EpetraExt_Version() << endl << endl;
 
   int nx = 128;
   int ny = comm.NumProc()*nx; // Scale y grid with number of processors

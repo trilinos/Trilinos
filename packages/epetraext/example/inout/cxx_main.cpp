@@ -28,6 +28,7 @@
 */
 
 #include "Epetra_ConfigDefs.h"
+#include "EpetraExt_Version.h"
 
 #ifdef EPETRA_MPI
 #include "mpi.h"
@@ -59,12 +60,15 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-  cout << Comm << endl;
-
   int MyPID = Comm.MyPID();
 
   bool verbose = true; 
   if (MyPID==0) verbose = true;
+
+  if (verbose)
+    cout << EpetraExt::EpetraExt_Version() << endl << endl;
+                                                                                
+  cout << Comm << endl;
 
   if(argc < 2 && verbose) {
     cerr << "Usage: " << argv[0] 

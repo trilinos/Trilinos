@@ -28,6 +28,7 @@
 
 // CrsMatrix_MapColoring Test routine
 #include <Epetra_ConfigDefs.h>
+#include "EpetraExt_Version.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -98,11 +99,16 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
-  if(verbose) cout << Comm << endl << flush;
-  Comm.Barrier();
-
   bool verbose1 = false;
   if(verbose) verbose1 = (MyPID==0);
+
+  if(verbose1)
+    cout << EpetraExt::EpetraExt_Version() << endl << endl;
+
+  Comm.Barrier();
+
+  if(verbose) cout << Comm << endl << flush;
+  Comm.Barrier();
 
   int NumGlobalElements = nx * ny;
   if( NumGlobalElements < NumProc )

@@ -28,6 +28,7 @@
 
 //Overlap Test routine
 #include <Epetra_ConfigDefs.h>
+#include "EpetraExt_Version.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -80,6 +81,11 @@ int main(int argc, char *argv[]) {
 
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
+
+  if (verbose && MyPID==0)
+    cout << EpetraExt::EpetraExt_Version() << endl << endl;
+
+  Comm.Barrier();
 
   if (verbose) cout << Comm << endl << flush;
 

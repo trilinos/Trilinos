@@ -28,6 +28,7 @@
 
 //Permutation Test routine
 #include <Epetra_ConfigDefs.h>
+#include "EpetraExt_Version.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -81,6 +82,8 @@ int main(int argc, char *argv[]) {
     Comm.SetTracebackMode(0); // This should shut down error traceback reporting
   }
 
+  if (verbose && Comm.MyPID()==0)
+    cout << EpetraExt::EpetraExt_Version() << endl << endl;
 
   EPETRA_CHK_ERR( check_rowpermute_crsmatrix_local_diagonal( Comm, verbose ) );
 

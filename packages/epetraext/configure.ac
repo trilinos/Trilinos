@@ -37,7 +37,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(epetraext, 3.2d, maherou@sandia.gov)
+AC_INIT(epetraext, 3.1d, maherou@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -88,11 +88,11 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-AM_INIT_AUTOMAKE(1.6.3)
+AM_INIT_AUTOMAKE(1.8.2)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.57)
+AC_PREREQ(2.59)
 
 # Specify revision number of configure.ac that was used to generate
 # configure.

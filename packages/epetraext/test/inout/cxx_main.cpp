@@ -28,6 +28,7 @@
 */
 
 #include "Epetra_ConfigDefs.h"
+#include "EpetraExt_Version.h"
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -72,8 +73,10 @@ int main(int argc, char *argv[]) {
       if (MyPID==0) verbose = true;
     }
   }
-  if (verbose1) cout << comm << endl;
+  if (verbose)
+    cout << EpetraExt::EpetraExt_Version() << endl << endl;
 
+  if (verbose1) cout << comm << endl;
 
 
   // Uncomment the next three lines to debug in mpi mode

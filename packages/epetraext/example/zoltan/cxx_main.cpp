@@ -47,6 +47,7 @@
 #include "EpetraExt_SymmRCM_CrsGraph.h"
 //#include "EpetraExt_ZoltanOrder_CrsGraph.h"
 #include "EpetraExt_LPTrans_From_GraphTrans.h"
+#include "EpetraExt_Version.h"
 
 #define perror(str) { fprintf(stderr,"%s\n",str);  exit(-1); }
 #define perror1(str,ierr) { fprintf(stderr,"%s %d\n",str,ierr);  exit(ierr); }
@@ -88,7 +89,10 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
-  if (verbose) cout << Comm << endl << flush;
+  if (verbose) {
+    cout << EpetraExt::EpetraExt_Version() << endl << endl;
+    cout << Comm << endl << flush;
+  }
 
   Comm.Barrier();
   bool verbose_all = verbose;
