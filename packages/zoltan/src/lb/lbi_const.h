@@ -50,6 +50,7 @@ enum LB_Fn_Type {
   LB_FIRST_BORDER_OBJ_FN_TYPE,
   LB_NEXT_BORDER_OBJ_FN_TYPE,
   LB_PRE_MIGRATE_FN_TYPE,
+  LB_MID_MIGRATE_FN_TYPE,
   LB_POST_MIGRATE_FN_TYPE,
   LB_OBJ_SIZE_FN_TYPE,
   LB_PACK_OBJ_FN_TYPE,
@@ -463,6 +464,43 @@ typedef void LB_PRE_MIGRATE_FN(void *data, int num_import,
                                int *ierr);
 
 typedef void LB_PRE_MIGRATE_FORT_FN(void *data, int *num_import,
+                                    LB_GID *import_global_ids,
+                                    LB_LID *import_local_ids, int *import_procs,
+                                    int *num_export, LB_GID *export_global_ids,
+                                    LB_LID *export_local_ids, int *export_procs,
+                                    int *ierr);
+
+/*****************************************************************************/
+/*
+ *  Function called between the packing and unpacking phases of data migration.
+ *  Within LB_Help_Migrate, the data to be migrated is packed and communicated;
+ *  then this function is called (if specified). This function is 
+ *  optional, and is used only when the application wants the load-balancer 
+ *  to help migrate the data.  The application can perform any type of 
+ *  processing in this function.
+ *  Input:  
+ *    void *data                --  pointer to user defined data structure
+ *    int num_import            --  Number of objects to be imported.
+ *    LB_GID *import_global_ids --  Global IDs of objects to be imported.
+ *    LB_LID *import_local_ids  --  Local IDs of objects to be imported.
+ *    int *import_procs         --  Processor IDs of importing processors.
+ *    int num_export            --  Number of objects to be exported.
+ *    LB_GID *export_global_ids --  Global IDs of objects to be exported.
+ *    LB_LID *export_local_ids  --  Local IDs of objects to be exported.
+ *    int *export_procs         --  Processor IDs of processors to receive
+ *                                  the objects.
+ *  Output:
+ *    int *ierr                 --  error code
+ */
+
+typedef void LB_MID_MIGRATE_FN(void *data, int num_import,
+                               LB_GID *import_global_ids,
+                               LB_LID *import_local_ids, int *import_procs,
+                               int num_export, LB_GID *export_global_ids,
+                               LB_LID *export_local_ids, int *export_procs,
+                               int *ierr);
+
+typedef void LB_MID_MIGRATE_FORT_FN(void *data, int *num_import,
                                     LB_GID *import_global_ids,
                                     LB_LID *import_local_ids, int *import_procs,
                                     int *num_export, LB_GID *export_global_ids,
@@ -1033,10 +1071,14 @@ extern int LB_Compute_Destinations(struct LB_Struct *lb,
  *  It then calls a function to obtain the size of the migrating objects
  *  (LB_OBJ_SIZE_FN).  The routine next calls an application-specified
  *  object packing routine (LB_PACK_OBJ_FN) for each object
- *  to be exported.  It develops the needed communication map to move the
- *  objects to other processors.  It performs the communication according
- *  to the map, and then calls an application-specified object unpacking 
- *  routine (LB_UNPACK_OBJ_FN) for each object imported.
+ *  to be exported.  LB_Help_Migrate then develops the needed communication 
+ *  map to move the objects to other processors.  It performs the communication 
+ *  according to the map. It then calls a mid-migration processing routine
+ *  (LB_MID_MIGRATE_FN) if specified, allowing the application to process 
+ *  its own data structures before the imported data is unpacked.
+ *  It then calls an application-specified object unpacking 
+ *  routine (LB_UNPACK_OBJ_FN) for each object imported.  Finally, a 
+ *  post-processing function (LB_POST_MIGRATE_FN) is invoked if specified.
  *
  *  Input:
  *    struct LB_Struct *lb       --  Load balancing structure for current 

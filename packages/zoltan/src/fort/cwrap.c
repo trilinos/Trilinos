@@ -368,7 +368,22 @@ void LB_Pre_Migrate_Fort_Wrapper(void *data, int num_import,
                                  LB_LID *export_local_ids, int *export_procs,
                                  int *ierr)
 {
-   LB_Current_lb->Migrate.Pre_Process_Fort(data, &num_import,
+   LB_Current_lb->Migrate.Pre_Migrate_Fort(data, &num_import,
+                                            import_global_ids,
+                                            import_local_ids, import_procs,
+                                            &num_export, export_global_ids,
+                                            export_local_ids, export_procs,
+                                            ierr);
+}
+
+void LB_Mid_Migrate_Fort_Wrapper(void *data, int num_import,
+                                 LB_GID *import_global_ids,
+                                 LB_LID *import_local_ids, int *import_procs,
+                                 int num_export, LB_GID *export_global_ids,
+                                 LB_LID *export_local_ids, int *export_procs,
+                                 int *ierr)
+{
+   LB_Current_lb->Migrate.Mid_Migrate_Fort(data, &num_import,
                                             import_global_ids,
                                             import_local_ids, import_procs,
                                             &num_export, export_global_ids,
@@ -383,7 +398,7 @@ void LB_Post_Migrate_Fort_Wrapper(void *data, int num_import,
                                   LB_LID *export_local_ids, int *export_procs,
                                   int *ierr)
 {
-   LB_Current_lb->Migrate.Post_Process_Fort(data, &num_import,
+   LB_Current_lb->Migrate.Post_Migrate_Fort(data, &num_import,
                                             import_global_ids,
                                             import_local_ids, import_procs,
                                             &num_export, export_global_ids,
@@ -591,11 +606,15 @@ int LB_fw_Set_Fn(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
       return LB_Set_Fn(lb, *type, (void *)LB_Next_Border_Obj_Fort_Wrapper, data);
       break;
    case LB_PRE_MIGRATE_FN_TYPE:
-      lb->Migrate.Pre_Process_Fort = (LB_PRE_MIGRATE_FORT_FN *) fn;
+      lb->Migrate.Pre_Migrate_Fort = (LB_PRE_MIGRATE_FORT_FN *) fn;
       return LB_Set_Fn(lb, *type, (void *)LB_Pre_Migrate_Fort_Wrapper, data);
       break;
+   case LB_MID_MIGRATE_FN_TYPE:
+      lb->Migrate.Mid_Migrate_Fort = (LB_MID_MIGRATE_FORT_FN *) fn;
+      return LB_Set_Fn(lb, *type, (void *)LB_Mid_Migrate_Fort_Wrapper, data);
+      break;
    case LB_POST_MIGRATE_FN_TYPE:
-      lb->Migrate.Post_Process_Fort = (LB_POST_MIGRATE_FORT_FN *) fn;
+      lb->Migrate.Post_Migrate_Fort = (LB_POST_MIGRATE_FORT_FN *) fn;
       return LB_Set_Fn(lb, *type, (void *)LB_Post_Migrate_Fort_Wrapper, data);
       break;
    case LB_OBJ_SIZE_FN_TYPE:

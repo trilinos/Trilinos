@@ -173,13 +173,16 @@ LB *lb;
   lb->Get_Child_Weight_Fort = NULL;
 
   lb->Migrate.Auto_Migrate = LB_AUTO_MIGRATE_DEF;
-  lb->Migrate.Pre_Process = NULL;
-  lb->Migrate.Post_Process = NULL;
+  lb->Migrate.Pre_Migrate = NULL;
+  lb->Migrate.Mid_Migrate = NULL;
+  lb->Migrate.Post_Migrate = NULL;
   lb->Migrate.Pack_Obj = NULL;
   lb->Migrate.Unpack_Obj = NULL;
   lb->Migrate.Get_Obj_Size = NULL;
   
-  lb->Migrate.Pre_Process_Fort = NULL;
+  lb->Migrate.Pre_Migrate_Fort = NULL;
+  lb->Migrate.Mid_Migrate_Fort = NULL;
+  lb->Migrate.Post_Migrate_Fort = NULL;
   lb->Migrate.Pack_Obj_Fort = NULL;
   lb->Migrate.Unpack_Obj_Fort = NULL;
   lb->Migrate.Get_Obj_Size_Fort = NULL;
@@ -280,12 +283,16 @@ char *yo = "LB_Set_Fn";
     lb->Get_Next_Border_Obj_Data = data;
     break;
   case LB_PRE_MIGRATE_FN_TYPE:
-    lb->Migrate.Pre_Process = (LB_PRE_MIGRATE_FN *) fn;
-    lb->Migrate.Pre_Process_Data = data;
+    lb->Migrate.Pre_Migrate = (LB_PRE_MIGRATE_FN *) fn;
+    lb->Migrate.Pre_Migrate_Data = data;
+    break;
+  case LB_MID_MIGRATE_FN_TYPE:
+    lb->Migrate.Mid_Migrate = (LB_MID_MIGRATE_FN *) fn;
+    lb->Migrate.Mid_Migrate_Data = data;
     break;
   case LB_POST_MIGRATE_FN_TYPE:
-    lb->Migrate.Post_Process = (LB_POST_MIGRATE_FN *) fn;
-    lb->Migrate.Post_Process_Data = data;
+    lb->Migrate.Post_Migrate = (LB_POST_MIGRATE_FN *) fn;
+    lb->Migrate.Post_Migrate_Data = data;
     break;
   case LB_OBJ_SIZE_FN_TYPE:
     lb->Migrate.Get_Obj_Size = (LB_OBJ_SIZE_FN *) fn;
@@ -1027,21 +1034,21 @@ int ierr = 0;
     return (LB_FATAL);
   }
 
-  if (lb->Migrate.Pre_Process != NULL) {
-    lb->Migrate.Pre_Process(lb->Migrate.Pre_Process_Data,
+  if (lb->Migrate.Pre_Migrate != NULL) {
+    lb->Migrate.Pre_Migrate(lb->Migrate.Pre_Migrate_Data,
                             num_import, import_global_ids,
                             import_local_ids, import_procs,
                             num_export, export_global_ids,
                             export_local_ids, export_procs, &ierr);
     if (ierr) {
       fprintf(stderr, "[%d] %s: Error returned from user defined "
-                      "Migrate.Pre_Process function.\n", lb->Proc, yo);
+                      "Migrate.Pre_Migrate function.\n", lb->Proc, yo);
       LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
   }
 
-  LB_TRACE_DETAIL(lb, yo, "Done pre-processing");
+  LB_TRACE_DETAIL(lb, yo, "Done pre-migration processing");
 
   /*
    * For each object, allow space for its LB_GID and its data.
@@ -1169,6 +1176,25 @@ int ierr = 0;
 
   LB_TRACE_DETAIL(lb, yo, "Done communication");
 
+  /* 
+   *  Perform application-specified processing before unpacking the data.
+   */
+  if (lb->Migrate.Mid_Migrate != NULL) {
+    lb->Migrate.Mid_Migrate(lb->Migrate.Mid_Migrate_Data,
+                            num_import, import_global_ids,
+                            import_local_ids, import_procs,
+                            num_export, export_global_ids,
+                            export_local_ids, export_procs, &ierr);
+    if (ierr) {
+      fprintf(stderr, "[%d] %s: Error returned from user defined "
+                      "Migrate.Mid_Migrate function.\n", lb->Proc, yo);
+      LB_TRACE_EXIT(lb, yo);
+      return (LB_FATAL);
+    }
+
+    LB_TRACE_DETAIL(lb, yo, "Done mid-migration processing");
+  }
+
   /*
    *  Unpack the object data.
    */
@@ -1197,20 +1223,20 @@ int ierr = 0;
 
   LB_TRACE_DETAIL(lb, yo, "Done unpacking objects");
 
-  if (lb->Migrate.Post_Process != NULL) {
-    lb->Migrate.Post_Process(lb->Migrate.Post_Process_Data,
+  if (lb->Migrate.Post_Migrate != NULL) {
+    lb->Migrate.Post_Migrate(lb->Migrate.Post_Migrate_Data,
                             num_import, import_global_ids,
                             import_local_ids, import_procs,
                             num_export, export_global_ids,
                             export_local_ids, export_procs, &ierr);
     if (ierr) {
       fprintf(stderr, "[%d] %s: Error returned from user defined "
-                      "Migrate.Post_Process function.\n", lb->Proc, yo);
+                      "Migrate.Post_Migrate function.\n", lb->Proc, yo);
       LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
 
-    LB_TRACE_DETAIL(lb, yo, "Done post-processing");
+    LB_TRACE_DETAIL(lb, yo, "Done post-migration processing");
   }
 
   LB_TRACE_EXIT(lb, yo);
