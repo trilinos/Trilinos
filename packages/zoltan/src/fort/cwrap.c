@@ -243,7 +243,7 @@ void LB_Edge_List_Fort_Wrapper(void *data,
                                int num_gid_entries, int num_lid_entries,
                                LB_ID_PTR global_id, LB_ID_PTR local_id,
                                LB_ID_PTR nbor_global_id, int *nbor_procs,
-                               int wdim, int *nbor_ewgts, int *ierr)
+                               int wdim, float *nbor_ewgts, int *ierr)
 {
    LB_Current_lb->Get_Edge_List_Fort(data, &num_gid_entries, &num_lid_entries,
                                      global_id, local_id,
