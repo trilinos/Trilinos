@@ -13,7 +13,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src -I$(top_srcdir)/../epetra/src \
    -I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
 
 TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
-	$(srcdir)/TestOptions.h \
 	$(srcdir)/CreateTridi.cpp \
 	$(srcdir)/CreateTridi.h \
 	$(srcdir)/TestSuperludist.cpp \

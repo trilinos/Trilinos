@@ -79,6 +79,10 @@ AmesosSuperLUserial_SOURCES = $(srcdir)/AmesosSuperLUserial
 AmesosJanusScript_SOURCES = $(srcdir)/AmesosJanusScript
 SpoolesJanusScript_SOURCES = $(srcdir)/SpoolesJanusScript
 SpoolesScript_SOURCES = $(srcdir)/SpoolesScript
+AmesosKluJanus_SOURCES = $(srcdir)/AmesosKluJanus
+AmesosSuperludistJanus_SOURCES = $(srcdir)/AmesosSuperludistJanus
+AmesosUmfpackJanus_SOURCES = $(srcdir)/AmesosUmfpackJanus
+DscpackTiming_SOURCES = $(srcdir)/DscpackTiming
 
 AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
 	cp  $(srcdir)/AmesosShellScript  AmesosShellScript$(EXEEXT)
