@@ -4,8 +4,6 @@
 #include "Teuchos_Out.hpp"
 
 using namespace Teuchos;
-using std::exception;
-using std::string;
 
 /* initialize the static raise handler object to the default handler. This
  * can be changed later with a call to setRaiseHandler() */
