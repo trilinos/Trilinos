@@ -10,17 +10,13 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
-
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 #include "phg_distrib.h"
-    
+
+    /*
 #define _DEBUG1
 #define _DEBUG2
 #define _DEBUG3
+    */
 
 #define MEMORY_ERROR { \
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
@@ -55,7 +51,7 @@ int maxgno = dist_dim[nProc_dim];
 
 
 
-
+#ifdef _DEBUG1
 static void PrintArr(PHGComm *hgc, char *st, int *ar, int n)
 {
     int i;
@@ -66,6 +62,7 @@ static void PrintArr(PHGComm *hgc, char *st, int *ar, int n)
     printf("]\n");
     Zoltan_Print_Sync_End(hgc->Communicator, TRUE);
 }
+#endif
 
 
 static int Zoltan_PHG_Redistribute_Hypergraph(
@@ -113,25 +110,26 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     for (n = 0; n < ohg->nEdge; ++n)
         ++dist_y[n2Row[n]];
 
-    uprintf(ocomm, "before computing dist_x\n");
+
     /* compute prefix sum to find new vertex start numbers; for each processor */
     MPI_Scan(dist_x, vsn, ncomm->nProc_x, MPI_INT, MPI_SUM, ocomm->row_comm);
-    uprintf(ocomm, "after scan for dist_x\n");
-    PrintArr(ocomm, "vsn", vsn, ncomm->nProc_x);
     /* All reduce to compute how many each processor will have */ 
     MPI_Allreduce(dist_x, &(nhg->dist_x[1]), ncomm->nProc_x, MPI_INT, MPI_SUM, ocomm->row_comm);
     nhg->dist_x[0] = 0;    
     for (i=1; i<=ncomm->nProc_x; ++i) 
         nhg->dist_x[i] += nhg->dist_x[i-1];
-    uprintf(ocomm, "dist_x are computed\n");
     
     MPI_Scan(dist_y, nsn, ncomm->nProc_y, MPI_INT, MPI_SUM, ocomm->col_comm);
-    PrintArr(ocomm, "nsn", nsn, ncomm->nProc_y);
+
     MPI_Allreduce(dist_y, &(nhg->dist_y[1]), ncomm->nProc_y, MPI_INT, MPI_SUM, ocomm->col_comm);
     nhg->dist_y[0] = 0;
     for (i=1; i<=ncomm->nProc_y; ++i)
         nhg->dist_y[i] += nhg->dist_y[i-1];
-    uprintf(ocomm, "dist_y are computed\n");
+
+#ifdef _DEBUG1
+    PrintArr(ocomm, "vsn", vsn, ncomm->nProc_x);
+    PrintArr(ocomm, "nsn", nsn, ncomm->nProc_y);
+#endif
     
     /* find mapping of current LOCAL vertex no (in my node)
        to "new" vertex no LOCAL to dest node*/
@@ -143,20 +141,20 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     nsend = MAX(MAX(ohg->nPins, ohg->nVtx), ohg->nEdge);
     elemsz = MAX(MAX(2, ohg->VtxWeightDim), ohg->EdgeWeightDim);
 
-    uprintf(ocomm, "nsend=%d  elemsz=%d H(%d, %d, %d)\n", nsend, elemsz, ohg->nVtx, ohg->nEdge, ohg->nPins);
     proclist = (int *) ZOLTAN_MALLOC(nsend * sizeof(int));
     sendbuf = (int *) ZOLTAN_MALLOC(nsend * elemsz * sizeof(int));
     if (sizeof(float)>sizeof(int))
         errexit("Zoltan_PHG_Redistribute_Hypergraph: this code assumes sizeof(float)(%d)<=sizeof(int)(%d)", sizeof(float), sizeof(int));
 
-    uprintf(ocomm, "before communicate pins\n");
     /* first communicate pins */
     nPins = 0;
     for (v = 0; v < ohg->nVtx; ++v) { 
         for (i = ohg->vindex[v]; i < ohg->vindex[v+1]; ++i) {
+#ifdef _DEBUG1
             if ((n2Row[ohg->vedge[i]] * ncomm->nProc_x + v2Col[v])<0 ||
                 (n2Row[ohg->vedge[i]] * ncomm->nProc_x + v2Col[v])>=ocomm->nProc)
                 errexit("vertex %d vedge[%d]=%d n2Row=%d #Proc_x=%d v2Col=%d", i, ohg->vedge[i], n2Row[ohg->vedge[i]], ncomm->nProc_x , v2Col[v]);
+#endif
             proclist[nPins]   = firstproc + n2Row[ohg->vedge[i]] * ncomm->nProc_x + v2Col[v];
             sendbuf[2*nPins]  = vno[v];
             sendbuf[2*nPins+1]= nno[ohg->vedge[i]];
@@ -187,11 +185,8 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     --msg_tag;
     Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, 2*sizeof(int),
                    (char *) pins);
-
     Zoltan_Comm_Destroy(&plan);
 
-    
-    uprintf(ocomm, "sending gnos\n");
     /* now communicate vertex map */
     nsend = 0;
     if (!ocomm->myProc_y) { /* only first row sends to the first row of ncomm */
@@ -221,7 +216,6 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, sizeof(int),
                    (char *) *vmap);
 
-
     if (!ocomm->myProc_y) { /* only first row sends to the first row of ncomm */
         for (v = 0; v < ohg->nVtx; ++v) 
             sendbuf[v] = ocomm->myProc;
@@ -230,8 +224,8 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, sizeof(int),
                    (char *) *vdest);
         
-
-    if (ncomm->myProc!=-1) { /* ncomm's first row now bcast to other rows */
+    if (ncomm->myProc!=-1) { /* I'm in the new comm */
+        /* ncomm's first row now bcast to other rows */
         MPI_Bcast(&nVtx, 1, MPI_INT, 0, ncomm->col_comm);
 #ifdef _DEBUG1
         if (nVtx!=(nhg->dist_x[ncomm->myProc_x+1] - nhg->dist_x[ncomm->myProc_x]))
@@ -244,7 +238,6 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     }
 
 
-    uprintf(ocomm, "ohg->VtxWeightDim=%d ohg->vwgt=%x\n", ohg->VtxWeightDim, ohg->vwgt);
     /* now communicate vertex weights */
     if (ohg->vwgt && ohg->VtxWeightDim) {
         if (nVtx)
@@ -259,7 +252,6 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     Zoltan_Comm_Destroy(&plan);
 
     
-    uprintf(ocomm, "now communicate Edge weights: ohg->EdgeWeightDim=%d ohg->ewgt=%x\n", ohg->EdgeWeightDim, ohg->ewgt);
     if (ohg->ewgt && ohg->EdgeWeightDim) { /* now communicate edge weights */
         nsend = 0;
         if (!ocomm->myProc_x)  /* only first column sends to first column of ncomm */
@@ -283,16 +275,15 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
         --msg_tag;
         Zoltan_Comm_Do(plan, msg_tag, (char *) ohg->ewgt,
                        ohg->EdgeWeightDim*sizeof(float), (char *) nhg->ewgt);
-        if (ncomm->myProc!=-1) { /* ncomm's first column now bcast to other columns */
+        if (ncomm->myProc!=-1) { /* if we're in the new comm */
+            /* ncomm's first column now bcast to other columns */
             MPI_Bcast(&nEdge, 1, MPI_INT, 0, ncomm->row_comm);
 #ifdef _DEBUG1
             if (nEdge != (nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y]))
             errexit("nEdge(%d)!=nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y](%d)", nEdge, nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y]);
 #endif
-            if (nEdge) {
-                nhg->ewgt = (float*) ZOLTAN_MALLOC(nEdge*ohg->EdgeWeightDim*sizeof(float));
+            if (nEdge) 
                 MPI_Bcast(nhg->ewgt, nEdge*ohg->EdgeWeightDim, MPI_FLOAT, 0, ncomm->row_comm);
-            }
         }
 
         Zoltan_Comm_Destroy(&plan);
@@ -301,14 +292,12 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     
     uprintf(ocomm, "all communication done! newH(%d, %d, %d)\n", nVtx, nEdge, nPins);
 
-    MPI_Barrier(ocomm->Communicator);
     if (ncomm->myProc==-1) {
 #ifdef _DEBUG1
         if (nPins || nVtx || nEdge)
             errexit("I should not have any data: hey nPins=%d  nVtx=%d  nEdge=%d\n", nPins, nVtx, nEdge);
 #endif
         nhg->nEdge = nhg->nVtx = nhg->nPins = 0;
-        MPI_Barrier(ocomm->Communicator);
     } else {
         nhg->nEdge = nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y];
         nhg->nVtx = nhg->dist_x[ncomm->myProc_x+1] - nhg->dist_x[ncomm->myProc_x];
@@ -322,20 +311,16 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
         if (!cnt || !nhg->vindex || (nPins && !nhg->vedge))
             MEMORY_ERROR;
 
-        uprintf(ocomm, "start unpacking\n");
         /* Count the number of pins per vertex */
         for (i = 0; i < nPins; ++i)
             ++cnt[pins[2*i]];
         
-
-        uprintf(ocomm, "setup vindex\n");
         /* Compute prefix sum to represent hindex correctly. */
         for (i = 0; i < nhg->nVtx; ++i)  {
             nhg->vindex[i+1] = nhg->vindex[i] + cnt[i];
             cnt[i] = nhg->vindex[i];
         }
 
-        uprintf(ocomm, "fill vedge\n");
         for (i = 0; i < nPins; ++i) 
             nhg->vedge[cnt[pins[2*i]]++] = pins[2*i+1];
         
@@ -343,10 +328,7 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
         nhg->VtxWeightDim       = ohg->VtxWeightDim;
         nhg->EdgeWeightDim      = ohg->EdgeWeightDim;
 
-        MPI_Barrier(ocomm->Communicator);
-        uprintf(ocomm, "call create mirror\n");
         ierr = Zoltan_HG_Create_Mirror(zz, nhg);
-        uprintf(ocomm, "DONE; hypergraph has been redistributed\n");
         if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
             MEMORY_ERROR;
     }
@@ -432,7 +414,6 @@ int Zoltan_PHG_Redistribute(
         ncomm->myProc = ncomm->myProc_x = ncomm->myProc_y = -1;
     }
 
-    uprintf(ocomm, "ncomm filled\n");
     v2Col = (int *) ZOLTAN_MALLOC(ohg->nVtx * sizeof(int));    
     n2Row = (int *) ZOLTAN_MALLOC(ohg->nEdge * sizeof(int));
 
@@ -446,7 +427,6 @@ int Zoltan_PHG_Redistribute(
     for (i=0; i<ohg->nEdge; ++i) 
         n2Row[i] = (int) ((float) i / frac);
 
-    uprintf(ocomm, "v2Col and n2Row are  filled\n");
     ierr = Zoltan_PHG_Redistribute_Hypergraph(zz, ohg, lo, v2Col, n2Row, ncomm, nhg, vmap, vdest);
     Zoltan_Multifree(__FILE__, __LINE__, 2,
                      &v2Col, &n2Row);
@@ -455,7 +435,3 @@ int Zoltan_PHG_Redistribute(
 }
 
     
-
-#ifdef __cplusplus
-} /* closing bracket for extern "C" */
-#endif
