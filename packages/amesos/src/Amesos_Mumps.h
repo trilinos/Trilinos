@@ -426,6 +426,13 @@ protected:
   bool PrintStatus_;
   bool ComputeVectorNorms_;
   bool ComputeTrueResidual_;
+
+  /* Set the matrix property as follows:
+     - 0 : general unsymmetric matrix;
+     - 1 : SPD;
+     - 2 : general symmetric matrix.
+  */
+  int MatrixProperty_;
   
   double Threshold_;
   

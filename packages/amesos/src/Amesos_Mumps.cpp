@@ -74,8 +74,9 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   CrsSchurComplement_(0),
   DenseSchurComplement_(0),
   IsComputeSchurComplementOK_(false),
-  ComputeTrueResidual_(false),
   ComputeVectorNorms_(false),
+  ComputeTrueResidual_(false),
+  MatrixProperty_(0),
   RowSca_(0),
   ColSca_(0),
   PermIn_(0),
@@ -214,12 +215,14 @@ int Amesos_Mumps::ConvertToTriplet()
 	(*Row)[NumMyMUMPSNonzeros_] = RowIndices[i]+diff;
 	(*Col)[NumMyMUMPSNonzeros_] = ColIndices[i]+diff;
 	(*Val)[NumMyMUMPSNonzeros_] = MatrixValues[i];
-	if( RowIndices[i] == ColIndices[i] ) {
-	  Diag = RowIndices[i];
-	  FoundDiagonal = true;
-	  (*Val)[NumMyMUMPSNonzeros_] += AddToDiag_;
+	if( MatrixProperty_ == 0 || RowIndices[i] >= ColIndices[i] ) {
+	  if( RowIndices[i] == ColIndices[i] ) {
+	    Diag = RowIndices[i];
+	    FoundDiagonal = true;
+	    (*Val)[NumMyMUMPSNonzeros_] += AddToDiag_;
+	  }
+	  NumMyMUMPSNonzeros_++;
 	}
-	NumMyMUMPSNonzeros_++;
       }
       // add diagonal element if not found
       if( AddDiagElement_ && FoundDiagonal == false ) {
@@ -395,15 +398,17 @@ int Amesos_Mumps::ConvertToTripletValues()
     */
 
     for( int i=0 ; i<NumIndices ; ++i ) {
-      if( abs(MatrixValues[i]) >= Threshold_ || true ) {
-	(*Val)[NumMUMPSNonzerosValues] = MatrixValues[i];
-	if( RowIndices[i] == ColIndices[i] ) {
-	  FoundDiagonal = true;
-	  (*Val)[NumMUMPSNonzerosValues] += AddToDiag_;
+      if( MatrixProperty_ == 0 || RowIndices[i] >= ColIndices[i] ) { 
+	if( abs(MatrixValues[i]) >= Threshold_ || true ) {
+	  (*Val)[NumMUMPSNonzerosValues] = MatrixValues[i];
+	  if( RowIndices[i] == ColIndices[i] ) {
+	    FoundDiagonal = true;
+	    (*Val)[NumMUMPSNonzerosValues] += AddToDiag_;
+	  }
+	  NumMUMPSNonzerosValues++;
 	}
-	NumMUMPSNonzerosValues++;
       }
-
+      
       // add diagonal element if not found
       if( AddDiagElement_ && FoundDiagonal == false ) {
 	(*Val)[NumMUMPSNonzerosValues++] = AddToDiag_;
@@ -575,6 +580,26 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
   // format. (this value must be less than available procs)
   if( ParameterList.isParameter("MaxProcs") )
     MaxProcs_ = ParameterList.get("MaxProcs",-1);
+
+  // Matrix property, defined internally in Amesos_Mumps as an integer,
+  // whose value can be:
+  // - 0 : general unsymmetric matrix;
+  // - 1 : SPD;
+  // - 2 : general symmetric matrix.
+  if( ParameterList.isParameter("MatrixType") ) {
+    string MatrixType;
+    MatrixType = ParameterList.get("MatrixType",MatrixType);
+    if( MatrixType == "SPD" )            MatrixProperty_ = 1;
+    else if( MatrixType == "symmetric" ) MatrixProperty_ = 2;
+    else if( MatrixType == "general" )   MatrixProperty_ = 0;
+    else {
+      if( Comm().MyPID() == 0 ) {
+	cerr << "Amesos_Mumps : ERROR" << endl 
+	     << "Amesos_Mumps : MatrixType value not recognized ("
+	     << MatrixType << ")" << endl;
+      }
+    }
+  }
 
   // some verbose output:
   // 0 - no output at all
@@ -774,7 +799,7 @@ int Amesos_Mumps::PerformSymbolicFactorization()
   
   MDS.job = -1  ;     //  Initialization
   MDS.par = 1 ;       //  Host IS involved in computations
-  MDS.sym = MatrixProperty();
+  MDS.sym = MatrixProperty_;
 
   if( Comm().MyPID() < MaxProcs_ ) dmumps_c( &MDS ) ;   //  Initialize MUMPS 
   CheckError();
@@ -1186,6 +1211,9 @@ void Amesos_Mumps::PrintStatus()
   cout << "Amesos_Mumps : Percentage of nonzero elements = "
        << 100.0*NumGlobalNonzeros()/(pow(NumGlobalRows(),2.0)) << endl;
   cout << "Amesos_Mumps : Use transpose = " << UseTranspose_ << endl;
+  if( MatrixProperty_ == 0 ) cout << "Amesos_Mumps : Matrix is general unsymmetric" << endl;
+  if( MatrixProperty_ == 2 ) cout << "Amesos_Mumps : Matrix is general symmetric" << endl;
+  if( MatrixProperty_ == 1 ) cout << "Amesos_Mumps : Matrix is SPD" << endl;
   cout << "Amesos_Mumps : Available process(es) = " << Comm().NumProc() << endl;
   cout << "Amesos_Mumps : Using " << MaxProcs_ << " process(es)" << endl;
   cout << "Amesos_Mumps : Input matrix distributed over " << MaxProcsInputMatrix_ << " process(es)" << endl;
