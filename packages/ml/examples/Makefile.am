@@ -36,7 +36,8 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_vbr \
 		  ml_example_MultiLevelPreconditioner_viz \
 		  ml_example_MultiLevelPreconditioner_analyze \
-		  ml_example_MultiLevelPreconditioner_maxwell  \
+		  ml_example_MultiLevelPreconditioner_maxwell \
+		  ml_example_elasticity
 		  ml_read_matrix_AIJ
 else
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
@@ -56,8 +57,9 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_analyze \
 		  ml_example_MultiLevelPreconditioner_maxwell  \
 		  ml_read_matrix_AIJ \
-		  ml_multiple_rhs ml_aztecoo
-
+                  ml_multiple_rhs \
+                  ml_aztecoo \
+                  ml_example_elasticity
 endif #ML_BENCHMARKING
 else #no mpi
 noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
@@ -77,8 +79,9 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_analyze \
 		  ml_example_MultiLevelPreconditioner_maxwell  \
 		  ml_read_matrix_AIJ \
-		  ml_multiple_rhs ml_aztecoo
-
+                  ml_multiple_rhs \
+                  ml_aztecoo \
+                  ml_example_elasticity
 endif #HAVE_MPI
 
 endif # ML_STANDALONE_MODE
@@ -116,6 +119,7 @@ ml_example_MultiLevelPreconditioner_vbr_SOURCES= $(srcdir)/ml_example_MultiLevel
 ml_example_MultiLevelPreconditioner_viz_SOURCES= $(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp
 ml_example_MultiLevelPreconditioner_analyze_SOURCES= $(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
 ml_example_MultiLevelPreconditioner_maxwell_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
+ml_example_elasticity_SOURCES = $(srcdir)/ml_example_elasticity.c
 ml_read_matrix_AIJ_SOURCES= $(srcdir)/ml_read_matrix_AIJ.cpp
 ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
 ml_aztecoo_SOURCES = $(srcdir)/ml_aztecoo.cpp
@@ -392,6 +396,10 @@ ml_aztecoo_CPPFLAGS = ${ml_common_include_locations}
 ml_aztecoo_CXXFLAGS = ${ml_common_include_locations}
 ml_aztecoo_LDADD = ${ml_libs}
 ml_aztecoo_LINK = ${mllink}
+
+ml_example_elasticity_CFLAGS = ${ml_common_include_locations}
+ml_example_elasticity_LDADD = ${ml_libs}
+ml_example_elasticity_LINK = ${mllink}
 
 if ML_BENCHMARKING
 ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
