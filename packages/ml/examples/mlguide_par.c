@@ -49,10 +49,11 @@ int main(int argc, char *argv[]){
    int proc, nlocal, nlocal_allcolumns;
 
    MPI_Init(&argc,&argv);
-
+   ML_Set_PrintLevel(15);
 
    for (i = 0; i < 5; i++) sol[i] = 0.;
    for (i = 0; i < 5; i++) rhs[i] = 2.;
+
 
    ML_Create         (&ml_object, N_grids);
    proc = ml_object->comm->ML_mypid;
@@ -60,6 +61,7 @@ int main(int argc, char *argv[]){
       if (proc == 0) printf("Must be run on two processors\n");
       ML_Destroy(&ml_object);
       MPI_Finalize();
+      exit(1);
    }
 
    if     (proc == 0) {nlocal = 2; nlocal_allcolumns = 4;}
@@ -67,9 +69,9 @@ int main(int argc, char *argv[]){
    else               {nlocal = 0; nlocal_allcolumns = 0;}
 
    ML_Init_Amatrix      (ml_object, 0,  nlocal, nlocal, &proc);
-   ML_Set_Amatrix_Getrow(ml_object, 0,  Poisson_getrow, Poisson_comm,
+   MLnew_Set_Amatrix_Getrow(ml_object, 0,  Poisson_getrow, Poisson_comm,
                          nlocal_allcolumns);
-   ML_Set_Amatrix_Matvec(ml_object, 0,  Poisson_matvec);
+   MLnew_Set_Amatrix_Matvec(ml_object, 0,  Poisson_matvec);
 
    ML_Aggregate_Create(&agg_object);
    ML_Aggregate_Set_MaxCoarseSize(agg_object,1);
@@ -109,9 +111,11 @@ int Poisson_getrow(void *A_data, int N_requested_rows, int requested_rows[],
    int allocated_space, int cols[], double values[], int row_lengths[])
 {
    int m = 0, i, row, proc, *itemp, start;
+   ML_Operator *mat_in;
 
-   
-   itemp = (int *) A_data;
+   mat_in = (ML_Operator *) A_data;
+   itemp  = (int *) ML_Get_MyGetrowData(mat_in);
+
    proc  = *itemp;
 
    for (i = 0; i < N_requested_rows; i++) {
@@ -139,12 +143,15 @@ int Poisson_matvec(void *A_data, int in_length, double p[], int out_length,
 {
    int i, proc, *itemp;
    double new_p[5];
+   ML_Operator *mat_in;
 
-   itemp = (int *) A_data;
+   mat_in = (ML_Operator *) A_data;
+   itemp = (int *) ML_Get_MyMatvecData(mat_in);
+   
    proc  = *itemp; 
 
    for (i = 0; i < in_length; i++) new_p[i] = p[i];
-   Poisson_comm(new_p, A_data);
+   Poisson_comm(new_p, &proc);
 
    for (i = 0; i < out_length; i++) ap[i] = 2.*new_p[i];
 
