@@ -288,7 +288,7 @@ int ShellOptions::GetIntOption( const string input )
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
-    if( ci->first == input ) 
+    if( (*ci).first == input ) 
       return( atoi(OptionDatabase[input].c_str()) );
   }
   return 0;
@@ -311,7 +311,7 @@ int ShellOptions::GetIntOption( const string input, const int def_value)
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
-    if( ci->first == input ) 
+    if( (*ci).first == input ) 
       return( atoi(OptionDatabase[input].c_str()) );
   }
   
@@ -335,7 +335,7 @@ double ShellOptions::GetDoubleOption( const string input)
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
-    if( ci->first == input ) 
+    if( (*ci).first == input ) 
       return( atof(OptionDatabase[input].c_str()) );
   }
   
@@ -359,7 +359,7 @@ double ShellOptions::GetDoubleOption( const string input, const double def_value
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
-    if( ci->first == input ) 
+    if( (*ci).first == input ) 
       return( atof(OptionDatabase[input].c_str()) );
   }
   
@@ -383,7 +383,7 @@ string ShellOptions::GetStringOption( const string input)
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
-    if( ci->first == input ) 
+    if( (*ci).first == input ) 
       return( OptionDatabase[input] );
   }
   
@@ -407,7 +407,7 @@ string ShellOptions::GetStringOption( const string input, const string def_value
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
-    if( ci->first == input ) 
+    if( (*ci).first == input ) 
       return( OptionDatabase[input] );
   }
   
@@ -430,7 +430,7 @@ bool ShellOptions::HaveOption( const string input)
 
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
-    if( ci->first == input ) 
+    if( (*ci).first == input ) 
       return true;
   }
   return false;
@@ -450,8 +450,8 @@ void ShellOptions::ShowAll() const
   cout << "\nShellOptions :: \n";
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
-    if( ci->first.at(0) != '_' ) 
-      cout << ci->first << " = " << ci->second << endl;
+    if( (*ci).first.at(0) != '_' ) 
+      cout << (*ci).first << " = " << (*ci).second << endl;
   }
 
 } /* ShowAll */
@@ -469,7 +469,7 @@ void ShellOptions::ShowReallyAll() const
   cout << "\nShellOptions :: \n";
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
-    cout << ci->first << " = " << ci->second << endl;
+    cout << (*ci).first << " = " << (*ci).second << endl;
   }
 
 } /* ShowReallyAll */
