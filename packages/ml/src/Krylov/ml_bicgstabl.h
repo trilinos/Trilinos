@@ -15,14 +15,19 @@
 #ifndef __MLCGSTABL__
 #define __MLCGSTABL__
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 extern int ML_BICGSTABL_Solve(ML_Krylov *,int,double *rhs,double *sol);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
 #endif
+#endif
+
 #endif
 
