@@ -71,7 +71,7 @@ int Ifpack_METISPartitioner::ComputePartitions()
 
       xadj[count2+1] = xadj[count2]; /* nonzeros in row i-1 */
     
-      ierr = ExtractMyRowCopy(i, MaxNumEntries(), NumIndices, &Indices[0]);
+      ierr = Graph_->ExtractMyRowCopy(i, MaxNumEntries(), NumIndices, &Indices[0]);
       IFPACK_CHK_ERR(ierr);
 
       /* need to avoid boundary nodes in METIS vectors. Skip them */

@@ -15,20 +15,18 @@ Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix) :
   Matrix_(Matrix),
   Solver_(0),
   Problem_(0),
-  IsComputed_(false)
+  IsComputed_(false),
+  Condest_(-1.0),
+  ComputeCondest_(false)
 {
-
-  Label_ = "Amesos LU preconditioner";
 
   Problem_ = new Epetra_LinearProblem;
 
   Problem_->SetOperator(Matrix_);
 
-  // by default I allocate Amesos_Klu, the user
-  // can change in SetParameters().
-  Amesos Factory;
-  Solver_ = Factory.Create("Amesos_Klu",*Problem_);
-
+  // Set all default values.
+  Teuchos::ParameterList List;
+  SetParameters(List);
 }
 
 //==============================================================================
@@ -46,29 +44,7 @@ Ifpack_Amesos::~Ifpack_Amesos()
 int Ifpack_Amesos::SetParameters(Teuchos::ParameterList& List)
 {
 
-  string SolverType = List.get("solver type", "Amesos_Klu");
-  Label_ = "Amesos LU (block solver = " + SolverType + ")";
-
-  // reallocate the solver. This allows the user to call
-  // or not SetParameters()
-  if (Solver_)
-    delete Solver_;
-
-  Amesos Factory;
-  Solver_ = Factory.Create((char*)SolverType.c_str(),*Problem_);
-  
-  if (Solver_ == 0) {
-    // try to create KLU, it is generally enabled
-    Solver_ = Factory.Create("Amesos_Klu",*Problem_);
-
-    if (Solver_ == 0) {
-      IFPACK_CHK_ERR(-1);
-    }
-  }
-  if (Solver_ == 0)
-    IFPACK_CHK_ERR(-1);
-
-  Solver_->SetParameters(List);
+  Label_ = List.get("amesos: solver type", "Amesos_Klu");
 
   return(0);
 }
@@ -81,8 +57,26 @@ int Ifpack_Amesos::Compute()
   if (Matrix_ == 0)
     IFPACK_CHK_ERR(-1);
 
+  // reallocate the solver. This allows the user to call
+  // or not SetParameters()
+  if (Solver_)
+    delete Solver_;
+
+  Amesos Factory;
+  Solver_ = Factory.Create((char*)Label_.c_str(),*Problem_);
+  
+  if (Solver_ == 0) {
+    // try to create KLU, it is generally enabled
+    Solver_ = Factory.Create("Amesos_Klu",*Problem_);
+
+    if (Solver_ == 0) {
+      IFPACK_CHK_ERR(-1);
+    }
+  }
   if (Solver_ == 0)
     IFPACK_CHK_ERR(-1);
+
+  Solver_->SetParameters(List_);
 
   IFPACK_CHK_ERR(Solver_->SymbolicFactorization());
   IFPACK_CHK_ERR(Solver_->NumericFactorization());

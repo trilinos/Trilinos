@@ -70,7 +70,7 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
 
   while (ok == true) {
 
-    int ierr = ExtractMyRowCopy(RootNode, MaxNumEntries(),
+    int ierr = Graph_->ExtractMyRowCopy(RootNode, MaxNumEntries(),
 				CrsNumEntries, &Indices[0]);
 
     IFPACK_CHK_ERR(ierr);

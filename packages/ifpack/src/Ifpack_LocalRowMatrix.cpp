@@ -10,7 +10,6 @@
 Ifpack_LocalRowMatrix::Ifpack_LocalRowMatrix(const Epetra_RowMatrix* Matrix) :
   Matrix_(Matrix)
 {
-  Label_ = new char[80];
   sprintf(Label_,"Ifpack_LocalRowMatrix");
 
 #ifdef HAVE_MPI
@@ -65,8 +64,6 @@ Ifpack_LocalRowMatrix::Ifpack_LocalRowMatrix(const Epetra_RowMatrix* Matrix) :
 //==============================================================================
 Ifpack_LocalRowMatrix::~Ifpack_LocalRowMatrix()
 {
-  if (Label_)
-    delete Label_;
 }
 
 //==============================================================================

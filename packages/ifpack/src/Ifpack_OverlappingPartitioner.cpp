@@ -32,10 +32,9 @@ Ifpack_OverlappingPartitioner::~Ifpack_OverlappingPartitioner()
 int Ifpack_OverlappingPartitioner::SetParameters(Teuchos::ParameterList& List)
 {
 
-  // FIXME: use isParameter() 
-  NumLocalParts_ = List.get("local blocks", (int)1);
-  OverlappingLevel_ = List.get("overlap level", (int)0);
-  verbose_ = List.get("output level", 2);
+  NumLocalParts_ = List.get("partitioner: local parts", NumLocalParts_);
+  OverlappingLevel_ = List.get("partitioner: overlap", OverlappingLevel_);
+  verbose_ = List.get("partitioner: print level", 2);
 
   SetPartitionParameters(List);
 
@@ -59,8 +58,6 @@ int Ifpack_OverlappingPartitioner::Compute()
     cout << PrintMsg_ << "Number of global parts = " 
          << NumLocalParts_ * Comm().NumProc() << endl;
     cout << PrintMsg_ << "Amoung of overlap      = " << OverlappingLevel_ << endl;
-    cout << PrintMsg_ << "Decomposition type     = " 
-         << DecompositionType_ << endl;
   }
   // 1.- allocate memory 
 
@@ -92,7 +89,7 @@ int Ifpack_OverlappingPartitioner::Compute()
   for (int i = 0; i < NumMyRows() ; ++i) {  
 
     int ierr;
-    ierr = ExtractMyRowCopy(i, MaxNumEntries(), NumIndices, &Indices[0]);
+    ierr = Graph_->ExtractMyRowCopy(i, MaxNumEntries(), NumIndices, &Indices[0]);
     IFPACK_CHK_ERR(ierr);
     
     if (NumIndices <= 1) {
@@ -247,14 +244,6 @@ const int Ifpack_OverlappingPartitioner::NumGlobalRows() const
 int Ifpack_OverlappingPartitioner::MaxNumEntries() const
 {
   return(Graph_->MaxMyNumEntries());
-}
-
-//============================================================================
-int Ifpack_OverlappingPartitioner::ExtractMyRowCopy(int MyRow, int Length, int& NumIndices,
-		     int* Indices)
-{
-  return(Graph_->ExtractMyRowCopy(MyRow, Length, NumIndices,
-				  Indices));
 }
 
 //============================================================================

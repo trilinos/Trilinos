@@ -12,23 +12,36 @@ class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_Import;
 
-//! Ifpack_OverlappingPartitioner: A class to decompose overlapping and non-overlapping Ifpack_Graph's.
+//! Ifpack_OverlappingPartitioner: A class to create overlapping local partitions.
 
 /*!
+Class Ifpack_OverlappingPartitioner enables the construction of
+overlapping partitions. This class extends the non-overlapping
+partitions created by a Ifpack_Partitioner derived class, by
+the required amount of overlap.
 
-  \note Partition ID's are local with respect to the numbering of \c G
-  and \c OG.
+Supported parameters are:
+- \c "partitioner: overlap": the required amount of overlap is set in 
+  parameter. Default = 0 (integer).
+- \c "partitioner: local parts": the number of local partition to compute
+  (int, default = 1).
+- \c "partitioner: print level": the print level, from 0 (silent)
+  to 10 (verbose). (int, default = 0).
 
-  \author Marzio Sala, 9214
+We note that this overlap refers to \e local graph only. This means
+the non-overlapping partitions are extended in the \c local graph,
+not in the non-local components.
 
-  \date Sep-04
+\date Sep-04
 */  
 class Ifpack_OverlappingPartitioner : public Ifpack_Partitioner {
 
 public:
 
+  //! Constructor.
   Ifpack_OverlappingPartitioner(const Ifpack_Graph* Graph);
 
+  //! Destructor.
   ~Ifpack_OverlappingPartitioner();
 
   //! Returns the number of computed local partitions.
@@ -45,8 +58,8 @@ public:
 
   //! Returns the local non-overlapping partition ID of the specified row.
   /*! Returns the non-overlapping partition ID of the specified row.
-   \param In
-   MyRow - local row numbe
+   \param 
+   MyRow - (In) local row numbe
 
    \return
    Local ID of non-overlapping partition for \t MyRow.
@@ -84,7 +97,7 @@ public:
   }
 
   //! Returns the number of rows contained in specified partition.
-  int NumRowsInPart(const int Part) const
+  inline int NumRowsInPart(const int Part) const
   {
     return(Parts_[Part].size());
   }
@@ -103,9 +116,18 @@ public:
   }
 
   //! Sets all the parameters for the partitioner.
+  /*! The supported parameters are:
+   * - \c "partitioner: overlap" (int, default = 0).
+   * - \c "partitioner: local parts" (int, default = 1).
+   * - \c "partitioner: print level" (int, default = 0).
+   */
   virtual int SetParameters(Teuchos::ParameterList& List);
 
   //! Sets all the parameters for the partitioner.
+  /*! This function is used by derived classes to set their own
+   * parameters. These classes should not derive SetParameters(),
+   * so that common parameters can be set just once.
+   */
   virtual int SetPartitionParameters(Teuchos::ParameterList& List) = 0;
 
   //! Computes the partitions. Returns 0 if successful.
@@ -125,20 +147,22 @@ public:
 
 protected:
    
+  //! Returns the number of local rows.
   const int NumMyRows() const;
 
+  //! Returns the number of local nonzero elements.
   const int NumMyNonzeros() const;
 
+  //! Returns the number of local non-Dirichlet rows.
   const int NumMyNonDirichletRows() const;
 
+  //! Returns the number of local rows.
   const int NumGlobalRows() const;
 
+  //! Returns the max number of local entries in a row.
   int MaxNumEntries() const;
     
-  // FIXME
-  int ExtractMyRowCopy(int MyRow, int Length, int& NumIndices,
-		       int* Indices);
-
+  //! Returns the communicator object of Graph.
   const Epetra_Comm& Comm() const;
 
   //! Number of local subgraphs
@@ -174,9 +198,6 @@ protected:
   int verbose_;
   string PrintMsg_;
   string ErrorMsg_;
-
-  //! Type of decomposition
-  string DecompositionType_;
 
   // Dirichlet rows
   int NumMyNonDirichletRows_;

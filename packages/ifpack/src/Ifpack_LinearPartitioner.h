@@ -19,27 +19,22 @@ class Ifpack_LinearPartitioner : public Ifpack_OverlappingPartitioner {
 
 public:
 
+  //! Constructor.
   Ifpack_LinearPartitioner(const Ifpack_Graph* Graph) :
-    Ifpack_OverlappingPartitioner(Graph),
-    RootNode_(0)
+    Ifpack_OverlappingPartitioner(Graph)
   {}
 
+  //! Destructor.
   ~Ifpack_LinearPartitioner() {};
 
-  //! Sets all the parameters for the partitioner.
+  //! Sets all the parameters for the partitioner (none for linear partioning).
   int SetPartitionParameters(Teuchos::ParameterList& List)
   {
-    RootNode_ = List.get("root node", RootNode_);
-
     return(0);
   }
 
   //! Computes the partitions. Returns 0 if successful.
   int ComputePartitions();
-
-private:
-
-  int RootNode_;
 
 };
 

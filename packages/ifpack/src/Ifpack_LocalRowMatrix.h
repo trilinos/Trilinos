@@ -69,10 +69,10 @@ public:
 
   //! Returns the number of nonzero entries in MyRow.
   /*! 
-    \param In
-    MyRow - Local row.
-    \param Out
-    NumEntries - Number of nonzero values present.
+    \param 
+    MyRow - (In) Local row.
+    \param 
+    NumEntries - (Out) Number of nonzero values present.
 
     \return Integer error code, set to 0 if successful.
     */
@@ -89,16 +89,16 @@ public:
 
   //! Returns a copy of the specified local row in user-provided arrays.
   /*! 
-    \param In
-    MyRow - Local row to extract.
-    \param In
-    Length - Length of Values and Indices.
-    \param Out
-    NumEntries - Number of nonzero entries extracted.
-    \param Out
-    Values - Extracted values for this row.
-    \param Out
-    Indices - Extracted global column indices for the corresponding values.
+    \param
+    MyRow - (In) Local row to extract.
+    \param
+    Length - (In) Length of Values and Indices.
+    \param
+    NumEntries - (Out) Number of nonzero entries extracted.
+    \param
+    Values - (Out) Extracted values for this row.
+    \param 
+    Indices - (Out) Extracted global column indices for the corresponding values.
 
     \return Integer error code, set to 0 if successful.
     */
@@ -106,8 +106,8 @@ public:
 
   //! Returns a copy of the main diagonal in a user-provided vector.
   /*! 
-    \param Out
-    Diagonal - Extracted main diagonal.
+    \param
+    Diagonal - (Out) Extracted main diagonal.
 
     \return Integer error code, set to 0 if successful.
     */
@@ -118,12 +118,12 @@ public:
 
   //! Returns the result of a Epetra_RowMatrix multiplied by a Epetra_MultiVector X in Y.
   /*! 
-    \param In
-    TransA -If true, multiply by the transpose of matrix, otherwise just use matrix.
-    \param In
-    X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param Out
-    Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
+    \param 
+    TransA -(In) If true, multiply by the transpose of matrix, otherwise just use matrix.
+    \param 
+    X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param 
+    Y -(Out) A Epetra_MultiVector of dimension NumVectorscontaining result.
 
     \return Integer error code, set to 0 if successful.
     */
@@ -333,7 +333,7 @@ const Epetra_BlockMap& Map() const
 }
 
 char* Label() const{
-  return(Label_);
+  return((char*)Label_);
 };
 
 private:
@@ -370,7 +370,7 @@ private:
   //! If true, the tranpose of the local matrix will be used.
   bool UseTranspose_;
   //! Label for \c this object.
-  char* Label_;
+  char Label_[80];
 
   };
 

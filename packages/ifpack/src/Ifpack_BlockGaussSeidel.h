@@ -18,11 +18,13 @@ class Ifpack_BlockGaussSeidel : public Ifpack_BlockPreconditioner<T> {
 
 public:
 
+  //! Constructor.
   Ifpack_BlockGaussSeidel(Epetra_RowMatrix* Matrix) :
     Ifpack_BlockPreconditioner<T>(Matrix)
   {
   };
-
+  
+  //! Destructor.
   virtual ~Ifpack_BlockGaussSeidel()
   {};
 
@@ -48,110 +50,82 @@ public:
     if (X.NumVectors() != Y.NumVectors())
       IFPACK_CHK_ERR(-1); // not valid
 
-    if (NumSweeps() == 1) {
+    // need this for AztecOO
+    Epetra_MultiVector Xtmp(X);
+    Epetra_MultiVector Xtmp2(X);
 
-      // simple case, I apply the preconditioner to the input     //
-      // vector. No matrix-vector product, nor other allocations  //
-      Y = X;
-      IFPACK_CHK_ERR(ApplyBGS(Y));
+    if (ZeroStartingSolution_)
+      Y.PutScalar(0.0);
 
-    }
-    else {
+    for (int j = 0; j < NumSweeps() ; j++) {
 
-      // generic case with more than one sweep. This requires room for two
-      // additional vectors, and a matrix-vector product for each sweeps. The
-      // starting solution is the vector to be preconditioned.
-      // copy rhs 
-      Epetra_MultiVector Xtmp(X);
+      // cycle over all local subdomains
 
-      // starting solution
-      Epetra_MultiVector AX(Y);
+      int Length = Matrix().MaxNumEntries();
+      vector<int> Indices;
+      vector<double> Values;
+      Indices.resize(Length);
+      Values.resize(Length);
 
-      for (int j = 0; j < NumSweeps() ; j++) {
+      int NumMyRows = Matrix().NumMyRows();
 
-	// compute the residual
-	IFPACK_CHK_ERR(Apply(Y,AX));
+      for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
 
-	AX.Update(1.0,Xtmp,-1.0);
+	int LID, GID;
 
-	// apply the lower block triangular part of A
-	ApplyBGS(AX);
+	// update from previous block
 
-	// update the residual
-	Y.Update(DampingFactor(), AX, 1.0);
+	for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
+	  LID = Containers_[i]->ID(j);
 
+	  int NumEntries;
+	  IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(LID, Length,NumEntries,
+						   &Values[0], &Indices[0]));
+
+	  for (int k = 0 ; k < NumEntries ; ++k) {
+	    int col = Indices[k];
+	    if (col >= NumMyRows ) 
+	      continue;
+
+	    if ((*Partitioner_)(col) < i) {
+	      for (int kk = 0 ; kk < Y.NumVectors() ; ++kk) {
+		Xtmp2[kk][LID] = Xtmp[kk][LID] - Values[k] * Y[kk][col];
+	      }
+	    }
+	  }
+	}
+
+	// solve with this block
+
+	for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
+	  LID = Containers_[i]->ID(j);
+	  for (int k = 0 ; k < Y.NumVectors() ; ++k) {
+	    Containers_[i]->RHS(j,k) = Xtmp2[k][LID];
+	  }
+	}
+
+	IFPACK_CHK_ERR(Containers_[i]->ApplyInverse());
+
+	for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
+	  LID = Containers_[i]->ID(j);
+	  for (int k = 0 ; k < Y.NumVectors() ; ++k) {
+	    Y[k][LID] = Y[k][LID] + DampingFactor() * Containers_[i]->LHS(j,k);
+	  }
+	}
       }
+
     }
     return(0);
   }
 
 private:
 
-  //!Applies one sweep of Gauss-Seidel to Y, overwrites results on Y.
-  int ApplyBGS(Epetra_MultiVector& Y) const
-  {
-    // cycle over all local subdomains
-
-    int Length = Matrix()->MaxNumEntries();
-    vector<int> Indices;
-    vector<double> Values;
-    Indices.resize(Length);
-    Values.resize(Length);
-
-    for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
-
-      int LID, GID;
-
-      // update from previous block
-
-      for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
-	LID = Containers_[i]->ID(j);
-
-	int NumEntries;
-	IFPACK_CHK_ERR(Matrix()->ExtractMyRowCopy(LID, Length,NumEntries,
-						    &Values[0], &Indices[0]));
-
-	for (int k = 0 ; k < NumEntries ; ++k) {
-	  int col = Indices[k];
-	  if (col >= Matrix()->NumMyRows() ) 
-	    continue;
-
-	  if ((*Partitioner_)(col) < i) {
-	    for (int kk = 0 ; kk < Y.NumVectors() ; ++kk) {
-	      Y[kk][LID] = Y[kk][LID] - Values[k] * Y[kk][col];
-	    }
-	  }
-	}
-      }
-
-      // solve with this block
-
-      for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
-	LID = Containers_[i]->ID(j);
-	for (int k = 0 ; k < Y.NumVectors() ; ++k) {
-	  Containers_[i]->RHS(j,k) = Y[k][LID];
-	}
-      }
-
-      IFPACK_CHK_ERR(Containers_[i]->ApplyInverse());
-
-      for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
-	LID = Containers_[i]->ID(j);
-	for (int k = 0 ; k < Y.NumVectors() ; ++k) {
-	  Y[k][LID] = Containers_[i]->LHS(j,k);
-	}
-      }
-    }
-
-    return(0); 
-  }
-
-  //! Sets the label of \c this object.
-  virtual int SetLabel()
-  {
-    Label_ = "Amesos_BlockGaussSeidel, # blocks = "
-      + Ifpack_toString(NumLocalBlocks());
-   }
+//! Sets the label of \c this object.
+virtual int SetLabel()
+{
+  Label_ = "Amesos_BlockGaussSeidel, # blocks = "
+    + Ifpack_toString(NumLocalBlocks());
+}
 
 };
 

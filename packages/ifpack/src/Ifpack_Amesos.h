@@ -6,10 +6,7 @@
 
 #include "Ifpack_Preconditioner.h"
 #include "Epetra_Operator.h"
-namespace Teuchos {
-  class ParameterList;
-}
-
+#include "Teuchos_ParameterList.hpp"
 class Epetra_Map;
 class Epetra_Comm;
 class Amesos_BaseSolver;
@@ -17,7 +14,43 @@ class Epetra_LinearProblem;
 class Epetra_RowMatrix;
 
 //! Ifpack_Amesos: a class to use Amesos's LU solvers as preconditioners.
+/*!
+Class Ifpack_Amesos enables the use of Amesos's LU factorizations as preconditioners.
+Like most other Ifpack_Preconditioner objects, this class requires the
+pointer of the precondioned matrix in the constructor. Parameters are
+set using \c SetParameters(), and the preconditioner is computed using
+Compute().
 
+It is important to note that this class solves the linear system defined by
+the matrix, with \e all the processes contained in the \c Comm object of this
+matrix. As such, this preconditioner is seldomly used alone; moreover, it
+is used as local solver for Ifpack_AdditiveSchwarz or Ifpack_CrsAdditiveSchwarz preconditioners. (In these cases, the distributed matrix is localized using
+Ifpack_LocalRowMatrix, than this local matrix is given to Ifpack_Amesos).
+
+Ifpack_Amesos is just a bare-bone wrap to Amesos. The most
+important parameter
+required by this class is \c "amesos: solver type" (defaulted to \c
+"Amesos_Klu"), which defined the Amesos solver. However, the \e same
+list is used to set Amesos parameters.
+
+An example of use is as follows.
+
+\code
+#include "Ifpack_Amesos.h"
+...
+
+Epetra_RowMatrix* A;
+// here A is filled as necessary
+Ifpack_Preconditioner* Prec = new Ifpack_Amesos(A);
+Teuchos::ParameterList List.
+List.set("amesos: solver type", "Amesos_Klu");
+Prec->SetParameters(List);
+Prec->Compute();
+\endcode
+
+\date Sep-04
+
+*/
 class Ifpack_Amesos : public Ifpack_Preconditioner {
       
 public:
@@ -35,8 +68,8 @@ public:
     /*! This flag allows the transpose of the given operator to be used 
      * implicitly.  
       
-    \param In
-	   UseTranspose -If true, multiply by the transpose of operator, 
+    \param 
+	   UseTranspose - (In) If true, multiply by the transpose of operator, 
 	   otherwise just use operator.
 
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
@@ -48,10 +81,10 @@ public:
 
     //! Applies the matrix to an Epetra_MultiVector.
   /*! 
-    \param In
-    X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param Out
-    Y -A Epetra_MultiVector of dimension NumVectors containing the result.
+    \param
+    X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param 
+    Y - (Out) A Epetra_MultiVector of dimension NumVectors containing the result.
 
     \return Integer error code, set to 0 if successful.
     */
@@ -59,10 +92,10 @@ public:
 
     //! Applies the preconditioner to X, returns the result in Y.
   /*! 
-    \param In
-    X - A Epetra_MultiVector of dimension NumVectors to be preconditioned.
-    \param Out
-    Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    \param 
+    X - (In) A Epetra_MultiVector of dimension NumVectors to be preconditioned.
+    \param 
+    Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
 
@@ -105,15 +138,18 @@ public:
   //! Computes the preconditioners.
   /*! Computes the preconditioners: 
    *
-   * \param In
-   * List - list specifying the parameters for Jacobi. See above.
-   *    
    * \return
-   * 0 if successful, 1 problems occurred.
+   * 0 if successful, 1 if problems occurred.
    */
   virtual int Compute();
 
   //! Sets all the parameters for the preconditioner.
+  /*! Only two parameters are recognized by Ifpack_Amesos:
+   * - \c "amesos: solver type" : Specifies the solver type
+   *   for Amesos. Default: \c Amesos_Klu.
+   * - \c "amesos: compute condest" : if \c true,
+   *   computes the estimated condition number. Default: \c false.
+   */   
   virtual int SetParameters(Teuchos::ParameterList& List);
 
   //! Not implemented, as Amesos requires Teuchos.
@@ -128,14 +164,16 @@ public:
     return(-1);
   }
 
+  //! Returns a reference to the internally stored matrix.
   virtual const Epetra_RowMatrix& Matrix() const
   {
     return(*Matrix_);
   }
-  
+
+  //! Returns the estimated condition number (if computed).
   virtual double Condest() const
   {
-    return(-1.0);
+    return(Condest_);
   }
   
   virtual std::ostream& Print(std::ostream& os) const;
@@ -152,6 +190,12 @@ private:
   string Label_;
   //! If true, the preconditioner has been successfully computed.
   bool IsComputed_;
+  //! Contains the estimated condition number.
+  double Condest_;
+  //! If true, compute the estimated condition number.
+  bool ComputeCondest_;
+  //! Contains a copy of the input parameter list.
+  Teuchos::ParameterList List_;
 
 };
 

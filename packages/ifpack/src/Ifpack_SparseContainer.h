@@ -22,8 +22,8 @@
 
 /*!
   Containers are templated with a type T, which represent the 
-  class to use in the application of the inverse. T is not
-  used in DenseContainer. In SparseContainer, T must be
+  class to use in the application of the inverse. (T is not
+  used in Ifpack_DenseContainer). In SparseContainer, T must be
   an Ifpack_Preconditioner derived class. The container will allocate
   a \c T object, use SetParameters() and Compute(), then
   use \c T every time the linear system as to be solved (using the
@@ -35,45 +35,70 @@ class Ifpack_SparseContainer : public Ifpack_Container {
 
 public:
 
+  //! Constructor.
   Ifpack_SparseContainer();
 
+  //! Destructor.
   virtual ~Ifpack_SparseContainer();
 
+  //! Shapes the container, allocating space for \c NumRows and \c NumVectors.
+  
   virtual int Shape(const int NumRows, const int NumVectors = 1);
 
+  //! Reshapes a container.
   virtual int Reshape(const int NumRows, const int NumVectors = 1);
 
+  //! Returns the number of rows of the matrix and LHS/RHS.
   virtual int NumRows() const;
 
+  //! Returns the number of vectors in LHS/RHS.
   virtual int NumVectors() const
   {
     return(NumVectors_);
   }
 
+  //! Sets the number of vectors for LHS/RHS.
   virtual int SetNumVectors(const int NumVectors)
   {
     NumVectors_ = NumVectors;
     return(0);
   }
 
+  //! Returns the i-th component of the vector Vector of LHS.
   virtual double& LHS(const int i, const int Vector = 0);
   
+  //! Returns the i-th component of the vector Vector of RHS.
   virtual double& RHS(const int i, const int Vector = 0);
 
+  //! Returns the ID associated to local row i. 
+  /*!
+   * The set of (local) rows assigned to this container is defined
+   * by calling ID(i) = j, where i (from 0 to NumRows()) indicates
+   * the container-row, and j indicates the local row in the calling
+   * process.
+   *
+   * This is usually used to recorder the local row ID (on calling process)
+   * of the i-th row in the container.
+   */
   virtual int& ID(const int i);
 
+  //! Extract the submatrices identified by the ID set int ID().
   virtual int Extract(const Epetra_RowMatrix* Matrix);
 
+  //! Set the matrix element (row,col) to \c value.
   virtual int SetMatrixElement(const int row, const int col,
 			       const double value);
 
+  //! Finalizes the linear system matrix and prepares for the application of the inverse.
   virtual int Compute();
 
+  //! Returns \c true is the container has successfully called \c Compute().
   virtual bool IsComputed() const
   {
     return(IsComputed_);
   }
 
+  //! Sets all necessary parameters.
   virtual int SetParameters(Teuchos::ParameterList& List);
 
   virtual bool IsShaped() const
@@ -81,12 +106,21 @@ public:
     return(IsShaped_);
   }
 
+  //! Apply the matrix to RHS, results are stored in LHS.
   virtual int Apply();
 
+  //! Apply the inverse of the matrix to RHS, results are stored in LHS.
   virtual int ApplyInverse();
 
+  //! Destroys all data.
   virtual int Destroy();
 
+  //! Returns the label of \e this container.
+  virtual const char* Label() const
+  {
+    return(Label_.c_str());
+  }
+  
 private:
   
   int NumRows_; 
@@ -103,6 +137,8 @@ private:
   bool IsComputed_;
   Epetra_Comm* SerialComm_;
   T* Inverse_;
+  //! Label for \c this object
+  string Label_;
 
 };
 
@@ -250,6 +286,8 @@ int Ifpack_SparseContainer<T>::Compute()
   // compute the inverse operator
   IFPACK_CHK_ERR(Inverse_->Compute());
 
+  Label_ = "Ifpack_SparseContainer";
+  
   IsComputed_ = true;
 
   return(0);
@@ -348,6 +386,15 @@ SetParameters(Teuchos::ParameterList& List)
 template<typename T>
 int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix* Matrix)
 {
+
+  for (int j = 0 ; j < NumRows_ ; ++j) {
+    // be sure that the user has set all the ID's
+    if (ID(j) == -1)
+      IFPACK_CHK_ERR(-1);
+    // be sure that all are local indices
+    if (ID(j) > Matrix->NumMyRows())
+      IFPACK_CHK_ERR(-2);
+  }
 
   int Length = Matrix->MaxNumEntries();
   vector<double> Values;

@@ -13,23 +13,25 @@ class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_Import;
 
-//! Ifpack_GreedyPartitioner: A class to decompose overlapping and non-overlapping Ifpack_Graph's.
+//! Ifpack_GreedyPartitioner: A class to decompose Ifpack_Graph's using a simple greedy algorithm.
 
 class Ifpack_GreedyPartitioner : public Ifpack_OverlappingPartitioner {
 
 public:
 
+  //! Constructor.
   Ifpack_GreedyPartitioner(const Ifpack_Graph* Graph) :
     Ifpack_OverlappingPartitioner(Graph),
     RootNode_(0)
   {}
 
+  //! Destructor.
   ~Ifpack_GreedyPartitioner() {};
 
-  //! Sets all the parameters for the partitioner.
+  //! Sets all the parameters for the partitioner (root node).
   int SetPartitionParameters(Teuchos::ParameterList& List)
   {
-    RootNode_ = List.get("root node", RootNode_);
+    RootNode_ = List.get("partitioner: root node", RootNode_);
 
     return(0);
   }

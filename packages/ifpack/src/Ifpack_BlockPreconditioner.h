@@ -136,10 +136,12 @@ public:
     // require it later
     List_ = List;
 
-    SetNumSweeps(List.get("sweeps",NumSweeps()));
-    SetDampingFactor(List.get("omega", DampingFactor()));
-    PrintLevel_ = List.get("print level", PrintLevel());
-    Partitioner_ = List.get("partitioner object", (Ifpack_Partitioner*)0);
+    SetNumSweeps(List.get("block: sweeps",NumSweeps()));
+    SetDampingFactor(List.get("block: damping factor", DampingFactor()));
+    PrintLevel_ = List.get("block: print level", PrintLevel());
+    Partitioner_ = List.get("partitioner: object", (Ifpack_Partitioner*)0);
+    ZeroStartingSolution_ = List.get("block: zero starting solution", 
+				     ZeroStartingSolution_);
 
     // derived class will set the appropriate label
     IFPACK_CHK_ERR(SetLabel());
@@ -172,27 +174,27 @@ public:
   virtual int Compute();
 
   //! Sets the number of sweeps.
-  int SetNumSweeps(const int NumSweeps)
+  inline int SetNumSweeps(const int NumSweeps)
   {
     NumSweeps_ = NumSweeps;
     return(0);
   }
 
   //! Gets the number of sweeps.
-  int NumSweeps() const
+  inline int NumSweeps() const
   {
     return(NumSweeps_);
   }
  
   //! Sets the damping factor.
-  int SetDampingFactor(const double DampingFactor)
+  inline int SetDampingFactor(const double DampingFactor)
   {
     DampingFactor_ = DampingFactor;
     return(0);
   }
 
   //! Gets the damping parameter.
-  double DampingFactor() const
+  inline double DampingFactor() const
   {
     return(DampingFactor_);
   }
@@ -222,7 +224,8 @@ public:
   {
     if (Matrix().Comm().MyPID())
       return(os);
-    os << "*** Ifpack_BlockPreconditioner" << endl;
+    os << "*** " << Label() << endl;
+    os << "*** Container label: " << Containers_[0]->Label() << endl;
     return(os);
   }
 
@@ -240,6 +243,8 @@ protected:
   Ifpack_Partitioner* Partitioner_;
   //! Label for \c this object
   string Label_;
+  //! If \c true, starting solution is the zero vector.
+  bool ZeroStartingSolution_;
 
 private:
 
@@ -278,7 +283,8 @@ Ifpack_BlockPreconditioner<T>::Ifpack_BlockPreconditioner(Epetra_RowMatrix* Matr
   DampingFactor_(1.0),
   NumLocalBlocks_(1),
   Partitioner_(0),
-  PrintLevel_(0)
+  PrintLevel_(0),
+  ZeroStartingSolution_(true)
 {
 }
 
