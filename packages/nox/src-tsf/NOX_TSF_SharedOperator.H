@@ -75,7 +75,7 @@ protected:
 
 
 
-  //! Pointer to TSFExtended::LinearOperator 
+  //! TSFExtended::LinearOperator 
   TSFExtended::LinearOperator<double> linearOp;
 
 

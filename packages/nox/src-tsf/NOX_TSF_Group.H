@@ -174,6 +174,9 @@ namespace NOX {
 
       virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
+      //! Print out the group
+      void print() const;
+
     protected:
 
       //! resets all isValid flags to false

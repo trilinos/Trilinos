@@ -67,11 +67,11 @@ namespace NOX {
       virtual const NOX::TSF::Vector& getInitialGuess() = 0;
 
       //! Compute RHS given the specified input vector x.  Returns true if computation was successful.
-      virtual bool computeF(TSFExtended::NonlinearOp& rhs, const NOX::TSF::Vector &x) = 0;
+      virtual bool computeF(NOX::TSF::Vector& rhs, const NOX::TSF::Vector &x) = 0;
   
       //! Compute Jacobian given the specified input vector x.  Returns true if computation was successful.
-      virtual bool computeJacobian(TSFExtended::LinearOp& J, const NOX::TSF::Vector & x) = 0;
-
+      //      virtual bool computeJacobian(TSFExtended::LinearOp& J, const NOX::TSF::Vector & x) = 0;
+      virtual bool computeJacobian(NOX::TSF::SharedOperator& J, const NOX::TSF::Vector & x) = 0;
     };
   } // namespace TSF
 } // namespace NOX

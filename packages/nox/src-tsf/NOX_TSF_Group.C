@@ -33,6 +33,7 @@
 #include "NOX_Common.H"
 #include "NOX_TSF_Group.H"	// class definition
 
+
 NOX::TSF::Group::Group(TSFExtended::Vector<double>& initcond, TSFExtended::NonlinearOperator<double>& nonlinop) :
   xVector(initcond,DeepCopy),
   fVector(xVector,ShapeCopy),
@@ -371,5 +372,20 @@ const NOX::Abstract::Vector& NOX::TSF::Group::getNewton() const
 {
   return newtonVector;
 }
+
+void NOX::TSF::Group::print() const
+{
+  cout << "x = " << xVector << "\n";
+
+  if (isValidF) {
+    cout << "F(x) = " << fVector << "\n";
+    cout << "|| F(x) || = " << normF << "\n";
+  }
+  else
+    cout << "F(x) has not been computed" << "\n";
+  
+  cout << endl;
+}
+
 
 
