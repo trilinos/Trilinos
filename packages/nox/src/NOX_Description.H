@@ -40,8 +40,10 @@
 
   \section started Getting Started
 
-  To configure and compile NOX, follow the 
+  To configure and compile %NOX, follow the 
   <A HREF="../configure.html">Configuration and compilation instructions</A>. 
+
+  \section bugs Reporting Bugs and Making Enhancement Requests
 
   To reports bugs or make enhancement reuqests, visit 
   <A HREF="http://csmr.ca.sandia.gov/bugzilla/">NOX's Bugzilla (Bug Tracking) Database</A>,
@@ -54,7 +56,9 @@
       </UL>
   </UL>
 
-  <p>We recommend that all NOX users subscribe to the 
+  \section email Mailing Lists
+
+  <p>We recommend that all %NOX users subscribe to the 
   <a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a>.
   This mailing list is used to keep users informed of new releases and patches. 
   Developers should subscribe to both the 
@@ -62,11 +66,8 @@
   and the 
   <a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-cvs">NOX-CVS Mailing List</a>.
   The first is a mailing list dedicated to discussion of the
-  development of NOX and is archived; the second is the mailing list
+  development of %NOX and is archived; the second is the mailing list
   to which all CVS commit messages are sent.
-
-  For examples on configuring and compiling NOX on specaized machines at Sandia National Laboratories, follow the 
-  <A HREF="../../maintenance/html/sandiaSpecificConfigure.html">Sandia Specific configuration and compilation instructions</A>. 
 
   \section classes Class Overview
 
@@ -92,14 +93,14 @@
 
   The \b Example interface is a very simple interface that is not
   intended for actual computations, but to serve as an
-  easy-to-understand example of how one might interface to NOX.
+  easy-to-understand example of how one might interface to %NOX.
   
-  The \b Epetra interface is a full function interface with the
+  The \b Epetra interface is an interface to the
   Trilinos/Epetra library.
 
-  The \b Petsc interface is a full function interface with the
-  Petsc library developed at Argonne National Labs,
-   <a href="http://www-fp.mcs.anl.gov/petsc">PETSC-Home</a>
+  The \b PETSc interface is an interface with the PETSc library. PETSc
+  was developed at Argonne National Labs; for more information see the
+  <a href="http://www-fp.mcs.anl.gov/petsc">PETSc Home Page</a>
 
   All solvers are in the NOX::Solver namespace. The solvers are
   accessed via the NOX::Solver::Manager. The recommended solver is
