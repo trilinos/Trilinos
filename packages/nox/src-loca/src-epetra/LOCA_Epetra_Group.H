@@ -166,6 +166,8 @@ namespace LOCA {
       //! Call the user interface print() routine, any vector
       virtual void printSolution(const NOX::Abstract::Vector& x,
                                  const double conParam) const;
+      virtual NOX::Abstract::Group::ReturnType
+      computeEigenvalues(NOX::Parameter::List& params);
 
       virtual NOX::Abstract::Group::ReturnType 
       augmentJacobianForHomotopy(double conParamValue);
@@ -190,6 +192,8 @@ namespace LOCA {
        */
       Epetra_Vector* tmpVectorPtr2;
 
+      //! Step counter for option of computing eigenvalues every n continuation steps
+      int eigenvalCounter;
     };
 
   } // namespace Epetra
