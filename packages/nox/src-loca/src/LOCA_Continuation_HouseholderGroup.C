@@ -184,10 +184,11 @@ LOCA::Continuation::HouseholderGroup::computeNewton(
   // Change sign of newton vector
   newtonVec.scale(-1.0);
 
-  //double r = computeScaledDotProduct(newtonVec, predictorVec);
-  double r = newtonVec.dot(predictorVec);
-  cout << "Component of newton vec in direction of predictor:  " 
-       << r << endl;
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    double r = computeScaledDotProduct(newtonVec, predictorVec);
+    cout << "\n\tScaled component of Newton vector in direction of "
+	 << "predictor:  " << r << endl;
+  }
 
   isValidNewton = true;
 
@@ -197,33 +198,81 @@ LOCA::Continuation::HouseholderGroup::computeNewton(
 void
 LOCA::Continuation::HouseholderGroup::computeHouseholderVector()
 {
-  
-  // Get x, param components of predictor vector
-  const NOX::Abstract::Vector& tanX = predictorVec.getXVec();
-  const double& tanP = predictorVec.getParam();
+
+  // Copy predictor in Householder vector and scale (twice)
+  houseVec = predictorVec;
+  scaleVector(houseVec);
+  scaleVector(houseVec);
 
   // Get x, param components of Householder vector
   NOX::Abstract::Vector& houseX = houseVec.getXVec();
   double& houseP = houseVec.getParam();
 
-  double sigma = tanX.dot(tanX);
-  houseX = tanX;
+  double sigma = houseX.dot(houseX);
 
   if (sigma == 0.0) {
     beta = 0.0;
     houseP = 1.0;
   }
   else {
-    double mu = sqrt(tanP*tanP + sigma);
-    if (tanP <= 0.0)
-      houseP = tanP - mu;
+    double mu = sqrt(houseP*houseP + sigma);
+    if (houseP <= 0.0)
+      houseP = houseP - mu;
     else
-      houseP = -sigma / (tanP + mu);
+      houseP = -sigma / (houseP + mu);
     beta = 2.0*houseP*houseP/(sigma + houseP*houseP);
     houseVec.scale(1.0/houseP);
   }
 
   return;
+}
+
+// void
+// LOCA::Continuation::HouseholderGroup::computeHouseholderVector()
+// {
+
+//   // Scale predictor
+//   LOCA::Continuation::ExtendedVector *scaledPredictor = 
+//     dynamic_cast<LOCA::Continuation::ExtendedVector*>(predictorVec.clone(NOX::DeepCopy));
+//   scaleVector(*scaledPredictor);
+//   scaleVector(*scaledPredictor);
+  
+//   // Get x, param components of predictor vector
+//   const NOX::Abstract::Vector& tanX = scaledPredictor->getXVec();
+//   const double& tanP = scaledPredictor->getParam();
+
+//   // Get x, param components of Householder vector
+//   NOX::Abstract::Vector& houseX = houseVec.getXVec();
+//   double& houseP = houseVec.getParam();
+
+//   double sigma = tanX.dot(tanX);
+//   houseX = tanX;
+
+//   if (sigma == 0.0) {
+//     beta = 0.0;
+//     houseP = 1.0;
+//   }
+//   else {
+//     double mu = sqrt(tanP*tanP + sigma);
+//     if (tanP <= 0.0)
+//       houseP = tanP - mu;
+//     else
+//       houseP = -sigma / (tanP + mu);
+//     beta = 2.0*houseP*houseP/(sigma + houseP*houseP);
+//     houseVec.scale(1.0/houseP);
+//   }
+
+//   delete scaledPredictor;
+
+//   return;
+// }
+
+void
+LOCA::Continuation::HouseholderGroup::scaleVector(
+				 LOCA::Continuation::ExtendedVector& x) const
+{
+  grpPtr->scaleVector(x.getXVec());
+  x.getParam() *= theta;
 }
 
 

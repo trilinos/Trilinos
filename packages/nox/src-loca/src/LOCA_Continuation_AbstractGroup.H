@@ -231,6 +231,13 @@ namespace LOCA {
 				      NOX::Abstract::Vector& result_x,
 				      double& result_p) const;
 
+      //! Scales a vector using scaling vector
+      /*!
+       * The default definition here is to do nothing, i.e., no scaling
+       */
+      virtual void
+      scaleVector(NOX::Abstract::Vector& x) const;
+
       //@}
 
     };

@@ -130,3 +130,8 @@ LOCA::Continuation::AbstractGroup::applyHouseholderJacobianInverse(
 	  "No implementation defined for group");
   return NOX::Abstract::Group::Failed;
 }
+
+void
+LOCA::Continuation::AbstractGroup::scaleVector(NOX::Abstract::Vector& x) const
+{
+}

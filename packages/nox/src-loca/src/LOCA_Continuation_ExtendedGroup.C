@@ -194,21 +194,21 @@ LOCA::Continuation::ExtendedGroup::getStepSizeScaleFactor() const {
 
 double
 LOCA::Continuation::ExtendedGroup::computeScaledDotProduct(
-			   const LOCA::Continuation::ExtendedVector& x,
-			   const LOCA::Continuation::ExtendedVector& y) const
-{
-  double val = grpPtr->computeScaledDotProduct(x.getXVec(), y.getXVec());
-  return val + theta*theta*x.getParam()*y.getParam();
-}
-
-double
-LOCA::Continuation::ExtendedGroup::computeScaledDotProduct(
 				     const NOX::Abstract::Vector& x,
 				     const NOX::Abstract::Vector& y) const
 {
   return computeScaledDotProduct(
 		   dynamic_cast<const LOCA::Continuation::ExtendedVector&>(x),
 		   dynamic_cast<const LOCA::Continuation::ExtendedVector&>(y));
+}
+
+double
+LOCA::Continuation::ExtendedGroup::computeScaledDotProduct(
+			   const LOCA::Continuation::ExtendedVector& x,
+			   const LOCA::Continuation::ExtendedVector& y) const
+{
+  double val = grpPtr->computeScaledDotProduct(x.getXVec(), y.getXVec());
+  return val + theta*theta*x.getParam()*y.getParam();
 }
 
 void

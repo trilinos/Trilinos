@@ -156,6 +156,9 @@ namespace LOCA {
        */ 
       void computeHouseholderVector();
 
+      //! Scales a vector using scaling vector
+      virtual void scaleVector(LOCA::Continuation::ExtendedVector& x) const;
+
     protected:
 	
       //! Stores the Householder vector

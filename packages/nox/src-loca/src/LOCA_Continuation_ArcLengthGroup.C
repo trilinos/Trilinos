@@ -399,6 +399,12 @@ LOCA::Continuation::ArcLengthGroup::computeNewton(
 
   newtonVec.scale(-1.0);
 
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    double r = computeScaledDotProduct(newtonVec, predictorVec);
+    cout << "\n\tScaled component of Newton vector in direction of "
+	 << "predictor:  " << r << endl;
+  }
+
   isValidNewton = true;
 
   return finalStatus;
