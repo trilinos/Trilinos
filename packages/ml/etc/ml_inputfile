@@ -21,7 +21,7 @@
 #      starts from 0 and increases. Each file
 #      should contain 1 rigid body mode.
 #   9) The utility ml/util/az_capt2read.c can be used
-#      to convert matlab type '*.dat' data into 
+#      to convert matlab/Aztec type data into 
 #      AZ_read_msr() format.
 #
 -----------------------------------------------

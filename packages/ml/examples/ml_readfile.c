@@ -22,7 +22,7 @@
 #   3) Parallel Partitioning File is not used
 #      when only 1 processor is present.
 #   4) comments in [] indicate available options.
-#   5) The matrix must be stored in a file according
+#   5) The matrix must be stored in a file '.data' according
 #      to Aztec's AZ_read_msr() format.
 #   6) Including the file 'rhsfile' will cause this 
 #      data (stored in Aztec's AZ_read_msr() format)
