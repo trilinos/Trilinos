@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
     double * tempvec1 = new double[10];
     for (int i=0; i<10; i++) { tempvec1[i] = i; }
     PL_Main.set( "Address of Norm Vector", tempvec1 );
-    double* tempvec2 = PL_Main.template get<double*>( "Address of Norm Vector" );
+    double* tempvec2 = getParameter<double*>( PL_Main, "Address of Norm Vector" );
     tempvec1[4] = 2.0; tempvec1[6] = 1.0;
     if (verbose) {
 	cout<< "Can we pass a pointer to a vector to a parameter list ... ";
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------
     double (*pt2Function) (double, double);
     PL_Main.set( "Address to Simple Function", &Plus );
-    pt2Function = PL_Main.template get<double(*)(double,double)>( "Address to Simple Function" ); 
+    pt2Function = getParameter<double(*)(double,double)>( PL_Main, "Address to Simple Function" ); 
     if (verbose) {
 	cout<< "Can we pass a pointer to a function to a parameter list ... ";
     }
