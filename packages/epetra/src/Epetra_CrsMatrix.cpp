@@ -727,11 +727,12 @@ int Epetra_CrsMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
     EPETRA_CHK_ERR(-2); // Maps must be the same
 
   for(int i = 0; i < NumMyRows_; i++) {
+    int ii = GRID(i);
     int NumEntries = NumEntriesPerRow_[i];
     int* Indices = Indices_[i];
     Diagonal[i] = 0.0;
     for(int j = 0; j < NumEntries; j++) {
-      if(i == Indices[j]) {
+      if(ii == GCID(Indices[j])) {
 	Diagonal[i] = Values_[i][j];
 	break;
       }
@@ -749,11 +750,12 @@ int Epetra_CrsMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
 
   int ierr = 0;
   for(int i = 0; i < NumMyRows_; i++) {
+    int ii = GRID(i);
     int NumEntries = NumEntriesPerRow_[i];
     int* Indices = Indices_[i];
     bool DiagMissing = true;
     for(int j = 0; j < NumEntries; j++) {
-      if(i == Indices[j]) {
+      if(ii == GCID(Indices[j])) {
 	Values_[i][j] = Diagonal[i];
 	DiagMissing = false;
 	break;

@@ -1033,12 +1033,12 @@ int Epetra_VbrMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
   if (!RowMap().SameAs(Diagonal.Map())) EPETRA_CHK_ERR(-2); // Maps must be the same
   double * diagptr = Diagonal.Values();
   for(int i=0; i<NumMyBlockRows_; i++){
-    int BlockRow = i;
+    int BlockRow = GRID(i);
     int RowDim = ElementSizeList_[i];
     int NumEntries = NumBlockEntriesPerRow_[i];
     int * Indices = Indices_[i];
     for (int j=0; j<NumEntries; j++) {
-      int BlockCol = Indices[j];
+      int BlockCol = GCID(Indices[j]);
       if (BlockRow==BlockCol) {
 	CopyMatDiag(Entries_[i][j]->A(), Entries_[i][j]->LDA(), RowDim,
 		    Entries_[i][j]->N(), diagptr+FirstPointInElementList_[i]);
@@ -1056,13 +1056,13 @@ int Epetra_VbrMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
   int ierr = 0;
   double * diagptr = (double *) Diagonal.Values(); // Dangerous but being lazy
   for(int i=0; i<NumMyBlockRows_; i++){
-    int BlockRow = i;
+    int BlockRow = GRID(i);
     int RowDim = ElementSizeList_[i];
     int NumEntries = NumBlockEntriesPerRow_[i];
     int * Indices = Indices_[i];
     bool DiagMissing = true;
     for (int j=0; j<NumEntries; j++) {
-      int BlockCol = Indices[j];
+      int BlockCol = GCID(Indices[j]);
       if (BlockRow==BlockCol) {
 	ReplaceMatDiag(Entries_[i][j]->A(), Entries_[i][j]->LDA(), RowDim, Entries_[i][j]->N(), 
 		       diagptr+FirstPointInElementList_[i]);
