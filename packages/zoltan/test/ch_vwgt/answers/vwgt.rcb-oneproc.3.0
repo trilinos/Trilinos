@@ -1,0 +1,11 @@
+Decomposition Info	= method=rcb
+Zoltan Parameters	= obj_weight_dim=1
+File Type		= Chaco, initial procs = 1
+File Name		= vwgt
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+1
+2
+6
+7
+12
