@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_STEPPER_H
-#define LOCA_STEPPER_H
+#ifndef LOCA_STEPPER_Generic_H
+#define LOCA_STEPPER_Generic_H
 
 #include "LOCA_Solver_Generic.H"    // class data element
 #include "NOX_Parameter_List.H"	    // class data element
@@ -50,11 +50,11 @@ namespace LOCA {
 using namespace NOX;
 
 /*!
-  \brief Driver for the LOCA Library.
+  \brief Driver for the %LOCA Library.
 
   This method accesses the Library of Continuation Algorithms (LOCA). 
-  Zero order, first order and arc-length continuation routines are in this
-  object.
+  Zero order, first order and arc-length continuation routines are derived this
+  from this object.
   
   The following parameters are valid for the LOCA Library:
 

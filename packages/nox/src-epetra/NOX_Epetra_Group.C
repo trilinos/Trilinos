@@ -59,6 +59,7 @@ Group::Group(const Parameter::List& params, Interface& i,
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedJacobian
   sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
   sharedPreconditionerPtr(0),  // separate preconditioner is not used in this ctor
+  sharedPreconditioner(*sharedJacobianPtr),  // point to the Jacobian
   userInterface(i)
 {
   // Set all isValid flags to false
@@ -86,6 +87,7 @@ Group::Group(const Parameter::List& params, Interface& i,
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedOperator
   sharedJacobian(*sharedJacobianPtr), // create reference from pointer
   sharedPreconditionerPtr(new SharedOperator(M)), // pass M to SharedOperator
+  sharedPreconditioner(*sharedPreconditionerPtr), // pass M to SharedOperator
   userInterface(i)
 {
   // Set all isValid flags to false
@@ -112,6 +114,7 @@ Group::Group(const Group& source, CopyType type) :
   sharedJacobianPtr(NULL),
   sharedJacobian(source.sharedJacobian),
   sharedPreconditionerPtr(source.sharedPreconditionerPtr),
+  sharedPreconditioner(source.sharedPreconditioner),
   userInterface(source.userInterface),
   jacobianOperatorType(source.jacobianOperatorType),
   preconditionerOperatorType(source.preconditionerOperatorType),
@@ -131,10 +134,6 @@ Group::Group(const Group& source, CopyType type) :
     // New copy takes ownership of the shared Jacobian
     if (isValidJacobian)
       sharedJacobian.getOperator(this);
-
-    // New copy takes ownership of the shared preconditioning matrix
-    if (sharedPreconditionerPtr != 0)
-      sharedPreconditionerPtr->getOperator(this);
 
     break;
 
@@ -280,10 +279,6 @@ Abstract::Group& Group::operator=(const Group& source)
   // If valid, this takes ownership of the shared Jacobian
   if (isValidJacobian)
     sharedJacobian.getOperator(this);
-    
-  // Takes ownership of the shared preconditioning matrix
-  if (sharedPreconditionerPtr != 0) 
-    sharedPreconditionerPtr->getOperator(this);
     
   // Copy linear solver options
   jacobianOperatorType = source.jacobianOperatorType;
@@ -693,7 +688,7 @@ SharedOperator& Group::getSharedJacobian()
 
 SharedOperator& Group::getSharedPreconditioner()
 {
-  return *sharedPreconditionerPtr;
+  return sharedPreconditioner;
 }
 
 Interface& Group::getUserInterface()
@@ -728,8 +723,8 @@ bool Group::checkOperatorConsistency()
   }
   else if (preconditioner == "AztecOO: User RowMatrix") {
     
-    // Make sure the operator was supplied by the user
-    if (sharedPreconditionerPtr == 0) {
+    // Make sure a separate operator was supplied by the user
+    if (preconditionerOperatorType == None) {
       cout << "ERROR: NOX::Epetra::Group::setLinearSolver() - The flag "
 	   << "\"Preconditioning\" with value \"" << preconditioner
 	   << "\" requires a NOX::Epetra::Group constructor with "
@@ -752,7 +747,7 @@ bool Group::checkOperatorConsistency()
   else if (preconditioner == "User Supplied Preconditioner") {
 
     // Make sure the operator was supplied by the user
-    if (sharedPreconditionerPtr == 0) {
+    if (preconditionerOperatorType == None) {
       cout << "ERROR: NOX::Epetra::Group::setLinearSolver() - The flag "
 	   << "\"Preconditioning\" with value \"" << preconditioner
 	   << "\" requires a NOX::Epetra::Group constructor with "
@@ -787,7 +782,7 @@ bool Group::computePreconditioner(AztecOO& aztec) const
   else if (preconditioner == "AztecOO: User RowMatrix") {
     
     Epetra_RowMatrix& precMatrix = 
-      dynamic_cast<Epetra_RowMatrix&>(sharedPreconditionerPtr->getOperator(this));
+      dynamic_cast<Epetra_RowMatrix&>(sharedPreconditioner.getOperator(this));
     
     if (preconditionerOperatorType == NoxFiniteDifferenceRowMatrix) {
       (dynamic_cast<FiniteDifference&>(precMatrix))
@@ -800,7 +795,7 @@ bool Group::computePreconditioner(AztecOO& aztec) const
   }
   else if (preconditioner == "User Supplied Preconditioner") {
     
-    Epetra_Operator& precOperator = sharedPreconditionerPtr->getOperator(this);
+    Epetra_Operator& precOperator = sharedPreconditioner.getOperator(this);
 
     // For user supplied Precs the user may supply them in one of two ways:
     if (preconditionerOperatorType == NoxOperator) {

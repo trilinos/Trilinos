@@ -357,6 +357,9 @@ protected:
   SharedOperator* sharedPreconditionerPtr;
   //@}
 
+  //! Reference to shared Jacobian matrix 
+  SharedOperator& sharedPreconditioner;
+
   //! Reference to the user supplied interface functions
   Interface& userInterface;
 
