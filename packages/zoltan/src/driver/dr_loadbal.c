@@ -155,6 +155,11 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
     }
   }
 
+  /* Evaluate the old balance */
+  if (lb_obj->Proc == 0) printf("\nBEFORE load balancing\n");
+  LB_Eval(lb_obj, 2, 0, 0, NULL, NULL, &i);
+
+
   /*
    * call the load balancer
    */
@@ -177,7 +182,8 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
     }
   }
 
-  /* Evaluate the current balance */
+  /* Evaluate the new balance */
+  if (lb_obj->Proc == 0) printf("\nAFTER load balancing\n");
   LB_Eval(lb_obj, 2, 0, 0, NULL, NULL, &i);
 
   /* Clean up */
