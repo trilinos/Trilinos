@@ -1178,3 +1178,110 @@ int ML_Info_DomainDecomp( ML_Aggregate_Viz_Stats info,
   return;
   
 } /* ML_VisualizeWithOpenDX */
+
+/* ********************************************************************** */
+/* used in `ML_Compute_AggregateGraphRadius'                              */
+/* ********************************************************************** */
+
+static int get_max_dep_line( int Nrows, int ia[], int ja[],
+			     int dep [] ) 
+{
+  int i, j, col, ok, contour;
+
+  contour = 1;
+  ok = 0;
+  
+  while( ok == 0 ) {
+    
+    ok = 1;
+    for( i=0 ; i<Nrows ; i++ ) {
+      if( dep[i] == contour-1 ) {
+	for( j=ia[i] ; j<ia[i+1] ; j++ ) {
+	  col = ja[j];
+	  if( dep[col] == -7 ) {
+	    dep[col] = contour;
+	    ok = 0;
+	  }
+	}
+      }
+    }
+    if( ok == 0 ) contour++;
+
+  }
+
+  return( --contour );
+
+} 
+
+
+/* ======================================================================== */
+/*!
+ \brief Compute the radius an aggregates, coded in a CSR matrix.
+
+ This function computes the radius (in matrix-graph sense) of a set of
+ nodes, coded in the CSR vectors ia and ja.
+ \param dep in : this vector, of size Nrows, is defined as follows:
+  - dep[i] == -7 for a boundary node
+  - dep[i] ==  0 for non-boundary ndes
+  
+*/
+/* ------------------------------------------------------------------------ */
+
+
+int ML_Compute_AggregateGraphRadius( int Nrows, int ia[], int ja[],
+				     int dep [],
+				     int *pradius, int *pNcenter ) 
+{
+  int i, j, radius, Ncenter;
+  int max_dep;
+  int * center;
+  int orig_dep[Nrows];
+
+  for( i=0 ; i<Nrows ; i++ )
+    orig_dep[i] = dep[i];
+  
+  max_dep = get_max_dep_line( Nrows, ia, ja, dep );
+  printf("-> %d\n", max_dep);  
+  /* define the center nodes */
+
+  Ncenter = 0;
+  center = (int *) malloc( sizeof(int) * Nrows );
+  
+  for( i=0 ; i<Nrows ; i++ ) {
+    if( dep[i] == max_dep ) {
+      center[Ncenter] = i;
+      Ncenter++;
+    }
+  }
+
+  /* now for all center nodes compute the radius */
+
+  radius = 0;
+  for( i=0 ; i<Ncenter ; i++ ) {
+    for( j=0 ; j<Nrows ; j++ ) {
+      if( orig_dep[j] == 0 )  dep[j] = -1;
+      else                    dep[j] = -7;
+    }
+    dep[center[i]] = 0;
+    j = get_max_dep_line( Nrows, ia, ja, dep );
+    printf("---> %d\n", j);
+    
+    if( j > radius ) radius = j;
+  }
+
+  if( radius < max_dep ) {
+    fprintf( stderr,
+	     "*ML*ERR* error in `ML_Compute_AggregateGraphRadius'\n"
+	     "*ML*ERR* radius < max_dep ( %d - %d )\n",
+	     radius,
+	     max_dep );
+  }
+  
+  *pradius = radius;
+  *pNcenter = Ncenter;
+  
+  free( (void *) center );
+
+  return 0;
+  
+}
