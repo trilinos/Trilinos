@@ -184,13 +184,13 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
          << Utils::fill(64,'=') << "\n" << endl;
   }
 
-  return LOCA::Abstract::Group::Ok;
+  return NOX::Abstract::Group::Ok;
 #else
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout << "\nWarning: LOCA::Continuation::AnasaziGroup::computeEigenvalues:"
 	 << endl
          <<  "Anasazi Eigensolver requested but not compiled in!" << endl;
   }
-  return LOCA::Abstract::Group::Ok;
+  return NOX::Abstract::Group::Ok;
 #endif
 }
