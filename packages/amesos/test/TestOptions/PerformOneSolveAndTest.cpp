@@ -3,7 +3,7 @@
 //
 
 #define OUR_CHK_ERR(a) { { int epetra_err = a; \
-                      if (epetra_err != 0) { cerr << "Epetra ERROR " << epetra_err << ", " \
+                      if (epetra_err != 0) { cerr << "Amesos ERROR " << epetra_err << ", " \
                            << __FILE__ << ", line " << __LINE__ << endl; \
 relerror = 1.3e15; relresidual=1e15; return(1);}  }\
                    }
@@ -16,6 +16,7 @@ relerror = 1.3e15; relresidual=1e15; return(1);}  }\
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
 #include "PerformOneSolveAndTest.h"
+#include "PartialFactorization.h"
 #include "CreateTridi.h"
 //
 //  Returns the number of failures.
@@ -69,6 +70,15 @@ int PerformOneSolveAndTest(char* AmesosClass,
 			   double& relerror,
 			   double& relresidual) 
 {
+
+  PartialFactorization( AmesosClass, Comm, transpose, verbose, ParamList, Amat, Rcond );
+
+  relerror = 0 ; 
+  relresidual = 0 ; 
+
+#if 0
+  return 0 ; 
+#endif
 	
   assert( Levels >= 1 && Levels <= 3 ) ; 
 
@@ -178,6 +188,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
     Problem.SetLHS( &sAAx );
     Problem.SetRHS( &b );
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
+    OUR_CHK_ERR( Abase->SymbolicFactorization(  ) );     // This should be irrelevant, but should nonetheless be legal 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
     OUR_CHK_ERR( Abase->Solve(  ) ); 
 
@@ -317,8 +328,6 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	errors += 1 ; 
       }
     }
-
-
 
 
     //  #define FACTOR_B

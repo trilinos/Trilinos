@@ -72,11 +72,10 @@ echo `uname -a` >>& $file
 #  I thought that I had Test_Epetra_CrsMatrix working, but now it has a memory error in it.
 #
 #foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix Test_Epetra_CrsMatrix ) 
-# foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
-# foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK )  # fails 25 Feb 2005
-# foreach f (  Test_Epetra_CrsMatrix  )
-# foreach f (  Test_Epetra_KLU  )  #  This passes - 25 Feb 2005
-foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix ) 
+foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
+# foreach f ( Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK )  # passes 1 MARCH 2005
+# foreach f ( Test_Epetra_VbrMatrix ) 
+# foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_KLU Test_Epetra_VbrMatrix ) # test passes Mar 1 
    cd $f
 ## Different directory structures will require different setups.
 ## This file assumes a structure like that of epetra - exe's live in 
@@ -100,10 +99,13 @@ foreach f ( TestOptions Test_SuperLU_DIST Test_Epetra_RowMatrix )
       rm -f TestFailed
       echo `pwd`
       $mpigo 4 valgrind --logfile=valg.out --leak-check=yes --suppressions=../Test_Basic/Suppressions $g -s
+      sleep 1    # I don't think we need this, but ... 
       grep ERROR valg.out.pid* | grep -v "SUMMARY: 0 " && touch TestFailed
       grep lost valg.out.pid* | grep -v " 0 bytes" && touch TestFailed
       if( -f TestFailed ) then
       # A test failed.
+        sleep 10   #  wait for valgrind to finish writing out the files.
+                 #  sleep 10 is overkill, sleep 1 suffices
    	set AnError = True
 	echo "  ******** Test failed ********" >>& ../$file
 #

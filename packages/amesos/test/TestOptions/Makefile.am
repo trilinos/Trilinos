@@ -36,6 +36,8 @@ TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 	$(srcdir)/TestSuperludist.h \
 	$(srcdir)/TestAllClasses.cpp \
 	$(srcdir)/TestAllClasses.h \
+	$(srcdir)/PartialFactorization.cpp \
+	$(srcdir)/PartialFactorization.h \
 	$(srcdir)/PerformOneSolveAndTest.cpp \
 	$(srcdir)/PerformOneSolveAndTest.h \
 	$(srcdir)/TestOtherClasses.cpp \

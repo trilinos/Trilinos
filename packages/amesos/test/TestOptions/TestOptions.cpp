@@ -187,8 +187,6 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
 		   double Rcond,
 		   int &NumTests  ) {
 
-  if ( verbose ) cout << endl << endl << " Matrix = " << filename << endl ;
-
   int NumErrors =0 ;
   double error = -13; 
   double residual = -13;

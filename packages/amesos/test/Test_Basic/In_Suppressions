@@ -4,7 +4,7 @@
 #
 #
 #  The errors suppressed in this file can be grouped as follows:
-#    1)  Two memory leaks in DSCPACK
+#    1)  Eleven memory leaks in DSCPACK
 #    2)  Eight errors in write, mwrite and writev
 #    3)  An overlap error in lam_memcpy
 #    4)  A memory leak in AmesosClasses
@@ -14,32 +14,6 @@
 #     
 # 
 
-#    1)  Two memory leaks in DSCPACK
-{
-   <Leak in DSCPACK::DSC_Analayze>
-   Memcheck:Leak
-   fun:malloc
-   fun:DSC_Analyze
-   fun:main
-   fun:__libc_start_main
-}
-{
-   <Leak in DSCPACK::order_and_make_tree2>
-   Memcheck:Leak
-   fun:malloc
-   fun:order_and_make_tree2
-   fun:DSC_Order
-   fun:main
-}
-
- {
-   <Leak in DSC_Begin in DSCPACK>
-   Memcheck:Leak
-   fun:malloc
-   fun:DSC_Begin
-   fun:_ZN14Amesos_DscpackC1ERK20Epetra_LinearProblem
-   fun:_ZN6Amesos6CreateESsRK20Epetra_LinearProblem
-}
 
 #    2)  Eight errors in write, mwrite and writev
 {
@@ -120,8 +94,8 @@
    write(buf)
    fun:__GI___libc_write
    fun:new_do_write
-   fun:_IO_do_write@@GLIBC_2.1
-   fun:_IO_file_sync@@GLIBC_2.1
+   fun:*
+   fun:*
 }
 
 #    3)  An overlap error in lam_memcpy
@@ -341,7 +315,7 @@
 }
 
  {
-   <insert a suppression name here>
+   <Superlu leak>
    Memcheck:Leak
    fun:malloc
    fun:superlu_malloc_dist
@@ -350,7 +324,7 @@
 }
 
  {
-   <insert a suppression name here>
+   <Superlu leak >
    Memcheck:Leak
    fun:malloc
    fun:superlu_malloc_dist
@@ -369,4 +343,223 @@
    fun:lam_arr_remove_index
    fun:finalize1
    fun:lam_ssi_rpi_usysv_finalize
+}
+
+
+
+
+#
+#  The following are needed to run TestOptions with Amesos_Dscpack
+#
+#
+#
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:_IO_vfprintf_internal
+   fun:_IO_printf
+   fun:_Z27Trilinos_Util_ReadHb2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
+   fun:*
+}
+
+
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:_Z27Trilinos_Util_ReadHb2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
+   fun:*
+   fun:*
+   fun:*
+}
+
+
+
+
+{
+   <insert a suppression name here>
+   Memcheck:Value4
+   fun:_IO_vfprintf_internal
+   fun:_IO_printf
+   fun:_Z27Trilinos_Util_ReadHb2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
+   fun:*
+}
+
+{
+   <another printf problem in Trilinos_Util_ReadHb2Epetra>
+   Memcheck:Cond
+   fun:_IO_file_xsputn@@GLIBC_2.1
+   fun:_IO_vfprintf_internal
+   fun:_IO_printf
+   fun:_Z27Trilinos_Util_ReadHb2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
+}
+{
+   <yet another printf problem in Trilinos_Util_ReadHb2Epetra>
+   Memcheck:Cond
+   fun:_IO_file_overflow@@GLIBC_2.1
+   fun:_IO_default_xsputn_internal
+   fun:_IO_file_xsputn@@GLIBC_2.1
+   fun:_IO_vfprintf_internal
+}
+{
+   <yet another another printf problem in Trilinos_Util_ReadHb2Epetra>
+   Memcheck:Cond
+   fun:_IO_default_xsputn_internal
+   fun:_IO_file_xsputn@@GLIBC_2.1
+   fun:_IO_vfprintf_internal
+   fun:_IO_printf
+}
+
+
+#
+#  These four leaks all occur when DSCPACK/Solve1 2 3 4 1 1 1 1 1 1   is run 
+#
+{
+   <DSCPACK leak #1A order_and_make_tree2>
+   Memcheck:Leak
+   fun:malloc
+   fun:order_and_make_tree2
+   fun:DSC_Order
+   fun:*
+}
+
+{
+   <DSCPACK leak #1B in order_and_make_tree2hyb bug #1210>
+   Memcheck:Leak
+   fun:malloc
+   fun:order_and_make_tree2hyb
+   fun:*
+   fun:*
+}
+{
+   <DSCPACK leak #1C in order_and_make_tree2hyb bug #1210>
+   Memcheck:Leak
+   fun:malloc
+   fun:order_and_make_tree2
+   fun:*
+   fun:*
+}
+{
+   <DSCPACK leak #1D DSC_Analayze>
+   Memcheck:Leak
+   fun:malloc
+   fun:DSC_Analyze
+   fun:*
+   fun:*
+}
+
+#
+#  The following leaks occurs when mpirun -np 4 Solve1 2 3 4 1 1 1 1 1 1   is run 
+#
+ {
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:DSC_Test_3_D
+   fun:*
+   obj:*
+}
+
+ {
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:DSC_Begin
+   fun:*
+   obj:*
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:MPI_Group_range_incl
+   fun:DSC_Open0
+   fun:*
+}
+
+#
+#  The following 4 leaks occur when TestOptions.exe is run with Dscpack enabled:
+#
+
+
+# {
+#    <DSCPACK leak #1 DSC_Open0  >
+#    Memcheck:Leak
+#    fun:malloc
+#    fun:MPI_Group_range_incl
+#    fun:DSC_Open0
+#    fun:_ZN14Amesos_Dscpack21SymbolicFactorizationEv
+# }
+
+
+{
+   <DSCPACK leak #2>
+   Memcheck:Leak
+   fun:malloc
+   fun:alloc_more
+   fun:lam_mp_init
+   fun:lam_comm_new
+}
+
+{
+   <DSCPACK leak #2 from SymbolicFactorization>
+   Memcheck:Leak
+   fun:malloc
+   fun:s_fact_allocate_vecs
+   fun:*
+   fun:*
+}
+{
+   <DSCPACK leak #3 from SymbolicFactorization>
+   Memcheck:Leak
+   fun:malloc
+   fun:n_fact_allocate_vecs
+   fun:*
+   fun:*
+}
+{
+   <DSCPACK leak #4 from SymbolicFactorization>
+   Memcheck:Leak
+   fun:malloc
+   fun:n_solve_initialize
+   fun:*
+   fun:*
+}
+{
+   <DSCPACK leak #5 from SymbolicFactorization>
+   Memcheck:Leak
+   fun:malloc
+   fun:n_fact_initialize
+   fun:*
+   fun:*
+}
+{
+   <DSCPACK leak #7 from Symbolic Factorization>
+   Memcheck:Leak
+   fun:malloc
+   fun:local_order_greedy
+   fun:*
+   fun:*
+}
+{
+   <DSCPACK leak #8 from Symbolic Factorization>
+   Memcheck:Leak
+   fun:malloc
+   fun:matrix_structure_spd
+   fun:*
+   fun:*
+}
+
+
+#
+#  Needed by Test_KLU 
+#
+{
+   <lam problem in Test_KLU>
+   Memcheck:Param
+   write(buf)
+   fun:__GI___libc_write
+   fun:swrite
+   fun:tcp_req_send_ack_long
+   fun:lam_ssi_rpi_tcp_advmultiple
 }

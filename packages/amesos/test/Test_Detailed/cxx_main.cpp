@@ -113,6 +113,8 @@ bool Test(char* SolverType,
       TestPassed = TestPassed && 
 	CheckError(SolverType, "Solve() only", A,x_A,b_A,x_exactA);
     }
+    delete Solver; 
+
   }
 
   // Test almost simple usage:
@@ -136,6 +138,8 @@ bool Test(char* SolverType,
 
     TestPassed = TestPassed && 
       CheckError(SolverType, "NumFact() + Solve()", A,x_A,b_A,x_exactA);
+
+    delete Solver; 
   }
   // Test normal usage:
   // - set problem (empty)
@@ -175,6 +179,8 @@ bool Test(char* SolverType,
     TestPassed = TestPassed && 
       CheckError(SolverType, "SymFact() + NumFact() + Solve()", 
 		 A,x_A,b_A,x_exactA);
+
+    delete Solver; 
   }
 
   // Test normal usage:
@@ -204,6 +210,8 @@ bool Test(char* SolverType,
 
     TestPassed = TestPassed && 
       CheckError(SolverType, "Set A, solve B", B,x_B,b_B,x_exactB);
+
+    delete Solver; 
   }
 
   // Construct Solver with filled ProblemA.
@@ -233,6 +241,7 @@ bool Test(char* SolverType,
       TestPassed = TestPassed && 
 	CheckError(SolverType, "Set A, Solve C", C,x_C,b_C,x_exactC);
     }
+    delete Solver; 
   }
 
   // Construct Solver with filled ProblemA, call Solve().
@@ -261,6 +270,7 @@ bool Test(char* SolverType,
       TestPassed = TestPassed && 
 	CheckError(SolverType, "Solve A + Solve C", C,x_C,b_C,x_exactC);
     }
+    delete Solver; 
   }
 
   return(TestPassed);
@@ -354,7 +364,7 @@ int SubMain( Epetra_Comm &Comm ) {
       cout << "Solver " << Solver << " not available" << endl;
   }
 #if 0
-  this does not seem to help
+  //  this does not seem to help
   delete RowA;
   delete RowB;
   delete RowC;

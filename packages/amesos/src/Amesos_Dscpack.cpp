@@ -78,6 +78,7 @@ Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) :
   A_and_LU_built = false ; 
   FirstCallToSolve_ = true ; 
   MyDSCObject = DSC_Begin() ; 
+
   MyDscRank = -1 ; 
 }
 
@@ -87,8 +88,8 @@ Amesos_Dscpack::~Amesos_Dscpack(void) {
   if ( MyDscRank>=0 && A_and_LU_built ) { 
     DSC_FreeAll( MyDSCObject ) ; 
     DSC_Close0( MyDSCObject ) ; 
-    DSC_End( MyDSCObject ) ; 
   }
+  DSC_End( MyDSCObject ) ; 
 
   if( Time_ ) { delete Time_; Time_ = 0; }
   if( ImportToSerial_ ) { delete ImportToSerial_; ImportToSerial_ = 0; }
@@ -264,6 +265,17 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   }
     MaxProcs_ = EPETRA_MIN( MaxProcs_, Comm().NumProc());
 
+
+#if 0
+  if ( MyDscRank>=0 && A_and_LU_built ) { 
+			     DSC_ReFactorInitialize(MyDSCObject);
+  }
+#endif
+  //  if ( ! A_and_LU_built ) { 
+  //    DSC_End( MyDSCObject ) ; 
+  //    MyDSCObject = DSC_Begin() ;
+  //  } 
+
   // MS // here I continue with the old code...
   
 
@@ -287,6 +299,8 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
     assert( NumGlobalCols == numrows ) ; 
     assert( NumLocalCols == NumLocalStructs ) ; 
   }
+
+
   
   if ( MyDscRank >= 0 ) { 
     int MaxSingleBlock; 
@@ -297,7 +311,7 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
     
   }
   
-  //  A_and_LU_built = true; 
+  //  A_and_LU_built = true;   // If you uncomment this, TestOptions fails
   
   SymTime_ += Time_->ElapsedTime();
   return 0;
@@ -328,7 +342,17 @@ int Amesos_Dscpack::PerformNumericFactorization()
   //  Call Dscpack to perform Numeric Factorization
   //  
   vector<double> MyANonZ;
+  if ( DscMap_ ) {
+    delete DscMap_ ; 
+#if 0
+    if ( IsNumericFactorizationOK_ ) { 
+      DSC_ReFactorInitialize(MyDSCObject);
+    }
+#endif
+  }
+
   DscMap_ = new Epetra_Map(numrows, NumLocalCols, LocalStructOldNum, 0, Comm());
+  AMESOS_CHK_ERR( ( (int) DscMap_ == 0 ) ) ; 
   
   //
   //  Import from the CrsMatrix
@@ -462,7 +486,7 @@ int Amesos_Dscpack::SymbolicFactorization()
   NumSymbolicFact_++;
   
   AMESOS_CHK_ERR(PerformSymbolicFactorization());
-  IsSymbolicFactorizationOK_ = false; 
+  IsSymbolicFactorizationOK_ = true; 
 
   return(0);
 }
