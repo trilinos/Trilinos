@@ -30,6 +30,7 @@ extern void print_distributed_mesh(
 extern int output_results(
   int Proc,
   int Num_Proc,
+  PROB_INFO_PTR prob,
   PARIO_INFO_PTR pio_info,
   ELEM_INFO elements[]);
 

@@ -47,8 +47,6 @@ static char *cvs_dr_main = "$Id$";
 MESH_INFO Mesh;
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, ELEM_INFO_PTR *);
-static void print_input_info(FILE *, int, PROB_INFO_PTR);
-static void print_input(int, int, PROB_INFO_PTR, PARIO_INFO_PTR);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -148,7 +146,7 @@ int main(int argc, char *argv[])
       exit(1);
     }
 
-    print_input(Proc, Num_Proc, &prob, &pio_info);
+    print_input_info(stdout, Num_Proc, &prob);
   }
 
   /* broadcast the command info to all of the processor */
@@ -178,7 +176,7 @@ int main(int argc, char *argv[])
   /*
    * output the results
    */
-  if (!output_results(Proc, Num_Proc, &pio_info, elements)) {
+  if (!output_results(Proc, Num_Proc, &prob, &pio_info, elements)) {
       Gen_Error(0, "fatal: Error returned from output_results\n");
       error_report(Proc);
       exit(1);
@@ -223,35 +221,7 @@ static int read_mesh(
 
 /*****************************************************************************/
 /*****************************************************************************/
-/*****************************************************************************/
-/* This function prints out parameters as read from the command file.
- * Parameters are also printed to the parallel output file.
- *---------------------------------------------------------------------------*/
-static void print_input(int Proc, int Num_Proc, PROB_INFO_PTR prob, 
-                        PARIO_INFO_PTR pio_info)
-{
-/* local declarations */
-  FILE *fp;
-  char  par_out_fname[FILENAME_MAX+1], ctemp[FILENAME_MAX+1];
-
-/*-----------------------------Execution Begins------------------------------*/
-
-  /* Print info to both stdout and the Proc's output file. */
-  /* generate the parallel filename for this processor */
-  strcpy(ctemp, pio_info->pexo_fname);
-  strcat(ctemp, ".out");
-  gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
-  fp = fopen(par_out_fname, "w");
-
-  print_input_info(stdout, Num_Proc, prob);
-  print_input_info(fp, Num_Proc, prob);
-
-  fclose(fp);
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob)
+void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob)
 {
 int i;
 

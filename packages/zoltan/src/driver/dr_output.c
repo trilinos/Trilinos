@@ -107,6 +107,7 @@ int elem;
 /*--------------------------------------------------------------------------*/
 int output_results(int Proc,
                    int Num_Proc,
+                   PROB_INFO_PTR prob,
                    PARIO_INFO_PTR pio_info,
                    ELEM_INFO elements[])
 /*
@@ -144,11 +145,9 @@ int output_results(int Proc,
   strcat(ctemp, ".out");
   gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
 
-  if (Proc != 0)
-    fp = fopen(par_out_fname, "w");
-  else
-    /* append for Proc 0, as input data was already printed to output file. */
-    fp = fopen(par_out_fname, "a");
+  fp = fopen(par_out_fname, "w");
+  if (Proc == 0) 
+    print_input_info(fp, Num_Proc, prob);
 
   fprintf(fp, "Global element ids assigned to processor %d\n", Proc);
   for (i = 0; i < Mesh.num_elems; i++)
