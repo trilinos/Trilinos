@@ -19,10 +19,9 @@ extern "C" {
 #ifdef ZOLTAN_HG
 #include "hypergraph.h"
 #endif
-
-#include "hg_util.h"
-#include "math.h"
-
+/*
+#include "math.h"  ..do we need that? <math.h> is included already!
+*/
 
 /*****************************************************************************/
 

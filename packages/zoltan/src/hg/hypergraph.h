@@ -28,17 +28,12 @@ extern "C" {
 
 #ifdef HGEXEC
 #include "zoltan_mem.h"
-
 typedef struct
   {
   int Proc;
   int Num_Proc;
   int Debug_Level;
   } ZZ;
-
-#include "hg_hypergraph.h"
-#include "hg_util.h"
-
 #define ZOLTAN_DEBUG_LIST            8
 #define ZOLTAN_DEBUG_ALL             10
 #define ZOLTAN_TRACE_ENTER(a,b)      {strlen(b);}   /* NOP using variable to avoid compiler warning */
@@ -54,9 +49,9 @@ typedef struct
 #else
 #include "zz_const.h"
 #include "params_const.h"
+#endif
 #include "hg_hypergraph.h"
 #include "hg_util.h"
-#endif
 
 #define MIN(A,B)                (((A) < (B)) ? (A) : (B))
 #define MAX(A,B)                (((A) > (B)) ? (A) : (B))
@@ -237,7 +232,8 @@ int  Zoltan_HG_heap_check        (HEAP*);
 int  Zoltan_HG_heap_input        (HEAP*, int, float);
 int  Zoltan_HG_heap_make         (HEAP*);
 int  Zoltan_HG_heap_change_value (HEAP*, int, float);
-int  Zoltan_HG_heap_extract_max  (HEAP*, float*);
+int  Zoltan_HG_heap_extract_max  (HEAP*);
+int  Zoltan_HG_heap_extract      (HEAP*, int);
 
 int  Zoltan_HG_move_vertex (HGraph*, int, int, int, int*, int**, double*, HEAP*);
 void Zoltan_HG_Plot(int, int, int, int*, int*, int*, char*);

@@ -198,7 +198,7 @@ int position, father;
 
 
 /* Extracts the maximum element & restores the heap property. Time O(log(n))*/
-int Zoltan_HG_heap_extract_max (HEAP *h, float *value)
+int Zoltan_HG_heap_extract_max (HEAP *h)
 {
 int max;
 
@@ -206,7 +206,6 @@ int max;
      return -1;           /* No elements in heap. */
 
   max     = h->ele[0];
-  *value  = h->value[0];
 
   h->value[max] = 0.0;
   h->pos[max] = -1;
@@ -214,6 +213,28 @@ int max;
 
   heapify(h,0);
   return max;
+}
+
+
+/* Extracts an element from the heap */
+int Zoltan_HG_heap_extract (HEAP *h, int element)
+{
+  int position;
+
+  if (element < 0 || element >= h->space)
+     return ZOLTAN_FATAL;
+  if (h->n == 0)
+     return ZOLTAN_FATAL;
+
+  position = h->pos[element];
+
+  h->value[element] = 0.0;
+  h->pos[element] = -1;
+  h->pos[h->ele[position] = h->ele[--(h->n)]] = position;
+
+  heapify(h,position);
+
+  return ZOLTAN_OK;
 }
 
 
