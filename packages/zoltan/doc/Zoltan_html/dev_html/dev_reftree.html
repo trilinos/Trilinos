@@ -58,6 +58,10 @@ through which to traverse the elements of the initial grid, a path is
 determined through the initial elements along with the "in" vertex and
 "out" vertex of each element, i.e., the vertices through which the path
 passes to move from one element to the next.
+This path can be determined by a Hilbert space filling curve, Sierpinski
+space filling curve (triangles only), or an algorithm that attempts to make
+connected partitions (connectivity is guaranteed for triangles and
+tetrahedra).
 The refinement tree is required to have all initial coarse grid elements,
 not just those that reside on the processor.  However, this requirement is not
 imposed on the user; a communication step fills in the elements from other
@@ -111,8 +115,11 @@ element, "in" and "out" vertex, a flag to indicate if this element is
 assigned to this processor, and the new partition number.
 <h3>
 Parameters</h3>
-There is one parameter, <a href="../ug_html/ug_alg_reftree.html">REFTREE_HASH_SIZE</a>, which determines the size of
-the hash table and is set by <b>Zoltan_Reftree_Set_Param</b>.
+There are two parameters. <a href="../ug_html/ug_alg_reftree.html">REFTREE_HASH_SIZE</a> determines the size of
+the hash table.
+<a href="../ug_html/ug_alg_reftree.html">REFTREE_INITPATH</a> determines which
+algorithm to use to find a path through the initial elements.
+Both are set by <b>Zoltan_Reftree_Set_Param</b> in the file <i>reftree/reftree_build.c</i>.
 <h3>
 Main routine</h3>
 The main routine is <b>Zoltan_Reftree_Part</b> in file <i>reftree/reftree_part.c</i>.
