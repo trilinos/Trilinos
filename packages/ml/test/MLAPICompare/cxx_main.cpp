@@ -79,14 +79,24 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  CrsMatrixGallery Gallery("recirc_2d", Comm);
-  Gallery.Set("problem_size", 10000);
+  int ProblemSize = 10000;
+  if (argc == 2) {
+    ProblemSize = atoi(argv[1]);
+  }
+    
+  CrsMatrixGallery Gallery("laplace_2d", Comm);
+  Gallery.Set("problem_size", ProblemSize);
   Epetra_RowMatrix* A = Gallery.GetMatrix();
   Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
   Epetra_MultiVector* LHS = Gallery.GetStartingSolution();
   Epetra_MultiVector* RHS = Gallery.GetRHS();
 
   AztecOO solver(*Problem);
+
+  // =========================== parameters =================================
+  
+  double DampingFactor = 1.333;
+  int    Output = 16;
 
   int MLPIters, MLAPIIters;
   double MLPResidual, MLAPIResidual;
@@ -99,10 +109,10 @@ int main(int argc, char *argv[])
   ParameterList MLList;
   ParameterList IFPACKList;
   ML_Epetra::SetDefaults("SA",MLList);
-  MLList.set("max levels",3);
+  MLList.set("max levels",10);
   MLList.set("increasing or decreasing","increasing");
   MLList.set("aggregation: type", "Uncoupled");
-  MLList.set("aggregation: damping factor", 0.0); // FIXME: should be 4/3
+  MLList.set("aggregation: damping factor", DampingFactor); 
   MLList.set("coarse: max size",32);
   MLList.set("smoother: pre or post", "both");
   MLList.set("coarse: type","Amesos-KLU");
@@ -132,8 +142,8 @@ int main(int argc, char *argv[])
   RHS->PutScalar(1.0);
 
   solver.SetPrecOperator(MLPPrec);
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_output, 1);
+  solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_output, 16);
   solver.Iterate(1550, 1e-5);
 
   MLPIters = solver.NumIters();
@@ -168,8 +178,8 @@ int main(int argc, char *argv[])
   RHS->PutScalar(1.0);
 
   solver.SetPrecOperator(MLAPIPrec);
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_output, 1);
+  solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_output, 16);
   solver.Iterate(1550, 1e-5);
 
   MLAPIIters = solver.NumIters();
