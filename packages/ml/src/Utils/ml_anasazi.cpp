@@ -32,14 +32,15 @@ using namespace Anasazi;
 
 // ================================================ ====== ==== ==== == =
 
-enum MLMatOp { A_MATRIX, I_MINUS_A_MATRIX, A_PLUS_AT_MATRIX, A_MINUS_AT_MATRIX };
+enum MLMatOp { A_MATRIX, I_MINUS_A_MATRIX, A_PLUS_AT_MATRIX,
+	       A_MINUS_AT_MATRIX, ITERATION_MATRIX };
 
 // ================================================ ====== ==== ==== == =
 
 template <class TYPE> 
 class MLMat : public virtual Matrix<TYPE> {
 public:
-  MLMat(const Epetra_RowMatrix &, const MLMatOp MatOp, const bool UseDiagScaling );
+  MLMat(const Epetra_RowMatrix &, const MLMatOp MatOp, const bool UseDiagScaling);
   ~MLMat();
   ReturnType ApplyMatrix ( const MultiVec<TYPE>& x, 
 			   MultiVec<TYPE>& y ) const;
@@ -69,7 +70,7 @@ private:
 
 template <class TYPE>
 MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
-		   const MLMatOp MatOp, const bool UseDiagScaling ) 
+		   const MLMatOp MatOp, const bool UseDiagScaling) 
   : Mat_(Matrix),
     MatOp_(MatOp),
     UseDiagScaling_(UseDiagScaling),
@@ -138,7 +139,39 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
   vec_x->ExtractView(&x_view);
   tmp_->ExtractView(&tmp_view);
   Mask_->ExtractView(&mask_view);
-  
+
+  if( MatOp_ == ITERATION_MATRIX ) {
+
+    // Here I apply I - ML^{-1} A
+    
+    const Epetra_RowMatrix & RowMatrix = dynamic_cast<const Epetra_RowMatrix &>(Mat_);
+
+    // 0- zero out tmp_
+    tmp_->PutScalar(0.0);
+
+    // 1- apply the linear system matrix to vec_x
+    info = RowMatrix.Multiply(true,*vec_x,*tmp_);
+    if( info ) return Failed;
+
+    // 1.1- damp out Dirichlet nodes (FIXME: am I useful?)
+    for( int j=0 ; j<NumVectors ; ++j ) {
+      for( int i=0 ; i<NumMyRows_ ; ++i ) {
+	tmp_view[j][i] *= mask_view[i];
+      }    
+    }
+
+    // 2- apply the multilevel hierarchy, as defined by `this' operator
+    //    vec_y is zero'd in ApplyInverse
+    //FIXME    this->ApplyInverse(*tmp_, *vec_y);
+    
+    // 3- add the contribution of the identity matrix
+    vec_y->Update (1.0,*vec_x,-1.0);
+
+    // 4- return and skip the crap below
+    return Ok;
+    
+  }
+
   for( int j=0 ; j<NumVectors ; ++j ) {
     for( int i=0 ; i<NumMyRows_ ; ++i ) {
       tmp_view[j][i] = x_view[j][i] * mask_view[i];
@@ -147,13 +180,13 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
   
   info = const_cast<Epetra_RowMatrix &>(Mat_).Apply( *tmp_, *vec_y );
   vec_y->Scale(Scale_);
-
   if( info ) return Failed;
-
+  
   if( MatOp_ == A_PLUS_AT_MATRIX || MatOp_ == A_MINUS_AT_MATRIX ) {
     const Epetra_RowMatrix & RowMatrix = dynamic_cast<const Epetra_RowMatrix &>(Mat_);
 
     info = RowMatrix.Multiply(true,*vec_x,*tmp_);
+    if( info ) return Failed;
 
     for( int j=0 ; j<NumVectors ; ++j ) {
       for( int i=0 ; i<NumMyRows_ ; ++i ) {
@@ -162,7 +195,6 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
     }
     
     tmp_->Scale(Scale_);
-    if( info ) return Failed;
   }
   if( MatOp_ == A_PLUS_AT_MATRIX ) vec_y->Update(1.0,*tmp_,1.0);
   else if( MatOp_ == A_MINUS_AT_MATRIX ) vec_y->Update(-1.0,*tmp_,1.0);
@@ -189,8 +221,9 @@ namespace ML_Anasazi {
 // ================================================ ====== ==== ==== == =
 
 int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVectors,
-		 	  double RealEigenvalues[], double ImagEigenvalues[],
-			  Teuchos::ParameterList & List) 
+	      double RealEigenvalues[], double ImagEigenvalues[],
+	      Teuchos::ParameterList & List,
+	      double RealEigenvectors[],  double ImagEigenvectors[]) 
 {
 
   int MyPID = RowMatrix->Comm().MyPID();
@@ -199,6 +232,10 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   /* Retrive parameters' choices                                            */
   /* ********************************************************************** */
 
+  bool UseDiagScaling = true;
+  UseDiagScaling = List.get("eigen-analysis: use diagonal scaling", UseDiagScaling);
+  bool isSymmetric = List.get("eigen-analysis: symmetric problem", false);
+
   MLMatOp MatOp;
   string MatOpStr = "A";
   MatOpStr = List.get("eigen-analysis: matrix operation", MatOpStr);
@@ -206,23 +243,27 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   else if( MatOpStr == "I-A" ) MatOp = I_MINUS_A_MATRIX;
   else if( MatOpStr == "A+A^T" ) MatOp = A_PLUS_AT_MATRIX;
   else if( MatOpStr == "A-A^T" ) MatOp = A_MINUS_AT_MATRIX;
-
-  bool UseDiagScaling = true;
-  UseDiagScaling = List.get("eigen-analysis: use diagonal scaling", UseDiagScaling);
-
+  else if( MatOpStr == "I-BA" ) {
+    MatOp = ITERATION_MATRIX;
+    UseDiagScaling = false; // doesn't work with iteration matrix
+    // note that `which' is usually "LM"
+    // also isSymmetric is probably false, set it to `false' for safety
+    isSymmetric = false;
+  }
+  
   int length = List.get("eigen-analysis: length", 20);
   double tol = List.get("eigen-analysis: tolerance", 1.0e-5);
   string which = List.get("eigen-analysis: action", "LM");
   int restarts = List.get("eigen-analysis: restart", 100);
-  bool isSymmetric = List.get("eigen-analysis: symmetric problem", false);
 
-  int output = List.get("eigen-analysis: output", 5);
+  int output = List.get("eigen-analysis: output", 6);
   
   if( output > 5 && MyPID == 0 ) {
     if( MatOp == A_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A" << endl;
     if( MatOp == I_MINUS_A_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of I - A" << endl;
     if( MatOp == A_PLUS_AT_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A + A^T" << endl;
     if( MatOp == A_MINUS_AT_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A - A^T" << endl;
+    if( MatOp == ITERATION_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of I-BA" << endl;
     if( UseDiagScaling ) cout << "ML_Anasazi : where A is scaled by D^{-1}" << endl;
     if( isSymmetric ) cout << "ML_Anasazi : Problem is symmetric" << endl;
     cout << "ML_Anasazi : Tolerance = " << tol << endl;
@@ -262,14 +303,15 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
 	
   // Inform the solver that the problem is symmetric
   if( isSymmetric ) MyBlockArnoldi1.setSymmetric(true);
+  else              MyBlockArnoldi1.setSymmetric(false);
   MyBlockArnoldi1.setDebugLevel(0);
 
-  //  MyBlockArnoldi.iterate(5);
+  MyBlockArnoldi1.iterate(5);
   
   // Solve the problem to the specified tolerances or length
   MyBlockArnoldi1.solve();
   
-  // Obtain results directly
+  // Obtain results directly for eigenvalues
 
   double * evalr = MyBlockArnoldi1.getEvals(); 
   double * evali = MyBlockArnoldi1.getiEvals();
@@ -277,20 +319,59 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   for( int i=0 ; i<NumBlocks ; ++i ) {
     RealEigenvalues[i] = evalr[i];
     ImagEigenvalues[i] = evali[i];
+    
   }
-
+  
+  // FIXME: I am not sure about those guys below
+  /*
   delete [] evalr;
   delete [] evali;
+  */
   
+  // populate real and imaginary components of the eigenvectors
+  // if the uses has passed RealEigenvalues or ImagEigenvalues not null
+
+  Anasazi::PetraVec<double> vec(EigenVectors.Map(), NumBlocks);
+
+  if( RealEigenvectors ) {
+
+    int count = 0;    
+    MyBlockArnoldi1.getEvecs(vec);
+
+    int NumRows = EigenVectors.Map().NumMyPoints();
+    for( int i=0 ; i<NumBlocks ; ++i ) {
+      if( RealEigenvalues[i] != 0 ) {
+	for( int j=0 ; j<NumRows ; ++j ) {
+	  RealEigenvectors[count*NumRows+j] = vec[i][j];
+	}
+	++count;
+      }
+    }
+  }
+  
+  if( ImagEigenvectors ) {
+
+    int count=0;
+    MyBlockArnoldi1.getiEvecs(vec);
+
+    int NumRows = EigenVectors.Map().NumMyPoints();    
+    for( int i=0 ; i<NumBlocks ; ++i )
+      if( ImagEigenvalues[i] != 0 ) {
+	for( int j=0 ; j<EigenVectors.Map().NumMyPoints() ; ++j ) {
+	  ImagEigenvectors[count*NumRows+j] = vec[i][j];
+	}
+	++count;
+      }
+  }
+
   // Output results to screen
   if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
 
-  MyBlockArnoldi1.getEvecs(Vectors);
-  
   /* ********************************************************************** */
   /* Scale vectors (real and imag part) so that max is 1 for each of them   */
   /* ********************************************************************** */
 
+  /* ERASEME
   if( List.get("eigen-analysis: normalize eigenvectors",false) ) {
     
     double * MaxVals = new double[NumBlocks];
@@ -312,7 +393,8 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
     delete [] MinVals;
     delete [] Vals;
   }
-
+  */
+  
   return 0;
   
 }

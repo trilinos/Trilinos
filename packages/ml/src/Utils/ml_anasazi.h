@@ -33,8 +33,9 @@ namespace ML_Anasazi {
     
   */
 extern int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVectors,
-				double RealEigenvalues[], double ImagEigenvalues[],
-				Teuchos::ParameterList & List);
+		     double RealEigenvalues[], double ImagEigenvalues[],
+		     Teuchos::ParameterList & List,
+		     double RealEigenvectors[] = 0, double ImagEigenvectors[] = 0);
 
   //! Computes the size of a box containing the field of values.
 extern int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix, 
