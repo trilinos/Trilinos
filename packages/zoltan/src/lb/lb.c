@@ -615,13 +615,14 @@ int LB_Compute_Destinations(
 char *yo = "LB_Compute_Destinations";
 int *proc_list = NULL;      /* List of processors from which objs are to be 
                                imported.                                    */
-COMM_OBJ *comm_plan;        /* Communication object returned
-                               by Bruce and Steve's communication routines  */
+COMM_OBJ *comm_plan;        /* Object returned communication routines  */
 LB_TAG *import_objs = NULL; /* Array of import objects used to request objs
                                from other processors.                       */
 LB_TAG *export_objs = NULL; /* Array of export objects describing which objs
                                must be sent to other processors.            */
+int msgtag, msgtag2;        /* Message tags for communication routines */
 int i;
+
 
   /*
    *  Return if this processor is not in the load-balancing object's
@@ -664,7 +665,8 @@ int i;
    *  processor has to export to establish the new decomposition.
    */
 
-  comm_plan = LB_Comm_Create(num_import, proc_list, lb->Communicator,
+   msgtag = 32768;
+   LB_Comm_Create(&comm_plan, num_import, proc_list, lb->Communicator, msgtag,
                              num_export);
 
   /*
@@ -720,7 +722,8 @@ int i;
     *export_procs = NULL;
   }
 
-  LB_Comm_Do(comm_plan, (char *) import_objs, sizeof(LB_TAG), 
+  msgtag2 = 32767;
+  LB_Comm_Do(comm_plan, msgtag2, (char *) import_objs, (int) sizeof(LB_TAG), 
           (char *) export_objs);
 
   /*
@@ -801,8 +804,8 @@ int tmp_import;          /* number of objects to be imported.               */
 int *proc_list = NULL;   /* list of processors to which this proc exports.  */
 LB_GID global_id;        /* tmp global ID for unpacking objects.            */
 LB_GID *tmp_id;          /* pointer to storage for an LB_GID in comm buf    */
-COMM_OBJ *comm_plan;     /* Communication object returned
-                            by Bruce and Steve's communication routines     */
+COMM_OBJ *comm_plan;     /* Object returned by communication routines       */
+int msgtag, msgtag2;     /* Tags for communication routines                 */
 int ierr = 0;
 
   /*
@@ -918,7 +921,8 @@ int ierr = 0;
    *  processor has to import to establish the new decomposition.
    */
 
-  comm_plan = LB_Comm_Create(num_export, proc_list, lb->Communicator,
+  msgtag = 32768;
+  LB_Comm_Create(&comm_plan, num_export, proc_list, lb->Communicator, msgtag,
                              &tmp_import);
   if (tmp_import != num_import) {
     fprintf(stderr, "%d  Error in %s:  tmp_import %d != num_import %d\n", 
@@ -941,7 +945,8 @@ int ierr = 0;
    *  Send the export data using the communication plan.
    */
 
-  LB_Comm_Do(comm_plan, export_buf, size, import_buf);
+  msgtag2 = 32767;
+  LB_Comm_Do(comm_plan, msgtag2, export_buf, size, import_buf);
 
   /*
    *  Free whatever memory we can.
