@@ -203,7 +203,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 {
    int         Ncoarse, Nfine, gNfine, gNcoarse;
    double      max_eigen = -1.;
-   ML_Operator *Amat, *Pmatrix, *AGGsmoother = NULL;
+   ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
 
@@ -223,11 +223,17 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    Nfine    = Amat->outvec_leng;
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
    ML_Aggregate_Set_CurrentLevel( ag, level );
+   if (ag->smoothP_damping_factor != 0.0)
+      Pmatrix = ML_Operator_Create(ml->comm);
+   else
+     Pmatrix = &(ml->Pmat[clevel]);
+
    Ncoarse  = ML_Aggregate_Coarsen(ag,Amat,&Pmatrix,ml->comm);
    gNcoarse = ML_Comm_GsumInt( ml->comm, Ncoarse);
    if ( gNcoarse == 0 || ((1.0*gNfine)/(1.0*gNcoarse+0.1) < 1.05) )
    {
-      if ( Pmatrix != NULL ) ML_Operator_Destroy(Pmatrix);
+      if (( Pmatrix != NULL ) && (ag->smoothP_damping_factor != 0.0)) 
+         ML_Operator_Destroy(Pmatrix);
       return -1;
    }
 
@@ -273,23 +279,25 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    }
 #endif
 
-   widget.drop_tol = ag->drop_tol_for_smoothing;
-   widget.Amat   = &(ml->Amat[level]);
-   widget.aggr_info = ag->aggr_info[level];
-   AGGsmoother = ML_Operator_Create(ml->comm);
-   ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
+   if ( ag->smoothP_damping_factor != 0.0 ) {
+     widget.drop_tol = ag->drop_tol_for_smoothing;
+     widget.Amat   = &(ml->Amat[level]);
+     widget.aggr_info = ag->aggr_info[level];
+     AGGsmoother = ML_Operator_Create(ml->comm);
+     ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
                         widget.Amat->outvec_leng, ML_EXTERNAL,&widget,
                         widget.Amat->matvec->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(AGGsmoother, ML_EXTERNAL,
+     ML_Operator_Set_Getrow(AGGsmoother, ML_EXTERNAL,
                           widget.Amat->getrow->Nrows, 
                           ML_AGG_JacobiSmoother_Getrows);
-   ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
+     ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
                           widget.Amat->getrow->pre_comm);
 
-   ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]) );
+     ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]) );
 
-   ML_Operator_Destroy(Pmatrix);
-   ML_Operator_Destroy(AGGsmoother);
+     ML_Operator_Destroy(Pmatrix);
+     ML_Operator_Destroy(AGGsmoother);
+   }
    ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
               &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));
 
@@ -596,7 +604,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
 
    if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
       printf("Aggregation : building multilevel hierarchy at level %d\n",level);
-   widget.near_bdry = NULL;
+   widget.near_bdry = NULL; 
    Amat     = (ML_Operator *) data;
    Nfine    = Amat->outvec_leng;
    getrow_obj = Amat->getrow;
@@ -658,7 +666,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
    ML_Aggregate_Set_OutputLevel( newag, 0 );
    ML_Aggregate_Set_CoarsenScheme_Uncoupled( newag );
    ML_Aggregate_Set_Threshold( newag, 0.08 );
-   ML_Aggregate_Set_DampingFactor( newag, 0.0/3.0 );
+ML_Aggregate_Set_DampingFactor( newag, 0.0/3.0 );
    ML_Aggregate_Set_MaxCoarseSize( newag, 1 );
    ML_Aggregate_Set_PSmootherType( newag, 0 );
    newClevel = ML_Gen_MGHierarchy_UsingAggregation(newml, newNlevels-1,
@@ -1294,7 +1302,7 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
    for (i = 0; i < Nfine; i++) new_ja[i] = 0;
 /*
    norm = sqrt((double) Nfine);
-   norm = 1.0;
+norm = 1.0;
    for (i = 0; i < Nfine; i++) new_val[i] = 1.0 / norm;
 */
    ML_memory_alloc((void**) &csr_data,sizeof(struct ML_CSR_MSRdata),"AVP");
@@ -1304,7 +1312,7 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
 /*
    tentP = &(ml->Pmat[clevel]);
 */
-   tentP = ML_Operator_Create(ml->comm);
+tentP = ML_Operator_Create(ml->comm);
    ML_Operator_Set_ApplyFuncData(tentP,1,Nfine,ML_EMPTY,csr_data,Nfine,NULL,0);
    tentP->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
    ML_memory_alloc((void**) &aggr_comm, sizeof(ML_Aggregate_Comm), "AD4");
