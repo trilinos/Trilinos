@@ -23,12 +23,18 @@
 # To compile zdrive, type
 #    gmake <optional flags> zdrive
 #
+# To compile zCPPdrive (C++ test driver), type
+#    gmake <optional flags> zCPPdrive
+#    and be sure to define the C++ compiler CPPC in your Config.* file
+#
 # The optional flags are:
 #    YES_FORTRAN=1   Use to compile and link a version of Zoltan that can
 #                    be called from Fortran.
 # Example:
 # To compile a version of Zoltan for tflop including the F90 interface, type
 #    gmake YES_FORTRAN=1 ZOLTAN_ARCH=tflop zoltan
+#
+# TODO - only build c++ test driver if CPP is defined in Config.ARCH
 ##############################################################################
 
 TARGET=zdrive 
@@ -244,18 +250,25 @@ REFTREE_CSRC    = reftree_build.c reftree_part.c reftree_hash.c \
                   reftree_coarse_path.c
 REFTREE_INC     = reftree_const.h
 
-# source code and defines for zdrive
-DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
-		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
-		  dr_migrate.c dr_output.c dr_chaco_io.c dr_random_io.c \
-                  dr_elem_util.c dr_maps.c dr_eval.c dr_gnuplot.c \
-		  dr_hg_io.c dr_hg_readfile.c dr_mm_readfile.c dr_mmio.c \
-                  dr_dd.c
+# source code and defines for zdrive and zCPPdrive
+DR_BOTH_SRC	= dr_err.c dr_input.c dr_par_util.c \
+		  dr_util.c dr_elem.c \
+		  dr_output.c dr_chaco_io.c dr_random_io.c \
+                  dr_elem_util.c dr_eval.c dr_gnuplot.c \
+		  dr_hg_io.c dr_hg_readfile.c dr_mm_readfile.c dr_mmio.c
 
-DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
+DR_C_SRC		= dr_main.c dr_exoII_io.c dr_loadbal.c \
+		  dr_migrate.c dr_maps.c dr_dd.c
+
+DR_CPP_SRC	= dr_mainCPP.cpp dr_exoII_ioCPP.cpp dr_loadbalCPP.cpp \
+		  dr_migrateCPP.cpp dr_mapsCPP.cpp dr_ddCPP.cpp
+
+DR_BOTH_INC	= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_err_const.h dr_par_util_const.h dr_elem_const.h \
 		  dr_elem_util_const.h dr_maps_const.h dr_eval_const.h \
                   zoltan_hg_readfile_const.h dr_mmio.h dr_dd.h
+
+DR_CPP_INC	= zoltanCPP.h
 
 CH_CSRC		= ch_dist_graph.c ch_input_assign.c ch_input_geom.c \
 		  ch_input_graph.c ch_input_read.c ch_init_dist.c
@@ -283,7 +296,7 @@ ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
 ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o)
 
-ZDRIVE_CSRC 	= $(DR_CSRC) $(CH_CSRC)
+ZDRIVE_CSRC 	= $(DR_C_SRC) $(DR_BOTH_SRC) $(CH_CSRC)
 ZDRIVE_OBJ	= $(ZDRIVE_CSRC:.c=.o)
 ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
@@ -291,8 +304,21 @@ ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 #		  -lzoltan_comm -lzoltan_mem -lzoltan_dd \
 ZDRIVE_DEPS	= libzoltan_comm.a libzoltan_mem.a libzoltan_dd.a
 
+ZCPPDRIVE_CSRC 	= $(DR_CPP_SRC) $(DR_BOTH_SRC) $(CH_CSRC)
+ZCPPDRIVE_OBJ	= $(DR_BOTH_SRC:.c=.o) $(CH_CSRC:.c=.o) $(DR_CPP_SRC:.cpp=.o)
+ZCPPDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
+	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) -lm
+ZCPPDRIVE_DEPS	= $(ZDRIVE_DEPS)
+
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
 F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
+
+ifndef CPPC
+# See if C compiler will work with C++ files
+CPCC = $(CC)
+endif
+
+CPPCOMP		= $(CPPC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
 
 ############################################################################
 #                  LINT DEFINITIONS KDDKDD
@@ -392,6 +418,22 @@ zdrive:
 	"MAIN_OBJ=$(ZDRIVE_OBJ)" 		\
 	"LNK_LIBS=$(ZDRIVE_LIBS)" 		\
 	"DEP_LIBS=$(ZDRIVE_DEPS)"		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
+	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
+
+zCPPdrive:
+	$(MAKE) zoltan
+	@cd $(ZOLTAN_OBJ_DIR); 			\
+	$(MAKE) zCPPdrive			\
+	"TARGET=zCPPdrive"			\
+	"LIB_NAME=$(LIB_NAME)"			\
+	"VPATH=$(ZOLTAN_VPATH)"			\
+	"CC=$(CPPCOMP)"				\
+	"OBJ_FILES=$(ZOLTAN_OBJ)"		\
+	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"MAIN_OBJ=$(ZCPPDRIVE_OBJ)" 		\
+	"LNK_LIBS=$(ZCPPDRIVE_LIBS)" 		\
+	"DEP_LIBS=$(ZCPPDRIVE_DEPS)"		\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)"
 
