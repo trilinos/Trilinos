@@ -765,10 +765,22 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
     break;
 
   case AZ_sym_row_sum:
-    if (data_org[AZ_matrix_type] != AZ_MSR_MATRIX){
+    if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
+        (data_org[AZ_matrix_type] != AZ_VBR_MATRIX)) {
       if (az_proc == 0) {
         (void) fprintf(stderr, "%sWARNING: sym row scaling can only be "
-                       "used with MSR matrices.\n"
+                       "used with MSR or VBR matrices.\n"
+                       "                     Turning off.\n\n", yo);
+      }
+    }
+    break;
+
+  case AZ_equil:
+    if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
+        (data_org[AZ_matrix_type] != AZ_VBR_MATRIX)) {
+      if (az_proc == 0) {
+        (void) fprintf(stderr, "%sWARNING: equilibrated scaling can only be "
+                       "used with MSR or VBR matrices.\n"
                        "                     Turning off.\n\n", yo);
       }
     }

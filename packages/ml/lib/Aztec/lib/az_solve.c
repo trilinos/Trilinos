@@ -946,6 +946,8 @@ void AZ_print_call_iter_solve(int options[], double params[], int az_proc,
     (void) printf("symmetric diagonal"); break;
   case AZ_sym_row_sum:
     (void) printf("symmetric row sum");
+  case AZ_equil:
+    (void) printf("equilibrated ");
   }
 
   (void) printf(" scaling\n");
