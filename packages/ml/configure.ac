@@ -301,7 +301,13 @@ AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_ml_aztecoo" != "Xyes")
 #fi
 
 TAC_ARG_WITH_PACKAGE(ml_metis, [Enable METIS support.  Note 1: METIS is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the METIS headers and libraries via the configure options --with-ldflags=<METIS-library-path/library-name> and --with-incdirs=METIS-include-directory.], ML_METIS, no)
- #
+TAC_ARG_WITH_PACKAGE(ml_parmetis2x, [Enable PaMETIS support, version 2.x.  Note
+1: PasMETIS is a third party library.  As such, configure assumes that it has
+already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries via the configure options --with-ldflags="-L<METIS-library-path> -l<library-name>" and --with-incdirs="-I<ParMETIS-include-directory>".], ML_PARMETIS_2x, no) #
+TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable PaMETIS support, version 3.x.  Note
+1: PasMETIS is a third party library.  As such, configure assumes that it has
+already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries via the configure options --with-ldflags="-L<METIS-library-path> -l<library-name>" and --with-incdirs="-I<ParMETIS-include-directory>". Note 3: You need to specify --with-ml_metis, and the location of the METIS library (after that of the ParMETIS one).], ML_PARMETIS_3x, no) #
+#
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
