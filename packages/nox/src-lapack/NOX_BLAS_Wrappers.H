@@ -39,12 +39,6 @@
 extern "C" {
 #endif
 
-static double d_one = 1.0;
-static double d_mone = -1.0;
-static double d_zero = 0.0;
-static int i_one = 1;
-static int i_zero = 0;
-
 /* y <- a*x + y */
 void daxpy_(const int *n, const double *a, const double *x, const int *incx, 
 	    double *y, const int *incy);

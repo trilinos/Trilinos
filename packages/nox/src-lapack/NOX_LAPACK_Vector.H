@@ -41,14 +41,25 @@ namespace NOX {
   //! NOX BLAS/LAPACK support
   namespace LAPACK {
 
+  //! 1.0
+  const double d_one = 1.0;
+  //! -1.0
+  const double d_mone = -1.0;
+  //! 0.0
+  const double d_zero = 0.0;
+  //! 1
+  const int i_one = 1;
+  //! 0
+  const int i_zero = 0;
+  
     //! Implementation of NOX::Abstract::Vector for vector<double> using LAPACK
     class Vector : public Abstract::Vector {
 
     public:			
-
+    
       //! Construct a zero vector of length n
       Vector(int n);
-      
+    
       //! Copy constructor
       Vector(const Vector& source, CopyType type = DeepCopy);
       
