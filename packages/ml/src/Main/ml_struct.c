@@ -2065,6 +2065,29 @@ scales = NULL;
    return 0;
 }
 
+int ML_Solve_Smoother(void *data, int isize, double *x, int osize, double *rhs)
+{
+   ML *ml;
+   int n, i;
+   double *res,*tmp;
+
+   ml = (ML *) data;
+   n = ml->Amat[0].invec_leng;
+   tmp  = (double *) ML_allocate(n*sizeof(double));
+   res  = (double *) ML_allocate(n*sizeof(double));
+   if (res == NULL) pr_error("swillie: out of space\n");
+
+   ML_Operator_Apply(&(ml->Amat[0]), n, x, n, res);
+   for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
+   for (i = 0; i < n; i++) tmp[i] = 0.;
+
+   ML_Solve_MGV( ml, tmp, rhs);
+
+   for (i = 0; i < n; i++) x[i] += tmp[i];
+   ML_free(res);
+   ML_free(tmp);
+}
+
 /*****************************************************************************/
 /* segregated solve                                                          */
 /*-------------------------------------------------------------------------- */

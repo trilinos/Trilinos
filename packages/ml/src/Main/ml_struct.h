@@ -228,6 +228,9 @@ extern int ML_Set_BoundaryTypes(ML*,int level,int type,int n,int *data);
 extern int ML_Gen_Solver(ML *ml, int method, int finest_level, int);
 extern int ML_Iterate(ML *ml, double *sol, double *rhs);
 extern int ML_Solve_MGV( ML *ml , double *din, double *dout);
+extern int ML_Solve_Smoother(void *data, int isize, double *x, int osize, 
+			     double *rhs);
+
 extern double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
                      int approx_all_zeros, ML_Comm *comm, int);
 extern int ML_Solve_AMGV( ML *ml , double *din, double *dout);
