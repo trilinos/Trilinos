@@ -1,5 +1,8 @@
 /* src/Amesos_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Need set_default_options_dist() */
+#undef AMESOS_SUPERLUDIST_OLD
+
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
 #undef F77_DUMMY_MAIN

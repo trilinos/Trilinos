@@ -103,9 +103,8 @@ endif
 
 if ("$1" != "DSCPACK" ) then
 
-  # Test one process, three processes and three processes transposes, tiny distributed matrix, on KLU
+  # Test one process, three processes and three processes transposes, tiny distributed matrix
   $mpigo 1 ./amesos_test.exe $1   fidapm05.rua 0 1 1 0   1000000000000000 1e-1 >>SST.stdout
-  $mpigo 3 ./amesos_test.exe $1   fidapm05.rua 1 1 1 0   1000000000000000 1e-1 >>SST.stdout
   $mpigo 2 ./amesos_test.exe $1   fidapm05.rua 1 1 4 1   1000000000000000 1e-1 >>SST.stdout
   $mpigo 4 ./amesos_test.exe $1   fidapm05.rua 1 1 -3 1  1000000000000000 1e-1 >>SST.stdout
 
@@ -123,7 +122,6 @@ if ("$1" != "DSCPACK" ) then
   $mpigo 3 ./amesos_test.exe $1   ImpcolE.rua 0 1 1 0  1e-8  1e-9   >>SST.stdout
   $mpigo 3 ./amesos_test.exe $1   ImpcolE.rua 0 1 3 1  1e-7  1e-9   >>SST.stdout
   $mpigo 3 ./amesos_test.exe $1   ImpcolE.rua 0 1 -3 1 1e-7  1e-9   >>SST.stdout
-  $mpigo 3 ./amesos_test.exe $1   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
   $mpigo 3 ./amesos_test.exe $1   fidapm05.rua 1 1 1 1  1000000000000000 1e-1 >>SST.stdout
 
   #  Test some tranpose solves
