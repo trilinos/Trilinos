@@ -982,6 +982,13 @@ void ML_az_dsort2(double dlist[], int N, int list2[])
 
 void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
 {
+#ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+  int i;
+  MPI_Allreduce((void *) vals,(void *) vals2, 1, MPI_INT, MPI_SUM,
+                MPI_COMM_WORLD);
+  *vals = *vals2;
+  return;
+#else
 
   /* local variables */
 
@@ -996,18 +1003,8 @@ void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
   int   length = 1;
 
   USR_REQ     request;  /* Message handle */
-#ifdef ML_USEMPIFUNCTIONS
-    int i;
-#endif
 
   /*********************** first executable statment *****************/
-
-#ifdef ML_USEMPIFUNCTIONS
-  MPI_Allreduce((void *) vals,(void *) vals2, length, MPI_INT, MPI_SUM,
-                MPI_COMM_WORLD);
-  *vals = *vals2;
-  return;
-#endif
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
@@ -1119,6 +1116,7 @@ void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
       exit(-1);
     }
   }
+#endif /* ifndef ML_USE_INTERNAL_COMM_FUNCTIONS */
 
 } /* ML_gsum_scalar_int */
 
@@ -1158,6 +1156,15 @@ void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
 
 void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
 {
+#ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+  int *tmpptr;
+  MPI_Allreduce((void *) *tvals,(void *) *tvals2, length, MPI_INT, MPI_SUM,
+                MPI_COMM_WORLD);
+  tmpptr = *tvals;
+  *tvals = *tvals2;
+  *tvals2 = tmpptr;
+  return;
+#else
 
   /* local variables */
 
@@ -1171,23 +1178,10 @@ void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
   char *yo = "ML_gsum_vec_int: ";
 
   USR_REQ     request;  /* Message handle */
-#ifdef ML_USEMPIFUNCTIONS
-  int *tmpptr;
-#else
   int  *vals = *tvals;
   int  *vals2 = *tvals2;
-#endif
 
   /*********************** first executable statment *****************/
-
-#ifdef ML_USEMPIFUNCTIONS
-  MPI_Allreduce((void *) *tvals,(void *) *tvals2, length, MPI_INT, MPI_SUM,
-                MPI_COMM_WORLD);
-  tmpptr = *tvals;
-  *tvals = *tvals2;
-  *tvals2 = tmpptr;
-  return;
-#else
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
@@ -1299,7 +1293,7 @@ void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
       exit(-1);
     }
   }
-#endif
+#endif /*#ifndef ML_USE_INTERNAL_COMM_FUNCTIONS*/
 
 } /* ML_gsum_vec_int */
 
@@ -1309,7 +1303,16 @@ void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
 
 void ML_gsum_vec_double(double **tvals, double **tvals2, int length, ML_Comm *comm)
 {
+#ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+  double *tmpptr;
 
+  MPI_Allreduce((void *) *tvals,(void *) *tvals2, length, MPI_INT, MPI_SUM,
+                MPI_COMM_WORLD);
+  tmpptr = *tvals;
+  *tvals = *tvals2;
+  *tvals2 = tmpptr;
+  return;
+#else
   /* local variables */
 
   int   type;             /* type of next message */
@@ -1322,23 +1325,10 @@ void ML_gsum_vec_double(double **tvals, double **tvals2, int length, ML_Comm *co
   char *yo = "ML_gsum_vec_int: ";
 
   USR_REQ     request;  /* Message handle */
-#ifdef ML_USEMPIFUNCTIONS
-  double *tmpptr;
-#else
   double  *vals = *tvals;
   double  *vals2 = *tvals2;
-#endif
 
   /*********************** first executable statment *****************/
-
-#ifdef ML_USEMPIFUNCTIONS
-  MPI_Allreduce((void *) *tvals,(void *) *tvals2, length, MPI_INT, MPI_SUM,
-                MPI_COMM_WORLD);
-  tmpptr = *tvals;
-  *tvals = *tvals2;
-  *tvals2 = tmpptr;
-  return;
-#else
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
@@ -1450,7 +1440,7 @@ void ML_gsum_vec_double(double **tvals, double **tvals2, int length, ML_Comm *co
       exit(-1);
     }
   }
-#endif
+#endif /*ifndef ML_USE_INTERNAL_COMM_FUNCTIONS*/
 
 } /* ML_gsum_vec_double */
 
@@ -1931,6 +1921,12 @@ double ML_gdot(int N, double r[], double z[], ML_Comm *comm)
 
 double ML_gsum_double(double val, ML_Comm *comm)
 {
+#ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+  double val2;          /* arriving value to add */
+  MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_DOUBLE, MPI_SUM,
+                MPI_COMM_WORLD);
+  return val2;
+#else
 
   /* local variables */
 
@@ -1946,11 +1942,6 @@ double ML_gsum_double(double val, ML_Comm *comm)
   USR_REQ     request;  /* Message handle */
 
   /**************************** execution begins ******************************/
-#ifdef ML_USEMPIFUNCTIONS
-  MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_DOUBLE, MPI_SUM,
-                MPI_COMM_WORLD);
-  return val2;
-#endif
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
@@ -2063,7 +2054,7 @@ double ML_gsum_double(double val, ML_Comm *comm)
   }
 
   return val;
-
+#endif /* ifndef ML_USE_INTERNAL_COMM_FUNCTIONS */
 } /* ML_gsum_double */
 
 /**************************************************************************
@@ -2085,6 +2076,12 @@ double ML_gsum_double(double val, ML_Comm *comm)
 
 double ML_gmax_double(double val, ML_Comm *comm)
 {
+#ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+  double val2;          /* arriving value to add */
+  MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_DOUBLE, MPI_MAX,
+                MPI_COMM_WORLD);
+  return val2;
+#else
 
   /* local variables */
 
@@ -2100,11 +2097,6 @@ double ML_gmax_double(double val, ML_Comm *comm)
   USR_REQ     request;  /* Message handle */
 
   /**************************** execution begins ******************************/
-#ifdef ML_USEMPIFUNCTIONS
-  MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_DOUBLE, MPI_MAX,
-                MPI_COMM_WORLD);
-  return val2;
-#endif
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
@@ -2217,6 +2209,7 @@ double ML_gmax_double(double val, ML_Comm *comm)
   }
 
   return val;
+#endif /* ifndef ML_USE_INTERNAL_COMM_FUNCTIONS */
 
 } /* ML_gmax_double */
 
@@ -2243,6 +2236,12 @@ double ML_gmax_double(double val, ML_Comm *comm)
 
 int ML_gmax_int(int val, ML_Comm *comm)
 {
+#ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+  int   val2;                     /* arriving value to add */
+  MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_INT, MPI_MAX,
+                MPI_COMM_WORLD);
+  return val2;
+#else
 
   /* local variables */
 
@@ -2258,11 +2257,6 @@ int ML_gmax_int(int val, ML_Comm *comm)
   USR_REQ     request;  /* Message handle */
 
   /**************************** execution begins ******************************/
-#ifdef ML_USEMPIFUNCTIONS
-  MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_INT, MPI_MAX,
-                MPI_COMM_WORLD);
-  return val2;
-#endif
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
@@ -2374,6 +2368,7 @@ int ML_gmax_int(int val, ML_Comm *comm)
   }
 
   return val;
+#endif /* ifndef ML_USE_INTERNAL_COMM_FUNCTIONS */
 
 } /* ML_gmax_int */
 

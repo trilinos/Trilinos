@@ -191,13 +191,13 @@ int ML_Comm_Set_WaitFcn( ML_Comm *com_ptr, int (*func)(void*,unsigned int,int*,i
 int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
 
 {
+#ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+   return ML_gmax_int(idata, com_ptr);
+#else
    int     mask, partner, hbit, msgtype, msgbase=245, nprocs, mypid;
    int     i, k, indata, outdata;
    USR_REQ Request;
 
-#ifdef ML_USEMPIFUNCTIONS
-   return ML_gmax_int(idata, com_ptr);
-#endif
 
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
@@ -302,6 +302,7 @@ int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
       }
    }
    return outdata;
+#endif /*ifndef ML_USE_INTERNAL_COMM_FUNCTIONS*/
 }
 
 /************************************************************************/
@@ -310,15 +311,17 @@ int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
 
 int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
 {
+#ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+   int     i;
+   USR_REQ Request;
+  MPI_Allreduce((void *) &idata,(void *) &i, 1, MPI_INT, MPI_SUM,
+                MPI_COMM_WORLD);
+  return i;
+#else
    int     mask, partner, hbit, msgtype, msgbase=246;
    int     i, k, indata, outdata, nprocs, mypid;
    USR_REQ Request;
 
-#ifdef ML_USEMPIFUNCTIONS
-  MPI_Allreduce((void *) &idata,(void *) &i, 1, MPI_INT, MPI_SUM,
-                MPI_COMM_WORLD);
-  return i;
-#endif
 
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
@@ -421,6 +424,7 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
       }
    }
    return outdata;
+#endif /* ifndef ML_USE_INTERNAL_COMM_FUNCTIONS */
 }
 
 /************************************************************************/
@@ -429,13 +433,13 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
 
 double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
 {
+#ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+   return ML_gsum_double(ddata, com_ptr);
+#else
    int     mask, partner, hbit, msgtype, msgbase=247;
    int     i, k, nprocs, mypid;
    double  indata, outdata;
    USR_REQ Request;
-#ifdef ML_USEMPIFUNCTIONS
-   return ML_gsum_double(ddata, com_ptr);
-#endif
 
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
@@ -538,6 +542,7 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
       }
    }
    return outdata;
+#endif /* ifndef ML_USE_INTERNAL_COMM_FUNCTIONS */
 }
 
 /************************************************************************/
@@ -546,14 +551,14 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
 
 double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
 {
+#ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+   return ML_gmax_double(ddata, com_ptr);
+#else
    int     mask, partner, hbit, msgtype, msgbase=247;
    int     i, k, nprocs, mypid;
    double  indata, outdata;
    USR_REQ Request;
 
-#ifdef ML_USEMPIFUNCTIONS
-   return ML_gmax_double(ddata, com_ptr);
-#endif
 
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
@@ -656,6 +661,7 @@ double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
       }
    }
    return outdata;
+#endif /* ifndef ML_USE_INTERNAL_COMM_FUNCTIONS */
 }
 
 /************************************************************************/

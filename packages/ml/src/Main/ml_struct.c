@@ -93,8 +93,8 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
 #ifdef ML_NOTALWAYS_LOWEST
   if (comm->ML_mypid == 0) printf("USing ML_NOTALWAYS_LOWEST\n");
 #endif
-#ifdef ML_USEMPIFUNCTIONS
-  if (comm->ML_mypid == 0) printf("USing ML_USEMPIFUNCTIONS\n");
+#ifdef ML_USE_INTERNAL_COMM_FUNCTIONS
+  if (comm->ML_mypid == 0) printf("USing ML_USE_INTERNAL_COMM_FUNCTIONS\n");
 #endif
 #ifdef ML_SYNCH
   if (comm->ML_mypid == 0) printf("USing ML_SYNCH\n");
