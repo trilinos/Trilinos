@@ -784,7 +784,7 @@ char  *yo = "matching_pgm";
 
 static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
-    int   i, j, k, v1, v2, vertex, edge, ip, maxip, maxindex, count1, count2;
+    int   i, j, v1, v2, edge, ip, maxip, maxindex, count1, count2;
     int*  checked;
     char* yo = "matching_ipm";
 
@@ -793,13 +793,13 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
         return ZOLTAN_MEMERR;
     }
     
-    //vertex = 0;
+    //j = 0;
     //
     //printf("Debugging info:\nvedges:\n----------\n");
     //for(i = 0; i < hg->vindex[hg->nVtx]; ++i) {
     //    printf("%2d ", hg->vedge[i]);
-    //    if(hg->vindex[vertex+1] == i + 1) {
-    //        vertex++;
+    //    if(hg->vindex[j+1] == i + 1) {
+    //        j++;
     //        printf("\n");
     //    }
     //}
@@ -807,11 +807,11 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
     //for(i = 0; i < hg->nVtx + 1; ++i)
     //    printf("%2d ", hg->vindex[i]);
     //printf("\n\nhvertex\n-------\n");
-    //vertex = 0;
+    //j = 0;
     //for(i = 0; i < hg->hindex[hg->nEdge]; ++i) {
     //    printf("%2d ", hg->hvertex[i]);
-    //    if(hg->hindex[vertex+1] == i + 1) {
-    //        vertex++;
+    //    if(hg->hindex[j+1] == i + 1) {
+    //        j++;
     //        printf("\n");
     //    }
     //}
@@ -823,7 +823,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
     //draw_matrix(hg);
     //printf("\n");
         
-    for(i = 0; i < hg->nVtx; ++i)
+    for(i = 0; i < hg->nVtx; i++)
         checked[i] = -1;
     
     /* for every vertex */
@@ -831,14 +831,15 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
         maxip = 0;
         maxindex = -1;
         
+        if(match[v1] != v1)
+            continue;
         /* for every hyperedge containing the vertex */
-        for(j = hg->vindex[v1]; match[v1] == v1 && j < hg->vindex[v1+1]; ++j) {
-            edge = hg->vedge[j];
+        for(i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
+            edge = hg->vedge[i];
                 
             /* for every other vertex in the hyperedge */
-            for(k = hg->hindex[edge]; match[v1] == v1 
-                    && k < hg->hindex[edge+1]; ++k) {
-                v2 = hg->hvertex[k];
+            for(j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+                v2 = hg->hvertex[j];
                 
                 /* ignore matched and previously checked vertices */
                 if(match[v2] != v2 || v1 == v2 || checked[v2] == v1)
@@ -882,10 +883,10 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
     }
 
     //printf("Final Matching:\n");
-    //for(i = 0; i < hg->nVtx; ++i)
+    //for(i = 0; i < hg->nVtx; i++)
     //    printf("%2d ",i);
     //printf("\n");
-    //for(i = 0; i < hg->nVtx; ++i)
+    //for(i = 0; i < hg->nVtx; i++)
     //    printf("%2d ",match[i]);
     //printf("\n");
 
