@@ -52,7 +52,7 @@ int check_rowpermute_multivector_local(Epetra_Comm& Comm, bool verbose);
 
 int main(int argc, char *argv[]) {
 
-  int i, ierr=0, returnierr=0;
+  int returnierr=0;
 
   bool verbose = false;
 
@@ -121,9 +121,6 @@ int check_rowpermute_crsmatrix_local_diagonal(Epetra_Comm& Comm,
 
   int NumMyElements = 5;
   int NumGlobalElements = NumMyElements*NumProc;
-  int IndexBase = 0;
-  int ElementSize = 1;
-  bool DistributedGlobal = (NumGlobalElements>NumMyElements);
  
   Epetra_Map Map(NumGlobalElements, NumMyElements, 0, Comm);
 
@@ -200,9 +197,6 @@ int check_rowpermute_crsgraph_local_diagonal(Epetra_Comm& Comm,
 
   int NumMyElements = 5;
   int NumGlobalElements = NumMyElements*NumProc;
-  int IndexBase = 0;
-  int ElementSize = 1;
-  bool DistributedGlobal = (NumGlobalElements>NumMyElements);
  
   Epetra_Map Map(NumGlobalElements, NumMyElements, 0, Comm);
 
@@ -277,9 +271,6 @@ int check_colpermute_crsgraph(Epetra_Comm& Comm,
 
   int NumMyElements = 5;
   int NumGlobalElements = NumMyElements*NumProc;
-  int IndexBase = 0;
-  int ElementSize = 1;
-  bool DistributedGlobal = (NumGlobalElements>NumMyElements);
  
   Epetra_Map Map(NumGlobalElements, NumMyElements, 0, Comm);
 
@@ -364,9 +355,6 @@ int check_rowpermute_crsmatrix_global_diagonal(Epetra_Comm& Comm,
 
   int NumMyElements = 5;
   int NumGlobalElements = NumMyElements*NumProc;
-  int IndexBase = 0;
-  int ElementSize = 1;
-  bool DistributedGlobal = (NumGlobalElements>NumMyElements);
  
   Epetra_Map Map(NumGlobalElements, NumMyElements, 0, Comm);
 
@@ -445,9 +433,6 @@ int check_colpermute_crsmatrix(Epetra_Comm& Comm,
 
   int NumMyElements = 5;
   int NumGlobalElements = NumMyElements*NumProc;
-  int IndexBase = 0;
-  int ElementSize = 1;
-  bool DistributedGlobal = (NumGlobalElements>NumMyElements);
  
   Epetra_Map Map(NumGlobalElements, NumMyElements, 0, Comm);
 
@@ -536,9 +521,6 @@ int check_rowpermute_multivector_local(Epetra_Comm& Comm,
 
   int NumMyElements = 5;
   int NumGlobalElements = NumMyElements*NumProc;
-  int IndexBase = 0;
-  int ElementSize = 1;
-  bool DistributedGlobal = (NumGlobalElements>NumMyElements);
  
   Epetra_Map Map(NumGlobalElements, NumMyElements, 0, Comm);
 

@@ -180,5 +180,7 @@ class Permutation : public Epetra_IntVector,
 
 }//namespace EpetraExt
 
+#include <EpetraExt_Permutation.cpp>
+
 #endif
 

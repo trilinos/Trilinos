@@ -25,6 +25,8 @@
 // 
 // ***********************************************************************
 //@HEADER
+#ifndef EpetraExt_PERMUTATION_CPP
+#define EpetraExt_PERMUTATION_CPP
 
 #include <EpetraExt_ConfigDefs.h>
 
@@ -527,3 +529,4 @@ template class EpetraExt::Permutation<Epetra_MultiVector>;
 template class EpetraExt::Permutation<Epetra_CrsMatrix>;
 template class EpetraExt::Permutation<Epetra_CrsGraph>;
 
+#endif //EpetraExt_PERMUTATION_CPP

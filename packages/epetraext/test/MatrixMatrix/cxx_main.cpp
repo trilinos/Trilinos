@@ -38,6 +38,7 @@
 #include "Epetra_Time.h"
 #include "Epetra_Import.h"
 #include "Epetra_Map.h"
+#include "Epetra_LocalMap.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
