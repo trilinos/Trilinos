@@ -73,14 +73,29 @@ Decomposition Info	= method=rcb, tol=0.9
 Zoltan Parameters	= 0=3.0, 1=0.05
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# Parallel File Name = <base filename>
+# FEM File Type = <file type>
 #
-# This line contains the base name of the parallel ExodusII files that
-# contain the results. The base name is the parallel filename without
-# the trailing .<# proc>.<file #> on it. This file must contain the
-# Nemesis global information.
+# This line is OPTIONAL. If it is not included, then it is assumed that
+# the file type is parallel nemesis.
+#
+# This line contains tells which format the FEM file is in. The current
+# options for this line are:
+#	NemesisI	- parallel ExodusII/NemesisI files (1 per processor)
+#	Chaco		- Chaco graph and/or geometry file(s)
 #-----------------------------------------------------------------------------
-Parallel File Name	= testa.par
+FEM File Type		= NemesisI
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# FEM File Name = <filename>
+#
+# This line contains the filename for the input finite element mesh.
+#
+# If the file type is NemesisI then this name refers to the base name
+# of the parallel ExodusII files that contain the results. The base
+# name is the parallel filename without the trailing .<# proc>.<file #>
+# on it. This file must contain the Nemesis global information.
+#-----------------------------------------------------------------------------
+FEM File Name	= testa.par
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Parallel Disk Info = <options>
