@@ -52,7 +52,7 @@ typedef struct ML_Aggregate_Struct
    int    nvblocks;                    /** for variable blocks (finest)  */
    int    *vblock_info;                /** for variable blocks (finest)  */
    int    keep_P_tentative;            /** keeping tentative prolongator */
-   void   *P_tentative;                /** so it can be reused later.    */
+   struct ML_Operator_Struct **P_tentative;/** so it can be reused later.    */
    int    smooth_existing_P_tentative; /** already have P tent, don't create it*/
   int use_transpose;                   /** Used to build restriction by doing */
   int Restriction_smoothagg_transpose; /** smoothed aggregation on A^T */
