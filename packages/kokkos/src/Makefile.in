@@ -250,6 +250,7 @@ CORE_H = \
 	$(srcdir)/Kokkos_HbMatrix.hpp \
 	$(srcdir)/Kokkos_MultiVector.hpp \
 	$(srcdir)/Kokkos_PackedSparseMultiply.hpp \
+	$(srcdir)/Kokkos_Permutation.hpp \
 	$(srcdir)/Kokkos_SparseOperation.hpp \
 	$(srcdir)/Kokkos_Vector.hpp
 
