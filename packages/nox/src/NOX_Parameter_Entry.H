@@ -49,6 +49,12 @@ public:
   
   //! Default Constructor
   Entry();
+  
+  //! Copy constructor
+  Entry(const Entry& source);
+
+  //! Copy
+  Entry& operator=(const Entry& source);
 
   //! Bool constructor
   Entry(bool value);

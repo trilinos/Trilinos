@@ -36,6 +36,20 @@ using namespace NOX::Parameter;
 
 List::List() {}
 
+List::List(const List& source) 
+{
+  params = source.params;
+}
+
+List& List::operator=(const List& source) 
+{
+  if (&source == this)
+    return *this;
+
+  params = source.params;
+  return *this;
+}
+
 List::~List() 
 {
 }

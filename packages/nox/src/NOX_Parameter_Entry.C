@@ -46,6 +46,38 @@ Entry::Entry() :
 {
 }
 
+Entry::Entry(const Entry& source) :
+  type(NONE),
+  bval(false),
+  ival(0),
+  dval(0),
+  sval(""), 
+  lval(NULL),
+  isused(false) 
+{
+  operator=(source);
+}
+
+Entry& Entry::operator=(const Entry& source)
+{
+  if (&source == this)
+    return *this;
+
+  type = source.type;
+  bval = source.bval;
+  ival = source.ival;
+  dval = source.dval;
+  sval = source.sval;
+  
+  delete lval;
+  if ((type == LIST) && (source.lval != NULL)) {
+    lval = new List(*source.lval);
+  }
+  
+  isused = source.isused;
+  return *this;
+}
+
 Entry::Entry(bool value) : 
   type(BOOL),
   bval(value),

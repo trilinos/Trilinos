@@ -56,6 +56,12 @@ public:
   //! Constructor
   List();
 
+  //! Copy Constructor
+  List(const List& source);
+
+  //! Copy
+  List& operator=(const List& source);
+
   //! Deconstructor
   ~List();
 
