@@ -1091,6 +1091,7 @@ int CSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
    ML_Operator       *Amat;
    int               *row_ptr, Nstored;
    ML_Comm           *comm;
+   double            *val_ptr;
 
    Amat    = (ML_Operator *) Amat_in;
    comm    = Amat->comm;
@@ -1099,6 +1100,7 @@ int CSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
    temp    = (struct ML_CSR_MSRdata *) Amat->data;
    bindx   = temp->columns;
    row_ptr = temp->rowptr;
+   val_ptr = temp->values;
 
    getrow_comm= Amat->getrow->pre_comm;
    if (getrow_comm != NULL) {
@@ -1129,7 +1131,8 @@ int CSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
      sum = 0;
      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
      {
-        sum  +=  p2[bindx[k]];
+       if (val_ptr[k] != 0.0)
+         sum  +=  p2[bindx[k]];
      }
 
      ap2[i] = sum;
