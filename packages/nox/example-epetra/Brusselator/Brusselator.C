@@ -133,6 +133,9 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm) :
   A = new Epetra_CrsMatrix (Copy, *AA);
   A->TransformToLocal();
 
+  // Create the Importer needed for FD coloring
+  ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
+
   // Create the nodal coordinates
   xptr = new Epetra_Vector(*StandardNodeMap);
   double Length= xmax - xmin;
@@ -187,7 +190,8 @@ void Brusselator::initializeSoln()
 bool Brusselator::evaluate(FillType f, 
 				    const Epetra_Vector* soln, 
 				    Epetra_Vector* tmp_rhs, 
-				    Epetra_RowMatrix* tmp_matrix)
+				    Epetra_RowMatrix* tmp_matrix,
+                                    NOX::Epetra::Interface::FillType fillFlag)
 {
   flag = f;
 
@@ -210,9 +214,20 @@ bool Brusselator::evaluate(FillType f,
   Epetra_Vector xvec(*OverlapNodeMap);
 
   // Export Solution to Overlap vector
-  u.Import(*soln, *Importer, Insert);
+  // If the vector to be used in the fill is already in the Overlap form,
+  // we simply need to map on-processor from column-space indices to
+  // OverlapMap indices. Note that the old solution is simply fixed data that
+  // needs to be sent to an OverlapMap (ghosted) vector.  The conditional
+  // treatment for the current soution vector arises from use of
+  // FD coloring in parallel.
   uold.Import(*oldSolution, *Importer, Insert);
   xvec.Import(*xptr, *nodeImporter, Insert);
+  if( fillFlag == NOX::Epetra::Interface::FiniteDifferenceF)
+    // Overlap vector for solution received from FD coloring, so simply reorder
+    // on processor
+    u.Export(*soln, *ColumnToOverlapImporter, Insert);
+  else // Communication to Overlap vector is needed
+    u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
   int i,j,ierr;
@@ -419,6 +434,12 @@ double Brusselator::getdt()
 {
   return dt;
 }
+
+Epetra_CrsGraph& Brusselator::getGraph()
+{
+  return *AA;
+}
+
 
 Epetra_CrsGraph& Brusselator::generateGraph(Epetra_CrsGraph& AA)
 {

@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
-  Epetra_RowMatrix& A = Problem.getJacobian();
+  Epetra_RowMatrix& A = Problem.getJacobian(); // Default
   // 2. Matrix-Free (Epetra_Operator)
   //NOX::Epetra::MatrixFree A(interface, soln);
   // 3. Finite Difference (Epetra_RowMatrix)
@@ -196,7 +196,7 @@ int main(int argc, char *argv[])
   // 4. Jacobi Preconditioner
   //NOX::Epetra::JacobiPreconditioner Prec(soln);
   // 5. Finite Difference with Coloring......uncomment the following
-/* -------------- Uncomment this block to use coloring --------------- //
+// -------------- Uncomment this block to use coloring --------------- //
 #ifdef HAVE_NOX_EPETRAEXT 
   bool verbose = false; 
   EpetraExt::CrsGraph_MapColoring tmpMapColoring( verbose ); 
@@ -205,11 +205,12 @@ int main(int argc, char *argv[])
   vector<Epetra_IntVector>* columns = &colorMapIndex(Problem.getGraph());
   NOX::Epetra::FiniteDifferenceColoring A(interface, soln, Problem.getGraph(),
                                           *colorMap, *columns);//, 1.e-2, 1.e-2);
+  //A.setDifferenceMethod(NOX::Epetra::FiniteDifference::Forward);
 #else 
   cout << "Cannot use Coloring without package epetraext !!!!" << endl;
   exit(0);
 #endif 
-// -------------- End of block needed to use coloring --------------- */
+// -------------- End of block needed to use coloring --------------- //
 
   // Create the Group
   NOX::Epetra::Group grp(printParams, lsParams, interface, soln, A); 
