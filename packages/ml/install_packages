@@ -9,47 +9,21 @@ PWD=`pwd`
 #
 ${echo}
 ${echo}
-${echo} "At this point you need to tell us which libraries are needed"
+${echo} "Here are the libraries we currently have:" 
+grep "^ARCH_LIB" etc/makefile.${ARCH} | sed "s/ARCH_LIB.*=/              /"
+${echo}
+${echo} "At this point you need to tell us what other libraries are needed"
 ${echo}
 ${echo}
-${echo} -n "Does your machine have the lapack library? [no] "
+${echo} -n "Do you want to supply the lapack library? [no] "
 read yes_or_no
 yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $yes_or_no` = 'yess'
-#   test `expr $yes_or_no` = 's'
 then
-   ${echo} "Where is the Lapack library?"
-   grep "LAPACK PATH" etc/makefile.${ARCH} | sed "s/.*Note/  Note/"
-   ${echo} -n "  Enter NA if not needed? [/usr/local/lib] "
-   read directory
-   tdirectory=`${echo} ${directory}x | sed "s/ /x/g"`
-   if test `expr $tdirectory` = 'x'
-   then
-      directory=/usr/local/lib
-   fi
-   ${echo} "What is the name of the Lapack library?"
-   grep "LAPACK LIB" etc/makefile.${ARCH} | sed "s/.*Note/  Note/"
-   ${echo} -n "  Enter NA if not needed? [lapack] "
-   read library
-   tlibrary=`${echo} ${library}x | sed "s/ /x/g"`
-   if test `expr $tlibrary ` = 'x'
-   then
-      library=lapack
-   fi
-   PACKAGES=`${echo} $PACKAGES -DUSE_VENDOR_LAPACK`
-   if test `expr $tdirectory ` != 'NAx'
-   then
-      LIBRARIES=`${echo} $LIBRARIES -L${directory}`
-   fi
-   if test `expr $tlibrary ` != 'NAx'
-   then
-      LIBRARIES=`${echo} $LIBRARIES -l${library}`
-   fi
    GOT_LAPACK=yes
-   ${echo} "=================================================================="
+   PACKAGES=`${echo} $PACKAGES -DUSE_VENDOR_LAPACK`
 fi
-
-${echo} -n "Does your machine have a blas library? [no] "
+${echo} -n "Do you want to supply the blas library? [no] "
 read yes_or_no
 yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $yes_or_no` = 'yess'
@@ -57,33 +31,6 @@ if test `expr $yes_or_no` = 'yess'
 then
    GOT_BLAS=yes
    PACKAGES=`${echo} $PACKAGES -DUSE_VENDOR_BLAS` 
-   ${echo} "Where is the Blas library?"
-   grep "BLAS PATH" etc/makefile.${ARCH} | sed "s/.*Note/  Note/"
-   ${echo} "  Enter NA if not needed? [/usr/local/lib] "
-   read directory
-   tdirectory=`${echo} ${directory}x`
-   if test `expr $tdirectory` = 'x'
-   then
-      directory=/usr/local/lib
-   fi
-   ${echo}    "What is the name of the Blas library?"
-   grep "BLAS LIB" etc/makefile.${ARCH} | sed "s/.*Note/  Note/"
-   ${echo} -n "  Enter NA if not needed? [blas] "
-   read library
-   tlibrary=`${echo} ${library}x`
-   if test `expr $tlibrary ` = 'x'
-   then
-      library=blas
-   fi
-   if test `expr $directory ` != 'NA'
-   then
-      LIBRARIES=`${echo} $LIBRARIES -L${directory}`
-   fi
-   if test `expr $library ` != 'NA'
-   then
-      LIBRARIES=`${echo} $LIBRARIES -l${library}`
-   fi
-   ${echo} "=================================================================="
 fi
 
 ${echo} -n "Do you want to use MPI? [yes] "
@@ -131,53 +78,29 @@ then
       cat .t1       | sed "s/^FC.*/FC=${fdirectory}mpif77/" > .arch_env
       \rm -f .t1
    fi
-   ${echo} -n "Does compiler need to know location of MPI include files? [yes] "
+fi 
+${echo} "=================================================================="
+   ${echo} "Does the compiler need to know the location of these libraries or any"
+   ${echo} -n "other libraries (not including: Aztec, SuperLU, ParaSails, Metis)? [yes] "
    read yes_or_no
    yes_or_no=`${echo} ${yes_or_no}s`
    if test `expr $yes_or_no` = 'yess' ||
       test `expr $yes_or_no` = 's'
    then
       ${echo}
-      ${echo} "List each include directory on a line followed by a line with just 'x'"
-      read directory
+      ${echo} "List each library include path (e.g. /usr/local/mympi/include) on a"
+      ${echo} "separate line followed by a line with just 'x'"
       MPI_INC_PATH=
+      read directory
       while (test `expr $directory ` != 'x')
       do
          INC_PATH=`${echo} ${INC_PATH}  -I$directory`
          MPI_INC_PATH=`${echo} ${MPI_INC_PATH}  -I$directory`
          read directory
       done
-   fi
-   ${echo} -n "Does compiler need to know location of MPI library? [yes] "
-   read yes_or_no
-   yes_or_no=`${echo} ${yes_or_no}s`
-   if test `expr $yes_or_no` = 'yess' ||
-      test `expr $yes_or_no` = 's'
-   then
-      ${echo} 
-      ${echo} "Enter directory containing library"
-      read directory
-      LIBRARIES=`${echo} ${LIBRARIES} -L$directory`
       ${echo}
-      ${echo} "Enter library name (e.g. mpich), type <enter> if no library needs to be given"
-      read directory
-      tdirect=`${echo} ${directory}s`
-      if test `expr $tdirect` != 's'
-      then
-      LIBRARIES=`${echo} ${LIBRARIES} -l$directory`
-      fi
-   else
-      ${echo} "Enter any compiler flag needed for mpi (e.g. -lmpi)."
-      read directory
-      LIBRARIES=`${echo} ${LIBRARIES} $directory`
-   fi
-   ${echo} -n "Does the compiler need to know the location of any other libraries? [no] "
-   read yes_or_no
-   yes_or_no=`${echo} ${yes_or_no}s`
-   if test `expr $yes_or_no` = 'yess'
-   then
-      ${echo}
-      ${echo} "List each library path on a line followed by a line with just 'x'"
+      ${echo} "List each directory where a library is located (e.g. /usr/local/mympi/lib)"
+      ${echo} "on a separate line followed by a line with just 'x'"
       read directory
       while (test `expr $directory ` != 'x')
       do
@@ -185,7 +108,8 @@ then
          read directory
       done
       ${echo}
-      ${echo} "List each library on a line followed by a line with just 'x'"
+      ${echo} "List each library in correct order (e.g. mpich) on a separate line"
+      ${echo} "followed by a line with just 'x'"
       read directory
       while (test `expr $directory ` != 'x')
       do
@@ -193,8 +117,6 @@ then
          read directory
       done
    fi
-   ${echo} "=================================================================="
-fi 
 ${echo} 
 ${echo} "Aztec can be used to supply some smoothers and an outer Krylov"
 ${echo} "iteration (i.e. using ML as a preconditioner)."

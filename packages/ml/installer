@@ -21,43 +21,31 @@ ${echo}
 ${echo} "                ML installer ..."
 ${echo}
 ${echo}
-${echo} "This program attempts to build all the libraries that can be used"
-${echo} "with ML. We are still debugging the installer ... and so there are"
-${echo} "lots of things that might go wrong (especially when compiling other"
-${echo} "packages). It is recommended that casual users work with as few "
-${echo} "packages as possible (e.g. just MPI or just MPI & SuperLU)."
-${echo}
-${echo} "Currently, the following libraries can be optionally"
-${echo} "used with ML:"
-${echo}
+${echo} "This program builds optional libraries that can be used with ML:"
 ${echo} "    1) MPI  "
 ${echo} "    2) Aztec"
 ${echo} "    3) SuperLU or Distributed SuperLU"
 ${echo} "    4) ParaSails                     " 
 ${echo} "    5) ParMetis                      " 
 ${echo}
-${echo} "If you are not sure what libraries you need, you can compile"
-${echo} "without libraries and then you will get a message when executing"
-${echo} "if something needs to be added."
+${echo} "If you are not sure what is needed, compile without libraries and"
+${echo} "wait for runtime message indicating a missing library."
 ${echo} 
-${echo} "==> If something goes WRONG ... you have to do things manually"
+${echo} "==> If this script bombs ... you have to do things manually!!"
 ${echo} "==>"
 ${echo} "==> 1) If you don't have 'Obj/' --> 'cd etc; flatten; cd ..'"
 ${echo} "==> 2) Compile any package not built"
-${echo} "==> 3) setenv ARCH machine"
-${echo} "==>       where machine is one of CPLANT, DEC, HP, PCLINUX, SGI, "
-${echo} "==>       SMOS, SOLARIS, SP2, SUN, TFLOP."
-${echo} "==> 4) create the file 'make_\${ARCH}.variables' in \'ml/\' listing"
-${echo} "==>    all packages being used, include paths, and libraries."
-${echo} "==>    For example:"
-${echo} "==>            PACKAGES=-DML_MPI -DAZTEC -DSUPERLU -DPARASAILS -DMETIS"
-${echo} "==>            LIB_HOME=/home/doe/ml/lib"
-${echo} "==>            INC_PATH=-I\${LIB_HOME}/ParMetis-2.0/METISLib -I\${LIB_HOME}/ParaSails \\"
-${echo} "==>                     -I\${LIB_HOME}/DSuperLU/SRC -I\${LIB_HOME}/Aztec/lib \\"
-${echo} "==>                     -I/usr/local/mpich/include"
-${echo} "==>            LIBRARIES= -L\${LIB_HOME}/ParMetis-2.0 -lmetis -L\${LIB_HOME}/ParaSails \\"
-${echo} "==>                       -lParaSails \${LIB_HOME}/DSuperLU/superluPCLINUX.a \\"
-${echo} "==>                       -L\${LIB_HOME}/Aztec/lib -laztec -L/usr/local/mpich/lib -lmpich"
+${echo} "==> 3) setenv ARCH machine (see machine list below)"
+${echo} "==> 4) create 'make_\${ARCH}.variables' in ml/ with package info. For example,"
+${echo} "==>        PACKAGES=-DML_MPI -DAZTEC -DSUPERLU -DPARASAILS -DMETIS"
+${echo} "==>        INC_PATH=-I../lib/ParMetis-2.0/METISLib -I../lib/ParaSails \\"
+${echo} "==>                 -I../lib/DSuperLU/SRC          -I../lib/Aztec/lib \\"
+${echo} "==>                 -I/usr/local/mpich/include"
+${echo} "==>        LIBRARIES=-L../lib/ParMetis-2.0 -L/usr/local/mpich/lib \\"
+${echo} "==>                  -L../lib/Aztec/lib -L../lib/ParaSails -lmetis -lParaSails \\"
+${echo} "==>                   ../lib/DSuperLU/superluPCLINUX.a -laztec -lmpich"
+${echo} "==> Note: Each externally supplied blas/lapack routine must be listed on the"
+${echo} "==> PACKAGES line (e.g. -DML_DDOT_FUNC). grep FUNC ml_lapack.c for a full list."
 ${echo}
 ${echo}
 export USING_MPI
@@ -79,13 +67,9 @@ LIBRARIES=
 PWD=`pwd`
 ML_HOME=$PWD
 
-${echo}
-${echo}
-${echo} "At this point you need to tell us what platform you are using"
-${echo} "Currently available machines include:"
+${echo} "What platform you are using?"
 ${echo} "    CPLANT, DEC, HP, PCLINUX, SGI, SMOS, SOLARIS, SP2, SUN, TFLOP"
-${echo} "To add another machine, create a new etc/makefile.xxx and put"
-${echo} "machine in this script's list."
+${echo} "Note: To add other machines, create a new etc/makefile.xxx."
 ${echo}
 ${echo} -n "What machine? [PCLINUX] "
 read ARCH
