@@ -53,7 +53,8 @@ require "cgi-lib.pl";
 #                 when the software is downloaded.  
 
 $prevpage = $ENV{'HTTP_REFERER'};
-if ($prevpage eq "http://www.cs.sandia.gov/Zoltan/Zoltan_download.html") {
+if (($prevpage eq "http://www.cs.sandia.gov/Zoltan/Zoltan_download.html") or
+    ($prevpage eq "http://www.cs.sandia.gov/zoltan/Zoltan_download.html")) {
   $pkg = "Zoltan";
   $pkghome = "http://www.cs.sandia.gov/Zoltan/";
   $downloadfile = "ftp://ftp.cs.sandia.gov/pub/papers/kddevin/zoltan_distrib.tar.gz";
@@ -96,7 +97,7 @@ else {
 # This email will be used to create the database for SNL Tech. Transfer.
 
 $database_mgr = "kddevin\@cs.sandia.gov";
-open(MAIL, "|/usr/lib/sendmail -i $database_mgr $recipient") || dienow "Unable to send mail.";
+open(MAIL, "|/usr/lib/sendmail -f "Zoltan_Download" -i $database_mgr $recipient") || dienow "Unable to send mail.";
 print MAIL "$pkg|$ul|$in{email}|$in{name}|$in{company}|$in{addr1}|$in{addr2}|$in{city}|$in{state}|$in{zip}|$in{country}|$ENV{'REMOTE_ADDR'}\n\n";
 close MAIL;
 
