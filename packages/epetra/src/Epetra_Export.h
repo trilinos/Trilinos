@@ -37,15 +37,14 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 class Epetra_Distributor;
 
-//! Epetra_Import: This class builds an import object for efficient importing of off-processor elements.
+//! Epetra_Export: This class builds an export object for efficient exporting of off-processor elements.
 
-/*! Epetra_Import is used to construct a communication plan that can be called repeatedly by computational
-    classes such the Epetra matrix, vector and multivector classes to efficiently obtain off-processor
-    elements.
+/*! Epetra_Export is used to construct a communication plan that can be called repeatedly by computational
+    classes such the Epetra matrix, vector and multivector classes to efficiently send data to a target processor.
 
     This class currently has one constructor, taking two Epetra_Map or Epetra_BlockMap objects.  The
     first map specifies the global IDs that are owned by the calling processor.  The second map specifies
-    the global IDs of elements that we want to import later.
+    the global IDs of elements that we want to export to later.
 */
 
 class Epetra_Export: public Epetra_Object {
@@ -53,7 +52,7 @@ class Epetra_Export: public Epetra_Object {
   public:
 
   //! Epetra_Export constructor
-  /*! Builds an import object that will transfer object built with SourceMap to objects built with TargetMap.
+  /*! Builds an export object that will transfer object built with SourceMap to objects built with TargetMap.
 
     A Epetra_Export object categorizes the elements of the target map into three sets as follows:
     <ol>
@@ -72,7 +71,7 @@ class Epetra_Export: public Epetra_Object {
     </ol>
 
 Given the above information, the Epetra_Export constructor builds a list of elements that must be communicated to other
-processors as a result of import requests.  The number of exported elements (where multiple sends of the same element
+processors as a result of export requests.  The number of exported elements (where multiple sends of the same element
 to different processors is counted) is returned by NumExportIDs().  The local IDs to be sent are returned by the list 
 ExportLIDs().  The processors to which each of the elements will be sent in returned in a list of the same length by 
 ExportPIDs().
@@ -89,42 +88,33 @@ Assume we have 3 processors and 9 global elements with each processor owning 3 e
     0  1  2          3  4  5           6  7  8
 \endverbatim
 
-The above layout essentially defines the source map argument of the import object.
+The above layout essentially defines the target map argument of the export object.
 
-This could correspond to a 9 by 9 matrix with the first three rows on PE 0, and so on.  Suppose that this matrix
-is periodic tridiagonal having the following sparsity pattern:
+This could correspond to a 9-entry forcing vector with the first three entries on PE 0, and so on.  
+Suppose that the entries of this forcing vector are computed by integrating over linear "hat" functions:
 
 \verbatim
+^  ^  ^  ^  ^  ^  ^  ^  ^
+ \/ \/ \/ \/ \/ \/ \/ \/ 
+ /\ /\ /\ /\ /\ /\ /\ /\ 
++--+--+--+--+--+--+--+--+
+0  1  2  3  4  5  6  7  8
 
-PE 0 Rows:
-
-  X  X  0  0  0  0  0  0  X
-  X  X  X  0  0  0  0  0  0
-  0  X  X  X  0  0  0  0  0
-
-PE 1 Rows:
-
-  0  0  X  X  X  0  0  0  0
-  0  0  0  X  X  X  0  0  0
-  0  0  0  0  X  X  X  0  0
-
-PE 2 Rows:
-
-  0  0  0  0  0  X  X  X  0
-  0  0  0  0  0  0  X  X  X
-  X  0  0  0  0  0  0  X  X
 
 \endverbatim
 
-To perform a matrix vector multiplication operation y = A*x (assuming that x has the same distribution as the 
-rows of the matrix A) each processor will need to import elements of x that
-are not local.  To do this, we build a target map on each processor as follows:
+In this case, PE 0 will make contributions to entries 0 through 3, PE 1 will make contributions to entries 3 through
+6 and PE 2 will make contributions to entries 5 through 8.  A convenient way to compute these contributions is to create
+a forcing vector with replicated entries for the shared contributions.  Specifically the following SourceMap works for
+this scenario:
+
 \verbatim
+
     PE 0 Elements    |  PE 1 Elements    |  PE 2 Elements
-    0  1  2  3  8        2  3  4  5         0  5  6  7  8
+     0  1  2  3         2  3  4  5  6        5  6  7  8
 \endverbatim
 
-The above list is the elements that will be needed to perform the matrix vector multiplication locally on each processor.
+A vector constructed using this SourceMap can be used to collect each processor's contributions to the forcing vector.
 Note that the ordering of the elements on each processor is not unique, but has been chosen for illustration.
 
 With these two maps passed into the Epetra_Export constructor, we get the following attribute definitions:
@@ -138,15 +128,15 @@ NumPermuteIDs   = 0
 PermuteToLIDs   = 0
 PermuteFromLIDs = 0
 
-NumRemoteIDs    = 2
-RemoteLIDs      = [3, 4]
+NumRemoteIDs    = 1
+RemoteLIDs      = [2]
 
-NumExportIDs    = 2
-ExportLIDs      = [0, 2]
-ExportPIDs      = [1, 2]
+NumExportIDs    = 1
+ExportLIDs      = [3]
+ExportPIDs      = [1]
 
-NumSend         = 2
-NumRecv         = 2
+NumSend         = 1
+NumRecv         = 1
 
 \endverbatim
 
@@ -159,15 +149,15 @@ NumPermuteIDs   = 3
 PermuteToLIDs   = [0, 1, 2]
 PermuteFromLIDs = [1, 2, 3]
 
-NumRemoteIDs    = 1
-RemoteLIDs      = [0]
+NumRemoteIDs    = 2
+RemoteLIDs      = [0, 2]
 
 NumExportIDs    = 2
-ExportLIDs      = [0, 2]
+ExportLIDs      = [0, 4]
 ExportPIDs      = [0, 2]
 
 NumSend         = 2
-NumRecv         = 1
+NumRecv         = 2
 
 \endverbatim
 
@@ -178,17 +168,17 @@ NumSameIDs      = 0
 
 NumPermuteIDs   = 3
 PermuteToLIDs   = [0, 1, 2]
-PermuteFromLIDs = [2, 3, 4]
+PermuteFromLIDs = [1, 2, 3]
 
-NumRemoteIDs    = 2
-RemoteLIDs      = [0, 1]
+NumRemoteIDs    = 1
+RemoteLIDs      = [0]
 
-NumExportIDs    = 2
-ExportLIDs      = [0, 2]
-ExportPIDs      = [0, 1]
+NumExportIDs    = 1
+ExportLIDs      = [0]
+ExportPIDs      = [1]
 
-NumSend         = 2
-NumRecv         = 2
+NumSend         = 1
+NumRecv         = 1
 
 \endverbatim
 
@@ -200,6 +190,22 @@ objects, namely Epetra_Vector, Epetra_MultiVector, Epetra_CrsGraph, Epetra_CrsMa
 All of these classes have Export and Export methods that will fill new objects whose distribution is described by
 the target map, taking elements from the source object whose distribution is described by the source map.  Details of usage
 for each class is given in the appropriate class documentation.
+
+In the above example, if x_integrate is constructed using the SourceMap and then filled with local contributions, and x_force
+is constructed using the target map, the following operation will fill x_force with the combined results of x_integrate:
+\verbatim
+x_force.Export(x_integrate, exporter, Add);
+\endverbatim
+The third argument above tells the export operation to add results that come from multiple processors for the same GID.
+
+Epetra_Export objects can also be used by Import operations to perform the reverse operation.  For example, if x_force in the
+above example had boundary conditions that should be sent to processors that share a boundary element, the following operation
+would send replicated values to x_integrate:
+\verbatim
+x_integrate.Import(x_force, exporter, Insert);
+\endverbatim
+At the end of this operation, x_integrate would have replicated values from x_force of entries 2 and 3 on PEs 0 and 1, 
+and entries 5 and 6 on PEs 1 and 2.
 
   */ 
 
@@ -244,10 +250,10 @@ for each class is given in the appropriate class documentation.
   //! Total number of elements to be received.
   int NumRecv() const {return(NumRecv_);};
 
-  //! Returns the SourceMap used to construct this importer
+  //! Returns the SourceMap used to construct this exporter
   const Epetra_BlockMap & SourceMap() const {return(SourceMap_);};
 
-  //! Returns the TargetMap used to construct this importer
+  //! Returns the TargetMap used to construct this exporter
   const Epetra_BlockMap & TargetMap() const {return(TargetMap_);};
 
   Epetra_Distributor & Distributor() const {return(*Distor_);};

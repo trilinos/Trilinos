@@ -120,7 +120,7 @@ rows of the matrix A) each processor will need to import elements of x that
 are not local.  To do this, we build a target map on each processor as follows:
 \verbatim
     PE 0 Elements    |  PE 1 Elements    |  PE 2 Elements
-    0  1  2  3  8        2  3  4  5 6       0  5  6  7  8
+    0  1  2  3  8       2  3  4  5  6       0  5  6  7  8
 \endverbatim
 
 The above list is the elements that will be needed to perform the matrix vector multiplication locally on each processor.
@@ -158,15 +158,15 @@ NumPermuteIDs   = 3
 PermuteToLIDs   = [0, 1, 2]
 PermuteFromLIDs = [1, 2, 3]
 
-NumRemoteIDs    = 1
-RemoteLIDs      = [0]
+NumRemoteIDs    = 2
+RemoteLIDs      = [0, 4]
 
 NumExportIDs    = 2
 ExportLIDs      = [0, 2]
 ExportPIDs      = [0, 2]
 
 NumSend         = 2
-NumRecv         = 1
+NumRecv         = 2
 
 \endverbatim
 
