@@ -51,8 +51,8 @@ LB_INC=lb_const.h lb.h lbi_const.h lb_util_const.h
 RCB_CSRC=rcb.c rcb_util.c 
 RCB_INC=rcb.h
 
-OCT_CSRC=msg.c octant.c util3.c octupdate3.c dfs.c costs.c migoct3.c output.c \
-	migreg3.c hilbert.c
+OCT_CSRC=msg.c octant.c util.c octupdate.c dfs.c costs.c migoct.c output.c \
+	migreg.c hilbert.c
 OCT_INC=msg_const.h octant_const.h util_const.h octupdate_const.h \
 	octupdate.h dfs_const.h dfs.h migoct_const.h migoct.h migreg.h \
 	hilbert_const.h
