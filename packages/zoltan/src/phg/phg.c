@@ -581,8 +581,8 @@ int ierr = ZOLTAN_OK;
     /* Compute default */
     tmp = (int) sqrt((double)nProc+0.1);
     while (nProc % tmp) tmp--;
-    comm->nProc_y = tmp;
-    comm->nProc_x = nProc / tmp;
+    comm->nProc_x = tmp;
+    comm->nProc_y = nProc / tmp;
   } else if (nProc_x == -1) {
     comm->nProc_y = MIN(nProc_y, nProc);
     comm->nProc_x = nProc / comm->nProc_y;
