@@ -74,7 +74,7 @@ PART II : how read output files with OpenDX
 6) To re-execute after a change, press CRTL-R to reset the server, then
    CTRL-E.
    
-6) You may wish to modify the vertex diameter of the edge.
+6) You may wish to modify the edge thickness (tube diameter).
 
 
 -----

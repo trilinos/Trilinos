@@ -1,16 +1,17 @@
-%
-%  Little script to plot memory usage within ML. Normally, users should
-%  compile ML with -DML_MEMORY_CHECK
-%  To use it do the following:
-%
-%     memory_graph output_file > matscript.m
-%
-%  Then run matscript.m from within matlab.
-%
-%  Note: if you want some other field plotted, you can just
-%        edit this file and change 'FIELD=used' to something
-%        else like 'FIELD=time'.
-%
+#!/bin/sh 
+#
+#  Little script to plot memory usage within ML. Normally, users should
+#  compile ML with -DML_MEMORY_CHECK
+#  To use it do the following:
+#
+#     memory_graph output_file > matscript.m
+#
+#  Then run matscript.m from within matlab.
+#
+#  Note: if you want some other field plotted, you can just
+#        edit this file and change 'FIELD=used' to something
+#        else like 'FIELD=time'.
+#
 FIELD=used
 grep "  $FIELD  " $1 > afile
 
