@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_NOX_ML_EPETRA
   // Comment out the previous Preconditioner spec and uncomment this line
   // to turn on ML 
-  lsParams.setParameter("Preconditioner", "ML");
+  //lsParams.setParameter("Preconditioner", "ML");
 #endif
   //lsParams.setParameter("Jacobian Operator", "Finite Difference");
   //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
@@ -233,8 +233,8 @@ int main(int argc, char *argv[])
   NOX::EpetraNew::Interface::Jacobian& iJac = MF;
   NOX::EpetraNew::Interface::Preconditioner& iPrec = FD;
   NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
-					     iJac, MF, iPrec, FD, soln,
-					     &scaling);
+					     iJac, MF, iPrec, FD, soln);
+					     //&scaling);
 
   // Create the Group
   NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
