@@ -157,72 +157,74 @@ namespace LineSearch {
 
   <ul>
  
-  <li> \anchor defaultstep "Default Step" - starting step length (defaults to 1.0)
+  <li> "Default Step" - Starting step length, i.e., \f$\lambda_0\f$.
+  Defaults to 1.0.
 
-  <li> \anchor minimumstep "Minimum Step" - minimum acceptable step length (defaults to 1.0e-12)
+  <li> "Minimum Step" - Minimum acceptable step length. The search
+  fails if the computed \f$\lambda_k\f$ is less than this
+  value. Defaults to 1.0e-12.
 
-  <li> \anchor recovertstep "Recovery Step" - step to take when the line search fails
-    (defaults to value for "Default Step")
+  <li> "Recovery Step" - The step to take when the line search fails.
+    Defaults to value for "Default Step".
 
-  <li> \anchor maxiters "Max Iters" - maximum number of line search iterations (default to 100)
+  <li> "Max Iters" - Maximum number of line search iterations. The
+  search fails if the number of iterations exceeds this
+  value. Defaults to 100.
 
-  <li> \anchor sufficientdecreasecondition "Sufficient Decrease
-    Condition" - choice of algorithm used to determine if the line
-    search algorithm has converged. Choices are (See above for
-    explanations):
+  <li> "Min Bounds Factor" - Choice for \f$ \gamma_{min} \f$, i.e.,
+    the factor that limits the minimum size of the new step based on
+    the previous step. Defaults to 0.1.
+
+  <li> "Max Bounds Factor" - Choice for \f$ \gamma_{max} \f$, i.e.,
+    the factor that limits the maximum size of the new step based on
+    the previous step.  Defaults to 0.5.
+
+  <li> "Sufficient Decrease Condition" - See checkConvergence() for
+  details. Choices are:
     
-
-    <ol>
+    <ul>
 
     <li> "Armijo-Goldstein" [default]
     <li> "Ared/Pred" 
     <li> "None"
 
-    </ol>
+    </ul>
 
-  <li> "User Defined Norm" - The user can redefine the norm that is
-    used in the Ared/Pred sufficient decrease condition; see
-    NOX::Parameter::UserNorm for details.
+  <li> "Alpha Factor" - %Parameter choice for sufficient decrease
+  condition. See checkConvergence() for details. (Defaults to 1.0e-4)
 
-  <li> "User Defined Merit Function" - The user can redefine the merit
-  function used; see NOX::Parameter::MeritFunction for details.
-
-  <li> \anchor alphafactor "Alpha Factor" - Used in Armijo-Goldstein stopping criteria \f$
-    \alpha \f$ (defaults to 1.0e-4)
-
-  <li> \anchor minboundsfactor "Min Bounds Factor" - \f$ \gamma_{min} \f$, the factor that limits
-    the minimum size of the new step based on the previous step
-    (defaults to 0.1)
-
-  <li> \anchor maxboundsfactor "Max Bounds Factor" - \f$ \gamma_{max} \f$, the factor that limits
-    the maximum size of the new step based on the previous step
-    (defaults to 0.5)
-
-  <li> \anchor forceinterpolation "Force Interpolation" (boolean) -
-    Set to true at least one interpolation step should be used. The
-    default is false which means that the line search will stop if the
-    default step length satisfies the convergence criteria. (defaults
-    to false)
-
-  <li> \anchor interpolationtype "Interpolation Type" - Type of
-    interpolation that should be used. Choices are
+  <li> "Interpolation Type" - Type of interpolation that should be
+    used. Choices are
     
-     <ol>
-     <li> "Cubic" 
+     <ul>
+     <li> "Cubic" [default]
      <li> "Quadratic"
-     </ol>
+     </ul>
 
-  <li> \anchor usecounters "Use Counters" (boolean) - True if we
-  should use counters and then output the result to the paramter list
-  as described in \ref outputparameters "Output Parameters". Defaults
-  to true.
+  <li> "Force Interpolation" (boolean) - Set to true if at least one
+    interpolation step should be used. The default is false which
+    means that the line search will stop if the default step length
+    satisfies the convergence criteria. Defaults to false.
 
-  <li> "Allowed Relative Increase" - See #maxRelativeIncrease and
-  checkConvergence().  Defaults to 100.
+  <li> "Use Counters" (boolean) - Set to true if we should use
+  counters and then output the result to the paramter list as
+  described in \ref outputparameters "Output Parameters". Defaults to
+  true.
 
   <li> "Maximum Iteration for Increase" - Maximum index of the
   nonlinear iteration for which we allow a relative increase. See
-  #maxIncreaseIter and checkConvergence(). Defaults to zero.
+  checkConvergence() for further details. Defaults to 0 (zero).
+
+  <li> "Allowed Relative Increase" - See checkConvergence() for
+  details.  Defaults to 100.
+
+  <li> "User Defined Merit Function" - The user can redefine the merit
+  function used; see computePhi() and NOX::Parameter::MeritFunction
+  for details.
+
+  <li> "User Defined Norm" - The user can redefine the norm that is
+    used in the Ared/Pred sufficient decrease condition; see
+    computeValue() and NOX::Parameter::UserNorm for details.
 
   </ul>   
 
@@ -256,7 +258,7 @@ namespace LineSearch {
 
   This line search is based on materials in the following:
 
-  - Section 8.3.1 in C.T. Kelley, "Iterative Methods for Linear and
+  - Section 8.3.1 in C.T. Kelley, "Iterative Methods for %Linear and
     Nonlinear Equations", SIAM, 1995.
 
   - Section 6.3.2 and Algorithm 6.3.1 of J. E. Dennis Jr. and Robert
@@ -295,46 +297,99 @@ protected:
 
   //! Returns true if converged.
   /*!  
+    We go through the following checks for convergence.
 
-    If the "Force Interpolation" parameter is true and this is the
-    first nonlinear iteration (i.e., nNonlinearIterations is 1), then
-    returns false.
+    <ol>
+  
+    <li> If the "Force Interpolation" parameter is true and this is the
+    first inner iteration (i.e., nIters is 1), then we return \b false.
 
-    Next, it checks to see if the "Relative Increase" condition is
-    satisfied. If so, then it returns true (converged).
+    <li> Next, it checks to see if the "Relative Increase" condition
+    is satisfied. If so, then we return \b true.  The "Relative
+    Increase" condition is satisfied if \e both of the following two
+    conditions hold.
 
-    The "Relative Increase" condition is satisfied if the following
-    holds.
-    -# #doAllowIncrease is true
-    -# nNonlinearIters <= #maxRelativeIncrease
-    -# (newValue / oldValue) < #maxRelativeIncrease
+    - The number of nonlinear iterations is less than or equal to the
+       value specified in the "Maximum Iteration for Increase"
+       parameter
 
-    Finally, it checks the actual convergence conditions.
+    - The ratio of newValue to oldValue is less than the value
+       specified in "Allowed Relative Increase".
+
+    <li> Last, we check the sufficient decrease condition. We return
+    \b true if it's satisfied, and \b false otherwise. The condition
+    depends on the value of the "Sufficient Decrease Condition
+    Parameter", as follows.
     
-    In the case of <b>Armijo-Goldstein</b> criteria, we return true if
+    <ul>
+    <li> "Armijo-Goldstein": Return true if
     \f[
     \phi(\lambda) \leq \phi(0) + \alpha \; \lambda \; \phi'(0)
     \f]
-    where 
-    - newValue = \f$ \phi(\lambda)  \f$
-    - oldValue = \f$ \phi(0) \f$
-    - oldSlope = \f$ \phi'(0) \f$
-    - step = \f$ \lambda  \f$
 
-    In the case of <b>Ared/Pred</b>, we return true if
+    <li>"Ared/Pred": Return true if
     \f[
     \| F(x_{\rm old} + \lambda d )\| \leq \| F(x_{\rm old}) \| (1 - \alpha (1 - \eta))
     \f]
-    where
-    - newValue = \f$ \| F(x_{\rm old} + \lambda d )\|  \f$
-    - oldValue = \f$ \| F(x_{\rm old}) \| \f$
-    - eta = Value of \f$\eta\f$ for last forcing term calculation in NOX::Direction::Newton
-    - step = \f$ \lambda \f$
+
+
+    <li> "None": Always return true.
+    </ul>
+
+    For the first two cases, \f$\alpha\f$ is specified by the
+    parameter "Alpha".
+
+    </ol>
+    
+    \param newValue Depends on the "Sufficient Decrease Condition" parameter.
+    <ul>
+    <li>"Armijo-Goldstein" - \f$ \phi(\lambda) \f$
+    <li>"Ared/Pred" - \f$ \| F(x_{\rm old} + \lambda d )\| \f$ 
+    <li>"None" - N/A
+    </ul>
+    
+    \param oldValue Depends on the "Sufficient Decrease Condition" parameter.
+    <ul>
+    <li>"Armijo-Goldstein" - \f$ \phi(0) \f$
+    <li>"Ared/Pred" - \f$ \| F(x_{\rm old} )\| \f$ 
+    <li>"None" - N/A
+    </ul>
+
+    \param oldSlope Only applicable to "Armijo-Goldstein", in which
+    case it should be \f$\phi'(0)\f$.
+
+    \param step The current step, \f$\lambda\f$.
+
+    \param eta Only applicable to "Ared/Pred", in which case it
+    should be the value of \f$\eta\f$ for last forcing term
+    calculation in NOX::Direction::Newton
+  
+    \param nIter Number of inner iterations.
+
+    \param nNonlinearIters Number of nonlinear iterations.
+
+    \note The norm used for "Ared/Pred" can be specified by the user
+    by using the "User Defined Norm" parameter.
+
   */
   bool checkConvergence(double newValue, double oldValue, double oldSlope, 
-			double step, double eta, int nNonlinearIters) const;
+			double step, double eta, int nIters, int nNonlinearIters) const;
 
-  //! Updates the newGrpand computes the values of newf_1, newf_2 and newf_interp
+  //! Updates the newGrp by computing a new x and a new F(x)
+  /*!
+    Let
+    
+    - \f$x_{\rm new}\f$ denote the new solution to be calculated (corresponding to \c newGrp)
+    - \f$x_{\rm old}\f$ denote the previous solution (i.e., the result of oldGrp.getX())
+    - \f$d\f$ denotes the search direction (\c dir).
+    - \f$\lambda\f$ denote the step (\c step), 
+
+    We compute
+    \f[
+    x_{\rm new} = x_{\rm old} + \lambda d,
+    \f]
+    and \f$ F(x_{\rm new})\f$. The results are stored in \c newGrp.
+   */
   bool updateGrp(NOX::Abstract::Group& newGrp, 
 		 const NOX::Abstract::Group& oldGrp,
 		 const NOX::Abstract::Vector& dir, 
@@ -371,7 +426,7 @@ protected:
   double computeValue(const NOX::Abstract::Group& grp, double phi);
 
 
-  //! Compute \f$ \phi'(x) \f$
+  //! Compute \f$ \phi'(0) \f$
   /*!
 
     If a "User Defined Merit Function" is provided, then we use
@@ -380,10 +435,11 @@ protected:
     Otherwise, we are using the standard merit function, so we want to
     compute
     \f[
-    d^T (J(x)^T F(x))
+    d^T (J(x_{\rm old})^T F(x_{\rm old}))
     \f]
     To do this, we use NOX::LineSearch::Utils::Slope.
 
+    \param grp Should correspond to s.getPreviousSolutionGroup() from compute().
    */
   double computeSlope(const NOX::Abstract::Vector& dir, 
 		      const NOX::Abstract::Group& grp);
@@ -396,17 +452,17 @@ protected:
 
 protected:
 
-  //! Algorithms used to determine termination of the line search
+  //! Types of sufficient decrease conditions used by checkConvergence()
   enum SufficientDecreaseType {
-    //! Sufficient decrease condition
+    //! Armijo-Goldstein conditions
     ArmijoGoldstein, 
     //! Ared/Pred condition
     AredPred,
-    //! Just accept the first step
+    //! No condition
     None
   };
 
-  //! Interpolation Type
+  //! Interpolation types
   enum InterpolationType {
     //! Use quadratic interpolation throughout
     Quadratic, 
@@ -414,47 +470,56 @@ protected:
     Cubic
   };
 
-  //! Choice for sufficient decrease condition
+  //! Choice for sufficient decrease condition; uses "Sufficient Decrease Condition" parameter
   SufficientDecreaseType suffDecrCond;
 
-  //! Choice of interpolation type
+  //! Choice of interpolation type; uses "Interpolation Type" parameter
   InterpolationType interpolationType;
 
-   //! Minimum step length (i.e., when we give up)
+   //! Minimum step length (i.e., when we give up); uses "Mimimum Step" parameter
   double minStep;
  
- //! Default step
+  //! Default step; uses "Default Step"  parameter
   double defaultStep;
 
-  //! Default step for linesearch failure
+  //! Default step for linesearch failure; uses "Recovery Step" parameter
   double recoveryStep;
 
-  //! Maximum iterations
+  //! Maximum iterations; uses "Max Iters" parameter
   int maxIters;
 
-  //! The \f$ \alpha \f$ for the Armijo-Goldstein condition, or the
-  //! \f$ \alpha \f$ for the Ared/Pred condition.
+  /*! \brief The \f$ \alpha \f$ for the Armijo-Goldstein condition, or
+      the \f$ \alpha \f$ for the Ared/Pred condition; see
+      checkConvergence().  Uses "Alpha" parameter. */
   double alpha;
 
-  //! Factor that limits the minimum size of the new step based on the previous step.
+  /*! \brief Factor that limits the minimum size of the new step based
+      on the previous step; uses "Min Bounds Factor" parameter */
   double minBoundFactor;
 
-  //! Factor that limits the maximum size of the new step based on the previous step.
+  /*! \brief Factor that limits the maximum size of the new step based
+      on the previous step; uses "Max Bounds Factor" parameter. */
   double maxBoundFactor;
 
-  //! True is we should force at least one interpolation step
+  /*! \brief True is we should force at least one interpolation step;
+      uses "Force Interpolation" parameter. */
   bool doForceInterpolation;
 
-  //! True if we sometimes allow an increase(!) in the decrease measure
-  bool doAllowIncrease;
-
-  //! Maximum allowable relative increase for decrease meausre (if allowIncrease is true)
-  double maxRelativeIncrease;
-
-  //! No increases are allowed if the number of nonlinear iterations is greater than this value
+  /*! \brief No increases are allowed if the number of nonlinear
+    iterations is greater than this value; uses "Maximum Iterations
+    for Increase" */
   int maxIncreaseIter;
 
-  //! True if we should use #counterUtil and output the results
+  /*! \brief True if we sometimes allow an increase(!) in the decrease
+    measure, i.e., maxIncreaseIter > 0. */
+  bool doAllowIncrease;
+
+  /*! \brief Maximum allowable relative increase for decrease meausre (if
+    allowIncrease is true); uses "Allowed Relative Increase" parameter */
+  double maxRelativeIncrease;
+
+  /*! \brief True if we should use #counterUtil and output the results; uses
+    "Use Counters" parameter.*/
   bool useCounter;
 
   //! Pointer to the input parameter list. 
