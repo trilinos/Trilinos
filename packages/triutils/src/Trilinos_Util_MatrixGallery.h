@@ -328,12 +328,18 @@ return 0 ;
   int ComputeDiffBetweenStartingAndExactSolutionsVbr(double & residual);
 
   //! Print out matrix and vectors
-  void Print(ostream & os);
+  void PrintMatrixAndVectors(ostream & os);
 
-  void Print();
+  void PrintMatrixAndVectors();
 
   //! Print out Vbr matrix and vectors
-  void PrintVbr(ostream & os);
+  void PrintVbrMatrixAndVectors(ostream & os);
+
+  void PrintVbrMatrixAndVectors();
+
+  //! Print out detailed information about the problem at hand
+  friend ostream & operator << (ostream& os,
+				const Trilinos_Util_MatrixGallery & G ); 
 
   //@}
 
@@ -369,22 +375,22 @@ private:
   int CreateMatrix();
 
   //! Creates the exact solution.
-  void CreateExactSolution();
+  int CreateExactSolution();
 
   //! Creates the exact solution for a Epetra_VbrMatrix.
-  void CreateVbrExactSolution(void);
+  int CreateVbrExactSolution(void);
 
   //! Creates the starting solution.
-  void CreateStartingSolution();
+  int CreateStartingSolution();
 
   //! Creates the starting solution for Vbr.
-  void CreateVbrStartingSolution();
+  int CreateVbrStartingSolution();
   
   //! Create the RHS corresponding to the desired exact solution.  
-  void CreateRHS();
+  int CreateRHS();
 
   //!  Create the RHS corresponding to the desired exact solution for the Vbr problem.
-  void CreateVbrRHS();
+  int CreateVbrRHS();
 
   // Create an identity matrix.
   int CreateEye();
@@ -402,6 +408,8 @@ private:
   int CreateMatrixCrossStencil2d();
 
   int CreateMatrixLaplace2d();
+
+  int CreateMatrixRecirc2d();
 
   int CreateMatrixLaplace3d();
 
@@ -422,10 +430,10 @@ private:
   int ReadHBMatrix();
 
   // Creates a block map, based on map, wich NumPDEEqns equations on each node.
-  void CreateBlockMap(void);
+  int CreateBlockMap(void);
 
   // create the Vbr matrix. 
-  void CreateVbrMatrix(void);  
+  int CreateVbrMatrix(void);  
 
   // returns the neighbors of a given node. The node is supposed to be on
   // a 2D Cartesian grid 

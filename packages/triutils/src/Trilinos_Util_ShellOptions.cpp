@@ -414,8 +414,9 @@ bool Trilinos_Util_ShellOptions::HaveOption( const string input)
 void Trilinos_Util_ShellOptions::ShowAll() const 
 {
 
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   cout << "\nTrilinos_Util_ShellOptions :: \n";
+  
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     if( (*ci).first.at(0) != '_' ) 
@@ -440,8 +441,9 @@ void Trilinos_Util_ShellOptions::ShowAll() const
 void Trilinos_Util_ShellOptions::ShowReallyAll() const 
 {
 
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   cout << "\nTrilinos_Util_ShellOptions :: \n";
+
+#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
   for( map<string,string>::const_iterator ci = OptionDatabase.begin();
        ci != OptionDatabase.end() ; ++ci ) {
     cout << (*ci).first << " = " << (*ci).second << endl;
@@ -504,7 +506,7 @@ bool Trilinos_Util_ShellOptions::SetOption( const string input, const string val
   
   for( int i=0 ; i<NumOptions ; ++i ) {
     if( OptionName[i] == input ) {
-      OptionValue[NumOptions] = value;
+      OptionValue[i] = value;
       found = true;
       break;
     }
@@ -611,4 +613,12 @@ string Trilinos_Util_ShellOptions::GetCharShellVariable( const char *str )
   return( buffer );
   
 } /* GetCharShellVariable */
+
+// ================================================ ====== ==== ==== == =
+
+ostream & operator << (ostream & os,
+		       const Trilinos_Util_ShellOptions & S)
+{
+  S.ShowAll();
+}
 

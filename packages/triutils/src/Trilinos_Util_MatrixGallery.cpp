@@ -379,63 +379,63 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
 // ================================================ ====== ==== ==== == =  
 Epetra_CrsMatrix * Trilinos_Util_MatrixGallery::GetMatrix(void) 
 {
-  if( matrix_ == NULL ) CreateMatrix();
+  if( matrix_ == NULL ) assert(CreateMatrix()==0);
   return( matrix_ );
 }
 
 // ================================================ ====== ==== ==== == =  
 Epetra_CrsMatrix & Trilinos_Util_MatrixGallery::GetMatrixRef(void) 
 {
-  if( matrix_ == NULL ) CreateMatrix();
+  if( matrix_ == NULL ) assert(CreateMatrix()==0);
   return( *matrix_ );
 }
   
 // ================================================ ====== ==== ==== == =
 Epetra_Vector * Trilinos_Util_MatrixGallery::GetExactSolution(void) 
 {
-  if( ExactSolution_ == NULL ) CreateExactSolution();
+  if( ExactSolution_ == NULL ) assert(CreateExactSolution()==0);
   return ExactSolution_;
 }
 
 // ================================================ ====== ==== ==== == =
 Epetra_Vector * Trilinos_Util_MatrixGallery::GetStartingSolution(void)
 {
-  if( StartingSolution_ == NULL ) CreateStartingSolution();
+  if( StartingSolution_ == NULL ) assert(CreateStartingSolution()==0);
   return StartingSolution_;
 }
 
 // ================================================ ====== ==== ==== == =
 Epetra_Vector * Trilinos_Util_MatrixGallery::GetRHS(void)
 {
-  if( rhs_ == NULL ) CreateRHS();
+  if( rhs_ == NULL ) assert(CreateRHS()==0);
   return rhs_;
 }
 
 // ================================================ ====== ==== ==== == =
 Epetra_Vector * Trilinos_Util_MatrixGallery::GetVbrRHS(void)
 {
-  if( VbrRhs_ == NULL ) CreateVbrRHS();
+  if( VbrRhs_ == NULL ) assert(CreateVbrRHS()==0);
   return VbrRhs_;
 }
 
 // ================================================ ====== ==== ==== == =
 Epetra_Vector * Trilinos_Util_MatrixGallery::GetVbrExactSolution(void)
 {
-  if( VbrExactSolution_ == NULL ) CreateVbrExactSolution();
+  if( VbrExactSolution_ == NULL ) assert(CreateVbrExactSolution()==0);
   return VbrExactSolution_;
 }
 
 // ================================================ ====== ==== ==== == =
 Epetra_Vector * Trilinos_Util_MatrixGallery::GetVbrStartingSolution(void)
 {
-  if( VbrStartingSolution_ == NULL ) CreateVbrStartingSolution();
+  if( VbrStartingSolution_ == NULL ) assert(CreateVbrStartingSolution()==0);
   return VbrStartingSolution_;
 }
 
 // ================================================ ====== ==== ==== == =
 const Epetra_Map * Trilinos_Util_MatrixGallery::GetMap(void)
 {
-  if( map_ == NULL ) CreateMap();
+  if( map_ == NULL ) assert(CreateMap()==0);
     
   return map_;
 }
@@ -443,7 +443,7 @@ const Epetra_Map * Trilinos_Util_MatrixGallery::GetMap(void)
 // ================================================ ====== ==== ==== == =
 const Epetra_Map & Trilinos_Util_MatrixGallery::GetMapRef(void)
 {
-  if( map_ == NULL ) CreateMap();
+  if( map_ == NULL ) assert(CreateMap()==0);
     
   return *map_;
 }
@@ -451,7 +451,7 @@ const Epetra_Map & Trilinos_Util_MatrixGallery::GetMapRef(void)
 // ================================================ ====== ==== ==== == =
 const Epetra_BlockMap * Trilinos_Util_MatrixGallery::GetBlockMap(void)
 {
-  if( BlockMap_ == NULL ) CreateBlockMap();
+  if( BlockMap_ == NULL ) assert(CreateBlockMap()==0);
     
   return BlockMap_;
 }
@@ -459,7 +459,7 @@ const Epetra_BlockMap * Trilinos_Util_MatrixGallery::GetBlockMap(void)
 // ================================================ ====== ==== ==== == =
 const Epetra_BlockMap & Trilinos_Util_MatrixGallery::GetBlockMapRef(void)
 {
-  if( BlockMap_ == NULL ) CreateBlockMap();
+  if( BlockMap_ == NULL ) assert(CreateBlockMap()==0);
     
   return *BlockMap_;
 }
@@ -485,7 +485,7 @@ Epetra_VbrMatrix * Trilinos_Util_MatrixGallery::GetVbrMatrix(const int NumPDEEqn
 Epetra_VbrMatrix * Trilinos_Util_MatrixGallery::GetVbrMatrix(void)
 {
     
-  if( VbrMatrix_ == NULL ) CreateVbrMatrix();
+  if( VbrMatrix_ == NULL ) assert(CreateVbrMatrix()==0);
 
   return VbrMatrix_;
     
@@ -495,7 +495,7 @@ Epetra_VbrMatrix * Trilinos_Util_MatrixGallery::GetVbrMatrix(void)
 Epetra_VbrMatrix & Trilinos_Util_MatrixGallery::GetVbrMatrixRef(void)
 {
     
-  if( VbrMatrix_ == NULL ) CreateVbrMatrix();
+  if( VbrMatrix_ == NULL ) assert(CreateVbrMatrix()==0);
 
   return *VbrMatrix_;
     
@@ -546,7 +546,7 @@ int Trilinos_Util_MatrixGallery::ComputeResidual(double & residual)
 
   // create solution and rhs if needed (matrix_ and ExactSolution_ are
   //  created by CreateRHS if necessary)
-  if( rhs_ == NULL ) CreateRHS();
+  if( rhs_ == NULL ) assert(CreateRHS()==0);
 
   Epetra_Vector Ax(*map_);
   assert(matrix_->Multiply(false, *StartingSolution_, Ax)==0);
@@ -564,7 +564,7 @@ int Trilinos_Util_MatrixGallery::ComputeDiffBetweenStartingAndExactSolutions(dou
 
   // create solution and rhs if needed (matrix_ and ExactSolution are
   //  created by CreateRHS is necessary)
-  if( rhs_ == NULL ) CreateRHS();
+  if( rhs_ == NULL ) assert(CreateRHS()==0);
 
   Epetra_Vector temp(*map_);
 
@@ -605,7 +605,8 @@ int Trilinos_Util_MatrixGallery::CreateMap(void)
     }
   }
     
-  else if( name_ == "laplace_2d" || name_ == "cross_stencil_2d" ) {
+  else if( name_ == "laplace_2d" || name_ == "cross_stencil_2d"
+	   || name_ == "recirc_2d" ) {
     if( NumGlobalElements_ <= 0 ) {  
       if( nx_ > 0 && ny_ > 0 )
 	NumGlobalElements_ = nx_*ny_;
@@ -827,35 +828,37 @@ int Trilinos_Util_MatrixGallery::CreateMatrix(void)
     
   } else {
       
-    if( map_ == NULL ) CreateMap();     
+    if( map_ == NULL ) assert(CreateMap()==0);
 
     Epetra_Time Time(*comm_);
     
-    if( name_ == "diag" ) CreateMatrixDiag();
+    if( name_ == "diag" ) assert(CreateMatrixDiag()==0);
 
-    else if( name_ == "eye" ) CreateEye();
+    else if( name_ == "eye" ) assert(CreateEye()==0);
       
-    else if( name_ == "tridiag" ) CreateMatrixTriDiag();
+    else if( name_ == "tridiag" ) assert(CreateMatrixTriDiag()==0);
       
-    else if( name_ == "laplace_1d" ) CreateMatrixLaplace1d();
+    else if( name_ == "laplace_1d" ) assert(CreateMatrixLaplace1d()==0);
       
-    else if( name_ == "laplace_2d" ) CreateMatrixLaplace2d();
-      
-    else if( name_ == "laplace_3d" ) CreateMatrixLaplace3d();
-      
-    else if( name_ == "cross_stencil_2d" ) CreateMatrixCrossStencil2d();
-      
-    else if( name_ == "cross_stencil_3d" ) CreateMatrixCrossStencil3d();
+    else if( name_ == "laplace_2d" ) assert(CreateMatrixLaplace2d()==0);
 
-    else if( name_ == "lehmer" ) CreateMatrixLehmer();
+    else if( name_ == "recirc_2d" ) assert(CreateMatrixRecirc2d()==0);
+      
+    else if( name_ == "laplace_3d" ) assert(CreateMatrixLaplace3d()==0);
+      
+    else if( name_ == "cross_stencil_2d" ) assert(CreateMatrixCrossStencil2d()==0);
+      
+    else if( name_ == "cross_stencil_3d" ) assert(CreateMatrixCrossStencil3d()==0);
 
-    else if( name_ == "minij" ) CreateMatrixMinij();
+    else if( name_ == "lehmer" ) assert(CreateMatrixLehmer()==0);
 
-    else if( name_ == "ris" ) CreateMatrixRis();
+    else if( name_ == "minij" ) assert(CreateMatrixMinij()==0);
 
-    else if( name_ == "hilbert" ) CreateMatrixHilbert();
+    else if( name_ == "ris" ) assert(CreateMatrixRis()==0);
 
-    else if( name_ == "jordblock" ) CreateMatrixJordblock();
+    else if( name_ == "hilbert" ) assert(CreateMatrixHilbert()==0);
+
+    else if( name_ == "jordblock" ) assert(CreateMatrixJordblock()==0);
     
     else {
       cerr << ErrorMsg << "matrix name is incorrect or not set ("
@@ -873,7 +876,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrix(void)
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util_MatrixGallery::CreateVbrExactSolution(void) 
+int Trilinos_Util_MatrixGallery::CreateVbrExactSolution(void) 
 {
 
   if( verbose_ == true ) {
@@ -883,19 +886,21 @@ void Trilinos_Util_MatrixGallery::CreateVbrExactSolution(void)
   // check if already have one; in this case delete and rebuild
   if( VbrExactSolution_ != NULL ) delete VbrExactSolution_;
   // need an exact solution for Crs first
-  if( ExactSolution_ == NULL ) CreateExactSolution();
+  if( ExactSolution_ == NULL ) assert(CreateExactSolution()==0);
   // need a block map first
-  if( BlockMap_ == NULL ) CreateBlockMap();
+  if( BlockMap_ == NULL ) assert(CreateBlockMap()==0);
   // now we can expand to the Vbr format
   VbrExactSolution_ = new Epetra_Vector(*BlockMap_);
   for( int j=0 ; j<NumMyElements_ ; j++ ) 
     for( int i=0 ; i<NumPDEEqns_ ; ++i ) {
       (*VbrExactSolution_)[j*NumPDEEqns_+i] = (*ExactSolution_)[j];
     }
+
+  return 0;
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util_MatrixGallery::CreateExactSolution(void)
+int Trilinos_Util_MatrixGallery::CreateExactSolution(void)
 {
 
   if( verbose_ == true ) {
@@ -903,7 +908,7 @@ void Trilinos_Util_MatrixGallery::CreateExactSolution(void)
 	 << ExactSolutionType_ << "'...\n";
   }
   
-  if( map_ == NULL ) CreateMap();
+  if( map_ == NULL ) assert(CreateMap()==0);
 
   if( ExactSolution_ == NULL ) {
     ExactSolution_ = new Epetra_Vector(*map_);
@@ -917,13 +922,16 @@ void Trilinos_Util_MatrixGallery::CreateExactSolution(void)
     } else {
       cerr << ErrorMsg << "exact solution type is not correct : "
 	   << ExactSolutionType_ << endl;
+      return -1;
     }
   }
 
+  return 0;
+  
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util_MatrixGallery::CreateStartingSolution(void)
+int Trilinos_Util_MatrixGallery::CreateStartingSolution(void)
 {
 
   if( verbose_ == true ) {
@@ -931,7 +939,7 @@ void Trilinos_Util_MatrixGallery::CreateStartingSolution(void)
 	 << StartingSolutionType_ << "'...\n";
   }
 
-  if( map_ == NULL ) CreateMap();
+  if( map_ == NULL ) assert(CreateMap()==0);
 
   if( StartingSolution_ == NULL ) {
     StartingSolution_ = new Epetra_Vector(*map_);
@@ -942,13 +950,16 @@ void Trilinos_Util_MatrixGallery::CreateStartingSolution(void)
     } else {
       cerr << ErrorMsg << "starting solution type is not correct : "
 	   << StartingSolutionType_ << endl;
+      return -1;
     }
   }
 
+  return 0;
+  
 }
   
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util_MatrixGallery::CreateVbrStartingSolution(void) 
+int Trilinos_Util_MatrixGallery::CreateVbrStartingSolution(void) 
 {
 
   if( verbose_ == true ) {
@@ -961,9 +972,9 @@ void Trilinos_Util_MatrixGallery::CreateVbrStartingSolution(void)
   }
     
   // need a rhs for crs
-  if( StartingSolution_ == NULL ) CreateStartingSolution();
+  if( StartingSolution_ == NULL ) assert(CreateStartingSolution()==0);
   // need a block map based on map_
-  if( BlockMap_ == NULL ) CreateBlockMap();
+  if( BlockMap_ == NULL ) assert(CreateBlockMap()==0);
   // now we can expand to the Vbr format
   VbrStartingSolution_ = new Epetra_Vector(*BlockMap_);
   for( int j=0 ; j<NumMyElements_ ; j++ ) 
@@ -971,15 +982,17 @@ void Trilinos_Util_MatrixGallery::CreateVbrStartingSolution(void)
       (*VbrStartingSolution_)[j*NumPDEEqns_+i] = (*StartingSolution_)[j];
     }
 
+  return 0;
+  
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util_MatrixGallery::CreateRHS(void)
+int Trilinos_Util_MatrixGallery::CreateRHS(void)
 {
 
-  if( map_ == NULL ) CreateMap();
-  if( matrix_ == NULL ) CreateMatrix();
-  if( ExactSolution_ == NULL )  CreateExactSolution();
+  if( map_ == NULL ) assert(CreateMap()==0);
+  if( matrix_ == NULL ) assert(CreateMatrix()==0);
+  if( ExactSolution_ == NULL )  assert(CreateExactSolution()==0);
 
   if( rhs_ != NULL ) delete rhs_;
   
@@ -997,10 +1010,12 @@ void Trilinos_Util_MatrixGallery::CreateRHS(void)
          << Time.ElapsedTime() << " (s)\n";
   }
 
+  return 0;
+  
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util_MatrixGallery::CreateVbrRHS(void) 
+int Trilinos_Util_MatrixGallery::CreateVbrRHS(void) 
 {
 
   if( verbose_ == true ) {
@@ -1013,16 +1028,19 @@ void Trilinos_Util_MatrixGallery::CreateVbrRHS(void)
   }
     
   // need a rhs for crs
-  if( rhs_ == NULL ) CreateRHS();
+  if( rhs_ == NULL ) assert(CreateRHS()==0);
   // need a block map based on map_
-  if( BlockMap_ == NULL ) CreateBlockMap();
+  if( BlockMap_ == NULL ) assert(CreateBlockMap()==0);
   // require VbrMatrix to be formed first
-  if( VbrMatrix_ == NULL ) CreateVbrMatrix();
+  if( VbrMatrix_ == NULL ) assert(CreateVbrMatrix()==0);
   // also need an exact solution
-  if( VbrExactSolution_ == NULL )  CreateVbrExactSolution();
+  if( VbrExactSolution_ == NULL )  assert(CreateVbrExactSolution()==0);
 
   VbrRhs_ = new Epetra_Vector( *BlockMap_);
   VbrMatrix_->Multiply(false,*VbrExactSolution_,*VbrRhs_);
+
+  return 0;
+  
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1034,7 +1052,7 @@ int Trilinos_Util_MatrixGallery::CreateEye(void)
   }
   
   a_ = 1.0;
-  CreateMatrixDiag();
+  assert(CreateMatrixDiag()==0);
   return 0;    
 }
 
@@ -1128,7 +1146,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixLaplace1d(void)
   b_ = -1.0;
   c_ = -1.0;
 
-  CreateMatrixTriDiag();
+  assert(CreateMatrixTriDiag()==0);
   
   return 0;
 }
@@ -1148,6 +1166,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixCrossStencil2d(void)
     if( nx_ * ny_ != NumGlobalElements_ ) {
       cerr << ErrorMsg << "The number of global elements must be a square number\n"
 	   << ErrorMsg << "(now is " << NumGlobalElements_ << "). Returning...\n";
+      return -2;
     }
   }
     
@@ -1222,7 +1241,86 @@ int Trilinos_Util_MatrixGallery::CreateMatrixLaplace2d(void)
   d_ = -1.0;
   e_ = -1.0;
 
-  CreateMatrixCrossStencil2d();
+  assert(CreateMatrixCrossStencil2d()==0);
+
+  return 0;
+}
+
+// ================================================ ====== ==== ==== == =
+int Trilinos_Util_MatrixGallery::CreateMatrixRecirc2d(void)
+{
+
+  // largely based on a ML example by Ray Tuminaro
+  
+  if( verbose_ == true ) {
+    cout << OutputMsg << "Creating matrix `recirc_2d'...\n";
+  }
+
+  if( nx_ == -1 || ny_ == -1 ) {
+    nx_ = (int)sqrt((double)NumGlobalElements_);
+    ny_ = nx_;
+      
+    if( nx_ * ny_ != NumGlobalElements_ ) {
+      cerr << ErrorMsg << "The number of global elements must be a square number\n"
+	   << ErrorMsg << "(now is " << NumGlobalElements_ << "). Returning...\n";
+      return -2;
+    }
+  }
+  
+  // need vectors for this job
+  if( VectorA_ == NULL )  VectorA_ = new Epetra_Vector(*map_);
+  if( VectorB_ == NULL )  VectorB_ = new Epetra_Vector(*map_);
+  if( VectorC_ == NULL )  VectorC_ = new Epetra_Vector(*map_);
+  if( VectorD_ == NULL )  VectorD_ = new Epetra_Vector(*map_);
+  if( VectorE_ == NULL )  VectorE_ = new Epetra_Vector(*map_);
+
+  VectorA_->PutScalar(0.0);
+  VectorB_->PutScalar(0.0);
+  VectorC_->PutScalar(0.0);
+  VectorD_->PutScalar(0.0);
+  VectorE_->PutScalar(0.0);
+  
+  double hx = 1.0/(nx_+1);
+  double hy = 1.0/(ny_+1);
+
+  for( int i=0 ; i<NumMyElements_ ; ++i ) {
+    int ix, iy;
+    ix = (MyGlobalElements_[i])%nx_;
+    iy = (MyGlobalElements_[i] - ix)/nx_;
+    double x = hx*(ix+1);
+    double y = hy*(iy+1);
+    double ConvX = a_*4*x*(x-1.)*(1.-2*y)/hx;
+    double ConvY = -a_*4*y*(y-1.)*(1.-2*x)/hy;
+
+    // convection part
+    
+    if( ConvX<0 ) {
+      (*VectorE_)[i] += ConvX;
+      (*VectorA_)[i] -= ConvX;
+    } else {
+      (*VectorD_)[i] -= ConvX;
+      (*VectorA_)[i] += ConvX;
+    }
+
+    if( ConvY<0 ) {
+      (*VectorB_)[i] += ConvY;
+      (*VectorA_)[i] -= ConvY;
+    } else {
+      (*VectorC_)[i] -= ConvY;
+      (*VectorA_)[i] += ConvY;
+    }
+
+    // add diffusion part
+    (*VectorA_)[i] += b_*2./(hx*hx) + b_*2./(hy*hy);
+    (*VectorB_)[i] -= b_/(hx*hx);
+    (*VectorC_)[i] -= b_/(hx*hx);
+    (*VectorD_)[i] -= b_/(hy*hy);
+    (*VectorE_)[i] -= b_/(hy*hy);
+      
+    
+  }
+  
+  assert(CreateMatrixCrossStencil2d()==0);
 
   return 0;
 }
@@ -1243,7 +1341,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixLaplace3d(void)
   f_ = -1.0;
   g_ = -1.0;
 
-  CreateMatrixCrossStencil3d();
+  assert(CreateMatrixCrossStencil3d()==0);
 
   return 0;
 }
@@ -1264,6 +1362,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixCrossStencil3d(void)
     if( nx_ * ny_ *nz_ != NumGlobalElements_ ) {
       cerr << ErrorMsg << "The number of global elements must be a perfect cube\n"
 	   << ErrorMsg << "(now is " << NumGlobalElements_ << "). Returning...\n";
+      return -2;
     }
   }
     
@@ -1684,14 +1783,14 @@ int Trilinos_Util_MatrixGallery::ReadHBMatrix(void)
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util_MatrixGallery::CreateBlockMap(void) 
+int Trilinos_Util_MatrixGallery::CreateBlockMap(void) 
 {
         
   if( verbose_ == true ) {
     cout << OutputMsg << "Creating BlockMap...\n";
   }
 
-  if( map_ == NULL ) CreateMap();
+  if( map_ == NULL ) assert(CreateMap()==0);
 
   Epetra_Time Time(*comm_);
     
@@ -1711,24 +1810,27 @@ void Trilinos_Util_MatrixGallery::CreateBlockMap(void)
     cout << OutputMsg << "Time to create BlockMap: "
 	 << Time.ElapsedTime() << " (s)\n";
   }
+
+  return 0;
+  
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util_MatrixGallery::CreateVbrMatrix(void) 
+int Trilinos_Util_MatrixGallery::CreateVbrMatrix(void) 
 {
 
   if( verbose_ == true ) {
     cout << OutputMsg << "Creating VBR matrix...\n";
   }
 
-  if( matrix_ == NULL ) CreateMatrix();
-  if( BlockMap_ == NULL ) CreateBlockMap();
+  if( matrix_ == NULL ) assert(CreateMatrix()==0);
+  if( BlockMap_ == NULL ) assert(CreateBlockMap()==0);
 
   int MaxNnzPerRow = matrix_->MaxNumEntries();
   if( MaxNnzPerRow == 0 ) {
     cerr << ErrorMsg << "something went wrong in `CreateMatrix'\n"
 	 << ErrorMsg << "MaxNnzPerRow == 0 \n";
-    exit( EXIT_FAILURE );
+    return -3;
   }
     
   // create a VBR matrix based on BlockMap
@@ -1789,6 +1891,7 @@ void Trilinos_Util_MatrixGallery::CreateVbrMatrix(void)
 
   VbrMatrix_->FillComplete();
 
+  return 0;
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1797,7 +1900,7 @@ int Trilinos_Util_MatrixGallery::ComputeResidualVbr(double & residual)
 
   // create solution and rhs if needed (matrix_ and ExactSolution are
   //  created by CreateRHS is necessary)
-  if( VbrRhs_ == NULL ) CreateVbrRHS();
+  if( VbrRhs_ == NULL ) assert(CreateVbrRHS()==0);
 
   Epetra_Vector Ax(*BlockMap_);
   assert(VbrMatrix_->Multiply(false, *VbrStartingSolution_, Ax)==0);
@@ -1814,7 +1917,7 @@ int Trilinos_Util_MatrixGallery::ComputeDiffBetweenStartingAndExactSolutionsVbr(
 
   // create solution and rhs if needed (matrix_ and ExactSolution are
   //  created by CreateRHS is necessary)
-  if( VbrRhs_ == NULL ) CreateVbrRHS();
+  if( VbrRhs_ == NULL ) assert(CreateVbrRHS()==0);
 
   Epetra_Vector temp(*BlockMap_);
 
@@ -1931,12 +2034,12 @@ void Trilinos_Util_MatrixGallery::ZeroOutData()
     
 }
 
-void Trilinos_Util_MatrixGallery::Print() 
+void Trilinos_Util_MatrixGallery::PrintMatrixAndVectors() 
 {
-  Print(cout);
+  PrintMatrixAndVectors(cout);
 }
 
-void Trilinos_Util_MatrixGallery::Print(ostream & os) 
+void Trilinos_Util_MatrixGallery::PrintMatrixAndVectors(ostream & os) 
 {
 
   if( comm_->MyPID() == 0 ) {
@@ -1955,7 +2058,7 @@ void Trilinos_Util_MatrixGallery::Print(ostream & os)
 
 }
 
-void Trilinos_Util_MatrixGallery::PrintVbr(ostream & os)
+void Trilinos_Util_MatrixGallery::PrintVbrMatrixAndVectors(ostream & os)
 {
 
   if( comm_->MyPID() == 0 ) {
@@ -1974,5 +2077,54 @@ void Trilinos_Util_MatrixGallery::PrintVbr(ostream & os)
 
 }
 
+void Trilinos_Util_MatrixGallery::PrintVbrMatrixAndVectors() 
+{
+  PrintVbrMatrixAndVectors(cout);
+}
+
+ostream & operator << (ostream& os,
+		       const Trilinos_Util_MatrixGallery & G )
+{
+
+  bool verbose = (G.comm_->MyPID() == 0);
+
+  if( verbose ) {
+    
+    os << " * Solving problem " << G.name_ << endl;
+    os << " * Number of global elements : " << G.NumGlobalElements_ << endl;
+    os << " * Type of Map : " << G.MapType_ << endl;
+    os << " * Number of PDEs : " << G.NumPDEEqns_ << endl;
+
+    // CRS stuff
+    if( G.matrix_ != NULL ) {
+      os << " * the matrix has been created " << endl;
+      os << " * Matrix->OperatorDomainMap().NumGlobalElements() = "
+	 << G.matrix_->OperatorDomainMap().NumGlobalElements() << endl;
+    }
+    if( G.ExactSolution_ != NULL ) 
+      os << " * an exact solution (" << G.ExactSolutionType_
+	 << ") has been created " << endl;
+    if( G.rhs_ != NULL ) 
+      os << " * the RHS has been created " << endl;
+    // VBR stuff
+    if( G.VbrMatrix_ != NULL ) {
+      os << " * VBR matrix has been created " << endl;
+      os << " * VbrMatrix->OperatorDomainMap().NumGlobalElements() = "
+	 << G.VbrMatrix_->OperatorDomainMap().NumGlobalElements() << endl;
+    }
+
+    if( G.VbrExactSolution_ != NULL ) 
+      os << " * a VBR exact solution has been created " << endl;
+    if( G.VbrRhs_ != NULL ) 
+      os << " * the VBR RHS has been created " << endl;
+    
+  }
+
+  //  os << " * On proc " << G.comm_->MyPID() << " there are "
+  //     << G.NumMyElements_ << " elements" << endl;
+
+  return os;
+  
+}
 
 

@@ -53,7 +53,8 @@ static int ML_BuildReorderedDecomposition( int starting_decomposition[],
 static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 					    int N_parts,
 					    int graph_decomposition[],
-					    double bdry_nodes[] );
+					    double bdry_nodes[],
+					    int);
 static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
 					int Naggre, int * NnodesPerAggre,
 					USR_COMM Comm);
@@ -363,7 +364,8 @@ static int ML_BuildReorderedDecomposition( int starting_decomposition[],
 static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 					    int N_parts,
 					    int graph_decomposition[],
-					    double bdry_nodes[] )
+					    double bdry_nodes[],
+					    int N_nonzeros )
 {
 
   int i, j,jj,  count;
@@ -384,7 +386,6 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   int ncon = 1;
   float * tpwgts = NULL;
   int ubvec; /* size = ncon */
-  int N_nonzeros = Amatrix->N_nonzeros;
   int local_rows;
   int * proc_with_parmetis = NULL;
 #ifdef ML_MPI
@@ -462,25 +463,6 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
     if( j>0 ) {
       proc_with_parmetis[N_procs_with_parmetis] = i-1;  
       vtxdist[1+N_procs_with_parmetis++] = (idxtype)offsets[i];
-    }
-  }
-
-  /* verify that N_nonzero is valid, otherwise compute it via
-     a matrix getro */
-
-  if( N_nonzeros == -1 ) {
-
-    N_nonzeros = 0;
-    
-    for (i = 0; i < Nrows; i++ ) {
-
-      if( bdry_nodes[i] != 1.0 ) {
-	
-	ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-			  &rowi_N, 0);
-	N_nonzeros += rowi_N;
-      }
-      
     }
   }
 
@@ -624,7 +606,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 	fprintf( stderr,
 		 "*ML*WRN* This function has been compiled without the configure\n"
 		 "*ML*WRN* option --with-ml_parmetis2x or --with-ml_parmetis3x\n"
-		 "*ML*WRN* I will put all the nodes in the same aggreagate, this time...\n"
+		 "*ML*WRN* I will put all the nodes in the same aggregate, this time...\n"
 		 "*ML*WRN* (file %s, line %d)\n",
 		 __FILE__,
 		 __LINE__);
@@ -814,7 +796,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   *temp_leng, *tem2_index, *tempaggr_index = NULL;
    int                   total_nz = 0;
    int                   count2;
-   int Nnonzeros = 0;
+   int Nnonzeros = 0, Nnonzeros2 = 0;
 
    int reorder_flag;
    /*   int kk, old_upper, nnzs, count2, newptr; */
@@ -906,23 +888,23 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    nbytes = sizeof(double)*(exp_Nrows + 1);
    starting_unamalg_bdry = (double *) ML_allocate(nbytes);
    for (i = Nrows ; i < exp_Nrows; i++) starting_unamalg_bdry[i] = 0.0;
-#ifdef NEIN
+
+   Nnonzeros2 = 0;
    for (i = 0; i < Nrows; i++) {
       starting_unamalg_bdry[i] = 1.0;
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
                         &rowi_N, 0);
-      if (rowi_N > 1) starting_unamalg_bdry[i] = 0.0;
+      if (rowi_N > 1) {
+        starting_unamalg_bdry[i] = 0.0;
+        Nnonzeros2 += rowi_N;
+      }	
    }
 
    /* communicate the boundary information */
 
    ML_exchange_bdry(starting_unamalg_bdry,Amatrix->getrow->pre_comm,
 		    nvertices,comm, ML_OVERWRITE,NULL);
-#else
-   for (i = 0; i < exp_Nrows; i++) {
-     starting_unamalg_bdry[i] = 0.0;
-   }
-#endif
+   
    /* ********************************************************************** */
    /* allocate memory for aggr_index and call METIS to decompose the local   */
    /* graph into the number of parts specified by the user with a call       */
@@ -1001,7 +983,8 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    starting_aggr_count =
      ML_DecomposeGraph_with_ParMETIS( Amatrix, starting_aggr_count,
 				      starting_decomposition,
-				      starting_unamalg_bdry );
+				      starting_unamalg_bdry,
+				      Nnonzeros2 );
 
    if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
      printf("ParMETIS aggregation: using %d aggregates (globally)\n",

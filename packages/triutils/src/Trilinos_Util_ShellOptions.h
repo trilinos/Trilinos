@@ -71,6 +71,9 @@ public:
   void    ShowAll() const;
   void    ShowReallyAll() const;
 
+  friend ostream & operator << (ostream & os,
+				const Trilinos_Util_ShellOptions & S);
+  
 private:
 
 #ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL

@@ -987,7 +987,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 	  fprintf( stderr,
 		   "*ML*WRN* This function has been compiled without the configure\n"
 		   "*ML*WRN* option --with-ml_metis or --with-ml_metis\n"
-		   "*ML*WRN* I will put all the nodes in the same aggreagate, this time...\n"
+		   "*ML*WRN* I will put all the nodes in the same aggregate, this time...\n"
 		   "*ML*WRN* (file %s, line %d)\n",
 		   __FILE__,
 		   __LINE__);
@@ -1118,7 +1118,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   /* Compute the number of edges one has to walk though to move from the    */
   /* "center" of each aggregate up to the boundaries. This is done by the   */
   /* function `ML_Compute_AggregateGraphRadius'. This works on CSR format   */
-  /* (as METIS). I look for nodes on the boundaries of all the aggreates,   */
+  /* (as METIS). I look for nodes on the boundaries of all the aggregates,  */
   /* and mark them in the `dep' vector with 0. All the other nodes (in the  */
   /* interior) will be marked -7). I will give                              */
   /* the entire graph in input; in output, we will have the max radius.     */
