@@ -1,0 +1,243 @@
+
+function f90LB_Set_Pack_Obj_Fn0s(lb,fn_ptr)
+integer(LB_INT) :: f90LB_Set_Pack_Obj_Fn0s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(num_gid_entries, num_lid_entries, global_id, &
+    local_id, dest_proc, size, buf, ierr)
+  use zoltan_types
+  integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: dest_proc, size
+  integer(LB_INT), intent(out) :: buf(*)
+  integer(LB_INT), intent(out) :: ierr
+  end subroutine fn_ptr
+end interface
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+f90LB_Set_Pack_Obj_Fn0s = LB_fw_Set_Fn0s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,loc(fn_ptr))
+#else
+f90LB_Set_Pack_Obj_Fn0s = LB_fw_Set_Fn0s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,fn_ptr)
+#endif
+end function f90LB_Set_Pack_Obj_Fn0s
+
+
+function f90LB_Set_Pack_Obj_Fn1s(lb,fn_ptr,data)
+integer(LB_INT) :: f90LB_Set_Pack_Obj_Fn1s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
+    local_id, dest_proc, size, buf, ierr)
+  use zoltan_types
+  integer(LB_INT) INTENT_IN data(*)
+  integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: dest_proc, size
+  integer(LB_INT), intent(out) :: buf(*)
+  integer(LB_INT), intent(out) :: ierr
+  end subroutine fn_ptr
+end interface
+integer(LB_INT) INTENT_IN data(*)
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+f90LB_Set_Pack_Obj_Fn1s = LB_fw_Set_Fn1s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+f90LB_Set_Pack_Obj_Fn1s = LB_fw_Set_Fn1s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function f90LB_Set_Pack_Obj_Fn1s
+
+
+function f90LB_Set_Pack_Obj_Fn2s(lb,fn_ptr,data)
+integer(LB_INT) :: f90LB_Set_Pack_Obj_Fn2s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
+    local_id, dest_proc, size, buf, ierr)
+  use zoltan_types
+  real(LB_FLOAT) INTENT_IN data(*)
+  integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: dest_proc, size
+  integer(LB_INT), intent(out) :: buf(*)
+  integer(LB_INT), intent(out) :: ierr
+  end subroutine fn_ptr
+end interface
+real(LB_FLOAT) INTENT_IN data(*)
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+f90LB_Set_Pack_Obj_Fn2s = LB_fw_Set_Fn2s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+f90LB_Set_Pack_Obj_Fn2s = LB_fw_Set_Fn2s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function f90LB_Set_Pack_Obj_Fn2s
+
+
+function f90LB_Set_Pack_Obj_Fn3s(lb,fn_ptr,data)
+integer(LB_INT) :: f90LB_Set_Pack_Obj_Fn3s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
+    local_id, dest_proc, size, buf, ierr)
+  use zoltan_types
+  real(LB_DOUBLE) INTENT_IN data(*)
+  integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: dest_proc, size
+  integer(LB_INT), intent(out) :: buf(*)
+  integer(LB_INT), intent(out) :: ierr
+  end subroutine fn_ptr
+end interface
+real(LB_DOUBLE) INTENT_IN data(*)
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+f90LB_Set_Pack_Obj_Fn3s = LB_fw_Set_Fn3s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+f90LB_Set_Pack_Obj_Fn3s = LB_fw_Set_Fn3s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function f90LB_Set_Pack_Obj_Fn3s
+
+
+function f90LB_Set_Pack_Obj_Fn4s(lb,fn_ptr,data)
+integer(LB_INT) :: f90LB_Set_Pack_Obj_Fn4s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
+    local_id, dest_proc, size, buf, ierr)
+  use zoltan_types
+  use lb_user_const
+  type(LB_User_Data_1) INTENT_IN data
+  integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: dest_proc, size
+  integer(LB_INT), intent(out) :: buf(*)
+  integer(LB_INT), intent(out) :: ierr
+  end subroutine fn_ptr
+end interface
+type(LB_User_Data_1) INTENT_IN data
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+f90LB_Set_Pack_Obj_Fn4s = LB_fw_Set_Fn4s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+f90LB_Set_Pack_Obj_Fn4s = LB_fw_Set_Fn4s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function f90LB_Set_Pack_Obj_Fn4s
+
+
+function f90LB_Set_Pack_Obj_Fn5s(lb,fn_ptr,data)
+integer(LB_INT) :: f90LB_Set_Pack_Obj_Fn5s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
+    local_id, dest_proc, size, buf, ierr)
+  use zoltan_types
+  use lb_user_const
+  type(LB_User_Data_2) INTENT_IN data
+  integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: dest_proc, size
+  integer(LB_INT), intent(out) :: buf(*)
+  integer(LB_INT), intent(out) :: ierr
+  end subroutine fn_ptr
+end interface
+type(LB_User_Data_2) INTENT_IN data
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+f90LB_Set_Pack_Obj_Fn5s = LB_fw_Set_Fn5s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+f90LB_Set_Pack_Obj_Fn5s = LB_fw_Set_Fn5s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function f90LB_Set_Pack_Obj_Fn5s
+
+
+function f90LB_Set_Pack_Obj_Fn6s(lb,fn_ptr,data)
+integer(LB_INT) :: f90LB_Set_Pack_Obj_Fn6s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
+    local_id, dest_proc, size, buf, ierr)
+  use zoltan_types
+  use lb_user_const
+  type(LB_User_Data_3) INTENT_IN data
+  integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: dest_proc, size
+  integer(LB_INT), intent(out) :: buf(*)
+  integer(LB_INT), intent(out) :: ierr
+  end subroutine fn_ptr
+end interface
+type(LB_User_Data_3) INTENT_IN data
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+f90LB_Set_Pack_Obj_Fn6s = LB_fw_Set_Fn6s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+f90LB_Set_Pack_Obj_Fn6s = LB_fw_Set_Fn6s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function f90LB_Set_Pack_Obj_Fn6s
+
+
+function f90LB_Set_Pack_Obj_Fn7s(lb,fn_ptr,data)
+integer(LB_INT) :: f90LB_Set_Pack_Obj_Fn7s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
+    local_id, dest_proc, size, buf, ierr)
+  use zoltan_types
+  use lb_user_const
+  type(LB_User_Data_4) INTENT_IN data
+  integer(LB_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(LB_INT), intent(in) :: global_id(*), local_id(*)
+  integer(LB_INT), intent(in) :: dest_proc, size
+  integer(LB_INT), intent(out) :: buf(*)
+  integer(LB_INT), intent(out) :: ierr
+  end subroutine fn_ptr
+end interface
+type(LB_User_Data_4) INTENT_IN data
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+f90LB_Set_Pack_Obj_Fn7s = LB_fw_Set_Fn7s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+f90LB_Set_Pack_Obj_Fn7s = LB_fw_Set_Fn7s(lb_addr,nbytes,LB_PACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function f90LB_Set_Pack_Obj_Fn7s
+
+
