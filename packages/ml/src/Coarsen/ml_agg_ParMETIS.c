@@ -1876,6 +1876,9 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      ML_Operator_Set_Label( Pmatrix2,str2);
      ML_free(str2);
    }
+   /* this must be set so that the hierarchy generation does not abort early
+      in adaptive SA */
+   Pmatrix2->num_PDEs = nullspace_dim;
 
    ML_Operator_Clean( *Pmatrix );
 
