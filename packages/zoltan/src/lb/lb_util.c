@@ -15,6 +15,7 @@
 
 #include "lb_const.h"
 #include "lb_util_const.h"
+#include "all_allo_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -135,4 +136,39 @@ int LB_pad_for_alignment(int num_bytes)
   return(ALIGN_SIZE - (((num_bytes-1) % ALIGN_SIZE) + 1));
 }
 #undef ALIGN_SIZE
+
+
+/* Remove leading & trailing white space and convert to upper case. */
+
+int LB_clean_string(
+char *string1,			/* original string */
+char **pstring2) 		/* cleaned string to return */
+{
+
+    char     *string2;		/* cleaned up string */
+    int       start, end;	/* indices bounding true string */
+    int       length1;		/* length of string 1 */
+    int       i;		/* loop counter */
+
+    length1 = strlen(string1);
+    start = 0;
+    end = length1;
+    while (start < length1 && isspace(string1[start]))
+	start++;
+    while (end > start && isspace(string1[end]))
+	end--;
+
+    string2 = (char *) LB_MALLOC((end - start + 1) * sizeof(char));
+    *pstring2 = string2;
+
+    if (string2 == NULL)
+	return (LB_MEMERR);
+
+    for (i = start; i < end; i++) {
+	*string2++ = toupper(string1[i]);
+    }
+    *string2 = '\0';
+
+    return (LB_OK);
+}
 
