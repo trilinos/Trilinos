@@ -37,7 +37,7 @@ using namespace std;
 using namespace Teuchos;
 
 #ifdef HAVE_TEUCHOS_ARPREC
-#define SType1	   double
+#define SType1	   mp_real
 #else
 #define SType1     double
 #endif
@@ -52,6 +52,9 @@ void ConstructHilbertSumVector(TYPE*, int);
 
 template<typename TYPE>
 bool Cholesky(TYPE*, int);
+
+template<typename TYPE>
+TYPE Solve(int, TYPE);
 
 template<typename TYPE>
 void PrintArrayAsVector(TYPE*, int);
@@ -71,38 +74,65 @@ void PrintArrayAsMatrix(mp_real*, int, int);
 int main(int argc, char *argv[]) {
 
 #ifdef HAVE_TEUCHOS_ARPREC
-  mp::mp_init(40);
+  mp::mp_init(20);
 #endif
 
-  int n = 3;
-  SType1* A = new SType1[n*n];
+  // SType1 dummy = ScalarTraits<SType1>::zero();
+  // SType1 result = Solve(3, dummy);
+  // cout << "result = " << result << endl;
+
+  SType1* A = new SType1[3*3];
+  SType1* b = new SType1[3];
+  SType1* B = new SType1[3*2];
+
   A[0] = 1;
-  A[1] = 2;
-  A[2] = 3;
-  A[3] = 2;
-  A[4] = 5;
-  A[5] = 8;
-  A[6] = 3;
-  A[7] = 8;
-  A[8] = 14;
+  A[1] = 0;
+  A[2] = 0;
+  A[3] = 4;
+  A[4] = 2;
+  A[5] = 0;
+  A[6] = 5;
+  A[7] = 6;
+  A[8] = 3;
 
-  PrintArrayAsMatrix(A, n, n);
+  b[0] = 13;
+  b[1] = 20;
+  b[2] = 12;
 
-  Cholesky(A, n);
+  B[0] = 7;
+  B[1] = 7;
+  B[2] = 3;
+  B[3] = 19;
+  B[4] = 16;
+  B[5] = 6;
 
-  PrintArrayAsMatrix(A, n, n);
+  BLAS<int, SType1> blasObj;
 
-  SType1* H5 = new SType1[5*5];
-  ConstructHilbertMatrix(H5, 5);
-  PrintArrayAsMatrix(H5, 5, 5);
+  PrintArrayAsMatrix(A, 3, 3);
+  PrintArrayAsVector(b, 3);
 
-  SType1* b = new SType1[5];
-  ConstructHilbertSumVector(b, 5);
-  PrintArrayAsVector(b, 5);
+  // void  TRSM (ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType *A, const OrdinalType lda, ScalarType *B, const OrdinalType ldb) const
+  
+  blasObj.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, 3, 1, 1, A, 3, b, 3);
+
+  cout << endl;
+
+  PrintArrayAsVector(b, 3);
+
+  cout << " *** " << endl << endl;
+
+  PrintArrayAsMatrix(A, 3, 3);
+  PrintArrayAsMatrix(B, 3, 2);
+  
+  blasObj.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, 3, 2, 2, A, 3, B, 3);
+ 
+  cout << endl;
+
+  PrintArrayAsMatrix(B, 3, 2);
 
   delete[] A;
-  delete[] H5;
   delete[] b;
+  delete[] B;
 
 #ifdef HAVE_TEUCHOS_ARPREC
   mp::mp_finalize();
@@ -152,6 +182,33 @@ bool Cholesky(TYPE* A, int n) {
     }
   }
   return 1;
+}
+
+template<typename TYPE>
+TYPE Solve(int n, TYPE dummy) {
+  BLAS<int, TYPE> blasObj;
+  TYPE* H = new TYPE[n*n];
+  TYPE* b = new TYPE[n];
+
+  ConstructHilbertMatrix(H, n);
+  ConstructHilbertSumVector(b, n);
+
+  // void COPY (const OrdinalType n, const ScalarType *x, const OrdinalType incx, ScalarType *y, const OrdinalType incy) const -- Copy the vector x to the vector y. 
+
+  PrintArrayAsMatrix(H, n, n);
+
+  TYPE sOne = ScalarTraits<TYPE>::one();
+
+  // void TRSM (ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType *A, const OrdinalType lda, ScalarType *B, const OrdinalType ldb) const
+
+  PrintArrayAsVector(b, n);
+
+  blasObj.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::NON_UNIT_DIAG, n, n, sOne, H, n, b, n);
+
+  PrintArrayAsVector(b, n);
+
+  delete[] H;
+  delete[] b;
 }
 
 template<typename TYPE>
