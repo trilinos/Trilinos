@@ -852,10 +852,9 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
 			   ML_Operator *SPn_mat)
 
 {
-   int         Ncoarse, Nfine, gNfine, gNcoarse, jj;
+  int         Ncoarse, Nfine;
    double      max_eigen = -1.;
    ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
-   ML_Operator **prev_P_tentatives;
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
 
