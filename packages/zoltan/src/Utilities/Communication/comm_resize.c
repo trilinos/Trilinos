@@ -10,7 +10,8 @@
 int       LB_Comm_Resize(
 COMM_OBJ *plan,			/* communication plan object */
 int      *sizes,		/* size of each item I'm sending */
-int       tag)			/* message tag I can use */
+int       tag,			/* message tag I can use */
+int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 {
     int       return_flag;	/* returned error code */
     int       my_proc;		/* my processor ID */
@@ -246,6 +247,9 @@ Mem_Err:
     plan->starts_from_ptr = starts_from_ptr;
     plan->indices_to_ptr = indices_to_ptr;
     plan->indices_from_ptr = indices_from_ptr;
+
+    if (sum_recv_sizes)
+      *sum_recv_sizes = plan->total_recv_size;
 
     return(return_flag);
 
