@@ -96,7 +96,7 @@ bool Manager::reset(Parameter::List& params)
       ptr = new QuasiNewton(utils, params);
     else {
       ptr = NULL;
-      if (Utils::doPrint(NOX::Utils::Warning)) {
+      if (utils.isPrintProcessAndType(NOX::Utils::Warning)) {
 	cerr << "NOX::Direction::Manager::reset() - invalid choice (" 
 	     << method << ") for direction method " << endl;
       }
