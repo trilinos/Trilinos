@@ -1,4 +1,7 @@
 #!/bin/sh
+echo
+echo 'This should be run from the ml root directory'
+echo
 cd lib
 cd Aztec/lib ; pwd; make -f Makefile.template clean; cd ../..
 cd DSuperLU/SRC; make clean; cd ../..
