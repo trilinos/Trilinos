@@ -2843,7 +2843,9 @@ void Trilinos_Util::CrsMatrixGallery::PrintMatrixAndVectors(ostream & os)
 
 }
 
-ostream & Trilinos_Util::operator << (ostream& os,
+namespace Trilinos_Util {
+
+ostream & operator << (ostream& os,
 		                      const Trilinos_Util::CrsMatrixGallery & G )
 {
 
@@ -2875,6 +2877,7 @@ ostream & Trilinos_Util::operator << (ostream& os,
   return os;
   
 }
+} //namespace Trilinos_Util
 
 void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
 							 double * & y,
