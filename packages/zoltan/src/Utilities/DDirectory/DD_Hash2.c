@@ -23,7 +23,8 @@
 
 
 /*****************************************************************************/
-/* LB_Hash is a hash function for Zoltan ids (local or global). 
+/* DD_Hash2 is a hash function for Zoltan ids (local or global). 
+ * It is derived from Zoltan_Hash.
  *
  * Input:
  *   key: a key to hash of type ZOLTAN_ID_PTR

@@ -86,7 +86,7 @@ THIRD_PARTY_INCPATH =
 # If PARMETIS_LIBPATH is defined, compile the ParMETIS interface and 
 # link ParMETIS into zdrive.
 ifdef PARMETIS_LIBPATH
-  GDEFINES     += -DLB_PARMETIS
+  GDEFINES     += -DZOLTAN_PARMETIS
   THIRD_PARTY_LIBS += -lparmetis -lmetis
   THIRD_PARTY_LIBPATH += $(PARMETIS_LIBPATH)
   THIRD_PARTY_INCPATH += $(PARMETIS_INCPATH)
@@ -95,7 +95,7 @@ endif
 # If JOSTLE_LIBPATH is defined, compile the JOSTLE interface and 
 # link JOSTLE into zdrive.
 ifdef JOSTLE_LIBPATH
-  GDEFINES     += -DLB_JOSTLE
+  GDEFINES     += -DZOLTAN_JOSTLE
   THIRD_PARTY_LIBS += -ljostle
   THIRD_PARTY_INCPATH += $(JOSTLE_INCPATH)
   THIRD_PARTY_LIBPATH += $(JOSTLE_LIBPATH)
@@ -357,8 +357,8 @@ zscript:
 	@echo CFLAGS='"$$3"' >> zoltan_script
 	@echo F90CFLAGS='"$$4"' >> zoltan_script
 	@echo INCLUDE_PATH='"$$5"' >> zoltan_script
-	@echo PARMETIS_FLAG='"$${6:+-DLB_PARMETIS}"' >> zoltan_script
-	@echo JOSTLE_FLAG='"$${7:+-DLB_JOSTLE}"' >> zoltan_script
+	@echo PARMETIS_FLAG='"$${6:+-DZOLTAN_PARMETIS}"' >> zoltan_script
+	@echo JOSTLE_FLAG='"$${7:+-DZOLTAN_JOSTLE}"' >> zoltan_script
 	@echo JOSTLE_INCPATH='"$$8"' >> zoltan_script
 	@echo AR='"$$9"' >> zoltan_script
 	@echo shift 9 >> zoltan_script

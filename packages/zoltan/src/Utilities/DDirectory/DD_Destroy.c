@@ -47,7 +47,7 @@ void Zoltan_DD_Destroy (
       }
 
    if ((*dd)->debug_level > 1)
-      ZOLTAN_TRACE_ENTER ((*dd)->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_IN ((*dd)->my_proc, yo, NULL) ;
 
    /* for each linked list head, walk its list freeing memory */
    for (i = 0 ; i < (*dd)->table_length ; i++)
@@ -69,5 +69,5 @@ void Zoltan_DD_Destroy (
    ZOLTAN_FREE (dd) ;                      /* free directory structure     */
 
    if (debug_level > 1)
-      ZOLTAN_TRACE_EXIT (my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_OUT (my_proc, yo, NULL) ;
    }

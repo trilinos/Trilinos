@@ -21,8 +21,8 @@
 #include "reftree_const.h"
 
 
-void LB_Free_Structure(
-LB *lb)				/* load balance structure */
+void Zoltan_Free_Structure(
+  LB *lb)				/* load balance structure */
 {
 /*
  * Free any persistent memory associated with a method.
@@ -31,19 +31,19 @@ LB *lb)				/* load balance structure */
   switch (lb->Method) {
 
     case RCB:
-      LB_RCB_Free_Structure(lb);
+      Zoltan_RCB_Free_Structure(lb);
       break;
 
     case RIB:
-      LB_RIB_Free_Structure(lb);
+      Zoltan_RIB_Free_Structure(lb);
       break;
 
     case OCTPART:
-      LB_OCT_Free_Structure(lb);
+      Zoltan_Oct_Free_Structure(lb);
       break;
 
     case REFTREE:
-      LB_Reftree_Free_Structure(lb);
+      Zoltan_Reftree_Free_Structure(lb);
       break;
 /*
  * Add calls to additional method-specific free routines here.

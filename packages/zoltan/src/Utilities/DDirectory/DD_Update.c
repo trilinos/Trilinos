@@ -57,7 +57,7 @@ int Zoltan_DD_Update (
    char            *yo = "Zoltan_DD_Update" ;
 
    if (dd != NULL && dd->debug_level > 1)
-      ZOLTAN_TRACE_ENTER(dd->my_proc, yo, NULL);
+      ZOLTAN_TRACE_IN(dd->my_proc, yo, NULL);
 
    /* input sanity checking */
    if (dd == NULL || count < 0 || (gid == NULL && count > 0))
@@ -65,7 +65,7 @@ int Zoltan_DD_Update (
       ZOLTAN_PRINT_ERROR ((dd == NULL ? ZOLTAN_DD_NO_PROC : dd->my_proc), yo,
        "Invalid input argument.") ;
       if (dd != NULL && dd->debug_level > 1)
-        ZOLTAN_TRACE_EXIT((dd == NULL ? ZOLTAN_DD_NO_PROC : dd->my_proc), yo,
+        ZOLTAN_TRACE_OUT((dd == NULL ? ZOLTAN_DD_NO_PROC : dd->my_proc), yo,
          NULL);
       return ZOLTAN_DD_INPUT_ERROR ;
       }
@@ -87,7 +87,7 @@ int Zoltan_DD_Update (
          {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc proc list.") ;
          if (dd->debug_level > 1)
-            ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
+            ZOLTAN_TRACE_OUT(dd->my_proc, yo, NULL);
          return ZOLTAN_DD_MEMORY_ERROR ;
          }
       }
@@ -202,7 +202,7 @@ fini:
       }
 
    if (dd->debug_level > 1)
-      ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
+      ZOLTAN_TRACE_OUT(dd->my_proc, yo, NULL);
 
    return err ;
    }
@@ -232,7 +232,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
 
 
    if (dd != NULL && dd->debug_level > 2)
-      ZOLTAN_TRACE_ENTER (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL) ;
 
    /* input sanity checking */
    if (dd == NULL || owner  < 0 || owner >= dd->nproc || gid == NULL)
@@ -241,7 +241,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
        yo, "Invalid input parameter.") ;
 
       if (dd != NULL && dd->debug_level > 2)
-         ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+         ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
 
       return ZOLTAN_DD_INPUT_ERROR ;
       }
@@ -269,7 +269,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
              {
              (*ptr)->errcheck = owner ;
              if (dd->debug_level > 2)
-                ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+                ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
              return ZOLTAN_DD_NORMAL_RETURN ;  /* ignore all errors */
              }
 
@@ -284,7 +284,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
 
           ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Multiply defined GID.") ;
           if (dd->debug_level > 2)
-             ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+             ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
 
           return ZOLTAN_DD_GID_REDEFINED_ERROR ;
           }
@@ -296,7 +296,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc new Node.") ;
       if (dd->debug_level > 2)
-         ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+         ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
       return ZOLTAN_DD_MEMORY_ERROR ;
       }
 
@@ -314,7 +314,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
    (*ptr)->errcheck  = owner ;
 
    if (dd->debug_level > 2)
-      ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
 
    return ZOLTAN_DD_GID_ADDED ;
    }

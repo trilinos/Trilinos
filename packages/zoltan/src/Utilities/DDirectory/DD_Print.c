@@ -43,7 +43,7 @@ int Zoltan_DD_Print (
       return ZOLTAN_DD_INPUT_ERROR ;
       }
    if (dd->debug_level > 1)
-      ZOLTAN_TRACE_ENTER (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL) ;
 
    /* walk linked list printing each node */
    for (i = 0 ; i < dd->table_length ; i++)
@@ -58,7 +58,7 @@ int Zoltan_DD_Print (
          }
 
    if (dd->debug_level > 1)
-      ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
    return ZOLTAN_DD_NORMAL_RETURN ;
    }
 

@@ -35,13 +35,15 @@
   fprintf(stderr, "[%d] Zoltan WARNING in %s (line %d of %s):  %s\n", \
           proc, yo, __LINE__, __FILE__, str);
 
-#define ZOLTAN_TRACE_ENTER(proc,yo,str) \
-  printf("ZOLTAN (Processor %d) Entering %s  %s\n", (proc), (yo), \
+#define ZOLTAN_TRACE(proc,where,yo,str) \
+  printf("ZOLTAN (Processor %d) %s %s  %s\n", (proc), (where), (yo), \
          ((str) != NULL ? (str) : " "));
 
-#define ZOLTAN_TRACE_EXIT(proc,yo,str) \
-  printf("ZOLTAN (Processor %d) Leaving %s  %s\n", (proc), (yo), \
-         ((str) != NULL ? (str) : " "));
+#define ZOLTAN_TRACE_IN(proc,yo,str) \
+  ZOLTAN_TRACE((proc),"Entering",(yo),(str));
+
+#define ZOLTAN_TRACE_OUT(proc,yo,str) \
+  ZOLTAN_TRACE((proc),"Exiting",(yo),(str));
 
 #define ZOLTAN_PRINT_INFO(proc,yo,str) \
   printf("ZOLTAN (Processor %d) %s: %s\n", (proc), (yo), \

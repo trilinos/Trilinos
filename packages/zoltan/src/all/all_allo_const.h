@@ -17,8 +17,8 @@
 #include "lb_const.h"
 #include "mem_const.h"
 
-extern int LB_Set_Malloc_Param(char *, char *);
-extern void LB_Free_Structure(LB *);
+extern int Zoltan_Set_Malloc_Param(char *, char *);
+extern void Zoltan_Free_Structure(LB *);
 
 /* function prototypes for Fortran allocation functions */
 
@@ -35,22 +35,22 @@ typedef void ZOLTAN_FORT_FREE_INT_FN(int *arg);
 #endif
 #endif
 
-/* type selector for LB_Special_Malloc */
+/* type selector for Zoltan_Special_Malloc */
 
-enum LB_Special_Malloc_Type {
-  LB_SPECIAL_MALLOC_INT,
-  LB_SPECIAL_MALLOC_GID,
-  LB_SPECIAL_MALLOC_LID
+enum Zoltan_Special_Malloc_Type {
+  ZOLTAN_SPECIAL_MALLOC_INT,
+  ZOLTAN_SPECIAL_MALLOC_GID,
+  ZOLTAN_SPECIAL_MALLOC_LID
 };
 
-typedef enum LB_Special_Malloc_Type LB_SPECIAL_MALLOC_TYPE;
+typedef enum Zoltan_Special_Malloc_Type ZOLTAN_SPECIAL_MALLOC_TYPE;
 
 /* function declarations for special malloc */
 
-extern int LB_Special_Malloc(LB *lb, void **array, int size,
-                      LB_SPECIAL_MALLOC_TYPE type);
-extern int LB_Special_Free(LB *lb, void **array,
-                      LB_SPECIAL_MALLOC_TYPE type);
+extern int Zoltan_Special_Malloc(LB *lb, void **array, int size,
+                      ZOLTAN_SPECIAL_MALLOC_TYPE type);
+extern int Zoltan_Special_Free(LB *lb, void **array,
+                      ZOLTAN_SPECIAL_MALLOC_TYPE type);
 extern void Zoltan_Register_Fort_Malloc(ZOLTAN_FORT_MALLOC_INT_FN *,
                                         ZOLTAN_FORT_FREE_INT_FN *);
 

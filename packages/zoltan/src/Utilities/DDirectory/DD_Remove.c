@@ -50,7 +50,7 @@ int Zoltan_DD_Remove (
 
 
    if (dd != NULL && dd->debug_level > 1)
-      ZOLTAN_TRACE_ENTER (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL) ;
 
    /* input sanity checks */
    if (dd == NULL || count < 0 || (gid == NULL && count > 0))
@@ -58,7 +58,7 @@ int Zoltan_DD_Remove (
       ZOLTAN_PRINT_ERROR ((dd == NULL) ? ZOLTAN_DD_NO_PROC : dd->my_proc,
        yo, "Invalid input argument.") ;
       if (dd != NULL && dd->debug_level > 1)
-         ZOLTAN_TRACE_EXIT ((dd == NULL) ? ZOLTAN_DD_NO_PROC : dd->my_proc,
+         ZOLTAN_TRACE_OUT ((dd == NULL) ? ZOLTAN_DD_NO_PROC : dd->my_proc,
           yo, NULL) ;
       return ZOLTAN_DD_INPUT_ERROR ;
       }
@@ -71,7 +71,7 @@ int Zoltan_DD_Remove (
          {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc proc list.") ;
          if (dd->debug_level > 1)
-            ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+            ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
          return ZOLTAN_DD_MEMORY_ERROR ;
          }
       }
@@ -164,7 +164,7 @@ int Zoltan_DD_Remove (
       ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
       }
    if (dd->debug_level > 1)
-      ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
 
    return err ;
    }
@@ -198,7 +198,7 @@ static int DD_Remove_Local (Zoltan_DD_Directory *dd,
       }
 
    if (dd->debug_level > 2)
-      ZOLTAN_TRACE_ENTER (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL) ;
 
    /* compute offset into hash table to find head of linked list */
    index = DD_Hash2 (gid, dd->gid_length, dd->table_length) ;
@@ -214,7 +214,7 @@ static int DD_Remove_Local (Zoltan_DD_Directory *dd,
          ZOLTAN_FREE (&old) ;       /* now OK to delete node */
 
          if (dd->debug_level > 2)
-            ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+            ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
 
          return ZOLTAN_DD_NORMAL_RETURN ;
          }
@@ -222,7 +222,7 @@ static int DD_Remove_Local (Zoltan_DD_Directory *dd,
 
    /* We get here only if the global ID has not been found */
    if (dd->debug_level > 2)
-      ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
 
    return ZOLTAN_DD_GID_NOT_FOUND_ERROR ;
    }

@@ -50,7 +50,7 @@ void Zoltan_DD_Stats (
       }
 
    if (dd->debug_level > 1)
-      ZOLTAN_TRACE_ENTER (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL) ;
 
    /* walk down each list in hash table to find every Node */
    for (i = 0 ; i < dd->table_length ; i++)
@@ -79,5 +79,5 @@ void Zoltan_DD_Stats (
    ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
 
    if (dd->debug_level > 1)
-      ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
    }

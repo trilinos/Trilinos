@@ -29,8 +29,9 @@
 int Zoltan_DD_Create (
  Zoltan_DD_Directory **dd,    /* contains directory state and pointers */
  MPI_Comm comm,               /* Dup'ed and saved for future use       */
- int num_gid,                 /* Eliminate dependence on LB struct     */
- int num_lid,                 /* Ditto. If zero, ignore LIDs           */
+ int num_gid,                 /* Number of entries in a global ID.     */
+ int num_lid,                 /* Number of entries in a local ID.      
+                                 If zero, ignore LIDs                  */
  int user_length,             /* Optional user data length, 0 ignore   */
  int table_length,            /* sizeof hash table, use default if 0   */
  int debug_level)             /* control actions to errors, normally 0 */
@@ -47,14 +48,14 @@ int Zoltan_DD_Create (
       }
 
    if (debug_level > 1)
-      ZOLTAN_TRACE_ENTER (my_proc, yo, NULL);
+      ZOLTAN_TRACE_IN (my_proc, yo, NULL);
 
    /* input sanity check */
    if (dd == NULL || num_gid < 1 || table_length < 0 || num_lid < 0)
       {
       ZOLTAN_PRINT_ERROR (my_proc, yo, "Invalid input argument.") ;
       if (debug_level > 1)
-         ZOLTAN_TRACE_EXIT (my_proc, yo, NULL);
+         ZOLTAN_TRACE_OUT (my_proc, yo, NULL);
       return ZOLTAN_DD_INPUT_ERROR ;
       }
 
@@ -66,7 +67,7 @@ int Zoltan_DD_Create (
       {
       ZOLTAN_PRINT_ERROR (my_proc, yo, "Can not malloc hash table.") ;
       if (debug_level > 1)
-        ZOLTAN_TRACE_EXIT(my_proc, yo, NULL);
+        ZOLTAN_TRACE_OUT(my_proc, yo, NULL);
       return ZOLTAN_DD_MEMORY_ERROR ;
       }
 
@@ -108,12 +109,12 @@ int Zoltan_DD_Create (
          {
          ZOLTAN_PRINT_ERROR (my_proc, yo, "MPI Problem, unable to continue.") ;
          if (debug_level > 1)
-           ZOLTAN_TRACE_EXIT(my_proc, yo, NULL);
+           ZOLTAN_TRACE_OUT(my_proc, yo, NULL);
          return ZOLTAN_DD_MPI_ERROR ;
          }
 
    if (debug_level > 1)
-      ZOLTAN_TRACE_EXIT (my_proc, yo, NULL);
+      ZOLTAN_TRACE_OUT (my_proc, yo, NULL);
 
    return ZOLTAN_DD_NORMAL_RETURN ;
    }

@@ -52,7 +52,7 @@ int Zoltan_DD_Find (
    char            *yo = "Zoltan_DD_Find" ;
 
    if (dd != NULL && dd->debug_level > 1)
-      ZOLTAN_TRACE_ENTER(dd->my_proc, yo, NULL);
+      ZOLTAN_TRACE_IN(dd->my_proc, yo, NULL);
 
    /* input sanity check */
    if (dd == NULL || count < 0 || ((owner == NULL || gid == NULL) && count > 0))
@@ -60,7 +60,7 @@ int Zoltan_DD_Find (
       ZOLTAN_PRINT_ERROR ((dd == NULL ? ZOLTAN_DD_NO_PROC : dd->my_proc),
        yo, "Invalid input argument.") ;
       if (dd != NULL && dd->debug_level > 1)
-         ZOLTAN_TRACE_EXIT((dd == NULL ? ZOLTAN_DD_NO_PROC : dd->my_proc),
+         ZOLTAN_TRACE_OUT((dd == NULL ? ZOLTAN_DD_NO_PROC : dd->my_proc),
           yo, NULL);
       return ZOLTAN_DD_INPUT_ERROR ;
       }
@@ -73,7 +73,7 @@ int Zoltan_DD_Find (
         {
         ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc proc list.") ;
         if (dd->debug_level > 1)
-           ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
+           ZOLTAN_TRACE_OUT(dd->my_proc, yo, NULL);
         return ZOLTAN_DD_MEMORY_ERROR ;
         }
       }
@@ -87,7 +87,7 @@ int Zoltan_DD_Find (
          ZOLTAN_FREE (&procs) ;
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc send buffer.") ;
          if (dd->debug_level > 1)
-            ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
+            ZOLTAN_TRACE_OUT(dd->my_proc, yo, NULL);
          return ZOLTAN_DD_MEMORY_ERROR ;
          }
       }
@@ -205,7 +205,7 @@ fini:
       }
 
    if (dd->debug_level > 1)
-      ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
+      ZOLTAN_TRACE_OUT(dd->my_proc, yo, NULL);
 
    return err ;
    }
@@ -242,7 +242,7 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
       return ZOLTAN_DD_INPUT_ERROR ;
       }
    if (dd->debug_level > 2)
-      ZOLTAN_TRACE_ENTER (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_IN (dd->my_proc, yo, NULL) ;
 
    /* compute offset into hash table to find head of linked list */
    index = DD_Hash2 (gid, dd->gid_length, dd->table_length) ;
@@ -261,7 +261,7 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
          if (partition != NULL)   *partition = ptr->partition ;
 
          if (dd->debug_level > 2)
-            ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+            ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
 
          return ZOLTAN_DD_NORMAL_RETURN ;
          }
@@ -269,7 +269,7 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
    if (dd->debug_level > 0) 
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "GID not found.");
    if (dd->debug_level > 2) 
-      ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+      ZOLTAN_TRACE_OUT (dd->my_proc, yo, NULL) ;
 
    return ZOLTAN_DD_GID_NOT_FOUND_ERROR ;
    }

@@ -20,11 +20,11 @@
 
 /* Fortran memory allocation callback functions */
 
-static ZOLTAN_FORT_MALLOC_INT_FN *LB_Fort_Malloc_int;
-static ZOLTAN_FORT_FREE_INT_FN *LB_Fort_Free_int;
+static ZOLTAN_FORT_MALLOC_INT_FN *Zoltan_Fort_Malloc_int;
+static ZOLTAN_FORT_FREE_INT_FN *Zoltan_Fort_Free_int;
 
 
-int LB_Set_Malloc_Param(
+int Zoltan_Set_Malloc_Param(
 char *name,			/* name of variable */
 char *val)			/* value of variable */
 {
@@ -36,7 +36,7 @@ char *val)			/* value of variable */
 	{ NULL, NULL, NULL }
     };
 
-    status = LB_Check_Param(name, val, malloc_params, &result, &index);
+    status = Zoltan_Check_Param(name, val, malloc_params, &result, &index);
     if (status == 0 && index == 0) {
 	Zoltan_Memory_Debug(result.ival);
 	status = 3;
@@ -49,42 +49,42 @@ char *val)			/* value of variable */
 /******************************************************************************
  * Special allocation for routines that allocate an array and return pointer.
  *
- * LB_Special_Malloc allows the allocation to be done from either C or Fortran.
+ * Zoltan_Special_Malloc allows the allocation to be done from either C or Fortran.
  *
- * LB_Special_Free frees memory allocated by LB_Special_Malloc
+ * Zoltan_Special_Free frees memory allocated by Zoltan_Special_Malloc
  *
- * LB_Register_Fort_Malloc is called by the wrappers for the Fortran
+ * Zfw_Register_Fort_Malloc is called by the wrappers for the Fortran
  * interface to provide pointers to the Fortran allocation/free routines.
  *
- * int LB_Special_Malloc(LB *lb, void **array, int size,
- *                       LB_SPECIAL_MALLOC_TYPE type)
+ * int Zoltan_Special_Malloc(LB *lb, void **array, int size,
+ *                       ZOLTAN_SPECIAL_MALLOC_TYPE type)
  *
  *   lb    -- the load balancing structure in use
  *   array -- int**; returned as a
  *            pointer to the allocated space
  *   size  -- number of elements to be allocated in the array
- *   type  -- the type of array; LB_SPECIAL_MALLOC_INT, LB_SPECIAL_MALLOC_GID,
- *            or LB_SPECIAL_MALLOC_LID
+ *   type  -- the type of array; ZOLTAN_SPECIAL_MALLOC_INT, ZOLTAN_SPECIAL_MALLOC_GID,
+ *            or ZOLTAN_SPECIAL_MALLOC_LID
  *
  * The return value is 1 if the allocation succeeded, 0 if it failed.
  *
- * int LB_Special_Free(LB *lb, void **array,
-                       LB_SPECIAL_MALLOC_TYPE type)
+ * int Zoltan_Special_Free(LB *lb, void **array,
+                       ZOLTAN_SPECIAL_MALLOC_TYPE type)
  *
  *****************************************************************************/
 
 void Zoltan_Register_Fort_Malloc(ZOLTAN_FORT_MALLOC_INT_FN *fort_malloc_int,
                                  ZOLTAN_FORT_FREE_INT_FN *fort_free_int)
 {
-   LB_Fort_Malloc_int = fort_malloc_int;
-   LB_Fort_Free_int = fort_free_int;
+   Zoltan_Fort_Malloc_int = fort_malloc_int;
+   Zoltan_Fort_Free_int = fort_free_int;
 }
 
-int LB_Special_Malloc(LB *lb, void **array, int size,
-                      LB_SPECIAL_MALLOC_TYPE type)
+int Zoltan_Special_Malloc(LB *lb, void **array, int size,
+                      ZOLTAN_SPECIAL_MALLOC_TYPE type)
 {
    int *ret_addr, success;
-   char *yo = "LB_Special_Malloc";
+   char *yo = "Zoltan_Special_Malloc";
 
    success = 1;
    if (lb->Fortran) {
@@ -92,40 +92,40 @@ int LB_Special_Malloc(LB *lb, void **array, int size,
 /* allocation from Fortran */
 
       switch(type) {
-      case LB_SPECIAL_MALLOC_INT:
+      case ZOLTAN_SPECIAL_MALLOC_INT:
 #ifdef PGI /* special case for PGI Fortran compiler */
-         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
+         Zoltan_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
 #else
 #ifdef FUJITSU /* special case for Fujitsu and Lahey Fortran compilers */
-         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2],0,0);
+         Zoltan_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2],0,0);
 #else
-         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
+         Zoltan_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
 #endif
 #endif
          if (ret_addr==0) success=0;
          break;
-      case LB_SPECIAL_MALLOC_GID:
+      case ZOLTAN_SPECIAL_MALLOC_GID:
          size *= lb->Num_GID;
 #ifdef PGI
-         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
+         Zoltan_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
 #else
 #ifdef FUJITSU
-         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2],0,0);
+         Zoltan_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2],0,0);
 #else
-         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
+         Zoltan_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
 #endif
 #endif
          if (ret_addr==0) success=0;
          break;
-      case LB_SPECIAL_MALLOC_LID:
+      case ZOLTAN_SPECIAL_MALLOC_LID:
          size *= lb->Num_LID;
 #ifdef PGI
-         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
+         Zoltan_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
 #else
 #ifdef FUJITSU
-         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2],0,0);
+         Zoltan_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2],0,0);
 #else
-         LB_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
+         Zoltan_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr);
 #endif
 #endif
          if (ret_addr==0) success=0;
@@ -145,16 +145,16 @@ int LB_Special_Malloc(LB *lb, void **array, int size,
 /* allocation from C */
 
       switch(type) {
-      case LB_SPECIAL_MALLOC_INT:
+      case ZOLTAN_SPECIAL_MALLOC_INT:
          *array = (int *) ZOLTAN_MALLOC(size*sizeof(int));
          if (*array==NULL) success=0;
          break;
-      case LB_SPECIAL_MALLOC_GID:
-         *array = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, size);
+      case ZOLTAN_SPECIAL_MALLOC_GID:
+         *array = ZOLTAN_MALLOC_GID_ARRAY(lb, size);
          if (*array==NULL) success=0;
          break;
-      case LB_SPECIAL_MALLOC_LID:
-         *array = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, size);
+      case ZOLTAN_SPECIAL_MALLOC_LID:
+         *array = ZOLTAN_MALLOC_LID_ARRAY(lb, size);
          if (lb->Num_LID > 0 && *array==NULL) success = 0;
          break;
       default:
@@ -170,11 +170,11 @@ int LB_Special_Malloc(LB *lb, void **array, int size,
 /****************************************************************************/
 /****************************************************************************/
 
-int LB_Special_Free(LB *lb, void **array,
-                    LB_SPECIAL_MALLOC_TYPE type)
+int Zoltan_Special_Free(LB *lb, void **array,
+                    ZOLTAN_SPECIAL_MALLOC_TYPE type)
 {
    int success;
-   char *yo = "LB_Special_Free";
+   char *yo = "Zoltan_Special_Free";
 
    success = 1;
    if (lb->Fortran) {
@@ -182,36 +182,36 @@ int LB_Special_Free(LB *lb, void **array,
 /* deallocation from Fortran */
 
       switch(type) {
-      case LB_SPECIAL_MALLOC_INT:
+      case ZOLTAN_SPECIAL_MALLOC_INT:
 #ifdef PGI /* special case for PGI Fortran compiler */
-         LB_Fort_Free_int((int *)(array[1]),array[2]);
+         Zoltan_Fort_Free_int((int *)(array[1]),array[2]);
 #else
 #ifdef FUJITSU /* special case for Fujitsu and Lahey Fortran compilers */
-         LB_Fort_Free_int((int *)(array[1]),array[2]);
+         Zoltan_Fort_Free_int((int *)(array[1]),array[2]);
 #else
-         LB_Fort_Free_int((int *)(array[1]));
+         Zoltan_Fort_Free_int((int *)(array[1]));
 #endif
 #endif
          break;
-      case LB_SPECIAL_MALLOC_GID:
+      case ZOLTAN_SPECIAL_MALLOC_GID:
 #ifdef PGI
-         LB_Fort_Free_int((int *)(array[1]),array[2]);
+         Zoltan_Fort_Free_int((int *)(array[1]),array[2]);
 #else
 #ifdef FUJITSU
-         LB_Fort_Free_int((int *)(array[1]),array[2]);
+         Zoltan_Fort_Free_int((int *)(array[1]),array[2]);
 #else
-         LB_Fort_Free_int((int *)(array[1]));
+         Zoltan_Fort_Free_int((int *)(array[1]));
 #endif
 #endif
          break;
-      case LB_SPECIAL_MALLOC_LID:
+      case ZOLTAN_SPECIAL_MALLOC_LID:
 #ifdef PGI
-         LB_Fort_Free_int((int *)(array[1]),array[2]);
+         Zoltan_Fort_Free_int((int *)(array[1]),array[2]);
 #else
 #ifdef FUJITSU
-         LB_Fort_Free_int((int *)(array[1]),array[2]);
+         Zoltan_Fort_Free_int((int *)(array[1]),array[2]);
 #else
-         LB_Fort_Free_int((int *)(array[1]));
+         Zoltan_Fort_Free_int((int *)(array[1]));
 #endif
 #endif
          break;
