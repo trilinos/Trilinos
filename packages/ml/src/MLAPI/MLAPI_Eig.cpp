@@ -9,6 +9,7 @@
 #include "float.h"
 #include <fstream>
 #include "Epetra_MultiVector.h"
+#include "Teuchos_ParameterList.hpp"
 
 namespace MLAPI {
 
