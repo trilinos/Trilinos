@@ -28,6 +28,10 @@
 // @HEADER
 */
 
+#ifndef __DEFINESH__
+#define __DEFINESH__
+
+
 #undef CBLAS
 #undef DEBUG
 #define  OVERLAP
@@ -180,3 +184,4 @@
 #define X_PERMUTE_ spermute_
 #endif
 
+#endif
