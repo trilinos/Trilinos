@@ -2306,6 +2306,13 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel())
 	printf("ML_Gen_MultiLevelHierarchy (level %d) : Gen RAP\n", level);
       ML_Gen_AmatrixRAP(ml, level, next);
+#ifdef ML_MPI
+MPI_Barrier(MPI_COMM_WORLD);
+#endif
+      ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, ML_TRUE);
+#ifdef ML_MPI
+MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
 #ifdef ML_TIMING
       t0 = GetClock() - t0;
