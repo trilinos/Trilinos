@@ -54,15 +54,14 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
     nextarg++;
   }
 
-  //  char tmp;
-  //  if (rank==0) cout << "Press any key to continue..."<< endl;
-  //  if (rank==0) cin >> tmp;
-  //  Comm.Barrier();
+  // char tmp;
+  // if (rank==0) cout << "Press any key to continue..."<< endl;
+  // if (rank==0) cin >> tmp;
+  // Comm.Barrier();
 
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
-  if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
-		    << " is alive."<<endl;
+  if (verbose) cout << Comm <<endl;
 
   int sqrtNumProc = (int) ceil(sqrt((double) NumProc));
 
@@ -309,7 +308,7 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
     assert(ILU11.ConstructFilledGraph()==0);
 
     if (verbose) cout << "\n\nPrint out Level 1 ILU graph of tridiagonal matrix with IndexBase = 1.\n\n" << endl;
-    if (verbose) cout << ILU11 << endl;
+    if (verbose1) cout << ILU11 << endl;
 
     
   // Release all objects
