@@ -968,7 +968,7 @@ int ML_Aggregate_Visualize( ML *ml, ML_Aggregate *ag, int MaxMgLevels,
   }
   
     
-  return;
+  return 0;
   
 } /* ML_Aggregate_Visualize */
 
@@ -1071,7 +1071,7 @@ int ML_Info_DomainDecomp( ML_Aggregate_Viz_Stats info,
   rowi_col = NULL; rowi_val = NULL;
   allocated = 0; 
   
-  return;
+  return 0;
   
 } /* ML_VisualizeWithOpenDX */
 
