@@ -50,7 +50,7 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    /* ----------------------------------------------------------------- */
 
    if ( ag == NULL ) ML_Aggregate_Create( &ml_ag );
-	 else ml_ag=ag;
+   else ml_ag=ag;
    ML_Aggregate_Set_MaxLevels( ml_ag, ml->ML_num_levels);
    ML_Aggregate_Set_StartLevel( ml_ag, start );
 
@@ -69,7 +69,7 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
       /* -------------------------------------------------------------- */
       /* coarse scheme == 4 ==> domain decomposition                    */
       /* -------------------------------------------------------------- */
-      if ( ag->coarsen_scheme == 4 )
+      if ( ml_ag->coarsen_scheme == 4 )
       {
          level = ML_Gen_MGHierarchy(ml, start, ML_AGG_Increment_Two_Level,
                      ML_AGG_Gen_DDProlongator, NULL, ML_INTERNAL, ml_ag);
@@ -82,7 +82,7 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    }
    else if (increment_or_decrement == ML_DECREASING)
    {
-      if ( ag->coarsen_scheme == 4 )
+      if ( ml_ag->coarsen_scheme == 4 )
       {
          level = ML_Gen_MGHierarchy(ml, start, ML_AGG_Decrement_Two_Level,
                      ML_AGG_Gen_DDProlongator, NULL, ML_INTERNAL, ml_ag);
