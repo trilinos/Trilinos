@@ -744,6 +744,7 @@ bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vecto
   outputList.setParameter("Number of Linear Iterations", 
 		 (linearIters + aztecSolver->NumIters()));
   outputList.setParameter("True Unscaled Residual", aztecSolver->TrueResidual());
+  outputList.setParameter("Scaled Residual", aztecSolver->ScaledResidual());
 
   // Remove the solver and set to NULL.
   destroyAztecSolver();

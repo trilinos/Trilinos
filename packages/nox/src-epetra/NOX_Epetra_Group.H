@@ -180,7 +180,8 @@ A NOX::ParameterList is supplied in the constructor and during calls to the NOX:
 The parameter list passed into the group during a computeNewton() or ApplyJacobianInverse() will have an "Output" sublist created that contains the following parameters:
 <ul>
 <li> "Number of Linear Iterations" - Number of iterations used by the linear solver <br>
-<li> "True Unscaled Residual"<br>
+<li> "True Unscaled Residual" - Actual unscaled linear solve residual<br>
+<li> "Scaled Residual" - Actual residual achieved by the linear solver computed via the method requested for comparison against the desired "Tolerance".<br>
 </ul><br>
 
  */
