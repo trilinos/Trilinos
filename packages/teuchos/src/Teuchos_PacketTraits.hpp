@@ -46,7 +46,7 @@ namespace Teuchos {
 		static inline const char* name()           {return("double");};
 	};
 
-#ifndef NO_COMPLEX
+#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_EXPERIMENTAL)
 #include <complex>
 
 	template<>
@@ -63,8 +63,8 @@ namespace Teuchos {
 		static inline const char* name()           {return("complex<double>");};
 	};
 
-#endif // NO_COMPLEX
+#endif // HAVE_COMPLEX || HAVE_COMPLEX_H
 
 } // namespace Teuchos
 
-#endif // _TEUCHOS_ORDINALTRAITS_HPP_
+#endif // _TEUCHOS_PACKETTRAITS_HPP_

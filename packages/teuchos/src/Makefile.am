@@ -25,7 +25,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_CompObject.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
-	$(srcdir)/Teuchos_DenseMatrix.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_LAPACK.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
@@ -37,6 +36,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ReportError.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
+	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
+	$(srcdir)/Teuchos_SerialDenseVector.hpp \
 	$(srcdir)/Teuchos_TestForException.hpp\
 	$(srcdir)/Teuchos_Time.hpp 
 

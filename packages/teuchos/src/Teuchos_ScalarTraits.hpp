@@ -11,7 +11,7 @@
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ConfigDefs.hpp"
-#if defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)
+#if ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_EXPERIMENTAL)
 #define ComplexFloat complex<float>
 #define ComplexDouble complex<double>
 #endif
@@ -148,7 +148,7 @@ namespace Teuchos {
     static inline double squareroot(double x) { return sqrt(x); };
   };
   
-#if defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)
+#if ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_EXPERIMENTAL)
   
   template<> 
   struct ScalarTraits<ComplexFloat>
