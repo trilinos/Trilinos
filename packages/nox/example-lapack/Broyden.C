@@ -192,11 +192,11 @@ int main()
   NOX::Parameter::List& directionParameters = 
     solverParameters.sublist("Direction");
   directionParameters.setParameter("Method","Tensor");
+  directionParameters.setParameter("Compute Step","Tensor");
 
   // Sublist for local solver parameters
   NOX::Parameter::List& localSolverParameters = 
     directionParameters.sublist("Tensor").sublist("Linear Solver");
-  localSolverParameters.setParameter("Compute Step","Tensor");
   //localSolverParameters.setParameter("Tolerance", 1e-4);
   //localSolverParameters.setParameter("Reorthogonalize","Always");
   //localSolverParameters.setParameter("Output Frequency",1);
