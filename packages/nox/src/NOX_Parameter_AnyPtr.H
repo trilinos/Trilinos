@@ -55,12 +55,12 @@ namespace NOX {
     public:
   
       //! Constructor, non-const reference
-      template <class T> AnyPtr(T* ptr) 
+      template <typename T> AnyPtr(T* ptr) 
 	: data(ptr), 
 	  type_string("Generic AnyPtr Container") {}
 
       //! Constructor, const reference
-      template <class T> AnyPtr(const T* ptr) 
+      template <typename T> AnyPtr(const T* ptr) 
 	: data(ptr), 
 	  type_string("Generic AnyPtr Container") {}
 
@@ -90,17 +90,17 @@ namespace NOX {
 	return stream << data << endl; } 
 
       //! Return whether stored data type is T
-      template <class T> bool isType() const {
+      template <typename T> bool isType() const {
 	return (data.type() == typeid(T));
       }
 
       //! Return stored pointer
-      template <class T> T* getPointer() const {
+      template <typename T> T* getPointer() const {
 	return Teuchos::any_cast<T*>(data);
       }
 
       //! Return stored pointer
-      template <class T> const T* getConstPointer() const {
+      template <typename T> const T* getConstPointer() const {
 	return Teuchos::any_cast<T*>(data);
       }
 
