@@ -195,6 +195,9 @@ public:				// functions
   //! Constructor
   explicit Utils(NOX::Parameter::List& p);
 
+  //! Copy constructor
+  Utils(const NOX::Utils& u);
+  
   //! Destructor
   ~Utils();
 
@@ -231,9 +234,6 @@ public:				// functions
 
 private:
 
-  //! Disallow copy constructor
-  Utils(Utils& u);
-  
   //! Print out a message regarding being deprecated
   static void deprecated(const string& oldname, const string& newname);
 

@@ -46,6 +46,14 @@ NOX::Utils::Utils(NOX::Parameter::List& p)
   reset(p);
 }
 
+NOX::Utils::Utils(const NOX::Utils& source)
+{
+  printTest = source.printTest;
+  myPID = source.myPID;
+  printProc = source.printProc;
+  precision = source.precision;
+}
+
 NOX::Utils::~Utils()
 {
 }
