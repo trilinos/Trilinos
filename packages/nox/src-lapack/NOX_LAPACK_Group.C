@@ -314,11 +314,6 @@ NOX::LAPACK::Group::applyJacobianInverse(NOX::Parameter::List& p,
 					 const Vector& input, Vector& result) const 
 {
 
-  if (!isF()) {
-    cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverse() - invalid F" << endl;
-    throw "NOX Error";
-  }
-
   if (!isJacobian()) {
     cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverse() - invalid Jacobian" << endl;
     throw "NOX Error";
