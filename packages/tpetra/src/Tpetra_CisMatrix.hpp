@@ -37,7 +37,6 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_VectorSpace.hpp"
-#include <set>
 
 namespace Tpetra {
 
@@ -259,26 +258,23 @@ public:
     if(!data().haveSecondary_) {
       /// --- start of new fix ---
 			// first create elementspace
-      std::set<OrdinalType> columnSet(data().indx_.begin(), data().indx_.end()); // a set of the column indices
-      std::vector<OrdinalType> columnVector(columnSet.begin(), columnSet.end()); // a vector of the same data
+      std::vector<OrdinalType> secondaryIndices(data().indx_); // cpy ctr
+      std::sort(secondaryIndices.begin(), secondaryIndices.end()); // sort it so we can use unique
+      secondaryIndices.erase(std::unique(secondaryIndices.begin(), secondaryIndices.end()), secondaryIndices.end()); // remove non-unique values
 
 			OrdinalType numGlobalElements = ordinalZero - ordinalOne; // set to -1
-			OrdinalType numMyElements = columnSet.size();
-			OrdinalType* elementList = &columnVector.front(); // address of first element in columnVector
+			OrdinalType numMyElements = secondaryIndices.size();
+			OrdinalType* elementList = &secondaryIndices.front(); // address of first element in secondaryIndices
 
       /*cout << "********** create secondary dist. diag info **********" << endl;
       cout << "indx_: "; 
       for(typename std::vector<OrdinalType>::const_iterator i = data().indx_.begin(); i != data().indx_.end(); i++) 
 				cout << *i << " "; 
-      cout << endl; 
-      cout << "columnSet: "; 
-      for(typename std::set<OrdinalType>::iterator i = columnSet.begin(); i != columnSet.end(); i++) 
-        cout << *i << " "; 
-      cout << endl; 
-      cout << "columnVector: "; 
-      for(typename std::vector<OrdinalType>::iterator i = columnVector.begin(); i != columnVector.end(); i++) 
-        cout << *i << " "; 
-      cout << endl; 
+      cout << endl;
+      cout << "secondaryIndices: "; 
+      for(typename std::vector<OrdinalType>::iterator i = secondaryIndices.begin(); i != secondaryIndices.end(); i++) 
+        cout << *i << " ";
+      cout << endl;
       cout << "********** end of secondary dist. diag info **********" << endl;*/
 
 			OrdinalType indexBase = getPrimaryDist().getIndexBase();
