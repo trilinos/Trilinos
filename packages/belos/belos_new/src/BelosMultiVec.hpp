@@ -35,8 +35,7 @@
 */
 
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "BelosNormType.hpp"
-#include "BelosReturnType.hpp"
+#include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
 
 /*! 	\class Belos::MultiVec

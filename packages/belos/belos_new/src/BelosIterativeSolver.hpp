@@ -35,7 +35,6 @@
 */
 
 #include "BelosLinearProblemManager.hpp"
-#include "BelosReturnType.hpp"
 #include "BelosOperator.hpp"
 #include "BelosMultiVec.hpp"
 
@@ -88,7 +87,7 @@ class IterativeSolver {
       by the calling routine.
     </ol>
   */
-  virtual MultiVec<TYPE>* GetNativeResiduals( TYPE* normvec ) const = 0;
+  virtual RefCountPtr<const MultiVec<TYPE> > GetNativeResiduals( TYPE* normvec ) const = 0;
 
   //! Get the actual residual vectors for the current block of linear systems.
   /*! This may force the solver to compute a current residual for its linear
@@ -99,7 +98,7 @@ class IterativeSolver {
 
     \note The memory of the returned multivector is managed by the calling routine.
   */
-  virtual MultiVec<TYPE>* GetCurrentSoln() = 0;
+  virtual RefCountPtr<MultiVec<TYPE> > GetCurrentSoln() = 0;
 
   /*! \brief Get a constant reference to the current linear problem, 
     	which may include a current solution.

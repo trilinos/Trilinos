@@ -36,7 +36,7 @@
   \brief Pure virtual base class for defining the status testing capabilities of Belos.
 */
 
-#include "BelosStatusType.hpp"
+#include "BelosTypes.hpp"
 #include "BelosIterativeSolver.hpp"
 #include "BelosConfigDefs.hpp"
 

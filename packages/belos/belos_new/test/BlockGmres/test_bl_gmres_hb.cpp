@@ -27,17 +27,8 @@
 // @HEADER
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
-// Multiple right-hand-sides are created randomly.
-// The initial guesses are all set to zero. 
-//
-// As currently set up, this driver tests the case when the number of right-hand
-// sides (numrhs = 15) is greater than the blocksize (block = 10) used by 
-// the solver. Here, 2 passes through the solver are required to solve 
-// for all right-hand sides. This information can be edited (see below - other
-// information used by block solver - can be user specified) to solve for
-// other sizes of systems. For example, one could set numrhs = 1 and block = 1,
-// to solve a single right-hand side system in the traditional way, or, set
-// numrhs = 1 and block > 1 to sove a single rhs-system with a block implementation. 
+// The right-hand-side from the problem is being used instead of multiple
+// random right-hand-sides.  The initial guesses are all set to zero. 
 //
 // NOTE: No preconditioner is used in this case. 
 //
@@ -82,16 +73,28 @@ int main(int argc, char *argv[]) {
 	
 	int MyPID = Comm.MyPID();
 	
-	bool verbose = (MyPID==0);
+	bool verbose = 0;
 	//
-    	if(argc < 2 && verbose) {
-     	cerr << "Usage: " << argv[0] 
-	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
-	 << "where:" << endl
-	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
-	 << endl;
-    	return(1);
-	}
+        if((argc < 2 || argc > 4)&& MyPID==0) {
+        cerr << "Usage: " << argv[0]
+         << " [ -v ] [ HB_filename ]" << endl
+         << "where:" << endl
+         << "-v                 - run test in verbose mode" << endl
+         << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
+         << endl;
+        return(1);
+        }
+        //
+        // Find verbosity flag
+        //
+        int file_arg = 1;
+        for(i = 1; i < argc; i++)
+        {
+          if(argv[i][0] == '-' && argv[i][1] == 'v') {
+            verbose = (MyPID == 0);
+            if(i==1) file_arg = 2;
+          }
+        }
 	//
 	//**********************************************************************
 	//******************Set up the problem to be solved*********************
@@ -101,7 +104,7 @@ int main(int argc, char *argv[]) {
 	//
 	// *****Read in matrix from HB file******
 	//
-        Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros,
+        Trilinos_Util_read_hb(argv[file_arg], MyPID, &NumGlobalElements, &n_nonzeros,
                               &val, &bindx, &xguess, &b, &xexact);
         // 
         // *****Distribute data among processors*****
@@ -155,15 +158,12 @@ int main(int argc, char *argv[]) {
 	int numrhs = 1;  // total number of right-hand sides to solve for
     	int block = 1;  // blocksize used by solver
 	int numrestarts = 3; // number of restarts allowed 
-	//int maxits = 500;
-	int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
+	int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
     	double tol = 1.0e-6;  // relative residual tolerance
 	//
 	// Construct the right-hand side and solution multivectors.
 	//
 	Belos::PetraVec<double> rhs(Map, b, numrhs, NumMyElements);
-	//Belos::PetraVec<double> rhs( Map, numrhs );
-	//rhs.MvRandom();
 	Belos::PetraVec<double> soln( Map, numrhs );
 	Belos::PetraVec<double> xx(Map, xexact, numrhs, NumMyElements);
 	//
@@ -183,7 +183,8 @@ int main(int argc, char *argv[]) {
 	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test3, test4 );
 
 	Belos::OutputManager<double> My_OM( MyPID );
-	//My_OM.SetVerbosity( 1 );
+	if (verbose)
+	  My_OM.SetVerbosity( 2 );
 
 	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, My_OM, maxits);
 
@@ -214,7 +215,6 @@ int main(int argc, char *argv[]) {
 	timer.start();
 	MyBlockGmres.Solve();
 	timer.stop();
-	My_Test.Print(cout);
 
 	if (verbose) {
 		cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
@@ -230,6 +230,8 @@ int main(int argc, char *argv[]) {
   if (xguess) delete [] xguess;
   if (b) delete [] b;
 	
-  return 0;
+  if (My_Test.GetStatus() == Belos::Converged)
+    return 0;
+  return 1;
   //
 } // end test_bl_gmres_hb.cpp

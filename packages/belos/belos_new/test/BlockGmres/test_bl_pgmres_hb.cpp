@@ -65,6 +65,10 @@
 
 int main(int argc, char *argv[]) {
 	//
+	using Teuchos::RefCountPtr;
+	using Teuchos::rcp;
+	//Teuchos::ENull null = Teuchos::null;
+	//
 	int i;
 	int n_nonzeros, N_update;
 	int *bindx=0, *update=0, *col_inds=0;
@@ -80,23 +84,28 @@ int main(int argc, char *argv[]) {
 	
 	int MyPID = Comm.MyPID();
 	
-	bool verbose = (MyPID==0);
+	bool verbose = 0;
 	//
-    	if(argc < 2 && verbose) {
-     	cerr << "Usage: " << argv[0] 
-	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
-	 << "where:" << endl
-	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
-	 << "level_fill         - The amount of fill to use for ILU preconditioner (default 0)" << endl
-	 << "level_overlap      - The amount of overlap used for overlapping Schwarz subdomains (default 0)" << endl
-	 << "absolute_threshold - The minimum value to place on the diagonal prior to factorization (default 0.0)" << endl
-	 << "relative_threshold - The relative amount to perturb the diagonal prior to factorization (default 1.0)" << endl << endl
-	 << "To specify a non-default value for one of these parameters, you must specify all" << endl
-	 << " preceding values but not any subsequent parameters. Example:" << endl
-	 << "bl_pgmres_hb_mpi.exe mymatrix.hb 1  - loads mymatrix.hb, uses level fill of one, all other values are defaults" << endl
-	 << endl;
-    	return(1);
-	}
+        if((argc < 2 || argc > 4)&& MyPID==0) {
+        cerr << "Usage: " << argv[0]
+         << " [ -v ] [ HB_filename ]" << endl
+         << "where:" << endl
+         << "-v                 - run test in verbose mode" << endl
+         << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
+         << endl;
+        return(1);
+        }
+        //
+        // Find verbosity flag
+        //
+        int file_arg = 1;
+        for(i = 1; i < argc; i++)
+        {
+          if(argv[i][0] == '-' && argv[i][1] == 'v') {
+            verbose = (MyPID == 0);
+            if(i==1) file_arg = 2;
+          }
+        }
 	//
 	//**********************************************************************
 	//******************Set up the problem to be solved*********************
@@ -106,7 +115,7 @@ int main(int argc, char *argv[]) {
 	//
 	// *****Read in matrix from HB file******
 	//
-	Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
+	Trilinos_Util_read_hb(argv[file_arg], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
 		                    &bindx);
 	//
 	// *****Distribute data among processors*****
@@ -204,7 +213,7 @@ int main(int argc, char *argv[]) {
 	int numrhs = 15;  // total number of right-hand sides to solve for
     	int block = 10;  // blocksize used by solver
 	int numrestarts = 20; // number of restarts allowed 
-    	int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
+    	int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
 	int length = 15;
     	double tol = 1.0e-6;  // relative residual tolerance
 	//
@@ -213,8 +222,8 @@ int main(int argc, char *argv[]) {
 	Belos::PetraVec<double> soln(Map, numrhs);
 	Belos::PetraVec<double> rhs(Map, numrhs);
 	rhs.MvRandom();
-	Belos::LinearProblemManager<double> My_LP( &Amat, &soln, &rhs);
-	My_LP.SetRightPrec( &EpetraOpPrec );
+	Belos::LinearProblemManager<double> My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
+	My_LP.SetRightPrec( rcp(&EpetraOpPrec,false) );
 	//My_LP.SetLeftPrec( &EpetraOpPrec );
 	My_LP.SetBlockSize( block );
 
@@ -229,13 +238,14 @@ int main(int argc, char *argv[]) {
 	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::SEQ, BasicTest, ExpTest );
 
 	Belos::OutputManager<double> My_OM( MyPID );
-	//My_OM.SetVerbosity( 4 );
+	if (verbose)
+	  My_OM.SetVerbosity( 2 );
 	//
 	//*******************************************************************
 	// *************Start the block Gmres iteration*************************
 	//*******************************************************************
 	//
-	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, My_OM, length);
+	Belos::BlockGmres<double> MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), length);
 	//
 	// **********Print out information about problem*******************
 	//
@@ -261,7 +271,6 @@ int main(int argc, char *argv[]) {
 			<< endl << endl;
 	}
 	MyBlockGmres.Solve();
-	My_Test.Print(cout);	
 	//
 	// Compute actual residuals.
 	//
@@ -272,11 +281,12 @@ int main(int argc, char *argv[]) {
 	resid.MvAddMv( -1.0, resid, 1.0, rhs ); 
 	resid.MvNorm( actual_resids );
 	rhs.MvNorm( rhs_norm );
-	cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
-	for (i=0; i<numrhs; i++) {
-		cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
-	}
-
+	if (verbose) {
+	  cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+	  for (i=0; i<numrhs; i++) {
+	 	cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+	  }
+        }
 	// Release all objects  
 	if (ilukGraph) delete ilukGraph;
 	if (ilukFactors) delete ilukFactors;
@@ -286,7 +296,9 @@ int main(int argc, char *argv[]) {
 	delete [] val;
 	delete [] actual_resids;
 	delete [] rhs_norm;	
-	
-  return 0;
+
+	if (My_Test.GetStatus() == Belos::Converged)
+  	  return 0;
+	return 1;
   //
-} // end test_bl_pgmrs_hb.cpp
+} // end test_bl_pgmres_hb.cpp

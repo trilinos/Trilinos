@@ -10,7 +10,6 @@
 // Belos files
 #include "BelosOperator.hpp"
 #include "BelosMultiVec.hpp"
-#include "BelosReturnType.hpp"
 #include "BelosConfigDefs.hpp"
 
 // TSFCore files

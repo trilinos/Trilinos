@@ -35,7 +35,7 @@
 */
 
 #include "BelosMultiVec.hpp"
-#include "BelosReturnType.hpp"
+#include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
 
 /*!	\class Belos::Operator

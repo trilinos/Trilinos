@@ -41,7 +41,6 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosMultiVec.hpp"
 #include "BelosOperator.hpp"
-#include "BelosReturnType.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Belos {

@@ -360,33 +360,32 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     cur_blksz_ = lp.GetNumToSolve();
     //
     if (scaletype_== NormOfRHS) {
-      MultiVec<TYPE>* rhs = lp.GetRHS();
-      numrhs_ = rhs->GetNumberVecs();
+      const MultiVec<TYPE>& rhs = *lp.GetRHS();
+      numrhs_ = rhs.GetNumberVecs();
       scalevector_ = new TYPE[ numrhs_ ];
       resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
       testvector_ = new TYPE[ numrhs_ ];
-      rhs->MvNorm( scalevector_, scalenormtype_ );
+      const_cast<MultiVec<TYPE>&>(rhs).MvNorm( scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
-      MultiVec<TYPE>* init_res = lp.GetInitResVec();
-      numrhs_ = init_res->GetNumberVecs();
+      const MultiVec<TYPE> &init_res = lp.GetInitResVec();
+      numrhs_ = init_res.GetNumberVecs();
       scalevector_ = new TYPE[ numrhs_ ];
       resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
       testvector_ = new TYPE[ numrhs_ ];
-      init_res->MvNorm( scalevector_, scalenormtype_ );
+      const_cast<MultiVec<TYPE>&>(init_res).MvNorm( scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfPrecInitRes) {
-      MultiVec<TYPE>* init_res = lp.GetInitResVec();
-      numrhs_ = init_res->GetNumberVecs();
+      const MultiVec<TYPE>& init_res = lp.GetInitResVec();
+      numrhs_ = init_res.GetNumberVecs();
       scalevector_ = new TYPE[ numrhs_ ];
       resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
       testvector_ = new TYPE[ numrhs_ ];
-      MultiVec<TYPE>* prec_init_res = init_res->Clone( numrhs_ );
-      if (lp.ApplyLeftPrec( *init_res, *prec_init_res ) != Undefined)
+      RefCountPtr<MultiVec<TYPE> > prec_init_res = rcp( const_cast<MultiVec<TYPE>&>(init_res).Clone( numrhs_ ) );
+      if (lp.ApplyLeftPrec( init_res, *prec_init_res ) != Undefined)
           prec_init_res->MvNorm( scalevector_, scalenormtype_ );
       else 
-          init_res->MvNorm( scalevector_, scalenormtype_ );
-      delete prec_init_res; prec_init_res=0;
+          const_cast<MultiVec<TYPE>&>(init_res).MvNorm( scalevector_, scalenormtype_ );
     }
 
     // Initialize the testvector.
@@ -419,10 +418,9 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     // If the residual is returned in multivector form, use the resnormtype to compute the residual norms.
     // Otherwise the native residual is assumed to be stored in the resvector_.
     //
-    MultiVec<TYPE>* residMV = iSolver->GetNativeResiduals( resvector_ + cur_rhs_num_ );     
-    if ( residMV != NULL ) { 
-  	residMV->MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );    
-	delete residMV;
+    RefCountPtr<const MultiVec<TYPE> > residMV = iSolver->GetNativeResiduals( resvector_ + cur_rhs_num_ );     
+    if ( residMV.get() != NULL ) { 
+  	const_cast<MultiVec<TYPE>&>(*residMV).MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );    
     } 
   }
   else if (restype_==Explicit) {
@@ -432,21 +430,20 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     // asking for the true residual from the solver.
     //
     if ( lp.IsSolutionUpdated() ) {
-      MultiVec<TYPE>* cur_res = lp.GetCurrResVec();
-      ret = cur_res->MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
+      const MultiVec<TYPE>& cur_res = lp.GetCurrResVec();
+      ret = const_cast<MultiVec<TYPE>&>(cur_res).MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
       if ( ret != Ok ) {
         status_ = Failed;
         return(status_);
       }
     } else {
-      MultiVec<TYPE>* cur_soln = iSolver->GetCurrentSoln();
-      MultiVec<TYPE>* cur_res = lp.GetCurrResVec( cur_soln );
-      ret = cur_res->MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
+      RefCountPtr<const MultiVec<TYPE> > cur_soln = iSolver->GetCurrentSoln();
+      const MultiVec<TYPE> &cur_res = lp.GetCurrResVec( &*cur_soln );
+      ret = const_cast<MultiVec<TYPE>&>(cur_res).MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
       if ( ret != Ok ) {
         status_ = Failed;
         return(status_);
       }
-      delete cur_soln;
     }
   }
   //

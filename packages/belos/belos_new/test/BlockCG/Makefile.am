@@ -7,10 +7,16 @@ EXEEXT = .exe
 if BUILD_IFPACK
 BELOS_BCG_IFPACK_EX = bl_pcg_hb
 endif
-BELOS_BCG_HB_EX = $(BELOS_BCG_IFPACK_EX) bl_cg_hb
+BELOS_BCG_HB_EX = bl_cg_hb
 #endif
 
-noinst_PROGRAMS = $(BELOS_BCG_HB_EX) 
+noinst_PROGRAMS = $(BELOS_BCG_HB_EX) $(BELOS_BCG_IFPACK_EX) Dummy
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/bcsstk14.hb  bcsstk14.hb
+	cp  $(srcdir)/bcsstk15.hb  bcsstk15.hb
+
+Dummy_SOURCES = Dummy
 
 bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp 
 

@@ -63,6 +63,7 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperator.hpp"
 #include "BelosMultiVec.hpp"
+#include "BelosMultiVecTraits.hpp"
 
 /*!	
   \class Belos::BlockGmres
@@ -82,9 +83,9 @@ namespace Belos {
   public:
     //@{ \name Constructor/Destructor.
     //! %Belos::BlockGmres constructor.
-    BlockGmres(LinearProblemManager<TYPE>& lp, 
-	       StatusTest<TYPE>& stest,
-               OutputManager<TYPE>& om,
+    BlockGmres(const RefCountPtr<LinearProblemManager<TYPE> > &lp, 
+	       const RefCountPtr<StatusTest<TYPE> > &stest,
+               const RefCountPtr<OutputManager<TYPE> > &om,
 	       const int length=25);
     
     //! %Belos::BlockGmres destructor.
@@ -102,8 +103,11 @@ namespace Belos {
     //! Get the solvers native residuals for the current block of linear systems.
     /*! For GMRES this is not the same as the actual residual of the linear system and the
 	residual is not in MultiVec form, so the normvec will be populated with the residual norm.
+	
+	\param  normvec  [out] Array (length <tt>blocksize</tt>) of computed norm values
+	                 for current residuals.
      */
-    MultiVec<TYPE>* GetNativeResiduals( TYPE *normvec ) const;
+    RefCountPtr<const MultiVec<TYPE> > GetNativeResiduals( TYPE *normvec ) const;
 
     //! Get the true residuals for the current block of linear systems.
     /*! For GMRES this will force the solver to compute a current residual for its linear 
@@ -111,12 +115,12 @@ namespace Belos {
       so a convergence test using these residuals should be secondary to using the native 
       residuals. </b>
     */
-    MultiVec<TYPE>* GetCurrentSoln();
+    RefCountPtr<MultiVec<TYPE> > GetCurrentSoln();
 
     //! Get a constant reference to the current linear problem.  
     /*! This may include a current solution, if the solver has recently restarted or completed.
      */
-    LinearProblemManager<TYPE>& GetLinearProblem() const { return( _lp ); }
+    LinearProblemManager<TYPE>& GetLinearProblem() const { return( *_lp ); }
 
     //@} 
 
@@ -151,19 +155,19 @@ namespace Belos {
     void CheckKrylovOrth(const int);
 
     //! Reference to the linear problem being solver for with the solver. [passed in by user]
-    LinearProblemManager<TYPE>& _lp; 
+    RefCountPtr<LinearProblemManager<TYPE> > _lp;
 
     //! Reference to the status test, which provides the stopping criteria for the solver. [passed in by user]
-    StatusTest<TYPE>& _stest; 
+    RefCountPtr<StatusTest<TYPE> > _stest; 
 
     //! Reference to the output manager for this linear solver. [passed in by user]
-    OutputManager<TYPE>& _om;
+    RefCountPtr<OutputManager<TYPE> > _om;
 
     //! Pointers to the Krylov basis constructed by the solver.
-    MultiVec<TYPE> *_basisvecs;
+    RefCountPtr<MultiVec<TYPE> > _basisvecs;
 
     //! Pointers to the current right-hand side and solution multivecs being solved for.
-    MultiVec<TYPE> *_cur_block_rhs, *_cur_block_sol;
+    RefCountPtr<MultiVec<TYPE> > _cur_block_rhs, _cur_block_sol;
 
     //! Dense matrices for holding the upper Hessenberg matrix (H) of the Arnoldi factorization 
     Teuchos::SerialDenseMatrix<int,TYPE> _hessmatrix;
@@ -172,12 +176,14 @@ namespace Belos {
     Teuchos::SerialDenseMatrix<int,TYPE> _z;
 
     //! The output stream for sending solver information.
-    ostream& _os;
+    ostream *_os;
 
     const int _length;
     int _blocksize;
     int _restartiter, _totaliter, _iter;
     TYPE _dep_tol, _blk_tol, _sing_tol;
+
+    typedef MultiVecTraits<TYPE,MultiVec<TYPE> >  MVT;
   };
   //
   // Implementation
@@ -185,17 +191,14 @@ namespace Belos {
   // Note: I should define a copy constructor and overload = because of the use of new
   //
   template <class TYPE>
-  BlockGmres<TYPE>::BlockGmres(LinearProblemManager<TYPE>& lp, 
-			       StatusTest<TYPE>& stest,
-			       OutputManager<TYPE>& om,
+  BlockGmres<TYPE>::BlockGmres(const RefCountPtr<LinearProblemManager<TYPE> > &lp, 
+			       const RefCountPtr<StatusTest<TYPE> > &stest,
+			       const RefCountPtr<OutputManager<TYPE> >&om,
 			       const int length) : 
     _lp(lp),
     _stest(stest),
     _om(om),
-    _basisvecs(0),     
-    _cur_block_rhs(0),
-    _cur_block_sol(0),
-    _os(om.GetOStream()),
+    _os(&om->GetOStream()),
     _length(length), 
     _blocksize(0), 
     _restartiter(0), 
@@ -210,9 +213,7 @@ namespace Belos {
     
   template <class TYPE>
   BlockGmres<TYPE>::~BlockGmres() 
-  {
-    if (_basisvecs) delete _basisvecs;
-  }
+  {}
   
   template <class TYPE>
   void BlockGmres<TYPE>::SetGmresBlkTols() 
@@ -228,17 +229,17 @@ namespace Belos {
   }
   
   template <class TYPE>
-  MultiVec<TYPE>* BlockGmres<TYPE>::GetNativeResiduals( TYPE *normvec ) const 
+  RefCountPtr<const MultiVec<TYPE> > BlockGmres<TYPE>::GetNativeResiduals( TYPE *normvec ) const 
   {
     //
     // If this is the first iteration for a new right-hand side return the
     // residual for the current block rhs and solution.
     //
     if (_totaliter == 0) {
-      MultiVec<TYPE>* temp_res = _cur_block_rhs->Clone(_blocksize); assert(temp_res!=NULL);
-      _lp.ComputeResVec( temp_res, _cur_block_sol, _cur_block_rhs);
-      temp_res->MvNorm( normvec, TwoNorm );
-      return temp_res;
+      RefCountPtr<MultiVec<TYPE> > temp_res = MVT::Clone(*_cur_block_rhs,_blocksize);
+      //RefCountPtr<MultiVec<TYPE> > temp_res = rcp( _cur_block_rhs->Clone(_blocksize) );
+      _lp->ComputeResVec( &*temp_res, &*_cur_block_sol, &*_cur_block_rhs );
+      MVT::MvNorm( *temp_res, normvec, TwoNorm );
     } else {
       if (normvec) {
         Teuchos::BLAS<int,TYPE> blas;
@@ -246,17 +247,17 @@ namespace Belos {
 	  normvec[j] = blas.NRM2( _blocksize, &_z(_iter*_blocksize, j ), 1);
       }
     }
-    return NULL;
+    return null;
   }
   
   template <class TYPE>
-  MultiVec<TYPE>* BlockGmres<TYPE>::GetCurrentSoln()
+  RefCountPtr<MultiVec<TYPE> > BlockGmres<TYPE>::GetCurrentSoln()
   {    
     //
     // If this is the first iteration of the Arnoldi factorization, return the current solution.
     // It has either been updated recently, if there was a restart, or we haven't computed anything yet.
     //
-    MultiVec<TYPE> * cur_sol_copy = _cur_block_sol->CloneCopy(); assert(cur_sol_copy!=NULL);
+    RefCountPtr<MultiVec<TYPE> > cur_sol_copy = MVT::CloneCopy(*_cur_block_sol);
     if (_iter==0) { 
         return cur_sol_copy; 
     } else {
@@ -267,7 +268,7 @@ namespace Belos {
       for ( i=0; i<m; i++ ) {   
         index[i] = i;
       }
-      MultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, m); assert(Vjp1!=NULL);
+      RefCountPtr<const MultiVec<TYPE> > Vjp1 = MVT::CloneView( MVT::c(*_basisvecs), index, m );
       //
       //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
       //
@@ -279,9 +280,8 @@ namespace Belos {
 	       Teuchos::NON_UNIT_DIAG, m, _blocksize, one,  
 	       _hessmatrix.values(), _hessmatrix.stride(), y.values(), y.stride() );
     
-      cur_sol_copy->MvTimesMatAddMv( one, *Vjp1, y, one );
+      MVT::MvTimesMatAddMv( one, *Vjp1, y, one, *cur_sol_copy );
     
-      if (Vjp1) delete Vjp1;
       if (index) delete [] index;
     }
     return cur_sol_copy;
@@ -296,26 +296,26 @@ namespace Belos {
     const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
     const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
     TYPE sigma, mu, vscale, maxelem;
-    MultiVec<TYPE> *U_vec=0;
+    RefCountPtr<MultiVec<TYPE> > U_vec;
     bool dep_flg = false, exit_flg = false;
     Teuchos::LAPACK<int, TYPE> lapack;
     Teuchos::BLAS<int, TYPE> blas;
     //
     // Obtain the first block linear system form the linear problem manager.
     //
-    _cur_block_sol = _lp.GetCurrLHSVec();
-    _cur_block_rhs = _lp.GetCurrRHSVec();
-    _blocksize = _lp.GetBlockSize();
+    _cur_block_sol = _lp->GetCurrLHSVec();
+    _cur_block_rhs = _lp->GetCurrRHSVec();
+    _blocksize = _lp->GetBlockSize();
     //
     //  Start executable statements. 
     //
-    while (_cur_block_sol && _cur_block_sol) {
+    while ( _cur_block_rhs.get() && _cur_block_sol.get() ) {
       //
-      if (_om.doOutput( 0 )) {
-        _os << endl;
-        _os << "===================================================" << endl;
-        _os << "Solving linear system(s):  " << _lp.GetRHSIndex() << " through " << _lp.GetRHSIndex()+_lp.GetNumToSolve() << endl;
-        _os << endl;
+      if (_om->doOutput( 0 )) {
+        *_os << endl;
+        *_os << "===================================================" << endl;
+        *_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve() << endl;
+        *_os << endl;
       }
       //
       // Reset the iteration counter for this block of right-hand sides.
@@ -324,7 +324,7 @@ namespace Belos {
       //
       // Make room for the Arnoldi vectors and F.
       //
-      _basisvecs = _cur_block_rhs->Clone((_length+1)*_blocksize); assert(_basisvecs!=NULL);
+      _basisvecs = MVT::Clone(*_cur_block_rhs,(_length+1)*_blocksize);
       //
       // Create the rectangular Hessenberg matrix and right-hand side of least squares problem.
       //
@@ -335,16 +335,15 @@ namespace Belos {
       index = new int[ (_length+1)*_blocksize ]; assert(index!=NULL);
       for (i=0; i < (_length+1)*_blocksize; i++) { index[i] = i; }
       //
-      for (_restartiter=0; _stest.CheckStatus(this) == Unconverged && !exit_flg; _restartiter++) {
+      for (_restartiter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _restartiter++) {
 	//
 	// Associate the initial block of _basisvecs with U_vec.
 	//
-	U_vec = _basisvecs->CloneView(index, _blocksize);
-	assert(U_vec!=NULL);
+	U_vec = MVT::CloneView(*_basisvecs, index, _blocksize);
 	//
 	// Compute current residual and place into 1st block
 	//
-	_lp.ComputeResVec( U_vec, _cur_block_sol, _cur_block_rhs );
+	_lp->ComputeResVec( &*U_vec, &*_cur_block_sol, &*_cur_block_rhs );
 	//
 	dep_flg = false; exit_flg = false;
 	//
@@ -355,17 +354,17 @@ namespace Belos {
 	exit_flg = QRFactorAug( *U_vec, G10, true );
 	//
 	if (exit_flg){
-	  if (_om.doOutput( 0 )){
-	    _os << "Exiting Block GMRES" << endl;
-	    _os << "  Restart iteration# " << _restartiter
+	  if (_om->doOutput( 0 )){
+	    *_os << "Exiting Block GMRES" << endl;
+	    *_os << "  Restart iteration# " << _restartiter
 		 << "  Iteration# " << _iter << endl;
-	    _os << "  Reason: Failed to compute initial block of orthonormal basis vectors"
+	    *_os << "  Reason: Failed to compute initial block of orthonormal basis vectors"
 		 << endl << endl;
 	  }
-	  if (U_vec) {delete U_vec; U_vec = 0;}
+	  if (U_vec.get()) {U_vec = null;}
 	}
 	//
-	for (_iter=0; _iter<_length && _stest.CheckStatus(this) == Unconverged && !exit_flg; _iter++, ++_totaliter) {
+	for (_iter=0; _iter<_length && _stest->CheckStatus(this) == Unconverged && !exit_flg; _iter++, ++_totaliter) {
 	  //
 	  // Compute a length _length block Arnoldi Reduction (one step at a time),
 	  // the exit_flg indicates if we cannot extend the Arnoldi Reduction.
@@ -436,47 +435,45 @@ namespace Belos {
 		   Teuchos::NON_UNIT_DIAG, _iter*_blocksize, _blocksize, one,
 		   _hessmatrix.values(), _hessmatrix.stride(), _z_copy.values(), _z_copy.stride() ); 
 	  // Create view into current basis vectors.
-	  MultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, _iter*_blocksize);
-          MultiVec<TYPE> * solnUpdate = _cur_block_sol->Clone( _blocksize );	  
-	  solnUpdate->MvTimesMatAddMv( one, *Vjp1, _z_copy, zero );
-	  delete Vjp1;
+	  RefCountPtr<const MultiVec<TYPE> > Vjp1 = MVT::CloneView(*_basisvecs, index, _iter*_blocksize);
+          RefCountPtr<MultiVec<TYPE> > solnUpdate = MVT::Clone(*_cur_block_sol,_blocksize );
+	  MVT::MvTimesMatAddMv( one, *Vjp1, _z_copy, zero, *solnUpdate );
 	  //
 	  // Update the solution held by the linear problem.
 	  //	  
-	  _lp.SolutionUpdated( solnUpdate );
-	  delete solnUpdate;
+	  _lp->SolutionUpdated( &*solnUpdate );
         }
 	//
 	// Print out solver status
 	// 
-	if (_om.doOutput( 0 )) {
-	  _stest.Print(_os);
+	if (_om->doOutput( 0 )) {
+	  _stest->Print(*_os);
 	  if (exit_flg) {
-	    _os << " Exiting Block GMRES --- " << endl;
-	    _os << "  Reason: Failed to compute new block of orthonormal basis vectors" << endl;
-	    _os << "  ***Solution from previous step will be returned***"<< endl<< endl;
+	    *_os << " Exiting Block GMRES --- " << endl;
+	    *_os << "  Reason: Failed to compute new block of orthonormal basis vectors" << endl;
+	    *_os << "  ***Solution from previous step will be returned***"<< endl<< endl;
 	  }
 	} 
-	if (U_vec) {delete U_vec; U_vec = 0;}
+	if (U_vec.get()) {U_vec = null;}
 	//
 	// Break out of this loop before the _restartiter is incremented if we are finished.
 	//
-        if ( _stest.GetStatus() != Unconverged || exit_flg ) { break; }
+        if ( _stest->GetStatus() != Unconverged || exit_flg ) { break; }
         //
       } // end for (_restartiter=0;...
       //
       // Inform the linear problem that we are finished with this block linear system.
       //	  
-      _lp.SetCurrLSVec();
+      _lp->SetCurrLSVec();
       //
       // Obtain the next block linear system from the linear problem manager.
       //
-      _cur_block_sol = _lp.GetCurrLHSVec();
-      _cur_block_rhs = _lp.GetCurrRHSVec();
+      _cur_block_sol = _lp->GetCurrLHSVec();
+      _cur_block_rhs = _lp->GetCurrRHSVec();
       //
       // **************Free heap space**************
       //
-      if (_basisvecs) {delete _basisvecs; _basisvecs=0;}
+      _basisvecs = null;
       if (index) {delete [] index; index=0;}
       if (beta) {delete [] beta; beta=0; }
       //
@@ -491,17 +488,16 @@ namespace Belos {
     //
     int i;	
     int *index = new int[_blocksize]; assert(index!=NULL);
-    MultiVec<TYPE> *AU_vec = _basisvecs->Clone( _blocksize );
+    RefCountPtr<MultiVec<TYPE> > AU_vec = MVT::Clone(*_basisvecs,_blocksize);
     //
     // Associate the j-th block of _basisvecs with U_vec.
     //
     for ( i=0; i<_blocksize; i++ ) {
       index[i] = _iter*_blocksize+i;
     }
-    MultiVec<TYPE>* U_vec = _basisvecs->CloneView(index, _blocksize);
-    assert(U_vec!=NULL);
+    RefCountPtr<MultiVec<TYPE> > U_vec = MVT::CloneView(*_basisvecs, index, _blocksize);
     //
-    _lp.Apply( *U_vec, *AU_vec ); 
+    _lp->Apply( *U_vec, *AU_vec ); 
     //
     bool dep = false;
     if (!dep_flg){
@@ -520,8 +516,7 @@ namespace Belos {
       flg = BlkOrthSing(*AU_vec);
     }
     //
-    delete U_vec; delete [] index;
-    delete AU_vec;
+    delete [] index;
     //
     return flg;
     //
@@ -550,12 +545,11 @@ namespace Belos {
     //
     // Associate (j+1)-st block of ArnoldiVecs with F_vec.
     //
-    MultiVec<TYPE>* F_vec = _basisvecs->CloneView(index+(_iter+1)*_blocksize, _blocksize);
-    assert(F_vec!=NULL);
+    RefCountPtr<MultiVec<TYPE> > F_vec = MVT::CloneView(*_basisvecs, index+(_iter+1)*_blocksize, _blocksize);
     //
     // Copy preconditioned AU_vec into (j+1)st block of _basisvecs
     //
-    F_vec->MvAddMv( one, VecIn, zero, VecIn);
+    MVT::MvAddMv( one, VecIn, zero, VecIn, *F_vec );
     //
     // Zero out the full block column of the Hessenberg matrix 
     // even though we're only going to set the coefficients in 
@@ -572,14 +566,13 @@ namespace Belos {
     // Grab all previous Arnoldi vectors
     //
     int num_prev = (_iter+1)*_blocksize;
-    MultiVec<TYPE>* V_prev = _basisvecs->CloneView(index, num_prev);
-    assert(V_prev!=NULL);
+    RefCountPtr<MultiVec<TYPE> > V_prev = MVT::CloneView(*_basisvecs, index, num_prev);
     //
     // Create a matrix to store the product trans(V_prev)*F_vec
     //
     Teuchos::SerialDenseMatrix<int,TYPE> dense_mat( num_prev, _blocksize );
     //
-    F_vec->MvNorm(norm1);
+    MVT::MvNorm(*F_vec,norm1);
     //
     // Perform two steps of block classical Gram-Schmidt so that
     // F_vec is orthogonal to the columns of V_prev.
@@ -589,7 +582,7 @@ namespace Belos {
       // Compute trans(V_prev)*F_vec and store in the j'th diagonal
       // block of the Hessenberg matrix
       //
-      F_vec->MvTransMv (one, *V_prev, dense_mat);
+      MVT::MvTransMv(*F_vec,one, *V_prev, dense_mat);
       //
       // Update the orthogonalization coefficients for the j-th block
       // column of the Hessenberg matrix.
@@ -602,10 +595,10 @@ namespace Belos {
       //
       // F_vec <- F_vec - V(0:(j+1)*block-1,:) * H(0:num_prev-1,j:num_prev-1)
       //
-      F_vec->MvTimesMatAddMv( -one, *V_prev, dense_mat, one );
+      MVT::MvTimesMatAddMv( -one, *V_prev, dense_mat, one, *F_vec );
     } // end for num_orth=0;...)
       //
-    F_vec->MvNorm(norm2);
+    MVT::MvNorm(*F_vec,norm2);
     //
     // Check to make sure the new block of Arnoldi vectors are 
     // not dependent on previous Arnoldi vectors
@@ -615,16 +608,16 @@ namespace Belos {
     for (i=0; i<_blocksize; i++){
       if (norm2[i] < norm1[i] * _blk_tol) {
 	flg = true;
-	if (_om.doOutput( 3 )){
-	  _os << "Col " << num_prev+i << " is dependent on previous "
+	if (_om->doOutput( 3 )){
+	  *_os << "Col " << num_prev+i << " is dependent on previous "
 	       << "Arnoldi vectors in V_prev" << endl;
-	  _os << endl;
+	  *_os << endl;
 	}
       }
     } // end for (i=0;...)
       //
-    if (_om.doOutput( 2 )) {
-      _os << "Checking Orthogonality after BlkOrth()"
+    if (_om->doOutput( 2 )) {
+      *_os << "Checking Orthogonality after BlkOrth()"
 	     << " Iteration: " << _iter << endl;
       CheckKrylovOrth(_iter);
     }
@@ -644,8 +637,6 @@ namespace Belos {
       flg = QRFactorAug( *F_vec, sub_block_hess, false );
     }
     //
-    delete F_vec;
-    delete V_prev;
     delete [] index;
     delete [] norm1;
     delete [] norm2;
@@ -681,12 +672,11 @@ namespace Belos {
     //
     // Associate (j+1)-st block of ArnoldiVecs with F_vec.
     //
-    MultiVec<TYPE>* F_vec = _basisvecs->CloneView(index+(_iter+1)*_blocksize, _blocksize);
-    assert(F_vec!=NULL);
+    RefCountPtr<MultiVec<TYPE> > F_vec = MVT::CloneView(*_basisvecs, index+(_iter+1)*_blocksize, _blocksize);
     //
     // Copy preconditioned AU_vec into (j+1)st block of _basisvecs
     //
-    F_vec->MvAddMv( one, VecIn, zero, VecIn);
+    MVT::MvAddMv( one, VecIn, zero, VecIn, *F_vec );
     //
     // Zero out the full block column of the Hessenberg matrix 
     //
@@ -698,8 +688,9 @@ namespace Belos {
       }
     }
     //
-    MultiVec<TYPE> *q_vec=0, *Q_vec=0, *tptr=0;
-    tptr = F_vec->Clone(IntOne); assert(tptr!=NULL);
+    RefCountPtr<const MultiVec<TYPE> > Q_vec;
+    RefCountPtr<MultiVec<TYPE> > q_vec, tptr;
+    tptr = MVT::Clone(*F_vec,IntOne);
     //
     // Start a loop to orthogonalize each of the _blocksize
     // columns of F_vec against all previous _basisvecs
@@ -713,21 +704,21 @@ namespace Belos {
       // Grab the next column of _basisvecs
       //
       index2[0] = num_prev;
-      q_vec = _basisvecs->CloneView(index2, IntOne); assert(q_vec!=NULL);
+      q_vec = MVT::CloneView(*_basisvecs, index2, IntOne);
       //
       // Grab all previous columns of _basisvecs
       //
-      Q_vec = _basisvecs->CloneView(index, num_prev); assert(Q_vec!=NULL);
+      Q_vec = MVT::CloneView(MVT::c(*_basisvecs), index, num_prev);
       //
       // Do one step of classical Gram-Schmidt orthogonalization
       // with a 2nd correction step if needed.
       //
       bool dep = false;
-      q_vec->MvNorm(nm1);
+      MVT::MvNorm(*q_vec,nm1);
       //
       // Compute trans(Q_vec)*q_vec
       //
-      q_vec->MvTransMv(one, *Q_vec, dense_vec);
+      MVT::MvTransMv(*q_vec, one, *Q_vec, dense_vec);
       //
       // Sum results [0:num_prev-1] into column (num_prev-_blocksize)
       // of the Hessenberg matrix
@@ -737,9 +728,9 @@ namespace Belos {
       }
       // Compute q_vec<- q_vec - Q_vec * dense_vec
       //
-      q_vec->MvTimesMatAddMv(-one, *Q_vec, dense_vec, one);
+      MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *q_vec );
       //
-      q_vec->MvNorm(nm2);
+      MVT::MvNorm(*q_vec,nm2);
       //
       if (nm2[0] < nm1[0] * _dep_tol) {
 	// 
@@ -747,7 +738,7 @@ namespace Belos {
 	//
 	// Compute trans(Q_vec)*q_vec
 	//
-	q_vec->MvTransMv(one, *Q_vec, dense_vec);
+	MVT::MvTransMv(*q_vec, one, *Q_vec, dense_vec);
 	//
 	// Sum results [0:num_prev-1] into column (num_prev-_blocksize)
 	// of the Hessenberg matrix
@@ -757,9 +748,9 @@ namespace Belos {
 	}
 	// Compute q_vec<- q_vec - Q_vec * dense_vec
 	//
-	q_vec->MvTimesMatAddMv(-one, *Q_vec, dense_vec, one);
+	MVT::MvTimesMatAddMv(-one, *Q_vec, dense_vec, one, *q_vec);
 	//
-	q_vec->MvNorm(nm2);
+	MVT::MvNorm(*q_vec,nm2);
       }
       //
       // Check for linear dependence
@@ -772,7 +763,7 @@ namespace Belos {
 	// Normalize the new q_vec
 	//
 	TYPE rjj = one/nm2[0];
-	q_vec->MvAddMv( rjj, *q_vec, zero, *q_vec );
+	MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec ); // RAB: Warning, aliasing of arguments!
 	//
 	// Enter norm of q_vec to the [(j+1)*_blocksize + iter] row
 	// in the [(j*_blocksize + iter] column of the Hessenberg matrix
@@ -781,9 +772,9 @@ namespace Belos {
       }
       else { 
 	//
-	if (_om.doOutput( 3 )) {
-	  _os << "Column " << num_prev << " of _basisvecs is dependent" << endl;
-	  _os << endl;
+	if (_om->doOutput( 3 )) {
+	  *_os << "Column " << num_prev << " of _basisvecs is dependent" << endl;
+	  *_os << endl;
 	}
 	//
 	// Create a random vector and orthogonalize it against all 
@@ -791,31 +782,31 @@ namespace Belos {
 	// We could try adding a random unit vector instead -- not 
 	// sure if this would make any difference.
 	//
-	tptr->MvRandom();
-	tptr->MvNorm(nm1);
+	MVT::MvRandom(*tptr);
+	MVT::MvNorm(*tptr,nm1);
 	//
 	// This code  is automatically doing 2 steps of orthogonalization
 	// after adding a random vector. We could do one step of
 	// orthogonalization with a correction step if needed.
 	//
 	for (num_orth=0; num_orth<2; num_orth++){
-	  tptr->MvTransMv(one, *Q_vec, dense_vec);
+	  MVT::MvTransMv(*tptr, one, *Q_vec, dense_vec);
 	  // Note that we don't change the entries of the
 	  // Hessenberg matrix when we orthogonalize a 
 	  // random vector
-	  tptr->MvTimesMatAddMv(-one, *Q_vec, dense_vec, one);
+	  MVT::MvTimesMatAddMv(-one, *Q_vec, dense_vec, one, *tptr);
 	}
 	//
-	tptr->MvNorm(nm2);
+	MVT::MvNorm(*tptr,nm2);
 	//
 	if (nm2[0] >= nm1[0] * _sing_tol){ 
 	  // Copy vector into the current column of _basisvecs
-	  q_vec->MvAddMv( one, *tptr, zero, *tptr );
-	  q_vec->MvNorm(nm2);
+	  MVT::MvAddMv( one, *tptr, zero, *tptr, *q_vec );
+	  MVT::MvNorm(*q_vec,nm2);
 	  // Normalize the new q_vec
 	  //
 	  TYPE rjj = one/nm2[0];
-	  q_vec->MvAddMv( rjj, *q_vec, zero, *q_vec );
+	  MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec ); // RAB: Warning, aliasing of arguments!
 	  //
 	  // Enter a zero in the [(j+1)*_blocksize + iter] row in the
 	  // [(j*_blocksize + iter] column of the Hessenberg matrix
@@ -828,10 +819,6 @@ namespace Belos {
 	  flg = true;
 	  // Clean up memory
 	  delete [] index;
-	  delete q_vec; q_vec = 0;
-	  delete Q_vec; Q_vec = 0;
-	  delete tptr; tptr = 0;
-	  delete F_vec; F_vec = 0;
 	  return flg;
 	}
 	//
@@ -839,9 +826,9 @@ namespace Belos {
 	//
     } // end for (iter=0;...)
       //
-    if (_om.doOutput( 2 )){
-      	_os << endl;
-	_os << "Checking Orthogonality after BlkOrthSing()"
+    if (_om->doOutput( 2 )){
+      	*_os << endl;
+	*_os << "Checking Orthogonality after BlkOrthSing()"
 	     << " Iteration: " << _iter << endl;
       CheckKrylovOrth(_iter);
     }
@@ -849,24 +836,19 @@ namespace Belos {
     //	free heap space
     //
     delete [] index;
-    delete q_vec; q_vec=0;
-    delete Q_vec; Q_vec=0;
-    delete tptr; tptr=0;
-    delete F_vec;
     //
     return flg;
     //
   } // end BlkOrthSing()
   
-  
-  
+
   template<class TYPE>
   bool BlockGmres<TYPE>::QRFactorAug(MultiVec<TYPE>& VecIn, 
 				     Teuchos::SerialDenseMatrix<int,TYPE>& FouierR, 
 				     bool blkone) 
   {
     int i,j,k;
-    int nb = VecIn.GetNumberVecs(); assert (nb == _blocksize);
+    int nb = MVT::GetNumberVecs(VecIn); assert (nb == _blocksize);
     int *index = new int[nb]; assert(index!=NULL);
     const int IntOne = 1;
     const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
@@ -877,8 +859,9 @@ namespace Belos {
     TYPE norm1[IntOne];
     TYPE norm2[IntOne];
     Teuchos::SerialDenseVector<int,TYPE> rj; 
-    MultiVec<TYPE> *qj = 0, *Qj = 0, *tptr = 0;
-    tptr = _basisvecs->Clone(IntOne); assert(tptr!=NULL);
+    RefCountPtr<const MultiVec<TYPE> > Qj;
+    RefCountPtr<MultiVec<TYPE> > qj, tptr;
+    tptr = MVT::Clone(*_basisvecs,IntOne);
     //
     // Zero out the array that will contain the Fourier coefficients.
     //
@@ -898,7 +881,7 @@ namespace Belos {
       // Grab the j-th column of VecIn (the first column is indexed to 
       // be the zero-th one).
       //
-      qj = VecIn.CloneView(index+j, IntOne); assert(qj!=NULL);
+      qj = MVT::CloneView( VecIn, index+j, IntOne );
       //
       // If we are beyond the 1st column, orthogonalize against the previous
       // vectors in the current block
@@ -909,8 +892,8 @@ namespace Belos {
 	// basis for first j columns of the entering VecIn).
 	//
 	rj.size(j);
-	Qj = VecIn.CloneView(index, j);
-	qj->MvNorm(norm1);
+	Qj = MVT::CloneView( MVT::c(VecIn), index, j );
+	MVT::MvNorm(*qj,norm1);
 	//
 	// Do one step of classical Gram-Schmidt orthogonalization
 	// with a second correction step if needed
@@ -919,7 +902,7 @@ namespace Belos {
 	// j of VecIn against columns 0:j-1 of VecIn. In other words,
 	// result = trans(Qj)*qj.
 	//
-	qj->MvTransMv( one, *Qj, rj );
+	MVT::MvTransMv( *qj, one, *Qj, rj );
 	//
 	// Sum results[0:j-1] into column j of R.
 	//
@@ -929,15 +912,15 @@ namespace Belos {
 	//
 	// Compute qj <- qj - Qj * rj.
 	//
-	qj->MvTimesMatAddMv(-one, *Qj, rj, one);
+	MVT::MvTimesMatAddMv(-one, *Qj, rj, one, *qj);
 	//
-	qj->MvNorm(norm2);
+	MVT::MvNorm(*qj,norm2);
 	//
 	if (norm2[0] < norm1[0] * _dep_tol){
 	  //
 	  // Repeat process with newly computed qj
 	  //
-	  qj->MvTransMv( one, *Qj, rj );
+	  MVT::MvTransMv( *qj, one, *Qj, rj );
 	  //
 	  // Sum results[0:j-1] into column j of R.
 	  //
@@ -947,9 +930,9 @@ namespace Belos {
 	  //
 	  // Compute qj <- qj - Qj * rj.
 	  //
-	  qj->MvTimesMatAddMv(-one, *Qj, rj, one);
+	  MVT::MvTimesMatAddMv(-one, *Qj, rj, one, *qj);
 	  //
-	  qj->MvNorm(norm2);
+	  MVT::MvNorm(*qj,norm2);
 	}
 	//
 	// Check for dependencies
@@ -965,11 +948,10 @@ namespace Belos {
 	  // 
 	  //
 	  if (norm2[0] < norm1[0] * _blk_tol) {
-	    if (_om.doOutput( 3 )) {
-	      _os << "Column " << j << " of current block is dependent" << endl;
+	    if (_om->doOutput( 3 )) {
+	      *_os << "Column " << j << " of current block is dependent" << endl;
 	    }
 	    flg = true;  
-	    delete qj; delete Qj; delete tptr;
 	    delete [] index;
 	    return flg;
 	  }
@@ -989,23 +971,22 @@ namespace Belos {
 	    addvec = true;
 	    Teuchos::SerialDenseVector<int,TYPE> tj(j);
 	    //
-	    tptr->MvRandom();
-	    tptr->MvNorm(norm1);
+	    MVT::MvRandom(*tptr);
+	    MVT::MvNorm(*tptr,norm1);
 	    //
 	    int num_orth;
 	    for (num_orth=0; num_orth<2; num_orth++){
-	      tptr->MvTransMv(one, *Qj, tj);
-	      tptr->MvTimesMatAddMv(-one, *Qj, tj, one);
+	      MVT::MvTransMv(*tptr, one, *Qj, tj);
+	      MVT::MvTimesMatAddMv(-one, *Qj, tj, one, *tptr);
 	    }
-	    tptr->MvNorm(norm2); 
+	    MVT::MvNorm(*tptr,norm2); 
 	    //
 	    if (norm2[0] >= norm1[0] * _sing_tol){
 	      // Copy vector into current column of _basisvecs
-	      qj->MvAddMv(one, *tptr, zero, *tptr);
+	      MVT::MvAddMv( one, *tptr, zero, *tptr, *qj );
 	    }
 	    else {
 	      flg = true;
-	      delete qj; delete Qj; delete tptr;
 	      delete [] index;
 	      return flg;
 	    } 
@@ -1017,10 +998,10 @@ namespace Belos {
       // VecIn (qj), then normalize qj to make it into a unit vector
       //
       TYPE normq[IntOne];
-      qj->MvNorm(normq);
+      MVT::MvNorm(*qj,normq);
       //
       TYPE rjj = one / normq[0];
-      qj->MvAddMv ( rjj, *qj, zero, *qj );
+      MVT::MvAddMv( rjj, *qj, zero, *qj, *qj ); // RAB: Warning aliasing of arguments!
       //
       if (addvec){
 	// We've added a random vector, so
@@ -1030,19 +1011,17 @@ namespace Belos {
       else {
 	FouierR(j,j) = normq[0];
       }
-      delete qj; delete Qj;
       //
     } // end for (j=0; j<nb; j++)
       //
     delete [] index;
-    delete tptr; tptr = 0;
     return flg;
     //
   } // end QRFactorAug()
   
   
   template<class TYPE>
-  void BlockGmres<TYPE>::CheckKrylovOrth( const int j ) 
+  void BlockGmres<TYPE>::CheckKrylovOrth( const int j )
   {
     int i,k,m=(j+1)*_blocksize;
     const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
@@ -1053,13 +1032,12 @@ namespace Belos {
     for ( i=0; i<_blocksize; i++ ) {
       index[i] = m+i;
     }
-    MultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _blocksize);
-    assert(F_vec!=NULL);
+    RefCountPtr<MultiVec<TYPE> > F_vec = MVT::CloneView(*_basisvecs, index, _blocksize);
     
     TYPE *ptr_norms = new double[m];
     TYPE sum = zero;
     
-    F_vec->MvNorm(ptr_norms);
+    MVT::MvNorm(*F_vec,ptr_norms);
     for ( i=0; i<_blocksize; i++ ) {
       sum += ptr_norms[i];
     }
@@ -1067,14 +1045,13 @@ namespace Belos {
     for ( i=0; i<m; i++ ) {
       index[i] = i;
     }
-    MultiVec<TYPE>* Vj = _basisvecs->CloneView(index, m);
-    assert(Vj!=NULL);
-    Vj->MvTransMv(one, *Vj, VTV);
+    RefCountPtr<MultiVec<TYPE> > Vj = MVT::CloneView(*_basisvecs,index, m);
+    MVT::MvTransMv(*Vj, one, *Vj, VTV);
     TYPE column_sum;
     //
-    _os << " " <<  endl;
-    _os << "********Block Arnoldi iteration******** " << j <<  endl;
-    _os << " " <<  endl;
+    *_os << " " <<  endl;
+    *_os << "********Block Arnoldi iteration******** " << j <<  endl;
+    *_os << " " <<  endl;
     //
     for (k=0; k<m; k++) {
       column_sum = zero;
@@ -1084,13 +1061,13 @@ namespace Belos {
 	}
 	column_sum += VTV(i,k);
       }
-      _os <<  " V^T*V-I " << "for column " << k << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) <<  endl;
+      *_os <<  " V^T*V-I " << "for column " << k << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) <<  endl;
     }
-    _os << " " <<  endl;
+    *_os << " " <<  endl;
     
     Teuchos::SerialDenseMatrix<int,TYPE> E; E.shape(m,_blocksize);
     
-    F_vec->MvTransMv(one, *Vj, E);
+    MVT::MvTransMv(*F_vec, one, *Vj, E);
     
     for (k=0;k<_blocksize;k++) {
       column_sum = zero;
@@ -1098,12 +1075,10 @@ namespace Belos {
 	column_sum += E(i,k);
       }
       if (ptr_norms[k]) column_sum = column_sum/ptr_norms[k];
-      _os << " Orthogonality with F " << "for column " << k << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) <<  endl;
+      *_os << " Orthogonality with F " << "for column " << k << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) <<  endl;
     }
-    _os << " " <<  endl;
+    *_os << " " <<  endl;
     //
-    delete F_vec;
-    delete Vj;
     delete [] index;
     delete [] ptr_norms;
     //

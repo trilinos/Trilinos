@@ -48,6 +48,9 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
+	$(top_srcdir)/config/tac_arg_check_default_feature.m4 \
+	$(top_srcdir)/config/tac_arg_check_feature.m4 \
+	$(top_srcdir)/config/tac_arg_check_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -56,6 +59,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -72,7 +76,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = BlockCG BlockGmres
+DIST_SUBDIRS = scripts BlockCG BlockGmres
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -90,6 +94,8 @@ BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
+BUILD_TSFCORE_EPETRA_FALSE = @BUILD_TSFCORE_EPETRA_FALSE@
+BUILD_TSFCORE_EPETRA_TRUE = @BUILD_TSFCORE_EPETRA_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -188,7 +194,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_BELOS_TESTS_TRUE@@BUILD_TESTS_TRUE@SUBDIRS = BlockCG BlockGmres
+@BUILD_BELOS_TESTS_TRUE@BELOS_TEST_SUBDIRS = BlockCG BlockGmres
+SUBDIRS = scripts $(BELOS_TEST_SUBDIRS)
 all: all-recursive
 
 .SUFFIXES:

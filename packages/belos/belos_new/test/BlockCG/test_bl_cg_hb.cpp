@@ -1,18 +1,34 @@
+// @HEADER
+// ***********************************************************************
 //
-// test_bl_cg_hb.cpp
+//                 Belos: Block Linear Solvers Package
+//                 Copyright (2004) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+// @HEADER
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
-// Multiple right-hand-sides are created randomly.
+// The right-hand-side from the HB file is used instead of random vectors.
 // The initial guesses are all set to zero. 
-//
-// As currently set up, this driver tests the case when the number of right-hand
-// sides (numrhs = 15) is greater than the blocksize (block = 10) used by 
-// the solver. Here, 2 passes through the solver are required to solve 
-// for all right-hand sides. This information can be edited (see below - other
-// information used by block solver - can be user specified) to solve for
-// other sizes of systems. For example, one could set numrhs = 1 and block = 1,
-// to solve a single right-hand side system in the traditional way, or, set
-// numrhs = 1 and block > 1 to sove a single rhs-system with a block implementation. 
 //
 // NOTE: No preconditioner is used in this case. 
 //
@@ -56,16 +72,28 @@ int main(int argc, char *argv[]) {
 	
 	int MyPID = Comm.MyPID();
 	int NumProc = Comm.NumProc();
-	bool verbose = (MyPID == 0);
+	bool verbose = 0;
 	//
-    	if(argc < 2 && verbose) {
+    	if((argc < 2 || argc > 4)&& MyPID==0) {
      	cerr << "Usage: " << argv[0] 
-	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
+	 << " [ -v ] [ HB_filename ]" << endl
 	 << "where:" << endl
+	 << "-v                 - run test in verbose mode" << endl
 	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
 	 << endl;
     	return(1);
 	}
+	//
+	// Find verbosity flag
+	//
+	int file_arg = 1;
+        for(i = 1; i < argc; i++)
+	{
+	  if(argv[i][0] == '-' && argv[i][1] == 'v') {
+	    verbose = (MyPID == 0);
+	    if(i==1) file_arg = 2;
+	  }
+        }
 	//
 	//**********************************************************************
 	//******************Set up the problem to be solved*********************
@@ -75,7 +103,7 @@ int main(int argc, char *argv[]) {
 	//
 	// *****Read in matrix from HB file******
 	//
-        Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros,
+        Trilinos_Util_read_hb(argv[file_arg], MyPID, &NumGlobalElements, &n_nonzeros,
                               &val, &bindx, &xguess, &b, &xexact);
         // 
         // *****Distribute data among processors*****
@@ -128,14 +156,12 @@ int main(int argc, char *argv[]) {
 	//
 	int numrhs = 1;  // total number of right-hand sides to solve for
     	int block = 1;  // blocksize used by solver
-	int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
-    	double tol = 1.0e-6;  // relative residual tolerance
+	int maxits = NumGlobalElements/block; // maximum number of iterations to run
+    	double tol = 1.0e-5;  // relative residual tolerance
 	//
 	// Construct the right-hand side and solution multivectors.
 	//
 	Belos::PetraVec<double> rhs(Map, b, numrhs, NumMyElements);
-	//Belos::PetraVec<double> rhs( Map, numrhs );
-	//rhs.MvRandom();
 	Belos::PetraVec<double> soln( Map, numrhs );
 	Belos::PetraVec<double> xx(Map, xexact, numrhs, NumMyElements);
 	//
@@ -153,7 +179,8 @@ int main(int argc, char *argv[]) {
 	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
 	//
 	Belos::OutputManager<double> My_OM( MyPID );
-	//My_OM.SetVerbosity( 1 );
+	if (verbose)
+	  My_OM.SetVerbosity( 2 );	
 	//
 	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, My_OM);
 	//
@@ -181,7 +208,6 @@ int main(int argc, char *argv[]) {
 	timer.start();
 	MyBlockCG.Solve();
 	timer.stop();
-	My_Test.Print(cout);
 
 	if (verbose) {
 		cout << "Solution time : "<< timer.totalElapsedTime()<<endl;
@@ -196,9 +222,12 @@ int main(int argc, char *argv[]) {
   delete [] xguess;
   delete [] update; 
   delete [] bindx;
-  return 0;
+
+  if (My_Test.GetStatus()==Belos::Converged)
+    return 0;
+  return 1;
   //
-} // end test_bl_pgmrs_hb.cpp
+} // end test_bl_cg_hb.cpp
 
 
 
