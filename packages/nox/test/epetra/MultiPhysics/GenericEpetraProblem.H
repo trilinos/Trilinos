@@ -41,6 +41,9 @@
 #include "NOX_EpetraNew_Interface_Jacobian.H"
 #include "NOX_EpetraNew_Interface_Preconditioner.H"
 
+//#include "Problem_Manager.H"
+class Problem_Manager;
+
 // Forward Declarations
 class Epetra_Comm;
 class Epetra_Map; 
@@ -91,11 +94,26 @@ public:
   // Query the unique int id for this problem
   virtual int getId() const { return myId; }; 
 
+  // Set the problem Manager with which this problem interacts 
+  // (ie for transfers)
+  virtual void setManager(Problem_Manager* manager_) 
+    { myManager =  manager_; }; 
+
+  // Add a problem to the list of that this one depends on
+  virtual void addProblemDependence(const GenericEpetraProblem& problemB); 
+
   // Add a transfer operator to get fields from another problem
   virtual void addTransferOp(const GenericEpetraProblem& problemB); 
 
+  // Do transfers from each problem to this
+  virtual void doTransfer(); 
+
   // Set the solution vector (initialSolution)
   virtual void setSolution(const Epetra_Vector&); 
+
+  // Create storage for auxillary data received from other problems via
+  // transfer operations
+  virtual void createAuxillaryVectors(); 
 
   // Set auxillary (other problem variables) vector
   virtual void setAuxillarySolution(const Epetra_Vector&); 
@@ -136,6 +154,7 @@ protected:
 protected:
 
   int myId;                     // Unique integer id for this Problem
+  Problem_Manager* myManager;   // Problem Manager with which this problem interacts
   //Epetra_Map *StandardMap;
   Epetra_Map *OverlapMap;
   Epetra_Import *Importer;
@@ -144,6 +163,7 @@ protected:
   Epetra_CrsGraph *AA;
   Epetra_CrsMatrix *A;
   Epetra_Comm *Comm;
+  vector<int> auxProblems;      // List of problems that this one depends on
   map<int, Epetra_Vector*> auxSolutions; // Auxillary data; solutions from 
                                   // other Problems needed by this Problem
   map<int, XferOp*> xferOperators;   // Container of transfer operators

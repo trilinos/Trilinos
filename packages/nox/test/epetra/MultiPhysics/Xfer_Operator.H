@@ -49,7 +49,8 @@ class XferOp {
   // Destructor
   ~XferOp();
 
-  // Calculates the values of u and x at the specified gauss point
+  // Transfers data from one problem to another using a previously constructed
+  // mapping.
   void transferField(Epetra_Vector& vecTo, Epetra_Vector& vecFrom);
 
 private:

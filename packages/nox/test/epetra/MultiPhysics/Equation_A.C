@@ -61,7 +61,7 @@ Equation_A::Equation_A(Epetra_Comm& comm, int numGlobalNodes) :
   oldSolution = new Epetra_Vector(*StandardMap);
 
   // Create extra vector needed as data from other problem (B)
-  auxSolutions.insert(pair<int, Epetra_Vector*>(1, new Epetra_Vector(*StandardMap)));
+//  auxSolutions.insert(pair<int, Epetra_Vector*>(1, new Epetra_Vector(*StandardMap)));
 
   // Next we create and initialize the solution vector
   initialSolution = new Epetra_Vector(*StandardMap);
@@ -194,7 +194,8 @@ bool Equation_A::evaluate(
   // treatment for the current soution vector arises from use of
   // FD coloring in parallel.
   uold.Import(*oldSolution, *Importer, Insert);
-  aux.Import(*(auxSolutions.find(1)->second), *Importer, Insert);
+//  aux.Import(*(auxSolutions.find(1)->second), *Importer, Insert);
+  aux.Import(*(auxSolutions.find(auxProblems[0])->second), *Importer, Insert);
   xvec.Import(*xptr, *Importer, Insert);
   if( flag == NOX::EpetraNew::Interface::Required::FD_Res)
     // Overlap vector for solution received from FD coloring, so simply reorder

@@ -43,6 +43,7 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 
+#include "Problem_Manager.H"
 #include "GenericEpetraProblem.H"
 #include "Xfer_Operator.H"
 
@@ -178,7 +179,7 @@ void GenericEpetraProblem::outputResults(NOX::Solver::Manager& solver,
 
 Epetra_Vector& GenericEpetraProblem::getMesh()
 {
-  assert( xptr != 0 ); // Solution vector had better exist
+  assert( xptr != 0 ); // Mesh vector had better exist
   return *xptr;
 }
 
@@ -222,6 +223,24 @@ void GenericEpetraProblem::setSolution(const Epetra_Vector& data)
   *initialSolution = data;
 }
 
+void GenericEpetraProblem::createAuxillaryVectors()
+{
+  // Create the auxillary vectors needed to receive data from other problems
+  if( !initialSolution ) {
+    cout << "ERROR: Cannot create auxillary data without an existing solution "
+         << "vector for this problem !!" << endl;
+    throw "GenericEpetraProblem ERROR";
+  }
+  for( int i = 0; i<auxProblems.size(); i++ ) {
+#ifdef DEBUG
+    cout << "For problem : " << myId << "  Creating AuxVec for problem : "
+         << auxProblems[i] << endl;
+#endif
+    auxSolutions.insert( pair<int, Epetra_Vector*>(auxProblems[i],
+			    new Epetra_Vector(*initialSolution)) );
+  }
+}
+
 void GenericEpetraProblem::setAuxillarySolution(const Epetra_Vector& data)
 {
   // Create the auxillary vector if needed
@@ -234,10 +253,41 @@ void GenericEpetraProblem::setAuxillarySolution(const Epetra_Vector& data)
     *(auxSolutions.find(1)->second) = data;
 }
 
+void GenericEpetraProblem::addProblemDependence(
+		const GenericEpetraProblem& problemB)
+{
+  // Add a problem to the list of those this one depends on
+  auxProblems.push_back(problemB.getId());
+}
+
 void GenericEpetraProblem::addTransferOp(const GenericEpetraProblem& problemB)
 {
   // Add a transfer operator to get fields from another problem
-  xferOperators.insert(pair<int, XferOp*>(problemB.getId(), new XferOp(*this, problemB)));
+  xferOperators.insert(pair<int, XferOp*>(problemB.getId(), 
+			  new XferOp(*this, problemB)));
+}
+
+void GenericEpetraProblem::doTransfer()
+{
+  // Do transfers from each dependent problem to this one
+  for( int i = 0; i<auxProblems.size(); i++) {
+    int auxId = auxProblems[i];
+    XferOp* xfer = xferOperators.find(auxId)->second;
+
+    if( !xfer ) {
+      cout << "ERROR: doTransfer: No valid transfer operator !!" << endl;
+      throw "GenericEpetraProblem ERROR";
+    }
+
+    else {
+      // NOTE that we are transferring (by default) to/from each problem's
+      // solution vector which may not be the same as in each respective
+      // group.
+      Epetra_Vector& fromVec = myManager->getProblem(auxId).getSolution();
+      Epetra_Vector& toVec = *(auxSolutions.find(auxId)->second);
+      xfer->transferField(toVec, fromVec); 
+    }  
+  }
 }
 
 bool GenericEpetraProblem::computePrecMatrix(const Epetra_Vector& solnVector,

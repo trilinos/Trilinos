@@ -62,6 +62,9 @@ public:
   // Add a problem to the Manager
   void addProblem(GenericEpetraProblem& problem);
 
+  // Get a problem given its unique id
+  GenericEpetraProblem& getProblem(int id);
+
   // Create a dependence of Problem A equations on Problem B variables
   void createDependency(GenericEpetraProblem& problemA,
                         GenericEpetraProblem& problemB);
@@ -76,7 +79,11 @@ public:
   // regitrations and trigger the problem setup
   void registerComplete();
 
-  // Solve problems 
+  // Have each problem receive auxillary data from each problem on which it
+  // depends
+  bool syncProblems();
+
+  // Solve problem using fixed-point iteration
   bool solve();
 
   // Solve problems using matrix-free coupling
@@ -100,7 +107,7 @@ private:
 
   map<int, GenericEpetraProblem*> Problems; // Problem container
   vector<NOX::EpetraNew::LinearSystemAztecOO*> LinearSystems;
-  					    // Groups container
+  					    // Linear Systems container
   vector<NOX::EpetraNew::Group*> Groups;    // Groups container
   vector<Problem_Interface*> Interfaces;    // Interfaces container
   vector<NOX::Solver::Manager*> Solvers;    // Solvers container

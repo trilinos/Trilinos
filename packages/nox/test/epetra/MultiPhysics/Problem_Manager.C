@@ -114,6 +114,20 @@ void Problem_Manager::addProblem(GenericEpetraProblem& problem)
 {
   Problems.insert(pair<int, GenericEpetraProblem*>(++problemCount, &problem));
   problem.setId(problemCount);
+  problem.setManager(this);
+}
+
+GenericEpetraProblem& Problem_Manager::getProblem(int id_)
+{
+  // Get a problem given its unique id
+  GenericEpetraProblem* problem = Problems.find(id_)->second;
+  if( !problem ) {
+    cout << "ERROR: Problem with id --> " << id_ << " not registered with "
+         << "Problem_Manager !!" << endl;
+    throw "Problem_Manager ERROR";
+  }
+  else
+    return *problem;
 }
 
 void Problem_Manager::createDependency(GenericEpetraProblem& problemA,
@@ -127,6 +141,7 @@ void Problem_Manager::createDependency(GenericEpetraProblem& problemA,
   }
 
   problemA.addTransferOp(problemB);
+  problemA.addProblemDependence(problemB);
 
 }
 
@@ -166,13 +181,30 @@ void Problem_Manager::registerComplete()
 
   int icount = 0; // Problem counter
 
+  // Do first pass over problems to allocate needed data
   while( iter != last)
   {
-    Interfaces.push_back(new Problem_Interface(*iter->second));
+    // Get a convenient reference to the problem at hand
+    GenericEpetraProblem& problem = *(*iter).second;
+    // Create auxillary vectors for this problem
+    problem.createAuxillaryVectors();
+
+    iter++;
+  }
+
+  iter = Problems.begin();
+
+  // Do second pass to setup each problem
+  while( iter != last)
+  {
+    // Get a convenient reference to the problem at hand
+    GenericEpetraProblem& problem = *(*iter).second;
+
+    Interfaces.push_back(new Problem_Interface(problem));
     NOX::EpetraNew::Interface::Required& reqInt = 
       dynamic_cast<NOX::EpetraNew::Interface::Required&>(*Interfaces.back());
 
-    NOX::Epetra::Vector nox_soln( (iter->second)->getSolution() );
+    NOX::Epetra::Vector nox_soln( problem.getSolution() );
 
     // Use this for analytic Matrix Fills
 #ifndef USE_FD
@@ -183,8 +215,8 @@ void Problem_Manager::registerComplete()
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       reqInt,
       jacInt,
-      (iter->second)->getJacobian(),
-      (iter->second)->getSolution()));
+      problem.getJacobian(),
+      problem.getSolution()));
 
     Groups.push_back( new NOX::EpetraNew::Group(
       nlParams->sublist("Printing"),
@@ -200,17 +232,17 @@ void Problem_Manager::registerComplete()
 
     bool verbose = false;
     TmpMapColorings.push_back(new EpetraExt::CrsGraph_MapColoring(verbose));
-    ColorMaps.push_back(&((*TmpMapColorings.back())((*iter)->getGraph())));
+    ColorMaps.push_back(&((*TmpMapColorings.back())(problem.getGraph())));
     ColorMapIndexSets.push_back(new 
       EpetraExt::CrsGraph_MapColoringIndex(*ColorMaps.back()));
-    ColumnsSets.push_back(&(*ColorMapIndexSets.back())((*iter)->getGraph()));
+    ColumnsSets.push_back(&(*ColorMapIndexSets.back())(problem.getGraph()));
 
     if (MyPID == 0)
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
                   icount++,fillTime.ElapsedTime());
     MatrixOperators.push_back(new
       NOX::EpetraNew::FiniteDifferenceColoring(*Interfaces.back(), 
-        (*iter)->getSolution(), (*iter)->getGraph(), *ColorMaps.back(), 
+        problem.getSolution(), problem.getGraph(), *ColorMaps.back(), 
         *ColumnsSets.back()));
     NOX::EpetraNew::Interface::Jacobian& jacInt = 
       dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*MatrixOperators.back());
@@ -220,7 +252,7 @@ void Problem_Manager::registerComplete()
       reqInt,
       jacInt,
       *MatrixOperators.back(),
-      (*iter)->getSolution()));
+      problem.getSolution()));
 
     Groups.push_back( new NOX::EpetraNew::Group(
       nlParams->sublist("Printing"),
@@ -243,6 +275,22 @@ void Problem_Manager::registerComplete()
 
   return;
 
+}
+
+bool Problem_Manager::syncProblems()
+{
+  if(Problems.empty()) {
+    cout << "ERROR: No problems registered with Problem_Manager !!"
+         << endl;
+    throw "Problem_Manager ERROR";
+  }
+  
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  // Loop over each problem being managed and invoke its transfer requests
+  for( ; problemIter != problemLast; problemIter++)
+    (*problemIter).second->doTransfer();
 }
 
 bool Problem_Manager::solve()
@@ -280,8 +328,9 @@ bool Problem_Manager::solve()
                        &solverB = *Solvers[1];
 
   // Sync the two problems and get initial convergence state
-  problemA.setAuxillarySolution(problemB.getSolution());
-  problemB.setAuxillarySolution(problemA.getSolution());
+  syncProblems();
+//  problemA.setAuxillarySolution(problemB.getSolution());
+//  problemB.setAuxillarySolution(problemA.getSolution());
   grpA.setX(problemA.getSolution());
   grpB.setX(problemB.getSolution());
   grpA.computeF();
@@ -315,7 +364,8 @@ bool Problem_Manager::solve()
     const Epetra_Vector& finalSolutionA =
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupA.getX())).getEpetraVector();
 
-    problemB.setAuxillarySolution(finalSolutionA);
+    problemB.doTransfer();
+//    problemB.setAuxillarySolution(finalSolutionA);
     solverB.reset(grpB, *statusTest, *nlParams);
     status = solverB.solve();
     if( status != NOX::StatusTest::Converged )
@@ -331,10 +381,12 @@ bool Problem_Manager::solve()
     const Epetra_Vector& finalSolutionB =
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupB.getX())).getEpetraVector();
   
-    problemA.setAuxillarySolution(finalSolutionB);
+    problemA.doTransfer();
+//    problemA.setAuxillarySolution(finalSolutionB);
     grpA.setX(finalSolutionA);
     grpA.computeF();
-    problemB.setAuxillarySolution(finalSolutionA);
+    problemB.doTransfer();
+//    problemB.setAuxillarySolution(finalSolutionA);
     grpB.setX(finalSolutionB);
     grpB.computeF();
 
@@ -387,8 +439,9 @@ bool Problem_Manager::solveMF()
                        &solverB = *Solvers[1];
 
   // Sync the two problems and get initial convergence state
-  problemA.setAuxillarySolution(problemB.getSolution());
-  problemB.setAuxillarySolution(problemA.getSolution());
+  syncProblems();
+//  problemA.setAuxillarySolution(problemB.getSolution());
+//  problemB.setAuxillarySolution(problemA.getSolution());
   grpA.setX(problemA.getSolution());
   grpB.setX(problemB.getSolution());
   grpA.computeF();
@@ -555,8 +608,12 @@ bool Problem_Manager::evaluate(
     solnB[i] = (*solnVector)[i+solnA.MyLength()];
 
   // Pass solutions and compute residuals
-  problemA.setAuxillarySolution(solnB);
-  problemB.setAuxillarySolution(solnA);
+//  cout << "\n\t\tInside evaluate(),  here is solnA :" << endl << solnA << endl;
+  problemA.setSolution(solnA);
+  problemB.setSolution(solnB);
+  syncProblems();
+//  problemA.setAuxillarySolution(solnB);
+//  problemB.setAuxillarySolution(solnA);
   grpA.setX(solnA);
   grpB.setX(solnB);
 
@@ -716,7 +773,7 @@ void Problem_Manager::generateGraph()
   for (i=0; i<graphB.NumMyRows(); i++)
   {
     row = graphB.Map().GID(i);
-    graphA.ExtractGlobalRowCopy(row, maxAllBGID, numCols, indices);
+    graphB.ExtractGlobalRowCopy(row, maxAllBGID, numCols, indices);
     for (int j=0; j<numCols; j++)
       indices[j] += maxAllAGID + 1;
     row += maxAllAGID + 1;

@@ -31,7 +31,7 @@
 #include "GenericEpetraProblem.H"
 #include "Epetra_Vector.h"
 
-#define DEBUG_TRANSFER_OPERATOR
+#undef DEBUG_TRANSFER_OPERATOR
 
 // Constructor
 XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
@@ -109,5 +109,20 @@ XferOp::~XferOp() { };
 // Calculates the values of u and x at the specified gauss point
 void XferOp::transferField(Epetra_Vector& vecTo, Epetra_Vector& vecFrom)
 {
-	// Do the transfer using Epetra_Vectors
+  // Do the transfer using Epetra_Vectors
+  for( int i = 0; i < vecTo.MyLength(); i++) {
+    vecTo[i] = 0.0;
+    pair< multimap<int, int>::iterator, 
+          multimap<int, int>::iterator > rangeN 
+		  = dependentNodes.equal_range(i);
+    pair< multimap<int, double>::iterator, 
+          multimap<int, double>::iterator > rangeW 
+		  = dependentWeights.equal_range(i);
+    multimap<int, int>::iterator iterN;
+    multimap<int, double>::iterator iterW;
+    int j;
+    for( j = 0, iterN = rangeN.first, iterW = rangeW.first;
+		   iterN != rangeN.second; j++, iterN++, iterW++)
+      vecTo[i] += iterW->second * vecFrom[iterN->second];
+  }
 }
