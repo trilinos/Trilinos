@@ -504,7 +504,8 @@ static int rcb_fn(
     }
 
     /* determine if there is a first guess to use */
-    if (reuse && dim == treept[procmid].dim) {
+    /* The test on old_nprocs is for the TFLOPS_SPECIAL flag */
+    if (old_nprocs > 1 && reuse && dim == treept[procmid].dim) {
       if (stats) counters[5]++;
       valuehalf = treept[procmid].cut;
       first_guess = 1;
