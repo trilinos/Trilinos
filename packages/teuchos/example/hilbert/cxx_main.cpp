@@ -26,6 +26,38 @@
 // ***********************************************************************
 // @HEADER
 
+// Teuchos Example: Hilbert
+  
+// This example showcases the usage of BLAS generics with an arbitrary precision
+// library -- ARPREC.
+  
+// Hilbert matrices are classical examples of ill-conditioned matrices. Cholesky
+// factorization fails on higher-order Hilbert matrices because they lose their
+// positive definiteness when represented with floating-point numbers. We have
+// attempted to alleviate this problem with arbitrary precision.
+  
+// The example program compares two datatypes, scalar type 1 and scalar type 2,
+// which can be customized below using #defines. Default types are mp_real (from
+// ARPREC) and double. The mp_real datatype must be initialized with a maximum 
+// precision value, also customizable below. (Default is 32.)
+  
+// For a given size n, an n-by-n Hilbert matrix H and a n-by-1 vector b are 
+// constructed such that, if Hx* = b, the true solution x* is a one-vector.
+// Cholesky factorization is attempted on H; if it fails, no further tests are
+// attempted for that datatype. If it is successful, the approximate solution x~
+// is computed with a pair of BLAS TRSM (triangular solve) calls. Then, the
+// two-norm of (x* - x~) is computed with BLAS AXPY (vector update) and BLAS
+// NRM2. The program output is of the form:
+
+//     [size of Hilbert matrix]: [two-norm of (x* - x~)]
+  
+// Tests for scalar type 2 are performed before scalar type 1 because scalar
+// type 2 fails at Cholesky factorization for much lower values of n if the
+// mp_real precision is sufficiently large.
+  
+// Timing analysis still remains to be done for this example, which should be
+// easily accomplished with the timing mechanisms native to Teuchos.
+
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_BLAS.hpp"
 
@@ -38,6 +70,7 @@ using namespace Teuchos;
 
 #ifdef HAVE_TEUCHOS_ARPREC
 #define SType1	   mp_real
+#define PRECISION  32
 #else
 #define SType1     double
 #endif
@@ -70,69 +103,30 @@ template<>
 void PrintArrayAsMatrix(mp_real*, int, int);
 #endif
 
-
 int main(int argc, char *argv[]) {
 
 #ifdef HAVE_TEUCHOS_ARPREC
-  mp::mp_init(20);
+  mp::mp_init(PRECISION);
 #endif
 
-  // SType1 dummy = ScalarTraits<SType1>::zero();
-  // SType1 result = Solve(3, dummy);
-  // cout << "result = " << result << endl;
-
-  SType1* A = new SType1[3*3];
-  SType1* b = new SType1[3];
-  SType1* B = new SType1[3*2];
-
-  A[0] = 1;
-  A[1] = 0;
-  A[2] = 0;
-  A[3] = 4;
-  A[4] = 2;
-  A[5] = 0;
-  A[6] = 5;
-  A[7] = 6;
-  A[8] = 3;
-
-  b[0] = 13;
-  b[1] = 20;
-  b[2] = 12;
-
-  B[0] = 7;
-  B[1] = 7;
-  B[2] = 3;
-  B[3] = 19;
-  B[4] = 16;
-  B[5] = 6;
-
-  BLAS<int, SType1> blasObj;
-
-  PrintArrayAsMatrix(A, 3, 3);
-  PrintArrayAsVector(b, 3);
-
-  // void  TRSM (ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType *A, const OrdinalType lda, ScalarType *B, const OrdinalType ldb) const
-  
-  blasObj.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, 3, 1, 1, A, 3, b, 3);
-
-  cout << endl;
-
-  PrintArrayAsVector(b, 3);
-
-  cout << " *** " << endl << endl;
-
-  PrintArrayAsMatrix(A, 3, 3);
-  PrintArrayAsMatrix(B, 3, 2);
-  
-  blasObj.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, 3, 2, 2, A, 3, B, 3);
- 
-  cout << endl;
-
-  PrintArrayAsMatrix(B, 3, 2);
-
-  delete[] A;
-  delete[] b;
-  delete[] B;
+  cout << "SType2: " << endl;
+  int n = 2;
+  SType2 dummy2 = ScalarTraits<SType2>::zero();
+  SType2 result2 = Solve(2, dummy2);
+  while(result2 != 10000.0) {
+    cout << n << ": " << result2 << endl;
+    n++;
+    result2 = Solve(n, dummy2);
+  }
+  cout << endl << endl << "SType1:" << endl;
+  n = 2;
+  SType1 dummy1 = ScalarTraits<SType1>::zero();
+  SType1 result1 = Solve(2, dummy1);
+  while(result1 != 10000.0) {
+    cout << n << ": " << result1 << endl;
+    n++;
+    result1 = Solve(n, dummy1);
+  }
 
 #ifdef HAVE_TEUCHOS_ARPREC
   mp::mp_finalize();
@@ -143,29 +137,30 @@ int main(int argc, char *argv[]) {
 
 template<typename TYPE>
 void ConstructHilbertMatrix(TYPE* A, int n) {
-  TYPE sOne = ScalarTraits<TYPE>::one();
+  TYPE scal0 = ScalarTraits<TYPE>::zero();
+  TYPE scal1 = ScalarTraits<TYPE>::one();
   for(int i = 0; i < n; i++) {
     for(int j = 0; j < n; j++) {
-      A[i + (j * n)] = (sOne / (i + j + sOne));
+      A[i + (j * n)] = (scal1 / (i + j + scal1));
     }
   }
 }
 
 template<typename TYPE>
 void ConstructHilbertSumVector(TYPE* x, int n) {
-  TYPE sZero = ScalarTraits<TYPE>::zero();
-  TYPE sOne = ScalarTraits<TYPE>::one();
+  TYPE scal0 = ScalarTraits<TYPE>::zero();
+  TYPE scal1 = ScalarTraits<TYPE>::one();
   for(int i = 0; i < n; i++) {
-    x[i] = sZero;
+    x[i] = scal0;
     for(int j = 0; j < n; j++) {
-      x[i] += (sOne / (i + j + sOne));
+      x[i] += (scal1 / (i + j + scal1));
     }
   }  
 }
 
 template<typename TYPE>
 bool Cholesky(TYPE* A, int n) {
-  TYPE sZero = ScalarTraits<TYPE>::zero();
+  TYPE scal0 = ScalarTraits<TYPE>::zero();
   for(int k = 0; k < n; k++) {
     for(int j = k + 1; j < n; j++) {
       TYPE alpha = A[k + (j * n)] / A[k + (k * n)];
@@ -173,7 +168,7 @@ bool Cholesky(TYPE* A, int n) {
 	A[j + (i * n)] -= (alpha * A[k + (i * n)]);
       }
     }
-    if(A[k + (k * n)] <= sZero) {
+    if(A[k + (k * n)] <= scal0) {
       return 0;
     }
     TYPE beta = ScalarTraits<TYPE>::squareroot(A[k + (k * n)]);
@@ -186,29 +181,33 @@ bool Cholesky(TYPE* A, int n) {
 
 template<typename TYPE>
 TYPE Solve(int n, TYPE dummy) {
+  TYPE scal0 = ScalarTraits<TYPE>::zero();
+  TYPE scal1 = ScalarTraits<TYPE>::one();
+  TYPE scalNeg1 = scal0 - scal1;
+  TYPE result = scal0;
   BLAS<int, TYPE> blasObj;
   TYPE* H = new TYPE[n*n];
   TYPE* b = new TYPE[n];
-
+  TYPE* x = new TYPE[n];
+  for(int i = 0; i < n; i++) {
+    x[i] = scal1;
+  }
   ConstructHilbertMatrix(H, n);
-  ConstructHilbertSumVector(b, n);
-
-  // void COPY (const OrdinalType n, const ScalarType *x, const OrdinalType incx, ScalarType *y, const OrdinalType incy) const -- Copy the vector x to the vector y. 
-
-  PrintArrayAsMatrix(H, n, n);
-
-  TYPE sOne = ScalarTraits<TYPE>::one();
-
-  // void TRSM (ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType *A, const OrdinalType lda, ScalarType *B, const OrdinalType ldb) const
-
-  PrintArrayAsVector(b, n);
-
-  blasObj.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::NON_UNIT_DIAG, n, n, sOne, H, n, b, n);
-
-  PrintArrayAsVector(b, n);
-
-  delete[] H;
-  delete[] b;
+  bool choleskySuccessful = Cholesky(H, n);
+  if(!choleskySuccessful) {
+    return 10000.0;
+  }
+  else {
+    ConstructHilbertSumVector(b, n);
+    blasObj.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::NON_UNIT_DIAG, n, 1, scal1, H, n, b, n);
+    blasObj.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, n, 1, scal1, H, n, b, n);
+    blasObj.AXPY(n, scalNeg1, x, 1, b, 1);
+    result = blasObj.NRM2(n, b, 1);
+    delete[] H;
+    delete[] b;
+    delete[] x;
+    return result;
+  }
 }
 
 template<typename TYPE>
@@ -274,4 +273,3 @@ void PrintArrayAsMatrix(mp_real* a, int m, int n) {
   cout << "]" << endl; 
 }
 #endif
-
