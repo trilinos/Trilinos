@@ -72,7 +72,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/configure INSTALL \
+	$(srcdir)/Makefile.in $(top_srcdir)/configure ChangeLog \
 	config/compile config/config.guess config/config.sub \
 	config/depcomp config/install-sh config/missing \
 	config/mkinstalldirs
