@@ -2483,8 +2483,7 @@ fi
 
 
 
-if test "X$ac_cv_use_ml" != "Xno" ||
-	test "X$ac_cv_use_tsf" != "Xno"; then
+if test "X$ac_cv_use_ml" != "Xno"; then
   BUILD_ML_TRUE=
   BUILD_ML_FALSE='#'
 else
@@ -2760,8 +2759,7 @@ subdirs="$subdirs packages/meros"
 
 fi
 
-if test "X$ac_cv_use_ml" != "Xno" ||
-	test "X$ac_cv_use_tsf" != "Xno"; then
+if test "X$ac_cv_use_ml" != "Xno"; then
 
 
 subdirs="$subdirs packages/ml"
