@@ -61,6 +61,19 @@ Marzio Sala, Ken Stanley
 
 \maketitle
 
+\begin{center}
+Marzio  Sala \\
+Computational Math \& Algorithms \\
+Sandia National Laboratories\\
+MS 1110 P.O. Box 5800 \\
+Albuquerque, NM 87185-1110\\[30pt]
+Ken Stanley\\
+322 W. College St.
+Oberlin OH 44074
+\end{center}
+
+\vspace{20pt}
+
 \begin{abstract}
   
   This document described the main functinalities of the Amesos package
@@ -137,7 +150,7 @@ processors, if necessary.
 Amesos is an interface to other packages, mainly developed outside the
 Trilinos framework\footnote{Currently, serial SuperLU is included in the
   Trilinos framework.}. In order to use those packages, the user should
-carefully check copyright and licensing of those third party codes.
+carefully check copyright and licensing of those third-party codes.
 Please refer to the web page or the documentation of each particular
 package for details.
 
@@ -194,21 +207,21 @@ http://software.sandia.gov/Trilinos
 
 \smallskip
 
-Each of the Amesos classes provides an interface to a third party direct
+Each of the Amesos classes provides an interface to a third-party direct
 sparse solver code\footnote{Exception to this rule is KLU, which is
-  distributed within Amesos.}. In order to install a particular class, you
-must first install the underlying direct sparse solver code. Generally,
-the Amesos installation requires four steps:
+  distributed within Amesos.}. In order to configure and compile a given
+interface, you must first install the underlying direct sparse solver
+code. Generally, the Amesos installation requires four steps:
 \begin{enumerate}
 \item Finding MPI for your machine;
 \item Finding optimized BLAS for your machine\footnote{Some libraries
     may require CBLAS, LAPACK, BLACS, ScaLAPACK.};
-\item Installing the third party code needed by the Amesos class that
+\item Installing the third-party code needed by the Amesos class that
   you intend to use;
 \item Configuring Trilinos with Amesos. 
 \end{enumerate}
 
-Amesos is configured and built using the GNU auatoconf~\cite{Autoconf}
+Amesos is configured and built using the GNU autoconf~\cite{Autoconf}
 and automake~\cite{Automake} tools. This should help for the first two
 points. As regards the third point, we refer to the documentation of
 each package. The fourth point is addresses here.
@@ -234,36 +247,36 @@ Trilinos packages, and \verb!AMESOS_FLAGS! the configure options
 specific to Amesos. 
 
 The configure options required to enable a specific interface are
-reported in each 3-part package's section. A complete list of them can
+reported in each third-party package's section. A complete list of them can
 be obtained by typing
 \begin{verbatim}
 $TRILINOS_HOME/packages/amesos/configure --help
 \end{verbatim}
 
-\begin{table}[tbhp]
+\begin{sidewaystable}[tbhp]
   \centering
-  \begin{tabular}{| l  l | c | c | c | c | }
+  \begin{tabular}{| l  l | c | c | c | c | c | }
     \hline
-    Architecture & Communicator & KLU & UMFPACK & SuperLU\_DIST 2.0 & MUMPS 4.3.1
-    \\
+    Architecture & Communicator & KLU & UMFPACK & SuperLU\_DIST 2.0 &
+    MUMPS 4.3.1 & ScaLAPACK    \\
     \hline
-    LINUX & SERIAL & $\bullet$ & $\bullet$ & -- & -- \\
+    LINUX & SERIAL & $\bullet$ & $\bullet$ & -- & -- & -- \\
     LINUX, GNU & LAM/MPI  &$\bullet$  & $\bullet$ & $\bullet$
-    & -- \\
+    & -- & $\bullet$ \\
 %    LINUX, GNU & MPICH  & -- & -- & -- & -- \\
-    LINUX, Intel & MPICH  &$\bullet$  & $\bullet$ & --
-    & $\bullet$ \\
-    SGI 64 & MPI & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ \\
-    DEC/Alpha & MPI & $\bullet$ & $\bullet$ & -- & -- \\
+    LINUX, Intel & MPICH  &$\bullet$  & $\bullet$ & -- 
+    & $\bullet$ & $\bullet$ \\
+    SGI 64 & MPI & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & -- \\
+    DEC/Alpha & MPI & $\bullet$ & $\bullet$ & -- & -- & -- \\
 %    SUN/Solaris & MPI & -- & -- & -- & -- \\
-    ASCI Red & MPI & -- & -- & -- & $\bullet$ \\
+    ASCI Red & MPI & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & -- \\
     \hline
   \end{tabular}
   \caption{Supported architectures for various interfaces. 
   `$\bullet$' means that the interface can successfully compiled, 
-  `--' means that it cannot, or may require specific tweaks.}
+  `--' means that it cannot, or that has not been tried.}
   \label{tab:arch}
-\end{table}
+\end{sidewaystable}
 
 %%%
 %%%
@@ -272,16 +285,17 @@ $TRILINOS_HOME/packages/amesos/configure --help
 \section{Amesos\_BaseSolver: A Generic Interface to Direct Solvers}
 \label{sec:amesos_generic}
 
-All Amesos objects are constructed from the function class
+All Amesos objects are derived from the pure virtual class
+Amesos\_BaseSolver, and can be constructed using the function class
 \verb!Amesos!.  \verb!Amesos! allows a code to delay the decision about
 which concrete class to use to implement the Amesos\_BaseSolver
 interface. The main goal of this class is to allow the user to select
 any supported (and enabled at configuration time) direct solver, simply
 changing an input parameter. Another remarkable advantage of
 Amesos\_BaseSolver is that, using this class, users does not have to
-include the header files of the 3-part libraries in their
-code\footnote{Using Amesos\_BaseSolver, 3-part libraries header files
-  are required in the compilation of Amesos only.}.
+include the header files of the third-party libraries in their
+code\footnote{Using Amesos\_BaseSolver, third-party libraries header
+  files are required in the compilation of Amesos only.}.
 
 An example of use of this class is as follows. First, the following
 header files must be included:
@@ -340,14 +354,8 @@ We can construct an \verb!Amesos_BaseSolver! object as follows:
 If the class requested by \verb!Choice! is not avaiable (because is not
 installed, or \verb!Choice! is mispelled), \verb!Create()! returns 0.
 Specific parameters can be set using a Teuchos parameters' list (which
-can be empty), as
-\begin{verbatim}
-  Teuchos::ParameterList AmesosList ;
-\end{verbatim}
-Parameters are set (before a call to \verb!SymbolicFactorization()!) as
-\begin{verbatim}
-  A_Base.SetParameters(AmesosList);
-\end{verbatim}
+can be empty), as later described.
+
 Symbolic and numeric factorizations are computed using methods
 \begin{verbatim}
   A_Base->SymbolicFactorization();
@@ -375,7 +383,7 @@ the solution phase, for instance using
 A common ingredient to all the Amesos classes is the Teuchos parameters'
 list. This object, whose definition requires the input file
 \verb!Teuchos_ParameterList.hpp!, is used to specify the parameters that
-affect the 3-part libraries. For a detailed presentation of Teuchos, we
+affect the third-party libraries. For a detailed presentation of Teuchos, we
 refer to the Teuchos documentation. 
 Table~\ref{tab:teuchos} briefly reports the most
 important methods of this class.
@@ -436,10 +444,11 @@ refer to table~\ref{tab:options}.
 
 \choicebox{\tt PrintTiming}{Print some timing information.}
 
-\choicebox{\tt PrintStatus}{Print some information about the solver.}
+\choicebox{\tt PrintStatus}{Print some information about the linear
+  system and the solver.}
 
-\choicebox{\tt ComputeVectorNorms}{After solution, compute the
-  2-norm of each vector of $B$ and $X$. }
+\choicebox{\tt ComputeVectorNorms}{After solution, compute the 2-norm of
+  each vector in the Epetra\_MultiVector $B$ and $X$. }
 
 \choicebox{\tt ComputeTrueResidual}{After solution, compute the
   real residual $\| B - A X \|_2$ for vector in Epetra\_MultiVector. }
@@ -483,27 +492,27 @@ refer to table~\ref{tab:options}.
     ScaLAPACK \\
     \hline
     \tt UseTranspose & \tt bool & \tt false & $\bullet$ & $\bullet$ & -- & $\bullet$
-    & ---\\
+    & $\bullet$ \\
     \tt Threshold & \tt double & \tt 0.0 & -- & -- & -- & $\bullet$ & --
     \\
     \tt AddZeroToDiag & \tt bool & \tt false & -- & -- & $\bullet$ &
     $\bullet$ & -- \\
-    \tt PrintTiming & \tt bool & \tt false & -- & -- & -- & $\bullet$ &
-    -- \\
-    \tt PrintStatus & \tt bool & \tt false & -- & -- & $\bullet$  &
-    $\bullet$ & -- \\
+    \tt PrintTiming & \tt bool & \tt false & $\bullet$ & $\bullet$ & -- & $\bullet$ &
+    $\bullet$ \\
+    \tt PrintStatus & \tt bool & \tt false & $\bullet$ & $\bullet$ & $\bullet$  &
+    $\bullet$ & $\bullet$ \\
     \tt MaxProcs & \tt int & -1 & -- & -- & $\bullet$  & $\bullet$  &
     $\bullet$  \\
     \tt MaxProcsMatrix & \tt int & -1 & -- & -- & -- & $\bullet$  & --
     \\
-    \tt ComputeVectorNorms & \tt bool & \tt false & -- & -- & $\bullet$ & $\bullet$
-    & -- \\
-    \tt ComputeTrueResidual & \tt bool & \tt false & -- & -- & $\bullet$ &
-    $\bullet$ & -- \\
-    \tt OutputLevel & \tt int & \tt 1 & -- & -- & $\bullet$ &
-    $\bullet$ & -- \\
-    \tt DebugLevel & \tt int & \tt 0 & -- & -- & $\bullet$ &
-    $\bullet$ & -- \\
+    \tt ComputeVectorNorms & \tt bool & \tt false & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$
+    & $\bullet$ \\
+    \tt ComputeTrueResidual & \tt bool & \tt false & $\bullet$ & $\bullet$ & $\bullet$ &
+    $\bullet$ & $\bullet$ \\
+    \tt OutputLevel & \tt int & \tt 1 & $\bullet$ & $\bullet$ & $\bullet$ &
+    $\bullet$ & $\bullet$ \\
+    \tt DebugLevel & \tt int & \tt 0 & $\bullet$ & $\bullet$ & $\bullet$ &
+    $\bullet$ & $\bullet$ \\
     \hline
   \end{tabular}
   \caption{Supported options. `$\bullet$' means that the interface
@@ -533,7 +542,7 @@ spaces are important, and that parameters' list is case sensitive!
 \section{Amesos Interface to KLU}
 \label{sec:klu}
 
-KLU is a serial, unblocked code ideal for getting started and for very
+KLU is a serial, unblocked code ideal for getting started, and for very
 sparse matrices, such as circuit matrces.
 
 KLU is Tim Davis' implementation of Gilbert-Peierl's left-looking sparse
@@ -653,29 +662,29 @@ values are taken as reported in the SuperLU\_dist manual.
 \choicebox{\tt Fact}{({\tt string}) Specifies whether or not the factored form
   of the matrix $A$ is supplied onentry and, if not, how the matrix will
   be factored. It can be: {\tt DOFACT, SamePattern,
-    SmapPattern\_SameRowPerm, FACTORED}. Default: {\tt
+    SamePattern\_SameRowPerm, FACTORED}. Default: {\tt
     SamePattern\_SameRowPerm}.}
 
 \choicebox{\tt Equil}{){\tt bool}) Specifies whether to equilibrate the system of
   not. Default: true.}
 
-\choicebox{\tt ColPerm}{({\tt string}) Specifies whether to column ordering.
-  It can be: {\tt NATURAL, MMD\_AT\_PLUS\_A, MMD\_ATA, COLAMD, MY\_PERMC}. 
-  Default: {\tt MMD\_AT\_PLUS\_A}.}
+\choicebox{\tt ColPerm}{({\tt string}) Specifies the column ordering
+  strategy.  It can be: {\tt NATURAL, MMD\_AT\_PLUS\_A, MMD\_ATA,
+    COLAMD, MY\_PERMC}.  Default: {\tt MMD\_AT\_PLUS\_A}.}
 
 \choicebox{\tt perm\_c}{({\tt int *}) Specifies the ordering to use when {\tt
     ColPerm = MY\_PERMC}.}
 
-\choicebox{\tt RowPerm}{({\tt string}) Specifies whether to row ordering.
-  It can be: {\tt NATURAL, LargeDiag, MY\_PERMR}. 
-  Default: {\tt LargeDiag}.}
+\choicebox{\tt RowPerm}{({\tt string}) Specifies the row ordering
+  strategy.  It can be: {\tt NATURAL, LargeDiag, MY\_PERMR}.  Default:
+  {\tt LargeDiag}.}
 
 \choicebox{\tt perm\_r}{({\tt int *}) Specifies the ordering to use when {\tt
     RowPerm = MY\_PERMR}.}
 
 \choicebox{\tt ReplaceTinyPivot}{({\tt bool}) Specifies whether to replace the
   tiny diagonals with $\varepsilon \| A \|$ during LU
-  factorization. Default: true.}
+  factorization. Default: {\tt true}.}
 
 \choicebox{\tt IterRefine}{({\tt string}) Specifies how to perform iterative
   refinement. It can be: {\tt NO, DOUBLE, EXTRA}. Default: {\tt
@@ -712,8 +721,7 @@ subset of rows. Reordering techniques can take advantage of PORD
 
 Amesos\_Mumps is based on the distributed double-precision version of
 MUMPS (which requires MPI, BLAS, BLACS
-and ScaLAPACK~\cite{scalapack}).  Complex linear system are not
-supported, and linear system in single precision are under development.
+and ScaLAPACK~\cite{scalapack}).  
 
 The default implementation of Amesos\_Mumps handles distributed
 matrices. It is also possible to ask Amesos\_Mumps to move the matrix to
@@ -722,7 +730,12 @@ processor 0.
 \medskip
 
 In order to interface with MUMPS 4.3.1, Amesos must be configured with
-the options
+the options\footnote{The MUMPS interface can take be used on a subset of
+  the processes. To that aim, it must be possible to convert from a C++
+  MPI communicator to a FORTRAN MPI communicator. Such a conversion is
+  not always possible. In you experience compilation problems with {\tt
+    Amesos\_Mumps}, you can try the option {\tt
+    --disable-amesos-mumps\_mpi\_c2f}.}
 \begin{verbatim}
 --enable-amesos-mumps 
 --with-amesos-mumpslib=<MUMPS library>
@@ -807,7 +820,7 @@ int ComputeSchurComplement(bool flag,
                            int NumSchurComplementRows, 
                            int * SchurComplementRows);
 \end{verbatim}
-This method computes (if \verb!flag! is true) the Schue complement with
+This method computes (if \verb!flag! is true) the Schur complement with
 respect to the set of indices included in the integer array {\tt
   SchurComplementRows} , of size {\tt NumSchurComplementRows}. This is a
 {\sl global} Schur complement, and it is formed (as a dense matrix) on
@@ -891,10 +904,11 @@ performances of various direct solvers, using the Amesos\_BaseSolver
 interface. 
 
 The source of the entire code is reported below. Several comments are
-reported to detail all phase. The source file is
-\begin{verbatim}
-$TRILINOS_HOME/packages/amesos/examples/Amesos_ReferenceGuide.cpp
-\end{verbatim}
+reported to detail all phase. 
+%The source file is
+%\begin{verbatim}
+%$TRILINOS_HOME/packages/amesos/examples/Amesos_ReferenceGuide.cpp
+%\end{verbatim}
 
 First, we need to include the appropriate headers. The variable
 \verb!HAVE_CONFIG_H! must have been defined -- in the file, or at
@@ -932,7 +946,7 @@ int main(int argc, char *argv[]) {
 Here we use the class Trilinos\_Util::CrsMatrixGallery to read and
 Harwell/Boeing matrix from file, whose name is hardwired in the code for
 simplicity. The name can be read from the input line using class
-Trilinos\_Util\_ShellOptions (see \cite{Trilinos-tutorial}), or the
+Trilinos\_Util\_CommandLineParser (see \cite{Trilinos-tutorial}), or the
 Teuchos package.
 \begin{verbatim}
   Trilinos_Util::CrsMatrixGallery G("hb", Comm);
@@ -943,15 +957,11 @@ Epetra\_LinearProblem, that can be obtained as follows:
 \begin{verbatim}  
   Epetra_LinearProblem * Problem = G.GetLinearProblem();
 \end{verbatim}
-Now, we define a Teuchos parameters' list, together with sublists for
-SuperLU\_dist and MUMPS. We set some parameters.
+Now, we define a Teuchos parameters' list, and set one parameter (for
+parallel runs)
 \begin{verbatim}  
-  Teuchos::ParameterList params;
-  Teuchos::ParameterList & SluParamList=params.sublist("Superludist");
-  Teuchos::ParameterList & MumpsParamList=params.sublist("mumps");
-
-  params.set("Redistribute",true);
-  SluParamList.set("MaxProcs",8);
+  Teuchos::ParameterList AmesosList;
+  AmesosList.set("MaxProcs",8);
 \end{verbatim}
 At this point, we can create an Amesos\_BaseSolver object, depending on
 the run-time choice (here hardcoded for the sake of simplicity as a
@@ -960,7 +970,7 @@ string):
   Amesos_BaseSolver * Solver;
   Amesos              Amesos_Factory;
   // change this ad required
-  string SolutionLib = "umfpack";
+  char SolutionLib[] = "umfpack";
 
   Solver = Amesos_Factory.Create(SolutionLib, *Problem, params );
   if( Solver == 0 ) cerr << "library not available" << endl;
@@ -976,8 +986,6 @@ We can solve the linear problem, taking some timing:
   double TimeForNumericFactorization = Time.ElapsedTime();
    
   Time.ResetStartTime();
-  Solver->Solve();
-  Solver->Solve();
   Solver->Solve();
   double TimeForSolve = Time.ElapsedTime();
 \end{verbatim}
