@@ -40,6 +40,8 @@ my $SUMMARY = 8;                      # test-harness summary
 # Host Operating System Variable
 chomp (my $hostOS=`uname`);
 $hostOS =~ s/\s*$//; 
+    
+print "\nTEST - UPDATED VERSION\n\n";
         
 ################################################################################
 # Execution ####################################################################
@@ -222,7 +224,7 @@ report($SUMMARY);
 
         # grab flabs
         use Getopt::Std;
-        getopts("f:p:g:snth", \%flags);
+        getopts("f:p:g:snthu", \%flags);
         
         # parse config file and exit
         if ($flags{p}) {                         
@@ -273,21 +275,33 @@ report($SUMMARY);
     #   - args: 
     #   - returns: 
 
-    sub cvsUpdate {    
-    
-        if ($options{'CVS_UPDATE'}[0] =~ m/YES/i) {
-            chdir "$options{'TRILINOS_DIR'}[0]";       
-            my $command = "";
-            $command .= "$options{'CVS_CMD'}[0] update -dP > $options{'TRILINOS_DIR'}[0]";
-            $command .= "/testharness/temp/update_log.txt 2>&1";
-            printEvent("cvs update\n\n");
-            my $result = system $command;
-            if ($result) {
-                report($UPDATE_ERROR);
-                die " *** error updating Trilinos - aborting test-harness ***\n";
+    sub cvsUpdate {
+        
+        # If -u flag is not set and CVS_UPDATE is set to YES, continue to update...
+        # If -u flag is set, we've already updated and we've been replaced by
+        #     the new, updated version of ourself--we want to skip this so we
+        #     don't continue the process forever
+        if (!$flags{u}) {        
+            if ($options{'CVS_UPDATE'}[0] =~ m/YES/i) {
+                chdir "$options{'TRILINOS_DIR'}[0]";       
+                my $command = "";
+                $command .= "$options{'CVS_CMD'}[0] update -dP > $options{'TRILINOS_DIR'}[0]";
+                $command .= "/testharness/temp/update_log.txt 2>&1";
+                printEvent("updating...\n\n");
+                my $result = system $command;
+                if ($result) {
+                    report($UPDATE_ERROR);
+                    die " *** error updating Trilinos - aborting test-harness ***\n";
+                }
+                system "rm -f $options{'TRILINOS_DIR'}[0]/testharness/temp/update_log.txt";
+
+                # Finished updating.
+                # Replace ourself with the new, updated version of ourselves.
+                chdir "$options{'TRILINOS_DIR'}[0]/testharness";
+                exec ("perl", $0, "-u", @ARGV);
             }
-            system "rm -f $options{'TRILINOS_DIR'}[0]/testharness/temp/update_log.txt";
         }
+        
     } # cvsUpdate()
 
     ############################################################################
