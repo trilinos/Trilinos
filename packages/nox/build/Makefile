@@ -17,7 +17,7 @@ all: $(LIBNLSPACK)
 # NLSPACK source files
 #=======================================================================
 
-include Makefile.rules
+include Makefile.NLSPACK.autorules
 
 $(LIBNLSPACK): $(NLSPACK_OBJ)
 	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)

@@ -37,7 +37,7 @@ TRILINOS_INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src \
 
 NLSPACK_HOME = $(TRILINOS_HOME)/packages/nlspack
 
-include $(NLSPACK_HOME)/build/Makefile.rules.defs
+include $(NLSPACK_HOME)/build/Makefile.autodefs
 
 DEFINES = $(TRILINOS_DEFINES)
 
