@@ -282,6 +282,8 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
     ML_Destroy(&ml_edges_);
     ml_edges_ = 0;
   }
+
+  if( Label_ ) delete Label_;
   
   if( LevelID_ != 0 ) delete [] LevelID_;
   
@@ -439,7 +441,8 @@ void MultiLevelPreconditioner::Initialize()
   NumPDEEqns_ = 1;
   
   NullSpaceToFree_ = 0;
-  
+
+  Label_ = 0;
   LevelID_ = new int[MaxLevels_];
   
   sprintf(ErrorMsg_,"ERROR (ML_Prec) : ");
@@ -491,6 +494,8 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   }
 
   FirstApplication_ = true;
+
+  if( Label_ ) delete Label_;
   
   Label_ = new char[80];
   
@@ -677,7 +682,8 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     field_of_values->P_coeff[0] =  1.878;
     field_of_values->P_coeff[1] = -2.515;
     field_of_values->P_coeff[2] =  0.942;
-
+    //    field_of_values->ParameterList = &List_;
+    
     agg_->field_of_values = (void*) field_of_values;
     
 #else
@@ -705,7 +711,11 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   else                               Direction = ML_DECREASING;
 
   if( SolvingMaxwell_ == false ) 
-    NumLevels_ = ML_Gen_MGHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
+#ifdef MARZIO
+    NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
+#else
+  NumLevels_ = ML_Gen_MGHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
+#endif
   /* FIXME *
 
     put here creating for Maxwell
