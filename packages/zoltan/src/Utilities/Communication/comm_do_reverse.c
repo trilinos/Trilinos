@@ -102,15 +102,13 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
 	return(COMM_MEMERR);
     }
 
-    if (sizes != NULL) {
-	comm_flag = LB_Comm_Resize(plan_reverse, sizes, tag);
+    comm_flag = LB_Comm_Resize(plan_reverse, sizes, tag);
 
-        if (comm_flag != COMM_OK && comm_flag != COMM_WARN) {
-            LB_FREE((void **) &(plan_reverse->status));
-            LB_FREE((void **) &(plan_reverse->request));
-            LB_FREE((void **) &plan_reverse);
-	    return(comm_flag);
-        }
+    if (comm_flag != COMM_OK && comm_flag != COMM_WARN) {
+        LB_FREE((void **) &(plan_reverse->status));
+        LB_FREE((void **) &(plan_reverse->request));
+        LB_FREE((void **) &plan_reverse);
+	return(comm_flag);
     }
 
     comm_flag = LB_Comm_Do(plan_reverse, tag, send_data, nbytes, recv_data);
