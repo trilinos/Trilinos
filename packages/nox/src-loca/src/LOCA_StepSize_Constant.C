@@ -34,6 +34,7 @@
 #include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Stepper.H"
 #include "NOX_Solver_Generic.H"
+#include "LOCA_Utils.H"
 
 LOCA::StepSize::Constant::Constant(NOX::Parameter::List& params) :
   maxStepSize(0.0),
@@ -138,6 +139,10 @@ LOCA::StepSize::Constant::clipStepSize(double& stepSize)
   if (fabs(stepSize) < minStepSize) {
     res = NOX::Abstract::Group::Failed;
     stepSize =  signStep*minStepSize;
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+      cout << "\n\tStep size reached minimum step size bound" 
+	   << endl;
+    }
   }
 
   return res;
