@@ -230,7 +230,7 @@ return 0 ;
   int Set(const string parameter, const Epetra_Vector & value);
 
   //! Sets gallery options using values passed from the shell
-  int Set(Trilinos_Util_ShellOptions & ShellOptions);
+  int Set(Trilinos_Util_CommandLineParser & CLP);
 
   //@}
 

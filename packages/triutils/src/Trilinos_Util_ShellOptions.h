@@ -26,16 +26,12 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __TRILINOS_UTIL_SHELL_OPTIONS
-#define __TRILINOS_UTIL_SHELL_OPTIONS
+#ifndef _TRILINOS_UTIL_CLP_
+#define _TRILINOS_UTIL_CLP_
 
 #include <iostream>
 #include <string>
-// if STL cannot be used, uncomment the line below
-//#define TRILINOS_UTIL_MAP_WITH_STL
-#ifdef TRILINOS_UTIL_MAP_WITH_STL
 #include <map>
-#endif
 
 using namespace std;
 
@@ -48,51 +44,30 @@ public:
   Trilinos_Util_Map();
 
   ~Trilinos_Util_Map()
-  {
-#ifndef TRILINOS_UTIL_MAP_WITH_STL
-    delete [] MapName_;
-    delete [] MapValue_;
-    Allocated_ = 0;
-#endif
-  }
+  {  }
 
   //@}
 
   //@{ \name Insertion/Removal methods.
   
-  //! Gets the value of the specified option as an integer
-  /*! This method returns the integer value assigned to option \c input.
-    If \c input is not in the database, or it cannot be converted to an
-    integer, returns 0.
-  */
-  virtual int    GetInt( const string input) ;
-
   //! Gets the value of the specified option as an integer. If not found, returns the specified default value.
-  virtual int    GetInt( const string input, const int def_value) ;
+  virtual int    Get( const string input, const int def_value) ;
 
-  //! Gets the value of the specified option as a double  
-  /*! This method returns the integer value assigned to option \c input.
-    If \c input is not in the database, or it cannot be converted to an
-    double, returns 0.
-  */  
-  virtual double GetDouble( const string input) ;
-  
   //! Gets the value of the specified option as a double. If not found, returns the specified default value.
-  virtual double GetDouble( const string input, const double def_value) ;
-
-  //! Get the value of the specified option as a C++ string. 
-  virtual string GetString( const string input) ;
+  virtual double Get( const string input, const double def_value) ;
 
  //! Gets the value of the specified option as a string. If not found, returns the specified default value.
-  virtual string GetString( const string input, const string def_value ) ;
+  virtual string Get( const string input, const string def_value ) ;
 
   //! Modify the value of a database entry.
   /*!  This method modifies the value of a database entry. If the entry
     does not exist in the database, return \c false. Otherwise, returns
     \c true.
   */
+  virtual bool Set(const string input, const char * value);  
   virtual bool Set(const string input, const string value);
   virtual bool Set(const string input, const int value);
+  virtual bool Set(const string input, const double value);
 
   //! Add an entry to the databse
   /*!  This method add an entry to the databse. First, it checks that
@@ -106,7 +81,7 @@ public:
     return true;
   }
   
-  inline string GettLabel(string Label) {
+  inline string GetLabel(string Label) {
     return( Label_ );
   }
 
@@ -119,7 +94,7 @@ public:
   This method checks whether option \c input is in the databse or not.
   It returns \c true if it is, \c false otherwise.
   */
-  virtual bool   Have(const string input);
+  virtual bool Has(const string input);
 
   //@}
 
@@ -146,22 +121,12 @@ private:
 
   string Label_;
   
-#ifdef TRILINOS_UTIL_MAP_WITH_STL
   // map containing the arguments
   map<string,string> Map_;
-#else
-  // for non-STL, I use a very simple array of strings
-  // for the option names and parameters. The dimension
-  // of the arrays is hardwired
-  string * MapName_;
-  string * MapValue_;
-  int NumEntries_;
-  int Allocated_;
-#endif
   
 };
 
-//! Trilinos_Util_ShellOptions: A class for managing the input arguments and variables.
+//! Trilinos_Util_CommandLineParser: A class for managing the input arguments and variables.
 
 /* ======================================================================== */
 /*!
@@ -245,14 +210,14 @@ private:
 */
 // ================================================ ====== ==== ==== == =
 
-class Trilinos_Util_ShellOptions : public Trilinos_Util_Map 
+class Trilinos_Util_CommandLineParser : public Trilinos_Util_Map 
 {
 
  public:
 
   //@{ \name Constructors/Destructor.
   //! Trilinos_Util_ShellOptions constructor using the options given at the shell line.
-  Trilinos_Util_ShellOptions(int argc, char *argv[] );
+  Trilinos_Util_CommandLineParser(int argc, char *argv[] );
 
   // ============= //
   // query and add //
@@ -270,7 +235,7 @@ class Trilinos_Util_ShellOptions : public Trilinos_Util_Map
   // --------------- //
   
   //!Returns the value of the environmenta variable \c str as an integer.
-  /*! This methods returns the value of the environmenta variable \c
+  /*! This methods returns the value of the environmental variable \c
     str. If the variable does not exists, returns \c 0. */
   virtual int    GetIntShellVariable( const char *str );
   
@@ -287,20 +252,6 @@ class Trilinos_Util_ShellOptions : public Trilinos_Util_Map
   //@}
   
 };
-
-void   Trilinos_Util_ShellOptions_Set(int argc, char * argv[]);
-int    Trilinos_Util_ShellOptions_GetInt( const string input) ;
-int    Trilinos_Util_ShellOptions_GetInt( const string input, const int def_value) ;
-double Trilinos_Util_ShellOptions_GetDouble( const string input) ;
-double Trilinos_Util_ShellOptions_GetDouble( const string input, const double def_value) ;
-string Trilinos_Util_ShellOptions_GetString( const string input) ;
-string Trilinos_Util_ShellOptions_GetString( const string input, const string def_value ) ;
-bool   Trilinos_Util_ShellOptions_Set(const string input, const string value);
-bool   Trilinos_Util_ShellOptions_Set(const string input, const int value);
-bool   Trilinos_Util_ShellOptions_Have(const string input);
-bool   Trilinos_Util_ShellOptions_Add( const string input, const string value );
-void   Trilinos_Util_ShellOptions_ShowAll();
-void   Trilinos_Util_ShellOptions_ShowReallyAll();
 
 // ================================================ ====== ==== ==== == =
 

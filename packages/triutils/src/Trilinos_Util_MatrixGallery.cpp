@@ -45,8 +45,8 @@
 #include "Trilinos_Util.h"
 #include <string>
 
-#include "Trilinos_Util_MatrixGallery.h"
 #include "Trilinos_Util_ShellOptions.h"
+#include "Trilinos_Util_MatrixGallery.h"
 
 // ================================================ ====== ==== ==== == =
 Trilinos_Util_MatrixGallery::Trilinos_Util_MatrixGallery(const string name, 
@@ -317,7 +317,7 @@ int Trilinos_Util_MatrixGallery::Set(const string parameter, const Epetra_Vector
 
 // ================================================ ====== ==== ==== == =  
 
-int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
+int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_CommandLineParser & S)
 {
   // this can be done with STL: iterators and sets.
   // However, on some Sandia computers, STL is not that simple
@@ -339,8 +339,8 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
   
   for( int i=0 ; i<count ; i++ ) {
     string parameter = "-"+Options[i];    
-    if( S.Have(parameter) == true ) {
-      string value = S.GetString(parameter);
+    if( S.Has(parameter) == true ) {
+      string value = S.Get(parameter,"not-set");
       Set(Options[i],value);
       
     }
@@ -358,8 +358,8 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
 
   for(  int i=0 ; i<8 ; i++ ) {
     string parameter = "-"+Options[i];   
-    if( S.Have(parameter) == true ) {
-      Set(Options[i],S.GetInt(parameter));
+    if( S.Has(parameter) == true ) {
+      Set(Options[i],S.Get(parameter,(int)1));
     }
   }
   
@@ -373,8 +373,8 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
   Options[6] = "g";
   for( int i=0 ; i<7 ; i++ ) {
     string parameter = "-"+Options[i];   
-    if( S.Have(parameter) == true ) {
-      Set(Options[i],S.GetDouble(parameter));
+    if( S.Has(parameter) == true ) {
+      Set(Options[i],S.Get(parameter,1.0));
     }
   }
 
