@@ -40,5 +40,5 @@ Vector_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
 
 Vector_test_LDADD = $(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 

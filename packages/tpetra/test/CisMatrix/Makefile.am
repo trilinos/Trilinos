@@ -49,5 +49,5 @@ CisMatrix_test_LDADD = \
 	$(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../kokkos/src/libkokkos.a \
-	$(BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 
