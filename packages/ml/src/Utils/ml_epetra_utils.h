@@ -38,6 +38,9 @@ extern "C" int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
 extern "C" int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *Result);
 
 extern "C" Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B, Epetra_RowMatrix *Bt);
+extern "C" Epetra_CrsMatrix *Epetra_MatrixAdd(Epetra_RowMatrix *B, Epetra_RowMatrix *Bt, double scalar);
+extern "C" int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
+
 
 /* This Proto-type is in ml_rap.h. This prevents ml_rap.c and ml_matmat_mult.c     */
 /* from including ml_epetra_utils.h which would require the C++ compiler for these */

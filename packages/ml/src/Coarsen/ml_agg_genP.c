@@ -549,13 +549,13 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
      t2 = ML_Operator_Create(Amat->comm);
      ML_Operator_Transpose_byrow(Amat,t2);
      t3 = ML_Operator_Create(Amat->comm);
-     ML_Operator_Add(Amat,t2,t3);
+     ML_Operator_Add(Amat,t2,t3,ML_CSR_MATRIX,1.);
 #else
      if (ml->symmetrize_matrix == ML_TRUE) {
        t2 = ML_Operator_Create(Amat->comm);
        ML_Operator_Transpose_byrow(Amat,t2);
        t3 = ML_Operator_Create(Amat->comm);
-       ML_Operator_Add(Amat,t2,t3);
+       ML_Operator_Add(Amat,t2,t3,ML_CSR_MATRIX,1.);
      }
 #endif
       if ( ag->spectral_radius_scheme == 1 ) /* compute it using CG */

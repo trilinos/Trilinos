@@ -1819,13 +1819,13 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
      t2 = ML_Operator_Create(Amat->comm);
      ML_Operator_Transpose_byrow(Amat,t2);
      t3 = ML_Operator_Create(Amat->comm);
-     ML_Operator_Add(Amat,t2,t3);
+     ML_Operator_Add(Amat,t2,t3, ML_CSR_MATRIX,1.);
 #else
      if (symmetrize == ML_TRUE) {
        t2 = ML_Operator_Create(Amat->comm);
        ML_Operator_Transpose_byrow(Amat,t2);
        t3 = ML_Operator_Create(Amat->comm);
-       ML_Operator_Add(Amat,t2,t3);
+       ML_Operator_Add(Amat,t2,t3, ML_CSR_MATRIX,1.);
        ML_Krylov_Set_Amatrix(kdata, t3);
      }
      else  ML_Krylov_Set_Amatrix(kdata, Amat);
@@ -2009,13 +2009,13 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
      t2 = ML_Operator_Create(Amat->comm);
      ML_Operator_Transpose_byrow(Amat,t2);
      t3 = ML_Operator_Create(Amat->comm);
-     ML_Operator_Add(Amat,t2,t3);
+     ML_Operator_Add(Amat,t2,t3, ML_CSR_MATRIX,1.);
 #else
      if (ml->symmetrize_matrix == ML_TRUE) {
        t2 = ML_Operator_Create(Amat->comm);
        ML_Operator_Transpose_byrow(Amat,t2);
        t3 = ML_Operator_Create(Amat->comm);
-       ML_Operator_Add(Amat,t2,t3);
+       ML_Operator_Add(Amat,t2,t3, ML_CSR_MATRIX,1.);
        ML_Krylov_Set_Amatrix(kdata, t3);
      }
      else  ML_Krylov_Set_Amatrix(kdata, Amat);

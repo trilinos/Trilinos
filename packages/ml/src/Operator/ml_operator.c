@@ -1160,9 +1160,26 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
 /* Add two ML_Operators together to create a new ML_Operator.       */
 /* NOTE: it is assumed that each individual ML_Operator has the     */
 /* same number of rows and the same number of columns.              */
+/*                                                                  */
+/* This routine can be used to produce an Epetra_CrsMatrix.         */
+/* This capability is really intended to support an Epetra          */
+/* matrix add capability (i.e. the function Epetra_MatrixAdd()).    */
+/* If you use it in a different way, good luck!                     */
+/* In this case, we make the following observations:                */
+/*     1) C->data must point to an already created Epetra_CrsMatrix */
+/*     2) The 'transform' call is not done here and must be done in */
+/*        the calling routine.                                      */
+/*     3) C is not a true ML_Operator. I believe you can make it    */
+/*        into one by doing:                                        */
+/*          tmp = (Epetra_CrsMatrix *) C->data;                     */
+/*          C->data = NULL;                                         */
+/*          Epetra2MLMatrix(tmp, C);                                */
 /* ---------------------------------------------------------------- */
-
-int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
+#ifdef ML_WITH_EPETRA
+extern int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
+#endif
+int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
+		    int matrix_type, double scalar)
 {
   int A_allocated = 0, *A_bindx = NULL, B_allocated = 0, *B_bindx = NULL;
   double *A_val = NULL, *B_val = NULL, *hashed_vals;
@@ -1174,6 +1191,9 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
   struct ML_CSR_MSRdata *temp;
   int *A_gids, *B_gids;
   int max_per_proc;
+#ifdef ML_WITH_EPETRA
+  int count;
+#endif
 
   if (A->getrow == NULL) 
     pr_error("ML_Operator_Add: A does not have a getrow function.\n");
@@ -1235,7 +1255,7 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
 	global_col = B_gids[B_bindx[j]];
 	hash_val = ML_hash_it(global_col, hashed_inds, index_length,&hash_used);
         hashed_inds[hash_val] = global_col;
-        hashed_vals[hash_val] += B_val[j];
+        hashed_vals[hash_val] += scalar*B_val[j];
         B_bindx[j] = hash_val;
       }
 
@@ -1253,9 +1273,25 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
       }
   }
   nz_ptr++;
+
+  rowptr = (int    *) ML_allocate(sizeof(int)*(A->outvec_leng+1));
+  if (matrix_type == ML_CSR_MATRIX) {
+    columns= (int    *) ML_allocate(sizeof(int)*nz_ptr);
+    values = (double *) ML_allocate(sizeof(double)*nz_ptr);
+  }
+#ifdef ML_WITH_EPETRA
+  else if (matrix_type == ML_EpetraCRS_MATRIX) {
+    columns= (int    *) ML_allocate(sizeof(int)*(index_length+1));
+    values = (double *) ML_allocate(sizeof(double)*(index_length+1));
+  }
+#endif
+  else {
+    pr_error("ML_Operator_Add: Unknown matrix type\n");
+  }
+
+
   columns= (int    *) ML_allocate(sizeof(int)*nz_ptr);
   values = (double *) ML_allocate(sizeof(double)*nz_ptr);
-  rowptr = (int    *) ML_allocate(sizeof(int)*(A->outvec_leng+1));
   if (values == NULL) pr_error("ML_Operator_Add: out of space\n");
 
 
@@ -1279,45 +1315,79 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C)
 	global_col = B_gids[B_bindx[j]];
 	hash_val = ML_hash_it(global_col, hashed_inds, index_length,&hash_used);
         hashed_inds[hash_val] = global_col;
-        hashed_vals[hash_val] += B_val[j];
+        hashed_vals[hash_val] += scalar*B_val[j];
         B_bindx[j] = hash_val;
       }
-
-      for (j = 0; j < A_length; j++) {
-        columns[nz_ptr] = hashed_inds[A_bindx[j]];
-        values[nz_ptr]  = hashed_vals[A_bindx[j]];
-        nz_ptr++;
-	hashed_inds[A_bindx[j]] = -1;
-	hashed_vals[A_bindx[j]] = 0.;
-      }
-      for (j = 0; j < B_length; j++) {
-        if (hashed_inds[B_bindx[j]] != -1) {
-	  columns[nz_ptr] = hashed_inds[B_bindx[j]];
-	  values[nz_ptr]  = hashed_vals[B_bindx[j]];
+#ifdef ML_WITH_EPETRA
+      if (matrix_type == ML_EpetraCRS_MATRIX) {
+	for (j = 0; j < A_length; j++) {
+	  columns[j] = hashed_inds[A_bindx[j]];
+	  values[j]  = hashed_vals[A_bindx[j]];
 	  nz_ptr++;
-	  hashed_inds[B_bindx[j]] = -1;
-	  hashed_vals[B_bindx[j]] = 0.;
+	  hashed_inds[A_bindx[j]] = -1;
+	  hashed_vals[A_bindx[j]] = 0.;
 	}
+	count = A_length;
+	for (j = 0; j < B_length; j++) {
+	  if (hashed_inds[B_bindx[j]] != -1) {
+	    columns[count] = hashed_inds[B_bindx[j]];
+	    values[count++]  = hashed_vals[B_bindx[j]];
+	    nz_ptr++;
+	    hashed_inds[B_bindx[j]] = -1;
+	    hashed_vals[B_bindx[j]] = 0.;
+	  }
+	}
+	ML_Epetra_CRSinsert(C,i,columns,values,count);
       }
+      else {
+#endif
+	for (j = 0; j < A_length; j++) {
+	  columns[nz_ptr] = hashed_inds[A_bindx[j]];
+	  values[nz_ptr]  = hashed_vals[A_bindx[j]];
+	  nz_ptr++;
+	  hashed_inds[A_bindx[j]] = -1;
+	  hashed_vals[A_bindx[j]] = 0.;
+	}
+	for (j = 0; j < B_length; j++) {
+	  if (hashed_inds[B_bindx[j]] != -1) {
+	    columns[nz_ptr] = hashed_inds[B_bindx[j]];
+	    values[nz_ptr]  = hashed_vals[B_bindx[j]];
+	    nz_ptr++;
+	    hashed_inds[B_bindx[j]] = -1;
+	    hashed_vals[B_bindx[j]] = 0.;
+	  }
+	}
+#ifdef ML_WITH_EPETRA
+      }
+#endif
       rowptr[i+1] = nz_ptr;
       if (rowptr[i+1] - rowptr[i] > max_nz_per_row)
 	max_nz_per_row = rowptr[i+1] - rowptr[1];
   }
-  temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
-  if (temp == NULL) pr_error("ML_Operator_Add: no space for temp\n");
-  temp->columns = columns;
-  temp->values  = values;
-  temp->rowptr   = rowptr;
+  if (matrix_type == ML_CSR_MATRIX) {
+    temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+    if (temp == NULL) pr_error("ML_Operator_Add: no space for temp\n");
+    temp->columns = columns;
+    temp->values  = values;
+    temp->rowptr   = rowptr;
 
-  ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng, ML_EMPTY,
-				temp,A->outvec_leng, NULL,0);
-  ML_Operator_Set_Getrow(C, ML_EXTERNAL, A->outvec_leng, CSR_getrows);
-  ML_Operator_Set_ApplyFunc (C, ML_INTERNAL, CSR_matvec);
-  ML_globalcsr2localcsr(C, max_per_proc);
-  C->data_destroy = ML_CSR_MSRdata_Destroy;
+    ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng, ML_EMPTY,
+				  temp,A->outvec_leng, NULL,0);
+    ML_Operator_Set_Getrow(C, ML_EXTERNAL, A->outvec_leng, CSR_getrows);
+    ML_Operator_Set_ApplyFunc (C, ML_INTERNAL, CSR_matvec);
+    ML_globalcsr2localcsr(C, max_per_proc);
+    C->data_destroy = ML_CSR_MSRdata_Destroy;
 
-  C->max_nz_per_row = max_nz_per_row;
-  C->N_nonzeros     = nz_ptr;
+    C->max_nz_per_row = max_nz_per_row;
+    C->N_nonzeros     = nz_ptr;
+  }
+#ifdef ML_WITH_EPETRA
+  else {
+    ML_free(rowptr); 
+    ML_free(columns);
+    ML_free(values);
+  }
+#endif
 
   ML_free(A_gids);
   ML_free(B_gids);

@@ -1181,7 +1181,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 	 csr_data->values[i] *= dtemp;
 
        newPe = ML_Operator_Create(ml_edges->comm);
-       ML_Operator_Add(Pe, TTtransPe, newPe);
+       ML_Operator_Add(Pe, TTtransPe, newPe, ML_CSR_MATRIX,1.);
 
        ML_Operator_Destroy(&TTtransPe);
 

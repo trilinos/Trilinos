@@ -182,6 +182,7 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
 int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result, 
 			 ML_Operator *Mat1, ML_Operator *Mat2)
 {
+  int *global_rows;
 
   Epetra_RowMatrix *Mat1_epet = (Epetra_RowMatrix *) Mat1->data;
   Epetra_RowMatrix *Mat2_epet = (Epetra_RowMatrix *) Mat2->data;
@@ -193,10 +194,13 @@ int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result,
   int *bindx = NULL;
   double *val = NULL;
 
+  global_rows = Mat1_epet->RowMatrixRowMap().MyGlobalElements();
   for (int i = 0; i < Mat1Mat2->getrow->Nrows; i++) {
     ML_get_matrix_row(Mat1Mat2, 1, &i, &allocated, &bindx, &val,
 		      &row_length, 0);
-    int ierr = Result_epet->InsertGlobalValues(i, row_length, val,
+
+    int ierr = Result_epet->InsertGlobalValues(global_rows[i],
+					       row_length, val,
 					       bindx);
   }
   int ierr=Result_epet->TransformToLocal(&(Mat1_epet->OperatorRangeMap()),
@@ -228,8 +232,6 @@ Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *B
   BBt_ml  = ML_Operator_Create(comm);
   Epetra2MLMatrix(B_crs, B_ml);
   Epetra2MLMatrix(Bt_crs, Bt_ml);
-  ML_Operator_Print(B_ml,"B");
-  ML_Operator_Print(Bt_ml,"Bt");
   ML_2matmult(B_ml, Bt_ml, BBt_ml, ML_EpetraCRS_MATRIX);
 
   ML_Comm_Destroy(&comm);
@@ -245,6 +247,52 @@ Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *B
   return dynamic_cast<Epetra_CrsMatrix*>(result);
    
 }
+
+
+Epetra_CrsMatrix *Epetra_MatrixAdd(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *Bt_crs, double scalar)
+{
+  ML_Comm *comm, *temp;
+
+  temp = global_comm;
+  ML_Comm_Create(&comm);
+  ML_Operator *B_ml, *Bt_ml, *BBt_ml;
+  B_ml  = ML_Operator_Create(comm);
+  Bt_ml = ML_Operator_Create(comm);
+  BBt_ml  = ML_Operator_Create(comm);
+  Epetra2MLMatrix(B_crs, B_ml);
+  Epetra2MLMatrix(Bt_crs, Bt_ml);
+  Epetra_CrsMatrix *BBt_crs = new Epetra_CrsMatrix(Copy,
+				            B_crs->RowMatrixRowMap(),
+					    B_crs->RowMatrixColMap(), 0);
+  BBt_ml->data = (void *) BBt_crs;
+  ML_Operator_Add(B_ml, Bt_ml, BBt_ml, ML_EpetraCRS_MATRIX, scalar);
+  int ierr=BBt_crs->TransformToLocal(&(B_crs->OperatorRangeMap()),
+				     &(B_crs->OperatorDomainMap()));
+
+  ML_Comm_Destroy(&comm);
+  global_comm = temp;
+
+  /* Need to blow about BBt_ml but keep epetra stuff */
+
+  ML_Operator_Destroy(&B_ml);
+  ML_Operator_Destroy(&Bt_ml);
+  ML_Operator_Destroy(&BBt_ml);
+
+  return BBt_crs;
+   
+}
+
+int ML_Epetra_CRSinsert(ML_Operator *A, int row, int *cols, double *vals, int length)
+{
+  int *global_rows;
+  Epetra_CrsMatrix *A_crs = (Epetra_CrsMatrix *) A->data;
+
+  global_rows = A_crs->RowMatrixRowMap().MyGlobalElements();
+  int ierr = A_crs->InsertGlobalValues(global_rows[row],length, vals, cols);
+
+  return 0;
+}
+
 
 #else
 
