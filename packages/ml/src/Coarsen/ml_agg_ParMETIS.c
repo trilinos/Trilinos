@@ -1851,11 +1851,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    Pstart->getrow->pre_comm = ML_CommInfoOP_Create();
    
-#ifdef LEASTSQ_SERIAL
-   ML_Operator_Set_Getrow((Pstart), ML_EXTERNAL, new_Nrows, CSR_get_ones_rows);
-#else
    ML_Operator_Set_Getrow((Pstart), ML_EXTERNAL, new_Nrows, CSR_getrows);
-#endif
    ML_Operator_Set_ApplyFunc(Pstart, ML_INTERNAL, CSR_matvec);
    Pstart->max_nz_per_row = 1;
 

@@ -350,35 +350,6 @@ int cCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    return(1);
 }
 
-int CSR_get_ones_rows(void *data, int N_requested_rows, int requested_rows[],
-   int allocated_space, int columns[], double values[], int row_lengths[])
-{
-   register int    *bindx, j;
-   int     *rowptr,  row, itemp;
-   struct ML_CSR_MSRdata *input_matrix;
-
-   row            = *requested_rows;
-   input_matrix = (struct ML_CSR_MSRdata *) data;
-   rowptr = input_matrix->rowptr;
-   itemp = rowptr[row];
-   *row_lengths = rowptr[row+1] - itemp;
-
-
-   if (*row_lengths > allocated_space) {
-     ML_avoid_unused_param( (void *) &N_requested_rows);
-     return(0);
-   }
-
-   bindx  = &(input_matrix->columns[itemp]);
-   for (j = 0 ; j < *row_lengths; j++) {
-      *columns++ = *bindx++;
-   }
-
-   for (j = 0 ; j < *row_lengths; j++) {
-     *values++  = 1.0;
-   }
-   return(1);
-}
 
 /*********************************************************************/
 /* Get some matrix rows ( requested_rows[0 ... N_requested_rows-1] ) */

@@ -93,11 +93,6 @@ extern int cCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen,
 extern int cCSR_matvec(void *Amat_in, int ilen, double p[], int olen, 
 		       double ap[]);
 
-extern int CSR_get_ones_rows(void *data, int N_requested_rows, 
-			     int requested_rows[], int allocated_space, 
-			     int columns[], double values[], int row_lengths[]);
-
-
 extern int MSR_get_ones_rows(void *data, int N_requested_rows, int requested_rows[],
                        int allocated_space, int columns[], double values[],
                        int row_lengths[]);
@@ -126,7 +121,7 @@ extern int VBR_cnst_blk_getrows(void *data, int N_requested_rows,
                                 int columns[], double values[],
                                 int row_lengths[]);
 
-extern int VECTOR_getrows(void *data,int N_requested_rows,int requested_rows[],
+extern int VECTOR_getrows(ML_Operator *mat,int N_requested_rows,int requested_rows[],
                           int allocated_space, int columns[], double values[],
                           int row_lengths[]);
 extern int ML_MSR2CSR(struct ML_CSR_MSRdata *csr_data, int Nrows,

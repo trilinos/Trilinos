@@ -32,9 +32,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   int max_matrix_size;
   int nrows, ncols;
 */
-#ifdef LEASTSQ_SERIAL
-  ML_Operator *SPn_mat;
-#endif
 #if defined(ML_ENRICH) || defined(ML_NEW_ENRICH)
   ML_Operator *TTtransPe;
   ML_Operator *newPe;
@@ -1090,25 +1087,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      Pe->matvec->external = NULL;
      Pe->matvec->ML_id = ML_INTERNAL;
 
-#ifdef LEASTSQ_SERIAL
-     if (ml_edges->comm->ML_mypid == 0)
-        { printf("\n\nDoing LS prolongator\n\n");fflush(stdout);}
-     SPn_mat = ML_Operator_Create(Pn_coarse->comm);
-     ML_Gen_SmoothPnodal(ml_nodes,grid_level+1, grid_level, 
-			 &(ml_nodes->Amat[grid_level+1]),1.5,
-			 SPn_mat);
-
-     /*sprintf(filename,"Spn%d",grid_level-1);
-     ML_Operator_Print(SPn_mat,filename);*/
-
-     Pn_coarse->N_nonzeros = 10*Pn_coarse->outvec_leng;
-     ml_leastsq_edge_interp(Pn_coarse, SPn_mat, Tfine, Tcoarse,Pe,
-			    Pn_coarse->N_nonzeros*3);
-     Tcoarse_trans = ML_Operator_Create(ml_edges->comm);
-     ML_Operator_Transpose_byrow(Tcoarse, Tcoarse_trans);
-     (*Tmat_trans_array)[grid_level] = Tcoarse_trans;
-     Pn_coarse = SPn_mat;
-#endif
 /*
      printf("\n\n%%%%%%%%%%%%%%%%%%\n(%d) Tfine->outvec_leng = %d, invec_leng = %d\n",grid_level+1,Tfine->outvec_leng, Tfine->invec_leng);
      printf("(%d) Pe->outvec_leng = %d, invec_leng = %d\n",grid_level+1,Pe->outvec_leng, Pe->invec_leng);
@@ -1120,9 +1098,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ML_Reitzinger_CheckCommutingProperty(ml_nodes, ml_edges, *Tmat_array,
                                   *Tmat_trans_array,
                                   grid_level+1, grid_level, ML_TRUE);
-#ifdef LEASTSQ_SERIAL
-     ML_Operator_Destroy(&SPn_mat);
-#endif
 
 #ifdef ML_VAMPIR
   VT_end(ml_vt_build_Pe_state);

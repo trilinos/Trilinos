@@ -1600,11 +1600,7 @@ Here is how we do all this:
    ML_CommInfoOP_Generate( &((*Pmatrix)->getrow->pre_comm), 
                            ML_Aggregate_ExchangeBdry, aggr_comm, 
                            comm, Ncoarse*nullspace_dim, m*nullspace_dim);
-#ifdef LEASTSQ_SERIAL
-   ML_Operator_Set_Getrow((*Pmatrix), ML_EXTERNAL, Nrows, CSR_get_ones_rows);
-#else
    ML_Operator_Set_Getrow((*Pmatrix), ML_EXTERNAL, Nrows, CSR_getrows);
-#endif
    ML_Operator_Set_ApplyFunc((*Pmatrix), ML_INTERNAL, CSR_matvec);
    (*Pmatrix)->max_nz_per_row = 1;
 
