@@ -28,16 +28,25 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
       for (i=0; i<NumMyElements; i++) 
         if (MyElementSizeList[i]!=ElementSize) return(-5);
 
+      if (Map.MaxMyElementSize() != ElementSize) return(-54);
+      if (Map.MinMyElementSize() != ElementSize) return(-56);
       delete [] MyElementSizeList;
     }
   else
     {
       MyElementSizeList = new int[NumMyElements];
       if (Map.ElementSizeList(MyElementSizeList)!=0) return(-5);
-
-      for (i=0; i<NumMyElements; i++) 
+      int MaxSize = MyElementSizeList[0];
+      int MinSize = MyElementSizeList[0];
+      for (i=0; i<NumMyElements; i++) {
         if (MyElementSizeList[i]!=ElementSizeList[i]) return(-5);
-
+	if (MyElementSizeList[i] > MaxSize)
+	  MaxSize = MyElementSizeList[i];
+	if (MyElementSizeList[i] < MinSize)
+	  MinSize = MyElementSizeList[i];
+      }
+      if (MaxSize !=Map.MaxMyElementSize()) return(-53);
+      if (MinSize !=Map.MinMyElementSize()) return(-55);
       delete [] MyElementSizeList;
     }
 
@@ -57,7 +66,8 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
 
   if (Map.MaxElementSize()!=ElementSize) return(-11);
 
-  if (Map.MaxLID()!=NumMyElements-1+IndexBase) return(-12);
+  int MaxLID = Map.MaxLID();
+  if (MaxLID!=NumMyElements-1+IndexBase) return(-12);
 
   int MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
   if (Comm.MyPID()>2) MaxMyGID+=3;
@@ -72,13 +82,14 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
     }
   else if (Map.MinElementSize()!=2) return(-15);
 
-  if (Map.MinLID()!=IndexBase) return(-16);
+  int MinLID = Map.MinLID();
+  if (MinLID!=IndexBase) return(-16);
 
   int MinMyGID = Comm.MyPID()*NumMyElements+IndexBase;
   if (Comm.MyPID()>2) MinMyGID+=3;
   if (!DistributedGlobal) MinMyGID = 0;
   if (Map.MinMyGID()!=MinMyGID) return(-17);
-  
+
   int * MyGlobalElements1 = new int[NumMyElements];
   if (Map.MyGlobalElements(MyGlobalElements1)!=0) return(-18);
   
@@ -100,6 +111,26 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
   if (Map.NumMyElements()!=NumMyElements) return(-21);  
 
   if (Map.NumMyEquations()!=NumMyEquations) return(-22);
+
+  int MaxMyGID2 = Map.GID(Map.LID(MaxMyGID));
+  if (MaxMyGID2 != MaxMyGID) return (-23);
+  int MaxLID2 = Map.LID(Map.GID(MaxLID));
+  if (MaxLID2 != MaxLID) return(-24);
+
+  if (Map.GID(MaxLID+1) != -1) return(-25);// MaxLID+1 doesn't exist
+  if (Map.LID(MaxMyGID+1) != -1) return(-26);// MaxMyGID+1 doesn't exist or is on a different processor
+
+  if (!Map.MyGID(MaxMyGID)) return (-27);
+  if (Map.MyGID(MaxMyGID+1)) return (-28);
+
+  if (!Map.MyLID(MaxLID)) return (-29);
+  if (Map.MyLID(MaxLID+1)) return (-30);
+
+  if (!Map.MyGID(Map.GID(MaxLID))) return(-31);
+  if (Map.MyGID(Map.GID(MaxLID+1))) return(-32);
+
+  if (!Map.MyLID(Map.LID(MaxMyGID))) return(-33);
+  if (Map.MyLID(Map.LID(MaxMyGID+1))) return(-34);
 
   // Check RemoteIDList function (assumes all maps are linear, even if not stored that way)
 

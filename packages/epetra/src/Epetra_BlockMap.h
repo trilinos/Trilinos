@@ -61,7 +61,7 @@ class Epetra_Directory;
   determined by the constructor.  Once an Epetra_BlockMap is constructed any of the following can 
   be obtained
   by calling a query function that has the same name as the attribute, e.g. to get the
-  value of NumGlobalEquations, you can call a function NumGlobalElements().  For attributes that
+  value of NumGlobalElements, you can call a function NumGlobalElements().  For attributes that
   are lists, the query functions return the list values in a user allocated array.
 
   <ul>
@@ -198,7 +198,7 @@ class Epetra_BlockMap: public Epetra_Object {
 
   //! Epetra_BlockMap constructor for a user-defined linear distribution of constant block size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. NumGlobalElements will be the
-      computed as the sum of NumMyElements across all processors in the Epetra_Comm communicator.
+      computed sum of NumMyElements across all processors in the Epetra_Comm communicator.
 
       The elements are defined to have a constant fixed block size specified by ElementSize.
 
@@ -231,7 +231,7 @@ class Epetra_BlockMap: public Epetra_Object {
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant block size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. The indices of the elements
       are determined from the list MyGlobalElements.  NumGlobalElements will be the
-      computed as the sum of NumMyElements across all processors in the Epetra_Comm communicator.
+      computed sum of NumMyElements across all processors in the Epetra_Comm communicator.
 
       The elements are defined to have a constant fixed block size specified by ElementSize.
 
@@ -268,7 +268,7 @@ class Epetra_BlockMap: public Epetra_Object {
 
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable block size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. NumGlobalElements will be the
-      computed as the sum of NumMyElements across all processors in the Epetra_Comm communicator.
+      computed sum of NumMyElements across all processors in the Epetra_Comm communicator.
 
       The elements are defined to have a variable block size defined by ElementSizeList.
 
