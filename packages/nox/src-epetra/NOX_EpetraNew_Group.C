@@ -329,7 +329,7 @@ Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p)
     throw "NOX Error";
   }
 
-  bool status;
+  Abstract::Group::ReturnType status;
   
   // Zero out the Newton Vector
   NewtonVector.init(0.0);
@@ -348,7 +348,7 @@ Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p)
   computeNormNewtonSolveResidual();
 
   // Return solution
-  return Abstract::Group::Ok;
+  return status;
 }
 
 Abstract::Group::ReturnType Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
@@ -367,9 +367,9 @@ Abstract::Group::ReturnType Group::applyJacobian(const NOX::Epetra::Vector& inpu
     return Abstract::Group::BadDependency;
 
   // Apply the Jacobian
-  sharedLinearSystem.getObject().applyJacobian(input, result);
+  bool status = sharedLinearSystem.getObject().applyJacobian(input, result);
 
-  return Abstract::Group::Ok;
+  return status == true ? Abstract::Group::Ok : Abstract::Group::Failed;
 }
 
 Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, const Abstract::Vector &input, Abstract::Vector &result) const
@@ -394,8 +394,9 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, con
     isValidPreconditioner = true;
   }
 
-  sharedLinearSystem.getObject(this).applyJacobianInverse(p, input, result);
-  return Abstract::Group::Ok;
+  bool status = sharedLinearSystem.getObject(this).applyJacobianInverse(p, input, result);
+
+  return status == true ? Abstract::Group::Ok : Abstract::Group::Failed;
 }
 
 Abstract::Group::ReturnType Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const
@@ -411,9 +412,9 @@ Abstract::Group::ReturnType Group::applyJacobianTranspose(const NOX::Epetra::Vec
   if (!isJacobian()) 
     return Abstract::Group::BadDependency;
   
-  sharedLinearSystem.getObject().applyJacobianTranspose(input, result);
+  bool status = sharedLinearSystem.getObject().applyJacobianTranspose(input, result);
 
-  return Abstract::Group::Ok;
+  return status == true ? Abstract::Group::Ok : Abstract::Group::Failed;
 }
 
 Abstract::Group::ReturnType Group::applyRightPreconditioning(
