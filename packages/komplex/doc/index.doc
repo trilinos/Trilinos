@@ -1,9 +1,5 @@
 /*! \mainpage The Komplex Solver Package for solving Complex Linear Systems
 \htmlonly
-<center>
-<img align=center lowsrc="../komplex.gif" src="../komplex.gif" 
-     width=200 height=200 alt="komplex"><br>
-</center>
 \endhtmlonly
 
   \section intro Introduction

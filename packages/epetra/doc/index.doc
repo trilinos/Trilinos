@@ -1,9 +1,5 @@
 /*! \mainpage Trilinos/Epetra: Linear Algebra Services Package.
 \htmlonly
-<center>
-<img align=center lowsrc="../Epetra.gif" src="../Epetra.gif" 
-     width=500 height=300 alt="Epetra"><br>
-</center>
 \endhtmlonly
 
 \section intro Introduction

@@ -1,9 +1,5 @@
 /*! \mainpage Trilinos/IFPACK: Object-oriented Algebraic Preconditioner Package
 \htmlonly
-<center>
-<img align=center lowsrc="../IFPACKLogo.gif" src="../IFPACKLogo.gif" 
-     width=500 height=300 alt="IFPACK"><br>
-</center>
 \endhtmlonly
 
 \section intro Introduction

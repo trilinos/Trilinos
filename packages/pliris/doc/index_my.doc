@@ -1,6 +1,5 @@
 /*! \mainpage Trilinos/Pliris: Object-Oriented Interface to a Direct Matrix Solve (Dense matrices)
 
-
 \section intro Introduction
 Pliris is an object-oriented interface to a LU solver for dense matrices on parallel platforms. These matrices are 
 double precision real matrices distributed on a parallel machine.
@@ -30,11 +29,11 @@ Pliris contains one class.
 Some examples will be given to reveal the matrix distribution for a number of cases.  The variable names
 given are those referred to the the GetDistribution function of Pliris.  
 
-<img src="../matrix_21.gif">
+\image html matrix_21.gif
 
-<img src="../matrix_12.gif">
+\image html matrix_12.gif
 
-<img src="../matrix_22.gif">
+\image html matrix_22.gif
 
 \section densep  Matrix Packing
 
@@ -48,12 +47,12 @@ example above when one right hand side is given.
 As stated previously the right hand side is appended to the matrix.  When there is one right hand side this is attached to 
 the first column of the processor mesh.  This is shown in the next figure.
 
-<img src="../matrix_22_eq.gif">
+\image html matrix_22_eq.gif
 
 The first set of interfaces use Epetra vectors.  The memory requirements using the 4 processor example are given below with 
 the packing of the data into the vectors. Only the first two processors are given explicitly.  Note the matrix is packed in column order.
 
-<img src="../matrix_mem.gif">
+\image html matrix_mem.gif
 
 After the solution process the answers are retrieved from the positions where the right hand sides were stored.
 

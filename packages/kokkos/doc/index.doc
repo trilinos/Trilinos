@@ -1,9 +1,5 @@
 /*! \mainpage Trilinos/Kokkos: Core Kernels Package
 \htmlonly
-<center>
-<img align=center lowsrc="../diamond.jpg" src="../diamond.jpg" 
-     width=500 height=300 alt="Kokkos"><br>
-</center>
 \endhtmlonly
 
 \section intro Introduction

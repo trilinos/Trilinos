@@ -1,9 +1,5 @@
 /*! \mainpage Trilinos/Tpetra: Templated Linear Algebra Services Package.
 \htmlonly
-<center>
-<img align=center lowsrc="../tpetra.gif" src="../tpetra.gif" 
-     width=500 height=300 alt="Tpetra"><br>
-</center>
 \endhtmlonly
 
 \section intro Introduction

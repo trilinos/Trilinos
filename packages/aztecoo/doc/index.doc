@@ -1,9 +1,5 @@
 /*! \mainpage Trilinos/AztecOO: Object-Oriented Aztec Linear Solver Package.
 \htmlonly
-<center>
-<img align=center lowsrc="../azteclogo.gif" src="../azteclogo.gif" 
-     width=500 height=300 alt="AztecOO"><br>
-</center>
 \endhtmlonly
 
 \section intro Introduction
