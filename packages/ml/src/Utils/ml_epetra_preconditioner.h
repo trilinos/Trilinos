@@ -8,15 +8,17 @@
 class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_MultiVector;
-class Epetra_RowMatrix;
 class Epetra_Comm;
+class Epetra_CrsMatrix;
 
-#include "Epetra_Operator.h"
+#ifdef HAVE_ML_TRIUTILS
+class Trilinos_Util_CommandLineParser;
+#endif
+
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-#include "AztecOO.h"
 
-namespace Epetra_ML
+namespace ML_Epetra
 {
 
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
@@ -46,10 +48,18 @@ public:
 
   //! Constructs an MultiLevelPreconditioner with default values.
 
-  MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-						     const bool ComputePrec );
+  MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
+                           const bool ComputePrec );
 
-    //! Constructs an MultiLevelPreconditioner. Retrives parameters (with prefix \c Prefix) from \c List.
+#ifdef HAVE_ML_TRIUTILS
+  //! Constructs an MultiLevelPreconditioner, input parameters are specific in the command line
+
+  MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
+			   Trilinos_Util_CommandLineParser & CLP,
+                           const bool ComputePrec );
+#endif
+  
+  //! Constructs an MultiLevelPreconditioner. Retrives parameters (with prefix \c Prefix) from \c List.
   
   MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
 			    const Teuchos::ParameterList & List,
@@ -57,14 +67,14 @@ public:
 
   //! Constructs an MultiLevelPreconditioner from an ML_Operator. Retrives parameters from \c List.
   
-  MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
-						      const Teuchos::ParameterList & List,
-						      const bool ComputePrec=true,
-						      const char Prefix[]="" );
+  MultiLevelPreconditioner( ML_Operator * Operator,
+			    const Teuchos::ParameterList & List,
+			    const bool ComputePrec=true,
+			    const char Prefix[]="" );
   
   //! Constructs an MultiLevelPreconditioner for Maxwell equations. Retrives parameters from \c List.
   /*! Constructs an MultiLevelPreconditioner for Maxwell equations. The constructor
-      requires the edge matrix, the connectivity matrix T, the nodal matrix.
+    requires the edge matrix, the connectivity matrix T, the nodal matrix.
   */
   MultiLevelPreconditioner( const Epetra_RowMatrix & EdgeMatrix,
 			    const Epetra_RowMatrix & TMatrix,
@@ -72,7 +82,7 @@ public:
 			    const Teuchos::ParameterList & List,
 			    const bool ComputePrec=true,
 			    const char Prefix[]="");
-
+  
   ~MultiLevelPreconditioner() {
     if( IsComputePreconditionerOK_ ) Destroy_ML_Preconditioner(); 
   }
@@ -317,6 +327,8 @@ private:
   void SetNullSpace();
 
   void SetEigenList();
+
+  void SetSmoothingDamping();
   
   void PrintLine();
   
@@ -377,9 +389,9 @@ private:
   // other stuff for old ML's compatibility
   Epetra_CrsMatrix * RowMatrixAllocated_;
   
-};
+}; // class MultiLevelPreconditioner
  
-}
+} // namespace ML_Epetra
 
 #endif /* defined ML_EPETRA and ML_TEUCHOS */
 

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_ML_OPERATOR_H_
-#define _EPETRA_ML_OPERATOR_H_
+#ifndef _ML_EPETRA_OPERATOR_H_
+#define _ML_EPETRA_OPERATOR_H_
 
 class Epetra_MultiVector;
 class Epetra_BlockMap;
@@ -41,7 +41,7 @@ class Epetra_Comm;
     within an AztecOO solver object.
 */    
 
-namespace Epetra_ML 
+namespace ML_Epetra 
 {
   
 class MultiLevelOperator: public virtual Epetra_Operator {
@@ -180,4 +180,4 @@ kSize = WKC) const;
  
 }
 
-#endif /* _EPETRA_ML_OPERATOR_H_ */
+#endif /* _ML_EPETRA_OPERATOR_H_ */

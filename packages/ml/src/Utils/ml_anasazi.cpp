@@ -40,7 +40,7 @@ enum MLMatOp { A_MATRIX, I_MINUS_A_MATRIX, A_PLUS_AT_MATRIX, A_MINUS_AT_MATRIX }
 template <class TYPE> 
 class MLMat : public virtual Matrix<TYPE> {
 public:
-  MLMat(const Epetra_RowMatrix &, const MLMatOp MatOp, const bool UseScaling );
+  MLMat(const Epetra_RowMatrix &, const MLMatOp MatOp, const bool UseDiagScaling );
   ~MLMat();
   ReturnType ApplyMatrix ( const MultiVec<TYPE>& x, 
 			   MultiVec<TYPE>& y ) const;
@@ -49,16 +49,17 @@ public:
     MatOp_ = MatOp;
   }
 
-  void SetScaling(const double Scale) 
+  void SetDiagScaling(const bool UseDiagScaling) 
   {
-    Scale_ = Scale;
+    UseDiagScaling_ = UseDiagScaling;
   }
   
 private:
   const Epetra_RowMatrix & Mat_;
   Epetra_Vector * Diagonal_;
+  Epetra_MultiVector * tmp_;
   MLMatOp MatOp_;
-  const bool UseScaling_;
+  const bool UseDiagScaling_;
   double Scale_;
   
 };
@@ -67,15 +68,16 @@ private:
 
 template <class TYPE>
 MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
-		   const MLMatOp MatOp, const bool UseScaling ) 
+		   const MLMatOp MatOp, const bool UseDiagScaling ) 
   : Mat_(Matrix),
     MatOp_(MatOp),
-    UseScaling_(UseScaling),
-    Scale_(1.0)
+    UseDiagScaling_(UseDiagScaling),
+    Scale_(1.0),
+    tmp_(0)
 {
-  if( UseScaling_ ) {
+  if( UseDiagScaling_ ) {
     
-    Epetra_Vector * Diagonal_ = new Epetra_Vector(Matrix.RowMatrixRowMap());
+    Diagonal_ = new Epetra_Vector(Matrix.RowMatrixRowMap());
     Matrix.ExtractDiagonalCopy(*Diagonal_);
     
     int NumMyElements = Matrix.RowMatrixRowMap().NumMyElements();
@@ -83,7 +85,7 @@ MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
       if( (*Diagonal_)[i] != 0.0 ) (*Diagonal_)[i] = 1.0/(*Diagonal_)[i];
       else  (*Diagonal_)[i] = 0.0;
     }
-    
+
   }
   
 }
@@ -93,7 +95,8 @@ MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
 template <class TYPE>
 MLMat<TYPE>::~MLMat() 
 {
-  if( UseScaling_ ) delete Diagonal_;
+  if( UseDiagScaling_ ) delete Diagonal_;
+  if( tmp_ )  delete tmp_;
 }
 
 // ================================================ ====== ==== ==== == =
@@ -105,8 +108,8 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
 
   int info = 0;
   MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
-  Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
-  Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+  Epetra_MultiVector * vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+  Epetra_MultiVector * vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
 
   if( vec_x==0 || vec_y==0 ) return Failed;
 
@@ -115,24 +118,24 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
 
   if( info ) return Failed;
 
-  // FIXME: put me in constructor....
-  Epetra_MultiVector * tmp ;
+  if( tmp_ == 0 ) {
+    const_cast<MLMat<TYPE> *>(this)->tmp_ = new Epetra_MultiVector(*vec_x);
+  }
+  
   if( MatOp_ == A_PLUS_AT_MATRIX || MatOp_ == A_MINUS_AT_MATRIX ) {
-    tmp = new Epetra_MultiVector(*vec_x);
     const Epetra_RowMatrix & RowMatrix = dynamic_cast<const Epetra_RowMatrix &>(Mat_);
-    info = RowMatrix.Multiply(true,*vec_x,*tmp);
-    tmp->Scale(Scale_);
+    info = RowMatrix.Multiply(true,*vec_x,*tmp_);
+    tmp_->Scale(Scale_);
     if( info ) return Failed;
   }
-  if( MatOp_ == A_PLUS_AT_MATRIX ) vec_y->Update(1.0,*tmp,1.0);
-  else if( MatOp_ == A_MINUS_AT_MATRIX ) vec_y->Update(-1.0,*tmp,1.0);
-
-  if(  MatOp_ == A_PLUS_AT_MATRIX || MatOp_ == A_MINUS_AT_MATRIX ) delete tmp;
+  if( MatOp_ == A_PLUS_AT_MATRIX ) vec_y->Update(1.0,*tmp_,1.0);
+  else if( MatOp_ == A_MINUS_AT_MATRIX ) vec_y->Update(-1.0,*tmp_,1.0);
   
   // diagonal scaling
-  if( UseScaling_ == true ) {
-    for( int j=0 ; j<vec_y->NumVectors() ; ++j ) 
+  if( UseDiagScaling_ == true ) {
+    for( int j=0 ; j<vec_y->NumVectors() ; ++j ) {
       for( int i=0 ; i<vec_y->Map().NumMyElements() ; ++i ) (*vec_y)[j][i] *= (*Diagonal_)[i];
+    }    
   }
   
   if( MatOp_ == I_MINUS_A_MATRIX ) {
@@ -142,11 +145,13 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
   return Ok; 
 }
 
+namespace ML_Anasazi {
+
 // ================================================ ====== ==== ==== == =
 
-int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVectors,
-			 double RealEigenvalues[], double ImagEigenvalues[],
-			 Teuchos::ParameterList & List) 
+int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVectors,
+		 	  double RealEigenvalues[], double ImagEigenvalues[],
+			  Teuchos::ParameterList & List) 
 {
 
   int MyPID = RowMatrix->Comm().MyPID();
@@ -163,8 +168,8 @@ int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector 
   else if( MatOpStr == "A+A^T" ) MatOp = A_PLUS_AT_MATRIX;
   else if( MatOpStr == "A-A^T" ) MatOp = A_MINUS_AT_MATRIX;
 
-  bool UseScaling = true;
-  UseScaling = List.get("eigen-analysis: use scaling", UseScaling);
+  bool UseDiagScaling = true;
+  UseDiagScaling = List.get("eigen-analysis: use diagonal scaling", UseDiagScaling);
 
   int length = List.get("eigen-analysis: length", 20);
   double tol = List.get("eigen-analysis: tolerance", 1.0e-5);
@@ -174,17 +179,14 @@ int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector 
 
   int output = List.get("eigen-analysis: output", 5);
   
-  double Scaling = List.get("eigen-analysis: scaling", 1.0);
-  
   if( output > 5 && MyPID == 0 ) {
     if( MatOp == A_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A" << endl;
     if( MatOp == I_MINUS_A_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of I - A" << endl;
     if( MatOp == A_PLUS_AT_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A + A^T" << endl;
     if( MatOp == A_MINUS_AT_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A - A^T" << endl;
-    if( UseScaling ) cout << "ML_Anasazi : where A is scaled by D^{-1}" << endl;
+    if( UseDiagScaling ) cout << "ML_Anasazi : where A is scaled by D^{-1}" << endl;
     if( isSymmetric ) cout << "ML_Anasazi : Problem is symmetric" << endl;
     cout << "ML_Anasazi : Tolerance = " << tol << endl;
-    cout << "ML_Anasazi : Scaling = " << Scaling << endl;
     cout << "ML_Anasazi : Required Action = " << which << endl;
 	
   }
@@ -209,8 +211,7 @@ int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector 
   int step = restarts*length*NumBlocks;
   
   // Call the ctor that calls the petra ctor for a matrix
-  MLMat<double> Amat(*RowMatrix,MatOp,UseScaling);
-  Amat.SetScaling(Scaling);
+  MLMat<double> Amat(*RowMatrix,MatOp,UseDiagScaling);
   
   Anasazi::Eigenproblem<double> MyProblem(&Amat, &Vectors);
 
@@ -270,7 +271,7 @@ int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector 
 
 // ================================================ ====== ==== ==== == =
 
-int ML_Anasazi_Get_FiledOfValuesBox(const Epetra_RowMatrix * RowMatrix, 
+int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix, 
 				    double & MaxReal, double & MaxImag,
 				    Teuchos::ParameterList & List ) 
 {
@@ -279,8 +280,8 @@ int ML_Anasazi_Get_FiledOfValuesBox(const Epetra_RowMatrix * RowMatrix,
   
   int MyPID = RowMatrix->Comm().MyPID();
 
-  bool UseScaling = true;
-  UseScaling = List.get("field-of-values: use scaling", UseScaling);
+  bool UseDiagScaling = true;
+  UseDiagScaling = List.get("field-of-values: use diagonal scaling", UseDiagScaling);
   
   int length = List.get("field-of-values: length", 20);
   double tol = List.get("field-of-values: tolerance", 1.0e-5);
@@ -290,12 +291,14 @@ int ML_Anasazi_Get_FiledOfValuesBox(const Epetra_RowMatrix * RowMatrix,
   
   if( output > 5 && MyPID == 0 ) {
     cout << "ML_Anasazi : Estimate box containing the field of values" << endl;
-    cout << "ML_Anasazi : Computing eigenvalues of A + A^T" << endl;
-    if( UseScaling ) cout << "ML_Anasazi : where A is scaled by D^{-1}" << endl;
     cout << "ML_Anasazi : Tolerance = " << tol << endl;	
+    cout << "ML_Anasazi : Computing eigenvalues of A + A^T" << endl;
+    if( UseDiagScaling ) cout << "ML_Anasazi : where A is scaled by D^{-1}" << endl;
   }
 
   bool PrintCurrentStatus =  List.get("field-of-values: print current status", false);
+
+  bool isSymmetric = List.get("eigen-analysis: symmetric problem", false);
   
   /* ********************************************************************** */
   /* First compute A + A^T to get the real bound                            */
@@ -307,7 +310,7 @@ int ML_Anasazi_Get_FiledOfValuesBox(const Epetra_RowMatrix * RowMatrix,
   int step = restarts*length*1;
   
   // Call the ctor that calls the petra ctor for a matrix
-  MLMat<double> Amat(*RowMatrix,A_PLUS_AT_MATRIX,UseScaling);
+  MLMat<double> Amat(*RowMatrix,A_PLUS_AT_MATRIX,UseDiagScaling);
   
   Anasazi::Eigenproblem<double> MyProblem(&Amat, &Vectors);
 
@@ -341,50 +344,60 @@ int ML_Anasazi_Get_FiledOfValuesBox(const Epetra_RowMatrix * RowMatrix,
   /* First compute A - A^T to get the real bound                            */
   /* ********************************************************************** */
   
-  if( output > 5 && MyPID == 0 ) {
-    cout << "ML_Anasazi : Computing eigenvalues of A - A^T" << endl;
-  }
-  
-  Vectors.MvRandom();
-  
-  // Call the ctor that calls the petra ctor for a matrix
-  MLMat<double> Amat2(*RowMatrix,A_MINUS_AT_MATRIX,UseScaling);
-  
-  Anasazi::Eigenproblem<double> MyProblem2(&Amat2, &Vectors);
-
-  // Initialize the Block Arnoldi solver
-  Anasazi::BlockArnoldi<double> MyBlockArnoldi2(MyProblem2, tol, 1, length, 1, 
-						"LM", step, restarts);
-
-  // Inform the solver that the problem is symmetric
-  MyBlockArnoldi2.setSymmetric(false);
-  MyBlockArnoldi2.setDebugLevel(0);
-
-  MyBlockArnoldi2.iterate(5);
-  
-  // Solve the problem to the specified tolerances or length
-  MyBlockArnoldi2.solve();
-  
-  // Obtain results directly
-
-  double * evali = MyBlockArnoldi2.getiEvals();
-
-  MaxImag = evali[0] / 2;
-
-  residuals  = MyBlockArnoldi2.getResiduals();
-  if( output > 5 && MyPID == 0 ) {
-    cout << "ML_Anasazi : Ritz Residual for A^T - A = " << residuals[0] << endl;
-  }
-
-  if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi2.currentStatus();
-
-  if( output > 5 && MyPID == 0 ) {
-    cout << "ML_Anasazi : Time = " << Time.ElapsedTime() << " (s)" << endl;
-  }
+  if( isSymmetric == false ) {
     
+    if( output > 5 && MyPID == 0 ) {
+      cout << "ML_Anasazi : Computing eigenvalues of A - A^T" << endl;
+    }
+    
+    Vectors.MvRandom();
+  
+    // Call the ctor that calls the petra ctor for a matrix
+    MLMat<double> Amat2(*RowMatrix,A_MINUS_AT_MATRIX,UseDiagScaling);
+    
+    Anasazi::Eigenproblem<double> MyProblem2(&Amat2, &Vectors);
+    
+    // Initialize the Block Arnoldi solver
+    Anasazi::BlockArnoldi<double> MyBlockArnoldi2(MyProblem2, tol, 1, length, 1, 
+						  "LM", step, restarts);
+    
+    // Inform the solver that the problem is symmetric
+    MyBlockArnoldi2.setSymmetric(false);
+    MyBlockArnoldi2.setDebugLevel(0);
+    
+    MyBlockArnoldi2.iterate(5);
+    
+    // Solve the problem to the specified tolerances or length
+    MyBlockArnoldi2.solve();
+    
+    // Obtain results directly
+    
+    double * evali = MyBlockArnoldi2.getiEvals();
+    
+    MaxImag = evali[0] / 2;
+  
+    residuals  = MyBlockArnoldi2.getResiduals();
+    if( output > 5 && MyPID == 0 ) {
+      cout << "ML_Anasazi : Ritz Residual for A^T - A = " << residuals[0] << endl;
+    }
+    
+    if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi2.currentStatus();
+
+    if( output > 5 && MyPID == 0 ) {
+      cout << "ML_Anasazi : Time = " << Time.ElapsedTime() << " (s)" << endl;
+    }
+    
+  } else {
+
+    MaxImag = 0;
+    
+  }
+  
   return 0;
   
 }
+
+} // namespace ML_Anasazi
 
 // ================================================ ====== ==== ==== == =
 
@@ -405,7 +418,7 @@ int ML_Anasazi_Get_FiledOfValuesBox_Interface(ML_Operator * Amat,
   double MaxReal,MaxImag;
   Teuchos::ParameterList * EigenList = (Teuchos::ParameterList *) fov->EigenList;
   
-  ML_Anasazi_Get_FiledOfValuesBox(CrsTemp,MaxReal,MaxImag,*EigenList);
+  ML_Anasazi::GetFieldOfValuesBox(CrsTemp,MaxReal,MaxImag,*EigenList);
 
   double eta = MaxImag/MaxReal;
 

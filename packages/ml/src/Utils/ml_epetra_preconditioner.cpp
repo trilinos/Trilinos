@@ -215,7 +215,6 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 
 
 
-
 #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
 #include "Epetra_Map.h"
@@ -232,21 +231,24 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Teuchos_ParameterList.hpp"
 
+#include <cstring>
 #include "ml_amesos_wrap.h"
 #include "ml_ifpack_wrap.h"
 #include "ml_agg_METIS.h"
 #include "ml_epetra_utils.h"
+
 #include "ml_epetra_preconditioner.h"
 #include "ml_agg_ParMETIS.h"
 
 #include "ml_anasazi.h"
 
-using namespace Teuchos;
+#ifdef HAVE_ML_TRIUTILS
+#include "Trilinos_Util_ShellOptions.h"
+#endif
 
-namespace Epetra_ML 
-{
+using namespace Teuchos;
+using namespace ML_Epetra;
   
 // ================================================ ====== ==== ==== == =
 
@@ -339,14 +341,14 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   
   ParameterList NewList;
   List_ = NewList;
-  Epetra_ML::SetDefaults("DD",List_,Prefix_,SmootherOptions_,SmootherParams_);
+  ML_Epetra::SetDefaults("DD",List_,Prefix_,SmootherOptions_,SmootherParams_);
     
   Initialize();
 
   // construct hierarchy
   if( ComputePrec == true ) ComputePreconditioner();
 }
-
+  
 // ================================================ ====== ==== ==== == =
 
 MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
@@ -424,6 +426,61 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
   // construct hierarchy
   if( ComputePrec == true ) ComputePreconditioner();
 }
+
+// ================================================ ====== ==== ==== == =
+
+#ifdef HAVE_ML_TRIUTILS
+MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
+						   Trilinos_Util_CommandLineParser & CLP,
+						   const bool ComputePrec ) :
+  RowMatrix_(&RowMatrix),
+  RowMatrixAllocated_(0)
+{
+  sprintf(Prefix_,"");
+
+  /* ********************************************************************** */
+  /* Parse command line to get main options                                 */
+  /* ********************************************************************** */
+
+  List_.set("max levels",CLP.Get("-num_levels",2));
+  List_.set("increasing or decreasing",CLP.Get("-incr_or_decr","increasing"));
+
+  List_.set("aggregation: type", CLP.Get("-aggr_scheme","Uncoupled"));
+  List_.set("smoother: type", CLP.Get("-smoother_type","Gauss-Seidel"));
+  List_.set("aggregation: nodes per aggregate", CLP.Get("-num_nodes_per_aggr",512));
+  List_.set("smoother: pre or post", CLP.Get("-smoother_pre_or_post","both"));
+  List_.set("smoother: damping factor", CLP.Get("-smoother_damping_factor",1.0));
+  List_.set("coarse: type", CLP.Get("-coarse_type","Amesos_KLU"));
+  List_.set("coarse: max processes", CLP.Get("-coarse_max_procs",4));
+  List_.set("aggregation: damping factor", CLP.Get("-aggr_damping_factor",1.333));
+  
+  /*
+    AZ_defaults(options,params);
+    options[AZ_precond] = AZ_dom_decomp;
+    options[AZ_subdomain_solve] = AZ_ilu;
+    List_.set("smoother: aztec options", options);
+    List_.set("smoother: aztec params", params);
+    List_.set("smoother: damping factor", 0.67);
+  */
+
+  List_.set("eigen-analysis: use symmetric algorithms", CLP.Has("-symmetricsssxx"));
+  List_.set("eigen-analysis: tolerance", CLP.Get("-eigen_analysis_tol",1e-2));
+  List_.set("compute null space", CLP.Has("-compute_null_space"));
+  List_.set("null space dimension", CLP.Get("-null_space_dim",1));
+  List_.set("add default null space", CLP.Has("-add_default_null_space"));
+  List_.set("R and P smoothing: type", CLP.Get("-RP_smoothing","default"));
+  List_.set("R and P smoothing: damping", CLP.Get("-RP_damping","default"));
+
+  /* ********************************************************************** */
+  /* back to normal initialization                                          */
+  /* ********************************************************************** */
+
+  Initialize();
+
+  // construct hierarchy
+  if( ComputePrec == true ) ComputePreconditioner();
+}
+#endif
 
 // ================================================ ====== ==== ==== == =
 
@@ -601,12 +658,6 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   /* minor settings                                                         */
   /* ********************************************************************** */
   
-  double DampingFactor = 0.01;
-  if( SolvingMaxwell_ ) DampingFactor = 0.0;
-  sprintf(parameter,"%saggregation: damping factor", Prefix_);
-  DampingFactor = List_.get(parameter, DampingFactor);
-  ML_Aggregate_Set_DampingFactor( agg_, DampingFactor ); 
-  
   int MaxCoarseSize = 50;
   sprintf(parameter,"%scoarse: max size", Prefix_);
   MaxCoarseSize = List_.get(parameter, MaxCoarseSize);
@@ -629,95 +680,30 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   ML_Aggregate_Set_ReqLocalCoarseSize( ml_, agg_, -1, ReqAggrePerProc);
 
   if( verbose_ ) {
-    cout << PrintMsg_ << "Aggregation damping factor = " << DampingFactor << endl;
     cout << PrintMsg_ << "Aggregation threshold = " << Threshold << endl;
     cout << PrintMsg_ << "Max coarse size = " << MaxCoarseSize << endl;
     cout << PrintMsg_ << "Requested next-level aggregates per process (ParMETIS) = " << ReqAggrePerProc << endl << endl;
   }
 
+  /* ********************************************************************** */
+  /* METIS and ParMETIS may suffer (that is, core dump) is the graph is     */
+  /* highly non-symmetric. In this case, it is better to set this parameter */
+  /* to ML_NO. It does affect METIS and ParMETIS only.                      */
+  /* ********************************************************************** */
+
   bool UseDropping = true;
   sprintf(parameter,"%saggregation: use dropping", Prefix_);
   UseDropping = List_.get(parameter, UseDropping);
   if( UseDropping == true ) ML_Aggregate_Set_UseDropping( ML_YES );
-  else                      ML_Aggregate_Set_UseDropping( ML_NO );
-  
-  sprintf(parameter,"%sR and P smoothing: type", Prefix_);
-  string RandPSmoothing = List_.get(parameter, "symmetric");
-  // symmetric: classical approach, do nothing special
-  // non-symmetric: normal, only use A and not A'
-  // advanced: determine damping parameters
+  else                      ML_Aggregate_Set_UseDropping( ML_NO );  
+ 
+  /* ********************************************************************** */
+  /* Define scheme to determine damping parameter in prolongator and        */
+  /* restriction smoother.                                                  */
+  /* ********************************************************************** */
 
-  if( RandPSmoothing == "non-symmetric" ) {
-    if( verbose_ )
-      cout << PrintMsg_ << "Use A to smooth restriction operator" << endl;
-    agg_->Restriction_smoothagg_transpose = ML_TRUE;
+  SetSmoothingDamping();
 
-  } else if( RandPSmoothing == "advanced" ) {
-
-#ifdef HAVE_ML_ANASAZI
-
-    int MaxNumNonzeros;
-    double CPUTime;
-    
-    if( verbose_ )
-      cout << PrintMsg_ << "Use A to smooth restriction operator" << endl;
-    agg_->Restriction_smoothagg_transpose = ML_TRUE;
-    
-    SetEigenList();
-    
-    struct ML_Field_Of_Values * field_of_values;
-    
-    field_of_values = (struct ML_Field_Of_Values *) malloc( sizeof(struct ML_Field_Of_Values) );
-    field_of_values->eta     = 0.0;
-    field_of_values->real_max= -1.0;
-    field_of_values->imag_max= -1.0;
-    field_of_values->poly_order = 2;          
-    field_of_values->EigenList = (void *) &EigenList_;
-
-    // still to set up polynomial coeffiecients
-    string DampingType =  List_.get("R and P smoothing: damping type", "default");
-  
-    if( DampingType == "default" ) {
-      
-      field_of_values->R_coeff[0] =  1.107;
-      field_of_values->R_coeff[1] =  0.285;
-      field_of_values->R_coeff[2] =  0.718;
-      
-      field_of_values->P_coeff[0] =  1.878;
-      field_of_values->P_coeff[1] = -2.515;
-      field_of_values->P_coeff[2] =  0.942;
-      
-      // stick other options here ?????
-      
-    } else {
-
-      // get them from parameters' list.
-      field_of_values->R_coeff[0] =  List_.get("R and P smoothing: c_0",  1.107);
-      field_of_values->R_coeff[1] =  List_.get("R and P smoothing: c_1",  0.285);
-      field_of_values->R_coeff[2] =  List_.get("R and P smoothing: c_2",  0.718);
-
-      field_of_values->P_coeff[0] =  List_.get("R and P smoothing: g_0",  1.878);
-      field_of_values->P_coeff[1] =  List_.get("R and P smoothing: g_1", -2.515);
-      field_of_values->P_coeff[2] =  List_.get("R and P smoothing: g_2",  0.942);
-      
-    }
-
-    agg_->field_of_values = (void*) field_of_values;
-    
-#else
-    cout << ErrorMsg_ << "You must compile with --with-ml_anasazi "  << endl
-         << ErrorMsg_ << "for eigen-analysis." << endl;
-    exit( EXIT_FAILURE );	
-#endif       
-
-  } else agg_->Restriction_smoothagg_transpose = ML_FALSE;
-
-  sprintf(parameter,"%seigen-analysis: use symmetric algorithms", Prefix_);
-  bool IsSymmetric = List_.get(parameter,false);
-  
-  if( IsSymmetric ) ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
-  else              ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
-  
   /************************************************************************/
   /* Build hierarchy using smoothed aggregation.                          */
   /* Then, retrive parameters for each level. Default values are given by */
@@ -830,348 +816,6 @@ int MultiLevelPreconditioner::SetParameterList(const ParameterList & List)
   List_ = List;
   return 0;
   
-}
-
-// ============================================================================
-
-int Epetra_ML::SetDefaults(string ProblemType, ParameterList & List, char * Prefix_,
-			   int SmootherOptions[], double SmootherParams[] )
-{
-  
-  int rv = 0;
-  
-  if( ProblemType == "SA" )
-    return( Epetra_ML::SetDefaultsSA(List, Prefix_, SmootherOptions, SmootherParams ) );
-  else if( ProblemType == "maxwell" )
-    return( Epetra_ML::SetDefaultsMaxwell(List, Prefix_, SmootherOptions, SmootherParams ) );
-  else if( ProblemType == "DD 3-levels" )
-    return( Epetra_ML::SetDefaultsDD_3Levels(List, Prefix_, SmootherOptions, SmootherParams ) );
-  else if( ProblemType == "DD" )
-    return( Epetra_ML::SetDefaultsDD(List, Prefix_, SmootherOptions, SmootherParams ) );
-  else {
-    cerr << "ERROR: Wrong input parameter in `SetDefaults'. Should be: " << endl
-	 << "ERROR: <SA> / <DD> / <DD 3-levels> / <maxwell>" << endl;
-    rv = 1;
-  }
-
-  EPETRA_CHK_ERR(rv);
-
-  return rv;
-  
-  
-}
-
-// ============================================================================
-
-int Epetra_ML::SetDefaultsDD(ParameterList & List, char * Prefix,
-			     int SmootherOptions[], double SmootherParams[]) 
-{
-
-  char parameter[80];
-
-  sprintf(parameter,"%smax levels", Prefix);
-  List.set(parameter,2);
-
-  sprintf(parameter,"%soutput", Prefix);
-  List.set(parameter,10);
-  
-  sprintf(parameter,"%sincreasing or decreasing", Prefix);
-  List.set(parameter,"increasing");
-
-  sprintf(parameter,"%sPDE equations", Prefix);
-  List.set(parameter,1);
-
-  sprintf(parameter,"%saggregation: type",Prefix);
-  List.set(parameter,"METIS");
-
-  sprintf(parameter,"%saggregation: local aggregates",Prefix);
-  List.set(parameter,1);
-  
-  sprintf(parameter,"%saggregation: damping factor",Prefix);
-  List.set(parameter,0.01);
-
-  sprintf(parameter,"%scoarse: max size",Prefix);
-  List.set(parameter,128);
-
-  sprintf(parameter,"%saggregation: threshold",Prefix);
-  List.set(parameter,0.0);
-  
-  sprintf(parameter,"%ssmoother: sweeps",Prefix);
-  List.set(parameter,2);
-
-  sprintf(parameter,"%ssmoother: damping factor",Prefix);
-  List.set(parameter,0.67);
-
-  sprintf(parameter,"%ssmoother: pre or post",Prefix);
-  List.set(parameter,"both");
-
-  if( SmootherOptions != 0 && SmootherParams != 0 ) {
-    
-    sprintf(parameter,"%ssmoother: type",Prefix);
-    List.set(parameter,"aztec");
-
-    AZ_defaults(SmootherOptions,SmootherParams);
-    SmootherOptions[AZ_precond] = AZ_dom_decomp;
-    SmootherOptions[AZ_scaling] = AZ_none;
-    SmootherOptions[AZ_subdomain_solve] = AZ_ilut;
-    
-    sprintf(parameter,"%ssmoother: aztec options",Prefix);
-    List.set(parameter,SmootherOptions);
-    
-    sprintf(parameter,"%ssmoother: aztec params",Prefix);
-    List.set(parameter,SmootherParams);
-    
-    sprintf(parameter,"%ssmoother: aztec as solver",Prefix);
-    List.set(parameter,false);
-
-  } else {
-
-    sprintf(parameter,"%ssmoother: type",Prefix);
-    List.set(parameter,"Gauss-Seidel");
-    
-  }
-  
-  sprintf(parameter,"%scoarse: type",Prefix);
-  List.set(parameter,"Amesos_KLU");
-
-  sprintf(parameter,"%sprec type",Prefix);
-  List.set(parameter,"MGV");
-
-  sprintf(parameter,"%sprint unused",Prefix);
-  List.set(parameter,0);
-
-  return 0;
-
-}
-
-// ============================================================================
-
-int Epetra_ML::SetDefaultsDD_3Levels(ParameterList & List, char * Prefix_,
-				     int SmootherOptions[], double SmootherParams[]) 
-{
-
-  char parameter[80];
-
-  sprintf(parameter,"%smax levels", Prefix_);
-  List.set(parameter,3);
-
-  sprintf(parameter,"%soutput", Prefix_);
-  List.set(parameter,10);
-  
-  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
-  List.set(parameter,"increasing");
-
-  sprintf(parameter,"%sPDE equations", Prefix_);
-  List.set(parameter,1);
-
-  sprintf(parameter,"%saggregation: type (level 0)",Prefix_);
-  List.set(parameter,"METIS");
-
-  sprintf(parameter,"%saggregation: type (level 1)",Prefix_);
-  List.set(parameter,"ParMETIS");
-
-  sprintf(parameter,"%saggregation: nodes per aggregate (level 0)",Prefix_);
-  List.set(parameter,512);
-
-  sprintf(parameter,"%saggregation: nodes per aggregate (level 1)",Prefix_);
-  List.set(parameter,32);
-  
-  sprintf(parameter,"%saggregation: damping factor",Prefix_);
-  List.set(parameter,0.01);
-
-  sprintf(parameter,"%scoarse: max size",Prefix_);
-  List.set(parameter,128);
-
-  sprintf(parameter,"%saggregation: threshold",Prefix_);
-  List.set(parameter,0.0);
-  
-  sprintf(parameter,"%ssmoother: sweeps (level 0)",Prefix_);
-  List.set(parameter,2);
-
-  sprintf(parameter,"%ssmoother: damping factor (level 0)",Prefix_);
-  List.set(parameter,0.67);
-
-  sprintf(parameter,"%ssmoother: pre or post (level 0)",Prefix_);
-  List.set(parameter,"both");
-
-  if( SmootherOptions != 0 && SmootherParams != 0 ) {
-    
-    sprintf(parameter,"%ssmoother: type (level 0)",Prefix_);
-    List.set(parameter,"aztec");
-    
-    AZ_defaults(SmootherOptions,SmootherParams);
-    SmootherOptions[AZ_precond] = AZ_dom_decomp;
-    SmootherOptions[AZ_subdomain_solve] = AZ_ilut;
-    
-    sprintf(parameter,"%ssmoother: aztec options (level 0)",Prefix_);
-    List.set(parameter,SmootherOptions);
-    
-    sprintf(parameter,"%ssmoother: aztec params (level 0)",Prefix_);
-    List.set(parameter,SmootherParams);
-    
-    sprintf(parameter,"%ssmoother: aztec as solver (level 0)",Prefix_);
-    List.set(parameter,false);
-  
-  } else {
-
-    sprintf(parameter,"%ssmoother: type",Prefix_);
-    List.set(parameter,"Gauss-Seidel");
-    
-  }
-  
-  sprintf(parameter,"%scoarse: type",Prefix_);
-  List.set(parameter,"Amesos_KLU");
-
-  sprintf(parameter,"%sprec type",Prefix_);
-  List.set(parameter,"MGV");
-
-  sprintf(parameter,"%sprint unused",Prefix_);
-  List.set(parameter,0);
-  
-  return 0;
-
-}
-
-// ============================================================================
-
-int Epetra_ML::SetDefaultsMaxwell(ParameterList & List, char * Prefix_,
-				  int SmootherOptions[], double SmootherParams[]) 
-{
-
-  // FIXME : here default values for Maxwell
-  
-  char parameter[80];
-  int MaxLevels = 10;
-  
-  sprintf(parameter,"%smax levels", Prefix_);
-  List.set(parameter,MaxLevels);
-
-  sprintf(parameter,"%soutput", Prefix_);
-  List.set(parameter,10);
-  
-  sprintf(parameter,"%sPDE equations", Prefix_);
-  List.set(parameter,1);
-
-  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
-  List.set(parameter,"decreasing");
-
-  // aggregation: Uncoupled for first levels, then MIS
-  sprintf(parameter,"%saggregation: type",Prefix_,MaxLevels-1);
-  List.set(parameter,"Hybrid");
-
-  // optimal value for smoothed aggregation
-  sprintf(parameter,"%saggregation: damping factor",Prefix_);
-  List.set(parameter,1.3333);
-
-  // relative small coarse size
-  sprintf(parameter,"%scoarse: max size",Prefix_);
-  List.set(parameter,16);
-
-  // don't forget any element
-  sprintf(parameter,"%saggregation: threshold",Prefix_);
-  List.set(parameter,0.0);
-
-  // gauss-seidel for all levels
-  sprintf(parameter,"%ssmoother: sweeps (level %d)",Prefix_,MaxLevels-1);
-  List.set(parameter,2);
-
-  sprintf(parameter,"%ssmoother: damping factor (level %d)",Prefix_,MaxLevels-1);
-  List.set(parameter,0.67);
-
-  sprintf(parameter,"%ssmoother: type (level %d)",Prefix_,MaxLevels-1);
-  List.set(parameter,"MLS");
-
-  sprintf(parameter,"%ssmoother: MLS polynomial order", Prefix_);
-  List.set(parameter,3);
-  
-  sprintf(parameter,"%ssmoother: pre or post (level %d)",Prefix_,MaxLevels-1);
-  List.set(parameter,"both");
-  
-  // simplest solver on coarse problem
-  sprintf(parameter,"%scoarse: type",Prefix_);
-  List.set(parameter,"SuperLU");
-//  Tim Davis' simple serial LU package.  It's part of Amesos
-//  itself.
-//  List.set(parameter,"Amesos_KLU");
-
-  sprintf(parameter,"%sprec type",Prefix_);
-  List.set(parameter,"MGV");
-
-  // print unused parameters on proc 0
-  sprintf(parameter,"%sprint unused",Prefix_);
-  List.set(parameter,0);
-    
-}
-
-// ============================================================================
-
-int Epetra_ML::SetDefaultsSA(ParameterList & List, char * Prefix_,
-			     int SmootherOptions[], double SmootherParams[]) 
-{
-
-  char parameter[80];
-  int MaxLevels = 10;
-  
-  sprintf(parameter,"%smax levels", Prefix_);
-  List.set(parameter,MaxLevels);
-
-  sprintf(parameter,"%soutput", Prefix_);
-  List.set(parameter,10);
-  
-  sprintf(parameter,"%sPDE equations", Prefix_);
-  List.set(parameter,1);
-
-  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
-  List.set(parameter,"decreasing");
-
-  // aggregation: Uncoupled for first levels, then MIS
-  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-1);
-  List.set(parameter,"Uncoupled");
-
-  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-2);
-  List.set(parameter,"Uncoupled");
-
-  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-3);
-  List.set(parameter,"MIS");
-  
-  // optimal value for smoothed aggregation
-  sprintf(parameter,"%saggregation: damping factor",Prefix_);
-  List.set(parameter,1.3333);
-
-  // relative small coarse size
-  sprintf(parameter,"%scoarse: max size",Prefix_);
-  List.set(parameter,16);
-
-  // don't forget any element
-  sprintf(parameter,"%saggregation: threshold",Prefix_);
-  List.set(parameter,0.0);
-
-  // guass-seidel for all levels
-  sprintf(parameter,"%ssmoother: sweeps (level %d)",Prefix_,MaxLevels-1);
-  List.set(parameter,2);
-
-  sprintf(parameter,"%ssmoother: damping factor (level %d)",Prefix_,MaxLevels-1);
-  List.set(parameter,0.67);
-
-  sprintf(parameter,"%ssmoother: type (level %d)",Prefix_,MaxLevels-1);
-  List.set(parameter,"Gauss-Seidel");
-  
-  sprintf(parameter,"%ssmoother: pre or post (level %d)",Prefix_,MaxLevels-1);
-  List.set(parameter,"both");
-  
-  // simplest solver on coarse problem
-  sprintf(parameter,"%scoarse: type",Prefix_);
-  List.set(parameter,"Amesos_KLU");
-
-  sprintf(parameter,"%sprec type",Prefix_);
-  List.set(parameter,"MGV");
-
-  // print unused parameters on proc 0
-  sprintf(parameter,"%sprint unused",Prefix_);
-  List.set(parameter,0);
-  
-  return 0;
-
 }
 
 // ============================================================================
@@ -1782,8 +1426,8 @@ void MultiLevelPreconditioner::SetNullSpace()
     AnasaziList.set("matrix operation", "A");    
     AnasaziList.set("action", "SM");
 
-    ML_Anasazi_Interface(RowMatrix_,EigenVectors,RealEigenvalues,
-			 ImagEigenvalues, AnasaziList);
+    ML_Anasazi::Interface(RowMatrix_,EigenVectors,RealEigenvalues,
+			  ImagEigenvalues, AnasaziList);
     
     NullSpaceToFree_ = NullSpacePtr; // this null space will be freed later
     
@@ -1811,7 +1455,7 @@ void MultiLevelPreconditioner::SetEigenList()
   char parameter[80];
   
   // eigen-analysis:
-  sprintf(parameter,"%seigen-analysis: use symmetric algotithms", Prefix_);
+  sprintf(parameter,"%seigen-analysis: use symmetric algorithms", Prefix_);
   bool IsSymmetric = List_.get(parameter,false);
     
   if( IsSymmetric ) EigenList_.set("eigen-analysis: symmetric problem",true);
@@ -1821,7 +1465,7 @@ void MultiLevelPreconditioner::SetEigenList()
   EigenList_.set("eigen-analysis: tolerance", List_.get(parameter, 1e-2));
 
   sprintf(parameter,"%seigen-analysis: use diagonal scaling", Prefix_);    
-  EigenList_.set("eigen-analysis: use scaling", List_.get(parameter,false));
+  EigenList_.set("eigen-analysis: use diagonal scaling", List_.get(parameter,false));
     
   sprintf(parameter,"%seigen-analysis: restart", Prefix_);
   int itemp = List_.get(parameter, 100);
@@ -1841,7 +1485,7 @@ void MultiLevelPreconditioner::SetEigenList()
   EigenList_.set("field-of-values: tolerance", List_.get(parameter, 1e-2));
 
   sprintf(parameter,"%sfield-of-values: use diagonal scaling", Prefix_);    
-  EigenList_.set("field-of-values: use scaling", List_.get(parameter,false));
+  EigenList_.set("field-of-values: use diagonal scaling", List_.get(parameter,false));
     
   sprintf(parameter,"%sfield-of-values: restart", Prefix_);
   itemp = List_.get(parameter, 100);
@@ -1862,6 +1506,589 @@ void MultiLevelPreconditioner::SetEigenList()
   EigenList_.set("output",itemp);
     
 }
+
+// ================================================ ====== ==== ==== == =
+
+void MultiLevelPreconditioner::SetSmoothingDamping() 
+{
+
+#ifdef MARZIO
+
+  char parameter[80];
+  Epetra_Time Time(Comm());
+  
+  // almost everything here is experimental ;)
+  
+  sprintf(parameter,"%sR and P smoothing: type", Prefix_);
+  string RandPSmoothing = List_.get(parameter, "symmetric");
+
+  double DampingFactor = 1.333;
+  if( SolvingMaxwell_ ) DampingFactor = 0.0;
+
+  /* ********************************************************************** */
+  /* For "classical" (non-Anasazi) approach to determine lambda_max only.   */
+  /* ********************************************************************** */
+
+  sprintf(parameter,"%seigen-analysis: use symmetric algorithms", Prefix_);
+  bool IsSymmetric = List_.get(parameter,false);
+  
+  if( IsSymmetric ) ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
+  else              ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
+  
+  /* start looping over different options */
+  
+  if( RandPSmoothing == "standard" ) {
+
+    /* ********************************************************************** */
+    /* This is the standard approach followed by ML (R = P^T)                 */
+    /* ********************************************************************** */
+
+    sprintf(parameter,"%saggregation: damping factor", Prefix_);
+    DampingFactor = List_.get(parameter, DampingFactor);
+    ML_Aggregate_Set_DampingFactor( agg_, DampingFactor );
+    
+    agg_->Restriction_smoothagg_transpose = ML_FALSE;
+    if( verbose_ )
+      cout << PrintMsg_ << "R and P smoothing : Standard ML procedure" << endl;
+    
+  } else if( RandPSmoothing == "standard-use A in R" ) {
+
+    /* ********************************************************************** */
+    /* This is the ML way, but with A in R                                    */
+    /* ********************************************************************** */
+
+    sprintf(parameter,"%saggregation: damping factor", Prefix_);
+    DampingFactor = List_.get(parameter, DampingFactor);
+    ML_Aggregate_Set_DampingFactor( agg_, DampingFactor );
+
+    if( verbose_ )
+      cout << PrintMsg_ << "R and P smoothing : Standard ML procedure with A to smooth restriction"
+	   << endl;
+    agg_->Restriction_smoothagg_transpose = ML_TRUE;
+
+  } else if( RandPSmoothing == "advanced" ) {
+
+    /* ********************************************************************** */
+    /* This is the new way, based on Anasazi to compute eigen-widgets         */
+    /* ********************************************************************** */
+
+    int MaxNumNonzeros;
+    double CPUTime;
+    
+    if( verbose_ )
+      cout << PrintMsg_ << "Use A to smooth restriction operator" << endl;
+    agg_->Restriction_smoothagg_transpose = ML_TRUE;
+    
+    SetEigenList();
+    
+    struct ML_Field_Of_Values * field_of_values;
+
+    // stick default values (undefined)
+    field_of_values = (struct ML_Field_Of_Values *) malloc( sizeof(struct ML_Field_Of_Values) );
+    field_of_values->eta     = 0.0;
+    field_of_values->real_max= -1.0;
+    field_of_values->imag_max= -1.0;
+    field_of_values->poly_order = 0;
+    // following values for choice:
+    // -1 : undefined
+    //  0 : do nothing, put eta = 0 (used in non-smoothed aggregation)
+    //  1 : compute the box of the field of values (eta = imag_max/real_max)
+    //  2 : compute ||lambda_max|| (eta = sqrt(imag_max^2 + real_max^2))
+    
+    field_of_values->choice     = -1;
+    // and this is a pointer for the object's interal ParameterList
+    // That's stilistically hugly, but I need this because ML is mainly C-coded
+    field_of_values->EigenList = (void *) &EigenList_;
+
+    // still to set up polynomial coeffiecients
+    string DampingType =  List_.get("R and P smoothing: damping", "default");
+  
+    if( DampingType == "non_smoothed" ) {
+
+      if( verbose_ )
+	cout << PrintMsg_ << "R and P smoothing : non-smoothed aggregation" << endl;
+
+      field_of_values->choice     =  0;
+      field_of_values->poly_order =  0;
+      // I don't really need them, smoothing will be set to zero
+      field_of_values->R_coeff[0] =  0.0;
+      field_of_values->R_coeff[1] =  0.0;
+      field_of_values->R_coeff[2] =  0.0;
+      
+      field_of_values->P_coeff[0] =  0.0;
+      field_of_values->P_coeff[1] =  0.0;
+      field_of_values->P_coeff[2] =  0.0;
+      
+    } else if( DampingType == "almost_non_smoothed" ) {
+
+      if( verbose_ )
+	cout << PrintMsg_ << "R and P smoothing : almost non-smoothed aggregation" << endl;
+
+      field_of_values->choice     =  0;
+      field_of_values->poly_order =  0;
+      // I don't really need them, smoothing will be set to zero
+      field_of_values->R_coeff[0] =  0.000000001;
+      field_of_values->R_coeff[1] =  0.0;
+      field_of_values->R_coeff[2] =  0.0;
+      
+      field_of_values->P_coeff[0] =  0.000000001;
+      field_of_values->P_coeff[1] =  0.0;
+      field_of_values->P_coeff[2] =  0.0;
+      
+    } else if( DampingType == "default" || DampingType == "ray" ) {
+
+      if( verbose_ )
+	cout << PrintMsg_ << "R and P smoothing : Using default values" << endl;
+      
+      field_of_values->choice     =  1;
+      field_of_values->poly_order =  2;
+      
+      field_of_values->R_coeff[0] =  1.107;
+      field_of_values->R_coeff[1] =  0.285;
+      field_of_values->R_coeff[2] =  0.718;
+      
+      field_of_values->P_coeff[0] =  1.878;
+      field_of_values->P_coeff[1] = -2.515;
+      field_of_values->P_coeff[2] =  0.942;
+      
+    } else if( DampingType == "marzio" ) {
+
+      if( verbose_ )
+	cout << PrintMsg_ << "R and P smoothing : Using marzio values" << endl;
+
+      field_of_values->choice     =  1;
+      field_of_values->poly_order =  2;
+      
+      field_of_values->R_coeff[0] =  1.138;
+      field_of_values->R_coeff[1] =  1.162;
+      field_of_values->R_coeff[2] = -2.384;
+      
+      field_of_values->P_coeff[0] =  2.143;
+      field_of_values->P_coeff[1] = -2.179;
+      field_of_values->P_coeff[2] =  0.101;
+
+    } else if( DampingType == "random" ) {
+
+      if( verbose_ )
+	cout << PrintMsg_ << "R and P smoothing : Using random values" << endl;
+
+      field_of_values->choice     =  1;
+      field_of_values->poly_order =  2;
+	    
+      // initialize seed
+      unsigned int s = (int) nearbyint(Time.ElapsedTime()*10000);
+      srandom(s);
+      
+      // put random values
+      field_of_values->R_coeff[0] =  (double)random()/RAND_MAX;
+      field_of_values->R_coeff[1] =  (double)random()/RAND_MAX;
+      field_of_values->R_coeff[2] =  (double)random()/RAND_MAX;
+      
+      field_of_values->P_coeff[0] =  (double)random()/RAND_MAX;
+      field_of_values->P_coeff[1] =  (double)random()/RAND_MAX;
+      field_of_values->P_coeff[2] =  (double)random()/RAND_MAX;
+
+      if( verbose_ ) {
+	cout << PrintMsg_ << "Random coefficients for R and P:" << endl
+	     << PrintMsg_ << field_of_values->R_coeff[0] << "   "
+	     << field_of_values->R_coeff[1] << "   "
+	     << field_of_values->R_coeff[2] << endl
+	     << PrintMsg_ << field_of_values->P_coeff[0] << "   "
+	     << field_of_values->P_coeff[1] << "   "
+	     << field_of_values->P_coeff[2] << "   (seed = "
+	     << s << ")" << endl;
+      }
+      
+    } else if( DampingType == "classic" ) {
+
+      if( verbose_ )
+	cout << PrintMsg_ << "R and P smoothing : Using 4/3" << endl;
+
+      field_of_values->choice     =  2;
+      field_of_values->poly_order =  2;
+      
+      field_of_values->R_coeff[0] =  1.333;
+      field_of_values->R_coeff[1] =  0.0;
+      field_of_values->R_coeff[2] =  0.0;
+      
+      field_of_values->P_coeff[0] =  1.333;
+      field_of_values->P_coeff[1] =  0.0;
+      field_of_values->P_coeff[2] =  0.0;
+
+    } else {
+
+      field_of_values->choice     =  1;
+      field_of_values->poly_order =  2;
+      
+      // get them from parameters' list.
+      field_of_values->R_coeff[0] =  List_.get("R and P smoothing: c_0",  1.107);
+      field_of_values->R_coeff[1] =  List_.get("R and P smoothing: c_1",  0.285);
+      field_of_values->R_coeff[2] =  List_.get("R and P smoothing: c_2",  0.718);
+
+      field_of_values->P_coeff[0] =  List_.get("R and P smoothing: g_0",  1.878);
+      field_of_values->P_coeff[1] =  List_.get("R and P smoothing: g_1", -2.515);
+      field_of_values->P_coeff[2] =  List_.get("R and P smoothing: g_2",  0.942);
+      
+    } 
+
+    agg_->field_of_values = (void*) field_of_values;  
+
+  } else {
+
+    cerr << endl;
+    cerr << ErrorMsg_ << "Parameter for `R and P smoothing : value for" << endl
+	 << ErrorMsg_ << "`Standard ML procedure' not recognized (" << RandPSmoothing << ")" << endl
+	 << ErrorMsg_ << "NO ACTION PERFORMED !!" << endl << endl;
+    
+  }
+
+#else
+  cout << "This feature is still experimental...\n"
+       << "Now quitting..." << endl;
+  exit( EXIT_FAILURE );  
+#endif       
+
+}
+
+// ============================================================================
+
+int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, char * Prefix_,
+			   int SmootherOptions[], double SmootherParams[] )
+{
+  
+  int rv = 0;
+  
+  if( ProblemType == "SA" )
+    return( ML_Epetra::SetDefaultsSA(List, Prefix_, SmootherOptions, SmootherParams ) );
+  else if( ProblemType == "maxwell" )
+    return( ML_Epetra::SetDefaultsMaxwell(List, Prefix_, SmootherOptions, SmootherParams ) );
+  else if( ProblemType == "DD 3-levels" )
+    return( ML_Epetra::SetDefaultsDD_3Levels(List, Prefix_, SmootherOptions, SmootherParams ) );
+  else if( ProblemType == "DD" )
+    return( ML_Epetra::SetDefaultsDD(List, Prefix_, SmootherOptions, SmootherParams ) );
+  else {
+    cerr << "ERROR: Wrong input parameter in `SetDefaults'. Should be: " << endl
+	 << "ERROR: <SA> / <DD> / <DD 3-levels> / <maxwell>" << endl;
+    rv = 1;
+  }
+
+  EPETRA_CHK_ERR(rv);
+
+  return rv;
+  
+  
+}
+
+// ============================================================================
+
+int ML_Epetra::SetDefaultsDD(ParameterList & List, char * Prefix,
+			     int SmootherOptions[], double SmootherParams[]) 
+{
+
+  char parameter[80];
+
+  sprintf(parameter,"%smax levels", Prefix);
+  List.set(parameter,2);
+
+  sprintf(parameter,"%soutput", Prefix);
+  List.set(parameter,10);
+  
+  sprintf(parameter,"%sincreasing or decreasing", Prefix);
+  List.set(parameter,"increasing");
+
+  sprintf(parameter,"%sPDE equations", Prefix);
+  List.set(parameter,1);
+
+  sprintf(parameter,"%saggregation: type",Prefix);
+  List.set(parameter,"METIS");
+
+  sprintf(parameter,"%saggregation: local aggregates",Prefix);
+  List.set(parameter,1);
+  
+  sprintf(parameter,"%saggregation: damping factor",Prefix);
+  List.set(parameter,0.01);
+
+  sprintf(parameter,"%scoarse: max size",Prefix);
+  List.set(parameter,128);
+
+  sprintf(parameter,"%saggregation: threshold",Prefix);
+  List.set(parameter,0.0);
+  
+  sprintf(parameter,"%ssmoother: sweeps",Prefix);
+  List.set(parameter,2);
+
+  sprintf(parameter,"%ssmoother: damping factor",Prefix);
+  List.set(parameter,0.67);
+
+  sprintf(parameter,"%ssmoother: pre or post",Prefix);
+  List.set(parameter,"both");
+
+  if( SmootherOptions != 0 && SmootherParams != 0 ) {
+    
+    sprintf(parameter,"%ssmoother: type",Prefix);
+    List.set(parameter,"aztec");
+
+    AZ_defaults(SmootherOptions,SmootherParams);
+    SmootherOptions[AZ_precond] = AZ_dom_decomp;
+    SmootherOptions[AZ_scaling] = AZ_none;
+    SmootherOptions[AZ_subdomain_solve] = AZ_ilut;
+    
+    sprintf(parameter,"%ssmoother: aztec options",Prefix);
+    List.set(parameter,SmootherOptions);
+    
+    sprintf(parameter,"%ssmoother: aztec params",Prefix);
+    List.set(parameter,SmootherParams);
+    
+    sprintf(parameter,"%ssmoother: aztec as solver",Prefix);
+    List.set(parameter,false);
+
+  } else {
+
+    sprintf(parameter,"%ssmoother: type",Prefix);
+    List.set(parameter,"Gauss-Seidel");
+    
+  }
+  
+  sprintf(parameter,"%scoarse: type",Prefix);
+  List.set(parameter,"Amesos_KLU");
+
+  sprintf(parameter,"%sprec type",Prefix);
+  List.set(parameter,"MGV");
+
+  sprintf(parameter,"%sprint unused",Prefix);
+  List.set(parameter,0);
+
+  return 0;
+
+}
+
+// ============================================================================
+
+int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, char * Prefix_,
+				     int SmootherOptions[], double SmootherParams[]) 
+{
+
+  char parameter[80];
+
+  sprintf(parameter,"%smax levels", Prefix_);
+  List.set(parameter,3);
+
+  sprintf(parameter,"%soutput", Prefix_);
+  List.set(parameter,10);
+  
+  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
+  List.set(parameter,"increasing");
+
+  sprintf(parameter,"%sPDE equations", Prefix_);
+  List.set(parameter,1);
+
+  sprintf(parameter,"%saggregation: type (level 0)",Prefix_);
+  List.set(parameter,"METIS");
+
+  sprintf(parameter,"%saggregation: type (level 1)",Prefix_);
+  List.set(parameter,"ParMETIS");
+
+  sprintf(parameter,"%saggregation: nodes per aggregate (level 0)",Prefix_);
+  List.set(parameter,512);
+
+  sprintf(parameter,"%saggregation: nodes per aggregate (level 1)",Prefix_);
+  List.set(parameter,32);
+  
+  sprintf(parameter,"%saggregation: damping factor",Prefix_);
+  List.set(parameter,0.01);
+
+  sprintf(parameter,"%scoarse: max size",Prefix_);
+  List.set(parameter,128);
+
+  sprintf(parameter,"%saggregation: threshold",Prefix_);
+  List.set(parameter,0.0);
+  
+  sprintf(parameter,"%ssmoother: sweeps (level 0)",Prefix_);
+  List.set(parameter,2);
+
+  sprintf(parameter,"%ssmoother: damping factor (level 0)",Prefix_);
+  List.set(parameter,0.67);
+
+  sprintf(parameter,"%ssmoother: pre or post (level 0)",Prefix_);
+  List.set(parameter,"both");
+
+  if( SmootherOptions != 0 && SmootherParams != 0 ) {
+    
+    sprintf(parameter,"%ssmoother: type (level 0)",Prefix_);
+    List.set(parameter,"aztec");
+    
+    AZ_defaults(SmootherOptions,SmootherParams);
+    SmootherOptions[AZ_precond] = AZ_dom_decomp;
+    SmootherOptions[AZ_subdomain_solve] = AZ_ilut;
+    
+    sprintf(parameter,"%ssmoother: aztec options (level 0)",Prefix_);
+    List.set(parameter,SmootherOptions);
+    
+    sprintf(parameter,"%ssmoother: aztec params (level 0)",Prefix_);
+    List.set(parameter,SmootherParams);
+    
+    sprintf(parameter,"%ssmoother: aztec as solver (level 0)",Prefix_);
+    List.set(parameter,false);
+  
+  } else {
+
+    sprintf(parameter,"%ssmoother: type",Prefix_);
+    List.set(parameter,"Gauss-Seidel");
+    
+  }
+  
+  sprintf(parameter,"%scoarse: type",Prefix_);
+  List.set(parameter,"Amesos_KLU");
+
+  sprintf(parameter,"%sprec type",Prefix_);
+  List.set(parameter,"MGV");
+
+  sprintf(parameter,"%sprint unused",Prefix_);
+  List.set(parameter,0);
+  
+  return 0;
+
+}
+
+// ============================================================================
+
+int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, char * Prefix_,
+				  int SmootherOptions[], double SmootherParams[]) 
+{
+
+  // FIXME : here default values for Maxwell
+  
+  char parameter[80];
+  int MaxLevels = 10;
+  
+  sprintf(parameter,"%smax levels", Prefix_);
+  List.set(parameter,MaxLevels);
+
+  sprintf(parameter,"%soutput", Prefix_);
+  List.set(parameter,10);
+  
+  sprintf(parameter,"%sPDE equations", Prefix_);
+  List.set(parameter,1);
+
+  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
+  List.set(parameter,"decreasing");
+
+  // aggregation: Uncoupled for first levels, then MIS
+  sprintf(parameter,"%saggregation: type",Prefix_,MaxLevels-1);
+  List.set(parameter,"Hybrid");
+
+  // optimal value for smoothed aggregation
+  sprintf(parameter,"%saggregation: damping factor",Prefix_);
+  List.set(parameter,1.3333);
+
+  // relative small coarse size
+  sprintf(parameter,"%scoarse: max size",Prefix_);
+  List.set(parameter,16);
+
+  // don't forget any element
+  sprintf(parameter,"%saggregation: threshold",Prefix_);
+  List.set(parameter,0.0);
+
+  // gauss-seidel for all levels
+  sprintf(parameter,"%ssmoother: sweeps (level %d)",Prefix_,MaxLevels-1);
+  List.set(parameter,2);
+
+  sprintf(parameter,"%ssmoother: damping factor (level %d)",Prefix_,MaxLevels-1);
+  List.set(parameter,0.67);
+
+  sprintf(parameter,"%ssmoother: type (level %d)",Prefix_,MaxLevels-1);
+  List.set(parameter,"MLS");
+
+  sprintf(parameter,"%ssmoother: MLS polynomial order", Prefix_);
+  List.set(parameter,3);
+  
+  sprintf(parameter,"%ssmoother: pre or post (level %d)",Prefix_,MaxLevels-1);
+  List.set(parameter,"both");
+  
+  // simplest solver on coarse problem
+  sprintf(parameter,"%scoarse: type",Prefix_);
+  List.set(parameter,"SuperLU");
+//  Tim Davis' simple serial LU package.  It's part of Amesos
+//  itself.
+//  List.set(parameter,"Amesos_KLU");
+
+  sprintf(parameter,"%sprec type",Prefix_);
+  List.set(parameter,"MGV");
+
+  // print unused parameters on proc 0
+  sprintf(parameter,"%sprint unused",Prefix_);
+  List.set(parameter,0);
+    
+}
+
+// ============================================================================
+
+int ML_Epetra::SetDefaultsSA(ParameterList & List, char * Prefix_,
+			     int SmootherOptions[], double SmootherParams[]) 
+{
+
+  char parameter[80];
+  int MaxLevels = 10;
+  
+  sprintf(parameter,"%smax levels", Prefix_);
+  List.set(parameter,MaxLevels);
+
+  sprintf(parameter,"%soutput", Prefix_);
+  List.set(parameter,10);
+  
+  sprintf(parameter,"%sPDE equations", Prefix_);
+  List.set(parameter,1);
+
+  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
+  List.set(parameter,"decreasing");
+
+  // aggregation: Uncoupled for first levels, then MIS
+  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-1);
+  List.set(parameter,"Uncoupled");
+
+  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-2);
+  List.set(parameter,"Uncoupled");
+
+  sprintf(parameter,"%saggregation: type (level %d)",Prefix_,MaxLevels-3);
+  List.set(parameter,"MIS");
+  
+  // optimal value for smoothed aggregation
+  sprintf(parameter,"%saggregation: damping factor",Prefix_);
+  List.set(parameter,1.3333);
+
+  // relative small coarse size
+  sprintf(parameter,"%scoarse: max size",Prefix_);
+  List.set(parameter,16);
+
+  // don't forget any element
+  sprintf(parameter,"%saggregation: threshold",Prefix_);
+  List.set(parameter,0.0);
+
+  // guass-seidel for all levels
+  sprintf(parameter,"%ssmoother: sweeps (level %d)",Prefix_,MaxLevels-1);
+  List.set(parameter,2);
+
+  sprintf(parameter,"%ssmoother: damping factor (level %d)",Prefix_,MaxLevels-1);
+  List.set(parameter,0.67);
+
+  sprintf(parameter,"%ssmoother: type (level %d)",Prefix_,MaxLevels-1);
+  List.set(parameter,"Gauss-Seidel");
+  
+  sprintf(parameter,"%ssmoother: pre or post (level %d)",Prefix_,MaxLevels-1);
+  List.set(parameter,"both");
+  
+  // simplest solver on coarse problem
+  sprintf(parameter,"%scoarse: type",Prefix_);
+  List.set(parameter,"Amesos_KLU");
+
+  sprintf(parameter,"%sprec type",Prefix_);
+  List.set(parameter,"MGV");
+
+  // print unused parameters on proc 0
+  sprintf(parameter,"%sprint unused",Prefix_);
+  List.set(parameter,0);
+  
+  return 0;
 
 }
 

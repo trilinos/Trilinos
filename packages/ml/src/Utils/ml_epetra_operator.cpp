@@ -38,7 +38,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 
-namespace Epetra_ML 
+namespace ML_Epetra 
 {
   
 //==============================================================================

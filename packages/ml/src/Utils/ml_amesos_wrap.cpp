@@ -23,9 +23,6 @@
 
 #include "ml_amesos_wrap.h"
 
-//  Jonathan - I need to convert an ml to an ML_Operator 
-//  Did I pick off the right ML_Operator?
-
 #ifdef EPETRA_MPI
 #ifndef ML_MPI
 Garbage - ML_MPI and EPETRA_MPI must be the same 
@@ -39,10 +36,6 @@ Garbage - ML_MPI and EPETRA_MPI must be the same
 #endif
 #include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
-
-  extern "C" { 
-  double *SendThisToEMV ; 
-  }
 
 static double TimeForSolve__ = 0.0;
 static int Level__ = -1;
