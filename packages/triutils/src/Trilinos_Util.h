@@ -58,6 +58,10 @@ void Trilinos_Util_read_hb(char *data_file, int MyPID,
 	      double **val, int **bindx,
 	      double **x, double **b, double **xexact);
 
+void Trilinos_Util_read_hb(char *data_file, int MyPID,
+              int *N_global, int *n_nonzeros,
+              double **val, int **bindx);
+
 void Trilinos_Util_read_coo(char *data_file, int MyPID,
 	      int *N_global, int *n_nonzeros,
 	      double **val, int **bindx,
@@ -92,6 +96,11 @@ void Trilinos_Util_distrib_msr_matrix(const Epetra_Comm & Comm,
            int *N_update, int **update, 
 	      double **val, int **bindx,
 	      double **x, double **b, double **xexact);
+
+void Trilinos_Util_distrib_msr_matrix(const Epetra_Comm & Comm, 
+              int *N_global, int *n_nonzeros, 
+              int *N_update, int **update, 
+              double **val, int **bindx);
 
 void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
 	      int *N_global, int *N_blk_global, 
