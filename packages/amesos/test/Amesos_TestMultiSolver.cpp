@@ -1,5 +1,5 @@
 #include "Amesos_ConfigDefs.h"
-
+#include "Amesos_Parameter_List.h"
 #include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Trilinos_Util.h"
@@ -21,6 +21,7 @@
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
 #include "DscpackOO.h"
+#include "Amesos_Dscpack.h"
 #endif
 #ifdef TEST_SPOOLES
 #include "SpoolesOO.h"
@@ -225,10 +226,10 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
   } else if ( SparseSolver == DSCPACK ) { 
-    DscpackOO dscpack( Problem ) ; 
+    AMESOS::Parameter::List ParamList ;
+    Amesos_Dscpack dscpack( Problem, ParamList ) ; 
     
-    dscpack.SetTrans( transpose ) ; 
-    dscpack.Solve( true ) ; 
+    EPETRA_CHK_ERR( dscpack.Solve( ) ); 
 #endif
 #ifdef TEST_SPOOLESSERIAL 
   } else if ( SparseSolver == SPOOLESSERIAL ) { 
@@ -302,7 +303,15 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   passx->Norm2( &xnorm[0] ) ; 
   SparseDirectTimingVars::SS_Result.Set_Xnorm(xnorm[0]) ;
 
+#if 0
+  if ( iam == 0 )     cout << " Here is B: " << endl; 
+  passb->Print( cout ) ;
+  Comm.Barrier(); 
+  if ( iam == 0 )    cout << endl <<" That was B " << endl ; 
+#endif
+
   if ( false && iam == 0 ) { 
+
     cout << " Amesos_TestMutliSolver.cpp " << endl ; 
     for ( int i = 0 ; i< numsolves && i < 10 ; i++ ) {
       cout << "i=" << i 

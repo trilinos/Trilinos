@@ -59,14 +59,11 @@ At present, either USE_LOCAL or USE_STL_SORT is required
 Amesos_Dscpack::~Amesos_Dscpack(void) {
 
   if ( MyDscRank>=0 && A_and_LU_built ) { 
-    //    cout << " At the top of the Amesos_Dscpack destructor" << endl ; 
     DSC_FreeAll( MyDSCObject ) ; 
     DSC_Close0( MyDSCObject ) ; 
     DSC_End( MyDSCObject ) ; 
-    //    cout << " At the bottom of the Amesos_Dscpack destructor" << endl ; 
   }
 
-  //    cout << " At the REAL bottom of the Amesos_Dscpack destructor" << endl ; 
 }
 
 
@@ -169,6 +166,11 @@ int Amesos_Dscpack::PerformSymbolicFactorization() {
 
   const Epetra_Map &Phase3Matmap = Phase3Mat->RowMap() ; 
   Epetra_Map ReplicatedMap( -1, numrows, AllIDs, 0, Comm);
+#ifdef DEBUG
+  AllIDs[0] = -13;  // This is just to make sure that AllIDs are no longer used.
+  AllIDs[numrows-1] = -13; 
+#endif
+  delete[] AllIDs;
   Epetra_Import importer( ReplicatedMap, Phase3Matmap );
 
   int nArows = Phase3Mat->NumGlobalRows() ; 
@@ -386,6 +388,7 @@ int Amesos_Dscpack::PerformNumericFactorization() {
 
   const Epetra_Map &Phase3Matmap = Phase3Mat->RowMap() ; 
   Epetra_Map ReplicatedMap( -1, numrows, AllIDs, 0, Comm);
+  delete[] AllIDs;
   Epetra_Import importer( ReplicatedMap, Phase3Matmap );
   int nArows = Phase3Mat->NumGlobalRows() ; 
   int nAcols = Phase3Mat->NumGlobalCols() ; 
@@ -655,6 +658,7 @@ int Amesos_Dscpack::Solve() {
 
   const Epetra_Map &Phase3Matmap = Phase3Mat->RowMap() ; 
   Epetra_Map ReplicatedMap( -1, numrows, AllIDs, 0, Comm);
+  delete[] AllIDs;
   Epetra_Import importer( ReplicatedMap, Phase3Matmap );
   //
   //  Step 5)  Convert vector b to a replicated vector
@@ -723,16 +727,18 @@ int Amesos_Dscpack::Solve() {
   
   int ldb = numrows ; 
 
-  //  amesos_test.exe DSCPACK Diagonal.mtx 0 0 -1 0 1e-15 1e-15 still dumps even if we disable the following code block
   if ( MyDscRank >= 0 ) {
-    EPETRA_CHK_ERR( DSC_InputRhsGlobalVec ( MyDSCObject, bValues, numrows ) ) ;
-    EPETRA_CHK_ERR( DSC_Solve ( MyDSCObject ) ) ; 
-    vector<double> Dsc_outputs( numrows ) ; 
-    vector<int> Dsc_indices( numrows) ;
-    EPETRA_CHK_ERR( DSC_GetGlobalSolution ( MyDSCObject, &Dsc_indices[0], &Dsc_outputs[0] ) ) ; 
+    for ( int j =0 ; j < nrhs; j++ ) { 
+      EPETRA_CHK_ERR( DSC_InputRhsGlobalVec ( MyDSCObject, &bValues[j*ldb], numrows ) ) ;
+      EPETRA_CHK_ERR( DSC_Solve ( MyDSCObject ) ) ; 
+      vector<double> Dsc_outputs( numrows ) ; 
+      vector<int> Dsc_indices( numrows) ;
+      EPETRA_CHK_ERR( DSC_GetGlobalSolution ( MyDSCObject, &Dsc_indices[0], &Dsc_outputs[0] ) ) ; 
+      for ( int i =0 ; i<numrows; i++ ) {
+	xValues[Dsc_indices[i]+j*ldb] = Dsc_outputs[i] ; 
+      }
+    }
     
-    for ( int i =0 ; i<numrows; i++ ) 
-      xValues[Dsc_indices[i]] = Dsc_outputs[i] ; 
   }
 
   if ( iam == 0 ) assert( MyDscRank >= 0 ) ; // Make sure that process 0 has valid data for xValues

@@ -1,5 +1,5 @@
 #include "Amesos_ConfigDefs.h"
-
+#include "Amesos_Parameter_List.h"
 #include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Trilinos_Util.h"
@@ -12,6 +12,7 @@
 #include "Epetra_Time.h"
 #ifdef HAVE_AMESOS_DSCPACK
 #include "DscpackOO.h"
+#include "Amesos_Dscpack.h"
 #endif
 #ifdef HAVE_AMESOS_KUNDERT
 #include "KundertOO.h"
@@ -250,9 +251,8 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
   } else if ( SparseSolver == DSCPACK ) { 
-    DscpackOO dscpack( Problem ) ; 
-    dscpack.SetTrans( transpose ) ; 
-    assert( true) ;
+    AMESOS::Parameter::List ParamList ;
+    Amesos_Dscpack dscpack( Problem, ParamList ) ; 
 
     bool factor = true; 
     for ( int i= 0 ; i < numsolves ; i++ ) { 
@@ -261,7 +261,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       Epetra_Vector *passx_i = (*passx)(i) ;
       Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
       Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
-      EPETRA_CHK_ERR( dscpack.Solve( factor ) ); 
+      EPETRA_CHK_ERR( dscpack.Solve( ) ); 
       factor = false; 
       if ( i == 0 ) 
 	SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
