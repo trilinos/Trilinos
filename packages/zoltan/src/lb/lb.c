@@ -984,6 +984,7 @@ int LB_Free_Data(
 /************************************************************************/
 /* This routine evaluates the current partitioning/balance.             */
 /************************************************************************/
+#define NUM_GSTATS 4 /* Number of graph statistics */
 
 void LB_Eval (LB *lb, int mode, 
      int vwgt_dim, int ewgt_dim, float *obj_wgt, 
@@ -1002,15 +1003,16 @@ void LB_Eval (LB *lb, int mode,
  *   Note that obj_wgt and graph_stats are only accessed if mode is odd
  *   obj_wgt     - obj_wgt[0:vwgt_dim-1] contain max of object weights 
  *               - obj_wgt[vwgt_dim:2*vwgt_dim-1] contain sum of object wgts 
- *   graph_stats - graph_stats[0,3] are max and sum of cut weight
- *               - graph_stats[1,4] are max and sum of # of boundary objects
- *               - graph_stats[2,5] are max and sum of # of adjacent procs
+ *   graph_stats - graph_stats[0,4] are max and sum of # of objects 
+ *               - graph_stats[1,5] are max and sum of cut weight
+ *               - graph_stats[2,6] are max and sum of # of boundary objects
+ *               - graph_stats[3,7] are max and sum of # of adjacent procs
  *   ierr        - error code
  */
 
 {
   int i, j, num_obj, max_edges, flag, cut_wgt, nboundary, nadj, nedges;
-  int stats[12], *ewgts;
+  int stats[4*NUM_GSTATS], *ewgts;
   int *proc, *nbors_proc;
   float *sum_wgt, *vwgts, nproc;
   LB_LID * local_ids;
@@ -1019,56 +1021,71 @@ void LB_Eval (LB *lb, int mode,
   /* Check for quick return */
   if (mode<=0) return;
 
-  /* Initialize */
-  sum_wgt = (float *) LB_MALLOC(num_obj * sizeof(float));
-  for (i=0; i<vwgt_dim; i++)
-    sum_wgt[i] = 0;
-    
+  /* Set all pointers to NULL */
+  sum_wgt = NULL;
+  global_ids = NULL;
+  local_ids = NULL;
+  vwgts = NULL;
+  ewgts = NULL;
+  nbors_global = NULL;
+  nbors_proc = NULL;
+  proc = NULL;
+  obj_wgt = NULL;
+
   /* First compute sum-max object weight on each proc */
   num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, ierr);
+
   /* Allocate space for object data */
   global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID));
   local_ids  = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID));
+  sum_wgt = (float *) LB_MALLOC(num_obj * sizeof(float));
   if (vwgt_dim>0)
     vwgts      = (float  *) LB_MALLOC(vwgt_dim*num_obj * sizeof(float));
-  else
-    vwgts = NULL;
+    
   if ((!sum_wgt) || (!global_ids) || (!local_ids) || (vwgt_dim && (!vwgts))){
     *ierr = LB_MEMERR;
     LB_Free((void **) &sum_wgt);
     LB_Free((void **) &global_ids);
-    LB_Free((void **) &global_ids);
+    LB_Free((void **) &local_ids);
     LB_Free((void **) &vwgts);
     return;
   }
+
+  /* Set pointers to local data if we are not going to return any output */
+  if (!(mode&1)){
+    obj_wgt = (float *) LB_MALLOC(2*vwgt_dim * sizeof(float));
+    graph_stats = &stats[2*NUM_GSTATS];
+  }
+
   LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, vwgts, ierr);
   if (*ierr == LB_FATAL){
     LB_Free((void **) &sum_wgt);
     LB_Free((void **) &global_ids);
-    LB_Free((void **) &global_ids);
+    LB_Free((void **) &local_ids);
     LB_Free((void **) &vwgts);
     return;
   }
+
+  /* Compute object weight sums */
   if (vwgt_dim>0){
+    for (j=0; j<vwgt_dim; j++)
+      sum_wgt[j] = 0;
     for (i=0; i<num_obj; i++){
       for (j=0; j<vwgt_dim; j++){
         sum_wgt[j] += vwgts[i*vwgt_dim+j];
       }
     }
   }
-  else{
-    /* Uniform weights = 1 */
-    vwgt_dim = 1; 
-    sum_wgt[0] = num_obj;
-  }
 
   /* Compute sum-max (weighted) edge cuts, #boundary vertices,
      and # adjacent procs if possible */
 
+  cut_wgt = 0;
+  nboundary = 0;
+  nadj = 0;
+
   if (lb->Get_Num_Edges != NULL) {
     /* Use the basic graph query functions */
-    cut_wgt = 0;
-    nboundary = 0;
 
     /* First compute max no. of edges so we can allocate the right
        amount of space */
@@ -1078,6 +1095,7 @@ void LB_Eval (LB *lb, int mode,
                local_ids[i], ierr);
       if (*ierr){
         /* Free memory and return error code */
+        printf("ERROR: Get_Num_Edges returned error code %d\n", *ierr);
       }
       if (nedges>max_edges) max_edges = nedges;
     }
@@ -1092,7 +1110,7 @@ void LB_Eval (LB *lb, int mode,
       *ierr = LB_MEMERR;
       LB_Free((void **) &sum_wgt);
       LB_Free((void **) &global_ids);
-      LB_Free((void **) &global_ids);
+      LB_Free((void **) &local_ids);
       LB_Free((void **) &vwgts);
       LB_Free((void **) &nbors_global);
       LB_Free((void **) &nbors_proc);
@@ -1136,30 +1154,24 @@ void LB_Eval (LB *lb, int mode,
       }
     }
     /* Compute the number of adjacent procs */
-    nadj=0;
     for (j=0; j<lb->Num_Proc; j++)
       if (proc[j]>0) nadj++;
   }
   else{
     /* No graph query functions available */
   }
-
-  /* Set pointers to local data if we are not going to return any output */
-  if (!(mode&1)){
-    obj_wgt = (float *) LB_MALLOC(2*vwgt_dim * sizeof(float));
-    graph_stats = &stats[6];
-  }
   
   /* Global reduction */
-  MPI_Allreduce(sum_wgt, &obj_wgt[0], vwgt_dim, MPI_FLOAT, MPI_MAX, lb->Communicator);
-  MPI_Allreduce(sum_wgt, &obj_wgt[vwgt_dim], vwgt_dim, MPI_FLOAT, MPI_SUM, lb->Communicator);
-  if (lb->Get_Num_Edges != NULL){
-    stats[0] = cut_wgt;
-    stats[1] = nboundary;
-    stats[2] = nadj;
-    MPI_Allreduce(stats, &graph_stats[0], 3, MPI_INT, MPI_MAX, lb->Communicator);
-    MPI_Allreduce(stats, &graph_stats[3], 3, MPI_INT, MPI_SUM, lb->Communicator);
+  if (vwgt_dim>0){
+    MPI_Allreduce(sum_wgt, &obj_wgt[0], vwgt_dim, MPI_FLOAT, MPI_MAX, lb->Communicator);
+    MPI_Allreduce(sum_wgt, &obj_wgt[vwgt_dim], vwgt_dim, MPI_FLOAT, MPI_SUM, lb->Communicator);
   }
+  stats[0] = num_obj;
+  stats[1] = cut_wgt;
+  stats[2] = nboundary;
+  stats[3] = nadj;
+  MPI_Allreduce(stats, &graph_stats[0], NUM_GSTATS, MPI_INT, MPI_MAX, lb->Communicator);
+  MPI_Allreduce(stats, &graph_stats[NUM_GSTATS], NUM_GSTATS, MPI_INT, MPI_SUM, lb->Communicator);
 
   /* Print results */
   if (mode>1){
@@ -1169,16 +1181,17 @@ void LB_Eval (LB *lb, int mode,
       for (i=0; i<vwgt_dim; i++)
         printf("  Object weight %1d  :  Max = %6.1f, Sum = %7.1f, Balance = %5.3f\n",
           i+1, obj_wgt[i], obj_wgt[vwgt_dim+i], obj_wgt[i]*nproc/obj_wgt[vwgt_dim+i]);
+      printf("  No. of objects   :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
+        graph_stats[0], graph_stats[NUM_GSTATS], graph_stats[0]*nproc/graph_stats[NUM_GSTATS]);
       if (lb->Get_Num_Edges != NULL){
         printf("  Cut weight       :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
-          graph_stats[0], graph_stats[3], graph_stats[0]*nproc/graph_stats[3]);
+          graph_stats[1], graph_stats[NUM_GSTATS+1], graph_stats[1]*nproc/graph_stats[NUM_GSTATS+1]);
         printf("  Boundary objects :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
-          graph_stats[1], graph_stats[4], graph_stats[1]*nproc/graph_stats[4]);
+          graph_stats[2], graph_stats[NUM_GSTATS+2], graph_stats[2]*nproc/graph_stats[NUM_GSTATS+2]);
         printf("  Adjacent procs   :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
-          graph_stats[2], graph_stats[5], graph_stats[2]*nproc/graph_stats[5]);
-        printf("\n");
-     
+          graph_stats[3], graph_stats[NUM_GSTATS+3], graph_stats[3]*nproc/graph_stats[NUM_GSTATS+3]);
       }
+      printf("\n");
     }
   }
 
