@@ -25,10 +25,8 @@
 // 
 // ************************************************************************
 //@HEADER
-#include "RowMatrixOut.h"
-extern "C" {
-#include "mmio.h"
-}
+#include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_mmio.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -38,8 +36,11 @@ extern "C" {
 #include "Epetra_Import.h"
 #include "Epetra_CrsMatrix.h"
 
-int RowMatrixToFile( const char *filename, const char * matrixName,
-		     const char *matrixDescription, const Epetra_RowMatrix & A) {
+namespace EpetraExt {
+
+int RowMatrixToMatrixMarketFile( const char *filename, const char * matrixName,
+				 const char *matrixDescription, const Epetra_RowMatrix & A, 
+				 bool writeHeader) {
   int M = A.NumGlobalRows();
   int N = A.NumGlobalCols();
   int nz = A.NumGlobalNonzeros();
@@ -55,12 +56,16 @@ int RowMatrixToFile( const char *filename, const char * matrixName,
     mm_set_matrix(&matcode);
     mm_set_coordinate(&matcode);
     mm_set_real(&matcode);
+
+    if (writeHeader==true) { // Only write header if requested (true by default)
     
-    fprintf(handle, "%% \n%% %s\n", matrixName);
-    fprintf(handle, "%% %s\n%% \n", matrixDescription);
-    
-    if (mm_write_banner(handle, matcode)) return(-1);
-    if (mm_write_mtx_crd_size(handle, M, N, nz)) return(-1);
+      if (mm_write_banner(handle, matcode)) return(-1);
+      
+      fprintf(handle, "%% \n%% %s\n", matrixName);
+      fprintf(handle, "%% %s\n%% \n", matrixDescription);
+      
+      if (mm_write_mtx_crd_size(handle, M, N, nz)) return(-1);
+    }
   }
     
   if (RowMatrixToHandle(handle, A)) return(-1); // Everybody calls this routine
@@ -156,3 +161,5 @@ int writeRowMatrix(FILE * handle, const Epetra_RowMatrix & A) {
   comm.MinAll(&ierr, &ierrGlobal, 1); // If any processor has -1, all return -1
   return(ierrGlobal);
 }
+
+} // namespace EpetraExt
