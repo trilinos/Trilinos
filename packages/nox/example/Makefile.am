@@ -32,7 +32,7 @@
 if BUILD_EXAMPLES
 
 EXAMPLES_LIBRARY = libnoxexample.a
-EXAMPLES = rosenbrock broyden
+EXAMPLES = rosenbrock linear $(PRERELEASE_EXAMPLES)
 
 endif
 
@@ -62,7 +62,21 @@ rosenbrock_CXXFLAGS = -I$(top_srcdir)/src
 
 rosenbrock_LDADD = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
 
-broyden_SOURCES = $(srcdir)/Broyden.C
+linear_SOURCES = $(srcdir)/Linear.C
+
+linear_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
+
+linear_CXXFLAGS = $(rosenbrock_CXXFLAGS)
+
+linear_LDADD = $(rosenbrock_LDADD)
+
+if BUILD_PRERELEASE
+
+PRERELEASE_EXAMPLES = broyden
+
+endif
+
+nodist_broyden_SOURCES = $(srcdir)/Broyden.C
 
 broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
 

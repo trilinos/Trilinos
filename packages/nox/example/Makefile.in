@@ -111,7 +111,7 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 @BUILD_EXAMPLES_TRUE@EXAMPLES_LIBRARY = libnoxexample.a
-@BUILD_EXAMPLES_TRUE@EXAMPLES = rosenbrock broyden
+@BUILD_EXAMPLES_TRUE@EXAMPLES = rosenbrock linear $(PRERELEASE_EXAMPLES)
 
 noinst_LIBRARIES = $(EXAMPLES_LIBRARY)
 noinst_PROGRAMS = $(EXAMPLES)
@@ -140,7 +140,17 @@ rosenbrock_CXXFLAGS = -I$(top_srcdir)/src
 
 rosenbrock_LDADD = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
 
-broyden_SOURCES = $(srcdir)/Broyden.C
+linear_SOURCES = $(srcdir)/Linear.C
+
+linear_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
+
+linear_CXXFLAGS = $(rosenbrock_CXXFLAGS)
+
+linear_LDADD = $(rosenbrock_LDADD)
+
+@BUILD_PRERELEASE_TRUE@PRERELEASE_EXAMPLES = broyden
+
+nodist_broyden_SOURCES = $(srcdir)/Broyden.C
 
 broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
 
@@ -174,14 +184,23 @@ am_libnoxexample_a_OBJECTS = \
 	libnoxexample_a-NOX_Example_Matrix.$(OBJEXT) \
 	libnoxexample_a-NOX_Example_Group.$(OBJEXT)
 libnoxexample_a_OBJECTS = $(am_libnoxexample_a_OBJECTS)
-@BUILD_EXAMPLES_TRUE@noinst_PROGRAMS = rosenbrock$(EXEEXT) \
-@BUILD_EXAMPLES_TRUE@	broyden$(EXEEXT)
-@BUILD_EXAMPLES_FALSE@noinst_PROGRAMS =
+@BUILD_EXAMPLES_FALSE@@BUILD_PRERELEASE_TRUE@noinst_PROGRAMS =
+@BUILD_EXAMPLES_FALSE@@BUILD_PRERELEASE_FALSE@noinst_PROGRAMS =
+@BUILD_EXAMPLES_TRUE@@BUILD_PRERELEASE_TRUE@noinst_PROGRAMS = \
+@BUILD_EXAMPLES_TRUE@@BUILD_PRERELEASE_TRUE@	rosenbrock$(EXEEXT) \
+@BUILD_EXAMPLES_TRUE@@BUILD_PRERELEASE_TRUE@	linear$(EXEEXT) \
+@BUILD_EXAMPLES_TRUE@@BUILD_PRERELEASE_TRUE@	broyden$(EXEEXT)
+@BUILD_EXAMPLES_TRUE@@BUILD_PRERELEASE_FALSE@noinst_PROGRAMS = \
+@BUILD_EXAMPLES_TRUE@@BUILD_PRERELEASE_FALSE@	rosenbrock$(EXEEXT) \
+@BUILD_EXAMPLES_TRUE@@BUILD_PRERELEASE_FALSE@	linear$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
-am_broyden_OBJECTS = broyden-Broyden.$(OBJEXT)
-broyden_OBJECTS = $(am_broyden_OBJECTS)
+nodist_broyden_OBJECTS = broyden-Broyden.$(OBJEXT)
+broyden_OBJECTS = $(nodist_broyden_OBJECTS)
 broyden_LDFLAGS =
+am_linear_OBJECTS = linear-Linear.$(OBJEXT)
+linear_OBJECTS = $(am_linear_OBJECTS)
+linear_LDFLAGS =
 am_rosenbrock_OBJECTS = rosenbrock-Rosenbrock.$(OBJEXT)
 rosenbrock_OBJECTS = $(am_rosenbrock_OBJECTS)
 rosenbrock_LDFLAGS =
@@ -196,6 +215,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po \
+@AMDEP_TRUE@	$(DEPDIR)/linear-Linear.Po \
 @AMDEP_TRUE@	$(DEPDIR)/rosenbrock-Rosenbrock.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -208,10 +228,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libnoxexample_a_SOURCES) $(broyden_SOURCES) \
+DIST_SOURCES = $(libnoxexample_a_SOURCES) $(linear_SOURCES) \
 	$(rosenbrock_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libnoxexample_a_SOURCES) $(broyden_SOURCES) $(rosenbrock_SOURCES)
+SOURCES = $(libnoxexample_a_SOURCES) $(nodist_broyden_SOURCES) $(linear_SOURCES) $(rosenbrock_SOURCES)
 
 all: all-am
 
@@ -246,6 +266,10 @@ broyden-Broyden.$(OBJEXT): $(srcdir)/Broyden.C
 broyden$(EXEEXT): $(broyden_OBJECTS) $(broyden_DEPENDENCIES) 
 	@rm -f broyden$(EXEEXT)
 	$(CXXLINK) $(broyden_LDFLAGS) $(broyden_OBJECTS) $(broyden_LDADD) $(LIBS)
+linear-Linear.$(OBJEXT): $(srcdir)/Linear.C
+linear$(EXEEXT): $(linear_OBJECTS) $(linear_DEPENDENCIES) 
+	@rm -f linear$(EXEEXT)
+	$(CXXLINK) $(linear_LDFLAGS) $(linear_OBJECTS) $(linear_LDADD) $(LIBS)
 rosenbrock-Rosenbrock.$(OBJEXT): $(srcdir)/Rosenbrock.C
 rosenbrock$(EXEEXT): $(rosenbrock_OBJECTS) $(rosenbrock_DEPENDENCIES) 
 	@rm -f rosenbrock$(EXEEXT)
@@ -261,6 +285,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/linear-Linear.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/rosenbrock-Rosenbrock.Po@am__quote@
 
 distclean-depend:
@@ -325,6 +350,18 @@ broyden-Broyden.obj: $(srcdir)/Broyden.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/broyden-Broyden.Po' tmpdepfile='$(DEPDIR)/broyden-Broyden.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(broyden_CXXFLAGS) $(CXXFLAGS) -c -o broyden-Broyden.obj `cygpath -w $(srcdir)/Broyden.C`
+
+linear-Linear.o: $(srcdir)/Linear.C
+@AMDEP_TRUE@	source='$(srcdir)/Linear.C' object='linear-Linear.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/linear-Linear.Po' tmpdepfile='$(DEPDIR)/linear-Linear.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linear_CXXFLAGS) $(CXXFLAGS) -c -o linear-Linear.o `test -f $(srcdir)/Linear.C || echo '$(srcdir)/'`$(srcdir)/Linear.C
+
+linear-Linear.obj: $(srcdir)/Linear.C
+@AMDEP_TRUE@	source='$(srcdir)/Linear.C' object='linear-Linear.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/linear-Linear.Po' tmpdepfile='$(DEPDIR)/linear-Linear.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linear_CXXFLAGS) $(CXXFLAGS) -c -o linear-Linear.obj `cygpath -w $(srcdir)/Linear.C`
 
 rosenbrock-Rosenbrock.o: $(srcdir)/Rosenbrock.C
 @AMDEP_TRUE@	source='$(srcdir)/Rosenbrock.C' object='rosenbrock-Rosenbrock.o' libtool=no @AMDEPBACKSLASH@
