@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Interface</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,80 +19,80 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div ALIGN=right>
+<h3>
+<img SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></h3></div>
 
-   <TITLE>Zoltan User's Guide:  Interface</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
-
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H3></DIV>
-
-<H2>
-<A NAME="Zoltan Interface Functions"></A>Zoltan Interface Functions</H2>
+<h2>
+<a NAME="Zoltan Interface Functions"></a>Zoltan Interface Functions</h2>
 An application calls a series of dynamic load-balancing library functions
 to initialize the load balancer, perform load balancing and migrate data.
 This section details the syntax of each type of interface function:
-<BLOCKQUOTE><A HREF="ug_interface_init.html">Initialization Interface Functions</A>
-<BR><A HREF="ug_interface_lb.html">Load-Balancing Interface Functions</A>
-<BR><A HREF="ug_interface_augment.html">Functions for Augmenting a Decomposition</A>
-<BR><A HREF="ug_interface_mig.html">Migration-Help Interface Functions</A></BLOCKQUOTE>
+<blockquote><a href="ug_interface_init.html">Initialization Interface Functions</a>
+<br><a href="ug_interface_lb.html">Load-Balancing Interface Functions</a>
+<br><a href="ug_interface_augment.html">Functions for Augmenting a Decomposition</a>
+<br><a href="ug_interface_mig.html">Migration-Help Interface Functions</a></blockquote>
 Examples of the calling sequences for initialization, load-balancing, and
-data migration are included in the <A HREF="ug_examples_init.html#Initialization Example">Initialization</A>,
-<A HREF="ug_examples_lb.html#Load-Balancing Example">Load-Balancing</A>,
-and <A HREF="ug_examples_mig.html#Migration Example">Migration</A> sections,
-respectively, of the <A HREF="ug_examples.html#Examples of Library Usage">Examples
-of Library Usage</A>.
-<H2>
-<A NAME="Error Codes"></A>Error Codes</H2>
-All interface functions, with the exception of <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>,
+data migration are included in the <a href="ug_examples_init.html#Initialization Example">Initialization</a>,
+<a href="ug_examples_lb.html#Load-Balancing Example">Load-Balancing</a>,
+and <a href="ug_examples_mig.html#Migration Example">Migration</a> sections,
+respectively, of the <a href="ug_examples.html#Examples of Library Usage">Examples
+of Library Usage</a>.
+<h2>
+<a NAME="Error Codes"></a>Error Codes</h2>
+All interface functions, with the exception of <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>,
 return an error code to the application. The possible return codes are
-defined in lbi_const.h and Fortran module zoltan, and are listed in the <A HREF="#error codes table">table</A>
+defined in lbi_const.h and Fortran module zoltan, and are listed in the
+<a href="#error codes table">table</a>
 below.
-<CENTER><TABLE BORDER WIDTH="90%" >
-<TR>
-<TD VALIGN=TOP><I>LB_OK</I></TD>
+<p>Note:&nbsp; Robust error handling in parallel has not yet been achieved
+in Zoltan.&nbsp; When a processor returns from Zoltan due to an error condition,
+other processors do not necessarily return the same condition.&nbsp; In
+fact, other processors may not know that the original processor has returned
+from Zoltan, and may wait indefinitely in a communication routine (e.g.,
+waiting for a message from the original processor that is not sent due
+to the error condition).&nbsp; The parallel error-handling capabilities
+of Zoltan will be improved in future releases.
+<br>&nbsp;
+<center><table BORDER WIDTH="90%" >
+<tr>
+<td VALIGN=TOP><i>LB_OK</i></td>
 
-<TD ALIGN=LEFT>Function returned without warnings or errors.</TD>
-</TR>
+<td ALIGN=LEFT>Function returned without warnings or errors.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>LB_WARN&nbsp;</I></TD>
+<tr>
+<td VALIGN=TOP><i>LB_WARN&nbsp;</i></td>
 
-<TD>Function returned with warnings. The application will probably be able
-to continue to run.</TD>
-</TR>
+<td>Function returned with warnings. The application will probably be able
+to continue to run.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>LB_FATAL&nbsp;</I></TD>
+<tr>
+<td VALIGN=TOP><i>LB_FATAL&nbsp;</i></td>
 
-<TD>A fatal error occured within the LB library.</TD>
-</TR>
+<td>A fatal error occured within the LB library.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>LB_MEMERR</I></TD>
+<tr>
+<td VALIGN=TOP><i>LB_MEMERR</i></td>
 
-<TD>An error occurred while allocating memory. When this error occurs,
+<td>An error occurred while allocating memory. When this error occurs,
 the library frees any allocated memory and returns control to the application.
 If the application then wants to try to use another, less memory-intensive,
-algorithm, it can do so.</TD>
-</TR>
+algorithm, it can do so.</td>
+</tr>
 
-<CAPTION ALIGN=BOTTOM><A NAME="error codes table"></A><I>Return codes defined
-in lb/lbi_const.h.</I></CAPTION>
-</TABLE></CENTER>
-&nbsp;
+<caption ALIGN=BOTTOM><a NAME="error codes table"></a><i>Return codes defined
+in lb/lbi_const.h.</i></caption>
+</table></center>
 
-<P>
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A> |&nbsp; <A HREF="ug_interface_init.html">Next:&nbsp;
-Initialization Functions</A>&nbsp; |&nbsp; <A HREF="ug_usage.html">Previous:&nbsp;
-Using the Library</A>]
-</BODY>
-</HTML>
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a> |&nbsp; <a href="ug_interface_init.html">Next:&nbsp;
+Initialization Functions</a>&nbsp; |&nbsp; <a href="ug_usage.html">Previous:&nbsp;
+Using the Library</a>]
+</body>
+</html>
