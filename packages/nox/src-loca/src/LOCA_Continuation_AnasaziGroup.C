@@ -42,7 +42,11 @@
 
 LOCA::Continuation::AnasaziGroup::AnasaziGroup() :
   eigenvalCounter(0),
-  hasMassMatrix(false)
+  hasMassMatrix(false),
+  cayley(false),
+  sigma(0.0),
+  mu(0.0),
+  shift_(0.0)
 {
 }
 
@@ -50,7 +54,11 @@ LOCA::Continuation::AnasaziGroup::AnasaziGroup(
 			   const LOCA::Continuation::AnasaziGroup& source, 
 			   NOX::CopyType type) :
   eigenvalCounter(source.eigenvalCounter),
-  hasMassMatrix(source.hasMassMatrix)
+  hasMassMatrix(source.hasMassMatrix),
+  cayley(source.cayley),
+  sigma(source.sigma),
+  mu(source.mu),
+  shift_(source.shift_)
 {
 }
 
@@ -87,7 +95,10 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
   int debug =   aList.getParameter("Debug Level",1);  // Anasazi Debug level
   string which= aList.getParameter("Sorting Order","LM");   //  Which eigenvalues are of interest.
   hasMassMatrix = aList.getParameter("Mass Matrix",false);  //Is there a mass matrix
-
+  cayley = aList.getParameter("Cayley Transformation",false); // Do Cayley transformation
+  sigma = aList.getParameter("Cayley Pole", 0.0);  // Cayley pole
+  mu = aList.getParameter("Cayley Zero", 0.0); // Cayley zero
+  shift_ = aList.getParameter("Shift",0.0);   // Shift for shift-and-invert
 
   // Check if eigenvalues are requested this continuation step
   if (eigenvalCounter++%freq != 0) {
@@ -113,6 +124,28 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
   Anasazi::LOCAVec<double> ivec( xVector, blksz );
   ivec.MvRandom();
 
+  // Apply J^-1*M to random vector before eigensolve begins
+
+  /* 
+      NOX::Abstract::Vector *noxivec =  0;
+      NOX::Abstract::Vector *ivecclone = xVector.clone(NOX::ShapeCopy);
+      NOX::Abstract::Vector *intermed = xVector.clone(NOX::ShapeCopy);
+
+     for (int j=0; j<blksz; j++){
+    noxivec = ivec.GetNOXVector( j );
+    ivecclone->update(1.0,*noxivec);
+    if(hasMassMatrix) {
+    const LOCA::TimeDependent::AbstractGroup& timegroup = 
+    dynamic_cast<const LOCA::TimeDependent::AbstractGroup&>(*this);
+    timegroup.applyMassMatrix(*ivecclone,*intermed);
+    applyJacobianInverse(params,*intermed,*noxivec);
+    }
+    else {
+      applyJacobianInverse(params,*ivecclone,*noxivec);
+    }
+   }
+*/
+
   // Create an instance of the eigenproblem
   Anasazi::Eigenproblem<double> LOCAProblem( &Amat, &ivec );
 
@@ -136,7 +169,17 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
   double * evali = LOCABlockArnoldi.getiEvals(narn); // to within [nev,length]
 
   if (Utils::doPrint(Utils::StepperIteration)) {
-    cout<<"Untransformed eigenvalues (since the operator was the Jacobian inverse)"<<endl;
+    if(cayley){
+          cout<<"Untransformed eigenvalues (since the operator was Cayley transformation)"<<endl;
+    }
+    else{
+      if(shift_ == 0.0){
+       cout<<"Untransformed eigenvalues (since the operator was the Jacobian inverse)"<<endl;
+      }
+      else{
+             cout<<"Untransformed eigenvalues (since the operator was shift-and-invert)"<<endl;
+      }
+    }
   }
   
   // Obtain the eigenvectors
@@ -149,8 +192,8 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
   computeJacobian();
 
   // Create some temporary vectors
-  NOX::Abstract::Vector *r_evec = xVector.clone(NOX::ShapeCopy);
-  NOX::Abstract::Vector *i_evec = xVector.clone(NOX::ShapeCopy);
+  NOX::Abstract::Vector *r_evec = 0;
+  NOX::Abstract::Vector *i_evec = 0;
   NOX::Abstract::Vector *tempvecr = xVector.clone(NOX::ShapeCopy);
   NOX::Abstract::Vector *tempveci = xVector.clone(NOX::ShapeCopy);
   NOX::Abstract::Group::ReturnType res;
@@ -159,8 +202,8 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
 
     // Computes z^T(Jz) for each eigenvector z
 
-    evecR.GetNOXVector( *r_evec, i );
-    evecI.GetNOXVector( *i_evec, i );
+    r_evec = evecR.GetNOXVector( i );
+    i_evec = evecI.GetNOXVector( i );
     res = applyJacobian(*r_evec, *tempvecr);
     res = applyJacobian(*i_evec, *tempveci);
     realpart = r_evec->dot(*tempvecr)+i_evec->dot(*tempveci);
@@ -184,26 +227,56 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
       itemp = imagpart;
       realpart = (rtemp*rquot + itemp*iquot)/magn;
       imagpart = (itemp*rquot - rtemp*iquot)/magn;
+      delete r_mass;
+      delete i_mass;
     }
 
     // Print out eigenvalue and Rayleigh quotient residual
 
     if (Utils::doPrint(Utils::StepperIteration)) {
+      if(cayley) {
+	double omag = (evalr[i]-1)*(evalr[i]-1)+evali[i]*evali[i];           
+        double mag=evalr[i]*evalr[i]+evali[i]*evali[i];             
+        double eigreal,eigimag;
+
+        eigreal = (sigma*mag - (sigma + mu)*evalr[i] + mu)/omag;
+        eigimag = (mu - sigma)*evali[i]/omag;
+
+      cout<<"Eigenvalue "<<i<<" : "<<LOCA::Utils::sci(eigreal)<<"  "
+	  <<LOCA::Utils::sci(eigimag)<<" i    :  RQresid "
+          << LOCA::Utils::sci(fabs(eigreal - realpart)) <<"  "
+	  << LOCA::Utils::sci(fabs(eigimag - imagpart))<<" i"<<endl;
+      }
+      else {
       double mag=evalr[i]*evalr[i]+evali[i]*evali[i];
-      cout<<"Eigenvalue "<<i<<" : "<<LOCA::Utils::sci(evalr[i]/mag)<<"  "
+      cout<<"Eigenvalue "<<i<<" : "<<LOCA::Utils::sci(evalr[i]/mag+shift_)<<"  "
 	  <<LOCA::Utils::sci(-evali[i]/mag)<<" i    :  RQresid "
-          << LOCA::Utils::sci(fabs(evalr[i]/mag - realpart)) <<"  "
+          << LOCA::Utils::sci(fabs(evalr[i]/mag + shift_ - realpart)) <<"  "
 	  << LOCA::Utils::sci(fabs(-evali[i]/mag - imagpart))<<" i"<<endl;
-    }  
-  }
+      }  
+    }
+  }  
 
   // Print out remaining eigenvalue approximations from nev to final arnoldi size
   if (Utils::doPrint(Utils::StepperIteration) && narn>nev) {
     cout << "~~~~~~~ remaining eigenvalue approximations ~~~~~~~~~~~~" << endl;
     for (int i=nev; i<narn; i++) {
+      if(cayley) {
+	double omag = (evalr[i]-1)*(evalr[i]-1)+evali[i]*evali[i];           
+        double mag=evalr[i]*evalr[i]+evali[i]*evali[i];             
+        double eigreal,eigimag;
+
+        eigreal = (sigma*mag - (sigma + mu)*evalr[i] + mu)/omag;
+        eigimag = (mu - sigma)*evali[i]/omag;
+
+      cout<<"Eigenvalue "<<i<<" : "<<LOCA::Utils::sci(eigreal)<<"  "
+	  <<LOCA::Utils::sci(eigimag)<<" i"<<endl;
+      }
+      else {
         double mag=evalr[i]*evalr[i]+evali[i]*evali[i];
-        cout<<"Eigenvalue "<<i<<" : "<<LOCA::Utils::sci(evalr[i]/mag)<<"  "
+        cout<<"Eigenvalue "<<i<<" : "<<LOCA::Utils::sci(evalr[i]/mag+shift_)<<"  "
 	    <<LOCA::Utils::sci(-evali[i]/mag)<<" i"<<endl;
+      }
     }
   }
 
@@ -211,6 +284,11 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
     cout << "\nAnasazi Eigensolver finished.\n" 
          << Utils::fill(64,'=') << "\n" << endl;
   }
+
+  delete [] evalr;
+  delete [] evali;
+  delete tempvecr;
+  delete tempveci;
 
   return NOX::Abstract::Group::Ok;
 #else
@@ -223,30 +301,58 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
 #endif
 }
 
+
 NOX::Abstract::Group::ReturnType
 LOCA::Continuation::AnasaziGroup::applyAnasaziOperator(NOX::Parameter::List &params, 
                            const NOX::Abstract::Vector &input, 
                            NOX::Abstract::Vector &result) const
 {
-   if(hasMassMatrix)   {
-    NOX::Abstract::Vector *input2 = input.clone(NOX::ShapeCopy);
-    const LOCA::TimeDependent::AbstractGroup& timeGroup = 
+
+     const LOCA::TimeDependent::AbstractGroup& timeGroup = 
       dynamic_cast<const LOCA::TimeDependent::AbstractGroup&>(*this);
 
-    if(&timeGroup != NULL) 
-       timeGroup.applyMassMatrix(input, *input2);  
-    else
-      cout <<"Error casting LOCA::Continuation::AnasaziGroup to TimeDependent Group"<<endl;
+  // Apply Cayley transformation 
 
-    const NOX::Abstract::Vector *massinput = input2->clone(NOX::DeepCopy);
-    applyJacobianInverse(params, *massinput, result);
-    return NOX::Abstract::Group::Ok;
-  }
-  else  {  
+  if(cayley)   {
 
-     applyJacobianInverse(params, input, result);
-     return NOX::Abstract::Group::Ok;
+   // First apply shifted matrix to input
 
-  }
+    const double& shift = -1.00*mu;
  
+    NOX::Abstract::Vector *result2 = result.clone(NOX::ShapeCopy);
+
+     timeGroup.applyShiftedMatrix(input,*result2,shift,hasMassMatrix);
+    
+     const double& shift2 = -1.00*sigma;
+      
+     timeGroup.applyShiftedMatrixInverse(*result2,result,shift2,hasMassMatrix,params);
+     delete result2;
+     return NOX::Abstract::Group::Ok;   
+}
+  else {  
+
+    double omega = -1.00*shift_;
+
+    // Shift and invert if no Cayley transformation
+
+    // If you have a mass matrix, first apply this to input
+
+    if(hasMassMatrix)   {
+    NOX::Abstract::Vector *input2 = input.clone(NOX::ShapeCopy);
+    
+    timeGroup.applyMassMatrix(input, *input2);  
+    
+    const NOX::Abstract::Vector *massinput = input2->clone(NOX::DeepCopy);
+    
+    timeGroup.applyShiftedMatrixInverse(*massinput,result,omega,hasMassMatrix,params);
+
+    delete input2;
+    delete massinput;
+
+    }
+    
+    else   {
+         timeGroup.applyShiftedMatrixInverse(input,result,omega,hasMassMatrix,params);
+    }
+  }
 }
