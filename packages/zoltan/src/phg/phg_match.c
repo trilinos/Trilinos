@@ -77,12 +77,14 @@ char  *yo = "Zoltan_PHG_Matching";
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Scale the weight of the edges */
-  if (hg->ewgt && hgp->ews) {
+  if (hgp->ews) {
      if (!(new_ewgt = (float*) ZOLTAN_MALLOC (hg->nEdge * sizeof(float)))) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         err = ZOLTAN_MEMERR;
         goto End;
      }
+     /* EBEB We need a parallel edge weight scaling routine, 
+             do not use the old serial routine! */
      Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt, hgp->ews);
      old_ewgt = hg->ewgt;
      hg->ewgt = new_ewgt;
@@ -114,7 +116,7 @@ char  *yo = "Zoltan_PHG_Matching";
 End: 
 
   /* Restore the old edge weights */
-  if (hg->ewgt && hgp->ews)
+  if (hgp->ews)
       hg->ewgt = old_ewgt;
 
   ZOLTAN_FREE ((void**) &new_ewgt);
@@ -286,7 +288,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   for (i = 0; i < hg->nVtx; i++)
     match[i] = i;                /* initialize match array to all unmatched */
    
-  /* order[] is used to impliement alternative vertex visiting algorithms:
+  /* order[] is used to implement alternative vertex visiting algorithms:
    * natural (lno), random, weight order, vertex size, etc. */
   for (i = 0; i < hg->nVtx; i++)
      order[i] = i;     /* select (visit) vertices in lno order */
@@ -579,7 +581,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        }                   
      }       
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);                       
-  } /* DONE: end of large loop over LOOP */
+  } /* DONE: end of large loop over rounds */
         
   Zoltan_Multifree (__FILE__, __LINE__, 7, &psums, &tsums, &select, &cmatch,
    &each_size, &each_count, &displs); 
