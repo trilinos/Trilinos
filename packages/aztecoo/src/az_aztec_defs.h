@@ -135,7 +135,9 @@
 #include <sys/time.h>
 #endif
 
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
+#endif
 
 #else HAVE_CONFIG_H
 #include <stdlib.h>

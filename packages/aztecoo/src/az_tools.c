@@ -21,10 +21,18 @@
  * Government.                                                                 *
  ******************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "AztecOO_config.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
+#ifdef HAVE_MALLOC_H
 #include <malloc.h>
+#endif
+
 #include <float.h>
 #include "az_aztec.h"
 

@@ -162,21 +162,17 @@ if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "
   AC_MSG_ERROR([[Cannot find string or string.h.  AztecOO requires at least one or the other.]])
 fi
 
-  if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find cmath or math.h.  AztecOO requires at least one or the other.]])
-  fi
+if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cmath or math.h.  AztecOO requires at least one or the other.]])
+fi
 
-  if test "X$ac_cv_header_cfloat" != "Xyes" && test "X$ac_cv_header_float_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find cfloat or float.h.  AztecOO requires at least one or the other.]])
-  fi
+if test "X$ac_cv_header_cfloat" != "Xyes" && test "X$ac_cv_header_float_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cfloat or float.h.  AztecOO requires at least one or the other.]])
+fi
 
-  if test "X$ac_cv_header_ctime" != "Xyes" && test "X$ac_cv_header_sys_time_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find ctime or sys/time.h.  AztecOO requires at least one or the other.]])
-  fi
-
-  if test "X$ac_cv_header_malloc_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find malloc.h.  AztecOO requires this header file.]])
-  fi
+if test "X$ac_cv_header_ctime" != "Xyes" && test "X$ac_cv_header_sys_time_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find ctime or sys/time.h.  AztecOO requires at least one or the other.]])
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -251,7 +247,12 @@ AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 #Also, other libraries check only one function, a standard math
 #lib should have sqrt provided that it has pow.
 #AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+
 AC_FUNC_MALLOC
+if test "X$ac_cv_func_malloc_works" != "Xyes"; then
+  AC_MSG_ERROR([malloc(...) not working, required by AztecOO])
+fi
+
 AC_CHECK_FUNCS([floor pow sqrt strchr uname])
 
 # Check for user-specified names for LAPACK and BLAS
