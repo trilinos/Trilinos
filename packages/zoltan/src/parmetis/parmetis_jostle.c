@@ -496,7 +496,7 @@ static int LB_ParMetis_Jostle(
     printf("\n");
   }
   
-  if (check_graph >= 1){
+  if (lb->Debug_Level){
      if ((lb->Proc ==0) && (vtxdist[lb->Num_Proc]==0))
         LB_PRINT_WARN(lb->Proc, yo, "No objects to balance.");
   }
@@ -523,10 +523,11 @@ static int LB_ParMetis_Jostle(
     if (lb->Debug_Level >= LB_DEBUG_ALL)
       printf("[%1d] Debug: num_edges = %d\n", lb->Proc, num_edges);
 
-    if (check_graph >= 1){
+    if (lb->Debug_Level){
        ierr = MPI_Reduce(&num_edges, &tmp, 1, MPI_INT, MPI_SUM, 0, lb->Communicator);
        if ((lb->Proc ==0) && (tmp==0))
-          LB_PRINT_WARN(lb->Proc, yo, "No edges in graph.");
+          LB_PRINT_WARN(lb->Proc, yo, "No edges in graph. "
+                        "Please use a different load balancing method.");
     }
 
   
