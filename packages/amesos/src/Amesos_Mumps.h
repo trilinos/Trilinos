@@ -421,7 +421,9 @@ private:
   bool AddZeroToDiag_;
   bool PrintTiming_;
   bool PrintStatistics_;
-
+  bool ComputeVectorNorms_;
+  bool ComputeTrueResidual_;
+  
   double Threshold_;
   
   int icntl_[40];                         // to allow users overwrite default settings

@@ -460,6 +460,10 @@ int Amesos_Mumps::ReadParameterList()
 
   PrintStatistics_ = ParameterList_->get("PrintStatistics", true);
 
+  ComputeVectorNorms_ = ParameterList_->get("ComputeVectorNorms",false);
+
+  ComputeTrueResidual_ = ParameterList_->get("ComputeTrueResidual",false);
+
   // retrive MUMPS' parameters
   
   if (ParameterList_->isSublist("mumps") ) {
@@ -853,7 +857,7 @@ int Amesos_Mumps::Solve()
   AddToSolTime(Time.ElapsedTime());
 
   // compute vector norms
-  if( ParameterList_->get("ComputeVectorNorms",false) ) {
+  if( ComputeVectorNorms_ == true ) {
     double NormLHS, NormRHS;
     for( int i=0 ; i<nrhs ; ++i ) {
       assert((*vecX)(i)->Norm2(&NormLHS)==0);
@@ -866,7 +870,7 @@ int Amesos_Mumps::Solve()
   }
 
   // compute true residual
-  if( ParameterList_->get("ComputeTrueResidual",false) ) {
+  if( ComputeTrueResidual_ == true ) {
     double Norm;
     Epetra_Vector Ax(vecB->Map());
     for( int i=0 ; i<nrhs ; ++i ) {
@@ -881,7 +885,7 @@ int Amesos_Mumps::Solve()
 
   //  ParameterList_->set("solution time",GetSolTime());
 			      
-  if( ParameterList_->get("PrintStatistics",true) ) PrintInformation();
+  if( PrintStatistics_ == true ) PrintInformation();
   
   return(0) ; 
 }
