@@ -1,4 +1,4 @@
-%@HEADER
+f%@HEADER
 % ************************************************************************
 % 
 %          Trilinos: An Object-Oriented Solver Framework
@@ -45,7 +45,7 @@
 \title{Amesos Reference Guide}
 \SANDnum{SAND2004-XXX}
 \SANDauthor{
-%Marzio Sala, Ken Stanley
+Marzio Sala, Ken Stanley
 }
 
 \SANDprintDate{May 2004}
@@ -146,7 +146,7 @@ Amesos contains several classes. The classes covered in this guide are:
 \item \verb!Amesos_KLU!: Interface to Amesos's internal solver
   KLU, described in Section~\ref{sec:klu}.
 \item \verb!Amesos_Umfpack!: Interface to Tim Davis's
-  UMFPACK~\cite{umfpack-home-page}. Section~\ref{sec:umfpack} presents the basic
+  UMFPACK~\cite{umfpack-home-page}, version 4.3. Section~\ref{sec:umfpack} presents the basic
   functionalities of this class.
 %\item \verb!Amesos_Dscpack!: Interface to Padma Raghavan's
 %  DSCPACK~\cite{dscpack-home-page}, presented in Section~\ref{sec:DSCPACK}.
@@ -250,14 +250,13 @@ $TRILINOS_HOME/packages/amesos/configure --help
     LINUX & SERIAL & $\bullet$ & $\bullet$ & -- & -- \\
     LINUX, GNU & LAM/MPI  &$\bullet$  & $\bullet$ & $\bullet$
     & -- \\
-    LINUX, GNU & MPICH  & -- & -- & --
-    & -- \\
+%    LINUX, GNU & MPICH  & -- & -- & -- & -- \\
     LINUX, Intel & MPICH  &$\bullet$  & $\bullet$ & --
     & $\bullet$ \\
     SGI 64 & MPI & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ \\
     DEC/Alpha & MPI & $\bullet$ & $\bullet$ & -- & -- \\
-    SUN/Solaris & MPI & -- & -- & -- & -- \\
-    ASCI Red & MPI & -- & -- & -- & -- \\
+%    SUN/Solaris & MPI & -- & -- & -- & -- \\
+    ASCI Red & MPI & -- & -- & -- & $\bullet$ \\
     \hline
   \end{tabular}
   \caption{Supported architectures for various interfaces. 
@@ -295,16 +294,16 @@ Epetra\_CrsMatrix or an Epetra\_VbrMatrix; this is reported in Table~\ref{tab:ma
 
 \begin{table}[tbhp]
   \centering
-  \begin{tabular}{| p{7cm} | p{3cm} | p{3cm} | }
+  \begin{tabular}{| p{4cm} | c | c | c | }
     \hline
-    Class &  Epetra\_CrsMatrix & Epetra\_VrbMatrix \\
+    Class &  Epetra\_RowMatrix & Epetra\_CrsMatrix & Epetra\_VrbMatrix \\
     \hline
-    Amesos\_Klu &  $\bullet$ & -- \\
-    Amesos\_Umfpack & $\bullet$ & -- \\
-    Amesos\_Superlu & $\bullet$ & -- \\
-    Amesos\_Superludist & $\bullet$ & -- \\
-    Amesos\_Mumps & $\bullet$ & $\bullet$ \\
-    Amesos\_Scalapack & $\bullet$ & -- \\
+    Amesos\_Klu          & $\bullet$&  $\bullet$ & -- \\
+    Amesos\_Umfpack      & $\bullet$& $\bullet$ & -- \\
+    Amesos\_Superlu      & $\bullet$& $\bullet$ & -- \\
+    Amesos\_Superludist  & $\bullet$& $\bullet$ & -- \\
+    Amesos\_Mumps        & $\bullet$ & $\bullet$ & $\bullet$ \\
+    Amesos\_Scalapack    & $\bullet$& $\bullet$ & -- \\
     \hline
   \end{tabular}
   \caption{Supported matrix formats. `$\bullet$' means that the interface
@@ -377,7 +376,30 @@ A common ingredient to all the Amesos classes is the Teuchos parameters'
 list. This object, whose definition requires the input file
 \verb!Teuchos_ParameterList.hpp!, is used to specify the parameters that
 affect the 3-part libraries. For a detailed presentation of Teuchos, we
-refer to the Teuchos documentation. Here, we simply recall that the
+refer to the Teuchos documentation. 
+Table~\ref{tab:teuchos} briefly reports the most
+important methods of this class.
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| p{4cm} | p{10cm} |}
+    \hline
+    \verb!set(Name,Value)! & Add entry \verb!Name! with value and type
+    specified by \verb!Value!. Any C++ type (like int, double, a
+    pointer, etc.) is valid. \\
+    \verb!get(Name,DefValue)! & Get value (whose type is automatically
+    specified by \verb!DefValue!). If not present, return
+    \verb!DefValue!. \\
+    \verb!subList(Name)! & Get a reference to sublist \verb!List!. If not
+    present, create the sublist. \\
+    \hline
+  \end{tabular}
+  \caption{Some methods of Teuchos::ParameterList class.}
+  \label{tab:teuchos}
+\end{table}
+
+
+Here, we simply recall that the
 parameters' list can be created as
 \begin{verbatim}
   Teuchos::ParameterList AmesosList;
@@ -541,7 +563,7 @@ solution as required.
 %%%
 %%%
 
-\section{Amesos Interface to UMFPACK}
+\section{Amesos Interface to UMFPACK 4.3}
 \label{sec:umfpack}
 
 UMFPACK is a C package copyrighted by Timothy A.~Davis. More information
@@ -725,7 +747,7 @@ or by using the functions reported at the end of this section.
   {\tt PermIn} must be defined on the host only, and allocated by the
   user, if the user sets ICNTL(7) = 1.}
   
-\choicebox{\tt Maxis}{){\tt int)} Sets Maxis value.}
+\choicebox{\tt Maxis}{({\tt int)} Sets Maxis value.}
 
 \choicebox{\tt Maxs}{({\tt int}) Sets Maxis value.}
 
