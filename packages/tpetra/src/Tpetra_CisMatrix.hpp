@@ -271,6 +271,7 @@ public:
     // create secondary distribution if we need to
     if(!data().haveSecondary_) {
 			// create elementspace first
+      /* !!!!!!!!!!!!! Temporary fix:  Making secondary ES equal to primary ES !!!!!!!!!!!!!!!!!!!!!!!
 			OrdinalType numGlobalElements = ordinalZero - ordinalOne; // set to -1
 			OrdinalType numMyElements = data().indx_.size();
 			OrdinalType* elementList = &data().indx_.front(); // address of first element in indx_
@@ -280,7 +281,8 @@ public:
 			// then create vectorspace using it
 			Platform<OrdinalType, ScalarType> const& platformS = platform();
 			VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformS);
-			data().secondary_ = vectorspace;
+      */
+      data().secondary_ = data().primary_;
 			data().haveSecondary_ = true;
 			if(isRowOriented())
 				data().haveCol_ = true;
