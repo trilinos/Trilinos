@@ -162,8 +162,17 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
 
       if ((*ag)->field_of_values != NULL) 
 	ML_free((*ag)->field_of_values);
-      if ((*ag)->nodal_coord != NULL)
+      if ((*ag)->nodal_coord != NULL) {
+        /* MS // start from 1 because we do not
+         * free the finest-level coordinates (given by the
+         * user). Recall that in nodal_coord the finest level is 
+         * always in position 0. */
+        for (i = 1 ; i < (*ag)->max_levels ; ++i) {
+          if ((*ag)->nodal_coord[i] != NULL)
+            ML_free((*ag)->nodal_coord[i]);
+        }
 	ML_free( (*ag)->nodal_coord );
+      }
 /*MS*/
 /*mgee*/
       if ((*ag)->vblock_data != NULL)
@@ -1217,11 +1226,13 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    /*       ag->begin_level - ag->cur_level                       */
 
    relative_level = fabs(ag->begin_level - ag->cur_level);
-   if ((ag->nodal_coord != NULL) && ((ag->nodal_coord)[relative_level] != NULL) ){
+   /* && ((ag->nodal_coord)[relative_level] != NULL)*/
+   if ((ag->nodal_coord != NULL)){
 
      ML_Aggregate_ProjectCoordinates(*Pmatrix, ag, Amatrix->num_PDEs,
 				     relative_level);
    }
+
    i = -1;
    label = ML_memory_check(NULL);
    if (label != NULL) 
@@ -2280,7 +2291,6 @@ int ML_Aggregate_ProjectCoordinates(ML_Operator *P_tentative,
 
      
 
-
    ML_Operator *temp;
    double *fine_vec, *coarse_vec, *agg_sizes, *new_coords;
    int i, j,k;
@@ -2288,15 +2298,15 @@ int ML_Aggregate_ProjectCoordinates(ML_Operator *P_tentative,
    /* Create a restriction operator by transposing prolongator and */
    /* replacing all nonzeros entries by +1.                        */				    
    temp = ML_Operator_Create((P_tentative)->comm);
-   ML_Operator_Transpose( P_tentative, temp);
-   temp->matvec->func_ptr = CSR_ones_matvec;
+   ML_Operator_Transpose(P_tentative, temp);
+   temp->matvec->func_ptr = CSR_ones_matvec; 
 
    /* allocate space */
 
    fine_vec = (double *) ML_allocate(sizeof(double)*
-				     (temp->invec_leng+1));
+                                     (temp->invec_leng+1));
    agg_sizes = (double *) ML_allocate(sizeof(double)*
-				      (temp->outvec_leng+1));
+                                      (temp->outvec_leng+1));
    coarse_vec= (double *) ML_allocate(sizeof(double)*
 				      (temp->outvec_leng+1));
 
@@ -2313,28 +2323,51 @@ int ML_Aggregate_ProjectCoordinates(ML_Operator *P_tentative,
    ML_Operator_Apply(temp, temp->invec_leng, fine_vec,
 		     temp->outvec_leng, agg_sizes);
 
+   for (i = 0 ; i < temp->outvec_leng ; ++i) {
+     if (agg_sizes[i] == 0.0) {
+       if (ML_Get_PrintLevel() > 2)
+         fprintf(stderr,"*ML*WRN* on proc %d, aggregate %d has size 0 "
+                 "(LocalRows=%d, LocalAggre=%d)!\n"
+                 "*ML*ERR* (file %s, line %d)\n",
+                 (P_tentative)->comm->ML_mypid, i,
+                 temp->invec_leng, temp->outvec_leng,
+                 __FILE__, __LINE__);
+       /* MS * I am not really sure of what we got here...
+        * MS * but at least the code does not crash... */
+       agg_sizes[i] = 1.0;
+     }
+   }
+
    /* Take nodal coordinates and stuff them into a fine grid vector. */
    /* Then, project the fine grid vector and stuff it into a coarse  */
    /* nodal coordinate vector after dividing by the aggregate sizes. */
 
+   if ((temp->invec_leng != 0) && (ag->nodal_coord[relative_level] == NULL)) {
+     fprintf(stderr,"ERROR: projecting coordinates we don't have...\n");
+     fprintf(stderr,"ERROR: (on processor %d)\n", temp->comm->ML_mypid);
+     exit(EXIT_FAILURE);
+   }
+
    for (k = 0; k < ag->N_dimensions; k++) {
-     for (i = 0; i < temp->invec_leng/num_PDEs; i++) {
-       for (j = 0; j < num_PDEs; j++) {
-	 fine_vec[i*(num_PDEs)+j] = (ag->nodal_coord)[relative_level][
-					      k*temp->invec_leng/num_PDEs + i];
+       for (i = 0; i < temp->invec_leng/num_PDEs; i++) {
+         for (j = 0; j < num_PDEs; j++) {
+           fine_vec[i*(num_PDEs)+j] = (ag->nodal_coord)[relative_level][
+             k*temp->invec_leng/num_PDEs + i];
+         }
        }
-     }
      ML_Operator_Apply(temp, temp->invec_leng, fine_vec,
 		       temp->outvec_leng, coarse_vec);
 
      for (i = 0; i < temp->outvec_leng/ag->nullspace_dim; i++) {
        new_coords[k*temp->outvec_leng/ag->nullspace_dim + i] =
-	 coarse_vec[i*ag->nullspace_dim]/agg_sizes[i*ag->nullspace_dim];
+         coarse_vec[i*ag->nullspace_dim]/agg_sizes[i*ag->nullspace_dim];
      }
    }
+
    ML_free(coarse_vec);
    ML_free(agg_sizes);
    ML_free(fine_vec);
    ML_Operator_Destroy(&temp);
+
    return 1;
 }
