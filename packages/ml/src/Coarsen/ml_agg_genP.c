@@ -1547,25 +1547,18 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
    ML_Operator *mat;
 
 
-   printf("here weeeeeeeeeee\n");
+   mesh_level = ml->ML_finest_level;
    if (ag->keep_P_tentative != ML_YES) {
      printf("ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg: must save\n");
      printf("   aggregation information by setting ML_Aggregate_Set_Reuse(...)\n");
      exit(-1);
    }
-   printf("Here weeeeeeeeeee\n");
-   printf("ml %u\n",ml);
-   printf("%u \n",ml->SingleLevel);
-   printf("%u \n",&(ml->SingleLevel[mesh_level]));
-   printf("%u \n",ml->SingleLevel[mesh_level].Rmat);
-   printf("%u \n",ml->SingleLevel[mesh_level].Rmat->to);
 
    while( ml->SingleLevel[mesh_level].Rmat->to != NULL) {
      old_mesh_level = mesh_level;
      mesh_level = ml->SingleLevel[mesh_level].Rmat->to->levelnum;
      /* clean and regenerate P */
 
-     printf("inside\n");
      mat = &(ml->Pmat[mesh_level]);
      if (ag->smoothP_damping_factor != 0.0) {
        ML_Operator_Clean(mat);
@@ -1573,7 +1566,6 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
        ML_AGG_Gen_Prolongator(ml, old_mesh_level, mesh_level, 
 			      &(ml->Amat[old_mesh_level]), ag);
      }
-   printf("Hare weeeeeeeeeee\n");
 
      /* clean and regenerate R */
 
@@ -1583,7 +1575,6 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
        ML_Operator_Init(mat,ml->comm);
        ML_Gen_Restrictor_TransP(ml, old_mesh_level, mesh_level);
      }
-   printf("H2re weeeeeeeeeee\n");
 
      /* clean and regenerate A */
 
@@ -1592,7 +1583,6 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
      ML_Operator_Init(mat,ml->comm);
      ML_Gen_AmatrixRAP(ml, old_mesh_level, mesh_level);
    }
-   printf("H3re weeeeeeeeeee\n");
 
    return 0;
 }
