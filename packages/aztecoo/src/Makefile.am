@@ -199,7 +199,9 @@ DIST = \
 	$(srcdir)/az_poly.c \
 	$(srcdir)/az_qmrcgs.c \
 	$(srcdir)/az_rilu.c \
-	$(srcdir)/az_subdomain_solver.c 
+	$(srcdir)/az_subdomain_solver.c \
+	$(srcdir)/az_cg_condnum.c \
+	$(srcdir)/az_gmres_condnum.c
 
 #There is no evidence that this file is used by anyone
 #	$(srcdir)/az_xyce_gmres.c

@@ -481,11 +481,15 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
 
   case AZ_cg:
     break;
+  case AZ_cg_condnum:
+    break;
   case AZ_analyze:
     break;
   case AZ_GMRESR:
     break;
   case AZ_gmres:
+    break;
+  case AZ_gmres_condnum:
     break;
   case AZ_cgs:
     break;

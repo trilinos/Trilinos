@@ -489,12 +489,29 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
 
     break;
 
+  case AZ_cg_condnum:
+
+    /* conjugate gradient with condition number estimate */
+
+    AZ_pcg_f_condnum(b,x,&(newparams[AZ_weights]),options,params,proc_config,status,Amat,precond,conv_info);
+
+    break;
+
   case AZ_gmres:
 
     /* GMRES */
 
     AZ_pgmres(b, x, &(newparams[AZ_weights]), options, params, proc_config,
               status, Amat, precond, conv_info);
+
+    break;
+
+  case AZ_gmres_condnum:
+
+    /* GMRES with condition number estimate */
+
+    AZ_pgmres_condnum(b, x, &(newparams[AZ_weights]), options, params, proc_config,
+		      status, Amat, precond, conv_info);
 
     break;
 
@@ -866,8 +883,12 @@ void AZ_print_call_iter_solve(int options[], double params[], int az_proc,
 
   case AZ_cg:
     (void) printf("Preconditioned CG"); break;
+  case AZ_cg_condnum:
+    (void) printf("Preconditioned CG (with condnum)"); break;
   case AZ_gmres:
     (void) printf("Preconditioned GMRES"); break;
+  case AZ_gmres_condnum:
+    (void) printf("Preconditioned GMRES (with condnum)"); break;
   case AZ_analyze:
     (void) printf("Preconditioned analysis"); break;
   case AZ_GMRESR:

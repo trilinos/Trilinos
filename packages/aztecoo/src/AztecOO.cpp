@@ -653,6 +653,7 @@ int AztecOO::Iterate(Epetra_RowMatrix * A,
   EPETRA_CHK_ERR( Iterate(MaxIters, Tolerance) );
   return(0);
 }
+
 //=============================================================================
 int AztecOO::SetAdaptiveParams(int NumTrials, double * athresholds, double * rthresholds,
 				double condestThreshold, double maxFill, int maxKspace) {

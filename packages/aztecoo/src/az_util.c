@@ -1508,6 +1508,10 @@ void AZ_terminate_status_print(int situation, int iter, double status[],
     solver_name = (char *) AZ_allocate(3*sizeof(char));
     (void) sprintf(solver_name, "cg");
     break;
+  case AZ_cg_condnum:
+    solver_name = (char *) AZ_allocate(11*sizeof(char));
+    (void) sprintf(solver_name, "cg_condnum");
+    break;
   case AZ_fixed_pt:
     solver_name = (char *) AZ_allocate(9*sizeof(char));
     (void) sprintf(solver_name, "fixed-pt");
@@ -1523,6 +1527,10 @@ void AZ_terminate_status_print(int situation, int iter, double status[],
   case AZ_gmres:
     solver_name = (char *) AZ_allocate(6*sizeof(char));
     (void) sprintf(solver_name, "gmres");
+    break;
+  case AZ_gmres_condnum:
+    solver_name = (char *) AZ_allocate(14*sizeof(char));
+    (void) sprintf(solver_name, "gmres_condnum");
     break;
   case AZ_cgs:
     solver_name = (char *) AZ_allocate(4*sizeof(char));

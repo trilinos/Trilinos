@@ -1417,9 +1417,19 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
 
   extern int  PAZ_sorted_search(int, int, int*);
 
+  extern void AZ_pgmres_condnum(double b[], double x[], double weight[], int options[],
+				double params[], int proc_config[],double status[],
+				AZ_MATRIX *Amat, AZ_PRECOND *precond,
+				struct AZ_CONVERGE_STRUCT *convergence_info );
+
+  extern void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
+			       double params[], int proc_config[],double status[],
+			       AZ_MATRIX *Amat, AZ_PRECOND *precond,
+			       struct AZ_CONVERGE_STRUCT *convergence_info );
+  
+
   /*****************************************************************************/
-  /*                    IFPACK interface routine
-*/
+  /*                    IFPACK interface routine                               */
   /*****************************************************************************/
 #ifdef IFPACK
   extern void az2ifp_blockmatrix (void **bmat, AZ_MATRIX *Amat);

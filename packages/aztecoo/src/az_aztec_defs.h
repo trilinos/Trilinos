@@ -251,6 +251,8 @@
 #define AZ_fixed_pt         8 /* fixed point iteration                        */
 #define AZ_analyze          9 /* fixed point iteration                        */
 #define AZ_lu              10 /* sparse LU direct method. Also used for a     */
+#define AZ_cg_condnum      11
+#define AZ_gmres_condnum   12
 /* preconditioning option.  NOTE: this should   */
 /* be the last solver so that AZ_check_input()  */
 /* works properly.                              */
@@ -552,6 +554,7 @@
 /* the entire solve.                   */
 #define AZ_Aztec_version       7     /* This is used to record the current  */
 /* version of Aztec.                   */
+#define AZ_condnum             8
 
 /*******************************************************************************
  *
