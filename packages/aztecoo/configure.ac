@@ -120,7 +120,7 @@ TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
-TAC_ARG_WITH_LIBS(libs, LIBS)
+TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
 # ------------------------------------------------------------------------
@@ -197,6 +197,9 @@ AC_CXX_STD_SPRINTF
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
+#This option is obsolete
+#TAC_ARG_ENABLE_FEATURE_SUB( aztecoo, ifpack, [enable AztecOO's Ifpack dependent code], AZTECOO_IFPACK, no)
+
 # The following section is required to decide if the AZ_lu preconditioner
 # should be built.  If not, y12m is not necessary.
 AC_ARG_ENABLE(aztecoo-azlu,
@@ -211,8 +214,6 @@ if test "X$ac_cv_use_aztecoo_azlu" != "Xno"; then
 else
   AC_MSG_RESULT(no)
 fi
-
-dnl THIS NEEDS TO BE FILLED IN!!!
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built

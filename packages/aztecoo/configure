@@ -6263,6 +6263,9 @@ fi
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
+#This option is obsolete
+#TAC_ARG_ENABLE_FEATURE_SUB( aztecoo, ifpack, [enable AztecOO's Ifpack dependent code], AZTECOO_IFPACK, no)
+
 # The following section is required to decide if the AZ_lu preconditioner
 # should be built.  If not, y12m is not necessary.
 # Check whether --enable-aztecoo-azlu or --disable-aztecoo-azlu was given.
@@ -6288,7 +6291,6 @@ else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
-
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
@@ -6865,7 +6867,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6868: \"$ac_link\") >&5
+(eval echo $as_me:6870: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6943,7 +6945,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6946: \"$ac_link\") >&5
+(eval echo $as_me:6948: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9472,7 +9474,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9475: \"$ac_link\") >&5
+(eval echo $as_me:9477: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9550,7 +9552,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9553: \"$ac_link\") >&5
+(eval echo $as_me:9555: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

@@ -43,7 +43,7 @@ AztecOO_msr_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 AztecOO_msr_LDADD = $(top_builddir)/src/libaztecoo.a\
 	$(top_builddir)/../triutils/src/libtriutils.a\
 	$(top_builddir)/../epetra/src/libepetra.a\
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 AztecOO_vbr_SOURCES = $(srcdir)/vbr_main.cpp
 
@@ -58,7 +58,7 @@ AztecOO_vbr_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 AztecOO_vbr_LDADD = $(top_builddir)/src/libaztecoo.a\
 	$(top_builddir)/../triutils/src/libtriutils.a\
 	$(top_builddir)/../epetra/src/libepetra.a\
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 adapt_msr_SOURCES = $(srcdir)/adapt_main.cpp
 
@@ -73,6 +73,6 @@ adapt_msr_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 adapt_msr_LDADD = $(top_builddir)/src/libaztecoo.a\
 	$(top_builddir)/../triutils/src/libtriutils.a\
 	$(top_builddir)/../epetra/src/libepetra.a\
-	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 
