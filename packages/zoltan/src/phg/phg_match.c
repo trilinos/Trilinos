@@ -73,7 +73,7 @@ char  *yo = "Zoltan_PHG_Matching";
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Scale the weight of the edges */
-  if (hg->vwgt && hgp->ews) {
+  if (hg->ewgt && hgp->ews) {
      if (!(new_ewgt = (float*) ZOLTAN_MALLOC (hg->nEdge * sizeof(float)))) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         err = ZOLTAN_MEMERR;
@@ -96,18 +96,13 @@ char  *yo = "Zoltan_PHG_Matching";
       if (hgp->matching)
           err = hgp->locmatching (zz, hg, match, &limit);
       
-#ifdef _DEBUG
-      uprintf(hgc, "there are %d matches\n", matchcnt);
-#endif
-          
       /* find the index of the proc in column group with the best match; it 
          will be our root proc */
+      /* EBEB This does not seem to work right because we don't have any 
+         quality metric returned from the matching. Currently,
+         matchcnt is never initialized?? */ 
       Zoltan_PHG_Find_Root(hg->nVtx-limit, hgc->myProc_y, hgc->col_comm,
                            &root.matchcnt, &root.rank);
-      
-#ifdef _DEBUG    
-      uprintf(hgc, "root is %d with matchcnt=%d \n", root.rank, root.matchcnt);
-#endif
       
       MPI_Bcast(match, hg->nVtx, MPI_INT, root.rank, hgc->col_comm);
 
