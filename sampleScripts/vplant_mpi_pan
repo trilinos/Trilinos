@@ -1,7 +1,8 @@
 .././configure \
---enable-epetra \
---with-blas="-L/usr/local/app/intel/mkl/mkl-5.2/mkl/lib/32/ -lmkl -lguide" \
---with-lapack="-L/usr/local/app/intel/mkl/mkl-5.2/mkl/lib/32/ \
+--enable-epetraext \
+--enable-triutils \
+--with-blas="-L/usr/local/app/intel/mkl61/lib/32/ -lmkl -lguide" \
+--with-lapack="-L/usr/local/app/intel/mkl61/lib/32/ \
 -lmkl_lapack -lmkl" \
 --with-mpi-compilers \
 --with-mpi-libs=-lmpich \
