@@ -121,42 +121,44 @@ $(srcdir)/Operator/ml_rap.c \
 $(srcdir)/Operator/ml_mat_formats.c $(srcdir)/Operator/ml_rap_utils.c
 
 UTIL_H = \
-$(srcdir)/Utils/ml_aztec_utils.h $(srcdir)/Utils/ml_epetra_utils.h \
-$(srcdir)/Utils/ml_utils.h \
-$(srcdir)/Utils/ml_memory.h \
-$(srcdir)/Utils/ml_agg_info.h \
-$(srcdir)/Utils/ml_aztec_lapack.h      $(srcdir)/Utils/ml_rbm.h \
-$(srcdir)/Utils/ml_read_utils.h \
-$(srcdir)/Utils/ml_superlu_lapack.h \
-$(srcdir)/Utils/ml_epetra_operator.h \
+$(srcdir)/Utils/ml_aztec_utils.h      \
+$(srcdir)/Utils/ml_epetra_utils.h     \
+$(srcdir)/Utils/ml_utils.h            \
+$(srcdir)/Utils/ml_memory.h           \
+$(srcdir)/Utils/ml_agg_info.h         \
+$(srcdir)/Utils/ml_aztec_lapack.h     \
+$(srcdir)/Utils/ml_rbm.h              \
+$(srcdir)/Utils/ml_read_utils.h       \
+$(srcdir)/Utils/ml_superlu_lapack.h   \
+$(srcdir)/Utils/ml_epetra_operator.h  \
 $(srcdir)/Utils/ml_twogrid_analysis.h \
-$(srcdir)/Utils/ml_intlist.h \
-$(srcdir)/Utils/ml_vec.h \
+$(srcdir)/Utils/ml_intlist.h          \
+$(srcdir)/Utils/ml_vec.h    \
 $(srcdir)/Utils/ml_lapack.h \
-$(srcdir)/Utils/ml_utils.h \
+$(srcdir)/Utils/ml_utils.h  \
 $(srcdir)/Utils/ml_eigf2c.h \
 $(srcdir)/Utils/ml_vampir.h \
-$(srcdir)/Utils/ml_viz_opendx.h \
-$(srcdir)/Utils/ml_viz_xyz.h \
-$(srcdir)/Utils/ml_amesos.h \
-$(srcdir)/Utils/ml_amesos_wrap.h \
-$(srcdir)/Utils/ml_ifpack.h \
-$(srcdir)/Utils/ml_ifpack_wrap.h \
+$(srcdir)/Utils/ml_viz_opendx.h   \
+$(srcdir)/Utils/ml_viz_xyz.h      \
+$(srcdir)/Utils/ml_amesos.h       \
+$(srcdir)/Utils/ml_amesos_wrap.h  \
+$(srcdir)/Utils/ml_ifpack.h       \
+$(srcdir)/Utils/ml_ifpack_wrap.h  \
 $(srcdir)/Utils/ml_epetra_preconditioner.h \
-$(srcdir)/Utils/ml_anasazi.h \
-$(srcdir)/Utils/ml_epetra.h \
-$(srcdir)/Utils/ml_MultiLevelOperator.h \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner.h \
-$(srcdir)/Utils/ml_RowMatrix.h \
-$(srcdir)/Utils/ml_DD_prec.h \
+$(srcdir)/Utils/ml_anasazi.h                           \
+$(srcdir)/Utils/ml_epetra.h                            \
+$(srcdir)/Utils/ml_MultiLevelOperator.h                \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner.h          \
+$(srcdir)/Utils/ml_RowMatrix.h                         \
+$(srcdir)/Utils/ml_DD_prec.h                           \
 $(srcdir)/Utils/ml_Epetra_wrap_CrsGraph_as_RowMatrix.H \
-$(srcdir)/NonlinML/ml_nox_fineinterface.H \
-$(srcdir)/NonlinML/ml_nox_coarseinterface.H \
-$(srcdir)/NonlinML/ml_nox_linearsystem.H \
-$(srcdir)/NonlinML/ml_nox_matrixfreelevel.H \
-$(srcdir)/NonlinML/ml_nox_nonlinearlevel.H \
-$(srcdir)/NonlinML/ml_nox_preconditioner.H \
-$(srcdir)/MLAPI/MLAPI.h                \
+$(srcdir)/NonlinML/ml_nox_fineinterface.H    \
+$(srcdir)/NonlinML/ml_nox_coarseinterface.H  \
+$(srcdir)/NonlinML/ml_nox_linearsystem.H     \
+$(srcdir)/NonlinML/ml_nox_matrixfreelevel.H  \
+$(srcdir)/NonlinML/ml_nox_nonlinearlevel.H   \
+$(srcdir)/NonlinML/ml_nox_preconditioner.H   \
+$(srcdir)/MLAPI/MLAPI.h                      \
 $(srcdir)/MLAPI/MLAPI_Aggregation.h          \
 $(srcdir)/MLAPI/MLAPI_BaseObject.h           \
 $(srcdir)/MLAPI/MLAPI_BaseOperator.h         \
@@ -179,45 +181,58 @@ $(srcdir)/MLAPI/MLAPI_Operator.h             \
 $(srcdir)/MLAPI/MLAPI_Operator_Utils.h       \
 $(srcdir)/MLAPI/MLAPI_Space.h                \
 $(srcdir)/MLAPI/MLAPI_TimeObject.h           \
-$(srcdir)/MLAPI/MLAPI_Workspace.h
+$(srcdir)/MLAPI/MLAPI_Workspace.h            \
+$(srcdir)/MLAPI/MLAPI_Error.h
 
 UTIL = \
-$(srcdir)/Utils/ml_rbm.c \
-$(srcdir)/Utils/ml_aztec_utils.c       $(srcdir)/Utils/ml_read_utils.c \
-$(srcdir)/Utils/ml_twogrid_analysis.c \
-$(srcdir)/Utils/ml_epetra_utils.cpp \
-$(srcdir)/Utils/ml_utils.c             $(srcdir)/Utils/ml_intlist.c \
-$(srcdir)/Utils/ml_vec.c \
-$(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c \
-$(srcdir)/Utils/ml_agg_info.c \
-$(srcdir)/Utils/ml_viz_opendx.c \
-$(srcdir)/Utils/ml_viz_xyz.c \
-$(srcdir)/Utils/ml_amesos.c \
-$(srcdir)/Utils/ml_amesos_wrap.cpp \
-$(srcdir)/Utils/ml_ifpack.c \
-$(srcdir)/Utils/ml_ifpack_wrap.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner_Filtering.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner_Smoothers.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner_Viz.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adapt.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner_Analyze.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp \
-$(srcdir)/Utils/ml_MultiLevelPreconditioner_Aux.cpp \
-$(srcdir)/Utils/ml_anasazi.cpp \
-$(srcdir)/Utils/ml_MultiLevelOperator.cpp \
-$(srcdir)/Utils/ml_RowMatrix.cpp \
-$(srcdir)/Utils/ml_DD_prec.cpp \
-$(srcdir)/NonlinML/ml_nox_coarseinterface.cpp \
-$(srcdir)/NonlinML/ml_nox_linearsystem.cpp \
-$(srcdir)/NonlinML/ml_nox_matrixfreelevel.cpp \
-$(srcdir)/NonlinML/ml_nox_nonlinearlevel.cpp \
-$(srcdir)/NonlinML/ml_nox_preconditioner1.cpp \
+$(srcdir)/Utils/ml_rbm.c                                    \
+$(srcdir)/Utils/ml_aztec_utils.c                            \
+$(srcdir)/Utils/ml_read_utils.c                             \
+$(srcdir)/Utils/ml_twogrid_analysis.c                       \
+$(srcdir)/Utils/ml_epetra_utils.cpp                         \
+$(srcdir)/Utils/ml_utils.c                                  \
+$(srcdir)/Utils/ml_intlist.c                                \
+$(srcdir)/Utils/ml_vec.c                                    \
+$(srcdir)/Utils/ml_memory.c                                 \
+$(srcdir)/Utils/ml_eigf2c.c                                 \
+$(srcdir)/Utils/ml_agg_info.c                               \
+$(srcdir)/Utils/ml_viz_opendx.c                             \
+$(srcdir)/Utils/ml_viz_xyz.c                                \
+$(srcdir)/Utils/ml_amesos.c                                 \
+$(srcdir)/Utils/ml_amesos_wrap.cpp                          \
+$(srcdir)/Utils/ml_ifpack.c                                 \
+$(srcdir)/Utils/ml_ifpack_wrap.cpp                          \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp             \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Filtering.cpp   \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp   \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp    \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Smoothers.cpp   \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Viz.cpp         \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adapt.cpp       \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Analyze.cpp     \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp        \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp         \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Aux.cpp         \
+$(srcdir)/Utils/ml_anasazi.cpp                              \
+$(srcdir)/Utils/ml_MultiLevelOperator.cpp                   \
+$(srcdir)/Utils/ml_RowMatrix.cpp                            \
+$(srcdir)/Utils/ml_DD_prec.cpp                              \
+$(srcdir)/MLAPI/MLAPI_Defaults.cpp                          \
+$(srcdir)/MLAPI/MLAPI_Gallery.cpp                           \
+$(srcdir)/MLAPI/MLAPI_Operator_Utils.cpp                    \
+$(srcdir)/MLAPI/MLAPI_Eig.cpp                               \
+$(srcdir)/MLAPI/MLAPI_Krylov.cpp                            \
+$(srcdir)/MLAPI/MLAPI_Workspace.cpp                         \
+$(srcdir)/MLAPI/MLAPI_Expressions.cpp                       \
+$(srcdir)/MLAPI/MLAPI_MultiVector_Utils.cpp                 \
+$(srcdir)/MLAPI/MLAPI_BaseObject.cpp                        \
+$(srcdir)/MLAPI/MLAPI_Aggregation.cpp                       \
+$(srcdir)/NonlinML/ml_nox_coarseinterface.cpp               \
+$(srcdir)/NonlinML/ml_nox_linearsystem.cpp                  \
+$(srcdir)/NonlinML/ml_nox_matrixfreelevel.cpp               \
+$(srcdir)/NonlinML/ml_nox_nonlinearlevel.cpp                \
+$(srcdir)/NonlinML/ml_nox_preconditioner1.cpp               \
 $(srcdir)/NonlinML/ml_nox_preconditioner2.cpp
-
 
 ENUM_H = 
 
