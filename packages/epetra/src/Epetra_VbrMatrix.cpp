@@ -1946,11 +1946,20 @@ int Epetra_VbrMatrix::RightScale(const Epetra_Vector& x) {
 int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
+  bool hasOperatorMap = false;
   if (DoRows) {
-    if (!Graph().RangeMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
+    if ( !Graph().RangeMap().SameAs(x.Map()) ) {
+      hasOperatorMap = OperatorRangeMap().SameAs(x.Map());
+      if( !hasOperatorMap )
+        EPETRA_CHK_ERR(-2);
+    }
   }
   else {
-    if (!Graph().DomainMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
+    if ( !Graph().DomainMap().SameAs(x.Map()) ) {
+      hasOperatorMap = OperatorDomainMap().SameAs(x.Map());
+      if( !hasOperatorMap )
+        EPETRA_CHK_ERR(-2);
+    }
   }
   int ierr = 0;
   int * NumBlockEntriesPerRow = NumBlockEntriesPerRow_;
