@@ -33,22 +33,20 @@
 #include "NOX_StatusTest_Combo.H"
 #include "NOX_Utils.H"
 
-using namespace NOX::StatusTest;
-
-Combo::Combo(ComboType t) :
+NOX::StatusTest::Combo::Combo(ComboType t) :
   type(t)
 {
   status = Unevaluated;
 }
 
-Combo::Combo(ComboType t, Generic& a) :
+NOX::StatusTest::Combo::Combo(ComboType t, Generic& a) :
   type(t)
 {
   tests.push_back(&a);
   status = Unevaluated;
 }
 
-Combo::Combo(ComboType t, Generic& a, Generic& b) :
+NOX::StatusTest::Combo::Combo(ComboType t, Generic& a, Generic& b) :
   type(t)
 {
   tests.push_back(&a);
@@ -56,7 +54,7 @@ Combo::Combo(ComboType t, Generic& a, Generic& b) :
   status = Unevaluated;
 }
 
-Combo& Combo::addStatusTest(Generic& a)
+NOX::StatusTest::Combo& NOX::StatusTest::Combo::addStatusTest(Generic& a)
 {
   if (isSafe(a))
     tests.push_back(&a);
@@ -73,7 +71,7 @@ Combo& Combo::addStatusTest(Generic& a)
   return *this;
 }
 
-bool Combo::isSafe(Generic& a)
+bool NOX::StatusTest::Combo::isSafe(Generic& a)
 {
   // Are we trying to add "this" to "this"? This would result in an infinite recursion.
   if (&a == this)
@@ -94,16 +92,17 @@ bool Combo::isSafe(Generic& a)
   return true;
 }
 
-Combo::~Combo()
+NOX::StatusTest::Combo::~Combo()
 {
 }
 
-StatusType Combo::checkStatus(const Solver::Generic& problem)
+NOX::StatusTest::StatusType NOX::StatusTest::Combo::checkStatus(const Solver::Generic& problem)
 {
   return checkStatus(problem, NOX::StatusTest::Minimal);
 }
 
-StatusType Combo::checkStatus(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
+NOX::StatusTest::StatusType NOX::StatusTest::Combo::checkStatus(const Solver::Generic& problem, 
+					       NOX::StatusTest::CheckType checkType)
 {
   if (type == OR)
     orOp(problem, checkType);
@@ -113,14 +112,14 @@ StatusType Combo::checkStatus(const Solver::Generic& problem, NOX::StatusTest::C
   return status;
 }
 
-StatusType Combo::getStatus() const
+NOX::StatusTest::StatusType NOX::StatusTest::Combo::getStatus() const
 {
   return status;
 }
 
-void Combo::orOp(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
+void NOX::StatusTest::Combo::orOp(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
 {
-  if (checkType == None)
+  if (checkType == NOX::StatusTest::None)
     status = Unevaluated;
   else
     status = Unconverged;
@@ -129,15 +128,15 @@ void Combo::orOp(const Solver::Generic& problem, NOX::StatusTest::CheckType chec
   // any, that is unconverged is the status that it sets itself too.
   for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) 
   {
-    StatusType s = (*i)->checkStatus(problem, checkType);
+    NOX::StatusTest::StatusType s = (*i)->checkStatus(problem, checkType);
 
     if ((status == Unconverged) && (s != Unconverged)) 
     {
       status = s;
 
       // Turn off checking for the remaining tests
-      if (checkType == Minimal)
-	checkType = None;
+      if (checkType == NOX::StatusTest::Minimal)
+	checkType = NOX::StatusTest::None;
     }
 
   }
@@ -145,9 +144,9 @@ void Combo::orOp(const Solver::Generic& problem, NOX::StatusTest::CheckType chec
   return;
 }
 
-void Combo::andOp(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
+void NOX::StatusTest::Combo::andOp(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType)
 {
-  if (checkType == None)
+  if (checkType == NOX::StatusTest::None)
     status = Unevaluated;
   else
     status = Unconverged;
@@ -156,7 +155,7 @@ void Combo::andOp(const Solver::Generic& problem, NOX::StatusTest::CheckType che
 
   for (vector<Generic*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
-    StatusType s = (*i)->checkStatus(problem, checkType);
+    NOX::StatusTest::StatusType s = (*i)->checkStatus(problem, checkType);
 
     // If any of the tests are unconverged, then the AND test is
     // unconverged.
@@ -166,8 +165,8 @@ void Combo::andOp(const Solver::Generic& problem, NOX::StatusTest::CheckType che
       status = Unconverged;
 
       // Turn off checking for the remaining tests
-      if (checkType == Minimal)
-	checkType = None;
+      if (checkType == NOX::StatusTest::Minimal)
+	checkType = NOX::StatusTest::None;
     }
 
     // If this is the first test and it's converged/failed, copy its
@@ -183,7 +182,7 @@ void Combo::andOp(const Solver::Generic& problem, NOX::StatusTest::CheckType che
 }
 
 
-ostream& Combo::print(ostream& stream, int indent) const
+ostream& NOX::StatusTest::Combo::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
