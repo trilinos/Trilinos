@@ -1,0 +1,152 @@
+
+
+To get Trilinos:
+
+Trilinos is kept in a CVS repository on skip.sandia.gov.  Contact
+Paul Sery (pgsery@sandia.gov) for an account.
+
+If you have an account on this machine, you may retrieve Trilinos by setting
+the following environment variables
+
+In csh or tcsh:
+
+setenv CVSROOT :ext:mheroux@skip.sandia.gov:/space/CVS
+setenv CVS_RSH ssh
+
+or in bash:
+
+export CVSROOT=:ext:mheroux@skip.sandia.gov:/space/CVS
+export CVS_RSH=ssh
+
+These variables may also be defined in your .cshrc or .bashrc file.
+
+
+To build Trilinos using Autotools please see Trilinos/config/AUTOCONF_README
+(Autotools has not been stabilized on all platforms)
+
+Although the Autotools approach is prefered, we do, for the time being, provide
+a 'classic' make system.  Instructions for building Trilinos using the 
+'classic' make system follow:
+
+To build Trilinos using the 'classic' make system:
+
+1) Define the following environment variable in your .cshrc (or
+   equivalent) file:
+
+   TRILINOS_HOME - Location of the main Trilinos directory
+
+   Please note that this is the most important variable to define.  
+   All other build processes use TRILINOS_HOME as a base location to 
+   point to other Trilinos makefiles and scripts.  The easiest way to 
+   define TRILINOS_HOME is to put a shell define statement in your 
+   .bashrc or .cshrc file.  Assume that your copy of Trilinos is in
+   
+   /home/mheroux/Trilinos
+   
+   If you are using csh, tcsh or related, put the following line in 
+   your .cshrc file:
+   
+   setenv TRILINOS_HOME /home/mheroux/Trilinos
+   
+   If you are using bash, put the following line in your .bashrc file:
+   
+   export TRILINOS_HOME=/home/mheroux/Trilinos
+   
+   You may also issue these commands at the command line in the window 
+   that will be used to make the Trilinos libraries.
+
+
+2) cd to the build directory of the master Trilinos repository.
+
+   All Trilinos makefiles are in the directory TRILINOS_HOME/build.  
+   In particular, the target-specific makefiles that customize the build 
+   for a given architecture, serial or parallel, and any other specific 
+   property are defined here.  Also, the file makefile.template, which 
+   serves as a template for creating a new target-specific makefile is here.
+
+3) Determine your target for building Trilinos and create or edit the file 
+   TRILINS_TARGET_DEFS and define the values of the following environment 
+   variables.
+
+   TRILINOS_ARCH - Machine architecture, e.g., SOLARIS, LINUX, SGI64
+   TRILINOS_COMM - SERIAL or MPI communication.
+   TRILINOS_ID   - Optional string to help differentiate unique
+                   versions of the libraries. Usually unset.
+
+   Note that as an alternative to editing the TARGET file, these variables
+   can be provided as command-line arguments to gmake, e.g.,
+
+   gmake TRILINOS_COMM=MPI
+
+4) The Trilinos/build directory has many pre-defined target-specific
+   makefiles, following the format:
+
+   makefile.$(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID).
+
+   For example, if we define (in the file TRILINOS_TARGET_DEFS):
+
+   TRILINOS_ARCH = LINUX
+   TRILINOS_COMM = SERIAL
+   TRILINOS_ID = _DEBUG
+
+   the file makefile.LINUX.SERIAL_DEBUG has the proper configuration to
+   build a serial version of the Trilinos libraries on most LINUX
+   platforms with proper configuration for debugging.  However, if a proper 
+   target-specific makefile does not exist for your machine, copy the file 
+   makefile.template to the desired target-specific makefile and edit it
+   to match your machines characteristics.
+
+5) Type "gmake".  This will start the build process.  As mentioned
+   above You must have a makefile of the name
+   makefile.$(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID) in the build
+   directory.  For example there must be a file called
+   makefile.SOLARIS.MPI to build an MPI version on Solaris.
+
+   Note that the makefile.<target> file defines several values for compiler
+   and compiler flags, etc., which may need to be altered for certain
+   systems and platforms. Again, you may provide these variables as command-
+   line arguments to gmake, or simply edit their values in makefile.<target>
+
+   The archives that are built will be placed in the directory
+   $(TRILINOS_HOME)/lib/$(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
+
+6) Trilinos depends on several external libraries.  Some of these
+   libraries are available in source form in the directory
+   Trilinos/external/package_name.  For example, AztecOO depends on the
+   direct sparse solver package called Y12M.  To build a version of that
+   library:
+
+   cd to the Trilinos/external/y12m directory and type gmake (again 
+   making sure that the variables TRILINOS_HOME, TRILINOS_ARCH etc., 
+   are provided either in the TARGET file or on the command-line) to 
+   build the y12m library which many test programs in the Trilinos 
+   distribution depend on.
+
+   This will place the liby12m.a archive in the directory
+   $(TRILINOS_HOME)/external/y12m/lib/$(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
+
+7) You can build individual Trilinos components by typing
+   gmake component_name, e.g., gmake epetra
+
+8) "gmake clean" will delete object files.  You may need to do a gmake
+   clean to do a make of a partially built library.
+
+9) "gmake clobber" will delete object files and libraries.
+
+
+10) To clean or clobber an individual library, type 
+
+    gmake clean_component_name
+    gmake clobber_component_name
+
+For example:
+
+    gmake clean_epetra
+
+
+11) Most Trilinos components have unit tests and example drivers that
+    can be very useful to someone getting familiar with Trilinos.  These
+    drivers are found in the individual package or adaptor directories
+    under test or example.  For example, the Epetra unit tests are in 
+    Trilinos/packages/epetra/test.  Epetra examples are in
+    Trilinos/packages/epetra/example.
