@@ -310,16 +310,16 @@ static int LB_ParMetis_Jostle(
 
   /* Check weight dimensions */
   if (lb->Obj_Weight_Dim>1){
-    fprintf(stderr, "Zoltan warning: This method does not support multidimensional "
-            "object weights. Using Obj_Weight_Dim = 1.\n");
+    fprintf(stderr, "Zoltan warning: This method does not support "
+            "multidimensional object weights. Using Obj_Weight_Dim = 1.\n");
     obj_wgt_dim = 1;
   }
   else {
     obj_wgt_dim = lb->Obj_Weight_Dim;
   }
   if (lb->Comm_Weight_Dim>1){
-    fprintf(stderr, "Zoltan warning: This method does not support multidimensional "
-            "communication weights. Using Comm_Weight_Dim = 1.\n");
+    fprintf(stderr, "Zoltan warning: This method does not support "
+        "multidimensional communication weights. Using Comm_Weight_Dim = 1.\n");
     comm_wgt_dim = 1;
   }
   else {
@@ -334,10 +334,10 @@ static int LB_ParMetis_Jostle(
   }
 
   /* Start timer */
-  get_times = (options[OPTION_DBGLVL]>0);
+  get_times = ((options[OPTION_DBGLVL]>0)||(lb->Debug_Level >= LB_DEBUG_ATIME));
   if (get_times){
     MPI_Barrier(lb->Communicator);
-    times[0] = MPI_Wtime();
+    times[0] = LB_Time();
   }
 
   /* Get parameter options shared by ParMetis and Jostle */
@@ -628,7 +628,8 @@ static int LB_ParMetis_Jostle(
     /* Sanity check */
     if ((check_graph >= 1) && (jj != xadj[num_obj])){
       fprintf(stderr, "[%1d] ZOLTAN ERROR: Internal error in %s. "
-              "Something may be wrong with the edges in the graph\n", lb->Proc, yo);
+              "Something may be wrong with the edges in the graph\n", 
+               lb->Proc, yo);
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
       return LB_FATAL;
@@ -794,15 +795,16 @@ static int LB_ParMetis_Jostle(
           MPI_FLOAT, MPI_MAX, lb->Communicator);
 
       if (lb->Debug_Level >= LB_DEBUG_ALL)
-        printf("[%1d] Debug: Converting vertex weights, scale = %d, max_wgt = %g\n", 
-                lb->Proc, scale, max_wgt[obj_wgt_dim]);
+        printf("[%1d] Debug: Converting vertex weights, scale = %d, "
+               "max_wgt = %g\n", 
+               lb->Proc, scale, max_wgt[obj_wgt_dim]);
 
       /* Convert weights to integers between 1 and SCALED_WEIGHT_MAX */
       jj = 0;
       for (i=0; i<num_obj; i++){
         for (j=0; j<obj_wgt_dim; j++, jj++){
           if (scale>0)
-             vwgt[jj] = (int) ceil(float_vwgt[jj]*scale/max_wgt[obj_wgt_dim +j]);
+             vwgt[jj] = (int)ceil(float_vwgt[jj]*scale/max_wgt[obj_wgt_dim +j]);
           else if (scale<0)
              vwgt[jj] = (int) (-float_vwgt[jj]*scale/max_wgt[obj_wgt_dim +j]);
           else /* scale == 0 */
@@ -865,7 +867,7 @@ static int LB_ParMetis_Jostle(
   }
   
   /* Get a time here */
-  if (get_times) times[1] = MPI_Wtime();
+  if (get_times) times[1] = LB_Time();
 
   /* Select the desired ParMetis function */
     if (lb->Debug_Level >= LB_DEBUG_ALL) {
@@ -940,7 +942,7 @@ static int LB_ParMetis_Jostle(
   }
 
   /* Get a time here */
-  if (get_times) times[2] = MPI_Wtime();
+  if (get_times) times[2] = LB_Time();
 
   if (lb->Debug_Level >= LB_DEBUG_ALL)
     printf("[%1d] Debug: Returned from ParMETIS partitioner with "
@@ -997,14 +999,14 @@ static int LB_ParMetis_Jostle(
   LB_FREE(&xyz);
 
   /* Get a time here */
-  if (get_times) times[3] = MPI_Wtime();
+  if (get_times) times[3] = LB_Time();
 
   /* Output timing results if desired */
   if (get_times){
     if (lb->Proc==0) printf("\nZoltan/ParMETIS timing statistics:\n");
     LB_Print_Stats(lb, times[1]-times[0], "ParMETIS  Pre-processing time  ");
     LB_Print_Stats(lb, times[2]-times[1], "ParMETIS  Library time         ");
-/*  LB_Print_Stats(lb, times[3]-times[2], "ParMETIS  Post-processing time "); */
+    LB_Print_Stats(lb, times[3]-times[2], "ParMETIS  Post-processing time ");
     LB_Print_Stats(lb, times[3]-times[0], "ParMETIS  Total time           ");
     if (lb->Proc==0) printf("\n");
   }
