@@ -1364,8 +1364,7 @@ int MSR_matvec_WKC(ML_Operator *Amat_in, int ilen, double *ep_p, int olen, doubl
    comm  = Amat->comm;
    Nrows = Amat->matvec->Nrows;
    if ( ilen != olen && ilen != Nrows ) {
-      printf("MSR_matvec error : lengths not matched.\n");
-      exit(1);
+      pr_error("MSR_matvec error : lengths not matched.\n");
    }
    temp  = (struct ML_CSR_MSRdata *) Amat->data;
    val   = temp->values;

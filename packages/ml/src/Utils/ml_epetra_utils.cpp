@@ -854,7 +854,7 @@ int Epetra_ML_matvec_WKC (ML_Operator *data, int in, double *p, int out, double 
 {
   ML_Operator *mat_in;
 
-  mat_in = (ML_Operator *) data;
+  mat_in = data;
   Epetra_RowMatrix *A = (Epetra_RowMatrix *) ML_Get_MyMatvecData(mat_in);
   Epetra_MultiVector &X(*(Epetra_MultiVector *)p);
   Epetra_MultiVector &Y(*(Epetra_MultiVector *)ap);

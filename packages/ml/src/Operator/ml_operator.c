@@ -1658,8 +1658,8 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
 
    if ( (void *)Op->matvec->func_ptr == (void *)Epetra_ML_matvec )
      /* WKC  Call the new blocked function!! */
-     Epetra_ML_matvec_WKC ((ML_Operator *)  Op->data, inlen, (double *)&ep_din, olen,
-			    (double *)&ep_dout );
+     Epetra_ML_matvec_WKC (Op, inlen,
+               (double *)&ep_din, olen, (double *)&ep_dout );
 
    else if ( (void *)Op->matvec->func_ptr == (void *) MSR_matvec )
      MSR_matvec_WKC (Op,inlen, (double *)&ep_din , olen , (double *)&ep_dout );
