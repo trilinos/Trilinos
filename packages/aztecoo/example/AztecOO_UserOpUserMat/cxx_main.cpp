@@ -101,6 +101,9 @@ int main(int argc, char *argv[])
                << "solution  = " << residual << endl;
   
   }
+  else {
+   if (vb) cout << "Solver converged" << endl;
+  }
   delete PrecMatrix;
 
 #ifdef EPETRA_MPI
