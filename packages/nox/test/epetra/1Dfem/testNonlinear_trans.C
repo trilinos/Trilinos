@@ -280,7 +280,6 @@ public:
   // ---------------------------
   bool initializeSoln()
   {
-	  cout << "Does this get Done !!!! ?? " << endl << endl;
     Epetra_Vector& x = *xptr;
   
     double arg;

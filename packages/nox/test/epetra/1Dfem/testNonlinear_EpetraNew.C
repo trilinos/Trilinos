@@ -167,9 +167,9 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
 
   // Use an Epetra Scaling object if desired
-  //Epetra_Vector scaleVec(soln);
-  //NOX::Epetra::Scaling scaling;
-  //scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
+  Epetra_Vector scaleVec(soln);
+  NOX::EpetraNew::Scaling scaling;
+  scaling.addRowSumScaling(NOX::EpetraNew::Scaling::Left, scaleVec);
   //grp.setLinearSolveScaling(scaling);
 
   // Create all possible Epetra_Operators.
@@ -233,7 +233,8 @@ int main(int argc, char *argv[])
   NOX::EpetraNew::Interface::Jacobian& iJac = MF;
   NOX::EpetraNew::Interface::Preconditioner& iPrec = FD;
   NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
-					     iJac, MF, iPrec, FD, soln);
+					     iJac, MF, iPrec, FD, soln,
+					     &scaling);
 
   // Create the Group
   NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
