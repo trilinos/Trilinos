@@ -1,4 +1,3 @@
-
 //@HEADER
 // ***********************************************************************
 // 
@@ -69,17 +68,14 @@ int MatlabEngine::EvalString (char* command) {
 }
 
 int MatlabEngine::EvalString (char* command, char* outputBuffer, int outputBufferSize) {
-	int err = 0;
     // send a string command to the MATLAB engine
     if (MyPID_ == 0) {
 		if (outputBuffer != NULL) {
-			err = engOutputBuffer(Engine_, outputBuffer, outputBufferSize);
-			if (err != 0) {
-				return(-1);
-			}
+		  if (engOutputBuffer(Engine_, outputBuffer, outputBufferSize))
+			return(-4);
 		}
-		err = engEvalString(Engine_, command);
-		return err;
+		if (engEvalString(Engine_, command))
+		  return(-3);
     }
 	
 	return(0);
@@ -87,82 +83,125 @@ int MatlabEngine::EvalString (char* command, char* outputBuffer, int outputBuffe
 
 //=============================================================================
 int MatlabEngine::PutMultiVector(const Epetra_MultiVector & multiVector, const char * variableName) {
-	mxArray * matlabMatrix = 0;
-	matlabMatrix = mxCreateDoubleMatrix(multiVector.MyLength(), multiVector.NumVectors(), mxREAL);
-	multiVector.ExtractCopy((double *)mxGetPr(matlabMatrix), multiVector.MyLength());
-	engPutVariable(Engine_, variableName, matlabMatrix);
+    mxArray* matlabA = 0;
+    if (comm.MyPID() == 0)
+      matlabA = mxCreateDoubleMatrix(A.GlobalLength(), A.NumVectors(), mxREAL);
 	
-	mxDestroyArray(matlabMatrix);
+	if (CopyMultiVector(matlabA, multiVector)) {
+	  mxDestroyArray(matlabA);
+	  return(-2);
+	}
+
+	if (comm.MyPID() == 0)
+	  if (engPutVariable(Engine_, variableName, matlabA)) {
+		mxDestroyArray(matlabA)
+		return(-1);
+	  }
+	
+	mxDestroyArray(matlabA);
 	return(0);
 }
 
 //=============================================================================
-int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& rowMatrix, const char* variableName) {
-	return(-1);
+int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableName, bool transA) {
+    mxArray* matlabA = 0;
+    if (comm.MyPID() == 0)
+	  // since matlab uses column major for matrices, switch row and column numbers
+	  mablabA = createSparse(A.NumGlobalCols(), A.NumGlobalRows(), A.NumGlobalNonzeros(), mxREAL);
+
+	if (CopyRowMatrix(matlabA, A)) {
+	  mxDestroyArray(matlabA);
+	  return(-2);
+	}
+
+	if (comm.MyPID() == 0) {
+	  if (engPutVariable(Engine_, variableName, matlabA)) {
+		mxDestroyArray(matlabA);
+		return(-1);
+	  }
+
+	  if (!tranA)
+		if (EvalString(sprintf("%s = %s'", variableName, variableName))) {
+		  mxDestroyArray(matlabA);
+		  return(-3);
+		}
+	}
+
+	mxDestroyArray(matlabA);
+	return(0);
 }
 
 //=============================================================================
-int MatlabEngine::PutCrsGraph(const Epetra_CrsGraph& crsGraph, const char* variableName) {
+int MatlabEngine::PutCrsGraph(const Epetra_CrsGraph& A, const char* variableName, bool transA) {
 	return(-1);
 }
 
-int MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& sdMatrix, const char* variableName) {
-	int numRows = sdMatrix.M();
-	int numCols = sdMatrix.N();
-	mxArray* matlabMatrix = 0;
-	// need to add global opp to send remote sdMatrix to proc 0
-	matlabMatrix = mxCreateDoubleMatrix(numRows, numCols, mxREAL);
+int MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const char* variableName) {
+  int ierr = 0;
 
-	int row;
-	int col;
-	double* targetPtr = 0;
-	double* sourcePtr = 0;
-	double* source = (double*)sdMatrix.A();
-    double* target = (double*)mxGetPr(matlabMatrix);
-	int source_LDA = sdMatrix.LDA();
-	int target_LDA = sdMatrix.LDA();
-	for (col = 0; col < numCols; col++) {
+	if (comm.MyPID() == 0) {
+	  int numRows = A.M();
+	  int numCols = A.N();
+	  mxArray* matlabA = 0;
+	  // need to add global opp to send remote sdMatrix to proc 0
+	  matlabA = mxCreateDoubleMatrix(numRows, numCols, mxREAL);
+
+	  int row;
+	  int col;
+	  double* targetPtr = 0;
+	  double* sourcePtr = 0;
+	  double* source = (double*)A.A();
+	  double* target = (double*)mxGetPr(matlabA);
+	  int source_LDA = A.LDA();
+	  int target_LDA = A.LDA();
+	  for (col = 0; col < numCols; col++) {
 		targetPtr = target + (col * target_LDA);
 		sourcePtr = source + (col * source_LDA);
 		for (row = 0; row < numRows; row++) {
 			*targetPtr++ = *sourcePtr++;
 		}
+	  }
+
+	  if (engPutVariable(Engine_, variableName, matlabA))
+		ierr = -1;
 	}
 	
-	int err = engPutVariable(Engine_, variableName, matlabMatrix);
-
-	mxDestroyArray(matlabMatrix);
-	return(err);
+	mxDestroyArray(matlabA);
+	return(ierr);
 }
 
 //=============================================================================
-int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& isdMatrix, const char* variableName) {
-	int numRows = isdMatrix.M();
-	int numCols = isdMatrix.N();
-	mxArray* matlabMatrix = 0;
-	// need to add global opp to send remote sdMatrix to proc 0
-	matlabMatrix = mxCreateDoubleMatrix(numRows, numCols, mxREAL);
+int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName) {
+	int ierr = 0;
+	if (comm.MyPID() == 0) {
+	  int numRows = A.M();
+	  int numCols = A.N();
+	  mxArray* matlabA = 0;
+	  // need to add global opp to send remote sdMatrix to proc 0
+	  matlabA = mxCreateDoubleMatrix(numRows, numCols, mxREAL);
 
-	int row;
-	int col;
-	double* targetPtr = 0;
-	int* sourcePtr = 0;
-	int* source = (int*)isdMatrix.A();
-    double* target = (double*)mxGetPr(matlabMatrix);
-	int source_LDA = isdMatrix.LDA();
-	int target_LDA = isdMatrix.LDA();
-	for (col = 0; col < numCols; col++) {
+	  int row;
+	  int col;
+	  double* targetPtr = 0;
+	  int* sourcePtr = 0;
+	  int* source = (int*)A.A();
+	  double* target = (double*)mxGetPr(matlabA);
+	  int source_LDA = A.LDA();
+	  int target_LDA = A.LDA();
+	  for (col = 0; col < numCols; col++) {
 		targetPtr = target + (col * target_LDA);
 		sourcePtr = source + (col * source_LDA);
 		for (row = 0; row < numRows; row++) {
 			*targetPtr++ = *sourcePtr++;
 		}
-	}
+	  }
 	
-	int err = engPutVariable(Engine_, variableName, matlabMatrix);
+	  if (engPutVariable(Engine_, variableName, matlabA))
+		ierr = -1;
+	}
 
-	mxDestroyArray(matlabMatrix);
-	return(err);
+	mxDestroyArray(matlabA);
+	return(ierr);
 }
 
 //=============================================================================

@@ -50,15 +50,16 @@ class Epetra_SerialDenseMatrix;
 class Epetra_BlockMap;
 class Epetra_IntSerialDenseMatrix;
 
-/*! The MATLAB_Engine class provides access to MATLAB from Trilinos 
+/*! The EpetraExt_MatlabEngine class allows Epetra data objects to be exported to Matlab. 
 
-<b>A typical heading</b>
+<b>Error Codes</b>
 <ul>
-  <li> A typical first list entry
-  <li> A typical second list entry
+  <li> -1 engPutVariable returned a nonzero result
+  <li> -2 internal gather of epetra object and copy to matlab object returned a nonzero result
+  <li> -3 engEvalString returned a nonzero result
+  <li> -4 engOutputBuffer returned a nonzero result
 </ul>
 
-<b>Another typical heading</b>
 
 */
 
@@ -99,10 +100,10 @@ class MatlabEngine {
   //@}
 
   int PutMultiVector(const Epetra_MultiVector& multiVector, const char* variableName);
-  int PutRowMatrix(const Epetra_RowMatrix& rowMatrix, const char* variableName);
-  int PutCrsGraph(const Epetra_CrsGraph& crsGraph, const char* variableName);
-  int PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& sdMatrix, const char* variableName);
-  int PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& isdMatrix, const char* variableName);
+  int PutRowMatrix(const Epetra_RowMatrix& A, const char* variableName, bool transA);
+  int PutCrsGraph(const Epetra_CrsGraph& A, const char* variableName, bool transA);
+  int PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const char* variableName);
+  int PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName);
   int PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName);
   
  private:
