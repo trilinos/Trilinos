@@ -18,21 +18,21 @@ static char *cvs_parmetis_part_id = "$Id$";
 
 /* Interface routine between Zoltan and ParMetis. */
 
-#define LB_DEBUG /* turn on debug print statements? */
+/* #define LB_DEBUG */ /* turn on debug print statements? */
 
 #include <math.h>
 #include <strings.h>
 #include "lb_const.h"
+#include "lb_util_const.h"
 #include "all_allo_const.h"
 #include "comm_const.h"
 #include "parmetis_const.h"
-#include "ParMetis/parmetis.h"
 
 int LB_ParMetis_Part(
   LB *lb,             /* load balancing object */
   int *num_imp,       /* number of objects to be imported */
-  LB_GID** imp_gids,  /* global ids of objects to be imported */
-  LB_LID** imp_lids,  /* local  ids of objects to be imported */
+  LB_GID **imp_gids,  /* global ids of objects to be imported */
+  LB_LID **imp_lids,  /* local  ids of objects to be imported */
   int **imp_procs     /* list of processors to import from */
 )
 {
@@ -44,7 +44,7 @@ int LB_ParMetis_Part(
   int i, j, ierr, size, flag, offset, hi, ndims;
   int num_obj, nedges, sum_edges, max_edges, edgecut;
   int options[4], *destproc, *nbors_proc;
-  int nsend, nrecv, use_ewgts, use_vwgts, wgtflag, numflag;
+  int nsend, nrecv, ewgt_dim, vwgt_dim, wgtflag, numflag, pmethod;
   int get_graph_data, get_geom_data;
   idxtype *vtxdist, *xadj, *adjncy, *adjptr, *vwgt, *adjwgt, *part;
   float  max_wgt, *float_vwgt, *xyz;
@@ -65,15 +65,73 @@ int LB_ParMetis_Part(
 #endif
 
   /* Set default return values (in case of early exit) */
+  /* Unnecessary because this was done in LB_Balance.
   *num_imp = 0;
   *imp_gids = NULL;
   *imp_lids = NULL;
   *imp_procs = NULL;
+  */
 
-  /* Get options. For now, use default values.  */
-  alg = "PartKway";
-  use_ewgts = 0;
-  use_vwgts = 0;
+  /* Get options. */
+  if (lb->Params == NULL) { 
+    /*  No application-specified parameters; use defaults. */ 
+    pmethod = 0;
+    vwgt_dim = 0;
+    ewgt_dim = 0;
+  } 
+  else { 
+    if (lb->Params[0] == LB_PARAMS_INIT_VALUE)
+      pmethod = 0;
+    else
+      pmethod = lb->Params[0]; 
+    if (lb->Params[1] == LB_PARAMS_INIT_VALUE)
+      vwgt_dim = 0;
+    else
+      vwgt_dim = lb->Params[1];
+    if (lb->Params[2] == LB_PARAMS_INIT_VALUE)
+      ewgt_dim = 0;
+    else
+      ewgt_dim = lb->Params[2];
+  }
+  /* Convert pmethod from integer to a string. Rationale: 
+     We want the user to set the string alg directly with 
+     LB_Set_Param() in future versions. */
+  switch(pmethod){
+  case 0:
+    alg = "PartKway";
+    break;
+  case 1:
+    alg = "PartGeomKway";
+    break;
+  case 2:
+    alg = "PartGeom";
+    break;
+  case 3:
+    alg = "RepartLDiffusion";
+    break;
+  case 4:
+    alg = "RepartGDiffusion";
+    break;
+  case 5:
+    alg = "RepartRemap";
+    break;
+  case 6:
+    alg = "RepartMLRemap";
+    break;
+  case 7:
+    alg = "RefineKway";
+    break;
+  default:
+    printf("Warning: Unknown ParMetis method %d, using PartKway.\n");
+    alg = "PartKway";
+  }
+
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: alg=%s, vwgt_dim=%d, ewgt_dim=%d\n", myproc, 
+      alg, vwgt_dim, ewgt_dim);
+#endif
+
+  /* Most ParMetis methods use only graph data */
   get_graph_data = 1;
   get_geom_data = 0;
 
@@ -97,51 +155,76 @@ int LB_ParMetis_Part(
     printf("[%1d] Debug: num_obj =%d\n", myproc, num_obj);
 #endif
   
-  global_ids = (LB_GID *) LB_array_alloc(__FILE__, __LINE__, 
-                1, num_obj, sizeof(LB_GID) );
-  local_ids = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 
-                1, num_obj, sizeof(LB_LID) );
-  if (use_vwgts)
-    float_vwgt = (float *)LB_array_alloc(__FILE__, __LINE__,
-                  1, num_obj, sizeof(float));
-  else
+  global_ids = (LB_GID *) LB_SMALLOC(num_obj * sizeof(LB_GID) );
+  local_ids = (LB_LID *) LB_SMALLOC(num_obj * sizeof(LB_LID) );
+  if (vwgt_dim)
+    float_vwgt = (float *)LB_SMALLOC(vwgt_dim*num_obj * sizeof(float));
+  else {
     float_vwgt = NULL;
-
-  if (!global_ids || !local_ids || (use_vwgts && !float_vwgt)){
-    /* Return not-enough-memory error code */
+    vwgt = NULL;
   }
-  LB_Get_Obj_List(lb, global_ids, local_ids, use_vwgts, float_vwgt, &ierr);
+
+  if (!global_ids || !local_ids || (vwgt_dim && !float_vwgt)){
+    /* Return not-enough-memory error code */
+#ifdef LB_DEBUG
+    printf("[%1d] Error: Not enough memory!\n", myproc);
+#endif
+  }
+  LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, float_vwgt, &ierr);
   if (ierr){
     /* Return error code */
+#ifdef LB_DEBUG
+    printf("[%1d] Error: LB_Get_Obj_List failed!\n", myproc);
+#endif
   }
+
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: Global ids = ", myproc);
+    for (i99=0; i99<num_obj; i99++) printf("%d ", global_ids[i99]);
+    printf("\n");
+#endif
   
   if (get_graph_data){
 
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: lb->Get_Edge_List_Data = %x\n", myproc,
+      lb->Get_Edge_List_Data);
+#endif
     sum_edges = 0;
     max_edges = 0;
     for (i=0; i< num_obj; i++){
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
                local_ids[i], &ierr);
+      if (ierr){
+      }
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: i=%d, nedges = %d\n", myproc, i, nedges);
+#endif
       sum_edges += nedges;
       if (nedges>max_edges) max_edges = nedges;
     }
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: Sum_edges = %d\n", myproc, sum_edges);
+#endif
   
     /* Allocate space for ParMETIS data structs */
-    vtxdist= (idxtype *)LB_array_alloc(__FILE__, __LINE__,
-              1, lb->Num_Proc+1, sizeof(idxtype));
-    xadj   = (idxtype *)LB_array_alloc(__FILE__, __LINE__,
-              1, num_obj+1, sizeof(idxtype));
-    adjncy = (idxtype *)LB_array_alloc(__FILE__, __LINE__,
-              1, sum_edges, sizeof(idxtype));
-    if (use_ewgts) 
-      adjwgt = (idxtype *)LB_array_alloc(__FILE__, __LINE__,
-                1, sum_edges, sizeof(idxtype));
+    vtxdist= (idxtype *)LB_SMALLOC((lb->Num_Proc+1)* sizeof(idxtype));
+    xadj   = (idxtype *)LB_SMALLOC((num_obj+1)* sizeof(idxtype));
+    adjncy = (idxtype *)LB_SMALLOC(sum_edges * sizeof(idxtype));
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: Allocating ParMetis space\n", myproc);
+#endif
+    if (ewgt_dim) 
+      adjwgt = (idxtype *)LB_SMALLOC(ewgt_dim*sum_edges * sizeof(idxtype));
     else
       adjwgt = NULL;
   
-    if (!vtxdist || !xadj || !adjncy || (use_ewgts && !adjwgt)){
+    if (!vtxdist || !xadj || !adjncy || (ewgt_dim && !adjwgt)){
       /* Return not-enough-memory error code */
     }
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: Allocated ParMetis space\n", myproc);
+#endif
   
     /* Construct ParMETIS graph */
     /* First compute a global dense numbering of the objects/vertices */
@@ -162,10 +245,10 @@ int LB_ParMetis_Part(
 #endif
   
     /* Construct local hash table */
-    hash_nodes = (struct LB_hash_node *)LB_array_alloc(__FILE__, __LINE__,
-        1, num_obj, sizeof(struct LB_hash_node));
-    hashtab = (struct LB_hash_node **) LB_array_alloc(__FILE__, __LINE__,
-        1, num_obj, sizeof(struct LB_hash_node *) );
+    hash_nodes = (struct LB_hash_node *)LB_SMALLOC(num_obj *
+      sizeof(struct LB_hash_node));
+    hashtab = (struct LB_hash_node **) LB_SMALLOC(num_obj *
+      sizeof(struct LB_hash_node *) );
     if ((!hash_nodes) || (!hashtab)){
       /* Return not-enough-memory error code */
     }
@@ -185,12 +268,10 @@ int LB_ParMetis_Part(
   
     
     /* Construct edge list */
-    nbors_global = (LB_GID *)LB_array_alloc(__FILE__, __LINE__,
-              1, max_edges, sizeof(LB_GID));
-    nbors_proc = (int *)LB_array_alloc(__FILE__, __LINE__,
-              1, max_edges, sizeof(int));
-    proc_list = (struct LB_vtx_list **) LB_array_alloc(__FILE__, __LINE__,
-                  1, lb->Num_Proc, sizeof(struct LB_vtx_list *) );
+    nbors_global = (LB_GID *)LB_SMALLOC(max_edges * sizeof(LB_GID));
+    nbors_proc = (int *)LB_SMALLOC(max_edges * sizeof(int));
+    proc_list = (struct LB_vtx_list **) LB_SMALLOC(lb->Num_Proc *
+      sizeof(struct LB_vtx_list *) );
     if ((!nbors_global) || (!nbors_proc) || (!proc_list)){
       /* Return not-enough-memory error code */
     }
@@ -211,7 +292,7 @@ int LB_ParMetis_Part(
                local_ids[i], &ierr);
       xadj[i+1] = xadj[i] + nedges;
       lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[i], local_ids[i],
-          nbors_global, nbors_proc, use_ewgts, adjwgt, &ierr);
+          nbors_global, nbors_proc, ewgt_dim, adjwgt, &ierr);
       if (ierr){
         /* Return error code */
       }
@@ -355,39 +436,41 @@ int LB_ParMetis_Part(
       size = sizeof(LB_GID) + sizeof(int);
       hi = 0;
       for (i=0; i<lb->Num_Proc; i++){
-        offset = hi;
-        for (ptr = proc_list[i]; ptr != NULL; ){
-#ifdef LB_DEBUG
-          printf("[%1d] Debug: Matching data from proc %d, offset=%d\n", 
-            myproc, i, offset);
-#endif
-          /* Look for matching global_id in recvbuf */
-          /* The sought gid should be in recvbuf between offset and hi */
-          flag = 0;
+        if (proc_list[i] != NULL){
+          offset = hi;
           hi = offset + (proc_list[i]->length)*size;
-          for (j=offset; j<hi; j += size){
+          for (ptr = proc_list[i]; ptr != NULL; ){
 #ifdef LB_DEBUG
-            printf("[%1d] Debug: Comparing GIDs %d and %d\n", myproc, 
-            *((LB_GID *)&recvbuf[j]), ptr->nbor_gid);
+            printf("[%1d] Debug: Matching data from proc %d, offset=%d\n", 
+              myproc, i, offset);
 #endif
-            if (LB_EQ_GID(*((LB_GID *)&recvbuf[j]), ptr->nbor_gid)){
+            /* Look for matching global_id in recvbuf */
+            /* The sought gid should be in recvbuf between offset and hi */
+            flag = 0;
+            for (j=offset; j<hi; j += size){
 #ifdef LB_DEBUG
-              printf("[%1d] Debug: Match!\n", myproc);
+              printf("[%1d] Debug: Comparing GIDs %d and %d\n", myproc, 
+              *((LB_GID *)&recvbuf[j]), ptr->nbor_gid);
 #endif
-              /* Found match. Amend adjncy array. */
-              flag = 1;
-              /* Insert the global number into adjncy vector */
-              *(ptr->adj) = *((int *)&recvbuf[j+sizeof(LB_GID)]); 
-              /* Free the node in the list we don't need anymore */
-              new = ptr;
-              ptr = ptr->next;
-              LB_safe_free((void **)&new);
-              break;
+              if (LB_EQ_GID(*((LB_GID *)&recvbuf[j]), ptr->nbor_gid)){
+#ifdef LB_DEBUG
+                printf("[%1d] Debug: Match!\n", myproc);
+#endif
+                /* Found match. Amend adjncy array. */
+                flag = 1;
+                /* Insert the global number into adjncy vector */
+                *(ptr->adj) = *((int *)&recvbuf[j+sizeof(LB_GID)]); 
+                /* Free the node in the list we don't need anymore */
+                new = ptr;
+                ptr = ptr->next;
+                LB_safe_free((void **)&new);
+                break;
+              }
             }
-          }
-          if (!flag){
-             /* Error in algorithm! */
-             printf("WARNING: Internal error in LB_ParMetis_Part, could not resolve off-proc ID.\n");
+            if (!flag){
+               /* Error in algorithm! */
+               printf("WARNING: Internal error in LB_ParMetis_Part, could not resolve off-proc ID.\n");
+            }
           }
         }
       }
@@ -406,18 +489,17 @@ int LB_ParMetis_Part(
     LB_safe_free((void **) &nbors_proc);
   
     /* Get vertex weights if needed */
-    if (use_vwgts){
+    if (vwgt_dim){
 #ifdef LB_DEBUG
       printf("[%1d] Debug: Converting vertex weights...\n", myproc);
 #endif
-      vwgt = (idxtype *)LB_array_alloc(__FILE__, __LINE__,
-                1, num_obj, sizeof(idxtype));
+      vwgt = (idxtype *)LB_SMALLOC(vwgt_dim*num_obj * sizeof(idxtype));
       max_wgt = 0;
       for (i=0; i<num_obj; i++){
         if (float_vwgt[i]>max_wgt) max_wgt = float_vwgt[i];
       }
       /* Convert weights to integers between 1 and 100 */
-      for (i=0; i<num_obj; i++){
+      for (i=0; i<vwgt_dim*num_obj; i++){
         vwgt[i] = ceil(float_vwgt[i]*100/max_wgt);
       }
       LB_safe_free((void **) &float_vwgt);
@@ -429,8 +511,7 @@ int LB_ParMetis_Part(
     /* Determine how many dimensions the data have */
     ndims = lb->Get_Num_Geom(lb->Get_Num_Geom_Data, &ierr);
     /* Allocate space for the geometry data */
-    xyz = (float *) LB_array_alloc(__FILE__, __LINE__, 
-                  1, ndims*num_obj, sizeof(float) );
+    xyz = (float *) LB_SMALLOC(ndims*num_obj * sizeof(float));
     if (!xyz){
       /* Not enough space */
     }
@@ -447,11 +528,10 @@ int LB_ParMetis_Part(
   }
 
   /* Call ParMETIS */
-  options[0] = 0; /* No options for now */
-  wgtflag = 2*use_vwgts + use_ewgts;
+  options[0] = 0; /* No ParMetis options for now */
+  wgtflag = 2*(vwgt_dim>0) + (ewgt_dim>0); /* Multidim wgts not supported yet */
   numflag = 0;
-  part = (idxtype *)LB_array_alloc(__FILE__, __LINE__,
-          1, num_obj, sizeof(idxtype));
+  part = (idxtype *)LB_SMALLOC(num_obj * sizeof(idxtype));
   
   /* Select the desired ParMetis function */
 #ifdef LB_DEBUG
@@ -498,12 +578,11 @@ int LB_ParMetis_Part(
 #endif
 
   /* Free weights; they are no longer needed */
-  LB_safe_free((void **) &vwgt);
-  LB_safe_free((void **) &adjwgt);
+  if (vwgt_dim) LB_safe_free((void **) &vwgt);
+  if (ewgt_dim) LB_safe_free((void **) &adjwgt);
 
   /* Construct send/recv data from ParMETIS output */
-  destproc = (int *)LB_array_alloc(__FILE__, __LINE__,
-             1, num_obj, sizeof(int));
+  destproc = (int *)LB_SMALLOC(num_obj * sizeof(int));
   nsend = 0;
   for (i=0; i<num_obj; i++){
     if (part[i] != lb->Proc){
@@ -604,6 +683,7 @@ int LB_ParMetis_Part(
   if (get_geom_data){
     LB_safe_free((void **) &xyz);
   }
+  return DLB_OK;
 #endif /* LB_NO_PARMETIS */
 }
 
