@@ -66,6 +66,10 @@ public:
   const List& getParameter(const string& name, const List& nominal) const;
   //@}
 
+  //! Return true if a parameter with this name exists.
+  bool isParameter(const string& name) const;
+
+
   //! Printing 
   ostream& print(ostream& stream, int indent = 0) const;
 

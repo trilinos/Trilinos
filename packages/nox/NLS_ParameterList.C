@@ -111,8 +111,14 @@ double NLS_ParameterList::getParameter(const string& name, double nominal) const
 
 const string& NLS_ParameterList::getParameter(const string& name, const char* nominal) const
 {
+  paramsiter it = params.find(name);
+
+  if ((it != params.end()) && (it->second.isString()))
+    return it->second.getStringValue();
+
+  // Save nominal value as a string, and return the string value.
   tmpstrings.push_back(nominal);
-  return getParameter(name, tmpstrings[tmpstrings.size() - 1]);
+  return tmpstrings[tmpstrings.size() - 1];
 }
 
 const string& NLS_ParameterList::getParameter(const string& name, const string& nominal) const
@@ -131,6 +137,11 @@ const List& NLS_ParameterList::getParameter(const string& name, const List& nomi
   return nominal;
 }
   
+
+bool NLS_ParameterList::isParameter(const string& name) const
+{
+  return (params.find(name) != params.end());
+}
 
 ostream& NLS_ParameterList::print(ostream& stream, int indent = 0) const
 {
