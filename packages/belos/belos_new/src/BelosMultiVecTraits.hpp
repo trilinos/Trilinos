@@ -121,7 +121,7 @@ private:
     }
     else {
       for( int j = 0; j < sdm.numCols(); ++j ) {
-	blas.COPY( sdm.numRows(), &sdm(0,j), 1, &mvv(1,j+1), 1 );
+				blas.COPY( sdm.numRows(), &sdm(0,j), 1, &mvv(1,j+1), 1 );
       }
     }
   }
@@ -159,7 +159,7 @@ public:
   static const TSFCore::MultiVector<TYPE>& c(TSFCore::MultiVector<TYPE>& mv) { return mv; } 
   ///
   static RefCountPtr<TSFCore::MultiVector<TYPE> > Clone( const TSFCore::MultiVector<TYPE>& mv, const int numvecs )
-  { return mv.range()->createMembers(numvecs); }
+  { RefCountPtr<TSFCore::MultiVector<TYPE> > mv_out = mv.range()->createMembers(numvecs); assign(&*mv_out,ST::zero()); return mv_out; }
   ///
   static RefCountPtr<TSFCore::MultiVector<TYPE> > CloneCopy( const TSFCore::MultiVector<TYPE>& mv )
   { RefCountPtr<TSFCore::MultiVector<TYPE> > mv_out = Clone(mv,GetNumberVecs(mv)); assign(&*mv_out,mv); return mv_out; }
