@@ -58,6 +58,8 @@ extern "C" {
   extern int ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate( );
   
   extern int ML_Aggregate_Set_UseDropping(int i);
+
+  extern int ML_Aggregate_Get_UseDropping();
   
 
 #ifndef ML_CPP

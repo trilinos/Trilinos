@@ -303,14 +303,11 @@ static int ML_BuildReorderedOffset( int starting_offset[],
   /* equal to the total number of aggregates.                               */
   /* ********************************************************************** */
 
+  if( mypid == 0 && 8 < ML_Get_PrintLevel() ) 
+    printf( "ParMETIS : Next-level matrix will have %d rows per process\n",
+	    Naggregates / Nprocs+1 );
+  
   if( desired_aggre_per_proc * Nprocs < Naggregates ) {
-    if( mypid == 0 && 8 < ML_Get_PrintLevel() ) 
-      fprintf( stderr,
-	       "*ML*WRN* input value for `desired_aggre_per_proc'"
-	       "is not valid.\n"
-	       "*ML*WRN* Now changing it from %d to %d\n",
-	       desired_aggre_per_proc,
-	       Naggregates / Nprocs+1 );
     mod = Naggregates % Nprocs;
     if( mod != 0 ) mod = 1;
     desired_aggre_per_proc = Naggregates / Nprocs+mod;
@@ -989,6 +986,11 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       printf("%s current eps = %e\n",
 	     str,
 	     epsilon);
+      if( epsilon != 0.0 ) {
+	fprintf( stderr,
+		 "WARNING: ParMETIS may not work with dropping!\n"
+		 "WARNING: Now proceeding -- with fingers crossed\n" );
+      }
    }
    
    ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
@@ -1112,9 +1114,9 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        starting_aggr_count = i;
 #endif
        break;
-
+       
      case ML_NUM_GLOBAL_AGGREGATES:
-
+       
        starting_aggr_count = aggr_options[ml_ag->cur_level].Naggregates_global;
        if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	 printf( "%s Requested %d global aggregates\n",
@@ -1181,13 +1183,13 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    str,
 	    desired_aggre_per_proc );
    } 
-
+   
    starting_aggr_count =
      ML_DecomposeGraph_with_ParMETIS( Amatrix, starting_aggr_count,
 				      starting_decomposition,
 				      starting_amalg_bdry,
 				      Nnonzeros2, ml_ag->cur_level );
-
+   
    if( starting_aggr_count <= 0 ) {
      fprintf( stderr,
 	      "*ML*ERR* Something went *very* wrong in ParMETIS...\n"
@@ -1201,15 +1203,42 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      printf("%s Using %d aggregates (globally)\n",
 	    str,
 	    starting_aggr_count );
-
-     if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
+   
+   if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
      printf("%s # aggre/ # (block) rows = %7.3f %%  (= %d/%d)\n",
 	    str,
 	    100.0*starting_aggr_count/Nrows_global,
 	    starting_aggr_count,
 	    Nrows_global);
    }
+   
+   /* ********************************************************************** */
+   /* compute operator complexity                                            */
+   /* ********************************************************************** */
+   
+   Nnonzeros2 = ML_Comm_GsumInt( comm, Nnonzeros2);
 
+   if ( mypid == 0 && 7 < ML_Get_PrintLevel())
+     printf("%s Total (block) nnz = %d ( = %5.2f/(block)row)\n",
+	    str,
+	    Nnonzeros2,1.0*Nnonzeros2/Nrows_global);
+   
+   if ( ml_ag->operator_complexity == 0.0 ) {
+      ml_ag->fine_complexity = Nnonzeros2;
+      ml_ag->operator_complexity = Nnonzeros2;
+   }
+   else ml_ag->operator_complexity += Nnonzeros2;
+
+   /* FIXME: erase meeeeeeeee
+      fix aggr_index for num_PDE_eqns > 1 
+   
+   for (i = Nrows - 1; i >= 0; i-- ) {
+      for (j = num_PDE_eqns-1; j >= 0; j--) {
+         aggr_index[i*num_PDE_eqns+j] = aggr_index[i];
+      }
+   }
+   */
+   
    /* ********************************************************************** */
    /* I allocate room to copy aggr_index and pass this value to the user,    */
    /* who will be able to analyze and visualize this after the construction  */

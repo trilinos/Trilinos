@@ -118,7 +118,7 @@ int ML_Set_Compute_GraphRadiusFlag(int i)
   return 0;
 }
 
-int USE_DROPPING = ML_YES;
+int USE_DROPPING = ML_NO;
 
 int ML_Aggregate_Set_UseDropping(int i)
 {
@@ -785,7 +785,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   comm = Amatrix->comm;
 
   /* forget dropping for a moment */
-
+  /* better to avoid this part ???
   if( ML_Aggregate_Get_UseDropping() == ML_NO ) {
     
     if( comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() ) {
@@ -797,7 +797,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     temp->scaled_diag = NULL;
     
   }
-  
+  */
   /* dimension of the problem (NOTE: only local matrices) */
   
   Nrows = Amatrix->getrow->Nrows;
@@ -1324,10 +1324,16 @@ int agg_offset, vertex_offset;
       printf("%s current eps = %e\n",
 	     str,
 	     epsilon);
+      if( epsilon != 0.0 ) {
+	fprintf( stderr,
+		 "WARNING: ParMETIS may not work with dropping!\n"
+		 "WARNING: Now proceeding -- with fingers crossed\n" );
+      }
+      
    }
-/*
-   epsilon = epsilon * epsilon;
-*/
+   /*
+     epsilon = epsilon * epsilon;
+   */
 
    ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
    Nrows /= num_PDE_eqns;

@@ -35,6 +35,10 @@ extern "C" {
   extern int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value );
   extern int ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate( );
 
+  /* those are coded in ml_agg_METIS.c */
+  extern int ML_Aggregate_Set_UseDropping(int i);
+
+  extern int ML_Aggregate_Get_UseDropping();
   
 #ifndef ML_CPP
 #ifdef __cplusplus
