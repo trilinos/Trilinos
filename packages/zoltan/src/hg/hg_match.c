@@ -64,6 +64,28 @@ int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
 
 /*****************************************************************************/
 
+static float sim (HGraph *hg, int a, int b)
+{ int   i, j, edge, pins;
+  float sim=0.0, weight;
+
+  for (i=hg->vindex[a]; i<hg->vindex[a+1]; i++)
+  { edge = hg->vedge[i];
+    j = hg->hindex[edge];
+    while (j<hg->hindex[edge+1] && hg->hvertex[j]!=b)
+      j++;
+    if (j < hg->hindex[edge+1])
+    { pins = hg->hindex[edge+1]-hg->hindex[edge];
+      weight = 2.0/((pins-1)*pins);
+      if (hg->ewgt)
+        weight *= hg->ewgt[edge];
+      sim += weight;
+    }
+  }
+  return sim;
+}
+
+/*****************************************************************************/
+
 int Zoltan_HG_Matching (
   ZZ *zz,
   HGraph *hg,
@@ -77,6 +99,15 @@ int Zoltan_HG_Matching (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+/*
+{ int i, j;
+  for (i=0; i<g->nVtx; i++)
+    for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
+      if (g->ewgt[j] != sim(hg,i,g->neigh[j]))
+        printf("%d %d %f %f\n",i,g->neigh[j],g->ewgt[j],sim(hg,i,g->neigh[j]));
+}
+*/
+ 
   if (g->vwgt && hgp->ews)
   { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nEdge)))
     { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
