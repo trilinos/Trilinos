@@ -440,8 +440,14 @@ public:
     int n           = GetMyLength();
     int incr        = 1;
     double* ptr     = (double*)GetValues() + vector * n;
+#if FIXME
     int i           = IDAMAX_F77(&n, ptr, &incr);
-    MyResult        = ptr[i - 1];
+    MyResult        = fabs(ptr[i - 1]);
+#endif
+    for (int i = 0 ; i < n ; ++i)
+      if (MyResult < fabs(ptr[i])) 
+        MyResult = fabs(ptr[i]);
+
     Result          = ML_Comm_GmaxDouble(GetML_Comm(),MyResult);
 
     return(Result);
