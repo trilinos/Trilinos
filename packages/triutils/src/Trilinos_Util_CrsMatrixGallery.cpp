@@ -672,8 +672,6 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
       int xpid = (MyPID%mxy)/mx_;
       int ypid = (MyPID%mxy)%my_;
 
-      cout << "Mypid = " << MyPID << "  " << xpid << "  " << ypid << "  " << zpid << endl;
-      
       startx = xpid*modx;
       if( (xpid+1)*modx < nx_ ) endx = (xpid+1)*modx;
       else endx = nx_;
