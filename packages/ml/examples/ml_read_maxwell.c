@@ -227,8 +227,8 @@ int main(int argc, char *argv[])
 #endif
   int Ndirichlet, *dirichlet;
 
-#ifdef BENCHMARK
   char input[MAX_INPUT_STR_LN];
+#ifdef BENCHMARK
   FILE *ifp;
 #endif
 
@@ -1563,6 +1563,7 @@ nx = nx--; /* rst dirichlet */
   /*------------------------------------------------------------------*/
 	
   ML_Set_ResidualOutputFrequency(ml_edges, context->output);
+  ML_Set_PrintLevel(context->output_level);
   ML_Set_Tolerance(ml_edges, context->tol);
   ML_Aggregate_Create( &ag );
   if (ML_strcmp(context->agg_coarsen_scheme,"Mis") == 0) {
