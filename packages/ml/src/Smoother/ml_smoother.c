@@ -2009,6 +2009,10 @@ int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double out[]) {
    ML_free(aggr_group);
    ML_free(aggr_offset);
 
+   if ( maxBlocksize > 0 ) {
+     ML_free(dtemp);
+   }
+
   }
   return 0;
 }
