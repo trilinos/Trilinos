@@ -1,0 +1,6 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= obj_weight_dim=1, debug_level=1
+Zoltan Parameters	= parmetis_method=partkway
+File Type		= Chaco
+File Name		= vwgt-zeros
+Parallel Disk Info	= number=0

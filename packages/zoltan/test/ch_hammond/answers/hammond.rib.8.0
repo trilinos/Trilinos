@@ -1,6 +1,6 @@
-Decomposition Method 	= irb
+Decomposition Method 	= rib
 Zoltan Parameters	= 
-File Type		= Chaco, initial procs = 1
+File Type		= Chaco
 File Name		= hammond
 Parallel Disk Info	= number=0
 Global element ids assigned to processor 0
