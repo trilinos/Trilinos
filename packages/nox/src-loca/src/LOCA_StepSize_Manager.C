@@ -100,3 +100,8 @@ double
 LOCA::StepSize::Manager::getPrevStepSize() const {
   return stepSizePtr->getPrevStepSize();
 }
+
+double
+LOCA::StepSize::Manager::getStartStepSize() const {
+  return stepSizePtr->getStartStepSize();
+}

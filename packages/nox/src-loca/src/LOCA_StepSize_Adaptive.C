@@ -75,6 +75,11 @@ LOCA::StepSize::Adaptive::compute(LOCA::Continuation::Group& curGroup,
     stepSize = LOCA::StepSize::Constant::startStepSize;
   }
   else {
+    double ds_ratio = curGroup.getStepSizeScaleFactor();
+    LOCA::StepSize::Constant::startStepSize *= ds_ratio;
+    LOCA::StepSize::Constant::maxStepSize *= ds_ratio;
+    LOCA::StepSize::Constant::minStepSize *= ds_ratio;
+
     // Get maximum number of nonlinear iterations from stepper parameters
     const NOX::Parameter::List& locaParams = 
       stepper.getParameterList().sublist("LOCA");
@@ -110,7 +115,9 @@ LOCA::StepSize::Adaptive::compute(LOCA::Continuation::Group& curGroup,
 	    stepSize = max(stepSize, startStepSize);
 	}
       }
-    }  
+    } 
+
+    stepSize *= ds_ratio;
   }
 
   // Clip step size to be within prescribed bounds

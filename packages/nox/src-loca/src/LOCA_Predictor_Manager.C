@@ -35,6 +35,7 @@
 #include "LOCA_Predictor_Constant.H"
 #include "LOCA_Predictor_Tangent.H"
 #include "LOCA_Predictor_Secant.H"
+#include "LOCA_Predictor_Random.H"
 
 LOCA::Predictor::Manager::Manager(NOX::Parameter::List& params) :
   method(),
@@ -64,6 +65,8 @@ LOCA::Predictor::Manager::reset(NOX::Parameter::List& params)
       predictorPtr = new LOCA::Predictor::Tangent(params);
     else if (method == "Secant")
       predictorPtr = new LOCA::Predictor::Secant(params);
+    else if (method == "Random")
+      predictorPtr = new LOCA::Predictor::Random(params);
     else {
       cerr << "LOCA::Predictor::Manager::reset() - invalid choice (" 
 	   << method << ") for predictor method " << endl;

@@ -82,6 +82,9 @@ namespace LOCA {
       //! Returns previous step size
       virtual double getPrevStepSize() const;
 
+      //! Returns initial step size
+      virtual double getStartStepSize() const;
+
     protected:
       //! Stores step size control method name
       string method;

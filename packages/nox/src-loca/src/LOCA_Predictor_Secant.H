@@ -37,6 +37,12 @@
 #include "NOX_Parameter_List.H"      // class data element
 
 namespace LOCA {
+  namespace Predictor {
+    class Manager;
+  }
+}
+
+namespace LOCA {
 
   namespace Predictor {
 
@@ -44,8 +50,14 @@ namespace LOCA {
     /*! 
       This class computes the predictor direction given by the secant
       vector to the continuation curve.  The secant vector calculation
-      is implemented by the computeSecant method
-      of the LOCA::Continuation::Group class.
+      is implemented by the computeSecant method of the 
+      LOCA::Continuation::Group class.
+
+      The parameters used by this class supplied in the constructor or reset
+      method are:
+      <ul>
+      <li> "First Step Predictor" Predictor sublist for first step
+      </ul>
     */
     class Secant : public LOCA::Predictor::Generic {
 
@@ -69,6 +81,14 @@ namespace LOCA {
       compute(LOCA::Continuation::Group& prevGroup,
 	      LOCA::Continuation::Group& curGroup,
 	      LOCA::Continuation::Vector& result);
+
+    protected:
+      
+      //! Predictor manager for first step
+      LOCA::Predictor::Manager* firstStepPredictorPtr;
+
+      //! Flag indicating whether to use the first step predictor
+      bool isFirstStep;
 
     };
   } // namespace Predictor

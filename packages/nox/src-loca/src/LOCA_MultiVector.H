@@ -35,6 +35,7 @@
 
 #include "NOX_Common.H"  // for <iostream>, <vector>, and <string>
 #include "NOX_Abstract_Vector.H"  // Base class
+#include "NOX_Random.H"
 
 namespace LOCA {
 
@@ -92,6 +93,12 @@ namespace LOCA {
 
     //! NOX::Abstract::Vector init function. Initializes each stored vector and scalar
     virtual NOX::Abstract::Vector& init(double gamma);
+
+    //! Initialize every element of this vector with random values
+    virtual NOX::Abstract::Vector& random();
+
+    //! Set seed for random number generator
+    virtual NOX::Abstract::Vector& setSeed(double s);
 
     //! NOX::Abstract::Vector abs function.  Compues absolute value of each stored vector and scalar
     virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y);
@@ -162,6 +169,9 @@ namespace LOCA {
 
     //! Array of doubles
     vector< double > scalars;
+
+    //! Random number generator
+    NOX::Random urand;
 
   }; // class MultiVector
 } // namespace LOCA

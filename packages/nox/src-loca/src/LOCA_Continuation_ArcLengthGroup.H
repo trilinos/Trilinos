@@ -95,6 +95,9 @@ namespace LOCA {
       //! Set step size for continuation constraint equation
       virtual void setStepSize(double deltaS);
 
+      //! Get step size for continuation constraint equation
+      virtual double getStepSize();
+
       //@{ \name "Compute" functions.
 
       //! Set the solution vector to y.
@@ -141,6 +144,14 @@ namespace LOCA {
       //! Overloaded Compute tangent from LOCA::Continuation::Group
       virtual NOX::Abstract::Group::ReturnType
       computeTangent();
+
+      //! Overloaded Compute secant from LOCA::Continuation::Group
+      virtual NOX::Abstract::Group::ReturnType
+      computeSecant();
+
+       //! Overloaded Compute secant from LOCA::Continuation::Group
+      //virtual NOX::Abstract::Group::ReturnType
+      //computeSecant();
 
       //@}
 
@@ -230,10 +241,16 @@ namespace LOCA {
       //! Calculates scale factor as described in the loca v1.0 manual
       virtual void recalculateScaleFactor(double dpds);
 
+      //! Returns step size scale factor
+      virtual double getStepSizeScaleFactor() const;
+
     protected:
 
       //! Resets all isValid flags
       void resetIsValid();
+
+      //! Scales predictor to have unit scaled norm
+      void scalePredictor();
 
     protected:
   
@@ -275,6 +292,9 @@ namespace LOCA {
 
       //! Maximum value of scale factor
       double thetaMin;
+
+      //! Scaling factor for step size
+      double stepSizeScaleFactor;
 
     };
   } // namespace Bifurcation

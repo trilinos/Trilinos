@@ -175,14 +175,16 @@ LOCA_PREDICTOR_H = \
 	$(srcdir)/LOCA_Predictor_Manager.H \
 	$(srcdir)/LOCA_Predictor_Constant.H \
 	$(srcdir)/LOCA_Predictor_Tangent.H \
-	$(srcdir)/LOCA_Predictor_Secant.H 
+	$(srcdir)/LOCA_Predictor_Secant.H \
+	$(srcdir)/LOCA_Predictor_Random.H
 
 
 LOCA_PREDICTOR = \
 	$(srcdir)/LOCA_Predictor_Manager.C \
 	$(srcdir)/LOCA_Predictor_Constant.C \
 	$(srcdir)/LOCA_Predictor_Tangent.C \
-	$(srcdir)/LOCA_Predictor_Secant.C 
+	$(srcdir)/LOCA_Predictor_Secant.C \
+	$(srcdir)/LOCA_Predictor_Random.C
 
 
 LOCA_STEPSIZE_H = \
@@ -305,6 +307,7 @@ am_libloca_a_OBJECTS = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Constant.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Tangent.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Secant.$(OBJEXT) \
+	libloca_a-LOCA_Predictor_Random.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Manager.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Constant.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Adaptive.$(OBJEXT) \
@@ -334,6 +337,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Predictor_Constant.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Predictor_Manager.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Predictor_Random.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Predictor_Secant.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Predictor_Tangent.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_StepSize_Adaptive.Po \
@@ -422,6 +426,8 @@ libloca_a-LOCA_Predictor_Tangent.$(OBJEXT): \
 	$(srcdir)/LOCA_Predictor_Tangent.C
 libloca_a-LOCA_Predictor_Secant.$(OBJEXT): \
 	$(srcdir)/LOCA_Predictor_Secant.C
+libloca_a-LOCA_Predictor_Random.$(OBJEXT): \
+	$(srcdir)/LOCA_Predictor_Random.C
 libloca_a-LOCA_StepSize_Manager.$(OBJEXT): \
 	$(srcdir)/LOCA_StepSize_Manager.C
 libloca_a-LOCA_StepSize_Constant.$(OBJEXT): \
@@ -459,6 +465,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Predictor_Constant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Predictor_Manager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Predictor_Random.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Predictor_Secant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Predictor_Tangent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_StepSize_Adaptive.Po@am__quote@
@@ -649,6 +656,18 @@ libloca_a-LOCA_Predictor_Secant.obj: $(srcdir)/LOCA_Predictor_Secant.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Secant.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Secant.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Predictor_Secant.obj `cygpath -w $(srcdir)/LOCA_Predictor_Secant.C`
+
+libloca_a-LOCA_Predictor_Random.o: $(srcdir)/LOCA_Predictor_Random.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Predictor_Random.C' object='libloca_a-LOCA_Predictor_Random.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Random.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Random.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Predictor_Random.o `test -f $(srcdir)/LOCA_Predictor_Random.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Predictor_Random.C
+
+libloca_a-LOCA_Predictor_Random.obj: $(srcdir)/LOCA_Predictor_Random.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Predictor_Random.C' object='libloca_a-LOCA_Predictor_Random.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Random.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Random.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Predictor_Random.obj `cygpath -w $(srcdir)/LOCA_Predictor_Random.C`
 
 libloca_a-LOCA_StepSize_Manager.o: $(srcdir)/LOCA_StepSize_Manager.C
 @AMDEP_TRUE@	source='$(srcdir)/LOCA_StepSize_Manager.C' object='libloca_a-LOCA_StepSize_Manager.o' libtool=no @AMDEPBACKSLASH@

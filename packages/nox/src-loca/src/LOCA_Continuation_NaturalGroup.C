@@ -139,6 +139,12 @@ LOCA::Continuation::NaturalGroup::setStepSize(double deltaS)
   isValidNewton = false;
 }
 
+double
+LOCA::Continuation::NaturalGroup::getStepSize() 
+{
+  return stepSize;
+}
+
 void 
 LOCA::Continuation::NaturalGroup::setX(const NOX::Abstract::Vector& y) 
 {
@@ -357,6 +363,7 @@ LOCA::Continuation::NaturalGroup::applyJacobianInverse(NOX::Parameter::List& par
     res = LOCA::Continuation::Group::grpPtr->applyJacobianInverse(params,
 								  *a,
 								  result_x);
+
     delete a;
   }
 

@@ -30,54 +30,43 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Predictor_Secant.H"
-#include "LOCA_Predictor_Manager.H"
+#include "LOCA_Predictor_Random.H"
 #include "LOCA_Continuation_Group.H"
 
-LOCA::Predictor::Secant::Secant(NOX::Parameter::List& params) :
-  firstStepPredictorPtr(NULL)
+LOCA::Predictor::Random::Random(NOX::Parameter::List& params)
 {
   reset(params);
 }
 
-LOCA::Predictor::Secant::~Secant()
+LOCA::Predictor::Random::~Random()
 {
-  delete firstStepPredictorPtr;
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Predictor::Secant::reset(NOX::Parameter::List& params) 
+LOCA::Predictor::Random::reset(NOX::Parameter::List& params) 
 {
-  NOX::Parameter::List& firstPredictorList 
-    = params.sublist("First Step Predictor");
-
-  delete firstStepPredictorPtr;
-  firstStepPredictorPtr = new LOCA::Predictor::Manager(firstPredictorList);
-
-  isFirstStep = true;
-
+  epsilon = params.getParameter("Epsilon", 1.0e-3);
   return NOX::Abstract::Group::Ok;
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Predictor::Secant::compute(LOCA::Continuation::Group& prevGroup,
+LOCA::Predictor::Random::compute(LOCA::Continuation::Group& prevGroup,
 				 LOCA::Continuation::Group& curGroup,
 				 LOCA::Continuation::Vector& result) 
 {
-  NOX::Abstract::Group::ReturnType res;
-
-  if (isFirstStep) {
-    firstStepPredictorPtr->compute(prevGroup, curGroup, result);
-    isFirstStep = false;
-    res = NOX::Abstract::Group::Ok;
-  }
-  else {
-    res = curGroup.computeSecant();
-    if (res != LOCA::Abstract::Group::Ok)
-      return res;
+  // Fill predictor with random values
+  result.random();
   
-    result = curGroup.getPredictorDirection();
-  }
+  // Scale predictor by solution vector
+  result.scale(curGroup.getX());
 
-  return res;
+  // Scale predictor by epsilon
+  result.scale(epsilon);
+
+  // Set parameter component to 1
+  result.getParam() = 1.0;
+
+  curGroup.setPredictorDirection(result);
+
+  return NOX::Abstract::Group::Ok;
 }

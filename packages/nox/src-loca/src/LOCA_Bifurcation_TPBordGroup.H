@@ -170,17 +170,34 @@ namespace LOCA {
 			   const NOX::Abstract::Vector& input, 
 			   NOX::Abstract::Vector& result) const;
 
+      //! Applies the inverse of the extended Jacobian matrix using the bordering algorithm for multiple right-hand sides
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianInverseMulti(NOX::Parameter::List& params, 
+			   const NOX::Abstract::Vector* const* inputs, 
+			   NOX::Abstract::Vector** results, int nVecs) const;
+
       /*! 
 	Applies Jacobian inverse of underlying group on multiple right hand sides
       */
       virtual NOX::Abstract::Group::ReturnType 
       underlyingGroupApplyJacobianInverseManager(NOX::Parameter::List& params, 
-						 const NOX::Abstract::Vector& input1, 
-						 const NOX::Abstract::Vector& input2, 
-						 const NOX::Abstract::Vector& approxNullVec,
-						 const NOX::Abstract::Vector& jacTimesApproxNullVec,
-						 NOX::Abstract::Vector& result1,
-						 NOX::Abstract::Vector& result2) const;
+			  const NOX::Abstract::Vector& input1, 
+			  const NOX::Abstract::Vector& input2, 
+			  const NOX::Abstract::Vector& approxNullVec,
+			  const NOX::Abstract::Vector& jacTimesApproxNullVec,
+			  NOX::Abstract::Vector& result1,
+			  NOX::Abstract::Vector& result2) const;
+
+      /*! 
+	Applies Jacobian inverse of underlying group on multiple right hand sides
+      */
+      virtual NOX::Abstract::Group::ReturnType 
+      underlyingGroupApplyJacobianInverseManagerMulti(
+                           NOX::Parameter::List& params, 
+			   const NOX::Abstract::Vector*const* inputs, 
+			   const NOX::Abstract::Vector& approxNullVec,
+			   const NOX::Abstract::Vector& jacTimesApproxNullVec,
+			   NOX::Abstract::Vector** results, int nVecs) const;
 
       //! Apply right preconditiong to the given input vector
       /*!

@@ -96,6 +96,39 @@ LOCA::Abstract::Group::applyJacobianInverseNic(
 }
 
 NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyJacobianInverseNicMulti(
+                          NOX::Parameter::List& params,
+                          const NOX::Abstract::Vector*const* inputs,
+                          const NOX::Abstract::Vector& approxNullVec,
+                          const NOX::Abstract::Vector& JacApproxNullVec,
+                          NOX::Abstract::Vector** results, int nVecs) const
+{
+  double denom = approxNullVec.dot(JacApproxNullVec);
+
+  double* alphas = new double[nVecs];
+  NOX::Abstract::Vector** tmpInputs  = new NOX::Abstract::Vector*[nVecs];
+
+  for (int i=0; i<nVecs; i++) {
+    alphas[i] = approxNullVec.dot(*(inputs[i])) / denom;
+    tmpInputs[i] = inputs[i]->clone(NOX::DeepCopy);
+    tmpInputs[i]->update(-alphas[i], JacApproxNullVec, 1.0);
+  }
+
+  NOX::Abstract::Group::ReturnType
+    res = applyJacobianInverseMulti(params, tmpInputs, results, nVecs);
+
+  for (int i=0; i<nVecs; i++) {
+    results[i]->update(alphas[i], approxNullVec, 1.0);
+    delete tmpInputs[i];
+  }
+
+  delete [] tmpInputs;
+  delete [] alphas;
+
+  return res;
+}
+
+NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyJacobianInverseNicDay(
                           NOX::Parameter::List& params,
                           const NOX::Abstract::Vector& input,
@@ -115,6 +148,39 @@ LOCA::Abstract::Group::applyJacobianInverseNicDay(
   delete tmpInput;
 
   result.update(alpha, approxNullVec, 1.0);
+
+  return res;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyJacobianInverseNicDayMulti(
+                          NOX::Parameter::List& params,
+                          const NOX::Abstract::Vector*const* inputs,
+                          const NOX::Abstract::Vector& approxNullVec,
+                          const NOX::Abstract::Vector& JacApproxNullVec,
+                          NOX::Abstract::Vector** results, int nVecs) const
+{
+  double denom = JacApproxNullVec.dot(JacApproxNullVec);
+
+  double* alphas = new double[nVecs];
+  NOX::Abstract::Vector** tmpInputs  = new NOX::Abstract::Vector*[nVecs];
+
+  for (int i=0; i<nVecs; i++) {
+    alphas[i] = JacApproxNullVec.dot(*(inputs[i]));
+    tmpInputs[i] = inputs[i]->clone(NOX::DeepCopy);
+    tmpInputs[i]->update(-alphas[i], JacApproxNullVec, 1.0);
+  }
+
+  NOX::Abstract::Group::ReturnType
+    res = applyJacobianInverseMulti(params, tmpInputs, results, nVecs);
+
+  for (int i=0; i<nVecs; i++) {
+    results[i]->update(alphas[i], approxNullVec, 1.0);
+    delete tmpInputs[i];
+  }
+
+  delete [] tmpInputs;
+  delete [] alphas;
 
   return res;
 }
@@ -145,6 +211,62 @@ LOCA::Abstract::Group::applyJacobianInverseItRef(
   
   delete remainder;
   delete refinement;
+
+  return res;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyJacobianInverseItRefMulti(
+                            NOX::Parameter::List& params,
+                            const NOX::Abstract::Vector*const* inputs,
+                            NOX::Abstract::Vector** results,
+			    int nVecs) const
+{
+  NOX::Abstract::Vector** remainders = new NOX::Abstract::Vector*[nVecs];
+  NOX::Abstract::Vector** refinements = new NOX::Abstract::Vector*[nVecs];
+
+  NOX::Abstract::Group::ReturnType 
+    res = applyJacobianInverseMulti(params, inputs, results, nVecs);
+
+  for (int i=0; i<nVecs; i++) {
+    remainders[i] = inputs[i]->clone(NOX::ShapeCopy);
+    refinements[i] = inputs[i]->clone(NOX::ShapeCopy);
+
+    res = applyJacobian(*(results[i]), *(remainders[i]));
+
+    // r = b-Ax
+    remainders[i]->update(1.0, *(inputs[i]), -1.0);
+  }
+
+  // Ay=r
+  res = applyJacobianInverseMulti(params, remainders, refinements, nVecs);
+
+  // x+=y
+  for (int i=0; i<nVecs; i++) {
+    results[i]->update(1.0, *(refinements[i]), 1.0);
+    delete remainders[i];
+    delete refinements[i];
+  }
+  
+  delete [] remainders;
+  delete [] refinements;
+
+  return res;
+}
+
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyJacobianInverseMulti(NOX::Parameter::List& params,
+			    const NOX::Abstract::Vector* const* inputs,
+			    NOX::Abstract::Vector** outputs, int nVecs) const
+{
+  NOX::Abstract::Group::ReturnType res;
+
+  for (int i=0; i<nVecs; i++) {
+    res = applyJacobianInverse(params, *inputs[i], *outputs[i]);
+    if (res != NOX::Abstract::Group::Ok)
+      return res;
+  }
 
   return res;
 }

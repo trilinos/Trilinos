@@ -54,5 +54,6 @@ LOCA::Predictor::Constant::compute(LOCA::Continuation::Group& prevGroup,
 {
   result.init(0.0);
   result.getParam() = 1.0;
+  curGroup.setPredictorDirection(result);
   return NOX::Abstract::Group::Ok;
 }

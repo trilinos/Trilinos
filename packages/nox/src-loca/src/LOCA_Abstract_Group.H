@@ -89,6 +89,16 @@ namespace LOCA {
 			      const NOX::Abstract::Vector& JacApproxNullVec,
 			      NOX::Abstract::Vector& result) const;
 
+      /*! Generic routine for applying Nic method to solve near-singular system
+	with multiple right hand sides */
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverseNicMulti(NOX::Parameter::List& params,
+			      const NOX::Abstract::Vector*const* inputs,
+			      const NOX::Abstract::Vector& approxNullVec,
+			      const NOX::Abstract::Vector& JacApproxNullVec,
+			      NOX::Abstract::Vector** results, 
+			      int nVecs) const;
+
       //! Generic routine for applying Nic method to solve near-singular system
       virtual NOX::Abstract::Group::ReturnType
       applyJacobianInverseNicDay(NOX::Parameter::List& params,
@@ -97,11 +107,35 @@ namespace LOCA {
 				 const NOX::Abstract::Vector& JacApproxNullVec,
 				 NOX::Abstract::Vector& result) const;
 
+      /*! Generic routine for applying Nic method to solve near-singular system
+	with multiple right hand sides */
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverseNicDayMulti(NOX::Parameter::List& params,
+				 const NOX::Abstract::Vector*const* inputs,
+				 const NOX::Abstract::Vector& approxNullVec,
+				 const NOX::Abstract::Vector& JacApproxNullVec,
+				 NOX::Abstract::Vector** results,
+				 int nVecs) const;
+
       //! Generic routine for applying Iterative Refinement for solving near-singular system
       virtual NOX::Abstract::Group::ReturnType
       applyJacobianInverseItRef(NOX::Parameter::List& params,
 				const NOX::Abstract::Vector& input,
 				NOX::Abstract::Vector& result) const;
+
+
+      //! Generic routine for applying Iterative Refinement for solving near-singular system with multiple right hand sides
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverseItRefMulti(NOX::Parameter::List& params,
+				const NOX::Abstract::Vector*const* inputs,
+				NOX::Abstract::Vector** results, 
+				int nVecs) const;
+
+      //! applyJacobianInverse for multiple right-hand sides
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverseMulti(NOX::Parameter::List& params,
+			    const NOX::Abstract::Vector* const* inputs,
+			    NOX::Abstract::Vector** outputs, int nVecs) const;
 
       //! Set the parameter vector in the group to p (pVector = p).  
       virtual void setParams(const ParameterVector& p) = 0;

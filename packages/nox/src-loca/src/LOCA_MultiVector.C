@@ -30,6 +30,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "NOX_Random.H" //for NOX::random()
 #include "LOCA_MultiVector.H"  // Class definition
 
 using namespace LOCA;
@@ -86,6 +87,23 @@ NOX::Abstract::Vector& MultiVector::init(double gamma)
 {
   for (int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->init(gamma);
+  for (int i=0; i<scalars.size(); i++)
+    scalars[i] = gamma;
+  return *this;
+}
+
+NOX::Abstract::Vector& LOCA::MultiVector::random() {
+  for (int i=0; i<vectorPtrs.size(); i++)
+    vectorPtrs[i]->random();
+  for (int i=0; i<scalars.size(); i++)
+    scalars[i] = urand();
+  return *this;
+}
+
+NOX::Abstract::Vector& LOCA::MultiVector::setSeed(double s) {
+  for (int i=0; i<vectorPtrs.size(); i++)
+    vectorPtrs[i]->setSeed(s);
+  urand.setSeed(s);
   return *this;
 }
 

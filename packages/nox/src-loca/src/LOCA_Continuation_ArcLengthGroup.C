@@ -43,12 +43,13 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
     prevXVec(g.getX(), g.getParam(paramID)),
     derivResidualParamPtr(g.getX().clone(NOX::ShapeCopy)),
     arclengthStep(0.0),
-    isValidPrevXVec(false)
+    isValidPrevXVec(false),
+    stepSizeScaleFactor(1.0)
 {
   resetIsValid();
   gGoal = params.getParameter("Goal g", 0.5);
   gMax = params.getParameter("Max g", 0.0);
-  thetaMin = params.getParameter("Min Scale Factor", 1.0e8);
+  thetaMin = params.getParameter("Min Scale Factor", 1.0e-3);
 }
 
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
@@ -62,12 +63,13 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
     prevXVec(g.getX(), g.getParam(paramID)),
     derivResidualParamPtr(g.getX().clone(NOX::ShapeCopy)),
     arclengthStep(0.0),
-    isValidPrevXVec(false)
+    isValidPrevXVec(false),
+    stepSizeScaleFactor(1.0)
 {
   resetIsValid();
   gGoal = params.getParameter("Goal g", 0.5);
   gMax = params.getParameter("Max g", 0.0);
-  thetaMin = params.getParameter("Min Scale Factor", 1.0e8);
+  thetaMin = params.getParameter("Min Scale Factor", 1.0e-3);
 }
 
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const LOCA::Continuation::ArcLengthGroup& source, NOX::CopyType type)
@@ -84,7 +86,8 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const LOCA::Continuation::Arc
     isValidPrevXVec(source.isValidPrevXVec),
     gGoal(source.gGoal),
     gMax(source.gMax),
-    thetaMin(source.thetaMin)
+    thetaMin(source.thetaMin),
+    stepSizeScaleFactor(source.stepSizeScaleFactor)
 {
 }
 
@@ -131,6 +134,7 @@ LOCA::Continuation::ArcLengthGroup::operator=(const LOCA::Continuation::ArcLengt
     gGoal = source.gGoal;
     gMax = source.gMax;
     thetaMin = source.thetaMin;
+    stepSizeScaleFactor = source.stepSizeScaleFactor;
   }
 
   return *this;
@@ -150,6 +154,12 @@ LOCA::Continuation::ArcLengthGroup::setStepSize(double deltaS)
   // Arclength Step appears on RHS but not in Jacobian
   isValidF = false;
   isValidNewton = false;
+}
+
+double
+LOCA::Continuation::ArcLengthGroup::getStepSize() 
+{
+  return arclengthStep;
 }
 
 void 
@@ -242,9 +252,11 @@ LOCA::Continuation::ArcLengthGroup::computeF()
 	 << "with invalid predictor vector." << endl;
     return NOX::Abstract::Group::Failed;
   }
-  
+
   fVec.getParam() =  
     scaledDotProduct(predictorVec, *tmpVec) - arclengthStep;
+
+  cout << "fVec.norm() = " << fVec.norm() << endl;
 
   delete tmpVec;
   
@@ -315,24 +327,22 @@ LOCA::Continuation::ArcLengthGroup::computeTangent() {
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
-  // Estimate dpds
-  double dpds = 1.0/sqrt(scaledDotProduct(predictorVec, predictorVec));
+  scalePredictor();
 
-  // Recompute scale factor
-  recalculateScaleFactor(dpds);
+  return res;
+}
 
-  // Calculate new dpds using new scale factor
-  dpds = 1.0/sqrt(scaledDotProduct(predictorVec, predictorVec));
+NOX::Abstract::Group::ReturnType
+LOCA::Continuation::ArcLengthGroup::computeSecant() {
+  
+  // Compute secant vector using base class
+  NOX::Abstract::Group::ReturnType res =
+    LOCA::Continuation::Group::computeSecant();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
-  cout << "LOCA::Continuation::ArcLengthGroup::computeTangent():  "
-       << "dpds = " << dpds << endl;
-  cout << "LOCA::Continuation::ArcLengthGroup::computeTangent():  "
-       << "scaleFactor = " << scaleVec.getParam() << endl;
-  cout << "LOCA::Continuation::ArcLengthGroup::computeTangent():  "
-       << "g = " << scaleVec.getParam()*dpds << endl;
-
-  // Compute dp/ds and rescale
-  predictorVec.scale(dpds);
+  if (isPrevXVec())
+    scalePredictor();
 
   return res;
 }
@@ -384,6 +394,70 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianTranspose(const NOX::Abstract::
   return NOX::Abstract::Group::NotDefined;
 }
 
+// NOX::Abstract::Group::ReturnType
+// LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& params, const NOX::Abstract::Vector& input, NOX::Abstract::Vector& result) const 
+// {
+//   // Cast inputs to continuation vectors
+//   const LOCA::Continuation::Vector& c_input = 
+//     dynamic_cast<const LOCA::Continuation::Vector&>(input);
+//   LOCA::Continuation::Vector& c_result = 
+//     dynamic_cast<LOCA::Continuation::Vector&>(result);
+
+//   // Get x, param componenets of input vector
+//   const NOX::Abstract::Vector& input_x = c_input.getXVec();
+//   double input_param = c_input.getParam();
+
+//   // Get references to x, param components of result vector
+//   NOX::Abstract::Vector& result_x = c_result.getXVec();
+//   double& result_param = c_result.getParam();
+
+//   NOX::Abstract::Vector *a = input_x.clone(NOX::ShapeCopy);
+//   NOX::Abstract::Vector *b = input_x.clone(NOX::ShapeCopy);
+  
+//   NOX::Abstract::Group::ReturnType res; 
+
+//   // Solve J*a = input_x
+//   if (input_x.norm() > 0.0) {
+//     res = LOCA::Continuation::Group::grpPtr->applyJacobianInverse(params, 
+// 								  input_x, *a);
+//     if (res != NOX::Abstract::Group::Ok)
+//       return res;
+//   }
+//   else {
+//     a->init(0.0);
+//   }
+
+//   // Solve J*b = dR/dp
+//   res = LOCA::Continuation::Group::grpPtr->applyJacobianInverse(params, 
+// 								*derivResidualParamPtr, *b);
+//   if (res != NOX::Abstract::Group::Ok)
+//     return res;
+
+//   // Get x, param components of predictor vector
+//   const NOX::Abstract::Vector& tanX =  
+//     LOCA::Continuation::Group::predictorVec.getXVec();
+//   double tanP = 
+//     LOCA::Continuation::Group::predictorVec.getParam();
+
+//   // Compute result_param
+//   const NOX::Abstract::Vector& s 
+//     = LOCA::Continuation::Group::scaleVec.getXVec();
+//   double t 
+//     = LOCA::Continuation::Group::scaleVec.getParam();
+//   result_param =
+//     (LOCA::Continuation::scaledDotProduct(tanX, *a, s) - input_param) / 
+//     (LOCA::Continuation::scaledDotProduct(tanX, *b, s) - t*t*tanP);
+
+//   // Compute result_x = a + result_param*b 
+//   result_x.update(1.0, *a, -result_param, *b, 0.0);
+
+//   // Clean up memory
+//   delete a;
+//   delete b;
+
+//   return res;
+// }
+
 NOX::Abstract::Group::ReturnType
 LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& params, const NOX::Abstract::Vector& input, NOX::Abstract::Vector& result) const 
 {
@@ -400,23 +474,18 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& p
   // Get references to x, param components of result vector
   NOX::Abstract::Vector& result_x = c_result.getXVec();
   double& result_param = c_result.getParam();
-
-  NOX::Abstract::Vector *a = input_x.clone(NOX::ShapeCopy);
-  NOX::Abstract::Vector *b = input_x.clone(NOX::ShapeCopy);
   
-  NOX::Abstract::Group::ReturnType res;
+  NOX::Abstract::Group::ReturnType res; 
 
-  // Solve J*a = input_x
-  if (input_x.norm() > 0.0) {
-    res = LOCA::Continuation::Group::grpPtr->applyJacobianInverse(params, 
-								  input_x, *a);
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
-  }
+  const NOX::Abstract::Vector** rhs = new const NOX::Abstract::Vector*[2];
+  NOX::Abstract::Vector** lhs = new NOX::Abstract::Vector*[2];
+  rhs[0] = &input_x;
+  rhs[1] = derivResidualParamPtr;
+  lhs[0] = input_x.clone(NOX::ShapeCopy);
+  lhs[1] = input_x.clone(NOX::ShapeCopy);
 
-  // Solve J*b = dR/dp
-  res = LOCA::Continuation::Group::grpPtr->applyJacobianInverse(params, 
-								*derivResidualParamPtr, *b);
+  // Solve J*lhs = rhs
+  res = grpPtr->applyJacobianInverseMulti(params, rhs, lhs, 2);
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
@@ -432,15 +501,17 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& p
   double t 
     = LOCA::Continuation::Group::scaleVec.getParam();
   result_param =
-    (LOCA::Continuation::scaledDotProduct(tanX, *a, s) - input_param) / 
-    (LOCA::Continuation::scaledDotProduct(tanX, *b, s) - t*t*tanP);
+    (LOCA::Continuation::scaledDotProduct(tanX, *lhs[0], s) - input_param) / 
+    (LOCA::Continuation::scaledDotProduct(tanX, *lhs[1], s) - t*t*tanP);
 
   // Compute result_x = a + result_param*b 
-  result_x.update(1.0, *a, -result_param, *b, 0.0);
+  result_x.update(1.0, *lhs[0], -result_param, *lhs[1], 0.0);
 
   // Clean up memory
-  delete a;
-  delete b;
+  delete lhs[0];
+  delete lhs[1];
+  delete [] rhs;
+  delete [] lhs;
 
   return res;
 }
@@ -627,6 +698,47 @@ LOCA::Continuation::ArcLengthGroup::resetIsValid() {
 }
 
 void
+LOCA::Continuation::ArcLengthGroup::scalePredictor() {
+
+  // Estimate dpds
+  double dpdsOld = 1.0/sqrt(scaledDotProduct(predictorVec, predictorVec));
+
+  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+       << "dpdsOld = " << dpdsOld << endl;
+  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+       << "thetaOld = " << scaleVec.getParam() << endl;
+  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+       << "gOld = " << scaleVec.getParam()*dpdsOld << endl;
+
+  // Recompute scale factor
+  recalculateScaleFactor(dpdsOld);
+
+  // Calculate new dpds using new scale factor
+  double dpdsNew = 1.0/sqrt(scaledDotProduct(predictorVec, predictorVec));
+
+  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+       << "dpdsNew = " << dpdsNew << endl;
+  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+       << "thetaNew = " << scaleVec.getParam() << endl;
+  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+       << "gNew = " << scaleVec.getParam()*dpdsNew << endl;
+
+  // Rescale predictor vector
+  predictorVec.scale(dpdsNew);
+
+  // Adjust step size scaling factor to reflect changes in 
+  // arc-length parameterization
+  if (LOCA::Continuation::Group::usedConstantPredictor && isPrevXVec()) {
+    stepSizeScaleFactor = 1.0/dpdsNew;
+    LOCA::Continuation::Group::usedConstantPredictor = false;
+  }
+  else
+    stepSizeScaleFactor = dpdsOld/dpdsNew;
+
+  return;
+}
+
+void
 LOCA::Continuation::ArcLengthGroup::recalculateScaleFactor(double dpds) {
   
   double thetaOld = getScaleFactor();
@@ -634,10 +746,16 @@ LOCA::Continuation::ArcLengthGroup::recalculateScaleFactor(double dpds) {
 
   static bool isFirstIt = false;
 
+  // if (g >= 0.9)
+//     return;
+
   if (g > gMax || isFirstIt) {
     double thetaNew;
     
     thetaNew = gGoal/dpds * sqrt( (1.0 - g*g) / (1.0 - gGoal*gGoal) ); 
+
+    if (thetaNew < thetaMin)
+      thetaNew = thetaMin;
 
     setScaleFactor(thetaNew);
 
@@ -646,3 +764,10 @@ LOCA::Continuation::ArcLengthGroup::recalculateScaleFactor(double dpds) {
   }
 
 }
+
+double
+LOCA::Continuation::ArcLengthGroup::getStepSizeScaleFactor() const {
+  return stepSizeScaleFactor;
+}
+
+

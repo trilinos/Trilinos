@@ -30,60 +30,62 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_PREDICTOR_MANAGER_H
-#define LOCA_PREDICTOR_MANAGER_H
+#ifndef LOCA_PREDICTOR_RANDOM_H
+#define LOCA_PREDICTOR_RANDOM_H
 
 #include "LOCA_Predictor_Generic.H"  // base class
+
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+}
 
 namespace LOCA {
 
   namespace Predictor {
 
-    //! %Manager for all predictor direction computations
+    //! %Random predictor computation class
     /*! 
-      The parameters passed to the constructor or reset should specify
-      the "Method", as described below, as well as any additional
-      parameters for that particular method.
- 
+      This class computes the predictor direction where the solution 
+      component is filled with random values and the parameter component
+      equal to 1.  Each componenet of the solution vector \f$v_i\f$ of the 
+      predictor is given by \f$v_i = \epsilon r_i x_i\f$ where 
+      \f$r_i\f$ is a random value between 0 and 1, \f$x_i\f$ is the
+      corresponding componenet of the solution vector, and \f$\epsilon\f$
+      is a parameter.
+
+      The parameters used by this class supplied in the constructor or reset
+      method are:
       <ul>
-      <li> "Method" - Name of the predictor direction method. Valid choices are
-      <ul> 
-      <li> "%Constant" (LOCA::Predictor::Constant) [Default]
-      <li> "%Tangent" (LOCA::Predictor::Tangent) 
-      <li> "%Secant" (LOCA::Predictor::Secant) 
-      <li> "%Random" (LOCA::Predictor::Random)
+      <li> "Epsilon" - \f$\epsilon\f$ as defined above (Default 1.0e-3)
       </ul>
-      </ul>
-    */  
-    class Manager : public LOCA::Predictor::Generic {
+    */
+    class Random : public LOCA::Predictor::Generic {
 
     public:
 
       //! Constructor. 
-      Manager(NOX::Parameter::List& params);
+      Random(NOX::Parameter::List& params);
 
       //! Destructor
-      virtual ~Manager();
+      virtual ~Random();
 
-      //! Reset parameters
+      //! Reset parameters.
+      /*!
+	The only parameter for the random predictor is \f$epsilon\f$.
+      */
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& params);
   
-      //! Computes predictor based on predictor method parameter
+      //! Computes the random predictor.
       virtual NOX::Abstract::Group::ReturnType 
       compute(LOCA::Continuation::Group& prevGroup,
 	      LOCA::Continuation::Group& curGroup,
 	      LOCA::Continuation::Vector& result);
 
-      //! Returns current predictor method
-      const string& getMethod() const;
-
     protected:
-      //! Stores predictor method name
-      string method;
-
-      //! Stores pointer to current predictor object
-      LOCA::Predictor::Generic *predictorPtr;
+      double epsilon;
 
     };
   } // namespace Predictor

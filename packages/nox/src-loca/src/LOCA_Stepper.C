@@ -187,7 +187,7 @@ LOCA::Stepper::reset(LOCA::Abstract::Group& initialGuess,
   
 
   // Get the initial values or use their defaults
-  stepSize = 0.0;
+  stepSize = stepSizeManagerPtr->getStartStepSize();
   maxNonlinearSteps = stepperList.getParameter("Max Nonlinear Iterations", 15);
 
   isLastStep = false;
@@ -221,6 +221,7 @@ LOCA::Stepper::start() {
   curGroupPtr = 
     conGroupManagerPtr->createContinuationGroup(solnGrp, paramList.sublist("NOX").sublist("Direction").sublist("Linear Solver"));
 
+  // Set the initial step size
   curGroupPtr->setStepSize(stepSize);
 
   prevGroupPtr = 
@@ -328,23 +329,26 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   predictorManagerPtr->compute(*prevGroupPtr, *curGroupPtr, *curPredictorPtr);
 
-  //tangentFactor = curPredictorPtr->dot(*prevPredictorPtr) 
-  //  / (curPredictorPtr->norm() * prevPredictorPtr->norm());
+  if (getStepNumber() > 0) {
+    //tangentFactor = curPredictorPtr->dot(*prevPredictorPtr) 
+    //  / (curPredictorPtr->norm() * prevPredictorPtr->norm());
 
-  //tangentFactor = curGroupPtr->scaledDotProduct(*curPredictorPtr, 
-  //						*prevPredictorPtr) 
-  // / (curPredictorPtr->norm() * prevPredictorPtr->norm());
+    //tangentFactor = curGroupPtr->scaledDotProduct(*curPredictorPtr, 
+    //						*prevPredictorPtr) 
+    // / (curPredictorPtr->norm() * prevPredictorPtr->norm());
 
-  tangentFactor = curGroupPtr->scaledDotProduct(*curPredictorPtr, 
-						*prevPredictorPtr) / 
-    sqrt(curGroupPtr->scaledDotProduct(*curPredictorPtr, *curPredictorPtr) * 
-	 curGroupPtr->scaledDotProduct(*prevPredictorPtr, *prevPredictorPtr));
+    tangentFactor = curGroupPtr->scaledDotProduct(*curPredictorPtr, 
+						  *prevPredictorPtr) / 
+      sqrt(curGroupPtr->scaledDotProduct(*curPredictorPtr, *curPredictorPtr) * 
+	   curGroupPtr->scaledDotProduct(*prevPredictorPtr, *prevPredictorPtr));
 
-  cout << "LOCA::Stepper::postprocess():  tangentFactor = "
-       << tangentFactor << endl;
+    cout << "LOCA::Stepper::postprocess():  tangentFactor = "
+	 << tangentFactor << endl;
 
-  if (tangentFactor < minTangentFactor)
-    return LOCA::Abstract::Iterator::Unsuccessful;
+    if (tangentFactor < minTangentFactor)
+      return LOCA::Abstract::Iterator::Unsuccessful;
+
+  }
 
   return stepStatus;
 }

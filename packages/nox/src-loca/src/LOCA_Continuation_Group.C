@@ -43,7 +43,8 @@ LOCA::Continuation::Group::Group(const LOCA::Abstract::Group& grp,
     isValidPredictor(false),
     linearSolverParams(linSolverParams),
     scaleVec(grp.getScaleVec(), 
-	     params.getParameter("Initial Scale Factor", 1.0))
+	     params.getParameter("Initial Scale Factor", 1.0)),
+    usedConstantPredictor(true)
 {
 }
 
@@ -57,7 +58,8 @@ LOCA::Continuation::Group::Group(const LOCA::Abstract::Group& grp,
     isValidPredictor(false),
     linearSolverParams(linSolverParams),
     scaleVec(grp.getScaleVec(), 
-	     params.getParameter("Initial Scale Factor", 1.0))
+	     params.getParameter("Initial Scale Factor", 1.0)),
+    usedConstantPredictor(true)
 {
   const ParameterVector& p = grpPtr->getParams();
   conParamID = p.getIndex(paramID);
@@ -69,7 +71,8 @@ LOCA::Continuation::Group::Group(const Group& source, NOX::CopyType type)
     predictorVec(source.predictorVec),
     isValidPredictor(source.isValidPredictor),
     linearSolverParams(source.linearSolverParams),
-    scaleVec(source.scaleVec)
+    scaleVec(source.scaleVec),
+    usedConstantPredictor(source.usedConstantPredictor)
 {
 }
 
@@ -97,6 +100,7 @@ LOCA::Continuation::Group::operator=(const LOCA::Continuation::Group& source)
     isValidPredictor = source.isValidPredictor;
     linearSolverParams = source.linearSolverParams;
     scaleVec = source.scaleVec;
+    usedConstantPredictor = source.usedConstantPredictor;
   }
 
   return *this;
@@ -154,14 +158,18 @@ LOCA::Continuation::Group::computeTangent() {
 NOX::Abstract::Group::ReturnType
 LOCA::Continuation::Group::computeSecant() {
 
-  if (isPrevXVec()) {
-    predictorVec = getPrevX();
-    predictorVec.update(1.0, getX(), -1.0);
-  }
-  else {
-    predictorVec.init(0.0);
-    predictorVec.getParam() = 1.0;
-  }
+  if (!isPrevXVec())
+    return NOX::Abstract::Group::Failed;
+  
+  predictorVec = getPrevX();
+  predictorVec.update(1.0, getX(), -1.0);
+  predictorVec.scale(1.0/fabs(predictorVec.getParam()));
+  
+  // else {
+//     predictorVec.init(0.0);
+//     predictorVec.getParam() = 1.0;
+//     usedConstantPredictor = true;
+//   }
 
   isValidPredictor = true;
 
@@ -171,6 +179,13 @@ LOCA::Continuation::Group::computeSecant() {
 const LOCA::Continuation::Vector&
 LOCA::Continuation::Group::getPredictorDirection() const {
   return predictorVec;
+}
+
+void
+LOCA::Continuation::Group::setPredictorDirection(const LOCA::Continuation::Vector& v) 
+{
+  predictorVec = v;
+  isValidPredictor = true;
 }
 
 void
@@ -205,6 +220,11 @@ LOCA::Continuation::Group::setScaleFactor(double theta) {
 double
 LOCA::Continuation::Group::getScaleFactor() const {
   return scaleVec.getParam();
+}
+
+double
+LOCA::Continuation::Group::getStepSizeScaleFactor() const {
+  return 1.0;
 }
 
 double

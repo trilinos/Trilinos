@@ -80,7 +80,11 @@ namespace LOCA {
 	      const LOCA::Stepper& stepper,
 	      double& stepSize);
 
+      //! Returns previous step size
       virtual double getPrevStepSize() const;
+
+      //! Returns initial step size
+      virtual double getStartStepSize() const;
 
     protected:
 

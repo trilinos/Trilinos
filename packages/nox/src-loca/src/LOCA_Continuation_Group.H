@@ -110,6 +110,9 @@ namespace LOCA {
       //! Set step size for continuation constraint equation
       virtual void setStepSize(double deltaS) = 0;
 
+      //! Get step size for continuation constraint equation
+      virtual double getStepSize() = 0;
+
       //! Compute tangent direction of continuation curve
       virtual NOX::Abstract::Group::ReturnType
       computeTangent();
@@ -120,6 +123,9 @@ namespace LOCA {
 
       //! Get predictor direction (tangent or secant)
       virtual const LOCA::Continuation::Vector& getPredictorDirection() const;
+
+      //! Set predictor direction (tangent or secant)
+      virtual void setPredictorDirection(const LOCA::Continuation::Vector&);
 
       //! Returns true if a predictor direction has been computed
       virtual bool isPredictorDirection() const;
@@ -141,6 +147,9 @@ namespace LOCA {
 
       //! Calculates scale factor as described in the loca v1.0 manual
       virtual void recalculateScaleFactor(double dpds) {}
+
+      //! Returns step size scale factor
+      virtual double getStepSizeScaleFactor()const;
 
       //! Prints the group
       virtual void print() const = 0;
@@ -173,6 +182,12 @@ namespace LOCA {
 
       //! Stores (extended) scaling vector
       LOCA::Continuation::Vector scaleVec;
+
+      /*! 
+	Stores flag indicating whether a constant predictor was used 
+	in place of the secant predictor (when no previous x-vec available)
+      */
+      bool usedConstantPredictor;
   
     };
 

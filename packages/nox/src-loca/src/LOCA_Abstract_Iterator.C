@@ -121,7 +121,7 @@ LOCA::Abstract::Iterator::iterate()
     stepStatus = postprocess(stepStatus);
 
     ++numTotalSteps;
-    if (stepStatus =  LOCA::Abstract::Iterator::Successful)
+    if (stepStatus ==  LOCA::Abstract::Iterator::Successful)
       ++stepNumber;
     else
       ++numFailedSteps;

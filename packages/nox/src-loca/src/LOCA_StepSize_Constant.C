@@ -73,17 +73,24 @@ LOCA::StepSize::Constant::compute(LOCA::Continuation::Group& curGroup,
     startStepSize /= dpds;
     maxStepSize /= dpds;
     minStepSize /= dpds;
-    isFirstStep = false;
     stepSize = startStepSize;
+    isFirstStep = false;
   }
   else {
+    double ds_ratio = curGroup.getStepSizeScaleFactor();
+    startStepSize *= ds_ratio;
+    maxStepSize *= ds_ratio;
+    minStepSize *= ds_ratio;
+
     // Step size remains constant, unless...
     stepSize = prevStepSize;
 
     // A failed nonlinear solve cuts the step size in half
     if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
-      stepSize = prevStepSize * 0.5;    
+      stepSize = prevStepSize * 0.5;
     }
+
+    stepSize *= ds_ratio;
   }
 
   // Clip step size to be within prescribed bounds
@@ -121,4 +128,9 @@ LOCA::StepSize::Constant::clipStepSize(double& stepSize)
 double
 LOCA::StepSize::Constant::getPrevStepSize() const {
   return prevStepSize;
+}
+
+double
+LOCA::StepSize::Constant::getStartStepSize() const {
+  return startStepSize;
 }

@@ -85,13 +85,15 @@ LOCA_PREDICTOR_H = \
 	$(srcdir)/LOCA_Predictor_Manager.H \
 	$(srcdir)/LOCA_Predictor_Constant.H \
 	$(srcdir)/LOCA_Predictor_Tangent.H \
-	$(srcdir)/LOCA_Predictor_Secant.H 
+	$(srcdir)/LOCA_Predictor_Secant.H \
+	$(srcdir)/LOCA_Predictor_Random.H
 
 LOCA_PREDICTOR = \
 	$(srcdir)/LOCA_Predictor_Manager.C \
 	$(srcdir)/LOCA_Predictor_Constant.C \
 	$(srcdir)/LOCA_Predictor_Tangent.C \
-	$(srcdir)/LOCA_Predictor_Secant.C 
+	$(srcdir)/LOCA_Predictor_Secant.C \
+	$(srcdir)/LOCA_Predictor_Random.C
 
 LOCA_STEPSIZE_H = \
 	$(srcdir)/LOCA_StepSize_Generic.H \

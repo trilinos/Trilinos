@@ -94,6 +94,9 @@ namespace LOCA {
       //! Return the previous step size
       virtual double getPrevStepSize() const = 0;
 
+      //! Return the initial step size
+      virtual double getStartStepSize() const = 0;
+
     };
   } // namespace StepSize
 } // namespace LOCA
