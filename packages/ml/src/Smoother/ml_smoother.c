@@ -2975,6 +2975,16 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 
    /* We access AT by column.  So calculate the transpose of AT
       and access it by row. This assumes that A is symmetric. */
+
+   if (Tmat_trans->invec_leng != Amat->outvec_leng)
+   {
+      printf("In ML_Smoother_Gen_Hiptmair_Data: Tmat_trans and Amat\n"
+	         "\tdimensions do not agree:\n"
+			 "\tTmat_trans->invec_leng = %d, Amat->outvec_leng = %d\n",
+			 Tmat_trans->invec_leng, Amat->outvec_leng);
+      exit(1);
+   }
+
    ML_2matmult(Tmat_trans,Amat,dataptr->ATmat_trans);
 
 
@@ -3016,12 +3026,26 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    }
    */
 
-   /* Generate matrix triple product */
+   /* Generate matrix triple product T^{*}AT. Use the already calculated
+     product T^{*} A. */
+
    tmpmat = ML_Operator_Create(Tmat_trans->comm);
+/*
    ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_CSR_MATRIX);
+*/
+   if (dataptr->ATmat_trans->invec_leng != Tmat->outvec_leng)
+   {
+      printf("In ML_Smoother_Gen_Hiptmair_Data: ATmat_trans and Tmat\n"
+	         "\tdimensions do not agree:\n"
+			 "\tATmat_trans->invec_leng = %d, Tmat->outvec_leng = %d\n",
+			 dataptr->ATmat_trans->invec_leng, Tmat->outvec_leng);
+      exit(1);
+   }
+   ML_2matmult(dataptr->ATmat_trans, Tmat, tmpmat);
 
    /* and pick off the diagonal entries. */
-   dataptr->TtAT_diag = (double *) malloc( tmpmat->outvec_leng * sizeof(double) );
+   dataptr->TtAT_diag = (double *)
+                        malloc( tmpmat->outvec_leng * sizeof(double) );
    ML_Operator_Get_Diag(tmpmat, tmpmat->outvec_leng, &tmpdiag );
    for (i=0; i< tmpmat->outvec_leng; i++)
       if (tmpdiag[i] == 0) dataptr->TtAT_diag[i] = 1.;
