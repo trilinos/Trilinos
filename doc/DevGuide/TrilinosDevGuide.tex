@@ -51,10 +51,11 @@
     %\clearpage - this is the beginning of the document
     \section*{Acknowledgement}
 The author would like to acknowledge the support of the ASCI and LDRD programs 
-that funded development of Trilinos and the talented group of Trilinos 
-contributors: Michael Heroux, Robert Hoekstra, Alan Williams, Richard Lehoucq, 
-Kevin Long, Tamara Kolda, Roger Pawlowski, David Day, Ray Tuminaro, 
-Jonathan Hu, Mark Adams and Teri Barth.
+that funded development of Trilinos and recognize all Trilinos 
+contributors: Michael Heroux, Teri Barth, David Day, Bob Heaphy, 
+Robert Hoekstra, Jonathan Hu, Tammy Kolda, Richard Lehoucq, Kevin Long, 
+Roger Pawlowski, Andrew Rothfuss, Andrew Salinger, Ken Stanley, Ray Tuminaro, 
+Jim Willenbring, and Alan Williams.
 
     % --------------------------------------------------------- %
     % The table of contents and list of figures and tables
@@ -106,16 +107,19 @@ Trilinos design allows individual packages to grow and mature
 autonomously to the extent the algorithms and package developers
 dictate. 
 	\end{quote}
-%85
 
 	\section{What is Covered in this Guide}
 **(see lines 230-243)
 
 The Trilinos Developer's Guide is meant to assist existing, as well as new and
-potential Trilinos developers.  Topics covered include what is required to
-integrate an existing package into Trilinos and examples of how those 
-requirements can be met, as well as what tools are available as a Trilinos
-package.  **(rewrite this section)**
+potential Trilinos developers.  Topics covered include how to configure and 
+build Trilinos, what is required to integrate an existing package into Trilinos
+and examples of how those requirements can be met, as well as what tools are 
+available to Trilinos packages.  Also discussed are some common practices that 
+are followed by many Trilinos package developers; these are found in the 
+chapter entitled ``Suggested practices''.  Finally, a graphical depiction of 
+Trilinos package iteroperability is supplied along with a list of platforms 
+that Trilinos has been ported to.
 
 For a higher-level view of the Trilinos project, please see **(Cite An Overview
 of the Trilinos Project by Mike Heroux). 
@@ -150,21 +154,32 @@ M4~\cite{M4} macros that can be used by any other
 package that wants to use Autoconf and Automake for configuring and
 building libraries.  These macros perform common configuration tasks such as
 locating a valid LAPACK~\cite{lapack} library, or checking for a user-defined 
-MPI C compiler.  These macros can be found ...
+MPI C compiler.  These macros can be found in the Trilinos cvs repository ...
 **(Add something about looking at the configure.ac files, and who to contact)**
 
 	\section{Regression Testing}
-	**(See Overview Doc pg 12)**
+Trilinos provides a variety of regression
+testing capabilities.  Within a number of Trilinos packages, we employ
+``white box'' testing where detailed information about the software is
+used and probed.  In addition, Trilinos performs ``black box'' testing
+of packages via the Trilinos Solver Framework (TSF) virtual class
+interfaces.  Any package that implements the TSF interfaces (see
+Section~\ref{subsect:InteropTSF} below **(MAKE SURE BELOW, NOTE ABOVE)), can be tested via this black box
+test environment.  ({\bf NOTE: Black box testing via TSF is not in
+place at this time}
+
 	
 	\section{Source Code Repository and Build Tools}
 	**(See Overview Doc pg 12)**
 Source code repository and build tools: Trilinos source code is
 maintained in a CVS~\cite{CVS} repository that is accessible via a
-web-based interface package called Bonsai~\cite{Bonsai}.  Features and bug reports
-are tracked using Bugzilla~\cite{Bugzilla}, and email lists are
-maintained for Trilinos as a whole and for each package.  Support for new
-packages can easily be added.  All tools are accessible from the main
-Trilinos website~\cite{Trilinos-home-page}.
+web-based interface package called Bonsai~\cite{Bonsai}.  Features and bug 
+reports are tracked using Bugzilla~\cite{Bugzilla}, and email lists are
+maintained for Trilinos as a whole and for each package through 
+Mailman~\cite{Mailman}.  Support for new packages can easily be added.  All 
+tools are accessible from the main Trilinos website~\cite{Trilinos-home-page}.
+
+
 **(Break this down and talk about how to use the various tools)**
 
 	\chapter{Tools Available to Trilinos Packages}
@@ -192,9 +207,139 @@ other packages.
 
 
 
+	\chapter{Getting Started}
+	**(How to configure and build Trilinos)**
+	**(Need intro! - also include examples!)**
+\section Trilinos Configuration Options
+
+The following options apply to all Trilinos packages unless 
+the option doesn't apply to a particular package (for example, a package that 
+does not include any Fortran code will not be sensitive to F77=g77), or 
+otherwise noted.  NOTE: This list is not yet complete, in particular many 
+options that apply to only a subset of Trilinos packages are not included.  
+For options specific to individual package, 'cd' to the home directory of
+the source code of the individual package and type ``configure --help'' 
+(without quotes).
+
+\triangleright Basic Options
+
+\bullet --enable-debug 
+
+(Nox only.)  This turns on compiler debugger flags. It has 
+not been fully tested. As an alternate, specify CXXFLAGS on the 
+                 configure line.
+
+\bullet --enable-opt
+
+(Nox only.)  This turns on compiler optimization flags. It 
+has not been fully tested. As an alternate, specify CXXFLAGS on the 
+                 configure line. 
+
+\bullet --with-cppflags 
+
+Specify additional preprocessor flags (e.g., "-Dflag -Idir") 
+
+\bullet --with-cxxflags 
+
+Specify additional C++ flags 
+
+\bullet --with-ldflags 
+Specify additional linker flags (e.g., "-Ldir") 
+
+\bullet --with-ar 
+Specify a special archiver command, the default is "ar cru". 
+
+\triangleright Influential Environmental Variables
+
+\bullet CC 
+
+C compiler command.
+
+\bullet CFLAGS 
+
+C compiler flags.
+
+\bullet CXX 
+
+C++ compiler command.
+
+\bullet CXXFLAGS 
+
+C++ compiler flags.
+
+\bullet LDFLAGS 
+
+Specify linker flags.
+
+\bullet CPPFLAGS 
+
+C/C++ preprocessor flags.
+
+\bullet CXXCPP 
+
+C++ preprocessor.
+
+\bullet F77 
+
+Fortran 77 compiler command.
+
+\bullet FFLAGS 
+
+Fortran 77 compiler flags.
+
+\triangleright MPI-Related Options
+
+\bullet --enable-mpi 
+
+Enables MPI mode. Defines HAVE_MPI in the (Package)_Config.h file. Will test 
+for the ability to preprocess the MPI header file and may test ability to link 
+with MPI.
+
+\bullet --with-mpi-cxx 
+
+If no argument is specified, uses "mpiCC". Otherwise, uses specified MPI C++ 
+compiler. Automatically enables MPI mode. 
+
+\bullet --with-mpi=MPIROOT 
+
+Specify the MPI root directory. Automatically enables MPI mode. 
+
+\bullet --with-mpi-libs="LIBS" 
+
+Specify the MPI libraries. Defaults to "-lmpi" if either --with-mpi or 
+--with-mpi-libdir is specified. **(Verify that the default applies only in these cases)**
+
+\bullet --with-mpi-incdir=DIR (Nox)
+\bullet --with-mpi-include=-I<DIR> (Other Trilinos packages)
+
+Specify the MPI include files location. Defaults to MPIROOT/include if 
+--with-mpi is specified. If multiple directories  must be specified, try 
+--with-cppflags="-I<dir1> -I<dir2>" instead.  NOTE: The ``other'' Trilinos 
+packages will replace --with-mpi-include with --with-mpi-incdir in the near
+future.
+
+\bullet --with-mpi-libdir=DIR 
+
+Specify the MPI libraries location. Defaults to MPIROOT/lib if --with-mpi is 
+specified. If multiple directories must be specified, try 
+--with-ldflags="-L<dir1> -L<dir2>" instead. 
+
+   Developer-Related Options
+
+\bullet --enable-maintainer-mode 
+
+Enable make rules and dependencies not useful (and sometimes confusing) to the 
+casual installer.
+
+\triangleright Other important notes about the configure/build process.
+
+\circ Any code that links to Trilinos should define 'HAVE_CONFIG_H' (without
+quotes).
+
 	\chapter{Interoperability Status for Existing Trilinos Packages}
 
-
+	\chapter{Platform Portablility}
+	**(List platforms - encourage script submission)**
     % ---------------------------------------------------------------------- %
     % References
     %
