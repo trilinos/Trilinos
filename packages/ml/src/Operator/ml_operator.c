@@ -223,6 +223,8 @@ ML_Operator *ML_Operator_halfClone( ML_Operator *original)
 int ML_Operator_halfClone_Init(ML_Operator *mat,
 					     ML_Operator *original)
 {
+  char str[95];
+
    mat->ML_id = ML_ID_OP;
    mat->halfclone        = ML_TRUE;
    mat->matvec->ML_id    = original->matvec->ML_id;
@@ -260,7 +262,10 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    /* If operator *mat has built as part of ML_Create, a label has already been
       allocated. */
    if (mat->label != NULL) ML_free(mat->label);
-   mat->label               = original->label;
+   if (original->label != NULL) {
+     sprintf(str,"Clone of %s",original->label); 
+     ML_Operator_Set_Label(mat,str);
+   }
    mat->comm                = original->comm;
    mat->num_PDEs            = original->num_PDEs;
    mat->num_rigid           = original->num_rigid;
@@ -288,7 +293,9 @@ int ML_Operator_halfClone_Clean( ML_Operator *mat)
    mat->getrow->loc_glob_map = NULL;
    mat->getrow->pre_comm = NULL;
    mat->getrow->post_comm = NULL;
-   mat->label = NULL;
+   /* changed this so that we allocate a new label if the original */
+   /* matrix had a label */
+   /*   mat->label = NULL; */
    mat->halfclone  = ML_FALSE;
    return(ML_Operator_Clean(mat));
 }
