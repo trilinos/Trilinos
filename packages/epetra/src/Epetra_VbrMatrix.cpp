@@ -1283,6 +1283,7 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
 	GEMV('N', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);			
       }
       if (Exporter()!=0) {
+	y.PutScalar(0.0);
 	EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
       }
     }
@@ -1405,6 +1406,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 		       BlockRowValues, Xp, Yp, NumVectors);
     }
     if (Exporter()!=0) {
+      Y.PutScalar(0.0);
       EPETRA_CHK_ERR(Y.Export(*ExportVector_, *Exporter(), Add)); // Fill Y with Values from export vector
     }
   }
@@ -1798,6 +1800,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
 
   if (!DoRows) {
     if (Importer()!=0){
+      x.PutScalar(0.0);
       EPETRA_CHK_ERR(x.Export(*x_tmp, *Importer(), Add)); // Fill x with Values from import vector
       delete x_tmp;
       xp = (double*) x.Values();
@@ -1998,6 +2001,7 @@ double Epetra_VbrMatrix::NormOne() const {
 		    BlockRowValues,  ColFirstPointInElementList, xp);
   }
   if (Importer()!=0) {
+    x->PutScalar(0.0);
     EPETRA_CHK_ERR(x->Export(*x_tmp, *Importer(), Add));
   } // Fill x with Values from temp vector
   x->MaxValue(&NormOne_); // Find max

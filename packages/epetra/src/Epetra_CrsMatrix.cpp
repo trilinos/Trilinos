@@ -860,8 +860,10 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
       yp[i] = sum;
 			
     }
-    if(Exporter() != 0) 
+    if(Exporter() != 0) {
+      y.PutScalar(0.0); // Make sure target is zero
       EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
+    }
   }
 	
   else { // Transpose operation
@@ -985,8 +987,10 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 	Yp[k][i] = sum;
       }
     }
-    if (Exporter()!=0) 
+    if (Exporter()!=0) {
+      Y.PutScalar(0.0); // Make sure target is zero
       Y.Export(*ExportVector_, *Exporter(), Add); // Fill Y with Values from export vector
+    }
   }
   else { // Transpose operation
 		
@@ -1378,6 +1382,7 @@ int Epetra_CrsMatrix::InvColSums(Epetra_Vector& x) const {
   }
 
   if(Importer() != 0) {
+    x.PutScalar(0.0);
     x.Export(*x_tmp, *Importer(), Add); // Fill x with Values from import vector
     delete x_tmp;
     xp = (double*) x.Values();
@@ -1528,6 +1533,7 @@ double Epetra_CrsMatrix::NormOne() const {
       xp[ColIndices[j]] += fabs(RowValues[j]);
   }
   if(Importer() != 0) {
+    x->PutScalar(0.0);
     EPETRA_CHK_ERR(x->Export(*x_tmp, *Importer(), Add)); // Fill x with Values from temp vector
   }
   x->MaxValue(&NormOne_); // Find max

@@ -32,6 +32,8 @@
 #include "Epetra_Directory.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_HashTable.h"
+// Use the new LID hash table approach by default
+#define EPETRA_BLOCKMAP_NEW_LID
 
 //==============================================================================
 // Epetra_BlockMap constructor for a Epetra-defined uniform linear distribution of constant size elements.
@@ -110,7 +112,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
 
   BlockMapData_->DistributedGlobal_ = IsDistributedGlobal(NumGlobalElements, NumMyElements);
 
-   // Local Map and uniprocessor case:  Each processor gets a complete copy of all elements
+  // Local Map and uniprocessor case:  Each processor gets a complete copy of all elements
   if (!BlockMapData_->DistributedGlobal_ || NumProc==1) {
     BlockMapData_->NumGlobalElements_ = BlockMapData_->NumMyElements_;
     CheckValidNGE(NumGlobalElements);
@@ -364,23 +366,23 @@ Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap& map)
 }
 
 //==============================================================================
-bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const
-{
-  if (this == &Map) 
+bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const {
+
+  // Quickest test: See if both maps share an inner data class
+  if (this->BlockMapData_ == Map.BlockMapData_) 
     return(true);
-  
+
+
+  // Next check other global properties that are easy global attributes
   if (BlockMapData_->MinAllGID_ != Map.MinAllGID() ||
       BlockMapData_->MaxAllGID_ != Map.MaxAllGID() ||
       BlockMapData_->NumGlobalElements_ != Map.NumGlobalElements() ||
       BlockMapData_->IndexBase_ != Map.IndexBase()) 
     return(false);
   
-  if (BlockMapData_->ConstantElementSize_) {
-    if (BlockMapData_->ElementSize_!=Map.ElementSize()) 
-      return(false);
-    else 
-      return(true);
-  }
+  // Last possible global check for constant element sizes
+  if (BlockMapData_->ConstantElementSize_ && BlockMapData_->ElementSize_!=Map.ElementSize()) 
+    return(false);
 
   // If we get this far, we need to check local properties and then check across
   // all processors to see if local properties are all true
@@ -388,16 +390,19 @@ bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const
   int numMyElements = BlockMapData_->NumMyElements_;
 
   int MySameMap = 1; // Assume not needed
-  if (numMyElements != Map.NumMyElements()) 
-    MySameMap = 0;
+  
+  // First check if number of element is the same in each map
+  if (numMyElements != Map.NumMyElements()) MySameMap = 0;
+  
+  if (MySameMap==1) // If numMyElements is the same, check to see that list of GIDs is the same
+    for (int i = 0; i < numMyElements; i++)
+      if (GID(i) != Map.GID(i)) MySameMap = 0;
 
-  if (MySameMap == 1) {
-    for (int i = 0; i < numMyElements; i++) {
-      if (GID(i) != Map.GID(i)) 
-	MySameMap = 0;
-      if (BlockMapData_->ElementSizeList_[i] != Map.BlockMapData_->ElementSizeList_[i]) 
-	MySameMap=0;
-    }
+  // If GIDs are the same, check to see element sizes are the same
+  if (MySameMap==1 && !BlockMapData_->ConstantElementSize_) {
+    int * sizeList1 = ElementSizeList();
+    int * sizeList2 = Map.ElementSizeList();
+    for (int i = 0; i < numMyElements; i++) if (sizeList1[i] != sizeList2[i]) MySameMap=0;
   }
   // Now get min of MySameMap across all processors
 
@@ -410,7 +415,7 @@ bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const
 //==============================================================================
 bool Epetra_BlockMap::PointSameAs(const Epetra_BlockMap & Map) const
 {
-  if (this == &Map) 
+  if (this->BlockMapData_ == Map.BlockMapData_) 
     return(true);
   
   if (BlockMapData_->NumGlobalPoints_ != Map.NumGlobalPoints() ) 
@@ -635,7 +640,7 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
     if(i < numMyElements) {
       BlockMapData_->LIDHash_ = new Epetra_HashTable(numMyElements - i + 1 );
       for(; i < numMyElements; ++i )
-	BlockMapData_->LIDHash->Add( MyGlobalElements_[i], i );
+	BlockMapData_->LIDHash_->Add( BlockMapData_->MyGlobalElements_[i], i );
     }
     
 #else
@@ -841,21 +846,22 @@ Epetra_BlockMap::~Epetra_BlockMap()  {
 
 //==============================================================================
 void Epetra_BlockMap::CleanupData()  {
-	if(BlockMapData_ != 0) {
-		BlockMapData_->DecrementReferenceCount();
-		if(BlockMapData_->ReferenceCount() == 0) {
-			delete BlockMapData_;
-			BlockMapData_ = 0;
-		}
-	}
+  if(BlockMapData_ != 0) {
+    BlockMapData_->DecrementReferenceCount();
+    if(BlockMapData_->ReferenceCount() == 0) {
+      delete BlockMapData_;
+      BlockMapData_ = 0;
+    }
+  }
 }
 
 //=============================================================================
 Epetra_BlockMap & Epetra_BlockMap::operator= (const Epetra_BlockMap & map) {
-	if((this != &map) && (BlockMapData_ != map.BlockMapData_)) {
-		CleanupData();
-		BlockMapData_ = map.BlockMapData_;
-		BlockMapData_->IncrementReferenceCount();
-	}
-	return(*this);
+  if((this != &map) && (BlockMapData_ != map.BlockMapData_)) {
+    CleanupData();
+    BlockMapData_ = map.BlockMapData_;
+    BlockMapData_->IncrementReferenceCount();
+  }
+  return(*this);
 }
+

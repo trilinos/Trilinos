@@ -714,9 +714,11 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_B
   // Local:  those whose GID matches a GID of the domain map on this processor and
   // Remote: All others.
 
-  Epetra_HashTable LocalGIDs(DomainMap.NumMyElements());
-  Epetra_HashTable RemoteGIDs(DomainMap.NumMyElements());
-  Epetra_HashTable RemoteGIDList(DomainMap.NumMyElements());
+  int hashSize = DomainMap.NumMyElements();
+  if (hashSize<5) hashSize = 5; // Make sure there are at least a few elements in this hash table
+  Epetra_HashTable LocalGIDs(hashSize);
+  Epetra_HashTable RemoteGIDs(hashSize);
+  Epetra_HashTable RemoteGIDList(hashSize);
 
   int NumLocalColGIDs = 0;
   int NumRemoteColGIDs = 0;

@@ -32,6 +32,8 @@
 #include "Epetra_Directory.h"
 #include "Epetra_Comm.h"
 //#include "Epetra_ConfigDefs.h" //DATA_DEBUG
+// Use the new LID hash table approach by default
+#define EPETRA_BLOCKMAP_NEW_LID
 
 //=============================================================================
 Epetra_BlockMapData::Epetra_BlockMapData(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm) 
