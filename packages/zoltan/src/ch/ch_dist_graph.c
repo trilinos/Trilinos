@@ -46,11 +46,7 @@ int chaco_dist_graph(
   float   **z                   /* z-coordinates of the vertices */
 )
 {
-  extern int CHECK_INPUT;	/* print warnings or not? */
-  extern int DEBUG_INPUT;	/* echo that input file read successful? */
-  extern int DEBUG_TRACE;	/* trace main execution path */
-
-  int nprocs, myproc, i, n, p, nedges, nsend, rest, flag;
+  int nprocs, myproc, i, n, p, nedges, nsend, rest;
   int offset, use_vwgts, use_ewgts, use_graph;
   int *old_xadj = NULL, *old_adjncy = NULL, *old_vwgts = NULL, *size = NULL;
   float *old_x = NULL, *old_y = NULL, *old_z = NULL;
@@ -70,36 +66,30 @@ int chaco_dist_graph(
   use_vwgts = (*vwgts != NULL);
   use_graph = (*xadj  != NULL);
  
+  /* Broadcast to all procs */
+  MPI_Bcast( &use_vwgts, 1, MPI_INT, host_proc, comm);
+  MPI_Bcast( &use_ewgts, 1, MPI_INT, host_proc, comm);
+  MPI_Bcast( &use_graph, 1, MPI_INT, host_proc, comm);
+  MPI_Bcast( ndim, 1, MPI_INT, host_proc, comm);
+  MPI_Bcast( nvtxs, 1, MPI_INT, host_proc, comm);
+  
   /* Set up vtxdist data */
-  flag = 0;
   if (*vtxdist == NULL){
-    if (myproc==host_proc) flag=1;
     *vtxdist = (int *) malloc((nprocs+1) * sizeof(int));
     if (*vtxdist == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
       return 0;
     }
   }
-  if (myproc==host_proc){
-    if (flag){
-      /* Calculate uniform vertex distribution */
-      (*vtxdist)[0] = 0;
-      rest = *nvtxs;
-      for (i=0; i<nprocs; i++){
-        n = rest/(nprocs-i);
-        (*vtxdist)[i+1] = (*vtxdist)[i] + n;
-        rest -= n;
-      }
-    }
+  /* Calculate uniform vertex distribution */
+  (*vtxdist)[0] = 0;
+  rest = *nvtxs;
+  for (i=0; i<nprocs; i++){
+    n = rest/(nprocs-i);
+    (*vtxdist)[i+1] = (*vtxdist)[i] + n;
+    rest -= n;
   }
 
-  /* Broadcast vtxdist to all procs */
-  MPI_Bcast( *vtxdist, nprocs+1, MPI_INT, host_proc, comm);
-  MPI_Bcast( &use_vwgts, 1, MPI_INT, host_proc, comm);
-  MPI_Bcast( &use_ewgts, 1, MPI_INT, host_proc, comm);
-  MPI_Bcast( &use_graph, 1, MPI_INT, host_proc, comm);
-  MPI_Bcast( ndim, 1, MPI_INT, host_proc, comm);
-  
   /* Store pointers to original data */
   if (myproc == host_proc) {
     old_xadj   = *xadj;
