@@ -251,15 +251,19 @@ using std::complex;
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
+#include <map>
+#include <algorithm>
+#include <sstream>
+#include <stdexcept>
+#include <typeinfo>
 
 #if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT)
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <iostream>
 #include <math.h>
-#include <string>
 using namespace std;
 
 #elif defined(TFLOP)
@@ -267,31 +271,24 @@ using namespace std;
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <string>
 using std::string;
-#include <iostream>
 #include <iomanip>
 using std::istream;
 using std::ostream;
 using std::cerr;
 using std::cout;
 using std::endl;
+#include <list>
 
 #else
 
 #include <cstdlib>
 #include <cstdio>
 #include <cassert>
-#include <iostream>
 #include <cmath>
-#include <string>
 using namespace std;
 
 #endif
-
-#include <vector>
-#include <map>
-#include <algorithm>
 
 #endif /* end HAVE_CONFIG_H */
 
