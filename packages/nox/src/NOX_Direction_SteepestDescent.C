@@ -130,6 +130,7 @@ bool SteepestDescent::operator()(Abstract::Vector& dir,
   }
   case SteepestDescent::None:
 
+    dir.scale( -1.0 );
     break;
 
   default:
