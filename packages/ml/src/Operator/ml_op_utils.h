@@ -47,6 +47,10 @@ extern int eye_getrows(ML_Operator *data, int N_requested_rows, int requested_ro
 extern	int eye_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]);
 extern int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans);
 extern int ML_Operator_Getrow_Diag(ML_Operator *Amat, double **diagonal);
+extern int ML_Operator_Analyze(ML_Operator *Op, char *name);
+extern int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
+				     int PrintDecomposition,
+				     int NumPDEEqns);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

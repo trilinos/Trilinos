@@ -1220,3 +1220,615 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
   return 0;
 }
 
+#include "float.h"
+#include "ml_cg.h"
+/* ******************************************************************** */
+/* "Cheap" analysis of the main properties of an ML_Operator.           */
+/************************************************************************/
+int ML_Operator_Analyze(ML_Operator * Op, char* name)
+{
+
+  int i,j;
+  double MyFrobeniusNorm=0.0; 
+  double FrobeniusNorm=0.0;
+  double MyMinElement=DBL_MAX; 
+  double MinElement=DBL_MAX;
+  double MyMaxElement=DBL_MIN; 
+  double MaxElement=DBL_MIN;
+  double MyMinAbsElement=DBL_MAX; 
+  double MinAbsElement=DBL_MAX;
+  double MyMaxAbsElement=0.0; 
+  double MaxAbsElement=0.0;
+  int NumNonzeros; /* nonzero elements in a row */
+
+  int NumMyRows = 0, NumGlobalRows = 0;
+  
+  int  allocated = 10;
+  double* colVal = NULL;
+  int*    colInd = NULL;
+  int MyPID;
+  int NumProc;
+
+  double* Diagonal = NULL;
+  double* SumOffDiagonal = NULL;
+  int* IsDiagonallyDominant = NULL;
+  int* NnzRow = NULL;
+  double Element, AbsElement; /* generic nonzero element and its abs value */
+  int ierr; /* return error code for ML_Operator_Getrow() */
+  int NumDiagonallyDominant = 0;
+  int NumMyDiagonallyDominant = 0;
+  int NumWeaklyDiagonallyDominant = 0;
+  int NumMyWeaklyDiagonallyDominant = 0;
+  int NumMyDirichletRows = 0;
+  int NumDirichletRows = 0;
+  
+  double Min;
+  double MyMin;
+  double Max;
+  double MyMax;
+  int Equation;
+  double time;
+
+  ML_Krylov data; /* for power-method */
+
+  /* ---------------------- execution begins ------------------------------ */
+
+  time = GetClock();
+
+  /* returns if Op is not set, or Op is a rectangular matrix */
+  if( Op == NULL ) return(-1);
+  if( Op->invec_leng != Op->outvec_leng ) return(-2);
+
+  /* set up data and allocate memory */
+  MyPID = Op->comm->ML_mypid;
+  NumProc = Op->comm->ML_nprocs;
+  NumMyRows = Op->invec_leng;
+  NumGlobalRows = ML_Comm_GsumInt(Op->comm,NumMyRows);
+
+  colInd = (int*)   ML_allocate(sizeof(int)*allocated);
+  colVal = (double*)ML_allocate(sizeof(double)*allocated);
+
+  Diagonal = (double*)ML_allocate(sizeof(double)*NumMyRows);
+  SumOffDiagonal = (double*)ML_allocate(sizeof(double)*NumMyRows);
+  NnzRow = (int*)ML_allocate(sizeof(int)*NumMyRows);
+  
+  for (i=0 ; i<NumMyRows ; ++i) {
+    SumOffDiagonal[i] = 0.0;
+  }
+ 
+  /* cycle over all matrix rows */
+  for( i=0 ; i<NumMyRows ; ++i ) {
+
+    ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NumNonzeros);
+
+    if( ierr == 0 ) {
+      do {
+	ML_free(colInd);
+	ML_free(colVal);
+	allocated *= 2;
+	colInd = (int*)   ML_allocate(sizeof(int)*allocated);
+	colVal = (double*)ML_allocate(sizeof(double)*allocated);
+
+	ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NumNonzeros);
+      } while( ierr == 0 );
+    }
+
+    NnzRow[i] = NumNonzeros;
+    if( NumNonzeros == 1 ) NumMyDirichletRows++;
+    
+    /* start looking for min/max element (with and without abs()) */
+    /* I consider the following:
+     * - min element;
+     * - min abs element;
+     * - max element;
+     * - max abs element;
+     * - diagonal element;
+     * - sum off abs off-diagonal elements;
+     * Here I compute the local ones, with prefix `My'. The global
+     * ones (without prefix will be computed later
+     */
+    for( j=0 ; j<NumNonzeros ; ++j ) {
+      Element = colVal[j];
+      AbsElement = ML_dabs(Element);
+      if( Element<MyMinElement ) MyMinElement = Element;
+      if( Element>MyMaxElement ) MyMaxElement = Element;
+      if( AbsElement<MyMinAbsElement ) MyMinAbsElement = AbsElement;
+      if( AbsElement>MyMaxAbsElement ) MyMaxAbsElement = AbsElement;
+      if( colInd[j] == i ) Diagonal[i] = AbsElement;
+      else
+	SumOffDiagonal[i] += ML_dabs(Element);
+      MyFrobeniusNorm += Element*Element;
+    }
+  } /* for over all matrix rows */
+
+  /* compute the min/max of important quantities over all processes */
+
+  MinElement    = - ML_Comm_GmaxDouble(Op->comm, -MyMinElement);
+  MaxElement    =   ML_Comm_GmaxDouble(Op->comm, MyMaxElement);
+  MinAbsElement = - ML_Comm_GmaxDouble(Op->comm, -MyMinAbsElement);
+  MaxAbsElement =   ML_Comm_GmaxDouble(Op->comm, MyMaxAbsElement);
+  
+  FrobeniusNorm =   ML_Comm_GmaxDouble(Op->comm, MyFrobeniusNorm);
+  NumDirichletRows = ML_Comm_GsumInt(Op->comm, NumMyDirichletRows);
+  
+  /* a test to see if matrix is diagonally-dominant */
+
+  NumMyDiagonallyDominant = 0;
+  NumMyWeaklyDiagonallyDominant = 0;
+
+  for( i=0 ; i<NumMyRows ; ++i ) {
+    if( Diagonal[i]>SumOffDiagonal[i] ) 
+      ++NumMyDiagonallyDominant;
+    else if( Diagonal[i]==SumOffDiagonal[i] ) 
+      ++NumMyWeaklyDiagonallyDominant;
+    /* else nothing to track */
+  }
+
+  NumDiagonallyDominant = ML_Comm_GsumInt(Op->comm, NumMyDiagonallyDominant);
+  NumWeaklyDiagonallyDominant = ML_Comm_GsumInt(Op->comm, NumMyWeaklyDiagonallyDominant);
+
+  /* simply no output for MyPID>0, only proc 0 write on os */
+  if( MyPID == 0 ) {
+
+    if( name != NULL ) 
+      printf("\n\t*** Analysis of ML_Operator `%s' ***\n\n", name);
+    else
+      printf("\n\t*** Analysis of ML_Operator ***\n\n");
+    printf("\tNumber of global rows      = %d\n", NumGlobalRows);
+    printf("\tNumber of equations        = %d\n", Op->num_PDEs);
+    printf("\t||A||_F                    = %f\n",sqrt(FrobeniusNorm));
+    printf("\tmin_{i,j} ( a_{i,j} )      = %e\n", MinElement);
+    printf("\tmax_{i,j} ( a_{i,j} )      = %e\n", MaxElement);
+    printf("\tmin_{i,j} ( abs(a_{i,j}) ) = %e\n", MinAbsElement);
+    printf("\tmax_{i,j} ( abs(a_{i,j}) ) = %e\n", MaxAbsElement);
+    printf("\tNumber of diagonally dominant rows            = %d (= %5.2f%%)\n",
+	   NumDiagonallyDominant,
+	   100.0*NumDiagonallyDominant/NumGlobalRows); 
+    printf("\tNumber of weakly diagonally dominant rows     = %d (= %5.2f%%)\n",
+	   NumWeaklyDiagonallyDominant,
+	   100.0*NumWeaklyDiagonallyDominant/NumGlobalRows);
+    printf("\tNumber of Dirichlet rows                      = %d (= %5.2f%%)\n",
+	   NumDirichletRows,
+	   100.0*NumDirichletRows/NumGlobalRows);
+
+  }
+
+  /* Analyze elements on diagonal for the entire matrix */
+
+  MyMin = DBL_MAX, MyMax = 0.0;
+  for( i=0 ; i<NumMyRows ; ++i ) {
+    if( Diagonal[i]<MyMin ) MyMin = Diagonal[i];
+    if( Diagonal[i]>MyMax ) MyMax = Diagonal[i];
+  }
+  Min = - ML_Comm_GmaxDouble(Op->comm, -MyMin);
+  Max =   ML_Comm_GmaxDouble(Op->comm, MyMax);
+
+  if( MyPID == 0 ) {
+
+    printf("\tmin_i ( abs(a_{i,i}) )               = %e\n", Min);
+    printf("\tmax_i ( abs(a_{i,i}) )               = %e\n", Max);
+
+  }
+
+  /* Analyze elements off diagonal for the entire matrix */
+
+  MyMin = DBL_MAX, MyMax = 0.0;
+  for( i=0 ; i<NumMyRows ; ++i ) {
+    if( SumOffDiagonal[i]<MyMin ) MyMin = SumOffDiagonal[i];
+    if( SumOffDiagonal[i]>MyMax ) MyMax = SumOffDiagonal[i];
+  }
+  Min = - ML_Comm_GmaxDouble(Op->comm, -MyMin);
+  Max =   ML_Comm_GmaxDouble(Op->comm, MyMax);
+
+  if( MyPID == 0 ) {
+
+    printf("\tmin_i ( \\sum_{j!=i} abs(a_{i,j}) )  = %e\n", Min);
+    printf("\tmax_i ( \\sum_{j!=i} abs(a_{i,j}) )  = %e\n", Max);
+
+  }
+
+  /* cycle over all equations and analyze diagonal elements. 
+   * This may show that the matrix is badly scaled */
+  
+  if (Op->num_PDEs > 1) {
+
+    for( Equation=0 ; Equation<Op->num_PDEs ; ++Equation ) {
+
+      /* Analyze elements on diagonal */
+
+      MyMin = DBL_MAX, MyMax = 0.0;
+      for( i=Equation ; i<NumMyRows ; i+=Op->num_PDEs ) {
+	if( Diagonal[i]<MyMin ) MyMin = Diagonal[i];
+	if( Diagonal[i]>MyMax ) MyMax = Diagonal[i];
+      }
+      Min = - ML_Comm_GmaxDouble(Op->comm, -MyMin);
+      Max =   ML_Comm_GmaxDouble(Op->comm, MyMax);
+
+      if( MyPID == 0 ) {
+
+	printf("\t(Eq %d) min_i ( abs(a_{i,i}) )      = %e\n", 
+	       Equation, Min);
+	printf("\t(Eq %d) max_i ( abs(a_{i,i}) )      = %e\n", 
+	       Equation, Max);
+
+      }
+    }
+  } /* if (Op->num_PDEs > 1) */
+
+  /* free memory */
+
+  if( colInd != NULL ) ML_free(colInd);
+  if( colVal != NULL ) ML_free(colVal);
+  if( Diagonal != NULL ) ML_free(Diagonal);
+  if( SumOffDiagonal != NULL ) ML_free(SumOffDiagonal);
+  if( IsDiagonallyDominant != NULL ) ML_free(IsDiagonallyDominant);
+  if( NnzRow != NULL ) ML_free( NnzRow );
+
+  data.ML_id = ML_ID_KRYLOVDATA;
+  data.ML_matrix = Op;
+  data.ML_com = Op->comm;
+  data.ML_print_freq = 1;
+  ML_Power_ComputeEigenvalues(&data,NumMyRows,0);
+
+  if( MyPID == 0 ) 
+    printf("\tMaximum eigenvalue of A (using power method)       = %e\n",
+	   data.ML_eigen_max);
+	   
+  ML_Power_ComputeEigenvalues(&data,NumMyRows,1);
+
+  if( MyPID == 0 ) 
+    printf("\tMaximum eigenvalue of D^{-1}A (using power method) = %e\n",
+	   data.ML_eigen_max);
+
+  if( MyPID == 0 )
+    printf("\n\tTotal time for analysis = %e (s)\n", GetClock() - time);
+    
+  return 0;
+
+}
+/****************************************************************
+ * Largely inspired from Yousef Saad's SPARSKIT plot function.  *
+ * Plots the sparsity pattern of an ML_Operator into a PS file. *
+ * Op : ML_Operator pointer
+ * title : char string containing the title. Can be NULL.
+ * PrintDecomposition : if ML_TRUE, prints lines corresponding to
+ *                      the row and column decomposition across
+ *                      the processors. If ML_FALSE, do nothing.
+ * NumPDEEqns : number of PDE equations. The function will plot
+ *              the block structure of the matrix if NumPDEEqns > 1
+ ****************************************************************/
+
+int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
+			      int PrintDecomposition,
+			      int NumPDEEqns)
+{
+
+  int i;
+  int NumMyRows;
+  int m,nc,nr,maxdim,ltit;
+  double lrmrgn,botmrgn,xtit,ytit,ytitof,fnstit,siz;
+  double xl,xr, yb,yt, scfct,u2dot,frlw,delt,paperx,xx,yy;
+  int square = ML_FALSE;
+  /*change square to .true. if you prefer a square frame around
+    a rectangular matrix */
+  double haf = 0.5, zero = 0.0, conv = 2.54;
+  char munt = 'E'; /* put 'E' for centimeters, 'U' for inches */
+  int ptitle = 0; /* position of the title, 0 under the drawing,
+		     else above */
+  FILE* fp = NULL;
+  int* colInd = NULL;
+  double* colVal = NULL;
+  int ierr;
+  int j;
+  int NumNonzeros;
+  int allocated = 0;
+  int NumMyCols;
+  int NumGlobalRows;
+  int NumGlobalCols;
+  int Nghost;
+  double* global_col_id = NULL;
+  int row_offset;
+  int col_offset;
+  int pid;
+  int MyPID;
+  int NumProc;
+  int grow;
+  int gcol;
+  int nlines;
+  int* row_lines = NULL;
+  int* col_lines = NULL;
+  int* itmp = NULL;
+  int row_isep;
+  int col_isep;
+
+  /* --------------------- execution begins ---------------------- */
+
+  MyPID = Op->comm->ML_mypid;
+  NumProc = Op->comm->ML_nprocs;
+
+  NumMyRows = Op->outvec_leng;
+  NumMyCols = Op->invec_leng;
+
+  NumGlobalRows = ML_Comm_GsumInt(Op->comm,NumMyRows);
+  NumGlobalCols = ML_Comm_GsumInt(Op->comm,NumMyCols);
+
+  /* need to define the global column number */
+
+  if (Op->getrow->pre_comm == NULL) 
+    Nghost = 0;
+  else {
+    if (Op->getrow->pre_comm->total_rcv_length <= 0)
+      ML_CommInfoOP_Compute_TotalRcvLength(Op->getrow->pre_comm);
+    Nghost = Op->getrow->pre_comm->total_rcv_length;
+  }
+
+  global_col_id = (double*) ML_allocate(sizeof(double) * (NumMyCols + Nghost));
+  if (global_col_id == NULL) {
+    fprintf(stderr,
+	    "Not enough memory\n");
+    exit(EXIT_FAILURE);
+  }
+
+  row_offset = ML_gpartialsum_int(NumMyRows, Op->comm);
+  col_offset = ML_gpartialsum_int(NumMyCols, Op->comm);
+
+  for (i = 0 ; i < NumMyCols ; ++i) {
+    global_col_id[i] = (double) (col_offset + i);
+  }
+
+  ML_exchange_bdry(global_col_id,Op->getrow->pre_comm, 
+		   Op->invec_leng,Op->comm,ML_OVERWRITE,NULL);
+
+  /* to be changed for rect matrices */
+  maxdim = (NumGlobalRows>NumGlobalCols)?NumGlobalRows:NumGlobalCols;
+  maxdim /= NumPDEEqns;
+
+  m = 1 + maxdim;
+  nr = NumGlobalCols / NumPDEEqns + 1;
+  nc = NumGlobalRows / NumPDEEqns + 1;
+
+  if (munt == 'E') {
+    u2dot = 72.0/conv;
+    paperx = 21.0;
+    siz = 10.0;
+  }
+  else {
+    u2dot = 72.0;
+    paperx = 8.5*conv;
+    siz = siz*conv;
+  }
+
+  /* left and right margins (drawing is centered) */
+
+  lrmrgn = (paperx-siz)/2.0;
+
+  /* bottom margin : 2 cm */
+
+  botmrgn = 2.0;
+  /* c scaling factor */
+  scfct = siz*u2dot/m;
+  /* matrix frame line witdh */
+  frlw = 0.25;
+  /* font size for title (cm) */
+  fnstit = 0.5;
+  if (title) ltit = strlen(title);
+  else       ltit = 0;
+  /* position of title : centered horizontally */
+  /*                     at 1.0 cm vertically over the drawing */
+  ytitof = 1.0;
+  xtit = paperx/2.0;
+  ytit = botmrgn+siz*nr/m + ytitof;
+  /* almost exact bounding box */
+  xl = lrmrgn*u2dot - scfct*frlw/2;
+  xr = (lrmrgn+siz)*u2dot + scfct*frlw/2;
+  yb = botmrgn*u2dot - scfct*frlw/2;
+  yt = (botmrgn+siz*nr/m)*u2dot + scfct*frlw/2;
+  if (ltit == 0) {
+    yt = yt + (ytitof+fnstit*0.70)*u2dot;
+  } 
+  /* add some room to bounding box */
+  delt = 10.0;
+  xl = xl-delt;
+  xr = xr+delt;
+  yb = yb-delt;
+  yt = yt+delt;
+
+  /* correction for title under the drawing */
+  if ((ptitle == 0) && (ltit == 0)) {
+    ytit = botmrgn + fnstit*0.3;
+    botmrgn = botmrgn + ytitof + fnstit*0.7;
+  }
+
+  /* detect how to write the lines for process decomposition. */
+
+  if (PrintDecomposition == ML_TRUE) {
+
+    row_lines = (int*) ML_allocate(sizeof(int)*NumProc);
+    col_lines = (int*) ML_allocate(sizeof(int)*NumProc);
+    itmp  = (int*) ML_allocate(sizeof(int)*NumProc);
+    for (i = 0 ; i < NumProc ; ++i ) {
+      row_lines[i] = 0;
+      col_lines[i] = 0;
+    }
+    row_lines[MyPID] = NumMyRows;
+    col_lines[MyPID] = NumMyCols;
+    nlines = NumProc;
+
+    ML_Comm_GsumVecInt(Op->comm, row_lines, itmp, NumProc);
+    ML_Comm_GsumVecInt(Op->comm, col_lines, itmp, NumProc);
+    for (i = 1 ; i < NumProc ; ++i ) {
+      row_lines[i] += row_lines[i-1];
+      col_lines[i] += col_lines[i-1];
+    }
+  }
+  
+  /* begin of output */
+
+  if( MyPID == 0 ) {
+
+    fp = fopen("Amat.ps","w");
+
+    fprintf(fp,"%%!\n");
+    fprintf(fp,"%%Creator: ML_Operator_PrintSparsity\n");
+    fprintf(fp,"%%BoundingBox: %f %f %f %f\n",
+	    xl,yb,xr,yt);
+    fprintf(fp,"%%EndComments\n");
+    fprintf(fp,"/cm {72 mul 2.54 div} def\n");
+    fprintf(fp,"/mc {72 div 2.54 mul} def\n");
+    fprintf(fp,"/pnum { 72 div 2.54 mul 20 string ");
+    fprintf(fp,"cvs print ( ) print} def\n");
+    fprintf(fp,"/Cshow {dup stringwidth pop -2 div 0 rmoveto show} def\n");
+
+    /* we leave margins etc. in cm so it is easy to modify them if
+       needed by editing the output file */
+    fprintf(fp,"gsave\n");
+    if (ltit != 0) {
+      fprintf(fp,"/Helvetica findfont %e cm scalefont setfont\n",
+	      fnstit);
+      fprintf(fp,"%f cm %f cm moveto\n",
+	      xtit,ytit);
+      fprintf(fp,"(%s) Cshow\n", title);
+      fprintf(fp,"%f cm %f cm translate\n",
+	      lrmrgn,botmrgn);
+    }
+    fprintf(fp,"%f cm %d div dup scale \n",
+	    siz,m);
+    /* draw a frame around the matrix */
+
+    fprintf(fp,"%f setlinewidth\n",
+	    frlw);
+    fprintf(fp,"newpath\n");
+    fprintf(fp,"0 0 moveto ");
+    if (square == ML_TRUE) {
+      printf("------------------- %d\n",m);
+      fprintf(fp,"%d %d lineto\n",
+	      m,0);
+      fprintf(fp,"%d %d lineto\n",
+	      m, m);
+      fprintf(fp,"%d %d lineto\n",
+	      0, m);
+    } 
+    else {
+      fprintf(fp,"%d %d lineto\n",
+	      nc, 0);
+      fprintf(fp,"%d %d lineto\n",
+	      nc, nr);
+      fprintf(fp,"%d %d lineto\n",
+	      0, nr);
+    }
+    fprintf(fp,"closepath stroke\n");
+
+    /*drawing the separation lines  */
+
+    if (PrintDecomposition == ML_TRUE) {
+
+      fprintf(fp,"0.2 setlinewidth\n");
+
+      /* this can be used to draw the decomposition
+       * into processors */
+      for (i = 0 ; i < nlines - 1 ; ++i) {
+
+	row_isep = row_lines[i];
+	col_isep = col_lines[i];
+
+	/*     horizontal lines  */
+
+	yy =  1.0 * (NumGlobalCols / NumPDEEqns - col_isep) + haf;
+	xx = 1.0 * (NumGlobalRows / NumPDEEqns + 1);
+	printf("%e %e\n", xx, yy);
+	fprintf(fp,"%f %f moveto \n",
+		zero, yy);
+	fprintf(fp,"%f %f lineto stroke\n",
+		xx, yy);
+
+	/*vertical lines  */
+
+	xx = 1.0 * (row_isep) + haf;
+	yy = 1.0 * (NumGlobalCols+1);
+	fprintf(fp,"%f %f moveto \n",
+		xx, zero);
+	fprintf(fp,"%f %f lineto stroke\n",
+		xx, yy);
+      }
+    }
+
+    /* plotting loop */
+
+    fprintf(fp,"1 1 translate\n");
+    fprintf(fp,"0.8 setlinewidth\n");
+    fprintf(fp,"/p {moveto 0 -.40 rmoveto \n");
+    fprintf(fp,"           0  .80 rlineto stroke} def\n");
+
+    fclose(fp);
+  }
+  
+  if (PrintDecomposition == ML_TRUE) {
+    ML_free(row_lines);
+    ML_free(col_lines);
+    ML_free(itmp);
+  }
+
+  allocated = 10;
+
+  colInd = (int*)   ML_allocate(sizeof(int)*allocated);
+  colVal = (double*)ML_allocate(sizeof(double)*allocated);
+
+  for (pid = 0 ; pid < NumProc ; ++pid) {
+
+    if (pid == MyPID) {
+
+      fp = fopen("Amat.ps","a");
+      if( fp == NULL ) {
+	fprintf(stderr,"ERROR\n");
+	exit(EXIT_FAILURE);
+      }
+
+      for (i = 0 ; i < NumMyRows ; ++i) {
+
+	if (i % NumPDEEqns) continue;
+
+	ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NumNonzeros);
+
+	if( ierr == 0 ) {
+	  do {
+	    ML_free(colInd);
+	    ML_free(colVal);
+	    allocated *= 2;
+	    colInd = (int*)   ML_allocate(sizeof(int)*allocated);
+	    colVal = (double*)ML_allocate(sizeof(double)*allocated);
+
+	    ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NumNonzeros);
+	  } while( ierr == 0 );
+	}
+
+	grow = i + row_offset;
+	for (j = 0 ; j < NumNonzeros ; ++j) {
+	  if (colInd[j] % NumPDEEqns == 0) {
+	    gcol = (int)(global_col_id[colInd[j]]);
+	    grow /= NumPDEEqns;
+	    gcol /= NumPDEEqns;
+	    fprintf(fp,"%d %d p\n",
+		    grow, NumGlobalCols - gcol - 1); 
+	  }
+	}
+      }
+
+      fprintf(fp,"%%end of data for this process\n");
+
+      if( pid == NumProc - 1 )
+	fprintf(fp,"showpage\n");
+
+      fclose(fp);
+    }
+#ifdef ML_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+  }
+
+  ML_free(colInd);
+  ML_free(colVal);
+  ML_free(global_col_id);
+  
+  return 1;
+}
+
