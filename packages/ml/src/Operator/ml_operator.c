@@ -548,6 +548,7 @@ int ML_Operator_Print(ML_Operator *matrix, char label[])
 */
       }
    }
+   fflush(stdout);
    ML_free(val);
    ML_free(bindx);
    return 0;
