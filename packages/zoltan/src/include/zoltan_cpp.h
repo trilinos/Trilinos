@@ -25,18 +25,36 @@
 #include "zoltan.h"
 #include "zoltan_comm_cpp.h"
 #include "zoltan_dd_cpp.h"
+
+extern "C"{
+extern void Zoltan_RCB_Print_Structure(struct Zoltan_Struct *zz, int howMany); 
+extern void Zoltan_RIB_Print_Structure(struct Zoltan_Struct *zz, int howMany);
+extern void Zoltan_HSFC_Print_Structure(struct Zoltan_Struct *zz);
+}
+
 #include <string>
 
 class Zoltan_Object {
 
 public:
 
-  Zoltan_Object (MPI_Comm communicator = MPI_COMM_WORLD) 
+  // Constructor
+
+  Zoltan_Object (const MPI_Comm &communicator = MPI_COMM_WORLD) 
   {
   this->ZZ_Ptr = Zoltan_Create(communicator);
 
   // int fail = (this->ZZ_Ptr == NULL);  should catch this exception
   }
+
+  // Copy constructor
+
+  Zoltan_Object (const Zoltan_Object &zz)
+  {
+  this->ZZ_Ptr = Zoltan_Copy(zz.ZZ_Ptr);
+  }
+
+  // Destructor
 
   ~Zoltan_Object()
   {
@@ -56,8 +74,19 @@ public:
     // ZoltanObject's created on the stack will be deleted at exit,
     //  after MPI_Finalize().
 
-    Zoltan_Destroy( &ZZ_Ptr );
+    Zoltan_Destroy( &(this->ZZ_Ptr) );
   }
+
+  // Copy operator
+
+  Zoltan_Object & operator= (const Zoltan_Object &zz)
+  {
+    Zoltan_Copy_To(this->ZZ_Ptr, zz.ZZ_Ptr);
+
+    return *this;
+  }
+
+  // Wrappers for Zoltan functions
 
   int Set_Param( const std::string & param, const std::string & value )
   {
@@ -68,7 +97,7 @@ public:
 
   //! Replaces Zoltan_Set_Param_Vec
   int Set_Param_Vec( const std::string & param, const std::string & value, 
-                     int index )
+                     const int &index )
   {
     return Zoltan_Set_Param_Vec( ZZ_Ptr,
                                  const_cast<char*>(param.c_str()),
@@ -76,50 +105,50 @@ public:
                                  index );
   }
 
-  int LB_Partition ( int * changes,
-                     int * num_gid_entries,
-                     int * num_lid_entries,
-                     int * num_import,
-                     ZOLTAN_ID_PTR * import_global_ids,
-                     ZOLTAN_ID_PTR * import_local_ids,
-                     int ** import_procs,
-                     int ** import_to_part,
-                     int * num_export,
-                     ZOLTAN_ID_PTR * export_global_ids,
-                     ZOLTAN_ID_PTR * export_local_ids,
-                     int ** export_procs,
-                     int ** export_to_part )
+  int LB_Partition ( int &changes,
+                     int &num_gid_entries,
+                     int &num_lid_entries,
+                     int &num_import,
+                     ZOLTAN_ID_PTR &import_global_ids,
+                     ZOLTAN_ID_PTR &import_local_ids,
+                     int * &import_procs,
+                     int * &import_to_part,
+                     int &num_export,
+                     ZOLTAN_ID_PTR &export_global_ids,
+                     ZOLTAN_ID_PTR &export_local_ids,
+                     int * &export_procs,
+                     int * &export_to_part )
   {
-    return Zoltan_LB_Partition( ZZ_Ptr, changes,
-                                num_gid_entries, num_lid_entries,
-                                num_import, import_global_ids, import_local_ids,
-                                import_procs, import_to_part,
-                                num_export, export_global_ids, export_local_ids,
-                                export_procs, export_to_part );
+    return Zoltan_LB_Partition( ZZ_Ptr, &changes,
+                                &num_gid_entries, &num_lid_entries,
+                                &num_import, &import_global_ids, &import_local_ids,
+                                &import_procs, &import_to_part,
+                                &num_export, &export_global_ids, &export_local_ids,
+                                &export_procs, &export_to_part );
   }
 
-  int LB_Balance  ( int * changes,
-                    int * num_gid_entries,
-                    int * num_lid_entries,
-                    int * num_import,
-                    ZOLTAN_ID_PTR * import_global_ids,
-                    ZOLTAN_ID_PTR * import_local_ids,
-                    int ** import_procs,
-                    int * num_export,
-                    ZOLTAN_ID_PTR * export_global_ids,
-                    ZOLTAN_ID_PTR * export_local_ids,
-                    int ** export_procs )
+  int LB_Balance  ( int &changes,
+                    int &num_gid_entries,
+                    int &num_lid_entries,
+                    int &num_import,
+                    ZOLTAN_ID_PTR &import_global_ids,
+                    ZOLTAN_ID_PTR &import_local_ids,
+                    int * &import_procs,
+                    int &num_export,
+                    ZOLTAN_ID_PTR &export_global_ids,
+                    ZOLTAN_ID_PTR &export_local_ids,
+                    int * &export_procs )
   {
-    return Zoltan_LB_Balance( ZZ_Ptr, changes,
-                              num_gid_entries, num_lid_entries,
-                              num_import, import_global_ids, import_local_ids, 
-                              import_procs,
-                              num_export, export_global_ids, export_local_ids, 
-                              export_procs );
+    return Zoltan_LB_Balance( ZZ_Ptr, &changes,
+                              &num_gid_entries, &num_lid_entries,
+                              &num_import, &import_global_ids, &import_local_ids, 
+                              &import_procs,
+                              &num_export, &export_global_ids, &export_local_ids, 
+                              &export_procs );
   }
 
-  int LB_Set_Part_Sizes( int global_num,
-                         int len,
+  int LB_Set_Part_Sizes( const int &global_num,
+                         const int &len,
                          int * part_ids,
                          int * wgt_idx,
                          float * part_sizes )
@@ -129,9 +158,9 @@ public:
                                      part_ids, wgt_idx, part_sizes );
   }
 
-  int Order    ( int * num_gid_entries,
-                 int * num_lid_entries,
-                 int num_objs,
+  int Order    ( int &num_gid_entries,
+                 int &num_lid_entries,
+                 const int &num_objs,
                  ZOLTAN_ID_PTR global_ids,
                  ZOLTAN_ID_PTR local_ids,
                  int * rank,
@@ -139,16 +168,16 @@ public:
   {
     //  Note:  Zoltan_Order_Struct set to NULL.
     return Zoltan_Order( ZZ_Ptr,
-                         num_gid_entries, num_lid_entries,
+                         &num_gid_entries, &num_lid_entries,
                          num_objs, global_ids, local_ids,
                          rank, iperm, NULL );
   }
 
-  int LB_Eval( int print_stats,
+  int LB_Eval( const int &print_stats,
                 int * num_objects,
-                float * object_weights,
+                float * const object_weights,
                 int * num_cuts,
-                float * cut_weights,
+                float * const cut_weights,
                 int * num_boundary_objects,
                 int * num_adj_procs )
   {
@@ -158,40 +187,40 @@ public:
                     num_boundary_objects, num_adj_procs );
   }
 
-  int RCB_Box( int part,
-                int * ndim, 
-                double * xmin, 
-                double * ymin, 
-                double * zmin, 
-                double * xmax, 
-                double * ymax, 
-                double * zmax )
+  int RCB_Box( const int &part,
+                int &ndim, 
+                double &xmin, 
+                double &ymin, 
+                double &zmin, 
+                double &xmax, 
+                double &ymax, 
+                double &zmax )
   {
-    return Zoltan_RCB_Box( ZZ_Ptr, part, ndim, xmin, ymin, zmin, xmax, ymax, zmax);
+    return Zoltan_RCB_Box( ZZ_Ptr,part,&ndim,&xmin,&ymin,&zmin,&xmax,&ymax,&zmax);
   }
 
-  int LB_Free_Part( ZOLTAN_ID_PTR * global_ids,
-                    ZOLTAN_ID_PTR * local_ids,
-                    int ** procs,
-                    int ** to_part )
+  int LB_Free_Part( ZOLTAN_ID_PTR &global_ids,
+                    ZOLTAN_ID_PTR &local_ids,
+                    int * &procs,
+                    int * &to_part )
   {
-    return Zoltan_LB_Free_Part( global_ids, local_ids, procs, to_part );
+    return Zoltan_LB_Free_Part( &global_ids, &local_ids, &procs, &to_part );
   }
 
-  int LB_Free_Data( ZOLTAN_ID_PTR * import_global_ids,
-                    ZOLTAN_ID_PTR * import_local_ids,
-                    int ** import_procs,
-                    ZOLTAN_ID_PTR * export_global_ids,
-                    ZOLTAN_ID_PTR * export_local_ids,
-                    int ** export_procs )
+  int LB_Free_Data( ZOLTAN_ID_PTR &import_global_ids,
+                    ZOLTAN_ID_PTR &import_local_ids,
+                    int * &import_procs,
+                    ZOLTAN_ID_PTR &export_global_ids,
+                    ZOLTAN_ID_PTR &export_local_ids,
+                    int * &export_procs )
   {
-    return Zoltan_LB_Free_Data( import_global_ids, import_local_ids, 
-                                import_procs,
-                                export_global_ids, export_local_ids, 
-                                export_procs );
+    return Zoltan_LB_Free_Data( &import_global_ids, &import_local_ids, 
+                                &import_procs,
+                                &export_global_ids, &export_local_ids, 
+                                &export_procs );
   }
 
-  int Set_Fn  ( ZOLTAN_FN_TYPE fn_type,
+  int Set_Fn  ( const ZOLTAN_FN_TYPE &fn_type,
                 void (*fn_ptr)(),
                 void * data = 0 )
   {
@@ -473,96 +502,96 @@ public:
     return Zoltan_Set_Unpack_Obj_Fn( ZZ_Ptr, fn_ptr, data );
   }
 
-  int LB_Point_PP_Assign ( double * coords,
-                           int * proc,
-                           int * part )
+  int LB_Point_PP_Assign ( double * const coords,
+                           int &proc,
+                           int &part )
   {
-    return Zoltan_LB_Point_PP_Assign( ZZ_Ptr, coords, proc, part );
+    return Zoltan_LB_Point_PP_Assign( ZZ_Ptr, coords, &proc, &part );
   }
 
-  int LB_Point_Assign ( double * coords,
-                        int * proc )
+  int LB_Point_Assign ( double * const coords,
+                        int &proc )
   {
-    return Zoltan_LB_Point_Assign( ZZ_Ptr, coords, proc );
+    return Zoltan_LB_Point_Assign( ZZ_Ptr, coords, &proc );
   }
 
-  int LB_Box_PP_Assign ( double xmin,
-                         double ymin,
-                         double zmin,
-                         double xmax,
-                         double ymax,
-                         double zmax,
-                         int * procs,
-                         int * numprocs,
-                         int * parts,
-                         int * numparts )
+  int LB_Box_PP_Assign ( const double &xmin,
+                         const double &ymin,
+                         const double &zmin,
+                         const double &xmax,
+                         const double &ymax,
+                         const double &zmax,
+                         int * const procs,
+                         int &numprocs,
+                         int * const parts,
+                         int &numparts )
   {
     return Zoltan_LB_Box_PP_Assign( ZZ_Ptr,
                                     xmin, ymin, zmin,
                                     xmax, ymax, zmax,
-                                    procs, numprocs,
-                                    parts, numparts );
+                                    procs, &numprocs,
+                                    parts, &numparts );
   }
 
-  int LB_Box_Assign ( double xmin,
-                      double ymin,
-                      double zmin,
-                      double xmax,
-                      double ymax,
-                      double zmax,
-                      int * procs,
-                      int * numprocs )
+  int LB_Box_Assign ( const double &xmin,
+                      const double &ymin,
+                      const double &zmin,
+                      const double &xmax,
+                      const double &ymax,
+                      const double &zmax,
+                      int * const procs,
+                      int &numprocs )
   {
     return Zoltan_LB_Box_Assign( ZZ_Ptr,
                                  xmin, ymin, zmin,
                                  xmax, ymax, zmax,
-                                 procs, numprocs );
+                                 procs, &numprocs );
   }
 
-  int Invert_Lists             ( int num_import,
-                                 ZOLTAN_ID_PTR import_global_ids,
-                                 ZOLTAN_ID_PTR import_local_ids,
-                                 int * import_procs,
-                                 int * import_to_part,
-                                 int * num_export,
-                                 ZOLTAN_ID_PTR * export_global_ids,
-                                 ZOLTAN_ID_PTR * export_local_ids,
-                                 int ** export_procs,
-                                 int ** export_to_part )
+  int Invert_Lists             ( const int &num_import,
+                                 ZOLTAN_ID_PTR const import_global_ids,
+                                 ZOLTAN_ID_PTR const import_local_ids,
+                                 int * const import_procs,
+                                 int * const import_to_part,
+                                 int &num_export,
+                                 ZOLTAN_ID_PTR &export_global_ids,
+                                 ZOLTAN_ID_PTR &export_local_ids,
+                                 int * &export_procs,
+                                 int * &export_to_part )
   {
     return Zoltan_Invert_Lists( ZZ_Ptr,
                                 num_import, import_global_ids, import_local_ids,
                                 import_procs, import_to_part,
-                                num_export, export_global_ids, export_local_ids,
-                                export_procs, export_to_part );
+                                &num_export, &export_global_ids, &export_local_ids,
+                                &export_procs, &export_to_part );
   }
 
-  int Compute_Destinations     ( int num_import,
-                                 ZOLTAN_ID_PTR import_global_ids,
-                                 ZOLTAN_ID_PTR import_local_ids,
-                                 int * import_procs,
-                                 int * num_export,
-                                 ZOLTAN_ID_PTR * export_global_ids,
-                                 ZOLTAN_ID_PTR * export_local_ids,
-                                 int ** export_procs )
+  int Compute_Destinations     ( const int &num_import,
+                                 ZOLTAN_ID_PTR const import_global_ids,
+                                 ZOLTAN_ID_PTR const import_local_ids,
+                                 int * const import_procs,
+                                 int &num_export,
+                                 ZOLTAN_ID_PTR &export_global_ids,
+                                 ZOLTAN_ID_PTR &export_local_ids,
+                                 int * &export_procs )
   {
     return Zoltan_Compute_Destinations( ZZ_Ptr,
                                         num_import, import_global_ids, 
                                         import_local_ids, import_procs,
-                                        num_export, export_global_ids, 
-                                        export_local_ids, export_procs );
+                                        &num_export, &export_global_ids, 
+                                        &export_local_ids, &export_procs );
   }
 
-  int Migrate          ( int num_import,
-                         ZOLTAN_ID_PTR import_global_ids,
-                         ZOLTAN_ID_PTR import_local_ids,
-                         int * import_procs,
-                         int * import_to_part,
-                         int num_export,
-                         ZOLTAN_ID_PTR export_global_ids,
-                         ZOLTAN_ID_PTR export_local_ids,
-                         int * export_procs,
-                         int * export_to_part )
+  int Migrate          ( const int &num_import,
+                         ZOLTAN_ID_PTR const import_global_ids,
+                         ZOLTAN_ID_PTR const import_local_ids,
+                         int * const import_procs,
+                         int * const import_to_part,
+                         const int &num_export,
+                         ZOLTAN_ID_PTR const export_global_ids,
+                         ZOLTAN_ID_PTR const export_local_ids,
+                         int * const export_procs,
+                         int * const export_to_part )
   {
     return Zoltan_Migrate( ZZ_Ptr,
                            num_import, import_global_ids, import_local_ids, 
@@ -571,14 +600,14 @@ public:
                            export_procs, export_to_part );
   }
 
-  int Help_Migrate     ( int num_import,
-                         ZOLTAN_ID_PTR import_global_ids,
-                         ZOLTAN_ID_PTR import_local_ids,
-                         int * import_procs,
-                         int num_export,
-                         ZOLTAN_ID_PTR export_global_ids,
-                         ZOLTAN_ID_PTR export_local_ids,
-                         int * export_procs )
+  int Help_Migrate     ( const int &num_import,
+                         ZOLTAN_ID_PTR const import_global_ids,
+                         ZOLTAN_ID_PTR const import_local_ids,
+                         int * const import_procs,
+                         const int &num_export,
+                         ZOLTAN_ID_PTR const export_global_ids,
+                         ZOLTAN_ID_PTR const export_local_ids,
+                         int * const export_procs )
   {
     return Zoltan_Help_Migrate( ZZ_Ptr,
                                 num_import, import_global_ids, import_local_ids,
@@ -587,15 +616,44 @@ public:
                                 export_procs );
   }
 
-  int Generate_Files( char * fname,
-                      int base_index,
-                      int gen_geom,
-                      int gen_graph,
-                      int gen_hg )
+  int Generate_Files( std::string & fname,
+                      const int &base_index,
+                      const int &gen_geom,
+                      const int &gen_graph,
+                      const int &gen_hg )
   {
-    return Zoltan_Generate_Files( ZZ_Ptr,
-                                  fname, base_index,
+    // c_str() is a "const char *", and Zoltan_Generate_Files may re-write
+    // the name passed in, so in order to compile we need a non-const
+    // "char *" file name to pass to Zoltan_Generate_Files.
+
+    char *fn = strdup(fname.c_str());
+
+    int rc = Zoltan_Generate_Files( ZZ_Ptr, fn, base_index,
                                   gen_geom, gen_graph, gen_hg );
+
+    free(fn);
+
+    return rc;
+  }
+
+/*
+** for debugging
+**   RCB/RIB - len is the number of IDs to print out, -1 for all
+*/
+
+  void PrintRCB(int len)
+  {
+    Zoltan_RCB_Print_Structure(ZZ_Ptr, len);
+  }
+
+  void PrintRIB(int len)
+  {
+    Zoltan_RIB_Print_Structure(ZZ_Ptr, len);
+  }
+
+  void PrintHSFC(int len)
+  {
+    Zoltan_HSFC_Print_Structure(ZZ_Ptr);
   }
 
 private:
