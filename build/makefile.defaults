@@ -197,7 +197,8 @@ endif
 OBJ_EXT = o
 LIB_EXT = a
 
-
-LIBSUPERLUDIST = $(TRILINOS3PL_HOME)/SuperLU_DIST_1.0/libsuperludist.a
-LIBDSSLV_HOME = $(TRILINOS_HOME)/external/DSSLV/
-LIBDSSLV = $(LIBDSSLV_HOME)/libdsslv.a 
+#  Supermatrix.h is the same for both so it should not matter which directory we pick it up from
+SUPERLU_INCLUDES = -I$(TRILINOS3PL_HOME)/SuperLU_DIST/SRC -I$(TRILINOS3PL_HOME)/SuperLU/SRC
+LIBSUPERLUDIST = $(TRILINOS3PL_HOME)/SuperLU_DIST/libsuperludist.a
+LIBAMESOS_HOME = $(TRILINOS_HOME)/packages/amesos
+LIBAMESOS = $(LIBAMESOS_HOME)/libamesos.a 
