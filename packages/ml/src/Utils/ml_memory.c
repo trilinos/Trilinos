@@ -717,6 +717,7 @@ ML_print_it();
 
 *******************************************************************************/
 
+#define ML_JANUS
 #ifdef ML_JANUS
 
 
@@ -725,7 +726,8 @@ int heap_info(long *a, long *b, long *c, long *d);
 void ML_mchk(char *ptr,int line)
 {
  long frags, tfree, lfree, tused;
- long nnodes,me;
+ /*long nnodes,me;*/
+ int nnodes,me;
  long sourcevec[4],maxvec[4],minvec[4],avgvec[4];
  int i;
  double inverse;
@@ -745,19 +747,19 @@ void ML_mchk(char *ptr,int line)
  
  
  MPI_Reduce(sourcevec,maxvec, 4, MPI_LONG, MPI_MAX, 0, MPI_COMM_WORLD); 
- if (me == 0) {
- 
-        inverse = 1.0/nnodes;
-        for (i =0; i < 4; i++) avgvec[i] = avgvec[i]*inverse;
- 
-        printf("Heap data at %s line %d \n",ptr, line);
-        printf("fragments         : (%8ld -- %8ld -- %8ld)\n",minvec[0],avgvec[0],maxvec[0]);
-        printf("free (KB)         : (%8ld -- %8ld -- %8ld)\n",minvec[1],avgvec[1],maxvec[1]);
-        printf("largest free (KB) : (%8ld -- %8ld -- %8ld)\n",minvec[2],avgvec[2],maxvec[2]);
-        printf("total used  (KB)  : (%8ld -- %8ld -- %8ld)\n",minvec[3],avgvec[3],maxvec[3]);
-        printf("\n");
- }
-}
  MPI_Reduce(sourcevec,minvec, 4, MPI_LONG, MPI_MIN, 0, MPI_COMM_WORLD);
  MPI_Reduce(sourcevec,avgvec, 4, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+ if (me == 0)
+ {
+    inverse = 1.0/nnodes;
+    for (i =0; i < 4; i++) avgvec[i] = avgvec[i]*inverse;
+ 
+    printf("Heap data at %s line %d \n",ptr, line);
+    printf("fragments         : (%8ld -- %8ld -- %8ld)\n",minvec[0],avgvec[0],maxvec[0]);
+    printf("free (KB)         : (%8ld -- %8ld -- %8ld)\n",minvec[1],avgvec[1],maxvec[1]);
+    printf("largest free (KB) : (%8ld -- %8ld -- %8ld)\n",minvec[2],avgvec[2],maxvec[2]);
+    printf("total used  (KB)  : (%8ld -- %8ld -- %8ld)\n",minvec[3],avgvec[3],maxvec[3]);
+    printf("\n");
+ }
+}
 #endif
