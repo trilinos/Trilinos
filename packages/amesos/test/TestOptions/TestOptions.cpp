@@ -338,7 +338,11 @@ int main( int argc, char *argv[] ) {
 
 #ifdef HAVE_VALGRIND
   //
-  //  If this is being run under valgrind
+  //  If this is being run under valgrind, query valgrind to see if valgrind
+  //  detected ay errors.
+  //
+  //  This does not catch memory leaks.  grep "loss" in the valgrind log files
+  //  to look for memory leaks.  
   //
   if ( RUNNING_ON_VALGRIND ) { 
     if (verbose) cout <<  VALGRIND_COUNT_ERRORS << " valgrind errors " << endl; 

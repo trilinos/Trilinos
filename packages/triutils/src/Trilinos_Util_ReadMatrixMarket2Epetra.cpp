@@ -150,5 +150,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
   EPETRA_CHK_ERR( xexact->Random( ) ) ; 
   EPETRA_CHK_ERR( A->Multiply( false, *xexact, *b ) ); 
 
+  assert( map->SameAs(A->RowMap()) ) ;
+ 
   return 0;
 }
