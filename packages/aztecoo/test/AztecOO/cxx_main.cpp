@@ -586,6 +586,8 @@ int call_AZ_iterate(AZ_MATRIX* Amat,
 
   AZ_iterate(x, b, options, params, status, proc_config,
              Amat, P, S);
+
+  return(0);
 }
                     
 int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
