@@ -24,6 +24,8 @@
 #ifdef DEBUG
 #include "Comm_assert_equal.h"
 #include "CrsMatricesAreIdentical.h"
+#endif
+#ifdef EPETRA_CRSMATRIX_CONSTRUCT_FROM_ROWMATRIX
 #include "ExtractCrsFromRowMatrix.h"
 #endif
 /*
@@ -185,14 +187,16 @@ int SuperludistOO::SetSuperludistDefaults() {
 int SuperludistOO::Solve() { 
 
   bool CheckExtraction = false;    //  Set to true to force extraction for unit test
-  bool CheckConversionToSerial = true ;  //Set true for unit test 
 
   Epetra_RowMatrix *RowMatrixA = (GetUserMatrix()) ; 
   Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
+#ifdef EPETRA_CRSMATRIX_CONSTRUCT_FROM_ROWMATRIX
   Epetra_CrsMatrix *ExtractCrsMatrixA = 0;
+#endif
   Epetra_CrsMatrix *Phase2Mat = 0 ;
   const Epetra_Comm &Comm = RowMatrixA->Comm();
 
+#ifdef DEBUG
   //
   //  The following lines allow us time to attach the debugger
   //
@@ -200,7 +204,7 @@ int SuperludistOO::Solve() {
   int iam = Comm.MyPID() ;
   //  if ( iam == 0 )  cin >> hatever ; 
   Comm.Barrier();
-
+#endif
   //  SparseDirectTimingVars::SS_Result.RedistribTime().Time_First( ) ; //  Initializes the global time
 
   //
@@ -212,17 +216,16 @@ int SuperludistOO::Solve() {
   if ( CastCrsMatrixA != 0 && ! CheckExtraction ) { 
     Phase2Mat = CastCrsMatrixA ; 
   } else {
-#ifndef EPETRA_CRSMATRIX_CONSTRUCT_FROM_ROWMATRIX
-    assert( false ) ;
-#else
+#ifdef EPETRA_CRSMATRIX_CONSTRUCT_FROM_ROWMATRIX
     ExtractCrsMatrixA = new Epetra_CrsMatrix( *RowMatrixA ) ; 
 
     Phase2Mat = ExtractCrsMatrixA ; 
-
 #ifdef DEBUG
     if ( CheckExtraction ) 
       assert( CrsMatricesAreIdentical( CastCrsMatrixA, ExtractCrsMatrixA ) ) ; 
 #endif
+#else
+    assert( false ) ;
 #endif
   }
 
