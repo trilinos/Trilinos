@@ -85,15 +85,14 @@ all processors should use the same value of <i><a href="#Debug Levels in Zoltan"
 is 5.</td>
 </tr>
 
-<tr VALIGN=TOP>
-<td><a NAME="TIMER"></a><i>&nbsp;&nbsp;&nbsp; TIMER</i></td>
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="DEBUG_MEMORY"></a><i>&nbsp;&nbsp;&nbsp; DEBUG_MEMORY</i></td>
 
-<td>The timer with which you wish to measure time. Valid choices are <i>wall
-</i>(based
-on <i>MPI_Wtime)</i>,<i> cpu </i>(based on the ANSI C library function
-<i>clock</i>)<i>, </i>and <i>user</i>.&nbsp; The resolution may be poor,
-as low as 1/60th of a second, depending upon your platform.</td>
+<td>Integer indicating the amount of low-level debugging information about
+memory-allocation should be kept by Zoltan's <a href="ug_util_mem.html">Memory
+Management utilities</a>. Valid values are 0, 1, 2, and 3.</td>
 </tr>
+
 
 <tr VALIGN=TOP NOSAVE>
 <td><a NAME="OBJ_WEIGHT_DIM"></a><i>&nbsp;&nbsp;&nbsp; OBJ_WEIGHT_DIM</i></td>
@@ -111,6 +110,16 @@ is zero, all edges have equal weight. Many algorithms do not support multiple
 (multidimensional) weights.</td>
 </tr>
 
+<tr VALIGN=TOP>
+<td><a NAME="TIMER"></a><i>&nbsp;&nbsp;&nbsp; TIMER</i></td>
+
+<td>The timer with which you wish to measure time. Valid choices are <i>wall
+</i>(based
+on <i>MPI_Wtime)</i>,<i> cpu </i>(based on the ANSI C library function
+<i>clock</i>)<i>, </i>and <i>user</i>.&nbsp; The resolution may be poor,
+as low as 1/60th of a second, depending upon your platform.</td>
+</tr>
+
 <tr VALIGN=TOP NOSAVE>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>USE_MACHINE_DESC</i></td>
 
@@ -123,14 +132,6 @@ are supported.</td>
 
 <td NOSAVE>Currently unused; will be used when heterogeneous computers
 are supported.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a NAME="DEBUG_MEMORY"></a><i>&nbsp;&nbsp;&nbsp; DEBUG_MEMORY</i></td>
-
-<td>Integer indicating the amount of low-level debugging information about
-memory-allocation should be kept by Zoltan's <a href="ug_util_mem.html">Memory
-Management utilities</a>. Valid values are 0, 1, 2, and 3.</td>
 </tr>
 
 <tr VALIGN=TOP>
@@ -166,8 +167,9 @@ Management utilities</a>. Valid values are 0, 1, 2, and 3.</td>
 <tr VALIGN=TOP>
 <td></td>
 
-<td><i>TIMER</i> = wall</td>
+<td><i>DEBUG_MEMORY</i> = 1</td>
 </tr>
+
 
 <tr VALIGN=TOP NOSAVE>
 <td></td>
@@ -184,6 +186,12 @@ Management utilities</a>. Valid values are 0, 1, 2, and 3.</td>
 <tr VALIGN=TOP>
 <td></td>
 
+<td><i>TIMER</i> = wall</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
 <td><i>USE_MACHINE_DESC</i> = 0</td>
 </tr>
 
@@ -193,11 +201,6 @@ Management utilities</a>. Valid values are 0, 1, 2, and 3.</td>
 <td><i>MACHINE_DESC_FILE</i> = /etc/local/Zoltan_Machine_Desc</td>
 </tr>
 
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>DEBUG_MEMORY</i> = 1</td>
-</tr>
 </table>
 
 <h3>

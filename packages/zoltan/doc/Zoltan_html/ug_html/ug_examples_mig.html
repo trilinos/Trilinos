@@ -56,11 +56,11 @@ The application
 requests auto-migration by turning on the <B>AUTO_MIGRATE</B> option
 through a call to <B><A HREF="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</A></B>
 and registers functions to pack and unpack a particle's data. During the
-call to <B><A HREF="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A></B>,
+call to <B><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A></B>,
 Zoltan computes the new decomposition and, using calls
 to the packing and unpacking query functions, automatically migrates particles
 to their new processors. The application then frees the arrays returned
-by <B><A HREF="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A></B> and
+by <B><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A></B> and
 can continue computation without having to perform any additional operations
 for data migration.
 <BR>&nbsp;
@@ -87,16 +87,14 @@ for data migration.
 <BR><TT>...</TT>&nbsp;
 <BR><TT>/* <I>Perform load balancing AND automatic data migration!</I>
 */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A>(zz,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&nbsp;</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A>(zz,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&amp;imp_to_part,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs,&amp;exp_to_part);</TT>&nbsp;
 
 <P><TT>/* <I>Free memory allocated for load-balancing results by Zoltan </I>
 */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</A>(&amp;imp_global_ids,
-&amp;imp_local_ids, &amp;imp_procs,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_ids, &amp;exp_local_ids,
-&amp;exp_procs);&nbsp;</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</A>(&amp;imp_global_ids, &amp;imp_local_ids, &amp;imp_procs, &amp;imp_to_part);</TT>
+<BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</A>(&amp;exp_global_ids, &amp;exp_local_ids, &amp;exp_procs, &amp;exp_to_part);</TT>
 <BR><TT>...</TT></TD>
 </TR>
 
@@ -116,11 +114,11 @@ copies of "ghost" nodes, nodes that are in the element but are assigned
 to other processors. Each of these entities (nodes, elements, and ghost
 nodes) can be migrated in separate migration steps using the functions
 provided in the migration tools.  First, the assignment of nodes to
-processors returned by <B><A HREF="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A></B>
+processors returned by <B><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A></B>
 is established. Query functions that pack and unpack nodes are registered
-and <B><A HREF="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</A></B>
-is called using the nodal decomposition returned from <B><A HREF="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A></B>.
-<B><A HREF="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</A></B>
+and <B><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A></B>
+is called using the nodal decomposition returned from <B><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A></B>.
+<B><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A></B>
 packs the nodes to be exported, sends them to other processors, and unpacks
 nodes received by a processor. The packing routine <I>migrate_node_pack</I>
 includes with each node a list of the element IDs for elements containing
@@ -128,14 +126,14 @@ that node. The unpacking routine <I>migrate_node_unpack</I> examines the
 list of element IDs and builds a list of requests for elements the processor
 needs but does not already store. At the end of the nodal migration, each
 processor has a list of element IDs for elements that it needs to support
-imported nodes but does not already store. Through a call to <B><A HREF="ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</A></B>,
+imported nodes but does not already store. Through a call to <B><A HREF="ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</A></B>,
 each processor computes the list of elements it has to send to other processors
 to satisfy their element requests. Packing and unpacking routines for elements
-are registered, and <B><A HREF="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</A></B>
+are registered, and <B><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A></B>
 is again used to move element data to new processors. Requests for ghost
 nodes can be built within the element packing and unpacking routines, and
-calls to <B><A HREF="ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</A></B>
-and <B><A HREF="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</A></B>,
+calls to <B><A HREF="ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</A></B>
+and <B><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A></B>,
 with node packing and unpacking, satisfy requests for ghost nodes. In all
 three phases of migration, the migration tools handle communication;
 the application is responsible only for packing and unpacking data and
@@ -147,23 +145,23 @@ for building the appropriate request lists.
 <TD NOSAVE><A NAME="User-guided Migration Example Fig"></A><TT>/* <I>Assume
 Zoltan returns a decomposition of the</I> */</TT>&nbsp;
 <BR><TT>/* <I>nodes of a finite element mesh.</I> */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A>(zz,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</A>(zz,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&amp;imp_to_part,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs,&amp;exp_to_part);</TT>
 
-<P><TT>/* <I>Migrate the nodes as directed by the results of Zoltan_LB_Balance.</I>
-*/</TT>&nbsp;
+<P><TT>/* <I>Migrate the nodes as directed by the results of Zoltan_LB_Partition.</I>
+*/</TT>
 <BR><TT>/* <I>While unpacking nodes, build list of requests for elements
-needed</I> */</TT>&nbsp;
-<BR><TT>/* <I>to support the imported nodes.</I>*/</TT>&nbsp;
+needed</I> */</TT>
+<BR><TT>/* <I>to support the imported nodes.</I>*/</TT>
 <BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN_TYPE</A>,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_node_size, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN_TYPE</A>,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_pack_node, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN_TYPE</A>,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_unpack_node, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</A>(zz,num_import,imp_global_ids,imp_local_ids,imp_procs,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_export,exp_global_ids,exp_local_ids,exp_procs);&nbsp;</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A>(zz,num_import,imp_global_ids,imp_local_ids,imp_procs,imp_to_part,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_export,exp_global_ids,exp_local_ids,exp_procs,exp_to_part);</TT>
 
 <P><TT>/* <I>Prepare for migration of requested elements.</I> */</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN_TYPE</A>,</tt>
@@ -178,14 +176,14 @@ needs</I> */</TT>&nbsp;
 <BR><TT>/* <I>to support the imported nodes; it must compute which elements
 to</I> */</TT>&nbsp;
 <BR><TT>/* <I>send to other processors. </I>*/</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</A>(zz,
+<BR><TT><A HREF="ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</A>(zz,
 Num_Elt_Requests, Elt_Requests_Global_IDs,&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Elt_Requests_Local_IDs,
-Elt_Requests_Procs,&nbsp;</TT>&nbsp;
+Elt_Requests_Procs, Elt_Requests_to_Part,</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_tmp_exp,
 &amp;tmp_exp_global_ids,&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;tmp_exp_local_ids,
-&amp;tmp_exp_procs);&nbsp;</TT>&nbsp;
+&amp;tmp_exp_procs, &amp;tmp_exp_to_part);&nbsp;</TT>&nbsp;
 
 <P><TT>/* <I>Processor now knows which elements to send to other processors.</I>
 */</TT>&nbsp;
@@ -193,11 +191,11 @@ Elt_Requests_Procs,&nbsp;</TT>&nbsp;
 </I>*/</TT>&nbsp;
 <BR><TT>/* <I>request lists for "ghost" nodes needed by the imported elements.</I>
 */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</A>(zz,
+<BR><TT><A HREF="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</A>(zz,
 Num_Elt_Requests, Elt_Requests_Global_IDs,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Elt_Requests_Local_IDs, Elt_Requests_Procs,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_tmp_exp_objs, tmp_exp_global_ids,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tmp_exp_local_ids, tmp_exp_procs);</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Elt_Requests_Local_IDs, Elt_Requests_Procs, Elt_Request_to_Part,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_tmp_exp_objs, tmp_exp_global_ids,&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tmp_exp_local_ids, tmp_exp_procs, tmp_exp_to_part);</TT>
 
 <P><TT>/* <I>Repeat process for "ghost" nodes.</I> */</TT>&nbsp;
 <BR><TT>...</TT></TD>

@@ -349,7 +349,7 @@ to tell Zoltan how to copy all needed data for a given
 object into a communication buffer. The object's data can then be sent
 to another processor as part of data migration. It may also perform other
 operations, such as removing the object from the processor's data structure.
-This routine is called by <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+This routine is called by <b><a href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
 for each object to be sent to another processor.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -625,7 +625,7 @@ object from a communication buffer into the application's data structure.
 This operation is needed as the final step of importing objects during
 data migration. The query function may also perform other computation,
 such as building request lists for related data. This routine is called
-by <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+by <b><a href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
 for each object to be received by the processor. (Note: a local ID for
 the object is not included in this function, as the local ID is local to
 the exporting, not the importing, processor.)

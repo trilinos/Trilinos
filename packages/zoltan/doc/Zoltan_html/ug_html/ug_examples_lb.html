@@ -36,25 +36,26 @@ with
 <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 Next, other parameter values are set by calls to 
 <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
-After some computation, load balancing is invoked by calling <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
+After some computation, load balancing is invoked by calling <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>.
 The results of the load balancing include the number of nodes to be imported
 and exported to the processor, lists of global and local IDs of the imported
 and exported nodes, and source and destination processors of the imported
-and exported nodes. A returned argument of <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
+and exported nodes. A returned argument of <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
 is tested to see whether the new decomposition differs from the old one.
 If the decompositions differ, some sort of data migration is needed to
 establish the new decomposition; the details of migration are not shown
 in this <a href="#LB Example Fig">figure</a> but will be addressed in the
 <a href="ug_examples_mig.html">migration
 examples</a>. After the data migration is completed, the arrays of information
-about imported and exported nodes returned by <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
-are freed by a call to <b><a href="ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>.
+about imported and exported nodes returned by <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+are freed by a call to <b><a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b>.
 <br>&nbsp;
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
 <td><a NAME="LB Example Fig"></a><tt>char *lb_method;</tt>
 <br><tt>int new, num_imp, num_exp, *imp_procs, *exp_procs;</tt>
+<br><tt>int *imp_to_part, *exp_to_part;</tt>
 <br><tt>int num_gid_entries, num_lid_entries;</tt>
 <br><tt><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>&nbsp;imp_global_ids,
 exp_global_ids;</tt>
@@ -70,17 +71,17 @@ imp_local_ids, exp_local_ids;</tt>
 <p><tt>/* <i>Perform computations</i> */</tt>
 <br><tt>...</tt>
 <br><tt>/* <i>Perform load balancing</i> */</tt>
-<br><tt><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a>(zz,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</tt>
+<br><tt><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a>(zz,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&amp;imp_to_part,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs,&amp;exp_to_part);&nbsp;</tt>
 <br><tt>if (new)</tt>
 <br><tt>&nbsp; perform_data_migration(...);</tt>
 <p><tt>/* <i>Free memory allocated for load-balancing results by Zoltan library</i>
 */</tt>
-<br><tt><a href="ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a>(&amp;imp_global_ids,
-&amp;imp_local_ids, &amp;imp_procs,&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_ids, &amp;exp_local_ids,
-&amp;exp_procs);&nbsp;</tt>
+<br><tt><a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a>(&amp;imp_global_ids,
+&amp;imp_local_ids, &amp;imp_procs, &amp;imp_to_part);</tt>
+<br><tt><a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a>(&amp;exp_global_ids,
+&amp;exp_local_ids, &amp;exp_procs, &amp;exp_to_part);</tt>
 <br><tt>...</tt>
 </td>
 </tr>
@@ -112,18 +113,18 @@ lb_method)</tt>
 <p><tt>! <i>Perform computations</i></tt>
 <br><tt>...</tt>
 <br><tt>! <i>Perform load balancing</i></tt>
-<br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a>(zz,new,num_gid_entries,num_lid_entries,&nbsp;&amp;</tt>
+<br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a>(zz,new,num_gid_entries,num_lid_entries,&nbsp;&amp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_imp,imp_global_ids,imp_local_ids,
 &amp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; imp_procs,num_exp,exp_global_ids,exp_local_ids,exp_procs)&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; imp_procs,imp_to_part, &amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_exp,exp_global_ids,exp_local_ids, &amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exp_procs,exp_to_part)&nbsp;</tt>
 <br><tt>if (new) then</tt>
 <br><tt>&nbsp; perform_data_migration(...)</tt>
 <br><tt>endif</tt>
 <p><tt>! <i>Free memory allocated for load-balancing results by Zoltan library</i></tt>
-<br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a>(imp_global_ids,
-imp_local_ids, imp_procs, &amp;&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exp_global_ids, exp_local_ids,
-exp_procs)&nbsp;</tt>
+<br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a>(imp_global_ids, imp_local_ids, imp_procs, imp_to_part);</tt>
+<br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a>(exp_global_ids, exp_local_ids, exp_procs, exp_to_part);</tt>
 <br><tt>...</tt></td>
 </tr>
 
