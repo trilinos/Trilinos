@@ -286,8 +286,11 @@ LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
   AnasaziLOCAVec<double> ivec( xVector, blksz );
   ivec.MvRandom();
 
+  // Create and instance of the eigenproblem
+  AnasaziEigenproblem<double> LOCAProblem( &Amat, &ivec );
+
   // Initialize the solver
-  Anasazi::BlockArnoldi<double> LOCABlockArnoldi( Amat, ivec, tol, nev, length,
+  Anasazi::BlockArnoldi<double> LOCABlockArnoldi( LOCAProblem, tol, nev, length,
                                       blksz, which, step, restart );
 
   // Print out debugging information on single proc
