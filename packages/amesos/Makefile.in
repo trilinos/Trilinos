@@ -138,6 +138,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 
+#SUBDIRS = src
 #SUBDIRS = src test example
 SUBDIRS = src test
 subdir = .

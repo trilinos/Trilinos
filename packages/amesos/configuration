@@ -1,25 +1,25 @@
 I recently added Amesos_Umfpack.  These are the files that I added or 
 changed as a part of that:
 
-Configure.ac
+Configure.ac - CODED
 
-src/Makefile.am
-src/Amesos_config.h.in
-src/Amesos_Umfpack.cpp
-src/Amesos_Umfpack.h
+src/Makefile.am - CODED 
+src/Amesos_config.h.in - CODED 
+src/Amesos_Klu.cpp - CODED but probably too many umfpack's to klu's
+src/Amesos_Klu.h - CODED 
 
 
-test/Makefile.am; 
-test/Amesos_TestDriver.cpp
-test/Amesos_TestSolver.cpp
-test/Amesos_TestSolver.h
-test/Amesos_TestMrhsSolver.cpp
-test/Amesos_TestMultiSolver.cpp
-test/AmesosUmfpack
-test/AmesosUmfpackShort
-test/AmesosUmfpackSerial 
-test/scripts/daily/serial/TestUmfpackSerial
-test/scripts/daily/serial/Makefile.am
-test/scripts/daily/mpi/TestUmfpack
-test/scripts/daily/mpi/Makefile.am
+test/Makefile.am; - CODED 
+test/Amesos_TestDriver.cpp - CODED 
+test/Amesos_TestSolver.cpp - CODED 
+test/Amesos_TestSolver.h - CODED 
+test/Amesos_TestMrhsSolver.cpp - CODED 
+test/Amesos_TestMultiSolver.cpp - CODED 
+test/AmesosKlu - CODED 
+test/AmesosKluShort - CODED 
+test/AmesosKluSerial - CODED 
+test/scripts/daily/serial/TestKluSerial - CODED 
+test/scripts/daily/serial/Makefile.am - CODED 
+test/scripts/daily/mpi/TestKlu - CODED 
+test/scripts/daily/mpi/Makefile.am - CODED 
 

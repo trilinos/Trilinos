@@ -263,6 +263,9 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, dscpack, [Enable Amesos interface support fo
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, umfpack, [Enable Amesos interface support for UMFPACK], 
 		AMESOS_UMFPACK, no)
 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, klu, [Enable Amesos interface support for KLU], 
+		AMESOS_KLU, no)
+
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, mumps, [Enable Amesos interface support for MUMPS], 
 		AMESOS_MUMPS, no)
 
@@ -279,9 +282,11 @@ if test "X$ac_cv_use_amesos_slud" = "Xno"; then
    if test "X$ac_cv_use_amesos_slus" = "Xno"; then
       if test "X$ac_cv_use_amesos_dscpack" = "Xno"; then
          if test "X$ac_cv_use_amesos_umfpack" = "Xno"; then
-            if test "X$ac_cv_use_amesos_mumps" = "Xno"; then
-	       if test "X$ac_cv_use_amesos_kundert" = "Xno"; then
+            if test "X$ac_cv_use_amesos_klu" = "Xno"; then
+               if test "X$ac_cv_use_amesos_mumps" = "Xno"; then
+   	          if test "X$ac_cv_use_amesos_kundert" = "Xno"; then
                  AC_MSG_ERROR([Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details])
+                  fi
                fi
             fi
          fi				 
@@ -505,6 +510,34 @@ fi
 
 
 
+
+
+
+
+
+
+
+#
+#  --enable-amesos-klu
+#
+if test "X$ac_cv_use_amesos_klu" != "Xno"; then
+  if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
+    AM_CONDITIONAL(HAVE_AMESOS_KLU, true ) 
+    AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+  else 
+    AC_MSG_ERROR([Cannot enable klu without enabling umfpack.])
+  fi 
+else
+  AM_CONDITIONAL(HAVE_AMESOS_KLU, false ) 
+fi
+
+
+
+
+
+
+
+
 #
 #  --enable-amesos-mumps, --with-amesos-mumpsdir, --with-amesos-mumpslib, 
 #    --with-amesos-mumpspordlib, 
@@ -566,7 +599,7 @@ if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 #      AC_MSG_ERROR([[Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libdmumps.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))  
 #    LIBS="${tac_with_amesos_mumpspordlib} ${MPI_LIBS} ${LIBS}"
 #      AC_TRY_LINK_FUNC(qsortUpInts,,
-#      AC_MSG_ERROR([[Cannot find the PORD library needed by MUMPS, specify a location using --with-amesos-mumpspordlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libpord.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))  
+#      AC_MSG_ERROR([[Cannot find the PORD library needed by MUMPS, specify a location using --with-amesos-mumpspordlib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libpord.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))  
 #    LIBS="${SAVE_LIBS}"
   AM_CONDITIONAL(HAVE_AMESOS_MUMPS, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 

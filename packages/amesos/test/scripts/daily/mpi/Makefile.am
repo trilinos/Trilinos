@@ -23,6 +23,12 @@ else
 UMFPACK_TEST = 
 endif
 
+if HAVE_AMESOS_KLU
+KLU_TEST = TestKlu
+else
+KLU_TEST = 
+endif
+
 if HAVE_AMESOS_MUMPS
 MUMPS_TEST = TestMumps
 else
@@ -30,7 +36,8 @@ MUMPS_TEST =
 endif
 
 
-noinst_PROGRAMS = $(SLUDIST_TEST) $(DSCPACK_TEST) $(UMFPACK_TEST) $(MUMPS_TEST)
+noinst_PROGRAMS = $(SLUDIST_TEST) $(DSCPACK_TEST) $(UMFPACK_TEST) \
+	$(MUMPS_TEST) $(KLU_TEST)
 
 if HAVE_AMESOS_SLUD
 TestSuperLUdist_SOURCES = $(srcdir)/TestSuperLUdist
@@ -51,6 +58,13 @@ TestUmfpack_SOURCES = $(srcdir)/TestUmfpack
 
 TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
 	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
+endif
+
+if HAVE_AMESOS_KLU
+TestKlu_SOURCES = $(srcdir)/TestKlu
+
+TestKlu$(EXEEXT): $(srcdir)/TestKlu
+	cp $(srcdir)/TestKlu TestKlu$(EXEEXT) 
 endif
 
 if HAVE_AMESOS_MUMPS

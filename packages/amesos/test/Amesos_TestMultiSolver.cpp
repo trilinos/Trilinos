@@ -26,6 +26,9 @@
 #ifdef HAVE_AMESOS_UMFPACK
 #include "Amesos_Umfpack.h"
 #endif
+#ifdef HAVE_AMESOS_KLU
+#include "Amesos_Klu.h"
+#endif
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
@@ -255,6 +258,16 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       EPETRA_CHK_ERR( umfpack.SetUseTranspose( transpose ) ); 
     
       EPETRA_CHK_ERR( umfpack.Solve( ) ); 
+#endif
+#ifdef HAVE_AMESOS_KLU
+    } else if ( SparseSolver == KLU ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Klu klu( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( klu.SetUseTranspose( transpose ) ); 
+    
+      EPETRA_CHK_ERR( klu.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( klu.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( klu.Solve( ) ); 
 #endif
 #ifdef HAVE_AMESOS_MUMPS
     } else if ( SparseSolver == MUMPS ) { 

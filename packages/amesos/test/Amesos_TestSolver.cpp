@@ -36,6 +36,9 @@
 #ifdef HAVE_AMESOS_UMFPACK
 #include "Amesos_Umfpack.h"
 #endif
+#ifdef HAVE_AMESOS_KLU
+#include "Amesos_Klu.h"
+#endif
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
@@ -184,6 +187,8 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 				 (Epetra_MultiVector *) passb );
   
 
+  cout << " Amesos_testSolver B = " << *passb << endl ; 
+
 
   Epetra_Time TotalTime( Comm ) ; 
   for ( int i = 0; i < 1+special ; i++ ) { 
@@ -247,6 +252,16 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       Amesos_Umfpack A_umfpack( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( A_umfpack.SetUseTranspose( transpose ) ); 
       EPETRA_CHK_ERR( A_umfpack.Solve(  ) ); 
+#endif
+#ifdef HAVE_AMESOS_KLU
+    } else if ( SparseSolver == KLU ) {
+
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Klu A_klu( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( A_klu.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( A_klu.Solve(  ) ); 
 #endif
 #ifdef TEST_SPOOLES
     } else if ( SparseSolver == SPOOLES ) { 

@@ -1,7 +1,7 @@
 #include "Epetra_Comm.h"
 enum SparseSolverType { UMFPACKOLD, Aztec, SuperLU, SuperLUdist, 
 			SuperLUdist2, DSCPACK, DSCPACKOLD, UMFPACK, 
-			SPOOLES, SPOOLESSERIAL, KUNDERT, MUMPS } ; 
+			SPOOLES, SPOOLESSERIAL, KUNDERT, MUMPS, KLU } ; 
 enum AMESOS_MatrixType { AMESOS_Serial, AMESOS_Distributed } ; 
 
 int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file, 

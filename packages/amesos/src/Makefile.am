@@ -62,6 +62,24 @@ UMFPACK_H =
 UMFPACK =
 endif
 
+#
+#  Here is where we will add Tim Davis' files 
+#
+if HAVE_AMESOS_KLU
+KLU_H = \
+	$(srcdir)/Amesos_Klu.h \
+	$(srcdir)/klu.h \
+	$(srcdir)/klu_kernel.h
+KLU = \
+	$(srcdir)/Amesos_Klu.cpp \
+	$(srcdir)/klu.c \
+	$(srcdir)/klu_kernel.c \
+	$(srcdir)/klu_noprune_kernel.c
+else
+KLU_H =
+KLU =
+endif
+
 if HAVE_AMESOS_MUMPS
 MUMPS_H = \
 	$(srcdir)/Amesos_Mumps.h
@@ -153,6 +171,7 @@ AMESOS_H = \
 	$(PARAM_H) \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
+	$(KLU_H) \
 	$(MUMPS_H) \
 	$(SLUDIST_H) \
 	$(SLUDIST2_H) \
@@ -163,6 +182,7 @@ AMESOS_H = \
 libamesos_a_SOURCES = \
 	$(PARAM) \
 	$(DSCPACK) \
+	$(KLU) \
 	$(UMFPACK) \
 	$(MUMPS) \
 	$(SLUDIST) \

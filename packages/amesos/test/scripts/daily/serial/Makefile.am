@@ -15,7 +15,13 @@ else
 UMFPACK_TEST = 
 endif
 
-noinst_PROGRAMS = $(SLUS_TEST) $(UMFPACK_TEST)
+if HAVE_AMESOS_KLU
+KLU_TEST = TestKluSerial
+else
+KLU_TEST = 
+endif
+
+noinst_PROGRAMS = $(SLUS_TEST) $(UMFPACK_TEST) $(KLU_TEST)
 
 if HAVE_AMESOS_SLUS
 TestAmesosSerial_SOURCES = $(srcdir)/TestAmesosSerial
@@ -29,6 +35,13 @@ TestUmfpackSerial_SOURCES = $(srcdir)/TestUmfpackSerial
 
 TestUmfpackSerial$(EXEEXT): $(srcdir)/TestUmfpackSerial
 	cp $(srcdir)/TestUmfpackSerial TestUmfpackSerial$(EXEEXT) 
+endif
+
+if HAVE_AMESOS_KLU
+TestKluSerial_SOURCES = $(srcdir)/TestKluSerial
+
+TestKluSerial$(EXEEXT): $(srcdir)/TestKluSerial
+	cp $(srcdir)/TestKluSerial TestKluSerial$(EXEEXT) 
 endif
 
 

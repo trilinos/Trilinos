@@ -146,6 +146,23 @@ install_sh = @install_sh@
 
 @HAVE_AMESOS_UMFPACK_FALSE@UMFPACK = 
 
+#
+#  Here is where we will add Tim Davis' files 
+#
+@HAVE_AMESOS_KLU_TRUE@KLU_H = \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/Amesos_Klu.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel.h
+
+@HAVE_AMESOS_KLU_FALSE@KLU_H = 
+@HAVE_AMESOS_KLU_TRUE@KLU = \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/Amesos_Klu.cpp \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_noprune_kernel.c
+
+@HAVE_AMESOS_KLU_FALSE@KLU = 
+
 @HAVE_AMESOS_MUMPS_TRUE@MUMPS_H = \
 @HAVE_AMESOS_MUMPS_TRUE@	$(srcdir)/Amesos_Mumps.h
 
@@ -230,6 +247,7 @@ AMESOS_H = \
 	$(PARAM_H) \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
+	$(KLU_H) \
 	$(MUMPS_H) \
 	$(SLUDIST_H) \
 	$(SLUDIST2_H) \
@@ -241,6 +259,7 @@ AMESOS_H = \
 libamesos_a_SOURCES = \
 	$(PARAM) \
 	$(DSCPACK) \
+	$(KLU) \
 	$(UMFPACK) \
 	$(MUMPS) \
 	$(SLUDIST) \
@@ -320,29 +339,33 @@ libamesos_a_DEPENDENCIES =
 @HAVE_AMESOS_DSCPACK_TRUE@am__objects_2 = DscpackOO.$(OBJEXT) \
 @HAVE_AMESOS_DSCPACK_TRUE@	Amesos_Dscpack.$(OBJEXT)
 @HAVE_AMESOS_DSCPACK_FALSE@am__objects_2 =
-@HAVE_AMESOS_UMFPACK_TRUE@am__objects_3 = Amesos_Umfpack.$(OBJEXT)
-@HAVE_AMESOS_UMFPACK_FALSE@am__objects_3 =
-@HAVE_AMESOS_MUMPS_TRUE@am__objects_4 = Amesos_Mumps.$(OBJEXT)
-@HAVE_AMESOS_MUMPS_FALSE@am__objects_4 =
-@HAVE_AMESOS_SLUD_TRUE@am__objects_5 = SuperludistOO.$(OBJEXT)
-@HAVE_AMESOS_SLUD_FALSE@am__objects_5 =
-@HAVE_AMESOS_SLUD2_TRUE@am__objects_6 = Superludist2_OO.$(OBJEXT)
-@HAVE_AMESOS_SLUD2_FALSE@am__objects_6 =
-@HAVE_AMESOS_SLUS_TRUE@am__objects_7 = Epetra_SLU.$(OBJEXT)
-@HAVE_AMESOS_SLUS_FALSE@am__objects_7 =
-@HAVE_AMESOS_KUNDERT_TRUE@am__objects_8 = \
+@HAVE_AMESOS_KLU_TRUE@am__objects_3 = Amesos_Klu.$(OBJEXT) klu.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	klu_kernel.$(OBJEXT) \
+@HAVE_AMESOS_KLU_TRUE@	klu_noprune_kernel.$(OBJEXT)
+@HAVE_AMESOS_KLU_FALSE@am__objects_3 =
+@HAVE_AMESOS_UMFPACK_TRUE@am__objects_4 = Amesos_Umfpack.$(OBJEXT)
+@HAVE_AMESOS_UMFPACK_FALSE@am__objects_4 =
+@HAVE_AMESOS_MUMPS_TRUE@am__objects_5 = Amesos_Mumps.$(OBJEXT)
+@HAVE_AMESOS_MUMPS_FALSE@am__objects_5 =
+@HAVE_AMESOS_SLUD_TRUE@am__objects_6 = SuperludistOO.$(OBJEXT)
+@HAVE_AMESOS_SLUD_FALSE@am__objects_6 =
+@HAVE_AMESOS_SLUD2_TRUE@am__objects_7 = Superludist2_OO.$(OBJEXT)
+@HAVE_AMESOS_SLUD2_FALSE@am__objects_7 =
+@HAVE_AMESOS_SLUS_TRUE@am__objects_8 = Epetra_SLU.$(OBJEXT)
+@HAVE_AMESOS_SLUS_FALSE@am__objects_8 =
+@HAVE_AMESOS_KUNDERT_TRUE@am__objects_9 = \
 @HAVE_AMESOS_KUNDERT_TRUE@	Epetra_CrsKundertSparse.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	alloc.$(OBJEXT) smplinkrows.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spbuild.$(OBJEXT) spoutput.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spsolve.$(OBJEXT) driver.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spalloc.$(OBJEXT) spfactor.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spsmp.$(OBJEXT) sputils.$(OBJEXT)
-@HAVE_AMESOS_KUNDERT_FALSE@am__objects_8 =
-am__objects_9 = CrsMatrixTranspose.$(OBJEXT)
+@HAVE_AMESOS_KUNDERT_FALSE@am__objects_9 =
+am__objects_10 = CrsMatrixTranspose.$(OBJEXT)
 am_libamesos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
-	$(am__objects_9)
+	$(am__objects_9) $(am__objects_10)
 libamesos_a_OBJECTS = $(am_libamesos_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -353,6 +376,7 @@ LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Amesos_Dscpack.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Amesos_Klu.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Mumps.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Parameter_Entry.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Parameter_List.Po \
@@ -363,11 +387,13 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_SLU.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Superludist2_OO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/SuperludistOO.Po ./$(DEPDIR)/alloc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/driver.Po ./$(DEPDIR)/smplinkrows.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/spalloc.Po ./$(DEPDIR)/spbuild.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/spfactor.Po ./$(DEPDIR)/spoutput.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/spsmp.Po ./$(DEPDIR)/spsolve.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/sputils.Po
+@AMDEP_TRUE@	./$(DEPDIR)/driver.Po ./$(DEPDIR)/klu.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/klu_kernel.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/klu_noprune_kernel.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/smplinkrows.Po ./$(DEPDIR)/spalloc.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/spbuild.Po ./$(DEPDIR)/spfactor.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/spoutput.Po ./$(DEPDIR)/spsmp.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/spsolve.Po ./$(DEPDIR)/sputils.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -449,6 +475,10 @@ Amesos_Parameter_List.$(OBJEXT): $(srcdir)/Amesos_Parameter_List.cpp
 Amesos_Parameter_Entry.$(OBJEXT): $(srcdir)/Amesos_Parameter_Entry.cpp
 DscpackOO.$(OBJEXT): $(srcdir)/DscpackOO.cpp
 Amesos_Dscpack.$(OBJEXT): $(srcdir)/Amesos_Dscpack.cpp
+Amesos_Klu.$(OBJEXT): $(srcdir)/Amesos_Klu.cpp
+klu.$(OBJEXT): $(srcdir)/klu.c
+klu_kernel.$(OBJEXT): $(srcdir)/klu_kernel.c
+klu_noprune_kernel.$(OBJEXT): $(srcdir)/klu_noprune_kernel.c
 Amesos_Umfpack.$(OBJEXT): $(srcdir)/Amesos_Umfpack.cpp
 Amesos_Mumps.$(OBJEXT): $(srcdir)/Amesos_Mumps.cpp
 SuperludistOO.$(OBJEXT): $(srcdir)/SuperludistOO.cpp
@@ -478,6 +508,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Dscpack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Klu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Mumps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Parameter_Entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Parameter_List.Po@am__quote@
@@ -490,6 +521,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SuperludistOO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_kernel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/klu_noprune_kernel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smplinkrows.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spalloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spbuild.Po@am__quote@
@@ -513,6 +547,42 @@ distclean-depend:
 @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(COMPILE) -c `cygpath -w $<`
+
+klu.o: $(srcdir)/klu.c
+@AMDEP_TRUE@	source='$(srcdir)/klu.c' object='klu.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/klu.Po' tmpdepfile='$(DEPDIR)/klu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu.o `test -f '$(srcdir)/klu.c' || echo '$(srcdir)/'`$(srcdir)/klu.c
+
+klu.obj: $(srcdir)/klu.c
+@AMDEP_TRUE@	source='$(srcdir)/klu.c' object='klu.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/klu.Po' tmpdepfile='$(DEPDIR)/klu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu.obj `cygpath -w $(srcdir)/klu.c`
+
+klu_kernel.o: $(srcdir)/klu_kernel.c
+@AMDEP_TRUE@	source='$(srcdir)/klu_kernel.c' object='klu_kernel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/klu_kernel.Po' tmpdepfile='$(DEPDIR)/klu_kernel.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_kernel.o `test -f '$(srcdir)/klu_kernel.c' || echo '$(srcdir)/'`$(srcdir)/klu_kernel.c
+
+klu_kernel.obj: $(srcdir)/klu_kernel.c
+@AMDEP_TRUE@	source='$(srcdir)/klu_kernel.c' object='klu_kernel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/klu_kernel.Po' tmpdepfile='$(DEPDIR)/klu_kernel.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_kernel.obj `cygpath -w $(srcdir)/klu_kernel.c`
+
+klu_noprune_kernel.o: $(srcdir)/klu_noprune_kernel.c
+@AMDEP_TRUE@	source='$(srcdir)/klu_noprune_kernel.c' object='klu_noprune_kernel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/klu_noprune_kernel.Po' tmpdepfile='$(DEPDIR)/klu_noprune_kernel.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_noprune_kernel.o `test -f '$(srcdir)/klu_noprune_kernel.c' || echo '$(srcdir)/'`$(srcdir)/klu_noprune_kernel.c
+
+klu_noprune_kernel.obj: $(srcdir)/klu_noprune_kernel.c
+@AMDEP_TRUE@	source='$(srcdir)/klu_noprune_kernel.c' object='klu_noprune_kernel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/klu_noprune_kernel.Po' tmpdepfile='$(DEPDIR)/klu_noprune_kernel.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o klu_noprune_kernel.obj `cygpath -w $(srcdir)/klu_noprune_kernel.c`
 
 alloc.o: $(srcdir)/ksparse/alloc.c
 @AMDEP_TRUE@	source='$(srcdir)/ksparse/alloc.c' object='alloc.o' libtool=no @AMDEPBACKSLASH@
@@ -694,6 +764,18 @@ Amesos_Dscpack.obj: $(srcdir)/Amesos_Dscpack.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Dscpack.Po' tmpdepfile='$(DEPDIR)/Amesos_Dscpack.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Dscpack.obj `cygpath -w $(srcdir)/Amesos_Dscpack.cpp`
+
+Amesos_Klu.o: $(srcdir)/Amesos_Klu.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_Klu.cpp' object='Amesos_Klu.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Klu.Po' tmpdepfile='$(DEPDIR)/Amesos_Klu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Klu.o `test -f '$(srcdir)/Amesos_Klu.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Klu.cpp
+
+Amesos_Klu.obj: $(srcdir)/Amesos_Klu.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_Klu.cpp' object='Amesos_Klu.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Klu.Po' tmpdepfile='$(DEPDIR)/Amesos_Klu.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Klu.obj `cygpath -w $(srcdir)/Amesos_Klu.cpp`
 
 Amesos_Umfpack.o: $(srcdir)/Amesos_Umfpack.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Amesos_Umfpack.cpp' object='Amesos_Umfpack.o' libtool=no @AMDEPBACKSLASH@

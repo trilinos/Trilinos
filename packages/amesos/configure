@@ -310,7 +310,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP FLIBS NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE HAVE_AMESOS_SLUD_TRUE HAVE_AMESOS_SLUD_FALSE HAVE_AMESOS_SLUD2_TRUE HAVE_AMESOS_SLUD2_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_SLUS_TRUE HAVE_AMESOS_SLUS_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE AMESOS_LIBS BLAS_LIBS LAPACK_LIBS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP FLIBS NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE HAVE_AMESOS_SLUD_TRUE HAVE_AMESOS_SLUD_FALSE HAVE_AMESOS_SLUD2_TRUE HAVE_AMESOS_SLUD2_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_SLUS_TRUE HAVE_AMESOS_SLUS_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE AMESOS_LIBS BLAS_LIBS LAPACK_LIBS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -882,6 +882,8 @@ Optional Features:
                           is no)
   --enable-amesos-umfpack Enable Amesos interface support for UMFPACK (default
                           is no)
+  --enable-amesos-klu     Enable Amesos interface support for KLU (default is
+                          no)
   --enable-amesos-mumps   Enable Amesos interface support for MUMPS (default
                           is no)
   --enable-amesos-slus    Enable Amesos interface support for SuperLU Dist
@@ -3554,7 +3556,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3557:" \
+echo "$as_me:3559:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5948,7 +5950,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5951: \"$ac_link\") >&5
+(eval echo $as_me:5953: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6028,7 +6030,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6031: \"$ac_link\") >&5
+(eval echo $as_me:6033: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6762,6 +6764,32 @@ fi
 
 
 
+# Check whether --enable-amesos-klu or --disable-amesos-klu was given.
+if test "${enable_amesos_klu+set}" = set; then
+  enableval="$enable_amesos_klu"
+  ac_cv_use_amesos_klu=$enableval
+else
+  ac_cv_use_amesos_klu=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use amesos-klu" >&5
+echo $ECHO_N "checking whether to use amesos-klu... $ECHO_C" >&6
+
+if test "X$ac_cv_use_amesos_klu" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_KLU
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
 # Check whether --enable-amesos-mumps or --disable-amesos-mumps was given.
 if test "${enable_amesos_mumps+set}" = set; then
   enableval="$enable_amesos_mumps"
@@ -6846,11 +6874,13 @@ if test "X$ac_cv_use_amesos_slud" = "Xno"; then
    if test "X$ac_cv_use_amesos_slus" = "Xno"; then
       if test "X$ac_cv_use_amesos_dscpack" = "Xno"; then
          if test "X$ac_cv_use_amesos_umfpack" = "Xno"; then
-            if test "X$ac_cv_use_amesos_mumps" = "Xno"; then
-	       if test "X$ac_cv_use_amesos_kundert" = "Xno"; then
+            if test "X$ac_cv_use_amesos_klu" = "Xno"; then
+               if test "X$ac_cv_use_amesos_mumps" = "Xno"; then
+   	          if test "X$ac_cv_use_amesos_kundert" = "Xno"; then
                  { { echo "$as_me:$LINENO: error: Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details" >&5
 echo "$as_me: error: Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details" >&2;}
    { (exit 1); exit 1; }; }
+                  fi
                fi
             fi
          fi
@@ -7764,6 +7794,63 @@ fi
 
 
 
+
+
+
+
+
+
+
+#
+#  --enable-amesos-klu
+#
+if test "X$ac_cv_use_amesos_klu" != "Xno"; then
+  if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
+
+
+if true ; then
+  HAVE_AMESOS_KLU_TRUE=
+  HAVE_AMESOS_KLU_FALSE='#'
+else
+  HAVE_AMESOS_KLU_TRUE='#'
+  HAVE_AMESOS_KLU_FALSE=
+fi
+
+
+
+if true ; then
+  NEED_PARAMETER_LIST_TRUE=
+  NEED_PARAMETER_LIST_FALSE='#'
+else
+  NEED_PARAMETER_LIST_TRUE='#'
+  NEED_PARAMETER_LIST_FALSE=
+fi
+
+  else
+    { { echo "$as_me:$LINENO: error: Cannot enable klu without enabling umfpack." >&5
+echo "$as_me: error: Cannot enable klu without enabling umfpack." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+else
+
+
+if false ; then
+  HAVE_AMESOS_KLU_TRUE=
+  HAVE_AMESOS_KLU_FALSE='#'
+else
+  HAVE_AMESOS_KLU_TRUE='#'
+  HAVE_AMESOS_KLU_FALSE=
+fi
+
+fi
+
+
+
+
+
+
+
+
 #
 #  --enable-amesos-mumps, --with-amesos-mumpsdir, --with-amesos-mumpslib,
 #    --with-amesos-mumpspordlib,
@@ -7957,7 +8044,7 @@ fi
 #      AC_MSG_ERROR([[Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libdmumps.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))
 #    LIBS="${tac_with_amesos_mumpspordlib} ${MPI_LIBS} ${LIBS}"
 #      AC_TRY_LINK_FUNC(qsortUpInts,,
-#      AC_MSG_ERROR([[Cannot find the PORD library needed by MUMPS, specify a location using --with-amesos-mumpspordlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libpord.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))
+#      AC_MSG_ERROR([[Cannot find the PORD library needed by MUMPS, specify a location using --with-amesos-mumpspordlib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libpord.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))
 #    LIBS="${SAVE_LIBS}"
 
 
@@ -9942,7 +10029,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9945: \"$ac_link\") >&5
+(eval echo $as_me:10032: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10022,7 +10109,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10025: \"$ac_link\") >&5
+(eval echo $as_me:10112: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10424,6 +10511,27 @@ if test -z "${HAVE_AMESOS_UMFPACK_TRUE}" && test -z "${HAVE_AMESOS_UMFPACK_FALSE
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_UMFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_AMESOS_UMFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_KLU_TRUE}" && test -z "${HAVE_AMESOS_KLU_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_KLU\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_KLU\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_KLU_TRUE}" && test -z "${HAVE_AMESOS_KLU_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_KLU\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_KLU\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -11090,6 +11198,8 @@ s,@HAVE_AMESOS_DSCPACK_TRUE@,$HAVE_AMESOS_DSCPACK_TRUE,;t t
 s,@HAVE_AMESOS_DSCPACK_FALSE@,$HAVE_AMESOS_DSCPACK_FALSE,;t t
 s,@HAVE_AMESOS_UMFPACK_TRUE@,$HAVE_AMESOS_UMFPACK_TRUE,;t t
 s,@HAVE_AMESOS_UMFPACK_FALSE@,$HAVE_AMESOS_UMFPACK_FALSE,;t t
+s,@HAVE_AMESOS_KLU_TRUE@,$HAVE_AMESOS_KLU_TRUE,;t t
+s,@HAVE_AMESOS_KLU_FALSE@,$HAVE_AMESOS_KLU_FALSE,;t t
 s,@HAVE_AMESOS_MUMPS_TRUE@,$HAVE_AMESOS_MUMPS_TRUE,;t t
 s,@HAVE_AMESOS_MUMPS_FALSE@,$HAVE_AMESOS_MUMPS_FALSE,;t t
 s,@HAVE_AMESOS_SLUS_TRUE@,$HAVE_AMESOS_SLUS_TRUE,;t t
