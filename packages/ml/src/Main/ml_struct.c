@@ -1398,7 +1398,7 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
       for ( i = 0; i < length; i++ ) data->blk_info[i] = blkinfo[i];
       maxblk = 0;
       for ( i = 0; i < length; i++ ) 
-         if ( blkinfo[i] > maxblk ) maxblk = blkinfo[0];
+         if ( blkinfo[i] > maxblk ) maxblk = blkinfo[i];
       data->nblocks = maxblk + 1;
    }
    else 
@@ -1491,7 +1491,7 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
       for ( i = 0; i < length; i++ ) data->blk_info[i] = blkinfo[i];
       maxblk = 0;
       for ( i = 0; i < length; i++ ) 
-         if ( blkinfo[i] > maxblk ) maxblk = blkinfo[0];
+         if ( blkinfo[i] > maxblk ) maxblk = blkinfo[i];
       data->nblocks = maxblk + 1;
    }
    else 
