@@ -2,8 +2,8 @@
 #@HEADER
 if HAVE_MPI
 COMM_SUBDIR = mpi 
-## else
-##   COMM_SUBDIR = serial
+else
+COMM_SUBDIR = serial
 endif
 
 SUBDIRS = $(COMM_SUBDIR)

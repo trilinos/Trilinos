@@ -93,6 +93,7 @@ install_sh = @install_sh@
 #@HEADER
 #@HEADER
 @HAVE_MPI_TRUE@COMM_SUBDIR = mpi 
+@HAVE_MPI_FALSE@COMM_SUBDIR = serial
 
 SUBDIRS = $(COMM_SUBDIR)
 subdir = test/scripts/daily
@@ -106,7 +107,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = mpi
+DIST_SUBDIRS = serial mpi
 all: all-recursive
 
 .SUFFIXES:

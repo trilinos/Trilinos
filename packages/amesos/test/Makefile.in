@@ -108,7 +108,7 @@ install_sh = @install_sh@
 #
 noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort \
 	AmesosShortSuperLU AmesosShortKundert AmesosDistScript AmesosShortScript \
-	AmesosJanusScript SpoolesJanusScript SpoolesScript 
+	AmesosJanusScript SpoolesJanusScript SpoolesScript AmesosSuperLUserial
 
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
@@ -117,6 +117,7 @@ AmesosShortSuperLU_SOURCES = $(srcdir)/AmesosShortSuperLU
 AmesosShortKundert_SOURCES = $(srcdir)/AmesosShortKundert
 AmesosDistScript_SOURCES = $(srcdir)/AmesosDistScript
 AmesosShortScript_SOURCES = $(srcdir)/AmesosShortScript
+AmesosSuperLUserial_SOURCES = $(srcdir)/AmesosSuperLUserial
 AmesosJanusScript_SOURCES = $(srcdir)/AmesosJanusScript
 SpoolesJanusScript_SOURCES = $(srcdir)/SpoolesJanusScript
 SpoolesScript_SOURCES = $(srcdir)/SpoolesScript
@@ -170,7 +171,7 @@ noinst_PROGRAMS = amesos_test$(EXEEXT) AmesosShellScript$(EXEEXT) \
 	AmesosShortSuperLU$(EXEEXT) AmesosShortKundert$(EXEEXT) \
 	AmesosDistScript$(EXEEXT) AmesosShortScript$(EXEEXT) \
 	AmesosJanusScript$(EXEEXT) SpoolesJanusScript$(EXEEXT) \
-	SpoolesScript$(EXEEXT)
+	SpoolesScript$(EXEEXT) AmesosSuperLUserial$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_AmesosDistScript_OBJECTS =
@@ -213,6 +214,11 @@ AmesosShortSuperLU_OBJECTS = $(am_AmesosShortSuperLU_OBJECTS)
 AmesosShortSuperLU_LDADD = $(LDADD)
 AmesosShortSuperLU_DEPENDENCIES =
 AmesosShortSuperLU_LDFLAGS =
+am_AmesosSuperLUserial_OBJECTS =
+AmesosSuperLUserial_OBJECTS = $(am_AmesosSuperLUserial_OBJECTS)
+AmesosSuperLUserial_LDADD = $(LDADD)
+AmesosSuperLUserial_DEPENDENCIES =
+AmesosSuperLUserial_LDFLAGS =
 am_SpoolesJanusScript_OBJECTS =
 SpoolesJanusScript_OBJECTS = $(am_SpoolesJanusScript_OBJECTS)
 SpoolesJanusScript_LDADD = $(LDADD)
@@ -271,8 +277,8 @@ DIST_SOURCES = $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) \
 	AmesosDscpackShort.c $(AmesosJanusScript_SOURCES) \
 	$(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) \
 	$(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) \
-	$(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) \
-	$(amesos_test_SOURCES)
+	$(AmesosSuperLUserial_SOURCES) $(SpoolesJanusScript_SOURCES) \
+	$(SpoolesScript_SOURCES) $(amesos_test_SOURCES)
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
@@ -280,7 +286,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = README Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
-SOURCES = $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) AmesosDscpackShort.c $(AmesosJanusScript_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(amesos_test_SOURCES)
+SOURCES = $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) AmesosDscpackShort.c $(AmesosJanusScript_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(amesos_test_SOURCES)
 
 all: all-recursive
 
@@ -738,6 +744,9 @@ AmesosDistScript$(EXEEXT): $(srcdir)/AmesosDistScript
 
 AmesosShortScript$(EXEEXT): $(srcdir)/AmesosShortScript
 	cp  $(srcdir)/AmesosShortScript  AmesosShortScript$(EXEEXT)
+
+AmesosSuperLUserial$(EXEEXT): $(srcdir)/AmesosSuperLUserial
+	cp  $(srcdir)/AmesosSuperLUserial  AmesosSuperLUserial$(EXEEXT)
 
 AmesosJanusScript$(EXEEXT): $(srcdir)/AmesosJanusScript
 	cp  $(srcdir)/AmesosJanusScript  AmesosJanusScript$(EXEEXT)

@@ -935,7 +935,7 @@ Optional Packages:
   --with-amesos-slusdir   Set SuperLU serial directory (default is
                           ${tac_with_trilinos3pldir}/SuperLU, )
   --with-amesos-sluslib   Set SuperLU serial library (default is
-                          ${tac_with_amesos_slusdir}/superlu.a, )
+                          ${tac_with_amesos_slusdir}/libsuperlu.a, )
   --with-amesos-slusincdir
                           Set SuperLU serial include directory (default is
                           ${tac_with_amesos_slusdir}/SRC, )
@@ -7381,7 +7381,7 @@ if test "${with_amesos_sluslib+set}" = set; then
   withval="$with_amesos_sluslib"
   tac_with_amesos_sluslib=$withval
 else
-  tac_with_amesos_sluslib=${tac_with_amesos_slusdir}/superlu.a
+  tac_with_amesos_sluslib=${tac_with_amesos_slusdir}/libsuperlu.a
 fi;
 
   as_ac_File=`echo "ac_cv_file_${tac_with_amesos_sluslib}" | $as_tr_sh`
@@ -7540,8 +7540,8 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
-echo "$as_me: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
+echo "$as_me: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
@@ -9560,7 +9560,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 ##
 #		test/Makefile
-                                                            ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile"
+                                                                      ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10222,6 +10222,7 @@ do
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
   "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;
+  "test/scripts/daily/serial/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Amesos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Amesos_config.h:src/Amesos_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

@@ -18,7 +18,7 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort \
 	AmesosShortSuperLU AmesosShortKundert AmesosDistScript AmesosShortScript \
-	AmesosJanusScript SpoolesJanusScript SpoolesScript 
+	AmesosJanusScript SpoolesJanusScript SpoolesScript AmesosSuperLUserial
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
 AmesosDscpack_SOURCES = $(srcdir)/AmesosDscpack
@@ -26,6 +26,7 @@ AmesosShortSuperLU_SOURCES = $(srcdir)/AmesosShortSuperLU
 AmesosShortKundert_SOURCES = $(srcdir)/AmesosShortKundert
 AmesosDistScript_SOURCES = $(srcdir)/AmesosDistScript
 AmesosShortScript_SOURCES = $(srcdir)/AmesosShortScript
+AmesosSuperLUserial_SOURCES = $(srcdir)/AmesosSuperLUserial
 AmesosJanusScript_SOURCES = $(srcdir)/AmesosJanusScript
 SpoolesJanusScript_SOURCES = $(srcdir)/SpoolesJanusScript
 SpoolesScript_SOURCES = $(srcdir)/SpoolesScript
@@ -50,6 +51,9 @@ AmesosDistScript$(EXEEXT): $(srcdir)/AmesosDistScript
 
 AmesosShortScript$(EXEEXT): $(srcdir)/AmesosShortScript
 	cp  $(srcdir)/AmesosShortScript  AmesosShortScript$(EXEEXT)
+
+AmesosSuperLUserial$(EXEEXT): $(srcdir)/AmesosSuperLUserial
+	cp  $(srcdir)/AmesosSuperLUserial  AmesosSuperLUserial$(EXEEXT)
 
 AmesosJanusScript$(EXEEXT): $(srcdir)/AmesosJanusScript
 	cp  $(srcdir)/AmesosJanusScript  AmesosJanusScript$(EXEEXT)

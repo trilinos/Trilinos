@@ -419,7 +419,7 @@ if test "X$ac_cv_use_amesos_slus" != "Xno"; then
   TAC_ARG_WITH_SUB( amesos, slusdir, [Set SuperLU serial directory],  ${tac_with_trilinos3pldir}/SuperLU )
   AC_CHECK_FILE(${tac_with_amesos_slusdir})
 
-  TAC_ARG_WITH_SUB( amesos, sluslib, [Set SuperLU serial library],  ${tac_with_amesos_slusdir}/superlu.a )
+  TAC_ARG_WITH_SUB( amesos, sluslib, [Set SuperLU serial library],  ${tac_with_amesos_slusdir}/libsuperlu.a )
   AC_CHECK_FILE(${tac_with_amesos_sluslib})
 
   TAC_ARG_WITH_SUB( amesos, slusincdir, [Set SuperLU serial include directory],  ${tac_with_amesos_slusdir}/SRC )
@@ -444,7 +444,7 @@ if test "X$ac_cv_use_amesos_slus" != "Xno"; then
     SAVE_LIBS="${LIBS}"
     LIBS="${tac_with_amesos_sluslib} ${MPI_LIBS} ${LIBS}"
      AC_TRY_LINK_FUNC(SuperLU_timer_,,
-      AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))  
+      AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))  
     LIBS="${SAVE_LIBS}"
   amesos_libs=" ${tac_with_amesos_sluslib} ${amesos_libs}"
 
@@ -612,6 +612,7 @@ AC_CONFIG_FILES([
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/mpi/Makefile
+		test/scripts/daily/serial/Makefile
 		])
 
 AC_OUTPUT
