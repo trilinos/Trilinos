@@ -27,10 +27,6 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
                                      because we are doing bisection */
   char *yo = "Zoltan_PHG_rdivide";
     
-  if (!hg || !hg->vmap)  {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "hg or hg->vmap is NULL.");
-    return ZOLTAN_WARN;
-  }
   hg->redl = hgp->redl;
   
   /* only one part remaining, record results and exit */
