@@ -72,12 +72,12 @@ Line searches typically allow steps to be accepted only if they meet sufficient 
   -# Direction vector: \f$ s \f$
   -# step length \f$ \lambda \f$ 
 
-  - "Allowed Relative Increase" - the allowed value \f$ k > 0 \f$ for which 
+  - "Allowed Relative Increase" - (default 100) - the allowed value \f$ k > 0 \f$ for which 
   \f$
   \frac{||F (x_{\rm old} + \lambda s)||_2^2}{||F (x_{\rm old})||_2^2} \le k
   \f$
 
-  - "Maximum Increase Steps" - maximum number of outer iterations for which the preceding acceptability criterion is allowed.  After this number of outer iterations, the original curvature and decrease conditions must be met for a step to be accepted.
+  - "Maximum Increase Steps" - (defaults to "Max Iters" of inheriting Linesearch method) - maximum number of outer iterations for which the preceding acceptability criterion is allowed.  After this number of outer iterations, the original curvature and decrease conditions must be met for a step to be accepted.
 */
 
 class Common : public Generic {
