@@ -37,7 +37,7 @@ epetra_lib =
 endif
 
 if ML_USING_AZTECOO
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
+aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
 else
 aztecoo_lib =
 endif
@@ -103,13 +103,13 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include \
                    -I$(top_builddir)/../triutils/src
 
 ml_libs = $(top_builddir)/src/libml.a \
-                ${aztecoo_lib}        \
-                ${ifpack_lib}         \
-                ${amesos_lib}         \
-                ${anasazi_lib}        \
-                ${teuchos_lib}        \
-                ${triutils_lib}       \
-                ${epetra_lib}         \
+                $(aztecoo_lib)        \
+                $(ifpack_lib)         \
+                $(amesos_lib)         \
+                $(anasazi_lib)        \
+                $(teuchos_lib)        \
+                $(triutils_lib)       \
+                $(epetra_lib)         \
                 $(LIBS)               \
                 $(LAPACK_LIBS)        \
                 $(BLAS_LIBS)          \

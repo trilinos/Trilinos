@@ -11175,7 +11175,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                                      ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile examples/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/VerySimple/Makefile test/2d_Poisson/Makefile test/AztecSimple/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
+                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile examples/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/VerySimple/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11853,10 +11853,11 @@ do
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/MultiLevelPreconditioner_NonSym/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MultiLevelPreconditioner_NonSym/Makefile" ;;
   "test/MultiLevelPreconditioner_Sym/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MultiLevelPreconditioner_Sym/Makefile" ;;
-  "test/VerySimple/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/VerySimple/Makefile" ;;
-  "test/2d_Poisson/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/2d_Poisson/Makefile" ;;
-  "test/AztecSimple/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AztecSimple/Makefile" ;;
   "test/MultiLevelPreconditioner_Maxwell/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MultiLevelPreconditioner_Maxwell/Makefile" ;;
+  "test/ML_Operator2Epetra_RowMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/ML_Operator2Epetra_RowMatrix/Makefile" ;;
+  "test/VerySimple/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/VerySimple/Makefile" ;;
+  "test/AztecSimple/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AztecSimple/Makefile" ;;
+  "test/2d_Poisson/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/2d_Poisson/Makefile" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
   "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;

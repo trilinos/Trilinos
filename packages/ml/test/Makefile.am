@@ -29,6 +29,7 @@
 SUBDIRS = MultiLevelPreconditioner_NonSym \
 	  MultiLevelPreconditioner_Sym \
 	  MultiLevelPreconditioner_Maxwell \
+	  ML_Operator2Epetra_RowMatrix \
 	  VerySimple \
 	  AztecSimple \
       2d_Poisson \

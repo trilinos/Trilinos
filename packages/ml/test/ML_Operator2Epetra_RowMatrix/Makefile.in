@@ -17,7 +17,7 @@
 #@HEADER
 # ************************************************************************
 # 
-#                 Amesos: Direct Sparse Solver Package
+#                 ML
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -41,13 +41,16 @@
 # 
 # ************************************************************************
 #@HEADER
+
+SOURCES = $(ML_Operator2Epetra_RowMatrix_SOURCES)
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ..
+top_builddir = ../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -62,7 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-subdir = test
+noinst_PROGRAMS = ML_Operator2Epetra_RowMatrix$(EXEEXT)
+subdir = test/ML_Operator2Epetra_RowMatrix
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -92,17 +96,37 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
-RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
-	html-recursive info-recursive install-data-recursive \
-	install-exec-recursive install-info-recursive \
-	install-recursive installcheck-recursive installdirs-recursive \
-	pdf-recursive ps-recursive uninstall-info-recursive \
-	uninstall-recursive
+PROGRAMS = $(noinst_PROGRAMS)
+am_ML_Operator2Epetra_RowMatrix_OBJECTS = ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.$(OBJEXT)
+ML_Operator2Epetra_RowMatrix_OBJECTS =  \
+	$(am_ML_Operator2Epetra_RowMatrix_OBJECTS)
+@ML_USING_AZTECOO_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../aztecoo/src/libaztecoo.a
+@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../ifpack/src/libifpack.a
+@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a
+@ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../anasazi/src/libanasazi.a
+@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_6 = $(top_builddir)/../triutils/src/libtriutils.a
+@ML_USING_EPETRA_TRUE@am__DEPENDENCIES_7 = $(top_builddir)/../epetra/src/libepetra.a
+am__DEPENDENCIES_8 =
+am__DEPENDENCIES_9 = $(top_builddir)/src/libml.a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3) \
+	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_5) \
+	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_7) \
+	$(am__DEPENDENCIES_8) $(am__DEPENDENCIES_8) \
+	$(am__DEPENDENCIES_8) $(am__DEPENDENCIES_8)
+DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+SOURCES = $(ML_Operator2Epetra_RowMatrix_SOURCES)
+DIST_SOURCES = $(ML_Operator2Epetra_RowMatrix_SOURCES)
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -131,7 +155,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = @EXEEXT@
+EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -236,18 +260,71 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = MultiLevelPreconditioner_NonSym \
-	  MultiLevelPreconditioner_Sym \
-	  MultiLevelPreconditioner_Maxwell \
-	  ML_Operator2Epetra_RowMatrix \
-	  VerySimple \
-	  AztecSimple \
-      2d_Poisson \
-	  scripts
+@ML_USING_EPETRA_FALSE@epetra_lib = 
+@ML_USING_EPETRA_TRUE@epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
+@ML_USING_AZTECOO_FALSE@aztecoo_lib = 
+@ML_USING_AZTECOO_TRUE@aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
+@ML_USING_AMESOS_FALSE@amesos_lib = 
+@ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
+@ML_USING_ANASAZI_FALSE@anasazi_lib = 
+@ML_USING_ANASAZI_TRUE@anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
+@ML_USING_TEUCHOS_FALSE@teuchos_lib = 
+@ML_USING_TEUCHOS_TRUE@teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_TRIUTILS_FALSE@triutils_lib = 
+@ML_USING_TRIUTILS_TRUE@triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
+@ML_USING_IFPACK_FALSE@ifpack_lib = 
+@ML_USING_IFPACK_TRUE@ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
+ML_Operator2Epetra_RowMatrix_SOURCES = $(srcdir)/ML_Operator2Epetra_RowMatrix.cpp
+ML_Operator2Epetra_RowMatrix_DEPENDENCIES = \
+	$(top_builddir)/src/libml.a \
+	${aztecoo_lib} \
+	${epetra_lib} \
+	${triutils_lib} \
+	${amesos_lib} \
+	${anasazi_lib} \
+	${teuchos_lib} 
 
-all: all-recursive
+ml_common_include_locations = -I$(top_srcdir)/src/Include \
+                   -I$(top_srcdir)/src/Coarsen            \
+                   -I$(top_srcdir)/src/Comm               \
+                   -I$(top_srcdir)/src/FEGrid             \
+                   -I$(top_srcdir)/src/Include            \
+                   -I$(top_srcdir)/src/Krylov             \
+                   -I$(top_srcdir)/src/Main               \
+                   -I$(top_srcdir)/src/Operator           \
+                   -I$(top_srcdir)/src/Smoother           \
+                   -I$(top_srcdir)/src/Utils              \
+                   -I$(top_srcdir)/../aztecoo/src         \
+                   -I$(top_builddir)/../aztecoo/src       \
+                   -I$(top_srcdir)/../epetra/src          \
+                   -I$(top_builddir)/../epetra/src        \
+                   -I$(top_srcdir)/../teuchos/src         \
+                   -I$(top_builddir)/../teuchos/src       \
+                   -I$(top_srcdir)/../triutils/src        \
+                   -I$(top_builddir)/../triutils/src
+
+ml_libs = $(top_builddir)/src/libml.a \
+                $(aztecoo_lib)        \
+                $(ifpack_lib)         \
+                $(amesos_lib)         \
+                $(anasazi_lib)        \
+                $(teuchos_lib)        \
+                $(triutils_lib)       \
+                $(epetra_lib)         \
+                $(LIBS)               \
+                $(LAPACK_LIBS)        \
+                $(BLAS_LIBS)          \
+                $(FLIBS)
+
+mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+ML_Operator2Epetra_RowMatrix_CPPFLAGS = ${ml_common_include_locations}
+ML_Operator2Epetra_RowMatrix_CXXFLAGS = ${ml_common_include_locations}
+ML_Operator2Epetra_RowMatrix_LDADD = ${ml_libs}
+ML_Operator2Epetra_RowMatrix_LINK = ${mllink}
+all: all-am
 
 .SUFFIXES:
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -257,9 +334,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/ML_Operator2Epetra_RowMatrix/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/Makefile
+	  $(AUTOMAKE) --foreign  test/ML_Operator2Epetra_RowMatrix/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -277,66 +354,53 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+ML_Operator2Epetra_RowMatrix$(EXEEXT): $(ML_Operator2Epetra_RowMatrix_OBJECTS) $(ML_Operator2Epetra_RowMatrix_DEPENDENCIES) 
+	@rm -f ML_Operator2Epetra_RowMatrix$(EXEEXT)
+	$(ML_Operator2Epetra_RowMatrix_LINK) $(ML_Operator2Epetra_RowMatrix_LDFLAGS) $(ML_Operator2Epetra_RowMatrix_OBJECTS) $(ML_Operator2Epetra_RowMatrix_LDADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Po@am__quote@
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.o: $(srcdir)/ML_Operator2Epetra_RowMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ML_Operator2Epetra_RowMatrix_CPPFLAGS) $(CPPFLAGS) $(ML_Operator2Epetra_RowMatrix_CXXFLAGS) $(CXXFLAGS) -MT ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.o -MD -MP -MF "$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Tpo" -c -o ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.o `test -f '$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Tpo" "$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Po"; else rm -f "$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp' object='ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Po' tmpdepfile='$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ML_Operator2Epetra_RowMatrix_CPPFLAGS) $(CPPFLAGS) $(ML_Operator2Epetra_RowMatrix_CXXFLAGS) $(CXXFLAGS) -c -o ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.o `test -f '$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp
+
+ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.obj: $(srcdir)/ML_Operator2Epetra_RowMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ML_Operator2Epetra_RowMatrix_CPPFLAGS) $(CPPFLAGS) $(ML_Operator2Epetra_RowMatrix_CXXFLAGS) $(CXXFLAGS) -MT ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.obj -MD -MP -MF "$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Tpo" -c -o ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.obj `if test -f '$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Tpo" "$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Po"; else rm -f "$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp' object='ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.Po' tmpdepfile='$(DEPDIR)/ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ML_Operator2Epetra_RowMatrix_CPPFLAGS) $(CPPFLAGS) $(ML_Operator2Epetra_RowMatrix_CXXFLAGS) $(CXXFLAGS) -c -o ML_Operator2Epetra_RowMatrix-ML_Operator2Epetra_RowMatrix.obj `if test -f '$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ML_Operator2Epetra_RowMatrix.cpp'; fi`
 uninstall-info-am:
-
-# This directory's subdirectories are mostly independent; you can cd
-# into them and run `make' without going through this Makefile.
-# To change the values of `make' variables: instead of editing Makefiles,
-# (1) if the variable is set in `config.status', edit `config.status'
-#     (which will cause the Makefiles to be regenerated when you run `make');
-# (2) otherwise, pass the desired values on the `make' command line.
-$(RECURSIVE_TARGETS):
-	@set fnord $$MAKEFLAGS; amf=$$2; \
-	dot_seen=no; \
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    dot_seen=yes; \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done; \
-	if test "$$dot_seen" = "no"; then \
-	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
-	fi; test -z "$$fail"
-
-mostlyclean-recursive clean-recursive distclean-recursive \
-maintainer-clean-recursive:
-	@set fnord $$MAKEFLAGS; amf=$$2; \
-	dot_seen=no; \
-	case "$@" in \
-	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
-	  *) list='$(SUBDIRS)' ;; \
-	esac; \
-	rev=''; for subdir in $$list; do \
-	  if test "$$subdir" = "."; then :; else \
-	    rev="$$subdir $$rev"; \
-	  fi; \
-	done; \
-	rev="$$rev ."; \
-	target=`echo $@ | sed s/-recursive//`; \
-	for subdir in $$rev; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
-	done && test -z "$$fail"
-tags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
-	done
-ctags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
-	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -348,21 +412,10 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	if (etags --etags-include --version) >/dev/null 2>&1; then \
-	  include_option=--etags-include; \
-	else \
-	  include_option=--include; \
-	fi; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -f $$subdir/TAGS && \
-	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
-	  fi; \
-	done; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -373,7 +426,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	  || $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
 	     $$tags $$unique
 ctags: CTAGS
-CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -422,33 +475,19 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test -d "$(distdir)/$$subdir" \
-	    || mkdir "$(distdir)/$$subdir" \
-	    || exit 1; \
-	    (cd $$subdir && \
-	      $(MAKE) $(AM_MAKEFLAGS) \
-	        top_distdir="../$(top_distdir)" \
-	        distdir="../$(distdir)/$$subdir" \
-	        distdir) \
-	      || exit 1; \
-	  fi; \
-	done
 check-am: all-am
-check: check-recursive
-all-am: Makefile
-installdirs: installdirs-recursive
-installdirs-am:
-install: install-recursive
-install-exec: install-exec-recursive
-install-data: install-data-recursive
-uninstall: uninstall-recursive
+check: check-am
+all-am: Makefile $(PROGRAMS)
+installdirs:
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-recursive
+installcheck: installcheck-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
@@ -464,21 +503,23 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-recursive
+clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
-distclean: distclean-recursive
+distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
-dvi: dvi-recursive
+dvi: dvi-am
 
 dvi-am:
 
-html: html-recursive
+html: html-am
 
-info: info-recursive
+info: info-am
 
 info-am:
 
@@ -486,43 +527,41 @@ install-data-am:
 
 install-exec-am:
 
-install-info: install-info-recursive
+install-info: install-info-am
 
 install-man:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-recursive
+maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-recursive
+mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-recursive
+pdf: pdf-am
 
 pdf-am:
 
-ps: ps-recursive
+ps: ps-am
 
 ps-am:
 
 uninstall-am: uninstall-info-am
 
-uninstall-info: uninstall-info-recursive
-
-.PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am \
-	clean clean-generic clean-recursive ctags ctags-recursive \
-	distclean distclean-generic distclean-recursive distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
-	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-info-am
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-info-am
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
