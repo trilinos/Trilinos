@@ -4,7 +4,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 
-void Trilinos_Util_distrib_vbr_matrix(Epetra_Comm & Comm,
+void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
 	      int *N_global, int *N_blk_global,
 	      int *n_nonzeros, int *n_blk_nonzeros, 
 	      int *N_update, int **update,
