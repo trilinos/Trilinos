@@ -44,7 +44,7 @@ static char *cvs_all_allo_c =
  *
  *      POINT    **points, corner;
  *
- *      points = (POINT **) array_alloc (2, x, y, sizeof(POINT));
+ *      points = (POINT **) LB_array_alloc (2, x, y, sizeof(POINT));
  *                               ^ ^ ^
  *                               | | |
  *         number of dimensions--+ | |
@@ -104,11 +104,11 @@ static char *cvs_all_allo_c =
 
 #ifdef __STDC__
 
-double *array_alloc(int numdim, ...)
+double *LB_array_alloc(int numdim, ...)
 
 #else
 
-double *array_alloc(va_alist)
+double *LB_array_alloc(va_alist)
 va_dcl
 
 #endif
@@ -145,12 +145,12 @@ va_dcl
 #endif
 
   if (numdim <= 0) {
-    fprintf(stderr, "array_alloc ERROR: number of dimensions, %d, is <=0\n",
+    fprintf(stderr, "LB_array_alloc ERROR: number of dimensions, %d, is <=0\n",
             numdim);
     exit(-1);
   }
   else if (numdim > 4) {
-    fprintf(stderr, "array_alloc ERROR: number of dimensions, %d, is > 4\n",
+    fprintf(stderr, "LB_array_alloc ERROR: number of dimensions, %d, is > 4\n",
             numdim);
     exit(-1);
   }
@@ -159,7 +159,7 @@ va_dcl
 
   if (dim[0].index <= 0) {
 #ifdef DEBUG
-    fprintf(stderr, "WARNING, array_alloc called with first "
+    fprintf(stderr, "WARNING, LB_array_alloc called with first "
             "dimension <= 0, %d\n\twill return the nil pointer\n", 
             dim[0].index);
 #endif
@@ -172,7 +172,7 @@ va_dcl
   for (i = 1; i < numdim; i++) {
     dim[i].index = va_arg(va, int);
     if (dim[i].index <= 0) {
-      fprintf(stderr, "WARNING: array_alloc called with dimension %d <= 0, "
+      fprintf(stderr, "WARNING: LB_array_alloc called with dimension %d <= 0, "
               "%d\n", i+1, dim[i].index);
       fprintf(stderr, "\twill return the nil pointer\n");
       return((double *) NULL);
@@ -192,7 +192,7 @@ va_dcl
 
   total = dim[numdim-1].off + dim[numdim-1].total * dim[numdim-1].size;
 
-  dfield = (double *) smalloc((int) total);
+  dfield = (double *) LB_smalloc((int) total);
   field  = (char *) dfield;
 
   for (i = 0; i < numdim - 1; i++) {
@@ -205,7 +205,7 @@ va_dcl
 
   return dfield;
 
-} /* array_alloc */
+} /* LB_array_alloc */
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -215,13 +215,13 @@ va_dcl
 
 /* Modified by Scott Hutchinson (1421) 20 January 1993 */
 
-double *smalloc(int n)
+double *LB_smalloc(int n)
 
 {
   double *pntr;           /* return value */
 
   if (n < 0) {
-    fprintf(stderr, "smalloc ERROR: Non-positive argument. (%d)\n", n);
+    fprintf(stderr, "LB_smalloc ERROR: Non-positive argument. (%d)\n", n);
     exit(-1);
   }
   else if (n == 0)
@@ -230,20 +230,20 @@ double *smalloc(int n)
     pntr = (double *) malloc((unsigned) n);
 
   if (pntr == NULL && n != 0) {
-    fprintf(stderr, "smalloc : Out of space - number of bytes "
+    fprintf(stderr, "LB_smalloc : Out of space - number of bytes "
             "requested = %d\n", n);
     exit(0);
   }
 
   return pntr;
 
-} /* smalloc */
+} /* LB_smalloc */
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-void safe_free (void **ptr)
+void LB_safe_free (void **ptr)
 {
 /*
  *  This version of free calls the system's free function
@@ -262,7 +262,7 @@ void safe_free (void **ptr)
  
     *ptr = NULL;
   }
-}  /* safe_free */
+}  /* LB_safe_free */
 
 /*****************************************************************************/
 /*                      END of all_allo.c                                     */

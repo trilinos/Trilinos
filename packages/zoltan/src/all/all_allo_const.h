@@ -38,8 +38,8 @@ static char *cvs_all_allo_h =
 
 /* function declarations for dynamic array allocation */
 
-extern double *array_alloc(int numdim, ...);
-extern void safe_free(void **ptr);
-extern double *smalloc(int n);
+extern double *LB_array_alloc(int numdim, ...);
+extern void LB_safe_free(void **ptr);
+extern double *LB_smalloc(int n);
 
 #endif
