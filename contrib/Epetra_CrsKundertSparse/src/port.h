@@ -90,13 +90,23 @@ Copyright 1990 Regents of the University of California.  All rights reserved.
 #  define CONFIGURED
 #endif
 
-#ifdef linux
+#ifdef LINUX
 #  include "os_linux.h"
+#  define CONFIGURED
+#endif
+
+#ifdef FREEBSD
+#  include "os_freebsd.h"
 #  define CONFIGURED
 #endif
 
 #ifdef NMcplant
 #  include "os_NMcplant.h"
+#  define CONFIGURED
+#endif
+
+#ifdef MINGW
+#  include "os_mingw32.h"
 #  define CONFIGURED
 #endif
 
