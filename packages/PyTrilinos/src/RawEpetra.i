@@ -4,6 +4,7 @@
 
 %{
 // System includes
+#include <iostream>
 #include <sstream>
 #include <vector>
 
@@ -44,8 +45,8 @@
 %}
 
 // Ignore directives
-%ignore operator<<(ostream &, const Epetra_Object &);// From python, use print
-%ignore Epetra_Object::Print(ostream &) const;       // faciltated by __str__
+%ignore operator<<(ostream &, const Epetra_Object &);// From python, use __str__
+%ignore Epetra_Object::Print(ostream &) const;
 %ignore Epetra_SerialComm::operator=(const Epetra_SerialComm &);
 %ignore Epetra_CompObject::operator=(const Epetra_CompObject &);
 %ignore Epetra_CompObject::UpdateFlops(int) const;   // Use long int version
@@ -196,6 +197,10 @@
 %extend Epetra_MultiVector {
   double * & __getitem__(int i) {
     return self->operator[](i);
+  }
+
+  void Print() {
+    self->Print(cout);
   }
 }
 

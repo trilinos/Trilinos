@@ -51,7 +51,7 @@
 
 [Done] Change -c swig option to -noruntime
 
-****** Re-wrap Epetra_Object.Print() method
+[Done] Re-wrap Epetra_MultiVector::Print() method
 
 ****** Get rid of NOX_Parameter_List warnings
 
