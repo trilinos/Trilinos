@@ -2059,6 +2059,10 @@ void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *reordere
                                   ML_EMPTY, csr_data, Nlocal_edges, NULL, 0);
   ML_Operator_Set_Getrow(*Tmat, ML_EXTERNAL, Nlocal_edges, CSR_getrows);
   ML_Operator_Set_ApplyFunc(*Tmat, ML_INTERNAL, CSR_matvec);
+
+  if ((*Tmat)->data_destroy == NULL)
+     (*Tmat)->data_destroy = ML_CSR_MSRdata_Destroy_StructOnly;
+
 ML_free(map);
 ML_free(sorted_ext);
 
