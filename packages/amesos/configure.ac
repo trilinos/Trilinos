@@ -299,15 +299,21 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
       AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"
   AM_CONDITIONAL(HAVE_AMESOS_SLUD, true ) 
-  if test "X$ac_cv_use_amesos_slud2" != "Xno"; then
-     AM_CONDITIONAL(HAVE_AMESOS_SLUD2, true ) 
-  else 
-     AM_CONDITIONAL(HAVE_AMESOS_SLUD2, false )  
-  fi
 else
-  AM_CONDITIONAL(HAVE_AMESOS_SLUD, false )  
+  AM_CONDITIONAL(HAVE_AMESOS_SLUD, false ) 
 fi
 
+if test "X$ac_cv_use_amesos_slud2" != "Xno"; then
+
+  if test "X$ac_cv_use_amesos_slud" != "Xno"; then
+     AM_CONDITIONAL(HAVE_AMESOS_SLUD2, true )
+  else 
+     AC_MSG_ERROR([Cannot enable slud2 without enabling slud.])
+  fi 
+
+else 
+   AM_CONDITIONAL(HAVE_AMESOS_SLUD2, false )  
+fi
 
 AC_SUBST(AMESOS_LIBS,${tac_with_amesos_sludlib}) 
 
