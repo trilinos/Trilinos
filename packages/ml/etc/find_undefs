@@ -1,21 +1,36 @@
 #!/bin/sh
 
+COMPILE=$1
+COMP_FLAGS=$2
+LINKER=$3
+THELIBRARIES=$4
+THEARCHS=$5
+#COMPILE=cc
+#COMP_FLAGS=
+#LINKER=cc
+#THELIBRARIES="-L/usr/local/lib -lblas /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/libg2c.a"
+#THELIBRARIES="-L/usr/local/lib -llapack /usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/libg2c.a"
+#echo=echo #TAKE OUT
+
 \rm -f capper .undefs .undefs2 .thedefs
-cc -o capper capper.c
-pwd
-echo $1 
-echo $2
-echo $3
-echo $4
-$1 $2 -I ../Obj -c lapack_driver.c
-$3 $2 lapack_driver.o $4 2> .undefs
-cat .undefs |  grep reference | sed "s/^.*: //" > .undefs2
+${COMPILE} ${COMP_FLAGS} -o capper capper.c
 tt=`grep MLFORTRAN lapack_driver.c | grep void | sed "s/^.*MLFORTRAN(//"| \
    sed "s/).*//"`
-echo $tt
 for i in $tt
 do
-bb=`grep -i $i .undefs2 | wc | sed "s/^ *//" | sed "s/ .*//"`
+#bb=`grep -i $i .undefs2 | wc | sed "s/^ *//" | sed "s/ .*//"`
+\rm -f temprog.c .undefs .undefs2
+echo "#include \"ml_defs.h\"" >> temprog.c
+echo  >> temprog.c
+echo "void MLFORTRAN($i)(void);" >> temprog.c
+echo "int main(int argc, char *argv[]){" >> temprog.c
+echo "MLFORTRAN($i)();" >> temprog.c
+echo "return 0;" >> temprog.c
+echo "}" >> temprog.c
+#cat temprog.c
+${COMPILE} ${COMP_FLAGS} -I ../Obj -c temprog.c
+${LINKER} ${COMP_FLAGS} temprog.o ${THELIBRARIES} ${THEARCHS} 2> .undefs
+bb=`cat .undefs | sed "s/$i.o//g" | sed "s/In function.*://" | grep -i $i | wc | sed "s/^ *//" | sed "s/ .*//"`
 echo $i $bb
 if test $bb -eq 0
 then

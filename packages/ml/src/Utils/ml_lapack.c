@@ -10474,23 +10474,6 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 #endif
 
 
-extern int MLFORTRAN(dpotf2)(char *uplo, integer *n, doublereal *a, integer *
-		   lda, integer *info, int);
-extern int MLFORTRAN(dsyrk)(char *uplo, char *trans, integer *n, integer *k, 
-	doublereal *alpha, doublereal *a, integer *lda, doublereal *beta, 
-		  doublereal *c, integer *ldc, int, int);
-extern int MLFORTRAN(dlaic1)(integer *job, integer *j, doublereal *x, 
-	doublereal *sest, doublereal *w, doublereal *gamma, doublereal *
-		   sestpr, doublereal *s, doublereal *c);
-extern int MLFORTRAN(dgetri)(integer *n, doublereal *a, integer *lda, integer 
-		   *ipiv, doublereal *work, integer *lwork, integer *info);
-extern int MLFORTRAN(dpotrf)(char *uplo, integer *n, doublereal *a, integer *
-		   lda, integer *info, int);
-extern int MLFORTRAN(dtrtri)(char *uplo, char *diag, integer *n, doublereal *
-		   a, integer *lda, integer *info, int, int);
-extern int MLFORTRAN(dtrti2)(char *uplo, char *diag, integer *n, doublereal *
-		   a, integer *lda, integer *info, int dummy1, int dummy2);
-
 
 /*  -- translated by f2c (version 19940927).
    You must link the resulting object file with the libraries:
