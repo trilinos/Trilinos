@@ -85,7 +85,7 @@ am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execin
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
-libml_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+@ML_USING_TEUCHOS_TRUE@libml_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = ml_agg_uncoupled.$(OBJEXT) ml_amg.$(OBJEXT) \
 	ml_agg_coupled.$(OBJEXT) ml_amg_genP.$(OBJEXT) \
 	ml_check.$(OBJEXT) ml_agg_dd.$(OBJEXT) ml_agg_genP.$(OBJEXT) \
@@ -588,12 +588,13 @@ EXTRA_libml_a_SOURCES = \
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
 @USE_ALTERNATE_AR_TRUE@libml_a_AR = $(ALTERNATE_AR)
+@ML_USING_TEUCHOS_FALSE@libml_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
-libml_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
+@ML_USING_TEUCHOS_TRUE@libml_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)

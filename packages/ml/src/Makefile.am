@@ -309,7 +309,15 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
+if ML_USING_TEUCHOS
+
 libml_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
+
+else
+
+libml_a_LIBADD = $(XTRALDADD)
+
+endif
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)

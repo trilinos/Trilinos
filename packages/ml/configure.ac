@@ -429,7 +429,7 @@ AC_F77_LIBRARY_LDFLAGS
 #  DEC/CPLANT and see if template-related errors occur)
 
 # -- DEC CXX --
-if test "X${ML_USING_TEUCHOS}" = "Xyes" ; then
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
  case $target in
   alpha*)
     if test $CXX = cxx; then
