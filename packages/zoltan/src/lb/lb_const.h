@@ -15,8 +15,9 @@
 
 typedef struct LB_Struct LB;
 typedef struct LB_Comm_Struct LB_COMM;
+typedef struct LB_Tag_Struct LB_TAG;
 
-typedef void LB_FN(LB *, int*, int*);
+typedef void LB_FN(LB *, int*, int*, int *, LB_TAG **);
 typedef void LB_COMM_BUILD_REQUEST_PROCLIST_FN_TYPE(LB *, int n_cells_orig, int *n_requests);
 typedef void LB_COMM_BUILD_SEND_REQUEST_LIST_FN_TYPE(LB *, int n_cells_orig);
 typedef int  LB_COMM_OBJ_DATA_SIZE_FN_TYPE(int object_type);
@@ -140,6 +141,10 @@ struct LB_Struct {
                                       in this load-balancing object.  This
                                       value is not used specifically by the
                                       load balancer.                         */
+  int Help_Migrate;               /*  Flag indicating whether the load
+                                      balancer should help the application
+                                      migrate data.  Some applications may
+                                      prefer to do it themselves.            */
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */
@@ -175,8 +180,27 @@ struct LB_Struct {
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+
+/*
+ *  Structure used to describe the results of the new decomposition.  The
+ *  load-balancing routines (lb_rcb, etc.) return an array of LB_Tag_Structs
+ *  with one entry for each non-local (i.e., imported) object in the new
+ *  new decomposition for a given processor.
+ *  This structure is the minimum structure required in the load-balancing
+ *  data structures.
+ */
+
+struct LB_Tag_Struct {
+  LB_ID Global_ID;         /* The global ID of the related object.           */
+  LB_ID Local_ID;          /* The local ID of the related object.            */
+  int Proc;                /* The original processor of the object.  Also 
+                              used for target processor in inverse comm. map */
+};
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 /* PROTOTYPES */
 
 extern LB_FN lb_rcb;
 extern LB_FN lb_wheat;
-

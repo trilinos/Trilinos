@@ -1,5 +1,6 @@
 #include "lb_const.h"
 #include "lb.h"
+#include "comm.h"
 #include "all_allo_const.h"
 #include "par.h"
 
@@ -9,7 +10,8 @@
 
 static void perform_error_checking(LB *);
 static void help_migrate(LB *);
-static void clean_up(LB_COMM *);
+static void clean_up(LB *);
+static void compute_destinations(LB *, int, int, LB_TAG *, int *, LB_TAG **);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -82,6 +84,7 @@ LB *lb;
   lb->Tolerance = 0.9;
   lb->Data_Structure = NULL;
   lb->Object_Type = 0;
+  lb->Help_Migrate = FALSE;
 
   lb->Get_Obj_Weight = NULL;
   lb->Get_Num_Edges = NULL;
@@ -292,20 +295,49 @@ void LB_Set_LB_Object_Type(LB *lb, int object_type)
 
 void LB_Balance(LB *lb)
 {
+/*
+ * Main user-call for load-balancing.
+ * Input:  a load-balancing object with appropriate function pointers set.
+ * Output: ???
+ */
+
 int num_objs;                  /* Set to the new number of objects on 
                                   the processor.                            */
 int num_keep;                  /* Set to the number of objects the processor
                                   keeps from the old decomposition.         */
+int num_non_local;             /* The number of non-local objects in the
+                                  processor's new decomposition.            */
+LB_TAG *non_local_objs;        /* Array of tags for non-local objects in
+                                  the processor's new decomposition.        */
+int num_export_objs;           /* The number of local objects that need to
+                                  be exported from the processor to establish
+                                  the new decomposition.                    */
+LB_TAG *export_objs;           /* Array of tags for objects that need to be
+                                  exported to establish the new 
+                                  decomposition.  */
 
-  perform_error_checking(lb);  /* make sure required functions are defined
-                                  for given method.   Num_Objs, comm rtns 
-                                  should be
-                                  defined for all methods.  */
+  perform_error_checking(lb);
 
-  lb->LB_Fn(lb, &num_objs, &num_keep);
+  lb->LB_Fn(lb, &num_objs, &num_keep, &num_non_local, &non_local_objs);
 
-  help_migrate(lb);
-  clean_up(&(lb->LB_Comm));
+  compute_destinations(lb, num_objs, num_non_local, non_local_objs, 
+                       &num_export_objs, &export_objs);
+
+  LB_print_sync_start(TRUE);
+  {
+    int i;
+    printf("LBLB: Objects to be exported from Proc %d\n", LB_Proc);
+    for (i = 0; i < num_export_objs; i++) {
+      printf("    Obj: %10d  Destination: %4d\n", 
+             export_objs[i].Global_ID, export_objs[i].Proc);
+    }
+  }
+  LB_print_sync_end(TRUE);
+
+  if (lb->Help_Migrate) {
+    help_migrate(lb);
+  }
+  clean_up(lb);
 }
 
 /****************************************************************************/
@@ -314,7 +346,83 @@ int num_keep;                  /* Set to the number of objects the processor
 
 static void perform_error_checking(LB *lb)
 {
+/* 
+ *  Routine to make sure required functions are defined for the given method.
+ *  Num_Objs, comm rtns should be defined for all methods.  
+ */
 
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+static void compute_destinations(
+  LB *lb,                 /* Load balancing object for the current balance. */
+  int num_objs,           /* Number of objects originally assigned to the
+                             processor.                                     */
+  int num_non_local,      /* Number of non-local objects assigned to the 
+                             processor in the new decomposition.            */
+  LB_TAG *non_local_objs, /* Array of tags for non-local objects assigned
+                             to the processor in the new decomposition.     */
+  int *num_export,        /* Returned value:  Number of objs to be exported
+                             to other processors to establish the new
+                             decomposition.                                 */
+  LB_TAG **export_objs    /* Returned value:  Array of tags of objects to 
+                             be exported to other processors to establish the
+                             new decomposition.                             */
+)
+{
+/*
+ *  Routine to compute the inverse map:  Given, for each processor, a list 
+ *  of non-local objects assigned to the processor, compute the list of objects
+ *  that processor needs to export to other processors to establish the new
+ *  decomposition.
+ */
+
+int *proc_list;          /* List of processors from which objs are to be 
+                            imported.                                       */
+COMM_OBJ *comm_plan;     /* Communication object returned
+                            by Bruce and Steve's communication routines     */
+LB_TAG *import_objs;     /* Array of import objects used to request the objs
+                            from other processors.                          */
+int i;
+
+  /*
+   *  Build processor's list of requests for non-local objs.
+   */
+
+  proc_list = (int *) array_alloc(1, num_non_local, sizeof(int));
+  import_objs = (LB_TAG *) array_alloc(1, num_non_local, sizeof(LB_TAG));
+
+  for (i = 0; i < num_non_local; i++) {
+    proc_list[i] = non_local_objs[i].Proc;
+
+    import_objs[i].Global_ID = non_local_objs[i].Global_ID;
+    import_objs[i].Local_ID  = non_local_objs[i].Local_ID;
+    import_objs[i].Proc      = LB_Proc;
+  }
+
+  /*
+   *  Compute communication map and num_export, the number of objs this
+   *  processor has to export to establish the new decomposition.
+   */
+
+  comm_plan = comm_create(num_non_local, proc_list, MPI_COMM_WORLD, num_export);
+
+  /*
+   *  Allocate space for the object tags that need to be exported.  Communicate
+   *  to get the list of objects to be exported.
+   */
+
+  *export_objs = (LB_TAG *) array_alloc(1, *num_export, sizeof(LB_TAG));
+  comm_do(comm_plan, (char *) import_objs, sizeof(LB_TAG), 
+          (char *) *export_objs);
+
+  LB_safe_free((void **) &proc_list);
+  LB_safe_free((void **) &import_objs);
+  
+  comm_destroy(comm_plan);
 }
 
 /****************************************************************************/
@@ -330,7 +438,12 @@ static void help_migrate(LB *lb)
 /****************************************************************************/
 /****************************************************************************/
 
-static void clean_up(LB_COMM *comm)
+static void clean_up(LB *lb)
 {
+/*
+ *  Routine to free the load-balancing object's data structures and 
+ *  communication data structures.
+ */
+
 
 }
