@@ -103,9 +103,9 @@ bool Test(Epetra_RowMatrix* Matrix, Teuchos::ParameterList& List)
   cout << *Prec;
   delete Prec;
   
-  double* Norm = new double[NumVectors];
+  vector<double> Norm(NumVectors);
   LHS.Update(1.0,LHSexact,-1.0);
-  LHS.Norm2(Norm);
+  LHS.Norm2(&Norm[0]);
   for (int i = 0 ; i < NumVectors ; ++i) {
     cout << "Norm[" << i << "] = " << Norm[i] << endl;
     if (Norm[i] > 1e-5)
@@ -120,10 +120,12 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
+
+  bool verbose = (Comm.MyPID() == 0);
 
   // size of the global matrix. 
   const int NumPoints = 14400;
@@ -138,7 +140,7 @@ int main(int argc, char *argv[])
   // test the preconditioner
   int TestPassed = true;
 
-#if 0
+
   if (!Test<Ifpack_Amesos>(Matrix)) {
     TestPassed = false;
   }
@@ -149,15 +151,15 @@ int main(int argc, char *argv[])
 
   // this is ok as long as just one sweep is applied
   List = DefaultList;
-  List.set("point: type", "Gauss-Seidel");
+  List.set("relaxation: type", "Gauss-Seidel");
   if (!Test<Ifpack_PointRelaxation>(Matrix,List)) {
     TestPassed = false;
   }
 
   // this is ok as long as just one sweep is applied
   List = DefaultList;
-  List.set("block: type", "symmetric Gauss-Seidel");
-  List.set("block: sweeps", 5);
+  List.set("relaxation: type", "symmetric Gauss-Seidel");
+  List.set("relaxation: sweeps", 5);
   List.set("partitioner: local parts", 128);
   List.set("partitioner: type", "Linear");
   if (!Test<Ifpack_BlockRelaxation<Ifpack_DenseContainer> >(Matrix,List)) {
@@ -166,26 +168,30 @@ int main(int argc, char *argv[])
 
   // this is ok as long as just one sweep is applied
   List = DefaultList;
-  List.set("block: type", "symmetric Gauss-Seidel");
+  List.set("relaxation: type", "symmetric Gauss-Seidel");
   List.set("partitioner: local parts", 128);
   if (!Test<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,List)) {
     TestPassed = false;
   }
-#endif
 
   // this is ok as long as just one sweep is applied
   List = DefaultList;
-  List.set("block: type", "symmetric Gauss-Seidel");
+  List.set("relaxation: type", "symmetric Gauss-Seidel");
   List.set("partitioner: local parts", 128);
   if (!Test<Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > >(Matrix,List)) {
     TestPassed = false;
   }
-  if (!TestPassed)
+  if (!TestPassed) {
+    cerr << "Test `TestAll.exe' FAILED!" << endl;
     exit(EXIT_FAILURE);
+  }
 
 #ifdef HAVE_MPI
   MPI_Finalize(); 
 #endif
+  if (verbose)
+    cout << "Test `TestAll.exe' passed!" << endl;
+
   exit(EXIT_SUCCESS);
 }
 

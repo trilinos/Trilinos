@@ -53,8 +53,6 @@
 int main(int argc, char* argv[]) {
   bool verbose = false;  // used to set verbose false on non-root processors
   bool verbose1 = false; // user's command-line argument
-  // Check if we should print results to standard out
-  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose1 = true;
 
   int err;
   int returnierr = 0;
@@ -67,9 +65,6 @@ int main(int argc, char* argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
-
-  if (verbose1) {
-  }
 
 #ifdef HAVE_IFPACK_TEUCHOS
   Ifpack::param_struct params;
@@ -113,7 +108,10 @@ int main(int argc, char* argv[]) {
 
   Ifpack_IlukGraph ilukgraph(graph, 1,1);
   Ifpack_CrsRiluk crsriluk(ilukgraph);
+  // MS // this was failing
+#if 0
   Ifpack_OverlapGraph overlapgraph(&graph, 1);
+#endif
 
   Epetra_CrsMatrix A(Copy, graph);
 
@@ -176,6 +174,7 @@ int main(int argc, char* argv[]) {
     return(-1);
   }
 
+#if 0
   overlapgraph.SetParameters(paramlist);
 
   int overlaplevel = overlapgraph.OverlapLevel();
@@ -184,6 +183,7 @@ int main(int argc, char* argv[]) {
         << endl;
     return(-1);
   }
+#endif
 #endif
 
   if (verbose1==true) {

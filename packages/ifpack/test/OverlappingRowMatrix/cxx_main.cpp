@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 #endif
 
   if (Comm.MyPID() == 0)
-    cout << "TEST PASSED!" << endl;
+    cout << "Test `TestOverlappingRowMatrix.exe' passed!" << endl;
   exit(EXIT_SUCCESS);
 }
 
@@ -166,8 +166,10 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  puts("please configure IFPACK with --eanble-aztecoo --enable-teuchos");
-  puts("--enable-amesos to run this test");
+  if (Comm.MyPID() == 0) {
+    puts("please configure IFPACK with --eanble-aztecoo --enable-teuchos");
+    puts("--enable-amesos to run this test");
+  }
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

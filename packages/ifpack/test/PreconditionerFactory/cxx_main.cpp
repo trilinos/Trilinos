@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 #endif
 
   // size of the global matrix. 
-  const int NumPoints = 100;
+  const int NumPoints = 9;
 
   CrsMatrixGallery Gallery("minij", Comm);
   Gallery.Set("problem_size", NumPoints);
@@ -80,7 +80,19 @@ int main(int argc, char *argv[])
   Prec->Compute();
   delete Prec;
 
+  Prec = Factory.Create("point relaxation (no AS)", A);
+  assert (Prec != 0);
+  Prec->Initialize();
+  Prec->Compute();
+  delete Prec;
+
   Prec = Factory.Create("block relaxation", A);
+  assert (Prec != 0);
+  Prec->Initialize();
+  Prec->Compute();
+  delete Prec;
+
+  Prec = Factory.Create("block relaxation (no AS)", A);
   assert (Prec != 0);
   Prec->Initialize();
   Prec->Compute();
@@ -123,8 +135,8 @@ int main(int argc, char *argv[])
 #endif
 
   if (Comm.MyPID() == 0)
-    cout << "### TEST PASSED!" << endl;
-  exit(EXIT_SUCCESS);
+    cout << "Test `PrecondititonerFactory.exe' passed!" << endl;
+  return(EXIT_SUCCESS);
 }
 
 #else

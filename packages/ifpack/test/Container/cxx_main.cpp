@@ -37,9 +37,7 @@
 #include "Epetra_LinearProblem.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Teuchos_ParameterList.hpp"
-#if 0
 #include "Ifpack_DenseContainer.h"
-#endif
 #include "Ifpack_SparseContainer.h"
 #include "Ifpack_Amesos.h"
 
@@ -67,11 +65,9 @@ bool TestContainer(string Type, CrsMatrixGallery& Gallery)
   
   Ifpack_Container* Container;
 
-#if 0
   if (Type == "dense")
     Container = new Ifpack_DenseContainer(A->NumMyRows(), NumVectors);
   else
-#endif
     Container = new Ifpack_SparseContainer<Ifpack_Amesos>(A->NumMyRows(), NumVectors);
 
   assert (Container != 0);
@@ -145,11 +141,7 @@ int main(int argc, char *argv[])
 #endif
   Epetra_SerialComm SerialComm;
 
-  for (int i = 1 ; i < argc ; ++i) {
-    if (strcmp(argv[i], "-v") == 0) {
-      verbose = true;
-    }
-  }
+  verbose = (Comm.MyPID() == 0);
 
   const int NumPoints = 900;
 
@@ -160,18 +152,15 @@ int main(int argc, char *argv[])
 
   int TestPassed = true;
 
-#if 0
-  // FIXME
   if (!TestContainer("dense",Gallery))
     TestPassed = false;
-#endif
   if (!TestContainer("sparse",Gallery))
     TestPassed = false;
 
   if (TestPassed)
-    cout << "### ALL TESTS PASSED!" << endl;
+    cout << "Test `TestContainer.exe' passed!" << endl;
   else {
-    cout << "### AT LEAST ONE TEST FAILED!" << endl;
+    cout << "Test `TestContainer.exe' FAILED!" << endl;
     exit(EXIT_FAILURE);
   }
 

@@ -377,11 +377,9 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
+  bool verbose = (Comm.MyPID() == 0);
+
   for (int i = 1 ; i < argc ; ++i) {
-    if (strcmp(argv[i],"-v") == 0) {
-      verbose = true;
-      Solver = AZ_gmres;
-    }
     if (strcmp(argv[i],"-s") == 0) {
       SymmetricGallery = true;
       Solver = AZ_cg;
@@ -498,7 +496,7 @@ int main(int argc, char *argv[])
   // ============ //
 
   if (!TestPassed) {
-    cout << "AT LEAST ONE TEST FAILED!" << endl;
+    cout << "Test `TestRelaxation.exe' failed!" << endl;
     exit(EXIT_FAILURE);
   }
   
@@ -506,7 +504,7 @@ int main(int argc, char *argv[])
   MPI_Finalize(); 
 #endif
 
-  cout << "ALL TESTS PASSED" << endl;
+  cout << "Test `TestRelaxation.exe' passed!" << endl;
   exit(EXIT_SUCCESS);
 }
 

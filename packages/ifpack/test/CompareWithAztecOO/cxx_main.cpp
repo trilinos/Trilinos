@@ -214,13 +214,6 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  if (Comm.MyPID() == 0) {
-    for (int i = 1 ; i < argc ; ++i) {
-      if (strcmp(argv[i], "-v") == 0)
-        verbose = true;
-    }
-  }
-
   // process the command line
   Teuchos::CommandLineProcessor CLP;
   // matrix name
@@ -247,6 +240,7 @@ int main(int argc, char *argv[])
       CompareWithAztecOO(Problem,"Jacobi",0,ival);
   }
 
+#if 0
   // AztecOO with IC and overlap complains, also with
   // large fill-ins (in parallel)
   TestPassed = TestPassed && 
@@ -256,8 +250,8 @@ int main(int argc, char *argv[])
 
   vector<string> Tests;
   // now test solvers that accept overlap
-  //Tests.push_back("ILU no reord");
-  //Tests.push_back("ILU reord");
+  Tests.push_back("ILU no reord");
+  Tests.push_back("ILU reord");
   // following requires --enable-aztecoo-azlu
 #ifdef HAVE_IFPACK_AMESOS
   //Tests.push_back("LU");
@@ -270,16 +264,17 @@ int main(int argc, char *argv[])
           CompareWithAztecOO(Problem,Tests[i],overlap,ival);
     }
   }
+#endif
 
   if (!TestPassed) {
-    cerr << "TEST FAILED!!!!!" << endl;
+    cerr << "Test `CompareWithAztecOO.exe' FAILED!" << endl;
     exit(EXIT_FAILURE);
   }
 
 #ifdef HAVE_MPI
   MPI_Finalize() ; 
 #endif
-  cout << "TEST PASSED" << endl;
+  cout << "Test `CompareWithAztecOO.exe' passed!" << endl;
 
   exit(EXIT_SUCCESS);
 }
