@@ -1,25 +1,19 @@
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile$
- *
- * $Author$
- *
- * $Date$
- *
- * $Revision$
- *
- *====================================================================*/
-
-/* This routine divides the current machine (defined by the communicator)
-   into two pieces.
-   For now, it simply divides the machine in half.  In the future, it will
-   be a more complicated routine taking into account the architecture of
-   the machine and communication network. */
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan is distributed under the GNU Lesser General Public License 2.1.    * 
+ * For more info, see the README file in the top-level Zoltan directory.     *  
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
 #include "lb_const.h"
+
 
 int LB_divide_machine(
    LB *lb,             /* The load-balancing structure (not used now, will be
@@ -35,6 +29,12 @@ int LB_divide_machine(
    double *fractionlo  /* actual division of machine */
 )
 {
+/* This routine divides the current machine (defined by the communicator)
+   into two pieces.
+   For now, it simply divides the machine in half.  In the future, it will
+   be a more complicated routine taking into account the architecture of
+   the machine and communication network. */
+
    int ierr;           /* error flag */
 
    /* assume for now that processors coming in are in a contiguously

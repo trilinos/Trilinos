@@ -1,26 +1,26 @@
-/*====================================================================
- * ------------------------
- * | CVS File Information |
- * ------------------------
- *
- * $RCSfile$
- *
- * $Author$
- *
- * $Date$
- *
- * $Revision$
- *
- *====================================================================*/
-
-/* This routine builds a description of the machine
-   defined by the processes in the MPI communicator
-   and the machine description file.
- */
+/*****************************************************************************
+ * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan is distributed under the GNU Lesser General Public License 2.1.    * 
+ * For more info, see the README file in the top-level Zoltan directory.     *  
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
 #include "lb_const.h"
 #include "ha_const.h"
 #include "params_const.h"
+
+/* 
+ * These routines build a description of the machine
+ * defined by the processes in the MPI communicator
+ * and the machine description file.
+ */
 
 /*******************************************************************/
 /*******************************************************************/
