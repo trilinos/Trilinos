@@ -8,10 +8,8 @@ import os
 import sys
 
 # Build the python library directory name and library name
-pythonDir  = sysconfig.get_python_lib()
-pythonPath = os.path.split(pythonDir)
-pythonDir  = [os.path.join(pythonPath[0], "config")]
-pythonLib  = ["python" + str(sys.version_info[0]) + "." + str(sys.version_info[1])]
+pythonDir = [sysconfig.get_config_var('LIBPL'  )      ]
+pythonLib = [sysconfig.get_config_var('LIBRARY')[3:-2]]
 
 # Trilinos data
 searchList = ["/usr/local", "/Users/aalorbe/local", "~/scratch2/local",
@@ -29,12 +27,12 @@ if trilHome == "/usr/local":
 else:
     trilIncDir = [trilHome + "/include"]
 trilLibDir   = [trilHome + "/lib"]
-epetraLib    = ["epetra"]
+epetraLib    = ["epetra"   ]
 epetraExtLib = ["epetraext"]
 noxEpetraLib = ["noxepetra"]
-noxLib       = ["nox"]
-aztecLib     = ["aztecoo"]
-ifpackLib    = ["ifpack"]
+noxLib       = ["nox"      ]
+aztecLib     = ["aztecoo"  ]
+ifpackLib    = ["ifpack"   ]
 
 # LAPACK hack
 sysName = os.uname()[0]

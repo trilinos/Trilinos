@@ -1,8 +1,6 @@
 #ifndef EPETRA_NUMPYVECTOR_H
 #define EPETRA_NUMPYVECTOR_H
 
-//#include <Python.h>
-//#include <Numeric/arrayobject.h>
 #define NO_IMPORT_ARRAY
 #include "numeric_include.h"
 
@@ -31,12 +29,10 @@ private:
   Epetra_NumPyVector(const Epetra_NumPyVector &);
 
   // Static helper functions
-  static void         initialize();
   static Epetra_Map & getEpetraMap( PyObject *);
   static double     * getSourceData(PyObject *);
 
   // Static private data
-  static       bool              initFlag;
   static const Epetra_SerialComm defaultComm;
   static       PyArrayObject *   tmp_array;
   static       Epetra_Map    *   tmp_map;
