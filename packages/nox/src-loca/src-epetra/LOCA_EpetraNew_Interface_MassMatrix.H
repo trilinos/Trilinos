@@ -72,6 +72,7 @@ namespace LOCA {
            "WARNING: LOCA::EpetraNew::Interface::MassMatrix::setOldSolution"
            << "\n\tempty default implementation not overloaded!" << endl;
 	};
+	//! See above
         virtual void setOldSolutionFirstStep() { cout << 
            "WARNING: LOCA::EpetraNew::Interface::MassMatrix::setOldSolutionFirstStep"
            << "\n\tempty default implementation not overloaded!" << endl;

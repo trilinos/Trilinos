@@ -89,10 +89,10 @@ namespace LOCA {
     public:
       //! Constructor with NO linear system (VERY LIMITED).
       /*! WARNING: If this constructor is used, then methods that require
-	a Jacobian or preconditioning will not be available.  You will be
-	limited to simple algorithms like nonlinear-CG with no
-	preconditioning.
-      */
+       * a Jacobian or preconditioning will not be available.  You will be
+       * limited to simple algorithms like nonlinear-CG with no
+       * preconditioning.
+       */
       Group(NOX::Parameter::List& printingParams, 
 	    LOCA::EpetraNew::Interface::Required& i, 
 	    NOX::Epetra::Vector& initialGuess,
@@ -105,6 +105,7 @@ namespace LOCA {
 	    NOX::EpetraNew::LinearSystem& linSys,
 	    const LOCA::ParameterVector& p);
 
+      //! Constructor with time-dependent interface
       Group(NOX::Parameter::List& printingParams,
             LOCA::EpetraNew::Interface::TimeDependent& i,
             NOX::Epetra::Vector& initialGuess,
@@ -112,8 +113,10 @@ namespace LOCA {
 	    const LOCA::ParameterVector& p);
 
 
-      /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
-	valid shared Jacobian and shared preconditioning matrix. */
+      /*! 
+       * \brief Copy constructor. If type is DeepCopy, takes ownership of
+       * valid shared Jacobian and shared preconditioning matrix. 
+       */
       Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
@@ -141,15 +144,15 @@ namespace LOCA {
 
       //! Overloaded computeF()
       /*!
-	Calls LOCA::EpetraNew::Interface::setParams before evalulating F.
-      */
+       * Calls LOCA::EpetraNew::Interface::setParams before evalulating F.
+       */
       virtual NOX::Abstract::Group::ReturnType 
       computeF();
 
       //! Overloaded computeJacobian()
       /*!
-	Calls LOCA::EpetraNew::Interface::setParams before evalulating J.
-      */
+       * Calls LOCA::EpetraNew::Interface::setParams before evalulating J.
+       */
       virtual NOX::Abstract::Group::ReturnType 
       computeJacobian();
 
@@ -393,10 +396,15 @@ namespace LOCA {
       //! Reference to the user supplied interface functions
       LOCA::EpetraNew::Interface::Required& userInterface;
 
+      /*! 
+       * \brief Flag indicating whether interface is derived from 
+       * LOCA::EpetraNew::Interface::TimeDependent
+       */
       bool interfaceTime;
 
       //! Extra vector needed for intermediate calculations of LOCA routines.
-      /*! NOTE: there already is a tmpVectorPtr in the NOX::Epetra::Group.  This is a second temporary vector if that one extra isn't enough.
+      /*! NOTE: there already is a tmpVectorPtr in the NOX::Epetra::Group.  
+       * This is a second temporary vector if that one extra isn't enough.
        */
       Epetra_Vector* tmpVectorPtr2;
 

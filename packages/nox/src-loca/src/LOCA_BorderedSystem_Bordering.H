@@ -134,6 +134,7 @@ namespace LOCA {
        *          J*X + A*Y \\
        *        B^T*X + C*Y
        *     \end{bmatrix}.
+       * \f]
        */
       virtual NOX::Abstract::Group::ReturnType 
       apply(const NOX::Abstract::MultiVector& X,
@@ -163,6 +164,7 @@ namespace LOCA {
        *        J^T*X + B*Y \\
        *        A^T*X + C^T*Y
        *     \end{bmatrix}.
+       * \f]
        */
       virtual NOX::Abstract::Group::ReturnType 
       applyTranspose(const NOX::Abstract::MultiVector& X,
@@ -175,7 +177,7 @@ namespace LOCA {
        */
       /*!
        * The \em params argument is the linear solver parameters. If
-       * \em isZeroF or \em \isZeroG is true, than the corresponding
+       * \em isZeroF or \em isZeroG is true, than the corresponding
        * \em F or \em G pointers may be NULL.
        */
       virtual NOX::Abstract::Group::ReturnType 

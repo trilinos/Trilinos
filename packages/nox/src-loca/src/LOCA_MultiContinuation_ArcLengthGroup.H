@@ -39,7 +39,10 @@ namespace LOCA {
 
   namespace MultiContinuation { 
 
-    
+    /*! 
+     * \brief Arclength continuation implementation of 
+     * LOCA::MultiContinuation::ExtendedGroup
+     */
     class ArcLengthGroup : 
       public virtual LOCA::MultiContinuation::ExtendedGroup {
 

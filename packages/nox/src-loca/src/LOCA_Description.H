@@ -622,7 +622,7 @@ title('Arc-length Continuation:  \beta = 0');
 
 /*! \page loca_tp_continuation_tutorial LOCA Turning Point Continuation Tutorial
 
-\section loca_continuation_tutorial_overview Overview
+\section loca_tp_continuation_tutorial_overview Overview
 
 In \ref loca_continuation_tutorial, two turning point bifurcations were discoved in the Chan problem as the parameter \f$\alpha\f$ was varied from \f$0\f$ to \f$5\f$.  Here we provide a brief tutorial on locating one of these turning points and tracking it in the second parameter \f$\beta\f$.  This example uses the turning point bordering method to formulate and solve the extended set of nonlinear equations specifying a turning point bifurcation.  Please see the documentation for LOCA::Bifurcation::TPBord::ExtendedGroup for a description of the turning point formulation and how it is solved.  The code fragements discussed below can be found in ChanTPContinuation.C in the Chan subdirectory of the %LOCA %LAPACK examples directory.
 

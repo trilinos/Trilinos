@@ -55,63 +55,93 @@ namespace LOCA {
 
   namespace Epetra {
 
-   class ShiftInvertInterface : public NOX::EpetraNew::Interface::Jacobian {
+    //! Interface for LOCA::Epetra::ShifterInvertOperator
+    class ShiftInvertInterface : public NOX::EpetraNew::Interface::Jacobian {
 
-   public:
-
-   // Constructor
-
-     ShiftInvertInterface() {};
-
-   // Destructor
-
-     ~ShiftInvertInterface() {};
-
-     bool computeJacobian(const Epetra_Vector &x) {return true;}; 
-   };
-
-   class ShiftInvertOperator : public Epetra_Operator {
+    public:
       
-   public:
+      //! Constructor
+      ShiftInvertInterface() {};
+      
+      //! Destructor
+      ~ShiftInvertInterface() {};
+      
+      //! Compute Jacobian \f$J\f$.
+      bool computeJacobian(const Epetra_Vector &x) {return true;}; 
+    };
 
-  // Constructor
+    //! Epetra operator for \f$(J-\sigma M)^{-1}\f$.
+    class ShiftInvertOperator : public Epetra_Operator {
+      
+    public:
 
-  ShiftInvertOperator(const LOCA::EpetraNew::Group& grp, const Epetra_Operator& jac, const double& shift, bool hasMassMatrix);
+      //! Constructor
+      ShiftInvertOperator(const LOCA::EpetraNew::Group& grp, 
+			  const Epetra_Operator& jac, 
+			  const double& shift, 
+			  bool hasMassMatrix);
 
-    //! Destructor
-  virtual ~ShiftInvertOperator();
+      //! Destructor
+      virtual ~ShiftInvertOperator();
 
-  virtual int SetUseTranspose(bool UseTranspose);
+      //! Set transpose
+      virtual int SetUseTranspose(bool UseTranspose);
  
-  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+      //! Apply shifted operator
+      virtual int Apply(const Epetra_MultiVector& X, 
+			Epetra_MultiVector& Y) const;
 
-  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const; 
+      //! Apply shifted operator inverse
+      virtual int ApplyInverse(const Epetra_MultiVector& X, 
+			       Epetra_MultiVector& Y) const; 
   
-  virtual double NormInf() const;
+      //! Computing infinity norm
+      virtual double NormInf() const;
 
-  virtual const char * Label() const;
+      //! Label
+      virtual const char * Label() const;
 
-  virtual bool UseTranspose() const;
+      //! Transpose
+      virtual bool UseTranspose() const;
 
-  virtual bool HasNormInf() const;
+      //! Have norm-inf
+      virtual bool HasNormInf() const;
   
-  //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
-  virtual const Epetra_Comm & Comm() const;
+      /*! 
+       * \brief Returns a pointer to the Epetra_Comm communicator associated 
+       * with this operator.
+       */
+      virtual const Epetra_Comm & Comm() const;
   
-  //! Returns the Epetra_Map object associated with the domain of this operator.
-  virtual const Epetra_Map & OperatorDomainMap() const;
+      /*! 
+       * \brief Returns the Epetra_Map object associated with the domain of 
+       * this operator.
+       */
+      virtual const Epetra_Map & OperatorDomainMap() const;
   
-  //! Returns the Epetra_Map object associated with the range of this operator.
-  virtual const Epetra_Map & OperatorRangeMap() const;
+      /*! 
+       * \brief Returns the Epetra_Map object associated with the range of 
+       * this operator.
+       */
+      virtual const Epetra_Map & OperatorRangeMap() const;
  
-   protected:  
+    protected:  
   
-  const LOCA::EpetraNew::Group& locagrp; 
-  const Epetra_Operator& jacOper;
-  const double& shift_;
-  bool massMatrix;
-  const char * Label_;
-      };
+      //! LOCA group
+      const LOCA::EpetraNew::Group& locagrp; 
+
+      //! Jacobian operator
+      const Epetra_Operator& jacOper;
+
+      //! Shift value
+      const double& shift_;
+
+      //! Do we have a mass matrix?
+      bool massMatrix;
+
+      //! Label
+      const char * Label_;
+    };
   } // namespace Epetra
 } // namespace LOCA
 #endif

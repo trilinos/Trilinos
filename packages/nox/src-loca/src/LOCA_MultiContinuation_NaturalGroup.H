@@ -39,7 +39,11 @@ namespace LOCA {
 
   namespace MultiContinuation { 
 
-    
+
+    /*! 
+     * \brief Natural continuation implementation of 
+     * LOCA::MultiContinuation::ExtendedGroup
+     */
     class NaturalGroup : 
       public virtual LOCA::MultiContinuation::ExtendedGroup {
 
