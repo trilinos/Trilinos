@@ -54,9 +54,8 @@ const double DEF_VALUE_DOUBLE = -123456.789;
   
 //=============================================================================
 
-Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob,
-			   const Teuchos::ParameterList &ParameterList ) :
-  Amesos_EpetraBaseSolver(prob,ParameterList),
+Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
+  Amesos_EpetraBaseSolver(prob),
   SymbolicFactorizationOK_(false), 
   NumericFactorizationOK_(false),
   KeepMatrixDistributed_(false),
@@ -515,7 +514,7 @@ void Amesos_Mumps::SetICNTLandCNTL()
 
 //=============================================================================
 
-int Amesos_Mumps::ReadParameterList()
+int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
 {
 
   // ========================================= //
@@ -523,67 +522,65 @@ int Amesos_Mumps::ReadParameterList()
   // default values defined in the constructor //
   // ========================================= //
   
-  if( ParameterList_ == NULL ) return 0;
-
   // retrive general parameters
 
   // solve problem with transpose
-  if( ParameterList_->isParameter("UseTranspose") )
-    SetUseTranspose(ParameterList_->get("UseTranspose",false));
+  if( ParameterList.isParameter("UseTranspose") )
+    SetUseTranspose(ParameterList.get("UseTranspose",false));
 
   // ignore all elements below given tolerance
-  if( ParameterList_->isParameter("Threshold") )
-    Threshold_ = ParameterList_->get("Threshold", 0.0);
+  if( ParameterList.isParameter("Threshold") )
+    Threshold_ = ParameterList.get("Threshold", 0.0);
 
   // add zero to diagonal if diagonal element is not present
-  if( ParameterList_->isParameter("AddZeroToDiag") )
-    AddDiagElement_ = ParameterList_->get("AddZeroToDiag", false);
+  if( ParameterList.isParameter("AddZeroToDiag") )
+    AddDiagElement_ = ParameterList.get("AddZeroToDiag", false);
 
   // add this value to diagonal
-  if( ParameterList_->isParameter("AddToDiag") )
-    AddToDiag_ = ParameterList_->get("AddToDiag", 0.0);
+  if( ParameterList.isParameter("AddToDiag") )
+    AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
 
   // print some timing information (on process 0)
-  if( ParameterList_->isParameter("PrintTiming") )
-    PrintTiming_ = ParameterList_->get("PrintTiming", false);
+  if( ParameterList.isParameter("PrintTiming") )
+    PrintTiming_ = ParameterList.get("PrintTiming", false);
 
   // print some statistics (on process 0). Do not include timing
-  if( ParameterList_->isParameter("PrintStatistics") )
-    PrintStatistics_ = ParameterList_->get("PrintStatistics", false);
+  if( ParameterList.isParameter("PrintStatistics") )
+    PrintStatistics_ = ParameterList.get("PrintStatistics", false);
 
   // compute norms of some vectors
-  if( ParameterList_->isParameter("ComputeVectorNorms") )
-    ComputeVectorNorms_ = ParameterList_->get("ComputeVectorNorms",false);
+  if( ParameterList.isParameter("ComputeVectorNorms") )
+    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",false);
 
   // compute the true residual Ax-b after solution
-  if( ParameterList_->isParameter("ComputeTrueResidual") )
-    ComputeTrueResidual_ = ParameterList_->get("ComputeTrueResidual",false);
+  if( ParameterList.isParameter("ComputeTrueResidual") )
+    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
 
   // keep matrix is distributed form (that is, use ICTNL(18)==3).
   // Matrix will be distributed among MaxProcsInputMatrix_ processes
   // (this value must be less than available procs)
-  if( ParameterList_->isParameter("KeepMatrixDistributed") )
-    KeepMatrixDistributed_ = ParameterList_->get("KeepMatrixDistributed",true);
+  if( ParameterList.isParameter("KeepMatrixDistributed") )
+    KeepMatrixDistributed_ = ParameterList.get("KeepMatrixDistributed",true);
 
   int OptNumProcs = (int)sqrt(1.0*Comm().NumProc());
   if( OptNumProcs < 1 ) OptNumProcs = 1;
-  if( ParameterList_->isParameter("MaxProcsInputMatrix") )
-    MaxProcsInputMatrix_ = ParameterList_->get("MaxProcsInputMatrix",OptNumProcs);
+  if( ParameterList.isParameter("MaxProcsInputMatrix") )
+    MaxProcsInputMatrix_ = ParameterList.get("MaxProcsInputMatrix",OptNumProcs);
 
   // define on how many processes matrix should be converted into MUMPS
   // format. (this value must be less than available procs)
 
-  if( ParameterList_->isParameter("MaxProcs") )
-    MaxProcs_ = ParameterList_->get("MaxProcs",OptNumProcs);
+  if( ParameterList.isParameter("MaxProcs") )
+    MaxProcs_ = ParameterList.get("MaxProcs",OptNumProcs);
 
   // some verbose output (for debugging only)
-  if( ParameterList_->isParameter("OutputLevel") )
-    verbose_ = ParameterList_->get("OutputLevel",0);
+  if( ParameterList.isParameter("OutputLevel") )
+    verbose_ = ParameterList.get("OutputLevel",0);
 
   // retrive MUMPS' specific parameters
   
-  if (ParameterList_->isSublist("mumps") ) {
-    Teuchos::ParameterList MumpsParams = ParameterList_->sublist("mumps") ;
+  if (ParameterList.isSublist("mumps") ) {
+    Teuchos::ParameterList MumpsParams = ParameterList.sublist("mumps") ;
     // integer array of parameters
     if( MumpsParams.isParameter("ICNTL") ) {
       int * ICNTL = NULL;
@@ -818,8 +815,6 @@ int Amesos_Mumps::SymbolicFactorization()
 
   if( verbose_ == 3 ) cout << "Entering `SymbolicFactorization'" << endl;
   
-  ReadParameterList();  
-  
   // first, gather matrix property using base class
   // Amesos_EpetraBaseSolver
 
@@ -854,8 +849,6 @@ int Amesos_Mumps::NumericFactorization()
 {
 
   if( verbose_ == 3 ) cout << "Entering `NumericFactorization'" << endl;
-
-  ReadParameterList();
 
   // MS // As in SymbolicFactorization. All those functions
   // MS // returns if they have already been called.
@@ -894,8 +887,6 @@ int Amesos_Mumps::Solve()
 { 
 
   if( verbose_ == 3 ) cout << "Entering `Solve'" << endl;
-
-  ReadParameterList();
 
   double RedistorTime = 0.0;
   Epetra_Time TimeForRedistor(Comm());
@@ -1038,7 +1029,7 @@ int Amesos_Mumps::Solve()
     }
   }
 
-  //  ParameterList_->set("solution time",GetSolTime());
+  //  ParameterList.set("solution time",GetSolTime());
 			      
   if( PrintStatistics_ == true ) PrintInformation();
   

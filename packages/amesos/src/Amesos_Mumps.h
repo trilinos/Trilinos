@@ -103,7 +103,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Mumps(const Epetra_LinearProblem& LinearProblem, const Teuchos::ParameterList &ParameterList );
+  Amesos_Mumps(const Epetra_LinearProblem& LinearProblem);
 
   //! Amesos_Mumps Destructor.
   /*! Completely deletes an Amesos_Mumps object.  
@@ -195,9 +195,6 @@ public:
   char * Label() const {return(Epetra_Object::Label());};
 #endif
     
-  //! Get a pointer to the ParameterList.
-  const Teuchos::ParameterList *GetParameterList() const { return(ParameterList_); };
-
   //! Returns true if MUMPS can handle this matrix shape 
   /*! Returns true if the matrix shape is one that MUMPS can
     handle. MUMPS only works with square matrices.  
@@ -237,12 +234,8 @@ public:
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
 
-  //! Reads the parameter list and updates internal variables. 
-  /*!
-    ReadParameterList is called by SymbolicFactorization.  Hence, few codes 
-    will need to make an explicit call to ReadParameterList.
-   */
-  int ReadParameterList() ;
+  int SetParameters(Teuchos::ParameterList &ParameterList );
+  
   //@}
 
   //! Set prescaling.
@@ -335,12 +328,6 @@ public:
     UseMpiCommSelf_ = true;
   }
 
-  //! Get a pointer tot he internally stored parameters' list.
-  const Teuchos::ParameterList* getList() const
-  {
-    return (const Teuchos::ParameterList *) &ParameterList_;
-  }
-  
 protected:
   
   /*
