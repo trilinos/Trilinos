@@ -30,6 +30,7 @@ set nem_name = (box_064 ti_300 ti_4k)
 set nem_nproc = (5 6 9) # no. of procs
 set nem_pdisk = (1 2 2) # parallel disk info
 
+# EBEB Hg testing is not ready for prime time, so turned it off.
 # Hypergraph problems to run, and methods to use
 set hg_name = (ibm01 ibm02 ibm03 ibm04 ibm05 ibm06 ibm07 ibm08 ibm09 ibm10 \
                ibm11 ibm12 ibm13 ibm14 ibm15 ibm16 ibm17 ibm18)
@@ -50,7 +51,6 @@ if ($?ZOLTAN_ARCH) then
    set arch = $ZOLTAN_ARCH
 endif
 
-set no_hg = $?ZOLTAN_NO_HG
 set no_chaco = $?ZOLTAN_NO_CHACO
 set no_nemesis = $?ZOLTAN_NO_NEMESIS
 set no_rcb = $?ZOLTAN_NO_RCB
@@ -65,6 +65,7 @@ set yes_fortran = $?ZOLTAN_YES_FORTRAN
 set yes_cpp = $?ZOLTAN_YES_CPP
 set yes_serial = $?ZOLTAN_YES_SERIAL
 set old_interface = $?ZOLTAN_OLD_INTERFACE
+set yes_hg = $?ZOLTAN_YES_HG
 
 # Parse command-line options. 
 # These options will override the environment variables.
@@ -73,8 +74,6 @@ while ( $#argv )
 
   if ( ("$1" == "-h") || ("$1" == "-help") ) then
      goto usage
-  else if ( "$1" == "-no_hg" ) then
-     @ no_hg = 1
   else if ( "$1" == "-no_nemesis" ) then
      @ no_nemesis = 1
   else if ( "$1" == "-no_chaco" ) then
@@ -102,6 +101,8 @@ while ( $#argv )
   else if ( "$1" == "-yes_serial" ) then
      @ yes_serial = 1
      @ no_nemesis = 1   # Nemesis input files require multiple processors
+  else if ( "$1" == "-yes_hg" ) then
+     @ yes_hg = 1
   else if ( "$1" == "-old_interface" ) then
      @ old_interface = 1
   else if ( "$1" == "-logfile" || "$1" == "-log" ) then
@@ -812,7 +813,7 @@ if (! $no_nemesis ) then
 endif # Nemesis
 
 # Loop over hg problems
-if (! $no_hg) then
+if ( $yes_hg) then
   @ nprob = $#hg_name
 
   cd hg_test
