@@ -161,12 +161,15 @@ int main(int argc, char *argv[])
   // additional information about the aggregates.
   // 
   // NOTE: the options above work only for "viz: output format" == "xyz"
-  // (default value). If "viz: output format" == "dx", the user
-  // can only plot the aggregates. However, "xyz" works in 2D only.
+  // (default value) or "viz: output format" == "vtk".
+  // If "viz: output format" == "dx", the user
+  // can only plot the aggregates. 
 
+  MLList.set("viz: output format", "xyz");
   MLList.set("viz: enable", true);
   MLList.set("viz: x-coordinates", x_coord);
   MLList.set("viz: y-coordinates", y_coord);
+  MLList.set("viz: z-coordinates", z_coord);
   MLList.set("viz: print starting solution", true);
 
   // =============================== //
@@ -203,35 +206,14 @@ int main(int argc, char *argv[])
   // end of visualization //
   // ==================== //
 
-  // tell AztecOO to use this preconditioner, then solve
-  solver.SetPrecOperator(MLPrec);
-  solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
-  solver.SetAztecOption(AZ_output, 32);
-  solver.Iterate(500, 1e-12);
-
   // destroy the preconditioner
   delete MLPrec;
   
-  // compute the real residual
-
-  double residual, diff;
-  Gallery.ComputeResidualVbr(&residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutionsVbr(&diff);
-  
-  if( Comm.MyPID()==0 ) {
-    cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff << endl;
-  }
-
   // delete memory for coordinates
   if( x_coord ) delete [] x_coord;
   if( y_coord ) delete [] y_coord;
   if( z_coord ) delete [] z_coord;
   
-  // for testing purposes only
-  if (residual > 1e-5)
-    exit(EXIT_FAILURE);
-
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
@@ -254,8 +236,11 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils");
+  puts("Please configure ML with:");
+  puts("--enable-epetra");
+  puts("--enable-teuchos");
+  puts("--enable-aztecoo");
+  puts("--enable-triutils");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
