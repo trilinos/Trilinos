@@ -40,7 +40,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  package name, version number, and e-mail address below
-AC_INIT(kokkos, 1.1d, jmwille@sandia.gov)
+AC_INIT(kokkos, 1.2d, maherou@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
