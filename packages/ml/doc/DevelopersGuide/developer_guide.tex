@@ -6,15 +6,15 @@
 \bibliographystyle{alpha}
 \newtheorem{remark}{Remark}
 \newcommand{\HRule}{\noindent\rule{\linewidth}{1mm}}
-\title{ML 3.0 Developers Guide}
-\SANDnum{SAND2004-2189}
+\title{ML 3.0 Developer's Guide}
+\SANDnum{SAND2004-XXXX}
 \SANDauthor{
 Marzio Sala, Jonathan J. Hu, Ray S. Tuminaro}
 
 \SANDprintDate{May 2004}
-\SANDreleaseType{Unlimited Release}
+\SANDreleaseType{Internal Use Only}
 
-\title{ML 3.0 Developers' Guide (DRAFT)}
+\title{ML 3.0 Developer's Guide (DRAFT)}
 \author{
 Marzio  Sala \\
 Computational Math \& Algorithms \\
@@ -66,7 +66,7 @@ source code.  This document contains suggested practices, naming conventions,
 and autoconf/automake hints.  We don't intend for this document to be a set
 of hard-and-fast rules, but rather {\em suggested} and {\em encouraged}
 practices. These guidelines are intended to be complimentary to policies
-established in the Trilinos Developers Guide~\ref{Trilinos-Dev-Guide}.
+established in the Trilinos Developer's Guide~\ref{Trilinos-Dev-Guide}.
 \end{abstract}
 
 \clearpage
@@ -182,10 +182,10 @@ development activities:
 
 \begin{remark}
   As a note, we recall that guidelines for \ML coding style and other
-  suggestions are supposed to be what they are, that is, guidelines and
-  suggestions. They are not intended to be obeyed with religious zealus.
-  In fact, as most of the \ML code was developed when this developers'
-  guide did not exist yet, part of \ML will not follow these guidelines.
+  suggestions are just that, guidelines and
+  suggestions. They are not intended to be obeyed zealously.
+  In fact, as most of the \ML code was developed when this developer's
+  guide did not exist yet, part of \ML does not follow these guidelines.
 \end{remark}
 
 
@@ -215,7 +215,7 @@ entities are shown in italics.
 \label{started}
 
 \ML can be obtained in different ways. Here, we suppose that the
-developer has access to the CVS repoitory on {\tt
+developer has access to the CVS repository on {\tt
   software.sandia.gov}. In addition, the user account must be in the
 {\tt trilinos} and {\tt cvs} group on this computer. To request an
 account, send a note to {\tt trilinos-help@software.sandia.gov}.  The
@@ -230,7 +230,7 @@ working copy of \ML in the current directory, type
 cvs checkout ml
 \end{verbatim}
 For a more detailed description of CVS commands, we refer to the
-Trilinos Developers Guide~\ref{Trilinos-Dev-Guide}, and to the GNU CVS Home
+Trilinos Developer's Guide~\ref{Trilinos-Dev-Guide}, and to the GNU CVS Home
 Page.
 
 \begin{itemize}
@@ -241,7 +241,7 @@ Guide.
   ('\verb!\!') properly. The characters should be at the end of every
   line, except the last line, and should not be followed by any space.
 \item autoconf cannot detect spelling mistakes in configure invocation scripts.
-\item When creating a configure 
+\item When creating a configure {\bf huh??}
 \item Other tips for making the configure and build more efficient can
   be found in \cite[Section 2.6]{Trilinos-Dev-Guide}.
 \end{itemize}
@@ -323,11 +323,12 @@ macro \verb!ML_FOO! inside the ml source.
 \section{How and Why to Add a New Test}
 \label{sec:add_test}
 
-As most Trilinos packages, \ML has a suite of test harness, that is
-executed every night. This suite of automatically execute tests verifies
+As most Trilinos packages, \ML has a test suite that is automatically
+executed every night on a variety of platforms.
+This suite verifies
 that the most important part of the code can be executed correctly, and
 that developers' changes do not affect the old code.  For more details
-on test harness, we refer to \cite[Section 3.3]{Trilinos-Dev-Guide}.
+on the test harness, we refer to \cite[Section 3.3]{Trilinos-Dev-Guide}.
 Here we report how to add a new test.
 
 The process is composed by the following steps:
@@ -371,11 +372,11 @@ has been included in \ML.
 \item The best way to write comment would be to write the code so that
   the working is obvious, and it's a waste of time to explain badly
   written code.
-\item \ML uses doxygen for the comments~\ref{doxygen} in C++ code. Most
-  of the C code is not Doxygen-complaint. (However, the most important
+\item \ML uses Doxygen for the comments~\cite[doxygen] in C++ code. Most
+  of the C code is not Doxygen-compliant. (However, the most important
   \ML structures have Doxygen comments.)
 \item For C++ code, always put Doxygen comments every class, and every
-  function in the header file.  Other non-doxygen comments can be added
+  function in the header file.  Other non-Doxygen comments can be added
   to the source file.
 \item For C++, comment everything in headers. This is where the
   interface is, and where people usually look for help.
@@ -392,7 +393,7 @@ has been included in \ML.
  *
  */
 \end{verbatim}
-\item Document functions/methods in Doxygen stle:
+\item Document functions/methods in Doxygen style:
 \begin{verbatim}
 /*! Here a brief description of the function */
 /**
@@ -490,7 +491,7 @@ instance,
 
 \vspace*{3cm}
 \HRule
-\part{Coding Pratices}
+\part{Coding Practices}
 
 \medskip
 
@@ -532,7 +533,7 @@ a mistake, but purposefully are doing a local variation for a good
 cause.
 
 Further suggestions on ``how to write good C/C++ code'' can be found,
-for instance, in the NOX guide, the Epetra Developers Coding
+for instance, in the NOX guide, the Epetra Developer's Coding
 Guidelines~\ref{Epetra-Dev-Guide}.
 
 \subsection{General}
