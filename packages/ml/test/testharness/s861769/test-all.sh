@@ -19,7 +19,7 @@ cd ${TRILINOS_HOME}/testharness
 /bin/rm -rf ${TRILINOS_HOME}/ml-test/
 mkdir ${TRILINOS_HOME}/ml-test
 
-TEST="basic"
+TEST="standalone epetra basic trilinos"
 StartTime=`date`
 lamboot
 for t in $TEST
@@ -35,6 +35,8 @@ do
   ls -1 ${TRILINOS_HOME}/ml-test/$t-results/ | grep -i error
   echo "2) test failed files (none is fine):"
   ls -1 ${TRILINOS_HOME}/ml-test/$t-results/ | grep -i failed
+  echo
+  echo
 done
 EndTime=`date`
 echo "Test started on $StartTime,"
