@@ -19,7 +19,9 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_Zoltan::operator()( const Epetra_CrsGrap
   int err;
 
   //Setup Load Balance Object
-  Zoltan_LoadBalance  LB;
+  float version;
+  char * dummy = 0;
+  Zoltan_LoadBalance  LB( 0, &dummy, &version );
   err = LB.Create( dynamic_cast<const Epetra_MpiComm&>(original.Comm()).Comm() );
   if( err == LB_OK ) err = LB.Set_Method( "PARMETIS" );
   char * pM = new char[partitionMethod_.size()];
