@@ -10700,7 +10700,7 @@ fi
 #                example/aztec_app/Makefile
 #                example/aztec_hb/Makefile
 #
-                                                                                                                        ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/UG_Ex1/Makefile example/simple_epetra_aztecoo/Makefile example/AztecOO_UserOpUserMat/Makefile example/AztecOO/Makefile test/Makefile test/AztecOO_UserOpUserMat/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile"
+                                                                                                                                  ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/UG_Ex1/Makefile example/simple_epetra_aztecoo/Makefile example/AztecOO_UserOpUserMat/Makefile example/AztecOO/Makefile test/Makefile test/AztecOO_SetParameters/Makefile test/AztecOO_UserOpUserMat/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -11308,6 +11308,7 @@ do
   "example/AztecOO_UserOpUserMat/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/AztecOO_UserOpUserMat/Makefile" ;;
   "example/AztecOO/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/AztecOO/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
+  "test/AztecOO_SetParameters/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AztecOO_SetParameters/Makefile" ;;
   "test/AztecOO_UserOpUserMat/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AztecOO_UserOpUserMat/Makefile" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
