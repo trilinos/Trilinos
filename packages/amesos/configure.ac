@@ -323,8 +323,11 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, superlu, [Enable Amesos interface support fo
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, klu, [Enable Amesos interface support for KLU], 
  		AMESOS_KLU, yes)
 
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, mumps, [Enable Amesos interface support for MUMPS], 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, mumps, [Enable Amesos interface support for the double-precision version of MUMPS], 
 		AMESOS_MUMPS, no)
+
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, smumps, [Enable Amesos interface support for the single-precision version of MUMPS. This is intended for use in conjuction with multilevel preconditioners (in particular ML). Users may decide to use single-precision solves of the coarse problem to save memory and computational time. Note: As Amesos is based on the Epetra_LinearProblem class (defined for double precision only), this interface still requires double-precision matrix and vectors. After the solver phase, the single precision vector is copied into the double-precision solution vector of the given Epetra_LinearProblem. If enabled, disabled double-precision version of MUMPS.], 
+		AMESOS_SMUMPS, no)
 
 TAC_ARG_ENABLE_FEATURE_SUB(amesos, mumps_mpi_c2f, [Enable conversion from C++ MPI commnicator to FORTRAN MPI communicator.], AMESOS_MPI_C2F, yes) 
 
@@ -371,6 +374,14 @@ amesos_libs=" "
 # AC_LANG_PUSH
 #  Atlantis fails unless we do the test links with the C compiler (instead of c++)
 AC_LANG([C])
+
+# // MS // specify location of all lib files
+  TAC_ARG_WITH_SUB( amesos, libdir, [Set location for all 3PL libraries (at present only MUMPS supports this feature)],  specify_amesos_libdir)
+  TAC_CHECK_FILE(${tac_with_amesos_libdir})
+
+# // MS // specify location of all include files
+  TAC_ARG_WITH_SUB( amesos, incdir, [Set location for all 3PL include files (at present only MUMPS supports this feature)],  specify_amesos_incdir)
+  TAC_CHECK_FILE(${tac_with_amesos_incdir})
 
 if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
 
@@ -487,7 +498,7 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
      AC_TRY_LINK_FUNC(DSC_CloseSolver,dscpack_lib_ok="yes",dscpack_lib_ok="no")
 
      if test "X$dscpack_lib_ok" == "Xyes"; then
-     AC_MSG_CHECKING( 480 ) 
+     AC_MSG_CHECKING( 480 )
      AC_MSG_RESULT( 480 ) 
        amesos_libs="${amesos_libs} -ldscdbl"
      else
@@ -859,58 +870,44 @@ else
   AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, false ) 
 fi
 
+#########
+# MUMPS #
+#########
 
+# ================================== #
+# Check for PORD (required by MUMPS) #
+# ================================== #
 
+if test "X$ac_cv_use_amesos_mumps" != "Xno" && test "X$ac_cv_use_amesos_smumps" != "Xno" ; then
+  echo "WARNING: your configure script has both --enable-ameso-smumps and"
+  echo "WARNING: --enable-amesos-smumps. We proceed with the single precision"
+  echo "WARNING: version of MUMPS only..."
+fi
 
+if test "X$ac_cv_use_amesos_mumps" != "Xno" || test "X$ac_cv_use_amesos_smumps" != "Xno" ; then
 
-#
-#  --enable-amesos-mumps, --with-amesos-mumpsdir, --with-amesos-mumpslib, 
-#    --with-amesos-mumpspordlib, 
-#    --with-amesos-mumpsincdir
-#
-#
-#  Test to see if everything is where it ought to be:
-#    Make sure that umfmain.h is in the directory pointed to by amesos-mumpsincdic
-#    Make sure that umfpack_di_default is in the library pointed to by amesos-mumpslib
-#    Make sure that amd_default is in the library pointed to by amesos-mumpspordlib
-#
-if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
-
-  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
-
-#
-#  We don't check do as thorough a check for Mumps at this point.  In fact, we don't do much of a check 
-#  at all.
-#
-  TAC_ARG_WITH_SUB( amesos, mumpsdir, [Set MUMPS directory],  ${tac_with_trilinos3pldir}/MUMPS_4.2_beta/ )
-  TAC_CHECK_FILE(${tac_with_amesos_mumpsdir})
-
-  TAC_ARG_WITH_SUB( amesos, mumpslib, [Set MUMPS library],  ${tac_with_amesos_mumpsdir}/lib/libdmumps.a )
-  TAC_CHECK_FILE(${tac_with_amesos_mumpslib})
-
-  TAC_ARG_WITH_SUB( amesos, mumpspordlib, [Set MUMPS PORD library],  ${tac_with_amesos_mumpsdir}/lib/libpord.a )
+  TAC_ARG_WITH_SUB( amesos, mumpspordlib, [Set MUMPS PORD library.],  amesos_libdir/libpord.a )
+  if test "X$tac_with_amesos_mumpspordlib" == "Xamesos_libdir/libpord.a"; then
+    tac_with_amesos_mumpspordlib=${tac_with_amesos_libdir}/libpord.a
+  fi
   TAC_CHECK_FILE(${tac_with_amesos_mumpspordlib})
 
-  TAC_ARG_WITH_SUB( amesos, mumpsincdir, [Set MUMPS include directory],  ${tac_with_amesos_mumpsdir}/include )
+  TAC_ARG_WITH_SUB( amesos, mumpsincdir, [Set MUMPS include directory.], amesos_incdir )
+  if test "X$tac_with_amesos_mumpsinclib" == "Xamesos_incdir"; then
+    tac_cv_use_amesos_mumpsinclib=${tac_with_amesos_incdir}
+  fi
   TAC_CHECK_FILE(${tac_with_amesos_mumpsincdir})
 
 #
 # This is a bad way to check for dmumps_c.h, it won't pick dmumps_c.h up if
 # it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
 #
-
-#
-#  First try to find amd.h without using the UMFPACK AMD incude directory
-#
   AC_CHECK_HEADERS([dmumps_c.h],,,)
 
   if test "X$ac_cv_header_dmumps_c_h" != "Xyes"; then
 #
-#   if we can't find dmumps_c.h in the include search path, look for it in mumpsincdir
-#   which defaults to Trilinos3PL/MUMPS_4.2_beta/include
-#
   TAC_CHECK_FILE(${tac_with_amesos_mumpsincdir}/dmumps_c.h,,
-    AC_MSG_ERROR([[Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]] ))
+    AC_MSG_ERROR([[Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsincdir or --with-amesos-incdir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]] ))
 
     CXXFLAGS="-I${tac_with_amesos_mumpsincdir} ${CXXFLAGS}"
   fi
@@ -938,21 +935,58 @@ if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 #
   AM_CONDITIONAL(HAVE_AMESOS_MUMPS, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-  amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib} ${tac_with_amesos_mumpslib} ${tac_with_amesos_scalapacklib}"
 else
   AM_CONDITIONAL(HAVE_AMESOS_MUMPS, false ) 
 fi
 
+# ================ #
+# Check for DMUMPS #
+# ================ #
 
+if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+
+  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
+
+  TAC_ARG_WITH_SUB( amesos, mumpslib, [Set MUMPS library], amesos_libdir/libmumps.a )
+
+  if test "X$tac_with_amesos_mumpslib" == "Xamesos_libdir/libdmumps.a"; then
+    tac_with_amesos_mumpslib=${tac_with_amesos_libdir}/libdmumps.a
+  fi
+
+  TAC_CHECK_FILE(${tac_with_amesos_mumpslib})
+fi
+
+# ================ #
+# Check for SMUMPS #
+# ================ #
+
+# SMUMPS overwrites DMUMPS if specified
+if test "X$ac_cv_use_amesos_smumps" != "Xno"; then
+
+  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
 #
-#  --enable-amesos-superlu, --with-amesos-superludir, --with-amesos-superlulib, 
-#    --with-amesos-superluincdir
-#
-#
-#  Test to see if everything is where it ought to be:
-#    Make sure that supermatrix.h is in the SuperLU serial include directory
-#    Make sure that SuperLU_timer is in the SuperLU serial library
-#
+  TAC_ARG_WITH_SUB( amesos, smumpslib, [Set single-precision MUMPS library], amesos_libdir/libsmumps.a )
+
+  if test "X$tac_with_amesos_smumpslib" == "Xamesos_libdir/libsmumps.a"; then
+    tac_with_amesos_mumpslib="${tac_with_amesos_libdir}/libsmumps.a"
+  fi
+
+  TAC_CHECK_FILE(${tac_with_amesos_smumpslib})
+
+# SMUMPS still requires HAVE_AMESOS_MUMPS to work. But now the dmumps
+# library is no longer needed.
+  AM_CONDITIONAL(HAVE_AMESOS_SMUMPS, true ) 
+else
+  AM_CONDITIONAL(HAVE_AMESOS_SMUMPS, false ) 
+fi
+
+# finally specify the MUMPS library. `tac_with_amesos_mumpslib' contains either dmumps or
+# smumps. At this stage, the code cannot handle both dmumps and smumps simultaneously.
+amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib} ${tac_with_amesos_scalapacklib}"
+
+# ======= #
+# SuperLU #
+# ======= #
 
 if test "X$ac_cv_use_amesos_superlu" != "Xno"; then
 
