@@ -2131,23 +2131,55 @@ void ML_find_local_indices(int N_update, int bindx[], int update[],
 int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
                              int num_dirichlet_rows)
 {
-   int *rows, /* *cols,*/ i, j, bcrow;
+   int *rows, i, j, bcrow;
    double *vals;
    struct ML_CSR_MSRdata *data;
- 
+#ifdef ML_ZEROOUTPINNEDNODES
+   int *cols, *pinnednodes;
+#endif
+
    data = (struct ML_CSR_MSRdata *) ((*Tmat)->data);
    rows = data->rowptr;
-   /*cols = data->columns;*/
    vals = data->values;
- 
-   for (i=0;i<num_dirichlet_rows;i++)
-   {
+#ifdef ML_ZEROOUTPINNEDNODES
+   cols = data->columns;
+   pinnednodes = (int *) ML_allocate((*Tmat)->invec_leng * sizeof(int) );
+   for (i=0; i<(*Tmat)->invec_leng; i++) pinnednodes[i] = 0;
+#endif
+
+   for (i=0;i<num_dirichlet_rows;i++) {
       bcrow = dirichlet_rows[i];
-      for (j = rows[bcrow]; j< rows[bcrow+1]; j++)
+      for (j = rows[bcrow]; j< rows[bcrow+1]; j++) {
          vals[j] = 0.0;
+#ifdef ML_ZEROOUTPINNEDNODES
+         if (cols[j] < (*Tmat)->invec_leng)
+            pinnednodes[ cols[j] ] = 1;
+         else {
+            printf("(%d) ERROR: col indx too large (%d >= %d) ",
+                   (*Tmat)->comm->ML_mypid, cols[j] , (*Tmat)->invec_leng);
+            printf("in ML_Tmat_applyDirichletBC\n");
+            fflush(stdout);
+            exit(1);
+         }
+#endif
+      }
    }
+#ifdef ML_ZEROOUTPINNEDNODES
+   /* If a node is the endpoint of a Dirichlet edge, the corresponding
+    *       column of T should be completely zeroed out. */
+   printf("\n\n\aIn ML_Tmat_applyDirichletBC: zeroing out pinned nodes\n\n");
+   fflush(stdout);
+   for (i=0;i<(*Tmat)->outvec_leng;i++) {
+      for (j = rows[i]; j< rows[i+1]; j++) {
+         if (pinnednodes[cols[j]]) vals[j] = 0.0;
+      }
+   }
+   ML_free(pinnednodes);
+#endif
    return 0;
 } /*ML_Tmat_applyDirichletBC*/
+
+/****************************************************************************/
 
 void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *reordered_node_externs,
 			    int Tmat_bindx[], double Tmat_val[], int rowptr[], int Nlocal_nodes,
