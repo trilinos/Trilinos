@@ -22,6 +22,37 @@
 #include "ha_const.h"
 #include "params_const.h"
 
+/*******************************************************************/
+/*******************************************************************/
+/*******************************************************************/
+/****** Parameters structure for building machine description. *****/
+
+static PARAM_VARS Mach_params[] = {
+        { "USE_MACHINE_DESC", NULL, "INT" },
+        { "MACHINE_DESC_FILE", NULL, "STRING" },
+        { NULL, NULL, NULL } };
+
+/*******************************************************************/
+/*******************************************************************/
+/*******************************************************************/
+
+int LB_Set_Machine_Param(
+char *name,                     /* name of variable */
+char *val)                      /* value of variable */
+{
+  int status;
+  PARAM_UTYPE result;         /* value returned from Check_Param */
+  int index;                  /* index returned from Check_Param */
+
+  status = LB_Check_Param(name, val, Mach_params, &result, &index);
+
+  return(status);
+}
+
+/*******************************************************************/
+/*******************************************************************/
+/*******************************************************************/
+
 int LB_Build_Machine_Desc(
    LB *lb              /* The load-balancing structure.                */
 )
@@ -30,11 +61,6 @@ int LB_Build_Machine_Desc(
   int use_mach_desc;
   char *filename;
 
-  PARAM_VARS Mach_params[] = {
-      { "USE_MACHINE_DESC", NULL, "INT" },
-      { "MACHINE_DESC_FILE", NULL, "STRING" },
-      { NULL, NULL, NULL } };
-  
   Mach_params[0].ptr = (void *) &use_mach_desc;
   Mach_params[1].ptr = (void *) &filename;
 
