@@ -20,6 +20,9 @@ extern "C" {
 #endif
 
 #include "zz_const.h"
+#include "zz_heap.h"
+#include "zz_sort.h"
+#include "phg_comm.h"
 #include "phg_const.h"
 #include "phg_hypergraph.h"
 #include "phg_util.h"
@@ -52,9 +55,9 @@ typedef struct Zoltan_PHGraph ZPHG;
 #define GNO_TO_LNO(gno, dist, myblock) \
     (gno) - (dist)[(myblock)]
 #define VTX_GNO_TO_LNO(phg, gno) \
-    GNO_TO_LNO(gno, (phg)->dist_x, (phg)->myProc_x)
+    GNO_TO_LNO(gno, (phg)->dist_x, (phg)->comm->myProc_x)
 #define EDGE_GNO_TO_LNO(phg, gno) \
-    GNO_TO_LNO(gno, (phg)->dist_y, (phg)->myProc_y)
+    GNO_TO_LNO(gno, (phg)->dist_y, (phg)->comm->myProc_y)
 
 
 /* Mapping of local number to global number           */
@@ -63,19 +66,19 @@ typedef struct Zoltan_PHGraph ZPHG;
 #define LNO_TO_GNO(lno, dist, myblock) \
     (lno) + (dist)[(myblock)]
 #define VTX_LNO_TO_GNO(phg, lno) \
-    LNO_TO_GNO(lno, (phg)->dist_x, (phg)->myProc_x)
+    LNO_TO_GNO(lno, (phg)->dist_x, (phg)->comm->myProc_x)
 #define EDGE_LNO_TO_GNO(phg, lno) \
-    LNO_TO_GNO(lno, (phg)->dist_y, (phg)->myProc_y)
+    LNO_TO_GNO(lno, (phg)->dist_y, (phg)->comm->myProc_y)
 
 
 /* Mapping of global number to processor block.     */
 /* Code should call EDGE_TO_PROC_Y or VTX_TO_PROC_X */
 
 #define EDGE_TO_PROC_Y(phg, gno) \
-    Zoltan_PHG_Gno_To_Proc_Block((gno), (phg)->dist_y, (phg)->nProc_y)
+    Zoltan_PHG_Gno_To_Proc_Block((gno), (phg)->dist_y, (phg)->comm->nProc_y)
 
 #define VTX_TO_PROC_X(phg, gno) \
-    Zoltan_PHG_Gno_To_Proc_Block(gno, (phg)->dist_x, (phg)->nProc_x)
+    Zoltan_PHG_Gno_To_Proc_Block(gno, (phg)->dist_x, (phg)->comm->nProc_x)
 
 
 /*****************/
@@ -125,6 +128,7 @@ typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, PHGraph*, int, Partition,
 /* do not need separate types here or separate pointers in HGPartParams.  KDD */
 typedef int ZOLTAN_PHG_MATCHING_EWS_FN(ZZ*, PGraph*);
 
+    
 /******************************************/
 /* Parameters to the hypergraph functions */
 /******************************************/
@@ -146,17 +150,13 @@ struct PHGPartParamsStruct {
                          * be checked for errors. */
   int output_level;     /* Flag indicating amount of output from HG algorithms.
                          * See levels PHG_DEBUG_* below.  */
-  int nProc_x;    /* number of processors in x-direction of 2D data distrib.  */
-  int nProc_y;    /* number of processors in y-direction of 2D data distrib.  */
-                  /* nProc_x * nProc_y should equal number of processors!     */
-  int myProc_x;   /* my processor's row block number in [0,nProc_x-1] */
-  int myProc_y;   /* my processor's column block number in [0,nProc_y-1] */
-  MPI_Comm row_comm; /* my processor's row communicator */
-  MPI_Comm col_comm; /* my processor's column communicator */
+  PHGComm comm;   /* UVCUVC: although this is not a paramater; we'll keep it here
+                     for now; later we can move it out */
 };
 
 typedef struct PHGPartParamsStruct PHGPartParams;
 
+    
 /*****************************/
 /* Hypergraph output levels: */
 /*****************************/
@@ -196,42 +196,6 @@ ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(char*);
 int Zoltan_PHG_Refinement (ZZ*, PHGraph*, int, Partition, PHGPartParams*);
 ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char*);
 
-/***********/
-/* Sorting */
-/***********/
-void Zoltan_quicksort_pointer_dec_float_int (int*, float*, int*, int, int);
-void Zoltan_quicksort_pointer_dec_float     (int*, float*, int,  int);
-void Zoltan_quicksort_pointer_inc_int_int   (int*, int*,   int*, int, int);
-void Zoltan_quicksort_list_inc_int          (int*, int,    int);
-void Zoltan_quicksort_pointer_inc_int_mult  (int*, int,    int,  int*, int*);
-
-/**************************************/
-/* Heap data structure and operations */
-/**************************************/
-typedef struct {
-   int    space;
-   int    n;
-   int   *ele;
-   int   *pos;
-   float *value;
-} HEAP;
-
-#define Zoltan_PHG_heap_empty(H)         (((H)->n)==0)
-#define Zoltan_PHG_heap_not_empty(H)     (((H)->n)!=0)
-#define Zoltan_PHG_heap_max_value(H)     ((H)->value[(H)->ele[0]])
-#define Zoltan_PHG_heap_peek_max(H)      ((H)->ele[0])
-#define Zoltan_PHG_heap_count(H)         ((H)->n)
-
-int  Zoltan_PHG_heap_init         (ZZ*, HEAP*, int);
-void Zoltan_PHG_heap_clear        (HEAP*);
-void Zoltan_PHG_heap_free         (HEAP*);
-int  Zoltan_PHG_heap_check        (HEAP*);
-int  Zoltan_PHG_heap_input        (HEAP*, int, float);
-int  Zoltan_PHG_heap_make         (HEAP*);
-int  Zoltan_PHG_heap_change_value (HEAP*, int, float);
-int  Zoltan_PHG_heap_extract_max  (HEAP*);
-int  Zoltan_PHG_heap_extract      (HEAP*, int);
-
 /*****************/
 /* Communication */
 /*****************/
@@ -248,8 +212,8 @@ extern int Zoltan_PHG_Set_Part_Options(ZZ*, PHGPartParams*);
 extern int Zoltan_PHG_HPart_Lib(ZZ*, PHGraph*, int, Partition, PHGPartParams*, 
                                 int);
 extern int Zoltan_PHG_HPart_Info(ZZ*, PHGraph*, int, Partition, PHGPartParams*);
-extern double Zoltan_PHG_hcut_size_total(ZZ*, PHGraph*, Partition, PHGPartParams*, int);
-extern double Zoltan_PHG_hcut_size_links(ZZ*, PHGraph*, Partition, PHGPartParams*, int);    
+extern double Zoltan_PHG_hcut_size_total(PHGComm*, PHGraph*, Partition, int);
+extern double Zoltan_PHG_hcut_size_links(PHGComm*, PHGraph*, Partition, int);    
 extern double Zoltan_PHG_HPart_balance(ZZ*, PHGraph*, int, Partition);
 
 extern int Zoltan_PHG_move_vertex(PHGraph*, int, int, int, int*, int**, double*,

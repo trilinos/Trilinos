@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "zz_sort.h"
 
 
 

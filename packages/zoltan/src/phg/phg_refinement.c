@@ -61,11 +61,11 @@ static int refine_no (
 
 /*****************************************************************************/
 /* 2-way Parallel FM refinement                                              */
-static char *uMe(ZZ *zz, PHGPartParams *hgp)
+static char *uMe(PHGComm *hgc)
 {
     static char msg[1024];
 
-    sprintf(msg, "<%d/%d>: (%d,%d)/[%d,%d] ->", zz->Proc, zz->Num_Proc, hgp->myProc_x, hgp->myProc_y, hgp->nProc_x, hgp->nProc_y);
+    sprintf(msg, "<%d/%d>: (%d,%d)/[%d,%d] ->", hgc->Proc, hgc->Num_Proc, hgc->myProc_x, hgc->myProc_y, hgc->nProc_x, hgc->nProc_y);
     return msg;
 }
 
@@ -83,9 +83,9 @@ static int refine_fm2 (
     double cutsize, best_cutsize, *gain = 0;
     HEAP   heap[2];
     char   *yo="local_fm2";
-    
     double ratio = hg->ratio, error, best_error;
     int    best_imbalance, imbalance;
+    PHGComm *hgc=&hgp->comm;
 
 #ifdef _DEBUG    
     FILE *fp;
@@ -126,18 +126,18 @@ static int refine_fm2 (
         for (i = 0; i < hg->nVtx; i++)
             tweights[part[i]] += 1.0;
 
-    MPI_Allreduce(tweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgp->row_comm);
+    MPI_Allreduce(tweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
     total_weight = weights[0] + weights[1];
     max_weight[0] = total_weight * bal_tol *      ratio;
     max_weight[1] = total_weight * bal_tol * (1 - ratio);
 
-    printf("%s W:(%.2lf, %.2lf) MaxW:(%.2lf, %.2lf)\n", uMe(zz, hgp), weights[0], weights[1], max_weight[0], max_weight[1]);
+    printf("%s W:(%.2lf, %.2lf) MaxW:(%.2lf, %.2lf)\n", uMe(hgc), weights[0], weights[1], max_weight[0], max_weight[1]);
     
     if (!(pins[0]    = (int*)   ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
         || !(tpins[0] = (int*)   ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
         || !(moves  = (int*)   ZOLTAN_CALLOC    (hg->nVtx,  sizeof(int)))
         || !(gain   = (double*)ZOLTAN_CALLOC    (hg->nVtx,  sizeof(double))) ) {
-         Zoltan_Multifree(__FILE__,__LINE__, 3, &pins[0], &moves, &gain);
+         Zoltan_Multifree(__FILE__,__LINE__, 4, &pins[0], &tpins[0], &moves, &gain);
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          return ZOLTAN_MEMERR;
     }
@@ -149,7 +149,7 @@ static int refine_fm2 (
         for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
             ++(tpins[part[hg->hvertex[j]]][i]);
 
-    MPI_Allreduce(tpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgp->row_comm); 
+    MPI_Allreduce(tpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm); 
     cutsize = 0.0;
     for (i=0; i < hg->nEdge; ++i) {
         if (pins[0][i] && pins[1][i])
@@ -157,9 +157,9 @@ static int refine_fm2 (
     }
 
     /* Just for debugging */
-    best_cutsize = Zoltan_PHG_hcut_size_total(zz, hg, part, hgp, p);
-    error = Zoltan_PHG_hcut_size_links(zz, hg, part, hgp, p);
-    printf("%s: Initial cutsize=%.2lf Verify: total=%.2lf links=%.2lf\n", uMe(zz, hgp), cutsize,
+    best_cutsize = Zoltan_PHG_hcut_size_total(hgc, hg, part, p);
+    error = Zoltan_PHG_hcut_size_links(hgc, hg, part, p);
+    printf("%s: Initial cutsize=%.2lf Verify: total=%.2lf links=%.2lf\n", uMe(hgc), cutsize,
            best_cutsize,
            error);
     if (error!=cutsize || best_cutsize!=cutsize) {
@@ -443,7 +443,7 @@ int Zoltan_PHG_move_vertex (PHGraph *hg, int vertex, int sour, int dest,
         v = hg->hvertex[j];
         gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
         if (heap)
-          Zoltan_PHG_heap_change_value(&heap[part[v]], v, gain[v]);
+          Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
       }
     }
     else if (cut[sour][edge] == 2) {
@@ -452,7 +452,7 @@ int Zoltan_PHG_move_vertex (PHGraph *hg, int vertex, int sour, int dest,
         if (part[v] == sour) {
           gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
           if (heap)
-            Zoltan_PHG_heap_change_value(&heap[part[v]], v, gain[v]);
+            Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
           break;
         }
       }
@@ -463,7 +463,7 @@ int Zoltan_PHG_move_vertex (PHGraph *hg, int vertex, int sour, int dest,
         v = hg->hvertex[j];
         gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
         if (heap)
-          Zoltan_PHG_heap_change_value(&heap[part[v]], v, gain[v]);
+          Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
       }
     }
     else if (cut[dest][edge] == 1) {
@@ -472,7 +472,7 @@ int Zoltan_PHG_move_vertex (PHGraph *hg, int vertex, int sour, int dest,
         if (v != vertex && part[v] == dest) {
           gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
           if (heap)
-            Zoltan_PHG_heap_change_value(&heap[part[v]], v, gain[v]);
+            Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
           break;
         }
       }

@@ -47,11 +47,10 @@ typedef struct {
   
 typedef struct {
   int info;       /* primarily for debugging recursive algorithms;initially 0 */
-  int nProc_x;    /* number of processors in x-direction of 2D data distrib.  */
-  int nProc_y;    /* number of processors in y-direction of 2D data distrib.  */
-                  /* nProc_x * nProc_y should equal number of processors!     */
-  int myProc_x;   /* my processor's row block number in [0,nProc_x-1] */
-  int myProc_y;   /* my processor's column block number in [0,nProc_y-1] */
+  PHGComm *comm;  /* this is a pointer to storage PHGPartParamsStruct:
+                     UVCUVC: I've included here because nProc_x, nProc_y was here
+                     for convenience.
+                   */
   int *dist_x;    /* distributions of vertices to processor columns. Vertices
                    * dist_x[n] to dist_x[n+1]-1 are stored in col block n */
   int *dist_y;    /* distribution of hyperedges to processor rows as above */                  

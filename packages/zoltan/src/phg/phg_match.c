@@ -46,6 +46,14 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 }
 
 
+static char *uMe(PHGComm *hgc)
+{
+    static char msg[1024];
+
+    sprintf(msg, "<%d/%d>: (%d,%d)/[%d,%d] ->", hgc->Proc, hgc->Num_Proc, hgc->myProc_x, hgc->myProc_y, hgc->nProc_x, hgc->nProc_y);
+    return msg;
+}
+
 
 /* Removed sim() from serial version at this point */
 
@@ -144,9 +152,10 @@ static int matching_ipm(ZZ *zz, PHGraph *hg, Matching match)
      */
 
     MPI_Comm *comm = &zz->Communicator;
+    PHGComm  *hgc = hg->comm;
 
     printf("Entering matching_ipm on proc %d ",zz->Proc);
-    printf("(%d,%d)\n", hg->myProc_x, hg->myProc_y);
+    printf("(%d,%d)\n", hgc->myProc_x, hgc->myProc_y);
     
     /* delimit vedge array so processor boundaries are visible in r_vedge */
     hg->vedge[hg->vindex[hg->nVtx] - 1] = 
@@ -155,7 +164,7 @@ static int matching_ipm(ZZ *zz, PHGraph *hg, Matching match)
     /* get row-wide vedge */    
     send_size = hg->vindex[hg->nVtx] * sizeof(int);
     err = Zoltan_PHG_gather_slice(
-        hg->nProc_x, hg->nProc_y, hg->myProc_x, hg->myProc_y, send_size,
+        hgc->nProc_x, hgc->nProc_y, hgc->myProc_x, hgc->myProc_y, send_size,
         (char*) hg->vedge, &r_vedge_size, (char**) &r_vedge, comm, 1);
     if (err < 0)
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_gather_slice failed.");
@@ -167,7 +176,7 @@ static int matching_ipm(ZZ *zz, PHGraph *hg, Matching match)
     /* get row-wide vindex */
     send_size = (hg->nVtx + 1) * sizeof(int);
     err = Zoltan_PHG_gather_slice(
-        hg->nProc_x, hg->nProc_y, hg->myProc_x, hg->myProc_y, send_size,
+        hgc->nProc_x, hgc->nProc_y, hgc->myProc_x, hgc->myProc_y, send_size,
         (char*) hg->vindex, &r_vindex_size, (char**) &r_vindex, comm, 1);
     if (err < 0)
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_gather_slice failed.");
@@ -228,9 +237,11 @@ static int matching_ipm(ZZ *zz, PHGraph *hg, Matching match)
     for (i = r_hindex_size; i > 0; i--)
         r_hindex[i] = r_hindex[i-1];
     r_hindex[0] = 0;
-    
+
+    /* UVCUVC: turned it off tooo much debug output
     print_matrix(r_vindex, r_vedge,   r_vindex_size, r_hindex_size, 0);
     print_matrix(r_hindex, r_hvertex, r_vindex_size, r_hindex_size, 1);
+    */
     
     /* compute partial inner products using serial algorithm */
     
@@ -244,6 +255,10 @@ static int matching_ipm(ZZ *zz, PHGraph *hg, Matching match)
     cips = NULL;
     pips_size = r_vindex_size * r_vindex_size;
 
+    printf("**** UVC: %s  r_vindex_size= %d   pips_size= %d \n r_vedge_size= %d",
+           uMe(hgc), 
+           r_vindex_size, pips_size, r_vedge_size);
+    
     if (!(pips = (int*) ZOLTAN_MALLOC(pips_size * sizeof(int)))) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory");
         return ZOLTAN_MEMERR;
@@ -265,7 +280,7 @@ static int matching_ipm(ZZ *zz, PHGraph *hg, Matching match)
 
     /* send results to column root */
     err = Zoltan_PHG_gather_slice_root(
-            hg->nProc_x, hg->nProc_y, hg->myProc_x, hg->myProc_y,
+            hgc->nProc_x, hgc->nProc_y, hgc->myProc_x, hgc->myProc_y,
             pips_size * sizeof(int), (char*)pips, 
             &cips_size, (char**)&cips, comm, 0);
     if (err < 0)
@@ -273,15 +288,15 @@ static int matching_ipm(ZZ *zz, PHGraph *hg, Matching match)
     cips_size /= sizeof(int);
    
     
-    if(!hg->myProc_y) {
+    if(!hgc->myProc_y) {
         /* column root computes complete inner products, creates matching */
         /* and sends results back                                         */
         
-        assert(cips_size == pips_size * hg->nProc_y);
+        assert(cips_size == pips_size * hgc->nProc_y);
 
         /* compute complete inner products */
         for (i = 0; i < pips_size; ++i)
-            for (j = 1; j < hg->nProc_y; ++j)
+            for (j = 1; j < hgc->nProc_y; ++j)
                 cips[i] += cips[j * pips_size];
         
 /*****************************************************************************

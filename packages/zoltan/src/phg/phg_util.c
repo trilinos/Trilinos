@@ -387,7 +387,7 @@ int Zoltan_PHG_Check (
       err = ZOLTAN_WARN;
     }
 
-  if (hg->nProc_x == 1) { 
+  if (hg->comm->nProc_x == 1) { 
     /* In 2D distribution, check makes sense only if proc has entire hedge */
     for (i = 0; i < hg->nEdge; i++)
       if ((hg->hindex[i+1] - hg->hindex[i]) < 2) {

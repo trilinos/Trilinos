@@ -48,7 +48,7 @@ static PARAM_VARS PHG_params[] = {
 };
 
 /* prototypes for static functions: */
-static int set_proc_distrib (int, int, int*, int*, int*, int*);
+static int set_proc_distrib (MPI_Comm, int, int, PHGComm*);
 static int Zoltan_PHG_Initialize_Params (ZZ*, PHGPartParams*);
 static int Zoltan_PHG_Return_Lists (ZZ*, ZPHG*, Partition, int*,
  ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
@@ -169,8 +169,8 @@ static int Zoltan_PHG_Initialize_Params(
   char *yo = "Zoltan_PHG_Initalize_Params";
   
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL",  (void*) &hgp->output_level);
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",          (void*) &(hgp->nProc_x));
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",          (void*) &(hgp->nProc_y));
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",          (void*) &(hgp->comm.nProc_x));
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",          (void*) &(hgp->comm.nProc_y));
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT",  (void*) &hgp->redl);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD", (void*) hgp->redm_str);
   Zoltan_Bind_Param(PHG_params, "PHG_EDGE_WEIGHT_SCALING",    (void*) &hgp->ews);
@@ -189,24 +189,17 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
   hgp->redl = zz->LB.Num_Global_Parts;
   hgp->output_level = PHG_DEBUG_LIST;
-  hgp->nProc_x = -1;
-  hgp->nProc_y = -1;
+  hgp->comm.nProc_x = -1;
+  hgp->comm.nProc_y = -1;
 
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
 
-  ierr = set_proc_distrib(zz->Proc, zz->Num_Proc, &hgp->nProc_x, &hgp->nProc_y,
-                          &hgp->myProc_x, &hgp->myProc_y);
+  ierr = set_proc_distrib(zz->Communicator, zz->Proc, zz->Num_Proc, &hgp->comm);
   if (ierr != ZOLTAN_OK) 
       goto End;
 
-  if ((MPI_Comm_split(zz->Communicator, hgp->myProc_x, hgp->myProc_y, &hgp->col_comm) != MPI_SUCCESS)
-      || (MPI_Comm_split(zz->Communicator, hgp->myProc_y, hgp->myProc_x, &hgp->row_comm) != MPI_SUCCESS)) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "MPI_Comm_Split failed");
-      return ZOLTAN_FATAL;
-  }
-/*  printf("(%d, %d) of [%d, %d] -> After Comm_split col_comm=%d  row_comm=%d\n", hgp->myProc_x, hgp->myProc_y, hgp->nProc_x, hgp->nProc_y, (int)hgp->col_comm, (int)hgp->row_comm);  */
   
   /* Convert strings to function pointers. */
   ierr = Zoltan_PHG_Set_Part_Options (zz, hgp);
@@ -348,14 +341,17 @@ void Zoltan_PHG_HGraph_Print(
 /*****************************************************************************/
 
 static int set_proc_distrib(
-  int proc,          /* Input:  Rank of current processor */
-  int nProc,         /* Input:  Total # of processors */
-  int *nProc_x,      /* Input/Output:  # processors in x-direction of 2D 
-                        data distrib; if -1 on input, compute. */
-  int *nProc_y,      /* Input/Output:  # processors in y-direction of 2D 
-                        data distrib; if -1 on input, compute. */
-  int *myProc_x,     /* Output:  x block of proc in [0,nProc_x-1]. */
-  int *myProc_y      /* Output:  y block of proc in [0,nProc_y-1]. */
+  MPI_Comm Communicator, /* Input:  The MPI Communicator      */
+  int proc,              /* Input:  Rank of current processor */
+  int nProc,             /* Input:  Total # of processors     */
+  PHGComm *comm          /* Input/Ouput: for nProc_x and nProc_y members;
+                            Output: for the rest:
+  int *nProc_x,      Input/Output:  # processors in x-direction of 2D 
+                        data distrib; if -1 on input, compute. 
+  int *nProc_y,      Input/Output:  # processors in y-direction of 2D 
+                        data distrib; if -1 on input, compute. 
+  int *myProc_x,     Output:  x block of proc in [0,nProc_x-1]. 
+  int *myProc_y      Output:  y block of proc in [0,nProc_y-1]. */
 )
 {
 /* Computes the processor distribution for the 2D data distrib.
@@ -365,40 +361,48 @@ static int set_proc_distrib(
  * If nProc_x and nProc_y both equal -1 on input, compute default.
  * Otherwise, compute valid values and/or return error.
  */
-char *yo = "set_proc_distrib";
-int tmp;
-int ierr = ZOLTAN_OK;
-
-  if (*nProc_x == -1 && *nProc_y == -1) {
-    /* Compute default */
-    tmp = (int) sqrt((double)nProc+0.1);
-    while (nProc % tmp) tmp--;
-    *nProc_y = tmp;
-    *nProc_x = nProc / tmp;
+    char *yo = "set_proc_distrib";
+    int tmp;
+    int ierr = ZOLTAN_OK;
+    
+    if (comm->nProc_x == -1 && comm->nProc_y == -1) {
+        /* Compute default */
+        tmp = (int) sqrt((double)nProc+0.1);
+        while (nProc % tmp) tmp--;
+        comm->nProc_y = tmp;
+        comm->nProc_x = nProc / tmp;
+    } else if (comm->nProc_x == -1) {
+        /* nProc_y set by user parameter */
+        comm->nProc_x = nProc / comm->nProc_y;
+    } else if (comm->nProc_y == -1) {
+        /* nProc_x set by user parameter */
+        comm->nProc_y = nProc / comm->nProc_x;
+    }
+    
+    /* Error check */
+    if (comm->nProc_x * comm->nProc_y != nProc) {
+        ZOLTAN_PRINT_ERROR(proc, yo,
+                           "Values for PHG_NPROC_X and PHG_NPROC_Y do not evenly divide the "
+                           "total number of processors.");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+    }
+    
+    comm->myProc_x = proc % comm->nProc_x;
+    comm->myProc_y = proc / comm->nProc_x;
+    comm->Communicator = Communicator;
+    comm->Proc = proc;
+    comm->Num_Proc = nProc;
+    
+  if ((MPI_Comm_split(Communicator, comm->myProc_x, comm->myProc_y, &comm->col_comm) != MPI_SUCCESS)
+      || (MPI_Comm_split(Communicator, comm->myProc_y, comm->myProc_x, &comm->row_comm) != MPI_SUCCESS)) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "MPI_Comm_Split failed");
+      return ZOLTAN_FATAL;
   }
-  else if (*nProc_x == -1) {
-    /* nProc_y set by user parameter */
-    *nProc_x = nProc / *nProc_y;
-  }
-  else if (*nProc_y == -1) {
-    /* nProc_x set by user parameter */
-    *nProc_y = nProc / *nProc_x;
-  }
-
-  /* Error check */
-  if (*nProc_x * *nProc_y != nProc) {
-    ZOLTAN_PRINT_ERROR(proc, yo,
-      "Values for PHG_NPROC_X and PHG_NPROC_Y do not evenly divide the "
-      "total number of processors.");
-    ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-
-  *myProc_x = proc % *nProc_x;
-  *myProc_y = proc / *nProc_x;
-
+/*  printf("(%d, %d) of [%d, %d] -> After Comm_split col_comm=%d  row_comm=%d\n", hgp->myProc_x, hgp->myProc_y, hgp->nProc_x, hgp->nProc_y, (int)hgp->col_comm, (int)hgp->row_comm);  */
+  
   printf("%d of %d KDDKDD nProc (%d,%d)  myProc (%d,%d)\n", 
-         proc, nProc, *nProc_x, *nProc_y, *myProc_x, *myProc_y);
+         proc, nProc, comm->nProc_x, comm->nProc_y, comm->myProc_x, comm->myProc_y);
 End:
 
   return ierr;

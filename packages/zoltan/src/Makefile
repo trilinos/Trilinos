@@ -158,7 +158,8 @@ UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory
 
 ZZ_CSRC		= zz_coord.c zz_obj_list.c zz_struct.c \
-		  zz_init.c zz_set_fn.c zz_util.c zz_gen_files.c
+		  zz_init.c zz_set_fn.c zz_util.c zz_gen_files.c \
+		  zz_heap.c zz_sort.c
 ZZ_INC		= zz_const.h zz_id_const.h zz_util_const.h
 
 ALL_CSRC	= all_allo.c 
@@ -198,9 +199,9 @@ HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
 ifdef ZOLTAN_HG
 
-PHG_CSRC 	= phg.c phg_build.c phg_coarse.c phg_distrib.c phg_heap.c \
+PHG_CSRC 	= phg.c phg_build.c phg_coarse.c phg_distrib.c \
 		  phg_match.c phg_plot.c \
-		  phg_refinement.c phg_serialpartition.c phg_sort.c \
+		  phg_refinement.c phg_serialpartition.c \
 		  phg_scale.c \
 		  phg_Vcycle.c phg_util.c \
 		  phg_comm.c
@@ -211,7 +212,7 @@ endif
 
 ifdef ZOLTAN_HG
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
-		  hg_group.c hg_heap.c hg_local.c hg_sort.c hg_scale.c \
+		  hg_group.c hg_local.c hg_scale.c \
 		  hg_match.c hg_pack.c hg_rdivide.c \
 		  hg_part.c hg_plot.c hg_util.c
 HG_INC 		= hg.h hypergraph.h hg_util.h

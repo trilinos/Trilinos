@@ -92,8 +92,8 @@ int Zoltan_PHG_Coarsening
   c_hg->ratio = hg->ratio;         /* for "global" recursive bisectioning */
   c_hg->redl  = hg->redl;          /* to stop coarsening near desired count */
   
-  maxgno = hg->dist_x[hg->myProc_x + 1] - 1;    /* last  gno of my column */
-  mingno = hg->dist_x[hg->myProc_x];            /* first gno of my column */
+  maxgno = hg->dist_x[hg->comm->myProc_x + 1] - 1;    /* last  gno of my column */
+  mingno = hg->dist_x[hg->comm->myProc_x];            /* first gno of my column */
 
   /* allocate x_lno[], x_count, x_dest[] to worst case sizes. Another (pre) pass 
      over match[] (below) could allow allocating the exact size arrays instead! */
@@ -118,7 +118,7 @@ int Zoltan_PHG_Coarsening
     if (match[i] > maxgno || match[i] < mingno)  {  /* external processor match */
       int gx, lx, proc_x;
       gx = VTX_TO_PROC_X (hg, match[i]);
-      lx = hg->myProc_x;
+      lx = hg->comm->myProc_x;
       
       /* rule to determine "ownership" of coarsened vertices across procs */      
       proc_x = ((mingno+i+match[i]) & 1) ? MIN(gx, lx) : MAX(gx, lx);

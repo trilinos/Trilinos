@@ -143,7 +143,7 @@ int i, j, edge, v;
            v = hg->hvertex[j];
            gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
            if (heap)
-              Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[v]);
+              Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
            }
         }
      else if (cut[sour][edge] == 2) {
@@ -152,7 +152,7 @@ int i, j, edge, v;
            if (part[v] == sour) {
               gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
               if (heap)
-                 Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[v]);
+                 Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
               break;
               }
            }
@@ -163,7 +163,7 @@ int i, j, edge, v;
            v = hg->hvertex[j];
            gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
            if (heap)
-              Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[v]);
+              Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
            }
         }
      else if (cut[dest][edge] == 1) {
@@ -172,7 +172,7 @@ int i, j, edge, v;
            if (v != vertex && part[v] == dest) {
               gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
               if (heap)
-                 Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[v]);
+                 Zoltan_heap_change_value(&heap[part[v]], v, gain[v]);
               break;
               }
            }
@@ -206,12 +206,12 @@ int Zoltan_HG_move_vertex_kway (HGraph *hg, int vertex, int sour, int dest,
       for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++)
       { v = hg->hvertex[j];
         gain[sour][v] -= ewgt_edge;
-        Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[gain_to[v]][v]); 
+        Zoltan_heap_change_value(&heap[part[v]], v, gain[gain_to[v]][v]); 
         gain_to[v] = -1;
         for (k=0; k<p; k++)
           if (k!=part[v] && (gain_to[v]<0 || gain[k][v]>gain[gain_to[v]][v]))
             gain_to[v] = k;
-        Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[gain_to[v]][v]);
+        Zoltan_heap_change_value(&heap[part[v]], v, gain[gain_to[v]][v]);
     } } 
     else if (cut[sour][edge] == 2)
     { for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++)
@@ -224,7 +224,7 @@ int Zoltan_HG_move_vertex_kway (HGraph *hg, int vertex, int sour, int dest,
             if (k!=part[v] && (gain_to[v]<0 || gain[k][v]>gain[gain_to[v]][v]))
               gain_to[v] = k;
           }
-          Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[gain_to[v]][v]);
+          Zoltan_heap_change_value(&heap[part[v]], v, gain[gain_to[v]][v]);
           break;
     } } }
 
@@ -237,10 +237,10 @@ int Zoltan_HG_move_vertex_kway (HGraph *hg, int vertex, int sour, int dest,
         if (v!= vertex)
         { gain[dest][v] += ewgt_edge;
           if (dest == gain_to[v])
-            Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[dest][v]);
+            Zoltan_heap_change_value(&heap[part[v]], v, gain[dest][v]);
           else if (gain[dest][v]>gain[gain_to[v]][v])
           { gain_to[v] = dest;
-            Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[dest][v]);
+            Zoltan_heap_change_value(&heap[part[v]], v, gain[dest][v]);
         } }
         else
         { gain_to[v] = -1;
@@ -250,7 +250,7 @@ int Zoltan_HG_move_vertex_kway (HGraph *hg, int vertex, int sour, int dest,
             if (k!=part[v] && (gain_to[v]<0 || gain[k][v]>gain[gain_to[v]][v]))
               gain_to[v] = k;
           }
-          Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[gain_to[v]][v]);
+          Zoltan_heap_change_value(&heap[part[v]], v, gain[gain_to[v]][v]);
     } } }
     else if (cut[dest][edge] == 1)
     { for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++)
@@ -263,7 +263,7 @@ int Zoltan_HG_move_vertex_kway (HGraph *hg, int vertex, int sour, int dest,
             if (k!=part[v] && (gain_to[v]<0 || gain[k][v]>gain[gain_to[v]][v]))
               gain_to[v] = k; 
           }
-          Zoltan_HG_heap_change_value(&heap[part[v]], v, gain[gain_to[v]][v]);
+          Zoltan_heap_change_value(&heap[part[v]], v, gain[gain_to[v]][v]);
           break;
     } } }
     cut[sour][edge]--;
@@ -345,12 +345,12 @@ int imbalance;
         }
 
   /* Initialize the heaps and fill them with the gain values */
-  Zoltan_HG_heap_init(zz, &heap[0], hg->nVtx);
-  Zoltan_HG_heap_init(zz, &heap[1], hg->nVtx);  
+  Zoltan_heap_init(zz, &heap[0], hg->nVtx);
+  Zoltan_heap_init(zz, &heap[1], hg->nVtx);  
   for (i = 0; i < hg->nVtx; i++)
-     Zoltan_HG_heap_input(&heap[part[i]], i, gain[i]);
-  Zoltan_HG_heap_make(&heap[0]);
-  Zoltan_HG_heap_make(&heap[1]);
+     Zoltan_heap_input(&heap[part[i]], i, gain[i]);
+  Zoltan_heap_make(&heap[0]);
+  Zoltan_heap_make(&heap[1]);
 
   /* Initialize given partition as best partition */
   best_cutsize = cutsize = Zoltan_HG_hcut_size_total(hg, part);
@@ -376,35 +376,35 @@ steplimit = (hgp->noimprove_limit > 1.1) ? (int) hgp->noimprove_limit
         step++;
         no_better_steps++;
 
-        if (Zoltan_HG_heap_empty(&heap[0]))
+        if (Zoltan_heap_empty(&heap[0]))
            sour = 1;
-        else if (Zoltan_HG_heap_empty(&heap[1]))
+        else if (Zoltan_heap_empty(&heap[1]))
            sour = 0;
         else if (part_weight[0] > max_weight[0])
            sour = 0;
         else if (part_weight[1] > max_weight[1])
            sour = 1;
 /*
-else if (Zoltan_HG_heap_max_value(&heap[0]) == Zoltan_HG_heap_max_value(&heap[1])
+else if (Zoltan_heap_max_value(&heap[0]) == Zoltan_heap_max_value(&heap[1])
  && hgp->tiestrategy == 2 && part_weight[0] > part_weight[1])
     sour = 0;
-else if (Zoltan_HG_heap_max_value(&heap[0]) == Zoltan_HG_heap_max_value(&heap[1])
+else if (Zoltan_heap_max_value(&heap[0]) == Zoltan_heap_max_value(&heap[1])
  && hgp->tiestrategy == 2 && part_weight[1] > part_weight[0])
    sour = 1;
 
-else if (Zoltan_HG_heap_max_value(&heap[0]) == Zoltan_HG_heap_max_value(&heap[1])
+else if (Zoltan_heap_max_value(&heap[0]) == Zoltan_heap_max_value(&heap[1])
  && hgp->tiestrategy == 1)
    sour = step % 2;
 */
 
-        else if (Zoltan_HG_heap_max_value(&heap[0])
-              >  Zoltan_HG_heap_max_value(&heap[1]))
+        else if (Zoltan_heap_max_value(&heap[0])
+              >  Zoltan_heap_max_value(&heap[1]))
            sour = 0;
         else
            sour = 1;
         dest = 1-sour;
 
-        vertex = Zoltan_HG_heap_extract_max(&heap[sour]);
+        vertex = Zoltan_heap_extract_max(&heap[sour]);
 
 /*
 if ((hg->vwgt[vertex] + part_weight[dest] > max_weight[dest]) &&
@@ -453,14 +453,14 @@ if (step == 1)
 
         part_weight[sour] -= (hg->vwgt ? hg->vwgt[vertex] : 1.0);
         part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex] : 1.0);
-        Zoltan_HG_heap_input(&heap[dest], vertex, gain[vertex]);
+        Zoltan_heap_input(&heap[dest], vertex, gain[vertex]);
         locked[vertex] = 0;
         }
 
      while (number_locked) {
         vertex = locked_list[--number_locked];
         locked[vertex] = 0;
-        Zoltan_HG_heap_input(&heap[part[vertex]], vertex, gain[vertex]);
+        Zoltan_heap_input(&heap[part[vertex]], vertex, gain[vertex]);
         }
 
 while (rth < &locked_list [hg->nVtx-1])
@@ -468,17 +468,17 @@ while (rth < &locked_list [hg->nVtx-1])
    rth++;
    vertex = *rth;
    *rth = 0;
-   Zoltan_HG_heap_input(&heap[part[vertex]], vertex, gain[vertex]);
+   Zoltan_heap_input(&heap[part[vertex]], vertex, gain[vertex]);
    }
 
-     Zoltan_HG_heap_make(&(heap[0]));
-     Zoltan_HG_heap_make(&(heap[1]));
+     Zoltan_heap_make(&(heap[0]));
+     Zoltan_heap_make(&(heap[1]));
      } while ((best_cutsize < cutsize) ||  (round < hgp->nlevelrepeat));
 
   /* gain_check (hg, gain, part, cut); */
   Zoltan_Multifree(__FILE__,__LINE__, 4, &cut[0], &locked, &locked_list, &gain);
-  Zoltan_HG_heap_free(&heap[0]);
-  Zoltan_HG_heap_free(&heap[1]);
+  Zoltan_heap_free(&heap[0]);
+  Zoltan_heap_free(&heap[1]);
 
   return ZOLTAN_OK;
 }
@@ -556,12 +556,12 @@ int    best_imbalance, imbalance;
         }
 
   /* Initialize the heaps and fill them with the gain values */
-  Zoltan_HG_heap_init(zz, &heap[0], hg->nVtx);
-  Zoltan_HG_heap_init(zz, &heap[1], hg->nVtx);  
+  Zoltan_heap_init(zz, &heap[0], hg->nVtx);
+  Zoltan_heap_init(zz, &heap[1], hg->nVtx);  
   for (i = 0; i < hg->nVtx; i++)
-     Zoltan_HG_heap_input(&heap[part[i]], i, gain[i]);
-  Zoltan_HG_heap_make(&heap[0]);
-  Zoltan_HG_heap_make(&heap[1]);
+     Zoltan_heap_input(&heap[part[i]], i, gain[i]);
+  Zoltan_heap_make(&heap[0]);
+  Zoltan_heap_make(&heap[1]);
 
   /* Initialize given partition as best partition */
   best_cutsize = cutsize = Zoltan_HG_hcut_size_total(hg, part);
@@ -584,21 +584,21 @@ int    best_imbalance, imbalance;
         step++;
         no_better_steps++;
 
-        if (Zoltan_HG_heap_empty(&heap[0]))
+        if (Zoltan_heap_empty(&heap[0]))
            sour = 1;
-        else if (Zoltan_HG_heap_empty(&heap[1]))
+        else if (Zoltan_heap_empty(&heap[1]))
            sour = 0;
         else if (part_weight[0] > max_weight[0])
            sour = 0;
         else if (part_weight[1] > max_weight[1])
            sour = 1;
-        else if (Zoltan_HG_heap_max_value(&heap[0])
-              >  Zoltan_HG_heap_max_value(&heap[1]))
+        else if (Zoltan_heap_max_value(&heap[0])
+              >  Zoltan_heap_max_value(&heap[1]))
            sour = 0;
         else
            sour = 1;
         dest = 1-sour;
-        vertex = Zoltan_HG_heap_extract_max(&heap[sour]);
+        vertex = Zoltan_heap_extract_max(&heap[sour]);
 
         locked[vertex] = part[vertex] + 1;
         locked_list[number_locked++] = vertex;
@@ -633,24 +633,24 @@ int    best_imbalance, imbalance;
 
         part_weight[sour] -= (hg->vwgt ? hg->vwgt[vertex] : 1.0);
         part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex] : 1.0);
-        Zoltan_HG_heap_input(&heap[dest], vertex, gain[vertex]);
+        Zoltan_heap_input(&heap[dest], vertex, gain[vertex]);
         locked[vertex] = 0;
         }
 
      while (number_locked) {
         vertex = locked_list[--number_locked];
         locked[vertex] = 0;
-        Zoltan_HG_heap_input(&heap[part[vertex]], vertex, gain[vertex]);
+        Zoltan_heap_input(&heap[part[vertex]], vertex, gain[vertex]);
         }
 
-     Zoltan_HG_heap_make(&(heap[0]));
-     Zoltan_HG_heap_make(&(heap[1]));
+     Zoltan_heap_make(&(heap[0]));
+     Zoltan_heap_make(&(heap[1]));
      } while ((best_cutsize < cutsize) ||  (round < hgp->nlevelrepeat));
 
   /* gain_check (hg, gain, part, cut); */
   Zoltan_Multifree(__FILE__,__LINE__, 4, &cut[0], &locked, &locked_list, &gain);
-  Zoltan_HG_heap_free(&heap[0]);
-  Zoltan_HG_heap_free(&heap[1]);
+  Zoltan_heap_free(&heap[0]);
+  Zoltan_heap_free(&heap[1]);
 
   return ZOLTAN_OK;
 }
@@ -744,11 +744,11 @@ char   *yo="local_fmkway";
 
   /* Initialize the heaps and fill them with the gain values */
   for (i=0; i<p; i++)
-    Zoltan_HG_heap_init(zz,&heap[i],hg->nVtx);
+    Zoltan_heap_init(zz,&heap[i],hg->nVtx);
   for (i=0; i<hg->nVtx; i++)
-    Zoltan_HG_heap_input(&heap[part[i]],i,gain[gain_to[i]][i]);
+    Zoltan_heap_input(&heap[part[i]],i,gain[gain_to[i]][i]);
   for (i=0; i<p; i++)
-    Zoltan_HG_heap_make(&heap[i]);
+    Zoltan_heap_make(&heap[i]);
 
   /* Initialize given partition as best partition */
   best_cutsize = cutsize = Zoltan_HG_hcut_size_links(zz,hg, part);
@@ -807,27 +807,27 @@ char   *yo="local_fmkway";
       /* If overweighted, take from largest part */
       if (max_part_weight > max_weight)
       { for (i=0; i<p; i++)
-        { if (Zoltan_HG_heap_not_empty(&heap[i]) && part_weight[i]==max_part_weight)
-            if (best_heap<0 || Zoltan_HG_heap_max_value(&heap[i])>best_gain)
+        { if (Zoltan_heap_not_empty(&heap[i]) && part_weight[i]==max_part_weight)
+            if (best_heap<0 || Zoltan_heap_max_value(&heap[i])>best_gain)
             { best_heap = i;
-              best_gain = Zoltan_HG_heap_max_value(&heap[i]);
+              best_gain = Zoltan_heap_max_value(&heap[i]);
       } }   }
       if (best_heap < 0) /* If necessary, take from too heavy parts */
       { for (i=0; i<p; i++)
-        { if (Zoltan_HG_heap_not_empty(&heap[i]) && part_weight[i]>max_weight)
-            if (best_heap<0 || Zoltan_HG_heap_max_value(&heap[i])>best_gain)
+        { if (Zoltan_heap_not_empty(&heap[i]) && part_weight[i]>max_weight)
+            if (best_heap<0 || Zoltan_heap_max_value(&heap[i])>best_gain)
             { best_heap = i;
-              best_gain = Zoltan_HG_heap_max_value(&heap[i]);
+              best_gain = Zoltan_heap_max_value(&heap[i]);
       } }   }
       if (best_heap < 0) /* If necessary, take from any parts */
       { for (i=0; i<p; i++)
-        { if (Zoltan_HG_heap_not_empty(&heap[i]))
-            if (best_heap<0 || Zoltan_HG_heap_max_value(&heap[i])>best_gain)
+        { if (Zoltan_heap_not_empty(&heap[i]))
+            if (best_heap<0 || Zoltan_heap_max_value(&heap[i])>best_gain)
             { best_heap = i;
-              best_gain = Zoltan_HG_heap_max_value(&heap[i]);
+              best_gain = Zoltan_heap_max_value(&heap[i]);
       } }   }
       if (best_heap > -1)
-      { vertex = Zoltan_HG_heap_extract_max (&heap[best_heap]);
+      { vertex = Zoltan_heap_extract_max (&heap[best_heap]);
         sour = part[vertex];
         dest = gain_to[vertex];
       }
@@ -865,7 +865,7 @@ char   *yo="local_fmkway";
       Zoltan_HG_move_vertex_kway (hg, vertex, sour, dest, p, part, cut, gain, gain_to, heap);
       part_weight[sour] -= (hg->vwgt ? hg->vwgt[vertex] : 1.0);
       part_weight[dest] += (hg->vwgt ? hg->vwgt[vertex] : 1.0);
-      Zoltan_HG_heap_input(&heap[dest], vertex, gain[gain_to[vertex]][vertex]);
+      Zoltan_heap_input(&heap[dest], vertex, gain[gain_to[vertex]][vertex]);
       locked[vertex] = 0;
     }
 
@@ -873,17 +873,17 @@ char   *yo="local_fmkway";
     while (number_locked)
     { vertex = locked_list[--number_locked];
       locked[vertex] = 0;
-      Zoltan_HG_heap_input(&heap[part[vertex]], vertex, gain[gain_to[vertex]][vertex]);
+      Zoltan_heap_input(&heap[part[vertex]], vertex, gain[gain_to[vertex]][vertex]);
     }
     for (i=0; i<p; i++)
-      Zoltan_HG_heap_make(&(heap[i]));
+      Zoltan_heap_make(&(heap[i]));
   } while (best_cutsize<cutsize || round<hgp->nlevelrepeat);
 
   if (gain_check_kway(hg,gain,p,part,cut) || best_cutsize!=Zoltan_HG_hcut_size_links(zz,hg, part))
     return ZOLTAN_FATAL; 
 
   for (i=0; i<p; i++)
-  { Zoltan_HG_heap_free(&heap[i]);
+  { Zoltan_heap_free(&heap[i]);
     Zoltan_Multifree(__FILE__,__LINE__,2,&cut[i],&gain[i]);
   }
   Zoltan_Multifree(__FILE__,__LINE__,7,&part_weight,&heap,&cut,&locked,&locked_list,&gain,&gain_to); 

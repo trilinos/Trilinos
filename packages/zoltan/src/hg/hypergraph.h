@@ -53,6 +53,10 @@ typedef struct
 #include "hg_hypergraph.h"
 #include "hg_util.h"
 
+#include "zz_heap.h"
+#include "zz_sort.h"
+
+    
 #define MIN(A,B)                (((A) < (B)) ? (A) : (B))
 #define MAX(A,B)                (((A) > (B)) ? (A) : (B))
 
@@ -203,41 +207,9 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char*);
 int Zoltan_HG_Local (ZZ*, HGraph*, int, Partition, HGPartParams*);
 ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char*);
 
-/* Sorting */
-void Zoltan_quicksort_pointer_dec_float_int (int*, float*, int*, int, int);
-void Zoltan_quicksort_pointer_dec_float     (int*, float*, int,  int);
-void Zoltan_quicksort_pointer_inc_int_int   (int*, int*,   int*, int, int);
-void Zoltan_quicksort_list_inc_int          (int*, int,    int);
-void Zoltan_quicksort_pointer_inc_int_mult  (int*, int,    int,  int*, int*);
-
-/* Heap datastructure */
-typedef struct {
-   int    space;
-   int    n;
-   int   *ele;
-   int   *pos;
-   float *value;
-   } HEAP;
-
-#define Zoltan_HG_heap_empty(H)         (((H)->n)==0)
-#define Zoltan_HG_heap_not_empty(H)     (((H)->n)!=0)
-#define Zoltan_HG_heap_max_value(H)     ((H)->value[(H)->ele[0]])
-#define Zoltan_HG_heap_peek_max(H)      ((H)->ele[0])
-#define Zoltan_HG_heap_count(H)         ((H)->n)
-
-int  Zoltan_HG_heap_init         (ZZ*, HEAP*, int);
-void Zoltan_HG_heap_clear        (HEAP*);
-void Zoltan_HG_heap_free         (HEAP*);
-int  Zoltan_HG_heap_check        (HEAP*);
-int  Zoltan_HG_heap_input        (HEAP*, int, float);
-int  Zoltan_HG_heap_make         (HEAP*);
-int  Zoltan_HG_heap_change_value (HEAP*, int, float);
-int  Zoltan_HG_heap_extract_max  (HEAP*);
-int  Zoltan_HG_heap_extract      (HEAP*, int);
 
 int  Zoltan_HG_move_vertex (HGraph*, int, int, int, int*, int**, double*, HEAP*);
 void Zoltan_HG_Plot(int, int, int, int*, int*, int*, char*);
-
 
 
 #ifdef __cplusplus

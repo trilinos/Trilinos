@@ -61,10 +61,8 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   phgraph = &(zhg->PHG);
   Zoltan_PHG_HGraph_Init(phgraph);
 
-  phgraph->nProc_x = hgp->nProc_x;
-  phgraph->nProc_y = hgp->nProc_y;
-  phgraph->myProc_x = hgp->myProc_x;
-  phgraph->myProc_y = hgp->myProc_y;
+  /* just set the pointer of phgraph's comm to hgp's comm */
+  phgraph->comm = &hgp->comm;
 
   /* Use callback functions to build the hypergraph. */
   if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_Num_HG_Pins){
@@ -236,10 +234,10 @@ ZOLTAN_ID_PTR global_ids;
 int num_gid_entries = zz->Num_GID;
 PHGraph *phg = &(zhg->PHG);
 
-int nProc_x = phg->nProc_x;
-int nProc_y = phg->nProc_y;
-int myProc_x = phg->myProc_x;
-int myProc_y = phg->myProc_y;
+int nProc_x = phg->comm->nProc_x;
+int nProc_y = phg->comm->nProc_y;
+int myProc_x = phg->comm->myProc_x;
+int myProc_y = phg->comm->myProc_y;
 
 float frac_x, frac_y;
 
