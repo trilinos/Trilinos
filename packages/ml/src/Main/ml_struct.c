@@ -74,7 +74,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
        (Nlevels <= 0)) {
      printf("ML_Create: Warning No. of requested levels = %d\n",Nlevels);
    }
-
+   ML_memory_check("ml_create start");
 
    ML_memory_alloc((void**) &pre_smoother, sizeof(ML_Smoother)*Nlevels,"MS1");
    ML_memory_alloc((void**) &post_smoother,sizeof(ML_Smoother)*Nlevels,"MS2");
@@ -2638,6 +2638,8 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
    int        output_level, t1, t2;
    double     *dtmp1, *dtmp2;
    ML_1Level  *current_level, *temp;
+
+   ML_memory_check("gen solver");
 
    ml->ML_scheme         = scheme;
    ml->ML_finest_level   = finest_level;
