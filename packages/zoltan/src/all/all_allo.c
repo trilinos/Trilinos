@@ -124,7 +124,7 @@ va_dcl
 {
   char *yo = "LB_array_alloc";
   int i, j;
-  struct dim {
+  struct dimension {
     long index;  /* Number of elements in the dimension  */
     long total;  /* Total number of elements             */
     long size;   /* Size of a single element in bytes    */
@@ -145,7 +145,7 @@ va_dcl
   va_list va;           /* Current pointer in the argument list */
 
 #ifdef __STDC__
-  va_start(va, file);
+  va_start(va, numdim);
 #else
   va_start(va);
   file = va_arg(va, char *);
