@@ -50,7 +50,8 @@ EXTRA_DIST = bootstrap \
 ## #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################
-AUX_DIST = config/install-sh config/missing config/mkinstalldirs
+AUX_DIST = config/install-sh config/missing config/mkinstalldirs \
+	config/depcomp
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
