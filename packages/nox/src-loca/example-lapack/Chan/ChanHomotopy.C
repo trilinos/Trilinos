@@ -148,7 +148,7 @@ int main()
 
     // Get the final solution from the solver
     const LOCA::Homotopy::Group& finalGroup = 
-      dynamic_cast<const LOCA::Homotopy::Group&>(stepper.getSolutionGroup());
+      dynamic_cast<const LOCA::Homotopy::Group&>(stepper.getBifurcationGroup());
     const NOX::LAPACK::Vector& finalSolution = 
       dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup.getX());
 
