@@ -118,4 +118,4 @@ NOX_Wrappers:
 
 # Generate a C++ wrapper and proxy file from a SWIG interface
 %_wrap.cxx %.py: %.i
-	$(SWIG) $(TRILINOS_INCLUDE) $(SWIG_FLAGS) $(srcdir)/$<
+	$(SWIG) $(TRILINOS_INCLUDE) $(SWIG_FLAGS) $<

@@ -13,7 +13,8 @@ pythonLib = [sysconfig.get_config_var('LIBRARY')[3:-2]]
 
 # Trilinos data
 searchList = ["/usr/local", "/Users/aalorbe/local", "~/scratch2/local",
-              "/usr/netpub/Trilinos-10_31_03", "/smallHD/scratch/install"]
+              "/usr/netpub/Trilinos-10_31_03", "/smallHD/scratch/install",
+	      "/u/TrilinosTestHarness/install"]
 trilHome = None
 for dir in searchList:
     epetraHeader = dir + "/include/Epetra_Comm.h"
