@@ -532,8 +532,10 @@ clean:
 	 cd fdriver_old; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
 	 $(RM) -rf $$a/*; \
 	 done;
-	 cd Utilities; $(MAKE) clean; cd .. ; \
-	 if test -d ZoltanComponent ; then cd ZoltanComponent ; $(MAKE) clean ; cd .. fi
+	 cd Utilities; $(MAKE) clean; cd .. ; 
+	 @if [ -d ZoltanComponent ]; \
+         then cd ZoltanComponent ; $(MAKE) clean ; cd .. ; \
+	 fi;
 	 exit 0
 
 cleantest:
