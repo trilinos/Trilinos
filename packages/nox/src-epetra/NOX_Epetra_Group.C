@@ -478,20 +478,20 @@ Abstract::Group& Group::operator=(const Group& source)
   return *this;
 }
 
-bool Group::setX(const Abstract::Vector& y) 
+void Group::setX(const Abstract::Vector& y) 
 {
   return setX(dynamic_cast<const Vector&> (y));
 }
 
-bool Group::setX(const Vector& y) 
+void Group::setX(const Vector& y) 
 {
   resetIsValid();
   destroyAztecSolver();
   xVector = y;
-  return true;
+  return;
 }
 
-bool Group::computeX(const Abstract::Group& grp, 
+void Group::computeX(const Abstract::Group& grp, 
 		     const Abstract::Vector& d, 
 		     double step) 
 {
@@ -501,18 +501,18 @@ bool Group::computeX(const Abstract::Group& grp,
   return computeX(epetragrp, epetrad, step); 
 }
 
-bool Group::computeX(const Group& grp, const Vector& d, double step) 
+void Group::computeX(const Group& grp, const Vector& d, double step) 
 {
   resetIsValid();
   destroyAztecSolver();
   xVector.update(1.0, grp.xVector, step, d);
-  return true;
+  return;
 }
 
-bool Group::computeF() 
+Abstract::Group::ReturnType Group::computeF() 
 {
   if (isF())
-    return true;
+    return Abstract::Group::Ok;
 
   bool status = false;
   
@@ -528,14 +528,14 @@ bool Group::computeF()
 
   isValidRHS = true;
 
-  return status;
+  return Abstract::Group::Ok;
 }
 
-bool Group::computeJacobian() 
+Abstract::Group::ReturnType Group::computeJacobian() 
 {
   // Skip if the Jacobian is already valid
   if (isJacobian())
-    return true;
+    return Abstract::Group::Ok;
 
   // Take ownership of the Jacobian and get a reference to the underlying operator
   Epetra_Operator& Jacobian = sharedJacobian.getOperator(this);
@@ -571,13 +571,13 @@ bool Group::computeJacobian()
   // Update status of Jacobian wrt solution vector
   isValidJacobian = true;
 
-  return status;
+  return Abstract::Group::Ok;
 }
 
-bool Group::computeGradient() 
+Abstract::Group::ReturnType Group::computeGradient() 
 {
   if (isGradient())
-    return true;
+    return Abstract::Group::Ok;
   
   if (!isF()) {
     cerr << "ERROR: NOX::Epetra::Group::computeGradient() - RHS is out of date wrt X!" << endl;
@@ -603,13 +603,13 @@ bool Group::computeGradient()
   isValidGrad = true;
 
   // Return result
-  return true;
+  return Abstract::Group::Ok;
 }
 
-bool Group::computeNewton(NOX::Parameter::List& p) 
+Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p) 
 {
   if (isNewton())
-    return true;
+    return Abstract::Group::Ok;
 
   if (!isF()) {
     cerr << "ERROR: NOX::Epetra::Group::computeNewton() - invalid RHS" << endl;
@@ -620,9 +620,14 @@ bool Group::computeNewton(NOX::Parameter::List& p)
     cerr << "ERROR: NOX::Epetra::Group::computeNewton() - invalid Jacobian" << endl;
     throw "NOX Error";
   }
+
+  Abstract::Group::ReturnType status;
   
   // Create Epetra problem for the linear solve
-  applyJacobianInverse(p, RHSVector, NewtonVector);
+  status = applyJacobianInverse(p, RHSVector, NewtonVector);
+
+  if( status != Abstract::Group::Ok ) 
+    return status;
 
   // Scale soln by -1
   NewtonVector.scale(-1.0);
@@ -634,21 +639,21 @@ bool Group::computeNewton(NOX::Parameter::List& p)
   computeNormNewtonSolveResidual();
 
   // Return solution
-  return true;
+  return Abstract::Group::Ok;
 }
 
-bool Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
+Abstract::Group::ReturnType Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& epetrainput = dynamic_cast<const Vector&> (input);
   Vector& epetraresult = dynamic_cast<Vector&> (result);
   return applyJacobian(epetrainput, epetraresult);
 }
 
-bool Group::applyJacobian(const Vector& input, Vector& result) const
+Abstract::Group::ReturnType Group::applyJacobian(const Vector& input, Vector& result) const
 {
   // Check validity of the Jacobian
   if (!isJacobian()) 
-    return false;
+    return Abstract::Group::BadDependency;
 
   // Get a reference to the Jacobian (it's validity was checked above)
   const Epetra_Operator& Jacobian = sharedJacobian.getOperator();
@@ -656,19 +661,20 @@ bool Group::applyJacobian(const Vector& input, Vector& result) const
   // Apply the Jacobian
   bool NoTranspose = false;
   (const_cast <Epetra_Operator&>(Jacobian)).SetUseTranspose(NoTranspose);
+  // The next call could be made to return a Abstract::Group::ReturnType
   Jacobian.Apply(input.getEpetraVector(), result.getEpetraVector());
 
-  return true;
+  return Abstract::Group::Ok;
 }
 
-bool Group::applyJacobianInverse (Parameter::List &p, const Abstract::Vector &input, Abstract::Vector &result) const
+Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, const Abstract::Vector &input, Abstract::Vector &result) const
 {
   const Vector& epetraInput = dynamic_cast<const Vector&>(input);
   Vector& epetraResult = dynamic_cast<Vector&>(result);
   return applyJacobianInverse(p, epetraInput, epetraResult);
 }
 
-bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vector &result) const
+Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vector &result) const
 {
   // Get the Jacobian 
   /* Have to get non-const version which requires reasserting
@@ -763,94 +769,23 @@ bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vecto
   destroyAztecSolver();
 
   if (aztecStatus != 0) 
-    return false;
+    return Abstract::Group::NotConverged;
   
-  return true;
+  return Abstract::Group::Ok;
 }
 
-bool Group::applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const
-{
-  const Vector& epetrainput = dynamic_cast<const Vector&> (input);
-  Vector& epetraresult = dynamic_cast<Vector&> (result);
-  return applyJacobianDiagonalInverse(epetrainput, epetraresult);
-}
-
-bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) const
-{
-  if (!isJacobian()) 
-    return false;
-
-  /* To extract the diagonal inverse, we must have a real matrix 
-   * (we can NOT be using matrix-free operators).  Thus it must 
-   * be an Epetra_RowMatrix.  Check for this and if not, throw an 
-   * error.
-   */
-  // Get a reference to the Jacobian operator 
-  const Epetra_Operator& tmpJacobian = sharedJacobian.getOperator();
-  // Try and cast it to an Epetra_RowMatrix
-  const Epetra_RowMatrix* testRowMatrix = dynamic_cast<const Epetra_RowMatrix*>(&tmpJacobian);
-  if (testRowMatrix == NULL) {
-    cout << "ERROR: NOX::Epetra::Group::applyJacobianDiagonalInverse) - "
-	 << "the Jacobian operator is NOT a matrix!" << endl;
-    throw "NOX Error";
-  }
-
-  // Convert the Epetra_RowMatrix this to a reference
-  const Epetra_RowMatrix& Jacobian = *testRowMatrix;
-
-  // Get epetra reference to the result vector
-  Epetra_Vector& r = result.getEpetraVector();
-
-  // Allocate the extra tmpVectorPtr if necessary
-  if (tmpVectorPtr == NULL)
-    tmpVectorPtr = new Epetra_Vector(r.Map());
-
-  // Get the reference to the temporary vector
-  Epetra_Vector& tmpVector = *tmpVectorPtr;
-
-  // Put a copy of the diagonal of the Jacobian into tmpVector
-  int retcode = Jacobian.ExtractDiagonalCopy(tmpVector);
-  
-  // Take element-wise absolute value of diagonal vector
-  retcode = tmpVector.Abs(tmpVector);
-  
-  // Check minimum absolute value of diagonal vector
-  double minAbsValue = 0;
-  retcode = tmpVector.MinValue(&minAbsValue);
-
-  if(minAbsValue <= 1.e-6) // This minimum threshold can be adjusted
-  {
-    cout << "Poor scaling on Jacobian diagonal (min abs value: " <<
-             minAbsValue << " ) --> NO nonlinear Preconditioning !!" << endl;
-    return false; 
-  }
-  
-  // Check if ExtractDiagonalCopy is supported
-  if (retcode != 0)
-    return false;
-
-  // Calculate r = input ./ tmpVector (./ is element-by-element divide)
-  retcode = r.ReciprocalMultiply(1.0, tmpVector, input.getEpetraVector(), 0.0);
-
-  // Check if this worked
-  if (retcode != 0)
-    return false;
-
-  return true;
-}
-
-bool Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const
+Abstract::Group::ReturnType Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& epetrainput = dynamic_cast<const Vector&> (input);
   Vector& epetraresult = dynamic_cast<Vector&> (result);
   return applyJacobianTranspose(epetrainput, epetraresult);
 }
 
-bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
+Abstract::Group::ReturnType Group::applyJacobianTranspose(const Vector& input, Vector& result) const
 {
   // Check validity of the Jacobian
   if (!isJacobian()) 
-    return false;
+    return Abstract::Group::BadDependency;
 
   // Get a reference to the Jacobian (it's validity was check above)
   const Epetra_Operator& Jacobian = sharedJacobian.getOperator();
@@ -862,10 +797,10 @@ bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
   Jacobian.Apply(input.getEpetraVector(), result.getEpetraVector());
   (const_cast<Epetra_Operator&>(Jacobian)).SetUseTranspose(NoTranspose);
 
-  return true;
+  return Abstract::Group::Ok;
 }
 
-bool Group::applyRightPreconditioning(Parameter::List& params,
+Abstract::Group::ReturnType Group::applyRightPreconditioning(Parameter::List& params,
 				      const Abstract::Vector& input, 
 				      Abstract::Vector& result) const
 {
@@ -875,7 +810,7 @@ bool Group::applyRightPreconditioning(Parameter::List& params,
   return applyRightPreconditioning(params, epetraInput, epetraResult);
 }
 
-bool Group::applyRightPreconditioning(Parameter::List& params,
+Abstract::Group::ReturnType Group::applyRightPreconditioning(Parameter::List& params,
 				      const Vector& input, 
 				      Vector& result) const
 {
@@ -883,7 +818,7 @@ bool Group::applyRightPreconditioning(Parameter::List& params,
 
   if (preconditioner == "None") {
     result = input;
-    return true;
+    return Abstract::Group::Ok;
   }
   else if ((preconditioner == "AztecOO: Jacobian Matrix") || 
 	   (preconditioner == "AztecOO: User RowMatrix")) {
@@ -969,9 +904,9 @@ bool Group::applyRightPreconditioning(Parameter::List& params,
   }
 
   if (errorCode == 0) 
-    return true;
+    return Abstract::Group::Ok;
   else
-    return false;
+    return Abstract::Group::Failed;
 }
 
 bool Group::isF() const 

@@ -256,26 +256,26 @@ public:
   /** @name "Compute" functions. */
   //@{
 
-  virtual bool setX(const Vector& y);
+  virtual void setX(const Vector& y);
 
   //! See above
-  virtual bool setX(const Abstract::Vector& y);
+  virtual void setX(const Abstract::Vector& y);
 
-  virtual bool computeX(const Group& grp, 
+  virtual void computeX(const Group& grp, 
 			const Vector& d, 
 			double step);
   //! See above.
-  virtual bool computeX(const Abstract::Group& grp,
+  virtual void computeX(const Abstract::Group& grp,
 			const Abstract::Vector& d, 
 			double step);
 
-  virtual bool computeF();
+  virtual Abstract::Group::ReturnType computeF();
 
-  virtual bool computeJacobian();
+  virtual Abstract::Group::ReturnType computeJacobian();
 
-  virtual bool computeGradient();
+  virtual Abstract::Group::ReturnType computeGradient();
 
-  virtual bool computeNewton(Parameter::List& params);
+  virtual Abstract::Group::ReturnType computeNewton(Parameter::List& params);
 
   //@}
 
@@ -286,28 +286,31 @@ public:
 
   //@{
   
-  virtual bool applyJacobian(const Vector& input, Vector& result) const;
+  virtual Abstract::Group::ReturnType 
+  applyJacobian(const Vector& input, Vector& result) const;
   //! See above
-  virtual bool applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const;
+  virtual Abstract::Group::ReturnType 
+  applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const;
 
-  virtual bool applyJacobianTranspose(const Vector& input, Vector& result) const;
+  virtual Abstract::Group::ReturnType 
+  applyJacobianTranspose(const Vector& input, Vector& result) const;
   //! See above
-  virtual bool applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const;
+  virtual Abstract::Group::ReturnType 
+  applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const;
   
-  virtual bool applyJacobianInverse(Parameter::List &params, const Vector &input, Vector &result) const;
+  virtual Abstract::Group::ReturnType 
+  applyJacobianInverse(Parameter::List &params, const Vector &input, Vector &result) const;
 
   //! See above
-  virtual bool applyJacobianInverse(Parameter::List &params, const Abstract::Vector &input, Abstract::Vector &result) const;
+  virtual Abstract::Group::ReturnType 
+  applyJacobianInverse(Parameter::List &params, const Abstract::Vector &input, Abstract::Vector &result) const;
 
-  virtual bool applyJacobianDiagonalInverse(const Vector& input, Vector& result) const;
-
-  //! See above
-  virtual bool applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
-  
-  virtual bool applyRightPreconditioning(Parameter::List& params, const Vector& input, Vector& result) const;
+  virtual Abstract::Group::ReturnType 
+  applyRightPreconditioning(Parameter::List& params, const Vector& input, Vector& result) const;
 
   //! See above
-  virtual bool applyRightPreconditioning(Parameter::List& params, const Abstract::Vector& input, Abstract::Vector& result) const;
+  virtual Abstract::Group::ReturnType 
+  applyRightPreconditioning(Parameter::List& params, const Abstract::Vector& input, Abstract::Vector& result) const;
 
   //@}
 
