@@ -498,7 +498,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
           nhg->nPins++;  
         }
         if (nhg->ewgt)
-            memcpy(&nhg->ewgt[nhg->nEdge*nhg->VtxWeightDim], &ohg->vwgt[edge*nhg->VtxWeightDim],
+            memcpy(&nhg->ewgt[nhg->nEdge*nhg->EdgeWeightDim], &ohg->ewgt[edge*nhg->EdgeWeightDim],
                    nhg->EdgeWeightDim * sizeof(float));
         ++nhg->nEdge;
     }
