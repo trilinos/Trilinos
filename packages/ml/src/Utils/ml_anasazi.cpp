@@ -246,7 +246,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   delete [] evali;
   
   // Output results to screen
-  if( PrintCurrentStatus > 5 && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
+  if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
 
   MyBlockArnoldi1.getEvecs(Vectors);
   
