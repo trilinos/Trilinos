@@ -236,6 +236,8 @@ static int Zoltan_PHG_Initialize_Params(
                     (void*) &hgp->fm_max_neg_move);  
   Zoltan_Bind_Param(PHG_params, "PHG_COARSE_PARTITIONING", 
                     (void*) hgp->coarsepartition_str);
+  /* Zoltan_Bind_Param(PHG_params, "PHG_COARSE_TRIES",
+                    (void*) &hgp->num_coarse_tries);   */
 
   /* Set default values */
   /* ipm should be made default matching method when it's ready */
@@ -255,6 +257,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->kway = 0;
   hgp->fm_loop_limit = 99;
   hgp->fm_max_neg_move = 250;  
+  hgp->num_coarse_tries = 10;
   hgp->part_sizes = part_sizes;
 
   /* Get application values of parameters. */

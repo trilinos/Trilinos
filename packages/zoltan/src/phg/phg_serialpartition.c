@@ -308,7 +308,7 @@ static int seq_part (
   int i, j, pnumber;
   int vwgtdim = hg->VtxWeightDim;
   double weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
-  float psize_sum = 0.0;
+  double psize_sum = 0.0;
 
   if (part_sizes==NULL){
     /* part_sizes should always exist, even with uniform partitions */
@@ -331,7 +331,7 @@ static int seq_part (
 
   pnumber = 0; /* Assign next vertex to partition no. pnumber */
   /* Set cutoff for current partition */
-  cutoff = weight_sum*(part_sizes ? part_sizes[0] : 1.0)/psize_sum;  
+  cutoff = weight_sum*part_sizes[0]/psize_sum;  
 
   /* Loop through all vertices in specified order, and assign
      partition numbers.  */                                        
@@ -345,8 +345,7 @@ static int seq_part (
     if ((pnumber+1) < p && part_sum > cutoff) {
       pnumber++; /* Increase current part number */
       /* Decide if current vertex should be moved to the next partition */
-        if ((part_sum-cutoff)/part_sizes[pnumber] > 
-            (cutoff-old_sum)/part_sizes[pnumber-1]) { 
+      if ((part_sum-cutoff) > (cutoff-old_sum)) { 
         part[j]++;
         part_sum = old_sum;
       }
@@ -619,7 +618,7 @@ static int greedy_order (
   int err=ZOLTAN_OK;
   double weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
   double *gain = NULL, *edge_sum = NULL, delta;
-  double damp_factor;
+  double damp_factor, psize_sum= 0.0;
   char msg[128];
   HEAP h[2];
   static char *yo = "greedy_order";
@@ -687,9 +686,13 @@ static int greedy_order (
     for (i=0; i<hg->nVtx; i++)
       weight_sum += hg->vwgt[i*vwgtdim];
 
-    cutoff = weight_sum/p;  /* Cutoff for current partition */
-    if (hgp->output_level >= PHG_DEBUG_ALL)
-      printf("COARSE_PART weight_sum=%f, cutoff=%f\n",weight_sum, cutoff);
+    /* Sum up all the target partition weights. */
+    /* Only use first vweight for now. */
+    for (i=0; i<p; i++)
+      psize_sum += part_sizes[i*vwgtdim];
+
+    /* Set cutoff for current partition */
+    cutoff = weight_sum*part_sizes[0]/psize_sum;
   }
 
   if (hgp->output_level >= PHG_DEBUG_ALL)
@@ -747,7 +750,6 @@ static int greedy_order (
            vtx, bfsnumber-1, vtx, part[vtx]);
       }
       weight_sum -= part_sum;
-      cutoff = weight_sum/(p-pnumber);
       if (part[vtx] == pnumber){
         part_sum = hg->vwgt[vtx*vwgtdim];
         j = -1;
@@ -756,9 +758,13 @@ static int greedy_order (
         part_sum = 0.0;
         j = Zoltan_heap_peek_max(h); /* j will be the first vertex in the next part. */
       }
+      /* Update cutoff. */
+      psize_sum -= part_sizes[pnumber-1];
+      cutoff = weight_sum*part_sizes[pnumber]/psize_sum;
+
       if (hgp->output_level >= PHG_DEBUG_ALL)
-        printf("COARSE_PART initializing for partition %2d, cutoff = %f\n",
-         pnumber, cutoff);
+        printf("COARSE_PART vtx=%2d, part[%2d] = %2d, part_sum=%f, cutoff=%f\n",
+          vtx, vtx, part[vtx], part_sum, cutoff);
 
       if (priority_mode > 0) {
         /* Reset all gain values (but one). */
@@ -924,7 +930,7 @@ static void pick_best(
   PHGComm *phg_comm,
   HGraph *shg, 
   int numPart,
-  int numCandidates,
+  int numLocalCandidates,
   int *spart
 )
 {
@@ -947,7 +953,7 @@ float cut, bal;
   local[0].rank = local[1].rank = phg_comm->myProc;
 
   /* What do we say is "best"?   For now, say lowest cut size. */
-  for (i=1; i<numCandidates; i++){
+  for (i=1; i<numLocalCandidates; i++){
     bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart+i*(shg->nVtx)); 
     cut = Zoltan_PHG_hcut_size_links(shg->comm, shg, 
              spart+i*(shg->nVtx), numPart);
