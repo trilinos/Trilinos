@@ -45,8 +45,7 @@
 #endif
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
-#include <cstdlib>
-                                            
+
 // prototypes
 
 void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
