@@ -26,21 +26,21 @@ CC          		= cc
 INCLUDE_PATH		= -I/usr/include
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O
-CFLAGS = $(OPT_FLAGS)
+CFLAGS = $(DBG_FLAGS)
 
 F90			= f90
 LOCAL_F90		= f90
-F90CFLAGS 		=
-FFLAGS    		= 
-SPPR_HEAD 		=
-F90_MODULE_PREFIX 	=
-FARG      		=
+F90CFLAGS               = -DFMANGLE=UNDERSCORE -DNO_MPI2 
+FFLAGS                  = -g
+SPPR_HEAD               = spprinc.64bit
+F90_MODULE_PREFIX       = -I
+FARG                    = farg_typical
 
 MPI_LIB			= -lmpi
 MPI_LIBPATH		= -L/usr/lib
 
-#PARMETIS_LIBPATH 	= -L.
-#PARMETIS_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
+PARMETIS_LIBPATH 	= -L../../ParMETIS
+PARMETIS_INCPATH 	= -I../../ParMETIS
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/alpha/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
