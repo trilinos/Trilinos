@@ -43,31 +43,31 @@ public:
     Zoltan_Timer_Destroy(&ZTStruct);
   }
 
-  int Init(const int use_barrier, const std::string & name) {
+  int Init(const int &use_barrier, const std::string & name) {
     return Zoltan_Timer_Init(this->ZTStruct, use_barrier,
                              const_cast<char*>(name.c_str()));
   }
 
-  int Reset(const int ts_idx, const int use_barrier, 
+  int Reset(const int &ts_idx, const int &use_barrier, 
             const std::string & name) {
     return Zoltan_Timer_Reset(this->ZTStruct, ts_idx, use_barrier,
                               const_cast<char*>(name.c_str()));
   }
 
-  int Start(const int ts_idx, const MPI_Comm comm) {
+  int Start(const int &ts_idx, const MPI_Comm &comm) {
     return Zoltan_Timer_Start(this->ZTStruct, ts_idx, comm);
   }
 
-  int Stop(const int ts_idx, const MPI_Comm comm) {
+  int Stop(const int &ts_idx, const MPI_Comm &comm) {
     return Zoltan_Timer_Stop(this->ZTStruct, ts_idx, comm);
   }
 
-  int Print(const int ts_idx, const int proc, FILE *os) {
+  int Print(const int &ts_idx, const int &proc, FILE *os) const {
     // KDD  Can we use ostream instead of FILE*?  How convert it for C call??
     return Zoltan_Timer_Print(this->ZTStruct, ts_idx, proc, os);
   }
 
-  int PrintAll(const int proc, FILE *os) {
+  int PrintAll(const int &proc, FILE *os) const {
     // KDD  Can we use ostream instead of FILE*?  How convert it for C call??
     return Zoltan_Timer_PrintAll(this->ZTStruct, proc, os);
   }
