@@ -70,6 +70,10 @@ public:
   //! Call user's own print routine for vector-parameter pair (LOCA::EpetraNew::Interface::Required)
   virtual void printSolution(const Epetra_Vector& x_, double conParam);
 
+  //! Routine to set data for file indexing in subsequent printSolution call
+  virtual void dataForPrintSolution(const int conStep, const int timeStep,
+		                    const int numTimeSteps);
+
   //! Calculation of preconditioner (NOX::EpetraNew::Interface::Preconditioner)
   bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M);
   
@@ -92,7 +96,8 @@ public:
   Brusselator& problem;
 
 private:
-  int outStep;  // Output step index
+  int conStep;  // Output continuation step index
+  int timeStep;  // Output time step index
   Epetra_Vector oldSolnOrig; // Initial value of solution vector, used as Xold for first time step
 };
 

@@ -339,14 +339,19 @@ int main(int argc, char *argv[])
   Problem_Interface interface(Problem);
 
   // Print initial guess
+#ifndef DO_XYZT
   interface.printSolution(soln, locaStepperList.getParameter("Initial Value", 0.0));
+#endif
 
   // Create the Epetra_RowMatrix
   Epetra_RowMatrix& A = Problem.getJacobian();
 
 #ifdef DO_XYZT
+  Epetra_MultiVector initGuess(soln.Map(), timeStepsPerProc);
+  for (int i=0; i<timeStepsPerProc; i++) *(initGuess(i)) = soln;
+
   LOCA::EpetraNew::Interface::xyzt ixyzt(interface, interface, interface,
-                                 soln, A, A, globalComm, timeStepsPerProc);
+                                 initGuess, A, A, globalComm);
   Epetra_RowMatrix& Axyzt = ixyzt.getJacobian();
   Epetra_Vector& solnxyzt = ixyzt.getSolution();
 

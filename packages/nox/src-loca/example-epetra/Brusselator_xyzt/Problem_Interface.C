@@ -41,7 +41,8 @@
 //-----------------------------------------------------------------------------
 Problem_Interface::Problem_Interface(Brusselator& Problem) :
   problem(Problem),
-  outStep(0),
+  conStep(0),
+  timeStep(0),
   oldSolnOrig(Problem.getOldSoln())
 { }
 
@@ -66,17 +67,26 @@ void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
  
 void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
 {
+   if (timeStep==0) cout << "Writing solution at continuation step " << conStep
+	                 << "  for parameter = " << conParam << endl;
    char file_name[25];
    FILE *ifp;
    Epetra_Vector& xMesh = problem.getMesh();
    int NumMyNodes = xMesh.Map().NumMyElements();
    (void) sprintf(file_name, "output.p%02d_t%03d_s%03d", xMesh.Comm().MyPID(),
-		  (int)conParam, outStep++);
+		  timeStep, conStep);
    ifp = fopen(file_name, "w");
    for (int i=0; i<NumMyNodes; i++)
      fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, xMesh[i],
                        x[2*i], x[2*i+1]);
    fclose(ifp);
+}
+
+void Problem_Interface::dataForPrintSolution(const int conStep_,
+                       	const int timeStep_, const int numTimeSteps_)
+{
+  conStep = conStep_; // Zero based
+  timeStep = timeStep_ + 1; // One based
 }
 
 bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M)
