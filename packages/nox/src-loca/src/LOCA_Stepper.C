@@ -29,14 +29,14 @@
 // 
 // ************************************************************************
 //@HEADER
-
 #include "LOCA_Stepper.H"    // class definition
-#include "LOCA_StepperArclength.H"    // derived class definition
 
 // LOCA Includes
 #include "LOCA_Utils.H"		      // for static function doPrint
 #include "LOCA_Abstract_Group.H"      // class data element
-#include "LOCA_Bifurcation_ArcLengthGroup.H"   //
+#include "LOCA_Continuation_Group.H"
+#include "LOCA_Continuation_NaturalGroup.H"
+#include "LOCA_Continuation_ArcLengthGroup.H"   //
 
 using namespace LOCA;
 using namespace NOX::StatusTest;
@@ -58,79 +58,53 @@ using namespace NOX::StatusTest;
 
 Stepper::Stepper(LOCA::Abstract::Group& initialGuess, 
 		 NOX::StatusTest::Generic& t,
-		 const NOX::Parameter::List& p,
+		 NOX::Parameter::List& p,
 		 LOCA::Abstract::DataOutput& dataOut) :
-  curGroupPtr(&initialGuess),
-  prevGroupPtr(dynamic_cast<LOCA::Abstract::Group*>(initialGuess.clone())),
+  conGroupManager(p.sublist("Stepper")),
+  curGroupPtr(NULL),
+  prevGroupPtr(NULL),
   statusTestPtr(&t),
-  paramList(p),
-  conParams(initialGuess.getParams()),
-  solver(initialGuess, t, paramList.sublist("Solver")),
-  dataOutput(dataOut)
+  solverPtr(NULL),
+  predictor(p.sublist("Predictor")),
+  predictorDirection(NULL),
+  stepSizeManager(p.sublist("Step Size")),
+  dataOutput(dataOut),
+  paramList()
 {
   // Initialize the utilities
   Utils::setUtils(paramList.sublist("Utilities"));
-
-  init();
+  paramList = p;
+  init(initialGuess);
 }
 
 Stepper::Stepper(const Stepper& s) :
   dataOutput(s.dataOutput),
-  solver(s.solver)
+  solverPtr(s.solverPtr),
+  conGroupManager(s.conGroupManager),
+  predictor(s.predictor),
+  stepSizeManager(s.stepSizeManager)
 { //Copy constructor declared private since it is not expected to be neeeded.
-}
-
-Stepper::Stepper(const Stepper& s, LOCA::Abstract::Group& grp) :
-  curGroupPtr(&grp),
-  prevGroupPtr(dynamic_cast<LOCA::Abstract::Group*>(grp.clone())),
-  dataOutput(s.dataOutput),
-  statusTestPtr(s.statusTestPtr),
-  paramList(s.paramList),
-  conParams(s.conParams),
-  solver(grp, *(s.statusTestPtr), s.paramList.sublist("Solver")),
-  stepperMethod(s.stepperMethod),
-  solverMethod(s.solverMethod),
-  conParamID(s.conParamID),
-  startValue(s.startValue),
-  finalValue(s.finalValue),
-  prevValue(s.prevValue),
-  curValue(s.curValue),
-  startStepSize(s.startStepSize),
-  minStepSize(s.minStepSize),
-  maxStepSize(s.maxStepSize),
-  prevStepSize(s.prevStepSize),
-  curStepSize(s.curStepSize),
-  stepNumber(s.stepNumber),
-  numFailedSteps(s.numFailedSteps),
-  numTotalSteps(s.numTotalSteps),
-  agrValue(s.agrValue),
-  maxNonlinearSteps(s.maxNonlinearSteps),
-  maxConSteps(s.maxConSteps),
-  doArclength(s.doArclength),
-  doFirstOrderPredictor(s.doFirstOrderPredictor),
-  stepperStatus(s.stepperStatus),
-  solverStatus(s.solverStatus)
-{
 }
 
 Stepper::~Stepper() 
 { 
+  delete curGroupPtr;
   delete prevGroupPtr;
+  delete predictorDirection;
+  delete solverPtr;
 }
 
 bool Stepper::reset(LOCA::Abstract::Group& initialGuess,
 		    NOX::StatusTest::Generic& t,
 		    const NOX::Parameter::List& p) 
 {
-  curGroupPtr = &initialGuess;
+  delete curGroupPtr;
   delete prevGroupPtr;
-  prevGroupPtr = 0;
-  prevGroupPtr = dynamic_cast<LOCA::Abstract::Group*>(initialGuess.clone());
+  delete predictorDirection;
   statusTestPtr = &t;
   paramList = p;
-  conParams = initialGuess.getParams();
 
-  return init();
+  return init(initialGuess);
 }
 
 StatusType Stepper::getStatus()
@@ -141,25 +115,44 @@ StatusType Stepper::getStatus()
 StatusType Stepper::solve()
 {
   // Perform solve of initial conditions
-  stepperStatus = nonlinearSolve();
+  solverStatus = Unconverged;
+  solverStatus = solverPtr->solve();
 
-  if (stepperStatus != Unconverged) return stepperStatus;
+  stepperStatus = checkStepperStatus();
 
-  if (!doArclength) {
+  // Set up continuation groups
+  const LOCA::Abstract::Group& solnGrp = 
+    dynamic_cast<const LOCA::Abstract::Group&>(solverPtr->getSolutionGroup());
+  curGroupPtr = 
+    conGroupManager.createContinuationGroup(solnGrp, paramList.sublist("Solver").sublist("Direction").sublist("Linear Solver"));
+  prevGroupPtr = 
+    dynamic_cast<LOCA::Continuation::Group*>(curGroupPtr->clone());
 
-    while (stepperStatus == Unconverged) {
-      stepperStatus = step();
-    }
+  // If nonlinear solve failed, return (this must be done after continuation 
+  // groups are created so Stepper::getSolutionGroup() functions correctly.
+  if (stepperStatus != Unconverged) 
+    return stepperStatus;
+
+  stepNumber = 1;
+  numTotalSteps = 1;
+  dataOutput.saveGroupData(getSolutionGroup());
+
+  // Initialize predictor direction
+  predictorDirection = 
+    dynamic_cast<LOCA::Continuation::Vector*>(curGroupPtr->getX().clone(NOX::ShapeCopy));
+
+  // Create new solver using new continauation groups
+  delete solverPtr;
+  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
+				       paramList.sublist("Solver"));
+
+  while (stepperStatus == Unconverged) {
+    stepperStatus = step();
   }
 
-  else {
-    //! Form arclength stepper from currunt one, including
-    //! augmented group and vector, and then solve.
-    LOCA::Bifurcation::ArcLengthGroup alGroup(getSolutionGroup(),
-                             conParams.getIndex(conParamID), curValue);
-    StepperArclength arclengthStepper(this, alGroup);
-    stepperStatus = arclengthStepper.solve();
-  }
+  // Get last solution
+  *curGroupPtr 
+    = dynamic_cast<const LOCA::Continuation::Group&>(solverPtr->getSolutionGroup());
 
   return stepperStatus;
 }
@@ -172,38 +165,35 @@ StatusType Stepper::step()
 
     *curGroupPtr = *prevGroupPtr;
 
-    curStepSize = computeStepSize(Failed);
-    curValue = prevValue + curStepSize;
+    stepSize = computeStepSize(Failed);
+    curGroupPtr->setStepSize(stepSize);
 
   }
   else {
 
+    // Set previous solution vector in current solution group
+    if (stepNumber > 1)
+      curGroupPtr->setPrevX(prevGroupPtr->getX());
+
+    // Compute step size
+    stepSize = computeStepSize(solverStatus);
+    curGroupPtr->setStepSize(stepSize);
+
+    // Compute predictor direction
+    predictor.compute(*prevGroupPtr, *curGroupPtr, *predictorDirection);
+
     // Save previous successful step information
     *prevGroupPtr = *curGroupPtr;
 
-    // Set initial guess for next step equal to last step's final solution 
-    *curGroupPtr = getSolutionGroup();
- 
-    // COMPUTE TANGENT VECTOR FOR PREDICTOR
-    
-    if (doFirstOrderPredictor)
-      curGroupPtr->computeTangent(paramList.sublist("Solver").sublist("Direction").sublist("Linear Solver"),
-         conParams.getIndex(conParamID)); 
+    // Set previous solution vector in current solution group
+    if (stepNumber > 1)
+      curGroupPtr->setPrevX(prevGroupPtr->getX());
 
-    prevStepSize = curStepSize;
-    prevValue = curValue;
-    curStepSize = computeStepSize(solverStatus);
-
-    curValue += curStepSize;
-
-    if (doFirstOrderPredictor) 
-      curGroupPtr->computeX(*curGroupPtr, curGroupPtr->getTangent(), curStepSize);
+    // Take step in predictor direction
+    curGroupPtr->computeX(*prevGroupPtr, *predictorDirection, stepSize);
   }
 
-  conParams.setValue(conParamID, curValue);
-  curGroupPtr->setParams(conParams);
-
-  solver.reset(*curGroupPtr, *statusTestPtr, paramList.sublist("Solver"));
+  solverPtr->reset(*curGroupPtr, *statusTestPtr, paramList.sublist("Solver"));
 
   return nonlinearSolve();
 }
@@ -213,17 +203,22 @@ StatusType Stepper::nonlinearSolve()
   printStartStep();
   
   solverStatus = Unconverged;
-  solverStatus = solver.solve();
-  
-  printEndStep(solverStatus);
+  solverStatus = solverPtr->solve();
   
   if (solverStatus == Failed) {
     numFailedSteps += 1;
+    printEndStep(solverStatus);
   }
   else  {
-    stepNumber += 1;
 
     dataOutput.saveGroupData(getSolutionGroup());
+
+    // Get solution
+    *curGroupPtr 
+       = dynamic_cast<const LOCA::Continuation::Group&>(solverPtr->getSolutionGroup());
+    printEndStep(solverStatus);
+
+    stepNumber += 1;
   }
   
   numTotalSteps += 1;
@@ -235,83 +230,29 @@ StatusType Stepper::nonlinearSolve()
 
 double Stepper::computeStepSize(StatusType solverStatus)
 {
-  double tmpStepSize = curStepSize;
-  double predStepSize = curStepSize;
+  NOX::Abstract::Group::ReturnType res = 
+    stepSizeManager.compute(*curGroupPtr, *solverPtr, solverStatus, *this, 
+			    stepSize);
 
-  if ((solverStatus == Failed) || 
-      (solverStatus == Unconverged)) {
-
-    // A failed nonlinear solve cuts the current step size in half
-    tmpStepSize = curStepSize * 0.5;    
-
-  }
-  else if (stepNumber > 1) {
-
-    // adapive step size control
-    if (agrValue != 0.0) {
-
-      // Number of nonlinear iterations to reach convergence for last 
-      // nonlinear solve -- used to pick next step size
-      double numNonlinearSteps = ((double) solver.getNumIterations());
-
-      double factor = ((double) maxNonlinearSteps - numNonlinearSteps)
-                      / ((double) maxNonlinearSteps - 1.0);
-
-      tmpStepSize = curStepSize * (1.0 + agrValue * factor * factor);
-  
-    }
-    // if constant step size (agrValue = 0.0), the step size may still be 
-    // reduced by a solver failure.  We should then slowly bring the step 
-    // size back towards its constant value using agrValue = 0.5.
-    else{
-      if (curStepSize != startStepSize) {  
-	double numNonlinearSteps = ((double) solver.getNumIterations());
-
-        double factor = ((double) maxNonlinearSteps - numNonlinearSteps)
-                        / ((double) maxNonlinearSteps - 1.0);
-
-        tmpStepSize = curStepSize * (1.0 + 0.5 * factor * factor);
-
-        if (startStepSize > 0.0) {
-          tmpStepSize = min(tmpStepSize, startStepSize);
-	}
-        else {
-	  tmpStepSize = max(tmpStepSize, startStepSize);
-	}
-      }
-    }
-  }  
-  predStepSize = tmpStepSize;
-
-  // Clip the step size if above the bounds
-  if (fabs(tmpStepSize) > maxStepSize) {
-     predStepSize = maxStepSize;
-     if (tmpStepSize < 0.0) predStepSize *= -1.0;
-  }
-
-  // Clip step size at minimum, signal for failed run
-  if (fabs(tmpStepSize) < minStepSize) {
+  if (res == NOX::Abstract::Group::Failed)
     stepperStatus = Failed;
-    predStepSize =  minStepSize;
-    if (tmpStepSize < 0.0) predStepSize *= -1.0;
-  }
   
   // Cap the con parameter so we don't go past the final value
-    
-  if ( (prevValue+predStepSize-finalValue)*(prevValue-finalValue) < 0.0)
-    predStepSize = finalValue - prevValue;
+  double prevValue = curGroupPtr->getContinuationParameter();
+  if ( (prevValue+stepSize-finalValue)*(prevValue-finalValue) < 0.0) {
+    stepSize = finalValue - prevValue;
+    isLastStep = true;
+  }
 
-  return predStepSize;
+  if (fabs(prevValue+stepSize-finalValue) < 1.0e-15*fabs(finalValue))
+    isLastStep = true;
+
+  return stepSize;
 }
 
-const Abstract::Group& Stepper::getSolutionGroup() const
+const LOCA::Abstract::Group& Stepper::getSolutionGroup() const
 {
-  return dynamic_cast<const LOCA::Abstract::Group&>(solver.getSolutionGroup());
-}
-
-const Abstract::Group& Stepper::getPreviousSolutionGroup() const
-{
-  return *prevGroupPtr;
+  return curGroupPtr->getGroup();
 }
 
 const NOX::Parameter::List& Stepper::getParameterList() const
@@ -319,32 +260,10 @@ const NOX::Parameter::List& Stepper::getParameterList() const
   return paramList;
 }
 
-bool Stepper::init()
+bool Stepper::init(LOCA::Abstract::Group& initialGuess)
 { 
   // Get a reference to the parameter stepper sublist from the Solver.
   const NOX::Parameter::List& p = paramList.sublist("Stepper");
-  
-  // Get the stepper method
-  if (p.isParameter("Stepper Method"))
-    stepperMethod = p.getParameter("Stepper Method", "???");
-  else {
-    cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
-	 << "\"Stepper Method\" is not set in the input parameter list!" 
-	 << endl;
-    throw "LOCA Error";
-  }
- 
-  // Get the solver method
-  
-  solverMethod = "<NOT IMPLEMENTED YET>";
-
-  // Get the continuation parameter
-  conParamID = p.getParameter("Continuation Parameter", "???");
-  if (conParamID == "???") {
-    cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
-	 << "\"Continuation Parameter\" is not set" << endl;
-    throw "LOCA Error";
-  }
 
   // Get the continuation parameter starting value
   if (p.isParameter("Initial Value"))
@@ -364,31 +283,25 @@ bool Stepper::init()
     throw "LOCA Error";
   }
 
-  // First step of a new continuation run - set con param to starting value
-  curValue = startValue;
-  prevValue = startValue;
-
   // Get the initial values or use their defaults
-  startStepSize = p.getParameter("Initial Step Size", 1.0);
-  minStepSize = p.getParameter("Min Step Size", 1.0e-12);
-  maxStepSize = p.getParameter("Max Step Size", 1.0e+12);
-  curStepSize = startStepSize;
-  prevStepSize = 0.0;
+  stepSize = 0.0;
   stepNumber = 0;                    
   numFailedSteps = 0;
   numTotalSteps = 0;
-  agrValue = p.getParameter("Step Size Aggressiveness", 1.0e+6);
   maxNonlinearSteps = p.getParameter("Max Nonlinear Iterations", 15);
   maxConSteps = p.getParameter("Max Continuation Steps", 100);
-  doArclength = p.getParameter("Arclength Continuation", false);
-  doFirstOrderPredictor =  p.getParameter("First Order Predictor", false);
 
   stepperStatus = Unconverged;
   solverStatus = Unconverged;
+  isLastStep = false;
+
+  // Create solver using initial conditions
+  solverPtr = new NOX::Solver::Manager(initialGuess, *statusTestPtr, 
+				       paramList.sublist("Solver"));
 
   printInitializationInfo();
 
-  if (Utils::doPrint(Utils::Parameters))
+  //  if (Utils::doPrint(Utils::Parameters))
     paramList.print(cout);
 
   return true;
@@ -414,11 +327,9 @@ void Stepper::printInitializationInfo()
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout << endl << Utils::fill(72, '~') << endl;
     cout << "Beginning Continuation Run \n" 
-	 << "Stepper Method:             " << stepperMethod << "\n"
-	 << "Solver Method:              " << solverMethod << "\n\n"
+	 << "Stepper Method:             " << conGroupManager.getMethod() << "\n"
 	 << "Initial Parameter Value = " << startValue << "\n"
 	 << "Final Parameter Value = " << finalValue << "\n"
-	 << "Initial Step Size = " << startStepSize << "\n" 
 	 << "Maximum Number of Continuation Steps = " << maxConSteps 
 	 << endl;
     cout << Utils::fill(72, '~') << endl << endl;
@@ -430,11 +341,11 @@ void Stepper::printStartStep()
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout << "\n" << Utils::fill(72, '~') << "\n";
     cout << "Start of Continuation Step " << stepNumber << endl;
-    cout << "Continuation Method: " << stepperMethod << endl;
-    cout << "Continuation Parameter: " << conParamID
-	 << " = " << curValue << " from " << prevValue << endl;
-    cout << "Current step size  = " << curStepSize << "   "
-	 << "Previous step size = " << prevStepSize << endl;
+    cout << "Continuation Method: " << conGroupManager.getMethod() << endl;
+    cout << "Continuation Parameter: " << conGroupManager.getConParamID()
+	 << " = " << curGroupPtr->getContinuationParameter() << " from " << prevGroupPtr->getContinuationParameter() << endl;
+    cout << "Current step size  = " << stepSize << "   "
+	 << "Previous step size = " << stepSizeManager.getPrevStepSize() << endl;
     cout << Utils::fill(72, '~') << "\n" << endl;
   }
 }
@@ -446,10 +357,10 @@ void Stepper::printEndStep(StatusType& solverStatus)
     if (Utils::doPrint(Utils::StepperIteration)) {
       cout << "\n" << Utils::fill(72, '~') << "\n";
       cout << "End of  Continuation Step " << stepNumber << endl;
-      cout << "Continuation Parameter: " << conParamID
-	   << " = " << curValue << " from " << prevValue << endl;
+      cout << "Continuation Parameter: " << conGroupManager.getConParamID()
+	   << " = " << curGroupPtr->getContinuationParameter() << " from " << prevGroupPtr->getContinuationParameter() << endl;
       cout << "--> Step Converged in "
-           << solver.getNumIterations() <<" Nonlinear Solver Iterations!\n";
+           << solverPtr->getNumIterations() <<" Nonlinear Solver Iterations!\n";
       cout << Utils::fill(72, '~') << "\n" << endl;
     }
   }
@@ -460,9 +371,9 @@ void Stepper::printEndStep(StatusType& solverStatus)
       cout << endl << Utils::fill(72, '~') << endl;
       cout << "Continuation Step Number " << stepNumber 
            << " experienced a convergence failure in\n"
-           << "the nonlinear solver after "<< solver.getNumIterations() <<" Iterations\n";
-      cout << "Value of continuation parameter at failed step = " << curValue
-	   << " from " << prevValue << endl;
+           << "the nonlinear solver after "<< solverPtr->getNumIterations() <<" Iterations\n";
+      cout << "Value of continuation parameter at failed step = " << curGroupPtr->getContinuationParameter()
+	   << " from " << prevGroupPtr->getContinuationParameter() << endl;
       cout << Utils::fill(72, '~') << endl;
     }
   }
@@ -479,8 +390,7 @@ StatusType Stepper::checkStepperStatus()
     return Failed;
 
   // Check to see if we hit final parameter value
-  if ((solverStatus == Converged) && 
-      (curValue == finalValue))
+  if ((solverStatus == Converged) && isLastStep)
     return Converged;
 
   // Check to see if max number of steps has been reached

@@ -33,16 +33,18 @@
 #ifndef LOCA_STEPPER_H
 #define LOCA_STEPPER_H
 
-#include "LOCA_Parameter_Vector.H"   // class data element
 #include "NOX_Parameter_List.H"	     // class data element
 #include "NOX_Solver_Manager.H"	     // class data element
+#include "LOCA_Continuation_Manager.H" // class data element
+#include "LOCA_Predictor_Manager.H" // class data element
+#include "LOCA_StepSize_Manager.H" // class data element
 #include "NOX_StatusTest_Generic.H"  // for enum StatusType
 #include "NOX_Common.H"              // for <string> class
 #include "LOCA_Abstract_DataOutput.H"
 
 // Forward Declarations
 namespace LOCA {
-  namespace Abstract {
+  namespace Continuation {
     class Group;
   }
 }
@@ -92,7 +94,7 @@ public:
   //! Constructor 
   Stepper(LOCA::Abstract::Group& initialGuess,
 	  NOX::StatusTest::Generic& t,
-	  const NOX::Parameter::List& p,
+	  NOX::Parameter::List& p,
 	  LOCA::Abstract::DataOutput& dataOut);
 
   //! Destructor
@@ -119,11 +121,7 @@ public:
   //@{ \name Information accessor methods.
 
   //! Return the current solution group.
-  virtual const Abstract::Group& getSolutionGroup() const;
-
-  //! Return the solution group with the solution for the previous continuation
-  //! step.
-  virtual const Abstract::Group& getPreviousSolutionGroup() const;
+  virtual const LOCA::Abstract::Group& getSolutionGroup() const;
 
   //! Returns the number of continuation steps taken by LOCA
   virtual int getNumContinuationSteps() const;
@@ -141,14 +139,11 @@ public:
 
 protected:
 
-  //! Constructor for Stepper base class components of SAtepperArclength derived class
-  Stepper(const Stepper& s, LOCA::Abstract::Group& grp);
-
   //! Copy Constructor: Not implemented, but put here to prevent compiler form generating one
   Stepper(const Stepper& s);
 
   //! Reset the objects in the base class
-  virtual bool init();
+  virtual bool init(LOCA::Abstract::Group& initialGuess);
 
   //! Compute a new step size based on results from the previous step
   virtual double computeStepSize(NOX::StatusTest::StatusType solverStatus);
@@ -176,11 +171,14 @@ protected:
 
 protected:
 
+  //! Continuation group manager
+  LOCA::Continuation::Manager conGroupManager;
+
   //! Pointer to the Group with the initial guess for the nonlinear solver.  This is used for resetting the nonlinear solver in between successful steps.
-  LOCA::Abstract::Group* curGroupPtr;
+  LOCA::Continuation::Group* curGroupPtr;
 
   //! Pointer to the a Group with the solution for the previous continuation step.  This is used for resetting the nonlinear solver in between failed steps.
-  LOCA::Abstract::Group* prevGroupPtr;
+  LOCA::Continuation::Group* prevGroupPtr;
 
   //! Reference to data output object.  This is used to save intermediate data generated during continuation run.
   LOCA::Abstract::DataOutput& dataOutput;
@@ -191,20 +189,17 @@ protected:
   //! Deep copy of the parameter list supplied initially in the constuctor. This can be changed via a call to the reset() method.
   NOX::Parameter::List paramList;
 
-  //! Deep copy of the ParameterVector of the solution group.
-  ParameterVector conParams;
+  //! Solver (a.k.a corrector)
+  NOX::Solver::Manager* solverPtr;
 
-  //! A NOX::Solver::Manager object
-  NOX::Solver::Manager solver;
+  //! Predictor
+  LOCA::Predictor::Manager predictor;
 
-  //! Label with the requested Stepper routine 
-  string stepperMethod;
-  
-  //! Label with the requested nonlinear solver routine
-  string solverMethod;
+  //! Predictor direction
+  LOCA::Continuation::Vector *predictorDirection;
 
-  //! Label that identifies the continuation parameter from the list of bifurcation parameters supplied by the user.
-  string conParamID;
+  //! Step size manager
+  LOCA::StepSize::Manager stepSizeManager;
 
   //! Starting value of continuation parameter, \f$\lambda_b \f$.
   double startValue;
@@ -212,26 +207,8 @@ protected:
   //! Final value of continuation parameter, \f$\lambda_e \f$.
   double finalValue;
 
-  //! Value of continuation parameter at previous continuation step, \f$\lambda_{i-1} \f$.
-  double prevValue;
-
-  //! Current value of continuation parameter, \f$\lambda_i \f$.
-  double curValue;
-
-  //! Initial Step Size of the continuation parameter, \f$\Delta \lambda_0 \f$.
-  double startStepSize;
-
-  //! Minimum Step Size of the continuation parameter, \f$\Delta \lambda_{min} \f$.
-  double minStepSize;
-
-  //! Maximum Step Size of the continuation parameter, \f$\Delta \lambda_{max} \f$.
-  double maxStepSize;
-
-  //! Step size of previous step.  Initializes to zero on first step, \f$\Delta \lambda_{i-1} \f$.
-  double prevStepSize;
-
   //! Current step size (change in the continuation parameter), \f$\Delta \lambda_i \f$.
-  double curStepSize;
+  double stepSize;
 
   //! Current step number of continuation algorithm (does not include failed steps).
   int stepNumber;                    
@@ -241,11 +218,6 @@ protected:
 
   //! Total number of steps attempeted (includes failed and successful steps).
   int numTotalSteps;
-
-  //! Aggressiveness parameter used to adjust the step size when using an 
-  //! adjustable step size, \f$ a \f$.  Defaults to zero (a constant 
-  //! step size).  Range: [0.0 to 1.0] 
-  double agrValue;
   
   //! Maximum number of newton iterations per continuation step,\f$ N_{max} \f$. Defaults to 15.
   int maxNonlinearSteps;
@@ -253,17 +225,14 @@ protected:
   //! Maximum number of continuation steps to take. Defaults to 100.
   int maxConSteps;
 
-  //! Flag specifying to specify Arclength contuinuation. Defaults to false.
-  bool doArclength;
-
-  //! Flag specifying to specify first order predictor. Defaults to false.
-  bool doFirstOrderPredictor;
-
   //! Current status of the stepper.
   NOX::StatusTest::StatusType stepperStatus;
   
   //! Status of the last step of the Solver.
   NOX::StatusTest::StatusType solverStatus;
+
+  //! Flag inidicating if current step is the last step (reached final value)
+  bool isLastStep;
   
 };
 } // end namespace LOCA
