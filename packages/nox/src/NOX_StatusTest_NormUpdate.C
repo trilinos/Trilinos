@@ -90,6 +90,14 @@ StatusType NormUpdate::checkStatus(const Solver::Generic& problem, NOX::StatusTe
     return status;
   } 
 
+  // Check that F exists!
+  if (!problem.getSolutionGroup().isF())
+  {
+    status = Unconverged;
+    normUpdate = -1.0;
+    return status;
+  } 
+
   const Abstract::Vector& oldSoln = problem.getPreviousSolutionGroup().getX();
   const Abstract::Vector& curSoln = problem.getSolutionGroup().getX();
 

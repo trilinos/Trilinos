@@ -48,17 +48,32 @@ namespace NOX {
 namespace StatusTest {
 
 /*! 
+  \brief Various convergence tests based on the norm of the change in
+  the solution vector, \f$ x \f$, between outer iterations.
 
-\brief Various convergence tests based on the norm of the change in
-the solution vector, \f$ x \f$, between outer iterations.
+  If checkStatus is called with the type set to NOX::StatusTest::None,
+  then the status is set to NOX::StatusTest::Unevaluated and returned.
+  (Also #normUpdate is set to -1.0.)
 
-Return \c StatusTest::Converged if \f$\alpha < \beta\f$ where
-\f$\alpha\f$ represents the norm of \f$ \Delta x \f$ and \f$\beta\f$
-represents the tolerance.  We define:
+  If checkStatus is called on the first iteration, then the status is
+  set to NOX::StatusTest::Unconverged and returned.  (Also #normF is
+  set to -1.0.)
 
-\f[ \Delta x = x_k - x_{k-1} \f]
+  If checkStatus is called on a problem where the solution group does
+  not have F evaluated (i.e., problem.getSolutionGroup.isF() is
+  false), then the status is set to NOX::StatusTest::Unconverged and
+  returned.   (Also #normF is set to -1.0.)
 
-where \f$ x_k \f$ is the solution vector of the \f$ k \f$-th outer iterate.
+
+  Finally, we return NOX::StatusTest::Converged if \f$\alpha <
+  \beta\f$ and NOX::StatusTest::Uncoverged otherwise.
+  Here
+  \f$\alpha\f$ represents the norm of \f$ \Delta x \f$ and \f$\beta\f$
+  represents the tolerance.  We define:
+
+  \f[ \Delta x = x_k - x_{k-1} \f]
+
+  where \f$ x_k \f$ is the solution vector of the \f$ k \f$-th outer iterate.
 
   We define \f$\gamma\f$ to be the optional scale factor. We define it to be
 
@@ -80,7 +95,9 @@ where \f$ x_k \f$ is the solution vector of the \f$ k \f$-th outer iterate.
   \f$\beta\f$ is a scalar set by the user in the constructor. 
 
   \f[  \beta  = \mbox{tolerance} \f]
+*/
 
+/*
   NOTE: If no iterations have been performed, then there is no
   information for\f$ x_{k-1} \f$.  If the test is called while the
   number of iterations is zero (i.e. before an iteration takes place),

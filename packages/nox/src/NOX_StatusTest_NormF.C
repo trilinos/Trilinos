@@ -96,6 +96,9 @@ NOX::StatusTest::NormF::~NormF()
 
 double NOX::StatusTest::NormF::computeNorm(const NOX::Abstract::Group& grp)
 {
+  if (!grp.isF())
+    return -1.0;
+
   double norm;
   int n = grp.getX().length();
 
@@ -151,7 +154,7 @@ NOX::StatusTest::StatusType NOX::StatusTest::NormF::checkStatus(const NOX::Solve
   else
   {
     normF = computeNorm( problem.getSolutionGroup() );
-    status = (normF < trueTolerance) ? Converged : Unconverged;
+    status = ((normF != -1) && (normF < trueTolerance)) ? Converged : Unconverged;
   }
 
   return status;

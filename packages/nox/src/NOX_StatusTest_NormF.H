@@ -50,9 +50,24 @@ namespace StatusTest {
 //! Various convergence tests based on the norm of the residual.
 /*! 
 
-  Return \c StatusTest::Converged if \f$\alpha < \beta\f$ where \f$\alpha\f$
+  Use the constructor to define the test based on the type
+  of scaling (see ScaleType) and the type of Tolerance (see
+  Tolerance).
+
+  If checkStatus is called with the type set to NOX::StatusTest::None,
+  then the status is set to NOX::StatusTest::Unevaluated and returned.
+  (Also #normF is set to 0.0.)
+
+  If checkStatus is called on a problem where the solution group does
+  not have F evaluated (i.e., problem.getSolutionGroup.isF() is
+  false), then the status is set to NOX::StatusTest::Unconverged and
+  returned.   (Also #normF is set to -1.0.)
+
+  Finally, we return NOX::StatusTest::Converged if \f$\alpha <
+  \beta\f$ and NOX::StatusTest::Uncoverged otherwise.
+  Here \f$\alpha\f$
   represents the norm of \f$F(x)\f$ and \f$\beta\f$ represents the
-  tolerance.
+  tolerance, as described below.
 
   We define \f$\gamma\f$ to be the optional scale factor. We define it to be
 
@@ -122,11 +137,14 @@ public:
   //! Destructor.
   virtual ~NormF();
 
+  // derived
   virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem);
 
+  // derived
   virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem,
 						  NOX::StatusTest::CheckType checkType);
 
+  // derived
   virtual NOX::StatusTest::StatusType getStatus() const;
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
@@ -154,7 +172,11 @@ public:
 private:
 
   /*! \brief Calculate the norm of F for the given group according to
-    the scaling type, norm type, and tolerance type. */
+    the scaling type, norm type, and tolerance type. 
+
+    \note Returns -1.0 if F(x) has not been calculated for the given
+    grp (i.e., grp.isF() is false).
+  */
   double computeNorm(const NOX::Abstract::Group& grp);
 
   /*! In the case of a relative norm calculation, initializes 
