@@ -55,6 +55,8 @@
 #endif
 /* End Aztec 2.1 mheroux mod */
 
+extern int az_iterate_id;
+
 /*
  * 
  * These routines contain all the solver specific stuff for solving on subdomains.
@@ -768,7 +770,7 @@ int  t1, t2, t3, i, t4, t5 = 0;
 
           sprintf(label,"y in ssolve%d", sub_options[AZ_recursion_level]);
           y = AZ_manage_memory((N+1)*sizeof(double),
-                             AZ_ALLOC, new_data_org[AZ_name], label, &i);
+                             AZ_ALLOC, AZ_SYS+az_iterate_id, label, &i);
 
           for (i = 0 ; i < N ; i++ ) y[i] = x[i];
           for (i = 0 ; i < N ; i++ ) x[i] = 0.0;

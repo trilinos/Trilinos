@@ -228,7 +228,8 @@ bool AztecOO_SetOptionOrParam(int offset,
 
   if (entry.isType<int>() || entry.isType<unsigned>()) {
     if (offset < AZ_FIRST_USER_OPTION) {
-      azoo->SetAztecOption(offset, entry.getValue(&dummy_int));
+      int ival = entry.getValue(&dummy_int);
+      azoo->SetAztecOption(offset, ival);
       entry_used = true;
     }
   }
@@ -288,6 +289,8 @@ int AztecOO::SetParameters(Teuchos::ParameterList& parameterlist,
     if (cerr_warning_if_unused && !entry_used) {
       cerr << "AztecOO:SetParameters warning: '"<<name<<"' not used."<<endl;
     }
+
+    name.clear();
   }
 
   return(0);

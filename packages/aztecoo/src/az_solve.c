@@ -59,18 +59,19 @@
 #define AZ_oldpre_calc        3
 #define AZ_SAVE_SIZE          5
 
-int az_iterate_id = 1;
+int az_iterate_id = 0;
+int az_iterate_id_increment = 10000;
+int az_iterate_recursion_level = 0;
 
 void AZ_iterate(double x[], double b[], int options[], double params[],
                 double status[], int proc_config[], AZ_MATRIX *Amat,
                 AZ_PRECOND *precond, struct AZ_SCALING *scaling)
 
-
-     /*******************************************************************************
+/*******************************************************************************
 This is the new Aztec interface. This routine calls AZ_oldsolve() passing
 in for example Amat->indx for the indx[] parameter in AZ_oldsolve().
 
-NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
+NOTE: Users can still invoke AZ_solve() in the old Aztec way. AZ_solve
       also calls AZ_oldsolve(). However, matrix-free and coarse grid
        capabilities are not available via AZ_solve().
 
@@ -124,6 +125,14 @@ NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
   int     prec_allocated = 0;
   struct AZ_SCALING *scale2;
 
+  /* az_iterate_id becomes nonzero only if AZ_iterate is being called
+     recursively -- i.e., if az_iterate_recursion_level has already
+     been incremented. */
+  az_iterate_id -= az_iterate_id_increment*az_iterate_recursion_level;
+
+  /* now increment az_iterate_recursion_level */
+  ++az_iterate_recursion_level;
+
   if (scaling == NULL)
     scale2 = AZ_scaling_create();
   else scale2 = scaling;
@@ -170,7 +179,6 @@ NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
     exit(1);
   }
 
-  ++az_iterate_id;
   Amat->data_org[AZ_name] += az_iterate_id;
   precond->Pmat->data_org[AZ_name] += az_iterate_id;
 
@@ -197,7 +205,16 @@ NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
 
   precond->Pmat->data_org[AZ_name] -= az_iterate_id;
   Amat->data_org[AZ_name] -= az_iterate_id;
-  --az_iterate_id;
+
+  /* decrement az_iterate_recursion_level in preparation for leaving
+     this AZ_iterate scope. */
+  --az_iterate_recursion_level;
+
+  /* if az_iterate_recursion_level is nonzero at this point, AZ_iterate is
+     being called recursively and so we'll alter az_iterate_id by the
+     opposite amount that it was altered above when we entered this function.
+  */
+  az_iterate_id += az_iterate_id_increment*az_iterate_recursion_level;
 
   if (prec_allocated)  AZ_precond_destroy(&precond);
   if (scaling == NULL) AZ_scaling_destroy(&scale2);
@@ -294,7 +311,7 @@ void AZ_solve(double x[], double b[], int options[], double params[],
   if (options[AZ_pre_calc] != AZ_reuse) {
     (void) AZ_manage_memory(0,AZ_EVERYBODY_BUT_CLEAR,(Amat->data_org)[AZ_name],"kvecs",(int *) 0);
   }
-  (void) AZ_manage_memory(0, AZ_CLEAR, (Amat->data_org)[AZ_name], (char *) 0, (int *) 0);
+  (void) AZ_manage_memory(0, AZ_CLEAR, AZ_SYS+az_iterate_id, (char *) 0, (int *) 0);
 
   /* output solver, scaling, and preconditioning options */
 
@@ -323,7 +340,7 @@ void AZ_solve(double x[], double b[], int options[], double params[],
     (void) AZ_manage_memory(0,AZ_CLEAR,(Amat->data_org)[AZ_name],(char *) 0,
                             (int *) 0);
 
-  (void) AZ_manage_memory(0, AZ_CLEAR, (Amat->data_org)[AZ_name], (char *) 0, (int *) 0);
+  (void) AZ_manage_memory(0, AZ_CLEAR, AZ_SYS+az_iterate_id, (char *) 0, (int *) 0);
 
   AZ_precond_destroy(&precond);
   AZ_matrix_destroy(&Amat);
@@ -1348,12 +1365,13 @@ void AZ_mk_context(int options[], double params[], int data_org[],
   char tag[80];
   int  istatus;
 
-
   AZ_mk_identifier(params,options,data_org, tag);
+
   precond->context = (struct context *) AZ_manage_memory(sizeof(struct context),
                                                          AZ_ALLOC,
                                                          data_org[AZ_name],
                                                          tag,&istatus);
+
   if (istatus == AZ_NEW_ADDRESS) {
     AZ_zero_out_context(precond->context);
     if ((options[AZ_pre_calc] == AZ_reuse) && (proc_config[AZ_node] == 0)){
@@ -1374,7 +1392,7 @@ void AZ_mk_context(int options[], double params[], int data_org[],
       fprintf(stderr, "\n\t\t10) params[AZ_drop]");
       fprintf(stderr, "\n\t\t11) data_org[AZ_name]\n");
       printf("XXX%sXXX %d %d\n",tag,data_org[AZ_name],(int) sizeof(struct context));
-      (void) AZ_manage_memory(0, -43, data_org[AZ_name], (char *) 0, (int *) 0);
+      (void) AZ_manage_memory(0, -43, AZ_SYS+az_iterate_id, (char *) 0, (int *) 0);
     }
     if (options[AZ_pre_calc] == AZ_reuse) exit(1);
 

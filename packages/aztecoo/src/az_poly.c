@@ -49,6 +49,8 @@
 #include "az_aztec.h"
 #include "az_blas_wrappers.h"
 
+extern int az_iterate_id;
+
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
@@ -122,7 +124,7 @@ void AZ_polynomial_expansion( double z[], int options[], int proc_config[],
   power = options[AZ_poly_ord];
 
   poly_temp = (double *) AZ_manage_memory(2*(N+data_org[AZ_N_external])*
-                                          sizeof(double), AZ_ALLOC, data_org[AZ_name],
+                                          sizeof(double), AZ_ALLOC, AZ_SYS+az_iterate_id,
                                           "poly mem", &j);
   w         = &(poly_temp[N+data_org[AZ_N_external]]);
 

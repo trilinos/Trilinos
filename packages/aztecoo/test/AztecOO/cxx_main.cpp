@@ -63,10 +63,27 @@ int test_azoo_with_ilut(Epetra_CrsMatrix& A,
                         Epetra_Vector& b,
                         bool verbose);
 
-int create_and_transform_simple_diag_MSR(int N, int* proc_config,
-                                         AZ_MATRIX*& Amat,
-                                         int*& external, int*& update_index,
-                                         int*& external_index);
+int call_AZ_iterate(AZ_MATRIX* Amat,
+                    AZ_PRECOND* P,
+                    AZ_SCALING* S,
+                    double* x,
+                    double* b,
+                    int* options,
+                    double* params,
+                    double* status,
+                    int* proc_config,
+                    int keep_info,
+                    int pre_calc,
+                    bool verbose);
+
+int create_and_transform_simple_matrix(int matrix_type,
+                                    int N,
+                                    double diag_term,
+                                    int* proc_config,
+                                    AZ_MATRIX*& Amat,
+                                    int*& external,
+                                    int*& update_index,
+                                    int*& external_index);
 
 int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
                                          int* options,
@@ -74,7 +91,7 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
 
 int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose);
 
-void destroy_MSR(AZ_MATRIX*& Amat);
+void destroy_matrix(AZ_MATRIX*& Amat);
 
 int main(int argc, char *argv[])
 {
@@ -158,8 +175,8 @@ int main(int argc, char *argv[])
 
   int* options = new int[AZ_OPTIONS_SIZE];
   options[AZ_solver] = AZ_cg;
-  options[AZ_subdomain_solve] = AZ_icc;
-  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_subdomain_solve] = AZ_none;
+  options[AZ_precond] = AZ_Jacobi;
 
   err = test_AZ_iterate_AZ_pre_calc_AZ_reuse(comm, options, verbose);
   if (err != 0) {
@@ -168,6 +185,8 @@ int main(int argc, char *argv[])
   }
 
   options[AZ_solver] = AZ_cgs;
+  options[AZ_subdomain_solve] = AZ_icc;
+  options[AZ_precond] = AZ_dom_decomp;
 
   err = test_AZ_iterate_AZ_pre_calc_AZ_reuse(comm, options, verbose);
   if (err != 0) {
@@ -377,43 +396,6 @@ int test_azoo_with_ilut(Epetra_CrsMatrix& A,
   return(0);
 }
 
-int create_and_transform_simple_diag_MSR(int N, int* proc_config,
-                                         AZ_MATRIX*& Amat,
-                                         int*& external, int*& update_index,
-                                         int*& external_index)
-{
-  Amat = AZ_matrix_create(N);
-
-  int* update = new int[N];
-  int i;
-  int first_eqn = proc_config[AZ_node]*N;
-  for(i=0; i<N; ++i) {
-    update[i] = first_eqn+i;
-  }
-
-  int* data_org;
-
-  int nnz = N;
-  double* val = new double[nnz+1];
-  int* bindx = new int[nnz+1];
-
-  for(i=0; i<nnz+1; ++i) {
-    val[i] = 2.0;
-    bindx[i] = N+1;
-  }
-
-  int* dummy = 0;
-  int* dummy2 = 0;
-  AZ_transform(proc_config, &external, bindx, val, update, &update_index,
-               &external_index, &data_org, N, dummy, dummy, dummy,
-               &dummy2, AZ_MSR_MATRIX);
-
-  AZ_set_MSR(Amat, bindx, val, data_org, N, update, AZ_LOCAL);
-
-  Amat->must_free_data_org = 1;
-
-  return(0);
-}
 
 int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
                                          int* options,
@@ -421,7 +403,8 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
 {
   if (verbose) {
     cout << "testing AZ_keep_info/AZ_reuse with 'old' Aztec (solver "
-         <<options[AZ_solver] <<", precond "<<options[AZ_subdomain_solve]<<")"<<endl;
+         <<options[AZ_solver] <<", precond "<<options[AZ_precond]<<"/"
+         << options[AZ_subdomain_solve]<<")"<<endl;
   }
   int numProcs = Comm.NumProc();
   int localProc = Comm.MyPID();
@@ -433,15 +416,26 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
   AZ_set_comm(proc_config, MPI_COMM_WORLD);
 #endif
 
+  //We're going to create 2 Aztec matrices, one MSR and one VBR. We're going
+  //to do 2 solves with each, reusing the preconditioner for the second solve.
+
   int *external, *update_index, *external_index;
+  int *external2, *update_index2, *external_index2;
 
   int i, N = 5;
-  AZ_MATRIX* Amat = NULL;
-  int err = create_and_transform_simple_diag_MSR(N, proc_config, Amat,
-                                                 external, update_index,
-                                                 external_index);
+  AZ_MATRIX* Amsr = NULL;
+  AZ_MATRIX* Avbr = NULL;
+  int err = create_and_transform_simple_matrix(AZ_MSR_MATRIX, N, 2.0,
+                                               proc_config, Amsr,
+                                               external, update_index,
+                                               external_index);
 
-  Epetra_MsrMatrix emsr(proc_config, Amat);
+  err += create_and_transform_simple_matrix(AZ_VBR_MATRIX, N, 2.0,
+                                            proc_config, Avbr,
+                                            external2, update_index2,
+                                            external_index2);
+
+//  Epetra_MsrMatrix emsr(proc_config, Amsr);
 
   int* az_options = new int[AZ_OPTIONS_SIZE];
   double* params = new double[AZ_PARAMS_SIZE];
@@ -450,7 +444,7 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
   az_options[AZ_solver] = options[AZ_solver];
   az_options[AZ_precond] = options[AZ_precond];
   az_options[AZ_subdomain_solve] = options[AZ_subdomain_solve];
-  az_options[AZ_scaling] = AZ_none;
+  az_options[AZ_scaling] = AZ_sym_diag;
   if (verbose) {
     az_options[AZ_output] = AZ_warnings;
   }
@@ -466,27 +460,82 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
     b[i] = 1.0;
   }
 
-  AZ_PRECOND* Pmat = AZ_precond_create(Amat, AZ_precondition, NULL);
-  AZ_SCALING* Scal = AZ_scaling_create();
+  AZ_PRECOND* Pmsr = AZ_precond_create(Amsr, AZ_precondition, NULL);
+  AZ_SCALING* Smsr = AZ_scaling_create();
+  AZ_PRECOND* Pvbr = AZ_precond_create(Avbr, AZ_precondition, NULL);
+  AZ_SCALING* Svbr = AZ_scaling_create();
 
-  az_options[AZ_pre_calc] = AZ_calc;
-  az_options[AZ_keep_info] = 1;
+ // Amsr->data_org[AZ_name] = 1;
+ // Avbr->data_org[AZ_name] = 2;
 
-  AZ_iterate(x, b, az_options, params, status, proc_config,
-             Amat, Pmat, Scal);
+  //First solve with the first matrix (Amsr).
+  if (verbose)
+    cout << "solve Amsr, name: "<<Amsr->data_org[AZ_name]<<endl;
 
-  for(i=0; i<N; ++i) {
-    x[i] = 0.0;
-  }
+  call_AZ_iterate(Amsr, Pmsr, Smsr, x, b, az_options, params, status,
+                  proc_config, 1, AZ_calc, verbose);
 
-  az_options[AZ_pre_calc] = AZ_reuse;
+  //First solve with the second matrix (Avbr).
+  if (verbose)
+    cout << "solve Avbr, name: " <<Avbr->data_org[AZ_name]<<endl;
 
-  AZ_iterate(x, b, az_options, params, status, proc_config,
-             Amat, Pmat, Scal);
+  call_AZ_iterate(Avbr, Pvbr, Svbr, x, b, az_options, params, status,
+                  proc_config, 0, AZ_calc, verbose);
 
-  AZ_scaling_destroy(&Scal);
-  AZ_precond_destroy(&Pmat);
-  destroy_MSR(Amat);
+  //Second solve with Amsr, reusing preconditioner
+  if (verbose)
+    cout << "solve Amsr (first reuse)"<<endl;
+
+  call_AZ_iterate(Amsr, Pmsr, Smsr, x, b, az_options, params, status,
+                  proc_config, 1, AZ_reuse, verbose);
+
+  //Second solve with Avbr, not reusing preconditioner
+  if (verbose)
+    cout << "solve Avbr (keepinfo==0), name: " <<Avbr->data_org[AZ_name]<<endl;
+
+  call_AZ_iterate(Avbr, Pvbr, Svbr, x, b, az_options, params, status,
+                  proc_config, 0, AZ_calc, verbose);
+
+  AZ_free_memory(Amsr->data_org[AZ_name]);
+  AZ_free_memory(Avbr->data_org[AZ_name]);
+
+  //solve with Amsr again, not reusing preconditioner
+  if (verbose)
+    cout << "solve Amsr (keepinfo==0)"<<endl;
+
+  call_AZ_iterate(Amsr, Pmsr, Smsr, x, b, az_options, params, status,
+                  proc_config, 0, AZ_calc, verbose);
+
+  //Second solve with Avbr, this time with keepinfo==1
+  if (verbose)
+    cout << "solve Avbr (keepinfo==1), name: " <<Avbr->data_org[AZ_name]<<endl;
+
+  call_AZ_iterate(Avbr, Pvbr, Svbr, x, b, az_options, params, status,
+                  proc_config, 1, AZ_calc, verbose);
+
+  //Second solve with Amsr, not reusing preconditioner
+  if (verbose)
+    cout << "solve Amsr (keepinfo==0, calc)"<<endl;
+
+  call_AZ_iterate(Amsr, Pmsr, Smsr, x, b, az_options, params, status,
+                  proc_config, 0, AZ_calc, verbose);
+
+  //Second solve with Avbr, not reusing preconditioner
+  if (verbose)
+    cout << "solve Avbr (keepinfo==1, reuse), name: "<<Avbr->data_org[AZ_name]<<endl;
+
+  call_AZ_iterate(Avbr, Pvbr, Svbr, x, b, az_options, params, status,
+                  proc_config, 1, AZ_reuse, verbose);
+
+  AZ_free_memory(Amsr->data_org[AZ_name]);
+  AZ_free_memory(Avbr->data_org[AZ_name]);
+
+  AZ_scaling_destroy(&Smsr);
+  AZ_precond_destroy(&Pmsr);
+  AZ_scaling_destroy(&Svbr);
+  AZ_precond_destroy(&Pvbr);
+  destroy_matrix(Amsr);
+  destroy_matrix(Avbr);
 
   delete [] x;
   delete [] b;
@@ -498,12 +547,52 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
   free(update_index);
   free(external);
   free(external_index);
+  free(update_index2);
+  free(external2);
+  free(external_index2);
 
   return(0);
 }
 
+int call_AZ_iterate(AZ_MATRIX* Amat,
+                    AZ_PRECOND* P,
+                    AZ_SCALING* S,
+                    double* x,
+                    double* b,
+                    int* options,
+                    double* params,
+                    double* status,
+                    int* proc_config,
+                    int keep_info,
+                    int pre_calc,
+                    bool verbose)
+{
+  options[AZ_keep_info] = keep_info;
+  options[AZ_pre_calc] = pre_calc;
+
+  std::string keepstr;
+  std::string calcstr;
+
+  if (keep_info == 1) keepstr = "true";
+  else keepstr = "false";
+
+  if (pre_calc == AZ_calc) calcstr = "AZ_calc";
+  else calcstr = "AZ_reuse";
+
+  if (verbose)
+    cout << "   solve with AZ_keep_info="<<keepstr<<", AZ_pre_calc="<<calcstr<<endl;
+
+  for(int i=0; i<Amat->N_update; ++i) x[i] = 0.0;
+
+  AZ_iterate(x, b, options, params, status, proc_config,
+             Amat, P, S);
+}
+                    
 int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
 {
+  if (verbose) {
+    cout << "testing AZ_iterate/AZ_scale_f with 'old' Aztec"<<endl;
+  }
   int numProcs = Comm.NumProc();
   int localProc = Comm.MyPID();
 
@@ -518,7 +607,8 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
 
   int i, N = 5;
   AZ_MATRIX* Amat = NULL;
-  int err = create_and_transform_simple_diag_MSR(N, proc_config, Amat,
+  int err = create_and_transform_simple_matrix(AZ_MSR_MATRIX, N, 2.0,
+                                               proc_config, Amat,
                                                  external, update_index,
                                                  external_index);
  
@@ -528,7 +618,7 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
   AZ_defaults(options, params);
   options[AZ_scaling] = AZ_sym_diag;
   if (verbose) {
-    options[AZ_output] = 1;
+    options[AZ_output] = AZ_warnings;
   }
   else {
     options[AZ_output] = 0;
@@ -557,7 +647,7 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
 
   AZ_scaling_destroy(&Scal);
   AZ_precond_destroy(&Pmat);
-  destroy_MSR(Amat);
+  destroy_matrix(Amat);
 
   delete [] x;
   delete [] b;
@@ -573,13 +663,85 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
   return(0);
 }
 
-void destroy_MSR(AZ_MATRIX*& Amat)
+void destroy_matrix(AZ_MATRIX*& Amat)
 {
   delete [] Amat->update;
   delete [] Amat->val;
   delete [] Amat->bindx;
 
+  if (Amat->matrix_type==AZ_VBR_MATRIX) {
+    delete [] Amat->indx;
+    delete [] Amat->rpntr;
+    free(Amat->cpntr);
+    delete [] Amat->bpntr;
+  }
+
   AZ_matrix_destroy(&Amat);
   Amat = NULL;
 }
 
+int create_and_transform_simple_matrix(int matrix_type,
+                                    int N,
+                                    double diag_term,
+                                    int* proc_config,
+                                    AZ_MATRIX*& Amat,
+                                    int*& external,
+                                    int*& update_index,
+                                    int*& external_index)
+{
+  //We're going to create a very simple diagonal matrix.
+
+  Amat = AZ_matrix_create(N);
+
+  int* update = new int[N];
+  int i;
+  int first_eqn = proc_config[AZ_node]*N;
+  for(i=0; i<N; ++i) {
+    update[i] = first_eqn+i;
+  }
+
+  int* data_org;
+
+  int nnz = N;
+  double* val = new double[nnz+1];
+  int* bindx = new int[nnz+1];
+  int* indx = NULL;
+  int* rpntr = NULL;
+  int* cpntr = NULL;
+  int* bpntr = NULL;
+
+  for(i=0; i<nnz+1; ++i) {
+    val[i] = diag_term;
+    bindx[i] = N+1;
+  }
+
+  if (matrix_type == AZ_VBR_MATRIX) {
+    //AZ_transform allocates cpntr
+    rpntr = new int[N+1];
+    bpntr = new int[N+1];
+    indx  = new int[N+1];
+
+    for(i=0; i<N+1; ++i) {
+      rpntr[i] = i;
+      bpntr[i] = i;
+      bindx[i] = first_eqn+i;
+      indx[i] = i;
+    }
+  }
+
+  AZ_transform(proc_config, &external, bindx, val, update, &update_index,
+               &external_index, &data_org, N, indx, bpntr, rpntr,
+               &cpntr, matrix_type);
+
+  if (matrix_type == AZ_MSR_MATRIX) {
+    AZ_set_MSR(Amat, bindx, val, data_org, N, update, AZ_LOCAL);
+  }
+  else {
+    AZ_set_VBR(Amat, rpntr, cpntr, bpntr, indx, bindx, val, data_org,
+               N, update, AZ_LOCAL);
+  }
+
+  Amat->must_free_data_org = 1;
+
+  return(0);
+}

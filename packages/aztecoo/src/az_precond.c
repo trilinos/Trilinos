@@ -64,6 +64,7 @@ extern void AZ_calc_blk_diag_inv(double *val, int *indx, int *bindx, int *rpntr,
                      int data_org[]);
 extern void jacobi(double val[], double x[], int data_org[]);
 
+extern int az_iterate_id;
 extern int AZ_sys_msg_type;
 
 /*---------------------------------------------------------------------------*/
@@ -195,10 +196,10 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
 
      sprintf(tag,"orig_rhs %s",precond->context->tag);
      orig_rhs = AZ_manage_memory((N+max_externals)*sizeof(double),
-                               AZ_ALLOC, data_org[AZ_name],tag,&i);
+                               AZ_ALLOC, AZ_SYS+az_iterate_id,tag,&i);
      sprintf(tag,"x_prec %s",precond->context->tag);
      x_precond    = AZ_manage_memory((N+max_externals)*sizeof(double),
-                               AZ_ALLOC, data_org[AZ_name], tag,&i);
+                               AZ_ALLOC, AZ_SYS+az_iterate_id, tag,&i);
      for (i = 0 ; i < N; i++) x_precond[i] = 0.0;
      for (i = 0 ; i < N; i++) orig_rhs[i] = current_rhs[i];
      multilevel_flag = 1;
@@ -228,9 +229,9 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
            if (options[AZ_poly_ord] > 1) {
               sprintf(tag,"v_prec %s",precond->context->tag);
               v = AZ_manage_memory((N+max_externals)*sizeof(double),
-                                    AZ_ALLOC, data_org[AZ_name], tag, &i);
+                                    AZ_ALLOC, AZ_SYS+az_iterate_id, tag, &i);
               sprintf(tag,"y_prec %s",precond->context->tag);
-              y = AZ_manage_memory(N*sizeof(double), AZ_ALLOC, data_org[AZ_name], tag,&i);
+              y = AZ_manage_memory(N*sizeof(double), AZ_ALLOC, AZ_SYS+az_iterate_id, tag,&i);
               for (i = 0; i < N; i++) v[i] = current_rhs[i];
 
               for (step = 1; step < options[AZ_poly_ord]; step++) {
@@ -277,9 +278,9 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
            if (options[AZ_poly_ord] > 1) {
               sprintf(tag,"v_prec %s",precond->context->tag);
               v = AZ_manage_memory((N+max_externals)*sizeof(double),
-                                    AZ_ALLOC, data_org[AZ_name], tag, &i);
+                                    AZ_ALLOC, AZ_SYS+az_iterate_id, tag, &i);
               sprintf(tag,"y_prec %s",precond->context->tag);
-              y = AZ_manage_memory(N*sizeof(double), AZ_ALLOC, data_org[AZ_name], tag,&i);
+              y = AZ_manage_memory(N*sizeof(double), AZ_ALLOC, AZ_SYS+az_iterate_id, tag,&i);
               for (i = 0; i < N; i++) v[i] = current_rhs[i];
 
               for (step = 1; step < options[AZ_poly_ord]; step++) {
@@ -350,7 +351,7 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
 
            sprintf(tag,"v_prec %s",precond->context->tag);
            v = AZ_manage_memory((N+max_externals)*sizeof(double),
-                           AZ_ALLOC, data_org[AZ_name], tag, &i);
+                           AZ_ALLOC, AZ_SYS+az_iterate_id, tag, &i);
 
            Dmat->matvec(current_rhs, v, Dmat, proc_config);
 
@@ -359,10 +360,10 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
            if (options[AZ_poly_ord] > 1) {
               sprintf(tag,"y_prec %s",precond->context->tag);
               y = AZ_manage_memory((N+max_externals)*sizeof(double),
-                             AZ_ALLOC, data_org[AZ_name], tag, &i);
+                             AZ_ALLOC, AZ_SYS+az_iterate_id, tag, &i);
 
               sprintf(tag,"temp_prec %s",precond->context->tag);
-              temp = AZ_manage_memory(N*sizeof(double), AZ_ALLOC,data_org[AZ_name],tag,&i);
+              temp = AZ_manage_memory(N*sizeof(double), AZ_ALLOC,AZ_SYS+az_iterate_id,tag,&i);
 
               for (step = 1; step < options[AZ_poly_ord]; step++) {
                  Amat->matvec(v, y, Amat, proc_config);
@@ -410,15 +411,15 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
      case AZ_smoother:
         sprintf(label,"istatus %s",precond->context->tag);
         istatus = AZ_manage_memory(AZ_STATUS_SIZE*sizeof(double),AZ_ALLOC,
-				   data_org[AZ_name], label,&i);
+				   AZ_SYS+az_iterate_id, label,&i);
         for (i = 0 ; i < AZ_STATUS_SIZE ; i++ ) istatus[i] = 0.0;
 
         sprintf(label,"y %s",precond->context->tag);
         y = AZ_manage_memory((N+max_externals)*sizeof(double), AZ_ALLOC, 
-			     data_org[AZ_name], label, &i);
+			     AZ_SYS+az_iterate_id, label, &i);
         sprintf(label,"tttemp %s",precond->context->tag);
         tttemp = AZ_manage_memory((N+max_externals)*sizeof(double),AZ_ALLOC,
-				  data_org[AZ_name], label, &i);
+				  AZ_SYS+az_iterate_id, label, &i);
 
         for (i = 0 ; i < N ; i++ ) tttemp[i] = current_rhs[i];
 
@@ -478,7 +479,7 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
                                  &istatus, &Aptr, &Pptr, &Sptr);
            sprintf(label,"y %s",precond->context->tag);
            y = AZ_manage_memory((N+max_externals)*sizeof(double),
-                                AZ_ALLOC, data_org[AZ_name], label, &i);
+                                AZ_ALLOC, AZ_SYS+az_iterate_id, label, &i);
            for (i = 0 ; i < N ; i++ ) y[i] = current_rhs[i];
            for (i = 0 ; i < N ; i++ ) current_rhs[i] = 0.0;
 
@@ -1009,7 +1010,7 @@ void AZ_sym_gauss_seidel_sl(double val[],int bindx[],double x[],int data_org[],
   N = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
   sprintf(tag,"b/sGS %s",context->tag);
-  b = AZ_manage_memory(N*sizeof(double), AZ_ALLOC, data_org[AZ_name], tag, &i);
+  b = AZ_manage_memory(N*sizeof(double), AZ_ALLOC, AZ_SYS+az_iterate_id, tag, &i);
 
   DCOPY_F77(&N, x, &ione, b, &ione);
   ptr_val = val;
@@ -1077,7 +1078,7 @@ int N;
  
       if (options[AZ_poly_ord] > flag) {
         v = AZ_manage_memory((N+data_org[AZ_N_external])*sizeof(double),
-                             AZ_ALLOC, data_org[AZ_name], "v in do_jacobi", &i);
+                             AZ_ALLOC, AZ_SYS+az_iterate_id, "v in do_jacobi", &i);
  
         for (i = 0; i < N; i++) v[i] = x[i];
  

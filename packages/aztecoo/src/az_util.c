@@ -1016,7 +1016,6 @@ double *dtmp;
       if (current->type == type) {
         if (prev == NULL) head       = current->next;
         else              prev->next = current->next;
-
         temp = current->next;
         AZ_free(current->address);
         current = temp;
