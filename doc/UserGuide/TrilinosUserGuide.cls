@@ -973,5 +973,5 @@
 \renewcommand{\sectionmark}[1]{\markright{\thesection\ #1}}
 \lhead[\fancyplain{}{\TrilinosTM{} Users Guide}]%
 {\fancyplain{}{\rightmark}}
-\rhead[\fancyplain{}{\leftmark}]
+\rhead[\fancyplain{}{\rightmark}]
 {\fancyplain{}{\TrilinosTM{} Users Guide}}
