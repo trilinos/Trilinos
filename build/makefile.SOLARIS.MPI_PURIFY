@@ -1,0 +1,39 @@
+# Default environment variable definitions are defined in makefile.defaults
+ 
+include $(TRILINOS_HOME)/build/makefile.defaults
+
+# Define architecture specific flags for C++, C and Fortran
+
+ARCH_CXXFLAGS= -g
+ARCH_CFLAGS= -g
+ARCH_FFLAGS= -g
+
+# Define compiler commands
+
+CC=/usr/local/pure/purify-4.5.1-solaris2/purify -best-effort \
+    -follow-child-processes=yes -log-file=petralog cc
+FC=/usr/local/pure/purify-4.5.1-solaris2/purify -best-effort \
+    -follow-child-processes=yes -log-file=petralog f77
+CXX=/usr/local/pure/purify-4.5.1-solaris2/purify -best-effort \
+    -follow-child-processes=yes -log-file=petralog CC
+CCC=/usr/local/pure/purify-4.5.1-solaris2/purify -best-effort \
+    -follow-child-processes=yes -log-file=petralog CC
+
+#Define include directories (remember to use -Idirectory_name)
+
+MPI_INCLUDES =  -I/usr/local/mpich-1.2.0/include
+ARCH_INCLUDES = $(MPI_INCLUDES)
+
+LIBMPI = -L/usr/local/mpich-1.2.0/lib -lmpich
+ARCH_LIBS = -lF77 -lM77 -lsunmath $(MPI_LIBS)
+
+AR=CC
+ARFLAGS= -xar -o
+
+LN=/usr/bin/ln -fs
+
+################## External Libraries ##########################
+
+LIBBLAS = /home/u/maherou/LAPACK/BLAS/SRC/libblas_purify.a
+#LIBLAPACK = -xlic_lib=sunperf
+LIBLAPACK = /home/u/maherou/LAPACK/SRC/liblapack_purify.a
