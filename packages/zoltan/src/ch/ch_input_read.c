@@ -15,7 +15,7 @@ static int offset = 0;		/* offset into line for next data */
 static int break_pnt = LINE_LENGTH;	/* place in sequence to pause */
 static int save_pnt;		/* place in sequence to save */
 
-static void flush_line();
+static void flush_line(FILE *);
 
 double    read_val(
   FILE     *infile,		/* file to read value from */
@@ -110,9 +110,10 @@ double    read_val(
 }
 
 
-int       read_int(infile, end_flag)
-FILE     *infile;		/* file to read value from */
-int      *end_flag;		/* 0 => OK, 1 => EOL, -1 => EOF */
+int       read_int(
+FILE     *infile,		/* file to read value from */
+int      *end_flag 		/* 0 => OK, 1 => EOL, -1 => EOF */
+)
 {
     int       val;		/* return value */
     char     *ptr;		/* ptr to next string to read */
@@ -202,8 +203,9 @@ int      *end_flag;		/* 0 => OK, 1 => EOL, -1 => EOF */
 }
 
 
-static void flush_line(infile)
-FILE     *infile;		/* file to read value from */
+static void flush_line(
+FILE     *infile 		/* file to read value from */
+)
 {
     char      c;		/* character being read */
 

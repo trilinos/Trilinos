@@ -9,12 +9,15 @@
 #include "ch_input_const.h"
 #include "dr_const.h"
 
-int chaco_input_geom(fingeom, geomname, nvtxs, igeom, x, y, z)
-FILE     *fingeom;		/* geometry input file */
-char     *geomname;		/* name of geometry file */
-int       nvtxs;		/* number of coordinates to read */
-int      *igeom;		/* dimensionality of geometry */
-float   **x, **y, **z;		/* coordiates of vertices */
+int chaco_input_geom(
+FILE     *fingeom,		/* geometry input file */
+char     *geomname,		/* name of geometry file */
+int       nvtxs,		/* number of coordinates to read */
+int      *igeom,		/* dimensionality of geometry */
+float   **x,         		/* coordinates of vertices */
+float   **y,
+float   **z
+)
 {
     extern int CHECK_INPUT;	/* print any warning messages? */
     char     *yo = "chaco_input_geom";
@@ -25,7 +28,6 @@ float   **x, **y, **z;		/* coordiates of vertices */
     int       end_flag;		/* return conditional */
     int       ndims;		/* number of values in an input line */
     int       i;		/* loop counter */
-    double   read_val();
 
     DEBUG_TRACE_START(0, yo);
 

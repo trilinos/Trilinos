@@ -51,7 +51,7 @@ int chaco_dist_graph(
 )
 {
   char *yo = "chaco_dist_graph";
-  int nprocs, myproc, i, j, n, p, nedges, nsend, rest, max_nvtxs, v, adj_cnt;
+  int nprocs, myproc, i, j, n, p, nedges, nsend, max_nvtxs, v, adj_cnt;
   int offset, use_vwgts, use_ewgts, use_graph, nvtx_edges;
   int *old_xadj = NULL, *old_adjncy = NULL, *old_vwgts = NULL, *size = NULL;
   int *send_xadj = NULL, *send_adjncy = NULL, *send_vwgts = NULL;
@@ -131,7 +131,7 @@ int chaco_dist_graph(
     /* Allocate space for send buffers  (size = max num vtx per proc ) */
     max_nvtxs = ch_dist_max_num_vtx();
     if (use_graph) {
-      send_xadj = (int *) malloc(max_nvtxs*sizeof(int));
+      send_xadj = (int *) malloc((max_nvtxs+1)*sizeof(int));
       if (send_xadj == NULL) {
         Gen_Error(0, "fatal: insufficient memory");
         return 0;

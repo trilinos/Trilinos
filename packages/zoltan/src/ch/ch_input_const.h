@@ -35,6 +35,8 @@ extern int chaco_dist_graph(MPI_Comm, PARIO_INFO_PTR,
                             int **, float **, 
                             int *, float **, float **, float **);
 
+extern double read_val(FILE *, int *);
+extern int read_int(FILE *, int *);
 
 extern int CHECK_INPUT;
 

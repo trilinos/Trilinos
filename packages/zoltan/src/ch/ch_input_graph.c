@@ -9,14 +9,15 @@
 #include "ch_input_const.h"
 #include "dr_const.h"
 
-int chaco_input_graph(fin, inname, start, adjacency, nvtxs, vweights, eweights)
-FILE     *fin;			/* input file */
-char     *inname;		/* name of input file */
-int     **start;		/* start of edge list for each vertex */
-int     **adjacency;		/* edge list data */
-int      *nvtxs;		/* number of vertices in graph */
-int     **vweights;		/* vertex weight list data */
-float   **eweights;		/* edge weight list data */
+int chaco_input_graph(
+FILE     *fin,			/* input file */
+char     *inname,		/* name of input file */
+int     **start,		/* start of edge list for each vertex */
+int     **adjacency,		/* edge list data */
+int      *nvtxs,		/* number of vertices in graph */
+int     **vweights,		/* vertex weight list data */
+float   **eweights 		/* edge weight list data */
+)
 {
     char     *yo = "chaco_input_graph";
     extern int CHECK_INPUT;	/* print warnings or not? */
@@ -46,8 +47,6 @@ float   **eweights;		/* edge weight list data */
     int       ignored;		/* how many edges are ignored? */
     int       error_flag;	/* error reading input? */
     int       j;		/* loop counters */
-    int       read_int();
-    double    read_val();
 
     DEBUG_TRACE_START(0, yo);
 
