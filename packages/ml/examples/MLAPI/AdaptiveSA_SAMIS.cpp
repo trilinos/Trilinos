@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
       Prec.AdaptCompute(true, AdditionalCandidates);
     }
     else {
-      Prec.AdaptCompute(false, AdditionalCandidates - 1);
+      Prec.AdaptCompute(false, AdditionalCandidates);
     }
 
     MultiVector LHS(A.GetDomainSpace());
