@@ -51,7 +51,7 @@ Amesos_Lapack stores the lineaar system matrix as an
 Epetra_SerialDensMatrix. The linear problem is an Epetra_SerialDenseProblem.
 Amesos_Lapack factorizes the matrix using DGETRF().
 
-\date Sep-04
+\date Last updated on 16-Mar-05.
 
 \author Marzio Sala, 9214.
 
@@ -145,6 +145,19 @@ public:
     \return Integer error code, set to 0 if successful. 
    */
   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
+
+  //! Computes the eigenvalues of the linear system matrix using DGEEV.
+  /*!
+    \param Er - (Out) On processor zero only, it will contain the 
+                      real component of the eigenvalues.
+
+    \param Ei - (Out) On processor zero only, it will contain the 
+                      imaginary component of the eigenvalues.
+
+    \note Er and Ei must have been allocated so that the local
+    length on processor 0 equals the global size of the matrix.
+    */
+  int GEEV(Epetra_Vector& Er, Epetra_Vector& Ei);
 
   //! Print timing information
   void PrintTiming();

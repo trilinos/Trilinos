@@ -33,6 +33,7 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
+#include "Epetra_LAPACK.h"
 
 //=============================================================================
 Amesos_Lapack::Amesos_Lapack(const Epetra_LinearProblem &Problem) :
@@ -421,6 +422,82 @@ int Amesos_Lapack::DistributedToDense()
   ConTime_ += Time_->ElapsedTime();
   return 0;
 } 
+
+// ====================================================================== 
+int Amesos_Lapack::GEEV(Epetra_Vector& Er, Epetra_Vector& Ei)
+{
+
+  if (Time_ == 0) 
+    Time_ = new Epetra_Time( Comm() );
+
+  if (MyPID() == 0) {
+    AMESOS_CHK_ERR(DenseMatrix_.Reshape(1,1));
+    AMESOS_CHK_ERR(DenseMatrix_.Reshape(NumGlobalRows(),NumGlobalRows()));
+  }
+
+  // convert the matrix from sparse to dense
+  if (NumProc() == 1) {
+    AMESOS_CHK_ERR(SerialToDense());
+  }
+  else {
+    AMESOS_CHK_ERR(DistributedToDense());
+  }
+
+  // check whether allocated 
+  if (!RowImporter().SourceMap().SameAs(Matrix()->RowMatrixRowMap())) {
+    delete SerialMap_;
+    SerialMap_ = 0;
+    delete RowImporter_;
+    RowImporter_ = 0;
+  }
+
+  Epetra_Vector LocalEr(*SerialMap_);
+  Epetra_Vector LocalEi(*SerialMap_);
+
+  if (MyPID() == 0) {
+
+    int n = NumGlobalRows();
+    char jobvl = 'N'; /* V/N to calculate/not calculate left eigenvectors
+                         of matrix H.*/
+    char jobvr = 'N'; /* As above, but for right eigenvectors. */
+    int info = 0;
+    int ldvl = n;
+    int ldvr = n;
+
+    Er.PutScalar(0.0);
+    Ei.PutScalar(0.0);
+
+    Epetra_LAPACK LAPACK;
+
+    vector<double> work(1);
+    int lwork = -1;
+
+    LAPACK.GEEV(jobvl, jobvr, n, DenseMatrix_.A(), n, 
+                LocalEr.Values(), LocalEi.Values(), NULL,
+                ldvl, NULL, 
+                ldvr, &work[0], 
+                lwork, &info);
+
+    lwork = (int)work[0];
+    work.resize(lwork);
+    LAPACK.GEEV(jobvl, jobvr, n, DenseMatrix_.A(), n, 
+                LocalEr.Values(), LocalEi.Values(), NULL,
+                ldvl, NULL, 
+                ldvr, &work[0], 
+                lwork, &info);
+
+    if (info)
+      AMESOS_CHK_ERR(info);
+  }
+
+  // I am not really sure that exporting the results make sense... 
+  // It is just to be coherent with the other parts of the code.
+  Er.Export(LocalEr, RowImporter(), Insert);
+  Ei.Export(LocalEi, RowImporter(), Insert);
+
+  return(0);
+}
+
 
 // ================================================ ====== ==== ==== == =
 void Amesos_Lapack::PrintStatus()
