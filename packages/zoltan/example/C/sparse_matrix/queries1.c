@@ -45,8 +45,6 @@ ZOLTAN_EDGE_LIST_MULTI_FN get_edge_list_multi;
 
 int setup_zoltan(struct Zoltan_Struct *zz, Matrix A)
 {
-  int ierr;                      /* Error code */
-
   /* Set the load-balance method */
   /* You can change "RCB" to any Zoltan method below. */
 
@@ -134,7 +132,7 @@ int run_zoltan(struct Zoltan_Struct *zz, Matrix A)
 
   int *ptr;
   int myrank;
-  int ierr, k;
+  int k;
 
   /*
    * Call Zoltan to compute a new decomposition. 

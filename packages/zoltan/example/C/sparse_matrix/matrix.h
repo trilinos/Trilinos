@@ -13,3 +13,6 @@ typedef struct {
    Matrix_entry * entries; /* user must allocate space for the entries */
 } Matrix;
 
+int setup_zoltan(struct Zoltan_Struct *zz, Matrix A);
+int run_zoltan(struct Zoltan_Struct *zz, Matrix A);
+

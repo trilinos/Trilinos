@@ -13,6 +13,7 @@
 
 
 #include <stdio.h> 
+#include <stdlib.h> 
 #include "mpi.h"     /* Zoltan requires MPI. */
 #include "zoltan.h"  /* always include this header for for Zoltan */
 #include "matrix.h"  /* data structure for this example only */
@@ -33,7 +34,7 @@ int main(int argc, char *argv[])
   /* Local declarations. */
   struct Zoltan_Struct *zz;
   float  version;
-  int    i, j, k, col; 
+  int    k, col; 
   int    myrank, nproc;
   int    max_nnz, error;
 
