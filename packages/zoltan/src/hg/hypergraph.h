@@ -211,8 +211,6 @@ float Zoltan_HG_hcut_size_total (HGraph *, Partition);
 int Zoltan_HG_Scale_HGraph_Weight (ZZ *, HGraph *, float *, int);
 int Zoltan_HG_Scale_Graph_Weight  (ZZ *, Graph *, float *, int);
 float sim (HGraph *, int, int);
-float sim_scale (HGraph *, int, int, float);
-void sim_check (HGraph *, Graph *);
 
 /* Matching functions */
 int Zoltan_HG_Matching (ZZ *, HGraph *, Matching, HGPartParams *, int*);

@@ -162,7 +162,7 @@ int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
 */
 
 float sim (HGraph *hg, int a, int b)
-{ int    i, j, edge, pins, end, scale=1;
+{ int    i, j, edge, pins, end;
   float  weight, sim=0.0;
 
   /* First calculate the edge weight of the graph between a and b */
@@ -179,47 +179,7 @@ float sim (HGraph *hg, int a, int b)
         weight *= hg->ewgt[edge];
       sim += weight;
   } }
-  /* Now scale the edge weight...currently only scaling option 1 implemented */
-  if (hg->vwgt && scale>0)
-  { if (hg->vwgt[a]<=(float)0.0 || hg->vwgt[b]<=(float)0.0)
-      sim = FLT_MAX/10.0;
-    else if (scale == 1)
-      sim = sim/(hg->vwgt[a]*hg->vwgt[b]);
-    else if (scale == 2)
-      sim = sim/(hg->vwgt[a]+hg->vwgt[b]);
-    else if (scale == 3)
-      sim = sim/MAX(hg->vwgt[a],hg->vwgt[b]);
-    else if (scale == 4)
-      sim = sim/MIN(hg->vwgt[a],hg->vwgt[b]);
-  }
   return sim;
-}
-
-float sim_scale (HGraph *hg, int a, int b, float sim)
-{ int scale=1;
-
-  if (hg->vwgt && scale>0)
-  { if (hg->vwgt[a]<=(float)0.0 || hg->vwgt[b]<=(float)0.0)
-      sim = FLT_MAX/10.0;
-    else if (scale == 1)
-      sim = sim/(hg->vwgt[a]*hg->vwgt[b]);
-    else if (scale == 2)
-      sim = sim/(hg->vwgt[a]+hg->vwgt[b]);
-    else if (scale == 3)
-      sim = sim/MAX(hg->vwgt[a],hg->vwgt[b]);
-    else if (scale == 4)
-      sim = sim/MIN(hg->vwgt[a],hg->vwgt[b]);
-  }
-  return sim;
-}
-
-void sim_check (HGraph *hg, Graph *g)
-{ int i, j;
-  for (i=0; i<g->nVtx; i++)
-  { for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
-     if ((fabs(g->ewgt[j] - sim(hg,i,g->neigh[j]))) > EPS*(g->ewgt[j]))
-       printf("%d %d %.20f %.20f\n",i,g->neigh[j],g->ewgt[j],sim(hg,i,g->neigh[j]));
-  }
 }
 
 /****************************************************************************/

@@ -69,70 +69,52 @@ int Zoltan_HG_Matching (
   Matching match,
   HGPartParams *hgp,
   int *limit)
-{ int   ierr, need_graph ;
+{ int   ierr, need_graph=0 ;
   char  *yo = "Zoltan_HG_Matching";
   float *old_ewgt=NULL, *new_ewgt;
   Graph g;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  /* temporary code while graphs are replaced by hypergraphs */
-  need_graph = 0 ;
-  if (hgp->matching == matching_lhm)
-  {
-      need_graph = 1 ;
-      Zoltan_HG_Graph_Init (&g) ;
-      ierr = Zoltan_HG_HGraph_to_Graph (zz, hg, &g) ;
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-         {
-         Zoltan_HG_Graph_Free (&g) ;
-         return ierr ;
-         }
-/*
-    graph_connected_components (g.nVtx,g.nindex,g.neigh,zz->Debug_Level);
-*/
-    /* Scaling the edge weights */
-    if (g.vwgt && hgp->ews>0)
-    { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (g.nEdge*sizeof(float))))
-      { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_MEMERR;
-      }
-      Zoltan_HG_Scale_Graph_Weight (zz, &g, new_ewgt,hgp->ews);
-      old_ewgt = g.ewgt;
-      g.ewgt = new_ewgt;
+  /* Scale the weight of the edges */
+  if (hg->vwgt && hgp->ews)
+  { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (hg->nEdge*sizeof(float))))
+    { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return ZOLTAN_MEMERR;
     }
-/*
-    sim_check(hg,&g);
-*/
+    Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt, hgp->ews);
+    old_ewgt = hg->ewgt;
+    hg->ewgt = new_ewgt;
   }
 
-  /* Call matching routine specified by parameters. */
-  ierr = hgp->matching(zz,hg,&g,match,limit);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    goto End;
+  /* temporary code while graphs are replaced by hypergraphs */
+  if (hgp->matching == matching_lhm)
+  { need_graph = 1 ;
+    Zoltan_HG_Graph_Init (&g) ;
+    ierr = Zoltan_HG_HGraph_to_Graph (zz, hg, &g) ;
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+      goto End;
   }
+
+  /* Do the matching */
+  ierr = hgp->matching(zz,hg,&g,match,limit);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+    goto End;
 
   /* Optimization */
   if (hgp->matching_opt)
     ierr = hgp->matching_opt (zz,hg,&g,match,limit);
 
-  /* compare matching weight to an upper bound */
-/*
-  if (g.ewgt && zz->Debug_Level>=2)
-    check_upper_bound_of_matching_weight (&g,zz, match);
-*/
-
 End:
 /* more temporary code while graphs are being replaced by hypergraphs */
   if (need_graph == 1)
-  { if (g.vwgt && hgp->ews)
-    { g.ewgt = old_ewgt;
-      ZOLTAN_FREE ((void **) &new_ewgt);
-    }
     Zoltan_HG_Graph_Free(&g) ;
+  /* Restore the old edge weights */
+  if (hg->vwgt && hgp->ews)
+  { hg->ewgt = old_ewgt;
+    ZOLTAN_FREE ((void **) &new_ewgt);
   }
-
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
@@ -310,7 +292,6 @@ static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
                {
                if ((sim=sims[(partner=hg->hvertex[k])]) > 0.0)
                    {
-                   sim = sim_scale(hg,vertex,partner,sim);
                    if (sim > max_weight)
                        {
                        pstack = 1 ;
@@ -532,8 +513,7 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
           for (k=hg->hindex[edge]; k<hg->hindex[edge+1]; k++)
           { neighbor = hg->hvertex[k];
             if (sims[neighbor] > 0.0)
-            { sims[neighbor] = sim_scale(hg,vertex,neighbor,sims[neighbor]);
-              if (sims[neighbor] > max_weight)
+            { if (sims[neighbor] > max_weight)
               { max_weight = sims[neighbor];
                 next_vertex = neighbor;
               }
