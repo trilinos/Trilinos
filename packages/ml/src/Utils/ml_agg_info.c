@@ -557,123 +557,9 @@ void ML_print_dash_line( int mypid )
     printf( "*ML* ------------------------- : "
 	    "------------------------------------------\n" );
 }
-#ifdef ERASE_THIS_ONE
-/* ======================================================================== */
-/*!
- \brief perform some analysis of the aggregates (number of nodes and on
- diameter, of geometrical informations are provided)
 
- Parameters:
- \in N_fine: number of local nodes
- \in N_aggregates: number of local aggregates
- \in graph_decomposition: integer vector of size N_fine, containing the
-                           global number of the aggregate
-
-*/
-/* ------------------------------------------------------------------------ */
-	       
-void ML_Aggregate_Analyze( int N_fine,
-			   int N_aggregates,
-			   int graph_decomposition[], int local_or_global,
-			   double x[], double y[], double z[],
-			   double V[], ML_Comm *comm,
-			   double xm[], double ym[], double zm[],
-			   double Vm[] )
-{
-
-  int i;
-  int min_loc_aggre, max_loc_aggre;
-  double avg_loc_aggre, std_loc_aggre;
-  double R[N_aggregates];
-  double H[N_aggregates];
-  double dmin, dmax, davg, dstd;
-  int nodes_per_aggregate[N_aggregates];
-
-  
-  /* ------------------- execution begins --------------------------------- */
-
-  switch( local_or_global ) {
-  case ML_LOCAL_INDICES :
-    ML_Aggregate_CountLocal( N_fine, graph_decomposition,
-			     N_aggregates, nodes_per_aggregate );
-    break;
-
-  case ML_GLOBAL_INDICES:
-    
-    /**************/
-    /* to be done */
-    /**************/
-
-  default:
-    fprintf( stderr,
-	     "*ML*ERR* input parameter 4 has an incorrect value (%d)\n"
-	     "*ML*ERR* (file %s, line %d)\n",
-	     local_or_global,
-	     __FILE__,
-	     __LINE__ );
-  }
-  
-  /* start printing out informations in a fancy way */
-
-  if( comm->ML_mypid == 0 ) {
-
-    ML_print_dash_line(comm->ML_mypid);
-    printf( "*ML* %25s :        min        avg        max"
-	    "     total\n", "quantity" );
-    printf( "*ML* %25s :          \\---- over procs ----/ "
-	    "    or std\n", "" );
-    ML_print_dash_line(comm->ML_mypid);
-    
-  }
-  
-  ML_Aggregate_AnalyzeLocalGraphDec( N_aggregates,
-				     nodes_per_aggregate,
-				     &min_loc_aggre,
-				     &max_loc_aggre,
-				     &avg_loc_aggre,
-				     &std_loc_aggre,
-				      comm );
-
-  if( comm->ML_mypid == 0 ) 
-
-    printf( "*ML* %25s :   % 8d   % 8d   % 8d  % 8d\n",
-	    "nodes/aggregate", min_loc_aggre, avg_loc_aggre,
-	    max_loc_aggre, std_loc_aggre );
-
-  /* compute the radius of aggregates. Here I suppose that the problem
-     is at least 1D. Actually, it can be 2D or 3D --- depending on
-     how many pointers are NULL. This is handled by the called
-     functions. */
-
-  /* compute the volume of each aggregate, defined as the sum of the
-     dual-cell volumes for each node of the aggregate */
-  
-  if( V != NULL ) {
-
-    ML_Aggregate_ComputeVolume( N_fine, N_aggregates,
-				graph_decomposition,
-				local_or_global, V, Vm );
-	
-    ML_Aggregate_AnalyzeVector( N_aggregates, V, &dmin, &dmax, &davg,
-			       &dstd, comm );
-    
-    if( comm->ML_mypid == 0 ) {
-      printf( "*ML* %25s :   %.2e   %.2e   %.2e  %.2e\n",
-	      "volume/aggregate",
-	      dmin, davg, dmax, dstd );
-      
-    }
-  }
-  
-  ML_print_dash_line( comm->ML_mypid );
-
-  return;
-    
-} /* ML_Aggregate_Analyze */
-#endif
-
-ML_Aggregate_CountLocal( int N_fine, int graph_decomposition[],
-			 int N_aggregates, int nodes_per_aggregate[] )
+void ML_Aggregate_CountLocal( int N_fine, int graph_decomposition[],
+			      int N_aggregates, int nodes_per_aggregate[] )
 
 {
   int i, j;  
@@ -1226,7 +1112,6 @@ static int get_max_dep_line( int Nrows, int ia[], int ja[],
   
 */
 /* ------------------------------------------------------------------------ */
-
 
 int ML_Compute_AggregateGraphRadius( int Nrows, int ia[], int ja[],
 				     int dep [],
