@@ -59,7 +59,7 @@ octree_load_balancer_algorithm()
               {
                 if number of object in list > max # of objects allowed
 		  oct_terminal_refine /* max number of recursive calls to 
-		             	       * oct_termial_refine is 10
+		             	       * oct_terminal_refine is 10
 				       */
               }
             } /* end of oct_terminal_refine */

@@ -1,13 +1,13 @@
                            III Octree Structure
 3.1 Describing the Octree Structure
-   The octree structure is an abstract data type in which a region in
-3-space is evenly divided into 8 subregions. In its current
+   The octree structure is an abstract data type in which an area in
+3-space is evenly divided into 8 subdomains. In its current
 implementation, the octree used begins with a root node that can be
-thought of as representing a bounding box of the total region being
+thought of as representing a bounding box of the total area being
 examined [4] [6] [7] [9]. Therefore, there should not exist objects
 having coordinates greater than the maximum bounds, nor objects having
 coordinates less than the minimum bounds of the root node. There
-should be only one root node representing the total region, called the
+should be only one root node representing the total area, called the
 "global root," and knowledge of this root should be given to all the
 processors if the octree is a distributed octree.
 
@@ -33,7 +33,7 @@ corresponds to the space filling curve specified by the user.
 
    A child node need not be on the same processor as its parent
 node. If child nodes exits on a separate processor, then the octree is
-said to be distributed [7] [9]. In this manner, subregions being
+said to be distributed [7] [9]. In this manner, subdomains being
 worked on are partitioned among different processors. Information
 gathered on each subdomain assigned to an octant, combined with octree
 ordering and traversal algorithms, can be used to balance work loads
@@ -381,15 +381,15 @@ during the partitioning phase of the load balancer. The user has to
 decide which method best suits the needs of the application. See
 section 3.3 for more information on space filling curves.
    Parameter 2 is used to tell the maximum number of objects to be
-associated with an octant. With parameter 2 equal to 1, each object is
+associated with an octant. If parameter 2 equals 1, each object is
 placed individually into a partition. This is a slower method, but it
 gives the best balance between processors. With higher numbers, groups
 of objects are placed in a partition as one set. If a group does not
 fit perfectly in a partition, a decision is made by the partitioner
 whether to assign it to one partition or another. This decision is
-made based on the cost of the whole group. For large numbers of objects
-being balanced, it is recommended that a higher number be used, but
-the default is set to 1 to try and give the best balancing.
+made based on the cost of the whole group. For large numbers of
+objects being balanced, it is recommended that a higher number be
+used, but the default is set to 1 to try and give the best balancing.
    The last parameter deals with statistics on the load balancer. An
 input of 0 means the user does not wish to see the statistics output,
 and no information on the load balancer is given. The default, input
@@ -397,7 +397,7 @@ of 1, gives a general overview of what happened during load
 balancing. The Total time, in seconds, used by the load balancer is
 given along with averages on the partitioner iterations, number of
 objects sent and received during different parts of the code, the load
- averages, and the times for startup, balancing, and
+averages, and the times for startup, balancing, and
 communication. This gives the user a general idea of what happened. An
 input of 2 causes information to be printed out on each of the
 processors used. Global averages and averages per processor are
@@ -420,9 +420,9 @@ maximum coordinates bounds of all objects that are to be
 balanced. get_bounds() first retrieves the total number of local
 objects on an individual processor. Using this information, it then
 iterates through the list of objects storing all important information
-inside a "object list," as well as calculating the min and max
-coordinates of all local objects. The "object list" is a linked list
-of Region structures that hold information on the objects, such as a
+inside an object list, as well as calculating the min and max
+coordinates of all local objects. The object list is a linked list of
+Region structures that hold information on the objects, such as a
 LB_Tag, coordinate location, and weight. Nodes of the list will be
 placed into octants once the initial octree has been built. The global
 min and max are found using the MPI function MPI_Allreduce(). The
@@ -461,8 +461,8 @@ of two octants, the default is that the object belongs to the lowered
 numbered octant. Subdomains were calculated on each processor so that
 knowledge of subdomain ownership would be known globally. Each
 processor then begins fitting, based on coordinate information, the
-object from their "object list" into their subdomain. Any objects
-whose coordinates are not within any local roots' subdomains are then
+object from their object list into their subdomain. Any objects whose
+coordinates are not within any local roots' subdomains are then
 considered to be orphans. Orphans are then migrated to the appropriate
 processor using the information calculated when creating the tree and
 the function migreg_migrate_orphans().
@@ -487,9 +487,9 @@ with the dfs_partition() algorithm, a better partitioning can be
 created. This is especially true if the initial mesh partition is not
 close to an octree partitioning. Still individual results will vary,
 since this does not guarantee contiguous partition regions. The faster
-ordering system, the Morton indexing scheme, has a greater
-possibility for discontinuous subdomain regions after load balancing,
-than compared to the more expensive ordering system, the Hilbert Space
+ordering system, the Morton indexing scheme, has a greater possibility
+for discontinuous subdomain regions after load balancing, than
+compared to the more expensive ordering system, the Hilbert Space
 Filling Curve. A trade-off occurs between quality of partitions versus
 cost. It is up to the user to decide what is more important, thus
 deciding which ordering system to use.
