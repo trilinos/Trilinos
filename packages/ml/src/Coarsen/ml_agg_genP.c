@@ -633,8 +633,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      if ((max_eigen < -666.) && (max_eigen > -667)) {
 
-      if ( ag->spectral_radius_scheme == 1 ) /* compute it using CG */
-      {
+       switch( ag->spectral_radius_scheme ) {
+
+       case 1:  /* compute it using CG */
+	 
          kdata = ML_Krylov_Create( ml->comm );
          ML_Krylov_Set_PrintFreq( kdata, 0 );
          ML_Krylov_Set_ComputeEigenvalues( kdata );
@@ -664,39 +666,65 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 	 */
          widget.omega  = ag->smoothP_damping_factor / max_eigen;
          ml->spectral_radius[level] = max_eigen;
-      }
-      else if( ag->spectral_radius_scheme == 2 ) {
-	/* Use Anasazi */
-	ML_Anasazi_Get_SpectralNorm_Anasazi( Amat, 10, 1e-5,
-					     ML_FALSE, ML_TRUE, &max_eigen);
-	Amat->lambda_max = max_eigen; 
-	Amat->lambda_min = -12345.6789;
-	if ( max_eigen <= 0.0 ) {
-	  printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
-	  max_eigen = 1.0;
-	}
-	/*
-	if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
-	  printf("Gen_Prolongator : max eigen = %e \n", max_eigen);
-	*/
-	widget.omega  = ag->smoothP_damping_factor / max_eigen;
-	ml->spectral_radius[level] = max_eigen;
-	
-      }
-      else   /* using matrix max norm */
-      {
+
+	 break;
+
+       case 2: /* Use Anasazi */
+	 ML_Anasazi_Get_SpectralNorm_Anasazi( Amat, 10, 1e-5,
+					      ML_FALSE, ML_TRUE, &max_eigen);
+	 Amat->lambda_max = max_eigen; 
+	 Amat->lambda_min = -12345.6789;
+	 if ( max_eigen <= 0.0 ) {
+	   printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+	   max_eigen = 1.0;
+	 }
+	 /*
+	   if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
+	   printf("Gen_Prolongator : max eigen = %e \n", max_eigen);
+	 */
+	 widget.omega  = ag->smoothP_damping_factor / max_eigen;
+	 ml->spectral_radius[level] = max_eigen;
+
+	 break;
+
+       case 3: /* use ML's power method */
+	 kdata = ML_Krylov_Create( ml->comm );
+	 ML_Krylov_Set_PrintFreq( kdata, 0 );
+	 ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
+	 ML_Krylov_Set_Amatrix(kdata, Amat);
+	 ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
+	 max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+	 Amat->lambda_max = max_eigen; 
+	 Amat->lambda_min = kdata->ML_eigen_min; 
+	 ML_Krylov_Destroy( &kdata );
+	 if ( max_eigen <= 0.0 )
+	   {
+	     printf("Gen_Prolongator warning : max eigen <= 0.0 \n");
+	     max_eigen = 1.0;
+	   }
+         widget.omega  = ag->smoothP_damping_factor / max_eigen;
+         ml->spectral_radius[level] = max_eigen;
+	 
+	 break;
+
+       default: /* using matrix max norm */
          max_eigen = ML_Operator_MaxNorm(Amat, ML_TRUE);
          widget.omega  = ag->smoothP_damping_factor / max_eigen;
          ml->spectral_radius[level] = max_eigen;
-      }
-    }
-    else { /* no need to compute eigenvalue .... we already have it */
-      widget.omega  = ag->smoothP_damping_factor / max_eigen;
-      ml->spectral_radius[level] = max_eigen;
-    }
-
+	 break;
+	 
+       }
+       
+     }
+     else { /* no need to compute eigenvalue .... we already have it */
+       widget.omega  = ag->smoothP_damping_factor / max_eigen;
+       ml->spectral_radius[level] = max_eigen;
+     }
+     
      if ( ml->comm->ML_mypid == 0 && 7 < ML_Get_PrintLevel()) {
-       printf("Gen_Prolongator : Max eigenvalue = %e\n", max_eigen);
+       printf("Gen_Prolongator (level %d) : Max eigenvalue = %e\n",
+	      ag->cur_level,
+	      max_eigen);
      }
      
    }
@@ -2077,8 +2105,10 @@ int ML_Gen_MultiLevelHierarchy_UsingAggregation(ML *ml, int start,
    
    idata = 0;
    idata = ML_gmax_int(idata, ml->comm);
-   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
+   /*
+   if ( ml->comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) 
       ML_Aggregate_Print( ml_ag );
+   */
 #ifdef ML_TIMING
    t0 = GetClock();
 #endif

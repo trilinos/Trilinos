@@ -593,6 +593,19 @@ int ML_Aggregate_Set_SpectralNormScheme_Anasazi( ML_Aggregate *ag)
    return 0;
 }
 
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_SpectralNormScheme_PowerMethod( ML_Aggregate *ag)
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_SpectralNormScheme_PowerMethod : wrong object. \n");
+      exit(-1);
+   }
+   ag->spectral_radius_scheme = 3;
+   return 0;
+}
+
 /* ************************************************************************* */
 /* set prolongator smoother type (diagonal, block diagonal = 0, 1)      */
 /* -------------------------------------------------------------------- */
@@ -859,7 +872,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    }
 
    if (mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
-      printf("ML_Aggregate_Coarsen begins \n");
+      printf("ML_Aggregate_Coarsen (level %d) begins\n", ag->cur_level);
 
 /* #### moved this somewhere else ?? */
    Amatrix->num_PDEs = ag->num_PDE_eqns;
