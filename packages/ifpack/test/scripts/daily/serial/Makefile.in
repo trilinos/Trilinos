@@ -80,8 +80,10 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_compiler_options.m4 \
+	$(top_srcdir)/config/tac_arg_enable_default_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_enable_option.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -139,8 +141,16 @@ EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
+HAVE_IFPACK_AMESOS_FALSE = @HAVE_IFPACK_AMESOS_FALSE@
+HAVE_IFPACK_AMESOS_TRUE = @HAVE_IFPACK_AMESOS_TRUE@
+HAVE_IFPACK_AZTECOO_FALSE = @HAVE_IFPACK_AZTECOO_FALSE@
+HAVE_IFPACK_AZTECOO_TRUE = @HAVE_IFPACK_AZTECOO_TRUE@
+HAVE_IFPACK_METIS_FALSE = @HAVE_IFPACK_METIS_FALSE@
+HAVE_IFPACK_METIS_TRUE = @HAVE_IFPACK_METIS_TRUE@
 HAVE_IFPACK_TEUCHOS_FALSE = @HAVE_IFPACK_TEUCHOS_FALSE@
 HAVE_IFPACK_TEUCHOS_TRUE = @HAVE_IFPACK_TEUCHOS_TRUE@
+HAVE_IFPACK_TRIUTILS_FALSE = @HAVE_IFPACK_TRIUTILS_FALSE@
+HAVE_IFPACK_TRIUTILS_TRUE = @HAVE_IFPACK_TRIUTILS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 INSTALL_DATA = @INSTALL_DATA@

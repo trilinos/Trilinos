@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP HAVE_IFPACK_TEUCHOS_TRUE HAVE_IFPACK_TEUCHOS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP HAVE_IFPACK_AZTECOO_TRUE HAVE_IFPACK_AZTECOO_FALSE HAVE_IFPACK_TRIUTILS_TRUE HAVE_IFPACK_TRIUTILS_FALSE HAVE_IFPACK_TEUCHOS_TRUE HAVE_IFPACK_TEUCHOS_FALSE HAVE_IFPACK_AMESOS_TRUE HAVE_IFPACK_AMESOS_FALSE HAVE_IFPACK_METIS_TRUE HAVE_IFPACK_METIS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -875,6 +875,24 @@ Optional Features:
   --enable-mpi            MPI support
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
+  --enable-aztecoo        Enable AztecOO support. AztecOO, a Trilinos package.
+                          (default is yes unless the
+                          --disable-default-packages option is used
+  --enable-triutils       Enable TRIUTILS support. Triutils, a Trilinos
+                          package, is used if some IFPACK examples to
+                          construct the linear system. (default is no)
+  --enable-teuchos        Enable TEUCHOS support. (default is no)
+  --enable-amesos         Enable AMESOS support. Amesos, a Trilinos package.
+                          (default is no)
+  --enable-ifpack-metis   Enable Ifpack support for METIS. METIS can be used
+                          to decompose the local graph into subgraphs. Note 1:
+                          METIS is a third party library. As such, configure
+                          assumes that it has already been built. Note 2: You
+                          must also specify the location of headers and
+                          libraries like, for instance: configure
+                          --with-libs="<other libraries> -lmetis"
+                          --with-ldflags="-L<METIS-library-path>" and
+                          --with-incdirs="<METIS-include-path>".
   --enable-ifpack-teuchos Enable Ifpack Teuchos::ParameterList interface.
                           Default is no. Requires Teuchos package.
   --enable-tests          Build tests for all Trilinos packages (not all
@@ -3796,7 +3814,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3799:" \
+echo "$as_me:3817:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6543,6 +6561,189 @@ fi
 
 
 # ------------------------------------------------------------------------
+# Checks for other Trilinos packages and external libraries
+# ------------------------------------------------------------------------
+
+
+# Check whether --enable-aztecoo or --disable-aztecoo was given.
+if test "${enable_aztecoo+set}" = set; then
+  enableval="$enable_aztecoo"
+  ac_cv_use_aztecoo=$enableval
+else
+  ac_cv_use_aztecoo=$ac_cv_use_default_packages
+fi;
+
+echo "$as_me:$LINENO: checking whether to use aztecoo" >&5
+echo $ECHO_N "checking whether to use aztecoo... $ECHO_C" >&6
+
+if test "X$ac_cv_use_aztecoo" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_IFPACK_AZTECOO
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_aztecoo" = "Xyes"; then
+  HAVE_IFPACK_AZTECOO_TRUE=
+  HAVE_IFPACK_AZTECOO_FALSE='#'
+else
+  HAVE_IFPACK_AZTECOO_TRUE='#'
+  HAVE_IFPACK_AZTECOO_FALSE=
+fi
+
+#
+
+# Check whether --enable-triutils or --disable-triutils was given.
+if test "${enable_triutils+set}" = set; then
+  enableval="$enable_triutils"
+  ac_cv_use_triutils=$enableval
+else
+  ac_cv_use_triutils=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use triutils" >&5
+echo $ECHO_N "checking whether to use triutils... $ECHO_C" >&6
+
+if test "X$ac_cv_use_triutils" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_IFPACK_TRIUTILS 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_triutils" = "Xyes"; then
+  HAVE_IFPACK_TRIUTILS_TRUE=
+  HAVE_IFPACK_TRIUTILS_FALSE='#'
+else
+  HAVE_IFPACK_TRIUTILS_TRUE='#'
+  HAVE_IFPACK_TRIUTILS_FALSE=
+fi
+
+#
+
+# Check whether --enable-teuchos or --disable-teuchos was given.
+if test "${enable_teuchos+set}" = set; then
+  enableval="$enable_teuchos"
+  ac_cv_use_teuchos=$enableval
+else
+  ac_cv_use_teuchos=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use teuchos" >&5
+echo $ECHO_N "checking whether to use teuchos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_teuchos" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_IFPACK_TEUCHOS 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_teuchos" = "Xyes"; then
+  HAVE_IFPACK_TEUCHOS_TRUE=
+  HAVE_IFPACK_TEUCHOS_FALSE='#'
+else
+  HAVE_IFPACK_TEUCHOS_TRUE='#'
+  HAVE_IFPACK_TEUCHOS_FALSE=
+fi
+
+#
+
+# Check whether --enable-amesos or --disable-amesos was given.
+if test "${enable_amesos+set}" = set; then
+  enableval="$enable_amesos"
+  ac_cv_use_amesos=$enableval
+else
+  ac_cv_use_amesos=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use amesos" >&5
+echo $ECHO_N "checking whether to use amesos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_amesos" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_IFPACK_AMESOS 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_amesos" = "Xyes"; then
+  HAVE_IFPACK_AMESOS_TRUE=
+  HAVE_IFPACK_AMESOS_FALSE='#'
+else
+  HAVE_IFPACK_AMESOS_TRUE='#'
+  HAVE_IFPACK_AMESOS_FALSE=
+fi
+
+
+# Check whether --enable-ifpack-metis or --disable-ifpack-metis was given.
+if test "${enable_ifpack_metis+set}" = set; then
+  enableval="$enable_ifpack_metis"
+  ac_cv_use_ifpack_metis=$enableval
+else
+  ac_cv_use_ifpack_metis=no
+fi;
+#
+echo "$as_me:$LINENO: checking whether to use ifpack-metis" >&5
+echo $ECHO_N "checking whether to use ifpack-metis... $ECHO_C" >&6
+#
+if test "X$ac_cv_use_ifpack_metis" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_IFPACK_METIS
+_ACEOF
+
+else
+ echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+#
+
+
+if test "X$ac_cv_use_ifpack_metis" != "Xno"; then
+  HAVE_IFPACK_METIS_TRUE=
+  HAVE_IFPACK_METIS_FALSE='#'
+else
+  HAVE_IFPACK_METIS_TRUE='#'
+  HAVE_IFPACK_METIS_FALSE=
+fi
+
+
+# ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
@@ -6557,10 +6758,10 @@ if test "${enable_ifpack_teuchos+set}" = set; then
 else
   ac_cv_use_ifpack_teuchos=no
 fi;
-
+#
 echo "$as_me:$LINENO: checking whether to use ifpack-teuchos" >&5
 echo $ECHO_N "checking whether to use ifpack-teuchos... $ECHO_C" >&6
-
+#
 if test "X$ac_cv_use_ifpack_teuchos" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
@@ -6573,7 +6774,7 @@ else
  echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
-
+#
 
 
 if test "X$ac_cv_use_ifpack_teuchos" != "Xno"; then
@@ -6780,7 +6981,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6783: \"$ac_link\") >&5
+(eval echo $as_me:6984: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6858,7 +7059,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6861: \"$ac_link\") >&5
+(eval echo $as_me:7062: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9594,7 +9795,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9597: \"$ac_link\") >&5
+(eval echo $as_me:9798: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9672,7 +9873,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9675: \"$ac_link\") >&5
+(eval echo $as_me:9876: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9871,7 +10072,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #		example/Makefile
 #		example/ifpack_hb/Makefile
 
-                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include test/Makefile test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
+                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include test/Makefile test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/AdditiveSchwarz/Makefile test/AdditiveSchwarz/Makefile.include test/CrsAdditiveSchwarz/Makefile test/CrsAdditiveSchwarz/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10011,6 +10212,41 @@ if test -z "${USE_ALTERNATE_AR_TRUE}" && test -z "${USE_ALTERNATE_AR_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"USE_ALTERNATE_AR\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"USE_ALTERNATE_AR\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_IFPACK_AZTECOO_TRUE}" && test -z "${HAVE_IFPACK_AZTECOO_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_AZTECOO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_IFPACK_AZTECOO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_IFPACK_TRIUTILS_TRUE}" && test -z "${HAVE_IFPACK_TRIUTILS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_TRIUTILS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_IFPACK_TRIUTILS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_IFPACK_TEUCHOS_TRUE}" && test -z "${HAVE_IFPACK_TEUCHOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_TEUCHOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_IFPACK_TEUCHOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_IFPACK_AMESOS_TRUE}" && test -z "${HAVE_IFPACK_AMESOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_AMESOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_IFPACK_AMESOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_IFPACK_METIS_TRUE}" && test -z "${HAVE_IFPACK_METIS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_METIS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_IFPACK_METIS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -10483,6 +10719,10 @@ do
   "test/IlukGraph/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/IlukGraph/Makefile.include" ;;
   "test/SetParameters/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SetParameters/Makefile" ;;
   "test/SetParameters/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/SetParameters/Makefile.include" ;;
+  "test/AdditiveSchwarz/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AdditiveSchwarz/Makefile" ;;
+  "test/AdditiveSchwarz/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/AdditiveSchwarz/Makefile.include" ;;
+  "test/CrsAdditiveSchwarz/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsAdditiveSchwarz/Makefile" ;;
+  "test/CrsAdditiveSchwarz/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/CrsAdditiveSchwarz/Makefile.include" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
   "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;
@@ -10651,8 +10891,16 @@ s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
+s,@HAVE_IFPACK_AZTECOO_TRUE@,$HAVE_IFPACK_AZTECOO_TRUE,;t t
+s,@HAVE_IFPACK_AZTECOO_FALSE@,$HAVE_IFPACK_AZTECOO_FALSE,;t t
+s,@HAVE_IFPACK_TRIUTILS_TRUE@,$HAVE_IFPACK_TRIUTILS_TRUE,;t t
+s,@HAVE_IFPACK_TRIUTILS_FALSE@,$HAVE_IFPACK_TRIUTILS_FALSE,;t t
 s,@HAVE_IFPACK_TEUCHOS_TRUE@,$HAVE_IFPACK_TEUCHOS_TRUE,;t t
 s,@HAVE_IFPACK_TEUCHOS_FALSE@,$HAVE_IFPACK_TEUCHOS_FALSE,;t t
+s,@HAVE_IFPACK_AMESOS_TRUE@,$HAVE_IFPACK_AMESOS_TRUE,;t t
+s,@HAVE_IFPACK_AMESOS_FALSE@,$HAVE_IFPACK_AMESOS_FALSE,;t t
+s,@HAVE_IFPACK_METIS_TRUE@,$HAVE_IFPACK_METIS_TRUE,;t t
+s,@HAVE_IFPACK_METIS_FALSE@,$HAVE_IFPACK_METIS_FALSE,;t t
 s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
 s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t

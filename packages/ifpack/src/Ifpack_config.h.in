@@ -35,11 +35,23 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
+/* Define if want to build with amesos enabled */
+#undef HAVE_IFPACK_AMESOS
+
+/* Define if want to build aztecoo */
+#undef HAVE_IFPACK_AZTECOO
+
+/* Define if you want to build Ifpack's ParameterList interface */
+#undef HAVE_IFPACK_METIS
+
 /* Define if want to build ifpack-tests */
 #undef HAVE_IFPACK_TESTS
 
 /* Define if you want to build Ifpack's ParameterList interface */
 #undef HAVE_IFPACK_TEUCHOS
+
+/* Define if want to build with triutils enabled */
+#undef HAVE_IFPACK_TRIUTILS
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H

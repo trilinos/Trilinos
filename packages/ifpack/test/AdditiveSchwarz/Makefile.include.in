@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(TestAdditiveSchwarz_SOURCES)
+SOURCES = $(TestCrsAdditiveSchwarz_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = TestAdditiveSchwarz$(EXEEXT)
+noinst_PROGRAMS = TestCrsAdditiveSchwarz$(EXEEXT)
 subdir = test/AdditiveSchwarz
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.include.am \
 	$(srcdir)/Makefile.include.in
@@ -99,22 +99,23 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Ifpack_config.h
 CONFIG_CLEAN_FILES = Makefile
 PROGRAMS = $(noinst_PROGRAMS)
-am_TestAdditiveSchwarz_OBJECTS =  \
-	TestAdditiveSchwarz-cxx_main.$(OBJEXT)
-TestAdditiveSchwarz_OBJECTS = $(am_TestAdditiveSchwarz_OBJECTS)
+am_TestCrsAdditiveSchwarz_OBJECTS =  \
+	TestCrsAdditiveSchwarz-cxx_main.$(OBJEXT)
+TestCrsAdditiveSchwarz_OBJECTS = $(am_TestCrsAdditiveSchwarz_OBJECTS)
 @HAVE_IFPACK_TRIUTILS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../triutils/src/libtriutils.a
 am__DEPENDENCIES_2 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES =  \
+@AMDEP_TRUE@	./$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(TestAdditiveSchwarz_SOURCES)
-DIST_SOURCES = $(TestAdditiveSchwarz_SOURCES)
+SOURCES = $(TestCrsAdditiveSchwarz_SOURCES)
+DIST_SOURCES = $(TestCrsAdditiveSchwarz_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -240,15 +241,15 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-TestAdditiveSchwarz_SOURCES = $(srcdir)/cxx_main.cpp
-TestAdditiveSchwarz_DEPENDENCIES = $(IFPACK_LIBS)
-TestAdditiveSchwarz_CXXFLAGS = $(IFPACK_INCLUDES)  \
+TestCrsAdditiveSchwarz_SOURCES = $(srcdir)/cxx_main.cpp
+TestCrsAdditiveSchwarz_DEPENDENCIES = $(IFPACK_LIBS)
+TestCrsAdditiveSchwarz_CXXFLAGS = $(IFPACK_INCLUDES)  \
 	-I$(top_srcdir)/../triutils/src \
 	-I$(top_builddir)/../triutils/src
 
 @HAVE_IFPACK_TRIUTILS_FALSE@triutils_lib = 
 @HAVE_IFPACK_TRIUTILS_TRUE@triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a 
-TestAdditiveSchwarz_LDADD = $(triutils_lib) \
+TestCrsAdditiveSchwarz_LDADD = $(triutils_lib) \
 	$(IFPACK_LIBS) \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
@@ -290,9 +291,9 @@ Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-TestAdditiveSchwarz$(EXEEXT): $(TestAdditiveSchwarz_OBJECTS) $(TestAdditiveSchwarz_DEPENDENCIES) 
-	@rm -f TestAdditiveSchwarz$(EXEEXT)
-	$(CXXLINK) $(TestAdditiveSchwarz_LDFLAGS) $(TestAdditiveSchwarz_OBJECTS) $(TestAdditiveSchwarz_LDADD) $(LIBS)
+TestCrsAdditiveSchwarz$(EXEEXT): $(TestCrsAdditiveSchwarz_OBJECTS) $(TestCrsAdditiveSchwarz_DEPENDENCIES) 
+	@rm -f TestCrsAdditiveSchwarz$(EXEEXT)
+	$(CXXLINK) $(TestCrsAdditiveSchwarz_LDFLAGS) $(TestCrsAdditiveSchwarz_OBJECTS) $(TestCrsAdditiveSchwarz_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -300,7 +301,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -318,21 +319,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-TestAdditiveSchwarz-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestAdditiveSchwarz_CXXFLAGS) $(CXXFLAGS) -MT TestAdditiveSchwarz-cxx_main.o -MD -MP -MF "$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Tpo" -c -o TestAdditiveSchwarz-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Tpo" "$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Po"; else rm -f "$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='TestAdditiveSchwarz-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Po' tmpdepfile='$(DEPDIR)/TestAdditiveSchwarz-cxx_main.TPo' @AMDEPBACKSLASH@
+TestCrsAdditiveSchwarz-cxx_main.o: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestCrsAdditiveSchwarz_CXXFLAGS) $(CXXFLAGS) -MT TestCrsAdditiveSchwarz-cxx_main.o -MD -MP -MF "$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Tpo" -c -o TestCrsAdditiveSchwarz-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Tpo" "$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Po"; else rm -f "$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='TestCrsAdditiveSchwarz-cxx_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Po' tmpdepfile='$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestAdditiveSchwarz_CXXFLAGS) $(CXXFLAGS) -c -o TestAdditiveSchwarz-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestCrsAdditiveSchwarz_CXXFLAGS) $(CXXFLAGS) -c -o TestCrsAdditiveSchwarz-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
 
-TestAdditiveSchwarz-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestAdditiveSchwarz_CXXFLAGS) $(CXXFLAGS) -MT TestAdditiveSchwarz-cxx_main.obj -MD -MP -MF "$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Tpo" -c -o TestAdditiveSchwarz-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Tpo" "$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Po"; else rm -f "$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='TestAdditiveSchwarz-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestAdditiveSchwarz-cxx_main.Po' tmpdepfile='$(DEPDIR)/TestAdditiveSchwarz-cxx_main.TPo' @AMDEPBACKSLASH@
+TestCrsAdditiveSchwarz-cxx_main.obj: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestCrsAdditiveSchwarz_CXXFLAGS) $(CXXFLAGS) -MT TestCrsAdditiveSchwarz-cxx_main.obj -MD -MP -MF "$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Tpo" -c -o TestCrsAdditiveSchwarz-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Tpo" "$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Po"; else rm -f "$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='TestCrsAdditiveSchwarz-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.Po' tmpdepfile='$(DEPDIR)/TestCrsAdditiveSchwarz-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestAdditiveSchwarz_CXXFLAGS) $(CXXFLAGS) -c -o TestAdditiveSchwarz-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestCrsAdditiveSchwarz_CXXFLAGS) $(CXXFLAGS) -c -o TestCrsAdditiveSchwarz-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
