@@ -71,6 +71,18 @@ communication operations allow for any object to be sent to any destination
 processor. However, if the objects are grouped in such a way that all those
 being sent to a particular processor are consecutive, the time and
 memory of an additional copy is avoided.
+<p> A similar function
+<b><a href="#Zoltan_Comm_Do_Reverse">Zoltan_Comm_Do_Reverse</a></b>
+allows for reversing the communication plan to send back messages to the originators.
+<p> In order to allow overlap between communication and processing, POST and WAIT
+variants of
+<b><a href="#Zoltan_Comm_Do">Zoltan_Comm_Do</a></b>
+and
+<b><a href="#Zoltan_Comm_Do_Reverse">Zoltan_Comm_Do_Reverse</a></b>
+are provided.  Communication is initialized by the POST. Then the user is free to
+continue processing. After the processing is complete the corresponding WAIT routine is called
+which completes when the communication is finished.  These routines use the same calling
+arguments as the corresponding non POST and WAIT routines for convenience.
 <p>All the functions in the unstructured communication library return integer
 <a href="../ug_html/ug_interface.html#Error Codes">error codes</a> identical to those used by Zoltan.   A Fortran90 interface is not yet available.
 
@@ -107,9 +119,16 @@ memory of an additional copy is avoided.
 <blockquote><b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a>:&nbsp; </b>computes
 a communication plan for sending objects to destination processors.
 <br><b><a href="#Zoltan_Comm_Do">Zoltan_Comm_Do</a>:&nbsp; </b>uses a communication
-plan to send data objects to destination processors.&nbsp;
+plan to send data objects to destination processors.&nbsp; The POST and WAIT variants
+are
+<br>&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="#Zoltan_Comm_Do_Post">Zoltan_Comm_Do_Post</a></b> and
+<br>&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="#Zoltan_Comm_Do_Wait">Zoltan_Comm_Do_Wait</a>. </b>
 <br><b><a href="#Zoltan_Comm_Do_Reverse">Zoltan_Comm_Do_Reverse</a>:&nbsp;</b>
 performs the reverse (opposite) communication of <b><a href="#Zoltan_Comm_Do">Zoltan_Comm_Do</a></b>.
+&nbsp;The POST and WAIT variants are
+<br>&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="#Zoltan_Comm_Do_Reverse_Post">Zoltan_Comm_Do_Reverse_Post</a></b> and
+<br>&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="#Zoltan_Comm_Do_Reverse_Wait">Zoltan_Comm_Do_Reverse_Wait</a>.</b>
+
 <br><b><a href="#Zoltan_Comm_Resize">Zoltan_Comm_Resize</a>:&nbsp; </b>augments
 the plan to allow objects to be of variable sizes.&nbsp;
 <br><b><a href="#Zoltan_Comm_Destroy">Zoltan_Comm_Destroy</a>:</b>&nbsp; free memory
@@ -236,9 +255,18 @@ each of the objects to be sent.</td>
 <!------------------------------------------------------------------------->
 <hr>
 <a NAME="Zoltan_Comm_Do"></a>
+<a NAME="Zoltan_Comm_Do_Post"></a>
+<a NAME="Zoltan_Comm_Do_Wait"></a>
 <hr>
 int <b>Zoltan_Comm_Do</b>(struct Zoltan_Comm_Obj *<i>plan</i>,
 int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
+<br>
+nt <b>Zoltan_Comm_Do_Post</b>(struct Zoltan_Comm_Obj *<i>plan</i>,
+int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
+<br>
+nt <b>Zoltan_Comm_Do_Wait</b>(struct Zoltan_Comm_Obj *<i>plan</i>,
+int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
+
 <hr>The <b>Zoltan_Comm_Do</b> function performs the communication described
 in a communication plan built by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b>.
 Using the plan, it takes a buffer of object data to be sent and the size
@@ -310,8 +338,18 @@ more details.)</td>
 <!------------------------------------------------------------------------->
 <hr>
 <a NAME="Zoltan_Comm_Do_Reverse"></a>
+<a NAME="Zoltan_Comm_Do_Reverse_Post"></a>
+<a NAME="Zoltan_Comm_Do_Reverse_Wait"></a>
 <hr>
 int <b>Zoltan_Comm_Do_Reverse</b>(
+struct Zoltan_Comm_Obj *<i>plan</i>, int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>,
+int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
+<br>
+int <b>Zoltan_Comm_Do_Reverse_Post</b>(
+struct Zoltan_Comm_Obj *<i>plan</i>, int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>,
+int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
+<br>
+int <b>Zoltan_Comm_Do_Reverse_Wait</b>(
 struct Zoltan_Comm_Obj *<i>plan</i>, int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>,
 int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
 <hr>The <b>Zoltan_Comm_Do_Reverse</b> function performs communication based
