@@ -151,12 +151,14 @@ if test `expr $noar` = '1'
 then
 \rm -f etc/makefile.copy
 cat etc/makefile.${ARCH} | sed "s/xar/ar/" > etc/makefile.copy
+\rm -f etc/makefile.${ARCH}
+mv etc/makefile.copy etc/makefile.${ARCH}
 fi
 fi
 \rm -f .artemp
 #
 #
-grep "=" etc/makefile.copy \
+grep "=" etc/makefile.${ARCH} \
          |  grep -v "^\#"  \
          | sed "s/\#.*//"  \
          | sed 's/=/=\"/' | sed 's/$/\"/' \
