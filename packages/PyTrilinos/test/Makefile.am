@@ -100,14 +100,5 @@ TEST_SUITE = testEpetra testEpetraExt testNOX testExample
 
 check-am: $(TEST_SUITE)
 
-testEpetra:
-	./$@.py
-
-testEpetraExt:
-	./$@.py
-
-testNOX:
-	./$@.py
-
-testExample:
+test%:
 	./$@.py

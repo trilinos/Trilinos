@@ -65,13 +65,34 @@ stdLibDirs = trilLibDir + swigDir
 stdLibs    = stdCXX + swigLib
 stdArgs    = swigPath
 
+# Source directories
+f = open("SRCDIR")
+srcdir = os.path.join(f.readline()[:-1],"src")
+f.close()
+noxdir = os.path.join(srcdir,"NOX")
+
+# Source files
+rawEpetraWrap      = os.path.join(srcdir,"RawEpetra_wrap.cxx"     )
+epetraExtWrap      = os.path.join(srcdir,"EpetraExt_wrap.cxx"     )
+noxAbstractWrap    = os.path.join(noxdir,"Abstract_wrap.cxx"      )
+noxEpetraWrap      = os.path.join(noxdir,"Epetra_wrap.cxx"        )
+noxParameterWrap   = os.path.join(noxdir,"Parameter_wrap.cxx"     )
+noxSolverWrap      = os.path.join(noxdir,"Solver_wrap.cxx"        )
+noxStatusTestWrap  = os.path.join(noxdir,"StatusTest_wrap.cxx"    )
+epetraNumPyVector  = os.path.join(srcdir,"Epetra_NumPyVector.cxx" )
+epetraVectorHelper = os.path.join(srcdir,"Epetra_VectorHelper.cxx")
+numPyArray         = os.path.join(srcdir,"NumPyArray.cxx"         )
+numPyWrapper       = os.path.join(srcdir,"NumPyWrapper.cxx"       )
+noxCallback        = os.path.join(noxdir,"Callback.cxx"           )
+noxPyInterface     = os.path.join(noxdir,"PyInterface.cxx"        )
+
 # Epetra extension module
 RawEpetra = Extension("PyTrilinos._RawEpetra",
-                      ["src/RawEpetra_wrap.cxx",
-                       "src/Epetra_NumPyVector.cxx",
-                       "src/Epetra_VectorHelper.cxx",
-                       "src/NumPyArray.cxx",
-                       "src/NumPyWrapper.cxx"],
+                      [rawEpetraWrap,
+                       epetraNumPyVector,
+                       epetraVectorHelper,
+                       numPyArray,
+                       numPyWrapper],
                       include_dirs    = stdIncDirs,
                       library_dirs    = stdLibDirs + pythonDir,
                       libraries       = stdLibs + epetraLib + lapackLib + pythonLib,
@@ -80,7 +101,7 @@ RawEpetra = Extension("PyTrilinos._RawEpetra",
 
 # EpetraExt extension module
 EpetraExt = Extension("PyTrilinos._EpetraExt",
-                      ["src/EpetraExt_wrap.cxx"],
+                      [epetraExtWrap],
                       include_dirs    = stdIncDirs,
                       library_dirs    = stdLibDirs + pythonDir,
                       libraries       = stdLibs + epetraExtLib + epetraLib + \
@@ -90,12 +111,12 @@ EpetraExt = Extension("PyTrilinos._EpetraExt",
 
 # NOX_Epetra extension module
 NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
-                       ["src/NOX/Epetra_wrap.cxx",
-                        "src/Epetra_VectorHelper.cxx",
-                        "src/NumPyArray.cxx",
-                        "src/NumPyWrapper.cxx",
-                        "src/NOX/Callback.cxx",
-                        "src/NOX/PyInterface.cxx"],
+                       [noxEpetraWrap,
+                        epetraVectorHelper,
+                        numPyArray,
+                        numPyWrapper,
+                        noxCallback,
+                        noxPyInterface],
                        include_dirs    = stdIncDirs,
                        library_dirs    = stdLibDirs,
                        libraries       = stdLibs + noxEpetraLib + noxLib +     \
@@ -106,7 +127,7 @@ NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
 
 # NOX.Abstract extension module
 NOX_Abstract = Extension("PyTrilinos.NOX._Abstract",
-                         ["src/NOX/Abstract_wrap.cxx"],
+                         [noxAbstractWrap],
                          include_dirs    = stdIncDirs,
                          library_dirs    = stdLibDirs,
                          libraries       = stdLibs + noxLib,
@@ -115,7 +136,7 @@ NOX_Abstract = Extension("PyTrilinos.NOX._Abstract",
 
 # NOX.Parameter extension module
 NOX_Parameter = Extension("PyTrilinos.NOX._Parameter",
-                          ["src/NOX/Parameter_wrap.cxx"],
+                          [noxParameterWrap],
                           include_dirs    = stdIncDirs,
                           library_dirs    = stdLibDirs,
                           libraries       = stdLibs + noxLib,
@@ -124,7 +145,7 @@ NOX_Parameter = Extension("PyTrilinos.NOX._Parameter",
 
 # NOX.Solver extension module
 NOX_Solver = Extension("PyTrilinos.NOX._Solver",
-                       ["src/NOX/Solver_wrap.cxx"],
+                       [noxSolverWrap],
                        include_dirs    = stdIncDirs,
                        library_dirs    = stdLibDirs,
                        libraries       = stdLibs + noxLib,
@@ -133,7 +154,7 @@ NOX_Solver = Extension("PyTrilinos.NOX._Solver",
 
 # NOX.StatusTest extension module
 NOX_StatusTest = Extension("PyTrilinos.NOX._StatusTest",
-                           ["src/NOX/StatusTest_wrap.cxx"],
+                           [noxStatusTestWrap],
                            include_dirs    = stdIncDirs,
                            library_dirs    = stdLibDirs,
                            libraries       = stdLibs + noxLib,
@@ -146,7 +167,7 @@ setup(name         = "PyTrilinos",
       description  = "Python Trilinos Interface",
       author       = "Bill Spotz",
       author_email = "wfspotz@sandia.gov",
-      package_dir  = {"PyTrilinos" : "src"},
+      package_dir  = {"PyTrilinos" : srcdir},
       packages     = ["PyTrilinos", "PyTrilinos.NOX"],
       ext_modules  = [ RawEpetra,    EpetraExt,     NOX_Epetra,
                        NOX_Abstract, NOX_Parameter, NOX_Solver,

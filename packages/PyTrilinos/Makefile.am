@@ -114,7 +114,10 @@ all-recursive: build
 wrappers:
 	cd src && make
 
-build: wrappers
+SRCDIR:
+	@echo $(srcdir) > $@
+
+build: wrappers SRCDIR
 	$(srcdir)/setup.py build
 
 install: build
