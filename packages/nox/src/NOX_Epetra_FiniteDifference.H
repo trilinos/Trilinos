@@ -33,8 +33,13 @@ class Epetra_Vector;
 class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 class Epetra_RowMatrix;
-class NOX::Epetra::Interface;
-class NOX::Utils;
+
+namespace NOX {
+  class Utils;
+  namespace Epetra {
+    class Interface;
+  }
+}
 
 namespace NOX {
 
