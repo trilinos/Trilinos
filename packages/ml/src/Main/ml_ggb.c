@@ -1,7 +1,7 @@
 
 /*************************************************************************************       
   HAIM: GLOBAL EIGENVALUE CALCULATIONS FOR MULTIGRID           
-  GLOBAL BASIS (GB) METHOD / GENERALIZED GLOBAL BASIS (GGB) METHOD USING ARPACK                      
+  THE GENERALIZED GLOBAL BASIS (GGB) METHOD USING ARPACK                      
 **************************************************************************************/     
 /*                                                            
    THE IDEA:                                                  
@@ -16,23 +16,20 @@
 	*/                                                            
 #include "ml_ggb.h"
 #include "ml_lapack.h"
-#include "ml_eigf2c.h"
 
-
-/*****************************************************************************************
-*****************************************************************************************/
 
 void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
-		     struct ML_CSR_MSRdata *mydata)
+		     struct ML_CSR_MSRdata *mydata, int Debug_Flag, 
+		    int GGB_alp_flag)
    
 {
 
-  int  level;
-  
+  int i ,  j, level;
+
   /* Eigenvalue definitions */
   int      iparam[11];
-  int      nev, ncv, mode, Fattening;
-  double   tol, tm;
+  int      nev, ncv, info, mode, nconv, Fattening;
+  double   tol, tm, tmp_tol;
   char     bmat[2], which[3];
   ML_Operator *Amat;
   
@@ -49,7 +46,8 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
     
   level         = ml->ML_finest_level;
   Amat          = &(ml->Amat[level]);
- 
+	  
+
   /* Set parameters for ARPACK from the input file */
 
   iparam[MAX_ITRS] = eigen_struct->Max_Iter;
@@ -57,7 +55,7 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
   ncv              = eigen_struct->Arnoldi;
   tol              = eigen_struct->Residual_Tol;
   Fattening        = eigen_struct->Fattening;
-    
+
      
   /* Set parameters for ARPACK: (2)then those that are fixed for MPSalsa */
   /* Setting ARPACK to: simple,nonsymetric, and finding Large Magnitude spectrum */ 
@@ -83,7 +81,8 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 
   /* ARNOLDI driver. On output nconv is the number of converged eigenvalues */ 
   ML_ARPACK_driver(which, bmat, iparam, mode,
-		     nev, ncv, tol, ml, mydata,Fattening);
+		   nev, ncv, tol, ml, mydata,Fattening,
+		   eigen_struct, Debug_Flag, GGB_alp_flag );
   
   printf("Time for eigenvalue computations is %g (sec.)\n",GetClock()-tm);
   
@@ -97,30 +96,35 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 
 
 void  ML_ARPACK_driver(char which[],
-                              char bmat[], int iparam[], int mode, 
-                              int nev, int ncv, double tol,  ML *ml, 
-                              struct ML_CSR_MSRdata *mydata, int Fattening)
+		       char bmat[], int iparam[], int mode, 
+		       int nev, int ncv, double tol,  ML *ml, 
+		       struct ML_CSR_MSRdata *mydata, int Fattening,
+		       struct ML_Eigenvalue_Struct *eigen_struct,
+		       int Debug_Flag, int GGB_alp_flag)
 {
 
-  int        /* i, */ j, kk, ldv, lworkl;
+  int        i, j, kk, ldv, lworkl;
   int        nloc, nloc_max, nloc2, ido, flag, counter;
-  int        count, nconv, ierr, info, comm;
-  int        ipntr[14]; /* , m=0; */
+  int        count, nconv, ierr, info;
+  int        ipntr[14], m=0;
   int        one = 1, dummy1, dummy2, dummy3, dummy4;
-  double     a1 , a2  , lamR, lamI;
+  double     a1 , a2  , lamR, lamI, time;
   char       string[4];
   double     *v, *workl, *workd, *workev, *d, *resid;         /* Pointers used by ARPACK */  
   int        *select, rvec, *work;
 
+
   double     *vecx, *vecy, *rhs, *rhs1;                       /* Dummy Pointers */
-  double     **eigvec;                                        /* Pointer to hold eigenvectors */ 
- 
+  int        comm=0, mu=0, delta=0, sigma=0;
+
+  
+  FILE       *ifp;
   ML_Operator *Amat;
 
   /********************************  Begin ************************************/
-  /*
-    ifp   = fopen("CheckEigen1.m", "w");
-  */
+  
+  //  ifp   = fopen("CheckQmgs.m", "w");
+  
 
   /******************************************************
    * A standard eigenvalue problem is solved (BMAT = 'I').
@@ -175,7 +179,10 @@ void  ML_ARPACK_driver(char which[],
   workev = (double *) ML_allocate(3*ncv*sizeof(double));
   workl  = (double *) ML_allocate(lworkl*sizeof(double));
   v      = (double *) ML_allocate(ncv*ldv*sizeof(double));
+  //eigen_struct->Kq     = (double *) ML_allocate(ncv*ldv*sizeof(double));
  
+
+
   
   if (v == NULL) {
     fprintf(stderr,"Not enough space to allocate workl\n");
@@ -200,11 +207,20 @@ void  ML_ARPACK_driver(char which[],
      * by parameter IDO until either convergence is indicated
      * or the maximum iterations have been exceeded.
      *****************************************************/
+    /*
+    cpdnaupc_( &comm,
+               &ido, bmat, &nloc, which, &nev, &tol, resid,
+               &ncv, v, &ldv, iparam, ipntr, workd, workl,
+               &lworkl, &info );
+    */   
+
     dnaupd_(&ido, bmat, &nloc, which, &nev, &tol, resid,
 	    &ncv, v, &ldv, iparam, ipntr, workd, workl,
 	    &lworkl, &info );
+    
 
     if ( (ido == -1) || (ido == 1) ) {
+     
       count++;
       if (ml->comm->ML_mypid==0) printf("\t    Eigensolver iteration: %d\n",count);
 
@@ -216,9 +232,8 @@ void  ML_ARPACK_driver(char which[],
       /************************************/
       /* Compute (I-inv(P)*K)v = lam * v  */
       /************************************/
-      
+      /*      time =  GetClock(); */
       /* First perform K*v = rhs */
-	     
       ML_Operator_Apply(Amat, Amat->invec_leng, &workd[ipntr[0]-1], 
 			Amat->outvec_leng, rhs);
 
@@ -226,9 +241,12 @@ void  ML_ARPACK_driver(char which[],
       /* Do ML cycle to find the iteration matrix eigenpairs */
       /* *****************************************************/
       
+
       /* Second perform inv(P)*rhs = rhs1 */
 	ML_Solve_MGV(ml ,rhs , rhs1);
 	
+	/* printf("time for M^-1 * K * v = %g \n", GetClock()-time); */
+
 	/* Third perform  workd[ipntr[1]-1] <- v-rhs1 */ 
 	for (kk = 0 ; kk < nloc2 ; kk++) 
 	  workd[ipntr[1]+kk-1] = workd[ipntr[0]+kk-1] - rhs1[kk];
@@ -237,6 +255,7 @@ void  ML_ARPACK_driver(char which[],
       
       
     else flag = 0;
+   
   }
 
 
@@ -261,11 +280,20 @@ void  ML_ARPACK_driver(char which[],
     rvec = 1;
     ierr = 0;
     sprintf(string,"A");
+    /*
+      cpdneupc_  (&comm, &rvec, 
+      string, select, d, v, &ldv, 
+		 &sigma, &mu, &delta,  
+		 workev, bmat, &nloc, &nloc2, which, &nev,
+		 &tol, resid, &ncv, iparam, ipntr, workd, workl,
+		 &lworkl, &ierr, 
+		 work);
+    */
     
     ml_dneupc__(&rvec, string, select, d, v, &ldv,
-		  workev, bmat, &nloc, which, &nev,
-		  &tol, resid, &ncv, iparam, ipntr, workd, workl,
-		  &lworkl, &ierr, (ftnlen)1, (ftnlen)1, (ftnlen) 2);
+		workev, bmat, &nloc, which, &nev,
+		&tol, resid, &ncv, iparam, ipntr, workd, workl,
+		&lworkl, &ierr);
     
     
     /*----------------------------------------------
@@ -314,16 +342,8 @@ void  ML_ARPACK_driver(char which[],
 	    ML_print_line("=", 80);
 	  }
 	  
-	  
-	  eigvec = (double **) ML_allocate((nconv+1)*sizeof(double *));
-	  
-	  /* Dynamic memory allocation */                                                                           
-	  for (kk = 0; kk < nconv+1 ; kk++ ) {
-	    eigvec[kk] = (double *) ML_allocate(nloc2*sizeof(double));      
-	    for (j = 0; j < nloc2; j++) eigvec[kk][j] = 0.;
-	  }           
-	
-	  for (j = 0; j < nconv ; j++ ) {
+
+	    for (j = 0; j < nconv ; j++ ) {
 	  
 	  /*--------------------------
           | Compute the residual norm |
@@ -350,27 +370,28 @@ void  ML_ARPACK_driver(char which[],
            *
       	   *  v[j*ldv] : j-th eigenvector
 	   */
-	    
-	    for (kk =0 ; kk < nloc2 ; kk++ ) {
-	      rhs[kk]  = rhs1[kk] = 0.0; 
-	      eigvec[j][kk] =  v[j*ldv+kk];
-	    
-	    }
-
-	    /*   fprintf(ifp,"\t\t Q(%d,%d)= %20.13f; \n",kk+1,j+1,GLB->eigvecR[j][kk]); */
 
 	    ML_Operator_Apply(Amat, Amat->invec_leng, &v[j*ldv],
 			Amat->outvec_leng, rhs);
+	    
+	    //	    for (kk =0 ; kk < nloc2 ; kk++ ) 
+	    //   eigen_struct->Kq[j*ldv+kk] = rhs[kk];
+	    
 
+
+	    /* Need only to analyze the eigenvalues of the MG iteration matrix */
+	    a1 = 0.0;
+	    if (Debug_Flag > 2) {
+	      ML_Solve_MGV(ml ,rhs , rhs1);
+	      
+	      for (kk =0 ; kk < nloc2 ; kk++ ) 
+		rhs1[kk]     = (1-lamR)*v[j*ldv+kk] - rhs1[kk];
+	    	      
+	      a1 = sqrt(ddot_(&nloc2, rhs1, &one, rhs1, &one));
+	    }
 	    
-	    ML_Solve_MGV(ml ,rhs , rhs1);
-	    
-	    for (kk =0 ; kk < nloc2 ; kk++ ) rhs1[kk] = (1-lamR)*v[j*ldv+kk] - rhs1[kk];
-	    
-	    
-	    
-	    a1 = sqrt(ddot_(&nloc2, rhs1, &one, rhs1, &one));
 	    d[j+2*ncv] = a1; /*sqrt(lamR*lamR);*/
+	   
 	    
 	  }
 	  
@@ -385,50 +406,47 @@ void  ML_ARPACK_driver(char which[],
            *  v[j*ldv]     : real part j-th eigenvector
            *  v[(j+1)*ldv] : imag part j-th eigenvector
            */
-	  
-	  for (kk =0 ; kk < nloc2 ; kk++ ) {
-	    rhs[kk] = rhs1[kk] = vecx[kk] = vecy[kk] = 0.0;
-	    
-	    eigvec[j][kk]   = v[j*ldv+kk]; 
-	    eigvec[j+1][kk] = v[(j+1)*ldv+kk];
-	
-	    /*
-	    fprintf(ifp,"\t\t Q(%d,%d)= %20.13f; \n",kk+1,j+1,GLB->eigvecR[j][kk]);
-	    fprintf(ifp,"\t\t Q(%d,%d)= %20.13f; \n",kk+1,j+2,GLB->eigvecR[j+1][kk]);
-	    */
-	  }
 
+	    for (kk =0 ; kk < nloc2 ; kk++ ) {
+	      rhs[kk] = rhs1[kk] = vecx[kk] = vecy[kk] = 0.0;	      	     
+	    }
+
+	    /* The following mat vec we need always for MGGB */
 	    ML_Operator_Apply(Amat, Amat->invec_leng, &v[j*ldv],
 			      Amat->outvec_leng, vecx);
 
-	    ML_Operator_Apply(Amat, Amat->invec_leng, &v[(j+1)*ldv],
-			      Amat->outvec_leng, vecy);
+	    
+	    //	    for (kk =0 ; kk < nloc2 ; kk++ ) 
+	    //  eigen_struct->Kq[j*ldv+kk] = vecx[kk];
+	    
 
-	    a1 = 1 - lamR;
+
+	    /* Need only to analyze the eigenvalues of the MG iteration matrix */ 
 	    a2 = 0.0;
+	    if (Debug_Flag > 2) {
+	      ML_Operator_Apply(Amat, Amat->invec_leng, &v[(j+1)*ldv],
+				Amat->outvec_leng, vecy);
+
+	      a1 = 1 - lamR;
 	    
+	      ML_Solve_MGV(ml ,vecx ,rhs);
+	      ML_Solve_MGV(ml ,vecy ,rhs1);
 	    
-	    
-	    ML_Solve_MGV(ml ,vecx ,rhs);
-	    ML_Solve_MGV(ml ,vecy ,rhs1);
-	    
-	    for (kk =0 ; kk < nloc ; kk++ ) {
-	      rhs[kk]  = a1*v[j*ldv+kk]     + lamI*v[(j+1)*ldv+kk] - rhs[kk];
-	      rhs1[kk] = a1*v[(j+1)*ldv+kk] - lamI*v[j*ldv+kk]     - rhs1[kk];
-	    }
+	      for (kk =0 ; kk < nloc ; kk++ ) {
+		rhs[kk]  = a1*v[j*ldv+kk]     + lamI*v[(j+1)*ldv+kk] - rhs[kk];
+		rhs1[kk] = a1*v[(j+1)*ldv+kk] - lamI*v[j*ldv+kk]     - rhs1[kk];
+	      }
 	      
-	   
-	    	  
+	      
+	      a2 = sqrt(ddot_(&nloc2, rhs1, &one, rhs1, &one) +   
+			ddot_(&nloc2, rhs, &one, rhs, &one));                   
+	    }	    
 	    
-	    a2 = sqrt(ddot_(&nloc2, rhs1, &one, rhs1, &one) +
-		      ddot_(&nloc2, rhs, &one, rhs, &one));
-	    
-	    
-	    d[j+2*ncv] =   a2; /*  /dlapy2_(&lamR,&lamI); */
+	    d[j+2*ncv] =   a2; //  /dlapy2_(&lamR,&lamI);
 	    
 	    d[j+1+2*ncv] = a2;
 	    
-	  
+	    
 	    d[j+1]       =  d[j];
 	    d[j+1+ncv]   = -d[j+ncv];
 	    j = j + 1;
@@ -448,26 +466,62 @@ void  ML_ARPACK_driver(char which[],
       /*   Display computed residuals   */
 
 	  comm=0; dummy1 = 6; dummy2 = 3; dummy3 = ncv; dummy4 = -6;
-	  ml_c_pdmout__(&comm, &dummy1, &nconv, &dummy2, d, &dummy3, &dummy4);
+     
+	  //	  cpdmout_(&comm, &dummy1, &nconv, &dummy2, d, &dummy3, &dummy4);
+
+     	  ml_c_pdmout__(&comm, &dummy1, &nconv, &dummy2, d, &dummy3, &dummy4);
 
       }
 
-
     /* If Fattening is defined than transfer information as one large vector 
        If not than transfer information in CSR format */ 
+    /*
     if (Fattening != 0) {
       
-      mydata->values = (double *) ML_allocate((ncv*ldv)*sizeof(double));
-      for (kk =0 ; kk < ncv*ldv; kk++ )      mydata->values[kk]   = v[kk];
-      
-      mydata->Ncols    = nconv;
-      mydata->Nrows    = nloc2;
+    mydata->values = (double *) ML_allocate((ncv*ldv)*sizeof(double));
+    for (kk =0 ; kk < ncv*ldv; kk++ )      mydata->values[kk]   = v[kk];
+    
+    mydata->Ncols    = nconv;
+    mydata->Nrows    = nloc2;
     }
+  
     else
-      /* Haim: Convert Information into CSR Format */
-      ML_GGB_2_CSR (eigvec, nconv, nloc2, mydata);
+    {
+    */	
+
+    if (GGB_alp_flag == 1) {
+      
+      ML_GGBalp (v, nconv, nloc2, eigen_struct);
+      
+      
+      //      ML_GGB_2_CSR (eigen_struct->Qmgs, eigen_struct->Pnconv, 
+      //	    nloc2, mydata, Debug_Flag);
+      
+     
+      ML_GGB2CSR (eigen_struct->Evec , eigen_struct->Pnconv, nloc2, mydata, Debug_Flag);
+      
+      ML_free((void *) v);
+      ML_free((void *) eigen_struct->Eval);
+
+
+
+      eigen_struct->Nflag  = 2;  /* Flag to indicate the first Newton step */
+      
+
+    }
+    else {
+    /* Convert Information into CSR Format */
+
+      ML_GGB2CSR (v, nconv, nloc2, mydata, Debug_Flag);
+
+      /* Keeping the eigenspace information to be reused with MGGB */
+      eigen_struct->Evec   = v;
+      eigen_struct->Eval   = d;
+      eigen_struct->Pnconv = nconv; 
+      eigen_struct->Nflag  = 1;
+    }
     
-    
+
     /*  Print additional convergence information */
     
     if ( info == 1 ){
@@ -493,54 +547,46 @@ void  ML_ARPACK_driver(char which[],
   }
  
 
-  ML_free(select);
-  ML_free(work);
-  ML_free(vecx);
-  ML_free(vecy);
-  ML_free(rhs1);
-  ML_free(rhs);
-  ML_free(d);
-  ML_free(resid);
-  ML_free(workd);
-  ML_free(workev);
-  ML_free(workl);
-  ML_free(v);
-  for (kk = 0; kk < nconv+1 ; kk++ ) {
-    ML_free(eigvec[kk]);
-  }           
-  ML_free(eigvec);
+  ML_free((void *) select);
+  ML_free((void *) work);
+  ML_free((void *) vecx);
+  ML_free((void *) vecy);
+  ML_free((void *) rhs1);
+  ML_free((void *) rhs);
+  ML_free((void *) resid);
+  ML_free((void *) workd);
+  ML_free((void *) workev);
+  ML_free((void *) workl);
 
- 
+    
+  /*  fclose(ifp);   */
 
-
-    /*
-      fclose(ifp);  
-    */
 
 } /* end ML_ARPACK_driver */
 
+
+
 /******************************************************************************/
+void ML_GGB2CSR (double *v, int nconv, int MatSize,
+		   struct ML_CSR_MSRdata  *mydata, int Debug_Flag)
 
-void ML_GGB_2_CSR (double **eigvec, int nconv, int MatSize,
-		   struct ML_CSR_MSRdata  *mydata)
-
-
+     /* Function to transfer dense columns of matrix to ML CSR format */
+     /* The colums are input as one long vector */
+     
 {
   int          nrows,   ncolumns,  nnz;
   int          *rowptr, *columns;
   int          i, j , count;
   double       *values;
  
-  /* FILE          *fp, *fp1, *eig; */
+  FILE          *fp, *fp1, *eig;
   
-
-
   /******************************  begin *****************************/
-  /*
+  if (Debug_Flag == 10) {
     fp  = fopen("Rowptr.m","w");
     fp1 = fopen("Val_Col.m","w");
-    eig = fopen("EIG_CHECK.m","w");
-  */
+    eig = fopen("EIGvec.m","w");
+  }
 
   ncolumns = nconv;
   nrows    = MatSize;
@@ -559,8 +605,6 @@ void ML_GGB_2_CSR (double **eigvec, int nconv, int MatSize,
   count     = 0;
 
 
-
-
   for (i = 0; i < nrows; i++) {       /* Looping over the rows */
     
     rowptr[i+1] = rowptr[i] + nconv;
@@ -569,37 +613,37 @@ void ML_GGB_2_CSR (double **eigvec, int nconv, int MatSize,
     for (j = 0; j < ncolumns; j++) {
     
       columns[count] = j;
-      values[count]  = eigvec[j][i];
+      values[count]  = v[j*nrows+i];    
       count = count + 1;
     }
     
     
   }
 
-  fprintf(stdout,"\n\t ********************************************************");
-  fprintf(stdout,"\n\t   GGB:    Q PROLONGATION MATRIX (GLOBAL BASIS)         ");
-  fprintf(stdout,"\n\t          ---------------------------------------    ");
-  fprintf(stdout,"\n\t                 MATRIX SIZE:   %d * %d             ",nrows,ncolumns);
-  fprintf(stdout,"\n\t                 NON ZEROS        = %d              ",nnz);
-  fprintf(stdout,"\n\t ********************************************************\n");  
+  fprintf(stdout,"\n\t *************************************");
+  fprintf(stdout,"\n\t       GGB PROLONGATION MATRIX    ");
+  fprintf(stdout,"\n\t      --------------------------  ");
+  fprintf(stdout,"\n\t         MATRIX SIZE:   %d * %d    ",nrows,ncolumns);
+  fprintf(stdout,"\n\t         NON ZEROS        = %d     ",nnz);
+  fprintf(stdout,"\n\t *************************************\n");  
   
   
   
   /* DEBUGING */
-  /*
-  for (i = 0; i < nnz; i++)
-    fprintf(fp1,"%f    %d \n",values[i],columns[i]);
-  
-  for (i = 0; i < nrows+1; i++) 
-    fprintf(fp,"%d \n",rowptr[i]);
-  
-  for (i = 0; i < ncolumns; i++) {
-    fprintf(eig,"EIG NUM = %d\n",i+1);
-    for (j = 0; j < nrows; j++) {
-      fprintf(eig,"\t %f\n ",eigvec[i][j]);
+  if (Debug_Flag == 10) {
+    for (i = 0; i < nnz; i++)
+      fprintf(fp1,"%20.13f    %d \n",values[i],columns[i]);
+    
+    for (i = 0; i < nrows+1; i++) 
+      fprintf(fp,"%d \n",rowptr[i]);
+    
+    for (i = 0; i < ncolumns; i++) {
+      fprintf(eig,"EIG NUM = %d\n",i+1);
+      for (j = 0; j < nrows; j++) {
+      	fprintf(eig,"\t %20.13f\n ",v[j*nrows+i]);
+      }
     }
   }
-  */
  
 
 
@@ -617,18 +661,398 @@ void ML_GGB_2_CSR (double **eigvec, int nconv, int MatSize,
 
   
     
-  /*
-  fclose(fp);
-  fclose(fp1);
-  fclose(eig);
-  */
+  if (Debug_Flag == 10) {
+    fclose(fp);
+    fclose(fp1);
+    fclose(eig);
+  }
 
 } /* end function */
+
+
+
+void  ML_GGBalp (double *NewVec, int nconv, int nloc2, struct ML_Eigenvalue_Struct
+		   *eigen_struct)
+{
+
+  /**************************************************************/
+/* Angle between two subspaces:                                 */
+/* A  = Q1*R1                 A - GGB projection from step i    */ 
+/* A1 = Q2*R2                 A1- GGB projection from step i    */  
+/*                            QR factorization is based on      */
+/*                            Househoulder reflectors           */
+/*                                                              */
+/* S = svd(Q1'*Q2)            SVD factorization of the          */ 
+/*                            orthogonal basis                  */
+/* cos(t) = min(S) = S(t,t)   Angle between the subspaces       */
+/****************************************************************/
+
+  double     *A , *current_vec;
+  double     theta, eps= 5.0 ;
+
+  int           m, n, i, j, k;
+  int           nnew, nold, lwork;
+  int           ind =1;
+ 
+
+
+  /********************* begin ************************/
+  nnew   =  nconv;
+  ind    =  1;  
+
+  nold   =  eigen_struct->Pnconv;
+  m      =  nloc2;
+  
+  for (j=0; j<nnew ; j++) 
+    {
+      current_vec = (double *)  ML_allocate( ind*m* sizeof(double));
+      k = 0;
+      for (i=j*m; i<(j+1)*m; i++)  
+	{
+	  current_vec[k] = NewVec[i];
+	  k = k+1;
+	}
+
+
+      /* Get the maximum principal angle and an orthogonal basis for the subspaces */
+      theta = ML_subspace(m, eigen_struct->Evec, nold, current_vec, ind);
+  
+      theta = theta*57.2958;     /* Convert to degrees */
+      printf("Angle between subspcaes is theta = %2.3f  \n",theta);
+      
+      
+      /* Increase the space of the prolongation */
+      if (theta > eps) {
+	
+	A = (double *)  ML_allocate( (nold+nnew)*m* sizeof(double)); 
+	
+	k = 0;
+	for (i=0; i<(nold+ind)*m    ; i++) 
+	  if (i<nold*m) A[i] = eigen_struct->Evec[i];
+	  else          
+	    {
+	      A[i] =  current_vec[k];
+	      k = k + 1;
+	    }
+	
+	ML_free((void *) eigen_struct->Evec);
+	ML_free((void *) current_vec);
+
+
+	
+	eigen_struct->Pnconv = nold+ind;
+	eigen_struct->Evec   = A;    
+      }
+    }
+
+
+
+
+}   
+
+
+extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, int ncols2)
+{ 
+  double     *tau, *work, *A, *S ,*U, *VT;
+  double     *tau1, *work1, *A1, *B;
+  double     theta;
+
+  int         lda, lwork, info, ldv, ldu, ldvt;
+  int         lwork1, info1, ldv1;
+
+
+  int           m, n, i, j, k, one=1;
+  int           nnew;
+  char          jobu[2], jobvt[2];
+
+  FILE          *fp2, *fp1, *fp;
+
+  /*******************  begin  ***********************/
+
+  if (ncols2 > ncols1) {
+    printf("First matrix is assumed to be larger than the second. Change inputs and try again \n");
+    exit(-1);
+  } 
+  
+  /*
+  fp2  = fopen("Amat.m","w");
+  k = 0;
+  for (i=0; i<ncols1; i++) 
+    for (j=0; j<nrows; j++) {   
+      fprintf(fp2,"A(%d,%d)=%20.13f;  \n",j+1,i+1,inp1[k]);
+      k = k + 1;
+    }    
+  k = 0;
+  for (i=0; i<ncols2; i++) 
+    for (j=0; j<nrows; j++) {   
+      fprintf(fp2,"A1(%d,%d)=%20.13f;  \n",j+1,i+1,inp2[k]);
+      k = k + 1;
+    }
+  fclose(fp2);
+
+  */
+
+  m                     =  nrows; 
+  lwork                 =  10*ncols1;
+  lda                   =  m;
+  lwork1                =  10*ncols2;
+
+
+  tau   = (double *)  ML_allocate(ncols1* sizeof(double));
+  tau1   = (double *)  ML_allocate(ncols2* sizeof(double));
+  work  = (double *)  ML_allocate(lwork* sizeof(double));
+  work1  = (double *)  ML_allocate(lwork1* sizeof(double));
+  A1     = (double *)  ML_allocate(m*ncols2* sizeof(double));
+  A     = (double *)  ML_allocate(m*ncols1* sizeof(double));
+
+
+  /* Previous eigenvectors */
+  for (i=0; i<m*ncols1; i++) A[i] = inp1[i];
+  /* Current eigenvectors */
+  for (i=0; i<m*ncols2; i++) A1[i] = inp2[i];
+
+
+  /* Get QR factorization for both matrices */
+  dgeqrf_(&m, &ncols1, A, &lda, tau, work, &lwork, &info);  
+  dgeqrf_(&m, &ncols2, A1, &lda, tau1, work1, &lwork1, &info1);  
+  
+
+  if (info !=0 | info1 !=0)  {
+    printf("Problem with QR factorization in ML_subspace function dgeqrf_\n");
+    exit(-1);
+  }
+  
+
+  /* Extract the R matrix from the output */
+  /*
+  fp1  = fopen("Rmat.m","w");
+  for (i=0; i<ncols1; i++) 
+    for (j=0; j<i+1; j++) 
+      fprintf(fp1,"R(%d,%d)=%20.13f;  \n",j+1,i+1,A[m*i+j]);
+  
+  for (i=0; i<ncols2; i++) 
+    for (j=0; j<i+1; j++) 
+  fprintf(fp1,"R1(%d,%d)=%20.13f;  \n",j+1,i+1,A1[m*i+j]);
+  
+  fclose(fp1);
+  */
+   
+  
+
+  /* Now we obtain Q's  */
+  dorgqr_(&m, &ncols1,&ncols1, A, &lda, tau, work, &lwork, &info);
+  dorgqr_(&m, &ncols2, &ncols2, A1, &lda, tau1, work1, &lwork1, &info1);
+
+  if (info !=0 | info1 !=0)  {
+    printf("Problem with QR factorization in ML_subspace function dorgqr_\n");
+    exit(-1);
+  }
+  /* Print the Q matrix of the first matrix */
+  /*
+  fp  = fopen("Qmat.m","w");
+  k = 0;
+  for (i=0; i<ncols1; i++) 
+    for (j=0; j<m; j++) {   
+      fprintf(fp,"Q(%d,%d)=%20.13f;  \n",j+1,i+1,A[k]);      
+      k = k + 1;
+    }
+  k = 0;
+  for (i=0; i<ncols2; i++) 
+    for (j=0; j<m; j++) {   
+      fprintf(fp,"Q1(%d,%d)=%20.13f;  \n",j+1,i+1,A1[k]);      
+      k = k + 1;
+    }
+  fclose(fp);    
+  */
+
+  
+  ML_free((void *) tau);
+  ML_free((void *) work);
+  ML_free((void *) tau1);
+  ML_free((void *) work1);
+  
+
+  /* Perform  B = A1'*A, to compute the principal angle with SVD */
+  B        = (double *)  ML_allocate(ncols1*ncols2* sizeof(double));
+  
+  k = 0;
+  for (i=0; i<ncols2; i++) {
+    for (j=0; j<ncols1; j++) {  
+      B[k] =  ddot_(&m, &A[j*m], &one, &A1[i*m], &one);   
+      k = k + 1;      
+    }
+  } 
+  
+
+  /* Compute SVD - we are interested only in the singular values */
+  jobu[0]  = 'N'; 
+  jobu[1]  = '\0';
+  jobvt[0] = 'N';
+  jobvt[1] = '\0';
+  
+  lda      =  ncols1;       // should be changed to n
+  lwork    =  10*ncols1;    // should be changed to n 
+  ldu      =  ncols1;
+  ldvt     =  ncols2;
+
+  S        = (double *)  ML_allocate(ncols2* sizeof(double));
+  work     = (double *)  ML_allocate(lwork* sizeof(double));
+
+  /* SVD */
+  dgesvd_(jobu, jobvt, &ncols1, &ncols2, B, &lda, S, U, &ldu, VT, &ldvt, 
+	  work, &lwork, &info);
+
+  if (info !=0 )  {
+    printf("Problem with QR factorization in ML_subspace function dgesvd_\n");
+    exit(-1);
+  }
+
+  /*  
+  for (i=0; i<ncols2; i++) 
+    printf("S[%d] = %3.30f , theta=%2.3f \n",i,S[i],acos(S[i])*180/3.14);
+  */
+
+
+  /* theta = acos(min(S)) */
+  if (S[ncols2-1] > 1.0) theta = 0.0;
+  else  theta = acos(S[ncols2-1]);
+  //  if (S[ncols2-1] <0.0) theta = 3.1415/2;
+ 
+
+
+  
+  ML_free((void *) A);
+  ML_free((void *) A1);  
+  ML_free((void *) S);
+  ML_free((void *) B);
+  ML_free((void *) work);
+
+
+  return theta;
+
+}
+
+
+/***************************************************
+   MGGB Variant - adaptive eigenspace computations
+   based on the angle between subspaces (Q,R*Q)
+****************************************************/
+ 
+int  ML_MGGB_angle( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
+		     struct ML_CSR_MSRdata *mydata)
+{
+  int            Nrows, Ncols, Nnz, Nnz_per_row, i, level;  
+  int            one = 1, ncv, kk, ggb_flag = 0, count;
+  double        *rhs, *rhs1, *u, *v, lamR, lamI;
+  double         mggb_tol, epsilon= 30.0 , norm, norm1;
+  double         tm, qRq, qRq1, qRq2, theta, theta_max, denum, pi = 3.1415;
+  double         time;
+
+  double        *A, *vec, *dumm ;
+
+
+  ML_Operator   *Amat;
+
+  /*************************** begin *****************************/
+  tm = GetClock();
+
+
+  Ncols = mydata->Ncols;
+  Nrows = mydata->Nrows;
+  Nnz   = mydata->Nnz;
+  ncv   = eigen_struct->Arnoldi;
+
+  level         = ml->ML_finest_level;
+  Amat          = &(ml->Amat[level]);
+
+  /****************************************************************/
+  if (Ncols >= 2) count = 2;
+  else count = 1;
+  
+
+  A      = (double *) ML_allocate(Nrows*count* sizeof(double));
+  rhs    = (double *) ML_allocate(Nrows*sizeof(double));
+  rhs1   = (double *) ML_allocate(Nrows*sizeof(double));
+  dumm   = (double *) ML_allocate(Nrows*sizeof(double));
+
+  vec    = eigen_struct->Evec;
+  
+  for (i=0; i<count; i++) {
+    
+    for (kk =0 ; kk < Nrows ; kk++ ) 
+      dumm[kk] = vec[i*Nrows+kk];
+  
+
+    ML_Operator_Apply(Amat, Amat->invec_leng, dumm, Amat->outvec_leng, rhs);
+    ML_Solve_MGV(ml ,rhs , rhs1);
+
+    for (kk =0 ; kk < Nrows ; kk++ ) 
+      A[i*Nrows+kk] = dumm[kk]  - rhs1[kk];
+  
+  }
+
+  theta = ML_subspace(Nrows, vec, Ncols, A, count);
+  
+
+  theta = theta*57.2958;     /* Transfer to degrees */
+  
+  
+  ML_free((void *) A);
+  ML_free((void *) rhs);
+  ML_free((void *) rhs1);
+  ML_free((void *) dumm);
+  
+
+  if (theta > epsilon) ggb_flag = 1;
+  
+  
+  printf("\n");
+  ML_print_line("=", 80);
+  printf("Angle between subspcaes is theta = %2.3f\n",theta);
+  printf("Time for MGGB eigenspace angle measure is %g (sec.)\n",GetClock()-tm);
+  
+  if (ggb_flag == 1) printf("Recomputing eigenspace \n");
+  else printf("Reusing previous eigenspace information \n");
+  ML_print_line("=", 80);
+  printf("\n");
+  
+
+  return ggb_flag;
+
+}
+
+double  ML_normc (double *real, double *imag, int leng)
+{
+
+  double    rl, im, dum1, dum2;
+  double    norm;
+  int       i;
+
+  dum1 = dum2 = 0.0;
+
+  for (i=0; i<leng; i++) {
+
+    dum1 = dum1 + real[i]*real[i];
+    dum2 = dum2 + imag[i]*imag[i];
+
+  }
+
+  rl = dum1 + dum2;  /* Real part */
+
+  norm = sqrt(rl); 
+  
+  return norm;
+}
+
+
+
+
 
 /*********************************************/
 /*  ARPACK Documentation   if info < 0       */ 
 /*********************************************/
-/* Haim: taken from dnaupd.f file 
+
+/* taken from dnaupd.f file 
 
 c  INFO    Integer.  (INPUT/OUTPUT)
 c          If INFO .EQ. 0, a randomly initial residual vector is used.
@@ -663,9 +1087,3 @@ c                   IPARAM(5) returns the size of the current Arnoldi
 c                   factorization.
 
 */
-
-
-
-
-
-
