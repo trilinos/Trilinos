@@ -1,7 +1,5 @@
 #!/bin/csh
 #
-#  Update MAy 16
-#
 #  AmesosShortKundert.exe, the Direct Sparse Solver Regresion Test, tests and times the 
 #  direct sparse solvers supported by the AME interface.  At present, it 
 #  tests two direct solvers:  KUNDERT and SuperLU MPI.  It also tests an 

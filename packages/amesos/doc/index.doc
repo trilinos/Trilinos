@@ -4,8 +4,9 @@
 
 \section intro Introduction 
 Amesos provides an object-oriented interface
-to several direct sparse solvers.  The first direct sparse solver to
-be added to Amesos is SuperLUdist, the distributed memory version of
+to several direct sparse solvers.  The first direct sparse solvers 
+in Amesos are SuperlLU serial and SuperLU distributed.  SuperLU serial is Xiaoye Li's 
+serial sparse solver code. SuperLU dist is the distributed memory version of
 SuperLU.  Amesos allows flexible construction of matrix and vector
 arguments via Epetra matrix and vector classes.  
 
@@ -19,17 +20,20 @@ Amesos contains two supported classes:
 <li> Epetra_SLU - Interface to Xiaoye Li's SuperLU Serial. 
 </ul>
 
+Amesos is migrating toward a base class model.  All future Amesos classes will implement the 
+base class.  
+
 Amesos will soon support the following classes:
 <ul> 
-<li> Superludist2_OO - Interface to Xiaoye Li's SuperLU Distributed memory code with distributed memory input interface. 
-<li> DscpackOO - Interface to DSCPACK
+<li> Amesos_Superludist - Interface to Xiaoye Li's SuperLU Distributed memory code with distributed memory input interface. 
+<li> Amesos_Dscpack - Interface to Padma Ragavan's DSCPACK
 
 
 </ul>
 
 \section install  Installing Amesos 
 
-Each of the Amesos classes provides an interface to a different third
+Each of the Amesos classes provides an interface to a third
 party direct sparse solver code.  In order to install a particular
 class, you must first install the underlying direct sparse solver
 code.  Amesos installation requires four steps:
@@ -40,14 +44,16 @@ code.  Amesos installation requires four steps:
 <li>Configuring Trilinos with Amesos.
 </ul>
 
+Additional architecture specific hints can be found in the CVS repositiory ~/Trilinos3PL/config.   A copy, albeit a potentially out-of-date copy, of ~/Trilinos3PL/config can be found at:  <a href="http://www.cs.utk.edu/~kstanley/Trilinos3PL/config">http://www.cs.utk.edu/~kstanley/Trilinos3PL/config</a>.  
+
 \subsection mpi Finding MPI for your architecture
 <ul><li>
-Most parallel sparse direct solvers on built on MPI.  
+Most parallel sparse direct solvers are built on MPI.  
 If Trilinos/config has a configure invocation script for your
 architecture, you can look for --with-mpi there.  
 Mpich, a portable implementation of MPI, is available from 
 the <a href="http://www-unix.mcs.anl.gov/mpi/mpich">MPICH website</a>. 
-LAM/MPI  is available from the <a href="http://www.lam-mpi.org/"> LAM/MPI webstie</a>.
+LAM/MPI  is available from the <a href="http://www.lam-mpi.org/"> LAM/MPI website</a>.
 </ul>
 
 \subsection blas Finding Optimized BLAS for your architecture
@@ -62,10 +68,13 @@ optimized BLAS library for you.  </ul>
 
 \subsection thirdparty Installing third party software
 
+
+
+
 <ul>
-<li> SuperludistOO
+<li> SuperLU distributed 
 <ul>
-<li>Obtain the distribution from <a href="http://www.nersc.gov/~xiaoye/SuperLU/index.html#superlu_dist">Xiaoye Li's SuperLU web site</a> by clicking on the download link under in the "SuperLU_DIST Version 2.0" section.
+<li>Obtain the distribution from <a href="http://www.nersc.gov/~xiaoye/SuperLU/index.html#superlu_dist">Xiaoye Li's SuperLU web site</a> by clicking on the download link in the "SuperLU_DIST Version 2.0" section.
 <li>Untar the SuperLU dist code in your Trilinos3PL directory.
 <li>Follow the intructions in README (edit make.inc, 'make lib'), ignoring the section on MATLAB
 <li>Run an example, following the instructions in EXAMPLE/README (make pddrive; mpirun -np 4 pddrive -r 1 -c 4 pddrive )
@@ -84,9 +93,9 @@ optimized BLAS library for you.  </ul>
         REFINEMENT time        0.03     Steps       1
 </pre>
 </ul>
-<li> Epetra_SLU
+<li> SuperLU serial
 <ul>
-<li>Obtain the distribution from <a href="http://www.nersc.gov/~xiaoye/SuperLU/index.html#superlu">Xiaoye Li's SuperLU web site</a> by clicking on the download link.
+<li>Obtain the distribution from <a href="http://www.nersc.gov/~xiaoye/SuperLU/index.html#superlu">Xiaoye Li's SuperLU web site</a> by clicking on the download link in the "SuperLU Version 2.0" section.
 <li>Untar the SuperLU serial code in your Trilinos3PL directory.
 <li>Follow the intructions in README (edit make.inc, 'make lib'), ignoring the section on MATLAB
 <li>Run an example, following the instructions in EXAMPLE/README (make dlinsol; dlinsol <g10 )
@@ -113,7 +122,10 @@ L\U MB 0.022    total MB needed 0.042   expansions 0
 
 You will need to add three switches to your configure invocation script.
 <ul>
-<li>Include the Amesos code in the configuration.  <b>--enable-amesos </b>
+<li>Include the Amesos code in the configuration:  
+<ul>
+<li><b>--enable-amesos </b>
+</ul>
 <li>Enable one of the Amesos classes:
 <ul>
 <li><b>--enable-amesos-slus</b> - SuperLU serial
@@ -123,11 +135,63 @@ You will need to add three switches to your configure invocation script.
 <ul>
 <li><b>--with-trilinos3pldir=/home/somedir/Trilinos3PL</b>
 <li><b>--with-amesos-sluddir=/home/somedir/SuperLU_DIST_2.0</b>
-<li><b>--with-amesos-sludlib=/home/somedir/SuperLU_DIST_2.0/libsuperludist.a</b> and <b>--with-amesos-sludincdir=/home/somedir/SuperLU_DIST_2.0/SRC</b>
+<li><b>--with-amesos-sludlib=/home/somedir/SuperLU_DIST_2.0/libsuperludist.a</b> <br>and <br><b>--with-amesos-sludincdir=/home/somedir/SuperLU_DIST_2.0/SRC</b>
 </ul>
 </ul>
-Amesos is not build with either of the two supported classes by default.  You must choose one.
-At present, you cna only chose one because of name conflicts between SuperLU serial and SuperLU dist.
+Amesos is not built with either of the two supported classes by default.  You must choose one.
+At present, you cannot configure with both  SuperLU serial and SuperLU dist because of name conflicts between the two.
+
+\subsection testsuperludist  Testing Amesos with SuperLU distributed
+
+<pre>
+cd packages/amesos/test
+source AmesosShortScript.exe
+echo $status
+</pre>
+
+<p>In the 3.0.1 tar ball, the test will print a message upon success.  In the current development version of the code, under CVS control, the test is silent.  However there are two ways to test whether the test succeeded:
+<ul>
+<li>If the test passes, "echo $status" will return 0 
+<li>Another way to check that this test passed is to compare the number of lines (the first number shown on the line) in each of the following two csh commands.  If this test was successful, OK will be printed once for each call to mpirun that is not in commented out, hence the following two calls to wc will show the same number of lines:
+<pre>
+grep OK SST.summary | wc
+grep mpirun AmesosShortScript.exe | grep -v comment | wc
+</pre>
+</ul>
+
+<p>Note: If AmesosShortScript.exe is not in amesos/test, it is likely that the make in the 
+amesos/test directory failed.
+
+<p>AmesosShellScript.exe contains a slightly longer test including larger matrices.
+
+\subsection testsuperluserial  Testing Amesos with SuperLU serial
+
+<p>Amesos as contained in the trilinos3.0.1 tar ball does not include a test for SuperLU serial.  
+
+<p>AmesosShortSuperLU.exe, found only in the CVS repository at the moment, tests Amesos with SuperLU serial.  Follow the instruction for testing with SuperLU distributed above, using AmesosShortSuperLU.exe instead of AmesosShortScript.exe.
+
+
+\subsection bugs Known bugs
+
+<ul>
+<li> SuperludistOO
+<ul>
+<li><b>--with-amesos-slud2</b> switch does not work on cygwingcc.  
+make in amesos/test fails with SuperLUdist_2.0 because dlsum_bmod and 
+dlsum_fmod are multiply defined. 
+
+<p><b>Patch:</b> To build with slud2 on cygwingcc, you will need SuperLUdist_2.0.amesos.tar, a patch file 
+for superlu_dist_2.0.tar.  Both SuperLUdist_2.0.amesos.tar and 
+superlu_dist_2.0.tar have been installed in ~/Trilinos3PL under CVS.  If you 
+use SuperLUdist_2.0.amesos.tar, you should start from the CVSd version of 
+superlu_dist_2.0.tar for consistency.
+<br><p>
+<li><b>Superludist_2.0 tar file requires --with-amesos-sluddir=/home/somedir/SuperLU_DIST_2.0</b>.  By default, Amesos configuration assumes that you are using superlu_dist_1.0.tar which installs in SuperLU_DIST.  superlu_dist_2.0.tar installs in SuperLU_DIST_2.0.  
+</ul>
+
+
+</ul>
+
 
 
 */
