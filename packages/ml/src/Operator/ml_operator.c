@@ -171,7 +171,7 @@ int ML_Operator_Clean( ML_Operator *mat)
    }
    ML_memory_free((void**)&(mat->matvec));
    ML_memory_free((void**)&(mat->getrow));
-   if (mat->label != NULL) { free(mat->label); mat->label = NULL; }
+   if (mat->label != NULL) { ML_free(mat->label); mat->label = NULL; }
    mat->num_PDEs            = 1;
    mat->num_rigid           = 1;
    mat->halfclone           = ML_FALSE;
@@ -445,9 +445,9 @@ int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag)
             for (j = 0; j < n; j++)
                if (cols[j] == i) tdiag[i] = vals[j];
          }
-         free(cols); free(vals);
+         ML_free(cols); ML_free(vals);
          ML_Operator_Set_Diag(Amat, length, tdiag);
-         free(tdiag);
+         ML_free(tdiag);
       }
    }
    ML_DVector_GetDataPtr( Amat->diagonal, diag);
@@ -1444,5 +1444,5 @@ int ML_Operator_Move2HierarchyAndDestroy_fragile(ML_Operator *newmat,
   newmat->getrow->pre_comm = NULL;
   ML_Operator_Destroy(&newmat);
 
-  return 0;
+  return 0;	
 }

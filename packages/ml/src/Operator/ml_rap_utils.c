@@ -305,7 +305,8 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
       }
       for (i = 0; i < index; i++) t1[i] = (*columns)[i];
       for (i = 0; i < index; i++) t2[i] = (*values)[i];
-      ML_free(*columns);  ML_free(*values);
+      if (*columns != NULL) ML_free(*columns);  
+      if (*values  != NULL) ML_free(*values);
       *columns = t1;
       *values  = t2;
    }

@@ -359,8 +359,8 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
        fflush(stdout);
 #endif
        ML_free(accum_index);
-       accum_index = ML_allocate(sizeof(int)*2*index_length);
-       tptr = ML_allocate(sizeof(int)*2*index_length);
+       accum_index = (int *) ML_allocate(sizeof(int)*2*index_length);
+       tptr = (int *) ML_allocate(sizeof(int)*2*index_length);
        if (tptr == NULL) pr_error("ML_matmat_mult: out of tptr space\n");
        for (j = 0; j < 2*index_length; j++) accum_index[j] = -1;
        for (j = 0; j < 2*index_length; j++) tptr[j] = -1;
