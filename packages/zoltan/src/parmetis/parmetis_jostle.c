@@ -1038,7 +1038,7 @@ static int LB_ParMetis_Jostle(
 #else
       fprintf(stderr, "Zoltan error: You need the newest beta version of ParMETIS to use multi-weights."
         "If you have this installed, please define BETA_PARMETIS and recompile Zoltan.\n");
-#endif BETA_PARMETIS
+#endif /* BETA_PARMETIS */
     LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
@@ -1078,7 +1078,7 @@ static int LB_ParMetis_Jostle(
 #else
       fprintf(stderr, "Zoltan error: You need the newest beta version of ParMETIS to use multi-weights."
         "If you have this installed, please define BETA_PARMETIS and recompile Zoltan.\n");
-#endif BETA_PARMETIS
+#endif /* BETA_PARMETIS */
     }
     LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
