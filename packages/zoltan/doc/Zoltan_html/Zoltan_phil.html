@@ -206,6 +206,10 @@ Zoltan</a></font></b></td>
 <br><b><font face="Verdana, Arial, Helvetica"><font size=+2>Data Management Services
 for Parallel Applications</font></font></b>
 <p><!---------------END OF THIS CHANGE AREA---------------><!----------------THIS IS A CHANGE AREA----------------><!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
+<!-------------------------------------------------------------------------->
+<!-------------------------------------------------------------------------->
+<!-------------------------------------------------------------------------->
+<!-------------------------------------------------------------------------->
 <b><font face="Verdana, Arial, Helvetica"><font size=+2>Project 
 Description</font></font></b><br>
 <hr>
@@ -261,8 +265,7 @@ Communication Tools
 
 </ul>
 <!---------------------------------------------------------------------------->
-<hr>
-<a name="Overview"><b>Overview</b><p>
+<a name="Overview"><hr><b>Overview</b><p>
 The Zoltan library is a collection of data management services for parallel, 
 unstructured, adaptive, and dynamic applications.  It simplifies the
 load-balancing, data movement, unstructured communication, and memory usage
@@ -299,8 +302,7 @@ C++, and Fortran90.
 
 
 <!---------------------------------------------------------------------------->
-<hr>
-<a name="Design"><b> Design of Toolkits and Libraries</b><p>
+<a name="Design"><hr><b>Design of Toolkits and Libraries</b><p>
 Using general-purpose libraries allows
 algorithms to be shared among and compared within many applications.  The
 close dependence of libraries on application data, however,
@@ -371,8 +373,7 @@ and Devine</a>].
 <p>
 
 <!---------------------------------------------------------------------------->
-<hr>
-<a name="ZDesign"><b> Zoltan's Design</b><p>
+<a name="ZDesign"><hr><b>Zoltan's Design</b><p>
 We have chosen an object-based, callback function design.  An application
 provides a number of simple callback functions that access the application
 data structures.  Zoltan then calls these functions to obtain data it needs.
@@ -393,8 +394,7 @@ Zoltan.  Zoltan calls the packing function to load communication buffers,
 performs the communication necessary to move the data, and calls the unpacking
 function to unload the communication buffers. 
 <!---------------------------------------------------------------------------->
-<hr>
-<a name="ZExamples"><b> Zoltan Examples</b><p>
+<a name="ZExamples"><hr><b>Zoltan Examples</b><p>
 Several examples of Zoltan's use can be found in the 
 <a href="ug_html/ug.html">Zoltan User's Guide</a>.
 <ul>
@@ -416,8 +416,7 @@ implementations</a>.
 </ul>
 <p>
 <!---------------------------------------------------------------------------->
-<hr>
-<a name="Typical"><b> Typical Approach to Dynamic Load Balancing</b><p>
+<a name="Typical"><hr><b>Typical Approach to Dynamic Load Balancing</b><p>
 Dynamic load balancing has been used in many applications, ranging from
 adaptive mesh refinement to particle methods to contact detection algorithms.
 In most applications using dynamic load balancing, the load-balancing
@@ -442,8 +441,7 @@ severely impaired.
 
 
 <!---------------------------------------------------------------------------->
-<hr>
-<a name="Harder"><b> Why Dynamic Load Balancing is Harder than Static Partitioning</b><p>
+<a name="Harder"><hr><b>Why Dynamic Load Balancing is Harder than Static Partitioning</b><p>
 Many high-quality static partitioning tools exist; examples include
 <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>,
 <a href="http://www-users.cs.umn.edu/~karypis/metis">METIS</a>,
@@ -496,8 +494,7 @@ costs.</td>
 </table>
 <p>
 <!---------------------------------------------------------------------------->
-<hr>
-<a name="ZLB"><b>Zoltan's Load-Balancing Suite</b></a>
+<a name="ZLB"><hr><b>Zoltan's Load-Balancing Suite</b></a>
 <p>
 In our experience, no single partitioning strategy is effective for all
 parallel computations.  Some application require partitions based only on the
@@ -537,8 +534,7 @@ to obtain, enabling users to try several algorithms and find
 the best ones for their applications.
 <p>
 <!---------------------------------------------------------------------------->
-<hr>
-<a name="Mig"><b>Data Migration Tools</b></a>
+<a name="Mig"><hr><b>Data Migration Tools</b></a>
 <p>
 A complicated part of dynamic repartitioning is the need to move data from old
 processors to new ones.  This data migration requires deletions and insertions
@@ -556,8 +552,7 @@ processors.  This mechanism eliminates the need for the application developer
 to implement complicated communication for data migration.
 <p>
 <!---------------------------------------------------------------------------->
-<hr>
-<a name="UComm"><b>Unstructured Communication Library</b></a>
+<a name="UComm"><hr><b>Unstructured Communication Library</b></a>
 <p>
 Unlike static applications, where communication patterns remain fixed
 throughout the computation, dynamic applications can have complicated,
@@ -583,8 +578,7 @@ patterns change.  The package also includes simple communication primitives that
 insulate the user from details of message sends and receives.  
 <p>
 <!---------------------------------------------------------------------------->
-<hr>
-<a name="DD"><b>Distributed Data Directories</b></a>
+<a name="DD"><hr><b>Distributed Data Directories</b></a>
 <p>
 Dynamic applications often need to locate off-processor information.  After
 repartitioning, for example, a processor might need to rebuild ghost cells and
@@ -599,8 +593,7 @@ Then, through a rendezvous algorithm, other processors can look up the
 location of data they need. 
 <p>
 <!---------------------------------------------------------------------------->
-<hr>
-<a name="MemTools"><b>Memory Management Tools</b></a>
+<a name="MemTools"><hr><b>Memory Management Tools</b></a>
 <p>
 Dynamic applications rely heavily on the ability to allocate and free memory
 as needed.  Memory leaks and invalid memory accesses are common to developing
