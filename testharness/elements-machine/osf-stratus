@@ -3,6 +3,7 @@ CXXFLAGS="-O3 -DMPICH_SKIP_MPICXX"
 TRILINOS_TEMPLATE_OBJS=cxx_repository/*.o
 CFLAGS=-O3
 FFLAGS=-O3
+--with-ar="/usr/users/jmwille/Trilinos/sampleScripts/stratus_ar.pl ar cru"
 --with-libs="/usr/users/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
 /usr/users/jmwille/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib/libumfpack.a
 /usr/users/jmwille/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a"
