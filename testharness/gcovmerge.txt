@@ -76,4 +76,4 @@ $cat dotofile.cpp.gcov
  #####:	       18:  cout << num << " is prime.\n";
      -:        19:}
 
-The first column indicates how many times each line was executed (- means that the line is not executable and ##### means the line was never executed).  The second is the line number in the code (lines 0 are for gcov's use). The remainder of the file is the actual source.
+The first column indicates how many times each line was executed (- means that the line is not executable and ##### means the line was never executed).  The second is the line number in the code (lines 0 are for gcov's use). The remainder of the file is the actual source.  Note that the .gcov files on your particular system may look a little different due to varying versions of GCC.

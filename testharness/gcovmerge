@@ -95,46 +95,22 @@ foreach (`find $sdir -name "*.bbg"`){
 	    }
 	}
 	if($skip){next;}
-	s/.bb$/.o/;
+	s/.bbg$/.cpp/;
 	chomp;
-	system "gcov $_ >& /dev/null";
-    }
-    foreach (<*.cpp.gcov>){
-	chomp;
-	open GCOVFILE, "<$_";
-	$lines_executed = 0;
-	$lines_compiled = 0;
-	foreach (<GCOVFILE>){
-	    if(/^\s+(.+):\s+(\d+):/){
-		if($1 eq "#####"){
-		    $lines_compiled++;
-		    $fcomp++;
-		}elsif($1 ne "-"){
-		    $lines_compiled++;
-		    $fcomp++;
-		    $lines_executed++;
-		    $fexec++;
-		}
-	    }else{}
-	}
-	close GCOVFILE;
-	unlink $_;
-	if($lines_compiled){
-	    $percent = ($lines_executed / $lines_compiled) * 100;
-	}else{
-	    $percent = "none";
-	}
-	if($percent <= $covmax && $percent >= $covmin){
-	    $s = " " x (55 - length);
-	    s/\.gcov$/$s/;
-	    print "\t$_$percent%\n";
+	foreach $line (`gcov -n $_ 2> /dev/null`){
+	    if($line =~ /\s*(\d+\.\d+)% of (\d+) source lines executed in file $_/){
+		$fcomp += $2;
+		$fexec += ($1 * $2 / 100);
+		$s = " " x (55 - length);
+		print "\t$_$s$1%\n";
+	    }
 	}
     }
     if($fc){
 	if($fcomp > 0){
 	    $fper = 100 * $fexec / $fcomp;
 	}else{
-	    $fper = "none";
+	    $fper = 0;
 	}
 	$s = " " x (50 - length);
 	s/$/$s/;
