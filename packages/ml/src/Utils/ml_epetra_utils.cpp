@@ -16,6 +16,8 @@
 
 #ifdef ML_WITH_EPETRA
 #include "ml_epetra_utils.h"
+#include "Epetra_Map.h"
+#include "Epetra_Vector.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #ifdef ML_MPI
@@ -326,9 +328,10 @@ extern "C" {
 
 Epetra_CrsMatrix * Q  = NULL;
 Epetra_FECrsMatrix *  Qt = NULL; 
-  
+
 ML_Operator * ML_BuildQ( int StartingNumElements,
 			 int ReorderedNumElements,
+			 int NumPDEEqns,
 			 int reordered_decomposition[],
 			 double StartingNullSpace[],
 			 double ReorderedNullSpace[],
@@ -354,40 +357,69 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
-  Epetra_Map StartingMap(-1,StartingNumElements,0,Comm);
-  Epetra_Map ReorderedMap(-1,ReorderedNumElements,0,Comm);
+  Epetra_Map StartingMap(-1,StartingNumElements*NumPDEEqns,0,Comm);
+  Epetra_Map ReorderedMap(-1,ReorderedNumElements*NumPDEEqns,0,Comm);
 
   Q = new Epetra_CrsMatrix(Copy,StartingMap,1);
 
   int * MyGlobalElements = StartingMap.MyGlobalElements();
 
   // fill Q
-  for( int i=0 ; i<StartingNumElements ; ++i ) {
+  for( int i=0 ; i<StartingNumElements ; i+=NumPDEEqns ) {
     double one = 1.0;
-    int indices = reordered_decomposition[i];
-    Q->InsertGlobalValues(MyGlobalElements[i], 1, &one, &indices );
+    int PointCol = reordered_decomposition[i%NumPDEEqns];
+    for( int j=0 ; j<NumPDEEqns ; ++j ) {
+      int GlobalRow = MyGlobalElements[i] + j;
+      int GlobalCol = PointCol*NumPDEEqns + j;
+      Q->InsertGlobalValues(GlobalRow, 1, &one, &GlobalCol );
+    }
   }
 
   assert(Q->FillComplete(ReorderedMap,StartingMap)==0);
 
   ML_Q2 = ML_Operator_Create( ml_communicator );
 
+  double * Start = new double[StartingNumElements*NumPDEEqns];
+  double * Reord = new double[ReorderedNumElements*NumPDEEqns];
+
+  Epetra_Vector xxx(View,ReorderedMap,Reord);
+  Epetra_Vector yyy(View,StartingMap,Start);
+
   if( ComputeNewNullSpace == 1 ) {
-    Epetra_Vector xxx(View, StartingMap, StartingNullSpace);
-    Epetra_Vector yyy(View, ReorderedMap, ReorderedNullSpace);
+
+    // This is not exactly true.... add null space with more than one vector??
+    xxx.PutScalar(0.0);
+    for( int i=0 ; i<StartingNumElements ; ++i )
+      xxx[i*NumPDEEqns] = StartingNullSpace[i];
+    
     Q->Multiply(true,xxx,yyy);
+    
+    for( int i=0 ; i<ReorderedNumElements ; ++i )
+      ReorderedNullSpace[i] = yyy[i*NumPDEEqns];
+    
   }
 
-  Epetra_Vector xxx2(View, StartingMap, StartingBdry);
-  Epetra_Vector yyy2(View, ReorderedMap, ReorderedBdry);
-  Q->Multiply(true,xxx2,yyy2);
+  xxx.PutScalar(0.0);
+  yyy.PutScalar(0.0);
+
+  for( int i=0 ; i<StartingNumElements ; ++i )
+    xxx[i*NumPDEEqns] = StartingBdry[i];
+
+  Q->Multiply(true,xxx,yyy);
+
+  for( int i=0 ; i<ReorderedNumElements ; ++i )
+    ReorderedBdry[i] = yyy[i*NumPDEEqns];
 
   Epetra2MLMatrix( Q, ML_Q2);
 
   return ML_Q2;
-#endif
+
+  delete [] Start;
+  delete [] Reord;
   
+#endif
 }
+
 
 void ML_DestroyQ(void) 
 {
@@ -398,6 +430,9 @@ void ML_DestroyQ(void)
   return;
   
 } /* ML_DestroyQ */
+
+// NOTE: this works ONLY if NumPDEEqns == 1. To be changed as
+// done with ML_BuildQ for the general case
 
 ML_Operator * ML_BuildQt( int StartingNumElements,
 			  int ReorderedNumElements,
