@@ -1,0 +1,5 @@
+../configure --enable-referencey12m --enable-belos \
+CC="$TRILINOS_HOME/config/cygwin_icl.pl icl" CXX="$TRILINOS_HOME/config/cygwin_icl.pl icl" \
+F77=ifl --with-fflags="-nologo -cm" \
+--with-cxxflags="-nologo -DICL -GR -Zc:forScope" --with-blas=" mkl_c.lib mkl_p4.lib" \
+--with-lapack=" mkl_lapack.lib" --with-ldflags="libirc.lib libm.lib"
