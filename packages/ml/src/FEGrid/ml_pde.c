@@ -63,10 +63,18 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
    nnode_local = nnode_part_1d * nnode_part_1d;
   
    nbytes = nnode_part_1d * 3 * sizeof(int*);
+#ifdef ML_CPP
+   ML_memory_alloc((void**) &square, nbytes, "AP1");
+#else
    ML_memory_alloc((void*) &square, nbytes, "AP1");
+#endif
    nbytes = nnode_part_1d * 3 * sizeof(int);
    for ( i = 0; i < nnode_part_1d*3; i++ )
+#ifdef ML_CPP
+      ML_memory_alloc((void**) &(square[i]), nbytes, "AP2");
+#else
       ML_memory_alloc((void*) &(square[i]), nbytes, "AP2");
+#endif
 
    for ( j = 0; j < 3; j++ )
    {
@@ -120,8 +128,13 @@ int ML_PDE_GenMat(MLI_Solver *solver, int N_nodes)
    }
 
    for ( i = 0; i < nnode_part_1d*3; i++ )
+#ifdef ML_CPP
+      ML_memory_free((void**) &(square[i]));
+   ML_memory_free((void**) &(square));
+#else
       ML_memory_free((void*) &(square[i]));
    ML_memory_free((void*) &(square));
+#endif
    rhs  = (double *) ML_allocate(nnode_local * sizeof(double));
    for ( i = 0; i < nnode_local; i++ ) rhs[i] = 1.0; 
 

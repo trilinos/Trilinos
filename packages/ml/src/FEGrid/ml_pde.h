@@ -15,14 +15,18 @@
 
 #include "mli_solver.h"
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 extern int ML_PDE_GenMat(MLI_Solver*,int);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

@@ -166,3 +166,40 @@ int ML_Mapper_Apply(ML_Mapper *ml_mapper, double *invec, double *outvec)
    }
 }
 
+
+
+
+#ifdef WKC
+// WKC
+//  EXTENSION FOR EPETRA CLASSES
+/* ******************************************************************** */
+/* apply mapping function                                               */
+/* -------------------------------------------------------------------- */
+// NOT CALLED!
+
+int ML_Mapper_Apply(ML_Mapper *ml_mapper, Epetra_MultiVector &ep_invec, 
+                    Epetra_MultiVector &ep_outvec)
+{
+   double ** pp_invec;
+   ep_invec.ExtractView ( &pp_invec );
+   double ** pp_outvec;
+   ep_outvec.ExtractView ( &pp_outvec );
+   int iRetVal = -1;
+
+   for ( int KK = 0 ; KK != ep_invec.NumVectors() ; KK++ ) {
+      double *invec = ep_invec[KK];
+      double *outvec = ep_outvec[KK];
+
+   if ( ml_mapper->ML_id != ML_ID_MAPPER ) {
+      printf("ML_Mapper_Set error : wrong object.\n");
+      exit(1);
+   }
+   if ( ml_mapper->map != NULL ) {
+      ml_mapper->map(ml_mapper->data, invec, outvec);
+      iRetVal = 0;
+   }
+   }
+
+   return iRetVal;
+}
+#endif

@@ -57,9 +57,11 @@ typedef struct ML_GridAGX_Struct
 /* functions to manipulate the grid structure                           */
 /* -------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" 
 {
+#endif
 #endif
 
 extern int  ML_GridAGX_Create( ML_GridAGX ** );
@@ -84,8 +86,10 @@ extern int  ML_GridAGX_Load_VertGlobalNum(ML_GridAGX *, int, int *);
 extern int  ML_GridAGX_Load_ElmntVertList(ML_GridAGX *, int, int *);
 extern int  ML_GridAGX_Load_AllVertCoordinates(ML_GridAGX*,int,double*);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

@@ -1198,7 +1198,11 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    {
       fromproc = -1;
       comm->USR_irecvbytes((void*) &intarray[i], sizeof(int), &fromproc, 
-                           &msgtype, comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
    }
    for ( i = 0; i < sendproc_cnt; i++ ) 
    {
@@ -1209,7 +1213,11 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    {
       fromproc = -1;
       comm->USR_waitbytes((void*) &intarray[i], sizeof(int), &fromproc, 
-                          &msgtype, comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
       itmp[fromproc] = intarray[i]; 
    }
    if ( proc_flag[mypid] > 0 )
@@ -1272,7 +1280,11 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
       trecv_leng[i] = leng * sizeof(int);
       comm->USR_irecvbytes((void*) (recv_list[i]), trecv_leng[i], 
                            &(trecv_proc[i]), &(trecv_msg[i]), 
-                           comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           comm->USR_comm, &Request[i]);
+#else
+                           comm->USR_comm, (void *)&Request[i]);
+#endif
    }
    for ( i = 0; i < sendproc_cnt; i++ )
    {
@@ -1284,7 +1296,11 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    {
       comm->USR_waitbytes((void*) (recv_list[i]), trecv_leng[i], 
                           &(trecv_proc[i]), &(trecv_msg[i]), 
-                          comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           comm->USR_comm, &Request[i]);
+#else
+                           comm->USR_comm, (void *)&Request[i]);
+#endif
    }
 
    /* ----------------------------------------------------------------- */
@@ -1311,7 +1327,11 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
       trecv_proc[i] = recv_proc[i];
       comm->USR_irecvbytes((void*)&(combuf->recv_xyz[index]), trecv_leng[i],
                            &(trecv_proc[i]), &(trecv_msg[i]), 
-                           comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                           comm->USR_comm, &Request[i]);
+#else
+                           comm->USR_comm, (void *)&Request[i]);
+#endif
       index = index + ndim * recv_leng[i];
    }
 
@@ -1341,7 +1361,11 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    {
       comm->USR_waitbytes((void*)&(combuf->recv_xyz[index]), trecv_leng[i],
                            &(trecv_proc[i]), &(trecv_msg[i]), 
-                           comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                           comm->USR_comm, &Request[i]);
+#else
+                           comm->USR_comm, (void *)&Request[i]);
+#endif
       index = index + ndim * recv_leng[i];
    }
 
@@ -1703,7 +1727,11 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    {
       msgtype = 13579;
       comm->USR_irecvbytes((void*) &recv_leng[i], sizeof(int), &recv_proc[i],
-                           &msgtype, comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
    }
    msgtype = 13579;
    for ( i = 0; i < sendproc_cnt; i++ )
@@ -1714,7 +1742,11 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    for ( i = 0; i < recvproc_cnt; i++ )
    {
       comm->USR_waitbytes((void*) &recv_leng[i], sizeof(int), &recv_proc[i],
-                          &msgtype, comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
       tot_recv_leng += recv_leng[i];
    }
 
@@ -1737,7 +1769,11 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
       msgtype = 13580;
       leng = recv_leng[i] * sizeof(double); 
       comm->USR_irecvbytes((void*) &coef_out[offset], leng, &recv_proc[i], 
-                           &msgtype, comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
       offset = offset + recv_leng[i];
    }
    offset  = 0;
@@ -1755,7 +1791,11 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
       msgtype = 13580;
       leng = recv_leng[i] * sizeof(double); 
       comm->USR_waitbytes((void*) &coef_out[offset], leng, &recv_proc[i], 
-                           &msgtype, comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
       offset = offset + recv_leng[i];
    }
 
@@ -1765,7 +1805,11 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
       msgtype = 13581;
       leng = recv_leng[i] * sizeof(int); 
       comm->USR_irecvbytes((void*) &index_out[offset], leng, &recv_proc[i], 
-                           &msgtype, comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
       offset = offset + recv_leng[i];
    }
    offset  = 0;
@@ -1783,7 +1827,11 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
       msgtype = 13581;
       leng = recv_leng[i] * sizeof(int); 
       comm->USR_waitbytes((void*) &index_out[offset], leng, &recv_proc[i], 
-                          &msgtype, comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
       offset = offset + recv_leng[i];
    }
    if ( recvproc_cnt > 0 ) 
@@ -1839,7 +1887,11 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
       msgtype = 13582;
       leng = recv_leng[i] * sizeof(int); 
       comm->USR_irecvbytes((char*) &coefp_out[offset], leng, &recv_proc[i], 
-                           &msgtype, comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
       offset = offset + recv_leng[i];
    }
    msgtype = 13582;
@@ -1857,7 +1909,11 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
       msgtype = 13582;
       leng = recv_leng[i] * sizeof(int); 
       comm->USR_waitbytes((char*) &coefp_out[offset], leng, &recv_proc[i], 
-                           &msgtype, comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
       offset = offset + recv_leng[i];
    }
 
@@ -2139,7 +2195,11 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    {
       fromproc = -1;
       comm->USR_irecvbytes((void*) &intarray[i], int_size, &fromproc, 
-                           &msgtype, comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
    }
    for ( i = 0; i < nprocs; i++ )
    {
@@ -2151,7 +2211,11 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    {
       fromproc = -1;
       comm->USR_waitbytes((void*) &intarray[i], int_size, &fromproc, 
-                          &msgtype, comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                           &msgtype, comm->USR_comm, &Request[i]);
+#else
+                           &msgtype, comm->USR_comm, (void *)&Request[i]);
+#endif
       tmp_ia[fromproc] = intarray[i];
    }
    if ( proc_flag[mypid] > 0 ) 
@@ -2201,7 +2265,11 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
                   int_size;
       tmp_ia   = &(xsfer_op->com->recv_list[xsfer_op->com->recv_ia[i]]);
       comm->USR_irecvbytes((void*) tmp_ia, fromsize, &fromproc, &msgtype, 
-                           comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                           comm->USR_comm, &Request[i]);
+#else
+                           comm->USR_comm, (void *)&Request[i]);
+#endif
    }
    for ( i = 0; i < nprocs; i++ )
    {
@@ -2219,7 +2287,11 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
                   int_size;
       tmp_ia   = &(xsfer_op->com->recv_list[xsfer_op->com->recv_ia[i]]);
       comm->USR_waitbytes((void*) tmp_ia, fromsize, &fromproc, &msgtype, 
-                           comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                           comm->USR_comm, &Request[i]);
+#else
+                           comm->USR_comm, (void *)&Request[i]);
+#endif
    }
    k = xsfer_op->com->recv_cnt;
    if ( k > 0 )

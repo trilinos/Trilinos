@@ -39,9 +39,11 @@ typedef struct ML_ElementAGX_Struct
 /* functions to manipulate the Simple_element structure                 */
 /* -------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" 
 {
+#endif
 #endif
 
 extern int  ML_ElementAGX_Create(ML_ElementAGX**, int, int);
@@ -55,8 +57,10 @@ extern int  ML_ElementAGX_Get_VertCoordinate
 extern int  ML_ElementAGX_ComposeCandidates
              (ML_ElementAGX *, int, double *, int *, int *, int *, int *);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

@@ -35,9 +35,11 @@ struct ML_Grid_Struct
 /* definition of the functions                                          */
 /* -------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
 {
+#endif
 #endif
 
 extern int ML_Grid_Create( ML_Grid ** );
@@ -49,8 +51,10 @@ extern int ML_Grid_Set_GridFunc( ML_Grid *, ML_GridFunc * );
 extern int ML_Grid_Get_GridFunc( ML_Grid *, ML_GridFunc ** );
 extern int ML_Grid_Create_GridFunc( ML_Grid * );
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

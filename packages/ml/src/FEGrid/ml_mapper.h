@@ -16,6 +16,10 @@
 #include "ml_defs.h"
 #include "ml_memory.h"
 
+#ifdef WKC
+#include <Epetra_MultiVector.h>
+#endif 
+
 typedef struct ML_Mapper_Struct ML_Mapper;
 
 /* ******************************************************************** */
@@ -39,8 +43,10 @@ struct ML_Mapper_Struct {
 /* function for accessing the ML_Mapper Class                           */
 /* ******************************************************************** */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 extern int ML_Mapper_Create(ML_Mapper **);
@@ -54,8 +60,15 @@ extern int ML_Mapper_SetData(ML_Mapper*,void*);
 extern int ML_Mapper_GetLength(ML_Mapper*,int*,int*);
 extern int ML_Mapper_Apply(ML_Mapper *, double *, double *);
 
+// WKC -- Added header for Epetra stuff
+#ifdef WKC
+extern int ML_Mapper_Apply(ML_Mapper *, Epetra_MultiVector & , Epetra_MultiVector &);
+#endif
+
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif
