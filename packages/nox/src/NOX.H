@@ -10,5 +10,7 @@
 #include "NOX_Status_MaxResid.H"
 #include "NOX_Status_RelResid.H"
 #include "NOX_Status_RelUpdate.H"
+#include "NOX_Status_WRMS.H"
+#include "NOX_Status_SizeIndAbsResid.H"
 #include "NOX_Utils.H"
 #include "LOCA_Stepper.H"

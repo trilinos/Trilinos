@@ -185,50 +185,6 @@ public:
 
   //@}
 
-  //@{ \name LOCA Specific Methods.
-
-  /*! 
-    \brief Set a parameter value in the application code. 
-
-    Returns true if successful.
-    This method is required ONLY for LOCA continuation runs.  It is used
-    to set the continuation parameter and bifurcation parameter. 
-  */
-  virtual bool setParameter(string param, double value) = 0;
-
-  /*!
-    \brief Set the RHSVector equal to the input vector.
-
-    Returns true if successful.
-    This method is needed since LOCA uses bordering algorithms that 
-    create unusual RHS vectors.  The methods used to generate the RHS vectors
-    must be done at the Abstract level and then put into the group
-    so linear solves can be called.  This is dangerous since it will set the
-    RHS vector to be valid for linear solves even though it does not 
-    correspond to the actual solution vector.  This should never be called 
-    from a nonlinear solver routine! This method is required ONLY for LOCA 
-    continuation runs.
-  */
-  virtual bool setRHS(const Vector& input) = 0;
-
-  //! Returns true if the computed mass matrix corresponds to the current solution vector.
-  virtual bool isMassMatrix() const = 0;
-
-  /*! 
-    \brief Compute the mass matrix.
-
-    Returns true if successful. 
-    This method hijacks the sharedJacobian and computes the mass matrix 
-    and stores it in the sharedJacobian object.  This will invalidate the 
-    jacobian wrt the current solution 
-    vector.  The mass matrix is the matrix of coefficients on the time
-    dependent terms of the system of equations.  This method is required 
-    ONLY for LOCA continuation runs for Hopf tracking and eigenvalue analysis.
-  */
-  virtual bool computeMassMatrix() = 0;
-
-  //@}
-
 };
 } // namespace Abstract
 } // namespace NOX

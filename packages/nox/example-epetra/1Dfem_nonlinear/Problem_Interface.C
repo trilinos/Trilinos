@@ -44,17 +44,5 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_Ope
   cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jaciban only for this test problem!" << endl;
   throw 1;
 }
-
-bool Problem_Interface::setParameter(string param, double value)
-{
-  cout << "ERROR: Problem_Interface::setParameter() - not implemented in this example!" << endl;
-  throw;
-}
-
-bool Problem_Interface::computeMassMatrix(const Epetra_Vector& x, Epetra_RowMatrix& B)
-{
-  cout << "ERROR: Problem_Interface::computeMassMatrix() - not implemented in this example!" << endl;
-  throw;
-}
 //-----------------------------------------------------------------------------
 

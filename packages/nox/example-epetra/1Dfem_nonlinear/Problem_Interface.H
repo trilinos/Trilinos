@@ -33,12 +33,6 @@ public:
   //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
   bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M);
 
-  //! Set a parameter in the user's code.
-  bool setParameter(string param, double value);
-
-  //! Compute the mass matrix 
-  bool computeMassMatrix(const Epetra_Vector& x, Epetra_RowMatrix& B);
-
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 
    *  auxiliary data required by the user's application for function/Jacobian

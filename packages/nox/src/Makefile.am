@@ -81,18 +81,13 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
 	$(srcdir)/NOX_Solver_TrustRegionBased.H \
-	$(srcdir)/NOX_Solver_NonlinearCG.H \
-        $(srcdir)/LOCA_Stepper.H \
-        $(srcdir)/LOCA_Solver_Generic.H \
-        $(srcdir)/LOCA_Solver_ZeroOrder.H
+	$(srcdir)/NOX_Solver_NonlinearCG.H 
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C \
-	$(srcdir)/NOX_Solver_NonlinearCG.C \
-        $(srcdir)/LOCA_Stepper.C \
-        $(srcdir)/LOCA_Solver_ZeroOrder.C
+	$(srcdir)/NOX_Solver_NonlinearCG.C 
 
 STATUS_H = \
 	$(srcdir)/NOX_Status_Test.H \
@@ -101,7 +96,9 @@ STATUS_H = \
 	$(srcdir)/NOX_Status_MaxResid.H \
 	$(srcdir)/NOX_Status_RelResid.H \
 	$(srcdir)/NOX_Status_MaxIters.H \
-	$(srcdir)/NOX_Status_RelUpdate.H 
+	$(srcdir)/NOX_Status_RelUpdate.H \
+        $(srcdir)/NOX_Status_WRMS.H \
+        $(srcdir)/NOX_Status_SizeIndAbsResid.H 
 
 STATUS = \
 	$(srcdir)/NOX_Status_Test.C \
@@ -110,7 +107,9 @@ STATUS = \
 	$(srcdir)/NOX_Status_MaxResid.C \
 	$(srcdir)/NOX_Status_RelResid.C \
 	$(srcdir)/NOX_Status_MaxIters.C \
-	$(srcdir)/NOX_Status_RelUpdate.C 
+	$(srcdir)/NOX_Status_RelUpdate.C \
+        $(srcdir)/NOX_Status_WRMS.C \
+        $(srcdir)/NOX_Status_SizeIndAbsResid.C 
 
 UTILS_H = \
 	$(srcdir)/NOX_Utils.H 

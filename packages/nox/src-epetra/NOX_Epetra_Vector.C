@@ -148,6 +148,21 @@ Abstract::Vector& Vector::update(double alpha, const Vector& a,
   return *this;
 }
 
+Abstract::Vector& Vector::multiply(double gamma, const Abstract::Vector& A,
+				   const Abstract::Vector& B, double alpha)
+{  
+  multiply(gamma, dynamic_cast<const Epetra::Vector&>(A),
+	   dynamic_cast<const Epetra::Vector&>(B), alpha);
+  return *this;
+}
+
+Abstract::Vector& Vector::multiply(double gamma, const Vector& A,
+				   const Vector& B, double alpha)
+{  
+  int status = epetraVec->Multiply(gamma, A.getEpetraVector(), 
+				   B.getEpetraVector(), alpha);\
+  return *this;
+}
 
 Abstract::Vector* Vector::clone(CopyType type) const
 {
@@ -210,31 +225,4 @@ double Vector::dot(const Vector& y) const
 int Vector::length() const
 {
   return epetraVec->GlobalLength();
-}
-
-bool Vector::random()
-{  
-  int status = epetraVec->Random();
-  if (status == 0)
-    return true;
-  else 
-    return false;
-}
-
-bool Vector::multiply(double gamma, const Abstract::Vector& A,
-		      const Abstract::Vector& B, double alpha)
-{  
-  return multiply(gamma, dynamic_cast<const Epetra::Vector&>(A),
-		  dynamic_cast<const Epetra::Vector&>(B), alpha);
-}
-
-bool Vector::multiply(double gamma, const Vector& A,
-		      const Vector& B, double alpha)
-{  
-  int status = epetraVec->Multiply(gamma, A.getEpetraVector(), 
-				   B.getEpetraVector(), alpha);
-  if (status == 0)
-    return true;
-  else 
-    return false;
 }

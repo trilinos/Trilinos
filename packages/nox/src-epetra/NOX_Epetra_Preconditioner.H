@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_MATRIXFREE_H_
-#define _EPETRA_MATRIXFREE_H_
+#ifndef _EPETRA_PRECONDITIONER_H_
+#define _EPETRA_PRECONDITIONER_H_
 
 #include "Epetra_Comm.h"
 #include "Epetra_Operator.h"	// base class
@@ -37,36 +37,23 @@ class Epetra_Comm;
 class Epetra_Map;
 
 namespace NOX {
-namespace Epetra {
-class Interface;
-}
-}
-
-namespace NOX {
 
 namespace Epetra {
 
-/*! \brief Concrete implementation for creating an Epetra_Operator Jacobian based on the Matrix-Free Newton-Krylov method.
-
-Matrix-Free Newton-Krylov is a method that takes advantage of the fact the Newton Krylov solvers do not require an explicit Jacobian matrix.  Newton-Krylov solvers only require the matrix-vector product \f$Jy\f$ in the iteration sequence.  This product can approximated by the following:
-
-\f[ Jy = \frac{F(x + \delta y) - F(x)}{\delta} \f]
-
-where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$ is the solution vector, \f$y\f$ is the vector to be operated on, and \f$\delta\f$ is a scalar perturbation calculated by:
-
-\f[ \delta = \lambda * (\lambda + \frac{\| x\|}{\| y\|} ) \f]
-
-where \f$ \lambda = 1.0e-6 \f$.
+/*! \brief Pure virtual class for creating a preconditioner for NOX.
+  Essentailly, NOX will compute the preconditioner with a call to 
+  computePreconditioner().  Then the ApplyInverse() will be called 
+  during the linear solves to precondition the solution.
  */
-class MatrixFree : public Epetra_Operator {
+class Preconditioner : public Epetra_Operator {
       
  public:
 
   //! Constructor 
-  MatrixFree(Interface& i, const Epetra_Vector& x);
+  Preconditioner(){};
 
   //! Pure virtual destructor
-  virtual ~MatrixFree();
+  virtual ~Preconditioner(){};
 
   //! If set true, transpose of this operator will be applied.
   /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -77,7 +64,7 @@ class MatrixFree : public Epetra_Operator {
     
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
   */
-  virtual int SetUseTranspose(bool UseTranspose);
+  virtual int SetUseTranspose(bool UseTranspose) = 0;
 
   //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
   /*! 
@@ -88,7 +75,7 @@ class MatrixFree : public Epetra_Operator {
     
     \return Integer error code, set to 0 if successful.
   */
-  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const = 0;
 
   //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
   /*! 
@@ -102,58 +89,38 @@ class MatrixFree : public Epetra_Operator {
     \warning In order to work with AztecOO, any implementation of this method must 
     support the case where X and Y are the same object.
   */
-  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const = 0;
   
   //! Returns the infinity norm of the global matrix.
   /* Returns the quantity \f$ \| A \|_\infty\f$ such that
      \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
      
      \warning This method must not be called unless HasNormInf() returns true.    */ 
-  virtual double NormInf() const;
+  virtual double NormInf() const = 0;
   
   //! Returns a character string describing the operator
-  virtual char* Label () const;
+  virtual char* Label () const = 0;
   
   //! Returns the current UseTranspose setting.
-  virtual bool UseTranspose() const;
+  virtual bool UseTranspose() const = 0;
 
   //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
-  virtual bool HasNormInf() const;
+  virtual bool HasNormInf() const = 0;
 
   //! Returns a reference to the Epetra_Comm communicator associated with this operator.
-  virtual const Epetra_Comm & Comm() const;
+  virtual const Epetra_Comm & Comm() const = 0;
 
   //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-  virtual const Epetra_BlockMap& DomainMap () const;
+  virtual const Epetra_BlockMap& DomainMap () const = 0;
 
   //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-  virtual const Epetra_BlockMap& RangeMap () const;
+  virtual const Epetra_BlockMap& RangeMap () const = 0;
 
   //! Compute Jacobian given the specified input vector, x.  Returns true if computation was successful.
-  virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
- 
-protected:
-
-  //! Label for matrix
-  string label;
-  
-  //! User provided interface function
-  Interface& interface;
-
-  //! The current solution vector 
-  Epetra_Vector currentX;
-
-  //! Perturbed solution vector 
-  mutable Epetra_Vector perturbX;
-
-  //! Function evaluation at currentX 
-  mutable Epetra_Vector fo;
-
-  //! Function evaluation at perturbX 
-  mutable Epetra_Vector fp;
+  virtual bool computePreconditioner(const Epetra_Vector& x) = 0;
 
 };
 } // namespace Epetra
 } // namespace NOX
 
-#endif /* _EPETRA_ROWMATRIX_H_ */
+#endif /* _EPETRA_PRECONDITIONER_H_ */

@@ -102,6 +102,12 @@ class Vector : public Abstract::Vector {
 			     double beta, const Abstract::Vector& b,
 			     double gamma = 0.0);
 
+  virtual Abstract::Vector& multiply(double gamma, const Vector& A,
+				     const Vector& B, double alpha);
+  //! See above
+  virtual Abstract::Vector& multiply(double gamma, const Abstract::Vector& A,
+				     const Abstract::Vector& B, double alpha);
+
   //@}
 
   //@{ \name Creating new Vectors. 
@@ -129,17 +135,6 @@ class Vector : public Abstract::Vector {
   //@}
 
   virtual int length() const;
-
-  //@{ \name LOCA Specific Methods
-
-  virtual bool random();
-
-  virtual bool multiply(double gamma, const Vector& A,
-			const Vector& B, double alpha);
-  //! See above
-  virtual bool multiply(double gamma, const Abstract::Vector& A,
-			const Abstract::Vector& B, double alpha);
-  //@}
 
  protected:
   

@@ -82,7 +82,12 @@ int main(int argc, char *argv[])
 
   // Create parameter list
   NOX::Parameter::List nlParams;
-  nlParams.setParameter("Output Level", 4);
+  nlParams.setParameter("Output Information", 
+			NOX::Utils::OuterIteration + 
+			NOX::Utils::InnerIteration +
+			NOX::Utils::Parameters + 
+			NOX::Utils::Details + 
+			NOX::Utils::Warning);
   nlParams.setParameter("MyPID", MyPID); 
   //nlParams.setParameter("Nonlinear Solver", "Newton");
   nlParams.setParameter("Nonlinear Solver", "Line Search");
@@ -124,18 +129,19 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Output Frequency", 50);    
-  lsParams.setParameter("Preconditioning", "None");   
-  lsParams.setParameter("Scaling", "None");          
-  //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
+  lsParams.setParameter("Scaling", "None");             
+  //lsParams.setParameter("Scaling", "Row Sum");          
+  //lsParams.setParameter("Preconditioning", "None");   
+  lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
   //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
   //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
   //lsParams.setParameter("Overlap", 2);  
   //lsParams.setParameter("Graph Fill", 2); 
-  //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
-  //lsParams.setParameter("Overlap", 2);   
-  //lsParams.setParameter("Fill Factor", 2.0);   
-  //lsParams.setParameter("Drop Tolerance", 1.0e-6);   
+  lsParams.setParameter("Aztec Preconditioner", "ilut"); 
+  lsParams.setParameter("Overlap", 2);   
+  lsParams.setParameter("Fill Factor", 2.0);   
+  lsParams.setParameter("Drop Tolerance", 1.0e-12);   
   //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
   //lsParams.setParameter("Polynomial Order", 6); 
 
@@ -152,17 +158,23 @@ int main(int argc, char *argv[])
   //NOX::Epetra::Group grp(lsParams, interface, soln, AA, AAA); 
   grp.computeRHS();
 
+  NOX::Epetra::Vector weights(soln);
+  weights.scale(1.0e-12);
+
   // Create the convergence tests
   NOX::Status::AbsResid absresid(1.0e-6);
   NOX::Status::RelResid relresid(grp.getNormRHS(), 1.0e-2);
+  //NOX::Status::WRMS wrms(1.0e-2, 1.0e-12);
+  //NOX::Status::WRMS wrms(1.0e-2, weights);
+  //NOX::Status::SizeIndAbsResid sizeindabsresid(1.0e-6);
   NOX::Status::Combo converged(NOX::Status::Combo::AND);
   converged.addTest(absresid);
   converged.addTest(relresid);
-  NOX::Status::MaxResid maxresid(1.0e-10);
+  //converged.addTest(wrms);
+  //converged.addTest(sizeindabsresid);
   NOX::Status::MaxIters maxiters(2000);
   NOX::Status::Combo combo(NOX::Status::Combo::OR);
   combo.addTest(converged);
-  combo.addTest(maxresid);
   combo.addTest(maxiters);
 
   // Create the method
