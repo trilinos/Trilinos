@@ -38,14 +38,10 @@
 namespace NOX {
 namespace Petsc {
 
-  /*! \brief Used by NOX::Petsc::Group to provide a link to the
-   *  external code for F and Jacobian evaluations (if needed). */
-  /*! At a minimum the user must supply a computeF().  
-   * If the user is supplying their own Petsc Mat for the Jacobian,
-   * then they must supply a computeJacobian().  Preconditioning 
-   * functions are only needed if the user wishes to supply their own 
-   * preconditioner.  Otherwise Petsc SLES has built-in preconditioners 
-   * to use.  */
+  /*! \brief Class to convert solver options from command line (or command 
+   *  input file) into a form usable by NOX. */
+  /*!  Details go here .....
+   *   */
 class Options {
 
 public:
@@ -54,7 +50,7 @@ public:
   Options();
 
   //! Constructor
-  Options(NOX::Parameter::List& params);
+  Options(NOX::Parameter::List& params, int rank = 0);
 
   //! Destructor
   ~Options();
@@ -66,8 +62,9 @@ private:
 
   enum {maxStringLength = 256};
   char optionString[maxStringLength];
-  PetscTruth flg;
-  int ierr;
+  PetscTruth flg;  // Boolean flag
+  int ierr;   // Used in Petsc CHKERRQ macro
+  int rank;   // proc ID used with output utils
   
 };
 } // namespace Petsc
