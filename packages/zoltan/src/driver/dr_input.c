@@ -398,18 +398,18 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
   /* default file type is nemesis */
   if (pio_info->file_type < 0) pio_info->file_type = NEMESIS_FILE;
 
-#ifdef LB_NO_NEMESIS
+#ifndef LB_NEMESIS
   /* 
-   * if compiling with the LB_NO_NEMESIS flag (i.e., not linking with 
+   * if not compiling with the LB_NEMESIS flag (i.e., not linking with 
    * Nemesis library), can't use NEMESIS_FILE file type.
    */
 
   if (pio_info->file_type == NEMESIS_FILE) {
-    Gen_Error(0, "fatal: must link with Nemesis libraries for Nemesis "
-                 "file types");
+    Gen_Error(0, "fatal: must compile for and link with Nemesis "
+                 "libraries for Nemesis file types");
     return 0;
   }
-#endif /* LB_NO_NEMESIS */
+#endif /* !LB_NEMESIS */
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 /*                 Check the parallel IO specifications                      */

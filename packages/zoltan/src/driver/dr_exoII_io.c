@@ -18,10 +18,10 @@
 
 #include <mpi.h>
 
-#ifndef LB_NO_NEMESIS
+#ifdef LB_NEMESIS
 #include "exodusII.h"
 #include "ne_nemesisI.h"
-#endif /* LB_NO_NEMESIS */
+#endif /* LB_NEMESIS */
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -34,10 +34,12 @@
 
 #define LIST_ALLOC 10
 
+#ifdef LB_NEMESIS
 static int read_elem_info(int, int, PROB_INFO_PTR, MESH_INFO_PTR);
 static int find_surnd_elem(MESH_INFO_PTR, int **, int *, int *);
 static int find_adjacency(int, MESH_INFO_PTR, int **, int *, int);
 static int read_comm_map_info(int, int, PROB_INFO_PTR, MESH_INFO_PTR);
+#endif /* LB_NEMESIS */
 
 /****************************************************************************/
 /****************************************************************************/
@@ -49,11 +51,11 @@ int read_exoII_mesh(int Proc,
                     PARIO_INFO_PTR pio_info,
                     MESH_INFO_PTR mesh)
 {
-#ifdef LB_NO_NEMESIS
+#ifndef LB_NEMESIS
   Gen_Error(0, "Fatal:  Nemesis requested but not linked with driver.");
   return 0;
 
-#else /* !LB_NO_NEMESIS */
+#else /* LB_NEMESIS */
   /* Local declarations. */
   char  *yo = "read_exoII_mesh";
   char   par_nem_fname[FILENAME_MAX+1], title[MAX_LINE_LENGTH+1];
@@ -198,14 +200,14 @@ int read_exoII_mesh(int Proc,
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 
-#endif /* LB_NO_NEMESIS */
+#endif /* LB_NEMESIS */
 }
 
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
 
-#ifndef LB_NO_NEMESIS
+#ifdef LB_NEMESIS
 
 static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
                           MESH_INFO_PTR mesh)
@@ -843,4 +845,4 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }
-#endif /* !LB_NO_NEMESIS */
+#endif /* LB_NEMESIS */

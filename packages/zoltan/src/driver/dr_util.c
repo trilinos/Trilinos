@@ -46,7 +46,7 @@ int token_compare(char *token, const char *key)
 
   for(i1=0; i1 < strlen(token); i1++)
   {
-    if(isupper(token[i1]))
+    if(isupper((int)(token[i1])))
       token[i1] = tolower(token[i1]);
 
     if(token[i1] != ' ')
@@ -142,7 +142,7 @@ void string_to_lower(char in_string[], const char cval)
     if(in_string[cnt] == cval)
       return;
 
-    if(isupper(in_string[cnt]))
+    if(isupper((int)(in_string[cnt])))
       in_string[cnt] = tolower(in_string[cnt]);
   }
 

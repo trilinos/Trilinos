@@ -1159,6 +1159,7 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
 
 {
   int i;
+  char msg[80];
 
   /*
    * This function returns a list of global node numbers forming a
@@ -1400,6 +1401,12 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
     i = 0;
     break;
 
+  default:  /* Yowsa!  More element types? */
+    sprintf(msg, "Warning: ss_to_node_list not supported for element type %d",
+	    etype);
+    Gen_Error(0, msg);
+    i = 0;
+    break;
   } /* End "switch (etype)" */
 
   /* the variable "i" should be the number of positions that I filled */
@@ -1421,6 +1428,7 @@ int get_ss_mirror(const E_Type etype, const int *ss_node_list, int side_num,
 
 {
   int   i;
+  char msg[80];
 
   /*
    * the following arrays are the conversion from the side to
@@ -1598,6 +1606,12 @@ int get_ss_mirror(const E_Type etype, const int *ss_node_list, int side_num,
     i = 0;
     break;
 
+  default:  /* Yowsa!  More element types? */
+    sprintf(msg, "Warning: get_ss_mirror not supported for element type %d",
+	    etype);
+    Gen_Error(0, msg);
+    i = 0;
+    break;
   } /* End "switch (etype)" */
 
   /* the variable "i" should be the number of positions that I filled */
