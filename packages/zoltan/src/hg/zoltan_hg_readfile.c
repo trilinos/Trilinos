@@ -21,12 +21,13 @@ extern "C" {
 
 #define BUF_LEN 1000000
 
-int Zoltan_HG_Readfile   (ZZ*, FILE*, int*, int*, int*, int**, int**, int*, float**, int*, float**) ;
-static int ibm_readfile  (ZZ*, FILE*, int*, int*, int*, int**, int**, int*, float**, int*, float**) ;
-static int umit_readfile (ZZ*, FILE*, int*, int*, int*, int**, int**, int*, float**, int*, float**) ;
+int Zoltan_HG_Readfile   (int, FILE*, int*, int*, int*, int**, int**, int*, float**, int*, float**) ;
+static int ibm_readfile  (int, FILE*, int*, int*, int*, int**, int**, int*, float**, int*, float**) ;
+static int umit_readfile (int, FILE*, int*, int*, int*, int**, int**, int*, float**, int*, float**) ;
 
 
-int Zoltan_HG_Readfile (ZZ *zz,
+int Zoltan_HG_Readfile (
+ int Proc,
  FILE *f,
  int *nVtx, int *nEdge, int *nPin,
  int **index,   int **vertex,
@@ -45,7 +46,7 @@ int Zoltan_HG_Readfile (ZZ *zz,
     if (!fgets (string, 80, f))
        {
        sprintf(errstr, "ERROR...not able to read input file\n");
-       ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
+       ZOLTAN_PRINT_WARN (Proc, yo, errstr) ;
        return ZOLTAN_WARN;
        }
 
@@ -53,7 +54,7 @@ int Zoltan_HG_Readfile (ZZ *zz,
     if (count <  4)
        {
        sprintf (errstr, "ERROR, first line of file must be: |V| |E| |P| (code)\n");
-       ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
+       ZOLTAN_PRINT_WARN (Proc, yo, errstr) ;
        }
 
     /* nEdge HYPEREDGE LINES */
@@ -62,7 +63,7 @@ int Zoltan_HG_Readfile (ZZ *zz,
            {
            ZOLTAN_FREE ((void **) index) ;
            ZOLTAN_FREE ((void **) vertex) ;
-           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+           ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
            return ZOLTAN_MEMERR;
            }
 
@@ -73,7 +74,7 @@ int Zoltan_HG_Readfile (ZZ *zz,
        if (!(fgets (string, BUF_LEN, f)))
           {
           sprintf(errstr, "ERROR... read hvertex %d\n",i);
-          ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
+          ZOLTAN_PRINT_WARN (Proc, yo, errstr) ;
           return ZOLTAN_WARN;
           }
        s = strtok(string," \n");
@@ -85,7 +86,7 @@ int Zoltan_HG_Readfile (ZZ *zz,
               {
               sprintf(errstr, "ERROR...pin %d of vertex %d is out of range [%d,%d]!\n",
                pin,i+1,1, *nVtx);
-              ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
+              ZOLTAN_PRINT_WARN (Proc, yo, errstr) ;
               return ZOLTAN_WARN;
               }
           (*vertex)[Hedge++] = pin-1;
@@ -98,7 +99,7 @@ int Zoltan_HG_Readfile (ZZ *zz,
        {
        if (!((*vwgt) = (float *) ZOLTAN_MALLOC (sizeof (float) * *nVtx)))
           {
-          ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory for vwgt.");
+          ZOLTAN_PRINT_ERROR (Proc, yo, "Insufficient memory for vwgt.");
           return ZOLTAN_MEMERR;
           }
        for (i = 0 ; i < *nVtx; i++)
@@ -106,7 +107,7 @@ int Zoltan_HG_Readfile (ZZ *zz,
           if (!(fgets (string, BUF_LEN, f)))
              {
              sprintf(errstr, "ERROR... reading weight %d\n",i);
-             ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
+             ZOLTAN_PRINT_WARN (Proc, yo, errstr) ;
              return ZOLTAN_WARN;
              }
           s = strtok (string, " \n");
@@ -117,7 +118,7 @@ int Zoltan_HG_Readfile (ZZ *zz,
     if (fscanf(f, "%d", &i) != EOF)
        {
        sprintf(errstr, "ERROR... file is too long!\n");
-       ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
+       ZOLTAN_PRINT_WARN (Proc, yo, errstr) ;
        return ZOLTAN_WARN;
        }
 printf ("friday returning from ibm read routine\n") ;

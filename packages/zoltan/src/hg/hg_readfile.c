@@ -21,7 +21,7 @@ extern "C" {
 
 #define BUF_LEN 1000000
 
-int Zoltan_HG_Readfile   (ZZ*, FILE*, int*, int*, int*, int**, int**, int*, float**, int*, float**) ;
+int Zoltan_HG_Readfile   (int, FILE*, int*, int*, int*, int**, int**, int*, float**, int*, float**) ;
 
 
 int HG_Readfile (ZZ *zz, HGraph *hg, char *hgraphfile)
@@ -40,7 +40,7 @@ int HG_Readfile (ZZ *zz, HGraph *hg, char *hgraphfile)
       return ZOLTAN_WARN;
       }
 
-   Zoltan_HG_Readfile (zz, f, &hg->nVtx, &hg->nEdge, &hg->nPin, &hg->hindex,
+   Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nPin, &hg->hindex,
     &hg->hvertex, &hg->VertexWeightDim, &hg->vwgt, &hg->EdgeWeightDim, &hg->ewgt) ;
 
    if (Zoltan_HG_Create_Mirror (zz, hg))
