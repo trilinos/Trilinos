@@ -6,17 +6,17 @@
 #include "TestScalapack.h"
 #include "TestKlu.h"
  
-int TestAllClasses(vector<string> AmesosClasses,
-		   vector<bool> AmesosClassesInstalled,
-		   Epetra_CrsMatrix *& Amat, 
-		   bool transpose, 
-		   bool verbose, 
-		   bool symmetric, 
-		   int Levels,
-		   const double Rcond,
-		   double &maxrelerror, 
-		   double &maxrelresidual,
-		   int &NumTests) {
+int TestAllClasses( const vector<string> AmesosClasses,
+		    const vector<bool> AmesosClassesInstalled,
+		    Epetra_CrsMatrix *& Amat, 
+		    const bool transpose, 
+		    const bool verbose, 
+		    const bool symmetric, 
+		    const int Levels,
+		    const double Rcond,
+		    double &maxrelerror, 
+		    double &maxrelresidual,
+		    int &NumTests ) {
 
   const int NumAmesosClasses = AmesosClasses.size();
   int errors = 0 ;
@@ -89,7 +89,7 @@ int TestAllClasses(vector<string> AmesosClasses,
 
       } else if ( AmesosClasses[i] == "Amesos_Dscpack" ) {
 	//
-	//  A quick sanity check - make you symmetric is the same on all processes
+	//  A quick sanity check - make sure symmetric is the same on all processes
 	//
 	const int sym_int = symmetric?0:1 ; 
 	int sym_int_out = sym_int; 

@@ -59,7 +59,7 @@ relerror = 1.3e15; relresidual=1e15; return(1);}  }\
 //  call NumericFactorization() between the second and third call to Solve. 
 //   
 
-int PerformOneSolveAndTest(char* AmesosClass,
+int PerformOneSolveAndTest(const char* AmesosClass,
 			   const Epetra_Comm &Comm, 
 			   bool transpose, 
 			   bool verbose, 

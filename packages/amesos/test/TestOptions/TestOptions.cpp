@@ -74,9 +74,9 @@ vector<string> AmesosClasses;
 
 int NumAmesosClasses;
 
-int CreateCrsMatrix( char *filename, Epetra_Comm &Comm, 
+int CreateCrsMatrix( char *filename, const Epetra_Comm &Comm, 
 		     Epetra_Map *& readMap,
-		     bool transpose, bool distribute, 
+		     const bool transpose, const bool distribute, 
 		     bool& symmetric, Epetra_CrsMatrix *& Matrix ) {
 
   Epetra_CrsMatrix * readA = 0; 
@@ -89,6 +89,7 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
   int FN_Size = FileName.size() ; 
   string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
   string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
+
   if ( LastFiveBytes == ".triU" ) { 
     // Call routine to read in unsymmetric Triplet matrix
     EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( filename, false, Comm, readMap, readA, readx, 
@@ -179,10 +180,10 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
   return 0;
 }
 
-int TestOneMatrix( vector<bool> AmesosClassesInstalled, 
+int TestOneMatrix( const vector<bool> AmesosClassesInstalled, 
 		   char *filename, 
 		   Epetra_Comm &Comm, 
-		   bool verbose, 
+		   const bool verbose, 
 		   bool symmetric, 
 		   double Rcond,
 		   int &NumTests  ) {
@@ -356,6 +357,13 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
 
 int NextMain( int argc, char *argv[] ) {
 
+#ifdef EPETRA_MPI
+  MPI_Init(&argc,&argv);
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm;
+#endif
+
 
   AmesosClasses.push_back( "Amesos_Klu" );
 #ifdef HAVE_AMESOS_SCALAPACK
@@ -404,6 +412,8 @@ int NextMain( int argc, char *argv[] ) {
   if ( argc >= 4 && (argv[3][0] == '-') &&  (argv[3][1] == 'q') ) 
     quiet = true ; 
 
+
+
   if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 'h') ) {
     cerr << "Usage TestOptions [-s] [-v] [-q] " << endl ; 
     cerr << "-v:  verbose  " << endl ; 
@@ -415,13 +425,6 @@ int NextMain( int argc, char *argv[] ) {
   vector<bool> AmesosClassesInstalled( NumAmesosClasses );
 
 
-
-#ifdef EPETRA_MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
 
   if ( Comm.MyPID() != 0 ) verbose = false ; 
   if ( Comm.MyPID() == 0 ) {

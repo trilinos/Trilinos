@@ -2,7 +2,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_CrsMatrix.h"
 
-int PerformOneSolveAndTest(char* AmesosClass,
+int PerformOneSolveAndTest(const char* AmesosClass,
 			   const Epetra_Comm &Comm, 
 			   bool transpose, 
 			   bool verbose, 

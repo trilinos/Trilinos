@@ -3,7 +3,7 @@
 //  before everything is done.
 //  
 
-int PartialFactorization( char* AmesosClass,
+int PartialFactorization( const char* AmesosClass,
 			  const Epetra_Comm &Comm, 
 			  bool transpose, 
 			  bool verbose, 

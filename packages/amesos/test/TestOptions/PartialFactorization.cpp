@@ -24,7 +24,7 @@ relerror = 1.3e15; relresidual=1e15; return(1);}  }\
 
 const int MaxNumSteps = 7 ; 
 
-int PartialFactorizationOneStep( char* AmesosClass,
+int PartialFactorizationOneStep( const char* AmesosClass,
 				 const Epetra_Comm &Comm, 
 				 bool transpose, 
 				 bool verbose, 
@@ -144,7 +144,7 @@ int PartialFactorizationOneStep( char* AmesosClass,
 }
 
 
-int PartialFactorization( char* AmesosClass,
+int PartialFactorization( const char* AmesosClass,
 			  const Epetra_Comm &Comm, 
 			  bool transpose, 
 			  bool verbose, 

@@ -8,16 +8,16 @@
 #include "TestOtherClasses.h"
 #include "PerformOneSolveAndTest.h"
 
-int TestOtherClasses(char* AmesosClass,
-		     Epetra_CrsMatrix *& Amat, 
-		     bool transpose, 
-		     bool verbose, 
-		     int Levels,
-		     const double Rcond,
-		     double &maxrelerror, 
-		     double &maxrelresidual,
-		     int &NumTests ) {
-
+int TestOtherClasses( const char* AmesosClass,
+		      Epetra_CrsMatrix *& Amat, 
+		      const bool transpose, 
+		      const bool verbose, 
+		      const int Levels,
+		      const double Rcond,
+		      double &maxrelerror, 
+		      double &maxrelresidual,
+		      int &NumTests ) {
+  
   int NumErrors = 0 ;
   maxrelerror = 0.0;
   maxrelresidual = 0.0;
