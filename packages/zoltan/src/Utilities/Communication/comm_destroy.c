@@ -26,6 +26,7 @@ extern "C" {
 int       Zoltan_Comm_Destroy(
 ZOLTAN_COMM_OBJ **plan)		/* communication data structure pointer */
 {
+    if (*plan == NULL) return ZOLTAN_OK;
 
     /* Free fields of the communication object. */
     ZOLTAN_FREE((void **) &((*plan)->status));
