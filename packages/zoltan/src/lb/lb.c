@@ -665,7 +665,7 @@ int i;
    *  processor has to export to establish the new decomposition.
    */
 
-   msgtag = 32768;
+   msgtag = 32767;
    LB_Comm_Create(&comm_plan, num_import, proc_list, lb->Communicator, msgtag,
                              num_export);
 
@@ -722,7 +722,7 @@ int i;
     *export_procs = NULL;
   }
 
-  msgtag2 = 32767;
+  msgtag2 = 32766;
   LB_Comm_Do(comm_plan, msgtag2, (char *) import_objs, (int) sizeof(LB_TAG), 
           (char *) export_objs);
 
@@ -921,7 +921,7 @@ int ierr = 0;
    *  processor has to import to establish the new decomposition.
    */
 
-  msgtag = 32768;
+  msgtag = 32767;
   LB_Comm_Create(&comm_plan, num_export, proc_list, lb->Communicator, msgtag,
                              &tmp_import);
   if (tmp_import != num_import) {
@@ -945,7 +945,7 @@ int ierr = 0;
    *  Send the export data using the communication plan.
    */
 
-  msgtag2 = 32767;
+  msgtag2 = 32766;
   LB_Comm_Do(comm_plan, msgtag2, export_buf, size, import_buf);
 
   /*

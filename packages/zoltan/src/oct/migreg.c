@@ -36,7 +36,7 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   Region *import_objs = NULL;    /* Array of import objects used to request 
 				    the objs from other processors. */
 
-  msgtag = 32768;
+  msgtag = 32767;
   LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, msgtag, &n_import);
   *c2 = n_import;
   if (n_import > 0) {
@@ -50,7 +50,7 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
     }
   }
 
-  msgtag2 = 32767;
+  msgtag2 = 32766;
   LB_Comm_Do(comm_plan, msgtag2, (char *) regions, sizeof(Region), 
           (char *) import_objs);
 

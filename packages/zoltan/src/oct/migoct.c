@@ -255,7 +255,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   COMM_OBJ *comm_plan;           /* Object returned by communication routines */
 
   im_load = 0;
-  msgtag = 32768;
+  msgtag = 32767;
   LB_Comm_Create(&comm_plan, nsentags, tag_pids, lb->Communicator, 
       msgtag, &nreceives);
 
@@ -269,7 +269,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
     }
   }
   
-  msgtag2 = 32767;
+  msgtag2 = 32766;
   LB_Comm_Do(comm_plan, msgtag2, (char *) export_tags, sizeof(Region),
       (char *) tmp);
   LB_Comm_Destroy(&comm_plan);
