@@ -42,7 +42,7 @@ static PARAM_VARS HG_params[] = {
  { NULL, NULL, NULL } };
 
 static int Zoltan_HG_Initialize_Params(ZZ*, HGPartParams*);
-static int Zoltan_HG_Return_Lists(ZZ*, struct Zoltan_HGraph*, Partition, int*,
+static int Zoltan_HG_Return_Lists(ZZ*, ZHG *, Partition, int*,
  ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
 
 /*****************************************************************************/
@@ -67,7 +67,7 @@ int Zoltan_HG(
 )
 {
 
-struct Zoltan_HGraph *zoltan_hg = NULL;
+ZHG *zoltan_hg = NULL;
 int i, ierr = ZOLTAN_OK;
 int nVtx;                       /* Temporary variable for base graph. */
 HGPartParams hgp;               /* Hypergraph parameters. */
@@ -131,7 +131,7 @@ End:
 
 void Zoltan_HG_Free_Structure(ZZ *zz)
 {
-struct Zoltan_HGraph *zoltan_hg=(struct Zoltan_HGraph*)(zz->LB.Data_Structure);
+ZHG *zoltan_hg = (ZHG *)(zz->LB.Data_Structure);
 
   if (zoltan_hg != NULL) {
      ZOLTAN_FREE((void **) &(zoltan_hg->Global_IDs));
@@ -207,7 +207,7 @@ char *val)                      /* value of variable */
 
 static int Zoltan_HG_Return_Lists(
   ZZ *zz,
-  struct Zoltan_HGraph *zoltan_hg,
+  ZHG *zoltan_hg,
   Partition output_parts,
   int *num_exp,
   ZOLTAN_ID_PTR *exp_gids,
@@ -277,7 +277,7 @@ ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
 
 void Zoltan_HG_HGraph_Print(
   ZZ *zz,
-  struct Zoltan_HGraph *zoltan_hg,
+  ZHG *zoltan_hg,
   HGraph *hg
 )
 {

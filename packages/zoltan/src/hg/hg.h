@@ -32,21 +32,22 @@ extern "C" {
  * a HGraph as used by the algorithms.
  */
 
-typedef struct {
+struct Zoltan_HGraph {
   ZOLTAN_ID_PTR Global_IDs; /* Global IDs for on-processor objects.  */
   ZOLTAN_ID_PTR Local_IDs;  /* Local IDs for on-processor objects.   */
   Partition Parts;          /* Initial partition #s for on-processor objects */
                             /* KDD In parallel version Part may be part of HG */
   HGraph HG;                /* Hypergraph for initial objects.       */
-} Zoltan_HGgraph;
+};
+typedef struct Zoltan_HGraph ZHG;
 
 /*****************************************************************************/
 
 
 
 /* Prototypes */
-extern int Zoltan_HG_Build_Hypergraph(ZZ *, struct Zoltan_HGraph **, int);
-extern void Zoltan_HG_HGraph_Print(ZZ *, struct Zoltan_HGraph *, HGraph *);
+extern int Zoltan_HG_Build_Hypergraph(ZZ *, ZHG **, int);
+extern void Zoltan_HG_HGraph_Print(ZZ *, ZHG *, HGraph *);
 
 
 

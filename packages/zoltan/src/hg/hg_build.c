@@ -25,12 +25,12 @@ extern "C" {
 
 int Zoltan_HG_Build_Hypergraph(
   ZZ *zz,
-  Zoltan_HGraph **zoltan_hg,   /* Hypergraph to be allocated and built.*/
+  ZHG **zoltan_hg,   /* Hypergraph to be allocated and built.*/
   int check_graph              /* Parameter for hypergraph checking.   */
 )
 {
 /* Input Zoltan Hypergraph from application */
-Zoltan_HGraph *zhg;           /* Temporary pointer to Zoltan_HGraph. */
+ZHG *zhg;                     /* Temporary pointer to Zoltan_HGraph. */
 HGraph *hgraph;               /* Temporary pointer to HG field */
 int ierr = ZOLTAN_OK;
 char *yo = "Zoltan_HG_Build_Hypergraph";
@@ -38,7 +38,7 @@ char *yo = "Zoltan_HG_Build_Hypergraph";
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Allocate a Zoltan hypergraph.  */
-  zhg = *zoltan_hg = (Zoltan_HGraph*) ZOLTAN_MALLOC(sizeof Zoltan_HGraph);
+  zhg = *zoltan_hg = (ZHG *) ZOLTAN_MALLOC(sizeof(ZHG));
   if (zhg == NULL) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      ierr = ZOLTAN_MEMERR;
@@ -112,7 +112,7 @@ End:
 
 int Zoltan_HG_Fill_Hypergraph(
   ZZ *zz,
-  Zoltan_HGraph *zhg
+  ZHG *zhg
 )
 {
 /* KDD  -- Placeholder. ??? */
