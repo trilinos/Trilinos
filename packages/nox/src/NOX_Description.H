@@ -1143,9 +1143,9 @@ immediately before the word that is causing the link. For example,
 
   Included with %NOX are three such interfaces:
 
-  - NOX::Example::Vector and NOX::Example::Group
-  - NOX::Epetra::Vector and NOX::Epetra::Group
-  - NOX::Petsc::Vector and NOX::Petsc::Group
+  - NOX::Example
+  - NOX::Epetra
+  - NOX::Petsc
 
   The \b Example interface is a very simple interface that is not
   intended for actual computations, but to serve as an
@@ -1198,71 +1198,74 @@ immediately before the word that is causing the link. For example,
   is passed to a NOX::Solver::Manager object constructor reset call.
 
 <ul>
-<li> NOX::Solver::Manager - \e Nonlinear \e Solver
+<li> NOX::Solver::Manager - <em> Nonlinear Solver </em>
 <li> NOX::Solver::LineSearchBased, NOX::Solver::TrustRegionBased - \b Direction
      <ul>
-     <li> NOX::Direction::Manager - \e Method
-     <li> NOX::Direction::Newton - \b Linear \b Solver
+     <li> NOX::Direction::Manager - <em> Method </em>
+     <li> NOX::Direction::Newton - <b> Linear Solver</b>
           <ul>
 	  <li> NOX::Direction::Newton - Tolerance
 	  </ul>
-     <li> NOX::Direction::Newton - \e Forcing \e Term \e Method
-     <li> NOX::Direction::Newton - \e Forcing \e Term \e Initial \e Tolerance
-     <li> NOX::Direction::Newton - \e Forcing \e Term \e Minimum \e Tolerance
-     <li> NOX::Direction::Newton - \e Forcing \e Term \e Maximum \e Tolerance
-     <li> NOX::Direction::Newton - \e Forcing \e Term \e Alpha
-     <li> NOX::Direction::Newton - \e Forcing \e Term \e Gamma
-     <li> NOX::Direction::SteepestDescent - \e Scaling \e Type
-     <li> NOX::Direction::NonlinearCG - \e Orthogonalize
-     <li> NOX::Direction::NonlinearCG - \e Precondition
-     <li> NOX::Direction::NonlinearCG - \e Restart Frequency
+     <li> NOX::Direction::Newton - <em> Forcing Term Method </em>
+     <li> NOX::Direction::Newton - <em> Forcing Term Initial Tolerance </em>
+     <li> NOX::Direction::Newton - <em> Forcing Term Minimum Tolerance </em>
+     <li> NOX::Direction::Newton - <em> Forcing Term Maximum Tolerance </em>
+     <li> NOX::Direction::Newton - <em> Forcing Term Alpha </em>
+     <li> NOX::Direction::Newton - <em> Forcing Term Gamma </em>
+     <li> NOX::Direction::SteepestDescent - <em> Scaling Type </em>
+     <li> NOX::Direction::QuasiNewton - <em>Memory</em>
+     <li> NOX::Direction::NonlinearCG - <em> Orthogonalize </em>
+     <li> NOX::Direction::NonlinearCG - <em> Precondition </em>
+     <li> NOX::Direction::NonlinearCG - <em> Restart Frequency </em>
      </ul>
-<li> NOX::Solver::LineSearchBased - \b Line \b Search
+<li> NOX::Solver::LineSearchBased -<b> Line Search</b>
      <ul>
-     <li> NOX::LineSearch::Manager - \e Method
-     <li> NOX::LineSearch::FullStep - \e Full \e Step
-     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant - \e Default \e Step
-     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant   - \e Minimum \e Step
-     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant   - \e Recovery \e Step
-     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant  - \e Max \e Iters
-     <li> NOX::LineSearch::Backtrack - \e Decrease \e Condition
-     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - \e Convergence \e Criteria
-     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - \e Alpha \e Factor
-     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - \e Min \e Bounds \e Factor
-     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - \e Max \e Bounds \e Factor
-     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - \b Output
+     <li> NOX::LineSearch::Manager - <em> Method </em>r
+     <li> NOX::LineSearch::FullStep - <em> Full Step </em>
+     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant - <em> Default Step </em>
+     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant   - <em> Minimum Step </em>
+     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant   - <em> Recovery Step </em>
+     <li> NOX::LineSearch::Backtrack, NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic, NOX::LineSearch::MoreThuente, NOX::LineSearch::Secant  - <em> Max Iters </em>
+     <li> NOX::LineSearch::Backtrack - <em> Decrease Condition </em>
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - <em> Convergence Criteria </em>
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - <em> Alpha Factor </em>
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - <em> Min Bounds Factor </em>
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - <em> Max Bounds Factor </em>
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - <em>Force Interpolation</em>
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - <em>Interpolation Type</em>
+     <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - <b> Output</b>
           <ul>
 	  <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - Total Number of Line Search Calls
 	  <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - Total Number of Non-trivial Line Searches
 	  <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - Total Number of Failed Line Searches
 	  <li> NOX::LineSearch::Polynomial, NOX::LineSearch::Quadratic - Total Number of Line Search Inner Iterations
 	  </ul>
-     <li> NOX::LineSearch::MoreThuente - \e Sufficient \e Decrease
-     <li> NOX::LineSearch::MoreThuente - \e Curvature \e Condition
-     <li> NOX::LineSearch::MoreThuente - \e Interval \e Width
-     <li> NOX::LineSearch::MoreThuente - \e Maximum \e Step
+     <li> NOX::LineSearch::MoreThuente - <em> Sufficient Decrease </em>
+     <li> NOX::LineSearch::MoreThuente - <em> Curvature Condition </em>
+     <li> NOX::LineSearch::MoreThuente - <em> Interval Width </em>
+     <li> NOX::LineSearch::MoreThuente - <em> Maximum Step </em>
      </ul>
-<li> NOX::Solver::LineSearchBased, NOX::Solver::TrustRegionBased  - \b Output
+<li> NOX::Solver::LineSearchBased, NOX::Solver::TrustRegionBased  - <b> Output</b>
      <ul> 
      <li> NOX::Solver::LineSearchBased - Nonlinear Iterations
      <li> NOX::Solver::LineSearchBased - 2-Norm or Residual
      </ul>
-<li> NOX::Solver::TrustRegionBased - \b Cauchy \b Direction 
+<li> NOX::Solver::TrustRegionBased - <b> Cauchy Direction </b>
      <ul>
-     <li> (see \b Direction above)
+     <li> (see <b>Direction</b> above)
      </ul>
-<li> NOX::Solver::TrustRegionBased - \e Minimum \e Trust \e Region \e Radius
-<li> NOX::Solver::TrustRegionBased - \e Maximum \e Trust \e Region \e Radius
-<li> NOX::Solver::TrustRegionBased - \e Minimum \e Improvement \e Ratio
-<li> NOX::Solver::TrustRegionBased - \e Contraction \e Trigger \e Ratio
-<li> NOX::Solver::TrustRegionBased - \e Contraction \e Factor
-<li> NOX::Solver::TrustRegionBased - \e Expansion \e Trigger \e Ratio
-<li> NOX::Solver::TrustRegionBased - \e Expansion \e Factor
-<li> NOX::Solver::TrustRegionBased - \e Recovery \e Step
-<li> NOX::Utils - \e MyPID
-<li> NOX::Utils - \e Output \e Information
-<li> NOX::Utils - \e Output \e Processor
-<li> NOX::Utils - \e Output \e Precision
+<li> NOX::Solver::TrustRegionBased - <em> Minimum Trust Region Radius </em>
+<li> NOX::Solver::TrustRegionBased - <em> Maximum Trust Region Radius </em>
+<li> NOX::Solver::TrustRegionBased - <em> Minimum Improvement Ratio </em>
+<li> NOX::Solver::TrustRegionBased - <em> Contraction Trigger Ratio </em>
+<li> NOX::Solver::TrustRegionBased - <em> Contraction Factor </em>
+<li> NOX::Solver::TrustRegionBased - <em> Expansion Trigger Ratio </em> 
+<li> NOX::Solver::TrustRegionBased - <em> Expansion Factor </em>
+<li> NOX::Solver::TrustRegionBased - <em> Recovery Step </em>
+<li> NOX::Utils - <em> MyPID </em>
+<li> NOX::Utils - <em> Output Information </em>
+<li> NOX::Utils - <em> Output Processor </em>
+<li> NOX::Utils - <em> Output Precision </em>
      
 </ul>
 
