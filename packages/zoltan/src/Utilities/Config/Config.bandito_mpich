@@ -22,8 +22,8 @@ DEFS 			=
 RANLIB			= ranlib
 AR			= ar r
 
-CC			= mpicc
-INCLUDE_PATH		= 
+CC			= /opt/mpich-intel/bin/mpicc
+INCLUDE_PATH		= -I/opt/mpich-intel/include
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O
 CFLAGS = $(DBG_FLAGS)
@@ -39,12 +39,8 @@ FARG                    = farg_typical
 #MPI_LIB         = -lpmpich -lmpich -lg2c
 #MPI_LIBPATH     = -L$(MPIR_HOME)/lib -L/usr/lib/gcc-lib/i386-redhat-linux/3.2
 
-#MPI_LIB         = -lpmpich -lmpich 
-#MPI_LIBPATH     = -L$(MPIR_HOME)/lib 
-
-#MPI_LIB         = -llamf77mpi -lmpi -lpmpi -llam -L/usr/lib/gcc-lib/i386-redhat-linux/3.2 -lg2c
-#MPI_LIBPATH     = -L$(LAMHOME)/lib -L/usr/lib/gcc-lib/i386-redhat-linux/3.2
-MPI_LIBPATH     =  -L/home/kddevin/lib
+MPI_LIB         = -lpmpich -lmpich 
+MPI_LIBPATH     = -L$(MPIR_HOME)/lib 
 
 PARMETIS_LIBPATH 	= -L../../ParMETIS3_1
 PARMETIS_INCPATH 	= -I../../ParMETIS3_1
