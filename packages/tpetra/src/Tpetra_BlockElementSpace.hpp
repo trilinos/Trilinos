@@ -1,16 +1,3 @@
-/*Paul
-11-June-2002 Initial writeup.
-12-June-2002 Initial writeup finished.
-15-June-2002 Changed constructors to all take ElementSpace objects. Changed some ints to ordinalTypes.
-01-August-2002 Real writeup starts. Minor changes.
-06-August-2002 Switched to images.
-03-Sept-2002 Added == and != operators
-16-Oct-2002 Updated for BESData
-12-Nov-2002 Updated to use createOrdinalComm() instead of createComm() (nothing changed)
-14-Nov-2002 Changed slightly for switch to massive constructor call
-27-Jan-2003 Updated for .hpp and for new const syntax.
-*/
-
 #ifndef _TPETRA_BLOCKELEMENTSPACE_HPP_
 #define _TPETRA_BLOCKELEMENTSPACE_HPP_
 

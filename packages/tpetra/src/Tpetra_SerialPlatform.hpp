@@ -1,10 +1,3 @@
-/*Paul
-12-Nov-2002 Rewritten for new templating scheme.
-19-Nov-2002 myImageID and numImages moved back to Comm, print method updated
-23-Nov-2002 Distributor methods added, distributor arguments commented out.
-06-Feb-2003 Updated const syntax, reordered <ST,OT> to <OT,ST>
-*/
-
 #ifndef _TPETRA_SERIALPLATFORM_HPP_
 #define _TPETRA_SERIALPLATFORM_HPP_
 

@@ -1,11 +1,3 @@
-/*Paul
-18-Nov-2002 Copied from Epetra_Distributor.h
-19-Nov-2002 Templated for <PT,OT>, modified slightly.
-23-Nov-2002 do methods named Do temporarily
-25-Nov-2002 do methods fixed
-06-Feb-2003 Updated const syntax.
-*/
-
 #ifndef _TPETRA_DISTRIBUTOR_HPP_
 #define _TPETRA_DISTRIBUTOR_HPP_
 

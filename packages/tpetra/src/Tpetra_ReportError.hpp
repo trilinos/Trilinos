@@ -1,7 +1,3 @@
-/*Paul
-Modified 04-Feb-2003
-*/
-
 #ifndef _TPETRA_REPORTERROR_HPP_
 #define _TPETRA_REPORTERROR_HPP_
 

@@ -1,9 +1,3 @@
-/*Paul
-27-May-2002 Major Overhaul. Changed method names to fit naming Convention (already done).
-28-May-2002 Heroux fixes things.
-06-August-2002 Changed to images (nothing changed). Updated a few naming comnventions, and to use a templated Comm.
-*/
-
 namespace Tpetra {
 //=============================================================================
 Time::Time(const Comm<double, int>& Comm) : Object("Tpetra::Time"), Comm_(&Comm) {

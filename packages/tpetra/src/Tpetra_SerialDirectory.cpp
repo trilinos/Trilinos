@@ -1,11 +1,3 @@
-/*Paul
-27-July-2002 Templated for OrdinalType.
-06-August-2002 Changed to images.
-21-Sept-2002 Comm/Platform split
-23-Nov-2002 Updated for myImageID moved back to Comm
-06-Feb-2003 Updated const syntax
-*/
-
 #include "Tpetra_ElementSpace.hpp"
 
 namespace Tpetra {

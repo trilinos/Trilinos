@@ -1,8 +1,3 @@
-/*Paul
-26-Jan-2003 Initial writeup
-05-Feb-2003
-*/
-
 namespace Tpetra {
 
 // Constructor 1: all values zeroed

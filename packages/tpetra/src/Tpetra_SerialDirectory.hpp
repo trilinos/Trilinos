@@ -1,10 +1,3 @@
-/*Paul
-27-July-2002 Templated for OrdinalType.
-06-August-2002 Changed to images. Documentation added.
-21-Sept-2002 Comm/Platform split
-06-Feb-2003 Updated const syntax.
-*/
-
 #ifndef _TPETRA_SERIALDIRECTORY_HPP_
 #define _TPETRA_SERIALDIRECTORY_HPP_
 

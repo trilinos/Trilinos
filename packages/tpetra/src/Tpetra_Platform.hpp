@@ -1,12 +1,3 @@
-/*Paul
-12-Oct-2002 Updated for Common->Compiler_Directives renaming.
-30-Oct-2002 Updated for Compiler_Directives -> ConfigDefs renaming.
-12-Nov-2002 Rewritten with new templating scheme.
-19-Nov-2002 myImageID and numImages moved back to Comm.
-23-Nov-2002 Distributor methods added.
-06-Feb-2003 Updated const syntax, reordered <ST,OT> to <OT,ST>
-*/
-
 #ifndef _TPETRA_PLATFORM_HPP_
 #define _TPETRA_PLATFORM_HPP_
 

@@ -1,7 +1,3 @@
-/*Paul
-19-Nov-2002 OrdinalTraits written, based on ScalarTraits form
-*/
-
 #ifndef _TPETRA_ORDINALTRAITS_HPP_
 #define _TPETRA_ORDINALTRAITS_HPP_
 

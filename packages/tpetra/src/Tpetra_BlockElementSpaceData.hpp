@@ -1,11 +1,3 @@
-/*Paul
-09-Oct-2002 BlockElementSpaceData move started.
-14-Oct-2002 Continued.
-12-Nov-2002 Updated to use createOrdinalComm() instead of createComm() (nothing changed)
-24-Nov-2002 Rewritten with massive constructor call.
-27-Jan-2003 Updated for .hpp and for new const syntax.
-*/
-
 #ifndef _TPETRA_BLOCKELEMENTSPACEDATA_HPP_
 #define _TPETRA_BLOCKELEMENTSPACEDATA_HPP_
 

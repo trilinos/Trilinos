@@ -1,12 +1,3 @@
-/*Paul
-18-Nov-2002 Copied from Epetra_SerialDistributor.h
-19-Nov-2002 Templated for <PT,OT>, modified slightly.
-23-Nov-2002 Default constructor modified, argument commented out
-            do methods temporarily renamed to Do
-25-Nov-2002 do methods fixed.
-06-Feb-2003 Updated const syntax.
-*/
-
 #ifndef _TPETRA_SERIALDISTRIBUTOR_HPP_
 #define _TPETRA_SERIALDISTRIBUTOR_HPP_
 

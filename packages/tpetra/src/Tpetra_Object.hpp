@@ -1,11 +1,3 @@
-/*Paul
-27-May-2002 General cleanup. Changed method names to fit namingConvention. Commented out reportError method (see Tpetra_Object.cpp for details).
-06-August-2002 Changed to images (nothing changed). Also touched up the documentation a bit, and updated some naming conventions.
-12-Oct-2002 Updated for Common->Compiler_Directives renaming.
-30-Oct-2002 Updated for Compiler_Directives -> ConfigDefs renaming.
-04-Feb-2003 Moved reportError method into seperate file.
-*/
-
 #ifndef _TPETRA_OBJECT_HPP_
 #define _TPETRA_OBJECT_HPP_
 

@@ -1,8 +1,3 @@
-/*Paul
-// 27-May-2002 General cleanup. Checked for newNamingConvention (nothing changed).
-06-August-2002 Changed to images (nothing changed).
-*/
-
 // Kris
 // 06.16.03 -- Start over from scratch
 // 06.16.03 -- Initial templatization (Tpetra_BLAS.cpp is no longer needed)

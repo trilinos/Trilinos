@@ -1,7 +1,3 @@
-/*Paul
-26-Jan-2003 Updated for .hpp and for new const syntax.
-*/
-
 #ifndef _TPETRA_ELEMENTSPACEDATA_HPP_
 #define _TPETRA_ELEMENTSPACEDATA_HPP_
 

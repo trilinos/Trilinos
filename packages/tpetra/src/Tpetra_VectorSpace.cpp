@@ -1,7 +1,3 @@
-/*Paul
-05-Feb-2003
-*/
-
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_BlockElementSpace.hpp"
 #include "Tpetra_Platform.hpp"

@@ -1,8 +1,3 @@
-/*Paul
-27-May-2002 General cleanup. Changed method names to fit namingConvention (already done).
-06-August-2002 Changed to images (nothing changed). Documentation cleaned up a bit.
-*/
-
 // Kris
 // 06.18.03 -- Removed comments/documentation; file too hard to edit otherwise. Will replace later.
 //          -- Begin conversion from <ScalarType> template to <OrdinalType, ScalarType>

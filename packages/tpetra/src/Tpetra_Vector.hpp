@@ -1,9 +1,3 @@
-/*Paul
-Created: 23-Jan-2003
-Modified: 05-Feb-2003
-Status: Initial writeup of methods. Updated for new const syntax.
-*/
-
 #ifndef _TPETRA_VECTOR_HPP_
 #define _TPETRA_VECTOR_HPP_
 

@@ -1,19 +1,3 @@
-/*Paul
-10-July-2002 SimpleES.cpp - Simple ElementSpace class for testing purposes
-17-July-2002 Now the real ElementSpace, being built up in extreme coding style
-24-July-2002 all including directory. untemplated. gMGE & print still not const.
-27-July-2002 gMGE & print const. Templated for OrdinalType.
-05-Aug-2002 switched from PID to imageID
-06-Aug-2002 Completed switch to images.
-21-Sept-2002 Comm/Platform split
-07-Oct-2002 ElementSpaceData move started
-13-Oct-2002 Updated constructors to use new ESData constructor.
-22-Oct-2002 Modified slightly - ESData constructor now takes Comm* argument
-12-Nov-2002 Updated to use createOrdinalComm() instead of createComm()
-24-Nov-2002 Updated for imageID methods moved back to Comm
-27-Jan-2003 Updated for .hpp and for new const syntax.
-*/
-
 #include "Tpetra_Platform.hpp"
 
 namespace Tpetra {

@@ -1,7 +1,3 @@
-/*Paul
-Modified 22-Jan-2003
-*/
-
 #ifndef _TPETRA_DATAACCESS_HPP_
 #define _TPETRA_DATAACCESS_HPP_
 

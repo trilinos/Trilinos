@@ -1,8 +1,3 @@
-/*Paul
-27-Jan-2003 Updated for .hpp and for new const syntax.
-06-Feb-2003 Ordering of ES<->ESData mutuality updated.
-*/
-
 #ifndef _TPETRA_ELEMENTSPACE_HPP_
 #define _TPETRA_ELEMENTSPACE_HPP_
 

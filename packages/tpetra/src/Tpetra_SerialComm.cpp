@@ -1,11 +1,3 @@
-/*Paul
-04-Aug-2002 Status: Templated for class T. All Epetra methods except Distributor.
-03-Sept-2002 Took out Directory and ImageID methods. Templated for PacketType, OrdinalType.
-12-Oct-2002 Added some consts (still some left).
-12-Nov-2002 Changed remaining template<class...> to template<typename...>
-06-Feb-2003 Updated const syntax.
-*/
-
 namespace Tpetra {
 
   // default constructor

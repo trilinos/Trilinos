@@ -1,15 +1,3 @@
-/*Paul
-01-August-2002 Initial writeup.
-05-August-2002 switched to images.
-06-August-2002 Completed switch.
-21-Sept-2002 Platform/Comm switch done.
-16-Oct-2002 Updated to use BESData
-12-Nov-2002 Updated to use createOrdinalComm() instead of createComm() (nothing changed)
-24-Nov-2002 Updated for imageID methods moved back to Comm. Changed to use massive BESData constructor calls.
-27-Jan-2003 Updated for .hpp and for new const syntax.
-06-Feb-2003 Tweaked a lil, retested.
-*/
-
 namespace Tpetra {
 
 //=======================================================================
