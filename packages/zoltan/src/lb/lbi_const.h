@@ -737,4 +737,32 @@ extern int LB_Free_Data(LB_GID **import_global_ids, LB_LID **import_local_ids,
                         int **export_procs);
 
 /*****************************************************************************/
+/* 
+ * Routine to compute statistics about the current balance/partitioning.
+ * 
+ * Input:
+ *   lb          - pointer to lb object
+ *   mode        - 0: do nothing at all
+ *                 1: quiet mode, return data in obj_wgt and graph_stats
+ *                 2: print stats, do not return any data 
+ *                 3: print stats, also return data in obj_wgt and graph_stats
+ *   vwgt_dim    - dimension of vertex weights (0 if none)
+ *   ewgt_dim    - dimension of edge weights (0 if none)
+ *
+ * Output:
+ *   Note that obj_wgt and graph_stats are only accessed if mode is odd
+ *   obj_wgt     - obj_wgt[0:vwgt_dim-1] contain max of object weights 
+ *               - obj_wgt[vwgt_dim:2*vwgt_dim-1] contain sum of object wgts 
+ *   graph_stats - graph_stats[0,3] are max and sum of cut weight
+ *               - graph_stats[1,4] are max and sum of # of boundary objects
+ *               - graph_stats[2,5] are max and sum of # of adjacent procs
+ *   ierr        - error code
+ */
+
+extern void LB_Eval(struct LB_Struct *lb, int mode,
+     int vwgt_dim, int ewgt_dim, float *obj_wgt,
+     int *graph_stats, int *ierr);
+
+/*****************************************************************************/
+
 #endif

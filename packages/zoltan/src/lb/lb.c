@@ -985,7 +985,7 @@ int LB_Free_Data(
 /* This routine evaluates the current partitioning/balance.             */
 /************************************************************************/
 
-void LB_eval (LB *lb, int mode, 
+void LB_Eval (LB *lb, int mode, 
      int vwgt_dim, int ewgt_dim, float *obj_wgt, 
      int *graph_stats, int *ierr)
 /* 
@@ -1002,9 +1002,9 @@ void LB_eval (LB *lb, int mode,
  *   Note that obj_wgt and graph_stats are only accessed if mode is odd
  *   obj_wgt     - obj_wgt[0:vwgt_dim-1] contain max of object weights 
  *               - obj_wgt[vwgt_dim:2*vwgt_dim-1] contain sum of object wgts 
- *   graph_stats - graph_stats[0:1] are max and sum of cut weight
- *               - graph_stats[2:3] are max and sum of # of boundary objects
- *               - graph_stats[4:5] are max and sum of # of adjacent procs
+ *   graph_stats - graph_stats[0,3] are max and sum of cut weight
+ *               - graph_stats[1,4] are max and sum of # of boundary objects
+ *               - graph_stats[2,5] are max and sum of # of adjacent procs
  *   ierr        - error code
  */
 
@@ -1124,7 +1124,7 @@ void LB_eval (LB *lb, int mode,
           else if (ewgt_dim == 1)
             cut_wgt += ewgts[j];
           else{
-            printf("Error in LB_eval: ewgt_dim = %d not supported\n");
+            printf("Error in LB_Eval: ewgt_dim = %d not supported\n");
             *ierr = LB_WARN;
           }
           if (flag==0){
