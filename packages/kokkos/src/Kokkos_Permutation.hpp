@@ -30,6 +30,8 @@
 #define KOKKOS_PERMUTATION_H
 
 #include "Kokkos_ConfigDefs.hpp"
+#include "Kokkos_Vector.hpp"
+#include "Kokkos_MultiVector.hpp"
 
 namespace Kokkos {
 

@@ -32,6 +32,8 @@
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_CompObject.hpp>
 #include <Kokkos_HbMatrix.hpp>
+#include <Kokkos_DenseVector.hpp>
+#include <Kokkos_BaseSparseMultiply.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_VectorSpace.hpp"
@@ -230,6 +232,9 @@ public:
   //! Signals that data entry is complete. Matrix data is converted into a more optimized form.
   /*! The VectorSpaces passed in will be used for the domain and range distributions. */
   void fillComplete(VectorSpace<OrdinalType, ScalarType> const& domainSpace, VectorSpace<OrdinalType, ScalarType> const& rangeSpace) {
+    if(isFillCompleted())
+      throw reportError("Already fillCompleted.", -99);
+
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
 
@@ -241,34 +246,34 @@ public:
     
     // fill pntr_, indx_ and values_ arrays from map values
     OrdinalType const numPrimaryIndices = getPrimaryDist().getNumMyEntries();
+    OrdinalType const numNonzeros = getNumMyNonzeros();
     data().pntr_.reserve(numPrimaryIndices + ordinalOne);
-    data().indx_.reserve(numPrimaryIndices);   // reserve enough space in the vectors now
-    data().values_.reserve(numPrimaryIndices); // so they don't have to reallocate later
+    data().indx_.reserve(numNonzeros);   // we need to allocate space in the vectors
+    data().values_.reserve(numNonzeros); // since they were created with a size of zero
 
-    OrdinalType pntr_loc = ordinalZero;   // current index in pntr_
     OrdinalType pntr_value = ordinalZero; // value to put into pntr_[pntr_loc]
-
+    
     typedef std::map<OrdinalType, ScalarType> OrdScalMap;
     typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
     MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
     for(typename MapOfMaps::iterator i = outermap.begin(); i != outermap.end(); i++) {
       OrdScalMap& innermap = (*i).second;
-      data().pntr_[pntr_loc] = pntr_value;
+      data().pntr_.push_back(pntr_value);
       for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++) {
-        data().indx_[pntr_value] = (*j).first;
-        data().values_[pntr_value] = (*j).second;
+        data().indx_.push_back((*j).first);
+        data().values_.push_back((*j).second);
         pntr_value++;
       }
-      pntr_loc++;
     }
-    data().pntr_[pntr_loc] = pntr_value; // pntr_ has an extra element on the end
 
+    data().pntr_.push_back(pntr_value); // pntr_ has an extra element on the end
+    
     // create secondary distribution if we need to
     if(!data().haveSecondary_) {
 			// create elementspace first
 			OrdinalType numGlobalElements = ordinalZero - ordinalOne; // set to -1
 			OrdinalType numMyElements = data().indx_.size();
-			OrdinalType* elementList = &data().indx_[ordinalZero]; // address of first element in indx_
+			OrdinalType* elementList = &data().indx_.front(); // address of first element in indx_
 			OrdinalType indexBase = getPrimaryDist().getIndexBase();
 			Platform<OrdinalType, OrdinalType> const& platformO = getPrimaryDist().elementSpace().platform();
 			ElementSpace<OrdinalType> elementspace(numGlobalElements, numMyElements, elementList, indexBase, platformO);
@@ -285,13 +290,13 @@ public:
 
     // initialize Kokkos::HbMatrix (Classical form)
 		data().HbMatrix_.initializeStructure(getRowDist().getNumMyEntries(), 
-																				 getColumnDist().getNumMyEntries(), 
-																				 isRowOriented(), 
-																				 &data().pntr_[Teuchos::OrdinalTraits<OrdinalType>::zero()],
-																				 &data().indx_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
-		data().HbMatrix_.initializeValues(&data().values_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
+                                         getColumnDist().getNumMyEntries(), 
+                                         isRowOriented(), 
+                                         &data().pntr_.front(), 
+                                         &data().indx_.front());
+    data().HbMatrix_.initializeValues(&data().values_.front());
 
-
+    
     data().fillCompleted_ = true;
   }
   
@@ -303,7 +308,24 @@ public:
   void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y) const {
     if(!isFillCompleted())
       throw reportError("Cannot apply until after fillComplete.", 4);
-    cerr << "*** apply not implemented yet ***" << endl;
+    
+    // setup kokkos x vector
+    Kokkos::DenseVector<OrdinalType, ScalarType> kx;
+    ScalarType* scalarArray = const_cast<ScalarType*>(x.scalarPointer()); // x is logically const but not bitwise const
+    kx.initializeValues(x.getNumMyEntries(), scalarArray);                // we will not be modifying it, but initializeValues is not a const function.
+
+    // setup kokkos y vector
+    Kokkos::DenseVector<OrdinalType, ScalarType> ky;
+    ky.initializeValues(y.getNumMyEntries(), y.scalarPointer());
+
+    // setup kokkos sparsemultiply object
+    Kokkos::BaseSparseMultiply<OrdinalType, ScalarType> axy;
+    axy.initializeStructure(data().HbMatrix_);
+    axy.initializeValues(data().HbMatrix_);
+
+    // do Kokkos apply operation
+    axy.apply(kx, ky);
+    
   }
   
   //! Returns the global one norm of the matrix
@@ -496,7 +518,7 @@ public:
   // Print method, used by the overloaded << operator
   void print(ostream& os) const {
     os << "Orientation: " << (data().rowOriented_ ? "Row" : "Column") << "-oriented" << endl;
-		os << "State: " << (isFillCompleted() ? "Post-fillComplete" : "Pre-fillCompleter") << endl;
+		os << "State: " << (isFillCompleted() ? "Post-fillComplete" : "Pre-fillComplete") << endl;
     os << "Secondary distribution defined? " << (data().haveSecondary_ ? "yes" : "no") << endl;
     os << "Domain distribution defined? " << (data().haveDomain_ ? "yes" : "no") << endl;
     os << "Range distribution defined? " << (data().haveRange_ ? "yes" : "no") << endl;

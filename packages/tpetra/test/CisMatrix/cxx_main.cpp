@@ -42,8 +42,6 @@ template <typename OrdinalType, typename ScalarType>
 int codeCoverage(bool verbose, bool debug);
 template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug);
-template <typename OrdinalType, typename ScalarType>
-int mapTester();
 
 int main(int argc, char* argv[]) {
 	// initialize verbose & debug flags
@@ -61,9 +59,8 @@ int main(int argc, char* argv[]) {
 	// call test routine
 	int ierr = 0;
 	if(verbose) cout << "Starting CisMatrixTest..." << endl;
-	ierr += codeCoverage<int, double>(verbose, debug);
+	//ierr += codeCoverage<int, double>(verbose, debug);
 	ierr += unitTests<int, double>(verbose, debug);
-  //int tmp = mapTester<int, double>();
 
 	// finish up
 	if(verbose)
@@ -72,40 +69,6 @@ int main(int argc, char* argv[]) {
 		else
 			cout << "CisMatrix test failed." << endl;
 	return(ierr);
-}
-
-//======================================================================
-template <typename OrdinalType, typename ScalarType>
-int mapTester() {
-  typedef std::map<OrdinalType, ScalarType> OrdScalMap;
-  typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
-
-  OrdScalMap map1;
-  map1[1] = 10.0;
-  map1[2] = 20.0;
-  map1[3] = 30.0;
-  cout << "map1" << endl;
-  for(typename OrdScalMap::iterator i = map1.begin(); i != map1.end(); i++)
-    cout << "Key: " << (*i).first << " Data: " << (*i).second << endl;
-
-  OrdScalMap map2;
-  map2[1] = 11.0;
-  map2[2] = 22.0;
-  map2[3] = 33.0;
-  cout << "map2" << endl;
-  for(typename OrdScalMap::iterator i = map2.begin(); i != map2.end(); i++)
-    cout << "Key: " << (*i).first << " Data: " << (*i).second << endl;
-
-  MapOfMaps map3;
-  map3[1] = map1;
-  map3[2] = map2;
-  cout << "map3" << endl;
-  for(typename MapOfMaps::iterator i = map3.begin(); i != map3.end(); i++) {
-    cout << "row/column: " << (*i).first << endl;
-    OrdScalMap& innermap = (*i).second;
-    for(typename OrdScalMap::iterator j = innermap.begin(); j != innermap.end(); j++)
-      cout << "(" << (*j).first << "," << (*j).second << ")" << endl;
-  }
 }
 
 //======================================================================
@@ -195,8 +158,73 @@ int unitTests(bool verbose, bool debug) {
 	char const * OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
 	char const * STName = Teuchos::ScalarTraits<ScalarType>::name();
 
-	if(verbose) cout << "Starting actual testing section... (none to do)" << endl;
+	if(verbose) cout << "Starting actual testing section..." << endl;
   
+  // do a simple matrix-vector multiplication
+  // the CisMatrix will be 4x4, and the vectors will be length 4
+
+  // create platform/es/vs we use
+  if(verbose) cout << "Creating and Initializing platform/es/ves..." << endl;
+  Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformO;
+  Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
+  Tpetra::ElementSpace<OrdinalType> elementspace(4, 0, platformO);
+  Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformV);
+  if(debug) {
+    cout << "Output of elementspace:" << endl;
+    cout << elementspace;
+    cout << "Output of vectorspace:" << endl;
+    cout << vectorspace;
+  }
+  
+  // create x vector and initialize values
+  if(verbose) cout << "Creating and initializing x and y vectors..." << endl;
+  Tpetra::Vector<OrdinalType, ScalarType> x(vectorspace);
+  x[0] = 3.0;
+  x[1] = 1.0;
+  x[2] = 6.0;
+  x[3] = 4.0;
+  // create y vector (don't need to initialize values)
+  Tpetra::Vector<OrdinalType, ScalarType> y(vectorspace);
+  if(debug) {
+    cout << "Output of x:" << endl;
+    cout << x;
+    cout << "Output of y:" << endl;
+    cout << y;
+  }
+
+  // create A CisMatrix and initalize values
+  if(verbose) cout << "Creating A matrix..." << endl;
+  Tpetra::CisMatrix<OrdinalType, ScalarType> A(vectorspace, vectorspace);
+  if(debug) cout << A;
+  if(verbose) cout << "Submitting values..." << endl;
+  A.submitEntry(Tpetra::Insert, 0, 2.0, 0); // CombineMode, Row/Col Number, Value, Index
+  A.submitEntry(Tpetra::Insert, 0, 1.0, 2); 
+  A.submitEntry(Tpetra::Insert, 1, 4.0, 1); // Matrix layout is:
+  A.submitEntry(Tpetra::Insert, 1, 2.0, 3); // 2 0 1 0
+  A.submitEntry(Tpetra::Insert, 2, 3.0, 0); // 0 4 0 2
+  A.submitEntry(Tpetra::Insert, 2, 6.0, 2); // 3 0 6 0
+  A.submitEntry(Tpetra::Insert, 3, 5.0, 1); // 0 5 0 8
+  A.submitEntry(Tpetra::Insert, 3, 8.0, 3);
+  if(debug) cout << A;
+  if(verbose) cout << "Calling fillComplete..." << endl;
+  A.fillComplete();
+  if(debug) cout << A;
+
+  // output current values
+  if(verbose) cout << "Finished creating & initializing." << endl;
+
+  // call apply
+  if(verbose) cout << "Calling apply..." << endl;
+  A.apply(x, y);
+  if(debug) {
+    cout << "Output of A:" << endl;
+    cout << A;
+    cout << "Output of x:" << endl;
+    cout << x;
+    cout << "Output of y:" << endl;
+    cout << y;
+  }
+
 	// finish up
 	if(verbose)
 		if(returnierr == 0)

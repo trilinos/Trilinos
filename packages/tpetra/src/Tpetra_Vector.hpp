@@ -86,9 +86,6 @@ public:
 		OrdinalType const length = VectorSpace.getNumMyEntries();
 
 		VectorData_ = Teuchos::rcp(new VectorData<OrdinalType, ScalarType>(VectorSpace, length, scalarZero));
-
-		for(OrdinalType i = ordinalZero; i < length; i++)
-			VectorData_->scalarArray_[i] = scalarZero;
 	}
   
   //! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
@@ -523,6 +520,18 @@ public:
 
 	//@}
 
+  //@{ \name Expert/Developer Use Only.
+
+	// Returns pointer to ScalarType array inside of scalarArray
+	ScalarType* scalarPointer() {
+		return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
+	}
+	ScalarType const* scalarPointer() const {
+		return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
+	}
+
+  //@}
+
 private:
 
 	// Accessor for BLAS
@@ -536,14 +545,6 @@ private:
 	}
 	std::vector<ScalarType>const & scalarArray() const{
 		return(VectorData_->scalarArray_);
-	}
-
-	// Returns pointer to ScalarType array inside of scalarArray
-	ScalarType* scalarPointer() {
-		return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
-	}
-	ScalarType const* scalarPointer() const {
-		return(&VectorData_->scalarArray_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
 	}
 
 	Teuchos::RefCountPtr< VectorData<OrdinalType, ScalarType> > VectorData_;

@@ -39,7 +39,7 @@ class VectorData : public Object {
 		: Object("Tpetra::VectorData")
 		, BLAS_()
 		, VectorSpace_(VectorSpace)
-		, scalarArray_(length)
+    , scalarArray_(length, Teuchos::ScalarTraits<ScalarType>::zero())
 		, seed_(seed)
 	{};
 
