@@ -115,10 +115,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   }
 
   /* Compute statistics w.r.t. partitions? */
-  if (zz->LB.PartDist != NULL)
-    compute_part = 1;
-  else
-    compute_part = 0;
+  compute_part = (zz->Get_Partition != NULL);
 
   if (compute_part){
     /* Allocate space. */

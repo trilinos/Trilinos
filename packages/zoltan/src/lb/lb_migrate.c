@@ -176,7 +176,7 @@ int *actual_exp_to_part = NULL;          /* processor may not be included.  */
 
   if (zz->Unpack_Obj == NULL && zz->Unpack_Obj_Multi == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Must register a "
-         "ZOLTAN_UNPACK_OBJ_FN or ZOLTAN_UNPACK_MULTI_OBJ_FN function "
+         "ZOLTAN_UNPACK_OBJ_FN or ZOLTAN_UNPACK_OBJ_MULTI_FN function "
          "to use the migration-help tools.");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_FATAL);
