@@ -5,6 +5,7 @@
 #include "Tpetra_VectorSpace.hpp"
 #include <Teuchos_CompObject.hpp>
 #include <Teuchos_BLAS.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include <vector>
 
 namespace Tpetra {
@@ -46,11 +47,27 @@ public:
 		: Object("Tpetra::Vector")
 		, BLAS_()
 		, VectorSpace_(VectorSpace)
-		, A_(VectorSpace_.getNumMyEntries())
-	{};
+		, A_(VectorSpace.getNumMyEntries())
+	{
+		ScalarType const zero = Teuchos::ScalarTraits<ScalarType>::zero();
+		OrdinalType const length = getNumMyEntries();
+		for(OrdinalType i = 0; i < length; i++)
+			A_[i] = zero;
+	};
   
   //! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
-	//Vector(ScalarType* vectorEntries, VectorSpace<OrdinalType, ScalarType> const& vectorSpace);
+	Vector(ScalarType* vectorEntries, OrdinalType numEntries, VectorSpace<OrdinalType, ScalarType> const& VectorSpace)
+		: Object("Tpetra::Vector")
+		, BLAS_()
+		, VectorSpace_(VectorSpace)
+		, A_(VectorSpace.getNumMyEntries())
+	{
+		OrdinalType const length = getNumMyEntries();
+		if(numEntries != length)
+			throw reportError("numEntries = " + toString(numEntries) + ".  Should be = " + toString(length) + ".", -1);
+		for(OrdinalType i = 0; i < length; i++)
+			A_[i] = vectorEntries[i];
+	};
 
 	//! Copy constructor.
   Vector(Vector<OrdinalType, ScalarType> const& Source)
@@ -100,7 +117,23 @@ public:
 
 	//! Print method, used by overloaded << operator.
 	void print(ostream& os) const {
-		os << "VECTOR:: print function called" << endl;
+		
+		OrdinalType myImageID = vectorSpace().comm().getMyImageID();
+		OrdinalType numImages = vectorSpace().comm().getNumImages();
+		
+		for (int imageCtr = 0; imageCtr < numImages; imageCtr++) {
+			if (myImageID == imageCtr) {
+				if (myImageID == 0) {
+					os << endl << "Number of Global Entries  = " << getNumGlobalEntries() << endl;
+				}
+				os << endl <<   "ImageID = " << myImageID << endl;
+				os <<           "Number of Local Entries   = " << getNumMyEntries() << endl;
+				os <<           "Contents: ";
+				for(OrdinalType i = 0; i < getNumMyEntries(); i++)
+					os << A_[i] << " ";
+				os << endl << endl;
+			}
+		}
 	};
 	//@}
 
