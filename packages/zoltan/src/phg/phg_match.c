@@ -20,9 +20,9 @@ extern "C" {
 #include "phg.h"
 
 
-static ZOLTAN_PHG_MATCHING_FN matching_local;   /* function for local matching */
-static ZOLTAN_PHG_MATCHING_FN matching_ipm;     /* inner product matching */
-static ZOLTAN_PHG_MATCHING_FN matching_col_ipm; /* local ipm along proc columns*/
+static ZOLTAN_PHG_MATCHING_FN pmatching_local; /* function for local matching */
+static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;   /* inner product matching */
+static ZOLTAN_PHG_MATCHING_FN pmatching_col_ipm; /* local ipm along proc cols*/
 
 
 /*****************************************************************************/
@@ -41,14 +41,14 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
             exist = 0;
             hgp->matching = NULL;
         } else {   
-            hgp->matching = matching_local; 
+            hgp->matching = pmatching_local; 
             hgp->locmatching = hp.matching;
             hgp->matching_opt = hp.matching_opt;
         }
     } else if (!strcasecmp(hgp->redm_str, "c-ipm"))
-        hgp->matching = matching_col_ipm;   
+        hgp->matching = pmatching_col_ipm;   
     else if (!strcasecmp(hgp->redm_str, "ipm"))
-        hgp->matching = matching_ipm;
+        hgp->matching = pmatching_ipm;
     else {
         exist = 0;
         hgp->matching = NULL;
@@ -106,7 +106,12 @@ End:
 }
 
 
-static int matching_local(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *hgp)
+static int pmatching_local(
+  ZZ *zz,
+  HGraph *hg,
+  Matching match,
+  PHGPartParams *hgp
+)
 {
     int limit=hg->nVtx, err=ZOLTAN_OK;
     PHGComm *hgc=hg->comm;
@@ -135,7 +140,12 @@ static int matching_local(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *hgp
 
 #define MAX_NNZ 50  /* Max number of nonzeros to store for each inner product */
                     /* Reduce this value to save memory and comm volume. */
-static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *hgp)
+static int pmatching_col_ipm(
+  ZZ *zz,
+  HGraph *hg,
+  Matching match,
+  PHGPartParams *hgp
+)
 {
     int   i, j, k, v1, v2, edge, best_vertex;
     int   nadj, dense_comm;
@@ -146,7 +156,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
     float *ptr;
     char  *sendbuf, *recvbuf; /* comm buffers */
     char   msg[160];          /* error messages */
-    char  *yo = "matching_col_ipm";
+    char  *yo = "pmatching_col_ipm";
     PHGComm *hgc = hg->comm;  
     float lquality[3] = {0,0,0}; /* local  matchcount, matchweight */
     float gquality[3] = {0,0,0}; /* global matchcount, matchweight */
@@ -467,7 +477,13 @@ static int calc_nCandidates (int num_vtx, int procs)
  {return num_vtx ? 1 + num_vtx/(2 * procs * ROUNDS_CONSTANT) : 0;}
  
 
-static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
+/****************************************************************************/
+static int pmatching_ipm(
+  ZZ *zz,
+  HGraph* hg,
+  Matching match,
+  PHGPartParams *hgp
+)
 {
   int i, j, k, n, m, round, pvisit, kstart, *r, *s;   /* loop counters */
   int lno, gno, count, old_kstart;                    /* temp variables */
@@ -482,7 +498,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
   int err = ZOLTAN_OK, old_row, row, col, nPins, nVtx;
   int **rows = NULL; 
   int bestlno, vertex, nselect;
-  char *yo = "matching_ipm";
+  char *yo = "pmatching_ipm";
   int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
   
   /* this restriction will be removed later, but for now NOTE this test */
@@ -857,8 +873,8 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
     }                                       /* DONE: kstart < nTotal loop */
 
     /* MASTER ROW only: send best results to candidates' owners */
-    err = communication_by_plan (zz, nmaster, master_procs, NULL, 3, master_data,
-     &nrec, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
+    err = communication_by_plan (zz, nmaster, master_procs, NULL, 3, 
+     master_data, &nrec, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
     if (err != ZOLTAN_OK)
       goto fini;
     nmaster = 0;
@@ -897,6 +913,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
         *s++ = vertex = (sums [lno] > TSUM_THRESHOLD) ? index[lno] : gno;
             
         /* each distict owner (gno or vertex) needs its copy of the message */
+        /*  KDDKDD:  Matching gno to vertex with IP=sums[lno] */
         d1 = VTX_TO_PROC_X (hg, gno);
         d2 = VTX_TO_PROC_X (hg, vertex);
         dest[nsend++] = d1;
@@ -955,7 +972,11 @@ uprintf (hgc, "RTHRTH %d unmatched, %d external, %d local of %d\n",
 
 if (1)
 {
-/* The following tests that the global match array is a valid permutation */                                    
+/* The following tests that the global match array is a valid permutation */
+/* NOTE:  THESE TESTS ARE NOT MANDATORY; THEY CAN BE EXCLUDED AFTER WE 
+ * COMPLETE TESTING OF matching_ipm. 
+ */
+
 for (i = 0; i < hg->nVtx; i++)
   if (match[i] < 0)  cmatch[i] = -match[i] - 1;
   else               cmatch[i] = VTX_LNO_TO_GNO (hg, match[i]);
@@ -999,10 +1020,11 @@ fini:
 
 
   
+/****************************************************************************/
 static int communication_by_plan (ZZ* zz, int nsend, int* dest, int* size, 
  int scale, int* send, int* nrec, int *recsize, int* nRec, int** rec,
  MPI_Comm comm, int tag)
-   {
+{
    ZOLTAN_COMM_OBJ *plan = NULL;
    int err;
    char *yo = "communication_by_plan";
@@ -1038,14 +1060,14 @@ static int communication_by_plan (ZZ* zz, int nsend, int* dest, int* size,
    err = Zoltan_Comm_Do (plan, tag+2, (char*) send, scale * sizeof(int),
     (char*) *rec);
    if (err != ZOLTAN_OK)  {
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "failed in Comm_Do");
-      return err;
+     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "failed in Comm_Do");
+     return err;
    }
    
    /* free memory associated with the plan */
    Zoltan_Comm_Destroy (&plan); 
    return ZOLTAN_OK;
-   }
+}
    
    
 

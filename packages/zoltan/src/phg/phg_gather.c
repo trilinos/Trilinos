@@ -70,6 +70,11 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
     return ZOLTAN_FATAL;
   }
 
+#ifdef KDDKDD_CHECK
+  Zoltan_HG_Print(zz, phg, NULL, stdout, "GatherBefore");/* NULL parts for now;
+                                                           add non-NULL later */
+#endif
+
   /******************************************************************
    *  0. Allocate the hypergraph to be returned. 
    *  Set values that we already know. 
@@ -349,7 +354,8 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
   }  /* End row gather */
   
 #ifdef KDDKDD_CHECK
-  Zoltan_HG_Print(zz, shg, stdout, "GatherAfter");
+  Zoltan_HG_Print(zz, shg, NULL, stdout, "GatherAfter");/* NULL parts for now;
+                                                           add non-NULL later */
   Zoltan_PHG_Plot_2D_Distrib(zz, phg);
   Zoltan_PHG_Plot_2D_Distrib(zz, shg);
 #endif

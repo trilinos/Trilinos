@@ -488,6 +488,7 @@ int Zoltan_PHG_Coarsening
   Zoltan_Comm_Do(plan, PLAN_TAG+12, (char *) c_hg->ewgt, c_hg->EdgeWeightDim*sizeof(float), (char *) c_ewgt);
 
   /* now vertices of hyperedges */
+
   Zoltan_Comm_Resize(plan, hlsize, PLAN_TAG+13, &idx);
   if (idx && !(ahvertex = (int *) ZOLTAN_MALLOC(idx * sizeof(int))))
       MEMORY_ERROR;
@@ -615,6 +616,7 @@ int Zoltan_PHG_Coarsening
 #endif
       if (ip[i]>0) { /* identical net */
           int n1=ip[i]-1; /* i is identical to n1 */
+          /* Removing identical net here:  i == n1 */
           for (j=0; j<c_hg->EdgeWeightDim; ++j)
               c_ewgt[n1*c_hg->EdgeWeightDim + j] += c_ewgt[i*c_hg->EdgeWeightDim + j];
 #ifdef _DEBUG
@@ -632,8 +634,10 @@ int Zoltan_PHG_Coarsening
           c_hg->nPins += hlsize[i];
           ++c_hg->nEdge;
           ip[i] = 1; /* Don't ignore */
-      } else 
+      } else {
+          /* ignoring net i with size hsize[i] */
           ip[i] = 0; /* ignore size 0/1 nets*/      
+      }
   }
 #ifdef _DEBUG
   uprintf(hgc, "#GlobIden= %7d    SuccessRate= %.1lf%%    ElapT= %.3lf\n", idx, 100.0 * idx / (double) count, MPI_Wtime()-starttime);  

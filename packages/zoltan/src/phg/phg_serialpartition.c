@@ -50,7 +50,7 @@ static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] =
 static int local_coarse_partitioner(ZZ *, HGraph *, int, float *, Partition,
   PHGPartParams *, ZOLTAN_PHG_COARSEPARTITION_FN *);
 
-static void pick_best(ZZ *, PHGComm *, HGraph *, int, int, int *);
+static void pick_best(ZZ*, PHGPartParams*, PHGComm*, HGraph*, int, int, int*);
 
 /****************************************************************************/
 
@@ -275,7 +275,7 @@ float bal, worst_cut;
     /* Evaluate and select the best. */
     /* For now, only pick the best one, in the future we pick the k best. */
 
-    pick_best(zz, phg->comm, shg, numPart, 
+    pick_best(zz, hgp, phg->comm, shg, numPart, 
               MIN(NUM_PART_KEEP, hgp->num_coarse_iter), spart);
   
     if (phg->comm->nProc > 1) {
@@ -1016,6 +1016,7 @@ static int coarse_part_gr4 (ZZ *zz, HGraph *hg, int p, float *part_sizes,
 /*****************************************************************************/
 static void pick_best(
   ZZ *zz, 
+  PHGPartParams *hgp,  /* Input:  parameters to use.  */
   PHGComm *phg_comm,
   HGraph *shg, 
   int numPart,
@@ -1060,7 +1061,10 @@ float cut, bal;
   MPI_Allreduce(local, global, 2, MPI_FLOAT_INT, MPI_MINLOC, 
                 phg_comm->Communicator);
 
-  uprintf(phg_comm, "Local Bal: %.3lf Cut= %.2lf   Global: bal= %.3lf  Cut= %.2lf\n", local[0].val, local[1].val, global[0].val, global[1].val);
+  if (hgp->output_level)
+    uprintf(phg_comm,
+            "Local Bal: %.3lf Cut= %.2lf   Global: bal= %.3lf  Cut= %.2lf\n", 
+             local[0].val, local[1].val, global[0].val, global[1].val);
 
   /* What do we say is "best"?   For now, say lowest cut size. */
   MPI_Bcast(spart, shg->nVtx, MPI_INT, global[1].rank, 

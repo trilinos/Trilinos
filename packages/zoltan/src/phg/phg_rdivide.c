@@ -81,10 +81,12 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   if (ierr != ZOLTAN_OK)
       goto End;
 
+  if (hgp->output_level)
+    uprintf(hgc, "Rdivide(%d, %d): %.1lf\n", lo, hi, 
+                 Zoltan_PHG_hcut_size_links(hgc, hg, part, 2));
+
   if (hgp->use_timers > 1)  /* Restart rdivide timer */
     ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hg->comm->Communicator);
-
-  uprintf(hgc, "Rdivide(%d, %d): %.1lf\n", lo, hi, Zoltan_PHG_hcut_size_links(hgc, hg, part, 2));
     
   /* if only two parts total, record results and exit */
   if (lo + 1 == hi)  {
@@ -353,7 +355,8 @@ int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGra
   if (ierr != ZOLTAN_OK)
       goto End;
 
-  uprintf(hgc, "Rdivide(%d, %d): %.1lf\n", lo, hi, Zoltan_PHG_hcut_size_links(hgc, hg, part, 2));
+  if (hgp->output_level)
+    uprintf(hgc, "Rdivide(%d, %d): %.1lf\n", lo, hi, Zoltan_PHG_hcut_size_links(hgc, hg, part, 2));
     
   /* if only two parts total, record results and exit */
   if (lo + 1 == hi)  {
