@@ -346,7 +346,7 @@ extern int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
 extern int ML_Smoother_MSR_SGSdamping(void *,int ,double *,int , double *);
 extern void ML_Smoother_Clean_MSR_GS(void *data);
 
-extern int DinvA(void *data,  int in, double p[], int out, double ap[]);
+extern int DinvA(ML_Operator *data,  int in, double p[], int out, double ap[]);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

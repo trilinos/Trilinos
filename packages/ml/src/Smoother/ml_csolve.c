@@ -174,9 +174,7 @@ int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, double din[],
    if (csolve->func->ML_id == ML_EMPTY) 
       pr_error("ML_CSolve_Apply error : coarse solver not defined\n");
 
-   if (csolve->func->ML_id == ML_EXTERNAL)
-        csolve->func->external(csolve->data, inlen, din, outlen, dout);
-   else csolve->func->internal(csolve->data, inlen, din, outlen, dout);
+   csolve->func->internal(csolve->data, inlen, din, outlen, dout);
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
    csolve->apply_time += (GetClock() - t0);
 #endif
@@ -322,14 +320,6 @@ int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, Epetra_MultiVector &ep_din,
    if (csolve->func->ML_id == ML_EMPTY) 
       pr_error("ML_CSolve_Apply error : coarse solver not defined\n");
 
-   if (csolve->func->ML_id == ML_EXTERNAL) {
-       for ( int KK = 0 ; KK != ep_din.NumVectors() ; KK++ ) {
-         double *din = pp_din[KK];
-         double *dout = pp_dout[KK];
-
-        csolve->func->external(csolve->data, inlen, din, outlen, dout);
-      }
-}   else {
    if ( (void *) csolve->func->internal == (void *)ML_SuperLU_Solve )
      ML_SuperLU_Solve_WKC (csolve->data, inlen, (double *) &ep_din, outlen, 
                          (double *) &ep_dout); 
@@ -339,8 +329,7 @@ int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, Epetra_MultiVector &ep_din,
          double *dout = pp_dout[KK];
 
          csolve->func->internal (csolve->data, inlen, din, outlen, dout); 
-      }
-     }
+       }
    }
    
 

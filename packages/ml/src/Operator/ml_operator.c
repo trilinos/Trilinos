@@ -419,13 +419,9 @@ int ML_Operator_Getrow(ML_Operator *Amat, int N_requested_rows,
    if (Amat->getrow->ML_id == ML_EMPTY) 
       pr_error("ML_Operator_Getrow : Amat getrow not defined\n");
 
-   if (Amat->getrow->ML_id == ML_EXTERNAL) {
-      return(Amat->getrow->external(Amat->data,N_requested_rows,
-	requested_rows, allocated_space, columns, values, row_lengths));
-   }
-   else 
-      return(Amat->getrow->internal(Amat,N_requested_rows,requested_rows, 
-                          allocated_space, columns, values, row_lengths));
+   return(Amat->getrow->internal(Amat,N_requested_rows, requested_rows, 
+			 allocated_space, columns, values, row_lengths));
+
 }
 
 /* ******************************************************************** */
@@ -493,10 +489,7 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, double din[], int olen,
    if (Op->matvec->ML_id == ML_EMPTY)
       pr_error("ML_Operator_Apply error : matvec not defined\n");
 
-   if (Op->matvec->ML_id == ML_EXTERNAL) {
-        Op->matvec->external(Op->data, inlen, din, olen, dout);
-   }
-   else Op->matvec->internal(Op,       inlen, din, olen, dout);
+   Op->matvec->internal(Op,       inlen, din, olen, dout);
 
 #if defined(ML_TIMING) || defined(ML_FLOPS)
    Op->apply_time += (GetClock() - t0);
@@ -525,10 +518,8 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
       pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
 
    /* apply grid transfer */
-   if (Op->matvec->ML_id == ML_EXTERNAL) {
-        Op->matvec->external((void*)Op->data, inlen, din, olen, dout);
-   }
-   else Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
+
+   Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
 
    /* apply boundary condition */
 
@@ -1596,11 +1587,8 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
       pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
 
    /* apply grid transfer */
-   if (Op->matvec->ML_id == ML_EXTERNAL)
-        Op->matvec->external((void*)Op->data, inlen, din, olen, dout);
-   else {
-     Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
-}
+
+   Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
 
    /* apply boundary condition */
 

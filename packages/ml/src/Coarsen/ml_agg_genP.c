@@ -999,20 +999,9 @@ int ML_AGG_JacobiSmoother_Getrows(ML_Operator *data, int N_requested_rows,
    /* fetch row                                                         */
    /* ----------------------------------------------------------------- */
 
-   if ( getrow_obj->ML_id == ML_EXTERNAL) {
-      info = getrow_obj->external(widget->Amat->data, N_requested_rows,
+   info = getrow_obj->internal(widget->Amat, N_requested_rows,
 			    requested_rows, allocated_space, columns,
 			    values, row_lengths);
-   }
-   else if ( getrow_obj->ML_id == ML_INTERNAL) 
-      info = getrow_obj->internal(widget->Amat, N_requested_rows,
-			    requested_rows, allocated_space, columns,
-			    values, row_lengths);
-   else 
-   {
-      printf("Invalid getrow id (level %d)\n",getrow_obj->ML_id);
-      exit(1);
-   }
    if (info == 0) return(0);
 
    /* ----------------------------------------------------------------- */
@@ -1144,20 +1133,9 @@ int ML_AGG_Amat_Getrows(ML_Operator *data, int N_requested_rows,
       exit(1);
    }
 
-   if ( getrow_obj->ML_id == ML_EXTERNAL) {
-      info = getrow_obj->external(widget->Amat->data, N_requested_rows,
+   info = getrow_obj->internal(widget->Amat, N_requested_rows,
 			    requested_rows, allocated_space, columns,
 			    values, row_lengths);
-   }
-   else if ( getrow_obj->ML_id == ML_INTERNAL) 
-      info = getrow_obj->internal(widget->Amat, N_requested_rows,
-			    requested_rows, allocated_space, columns,
-			    values, row_lengths);
-   else 
-   {
-      printf("Invalid getrow id (%d)\n",getrow_obj->ML_id);
-      exit(1);
-   }
    if (info == 0) return(0);
 
    return(1);

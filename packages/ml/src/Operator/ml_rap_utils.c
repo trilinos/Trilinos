@@ -286,15 +286,9 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
    }
    if (next != NULL) row -= next->getrow->Nrows;
 
-   if (input_matrix->getrow->ML_id == ML_EXTERNAL) {
-      getfunction = input_matrix->getrow->external;
-      data = input_matrix->data;
-   }
-   else {
-      data = (void *) input_matrix;
-      getfunction = (int (*)(void *,int,int*,int,int*,double*,int*))
-                     input_matrix->getrow->internal;
-   }
+   data = (void *) input_matrix;
+   getfunction = (int (*)(void *,int,int*,int,int*,double*,int*))
+     input_matrix->getrow->internal;
 
    while(getfunction(data,1,&row,*allocated_space-index,
                &((*columns)[index]), &((*values)[index]), row_lengths) == 0) {

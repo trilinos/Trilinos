@@ -279,46 +279,41 @@ int ML_Smoother_Set_Label( ML_Smoother *smoo, char *label)
 int ML_Smoother_Apply(ML_Smoother *pre, int inlen, double sol[], 
                       int outlen, double rhs[], int init_guess)
 {
-   int         i, n;
-   double      temp, *res, tol;
-   ML_Operator *Amat;
+  int         i, n;
+  double      temp, *res, tol;
+  ML_Operator *Amat;
 
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
-   double      t0;
-   t0 = GetClock();
+  double      t0;
+  t0 = GetClock();
 #endif
 
-   if (pre->smoother->ML_id == ML_EMPTY) return 1;
-   pre->init_guess = init_guess;
+  if (pre->smoother->ML_id == ML_EMPTY) return 1;
+  pre->init_guess = init_guess;
 
-   if (pre->smoother->ML_id == ML_EXTERNAL)
-        pre->smoother->external(pre->smoother->data,inlen,sol,outlen,rhs);
-   else 
-   {
-      if (pre->ntimes == ML_CONVERGE) 
+  if (pre->ntimes == ML_CONVERGE) {
+    Amat = pre->my_level->Amat;
+    n    = Amat->outvec_leng; 
+    res  = (double *) ML_allocate( (n+1)*sizeof(double) );
+    temp = sqrt(ML_gdot(n, rhs, rhs, pre->my_level->comm));
+    tol  = temp*pre->tol;
+    pre->ntimes = 100;
+    while ( temp > tol ) 
       {
-         Amat = pre->my_level->Amat;
-         n    = Amat->outvec_leng; 
-         res  = (double *) ML_allocate( (n+1)*sizeof(double) );
-         temp = sqrt(ML_gdot(n, rhs, rhs, pre->my_level->comm));
-         tol  = temp*pre->tol;
-         pre->ntimes = 100;
-         while ( temp > tol ) 
-         {
-            pre->smoother->internal(pre,n,sol,n, rhs);
-            ML_Operator_Apply(Amat, n, sol, n, res);
-            for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
-            temp = sqrt(ML_gdot(n, res, res, pre->my_level->comm));
-         }
-         pre->ntimes = ML_CONVERGE;
-         ML_free(res);
+	pre->smoother->internal(pre,n,sol,n, rhs);
+	ML_Operator_Apply(Amat, n, sol, n, res);
+	for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
+	temp = sqrt(ML_gdot(n, res, res, pre->my_level->comm));
       }
-      else pre->smoother->internal(pre,inlen,sol,outlen,rhs);
-   }
+    pre->ntimes = ML_CONVERGE;
+    ML_free(res);
+  }
+  else pre->smoother->internal(pre,inlen,sol,outlen,rhs);
+
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
-   pre->apply_time += (GetClock() - t0);
+  pre->apply_time += (GetClock() - t0);
 #endif
-   return 1;
+  return 1;
 }
 
 /* ************************************************************************* */
@@ -330,21 +325,13 @@ int ML_Smoother_Set(ML_Smoother *smoo,int internal_or_external,void *data,
                     int (*external)(void*,int,double*,int,double *), 
                     int ntimes, double omega, char *str)
 {
-   if (internal_or_external == ML_EXTERNAL) 
-   {
-      smoo->smoother->external = external;
-      smoo->smoother->ML_id = ML_EXTERNAL;
-   } 
-   else 
-   {
-      smoo->smoother->internal = internal;
-      smoo->smoother->ML_id = ML_INTERNAL;
-   }
-   smoo->smoother->data= data;
-   smoo->ntimes = ntimes;
-   smoo->omega = omega;
-   if (str != NULL) ML_Smoother_Set_Label( smoo, str);
-   return 0;
+  smoo->smoother->internal = internal;
+  smoo->smoother->ML_id = ML_INTERNAL;
+  smoo->smoother->data= data;
+  smoo->ntimes = ntimes;
+  smoo->omega = omega;
+  if (str != NULL) ML_Smoother_Set_Label( smoo, str);
+  return 0;
 }
 
 /* ************************************************************************* */
@@ -6457,7 +6444,7 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
 
     return 0; 
 }
-int DinvA(void *data,  int in, double p[], int out, double ap[])
+int DinvA(ML_Operator *data,  int in, double p[], int out, double ap[])
 {
   void *olddata;
   struct DinvA_widget *DinvA_widget;
@@ -6465,7 +6452,7 @@ int DinvA(void *data,  int in, double p[], int out, double ap[])
   double *diagonal;
   int i;
 
-  DinvA_widget = (struct DinvA_widget *) data;
+  DinvA_widget = (struct DinvA_widget *) ML_Get_MyMatvecData(data);
   Amat = DinvA_widget->Amat;
   olddata = Amat->data;
 
@@ -6478,8 +6465,8 @@ int DinvA(void *data,  int in, double p[], int out, double ap[])
   ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
   for (i = 0; i < Amat->outvec_leng; i++) ap[i] = ap[i]/diagonal[i];
 
-  Amat->matvec->ML_id    = ML_EXTERNAL;
-  Amat->matvec->external = DinvA;
+  Amat->matvec->ML_id    = ML_INTERNAL;
+  Amat->matvec->internal = DinvA;
   Amat->data             = olddata;
   return 0;
 }
@@ -6571,8 +6558,8 @@ int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
    DinvA_widget.external = Amat->matvec->external;
    DinvA_widget.data     = Amat->data;
    DinvA_widget.Amat     = Amat;
-   Amat->matvec->ML_id    = ML_EXTERNAL;
-   Amat->matvec->external = DinvA;
+   Amat->matvec->ML_id    = ML_INTERNAL;
+   Amat->matvec->internal = DinvA;
    Amat->data             = &DinvA_widget;
 #endif
 
@@ -7988,19 +7975,10 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, Epetra_MultiVector &ep_sol,
    if (pre->smoother->ML_id == ML_EMPTY) return 1;
    pre->init_guess = init_guess;
 
-   if (pre->smoother->ML_id == ML_EXTERNAL) {
-      for ( int KK = 0 ; KK != ep_sol.NumVectors() ; KK++ ) {
-         double *sol = pp_sol[KK];
-         double *rhs = pp_rhs[KK];
-        pre->smoother->external(pre->smoother->data,inlen,sol,outlen,rhs);
-      }
-   } else 
-   {
-      if (pre->ntimes == ML_CONVERGE) 
-      {
-         for ( int KK = 0 ; KK != ep_sol.NumVectors() ; KK++ ) {
-            double *sol = pp_sol[KK];
-            double *rhs = pp_rhs[KK];
+   if (pre->ntimes == ML_CONVERGE) {
+       for ( int KK = 0 ; KK != ep_sol.NumVectors() ; KK++ ) {
+	 double *sol = pp_sol[KK];
+	 double *rhs = pp_rhs[KK];
 
          Amat = pre->my_level->Amat;
          n    = Amat->outvec_leng; 
@@ -8009,31 +7987,30 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, Epetra_MultiVector &ep_sol,
          tol  = temp*pre->tol;
          pre->ntimes = 100;
          while ( temp > tol ) 
-         {
-            pre->smoother->internal(pre,n,sol,n, rhs);
-            ML_Operator_Apply(Amat, n, sol, n, res);
-            for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
-            temp = sqrt(ML_gdot(n, res, res, pre->my_level->comm));
-         }
+	   {
+	     pre->smoother->internal(pre,n,sol,n, rhs);
+	     ML_Operator_Apply(Amat, n, sol, n, res);
+	     for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
+	     temp = sqrt(ML_gdot(n, res, res, pre->my_level->comm));
+	   }
          pre->ntimes = ML_CONVERGE;
          ML_free(res);
-      }
-      }
-      else {
+       }
+   }
+   else {
 
-         if ( (void *)pre->smoother->internal == (void *)ML_Cheby )
-            ML_Cheby_WKC ( pre , inlen , (double *)&ep_sol , outlen , 
-                          (double *) &ep_rhs );
+     if ( (void *)pre->smoother->internal == (void *)ML_Cheby )
+       ML_Cheby_WKC ( pre , inlen , (double *)&ep_sol , outlen , 
+		      (double *) &ep_rhs );
 
-         else {
-            for ( int KK = 0 ; KK != ep_sol.NumVectors() ; KK++ ) {
-               double *sol = pp_sol[KK];
-               double *rhs = pp_rhs[KK];
+     else {
+       for ( int KK = 0 ; KK != ep_sol.NumVectors() ; KK++ ) {
+	 double *sol = pp_sol[KK];
+	 double *rhs = pp_rhs[KK];
 
-               pre->smoother->internal(pre,inlen,sol,outlen,rhs);
-            }
-         }
-      }
+	 pre->smoother->internal(pre,inlen,sol,outlen,rhs);
+       }
+     }
    }
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
    pre->apply_time += (GetClock() - t0);
