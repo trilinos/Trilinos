@@ -977,9 +977,6 @@ Optional Packages:
                           directories for -lname
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
-  --with-amesos-superludistlib
-                          Set SuperLU dist library (default is
-                          ${tac_with_amesos_superludistdir}/libsuperludist.a, )
 
 Some influential environment variables:
   CC          C compiler command
@@ -3849,7 +3846,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3852:" \
+echo "$as_me:3849:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7372,7 +7369,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7375: \"$ac_link\") >&5
+(eval echo $as_me:7372: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7450,7 +7447,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7453: \"$ac_link\") >&5
+(eval echo $as_me:7450: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10354,124 +10351,7 @@ fi
 #  U M F P A C K  #
 #  =============  #
 
-  if test "X$superludist_lib_ok" != "Xyes"; then
-#
-#       2)  Next try to compile with -lsuperludist.  This allows the user to specify
-#           the directory while using the default name for the library
-     LIBS=" -lsuperludist ${LIBS}"
-
-     cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char pdgssvx ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-pdgssvx ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  superludist_with_lib="yes"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-superludist_with_lib="no"
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-
-     if test "X$superludist_with_lib" == "Xyes"; then
-       amesos_libs="${amesos_libs} -lsuperludist"
-     else
-#       3)  Then try the existing Triliinos3PL scheme.
-#
-
-
-# Check whether --with-amesos-superludistlib or --without-amesos-superludistlib was given.
-if test "${with_amesos_superludistlib+set}" = set; then
-  withval="$with_amesos_superludistlib"
-  tac_with_amesos_superludistlib=$withval
-else
-  tac_with_amesos_superludistlib=${tac_with_amesos_superludistdir}/libsuperludist.a
-fi;
-
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${tac_with_amesos_superludistlib}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_superludistlib}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_superludistlib}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_superludistlib}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
- }
-  fi
-
-       LIBS="${tac_with_amesos_superludistlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
-       amesos_libs="${amesos_libs} ${tac_with_amesos_superludistlib}"
-     fi
-  fi
-#
-#   At this point, LIBS and amesos_libs both have our best shot, if they don't work now
-#   we give up
-
-#   This causes problems when you use build with both superlu and superludist
-#
-#    AC_TRY_LINK_FUNC( set_default_options,
-#                        AC_DEFINE(OLD_SUPERLUDIST,,[Define if we are using the old Superludist]) )
+if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
 
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -12739,7 +12619,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12742: \"$ac_link\") >&5
+(eval echo $as_me:12622: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12817,7 +12697,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:12820: \"$ac_link\") >&5
+(eval echo $as_me:12700: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
