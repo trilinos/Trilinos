@@ -144,7 +144,7 @@ ostream& NormWRMS::print(ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
-    stream << "Norm-WRMS:  " << Utils::sci(value) << " < 1.0";
+    stream << "WRMS-Norm = " << Utils::sci(value) << " < 1.0";
   stream << endl;
   return stream;
 }

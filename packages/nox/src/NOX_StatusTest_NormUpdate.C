@@ -159,11 +159,11 @@ ostream& NormUpdate::print(ostream& stream, int indent) const
     stream << ' ';
   stream << status;
   if (toleranceType == Absolute) {
-    stream << "Update-Norm (Absolute):  " << Utils::sci(normUpdate) << " < " 
+    stream << "Absolute Update-Norm = " << Utils::sci(normUpdate) << " < " 
 	   << Utils::sci(trueTolerance);
   }
   else {
-    stream << "Update-Norm (Relative):  " << Utils::sci(normUpdate) << " < " 
+    stream << "Relative Update-Norm = " << Utils::sci(normUpdate) << " < " 
 	   << Utils::sci(trueTolerance);
   }
   stream << endl;
