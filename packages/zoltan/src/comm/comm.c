@@ -30,6 +30,8 @@ static char *cvs_commc_id = "$Id$";
 #include "all_allo_const.h"
 
 #define MAX(A,B) ((A) > (B)) ? (A) : (B)
+/* KDDKDD */
+static void debug_sort2_int_int(int n, int ra[], int rb[]);
 
 /* ------------------------------------------------------------------- */
 /* perform irregular communication using a pre-computed plan */
@@ -204,6 +206,15 @@ struct Comm_Obj *comm_create(
 
   MPI_Barrier(new_comm);
 
+/* KDDKDD  sort the procs_from array in ascending order.
+           also reorder lengths_from.  
+           do this ONLY to remove non-determinism; non-determinism
+           may cause different results due to different order of
+           migration. 
+*/
+
+  debug_sort2_int_int(nrecv, procs_from-1, lengths_from-1);
+
 /* setup indices_to, including self
    counts = current offset into indices_to for each proc I send to */
 
@@ -312,4 +323,67 @@ void comm_destroy_(struct Comm_Obj **plan)
 
 {
   comm_destroy(*plan);
+}
+
+/* KDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDDKDD */
+
+/* sorting routine to sort messages to be received by their processor
+ * number.
+ * this is used only to test whether non-deterministic order of messages
+ * is influencing results.
+ * otherwise, this sort is extraneous and unnecessary.
+ */
+
+
+static void debug_sort2_int_int(int n, int ra[], int rb[])
+{
+/*
+ *       Numerical Recipies in C source code
+ *       modified to have first argument an integer array (JS)
+ *
+ *       Sorts the array ra[1,..,n] in ascending numerical order using heapsort
+ *       algorithm, while making the corresponding rearrangement of the
+ *       array rb[1,..,n].
+ */
+
+  int l,j,ir,i;
+  int rra;
+  int rrb;
+
+  /*
+   *  No need to sort if one or fewer items.
+   */
+  if (n <= 1) return;
+
+  l=(n >> 1)+1;
+  ir=n;
+  for (;;) {
+    if (l > 1) {
+      rra=ra[--l];
+      rrb=rb[l];
+    } else {
+      rra=ra[ir];
+      rrb=rb[ir];
+      ra[ir]=ra[1];
+      rb[ir]=rb[1];
+      if (--ir == 1) {
+        ra[1]=rra;
+        rb[1]=rrb;
+        return;
+      }
+    }
+    i=l;
+    j=l << 1;
+    while (j <= ir) {
+      if (j < ir && ra[j] < ra[j+1]) ++j;
+      if (rra < ra[j]) {
+        ra[i]=ra[j];
+        rb[i]=rb[j];
+        j += (i=j);
+      }
+      else j=ir+1;
+    }
+    ra[i]=rra;
+    rb[i]=rrb;
+  }
 }
