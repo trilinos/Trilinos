@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
-#ifdef HTEST
+#ifdef HGEXEC
 #include "hypergraph.h"
 #else
 #include "zoltan.h"
