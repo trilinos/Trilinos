@@ -104,8 +104,8 @@ namespace Solver {
 
        <li> "Method" - Name of the direction to be computed in this
        solver.  "Tensor" and "Newton" are the only two valid choices.
-       A sublist by that name specifies all of the parameters to
-       be passed to the linear solver.  See below.
+       A sublist by this name specifies all of the parameters to be
+       passed to the linear solver.  See below under "Linear Solver".
 
        <li> "Rescue Bad Newton Solve" (Boolean) - If the linear solve
        does not meet the tolerance specified by the forcing term, then
@@ -115,10 +115,11 @@ namespace Solver {
        parameters that are passed to
        NOX::Abstract::Group::computeNewton() and
        NOX::Abstract::Group::applyJacobianInverse().  "Linear Solver"
-       is itself a sublist of the list specified in "Method" above.
-       Below is a partial list of standard parameters usually
-       available in common linear solvers.  Check with the specific
-       linear solver being used for other parameters.
+       is itself a sublist of the list specified in "Method" above
+       (i.e., "Tensor" or "Newton").  Below is a partial list of
+       standard parameters usually available in common linear solvers.
+       Check with the specific linear solver being used for other
+       parameters.
 
 	    <ul>
      
@@ -135,13 +136,15 @@ namespace Solver {
 
        </ul> 
 
-  <li> "Line Search" - Sublist of the line search parameters. Defaults
-       to an empty list.  Be aware that the tensor step is not
-       guaranteed to be a descent direction on the function.  Thus,
-       not all "basic" line search approaches would be appropriate.
-       This solver class approriately handles these considerations.
-       The following parameters specify the specific options for this
-       line search:
+  <li> "Line Search" - Sublist of the line search parameters.  Because
+       the tensor step is not guaranteed to be a descent direction on
+       the function, not all "basic" line search approaches would be
+       appropriate.  Thus, the LineSearch classes available to
+       Newton's method (e.g., Polynomial, More-Thuente) are not used
+       here.  Instead, this solver class approriately handles
+       technical considerations for tensor methods with its own set of
+       global strategies.  The following parameters specify the
+       specific options for this line search:
 
        <ul>
 
@@ -150,6 +153,12 @@ namespace Solver {
 
             <ul> 
 
+            <li> "Curvilinear" - Backtrack along the "curvilinear"
+	    path that spans the tensor direction and the Newton
+	    direction and that maintains monotonicity on the tensor
+	    model.  Recommended because it tends to be more robust and
+	    efficient than the other choices.  [Default]
+
 	    <li> "Standard" - Backtrack along tensor direction unless
 	    it is not a descent direction, in which case backtrack
 	    along Newton direction.
@@ -157,32 +166,43 @@ namespace Solver {
 	    <li> "Dual" - Backtrack along both the Newton and tensor
 	    directions and choose the better of the two.
 
-            <li> "Curvilinear" - Backtrack along the "curvilinear"
-	    path that spans the tensor direction and the Newton
-	    direction and that maintains monotonicity on the tensor
-	    model. [Default]
+	    <li> "Full Step" - Only use the full step and do not
+	    backtrack along both the Newton and tensor directions and
+	    choose the better of the two.
 
             </ul>
 
-       <li> "Lambda selection" - flag for how to calculate next lambda
-       (quadratic, halving)
+       <li> "Lambda selection" - Flag for how to calculate the next
+       linesearch parameter lambda.  Valid choices are "Quadratic" and
+       "Halving" (default).  Quadratic constructs a quadratic
+       interpolating polynomial from the last trial point and uses the
+       minimum of this function as the next trial lambda (bounded by
+       0.1).  Halving divides the linesearch parameter by 2 before
+       each trial, which is simpler but tends to generate longer steps
+       than quadratic.
 
-       <li> "Default Step" - starting value of linesearch parameter
+       <li> "Default Step" - Starting value of the linesearch parameter
        (defaults to 1.0)
 
-       <li> "Minimum Step" - minimum acceptable linesearch parameter
-       before the linesearch terminates (defaults to 1.0e-12)
+       <li> "Minimum Step" - Minimum acceptable linesearch parameter
+       before the linesearch terminates (defaults to 1.0e-12). If
+       there are many linesearch failures, then lowering this value is
+       one thing to try.
 
-       <li> "Recovery Step" - step parameter to take when the line
+       <li> "Recovery Step" - Step parameter to take when the line
        search fails (defaults to value for "Default Step")
 
-       <li> "Max Iters" - maximum number of iterations (i.e., backtracks)
+       <li> "Max Iters" - Maximum number of iterations (i.e., backtracks)
 
        </ul>
 
   <li>"Solver Options" - Sublist of general solver options.  
+
        <ul>
-       <li> "User Defined Pre/Post Operator" is supported.  See NOX::Parameter::PrePostOperator for more details.
+
+       <li> "User Defined Pre/Post Operator" is supported.  See
+       NOX::Parameter::PrePostOperator for more details.
+
        </ul>
 
   </ul>
@@ -210,7 +230,7 @@ namespace Solver {
   of Colorado, Boulder, Colorado.
 
   <li> B. W. Bader, <em>Tensor-Krylov methods for solving large-scale
-  systems of nonlinear equations</em>, submitted to SIAM J. Opt.
+  systems of nonlinear equations</em>, submitted to SIAM J. Numer. Anal.
 
   <li> B. W. Bader and R. B. Schnabel, <em>Curvilinear linesearch for
   tensor methods</em>, SISC, 25(2):604-622.
