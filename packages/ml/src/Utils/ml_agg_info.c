@@ -165,9 +165,9 @@ void ML_Aggregate_ComputeRadius( ML_Aggregate_Viz_Stats finer_level,
     for( i=0 ; i<N_fine ; i++ ) {
       iaggre = graph_decomposition[i];
       if( iaggre != -1 ) {
-	Ri = pow(x[i] - xm[iaggre], 2);
-	if( ym != NULL )  Ri += pow(y[i] - ym[iaggre], 2);
-	if( zm != NULL )  Ri += pow(z[i] - zm[iaggre], 2);
+	Ri = pow(x[i] - xm[iaggre], 2.0);
+	if( ym != NULL )  Ri += pow(y[i] - ym[iaggre], 2.0);
+	if( zm != NULL )  Ri += pow(z[i] - zm[iaggre], 2.0);
 	if( Ri > R[iaggre] ) R[iaggre]=sqrt(Ri);
       }
     }
@@ -529,7 +529,7 @@ void ML_Aggregate_AnalyzeLocalGraphDec( int N_aggregates,
   std = 0.0;
   
   for( i=0 ; i<N_aggregates ; i++ ) {
-    std += pow(1.0*nodes_per_aggregate[i] - avg,2);
+    std += pow(1.0*nodes_per_aggregate[i] - avg,2.0);
   }
 
   /* compute the standard deviation as
@@ -610,7 +610,7 @@ void ML_Aggregate_AnalyzeVector( int Nlocal,
   std = 0.0;
   
   for( i=0 ; i<Nlocal ; i++ ) {
-    std += pow(vector[i] - avg,2);
+    std += pow(vector[i] - avg,2.0);
   }
 
   /* compute the standard deviation as
@@ -1285,9 +1285,9 @@ int ML_Info_DomainDecomp( ML_Aggregate_Viz_Stats info,
 	xmin = ML_min(xmin,x_col);
       }
 
-      h_row = sqrt( pow(x_row-x_col+0.00000001,2) +
-		    pow(y_row-y_col+0.00000001,2) +
-		    pow(z_row-z_col+0.00000001,2) );
+      h_row = sqrt( pow(x_row-x_col+0.00000001,2.0) +
+		    pow(y_row-y_col+0.00000001,2.0) +
+		    pow(z_row-z_col+0.00000001,2.0) );
 
       if( h_row > (*h) ) *h = h_row;
       
@@ -1829,7 +1829,9 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
   /* OpenDX, does not support everything (like plotting vector values),
    * but it works for 1D, 2D, and 3D
    * Note that the input file has adash (`-') and not an underscore (`_')
-   * as for OpenDX. */
+   * as for OpenDX. 
+   * Also the name of graph file is different (for the dot `.').
+   * */
   if( choice == 0 ) {
 
     if( info[level].is_filled == ML_YES ) {
@@ -1854,6 +1856,7 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
       
   } else if( choice == 1 ) {
 
+    /* XYZ (XD3D for example) */
     if( info[level].is_filled == ML_YES ) {
       if( base_filename != NULL ) 
 	sprintf( graphfile,
@@ -1863,7 +1866,7 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
 
       else  
 	sprintf( graphfile,
-		".graph-level%d.xyz",
+		"graph-level%d.xyz",
 		level );
 
       if( comm->ML_mypid == 0 ) 

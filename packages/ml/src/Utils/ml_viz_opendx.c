@@ -1,6 +1,7 @@
 /* ************************************************************************* */
 /* ************************************************************************* */
 /* Functions to write OpenDX-readable files (about graph decomposition)      */
+/* Also, functions to write .xyz files (that can be read using xd3d)         */
 /* ************************************************************************* */
 /* Author        : Marzio Sala (SNL)                                         */
 /* Date          : October 2003                                              */
