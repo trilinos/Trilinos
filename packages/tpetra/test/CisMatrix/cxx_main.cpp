@@ -155,8 +155,6 @@ template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug) {
 	//int ierr = 0;
 	int returnierr = 0;
-	char const * OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
-	char const * STName = Teuchos::ScalarTraits<ScalarType>::name();
 
 	if(verbose) cout << "Starting actual testing section..." << endl;
   
@@ -228,9 +226,13 @@ int unitTests(bool verbose, bool debug) {
 	// finish up
 	if(verbose)
 		if(returnierr == 0)
-			cout << "Unit tests <" << OTName << ", " << STName << "> passed." << endl;
+			cout << "Unit tests <" 
+			     << Teuchos::OrdinalTraits<OrdinalType>::name()  << ", " 
+			     << Teuchos::ScalarTraits<ScalarType>::name() << "> passed." << endl;
 		else
-			cout << "Unit Tests <" << OTName << ", " << STName << "> failed." << endl;
+			cout << "Unit Tests <" 
+			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
+			     << Teuchos::ScalarTraits<ScalarType>::name() << "> failed." << endl;
   
 	return(returnierr);
 }

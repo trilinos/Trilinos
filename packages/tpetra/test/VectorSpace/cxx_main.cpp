@@ -30,8 +30,8 @@
 // Modified: 06-Feb-2003
 
 #include <iostream>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
+#include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_VectorSpace.hpp"
@@ -73,11 +73,11 @@ template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug) {
 	int ierr = 0;
 	int returnierr = 0;
-  const Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformE;
-	const Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
-	char const * OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
-	char const * STName = Teuchos::ScalarTraits<ScalarType>::name();
-	if(verbose) cout << "Starting unit tests for VectorSpace<" << OTName << "," << STName << ">." << endl;
+	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformE;
+	Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
+	if(verbose) cout << "Starting unit tests for VectorSpace<" 
+			 << Teuchos::OrdinalTraits<OrdinalType>::name() << "," 
+			 << Teuchos::ScalarTraits<ScalarType>::name() << ">." << endl;
 
 	//
 	// code coverage section - just call functions, no testing
@@ -187,10 +187,16 @@ int unitTests(bool verbose, bool debug) {
 	ierr = 0;
 	
 	// finish up
+	//char const * OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
+	//char const * STName = Teuchos::ScalarTraits<ScalarType>::name();
 	if(verbose)
 		if(returnierr == 0)
-			cout << "VectorSpaceTest <" << OTName << ", " << STName << "> passed." << endl;
+			cout << "VectorSpaceTest <" 
+			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
+			     << Teuchos::ScalarTraits<ScalarType>::name()  << "> passed." << endl;
 		else
-			cout << "VectorSpaceTest <" << OTName << ", " << STName << ">failed." << endl;
+			cout << "VectorSpaceTest <" 
+			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
+			     << Teuchos::ScalarTraits<ScalarType>::name() << ">failed." << endl;
 	return(returnierr);
 }

@@ -142,11 +142,11 @@ template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug) {
 	int ierr = 0;
 	int returnierr = 0;
-  const Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformE;
-	const Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
-	char const * OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
-	char const * STName = Teuchos::ScalarTraits<ScalarType>::name();
-	if(verbose) cout << "Starting unit tests for Vector<" << OTName << "," << STName << ">." << endl;
+	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformE;
+	Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
+	if(verbose) cout << "Starting unit tests for Vector<" 
+			 << Teuchos::OrdinalTraits<OrdinalType>::name() << "," 
+			 << Teuchos::ScalarTraits<ScalarType>::name() << ">." << endl;
 
 	// ======================================================================
 	// code coverage section - just call functions, no testing
@@ -347,8 +347,12 @@ int unitTests(bool verbose, bool debug) {
 	// finish up
 	if(verbose)
 		if(returnierr == 0)
-			cout << "VectorTest <" << OTName << ", " << STName << "> passed." << endl;
+			cout << "VectorTest <" 
+			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
+			     << Teuchos::ScalarTraits<ScalarType>::name() << "> passed." << endl;
 		else
-			cout << "VectorTest <" << OTName << ", " << STName << "> failed." << endl;
+			cout << "VectorTest <" 
+			     << Teuchos::OrdinalTraits<OrdinalType>::name() << ", " 
+			     << Teuchos::ScalarTraits<ScalarType>::name() << "> failed." << endl;
 	return(returnierr);
 }
