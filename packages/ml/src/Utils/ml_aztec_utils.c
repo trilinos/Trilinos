@@ -2808,7 +2808,11 @@ typedef struct MLAZ_LevelSettings
   double status[AZ_STATUS_SIZE];
   double omega;
   double smoother_damping;
-
+  int amesos_solver;                  /* to choose among different          */
+                                      /* amesos linear solvers              */
+  int max_procs;                      /* maximum number of procs when       */
+                                      /* solving with ML_AMESOS_SUPERLUDIST */
+                                      /* (version 2.0 only)                 */
 } MLAZ_LevelSettings;
 
 /* this structure contains the global settings, and a pointer to
@@ -2960,6 +2964,8 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
 
 } /* MLAZ_Iterate */
 
+#include "ml_amesos.h"
+
 int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 			       int proc_config[AZ_PROC_SIZE],
 			       ML *ml, ML_Aggregate *ag)
@@ -2972,6 +2978,9 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   
   double       omega;
   double       t0, t1, t2, t3, t4, t5;
+  int          amesos_solver, max_procs;
+
+  /* ------------------- execution begins --------------------------------- */
 
   /* check out whether Settings has been initialized or not.
      If now, fill with default values */
@@ -3166,6 +3175,13 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
     ML_Gen_CoarseSolverSuperLU( ml, Nlevels-1);
     break;
     
+  case MLAZ_Amesos:
+    amesos_solver = Settings.Level[MLAZ_COARSE_LEVEL].amesos_solver;
+    max_procs = Settings.Level[MLAZ_COARSE_LEVEL].max_procs;
+    ML_Gen_Smoother_Amesos( ml, Nlevels-1, amesos_solver, max_procs);
+    
+    break;
+    
   default:
     fprintf( stderr,
 	     "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
@@ -3229,7 +3245,9 @@ void MLAZ_Defaults( void )
   MLAZ_Set_LevelAztecSmoother(MLAZ_ALL,options,params);
  
   /* now some stuff with coarse level */
-  MLAZ_Set_LevelOption(MLAZ_COARSE_LEVEL, MLAZ_smoother, MLAZ_SuperLU);
+  MLAZ_Set_LevelOption(MLAZ_COARSE_LEVEL, MLAZ_smoother, MLAZ_Jacobi);
+  MLAZ_Set_LevelOption(MLAZ_COARSE_LEVEL, MLAZ_amesos_solver, ML_AMESOS_KLU);
+  MLAZ_Set_LevelOption(MLAZ_COARSE_LEVEL, MLAZ_max_procs, -1);
     
   return;
   
@@ -3324,7 +3342,15 @@ void MLAZ_Set_LevelOption( int level, int option, int value )
       Settings.Level[level].pre_or_post_smoother = value;
       break;
       
-    default:
+    case MLAZ_amesos_solver:
+      Settings.Level[level].amesos_solver = value;
+      break;
+    
+    case MLAZ_max_procs:
+      Settings.Level[level].max_procs = value;
+      break;
+
+      default:
       fprintf( stderr,
 	       "*ERR*ML* input level option not valid\n" );
     }

@@ -221,6 +221,8 @@ extern void new_norm(AZ_PRECOND *prec, double res[], double *result);
 #define MLAZ_pre_or_post_smoother  13
 #define MLAZ_num_pde_eqns          14
 #define MLAZ_smoother_damping      15
+#define MLAZ_amesos_solver         16
+#define MLAZ_max_procs             17
   
 /*  MLAZ_smoother */
 #define MLAZ_Jacobi                 0 /* ML's Jacobi smoother */
@@ -229,6 +231,8 @@ extern void new_norm(AZ_PRECOND *prec, double res[], double *result);
 #define MLAZ_BlockGaussSeidel       3
 #define MLAZ_MLS                    4
 #define MLAZ_SuperLU                -1
+#define MLAZ_Amesos                 -2
+  
 /* MLAZ_aggregates */
 #define MLAZ_METIS                  0
 #define MLAZ_ParMETIS               1
