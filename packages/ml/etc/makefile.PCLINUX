@@ -1,5 +1,5 @@
-ARCH_FLAGS= -O  # -Wall 
-#ARCH_FLAGS= -Wall -g # -Wall 
+ARCH_FLAGS=-O  # -Wall 
+#ARCH_FLAGS=-Wall -g # -Wall 
 #ARCH_FLAGS=-pg # -Wall 
 CC=gcc
 FC=g77

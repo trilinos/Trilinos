@@ -1,6 +1,6 @@
-ARCH_FLAGS=-O
-CC=cc -Dmatched
-FC=cc -Dmatched
+ARCH_FLAGS=-O -Dmatched
+CC=cc
+FC=cc
 RANLIB=ranlib
 LINKER=$(CC)
 ARCH_LIBS=-lmalloc -lM77 -lF77 -lsunmath -lnsl -lsocket
