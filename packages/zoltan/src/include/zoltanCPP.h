@@ -767,7 +767,7 @@ public:
   static int Comm_Do(ZOLTAN_COMM_OBJ *plan, int tag, char *send_data, int nbytes,
     char *recv_data)
     {
-      return Comm_Do(plan, tag, send_data, nbytes, recv_data);
+      return Zoltan_Comm_Do(plan, tag, send_data, nbytes, recv_data);
     }
 
   static int Comm_Do_Post( ZOLTAN_COMM_OBJ * plan, int tag, char *send_data, int nbytes,
