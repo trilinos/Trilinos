@@ -116,9 +116,9 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_intlist.$(OBJEXT) ml_vec.$(OBJEXT) ml_memory.$(OBJEXT) \
 	ml_eigf2c.$(OBJEXT) ml_agg_info.$(OBJEXT) \
 	ml_viz_opendx.$(OBJEXT) ml_viz_xyz.$(OBJEXT) \
-	ml_amesos.$(OBJEXT) ml_amesos_wrap.$(OBJEXT) \
-	ml_ifpack.$(OBJEXT) ml_ifpack_wrap.$(OBJEXT) \
-	ml_MultiLevelPreconditioner.$(OBJEXT) \
+	ml_viz_vtk.$(OBJEXT) ml_amesos.$(OBJEXT) \
+	ml_amesos_wrap.$(OBJEXT) ml_ifpack.$(OBJEXT) \
+	ml_ifpack_wrap.$(OBJEXT) ml_MultiLevelPreconditioner.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Filtering.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_NullSpace.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Defaults.$(OBJEXT) \
@@ -235,6 +235,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_twogrid_analysis.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_utils.Po ./$(DEPDIR)/ml_vec.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_viz_opendx.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_viz_vtk.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_viz_xyz.Po ./$(DEPDIR)/ml_xxt.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_xyt.Po ./$(DEPDIR)/mli_solver.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -525,6 +526,7 @@ $(srcdir)/Utils/ml_eigf2c.h \
 $(srcdir)/Utils/ml_vampir.h \
 $(srcdir)/Utils/ml_viz_opendx.h   \
 $(srcdir)/Utils/ml_viz_xyz.h      \
+$(srcdir)/Utils/ml_viz_vtk.h      \
 $(srcdir)/Utils/ml_amesos.h       \
 $(srcdir)/Utils/ml_amesos_wrap.h  \
 $(srcdir)/Utils/ml_ifpack.h       \
@@ -587,6 +589,7 @@ $(srcdir)/Utils/ml_eigf2c.c                                 \
 $(srcdir)/Utils/ml_agg_info.c                               \
 $(srcdir)/Utils/ml_viz_opendx.c                             \
 $(srcdir)/Utils/ml_viz_xyz.c                                \
+$(srcdir)/Utils/ml_viz_vtk.c                                \
 $(srcdir)/Utils/ml_amesos.c                                 \
 $(srcdir)/Utils/ml_amesos_wrap.cpp                          \
 $(srcdir)/Utils/ml_ifpack.c                                 \
@@ -993,6 +996,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_vec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_viz_opendx.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_viz_vtk.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_viz_xyz.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_xxt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_xyt.Po@am__quote@
@@ -2053,6 +2057,22 @@ ml_viz_xyz.obj: $(srcdir)/Utils/ml_viz_xyz.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_viz_xyz.Po' tmpdepfile='$(DEPDIR)/ml_viz_xyz.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_viz_xyz.obj `if test -f '$(srcdir)/Utils/ml_viz_xyz.c'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_viz_xyz.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_viz_xyz.c'; fi`
+
+ml_viz_vtk.o: $(srcdir)/Utils/ml_viz_vtk.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_viz_vtk.o -MD -MP -MF "$(DEPDIR)/ml_viz_vtk.Tpo" -c -o ml_viz_vtk.o `test -f '$(srcdir)/Utils/ml_viz_vtk.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_viz_vtk.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_viz_vtk.Tpo" "$(DEPDIR)/ml_viz_vtk.Po"; else rm -f "$(DEPDIR)/ml_viz_vtk.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utils/ml_viz_vtk.c' object='ml_viz_vtk.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_viz_vtk.Po' tmpdepfile='$(DEPDIR)/ml_viz_vtk.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_viz_vtk.o `test -f '$(srcdir)/Utils/ml_viz_vtk.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_viz_vtk.c
+
+ml_viz_vtk.obj: $(srcdir)/Utils/ml_viz_vtk.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_viz_vtk.obj -MD -MP -MF "$(DEPDIR)/ml_viz_vtk.Tpo" -c -o ml_viz_vtk.obj `if test -f '$(srcdir)/Utils/ml_viz_vtk.c'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_viz_vtk.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_viz_vtk.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_viz_vtk.Tpo" "$(DEPDIR)/ml_viz_vtk.Po"; else rm -f "$(DEPDIR)/ml_viz_vtk.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utils/ml_viz_vtk.c' object='ml_viz_vtk.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_viz_vtk.Po' tmpdepfile='$(DEPDIR)/ml_viz_vtk.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_viz_vtk.obj `if test -f '$(srcdir)/Utils/ml_viz_vtk.c'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_viz_vtk.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_viz_vtk.c'; fi`
 
 ml_amesos.o: $(srcdir)/Utils/ml_amesos.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_amesos.o -MD -MP -MF "$(DEPDIR)/ml_amesos.Tpo" -c -o ml_amesos.o `test -f '$(srcdir)/Utils/ml_amesos.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_amesos.c; \

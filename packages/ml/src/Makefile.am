@@ -140,6 +140,7 @@ $(srcdir)/Utils/ml_eigf2c.h \
 $(srcdir)/Utils/ml_vampir.h \
 $(srcdir)/Utils/ml_viz_opendx.h   \
 $(srcdir)/Utils/ml_viz_xyz.h      \
+$(srcdir)/Utils/ml_viz_vtk.h      \
 $(srcdir)/Utils/ml_amesos.h       \
 $(srcdir)/Utils/ml_amesos_wrap.h  \
 $(srcdir)/Utils/ml_ifpack.h       \
@@ -202,6 +203,7 @@ $(srcdir)/Utils/ml_eigf2c.c                                 \
 $(srcdir)/Utils/ml_agg_info.c                               \
 $(srcdir)/Utils/ml_viz_opendx.c                             \
 $(srcdir)/Utils/ml_viz_xyz.c                                \
+$(srcdir)/Utils/ml_viz_vtk.c                                \
 $(srcdir)/Utils/ml_amesos.c                                 \
 $(srcdir)/Utils/ml_amesos_wrap.cpp                          \
 $(srcdir)/Utils/ml_ifpack.c                                 \

@@ -181,6 +181,8 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   if( FileFormat == "xyz" ) Format = 1;
   // you are a poor man if you need "dx". God bless you.
   else if( FileFormat == "dx" ) Format = 0;
+  // you are a very cool guy if you plot with the "vtk" option (paraview)
+  else if( FileFormat == "vtk" ) Format = 2;
   else {
     cerr << ErrorMsg_ << "Option `viz: output format' has an incorrect" << endl
       << ErrorMsg_ << "value (" << FileFormat << "). Possible values are" << endl
@@ -205,6 +207,14 @@ Visualize(bool VizAggre, bool VizPreSmoother,
     cerr << ErrorMsg_ << "Option `viz: output format' == `dx' cannot be used" << endl
          << ErrorMsg_ << "to visualize the effect of smoothers and cycle." << endl;
     cerr << endl;
+    VizPreSmoother = false;
+    VizPostSmoother = false;
+    VizCycle = false;
+  }
+
+  if (Format == 2) {
+    // only aggregate visualization is supported right now
+    // paraview should be able to visualize vectors, however
     VizPreSmoother = false;
     VizPostSmoother = false;
     VizCycle = false;

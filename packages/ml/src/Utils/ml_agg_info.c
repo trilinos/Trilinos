@@ -20,6 +20,7 @@
 #include "ml_utils.h"
 #include "ml_viz_opendx.h"
 #include "ml_viz_xyz.h"
+#include "ml_viz_vtk.h"
 #include "ml_viz_stats.h"
 #include "ml_agg_info.h"
 
@@ -1781,6 +1782,25 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
 	       level, graphfile );
 
       ML_Aggregate_VisualizeXYZ(info[level], graphfile, comm, values);
+    }
+  } else if( choice == 2 ) {
+    /* VTK (Paraview, for example) */
+    if( info[level].is_filled == ML_YES ) {
+      if( base_filename != NULL ) 
+        sprintf( graphfile,
+                 "%s-level%d.vtk",
+                 base_filename,
+                 level );
+
+      else  
+        sprintf(graphfile,
+                "graph-level%d.vtk",
+                level );
+
+      if( comm->ML_mypid == 0 ) 
+        printf("\t(level %d) : Writing VTK file `%s'\n", level, graphfile );
+
+      ML_Aggregate_VisualizeVTK(info[level], graphfile, comm, values);
     }
   }
 
