@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_TEUCHOS)
+#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_TRIUTILS)
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 #endif
 
   puts("please configure IFPACK with --eanble-aztecoo --enable-teuchos");
-  puts("--enable-amesos to run this test");
+  puts("--enable-amesos --enable-triutils to run this test");
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

@@ -396,8 +396,12 @@ ApplyInverseJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   for (int j = 0; j < NumSweeps_ ; j++) {
 
     // compute the residual
-    IFPACK_CHK_ERR(Apply(Y,AX));
-    AX.Update(1.0,X,-1.0);
+    if (j) {
+      IFPACK_CHK_ERR(Apply(Y,AX));
+      AX.Update(1.0,X,-1.0);
+    }
+    else 
+      AX = X;
 
     // apply the inverse of the diagonal
     AX.Multiply(1.0, AX, *Diagonal_, 0.0);

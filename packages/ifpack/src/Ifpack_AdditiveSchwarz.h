@@ -185,7 +185,7 @@ public:
    * be defined on each subblock.
    * Parameters accepted by List are:
    * - \c "schwarz: combine mode" : It must be an Epetra_CombineMode.
-   *     Default: \c Insert.
+   *     Default: \c Zero.
    *     It Can be assume of the following values:
    *   - Add: Components on the receiving processor will be added together;
    *   - Zero: Off-processor components will be ignored;
@@ -371,7 +371,7 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   Inverse_(0),
   OverlapLevel_(OverlapLevel),
   IsOverlapping_(false),
-  CombineMode_(Add),
+  CombineMode_(Zero),
   Condest_(-1.0),
   UseReordering_(false),
   ReorderedLocalizedMatrix_(0),
@@ -412,7 +412,7 @@ Ifpack_AdditiveSchwarz(const Ifpack_AdditiveSchwarz& RHS) :
   Inverse_(0),
   OverlapLevel_(RHS.OverlapLevel()),
   IsOverlapping_(RHS.IsOverlapping()),
-  CombineMode_(Add),
+  CombineMode_(Zero),
   Condest_(-1.0),
   UseReordering_(false),
   ReorderedLocalizedMatrix_(0),
@@ -758,7 +758,9 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
                                           Y.NumVectors());
     assert (OverlappingY != 0);
 
-    IFPACK_CHK_ERR(OverlappingMatrix_->ImportMultiVector(X,*OverlappingX));
+    OverlappingY->PutScalar(0.0);
+    OverlappingX->PutScalar(0.0);
+    IFPACK_CHK_ERR(OverlappingMatrix_->ImportMultiVector(X,*OverlappingX,Insert));
   }
   else {
     OverlappingX = (Epetra_MultiVector*)&X;
@@ -772,20 +774,20 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     IFPACK_CHK_ERR(SingletonFilter_->SolveSingletons(*OverlappingX,*OverlappingY));
     IFPACK_CHK_ERR(SingletonFilter_->CreateReducedRHS(*OverlappingY,*OverlappingX,ReducedX));
 
-  // process reordering
-  if (!UseReordering_) {
-    IFPACK_CHK_ERR(Inverse_->ApplyInverse(ReducedX,ReducedY));
-  }
-  else {
-    Epetra_MultiVector ReorderedX(ReducedX);
-    Epetra_MultiVector ReorderedY(ReducedY);
-    IFPACK_CHK_ERR(Reordering_->P(ReducedX,ReorderedX));
-    IFPACK_CHK_ERR(Inverse_->ApplyInverse(ReorderedX,ReorderedY));
-    IFPACK_CHK_ERR(Reordering_->Pinv(ReorderedY,ReducedY));
-  }
+    // process reordering
+    if (!UseReordering_) {
+      IFPACK_CHK_ERR(Inverse_->ApplyInverse(ReducedX,ReducedY));
+    }
+    else {
+      Epetra_MultiVector ReorderedX(ReducedX);
+      Epetra_MultiVector ReorderedY(ReducedY);
+      IFPACK_CHK_ERR(Reordering_->P(ReducedX,ReorderedX));
+      IFPACK_CHK_ERR(Inverse_->ApplyInverse(ReorderedX,ReorderedY));
+      IFPACK_CHK_ERR(Reordering_->Pinv(ReorderedY,ReducedY));
+    }
 
-  // finish up with singletons
-  IFPACK_CHK_ERR(SingletonFilter_->UpdateLHS(ReducedY,*OverlappingY));
+    // finish up with singletons
+    IFPACK_CHK_ERR(SingletonFilter_->UpdateLHS(ReducedY,*OverlappingY));
   }
   else {
     // process reordering
@@ -803,7 +805,8 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   if (IsOverlapping()) {
     IFPACK_CHK_ERR(OverlappingMatrix_->ExportMultiVector(*OverlappingY,Y,
-                                                         CombineMode_));
+                                                        CombineMode_));
+
     delete OverlappingX;
     delete OverlappingY;
   }

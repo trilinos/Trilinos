@@ -42,58 +42,7 @@
 #ifdef HAVE_IFPACK_TEUCHOS
 #include "Teuchos_ParameterList.hpp"
 #endif
-
-//==============================================================================
-class Ifpack_Element {
-
-public:
-  Ifpack_Element() {};
-
-  Ifpack_Element(const Ifpack_Element& rhs) {
-    i_ = rhs.Index();
-    val_ = rhs.Value();
-    aval_ = rhs.AbsValue();
-  }
-
-  inline int Index() const {
-    return(i_);
-  }
-
-  inline double Value() const {
-    return(val_);
-  }
-
-  inline double AbsValue() const {
-    return(aval_);
-  }
-
-  inline void SetIndex(const int i)
-  {
-    i_ = i;
-  }
-
-  inline void SetValue(const double val)
-  {
-    val_ = val;
-    aval_ = IFPACK_ABS(val_);
-  }
-
-  inline bool operator <(const Ifpack_Element& rhs) const 
-  {
-    if (rhs.AbsValue() > AbsValue())
-      return(false);
-    else if (rhs.AbsValue() < AbsValue())
-      return(true);
-    else if (rhs.Index() < Index())
-        return(true);
-  }
-
-private:
-  int i_;
-  double val_;
-  double aval_;
-
-};
+#include <functional>
 
 //==============================================================================
 // FIXME: allocate Comm_ and Time_ the first Initialize() call
@@ -204,6 +153,7 @@ int Ifpack_vRiluk::Initialize()
 }
 
 //==========================================================================
+#include "float.h"
 int Ifpack_vRiluk::Compute() {
 
   if (!IsInitialized()) 
@@ -228,30 +178,55 @@ int Ifpack_vRiluk::Compute() {
   vector<int> RowIndices(Length);
   vector<double> RowValues(Length);
 
+  // sizes of L and U pointers (a couple for each row)
+  vector<int> L_size(NumMyRows_);
+  vector<int> U_size(NumMyRows_);
+
   // cycle over all rows
   for (int i = 0 ; i < NumMyRows_ ; ++i) {
 
     int RowNnz;
     Matrix().ExtractMyRowCopy(i,Length,RowNnz,&RowValues[0],&RowIndices[0]);
     
+    // count the nonzeros in L (without diagonal, stored in U)
+    L_size[i] = 0;
+    U_size[i] = 0;
+    for (int j = 0 ; j < RowNnz ; ++j) {
+      if (RowIndices[j] < i)
+        L_size[i]++;
+      else
+        U_size[i]++;
+    }
+
+    LI[i].resize(L_size[i] * LevelOfFill());
+    LV[i].resize(L_size[i] * LevelOfFill());
+    UI[i].resize(U_size[i] * LevelOfFill() + 1);
+    UV[i].resize(U_size[i] * LevelOfFill() + 1);
+
+    int L_count = 0;
+    int U_count = 0;
+
     // zero diagonal is always the first of U
-    UI[i].push_back(i);
-    UV[i].push_back(0.0);
+    UI[i][U_count] = i;
+    UV[i][U_count] = 0.0;
+    ++U_count;
 
     for (int j = 0 ; j < RowNnz ; ++j) {
       int col = RowIndices[j];
 
       if (col < i) {
-        LI[i].push_back(col);
-        LV[i].push_back(RowValues[j]);
+        LI[i][L_count] = col;
+        LV[i][L_count] = RowValues[j];
+        ++L_count;
       }
       else {
         if (col == i) {
           UV[i][0] = RowValues[j];
         }
         else {
-          UI[i].push_back(col);
-          UV[i].push_back(RowValues[j]);
+          UI[i][U_count] = col;
+          UV[i][U_count] = RowValues[j];
+          ++U_count;
         }
       }
     }
@@ -264,143 +239,159 @@ int Ifpack_vRiluk::Compute() {
     IFPACK_CHK_ERR(-1);
 
   // insert first row in U_
-  IFPACK_CHK_ERR(U_->InsertGlobalValues(0,UI[0].size(),
+  IFPACK_CHK_ERR(U_->InsertGlobalValues(0,U_size[0],
                                         &(UV[0][0]), &(UI[0][0])));
 
-  vector<int> flag(NumMyRows_);
+  // FIXME
+  double threshold_ = 0e-6;
+  double rel_threshold_ = 1e-1;
+
+  // ===================== //
+  // Perform factorization //
+  // ===================== //
+
+  vector<double> tmp(NumMyRows_);
   for (int j = 0 ; j < NumMyRows_ ; ++j)
-    flag[j] = -1;
+    tmp[j] = 0.0;
+  vector<double> l_atmp(NumMyRows_);
+  vector<double> u_atmp(NumMyRows_);
+  vector<int> l_index(NumMyRows_);
+  vector<int> u_index(NumMyRows_);
 
-  if (!LevelOfFill_) {
+  double old_l_cutoff = 1.0;
+  double old_u_cutoff = 1.0;
 
-    // ================= //
-    // zero fill-in case //
-    // ================= //
+  double time_fact = 0.0;
+  double time_sort = 0.0;
+  double time_insert = 0.0;
 
-    // cycle over all rows 
-    for (int i = 1 ; i < NumMyRows_ ; ++i) {
+  // cycle over all rows 
+  for (int i = 1 ; i < NumMyRows_ ; ++i) {
 
-      for (int k = 0 ; k < LI[i].size() ; ++k) {
-
-        // index of entry `k'
-        int kk = LI[i][k];
-
-        LV[i][k] /= UV[kk][0];
-        double Lik = LV[i][k];
-
-        // position of nonzeros in row `kk'
-        for (int j = 0 ; j < UI[kk].size() ; ++j)
-          flag[UI[kk][j]] = j;
-
-        // fix lower triangular
-        for (int j = 0 ; j < LI[i].size() ; ++j) {
-          int jj = LI[i][j];
-          if (jj <= kk)
-            continue;
-          // look if position `jj' is in row `kk'
-          if (flag[jj] != -1) {
-            LV[i][j] -= Lik * UV[kk][flag[jj]];
-          }
-        }
-        // fix upper triangular
-        for (int j = 0 ; j < UI[i].size() ; ++j) {
-          int jj = UI[i][j];
-          if (flag[jj] != -1) {
-            UV[i][j] -= Lik * UV[kk][flag[jj]];
-          }
-        }
-
-        for (int j = 0 ; j < UI[kk].size() ; ++j)
-          flag[UI[kk][j]] = -1;
-      }
+    // populate tmp with nonzeros of this row
+    for (int j = 0 ; j < L_size[i] ; ++j) {
+      tmp[LI[i][j]] = LV[i][j];
     }
-  }
-  else {
+    for (int j = 0 ; j < U_size[i] ; ++j) {
+      tmp[UI[i][j]] = UV[i][j];
+    }
 
-    // ===================== //
-    // non-zero fill-in case //
-    // ===================== //
+    int first;
+    if (L_size[i])
+      first = LI[i][0];
+    else
+      first = i;
 
-    vector<double> tmp(NumMyRows_);
+    double diag = UV[i][0];
+    double drop = 1e-4 * diag;
 
-    // cycle over all rows 
-    for (int i = 1 ; i < NumMyRows_ ; ++i) {
+    for (int k = first ; k < i ; ++k) {
 
-      // FIXME: I am not technically correct, this may keep
-      // LevelOfFill() elements in L and LevelOfFill() in U...
-      int LOF = 2* LevelOfFill();
+      if (tmp[k] == 0.0)
+        continue;
 
-      // put all elements in this vector, because it
-      // will be sorted using STL sort() algorithm later
-      vector<Ifpack_Element> RowEntries;
-      Ifpack_Element Element;
+      if (IFPACK_ABS(tmp[k]) < drop) {
+        tmp[k] = 0.0;
+        continue;
+      }
 
-      // populate tmp with nonzeros of this row
-      for (int j = 0 ; j < NumMyRows_ ; ++j)
-        tmp[j] = 0.0;
-      for (int j = 0 ; j < LI[i].size() ; ++j)
-        tmp[LI[i][j]] = LV[i][j];
-      for (int j = 0 ; j < UI[i].size() ; ++j)
-        tmp[UI[i][j]] = UV[i][j];
+      tmp[k] /= UV[k][0];
 
-      // now perform factorization as if it were a dense matrix
-      for (int k = 0 ; k < i ; ++k) {
-
-        if (tmp[k] == 0.0)
+      for (int j = 0 ; j < U_size[k] ; ++j) {
+        int col = UI[k][j];
+        if (col <= k)
           continue;
-
-        tmp[k] /= UV[k][0];
-
-        // position of nonzeros in row `k'
-        for (int j = 0 ; j < UI[k].size() ; ++j) {
-          if (UI[k][j] <= k)
-            continue;
-          tmp[UI[k][j]] -= tmp[k] * UV[k][j];
-        }
-      }
-
-      // reset the entries in LV
-      for (int j = 0 ; j < LV[i].size() ; ++j) {
-        int col = LI[i][j];
-        LV[i][j] = tmp[col];
-        tmp[col] = 0.0;
-      }
-      
-      // reset the entries in UV
-      for (int j = 0 ; j < UV[i].size() ; ++j) {
-        int col = UI[i][j];
-        UV[i][j] = tmp[col];
-        tmp[col] = 0.0;
-      }
-      
-      // get nonzeros in tmp
-      for (int j = 0 ; j < NumMyRows_ ; ++j) {
-        if ((tmp[j] != 0.0) && (j != i)) {
-          Element.SetIndex(j);
-          Element.SetValue(tmp[j]);
-          RowEntries.push_back(Element);
-        }
-      }
-
-      if (RowEntries.size() > LOF) {
-        // sort in ascending order the entries for this row
-        sort(RowEntries.begin(),RowEntries.end());
-      }
-
-      for (int kk = 0 ; kk < EPETRA_MIN(LOF,RowEntries.size()) ; ++kk) {
-        int col = RowEntries[kk].Index();
-        double val = RowEntries[kk].Value();
-        assert (val != 0.0);
-        if (col < i) {
-          LI[i].push_back(col);
-          LV[i].push_back(val);
-        }
-        else {
-          UI[i].push_back(col);
-          UV[i].push_back(val);
-        }
+        double add = tmp[k] * UV[k][j];
+        if (IFPACK_ABS(add) > drop)
+          tmp[col] -= add;
       }
     }
+
+    // track diagonal element and insert it
+    if (tmp[i] < 1-9)
+      tmp[i] = 1.0; // FIXME
+    UV[i][0] = tmp[i];
+    double abs_diag = IFPACK_ABS(UV[i][0]);
+    tmp[i] = 0.0;
+
+    // estimate a good cut-off from previous line. This will
+    // limitate the number of elements to order with sort().
+    double this_l_cutoff = rel_threshold_ * old_l_cutoff * abs_diag;
+    double this_u_cutoff = rel_threshold_ * old_u_cutoff * abs_diag;
+    // get nonzeros in tmp, and absolute values in l_atmp and u_atmp
+    int l_count = 0;
+    int u_count = 0;
+    for (int j = 0 ; j < i ; ++j) {
+      double val = IFPACK_ABS(tmp[j]);
+      if (val <= this_l_cutoff || val <= drop) {
+        tmp[j] = 0.0;
+        continue;
+      }
+      // store in l pointer
+      l_atmp[l_count] = val;
+      l_index[l_count] = j;
+      ++l_count;
+    }
+    for (int j = i + 1 ; j < NumMyRows_ ; ++j) {
+      double val = IFPACK_ABS(tmp[j]);
+      if (val <= this_u_cutoff || val <= drop) {
+        tmp[j] = 0.0;
+        continue;
+      }
+      u_atmp[u_count] = val;
+      u_index[u_count] = j;
+      ++u_count;
+    }
+
+    int l_LOF = LevelOfFill() * L_size[i];
+    int u_LOF = LevelOfFill() * U_size[i];
+    double l_cutoff = 0.0;
+    double u_cutoff = 0.0;
+    // sort in ascending order the entries for this row
+    if (l_count > l_LOF) {
+      sort(l_atmp.begin(),l_atmp.begin() + l_count,greater<double>());
+      l_cutoff = l_atmp[l_LOF];
+    }
+    if (u_count > u_LOF) {
+      sort(u_atmp.begin(),u_atmp.begin() + u_count,greater<double>());
+      u_cutoff = u_atmp[u_LOF];
+    }
+
+    int L_count = 0;
+    int U_count = 1; // diagonal already inserted
+
+    for (int kk = 0 ; kk < l_count ; ++kk) {
+      int col = l_index[kk];
+      double aval = IFPACK_ABS(tmp[col]);
+      if (aval > l_cutoff) {
+        LI[i][L_count] = col;
+        LV[i][L_count] = tmp[col];
+        ++L_count;
+      }
+      tmp[col] = 0.0;
+    }
+    for (int kk = 0 ; kk < u_count ; ++kk) {
+      int col = u_index[kk];
+      double aval = IFPACK_ABS(tmp[col]);
+      if (aval > u_cutoff) {
+        UI[i][U_count] = col;
+        UV[i][U_count] = tmp[col];
+        ++U_count;
+      }
+      tmp[col] = 0.0;
+    }
+
+    // reset the number in processed row
+    L_size[i] = L_count;
+    U_size[i] = U_count;
+    if (L_size[i] > LI[i].size())
+      IFPACK_CHK_ERR(-1);
+    if (U_size[i] > UI[i].size())
+      IFPACK_CHK_ERR(-1);
+
+    old_l_cutoff = l_cutoff / abs_diag;
+    old_u_cutoff = u_cutoff / abs_diag;
+
   }
 
   // insert unit diagonal in L_
@@ -411,7 +402,17 @@ int Ifpack_vRiluk::Compute() {
 
   // insert computed elements in L_
   for (int i = 1 ; i < NumMyRows_ ; ++i) {
-    IFPACK_CHK_ERR(L_->InsertGlobalValues(i,LI[i].size(),
+#ifdef IFPACK_DEBUG
+    for (int j = 0 ; j < L_size[i] ; ++j) {
+      if (LI[i][j] >= NumMyRows_) {
+        cerr << "ERROR: LI[" << i << "][" << j << "] = "
+          << LI[i][j] << " and NumMyRows = " << NumMyRows_ << endl;
+        cerr << "(file " << __FILE__ << ", line " << __LINE__ << endl;
+        exit(EXIT_FAILURE);
+      }
+    }
+#endif
+    IFPACK_CHK_ERR(L_->InsertGlobalValues(i,L_size[i],
                                           &(LV[i][0]), &(LI[i][0])));
     LI[i].resize(0);
     LV[i].resize(0);
@@ -419,7 +420,17 @@ int Ifpack_vRiluk::Compute() {
 
   // insert computed elements in U_
   for (int i = 1 ; i < NumMyRows_ ; ++i) {
-    IFPACK_CHK_ERR(U_->InsertGlobalValues(i,UI[i].size(),
+#ifdef IFPACK_DEBUG
+    for (int j = 0 ; j < U_size[i] ; ++j) {
+      if (UI[i][j] >= NumMyRows_) {
+        cerr << "ERROR: UI[" << i << "][" << j << "] = "
+          << UI[i][j] << " and NumMyRows = " << NumMyRows_ << endl;
+        cerr << "(file " << __FILE__ << ", line " << __LINE__ << endl;
+        exit(EXIT_FAILURE);
+      }
+    }
+#endif
+    IFPACK_CHK_ERR(U_->InsertGlobalValues(i,U_size[i],
                                           &(UV[i][0]), &(UI[i][0])));
     UI[i].resize(0);
     UV[i].resize(0);
@@ -430,8 +441,7 @@ int Ifpack_vRiluk::Compute() {
 
   IsComputed_ = true;
   ++NumCompute_;
-  ComputeTime_ += Time_.ElapsedTime();
-
+  
   return(0);
 
 }
@@ -540,20 +550,3 @@ Ifpack_vRiluk::Print(std::ostream& os) const
   
   return(os);
 }
-
-
-
-/*
- *
-        // position of nonzeros in row `k'
-        for (int j = 0 ; j < UI[k].size() ; ++j)
-          flag[UI[k][j]] = j;
-
-        // perform factorizations (both L and U stored in tmp)
-        for (int j = k + 1 ; j < NumMyRows_ ; ++j) {
-          // if I have a nonzero in this position on row `k', multiply
-          if (tmp[k] != 0.0 && flag[j] != -1) {
-            tmp[j] -= tmp[k] * UV[k][flag[j]];
-          }
-        }
-*/
