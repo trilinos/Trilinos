@@ -81,8 +81,6 @@ int main(int argc, char *argv[])
   if (!Afine) {
      cout << "**ERR**: could not read matrix\n"; throw -1; }
 
-  // read the nullspace
-  int dimNS = 6;
   
   // read the rhs
   Epetra_MultiVector* Rhs = new Epetra_MultiVector(*map,1,true);
@@ -114,7 +112,7 @@ int main(int argc, char *argv[])
     List.get("adapt: iters fine", 45);
     List.get("adapt: iters coarse", 5);
 
-    int NumPDEEqns = dimNS;
+    int NumPDEEqns = 6;
     int MaxLevels  = 10;
     MultiLevelAdaptiveSA Prec(A, List, NumPDEEqns, MaxLevels);
 
@@ -125,7 +123,9 @@ int main(int argc, char *argv[])
     // Variable UseAdapt toggles the use of adaptation.  //
     // ================================================= //
 
+    // read the nullspace
     bool ReadKernel = true;
+    int dimNS = 3;
 
     MultiVector NSfine(FineSpace,dimNS);
     if (!ReadKernel) {
