@@ -1172,28 +1172,32 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      if (8 < ML_Get_PrintLevel())  {
        if (ml_edges->comm->ML_mypid == 0 )
          printf("ML_agg_reitzinger: %e\n",d1);
-       if ( fabs(d1) > 1.0e-4) {
+       if ( fabs(d1) > 1.0e-4)
+       {
          if (ml_edges->comm->ML_mypid == 0 )
            printf("ML_agg_reitzinger: Pe TH != Th Pn %e (level %d)\n",
                   d1,grid_level);
-         if (14 < ML_Get_PrintLevel())  {
-            Ke = ml_edges->Amat+grid_level;
-            ML_build_global_numbering(Pe, Pe->comm,
-                                      &glob_fine_edge_nums);
-            ML_build_global_numbering(Pn_coarse,Pn_coarse->comm,
-                                      &glob_fine_node_nums);
-            ML_build_global_numbering(Kn_coarse,Kn_coarse->comm,
-                                      &glob_coarse_node_nums);
-            ML_build_global_numbering(Ke,Ke->comm,
+         if (14 < ML_Get_PrintLevel() )  {
+
+            Ke = ml_edges->Amat+grid_level+1;
+            ML_build_global_numbering(Ke, Ke->comm, &glob_fine_edge_nums);
+            Ke = ml_nodes->Amat+grid_level+1;
+            ML_build_global_numbering(Ke,Ke->comm, &glob_fine_node_nums);
+            Ke = ml_nodes->Amat+grid_level;
+            ML_build_global_numbering(Ke,Ke->comm, &glob_coarse_node_nums);
+            // ml_edges->Amat+grid_level doesn't exist yet..
+            ML_build_global_numbering(Tcoarse,Tcoarse->comm,
                                       &glob_coarse_edge_nums);
+
             ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,"Pn_debug",
-                              glob_fine_node_nums,glob_coarse_edge_nums);
+                              glob_fine_node_nums,glob_coarse_node_nums);
             ML_Operator_Print_UsingGlobalOrdering(Tfine,"Tfine_debug",
                               glob_fine_edge_nums,glob_fine_node_nums);
             ML_Operator_Print_UsingGlobalOrdering(Tcoarse,"Tcoarse_debug",
                               glob_coarse_edge_nums,glob_coarse_node_nums);
             ML_Operator_Print_UsingGlobalOrdering(Pe,"Pe_debug",
-                              glob_fine_edge_nums,glob_coarse_node_nums);
+                              glob_fine_edge_nums,glob_coarse_edge_nums);
+
             ML_free(glob_fine_edge_nums);
             ML_free(glob_fine_node_nums);
             ML_free(glob_coarse_node_nums);
@@ -1202,7 +1206,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
          for (i = 0; i < Pe->outvec_leng; i++) {
            /* change this tolerance if you actually want */
            /* to see the individual components.          */
-           if (fabs(vec[i]) > 1.0e-3) 
+           if (fabs(vec[i]) > 1.0) 
              fprintf(stderr,"%d: ===> %d is %20.13e vs %20.13e\n",
                 Pe->comm->ML_mypid,i,vec[i] + Tfine_Pn_vec[i],Tfine_Pn_vec[i]);
          }
