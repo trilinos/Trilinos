@@ -2,6 +2,7 @@
 #include "ExecuteTestProblems.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
 
 int MatrixTests(const Epetra_Map & Map, const Epetra_LocalMap & LocalMap,
 		int NumVectors, bool verbose)
@@ -260,6 +261,119 @@ int Drumm2(const Epetra_Map& map, bool verbose)
     delete [] myNodes;
     delete [] values;
   }
+
+  return(0);
+}
+
+int Drumm3(const Epetra_Map& map, bool verbose)
+{
+  const Epetra_Comm & Comm = map.Comm();
+  int ierr = 0, i;
+
+  /* get number of processors and the name of this processor */
+
+  int Numprocs = Comm.NumProc();
+  int MyPID   = Comm.MyPID();
+
+  if (Numprocs != 2) return(0);
+
+  int NumGlobalRows = 4;
+  int IndexBase = 0;
+  Epetra_Map Map(NumGlobalRows, IndexBase, Comm);
+
+  // Construct FECrsMatrix
+
+  int NumLocalRows = Map.NumMyElements();
+  int MinLocalRow = Map.MinMyGID();
+  int NumEntriesPerRow = 3;
+
+  Epetra_FECrsMatrix A(Copy, Map, NumEntriesPerRow);
+
+  double ElementArea = 0.5;
+  
+  int NumCols = 3;
+  int* Indices = new int[NumCols];
+
+  if(MyPID==0)  // indices corresponding to element 0 on processor 0
+  {
+    Indices[0] = 0;
+    Indices[1] = 1;
+    Indices[2] = 3;
+  }
+  else if(MyPID==1)  // indices corresponding to element 1 on processor 1
+  {
+    Indices[0] = 1;
+    Indices[1] = 2;
+    Indices[2] = 3;
+  }
+
+  double* Values = new double[NumCols*NumCols];
+
+// removal term
+  Values[0] = 2*ElementArea/12.;
+  Values[1] = 1*ElementArea/12.;
+  Values[2] = 1*ElementArea/12.;
+  Values[3] = 1*ElementArea/12.;
+  Values[4] = 2*ElementArea/12.;
+  Values[5] = 1*ElementArea/12.;
+  Values[6] = 1*ElementArea/12.;
+  Values[7] = 1*ElementArea/12.;
+  Values[8] = 2*ElementArea/12.;
+
+  A.SumIntoGlobalValues(NumCols, Indices,
+                        Values,
+                        Epetra_FECrsMatrix::ROW_MAJOR);
+
+  A.GlobalAssemble();
+
+//  A.Print(cout);
+
+// Create vectors for CG algorithm
+
+  Epetra_FEVector* bptr = new Epetra_FEVector(A.RowMap());
+  Epetra_FEVector* x0ptr = new Epetra_FEVector(A.RowMap());
+
+  Epetra_FEVector& b = *bptr;
+  Epetra_FEVector& x0 = *x0ptr;
+
+  // source terms
+  NumCols = 2;
+
+  if(MyPID==0)  // indices corresponding to element 0 on processor 0
+  {
+    Indices[0] = 0;
+    Indices[1] = 3;
+
+    Values[0] = 1./2.;
+    Values[1] = 1./2.;
+
+   }
+   else
+   {
+    Indices[0] = 1;
+    Indices[1] = 2;
+
+    Values[0] = 0;
+    Values[1] = 0;
+   }
+
+  b.SumIntoGlobalValues(NumCols, Indices, Values);
+
+  b.GlobalAssemble();
+
+  cout << "b:" << endl;
+  b.Print(cout);
+
+  x0 = b;
+
+  cout << "x:"<<endl;
+  x0.Print(cout);
+
+  delete [] Values;
+  delete [] Indices;
+
+  delete bptr;
+  delete x0ptr;
 
   return(0);
 }
