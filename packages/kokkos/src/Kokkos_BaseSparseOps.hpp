@@ -31,6 +31,9 @@
 
 #include "Kokkos_CompObject.hpp" 
 
+
+namespace Kokkos {
+
 //! Kokkos::BaseSparseOps: A class for constructing and using real-valued double-precision sparse compressed row matrices.
 
 /*! The Kokkos::BaseSparseOps enables the piecewise construction and use of real-valued double-precision sparse matrices
@@ -61,8 +64,6 @@
 
 
 */    
-
-namespace Kokkos {
 
   template<typename OrdinalType, typename ScalarType>
   class BaseSparseOps: public CompObject {

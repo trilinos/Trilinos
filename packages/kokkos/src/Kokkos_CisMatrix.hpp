@@ -30,6 +30,8 @@
 #define KOKKOS_CISMATRIX_H
 
 
+namespace Kokkos {
+
 //! Kokkos::CisMatrix: Kokkos compressed index sparse matrix base class.
 
 /*! The Kokkos::CisMatrix specifies the interface that any sparse matrix interfacing to the Kokkos 
@@ -39,8 +41,6 @@
   times multi-vector multiplication and solves with single or multiple right-hand-sides.
 
 */    
-
-namespace Kokkos {
 
   template<typename OrdinalType, typename ScalarType>
   class CisMatrix {

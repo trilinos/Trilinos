@@ -30,6 +30,8 @@
 #ifndef KOKKOS_FLOPS_H
 #define KOKKOS_FLOPS_H
 
+namespace Kokkos {
+
 //! Kokkos::Flops:  The Kokkos Floating Point Operations Class.
 /*! The Kokkos::Flops class provides basic support and consistent interfaces
   for counting and reporting floating point operations performed in 
@@ -39,7 +41,6 @@
   
 */
 
-namespace Kokkos {
   class Flops {
     
   public:

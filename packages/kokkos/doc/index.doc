@@ -1,86 +1,80 @@
-/*! \mainpage Trilinos/Tpetra: Templated Linear Algebra Services Package.
+/*! \mainpage Trilinos/Kokkos: Core Kernels Package
 \htmlonly
 <center>
-<img align=center lowsrc="../tpetra.gif" src="../tpetra.gif" 
-     width=500 height=300 alt="Tpetra"><br>
+<img align=center lowsrc="../diamond.jpg" src="../diamond.jpg" 
+     width=500 height=300 alt="Kokkos"><br>
 </center>
 \endhtmlonly
 
 \section intro Introduction
-Tpetra is an attempt at applying generic algorithm techniques to the
-serial and parallel linear algebra libraries of Epetra.  It is hoped that
-Tpetra will complement Epetra by providing an alternative foundation 
-for future Trilinos solvers.  The lessons learned and discoveries made 
-while creating Tpetra are also being applied to improving their Epetra cousins.
+Kokkos is a collection of the handful of sparse and dense kernels that determine the much
+of the performance for preconditioned Krylov methods.  In particular, it contains
+function class for sparse matrix vector multiplication and triangular solves, and also
+for dense kernels that are not part of the standard BLAS.  
 
-\section startup Overview of Tpetra.
+The classes in this package
+are written in a way that they can be easily customized via inheritance, replacing only
+the small sections of code that are unique for a given platform or architectures.
+In this way we hope to provide optimal implementations of these algorithms for a broad
+set of platforms from scalar microprocessors to vector multiprocessors.
 
-\subsection formulations Tpetra Classes
+Kokkos is not intended as a user package, but to be incorporated into other packages that
+need high performance kernels.
 
-Tpetra contains a number of classes.  They can be categorized as follows:
+\section startup Overview of Kokkos.
+
+\subsection formulations Kokkos Classes
+
+Kokkos contains a number of classes.  They can be categorized as follows:
 
 <ul> 
 
-<li> Primary parallel user classes.  These are typically the most important classes for most users.
+<li> Abstract interfaces:
 
 <ol>
 
-<li> Communicator class: Tpetra::Comm - Contains specific information about the parallel machine we are using.  Currently
-     only supports serial, but support is planned for other models, including MPI 
-		 and hybrid MPI/threaded.
+<li> Kokkos::CisMatrix class:  The base class describing the functionality that Kokkos needs from
+a sparse matrix object.  The Kokkos::HbMatrix is a default implementation.
 
-<li> Mapping classes: Tpetra::ElementSpace and Tpetra::BlockElementSpace - Contain information used to
-     distribute vectors, matrices and other objects on a parallel (or serial) machine.
-
-<li> Import/Export classes:  Tpetra::Import and Tpetra::Export - Constructed from two
-     ElementSpace or BlockElementSpace objects.  Allows
-     efficient transfer of objects built using one mapping to a new
-     object with a new mapping.  Supports local and global permutations,
-     overlapping Schwarz operations and many other data movement
-     algorithms.
+<li> Kokkos::MultiVector class: The base class describing the functionality that Kokkos
+     needs from a dense object. The Kokkos::AopMultiVector and Kokkos::2dMultiVector are
+     default implementations.
 
 </ol>
 
-<li> Primary serial user classes.  These classes provide object oriented interfaces to LAPACK capabilities,
-     providing easy access to the most powerful numerical methods in LAPACK.
+<li> Reference Implementations of Fuction Classes:
 
 <ol>
 
-<li> General dense matrix class: Tpetra::DenseMatrix - Provides dense matrix services such as 
-     factorizations, solves, QR, SVD, etc., with special attention focused on numerically robust solutions.
+<li> Kokkos::BaseSparseOps: Provides a reference implementation of sparse matrix vector,
+sparse matrix multivector and sparse solve operations.  Provides support for reuse of
+structure.  All methods are virtual, allowing derived classes to selectively reimplement
+methods as needed.
+
+<li> Kokkos::BaseDenseOps: Provides a reference implementation of certain vector update
+
+kernels that are not part of the BLAS standard, but still important for performance.
 </ol>
 
 <li> Utility classes. 
 
 <ol>
-<li> Timing class: Tpetra::Time - Provides timing functions for the
-     purposes of performance analysis.
+<li> Timing class: Kokkos::Time - Provides timing functions for the purposes of 
+     performance analysis.
 
-<li> Floating point operation class: Tpetra::Flops - Provides floating point operations (FLOPS)
-     counting and reporting functions for the purposes of performance analysis.  All Tpetra computational
+<li> Floating point operation class: Kokkos::Flops - Provides floating point operations (FLOPS)
+     counting and reporting functions for the purposes of performance analysis.  All
+     Kokkos computational
      classes accumulate FLOP counts associated with the \e this object of the computations.
 
-<li> Distributed directory class:  Tpetra::Directory - Allows construction of a distributed directory.
-     Once constructed, a directory allows one to access randomly distributed objects in an efficient, scalable
-     manner.  This class is intended for support of general ElementSpace and BlockElementSpace objects, but is 
-     useful in other settings as well.
-
-<li> BLAS wrapper class: Tpetra::BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
-     This class provides a single instance interface between Epetra and the BLAS.  In this way we can easily
-     switch BLAS interfaces and manage the C++/Fortran translation differences that exist between different
-     computer systems.  This class also provides a very convenient way to templatize the BLAS.
-
-<li> LAPACK wrapper class: Tpetra::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Tpetra::BLAS,
-     it provides nice C++ access to LAPACK.
-
+<li> Kokkos::CompObject class: Supports the registration of a Kokkos::Flops object with a
+     function class.
 </ol>
 </ul>
      
 
-\subsection trilinos Trilinos and Tpetra
+\subsection trilinos Trilinos and Kokkos
 
-Tpetra can be used as a stand-alone package.  However, in the future it will also provides the foundation for
-Trilinos.  Trilinos is a collection of solver packages, such as AztecOO and TSF.  But as Tpetra is not yet completed, 
-it is suggested that for the time being, Epetra be used in conjunction with other Trilinos solvers instead.
+Kokkos can be used as a stand-alone package.  However, it also provides functionality for Epetra and Tpetra.
 
 */

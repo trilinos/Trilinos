@@ -29,6 +29,9 @@
 #ifndef KOKKOS_HBMATRIX_H
 #define KOKKOS_HBMATRIX_H
 
+namespace Kokkos {
+
+
 
 //! Kokkos::HbMatrix: Kokkos compressed index sparse matrix base class.
 
@@ -36,8 +39,6 @@
     generalized form of one.
 
 */    
-
-namespace Kokkos {
 
   template<typename OrdinalType, typename ScalarType>
   class HbMatrix: public virtual CisMatrix {
@@ -124,7 +125,7 @@ namespace Kokkos {
 
 	\return Integer error code, set to 0 if successful.
     */
-    int getIndices(OrdinalType i, OrdinalType & numRowEntries, OrdinalType *& indices) const {;
+    int getIndices(OrdinalType i, OrdinalType & numRowEntries, OrdinalType *& indices) const;
 
     //! Returns a pointer to an array of values for the ith row/column.
     /*! Extract the values in the ith row/column of the matrix.  Note that

@@ -30,17 +30,6 @@
 #ifndef KOKKOS_TIME_H
 #define KOKKOS_TIME_H
 
-//! Kokkos_Time:  The Kokkos Timing Class.
-/*! The Kokkos_Time class is a wrapper that encapsulates the general
-  information needed getting timing information.  Currently it return
-  the elapsed time for each calling processor..
-  A Kokkos_Comm object is required for building all Kokkos_Time objects.
-  
-  Kokkos_Time support both serial execution and (via MPI) parallel 
-  distributed memory execution.  It is meant to insulate the user from
-  the specifics of timing across a variety of platforms.
-*/
-
 #ifdef ICL
 #include <time.hpp>
 #else
@@ -51,6 +40,17 @@
 #endif
 
 namespace Kokkos {
+
+//! Kokkos_Time:  The Kokkos Timing Class.
+/*! The Kokkos_Time class is a wrapper that encapsulates the general
+  information needed getting timing information.  Currently it return
+  the elapsed time for each calling processor..
+  A Kokkos_Comm object is required for building all Kokkos_Time objects.
+  
+  Kokkos_Time support both serial execution and (via MPI) parallel 
+  distributed memory execution.  It is meant to insulate the user from
+  the specifics of timing across a variety of platforms.
+*/
   class Time {
     
   public:

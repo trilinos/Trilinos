@@ -29,6 +29,9 @@
 
 #ifndef KOKKOS_COMPOBJECT_H
 #define KOKKOS_COMPOBJECT_H
+#include "Kokkos_Flops.hpp"
+
+namespace Kokkos {
 
 //! Kokkos::CompObject: Functionality and data that is common to all computational classes.
 
@@ -36,10 +39,6 @@
     mechanisms and interface specifications for floating point operations using Kokkos::Flops objects.
 
 */
-#include "Kokkos_Flops.hpp"
-
-namespace Kokkos {
-//==========================================================================
 class CompObject {
 
   public:
