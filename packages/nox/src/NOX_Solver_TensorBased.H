@@ -35,7 +35,126 @@
 #include "NOX_LineSearch_Manager.H" // class data element
 #include "NOX_Direction_Tensor.H"   // class data element
 #include "NOX_Parameter_List.H"	    // class data element
-#include "NOX_Abstract_Vector.H"    // for NOX::Abstract::Vector::NormType
+// #include "NOX_Abstract_Vector.H"    // for NOX::Abstract::Vector::NormType  (bwb-needed?)
+#include "NOX_Utils.H"              // class data element
+
+#include "NOX_LineSearch_Generic.H" // base class
+#include "NOX_LineSearch_Utils_Printing.H"  // class data member
+#include "NOX_LineSearch_Utils_Counters.H"  // class data member
+#include "NOX_LineSearch_Utils_Slope.H"     // class data member
+
+
+namespace NOX {
+namespace LineSearch { 
+
+class Tensor : public Generic {
+
+public:
+
+  //! Constructor
+  Tensor(const NOX::Utils& u, NOX::Parameter::List& params);
+
+  //! Destructor
+  ~Tensor();
+  
+  // derived
+  bool reset(NOX::Parameter::List& params);
+
+  // derived
+  bool compute(NOX::Abstract::Group& newgrp, double& step, 
+	       const NOX::Abstract::Vector& dir,
+	       const NOX::Solver::Generic& s);
+
+  // Needed to work with tensor stuff 
+  bool compute2(NOX::Abstract::Group& newgrp, double& step, 
+		const NOX::Abstract::Vector& dir,
+		const NOX::Solver::Generic& s,
+		NOX::Direction::Tensor& direction);
+
+protected:
+
+  //! Performs a standard tensor linesearch (tensor or Newton direction)
+  bool performLinesearch(NOX::Abstract::Group& newsoln,
+			 double& step,
+			 const NOX::Abstract::Vector& dir,
+			 const NOX::Solver::Generic& s,
+			 NOX::Direction::Tensor& direction);
+
+#ifdef DEPRECATED_CODE
+  //! Performs a dual linesearch (tensor and Newton direction; cf. TENSOLVE)
+  bool performDualLinesearch(NOX::Abstract::Group& newsoln, double& step,
+			     const NOX::Abstract::Vector& dir,
+			     const Solver::Generic& s,
+			     NOX::Direction::Tensor& direction);
+#endif // DEPRECATED_CODE
+
+  //! Select lambda for linesearch (quadratic or halving)
+  double selectLambda(double newf, double oldf,
+		      double oldfprime, double lambda);
+
+protected:
+
+  //! Type of tensor linesearch
+  enum LineSearchType {Curvilinear, Standard, Dual, Newton};
+  
+  //! Algorithms used to determine convergence of the line search
+  enum ConvergenceCriteriaType {
+    //! Sufficient decrease condition
+    ArmijoGoldstein, 
+    //! Ared/Pred condition
+    AredPred,
+    //! Just accept the first step
+    None
+  };
+
+  //! Types of lambda selection 
+  enum LambdaSelectionType {Halving, Quadratic};
+
+  //! Flag for lambda selection (Halving/Quadratic)
+  LambdaSelectionType lambdaSelection;
+
+  //! Choice of convergence criteria   (currently unused)
+  ConvergenceCriteriaType convCriteria;
+
+  //! Choice of line search
+  LineSearchType lsType;
+  
+  //! Flag for Newton direction
+  bool isNewtonDirection;
+
+  //! Minimum step length (i.e., when we give up)
+  double minStep;
+ 
+  //! Default step
+  double defaultStep;
+
+  //! Default step for linesearch failure
+  double recoveryStep;
+
+  //! Maximum iterations
+  int maxIters;
+
+  //! Scaling factor for the Armijo-Goldstein condition
+  double alpha;
+
+  //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters from the counter object.  
+  NOX::Parameter::List* paramsPtr;
+
+  //! Common line search printing utilities.
+  NOX::LineSearch::Utils::Printing print;
+
+  //! Common common counters for line searches.
+  NOX::LineSearch::Utils::Counters counter;
+
+  //! Common slope calculations for line searches.
+  NOX::LineSearch::Utils::Slope slopeObj;
+
+};
+} // namespace LineSearch
+} // namespace NOX
+
+
+
 
 namespace NOX {
 namespace Solver {
@@ -82,10 +201,14 @@ namespace Solver {
    <ul> 
    <li> "Standard" - Backtrack along tensor direction unless it is not a 
    descent direction, in which case backtrack along Newton direction.
+   <li> "Dual" - Backtrack along both the Newton and tensor directions
+   and choose the better of the two.
    <li> "Curvilinear" - Backtrack along the "curvilinear" path that 
    spans the tensor direction and the Newton direction and that maintains
    monotonicity on the tensor model. [Default]
    </ul>
+<li> "Lambda selection" - flag for how to calculate next lambda
+     (quadratic, halving)
 <li> "Default Step" - starting step parameter (defaults to 1.0)
 <li> "Minimum Step" - minimum acceptable step parameter (defaults to 1.0e-12)
 <li> "Recovery Step" - step parameter to take when the line search fails
@@ -103,12 +226,13 @@ class TensorBased : public Generic {
 public:
 
   //! %TensorBased-method constructor. 
-  TensorBased(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, const NOX::Parameter::List& p);
+  TensorBased(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t,
+	      NOX::Parameter::List& p);
 
   //! Destructor
   virtual ~TensorBased();
 
-  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, 
+  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t,
 		     NOX::Parameter::List& p);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType iterate();
@@ -117,7 +241,7 @@ public:
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
   virtual const NOX::Parameter::List& getParameterList() const;
-
+  
 protected:
   
   //! Print out initialization information and calcuation the RHS.
@@ -126,15 +250,11 @@ protected:
   //! Prints the current iteration information.
   virtual void printUpdate();
 
+#ifdef DELETE_EVENTUALLY
   //! Sets the output parameters for the solver in an "Output" sublist
   bool setOutputParameters(); 
-
-  //! Performs a standard tensor linesearch (tensor or Newton direction)
-  bool performStandardLinesearch();
-
-  //! Performs a curvilinear linesearch (like a trust region method)
-  bool performCurvilinearLinesearch();
-
+#endif
+  
 protected:
   
   //! Current solution.
@@ -158,10 +278,16 @@ protected:
   NOX::StatusTest::Generic* testptr;		
 
   //! Input parameters.
-  NOX::Parameter::List params;	
+  NOX::Parameter::List* paramsPtr;	
 
+  //! Utils
+  NOX::Utils utils;
+  
+  //! Linesearch
+  NOX::LineSearch::Tensor lineSearch;
+  
   //! %Search %Direction. 
-  NOX::Direction::Tensor direction; 
+  NOX::Direction::Tensor direction;  // This is Direction::Manager in LSBased
 
   //! Current step.
   double step;			
@@ -169,36 +295,8 @@ protected:
   //! Number of nonlinear iterations.
   int niter;
 
-  //! Number of linesearch iterations (i.e., backtracks).
-  int totalNumLSIterations;
-
-  //! Number of times that a linesearch failed.
-  int totalNumFailedLineSearches;
-
-  //! Number of Newton/tensor steps that required a linesearch.
-  int totalNumLSSteps;
-
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
-
-  //! "alpha" parameter in Armijo-Goldstein sufficient decrease condition.
-  double alpha;
-  
-
-private:  
-
-  //! Minimum step length (i.e., when we give up)
-  double minStep;
- 
-  //! Default step
-  double defaultStep;
-
-  //! Default step for linesearch failure
-  double recoveryStep;
-
-  //! Maximum number of iterations
-  int maxIters;
-  
 };
 } // namespace Solver
 } // namespace NOX

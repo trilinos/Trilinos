@@ -28,6 +28,35 @@
 // ************************************************************************
 //@HEADER
 
+/*  Notes:
+**
+**  (.) The TensorBased solver is virtually identical to the
+**  LineSearchBased solver.  Thus, maybe at some point I should remove
+**  this TensorBased solver and convert LineSearchBased solver and the
+**  LineSearch classes to work with the tensor linesearches.  Right
+**  now I see 2 options for this conversion: Make optional argument in
+**  LineSearch::compute to allow for a direction argument or add
+**  getDirection method to solver so that linesearch object can
+**  compute the curvilinear linesearch.  The latter option might have
+**  trouble using the const direction.  Need to investigate...
+**     //NOX::Abstract::Vector dir2 = dir.clone(ShapeCopy);
+**     //const NOX::Direction::Tensor& direction = s.getDirection();
+**  
+**  (.)  Should change to *sufficient* decrease condition instead of
+**  just "fprime<0"
+**
+**  (.)  Maybe move the test of full step into compute instead of in
+**  performLinesearch.  However, this might cause trouble with
+**  counters and other things.
+**
+**  (.)  In the dual linesearch, it is checking both full steps and
+**  taking the best of either.  This is different from TENSOLVE.
+**
+**  (.)  Old comment says:
+**  "// Note that for Newton direction, fprime = -2.0*oldf"
+**  Is this really true?
+*/
+
 #include "NOX_Solver_TensorBased.H"	// class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
@@ -35,127 +64,110 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
-using namespace NOX;
-using namespace NOX::Solver;
+#include "NOX_LineSearch_Utils_Printing.H"  // class data member
+#include "NOX_LineSearch_Utils_Counters.H"  // class data member
+#include "NOX_LineSearch_Utils_Slope.H"     // class data member
 
-/* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
- * fail to find the max and min function.  Therfore we redefine them 
- * here. 
- */ 
-#ifdef max
-#undef max
-#endif
+#include "stdio.h"  // for printf()
 
-#define max(a,b) ((a)>(b)) ? (a) : (b);
 
-#ifdef min
-#undef min
-#endif
-
-#define min(a,b) ((a)<(b)) ? (a) : (b);
-
-TensorBased::TensorBased(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p) :
+NOX::Solver::TensorBased::TensorBased(NOX::Abstract::Group& xgrp,
+				      NOX::StatusTest::Generic& t,
+				      NOX::Parameter::List& p) :
   solnptr(&xgrp),		// pointer to xgrp
   oldsolnptr(xgrp.clone(DeepCopy)), // create via clone
   oldsoln(*oldsolnptr),		// reference to just-created pointer
   dirptr(xgrp.getX().clone(ShapeCopy)), // create via clone 
   dir(*dirptr),			// reference to just-created pointer
   testptr(&t),			// pointer to t
-  params(p),			// copy p
-  direction(params.sublist("Direction")) // initialize direction
+  paramsPtr(&p),			// copy p
+  utils(paramsPtr->sublist("Printing")),               // initialize utils
+  lineSearch(utils, paramsPtr->sublist("Line Search")),// initialize linesearch
+  direction(utils, paramsPtr->sublist("Direction"))    // initialize direction
 {
   init();
 }
 
 // Protected
-void TensorBased::init()
+void NOX::Solver::TensorBased::init()
 {
   // Initialize 
   step = 0;
   niter = 0;
-  totalNumLSSteps = 0;
-  totalNumLSIterations = 0;
-  totalNumFailedLineSearches = 0;
-  status = StatusTest::Unconverged;
+  status = NOX::StatusTest::Unconverged;
 
-  // Initialize linesearch parameters for this solver object
-  Parameter::List& lsparams = params.sublist("Line Search");
-  minStep = lsparams.getParameter("Minimum Step", 1.0e-12);
-  defaultStep = lsparams.getParameter("Default Step", 1.0);
-  recoveryStep = lsparams.getParameter("Recovery Step", defaultStep);
-  maxIters = lsparams.getParameter("Max Iters", 40);
-  alpha = lsparams.getParameter("Alpha Factor", 1.0e-4);
-
-  // Set up utilities (i.e., set print processor, etc)
-  Utils::setUtils(params);
-  
   // Print out initialization information
-  if (Utils::doPrint(Utils::Parameters)) {
-    cout << "\n" << Utils::fill(72) << "\n";
-    cout << "\n-- Parameters Used in Nonlinear Solver --\n\n";
-    params.print(cout,5);
-    cout << "\n" << Utils::fill(72) << "\n";
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+    cout << "\n" << NOX::Utils::fill(72) << "\n";
+    cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    paramsPtr->print(cout,5);
+    cout << "\n" << NOX::Utils::fill(72) << "\n";
   }
 
   // Compute F of initial guess
-  solnptr->computeF();
-//   if (!ok) {
-//     cout << "NOX::Solver::TensorBased::init - Unable to compute F" << endl;
-//     throw "NOX Error";
-//   }
+  NOX::Abstract::Group::ReturnType rtype = solnptr->computeF();
+  if (rtype != NOX::Abstract::Group::Ok)    {
+    cout << "NOX::Solver::TensorBased::init - Unable to compute F" << endl;
+    throw "NOX Error";
+  }
 
   // Test the initial guess
   status = testptr->checkStatus(*this);
-  if (status == StatusTest::Converged) {
-    if (Utils::doPrint(Utils::Warning)) {
-      cout << "Warning: NOX::Solver::TensorBased::init() - The solution passed "
-	   << "into the solver (either through constructor or reset method) "
-	   << "is already converged!  The solver will not "
-	   << "attempt to solve this system since status is flagged as "
-	   << "converged." << endl;
-    }
+  if ((status == NOX::StatusTest::Converged) &&
+      (utils.isPrintProcessAndType(NOX::Utils::Warning)))  {
+    cout << "Warning: NOX::Solver::TensorBased::init() - The solution passed "
+	 << "into the solver (either through constructor or reset method) "
+	 << "is already converged!  The solver will not "
+	 << "attempt to solve this system since status is flagged as "
+	 << "converged." << endl;
   }
 
-  if (Utils::doPrint(Utils::Parameters)) {
+  // Print out status tests
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters))  {
     cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
     testptr->print(cout, 5);
-    cout <<"\n" << Utils::fill(72) << "\n";
+    cout <<"\n" << NOX::Utils::fill(72) << "\n";
   }
-
 }
 
-bool TensorBased::reset(Abstract::Group& xgrp, StatusTest::Generic& t, Parameter::List& p) 
+
+bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xgrp,
+				     NOX::StatusTest::Generic& t,
+				     NOX::Parameter::List& p)
 {
   solnptr = &xgrp;
   testptr = &t;
-  params = p;
-  direction.reset(params.sublist("Direction"));
+  paramsPtr = &p;
+  utils.reset(paramsPtr->sublist("Printing"));
+  lineSearch.reset(paramsPtr->sublist("Line Search"));
+  direction.reset(paramsPtr->sublist("Direction"));
   init();
 
   return true;
 }
 
-TensorBased::~TensorBased() 
+
+NOX::Solver::TensorBased::~TensorBased() 
 {
   delete oldsolnptr;
   delete dirptr;
 }
 
 
-NOX::StatusTest::StatusType TensorBased::getStatus()
+NOX::StatusTest::StatusType  NOX::Solver::TensorBased::getStatus()
 {
   return status;
 }
 
-NOX::StatusTest::StatusType TensorBased::iterate()
+NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
 {
   // First check status
-  if (status != StatusTest::Unconverged) 
+  if (status != NOX::StatusTest::Unconverged) 
     return status;
 
   // Copy pointers into temporary references
-  Abstract::Group& soln = *solnptr;
-  StatusTest::Generic& test = *testptr;
+  NOX::Abstract::Group& soln = *solnptr;
+  NOX::StatusTest::Generic& test = *testptr;
 
   // Compute the direction for the update vector at the current solution.
   bool ok;
@@ -163,7 +175,7 @@ NOX::StatusTest::StatusType TensorBased::iterate()
   if (!ok) {
     cout << "NOX::Solver::TensorBased::iterate - "
 	 << "unable to calculate direction" << endl;
-    status = StatusTest::Failed;
+    status = NOX::StatusTest::Failed;
     return status;
   }
 
@@ -174,40 +186,29 @@ NOX::StatusTest::StatusType TensorBased::iterate()
   oldsoln = soln;
 
   // Do line search and compute new soln.
-  string choice = params.sublist("Line Search").
-    getParameter("Method", "Curvilinear");
-  if (choice == "Curvilinear") 
-    ok = performCurvilinearLinesearch(); 
-  else if (choice == "Standard")
-    ok = performStandardLinesearch();
-  else {
-    cout << "ERROR: NOX::Direction::Tensor::iterate() - the choice of "
-	 << "\"Line Search\" parameter is invalid." << endl;
-    //throw "NOX Error";
-    ok = performCurvilinearLinesearch(); 
-  }
-
-
+  ok = lineSearch.compute2(soln, step, dir, *this, direction);
   if (!ok) {
     if (step == 0) {
-      cout << "NOX::Solver::TensorBased::iterate - linesearch failed" << endl;
-      status = StatusTest::Failed;
+      cout << "NOX::Solver::TensorBased::iterate - line search failed" << endl;
+      status = NOX::StatusTest::Failed;
       return status;
     }
-    else if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Solver::TensorBased::iterate - "
-	   << "using recovery step for linesearch" << endl;
+    else if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+       cout << "NOX::Solver::TensorBased::iterate - "
+	   << "using recovery step for line search" << endl;
   }
       
 
   // Compute F for new current solution.
-  soln.computeF();
-//   if (!ok) {
-//     cout << "NOX::Solver::TensorBased::iterate - unable to compute F" << endl;
-//     status = StatusTest::Failed;
-//     return status;
-//   }
+  NOX::Abstract::Group::ReturnType rtype = soln.computeF();
+  if (rtype != NOX::Abstract::Group::Ok)  {
+    cout << "NOX::Solver::LineSearchBased::iterate - "
+	 << "unable to compute F" << endl;
+    status = NOX::StatusTest::Failed;
+    return status;
+  }
 
+  
   // Evaluate the current status.
   status = test.checkStatus(*this);
  
@@ -215,318 +216,438 @@ NOX::StatusTest::StatusType TensorBased::iterate()
   return status;
 }
 
-NOX::StatusTest::StatusType TensorBased::solve()
+
+NOX::StatusTest::StatusType  NOX::Solver::TensorBased::solve()
 {
   printUpdate();
 
   // Iterate until converged or failed
-  while (status == StatusTest::Unconverged) {
+  while (status == NOX::StatusTest::Unconverged) {
     status = iterate();
     printUpdate();
   }
 
-  setOutputParameters();
+  NOX::Parameter::List& outputParams = paramsPtr->sublist("Output");
+  outputParams.setParameter("Nonlinear Iterations", niter);
+  outputParams.setParameter("2-Norm of Residual", solnptr->getNormF());
 
   return status;
 }
 
-const Abstract::Group& TensorBased::getSolutionGroup() const
+const NOX::Abstract::Group&
+NOX::Solver::TensorBased::getSolutionGroup() const
 {
   return *solnptr;
 }
 
-const Abstract::Group& TensorBased::getPreviousSolutionGroup() const
+const NOX::Abstract::Group&
+NOX::Solver::TensorBased::getPreviousSolutionGroup() const
 {
   return oldsoln;
 }
 
-int TensorBased::getNumIterations() const
+int NOX::Solver::TensorBased::getNumIterations() const
 {
   return niter;
 }
 
-const Parameter::List& TensorBased::getParameterList() const
+const NOX::Parameter::List&
+NOX::Solver::TensorBased::getParameterList() const
 {
-  return params;
+  return *paramsPtr;
 }
 
 
 // protected
-void TensorBased::printUpdate() 
+void NOX::Solver::TensorBased::printUpdate() 
 {
-  double norm_soln;
-  double norm_step;
+  double normSoln = 0;
+  double normStep = 0;
 
   // Print the status test parameters at each iteration if requested  
-  if ((status == StatusTest::Unconverged) && 
-      (Utils::doPrint(Utils::OuterIterationStatusTest))) {
-    cout << Utils::fill(72) << "\n";
+  if ((status == NOX::StatusTest::Unconverged) &&
+      (utils.isPrintProcessAndType(NOX::Utils::OuterIterationStatusTest))) {
+    cout << NOX::Utils::fill(72) << "\n";
     cout << "-- Status Test Results --\n";    
     testptr->print(cout);
-    cout << Utils::fill(72) << "\n";
+    cout << NOX::Utils::fill(72) << "\n";
   }
 
   // All processes participate in the computation of these norms...
-  if (Utils::doAllPrint(Utils::OuterIteration)) {
-    norm_soln = solnptr->getNormF();
-    norm_step = (niter > 0) ? dir.norm() : 0;
+  if (utils.isPrintType(NOX::Utils::InnerIteration)) {
+    normSoln = solnptr->getNormF();
+    normStep = (niter > 0) ? dir.norm() : 0;
   }
 
   // ...But only the print process actually prints the result.
-  if (Utils::doPrint(Utils::OuterIteration)) {
-    cout << "\n" << Utils::fill(72) << "\n";
+  if (utils.isPrintProcessAndType(NOX::Utils::OuterIteration)) {
+    cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "-- Nonlinear Solver Step " << niter << " -- \n";
-    cout << "f = " << Utils::sci(norm_soln);
-    cout << "  step = " << Utils::sci(step);
-    cout << "  dx = " << Utils::sci(norm_step);
-    if (status == StatusTest::Converged)
+    cout << "f = " << utils.sciformat(normSoln);
+    cout << "  step = " << utils.sciformat(step);
+    cout << "  dx = " << utils.sciformat(normStep);
+    if (status == NOX::StatusTest::Converged)
       cout << " (Converged!)";
-    if (status == StatusTest::Failed)
+    if (status == NOX::StatusTest::Failed)
       cout << " (Failed!)";
     cout << "\n" << Utils::fill(72) << "\n" << endl;
   }
 
   // Print the final parameter values of the status test
-  if ((status != StatusTest::Unconverged) && 
-      (Utils::doPrint(Utils::OuterIteration))) {
-    cout << Utils::fill(72) << "\n";
+  if ((status != NOX::StatusTest::Unconverged) && 
+      (utils.isPrintProcessAndType(NOX::Utils::OuterIteration))) {
+    cout << NOX::Utils::fill(72) << "\n";
     cout << "-- Final Status Test Results --\n";    
     testptr->print(cout);
-    cout << Utils::fill(72) << "\n";
+    cout << NOX::Utils::fill(72) << "\n";
   }
 }
 
 
-bool TensorBased::setOutputParameters() 
-{
-  NOX::Parameter::List& outputList = params.sublist("Output");
+// ================================================================
+//                     NOX::LineSearch::Tensor
+// ================================================================
 
-  outputList.setParameter("Nonlinear Iterations", niter);
-  outputList.setParameter("2-Norm of Residual", solnptr->getNormF());
-  outputList.setParameter("Total Number of Line Search Iterations", 
-			  totalNumLSIterations);
-  outputList.setParameter("Total Number of Failed Line Searches", 
-			  totalNumFailedLineSearches);
-  outputList.setParameter("Total Number Steps Requiring Line Search", 
-			  totalNumLSSteps);
+
+NOX::LineSearch::Tensor::Tensor(const NOX::Utils& u, Parameter::List& params) :
+  paramsPtr(NULL),
+  print(u)
+{
+  reset(params);
+}
+
+NOX::LineSearch::Tensor::~Tensor()
+{
+
+}
+
+bool NOX::LineSearch::Tensor::reset(Parameter::List& params)
+{ 
+  NOX::Parameter::List& lsparams = params.sublist("Tensor");
+  
+  // Initialize linesearch parameters for this object
+  minStep = lsparams.getParameter("Minimum Step", 1.0e-12);
+  defaultStep = lsparams.getParameter("Default Step", 1.0);
+  recoveryStep = lsparams.getParameter("Recovery Step", 0.0); // force exit on linesearch failure
+  maxIters = lsparams.getParameter("Max Iters", 40);
+  alpha = lsparams.getParameter("Alpha Factor", 1.0e-4);
+  paramsPtr = &params;
+
+  // Do line search and compute new soln.
+  string choice = lsparams.getParameter("Submethod", "Curvilinear");
+
+  if (choice == "Curvilinear")
+    lsType = Curvilinear;
+  else if (choice == "Dual")
+    lsType = Dual;
+  else if (choice == "Standard")
+    lsType = Standard;
+  else if (choice == "Newton")
+    lsType = Newton;
+  else {
+    if (print.isPrintProcessAndType(NOX::Utils::Warning)) {
+      cout << "Warning: NOX::Direction::Tensor::reset() - the choice of "
+	   << "\"Line Search\" \nparameter is invalid.  Using curvilinear "
+	   << "line search." << endl;
+    }
+    lsparams.setParameter("Submethod", "Curvilinear");
+    lsType = Curvilinear;
+  }
+
+
+  choice = lsparams.getParameter("Lambda Selection", "Halving");
+  if (choice == "Halving") {
+    lambdaSelection = Halving;
+  }
+  else if (choice == "Quadratic") {
+    lambdaSelection = Quadratic;
+  }
+  else {
+    cout << "Warning: NOX::Solver::TensorBased::init() - the choice of "
+	 << "\"Lambda Selection\" parameter is invalid." << endl;
+    lambdaSelection = Halving;
+  }
+
+
+  choice = lsparams.getParameter("Sufficient Decrease Condition",
+				 "Armijo-Goldstein");
+  if (choice == "Ared/Pred") 
+    convCriteria = AredPred;
+  else if (choice == "None")
+    convCriteria = None;
+  else 
+    convCriteria = ArmijoGoldstein;     // bwb - the others aren't implemented
+
+  counter.reset();
 
   return true;
 }
 
-bool TensorBased::performStandardLinesearch()
+
+bool NOX::LineSearch::Tensor::compute(NOX::Abstract::Group& newGrp,
+				      double& step, 
+				      const NOX::Abstract::Vector& dir,
+				      const NOX::Solver::Generic& s)
 {
-  // Copy pointers into temporary references
-  Abstract::Group& newsoln = *solnptr;
+  return false;
+}
+
+
+bool NOX::LineSearch::Tensor::compute2(NOX::Abstract::Group& newGrp,
+				       double& step, 
+				       const NOX::Abstract::Vector& dir,
+				       const NOX::Solver::Generic& s,
+				       NOX::Direction::Tensor& direction) 
+{
+  bool ok;
+  counter.incrementNumLineSearches();
+  isNewtonDirection = false;
+  
+  if (counter.getNumLineSearches() == 1  ||  lsType == Newton)
+    isNewtonDirection = true;
+
+  // Do line search and compute new soln.
+  if (lsType != Dual || isNewtonDirection)
+    ok = performLinesearch(newGrp, step, dir, s, direction);
+  else if (lsType == Dual) {
+    const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
+    double fprime = slopeObj.computeSlope(dir, oldGrp);
+    double tensorf;
+    double tensorStep;
+    bool isTensorDescent = false;
+    
+    if (fprime < 0) {
+      ok = performLinesearch(newGrp, step, dir, s, direction);
+      tensorf = 0.5*newGrp.getNormF()*newGrp.getNormF();
+      tensorStep = step;
+      isTensorDescent = true;
+    }      
+    const NOX::Abstract::Vector& dir2 = direction.getNewton();
+
+    ok = performLinesearch(newGrp, step, dir2, s, direction);
+    double newf = 0.5*newGrp.getNormF()*newGrp.getNormF();
+
+    // If backtracking on the tensor step produced a better step, then use it.
+    if (isTensorDescent  &&  tensorf < newf) {
+      newGrp.computeX(oldGrp, dir, tensorStep);
+      newGrp.computeF();    
+    }
+  }
+#ifdef DEPRECATED_CODE
+  else if (lsType == Dual) 
+    ok = performDualLinesearch(newGrp, step, dir, s, direction);
+#endif
+  
+  return ok;
+}
+
+
+bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
+					double& step,
+					const NOX::Abstract::Vector& dir,
+					const NOX::Solver::Generic& s,
+					NOX::Direction::Tensor& direction)
+{
+  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+    cout << "\n" << NOX::Utils::fill(72) << "\n";
+    cout << "-- Tensor Line Search ("
+	 << paramsPtr->sublist("Tensor").getParameter("Submethod","Curvilinear")
+	 << ") -- \n";
+  }
 
   // Local variables
-  int lsIterations = 1;
-  bool ok;
   bool isFailed = false;
-  double newf;
+  bool isAcceptable = false;
+  bool isFirstPass = true;
+  string message = "(STEP ACCEPTED!)";
+
+  // Set counters
+  int lsIterations = 1;
+
+  // Get Old F
+  const Abstract::Group& oldsoln = s.getPreviousSolutionGroup();
   double oldf = 0.5*oldsoln.getNormF()*oldsoln.getNormF();  
-                            // Redefined f() = 0.5 * F'*F = 0.5*||F||^2
-
-
-  // Computation of directional derivative used in curvature condition
-  // Note that for Newton direction, fprime = -2.0*oldf
-  Abstract::Vector* tmpvecptr = oldsoln.getX().clone(ShapeCopy);
-  oldsoln.applyJacobian(dir,*tmpvecptr);
-  double fprime = tmpvecptr->dot(oldsoln.getF());
-
-  if (Utils::doPrint(Utils::InnerIteration)) {
-    cout << "\n" << Utils::fill(72) << "\n";
-    cout << "-- Std. Tensor Line Search -- \n";
-  }
 
   // Compute first trial point and its function value
   step = defaultStep;
   newsoln.computeX(oldsoln, dir, step);
   newsoln.computeF();    
-  newf = 0.5*newsoln.getNormF()*newsoln.getNormF();  
+  double newf = 0.5*newsoln.getNormF()*newsoln.getNormF();  
+
+  // Compute directional derivative
+  double fprime;
+  if (lsType == Curvilinear)
+    fprime = slopeObj.computeSlope(direction.getNewton(), oldsoln);
+  else
+    fprime = slopeObj.computeSlope(dir, oldsoln);
 
   // Compute the convergence criteria for the line search 
-  double convergence = oldf + alpha*step*fprime;
+  double threshold = oldf + alpha*step*fprime;
+  isAcceptable = (newf < threshold);
+    
+  // Update counter if a linesearch is needed
+  if (!isAcceptable) 
+    counter.incrementNumNonTrivialLineSearches();
 
-  // Is a linesearch needed?
-  if (newf >= convergence) {
-
-    totalNumLSSteps++;
-
-    if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << setw(3) << lsIterations << ":";
-      cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
-      cout << " newf = " << Utils::sci(sqrt(2.*newf));
-      cout << endl;
-    }
+  // Iterate until the trial point is accepted....
+  while (!isAcceptable) {  
       
-    // Is the tensor step a descent direction?  If not, switch to Newton
-    if (fprime >= 0) {
-      dir = oldsoln.getNewton();
-      oldsoln.applyJacobian(dir,*tmpvecptr);
-      fprime = tmpvecptr->dot(oldsoln.getF());
+    // Check for linesearch failure
+    if (lsIterations > maxIters) {
+      isFailed = true;
+      message = "(FAILED - Max Iters)";
+      break;
+    }
+
+    print.printStep(lsIterations, step, oldf, newf);
+
+    // Is the full tensor step a descent direction?  If not, switch to Newton
+    if ((!isNewtonDirection) && (isFirstPass && fprime >= 0)) {
+      // dir = oldsoln.getNewton();   // bwb - for when Newton put in group
+      fprime = slopeObj.computeSlope(direction.getNewton(), oldsoln);
+      
+      printf("  Switching to Newton.  New fprime = %e\n", fprime);
     }
     else {
-      step = step * 0.5;
+      step = selectLambda(newf, oldf, fprime, step);
+    }
+    
+    isFirstPass = false;
+
+    // Check for linesearch failure
+    if (step < minStep) {
+      isFailed = true;
+      message = "(FAILED - Min Step)";
+      break;
     }
 
     // Update the number of linesearch iterations
+    counter.incrementNumIterations();
     lsIterations ++;
-      
-    // Compute trial point and its function value
-    newsoln.computeX(oldsoln, dir, step);
-    newsoln.computeF();
-    newf = 0.5*newsoln.getNormF()*newsoln.getNormF(); 
 
-    // Recompute convergence criteria based on new step or new fprime
-    convergence = oldf + alpha*step*fprime;
-
-    //Iterate until Armijo-Goldstein condition is satisfied
-    while (newf >= convergence) {  
-      
-      if (Utils::doPrint(Utils::InnerIteration)) {
-	cout << setw(3) << lsIterations << ":";
-	cout << " step = " << Utils::sci(step);
-	cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
-	cout << " newf = " << Utils::sci(sqrt(2.*newf));
-	cout << endl;
-      }
-	
-      lsIterations ++;
-      step = step * 0.5;
-
-      // Check for linesearch failure: if true, exit the method
-      if ((step < minStep) || (lsIterations > maxIters)) {
-
-	totalNumFailedLineSearches += 1;
-	step = recoveryStep;
-
-	// Update the group and exit linesearch
-	newsoln.computeX(oldsoln, dir, step);
-	newsoln.computeF();    
-	newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
-
-	// Print out info
-	cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-	cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
-	cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
-	cout << " (USING RECOVERY STEP!)" << endl;
-	cout << Utils::fill(72) << "\n" << endl;
-
-	isFailed = true;
-	return (!isFailed);
-      }
-
-      // Compute new trial point and its function value
+    // Compute new trial point and its function value
+    if (lsType == Curvilinear) {
+      // bwb - move creation of dir2 outside so only done once.
+      NOX::Abstract::Vector* dir2 = dir.clone(ShapeCopy);
+      bool ok = direction.computeCurvilinearStep(*dir2, newsoln, s, step);
+      newsoln.computeX(oldsoln, *dir2, 1.0);
+      delete dir2;
+    }
+    else {
       newsoln.computeX(oldsoln, dir, step);
+    }
+    newsoln.computeF();    
+    newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
+
+    // Recompute convergence criteria based on new step
+    threshold = oldf + alpha*step*fprime;
+    isAcceptable = (newf < threshold);
+  }
+
+
+  if (isFailed) {
+    counter.incrementNumFailedLineSearches();
+    step = recoveryStep;
+
+    if (step != 0.0) {
+      // Update the group using Newton direction and recovery step
+      newsoln.computeX(oldsoln, direction.getNewton(), step);
       newsoln.computeF();    
       newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
 
-      // Recompute convergence criteria based on new step
-      convergence = oldf + alpha*step*fprime;
-
+      message = "(USING RECOVERY STEP!)";
     }
   }
-
-  if (Utils::doPrint(Utils::InnerIteration)) {
-    cout << setw(3) << lsIterations << ":";
-    cout << " step = " << Utils::sci(step);
-    cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
-    cout << " newf = " << Utils::sci(sqrt(2.*newf));
-    if (isFailed)
-      cout << " (USING RECOVERY STEP!)" << endl;
-    else
-      cout << " (STEP ACCEPTED!)" << endl;
-    cout << Utils::fill(72) << "\n" << endl;
-  }
   
-  ok = !isFailed;
-  totalNumLSIterations += lsIterations - 1;
+  print.printStep(lsIterations, step, oldf, newf, message);
+  counter.setValues(*paramsPtr);
 
-  delete tmpvecptr;
-
-  return ok;
+  return (!isFailed);
 }
 
 
-bool TensorBased::performCurvilinearLinesearch()
+#ifdef DEPRECATED_CODE
+bool NOX::LineSearch::Tensor::performDualLinesearch(NOX::Abstract::Group& newsoln,
+						    double& step,
+						    const NOX::Abstract::Vector& dir,
+						    const NOX::Solver::Generic& s,
+						    NOX::Direction::Tensor& direction)
 {
-  // Copy pointer into temporary reference
-  Abstract::Group& newsoln = *solnptr;
-
-  // local variables
-  int lsIterations = 1;
-  bool ok;
-  bool isFailed = false;
-  double newf;
-  double oldf = 0.5*oldsoln.getNormF()*oldsoln.getNormF();  
-                            // Redefined f() = 0.5 * F'*F = 0.5*||F||^2
-
-  // Computation of directional derivative used in curvature condition
-  Abstract::Vector* tmpvecptr = oldsoln.getX().clone(ShapeCopy);
-  oldsoln.applyJacobian(oldsoln.getNewton(),*tmpvecptr);   // bwb - dNewton 
-  double fprime = tmpvecptr->dot(oldsoln.getF());
-  
-  if (Utils::doPrint(Utils::InnerIteration)) {
-    cout << "\n" << Utils::fill(72) << "\n";
-    cout << "-- Curvilinear Linesearch -- \n";
+  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+    cout << "\n" << NOX::Utils::fill(72) << "\n";
+    cout << "-- Dual Direction Linesearch -- \n";
   }
   
-  // Compute curvilinear step, new trial point, and its function value
+  // Set counter to 1
+  int lsIterations = 1;
+
+  // local variables
+  bool ok;
+  bool isFailed = false;
+  bool lsRequired = false;
+  double tensorf = 1e29;
+  double tensors = defaultStep;
+
+  // Get Old F
+  const Abstract::Group& oldsoln = s.getPreviousSolutionGroup();
+  double oldf = 0.5*oldsoln.getNormF()*oldsoln.getNormF();  
+
+  // Compute new trial point and its function value
   step = defaultStep;
   newsoln.computeX(oldsoln, dir, step);
   newsoln.computeF();    
-  newf = 0.5*newsoln.getNormF()*newsoln.getNormF();  
-  
+  double newf = 0.5*newsoln.getNormF()*newsoln.getNormF();  
+
+  // Computation of directional derivative used in curvature condition
+  NOX::Abstract::Vector* tmpvecptr = oldsoln.getX().clone(ShapeCopy);
+  oldsoln.applyJacobian(dir, *tmpvecptr);
+  double fprime = tmpvecptr->dot(oldsoln.getF());
+
+  double slope = slopeObj.computeSlope(dir, oldsoln);
+  printf("slope:   %16e   %16e\n", fprime, slope);
+
   // Compute the convergence criteria for the line search 
   double convergence = oldf + alpha*step*fprime;
 
-  // Increment the counter of Newton steps requiring a linesearch
-  if (newf >= convergence)
-    totalNumLSSteps++;
-
-  //Iterate until Armijo-Goldstein condition is satisfied
-  while (newf >= convergence) {  
+  // Increment the counter of nonlinear iterations requiring a linesearch
+  if (newf >= convergence) {
+    counter.incrementNumNonTrivialLineSearches();
+    lsRequired = true;
+  }
     
-    if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << setw(3) << lsIterations << ":";
-      cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
-      cout << " newf = " << Utils::sci(sqrt(2.*newf));
-      cout << endl;
-    }
-    
-    lsIterations ++;
+  // If the tensor step is a descent direction (fprime < 0),
+  // then backtrack until Armijo-Goldstein condition is satisfied.
+  while (newf >= convergence  &&  fprime < 0) {  
 
-    // Backtrack by halving the step
-    step = step * 0.5;
+    print.printStep(lsIterations, step, oldf, newf);
+
+    counter.incrementNumIterations();
+    lsIterations++;
+    
+    // Backtrack by reducing the step
+    step = selectLambda(newf, oldf, fprime, step);
 
     // Check for linesearch failure: if true, exit the method
     if ((step < minStep) || (lsIterations > maxIters)) {
 
-      totalNumFailedLineSearches += 1;
+      counter.incrementNumFailedLineSearches();
       step = recoveryStep;
-
+      
       // Update the group, and exit linesearch
-      ok = direction.computeCurvilinearStep(dir, newsoln, *this, step);
-      newsoln.computeX(oldsoln, dir, 1.0);
+      newsoln.computeX(oldsoln, dir, step);
       newsoln.computeF();    
       newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
-
+      
       // Print out info
-      cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
-      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
-      cout << " (USING RECOVERY STEP!)" << endl;
-      cout << Utils::fill(72) << "\n" << endl;
-
+      string message = "(USING RECOVERY STEP!)";
+      print.printStep(lsIterations, step, oldf, newf, message);
+      
       isFailed = true;
       return (!isFailed);
     }
 
-    // Compute curvilinear step, new trial point, and its function value
-    ok = direction.computeCurvilinearStep(dir, newsoln, *this, step);   
-    newsoln.computeX(oldsoln, dir, 1.0);
+    // Compute new trial point and its function value
+    newsoln.computeX(oldsoln, dir, step);
     newsoln.computeF();    
     newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
 
@@ -536,26 +657,127 @@ bool TensorBased::performCurvilinearLinesearch()
   }  // end while loop
 
 
-  if (Utils::doPrint(Utils::InnerIteration)) {
-    cout << setw(3) << lsIterations << ":";
-    cout << " step = " << Utils::sci(step);
-    cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
-    cout << " newf = " << Utils::sci(sqrt(2.*newf));
-    cout << " (STEP ACCEPTED!)" << endl;
-    cout << Utils::fill(72) << "\n" << endl;
+  if (lsRequired) {
+
+    string message = "(STEP ACCEPTED!)";
+    print.printStep(lsIterations, step, oldf, newf, message);
+
+    // If tensor step is not descent, then use oldf to force acceptance
+    // of Newton backtrack...
+    if ( !(fprime < 0) )
+      newf = oldf;
+
+    // Save info from tensor backtrack and then try backtracking
+    // on the Newton step and compare with tensor backtrack.
+    tensorf = newf;
+    tensors = step;
+  
+    // Computation of directional derivative used in curvature condition
+    //const NOX::Abstract::Vector& dir2 = oldsoln.getNewton();// bwb - dNewton 
+    const NOX::Abstract::Vector& dir2 = direction.getNewton();
+    oldsoln.applyJacobian(dir2,*tmpvecptr);
+    fprime = tmpvecptr->dot(oldsoln.getF());
+
+    slope = slopeObj.computeSlope(dir2, oldsoln);
+    printf("slope:   %16e   %16e\n", fprime, slope);
+
+    // Compute new trial point and its function value
+    step = defaultStep;
+    newsoln.computeX(oldsoln, dir2, step);
+    newsoln.computeF();    
+    newf = 0.5*newsoln.getNormF()*newsoln.getNormF();  
+
+    counter.incrementNumIterations();
+    lsIterations ++;
+  
+    // Compute the convergence criteria for the line search 
+    convergence = oldf + alpha*step*fprime;
+
+    //Iterate until Armijo-Goldstein condition is satisfied
+    while (newf >= convergence) {  
+    
+      print.printStep(lsIterations, step, oldf, newf);
+
+      counter.incrementNumIterations();
+      lsIterations ++;
+    
+      // Backtrack by reducing the step
+      step = selectLambda(newf, oldf, fprime, step);
+    
+      // Check for linesearch failure: if true, exit the method
+      if ((step < minStep) || (lsIterations > maxIters)) {
+	
+	counter.incrementNumFailedLineSearches();
+	step = recoveryStep;
+	
+	// Update the group, and exit linesearch
+	newsoln.computeX(oldsoln, dir2, step);
+	newsoln.computeF();    
+	newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
+	
+	// Print out info
+	string message = "(USING RECOVERY STEP!)";
+	print.printStep(lsIterations, step, oldf, newf, message);
+
+	isFailed = true;
+	return (!isFailed);
+      }
+
+      // Compute new trial point and its function value
+      newsoln.computeX(oldsoln, dir2, step);
+      newsoln.computeF();    
+      newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
+
+      // Recompute convergence criteria based on new step
+      convergence = oldf + alpha*step*fprime;
+
+    }  // end while loop
+  } // end if
+  
+  string message = "(STEP ACCEPTED!)";
+  print.printStep(lsIterations, step, oldf, newf, message);
+
+
+  // If backtracking on the tensor step produced a better step, then use it.
+  if (lsRequired  &&  tensorf < newf) {
+    newsoln.computeX(oldsoln, dir, tensors);
+    newsoln.computeF();    
+    newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
   }
 
+  
 #if DEBUG_LEVEL > 1
   cout << "Current point: ";
   newsoln.getX().print();
 #endif
 
   ok = !isFailed;
-  totalNumLSIterations += lsIterations - 1;
+
+  counter.setValues(*paramsPtr);
+  //counter.setValues(params);
 
   delete tmpvecptr;
 
   return ok;
+}
+#endif // DEPRECATED_CODE
+
+double NOX::LineSearch::Tensor::selectLambda(double newf, double oldf,
+					     double oldfprime, double lambda)
+{
+  double lambdaRet;
+  double temp;
+  
+  if (lambdaSelection == Quadratic) {
+    temp = -oldfprime / (2.0*(newf - oldf - oldfprime));
+    if (temp < 0.1)
+      temp = 0.1;
+    lambdaRet = temp *lambda;
+  }
+  else {
+    lambdaRet = 0.5 * lambda;
+  }
+  return lambdaRet;
 }
 
 
