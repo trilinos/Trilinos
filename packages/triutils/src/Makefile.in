@@ -152,6 +152,8 @@ CORE = \
 	$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp \
 	$(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp \
 	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp \
+	$(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp \
+	$(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp \
 	$(srcdir)/Trilinos_Util_ShellOptions.cpp
 
 
@@ -318,6 +320,8 @@ am__objects_1 = Trilinos_Util_duscr_vbr.$(OBJEXT) \
 	Trilinos_Util_ReadHb2Epetra.$(OBJEXT) \
 	Trilinos_Util_ReadHpc2Epetra.$(OBJEXT) \
 	Trilinos_Util_ReadHb2EpetraVbr.$(OBJEXT) \
+	Trilinos_Util_GenerateCrsProblem.$(OBJEXT) \
+	Trilinos_Util_GenerateVbrProblem.$(OBJEXT) \
 	Trilinos_Util_ShellOptions.$(OBJEXT)
 am__objects_2 =
 am__objects_3 = iohb.$(OBJEXT)
@@ -334,7 +338,9 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Trilinos_Util_GenerateCrsProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_GenerateVbrProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ShellOptions.Po \
@@ -456,6 +462,10 @@ Trilinos_Util_ReadHpc2Epetra.$(OBJEXT): \
 	$(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp
 Trilinos_Util_ReadHb2EpetraVbr.$(OBJEXT): \
 	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp
+Trilinos_Util_GenerateCrsProblem.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp
+Trilinos_Util_GenerateVbrProblem.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp
 Trilinos_Util_ShellOptions.$(OBJEXT): \
 	$(srcdir)/Trilinos_Util_ShellOptions.cpp
 iohb.$(OBJEXT): $(srcdir)/iohb.cpp
@@ -470,6 +480,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_GenerateCrsProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_GenerateVbrProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.Po@am__quote@
@@ -760,6 +772,30 @@ Trilinos_Util_ReadHb2EpetraVbr.obj: $(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ReadHb2EpetraVbr.obj `cygpath -w $(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp`
+
+Trilinos_Util_GenerateCrsProblem.o: $(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp' object='Trilinos_Util_GenerateCrsProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_GenerateCrsProblem.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_GenerateCrsProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_GenerateCrsProblem.o `test -f '$(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp
+
+Trilinos_Util_GenerateCrsProblem.obj: $(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp' object='Trilinos_Util_GenerateCrsProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_GenerateCrsProblem.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_GenerateCrsProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_GenerateCrsProblem.obj `cygpath -w $(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp`
+
+Trilinos_Util_GenerateVbrProblem.o: $(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp' object='Trilinos_Util_GenerateVbrProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_GenerateVbrProblem.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_GenerateVbrProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_GenerateVbrProblem.o `test -f '$(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp
+
+Trilinos_Util_GenerateVbrProblem.obj: $(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp' object='Trilinos_Util_GenerateVbrProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_GenerateVbrProblem.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_GenerateVbrProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_GenerateVbrProblem.obj `cygpath -w $(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp`
 
 Trilinos_Util_ShellOptions.o: $(srcdir)/Trilinos_Util_ShellOptions.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ShellOptions.cpp' object='Trilinos_Util_ShellOptions.o' libtool=no @AMDEPBACKSLASH@
