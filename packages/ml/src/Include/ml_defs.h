@@ -147,6 +147,8 @@
 /* block partitioning option to use Parmetis */
 #define ML_USEPARMETIS       1
 #define ML_USEMETIS          2
+#define ML_USEZOLTAN         3
+
 
 
 /* Allow 64-bit integer support.  This is needed when the ML library is used
