@@ -72,12 +72,12 @@ in future versions.
 <P>The <B>LB_Comm_Create</B> function sets up the communication plan in
 the irregular communication package. Its input is a count of objects to
 be sent to other processors, a list of the processors to which the objects
-should be sent (repetitions are allowed), and an MPI communicator. It allocates
-and builds a communication plan that describes to which processors data
-will be sent and from which processors data will be received. It also computes
-the amount of data to be sent to and received from each processor. It returns
-the number of objects to be received by the processor and a pointer to
-the communication plan it created. In <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
+should be sent (repetitions are allowed), and an MPI communicator and tag.
+It allocates and builds a communication plan that describes to which processors
+data will be sent and from which processors data will be received. It also
+computes the amount of data to be sent to and received from each processor.
+It returns the number of objects to be received by the processor and a
+pointer to the communication plan it created. In <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
 for example, the number of objects to be exported by a processor and a
 list of the destination processors for the objects are passed to <B>LB_Comm_Create</B>;
 the resulting plan describes the communication patterns needed to export
@@ -107,8 +107,8 @@ to perform the actual communication.
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; proclist</I></TD>
 
-<TD>An array of size <I>n</I> of destination processor numbers for each
-of the objects to be sent.</TD>
+<TD>An array of size <I>nsend</I> of destination processor numbers for
+each of the objects to be sent.</TD>
 </TR>
 
 <TR>
