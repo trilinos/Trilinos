@@ -71,7 +71,14 @@ FILE_PATTERNS         += ml_struct.h
 FILE_PATTERNS         += ml_aggregate.h
 FILE_PATTERNS         += MLAPI*.h
 
-EXAMPLE_PATH           = ../../../../Trilinos/packages/ml/examples
+EXAMPLE_PATH           = ../examples/BasicExamples 
+EXAMPLE_PATH          += ../examples/Advanced 
+EXAMPLE_PATH          += ../examples/TwoLevelDD 
+EXAMPLE_PATH          += ../examples/Visualization 
+EXAMPLE_PATH          += ../examples/Maxwell 
+EXAMPLE_PATH          += ../examples/MLAPI 
+EXAMPLE_PATH          += ../examples/MatrixReading 
+EXAMPLE_PATH          += ../examples/StandAlone
 
 IMAGE_PATH             = ../../../../Trilinos/packages/ml/doc
 

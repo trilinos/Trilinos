@@ -158,11 +158,17 @@ following examples:
 - \ref mlguide_c is the simplest ML (serial) example;
 - \ref mlguide_par_c is the parallel counterpart of mlguide.c.
 - \ref ml_aztec_simple_c gives an example of the ML/Aztec C interface;
-- \ref ml_operator_cpp presents the use of the MultiLevelOperator class;
+- \ref ml_operator_cpp presents the use of the MultiLevelOperator class
+(see also section \ref ml_multileveloperator);
 - \ref ml_preconditioner_cpp details the use of ML as a
-  black-box preconditionerr (see also section \ref ml_minitutorial);
+  black-box preconditionerr (see also section \ref ml_minitutorial
+  and section \ref ml_multilevelpreconditioner);
 - \ref ml_2level_DD_cpp  describes how to define
   domain decomposition preconditioners using ML.  
+- \ref ml_viz_cpp  describes how to visualize the aggregates;
+- \ref ml_analyze_cpp shows how ML can be used to analyze the performances of a
+  the preconditioner on a given linear system;
+- \ref ml_maxwell_cpp outlines the use of ML to solve the Maxwell equations.
 
 
 \section ml_minitutorial Quick introduction to the ML/Epetra interface
@@ -208,7 +214,9 @@ The following structure are used by ML:
 - ML_Aggregate_Struct (aliased as ML_Aggregate) contains the main information
   about the aggregates (for smoothed aggregates only)
 - ML_Operator_Struct (aliased as ML_Operator) defined the ML's internal matrix
-  format.
+  format;
+- classes MultiLevelOperator and MultiLevelPreconditioner should be use to
+  define AztecOO preconditioners.
 
  
 \section ml_conversion Conversion utilities from/to Epetra matrices.
@@ -297,56 +305,7 @@ computationally expensive, and it is not recommended for performance evaluations
 
 \section ml_changes Overview of main ML changes from ml-2.0 to ml-3.0
 
-The ML version contained in Trilinos 4.0 has been enhanced with respect
-to the one included in the Trilinos 3.1 distribution as follows:
-- ML now has extended capabilities to define preconditioners for
-Epetra_LinearProblem objects. Two new classes have been
-introduced (both in the ML_Epetra namespace): MultiLevelOperator (derived from
-Epetra_Operator) and MultiLevelPreconditioner (derived from Epetra_RowMatrix).
-The latter is particularly easy to use, and requires, as input parameters, the
-linear system matrix, and a list of parameters only. Using this class,
-ML can be used as a black-box solver to define multilevel (possibly domain
-decomposition based) preconditioners.
-- ML users can take advantage of several other Trilinos packages: Epetra,
-Teuchos, Amesos, Anasazi, Triutils, IFPACK.
-- ML uses Teuchos to specify the input parameters for
-ML_Epetra::MultiLevelPreconditioner objects, and in
-some other internal classes (mainly, the interface with Amesos and Anasazi).
-- ML now supports the Trilinos package Amesos as primary direct
-sequential and parallel direct solvers. Through Amesos, KLU, UMFPACK
-4.1, SuperLU_DIST 2.0, MUMPS 4.3.1, and ScaLAPACK can be used. The user can
-specify the maximum number of processes to be used in the coarse
-solution, or let Amesos decide.
-- ML interface to SuperLU and SuperLU_DIST is now deprecated in favor of
-the Amesos interface (but still available).
-- ML can use the Trilinos package Anasazi to estimate the maximum eigenvalue for
-both symmetric and non-symmetric problems.
-- A basic interface to the Trilinos package IFPACK is available.
-- Two new aggregation schemes, based on graph partitioning algorithms,
-have been added. Interfaces to the third-party libraries METIS and ParMETIS
-are available. Users can now specify the number of nodes to be included in each
-aggregate (or the number of local or global aggregates); this allows aggressive
-coarsening. ML must be configured with options --with-ml_metis and
---with-ml_parmetis_3x to use graph partitioning algorithms. ParMETIS support
-requires Epetra.
-- ML can use a simple power method to estimate the maximum eigenvalue for
-non-symmetric problems, in addition to the A-norm scheme.
-- The set of examples has been extended. Now about 30 examples are available,
-mainly in C. A couple of C++ examples, that use
-Trilinos_Utils::CrsMatrixGallery to define the linear system matrix, is included
-in the distribution.
-- Improved the MLS preconditioner for block systems.
-- In the configuration phase, ML automatically recognizes which Trilinos
-package has been enabled, and compiles all functions using this package (if any).
-- (Limited) visualization and statistics capabilities are available for METIS
-and Uncoupled aggregation schemes. The user can visualize the shape of the
-aggregates for all levels using OpenDX.
-- (Limited) doxygen documentation is available. Type doxygen in the doc
-subdirectory to create the documentation. Almost all the C++ code, and a small
-part of the C code, has been modified with doxygen-compatible comments.
-- A new user's guide is available in the doc subdirectory (Sandia report
-SAND-2004-22195).
- 
+Consult the \ref changelog file.
 
 \section ml_copyright Copyright
 
@@ -374,7 +333,7 @@ USA
 
 /*!
 
-\page ml_preconditioner_cpp Example of use ML_Epetra::MultiLevelPreconditioner
+\page ml_multilevelpreconditioner Example of use ML_Epetra::MultiLevelPreconditioner
 
 We now report and comment and example of usage of
 ML_Epetra::MultiLevelPreconditioner. The source code can be found in
@@ -516,7 +475,7 @@ At this point, we can compute the true residual, and quit.
 
 */
 
-/*! \page ml_operator_cpp Example of use of ML_Epetra::MultiLevelOperator
+/*! \page ml_multileveloperator Example of use of ML_Epetra::MultiLevelOperator
 
 We now report and comment and example of usage of
 ML_Epetra::MultiLevelPreconditioner. The source code can be found in
@@ -728,6 +687,17 @@ Trilinos 4.0 tutorial.
 */
 
 /*!
+\page ml_analyze_cpp ml_analyze.cpp
+\include ml_analyze.cpp
+*/
+
+/*!
 \page ml_maxwell_cpp ml_maxwell.cpp
 \include ml_maxwell.cpp
 */
+
+/*!
+\page changelog ChangeLog
+\include ChangeLog
+*/
+
