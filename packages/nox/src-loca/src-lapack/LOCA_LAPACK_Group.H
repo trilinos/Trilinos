@@ -109,7 +109,7 @@ namespace LOCA {
 	    LOCA::LAPACK::Interface& i, int m, int n, bool hasMassMat = false);
 
       //! Copy constructor
-      Group(const Group& source, 
+      Group(const LOCA::LAPACK::Group& source, 
 	    NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
