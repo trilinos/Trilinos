@@ -68,7 +68,7 @@ namespace LineSearch {
   \f]
 
   but a user defined merit function can be used instead (see
-  NOX::Parameter::MeritFunction for details).  Our first attempt is
+  computePhi() for details).  Our first attempt is
   always to try a step \f$ \lambda_0 \f$, and then check the stopping
   criteria. The value of \f$ \lambda_0 \f$ is the specified by the
   "Default Step" parameter. If the first try doesn't work, then we
@@ -99,9 +99,11 @@ namespace LineSearch {
 
   <b> %Polynomial Models of the Merit Function </b>
 
-  We compute \f$ p_k(\lambda) \f$ by interpolating \f$ \phi(0) \f$ at
-  \f$ \phi'(0) \f$ and \f$ \phi(\lambda_{k-1}) \f$ where \f$ \lambda_{k-1} \f$
-  is the \f$ k-1 \f$st approximation to the step. 
+  We compute \f$ p_k(\lambda) \f$ by interpolating \f$f\f$. For the
+  quadratic fit, we interpolate \f$ \phi(0) \f$, \f$ \phi'(0) \f$, and
+  \f$ \phi(\lambda_{k-1}) \f$ where \f$ \lambda_{k-1} \f$ is the \f$
+  k-1 \f$st approximation to the step. For the cubit fit, we
+  additionally include \f$\phi(\lambda{k-2})\f$.
 
   The first interpolation step is always quadratic.  Depending on the
   choice of "Interpolation Type" parameter, the
@@ -114,9 +116,6 @@ namespace LineSearch {
   \lambda_{k} = \frac{-\phi'(0) \lambda_{k-1}^2 }{2 \left[ \phi(\lambda_{k-1}) - \phi(0) 
   -\phi'(0) \lambda_{k-1} \right]} 
   \f]
-
-  See computeSlope() for details on how \f$ \phi'(0) \f$ is
-  calculated.
 
   If we are using a <b>cubic model</b>, the \f$k\f$-th step (\f$ k>1
   \f$) approximation is calculated as
@@ -139,9 +138,13 @@ namespace LineSearch {
                               \phi'(0)\lambda_{k-2} \end{array} \right]
   \f]
 
+  In either case, see computeSlope() for details on how \f$ \phi'(0) \f$ is
+  calculated.
+
   <B> Bounds on the step length </B> 
  
-  We do not allow the step to grow or shrink too quickly, using the following bounds:
+  We do not allow the step to grow or shrink too quickly by enforcing
+  the following bounds:
 
   \f[ 
   \gamma_{min} \; \lambda_{k-1} \leq \lambda_k \le \gamma_{max} \; \lambda_{k-1}
@@ -153,12 +156,22 @@ namespace LineSearch {
 
   <B> Input Parameters </B> 
 
-  "Line Search"/"PolynomialNew":
+  "Line Search": 
+
+  <ul>
+  <li>"Method" = "PolynomialNew" [required]
+  </ul>
+
+  "Line Search"/"PolynomialNew": 
 
   <ul>
  
   <li> "Default Step" - Starting step length, i.e., \f$\lambda_0\f$.
   Defaults to 1.0.
+
+  <li> "Max Iters" - Maximum number of line search iterations. The
+  search fails if the number of iterations exceeds this
+  value. Defaults to 100.
 
   <li> "Minimum Step" - Minimum acceptable step length. The search
   fails if the computed \f$\lambda_k\f$ is less than this
@@ -167,9 +180,13 @@ namespace LineSearch {
   <li> "Recovery Step" - The step to take when the line search fails.
     Defaults to value for "Default Step".
 
-  <li> "Max Iters" - Maximum number of line search iterations. The
-  search fails if the number of iterations exceeds this
-  value. Defaults to 100.
+  <li> "Interpolation Type" - Type of interpolation that should be
+    used. Choices are
+    
+     <ul>
+     <li> "Cubic" [default]
+     <li> "Quadratic"
+     </ul>
 
   <li> "Min Bounds Factor" - Choice for \f$ \gamma_{min} \f$, i.e.,
     the factor that limits the minimum size of the new step based on
@@ -191,15 +208,7 @@ namespace LineSearch {
     </ul>
 
   <li> "Alpha Factor" - %Parameter choice for sufficient decrease
-  condition. See checkConvergence() for details. (Defaults to 1.0e-4)
-
-  <li> "Interpolation Type" - Type of interpolation that should be
-    used. Choices are
-    
-     <ul>
-     <li> "Cubic" [default]
-     <li> "Quadratic"
-     </ul>
+  condition. See checkConvergence() for details. Defaults to 1.0e-4.
 
   <li> "Force Interpolation" (boolean) - Set to true if at least one
     interpolation step should be used. The default is false which
@@ -240,17 +249,16 @@ namespace LineSearch {
   <li> "Total Number of Line Search Calls" - Total number of calls to
   the compute() method of this line search.
 
-  <li> "Total Number of Non-trivial Line Searches" - The total number of
+  <li> "Total Number of Non-trivial Line Searches" - Total number of
     steps that could not directly take a full step and meet the
-    required "Sufficient Decrease Condition" (i.e. The line search had to
-    reduce the step length using inner iteration calculations over
-    iterate \f$ k \f$).
+    required "Sufficient Decrease Condition" (i.e., the line search had to
+    do at least one interpolation).
 
-  <li> "Total Number of Failed Line Searches" - total number of line
+  <li> "Total Number of Failed Line Searches" - Total number of line
     searches that failed and used a recovery step.
 
-  <li> "Total Number of Line Search Inner Iterations" - total number of
-    inner iterations \f$ k \f$ performed by this object.
+  <li> "Total Number of Line Search Inner Iterations" - Total number of
+    inner iterations of all calls to compute().
 
   </ul>
 
@@ -364,12 +372,13 @@ protected:
     should be the value of \f$\eta\f$ for last forcing term
     calculation in NOX::Direction::Newton
   
-    \param nIter Number of inner iterations.
+    \param nIters Number of inner iterations.
 
     \param nNonlinearIters Number of nonlinear iterations.
 
     \note The norm used for "Ared/Pred" can be specified by the user
-    by using the "User Defined Norm" parameter.
+    by using the "User Defined Norm" parameter; this parameter is any
+    object derived from NOX::Parameter::UserNorm.
 
   */
   bool checkConvergence(double newValue, double oldValue, double oldSlope, 
@@ -462,7 +471,7 @@ protected:
     None
   };
 
-  //! Interpolation types
+  //! Interpolation types used by compute().
   enum InterpolationType {
     //! Use quadratic interpolation throughout
     Quadratic, 
