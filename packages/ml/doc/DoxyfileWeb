@@ -58,16 +58,16 @@ INPUT                 += ../../../../Trilinos/packages/ml/src/Utils
 INPUT                 += ../../../../Trilinos/packages/ml/src/Coarsen 
 INPUT                 += ../../../../Trilinos/packages/ml/src/Main
 
-FILE_PATTERNS          = ../../../../Trilinos/packages/ml/examples/BasicExamples/ml_MultiLevelPreconditioner*.cpp 
-FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Utils/ml_epetra_utils.h 
-FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Utils/ml_MultiLevelPreconditioner.h 
-FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Utils/ml_MultiLevelOperator.h 
-FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Utils/ml_amesos_wrap.h 
-FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Utils/ml_anasazi.h 
-FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Utils/ml_ifpack_wrap.h
-FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Operator/ml_operator.h 
-FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Main/ml_struct.h 
-FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Utils/Coarsen/ml_aggregate.h
+FILE_PATTERNS          = ml_MultiLevelPreconditioner*.cpp
+FILE_PATTERNS         += ml_epetra_utils.h 
+FILE_PATTERNS         += ml_MultiLevelPreconditioner.h 
+FILE_PATTERNS         += ml_MultiLevelOperator.h 
+FILE_PATTERNS         += ml_amesos_wrap.h 
+FILE_PATTERNS         += ml_anasazi.h 
+FILE_PATTERNS         += ml_ifpack_wrap.h
+FILE_PATTERNS         += ml_operator.h 
+FILE_PATTERNS         += ml_struct.h 
+FILE_PATTERNS         += ml_aggregate.h
 
 EXAMPLE_PATH           = ../../../../Trilinos/packages/ml/examples/BasicExamples 
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Advanced 
@@ -84,4 +84,3 @@ PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_IFPACK
 PREDEFINED            += HAVE_ML_TEUCHOS HAVE_MPI HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS 
 PREDEFINED            += HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X 
 PREDEFINED            += HAVE_ML_AMESOS HAVE_ML_AZTECOO ML_WITH_EPETRA
-

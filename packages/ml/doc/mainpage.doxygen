@@ -730,7 +730,7 @@ Trilinos 4.0 tutorial.
 */
 
 /*!
-\page ml_adaptivesa AdaptiveSa.cpp
-\include AdaptiveSa.cpp
+\page ml_adaptivesa AdaptiveSA.cpp
+\include AdaptiveSA.cpp
 */
 
