@@ -1177,6 +1177,8 @@ using namespace std;
 #endif],
 [map<int,int> x;
 x.insert(pair<int,int>(0,0));
+multimap<int,int> y;
+y.insert(pair<int,int>(0,0));
 return 0;],
 ac_cv_cxx_stl_map_key_const=no,
 ac_cv_cxx_stl_map_key_const=yes)
