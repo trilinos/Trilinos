@@ -429,9 +429,9 @@ int AztecOO::SetPreconditioner(void  (*prec_function)
 					       struct AZ_PREC_STRUCT *),
 					      void *p_data)
 {
-  if (Amat_==0) EPETRA_CHK_ERR(-1); // No matrix yet
+  if (Pmat_==0) EPETRA_CHK_ERR(-1); // No matrix yet
   EPETRA_CHK_ERR(DestroyPreconditioner()); // Delete existing preconditioner if one exists
-  Prec_ = AZ_precond_create(Amat_,prec_function, p_data);
+  Prec_ = AZ_precond_create(Pmat_,prec_function, p_data);
   options_[AZ_precond] = AZ_user_precond;
 
   return(0);
@@ -448,16 +448,17 @@ int AztecOO::ConstructPreconditioner(double & condest) {
 
   // Create default Aztec preconditioner if one not defined
   if (Prec_==0) {
-    if (Amat_==0)  EPETRA_CHK_ERR(-2); // No Amat to use for building preconditioner
-    Prec_ = AZ_precond_create(Amat_, AZ_precondition, NULL);
-    AZ_mk_context(options_, params_, Amat_->data_org, Prec_, proc_config_);
+    if (Pmat_==0)  EPETRA_CHK_ERR(-2); // No Pmat to use for building preconditioner
+    Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
   }
+  
+  AZ_mk_context(options_, params_, Pmat_->data_org, Prec_, proc_config_);
 
 
     int NN = PrecMatrix_->NumMyCols();
     double * condvec = new double[NN];
     for (int i = 0 ; i < N_local_ ; i++ ) condvec[i] = 1.0;
-    Prec_->prec_function(condvec,options_,proc_config_,params_,Amat_,Prec_);
+    Prec_->prec_function(condvec,options_,proc_config_,params_,Pmat_,Prec_);
     condest_ = 0.0;
     for (int i=0; i<N_local_; i++)
       if (fabs(condvec[i]) > condest_)
@@ -507,7 +508,7 @@ int AztecOO::recursiveIterate(int MaxIters, double Tolerance)
   int prec_allocated = 0;
   if (Prec_ == 0) {
     if (options_[AZ_precond] == AZ_user_precond) EPETRA_CHK_ERR(-10); // Cannot have user prec==0
-    Prec_ = AZ_precond_create(Amat_, AZ_precondition, NULL);
+    Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
     prec_allocated = 1;
   }
 
@@ -555,7 +556,7 @@ int AztecOO::Iterate(int MaxIters, double Tolerance)
       }
       EPETRA_CHK_ERR(-2);
     }
-    Prec_ = AZ_precond_create(Amat_, AZ_precondition, NULL);
+    Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
     prec_allocated = 1;
   }
 
