@@ -56,7 +56,6 @@ PARALLEL_CMD=`echo /usr/local/mpich/bin/mpirun -machinefile ./machines -np `
 #           cvs_update           Either TRUE or FALSE to indicate whether
 #                                the ml & mlbench directories should be
 #                                updated before running the benchmarks.
-#                                (Currently only works if FALSE).
 #
 #           arch                 One of CPLANT DEC HP PCLINUX SGI SMOS SOLARIS
 #                                SP2 SUN XTFLOP or TFLOP.  This is the same
@@ -65,9 +64,9 @@ PARALLEL_CMD=`echo /usr/local/mpich/bin/mpirun -machinefile ./machines -np `
 BENCH_ROOT_DIRECTORY=${HOME}/mlbench
 EXECUTABLE_DIRECTORY=${PWD}/../Obj
 SCRATCH_ROOT_DIRECTORY=/tmp/mlbench_results
-PARALLEL=FALSE
+PARALLEL=TRUE
 BATCH=TRUE
-CVS_UPDATE=FALSE                # DON'T CHANGE THIS FOR RIGHT NOW
+CVS_UPDATE=TRUE                # DON'T CHANGE THIS FOR RIGHT NOW
 ARCH=PCLINUX
 #
 # CREATING NEW BENCHMARKS
@@ -182,8 +181,12 @@ then
   echo "      ARCH                 = " $ARCH
   echo 
   echo "If defaults not wanted, overwrite using ..."
-  echo "    Usage: run_benchmarks [bench_root_directory executable_directory scratch_root_directory parallel={TRUE,FALSE} batch={TRUE,FALSE} cvs_update={TRUE,FALSE} arch={CPLANT DEC HP PCLINUX SGI SMOS SOLARIS SP2 SUN XTFLOP TFLOP}]"
+  echo "    Usage: run_benchmarks [bench_root_directory executable_directory"
+  echo "           scratch_root_directory parallel={TRUE,FALSE} batch={TRUE,FALSE}"
+  echo "           cvs_update={TRUE,FALSE} arch={CPLANT DEC HP PCLINUX SGI SMOS SOLARIS"
+  echo "           SP2 SUN XTFLOP TFLOP}]"
   echo
+  sleep 5
 fi
 if test $# -ge 1
 then
@@ -235,10 +238,27 @@ then
   CVS_RSH=/usr/bin/ssh
   export CVSROOT
   export CVS_RSH
+
+  /home/jhu/keychain-1.9/keychain -q
+  source ~/.ssh-agent-puffin.ca.sandia.gov
+
+  temp=`/usr/bin/ssh-add -l`
+  temp=`echo "xx${temp}xx" | sed "s/The agent has no identities\.//g"`
+  temp=`echo $temp | sed "s/ //g"`
+  if test `expr "${temp}"` = 'xxxx'
+  then
+     echo "Cannot do a cvs checkout without ssh key!"
+     exit
+  fi
  
   cd ${SCRIPT_DIRECTORY}/../..
+  echo "Doing a cvs update of `pwd`/ml..."
+  echo
   cvs update ml
   cd ${BENCH_ROOT_DIRECTORY}/..
+  echo
+  echo "Doing a cvs update of `pwd`/mlbench..."
+  echo
   cvs update mlbench
   cd ${SCRIPT_DIRECTORY}
 fi
@@ -337,3 +357,4 @@ do
    fi
 done
 echo "Done running benchmarks."
+sleep 10
