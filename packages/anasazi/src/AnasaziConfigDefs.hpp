@@ -106,11 +106,16 @@
 #include <iostream.h>
 #endif
 
+#ifndef JANUS_STLPORT
 #ifdef HAVE_CMATH
 #include <cmath>
 #else
 #include <math.h>
 #endif
+#else /* JANUS_STLPORT */
+#include <math.h>
+#endif /* JANUS_STLPORT */
+
 using namespace std;
 
 #else /*HAVE_CONFIG_H is not defined*/
