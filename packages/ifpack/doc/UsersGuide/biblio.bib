@@ -1,0 +1,2816 @@
+@phdthesis{marzio_thesis,
+           AUTHOR="M. Sala",
+           TITLE={Domain Decomposition Preconditioners: Theoretical Properties, Application to the Compressible Euler Equations, Parallel Aspects},
+           SCHOOL={Ecole Polytechnique F\'ed\'erale de Lausanne},
+           YEAR="2003",
+           ADDRESS = "Switzerland"
+}
+
+@book{ QV,
+    author = "A. Quarteroni and A. Valli",
+    title = {Numerical Approximation of Partial Differential Equations},
+    publisher = "Springer-Verlag",
+    address = "Berlin",
+    isbn = "3-540-57111-6",
+    pages = "xvi+543",
+    year = "1994"
+}
+
+@book{ QV2,
+    author = "A. Quarteroni and A. Valli",
+    title = {Domain Decomposition Methods for Partial Differential Equations},
+    publisher = "Oxford University Press",
+    address = "Oxford",
+    year = "1999"
+}
+
+@book{ QSS,
+    author = "A. Quarteroni and R. Sacco and F. Saleri",
+    title = "Numerical Mathematics",
+    publisher = "Springer-Verlag",
+    address = "New York",
+    isbn = "0-387-98959-5",
+    pages = "xvi+543",
+    year = "2000"
+}
+
+@book{axelsson94iterative,
+    author = "O. Axelsson",
+    title = "Iterative Solution Methods",
+    publisher = "Cambridge University Press",
+    address = "Cambridge",
+    year = "1994"
+}
+
+@book{barret93templates,  
+  AUTHOR = {R. Barrett and M. Berry and T.F. Chan and J. Demmel and J. Donato and J. Dongarra and V. Eijkhout and R. Pozo and C. Romine and H. Van der Vorst },  
+  TITLE = {Templates for the Solution of Linear Systems: Building Blocks for Iterative Methods, 2nd Edition},  
+  PUBLISHER = {SIAM},  
+  YEAR = {1994},  
+  ADDRESS = {Philadelphia, PA} 
+}
+
+@techreport{ AZTEC,
+  author = "R. Tuminaro and M. Heroux and S. Hutchison and J. Shadid",
+  title = "Official {Aztec} User's Guide: Version 2.1",
+  institution = "Sandia National Laboratories, Albuquerque, NM",
+  number = "SAND99-8801J",
+  month = "Dec",
+  year = "1999" }
+  
+@inproceedings{ paglieri97parallel,
+    author = "L. Paglieri and A. Scheinine and L. Formaggia and A. Quarteroni",
+    title = "Parallel Conjugate Gradient with {S}chwarz Preconditioner Applied to Fluid Dynamics Problems",
+    booktitle = "Parallel Computational Fluid Dynamics, Algorithms and Results using Advanced Computer, Proceedings of Parallel {CFD}'96",
+    editor = "P. Schiano et al.",
+    pages = "21--30",
+    year = "1997"
+}
+
+@techreport{ METIS,
+  author = "G. Karypis and V. Kumar",
+  title = "{METIS}: Unstructured graph partitining and sparse matrix ordering system",
+  institution = "University of  Minnesota, Department of Computer Science",
+  year = "1998" 
+}
+
+@article{ saad86gmres,
+    author = "Y. Saad and M. H. Schultz",
+    title = "{GMRES}: a generalized minimal residual algorithm for solving nonsymmetric linear systems",
+    journal = "SIAM Journal on Scientific and Statistical Computing",
+    volume = "7",
+    number = "3",
+    pages = "856--869",
+    year = "1986"
+}
+
+@article{ vorst92bicgstab,
+  author = "H. van der Vorst",
+  title = "{BI-CGSTAB}: A fast and smoothly converging variant of {Bi-CG} for the solution of nonsymmetric linear systems",
+  journal = " SIAM Journal on Scientific and Statistical Computing",
+  volume = "13",
+  number = "2",
+  pages = "631--644",
+  year = "1992" 
+}
+  
+@book{ saad96iterative,
+    author = "Y. Saad",
+    title = "Iterative Methods for Sparse Linear Systems",
+    publisher = "PWS",
+    address = "Boston",
+    isbn = "053494776X",
+    year = "1996"
+}
+
+@phdthesis{ carvalho97preconditioned,
+  author = "L. Carvalho",
+  title = "Preconditioned {S}chur complement methods in distributed memory environments",
+  school = "CERFACS, Toulose",
+  address = "France",
+  volume = " INPT PhD Thesis TH/PA/97/41",
+  year = "1997" 
+}
+  
+@book{ smith96parallel,
+  author = "B.F. Smith and P. Bjorstad and W.D. Gropp",
+  title = "Parallel Multilevel Methods for Elliptic Partial Differential Equations",
+  publisher = "Cambridge University Press",
+  address = "Cambrige",
+  year = "1996" 
+}
+  
+ @incollection{ letallec94domain,
+    author = "P. Le Tallec",
+    title = "Domain Decomposition Methods in Computational Mechanics",
+    booktitle = "Computational Mechanics Advances",
+    volume = "1",
+    publisher = "North-Holland",
+    editor = "J.T. Oden",
+    pages = "121--220",
+    year = "1994"
+}
+
+ @article{ chan92interface,
+    author = "T.F. Chan and T.P. Mathew",
+    title = "The Interface Probing Technique in Domain Decomposition",
+    journal = "SIAM Journal on Matrix Analysis and Applications",
+    volume = "13",
+    number = "1",
+    pages = "212--238",
+    year = "1992"
+}
+
+@article{ bramble86schatz,
+  author = "J. Bramble and J. Pasciak",
+  title = "Schatz: The Construction of Preconditioners for Elliptic Problems by Substructuring",
+  journal = "Mathematics of Computation",
+  number = "47",
+  pages = "103--134",
+  year = "1986" 
+}
+  
+@book{ anderson92lapack,
+    author = "E. Anderson and Z. Bai and C. Bischof and J. Demmel and J. Dongarra and J. Du Croz and A. Greenbaum and S. Hammarling and A. McKenney and S. Ostrouchov and S. Sorensen",
+    title = "{LAPACK} Users' Guide, Release 1.0",
+    publisher = "{SIAM}",
+    address = "Philadelphia",
+    year = "1992"
+}
+
+@article{ dj96agglomeration,
+  author = "D.J. Mavriplis",
+  title = "Agglomeration multigrid solver for the {R}eynolds-averaged-{N}avier-{S}tokes equations on unstructured meshes",
+  journal = "International Journal for Numerical Methods in Fluids",
+  volume = "23",
+  pages = "527--544",
+  year = "1996" 
+}
+    
+@techreport{ mavriplis98multigrid,
+    author = "D.J. Mavriplis",
+    title = "Multigrid Strategies for Viscous Flow Solvers on Anisotropic Unstructured Meshes",
+    institution = "{ICASE}",
+    number = "TR-98-6",
+    year = "1998"
+}
+
+@techreport{ mavriplis00multigrid,
+    author = "D.J. Mavriplis",
+    title = "Parallel Perfomance Investigation of an Unstructured Mesh {N}avier-{S}tokes Solver",
+    institution = "{ICASE}",
+    number = "TR-00-13",
+    year = "2000"
+}
+
+@techreport{ IDeMAS,
+    author = "IDeMAS",
+    institution = "BRITE/EURAM BE 97-4162",
+    title = "Industrial Demonstration of Accurate and Efficient multidimensional upwind algorithms for aerodynamics simulations",
+    year = "2001"
+}
+
+@techreport{ idemastr4.1,
+    author = "L. Paglieri and C. Vittoli and E. van der Weide and H. Deconick",
+    title = "IDeMAS Technical Report 4.1",
+    institution = "BRITE/EURAM",
+    number = "TR-4.1",
+    year = "1999"
+}
+
+@techreport{ idemastr4.3,
+    author = "F. Maggio and M. Sala",
+    title = "IDeMAS Technical Report 4.3",
+    number = "TR-4.3",
+    institution = "BRITE/EURAM",
+    year = "2001"
+}
+
+@techreport{ idemastr4.4,
+    author = "L. Formaggia and M. Sala",
+    title = "IDeMAS Technical Report 4.4",
+    number = "TR-4.4",
+    institution = "BRITE/EURAM",
+    year = "2000"
+}
+
+@techreport{ idemastr4.5,
+    author = "L. Formaggia and M. Sala",
+    title = "IDeMAS Technical Report 4.5",
+    number = "TR-4.5",
+    institution = "BRITE/EURAM",
+    year = "2001"
+}
+
+@incollection{ chan94domain,
+    author = "T.F. Chan and T.P. Mathew",
+    title = "Domain Decomposition Algorithms",
+    booktitle = "Acta Numerica",
+    publisher = "Cambridge University Press",
+    pages = "61--143",
+    year = "1994"
+}  
+    
+@article{ CGS,
+  author = "P. Sonneveld",
+  title = "a fast Lanczos-type solver for nonsymmetric linear systems",
+  journal = "SIAM Journal on Scientific and Statistical Computing",
+  volume = "10",
+  pages = "36--52",
+  year = "1989" 
+}  
+    
+@article{ freund93transposefree,
+  author = "R.W. Freund",
+  title = "A transpose--free quasi--minimum residual algorithm for non--Hermitian linear systems",
+  journal = "SIAM Journal on Scientific and Statistical Computing",
+  volume = "14",
+  pages = "470--482",
+  year = "1993" 
+}
+  
+@inproceedings{ golub97closer,
+    author = "G.H. Golub and H.A. {van der Vorst}",
+    title = "Closer to the Solution: Iterative Linear Solvers",
+    editor = "I.S. Duff and G.A. Watson",
+    booktitle = "The State of the Art in Numerical Analysis",
+    published = "Clarendon Press",
+    address = "Oxford",
+    volume = "63",
+    pages = "63--92",
+    year = "1997"
+}
+
+@misc{ vorst95parallel,
+  author = "H. {van der Vorst}",
+  title = "Parallel Iterative Solution Methods for Linear Systems arising from Discretized
+    PDE's",
+  text = "H. A. van der Vorst, Parallel Iterative Solution Methods for Linear Systems
+    arising from Discretized PDE's, in Special Course on Parallel Computing
+    in {CFD}, no. R--807 in AGARD Reports, AGARD, Neuilly-sur-Seine, France, 1995,
+    pp. 3--1--3--39.",
+  year = "1995" 
+}  
+ 
+@article{ dryja94domain,
+    author = "M. Dryja and O.B. Widlund",
+    title = "Domain Decomposition Algorithms with Small Overlap",
+    journal = "SIAM Journal on Scientific Computing",
+    volume = "15",
+    number = "3",
+    pages = "604--620",
+    year = "1994"
+}      
+
+  
+@techreport{ mavriplis98directional,
+    author = "D.J. Mavriplis",
+    title = "Directional Agglomeration Multigrid Techniques for High-Reynolds Number Viscous Flows",
+    institution = "{ICASE}",
+    number = "TR-98-7",
+    year = "1998"
+}  
+
+@article{ venkatakrishnan94agglomeration,
+  author = "V. Venkatakrishnan and D.J. Mavriplis",
+  title = "Agglomeration Multigrid for the {3D} {E}uler Equations",
+  journal = "AIAA Paper",
+  volume = "94-0069",
+  year = "1994" 
+}
+  
+@article{ formaggia94numerical,
+  author = "L. Formaggia and A. Scheinine and A. Quarteroni",
+  title = "A Numerical Investigation of {S}chwarz Domain Decomposition Techniques
+         for Elliptic Problems on Unstructured Grids",
+  journal = "Mathematics and Computers in Simulations",
+  volume = "44",
+  pages = "313-330",
+  year = "1994" 
+}
+   
+@article{ brown90hybrid,
+    author = "P.N. Brown and Y. Saad",
+    title = "Hybrid {K}rylov methods for nonlinear systems of equations",
+    journal = "SIAM Journal on Scientific and Statistical Computing",
+    volume = "11",
+    number = "3",
+    pages = "450--481",
+    year = "1990"
+}
+
+@article{ tidriri97efficient,
+  author = "M. Tidriri",
+  title = "Efficient preconditioning of {N}ewton-{K}rylov matrix-free algorithms for compressible
+    flows",
+  journal = "J. Computational Physics",
+  volume = "132",
+  pages = "51--61",
+  year = "1997" 
+}
+
+@article{ zhang00preconditioned,
+  author = "J. Zhang",
+  title = "Preconditioned {K}rylov subspace methods for solving nonsymmetric matrices from {CFD} applications",
+  journal = "Computer Methods in Applied Mechanics and Engineering",
+  volume = "189",
+  number = "3",
+  pages = "825--840",
+  year = "2000" 
+}
+
+@techreport{ zhang99grid,
+  author = "J. Zhang",
+  title = "A grid based multilevel incomplete LU factorization preconditioning technique for general sparse matrices",
+  institution = "Department of Computer Science, University of Kentucky, Lexington, KY",
+  number = "283-99",
+  year = "1999" 
+}
+
+@inproceedings{ barth98parallel,
+  author = "T.J. Barth and T.F. Chan and W. Tang",
+  title = "A parallel non-overlapping domain decomposition algorithm for compressible fluid flow problems on triangulated domains",
+  booktitle = "Domain Decomposition Methods, 10, Contemp. Math.",
+  pages = "23--41",
+  year = "1998" 
+}
+
+@article{ nielsen95application,
+  author = "E. Nielsen and W. Anderson and R. Walters and D.E. Keyes",
+  title = "Application of {N}ewton-{K}rylov Methodology to a Three-Dimensional Unstructured {E}uler Code",
+  journal = "AIAA  Paper",
+  volume = "95-1733",
+  year = "1995" 
+}
+
+@article{ deconinck00status,
+  author = "H. Deconinck and K. Sermeus and R. Abgrall",
+  title = "Status of Multidimensional Upwind Residual Distribution Schemes and Applications in AeroNautics",
+  journal = "AIAA  Paper",
+  vooume = "2000-2328",
+  year = "2000" 
+}
+
+@article {paillere96multidimensional, 
+  author = "H. Paill\`ere and J. Boxho and G. Degrez and H. Deconinck", 
+  title = "MUltidimensional Upwind Residual Distribution Schemes for the Convection-Diffusion Equation", 
+  journal = "International Journal for Numerical Methods in Fluids",
+  volume = "23",
+  number = "9",
+  pages = "923--936",
+  Year = "1996"
+}
+
+@article {issman96implicit, 
+  author = "E. Issman and G. Degrez and H. Deconinck",
+  title = "Implicit upwind residual-distribution {E}uler and {N}avier-{S}tokes
+                                   solver on unstructured meshes",
+  journal = "AIIA",
+  volume = "34",
+  month = "Oct",
+  pages = "2021-2028",
+  Year = "1996"
+}
+
+@article {weide99parallel,
+  author = "E. {van der Weide} and H. Deconinck and E. Issman and G. Degrez",
+  title = "A parallel, implicit, multidimensional upwind residual distribution scheme for the {N}avier-{S}tokes equations on unstructured grids",
+  journal = "Computational Mechanics",
+  volume = "23",
+  pages = "199--208",
+  Year = "1999"
+}
+
+@article {beam90viscous,
+  author = "R.M. Bream and H.E. Bailey", 
+  title = "{N}ewton's method to solve the axisymmetric {N}avier-{S}tokes", 
+  journal = "Journal of Computational Physics",
+  volume = "30",
+  pages = "1507--1514",
+  Year = "1990"
+}
+
+@article {nested_dissection,
+  author = "A. Pothen and H.D. Simon and K.P. Liou",
+  title = "Partitioning sparse matrices with eigenvectors of graphs",
+  journal = "SIAM Journal on Matrix Analysis and Applications",
+  volume = "11",
+  pages = "430--152",
+  year = "1990"
+}
+
+@book {minumal_degree,
+  author = "A. George and J.W. Liu",
+  title = "Computer solution of large sparse positive definite systems",
+  publisher = "Prentice Hall Series in Computational Mathematics",
+  address = "Englewood Cliffs, N. J.",
+  year = " 1981"
+}
+
+@article {mavriplis90accurate,
+  author = "D.J. Mavriplis",
+  title = "Accurate multigrid solution of the {E}uler equations on unstructured and adaptive meshes",
+  journal = "AIAA  Paper",
+  volume = "28",
+  pages = "213--221",
+  year = "1990"
+}
+
+@article{ steve92unstructured,
+  author = "H. Steve and M. Lallemand and A. Dervieux",
+  title = "Unstructured multigridding by volume agglomeration: Current status",
+  journal = "Computers and Fluids",
+  volume = "21",
+  number = "3",
+  pages = "397--433",
+  year = "1992" 
+}
+
+@article {chow98approximate, 
+  author = "E. Chow and Y. Saad",
+  title = "Approximate inverse preconditioners via sparse-sparse iterations", 
+  journal = "SIAM Journal on Scientific Computing",
+  volume = "19",
+  pages = "995--1023",
+  year = "1998"
+}
+
+@article {elman89approximate,
+  author = "H.C. Elman",
+  title = "Approximate {S}chur complement preconditioners on serial and parallel computers",
+  journal = "SIAM Journal on Scientific and Statistical Computing",
+  volume = "10",
+  number = "3",
+  pages = "581--605",
+  year = "1989"
+}
+
+@article {saad99distributed,
+  author = "Y. Saad and M. Sosonkina",
+  title = "Distributed {S}chur complement techniques for general sparse linear systems",
+  journal = "SIAM Journal on Scientific and Statistical Computing",
+  volume = "21",
+  number = "4",
+  pages = "1337--1356",
+  year = "1999"
+}
+
+@article {chow@99priori,
+  author = "E. Chow",
+  title = "A priori sparsity pattern for parallel approximate inverse preconditioners",
+  journal = "SIAM Journal on  Scientific and Statistical Computing",
+  volume = "21",
+  number = "5",
+  pages = "1804--1821",  
+  year = "1999"
+}
+
+@article {knoll99multigrid,
+  author = "D.A. Knoll and W.J. Rider",
+  title = "A multigrid preconditioned {N}ewton-{K}rylov method",
+  journal = "SIAM Journal on Scientific and Statistical Computing",
+  volume = "21",
+  number = "2",
+  pages = "691--710",  
+  year = "1999"
+}
+
+@article {dembo82inexact,
+  author = "R.S. Dembo and S.C. Eisenstat and T. Steihaug",
+  title = "Inexact {N}ewton Methods",
+  journal = "SIAM Journal on  Numerical Analysis",
+  volume = "19",
+  pages = "400--408",  
+  year = "1982"
+}
+
+@article {brown@hybrid,
+  author = "P.N. Brown and Y. Saad",
+  title = "Hybrid {K}rylov methods for nonlinear systems of equations",
+  journal = "SIAM Journal on Scientific and Statistical Computing",
+  volume = "11",
+  pages = "450--491",
+  year = 1990
+}
+
+@article {meijerink77iterative,
+  author = "J.A. Meijerink and H. A. var der Vorst",
+  title = "An iterative solution method for linear systems of which the coefficient matrix is a symmetric {M}-matrix",
+  journal = "Mathematics of Computation",
+  volume = "21",
+  pages = "148-162",
+  year = "1977"
+}
+
+@techreport { ma94distributed,
+  author = "S. Ma and Y. Saad",
+  title = "Distributed {ILU}(0) and {SOR} preconditioners for unstructured sparse linear systems",
+  number = "94-027",
+  institution = "Army High Performance Computing Research Center, Minneapolis",
+  year = "1994"
+}
+
+@article {duff89effect,
+  author = "U.S. Duff and G.A. Meurant",
+  title = "The effect of ordering on preconditioned conjugate gradients",
+  journal = "BIT",
+  volume = "29",
+  pages = "635--657",
+  year = "1980"
+}
+
+@article {dutto93effect, 
+  author = "L.C. Dutto", 
+  text = "The effect of reordering on preconditioned {GMRES} algorithm, for solving the compressible {N}avier-{S}tokes equations",
+  journal = "Intl. J. Num. Meth. Engrg.",
+  volume = "36",
+  pages = "457--497",
+  year = "1993"
+}
+
+@article{ benzi96sparse,
+    author = "M. Benzi and C.D. Meyer and M. Tuma",
+    title = "A Sparse Approximate Inverse Preconditioner for the Conjugate Gradient Method",
+    journal = "SIAM Journal on Scientific Computing",
+    volume = "17",
+    number = "5",
+    pages = "1135--1149",
+    year = "1996"
+}
+
+@article{ benzi98sparse,
+    author = "M. Benzi and M. Tuma",
+    title = "A Sparse Approximate Inverse Preconditioner for Nonsymmetric Linear Systems",
+    journal = "SIAM Journal on Scientific Computing",
+    volume = "19",
+    number = "3",
+    pages = "968--994",
+    year = "1998"
+}
+
+@techreport{ zhang98sparse,
+  author = "J. Zhang",
+  title = "A sparse approximate inverse technique for parallel preconditioning of general sparse matrices",
+  institution = "Department of Computer Science, University of Kentucky, Lexington, KY",
+  number = "281-98",
+  year = "1998" 
+}
+
+@article{ chow00priory,
+  author = "E. Chow",
+  title = "A priory sparsity patterns for parallel sparse approximate inverse preconditioners",
+  journal = "SIAM Journal on Scientific Computing",
+  volume = "21",
+  pages = "1804--1822",
+  year = "2000" 
+}
+
+@techreport {sala01parallel,
+  author = "M. Sala and L. Formaggia",
+  title =  "Parallel {S}chur and {S}chwarz
+    based preconditioners and agglomeration coarse corrections for {CFD}
+    problems",
+  institution = "DMA-EPFL",
+  number = "15",
+  year = "2001"
+}
+
+@article{ bastin99multidimensional,
+  author = "J. Bastin and G. Rog\'e",
+  title = "A multidimensional fluctuation splitting scheme for the three dimensional
+    {E}uler equations",
+  journal = "Mathematical Modelling and  Numerical Analysis",
+  pages = "1241--1259",
+  volume = "33",
+  number = "6",
+  year = "1999" 
+}
+
+@article{ chow97experimental,
+  author = "E. Chow and Y. Saad",
+  title = "Experimental study of {ILU} preconditioners of indenite matrices",
+  journal = "J. Comput. Appl. Math.",
+  pages = "387--414",
+  volume = "86",
+  year = "1997" 
+}
+
+@article{ benzi99orderings,
+    author = "M. Benzi and D.B. Szyld and A. van Duin",
+    title = "Orderings for Incomplete Factorization Preconditioning of Nonsymmetric Problems",
+    journal = "SIAM Journal on Scientific Computing",
+    volume = "20",
+    number = "5",
+    pages = "1652--1670",
+    year = "1999"
+}
+
+@article {bank99incomplete,
+  author = "R. Bank and R. Kent Smith",
+  title = "The incomplete factorization multigraph algorithm",
+  journal = "SIAM Journal on Scientific Computing",
+  volume = "20",
+  number = "4",
+  pages = "1349--1364",
+  year = "1999"
+}
+
+@inproceedings{ fletcher76conjugate,
+    author = "R. Fletcher",
+    title = "Conjugate gradient methods for indefinite systems",
+    booktitle = "Lecture Notes in Mathematics",
+    editor = "G. A. Watson",
+    volume = "506",
+    publisher = "Springer-Verlag",
+    address = "Berlin",
+    pages = "73--89",
+    year = "1976"
+}
+
+@article {saad93flexible,
+  author = "Y. Saad",
+  title = "A Flexible Inner-Outer Preconditioned {GMRES} Algorithm",
+  journal = "SIAM Journal on Scientific Computing",
+  volume = "14",
+  issue = "2",
+  pages = "461--469",
+  year = "1993"
+}
+
+@article{ vorst94gmresr,
+  author = "H. {Van der Vorst} and C. Vuik",
+  title = "{GMRESR}: a family of nested {GMRES} methods",
+  journal = "Numer. Linear Algebra Appl.",
+  volume = "1",
+  pages = "369--386",
+  year = "1994" 
+}
+
+@article{ sonneveld89fast, 
+  author = "P. Sonneveld", 
+  title = "{CGS}, a fast {L}anczos-type solver for nonsymmetric linear systems", 
+  journal = "SIAM Journal on Scientific and Statistical Computing", 
+  volume = "10", pages = "36--52",
+  year = "1989" }
+
+@article {freund91quasi,
+  author = "R.W. Freund and N.M. Nachtigal",
+  title = "{QMR}: a quasi-minimal residual method for non-{H}ermitian linear systems.",
+  journal = "Numeriske Mathematik",
+  pages = "315--339",
+  volume = "60",
+  year = "1991"
+}
+
+@article {chow97approximate,
+  author = "E. Chow and Y. Saad",
+  title = "Approximate Inverse Techniques for Block-Partitioned Matrices", 
+  journal = "SIAM Journal on Scientific Computing",
+  volume = "18",
+  number = "6",
+  pages = "1657-1675",
+  year = "1997"
+}
+
+@article {chan98preserving,
+  author = "T.F. Chan and E. Chow, Y. Saad and M.C. Yeung",
+  title = "Preserving Symmetry in Preconditioned {K}rylov Subspace Methods",
+  journal = "SIAM Journal on Scientific Computing",
+  volume = "20",
+  number = "2",
+  pages = "568--581",
+  year = "1998"
+}
+
+@article {heise98efficiency,
+  author = "B. Heise and M. Jung",
+  title = "Efficiency, Scalability, and Robustness of Parallel Multilevel Methods for Nonlinear Partial Differential Equations",
+  journal = "SIAM Journal on Scientific Computing",
+  volume = "20",
+  number = "2",
+  pages = "553--567",
+  year = "1998"
+}
+    
+@techreport{ karypis97parmetis,
+  author = "G. Karypis and V. Kumar",
+  title = "{ParMETIS}: Parallel graph partitioning and sparse matrix ordering library",
+  institution = "Department of Computer Science, University of Minnesota",
+  number = "97-060",
+  year = "1997" 
+}
+
+@techreport{ SPARSKIT,
+    author = "Y. Saad",
+    title = "{SPARSKIT}: {A} basic tool kit for sparse matrix computations",
+    number = "90-20",
+    institution = "NASA Ames Research Center, Moffett Field, CA",
+    year = "1990"
+}
+
+@misc{ saad98domain,
+  author = "Y. Saad and M. Sosonkina and J. Zhang",
+  title = "Domain decomposition and multi-level type techniques for general sparse
+    linear systems",
+  text = "Y. SAAD, M. SOSONKINA, AND J. ZHANG, Domain decomposition and multi-level
+    type techniques for general sparse linear systems, in Domain Decomposition
+    Methods 10, J. Mandel, C. Farhat, and X. Cai, eds., no. 218 in Contemporary
+    Mathematics, Providence, RI, 1998, AMS, pp. 174--190.",
+  year = "1998" }
+  
+@inproceedings{ gropp97parallel,
+  author = "W.D. Gropp and D.E. Keyes and L. McInnes and M. Tidriri",
+  title = "Parallel Implicit {PDE} Computations: Algorithms and Software",
+  text = "W. D. Gropp, D. E. Keyes, L. C. McInnes, and M. D. Tidriri, 1997, Parallel
+    Implicit PDE Computations: Algorithms and Software,inParallel Computational
+    Fluid Dynamics '97 (Proceedings of Parallel {CFD}'97, Manchester, 1997), A.
+    Ecer, D. Emerson, J. Periaux, and N Satofuka, eds., Elsevier, pp. 333--334.",
+  journal = "Proceedings of Parallel CFD'97, Manchester",
+  publisher = "Elsevier",
+  pages = "333--334",
+  year = "1997" }
+
+@article{ wd00globalized,
+  author = "W.D. Gropp, D.E. Keyes, L.C. McInnes and M.D. Tidriri",
+  title = "Globalized {N}ewton--{K}rylov--{S}chwarz algorithms and software for parallel
+    implicit {CFD}",
+  journal = "Int. J. High. Perfor. Comput. Appl.",
+  volume = "14",
+  pages = "102--136",
+  year = "2000" }
+
+@article{ saad99iterative,
+  author = "Y. Saad and H. {van der Vorst}",
+  title = "Iterative solution of linear systems in the 20-th century",
+  journal = "J. Comp. Appl. Math.",
+  pages = "1-33",
+  year = "2000" 
+}   
+
+
+@article{ hestenes52method,
+  author = "M. Hestenes and E. Steifel",
+  title = "Method of Conjugate Gradients for solving Linear Systems",
+  journal = "Journal of Research",
+  volume = "20",
+  pages = "409--436",
+  year = "1952",
+}
+
+@article{ keyes87comparison,
+    author = "D.E. Keyes and W.D. Gropp",
+    title = "A comparison of domain decomposition techniques for elliptic partial differential equations and their parallel implementation",
+    journal = "SIAM Journal on Scientific and Statistical Computing",
+    volume = "8",
+    number = "2",
+    pages = "S166--S202",
+    year = "1987"
+}
+
+
+@InCollection{chan97approximate,
+  author = 	 {T.F. Chan and H. {van der Vorst}},
+  title = 	 {Approximate and Incomplete Factorizations},
+  booktitle = 	 {Parallel Numerical Algorithms},
+  OPTcrossref =  {},
+  OPTkey = 	 {},
+  pages = 	 {167--202},
+  publisher = {Kluwer, Dordrecht},
+  year = 	 {1997},
+  editor = 	 {D.E. Keyes and A. Sameh and V. Venkatakrishnan},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  series = 	 {ICASE/LaRC Interdisciplinary Series in Science and Engineering},
+  OPTtype = 	 {},
+  OPTchapter = 	 {},
+  OPTaddress = 	 {},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@article{ gropp00globalized,
+  author = "W.D. Gropp and L. McInnes and M. Tidriri and D.E. Keyes",
+  title =  "Globalized {N}ewton--{K}rylov--{S}chwarz algorithms and software for parallel implicit {CFD}",
+  journal = "The International Journal of High Performance Computing Applications",
+  volume = "14",
+  number = "2",
+  pages = "102--136",
+  year = "2000"
+}
+
+@inproceedings {cai97newton,
+  author = "X.-C. Cai and D.E. Keyes and V. Venkatakrishnan",
+  title =  "{N}ewton-{K}rylov-{S}chwarz: an Implicit Solver for {CFD}",
+  booktitle = "Proceedings of the Eight International Conference on Domain Decomposition Methods",
+  editor = "R. Glowinski et al.",
+  pages = "387--400",
+year = "1997"
+}
+
+@article{ gropp01highperformance,
+    author = "W.D. Gropp and D.K. Kaushik and D.E. Keyes and B.F. Smith",
+    title = "High-performance parallel implicit {CFD}",
+    journal = "Parallel Computing",
+    volume = "27",
+    number = "4",
+    pages = "337-362",
+    year = "2001"
+}
+
+@article { kelley98convergence,
+  author =  "C.T. Kelley and D.E. Keyes",
+  title = "Convergence analysis of pseudo-transient continuation",
+  journal = "{SIAM} Journal on Numerical Analysis",
+  volume = "35",
+  number = "2",
+  pages = "508--523",
+  year = "1998"
+}
+
+@article { cai95use,
+  author = "X.-C. Cai",
+  title  = "The use of pointwise interpolation in domain decomposition methods with non-nested meshes",
+  journal = "SIAM Journal on  Scientific Computing",
+  volume  = "16",
+  pages   = "250--256",
+  year    = "1995"
+}
+
+@article { chan99boundary,
+  author = "T.F. Chan and S. Go and J. Zou",
+  title  = "Boundary treatments for multilevel methods on unstructured meshes",
+  journal = "SIAM Journal on  Scientific Computing",
+  volume  = "21",
+  number  = "1",
+  pages   = "46--66",
+  year    = "1999"
+}
+
+@article { chan96convergence,
+  author = "T.F. Chan and J. Zou",
+  title  = "A convergence theory of multilevel additive {S}chwarz methods on unstructured grids",
+  journal = "Numer. Algorithms",
+  volume  = "13",
+  pages   = "365--398",
+  year    = "1996"
+}
+
+@inbook { quarteroni01modeling,
+  author = "A. Quarteroni",
+  title = "Modeling the cardiovascular system: a mathematical challenge", 
+  volume = "Mathematics Unlimited - 2001 and Beyond (B. Engquist and W. Schmid Eds)", 
+  pages = "961--972", 
+  publisher  = "Springer-Verlag", 
+  year = "2001"
+}
+
+@inbook {quarteroni02mathematical,
+  author = "A. Quarteroni and L. Formaggia", 
+  title = "Mathematical Modelling and Numerical Simulation of the Cardiovascular System",
+  volume = "Modelling of Living Systems, Handbook of Numerical Analysis Series (P.G. Ciarlet and J.L. Lions Eds.) (to appear)",
+  year = "2002"
+}
+
+@article{ karypis98fast,
+  author = "G. Karypis and V. Kumar",
+  title = "A {F}ast and {H}igh {Q}uality {M}ultilevel {S}cheme for {P}artitioning {I}rregular {G}raphs",
+  journal = "SIAM Journal on Scientific Computing",
+  volume = "20",
+  number = "1",
+  pages = "359--392",
+  year = "1998"
+}
+
+@TECHREPORT{jenkins00aggregation,
+  AUTHOR       = "L. Jenkins and T. Kelley and C.T. Miller and
+                  C.E. Kees",
+  TITLE        = "An Aggregation-based Domain Decomposition
+                  Preconditioner for Groundwater Flow",
+  INSTITUTION  = "Department of Mathematics, North Carolina State
+                  University",
+  YEAR         = 2000,
+  NUMBER       = "TR00--13"
+}
+
+@book{hockney88parallel,
+  author = "R.W. Hockney and C.R. Jesshope",
+  title = "Parallel Computers 2",
+  publisher = "Adam Hilger Ltd",
+  year = "1988",
+  address = "Bristol"
+}
+
+@article { leyland00completely,
+  author = "P. Leyland and R. Richter",
+  title  = "Completely Parallel Compressible Flow Simulations using Adaptive Unstructured Meshes",
+  journal = "Computer Methods in Applied Mechanics and Engineering",
+  volume  = "184",
+  pages   = "467--483",
+  year    = "2000"
+}
+
+@techreport {mavriplis98three,
+  author = "D.J. Mavriplis",
+  title  = "Three-dimension high-lift analysis using a parallel unstructured multigrid solver",
+  institution = "ICASE",
+  year = "1998",
+  number = "TR-98-20"
+}
+
+@Book{ortega88introduction,
+  author =       "J. Ortega",
+  title =    {Introduction to Parallel and Vector Solution of Linear
+                 Systems},
+  publisher =    "Plenum Press",
+  address = "New York",
+  year =         "1988",
+}
+
+@article{strohmaier99marketplace,
+  author = "E. Strohmaier and J.J. Dongarra and H.W. Meuer and H.D. Simon",
+  title = "The marketplace of high-performance computing",
+  journal = "Parallel Computing",
+  pages = "1517--1544",
+  volume = "25",
+  year = "1999"
+}
+
+@article{womble99massively,
+  author = "D.E. Womble and S.S. Dosanjh and B. Hendrickson and M.A. Heroux and S.J. Plimpton and J.L. Tomkins and D.S. Greenberg",
+  title =  "Massively parallel computing: a {S}andia perspective",
+  journal = "Parallel Computing",
+  pages = "1853--1876",
+  volume = "25",
+  year = "1999"
+}
+
+
+@article{ PVMPI,
+    author = "G. Fagg and J. Dongarra",
+    title = "{PVMPI}: An Integration of {PVM} and {MPI} Systems",
+    journal = "Calculateurs Parall{\`e}les",
+    volume = "8",
+    number = "2",
+    pages = "151--166",
+    year = "1996",
+    url = "citeseer.nj.nec.com/fagg96pvmpi.html" 
+}
+
+@article {annamalai99adaptive,
+  author = "V. Annamalai and C.S. Krishnamoorthy and V. Kamakoti",
+  title = "Adaptive finite element analysis on a parallel and distributed environment",
+  journal = "Parallel Computing",
+  volume = "25",
+  issue = "4",
+  pages = "1413--1434",
+  year = "1999"
+}
+
+@article {golub89some,
+  title = "Some history of the conjugate gradient algorithm and {L}anczos algorithms",
+  author = "G.H. Golub and D.P. O'Leary",
+  journal = "{SIAM} {R}eview",
+  pages = "31--50",
+  volume = "102",
+  year = "1989"
+}
+
+@inproceedings {lanczos52chebyshev,
+  title = "{C}hebyshev polynomials in the solution of large-scale linear problems",
+  author = "C. Lanczos",
+  pages = "123--133",
+  booktitle = "Proceedings of the {ACM}",
+  year = "1952"
+}
+
+@article{ hughes83element,
+  author = "T.J.R. Hughes and I. Levit and J. Winget",
+  title = "An element-by-element solution algorithm for problems of structural and solid mechanics",
+  journal = "J. Comp. Methods in Appl. Mech. Eng.",
+  pages = "241--254",
+  volume = "36",
+  jear = "1983"
+}
+
+@phdthesis {gijzen94iterative,
+  author = "M.B. van Gijzen",
+  title = "Iterative Solution Methods for linear equations in finite element computations",
+  school = "Delft University of Technologu, Delft, the Netherlands",
+  year = "1994"
+}
+
+@article{haynsworth68schur,
+  author = "E. Haynsworth",
+  title = "On the {S}chur complement",
+  journal = "Basel Math. Notes",
+  volume = "20",
+  year = "1968"
+}
+
+@article{wang99some,
+  author = "B.-Y. Wang and X. Zhang and F. Zhang",
+  title = "Some inequalities on generalized {S}chur complements",
+  journal = "Linear Algebra and its Applications",
+  volume = "302/303",
+  pages = "163--172",
+  year = "1999"
+}
+
+@article{li00extremal,
+  author = "C.-K. Li and R. Mathias",
+  title = "Extremal characterisations of the {S}chur complement and Resulting Inequalities",
+  journal = "{SIAM} {R}eview",
+  volume = "42",
+  number = "2",
+  pages = "233--246",
+  year = "2000"
+}
+
+@article {gould98sparse, 
+  title = "Sparse Approximate-Inverse Preconditioners Using Norm-Minimization Techniques",
+  author = "N. Gould and J. Scott",
+  journal = "{SIAM} Journal on Scientific Computing",
+  volume = "19",
+  number = "2",
+  pages = " 605--625",
+  year = "1998"
+}
+
+@article{ grote97parallel,
+    author = "M.J. Grote and T. Huckle",
+    title = "Parallel Preconditioning with Sparse Approximate Inverses",
+    journal = "SIAM Journal on Scientific Computing",
+    volume = "18",
+    number = "3",
+    pages = "838--853",
+    year = "1997"
+}
+
+
+@article {MR97h:65135,
+    AUTHOR = {T.F. Chan. and B.F. Smith and J. Zou},
+     TITLE = {Overlapping {S}chwarz methods on unstructured meshes using
+              non-matching coarse grids},
+   JOURNAL = {Numerische Mathematik},
+    VOLUME = {73},
+      YEAR = {1996},
+    NUMBER = {2},
+     PAGES = {149--167},
+      ISSN = {0029-599X},
+     CODEN = {NUMMA7},
+   MRCLASS = {65N30},
+  MRNUMBER = {97h:65135},
+MRREVIEWER = {Jan Mandel},
+}
+
+
+@inproceedings {tuminaro00parallel,
+  author    = "R.S. Tuminaro and C. Tong",
+  title     = " Parallel Smoothed Aggregation Multigrid: Aggregation Strategies on Massively Parallel Machines",
+  booktitle = "SuperComputing 2000 Proceedings",
+  editor    = "J. Donnelley",
+  year      = "2000"
+}
+
+@article {MandelTezaur,
+  author = " J. Mandel and R. Tezaur",
+  title = "Convergence of
+  substructuring method with Lagrange multipliers",
+  JOURNAL = {Numerische Mathematik},
+  volume = "73",
+  pages = "473--487",
+  year = "1996"
+}
+
+@ARTICLE{Smith92, 
+  AUTHOR       = "B.F. Smith",
+  TITLE        = "An Optimal  Domain Decomposition Preconditioner for
+		  the Finite Element Solution of Linear Elasticity
+		  Problems",
+  JOURNAL      = "{SIAM} Journal on Scientific and Statistical Computing",
+  YEAR         = 1992, 
+  VOLUME       = 13,
+  NUMBER       = 1,
+  PAGES        = "364--378"
+}
+
+@ARTICLE{BramblePS,
+  AUTHOR       = "J.H. Bramble and J.E. Pasciak and A.H. Schatz", 
+  TITLE        = "The construction of preconditioners for elliptic
+		  problems by substructuring, {I}",
+  JOURNAL      = "Mathematics of  Computation",
+  YEAR         = 1986,
+  VOLUME       = 47,
+  NUMBER       = 175,
+  PAGES        = "103--134"
+}
+
+@article {AxelssonLarin,
+  author = "O. Axelsson and M. Larin",
+  title = "An algebraic
+  multilevel iteration method for finite element matrices",
+  journal = "Journal
+    of Computational and Applied Mathematics",
+  volume = "89",
+  pages = "135--153", 
+  year = "1997"
+}
+
+@ARTICLE{MandelBerzina96balancing,
+   AUTHOR       = "J. Mandel and M. Brezina",
+   TITLE        = "Balancing {D}omain {D}ecomposition for {P}roblems with 
+                   {L}arge {J}umps in {C}oefficients",
+   JOURNAL      = "Mathematics of  Computation",
+   VOLUME       = 65,
+   PAGES        = "1387--1401",
+   YEAR         = 1996
+}
+
+@ARTICLE{Farhat:2001:FDP,
+  AUTHOR       = "C. Farhat and M. Lesoinne and P. Le Tallec 
+                  and K. Pierson and D. Rixen",
+  TITLE        = "{FETI-DP}: {A} Dual-Primal Unified {FETI} Method --
+                  Part {I}: A Faster Alternative to the Two-Level
+                  {FETI} Method.",
+  JOURNAL      = "Int.\ J.\ Numer.\ Meth.\ Engng.",
+  VOLUME       = 50,
+  PAGES        = "1523--1544",
+  YEAR         = 2001
+}
+
+@ARTICLE{Dryja:1994:SAI,
+  AUTHOR       = "M. Dryja and B.F. Smith and O.B. Widlund",
+  TITLE        = "{S}chwarz Analysis of Iterative Substructuring Algorithms
+                  for Elliptic Problems in Three Dimensions",
+  YEAR         = 1994,
+  PAGES        = "1662--1694",
+  VOLUME       = 31,
+  NUMBER       = 6,
+  JOURNAL      = "SIAM Jounrnal on  Numerical Analysis"
+}
+
+@article {schwarz70,
+  author = "H.-A. Schwarz",
+  title = {{U}ber einen {G}renz\"ubergang durch alternierendes {V}erfahren.},
+  journal = {{V}ierteljahrsschrift der {N}aturforschenden {G}esellschaft in {Z}\"urich},
+  volume = "15",
+  pages = "272--286",
+  year = "1870"
+}
+
+@phdthesis{issman_thesis,
+           AUTHOR="E. Issman",
+           TITLE="{Implicit Solution Strategies for Compressible Flow
+                  Equations on Unstructured Grids}",
+           SCHOOL="Universit\'{e} Libre de Bruxelles",
+           YEAR="1997",
+           ADDRESS = "Belgium"
+}
+
+
+@phdthesis{weide_thesis,
+           AUTHOR="E. van der Weide",
+           TITLE="Compressible Flow Simulations on Unstructured Grids using Multi-Dimensional Upwind Schemes",
+           SCHOOL="Universit\'{e} Libre de Bruxelles",
+           YEAR="1998",
+           ADDRESS = "Belgium"
+}
+
+@article {VISUAL3,
+  author = "R. Haimes",
+  title = "{V}isual3: Interactive Unsteady Unstructured {3D} Visualisation",
+  journal = "AIAA  Paper",
+  volume = "91--0794",
+  year ="1991"
+}
+
+@ARTICLE{Amestoy:2001:FAM,
+  AUTHOR       = "P.R. Amestoy and I.S. Duff and
+                  J.Y. L'Excellent and J. Koster",
+  TITLE        = "A fully asynchronous multifrontal solver using
+                  distributed dynamic scheduling",
+  JOURNAL      = "SIAM Journal on Matrix Analysis and Applications",
+  YEAR         = 2001,
+  VOLUME       = 23,
+  NUMBER       = 1,
+  PAGES        = "15-41"
+}
+
+@conference{barth96lecture,
+  author = "T.J. Barth",
+  title = "Aspects of unstructured grids and finite-volume solvers for the {E}uler and {N}avier-{S}tokes equations",
+  booktitle = "VKI LS 1994-05, Computational Fluid Dynamics",
+  year = "1994"
+}
+
+@Article{saad85practical,
+  author = 	 {Y. Saad},
+  title = 	 {Practical use of Polynomial Preconditioning for the {CG} method},
+  journal = 	 {{SIAM} J. Sci. Stat. Comput.},
+  year = 	 {1985},
+  volume = 	 {6},
+  pages = 	 {865--882},
+}
+
+@Article{karypis99parallel,
+  author = 	 {G. Karypis and V. Kumar},
+  title = 	 {Parallel Multilevel k-way Partitioning Scheme for Irregular Graphs},
+  journal = 	 {{SIAM} {R}eview},
+  year = 	 {1999},
+  volume = 	 {41},
+  number = 	 {2},
+  pages = 	 {278--300},
+}
+
+@article{morgan99parallel,
+  author = 	 {K. Morgan and N.-P. Weatherill and O. Hassan and P.-J. Brookes and R. Raid and J. Jones},
+  title = 	 {A Parallel framework for multidisciplinary aerospace engineering simulations using unstructured meshes},
+  journal = 	 {International Journal for Numerical Methods in Fluids},
+  year = 	 {1999},
+  volume = 	 {31},
+  pages = 	 {159--173},
+}
+
+@article{weatherill99aerospace,
+  author = 	 {N.-P. Weatherill and O. Hassan and K. Morgan and J.-W. Jones and B.-G. Larwood and K. Sorenson},
+  title = 	 {Aerospace simulations on parallel computers using unstructured grids},
+  journal = 	 {International Journal for Numerical Methods in Fluids},
+  year = 	 {1999},
+  volume = 	 {40},
+  pages = 	 {171--187},
+}
+
+@inproceedings{deroeck91analysis,
+  author = "Y.-H. De Roeck and P. Le Tallec",
+  title = "Analisys and test of a local domain decomposition",
+  booktitle = "Fourth International symposium on Domain Decomposition Methods for Partial differential Equations",
+  editor = "R. Glowinsky and Y.-A. Kuznetsov and G.-A. Meurant and J. P\'eriaux and O.-B. Widlund",
+  publisher = "SIAM, Philadelphia",
+  pages = "112--128",
+  year = "1991"
+}
+
+@article{mandel93balancing,
+  author = "J. Mandel", 
+  title = "Balancing domain decomposition",
+  journal = "Comm. Appl. Numer. Methods",
+  volume = "9",
+  pages = "233--241",
+  year = "1993"
+}
+
+
+@BOOK{DDeleven,
+  BOOKTITLE    = "Eleventh International Conference on Domain
+                  Decomposition Methods",
+  YEAR         = 1999,
+  EDITOR       = "C.-H. Lai and P. E. Bj{\o}rstad and M.
+                  Cross and O. B. Widlund",
+  PUBLISHER    = "Domain Decomposition Press",
+  ADDRESS      = "Bergen"
+}
+
+@BOOK{DDten,
+  BOOKTITLE    = "Domain Decomposition Methods 10",
+  YEAR         = 1998,
+  EDITOR       = "J. Mandel and C Farhat and X.C. Cai",
+  ORGANIZATION = "AMS",
+  NOTE         = "Proceedings from the Tenth International
+                  Conference, June 1997,
+                  Boulder, Colorado"
+}
+
+@BOOK{DDseven,
+  YEAR         = 1995,
+  BOOKTITLE    = "Seventh International Conference of Domain Decomposition 
+                  Methods in Scientific and Engineering Computing",
+  EDITOR       = "D. E. Keyes and  and J. Xu",
+  PUBLISHER    = "AMS",
+  ADDRESS      = "Providence, RI",
+}
+
+@BOOK{DDsix,
+  BOOKTITLE    = "Domain Decomposition Methods in Science and Engineering:
+                  The Sixth International Conference on Domain
+		  Decomposition",
+  NOTE         = "Held in Como, Italy, June 15--19,1992",
+  VOLUME       = 157,
+  EDITOR       = "A. Quarteroni and Y. A. Kuznetsov and J.
+		  P{\'e}riaux and O. B. Widlund",
+  YEAR         = 1994,
+  SERIES       = "Contemporary Mathematics",
+  PUBLISHER    = "AMS",
+}
+
+@BOOK{DDfive,
+  EDITOR       = "D. E. Keyes and T. F. Chan and G. A. Meurant
+                  and J. S. Scroggs and R. G. Voigt",
+  BOOKTITLE    = "Fifth International Symposium on Domain Decomposition 
+                  Methods for Partial Differential Equations", 
+  PUBLISHER    = "SIAM", 
+  YEAR         = 1992,
+  ADDRESS      = "Philadelphia, PA",
+}
+
+@BOOK{DDfour,
+  BOOKTITLE    = "Fourth International Symposium on Domain Decomposition 
+                  Methods for Partial Differential Equations",
+  YEAR         = 1991,
+  EDITOR       = "R. Glowinski and Y. A. Kuznetsov and G. 
+                  A. Meurant and J. P{\'e}riaux and O. B. Widlund",
+  PUBLISHER    = "SIAM",
+  ADDRESS      = "Philadelphia, PA",
+  NOTE         = "Proceedings from the fourth international symposium
+		  on domain decomposition, Moscow May 1990",
+  URL          = "http://www.ii.uib.no/~petter/reports/moscow_siam.ps.gz"
+}
+
+@BOOK{DDthree,
+  YEAR         = 1990,
+  EDITOR       = "T. F. Chan and R. Glowinski and J. P{\'e}riaux and
+                  O. Widlund",
+  BOOKTITLE    = "Third International Symposium on Domain
+                  Decomposition Methods for Partial Differential Equations",
+  PUBLISHER    = "SIAM, Philadelphia, PA",
+}
+
+@BOOK{DDone,
+  BOOKTITLE    = "{F}irst {I}nternational {S}ymposium on {D}omain 
+                  {D}ecomposition {M}ethods for {P}artial {D}ifferential 
+                  {E}quations",
+  YEAR         = 1988,
+  EDITOR       = "R. Glowinski and G. H. Golub and G.
+		  A. Meurant and J. P{\'e}riaux",
+  PUBLISHER    = "SIAM",
+  ADDRESS      = "Philadelphia, PA"
+}
+
+@article{axelsson91black,
+  author = "O. Axelsson and P.S. Vassilevski",
+  title = "A black box generalized conjugate gradient solver with inner iterations and variable-step preconditioner",
+  journal = "SIAM Journal on Matrix Analysis and Applications",
+  number = "12",
+  volume = "4",
+  pages = "625--644",
+  year = "1991"
+}
+
+@Article{arnoldi51principle,
+  author = 	 {W.E. Arnoldi},
+  title = 	 {The principle of minimized iteration in the solution of the matrix eigenproblem},
+  journal = 	 {Quart. Appl. Math.},
+  year = 	 {1951},
+  volume = 	 {9},
+  pages = 	 {17--29},
+}
+
+@Article{brandt86algebraic,
+  author = 	 {A. Brandt},
+  title = 	 {Algebraic Multigrid: the symmetric case},
+  journal = 	 {Appl. Math. Comp.},
+  year = 	 {1986},
+  volume = 	 {19},
+  pages = 	 {23--56},
+}
+
+@InCollection{rube85efficient,
+  author = 	 {J.W. Rube and K. St\"uben},
+  title = 	 {Efficient solution of finite difference and finite element equations by algebraic multigrid ({AMG})},
+  booktitle = 	 {Multigrid Methods for Integral and Differential Equations, The Institute of Mathematics and its Application Conference Series},
+  pages = 	 {169--212},
+  publisher = {Claredon Press, Oxford},
+  year = 	 {1985},
+  editor = 	 {D. J. Paddon and H. Holstein},
+  series = 	 {3},
+}
+
+@article{stuben01review,
+ author = {K. Stüben},
+ title = {A review of algebraic multigrid},
+ journal = {Journal of Computational and Applied Mathematics},
+ volume = {128},
+ number = {1-2},
+ year = {2001},
+ issn = {0377-0427},
+ pages = {281--309},
+ publisher = {Elsevier Science Publishers B. V.},
+}
+
+@Article{mavriplis02assessment,
+  author = 	 {D.J. Mavriplis},
+  title = 	 {An Assessment of Linear versus Non-Linear Multigrid Methods for Unstructured Mesh Solvers},
+  journal = 	 {Journal of Computational Physics},
+  year = 	 {2002},
+  volume = 	 {175},
+  pages = 	 {302--325},
+}
+
+@BOOK{hackbusch94iterative,
+  AUTHOR       = "W. Hackbusch",
+  TITLE        = "Iterative Solution of Large Sparse Linear Systems of
+		  Equations",
+  YEAR         = 1994,
+  PUBLISHER    = "Springer-Verlag",
+  ADDRESS      = "Berlin"
+}
+
+@BOOK{wesseling92introduction,
+  AUTHOR       = "P. Wesseling",
+  TITLE        = "An Introduction To Multigrid Methods",
+  PUBLISHER    = "Wiley",
+  ADDRESS      = "New York",
+  YEAR         = 1992
+}
+
+@Article{brezina00algebraic,
+  author = 	 {M. Brezina and A.J. Cleary and R.D. Falgout and V.E. Henson and J.E. Jones and T.A. Manteuffel and S.F. McCormick and J.W. Ruge},
+  title = 	 {Algebraic Multigrid Based on Element Interpolation ({AMG}e)},
+  journal = 	 {SIAM Journal on Scientific Computing},
+  year = 	 {2000},
+  volume = 	 {22},
+  number = 	 {5},
+  pages = 	 {1570-1592},
+}
+
+@article{ benzi99comparative,
+    author = "M. Benzi and M. Tuma",
+    title = "A comparative study of sparse approximate inverse preconditioners",
+    journal = "Applied Numerical Mathematics: Transactions of IMACS",
+    volume = "30",
+    number = "2--3",
+    pages = "305--340",
+    year = "1999",
+    url = "citeseer.nj.nec.com/benzi98comparative.html" 
+}
+@Article{clearly00robustness,
+  author = 	 {A.J. Cleary and R.D. Falgout and v.E. Henson and J.E. Jones and T.A. Manteuffel and S.F. McCormick and G.N. Miranda and J.W. Ruge},
+  title = 	 {Robustness and Scalability of Algebraic Multigrid},
+  journal = 	 {SIAM Journal on Scientific Computing},
+  year = 	 {2000},
+  volume = 	 {22},
+  number = 	 {5},
+  pages = 	 {1886--1908},
+}
+
+@TECHREPORT{Lasser:2000:ODD,
+  AUTHOR       = "C. Lasser and A. Toselli",
+  TITLE        = "An overlapping domain decomposition
+                  preconditioner for a class of
+                  discontinuous {G}alerkin approximations of
+                  advection-diffusion problems",
+  INSTITUTION  = "Dept. of Computer Science, Courant
+                  Institute",
+  YEAR         = 2000,
+  NUMBER       = 810,
+  NOTE         = "To appear in  Mathematics of Computation."
+}
+
+@ARTICLE{Cai:1999:RAS,
+  AUTHOR       = "X.-C. Cai and M. Sarkis",
+  TITLE        = "A restricted additive {S}chwarz preconditioner for
+                  general sparse linear systems",
+  JOURNAL      = "SIAM Journal on Scientific Computing",
+  YEAR         = 1999,
+  VOLUME       = 21,
+  PAGES        = "239--247"
+}
+
+@ARTICLE{Frommer:2001:RAS,
+  AUTHOR       = "A. Frommer and D.B. Szyld",
+  TITLE        = "An Algebraic Convergence Theory for Restricted
+                  Additive {S}chwarz Methods Using Weighted Max Norms",
+  JOURNAL      = "SIAM Journal on Numerical Analysis",
+  YEAR         = 2001,
+  VOLUME       = 39,
+  PAGES        = "463--479",
+}
+
+@INPROCEEDINGS{Dryja:1990:TUT,
+  AUTHOR       = "M. Dryja and O.B. Widlund",
+  TITLE        = "Towards a Unified Theory of Domain Decomposition Algorithms
+                  for Elliptic Problems",
+  YEAR         = 1990,
+  EDITOR       = "T.F. Chan and R. Glowinski and J. P{\'e}riaux and
+                  O. Widlund",
+  BOOKTITLE    = "Third International Symposium on Domain
+                  Decomposition Methods for Partial Differential Equations",
+  PUBLISHER    = "SIAM, Philadelphia, PA",
+  PAGES        = "3--21"
+}
+
+@techreport{sidilkover95unification,
+        AUTHOR = "D. Sidilkover and P.L. Roe",
+        TITLE = "Unification of Some Advection Schemes in Two Dimensions",
+        INSTITUTION = "ICASE",
+        YEAR = "1995",
+        NUMBER = "95-10"
+        }
+
+@incollection{quarteroni03mathematical,
+  title=        "Mathematical Modelling and Visualisation of Complex Three-dimen
+sional Flows",
+  author=       "Alfio Quarteroni and Marzio Sala and M.L. Sawley and N. Parolin
+i and G. Cowles",
+  booktitle=    "{V}isualization and {M}athematics III",
+  editor=       "Hans-Christian Hege and Konrad Polthier",
+  publisher=    "Springer-Verlag",
+  address=      "Heidelberg",
+  year=         "2003",
+  pages=        "361--377"
+}
+
+
+@InCollection{sala02algebraic,
+  author = 	 {M. Sala and L. Formaggia},
+  title = 	 {Algebraic Coarse Grid Operators for Domain Decomposition Based
+Preconditioners},
+  booktitle = 	 {Parallel Computational Fluid Dynamics -- Practice and Theory},
+  OPTcrossref =  {},
+  OPTkey = 	 {},
+  pages = 	 {119--126},
+  publisher = {Elsevier Science},
+  year = 	 {2002},
+  editor = 	 {P. Wilders and A. Ecer and J. Periaux and
+N.  Satofuka and P. Fox},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  OPTtype = 	 {},
+  OPTchapter = 	 {},
+  address = 	 {The Netherlands},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{roe86discrete,
+  author = 	 {P.L. Roe},
+  title = 	 {Discrete Models for the numerical analysis of time-dependent multidimensional gas dynamics},
+  journal = 	 {Journal of Computational Physics},
+  year = 	 {1986},
+ volume = {63},
+ number = {2},
+ year = {1986},
+ issn = {0021-9991},
+ pages = {458--476},
+ publisher = {Academic Press Professional, Inc.},
+}
+
+@Article{lerat02residual,
+  author = 	 {A. Lerat and C. Corre},
+  title = 	 {Residual-based compact schemes for multidimensional hyperbolic systems of conservation laws},
+  journal = 	 {Computers and Fluids},
+  year = 	 {2002},
+  OPTkey = 	 {},
+  volume = 	 {31},
+  OPTnumber = 	 {},
+  pages = 	 {639--661},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+
+@techreport{ckk02,
+title = "Pseudo-Transient Continuation and Differential-Algebraic Equations",
+author = "T.S. Coffey and C.T. Kelly and D.E. Keyes",
+year = 2002,
+type = "Technical Report",
+institution = {ODU},
+url = "http://www.math.odu.edu/\~{ }keyes",
+note = "Submitted to the special issue of the SIAM Journal on Scientific Computing dedicated to papers from the 2002 Copper Mountain Conference on Iterative Methods"
+}
+
+@INPROCEEDINGS{KKS99,
+AUTHOR = "D.K. Kaushik and D.E. Keyes and B.F. Smith",
+TITLE = "{N}ewton-{K}rylov-{S}chwarz Methods for Aerodynamic Problems: Compressible and Incompressible Flows on Unstructured Grids",
+BOOKTITLE = "Proceedings of the 11th International Conference on Domain Decomposition Methods",
+EDITOR = "C.-H. Lai et al.",
+PUBLISHER = "Domain Decomposition Press, Bergen",
+YEAR = "1999",
+}
+
+@article{vanek01convergence,
+  author = "P. Vanek and M. Brezina and J. Mandel",
+  title  = "Convergence of Algebraic Multigrid Based on Smoothed Aggregation", 
+  journal = "Numerische Mathematik",
+  volume  = "88", 
+  pages   = "559--579", 
+  year    = "2001"
+}
+
+@Book{golub83matrix,
+  author = 	 {G.H. Golub and C.F. van Loan},
+  title = 	 {Matrix Computations},
+  publisher = 	 {The Johns Hopkins University Press},
+  year = 	 {1983},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  address = 	 {Baltimore, Maryland},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+
+@TechReport{lasser01convergence,
+  author = 	 {C. Lasser and A. Toselli},
+  title = 	 {Convergence of some two-level overlapping domain decomposition preconditioners with smoothed aggregation coarse spaces},
+  institution =  {Technische Universit\"at M\"unchen},
+  year = 	 {2001},
+  OPTkey = 	 {},
+  OPTtype = 	 {},
+  number = 	 {TUM-M0109},
+  OPTaddress = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{vanek99two,
+  author = 	 {P. Vanek and M. Brezina and R. Tezaur},
+  title = 	 {Two-grid Method for Linear Elasticity on Unstructured Meshes},
+  journal = 	 {SIAM Journal on Scientific Computing},
+  year = 	 {1999},
+  volume = 	 {21},
+  number = 	 {3},
+  pages = 	 {900--923},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{broeker01robust,
+  author = 	 {O. Broeker and M.J. Grote and C. Mayer and A. Reusken},
+  title = 	 {Robust Parallel Smoothing for Multigrid Via Sparse Approximate Inverses},
+  journal = 	 {SIAM Journal on Scientific Computing},
+  year = 	 {2001},
+  volume = 	 {23},
+  pages = 	 {1396--1417},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+ 
+@Article{adams00parallel,
+  author =   {M.F. Adams},
+  title =   {Parallel Multigrid Solvers for {3D} Unstructured Finite Element Problems in Large Deformation Elasticity and Plasticity},
+  journal =   {International Journal for Numerical Methods in Engineering},
+  year =   {2000},
+  volume =   {48},
+  number = {8},
+  pages = {1241-1262},
+}
+  
+
+@Book{leontief51structure,
+  author = 	 {W. Leontief},
+  ALTeditor = 	 {},
+  title = 	 {The structure of the American Economy},
+  publisher = 	 {Oxford University Press},
+  year = 	 {1951},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  address = 	 {New York},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{mandel83local,
+  author = 	 {J. Mandel and B. Sekerka},
+  title = 	 {A local convergence proof for the iterative aggregation method},
+  journal = 	 {Linear Algebra and its Applications},
+  year = 	 {1983},
+  OPTkey = 	 {},
+  volume = 	 {51},
+  OPTnumber = 	 {},
+  pages = 	 {163--172},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@PhdThesis{berzina97robust,
+  author = 	 {M. Brezina},
+  title = 	 {Robust iterative method on unstructured meshes},
+  school = 	 {University of Colorado at Denver},
+  year = 	 {1997},
+  OPTkey = 	 {},
+  OPTtype = 	 {},
+  OPTaddress = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@ARTICLE{Brezina:1999:BBI,
+  AUTHOR       = "M. Brezina and P. Van{\v e}k",
+  TITLE        = "A black--box iterative solver based on a
+                  two--level {S}chwarz method",
+  JOURNAL      = "Computing",
+  YEAR         = 1999,
+  VOLUME       = 63,
+  PAGES        = "233--263"
+}
+@ARTICLE{Dryja:1995:SMN,
+  AUTHOR       = "M. Dryja and O.B. Widlund",
+  TITLE        = "{S}chwarz Methods of {N}eumann-{N}eumann Type
+                  for Three-Dimensional Elliptic Finite Element Problems",
+  YEAR         = 1995,
+  MONTH        = "February", 
+  JOURNAL      = "Comm. Pure Appl. Math.",
+  VOLUME       = 48,
+  PAGES        = "121--155",
+  NUMBER       = 2
+}
+
+@TechReport{kees01versatile,
+  author = 	 {C.E. Kees and  C.T. Miller and E.W. Jenkins and C.T. Kelley},
+  title = 	 {VERSATILE MULTILEVEL {S}CHWARZ PRECONDITIONERS FOR MULTIPHASE FLOW},
+  institution =  {Center for Research in Scientific Computation, North Carolina State University},
+  year = 	 {2001},
+  OPTkey = 	 {},
+  OPTtype = 	 {},
+  number = 	 {CRSC-TR01-32},
+  OPTaddress = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Book{varga00matrix,
+  author = 	 {R. Varga},
+  title = 	 {Matrix Iterative Analysis, Second Edition},
+  publisher = 	 {Springer-Verlag},
+  year = 	 {2000},
+  address = 	 {Berlin}
+}
+
+
+@Article{saad96ilum,
+  author = 	 {Y. Saad},
+  title = 	 {{ILUM}: a multi-elimination {ILU} preconditioner for general sparse matrices},
+  journal = 	 {{SIAM} Journal on Scientific Computing},
+  year = 	 {1996},
+  OPTkey = 	 {},
+  volume = 	 {4},
+  number = 	 {17},
+  pages = 	 {830--847},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{saad99bilum,
+  author = 	 {Y. Saad and J. Zhang},
+  title = 	 {{BILUM}: Block versions of multi-elimination and multi-level {ILU} preconditioner for general sparse linear systems },
+  journal = 	 {{SIAM} Journal on Scientific Computing},
+  year = 	 {1999},
+  OPTkey = 	 {},
+  volume = 	 {20},
+  pages = 	 {2103--2121},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{saad02arms,
+  author = 	 {Y. Saad and B. Suchomel},
+  title = 	 {{ARMS}: an algebraic recursive multilevel solver for general sparse linear systems},
+  journal = 	 {Numer. Linear Algebra Appl.},
+  year = 	 {2002},
+  OPTkey = 	 {},
+  volume = 	 {5},
+  OPTnumber = 	 {},
+  pages = 	 {359--378},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@article{ hills:99,
+   author = {D.P. Hills},
+   title  = {Computational Mesh Adaptation},
+   journal= {Notes on numerical fluid mechanics},
+   volume = 69,
+   year   = 1999,
+   code   = {ETH-BIB  P 714 894: 69 } }
+
+@article{ ollivier:99,
+   author = {C.F. Ollivier-Gooch},
+   title  = {Robust Coarsening of Unstructured Meshes for Multigrid Methods},
+   journal= {AIAA  Paper},
+   year   = 1999,
+   code   = {} }
+
+@techreport{ carstens:88,
+   author = {V. Carstens},
+   title  = {Two-Dimensional Elliptic Grid Generation for Airfoils and Cascades},
+   institution = {DLR},
+   number      = {DFVLR-FB 88-52},
+   year        = {1988} }
+
+@inproceedings{ carstens:00}
+   author = {V. Carstens and B. Gr\"uber},
+   title  = {The Impact of Viscous Effects on the Aerodynamic Damping of Vibrating
+             Transonic Compressor Blades - A Numerical Study},
+   booktitle = {Proceedings of {TURBO EXPO'00}},
+   organisation = {ASM TURBO EXPO 2000},
+   year = 2000,
+   code = {} }
+
+@article{ gruber:98,
+         author    = {B. Gr{\"u}ber and V. Carstens},
+         title     = {Computation of the Unsteady Transonic Flow in
+                      Harmonically Oscillating Turbine Cascades
+                      Taking into Account Viscous Effects},
+         journal   = {ASME Journal of Turbomachinery},
+         volume    = {120},
+         number    = {1},
+         pages     = {104-111},
+         year      = 1998 }
+
+@article{ GHS3D,
+         author    = {P.L. George},
+         title     = {{GHS3D}, Improvement on Delaunay based {3D} automatic mesh generation},
+         journal   = {Finite Element in Analysis and Design},
+         volume    = {25},
+         year      = 1997 }
+
+@book{ verfurth:96,
+   author   = {R. Verf\"urth},
+   title    = {A Review of a Posteriori Error Estimation and Adaptive Mesh-Refinement Techniques},
+   publisher= {Wiley Teubner series Advances in numerical mathematics},
+   year     = 1996,
+   code     = {ETH-BIB  768 217 / EPF-BC   CD 738} }
+
+@book{ weiss:92,
+   author   = {M.A. Weiss},
+   title    = {Data Structure and Algorithm Analysis},
+   publisher= {The Benjamin/Cummings Publishing Company, Inc.},
+   year     = 1992,
+   code     = {EPF-BC CG 2914 (1992)} }
+
+@book{ luskin:99,
+   author   = {M. Luskin and  J.E. Flaherty and M.W. Bern},
+   title    = {Grid Generation and Adaptive Algorithms},
+   publisher= {Springer},
+   year     = 1999,
+   code     = {EPF-BC   } }
+
+@article{ castillo:91,
+   author = {J.E. Castillo},
+   title  = {Mathematical Aspects of Numerical Grid Generation},
+   journal= {Frontiers in applied mathematics},
+   volume = 8,
+   year   = 1991,
+   code   = {ETH-BIB  P 716 066: 8 } }
+
+@article{ freitag:99,
+   author = {L. Freitag and M. Jones and P. Plassmann},
+   title  = {A Parallel Algorithm for Mesh Smoothing},
+   journal= {SIAM Journal on Scientific Computing},
+   volume = 20,
+   year   = 1999,
+   code   = {} }
+
+@article{ eriksson:90,
+   author = {K. Eriksson and C. Johnson and J. Lennblad},
+   title  = {Error Estimates and Automatic Time and Space Step Control for
+             Linear Parabolic Problems},
+   journal= {SIAM Journal on Scientific Computing},
+   year   = 1990,
+   code   = {} }
+
+@article{ babuvska:78,
+   author = {I. Babu\v{s}ka and W.C. Rheinboldt},
+   title  = {Error Estimates for Adaptive Finite Element Computations},
+   journal= {SIAM Journal on Numerical Analysis},
+   volume = 14,
+   year   = 1978,
+   code   = {} }
+
+@article{ leyland:93,
+   author = {P. Leyland and F. Benkhaldoun and N. Maman and B. Larrouturou},
+   title  = {Dynamical Mesh Adaptation Criteria for Accurate Capturing of
+             Stiff Phenomena in Combustion},
+   note   = {(INRIA Report 1876)},
+   journal= {International Journal of Numerical Methods in Heat and Mass Transfer},
+   year   = 1993,
+   code   = {} }
+
+@article{lohner:88,
+   author = {R, L{\"o}hner and K. Morgan and M. Vahdati and J.P. Boris and D.L. Book},
+   title  = {{FEM-FCT}: Combining Unstructured Grids with High Resolution},
+   journal= {Communications on Applied Numerical Methodes},
+   year   = 1988,
+   volume = 4,
+   code   = {} }
+
+@inproceedings{richter:94,
+   author = {R. Richter and P. Leyland},
+   title  = {Distributed {CFD} using Auto-Adaptive Finite Element},
+   booktitle= {{ICASE}/{L}a{RC} Worshop on Adaptive Grid Methods},
+   year   = 1994,
+   code   = {} }
+
+@techreport{ george:88,
+   author = {P.L. George},
+   title  = {{Modulef}: construction et modification de maillages},
+   institution = "{INRIA}",
+   number = 104,
+   year   = 1988,
+   code = {ETH-BIB  P 715 399: 104} }
+
+@techreport{ farhat:97,
+   author = {C. Farhat and C. Degland and B. Koobus and M. Lesoinne},
+   title  = {Torsional Springs for Two-Dimensional Dynamic Unstructured Fluid Meshes},
+   institution = {College of Engineering, University of Colorado},
+   number = 3,
+   year   = 1997,
+   code = {} }
+
+@techreport{ ug1.0,
+   author = {G. Cartes and K. Sermeus}, 
+   title  = {{THOR} User's Guide {V1.0}},
+   institution = {IDeMAS},
+   year   = 1999 }
+
+@techreport{ th1.1,
+   author = {Y. Savoy}, 
+   title  = {An Overview of the {THOR} Data Structure {V1.1}},
+   institution = {IDeMAS},
+   year   = 1999 }
+
+@techreport{ tr5.1,
+   author = {Y. Savoy and P. Leyland}, 
+   title  = {Adaptive Module: Technical Report Task 5.1},
+   number = {TR5.1},
+   institution = {IDeMAS},
+   year   = 2000 }
+
+@techreport{ cm5.1,
+   author = {Y. Savoy}, 
+   title  = {Adaptive Module: Code Module Task 5.1},
+   number = [CM5.1},
+   institution = {IDeMAS},
+   year   = 2000 }
+
+@techreport{ ug5.1,
+   author = {Y. Savoy}, 
+   title  = {Adaptive Module: User's Guide Task 5.1},
+   number = {UG5.1},
+   institution = {IDeMAS},
+   year   = 2000 }
+
+@techreport{ MPI,
+   author = {Message Passing Interface Forum},
+   title  = {{MPI}: A Message-Passing Interface Standard},
+   year   = {1995} },
+   number = "ut-cs-94-230",
+   institution = "Department of Computer Science, University of Tennessee"
+}
+
+
+@book{ knupp:94,
+   author = {P. Knupp and S. Steinberg},
+   title  = {Fundamentals of Grid Generation},
+   publisher = {CFC Press},
+   year   = 1993,
+   code   = {ETH-BIB  758 799} }
+
+@proceedings{ swansea:94,
+   title  = {Numerical Grid Generation in Computational Fluid Dynamics and Related Fields},
+   year   = 1994,
+   publisher = {Pineridge Press},
+   editor = {N. P. Weatherill},
+   code   = {ETH-BIB  759 690} }
+
+@proceedings{ gamm:93,
+   title  = {Adaptive Methods -- Algorithms, Theory and Applications},
+   year   = 1993,
+   publisher = {{V}ieweg},
+   editor = {W. Hackbusch and G. Wittum},
+   code   = {ETH-BIB  P 714 894: 46} }
+
+@techreport{ duval:96,
+   author = {B. Duval},
+   title  = {Optimisation de maillages non structures dans les geometries deformables},
+   institution = {INRIA},
+   year   = 1996,
+   code = {ETH-BIB  HB 8150} }
+
+@book{ hagmeijer:97,
+   author = {R. Hagmeijer},
+   title  = {Adaptation of Structured Grids Based on Weighted Least Squares Formulation},
+   publisher = {National Aerospace Laboratory},
+   year   = 1997,
+   code   = {ETH-BIB  P 414 108: 97 482} }
+
+@book{ thompson:85,
+   author = {J.F. Thompson and Z.U.A Wrsi and C. Wayne Mastin},
+   title  = {Numerical Grid Generation},
+   publisher = {Elsevier Science Publishing},
+   year   = 1985,
+   code   = {EPF-BC CD 576} }
+
+@book{ carey:97,
+   author = {G.F. Carey},
+   title  = {Computational Grids: Generation, Adaptation, and Solution Strategies},
+   publisher = {Talor \& Francis},
+   year   = 1997,
+   code   = {EPF-BC CD 757},
+   topics = {ouvrage de reference sur toutes les techniques de base et importante biblio} }
+
+@book{ george:98,
+   author = {P.L. George and H. Borouchaki},
+   title  = {Delaunay Triangulation and Meshing},
+   publisher = {Hermes},
+   year   = 1998,
+   code   = {ETH-BIB - 775153},
+   topics = {ouvrage de reference et importante biblio, chapitres sur l'adaptation et le smoothing avec expression mathematique des techniques de base} }
+
+@book{ baranger:91,
+   author = {J. Baranger},
+   title  = {Analyse numerique},
+   publisher = {Hermann},
+   year   = 1991,
+   code   = {EPF-BC CD 683},
+   topics = {toutes les techniques tordues de spline et autre. tres math.} }
+
+@book{ ciarlet:98,
+   author = {P.G. Ciarlet},
+   title  = {Introduction \`a l'analyse numerique matriciell et \`a l'optimisation},
+   publisher = {Dunod},
+   year   = 1998,
+   code   = {EPF-BC CAM RAPP 2},
+   topics = {} }
+
+@proceedings{ weatherill:94,
+   title  = {Numerical Grid Generation in Cuputational Fluid Dynamics and Related Fields},
+   year   = 1994,
+   publisher = {Pineridge Press Ltd.},
+   editor = {N. P. Weatherhill and P.R. Eisman and J. H\"auser and J.F. Thompson},
+   code   = {ETH-BIB  P 759 690} }
+
+@article{ yoshimura:99,
+   author = {S. Yoshimura and  Y. Wada and G. Yagawa},
+   title  = {Automatic Mesh Generation of Quadrilateral Elements Using Intelligent Local Approach},
+   journal= {Computer methods in applied mechanics and engineering},
+   volume = 179,
+   year   = 1999,
+   code   = {} }
+
+@phdthesis{ benalcazar:94,
+   author = {H. Benalcazar},
+   title  = {Estimation d'erreurs a posteriori et maillages adaptatifs pour des probl\`emes 
+             stationnaires et \'evolutifs},
+   school = {Ecole polytechnique f\`ed\`erale de Lausanne},
+   year   = 1997,
+   code   = {EPF-BC CD 750} }
+
+@phdthesis{ Moussaoui:99,
+   author = {F. Moussaoui},
+   title  = {M\'ethode de moindres-carr\'es en \'el\'ements finis. Applications 
+             aux \'ecoulements faiblement compressibles.},
+   school = {Universit\'e de Paris-Sud},
+   year   = 1999,
+   code   = {} }
+
+@phdthesis{ dumeau:95,
+   author = {J.-P. Dumeau},
+   title  = {Contr\^ole et adaptation des maillages {3D}: application a l'automatistion des calculs},
+   school = {Ecole Normale Sup\'erieure de Cachan},
+   year   = 1995,
+   code   = {ETH-BIB PER 414 336:95/9} }
+
+@phdthesis{ richter:93,
+   author = {R. Richter},
+   title  = {Sch\'emas de capture de discontinuit\'es en maillage
+             non-structur\'e avec adaptation dynamique},
+   school = {Ecole Polytechnique F\'ed\'erale de Lausanne},
+   year   = 1993,
+   code   = {} }
+
+@phdthesis{ blom:98,
+   author = {F. Blom},
+   title  = {Investigations on Computational Fluid-Structure Interaction},
+   school = {Ecole Polytechnique F\'ed\'erale de Lausanne},
+   year   = 1998,
+   code   = {} }
+
+@techreport{task5_fin,
+   author = {Y. Savoy and P. Leyland}, 
+   title  = {Parallel Mesh Adaptation for Unstructured Grids
+             within The {IDeMas} Project},
+   year   = 2000,
+   institution = {IMHEF-DGM EPFL}
+}
+
+@article{aiaa:97,
+   author = {P. Leyland and R. Richter},
+   title  = {Completely Parallel Compressible Flow Simulations using Adaptive unstructured Meshes},
+   journal= {Computer methods in applied mechanics and engineering},
+   volume = 184,
+   year   = 1999,
+   code   = {} }
+@techreport{parmetis,
+   author = {G. Karypis and K. Schloegel and  V. Kumar},
+   title  = {{ParMETIS} Parallel Graph Partitioning and Sparse Matrix Ordering Library},
+      number      = {September 1998},
+   year   = 1998,
+   institution = {Army HPC HPC Research Center, University of Minnesota, MN 55455}}
+
+@phdthesis{r3,
+         author    = "R. Richter",
+         title     = "Sch\'emas de Capture de Discontinuit\'es en
+ 		      Maillage Non-Structur\'e avec Adaptation 
+                      Dynamique: Applications en A\'erodynamique",
+         school    = "Ecole Polytechnique F\'ed\'erale de Lausanne",
+         address   = "Switzerland",
+         year      = "1993"}
+
+@article{entropy,
+         author    = "R. Richter and P. Leyland",
+         title     = "Entropy Correcting Schemes  and Non-Hierarchical
+                      Auto-Adaptive Dynamic Finite Element Type Meshes:
+                      Applications to Unsteady Aerodynamics",
+         journal   = "International Journal for Numerical Methods in
+                      Fluids", 
+         volume    = "20",
+         pages     = "853-868",
+         year      = "1995"}
+
+
+@Article{borisbook:73,
+  author =       "J.P. Boris and D. Book",
+  title =        "Flux corrected transport",
+  journal =      "Journ. Comp. Physics",
+  volume =       "11",
+  pages =        "64-89",
+  year =         "1973"
+}
+
+
+@TechReport{roesildikover,
+  author =       " P.L Roe and D. Sildikover",
+  title =        "Optimum positive linear schemes for 
+                             advection in two and three dimension",
+   institution  =      "{ICASE}",
+  year =         "1989"
+}
+
+
+@TechReport{sildikover, 
+  author =       "D. Sildikover",
+  title =        "Numerical Solution to Steady State Problems with Discontinuities",
+  type =         "Ph. D Thesis",
+  institution =  "Weizmann Institute of Science", 
+  year =         "1989"
+}
+
+
+
+
+@Article{roeturkel:96,
+  author =       "P.L. Roe and E. Turkel", 
+  title =       {"The quest for diagonalization of differential systems"},
+ journal =     "Proceedings of the Workshop on Barriers and
+Challenges in Computational Fluid Dynamics, {ICASE}/{L}a{RC} Interdiscip. Ser. Sci. Eng",
+  year =         "1996" 
+}
+
+@Article{roe:81,
+  author =       "P.L. Roe", 
+  title =       {Approximate {R}iemann solvers, parameter vectors and difference schemes},
+ journal =     "Journ. Comp. Physics", 
+  volume =       "43",
+  number =       "2",
+  year =         "1981" 
+}
+
+@Article{roe:82,
+  author =       "P.L. Roe", 
+  title =       {Fluctuation and Signals - A Framework for Numerical 
+              Evolution Problems}, 
+ journal =     "Numerical Methods for Fluid Dynamics", 
+  volume =       "Academic Press, Inc.",
+  year =         "1982" 
+}
+
+
+@Article{roe:86,
+  author =       "  P.L. Roe", 
+  title =       {Discrete models for the  numerical analysis
+ of time-dependent gas dynamics},
+  booktitle =      "Journ. Comp. Physics", 
+  volume =       "63",
+  year =         "1986"
+}
+
+
+
+@InProceedings{roe:94,
+  author =       "  P.L. Roe", 
+  title =       {Multidimensional upwinding -- motivation and concepts},
+  booktitle =      "25th VKI Lecture Series on Computational Fluid Dynamics", 
+  publisher =      "VKI 94-05",
+  year =         "1994"
+}
+
+@Article{sildikover:95,
+  author =       "D. Sildikover", 
+  title =       {Multidimensional upwinding and multigrid},
+ journal =     "AIAA  Paper",
+  volume = "95-1795", 
+  year =         "1995"
+}
+
+}
+
+
+
+@TechReport{tassan:93,
+  author =       "S. Ta'asan",
+  title =        "Canonical form of multidimensional inviscid flows",
+  type =         "Technical Report",
+  institution =  "{ICASE}",
+  year =         "1993"
+}
+
+
+@InProceedings{agard,
+  author =       "", 
+  title =       {Unstructured Grid Methods for Advection Dominated Flows},
+  booktitle =      "{AGARD}", 
+  publisher =      "R-987",
+  year =         "1992"
+}
+
+@proceedings{ weatherill:94,
+   title  = {Numerical Grid Generation in Cuputational Fluid Dynamics and Related Fields},
+   year   = 1994,
+   publisher = {Pineridge Press Ltd.},
+   editor = {N. P. Weatherhill and P.R. Eisman and J. H\"auser and J.F. Thompson},
+   code   = {ETH-BIB  P 759 690} 
+}
+
+@TechReport{sala_leyland,
+  author = 	 {M. Sala and P. Leyland},
+  title = 	 {A Parallel Adaptive {N}ewton-{K}rylov-{S}chwarz Method\\ 
+for the 3{D} Compressible {E}uler Equations},
+  institution =  {EPFL-IMA},
+  year = 	 {2002},
+  OPTkey = 	 {},
+  OPTtype = 	 {},
+  number = 	 {9},
+  OPTaddress = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{abgrall01toward,
+  author = 	 {R. Abgrall},
+  title = 	 {Toward the ultimate conservative scheme: Following the Quest},
+  journal = 	 {Journal of  Computational Physics},
+  year = 	 {2001},
+  OPTkey = 	 {},
+  volume = 	 {167},
+  OPTnumber = 	 {},
+  pages = 	 {277--315},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@TechReport{vanda00expert,
+  author = 	 {D. Vanderstraeten and \'A. \'Cs\'ik and D. Roose},
+  title = 	 {An expert-system to control the {CFL} number of implicit upwind methods},
+  institution =  {Katholieke Universiteit Leuven, Department of Computer Science, Belgium},
+  year = 	 {2000},
+  OPTkey = 	 {},
+  OPTtype = 	 {},
+  OPTnumber = 	 {},
+  OPTaddress = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@InProceedings{csik01space,
+  author = 	 {A. \'Cs\'ik and M. Ricchiuto and H. Deconinck and S. Poedts},
+  title = 	 {Space time residual distribution schemes for hyperbolic conservations laws},
+  booktitle = 	 {Proc. 15th AIAA Conference},
+  OPTcrossref =  {},
+  OPTkey = 	 {},
+  OPTpages = 	 {},
+  year = 	 {2001},
+  OPTeditor = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  OPTaddress = 	 {},
+  OPTmonth = 	 {},
+  OPTorganization = {},
+  OPTpublisher = {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@InProceedings{deconinck01upwind,
+  author = 	 {H. Deconinck, K. Sermeus, A. \'Cs\'ik and M. Ricchiuto},
+  title = 	 {Upwind residual distribution schemes for hyperbolic conservation laws},
+  booktitle = 	 {1er Congrès National de Mathématiques Appliquées et Industrielles, Pompadour, France},
+  year =         {2001}
+}
+
+
+@InCollection{paillere97upwind,
+  author = 	 {H. Paill\`ere and H. Deconinck and E. van der Weide},
+  title = 	 {Upwind residual distribution methods for compressible flows: an alternative to finite volume and finite element methods},
+  booktitle = 	 {VKI LS 1997-02},
+  year = 	 {1997},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  OPTaddress = 	 {},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@InCollection{paillere97compact,
+  author = 	 {H. Paill\`ere and H. Deconinck},
+  title = 	 {Compact Cell Vertex Convection Schemes on Unstructured Meshes},
+  booktitle = 	 {Notes on Numerical Fluid Mechanics},
+  OPTcrossref =  {},
+  OPTkey = 	 {},
+  pages = 	 {1--49},
+  publisher = {{V}ieweg},
+  year = 	 {1997},
+  OPTeditor = 	 {},
+  volume = 	 {57},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  OPTtype = 	 {},
+  OPTchapter = 	 {},
+  OPTaddress = 	 {},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+
+@Article{carre00parallel,
+  author = 	 {G. Carr\'e and S. Lanteri},
+  title = 	 {Parallel linear multigrid by agglomeration for the acceleration of {3D} compressible flow computations on unstructured meshes},
+  journal = 	 {Numerical Algorithms},
+  year = 	 {2000},
+  OPTkey = 	 {},
+  volume = 	 {24},
+  OPTnumber = 	 {},
+  pages = 	 {309--332},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Book{ortega70iterative,
+  author = 	 {J.M. Ortega and W. C. Rheinboldt},
+  ALTeditor = 	 {},
+  title = 	 {Iterative Solution of Nonlinear Equations in Several Variables},
+  publisher = 	 {Academic Press},
+  year = 	 {1970},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  address = 	 {New York},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Book{kelley95iterative,
+  author = 	 {C.T. Kelley},
+  ALTeditor = 	 {},
+  title = 	 {{Iterative Methods for Linear and Nonlinear Equations}},
+  publisher = 	 {SIAM},
+  year = 	 {1995},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  address = 	 {Philadelphia},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{xu98some,
+  author = 	 {J. Xu and J. Zou},
+  title = 	 {Some nonoverlapping domain decomposition methods},
+  journal = 	 {{SIAM} {R}eview},
+  year = 	 {1998},
+  OPTkey = 	 {},
+  volume = 	 {40},
+  OPTnumber = 	 {},
+  pages = 	 {857--914},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+
+@Book{leveque02finite,
+  author = 	 {R.J. Leveque},
+  ALTeditor = 	 {},
+  title = 	 {Finite Volume Methods for Hyperbolic Problems},
+  publisher = 	 {Cambridge University Press},
+  year = 	 {2002},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  OPTaddress = 	 {},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@techreport {agardm6,
+   AUTHOR = {AGARD},
+   TITLE = {Experimental Data Base for Computer Program Assessment},
+   INSTITUTION = {AGARD},
+   NUMBER = {138},
+   YEAR = {1979}
+}
+
+@Book{deconinck96notes,
+  ALTauthor = 	 {},
+  editor = 	 {H. Deconinck and B. Koren},
+  title = 	 {Notes on Numerical Fluid Mechanics},
+  publisher = 	 {{V}ieweg},
+  year = 	 {1996},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  OPTaddress = 	 {},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@InProceedings{sermeus02entropy,
+  author = 	 {K. Sermeus and H. Deconinck},
+  title = 	 {An Entropy Fix for the Multidimensional Upwind Residual Distribution Schemes},
+  booktitle = 	 {CFD2002: 10th Annual Conference of the CFD Society of Canada},
+  OPTcrossref =  {},
+  OPTkey = 	 {},
+  OPTpages = 	 {},
+  year = 	 {2002},
+  OPTeditor = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  OPTaddress = 	 {},
+  OPTmonth = 	 {},
+  OPTorganization = {},
+  OPTpublisher = {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{quarteroni03swiss,
+  author = 	 {A. Quarteroni and M. Sala and A. Valli},
+  title = 	 {The Swiss Carpet Domain Decomposition Preconditioner},
+  journal = 	 {},
+  year = 	 {2003},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTpages = 	 {},
+  OPTmonth = 	 {},
+  note = 	 {In preparation},
+  OPTannote = 	 {}
+}
+
+@Article{farhat09twob,
+  author = 	 {C. Farhat and P.-S. Chen and J. Mandel and F. X. Roux},
+  title = 	 {The two-level {FETI} method. Part {II}. Extension to shell problems, parallel implementation and performance results},
+  journal = 	 {Comput. Methods Appl. Mech. Engrg.},
+  year = 	 {1998},
+  OPTkey = 	 {},
+  volume = 	 {155},
+  number = 	 {1-2},
+  pages = 	 {153--179},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{farhat09two,
+  author = 	 {C. Farhat and J. Mandel},
+  title = 	 {The two-level {FETI} method. Part {I}. An optimal iterative solver for biharmonic systems},
+  journal = 	 {Comput. Methods Appl. Mech. Engrg.},
+  year = 	 {1998},
+  OPTkey = 	 {},
+  volume = 	 {155},
+  number = 	 {1-2},
+  pages = 	 {129--151},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@InProceedings{quintino03conservative,
+  author = 	 {T. Quintino and M. Ricchiuto and A. Csik and H. Deconinck and S. Poedts},
+  title = 	 {Conservative Multidimensional Upwind Residual Distribution Schemes for Arbitrary Finite Elements},
+  booktitle = 	 {Computational Fluid Dynamics 2002},
+  OPTcrossref =  {},
+  OPTkey = 	 {},
+  OPTpages = 	 {},
+  year = 	 {2003},
+  editor = 	 {S. Armfield and P. Morgan and K. Srinivas},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  OPTaddress = 	 {},
+  OPTmonth = 	 {},
+  OPTorganization = {},
+  publisher = {Springer},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+
+
+
+
+@Book{ciarlet02finite,
+  author = 	 {P.G. Ciarlet},
+  ALTeditor = 	 {Society for Industrial and Applied Mathematics (SIAM)},
+  title = 	 {The finite element method for elliptic problems},
+  publisher = 	 {},
+  year = 	 {2002},
+  OPTkey = 	 {},
+  volume = 	 {40},
+  OPTnumber = 	 {},
+  series = 	 {Classics in Applied Mathematics},
+  address = 	 {Philadelphia, PA},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+
+@article{ houston99posteriori,
+    author = "P. Houston and J. A. Mackenzie and E. S{\"u}li and G. Warnecke",
+    title = "A posteriori error analysis for numerical approximations of {Friedrichs} systems",
+    journal = "Numerische Mathematik",
+    volume = "82",
+    number = "3",
+    month = "????",
+    pages = "433--470",
+    year = "1999",
+    url = "citeseer.nj.nec.com/article/houston99posteriori.html" 
+}
+
+
+
+
+@Book{apel99anisotropic,
+  author = 	 {T. Apel},
+  editor = 	 {Teubner Verlag},
+  title = 	 {Anisotropic Finite Elements: Local Estimates and Applications},
+  publisher = 	 {},
+  year = 	 {1999},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  series = 	 {Advances in Numerical Mathematics},
+  address = 	 {Stuttgart},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+
+@InProceedings{habashi98anisotropic,
+  author = 	 {W.G. Habashi and M. Fortin and J. Dompierre and M.G. Vallet and Y. Bourgault},
+  title = 	 {Anisotropic mesh adaptation: a step towards a mesh-independent and
+                  user-independent CFD},
+  booktitle = 	 {Barriers and Challenges in Computational Fluid Dynamics},
+  OPTcrossref =  {},
+  OPTkey = 	 {},
+  pages = 	 {99--117},
+  year = 	 {1998},
+  OPTeditor = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  OPTaddress = 	 {},
+  OPTmonth = 	 {},
+  OPTorganization = {},
+  publisher = {Kluwer Acad. Publ.},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{formaggia01new,
+  author = 	 {L. Formaggia and S. Perotto},
+  title = 	 {New anisotropic a priori error estimates},
+  journal = 	 {Numer.Math.},
+  year = 	 {2001},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  pages = 	 {641--667},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{beatrice01priori,
+  author = 	 {B. Rivi\`ere and M.F. Wheeler and V. Girault},
+  title = 	 {A Priori Error Estimates for Finite Element Methods Based on Discontinuous
+Approximation Spaces for Elliptic Problems},
+  journal = 	 {SIAM Journal on Numerical Analysis},
+  year = 	 {2001},
+  OPTkey = 	 {},
+  volume = 	 {39},
+  number = 	 {3},
+  pages = 	 {902--931},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+
+@Book{vkils00,
+  ALTauthor = 	 {},
+  editor = 	 {},
+  title = 	 {Computational Fluid Dynamics Lecture Series LS 2000-05},
+  publisher = 	 {VKI Rhode-Saint Genèse},
+  year = 	 {2000},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  address = 	 {Belgium},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@Article{hartmann02adaptive,
+  author = 	 {R. Hartmann and P. Houston},
+  title = 	 {Adaptive Discontinuous Galerkin Finite Element Methods for Nonlinear Hyperbolic Conservation Laws},
+  journal = 	 {SIAM Journal on Scientific Computing},
+  year = 	 {2002},
+  OPTkey = 	 {},
+  volume = 	 {24},
+  number = 	 {3},
+  pages = 	 {979--1004},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+
+
+
+
+@Article{sala03analysis,
+  author = 	 {M. Sala},
+  title = 	 {Analysis of Two-level Domain Decomposition Preconditioners Based
+  on Aggregation},
+  journal = 	 {submitted},
+  year = 	 {2003},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTpages = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@InProceedings{sala03parallel,
+  author = 	 {M.~Sala and P.~Leyland and L.~Formaggia and F.~Moussaoui and Y.~Savoy},
+  title = 	 {Parallel Preconditioners with Mesh Adaption for Compressible Flow Computations},
+  booktitle = 	 {Computational Fluid Dynamics 2002},
+  OPTcrossref =  {},
+  OPTkey = 	 {},
+  pages = 	 {253--258},
+  year = 	 {2003},
+  editor = 	 {S.~Armfield and P.~Morgan and K.Srinivas},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  OPTseries = 	 {},
+  OPTaddress = 	 {},
+  OPTmonth = 	 {},
+  OPTorganization = {},
+  OPTpublisher = {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+
+@article{greenbaum01generalizations,
+                AUTHOR = "A. Greenbaum",
+                TITLE = "Generalizations of the Field of Values Useul in the Study of Polynomial Functions of a Matrix", 
+                JOURNAL = "",
+                VOLUME = "",
+                PAGES = "",
+                YEAR = "2001"}
+@Article{greenbaum02generalizations,
+  author = 	 {A. Greenbaum},
+  title = 	 {Generalizations of the Field of Values Useful in the Study of Polynomial Functions of a Matrix},
+  journal = 	 {Linear Algebra Appl.},
+  year = 	 {2002},
+  OPTkey = 	 {},
+  volume = 	 {347},
+  OPTnumber = 	 {},
+  pages = 	 {233-249},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+
+@Book{greenbaum97iterative,
+  author = 	 {A. Greenbaum},
+  ALTeditor = 	 {},
+  title = 	 {Iterative Methods for Solving Linear Systems},
+  publisher = 	 { Society for Industrial and Applied Mathematics},
+  year = 	 {1997},
+  OPTkey = 	 {},
+  OPTvolume = 	 {},
+  OPTnumber = 	 {},
+  series = 	 {Frontiers in Applied Mathematics 17},
+  address = 	 {Philadelphia, PA},
+  OPTedition = 	 {},
+  OPTmonth = 	 {},
+  OPTnote = 	 {},
+  OPTannote = 	 {}
+}
+
+@TechReport{ml-guide,
+  author =       {M. Sala and J. Hu and R. Tuminaro},
+  title =        {ML 3.0 Smoothed Aggregation User's Guide},
+  institution =  {Sandia National Laboratories},
+  year =         {2004},
+  OPTkey =       {},
+  OPTtype =      {},
+  number =       {SAND-2195},
+  OPTaddress =   {},
+  month =        {May},
+  OPTnote =      {},
+  OPTannote =    {}
+}
+
+

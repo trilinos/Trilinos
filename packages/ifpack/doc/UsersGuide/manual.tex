@@ -1,0 +1,119 @@
+% @HEADER
+% ***********************************************************************
+% 
+%            Trilinos: An Object-Oriented Solver Framework
+%                 Copyright (2001) Sandia Corporation
+% 
+% Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+% license for use of this work by or on behalf of the U.S. Government.
+% 
+% This library is free software; you can redistribute it and/or modify
+% it under the terms of the GNU Lesser General Public License as
+% published by the Free Software Foundation; either version 2.1 of the
+% License, or (at your option) any later version.
+%  
+% This library is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+% Lesser General Public License for more details.
+%  
+% You should have received a copy of the GNU Lesser General Public
+% License along with this library; if not, write to the Free Software
+% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+% USA
+% Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+% 
+% ***********************************************************************
+% @HEADER
+
+\documentclass[11pt,relax]{SANDreport}
+\usepackage{graphicx}
+\usepackage{amsmath,amsfonts,amsthm}
+\usepackage{amssymb}
+\usepackage{enumerate}
+\usepackage{rotating}
+
+
+\usepackage{times}
+
+\def\choicebox#1#2{\noindent$\hphantom{th}$\parbox[t]{1.8in}{\sf
+#1}\parbox[t]{4.5in}{#2}\\[0.8em]}
+
+\author{Michael Heroux and Marzio Sala \\
+Computational Mathematics and Algorithms Department \\
+Sandia National Laboratories \\
+P.O. Box 5800 \\
+Albuquerque, NM 87185-1110
+}
+
+\title{IFPACK User's Guide (DRAFT)}
+\SANDnum{SAND2004-XXXX}
+\SANDauthor{
+Michael Heroux, Marzio Sala}
+
+\SANDprintDate{October 2004}
+\SANDreleaseType{Unlimited Release}
+
+\newcommand{\Trilinos}{Trilinos}
+\newcommand{\TrilinosTM}{Trilinos \copyright}
+\newcommand{\trilinos}{{\sc Trilinos}}
+\newcommand{\ifpack}{{\sc Ifpack}}
+\newcommand{\aztecoo}{{\sc AztecOO}}
+\newcommand{\amesos}{{\sc Amesos}}
+\newcommand{\epetra}{{\sc Epetra}}
+\newcommand{\ml}{{\sc ML}}
+\newcommand{\mb}[1]{{\mathbf {#1} }}
+\newcommand{\teuchos}{{\sc Teuchos}}
+\newcommand{\triutils}{{\sc Triutils}}
+\newcommand{\metis}{{\sc METIS}}
+
+\newcommand{\ie}{i.e., }
+\newtheorem{assumption}{Assumption}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{corollary}{Corollary}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{algorithm}{Algorithm}[section]
+\newtheorem{definition}{Definition}[section]
+\newtheorem{property}{Property}[section]
+
+\newtheorem{remark}{Remark}
+
+\def\choicebox#1#2{\noindent$\hphantom{th}$\parbox[t]{3.0in}{\sf
+#1}\parbox[t]{3.35in}{#2}\\[0.8em]}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+IFPACK provides a suite of object-oriented algebraic preconditioners
+for the solution of preconditioned iterative solvers.  IFPACK
+constructors expect an Epetra\_RowMatrix object for construction.
+IFPACK is part of the Trilinos Solver Project and IFPACK object
+interact well with other Trilinos classes.  In particular, IFPACK can
+be used as a preconditioner for AztecOO.
+
+\ifpack\ is mainly written in C++. To enhance portability, 
+only a limited subset of C++ features is used.
+\end{abstract}
+
+\clearpage
+\section*{Acknowledgments}
+The authors would like to acknowledge the support of the ASCI and LDRD programs
+that funded development of Trilinos.
+
+\medskip
+
+\SANDmain
+
+\tableofcontents
+
+\clearpage
+\newpage
+\include{ifpack}
+
+\bibliographystyle{plain}
+\bibliography{biblio,../../../../doc/CommonFiles/TrilinosBibliography}
+
+\end{document}
