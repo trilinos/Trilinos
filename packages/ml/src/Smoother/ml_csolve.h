@@ -28,6 +28,7 @@ typedef struct ML_CSolve_Struct ML_CSolve;
 #include "ml_defs.h"
 #include "ml_memory.h"
 #include "ml_1level.h"
+#include "ml_solver.h"
 
 #ifdef WKC
 #include <Epetra_MultiVector.h>
@@ -43,7 +44,7 @@ typedef struct ML_CSolve_Struct ML_CSolve;
 struct ML_CSolveFunc_Struct 
 {
    int ML_id;
-   int (*internal)(void *, int, double *, int, double *);
+   int (*internal)(ML_Solver *, int, double *, int, double *);
    int (*external)(void *, int, double *, int, double *);
 };
 
@@ -86,7 +87,7 @@ extern int ML_CSolve_Apply(ML_CSolve *, int, Epetra_MultiVector &, int,
                            Epetra_MultiVector &);
 #endif
 
-extern int ML_CSolve_Aggr(void *, int, double *, int, double *);
+extern int ML_CSolve_Aggr(ML_Solver *, int, double *, int, double *);
 extern int ML_CSolve_Clean_Aggr(void *, ML_CSolveFunc *);
 
 #ifndef ML_CPP

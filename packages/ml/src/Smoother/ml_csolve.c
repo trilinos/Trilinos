@@ -204,7 +204,7 @@ int ML_CSolve_Set_Label( ML_CSolve *csolve, char *label)
 /* factorization of a given matrix                                           */
 /* ------------------------------------------------------------------------- */
 
-int ML_CSolve_Aggr(void *vsolver,int ilen,double *x,int olen,double *rhs)
+int ML_CSolve_Aggr(ML_Solver *vsolver,int ilen,double *x,int olen,double *rhs)
 {
    int            i, n, N_local, offset;
    double         *local_x, *local_rhs;

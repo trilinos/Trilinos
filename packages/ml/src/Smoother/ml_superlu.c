@@ -47,7 +47,7 @@
 /* factorization of a given matrix                                      */
 /* ******************************************************************** */
 
-int ML_SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
+int ML_SuperLU_Solve(ML_Solver *vsolver,int ilen,double *x,int olen,double *rhs)
 {
 #ifdef SUPERLU
    int            i, n, info, flag, *perm_r, *perm_c, permc_spec;
@@ -2370,7 +2370,7 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
 /* NO NEED TO BLOCK, SOLVING A #proc x #proc system at this point, 
    communication costs vastly dominates the calculation.  */
 
-int ML_SuperLU_Solve_WKC(void *vsolver,int ilen,double *pep_x,int olen,double *pep_rhs)
+int ML_SuperLU_Solve_WKC(ML_Solver *vsolver,int ilen,double *pep_x,int olen,double *pep_rhs)
 {
 
 

@@ -13,6 +13,7 @@
 #define __MLSUPERLU__
 
 #include "ml_common.h"
+#include "ml_solver.h"
 
 typedef struct ML_Sm_Schwarz_Data_Struct ML_Sm_Schwarz_Data;
 
@@ -45,12 +46,12 @@ extern "C" {
 #endif
 #endif
 
-extern int ML_SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,
+extern int ML_SuperLU_Solve(ML_Solver *vsolver,int ilen,double *x,int olen,
 			    double *rhs);
 
 #ifdef WKC
 /* These double *'s are Epetra_MultiVector *'s in disguise */
-extern int ML_SuperLU_Solve_WKC(void *vsolver,int ilen,double *x,int olen,
+extern int ML_SuperLU_Solve_WKC(ML_Solver *vsolver,int ilen,double *x,int olen,
 			    double *rhs);
 #endif
 
