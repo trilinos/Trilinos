@@ -3465,7 +3465,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    char trans[2];
    int nrhs=1;
    unsigned int itmp=0;
-
+   
    Amat = &(ml->Amat[ml->ML_finest_level]);
    V = Amat->subspace->basis_vectors;
    dimV = Amat->subspace->dimension;
@@ -3485,8 +3485,9 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
       for (i=0; i<dimV; i++)
          ML_Operator_Apply(Amat, Amat->invec_leng,V[i],Amat->outvec_leng,Av[i]);
       for (i=0; i<dimV; i++)
-        for (j=0; j<dimV; j++)
+        for (j=0; j<dimV; j++) {
           VAV[i*dimV+j] = ML_gdot(lengV, Av[i], V[j], ml->comm);
+        }
 
       /* clean up */
       for (i=0; i<dimV; i++)
@@ -3518,7 +3519,6 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    /**************************************
    **** 1) Solve V'*A*V * x1 = V' * f.
    **************************************/
-
    /* see man page for description of arguments */
    strcpy(trans,"N");
    MLFORTRAN(dgetrs)(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);
@@ -3550,7 +3550,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    /************************************************
    **** 3) Solve A * x2 = r1 via a multigrid cycle.
    ************************************************/
-        
+   
    ML_Solve_AMGV(ml, res1, dout);
 
    /******************************************************
@@ -3572,7 +3572,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
 
    /* calculate V' * r2 */
    for (i=0; i<dimV; i++)
-     rhs[i] = ML_gdot(lengV, V[i], din, ml->comm);
+     rhs[i] = ML_gdot(lengV, V[i], res2, ml->comm);
 
    /* see man page for description of arguments */
    MLFORTRAN(dgetrs)(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);
@@ -3587,14 +3587,17 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    **** 6) Assemble the final solution, x = V*x1 + x2 + V*x3.
    **********************************************************/
 
+   /* calculate V * x3 */
    for (i=0; i<lengV; i++) {
      vec1[i] = 0.0;
      for (j=0; j<dimV; j++)
         vec1[i] = vec1[i] + x3[j] * V[j][i]; 
    }
-   for (i=0; i<Amat->outvec_leng; i++)
-     dout[i] += vec2[i] + vec1[i];
 
+   /* Recall that vec2 = V*x1 + x2  and vec1 = V*x3 */
+   for (i=0; i<Amat->outvec_leng; i++)
+     dout[i] = vec2[i] + vec1[i];
+   
    return 0;
 }
 
