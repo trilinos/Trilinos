@@ -1,0 +1,20 @@
+
+
+mpirun -np 1 ./BasicPerfTest.exe 700 800 1 1 9 -s > out1
+mpirun -np 2 ./BasicPerfTest.exe 700 800 1 2 9 -s > out2
+mpirun -np 3 ./BasicPerfTest.exe 700 800 1 3 9 -s > out3
+mpirun -np 4 ./BasicPerfTest.exe 700 800 2 2 9 -s > out4
+mpirun -np 5 ./BasicPerfTest.exe 700 800 1 5 9 -s > out5
+mpirun -np 6 ./BasicPerfTest.exe 700 800 3 2 9 -s > out6
+mpirun -np 7 ./BasicPerfTest.exe 700 800 1 7 9 -s > out7
+mpirun -np 8 ./BasicPerfTest.exe 700 800 4 2 9 -s > out8
+mpirun -np 9 ./BasicPerfTest.exe 700 800 3 3 9 -s > out9
+mpirun -np 10 ./BasicPerfTest.exe 700 800 5 2 9 -s > out10
+mpirun -np 11 ./BasicPerfTest.exe 700 800 1 11 9 -s > out11
+mpirun -np 12 ./BasicPerfTest.exe 700 800 6 2 9 -s > out12
+mpirun -np 13 ./BasicPerfTest.exe 700 800 1 13 9 -s > out13
+mpirun -np 14 ./BasicPerfTest.exe 700 800 7 2 9 -s > out14
+mpirun -np 15 ./BasicPerfTest.exe 700 800 5 3 9 -s > out15
+mpirun -np 16 ./BasicPerfTest.exe 700 800 4 4 9 -s > out16
+
+paste out1 out2 out3 out4 out5 out6 out7 out8 out9 out10 out11 out12 out13 out14 out15 out16 > outall

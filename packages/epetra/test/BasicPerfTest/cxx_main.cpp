@@ -50,7 +50,7 @@
 
 void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff,
-			const Epetra_Comm  &comm, 
+			const Epetra_Comm  &comm, bool verbose, 
 			Epetra_Map *& map, 
 			Epetra_CrsMatrix *& A, 
 			Epetra_Vector *& b, 
@@ -59,7 +59,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
 void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff, int nrhs,
-			const Epetra_Comm  &comm, 
+			const Epetra_Comm  &comm, bool verbose, 
 			Epetra_Map *& map, 
 			Epetra_CrsMatrix *& A, 
 			Epetra_MultiVector *& b, 
@@ -69,7 +69,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff,
 			int nsizes, int * sizes,
-			const Epetra_Comm  &comm, 
+			const Epetra_Comm  &comm, bool verbose, 
 			Epetra_BlockMap *& map, 
 			Epetra_VbrMatrix *& A, 
 			Epetra_Vector *& b, 
@@ -79,7 +79,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff, 
 			int nsizes, int * sizes, int nrhs,
-			const Epetra_Comm  &comm, 
+			const Epetra_Comm  &comm, bool verbose, 
 			Epetra_BlockMap *& map, 
 			Epetra_VbrMatrix *& A, 
 			Epetra_MultiVector *& b, 
@@ -107,20 +107,24 @@ int main(int argc, char *argv[])
 #endif
 
   bool verbose = false;
+  bool summary = false;
 
-  // Check if we should print results to standard out
+  // Check if we should print verbose results to standard out
   if (argc>6) if (argv[6][0]=='-' && argv[6][1]=='v') verbose = true;
+
+  // Check if we should print verbose results to standard out
+  if (argc>6) if (argv[6][0]=='-' && argv[6][1]=='s') summary = true;
 
   if(argc < 6) {
     cerr << "Usage: " << argv[0]
-         << " NumNodesX NumNodesY NumProcX NumProcY NumPoints [-v]" << endl
+         << " NumNodesX NumNodesY NumProcX NumProcY NumPoints [-v|-s]" << endl
          << "where:" << endl
          << "NumNodesX         - Number of mesh nodes in X direction per processor" << endl
          << "NumNodesY         - Number of mesh nodes in Y direction per processor" << endl
          << "NumProcX          - Number of processors to use in X direction" << endl
          << "NumProcY          - Number of processors to use in Y direction" << endl
          << "NumPoints         - Number of points to use in stencil (5 or 9 only)" << endl
-         << "-v                - (Optional) Run in verbose mode if present" << endl
+         << "-v|-s             - (Optional) Run in verbose mode if -v present or summary mode if -s present" << endl
          << " NOTES: NumProcX*NumProcY must equal the number of processors used to run the problem. Example:" << endl
          << "mpirun -np 32 " << argv[0] << " 10 12 4 8 -v" << endl
 	 << " Run this program on 32 processors putting a 10 X 12 subgrid on each processor using 4 processors "<< endl
@@ -137,14 +141,20 @@ int main(int argc, char *argv[])
   comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   if (verbose && comm.MyPID()==0)
     cout << Epetra_Version() << endl << endl;
+  if (summary && comm.MyPID()==0) {
+    if (comm.NumProc()==1)
+      cout << Epetra_Version() << endl << endl;
+    else
+      cout << endl << endl; // Print two blank line to keep output columns lined up
+  }
 
   if (verbose) cout << comm <<endl;
 
-  //  bool verbose1 = verbose;
 
   // Redefine verbose to only print on PE 0
 
   if (verbose && comm.MyPID()!=0) verbose = false;
+  if (summary && comm.MyPID()!=0) summary = false;
 
   int numNodesX = atoi(argv[1]);
   int numNodesY = atoi(argv[2]);
@@ -152,7 +162,7 @@ int main(int argc, char *argv[])
   int numProcsY = atoi(argv[4]);
   int numPoints = atoi(argv[5]);
 
-  if (verbose) {
+  if (verbose || (summary && comm.NumProc()==1)) {
     cout << " Number of local nodes in X direction  = " << numNodesX << endl
 	 << " Number of local nodes in Y direction  = " << numNodesY << endl
 	 << " Number of global nodes in X direction = " << numNodesX*numProcsX << endl
@@ -163,6 +173,9 @@ int main(int argc, char *argv[])
 	 << " Number of Processors in Y direction   = " << numProcsY << endl
 	 << " Number of Points in stencil           = " << numPoints << endl << endl;
   }
+  // Print blank line to keep output columns lined up
+  if (summary && comm.NumProc()>1)
+    cout << endl << endl << endl << endl << endl << endl << endl << endl<< endl << endl;
 
   if (numProcsX*numProcsY!=comm.NumProc()) {
     cerr << "Number of processors = " << comm.NumProc() << endl
@@ -210,7 +223,7 @@ int main(int argc, char *argv[])
   Epetra_Vector * xexact;
 
   GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
- Xoff.Values(), Yoff.Values(), comm, 
+		     Xoff.Values(), Yoff.Values(), comm, verbose, 
 		     map, A, b, bt, xexact);
 
   Epetra_Vector q(b->Map());
@@ -237,6 +250,13 @@ int main(int argc, char *argv[])
     MFLOPs = total_flops/elapsed_time/1000000.0;
     if (verbose) cout << "\n\nTotal MFLOPs for 10 MatVec's (Trans = " << TransA
 		      << ")     = " << MFLOPs << endl<< endl;
+    if (summary) {
+      if (comm.NumProc()==1) {
+	if (TransA) cout << "TransMV   ";
+	else cout << "NoTransMV ";
+      }
+      cout << MFLOPs << endl;
+    }
       
 
     // Compute residual
@@ -264,6 +284,12 @@ int main(int argc, char *argv[])
   total_flops = q.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
   if (verbose) cout << "\n\nTotal MFLOPs for 10 Norm2's= " << MFLOPs << endl<< endl;
+
+  if (summary) {
+    if (comm.NumProc()==1) cout << "Norm2     ";
+    cout << MFLOPs << endl;
+  }
+
   r.SetFlopCounter(*A);
     
   flopcounter.ResetFlops();
@@ -278,6 +304,28 @@ int main(int argc, char *argv[])
   MFLOPs = total_flops/elapsed_time/1000000.0;
   if (verbose) cout << "\n\nTotal MFLOPs for 10 Dot's= " << MFLOPs << endl<< endl;
     
+  if (summary) {
+    if (comm.NumProc()==1) cout << "DotProd   ";
+    cout << MFLOPs << endl;
+  }
+
+  flopcounter.ResetFlops();
+  timer.ResetStartTime();
+
+  //10 dot's
+  for( int i = 0; i < 10; ++i )
+    q.Update(1.0, z, 1.0, r, 0.0);
+    
+  elapsed_time = timer.ElapsedTime();
+  total_flops = q.Flops();
+  MFLOPs = total_flops/elapsed_time/1000000.0;
+  if (verbose) cout << "\n\nTotal MFLOPs for 10 Updates= " << MFLOPs << endl<< endl;
+    
+  if (summary) {
+    if (comm.NumProc()==1) cout << "Update     ";
+    cout << MFLOPs << endl;
+  }
+
   delete map;
   delete A;
   delete b;
@@ -326,7 +374,7 @@ return ierr ;
 
 void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff,
-			const Epetra_Comm  &comm, 
+			const Epetra_Comm  &comm, bool verbose, 
 			Epetra_Map *& map, 
 			Epetra_CrsMatrix *& A, 
 			Epetra_Vector *& b, 
@@ -336,7 +384,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   Epetra_MultiVector * b1, * bt1, * xexact1;
 	
   GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints, 
-		     xoff, yoff, 1, comm, 
+		     xoff, yoff, 1, comm, verbose, 
 		     map, A, b1, bt1, xexact1);
 
   b = dynamic_cast<Epetra_Vector *>(b1);
@@ -348,7 +396,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
 void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff, int nrhs,
-			const Epetra_Comm  &comm, 
+			const Epetra_Comm  &comm, bool verbose,
 			Epetra_Map *& map, 
 			Epetra_CrsMatrix *& A, 
 			Epetra_MultiVector *& b, 
@@ -402,7 +450,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   A->TransformToLocal();
   double fillCompleteTime = timer.ElapsedTime();
 
-  if (comm.MyPID()==0)
+  if (verbose && comm.MyPID()==0)
     cout << "Time to insert matrix values = " << insertTime << endl
 	 << "Time to complete fill        = " << fillCompleteTime << endl;
 
@@ -468,7 +516,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff,
 			int nsizes, int * sizes,
-			const Epetra_Comm  &comm, 
+			const Epetra_Comm  &comm, bool verbose, 
 			Epetra_BlockMap *& map, 
 			Epetra_VbrMatrix *& A, 
 			Epetra_Vector *& b, 
@@ -479,7 +527,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 	
   GenerateVbrProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
 		     xoff, yoff, nsizes, sizes,
-		     1, comm, map, A, b1, bt1, xexact1);
+		     1, comm, verbose, map, A, b1, bt1, xexact1);
 
   b = dynamic_cast<Epetra_Vector *>(b1);
   bt = dynamic_cast<Epetra_Vector *>(bt1);
@@ -491,7 +539,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff, 
 			int nsizes, int * sizes, int nrhs,
-			const Epetra_Comm  &comm, 
+			const Epetra_Comm  &comm, bool verbose, 
 			Epetra_BlockMap *& map, 
 			Epetra_VbrMatrix *& A, 
 			Epetra_MultiVector *& b, 
