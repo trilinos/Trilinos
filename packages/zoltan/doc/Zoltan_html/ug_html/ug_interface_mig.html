@@ -12,14 +12,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="Migration-Help Functions"></A>Migration-Help Functions</H2>
@@ -258,30 +256,30 @@ processors).</TD>
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_export</I></TD>
 
-<TD>Upon return, the number of objects that were stored on this processor
-in the previous decomposition that are needed by other processors (i.e.,
-the number of objects that must be sent from this processor to other processors).</TD>
+<TD>The number of objects that were stored on this processor in the previous
+decomposition that are needed by other processors (i.e., the number of
+objects that must be sent from this processor to other processors).</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
 
-<TD>Upon return, an array of size <I>num_export </I>listing the global
-IDs of objects to be sent from this processor.</TD>
+<TD>An array of size <I>num_export </I>listing the global IDs of objects
+to be sent from this processor.</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
 
-<TD>&nbsp;Upon return, an array of size <I>num_export </I>listing the local
-IDs of objects to be sent from this processor.</TD>
+<TD>An array of size <I>num_export </I>listing the local IDs of objects
+to be sent from this processor.</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
 
-<TD>Upon return, an array of size <I>num_export</I> listing the processor
-IDs of processors that need the sent objects (i.e., the destination processors).</TD>
+<TD>An array of size <I>num_export</I> listing the processor IDs of processors
+that need the sent objects (i.e., the destination processors).</TD>
 </TR>
 
 <TR>
