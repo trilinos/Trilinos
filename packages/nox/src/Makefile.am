@@ -141,9 +141,7 @@ endif
 
 libnoxepetra_a_SOURCES = $(EPETRA)
 
-libnoxepetra_a_CXXFLAGS = \
-	-I$(TRILINOS_HOME)/packages/epetra/src \
-	-I$(TRILINOS_HOME)/packages/aztecoo/src
+libnoxepetra_a_CXXFLAGS = @TRILINOS_CXXFLAGS@
 
 
 # ------------------------------------------------------------------------
