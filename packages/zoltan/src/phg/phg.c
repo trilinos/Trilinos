@@ -190,6 +190,23 @@ int **exp_to_part )         /* list of partitions to which exported objs
     ZOLTAN_FREE (&zoltan_hg->PHG.vmap);
   }  
   
+  /* KDDKDD The following code prints a final quality result even when
+   * KDDKDD phg_output_level is zero.  It is useful for our tests and
+   * KDDKDD data collection, but it should NOT be included in the released
+   * KDDKDD code.  */
+  {HGraph *hg = &zoltan_hg->PHG;
+   double bal = Zoltan_PHG_Compute_Balance(zz, hg, zz->LB.Num_Global_Parts,
+                                           parts);
+   double cutl= Zoltan_PHG_hcut_size_links(hg->comm, hg, parts,
+                                           zz->LB.Num_Global_Parts);
+   if (zz->Proc == 0)
+     uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |Z|=%6d %s/%s/%s p=%d "
+      "bal=%.2f cutl=%.2f\n", hg->info, hg->nVtx, hg->nEdge, hg->nPins,
+      hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, 
+      zz->LB.Num_Global_Parts, bal, cutl);
+  }
+  /* KDDKDD  End of printing section. */
+        
   if (hgp.use_timers > 1) {
     if (timer_retlist < 0) 
       timer_retlist = Zoltan_Timer_Init(zz->ZTime, 1, "Return Lists");
