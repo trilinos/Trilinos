@@ -36,6 +36,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_Export.h"
@@ -197,6 +198,16 @@ int Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const int value
     }
 
     NumPDEEqns_ = value;
+    return 0;
+
+  } else if( parameter == "num_vectors" ) {
+
+    if( value <= 0 ) {
+      cerr << ErrorMsg << "num_vectors must be greater than 0\n";
+      return -1;
+    }
+
+    NumVectors_ = value;
     return 0;
   } 
 
@@ -425,21 +436,21 @@ Epetra_CrsMatrix & Trilinos_Util::CrsMatrixGallery::GetMatrixRef(void)
 }
   
 // ================================================ ====== ==== ==== == =
-Epetra_Vector * Trilinos_Util::CrsMatrixGallery::GetExactSolution(void) 
+Epetra_MultiVector * Trilinos_Util::CrsMatrixGallery::GetExactSolution(void) 
 {
   if( ExactSolution_ == NULL ) CreateExactSolution();
   return ExactSolution_;
 }
 
 // ================================================ ====== ==== ==== == =
-Epetra_Vector * Trilinos_Util::CrsMatrixGallery::GetStartingSolution(void)
+Epetra_MultiVector * Trilinos_Util::CrsMatrixGallery::GetStartingSolution(void)
 {
   if( StartingSolution_ == NULL ) CreateStartingSolution();
   return StartingSolution_;
 }
 
 // ================================================ ====== ==== ==== == =
-Epetra_Vector * Trilinos_Util::CrsMatrixGallery::GetRHS(void)
+Epetra_MultiVector * Trilinos_Util::CrsMatrixGallery::GetRHS(void)
 {
   if( rhs_ == NULL ) CreateRHS();
   return rhs_;
@@ -466,8 +477,8 @@ Epetra_LinearProblem * Trilinos_Util::CrsMatrixGallery::GetLinearProblem(void)
 {
   // pointers, not really needed
   Epetra_CrsMatrix * A;
-  Epetra_Vector * RHS;
-  Epetra_Vector * StartingSolution;
+  Epetra_MultiVector * RHS;
+  Epetra_MultiVector * StartingSolution;
 
   A = GetMatrix();
   RHS = GetRHS();
@@ -482,35 +493,35 @@ Epetra_LinearProblem * Trilinos_Util::CrsMatrixGallery::GetLinearProblem(void)
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util::CrsMatrixGallery::ComputeResidual(double & residual)
+void Trilinos_Util::CrsMatrixGallery::ComputeResidual(double* residual)
 {
 
   // create solution and rhs if needed (matrix_ and ExactSolution_ are
   //  created by CreateRHS if necessary)
   if( rhs_ == NULL ) CreateRHS();
 
-  Epetra_Vector Ax(*map_);
+  Epetra_MultiVector Ax(*map_, NumVectors_);
 
   assert(matrix_->Multiply(false, *StartingSolution_, Ax)==0);
   assert(Ax.Update(1.0, *rhs_, -1.0)==0);
-  assert(Ax.Norm2(&residual)==0);
+  assert(Ax.Norm2(residual)==0);
   
   return;
 }
 
 // ================================================ ====== ==== ==== == =
-void Trilinos_Util::CrsMatrixGallery::ComputeDiffBetweenStartingAndExactSolutions(double & residual)
+void Trilinos_Util::CrsMatrixGallery::ComputeDiffBetweenStartingAndExactSolutions(double* residual)
 {
 
   // create solution and rhs if needed (matrix_ and ExactSolution are
   //  created by CreateRHS is necessary)
   if( rhs_ == NULL ) CreateRHS();
 
-  Epetra_Vector temp(*map_);
+  Epetra_MultiVector temp(*map_, NumVectors_);
 
   assert(temp.Update(1.0, *ExactSolution_, -1.0, *StartingSolution_, 0.0)==0);
 
-  assert(temp.Norm2(&residual)==0);
+  assert(temp.Norm2(residual)==0);
 
   return;
 }
@@ -953,7 +964,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
 
   if( ExactSolution_ == NULL ) {
 
-    ExactSolution_ = new Epetra_Vector(*map_);
+    ExactSolution_ = new Epetra_MultiVector(*map_, NumVectors_);
 
     if( ExactSolutionType_ == "random" ) {
 
@@ -971,7 +982,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
       double hx = lx_/(NumGlobalElements_+1);
       for( int i=0 ; i<NumMyElements_ ; i++ ) {
 	double x = (MyGlobalElements_[i]+1)*hx;
-	(*ExactSolution_)[i] = x*(1.-x);
+	for (int j = 0 ; j < NumVectors_ ; ++j)
+	  (*ExactSolution_)[j][i] = x*(1.-x);
       }
       
     } else if( ExactSolutionType_ == "quad_xy" ) {
@@ -990,7 +1002,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
 	double u;
 	ExactSolQuadXY(x,y,u);
 
-	(*ExactSolution_)[i] = u;
+	for (int j = 0 ; j < NumVectors_ ; ++j)
+	  (*ExactSolution_)[j][i] = u;
 	
       }
       
@@ -1022,7 +1035,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateStartingSolution(void)
   if( map_ == NULL ) CreateMap();
 
   if( StartingSolution_ == NULL ) {
-    StartingSolution_ = new Epetra_Vector(*map_);
+    StartingSolution_ = new Epetra_MultiVector(*map_, NumVectors_);
     if( StartingSolutionType_ == "random" ) {
       StartingSolution_->Random();
     } else if( StartingSolutionType_ == "zero" ) {
@@ -1054,7 +1067,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
     cout << OutputMsg << "Creating RHS `" << RhsType_ << "' ...\n";
   }
   
-  rhs_ = new Epetra_Vector(*map_);
+  rhs_ = new Epetra_MultiVector(*map_,NumVectors_);
 
   if( RhsType_ == "from_exact_solution" ) {
 
@@ -1081,10 +1094,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
       double u, ux, uy, uxx, uyy;
       ExactSolQuadXY(x,y,u,ux,uy,uxx,uyy);
       
-      (*rhs_)[i] = -diff_*( uxx + uyy )  // -b_ \nabla u
-	+ conv_*cos(alpha_)*ux               // ux
-	+ conv_*sin(alpha_)*uy;              // uy
-      
+      for (int j = 0 ; j < NumVectors_ ; ++j) {
+	(*rhs_)[j][i] = -diff_*( uxx + uyy )  // -b_ \nabla u
+	  + conv_*cos(alpha_)*ux               // ux
+	  + conv_*sin(alpha_)*uy;              // uy
+      }
     }
     
   } else if( RhsType_ == "exact_rhs_recirc_2d" ) {
@@ -1107,10 +1121,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
       double u, ux, uy, uxx, uyy;
       ExactSolQuadXY(x,y,u,ux,uy,uxx,uyy);      
       
-      (*rhs_)[i] =  -diff_*( uxx + uyy )        // -b_ \nabla u
-	+ conv_*4*x*(x-1.)*(1.-2*y)*ux          // ux
-	- conv_*4*y*(y-1.)*(1.-2*x)*uy;         // uy
-      
+      for (int j = 0 ; j < NumVectors_ ; ++j) {
+	(*rhs_)[j][i] =  -diff_*( uxx + uyy )        // -b_ \nabla u
+	  + conv_*4*x*(x-1.)*(1.-2*y)*ux          // ux
+	  - conv_*4*y*(y-1.)*(1.-2*x)*uy;         // uy
+      }
     }
 
   } else if( RhsType_ == "exact_rhs_laplace_2d" ) {
@@ -1129,8 +1144,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
       double u, ux, uy, uxx, uyy;
       ExactSolQuadXY(x,y,u,ux,uy,uxx,uyy);      
       
-      (*rhs_)[i] = uxx+uyy;
-      
+      for (int j = 0 ; j < NumVectors_ ; ++j) {
+	for (int j = 0 ; j < NumVectors_ ; ++j) {
+	  (*rhs_)[j][i] = uxx+uyy;
+	}
+      }
     }
     
   } else {
@@ -2816,9 +2834,9 @@ void Trilinos_Util::CrsMatrixGallery::ReadMatrix(void)
   // Create Exporter to distribute read-in matrix and vectors
   Epetra_Export exporter(*readMap, *map_);
   matrix_ = new Epetra_CrsMatrix(Copy, *map_, 0);
-  StartingSolution_ = new Epetra_Vector(*map_);
-  rhs_ = new Epetra_Vector(*map_);
-  ExactSolution_ = new Epetra_Vector(*map_);
+  StartingSolution_ = new Epetra_MultiVector(*map_, NumVectors_);
+  rhs_ = new Epetra_MultiVector(*map_, NumVectors_);
+  ExactSolution_ = new Epetra_MultiVector(*map_, NumVectors_);
   StartingSolution_->Export(*readx, exporter, Add);
   rhs_->Export(*readb, exporter, Add);
   ExactSolution_->Export(*readxexact, exporter, Add);
@@ -2946,6 +2964,7 @@ void Trilinos_Util::CrsMatrixGallery::ZeroOutData()
   RhsType_ = "from_exact_solution";
   
   NumPDEEqns_= 1;
+  NumVectors_ = 1;
 
   LinearProblem_ = NULL;
     
@@ -3265,22 +3284,33 @@ void Trilinos_Util::CrsMatrixGallery::ExactSolQuadXY(double x, double y,
 
 }
 
+Trilinos_Util::VbrMatrixGallery::~VbrMatrixGallery()
+{
+    // VBR data
+  if( VbrLinearProblem_ != NULL ) delete VbrLinearProblem_;
+  if( VbrMatrix_ != NULL ) delete VbrMatrix_;  
+  if( VbrExactSolution_ != NULL ) delete VbrExactSolution_;
+  if( VbrStartingSolution_ != NULL ) delete VbrStartingSolution_;
+  if( VbrRhs_ != NULL ) delete VbrRhs_;
+  if( BlockMap_ != NULL ) delete BlockMap_;
+  
+}
 // ================================================ ====== ==== ==== == =
-Epetra_Vector * Trilinos_Util::VbrMatrixGallery::GetVbrRHS(void)
+Epetra_MultiVector * Trilinos_Util::VbrMatrixGallery::GetVbrRHS(void)
 {
   if( VbrRhs_ == NULL ) CreateVbrRHS();
   return VbrRhs_;
 }
 
 // ================================================ ====== ==== ==== == =
-Epetra_Vector * Trilinos_Util::VbrMatrixGallery::GetVbrExactSolution(void)
+Epetra_MultiVector * Trilinos_Util::VbrMatrixGallery::GetVbrExactSolution(void)
 {
   if( VbrExactSolution_ == NULL ) CreateVbrExactSolution();
   return VbrExactSolution_;
 }
 
 // ================================================ ====== ==== ==== == =
-Epetra_Vector * Trilinos_Util::VbrMatrixGallery::GetVbrStartingSolution(void)
+Epetra_MultiVector * Trilinos_Util::VbrMatrixGallery::GetVbrStartingSolution(void)
 {
   if( VbrStartingSolution_ == NULL ) CreateVbrStartingSolution();
   return VbrStartingSolution_;
@@ -3329,8 +3359,8 @@ Epetra_LinearProblem * Trilinos_Util::VbrMatrixGallery::GetVbrLinearProblem(void
 {
   // pointers, not really needed
   Epetra_VbrMatrix * A;
-  Epetra_Vector * RHS;
-  Epetra_Vector * StartingSolution;
+  Epetra_MultiVector * RHS;
+  Epetra_MultiVector * StartingSolution;
 
   A = GetVbrMatrix();
   RHS = GetVbrRHS();
@@ -3360,7 +3390,7 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrExactSolution(void)
   // need a block map first
   if( BlockMap_ == NULL ) CreateBlockMap();
   // now we can expand to the Vbr format
-  VbrExactSolution_ = new Epetra_Vector(*BlockMap_);
+  VbrExactSolution_ = new Epetra_MultiVector(*BlockMap_,NumVectors_);
   for( int j=0 ; j<NumMyElements_ ; j++ ) 
     for( int i=0 ; i<NumPDEEqns_ ; ++i ) {
       (*VbrExactSolution_)[j*NumPDEEqns_+i] = (*ExactSolution_)[j];
@@ -3388,7 +3418,7 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrStartingSolution(void)
   // need a block map based on map_
   if( BlockMap_ == NULL ) CreateBlockMap();
   // now we can expand to the Vbr format
-  VbrStartingSolution_ = new Epetra_Vector(*BlockMap_);
+  VbrStartingSolution_ = new Epetra_MultiVector(*BlockMap_,NumVectors_);
   for( int j=0 ; j<NumMyElements_ ; j++ ) 
     for( int i=0 ; i<NumPDEEqns_ ; ++i ) {
       (*VbrStartingSolution_)[j*NumPDEEqns_+i] = (*StartingSolution_)[j];
@@ -3421,7 +3451,7 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrRHS(void)
   // also need an exact solution
   if( VbrExactSolution_ == NULL )  CreateVbrExactSolution();
 
-  VbrRhs_ = new Epetra_Vector( *BlockMap_);
+  VbrRhs_ = new Epetra_MultiVector( *BlockMap_,NumVectors_);
   VbrMatrix_->Multiply(false,*VbrExactSolution_,*VbrRhs_);
 
   return;
@@ -3535,37 +3565,37 @@ void Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix(void)
 
 // ================================================ ====== ==== ==== == =
 
-void Trilinos_Util::VbrMatrixGallery::ComputeResidualVbr(double & residual)
+void Trilinos_Util::VbrMatrixGallery::ComputeResidualVbr(double* residual)
 {
 
   // create solution and rhs if needed (matrix_ and ExactSolution are
   //  created by CreateRHS is necessary)
   if( VbrRhs_ == NULL ) CreateVbrRHS();
 
-  Epetra_Vector Ax(*BlockMap_);
+  Epetra_MultiVector Ax(*BlockMap_,NumVectors_);
   assert(VbrMatrix_->Multiply(false, *VbrStartingSolution_, Ax)==0);
 
   assert(Ax.Update(1.0, *VbrRhs_, -1.0)==0);
 
-  assert(Ax.Norm2(&residual)==0);
+  assert(Ax.Norm2(residual)==0);
 
   return;
 }
 
 // ================================================ ====== ==== ==== == =
 
-void Trilinos_Util::VbrMatrixGallery::ComputeDiffBetweenStartingAndExactSolutionsVbr(double & residual)
+void Trilinos_Util::VbrMatrixGallery::ComputeDiffBetweenStartingAndExactSolutionsVbr(double* residual)
 {
 
   // create solution and rhs if needed (matrix_ and ExactSolution are
   //  created by CreateRHS is necessary)
   if( VbrRhs_ == NULL ) CreateVbrRHS();
 
-  Epetra_Vector temp(*BlockMap_);
+  Epetra_MultiVector temp(*BlockMap_,NumVectors_);
 
   assert(temp.Update(1.0, *VbrExactSolution_, -1.0, *VbrStartingSolution_, 0.0)==0);
 
-  assert(temp.Norm2(&residual)==0);
+  assert(temp.Norm2(residual)==0);
 
   return;
 }

@@ -99,10 +99,10 @@ int main(int argc, char *argv[])
   // compute residual
   double residual;
   
-  Gallery.ComputeResidual(residual);
+  Gallery.ComputeResidual(&residual);
   if( Comm.MyPID()==0 ) cout << "||b-Ax||_2 = " << residual << endl;
   
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&residual);
   if( Comm.MyPID()==0 ) cout << "||x_exact - x||_2 = " << residual << endl;
 
  #ifdef HAVE_MPI
@@ -185,7 +185,7 @@ return 0 ;
     - linear: value at node i is defined as alpha*i. The double value
     alpha can be set via Set("alpha",DoubleVal).
   */
-  Epetra_Vector * GetExactSolution();
+  Epetra_MultiVector * GetExactSolution();
 
   //! Returns a pointer to the starting solution (typically, for HB problems).
   /*! Returns a pointer to the starting solution. This is typically used
@@ -194,10 +194,10 @@ return 0 ;
     - zero
     - random 
   */
-  Epetra_Vector * GetStartingSolution();
+  Epetra_MultiVector * GetStartingSolution();
   
   //! Returns a pointer to the rhs corresponding to the selected exact solution.
-  Epetra_Vector * GetRHS();
+  Epetra_MultiVector * GetRHS();
 
   //! Returns a pointer the internally stored Map.
   const Epetra_Map * GetMap();
@@ -212,10 +212,10 @@ return 0 ;
   Epetra_LinearProblem * GetLinearProblem();
 
   //! Computes the 2-norm of the residual
-  void ComputeResidual(double & residual);
+  void ComputeResidual(double* residual);
 
   //! Computes the 2-norm of the difference between the starting solution and the exact solution
-  void ComputeDiffBetweenStartingAndExactSolutions(double & residual);
+  void ComputeDiffBetweenStartingAndExactSolutions(double* residual);
 
   //! Print out matrix and vectors
   void PrintMatrixAndVectors(ostream & os);
@@ -377,9 +377,9 @@ protected:
 
   // matrix and vectors (scalar)
   Epetra_CrsMatrix * matrix_;
-  Epetra_Vector * ExactSolution_;
-  Epetra_Vector * StartingSolution_;
-  Epetra_Vector * rhs_;
+  Epetra_MultiVector * ExactSolution_;
+  Epetra_MultiVector * StartingSolution_;
+  Epetra_MultiVector * rhs_;
   Epetra_Map * map_;
 
   // linear problem
@@ -403,6 +403,7 @@ protected:
   double lx_, ly_, lz_;
   
   int NumPDEEqns_;
+  int NumVectors_;
   
   Epetra_Vector * VectorA_, * VectorB_, * VectorC_, * VectorD_, * VectorE_, *VectorF_, * VectorG_;
   
@@ -449,19 +450,9 @@ public:
     BlockMap_(0),
     MaxBlkSize_(1),
     VbrLinearProblem_(0)
- {} ;
+  {} ;
 
-~VbrMatrixGallery() 
-{
-    // VBR data
-  if( VbrLinearProblem_ != NULL ) delete VbrLinearProblem_;
-  if( VbrMatrix_ != NULL ) delete VbrMatrix_;  
-  if( VbrExactSolution_ != NULL ) delete VbrExactSolution_;
-  if( VbrStartingSolution_ != NULL ) delete VbrStartingSolution_;
-  if( VbrRhs_ != NULL ) delete VbrRhs_;
-  if( BlockMap_ != NULL ) delete BlockMap_;
-  
-}
+  ~VbrMatrixGallery(); 
   
   // ========= //
   // VBR STUFF //
@@ -489,13 +480,13 @@ public:
   //! Returns a pointer to the RHS for the selected Vbr exact solution
   /*!  Returns a pointer to the RHS  corresponding to the selected exact solution to the linear systems defined by the Epetra_VbrMatrix.
    */
-  Epetra_Vector * GetVbrRHS();
+  Epetra_MultiVector * GetVbrRHS();
 
   //! Returns a pointer to the selected Vbr exact solution
-  Epetra_Vector * GetVbrExactSolution();
+  Epetra_MultiVector * GetVbrExactSolution();
 
   //! Returns a pointer to the starting solution for Vbr problems
-  Epetra_Vector * GetVbrStartingSolution();
+  Epetra_MultiVector * GetVbrStartingSolution();
 
 
   // create the Vbr matrix. 
@@ -505,10 +496,10 @@ public:
   Epetra_LinearProblem * GetVbrLinearProblem();
 
   //! Computes the 2-norm of the residual for the VBR problem
-  void ComputeResidualVbr(double & residual);
+  void ComputeResidualVbr(double* residual);
 
   //! Computes the 2-norm of the difference between the starting solution and the exact solution for the VBR problem  
-  void ComputeDiffBetweenStartingAndExactSolutionsVbr(double & residual);
+  void ComputeDiffBetweenStartingAndExactSolutionsVbr(double* residual);
 
   //! Print out Vbr matrix and vectors
   void PrintVbrMatrixAndVectors(ostream & os);
@@ -531,9 +522,9 @@ protected:
 
   // matrix and vectors (vbr)
   Epetra_VbrMatrix * VbrMatrix_;
-  Epetra_Vector * VbrExactSolution_;
-  Epetra_Vector * VbrStartingSolution_;
-  Epetra_Vector * VbrRhs_;
+  Epetra_MultiVector * VbrExactSolution_;
+  Epetra_MultiVector * VbrStartingSolution_;
+  Epetra_MultiVector * VbrRhs_;
   Epetra_BlockMap * BlockMap_;
   int MaxBlkSize_;
 
