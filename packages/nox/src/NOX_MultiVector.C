@@ -249,16 +249,18 @@ NOX::MultiVector::update(double alpha, const NOX::MultiVector& a,
 
     if (p == 0)
       vecs[i]->update(alpha*b(0,i), *(a.vecs[0]), gamma);
-    else
+    else {
       vecs[i]->update(alpha*b(0,i), *(a.vecs[0]), 
 		      alpha*b(1,i), *(a.vecs[1]), gamma);
 
-    for (int j=1; j<p; j++) 
-      vecs[i]->update(alpha*b(2*j,i), *(a.vecs[2*j]), 
-		      alpha*b(2*j+1,i), *(a.vecs[2*j+1]), 1.0);
+      for (int j=1; j<p; j++) 
+	vecs[i]->update(alpha*b(2*j,i), *(a.vecs[2*j]), 
+			alpha*b(2*j+1,i), *(a.vecs[2*j+1]), 1.0);
 
-    if (q > 0)
-      vecs[i]->update(alpha*b(sz_a-1,i), *(a.vecs[sz_a-1]), 1.0);
+      if (q > 0)
+	vecs[i]->update(alpha*b(sz_a-1,i), *(a.vecs[sz_a-1]), 1.0);
+    }
+
   }
 
   return *this;
@@ -331,10 +333,11 @@ void
 NOX::MultiVector::dot(double alpha, const NOX::MultiVector& y,
 		      NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
-  checkSize(y.vecs.size());
-  for (unsigned int i=0; i<vecs.size(); i++)
-    for (unsigned int j=0; j<y.vecs.size(); j++)
-      b(i,j) = alpha*(vecs[i]->dot(*(y.vecs[j])));
+  for (unsigned int i=0; i<y.vecs.size(); i++) {
+    for (unsigned int j=0; j<vecs.size(); j++) {
+      b(i,j) = alpha*(y.vecs[i]->dot(*(vecs[j])));
+    }
+  }
 }
 
 int 

@@ -37,7 +37,12 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
-NOX::Epetra::MultiVector::MultiVector() {}
+NOX::Epetra::MultiVector::MultiVector(int numvecs) 
+  : noxEpetraVectors(numvecs)
+{
+  for (unsigned int i=0; i<noxEpetraVectors.size(); i++)
+    noxEpetraVectors[i] = NULL;
+}
 
 NOX::Epetra::MultiVector::MultiVector(Epetra_MultiVector& source, 
 				      NOX::CopyType type,
@@ -354,7 +359,7 @@ NOX::Epetra::MultiVector::clone(CopyType type) const
 NOX::Abstract::MultiVector* 
 NOX::Epetra::MultiVector::clone(int numvecs) const
 {
-  NOX::Epetra::MultiVector* newVec = new NOX::Epetra::MultiVector;
+  NOX::Epetra::MultiVector* newVec = new NOX::Epetra::MultiVector(numvecs);
   newVec->epetraMultiVec = new Epetra_MultiVector(epetraMultiVec->Map(),
 						  numvecs);
   return newVec;
@@ -363,18 +368,20 @@ NOX::Epetra::MultiVector::clone(int numvecs) const
 NOX::Abstract::MultiVector* 
 NOX::Epetra::MultiVector::subCopy(vector<int>& index) const
 {
-  NOX::Epetra::MultiVector* newVec = new NOX::Epetra::MultiVector;
+  int numvecs = index.size();
+  NOX::Epetra::MultiVector* newVec = new NOX::Epetra::MultiVector(numvecs);
   newVec->epetraMultiVec = new Epetra_MultiVector(Copy, *epetraMultiVec,
-						  &index[0], index.size());
+						  &index[0], numvecs);
   return newVec;
 }
 
 NOX::Abstract::MultiVector* 
 NOX::Epetra::MultiVector::subView(vector<int>& index) const
 {
-  NOX::Epetra::MultiVector* newVec = new NOX::Epetra::MultiVector;
+  int numvecs = index.size();
+  NOX::Epetra::MultiVector* newVec = new NOX::Epetra::MultiVector(numvecs);
   newVec->epetraMultiVec = new Epetra_MultiVector(View, *epetraMultiVec,
-						  &index[0], index.size());
+						  &index[0], numvecs);
   return newVec;
 }
 
@@ -409,8 +416,13 @@ NOX::Epetra::MultiVector::dot(double alpha,
 			      const NOX::Epetra::MultiVector& y,
 			      NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
-  epetraMultiVec->Dot(y.getEpetraMultiVector(), b.values());
-  b.scale(alpha);
+    // Create a replicated-local Epetra_MultiVector using b (view)
+  const int izero = 0;
+  Epetra_LocalMap localMap(b.numRows(), izero, epetraMultiVec->Map().Comm());
+  Epetra_MultiVector B(View, localMap, b.values(), b.stride(), b.numCols());
+
+  
+  B.Multiply('T', 'N', alpha, *(y.epetraMultiVec), *epetraMultiVec, 0.0);
 }
 
 int NOX::Epetra::MultiVector::length() const

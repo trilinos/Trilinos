@@ -68,6 +68,9 @@
 /* define that Techos::any support is activated in nox */
 #undef HAVE_NOX_ANY
 
+/* define that Belos is activated in nox */
+#undef HAVE_NOX_BELOS
+
 /* define that epetraext is activated in nox */
 #undef HAVE_NOX_EPETRAEXT
 

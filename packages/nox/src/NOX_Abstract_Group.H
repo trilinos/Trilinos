@@ -42,6 +42,14 @@
  }
  }
 
+ #ifdef HAVE_NOX_MULTIVECS
+ namespace NOX {
+ namespace Abstract {
+ class MultiVector;
+ }
+ }
+ #endif
+
  namespace NOX { 
  namespace Abstract { 
 
@@ -364,6 +372,61 @@
 			     const NOX::Abstract::Vector& input, 
 			     NOX::Abstract::Vector& result) const;
   //@}
+
+#ifdef HAVE_NOX_MULTIVECS
+   /** @name Block Jacobian operations.
+
+   Operations using the Jacobian matrix. 
+   */
+
+   //@{
+
+   //! applyJacobian for multiple right-hand sides 
+   /*! 
+    * The default implementation here calls applyJacobian() for
+    * each right hand side serially but should be overloaded if a 
+    * block method is available.
+    */
+   virtual NOX::Abstract::Group::ReturnType
+   applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
+			    NOX::Abstract::MultiVector& result) const;
+
+   //! applyJacobianTranspose for multiple right-hand sides 
+   /*! 
+    * The default implementation here calls applyJacobianTranspose() for
+    * each right hand side serially but should be overloaded if a 
+    * block method is available.
+    */
+   virtual NOX::Abstract::Group::ReturnType
+   applyJacobianTransposeMultiVector(const NOX::Abstract::MultiVector& input, 
+				     NOX::Abstract::MultiVector& result) const;
+
+   //! applyJacobianInverse for multiple right-hand sides
+   /*! 
+    * The default implementation here calls applyJacobianInverse() for
+    * each right hand side serially but should be overloaded if a 
+    * block solver is available.
+    */
+   virtual NOX::Abstract::Group::ReturnType 
+   applyJacobianInverseMultiVector(NOX::Parameter::List& params, 
+				   const NOX::Abstract::MultiVector& input, 
+				   NOX::Abstract::MultiVector& result) const;
+   
+   //! applyRightPreconditioning for multiple right-hand sides
+   /*! 
+    * The default implementation here calls applyRightPreconditioning() for
+    * each right hand side serially but should be overloaded if a 
+    * block method is available.
+    */
+   virtual NOX::Abstract::Group::ReturnType 
+   applyRightPreconditioningMultiVector(
+				    bool useTranspose,
+				    NOX::Parameter::List& params,
+				    const NOX::Abstract::MultiVector& input, 
+				    NOX::Abstract::MultiVector& result) const;
+
+   //@}
+#endif
 
   /** @name "Is" functions.
    

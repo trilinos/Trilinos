@@ -31,6 +31,11 @@
 //@HEADER
 
 #include "NOX_Abstract_Group.H"
+
+#ifdef HAVE_NOX_MULTIVECS
+#include "NOX_Abstract_MultiVector.H"
+#endif
+
 NOX::Abstract::Group::ReturnType 
 NOX::Abstract::Group::computeJacobian()
 {
@@ -80,6 +85,102 @@ NOX::Abstract::Group::applyRightPreconditioning(bool useTranspose,
 {
   return NOX::Abstract::Group::NotDefined;
 }
+
+#ifdef HAVE_NOX_MULTIVECS
+
+NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobianMultiVector(
+				    const NOX::Abstract::MultiVector& input, 
+				    NOX::Abstract::MultiVector& result) const
+{
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+  finalStatus = NOX::Abstract::Group::Ok;
+  
+  for (int i=0; i<input.numVectors(); i++) {
+    status = applyJacobian(input[i], result[i]);
+
+    if (status == NotDefined || status == BadDependency)
+      return status;
+    else if (status == Failed)
+      finalStatus == Failed;
+    else if (status == NotConverged && finalStatus != Failed)
+      finalStatus = NotConverged;
+  }
+
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobianTransposeMultiVector(
+				    const NOX::Abstract::MultiVector& input, 
+				    NOX::Abstract::MultiVector& result) const
+{
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+  finalStatus = NOX::Abstract::Group::Ok;
+  
+  for (int i=0; i<input.numVectors(); i++) {
+    status = applyJacobianTranspose(input[i], result[i]);
+
+    if (status == NotDefined || status == BadDependency)
+      return status;
+    else if (status == Failed)
+      finalStatus == Failed;
+    else if (status == NotConverged && finalStatus != Failed)
+      finalStatus = NotConverged;
+  }
+
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyJacobianInverseMultiVector(
+                                    NOX::Parameter::List& params, 
+				    const NOX::Abstract::MultiVector& input, 
+				    NOX::Abstract::MultiVector& result) const
+{
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+  finalStatus = NOX::Abstract::Group::Ok;
+  
+  for (int i=0; i<input.numVectors(); i++) {
+    status = applyJacobianInverse(params, input[i], result[i]);
+    
+    if (status == NotDefined || status == BadDependency)
+      return status;
+    else if (status == Failed)
+      finalStatus == Failed;
+    else if (status == NotConverged && finalStatus != Failed)
+      finalStatus = NotConverged;
+  }
+
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType
+NOX::Abstract::Group::applyRightPreconditioningMultiVector(
+				   bool useTranspose,
+				   NOX::Parameter::List& params,
+				   const NOX::Abstract::MultiVector& input, 
+				   NOX::Abstract::MultiVector& result) const
+{
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+  finalStatus = NOX::Abstract::Group::Ok;
+  
+  for (int i=0; i<input.numVectors(); i++) {
+    status = applyRightPreconditioning(useTranspose, params, input[i],
+				       result[i]);
+
+    if (status == NotDefined || status == BadDependency)
+      return status;
+    else if (status == Failed)
+      finalStatus == Failed;
+    else if (status == NotConverged && finalStatus != Failed)
+      finalStatus = NotConverged;
+  }
+
+  return finalStatus;
+}
+
+#endif
 
 bool NOX::Abstract::Group::isJacobian() const
 {

@@ -210,9 +210,9 @@ public:
 #ifdef HAVE_NOX_MULTIVECS
 
   /*! 
-   * \brief Create a MultiVector with \c numVecs columns out of an array of 
+   * \brief Create a MultiVector with \c numVecs+` columns out of an array of 
    * Vectors.  The vector stored under \c this will be the first column with
-   * the remaining \c numVecs - 1 columns given by \c vecs.
+   * the remaining \c numVecs columns given by \c vecs.
    *
    * The default implementation creates a generic NOX::MultiVector with
    * either Shape or Deep copies of the supplied vectors.

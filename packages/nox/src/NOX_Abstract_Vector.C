@@ -69,8 +69,9 @@ NOX::Abstract::Vector::createMultiVector(
   for (int i=0; i<numVecs; i++)
     tmp[i+1] = vecs[i];
 
-  NOX::MultiVector* mv = new NOX::MultiVector(tmp, numVecs, type);
-  delete tmp;
+  NOX::MultiVector* mv = new NOX::MultiVector(tmp, numVecs+1, type);
+
+  delete [] tmp;
 
   return mv;
 }

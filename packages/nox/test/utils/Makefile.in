@@ -43,6 +43,9 @@
 # ************************************************************************
 #@HEADER
 
+
+SOURCES = $(libnoxtestutils_a_SOURCES)
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -78,9 +81,33 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
-am__installdirs = $(DESTDIR)$(includedir)
+AR = ar
+ARFLAGS = cru
+am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
+libLIBRARIES_INSTALL = $(INSTALL_DATA)
+LIBRARIES = $(lib_LIBRARIES)
+am__DEPENDENCIES_1 =
+libnoxtestutils_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__objects_1 = libnoxtestutils_a-NOX_TestUtils.$(OBJEXT)
+am__objects_2 =
+am_libnoxtestutils_a_OBJECTS = $(am__objects_1) $(am__objects_2)
+libnoxtestutils_a_OBJECTS = $(am_libnoxtestutils_a_OBJECTS)
+DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+@AMDEP_TRUE@DEP_FILES =  \
+@AMDEP_TRUE@	./$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(libnoxtestutils_a_SOURCES)
+DIST_SOURCES = $(libnoxtestutils_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -96,6 +123,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
+BUILD_BELOS_EXAMPLES_FALSE = @BUILD_BELOS_EXAMPLES_FALSE@
+BUILD_BELOS_EXAMPLES_TRUE = @BUILD_BELOS_EXAMPLES_TRUE@
 BUILD_EPETRA_EXAMPLES_FALSE = @BUILD_EPETRA_EXAMPLES_FALSE@
 BUILD_EPETRA_EXAMPLES_TRUE = @BUILD_EPETRA_EXAMPLES_TRUE@
 BUILD_EPETRA_TESTS_FALSE = @BUILD_EPETRA_TESTS_FALSE@
@@ -110,6 +139,8 @@ BUILD_LIBLOCALAPACK_FALSE = @BUILD_LIBLOCALAPACK_FALSE@
 BUILD_LIBLOCALAPACK_TRUE = @BUILD_LIBLOCALAPACK_TRUE@
 BUILD_LIBLOCA_FALSE = @BUILD_LIBLOCA_FALSE@
 BUILD_LIBLOCA_TRUE = @BUILD_LIBLOCA_TRUE@
+BUILD_LIBNOXBELOS_FALSE = @BUILD_LIBNOXBELOS_FALSE@
+BUILD_LIBNOXBELOS_TRUE = @BUILD_LIBNOXBELOS_TRUE@
 BUILD_LIBNOXEPETRA_FALSE = @BUILD_LIBNOXEPETRA_FALSE@
 BUILD_LIBNOXEPETRA_TRUE = @BUILD_LIBNOXEPETRA_TRUE@
 BUILD_LIBNOXLAPACK_FALSE = @BUILD_LIBNOXLAPACK_FALSE@
@@ -244,11 +275,54 @@ target_vendor = @target_vendor@
 
 # Needed so this is installed with distributions
 include_HEADERS = \
-        $(srcdir)/NOX_TestError.H
+        $(srcdir)/NOX_TestError.H 
 
+NOX_TEST_UTILS = \
+	$(srcdir)/NOX_TestUtils.C
+
+lib_LIBRARIES = libnoxtestutils.a
+
+# ------------------------------------------------------------------------
+# Noxtestutils library specifications
+# ------------------------------------------------------------------------
+libnoxtestutils_a_SOURCES = $(NOX_TEST_UTILS) $(include_HEADERS) 
+libnoxtestutils_a_CXXFLAGS = \
+	-I$(top_srcdir)/src-loca/src \
+	-I$(top_srcdir)/src \
+	$(TRILINOS_CXXFLAGS) 
+
+@USE_ALTERNATE_AR_FALSE@libnoxtestutils_a_AR = $(AR) cru
+
+#lib_LIBRARIES = libnoxtestutils.a
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libnoxtestutils_a_AR = $(ALTERNATE_AR)
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+libnoxtestutils_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
+.SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -278,6 +352,79 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkdir_p) $(DESTDIR)$(libdir)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    f="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f"; \
+	    $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    p="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
+
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  p="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+libnoxtestutils.a: $(libnoxtestutils_a_OBJECTS) $(libnoxtestutils_a_DEPENDENCIES) 
+	-rm -f libnoxtestutils.a
+	$(libnoxtestutils_a_AR) libnoxtestutils.a $(libnoxtestutils_a_OBJECTS) $(libnoxtestutils_a_LIBADD)
+	$(RANLIB) libnoxtestutils.a
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po@am__quote@
+
+.C.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.C.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+libnoxtestutils_a-NOX_TestUtils.o: $(srcdir)/NOX_TestUtils.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtestutils_a-NOX_TestUtils.o -MD -MP -MF "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" -c -o libnoxtestutils_a-NOX_TestUtils.o `test -f '$(srcdir)/NOX_TestUtils.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TestUtils.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po"; else rm -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_TestUtils.C' object='libnoxtestutils_a-NOX_TestUtils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po' tmpdepfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtestutils_a-NOX_TestUtils.o `test -f '$(srcdir)/NOX_TestUtils.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TestUtils.C
+
+libnoxtestutils_a-NOX_TestUtils.obj: $(srcdir)/NOX_TestUtils.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtestutils_a-NOX_TestUtils.obj -MD -MP -MF "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" -c -o libnoxtestutils_a-NOX_TestUtils.obj `if test -f '$(srcdir)/NOX_TestUtils.C'; then $(CYGPATH_W) '$(srcdir)/NOX_TestUtils.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_TestUtils.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po"; else rm -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_TestUtils.C' object='libnoxtestutils_a-NOX_TestUtils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po' tmpdepfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtestutils_a-NOX_TestUtils.obj `if test -f '$(srcdir)/NOX_TestUtils.C'; then $(CYGPATH_W) '$(srcdir)/NOX_TestUtils.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_TestUtils.C'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -372,9 +519,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(HEADERS)
+all-am: Makefile $(LIBRARIES) $(HEADERS)
 installdirs:
-	$(mkdir_p) $(DESTDIR)$(includedir)
+	$(mkdir_p) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -390,6 +537,7 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 
@@ -399,13 +547,16 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
 distclean: distclean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
 dvi: dvi-am
 
@@ -419,7 +570,7 @@ info-am:
 
 install-data-am: install-includeHEADERS
 
-install-exec-am:
+install-exec-am: install-libLIBRARIES
 
 install-info: install-info-am
 
@@ -428,12 +579,13 @@ install-man:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-am
 
@@ -443,18 +595,21 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-includeHEADERS uninstall-info-am
+uninstall-am: uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	ctags distclean distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-exec install-exec-am \
+	clean-libLIBRARIES ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am \
 	install-includeHEADERS install-info install-info-am \
-	install-man install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
-	uninstall uninstall-am uninstall-includeHEADERS \
-	uninstall-info-am
+	install-libLIBRARIES install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

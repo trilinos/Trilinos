@@ -699,6 +699,14 @@ AM_CONDITIONAL(BUILD_LIBNOXPETSC, test X${ADDON_petsc} = Xyes)
 AM_CONDITIONAL(BUILD_PETSC_EXAMPLES, test X${ADDON_petsc_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
+# NOX-Belos library?
+# ------------------------------------------------------------------------
+
+NOX_INTERFACE(belos)
+AM_CONDITIONAL(BUILD_LIBNOXBELOS, test X${ADDON_belos} = Xyes)
+AM_CONDITIONAL(BUILD_BELOS_EXAMPLES, test X${ADDON_belos_EXAMPLES} = Xyes)
+
+# ------------------------------------------------------------------------
 # LOCA Library Check
 # ------------------------------------------------------------------------
 
@@ -725,6 +733,11 @@ AC_ARG_ENABLE(nox-multivectors,
 
 # If LOCA is enabled, must enable multivector support
 if test X${BUILD_LIBLOCA} = Xyes; then
+   BUILD_NOX_MULTIVECS=yes
+fi
+
+# If NOX-Belos support is enabled, must enable multivector support
+if test X${BUILD_LIBNOXBELOS} = Xyes; then
    BUILD_NOX_MULTIVECS=yes
 fi
 
@@ -1051,6 +1064,16 @@ AC_ARG_WITH(anasazi-libdir,
 [],
 [anasazi_LIBDIR=$withval])
 
+AC_ARG_WITH(belos-incdir,
+[AC_HELP_STRING([--with-belos-incdir],[specify location of all belos header files])],
+[],
+[belos_INCDIR=$withval])
+
+AC_ARG_WITH(belos-libdir,
+[AC_HELP_STRING([--with-belos-libdir],[specify location of belos library])],
+[],
+[belos_LIBDIR=$withval])
+
 # Relative path to Trilinos include files, to be used in Makefiles
 REL_TRILINOS_CPPFLAGS=
 
@@ -1196,16 +1219,22 @@ if test X${ADDON_epetra} = Xyes; then
 
 fi
 
-if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
-  TRILINOS_HEADER(anasazi,Anasazi_config.h,src)
-  TRILINOS_HEADER(anasazi,AnasaziReturnType.hpp,src)
-  TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"	
-fi
-
 if test X${REQUIRE_TEUCHOS} = Xyes; then
   TRILINOS_HEADER(teuchos,Teuchos_config.h,src)
   TRILINOS_HEADER(teuchos,Teuchos_Flops.hpp,src)
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
+fi
+
+if test X${ADDON_belos} = Xyes; then
+   TRILINOS_HEADER(belos,Belos_config.h,belos_new/src)
+   TRILINOS_HEADER(belos,BelosReturnType.hpp,belos_new/src)
+   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
+fi
+
+if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+  TRILINOS_HEADER(anasazi,Anasazi_config.h,src)
+  TRILINOS_HEADER(anasazi,AnasaziReturnType.hpp,src)
+  TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"	
 fi
 
 AC_SUBST(TRILINOS_CXXFLAGS)
@@ -1291,14 +1320,19 @@ if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes; then
   AC_DEFINE(HAVE_NOX_TEUCHOS,1,[define that Teuchos is activated in nox])
 fi
 
-if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
-  TRILINOS_LIB_CHECK(anasazi,anasazi,src)
-  AC_DEFINE(HAVE_LOCA_ANASAZI,1,[define that anasazi is activated in loca])
-fi
-
 if test X${REQUIRE_TEUCHOS} = Xyes; then
   TRILINOS_LIB_CHECK(teuchos,teuchos,src)
   AC_DEFINE(HAVE_NOX_TEUCHOS,1,[define that Teuchos is activated in nox])
+fi
+
+if test X${ADDON_belos} = Xyes; then
+  TRILINOS_LIB_CHECK(belos,belos,belos_new/src)
+  AC_DEFINE(HAVE_NOX_BELOS,1,[define that Belos is activated in nox])
+fi
+
+if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+  TRILINOS_LIB_CHECK(anasazi,anasazi,src)
+  AC_DEFINE(HAVE_LOCA_ANASAZI,1,[define that anasazi is activated in loca])
 fi
 
 # ------------------------------------------------------------------------
@@ -1518,6 +1552,10 @@ AC_CONFIG_FILES([
                 example-petsc/Makefile
                 example-petsc/DS6.5.1/Makefile
                 example-petsc/1Dfd_nonlinear/Makefile
+		src-belos/Makefile
+		example-belos/Makefile
+		example-belos/epetra/Makefile
+		example-belos/epetra/1Dfem_nonlinear/Makefile
 		src-loca/Makefile
 		src-loca/doc/Makefile
 		src-loca/src/Makefile

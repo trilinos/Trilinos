@@ -436,8 +436,6 @@ void NOX::LAPACK::MultiVector::dot(
 			   const NOX::LAPACK::MultiVector& y,
 			   NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
-  checkSize(y.numCols);
-
   // Create strided versions of y and c (this) if they are not already strided
   // Note:  This is not the best test.  A multivector could not own its columns
   // and still be strided, i.e., if the indices in the view were contiguous
@@ -459,8 +457,8 @@ void NOX::LAPACK::MultiVector::dot(
   const double *cv = &(sc->x[0]);
 
   // Call BLAS routine
-  DGEMM_F77("T", "N", &len, &numCols, &numCols, &alpha, cv, &len, yv, &len,
-	    &NOX::LAPACK::d_zero, bv, &numCols);
+  DGEMM_F77("T", "N", &y.numCols, &numCols, &len, &alpha, yv, &len, cv, &len,
+	    &NOX::LAPACK::d_zero, bv, &y.numCols);
 
   // Delete temporaries
   if (!ownsCols) {

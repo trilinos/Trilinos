@@ -135,9 +135,9 @@ class Vector : public virtual NOX::Abstract::Vector {
 #ifdef HAVE_NOX_MULTIVECS
 
   /*! 
-   * \brief Create a MultiVector with \c numVecs columns out of an array of 
+   * \brief Create a MultiVector with \c numVecs+1 columns out of an array of 
    * Vectors.  The vector stored under \c this will be the first column with
-   * the remaining \c numVecs - 1 columns given by \c vecs.
+   * the remaining \c numVecs columns given by \c vecs.
    *
    * The implementation here creates a NOX::Epetra::MultiVector with
    * either Shape or Deep copies of the supplied vectors.

@@ -42,9 +42,10 @@ lib_LIBRARIES = libnoxtestutils.a
 
 libnoxtestutils_a_SOURCES = $(NOX_TEST_UTILS) $(include_HEADERS) 
 
-libnoxlapack_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
-                           -I$(top_srcdir)/src \
-                           $(TRILINOS_CXXFLAGS) 
+libnoxtestutils_a_CXXFLAGS = \
+	-I$(top_srcdir)/src-loca/src \
+	-I$(top_srcdir)/src \
+	$(TRILINOS_CXXFLAGS) 
 
 #lib_LIBRARIES = libnoxtestutils.a
 

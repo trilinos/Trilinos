@@ -265,8 +265,8 @@ namespace NOX {
        */
       mutable vector<NOX::Epetra::Vector*> noxEpetraVectors;
 
-      //! Default constructor (Protected)
-      MultiVector();
+      //! Constructor (Protected)
+      MultiVector(int numvecs);
 
       //! Checks whether an index is valid.  Throws an error if invalid
       void checkIndex(int idx) const;
