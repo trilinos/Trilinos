@@ -61,6 +61,7 @@ extern "C" {
 #define Zfw_Set_FnAs                   zfw_set_fnas
 #define Zfw_Set_FnBs                   zfw_set_fnbs
 #define Zfw_Set_Param                  zfw_set_param
+#define Zfw_Set_Param_Vec              zfw_set_param_vec
 #define Zfw_LB_Partition               zfw_lb_partition
 #define Zfw_LB_Eval                    zfw_lb_eval
 #define Zfw_LB_Set_Part_Sizes          zfw_lb_set_part_sizes
@@ -111,6 +112,7 @@ extern "C" {
 #define Zfw_Set_FnAs                   ZFW_SET_FNAS
 #define Zfw_Set_FnBs                   ZFW_SET_FNBS
 #define Zfw_Set_Param                  ZFW_SET_PARAM
+#define Zfw_Set_Param_Vec              ZFW_SET_PARAM_VEC
 #define Zfw_LB_Partition               ZFW_LB_PARTITION
 #define Zfw_LB_Eval                    ZFW_LB_EVAL
 #define Zfw_LB_Set_Part_Sizes          ZFW_LB_SET_PART_SIZES
@@ -160,6 +162,7 @@ extern "C" {
 #define Zfw_Set_FnAs                   zfw_set_fnas_
 #define Zfw_Set_FnBs                   zfw_set_fnbs_
 #define Zfw_Set_Param                  zfw_set_param_
+#define Zfw_Set_Param_Vec              zfw_set_param_vec_
 #define Zfw_LB_Partition               zfw_lb_partition_
 #define Zfw_LB_Eval                    zfw_lb_eval_
 #define Zfw_LB_Set_Part_Sizes          zfw_lb_set_part_sizes_
@@ -210,6 +213,7 @@ extern "C" {
 #define Zfw_Set_FnAs                   zfw_set_fnas__
 #define Zfw_Set_FnBs                   zfw_set_fnbs__
 #define Zfw_Set_Param                  zfw_set_param__
+#define Zfw_Set_Param_Vec              zfw_set_param_vec__
 #define Zfw_LB_Partition               zfw_lb_partition__
 #define Zfw_LB_Eval                    zfw_lb_eval__
 #define Zfw_LB_Set_Part_Sizes          zfw_lb_set_part_sizes__
@@ -1279,6 +1283,30 @@ int Zfw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
    for (i=0; i<(*new_value_len); i++) new_value[i] = (char)int_new_value[i];
    new_value[*new_value_len] = '\0';
    result = Zoltan_Set_Param(lb, param_name, new_value);
+   ZOLTAN_FREE(&param_name);
+   ZOLTAN_FREE(&new_value);
+   return result;
+}
+
+/*****************************************************************************/
+int Zfw_Set_Param_Vec(int *addr_lb, int *nbytes, int *int_param_name,
+                   int *param_name_len, int *int_new_value, int *new_value_len,
+                   int index)
+{
+   struct Zoltan_Struct *lb;
+   char *param_name, *new_value;
+   unsigned char *p;
+   int i, result;
+   param_name = (char *)ZOLTAN_MALLOC(*param_name_len+1);
+   new_value = (char *)ZOLTAN_MALLOC(*new_value_len+1);
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   Zoltan_Current = lb;
+   for (i=0; i<(*param_name_len); i++) param_name[i] = (char)int_param_name[i];
+   param_name[*param_name_len] = '\0';
+   for (i=0; i<(*new_value_len); i++) new_value[i] = (char)int_new_value[i];
+   new_value[*new_value_len] = '\0';
+   result = Zoltan_Set_Param_Vec(lb, param_name, new_value, index);
    ZOLTAN_FREE(&param_name);
    ZOLTAN_FREE(&new_value);
    return result;

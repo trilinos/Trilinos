@@ -109,6 +109,7 @@ public :: &
    Zoltan_Memory_Stats, &
    Zoltan_Set_Fn, &
    Zoltan_Set_Param, &
+   Zoltan_Set_Param_Vec, &
    Zoltan_LB_Partition, &
    Zoltan_LB_Eval, &
    Zoltan_LB_Free_Part, &
@@ -699,6 +700,21 @@ end function Zfw_Set_Param
 end interface
 
 interface
+!NAS$ ALIEN "F77 zfw_set_param_vec"
+function Zfw_Set_Param_Vec(zz,nbytes,param_name,param_name_len, &
+                          new_value,new_value_len,index)
+use zoltan_types
+use lb_user_const
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_Set_Param_Vec
+integer(Zoltan_INT), dimension(*) INTENT_IN zz, param_name, new_value
+integer(Zoltan_INT) INTENT_IN nbytes, param_name_len, new_value_len
+integer(Zoltan_INT) INTENT_IN index
+end function Zfw_Set_Param_Vec
+end interface
+
+interface
 !NAS$ ALIEN "F77 zfw_partition"
 function Zfw_LB_Partition(zz,nbytes,changes,num_gid_entries,num_lid_entries, &
                 num_import,import_global_ids, &
@@ -1009,6 +1025,10 @@ end interface
 
 interface Zoltan_Set_Param
    module procedure Zf90_Set_Param
+end interface
+
+interface Zoltan_Set_Param_Vec
+   module procedure Zf90_Set_Param_Vec
 end interface
 
 interface Zoltan_LB_Partition
@@ -1594,6 +1614,32 @@ end do
 Zf90_Set_Param = Zfw_Set_Param(zz_addr,nbytes,int_param_name, &
                                     param_name_len,int_new_value,new_value_len)
 end function Zf90_Set_Param
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_Set_Param_Vec(zz,param_name,new_value,index)
+integer(Zoltan_INT) :: Zf90_Set_Param_Vec
+type(Zoltan_Struct) INTENT_IN zz
+character(len=*) INTENT_IN param_name, new_value
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT), dimension(len_trim(param_name)) :: int_param_name
+integer(Zoltan_INT), dimension(len_trim(new_value)) :: int_new_value
+integer(Zoltan_INT) :: index
+integer(Zoltan_INT) :: nbytes, param_name_len, new_value_len, i
+nbytes = Zoltan_PTR_LENGTH
+param_name_len = len_trim(param_name)
+new_value_len = len_trim(new_value)
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+do i=1,param_name_len
+   int_param_name(i) = ichar(param_name(i:i))
+end do
+do i=1,new_value_len
+   int_new_value(i) = ichar(new_value(i:i))
+end do
+Zf90_Set_Param_Vec = Zfw_Set_Param_Vec(zz_addr,nbytes,int_param_name, &
+                     param_name_len,int_new_value,new_value_len,index)
+end function Zf90_Set_Param_Vec
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_LB_Partition(zz,changes,num_gid_entries,num_lid_entries, &
