@@ -49,7 +49,7 @@ namespace Tpetra {
   MpiDistributor() : Object("Tpetra::Distributor[MPI]") {};
 
   //! Copy Constructor
-  MpiDistributor(MpiDistributor<PacketType, OrdinalType> const& plan) : Object(plan.label()) {};
+  MpiDistributor(MpiDistributor<PacketType, OrdinalType> const& distributor) : Object(distributor.label()) {};
 
   //! Clone method
 	Distributor<PacketType, OrdinalType>* clone() {

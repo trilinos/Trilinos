@@ -41,16 +41,16 @@ namespace Tpetra {
   */	
 
   template<class T>
-  struct UndefinedScalarTraits {
+  struct UndefinedPacketTraits {
     //! This function should not compile if there is an attempt to instantiate!
     static inline T notDefined() { return T::this_type_is_missing_a_specialization(); };
   };
   
 	template<class T>
 	struct PacketTraits {
-		static inline int packetSize()              {return UndefinedScalarTraits<T>::notDefined();};
-		static inline std::string name()            {return UndefinedScalarTraits<T>::notDefined();};
-    static inline MPI_Datatype mpiDataType()    {return UndefinedScalarTraits<T>::notDefined();};
+		static inline int packetSize()              {return UndefinedPacketTraits<T>::notDefined();};
+		static inline std::string name()            {return UndefinedPacketTraits<T>::notDefined();};
+    static inline MPI_Datatype mpiDataType()    {return UndefinedPacketTraits<T>::notDefined();};
 	};
 	
 	template<>

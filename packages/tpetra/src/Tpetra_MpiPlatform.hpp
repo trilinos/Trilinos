@@ -47,10 +47,18 @@ namespace Tpetra {
     //@{ \name Constructor/Destructor Methods
 
 		//! Constructor
-		MpiPlatform() : Object("Tpetra::Platform[MPI]") {};
+		MpiPlatform(MPI_Comm Comm) 
+      : Object("Tpetra::Platform[MPI]")
+      , MpiComm_(Comm)
+    {
+    };
 
     //! Copy Constructor
-    MpiPlatform(MpiPlatform<OrdinalType, ScalarType> const& platform) : Object(platform.label()) {};
+    MpiPlatform(MpiPlatform<OrdinalType, ScalarType> const& platform) 
+      : Object(platform.label())
+      , MpiComm_(platform.MpiComm_)
+    {
+    };
 
     //! Destructor
 		~MpiPlatform() {};
@@ -67,11 +75,11 @@ namespace Tpetra {
 
 		//! Comm Instances
     Comm<ScalarType, OrdinalType>* createScalarComm() const {
-			MpiComm<ScalarType, OrdinalType>* comm = new MpiComm<ScalarType, OrdinalType>(MPI_COMM_WORLD);
+			MpiComm<ScalarType, OrdinalType>* comm = new MpiComm<ScalarType, OrdinalType>(getMpiComm());
       return(comm);
 		};
 		Comm<OrdinalType, OrdinalType>* createOrdinalComm() const {
-			MpiComm<OrdinalType, OrdinalType>* comm = new MpiComm<OrdinalType, OrdinalType>(MPI_COMM_WORLD);
+			MpiComm<OrdinalType, OrdinalType>* comm = new MpiComm<OrdinalType, OrdinalType>(getMpiComm());
       return(comm);
 		};
 
@@ -102,6 +110,16 @@ namespace Tpetra {
 		void printInfo(ostream& os) const {print(os);};
 
 		//@}
+    
+    //@{ \name MPI-specific methods, not inherited from Tpetra::Comm
+    //! Access method to the MPI Communicator we're using.
+    MPI_Comm getMpiComm() const {
+      return(MpiComm_);
+    };
+    //@}
+    
+private:
+    MPI_Comm MpiComm_;
     
 	}; // MpiPlatform class
   

@@ -78,28 +78,28 @@ namespace Tpetra {
     
     //@{ \name Gather Methods
     void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const {
-        throw reportError("This method is not implemented yet.", -1);
+      MPI_Allgather(myVals, count, PacketTraits<PacketType>::mpiDataType(), allVals, count, PacketTraits<PacketType>::mpiDataType(), MpiComm_);
     };
     //@}
     
     //@{ \name Sum Methods
     void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const {
-      throw reportError("This method is not implemented yet.", -1);
+      MPI_Allreduce(partialSums, globalSums, count, PacketTraits<PacketType>::mpiDataType(), MPI_SUM, MpiComm_);
     };
     //@}
     
     //@{ \name Max/Min Methods
     void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const {
-      throw reportError("This method is not implemented yet.", -1);
+      MPI_Allreduce(partialMaxs, globalMaxs, count, PacketTraits<PacketType>::mpiDataType(), MPI_MAX, MpiComm_);
     };
     void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const {
-      throw reportError("This method is not implemented yet.", -1);
+      MPI_Allreduce(partialMins, globalMins, count, PacketTraits<PacketType>::mpiDataType(), MPI_MIN, MpiComm_);
     };
     //@}
     
     //@{ \name Parallel Prefix Methods
     void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const {
-      throw reportError("This method is not implemented yet.", -1);
+      MPI_Scan(myVals, scanSums, count, PacketTraits<PacketType>::mpiDataType(), MPI_SUM, MpiComm_);
     };
     //@}
     

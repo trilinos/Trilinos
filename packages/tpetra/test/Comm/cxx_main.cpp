@@ -27,17 +27,19 @@
 // @HEADER
 
 #include <iostream>
-#include "Tpetra_SerialComm.hpp"
+#include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Version.hpp"
+#include "Tpetra_SerialComm.hpp"
 #ifdef TPETRA_MPI
 #include <mpi.h>
 #include "Tpetra_MpiComm.hpp"
 #endif // TPETRA_MPI
 
 // function prototypes
-template<typename PacketType, typename OrdinalType> void setRandom(PacketType& vals, OrdinalType count);
-template<typename PacketType, typename OrdinalType> void setToZero(PacketType& vals, OrdinalType count);
-template<typename PacketType, typename OrdinalType> void commTest(Tpetra::SerialComm<PacketType, OrdinalType>& comm, bool verbose);
+template<typename PacketType, typename OrdinalType> 
+int commMethods(Tpetra::Comm<PacketType, OrdinalType>& comm, bool verbose);
+template<typename PacketType, typename OrdinalType> 
+int checkRankAndSize(Tpetra::Comm<PacketType, OrdinalType>& comm, int rank, int size, bool verbose, bool debug);
 
 int main(int argc, char* argv[]) {
 	// initialize verbose & debug flags
@@ -52,101 +54,148 @@ int main(int argc, char* argv[]) {
 		}
 	}
   
-  bool verbose1 = verbose;
+  int rank = 0; // assume we are on serial
+  int size = 1; // if MPI, will be reset later
   
-
-	if(verbose)
-		cout << Tpetra::Tpetra_Version() << endl << endl;
-
-	if(verbose) cout << "Creating SerialComm object...";
-	Tpetra::SerialComm<int, int> comm;
-  if(verbose) cout << "Successful" << endl;
-	commTest(comm, verbose);
-	if(verbose) cout << "SerialComm testing successfull." << endl;
-  
+  // initialize MPI if needed
 #ifdef TPETRA_MPI
-  if(verbose) cout << "Testing MPI functionality..." << endl;
-  int size = -1;
-  int rank = -1;
+  size = -1;
+  rank = -1;
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if(verbose) cout << "MPI Startup: Image " << rank << " of " << size << " is alive." << endl;
+#endif // TPETRA_MPI
   
-  if(verbose) cout << "Image " << rank << " of " << size << " is alive." << endl;
+  // change verbose to only be true on Image 0, and verboseAll to have the original verbose setting
+  bool verboseAll = verbose;
+  verbose = (verbose && (rank == 0));
+  
+  // start the testing
+	if(verbose) {
+    cout << "\n****************************************\n" 
+         << "Starting CommTest..." << endl
+         << Tpetra::Tpetra_Version() << endl
+         << "****************************************\n";
+  }
+  int ierr = 0;
+  int returnierr = 0;
+  
+  // test SerialComm
+  if(verbose) cout << "\n****************************************\n" 
+                   << "Testing Tpetra::SerialComm\n" 
+                   << "****************************************\n\n";
+  if(verbose) cout << "Creating SerialComm object...";
+  Tpetra::SerialComm<float, int> comm;
+  if(verbose) cout << "Successful" << endl;
+  Tpetra::SerialComm<float, int> serialClone(comm); // test copy constructor
+  ierr += checkRankAndSize<float, int>(comm, 0, 1, verbose, debug); // for serial, rank and size are always 0 and 1
+  ierr += commMethods<float, int>(comm, verbose);
+  if(verbose) 
+    if(ierr == 0) cout << "SerialComm testing successful." << endl;
+    else cout << "SerialComm testing failed." << endl;
+  returnierr += ierr;
+  ierr = 0;
+  
+  // test MpiComm if MPI is enabled
+#ifdef TPETRA_MPI
+  if(verbose) cout << "\n****************************************\n" 
+                   << "Testing Tpetra::MpiComm\n" 
+                   << "****************************************\n\n";
   
   if(verbose) cout << "Creating MpiComm object...";
   Tpetra::MpiComm<float, int> comm2(MPI_COMM_WORLD);
   if(verbose) cout << "Successful" << endl;
-  
-  if(debug) cout << comm2 << endl;
-  
-  comm2.barrier();
-  
-  if(verbose) cout << "Trying broadcast..." << endl;
-  float foo = rank;
-  if(debug) cout << "Before broadcast, foo = " << foo << " on image " << rank << "." << endl;
-  comm2.broadcast(&foo, 1, 0);
-  if(debug) cout << "After broadcast, foo = " << foo << " on image " << rank << "." << endl;
+  Tpetra::MpiComm<float, int> mpiClone(comm2); // test copy constructor
+  ierr += checkRankAndSize<float, int>(comm2, rank, size, verbose, debug);
+  ierr += commMethods<float, int>(comm2, verbose);
+  if(verbose) 
+    if(ierr == 0) cout << "MpiComm testing successful." << endl;
+    else cout << "MpiComm testing failed." << endl;
+  returnierr += ierr;
+  ierr = 0;
   
   MPI_Finalize();
 #endif // TPETRA_MPI
-
-  return(0);
+  
+  // finish up
+	if(verbose)
+		if(returnierr == 0)
+			cout << "Comm test successful." << endl;
+		else
+			cout << "Comm test failed." << endl;
+  return(returnierr);
 }
 
+//======================================================================
 template<typename PacketType, typename OrdinalType> 
-void setValues(PacketType& vals, OrdinalType count) {
-	for(OrdinalType i = 0; i < count; i++)
-		vals[i] = 5;
+int checkRankAndSize(Tpetra::Comm<PacketType, OrdinalType>& comm, int rank, int size, bool verbose, bool debug) {
+  if(verbose) cout << "Checking rank and size... ";
+  
+  int ierr = 0;
+  
+  int comm_rank = comm.getMyImageID();
+  if(comm_rank != rank)
+    ierr++;
+  int comm_size = comm.getNumImages();
+  if(comm_size != size)
+    ierr++;
+  
+  if(verbose)
+    if(ierr == 0)
+      cout << "Successful" << endl;
+    else
+      cout << "Failed" << endl;
+  
+  if(debug || (ierr != 0)) {
+    cout << "rank = " << rank << ", myImageID = " << comm_rank << endl;
+    cout << "size = " << size << ", numImages = " << comm_size << endl;
+  }
+  
+  return(ierr);
 }
 
-template<typename PacketType, typename OrdinalType> 
-void setToZero(PacketType& vals, OrdinalType count) {
-	for(OrdinalType i = 0; i < count; i++)
-		vals[i] = 0;
-}
-
+//======================================================================
 template<typename PacketType, typename OrdinalType>
-void commTest(Tpetra::SerialComm<PacketType, OrdinalType>& comm, bool verbose) {
-	OrdinalType count;
-	count = 1;	// eventually, count = randnum
+int commMethods(Tpetra::Comm<PacketType, OrdinalType>& comm, bool verbose) {
+	if(verbose) cout << "Starting Comm method testing..." << endl;
+  
+	OrdinalType count = Teuchos::OrdinalTraits<OrdinalType>::one();
 	PacketType inVal;
 	PacketType outVal;
-
-	inVal = 7; outVal = 7;
-	if(verbose) cout << "Testing broadcast...";
-	comm.broadcast(&inVal, count, 0);
-	assert(inVal = outVal);
-	if(verbose) cout << "Successful" << endl;
   
-	inVal = 5; outVal = 0;
-	if(verbose) cout << "Testing gatherAll...";
+  if(verbose) cout << "getMyImageID..." << endl;
+  comm.getMyImageID(); // throw away output
+  
+  if(verbose) cout << "getNumImages..." << endl;
+  comm.getNumImages(); // throw away output
+  
+  if(verbose) cout << "barrier..." << endl;
+  comm.barrier();
+  
+	if(verbose) cout << "broadcast..." << endl;
+	comm.broadcast(&inVal, count, 0);
+  
+	if(verbose) cout << "gatherAll..." << endl;
 	comm.gatherAll(&inVal, &outVal, count);
-	assert(inVal = outVal);
-	if(verbose) cout << "Successful" << endl;
-
-	inVal = 2; outVal = 0;
-	if(verbose) cout << "Testing sumAll...";
+  
+	if(verbose) cout << "sumAll..." << endl;
 	comm.sumAll(&inVal, &outVal, count);
-	assert(inVal = outVal);
-	if(verbose) cout << "Successful" << endl;
-
-	inVal = 6; outVal = 0;
-	if(verbose) cout << "Testing MaxAll...";
+  
+	if(verbose) cout << "maxAll..." << endl;
 	comm.maxAll(&inVal, &outVal, count);
-	assert(inVal = outVal);
-	if(verbose) cout << "Successful" << endl;
-
-	inVal = 9; outVal = 0;
-	if(verbose) cout << "Testing MinAll...";
+  
+	if(verbose) cout << "minAll..." << endl;
 	comm.minAll(&inVal, &outVal, count);
-	assert(inVal = outVal);
-	if(verbose) cout << "Successful" << endl;
-
-	inVal = 1; outVal = 0;
-	if(verbose) cout << "Testing scanSum...";
+  
+	if(verbose) cout << "scanSum..." << endl;
 	comm.scanSum(&inVal, &outVal, count);
-	assert(inVal = outVal);
-	if(verbose) cout << "Successful" << endl;
-
+  
+  if(verbose) cout << "printInfo..." << endl;
+  comm.barrier();
+  if(verbose) comm.printInfo(cout); // only run if in verbose mode
+  comm.barrier();
+  
+  if(verbose) cout << "Comm method testing finished." << endl;
+	return(0);
 }

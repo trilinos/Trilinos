@@ -75,8 +75,8 @@ int main(int argc, char* argv[]) {
 //======================================================================
 template <typename OrdinalType, typename ScalarType>
 int codeCoverage(bool verbose, bool debug) {
-	char const * OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
-	char const * STName = Teuchos::ScalarTraits<ScalarType>::name();
+  std::string OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
+  std::string STName = Teuchos::ScalarTraits<ScalarType>::name();
 
 	if(verbose) cout << "Starting code coverage for CisMatrix<" << OTName << "," << STName << ">." << endl;
 

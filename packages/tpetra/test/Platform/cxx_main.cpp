@@ -107,7 +107,7 @@ int serialTests(bool verbose, bool debug) {
 template <typename OrdinalType, typename ScalarType>
 int mpiTests(bool verbose, bool debug) {
 	if(verbose) cout << "Creating MpiPlatform object...";
-	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform2;
+	Tpetra::MpiPlatform<OrdinalType, ScalarType> platform2(MPI_COMM_WORLD);
 	if(verbose) cout << "Successful." << endl;
 
 	if(verbose) cout << "Creating MpiComm objects...";
