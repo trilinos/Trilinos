@@ -330,7 +330,7 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
 
 /* see if we need more memory for the element_list's */
 
-         if (nvert > element_list_dim) {
+         if (nvert >= element_list_dim) {
             element_list_dim *= 2;
             temp_element_list = (int **) ZOLTAN_REALLOC(element_list,
                                                 sizeof(int *)*element_list_dim);
@@ -424,10 +424,10 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
    }
 
    for (i=0; i<num_obj; i++) {
-      num_neigh[i] = (int *) ZOLTAN_MALLOC(sizeof(int)*MAXVERT+1);
-      neigh_dim[i] = (int *) ZOLTAN_MALLOC(sizeof(int)*MAXVERT+1);
-      neigh[i] = (int **) ZOLTAN_MALLOC(sizeof(int *)*MAXVERT+1);
-      shared_vert[i] = (int ***) ZOLTAN_MALLOC(sizeof(int **)*MAXVERT+1);
+      num_neigh[i] = (int *) ZOLTAN_MALLOC(sizeof(int)*(MAXVERT+1));
+      neigh_dim[i] = (int *) ZOLTAN_MALLOC(sizeof(int)*(MAXVERT+1));
+      neigh[i] = (int **) ZOLTAN_MALLOC(sizeof(int *)*(MAXVERT+1));
+      shared_vert[i] = (int ***) ZOLTAN_MALLOC(sizeof(int **)*(MAXVERT+1));
       if (num_neigh[i] == NULL || neigh_dim[i] == NULL || neigh[i] == NULL || shared_vert[i] == NULL) {
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          for (j=0; j<element_list_dim; j++) ZOLTAN_FREE(&(element_list[j]));

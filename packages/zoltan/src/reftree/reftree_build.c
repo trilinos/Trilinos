@@ -301,9 +301,6 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
                               local_gids, local_lids, 
                               assigned, num_vert, vertices,
                               &in_order, in_vertex, out_vertex, &ierr);
-      for (i=0; i<num_obj; i++) {
-        sum_vert += num_vert[i];
-      }
       if (ierr) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                       "Error returned from user function Get_Coarse_Obj_List.");
@@ -317,6 +314,9 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
         Zoltan_Reftree_Free_Structure(zz);
         ZOLTAN_TRACE_EXIT(zz, yo);
         return(ierr);
+      }
+      for (i=0; i<num_obj; i++) {
+        sum_vert += num_vert[i];
       }
 
     }
@@ -341,7 +341,6 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
                                        &in_vertex[count*ngid_ent],
                                        &out_vertex[count*ngid_ent],
                                        &ierr);
-      sum_vert += num_vert[count];
       if (ierr) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                      "Error returned from user function Get_First_Coarse_Obj.");
@@ -356,6 +355,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
         ZOLTAN_TRACE_EXIT(zz, yo);
         return(ierr);
       }
+      if (found) sum_vert += num_vert[count];
 
       while (found && count <= num_obj) {
         count += 1;
@@ -374,7 +374,6 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
                                       &in_vertex[count*ngid_ent],
                                       &out_vertex[count*ngid_ent],
                                       &ierr);
-        sum_vert += num_vert[count];
         if (ierr) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                       "Error returned from user function Get_Next_Coarse_Obj.");
@@ -389,6 +388,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
           ZOLTAN_TRACE_EXIT(zz, yo);
           return(ierr);
         }
+        if (found) sum_vert += num_vert[count];
       }
       if (count != num_obj) {
         sprintf(msg, "Number of objects returned by "
@@ -2559,7 +2559,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
       else {
         tree_node->assigned_to_me = sassigned;
         tree_node->known_to_me = 1;
-          ZOLTAN_SET_LID(zz, tree_node->local_id, &(local_lids[i*nlid_ent]));
+        ZOLTAN_SET_LID(zz, tree_node->local_id, slocal_lids);
         if (zz->Obj_Weight_Dim == 0)
           tree_node->weight[0] = 0.0;
         else
