@@ -125,7 +125,8 @@ $(srcdir)/Utils/ml_twogrid_analysis.h \
 $(srcdir)/Utils/ml_intlist.h \
 $(srcdir)/Utils/ml_vec.h \
 $(srcdir)/Utils/ml_lapack.h            $(srcdir)/Utils/ml_vendor_lapack.h \
-$(srcdir)/Utils/ml_eigf2c.h
+$(srcdir)/Utils/ml_eigf2c.h \
+$(srcdir)/Utils/ml_vampir.h
 
 
 UTIL = \
