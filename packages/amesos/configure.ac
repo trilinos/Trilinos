@@ -105,7 +105,7 @@ TAC_ARG_CONFIG_MPI
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ gcc c++ cxx)
 BASE_CXX=${CXX}
-#AC_PROG_F77(f77 g77 f90 xlf90)
+AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -232,7 +232,7 @@ TAC_ARG_WITH_LIBDIRS
 TAC_ARG_WITH_INCDIRS
 
 # Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
-#AC_F77_WRAPPERS
+AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
 # Checks for addons
@@ -348,9 +348,12 @@ dnl Replace `main' with a function in -lm:
 
 dnl Check for user-specified names for LAPACK and BLAS
 TAC_ARG_WITH_BLASLIB
+# ------------------------------  ABC
 TAC_ARG_WITH_LAPACKLIB
+# ------------------------------  ABCD
 
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+# ------------------------------  ABCDE
   ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 
 # ------------------------------------------------------------------------
@@ -362,7 +365,7 @@ TAC_ARG_WITH_LAPACKLIB
 # ------------------------------------------------------------------------
 
 # Determine libraries needed for linking with Fortran
-#AC_F77_LIBRARY_LDFLAGS
+AC_F77_LIBRARY_LDFLAGS
 
 # -- DEC CXX --
 dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
