@@ -58,17 +58,6 @@ public:
 		  const Abstract::Group& oldgrp, 
 		  const Abstract::Vector& dir) ;
 
-  //! \todo This needs to be documented
-  int MTStep(double*, double*, double*, double*, double*, double*, double*,
-           double*, double*, double*, double*, int*);
-//   int MTStep();
-  
-  //! \todo This needs to be documented
-  double mymin(double, double);
-
-  //! \todo This needs to be documented
-  double mymax(double, double);
-
 
 private:
 
@@ -223,6 +212,7 @@ private:
 	     const Abstract::Group& oldgrp, const Abstract::Vector& dir);
 
 
+  //! More'-Thuente's cstep subroutine.
   /*!
     \verbatim
 %   Translation of minpack subroutine cstep 
