@@ -142,6 +142,7 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
   isize = osize;
   int N_ghost = A->NumMyCols() - A->NumMyRows();
 
+  if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 
   ML_Init_Amatrix(ml_handle, level,isize, osize, (void *) A);
   ML_Set_Amatrix_Getrow(ml_handle, level, Epetra_ML_getrow,
