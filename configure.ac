@@ -130,6 +130,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
 	test "X$ac_cv_use_amesos" != "Xno" || 
  	test "X$ac_cv_use_anasazi" != "Xno" ||
+ 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/teuchos])
 fi
