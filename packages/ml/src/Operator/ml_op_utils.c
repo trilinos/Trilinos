@@ -2788,7 +2788,7 @@ int ML_Operator_Eigensolver_Dense(ML_Operator* Amat,
 void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel)
 {
   double t1;
-  int i,NumActiveProc, proc_active;
+  int i,j,NumActiveProc, proc_active;
   int Nglobrows,Nglobcols;
   ML_Comm *comm = mat->comm;
   int mypid = mat->comm->ML_mypid;
@@ -2825,10 +2825,11 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel)
       i = mat->getrow->pre_comm->N_neighbors;
     else i = 0;
     i = ML_Comm_GsumInt(comm, i);
+    j = ML_Comm_GsumInt(comm, mat->N_nonzeros);
     if (mypid == 0) {
        printf("===========================================\n");
        printf("Operator %s: %d rows, %d cols, %d nnz\n",
-              mat->label,Nglobrows,Nglobcols, mat->N_nonzeros);
+              mat->label,Nglobrows,Nglobcols, j);
        printf("Operator %s: %e avg nbrs, %d active proc.\n",
               mat->label,((double) i)/((double) NumActiveProc), NumActiveProc);
     }
