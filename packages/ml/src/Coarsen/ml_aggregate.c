@@ -21,6 +21,7 @@
 #include "ml_op_utils.h"
 #include "ml_utils.h"
 #include "ml_agg_Zoltan.h"
+#include "ml_agg_user.h"
 #include "ml_agg_VBMETIS.h"
 
 
@@ -53,6 +54,7 @@ extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 #define ML_AGGR_METIS        7
 #define ML_AGGR_PARMETIS     8
 #define ML_AGGR_ZOLTAN       9
+#define ML_AGGR_USER        11
 /*ms*/
 
 #define ML_AGGR_VBMETIS      10  /*mgee*/
@@ -508,6 +510,19 @@ int ML_Aggregate_Set_CoarsenScheme_Zoltan( ML_Aggregate *ag  )
 
 /* ------------------------------------------------------------------------- */
 
+int ML_Aggregate_Set_CoarsenScheme_User( ML_Aggregate *ag  )
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_CoarsenScheme_Zoltan : wrong object. \n");
+      exit(-1);
+   }
+   ag->coarsen_scheme = ML_AGGR_USER;
+   return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+
 int ML_Aggregate_Get_CoarsenScheme( ML_Aggregate *ag  )
 {
    if ( ag->ML_id != ML_ID_AGGRE ) 
@@ -585,20 +600,29 @@ int ML_Aggregate_Set_CoarsenSchemeLevel_MIS( int level, int MaxLevels,
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Aggregate_Set_CoarsenSchemeLevel_METIS( int level, int MaxLevels,
-					       ML_Aggregate *ag  )
+int ML_Aggregate_Set_CoarsenSchemeLevel_METIS(int level, int MaxLevels,
+					      ML_Aggregate *ag)
 {
   return( ML_Aggregate_Set_CoarsenSchemeLevel(level, MaxLevels,
-					      ag, ML_AGGR_METIS) );
+					      ag, ML_AGGR_METIS));
 }
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS( int level, int MaxLevels,
-						  ML_Aggregate *ag  )
+int ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS(int level, int MaxLevels,
+						 ML_Aggregate *ag)
 {
   return( ML_Aggregate_Set_CoarsenSchemeLevel(level, MaxLevels,
-					      ag, ML_AGGR_PARMETIS) );
+					      ag, ML_AGGR_PARMETIS));
+}
+
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_CoarsenSchemeLevel_User(int level, int MaxLevels,
+                                             ML_Aggregate *ag)
+{
+  return( ML_Aggregate_Set_CoarsenSchemeLevel(level, MaxLevels,
+					      ag, ML_AGGR_USER));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1063,6 +1087,8 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 	coarsen_scheme = ML_AGGR_PARMETIS;
       else if (coarsen_scheme == ML_AGGR_ZOLTAN) 
 	coarsen_scheme = ML_AGGR_ZOLTAN;
+      else if (coarsen_scheme == ML_AGGR_USER) 
+	coarsen_scheme = ML_AGGR_USER;
 /*ms*/
 /*mgee*/
       else if (coarsen_scheme == ML_AGGR_VBMETIS) 
@@ -1093,6 +1119,8 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 	coarsen_scheme = ML_AGGR_PARMETIS;
       else if (coarsen_scheme == ML_AGGR_ZOLTAN)
 	coarsen_scheme = ML_AGGR_ZOLTAN;
+      else if (coarsen_scheme == ML_AGGR_USER)
+	coarsen_scheme = ML_AGGR_USER;
 /*ms*/
       else
       {
@@ -1139,6 +1167,10 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 
       case ML_AGGR_ZOLTAN :
            Ncoarse = ML_Aggregate_CoarsenZoltan(ag,Amatrix,Pmatrix,comm);
+           break;
+
+      case ML_AGGR_USER :
+           Ncoarse = ML_Aggregate_CoarsenUser(ag,Amatrix,Pmatrix,comm);
            break;
 /*ms*/
 /*mgee*/
