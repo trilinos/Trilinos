@@ -65,57 +65,25 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose);
 
 int checkMatvecSameVectors(Epetra_Comm& comm, bool verbose);
 
-int main(int argc, char *argv[])
-{
+
+//
+//  TestMatrix contains the bulk of the testing.  
+//    MinSize and MaxSize control the range of the block sizes - which are chosen randomly
+//    ConstructWithMap controls whether a Column Map is passed to the VbrMatrix contructor
+//      if false, the underlying graph will not be optimized
+//    ExtraBlocks, if true, causes extra blocks to be added to the matrix, further 
+//      guaranteeing that the matrix and graph will not have optimal storage.  
+//      ExtraBlocks is only supported for fixed block sizes (i.e. when minsize=maxsize)
+//
+//    ConstructWithMap and ExtraBlocks are not supported yet.
+//
+int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug, 
+		int NumMyElements, int MinSize, int MaxSize, 
+		bool ConstructWithMap, bool ExtraBlocks ) {
+
   int ierr = 0, i, j, forierr = 0;
-  bool debug = false;
-
-#ifdef EPETRA_MPI
-
-  // Initialize MPI
-
-  MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
-
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-
-#else
-
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
-  Epetra_SerialComm Comm;
-
-#endif
-
-  bool verbose = false;
-
-  // Check if we should print results to standard out
-  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
-
-  //char tmp;
-  //if (rank==0) cout << "Press any key to continue..."<< endl;
-  //if (rank==0) cin >> tmp;
-  //Comm.Barrier();
-
-  Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
-
-  if (verbose && MyPID==0)
-    cout << Epetra_Version() << endl << endl;
-
-  if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
-              << " is alive."<<endl;
-
-  bool verbose1 = verbose;
-
-  // Redefine verbose to only print on PE 0
-  if (verbose && rank!=0) verbose = false;
-
-//  int NumMyElements = 1000;
-  int NumMyElements = 10; 
   if (MyPID < 3) NumMyElements++;
   if (NumMyElements<2) NumMyElements = 2; // This value must be greater than one on each processor
 
@@ -124,8 +92,6 @@ int main(int argc, char *argv[])
   Epetra_Vector randvec(randmap);
   randvec.Random(); // Fill with random numbers
   int * ElementSizeList = new int[NumMyElements];
-  int MinSize = 3;
-  int MaxSize = 8;
   int SizeRange = MaxSize - MinSize + 1;
   double DSizeRange = SizeRange;
   
@@ -441,10 +407,82 @@ int main(int argc, char *argv[])
     
     if (verbose) cout << "\n\nMatrix scale OK.\n\n" << endl;
 
+    return ierr; 
 
+}
+
+int main(int argc, char *argv[])
+{
+  int ierr = 0, i, j, forierr = 0;
+  bool debug = false;
+
+#ifdef EPETRA_MPI
+
+  // Initialize MPI
+
+  MPI_Init(&argc,&argv);
+  int size, rank; // Number of MPI processes, My process ID
+
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+
+#else
+
+  int size = 1; // Serial case (not using MPI)
+  int rank = 0;
+  Epetra_SerialComm Comm;
+
+#endif
+
+  int MyPID = Comm.MyPID();
+  int NumProc = Comm.NumProc();
+  bool verbose = false;
+
+  // Check if we should print results to standard out
+  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
+
+  //char tmp;
+  //if (rank==0) cout << "Press any key to continue..."<< endl;
+  //if (rank==0) cin >> tmp;
+  //Comm.Barrier();
+
+  Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
+
+  if (verbose && MyPID==0)
+    cout << Epetra_Version() << endl << endl;
+
+  if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
+              << " is alive."<<endl;
+
+  // Redefine verbose to only print on PE 0
+  if (verbose && Comm.MyPID()!=0) verbose = false;
+
+
+//  int NumMyElements = 1000;
+  int NumMyElements = 10; 
+  int MinSize = 3;
+  int MaxSize = 8;
+  bool ConstructWithMap = true; 
+  bool ExtraBlocks = true; 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, ConstructWithMap, ExtraBlocks );   // Test variable block sizes
+
+#if 0
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, ConstructWithMap, ExtraBlocks ); // Test fixed block sizes
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, ConstructWithMap, ExtraBlocks ); // Test fixed block sizes with extra blocks
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, false, ExtraBlocks );   // Test variable block sizes, without a map
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, false, ExtraBlocks ); // Test fixed block sizes, without a map and with extra blocks
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, false, false ); // Test fixed block sizes, without a map and with extra blocks
+#endif
+ 
   /*
-  if (verbose1) {
-    // Test ostream << operator (if verbose1)
+  if (verbose) {
+    // Test ostream << operator (if verbose)
     // Construct a Map that puts 2 equations on each PE
     
     int NumMyElements1 = 2;
@@ -522,11 +560,11 @@ int main(int argc, char *argv[])
   }
   */
 
-  EPETRA_TEST_ERR( checkMergeRedundantEntries(Comm, verbose1), ierr);
+  EPETRA_TEST_ERR( checkMergeRedundantEntries(Comm, verbose), ierr);
 
-  EPETRA_TEST_ERR( checkExtractMyRowCopy(Comm, verbose1), ierr);
+  EPETRA_TEST_ERR( checkExtractMyRowCopy(Comm, verbose), ierr);
 
-  EPETRA_TEST_ERR( checkMatvecSameVectors(Comm, verbose1), ierr);
+  EPETRA_TEST_ERR( checkMatvecSameVectors(Comm, verbose), ierr);
 
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
