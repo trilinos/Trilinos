@@ -195,6 +195,9 @@ bool NOX::Direction::Broyden::reset(Parameter::List& params)
   // Get the restart frequency
   cntMax = p.getParameter("Restart Frequency", 10);
 
+  // Get the maximum convergence rate
+  maxConvRate = p.getParameter("Max Convergence Rate", 1.0);
+
   // Get the memory size
   memorySizeMax = p.getParameter("Memory", cntMax);
   
@@ -331,8 +334,9 @@ bool NOX::Direction::Broyden::doRestart(NOX::Abstract::Group& soln,
   if (solver.getStepSize() == 0.0)
     return true;
 
-  // Test 4 - Check for decrease in the norm of F in the last two iterations
-  if (soln.getNormF() >= solver.getPreviousSolutionGroup().getNormF())
+  // Test 4 - Check for convergence rate
+  convRate = soln.getNormF() / solver.getPreviousSolutionGroup().getNormF();
+  if (convRate > maxConvRate)
     return true;
 
   return false;

@@ -90,6 +90,13 @@ namespace Direction {
       refreshed. A value of 5, for example, means that the Jacobian
       should be updated every 5 iterations. Defaults to 10.
 
+  <li>"Max Convergence Rate" - Maximum convergence rate allowed when
+  reusing the Jacobian.  The Jacobian will be refreshed if the
+  convergence rate, \f$ \alpha \f$, is larger than this value.  The
+  convergence rate is calculated by \f$ \alpha = \frac{\| F_k \| }{\|
+  F_{k-1} \|} \f$ where F is the nonlinear residual and \f$ k \f$ is
+  the nonlinear iteration.  Defaults to 1.0.
+
   <li>"Memory" - The maximum number of past updates that can be saved
       in memory.  Defaults to the value of "Restart Frequency".
 
@@ -340,7 +347,9 @@ NOX::Direction::Broyden::<functionName> - <errorMsg>
     <ul>
     <li> It's the very first iteration
     <li> The current Jacobian has been used #cntMax times
-    <li> \f$ \|F_{old}\| < \|F_{new}\| \f$
+    <li> \f$ \frac{ \|F_{new}\|}{\|F_{old}\|} > \alpha \f$ where 
+         \f$ \alpha \f$ is the maximum convergence rate that is 
+         specified in the parameter list (defaults to 1.0).
     </ul>
   */
   bool doRestart(NOX::Abstract::Group& soln, 
@@ -371,7 +380,13 @@ private:
     \brief Maximum number of times the Jacboian should be used between updates. 
     \note Should only be changed by reset() 
   */ 
- int cntMax;
+  int cntMax;
+
+  //! Last computed convergence rate.
+  double convRate;
+
+  //! Greatest allowable convergence rate before the Jacobian is recomputed.
+  double maxConvRate;
 
   //! Maximum memory size
   /*! \note Should only be changed by reset() */
