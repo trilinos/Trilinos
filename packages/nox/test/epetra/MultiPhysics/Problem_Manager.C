@@ -193,13 +193,24 @@ void Problem_Manager::registerComplete()
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
                   icount++,fillTime.ElapsedTime());
     MatrixOperators.push_back(new
-      NOX::Epetra::FiniteDifferenceColoring(*Interfaces.back(), 
+      NOX::EpetraNew::FiniteDifferenceColoring(*Interfaces.back(), 
         (*iter)->getSolution(), (*iter)->getGraph(), *ColorMaps.back(), 
         *ColumnsSets.back()));
-
-    Groups.push_back(new NOX::Epetra::Group(nlParams->sublist("Printing"),
+    NOX::EpetraNew::Interface::Jacobian& jacInt = 
+      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*MatrixOperators.back());
+    LinearSystems.push_back( new NOX::EpetraNew::LinearSystemAztecOO(
+      nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
-      *Interfaces.back(), (*iter)->getSolution(), *MatrixOperators.back()));
+      reqInt,
+      jacInt,
+      *MatrixOperators.back(),
+      (*iter)->getSolution()));
+
+    Groups.push_back( new NOX::EpetraNew::Group(
+      nlParams->sublist("Printing"),
+      reqInt,
+      nox_soln,
+      *LinearSystems.back()) );
 #else
     if(MyPID==0)
       cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
@@ -558,6 +569,7 @@ bool Problem_Manager::evaluate(
     if (MyPID == 0)
       printf("\n\tTime to fill Jacobian A --> %e sec. \n\n",
                   fillTime.ElapsedTime());
+
     fillTime.ResetStartTime();
     grpB.computeJacobian();
     if (MyPID == 0)
@@ -594,7 +606,7 @@ bool Problem_Manager::evaluate(
     }
 
     if ( dynamic_cast<const NOX::EpetraNew::FiniteDifference*>(&jacOpB) )
-      matrixAPtr = const_cast<Epetra_CrsMatrix*>(
+      matrixBPtr = const_cast<Epetra_CrsMatrix*>(
         &dynamic_cast<const NOX::EpetraNew::FiniteDifference&>
           (jacOpB).getUnderlyingMatrix());
     else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOpB) )
