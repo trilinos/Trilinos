@@ -14,6 +14,11 @@
 #ifndef __LBI_CONST_H
 #define __LBI_CONST_H
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <mpi.h>
 
 /*
@@ -1162,5 +1167,9 @@ extern void LB_Eval (struct LB_Struct *lb, int print_stats,
      int *nobj, float *obj_wgt, 
      int *cut_wgt, int *nboundary,
      int *nadj, int *ierr);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif /* !__LBI_CONST_H */
