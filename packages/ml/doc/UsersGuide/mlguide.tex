@@ -1,0 +1,2138 @@
+\documentclass{article}[12pt]
+% fancybox prevents the TOC from printing
+%\usepackage{fancyhdr, fancybox, tabularx, verbatim, epsfig}
+\usepackage{fancyhdr, tabularx, verbatim, epsfig}
+\usepackage{amssymb,psboxit}
+\usepackage{rotating}
+
+\setlength{\oddsidemargin}{0.1\oddsidemargin}
+\setlength{\evensidemargin}{0.5\evensidemargin}
+\setlength{\topmargin}{0.0\topmargin}
+\setlength{\textheight}{1.16\textheight}
+\setlength{\textwidth}{1.35\textwidth}
+\newcommand{\Aztec}  {{\sc Aztec}}
+\newcommand{\Aztecoo}  {{\sc AztecOO}}
+\newcommand{\aztecoo}  {{\Aztecoo}}
+\newcommand{\epetra}  {{\sc Epetra}}
+\newcommand{\ML}     {{\bf ML}}
+\newcommand{\trilinos}  {{\sc Trilinos}}
+\newcommand{\amesos}  {{\sc Amesos}}
+\newcommand{\anasazi}  {{\sc Anasazi}}
+\newcommand{\umfpack}  {{\sc Umfpack }}
+\newcommand{\superlu}  {{\sc SuperLU}}
+\newcommand{\superludist}  {{\sc SuperLU\_dist}}
+\newcommand{\mumps}  {{\sc Mumps}}
+\newcommand{\klu}  {{\sc Klu}}
+\newcommand{\metis}  {{\sc Metis}}
+\newcommand{\parmetis}  {{\sc ParMetis}}
+\newcommand{\triutils}  {{\sc Triutils}}
+\newcommand{\ifpack}  {{\sc Ifpack}}
+\newcommand{\teuchos}  {{\sc Teuchos}}
+%
+% ***********************************************************************
+% * 02 July 1993: McCorkle                                              *
+% * Define a macro that will lightly print the word `DRAFT' diagonally  *
+% * across each page of the document. This macro was obtained from the  *
+% * NMSU math department                                                *
+% *                                                                     *
+% * Usage: \draft                                                       *
+% ***********************************************************************
+%
+\def\optionbox#1#2{\noindent$\hphantom{ii}${\parbox[t]{1.5in}{\it
+#1}}{\parbox[t]{4.8in}{#2}} \\[1.1em]}
+
+\def\choicebox#1#2{\noindent$\hphantom{th}$\parbox[t]{3.0in}{\sf
+#1}\parbox[t]{3.35in}{#2}\\[0.8em]}
+
+\def\structbox#1#2{\noindent$\hphantom{hix}${\parbox[t]{2.10in}{\it
+#1}}{\parbox[t]{3.9in}{#2}} \\[.02cm]}
+
+\def\protobox#1{\vspace{2em}{\flushleft{\bf Prototype}
+\hrulefill}\flushleft{\fbox{\parbox[t]{6in}{\vspace{1em}{\sf
+#1}\vspace{1em}}}}}
+
+
+\def\draft{%
+\special{!userdict begin /bop-hook{gsave
+200 30 translate 65 rotate
+/Times-Roman findfont 216 scalefont setfont
+0 0 moveto 0.9 setgray (DRAFT) show grestore}def end}
+}
+
+\begin{document}
+\bibliographystyle{siam}
+\setcounter{page}{3}
+
+\large
+
+%\draft                                   % Lightly print `DRAFT' on every
+                                         % page of the document
+
+%
+%
+%\hspace{2.22in}
+\begin{center}
+SAND2004--2195 \\
+%\hfill
+%\hspace{2.41in}
+Unlimited Release \\
+%\hfill
+%\begin{center}
+Printed May 2004
+\end{center}
+
+\vspace{0.2in}
+
+\begin{center}
+{\Large {\bf ML 3.0 Smoothed Aggregation User's Guide}}
+%\footnote{ Sandia is a multiprogram laboratory operated by Sandia Corporation,
+%a Lockheed Martin Company, for the United States Department of Energy's
+%National Nuclear Security Administration under contract DE-AC04-94AL85000.}}}
+%\footnote{ This work was supported by
+%        the
+%        Applied Mathematical Sciences program, U.S. Department of Energy,
+%        Office of Energy Research, and was partially performed at 
+%        Sandia National
+%        Laboratories, operated for the U.S. Department of Energy under contract
+%        No. DE-AC04-94AL85000.} }}
+
+\vspace*{0.8in}
+Marzio  Sala \\
+Computational Math \& Algorithms \\
+Sandia National Laboratories\\
+P.O.~Box 5800 \\
+Albuquerque, NM 87185-1110\\[20pt]
+Jonathan J. Hu $\quad$ and $\quad$
+Ray S. Tuminaro \\
+Computational Math \& Algorithms \\
+Sandia National Laboratories\\
+P.O.~Box 0969 \\
+Livermore, CA 94551-0969\\
+
+
+\vspace*{1in}
+
+\end{center}
+
+\begin{abstract}
+
+\ML\ is a multigrid preconditioning package intended to solve linear
+systems of equations $A x = b$ where $A$ is a user supplied $n \times n$
+sparse matrix, $b$ is a user supplied vector of length $n$ and $x$ is a
+vector of length $n$ to be computed. \ML\ should be used on large sparse
+linear systems arising from partial differential equation (PDE)
+discretizations.  While technically any linear system can be considered,
+\ML\ should be used on linear systems that correspond to things that work
+well with multigrid methods (e.g. elliptic PDEs).  \ML\ can be used as a
+stand-alone package or to generate preconditioners for a traditional
+iterative solver package (e.g. Krylov methods). We have supplied support
+for working with the {\sc Aztec 2.1} and {\sc AztecOO} iterative package
+\cite{Aztec}.  However, other solvers can be used by supplying a few
+functions.
+
+This document describes one specific algebraic multigrid approach:
+smoothed aggregation.  This approach is used within several specialized
+multigrid methods: one for the eddy current formulation for Maxwell's
+equations, and a multilevel and domain decomposition method for
+symmetric and non-symmetric systems of equations (like elliptic
+equations, or compressible and incompressible fluid dynamics problems).
+Other methods exist within \ML\ but are not described in this document.
+Examples are given illustrating the problem definition and exercising
+multigrid options.
+
+\end{abstract}
+
+%
+\clearpage
+\newpage
+
+\vfill
+\begin{center}
+(page intentionally left blank)
+\end{center}
+\clearpage
+\newpage
+
+
+\tableofcontents
+\newpage
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Notational Conventions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+
+In this guide, we show typed commands in this font:
+\begin{verbatim}
+% a_really_long_command
+\end{verbatim}
+The character \verb!%! indicates any shell prompt\footnote{For
+  simplicity, commands are shown as they would be issued in a Linux or
+  Unix environment.  Note, however, that \ML\ has and can be built
+  successfully in a Windows environment.}.
+Function names are shown as {\sf ML\_Gen\_Solver}.  Names of packages or
+libraries as reported in small caps, as {\sc Epetra}. Mathematical
+entities are shown in italics.
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Overview} \label{overview}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+This guide describes the use of an algebraic multigrid method within the
+\ML\ package. The algebraic multigrid method can be used to solve linear
+system systems of type
+\begin{equation}
+\label{eq:lin_sys}
+A x = b
+\end{equation}
+where $A$ is a user supplied $n \times n$ sparse matrix, $b$ is a
+user supplied vector of length $n$ and $x$ is a vector of length $n$ to
+be computed. \ML\ is intended to be used on (distributed) large sparse
+linear systems arising from partial differential equation (PDE)
+discretizations.  While technically any linear system can be considered,
+\ML\ should be used on linear systems that correspond to things that work
+well with multigrid methods (e.g. elliptic PDEs).
+
+The \ML\ package is used by creating a \ML\ object and then associating a
+matrix, $A$, and a set of multigrid parameters which describe the
+specifics of the solver. Once created and initialized, the \ML\ object
+can be used to solve linear systems. 
+
+\medskip
+
+This manual is structured as follows.  Multigrid and multilevel methods
+are briefly recalled in Section~\ref{multigrid}.  The process of
+configuring and building \ML\ is outlined in Section~\ref{configure}.
+Section~\ref{sec:getting_started} shows the basic usage of \ML\ as a
+black-box preconditioner for {\sc Epetra} matrices. The definition of
+(parallel) preconditioners using ML\_Epetra::MultiLevelPreconditioner is
+detailed. This class only requires the linear system matrix, and a list
+of options.  Available parameters for
+ML\_Epetra::MultiLevelPreconditioner are reported in Section
+\ref{sec:list}.  More advanced uses of \ML\ are presented in
+Section~\ref{high level sample}. Here, we present how to define and
+fine-tune smoothers, coarse grid solver, and the multilevel hierarchy.
+Multigrid options are reported in Section~\ref{multigrid options}.
+Smoothing options are reported in Section~\ref{aggregation options},
+where we also present how to construct a user's defined smoother.
+Advanced usage of \ML\ with {\sc Epetra} objects is reported in
+Section~\ref{sec:advanced}.  Section~\ref{sec:without_Epetra} reports
+how to define matrices in \ML\ format without depending on {\sc epetra}.
+Section~\ref{sec:viz} detailes the (limited) visualization capabilities
+of \ML.
+
+%%%
+%%%
+%%%
+
+\section{Multigrid Background} \label{multigrid}
+A brief multigrid description is given (see
+\cite{brandt.classic}, \cite{hack.book}, or \cite{hack2.book}
+%, and \cite{wesseling} or
+ for more information).
+A multigrid solver tries to approximate
+the original PDE problem of interest on a hierarchy of grids and use
+`solutions' from coarse grids to accelerate the convergence
+on the finest grid.  A simple multilevel iteration is illustrated in
+Figure \ref{multigrid code}.
+%
+\begin{figure}[htp]
+\begin{tabbing}
+\hspace{0.35in} \=
+at \= at \= else \= one iteration what there solve hard cat \= \kill
+\> /* \> Solve $A_k$ u = b (k is current grid level) \>\>\>*/ \\
+\> proc multilevel($ A_k, b, u, k $) \\
+\> \> \>   $ u = S^{1}_k (A_k, b, u )$;                           \\
+\> \> \>   if ( $k \ne {\bf Nlevel-1} $)  \\
+%\{                        \\
+\>\>\>\>       $P_{k} = $ determine\_interpolant( $A_k$ ); \\
+\> \>\>\>      $ \hat{r} = P_{k}^T (b - A_k u )$ ;     \\[3pt]
+%\> \>\>\>      /* Coarse grid projection \> \hskip -0.2in */ \\[3pt]
+\> \>\>\>
+               $\hat{A}_{k+1} = P_{k}^T A_k P_{k}$; \hskip .1in v = 0;  \\
+\> \>\>\>      multilevel($\hat{A}_{k+1}, \hat{r}, v, k+1 $);                \\
+\> \>\>\>      $ u = u + P_{k} $ v;                                      \\
+\> \>\>\>      $ u = S^{2}_k (A_k, b, u )$;                           \\
+%\> \>\>   \}   \}                                                            \\
+%\> \}
+\end{tabbing}
+\caption{High level multigrid V cycle consisting of `Nlevel' grids to
+  solve (\ref{eq:lin_sys}), with $A_0 = A$.
+\label{multigrid code} }
+\end{figure}
+%
+In the above method, the $S^{1}_k()$'s and $S^{2}_k()$'s are approximate
+solvers corresponding to $k$ steps of pre and post smoothing,
+respectively. These smoothers are discussed in Section 
+\ref{multigrid options}. 
+For now, it suffices to view them as basic iterative methods
+(e.g. Gauss-Seidel) which effectively smooth out the error associated
+with the current approximate solution.  The $P_k$'s (interpolation
+operators that transfer solutions from coarse grids to finer grids) are
+the key ingredient that are determined automatically by the algebraic
+multigrid method\footnote{The $P_k$'s are usually determined as a
+  preprocessing step and not computed within the iteration.}. For the
+purposes of this guide, it is important to understand that when the
+multigrid method is used, a hierarchy of grids, grid transfer operators
+($P_k$), and coarse grid discretizations ($A_k$) are created. To
+complete the specification of the multigrid method, smoothers must be
+supplied on each level.  There are several smoothers within \ML\ or an
+iterative solver package can be used, or users can write their own
+smoother (see Section \ref{multigrid options}).
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Configuring and Building \ML}
+\label{configure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\ML\ is configured and built using the GNU autoconf~\cite{Autoconf} and
+automake~\cite{Automake} tools.  It can be configured and build as a
+standalone package without or with {\sc Aztec 2.1} support (as detailed
+in Section~\ref{Standalone Mode} and~\ref{other packages}), or as a part
+of the \trilinos~framework~\cite{Trilinos-home-page} (as described in
+Section~\ref{sec:build:trilinos}). Even though \ML\ can be compiled and
+used as a standalone package, the recommended approach is to build
+\ML~as part of the \trilinos~framework, as a richer set of features are
+then available.
+
+
+\ML\ has been configured and built successfully on a wide variety of
+operating systems, and with a variety of compilers (as reported in
+Table~\ref{tab:compilers}).
+
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| l l |}
+    \hline
+    Operating System & Compilers(s) \\
+    \hline
+    Linux  & GNU and Intel  \\
+    IRIX N32, IRIX 64, HPUX, Solaris, DEC & Native  \\
+    ASCI Red & Native and Portland Group \\
+    CPlant & Native \\
+%    {\bf CPLANT OS -- what's it called?} & Portland Group\\
+    Windows & Microsoft \\
+%   {\bf any others?????} & \\
+   \hline
+  \end{tabular}
+  \caption{Main operating systems and relative compilers supported by \ML.}
+  \label{tab:compilers}
+\end{table}
+
+Although it is possible to configure directly in the \ML\ home directory,
+we strongly advise against this.  Instead, we suggest working in an
+independent directory and configuring and building there.
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\subsection{Supported Platforms}
+%\label{Supported Platforms}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+
+\subsection{Building in Standalone Mode}
+\label{Standalone Mode}
+%
+
+To configure and build \ML\ as a standalone package without any {\sc Aztec}
+support, do the following.  It's assumed that the shell variable
+\verb!$ML_HOME! identifies
+the \ML\ directory.\\
+\begin{verbatim}
+% cd $ML_HOME
+% mkdir standalone
+% cd standalone
+% $ML_HOME/configure --disable-epetra --disable-aztecoo \
+    --prefix=$ML_HOME/standalone
+% make
+% make install
+\end{verbatim}
+The \ML\ library file {\tt libml.a} and the header files will be
+installed in the directory specified in {\tt --prefix}.
+
+%%%
+%%%
+%%%
+
+\subsection{Building with {\sc Aztec 2.1} Support} 
+\label{other packages}
+
+To enable the supports for {\sc Aztec 2.1}, \ML\ must be configured with
+the options reported in the previous section, plus {\tt
+  --with-ml\_aztec2\_1} (defaulted to {\tt no}).
+
+All of the {\sc Aztec 2.1} functionality that \ML\ accesses is contained
+in the file \verb'ml_aztec_utils.c'. In principal by creating a similar
+file, other solver packages could work with \ML\ in the same way.  For
+the {\sc Aztec} users there are essentially three functions that are
+important.  The first is {\sf AZ\_ML\_Set\_Amat} which converts {\sc
+  Aztec} matrices into \ML\ matrices by making appropriate \ML\ calls (see
+Section \ref{single} and Section \ref{sec:multiple}).  It is important
+to note that when creating \ML\ matrices from {\sc Aztec} matrices
+information is not copied. Instead, wrapper functions are made so that
+\ML\ can access the same information as {\sc Aztec}.  The second is {\sf
+  ML\_Gen\_SmootherAztec } that is used for defining {\sc Aztec}
+iterative methods as smoothers (discussed in Section \ref{multigrid options}. The third function,
+{\sf AZ\_set\_ML\_preconditioner}, can be invoked to set the {\sc Aztec}
+preconditioner to use the multilevel `V' cycle constructed in \ML.
+Thus, it is possible to invoke several instances of {\sc Aztec} within
+one solve: smoother on different multigrid levels and/or outer iterative
+solve.
+
+%
+%
+%
+\subsection{Building with \trilinos~Support (RECOMMENDED)}
+\label{sec:build:trilinos}
+%
+We recommend to configure and build \ML\ as part of the standard \trilinos~build and configure process.  In fact,
+\ML\ is built by default if you follow the standard \trilinos~configure and build directions. Please refer to the \trilinos~documentation for information about the configuration and building of
+other \trilinos~packages.
+
+To configure and build \ML\ through \trilinos, you may need do the
+following (actual configuration options may vary depending on the
+specific architecture, installation, and user's need).  It's assumed
+that shell variable \verb!$TRILINOS_HOME!  identifies the
+\trilinos~directory, and, for example, that we are compiling under LINUX
+and MPI.
+\begin{verbatim}
+% cd $TRILINOS_HOME
+% mkdir LINUX_MPI
+% cd LINUX_MPI
+% $TRILINOS_HOME/configure  --with-mpi-compilers \
+    --prefix=$TRILINOS_HOME/LINUX_MPI
+% make
+% make install
+\end{verbatim}
+
+If required, other \trilinos~and \ML\ options can be specified in the
+configure line. A complete list of \ML\ options is given in
+Section~\ref{sec:configure:3pl} and~\ref{sec:configure:profiling}.  You
+can also find a complete list and explanations by typing {\tt
+  ./configure --help} in the \ML\ home directory.
+%
+\subsubsection{Enabling Third Party Library Support}
+\label{sec:configure:3pl}
+%
+
+\ML\ can be configured with the following third party libraries (TPLs):
+\superlu, \superludist, \metis, and \parmetis. It can take advantage of
+the following \trilinos~packages: \ifpack, \teuchos, \triutils,
+\amesos. Through \amesos, \ML\ can interface with the direct solvers
+\klu, \umfpack, \superlu, \superludist\footnote{Currently, \ML\ can
+  support \superludist~directly (without \amesos~support), or through
+  \amesos.}, \mumps.  It is assumed that you have already built the
+appropriate libraries (e.g., {\tt libsuperlu.a}) and have the header
+files.  To configure \ML\ with one of the above TPLs, you must enable the
+particular TPL interface in \ML. All of the options below are disabled
+by default.
+
+\medskip
+
+The same configure options that one uses to enable certain other Trilinos packages also enables the interfaces to those packages within \ML: \smallskip
+
+\choicebox{\tt --enable-epetra}
+{Enable support for the \epetra\ package.}
+%
+\choicebox{\tt --enable-aztecoo}
+{Enable support for the \aztecoo\ package.}
+%
+\choicebox{\tt --enable-amesos}
+{Enables support for the \amesos~package.
+  \amesos~is an interface with several direct solvers.  \ML\ supports
+  \umfpack~\cite{umfpack-home-page}, \klu, \superludist~(1.0 and 2.0),
+  \mumps~\cite{MUMPS}.  This package is used only in function {\sf
+    ML\_Gen\_SmootherAmesos}.}
+%
+\choicebox{\tt --enable-teuchos}
+{Enables support for the \teuchos~package.  This package is used only
+  in the definition of class ML\_Epetra::MultiLevelPreconditioner (see
+  Section~\ref{sec:getting_started}). and by the Amesos smoother}
+%
+\choicebox{\tt --enable-triutils}
+{Enables support for the \triutils~package.
+  \ML~uses \triutils~only in some examples, to create the linear system
+  matrix.  }
+%
+\choicebox{\tt --enable-ifpack}
+{Enable support for the
+  \ifpack~package~\cite{Ifpack-Ref-Guide}. \ifpack~is used only to
+  create smoothers via {\sf ML\_Gen\_SmootherIfpack}.}
+%
+\choicebox{\tt --enable-anasazi}
+{Enable support for the
+\anasazi\ package. \anasazi\ is a high level interface package
+for various eigenvalue computations.}
+
+\medskip
+
+The following configure line options enable interfaces in \ML\ to certain TPLs.
+\smallskip
+
+%
+\choicebox{\tt --with-ml\_metis}{Enables interface for \metis~\cite{METIS}.}
+%
+\choicebox{\tt --with-ml\_parmetis2x}{ Enables interface for \parmetis,
+  version $2.x$.}
+%
+\choicebox{\tt --with-ml\_parmetis3x}{ Enables interface for \parmetis~\cite{ParMETIS}, version $3.x$.}
+%
+\choicebox{\tt --with-ml\_superlu}{ Enables \ML\ interface for serial
+    \superlu~\cite{superlu-manual}. {The \ML\ interface to
+    \superlu~is deprecated in favor of the \amesos~interface. }}
+%
+\choicebox{\tt --with-ml\_superlu\_dist}{ Enables \ML\ interface for
+  \superludist~\cite{superlu-manual}. {The \ML\ interface to
+    \superludist~is deprecated in favor of the \amesos~interface. }}
+
+\medskip
+
+For \metis, {\sc ParMETIS}, and the \ML\ interface to \superlu~and
+\superludist, the user must specify the location of the header files,
+with the option
+\begin{verbatim}
+--with-incdirs=include-locations
+\end{verbatim}
+(Header files for \trilinos~libraries are automatically located if \ML\ 
+is built through the \trilinos~{\tt configure}.)  In order to link the
+\ML~examples, the user must indicate the location of all the enabled
+packages' libraries\footnote{An example of configuration line that enables \metis~and \parmetis~might be as follows:
+{\tt ./configure --with-mpi-compilers --enable-ml\_metis --enable-ml\_parmetis3x --with-cflags="-I\$HOME/include" \
+ --with-cppflags="-I\$HOME/include" \
+ --with-ldflags="-L\$HOME/lib/LINUX\_MPI -lparmetis-3.1 -lmetis-4.0" }.}
+, with the option
+\begin{verbatim}
+--with-ldflags=lib-locations
+\end{verbatim}
+The user might find useful the option 
+\begin{verbatim}
+--disable-examples
+\end{verbatim}
+which turns off compilation and linking of the examples.
+
+\smallskip
+
+More details about the installation of \trilinos~can be found at the
+\trilinos~web site,
+\begin{verbatim}
+http://software.sandia.gov/Trilinos 
+\end{verbatim}
+and \cite[Chapter 1]{Trilinos-Tutorial}.
+
+\subsubsection{Enabling Profiling}
+\label{sec:configure:profiling}
+
+All of the options below are disabled by default.
+
+\smallskip
+
+\choicebox{\tt --enable-ml\_timing}{This prints out timing of key
+  \ML~routines.}
+
+\choicebox{\tt --enable-ml\_flops}{ This enables printing of flop
+  counts.}  Timing and flop counts are printed when the associated
+object is destroyed.
+
+%%%
+%%%
+%%%
+
+%\subsection{Example Configure Lines}
+%Here is an example of configuring \trilinos~with \ML\ and enabling
+%the use of both MPI and \superlu.
+%We've chosen to disable certain other \trilinos~packages because we won't use
+% them in this theoretical situation.
+%\begin{verbatim}
+%% cd /home/jhu/Trilinos
+%% mkdir parallel
+%% cd parallel
+%% ../configure --disable-komplex --disable-ifpack --disable-new_package \
+%   --disable-epetraext --disable-nox  \
+%   --with-ml_superlu \
+%   --with-ldflags="/usr/local/superlu/lib/libsuperlu.a" \
+%   --with-incdirs="-I/usr/local/superlu/include" \
+%   --with-mpi-compilers="/usr/local/mpich/bin"
+%\end{verbatim}
+%%
+%Here is an example of configuring \ML\ without any dependencies on other
+%packages in Trilinos and still enabling the use of both MPI and \superlu.
+%\begin{verbatim}
+%% cd /home/jhu/Trilinos
+%% mkdir ml-alone
+%% cd ml-alone
+%% ../packages/ml/configure --without-ml_epetra --without-ml_aztecoo \
+% --with-mpi-compilers=/usr/local/mpich/bin \
+% --with-ml_superlu \
+% --with-ldflags="/usr/local/superlu/lib/libsuperlu.a" \
+%  --with-incdirs="-I/usr/local/superlu/include"
+%\end{verbatim}
+%
+%
+%
+
+%%%
+%%%
+%%%
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{\ML\ and Epetra: Getting Started with the MultiLevelPreconditioner
+Class}\label{sec:getting_started}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+In this Section we show how to use \ML\ as a preconditioner to {\sc
+  Epetra} and \aztecoo~through the MultiLevelPreconditioner
+class\footnote{The MultiLevelPreconditioner class is derived from the
+  Epetra\_RowMatrix class.} in the ML\_Epetra namespace.\footnote{\ML\ 
+  does not rely on any particular matrix format or iterative solver.
+  Examples of using of \ML\ as a preconditioner for user-defined
+  matrices (i.e., non-Epetra matrices) are reported in
+  Section~\ref{single} and~\ref{sec:multiple}.}  Although limited to
+algebraic multilevel preconditioners, this allows the use of \ML\ as a
+black-box preconditioner.
+
+The MultiLevelPreconditioner class automatically constructs all the
+components of the preconditioner, using the parameters specified in a
+\teuchos~parameter list.
+%However, as a part of the \trilinos~project, it
+%can be easily used to define preconditioners for Epetra\_LinearProblem
+%objects (whose matrix is coded as an Epetra\_RowMatrix, see for
+%instance~\cite{Epetra-Ref-Guide}). This means that, in a C++ framework,
+%\ML\ objects can be applied to an Epetra\_MultiVector object, and used as
+%a preconditioner for {\sc AztecOO}.  This can be accomplished in two
+%ways:
+%\item By defining a MultiLevelOperator object, derived from
+%  the Epetra\_Operator class. The constructor of this object requires
+%  already filled ML\_Struct and ML\_Aggregate structures (see
+%  Section~\ref{high level sample}).  \ML\ must be configured with the
+%  option \verb!--with-ml_epetra!.
+The constructor of this class takes as input an Epetra\_RowMatrix
+pointer and a \teuchos~parameter list\footnote{In order to use the
+  MultiLevelPreconditioner class, \ML\ must be configured with options
+  {\tt -enable-epetra --enable-teuchos}.}.
+
+%The first approach is more general, and can be applied to geometric and
+%algebraic multilevel preconditioner, but it requires a deeper knowledge
+%of the \ML\ package.  This is because the user has to explicitly
+%construct the \ML\ hierarchy, define the aggregation strategies, the
+%smoothers, and the coarse grid solver. This class is described in
+%Section~\ref{sec:advanced}.
+
+%Class MultiLevelPreconditioner is defined in a header
+%file, that must be included as
+%\begin{verbatim}
+%#include "ml_epetra_preconditioner.h"
+%\end{verbatim}
+  In order to compile, it may also be necessary to include the following
+  files: \verb!ml_config.h! (as first \ML\ include),
+  \verb!Epetra_ConfigDefs.h! (as first {\sc Epetra} include),
+  \verb!Epetra_RowMatrix.h!, \newline \verb!Epetra_MultiVector.h!,
+  \verb!Epetra_LinearProblem.h!, and \verb!AztecOO.h!. Check the {\sc
+    Epetra} and {\sc AztecOO} documentation for more details.
+  Additionally, the user must include the header file
+  \verb!"ml_epetra_preconditioner.h"!.  Also note that the macro
+  \verb!HAVE_CONFIG_H!  must be defined either in the user's code or as
+  a compiler flag.
+
+\subsection{Example 1: ml\_example\_epetra\_preconditioner.cpp}
+\label{parameter list ex. 1}
+
+We now give a very simple fragment of code that uses the
+MultiLevelPreconditioner.
+For the complete code, see
+\verb!$ML_HOME/examples/ml_example_epetra_preconditioner.cpp!.
+(In order to be effectively compiled, this example
+requires \ML\ to be configured with option \verb!--enable-triutils!; see
+Section~\ref{configure}.)  The linear operator \verb!A! is derived from an
+Epetra\_RowMatrix, \verb!Solver! is an AztecOO object, and
+\verb!Problem! is an Epetra\_LinearProblem object.
+
+\begin{verbatim}
+#include "ml_include.h"
+#include "ml_epetra_preconditioner.h"
+#include "Teuchos_ParameterList.hpp"
+
+...
+
+  Teuchos::ParameterList MList;
+
+  // set default values for smoothed aggregation in MLList
+  ML_Epetra::SetDefaults("SA",MLList);
+
+  // overwrite with user's defined parameters
+  MLList.set("max levels",6);
+  MLList.set("increasing or decreasing","decreasing");
+  MLList.set("aggregation: type", "MIS");
+  MLList.set("coarse: type","Amesos-KLU");
+  
+  // create the preconditioner
+  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+    new ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
+
+  // create an AztecOO solver
+  AztecOO Solver(Problem)
+
+  // set preconditioner and solve
+  Solver.SetPrecOperator(MLPrec);
+  Solver.SetAztecOption(AZ_solver, AZ_gmres);
+  Solver.Iterate(Niters, 1e-12);
+
+  ...
+
+  delete MLPrec;
+\end{verbatim}
+We now detail the general procedure to define the
+MultiLevelPreconditioner. First, the user defines a \teuchos~parameter
+list\footnote{See the \teuchos~documentation for a detailed overview of
+  this class.}.  Table~\ref{tab:teuchos} briefly reports the most
+important methods of this class.
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| p{4cm} | p{10cm} |}
+    \hline
+    \verb!set(Name,Value)! & Add entry \verb!Name! with value and type
+    specified by \verb!Value!. Any C++ type (like int, double, a
+    pointer, etc.) is valid. \\
+    \verb!get(Name,DefValue)! & Get value (whose type is automatically
+    specified by \verb!DefValue!). If not present, return
+    \verb!DefValue!. \\
+    \verb!subList(Name)! & Get a reference to sublist \verb!List!. If not
+    present, create the sublist. \\
+    \hline
+  \end{tabular}
+  \caption{Some methods of Teuchos::ParameterList class.}
+  \label{tab:teuchos}
+\end{table}
+
+Input parameters are set via method \verb!set(Name,Value)!, where
+\verb!Name! is a string defining the parameter, and \verb!Value! is the
+specified parameter, that can be any C++ object or pointer. A complete
+list of parameters available for class MultiLevelPreconditioner is
+reported in Section~\ref{sec:list}. 
+
+The parameter list is passed to the constructor, together with a pointer
+to the matrix, and a boolean flag.  If this flag is set to \verb!false!,
+the constructor will not create the multilevel hierarchy until when
+\verb!MLPrec->ComputePreconditioner()!  is called.  The hierarchy can be
+destroyed using \verb!MLPrec->Destroy()!\footnote{We suggest to create
+  the preconditioning object with {\tt new} and to free memory with {\tt
+    delete}. Some MPI calls occur in {\tt Destroy()}, so the user should
+  not call {\tt MPI\_Finalize()} or delete the communicator used by \ML\
+  before the preconditioning object is destroyed.}.
+For instance, the
+user may define a code like:
+\begin{verbatim}
+  // A is still not filled with numerical values
+  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+    new ML_Epetra::MultiLevelPreconditioner(A, MLList, false);
+  
+  // compute the elements of A
+  ...
+  // now compute the preconditioner
+  MLPrec->ComputePreconditioner();
+
+  // solve the linear system
+  ...
+  // destroy the previously define preconditioner, and build a new one
+  MLPrec->Destroy();
+
+  // re-compute the elements of A
+  // now re-compute (if required) the preconditioner
+  MLPrec->ComputePreconditioner();
+
+  // re-solve the linear system
+\end{verbatim}
+In this fragment of code, the user defines the \ML\ preconditioner, but
+the preconditioner is created only with the call \verb!ComputePreconditioner()!.
+ This may
+be useful, for example, when \ML\ is used in conjunction with
+nonlinear solvers (like {\sc Nox}~\cite{NOX-home-page}).
+
+\subsection{Example 2: ml\_example\_epetra\_preconditioner\_2level.cpp}
+\label{parameter list ex. 2}
+
+As a second example, here we explain with some details the construction
+of a 2-level domain decomposition preconditioner, with a coarse space
+defined using aggregation. 
+
+File {\tt
+  \$ML\_HOME/examples/ml\_example\_epetra\_preconditioner\_2level.cpp}
+reports the entire code.  In the example, the linear system matrix
+\verb!A!,  coded as an Epetra\_CrsMatrix, corresponds to the
+discretization of a 2D Laplacian on a Cartesian grid. \verb!x! and
+\verb!b! are the solution vector and the right-hand side, respectively.
+
+\noindent
+The AztecOO linear problem is defined as
+\begin{verbatim}
+  Epetra_LinearProblem problem(&A, &x, &b);
+  AztecOO solver(problem);
+\end{verbatim}
+
+\noindent
+We create the \teuchos~parameter  list as follows:
+\begin{verbatim}
+  ParameterList MLList;
+  ML_Epetra::SetDefaults("DD", MLList);
+  MLList.set("max levels",2);
+  MLList.set("increasing or decreasing","increasing");
+
+  MLList.set("aggregation: type", "METIS");
+  MLList.set("aggregation: nodes per aggregate", 16);
+  MLList.set("smoother: pre or post", "both");
+  MLList.set("coarse: type","Amesos-KLU");
+  MLList.set("smoother: type", "Aztec");
+\end{verbatim}
+The last option tells \ML\ to use the {\sc Aztec} preconditioning
+function as a smoother. All \Aztec~preconditioning options can be used
+as \ML~smoothers.  {\sc Aztec} requires an integer vector \verb!options!
+and a double vector \verb!params!. Those can be defined as follows:
+\begin{verbatim}
+  int options[AZ_OPTIONS_SIZE];
+  double params[AZ_PARAMS_SIZE];
+  AZ_defaults(options,params);
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_subdomain_solve] = AZ_icc;
+  MLList.set("smoother: Aztec options", options);
+  MLList.set("smoother: Aztec params", params);
+\end{verbatim}
+The last two commands set the pointer to {\tt options} and {\tt params}
+in the parameter list\footnote{Only the {\sl pointer} is copied in the
+  parameter list, not the array itself. Therefore, {\tt options} and
+  {\tt params} should not go out of scope before the destruction of the
+  preconditioner.}.
+
+The \ML\ preconditioner is created as in the previous example,
+\begin{verbatim}
+  ML_Epetra::MultiLevelPreconditioner * MLPrec =
+    new ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
+\end{verbatim}
+and we can check that no options have been mispelled, using
+\begin{verbatim}
+  MLPrec->PrintUnused();
+\end{verbatim}
+The AztecOO solver is called using, for instance,
+\begin{verbatim}
+  solver.SetPrecOperator(MLPrec);
+
+  solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
+
+  solver.SetAztecOption(AZ_kspace, 160);
+
+  solver.Iterate(1550, 1e-12);
+\end{verbatim}
+Finally, some (limited) information about the preconditioning phase are
+obtained using
+\begin{verbatim}
+  cout << MLPrec->GetOutputList();
+\end{verbatim}
+
+Note that the input parameter list is {\sl copied} in the
+construction phase, hence later changes to \verb!MLList! will not affect
+the preconditioner. Should the user need to modify parameters in the
+\verb!MLPrec!'s internally stored parameter list, he can get a
+reference to the internally stored list:
+%
+\begin{verbatim}
+  ParameterList & List = MLPrec->GetList();
+\end{verbatim}
+%
+and then directly modify \verb!List!.\\
+
+%%%
+%%%
+%%%
+
+\section{Parameters for the ML\_Epetra::MultiLevelPreconditioner Class}
+\label{sec:list}
+
+In this section we give general guidelines for using the
+MultiLevelPreconditioner class effectively.
+The complete list of input parameters is also reported.
+%
+\subsection{Setting Options on a Specific Level}
+%
+Some of the parameters that affect MultiLevelPreconditioner can in
+principle be different from level to level.  By default, the set method
+for the MultiLevelPreconditioner class affects all levels in the
+multigrid hierarchy.  In order to change a setting on a particular level
+(say, \verb!d!), the string ``\verb!(level d)!" is appended to the
+option string (note that a space must separate the option and the level
+specification).  For instance, assuming decreasing levels starting from
+4, one could set the aggregation schemes as follows:
+\begin{verbatim}
+  MLList.set("aggregation: type","Uncoupled");
+  MLList.set("aggregation: type (level 1)","METIS");
+  MLList.set("aggregation: type (level 3)","MIS");
+\end{verbatim}
+
+\noindent
+If the finest level is 0, and one has 5 levels, the code will use {\tt
+  Uncoupled} for level 0, {\tt METIS} for levels 1 and 2, then {\tt MIS}
+for levels 3 and 4.
+
+In \S\ref{all possible parameters},
+parameters that can be set differently on individual levels are denoted
+with the symbol $\star$ (that is not part of the parameter name).
+Note that some parameters (e.g., {\tt Uncoupled-MIS} aggregation) correspond to quantities
+that must be the same at all levels.
+
+%
+\subsection{General Usage of the Parameter List}
+\label{parameter list usage}
+%
+\noindent
+All \ML\ options can have a common prefix, specified by the user in the
+construction phase. For example, suppose that we require \verb!ML: ! (in
+this case with a trailing space) to be the prefix. The constructor will
+be
+\begin{verbatim}
+  char Prefix[] = "ML: ";
+  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+    new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true, Prefix);
+\end{verbatim}
+A generic parameter, say \verb!aggregation: type!, will now be defined as
+\begin{verbatim}
+  MLLIst.set("ML: aggregation: type", "METIS");
+\end{verbatim}\\
+
+\noindent
+It is important to point out that some options can be effectively used
+only if \ML\ has been properly configured. In particular:
+\begin{itemize}
+\item \metis\ aggregation scheme requires \verb!--with-ml_metis!, or
+  otherwise the code will include all nodes in the calling processor in
+  a unique aggregate;
+\item \parmetis~aggregation scheme required {\tt --with-ml\_metis
+  --enable-epetra} and \newline {\tt --with-ml\_parmetis2x} or
+  {\tt --with-ml\_parmetis3x}. 
+\item \amesos~coarse solvers require \verb!--enable-amesos!. Moreover,
+  \amesos~must have been configure to support the requested coarse
+  solver. Please refer to the \amesos~documentation for more details;
+\item \ifpack~smoother requires \verb!--enable-ifpack!.
+\end{itemize}
+%
+\subsection{Default Parameter Settings for Common Problem Types}
+%
+The MultiLevelPreconditioner class provides default values for four different
+preconditioner types:
+%
+\begin{enumerate}
+  \item Linear elasticity
+  \item Classical 2-level domain decomposition for the advection diffusion operator
+  \item 3-level algebraic domain decomposition for the advection diffusion operator
+  \item Eddy current formulation of Maxwell's equations
+\end{enumerate}
+%
+Default values are listed in Table~\ref{tab:default}.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%% table for SA, DD, DD-ML, and Maxwell problem type defaults %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{sidewaystable}[tbhp]
+  \begin{tabular}{| p{7cm} | p{2.5cm} | p{2.5cm} | p{2.5cm} | p{2.5cm} |
+    p{2.5cm} | }
+    \hline
+    Option Name & Type & {\tt SA} & {\tt DD} & {\tt DD-ML} & \tt maxwell
+    \\
+    \hline
+    \hline
+{\tt max levels} & \tt int & 16 & 2 & 3 & 5 \\
+\tt output & \tt int & 8 &  8 & 8 & 10 \\
+\tt increasing or decreasing & \tt string & \tt increasing & \tt
+increasing & \tt increasing & \tt decreasing \\
+\tt PDE equations & \tt int & 1 & 1 & 1 & -- \\
+\tt null space dimension & \tt int & 1 & 1 & 1 & -- \\
+\tt null space vectors & \tt double * & \tt NULL & \tt NULL & \tt NULL &
+\tt NULL\\
+\hline
+\hline
+\tt aggregation: type & \tt string & \tt Uncoupled & \tt METIS & \tt METIS &
+\tt Uncoupled-MIS \\
+\tt aggregation: type (level 1) & \tt string & -- & -- & \tt ParMETIS &
+-- \\
+\tt aggregation: type (level 8) & \tt string & \tt MIS & -- & -- & -- \\
+\tt aggregation: local aggregates & \tt int & -- & 1 & -- & -- \\
+\tt aggregation: nodes per aggregate & \tt int & -- & -- & 512 & -- \\
+\tt aggregation: damping factor & \tt double &  4/3 & 4/3 & 4/3 & 0.0\\
+\tt eigen-analysis: type & \tt string & \tt Anorm & \tt Anorm & \tt Anorm & \tt
+Anorm \\
+\tt coarse: max size & \tt int & 128 & 128 & 128 & 128 \\
+\tt aggregation: threshold & \tt double & 0.0 & 0.0 & 0.0 & 0.0\\
+\tt aggregation: next-level aggregates per process & \tt int & -- & --
+&128 & --\\
+\hline
+\hline
+\tt smoother: sweeps & \tt int & 2 & 2 & 2 & 2 \\
+\tt smoother: damping factor & \tt double & 0.67  & -- & --  & 0.67 \\
+\tt smoother: pre or post & \tt string & \tt both & \tt both & \tt both
+& \tt both \\
+\tt smoother: type & \tt string & \tt Gauss-Seidel & \tt Aztec & \tt
+Aztec & -- \\
+\tt smoother: Aztec as solver & \tt bool & -- & \tt false & \tt
+false & -- \\
+\tt smoother: MLS polynomial order & \tt int & -- & -- & -- & 3 \\
+\tt smoother: MLS alpha & \tt double & -- & -- & -- & 30.0 \\
+\hline
+\hline
+\tt coarse: type & \tt string & \tt Amesos\_KLU & \tt Amesos\_KLU  & \tt
+Amesos\_KLU & \tt SuperLU \\
+\tt coarse: sweeps & \tt int & 1 & 1 & 1 & 1 \\
+\tt coarse: damping factor & \tt double & 1.0 & 1.0 & 1.0 & 1.0 \\
+\tt coarse: max processes & \tt int & 16 & 16 & 16 & -- \\
+\tt print unused & \tt int & 0 & 0 & 0 & 0 \\
+\hline
+  \end{tabular}
+  \caption{Default values for ML\_Epetra::MultiLevelPreconditioner for
+    the 4 currently supported problem types {\tt SA, DD, DD-ML,
+    Maxwell}. ``--'' means not set.}
+  \label{tab:default}
+\end{sidewaystable}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% end of table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+In the table, {\tt SA} refers to ``classical'' smoothed aggregation (with
+small aggregates and relative large number of levels), {\tt DD} and {\tt
+  DD-ML} to domain decomposition methods (whose coarse matrix is defined
+using aggressive coarsening and limited number of levels).  {\tt
+  Maxwell} refers to the solution of Maxwell's equations. 
+
+Default values for the parameter list can be set by {\tt
+  ML\_Epetra::SetDefaults()}.  The user can easily put the desired
+default values in a given parameter list as follows:
+\begin{verbatim}
+  Teuchos::ParameterList MLList;
+  ML_Epetra::SetDefaults(ProblemType, MLList);
+\end{verbatim}
+or as
+\begin{verbatim}
+  Teuchos::ParameterList MLList;
+  ML_Epetra::SetDefaults(ProblemType, MLList, Prefix);
+\end{verbatim}
+
+\verb!Prefix! (defaulted to an empty string) is the prefix to assign to
+each entry in the parameter list.
+
+For {\tt DD} and {\tt DD-ML}, the default smoother is {\tt Aztec},
+with an incomplete factorization ILUT, and minimal overlap. 
+Memory for the two {\sc Aztec} vectors is allocated using {\tt new}, and the
+user is responsible to free this memory, for instance as follows:
+\begin{verbatim}
+int * options;
+options = MLList.get("smoother: Aztec options", options);
+double * params;
+params = MLList.get("smoother: Aztec params", params);
+.
+.
+.
+// Make sure solve is completed before deleting options & params!!
+delete [] options;
+delete [] params;
+\end{verbatim}
+The rational behind this is that the parameter list stores a {\sl pointer} to those
+vectors, not the content itself. (As a general rule, the vectors stored in the
+parameter list should not
+be prematurely destroyed or permitted to go out of scope.)
+%
+\subsection{Commonly Used Parameters}
+%
+Table \ref{tab:ml:aggr} lists parameter for changing aggregation schemes.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% table of aggregation options
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{table}[tbh]
+\begin{center}
+\begin{tabular}{ | p{4cm} | p{10cm} | }
+\hline
+\verb!Uncoupled! & Attempts to construct
+aggregates of optimal size ($3^d$ nodes in $d$ dimensions).
+Each process works independently, and aggregates cannot span processes.\\
+\verb!Coupled! & As \verb!Uncoupled!, but aggregates can span processes (deprecated).\\
+\verb!MIS! & Uses a maximal independent set technique to define the
+aggregates. Aggregates can span
+processes. May provide better quality aggregates than either \verb!Coupled! or
+\verb!uncoupled!.
+Computationally more expensive than either because it requires
+matrix-matrix product. \\
+\verb!Uncoupled-MIS! & Uses \verb!Uncoupled! for all levels until there is $1$
+aggregate per processor.  Then switches over to \verb!MIS!.
+The coarsening scheme on a given level cannot be specified with this option.\\
+\verb!METIS! & Use a graph partitioning algorithm to creates the
+aggregates, working process-wise. The number of nodes in each aggregate
+is specified with the option {\tt aggregation: nodes per
+  aggregate}. Requires \ML\ to be configured with {\tt
+  --with-ml\_metis}. \\
+\verb!ParMETIS! & As \verb!METIS!, but partition the global
+graph. Requires {\tt --with-ml\_parmetis2x} or {\tt --with-ml\_parmetis3x}. Aggregates can span
+arbitrary number of processes. Global number of aggregates can be
+specified with the option {\tt aggregation: global number}. \\
+\hline
+\end{tabular}
+\caption{ML\_Epetra::MultiLevelPreconditioner: Available coarsening schemes.}
+\label{tab:ml:aggr}
+\end{center}
+\end{table}
+%
+Table \ref{tab:ml:smoother} lists common choices for smoothing options.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% table of smoothing options
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{table}[tbh]
+\begin{center}
+\begin{tabular}{ | p{4cm} | p{10cm} | }
+\hline
+\verb!Jacobi! & Point-Jacobi. Damping factor is specified using
+{\tt smoother: dampig factor}, and the number of sweeps with {\tt
+  smoother: sweeps} \\ 
+\verb!Gauss-Seidel! & Point Gauss-Seidel.  Damping factor is specified using
+{\tt smoother: dampig factor}, and the number of sweeps with {\tt
+  smoother: sweeps} \\
+\verb!Aztec! & Use \aztecoo's built-in preconditioning functions as
+smoothers. Or, if {\tt smoother: Aztec as solver} is {\tt true},  use
+approximate solutions with \aztecoo (with {\tt smoothers: sweeps}
+iterations as smoothers. 
+The \aztecoo vectors \verb!options! and {\tt params} can be set using
+{\tt smoother: Aztec options} and {\tt smoother: Aztec params}. \\
+\verb!MLS! & Use MLS smoother. The polynomial order is specified by {\tt
+  \tt smoother: MLS polynomial order}, and the alpha value by {\tt
+  smoother: MLS alpha}.\\ 
+\hline
+\end{tabular}
+\caption{ML\_Epetra::MultiLevelPreconditioner: Commonly used smoothers.} 
+\label{tab:ml:smoother}
+\end{center}
+\end{table}
+%
+Table \ref{tab:ml:coarse} lists common choices affecting the coarse grid
+solve.
+%
+
+\noindent
+{\bf Note that, in the parameters name, spaces are important: Do not
+  include non-required leading or trailing spaces, and separate words by
+  just one space! Mispelled parameters will not be detected.} One may
+find useful to print unused parameters by calling \verb!PrintUnused()!
+{\sl after} the construction
+of the multilevel hierarchy.\\
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% table of coarse solver options
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{table}[tbh]
+\begin{center}
+\begin{tabular}{ | p{4cm} | p{10cm} | }
+\hline
+\verb!Jacobi! & Use {\tt coarse: sweeps} steps of Jacobi (with damping
+parameter {\tt coarse: damping parameter}) as a solver. \\
+\verb!Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of Gauss-Seidel(with damping
+parameter {\tt coarse: damping parameter}) as a solver. \\ 
+\verb!Amesos-KLU! & Use \klu through \amesos. Coarse grid problem is shipped to
+ proc 0, solved, and solution is broadcast \\
+\verb!Amesos-UMFPACK! & Use \umfpack through \amesos. Coarse grid problem is shipped to
+ proc 0, solved, and solution is broadcasted. \\
+\verb!Amesos-Superludist! & Use \superludist through \amesos. \\
+\verb!Amesos-MUMPS! & Use double precision version of \mumps~through
+\amesos. \\
+\verb!Amesos-ScaLAPACK! & Use double precision version of {\sc ScaLAPACK}~through
+\amesos. \\
+\verb!SuperLU! & Use \ML\ interface to \superlu. \\
+\hline
+\end{tabular}
+\caption{ML\_Epetra::MultiLevelPreconditioner: Some of the available coarse
+matrix solvers. Note: Amesos solvers requires 
+  \ML\ to be configured with {\tt with-ml\_amesos}, and Amesos to be
+  properly configured to support the specified solver.}
+\label{tab:ml:coarse}
+\end{center}
+\end{table}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{List of All Parameters for MultiLevelPreconditioner Class}
+\label{all possible parameters}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\subsubsection{General Options}
+
+\choicebox{\tt output}{Output level, from 0 to 10 (10 being verbose).}
+
+\choicebox{\tt print unused}{If non-negative, will print all the
+  unused parameter on the specified processor.}
+
+\choicebox{\tt max levels}{Maximum number of levels.}
+
+\smallskip
+
+\choicebox{\tt increasing or decreasing}{If set to {\tt
+    increasing}, level 0 will correspond to the finest level. If set to
+  {\tt decreasing}, {\tt max levels} - 1 will correspond to the finest
+  level.}
+
+\choicebox{\tt PDE equations}{Number of PDE equations for each grid node. This
+value is not considered for {\tt Epetra\_VbrMatrix} objects, as in this
+case is obtained from the block map used to construct the object. Note
+that only block maps with constant element size can be
+considered.}
+
+\choicebox{\tt null space dimension}{Dimension of the null space. }
+
+\choicebox{\tt null space vectors}{Pointer to the null space
+vectors. If {\tt NULL}, \ML\ will use the default null space.}
+
+\subsubsection{Aggregation Parameters}
+
+\choicebox{\tt aggregation: type $\star$}{Define the
+  aggregation scheme. Can be: {\tt Uncoupled, Coupled, MIS, METIS,
+    ParMETIS}. See Table~\ref{tab:ml:aggr}. }
+
+\choicebox{\tt aggregation: global aggregates $\star$}{Defines the global number of
+aggregates (only for {\tt METIS} and {\tt ParMETIS} aggregation schemes). }
+
+\choicebox{\tt aggregation: local aggregates $\star$}{Defines the number of aggregates
+of the calling processor (only for {\tt METIS} and {\tt ParMETIS} aggregation
+schemes). Note: this value overwrites {\tt aggregation: global aggregates}.}
+
+\choicebox{\tt aggregation: nodes per aggregate $\star$}{Defines
+  the number of nodes to be assigned to each aggregate (only for {\tt
+    METIS} and {\tt ParMETIS} aggregation schemes). Note: this value
+  overwrites {\tt aggregation: local aggregates}.  If none among {\tt
+    aggregation: global aggregates}, {\tt aggregation: local aggregates}
+  and {\tt aggregation: nodes per aggregate} is specified, the default
+  value is 1 aggregate per process.}
+
+\choicebox{\tt aggregation: damping factor}{Damping factor for smoothed
+aggregation. }
+
+
+\choicebox{\tt eigen-analysis: type}{Defines the numerical scheme to
+be used to compute an estimation of the maximum eigenvalue of $D^{-1}A$,
+where $D = diag(A)$ (for smoothed
+aggregation only). It can be: {\tt cg} (use 10 steps of conjugate gradient
+method), {\tt Anorm} (use A-norm of matrix), {\tt Anasazi} (use the {\sc
+Anasazi} package; the problem is supposed to be non-symmetric), or {\tt power-method}.}
+
+\choicebox{\tt aggregation: threshold}{Threshold in aggregation.}
+
+\choicebox{\tt aggregation: next-level aggregates per process
+  $\star$}{Defines the maximum number of next-level matrix rows
+  per process (only for {\tt ParMETIS} aggregation
+scheme). }
+
+\subsubsection{Smoothing Parameters}
+
+\choicebox{\tt smoother: sweeps $\star$}{Number of sweeps of smoother.}
+
+\choicebox{\tt smoother: damping factor $\star$}{Smoother damping factor.}
+
+\choicebox{\tt smoother: pre or post $\star$}{If set to {\tt pre}, only pre-smoothing
+will be used. If set to {\tt post}, only post-smoothing will be used. If
+set to {\tt both}, pre- and post-smoothing will be used.}
+
+\choicebox{\tt smoother: type $\star$}{Type of the smoother. It can be:
+{\tt Jacobi, Gauss-Seidel, sym Gauss-Seidel,
+Aztec, IFPACK}. See Table~\ref{tab:ml:smoother}.}
+
+\choicebox{\tt smoother: Aztec options $\star$}{Pointer to {\sc Aztec}'s
+options vector (only for {\tt aztec}
+  smoother) .}
+
+\choicebox{\tt smoother: Aztec params $\star$}{Pointer to {\sc Aztec}'s
+params vector (only for {\tt aztec}
+  smoother) .}
+
+\choicebox{\tt smoother: Aztec as solver $\star$}{If {\tt true}, {\tt smoother: sweeps} iterations of {\sc Aztec}
+  solvers will be used as smoothers. If false, only the {\sc Aztec}'s
+  preconditioner function will be used as smoother (only for {\tt aztec}
+  smoother) .}
+
+\choicebox{\tt smoother: MLS polynomial order $\star$}{Polynomial order for {\tt
+MLS}
+smoothers. }
+
+\choicebox{\tt smoother: MLS alpha $\star$}{Alpha value for {\tt MLS} 
+smoothers. }
+
+%%%
+%%%
+%%%
+
+\subsubsection{Coarsest Grid Parameters}
+
+\choicebox{\tt coarse: max size}{Maximum dimension of the coarse grid. \ML\ will
+not coarsen further is the size of the current level  is less than this
+value.}
+
+\choicebox{\tt coarse: type}{Coarse solver. It can be: {\tt Jacobi,
+Gauss-Seidel, Amesos\_KLU,
+Amesos\_UMFPACK, Amesos\_Superludist,
+Amesos\_MUMPS}. See Table~\ref{tab:ml:coarse}. }
+
+\choicebox{\tt coarse: sweeps}{(only for {\tt Jacobi} and {\tt Gauss-Seidel}) Number of
+sweeps in the coarse solver.}
+
+\choicebox{\tt coarse: damping factor}{(only for {\tt Jacobi} and {\tt Gauss-Seidel})
+Damping factor in the coarse solver.}
+
+\choicebox{\tt coarse: max processes}{ Maximum number of processes to be used in the
+  coarse grid solution (only for {\tt
+    Amesos-Superludist, Amesos-MUMPS, Amesos-ScaLAPACK}).}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Advanced Usage of \ML} \label{high level sample}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+Sections~\ref{sec:getting_started} and ~\ref{sec:list} have detailed the
+use of \ML~as a black box preconditioner. In some cases, instead, the
+user may need to explicitly construct the \ML\ hierarchy. This is
+reported in the following sections.
+
+\medskip
+
+A brief sample program is given in Figure \ref{high level figure}.
+%
+\begin{figure}[ht]
+\begin{verbatim}
+
+   ML_Create         (&ml_object, N_grids);
+
+   ML_Init_Amatrix      (ml_object, 0,  nlocal, nlocal,(void *) A_data);
+   ML_Set_Amatrix_Getrow(ml_object, 0,  user_getrow, NULL, nlocal_allcolumns);
+   ML_Set_Amatrix_Matvec(ml_object, 0,  user_matvec);
+
+   N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_object, 0, 
+                                                  ML_INCREASING, NULL);
+   ML_Gen_Smoother_Jacobi(ml_object, ML_ALL_LEVELS, ML_PRESMOOTHER, 1, 
+                          ML_DEFAULT);
+   ML_Gen_Solver    (ml_object, ML_MGV, 0, N_levels-1);
+   ML_Iterate(ml_object, sol, rhs);
+   ML_Destroy(&ml_object);
+\end{verbatim}
+\caption{High level multigrid sample code. \label{high level figure}}
+\end{figure}
+%
+The function {\sf ML\_Create} creates a multilevel solver object that is
+used to define the preconditioner. It requires the
+maximum number of multigrid levels be specified. In
+almost all cases, {\tt N\_grids}$ = 20$ is more than
+adequate. The three `Amatrix' statements are used to define the 
+discretization matrix, $A$, that is solved. This is discussed
+in greater detail in Section \ref{single}. The 
+multigrid hierarchy is generated via
+{\sf ML\_Gen\_MGHierarchy\_UsingAggregation}. Controlling the behavior of
+this function is discussed in Section \ref{aggregation options}.
+For now, it is important
+to understand that this function takes the matrix $A$ and sets up
+relevant multigrid operators corresponding to the smoothed aggregation
+multigrid method \cite{vanek3} \cite{vanek4}. In particular, it generates
+a graph associated with $A$, coarsens this graph, builds functions
+to transfer vector data between the original graph and
+the coarsened graph, and then builds an approximation to $A$ on the
+coarser graph. Once this second multigrid level is completed, the same
+operations are repeated to the second level 
+approximation to $A$ generating a third level. This process continues 
+until the 
+current graph is sufficiently coarse.  The function {\sf ML\_Gen\_Smoother\_Jacobi}
+indicates that a Jacobi smoother should be used on all levels.
+Smoothers are discussed further in Section \ref{multigrid options}.
+Finally, {\sf ML\_Gen\_Solver} is invoked when the multigrid preconditioner
+is fully specified. This function performs any needed initialization and
+checks for inconsistent options. After {\sf ML\_Gen\_Solver} completes 
+{\sf ML\_Iterate} can be used to solve the 
+problem with an initial guess of {\tt sol} (which will be overwritten with
+the solution) and a right hand side of {\tt rhs}. At the present time, the
+external interface to vectors are just arrays. That is, {\tt rhs} and {\tt sol}
+are simple one-dimensional arrays of the same length as the number of rows
+in $A$. In addition to {\sf ML\_Iterate}, the function {\sf ML\_Solve\_MGV }
+can be used to perform one multigrid `V' cycle as a preconditioner.
+
+%%%
+%%%
+%%%
+
+\section{Multigrid \& Smoothing Options} \label{multigrid options}
+Several options can be set to tune the multigrid behavior.  In this
+section, smoothing and high level multigrid choices are discussed. In
+the next section, the more specialized topic of the grid transfer
+operator is considered. 
+%!@#The details of the functions described in these
+%!@#next two sections are given in Section~\ref{subroutines}.
+
+For most applications, smoothing choices are important to the overall performance
+of the multigrid method.
+Unfortunately, there is no simple advice as to what smoother will be
+best and systematic experimentation is often necessary. \ML\ offers a variety 
+of standard smoothers. Additionally, user-defined smoothers can be supplied
+and it is possible to use \Aztec as a smoother.
+A list of \ML\ functions that
+can be invoked to use built-in smoothers are given below along with a 
+few general comments.
+\vskip .1in
+\choicebox{ML\_Gen\_Smoother\_Jacobi} {
+    Typically, not the fastest smoother.
+    Should be used with damping. 
+    For Poisson problems, the recommended damping values are 
+    $\frac{2}{3}$ (1D), $\frac{4}{5}$ (2D), and $\frac{5}{7}$ (3D). In general, smaller damping numbers are
+    more conservative.
+}
+\choicebox{ML\_Gen\_Smoother\_GaussSeidel}{
+    Probably the most popular smoother. Typically, faster than Jacobi and
+    damping is often not necessary nor advantageous. 
+}
+\choicebox{ML\_Gen\_Smoother\_SymGaussSeidel}{
+    Symmetric version of Gauss Seidel. When using multigrid preconditioned 
+    conjugate gradient, the multigrid operator must be symmetrizable. This
+    can be achieved by using a symmetric smoother with the same number of
+    pre and post sweeps on each level.
+}
+\choicebox{ML\_Gen\_Smoother\_BlockGaussSeidel}{
+    Block Gauss-Seidel with a fixed block size.  Often used for PDE systems 
+    where the block size is the number of degrees of freedom (DOFs) per grid point.
+}
+\choicebox{ML\_Gen\_Smoother\_VBlockJacobi}{
+    Variable block Jacobi smoother. This allows users to specify unknowns
+    to be grouped into different blocks when doing block Jacobi. 
+}
+\choicebox{ML\_Gen\_Smoother\_VBlockSymGaussSeidel}{
+    Symmetric variable block Gauss-Seidel smoothing. This allows users to 
+    specify unknowns to be grouped into different blocks when doing 
+    symmetric block Gauss-Seidel. 
+}
+It should be noted that the parallel Gauss-Seidel smoothers are not true
+Gauss-Seidel. In particular, each processor does a Gauss-Seidel iteration
+using off-processor information from the previous iteration.
+    
+\Aztec~user's \cite{Aztec} can invoke {\sf ML\_Gen\_SmootherAztec} to use either
+\Aztec~solvers or \Aztec~preconditioners as smoothers on any 
+grid level. Thus, for example, it is possible to use preconditioned
+conjugate-gradient (where the preconditioner might be an incomplete
+Cholesky factorization) as a smoother within the multigrid method.
+Using Krylov smoothers as a preconditioner could potentially be more
+robust than using the simpler schemes provided directly by \ML.
+However, one must be careful when multigrid is a preconditioner
+to an outer Krylov iteration. Embedding an inner Krylov method within
+a preconditioner to an outer Krylov method may not converge
+due to the fact that the preconditioner can no longer be represented
+by a simple matrix.
+Finally, it is possible to pass user-defined smoothing functions into
+\ML\ via {\sf ML\_Set\_Smoother}. The signature of the user defined
+smoother function is
+\begin{verbatim}
+
+int user_smoothing(ML_Smoother *smoother, int x_length, double x[],
+                   int rhs_length, double rhs[])
+
+\end{verbatim}
+where {\tt smoother} is an internal \ML\ object,
+{\tt x} is a vector (of length {\tt x\_length}) that corresponds to the initial
+guess on input and is the improved solution estimate on output, and {\tt rhs}
+is the right hand side vector of length {\tt rhs\_length}. 
+The function {\sf ML\_Get\_MySmootherData(smoother)} can be used to get
+a pointer back to the user's data (i.e. the data pointer given with 
+the {\sf ML\_Set\_Smoother} invocation). 
+A simple (and suboptimal)
+damped Jacobi smoother for the finest grid of our example is given below:
+{\small 
+\begin{verbatim}
+int user_smoothing(ML_Smoother *smoother, int x_length, double x[], int rhs_length, double rhs[])
+{
+   int i;
+   double ap[5], omega = .5; /* temp vector and damping factor */
+
+   Poisson_matvec(ML_Get_MySmootherData(smoother), x_length, x, rhs_length, ap);
+   for (i = 0; i < x_length; i++) x[i] = x[i] + omega*(rhs[i] - ap[i])/2.;
+
+   return 0;
+}
+\end{verbatim} 
+}
+\noindent
+A more complete smoothing example that operates on all multigrid levels
+is given in the file \verb'mlguide.c'. This routine uses the functions
+{\sf ML\_Operator\_Apply}, {\sf ML\_Operator\_Get\_Diag}, and {\sf
+  ML\_Get\_Amatrix} to access coarse grid matrices constructed during
+the algebraic multigrid process.  By writing these user-defined
+smoothers, it is possible to tailor smoothers to a particular
+application or to use methods provided by other packages.  In fact, the
+\Aztec~methods within \ML\ have been implemented by writing wrappers to
+existing \Aztec~functions and passing them into \ML\ via {\sf
+  ML\_Set\_Smoother}.
+
+At the present time there are only a few supported general parameters
+that may be altered by users. However, we expect that this list will
+grow in the future.  When using {\sf ML\_Iterate}, the convergence
+tolerance ({\sf ML\_Set\_Tolerance}) and the frequency with which
+residual information is output ({\sf ML\_Set\_ResidualOutputFrequency})
+can both be set. Additionally, the level of diagnostic output from
+either {\sf ML\_Iterate} or {\sf ML\_Solve\_MGV } can be set via {\sf
+  ML\_Set\_OutputLevel}.  The maximum number of multigrid levels can be
+set via {\sf ML\_Create} or {\sf ML\_Set\_MaxLevels}. Otherwise, \ML\
+continues coarsening until the coarsest grid is less than or equal to a
+specified size (by default 10 degrees of freedom).  This size can be set
+via {\sf ML\_Aggregate\_Set\_MaxCoarseSize}.
+
+\section{Smoothed Aggregation Options} \label{aggregation options}
+When performing smooth aggregation, the matrix graph is first coarsened 
+(actually vertices are aggregated together) and then a grid transfer
+operator is constructed.  A number of parameters can be altered to
+change the behavior of these phases. 
+
+\subsection{Aggregation Options}
+
+A graph of the matrix is usually constructed by associating a vertex
+with each equation and adding an edge between two vertices $i$ and $j$
+if there is a nonzero in the $(i,j)^{th}$ or $(j,i)^{th}$ entry. It is
+this matrix graph whose vertices are aggregated together that effectively
+determines the next coarser mesh. The above graph generation procedure
+can be altered in two ways. First, a block matrix graph can be constructed
+instead of a point matrix graph. In particular, all the degrees of freedom (DOFs) 
+at a grid point
+can be collapsed into a single vertex of the matrix graph. This situation
+arises when a PDE system is being solved where each grid point has the same 
+number of DOFs. The resulting block matrix graph is significantly smaller 
+than the point matrix graph and by aggregating the block matrix graph, 
+all unknowns at a grid point are kept together.  This usually results in
+better convergence rates (and the coarsening is actually less expensive to 
+compute).  To indicate the number of DOFs per node,
+the function {\sf ML\_Aggregate\_Set\_NullSpace} is used.
+The second way in which the graph matrix can be altered is by 
+ignoring small values. In particular,
+it is often preferential to ignore weak coupling during coarsening.
+The error between weakly coupled points is generally hard to smooth
+and so it is best not to coarsen in this direction.
+For example,
+when applying a Gauss-Seidel smoother to a standard discretization of 
+$$
+u_{xx} + \epsilon u_{yy} = f  
+$$
+(with $ 0 \le \epsilon \le 10^{-6}$) ,
+there is almost no coupling in the $y$ direction. Consequently, simple smoothers
+like Gauss-Seidel do not effectively smooth the error in this direction. If we apply a standard
+coarsening algorithm, convergence rates suffer due to this lack of $y$-direction
+smoothing. There are two principal ways to fix this: use a more sophisticated smoother
+or coarsen the graph only in the $x$ direction.
+By ignoring the $y$-direction coupling in the matrix graph, the aggregation phase 
+effectively coarsens in only the $x$-direction (the direction
+for which the errors are smooth)
+yielding significantly better multigrid convergence rates. In general,
+a drop tolerance,
+$tol_{d}$,
+can be set such that an individual matrix entry, $ A(i,j)$ is dropped
+in the {\it coarsening phase}
+if 
+$$
+ | A(i,j) | \le tol_d * \sqrt{ | A(i,i) A(j,j) | } .
+ $$
+ This drop tolerance (whose default value is zero) is set by {\sf
+   ML\_Aggregate\_Set\_Threshold}.
+
+There are two different groups of graph coarsening algorithms in \ML:
+\begin{itemize}
+\item schemes with fixed ratio of coarsening between levels: uncoupled
+  aggregation, coupled aggregation, and MIS aggregation.  A description
+  of those three schemes along with some numerical results are given in
+  \cite{supercomputing}. As the default, the {\tt Uncoupled-MIS} scheme is used which
+  does uncoupled aggregation on finer grids and switches to the more
+  expensive MIS aggregation on coarser grids;
+\item schemes with variable ratio of coarsening between levels:
+  \metis~and \parmetis aggregation. Those schemes use the graph
+  decomposition algorithms provided by \metis~and \parmetis, to create
+  the aggregates.
+\end{itemize}
+Poorly done aggregation can adversely affect the multigrid convergence
+and the time per iteration. In particular, if the scheme coarsens too
+rapidly multigrid convergence may suffer. However, if coarsening is too
+slow, the number of multigrid levels increases and the number of
+nonzeros per row in the coarse grid discretization matrix may grow
+rapidly. We refer the reader to the above paper and indicate that users
+might try experimenting with the different schemes via {\sf
+  ML\_Aggregate\_Set\_CoarsenScheme\_Uncoupled}, {\sf
+  ML\_Aggregate\_Set\_CoarsenScheme\_Coupled}, \newline {\sf
+  ML\_Aggregate\_Set\_CoarsenScheme\_MIS}, {\sf
+  ML\_Aggregate\_Set\_CoarsenScheme\_METIS}, and \\ {\sf
+  ML\_Aggregate\_Set\_CoarsenScheme\_ParMETIS}.
+
+%Finally, within the uncoupled and border aggregation it is possible to 
+%set the following ...
+
+\subsection{Interpolation Options}
+An interpolation operator is built using coarsening information,
+seed vectors, and a damping factor. We refer the 
+reader to \cite{vanek4} for details on the algorithm and the theory. 
+In this section, we explain a few essential features to
+help users direct the interpolation process. 
+
+Coarsening or aggregation information is first used to create a
+tentative interpolation operator.  This process takes a seed vector or
+seed vectors and builds a grid transfer operator. The details of this
+process are not discussed in this document.  It is, however, important
+to understand that only a few seed vectors are needed (often but not
+always equal to the number of DOFs at each grid point) and that these
+seed vectors should correspond to components that are difficult to
+smooth.  The tentative interpolation that results from these seed
+vectors will interpolate the seed vectors perfectly.  It does this by
+ensuring that all seed vectors are in the range of the interpolation
+operator.  This means that each seed vector can be recovered by
+interpolating the appropriate coarse grid vector.  The general idea of
+smoothed aggregation (actually all multigrid methods) is that errors not
+eliminated by the smoother must be removed by the coarse grid solution
+process.  If the error after several smoothing iterations was known, it
+would be possible to pick this error vector as the seed vector. However,
+since this is not the case, we look at vectors associated with small
+eigenvalues (or singular values in the nonsymmetric case) of the
+discretization operator.  Errors in the direction of these eigenvectors
+are typically difficult to smooth as they appear much smaller in the
+residual ($ r = A e $ where $r$ is the residual, $A$ is discretization
+matrix, and $e$ is the error).  For most scalar PDEs, a single seed
+vector is sufficient and so we seek some approximation to the
+eigenvector associated with the lowest eigenvalue.  It is well known
+that a scalar Poisson operator with Neumann boundary conditions is
+singular and that the null space is the constant vector. Thus, when
+applying smoothed aggregation to Poisson operators, it is quite natural
+to choose the constant vector as the seed vector.  In many cases, this
+constant vector is a good choice as all spatial derivatives within the
+operator are zero and so it is often associated with small singular
+values. Within \ML\ the default is to choose the number of seed vectors
+to be equal to the number of DOFs at each node (given via {\sf
+  ML\_Aggregate\_Set\_NullSpace}).  Each seed vector corresponds to a
+constant vector for that DOF component.  Specifically, if we have a PDE
+system with two DOFs per node. Then one seed vector is one at the first
+DOF and zero at the other DOF throughout the graph. The second seed
+vector is zero at the first DOF and one at the other DOF throughout the
+graph.  In some cases, however, information is known as to what
+components will be difficult for the smoother or what null space is
+associated with an operator.  In elasticity, for example, it is well
+known that a floating structure has six rigid body modes (three
+translational vectors and three rotation vectors) that correspond to the
+null space of the operator.  In this case, the logical choice is to take
+these six vectors as the seed vectors in smoothed aggregation. When this
+type of information is known, it should be given to \ML\ via the command
+{\sf ML\_Aggregate\_Set\_NullSpace}.
+
+Once the tentative prolongator is created, it is smoothed via a damped Jacobi
+iteration. The reasons for this smoothing are related to the theory where the
+interpolation basis functions must have a certain degree of smoothness (see \cite{vanek4}).
+However, the smoothing stage can be omitted by setting the damping to zero
+using the function 
+{\sf ML\_Aggregate\_Set\_DampingFactor}. Though
+theoretically poorer, unsmoothed aggregation can have considerably less set up
+time and less cost per iteration than smoothed aggregation.
+When smoothing,
+\ML\ has two ways to determine the Jacobi damping parameter and each require some estimate
+of the largest eigenvalue of the discretization operator. The current default is to
+use a few iterations of a conjugate-gradient method to estimate this value.
+However, if the matrix is nonsymmetric, the infinity norm of the matrix should be used 
+instead via {\sf ML\_Aggregate\_Set\_SpectralNormScheme\_Anorm}.  
+There are several other internal parameters that have not 
+been discussed in this document. In the future, it is anticipated that some of 
+these will be made available to users.
+
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Advanced Usage of \ML\ and Epetra}
+\label{sec:advanced}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+Class ML\_Epetra::MultiLevelOperator is defined in a header file, that must
+be included as
+\begin{verbatim}
+#include "ml_epetra_operator.h" 
+\end{verbatim}
+Users may also need to include \verb!ml_config.h!,
+\verb!Epetra_Operator.h!, \verb!Epetra_MultiVector.h!,
+\verb!Epetra_LinearProblem.h!,  \verb!AztecOO.h!. Check the {\sc Epetra} and
+AztecOO documentation for more details.
+
+Let \verb!A! be an Epetra\_RowMatrix for which we aim to construct
+a preconditioner, and let \verb!ml_handle! be the structure \ML\ requires
+to store internal data (see Section~\ref{high level sample}), created
+with the instruction
+\begin{verbatim}
+ML_Create(&ml_handle,N_levels);
+\end{verbatim}
+where \verb!N_levels! is the specified (maximum) number of levels.  As
+already pointed out, \ML\ can accept in input very general matrices.
+Basically, the user has to specify the number of local rows, and provide
+a function to update the ghost nodes (that is, nodes requires in the
+matrix-vector product, but assigned to another process). For Epetra
+matrices, this is done by the following function
+\begin{verbatim}
+EpetraMatrix2MLMatrix(ml_handle, 0, &A);
+\end{verbatim}
+and it is important to note that \verb!A! is {\sl not} converted to ML
+format. Instead, {\sf EpetraMatrix2MLMatrix} defines a suitable getrow
+function (and other minor data structures) that allows \ML\ to work with
+\verb!A!.
+
+Let \verb!agg_object! a ML\_Aggregate pointer, created using
+\begin{verbatim}
+ML_Aggregate_Create(&agg_object);
+\end{verbatim}
+At this point, users have to create the multilevel hierarchy, define the
+aggregation schemes, the smoothers, the coarse solver, and create the solver.
+Then, we can finally create the ML\_Epetra::MultiLevelOperator object
+\begin{verbatim}
+ML_Epetra::MultiLevelOperator MLop(ml_handle,comm,map,map);
+\end{verbatim}
+(\verb!map! being the Epetra\_Map used to create the matrix) and set the
+preconditioning operator of our {\sc AztecOO} solver,
+\begin{verbatim}
+Epetra_LinearProblem Problem(A,&x,&b);
+AztecOO Solver(Problem);
+solver.SetPrecOperator(&MLop);
+\end{verbatim}
+where \verb!x! and \verb!b! are \verb!Epetra_MultiVector!'s defining
+solution and right-hand side. The linear problem can now be solved as,
+for instance,
+\begin{verbatim}
+Solver.SetAztecOption( AZ_solver, AZ_gmres );
+solver.Iterate(Niters, 1e-12);
+\end{verbatim}
+
+%%%
+%%%
+%%%
+
+\section{Using \ML\ without Epetra}
+\label{sec:without_Epetra}
+
+\subsection{Creating a \ML\ matrix: Single Processor}
+\label{single}
+
+Matrices are created by defining some size information, a matrix-vector
+product and a getrow function (which is used to extract matrix
+information).  We note that {\sc Epetra} and {\sc Aztec} users do not
+need to read this (or the next) section as there are special functions
+to convert {\sc Epetra} objects and {\sc Aztec} matrices to \ML\ matrices (see
+Section \ref{other packages}). Further, functions for
+some common matrix storage formats (CSR \& MSR) already exist within ML
+and do not need to be rewritten\footnote{The functions {\sf
+    CSR\_matvec}, {\sf CSR\_getrows}, {\sf MSR\_matvec} and {\sf
+    MSR\_getrows} can be used.}.
+
+Size information is indicated via {\sf ML\_Init\_Amatrix}. The third parameter
+in the Figure \ref{high level figure} 
+invocation
+indicates that a matrix with {\tt nlocal} rows is being defined. The fourth parameter
+gives the vector length of vectors that can be multiplied with this matrix.  
+Additionally,
+a data pointer, {\tt A\_data}, is associated with the matrix. This pointer 
+is passed back into the matrix-vector product and getrow functions that are 
+supplied by the user. Finally, the number `0' indicates at what level within
+the multigrid hierarchy the matrix is to be stored. For discussions within this
+document, this is always `0'. It should be noted that there appears to be some redundant
+information. In particular, the number of rows and the vector length in
+{\sf ML\_Init\_Amatrix} should be the same number as the discretization matrices are square.
+Cases where these `apparently' redundant parameters might be set differently
+are not discussed in this document.
+
+The function {\sf ML\_Set\_Amatrix\_Matvec} associates a 
+matrix-vector product with the discretization matrix.
+The invocation in Figure
+\ref{high level figure} indicates that the matrix-vector product
+function
+{\tt user\_matvec} is associated with the matrix located at level
+`{\tt 0}' of the multigrid hierarchy.  The signature of {\tt user\_matvec} is
+%
+\begin{verbatim}
+int user_matvec(ML_Operator *Amat, int in_length, double p[], int out_length, 
+                double ap[])
+\end{verbatim}
+%
+where {\tt A\_mat} is an internal \ML\ object,
+%the user-defined data pointer specified in the 
+%{\sf ML\_Init\_Amatrix}, 
+{\tt p} is the vector to apply to the matrix,
+{\tt in\_length} is the length of this vector, and {\tt ap} is the 
+result after
+multiplying the discretization matrix by the vector {\tt p} 
+and {\tt out\_length}
+is the length of {\tt ap}.
+The function {\sf ML\_Get\_MyMatvecData(Amat)} can be used to get
+a pointer back to the user's data (i.e. the data pointer given with 
+the {\sf ML\_Init\_Amatrix} invocation). 
+
+Finally, {\sf ML\_Set\_Amatrix\_Getrow} associates a getrow function with 
+the discretization matrix.  This getrow function returns nonzero information 
+corresponding to specific rows.  
+The invocation 
+in Figure \ref{high level figure}
+indicates that a user supplied function {\tt user\_getrow} is 
+associated with the matrix located at level `{\tt 0}' of the multigrid
+hierarchy and that this matrix contains {\tt nlocal\_allcolumns} columns 
+and that no communication ({\tt NULL})
+is used (discussed in the next section).
+It again appears that some redundant information is being asked as the 
+number of columns was already given. However, when running in parallel
+this number will include ghost node information and is usually different
+from the number of rows.
+The signature of {\tt user\_getrow} is
+%
+\begin{verbatim}
+int user_getrow(ML_Operator *Amat, int N_requested_rows, int requested_rows[],
+   int allocated_space, int columns[], double values[], int row_lengths[])
+\end{verbatim}
+%
+where {\tt Amat} is an internal \ML\ object,
+{\tt N\_requested\_rows} is the number of matrix rows for which 
+information is
+returned, {\tt requested\_rows} are the specific rows for which information will be returned,
+{\tt allocated\_space} indicates how much space has been allocated in 
+{\tt columns}
+and {\tt values} for nonzero information. 
+The function {\sf ML\_Get\_MyGetrowData(Amat)} can be used to get
+a pointer back to the user's data (i.e. the data pointer given with 
+the {\sf ML\_Init\_Amatrix} invocation). On return, the user's function
+should take each row in order within {\tt requested\_rows} and place the 
+column numbers and the values corresponding to nonzeros in the 
+arrays {\tt columns} and {\tt values}. The length of the ith requested row
+should appear in {\tt row\_lengths[i]}. If there is not enough allocated 
+space in {\tt columns} or {\tt values}, this routine simply returns a `{\tt 0}',
+otherwise it returns a `{\tt 1}'.
+
+
+To clarify, these functions, one concrete example is given
+corresponding to the matrix:
+\begin{equation} \label{matrix example}
+\pmatrix{ 2 & -1 &    &    &    \cr
+         -1 &  2 & -1 &    &    \cr
+            & -1 &  2 & -1 &    \cr
+            &    & -1 &  2 & -1 \cr
+            &    &    & -1 &  2 } .
+\end{equation}
+To implement this matrix, the following functions are defined:
+%
+{\small
+\begin{verbatim}
+int Poisson_getrow(ML_Operator *Amat, int N_requested_rows, int requested_rows[],
+   int allocated_space, int columns[], double values[], int row_lengths[])
+{
+   int count = 0, i, start, row;
+
+
+   for (i = 0; i < N_requested_rows; i++) {
+      if (allocated_space < count+3) return(0);
+      start = count;
+      row = requested_rows[i];
+      if ( (row >= 0) || (row <= 4) ) {
+         columns[count] = row; values[count++] = 2.;
+         if (row != 0) { columns[count] = row-1; values[count++] = -1.; }
+         if (row != 4) { columns[count] = row+1; values[count++] = -1.; }
+      }
+      row_lengths[i] = count - start;
+   }
+   return(1);
+}
+\end{verbatim}
+}
+%
+\noindent
+and
+%
+{\small
+\begin{verbatim}
+int Poisson_matvec(ML_Operator *Amat, int in_length, double p[], int out_length, 
+                   double ap[])
+{
+   int i;
+
+   for (i = 0; i < 5; i++ ) {
+      ap[i] = 2*p[i];
+      if (i != 0) ap[i] -= p[i-1];
+      if (i != 4) ap[i] -= p[i+1];
+   }
+   return 0;
+}
+\end{verbatim}
+}
+%
+\noindent
+Finally, these matrix functions along with size information are associated with the
+fine grid discretization matrix via
+\begin{verbatim}
+   ML_Init_Amatrix      (ml_object, 0,  5, 5, NULL);
+   ML_Set_Amatrix_Getrow(ml_object, 0,  Poisson_getrow, NULL, 5);
+   ML_Set_Amatrix_Matvec(ml_object, 0,  Poisson_matvec);
+\end{verbatim}
+Notice that in these simple examples {\tt Amat} was not used.
+In the next section we give a parallel example which makes use of 
+{\tt Amat}. The complete sample program can be found in the
+file \verb'mlguide.c' within the \ML\ code distribution.
+
+\subsection{Creating a \ML\ matrix: Multiple Processors} 
+\label{sec:multiple}
+
+Creating matrices in parallel requires a bit more work. In this
+section local versus global indexing as well as communication
+are discussed.  In the description, we reconsider the previous example 
+(\ref{matrix example}) partitioned over two processors. 
+The matrix row indices (ranging from 0 to 4) are referred to as global 
+indices and are independent of the number of processors being used.
+On distributed memory machines, the matrix is subdivided
+into pieces that are assigned to individual processors.  \ML\ 
+requires matrices be partitioned by rows (i.e. each row is 
+assigned to a processor which holds the entire data for that row).
+These matrix pieces are stored on each processor as smaller local 
+matrices. Thus, global indices in the original matrix get mapped to
+local indices on each processor.
+In our
+example, we will assign global rows 0 and 4 to processor 0 
+and store them locally as rows 1 and 0 respectively.
+Global columns 0, 1, 3,  and 4 are stored locally as columns 1, 3, 2, and
+0. This induces the local matrix
+$$
+\pmatrix{2 &  & -1  &  \cr     & 2 & & -1 } .
+$$
+Likewise, processor 1 is assigned global rows 1, 2, and 3 which are
+stored locally as rows 0, 1, and 2 respectively.
+Global columns 0 - 4 are stored locally as columns 3, 0, 1, 2, and 4
+inducing the local matrix 
+$$
+\pmatrix{2 & -1 &    &     & -1 \cr
+        -1 & 2  & -1 &     &    \cr 
+           & -1 & 2  & -1  &     } .
+$$
+At the present time, there are some restrictions
+as to what type of mappings can be used. In particular, all global rows 
+stored on a processor must be mapped from 0 to $k-1$ where $k$ is the
+number of rows assigned to this processor. This row mapping induces a
+partial column mapping. Any additional columns must be mapped with
+consecutive increasing numbers starting from $k$.
+
+\ML\ has no notion of global indices and uses only the local indices.
+In most cases, another package or application already mapped
+the global indices to local indices and so 
+\ML\ works with the existing local
+indices.  Specifically, the parallel version of 
+{\tt user\_getrow} and {\tt user\_matvec} should correspond
+to each processor's local matrix.  This means that when giving
+the column information with {\sf ML\_Set\_Amatrix\_Getrow}, the
+total number of columns in the local matrix should be given and that
+when row $k$ is requested, {\tt user\_getrow} should return the $k^{th}$ local
+row using local column indices. Likewise, the matrix-vector product
+takes a local input vector and multiplies it by the local
+matrix. It is important to note that this local input vector
+does not contain ghost node data
+(i.e. the input vector is of length {\tt nlocal} where {\tt nlocal} is the number of matrix rows). 
+Thus, 
+{\tt user\_matvec} must perform the necessary communication to update
+ghost variables.  When invoking {\sf ML\_Init\_Amatrix}, the local number of rows 
+should be given for the number of rows and the vector 
+length\footnote{ In contrast to {\sf ML\_Set\_Amatrix\_Getrow} in which the number of
+local columns are given (including those that correspond to ghost variables), 
+{\sf ML\_Init\_Amatrix} does not include ghost variables and so both size parameters
+should be the number of local rows.}.
+A specific communication
+function must also be passed into \ML\ when supplying the getrow function
+so that \ML\ can determine how local 
+matrices on different processors are `glued' together.
+The signature of the communication function is
+%
+\begin{verbatim}
+int user_comm(double x[], void *Adata) 
+\end{verbatim}
+%
+where {\tt A\_data} is the user-defined data pointer specified in the
+{\sf ML\_Init\_Amatrix} and {\tt x} is a vector of length 
+{\tt nlocal\_allcolumns} specified in {\sf ML\_Set\_Amatrix\_Getrow}. This parameter
+should be set to the total number of matrix columns stored on this processor.
+On input, only the first {\tt nlocal} elements of {\tt x} are
+filled with data where {\tt nlocal} is the number of rows/columns specified
+in {\sf ML\_Init\_Amatrix}. On output, the ghost elements 
+are updated to their current values (defined on other processors). Thus, after 
+this function a local matrix-vector product could be properly performed
+using {\tt x}. To make all this clear, we give the new functions 
+corresponding to our two processor example.
+
+{\small
+\begin{verbatim}
+int Poisson_getrow(ML_Operator *Amat, int N_requested_rows, int requested_rows[],
+   int allocated_space, int cols[], double values[], int row_lengths[])
+{
+   int m = 0, i, row, proc, *itemp, start;
+
+   itemp = (int *) ML_Get_MyGetrowData(Amat);
+   proc  = *itemp;
+
+   for (i = 0; i < N_requested_rows; i++) {
+      row = requested_rows[i];
+      if (allocated_space < m+3) return(0);
+      values[m] = 2; values[m+1] = -1; values[m+2] = -1;
+      start = m;
+      if (proc == 0) {
+         if (row == 0) {cols[m++] = 0; cols[m++] = 2;               }
+         if (row == 1) {cols[m++] = 1; cols[m++] = 3;}
+      }
+      if (proc == 1) {
+         if (row == 0) {cols[m++] = 0; cols[m++] = 1; cols[m++] = 4;}
+         if (row == 1) {cols[m++] = 1; cols[m++] = 0; cols[m++] = 2;}
+         if (row == 2) {cols[m++] = 2; cols[m++] = 1; cols[m++] = 3;}
+      }
+      row_lengths[i] = m - start;
+   }
+   return(1);
+}
+\end{verbatim}
+}
+%
+%
+{\small
+\begin{verbatim}
+int Poisson_matvec(ML_Operator *Amat, int in_length, double p[], int out_length, 
+                   double ap[])
+{
+   int i, proc, *itemp;
+   double new_p[5];
+
+   itemp = (int *) ML_Get_MyMatvecData(Amat);
+   proc  = *itemp;
+
+   for (i = 0; i < in_length; i++) new_p[i] = p[i];
+   Poisson_comm(new_p, A_data);
+
+   for (i = 0; i < out_length; i++) ap[i] = 2.*new_p[i];
+
+   if (proc == 0) {
+      ap[0] -= new_p[2];
+      ap[1] -= new_p[3];
+   }
+   if (proc == 1) {
+      ap[0] -= new_p[1]; ap[0] -= new_p[4];
+      ap[1] -= new_p[2]; ap[1] -= new_p[0];
+      ap[2] -= new_p[3]; ap[2] -= new_p[1];
+   }
+   return 0;
+}
+\end{verbatim}
+}
+and
+{\small
+\begin{verbatim}
+int Poisson_comm(double x[], void *A_data)
+{
+   int    proc, neighbor, length, *itemp;
+   double send_buffer[2], recv_buffer[2];
+
+   
+   itemp = (int *) A_data;
+   proc  = *itemp; 
+
+   length = 2;
+   if (proc == 0) {
+      neighbor = 1;
+      send_buffer[0] = x[0]; send_buffer[1] = x[1];
+      send_msg(send_buffer,  length, neighbor);
+      recv_msg(recv_buffer,  length, neighbor);
+      x[2] = recv_buffer[1]; x[3] = recv_buffer[0];
+   }
+   else {
+      neighbor = 0;
+      send_buffer[0] = x[0]; send_buffer[1] = x[2];
+      send_msg(send_buffer,  length, neighbor);
+      recv_msg(recv_buffer,  length, neighbor);
+      x[3] = recv_buffer[1]; x[4] = recv_buffer[0];
+   }
+   return 0;
+}
+\end{verbatim}
+}
+\noindent
+Finally, these matrix functions along with size information are associated with the
+fine grid discretization matrix via
+\begin{verbatim}
+   if     (proc == 0) {nlocal = 2; nlocal_allcolumns = 4;}
+   else if (proc == 1) {nlocal = 3; nlocal_allcolumns = 5;}
+   else               {nlocal = 0; nlocal_allcolumns = 0;}
+
+   ML_Init_Amatrix      (ml_object, 0,  nlocal, nlocal, &proc);
+   ML_Set_Amatrix_Getrow(ml_object, 0,  Poisson_getrow, Poisson_comm, 
+                         nlocal_allcolumns);
+   ML_Set_Amatrix_Matvec(ml_object, 0,  Poisson_matvec);
+\end{verbatim}
+
+%%%
+%%%
+%%%
+
+\section{Visualization Capabilities}
+\label{sec:viz}
+
+\ML\ supports limited capabilities for the visualization of and statistical
+information for aggregates, with an interface to OpenDX.
+Currently, only {\tt Uncoupled,
+METIS} and {\tt ParMETIS} aggregation routines can dump files in OpenDX
+format.
+
+The procedure to create the OpenDX input files is as follows:
+\begin{enumerate}
+\item Add the following line after the creation of the ML\_Aggregate object
+\begin{verbatim}
+   ML_Aggregate_VizAndStats_Setup( ag, MaxMgLevels );
+\end{verbatim}
+  where \verb!MaxMgLevels! is the maximum number of levels (this is the
+  same value used to create the \ML\ object).
+\item Create the multilevel hierarchy;
+\item Write OpenDX file using the instruction
+%\begin{verbatim}
+%   ML_Aggregate_Visualize( ml, ag, MaxMgLevels, x, y, z, option, filename);
+%\end{verbatim}
+\begin{verbatim}
+   ML_Aggregate_VizAndStats_Compute( ml, ag, MaxMgLevels, x, y, z,
+                                     option, filename);
+\end{verbatim}
+   where \verb!ml! is the \ML\ object, \verb!ag! the ML\_Aggregation object, 
+   and \verb!x,y,z! are double vectors, whose size
+   equals the number of local nodes in the fine grid, containing the coordinates
+   of fine grids nodes. \verb!option! is an integer value defined so
+   that:
+   \begin{itemize}
+   \item option = 1 : solution of 1D problem ({\tt y} and {\tt z} can be
+     {\tt NULL});
+   \item option = 2 : solution of 2D problems ({\tt z} can be {\tt NULL});
+   \item option = 3 : solution of 3D problems.
+   \end{itemize}
+   Processor X will write its own file, \verb!filename_levelY_procX!, where
+   \verb!Y! is the level. \verb!filename! can be set to {\tt NULL} (default value of
+   \verb!.graph! will be used in this case).
+   
+   Note that in AMG there is no mesh associated with coarser
+   levels. Therefore \newline {\sf ML\_Aggregate\_VizAndStats\_Compute} needs to
+   assign a set of coordinates  to each aggregate.
+   This is done by computing the center
+   of gravity of each aggregate (starting from the fine grid and finishing
+   at the coarsest level).
+
+   \verb!ML_Aggregate_VizAndStats_Compute!
+   will also write statistical
+   information to the screen.
+
+\item Deallocate memory using
+\begin{verbatim}
+  ML_Aggregate_VizAndStats_Clean( ag, MaxMgLevels ).
+\end{verbatim}
+\end{enumerate}
+
+At this point, one should copy file \verb!viz_aggre.net! and
+\verb!viz_aggre.cfg! (located in \verb!$ML_HOME/util/!) in the directory
+where the output files are located, and run OpendDX with the instruction
+\begin{verbatim}
+% dx -edit viz_aggre.net
+\end{verbatim}
+Other instructions are reported in file
+\verb!$ML_HOME/util/viz_aggre.README!. An example of code can be found in
+file \verb!$ML_HOME/examples/ml_aztec_simple_METIS.c!.
+
+
+%%%
+%%%
+%%%
+
+%\section{Function Appendix} \label{function appendix}
+%\section{Compiling/Linking} \label{Compliling }
+
+\bibliography{mlguide}
+
+\end{document}
