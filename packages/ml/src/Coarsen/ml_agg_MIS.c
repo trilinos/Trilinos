@@ -1434,7 +1434,8 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
       MLFORTRAN(dgeqrf)(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
                         &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
       if (info != 0)
-         pr_error("Error in CoarsenMIS : dgeqrf returned a non-zero\n");
+         pr_error("ErrOr in CoarsenMIS : dgeqrf returned a non-zero %d %d\n",
+aggr_cnt_array[i],i);
 
       if (work[0] > lwork) 
       {
