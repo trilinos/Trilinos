@@ -28,7 +28,7 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
 			&val_msr,  &bindx_msr, &x_in, &b_in, &xexact_in);
   
   double *val = 0;
-  int NumGlobalElements = 0, NumGlobalBlockEntries = 0;
+  int NumGlobalElements = 0;
   int *indx = 0, *rpntr = 0, *cpntr = 0, *bpntr = 0, *bindx = 0;
   int NumMyBlockEntries = 0, NumMyElements = 0, * MyGlobalElements = 0;
   
