@@ -424,57 +424,61 @@ RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
  *
  * @param  extra_data
  *               [in] Data object that will be set (copied)
+ * @param  name  [in] The name given to the extra data.  The value of
+ *               <tt>name</tt> together with the data type <tt>T1</tt> of the
+ *               extra data must be unique from any other such data or
+ *               the other data will be overwritten.
  * @param  p     [out] On output, will be updated with the input <tt>extra_data</tt>
- * @param  ctx   [in] The context used to define the client that is adding (or
- *               replacing) this extra data.  If <tt>ctx > 0</tt> then this value
- *               of <tt>ctx</tt> must have been a value returned from a previous
- *               call to <tt>set_extra_data(...,p)</tt> and in this case
- *               the currently set extra data will be replaced with <tt>extra_data</tt>.
- *               Otherwise, if <tt>ctx < 0</tt> (the default value), then a new
- *               bit of extra data will be added to <tt>*p</tt>.
+ * @param  fource_unique
+ *               [in] Determines if this type and name pair must be unique
+ *               in which case if an object with this same type and name
+ *               already exists, then an exception will be thrown.
+ *               The default is <tt>true</tt> for safety.
  *
- * @return Returns a context number that must be used to access this
- * object in a latter call to <tt>get_extra_data()</tt> or
- * <tt>set_extra_data()</tt>.  If <tt>ctx >= 0</tt> on input and this
- * function returns without throwing an exception, then the return
- * value will equal the value input in <tt>ctx</tt>.  Note that
- * context numbers will be assigned starting at <tt>0</tt> and then
- * incremented as more extra data is added.  This feature is designed
- * to make it easier for clients to use this class without stomping on
- * each other.
+ * If there is a call to this function with the same type of extra
+ * data <tt>T1</tt> and same arguments <tt>p</tt> and <tt>name</tt>
+ * has already been made, then the current piece of extra data already
+ * set will be overwritten with <tt>extra_data</tt>.  However, if the
+ * type of the extra data <tt>T1</tt> is different, then the extra
+ * data can be added and not overwrite existing extra data.  This
+ * means that extra data is keyed on both the type and name.  This
+ * helps to minimize the chance that clients will unexpectedly
+ * overwrite data by accident.
  *
  * When the last <tt>RefcountPtr</tt> object is removed the underlying
  * reference-counted object is deleted before any of the extra data
  * that has been associated with this object.  The extra data objects
- * will then be destoried in a first-in basis based on their context.
- * In other words, the first extra data object added will be deleted
- * first, the second extra data object will be deleted second and so
- * on.  This must be considered when multiple pieces of extra data are
- * being added.
+ * will then be destoried in a first-in basis.  In other words, the
+ * first extra data object added will be deleted first, the second
+ * extra data object will be deleted second and so on.  This must be
+ * considered when multiple pieces of extra data are being added if
+ * the order of distruction is significant.
  *
  * Preconditions:<ul>
  * <li> <tt>p->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
- * <li> [<tt>ctx >= 0</tt>] <tt>ctx</tt> must be value returned from a previous
- *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
+ * <li> If this function has already been called with the same template
+ *      type <tt>T1</tt> for <tt>extra_data</tt> and the same string <tt>name</tt>
+ *      and <tt>force_unique==true</tt>, then an <tt>std::invalid_argument</tt>
+ *      exception will be thrown.
  * </ul>
  *
  * Note, this function is made a non-member function to be consistent
  * with the non-member <tt>get_extra_data()</tt> functions.
  */
 template<class T1, class T2>
-int set_extra_data( const T1 &extra_data, RefCountPtr<T2> *p, int ctx = -1 );
+void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p, bool force_unique = true);
 
 ///
 /** Get a non-const reference to extra data associated with a <tt>RefCountPtr</tt> object.
  *
  * @param  p    [in] Smart pointer object that extra data is being extraced from.
- * @param  ctx  [in] The context for the extra data object being extraced.
+ * @param  name [in] Name of the extra data.
  *
  * @return Returns a non-const reference to the extra_data object.
  *
  * Preconditions:<ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
- * <li> <tt>cxt >= 0</tt> must be value returned from a previous
+ * <li> <tt>name</tt> and <tt>T1</tt> must have been used in a previous
  *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
  * </ul>
  *
@@ -482,33 +486,33 @@ int set_extra_data( const T1 &extra_data, RefCountPtr<T2> *p, int ctx = -1 );
  * must manually select the first template argument.
  */
 template<class T1, class T2>
-T1& get_extra_data( RefCountPtr<T2>& p, int ctx );
+T1& get_extra_data( RefCountPtr<T2>& p, const std::string& name );
 
 ///
 /** Get a const reference to extra data associated with a <tt>RefCountPtr</tt> object.
  *
  * @param  p    [in] Smart pointer object that extra data is being extraced from.
- * @param  ctx  [in] The context for the extra data object being extraced.
+ * @param  name [in] Name of the extra data.
  *
  * @return Returns a const reference to the extra_data object.
  *
  * Preconditions:<ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
- * <li> <tt>cxt >= 0</tt> must be value returned from a previous
+ * <li> <tt>name</tt> and <tt>T1</tt> must have been used in a previous
  *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
  * </ul>
  *
  * Note, this function must be a non-member function since the client
  * must manually select the first template argument.
  *
- * Also note that this const version is a false since of security
+ * Also note that this const version is a false sense of security
  * since a client can always copy a const <tt>RefCountPtr</tt> object
  * into a non-const object and then use the non-const version to
  * change the data.  However, its presence will help to avoid some
  * types of accidental changes to this extra data.
  */
 template<class T1, class T2>
-const T1& get_extra_data( const RefCountPtr<T2>& p, int ctx );
+const T1& get_extra_data( const RefCountPtr<T2>& p, const std::string& name );
 
 ///
 /** Return a non-<tt>const</tt> reference to the underlying deallocator object.

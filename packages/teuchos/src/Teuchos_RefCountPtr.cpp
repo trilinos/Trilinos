@@ -28,38 +28,32 @@ void PrivateUtilityPack::throw_null( const std::string &type_name )
 
 namespace PrivateUtilityPack {
 
-int RefCountPtr_node::set_extra_data( const any &extra_data, int ctx )
+void RefCountPtr_node::set_extra_data( const any &extra_data, const std::string& name, bool force_unique )
 {
-	TEST_FOR_EXCEPTION(
-		(extra_data_array_==NULL) && (ctx >= 0), std::invalid_argument
-		,"Error, not existing extra data is set yet (set ctx to -1)!" );
-	TEST_FOR_EXCEPTION(
-		(extra_data_array_!=NULL) && (ctx > (int)extra_data_array_->size()-1), std::invalid_argument
-		,"Error, the value of ctx = " << ctx << " > 0 is outside of the range [0,"
-		<< (extra_data_array_->size()-1) << "] and therefore could not have been returned"
-		" from a previous call to set_extra_data(...)!" );
-	if(extra_data_array_==NULL) extra_data_array_ = new extra_data_array_t;
-	if( ctx > 0 ) {
-		(*extra_data_array_)[ctx] = extra_data;
+	if(extra_data_map_==NULL) {
+		extra_data_map_ = new extra_data_map_t;
 	}
-	else {
-		extra_data_array_->push_back( extra_data );
-		ctx = extra_data_array_->size()-1;
+	const std::string type_and_name( extra_data.type().name() + std::string(":") + name );
+	if( !extra_data_map_->empty() && force_unique ) {
+		extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
+		TEST_FOR_EXCEPTION(
+			itr != extra_data_map_->end(), std::invalid_argument
+			,"Error, the type:name pair \'" << type_and_name << "\' already exists and force_unique==true!" );
 	}
-	return ctx;
+	(*extra_data_map_)[type_and_name] = extra_data; // This may add or replace!
 }
 
-any& RefCountPtr_node::get_extra_data( int ctx )
+any& RefCountPtr_node::get_extra_data( const std::string& type_name, const std::string& name )
 {
 	TEST_FOR_EXCEPTION(
-		extra_data_array_==NULL, std::invalid_argument
+		extra_data_map_==NULL, std::invalid_argument
 		,"Error, no extra data has been set yet!" );
+	const std::string type_and_name( type_name + std::string(":") + name );
+	extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
 	TEST_FOR_EXCEPTION(
-		(ctx < 0) || (extra_data_array_->size()-1) < ctx, std::invalid_argument
-		,"Error, the value of ctx = " << ctx << " is outside of the range [0,"
-		<< (extra_data_array_->size()-1) << "] and therefore could not have been returned"
-		" from a previous call to set_extra_data(...)!" );
-	return (*extra_data_array_)[ctx];
+		itr == extra_data_map_->end(), std::invalid_argument
+		,"Error, the type:name pair \'" << type_and_name << "\' is not found!" );
+	return itr->second;
 }
 
 } // namespace PrivateUtilityPack

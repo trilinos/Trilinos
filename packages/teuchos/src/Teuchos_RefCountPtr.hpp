@@ -34,11 +34,11 @@ void throw_null( const std::string &type_name );
 class RefCountPtr_node {
 public:
 	RefCountPtr_node(bool has_ownership)
-		: count_(1), has_ownership_(has_ownership), extra_data_array_(NULL)
+		: count_(1), has_ownership_(has_ownership), extra_data_map_(NULL)
 	{}
 	virtual ~RefCountPtr_node()
 	{
-		if(extra_data_array_) delete extra_data_array_;
+		if(extra_data_map_) delete extra_data_map_;
 	}
 	int count() const {
 		return count_;	
@@ -55,16 +55,16 @@ public:
 	bool has_ownership() const {
 		return has_ownership_;
 	}
-	int set_extra_data( const any &extra_data, int ctx );
-    any& get_extra_data( int ctx );
-    const any& get_extra_data( int ctx ) const {
-		return const_cast<RefCountPtr_node*>(this)->get_extra_data(ctx);
+	void set_extra_data( const any &extra_data, const std::string& name, bool force_unique );
+	any& get_extra_data( const std::string& type_name, const std::string& name );
+	const any& get_extra_data( const std::string& type_name, const std::string& name ) const {
+		return const_cast<RefCountPtr_node*>(this)->get_extra_data(type_name,name);
 	}
 private:
-	typedef std::deque<any> extra_data_array_t;  // A std::deque should have a smaller footprint than std::vector
+	typedef map<std::string,any>  extra_data_map_t;
 	int                 count_;
 	bool                has_ownership_;
-	extra_data_array_t  *extra_data_array_;
+	extra_data_map_t    *extra_data_map_;
 	// This is made a pointer to reduce overhead for the general case
 	// where this is not used
 	RefCountPtr_node();
@@ -353,25 +353,26 @@ Teuchos::rcp_dynamic_cast(const RefCountPtr<T1>& p1)
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-int Teuchos::set_extra_data( const T1 &extra_data, Teuchos::RefCountPtr<T2> *p, int ctx )
+void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teuchos::RefCountPtr<T2> *p, bool force_unique )
 {
 	*(*p); // Assert not NULL
-	return p->access_node()->set_extra_data( extra_data, ctx );
+	return p->access_node()->set_extra_data( extra_data, name, force_unique );
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-T1& Teuchos::get_extra_data( RefCountPtr<T2>& p, int ctx )
+T1& Teuchos::get_extra_data( RefCountPtr<T2>& p, const std::string& name )
 {
 	*p; // Assert not NULL
-	return any_cast<T1>(p.access_node()->get_extra_data(ctx));
+	return any_cast<T1>(p.access_node()->get_extra_data(typeid(T1).name(),name));
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
-const T1& Teuchos::get_extra_data( const RefCountPtr<T2>& p, int ctx )
+const T1& Teuchos::get_extra_data( const RefCountPtr<T2>& p, const std::string& name )
 {
-	return get_extra_data<T1>( const_cast<RefCountPtr<T2>&>(p), ctx );
+	*p; // Assert not NULL
+	return any_cast<T1>(p.access_node()->get_extra_data(typeid(T1).name(),name));
 }
 
 template<class Dealloc_T, class T>

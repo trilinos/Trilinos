@@ -371,38 +371,22 @@ int main( int argc, char* argv[] ) {
 			std::cout << "Offset of B2 object in object of type C = " << ((long int)static_cast<B2*>(c_ptr5) - (long int)c_ptr5_base) << std::endl;
 			std::cout << "Offset of A object in object of type C  = " << ((long int)static_cast<A*>(c_ptr5)  - (long int)c_ptr5_base) << std::endl;
 		}
-#endif
+#endif // SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
 		A *a_rptr5 = c_ptr5;    // Here the address has changed and is no longer the same as the base address
 		a_ptr1 = rcp(a_rptr5);  // This is a no-no and could cause trouble!
 		a_ptr1 = Teuchos::null; // This will cause a segmentation fault in free(...) on many platforms
-#endif
+#endif // SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS
 	
 		// Test out getting the deallocator object
 		a_ptr1 = rcp( new C, DeallocDelete<C>(), true );
 		DeallocDelete<C> &a_ptr1_dealloc = get_dealloc<DeallocDelete<C> >(a_ptr1);
 
 		// Test storing extra data and then getting it out again
-#ifdef __sun
-		// RAB: 2003/11/24: The Sun compiler ("Forte Developer 7 C++
-		// 5.4 2002/03/09" returned from CC -V) does not seem to
-		// recongnise default argument values with nonmember template
-		// functions (this same error was discovered by K. Long in the
-		// rcp() function).  I will be dammed if I am going to screw
-		// up all of my interface code to accomidate this crappy
-		// compiler.  I would rather ifdef all of my code to show just
-		// how crapy this compiler really is.
-		const int ctx_int = set_extra_data( int(-5), &a_ptr1, -1 ); // Must specify ctx=-1!
-#else
-		const int ctx_int = set_extra_data( int(-5), &a_ptr1 );
-#endif
-		assert( get_extra_data<int>(a_ptr1,ctx_int) == -5 );
-#ifdef __sun
-		const int ctx_rcp = set_extra_data( rcp(new B1), &a_ptr1, -1 );
-#else
-		const int ctx_rcp = set_extra_data( rcp(new B1), &a_ptr1 );
-#endif
-		assert( get_extra_data<RefCountPtr<B1> >(a_ptr1,ctx_rcp)->B1_f() == B1_f_return );
-		assert( get_extra_data<int>(const_cast<const RefCountPtr<A>&>(a_ptr1),ctx_int) == -5 ); // test const version
+		set_extra_data( int(-5), "int", &a_ptr1 );
+		assert( get_extra_data<int>(a_ptr1,"int") == -5 );
+		set_extra_data( rcp(new B1), "B1", &a_ptr1 );
+		assert( get_extra_data<RefCountPtr<B1> >(a_ptr1,"B1")->B1_f() == B1_f_return );
+		assert( get_extra_data<int>(const_cast<const RefCountPtr<A>&>(a_ptr1),"int") == -5 ); // test const version
 
 		// Set pointers to null to force releasing any owned memory
 		a_ptr1 = Teuchos::null;
