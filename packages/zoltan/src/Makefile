@@ -327,6 +327,8 @@ zfdrive:
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
 
 zscript:
+	cd Utilities; \
+	$(MAKE) zscript
 	@echo "Building zoltan_script..."
 	@if [ -f zoltan_script ]; \
 	then /bin/rm zoltan_script; \
@@ -374,10 +376,6 @@ zscript:
 	@for iii in $(PARAMS_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../params/$$iii >> zoltan_script; \
 	 done;
-	@echo "echo 'Zoltan:  Compiling Zoltan/comm'" >> zoltan_script
-	@for iii in $(COMM_CSRC) ; do \
-	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../comm/$$iii >> zoltan_script; \
-	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/par'" >> zoltan_script
 	@for iii in $(PAR_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../par/$$iii >> zoltan_script; \
@@ -399,7 +397,7 @@ zscript:
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../reftree/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo Zoltan:  Linking $(LIB_NAME)" >> zoltan_script
-	@echo '$$AR' $(LIB_NAME) $(OBJ_FILES) $(FOBJ_FILES) >> zoltan_script
+	@echo '$$AR' $(LIB_NAME) $(ZOLTAN_OBJ) $(FOBJ_FILES) >> zoltan_script
 	@echo '$$RANLIB' $(LIB_NAME) >> zoltan_script
 	@echo 'if [ $$ZOLTAN_LIB_DIR ] ; ' >> zoltan_script
 	@echo 'then cp -f $(LIB_NAME) $$ZOLTAN_LIB_DIR ; ' >> zoltan_script
