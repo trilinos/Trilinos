@@ -1427,3 +1427,118 @@ int ml_comp_Pe_entries(int coef_cols[], double coef_values[], int coef_count,
 
 }
 
+
+/****************************************************************************/
+/* Generate the new grid hierarchy for 2x2 block matrices from the original */
+/* hierarchy stored in 'ml_edges'.                                          */
+/****************************************************************************/
+
+int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array, 
+				    ML_Operator **Tmat_trans_array,
+				    ML **new_ml , ML_Operator *originalM)
+{
+
+   int mesh_level, old_mesh_level, i, levels;
+   ML_Operator *original, *blockmat, *mat, *newM, *lastM;
+   ML  *block_ml;
+   struct ML_Operator_blockmat_data *ML_Operator_blockmat_data;
+   int scale_fact = 2;
+
+   mesh_level = ml_edges->ML_finest_level;
+
+   /* create a new empty hierarchy with the same number of levels */
+   /* as in ml_edges.                                             */
+   ML_Create(&block_ml,ml_edges->ML_num_levels);
+   *new_ml = block_ml;
+
+
+   /* Make A on the fine level into a 2x2 block matrix */
+
+   levels = 1;
+   original = &(ml_edges->Amat[mesh_level]);
+   blockmat = &(block_ml->Amat[mesh_level]);
+   ML_Operator_Gen_blockmat(blockmat, original , originalM );
+   blockmat->sub_matrix1 = originalM;
+   /* ML_Operator_Print(blockmat,"Ablock"); */
+
+   /* rst: I'm not sure ... but something like the following */
+   /* should work for T if needed?                           */
+   /*
+   original = &(Tmat_array[mesh_level]);
+   blockmat = &(blk_Tmat_array[mesh_level]);
+   ML_Operator_Gen_blockmat(blockmat, original);
+   original = &(Tmat_trans_array[mesh_level]);
+   blockmat = &(blk_Tmat_trans_array[mesh_level]);
+   ML_Operator_Gen_blockmat(blockmat, original);
+   */
+
+   lastM = originalM;
+   while( ml_edges->SingleLevel[mesh_level].Rmat->to != NULL) {
+     levels++;
+     old_mesh_level = mesh_level;
+     mesh_level = ml_edges->SingleLevel[mesh_level].Rmat->to->levelnum;
+
+     /* Make 2x2 block diagonal P */
+
+     original = &(ml_edges->Pmat[mesh_level]);
+     blockmat = &(block_ml->Pmat[mesh_level]);
+     ML_Operator_Gen_blockmat(blockmat, original , NULL );
+     /* This stuff sets the 'to' and 'from' field in P */
+     /* which indicates from what level we interpolate */
+     /* and to what level the interpolation goes.      */
+     ML_Operator_Set_1Levels(blockmat, &(block_ml->SingleLevel[mesh_level]), 
+			     &(block_ml->SingleLevel[old_mesh_level]));
+
+     /* Make 2x2 block diagonal R */
+
+     original = &(ml_edges->Rmat[old_mesh_level]);
+     blockmat = &(block_ml->Rmat[old_mesh_level]);
+     ML_Operator_Gen_blockmat(blockmat, original, NULL );
+     /* This stuff sets the 'to' and 'from' field in P */
+     /* which indicates from what level we interpolate */
+     /* and to what level the interpolation goes.      */
+     ML_Operator_Set_1Levels(blockmat,
+                             &(block_ml->SingleLevel[old_mesh_level]), 
+			     &(block_ml->SingleLevel[mesh_level]));
+				  
+     /* Make 2x2 block diagonal A */
+
+     original = &(ml_edges->Amat[mesh_level]);
+     blockmat = &(block_ml->Amat[mesh_level]);
+     /*  newM = ML_Operator_Create(ml_edges->comm);
+	 ML_rap(&(ml_edges->Rmat[old_mesh_level]), original, 
+	 &(ml_edges->Pmat[mesh_level]), newM, ML_CSR_MATRIX);
+     */
+     newM = ML_Operator_Create(ml_edges->comm);
+     ML_rap(&(ml_edges->Rmat[old_mesh_level]), lastM, 
+            &(ml_edges->Pmat[mesh_level]), newM, ML_CSR_MATRIX);
+     lastM = newM;
+     
+     /* comment these two out if you want to do rap */
+     ML_Operator_Gen_blockmat(blockmat, original, newM);
+     blockmat->sub_matrix1 = newM;
+     blockmat->getrow->pre_comm = ML_CommInfoOP_Create(); 
+              /* ugh. The superlu interface seems to not work */
+              /* with an empty communication object */
+
+     /* RAP works too */
+     /* ML_Gen_AmatrixRAP(block_ml, old_mesh_level, mesh_level); */
+
+     /* rst: I'm not sure ... but something like the following */
+     /* should work for T if needed?                           */
+     /*
+       original = &(Tmat_array[mesh_level]);
+       blockmat = &(blk_Tmat_array[mesh_level]);
+       ML_Operator_Gen_blockmat(blockmat, original);
+       original = &(Tmat_trans_array[mesh_level]);
+       blockmat = &(blk_Tmat_trans_array[mesh_level]);
+       ML_Operator_Gen_blockmat(blockmat, original);
+     */
+
+   }
+
+   return levels;
+
+}
+
+
