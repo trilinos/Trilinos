@@ -24,8 +24,8 @@ GDEFINES = -DDEBUG
 #
 #   Paths to submodules
 #
-SUBVPATH=../all ../lb ../par ../rcb
-SUBINCPATH=-I../all -I../lb -I../par -I../rcb
+SUBVPATH=../all ../lb ../par ../rcb ../comm
+SUBINCPATH=-I../all -I../lb -I../par -I../rcb -I../comm
 SUBDIRS= all lb par rcb Obj_sgi10k Obj_smos Obj_sun Obj_tflop 
 
 #source code from SCCS projects
@@ -50,13 +50,17 @@ LB_INC=lb_const.h lb.h lbi_const.h
 RCB_CSRC=rcb.c rcb_util.c 
 RCB_INC=rcb.h
 
+COMM_CSRC=comm.c
+COMM_INC=comm.h
+
 PAR_CSRC=par_util.c
 PAR_INC=par_const.h par.h
 
 # machine independent routines
-INC          = $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) $(RCB_INC)
+INC          = $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) $(RCB_INC) \
+               $(COMM_INC)
 #LIB_SRC_C    = $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) 
-LIB_SRC_C    = $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC)
+LIB_SRC_C    = $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) $(COMM_CSRC)
 LIB_SRC_OBJ  = $(LIB_SRC_C:.c=.o) 
 
 #library paths for different machines
