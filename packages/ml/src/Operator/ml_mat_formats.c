@@ -585,14 +585,14 @@ int ML_Matrix_DCSR_Create( ML_Matrix_DCSR **mat)
 /* destructor for DCSR matrix                                           */
 /* -------------------------------------------------------------------- */
 
-void ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR **mat )
+int ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR **mat )
 {
    if ( (*mat)->mat_ia != NULL ) free((*mat)->mat_ia);
    if ( (*mat)->mat_ja != NULL ) free((*mat)->mat_ja);
    if ( (*mat)->mat_a  != NULL ) free((*mat)->mat_a);
    if ( (*mat)->comminfo != NULL )
       ML_CommInfoOP_Destroy( (*mat)->comminfo );
-   return;
+   return 0;
 }
 
 /* ******************************************************************** */
@@ -690,3 +690,48 @@ int ML_Matrix_DCSR_Matvec(void *data,int ilen,double *x,int olen,double y[])
    return(1);
 }
 
+/************************************************************************/
+/* Convert the data in csr_data from an MSR matrix to a CSR matrix.     */
+/* Also, return the largest column number encountered.                  */
+/*----------------------------------------------------------------------*/
+ 
+int ML_MSR2CSR(struct ML_CSR_MSRdata *csr_data, int Nrows, int *Ncolumns)
+{
+  int  *row_ptr, *Tmat_bindx, i, j, lower, upper, nz_ptr, Ncols;
+  double *Tmat_val, *diag;
+ 
+  row_ptr = (int *) ML_allocate((Nrows+1)*sizeof(int));
+  csr_data->rowptr  = row_ptr;
+  Tmat_bindx = csr_data->columns;
+  Tmat_val   = csr_data->values;
+ 
+  diag    = (double *) ML_allocate(Nrows*sizeof(double));
+  for (i = 0; i <= Nrows; i++) row_ptr[i] = Tmat_bindx[i];
+  for (i = 0; i < Nrows; i++) diag[i] = Tmat_val[i];
+  lower = row_ptr[0];
+  row_ptr[0] = 0;
+  nz_ptr = 0;
+  Ncols = -1;
+  for (i = 0; i < Nrows; i++) {
+ 
+    upper = row_ptr[i+1];
+    if ( diag[i] != 0.0) {
+      Tmat_bindx[nz_ptr] = i;
+      Tmat_val[nz_ptr++] = diag[i];
+      if (i > Ncols) Ncols = i;
+    }
+    for (j = lower; j < upper; j++) {
+      if (Tmat_val[j] != 0.0) {
+    Tmat_bindx[nz_ptr] = Tmat_bindx[j];
+    Tmat_val[nz_ptr++] = Tmat_val[j];
+        if (Tmat_bindx[j] > Ncols) Ncols = Tmat_bindx[j];
+      }
+    }
+    row_ptr[i+1] = nz_ptr;
+    lower = upper;
+  }
+  Ncols++;
+  ML_free(diag);
+  *Ncolumns = Ncols;
+  return 0;
+}
