@@ -38,8 +38,8 @@ TRIUTILS_CC = \
            Trilinos_Util_ReadHb2Epetra.cpp \
            Trilinos_Util_ReadHpc2Epetra.cpp	\
            Trilinos_Util_ReadHb2EpetraVbr.cpp \
-           Trilinos_Util_GenerateCrsProblem.cpp 
-#           Trilinos_Util_GenerateVbrProblem.cpp
+           Trilinos_Util_GenerateCrsProblem.cpp \
+           Trilinos_Util_GenerateVbrProblem.cpp
 
 TRIUTILS_C = 
 TRIUTILS_F =
