@@ -37,7 +37,7 @@ static void times_output () {}
 #endif
 
 int main (int argc, char **argv)
-{ int    i, p=2, *part;
+{ int    i, p=2, *part, memory_graph;
   char   hgraphfile[100]="grid5x5.hg";
   HGraph hg;
   HGPartParams hgp;
@@ -100,8 +100,8 @@ int main (int argc, char **argv)
 /* load and info hypergraph */
   if (Zoltan_HG_Readfile(&zz,&hg,hgraphfile))
     return 1;
-  printf("Initial Memory: %d %d\n",
-         Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL),
+  memory_graph = Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL);
+  printf("Initial Memory: %d %d\n", memory_graph,
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
   if (Zoltan_HG_Info (&zz,&hg))
     return 1;
@@ -125,16 +125,17 @@ int main (int argc, char **argv)
   if (Zoltan_HG_HGraph_Free (&hg))
     return 1;
   if (Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL) > 0)
-  { printf("ERROR: remaining memory: %d\n");
+  { printf("ERROR: remaining memory: %d\n",Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL));
     return 1;
   }
   ADD_NEW_TIME(t_rest);
   END_TIME();
   times_output();
 
-  printf("Final Memory: %d %d\n",
+  printf("Final Memory: %d %d  ratio:%f\n",
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL),
-         Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
+         Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM),
+         (float)Zoltan_Memory_Usage(ZOLTAN_MEM_STAT_MAXIMUM)/memory_graph );
 
   Zoltan_Memory_Stats();
 

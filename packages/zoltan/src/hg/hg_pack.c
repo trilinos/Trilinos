@@ -113,8 +113,10 @@ static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
       if (pack[hg->hvertex[j]] != hg->hvertex[j])
         break ;
     if (j == hg->hindex[i+1])    /* if true, all vertices free for packing */
-    { for (j = hg->hindex[i] ; j < (hg->hindex[i+1]-1) && (*limit)-- > 0; j++)
-        pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+    { for (j = hg->hindex[i] ; j < (hg->hindex[i+1]-1) && (*limit)>0; j++)
+      { pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+        (*limit)--;
+      }
       pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[i]] ;
     }
   }
@@ -145,8 +147,10 @@ static int packing_rep (ZZ *zz, HGraph *hg, Packing pack, int *limit)
       if (pack[hg->hvertex[j]] != hg->hvertex[j])
         break ;
     if (j == hg->hindex[edge+1])   /* if true, all vertices free for packing */
-    { for (j = hg->hindex[edge] ; j < (hg->hindex[edge+1]-1) && (*limit)-- > 0; j++)
-        pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+    { for (j = hg->hindex[edge] ; j < (hg->hindex[edge+1]-1) && (*limit)>0; j++)
+      { pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+        (*limit)--;
+      }
       pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[edge]] ;
     }
   }
@@ -199,8 +203,10 @@ static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
     for (k = hg->vindex[vertex] ; k < hg->vindex[vertex+1] ; k++)
     { edge = hg->vedge[k] ;
       if (del_edges[edge] == 0 && --count == random)
-      { for (j = hg->hindex[edge] ; j < (hg->hindex[edge+1]-1) && (*limit)-- > 0 ; j++)
-          pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+      { for (j = hg->hindex[edge] ; j < (hg->hindex[edge+1]-1) && (*limit)>0 ; j++)
+        { pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+          (*limit)--;
+        }
         pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[edge]] ;
       }
       del_edges[edge] = 1 ;
@@ -284,8 +290,10 @@ static int packing_rhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
         for (k=hg->vindex[hg->hvertex[j]]; k<hg->vindex[hg->hvertex[j]+1]; k++)
           del_edges[hg->vedge[k]] = 1;
 
-      for (j = hg->hindex[best_edge] ; j < (hg->hindex[best_edge+1]-1) && (*limit)-- > 0 ; j++)
-         pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+      for (j = hg->hindex[best_edge] ; j < (hg->hindex[best_edge+1]-1) && (*limit)>0 ; j++)
+      { pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+        (*limit)--;
+      }
       pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[best_edge]] ;
       }
    ZOLTAN_FREE ((void **) &vertices) ;
@@ -325,8 +333,10 @@ static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
       if (pack[hg->hvertex[j]] != hg->hvertex[j])
         break;
     if (j == hg->hindex[sorted[i]+1])
-    { for (j=hg->hindex[sorted[i]]; j<(hg->hindex[sorted[i]+1]-1) && (*limit)-- > 0; j++)
-        pack[hg->hvertex[j]] = hg->hvertex[j+1];
+    { for (j=hg->hindex[sorted[i]]; j<(hg->hindex[sorted[i]+1]-1) && (*limit)>0; j++)
+      { pack[hg->hvertex[j]] = hg->hvertex[j+1];
+        (*limit)--;
+      }
       pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[sorted[i]]];
   } }
   ZOLTAN_FREE ((void **) &sorted);
@@ -362,8 +372,10 @@ static int lhp_pack (ZZ *zz, HGraph *hg, int edge, int *del_edge, int *Vindex,
   } } }
 
   if (del_edge[edge]==0 && (*limit)>0)
-  { for (i=hg->hindex[edge]; i<hg->hindex[edge+1]-1 && (*limit)-->0; i++)
-      pack[hg->hvertex[i]] = hg->hvertex[i+1];
+  { for (i=hg->hindex[edge]; i<hg->hindex[edge+1]-1 && (*limit)>0; i++)
+    { pack[hg->hvertex[i]] = hg->hvertex[i+1];
+      (*limit)--;
+    }
     pack[hg->hvertex[i]] = hg->hvertex[hg->hindex[edge]];
     for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++)
     { vertex = hg->hvertex[i];

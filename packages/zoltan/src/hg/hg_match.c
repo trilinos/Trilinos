@@ -164,14 +164,13 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
    int i, j, k=0, *v1, *v2, random ;
    char *yo = "matching_rem" ;
 
-   if (!(v1 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) ) ||
-       !(v2 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) )  )
+   if (!(v1 = (int *) ZOLTAN_MALLOC (sizeof (int) * 2*g->nEdge) ) )
       {
       ZOLTAN_FREE ((void **) &v1) ;
-      ZOLTAN_FREE ((void **) &v2) ;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR ;
       }
+   v2 = &(v1[g->nEdge]);
 
    for (i = 0 ; i < g->nVtx ; i++)
       match[i] = i ;
@@ -199,7 +198,6 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
       }
 
    ZOLTAN_FREE (&v1) ;
-   ZOLTAN_FREE (&v2) ;
    return ZOLTAN_OK ;
    }
 
@@ -292,21 +290,21 @@ static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
   for (i=0; i<g->nVtx; i++)
     match[i] = i;
-  if (!(sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nindex[g->nVtx])) ||
-      !(vertex = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nindex[g->nVtx]))  )
+  if (!(sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge)) ||
+      !(vertex = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge))  )
   { ZOLTAN_FREE ((void **) &sorted) ;
     ZOLTAN_FREE ((void **) &vertex) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
-  for (i=0; i<g->nindex[g->nVtx]; i++)
+  for (i=0; i<g->nEdge; i++)
     sorted[i] = i;
 
   for (i=0; i<g->nVtx; i++)
     for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
       vertex[j] = i;
 
-  quicksort_pointer_dec_float (sorted,g->ewgt,0,g->nindex[g->nVtx]-1);
+  quicksort_pointer_dec_float (sorted,g->ewgt,0,g->nEdge-1);
 
   for (i=0; i<g->nindex[g->nVtx] && (*limit)>0; i++)
   { vertex1 = vertex[sorted[i]];
