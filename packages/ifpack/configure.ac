@@ -414,8 +414,6 @@ AC_CONFIG_FILES([
 		test/SetParameters/Makefile.include
 		test/PointPreconditioner/Makefile
 		test/PointPreconditioner/Makefile.include
-		test/BlockPreconditioner/Makefile
-		test/BlockPreconditioner/Makefile.include
 		test/AdditiveSchwarz/Makefile
 		test/AdditiveSchwarz/Makefile.include
 		test/Container/Makefile
