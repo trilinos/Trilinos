@@ -1574,6 +1574,7 @@ AC_CONFIG_FILES([
                 src-loca/example-epetra/Makefile
                 src-loca/example-epetra/1Dfem/Makefile
                 src-loca/example-epetra/Tcubed/Makefile
+                src-loca/example-epetra/Tcubed_epetra_new/Makefile
 		src-loca/example-lapack/Makefile
 		src-loca/example-lapack/Chan/Makefile
 		src-loca/example-lapack/1Dfd_pitchfork/Makefile

@@ -86,7 +86,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = 1Dfem Tcubed
+DIST_SUBDIRS = 1Dfem Tcubed Tcubed_epetra_new
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -251,7 +251,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@SUBDIRS = 1Dfem Tcubed
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@SUBDIRS = 1Dfem Tcubed Tcubed_epetra_new
 all: all-recursive
 
 .SUFFIXES:
