@@ -73,7 +73,6 @@ static int serial_rcb(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   int, int, int, int, int, int, int, int *, struct rcb_tree *, int *, int,
   double *, double *, float *);
 
-
 /*****************************************************************************/
 /*  Parameters structure for RCB method.  Used in  */
 /*  Zoltan_RCB_Set_Param and Zoltan_RCB.                   */
@@ -331,6 +330,8 @@ static int rcb_fn(
   int *dotmark_best = NULL;         /* temp dotmark array */
   int valuehalf_best;               /* temp valuehalf */
   int dim_best= -1;                 /* best cut dimension  */
+  double norm_max, norm_best;       /* norm of largest half after bisection */
+  double max_box;                   /* largest length of bbox */
   char msg[128];                    /* buffer for error messages */
 
   /* MPI data types and user functions */
@@ -466,6 +467,7 @@ static int rcb_fn(
 
       /* move dots */
       allocflag = 0;
+      printf("[%2d] Calling Zoltan_RB_Send_Dots\n", proc);
       ierr = Zoltan_RB_Send_Dots(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                  &(rcb->Dots), &dotmark, 
                                  proc_list, outgoing, 
@@ -584,6 +586,10 @@ static int rcb_fn(
   while ((num_parts > 1 && num_procs > 1) || 
          (zz->Tflops_Special && tfs[0] > 1 && tfs[1] > 1)) {
 
+    sprintf(msg, "In main RCB loop: num_parts=%d, num_procs=%d\n", 
+            num_parts, num_procs);
+    ZOLTAN_TRACE_DETAIL(zz, yo, msg);
+
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time1 = Zoltan_Time(zz->Timer);
 
@@ -624,15 +630,23 @@ static int rcb_fn(
       }
     }
 
+    /* Compute max box length. */
+    max_box = 0.0;
+    for (dim=0; dim<3; dim++)
+      if (rcbbox->hi[dim] - rcbbox->lo[dim] > max_box) 
+        max_box = rcbbox->hi[dim] - rcbbox->lo[dim];
+
     /* try all cut directions and pick best one. */
     breakflag= 0;
+    norm_best = -1;
     one_cut_dir = (wgtflag<=1) || lock_direction || preset_dir;
     if (!one_cut_dir){
       if (!(dotmark0 = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
-       || !(dotmark_best = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int))))
+       || !(dotmark_best = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))){
         ZOLTAN_PRINT_ERROR(proc, yo, "Memory error.");
         ierr = ZOLTAN_MEMERR;
         goto End;
+      }
       for (j=0; j<dotnum; j++)
         dotmark0[j] = dotmark[j];
     }
@@ -646,6 +660,10 @@ static int rcb_fn(
         breakflag= 1;
       }
       else {
+        /* Do not cut along this dimension if box is too thin. */
+        if (rcbbox->hi[dim] - rcbbox->lo[dim] < 0.01 * max_box)
+          continue;
+
         /* Restore original dotmark array. */
         for (j=0; j<dotnum; j++)
           dotmark[j] = dotmark0[j];
@@ -692,17 +710,18 @@ static int rcb_fn(
                &valuehalf, first_guess, counters,
                old_nprocs, proclower, old_nparts, 
                rcbbox->lo[dim], rcbbox->hi[dim], 
-               weight, weightlo, weighthi,
+               weight, weightlo, weighthi, &norm_max,
                dotlist, rectilinear_blocks, obj_wgt_comp)
           != ZOLTAN_OK) {
           ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
           ierr = ZOLTAN_FATAL;
           goto End;
         }
+
         /* test for better balance */
-        /* EBEB For now, simulate old code!! */
-        if (dim == cut_dimension(lock_direction, treept, partmid, 
-                        preset_dir, dim_spec, &level, rcbbox)){
+        if ((!one_cut_dir) && 
+            ((norm_max < norm_best) || (norm_best<0))){
+          norm_best = norm_max; 
           dim_best = dim;
           for (j=0; j<wgtflag; j++){
             weightlo_best[j] = weightlo[j];
@@ -1254,6 +1273,7 @@ double fractionlo[RB_MAX_WGTS];
 double weightlo[RB_MAX_WGTS], weighthi[RB_MAX_WGTS];
 int set0, set1;
 struct rcb_box tmpbox;
+double norm_max;
 
   if (num_parts == 1) {
     for (i = 0; i < dotnum; i++)
@@ -1301,7 +1321,7 @@ struct rcb_box tmpbox;
              &valuehalf, first_guess, counters,
              1, 0, num_parts, 
              rcbbox->lo[dim], rcbbox->hi[dim], 
-             weight, weightlo, weighthi,
+             weight, weightlo, weighthi, &norm_max,
              dotlist, rectilinear_blocks, obj_wgt_comp)
         != ZOLTAN_OK) {
         ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
