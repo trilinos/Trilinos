@@ -28,17 +28,17 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = epetra_crsmatrix
+noinst_PROGRAMS = Poisson2d
 
-epetra_crsmatrix_SOURCES = $(srcdir)/cxx_main.cpp
+Poisson2d_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/Poisson2dOperator.cpp \
+		$(srcdir)/Poisson2dOperator.h \
+		$(top_srcdir)/../triutils/src/Trilinos_Util.h
+Poisson2d_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a 
 
-#epetra_crsmatrix_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a $(top_builddir)/../epetra/src/libepetra.a
+Poisson2d_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
+	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../epetra/src \
+	-I$(top_builddir)/../triutils/src
 
-epetra_crsmatrix_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src
-
-epetra_crsmatrix_LDADD = $(top_builddir)/src/libaztecoo.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
+Poisson2d_LDADD = $(AZTECOO_LIBS) \
 	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-
 
