@@ -39,13 +39,10 @@
 
 namespace EpetraExt {
 
-///
-/** Composition Class for Epetra Transform SameType Operators.
- *
- * This class allows <tt>SameType</tt> Transforms to be composed as
- * a single Transform.
+//! Composition Class for Epetra Transform SameType Operators.
+/*! This class allows <tt>SameType</tt> Transforms to be composed as
+  a single Transform.
  */
-
 template<typename T>
 class Transform_Composite : public SameTypeTransform<T>
 {
@@ -54,76 +51,43 @@ class Transform_Composite : public SameTypeTransform<T>
 
   typedef SameTypeTransform<T> * TransformTypePtr;
 
-  ///
-  /** Default Constructor
-    */
+  //! EpetraExt::Transform_Composite Constructor
   Transform_Composite() {}
 
-  ///
-  /** Destructor
-    */
+  //! EpetraExt::Transform_Composite Destructor
   virtual ~Transform_Composite();
 
-  ///
-  /** Add <tt>SameType</tt> Transform to composition.
-    * Order of Addition == Order of Application
+  //! Transform Addition
+  /*! Add <tt>SameType</tt> Transform to composition.
+      Order of Addition == Order of Application
     */
   void addTransform( TransformTypePtr new_trans );
 
-  ///
-  /** Analysis of transform operation on original object and construction
-    * of new object.
-    *
-    * Preconditions:<ul>
-    * </ul>
-    *
-    * Invariants:<ul>
-    * </ul>
-    *
-    * Postconditions:<ul>
-    * </ul>
-    *
-    * @return Returns a pointer to the newly created object of type
-    * NewTypePtr.  The Transform object maintains ownership of this
-    * new object and deletes as a part of it's destruction.
+  //! Analysis phase generates plan and check feasibility
+  /*! Analysis of transform operation on original object and construction
+      of new object.
+     
+      \return Returns a pointer to the newly created object of type
+      NewTypePtr.  The Transform object maintains ownership of this
+      new object and deletes as a part of it's destruction.
     */
   virtual
   typename Transform<T,T>::NewTypeRef
   operator()
   ( typename Transform<T,T>::OriginalTypeRef orig );
 
-  ///
-  /** Forward transfer of data from <tt>orig</tt> object input in the
-    * <tt>operator()</tt> method call to the new object created in this
-    * same call.  Returns <tt>true</tt> is
-    * operation is successful.
-    *
-    * Preconditions:<ul>
-    * </ul>
-    *
-    * Invariants:<ul>
-    * </ul>
-    *
-    * Postconditions:<ul>
-    * </ul>
-    *
+  //! Forward Data Transfer
+  /*! Forward transfer of data from <tt>orig</tt> object input in the
+      <tt>operator()</tt> method call to the new object created in this
+      same call.  Returns <tt>true</tt> is
+      operation is successful.
     */
   virtual bool fwd();
 
-  ///
-  /** Reverse transfer of data from new object created in the
-    * <tt>operator()</tt> method call to the <tt>orig</tt> object input
-    * to this same method. Returns <tt>true</tt> if operation is successful.
-    *
-    * Preconditions:<ul>
-    * </ul>
-    *
-    * Invariants:<ul>
-    * </ul>
-    *
-    * Postconditions:<ul>
-    * </ul>
-    *
+  //!
+  /*! Reverse transfer of data from new object created in the
+      <tt>operator()</tt> method call to the <tt>orig</tt> object input
+      to this same method. Returns <tt>true</tt> if operation is successful.
     */
   virtual bool rvs();
 

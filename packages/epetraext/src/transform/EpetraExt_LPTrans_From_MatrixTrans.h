@@ -41,9 +41,7 @@ class Epetra_Import;
 
 namespace EpetraExt {
 
-///
-/** Adaptation of an Epetra_CrsMatrix Transform to a Epetra_LinearProblem Transform
- */
+//! Adaptation of an Epetra_CrsMatrix Transform to a Epetra_LinearProblem Transform
 class LinearProblem_MatrixTrans : public SameTypeTransform<Epetra_LinearProblem>
 {
   SameTypeTransform<Epetra_CrsMatrix> & matrixTrans_;
@@ -64,14 +62,10 @@ class LinearProblem_MatrixTrans : public SameTypeTransform<Epetra_LinearProblem>
 
  public:
 
-  ///
-  /** Destructor
-   */
+  //! Destructor
   ~LinearProblem_MatrixTrans();
 
-  ///
-  /** Constructor
-   */
+  //! Constructor
   LinearProblem_MatrixTrans( SameTypeTransform<Epetra_CrsMatrix> & matrix_trans )
   : matrixTrans_(matrix_trans),
     OldProblem_(0),
@@ -87,12 +81,15 @@ class LinearProblem_MatrixTrans : public SameTypeTransform<Epetra_LinearProblem>
     Exporter_(0)
   {}
 
-  ///
-  /** Constructs a Epetra_LinearProblem
+  //! Transform Operator
+  /*! Constructs a Epetra_LinearProblem
    */
   NewTypeRef operator()( OriginalTypeRef orig );
 
+  //! Forward Data Migration
   bool fwd();
+
+  //! Reverse Data Migration
   bool rvs();
 
 };

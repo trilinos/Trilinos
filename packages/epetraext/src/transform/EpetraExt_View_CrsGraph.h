@@ -36,6 +36,7 @@ class Epetra_BlockMap;
 
 namespace EpetraExt {
 
+//! Generates a sub-block view of a Epetra_CrsGraph
 class CrsGraph_View : public ViewTransform<Epetra_CrsGraph> {
 
   const Epetra_BlockMap * NewRowMap_;
@@ -43,14 +44,17 @@ class CrsGraph_View : public ViewTransform<Epetra_CrsGraph> {
 
  public:
 
+  //! Destructor
   ~CrsGraph_View();
 
+  //! Constructor
   CrsGraph_View( const Epetra_BlockMap * new_row_map,
                  const Epetra_BlockMap * new_col_map = 0 )
   : NewRowMap_(new_row_map),
     NewColMap_(new_col_map)
   {}
 
+  //! Transformation Operator
   NewTypeRef operator()( OriginalTypeRef orig );
 
 };

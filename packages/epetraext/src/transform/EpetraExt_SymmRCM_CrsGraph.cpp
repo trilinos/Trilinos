@@ -95,7 +95,7 @@ operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
   BFT * BestBFT;
   bool TooWide;
 
-  cout << "SymmRCM::bruteForce_ : " << bruteForce_ << endl;
+  //cout << "SymmRCM::bruteForce_ : " << bruteForce_ << endl;
 
   if( bruteForce_ )
   {
@@ -176,11 +176,11 @@ operator()( CrsGraph_SymmRCM::OriginalTypeRef orig )
     }
   }
 
-  cout << "\nSymmRCM:\n";
-  cout << "----------------------------\n";
-  cout << " Depth: " << BestBFT->Depth() << endl;
-  cout << " Width: " << BestBFT->Width() << endl;
-  cout << "----------------------------\n\n";
+  //cout << "\nSymmRCM:\n";
+  //cout << "----------------------------\n";
+  //cout << " Depth: " << BestBFT->Depth() << endl;
+  //cout << " Width: " << BestBFT->Width() << endl;
+  //cout << "----------------------------\n\n";
 
   vector<int> RCM;
   BestBFT->ReverseVector( RCM );

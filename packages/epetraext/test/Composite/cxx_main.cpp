@@ -143,18 +143,18 @@ int main(int argc, char *argv[]) {
 #endif
 
   Epetra_CrsMatrix Matrix( Copy, Graph );
-  index = PIDFac+2;
+  index = 2;
   double val = 2;
-  Matrix.InsertGlobalValues( PIDFac+0, 1, &val, &index );
-  index = PIDFac+0;
+  Matrix.ReplaceMyValues( 0, 1, &val, &index );
+  index = 0;
   val = 0;
-  Matrix.InsertGlobalValues( PIDFac+1, 1, &val, &index );
-  index = PIDFac+1;
+  Matrix.ReplaceMyValues( 1, 1, &val, &index );
+  index = 1;
   val = 1;
-  Matrix.InsertGlobalValues( PIDFac+2, 1, &val, &index);
+  Matrix.ReplaceMyValues( 2, 1, &val, &index);
 
   vector<double> valA(3);
-  valA[PIDFac+0]=0; valA[PIDFac+1]=1; valA[PIDFac+2]=2;
+  valA[0]=0; valA[1]=1; valA[2]=2;
   Epetra_BlockMap & MapRef = Map;
   Epetra_Vector LHS( Copy, MapRef, &valA[0] );
   Epetra_Vector RHS( Copy, MapRef, &valA[0] );

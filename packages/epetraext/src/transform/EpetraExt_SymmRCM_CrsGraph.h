@@ -38,12 +38,15 @@ class Epetra_CrsGraph;
 
 namespace EpetraExt {
 
+//! Generates the symmetric RCM reordered version of a Epetra_CrsGraph.
 struct CrsGraph_SymmRCM : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
  public:
 
+  //! Destructor
   ~CrsGraph_SymmRCM();
 
+  //! Constructor
   CrsGraph_SymmRCM( bool BruteForce = false, int testLeafWidth = 5 )
   : bruteForce_(BruteForce),
     testLeafWidth_(testLeafWidth),
@@ -51,6 +54,7 @@ struct CrsGraph_SymmRCM : public StructuralSameTypeTransform<Epetra_CrsGraph> {
     RCMColMap_(0)
   {}
 
+  //! Transformation Operator
   NewTypeRef operator()( OriginalTypeRef orig );
 
  private:

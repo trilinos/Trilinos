@@ -35,18 +35,26 @@ class Epetra_CrsGraph;
 
 namespace EpetraExt {
 
+//! Transform to generate the explicit transpose of a Epetra_CrsGraph
 class CrsGraph_Transpose : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
  bool ignoreNonLocalCols_;
 
  public:
 
+  //! Destructor
   ~CrsGraph_Transpose();
 
+  //! Constructor
+  /*!
+   \param In
+   IgnoreNonLocalCols - Whether or not to include non-local columns in the transpose.
+   */
   CrsGraph_Transpose( bool IgnoreNonLocalCols = false )
   : ignoreNonLocalCols_(IgnoreNonLocalCols)
   {}
 
+  //! Transpose Transform Operator
   NewTypeRef operator()( OriginalTypeRef orig );
 };
 

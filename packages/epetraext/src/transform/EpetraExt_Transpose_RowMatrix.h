@@ -38,12 +38,22 @@ class Epetra_Export;
 
 namespace EpetraExt {
 
-class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix> {
+//! Transform to form the explicit transpose of a Epetra_RowMatrix
+class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
+{
 
  public:
 
+  //! Destructor
   ~RowMatrix_Transpose();
 
+  //! Constructor
+  /*!
+    \param In
+    IgnoreNonLocalCols - Whether to ignore non-local columns for the transpose
+    \param In
+    MakeDataContiguous - Whether to optimize form of matrix to be contiguous data storage.
+   */
   RowMatrix_Transpose( bool IgnoreNonLocalCols = false,
                        bool MakeDataContiguous = false )
   : IgnoreNonLocalCols_(IgnoreNonLocalCols),
@@ -63,10 +73,13 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix> {
     OrigMatrixIsCrsMatrix_(false)
   {}
 
+  //! Transpose Tranform Operator
   NewTypeRef operator()( OriginalTypeRef orig );
 
+  //! Foward Data Migration
   bool fwd();
 
+  //! Reverse Data Migration
   bool rvs();
 
  private:

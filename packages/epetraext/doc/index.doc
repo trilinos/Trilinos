@@ -1,4 +1,4 @@
-/*! \mainpage Trilinos/Epetra Extensions
+/*! \mainpage Trilinos/EpetraExt: Extensions to Epetra
 \htmlonly
 <center>
 <img align=center lowsrc="../Epetra.gif" src="../Epetra.gif" 
@@ -7,29 +7,69 @@
 \endhtmlonly
 
 \section intro Introduction
-Epetra Extensions provides extensions to the Epetra package.
+EpetraExt is a set of extensions to Epetra.  To allow Epetra to remain
+focused on it's primary functionality as a Linear Algebra object support,
+EpetraExt was created to maintain additional support for such capabilities
+as transformations (permutions, sub-block views, etc.), coloring support,
+partitioning (Zoltan), and I/O.
 
 \section startup Overview of EpetraExt.
 
-\subsection formulations Epetra Extensions Classes
+\subsection formulations EpetraExt Classes
 
 EpetraExt contains a number of classes.  They can be categorized as follows:
 
 <ul> 
 
-<li> Abstract Transform: EpetraExt::Transform
-     Abstract interface to transformation operations.
+<li> EpetraExt::MatrixMatrix: Static Matrix Matrix Operations including Multiply and Add.
 
-<li> Composition of Transforms: EpetraExt::Transform_Composite
-     Composition of multiple transforms.
+<li> Transforms: These classes derive from EpetraExt::Transform<T,U> allowing a common
+     interface for transformation of epetra objects and migration of associated 
+     data.
 
-<li> View Transforms: EpetraExt::CrsGraph_View EpetraExt::CrsMatrix_View EpetraExt::MultiVector_View - Generate a view of contiguous subsets of the original object.
+<ol>
 
-<li> Permutation Transforms: CrsGraph_SymmRCM CrsGraph_Zoltan CrsGraph_ZoltanOrder CrsGraph_BTF CrsMatrix_BTF - Generate specific permutations.
+<li> EpetraExt::Transform<T,U>: Abstract base for transformation of object of type T
+     to object of type U.
 
-<li> Coloring: CrsGraph_MapColoring CrsGraph_MapColoringIndex
 
-<li> Singleton Removal:
+<li> EpetraExt::Transform_Composite<T>: Allows the additive composition of 
+     EpetraExt::SameTypeTransform<T>'s.
+
+<li> Convertors: EpetraExt::LinearProblem_GraphTrans and EpetraExt::LinearProblem_MatrixTrans
+     converts a EpetraExt::SameTypeTransform<Epetra_CrsGraph> and
+     EpetraExt::SameTypeTransform<Epetra_CrsMatrix> to a EpetraExt::SameTypeTransform<Epetra_LinearProblem>
+
+<li> EpetraExt::CrsGraph_Overlap: Forms the overlapped version of a distributed graph
+     up to the user specified level.
+
+<li> Reindexer's: Used to remap the global indexing of an existing Epetra object include
+     EpetraExt::CrsMatrix_Reindex, EpetraExt::MultiVector_Reindex, and EpetraExt::LinearProblem_Reindex.
+
+<li> EpetraExt::LinearProblem_Scale: Linear left and right scaling of a Epetra_LinearProblem
+
+<li> Solver Mapping Tools: Remaps the columns of a CrsGraph or LinearProblem to meet the
+     requirements of a square local block indexing for some linear solvers. Tools are
+     EpetraExt::CrsGraph_SolverMap and EpetraExt::LinearProblem_SolverMap.
+
+<li> EpetraExt::CrsGraph_SymmRCM: Perform a symmetric RCM for the local blocks of a
+     Epetra_CrsGraph.
+
+<li> Transpose: Form the explicit transpose of a Epetra_CrsGraph or Epetra_CrsMatrix.
+     Tools are EpetraExt::CrsGraph_Transpose and EpetraExt::RowMatrix_Transpose.
+
+<li> View: For sub-block views of existing Epetra objects including EpetraExt::CrsGraph_View,
+     EpetraExt::CrsMatrix_View and EpetraExt::MultiVector_View
+
+</ol>
+
+<li> InOut: I/O operations for Epetra objects based on the Matrix Market format.
+
+<li> Coloring: Helper tools for generating Finite Differencing Colorings of Linear Problems.
+
+<li> Zoltan Tools: Primarily tools for generation of repartitioned Epetra objects using
+     the Zoltan library..
 
 </ul>
      
+*/

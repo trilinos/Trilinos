@@ -36,6 +36,7 @@ class Epetra_BlockMap;
 
 namespace EpetraExt {
 
+//! Generates a sub-block view of a Epetra_MultiVector
 class MultiVector_View : public ViewTransform<Epetra_MultiVector> {
 
   const Epetra_BlockMap & OrigMap_;
@@ -45,8 +46,10 @@ class MultiVector_View : public ViewTransform<Epetra_MultiVector> {
 
  public:
 
+  //! Destructor
   ~MultiVector_View();
 
+  //! Constructor
   MultiVector_View( const Epetra_BlockMap & orig_map,
                     const Epetra_BlockMap & new_map,
                     const int num_vec = -1 )
@@ -55,6 +58,7 @@ class MultiVector_View : public ViewTransform<Epetra_MultiVector> {
     NumVec_(num_vec)
   {}
 
+  //! Transformation Operator
   NewTypeRef operator()( OriginalTypeRef orig );
 
 };

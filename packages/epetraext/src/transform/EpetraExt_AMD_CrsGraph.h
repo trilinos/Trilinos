@@ -36,30 +36,31 @@ class Epetra_Map;
 
 namespace EpetraExt {
 
-///
-/** Approximate Minimum Degree Reordering using Tim Daley's AMD Algorithm.
- */
+//!  EpetraExt::CrsGraph_AMD: A transform for Approximate Minimum Degree Reordering using Tim Daley's AMD Algorithm.
 class CrsGraph_AMD : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
  public:
 
-  ///
-  /** Destructor
-   */
+  //! EpetraExt::CrsGraph_AMD Destructor
   ~CrsGraph_AMD();
 
-  ///
-  /** Constructor
-   */
+  //! EpetraExt::CrsGraph_AMD Constructor
+  /*! Creates a transform for AMD reordering of a Epetra_CrsGraph
+    \param In
+    verbose - Turns on verbosity for debugging
+  */
   CrsGraph_AMD( bool verbose = false )
   : NewMap_(0),
     NewGraph_(0),
     verbose_(verbose)
   {}
 
-  ///
-  /** Constructs AMD ordered Epetra_CrsGraph from <tt>orig</tt> object.
-   */
+  //! EpetraExt::CrsGraph_AMD Transform Operator
+  /*! Takes in a Epetra_CrsGraph and generates a local block AMD reordered version
+    \param In
+    orig - Original Epetra_CrsGraph to be Transformed
+    \return Reordered Epetra_CrsGraph
+  */
   NewTypeRef operator()( OriginalTypeRef orig );
 
  private:
