@@ -43,9 +43,9 @@
 
 
 \title{Amesos 1.0 Reference Guide}
-\SANDnum{SAND2004-XXX}
+\SANDnum{SAND2004-2188}
 \SANDauthor{
-Marzio Sala
+Marzio Sala, Ken Stanley
 }
 
 \SANDprintDate{May 2004}
@@ -65,12 +65,12 @@ Marzio Sala
 Marzio  Sala \\
 Computational Math \& Algorithms \\
 Sandia National Laboratories\\
-MS 1110 P.O. Box 5800 \\
+P.O.~Box 5800 \\
 Albuquerque, NM 87185-1110
-%\\[30pt]
-%Ken Stanley\\
-%322 W. College St.\\
-%Oberlin OH 44074
+\\[30pt]
+Ken Stanley\\
+322 W. College St.\\
+Oberlin OH 44074
 \end{center}
 
 \vspace{20pt}
@@ -89,22 +89,18 @@ Albuquerque, NM 87185-1110
   Epetra\_RowMatrix object, and $X$ and $B$ are defined as
   Epetra\_MultiVector objects.
   
-  Amesos provides a common look-and-feel to several directo solvers,
+  Amesos provides a common look-and-feel to several direct solvers,
   insulating the user from each package's details, such as matrix and
-  vector format, and data distribution.
+  vector formats, and data distribution.
 \end{abstract}
 
 \clearpage
-
-\SANDmain
-
-\tableofcontents
 
 \clearpage
 
 \section*{Acknowledgments}
 The authors would like to acknowledge the support of the ASCI and LDRD programs
-that funded development of Trilinos.
+that funded development of Amesos.
 
 \smallskip
 
@@ -119,6 +115,13 @@ that funded development of Trilinos.
 \smallskip
 
 %The MUMPS developers' team is acknowledged for providing MUMPS.
+
+\clearpage
+
+\SANDmain
+
+
+\tableofcontents
 
 \clearpage
 
@@ -140,7 +143,7 @@ Amesos contains several classes, as reported in table~\ref{tab:classes}.
 The classes covered in this guide are:
 \begin{itemize}
 \item \verb!Amesos_KLU!: Interface to Amesos's internal solver KLU (in
-  Section~\ref{sec:klu}).
+  Section~\ref{sec:klu});
 \item \verb!Amesos_Umfpack!: Interface to Tim Davis's
   UMFPACK~\cite{umfpack-home-page}, version 4.3 (in Section~\ref{sec:umfpack});
 \item \verb!Amesos_Superludist!: Interface to Xiaoye S.~Li's distributed
@@ -167,8 +170,8 @@ AmesosObject.NumericFactorization();
 AmesosObject.Solve();
 \end{verbatim}
 This sequence of commands applies to serial, as well as distributed
-direct solvers libraries. All necessary data redistribution is
-automatically managed by Amesos.
+libraries. All necessary data redistribution is automatically managed by
+Amesos.
 
 \begin{table}[tbhp]
   \centering
@@ -185,10 +188,11 @@ automatically managed by Amesos.
     \hline
   \end{tabular}
   \caption{Supported interfaces. ``serial'' means that the supported
-    direct solver is a serial one. When solving with 
-    more than one processor, the linear problem is shipped to processor 0, 
-    solved, then the solution is broadcasted in the solution vector 
-    $X$. ``parallel'' means that a subset or all the processes in the current
+    direct solver is serial. When solving with 
+    more than one processor, the linear problem is exported to process
+    0, here solved, then the solution is broadcasted to the distributed
+    solution 
+    vector. ``parallel'' means that a subset or all the processes in the current
     communicator will be used by the solver. ``general'' means general
     unsymmetric 
     matrix, If ``sym'' (symmetric matrix) or  ``SPD'' (symmetric

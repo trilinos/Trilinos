@@ -199,7 +199,7 @@
             \begin{minipage}[t]{6.0in}
             {
             \CoverFont{b}{18}{20pt}
-            SAND REPORT
+            SANDIA REPORT
             \vspace{0.125in}\\
             \CoverFont{m}{12}{14pt}
             \SANDnumVar\\
