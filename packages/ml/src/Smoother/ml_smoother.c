@@ -144,20 +144,22 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
 #endif
 
 #ifdef ML_TIMING_DETAILED
-   mypid  = ml_sm->my_level->comm->ML_mypid;
-   nprocs = ml_sm->my_level->comm->ML_nprocs;
-   t1 = ML_gsum_double(ml_sm->build_time, ml_sm->my_level->comm);
-   t1 = t1/((double) nprocs);
-   if ( (ml_sm->label != NULL) && ( t1 != 0.0) && mypid == 0)
-      printf(" Build time for %s (average) \t= %e\n",ml_sm->label,t1);
-   t1 = ML_gmax_double(ml_sm->build_time, ml_sm->my_level->comm);
-   if ( (ml_sm->label != NULL) && ( t1 != 0.0) && mypid == 0)
-      printf(" Build time for %s (maximum) \t= %e\n",ml_sm->label,t1);
-   t1 = - ml_sm->build_time;
-   t1 = ML_gmax_double(t1, ml_sm->my_level->comm);
-   t1 = - t1;
-   if ( (ml_sm->label != NULL) && ( t1 != 0.0) && mypid == 0)
-      printf(" Build time for %s (minimum) \t= %e\n",ml_sm->label,t1);
+   if (ml_sm->my_level != NULL) {
+     mypid  = ml_sm->my_level->comm->ML_mypid;
+     nprocs = ml_sm->my_level->comm->ML_nprocs;
+     t1 = ML_gsum_double(ml_sm->build_time, ml_sm->my_level->comm);
+     t1 = t1/((double) nprocs);
+     if ( (ml_sm->label != NULL) && ( t1 != 0.0) && mypid == 0)
+       printf(" Build time for %s (average) \t= %e\n",ml_sm->label,t1);
+     t1 = ML_gmax_double(ml_sm->build_time, ml_sm->my_level->comm);
+     if ( (ml_sm->label != NULL) && ( t1 != 0.0) && mypid == 0)
+       printf(" Build time for %s (maximum) \t= %e\n",ml_sm->label,t1);
+     t1 = - ml_sm->build_time;
+     t1 = ML_gmax_double(t1, ml_sm->my_level->comm);
+     t1 = - t1;
+     if ( (ml_sm->label != NULL) && ( t1 != 0.0) && mypid == 0)
+       printf(" Build time for %s (minimum) \t= %e\n",ml_sm->label,t1);
+   }
 #endif
 
 #ifdef ML_TIMING_DETAILED
@@ -7023,7 +7025,7 @@ double tmp;
 
    /* This is meant for the case when the matrix is the identity.*/
    if ((Amat->lambda_min == 1.0) && (Amat->lambda_min == Amat->lambda_max)) {
-     for (i = 0; i < Amat->outvec_leng; i++) x[i] = rhs[k];
+     for (i = 0; i < Amat->outvec_leng; i++) x[i] = rhs[i];
      return 0;
    }
 
