@@ -131,15 +131,18 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
   /* condition number estimate from Lanczos matrix */
  double beta_old, p_ap_dot_old;
  int N_lanczos_max = options[AZ_max_iter];
- double diag_T[N_lanczos_max];
- double offdiag_T[N_lanczos_max-1];
+ double * diag_T;
+ double * offdiag_T;
  int N_lanczos=0;
  double r_z_dot_old2;
  double smallest, largest;
  double ConditionNumber;
 
   /**************************** execution begins ******************************/
- 
+
+  diag_T = (double *) malloc( sizeof(double) * N_lanczos_max ); 
+  offdiag_T = (double *) malloc( sizeof(double) * (N_lanczos_max-1) ); 
+
   sprintf(suffix," in cg%d",options[AZ_recursion_level]);  /* set string that will be used */
                                                            /* for manage_memory label      */
   /* set prefix for printing */
@@ -291,6 +294,8 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
 	compute_condnum_tridiag_sym( N_lanczos-2, diag_T, offdiag_T, prefix,
 				     options, proc_config, &ConditionNumber);
 	status[AZ_condnum] = ConditionNumber;
+        free((void*)diag_T);
+        free((void*)offdiag_T);
         return;
       }
       else brkdown_tol = 0.1 * fabs(p_ap_dot);
@@ -346,6 +351,9 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
       compute_condnum_tridiag_sym( N_lanczos-2, diag_T, offdiag_T, prefix,
 				   options, proc_config, &ConditionNumber);
       status[AZ_condnum] = ConditionNumber;
+      free((void*)diag_T);
+      free((void*)offdiag_T);
+
       return;
     }
 
@@ -406,6 +414,9 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
 	  compute_condnum_tridiag_sym( N_lanczos-2, diag_T, offdiag_T, prefix,
 				       options, proc_config, &ConditionNumber);
 	  status[AZ_condnum] = ConditionNumber;
+	  free((void*)diag_T);
+	  free((void*)offdiag_T);
+	
 	  return;
 	}
       }
@@ -485,14 +496,20 @@ static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
   int N_split;
   double zero_double = 0.0;
 
-  double eigenvalues[N], work[N*4];
-  int iwork[N*3], info, iblock[N], isplit[N];
+  double * eigenvalues, * work;
+  int * iwork, info, * iblock, * isplit;
   int dummy, N_eigs;
   double double_dummy;
   char char_A = 'A';
   char char_E = 'E';
   int i;
   double smallest, largest;
+
+  eigenvalues = (double *) malloc( sizeof(double) * N);
+  work        = (double *) malloc( sizeof(double) * N * 4 );
+  iwork       = (int *) malloc( sizeof(int) * N * 3 );
+  iblock      = (int *) malloc( sizeof(int) * N );
+  isplit      = (int *) malloc( sizeof(int) * N );
 
   if( N > 2 ) {
     
@@ -527,6 +544,12 @@ static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
     
   *ConditionNumber = largest/smallest;
   
+  free((void *) eigenvalues );
+  free((void *) work );
+  free((void *) iwork );
+  free((void *) iblock );
+  free((void *) isplit );
+
   if( proc_config[AZ_node] != 0 ) return;
   
   if ( (options[AZ_output] != AZ_none) && (options[AZ_output] != AZ_last) &&
