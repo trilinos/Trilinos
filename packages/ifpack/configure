@@ -875,26 +875,39 @@ Optional Features:
   --enable-mpi            MPI support
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
-  --enable-aztecoo        Enable AztecOO support. AztecOO, a Trilinos package.
-                          (default is yes unless the
+  --enable-default-packages
+                          Build all default packages unless explicitly
+                          disabled. When this option is disabled, only
+                          packages explicitly enabled and packages needed to
+                          satisfy the dependencies of enabled packages will be
+                          built (default is yes)
+  --enable-epetra         Enable EPETRA support. IFPACK depens on Epetra.
+                          Hence, if --disable-default-packages is used, the
+                          user need to specify --enable-epetra to compile
+                          IFPACK. (default is yes unless the
+                          --disable-default-packages option is used
+  --enable-aztecoo        Enable AztecOO support. AztecOO, a Trilinos package,
+                          is used in some of the examples for solve the linear
+                          system. (default is yes unless the
                           --disable-default-packages option is used
   --enable-triutils       Enable TRIUTILS support. Triutils, a Trilinos
-                          package, is used if some IFPACK examples to
+                          package, is used in some IFPACK examples to
                           construct the linear system. (default is no)
-  --enable-teuchos        Enable TEUCHOS support. (default is no)
-  --enable-amesos         Enable AMESOS support. Amesos, a Trilinos package.
-                          (default is no)
+  --enable-teuchos        Enable TEUCHOS support. The parameters list of
+                          Teuchos, a Trilinos package, can be used in several
+                          IFPACK classes. (default is no)
+  --enable-amesos         Enable AMESOS support. Amesos, a Trilinos package,
+                          can be adopted as local solver for additive Schwarz
+                          preconditioners. (default is no)
   --enable-ifpack-metis   Enable Ifpack support for METIS. METIS can be used
                           to decompose the local graph into subgraphs. Note 1:
                           METIS is a third party library. As such, configure
                           assumes that it has already been built. Note 2: You
                           must also specify the location of headers and
                           libraries like, for instance: configure
-                          --with-libs="<other libraries> -lmetis"
+                          --with-libs="-lmetis"
                           --with-ldflags="-L<METIS-library-path>" and
                           --with-incdirs="<METIS-include-path>".
-  --enable-ifpack-teuchos Enable Ifpack Teuchos::ParameterList interface.
-                          Default is no. Requires Teuchos package.
   --enable-tests          Build tests for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
@@ -3814,7 +3827,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3817:" \
+echo "$as_me:3830:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6563,6 +6576,82 @@ fi
 # ------------------------------------------------------------------------
 # Checks for other Trilinos packages and external libraries
 # ------------------------------------------------------------------------
+# Trilinos packages currently tested:
+# - Epetra is required. The configure stops if Epetra is not enabled.
+# - AztecOO is used in some examples.
+# - Amesos is used by Ifpack_Amesos
+# - Triutils is used in some examples, to generate the linear system.
+# - Teuchos is used for the parameters list in several classes.
+# ------------------------------------------------------------------------
+
+
+# Check whether --enable-default-packages or --disable-default-packages was given.
+if test "${enable_default_packages+set}" = set; then
+  enableval="$enable_default_packages"
+  ac_cv_use_default_packages=$enableval
+else
+  ac_cv_use_default_packages=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to use default-packages" >&5
+echo $ECHO_N "checking whether to use default-packages... $ECHO_C" >&6
+
+if test "X$ac_cv_use_default_packages" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_DEFAULT_PACKAGES
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-epetra or --disable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval="$enable_epetra"
+  ac_cv_use_epetra=$enableval
+else
+  ac_cv_use_epetra=$ac_cv_use_default_packages
+fi;
+
+echo "$as_me:$LINENO: checking whether to use epetra" >&5
+echo $ECHO_N "checking whether to use epetra... $ECHO_C" >&6
+
+if test "X$ac_cv_use_epetra" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_IFPACK_EPETRA
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_epetra" = "Xyes"; then
+  HAVE_IFPACK_AZTECOO_TRUE=
+  HAVE_IFPACK_AZTECOO_FALSE='#'
+else
+  HAVE_IFPACK_AZTECOO_TRUE='#'
+  HAVE_IFPACK_AZTECOO_FALSE=
+fi
+
+if test "X$ac_cv_use_epetra" = "Xno"; then
+  echo "IFPACK depends on EPETRA. If you disable the default packages"
+  echo "(--disable-default-packages), then you must enable epetra,"
+  echo "using --enable-epetra."
+  exit 1
+fi
+#
 
 
 # Check whether --enable-aztecoo or --disable-aztecoo was given.
@@ -6708,6 +6797,13 @@ else
 fi
 
 
+# ------------------------------------------------------------------------
+# Checks for special package flags
+# ------------------------------------------------------------------------
+# Packages currently available:
+# - METIS (used by Ifpack_METISPartitioner only)
+# ------------------------------------------------------------------------
+
 # Check whether --enable-ifpack-metis or --disable-ifpack-metis was given.
 if test "${enable_ifpack_metis+set}" = set; then
   enableval="$enable_ifpack_metis"
@@ -6743,48 +6839,24 @@ else
 fi
 
 
-# ------------------------------------------------------------------------
-# Checks for special package flags
-# ------------------------------------------------------------------------
-
 ### fill in ifdefs here - EPETRA_MPI, DEBUG, CRAY, COMPLEX_SUPPORT
 
 # The following section is required to decide if the Ifpack ParameterList
 # interface should be built.
-# Check whether --enable-ifpack-teuchos or --disable-ifpack-teuchos was given.
-if test "${enable_ifpack_teuchos+set}" = set; then
-  enableval="$enable_ifpack_teuchos"
-  ac_cv_use_ifpack_teuchos=$enableval
-else
-  ac_cv_use_ifpack_teuchos=no
-fi;
+#AC_ARG_ENABLE(ifpack-teuchos,
+# [AC_HELP_STRING([--enable-ifpack-teuchos],[Enable Ifpack Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
+# ac_cv_use_ifpack_teuchos=$enableval, ac_cv_use_ifpack_teuchos=no)
 #
-echo "$as_me:$LINENO: checking whether to use ifpack-teuchos" >&5
-echo $ECHO_N "checking whether to use ifpack-teuchos... $ECHO_C" >&6
+#AC_MSG_CHECKING(whether to use ifpack-teuchos)
 #
-if test "X$ac_cv_use_ifpack_teuchos" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_IFPACK_TEUCHOS
-_ACEOF
-
-else
- echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
+#if test "X$ac_cv_use_ifpack_teuchos" != "Xno"; then
+#  AC_MSG_RESULT(yes)
+#  AC_DEFINE([HAVE_IFPACK_TEUCHOS],,[Define if you want to build Ifpack's ParameterList interface])
+#else
+# AC_MSG_RESULT(no)
+#fi
 #
-
-
-if test "X$ac_cv_use_ifpack_teuchos" != "Xno"; then
-  HAVE_IFPACK_TEUCHOS_TRUE=
-  HAVE_IFPACK_TEUCHOS_FALSE='#'
-else
-  HAVE_IFPACK_TEUCHOS_TRUE='#'
-  HAVE_IFPACK_TEUCHOS_FALSE=
-fi
-
+#AM_CONDITIONAL(HAVE_IFPACK_TEUCHOS, [test "X$ac_cv_use_ifpack_teuchos" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Checks if tests should be built
@@ -6981,7 +7053,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6984: \"$ac_link\") >&5
+(eval echo $as_me:7056: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7059,7 +7131,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7062: \"$ac_link\") >&5
+(eval echo $as_me:7134: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9795,7 +9867,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9798: \"$ac_link\") >&5
+(eval echo $as_me:9870: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9873,7 +9945,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9876: \"$ac_link\") >&5
+(eval echo $as_me:9948: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10222,6 +10294,13 @@ echo "$as_me: error: conditional \"HAVE_IFPACK_AZTECOO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_IFPACK_AZTECOO_TRUE}" && test -z "${HAVE_IFPACK_AZTECOO_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_AZTECOO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_IFPACK_AZTECOO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_IFPACK_TRIUTILS_TRUE}" && test -z "${HAVE_IFPACK_TRIUTILS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -10247,13 +10326,6 @@ if test -z "${HAVE_IFPACK_METIS_TRUE}" && test -z "${HAVE_IFPACK_METIS_FALSE}"; 
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_METIS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_IFPACK_METIS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_IFPACK_TEUCHOS_TRUE}" && test -z "${HAVE_IFPACK_TEUCHOS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_TEUCHOS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_IFPACK_TEUCHOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi

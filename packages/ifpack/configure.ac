@@ -211,18 +211,44 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 # Checks for other Trilinos packages and external libraries
 # ------------------------------------------------------------------------
+# Trilinos packages currently tested:
+# - Epetra is required. The configure stops if Epetra is not enabled.
+# - AztecOO is used in some examples.
+# - Amesos is used by Ifpack_Amesos
+# - Triutils is used in some examples, to generate the linear system.
+# - Teuchos is used for the parameters list in several classes.
+# ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Enable AztecOO support. AztecOO, a Trilinos package.], IFPACK_AZTECOO, yes)
+TAC_ARG_ENABLE_FEATURE_SUB( default, packages, [Build all default packages unless explicitly disabled.  When this option is disabled, only packages explicitly enabled and packages needed to satisfy the dependencies of enabled packages will be built], DEFAULT_PACKAGES, yes)
+
+TAC_ARG_ENABLE_DEFAULT_FEATURE(epetra, [Enable EPETRA support. IFPACK depens on Epetra. Hence, if --disable-default-packages is used, the user need to specify --enable-epetra to compile IFPACK.], IFPACK_EPETRA, yes)
+AM_CONDITIONAL(HAVE_IFPACK_AZTECOO, test "X$ac_cv_use_epetra" = "Xyes")
+if test "X$ac_cv_use_epetra" = "Xno"; then
+  echo "IFPACK depends on EPETRA. If you disable the default packages"
+  echo "(--disable-default-packages), then you must enable epetra,"
+  echo "using --enable-epetra."
+  exit 1
+fi
+#
+
+TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Enable AztecOO support. AztecOO, a Trilinos package, is used in some of the examples for solve the linear system.], IFPACK_AZTECOO, yes)
 AM_CONDITIONAL(HAVE_IFPACK_AZTECOO, test "X$ac_cv_use_aztecoo" = "Xyes")
 #
-TAC_ARG_ENABLE_OPTION(triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used if some IFPACK examples to construct the linear system.], IFPACK_TRIUTILS, no)
+TAC_ARG_ENABLE_OPTION(triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used in some IFPACK examples to construct the linear system.], IFPACK_TRIUTILS, no)
 AM_CONDITIONAL(HAVE_IFPACK_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
 #
-TAC_ARG_ENABLE_OPTION(teuchos, [Enable TEUCHOS support.], IFPACK_TEUCHOS, no)
+TAC_ARG_ENABLE_OPTION(teuchos, [Enable TEUCHOS support. The parameters list of Teuchos, a Trilinos package, can be used in several IFPACK classes.], IFPACK_TEUCHOS, no)
 AM_CONDITIONAL(HAVE_IFPACK_TEUCHOS, test "X$ac_cv_use_teuchos" = "Xyes")
 #
-TAC_ARG_ENABLE_OPTION(amesos, [Enable AMESOS support. Amesos, a Trilinos package.  ], IFPACK_AMESOS, no)
+TAC_ARG_ENABLE_OPTION(amesos, [Enable AMESOS support. Amesos, a Trilinos package, can be adopted as local solver for additive Schwarz preconditioners.  ], IFPACK_AMESOS, no)
 AM_CONDITIONAL(HAVE_IFPACK_AMESOS, test "X$ac_cv_use_amesos" = "Xyes")
+
+# ------------------------------------------------------------------------
+# Checks for special package flags
+# ------------------------------------------------------------------------
+# Packages currently available:
+# - METIS (used by Ifpack_METISPartitioner only)
+# ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(ifpack-metis, [AC_HELP_STRING([--enable-ifpack-metis],[Enable
 			     Ifpack support for METIS.  METIS can be used to
@@ -231,7 +257,7 @@ AC_ARG_ENABLE(ifpack-metis, [AC_HELP_STRING([--enable-ifpack-metis],[Enable
 			     configure assumes that it has already been built.
 			     Note 2: You must also specify the location of
 			     headers and libraries like, for instance:
-			     configure --with-libs="<other libraries> -lmetis"
+			     configure --with-libs="-lmetis"
 			     --with-ldflags="-L<METIS-library-path>" and
 			     --with-incdirs="<METIS-include-path>".])], ac_cv_use_ifpack_metis=$enableval, ac_cv_use_ifpack_metis=no) 
 #
@@ -246,28 +272,24 @@ fi
 #
 AM_CONDITIONAL(HAVE_IFPACK_METIS, [test "X$ac_cv_use_ifpack_metis" != "Xno"])
 
-# ------------------------------------------------------------------------
-# Checks for special package flags
-# ------------------------------------------------------------------------
-
 ### fill in ifdefs here - EPETRA_MPI, DEBUG, CRAY, COMPLEX_SUPPORT
 
 # The following section is required to decide if the Ifpack ParameterList
 # interface should be built.
-AC_ARG_ENABLE(ifpack-teuchos,
- [AC_HELP_STRING([--enable-ifpack-teuchos],[Enable Ifpack Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
- ac_cv_use_ifpack_teuchos=$enableval, ac_cv_use_ifpack_teuchos=no)
+#AC_ARG_ENABLE(ifpack-teuchos,
+# [AC_HELP_STRING([--enable-ifpack-teuchos],[Enable Ifpack Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
+# ac_cv_use_ifpack_teuchos=$enableval, ac_cv_use_ifpack_teuchos=no)
 #
-AC_MSG_CHECKING(whether to use ifpack-teuchos)
+#AC_MSG_CHECKING(whether to use ifpack-teuchos)
 #
-if test "X$ac_cv_use_ifpack_teuchos" != "Xno"; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE([HAVE_IFPACK_TEUCHOS],,[Define if you want to build Ifpack's ParameterList interface])
-else
- AC_MSG_RESULT(no)
-fi
+#if test "X$ac_cv_use_ifpack_teuchos" != "Xno"; then
+#  AC_MSG_RESULT(yes)
+#  AC_DEFINE([HAVE_IFPACK_TEUCHOS],,[Define if you want to build Ifpack's ParameterList interface])
+#else
+# AC_MSG_RESULT(no)
+#fi
 #
-AM_CONDITIONAL(HAVE_IFPACK_TEUCHOS, [test "X$ac_cv_use_ifpack_teuchos" != "Xno"])
+#AM_CONDITIONAL(HAVE_IFPACK_TEUCHOS, [test "X$ac_cv_use_ifpack_teuchos" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Checks if tests should be built
