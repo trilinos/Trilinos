@@ -56,18 +56,20 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   struct LB_Struct *lb;
 
   /* Variables returned by Zoltan */
-  LB_GID *import_gids = NULL;    /* Global node nums of nodes to be imported */
-  LB_LID *import_lids = NULL;    /* Pointers to nodes to be imported         */
+  LB_ID_PTR import_gids = NULL;  /* Global node nums of nodes to be imported */
+  LB_ID_PTR import_lids = NULL;  /* Pointers to nodes to be imported         */
   int   *import_procs = NULL;    /* Proc IDs of procs owning nodes to be
                                     imported.                                */
-  LB_GID *export_gids = NULL;    /* Global node nums of nodes to be exported */
-  LB_LID *export_lids = NULL;    /* Pointers to nodes to be exported         */
+  LB_ID_PTR export_gids = NULL;  /* Global node nums of nodes to be exported */
+  LB_ID_PTR export_lids = NULL;  /* Pointers to nodes to be exported         */
   int   *export_procs = NULL;    /* Proc IDs of destination procs for nodes
                                     to be exported.                          */
   int num_imported;              /* Number of nodes to be imported.          */
   int num_exported;              /* Number of nodes to be exported.          */
   int new_decomp;                /* Flag indicating whether the decomposition
                                     has changed                              */
+  int num_gid_entries;           /* Number of array entries in a global ID.  */
+  int num_lid_entries;           /* Number of array entries in a local ID.   */
 
   int i;                         /* Loop index                               */
   int ierr;                      /* Error code                               */
@@ -164,7 +166,8 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   /*
    * Call Zoltan
    */
-  if (LB_Balance(lb, &new_decomp, &num_imported, &import_gids,
+  if (LB_Balance(lb, &new_decomp, &num_gid_entries, &num_lid_entries,
+                 &num_imported, &import_gids,
                  &import_lids, &import_procs, &num_exported, &export_gids,
                  &export_lids, &export_procs) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Balance()\n");
@@ -175,9 +178,9 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
    * Call another routine to perform the migration
    */
   if (new_decomp) {
-    if (!migrate_elements(Proc, mesh, lb, num_imported, import_gids,
-                          import_lids, import_procs, num_exported, export_gids,
-                          export_lids, export_procs)) {
+    if (!migrate_elements(Proc, mesh, lb, num_gid_entries, num_lid_entries,
+                        num_imported, import_gids, import_lids, import_procs,
+                        num_exported, export_gids, export_lids, export_procs)) {
       Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
       return 0;
     }
@@ -225,11 +228,13 @@ MESH_INFO_PTR mesh;
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
+int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
+                      LB_ID_PTR global_id, LB_ID_PTR local_id,
                       int wdim, float *wgt, int *ierr)
 {
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
+  ELEM_INFO *current_elem;
   int i;
 
  *ierr = LB_OK; 
@@ -246,15 +251,15 @@ int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
   }
 
   elem = mesh->elements;
-
-  *local_id = 0;
-  *global_id = elem[*local_id].globalID;
+  current_elem = &elem[0];
+  local_id[0] = 0;
+  global_id[0] = (LB_ID_TYPE) current_elem->globalID;
 
   if (wdim>0){
     for (i=0; i<wdim; i++){
-      *wgt++ = elem[*local_id].cpu_wgt[i];
+      *wgt++ = current_elem->cpu_wgt[i];
       /* printf("Debug: In query function, object = %d, weight no. %1d = %f\n",
-             *global_id, i, elem[*local_id].cpu_wgt[i]); */
+             global_id[0], i, current_elem->cpu_wgt[i]); */
     }
   }
 
@@ -264,12 +269,14 @@ int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
-                     LB_GID *next_global_id, LB_LID *next_local_id, 
+int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
+                     LB_ID_PTR global_id, LB_ID_PTR local_id,
+                     LB_ID_PTR next_global_id, LB_ID_PTR next_local_id, 
                      int wdim, float *next_wgt, int *ierr)
 {
   int found = 0;
   ELEM_INFO *elem;
+  ELEM_INFO *next_elem;
   MESH_INFO_PTR mesh;
   int i;
 
@@ -281,16 +288,17 @@ int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
 
-  if (local_id+1 < mesh->num_elems) { 
+  if (local_id[0]+1 < mesh->num_elems) { 
     found = 1;
-    *next_local_id = local_id + 1;
-    *next_global_id = elem[*next_local_id].globalID;
+    next_local_id[0] = local_id[0] + 1;
+    next_elem = &elem[next_local_id[0]];
+    next_global_id[0] = next_elem->globalID;
 
     if (wdim>0){
       for (i=0; i<wdim; i++){
-        *next_wgt++ = elem[*next_local_id].cpu_wgt[i];
+        *next_wgt++ = next_elem->cpu_wgt[i];
         /* printf("Debug: In query function, object = %d, weight no. %1d = %f\n",
-          *next_global_id, i, elem[*next_local_id].cpu_wgt[i]); */
+          next_global_id[0], i, next_elem->cpu_wgt[i]); */
       }
     }
 
@@ -321,10 +329,12 @@ int get_num_geom(void *data, int *ierr)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void get_geom(void *data, LB_GID global_id, LB_LID local_id,
+void get_geom(void *data, int num_gid_entries, int num_lid_entries,
+              LB_ID_PTR global_id, LB_ID_PTR local_id,
               double *coor, int *ierr)
 {
   ELEM_INFO *elem;
+  ELEM_INFO *current_elem;
   int i, j;
   double tmp;
   MESH_INFO_PTR mesh;
@@ -335,8 +345,9 @@ void get_geom(void *data, LB_GID global_id, LB_LID local_id,
   }
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
+  current_elem = &elem[local_id[0]];
 
-  if (mesh->eb_nnodes[elem[local_id].elem_blk] == 0) {
+  if (mesh->eb_nnodes[current_elem->elem_blk] == 0) {
     /* No geometry info was read. */
     *ierr = LB_FATAL;
     return;
@@ -348,10 +359,10 @@ void get_geom(void *data, LB_GID global_id, LB_LID local_id,
    */
   for (i = 0; i < mesh->num_dims; i++) {
     tmp = 0.0;
-    for (j = 0; j < mesh->eb_nnodes[elem[local_id].elem_blk]; j++)
-      tmp += elem[local_id].coord[j][i];
+    for (j = 0; j < mesh->eb_nnodes[current_elem->elem_blk]; j++)
+      tmp += current_elem->coord[j][i];
 
-    coor[i] = tmp / mesh->eb_nnodes[elem[local_id].elem_blk];
+    coor[i] = tmp / mesh->eb_nnodes[current_elem->elem_blk];
   }
 
   *ierr = LB_OK;
@@ -360,7 +371,8 @@ void get_geom(void *data, LB_GID global_id, LB_LID local_id,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_num_edges(void *data, LB_GID global_id, LB_LID local_id, int *ierr)
+int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
+                  LB_ID_PTR global_id, LB_ID_PTR local_id, int *ierr)
 {
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
@@ -374,18 +386,20 @@ int get_num_edges(void *data, LB_GID global_id, LB_LID local_id, int *ierr)
 
   *ierr = LB_OK;
 
-  return(elem[local_id].nadj);
+  return(elem[local_id[0]].nadj);
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
-                   LB_GID *nbor_global_id, int *nbor_procs,
+void get_edge_list (void *data, int num_gid_entries, int num_lid_entries, 
+                   LB_ID_PTR global_id, LB_ID_PTR local_id,
+                   LB_ID_PTR nbor_global_id, int *nbor_procs,
                    int get_ewgts, float *nbor_ewgts, int *ierr)
 {
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
+  ELEM_INFO *current_elem;
   int i, j, proc, local_elem;
 
   if (data == NULL) {
@@ -395,30 +409,31 @@ void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
 
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
+  current_elem = &elem[local_id[0]];
 
   /* get the processor number */
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
   j = 0;
-  for (i = 0; i < elem[local_id].adj_len; i++) {
+  for (i = 0; i < current_elem->adj_len; i++) {
 
     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-    if (elem[local_id].adj[i] == -1) continue;
+    if (current_elem->adj[i] == -1) continue;
 
-    if (elem[local_id].adj_proc[i] == proc) {
-      local_elem = elem[local_id].adj[i];
-      nbor_global_id[j] = elem[local_elem].globalID;
+    if (current_elem->adj_proc[i] == proc) {
+      local_elem = current_elem->adj[i];
+      nbor_global_id[j*num_gid_entries] = elem[local_elem].globalID;
     }
     else { /* adjacent element on another processor */
-      nbor_global_id[j] = elem[local_id].adj[i];
+      nbor_global_id[j*num_gid_entries] = current_elem->adj[i];
     }
-    nbor_procs[j] = elem[local_id].adj_proc[i];
+    nbor_procs[j] = current_elem->adj_proc[i];
 
     if (get_ewgts) {
-      if (elem[local_id].edge_wgt == NULL)
+      if (current_elem->edge_wgt == NULL)
         nbor_ewgts[j] = 1.0; /* uniform weights is default */
       else
-        nbor_ewgts[j] = elem[local_id].edge_wgt[i];
+        nbor_ewgts[j] = current_elem->edge_wgt[i];
     }
     j++;
   }
