@@ -71,10 +71,13 @@ operator()( OriginalTypeRef orig )
 
   int i, j;
 
-  if( IgnoreNonLocalCols_ )
-    TransposeRowMap_ = (Epetra_Map *) &(orig.OperatorRangeMap()); // Should be replaced with refcount =
-  else
-    TransposeRowMap_ = (Epetra_Map *) &(orig.OperatorDomainMap()); // Should be replaced with refcount =
+  if( !TransposeRowMap_ )
+  {
+    if( IgnoreNonLocalCols_ )
+      TransposeRowMap_ = (Epetra_Map *) &(orig.OperatorRangeMap()); // Should be replaced with refcount =
+    else
+      TransposeRowMap_ = (Epetra_Map *) &(orig.OperatorDomainMap()); // Should be replaced with refcount =
+  }
 
   // This routine will work for any RowMatrix object, but will attempt cast the matrix to a CrsMatrix if
   // possible (because we can then use a View of the matrix and graph, which is much cheaper).
@@ -175,7 +178,10 @@ operator()( OriginalTypeRef orig )
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
-  TransposeMatrix_ = new Epetra_CrsMatrix(Copy, *TransposeRowMap_,0);
+  if( IgnoreNonLocalCols_ )
+    TransposeMatrix_ = new Epetra_CrsMatrix(Copy, *TransposeRowMap_, *TransposeRowMap_, 0);
+  else
+    TransposeMatrix_ = new Epetra_CrsMatrix(Copy, *TransposeRowMap_,0);
 
   // Create an Export object that will move TempTransA around
   TransposeExporter_ = new Epetra_Export(TransMap, *TransposeRowMap_);
