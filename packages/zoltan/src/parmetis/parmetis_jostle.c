@@ -146,7 +146,7 @@ int LB_Jostle(
 )
 {
 #ifndef LB_JOSTLE
-  fprintf(stderr, "Error: Jostle requested but not compiled into library.\n");
+  fprintf(stderr, "Zoltan Error: Jostle requested but not compiled into library.\n");
   return LB_FATAL;
 
 #else /* LB_JOSTLE */
@@ -287,7 +287,7 @@ static int LB_ParMetis_Jostle(
 {
   static char *yo = "LB_ParMetis_Jostle";
   int i, j, jj, ierr, packet_size, offset, tmp, flag, ndims; 
-  int obj_wgt_dim, comm_wgt_dim, check_graph;
+  int obj_wgt_dim, comm_wgt_dim, nnodes, check_graph;
   int num_obj, nedges, num_edges, cross_edges, max_edges, edgecut;
   int *nbors_proc, *plist;
   int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
@@ -906,7 +906,6 @@ static int LB_ParMetis_Jostle(
 
   /* Select the desired ParMetis function */
     if (lb->Debug_Level >= LB_DEBUG_ALL) {
-      printf("[%1d] Debug: Calling ParMETIS partitioner ...\n", lb->Proc);
       printf("[%1d] Debug: vtxdist, xadj, adjncy, part = 0x%x, 0x%x, 0x%x, "
              "0x%x\n", 
              lb->Proc, (unsigned int) vtxdist, (unsigned int) xadj, 
@@ -916,19 +915,27 @@ static int LB_ParMetis_Jostle(
   if (strcmp(alg, "JOSTLE") == 0){
     offset = 0;            /* Index of the first object/node. */
     j = 0;                 /* Dummy variable for Jostle */
-    tmp = vtxdist[num_obj]; /* Global number of objects */ 
+    nnodes = vtxdist[lb->Num_Proc]; /* Global number of objects */ 
     ndims = 1;             /* Topological dimension of the computer */
     network[1] = lb->Num_Proc;
-    /* Convert xadj and vtxdist arrays to Jostle format */
+    /* Convert xadj array to Jostle format (degree) */
     for (i=0; i<num_obj; i++){
       xadj[i] = xadj[i+1] - xadj[i];
+    }
+    /* Convert vtxdist array to Jostle format (degree) */
+    for (i=0; i<lb->Num_Proc; i++){
       vtxdist[i] = vtxdist[i+1] - vtxdist[i];
     }
 #ifdef LB_JOSTLE
+    LB_TRACE_DETAIL(lb, yo, "Calling the Jostle library");
     jostle_env("format = contiguous");
-    pjostle(&tmp, &offset, &num_obj, &j, vtxdist, 
+    if (check_graph >= 2){
+      jostle_env("check = on");
+    }
+    pjostle(&nnodes, &offset, &(vtxdist[lb->Proc]), &j, vtxdist, 
        xadj, vwgt, part, &num_edges, adjncy, adjwgt, network,
        NULL, options, &ndims, NULL); 
+    LB_TRACE_DETAIL(lb, yo, "Returned from the Jostle library");
 #else
     /* We don't have Jostle */
     fprintf(stderr, "Sorry, Jostle is not available on this system.\n");
@@ -938,40 +945,56 @@ static int LB_ParMetis_Jostle(
 #endif
   }
   else if (strcmp(alg, "PARTKWAY") == 0){
+    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, &num_proc, options, &edgecut, part, &comm);
+    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
+    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_PartGeomKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag,
       &numflag, &ndims, xyz, &num_proc, options, &edgecut, 
       part, &comm);
+    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOM") == 0){
+    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_PartGeom (vtxdist, &ndims, xyz, part, &comm);
+    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTLDIFFUSION") == 0){
+    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RepartLDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
+    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTGDIFFUSION") == 0){
+    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RepartGDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
+    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTREMAP") == 0){
+    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RepartRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
+    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTMLREMAP") == 0){
+    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RepartMLRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
+    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REFINEKWAY") == 0){
+    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RefineKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
+    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else {
     /* This should never happen! */
-    fprintf(stderr, "ZOLTAN Error: Unknown ParMetis algorithm %s\n", alg);
+    fprintf(stderr, "ZOLTAN Error: Unknown ParMetis or Jostle algorithm %s\n", alg);
     FREE_MY_MEMORY;
     LB_TRACE_EXIT(lb, yo);
     return LB_FATAL;
@@ -1039,11 +1062,11 @@ static int LB_ParMetis_Jostle(
 
   /* Output timing results if desired */
   if (get_times){
-    if (lb->Proc==0) printf("\nZoltan/ParMETIS timing statistics:\n");
-    LB_Print_Stats(lb, times[1]-times[0], "ParMETIS  Pre-processing time  ");
-    LB_Print_Stats(lb, times[2]-times[1], "ParMETIS  Library time         ");
-    LB_Print_Stats(lb, times[3]-times[2], "ParMETIS  Post-processing time ");
-    LB_Print_Stats(lb, times[3]-times[0], "ParMETIS  Total time           ");
+    if (lb->Proc==0) printf("\nZOLTAN timing statistics:\n");
+    LB_Print_Stats(lb, times[1]-times[0], " Partitioner Pre-processing time  ");
+    LB_Print_Stats(lb, times[2]-times[1], " Partitioner Library time         ");
+    LB_Print_Stats(lb, times[3]-times[2], " Partitioner Post-processing time ");
+    LB_Print_Stats(lb, times[3]-times[0], " Partitioner Total time           ");
     if (lb->Proc==0) printf("\n");
   }
 
