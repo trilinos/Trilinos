@@ -136,7 +136,7 @@ int Zoltan_HG_HPart_Lib (
         Zoltan_HG_Graph_Free(&g);
         return ierr ;
       }
-      ierr = Zoltan_HG_Matching(zz, &g, pack, hgp, g.nVtx-hgp->redl) ;
+      ierr = Zoltan_HG_Matching(zz, hg, &g, pack, hgp, g.nVtx-hgp->redl) ;
       Zoltan_HG_Graph_Free(&g);
     }
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)

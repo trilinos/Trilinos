@@ -140,7 +140,7 @@ int Zoltan_HG_Readfile     (ZZ *, HGraph *, char *hgraphfile);
 
 /* Hypergraph Partitioning */
 /* Function types for options to hypergraph partitioning */
-typedef int ZOLTAN_HG_MATCHING_FN   (ZZ *, Graph *,  Matching, int);
+typedef int ZOLTAN_HG_MATCHING_FN   (ZZ *, HGraph *, Graph *,  Matching, int);
 typedef int ZOLTAN_HG_PACKING_FN    (ZZ *, HGraph *, Packing,  int);
 typedef int ZOLTAN_HG_GROUPING_FN   (ZZ *, HGraph *, Grouping, int);
 typedef int ZOLTAN_HG_GLOBAL_PART_FN(ZZ *, HGraph *, int, Partition);
@@ -192,7 +192,7 @@ int Zoltan_HG_Scale_Graph_Weight  (ZZ *, Graph *, float *);
 int Zoltan_HG_Scale_HGraph_Weight (ZZ *, HGraph *, float *);
 
 /* Matching functions */
-int Zoltan_HG_Matching (ZZ *, Graph *, Matching, HGPartParams *, int);
+int Zoltan_HG_Matching (ZZ *, HGraph *, Graph *, Matching, HGPartParams *, int);
 int Zoltan_HG_Set_Matching_Fn(HGPartParams *);
 
 /* Packing */
