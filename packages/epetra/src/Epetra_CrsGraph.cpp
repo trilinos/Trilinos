@@ -650,6 +650,7 @@ int Epetra_CrsGraph::RemoveRedundantIndices() {
 	  NumMyNonzeros_ --;
 	  for (k=j; k<NumIndices-1; k++) Indices[k] = Indices[k+1]; // Shift indices
 	  NumIndices--;
+	  j--;
 	}
 	else j0=j; // Redefine comparison index value
       }
