@@ -2566,7 +2566,8 @@ fi
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_tsf" != "Xno" ||
-	test "X$ac_cv_use_amesos" != "Xno" ||
+        test "X$ac_cv_use_tsfextended" != "Xno" ||
+ 	test "X$ac_cv_use_amesos" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_new_package" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
