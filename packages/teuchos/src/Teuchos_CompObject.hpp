@@ -1,8 +1,8 @@
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 
-#ifndef _TEUCHOS_COMPOBJECT_HPP_
-#define _TEUCHOS_COMPOBJECT_HPP_
+#ifndef TEUCHOS_COMPOBJECT_HPP
+#define TEUCHOS_COMPOBJECT_HPP
 
 #include "Teuchos_Object.hpp"
 #include "Teuchos_Flops.cpp"
@@ -38,38 +38,38 @@ class CompObject
 
   //@{ \name Set/Get counter method.
   //! Set the internal Teuchos::Flops() pointer.
-  void setFlopCounter(const Flops &FlopCounter);
+  void setFlopCounter(const Flops &FlopCounter) {flopCounter_= (Flops *) &FlopCounter; return;};
   
   //! Set the internal Teuchos::Flops() pointer to the flop counter of another Teuchos::CompObject.
-  void setFlopCounter(const CompObject &CompObject);
+  void setFlopCounter(const CompObject &compObject) {flopCounter_= (Flops *) (compObject.getFlopCounter()); return;};
   
   //! Set the internal Teuchos::Flops() pointer to 0 (no flops counted).
-  void unsetFlopCounter();
+  void unsetFlopCounter() {flopCounter_=0; return;};
   
   //! Get the pointer to the Teuchos::Flops() object associated with this object, returns 0 if none.
-  Flops * getFlopCounter() const;
+  Flops * getFlopCounter() const {return(flopCounter_);};
   //@}
 
   //@{ \name Set flop count methods.
   //! Resets the number of floating point operations to zero for \e this multi-vector.
-  void resetFlops() const;
+  void resetFlops() const {if (flopCounter_!=0) flopCounter_->resetFlops(); return;};
 
   //! Returns the number of floating point operations with \e this multi-vector.
-  double flops() const;
+  double flops() const {if (flopCounter_!=0) return(flopCounter_->flops()); else return(0.0);};
   //@}
 
   //@{ \name Update flop count methods.
   //! Increment Flop count for \e this object
-  void updateFlops(int Flops) const;
+  void updateFlops(int addflops) const { if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;};
 
   //! Increment Flop count for \e this object
-  void updateFlops(long int Flops) const;
+  void updateFlops(long int addflops) const { if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;};
 
   //! Increment Flop count for \e this object
-  void updateFlops(double Flops) const;
+  void updateFlops(double addflops) const { if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;};
 
   //! Increment Flop count for \e this object
-  void updateFlops(float Flops) const;
+  void updateFlops(float addflops) const {if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;};
   //@}
 
  protected:
@@ -83,4 +83,4 @@ class CompObject
 
 } // namespace Teuchos
 
-#endif // end of _TEUCHOS_COMPOBJECT_HPP_
+#endif // end of TEUCHOS_COMPOBJECT_HPP

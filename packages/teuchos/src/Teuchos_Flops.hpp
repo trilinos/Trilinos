@@ -1,8 +1,8 @@
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 
-#ifndef _TEUCHOS_FLOPS_HPP_
-#define _TEUCHOS_FLOPS_HPP_
+#ifndef TEUCHOS_FLOPS_HPP
+#define TEUCHOS_FLOPS_HPP
 
 namespace Teuchos
 {
@@ -33,28 +33,28 @@ class Flops
   Flops(const Flops &flops);
 
   //! Returns the number of floating point operations with \e this object and resets the count.
-  double flops() const;
+  double flops() const {double tmp = flops_; flops_= 0.0; return(tmp); };
 
   //! Resets the number of floating point operations to zero for \e this multi-vector.
-  void resetFlops();
+  void resetFlops() {flops_ = 0.0;};
 
   //! Flops Destructor.
-  /*! Completely deletes a Flops object.  Teuchos::
+  /*! Completely deletes a Flops object.
   */
   virtual ~Flops();
 
   friend class CompObject;
 
  protected:
-  mutable double flopCounter_;
+  mutable double flops_;
   //! Increment Flop count for \e this object from an int
-  void updateFlops(int flops) const;
+  void updateFlops(int addflops) const {flops_ += (double) addflops; };
   //! Increment Flop count for \e this object from a long int
-  void updateFlops(long int flops) const;
+  void updateFlops(long int addflops) const {flops_ += (double) addflops; };
   //! Increment Flop count for \e this object from a double
-  void updateFlops(double flops) const;
+  void updateFlops(double addflops) const {flops_ += (double) addflops; };
   //! Increment Flop count for \e this object from a float
-  void updateFlops(float flops) const;
+  void updateFlops(float addflops) const {flops_ += (double) addflops; };
 
  private:
   
@@ -64,4 +64,4 @@ class Flops
 
 } // namespace Teuchos
 
-#endif // end of _TEUCHOS_FLOPS_HPP_
+#endif // end of TEUCHOS_FLOPS_HPP
