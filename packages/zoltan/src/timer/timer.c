@@ -16,6 +16,11 @@
 #include "timer_const.h"
 
 /*
+ * Machine independent timing utilities.
+ * ANSI C and MPI are required.
+ */
+
+/*
  * Symbols being used in this file:
  *
  * _CLOCK_T    : if defined, clock() is available
@@ -23,58 +28,57 @@
  * HAVE_RUSAGE : if defined, getrusage() is available
  */
  
-/* Static variables */
-static int Timer = LB_TIME_WALL;
-static PARAM_VARS Timer_params[] = {
-        { "TIMER", &Timer, "STRING" },
-        { NULL, NULL, NULL }
-};
 
 /* Interpret and set timer parameters */
 
 int LB_Set_Timer_Param(
-char *name,                     /* name of variable */
-char *val)                      /* value of variable */
+char *name,                     /* input:  name of variable */
+char *val,                      /* input:  value of variable */
+int *timer)                     /* output: timer type */
 {
     PARAM_UTYPE result;         /* value returned from Check_Param */
     int index;                  /* index returned from Check_Param */
     int status;
+    PARAM_VARS Timer_params[] = {
+        { "TIMER", NULL, "STRING" },
+        { NULL, NULL, NULL }
+};
+    char *yo = "LB_Set_Timer_Param";
+
+    (*timer) = LB_TIME_WALL;  /* default timer value */
 
     status = LB_Check_Param(name, val, Timer_params, &result, &index);
 
     if (status == 0 && index == 0) {
-        if (result.def || (!strcmp(result.sval, "WALL")))
-          Timer = LB_TIME_WALL;
+        if (!strcmp(result.sval, "WALL"))
+          (*timer) = LB_TIME_WALL;
         else if (strcmp(result.sval, "CPU")==0) {
 #if (defined(_CLOCK_T) && ! defined(SMOS))
-          Timer = LB_TIME_CPU;
+          (*timer) = LB_TIME_CPU;
 #else  /* SMOS or !_CLOCK_T */
-          fprintf(stderr, "LB_Set_Timer_Param warning: CPU time not available;"
-                          " Wall clock time will be used.\n");
-          Timer = LB_TIME_WALL;
+          fprintf(stderr, "%s warning: CPU time not available;"
+                          " Wall clock time will be used.\n", yo);
 #endif /* SMOS or !_CLOCK_T */
         }
         else if (strcmp(result.sval, "USER")==0){
 #if (defined(HAVE_TIMES) || defined(HAVE_RUSAGE))
-          Timer = LB_TIME_USER;
+          (*timer) = LB_TIME_USER;
 #else
-          fprintf(stderr, "LB_Set_Timer_Param warning: user time not available;"
-                          " Wall clock time will be used.\n");
-          Timer = LB_TIME_WALL;
+          fprintf(stderr, "%s warning: user time not available;"
+                          " Wall clock time will be used.\n", yo);
 #endif
         }
         else if (strcmp(result.sval, "USERSYS")==0){
 #if (defined(HAVE_TIMES) || defined(HAVE_RUSAGE))
-          Timer = LB_TIME_USERSYS;
+          (*timer) = LB_TIME_USERSYS;
 #else
-          fprintf(stderr, "LB_Set_Timer_Param warning: usersys time not "
-                          "available; Wall clock time will be used.\n");
-          Timer = LB_TIME_WALL;
+          fprintf(stderr, "%s warning: usersys time not "
+                          "available; Wall clock time will be used.\n", yo);
 #endif
         }
         else{
-          fprintf(stderr, "Zoltan warning: Unknown timer option "
-                          "%s\n", result.sval);
+          fprintf(stderr, "ZOLTAN warning in %s: Unknown timer option "
+                          "%s\n", yo, result.sval);
           status = 2; /* Illegal parameter */
         }
     }
@@ -87,9 +91,10 @@ char *val)                      /* value of variable */
    so we try to determine the number of rollovers.
 */
 
-double LB_Time()
+double LB_Time(int timer)
 {
-  double t = 0.0;
+  double t = -1.;
+
 #if (defined(_CLOCK_T) && ! defined(SMOS))
   clock_t num_ticks;
   static clock_t last_num_ticks = 0;
@@ -102,10 +107,10 @@ double LB_Time()
   static double  inv_clk_tck = 1./(double)CLK_TCK;
 #endif
 
-  if (Timer==LB_TIME_WALL)
+  if (timer==LB_TIME_WALL)
     /* Wall clock */
     t = MPI_Wtime();
-  else if (Timer==LB_TIME_CPU) {
+  else if (timer==LB_TIME_CPU) {
     /* CPU time */
 #if (defined(_CLOCK_T) && ! defined(SMOS))
     num_ticks = clock();
@@ -116,23 +121,23 @@ double LB_Time()
 #endif /* !SMOS */
   }
 #if defined(HAVE_TIMES)
-  else if (Timer==LB_TIME_USER) {
+  else if (timer==LB_TIME_USER) {
     struct tms tms;
     times(&tms);
     t = tms.tms_utime * inv_clk_tck;
   }
-  else if (Timer==LB_TIME_USERSYS) {
+  else if (timer==LB_TIME_USERSYS) {
     struct tms tms;
     times(&tms);
     t = (tms.tms_utime + tms.tms_stime) * inv_clk_tck;
   }
 #elif defined(HAVE_RUSAGE)
-  else if (Timer==LB_TIME_USER) {
+  else if (timer==LB_TIME_USER) {
     struct rusage rusage;
     getrusage(RUSAGE_SELF, &rusage);
     t = (rusage.ru_utime.tv_sec + 1.0e-6 * rusage.ru_utime.tv_usec);
   }
-  else if (Timer==LB_TIME_USERSYS) {
+  else if (timer==LB_TIME_USERSYS) {
     struct rusage rusage;
     getrusage(RUSAGE_SELF, &rusage);
     t = ((rusage.ru_utime.tv_sec + rusage.ru_stime.tv_sec) +
@@ -143,21 +148,22 @@ double LB_Time()
   return t;
 }
 
-/* Precision of timer. If the precision is unknown, zero is returned.  */
-double LB_Time_Resolution()
-{
-  double t = 0.0;
+/* Resolution (precision) of timer. If the precision is unknown, -1 is returned.  */
 
-  if (Timer==LB_TIME_WALL)
+double LB_Time_Resolution(int timer)
+{
+  double t = -1.;
+
+  if (timer==LB_TIME_WALL)
     t = MPI_Wtick();
-  else if (Timer==LB_TIME_CPU)
+  else if (timer==LB_TIME_CPU)
     t = 1.0/(double)CLOCKS_PER_SEC;
 #if defined(HAVE_TIMES)
-  else if ((Timer==LB_TIME_USER)||(Timer==LB_TIME_USERSYS)) {
+  else if ((timer==LB_TIME_USER)||(timer==LB_TIME_USERSYS)) {
     t = 1.0/(double)CLK_TCK;
   }
 #elif defined(HAVE_RUSAGE)
-  else if ((Timer==LB_TIME_USER)||(Timer==LB_TIME_USERSYS)) {
+  else if ((timer==LB_TIME_USER)||(timer==LB_TIME_USERSYS)) {
 #ifdef SUN
     /* Use Sun-specific variable */
     extern int usec_per_tick; 

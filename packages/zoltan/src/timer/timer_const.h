@@ -16,7 +16,7 @@
 
 #include <time.h> /* ANSI C; defines clock_t and clock() */
 
-/* Skip advanced timers for now. They give more trouble than
+/* Skip advanced timers. They give us more trouble than
    they are useful.  */
 #ifdef USE_ADVANCED_TIMERS 
 
@@ -62,8 +62,8 @@ extern int getrusage(); /* Should be in sys/resource.h, but isn't always */
 #define LB_TIME_USERSYS 4
 
 /* Function prototypes */
-double LB_Time();
-double LB_Time_Resolution();
-int LB_Set_Timer_Param(char *, char *);
+double LB_Time(int);
+double LB_Time_Resolution(int);
+int LB_Set_Timer_Param(char *, char *, int *);
 
 #endif
