@@ -5079,7 +5079,8 @@ done
 
 
 
-for ac_header in string string.h complex complex.h algorithm algorithm.h
+
+for ac_header in string string.h complex complex.h algorithm algo.h algorithm.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -5882,9 +5883,9 @@ echo "$as_me: error: Cannot find complex or complex.h.  Teuchos requires at leas
    { (exit 1); exit 1; }; }
 fi
 
-if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
-  { { echo "$as_me:$LINENO: error: Cannot find algorithm or algorithm.h.  Teuchos requires at least one or the other." >&5
-echo "$as_me: error: Cannot find algorithm or algorithm.h.  Teuchos requires at least one or the other." >&2;}
+if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
+  { { echo "$as_me:$LINENO: error: Cannot find algorithm, algo.h, or algorithm.h.  Teuchos requires at least one of these." >&5
+echo "$as_me: error: Cannot find algorithm, algo.h, or algorithm.h.  Teuchos requires at least one of these." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -7749,7 +7750,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7752: \"$ac_link\") >&5
+(eval echo $as_me:7753: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7827,7 +7828,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7830: \"$ac_link\") >&5
+(eval echo $as_me:7831: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10357,7 +10358,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10360: \"$ac_link\") >&5
+(eval echo $as_me:10361: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10435,7 +10436,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10438: \"$ac_link\") >&5
+(eval echo $as_me:10439: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

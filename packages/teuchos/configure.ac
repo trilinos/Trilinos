@@ -155,7 +155,7 @@ TAC_ARG_CHECK_MPI
 
 AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
 AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
-AC_CHECK_HEADERS([string string.h complex complex.h algorithm algorithm.h],,,)
+AC_CHECK_HEADERS([string string.h complex complex.h algorithm algo.h algorithm.h],,,)
 AC_CHECK_HEADERS([map map.h list list.h vector vector.h],,,)
 AC_CHECK_HEADERS([sstream strstream sstream.h strstream.h],,,)
 AC_CHECK_HEADERS([stdexcept stdexcept.h cstdarg stdarg.h],,,)
@@ -189,8 +189,8 @@ if test "X$ac_cv_header_complex" != "Xyes" && test "X$ac_cv_header_complex_h" !=
   AC_MSG_ERROR([[Cannot find complex or complex.h.  Teuchos requires at least one or the other.]])
 fi
 
-if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find algorithm or algorithm.h.  Teuchos requires at least one or the other.]])
+if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find algorithm, algo.h, or algorithm.h.  Teuchos requires at least one of these.]])
 fi
 
 if test "X$ac_cv_header_map" != "Xyes" && test "X$ac_cv_header_map_h" != "Xyes"; then
