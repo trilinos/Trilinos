@@ -323,7 +323,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 				ParaSailsFactorized);
 #else
       cerr << ErrorMsg_ << "ParaSails not available." << endl
-	   << ErrorMsg_ << "ML must be configure with --with-ml_parasails" << enld
+	   << ErrorMsg_ << "ML must be configure with --with-ml_parasails" << endl
 	   << ErrorMsg_ << "to use ParaSails as a smoother" << endl
 	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
 #endif
