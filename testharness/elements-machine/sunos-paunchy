@@ -1,0 +1,6 @@
+--with-trilinos3pldir=/local/homes/jmwille/Trilinos3PL
+--with-amesos-dscpacklib=/local/homes/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
+--with-amesos-dscpackdir=/local/homes/jmwille/Trilinos3PL/DSCPACK1.0
+LDFLAGS="-xlic_lib=sunperf"
+CXXFLAGS="-g -pto /local/homes/jmwille/Trilinos3PL/SuperLU/libsuperlu.a"
+--with-incdirs="-I/local/homes/jmwille/Trilinos3PL/SuperLU/SRC"

@@ -1,0 +1,7 @@
+--enable-mpi
+--with-mpi-libs="-lmpich -lnsl -lsocket -lrt"
+--with-mpi-incdir=/local/arch/sun/sunos/mpi/mpich/include
+--with-mpi-libdir=/local/arch/sun/solaris/mpi/build/solaris/ch_p4/lib
+CPPFLAGS="-I/local/arch/sun/sunos/mpi/mpich/lib/sun4/ch_p4
+-I/local/arch/sun/sunos/mpi/mpich/lib/sun4/ch_p4"
+--enable-amesos-dscpack
