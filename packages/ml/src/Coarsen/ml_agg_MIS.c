@@ -2135,7 +2135,11 @@ int ML_Aggregate_UpdateVertexStates(int N_remaining_vertices,
             fproc = recv_proc[j];
             nbytes = (recv_leng[j] + 1) * sizeof( int );
             comm->USR_irecvbytes((char*) recv_buf[j], nbytes, &fproc,
+#ifdef ML_CPP
+                    &msgtype, comm->USR_comm, &Request[j] );
+#else
                     &msgtype, comm->USR_comm, (void *) &Request[j] );
+#endif
          }
       }
       if ( *send_flag == 0 ) {
@@ -2162,7 +2166,11 @@ comm->ML_mypid, send_buf[j][0], send_buf[j][1]);
             fproc = recv_proc[j];
             nbytes = (recv_leng[j] + 1) * sizeof( int );
             comm->USR_waitbytes((char*) recv_buf[j], nbytes, &fproc,
+#ifdef ML_CPP
+                     &msgtype, comm->USR_comm, &Request[j] );
+#else
                      &msgtype, comm->USR_comm, (void *) &Request[j] );
+#endif
 #ifdef ML_AGGR_DEBUG
 printf("%d: rcvd is %d %d (%d)\n",comm->ML_mypid, recv_buf[0][0],fproc,
         recv_leng[j]+1); fflush(stdout);
