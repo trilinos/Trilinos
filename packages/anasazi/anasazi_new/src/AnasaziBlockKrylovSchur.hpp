@@ -119,7 +119,7 @@ namespace Anasazi {
       by the calling routine.
       </ol>
     */
-    Teuchos::RefCountPtr<const MultiVec<TYPE> > GetNativeResiduals( TYPE* normvec ) const {};
+    Teuchos::RefCountPtr<const MultiVec<TYPE> > GetNativeResiduals( TYPE* normvec ) const { return Teuchos::null; };
     
     /*! \brief Get a constant reference to the current linear problem, 
       which may include a current solution.
@@ -163,7 +163,7 @@ namespace Anasazi {
 
     // Information obtained from the eigenproblem
     Operator<TYPE> *_Op;
-    Operator<TYPE> *_B;
+    Operator<TYPE> *_BOp;
     MultiVec<TYPE> *_evecs;
     const int _nev, _block;  
     TYPE *_evals;
@@ -210,7 +210,7 @@ namespace Anasazi {
     _sing_tol(1.0),
     _def_tol(1.0),
     _Op(problem->GetOperator()),
-    _B(problem->GetB()),
+    _BOp(problem->GetB()),
     _evecs(problem->GetEvecs()), 
     _nev(problem->GetNEV()), 
     _block(problem->GetBlockSize()), 
@@ -1104,11 +1104,11 @@ namespace Anasazi {
       int lwork = 4*n;
       TYPE *work = new TYPE[lwork]; assert(work!=NULL);
       int *select = new int[ n ];	  
-      char * side = "R";
-      char * howmny = "A";
+      char side = 'R';
+      char howmny = 'A';
       int mm, ldvl = 1;
       TYPE *vl = new TYPE[ ldvl ];
-      lapack.TREVC( *side, *howmny, select, n, Hj.values(), Hj.stride(), vl, ldvl,
+      lapack.TREVC( side, howmny, select, n, Hj.values(), Hj.stride(), vl, ldvl,
 		    Q.values(), Q.stride(), n, &mm, work, &info );
       assert(info==0);
       delete [] work;
@@ -1489,7 +1489,7 @@ namespace Anasazi {
     //H.print(cout);	  
     //
     int _nevtemp = 0;
-    char * compq = "V";
+    char compq = 'V';
     int *offset2 = new int[ n ]; assert(offset2!=NULL);
     int *_order2 = new int[ n ]; assert(_order2!=NULL);
     i = 0; 
@@ -1512,7 +1512,7 @@ namespace Anasazi {
       _nevtemp++;
     }
     for (i=_nevtemp-1; i>=0; i--) {
-      lapack.TREXC( *compq, n, ptr_h, ldh, ptr_q, ldq, _order2[i]+1+offset2[i], 
+      lapack.TREXC( compq, n, ptr_h, ldh, ptr_q, ldq, _order2[i]+1+offset2[i], 
 		    1, work, &info );
       assert(info==0);
     }

@@ -231,13 +231,13 @@ void EpetraVec::MvTimesMatAddMv ( double alpha, MultiVec<double>& A,
 {
 	int info=0;
 	const int izero=0;
-	char* trans="N";
+	char trans = 'N';
 	Epetra_LocalMap LocalMap(B.numRows(), izero, Map().Comm());
 	Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
 
 	EpetraVec *A_vec = dynamic_cast<EpetraVec *>(&A); assert(A_vec!=NULL);
 
-	info = Multiply( *trans, *trans, alpha, *A_vec, B_Pvec, beta );
+	info = Multiply( trans, trans, alpha, *A_vec, B_Pvec, beta );
 
 	assert(info==0);
 }
@@ -267,8 +267,8 @@ void EpetraVec::MvTransMv ( double alpha, MultiVec<double>& A,
 	const int izero=0;
 	const double zero=0.0;
 	//const double one=1.0;
-	char* trans1="T";
-	char* trans2="N";
+	char trans1 = 'T';
+	char trans2 = 'N';
 
 	EpetraVec *A_vec = dynamic_cast<EpetraVec *>(&A);
 
@@ -277,7 +277,7 @@ void EpetraVec::MvTransMv ( double alpha, MultiVec<double>& A,
 		Epetra_LocalMap LocalMap(B.numRows(), izero, Map().Comm());
 		Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
 
-		info = B_Pvec.Multiply( *trans1, *trans2, alpha, *A_vec, *this, zero ); 
+		info = B_Pvec.Multiply( trans1, trans2, alpha, *A_vec, *this, zero ); 
 		assert(info==0);
 	}
 }
