@@ -26,7 +26,7 @@
 #define MAX_OPTIONS             4  /* Total number of options +1 */
 
 /* Do we have the multiconstraint beta version of ParMetis? */
-#define BETA_PARMETIS
+/* #define BETA_PARMETIS */
 
 /* Misc. defs to be used with MPI */
 #define TAG1  32001
