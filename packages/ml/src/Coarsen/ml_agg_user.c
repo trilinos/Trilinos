@@ -65,8 +65,6 @@ int ML_SetUserPartitions(int (user)(ML_Operator* Amat, char* bdry_nodes,
   return(0);
 }
 
-extern int ML_USE_EDGE_WEIGHT;
-
 /* ------------------------------------------------------------------------ */
 
 int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix, 
@@ -100,14 +98,11 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   double* x_coord = NULL;
   double* y_coord = NULL;
   double* z_coord = NULL;
-  int OldEdge = ML_USE_EDGE_WEIGHT;
 
   /* ------------------- execution begins --------------------------------- */
 
   label =  ML_GetUserLabel();
   sprintf(str, "%s (level %d) :", label, ml_ag->cur_level);
-
-  ML_USE_EDGE_WEIGHT = ML_YES;
 
   /* ============================================================= */
   /* get the machine information and matrix references             */
@@ -678,8 +673,6 @@ int ML_Aggregate_CoarsenUser(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
     if ( supernode->length > 0 ) ML_free( supernode->list );
     ML_free( supernode );
   }
-
-  ML_USE_EDGE_WEIGHT = OldEdge;
 
   return Ncoarse*nullspace_dim;
 

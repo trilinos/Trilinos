@@ -102,9 +102,6 @@ int ML_Aggregate_Options_Defaults( ML_Aggregate_Options * pointer,
   
 }
 
-int ML_USE_EDGE_WEIGHT = ML_NO;
-double ML_WEIGHT_THRES = 0.0;
-
 /* ======================================================================== */
 /*!
  \brief Set the number of nodes for each aggregate (for graph-based
@@ -741,9 +738,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   int *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL;
 #ifdef HAVE_ML_METIS
-  int     delta;
   idxtype *vwgt=NULL, *adjwgt=NULL;
-  double diag_i = 0.0;
 #endif
   idxtype *part=NULL;
   ML_Comm * comm;
@@ -814,20 +809,9 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   
   /* set parameters */
    
-  if (ML_USE_EDGE_WEIGHT == ML_NO) {
-    wgtflag[0] = 0;    /* no weights */
-    numflag    = 0;    /* C style */
-    options[0] = 0;    /* default options */
-  }
-  else {
-    wgtflag[0] = 1;    /* weights on edges only */
-    numflag    = 0;    /* C style */
-    options[0] = 0;    /* default options */
-#ifdef HAVE_ML_METIS
-    adjwgt = (idxtype*) ML_allocate((N_nonzeros) * sizeof(idxtype));
-    assert (adjwgt != NULL);
-#endif
-  }
+  wgtflag[0] = 0;    /* no weights */
+  numflag    = 0;    /* C style */
+  options[0] = 0;    /* default options */
    
   xadj    = (idxtype *) ML_allocate ((NrowsMETIS+1)*sizeof(idxtype));
   adjncy  = (idxtype *) ML_allocate ((N_nonzeros)*sizeof(idxtype));
@@ -872,28 +856,6 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
       }
       count2++;
 
-#ifdef HAVE_ML_METIS
-      if (ML_USE_EDGE_WEIGHT == ML_YES) {
-        delta = 0;
-        for (j = 0 ; j < rowi_N ; ++j) {
-          if (rowi_col[j] == i) {
-            diag_i = rowi_val[j];
-          }
-        }
-        for (j = 0 ; j < rowi_N ; ++j) {
-          jj = rowi_col[j];
-          if ((jj >= Nrows) || (jj == i) || (perm[jj] == -1))
-            continue;
-          if (rowi_val[j] > ML_WEIGHT_THRES * diag_i)
-            /* I am not really sure of this 1000, but it seems that
-             * larger numbers do not change the shape of the aggregates */
-            adjwgt[count_start++] = 1000;
-          else
-            adjwgt[count_start++] = 1;
-          ++delta;
-        }
-      }
-#endif
     }      
   }
 
@@ -1247,24 +1209,14 @@ int agg_offset, vertex_offset;
    epsilon = ml_ag->curr_threshold;
    ml_ag->curr_threshold *= 0.5;
 
-   if (ML_USE_EDGE_WEIGHT == ML_YES) {
-     epsilon = 0.0;
-   }
-
    if (mypid == 0 && 7 < ML_Get_PrintLevel())
    {
-     if (ML_USE_EDGE_WEIGHT == ML_YES) {
-       printf("%s no dropping because edge weighting is enabled\n", 
-              str);
-     }
-     else {
-       printf("%s current eps = %e\n", str, epsilon);
+     printf("%s current eps = %e\n", str, epsilon);
 
-       if (epsilon != 0.0) {
-         fprintf( stderr,
-                 "%s (note that METIS may not work with dropping)\n",
-                 str );
-       }
+     if (epsilon != 0.0) {
+       fprintf( stderr,
+               "%s (note that METIS may not work with dropping)\n",
+               str );
      }
    }
 
