@@ -40,7 +40,7 @@
 #include "NOX_Parameter_List.H"
 
 NOX::LineSearch::Polynomial::Polynomial(const NOX::Utils& u, Parameter::List& params) :
-  paramsPtr(0),
+  paramsPtr(NULL),
   print(u)
 {
   reset(params);
@@ -56,21 +56,20 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
   NOX::Parameter::List& p = params.sublist("Polynomial");
   
   string choice = p.getParameter("Convergence Criteria", "Armijo-Goldstein");
-
   if (choice == "Ared/Pred") 
     convCriteria = AredPred;
   else if (choice == "None")
     convCriteria = None;
-  else {
+  else 
     convCriteria = ArmijoGoldstein;
-  }
 
   choice = p.getParameter("Interpolation Type", "Cubic");
   if (choice == "Quadratic")
     interpolationType = Quadratic;
   else if (choice == "Cubic") 
     interpolationType = Cubic;
-  else {
+  else 
+  {
     cerr << "NOX::LineSearch::Polynomial::reset - Invalid \"Interpolation Type\"" << endl;
     throw "NOX Error";
   }
@@ -85,17 +84,19 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
   doForceInterpolation = p.getParameter("Force Interpolation", false);
   paramsPtr = &params;
 
-  counter.reset();
-
   allowIncrease = p.isParameter("Allowed Relative Increase");
-  if(allowIncrease) {
+  if(allowIncrease) 
+  {
     relIncrease = p.getParameter("Allowed Relative Increase", 1.e2);
     numAllowed = p.getParameter("Maximum Increase Steps", maxIters);
-    if(relIncrease<=0) {
+    if(relIncrease <= 0) 
+    {
       cerr << "NOX::LineSearch::NM_Polynomial::reset - Invalid \"Allowed Relative Increase\"" << endl;
       throw "NOX Error";
     }
   }
+
+  counter.reset();
 
   return true;
 }
@@ -107,12 +108,14 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
 
   if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
   {
-   cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
+    cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
   }
 
+  // Set counter to 1
   int nIters = 1;
-  counter.increaseNumLineSearches();
+  counter.incrementNumLineSearches();
 
+  // Get Old F
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
   double oldf = 0.0;
   if (convCriteria == AredPred)
@@ -120,6 +123,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
   else 
     oldf = 0.5 * oldGrp.getNormF() * oldGrp.getNormF();  
 
+  // Get New F
   step = defaultStep;
   newGrp.computeX(oldGrp, dir, step);
   newGrp.computeF();
@@ -144,22 +148,25 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
   double slope = slopeObj.computeSlope(dir, oldGrp);
 
   if (convCriteria == AredPred)
-    slope = slope/oldf;
+    slope = slope / oldf;
 
   if (slope >= 0)
     isFailed = true;
   else if (doForceInterpolation)
     isConverged = false;
-  else {
+  else 
+  {
     isConverged = isSufficientDecrease(newf, oldf, step, slope, eta);
-    if(allowIncrease)
-      isConverged = (isConverged || 
-                     isIncreaseAllowed(newf, oldf, counter.getNumLineSearches()) );
+    if(allowIncrease) 
+    {
+      isConverged = ( isConverged || 
+		      isIncreaseAllowed(newf, oldf, counter.getNumLineSearches()) );
+    }
   }
 
   // Increment the number of newton steps requiring a line search
   if (!isConverged)
-    counter.increaseNumNonTrivialLineSearches();
+    counter.incrementNumNonTrivialLineSearches();
 
   double prevf = 0;
   double previousStep = 0;
@@ -167,7 +174,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
   bool isFirstPass = true;
   while ((!isConverged) && (!isFailed)) {
 
-    if (nIters > maxIters) {
+    if (nIters > maxIters) 
+    {
       isFailed = true;
       break;
     }
@@ -177,7 +185,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     else
       print.printStep(nIters, step, oldf, newf);
     
-    counter.increaseNumIterations();
+    counter.incrementNumIterations();
     nIters ++;
     
     if ((isFirstPass) || (interpolationType == Quadratic)) 
@@ -187,6 +195,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
       
       tempStep = - (slope * step * step) / (2.0 * (newf - oldf - step * slope)) ;
       isFirstPass = false;
+
     }
 
     else 
@@ -274,7 +283,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
 
   if (isFailed) {
 
-    counter.increaseNumFailedLineSearches();
+    counter.incrementNumFailedLineSearches();
     step = recoveryStep;
     newGrp.computeX(oldGrp, dir, step);
     newGrp.computeF();
@@ -298,26 +307,28 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
   return (!isFailed);
 }
 
-bool NOX::LineSearch::Polynomial::isSufficientDecrease(double newf, double oldf, double step, double slope, double eta) const
+bool NOX::LineSearch::Polynomial::isSufficientDecrease(double newf, double oldf, double step, 
+						       double slope, double eta) const
 {
   double rhs = 0.0;
   if (convCriteria == ArmijoGoldstein) 
   {
     rhs = oldf + alpha * step * slope;
+    return (newf <= rhs);
   }
   else if (convCriteria == AredPred) 
   {
     rhs = oldf * (1.0 - alpha * (1.0 - eta));
+    return (newf <= rhs);
   }
   else if (convCriteria == None)
-    return true;
-  else 
   {
-    cerr << "NOX::LineSearch::Polynomial::isSufficientDecrease - Invalid convergence criteria" << endl;
-    throw "NOX Error";
+    return true;
   }
 
-  return (newf <= rhs);
+  cerr << "NOX::LineSearch::Polynomial::isSufficientDecrease - Invalid convergence criteria" << endl;
+  throw "NOX Error";
+
 }
 
 bool NOX::LineSearch::Polynomial::isIncreaseAllowed(double newf, double oldf, int nOuterIters) const
