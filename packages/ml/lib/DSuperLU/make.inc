@@ -14,7 +14,7 @@
 #
 #  The machine (platform) identifier to append to the library names
 #
-PLAT = _alpha
+PLAT = _linux
 
 #
 #  The name of the libraries to be created/linked to
