@@ -1194,8 +1194,9 @@ int  Epetra_MultiVector::NormInf (double* Result) const {
   int i, j;
   for (i=0; i < NumVectors_; i++) 
     {
+      DoubleTemp_[i] = 0.0;
       j = IAMAX(MyLength_, Pointers_[i]);
-      DoubleTemp_[i] = fabs(Pointers_[i][j]);
+      if (j>-1) DoubleTemp_[i] = fabs(Pointers_[i][j]);
     }
   Comm_->MaxAll(DoubleTemp_, Result, NumVectors_);
   
