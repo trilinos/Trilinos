@@ -108,6 +108,11 @@
    void   ML_PauseForDebugger(ML_Comm *comm);
    void ML_print_line (char *charstr, int ntimes);
 
+   /*MS*/
+   int ML_gsum_int(int val, ML_Comm *comm);
+   int ML_gmin_int(int val, ML_Comm *comm);
+   double ML_gmin_double(double val, ML_Comm *comm);
+   /*ms*/
 
 #ifndef ML_CPP
 #ifdef __cplusplus
