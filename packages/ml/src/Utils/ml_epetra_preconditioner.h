@@ -502,6 +502,8 @@ private:
   //! ML structures for Maxwell
   ML * ml_edges_, * ml_nodes_;
 
+  void ** nodal_args_, ** edge_args_;
+
   //@}
 
   //@{ \name Variables for Timing
