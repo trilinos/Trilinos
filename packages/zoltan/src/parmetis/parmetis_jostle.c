@@ -52,9 +52,17 @@ static PARAM_VARS Jostle_params[] = {
 static PARAM_VARS Graph_params[] = {
         { "CHECK_GRAPH", NULL, "INT", 0 },
         { "SCATTER_GRAPH", NULL, "INT", 0 },
+        { "FINAL_OUTPUT", NULL, "INT", 0 },
+        { "USE_TIMERS", NULL, "INT", 0 },
         { NULL, NULL, NULL, 0 } };
 
 /***************  prototypes for internal functions ********************/
+
+static int Compute_Bal(ZZ *, int, float *, int *, double *);
+static int Compute_EdgeCut(ZZ *, int, int *, float *, int *, int *, double *);
+static int Compute_NetCut(ZZ *, int, int *, int *, int *);
+static int Compute_ConCut(ZZ *, int, int *, int *, int *);
+static int Compute_Adjpart(ZZ *, int, int *, int *, int *, int *, int *, int *);
 
 /* Zoltan_ParMetis_Shared should be compiled even when ZOLTAN_PARMETIS 
    is not defined so it can return an error.
@@ -481,17 +489,20 @@ static int Zoltan_ParMetis_Jostle(
   static char *yo = "Zoltan_ParMetis_Jostle";
   int i, j, k, ierr, tmp, flag, ndims;
   int obj_wgt_dim, edge_wgt_dim, check_graph, scatter;
+  int use_timers, final_output;
   int num_obj=0, num_edges, edgecut;
   int nsend, wgtflag, numflag, graph_type; 
   int get_graph_data, get_geom_data, get_times; 
   int compute_only_part_changes=0; /* EBEB: Read parameter when implemented. */
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *vsize;
+  int *adjproc;
   idxtype *sep_sizes, *part_orig;
   int num_obj_orig, ncon, start_index, compute_order=0;
   float *float_vwgt, *ewgts, *xyz, *imb_tols; 
   double *geom_vec;
   ZOLTAN_ID_PTR local_ids;
   ZOLTAN_ID_PTR global_ids;    
+  static int timer_pj = -1;
 #ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
 #if (PARMETIS_MAJOR_VERSION >= 3) 
   ZOLTAN_ID_PTR lid;        /* Temporary pointer to a local id; used to pass
@@ -528,6 +539,7 @@ static int Zoltan_ParMetis_Jostle(
    * because we free all non-NULL pointers upon errors.
    */
   vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
+  adjproc = NULL;
   vsize = sep_sizes = NULL;
   float_vwgt = ewgts = xyz = imb_tols = NULL;
   geom_vec = NULL;
@@ -587,10 +599,20 @@ static int Zoltan_ParMetis_Jostle(
   /* Get parameter options shared by ParMetis and Jostle */
   check_graph = 1;          /* default */
   scatter = 1;              /* default */
+  final_output = 0;         /* default */
+  use_timers = 0;           /* default */
   Zoltan_Bind_Param(Graph_params, "CHECK_GRAPH", (void *) &check_graph);
   Zoltan_Bind_Param(Graph_params, "SCATTER_GRAPH", (void *) &scatter);
+  Zoltan_Bind_Param(Graph_params, "FINAL_OUTPUT", (void *) &final_output);
+  Zoltan_Bind_Param(Graph_params, "USE_TIMERS", (void *) &use_timers);
   Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
                        zz->Debug_Proc);
+
+  if (use_timers) {
+    if (timer_pj < 0)
+      timer_pj = Zoltan_Timer_Init(zz->ZTime, 1, "ParMETIS_Jostle");
+    ZOLTAN_TIMER_START(zz->ZTime, timer_pj, zz->Communicator);
+  }
 
   /* Are we doing ordering or partitioning? */
   /* Note: If ORDER_METHOD=PARMETIS, then PARMETIS_METHOD=NODEND */
@@ -697,7 +719,7 @@ static int Zoltan_ParMetis_Jostle(
   /* Build ParMetis data structures, or just get vtxdist. */
   ierr = Zoltan_Build_Graph(zz, graph_type, check_graph, num_obj,
          global_ids, local_ids, obj_wgt_dim, edge_wgt_dim,
-         &vtxdist, &xadj, &adjncy, &ewgts);
+         &vtxdist, &xadj, &adjncy, &ewgts, &adjproc);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Build_Graph returned error.");
   }
@@ -751,7 +773,6 @@ static int Zoltan_ParMetis_Jostle(
           printf("[%1d] Debug: scaled weights for vertex %d = %s\n",
                  zz->Proc, vtxdist[zz->Proc]+i99, msg);
         }
-      ZOLTAN_FREE(&float_vwgt);
     }
 
     /* Get edge weights if needed */
@@ -791,7 +812,6 @@ static int Zoltan_ParMetis_Jostle(
 
         printf("\n");
       }
-      ZOLTAN_FREE(&ewgts);
     }
 
   if (get_geom_data){
@@ -1157,14 +1177,6 @@ static int Zoltan_ParMetis_Jostle(
     printf("[%1d] Debug: Returned from partitioner with edgecut= %d\n", 
       zz->Proc, edgecut);
 
-  /* Free weights; they are no longer needed */
-  if (obj_wgt_dim) {
-    ZOLTAN_FREE(&vwgt);
-    if (float_vwgt) ZOLTAN_FREE(&float_vwgt);
-  }
-  if (edge_wgt_dim){
-    ZOLTAN_FREE(&adjwgt);
-  }
   /* Also free temp arrays for ParMetis 3.0 */
   ZOLTAN_FREE(&imb_tols);
   if (vsize) ZOLTAN_FREE(&vsize);
@@ -1323,6 +1335,87 @@ static int Zoltan_ParMetis_Jostle(
   ierr = ZOLTAN_OK;
 
 End:
+
+  if (use_timers) 
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_pj, zz->Communicator);
+
+  if (final_output) {
+#define FOMAXDIM 10
+    static int nRuns=0;
+    static double balsum[FOMAXDIM], cutesum[FOMAXDIM];
+    static double balmax[FOMAXDIM], cutemax[FOMAXDIM];
+    static double balmin[FOMAXDIM], cutemin[FOMAXDIM];
+    static int cutlsum = 0, cutnsum = 0;
+    static int cutlmax = 0, cutnmax = 0;
+    static int cutlmin = INT_MAX, cutnmin = INT_MAX;
+    double bal[FOMAXDIM];    /* Balance:  max / avg */
+    double cute[FOMAXDIM];   /* Traditional weighted graph edge cuts */
+    int cutl;   /* Connnectivity cuts:  sum_over_edges((npart-1)) */
+    int cutn;   /* Net cuts:  sum_over_edges((nparts>1)) */
+    int *adjpart = NULL;
+    int vdim = MAX(zz->Obj_Weight_Dim,1);
+    int edim = MAX(zz->Edge_Weight_Dim,1);
+
+    if (nRuns == 0) { 
+      for (i = 0; i < FOMAXDIM; i++) {
+        /* Initialize first time */
+        balsum[i] = cutesum[i] = 0.0;
+        balmax[i] = cutemax[i] = 0.0;
+        balmin[i] = cutemin[i] = 1e100;
+      }
+    }
+
+    if (zz->Obj_Weight_Dim < FOMAXDIM && zz->Edge_Weight_Dim < FOMAXDIM) {
+
+      adjpart = (int *) ZOLTAN_MALLOC(xadj[num_obj] * sizeof(int));
+
+      Compute_Bal(zz, num_obj, float_vwgt, part, bal);
+      Compute_Adjpart(zz, num_obj, vtxdist, xadj, adjncy, adjproc, 
+                      part, adjpart);
+      Compute_EdgeCut(zz, num_obj, xadj, ewgts, part, adjpart, cute);
+      cutl= Compute_ConCut(zz, num_obj, xadj, part, adjpart);
+      cutn = Compute_NetCut(zz, num_obj, xadj, part, adjpart);
+  
+      cutlsum += cutl;
+      if (cutl > cutlmax) cutlmax = cutl;
+      if (cutl < cutlmin) cutlmin = cutl;
+      cutnsum += cutn;
+      if (cutn > cutnmax) cutnmax = cutn;
+      if (cutn < cutnmin) cutnmin = cutn;
+      for (i = 0; i < vdim; i++) {
+        balsum[i] += bal[i];
+        if (bal[i] > balmax[i]) balmax[i] = bal[i];
+        if (bal[i] < balmin[i]) balmin[i] = bal[i];
+      }
+      for (i = 0; i < edim; i++) {
+        cutesum[i] += cute[i];
+        if (cute[i] > cutemax[i]) cutemax[i] = cute[i];
+        if (cute[i] < cutemin[i]) cutemin[i] = cute[i];
+      }
+      nRuns++;
+  
+      if (zz->Proc == 0) {
+        for (i = 0; i < vdim; i++) {
+          printf("STATS Runs %d  bal[%d]  CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+                  nRuns, i, bal[i], balmax[i], balmin[i], balsum[i]/nRuns);
+        }
+        printf("STATS Runs %d  cutl CURRENT %d  MAX %d  MIN %d  AVG %d\n",
+                nRuns, cutl, cutlmax, cutlmin, cutlsum/nRuns);
+        printf("STATS Runs %d  cutn CURRENT %d  MAX %d  MIN %d  AVG %d\n",
+                nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
+        for (i = 0; i < edim; i++) {
+          printf("STATS Runs %d  cute[%d] CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+                  nRuns, i, cute[i], cutemax[i], cutemin[i], cutesum[i]/nRuns);
+        }
+      }
+      ZOLTAN_FREE(&adjpart);
+    }
+#undef FOMAXDIM
+  }
+
+  if (use_timers && zz->Proc == 0)
+    Zoltan_Timer_PrintAll(zz->ZTime, zz->Proc, stdout);
+
   /* If an error was encountered, the following data may need to be freed */
   if (vwgt)      ZOLTAN_FREE(&vwgt); 
   if (adjwgt)    ZOLTAN_FREE(&adjwgt); 
@@ -1344,6 +1437,7 @@ End:
   ZOLTAN_FREE(&vtxdist);
   ZOLTAN_FREE(&xadj);
   ZOLTAN_FREE(&adjncy);
+  ZOLTAN_FREE(&adjproc);
   ZOLTAN_FREE(&xyz);
   ZOLTAN_FREE(&part);
   ZOLTAN_FREE(&input_parts);
@@ -1564,6 +1658,192 @@ char *val)                      /* value of variable */
     }
 
     return(status);
+}
+
+/****************************************************************************/
+static int Compute_Bal(
+  ZZ *zz,
+  int nvtx,
+  float *vwgts,
+  int *parts,
+  double *bal
+)
+{
+/*
+ * Compute the load balance of the computed partition.
+ */
+int i, j;
+int dim = MAX(zz->Obj_Weight_Dim, 1);
+int size;
+float *sum = NULL, *gsum = NULL;
+float *tot = NULL, *max = NULL;
+
+  size = zz->LB.Num_Global_Parts * dim;
+  sum = (float *) ZOLTAN_CALLOC(2 * size, sizeof(float));
+  gsum = sum + size;
+  tot = (float *) ZOLTAN_CALLOC(2 * dim, sizeof(float));
+  max = tot + dim;
+
+  for (i = 0; i < nvtx; i++)
+    for (j = 0; j < dim; j++)
+      sum[parts[i]*dim + j] += (vwgts ? vwgts[i*dim + j] : 1.);
+
+  MPI_Allreduce(sum, gsum, size, MPI_FLOAT, MPI_SUM, zz->Communicator);
+
+  for (i = 0; i < zz->LB.Num_Global_Parts; i++)
+    for (j = 0; j < dim; j++) {
+      tot[j] += gsum[i*dim+j];
+      if (gsum[i*dim+j] > max[j]) max[j] = gsum[i*dim+j];
+    }
+
+  for (j = 0; j < dim; j++)
+    if (tot[j] > 0.)
+      bal[j] = zz->LB.Num_Global_Parts * max[j] / tot[j];
+
+  ZOLTAN_FREE(&sum);
+  ZOLTAN_FREE(&tot);
+
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
+static int Compute_EdgeCut(
+  ZZ *zz,
+  int nvtx,
+  int *xadj,
+  float *ewgts,
+  int *parts,
+  int *nborparts,
+  double *cute
+)
+{
+/*
+ * Compute total weight of cut graph edges w.r.t. partitions.
+ */
+int i, j, k;
+int dim = MAX(zz->Edge_Weight_Dim, 1);
+double *cut = NULL;
+
+  cut = (double *) ZOLTAN_CALLOC(dim, sizeof(double));
+
+  for (i = 0; i < nvtx; i++)
+    for (j = xadj[i]; j < xadj[i+1]; j++)
+      if (parts[i] != nborparts[j])
+        for (k = 0; k < dim; k++)
+          cut[k] += (ewgts ? ewgts[j*dim+k] : 1.);
+
+  MPI_Allreduce(cut, cute, dim, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+
+  ZOLTAN_FREE(&cut);
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
+static int Compute_NetCut(
+  ZZ *zz,
+  int nvtx,
+  int *xadj,
+  int *parts,
+  int *nborparts
+)
+{
+/*
+ * Compute number of hyperedges cut w.r.t. partitions.
+ * Assume one hyperedge per vertex.
+ * Equivalent to number of boundary vertices.
+ */
+int i, j;
+int cutn = 0, gcutn = 0;
+
+  for (i = 0; i < nvtx; i++)
+    for (j = xadj[i]; j < xadj[i+1]; j++)
+      if (parts[i] != nborparts[j]) {
+        cutn++; 
+        break;
+      }
+
+  MPI_Allreduce(&cutn, &gcutn, 1, MPI_INT, MPI_SUM, zz->Communicator);
+
+  return gcutn;
+}
+
+/****************************************************************************/
+static int Compute_ConCut(
+  ZZ *zz,
+  int nvtx,
+  int *xadj,
+  int *parts,
+  int *nborparts
+)
+{
+/*
+ * Compute SUM over hyperedges( (#parts/hyperedge - 1));
+ * Assume one hyperedge per vertex.
+ * Equivalent to number of boundary vertices.
+ */
+int i, j;
+int cutl = 0, gcutl = 0;
+int *used = NULL;
+
+  used = (int *) ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(int));
+  for (i = 0; i < zz->LB.Num_Global_Parts; i++) used[i] = -1;
+
+  for (i = 0; i < nvtx; i++) {
+    used[parts[i]] = i;
+    for (j = xadj[i]; j < xadj[i+1]; j++)
+      if (used[nborparts[j]] < i) {
+        used[nborparts[j]] = i;
+        cutl++; 
+      }
+  }
+  ZOLTAN_FREE(&used);
+
+  MPI_Allreduce(&cutl, &gcutl, 1, MPI_INT, MPI_SUM, zz->Communicator);
+
+  return gcutl;
+}
+
+/****************************************************************************/
+static int Compute_Adjpart(
+  ZZ *zz,
+  int nvtx,         /* Input:  # vtxs in this processor */
+  int *vtxdist,     /* Input:  Distribution of vertices across processors */
+  int *xadj,        /* Input:  Index of adjncy:  adjncy[xadj[i]] to 
+                               adjncy[xadj[i]+1] are all edge nbors of vtx i. */
+  int *adjncy,      /* Input:  Array of nbor vertices. */
+  int *adjproc,     /* Input:  adjproc[j] == processor owning adjncy[j]. */
+  int *part,        /* Input:  Partition assignments of vtxs. */
+  int *adjpart      /* Output: adjpart[j] == partition owning adjncy[j] */
+)
+{
+/* Given an adjacency list adjncy, find the partition number of each 
+ * vertex in adjncy.  Return it in adjpart.
+ */
+ZOLTAN_COMM_OBJ *plan;
+int i;
+int start = vtxdist[zz->Proc];  /* First vertex on this processor */
+int nrecv;
+int *vtxs = NULL;
+int tag = 24542;
+
+  Zoltan_Comm_Create(&plan, xadj[nvtx], adjproc, zz->Communicator, tag++,
+                     &nrecv);
+
+  vtxs = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+
+  Zoltan_Comm_Do(plan, tag++, (char *) adjncy, sizeof(int), (char *) vtxs);
+
+  for (i = 0; i < nrecv; i++)
+    vtxs[i] = part[vtxs[i]-start];
+
+  Zoltan_Comm_Do_Reverse(plan, tag, (char *) vtxs, sizeof(int), NULL,
+                         (char *) adjpart);
+
+  ZOLTAN_FREE(&vtxs);
+
+  Zoltan_Comm_Destroy(&plan);
+
+  return ZOLTAN_OK;
 }
 
 

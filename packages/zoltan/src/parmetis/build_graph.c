@@ -29,8 +29,8 @@ static int hash_lookup (ZZ *zz, struct Hash_Node **hashtab, ZOLTAN_ID_PTR key,
                         int n);
 static int process_edge_list(ZZ *, int, ZOLTAN_ID_PTR, int, ZOLTAN_ID_PTR, 
   int *, float *, struct Hash_Node **, int, int, int, int, int *, int *, int *, 
-  float *, int *, int *, int *, int *, int *, int *, int *, struct Edge_Info **,
-  ZOLTAN_ID_PTR *);
+  int *, float *, int *, int *, int *, int *, int *, int *, int *, 
+  struct Edge_Info **, ZOLTAN_ID_PTR *);
 
 /*
  * Build a graph in ParMetis format from Zoltan query functions. 
@@ -57,7 +57,7 @@ int Zoltan_Build_Graph(
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
     int obj_wgt_dim, int edge_wgt_dim,
     idxtype **vtxdist, idxtype **xadj, idxtype **adjncy, 
-    float **ewgts)
+    float **ewgts, int **adjproc)
 {
   /* Local variables */
   int  num_edges, cross_edges, max_edges;
@@ -93,6 +93,7 @@ int Zoltan_Build_Graph(
 
   /* Set pointers to NULL */
   *vtxdist = *xadj = *adjncy = NULL;
+  *adjproc = NULL;
   *ewgts = tmp_ewgts = NULL;
   nbors_global = proc_list_nbor = lid = NULL;
   proc_list = NULL;
@@ -146,8 +147,9 @@ int Zoltan_Build_Graph(
     /* Allocate space for ParMETIS data structs */
     *xadj   = (idxtype *)ZOLTAN_MALLOC((num_obj+1) * sizeof(idxtype));
     *adjncy = (idxtype *)ZOLTAN_MALLOC(num_edges * sizeof(idxtype));
+    *adjproc = (int *)ZOLTAN_MALLOC(num_edges * sizeof(int));
   
-    if (!(*xadj) || (num_edges && !(*adjncy))){
+    if (!(*xadj) || (num_edges && (!(*adjncy) || !(*adjproc)))){
       /* Not enough memory */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
@@ -303,7 +305,8 @@ int Zoltan_Build_Graph(
                                  &(tmp_ewgts[sum*edge_wgt_dim]),
                                  hashtab, graph_type, num_gid_entries, 
                                  num_obj, edge_wgt_dim,
-                                 *vtxdist, *xadj, *adjncy, *ewgts, plist,
+                                 *vtxdist, *xadj, *adjncy, *adjproc,
+                                 *ewgts, plist,
                                  &jj, &nself, &cross_edges, &offset, &nsend,
                                  &max_proc_list_len, &proc_list,
                                  &proc_list_nbor);
@@ -342,7 +345,8 @@ int Zoltan_Build_Graph(
                                  nbors_global, nbors_proc, tmp_ewgts,
                                  hashtab, graph_type, num_gid_entries, 
                                  num_obj, edge_wgt_dim,
-                                 *vtxdist, *xadj, *adjncy, *ewgts, plist,
+                                 *vtxdist, *xadj, *adjncy, *adjproc,
+                                 *ewgts, plist,
                                  &jj, &nself, &cross_edges, &offset, &nsend,
                                  &max_proc_list_len, &proc_list,
                                  &proc_list_nbor);
@@ -661,6 +665,7 @@ static int process_edge_list(
   int *vtxdist,                 /* Distrib across procs of global dense #ing */
   int *xadj,                    /* Index of each obj's first edge in adjncy */
   int *adjncy,                  /* Edges for all objects. */
+  int *adjproc,                 /* Edges for all objects. */
   float *ewgts,                 /* Edge weights for all edges */
   int *plist,                   /* Procs with nbors of this object */
   int *jj,                      /* Position to store non-self edge in adjncy. */
@@ -704,6 +709,7 @@ int ierr = ZOLTAN_OK;
         for (k=0; k<edge_wgt_dim; k++)
           ewgts[(*jj)*edge_wgt_dim+k] = tmp_ewgts[j*edge_wgt_dim+k];
         /* Put the global number into the adjacency array */
+        adjproc[*jj] = nbors_proc[j];
         adjncy[(*jj)++] = tmp;
       }
     } else {
@@ -764,6 +770,7 @@ int ierr = ZOLTAN_OK;
           ewgts[(*jj)*edge_wgt_dim+k] = tmp_ewgts[j*edge_wgt_dim+k];
 
         /* Still don't know the global number, need to come back here later */
+        adjproc[*jj] = nbors_proc[j];
         adjncy[(*jj)++] = -1; 
 
         (*offset)++;
