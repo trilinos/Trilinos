@@ -299,3 +299,18 @@ Chaco input assignment inverse = 0
 #-----------------------------------------------------------------------------
 Number of Iterations = 1
 
+
+#-----------------------------------------------------------------------------
+# Test DDirectory = <integer>
+#
+# This line signals that zdrive should exercise the Distributed Directory
+# utility of Zoltan.  Comparisons between zdrive-generated communication maps
+# and DDirectory-generated communication maps are done.  If a difference is
+# found, a diagnostic message containing "DDirectory Test" is printed as 
+# output from zdrive.
+#
+# Default value is 1.
+#
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
+#-----------------------------------------------------------------------------
+Test DDirectory = 1
