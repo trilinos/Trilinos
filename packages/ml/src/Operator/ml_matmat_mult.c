@@ -573,7 +573,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 
       /* store matrix row */
 
-#ifdef ML_LOWMEMORY
+#ifndef ML_LOWMEMORY
       memcpy(&(Ccol[next_nz]),accum_col, sizeof(int)*Ncols);
       memcpy(&(Cval[next_nz]),accum_val, sizeof(double)*Ncols);
       next_nz += Ncols;
