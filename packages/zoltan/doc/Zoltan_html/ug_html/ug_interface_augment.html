@@ -32,7 +32,7 @@ decomposition. Given a decomposition, they determine to which processor(s)
 a new item should be assigned. Currently, they work in conjunction with
 only the 
 <A HREF="ug_alg_rcb.html">RCB</A> and
-<a href="ug_alg_irb.html">IRB</a> 
+<a href="ug_alg_rib.html">RIB</a> 
 algorithms.
 <BLOCKQUOTE><B><A HREF="#LB_Point_Assign">LB_Point_Assign</A></B>
 <BR><B><A HREF="#LB_Box_Assign">LB_Box_Assign</A></B></BLOCKQUOTE>
@@ -62,7 +62,7 @@ algorithms.
 a new point should be assigned. It is applicable only to geometrically
 generated decompositions (currently only 
 <A HREF="ug_alg_rcb.html">RCB</A> and
-<a href="ug_alg_irb.html">IRB</a>).
+<a href="ug_alg_rib.html">RIB</a>).
 If the parameter <B>KEEP_CUTS</B>
 is set to TRUE, then the recursive sequence of cuts which define the 
 decomposition is saved. Given a new geometric point, the processor which
@@ -134,7 +134,7 @@ might need to know about an extended geometric object. <B>LB_Box_Assign</B>
 addresses this problem. Given a geometric decomposition of space (currently
 only 
 <A HREF="ug_alg_rcb.html">RCB</A> and
-<a href="ug_alg_irb.html">IRB</a> are
+<a href="ug_alg_rib.html">RIB</a> are
 supported), and given an axis-aligned box around the geometric
 object, <B>LB_Box_Assign</B> determines which processors own geometry that
 intersects the box. To use this routine, the parameter <B>KEEP_CUTS</B>

@@ -18,7 +18,7 @@
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title>Zoltan User's Guide:  IRB</title>
+   <title>Zoltan User's Guide:  RIB</title>
 </head>
 <body bgcolor="#FFFFFF">
 
@@ -26,13 +26,13 @@
 
 
 <h2>
-<a NAME="IRB"></a>Inertial Recursive Bisection (IRB)</h2>
-An implementation of Inertial Recursive Bisection (IRB) is included in the
-dynamic load-balancing library. IRB was first proposed as a static
+<a NAME="RIB"></a>Recursive Inertial Bisection (RIB)</h2>
+An implementation of Recursive Inertial Bisection (RIB) is included in the
+dynamic load-balancing library. RIB was first proposed as a static
 load-balancing algorithm by <a href="ug_refs.html#taylor">Taylor and
-Nour-Omid</a>.  IRB is similar to RCB in that it divides the domain based on
+Nour-Omid</a>.  RIB is similar to RCB in that it divides the domain based on
 the location of the obects being partitioned by use of cutting planes.
-In IRB, the computational domain is first divided into two regions by a
+In RIB, the computational domain is first divided into two regions by a
 cutting plane orthogonal to the longest direction of the domain so that half
 the work load is in each of the sub-regions.  The sub-regions are then further
 divided by recursive application of the same splitting algorithm until
@@ -42,7 +42,7 @@ of two, the set sizes in a particular cut needn't be equal.  By adjusting
 the partition sizes appropriately, any number of equally-sized sets can
 be created.  If the parallel machine has processors with different speeds,
 sets with nonuniform sizes can also be easily generated.  The Zoltan implementation
-of IRB has several parameters which can be modified by the <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>
+of RIB has several parameters which can be modified by the <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>
 function.
 <br>&nbsp;
 <br>&nbsp;
@@ -50,7 +50,7 @@ function.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Method String:</b></td>
 
-<td><b>IRB</b></td>
+<td><b>RIB</b></td>
 </tr>
 
 <tr>
@@ -60,23 +60,23 @@ function.
 </tr>
 
 <tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>IRB_OVERALLOC</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>RIB_OVERALLOC</i></td>
 
 <td>The amount by which to over-allocate temporary storage arrays for objects
-within the IRB algorithm when additional storage is due to changes in processor
+within the RIB algorithm when additional storage is due to changes in processor
 assignments.&nbsp;
 <br>1.0 = no extra storage allocated; 1.5 = 50% extra storage; etc.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> IRB_CHECK</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RIB_CHECK</i></td>
 
 <td>Flag controlling the invocation of input and output error checking.&nbsp;
 <br>0 = don't do checking; 1 = do checking.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> IRB_OUTPUT_LEVEL</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RIB_OUTPUT_LEVEL</i></td>
 
 <td>Flag controlling the amount of timing and diagnostic output the routine
 produces.&nbsp;
@@ -84,9 +84,9 @@ produces.&nbsp;
 </tr>
 
 <tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> IRB_KEEP_CUTS</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> KEEP_CUTS</i></td>
 
-<td>Should information about the cuts determining the IRB decomposition
+<td>Should information about the cuts determining the RIB decomposition
 be retained? It costs a bit of time to do so, but this information is necessary
 if application wants to add more objects to the decomposition via calls
 to <b><a href="ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</a></b>
@@ -103,25 +103,25 @@ or to <b><a href="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</a></b>
 <tr>
 <td></td>
 
-<td><i>IRB_OVERALLOC</i> = 1.0</td>
+<td><i>RIB_OVERALLOC</i> = 1.0</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><i>IRB_CHECK</i> = 1</td>
+<td><i>RIB_CHECK</i> = 1</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><i>IRB_OUTPUT_LEVEL</i> = 0</td>
+<td><i>RIB_OUTPUT_LEVEL</i> = 0</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><i>IRB_KEEP_CUTS</i> = 0</td>
+<td><i>KEEP_CUTS</i> = 0</td>
 </tr>
 
 <tr>
