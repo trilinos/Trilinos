@@ -32,7 +32,6 @@
 #include "Tpetra_ConfigDefs.hpp" // for iostream, etc.
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_basic_oblackholestream.hpp>
 #include "Tpetra_Version.hpp"
 
 /*! \file tpetra_test_util.hpp
@@ -128,11 +127,12 @@ T generateValue(T const x, T const y) {
 }
 
 // specialization for complex so that both real and imaginary portions get written to
-// the real portion gets generateValue(x, y), and the imaginary portion gets generateValue(x, y+1)
+// the real portion gets generateValue(x, 2y), and the imaginary portion gets generateValue(x, 2y+1)
 template <typename T>
 complex<T> generateValue(complex<T> const x, complex<T> const y) {
-  T real = generateValue(x.real(), y.real());
-  T imag = generateValue(x.real(), (y.real() + Teuchos::ScalarTraits<T>::one()));
+  T twoY = y.real() * intToScalar<T>(2);
+  T real = generateValue(x.real(), twoY);
+  T imag = generateValue(x.real(), (twoY + Teuchos::ScalarTraits<T>::one()));
   return(complex<T>(real, imag));
 }
 
@@ -152,6 +152,24 @@ void generateMultipleColumns(std::vector<T>& vector, int const firstx, int const
       *i = generateValue(intToScalar<T>(x), intToScalar<T>(y));
       i++;
     }
+}
+
+template <typename T>
+void generateRowSums(std::vector<T>& vector, int const firstx, int const lastx, int const length) {
+  vector.assign(length, Teuchos::ScalarTraits<T>::zero());
+  for(int x = firstx; x <= lastx; x++)
+    for(int y = 0; y < length; y++)
+      vector[y] += generateValue(intToScalar<T>(x), intToScalar<T>(y));
+}
+
+template <typename T>
+void generateRowMaxs(std::vector<T>& vector, int const firstx, int const lastx, int const length) {
+  generateColumn(vector, lastx, length); // for this generator, row max is right-most entry
+}
+
+template <typename T>
+void generateRowMins(std::vector<T>& vector, int const firstx, int const lastx, int const length) {
+  generateColumn(vector, firstx, length); // for this generator, row min is left-most entry
 }
 
 /*

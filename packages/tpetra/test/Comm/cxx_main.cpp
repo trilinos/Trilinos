@@ -66,6 +66,7 @@ int main(int argc, char* argv[]) {
   
   // change verbose to only be true on Image 0
   // if debug is enabled, it will still output on all nodes
+  bool verboseAll = verbose;
   verbose = (verbose && (myImageID == 0));
   
   // start the testing
@@ -75,13 +76,15 @@ int main(int argc, char* argv[]) {
   // call the actual test routines
   ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
 	ierr += unitTests<double, int>(verbose, debug, myImageID, numImages);
-  //ierr += unitTests<complex<double>, int>(verbose, debug, myImageID, numImages);
+  ierr += unitTests<complex<double>, int>(verbose, debug, myImageID, numImages);
+  ierr += unitTests<complex<float>, int>(verbose, debug, myImageID, numImages);
   
 	// finish up
 #ifdef TPETRA_MPI
   MPI_Finalize();
 #endif
 	if(verbose) outputEndMessage("Comm", (ierr == 0));
+  if(ierr != 0) cout << "[Image " << myImageID << "] Return Value = " << ierr << endl;
 	return(ierr);
 }
 
@@ -93,17 +96,10 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 
   int ierr = 0;
   int returnierr = 0;
-  int const root = 0; // root image for broadcast
-  OrdinalType const length = 5; // length of arrays used for Comm operations
-  
-  // give each image a column from the generator
-  // do not modify these values - they are used by all tests
-  std::vector<PacketType> myVals;
-  generateColumn(myVals, myImageID, length);
 
 	// ======================================================================
 	// code coverage section - just call functions, no testing
-	// =====================================================================
+	// ======================================================================
   
 #ifdef TPETRA_MPI
   // default constructor
@@ -121,32 +117,34 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   Tpetra::SerialComm<PacketType, OrdinalType> comm2(comm);
 #endif
   
-  // printInfo
-  //if(verbose) cout << "Calling printInfo..." << endl;
-  //ostream& blackhole = Teuchos::basic_oblackholestream<void, void>();
-  //comm.printInfo(blackhole);
-  
 	// ======================================================================
 	// actual testing section - affects return code
 	// ======================================================================
+  
+  // fixtures
+  int const root = 0; // root image for broadcast
+  OrdinalType const length = 5; // length of arrays used for Comm operations
+  std::vector<PacketType> myVals(length);
+  std::vector<PacketType> allVals(length);
+  std::vector<PacketType> expected(length);
 
   // test broadcast
   if(verbose) cout << "Testing broadcast... ";
-  std::vector<PacketType> rootVals;
-  generateColumn(rootVals, root, length);
+  generateColumn(myVals, myImageID, length); // set myVals
   if(debug) {
     if(verbose) cout << endl;
     comm.barrier();
     cout << "[Image " << myImageID << "] Values prior to broadcast: " << myVals << endl;
   }
   comm.broadcast(&myVals.front(), length, root);
+  generateColumn(expected, root, length);
   if(debug) {
     cout << "[Image " << myImageID << "] Values after broadcast:    " << myVals << endl;
-    if(verbose) cout << "[  All  ] Expected values:           " << rootVals << endl;
+    if(verbose) cout << "[  All  ] Expected values:           " << expected << endl;
     comm.barrier();
     if(verbose) cout << "Broadcast test ";
   }
-  if(myVals != rootVals) {
+  if(myVals != expected) {
     if(verbose) cout << "failed" << endl;
     ierr++;
   }
@@ -157,21 +155,20 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   
   // test gatherAll
   if(verbose) cout << "Testing gatherAll... ";
-  generateColumn(myVals, myImageID, length);
-  std::vector<PacketType> allVals(numImages * length);
+  generateColumn(myVals, myImageID, length); // reset myVals
+  allVals.resize(length * numImages); // allVals needs to be larger for this test
   comm.gatherAll(&myVals.front(), &allVals.front(), length);
-  std::vector<PacketType> expectedAllVals;
-  generateMultipleColumns(expectedAllVals, 0, (numImages-1), length);
+  generateMultipleColumns(expected, 0, (numImages-1), length);
   if(debug) {
     if(verbose) cout << endl;
     comm.barrier();
     cout << "[Image " << myImageID << "] myVals:   " << myVals << endl;
     cout << "[Image " << myImageID << "] allVals:  " << allVals << endl;
-    if(verbose) cout << "[  All  ] Expected: " << expectedAllVals << endl;
+    if(verbose) cout << "[  All  ] Expected: " << expected << endl;
     comm.barrier();
     if(verbose) cout << "GatherAll test ";
   }
-  if(allVals != expectedAllVals) {
+  if(allVals != expected) {
     if(verbose) cout << "failed" << endl;
     ierr++;
   }
@@ -182,23 +179,19 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   
   // test sumAll
   if(verbose) cout << "Testing sumAll... ";
-  int indexToUse = 3;
-  PacketType localSum = myVals[indexToUse];
-  PacketType globalSum = Teuchos::ScalarTraits<PacketType>::zero();
-  comm.sumAll(&localSum, &globalSum, Teuchos::OrdinalTraits<OrdinalType>::one());
-  PacketType expectedGlobalSum = Teuchos::ScalarTraits<PacketType>::zero();
-  for(int x = 0; x < numImages; x++)
-    expectedGlobalSum += generateValue(intToScalar<PacketType>(x), intToScalar<PacketType>(indexToUse));
+  allVals.resize(length); // resize allVals back down
+  comm.sumAll(&myVals.front(), &allVals.front(), length);
+  generateRowSums(expected, 0, numImages-1, length);
   if(debug) {
     if(verbose) cout << endl;
     comm.barrier();
-    cout << "[Image " << myImageID << "] localSum:  " << localSum << endl;
-    cout << "[Image " << myImageID << "] globalSum: " << globalSum << endl;
-    if(verbose) cout << "[  All  ] Expected:  " << expectedGlobalSum << endl;
+    cout << "[Image " << myImageID << "] localSums:  " << myVals << endl;
+    cout << "[Image " << myImageID << "] globalSums: " << allVals << endl;
+    if(verbose) cout << "[  All  ] Expected:   " << expected << endl;
     comm.barrier();
     if(verbose) cout << "SumAll test ";
   }
-  if(globalSum != expectedGlobalSum) {
+  if(allVals != expected) {
     if(verbose) cout << "failed" << endl;
     ierr++;
   }
@@ -209,20 +202,18 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   
   // test maxAll
   if(verbose) cout << "Testing maxAll... ";
-  PacketType localMax = myVals[length-1]; // dependent on generator ordering
-  PacketType globalMax = Teuchos::ScalarTraits<PacketType>::zero();
-  comm.maxAll(&localMax, &globalMax, Teuchos::OrdinalTraits<OrdinalType>::one());
-  PacketType expectedGlobalMax = generateValue(intToScalar<PacketType>(numImages-1), intToScalar<PacketType>(length-1)); // dependent on generator ordering
+  comm.maxAll(&myVals.front(), &allVals.front(), length);
+  generateRowMaxs(expected, 0, numImages-1, length);
   if(debug) {
     if(verbose) cout << endl;
     comm.barrier();
-    cout << "[Image " << myImageID << "] localMax:  " << localMax << endl;
-    cout << "[Image " << myImageID << "] globalMax: " << globalMax << endl;
-    if(verbose) cout << "[  All  ] Expected:  " << expectedGlobalMax << endl;
+    cout << "[Image " << myImageID << "] localMaxs:  " << myVals << endl;
+    cout << "[Image " << myImageID << "] globalMaxs: " << allVals << endl;
+    if(verbose) cout << "[  All  ] Expected:   " << expected << endl;
     comm.barrier();
     if(verbose) cout << "MaxAll test ";
   }
-  if(globalMax != expectedGlobalMax) {
+  if(allVals != expected) {
     if(verbose) cout << "failed" << endl;
     ierr++;
   }
@@ -233,21 +224,18 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
 
   // test minAll
   if(verbose) cout << "Testing minAll... ";
-  indexToUse = 1;
-  PacketType localMin = myVals[indexToUse]; // might not be true min in whole myVals array
-  PacketType globalMin = Teuchos::ScalarTraits<PacketType>::zero();
-  comm.minAll(&localMin, &globalMin, Teuchos::OrdinalTraits<OrdinalType>::one());
-  PacketType expectedGlobalMin = generateValue(intToScalar<PacketType>(0), intToScalar<PacketType>(indexToUse)); // dependent on generator ordering
+  comm.minAll(&myVals.front(), &allVals.front(), length);
+  generateRowMins(expected, 0, numImages-1, length);
   if(debug) {
     if(verbose) cout << endl;
     comm.barrier();
-    cout << "[Image " << myImageID << "] localMin:  " << localMin << endl;
-    cout << "[Image " << myImageID << "] globalMin: " << globalMin << endl;
-    if(verbose) cout << "[  All  ] Expected:  " << expectedGlobalMin << endl;
+    cout << "[Image " << myImageID << "] localMins:  " << myVals << endl;
+    cout << "[Image " << myImageID << "] globalMins: " << allVals << endl;
+    if(verbose) cout << "[  All  ] Expected:   " << expected << endl;
     comm.barrier();
     if(verbose) cout << "MinAll test ";
   }
-  if(globalMin != expectedGlobalMin) {
+  if(allVals != expected) {
     if(verbose) cout << "failed" << endl;
     ierr++;
   }
@@ -258,23 +246,18 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   
   // test scanSum
   if(verbose) cout << "Testing scanSum... ";
-  indexToUse = 2;
-  PacketType localScanSum = myVals[indexToUse];
-  PacketType globalScanSum = Teuchos::ScalarTraits<PacketType>::zero();
-  comm.scanSum(&localScanSum, &globalScanSum, Teuchos::OrdinalTraits<OrdinalType>::one());
-  PacketType expectedScanSum = Teuchos::ScalarTraits<PacketType>::zero();
-  for(int x = 0; x <= myImageID; x++)
-    expectedScanSum += generateValue(intToScalar<PacketType>(x), intToScalar<PacketType>(indexToUse));
+  comm.scanSum(&myVals.front(), &allVals.front(), length);
+  generateRowSums(expected, 0, myImageID, length);
   if(debug) {
     if(verbose) cout << endl;
     comm.barrier();
-    cout << "[Image " << myImageID << "] localScanSum:  " << localScanSum << endl;
-    cout << "[Image " << myImageID << "] globalScanSum: " << globalScanSum << endl;
-    cout << "[Image " << myImageID << "] Expected:      " << expectedScanSum << endl;
+    cout << "[Image " << myImageID << "] localScanSums:  " << myVals << endl;
+    cout << "[Image " << myImageID << "] globalScanSums: " << allVals << endl;
+    cout << "[Image " << myImageID << "] Expected:       " << expected << endl;
     comm.barrier();
     if(verbose) cout << "ScanSum test ";
   }
-  if(globalScanSum != expectedScanSum) {
+  if(allVals != expected) {
     if(verbose) cout << "failed" << endl;
     ierr++;
   }

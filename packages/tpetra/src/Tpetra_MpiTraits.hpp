@@ -129,60 +129,41 @@ namespace Tpetra {
 	};
 
   //======================================================================
-  // custom specialization for complex<double>
+  // custom specialization for complex<T>
   //======================================================================
-
-  void complexSum(complex<double>* in, complex<double>* inout, int* len, MPI_Datatype* dptr) {
-    for(int i = 0; i < *len; i++) {
-      *inout += *in;
-      in++;
-      inout++;
-    }
-  }
   
-  void complexMax(complex<double>* in, complex<double>* inout, int* len, MPI_Datatype* dptr) {
-    for(int i = 0; i < *len; i++) {
-      if(Teuchos::ScalarTraits< complex<double> >::magnitude(*in) > Teuchos::ScalarTraits< complex<double> >::magnitude(*inout))
-        *inout = *in;
-      in++;
-      inout++;
-    }
-  }
-  
-  void complexMin(complex<double>* in, complex<double>* inout, int* len, MPI_Datatype* dptr) {
-    for(int i = 0; i < *len; i++) {
-      if(Teuchos::ScalarTraits< complex<double> >::magnitude(*in) < Teuchos::ScalarTraits< complex<double> >::magnitude(*inout))
-        *inout = *in;
-      in++;
-      inout++;
-    }
-  }
-  
-  // we assume that complex is implemented like a struct, so that the real
-  // and imaginary parts are contiguously stored, and there is no other
-  // data stored with it. i.e. sizeof(complex<T> == (sizeof(T) * 2)
-	template<>
-	struct MpiTraits< complex<double> > {
-    static MPI_Datatype datatype() {
-      return(MPI_DOUBLE);
+  template<typename T>
+    struct MpiTraits< complex<T> > {
+      static MPI_Datatype datatype() {return(MpiTraits<T>::datatype());};
+      static inline int count(int userCount) {return(userCount * 2);};
+      static MPI_Op sumOp() {return(MpiTraits<T>::sumOp());};
+      static MPI_Op maxOp() {
+        MPI_Op myOp;
+        MPI_Op_create((MPI_User_function*)complexMax, true, &myOp);
+        return(myOp);
+      };
+      static MPI_Op minOp() {
+        MPI_Op myOp;
+        MPI_Op_create((MPI_User_function*)complexMin, true, &myOp);
+        return(myOp);
+      };
+      static void complexMin(complex<T>* in, complex<T>* inout, int* len, MPI_Datatype* dptr) {
+        for(int i = 0; i < *len; i++) {
+          if(Teuchos::ScalarTraits< complex<T> >::magnitude(*in) < Teuchos::ScalarTraits< complex<T> >::magnitude(*inout))
+            *inout = *in;
+          in++;
+          inout++;
+        }
+      };
+      static void complexMax(complex<T>* in, complex<T>* inout, int* len, MPI_Datatype* dptr) {
+        for(int i = 0; i < *len; i++) {
+          if(Teuchos::ScalarTraits< complex<T> >::magnitude(*inout) < Teuchos::ScalarTraits< complex<T> >::magnitude(*in))
+            *inout = *in;
+          in++;
+          inout++;
+        }
+      };
     };
-    static inline int count(int userCount) {return(userCount * 2);};
-    static MPI_Op sumOp() {
-      MPI_Op myOp;
-      MPI_Op_create((MPI_User_function*)complexSum, true, &myOp);
-      return(myOp);
-    };
-    static MPI_Op maxOp() {
-      MPI_Op myOp;
-      MPI_Op_create((MPI_User_function*)complexMax, true, &myOp);
-      return(myOp);
-    };
-    static MPI_Op minOp() {
-      MPI_Op myOp;
-      MPI_Op_create((MPI_User_function*)complexMin, true, &myOp);
-      return(myOp);
-    };
-	};
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
    
