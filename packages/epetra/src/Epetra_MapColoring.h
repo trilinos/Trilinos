@@ -272,8 +272,10 @@ class Epetra_MapColoring: public Epetra_DistObject {
     
     ListItem( const int itemValue = 0, ListItem * nextItem = 0)
       : ItemValue(itemValue), NextItem(nextItem){}
-    ListItem(const Epetra_MapColoring::ListItem & Item); // Make these inaccessible
-    ListItem & operator=(const Epetra_MapColoring::ListItem & Item);
+
+    // Constructors commented out due to Intel v.7.1 compiler error (4/2005).
+    //ListItem(const Epetra_MapColoring::ListItem & Item); // Make these inaccessible
+    //ListItem & operator=(const Epetra_MapColoring::ListItem & Item);
   };
   
   int DefaultColor_;

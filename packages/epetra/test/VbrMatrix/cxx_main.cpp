@@ -819,6 +819,7 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   Epetra_MultiVector my(Map, NumVecs);
   Epetra_MultiVector check_my(Map, NumVecs);
   Epetra_MultiVector check_mytranspose(Map, NumVecs);
+  mx.Random(); // Fill mx with random numbers
 #if 0 
   CrsMX = mx; 
   CrsA->Multiply( false, CrsMX, CrsMY ) ; 
@@ -1149,8 +1150,8 @@ int main(int argc, char *argv[])
   if (verbose && Comm.MyPID()!=0) verbose = false;
 
 
-//  int NumMyElements = 1000;
-  int NumMyElements = 3; 
+  int NumMyElements = 400;
+  //  int NumMyElements = 3; 
   int MinSize = 2;
   int MaxSize = 8;
   bool NoExtraBlocks = false; 

@@ -570,5 +570,10 @@ void Epetra_LAPACK::GGLSE(const int M, const int N, const int P, double* A, cons
 			  double* C, double* D, double* X, double* WORK, const int LWORK, int* INFO) const{
   DGGLSE_F77(&M, &N, &P, A, &LDA, B, &LDB, C, D, X, WORK, &LWORK,  INFO);
 }
+//=============================================================================
+void Epetra_LAPACK::GGLSE(const int M, const int N, const int P, float* A, const int LDA, float* B, const int LDB, 
+			  float* C, float* D, float* X, float* WORK, const int LWORK, int* INFO) const{
+  SGGLSE_F77(&M, &N, &P, A, &LDA, B, &LDB, C, D, X, WORK, &LWORK,  INFO);
+}
 
 

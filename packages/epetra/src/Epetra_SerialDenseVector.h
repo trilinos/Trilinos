@@ -84,6 +84,7 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
 
   public:
   
+  //@{ \name Constructors/destructors.
   //! Default constructor; defines a zero size object.
   /*!
     Epetra_SerialDenseVector objects defined by the default constructor should be sized with the 
@@ -121,6 +122,13 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
   
   Epetra_SerialDenseVector(const Epetra_SerialDenseVector& Source);
   
+
+  //! Epetra_SerialDenseVector destructor.  
+  virtual ~Epetra_SerialDenseVector ();
+  //@}
+
+  //@{ \name Post-construction modification routines.
+
   //! Set length of a Epetra_SerialDenseVector object; init values to zero.
   /*!
     \param In 
@@ -148,9 +156,9 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
   */
   int Resize(int Length) {return(Epetra_SerialDenseMatrix::Reshape(Length, 1));};
 
-  //! Epetra_SerialDenseVector destructor.  
-  virtual ~Epetra_SerialDenseVector ();
+  //@}
 
+  //@{ \name Element access methods.
   //! Value copy from one vector to another.
   /*!
     The operator= allows one to copy the values from one existing SerialDenseVector to another, as
@@ -196,6 +204,9 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
   */
     const double& operator [] (int Index) const;
 
+  //@}
+
+  //@{ \name Mathematical methods.
   //! Set vector values to random numbers.
   /*! 
 		SerialDenseVector uses the random number generator provided by Epetra_Util.
@@ -205,6 +216,36 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
   */
   int Random();
     
+  //! Compute 1-norm of each vector in multi-vector.
+  /*!
+    \param x (In) Input vector x.
+
+    \return Dot-product of the \e this vector and x.
+  */
+  double Dot(const Epetra_SerialDenseVector & x) const;
+
+  //! Compute 1-norm of each vector in multi-vector.
+  /*!
+    \return 1-norm of the vector.
+  */
+  double Norm1() const;
+
+  //! Compute 2-norm of each vector in multi-vector.
+  /*!
+    \param Out
+    \return 2-norm of the vector.
+  */
+  double Norm2() const;
+
+  //! Compute Inf-norm of each vector in multi-vector.
+  /*!
+    \return Infinity-norm of the vector.
+  */
+  double NormInf() const;
+
+  //@}
+
+  //@{ \name Attribute access methods.
   //! Returns length of vector.
   int Length() const {return(M_);};
 
@@ -213,6 +254,8 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
 
 	//! Returns the data access mode of the \e this vector.
 	Epetra_DataAccess CV() const {return(CV_);};
+
+  //@}
 
   //@{ \name I/O methods
   //! Print service methods; defines behavior of ostream << operator.

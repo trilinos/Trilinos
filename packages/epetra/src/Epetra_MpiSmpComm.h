@@ -345,7 +345,7 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
   return;}
 
   //! Print method that implements Epetra_Comm virtual PrintInfo method
-  void PrintInfo(ostream & os) const {Epetra_MpiSerialComm::Print(os);return;};
+  void PrintInfo(ostream & os) const {Epetra_MpiSmpComm::Print(os);return;};
 
   //@}
 

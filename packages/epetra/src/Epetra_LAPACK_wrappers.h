@@ -41,6 +41,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define Epetra_fcd fcd
 #define PREFIX
 
+/* CRAY Single precision is used like everyone else's double precision */
 #define DGECON_F77  SGECON
 #define DGEEQU_F77  SGEEQU
 #define DGEEV_F77   SGEEV
@@ -116,7 +117,23 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define Epetra_fcd const char *
 #define PREFIX
 
+/* Use autoconf's definition of F77_FUNC
+   unless using old make system */
+
+#ifndef HAVE_CONFIG_H
+
+#ifdef F77_FUNC
+#undef F77_FUNC
 #endif
+
+#ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
+#define F77_FUNC(lcase,UCASE) lcase
+#else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
+#define F77_FUNC(lcase,UCASE) lcase ## _
+#endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
+
+#endif /* !HAVE_CONFIG_H */
+#endif /* defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL) */
 
 #ifndef CRAY_T3X
 

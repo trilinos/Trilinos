@@ -93,7 +93,7 @@ UNIPROC = \
 	$(srcdir)/Epetra_dcrsmv.f \
 	$(srcdir)/Epetra_dcrsmm.f \
 	$(srcdir)/Epetra_dcrssv.f \
-	$(srcdir)/Epetra_dcrsmm.f
+	$(srcdir)/Epetra_dcrssm.f
 
 SERIAL_H = \
 	$(srcdir)/Epetra_SerialComm.h  \
@@ -134,6 +134,7 @@ EXTRA_MPISMP_H = \
 	$(srcdir)/Epetra_MpiCommData.h \
 	$(srcdir)/Epetra_MpiSmpComm.h \
 	$(srcdir)/Epetra_MpiSmpCommData.h
+
 
 EXTRA_MPISMP = \
 	$(srcdir)/Epetra_MpiComm.cpp \

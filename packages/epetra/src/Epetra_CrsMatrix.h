@@ -1117,6 +1117,11 @@ or if the number of entries in this row exceed the Length parameter.
   mutable Epetra_MultiVector* ExportVector_;
 
   Epetra_DataAccess CV_;
+ private:
+
+  // These are the pre-5.0 versions of solve.  They are still faster that generic 5.0 solves, so we keep them around
+  int Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_Vector& x, Epetra_Vector& y) const;
+  int Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
 };
 #endif /* EPETRA_CRSMATRIX_H */

@@ -840,12 +840,15 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_B
   // Scan all column indices and sort into two groups: 
   // Local:  those whose GID matches a GID of the domain map on this processor and
   // Remote: All others.
+  int numDomainElements = DomainMap.NumMyElements();
+  bool * LocalGIDs  = 0;
+  if (numDomainElements>0) LocalGIDs  = new bool[numDomainElements];
+  for (int i=0; i<numDomainElements; i++) LocalGIDs[i] = false; // Assume domain GIDs are not local
 
-  int hashSize = DomainMap.NumMyElements();
-  if (hashSize<5) hashSize = 5; // Make sure there are at least a few elements in this hash table
-  Epetra_HashTable LocalGIDs(hashSize);
-  Epetra_HashTable RemoteGIDs(hashSize);
-  Epetra_HashTable RemoteGIDList(hashSize);
+  // In principle it is good to have RemoteGIDs and RemotGIDList be as long as the number of remote GIDs
+  // on this processor, but this would require two passes through the column IDs, so we make it 100
+  Epetra_HashTable RemoteGIDs(100); 
+  Epetra_HashTable RemoteGIDList(100);
 
   int NumLocalColGIDs = 0;
   int NumRemoteColGIDs = 0;
@@ -857,8 +860,11 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_B
       int GID = ColIndices[j];
       // Check if GID matches a row GID
       if(DomainMap.MyGID(GID)) {
-	if(LocalGIDs.Get(GID) == -1) // This means its a new local GID
-	  LocalGIDs.Add(GID, NumLocalColGIDs++);
+	bool alreadyFound = LocalGIDs[DomainMap.LID(GID)];
+	if (!alreadyFound) {
+	LocalGIDs[DomainMap.LID(GID)] = true; // There is a column in the graph associated with this domain map GID
+	NumLocalColGIDs++;
+	}
       }
       else {
 	if(RemoteGIDs.Get(GID) == -1) { // This means its a new remote GID
@@ -869,6 +875,18 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_B
     }
   }
 
+  // Possible short-circuit:  If all domain map GIDs are present as column indices, then set ColMap=DomainMap and quit
+  if (DomainMap.Comm().NumProc()==1) { 
+    
+    assert(NumRemoteColGIDs==0); // Sanity test: When one processor,there can be no remoteGIDs
+    if (NumLocalColGIDs==numDomainElements) {
+      CrsGraphData_->ColMap_ = DomainMap;
+      CrsGraphData_->HaveColMap_ = true;
+      if (LocalGIDs!=0) delete [] LocalGIDs; 
+      return(0); 
+    }
+  }
+      
   // Now build integer array containing column GIDs
   // Build back end, containing remote GIDs, first
   int NumMyBlockCols = NumLocalColGIDs + NumRemoteColGIDs;
@@ -925,15 +943,17 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_B
       ElementSizeList = DomainMap.ElementSizeList();
     int NumLocalAgain = 0;
     for(i = 0; i < NumMyElements; i++) {
-      int GID = MyGlobalElements[i];
-      if(LocalGIDs.Get(GID) != -1) {
+      if(LocalGIDs[i]) {
 	if(DoSizes) 
 	  SizeList[NumLocalAgain] = ElementSizeList[i];
-	ColIndices[NumLocalAgain++] = GID;
+	ColIndices[NumLocalAgain++] = MyGlobalElements[i];
       }
     }
     assert(NumLocalAgain==NumLocalColGIDs); // Sanity test
   }
+
+  // Done with this array
+  if (LocalGIDs!=0) delete [] LocalGIDs; 
 
 
   // Make Column map with same element sizes as Domain map
@@ -1068,8 +1088,8 @@ int Epetra_CrsGraph::OptimizeStorage() {
     }
   } // End of !Contiguous section
   else {
-    if (numMyBlockRows > 0) {
-      //if contiguous, set All_Indices_ from CrsGraphData_->Indices_[0].
+    //if contiguous, set All_Indices_ from CrsGraphData_->Indices_[0].
+    if (numMyBlockRows > 0 && !(CrsGraphData_->StaticProfile_)) {
       int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
       int* all_indices_values = CrsGraphData_->All_Indices_.Values();
       int* indices_values = CrsGraphData_->Indices_[0];

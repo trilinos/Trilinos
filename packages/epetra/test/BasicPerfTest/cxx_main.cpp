@@ -26,6 +26,8 @@
 // ************************************************************************
 //@HEADER
 
+#define EPETRA_SHORT_PERFTEST
+#define EPETRA_HAVE_STATICPROFILE
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_BlockMap.h"
@@ -46,7 +48,9 @@
 #endif
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
+#ifdef EPETRA_HAVE_JADOPERATOR
 #include "Epetra_JadOperator.h"
+#endif
 
 // prototypes
 
@@ -93,10 +97,10 @@ void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int n
 
 void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
 		    Epetra_MultiVector * xexact, bool StaticProfile, bool verbose, bool summary);
-
+#ifdef EPETRA_HAVE_JADOPERATOR
 void runJadOperatorTests(Epetra_JadOperator * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
 		    Epetra_MultiVector * xexact, bool StaticProfile, bool verbose, bool summary);
-
+#endif
 void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_MultiVector * btL, Epetra_MultiVector * xexactL, 
 		      Epetra_CrsMatrix * U,  Epetra_MultiVector * bU, Epetra_MultiVector * btU, Epetra_MultiVector * xexactU, 
 		      bool StaticProfile, bool verbose, bool summary);
@@ -326,10 +330,19 @@ int main(int argc, char *argv[])
   //Timings
   Epetra_Flops flopcounter;
   Epetra_Time timer(comm);
-		
-  for (int j=0; j<2; j++) {
-    for (int k=1; k<16; k++) {
+
+#ifdef EPETRA_SHORT_PERFTEST
+  int jstop = 1;
+#else
+  int jstop = 2;
+#endif
+  for (int j=0; j<jstop; j++) {
+    for (int k=1; k<17; k++) {
+#ifdef EPETRA_SHORT_PERFTEST
+      if (k<6 || k%4==0) {
+#else
       if (k<7 || k%2==0) {
+#endif
       int nrhs=k;
       if (verbose) cout << "\n*************** Results for " << nrhs << " RHS with ";
 
@@ -341,6 +354,9 @@ int main(int argc, char *argv[])
       GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
 			 Xoff.Values(), Yoff.Values(), nrhs, comm, verbose, summary,
 			 map, A, b, bt, xexact, StaticProfile, false);
+
+      
+#ifdef EPETRA_HAVE_JADOPERATOR
       
       timer.ResetStartTime();
       Epetra_JadOperator JA(*A);
@@ -352,6 +368,7 @@ int main(int argc, char *argv[])
 
       runJadOperatorTests(&JA, b, bt, xexact, StaticProfile, verbose, summary);
 
+#endif
       runMatrixTests(A, b, bt, xexact, StaticProfile, verbose, summary);
 
       delete A;
@@ -532,11 +549,22 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   int numGlobalEquations = map->NumGlobalElements();
 
   int profile = 0; if (StaticProfile) profile = numPoints;
-  
+
+#ifdef EPETRA_HAVE_STATICPROFILE
+
   if (MakeLocalOnly) 
     A = new Epetra_CrsMatrix(Copy, *map, *map, profile, StaticProfile); // Construct matrix with rowmap=colmap
   else
     A = new Epetra_CrsMatrix(Copy, *map, profile, StaticProfile); // Construct matrix
+
+#else
+
+  if (MakeLocalOnly) 
+    A = new Epetra_CrsMatrix(Copy, *map, *map, profile); // Construct matrix with rowmap=colmap
+  else
+    A = new Epetra_CrsMatrix(Copy, *map, profile); // Construct matrix
+
+#endif
 
   int * indices = new int[numPoints];
   double * values = new double[numPoints];
@@ -814,7 +842,12 @@ void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiV
     std::string contig = "without";
     if (j>1) contig =    "with   ";
     
-    for (int k=0; k<2; k++) { // Loop over old multiply vs. new multiply
+#ifdef EPETRA_SHORT_PERFTEST
+    int kstart = 1;
+#else
+    int kstart = 0;
+#endif
+    for (int k=kstart; k<2; k++) { // Loop over old multiply vs. new multiply
       
       std::string oldnew = "old";
       if (k>0) oldnew =    "new";
@@ -826,8 +859,10 @@ void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiV
 
       if (k==0) {
 	//10 matvecs
+#ifndef EPETRA_SHORT_PERFTEST
 	for( int i = 0; i < 10; ++i )
 	  A->Multiply1(TransA, *xexact, z); // Compute z = A*xexact or z = A'*xexact using old Multiply method
+#endif
       }
       else {
 	//10 matvecs
@@ -849,7 +884,7 @@ void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiV
       if (verbose) cout << "ResNorm = " << resvec.NormInf() << ": ";
       double MFLOPs = total_flops/elapsed_time/1000000.0;
       if (verbose) cout << "Total MFLOPs for 10 " << oldnew << " MatVec's with " << statdyn << " Profile (Trans = " << TransA
-			<< ")  and " << contig << " optimized storage = " << MFLOPs <<endl;
+			<< ")  and " << contig << " optimized storage = " << MFLOPs << " (" << elapsed_time << " s)" <<endl;
       if (summary) {
 	if (A->Comm().NumProc()==1) {
 	  if (TransA) cout << "TransMv" << statdyn<< "Prof" << contig << "OptStor" << '\t';
@@ -861,6 +896,7 @@ void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiV
   }
   return;
 }
+#ifdef EPETRA_HAVE_JADOPERATOR
 void runJadOperatorTests(Epetra_JadOperator * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
 		    Epetra_MultiVector * xexact, bool StaticProfile, bool verbose, bool summary) {
 
@@ -898,7 +934,7 @@ void runJadOperatorTests(Epetra_JadOperator * A,  Epetra_MultiVector * b, Epetra
     if (verbose) cout << "ResNorm = " << resvec.NormInf() << ": ";
     double MFLOPs = total_flops/elapsed_time/1000000.0;
     if (verbose) cout << "Total MFLOPs for 10 " << " Jagged Diagonal MatVec's with (Trans = " << TransA
-		      << ") " << MFLOPs <<endl;
+		      << ") " << MFLOPs << " (" << elapsed_time << " s)" <<endl;
     if (summary) {
       if (A->Comm().NumProc()==1) {
 	if (TransA) cout << "TransMv" << '\t';
@@ -909,6 +945,7 @@ void runJadOperatorTests(Epetra_JadOperator * A,  Epetra_MultiVector * b, Epetra
   }
   return;
 }
+#endif
 //=========================================================================================
 void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_MultiVector * btL, Epetra_MultiVector * xexactL, 
 		      Epetra_CrsMatrix * U,  Epetra_MultiVector * bU, Epetra_MultiVector * btU, Epetra_MultiVector * xexactU, 
@@ -973,7 +1010,7 @@ void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_Mul
     if (verbose) cout << "ResNorm = " << resvec.NormInf() << ": ";
     double MFLOPs = total_flops/elapsed_time/1000000.0;
     if (verbose) cout << "Total MFLOPs for 10 " << " Lower solves " << statdyn << " Profile (Trans = " << TransA
-		      << ")  and " << contig << " opt storage = " << MFLOPs <<endl;
+		      << ")  and " << contig << " opt storage = " << MFLOPs << " (" << elapsed_time << " s)" <<endl;
     if (summary) {
       if (L->Comm().NumProc()==1) {
 	if (TransA) cout << "TransLSv" << statdyn<< "Prof" << contig << "OptStor" << '\t';

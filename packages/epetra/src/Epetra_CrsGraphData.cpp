@@ -161,7 +161,7 @@ Epetra_CrsGraphData::~Epetra_CrsGraphData() {
 
   if(Indices_ != 0 && !StorageOptimized_) {
     for (int i=0; i<NumMyBlockRows_; i++) {
-      if (Indices_[i]!=0 && CV_==Copy) 
+      if (Indices_[i]!=0 && CV_==Copy && !StaticProfile_) 
 	delete [] Indices_[i]; 
       Indices_[i] = 0;
     } 

@@ -59,29 +59,6 @@ Epetra_SerialDenseVector::~Epetra_SerialDenseVector()
 {}
 
 //=========================================================================
-/*double& Epetra_SerialDenseVector::operator() (int Index)  {
-  if (Index >= M_ || Index < 0)
-		throw ReportError("Index = " +toString(Index) + " Out of Range 0 - " + toString(M_-1), -1); 
-  return(A_[Index]); 
-} 
-//=========================================================================
-const double& Epetra_SerialDenseVector::operator() (int Index) const  { 
-  if (Index >= M_ || Index < 0)  
-		throw ReportError("Index = " +toString(Index) + " Out of Range 0 - " + toString(M_-1), -1); 
-   return(A_[Index]); 
-}
-//=========================================================================
-const double& Epetra_SerialDenseVector::operator [] (int Index) const  { 
-   return(A_[Index]); 
-} 
-//=========================================================================
-double& Epetra_SerialDenseVector::operator [] (int Index)  { 
-  if (Index >= M_ || Index < 0)  
-		throw ReportError("Index = " +toString(Index) + " Out of Range 0 - " + toString(M_-1), -1); 
-   return(A_[Index]); 
-}*/
-
-//=========================================================================
 Epetra_SerialDenseVector& Epetra_SerialDenseVector::operator = (const Epetra_SerialDenseVector& Source) {
 	Epetra_SerialDenseMatrix::operator=(Source); // call this->Epetra_SerialDenseMatrix::operator =
 	return(*this);
@@ -93,6 +70,60 @@ int Epetra_SerialDenseVector::Random() {
 	return(errorcode);
 }
 
+//=========================================================================
+double  Epetra_SerialDenseVector::Dot(const Epetra_SerialDenseVector & x) const {
+  
+#ifdef HAVE_EPETRA_ARRAY_BOUNDS_CHECK
+  if (Length()!=x.Length()) 
+    throw ReportError("Length of this object = " + 
+		      toString(Length()) + " is not equal to length of x = "  + toString(x.Length()), -1);
+#endif
+
+  // dot-product of this and x.
+    
+  double result = DOT(Length(), Values(), x.Values());
+  
+  UpdateFlops(2*Length());
+
+  return(result);
+}
+
+//=========================================================================
+double  Epetra_SerialDenseVector::Norm1() const {
+  
+  // 1-norm of vector
+    
+  double result = ASUM(Length(), Values());
+  
+  UpdateFlops(2*Length());
+
+  return(result);
+}
+
+//=========================================================================
+double  Epetra_SerialDenseVector::Norm2() const {
+  
+  // 2-norm of vector
+    
+  double result = NRM2(Length(), Values());
+  
+  UpdateFlops(2*Length());
+
+  return(result);
+}
+//=========================================================================
+double  Epetra_SerialDenseVector::NormInf() const {
+  
+  // Inf-norm of vector
+  double result = 0.0;
+  int j = IAMAX(Length(), Values()); // Location of max (-1) if length zero
+
+  if (j>-1) result = fabs( (*this)[j]);
+  
+  // UpdateFlops(2*Length()); // Technically there are no FLOPS
+
+  return(result);
+}
 //=========================================================================
 void Epetra_SerialDenseVector::Print(ostream& os) const {
 	if(CV_ == Copy)

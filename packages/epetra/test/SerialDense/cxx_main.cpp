@@ -380,31 +380,53 @@ int main(int argc, char *argv[])
   
   delete [] C1;
 
-	// now test sized/shaped constructor
-	Epetra_SerialDenseMatrix shapedMatrix(10, 12);
-	assert(shapedMatrix.M() == 10);
-	assert(shapedMatrix.N() == 12);
-	for(i = 0; i < 10; i++)
-		for(j = 0; j < 12; j++)
-			assert(shapedMatrix(i, j) == 0.0);
-	Epetra_SerialDenseVector sizedVector(20);
-	assert(sizedVector.Length() == 20);
-	for(i = 0; i < 20; i++)
-		assert(sizedVector(i) == 0.0);
-	if (verbose)
-		cout << "Shaped/sized constructors check OK." << endl;
+  // now test sized/shaped constructor
+  Epetra_SerialDenseMatrix shapedMatrix(10, 12);
+  assert(shapedMatrix.M() == 10);
+  assert(shapedMatrix.N() == 12);
+  for(i = 0; i < 10; i++)
+    for(j = 0; j < 12; j++)
+      assert(shapedMatrix(i, j) == 0.0);
+  Epetra_SerialDenseVector sizedVector(20);
+  assert(sizedVector.Length() == 20);
+  for(i = 0; i < 20; i++)
+    assert(sizedVector(i) == 0.0);
+  if (verbose)
+    cout << "Shaped/sized constructors check OK." << endl;
+  
+  // test Copy/View mode in op= and cpy ctr
+  int temperr = 0;
+  temperr = matrixAssignment(verbose, debug);
+  if(verbose && temperr == 0)
+    cout << "Operator = checked OK." << endl;
+  EPETRA_TEST_ERR(temperr, ierr);
+  temperr = matrixCpyCtr(verbose, debug);
+  if(verbose && temperr == 0)
+    cout << "Copy ctr checked OK." << endl;
+  EPETRA_TEST_ERR(temperr, ierr);
+  
+  // Test some vector methods
 
-	// test Copy/View mode in op= and cpy ctr
-	int temperr = 0;
-	temperr = matrixAssignment(verbose, debug);
-	if(verbose && temperr == 0)
-		cout << "Operator = checked OK." << endl;
-	EPETRA_TEST_ERR(temperr, ierr);
-	temperr = matrixCpyCtr(verbose, debug);
-	if(verbose && temperr == 0)
-		cout << "Copy ctr checked OK." << endl;
-	EPETRA_TEST_ERR(temperr, ierr);
-	
+  Epetra_SerialDenseVector v1(3);
+  v1[0] = 1.0;
+  v1[1] = 3.0;
+  v1[2] = 2.0;
+
+  Epetra_SerialDenseVector v2(3);
+  v2[0] = 2.0;
+  v2[1] = 1.0;
+  v2[2] = -2.0;
+
+  temperr = 0;
+  if (v1.Norm1()!=6.0) temperr++;
+  if (fabs(sqrt(14.0)-v1.Norm2())>1.0e-6) temperr++;
+  if (v1.NormInf()!=3.0) temperr++;
+  if(verbose && temperr == 0)
+    cout << "Vector Norms checked OK." << endl;
+  temperr = 0;
+  if (v1.Dot(v2)!=1.0) temperr++;
+  if(verbose && temperr == 0)
+    cout << "Vector Dot product checked OK." << endl;
 
 #ifdef EPETRA_MPI
   MPI_Finalize() ;

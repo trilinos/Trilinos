@@ -33,8 +33,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define EPETRA_BLAS_WRAPPERS_H
 
 #include "Epetra_ConfigDefs.h"
-#include <stdio.h>
-#include <string.h>
+/* #include <stdio.h> */
+/* #include <string.h> */
 
 
 /* Define fcd (Fortran Epetra_fcd descriptor) for non-standard situations */
@@ -48,74 +48,34 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define PREFIX
 #define Epetra_fcd fcd
 
-#define DASUM_F77   F77_FUNC(sasum,SASUM)
-#define DAXPY_F77   F77_FUNC(saxpy,SAXPY)
-#define DCOPY_F77   F77_FUNC(scopy,SCOPY)
-#define DDOT_F77    F77_FUNC(sdot,SDOT)
-#define DNRM2_F77   F77_FUNC(snrm2,SNRM2)
-#define DSCAL_F77   F77_FUNC(sscal,SSCAL)
-#define IDAMAX_F77  F77_FUNC(isamax,ISAMAX)
-#define DGEMV_F77   F77_FUNC(sgemv,SGEMV)
-#define DGER_F77    F77_FUNC(sger,SGER)
-#define DTRMV_F77   F77_FUNC(strmv,STRMV)
-#define DGEMM_F77   F77_FUNC(sgemm,SGEMM)
-#define DSYMM_F77   F77_FUNC(ssymm,SSYMM)
-#define DTRMM_F77   F77_FUNC(strmm,STRMM)
-#define DTRSM_F77   F77_FUNC(strsm,STRSM)
-#define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
-#define EPETRA_DCRSMM_F77   F77_FUNC_(epetra_dcrsmm,EPETRA_DCRSMM)
-#define EPETRA_DCRSSV_F77   F77_FUNC_(epetra_dcrssv,EPETRA_DCRSSV)
-#define EPETRA_DCRSSM_F77   F77_FUNC_(epetra_dcrssm,EPETRA_DCRSSM)
+#define DASUM_F77   SASUM
+#define DAXPY_F77   SAXPY
+#define DCOPY_F77   SCOPY
+#define DDOT_F77    SDOT
+#define DNRM2_F77   SNRM2
+#define DSCAL_F77   SSCAL
+#define IDAMAX_F77  ISAMAX
+#define DGEMV_F77   SGEMV
+#define DGER_F77    SGER
+#define DTRMV_F77   STRMV
+#define DGEMM_F77   SGEMM
+#define DSYMM_F77   SSYMM
+#define DTRMM_F77   STRMM
+#define DTRSM_F77   STRSM
+#define EPETRA_DCRSMV_F77   EPETRA_DCRSMV
+#define EPETRA_DCRSMM_F77   EPETRA_DCRSMM
+#define EPETRA_DCRSSV_F77   EPETRA_DCRSSV
+#define EPETRA_DCRSSM_F77   EPETRA_DCRSSM
 
 #elif defined(INTEL_CXML)
 
 #define PREFIX __stdcall
 #define Epetra_fcd const char *, const unsigned int
 
-#define DASUM_F77   F77_FUNC(dasum,DASUM)
-#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
-#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
-#define DDOT_F77    F77_FUNC(ddot,DDOT)
-#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
-#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
-#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
-#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
-#define DGER_F77    F77_FUNC(dger,DGER)
-#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
-#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
-#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
-#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
-#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
-#define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
-#define EPETRA_DCRSMM_F77   F77_FUNC_(epetra_dcrsmm,EPETRA_DCRSMM)
-#define EPETRA_DCRSSV_F77   F77_FUNC_(epetra_dcrssv,EPETRA_DCRSSV)
-#define EPETRA_DCRSSM_F77   F77_FUNC_(epetra_dcrssm,EPETRA_DCRSSM)
-
-
 #elif defined(INTEL_MKL)
 
 #define PREFIX
 #define Epetra_fcd const char *
-
-#define DASUM_F77   F77_FUNC(dasum,DASUM)
-#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
-#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
-#define DDOT_F77    F77_FUNC(ddot,DDOT)
-#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
-#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
-#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
-#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
-#define DGER_F77    F77_FUNC(dger,DGER)
-#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
-#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
-#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
-#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
-#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
-#define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
-#define EPETRA_DCRSMM_F77   F77_FUNC_(epetra_dcrsmm,EPETRA_DCRSMM)
-#define EPETRA_DCRSSV_F77   F77_FUNC_(epetra_dcrssv,EPETRA_DCRSSV)
-#define EPETRA_DCRSSM_F77   F77_FUNC_(epetra_dcrssm,EPETRA_DCRSSM)
-
 
 #endif 
 
@@ -159,7 +119,12 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define F77_FUNC(lcase,UCASE) lcase ## _
 #define F77_FUNC_(lcase,UCASE) lcase ## __
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
+
 #endif /* HAVE_CONFIG_H */
+
+#endif /* defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL) */
+
+#ifndef CRAY_T3X /* Double declarations already done for the Cray */
 
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
 #define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
@@ -180,8 +145,11 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define EPETRA_DCRSSV_F77   F77_FUNC_(epetra_dcrssv,EPETRA_DCRSSV)
 #define EPETRA_DCRSSM_F77   F77_FUNC_(epetra_dcrssm,EPETRA_DCRSSM)
 
+/* End of defines for double precision when not on a T3X */
 
 #endif
+
+/* The following defines are good for all platforms */
 
 
 #define SSCAL_F77   F77_FUNC(sscal,SSCAL)

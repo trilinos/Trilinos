@@ -128,7 +128,8 @@ am__libepetra_a_SOURCES_DIST = $(srcdir)/Epetra_BLAS.cpp \
 	$(srcdir)/Epetra_IntSerialDenseMatrix.cpp \
 	$(srcdir)/Epetra_IntSerialDenseVector.cpp \
 	$(srcdir)/Epetra_dcrsmv.f $(srcdir)/Epetra_dcrsmm.f \
-	$(srcdir)/Epetra_dcrssv.f $(srcdir)/Epetra_SerialComm.cpp \
+	$(srcdir)/Epetra_dcrssv.f $(srcdir)/Epetra_dcrssm.f \
+	$(srcdir)/Epetra_SerialComm.cpp \
 	$(srcdir)/Epetra_SerialCommData.cpp \
 	$(srcdir)/Epetra_SerialDistributor.cpp \
 	$(srcdir)/Epetra_BasicDirectory.cpp \
@@ -168,7 +169,7 @@ am__objects_3 = Epetra_SerialDenseMatrix.$(OBJEXT) \
 	Epetra_IntSerialDenseMatrix.$(OBJEXT) \
 	Epetra_IntSerialDenseVector.$(OBJEXT) Epetra_dcrsmv.$(OBJEXT) \
 	Epetra_dcrsmm.$(OBJEXT) Epetra_dcrssv.$(OBJEXT) \
-	Epetra_dcrsmm.$(OBJEXT)
+	Epetra_dcrssm.$(OBJEXT)
 am__objects_4 = Epetra_SerialComm.$(OBJEXT) \
 	Epetra_SerialCommData.$(OBJEXT) \
 	Epetra_SerialDistributor.$(OBJEXT)
@@ -486,7 +487,7 @@ UNIPROC = \
 	$(srcdir)/Epetra_dcrsmv.f \
 	$(srcdir)/Epetra_dcrsmm.f \
 	$(srcdir)/Epetra_dcrssv.f \
-	$(srcdir)/Epetra_dcrsmm.f
+	$(srcdir)/Epetra_dcrssm.f
 
 SERIAL_H = \
 	$(srcdir)/Epetra_SerialComm.h  \
@@ -1651,6 +1652,12 @@ Epetra_dcrssv.o: $(srcdir)/Epetra_dcrssv.f
 
 Epetra_dcrssv.obj: $(srcdir)/Epetra_dcrssv.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o Epetra_dcrssv.obj `if test -f '$(srcdir)/Epetra_dcrssv.f'; then $(CYGPATH_W) '$(srcdir)/Epetra_dcrssv.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_dcrssv.f'; fi`
+
+Epetra_dcrssm.o: $(srcdir)/Epetra_dcrssm.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o Epetra_dcrssm.o `test -f '$(srcdir)/Epetra_dcrssm.f' || echo '$(srcdir)/'`$(srcdir)/Epetra_dcrssm.f
+
+Epetra_dcrssm.obj: $(srcdir)/Epetra_dcrssm.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o Epetra_dcrssm.obj `if test -f '$(srcdir)/Epetra_dcrssm.f'; then $(CYGPATH_W) '$(srcdir)/Epetra_dcrssm.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_dcrssm.f'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
