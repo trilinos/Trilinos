@@ -503,9 +503,9 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
    
    //======do this level's FAS-iteration or postsmoothing================
    // iterate
-   if (level>0)
+   if (level>0 && FAS_postsmooth_>0)
       *converged = nlnLevel_[level]->iterate(f,x,FAS_postsmooth_);
-   else
+   else if (FAS_postfinesmooth_>0)
       *converged = nlnLevel_[level]->iterate(f,x,FAS_postfinesmooth_);
    // reset the system
    nlnLevel_[level]->setModifiedSystem(false,NULL,NULL);
@@ -611,7 +611,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle1(Epetra_Vector* f, Epetra_V
    delete xcorrect; xcorrect = 0;
    
    //======do this level's FAS-iteration or postsmoothing================
-   if (level>0)
+   if (level>0 && FAS_postsmooth_>0)
    {
       // iterate
       *converged = nlnLevel_[level]->iterate(f,x,FAS_postsmooth_);
@@ -623,7 +623,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle1(Epetra_Vector* f, Epetra_V
       delete xbar;  xbar  = 0;
       delete fxbar; fxbar = 0;
    }
-   else // level==0
+   else if (FAS_postfinesmooth_>0) // level==0
    {
       // iterate
       *converged = nlnLevel_[level]->iterate(f,x,FAS_postfinesmooth_);
