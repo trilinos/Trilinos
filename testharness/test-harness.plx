@@ -2313,6 +2313,7 @@ report($SUMMARY);
             print outFile "#   For example:\n";
             print outFile "#   MPI_STARTUP_CMD                 = \"lamboot <HOST_FILE> -v\"\n";
             print outFile "\n";
+	}
  
         push (@optionsOrder, "MPI_STARTUP_CMD");
         if (!$silent) { print outFile "MPI_STARTUP_CMD                 = \n"; }
