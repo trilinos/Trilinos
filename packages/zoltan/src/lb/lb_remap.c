@@ -1,6 +1,6 @@
-/*****************************************************************************
- * Zoltan Library for Parallel Applications                                  *
- * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
+/***************************************************************************** 
+ * Zoltan Library for Parallel Applications                                  * 
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               * 
  * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
 /*****************************************************************************
@@ -22,6 +22,14 @@ extern "C" {
 #include "hypergraph.h"
 #include <limits.h>
 
+/*
+ * Values indicating how partition remapping should be done.
+ */
+#define ZOLTAN_LB_REMAP_NONE 0
+#define ZOLTAN_LB_REMAP_PROCESSORS 1
+#define ZOLTAN_LB_REMAP_PARTITIONS 2
+
+
   /* Generate serial HG.
    * Two cases:  
    * Case 1:  HE = [OldProc, NewProc] 
@@ -32,21 +40,109 @@ extern "C" {
 
 #define HEINFO_ENTRIES 3
 
-static int gather_and_remap(ZZ *, int, int *);
-static int set_remap_flag(ZZ *);
+static int gather_and_build_remap(ZZ *, int *, int, int *);
+static int set_remap_type(ZZ *, int *);
 static int malloc_HEinfo(ZZ *, int, int **);
 static int do_match(ZZ*, HGraph *, int *, int);
+static int local_HEs_from_import_lists(ZZ *, int, int, int *, int *, int *,
+  int *, int **);
+static int local_HEs_from_export_lists(ZZ *, int, int, int *, int *, int *,
+  int *, int **);
+
+/******************************************************************************/
+
+int Zoltan_LB_Remap(
+  ZZ *zz,
+  int *new_map,        /* Upon return, flag indicating whether part or proc
+                          assignments actually changed due to remapping. */
+  int nobj,            /* # objs the processor knows about after partitioning */
+  int *proc,           /* processors for the objs; 
+                          if export_list_flag == 1, 
+                             proc contains new proc assignment
+                          else
+                             proc contains old proc assignment
+                          Upon return, proc contains remapped new proc 
+                          assignment regardless of export_list_flag's value. */
+  int *old_part,       /* old partition assignments for the objs */
+  int *new_part,       /* new partition assignments for the objs.
+                          Upon return, new_part contains remapped new
+                          partition assignments */
+  int export_list_flag /* Flag indicating whether the algorithm computes
+                          export lists or import lists. The HG for matching
+                          is built differently depending on whether 
+                          the algorithm knows export or import info.  */
+)
+{
+char *yo = "Zoltan_LB_Remap";
+int ierr = ZOLTAN_OK;
+int i;
+int remap_type;               /* Type of remapping to be done: 
+                                 Procs, Parts, or None */
+int HEcnt = 0;                /* Number of local hyperedges */
+int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and 
+                                 one edge weight. Stored as a single vector
+                                 to minimize communication calls.  */
+
+  *new_map = 0;
+
+  /* Determine type of remapping that is appropriate */
+  ierr = set_remap_type(zz, &remap_type);
+
+  if (remap_type != ZOLTAN_LB_REMAP_NONE) {
+    /* Build local hyperedges */
+    if (export_list_flag) 
+      ierr = local_HEs_from_export_lists(zz, remap_type,
+                                         nobj, proc, old_part, new_part,
+                                         &HEcnt, &HEinfo);
+    else 
+      ierr = local_HEs_from_import_lists(zz, remap_type,
+                                         nobj, proc, old_part, new_part,
+                                         &HEcnt, &HEinfo);
+
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building local HEs");
+      goto End;
+    }
+
+    /* Gather local hyperedges to each processor; build remap vector */
+    ierr = gather_and_build_remap(zz, new_map, HEcnt, HEinfo);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                         "Error returned from gather_and_build_remap.");
+      goto End;
+    }
+  
+    if (*new_map) {
+      /* Update partition and processor information for algorithms */
+      for (i = 0; i < nobj; i++) {
+        new_part[i] = zz->LB.Remap[new_part[i]];
+        proc[i] = Zoltan_LB_Part_To_Proc(zz, new_part[i], NULL);
+      }
+    }
+  }
+
+End:
+
+  ZOLTAN_FREE(&HEinfo);
+  return(ierr);
+}
 
 
 /******************************************************************************/
-int Zoltan_LB_Remap_From_Import_Lists(
+static int local_HEs_from_import_lists(
   ZZ *zz,
-  int nkeep,           /* # objs whose partition and processor are unchanged */
-  int *keep_part,      /* partition assignments for kept objs:  old == new */
-  int nimp,            /* # objs imported to this processor */
-  int *imp_old_proc,   /* processors from which objs are imported */
-  int *imp_old_part,   /* partitions from which objs are imported */
-  int *imp_new_part    /* partitions to which objs are imported */
+  int remap_type,      /* type of remapping to do:  parts, procs, or none. */
+  int nobj,            /* # objs the processor knows about (keep + imports) */
+  int *proc,           /* On input, old processor assignment for each obj; 
+                          Upon return, remapped new proc assignment for
+                          each obj. */
+  int *old_part,       /* old partition assignments for each objs */
+  int *new_part,       /* On input, new partition assignments for each objs.
+                          Upon return, remapped new partition assignments */
+  int *HEcnt,          /* # of HEs allocated. */
+  int **HEinfo         /* Array of HE info; for each HE, two pins and 
+                          one edge weight. Stored as a single vector
+                          to minimize communication calls.  */
 )
 {
 /*  Routine to remap partitions (to new processors or new partition numbers)
@@ -55,10 +151,10 @@ int Zoltan_LB_Remap_From_Import_Lists(
  *  Objects described are those that ENDED UP on my_proc due to load balancing.
  *  For all these objects, new_proc == my_proc.
  */
-char *yo = "Zoltan_LB_Remap_From_Import_Lists";
+char *yo = "local_HEs_from_import_lists";
 int ierr = ZOLTAN_OK;
 int i, cnt, tmp;
-
+int *tmp_HEinfo;
 int old_size;                 /* # of old entries to remap to. If remapping
                                  parts to processors, old_size = Num_Procs;
                                  if renumbering partitions, old_size = old 
@@ -75,20 +171,9 @@ int minp, maxp;               /* Lowest and highest partition numbers on this
 int HEwgt_size;               /* # of HE weights allocated. */
 int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
                                  zero weights; later zero-weights are removed.*/
-int HEcnt;                    /* # of HEs allocated. */
-int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and 
-                                 one edge weight. Stored as a single vector
-                                 to minimize communication calls.  */
 
 
-  /* Determine type of remapping that is appropriate */
-  ierr = set_remap_flag(zz);
-
-  if (zz->LB.Remap_Flag == ZOLTAN_LB_REMAP_NONE) 
-    return ierr;
-
-  Zoltan_LB_Proc_To_Part(zz, my_proc, &np, &fp);
-  if (zz->LB.Remap_Flag == ZOLTAN_LB_REMAP_PROCESSORS) {
+  if (remap_type == ZOLTAN_LB_REMAP_PROCESSORS) {
 
     /* Renumber new processors to minimize changes in proc assignment. */
 
@@ -100,26 +185,25 @@ int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and
       goto End;
     }
 
-    for (i = 0; i < nkeep; i++) 
-      HEwgt[my_proc]++;
-    for (i = 0; i < nimp; i++) 
-      HEwgt[imp_old_proc[i]]++;
+    for (i = 0; i < nobj; i++) 
+      HEwgt[proc[i]]++;    /* At this point, proc has old proc assignments */
 
-    HEcnt = 0;
+    *HEcnt = 0;
     for (i = 0; i < HEwgt_size; i++)
-      if (HEwgt[i] != 0) HEcnt++;
+      if (HEwgt[i] != 0) (*HEcnt)++;
  
-    ierr = malloc_HEinfo(zz, HEcnt, &HEinfo);
+    ierr = malloc_HEinfo(zz, *HEcnt, HEinfo);
     if (ierr < 0) 
       goto End;
+    tmp_HEinfo = *HEinfo;
 
     cnt = 0;
     for (i = 0; i < HEwgt_size; i++) {
       if (HEwgt[i] != 0) {
         tmp = cnt * HEINFO_ENTRIES;
-        HEinfo[tmp] = i;               /* Old processor number */
-        HEinfo[tmp+1] = my_proc;       /* New processor number */
-        HEinfo[tmp+2] = HEwgt[i];         /* shift non-zero weights down. */
+        tmp_HEinfo[tmp] = i;               /* Old processor number */
+        tmp_HEinfo[tmp+1] = my_proc;       /* New processor number */
+        tmp_HEinfo[tmp+2] = HEwgt[i];      /* shift non-zero weights down. */
         cnt++;
       }
     }
@@ -129,16 +213,13 @@ int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and
 
     /* Renumber new partitions to minimize changes in partition assignment */
 
-    for (minp = INT_MAX, maxp = 0, i = 0; i < nkeep; i++) {
-      if (keep_part[i] < minp) minp = keep_part[i];
-      if (keep_part[i] > maxp) maxp = keep_part[i];
-    }
-    for (i = 0; i < nimp; i++) {
-      if (imp_old_part[i] < minp) minp = imp_old_part[i];
-      if (imp_old_part[i] > maxp) maxp = imp_old_part[i];
+    for (minp = INT_MAX, maxp = 0, i = 0; i < nobj; i++) {
+      if (old_part[i] < minp) minp = old_part[i];
+      if (old_part[i] > maxp) maxp = old_part[i];
     }
     old_size = maxp - minp + 1; 
 
+    Zoltan_LB_Proc_To_Part(zz, my_proc, &np, &fp);
     HEwgt_size = np * old_size;
     HEwgt = (int *) ZOLTAN_CALLOC(HEwgt_size, sizeof(int));
     if (HEwgt_size && !HEwgt) {
@@ -147,57 +228,54 @@ int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and
       goto End;
     }
 
-    for (i = 0; i < nkeep; i++) {
-      tmp = (keep_part[i]-fp) * old_size;
-      HEwgt[tmp + (keep_part[i]-minp)]++;
+    for (i = 0; i < nobj; i++) {
+      tmp = (new_part[i]-fp) * old_size;
+      HEwgt[tmp + (old_part[i]-minp)]++;
     }
 
-    for (i = 0; i < nimp; i++) {
-      tmp = (imp_new_part[i] - fp) * old_size;
-      HEwgt[tmp + (imp_old_part[i]-minp)]++;
-    }
-
-    HEcnt = 0;
+    *HEcnt = 0;
     for (i = 0; i < HEwgt_size; i++)
-      if (HEwgt[i] != 0) HEcnt++;
+      if (HEwgt[i] != 0) (*HEcnt)++;
    
-    ierr = malloc_HEinfo(zz, HEcnt, &HEinfo);
+    ierr = malloc_HEinfo(zz, *HEcnt, HEinfo);
     if (ierr < 0) 
       goto End;
+    tmp_HEinfo = *HEinfo;
 
     cnt = 0;
     for (i = 0; i < HEwgt_size; i++) {
       if (HEwgt[i] != 0) {
         tmp = cnt * HEINFO_ENTRIES;
-        HEinfo[tmp] = i%old_size + minp;  /* Old partition number */
-        HEinfo[tmp+1] = i/old_size + fp; /* New partition number */
-        HEinfo[tmp+2] = HEwgt[i];           /* shift non-zero weights down. */
+        tmp_HEinfo[tmp] = i%old_size + minp;  /* Old partition number */
+        tmp_HEinfo[tmp+1] = i/old_size + fp;  /* New partition number */
+        tmp_HEinfo[tmp+2] = HEwgt[i];         /* shift non-zero weights down. */
         cnt++;
       }
     }
   }
 
-  ZOLTAN_FREE(&HEwgt);
-
-  ierr = gather_and_remap(zz, HEcnt, HEinfo);
-
 End:
   
-  if (HEinfo) ZOLTAN_FREE(&HEinfo);
   if (HEwgt) ZOLTAN_FREE(&HEwgt);
 
   return ierr;
 }    
 
 /******************************************************************************/
-int Zoltan_LB_Remap_From_Export_Lists(
+static int local_HEs_from_export_lists(
   ZZ *zz,
-  int nkeep,           /* # objs whose partition and processor are unchanged */
-  int *keep_part,      /* partition assignments for kept objs:  old == new */
-  int nexp,            /* # objs exported from this processor */
-  int *exp_old_part,   /* partitions from which objs are exported */
-  int *exp_new_proc,   /* processors to which objs are exported */
-  int *exp_new_part    /* partitions to which objs are exported */
+  int remap_type,      /* type of remapping to do:  parts, procs, or none. */
+  int nobj,            /* # objs the processor knows about (keep + exports) */
+  int *new_proc,       /* On input, new processor assignment for each obj; 
+                          Upon return, remapped new proc assignment for
+                          each obj. */
+  int *old_part,       /* old partition assignments for each objs */
+  int *new_part,       /* On input, new partition assignments for each objs.
+                          Upon return, remapped new partition assignments */
+  int *HEcnt,          /* # of HEs allocated. */
+  int **HEinfo         /* Array of HE info; for each HE, two pins and 
+                          one edge weight. Stored as a single vector
+                          to minimize communication calls.  */
 ) 
 {
 /*  Routine to remap partitions (to new processors or new partition numbers)
@@ -206,32 +284,22 @@ int Zoltan_LB_Remap_From_Export_Lists(
  *  Objects described are those that STARTED on zz->Proc due to load balancing.
  *  For all these objects, old_proc == zz->Proc.
  */
-char *yo = "Zoltan_LB_Remap_From_Export_Lists";
+char *yo = "local_HEs_from_export_lists";
 int ierr = ZOLTAN_OK;
 int i, cnt, tmp;
+int *tmp_HEinfo;
 int my_proc = zz->Proc;       /* This processor's rank. */
 
 int nimp = 0;
-int *imp_old_proc = NULL,     /* Temporary arrays if inversion of export to */
+int *imp_proc = NULL,         /* Temporary arrays if inversion of export to */
     *imp_old_part = NULL,     /* import lists is needed. */
     *imp_new_part = NULL;
 
 int HEwgt_size;               /* # of HE weights allocated. */
 int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
                                  zero weights; later zero-weights are removed.*/
-int HEcnt;                    /* # of HEs allocated. */
-int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and 
-                                 one edge weight. Stored as a single vector
-                                 to minimize communication calls.  */
 
-  /* Determine type of remapping that is appropriate */
-  ierr = set_remap_flag(zz);
-
-  if (zz->LB.Remap_Flag == ZOLTAN_LB_REMAP_NONE) 
-    /* Not doing remapping */
-    return ierr;
-
-  if (zz->LB.Remap_Flag == ZOLTAN_LB_REMAP_PROCESSORS) {
+  if (remap_type == ZOLTAN_LB_REMAP_PROCESSORS) {
     /* Build HEs based on processor assignment.
      * We know the old processor for all objects we are keeping and all
      * export objects -- it is my_proc!
@@ -249,32 +317,28 @@ int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and
       goto End;
     }
 
-    for (i = 0; i < nkeep; i++) 
-      HEwgt[my_proc]++;
-    for (i = 0; i < nexp; i++)
-      HEwgt[exp_new_proc[i]]++;
+    for (i = 0; i < nobj; i++) 
+      HEwgt[new_proc[i]]++;
 
-    HEcnt = 0;
+    *HEcnt = 0;
     for (i = 0; i < HEwgt_size; i++)
-      if (HEwgt[i] != 0) HEcnt++;
+      if (HEwgt[i] != 0) (*HEcnt)++;
    
-    ierr = malloc_HEinfo(zz, HEcnt, &HEinfo);
+    ierr = malloc_HEinfo(zz, *HEcnt, HEinfo);
     if (ierr < 0) 
       goto End;
+    tmp_HEinfo = *HEinfo;
 
     cnt = 0;
     for (i = 0; i < HEwgt_size; i++) {
       if (HEwgt[i] != 0) {
         tmp = cnt * HEINFO_ENTRIES;
-        HEinfo[tmp] = my_proc;    /* Old processor number */
-        HEinfo[tmp+1] = i;        /* New processor number */
-        HEinfo[tmp+2] = HEwgt[i];    /* shift non-zero weights down. */
+        tmp_HEinfo[tmp] = my_proc;    /* Old processor number */
+        tmp_HEinfo[tmp+1] = i;        /* New processor number */
+        tmp_HEinfo[tmp+2] = HEwgt[i]; /* shift non-zero weights down. */
         cnt++;
       }
     }
-    ZOLTAN_FREE(&HEwgt);
-  
-    ierr = gather_and_remap(zz, HEcnt, HEinfo);
   }
 
   else {  /* ZOLTAN_LB_REMAP_PARTITIONS */
@@ -288,14 +352,14 @@ int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and
     ZOLTAN_COMM_OBJ *plan;
     int msg_tag = 22345;
 
-    ierr = Zoltan_Comm_Create(&plan, nexp, exp_new_proc, zz->Communicator,
+    ierr = Zoltan_Comm_Create(&plan, nobj, new_proc, zz->Communicator,
                               msg_tag, &nimp);
 
     if (nimp > 0) {
-      imp_old_proc = (int *) ZOLTAN_MALLOC(3 * nimp * sizeof(int));
-      imp_old_part = imp_old_proc + nimp;
+      imp_proc = (int *) ZOLTAN_MALLOC(3 * nimp * sizeof(int));
+      imp_old_part = imp_proc + nimp;
       imp_new_part = imp_old_part + nimp;
-      if (!imp_old_proc) {
+      if (!imp_proc) {
         ierr = ZOLTAN_MEMERR;
         ZOLTAN_PRINT_ERROR(my_proc, yo, "Memory error.");
         goto End;
@@ -303,47 +367,49 @@ int *HEinfo = NULL;           /* Array of HE info; for each HE, two pins and
     }
 
     ierr = Zoltan_Comm_Info(plan, NULL, NULL, NULL, NULL, NULL, NULL, 
-                            NULL, NULL, NULL, NULL, NULL, imp_old_proc, NULL);
+                            NULL, NULL, NULL, NULL, NULL, imp_proc, NULL);
 
     msg_tag++;
-    ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) exp_old_part, sizeof(int),
+    ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) old_part, sizeof(int),
                           (char *) imp_old_part);
 
     msg_tag++;
-    ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) exp_new_part, sizeof(int),
+    ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) new_part, sizeof(int),
                           (char *) imp_new_part);
 
     Zoltan_Comm_Destroy(&plan);
 
-    ierr = Zoltan_LB_Remap_From_Import_Lists(zz, nkeep, keep_part, nimp, 
-                                      imp_old_proc, imp_old_part, imp_new_part);
+    ierr = local_HEs_from_import_lists(zz, remap_type, nimp, imp_proc,
+                                       imp_old_part, imp_new_part,
+                                       HEcnt, HEinfo);
   }
 
 End:
+
   if (HEwgt) ZOLTAN_FREE(&HEwgt);
-  if (HEinfo) ZOLTAN_FREE(&HEinfo);
-  if (imp_old_proc) ZOLTAN_FREE(&imp_old_proc);
+  if (imp_proc) ZOLTAN_FREE(&imp_proc);
 
   return ierr;
 }
 
 /******************************************************************************/
-static int set_remap_flag(
-  ZZ *zz
+static int set_remap_type(
+  ZZ *zz, 
+  int *remap_type
 )
 {
-char *yo = "set_remap_flag";
+char *yo = "set_remap_type";
 int ierr = ZOLTAN_OK;
 
-/* Set remap flag based on distribution of partitions to processors. */
+/* Set remap type based on distribution of partitions to processors. */
 
   if (zz->LB.PartDist == NULL) {
     /* # Partitions == # Processors, uniformly distributed; remap processors */
-    zz->LB.Remap_Flag = ZOLTAN_LB_REMAP_PROCESSORS;
+    *remap_type = ZOLTAN_LB_REMAP_PROCESSORS;
   }
   else if (!(zz->LB.Single_Proc_Per_Part)) {
     /* Partitions spread across >1 processor; remapping not supported. */
-    zz->LB.Remap_Flag = ZOLTAN_LB_REMAP_NONE;
+    *remap_type = ZOLTAN_LB_REMAP_NONE;
     ZOLTAN_PRINT_WARN(zz->Proc, yo, 
                       "Remapping is not available when computed partitions "
                       "are spread across multiple processors.");
@@ -351,7 +417,7 @@ int ierr = ZOLTAN_OK;
   }
   else {
     /* # Partitions != # processors, or partitions not uniformly distributed */
-    zz->LB.Remap_Flag = ZOLTAN_LB_REMAP_PARTITIONS;
+    *remap_type = ZOLTAN_LB_REMAP_PARTITIONS;
   }
 
   return ierr;
@@ -377,7 +443,9 @@ int i;
   for (i = limit; i < hg->nVtx; i++) {
     int part = i - limit;
     int tmp = 2 * limit - i - 1;
+#ifdef KDDKDD 
     if (part%2) continue;   /* Don't match odd-numbered parts */
+#endif
     match[i] = tmp;
     match[tmp] = i;
   }
@@ -418,8 +486,10 @@ int ierr = ZOLTAN_OK;
 }
 
 /******************************************************************************/
-static int gather_and_remap(
+static int gather_and_build_remap(
   ZZ *zz, 
+  int *new_map,               /* Upon return, flag indicating whether parts
+                                 assignments were changed due to remap. */
   int HEcnt,                  /* # of HEs allocated. */
   int *HEinfo                 /* Array of HE info; for each HE, two pins and 
                                  one edge weight. Stored as a single vector
@@ -548,54 +618,66 @@ HGraph hg;                    /* Hypergraph for matching */
   limit = max0;   /* Max # matches allowed */
   do_match(zz, &hg, match, limit);
 
-  /* Build remapping vector */
+      
+  /* Build remapping vector, if non-trivial matching was returned. */
 
-  zz->LB.Remap = (int *) ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(int));
-  if (!(zz->LB.Remap)) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-    ierr = ZOLTAN_MEMERR;
-    goto End;
-  }
-
-
-  /* First, process all parts that were matched.  Mark matched parts as used. */
-  for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
-    zz->LB.Remap[i] = -1;  /* FOR SANITY CHECK ONLY, REMOVE LATER */
-    tmp = match[i+max0];
-    if (tmp != i+max0) {
-      zz->LB.Remap[i] = tmp;
-      used[tmp] = 1;
+  *new_map = 0;
+  for (i = 0; i < zz->LB.Num_Global_Parts; i++) 
+    if (match[i+max0] != i+max0) {
+      *new_map = 1;
+      break;
     }
-  }
 
-  /* Second, process all unmatched parts; assign them to unused partitions.  */
+  if (*new_map) {
 
-  for (uidx = 0, i = 0; i < zz->LB.Num_Global_Parts; i++) {
-    tmp = match[i+max0];
-    if (tmp == i+max0) {
-      while (used[uidx]) uidx++;   /* Find next unused partition */
-      zz->LB.Remap[i] = uidx;
-      used[uidx] = 1;
+    zz->LB.Remap = (int *) ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(int));
+    if (!(zz->LB.Remap)) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+
+
+    /* First, process all parts that were matched. Mark matched parts as used.*/
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
+      zz->LB.Remap[i] = -1;  /* FOR SANITY CHECK ONLY, REMOVE LATER */
+      tmp = match[i+max0];
+      if (tmp != i+max0) {
+        zz->LB.Remap[i] = tmp;
+        used[tmp] = 1;
+      }
+    }
+  
+    /* Second, process all unmatched parts; assign them to unused partitions.*/
+  
+    for (uidx = 0, i = 0; i < zz->LB.Num_Global_Parts; i++) {
+      tmp = match[i+max0];
+      if (tmp == i+max0) {
+        while (used[uidx]) uidx++;   /* Find next unused partition */
+        zz->LB.Remap[i] = uidx;
+        used[uidx] = 1;
+      }
     }
   }
 
   ZOLTAN_FREE(&match);
 
+  if (*new_map) {
+    /* Diagnostics:  put into high Debug_Level later */
+    if (zz->Proc == zz->Debug_Proc) 
+      for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
+        printf("%d REMAP Part %d to Part %d\n", zz->Proc, i, zz->LB.Remap[i]);
+      }
 
-  /* Diagnostics:  put into high Debug_Level later */
-  if (zz->Proc == zz->Debug_Proc) 
-    for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
-      printf("%d REMAP Part %d to Part %d\n", zz->Proc, i, zz->LB.Remap[i]);
+    for (gnum_move = 0, i = 0; i < hg.nEdge; i++) {
+      tmp = i + i;
+      if (hg.hvertex[tmp] != zz->LB.Remap[hg.hvertex[tmp+1]-max0]) {
+        gnum_move += hg.ewgt[i];
+      }
     }
-
-  for (gnum_move = 0, i = 0; i < hg.nEdge; i++) {
-    tmp = i + i;
-    if (hg.hvertex[tmp] != zz->LB.Remap[hg.hvertex[tmp+1]-max0]) {
-      gnum_move += hg.ewgt[i];
-    }
+    if (zz->Proc == zz->Debug_Proc)
+      printf("%d REMAP--AFTER: TOTAL NUM MOVE = %d\n\n", zz->Proc, gnum_move);
   }
-  if (zz->Proc == zz->Debug_Proc)
-    printf("%d REMAP--AFTER: TOTAL NUM MOVE = %d\n\n", zz->Proc, gnum_move);
 
 End:
   ZOLTAN_FREE(&each_size);
@@ -603,6 +685,7 @@ End:
   Zoltan_HG_HGraph_Free(&hg);
   return ierr;
 }
+
 
 /******************************************************************************/
 
