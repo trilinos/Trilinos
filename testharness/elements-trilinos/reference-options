@@ -76,3 +76,4 @@
 --disable-tsfcore-mpi
 --enable-tsfcoreutils
 --enable-tsfextended
+--disable-default-packages
