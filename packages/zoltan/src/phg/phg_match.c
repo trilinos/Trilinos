@@ -540,7 +540,8 @@ static int pmatching_ipm(
   sums = NULL;
   send = dest = size = rec = index = aux = visit = cmatch = select = NULL;
   permute = edgebuf = NULL;
-  nPermute = nDest = nSize = nIndex = nAux = 1 + MAX(nTotal, gmax_nVtx);
+  nPermute = nIndex = nAux = 1 + MAX(nTotal, gmax_nVtx);
+  nDest = nSize = 1 + MAX (hgc->nProc_x, MAX(nTotal, gmax_nVtx));
   nSend = nRec = nEdgebuf = MAX (1000, MAX(gmax_nPins, gmax_nVtx+2));
   
   if (hg->nVtx)  
@@ -656,7 +657,7 @@ static int pmatching_ipm(
       i += count;                   /* skip over count edges */
     }
 
-    /* randomly permute vertices */
+    /* randomly permute candidate vertices */
     Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
     Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));   
             
@@ -856,9 +857,10 @@ static int pmatching_ipm(
       for (i = 1; i < hgc->nProc_y; i++)
         dest[i] = dest[i-1] + size[i-1];
         
-      if (recsize > nRec) {  /* Karen suggests free, malloc rather than realloc ???*/
+      if (recsize > nRec) {
         nRec = recsize;
-        rec = (int*) ZOLTAN_REALLOC (rec, nRec * sizeof(int));
+        ZOLTAN_FREE (&rec);
+        rec = (int*) ZOLTAN_MALLOC (nRec * sizeof(int));
         if (rec == NULL)  {
           ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory");
           return ZOLTAN_MEMERR;
@@ -903,7 +905,6 @@ static int pmatching_ipm(
      master_data, &nrec, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
     if (err != ZOLTAN_OK)
       goto fini;  
-
 
     /* read each message (candidate id, best match id, and best i.p.) */ 
     if (hgc->myProc_y == 0) 
