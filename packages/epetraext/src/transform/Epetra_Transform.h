@@ -191,7 +191,7 @@ analyze( OriginalTypeRef orig )
 }
 
 template<typename T,typename U>
-Transform<T,U>::NewTypeRef
+typename Transform<T,U>::NewTypeRef
 Transform<T,U>::
 construct()
 {
