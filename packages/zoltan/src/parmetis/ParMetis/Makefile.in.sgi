@@ -1,0 +1,52 @@
+From kddevin@darwin.mp.sandia.gov Tue Oct  5 17:03:57 1999
+Return-Path: <kddevin@darwin.mp.sandia.gov>
+Received: from gila.cs.sandia.gov by quincey.cs.sandia.gov. (4.1/SMI-4.1)
+	id AA16851; Tue, 5 Oct 99 17:03:57 MDT
+Received: from jemez.cs.sandia.gov (jemez [132.175.13.11])
+	by gila.cs.sandia.gov (8.9.3/8.9.3) with SMTP id RAA09886
+	for <kddevin@quincey.cs.sandia.gov>; Tue, 5 Oct 1999 17:03:58 -0600 (MDT)
+Received: from gila.cs.sandia.gov by jemez.cs.sandia.gov (5.65v3.2/1.1.10.5/02May98-1109AM)
+	id AA28410; Tue, 5 Oct 1999 17:03:58 -0600
+Received: from sass165.sandia.gov (mailgate.sandia.gov [132.175.109.1])
+	by gila.cs.sandia.gov (8.9.3/8.9.3) with ESMTP id RAA09882
+	for <kddevin@cs.sandia.gov>; Tue, 5 Oct 1999 17:03:57 -0600 (MDT)
+Received: from darwin.mp.sandia.gov (darwin.mp.sandia.gov [134.253.242.65])
+	by sass165.sandia.gov (8.9.3/8.9.3) with ESMTP id RAA24002
+	for <@mailgate.sandia.gov:kddevin@cs.sandia.gov>; Tue, 5 Oct 1999 17:03:56 -0600 (MDT)
+Received: (from kddevin@localhost) by darwin.mp.sandia.gov (980427.SGI.8.8.8/980728.SGI.AUTOCF) id RAA34181 for kddevin@cs.sandia.gov; Tue, 5 Oct 1999 17:03:56 -0600 (MDT)
+Date: Tue, 5 Oct 1999 17:03:56 -0600 (MDT)
+From: kddevin@darwin.mp.sandia.gov (Karen Devine)
+Message-Id: <199910052303.RAA34181@darwin.mp.sandia.gov>
+Apparently-To: <kddevin@cs.sandia.gov>
+Status: R
+
+# Which compiler to use
+CC = cc -xansi -n32
+
+
+# What optimization level to use
+OPTFLAGS = -O
+
+# Include directories for the compiler
+INCDIR = -I/Net/local/mpi/mpich/include -I/Net/local/mpi/mpich/lib/sun4/ch_p4
+
+# What options to be used by the compiler
+COPTIONS = 
+
+# Which loader to use
+LD = cc -xansi -n32
+
+# In which directories to look for any additional libraries
+LIBDIR = 
+
+# What additional libraries to link the programs with (eg., -lmpi)
+XTRALIBS = 
+
+# What archiving to use
+AR = ar rv
+
+# What to use for indexing the archive
+#RANLIB = ranlib
+RANLIB = ar -ts
+
+

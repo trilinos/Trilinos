@@ -1,0 +1,30 @@
+
+# Which compiler to use
+CC = gcc -Wall
+
+
+# What optimization level to use
+OPTFLAGS = -O
+
+# Include directories for the compiler
+INCDIR = -I/Net/local/mpi/include -I/Net/local/mpi/build/solaris/ch_p4/include
+
+# What options to be used by the compiler
+COPTIONS = 
+
+# Which loader to use
+LD = gcc -Wall
+
+# In which directories to look for any additional libraries
+LIBDIR = 
+
+# What additional libraries to link the programs with (eg., -lmpi)
+XTRALIBS = 
+
+# What archiving to use
+AR = ar r
+
+# What to use for indexing the archive
+RANLIB = ranlib
+#RANLIB = ar -ts
+

@@ -1,0 +1,30 @@
+
+# Which compiler to use
+CC = /Net/mp/cplant/current/bin/cc
+
+
+# What optimization level to use
+OPTFLAGS = -O
+
+# Include directories for the compiler
+INCDIR = -I/Net/mp/cplant/current/include
+
+# What options to be used by the compiler
+COPTIONS = 
+
+# Which loader to use
+LD = /Net/mp/cplant/current/bin/cc
+
+# In which directories to look for any additional libraries
+LIBDIR = 
+
+# What additional libraries to link the programs with (eg., -lmpi)
+XTRALIBS = 
+
+# What archiving to use
+AR = ar r
+
+# What to use for indexing the archive
+RANLIB = ranlib
+#RANLIB = ar -ts
+
