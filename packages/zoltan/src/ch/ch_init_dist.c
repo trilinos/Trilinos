@@ -30,6 +30,8 @@ extern "C" {
  *  of the switch statements in this file.
  *
  *  Methods currently implemented:
+ *    INITIAL_FILE:    takes assignments from user input file 
+ *                     (graphname.assign).
  *    INITIAL_LINEAR:  assigns the first n/p vertices to proc 0, the
  *                     next n/p vertices to proc 1, etc.
  *    INITIAL_OWNER:   same as INITIAL_LINEAR; takes on different meaning 
@@ -84,20 +86,29 @@ void ch_dist_init(int num_proc, int gnvtxs, PARIO_INFO_PTR pio_info,
  * All processors call this routine prior to the actual distribution of 
  * graph data.
  */
+int proc, i;
+int max_assignment, have_assignments;
 
   Num_Proc = num_proc; 
   Gnvtxs = gnvtxs;
-  Initial_Method = pio_info->init_dist_type;
   Num_Proc_Dist  = pio_info->init_dist_procs;
   /* If Num_Proc_Dist has an invalid value, set it to Num_Proc by default */ 
   if ((Num_Proc_Dist <= 0) || (Num_Proc_Dist > Num_Proc)) 
      Num_Proc_Dist = Num_Proc;
 
-  switch(Initial_Method) {
-  case INITIAL_FILE: {
+  /* Broadcast initial assignments if they exist.  
+   * Assignments can be used for partitions and/or processors.
+   */
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+
+  /* First, tell other processors whether the assignments array is NULL. */
+  if (proc == host_proc) 
+    have_assignments = (*assignments != NULL);
+  MPI_Bcast(&have_assignments, 1, MPI_INT, host_proc, comm);
+
+  /* Now send the assignments if they exists. */
+  if (have_assignments) {
     /* Allocate and broadcast the assignments array. */
-    int proc;
-    MPI_Comm_rank(MPI_COMM_WORLD, &proc);
     if (proc != host_proc) {
       *assignments = (short *) malloc(gnvtxs * sizeof(short));
       if (*assignments == NULL) {
@@ -106,8 +117,22 @@ void ch_dist_init(int num_proc, int gnvtxs, PARIO_INFO_PTR pio_info,
       }
     }
     MPI_Bcast( *assignments, gnvtxs, MPI_SHORT, host_proc, comm);
-    break;
+
+    for (max_assignment = 0, i = 0; i < gnvtxs; i++)
+      if ((*assignments)[i] > max_assignment)
+        max_assignment = (*assignments)[i];
+    if (max_assignment >= Num_Proc) {
+      /* Highest partition number in assignment array is greater than
+       * the number of processors.  Assume the assignments are to be
+       * used ONLY as partition assignments; use INITIAL_LINEAR
+       * assignment to put vertices on processors.
+       */
+      pio_info->init_dist_type = INITIAL_LINEAR;
+    }
   }
+
+  Initial_Method = pio_info->init_dist_type;
+  switch(Initial_Method) {
   case INITIAL_LINEAR:
   case INITIAL_OWNER:
     /* create the vtxdist array. */
@@ -116,13 +141,10 @@ void ch_dist_init(int num_proc, int gnvtxs, PARIO_INFO_PTR pio_info,
   case INITIAL_CYCLIC:
     /* no initialization needed for this method. */
     break;
-  default: {
-    int proc;
+  default: 
     Gen_Error(0, "Invalid Initial Distribution Type in ch_dist_init");
-    MPI_Comm_rank(MPI_COMM_WORLD, &proc);
     error_report(proc);
     return;
-  }
   }
 }
 
