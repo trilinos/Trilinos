@@ -34,7 +34,7 @@ void LB_Eval (LB *lb, int print_stats,
 /* 
  * Input:
  *   lb          - pointer to lb structure
- *   print_stats - if > 0, compute and print max and sum of the metrics
+ *   print_stats - if > 0, compute and print max, min and sum of the metrics
  *
  * Output:
  *   nobj      - number of objects (for each proc)
@@ -54,7 +54,7 @@ void LB_Eval (LB *lb, int print_stats,
   char *yo2 = "ZOLTAN LB_Eval";
   int i, j, num_obj, max_edges, flag, nedges;
   int num_adj, num_boundary, cut_weight;
-  int stats[3*NUM_GSTATS], *ewgts;
+  int stats[4*NUM_GSTATS], *ewgts;
   int *proc, *nbors_proc;
   float *tmp_wgt, *vwgts, nproc;
   LB_LID * local_ids;
@@ -96,7 +96,7 @@ void LB_Eval (LB *lb, int print_stats,
   /* Allocate space for weights if needed */
   if (lb->Obj_Weight_Dim>0){
     vwgts   = (float  *) LB_MALLOC(lb->Obj_Weight_Dim*num_obj * sizeof(float));
-    tmp_wgt = (float *) LB_MALLOC(3*lb->Obj_Weight_Dim * sizeof(float));
+    tmp_wgt = (float *) LB_MALLOC(4*lb->Obj_Weight_Dim * sizeof(float));
     if ((num_obj && !vwgts) || (!tmp_wgt)){
       *ierr = LB_MEMERR;
       LB_FREE(&global_ids);
@@ -248,48 +248,67 @@ void LB_Eval (LB *lb, int print_stats,
                     MPI_FLOAT, MPI_MAX, lb->Communicator);
       MPI_Allreduce(tmp_wgt, &tmp_wgt[2*lb->Obj_Weight_Dim], lb->Obj_Weight_Dim,
                     MPI_FLOAT, MPI_SUM, lb->Communicator);
+      MPI_Allreduce(tmp_wgt, &tmp_wgt[3*lb->Obj_Weight_Dim], lb->Obj_Weight_Dim,
+                    MPI_FLOAT, MPI_MIN, lb->Communicator);
     }
     stats[0] = num_obj;
     stats[1] = cut_weight;
     stats[2] = num_boundary;
     stats[3] = num_adj;
 
-    /* Compute max and sum in the upper portions of the stats array. */
+    /* Compute max, min and sum in the upper portions of the stats array. */
     MPI_Allreduce(stats, &stats[NUM_GSTATS], NUM_GSTATS, MPI_INT, MPI_MAX, 
                   lb->Communicator);
     MPI_Allreduce(stats, &stats[2*NUM_GSTATS], NUM_GSTATS, MPI_INT, MPI_SUM, 
                   lb->Communicator);
+    MPI_Allreduce(stats, &stats[3*NUM_GSTATS], NUM_GSTATS, MPI_INT, MPI_MIN, 
+                  lb->Communicator);
+
+    /* Print max-sum of results */
 
     /* Print max-sum of results */
     nproc = lb->Num_Proc; /* convert to float */
     if (lb->Proc == lb->Debug_Proc){
       printf("\n%s  Statistics for current partitioning/balance:\n", yo2);
       for (i=0; i<lb->Obj_Weight_Dim; i++)
-        printf("%s  Object weight #%1d :  Max = %6.1f, Sum = %7.1f, "
-          "Imbal. = %5.3f\n",
+        printf("%s  Object weight #%1d :  Max = %6.1f, Min = %6.1f, "
+          "Sum = %7.1f, Imbal. = %5.3f\n",
           yo2, i+1, tmp_wgt[lb->Obj_Weight_Dim+i], 
+          tmp_wgt[3*lb->Obj_Weight_Dim+i], 
           tmp_wgt[2*lb->Obj_Weight_Dim+i], 
           (tmp_wgt[2*lb->Obj_Weight_Dim+i] > 0 
            ? tmp_wgt[lb->Obj_Weight_Dim+i]*nproc/tmp_wgt[2*lb->Obj_Weight_Dim+i]
            : 1.));
-      printf("%s  No. of objects   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-        yo2, stats[NUM_GSTATS], stats[2*NUM_GSTATS], 
+      printf("%s  No. of objects   :  Max = %6d, Min = %6d, "
+             "Sum = %7d, Imbal. = %5.3f\n",
+        yo2, stats[NUM_GSTATS], 
+        stats[3*NUM_GSTATS],
+        stats[2*NUM_GSTATS], 
         (stats[2*NUM_GSTATS] > 0
               ? stats[NUM_GSTATS]*nproc/stats[2*NUM_GSTATS]
               : 1.));
       if (lb->Get_Num_Edges != NULL){
-        printf("%s  Cut weight       :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-          yo2, stats[NUM_GSTATS+1], stats[2*NUM_GSTATS+1], 
+        printf("%s  Cut weight       :  Max = %6d, Min = %6d, "
+               "Sum = %7d, Imbal. = %5.3f\n",
+          yo2, stats[NUM_GSTATS+1], 
+          stats[3*NUM_GSTATS+1],
+          stats[2*NUM_GSTATS+1], 
           (stats[2*NUM_GSTATS+1] > 0 
                 ? stats[NUM_GSTATS+1]*nproc/stats[2*NUM_GSTATS+1]
                 : 1.));
-        printf("%s  Boundary objects :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-          yo2, stats[NUM_GSTATS+2], stats[2*NUM_GSTATS+2], 
+        printf("%s  Boundary objects :  Max = %6d, Min = %6d, "
+               "Sum = %7d, Imbal. = %5.3f\n",
+          yo2, stats[NUM_GSTATS+2], 
+          stats[3*NUM_GSTATS+2],
+          stats[2*NUM_GSTATS+2], 
           (stats[2*NUM_GSTATS+2] > 0
                 ? stats[NUM_GSTATS+2]*nproc/stats[2*NUM_GSTATS+2]
                 : 1.));
-        printf("%s  Adjacent procs   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-          yo2, stats[NUM_GSTATS+3], stats[2*NUM_GSTATS+3], 
+        printf("%s  Adjacent procs   :  Max = %6d, Min = %6d, "
+               "Sum = %7d, Imbal. = %5.3f\n",
+          yo2, stats[NUM_GSTATS+3], 
+          stats[3*NUM_GSTATS+3],
+          stats[2*NUM_GSTATS+3], 
           (stats[2*NUM_GSTATS+3] > 0
                 ? stats[NUM_GSTATS+3]*nproc/stats[2*NUM_GSTATS+3]
                 : 1.));
