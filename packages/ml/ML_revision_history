@@ -23,3 +23,7 @@ mystring = ml2_0_0_1
 		 0 => minimal output
 		 1 => some output (default)
 		 2,3,... => increasing amounts of output
+
+mystring = ml2_0_0_2
+
+     Symmetrize Hiptmair smoother and finished off MLS within Hiptmair. 
