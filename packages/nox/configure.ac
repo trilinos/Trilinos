@@ -799,7 +799,7 @@ AC_ARG_WITH(epetra-libdir,
 [epetra_LIBDIR=$withval])
 
 AC_ARG_WITH(nox-epetraext,
-[AC_HELP_STRING([--with-epetraext],[compile epetraext support into the noxepetra library])],
+[AC_HELP_STRING([--with-nox-epetraext],[compile epetraext support into the noxepetra library])],
 [BUILD_NOX_EPETRAEXT_SUPPORT=${enableval}],
 [BUILD_NOX_EPETRAEXT_SUPPORT=no]
 )
@@ -1259,6 +1259,7 @@ AC_CONFIG_FILES([
 		example-epetra/1Dfem_nonlinearColoring/Makefile
 		example-epetra/1Dtransfem_nonlinear/Makefile
 		example-epetra/Brusselator/Makefile
+		example-epetra/Brusselator_Split/Makefile
 		example-epetra/Suite/Makefile
                 src-petsc/Makefile
                 example-petsc/Makefile
