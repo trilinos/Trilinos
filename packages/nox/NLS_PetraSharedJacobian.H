@@ -11,7 +11,6 @@
 #ifndef _NLS_PETRA_SHARED_JACOBIAN_H
 #define _NLS_PETRA_SHARED_JACOBIAN_H
 
-//#include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 
 class NLS_PetraGroup;		// forward declaration
