@@ -61,16 +61,21 @@ functions are required by individual algorithms.
 </blockquote>
 
 <hr><hr>
+
+<!------------------------------------------------------------------------->
 <h2>
 <a NAME="General Functions"></a>Object ID Functions</h2>
 
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_NUM_OBJ_FN"></a>typedef int <b>ZOLTAN_NUM_OBJ_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;*<i>ierr</i>);</td>
 </tr>
@@ -132,13 +137,17 @@ of objects that are currently assigned to the processor.
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_OBJ_LIST_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_OBJ_LIST_FN"></a>typedef void<b> ZOLTAN_OBJ_LIST_FN</b>
+<td WIDTH="85%">
+typedef void<b> ZOLTAN_OBJ_LIST_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -251,13 +260,17 @@ may be NULL.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_FIRST_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_FIRST_OBJ_FN"></a>typedef int <b>ZOLTAN_FIRST_OBJ_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_FIRST_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -393,13 +406,17 @@ of the first object.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_NEXT_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_NEXT_OBJ_FN"></a>typedef int <b>ZOLTAN_NEXT_OBJ_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NEXT_OBJ_FN</b>
 (void&nbsp;*<i>&nbsp;data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -551,16 +568,22 @@ of the next object.</td>
 
 <p>
 <hr><hr>
+
+<!------------------------------------------------------------------------->
 <h2>
 <a NAME="Border Functions"></a>Border Object Functions (currently not used)</h2>
 
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_BORDER_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_NUM_BORDER_OBJ_FN"></a>typedef int <b>ZOLTAN_NUM_BORDER_OBJ_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_BORDER_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>nbor_proc</i>, 
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -633,13 +656,17 @@ should be returned.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_BORDER_OBJ_LIST_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_BORDER_OBJ_LIST_FN"></a>typedef void <b>ZOLTAN_BORDER_OBJ_LIST_FN</b>
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_BORDER_OBJ_LIST_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -763,13 +790,17 @@ If <i>wgt_dim=0,</i> <i>obj_wgts</i> is undefined and may be NULL.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_FIRST_BORDER_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_FIRST_BORDER_OBJ_FN"></a>typedef int <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b>
 (void&nbsp;*<i>data</i>, 
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -915,13 +946,17 @@ of the first object along the processor border.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_NEXT_BORDER_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_NEXT_BORDER_OBJ_FN"></a>typedef int <b>ZOLTAN_NEXT_BORDER_OBJ_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NEXT_BORDER_OBJ_FN</b>
 (void&nbsp;*<i>data</i>, 
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -1083,16 +1118,22 @@ of the next object along the processor border.</td>
 </table>
 
 <hr><hr>
+
+<!------------------------------------------------------------------------->
 <h2>
 <a NAME="Geometry-based Functions"></a>Geometry-based Functions</h2>
 
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_GEOM_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_NUM_GEOM_FN"></a>typedef int <b>ZOLTAN_NUM_GEOM_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_GEOM_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
@@ -1158,13 +1199,17 @@ application, the return value should be three.
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_GEOM_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_GEOM_FN"></a>typedef void <b>ZOLTAN_GEOM_FN</b>
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_GEOM_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -1260,16 +1305,22 @@ the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 
 <br>&nbsp;
 <hr><hr>
+
+<!------------------------------------------------------------------------->
 <h2>
 <a NAME="Graph-based Functions"></a>Graph-based Functions</h2>
 
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_EDGES"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_NUM_EDGES"></a>typedef int <b>ZOLTAN_NUM_EDGES_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_EDGES_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -1371,13 +1422,17 @@ returned.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_EDGE_LIST_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_EDGE_LIST_FN"></a>typedef void <b>ZOLTAN_EDGE_LIST_FN</b>
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_EDGE_LIST_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -1506,15 +1561,21 @@ return value of <i>ewgts </i>is undefined and may be NULL.</td>
 <br>&nbsp;
 <hr><hr>
 <h2>
+
+<!------------------------------------------------------------------------->
 <a NAME="Tree-based Functions"></a>Tree-based Functions</h2>
 
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_COARSE_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_NUM_COARSE_OBJ_FN"></a>typedef int <b>ZOLTAN_NUM_COARSE_OBJ_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_COARSE_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
@@ -1576,13 +1637,17 @@ the number of objects (elements) in the initial coarse grid.
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_COARSE_OBJ_LIST_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_COARSE_OBJ_LIST_FN"></a>typedef void <b>ZOLTAN_COARSE_OBJ_LIST_FN</b>
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_COARSE_OBJ_LIST_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -1734,13 +1799,17 @@ element in the user provided traversal. The same provisions hold as for
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_FIRST_COARSE_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_FIRST_COARSE_OBJ_FN"></a>typedef int <b>ZOLTAN_FIRST_COARSE_OBJ_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_FIRST_COARSE_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -1909,13 +1978,17 @@ object in the coarse grid.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_NEXT_COARSE_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_NEXT_COARSE_OBJ_FN"></a>typedef int <b>ZOLTAN_NEXT_COARSE_OBJ_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NEXT_COARSE_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -2087,13 +2160,17 @@ object in the coarse grid.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_CHILD_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_NUM_CHILD_FN"></a>typedef int <b>ZOLTAN_NUM_CHILD_FN</b>
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_NUM_CHILD_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -2192,13 +2269,17 @@ the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_CHILD_LIST_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_CHILD_LIST_FN"></a>typedef void <b>ZOLTAN_CHILD_LIST_FN</b>
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_CHILD_LIST_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -2395,13 +2476,17 @@ element in the user provided traversal. The same provisions hold as for
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_CHILD_WEIGHT_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_CHILD_WEIGHT_FN"></a>typedef void<b> ZOLTAN_CHILD_WEIGHT_FN</b>
+<td WIDTH="85%">
+typedef void<b> ZOLTAN_CHILD_WEIGHT_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,

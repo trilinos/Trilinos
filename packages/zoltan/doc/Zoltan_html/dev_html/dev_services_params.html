@@ -24,6 +24,7 @@
 <body bgcolor="#FFFFFF">
 
 <div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_services_parallel.html">Next</a>&nbsp; |&nbsp; <a href="dev_services.html">Previous</a></i></b></div>
+<!------------------------------------------------------------------------->
 
 
 <h2>
@@ -74,8 +75,12 @@ list.</blockquote>
 See also:&nbsp; <a href="dev_add_params.html">Adding new parameters in
 Zoltan</a>.
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Set_Param"></a>int <b>Zoltan_Set_Param</b>(struct <b><a href="dev_lb_structs.html">Zoltan_Struct</a></b>
+<a NAME="Zoltan_Set_Param"></a>
+<hr>
+int <b>Zoltan_Set_Param</b>(struct <b><a href="dev_lb_structs.html">Zoltan_Struct</a></b>
 *<i>zz</i>, char *<i>param_name</i>, char *<i>new_val</i>);
 <br>
 <hr>
@@ -140,8 +145,12 @@ automatically converted to all upper-case letters.</td>
 </tr>
 </table>
 
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Check_Param"></a>int <b>Zoltan_Check_Param</b>( char *<i>param_name</i>,
+<a NAME="Zoltan_Check_Param"></a>
+<hr>
+int <b>Zoltan_Check_Param</b>( char *<i>param_name</i>,
 char *<i>new_val</i>, <b>PARAM_VARS</b> *<i>params</i>, <b>PARAM_UTYPE
 </b>*<i>result</i>,
 int *<i>matched_index</i>);
@@ -227,8 +236,12 @@ doesn't decode properly.&nbsp;</td>
 </tr>
 </table>
 
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr WIDTH="100%"><a NAME="Zoltan_Bind_Param"></a>int <b>Zoltan_Bind_Param </b>(<b>PARAM_VARS</b>
+<a NAME="Zoltan_Bind_Param"></a>
+<hr WIDTH="100%">
+int <b>Zoltan_Bind_Param </b>(<b>PARAM_VARS</b>
 *<i>params,</i> char *<i>name,</i> void *<i>var</i>);
 <br>
 <hr WIDTH="100%">
@@ -293,8 +306,12 @@ calls to <b><a href="#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a>.</b
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Assign_Param_Vals"></a>int&nbsp; <b>Zoltan_Assign_Param_Vals</b>(<b>PARAM_LIST</b>
+<a NAME="Zoltan_Assign_Param_Vals"></a>
+<hr>
+int <b>Zoltan_Assign_Param_Vals</b>(<b>PARAM_LIST</b>
 *<i>change_list</i>, <b>PARAM_VARS</b> *<i>params,
 </i>int<i> debug_level,</i>
 int <i>my_proc,</i> int <i>debug_proc</i>);
@@ -382,9 +399,12 @@ Zoltan's debugging features. If the parameter utility code is used outside
 of Zoltan, these&nbsp; parameters may be removed or simply set these input
 values to zero in the function call.
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="Zoltan_Free_Params"></a>
 <hr>
-<a NAME="Zoltan_Free_Params"></a>void <b>Zoltan_Free_Params </b>(<b>PARAM_LIST</b>
+void <b>Zoltan_Free_Params </b>(<b>PARAM_LIST</b>
 **<i>param_list</i> );
 <hr WIDTH="100%">
 <br>This routine frees the parameters in the list pointed to by <i>param_list</i>.
@@ -405,6 +425,8 @@ is defined in <i>params/param_const.h</i>.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_services_parallel.html">Next:&nbsp;
 Parallel Computing Routines</a>&nbsp; |&nbsp; <a href="dev_services.html">Previous:&nbsp;

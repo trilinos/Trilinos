@@ -25,6 +25,8 @@
 
 <div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
 |&nbsp; <a href="dev_add_params.html">Next</a>&nbsp; |&nbsp; <a href="dev_add_struct.html">Previous</a></i></b></div>
+<!------------------------------------------------------------------------->
+
 
 <h2>
 Memory Management in Zoltan Algorithms</h2>
@@ -37,7 +39,7 @@ developers use the routines in this package, such as
 of the standard C routines for most memory management.
 <p>
 Macros that simplify the <a href="dev_lb_types.html#ID alloc">allocation of global and local identifiers (IDs)</a>
-are defined in <i>lb/lb_id_const.h</i>.  These macros are described in the 
+are defined in <i>zz/zz_id_const.h</i>.  These macros are described in the 
 <a href="dev_lb_types.html">ID Data Types</a> section.  The macros include
 error checking for the allocations and, thus, their use is highly recommended.
 
@@ -61,7 +63,12 @@ their own decomposition data. The developer should write a function that
 frees this data structure.&nbsp; Use <b>Zoltan_RCB_Free_Structure </b>as an
 example.
 <p>
-<hr><a NAME="Zoltan_Special_Malloc"></a>int <b>Zoltan_Special_Malloc</b>(struct
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Special_Malloc"></a>
+<hr>
+int <b>Zoltan_Special_Malloc</b>(struct
 <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
 *<i>zz</i>, void **<i>array</i>, int <i>size</i>, <b>ZOLTAN_SPECIAL_MALLOC_TYPE</b><i>type</i>);&nbsp;
 <hr>
@@ -151,7 +158,12 @@ and returns a pointer to the allocated space in <i>import_gid</i>.
 </table>
 
 <p>
-<hr><a NAME="Zoltan_Special_Free"></a>int <b>Zoltan_Special_Free</b>(struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Special_Free"></a>
+<hr>
+int <b>Zoltan_Special_Free</b>(struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
 *<i>zz</i>, void **<i>array</i>,<b> ZOLTAN_SPECIAL_MALLOC_TYPE</b> <i>type</i>);&nbsp;
 <hr>
 <p><b>Zoltan_Special_Free</b> frees memory allocated by <b><a href="#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
@@ -223,6 +235,7 @@ array <i>import_gid</i> and sets it to NULL.</td>
 
 <br>&nbsp;
 <p>
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_add_params.html">Next:&nbsp;
 Parameters</a>&nbsp; |&nbsp; <a href="dev_add_struct.html">Previous:&nbsp;

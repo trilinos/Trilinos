@@ -39,13 +39,16 @@ algorithms.
 <BLOCKQUOTE><B><A HREF="#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</A></B>
 <BR><B><A HREF="#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</A></B></BLOCKQUOTE>
 
+<!------------------------------------------------------------------------->
 <HR WIDTH="100%">
+<A NAME="Zoltan_LB_Point_Assign"></A>
 <HR WIDTH="100%">
 <TABLE WIDTH="100%" NOSAVE >
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD WIDTH="85%"><A NAME="Zoltan_LB_Point_Assign"></A>int <B>Zoltan_LB_Point_Assign</B> (struct <B>Zoltan_Struct</B>
+<TD WIDTH="85%">
+int <B>Zoltan_LB_Point_Assign</B> (struct <B>Zoltan_Struct</B>
 * <I>zz</I>, double * <I>coords</I>, int * <I>proc</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
@@ -109,13 +112,17 @@ owns it can be determined.
 </TR>
 </TABLE>
 &nbsp;
+
+<!------------------------------------------------------------------------->
 <HR WIDTH="100%">
+<A NAME="Zoltan_LB_Box_Assign"></A>
 <HR WIDTH="100%">
 <TABLE WIDTH="100%" NOSAVE >
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD WIDTH="85%"><A NAME="Zoltan_LB_Box_Assign"></A>int <B>Zoltan_LB_Box_Assign</B> (struct <B>Zoltan_Struct</B>
+<TD WIDTH="85%">
+int <B>Zoltan_LB_Box_Assign</B> (struct <B>Zoltan_Struct</B>
 *<I> zz</I>, double <I>xmin</I>, double <I>ymin</I>, double <I>zmin</I>,
 double <I>xmax</I>, double <I>ymax</I>, double <I>zmax</I>, int * <I>procs</I>,
 int * <I>numprocs</I>);&nbsp;&nbsp;
@@ -206,6 +213,8 @@ the box (i.e. the number of entries placed in the <I>procs</I> list).&nbsp;</TD>
 <TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
 </TR>
 </TABLE>
+
+<!------------------------------------------------------------------------->
 
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
 <A HREF="ug_interface_mig.html">Next:&nbsp; Migration Functions</A>&nbsp;

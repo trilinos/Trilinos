@@ -35,13 +35,16 @@ are described below:
 <br><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a>
 <br><a href="#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></ul>
 
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="Zoltan_Initialize"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="Zoltan_Initialize"></a>int <b>Zoltan_Initialize</b>
+<td WIDTH="85%">
+int <b>Zoltan_Initialize</b>
 (int&nbsp;<i>argc</i>,
 char&nbsp;**<i>argv</i>,
 float&nbsp;*<i>ver</i>);</td>
@@ -114,13 +117,17 @@ is linked to.
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="Zoltan_Create"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%"NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="Zoltan_Create"></a>struct <b>Zoltan_Struct</b> *<b>Zoltan_Create</b>
+<td WIDTH="85%">
+struct <b>Zoltan_Struct</b> *<b>Zoltan_Create</b>
 (MPI_Comm&nbsp;<i>communicator</i>);&nbsp;</td>
 </tr>
 
@@ -175,13 +182,17 @@ be fatal.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="Zoltan_Set_Fn"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="Zoltan_Set_Fn"></a>int <b>Zoltan_Set_Fn</b>
+<td WIDTH="85%">
+int <b>Zoltan_Set_Fn</b>
 (struct&nbsp;<b>Zoltan_Struct&nbsp;*</b><i>zz</i>,
 <b>ZOLTAN_FN_TYPE&nbsp;</b><i>fn_type</i>,
 void&nbsp;(*<i>fn_ptr</i>)(),
@@ -259,13 +270,17 @@ it may be omitted.</td>
 </tr>
 </table>
 
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="Zoltan_Set_Specific_Fn"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="Zoltan_Set_Specific_Fn"></a>int <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>
+<td WIDTH="85%">
+int <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>
 (struct&nbsp;<b>Zoltan_Struct&nbsp;</b>*<i>zz</i>,
 &lt;<b><i><a href="ug_query.html">zoltan_fn_type</a></i></b>>&nbsp;(*<i>fn_ptr</i>)(), 
 void&nbsp;*<i>data</i>);</td>
@@ -364,6 +379,8 @@ may be omitted.</td>
 query function.</td>
 </tr>
 </table>
+
+<!------------------------------------------------------------------------->
 
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_interface_lb.html">Next:&nbsp;

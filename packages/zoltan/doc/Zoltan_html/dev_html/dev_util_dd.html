@@ -30,6 +30,8 @@
 <a href="dev_util_comm.html">Previous</a></i></b>
 </div>
 
+<!------------------------------------------------------------------------->
+
 <h2>
 <a NAME="Distributed Directory Utility"></a>Distributed Directory Utility
 </h2>
@@ -157,9 +159,11 @@ address of this structure to the other routines in this package.
 </tr>
 </table>
 
+<!------------------------------------------------------------------------->
 <hr>
+<a NAME="DD_Create"></a>
 <hr>
-<a NAME="DD_Create"></a>int <b>Zoltan_DD_Create </b>
+int <b>Zoltan_DD_Create </b>
 (struct Zoltan_DD_Struct **<i>dd</i>,
 MPI_Comm <i>comm</i>,
 int <i>num_gid</i>,
@@ -217,9 +221,12 @@ conditions where 3 is the most verbose.</td></tr>
 
 </table>
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
+<a NAME="DD_Destroy"></a>
 <hr>
-<a NAME="DD_Destroy"></a>void <b>Zoltan_DD_Destroy</b>
+void <b>Zoltan_DD_Destroy</b>
 (struct Zoltan_DD_Struct **<i>dd</i>);
 <hr>
 This routine frees all memory allocated for the distributed directory.
@@ -241,8 +248,12 @@ to free the previously saved MPI comm.
 <td>NONE</td></tr>
 </table>
 <p>
-<hr><hr>
-<a NAME="DD_Update"></a>int <b>Zoltan_DD_Update</b>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Update"></a>
+<hr>
+int <b>Zoltan_DD_Update</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
 ZOLTAN_ID_PTR <i>gid</i>,
 ZOLTAN_ID_PTR <i>lid</i>,
@@ -291,9 +302,12 @@ within one update cycle.
 <td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
 </table>
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
+<a NAME="DD_Find"></a>
 <hr>
-<a NAME="DD_Find"></a>int <b>Zoltan_DD_Find</b>
+int <b>Zoltan_DD_Find</b>
 (Zoltan_DD_DDirectory *<i>dd</i>,
 ZOLTAN_ID_PTR <i>gid</i>,
 ZOLTAN_ID_PTR <i>lid</i>,
@@ -335,8 +349,12 @@ being used.
 </table>
 
 <p>
-<hr><hr>
-<a NAME="DD_Remove"></a>int <b>Zoltan_DD_Remove</b>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Remove"></a>
+<hr>
+int <b>Zoltan_DD_Remove</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
 ZOLTAN_ID_PTR <i>gid</i>,
 int <i>count</i>);
@@ -364,8 +382,12 @@ their information from the distributed directory.
 <td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
 </table>
 <p>
-<hr><hr>
-<a NAME="DD_Set_Hash_Fn"></a>void <b>Zoltan_DD_Set_Hash_Fn</b>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Set_Hash_Fn"></a>
+<hr>
+void <b>Zoltan_DD_Set_Hash_Fn</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
 unsigned int (*<i>hash</i>) (ZOLTAN_ID_PTR, int, unsigned int));
 <hr>
@@ -412,8 +434,12 @@ NOTE:  This hash function might group the gid's directory information
 </table>
 
 <p>
-<hr><hr>
-<a NAME="DD_Stats"></a>void <b>Zoltan_DD_Stats</b>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Stats"></a>
+<hr>
+void <b>Zoltan_DD_Stats</b>
 (struct Zoltan_DD_Struct *<i>dd</i>);
 <hr>
 This routine prints out summary information about the local distributed
@@ -436,8 +462,12 @@ longest linked list.  The debug level (set by an argument to
 </table>
 
 <p>
-<hr><hr>
-<a NAME="DD_Set_Neighbor_Hash_Fn1"></a>int <b>Zoltan_DD_Set_Neighbor_Hash_Fn1</b>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Set_Neighbor_Hash_Fn1"></a>
+<hr>
+int <b>Zoltan_DD_Set_Neighbor_Hash_Fn1</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
 int <i>size</i>);
 <hr>
@@ -465,9 +495,12 @@ their own similar routine.
 
 </table>
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
+<a NAME="DD_Set_Neighbor_Hash_Fn2"></a>
 <hr>
-<a NAME="DD_Set_Neighbor_Hash_Fn2"></a>int <b>Zoltan_DD_Set_Neighbor_Hash_Fn2</b>
+int <b>Zoltan_DD_Set_Neighbor_Hash_Fn2</b>
 (struct Zoltan_DD_Struct *dd,
 int *<i>proc</i>,
 int *<i>low</i>,
@@ -508,8 +541,12 @@ high and low lists are evenly distributed among the processors via modulo
 
 </table>
 <p>
-<hr><hr>
-<a NAME="DD_Print"></a>int <b>Zoltan_DD_Print</b>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Print"></a>
+<hr>
+int <b>Zoltan_DD_Print</b>
 (struct Zoltan_DD_Struct *<i>dd</i>);
 <hr>
 This utility displays (to stdout) the entire contents of the distributed
@@ -529,7 +566,10 @@ directory at one line per GID.
 
 </table>
 <p>
-<hr><hr>
+
+<!------------------------------------------------------------------------->
+<hr>
+<hr>
 
 <p ALIGN=CENTER><b>Developer's Notes</b>
 <p>

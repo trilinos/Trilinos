@@ -38,13 +38,16 @@ Optional, additional query functions for migration may also be registered:
 <br><b><a href="#ZOLTAN_MID_MIGRATE_FN">ZOLTAN_MID_MIGRATE_FN</a></b>
 <br><b><a href="#ZOLTAN_POST_MIGRATE_FN">ZOLTAN_POST_MIGRATE_FN</a></b></blockquote>
 
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_OBJ_SIZE_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_OBJ_SIZE_FN"></a>typedef int <b>ZOLTAN_OBJ_SIZE_FN</b>(void
+<td WIDTH="85%">
+typedef int <b>ZOLTAN_OBJ_SIZE_FN</b>(void
 *<i> data</i>, int <i>num_gid_entries</i>,&nbsp; int <i>num_lid_entries</i>,
 <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>global_id,</i> <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
@@ -141,13 +144,17 @@ ID.&nbsp; This value is the maximum value over all processors of the parameter
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_PACK_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_PACK_OBJ_FN"></a>typedef void <b>ZOLTAN_PACK_OBJ_FN</b> (void
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_PACK_OBJ_FN</b> (void
 *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
 <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>global_id</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
@@ -260,13 +267,17 @@ data should be packed.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_UNPACK_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_UNPACK_OBJ_FN"></a>typedef void <b>ZOLTAN_UNPACK_OBJ_FN</b>
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_UNPACK_OBJ_FN</b>
 (void *<i>data</i>, int <i>num_gid_entries</i>,
 <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>global_id</i>, int <i>size</i>, char *<i>buf</i>, int *<i>ierr</i>);&nbsp;</td>
@@ -354,13 +365,17 @@ buffer.</td>
 </tr>
 </table>
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_PRE_MIGRATE_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_PRE_MIGRATE_FN"></a>typedef void <b>ZOLTAN_PRE_MIGRATE_FN</b>
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_PRE_MIGRATE_FN</b>
 (void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
 int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>import_global_ids</i>,
@@ -509,13 +524,17 @@ destination processors.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_MID_MIGRATE_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_MID_MIGRATE_FN"></a>typedef void <b>ZOLTAN_MID_MIGRATE_FN</b>
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_MID_MIGRATE_FN</b>
 (void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
 int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>import_global_ids</i>,
@@ -668,13 +687,17 @@ destination processors.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_POST_MIGRATE_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="ZOLTAN_POST_MIGRATE_FN"></a>typedef void <b>ZOLTAN_POST_MIGRATE_FN</b>
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_POST_MIGRATE_FN</b>
 (void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
 int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>import_global_ids</i>,

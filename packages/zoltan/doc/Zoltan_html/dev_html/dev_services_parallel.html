@@ -24,6 +24,7 @@
 <BODY BGCOLOR="#FFFFFF">
 
 <div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_services_objlist.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_params.html">Previous</a></i></b></div>
+<!------------------------------------------------------------------------->
 
 
 <H2>
@@ -35,8 +36,11 @@ synchronization of processors for I/O (with <A HREF="#print_sync_example">exampl
 <BR><B><A HREF="#Zoltan_Print_Stats">Zoltan_Print_Stats</A></B> : print statistics
 about a parallel variable.</BLOCKQUOTE>
 
+<!------------------------------------------------------------------------->
 <hr>
-<HR><A NAME="Zoltan_Print_Sync_Start"></A>void <B>Zoltan_Print_Sync_Start</B>(struct
+<A NAME="Zoltan_Print_Sync_Start"></A>
+<HR>
+void <B>Zoltan_Print_Sync_Start</B>(struct
 <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B> *<I>zz</I>,
 int <I>do_print_line</I>);&nbsp;
 <HR>
@@ -81,8 +85,12 @@ line is printed; no line is printed otherwise.</TD>
 &nbsp;
 
 <P>
+
+<!------------------------------------------------------------------------->
 <hr>
-<HR><A NAME="Zoltan_Print_Sync_End"></A>void <B>Zoltan_Print_Sync_End</B>(struct
+<A NAME="Zoltan_Print_Sync_End"></A>
+<HR>
+void <B>Zoltan_Print_Sync_End</B>(struct
 <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B> *<I>zz</I>,
 int <I>do_print_line</I>);&nbsp;
 <HR>
@@ -125,8 +133,12 @@ and after the synchronization block. If <I>do_print_line</I> is TRUE, a
 line is printed; no line is printed otherwise.</TD>
 </TR>
 </TABLE>
+
+<!------------------------------------------------------------------------->
 <hr>
-<HR WIDTH="100%"><A NAME="Zoltan_Print_Stats"></A>void <B>Zoltan_Print_Stats</B>(MPI_Comm <i>comm</i>, int <i>debug_proc</i>,
+<A NAME="Zoltan_Print_Stats"></A>
+<HR WIDTH="100%">
+void <B>Zoltan_Print_Stats</B>(MPI_Comm <i>comm</i>, int <i>debug_proc</i>,
 double <i>x</i>, char <i>*msg</i>);
 <BR>
 <HR WIDTH="100%">
@@ -170,6 +182,8 @@ If <I>x </I>has the same value on all processors, the imbalance is zero.
 
 <HR WIDTH="100%">
 <H4>
+
+<!------------------------------------------------------------------------->
 
 <HR WIDTH="100%"><A NAME="print_sync_example"></A><B>Example Using Zoltan_Print_Sync_Start/Zoltan_Print_Sync_End</B></H4>
 &nbsp;

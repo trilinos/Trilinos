@@ -25,7 +25,7 @@
 
 <div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_add.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_time.html">Previous</a></i></b></div>
 
-
+<!------------------------------------------------------------------------->
 <h2>
 <a NAME="Debugging"></a>Debugging Services</h2>
 Execution of code for debugging can be controlled by algorithm specific
@@ -50,8 +50,12 @@ The macros are defined in <i>zz/zz_const.h.</i>
 be found <a href="#Debug Example">below</a> and in <i>lb/lb_balance.c</i> 
 and <i>rcb/rcb.c.</i>
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="ZOLTAN_TRACE_ENTER"></a><b>ZOLTAN_TRACE_ENTER</b>(struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
+<a NAME="ZOLTAN_TRACE_ENTER"></a>
+<hr>
+<b>ZOLTAN_TRACE_ENTER</b>(struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
 *<i>zz</i>, char *<i>function_name</i>);
 <br>
 <hr>
@@ -97,9 +101,12 @@ parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
+<a NAME="ZOLTAN_TRACE_EXIT"></a>
 <hr>
-<a NAME="ZOLTAN_TRACE_EXIT"></a><b>ZOLTAN_TRACE_EXIT</b>(struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
+<b>ZOLTAN_TRACE_EXIT</b>(struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
 *<i>zz</i>, char *<i>function_name</i>);
 <br>
 <hr>
@@ -145,8 +152,12 @@ parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr WIDTH="100%"><a NAME="ZOLTAN_TRACE_DETAIL"></a><b>ZOLTAN_TRACE_DETAIL</b>(struct
+<a NAME="ZOLTAN_TRACE_DETAIL"></a>
+<hr WIDTH="100%">
+<b>ZOLTAN_TRACE_DETAIL</b>(struct
 <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
 *<i>zz</i>, char *<i>function_name</i>, char *<i>message</i>);
 <br>
@@ -201,6 +212,8 @@ parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html
 
 <br>&nbsp;
 <br>&nbsp;
+
+<!------------------------------------------------------------------------->
 <p>
 <hr><a NAME="Debug Example"></a>
 <br><b>Example:</b>

@@ -25,6 +25,7 @@
 
 <div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
 |&nbsp; <a href="dev_services_debug.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_hash.html">Previous</a></i></b></div>
+<!------------------------------------------------------------------------->
 
 <h2>
 <a NAME="Timing"></a>Timing Routines</h2>
@@ -61,8 +62,12 @@ This value should be passed to <a href="#Zoltan_Time"><b>Zoltan_Time</b></a>,
 as in <a href="#Zoltan_Time"><b>Zoltan_Time</b></a>(<i>zz->Timer</i>).
 <br>&nbsp;
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Time"></a>double <b>Zoltan_Time</b>(int <i>timer</i>);&nbsp;
+<a NAME="Zoltan_Time"></a>
+<hr>
+double <b>Zoltan_Time</b>(int <i>timer</i>);&nbsp;
 <hr>
 <p><b>Zoltan_Time</b> returns the time in seconds, measured from some fixed
 reference time. Note that the time is <i>not </i>synchronized among different
@@ -98,8 +103,12 @@ indicates an error.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Time_Resolution"></a>double <b>Zoltan_Time_Resolution</b>(int
+<a NAME="Zoltan_Time_Resolution">
+<hr>
+</a>double <b>Zoltan_Time_Resolution</b>(int
 <i>timer</i>)
 ;&nbsp;
 <hr>
@@ -135,6 +144,8 @@ of page</a> for a list of valid values.</td>
 
 <br>&nbsp;
 <p>
+
+<!------------------------------------------------------------------------->
 <hr><a NAME="Example"></a>
 <br><b>Example:</b>
 <br>Here is a simple example for how to use the timer routines:

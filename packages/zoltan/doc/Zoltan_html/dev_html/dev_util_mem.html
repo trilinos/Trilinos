@@ -25,6 +25,7 @@
 
 <div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
 |&nbsp; <a href="dev_util_comm.html">Next</a>&nbsp; |&nbsp; <a href="dev_util.html">Previous</a></i></b></div>
+<!------------------------------------------------------------------------->
 
 <h2>
 <a NAME="Memory"></a>Memory Management Utilities</h2>
@@ -111,8 +112,11 @@ used by this utility through calls to
 </tr>
 </table>
 
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Array_Alloc"></a>double *<b>Zoltan_Array_Alloc</b>(char *<i>
+<a NAME="Zoltan_Array_Alloc"></a>
+<hr>
+double *<b>Zoltan_Array_Alloc</b>(char *<i>
 file</i>, int <i>line</i>, int <i>n</i>, int <i>d1</i>, int <i>d2</i>,
 ..., int <i>dn</i>, int <i>size</i>);&nbsp;
 <hr>
@@ -202,8 +206,12 @@ or NULL if the allocation fails.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Malloc"></a>double *<b>Zoltan_Malloc</b>(int <i>n</i>, char
+<a NAME="Zoltan_Malloc"></a>
+<hr>
+double *<b>Zoltan_Malloc</b>(int <i>n</i>, char
 *<i> file</i> , int <i>line</i>);&nbsp;
 <hr>
 The <b>Zoltan_Malloc</b> function is a wrapper around the standard C malloc
@@ -285,8 +293,12 @@ returned if <i>n</i> = 0 or the routine is unsuccessful.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Realloc"></a>double *<b>Zoltan_Realloc</b>(void *<i>ptr</i>,
+<a NAME="Zoltan_Realloc"></a>
+<hr>
+double *<b>Zoltan_Realloc</b>(void *<i>ptr</i>,
 int <i>n</i>, char *<i>file</i>, int <i>line</i>);&nbsp;
 <hr>
 The <b>Zoltan_Realloc</b> function is a "safe" version of realloc. It changes
@@ -378,8 +390,12 @@ routine is unsuccessful, NULL is returned and *<i>ptr</i> is unchanged.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Free"></a>void <b>Zoltan_Free</b>(void **<i>ptr</i>, char *<i>
+<a NAME="Zoltan_Free"></a>
+<hr>
+void <b>Zoltan_Free</b>(void **<i>ptr</i>, char *<i>
 file</i> , int <i>line</i>);&nbsp;
 <hr>
 The <b>Zoltan_Free</b> function calls the system's "free" function for the
@@ -434,6 +450,8 @@ is NULL.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
 <hr><a NAME="Debug_Memory"></a>
 <h3>
@@ -447,8 +465,12 @@ We have found values of one and two to
 be very helpful in our development efforts.&nbsp;
 <p>
 
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Set_Memory_Debug"></a>void <b>Zoltan_Set_Memory_Debug</b>(int <i>new_level</i>);
+<a NAME="Zoltan_Set_Memory_Debug"></a>
+<hr>
+void <b>Zoltan_Set_Memory_Debug</b>(int <i>new_level</i>);
 <hr>
 The <b>Zoltan_Set_Memory_Debug</b> function sets the level of memory debugging to
 be used.  
@@ -500,8 +522,12 @@ list and thus can generate spurious warnings.)
 </table>
 <p>
 
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Memory_Stats"></a>void <b>Zoltan_Memory_Stats</b>();
+<a NAME="Zoltan_Memory_Stats"></a>
+<hr>
+void <b>Zoltan_Memory_Stats</b>();
 <hr>
 The <b>Zoltan_Memory_Stats</b> function prints information about memory allocation
 and deallocation.&nbsp; The amount of information printed is determined by the

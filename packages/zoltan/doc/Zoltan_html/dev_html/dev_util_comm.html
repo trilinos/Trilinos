@@ -25,6 +25,7 @@
 
 <div align=right><b><i><a href="dev.html">&nbsp;Zoltan Developer's Guide</a>&nbsp;
 |&nbsp; <a href="dev_util_dd.html">Next</a>&nbsp; |&nbsp; <a href="dev_util_mem.html">Previous</a></i></b></div>
+<!------------------------------------------------------------------------->
 
 <h2>
 Unstructured Communication Utilities</h2>
@@ -148,8 +149,11 @@ then automatically propagate to the algorithms.&nbsp;</blockquote>
 </tr>
 </table>
 
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Comm_Create"></a>int<b> Zoltan_Comm_Create</b>(struct Comm_Obj&nbsp;
+<a NAME="Zoltan_Comm_Create"></a>
+<hr>
+int <b>Zoltan_Comm_Create</b>(struct Comm_Obj&nbsp;
 **<i>plan</i>,<b> </b>int <i>nsend</i>, int *<i>proclist</i>, MPI_Comm
 <i>comm</i>
 , int <i>tag</i>, int *<i>nreturn</i>);&nbsp;
@@ -223,8 +227,12 @@ each of the objects to be sent.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Comm_Do"></a>int<b> Zoltan_Comm_Do</b>(struct Comm_Obj *<i>plan</i>,
+<a NAME="Zoltan_Comm_Do"></a>
+<hr>
+int <b>Zoltan_Comm_Do</b>(struct Comm_Obj *<i>plan</i>,
 int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
 <hr>The <b>Zoltan_Comm_Do</b> function performs the communication described
 in a communication plan built by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b>.
@@ -293,8 +301,12 @@ more details.)</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Comm_Do_Reverse"></a>int <b>Zoltan_Comm_Do_Reverse</b>(struct
+<a NAME="Zoltan_Comm_Do_Reverse"></a>
+<hr>
+int <b>Zoltan_Comm_Do_Reverse</b>(struct
 Comm_Obj *<i>plan</i>, int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>,
 int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
 <hr>The <b>Zoltan_Comm_Do_Reverse</b> function performs communication based
@@ -369,8 +381,12 @@ of the values being received, not sent.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Comm_Resize"></a>int <b>Zoltan_Comm_Resize</b>( struct Comm_Obj
+<a NAME="Zoltan_Comm_Resize"></a>
+<hr>
+int <b>Zoltan_Comm_Resize</b>( struct Comm_Obj
 *<i>plan</i>, int *<i>sizes</i>, int <i>tag</i> , int *<i>total_recv_size</i>);&nbsp;
 <hr>If the objects being communicated are of variable sizes, then the plan
 produced by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b> is incomplete.
@@ -431,8 +447,12 @@ size (in bytes), you need to scale by the <i>nbytes</i> argument to <b><a href="
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Comm_Destroy"></a>int <b>Zoltan_Comm_Destroy</b>(struct Comm_Obj
+<a NAME="Zoltan_Comm_Destroy"></a>
+<hr>
+int <b>Zoltan_Comm_Destroy</b>(struct Comm_Obj
 **<i>plan</i>);&nbsp;
 <hr>The <b>Zoltan_Comm_Destroy</b> function frees all memory associated with
 a communication plan created by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b>.
@@ -465,8 +485,12 @@ Upon return, <i>plan</i> is set to NULL.&nbsp;</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Comm_Exchange_Sizes"></a>int <b>Zoltan_Comm_Exchange_Sizes</b>(
+<a NAME="Zoltan_Comm_Exchange_Sizes"></a>
+<hr>
+int <b>Zoltan_Comm_Exchange_Sizes</b>(
 int *<i>sizes_to</i>, int *<i>procs_to</i>, int <i>nsends</i>, int <i>self_msg</i>,
 int *<i>sizes_from</i>, int *<i>procs_from</i>, int <i>nrecvs</i>, int
 *<i>total_recv_size</i>, int <i>my_proc</i>, int <i>tag</i>, MPI_Comm <i>comm</i>
@@ -573,8 +597,12 @@ number of bytes will be scaled by the <i>nbytes</i> argument to <b><a href="#Zol
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Comm_Invert_Map"></a>int <b>Zoltan_Comm_Invert_Map</b>( int
+<a NAME="Zoltan_Comm_Invert_Map"></a>
+<hr>
+int <b>Zoltan_Comm_Invert_Map</b>( int
 *<i>lengths_to</i>, int *<i> procs_to</i>, int <i>nsends</i>, int <i>self_msg</i>,
 int **<i> lengths_from</i>, int **<i> procs_from</i>, int *<i> nrecvs</i>,
 int <i>my_proc</i>, int <i>nprocs</i>, int <i>out_of_mem</i>, int <i>tag</i>,
@@ -694,8 +722,12 @@ if any of them is out of memory.</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr>
-<hr><a NAME="Zoltan_Comm_Sort_Ints"></a>int <b>Zoltan_Comm_Sort_Ints</b>( int *<i>vals_sort</i>,
+<a NAME="Zoltan_Comm_Sort_Ints"></a>
+<hr>
+int <b>Zoltan_Comm_Sort_Ints</b>( int *<i>vals_sort</i>,
 int *<i>vals_other</i>, int <i>nvals</i>);&nbsp;
 <hr>As its name suggests, the <b>Zoltan_Comm_Sort_Ints</b> function sorts a
 set of integers via the quicksort algorithm. The integers are reordered

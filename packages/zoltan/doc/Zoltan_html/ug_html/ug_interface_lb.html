@@ -37,13 +37,16 @@ Zoltan library; their descriptions are included below.
 <br><b><a href="#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>
 <br><b><a href="#Zoltan_Destroy">Zoltan_Destroy</a></b></blockquote>
 
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="Zoltan_LB_Set_Method"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="Zoltan_LB_Set_Method"></a>int <b>Zoltan_LB_Set_Method</b>
+<td WIDTH="85%">
+int <b>Zoltan_LB_Set_Method</b>
 (struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
 char&nbsp;*<i>string</i>);&nbsp;</td>
 </tr>
@@ -119,13 +122,17 @@ is used.</td>
 </tr>
 </table>
 
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="Zoltan_Set_Param"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="Zoltan_Set_Param"></a>int <b>Zoltan_Set_Param</b>
+<td WIDTH="85%">
+int <b>Zoltan_Set_Param</b>
 (struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
 char&nbsp;*<i>param_name</i>,
 char&nbsp;*<i>new_val</i>);&nbsp;</td>
@@ -199,13 +206,17 @@ being set. As above, the string is case-insensitive.&nbsp;</td>
 </tr>
 </table>
 
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="Zoltan_LB_Balance"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="Zoltan_LB_Balance"></a>int <b>Zoltan_LB_Balance</b>
+<td WIDTH="85%">
+int <b>Zoltan_LB_Balance</b>
 (struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
 int&nbsp;*<i>changes</i>,
 int&nbsp;*<i>num_gid_entries</i>,
@@ -369,13 +380,17 @@ IDs of processors that will own the exported objects in the new decomposition
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="Zoltan_LB_Eval"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="Zoltan_LB_Eval"></a>int <b>Zoltan_LB_Eval</b>
+<td WIDTH="85%">
+int <b>Zoltan_LB_Eval</b>
 (struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
 int&nbsp;<i>print_stats</i>,
 int&nbsp;*<i>nobj</i>,
@@ -509,13 +524,17 @@ one or more of the optional output parameters.
 the number of edges cut in the graph (because each edge is counted twice).
 The same principle holds for <i>cut_wgt.</i>
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="Zoltan_LB_Free_Data"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="Zoltan_LB_Free_Data"></a>int <b>Zoltan_LB_Free_Data</b>
+<td WIDTH="85%">
+int <b>Zoltan_LB_Free_Data</b>
 (<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;*<i>import_global_ids</i>,
 <a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;*<i>import_local_ids</i>,
 int&nbsp;**<i>import_procs</i>, 
@@ -602,13 +621,17 @@ objects in the new decomposition (i.e., the destination processors).</td>
 </tr>
 </table>
 
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="Zoltan_Destroy"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="Zoltan_Destroy"></a>void <b>Zoltan_Destroy</b>
+<td WIDTH="85%">
+void <b>Zoltan_Destroy</b>
 (struct&nbsp;<b>Zoltan_Struct</b>&nbsp;**<i>zz</i>);&nbsp;</td>
 </tr>
 
@@ -642,6 +665,8 @@ to be destroyed.&nbsp;</td>
 </table>
 
 <p>
+
+<!------------------------------------------------------------------------->
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_interface_augment.html">Next:&nbsp;
 Functions for Augmenting a Decomposition</a>&nbsp; |&nbsp; <a href="ug_interface_init.html">Previous:&nbsp;
 Initialization Functions</a>]
