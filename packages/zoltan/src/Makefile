@@ -14,6 +14,7 @@
 #
 #====================================================================
 #
+
 GDEFINES = -DDEBUG
 
 #
@@ -24,9 +25,9 @@ GDEFINES = -DDEBUG
 #
 #   Paths to submodules
 #
-SUBVPATH=../all ../lb ../par ../rcb ../comm
-SUBINCPATH=-I../all -I../lb -I../par -I../rcb -I../comm
-SUBDIRS= all lb par rcb Obj_sgi10k Obj_smos Obj_sun Obj_tflop 
+SUBVPATH=../all ../lb ../par ../rcb ../comm ../oct
+SUBINCPATH=-I../all -I../lb -I../par -I../rcb -I../comm -I../oct
+SUBDIRS= all lb par rcb oct Obj_sgi10k Obj_smos Obj_sun Obj_tflop 
 
 #source code from SCCS projects
 
@@ -50,6 +51,12 @@ LB_INC=lb_const.h lb.h lbi_const.h lb_util_const.h
 RCB_CSRC=rcb.c rcb_util.c 
 RCB_INC=rcb.h
 
+OCT_CSRC=msg.c octant.c util3.c octupdate3.c dfs.c costs.c migoct3.c output.c \
+	migreg3.c hilbert.c
+OCT_INC=msg_const.h octant_const.h util_const.h octupdate_const.h \
+	octupdate.h dfs_const.h dfs.h migoct_const.h migoct.h migreg.h \
+	hilbert_const.h
+
 COMM_CSRC=comm.c
 COMM_INC=comm.h
 
@@ -58,9 +65,10 @@ PAR_INC=par_const.h par.h
 
 # machine independent routines
 INC          = $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) $(RCB_INC) \
-               $(COMM_INC)
+               $(COMM_INC) $(OCT_INC)
 #LIB_SRC_C    = $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) 
-LIB_SRC_C    = $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) $(COMM_CSRC)
+LIB_SRC_C    = $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) $(COMM_CSRC) \
+		$(OCT_CSRC)
 LIB_SRC_OBJ  = $(LIB_SRC_C:.c=.o) 
 
 #library paths for different machines
@@ -75,6 +83,7 @@ SUN_INC_PATH     =   -I$(SUN_PATH)/include  -I/Net/local/lang/SC2.0.1/include \
 			-I/Net/local/lang/SC2.0.1/ansi_include \
                         -I/Net/hondo/puma1/pumatmp1/tools/mpi/include \
                          $(SUBINCPATH)
+
 SGI10K_INC_PATH  =   -I$(SGI10K_PATH)/include $(SUBINCPATH)
 SMOS_INC_PATH    =   -I$(SMOS_PATH)/include $(SUBINCPATH)
 TFLOP_INC_PATH   =   -I$(TFLOP_PATH)/include $(SUBINCPATH)
