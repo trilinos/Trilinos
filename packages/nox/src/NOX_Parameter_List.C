@@ -424,7 +424,7 @@ ostream& List::print(ostream& stream, int indent) const
 	stream << name(i) << " -> " << endl;
 	entry(i).getListValue().print(stream, indent + 2);
       }
-      if (entry(i).isArbitrary()) 
+      else if (entry(i).isArbitrary()) 
       {
 	stream << name(i) << " = " << entry(i) << endl;
 	entry(i).getArbitraryValue().print(stream, indent + 2);
