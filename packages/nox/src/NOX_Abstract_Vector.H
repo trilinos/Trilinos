@@ -49,7 +49,7 @@ namespace Abstract {
 
 /*! 
   \brief %NOX's pure abstract vector interface for vectors that are
-  used by the NLS solver. We require only limited functionality for
+  used by the nonlinear solver. We require only limited functionality for
   the vectors.
 
   The documentation throughout assumes that \f$x\f$ denotes "this"
@@ -63,7 +63,7 @@ class Vector {
 
 public:
   
-  //! Norm types.
+  //! Norm types used in norm() calculations
   enum NormType {
     //! Use the 2-norm
     TwoNorm, 
@@ -82,22 +82,47 @@ public:
   //@{ \name Initialization methods.
 
   //! Initialize every element of this vector with \c gamma.
-  /*! \f[ x_i = \alpha \quad \mbox{for } i=1,\dots,n \f] */
+  /*! 
+    \f[ x_i = \gamma \quad \mbox{for } i=1,\dots,n \f] 
+    \return Reference to x
+  */
   virtual NOX::Abstract::Vector& init(double gamma) = 0;
 
-  //! Initialize every element of this vector with random values
+  //! Initialize each element of this vector with a random value
+  /*
+    If \c useSeed is true, uses the value of \c seed to seed the
+    random number generator before filling the entries of x. So, if
+    two calls are made where \c useSeed is true and \c seed is the
+    same, then the vectors returned should be the same.
+
+    Default implementation throw an error. Only used by a subset of methods.
+
+    \return Reference to x
+   */
   virtual NOX::Abstract::Vector& random(bool useSeed = false, double seed = 0.0);
 
   //! Put element-wise absolute values of source vector \c y into this vector.
-  /*! \f[ x_i = | y_i | \quad \mbox{for } i=1,\dots,n \f] */
+  /*! 
+    \f[ x_i = | y_i | \quad \mbox{for } i=1,\dots,n \f] 
+
+    \return Reference to x
+  */
   virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y) = 0;
 
   //! Copy source vector \c y into this vector.
-  /*! \f[ x_i = y_i \quad \mbox{for } i=1,\dots,n \f] */
+  /*! 
+    \f[ x_i = y_i \quad \mbox{for } i=1,\dots,n \f] 
+
+    \return Reference to x
+  */
   virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y) = 0;
 
   //! Put element-wise reciprocal of source vector \c y into this vector.
-  /*! \f[ x_i =  \frac{1}{y_i} \quad \mbox{for } i=1,\dots,n  \f] */
+  /*! 
+    \f[ x_i =  \frac{1}{y_i} \quad \mbox{for } i=1,\dots,n  \f] 
+
+    \return Reference to x
+  */
   virtual NOX::Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y) = 0;
 
   //@}
@@ -105,19 +130,35 @@ public:
   //@{ \name Update methods.
 
   //! Scale each element of this vector by \c gamma.
-  /*! \f[ x_i = \gamma x_i \quad \mbox{for } i=1,\dots,n \f] */
+  /*! 
+    \f[ x_i = \gamma x_i \quad \mbox{for } i=1,\dots,n \f] 
+
+    \return Reference to x
+  */
   virtual NOX::Abstract::Vector& scale(double gamma) = 0;
 
-  //! Scale this vector <em>element-by-element<\em> by \c a.
-  /*! \f[ x_i = x_i \cdot a_i \quad \mbox{for } i=1,\dots,n \f] */
+  //! Scale this vector <em>element-by-element</em> by the vector a.
+  /*! 
+    \f[ x_i = x_i \cdot a_i \quad \mbox{for } i=1,\dots,n \f] 
+
+    \return Reference to x
+  */
   virtual NOX::Abstract::Vector& scale(const NOX::Abstract::Vector& a) = 0;
 
   //! Compute x = (alpha * a) + (x * this) where x is this vector.
-  /*! \f[ x_i = \alpha \; a_i + \gamma \; x_i \quad \mbox{for } i=1,\dots,n \f] */
+  /*! 
+    \f[ x_i = \alpha \; a_i + \gamma \; x_i \quad \mbox{for } i=1,\dots,n \f] 
+
+    \return Reference to x
+  */
   virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, double gamma = 0.0) = 0;
 
   //! Compute x = (alpha * a) + (beta * b) + (x * this) where x is this vector.
-  /*! \f[ x_i = \alpha \; a_i + \beta \; b_i + \gamma \; x_i \quad \mbox{for } i=1,\dots,n \f] */
+  /*! 
+    \f[ x_i = \alpha \; a_i + \beta \; b_i + \gamma \; x_i \quad \mbox{for } i=1,\dots,n \f] 
+
+    \return Reference to x
+  */
   virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, 
 			 double beta, const NOX::Abstract::Vector& b,
 			 double gamma = 0.0) = 0;
@@ -126,12 +167,16 @@ public:
 
   //@{ \name Creating new Vectors.
 
-  /*! \brief Create a new %Vector of the same underlying type by
-    cloning "this", and return a pointer to the new vector.  */
-  /*! If type is NOX::DeepCopy, then we need to create an exact replica
+  /*! 
+    \brief Create a new %Vector of the same underlying type by
+    cloning "this", and return a pointer to the new vector.  
+
+    If type is NOX::DeepCopy, then we need to create an exact replica
     of "this". Otherwise, if type is NOX::ShapeCopy, we need only
-    replicate the shape of "this". Returns NULL if clone is not
-    supported. */
+    replicate the shape of "this". 
+
+    \return Pointer to newly created vector or NULL if clone is not supported. 
+  */
   virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
   //@}
@@ -141,16 +186,19 @@ public:
   //! Norm.
   /*! Defined as follows for each NOX::Abstract::Vector::NormType:
     <ul>
-    <li>\c TWO : 2-norm \f[ \sqrt{\sum_{i=1}^{n} x_i^2} \f] 
-    <li>\c ONE : 1-norm \f[ \sum_{i=1}^{n} |x_i| \f]
-    <li>\c INF : infinity- or max-norm \f[ \max_{i} |x_i| \f]
+    <li>\c TWO : 2-norm \f[ \|x\| = \sqrt{\sum_{i=1}^{n} x_i^2} \f] 
+    <li>\c ONE : 1-norm \f[ \|x\| = \sum_{i=1}^{n} |x_i| \f]
+    <li>\c INF : infinity- or max-norm \f[ \|x\| = \max_{i} |x_i| \f]
     </uL>
+
+    \return \f$\|x\|\f$
   */
   virtual double norm(NOX::Abstract::Vector::NormType type = NOX::Abstract::Vector::TwoNorm) const = 0;
 
   //! Weighted 2-Norm.
   /*! Defined as 
-    \f[ \sqrt{\sum_{i=1}^{n} w_i \; x_i^2} \f] 
+    \f[ \|x\|_w = \sqrt{\sum_{i=1}^{n} w_i \; x_i^2} \f] 
+    \return \f$ \|x\|_w \f$
   */
   virtual double norm(const NOX::Abstract::Vector& weights) const = 0;
 
@@ -159,13 +207,18 @@ public:
   //@{ \name Dot products.
 
   //! Dot product with \c y.
-  /*! \f[\sum_{i=1}^n x_i y_i\f] */
+  /*! 
+    Defined as
+    \f[ <x,y> = \sum_{i=1}^n x_i y_i \f] 
+    \return \f$<x,y>\f$
+   */
   virtual double dot(const NOX::Abstract::Vector& y) const = 0;
   
   //@}
 
   //! Return the length of vector.
   /*! 
+    \return n
     \note Even if the vector is distributed across processors, this
     should return the \e global length of the vector.
    */
