@@ -1,0 +1,12 @@
+Code to convert HB matrices to hypergraph and graph files readable by Zoltan,
+and to measure communication volume of matrix-vector multiplication with a 
+given decomposition of a HB matrix.
+
+
+Files:
+  buildgraph.c -- does conversion of HB to hypergraph and graph.
+  metric.c     -- measure communication volume of matrix-vector multiplication.
+  Other *.c    -- Matrix Market code for reading a HB matrix file.
+
+Documentation on usage of metric.c is included in comments in metric.c.
+Documentation of buildgraph.c is not yet available.
