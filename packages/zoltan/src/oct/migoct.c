@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_migoctc_id = "$Id$";
-#endif
 
 #include <unistd.h>
 #include "lb_const.h"
@@ -89,6 +86,7 @@ void LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
    *  for(i=0; i<(*nrecregs); i++)
    *    fprintf(stderr,"%d\n", (*import_regions)[i].Tag.Proc);
    */
+  LB_FREE(&tag_pids);
 }
 
 /*
@@ -250,7 +248,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   int i;                                  /* index counter */
   int nreceives;                          /* number of messages received */
   pRegion imp;                            /* array of tags being imported */
-  pRegion tmp;
+  pRegion tmp = NULL;
   int j;
   float im_load;
   COMM_OBJ *comm_plan;           /* Communication object returned by 
@@ -258,13 +256,16 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 
   im_load = 0;
   comm_plan = LB_Comm_Create(nsentags, tag_pids, lb->Communicator, &nreceives);
-  tmp = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, nreceives,
-                                 sizeof(Region));
+
+  if (nreceives > 0) {
+    tmp = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, nreceives,
+                                   sizeof(Region));
   
-  if((nreceives != 0) && (tmp == NULL)) {
-    fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
-	    "cannot allocate memory for import_objs.");
-    abort();
+    if(tmp == NULL) {
+      fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
+  	    "cannot allocate memory for import_objs.");
+      abort();
+    }
   }
   
   LB_Comm_Do(comm_plan, (char *) export_tags, sizeof(Region), (char *) tmp);

@@ -16,10 +16,6 @@
 #ifndef __OCTUPDATE_CONST_H
 #define __OCTUPDATE_CONST_H
 
-#ifndef lint
-static char *cvs_octantupdateconsth_id = "$Id$";
-#endif
-
 #include "octant_const.h"
 #define MINOCTREGIONS 1              /* minimum number of regions per octant */
 

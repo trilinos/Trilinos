@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_migregc_id = "$Id$";
-#endif
 
 #include "migreg.h"
 #include "hilbert_const.h"
@@ -36,18 +33,20 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   int n_import;
   COMM_OBJ *comm_plan;           /* Communication object returned by 
 				    Bruce and Steve's communication routines */
-  Region *import_objs;          /* Array of import objects used to request 
+  Region *import_objs = NULL;    /* Array of import objects used to request 
 				    the objs from other processors. */
 
   comm_plan = LB_Comm_Create(nregions, npids, lb->Communicator, &n_import);
   *c2 = n_import;
-  import_objs = (Region *) LB_Array_Alloc(__FILE__, __LINE__, 1, n_import,
-                                          sizeof(Region));
+  if (n_import > 0) {
+    import_objs = (Region *) LB_Array_Alloc(__FILE__, __LINE__, 1, n_import,
+                                            sizeof(Region));
 
-  if((n_import != 0) && (import_objs == NULL)) {
-    fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
-	    "cannot allocate memory for import_objs.");
-    abort();
+    if(import_objs == NULL) {
+      fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
+  	    "cannot allocate memory for import_objs.");
+      abort();
+    }
   }
 
   LB_Comm_Do(comm_plan, (char *) regions, sizeof(Region), 
@@ -73,12 +72,13 @@ void LB_insert_orphan(LB *lb, Region reg) {
   int i, j;                        /* index counters */
   double upper,                    /* upper bounds of the octant */
          lower;                    /* lower bounds of the octant */
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
 
-  rootlist = POC_localroots();                 /* get a list all local roots */
+  rootlist = POC_localroots(OCT_info);                 /* get a list all local roots */
   if(rootlist == NULL)                                        /* error check */
     fprintf(stderr,"ERROR in LB_insert_orphans(), rootlist is NULL\n");
 
-  if (OCT_dimension == 2)
+  if (OCT_info->OCT_dimension == 2)
     i = 2;                                           /* ignore z coordinates */
   else
     i = 3;
@@ -142,6 +142,7 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
           cmax;                       /* maximum bounds of a child octant */
   int     new_num;
   int     n;
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
 
   /* create the array of messages to be sent to other processors */
   /* Array = (Message *) LB_Array_Alloc(__FILE__, __LINE__, 1, nregions,
@@ -167,26 +168,26 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
      */
     /* region not attached, have to find which processor to send to */
     j=0;
-    vector_set(min, OCT_gmin);
-    vector_set(max, OCT_gmax);
+    vector_set(min, OCT_info->OCT_gmin);
+    vector_set(max, OCT_info->OCT_gmax);
     /* 
      * for each level of refinement, find which child region belongs to.
      * translate which child to which entry in map array.
      */
     for(i=0; i<level; i++) {
       LB_bounds_to_origin(min, max, origin);
-      if(OCT_dimension == 2)
+      if(OCT_info->OCT_dimension == 2)
 	j = j * 4;
       else
 	j = j * 8;
-      k = LB_child_which(origin, ptr->Coord);
-      if(HILBERT) {
-	if(OCT_dimension == 3) 
-	  new_num = LB_change_to_hilbert(min, max, origin, k);
+      k = LB_child_which(OCT_info,origin, ptr->Coord);
+      if(OCT_info->HILBERT) {
+	if(OCT_info->OCT_dimension == 3) 
+	  new_num = LB_change_to_hilbert(OCT_info,min, max, origin, k);
 	else 
-	  new_num = LB_change_to_hilbert2d(min, max, origin, k);
+	  new_num = LB_change_to_hilbert2d(OCT_info,min, max, origin, k);
       }
-      else if(GRAY)
+      else if(OCT_info->GRAY)
 	new_num = LB_convert_to_gray(k);
       else
 	new_num = k;
@@ -242,6 +243,8 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   /* migrate the orphan regions according to the message array */
   LB_migreg_migrate_regions(lb, regions2, npids2, n, c2);
   
+  for (i=0; i < n; i++) 
+    LB_FREE(&(regions[i]));
   LB_FREE(&regions);
   LB_FREE(&npids);
   LB_FREE(&regions2);
