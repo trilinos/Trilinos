@@ -37,8 +37,18 @@
 
   \mainpage %NOX: An Object-Oriented Nonlinear Solver Package
 
-  \todo Add regression testing.
- */
+  Useful Links...
+  <UL>
+  <LI><A HREF="../configure.html">Configuration and compilation instructions</A>
+  <LI><A HREF="http://csmr.ca.sandia.gov/bugzilla/">Bugzilla (Bug Tracking)</A> 
+      <UL>
+      <LI>Click on "Enter a new bug report"
+      <LI>Choose "%NOX"
+      <LI>Either login or create a new account
+      <LI>Submit your bug report
+      </UL>
+  </UL>
+*/
  
 //! Nonlinear solvers package namespace
 namespace NOX {
