@@ -26,12 +26,16 @@
 // ************************************************************************
 //@HEADER
 
+#include "Epetra_LocalMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Flops.h"
 #include "Epetra_Export.h"
+#include "Epetra_Import.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_IntSerialDenseVector.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
@@ -43,6 +47,7 @@
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, j, forierr = 0;
+  int ntrials = 1;
 
 #ifdef EPETRA_MPI
 
@@ -232,7 +237,9 @@ int main(int argc, char *argv[])
   A.SetFlopCounter(counter);
   B.SetFlopCounter(A);
   Epetra_Time timer(Comm);
-  EPETRA_TEST_ERR(!(B.Multiply(false, Y, BY)==0),ierr); // Compute BY = B*Y
+  for (i=0; i<ntrials; i++) {
+    EPETRA_TEST_ERR(!(B.Multiply(false, Y, BY)==0),ierr); // Compute BY = B*Y
+  }
   double elapsed_time = timer.ElapsedTime();
   double total_flops = B.Flops();
   counter.ResetFlops();
@@ -247,7 +254,9 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   timer.ResetStartTime();
-  EPETRA_TEST_ERR(!(A.Multiply(true, Y, X)==0),ierr); // Compute X = A^T*Y
+  for (i=0; i<ntrials; i++) {
+    EPETRA_TEST_ERR(!(A.Multiply(true, Y, X)==0),ierr); // Compute X = A^T*Y
+  }
   elapsed_time = timer.ElapsedTime();
   total_flops = A.Flops();
   counter.ResetFlops();
@@ -279,7 +288,9 @@ int main(int argc, char *argv[])
 
   AT.SetFlopCounter(counter);
   timer.ResetStartTime();
-  EPETRA_TEST_ERR(!(AT.Multiply(false, Y, X)==0),ierr); // Compute X = A^T*Y
+  for (i=0; i<ntrials; i++) {
+    EPETRA_TEST_ERR(!(AT.Multiply(false, Y, X)==0),ierr); // Compute X = A^T*Y
+  }
   elapsed_time = timer.ElapsedTime();
   total_flops = AT.Flops();
   counter.ResetFlops();
@@ -292,7 +303,9 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   timer.ResetStartTime();
-  EPETRA_TEST_ERR(!(AT.Multiply(true, X, AATY)==0),ierr); // Compute AATY = A*X
+  for (i=0; i<ntrials; i++) {
+    EPETRA_TEST_ERR(!(AT.Multiply(true, X, AATY)==0),ierr); // Compute AATY = A*X
+  }
   elapsed_time = timer.ElapsedTime();
   total_flops = AT.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
@@ -305,6 +318,209 @@ int main(int argc, char *argv[])
   if (verbose && NumGlobalEquations<20) cout << "\n\nVector Z = A*ATY \n";
   if (verbose1 && NumGlobalEquations<20) cout <<AATY << endl;
 
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Now test use of Epetra_LocalMap vectors: First test case of local replicated range vector
+
+  {
+    Epetra_CrsMatrix AL(Copy, RowMap, 3);
+    for (i=0; i<NumMyEquations; i++)
+      {
+	forierr += !(A.ExtractGlobalRowCopy(MyGlobalElements[i], 3, NumEntries, Values, Indices)==0);
+	forierr += !(AL.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+      }
+    EPETRA_TEST_ERR(forierr,ierr);
+
+    Epetra_LocalMap YLMap(NumGlobalEquations, 0, Comm);
+    EPETRA_TEST_ERR(!(AL.FillComplete(XMap, YLMap)==0),ierr);
+    AL.SetFlopCounter(A);
+    Epetra_Vector YL(YLMap);
+    Epetra_Vector ALX(YLMap);
+  
+    timer.ResetStartTime();
+    for (i=0; i<ntrials; i++) {
+      EPETRA_TEST_ERR(!(A.Multiply(false, X, Y)==0),ierr); // Compute Y= A*X
+    }
+    elapsed_time = timer.ElapsedTime();
+    total_flops = A.Flops();
+    counter.ResetFlops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+
+
+
+    if (verbose) cout << "\n\nTotal MFLOPs for Y=A*X using global distributed Y = " << MFLOPs << endl<< endl;
+    if (verbose && NumGlobalEquations<20) cout << "\n\nVector Y = A*X using distributed Y \n";
+    if (verbose1 && NumGlobalEquations<20) cout << Y << endl;
+    if (verbose && NumGlobalEquations<20) cout << "\n\nA using dist Y range map\n";
+    if (verbose1 && NumGlobalEquations<20) cout << A << endl;
+
+    timer.ResetStartTime();
+    for (i=0; i<ntrials; i++) {
+      EPETRA_TEST_ERR(!(AL.Multiply(false, X, ALX)==0),ierr); // Compute YL= A*X
+    }
+    elapsed_time = timer.ElapsedTime();
+    total_flops = AL.Flops();
+    counter.ResetFlops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+
+    if (verbose) cout << "\n\nTotal MFLOPs for Y=A*X using Local replicated Y = " << MFLOPs << endl<< endl;
+    if (verbose && NumGlobalEquations<20) cout << "\n\nVector YL = AL*X using local replicated Y \n";
+    if (verbose1 && NumGlobalEquations<20) cout << ALX << endl;
+    if (verbose && NumGlobalEquations<20) cout << "\n\nA using local Y range map\n";
+    if (verbose1 && NumGlobalEquations<20) cout << AL << endl;
+
+    // Now gather Y values from the distributed Y and compare them to the local replicated Y values
+    Epetra_Import g2limporter(YLMap, YMap); // Import from distributed Y map to local Y map
+    EPETRA_TEST_ERR(!(YL.Import(Y, g2limporter, Insert)==0),ierr);
+    if (verbose && NumGlobalEquations<20) cout << "\n\nVector YL = imported from distributed Y \n";
+    if (verbose1 && NumGlobalEquations<20) cout << YL << endl;
+    EPETRA_TEST_ERR(!(YL.Update(-1.0, ALX, 1.0)==0),ierr);
+    EPETRA_TEST_ERR(!(YL.Norm2(&residual)==0),ierr);
+    if (verbose) cout << "Residual = " << residual << endl<< endl;
+			
+
+    // 
+    // Multiply by transpose
+    //
+
+    timer.ResetStartTime();
+    for (i=0; i<ntrials; i++) {
+      EPETRA_TEST_ERR(!(A.Multiply(true, Y, X)==0),ierr); // Compute X = A^TY
+    }
+    elapsed_time = timer.ElapsedTime();
+    total_flops = A.Flops();
+    counter.ResetFlops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+
+
+
+    if (verbose) cout << "\n\nTotal MFLOPs for X=A^TY using global distributed Y = " << MFLOPs << endl<< endl;
+    if (verbose && NumGlobalEquations<20) cout << "\n\nVector X using distributed Y \n";
+    if (verbose1 && NumGlobalEquations<20) cout << Y << endl;
+    if (verbose && NumGlobalEquations<20) cout << "\n\nA using dist Y range map\n";
+    if (verbose1 && NumGlobalEquations<20) cout << A << endl;
+
+    Epetra_Vector X1(XMap);
+
+    timer.ResetStartTime();
+    for (i=0; i<ntrials; i++) {
+      EPETRA_TEST_ERR(!(AL.Multiply(true, ALX, X1)==0),ierr); // Compute X1 = AL^T*Y
+    }
+    elapsed_time = timer.ElapsedTime();
+    total_flops = AL.Flops();
+    counter.ResetFlops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+
+    if (verbose) cout << "\n\nTotal MFLOPs for X1=A^T*Y using Local replicated Y = " << MFLOPs << endl<< endl;
+    if (verbose && NumGlobalEquations<20) cout << "\n\nVector X1 using local replicated Y \n";
+    if (verbose1 && NumGlobalEquations<20) cout << X1 << endl;
+
+    EPETRA_TEST_ERR(!(X1.Update(-1.0, X, 1.0)==0),ierr);
+    EPETRA_TEST_ERR(!(X1.Norm2(&residual)==0),ierr);
+    if (verbose) cout << "Residual = " << residual << endl<< endl;
+  }
+			
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // Finally test use of Epetra_LocalMap vectors using local replicated domain vector
+
+  {
+    Epetra_CrsMatrix AL(Copy, RowMap, 3);
+    for (i=0; i<NumMyEquations; i++)
+      {
+	forierr += !(A.ExtractGlobalRowCopy(MyGlobalElements[i], 3, NumEntries, Values, Indices)==0);
+	forierr += !(AL.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+      }
+    EPETRA_TEST_ERR(forierr,ierr);
+
+    Epetra_LocalMap XLMap(NumGlobalVariables, 0, Comm);
+    EPETRA_TEST_ERR(!(AL.FillComplete(XLMap, YMap)==0),ierr);
+    AL.SetFlopCounter(A);
+    Epetra_Vector XL(XLMap);
+    Epetra_Vector ALX(XLMap);
+  
+    timer.ResetStartTime();
+    for (i=0; i<ntrials; i++) {
+      EPETRA_TEST_ERR(!(A.Multiply(false, X, Y)==0),ierr); // Compute Y= A*X
+    }
+    elapsed_time = timer.ElapsedTime();
+    total_flops = A.Flops();
+    counter.ResetFlops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+
+
+
+    if (verbose) cout << "\n\nTotal MFLOPs for Y=A*X using global distributed X = " << MFLOPs << endl<< endl;
+    if (verbose && NumGlobalEquations<20) cout << "\n\nVector Y = A*X using distributed X \n";
+    if (verbose1 && NumGlobalEquations<20) cout << Y << endl;
+    //if (verbose && NumGlobalEquations<20) cout << "\n\nA using dist X range map\n";
+    //if (verbose1 && NumGlobalEquations<20) cout << A << endl;
+
+    // Now gather X values from the distributed X 
+    Epetra_Import g2limporter(XLMap, XMap); // Import from distributed X map to local X map
+    EPETRA_TEST_ERR(!(XL.Import(X, g2limporter, Insert)==0),ierr);
+    if (verbose && NumGlobalEquations<20) cout << "\n\nVector XL = imported from distributed X \n";
+    if (verbose1 && NumGlobalEquations<20) cout << XL << endl;
+    Epetra_Vector Y1(Y);
+    timer.ResetStartTime();
+    for (i=0; i<ntrials; i++) {
+      EPETRA_TEST_ERR(!(AL.Multiply(false, XL, Y1)==0),ierr); // Compute Y1= AL*XL
+    }
+    elapsed_time = timer.ElapsedTime();
+    total_flops = AL.Flops();
+    counter.ResetFlops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+
+    if (verbose) cout << "\n\nTotal MFLOPs for Y1=A*XL using Local replicated X = " << MFLOPs << endl<< endl;
+    if (verbose && NumGlobalEquations<20) cout << "\n\nVector Y1 = AL*XL using local replicated X \n";
+    if (verbose1 && NumGlobalEquations<20) cout << Y1 << endl;
+    //if (verbose && NumGlobalEquations<20) cout << "\n\nA using local X domain map\n";
+    //if (verbose1 && NumGlobalEquations<20) cout << AL << endl;
+
+    EPETRA_TEST_ERR(!(Y1.Update(-1.0, Y, 1.0)==0),ierr);
+    EPETRA_TEST_ERR(!(Y1.Norm2(&residual)==0),ierr);
+    if (verbose) cout << "Residual = " << residual << endl<< endl;
+			
+
+    // 
+    // Multiply by transpose
+    //
+
+    timer.ResetStartTime();
+    for (i=0; i<ntrials; i++) {
+      EPETRA_TEST_ERR(!(A.Multiply(true, Y, X)==0),ierr); // Compute X = A^TY
+    }
+    elapsed_time = timer.ElapsedTime();
+    total_flops = A.Flops();
+    counter.ResetFlops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+
+
+
+    if (verbose) cout << "\n\nTotal MFLOPs for X=A^TY using global distributed X = " << MFLOPs << endl<< endl;
+    if (verbose && NumGlobalEquations<20) cout << "\n\nVector X using distributed X \n";
+    if (verbose1 && NumGlobalEquations<20) cout << X << endl;
+    //if (verbose && NumGlobalEquations<20) cout << "\n\nA using dist X domain map\n";
+    //if (verbose1 && NumGlobalEquations<20) cout << A << endl;
+
+    timer.ResetStartTime();
+    for (i=0; i<ntrials; i++) {
+      EPETRA_TEST_ERR(!(AL.Multiply(true, Y, XL)==0),ierr); // Compute XL = AL^T*Y
+    }
+    elapsed_time = timer.ElapsedTime();
+    total_flops = AL.Flops();
+    counter.ResetFlops();
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+
+    if (verbose) cout << "\n\nTotal MFLOPs for XL=A^T*Y1 using Local replicated X = " << MFLOPs << endl<< endl;
+    if (verbose && NumGlobalEquations<20) cout << "\n\nVector XL using local replicated X \n";
+    if (verbose1 && NumGlobalEquations<20) cout << XL << endl;
+
+    Epetra_Vector XL1(XLMap);
+    EPETRA_TEST_ERR(!(XL1.Import(X, g2limporter, Insert)==0),ierr);
+    EPETRA_TEST_ERR(!(XL1.Update(-1.0, XL, 1.0)==0),ierr);
+    EPETRA_TEST_ERR(!(XL1.Norm2(&residual)==0),ierr);
+    if (verbose) cout << "Residual = " << residual << endl<< endl;
+  }			
   // Release all objects
   delete [] Values;
   delete [] Indices;
@@ -313,7 +529,7 @@ int main(int argc, char *argv[])
   delete [] YGlobalElements;
   delete [] ATAssemblyGlobalElements;
 
-			
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
