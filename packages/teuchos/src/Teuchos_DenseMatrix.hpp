@@ -32,20 +32,20 @@ namespace Teuchos
   {
   public:
     DenseMatrix();
-    DenseMatrix(DataAccess, ScalarType*, int, int, int);
-    DenseMatrix(const DenseMatrix<OrdinalType, ScalarType> &);
-    DenseMatrix(DataAccess, const DenseMatrix<OrdinalType, ScalarType> &, int, int, int, int);
+    DenseMatrix(DataAccess CV, ScalarType* A, int stride, int numRows, int numCols);
+    DenseMatrix(const DenseMatrix<OrdinalType, ScalarType> &Source);
+    DenseMatrix(DataAccess CV, const DenseMatrix<OrdinalType, ScalarType> &Source, int rows, int cols, int startRow=0, int startCol=0);
     virtual ~DenseMatrix();
-    int shape(int, int);
-    int reshape(int, int);
+    int shape(int numRows, int numCols);
+    int reshape(int numRows, int numCols);
     typename ScalarTraits<ScalarType>::magnitudeType DenseMatrix<OrdinalType, ScalarType>::oneNorm();
-    int  multiply (char, char, ScalarType, const DenseMatrix<OrdinalType, ScalarType> &, const DenseMatrix<OrdinalType, ScalarType> &, ScalarType);
-    bool operator== (const DenseMatrix<OrdinalType, ScalarType> &);
-    bool operator!= (const DenseMatrix<OrdinalType, ScalarType> &);
-    ScalarType &operator () (int, int);
-    const ScalarType &operator () (int, int) const;
-    ScalarType *operator [] (int);
-    const ScalarType *operator [] (int) const;
+    int  multiply (char TransA, char TransB, ScalarType alpha, const DenseMatrix<OrdinalType, ScalarType> &A, const DenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta);
+    bool operator== (const DenseMatrix<OrdinalType, ScalarType> &Operand);
+    bool operator!= (const DenseMatrix<OrdinalType, ScalarType> &Operand);
+    ScalarType &operator () (int RowIndex, int ColIndex);
+    const ScalarType &operator () (int RowIndex, int ColIndex) const;
+    ScalarType *operator [] (int ColIndex);
+    const ScalarType *operator [] (int ColIndex) const;
     int numRows() const { return(numRows_); };
     int numCols() const { return(numCols_); };
     ScalarType* values() const { return(values_); };
@@ -55,7 +55,7 @@ namespace Teuchos
     void TempPrint();
 
   protected:
-    void copyMat(ScalarType*, int, int, int, ScalarType*, int, int, int);
+    void copyMat(ScalarType* inputMatrix, int strideInput, int numRows, int numCols, ScalarType* outputMatrix, int strideOutput, int startRow, int startCol);
     void deleteArrays();
     int numRows_;
     int numCols_;
@@ -88,18 +88,18 @@ DenseMatrix<OrdinalType, ScalarType>::DenseMatrix(const DenseMatrix<OrdinalType,
 }
 
 template<typename OrdinalType, typename ScalarType>
-DenseMatrix<OrdinalType, ScalarType>::DenseMatrix(DataAccess CV, const DenseMatrix<OrdinalType, ScalarType> &Source, int rows, int cols, int startrow = 0, int startcol = 0) : CompObject(), numRows_(rows), numCols_(cols), stride_(Source.stride_), valuesCopied_(false), values_(Source.values_)
+DenseMatrix<OrdinalType, ScalarType>::DenseMatrix(DataAccess CV, const DenseMatrix<OrdinalType, ScalarType> &Source, int rows, int cols, int startRow, int startCol) : CompObject(), numRows_(rows), numCols_(cols), stride_(Source.stride_), valuesCopied_(false), values_(Source.values_)
 {
   if(CV == Copy)
     {
       stride_ = rows;
       values_ = new ScalarType[stride_ * cols];
-      copyMat(Source.values_, Source.stride_, rows, cols, values_, stride_, startrow, startcol);
+      copyMat(Source.values_, Source.stride_, rows, cols, values_, stride_, startRow, startCol);
       valuesCopied_ = true;
     }
   else // CV == View
     {
-      values_ = values_ + (stride_ * startrow) + startcol;
+      values_ = values_ + (stride_ * startRow) + startCol;
     }
 }
 
@@ -290,7 +290,7 @@ ScalarType* DenseMatrix<OrdinalType, ScalarType>::operator [] (int ColIndex)
 }
 
 template<typename OrdinalType, typename ScalarType>
-int  DenseMatrix<OrdinalType, ScalarType>::multiply(char TransA, char TransB, ScalarType ScalarAB, const DenseMatrix<OrdinalType, ScalarType> &A, const DenseMatrix<OrdinalType, ScalarType> &B, ScalarType Scalar)
+int  DenseMatrix<OrdinalType, ScalarType>::multiply(char TransA, char TransB, ScalarType alpha, const DenseMatrix<OrdinalType, ScalarType> &A, const DenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta)
 {
   // Check for compatible dimensions
   int A_nrows = (TransA=='T') ? A.numCols() : A.numRows();
@@ -302,7 +302,7 @@ int  DenseMatrix<OrdinalType, ScalarType>::multiply(char TransA, char TransB, Sc
       TEUCHOS_CHK_ERR(-1); // Return error
     }
   // Call GEMM function
-  GEMM(TransA, TransB, numRows_, numCols_, A_ncols, ScalarAB, A.values(), A.stride(), B.values(), B.stride(), Scalar, values_, stride_);
+  GEMM(TransA, TransB, numRows_, numCols_, A_ncols, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
   double nflops = 2 * numRows_;
   nflops *= numCols_;
   nflops *= A_ncols;

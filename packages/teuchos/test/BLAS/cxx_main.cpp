@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
   int SType2IAMAXresult;
   int TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, M2, N, N2, P, LDA, LDB, Mx, My;
   char UPLO, SIDE, TRANS, TRANSA, TRANSB, DIAG;
-  SType2 convertTo;
+  SType2 convertTo = ScalarTraits<SType2>::zero();
 
   srand(time(NULL));
 
