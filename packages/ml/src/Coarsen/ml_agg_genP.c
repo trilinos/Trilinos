@@ -33,6 +33,7 @@ extern "C"
 {
 #endif
 #endif
+#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
 extern int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 						     struct ML_Field_Of_Values * fov );
 extern int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
@@ -42,6 +43,7 @@ extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 					       int IsProblemSymmetric,
 					       int UseDiagonalScaling,
 					       double * LambdaMax );
+#endif
 #ifndef ML_CPP
 #ifdef __cplusplus
 }
@@ -707,8 +709,17 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 	 break;
 
        case 2: /* Use Anasazi */
+#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
 	 ML_Anasazi_Get_SpectralNorm_Anasazi( Amat, 10, 1e-5,
 					      ML_FALSE, ML_TRUE, &max_eigen);
+#else
+	 fprintf(stderr,
+		 "--enable-epetra --enable-anasazi --enable-teuchos required\n"
+		 "(file %s, line %d)\n",
+		 __FILE__,
+		 __LINE__);
+	 exit(EXIT_FAILURE);
+#endif
 	 Amat->lambda_max = max_eigen; 
 	 Amat->lambda_min = -12345.6789;
 	 if ( max_eigen <= 0.0 ) {
@@ -2334,7 +2345,17 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      if( fov->compute_field_of_values_non_scaled == ML_YES ) {
 
+#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
        ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(Amat,fov);
+#else
+       fprintf(stderr,
+	       "--enable-epetra --enable-anasazi --enable-teuchos required\n"
+	       "(file %s, line %d)\n",
+	       __FILE__,
+	       __LINE__);
+       exit(EXIT_FAILURE);
+#endif
+
        if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
 	 printf("\nNon-Scaled Field of Values Box (level %d) : Max Real = %e\n",
 		level,
@@ -2361,7 +2382,16 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      if( fov->compute_field_of_values == ML_YES ) {
 
+#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
        ML_Anasazi_Get_FieldOfValuesBox_Interface(Amat,fov);
+#else
+	 fprintf(stderr,
+		 "--enable-epetra --enable-anasazi --enable-teuchos required\n"
+		 "(file %s, line %d)\n",
+		 __FILE__,
+		 __LINE__);
+	 exit(EXIT_FAILURE);
+#endif
 
        if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
 	 printf("\nField of Values Box (level %d) : Max Real = %e\n",
@@ -2390,7 +2420,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      /* compute box surrounding field-of-values */
 
-#if defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
 
      if( fov->compute_field_of_values == ML_YES && fov->choice != 1 ) {
        

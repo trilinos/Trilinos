@@ -27,6 +27,7 @@
 #include "ml_epetra_utils.h"
 #include "Epetra_CrsMatrix.h"
 #include "ml_anasazi.h"
+#include "Teuchos_ParameterList.hpp"
 
 void Orthogonalize(Anasazi::PetraVec<double> & vec)
 {
@@ -322,9 +323,6 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
 
   return Ok; 
 }
-
-#ifdef HAVE_ML_TEUCHOS
-#include "Teuchos_ParameterList.hpp"
 
 namespace ML_Anasazi {
 
@@ -726,20 +724,6 @@ int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
  
 }
 
-#ifndef ML_CPP
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-#endif /* ifdef HAVE_ML_TEUCHOS */
-
-#ifndef ML_CPP
-#ifdef __cplusplus
-extern "C"
-{  
-#endif
-#endif
 // ================================================ ====== ==== ==== == =
 
 int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
@@ -828,63 +812,5 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 }
 #endif
 #endif
-#else
-
-#include <stdio.h>
-
   
-#ifndef ML_CPP
-#ifdef __cplusplus
-extern "C"
-{  
-#endif
-#endif
-  // ================================================ ====== ==== ==== == =
-  
-  int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
-					int MaxIters, double Tolerance,
-					  int IsProblemSymmetric,
-					  int UseDiagonalScaling,
-					double * LambdaMax )
-  {
-    
-    puts("You must configure with options --enable-epetra and ");
-    puts("--eanble-anasazi to estimate lambda max with Anasazi.");
-
-    exit( EXIT_FAILURE );
-
-    return( -1 );
-  
-  }
-  
-int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
-					      struct ML_Field_Of_Values * fov )
-{
-    puts("You must configure with options --enable-epetra and ");
-    puts("--enable-anasazi to estimate lambda max with Anasazi.");
-
-    exit( EXIT_FAILURE );
-
-    return( -1 );
-}
-
-int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
-						       struct ML_Field_Of_Values * fov )
-{
-  
-    puts("You must configure with options --enable-epetra and ");
-    puts("--enable-anasazi to estimate lambda max with Anasazi.");
-
-    exit( EXIT_FAILURE );
-
-    return( -1 );
-}
-  
-#ifndef ML_CPP
-#ifdef __cplusplus
-}
-#endif
-#endif
-
-
 #endif
