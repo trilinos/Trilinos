@@ -531,6 +531,13 @@ bool Group::computeF()
   return status;
 }
 
+bool Group::validateJacobian()
+{
+  sharedJacobian.getOperator(this);
+  isValidJacobian = true;
+  return true;
+}
+
 bool Group::computeJacobian() 
 {
   // Skip if the Jacobian is already valid

@@ -273,6 +273,8 @@ public:
 
   virtual bool computeJacobian();
 
+  virtual bool validateJacobian();
+
   virtual bool computeGradient();
 
   virtual bool computeNewton(Parameter::List& params);
