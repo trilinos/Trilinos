@@ -164,6 +164,8 @@ extern int ML_Operator_halfClone_Destroy( ML_Operator *mat);
 
 extern int ML_Operator_Init(ML_Operator *, ML_Comm *comm);
 extern int ML_Operator_Clean(ML_Operator *);
+extern int ML_Operator_Dump(ML_Operator *Ke, double *, double *,
+			    char *str);
 extern int ML_hash_it( int new_val, int hash_list[], int hash_length, 
 		       int *hash_used);
 
