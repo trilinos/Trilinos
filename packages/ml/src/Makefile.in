@@ -218,7 +218,9 @@ $(srcdir)/Utils/ml_intlist.h \
 $(srcdir)/Utils/ml_vec.h \
 $(srcdir)/Utils/ml_lapack.h            $(srcdir)/Utils/ml_vendor_lapack.h \
 $(srcdir)/Utils/ml_eigf2c.h \
-$(srcdir)/Utils/ml_vampir.h
+$(srcdir)/Utils/ml_vampir.h \
+$(srcdir)/Utils/ml_amesos.h \
+$(srcdir)/Utils/ml_amesos_wrap.h
 
 
 UTIL = \
@@ -232,7 +234,9 @@ $(srcdir)/Utils/ml_vec.c \
 $(srcdir)/Utils/ml_lapack.c \
 $(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c \
 $(srcdir)/Utils/ml_agg_info.c \
-$(srcdir)/Utils/ml_viz_opendx.c
+$(srcdir)/Utils/ml_viz_opendx.c \
+$(srcdir)/Utils/ml_amesos.c \
+$(srcdir)/Utils/ml_amesos_wrap.cpp
 
 
 ENUM_H = 
@@ -308,6 +312,7 @@ COMP =
 #  
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
               -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
+              -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src \
               -I$(srcdir)/Comm \
               -I$(srcdir)/Operator \
               -I$(srcdir)/Smoother \
@@ -437,7 +442,8 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_twogrid_analysis.$(OBJEXT) ml_epetra_utils.$(OBJEXT) \
 	ml_utils.$(OBJEXT) ml_intlist.$(OBJEXT) ml_vec.$(OBJEXT) \
 	ml_lapack.$(OBJEXT) ml_memory.$(OBJEXT) ml_eigf2c.$(OBJEXT) \
-	ml_agg_info.$(OBJEXT) ml_viz_opendx.$(OBJEXT)
+	ml_agg_info.$(OBJEXT) ml_viz_opendx.$(OBJEXT) \
+	ml_amesos.$(OBJEXT) ml_amesos_wrap.$(OBJEXT)
 am__objects_3 =
 @HAVE_MPI_TRUE@am__objects_4 = $(am__objects_3)
 @HAVE_MPI_FALSE@am__objects_4 =
@@ -462,7 +468,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_info.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_reitzinger.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_uncoupled.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_aggregate.Po ./$(DEPDIR)/ml_amg.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_aggregate.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_amesos.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_amesos_wrap.Po ./$(DEPDIR)/ml_amg.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_amg_MIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_amg_genP.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_utils.Po \
@@ -639,6 +647,8 @@ ml_memory.$(OBJEXT): $(srcdir)/Utils/ml_memory.c
 ml_eigf2c.$(OBJEXT): $(srcdir)/Utils/ml_eigf2c.c
 ml_agg_info.$(OBJEXT): $(srcdir)/Utils/ml_agg_info.c
 ml_viz_opendx.$(OBJEXT): $(srcdir)/Utils/ml_viz_opendx.c
+ml_amesos.$(OBJEXT): $(srcdir)/Utils/ml_amesos.c
+ml_amesos_wrap.$(OBJEXT): $(srcdir)/Utils/ml_amesos_wrap.cpp
 libml.a: $(libml_a_OBJECTS) $(libml_a_DEPENDENCIES) 
 	-rm -f libml.a
 	$(libml_a_AR) libml.a $(libml_a_OBJECTS) $(libml_a_LIBADD)
@@ -661,6 +671,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_reitzinger.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_uncoupled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aggregate.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_amesos.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_amesos_wrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_amg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_amg_MIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_amg_genP.Po@am__quote@
@@ -1473,6 +1485,18 @@ ml_viz_opendx.obj: $(srcdir)/Utils/ml_viz_opendx.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_viz_opendx.Po' tmpdepfile='$(DEPDIR)/ml_viz_opendx.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_viz_opendx.obj `cygpath -w $(srcdir)/Utils/ml_viz_opendx.c`
+
+ml_amesos.o: $(srcdir)/Utils/ml_amesos.c
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_amesos.c' object='ml_amesos.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_amesos.Po' tmpdepfile='$(DEPDIR)/ml_amesos.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_amesos.o `test -f '$(srcdir)/Utils/ml_amesos.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_amesos.c
+
+ml_amesos.obj: $(srcdir)/Utils/ml_amesos.c
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_amesos.c' object='ml_amesos.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_amesos.Po' tmpdepfile='$(DEPDIR)/ml_amesos.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_amesos.obj `cygpath -w $(srcdir)/Utils/ml_amesos.c`
 CCDEPMODE = @CCDEPMODE@
 
 .cpp.o:
@@ -1510,6 +1534,18 @@ ml_epetra_utils.obj: $(srcdir)/Utils/ml_epetra_utils.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_epetra_utils.Po' tmpdepfile='$(DEPDIR)/ml_epetra_utils.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_epetra_utils.obj `cygpath -w $(srcdir)/Utils/ml_epetra_utils.cpp`
+
+ml_amesos_wrap.o: $(srcdir)/Utils/ml_amesos_wrap.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_amesos_wrap.cpp' object='ml_amesos_wrap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_amesos_wrap.Po' tmpdepfile='$(DEPDIR)/ml_amesos_wrap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_amesos_wrap.o `test -f '$(srcdir)/Utils/ml_amesos_wrap.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_amesos_wrap.cpp
+
+ml_amesos_wrap.obj: $(srcdir)/Utils/ml_amesos_wrap.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_amesos_wrap.cpp' object='ml_amesos_wrap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_amesos_wrap.Po' tmpdepfile='$(DEPDIR)/ml_amesos_wrap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_amesos_wrap.obj `cygpath -w $(srcdir)/Utils/ml_amesos_wrap.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 includeHEADERS_INSTALL = $(INSTALL_HEADER)

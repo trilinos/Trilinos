@@ -59,6 +59,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define if want to build with ml_amesos enabled */
+#undef HAVE_ML_AMESOS
+
 /* Define if want to build with ml_aztecoo enabled */
 #undef HAVE_ML_AZTEC
 

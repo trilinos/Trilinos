@@ -126,7 +126,9 @@ $(srcdir)/Utils/ml_intlist.h \
 $(srcdir)/Utils/ml_vec.h \
 $(srcdir)/Utils/ml_lapack.h            $(srcdir)/Utils/ml_vendor_lapack.h \
 $(srcdir)/Utils/ml_eigf2c.h \
-$(srcdir)/Utils/ml_vampir.h
+$(srcdir)/Utils/ml_vampir.h \
+$(srcdir)/Utils/ml_amesos.h \
+$(srcdir)/Utils/ml_amesos_wrap.h
 
 
 UTIL = \
@@ -140,7 +142,10 @@ $(srcdir)/Utils/ml_vec.c \
 $(srcdir)/Utils/ml_lapack.c \
 $(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c \
 $(srcdir)/Utils/ml_agg_info.c \
-$(srcdir)/Utils/ml_viz_opendx.c
+$(srcdir)/Utils/ml_viz_opendx.c \
+$(srcdir)/Utils/ml_amesos.c \
+$(srcdir)/Utils/ml_amesos_wrap.cpp
+
 
 ENUM_H = 
 
@@ -222,6 +227,7 @@ COMP =
 #  
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
               -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
+              -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src \
               -I$(srcdir)/Comm \
               -I$(srcdir)/Operator \
               -I$(srcdir)/Smoother \
