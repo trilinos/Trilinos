@@ -24,6 +24,7 @@
 #include "Epetra_LAPACK.h"
 #include "BelosConfigDefs.hpp"
 
+namespace Belos {
 // 
 // BlockGmres base class
 //
@@ -1508,5 +1509,6 @@ void BlockGmres<TYPE>::CheckGmresResids(AnasaziMultiVec<TYPE> & x, AnasaziMultiV
 	if (residuals) delete [] residuals;
 }
 
+} // end namespace Belos
 #endif
 // End of file BelosBlockGmres.hpp

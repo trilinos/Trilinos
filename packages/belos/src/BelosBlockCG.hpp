@@ -25,6 +25,7 @@
 #include "Epetra_LAPACK.h"
 #include "BelosConfigDefs.hpp"
 
+namespace Belos {
 //
 // BlockCG base class
 //
@@ -1217,5 +1218,7 @@ void BlockCG<TYPE>::CheckCGResids(AnasaziMultiVec<TYPE>& X, AnasaziMultiVec<TYPE
 
 //
 //
+} // end namespace Belos
+
 #endif
 // End of file BelosBlockCG.hpp
