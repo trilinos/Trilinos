@@ -79,8 +79,8 @@
                                                                                 
 #include "NOX.H"  // NOX headers
 #include "NOX_LAPACK.H" // NOX LAPACK Interface headers
-#include "Utils.H"
-#include "Common.H"
+#include "NOX_TestUtils.H"
+#include "NOX_TestCommon.H"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -234,15 +234,20 @@ int main(int argc, char *argv[]) {
   grp = solver.getSolutionGroup();
   
 
+
   if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
-    if (status == 0) 
+    if (status == NOX::StatusTest::Converged) 
       cout << "Test was successful!" << endl;
     else 
       cout << "Test Failed!" << endl;
   }
 
   // Final return value (0 = succefull, non-zero = failure)
-  return status;
+  //return status;
+  if (status ==  NOX::StatusTest::Converged) 
+     return 0;
+  else
+     return 1;
 }
 
 /*
