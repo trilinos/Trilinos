@@ -432,13 +432,20 @@ the problem interface.
     stepperList.setParameter("Min Value", 0.0/scale);
     stepperList.setParameter("Max Steps", 50);
     stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
-    stepperList.setParameter("Goal g", 0.5);
-    stepperList.setParameter("Max g", 0.7);
+    stepperList.setParameter("Enable Arc Length Scaling", true);
+    stepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
+    stepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
     stepperList.setParameter("Initial Scale Factor", 1.0);
     stepperList.setParameter("Min Scale Factor", 1.0e-8);
+    stepperList.setParameter("Enable Tangent Factor Step Size Scaling",true);
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
     stepperList.setParameter("Compute Eigenvalues",false);
+
+    // Create bifurcation sublist
+    NOX::Parameter::List& bifurcationList = 
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.setParameter("Method", "None");
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
@@ -469,10 +476,12 @@ the problem interface.
 Next we set up the %LOCA parameters.  We are setting up the problem to 
 perform arc-length continuation in the parameter "alpha" from 0 to 5 with 
 a maximum of 50 continuation steps and \em maxNewtonIters nonlinear iterations
-per step.  The "g" and "Scale Factor" parameters deal with arc-length
-parameter scaling while the "Tangent Factor" parameters deal with reducing
+per step.  The "Enable Arc Length Scaling", "Goal/Max Arc Length Parameter Contribution" and "Scale Factor" parameters deal with arc-length
+parameter scaling to equilibrate relative contributions between solution
+and parameter components in the arc-length equations.  The "Tangent Factor" parameters deal with reducing
 the step size when the solution changes by a large amount from step to 
-step (see \ref loca_parameters for more details).  We use a tangent predictor
+step (see \ref loca_parameters for more details).  Since we are doing an
+equilibrium continuation, we set the bifurcation method to "None".  We use a tangent predictor
 and adaptive step size control with an initial step size of 0.1, maximum of 
 10.0 and minimum of 0.001.  The "Aggressiveness" parameter determines how
 quickly the step size is increased every successful continuation step.
@@ -558,5 +567,46 @@ returned status.
 Lastly we copy the final solution out of the stepper, print out the final
 parameter list, close the output file, and catch any thrown exceptions.
 
+After running the example and plotting the maximum of the temperature versus the continuation parameter \f$\alpha\f$ at each step, we  obtain the following continuation curve with two turning points:
+
+\image html chan.png
+
+\image latex chan.eps
+
+This plot was generated via MATLAB using the output file ChanContinuation.dat specified above.  For those interested, the MATLAB commands used to generate this plot are shown below.
+\code
+
+% open output file
+fid = fopen('ChanContinuation.dat');
+
+% read dimension of discretization
+n = fscanf(fid, '%d', 1);
+  
+alpha = []; % array of continuation parameter values at each step
+x = [];     % array of solution components at each step
+  
+% read values from output file
+while ~feof(fid)
+  
+  % read alpha
+  alpha = [alpha fscanf(fid, '%g', 1)];
+  
+  % read x
+  x = [x fscanf(fid, '%g', n)];
+  
+end
+
+% close output file
+fclose(fid);
+
+% compute maximum of each temperature profile
+maxT = max(x);
+
+plot(alpha,maxT,'bo-');
+xlabel('\alpha');
+ylabel('T_{max}   ','Rotation',0);
+title('Arc-length Continuation:  \beta = 0');
+
+\endcode
 */
 
