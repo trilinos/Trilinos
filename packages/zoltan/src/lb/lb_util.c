@@ -102,7 +102,7 @@ void LB_Get_Obj_List(LB *lb, LB_ID_PTR global_ids, LB_ID_PTR local_ids,
  */
 
 
-unsigned int LB_Hash(LB_ID_PTR key, int num_id_entries, int n)
+unsigned int LB_Hash(LB_ID_PTR key, int num_id_entries, unsigned int n)
 {
   unsigned int h, rest, *p;
   char *byteptr;
@@ -128,8 +128,7 @@ unsigned int LB_Hash(LB_ID_PTR key, int num_id_entries, int n)
     h = (h*2654435761U) ^ rest;
 
   /* Return h mod n */
-  h = h%n;
-  return h;
+  return (h%n);
 }
 
 /*****************************************************************************/
