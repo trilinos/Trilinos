@@ -813,7 +813,7 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     int OptimizeStorage();
 
     //! If OptimizeStorage() has been called, this query returns true, otherwise it returns false.
-    bool StorageOptimized() const {return(Graph_->StorageOptimized());};
+    bool StorageOptimized() const {return(StorageOptimized_);};
 
     //! If matrix indices has not been transformed to local, this query returns true, otherwise it returns false.
     bool IndicesAreGlobal() const {return(Graph_->IndicesAreGlobal());};
@@ -1257,13 +1257,14 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 	int GeneratePointObjects() const;
 	int BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Epetra_Map * & PointMap) const;
 	int UpdateOperatorXY(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-
+	
   Epetra_CrsGraph * Graph_;
   bool Allocated_;
   bool StaticGraph_;
   bool UseTranspose_;
   bool constructedWithFilledGraph_;
   bool matrixFillCompleteCalled_;
+  bool StorageOptimized_;
 
   int NumMyBlockRows_;
 

@@ -92,6 +92,7 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
   InitializeDefaults();
   Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumBlockEntriesPerRow);
   int err = Allocate();
+
   assert( err == 0 );
 }
 
@@ -185,12 +186,15 @@ Epetra_VbrMatrix& Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix& src)
     }
   }
 
+  if ( src.StorageOptimized() ) OptimizeStorage() ;
+
   return( *this );
 }
 
 //==============================================================================
 void Epetra_VbrMatrix::InitializeDefaults() { // Initialize all attributes that have trivial default values
 
+  StorageOptimized_ = false ;
   UseTranspose_ = false;
   Entries_ = 0;
   All_Values_ = 0;
@@ -320,9 +324,16 @@ void Epetra_VbrMatrix::DeleteMemory()
 
   // Delete any objects related to supporting the RowMatrix and Operator interfaces
   if (HavePointObjects_) {
+#if 1
+    if ( RowMatrixColMap_ != RowMatrixRowMap_ )        delete RowMatrixColMap_;
+    if ( OperatorDomainMap_ != RowMatrixRowMap_ )        delete OperatorDomainMap_;
+    if ( OperatorRangeMap_ != RowMatrixRowMap_ )        delete OperatorRangeMap_;
+#else
+    //  this can fail, see bug # 1114
     if (!RowMatrixColMap().SameAs(RowMatrixRowMap())) delete RowMatrixColMap_;
     if (!OperatorDomainMap().SameAs(RowMatrixRowMap())) delete OperatorDomainMap_;
     if (!OperatorRangeMap().SameAs(RowMatrixRowMap())) delete OperatorRangeMap_;
+#endif
     delete RowMatrixRowMap_;
     delete RowMatrixImporter_;
     HavePointObjects_ = false;
@@ -827,6 +838,8 @@ int Epetra_VbrMatrix::MergeRedundantEntries()
 //==========================================================================
 int Epetra_VbrMatrix::OptimizeStorage() {
 
+
+  StorageOptimized_ = true; 
   /* Work on later...
      int i, j;
 
@@ -1400,6 +1413,8 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
 	GEMV('N', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);			
       }
     }
+
+
     if (Exporter()!=0) {
       yref.PutScalar(0.0);
       EPETRA_CHK_ERR(yref.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
@@ -1462,6 +1477,11 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
     if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(yref.Reduce());
   }
   
+  if (x_and_y_same == true) {
+    y = *ytemp;
+    delete ytemp;
+  }
+
   UpdateFlops(2*NumGlobalNonzeros());
   return(0);
 }
@@ -2101,7 +2121,7 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
 //=============================================================================
 double Epetra_VbrMatrix::NormInf() const {
 
-  if (NormInf_>-1.0) return(NormInf_);
+  //  if (NormInf_>-1.0) return(NormInf_);    Temporarily disabled until bug #1104 is resolved 
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
