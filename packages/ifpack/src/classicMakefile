@@ -39,7 +39,7 @@ IFPACK_C  = az_ifpack_prec_create.c   az_ifpack_precon.c  \
 
 IFPACK_INC =
 
-IFPACK_OBJ = $(IFPACK_CC_new:.cpp=.$(OBJ_EXT)) $(IFPACK_CC_old:.cc=.$(OBJ_EXT)) $(IFPACK_C:.c=.$(OBJ_EXT)) 
+IFPACK_OBJ = $(IFPACK_CC_new:.cpp=.$(OBJ_EXT)) $(IFPACK_CC_old:.cpp=.$(OBJ_EXT)) $(IFPACK_C:.c=.$(OBJ_EXT)) 
 
 #$(LIBIFPACK): $(IFPACK_OBJ)
 LIBIFPACK: $(IFPACK_OBJ)
