@@ -27,21 +27,46 @@
 #@HEADER
 
 EXEEXT = .exe
-if ML_USING_AMESOS
-if ML_USING_ANASAZI
-if ML_USING_TEUCHOS 
-if ML_USING_TRIUTILS
-if ML_USING_IFPACK
 
 noinst_PROGRAMS = MultiLevelPreconditioner_Sym 
+
+if ML_USING_AMESOS
+# Amesos require Teuchos
+amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
+else
+amesos_lib =
+endif
+if ML_USING_ANASAZI
+# Anasazi require Teuchos
+anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
+else
+anasazi_lib = 
+endif
+if ML_USING_TEUCHOS 
+teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
+else
+teuchos_lib =
+endif
+if ML_USING_TRIUTILS
+triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
+else
+triutils_lib =
+endif
+if ML_USING_IFPACK
+ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
+else
+ifpack_lib =
+endif
 
 MultiLevelPreconditioner_Sym_SOURCES = $(srcdir)/MultiLevelPreconditioner_Sym.cpp
 
 MultiLevelPreconditioner_Sym_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a 
+	${triutils_lib} \
+	${amesos_lib} \
+	${anasazi_lib} \
+	${teuchos_lib} 
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Coarsen                  \
@@ -62,36 +87,6 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/../triutils/src            \
                    -I$(top_builddir)/../triutils/src
 
-if ML_USING_AMESOS
-# Amesos require Teuchos
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-             $(top_builddir)/../teuchos/src/libteuchos.a
-else
-amesos_lib =
-endif
-if ML_USING_ANASAZI
-# Anasazi require Teuchos
-anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a  \
-             $(top_builddir)/../teuchos/src/libteuchos.a
-else
-anasazi_lib = 
-endif
-if ML_USING_TEUCHOS 
-teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
-else
-teuchos_lib =
-endif
-if ML_USING_TRIUTILS
-triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
-else
-triutils_lib =
-endif
-if ML_USING_IFPACK
-ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
-else
-ifpack_lib =
-endif
-#
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(top_builddir)/../aztecoo/src/libaztecoo.a        \
                 ${ifpack_lib} \
@@ -111,8 +106,3 @@ MultiLevelPreconditioner_Sym_CPPFLAGS = ${ml_common_include_locations}
 MultiLevelPreconditioner_Sym_CXXFLAGS = ${ml_common_include_locations}
 MultiLevelPreconditioner_Sym_LDADD = ${ml_libs}
 MultiLevelPreconditioner_Sym_LINK = ${mllink}
-endif #if ML_USING_AMESOS
-endif #if ML_USING_ANASAZI
-endif #if ML_USING_TEUCHOS 
-endif #if ML_USING_TRIUTILS
-endif #if ML_USING_IFPACK
