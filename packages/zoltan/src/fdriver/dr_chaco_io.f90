@@ -7,7 +7,7 @@ use dr_input
 implicit none
 private
 
-public :: read_chaco_mesh, free_element_arrays, in_list
+public :: read_chaco_mesh, free_element_arrays, in_list, build_elem_comm_maps
 
 !/*                                                                          */
 !/*--------------------------------------------------------------------------*/
@@ -69,8 +69,6 @@ type(ELEM_INFO), pointer :: elements(:)
       read_chaco_mesh = .false.
       return
     endif
-
-    close(fp)
 
 !    /* Read Chaco geometry file, if provided. */
     chaco_fname = trim(pio_info%pexo_fname)//".coords"
@@ -1295,7 +1293,7 @@ type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
       max_adj_per_map = Mesh%ecmap_cnt(i)
     endif
   end do
-  allocate(sindex(0:max_adj_per_map-1))
+  allocate(sindex(0:max_adj_per_map))
 
   cnt = 0
   do i = 0, Mesh%necmap-1

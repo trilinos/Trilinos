@@ -37,6 +37,9 @@
 #define LB_fw_Balance12                  lb_fw_balance12
 #define LB_fw_Balance21                  lb_fw_balance21
 #define LB_fw_Balance22                  lb_fw_balance22
+#define LB_fw_Eval                       lb_fw_eval
+#define LB_fw_Point_Assign               lb_fw_point_assign
+#define LB_fw_Box_Assign                 lb_fw_box_assign
 #define LB_fw_Compute_Destinations11     lb_fw_compute_destinations11
 #define LB_fw_Compute_Destinations12     lb_fw_compute_destinations12
 #define LB_fw_Compute_Destinations21     lb_fw_compute_destinations21
@@ -78,6 +81,9 @@
 #define LB_fw_Balance12                  LB_FW_BALANCE12
 #define LB_fw_Balance21                  LB_FW_BALANCE21
 #define LB_fw_Balance22                  LB_FW_BALANCE22
+#define LB_fw_Eval                       LB_FW_EVAL
+#define LB_fw_Point_Assign               LB_FW_POINT_ASSIGN
+#define LB_fw_Box_Assign                 LB_FW_BOX_ASSIGN
 #define LB_fw_Compute_Destinations11     LB_FW_COMPUTE_DESTINATIONS11
 #define LB_fw_Compute_Destinations12     LB_FW_COMPUTE_DESTINATIONS12
 #define LB_fw_Compute_Destinations21     LB_FW_COMPUTE_DESTINATIONS21
@@ -119,6 +125,9 @@
 #define LB_fw_Balance12                  lb_fw_balance12_
 #define LB_fw_Balance21                  lb_fw_balance21_
 #define LB_fw_Balance22                  lb_fw_balance22_
+#define LB_fw_Eval                       lb_fw_eval_
+#define LB_fw_Point_Assign               lb_fw_point_assign_
+#define LB_fw_Box_Assign                 lb_fw_box_assign_
 #define LB_fw_Compute_Destinations11     lb_fw_compute_destinations11_
 #define LB_fw_Compute_Destinations12     lb_fw_compute_destinations12_
 #define LB_fw_Compute_Destinations21     lb_fw_compute_destinations21_
@@ -160,6 +169,9 @@
 #define LB_fw_Balance12                  lb_fw_balance12__
 #define LB_fw_Balance21                  lb_fw_balance21__
 #define LB_fw_Balance22                  lb_fw_balance22__
+#define LB_fw_Eval                       lb_fw_eval__
+#define LB_fw_Point_Assign               lb_fw_point_assign__
+#define LB_fw_Box_Assign                 lb_fw_box_assign__
 #define LB_fw_Compute_Destinations11     lb_fw_compute_destinations11__
 #define LB_fw_Compute_Destinations12     lb_fw_compute_destinations12__
 #define LB_fw_Compute_Destinations21     lb_fw_compute_destinations21__
@@ -190,7 +202,7 @@ static struct LB_Struct *LB_Current_lb;
 MPI_Comm LB_comm_f2c(int *f_comm)
 {
 #ifndef NO_MPI2
-/* MPI 2 provides a standard way of doing this
+/* MPI 2 provides a standard way of doing this */
    return MPI_Comm_f2c((MPI_Fint)(*f_comm));
 #else
 /* will probably need some special cases here */
@@ -356,8 +368,8 @@ int LB_fw_Initialize(float *ver)
    char **myArgv;
    int result;
    myArgc = 1;
-   myArgv = (char **) LB_Malloc((myArgc+1)*sizeof(char),__FILE__,__LINE__);
-/* TEMP do I have to malloc myArgv[0]? */
+   myArgv = (char **) LB_Malloc((myArgc+1)*sizeof(char *),__FILE__,__LINE__);
+   myArgv[0] = (char *) LB_Malloc(8*sizeof(char),__FILE__,__LINE__);
    myArgv[0] = "unknown";
    myArgv[1] = NULL;
    result = LB_Initialize(myArgc,myArgv,ver);
@@ -636,12 +648,20 @@ int LB_fw_Balance11(int *addr_lb, int *nbytes, int *changes, int *num_import,
                    ,int *imp_gid_hide, int *imp_lid_hide, int *imp_proc_hide,
                     int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
 #endif
+#ifdef FUJITSU
+/* Fujitsu and Lahey use a hidden argument for every argument */
+/* TEMP need to verify this with Fujitsu or Lahey */
+                   ,int *addr_lb_hide, int *nbytes_hide, int *changes_hide,
+                    int *num_import_hide, int *imp_gid_hide, int *imp_lid_hide,
+                    int *imp_proc_hide, int *num_export_hide, int *exp_gid_hide,
+                    int *exp_lid_hide, int *exp_proc_hide
+#endif
                     )
 {
    struct LB_Struct *lb;
    unsigned char *p;
    int i;
-#ifdef PGI
+#if defined (PGI) || defined (FUJITSU)
 #define F90LB_TEMP 3
 #else
 #define F90LB_TEMP 2
@@ -668,9 +688,9 @@ int LB_fw_Balance11(int *addr_lb, int *nbytes, int *changes, int *num_import,
    temp_exp_lid[1] = (LB_LID *)export_local_ids;
    temp_exp_proc[1] = (int *)export_procs;
 
-/* for PGI, put the hidden argument in temp_*[2] */
+/* for PGI and FUJITSU, put the hidden argument in temp_*[2] */
 
-#ifdef PGI
+#if defined (PGI) || defined (FUJITSU)
    temp_imp_gid[2] = (LB_GID *)imp_gid_hide;
    temp_imp_lid[2] = (LB_LID *)imp_lid_hide;
    temp_imp_proc[2] = (int *)imp_proc_hide;
@@ -695,6 +715,12 @@ int LB_fw_Balance12(int *addr_lb, int *nbytes, int *changes, int *num_import,
                    ,int *imp_gid_hide, int *imp_lid_hide, int *imp_proc_hide,
                     int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
 #endif
+#ifdef FUJITSU
+                   ,int *addr_lb_hide, int *nbytes_hide, int *changes_hide,
+                    int *num_import_hide, int *imp_gid_hide, int *imp_lid_hide,
+                    int *imp_proc_hide, int *num_export_hide, int *exp_gid_hide,
+                    int *exp_lid_hide, int *exp_proc_hide
+#endif
                     )
 {return LB_fw_Balance11(addr_lb, nbytes, changes, num_import, import_global_ids,
                     import_local_ids, import_procs, num_export,
@@ -702,6 +728,12 @@ int LB_fw_Balance12(int *addr_lb, int *nbytes, int *changes, int *num_import,
 #ifdef PGI
                    ,imp_gid_hide, imp_lid_hide, imp_proc_hide,
                     exp_gid_hide, exp_lid_hide, exp_proc_hide
+#endif
+#ifdef FUJITSU
+                   ,addr_lb_hide, nbytes_hide, changes_hide,
+                    num_import_hide, imp_gid_hide, imp_lid_hide,
+                    imp_proc_hide, num_export_hide, exp_gid_hide, exp_lid_hide,
+                    exp_proc_hide
 #endif
                     );
 }
@@ -715,6 +747,12 @@ int LB_fw_Balance21(int *addr_lb, int *nbytes, int *changes, int *num_import,
                    ,int *imp_gid_hide, int *imp_lid_hide, int *imp_proc_hide,
                     int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
 #endif
+#ifdef FUJITSU
+                   ,int *addr_lb_hide, int *nbytes_hide, int *changes_hide,
+                    int *num_import_hide, int *imp_gid_hide, int *imp_lid_hide,
+                    int *imp_proc_hide, int *num_export_hide, int *exp_gid_hide,
+                    int *exp_lid_hide, int *exp_proc_hide
+#endif
                     )
 {return LB_fw_Balance11(addr_lb, nbytes, changes, num_import, import_global_ids,
                     import_local_ids, import_procs, num_export,
@@ -722,6 +760,12 @@ int LB_fw_Balance21(int *addr_lb, int *nbytes, int *changes, int *num_import,
 #ifdef PGI
                    ,imp_gid_hide, imp_lid_hide, imp_proc_hide,
                     exp_gid_hide, exp_lid_hide, exp_proc_hide
+#endif
+#ifdef FUJITSU
+                   ,addr_lb_hide, nbytes_hide, changes_hide,
+                    num_import_hide, imp_gid_hide, imp_lid_hide,
+                    imp_proc_hide, num_export_hide, exp_gid_hide, exp_lid_hide,
+                    exp_proc_hide
 #endif
                     );
 }
@@ -735,6 +779,12 @@ int LB_fw_Balance22(int *addr_lb, int *nbytes, int *changes, int *num_import,
                    ,int *imp_gid_hide, int *imp_lid_hide, int *imp_proc_hide,
                     int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
 #endif
+#ifdef FUJITSU
+                   ,int *addr_lb_hide, int *nbytes_hide, int *changes_hide,
+                    int *num_import_hide, int *imp_gid_hide, int *imp_lid_hide,
+                    int *imp_proc_hide, int *num_export_hide, int *exp_gid_hide,
+                    int *exp_lid_hide, int *exp_proc_hide
+#endif
                     )
 {return LB_fw_Balance11(addr_lb, nbytes, changes, num_import, import_global_ids,
                     import_local_ids, import_procs, num_export,
@@ -743,7 +793,55 @@ int LB_fw_Balance22(int *addr_lb, int *nbytes, int *changes, int *num_import,
                    ,imp_gid_hide, imp_lid_hide, imp_proc_hide,
                     exp_gid_hide, exp_lid_hide, exp_proc_hide
 #endif
+#ifdef FUJITSU
+                   ,addr_lb_hide, nbytes_hide, changes_hide,
+                    num_import_hide, imp_gid_hide, imp_lid_hide,
+                    imp_proc_hide, num_export_hide, exp_gid_hide, exp_lid_hide,
+                    exp_proc_hide
+#endif
                     );
+}
+
+void LB_fw_Eval(int *addr_lb, int *nbytes, int *print_stats, int *vwgt_dim,
+                int *ewgt_dim, int *nobj, float *obj_wgt, int *cut_wgt,
+                int *nboundary, int *nadj, int *ierr)
+{
+   struct LB_Struct *lb;
+   unsigned char *p;
+   int i;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   LB_Current_lb = lb;
+
+   LB_Eval(lb, *print_stats, *vwgt_dim, *ewgt_dim, nobj, obj_wgt, cut_wgt,
+           nboundary, nadj, ierr);
+}
+
+int LB_fw_Point_Assign(int *addr_lb, int *nbytes, double *coords, int *proc)
+{
+   struct LB_Struct *lb;
+   unsigned char *p;
+   int i;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   LB_Current_lb = lb;
+
+   return LB_Point_Assign(lb, coords, proc);
+}
+
+int LB_fw_Box_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
+                     double *zmin, double *xmax, double *ymax, double *zmax,
+                     int *procs, int *numprocs)
+{
+   struct LB_Struct *lb;
+   unsigned char *p;
+   int i;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   LB_Current_lb = lb;
+
+   return LB_Box_Assign(lb, *xmin, *ymin, *zmin, *xmax, *ymax, *zmax, procs,
+                        numprocs);
 }
 
 int LB_fw_Compute_Destinations11(int *addr_lb, int *nbytes, int *num_import,
@@ -754,12 +852,18 @@ int LB_fw_Compute_Destinations11(int *addr_lb, int *nbytes, int *num_import,
 #ifdef PGI
                     ,int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
 #endif
+#ifdef FUJITSU
+                   ,int *addr_lb_hide, int *nbytes_hide, int *num_import_hide,
+                    int *import_global_ids_hide, int *import_local_ids_hide,
+                    int *import_procs_hide, int *num_export_hide,
+                    int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
+#endif
                     )
 {
    struct LB_Struct *lb;
    unsigned char *p;
    int i;
-#ifdef PGI
+#if defined (PGI) || defined(FUJITSU)
 #define F90LB_TEMP 3
 #else
 #define F90LB_TEMP 2
@@ -783,9 +887,9 @@ int LB_fw_Compute_Destinations11(int *addr_lb, int *nbytes, int *num_import,
    temp_exp_lid[1] = (LB_LID *)export_local_ids;
    temp_exp_proc[1] = (int *)export_procs;
 
-/* for PGI, put the hidden argument in temp_*[2] */
+/* for PGI and FUJITSU, put the hidden argument in temp_*[2] */
 
-#ifdef PGI
+#if defined (PGI) || defined(FUJITSU)
    temp_exp_gid[2] = (LB_GID *)exp_gid_hide;
    temp_exp_lid[2] = (LB_LID *)exp_lid_hide;
    temp_exp_proc[2] = (int *)exp_proc_hide;
@@ -806,12 +910,18 @@ int LB_fw_Compute_Destinations12(int *addr_lb, int *nbytes, int *num_import,
 #ifdef PGI
                     ,int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
 #endif
+#ifdef FUJITSU
+                   ,int *addr_lb_hide, int *nbytes_hide, int *num_import_hide,
+                    int *import_global_ids_hide, int *import_local_ids_hide,
+                    int *import_procs_hide, int *num_export_hide,
+                    int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
+#endif
                     )
 {
    struct LB_Struct *lb;
    unsigned char *p;
    int i;
-#ifdef PGI
+#if defined (PGI) || defined(FUJITSU)
 #define F90LB_TEMP 3
 #else
 #define F90LB_TEMP 2
@@ -835,9 +945,9 @@ int LB_fw_Compute_Destinations12(int *addr_lb, int *nbytes, int *num_import,
    temp_exp_lid[1] = (LB_LID *)export_local_ids;
    temp_exp_proc[1] = (int *)export_procs;
 
-/* for PGI, put the hidden argument in temp_*[2] */
+/* for PGI and FUJITSU, put the hidden argument in temp_*[2] */
 
-#ifdef PGI
+#if defined (PGI) || defined(FUJITSU)
    temp_exp_gid[2] = (LB_GID *)exp_gid_hide;
    temp_exp_lid[2] = (LB_LID *)exp_lid_hide;
    temp_exp_proc[2] = (int *)exp_proc_hide;
@@ -858,12 +968,18 @@ int LB_fw_Compute_Destinations21(int *addr_lb, int *nbytes, int *num_import,
 #ifdef PGI
                     ,int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
 #endif
+#ifdef FUJITSU
+                   ,int *addr_lb_hide, int *nbytes_hide, int *num_import_hide,
+                    int *import_global_ids_hide, int *import_local_ids_hide,
+                    int *import_procs_hide, int *num_export_hide,
+                    int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
+#endif
                     )
 {
    struct LB_Struct *lb;
    unsigned char *p;
    int i;
-#ifdef PGI
+#if defined (PGI) || defined(FUJITSU)
 #define F90LB_TEMP 3
 #else
 #define F90LB_TEMP 2
@@ -887,9 +1003,9 @@ int LB_fw_Compute_Destinations21(int *addr_lb, int *nbytes, int *num_import,
    temp_exp_lid[1] = (LB_LID *)export_local_ids;
    temp_exp_proc[1] = (int *)export_procs;
 
-/* for PGI, put the hidden argument in temp_*[2] */
+/* for PGI and FUJITSU, put the hidden argument in temp_*[2] */
 
-#ifdef PGI
+#if defined (PGI) || defined(FUJITSU)
    temp_exp_gid[2] = (LB_GID *)exp_gid_hide;
    temp_exp_lid[2] = (LB_LID *)exp_lid_hide;
    temp_exp_proc[2] = (int *)exp_proc_hide;
@@ -910,12 +1026,18 @@ int LB_fw_Compute_Destinations22(int *addr_lb, int *nbytes, int *num_import,
 #ifdef PGI
                     ,int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
 #endif
+#ifdef FUJITSU
+                   ,int *addr_lb_hide, int *nbytes_hide, int *num_import_hide,
+                    int *import_global_ids_hide, int *import_local_ids_hide,
+                    int *import_procs_hide, int *num_export_hide,
+                    int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
+#endif
                     )
 {
    struct LB_Struct *lb;
    unsigned char *p;
    int i;
-#ifdef PGI
+#if defined (PGI) || defined(FUJITSU)
 #define F90LB_TEMP 3
 #else
 #define F90LB_TEMP 2
@@ -939,9 +1061,9 @@ int LB_fw_Compute_Destinations22(int *addr_lb, int *nbytes, int *num_import,
    temp_exp_lid[1] = (LB_LID *)export_local_ids;
    temp_exp_proc[1] = (int *)export_procs;
 
-/* for PGI, put the hidden argument in temp_*[2] */
+/* for PGI and FUJITSU, put the hidden argument in temp_*[2] */
 
-#ifdef PGI
+#if defined (PGI) || defined(FUJITSU)
    temp_exp_gid[2] = (LB_GID *)exp_gid_hide;
    temp_exp_lid[2] = (LB_LID *)exp_lid_hide;
    temp_exp_proc[2] = (int *)exp_proc_hide;

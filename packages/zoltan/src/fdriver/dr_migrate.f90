@@ -124,9 +124,6 @@ type(LB_User_Data_1) :: elements_wrapper ! wrapper to pass elements to query
     migrate_elements = .false.; return
   endif
 
-! TEMP Help_Migrate might reallocate elements(:).  How do I make sure
-! the pointer at the top of the call chain has been changed?
-
   migrate_elements = .true.
 end function migrate_elements
 
@@ -298,7 +295,6 @@ type(ELEM_INFO), pointer :: elements(:)
 
   call boundary_exchange(1_LB_INT, send_vec, recv_vec)
   
-  
 !  /* Unload receive vector */
 
   offset = 0
@@ -307,6 +303,7 @@ type(ELEM_INFO), pointer :: elements(:)
       if (recv_vec(offset) == Mesh%ecmap_id(i)) then
 !        /* off-processor element is not changing processors.  */
 !        /* no changes are needed in the local data structure. */
+        offset = offset + 1
         cycle
       endif
 !      /* Change processor assignment in local element's adjacency list */
@@ -424,10 +421,9 @@ integer(LB_INT) :: adj_elem
   if (allocated(New_Elem_Index)) deallocate(New_Elem_Index)
   New_Elem_Index_Size = 0
 
-!TEMP need build_elem_comm_maps
-!  if (.not.build_elem_comm_maps(proc, element)) then
-!    print *, "Fatal: error rebuilding elem comm maps"
-!  endif
+  if (.not.build_elem_comm_maps(proc, element)) then
+    print *, "Fatal: error rebuilding elem comm maps"
+  endif
 
 end subroutine migrate_post_process
 
@@ -448,6 +444,7 @@ integer(LB_INT), save :: gmax_nnodes = 0 !/* Max. num of nodes/elem over all ele
 integer(LB_INT) :: i, size, mpierr
 type(ELEM_INFO), pointer :: elements(:)
 integer(LB_INT) :: retval(1) ! an array of length 1 for MPI return arrays
+integer, parameter :: SIZE_OF_INT = 4, SIZE_OF_FLOAT = 4
 
   elements => data%ptr
   ierr = LB_OK
@@ -479,23 +476,23 @@ integer(LB_INT) :: retval(1) ! an array of length 1 for MPI return arrays
 !   * Compute size of one element's data.
 !   */
 
-  size = 7
+  size = 5 * SIZE_OF_INT + 2 * SIZE_OF_FLOAT
  
 !  /* Add space for connect table. */
   if (Mesh%num_dims > 0) then
-    size = size + gmax_nnodes
+    size = size + gmax_nnodes * SIZE_OF_INT
   endif
 
 !  /* Add space for adjacency info (elements[].adj and elements[].adj_proc). */
-  size = size + gmax_adj_len * 2
+  size = size + gmax_adj_len * 2 * SIZE_OF_INT
 
 !  /* Assume if one element has edge wgts, all elements have edge wgts. */
   if (Use_Edge_Wgts) then
-    size = size + gmax_adj_len
+    size = size + gmax_adj_len * SIZE_OF_FLOAT
   endif
 
 !  /* Add space for coordinate info */
-  size = size + gmax_nnodes * Mesh%num_dims
+  size = size + gmax_nnodes * Mesh%num_dims * SIZE_OF_FLOAT
   
   migrate_elem_size = size
 end function migrate_elem_size
@@ -578,9 +575,9 @@ integer(LB_INT) :: buf(*)
   endif
 
 !  /* copy coordinate data */
-  do i = 0, num_nodes-1
-    do j = 0, Mesh%num_dims-1
-      buf(size+i*Mesh%num_dims+j+1) = transfer(current_elem%coord(i,j),1_LB_INT)
+  do i = 0, Mesh%num_dims-1
+    do j = 0, num_nodes-1
+      buf(size+i*num_nodes+j+1) = transfer(current_elem%coord(i,j),1_LB_INT)
     end do
   end do
   size = size + num_nodes * Mesh%num_dims
@@ -734,9 +731,9 @@ integer(LB_INT) :: buf(*)
       ierr = LB_MEMERR
       return
     endif
-    do i = 0, num_nodes-1
-      do j = 0, Mesh%num_dims-1
-        current_elem%coord(i,j) = transfer(buf(size+i*Mesh%num_dims+j+1),1.0_LB_FLOAT)
+    do i = 0, Mesh%num_dims-1
+      do j = 0, num_nodes-1
+        current_elem%coord(i,j) = transfer(buf(size+i*num_nodes+j+1),1.0_LB_FLOAT)
       end do
     end do
     size = size + num_nodes * Mesh%num_dims
@@ -760,8 +757,8 @@ end subroutine migrate_unpack_elem
 
 subroutine boundary_exchange(vec_len,send_vec,recv_vec)
   integer(LB_INT) :: vec_len           ! /* Length of vector for each element
-  integer(LB_INT) :: send_vec(:)       ! /* Vector of values to be sent.
-  integer(LB_INT) :: recv_vec(:)       ! /* Vector of values to be received.
+  integer(LB_INT) :: send_vec(0:)       ! /* Vector of values to be sent.
+  integer(LB_INT) :: recv_vec(0:)       ! /* Vector of values to be received.
 
 integer(LB_INT) :: i, ierr, offset
 integer(LB_INT) :: msg_type = 111

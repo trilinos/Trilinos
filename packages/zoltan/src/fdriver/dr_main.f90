@@ -38,6 +38,11 @@ implicit none
   type(ELEM_INFO), pointer :: elements(:)
   type(PROB_INFO) :: prob
 
+  integer, parameter :: MAX_PROCNAME_LEN = 64
+  character(len=MAX_PROCNAME_LEN) :: procname
+  integer(LB_INT) :: int_procname(MAX_PROCNAME_LEN)
+  integer(LB_INT) :: namelen
+
 ! interface blocks for external procedures
 
 interface
@@ -82,6 +87,17 @@ end interface
 !  /* get some machine information */
   call MPI_Comm_rank(MPI_COMM_WORLD, Proc, error)
   call MPI_Comm_size(MPI_COMM_WORLD, Num_Proc, error)
+  namelen = MAX_PROCNAME_LEN
+  call my_Get_Processor_Name(int_procname, namelen, error)
+
+  if (namelen > MAX_PROCNAME_LEN) then
+     print *,"WARNING: processor name longer than MAX_PROCNAME_LEN (",MAX_PROCNAME_LEN,") characters"
+     namelen = MAX_PROCNAME_LEN
+  endif
+  do i=1,namelen
+     procname(i:i) = achar(int_procname(i))
+  end do
+  print *,"Processor ",Proc," of ",Num_Proc," on host ",procname(1:namelen)
 
 ! Set the input file
 
@@ -169,8 +185,7 @@ end interface
     deallocate(elements)
   endif
   if (associated(prob%params)) deallocate(prob%params)
-! TEMP getting an error from MPI_Finalize
-!  call MPI_Finalize(error)
+  call MPI_Finalize(error)
 
 end program fdriver
 
@@ -290,7 +305,7 @@ type(ELEM_INFO), pointer :: elements(:)
 
 !/***************************** BEGIN EXECUTION ******************************/
 
-  allocate(global_ids(0:Mesh%num_elems-1),stat=alloc_stat)
+  allocate(global_ids(0:Mesh%num_elems),stat=alloc_stat)
   if (alloc_stat /= 0) then
     print *, "fatal: insufficient memory"
     output_results = .false.

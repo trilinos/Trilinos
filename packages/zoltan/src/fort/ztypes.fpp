@@ -1,4 +1,4 @@
-#include 'sppr_header'
+#include "sppr_header"
 module zoltan_types
 
 !--------------------------------------------------------------------------

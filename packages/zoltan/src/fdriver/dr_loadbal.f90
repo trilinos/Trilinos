@@ -59,6 +59,9 @@ type(ELEM_INFO), pointer :: elements(:)
   integer(LB_INT) :: ierr         !   Return code
   type(LB_User_Data_1) :: elements_wrapper ! wrapper to pass elements to query
 
+  integer(LB_INT) :: idum1, idum2, idum3, idum4, idum5 ! dummies for LB_Eval
+  real(LB_FLOAT) :: rdumarray(1)
+
 !/***************************** BEGIN EXECUTION ******************************/
 
   nullify(lb_obj, import_gids, import_lids, import_procs, &
@@ -148,9 +151,11 @@ type(ELEM_INFO), pointer :: elements(:)
 
 !  /* Evaluate the old balance */
 !  if (Debug_Driver > 0) {
-!    if (lb_obj->Proc == 0) printf("\nBEFORE load balancing\n");
+    if (Proc == 0) then
+       print *,"BEFORE load balancing"
+    endif
 !    driver_eval();
-!    LB_Eval(lb_obj, 1, 0, 0, NULL, NULL, NULL, NULL, NULL, &i);
+    call LB_Eval(lb_obj, .true., 0, 0, idum1, rdumarray, idum2, idum3, idum4, idum5)
 !  }
 
 !  /*
@@ -179,17 +184,18 @@ type(ELEM_INFO), pointer :: elements(:)
 
 !  /* Evaluate the new balance */
 !  if (Debug_Driver > 0) {
-!    if (lb_obj->Proc == 0) printf("\nAFTER load balancing\n");
+    if (Proc == 0) then
+      print *,"AFTER load balancing"
+    endif
 !    driver_eval();
-!    LB_Eval(lb_obj, 1, 0, 0, NULL, NULL, NULL, NULL, NULL, &i);
+    call LB_Eval(lb_obj, .true., 0, 0, idum1, rdumarray, idum2, idum3, idum4, idum5)
 !  }
 
 !  /* Clean up */
   ierr = LB_Free_Data(import_gids, import_lids, import_procs, &
                       export_gids, export_lids, export_procs)
 
-! TEMP got fatal error in MPI_Comm_free
-!  call LB_Destroy_Object(lb_obj)
+  call LB_Destroy_Object(lb_obj)
 
   run_zoltan = .true.
 
@@ -334,7 +340,7 @@ integer(LB_INT) :: ierr
 !   */
   do i = 0, Mesh%num_dims-1
     tmp = 0.0_LB_DOUBLE
-    do j = 0, Mesh%eb_nnodes(elem(local_id)%elem_blk)
+    do j = 0, Mesh%eb_nnodes(elem(local_id)%elem_blk)-1
       tmp = tmp + elem(local_id)%coord(i,j)
     end do
 
@@ -379,7 +385,7 @@ integer(LB_INT) :: local_id
 integer(LB_INT) :: nbor_procs(*), get_ewgts, nbor_ewgts(*), ierr
 
   type(ELEM_INFO), pointer :: elem(:)
-  integer(LB_INT) :: i, j, proc, local_elem
+  integer(LB_INT) :: i, j, proc, local_elem, mpierr
 
   elem => data%ptr
 
@@ -389,9 +395,9 @@ integer(LB_INT) :: nbor_procs(*), get_ewgts, nbor_ewgts(*), ierr
   endif
 
 !  /* get the processor number */
-  call MPI_Comm_rank(MPI_COMM_WORLD, proc)
+  call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
 
-  j = 0
+  j = 1
   do i = 0, elem(local_id)%adj_len-1
 
 !    /* Skip NULL adjacencies (sides that are not adjacent to another elem). */

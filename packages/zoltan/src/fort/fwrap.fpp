@@ -1,4 +1,4 @@
-#include 'sppr_header'
+#include "sppr_header"
 !--------------------------------------------------------------------------
 ! preprocessor directives to handle special case compilers
 
@@ -71,7 +71,10 @@ public :: &
    LB_Set_Method, &
    LB_Set_Param, &
    LB_Balance, &
+   LB_Eval, &
    LB_Free_Data, &
+   LB_Point_Assign, &
+   LB_Box_Assign, &
    LB_Compute_Destinations, &
    LB_Help_Migrate
 
@@ -669,6 +672,49 @@ end function LB_fw_Balance22
 end interface
 
 interface
+!NAS$ ALIEN "F77 lb_fw_eval"
+subroutine LB_fw_Eval(lb,nbytes,print_stats,vwgt_dim,ewgt_dim,nobj,obj_wgt, &
+                      cut_wgt,nboundary,nadj,ierr)
+use zoltan_types
+use lb_user_const
+implicit none
+integer(LB_INT), dimension(*) INTENT_IN lb
+integer(LB_INT) INTENT_IN nbytes, print_stats, vwgt_dim, ewgt_dim
+integer(LB_INT), intent(out) :: nobj, cut_wgt, nboundary, nadj, ierr
+real(LB_FLOAT), intent(out) :: obj_wgt(*)
+end subroutine LB_fw_Eval
+end interface
+
+interface
+!NAS$ ALIEN "F77 lb_fw_point_assign"
+function LB_fw_Point_Assign(lb,nbytes,coords,proc)
+use zoltan_types
+use lb_user_const
+implicit none
+integer(LB_INT) :: LB_fw_Point_Assign
+integer(LB_INT), dimension(*) INTENT_IN lb
+integer(LB_INT) INTENT_IN nbytes
+real(LB_DOUBLE), dimension(*) INTENT_IN coords
+integer(LB_INT), intent(out) :: proc
+end function LB_fw_Point_Assign
+end interface
+
+interface
+!NAS$ ALIEN "F77 lb_fw_box_assign"
+function LB_fw_Box_Assign(lb,nbytes,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs)
+use zoltan_types
+use lb_user_const
+implicit none
+integer(LB_INT) :: LB_fw_Box_Assign
+integer(LB_INT), dimension(*) INTENT_IN lb
+integer(LB_INT) INTENT_IN nbytes
+real(LB_DOUBLE) INTENT_IN xmin,ymin,zmin,xmax,ymax,zmax
+integer(LB_INT), dimension(*), intent(out) :: procs
+integer(LB_INT), intent(out) :: numprocs
+end function LB_fw_Box_Assign
+end interface
+
+interface
 !NAS$ ALIEN "F77 lb_fw_compute_destinations11"
 function LB_fw_Compute_Destinations11(lb,nbytes,num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
@@ -895,11 +941,23 @@ interface LB_Balance
    module procedure f90LB_Balance22
 end interface
 
+interface LB_Eval
+   module procedure f90LB_Eval
+end interface
+
 interface LB_Free_Data
    module procedure f90LB_Free_Data11
    module procedure f90LB_Free_Data12
    module procedure f90LB_Free_Data21
    module procedure f90LB_Free_Data22
+end interface
+
+interface LB_Point_Assign
+   module procedure f90LB_Point_Assign
+end interface
+
+interface LB_Box_Assign
+   module procedure f90LB_Box_Assign
 end interface
 
 interface LB_Compute_Destinations
@@ -1512,6 +1570,28 @@ f90LB_Balance22 = LB_fw_Balance22(lb_addr,nbytes,changes, &
                              export_local_ids,export_procs)
 end function f90LB_Balance22
 
+subroutine f90LB_Eval(lb,print_stats,vwgt_dim,ewgt_dim,nobj,obj_wgt, &
+                      cut_wgt,nboundary,nadj,ierr)
+type(LB_Struct) INTENT_IN lb
+logical INTENT_IN print_stats
+integer(LB_INT) INTENT_IN vwgt_dim, ewgt_dim
+integer(LB_INT), intent(out) :: nobj, cut_wgt, nboundary, nadj, ierr
+real(LB_FLOAT), intent(out) :: obj_wgt(:)
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i, int_print_stats
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+if (print_stats) then
+   int_print_stats = 1
+else
+   int_print_stats = 0
+endif
+call LB_fw_Eval(lb_addr,nbytes,int_print_stats,vwgt_dim,ewgt_dim,nobj,obj_wgt, &
+                cut_wgt,nboundary,nadj,ierr)
+end subroutine f90LB_Eval
+
 function f90LB_Free_Data11(import_global_ids, import_local_ids,import_procs, &
                          export_global_ids,export_local_ids,export_procs)
 integer(LB_INT) :: f90LB_Free_Data11
@@ -1627,6 +1707,36 @@ if (associated(export_procs)) deallocate(export_procs,stat=stat)
 if (stat /= 0) f90LB_Free_Data22 = LB_WARN
 nullify(export_procs)
 end function f90LB_Free_Data22
+
+function f90LB_Point_Assign(lb,coords,proc)
+integer(LB_INT) :: f90LB_Point_Assign
+type(LB_Struct) INTENT_IN lb
+real(LB_DOUBLE), dimension(:) INTENT_IN coords
+integer(LB_INT), intent(out) :: proc
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+f90LB_Point_Assign = LB_fw_Point_Assign(lb_addr,nbytes,coords,proc)
+end function f90LB_Point_Assign
+
+function f90LB_Box_Assign(lb,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs)
+integer(LB_INT) :: f90LB_Box_Assign
+type(LB_Struct) INTENT_IN lb
+real(LB_DOUBLE) INTENT_IN xmin,ymin,zmin,xmax,ymax,zmax
+integer(LB_INT), intent(out), dimension(:) :: procs
+integer(LB_INT), intent(out) :: numprocs
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+f90LB_Box_Assign = LB_fw_Box_Assign(lb_addr,nbytes,xmin,ymin,zmin,xmax,ymax, &
+                                    zmax,procs,numprocs)
+end function f90LB_Box_Assign
 
 function f90LB_Compute_Destinations11(lb,num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &

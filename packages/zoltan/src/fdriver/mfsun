@@ -1,75 +1,117 @@
+### For Sunsoft
 F90 = f90
-FFLAGS = -g
+FFLAGS = -g -DSUNSOFT
 CFLAGS = -DFMANGLE=UNDERSCORE -g
+USE_CPP = cpp
+SPPR_HEAD = ../fort/spprinc.most
+FARG = farg_typical.f
 
 ### For LAM
 #MPIINC = -I$(LAMHOME)/include
 #MPILIB = -L$(LAMHOME)/lib -lmpi -lm
-#MPIH_PATH = -I$(LAMHOME)/include
 #LAMHF77 = $(F90)
 #LINK = hf77
-#LAMHCC = cc
+#LAMHCC = gcc
 #CC = hcc
 
-### For MPICH
-MPIINC = -I$(MPIR_HOME)/include -I$(MPIR_HOME)/lib/solaris/ch_p4
-MPILIB = -L$(MPIR_HOME)/lib/solaris/ch_p4 -lpmpich -lmpich -lsocket -lnsl \
-	-laio -lm
-MPIH_PATH =
+### For MPICH, ITL compilation
+#MPIINC = -I$(MPIR_HOME)/include -I$(MPIR_HOME)/lib/solaris/ch_p4
+#MPILIB = -L$(MPIR_HOME)/lib/solaris/ch_p4 -lpmpich -lmpich -lsocket -lnsl \
+#	-laio -lm
+#LINK = $(F90)
+#CC = cc
+
+### For MPICH, my compilation
+MPIINC = -I$(MPIR_HOME)/include
+MPILIB = -L$(MPIR_HOME)/build/solaris/ch_p4/lib -lpmpich -lmpich -lsocket \
+	-lnsl -laio -lm
 LINK = $(F90)
 CC = cc
 
+##########
 CINC_PATH = -I. -I../lb -I../par -I../all -I../params $(MPIINC)
+NO_PARMETIS = 1
+NP_NEMESIS = 1
 
-fdriver: cwrap.o fwrap.o lb_user_const.o ztypes.o \
+fdriver: cwrap.o fwrap$(USE_CPP).o lb_user_const.o ztypes$(USE_CPP).o \
+        dr_migrate.o farg.o mpistring.o \
 	dr_main.o dr_loadbal.o dr_input.o dr_chaco_io.o dr_const.o \
 	../Obj_nistsun/libzoltan.a
-	$(LINK) $(FFLAGS) -o zfdriver cwrap.o fwrap.o lb_user_const.o ztypes.o \
-	dr_main.o dr_loadbal.o dr_input.o dr_chaco_io.o dr_const.o \
-	./../Obj_nistsun -lzoltan $(MPILIB)
+	$(LINK) $(FFLAGS) -o zfdriver cwrap.o fwrap$(USE_CPP).o \
+        lb_user_const.o ztypes$(USE_CPP).o dr_main.o dr_loadbal.o dr_input.o \
+        dr_chaco_io.o dr_const.o dr_migrate.o farg.o mpistring.o \
+	-L../Obj_nistsun -lzoltan $(MPILIB)
 
-dr_main.o: dr_main.f90 fwrap.o mpi_h.o dr_const.o dr_input.o dr_chaco_io.o \
-	dr_loadbal.o
+farg.o: $(FARG)
+	$(F90) $(FFLAGS) -o farg.o -c $(FARG)
+
+dr_main.o: dr_main.f90 fwrap$(USE_CPP).o mpi_h.o dr_const.o dr_input.o \
+	dr_chaco_io.o dr_loadbal.o
 	$(F90) $(FFLAGS) -c dr_main.f90
 
-dr_loadbal.o: dr_loadbal.f90 fwrap.o mpi_h.o dr_const.o lb_user_const.o
+dr_migrate.o: dr_migrate.f90 fwrap$(USE_CPP).o mpi_h.o dr_const.o \
+	lb_user_const.o dr_chaco_io.o
+	$(F90) $(FFLAGS) -c dr_migrate.f90
+
+dr_loadbal.o: dr_loadbal.f90 fwrap$(USE_CPP).o mpi_h.o dr_const.o \
+	lb_user_const.o dr_migrate.o
 	$(F90) $(FFLAGS) -c dr_loadbal.f90
 
-dr_input.o: dr_input.f90 fwrap.o mpi_h.o dr_const.o
+dr_input.o: dr_input.f90 fwrap$(USE_CPP).o mpi_h.o dr_const.o
 	$(F90) $(FFLAGS) -c dr_input.f90
 
-dr_chaco_io.o: dr_chaco_io.f90 fwrap.o mpi_h.o dr_const.o dr_input.o \
+dr_chaco_io.o: dr_chaco_io.f90 fwrap$(USE_CPP).o mpi_h.o dr_const.o dr_input.o \
 	lb_user_const.o
 	$(F90) $(FFLAGS) -c dr_chaco_io.f90
 
-dr_const.o: dr_const.f90 fwrap.o
+dr_const.o: dr_const.f90 fwrap$(USE_CPP).o
 	$(F90) $(FFLAGS) -c dr_const.f90
 
-mpi_h.o: mpi_h.f90
-	$(F90) $(FFLAGS) $(MPIH_PATH) -c mpi_h.f90
+mpi_h.o: mpi_h.f
+	$(F90) $(FFLAGS) $(MPIINC) -c mpi_h.f
 
-fwrap.o: fwrap.F90 ztypes.o lb_user_const.o
-	$(F90) $(FFLAGS) -DSUNSOFT -c fwrap.F90
+fwrapcpp.o: fwrap.F90 ztypes$(USE_CPP).o lb_user_const.o
+	$(F90) $(FFLAGS) -o fwrapcpp.o -c fwrap.F90
 
-fwrap.F90: ../fort/fwrap.fpp
+fwrap.F90: ../fort/fwrap.fpp sppr_header
 	cp ../fort/fwrap.fpp fwrap.F90
+
+fwrap.o: fwrap.f90 ztypes$(USE_CPP).o lb_user_const.o
+	$(F90) $(FFLAGS) -c fwrap.f90
+
+fwrap.f90: ../fort/fwrap.fpp sppr sppr_header
+	./sppr < ../fort/fwrap.fpp > fwrap.f90
 
 sppr: ../fort/sppr.f90
 	$(F90) $(FFLAGS) -o sppr ../fort/sppr.f90
 
-lb_user_const.o: ../fort/lb_user_const.f90 ztypes.o
+lb_user_const.o: ../fort/lb_user_const.f90 ztypes$(USE_CPP).o
 	$(F90) $(FFLAGS) -c ../fort/lb_user_const.f90
 
-ztypes.o: ztypes.F90
-	$(F90) $(FFLAGS) -c ztypes.F90
+ztypescpp.o: ztypes.F90
+	$(F90) $(FFLAGS) -o ztypescpp.o -c ztypes.F90
 
-ztypes.F90: ../fort/ztypes.fpp
+ztypes.F90: ../fort/ztypes.fpp sppr_header
 	cp ../fort/ztypes.fpp ztypes.F90
+
+ztypes.o: ztypes.f90
+	$(F90) $(FFLAGS) -c ztypes.f90
+
+ztypes.f90: ../fort/ztypes.fpp sppr sppr_header
+	./sppr < ../fort/ztypes.fpp > ztypes.f90
+
+sppr_header: $(SPPR_HEAD)
+	cp $(SPPR_HEAD) sppr_header
 
 cwrap.o: ../fort/cwrap.c
 	$(CC) $(CFLAGS) $(CINC_PATH) -c ../fort/cwrap.c
 
+mpistring.o: mpistring.c
+	$(CC) $(CFLAGS) $(CINC_PATH) -c mpistring.c
+
 ../Obj_nistsun/libzoltan.a:
-	cd ..; zmake nistsun
+	cd ..; make nistsun
 clean:
-	rm -f *.o *.F90 *.mod zfdriver
+	rm -f *.o fwrap.f90 ztypes.f90 *.mod debug V* *.vo *.dbg zfdriver sppr \
+	      sppr_header fwrap.F90 ztypes.F90
+	rm -Rf album
