@@ -67,9 +67,8 @@ is provided.
 \section*{Acknowledgement}
 The authors would like to acknowledge the support of the ASCI and LDRD 
 programs that funded development of Trilinos and recognize all Trilinos 
-contributors: Teri Barth, Ross Bartlett, David Day, Bob Heaphy, 
-Robert Hoekstra, Jonathan Hu, Tammy Kolda, Richard Lehoucq, Kevin
-Long, Eric Phipps, 
+contributors: Teri Barth, Ross Bartlett, David Day, Robert Hoekstra, 
+Jonathan Hu, Tammy Kolda, Richard Lehoucq, Kevin Long, Eric Phipps, 
 Roger Pawlowski, Andrew Rothfuss, Andrew Salinger, Paul Sery, Ken
 Stanley, Heidi Thornquist, Ray Tuminaro and Alan Williams.
 
@@ -285,19 +284,17 @@ Although it is possible to run \InlineCommand{./configure} from the source tree 
 the directory where the configure file is located), we recommend that a 
 user have separate build trees.  The greatest advantage to having a separate 
 build tree is that multiple builds of the libraries can be maintained
-from the same source tree, for 
-example, serial and parallel libraries.  A less obvious advantage is that 
-this approach eliminates problems with configuring in a 'dirty'
-directory (one that has 
-already been configured in).
+from the same source tree.  For example, both serial and parallel libraries
+can be built.  
+This approach also eliminates problems with configuring in a 'dirty'
+directory (one that has already been configured in).
 \end{minipage}\hfill
 \framebox{\begin{minipage}[r]{.35\textwidth}{
 {\bf Key Point:}
 $\ldots$ we recommend that a 
 user have separate build trees $\ldots$ multiple builds of the
 libraries can be maintained from the same source tree $\ldots$ 
-eliminates problems with configuring in a 'dirty'
-directory $\ldots$
+problems with configuring in a 'dirty' directory (are eliminated) $\ldots$
 }\end{minipage}}
 \end{minipage}
 
