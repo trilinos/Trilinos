@@ -41,7 +41,10 @@ my $SUMMARY = 8;                      # test-harness summary
 chomp (my $hostOS=`uname`);
 $hostOS =~ s/\s*$//; 
 
-print "\nTEST - UPDATED VERSION 006\n\n";
+# Grab program arguments for use with self-updating functionality (see cvsUpdate())
+my @programArguments = @ARGV;
+
+print "\nTEST - UPDATED VERSION 007\n\n";
         
 ################################################################################
 # Execution ####################################################################
@@ -65,7 +68,7 @@ parseConfig($flags{f});
 validateOptions();
 
 # Update Trilinos from CVS Repository
-cvsUpdate(@ARGV);
+cvsUpdate();
 
 # Start up MPI implementation if any tests are parallel
 mpiStartup();
@@ -276,7 +279,6 @@ report($SUMMARY);
     #   - returns: 
 
     sub cvsUpdate {
-        my @programArguments = @_;
         
         # If -u flag is not set and CVS_UPDATE is set to YES, continue to update...
         # If -u flag is set, we've already updated and we've been replaced by
