@@ -51,10 +51,46 @@ using namespace NOX::Epetra;
 
 Group::Group(const Parameter::List& params, Interface& i, 
 	     Epetra_Vector& x, Epetra_Operator& J):
-  xVector(x), // deep copy x     
-  RHSVector(x, ShapeCopy), // new vector of same size
-  gradVector(x, ShapeCopy), // new vector of same size
-  NewtonVector(x, ShapeCopy), // new vector of same size
+  xVectorPtr(new Vector(x, DeepCopy)), // deep copy x     
+  xVector(*xVectorPtr),    
+  RHSVectorPtr(new Vector(x, ShapeCopy)), // new vector of same size
+  RHSVector(*RHSVectorPtr), 
+  gradVectorPtr(new Vector(x, ShapeCopy)), // new vector of same size
+  gradVector(*gradVectorPtr), 
+  NewtonVectorPtr(new Vector(x, ShapeCopy)), // new vector of same size
+  NewtonVector(*NewtonVectorPtr), 
+  tmpVectorPtr(0),
+  sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedJacobian
+  sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
+  sharedPreconditionerPtr(0),  // separate preconditioner is not used in this ctor
+  sharedPreconditioner(*sharedJacobianPtr),  // point to the Jacobian
+  userInterface(i)
+{
+  // Set all isValid flags to false
+  resetIsValid();
+
+  // Set the operators
+  jacobianOperatorType = getOperatorType(J);
+  preconditionerOperatorType = None; // This ctor is for one operator only!
+
+  // Set the requested preconditioning.  Defaults to "None".
+  preconditioner = params.getParameter("Preconditioning", "None");
+
+  // Make sure the correct underlying objects were supplied for the requested
+  // preconditioning options.
+  checkOperatorConsistency();
+}
+
+Group::Group(const Parameter::List& params, Interface& i, 
+	     Vector& x, Epetra_Operator& J):
+  xVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(DeepCopy))),
+  xVector(*xVectorPtr),    
+  RHSVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  RHSVector(*RHSVectorPtr), 
+  gradVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  gradVector(*gradVectorPtr), 
+  NewtonVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  NewtonVector(*NewtonVectorPtr), 
   tmpVectorPtr(0),
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedJacobian
   sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
@@ -79,11 +115,47 @@ Group::Group(const Parameter::List& params, Interface& i,
 
 Group::Group(const Parameter::List& params, Interface& i, 
 	     Epetra_Vector& x, Epetra_Operator& J, Epetra_Operator& M):
-  xVector(x), // deep copy x     
-  RHSVector(x, ShapeCopy), // new vector of same size
-  gradVector(x, ShapeCopy), // new vector of same size
-  NewtonVector(x, ShapeCopy), // new vector of same size
-  tmpVectorPtr(NULL),
+  xVectorPtr(new Vector(x, DeepCopy)), // deep copy x     
+  xVector(*xVectorPtr),    
+  RHSVectorPtr(new Vector(x, ShapeCopy)), // new vector of same size
+  RHSVector(*RHSVectorPtr), 
+  gradVectorPtr(new Vector(x, ShapeCopy)), // new vector of same size
+  gradVector(*gradVectorPtr), 
+  NewtonVectorPtr(new Vector(x, ShapeCopy)), // new vector of same size
+  NewtonVector(*NewtonVectorPtr), 
+  tmpVectorPtr(0),
+  sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedOperator
+  sharedJacobian(*sharedJacobianPtr), // create reference from pointer
+  sharedPreconditionerPtr(new SharedOperator(M)), // pass M to SharedOperator
+  sharedPreconditioner(*sharedPreconditionerPtr), // pass M to SharedOperator
+  userInterface(i)
+{
+  // Set all isValid flags to false
+  resetIsValid();
+
+  // Set the operators
+  jacobianOperatorType = getOperatorType(J);
+  preconditionerOperatorType = getOperatorType(M); 
+
+  // Set the requested preconditioning.  Defaults to "None".
+  preconditioner = params.getParameter("Preconditioning", "None");
+
+  // Make sure the correct underlying objects were supplied for the requested
+  // preconditioning options.
+  checkOperatorConsistency();
+}
+
+Group::Group(const Parameter::List& params, Interface& i, 
+	     Vector& x, Epetra_Operator& J, Epetra_Operator& M):
+  xVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(DeepCopy))),
+  xVector(*xVectorPtr),    
+  RHSVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  RHSVector(*RHSVectorPtr), 
+  gradVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  gradVector(*gradVectorPtr), 
+  NewtonVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
+  NewtonVector(*NewtonVectorPtr), 
+  tmpVectorPtr(0),
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedOperator
   sharedJacobian(*sharedJacobianPtr), // create reference from pointer
   sharedPreconditionerPtr(new SharedOperator(M)), // pass M to SharedOperator
@@ -106,10 +178,14 @@ Group::Group(const Parameter::List& params, Interface& i,
 }
 
 Group::Group(const Group& source, CopyType type) :
-  xVector(source.xVector.getEpetraVector(), type), 
-  RHSVector(source.RHSVector.getEpetraVector(), type), 
-  gradVector(source.gradVector.getEpetraVector(), type), 
-  NewtonVector(source.NewtonVector.getEpetraVector(), type),
+  xVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.xVector.clone(type))),
+  xVector(*xVectorPtr),    
+  RHSVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.RHSVector.clone(type))),
+  RHSVector(*RHSVectorPtr), 
+  gradVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.gradVector.clone(type))),
+  gradVector(*gradVectorPtr), 
+  NewtonVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.NewtonVector.clone(type))),
+  NewtonVector(*NewtonVectorPtr), 
   tmpVectorPtr(0),
   sharedJacobianPtr(0),
   sharedJacobian(source.sharedJacobian),
@@ -155,6 +231,10 @@ Group::~Group()
   delete tmpVectorPtr;
   delete sharedJacobianPtr;
   delete sharedPreconditionerPtr;
+  delete NewtonVectorPtr;
+  delete gradVectorPtr;
+  delete RHSVectorPtr;
+  delete xVectorPtr;
 }
 
 void Group::resetIsValid() //private

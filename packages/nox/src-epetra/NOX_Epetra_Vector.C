@@ -53,6 +53,24 @@ Vector::Vector(const Epetra_Vector& source, CopyType type)
   }
 }
 
+Vector::Vector(const Vector& source, CopyType type)
+{
+
+  switch (type) {
+
+  case DeepCopy:		// default behavior
+
+    epetraVec = new Epetra_Vector(source.getEpetraVector()); 
+    break;
+
+  case ShapeCopy:
+
+    epetraVec = new Epetra_Vector(source.getEpetraVector().Map()); 
+    break;  
+
+  }
+}
+
 Vector::~Vector()
 {
   delete epetraVec;

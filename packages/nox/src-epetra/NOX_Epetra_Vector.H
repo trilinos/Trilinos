@@ -51,6 +51,9 @@ class Vector : public Abstract::Vector {
   //! Construct by copying map and/or elements of an Epetra_Vector.
   Vector(const Epetra_Vector& source, CopyType type = DeepCopy);
 
+  //! Copy constructor.
+  Vector(const Vector& source, CopyType type = DeepCopy);
+
   //! Destruct Vector.
   ~Vector();
 

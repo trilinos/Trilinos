@@ -179,10 +179,24 @@ public:
   Group(const Parameter::List& linearSolverParams, Interface& i, 
  	Epetra_Vector& x, Epetra_Operator& J);
 
+  //! Constructor with Jacobian Operator only.  
+  /*! Either there is no preconditioning or the Jacobian will be used
+   * for preconditioning.  An Epetra_Operator must be supplied for 
+   * the Jacobian even in Matrix-Free mode. linearSolverParams is 
+   * the "Linear Solver" sublist of parameter list.
+   */
+  Group(const Parameter::List& linearSolverParams, Interface& i, 
+ 	Vector& x, Epetra_Operator& J);
+
   //! Constructor with a separate Jacobian (J) and %Preconditioner (M).  
   //! linearSolverParams is the "Linear %Solver" sublist of parameter list.
   Group(const Parameter::List& linearSolverParams, Interface& i, 
  	Epetra_Vector& x, Epetra_Operator& J, Epetra_Operator& M);
+
+  //! Constructor with a separate Jacobian (J) and %Preconditioner (M).  
+  //! linearSolverParams is the "Linear %Solver" sublist of parameter list.
+  Group(const Parameter::List& linearSolverParams, Interface& i, 
+ 	Vector& x, Epetra_Operator& J, Epetra_Operator& M);
 
   /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
     valid shared Jacobian and shared preconditioning matrix. */
@@ -323,14 +337,22 @@ protected:
 
   /** @name Vectors */
   //@{
+  //! Solution vector pointer.
+  Vector* xVectorPtr;
   //! Solution vector.
-  Vector xVector;
+  Vector& xVector;
   //! Right-hand-side vector (function evaluation).
-  Vector RHSVector;
+  Vector* RHSVectorPtr;
+  //! Right-hand-side vector pointer (function evaluation).
+  Vector& RHSVector;
+  //! Gradient vector pointer(steepest descent vector).
+  Vector* gradVectorPtr;
   //! Gradient vector (steepest descent vector).
-  Vector gradVector;
+  Vector& gradVector;
+  //! Newton direction vector pointer.
+  Vector* NewtonVectorPtr;
   //! Newton direction vector.
-  Vector NewtonVector;
+  Vector& NewtonVector;
   //@}
 
   //! An extra temporary vector, only allocated if needed.
