@@ -898,9 +898,16 @@ Optional Features:
   --enable-tests          Build tests for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
+
+  --enable-epetraext-tests
+                          Build EpetraExt tests (default is yes if
+                          --disable-tests is not specified)
   --enable-examples       Build examples for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
+  --enable-epetraext-examples
+                          Build EpetraExt examples (default is yes if
+                          --disable-examples is not specified)
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
@@ -4196,7 +4203,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4199:" \
+echo "$as_me:4206:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7014,7 +7021,39 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( epetraext, tests, Build EpetraExt tests, EPETRAEXT_TESTS)
+
+# Check whether --enable-tests or --disable-tests was given.
+if test "${enable_tests+set}" = set; then
+  enableval="$enable_tests"
+  ac_cv_use_tests=$enableval
+else
+  ac_cv_use_tests=yes
+fi;
+
+# Check whether --enable-epetraext-tests or --disable-epetraext-tests was given.
+if test "${enable_epetraext_tests+set}" = set; then
+  enableval="$enable_epetraext_tests"
+  ac_cv_use_epetraext_tests=$enableval
+else
+  ac_cv_use_epetraext_tests=${ac_cv_use_tests}
+fi;
+
+echo "$as_me:$LINENO: checking whether to use epetraext-tests" >&5
+echo $ECHO_N "checking whether to use epetraext-tests... $ECHO_C" >&6
+
+if test "X$ac_cv_use_epetraext_tests" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EPETRAEXT_TESTS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
 
 
 if test "X$ac_cv_use_epetraext_tests" != "Xno"; then
@@ -7051,7 +7090,39 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( epetraext, examples, Build EpetraExt examples, EPETRAEXT_EXAMPLES)
+
+# Check whether --enable-examples or --disable-examples was given.
+if test "${enable_examples+set}" = set; then
+  enableval="$enable_examples"
+  ac_cv_use_examples=$enableval
+else
+  ac_cv_use_examples=yes
+fi;
+
+# Check whether --enable-epetraext-examples or --disable-epetraext-examples was given.
+if test "${enable_epetraext_examples+set}" = set; then
+  enableval="$enable_epetraext_examples"
+  ac_cv_use_epetraext_examples=$enableval
+else
+  ac_cv_use_epetraext_examples=${ac_cv_use_examples}
+fi;
+
+echo "$as_me:$LINENO: checking whether to use epetraext-examples" >&5
+echo $ECHO_N "checking whether to use epetraext-examples... $ECHO_C" >&6
+
+if test "X$ac_cv_use_epetraext_examples" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EPETRAEXT_EXAMPLES
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
 
 
 if test "X$ac_cv_use_epetraext_examples" != "Xno"; then
@@ -7258,7 +7329,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7261: \"$ac_link\") >&5
+(eval echo $as_me:7332: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7336,7 +7407,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7339: \"$ac_link\") >&5
+(eval echo $as_me:7410: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10827,7 +10898,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10830: \"$ac_link\") >&5
+(eval echo $as_me:10901: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10905,7 +10976,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10908: \"$ac_link\") >&5
+(eval echo $as_me:10979: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
