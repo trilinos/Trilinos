@@ -8,9 +8,6 @@
 # might someday be needed by some other code outside Ifpack. The first is
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
-# For now, these are just guesses as to where the files belong.
-# Files that prove to be troublesome have been commented out and 
-# placed at the bottom of the appropriate section
 
 #Ifpack_CrsGraph.h
 #Ifpack_CrsRick.h
@@ -27,9 +24,7 @@ CORE =
 ### add in paths as needed - trying to prevent 
 ### unnecessary paths from being listed - see old.Makefile for ideas
 ### Should I add a dependence on AztecOO??  Library doesn't necessarily have
-### to be built - just need some headers???  Ask Mike about headers that 
-### may be needed outside of the various packages, vs those that will not
-### be needed and if I should split them up.
+### to be built - just need some headers???
 
 AM_CPPFLAGS =-I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
 	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
