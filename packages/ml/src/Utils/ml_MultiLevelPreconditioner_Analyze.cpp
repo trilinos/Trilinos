@@ -13,6 +13,7 @@
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
 #include "ml_operator.h"
+#include "ml_op_utils.h"
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
