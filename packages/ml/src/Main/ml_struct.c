@@ -72,7 +72,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    ML_memory_alloc((void**) &Amat         ,sizeof(ML_Operator)*Nlevels,"MAM");
    ML_memory_alloc((void**) &Rmat         ,sizeof(ML_Operator)*Nlevels,"MRM");
    ML_memory_alloc((void**) &Pmat         ,sizeof(ML_Operator)*Nlevels,"MPM");
-   ML_memory_alloc((void**) &max_eigen    ,sizeof(ML_Operator)*Nlevels,"MQM");
+   ML_memory_alloc((void**) &max_eigen    ,sizeof(double)*Nlevels,"MQM");
    length = sizeof(ML_DVector) * Nlevels;
    for ( i = 0; i < Nlevels; i++ ) max_eigen[i] = 0.0;
    ML_memory_alloc((void**)&Amat_Normalization, length, "MAN");
