@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+#   !!works with Lam-mpi only!!       
+#   script to attach gdb to the first 12 processes of a parallel job
+#   (processes 12 and up are run outside gdb)
+# 
+# usage:
+#
+#   lamboot
+#   mpirun -np <nproc> lamgdbm executable
+#
+#   launches gdb in a separate window for each process
+#   the arguments to executable have to be specified in gdb:
+#
+#   (gdb): set args arg1 arg2
+#   or
+#   (gdb): run arg1 arg2
+#
+#   make sure to correctly quit gdb using (gdb):quit in all windows
+#   to end all running processes
+#
+# see also:
+#   lamgdb: script to debug just one out of a bunch of processes
+#
+if [ "$LAMRANK" -eq 0 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+elif [ "$LAMRANK" -eq 1 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+elif [ "$LAMRANK" -eq 2 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+elif [ "$LAMRANK" -eq 3 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+elif [ "$LAMRANK" -eq 4 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+elif [ "$LAMRANK" -eq 5 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+elif [ "$LAMRANK" -eq 6 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+elif [ "$LAMRANK" -eq 7 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+elif [ "$LAMRANK" -eq 8 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+elif [ "$LAMRANK" -eq 9 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+elif [ "$LAMRANK" -eq 10 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+elif [ "$LAMRANK" -eq 11 ]
+then
+   echo "Launching gdb $* on rank $LAMRANK"
+   xterm -sb -title "gdb on proc $LAMRANK" -e /usr/bin/gdb $*
+else
+   echo "Launching $2 $3 $4 on rank $LAMRANK"
+   ./$*
+fi
