@@ -50,7 +50,8 @@ ALL_EPETRA_CC = \
             Epetra_VbrMatrix.cpp \
             Epetra_Vector.cpp \
             Epetra_MpiDistributor.cpp \
-            Epetra_SerialDistributor.cpp
+            Epetra_SerialDistributor.cpp \
+            Epetra_ReducedLinearProblem.cpp
 #           Epetra_C_wrappers.cpp Epetra_Fortran_wrappers.cpp
 
 EPETRA_CC = Epetra_SerialComm.cpp \

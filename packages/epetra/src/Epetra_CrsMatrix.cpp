@@ -1031,7 +1031,7 @@ int Epetra_CrsMatrix::InvRowSums(Epetra_Vector& x) const {
 //
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
-  if (!Graph().RangeMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
+  if (!Graph().RowMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
   int ierr = 0;
   int i, j;
   int * NumEntriesPerRow = NumEntriesPerRow_;
