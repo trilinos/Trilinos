@@ -80,7 +80,7 @@ Spectral norm calculation    = Anorm
 #include <math.h>
 #include "az_aztec.h"
 #include "ml_include.h"
-#include "ml_reader.h"
+#include "ml_read_utils.h"
 #include <math.h>
 
 extern int AZ_using_fortran;
