@@ -34,15 +34,32 @@
 #include "NOX_Utils.H"
 #include "NOX_Parameter_List.H"
 
-int NOX::Utils::precision = 3;
-int NOX::Utils::myPID = 0;
-int NOX::Utils::printProc = 0;
-int NOX::Utils::printTest = 0xf;
+NOX::Utils::Utils()
+{
+  // Make an empty list
+  NOX::Parameter::List p;
+  reset(p);
+}
 
-//NOX::Utils::Fill NOX::Utils::fillobj;
-//NOX::Utils::Sci NOX::Utils::sciobj;
+NOX::Utils::Utils(NOX::Parameter::List& p)
+{
+  reset(p);
+}
 
-NOX::Utils::Fill NOX::Utils::fill(int filln, char fillc) 
+NOX::Utils::~Utils()
+{
+}
+
+void NOX::Utils::reset(NOX::Parameter::List& p)
+{
+  printTest = p.getParameter("Output Information", 0xf);
+  myPID = p.getParameter("MyPID", 0);
+  printProc = p.getParameter("Output Processor", 0);
+  precision = p.getParameter("Output Precision", 3);
+}
+
+//static
+NOX::Utils::Fill NOX::Utils::fill(int filln, char fillc)
 {
   return NOX::Utils::Fill(filln, fillc);
 }
@@ -54,76 +71,88 @@ ostream& operator<<(ostream& os, const NOX::Utils::Fill& f)
   return os;
 }
 
-NOX::Utils::Sci NOX::Utils::sci(double dval, int prec)
+NOX::Utils::Sci NOX::Utils::sciformat(double dval, int p) const
 {
-  return NOX::Utils::Sci(dval, prec);
+  return NOX::Utils::Sci(dval, ((p > 0) ? p : precision) );
 }
 
 ostream& operator<<(ostream& os, const NOX::Utils::Sci& s)
 {
   os.setf(ios::scientific);
-  if (s.p < 0) {
-    os.precision(NOX::Utils::precision);
-    os << setw(NOX::Utils::precision + 6) << s.d;
-  }
-  else {
-    os.precision(s.p);
-    os << setw(s.p + 6) << s.d;
-  } 
+  os.precision(s.p);
+  os << setw(s.p + 6) << s.d;
   cout.unsetf(ios::scientific);
   return os;
 }
 
-void NOX::Utils::setUtils(NOX::Parameter::List& params)
-{
-  NOX::Parameter::List& p = params.sublist("Printing");
-  printTest = p.getParameter("Output Information", printTest);
-  myPID = p.getParameter("MyPID", myPID);
-  printProc = p.getParameter("Output Processor", printProc);
-  precision = p.getParameter("Output Precision", precision);
-}
-
-bool NOX::Utils::isPrintProc()
+bool NOX::Utils::isPrintProcess() const
 {
   return (printProc == myPID);
 }
 
-bool NOX::Utils::doPrint(int printLevel)
+bool NOX::Utils::isPrintProcessAndType(MsgType type) const
 {
-  cerr << "WARNING: NOX::Utils::doPrint(int printLevel) is deprecated!" << "\n";
-  cerr << "         Use Nox::Utils::doPrint(NOX::Utils::MsgType type) instead.";
-  cerr << endl;
-
-  return (isPrintProc());
+  return (isPrintProcess() && isPrintType(type));
 }
 
-bool NOX::Utils::doAllPrint(int printLevel)
+bool NOX::Utils::isPrintType(MsgType type) const
 {
-  cerr << "WARNING: NOX::Utils::doAllPrint(int printLevel) is deprecated!" << "\n";
-  cerr << "         Use Nox::Utils::doAllPrint(NOX::Utils::MsgType type) instead.";
-  cerr << endl;
+  return ((type == NOX::Utils::Error) || ((printTest & type) != 0));
+}
 
+//private
+void NOX::Utils::deprecated(const string& oldname, const string& newname)
+{
+#ifdef WITH_PRERELEASE
+  cerr << "WARNING: NOX::Utils::" << oldname << " is deprecated!" << "\n"
+       << "         Use Nox::Utils::" << newname << " instead." << endl;
+#endif
+}
+
+//static & deprecated
+NOX::Utils::Sci NOX::Utils::sci(double dval, int p) 
+{
+  deprecated("sci","sciformat");
+  return  NOX::Utils::Sci(dval, ((p > 0) ? p : 3) );
+}
+
+//static & deprecated
+bool NOX::Utils::isPrintProc() 
+{
+  deprecated("isPrintProc","isPrintProcess");
   return true;
 }
 
-bool NOX::Utils::doPrint(MsgType type)
+//static & deprecated
+bool NOX::Utils::doPrint(MsgType type) 
 {
-  if (type == Error)
-    return isPrintProc();
-
-  return (isPrintProc() && ((printTest & type) != 0));
+  deprecated("doPrint","isPrintProcessAndType");
+  return true;
 }
 
-bool NOX::Utils::doAllPrint(MsgType type)
+//static & deprecated
+bool NOX::Utils::doAllPrint(MsgType type) 
 {
-  if (type == Error)
-    return true;
-
-  return ((printTest & type) != 0);
+  deprecated("doAllPrint","isPrintType");
+  return true;
 }
 
-int NOX::Utils::getMyPID()
+//static & deprecated
+bool NOX::Utils::doPrint(int printLevel)
 {
-  return myPID;
+  deprecated("doPrint","isPrintProcessAndType");
+  return (isPrintProc());
 }
 
+//static & deprecated
+bool NOX::Utils::doAllPrint(int printLevel)
+{
+  deprecated("doAllPrint","isPrintType");
+  return true;
+}
+
+//static & deprecated
+void NOX::Utils::setUtils(NOX::Parameter::List& params)
+{
+  deprecated("setUtils","reset");
+}

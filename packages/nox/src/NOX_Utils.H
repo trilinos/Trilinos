@@ -42,11 +42,10 @@ class List;
 }
 }
 
-
 namespace NOX {
 
 /*!
-  \brief Provides static parallel communication and printing utilities.
+  \brief Provides parallel communication and printing utilities.
 
   The following parameters are used by this class and should be
   defined in the "Printing" sublist of the solver parameter list.
@@ -67,8 +66,35 @@ namespace NOX {
 */
 class Utils {
 
+public:				// types
 
-public:
+  //! Fill object - used to print the given character the number of times specified.
+  class Fill {
+  public:
+    //! Constructor
+    Fill(int ntimes, char ch) : n(ntimes), c(ch) {};
+    //! Destructor
+    ~Fill() {};
+    //! Number of times the character should be printed
+    int n;
+    //! Character to be printed
+    char c;
+  };
+
+  //! Sci object - used to print the given value with the specified precision
+  class Sci {
+  public:
+    //! Constructor
+    Sci(double val, int precision = -1) : d(val), p(precision) {};
+    //! Destructor
+    ~Sci() {};
+    //! Value to be printed
+    double d;
+    //! Precision 
+    int p;
+  };
+
+
   /*!
     \brief Message types for printing.
 
@@ -77,107 +103,69 @@ public:
     you wish to receive.
   */
   enum MsgType { 
-    Error = 0,			     // Errors are always printed
-    Warning = 0x1,		     // 2^0
-    OuterIteration = 0x2,	     // 2^1
-    InnerIteration = 0x4,	     // 2^2
-    Parameters = 0x8,		     // 2^3
-    Details = 0x10,		     // 2^4
-    OuterIterationStatusTest = 0x20, // 2^5
-    LinearSolverDetails = 0x40        // 2^6
+    //! Errors are always printed
+    Error = 0,			     
+    //! 2^0
+    Warning = 0x1,		     
+    //! 2^1
+    OuterIteration = 0x2,	     
+    //! 2^2
+    InnerIteration = 0x4,	     
+    //! 2^3
+    Parameters = 0x8,		     
+    //! 2^4
+    Details = 0x10,		     
+    //! 2^5
+    OuterIterationStatusTest = 0x20, 
+    //! 2^6
+    LinearSolverDetails = 0x40        
   };
 
-public:
 
-  //! Repeat the given character n times to the given stream.
-  static ostream& repeat(ostream& stream, int n, char c = '*');
+public:				// static functions
 
   /*! 
-    \brief Set the parameters in the utilities class.
-    
-    Valid parameters are:
-    <li> "Output Information" - Sum of MsgType flags to set what information
-    to output.
-    <li> "MyPID" - Processor ID.
-    <li> "Output Processor" - Ranges from 0 to MyPID-1.
-    <li> "Output Precision" - Precision of values to be printed by output.
+    \brief Deprecated
+    \deprecated Use Utils() or reset() on instantiated object instead.
   */
   static void setUtils(NOX::Parameter::List& p);
 
   /*! 
-    \brief Returns true if the current processor is designated as the
-    processor send output to screen and/or file.
-
-    This is used to prevent each processor from printing the same
-    information. 
+    \brief Deprecated
+    \deprecated Use isPrintProcess() on instantiated object instead.
   */
   static bool isPrintProc();
 
   /*! 
-    \brief This function is deprecated.
-
-    \deprecated Use NOX::Utils::doPrint(NOX::Utils::MsgType type)
-    instead. This will print many warnings if you used it and is to be
-    phased out.
-
+    \brief Deprecated.
+    \deprecated Use isPrintProcess() on instantiated object instead.
   */ 
   static bool doPrint(int printLevel);
 
   /*!
-    \brief Indicate whether or not the message should be printed.
-
-    Returns true if the specifed message type should be printed \b and
-    this is the print process.
-
-    \note Be careful about putting any computations inside a doPrint
-    if statement since \b only the print process will execute that
-    code.
-
+    \brief Deprecated
+    \deprecated Use isPrintProcessAndCode() on instantiated object instead.
   */
   static bool doPrint(MsgType type);
 
   /*! 
-    \brief This function is deprecated.
-
-    \deprecated Use NOX::Utils::doAllPrint(NOX::Utils::MsgType type)
-    instead. This will print many warnings if you used it and is to be
-    phased out.
-
+    \brief Deprecated
+    \deprecated Use isPrintProcessAndCode() on instantiated object instead.
   */ 
   static bool doAllPrint(int printLevel);
 
   /*!
-    \brief Indicate whether or not the message should be printed.
-
-    Returns true if the specifed message type should be printed.
+    \brief Deprecated
+    \deprecated Use isPrintCode() on instantiated object instead.
   */
   static bool doAllPrint(MsgType type);
 
-  //! Returns the process ID number.
+  /*!
+    \brief Deprecated
+    \deprecated No replacement.
+  */
   static int getMyPID();
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-
-  class Fill {
-  public:
-    Fill(int ntimes, char ch) : n(ntimes), c(ch) {};
-    ~Fill() {};
-    int n;
-    char c;
-  };
-
-  class Sci {
-  public:
-    Sci(double val, int precision = -1) : d(val), p(precision) {};
-    ~Sci() {};
-    double d;
-    int p;
-  };
-
-  //static Fill fillobj;
-  //  static Sci sciobj;
-
-#endif
 
   /*!  
     \brief Creates a Fill object which can be used in an output stream
@@ -192,12 +180,41 @@ public:
   */
   static Fill fill(int filln, char fillc = '*');
 
-  /*! 
 
+  /*!
+    \brief Deprecated
+    \deprecated Use sciformat() on instantiated object instead.
+  */
+  static Sci sci(double dval, int prec = -1);
+
+public:				// functions
+
+  //! Empty constructor
+  Utils();
+
+  //! Constructor
+  Utils(NOX::Parameter::List& p);
+
+  //! Destructor
+  ~Utils();
+
+  //! Reset the utility parameters
+  void reset(NOX::Parameter::List& p);
+
+  //! Returns true if this is the designated print process
+  bool isPrintProcess() const;
+
+  //! Returns true if this is a valid print type
+  bool isPrintType(NOX::Utils::MsgType type) const;
+
+  //! Returns true if this is the designated print process and this is a valid print type
+  bool isPrintProcessAndType(NOX::Utils::MsgType type) const;
+
+  /*! 
     \brief Creates a Sci object which can be used in an output stream
     for printing a double precision number in scientific format with
     an arbitrary precision. The default precision is that specificed
-    by the Utils static object.
+    by the Utils object.
 
     For example,
     \code cout << Utils::sci(d) << "or" << Utils::sci(d,2); \endcode
@@ -205,21 +222,29 @@ public:
     This is modeled after the Form and Bound_form objects in
     Stroustrup, C++ Programming Langauge, 3rd ed., Chapter 21.4.
   */
-  static Sci sci(double dval, int prec = -1);
+  Sci sciformat(double dval, int prec = -1) const;
 
-public:
+private:
+
+  //! Disallow copy constructor
+  Utils(Utils& u);
+  
+  //! Print out a message regarding being deprecated
+  static void deprecated(const string& oldname, const string& newname);
+
+private:
 
   //! Output precision for floats and doubles.
-  static int precision;
+  int precision;
   
   //! Processor ID.
-  static int myPID;
+  int myPID;
   
   //! Output test. 
-  static int printTest;
+  int printTest;
 
   //! Processor responsible for output. 
-  static int printProc;
+  int printProc;
 
 }; // class Utils
 
