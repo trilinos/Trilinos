@@ -898,9 +898,11 @@ static int matching_agm(ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
     int   i, j, k, nadj, v1, v2, edge, maxindex, nheavy, pass;
     float maxip;
+    int   locking, nlocked;
     int   *adj = NULL;
     int   *order = NULL;
     int   *sorted = NULL;
+    int   *locked = NULL; 
     float *ips = NULL; 
     float *wgts = NULL; 
     char  *yo = "matching_agm";
@@ -909,8 +911,9 @@ static int matching_agm(ZZ *zz, HGraph *hg, Matching match, int *limit)
 
     if (!(ips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
      || !(adj = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
-     || !(order = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))) {
-        Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
+     || !(order = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
+     || !(locked = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))) {
+        Zoltan_Multifree(__FILE__, __LINE__, 4, &ips, &adj, &order, &locked);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
@@ -926,6 +929,27 @@ static int matching_agm(ZZ *zz, HGraph *hg, Matching match, int *limit)
         return ZOLTAN_MEMERR;
     }
 
+    /* lock some of the vertices with the most hedges */
+    /* we prevent these from matching each other, but they can match 
+       non-locked vertices. this heuristic works quite well.  */
+    locking=1;   /* make parameter later! */
+    if (locking){
+      nlocked = 0.2*hg->nVtx; /* lock 20% of vertices */
+      for (i = 0; i < hg->nVtx; i++){
+        sorted[i] = i;
+        ips[i] = (float) hg->vindex[i+1] - hg->vindex[i];
+           /* make float so we can use Zoltan_quicksort_pointer_dec_float */
+      }
+      /* sort vertices by degree */
+      Zoltan_quicksort_pointer_dec_float (sorted, ips, 0, hg->nVtx-1);
+      /* lock vertices */
+      for (i = 0; i < hg->nVtx; i++)
+        locked[i] = 0;
+      for (i = 0; i < nlocked; i++)
+        locked[sorted[i]] = 1;
+    }
+
+    /* initialize */
     for (i = 0; i < hg->nVtx; i++){
         ips[i] = .0;
         order[i] = i;
@@ -1011,6 +1035,8 @@ static int matching_agm(ZZ *zz, HGraph *hg, Matching match, int *limit)
                  i, v1, v2, wgts[j]); */
   
         /* match (v1,v2) if both are unmatched */
+        if (locking && locked[v1] && locked[v2]) 
+          continue;  /* can't match two locked vertices */
         if ((match[v1]==v1) && (match[v2]==v2) && *limit ){
             match[v1] = v2;
             match[v2] = v1;
@@ -1019,7 +1045,7 @@ static int matching_agm(ZZ *zz, HGraph *hg, Matching match, int *limit)
       }
     }
   
-    Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
+    Zoltan_Multifree(__FILE__, __LINE__, 4, &ips, &adj, &order, &locked);
     Zoltan_Multifree(__FILE__, __LINE__, 3, &wgts, &heavy_edges, &sorted);
 
     /* call maximal matching to match vertices that are unmatched */
