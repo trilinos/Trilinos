@@ -409,6 +409,18 @@ void ML_Reader_GetSolutionSpecs(FILE *ifp, struct reader_context *context)
   ML_Reader_Strip(input);
   strcpy(context->smoother,input);
 
+  /* select the subsmoother (if applicable) */
+
+  c_srch = "type of subsmoother";
+  if (!ML_Reader_LookFor(ifp, c_srch, input, '=')) {
+    strcpy(context->subsmoother,"default");
+  }
+  else {
+     ML_Reader_ReadString(ifp,input, '\n');
+     ML_Reader_Strip(input);
+     strcpy(context->subsmoother,input);
+  }
+
   /* select the number of smoother iterations per level */
 
   c_srch = "smoother steps per level";
