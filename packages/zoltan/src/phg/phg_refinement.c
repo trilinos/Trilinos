@@ -449,7 +449,9 @@ static int refine_fm2 (ZZ *zz,
                 }
             }
         /* now sum up all gains on only root proc */
-        MPI_Reduce(lgain, gain, hg->nVtx, MPI_FLOAT, MPI_SUM, root.rank, hgc->col_comm);
+        if (hg->nVtx)
+            MPI_Reduce(lgain, gain, hg->nVtx, MPI_FLOAT, MPI_SUM, root.rank, 
+                       hgc->col_comm);
 
         if (hgp->output_level >= PHG_DEBUG_ALL)        
             printf("%s FM Pass %d (%d->%d) Cut=%.2lf W[%5.0lf, %5.0lf] I= %.2lf LW[%5.0lf, %5.0lf] LI= %.2lf\n", uMe(hgc), passcnt, from, to, cutsize, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal);
