@@ -985,7 +985,7 @@ void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
 #ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
 #ifdef ML_MPI
   MPI_Allreduce((void *) vals,(void *) vals2, 1, MPI_INT, MPI_SUM,
-                MPI_COMM_WORLD);
+                comm->USR_comm);
   *vals = *vals2;
 #endif
   return;
@@ -1161,7 +1161,7 @@ void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
 #ifdef ML_MPI
   int *tmpptr;
   MPI_Allreduce((void *) *tvals,(void *) *tvals2, length, MPI_INT, MPI_SUM,
-                MPI_COMM_WORLD);
+                comm->USR_comm);
   tmpptr = *tvals;
   *tvals = *tvals2;
   *tvals2 = tmpptr;
@@ -1311,7 +1311,7 @@ void ML_gsum_vec_double(double **tvals, double **tvals2, int length, ML_Comm *co
   double *tmpptr;
 
   MPI_Allreduce((void *) *tvals,(void *) *tvals2, length, MPI_INT, MPI_SUM,
-                MPI_COMM_WORLD);
+                comm->USR_comm);
   tmpptr = *tvals;
   *tvals = *tvals2;
   *tvals2 = tmpptr;
@@ -1931,7 +1931,7 @@ double ML_gsum_double(double val, ML_Comm *comm)
 #ifdef ML_MPI
   double val2;          /* arriving value to add */
   MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_DOUBLE, MPI_SUM,
-                MPI_COMM_WORLD);
+                comm->USR_comm);
   return val2;
 #else
   return val;
@@ -2090,7 +2090,7 @@ double ML_gmax_double(double val, ML_Comm *comm)
 #ifdef ML_MPI
   double val2;          /* arriving value to add */
   MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_DOUBLE, MPI_MAX,
-                MPI_COMM_WORLD);
+                comm->USR_comm);
   return val2;
 #else
   return val;
@@ -2254,7 +2254,7 @@ int ML_gmax_int(int val, ML_Comm *comm)
 #ifdef ML_MPI
   int   val2;                     /* arriving value to add */
   MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_INT, MPI_MAX,
-                MPI_COMM_WORLD);
+                comm->USR_comm);
   return val2;
 #else
   return val;
@@ -2541,7 +2541,7 @@ int pr_error(char *fmt,  ... )
   va_end(ap);
   fprintf(stderr,"\n%sn",ml_message_string);
 #ifdef ML_MPI
-  MPI_Abort(MPI_COMM_WORLD,1);
+  MPI_Abort(MPI_COMM_WORLD, 1);
 #else
   exit(1);
 #endif
@@ -2735,7 +2735,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
    Nrows = matrix->getrow->Nrows;
 #ifdef ML_MPI
    MPI_Reduce((void*)&Nrows, (void*)&NglobalRows,
-	      1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD );
+	      1, MPI_INT, MPI_SUM, 0, matrix->comm->USR_comm );
 #else
    NglobalRows = Nrows; 
 #endif
@@ -2796,7 +2796,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
          if( label != NULL ) fclose(fid);
      }
 #ifdef ML_MPI
-     MPI_Barrier( MPI_COMM_WORLD );
+     MPI_Barrier( matrix->comm->USR_comm );
 #endif
      
    }
@@ -2805,7 +2805,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
 
 #ifdef ML_MPI
    MPI_Reduce((void*)&NglobalCols, (void*)&i,
-	      1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD );
+	      1, MPI_INT, MPI_MAX, 0, matrix->comm->USR_comm );
 #else
    i = NglobalCols; 
 #endif
