@@ -38,7 +38,7 @@
 
 namespace NOX {
 
-  //! Used for inteface using BLAS/LAPACK for linear algebra
+  //! NOX BLAS/LAPACK support
   namespace LAPACK {
 
     //! Implementation of NOX::Abstract::Vector for vector<double> using LAPACK
