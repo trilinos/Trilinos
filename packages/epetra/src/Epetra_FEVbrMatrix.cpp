@@ -127,11 +127,11 @@ int Epetra_FEVbrMatrix::PutScalar(double ScalarConstant)
 //----------------------------------------------------------------------------
 int Epetra_FEVbrMatrix::GlobalAssemble(bool callTransformToLocal) 
 {
-  if (Map().Comm().NumProc() < 2) {
-    return(0);
-  }
+  if (Map().Comm().NumProc() < 2 || ignoreNonLocalEntries_) {
+    if (callTransformToLocal) {
+      EPETRA_CHK_ERR( TransformToLocal() );
+    }
 
-  if (ignoreNonLocalEntries_) {
     return(0);
   }
 
