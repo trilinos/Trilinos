@@ -1509,6 +1509,7 @@ char *AZ_allocate_or_free(void *ptr, unsigned int input_size, int action)
         if (v_lastused > v_smallest_free) {
           printf("Error: Out of space due to poor estimate of memory needed\n");
           printf("       for overlapping.\n");
+	  exit(1);
         }
     }
     else if (action == ESTIMATED_SET) {
