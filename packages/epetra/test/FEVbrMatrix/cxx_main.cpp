@@ -79,11 +79,11 @@ int main(int argc, char *argv[]) {
 
   Epetra_Map Map(NumGlobalElements, NumMyElements, IndexBase, Comm);
 
-  //EPETRA_TEST_ERR( quad1(Map, verbose), ierr);
+  EPETRA_TEST_ERR( quad1(Map, verbose), ierr);
 
   EPETRA_TEST_ERR( quad2(Map, verbose), ierr);
 
-  //EPETRA_TEST_ERR( MultiVectorTests(Map, NumVectors, verbose), ierr);
+  EPETRA_TEST_ERR( MultiVectorTests(Map, NumVectors, verbose), ierr);
 
 #ifdef EPETRA_MPI
   MPI_Finalize();
