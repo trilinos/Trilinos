@@ -1830,7 +1830,11 @@ int Epetra_CrsMatrix::RightScale(const Epetra_Vector& x) {
 //=============================================================================
 double Epetra_CrsMatrix::NormInf() const {
 
-  if (NormInf_>-1.0) return(NormInf_);
+  double MinNorm ; 
+  Comm().MinAll( &NormInf_, &MinNorm, 1 ) ; 
+
+  if( MinNorm >= 0.0) 
+    return(NormInf_);
 
   if(!Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
@@ -1870,7 +1874,10 @@ double Epetra_CrsMatrix::NormInf() const {
 //=============================================================================
 double Epetra_CrsMatrix::NormOne() const {
 
-  if(NormOne_ > -1.0) 
+  double MinNorm ; 
+  Comm().MinAll( &NormOne_, &MinNorm, 1 ) ; 
+
+  if( MinNorm >= 0.0) 
     return(NormOne_);
 
   if(!Filled()) 

@@ -607,6 +607,50 @@ int main(int argc, char *argv[])
     EPETRA_TEST_ERR(-38,ierr)
     ScalingBroke = true;
   }
+
+  //
+  //  Now try changing the values underneath and make sure that 
+  //  telling one process about the change causes NormInf() and 
+  //  NormOne() to recompute the norm on all processes.
+  //
+  
+  double *values; 
+  int num_my_rows = A2.NumMyRows() ; 
+  int num_entries;
+
+  for ( int  i=0 ; i< num_my_rows; i++ ) {
+    EPETRA_TEST_ERR( A2.ExtractMyRowView( i, num_entries, values ), ierr );
+    for ( int j = 0 ; j <num_entries; j++ ) {
+      values[j] *= 2.0; 
+    }
+  }
+
+
+  if ( MyPID == 0 )
+    A2.SumIntoGlobalValues( 0, 0, 0, 0 ) ; 
+
+  double A2infNorm5 = A2.NormInf();
+  double A2oneNorm5 = A2.NormOne();
+
+  if (A2infNorm5!=2.0 * A2infNorm4) {
+    EPETRA_TEST_ERR(-39,ierr)
+    ScalingBroke = true;
+  }
+  if (A2oneNorm5!= 2.0 * A2oneNorm4) {
+    EPETRA_TEST_ERR(-40,ierr)
+    ScalingBroke = true;
+  }
+
+  //
+  //  Restore the values underneath
+  //
+  for ( int  i=0 ; i< num_my_rows; i++ ) {
+    EPETRA_TEST_ERR( A2.ExtractMyRowView( i, num_entries, values ), ierr );
+    for ( int j = 0 ; j <num_entries; j++ ) {
+      values[j] /= 2.0; 
+    }
+  }
+
   if (verbose1) cout << A2;
 
   if (ScalingBroke) {

@@ -453,6 +453,8 @@ int Epetra_VbrMatrix::Scale(double ScalarConstant)
       }
     }
   }
+  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
+  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   return(0);
 }
 //==========================================================================
@@ -619,6 +621,8 @@ int Epetra_VbrMatrix::EndSubmitEntries() {
   else {
     EPETRA_CHK_ERR(EndReplaceSumIntoValues());
   }
+  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
+  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   return(0);
 }
 
@@ -1307,6 +1311,8 @@ int Epetra_VbrMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
     }
     if (DiagMissing) ierr = 1; // flag a warning error
   }
+  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
+  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   EPETRA_CHK_ERR(ierr);
   return(0);
 }
@@ -2522,7 +2528,12 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
 //=============================================================================
 double Epetra_VbrMatrix::NormInf() const {
 
-  //  if (NormInf_>-1.0) return(NormInf_);
+  double MinNorm ; 
+  Comm().MinAll( &NormInf_, &MinNorm, 1 ) ; 
+
+  if( MinNorm >= 0.0) 
+  //  if( NormInf_ >= 0.0) 
+    return(NormInf_);
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
@@ -2569,7 +2580,13 @@ void Epetra_VbrMatrix::BlockRowNormInf(int RowDim, int NumEntries,
 //=============================================================================
 double Epetra_VbrMatrix::NormOne() const {
 
-  if (NormOne_>-1.0) return(NormOne_);
+  double MinNorm ; 
+  Comm().MinAll( &NormOne_, &MinNorm, 1 ) ; 
+
+  if( MinNorm >= 0.0) 
+    return(NormOne_);
+
+
   int * ColFirstPointInElementList = FirstPointInElementList_;
   if (Importer()!=0) {
     ColFirstPointInElementList = ColMap().FirstPointInElementList();

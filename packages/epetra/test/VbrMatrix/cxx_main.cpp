@@ -728,8 +728,10 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   if (verbose) cout << "\n\nIncreasing the magnitude of first diagonal term and solving again\n\n"
 		    << endl;
 
-    double Anorm = -13 ;
-  //  Anorm = A->NormInf( ) ; 
+  double AnormInf = -13 ;
+  double AnormOne = -13 ;
+  AnormInf = A->NormInf( ) ; 
+  AnormOne = A->NormOne( ) ; 
 
   EPETRA_TEST_ERR(!(A->IndicesAreLocal()),ierr);
   EPETRA_TEST_ERR((A->IndicesAreGlobal()),ierr);
@@ -750,7 +752,21 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
     }
     delete [] Rowinds;
   }
-  //  Anorm = A->NormInf( ) ; 
+  //
+  //  NormOne() and NormInf() will return cached values
+  //
+  EPETRA_TEST_ERR( ! (AnormOne == A->NormOne( )), ierr ); 
+  EPETRA_TEST_ERR( ! (AnormInf == A->NormInf( )), ierr );
+  //
+  //  On Process 0, 
+  // 
+  if ( MyPID == 0 ) {
+    EPETRA_TEST_ERR(!(A->BeginSumIntoGlobalValues( 0, 0, 0 )==0),ierr);
+    EPETRA_TEST_ERR(  A->EndSubmitEntries(), ierr );
+  }
+  EPETRA_TEST_ERR( ! (AnormOne != A->NormOne( )), ierr ); 
+  EPETRA_TEST_ERR( ! (AnormInf != A->NormInf( )), ierr ); 
+  if ( MyPID == 0 ) 
   // Iterate (again)
   lambda = 0.0;
   z = z_initial;  // Start with common initial guess
@@ -1071,9 +1087,18 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 
   if (verbose) cout << "\n\nDiagonal extraction and replacement OK.\n\n" << endl;
 
-  double orignorm = B->NormOne();
+  double originfnorm = B->NormInf();
+  double origonenorm = B->NormOne();
   EPETRA_TEST_ERR(!(B->Scale(4.0)==0),ierr);
-  EPETRA_TEST_ERR((B->NormOne()!=orignorm),ierr);
+  //  EPETRA_TEST_ERR((B->NormOne()!=origonenorm),ierr);
+#if 0
+  cout << " B->NormOne() " << B->NormOne() << " origonenorm = " <<
+    origonenorm << endl ; 
+  cout << " B->NormInf() " << B->NormInf() << " originfnorm = " <<
+    originfnorm << endl ; 
+#endif
+  EPETRA_TEST_ERR(!(B->NormInf()==4.0 * originfnorm),ierr);
+  EPETRA_TEST_ERR(!(B->NormOne()==4.0 * origonenorm),ierr);
 
   if (verbose) cout << "\n\nMatrix scale OK.\n\n" << endl;
   
@@ -1159,7 +1184,7 @@ int main(int argc, char *argv[])
   bool NoExtraBlocks = false; 
   bool ExtraBlocks = true; 
   bool symmetric = true; 
-  bool NonSymmetric = false; 
+  bool NonSymmetric = false;
   bool NoInsertLocal = false ; 
   bool InsertLocal = true ; 
 
@@ -1182,38 +1207,56 @@ int main(int argc, char *argv[])
 
   ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_VEPR, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA );
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_NEPR, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA ); 
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_NEPR, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_VEPR, NoExtraBlocks, InsertLocal, symmetric, &PreviousA );
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_VEPR, NoExtraBlocks, InsertLocal, NonSymmetric, &PreviousA );
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_NEPR, NoExtraBlocks, InsertLocal, symmetric, &PreviousA ); 
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_NEPR, NoExtraBlocks, InsertLocal, NonSymmetric, &PreviousA ); 
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, WithGraph, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA ); 
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, WithGraph, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
   assert ( PreviousA == 0 ) ; 
 
 
   //
   //  Check some various options
   //
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA ); 
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_NEPR, NoExtraBlocks, InsertLocal, symmetric, &PreviousA ); 
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, RowMapColMap_NEPR, NoExtraBlocks, InsertLocal, NonSymmetric, &PreviousA ); 
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, WithGraph, NoExtraBlocks, InsertLocal, symmetric, &PreviousA ); 
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MaxSize, WithGraph, NoExtraBlocks, InsertLocal, NonSymmetric, &PreviousA ); 
   assert ( PreviousA == 0 ) ; 
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 4, 4, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA ); 
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 4, 4, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 4, 4, RowMapColMap_NEPR, NoExtraBlocks, InsertLocal, symmetric, &PreviousA ); 
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 4, 4, RowMapColMap_NEPR, NoExtraBlocks, InsertLocal, NonSymmetric, &PreviousA ); 
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 4, 4, WithGraph, NoExtraBlocks, InsertLocal, symmetric, &PreviousA ); 
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 4, 4, WithGraph, NoExtraBlocks, InsertLocal, NonSymmetric, &PreviousA ); 
   assert ( PreviousA == 0 ) ; 
 
 
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MinSize, FixedEntriesPerRow, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA );   
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MinSize, FixedEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA );   
 
-  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MinSize, RowMapColMap_FEPR, NoExtraBlocks, NoInsertLocal, symmetric, &PreviousA );   
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, MinSize, MinSize, RowMapColMap_FEPR, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA );   
+
+
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 2, 2, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 3, 3, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 4, 4, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 5, 5, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 6, 6, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 7, 7, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
+
+  ierr = TestMatrix( Comm, verbose, debug, NumMyElements, 8, 8, NoEntriesPerRow, NoExtraBlocks, NoInsertLocal, NonSymmetric, &PreviousA ); 
+
+
 
   delete PreviousA;
 
