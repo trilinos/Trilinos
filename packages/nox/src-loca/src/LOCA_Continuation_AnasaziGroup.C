@@ -33,6 +33,7 @@
 #include "LOCA_Continuation_AnasaziGroup.H"
 #include "NOX_Parameter_List.H"
 #include "LOCA_Utils.H"
+#include "LOCA_TimeDependent_AbstractGroup.H"
 
 #ifdef HAVE_LOCA_ANASAZI
 #include "AnasaziLOCAInterface.hpp"
@@ -40,14 +41,16 @@
 #endif
 
 LOCA::Continuation::AnasaziGroup::AnasaziGroup() :
-  eigenvalCounter(0)
+  eigenvalCounter(0),
+  hasMassMatrix(false)
 {
 }
 
 LOCA::Continuation::AnasaziGroup::AnasaziGroup(
 			   const LOCA::Continuation::AnasaziGroup& source, 
 			   NOX::CopyType type) :
-  eigenvalCounter(source.eigenvalCounter)
+  eigenvalCounter(source.eigenvalCounter),
+  hasMassMatrix(source.hasMassMatrix)
 {
 }
 
@@ -83,6 +86,8 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
   int freq =    aList.getParameter("Frequency",1);    // How often to recalculate eigenvalues
   int debug =   aList.getParameter("Debug Level",1);  // Anasazi Debug level
   string which= aList.getParameter("Sorting Order","LM");   //  Which eigenvalues are of interest.
+  hasMassMatrix = aList.getParameter("Mass Matrix",false);  //Is there a mass matrix
+
 
   // Check if eigenvalues are requested this continuation step
   if (eigenvalCounter++%freq != 0) {
@@ -118,8 +123,6 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
   // Print out debugging information on single proc
   LOCABlockArnoldi.setDebugLevel(debug);
 
-  LOCABlockArnoldi.setSymmetric(true);
-
   // Solve the problem to the specified tolerance
   LOCABlockArnoldi.solve();
 
@@ -153,12 +156,37 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
   NOX::Abstract::Group::ReturnType res;
   double realpart, imagpart; 
   for (int i=0; i<nev; i++) {
+
+    // Computes z^T(Jz) for each eigenvector z
+
     evecR.GetNOXVector( *r_evec, i );
     evecI.GetNOXVector( *i_evec, i );
     res = applyJacobian(*r_evec, *tempvecr);
     res = applyJacobian(*i_evec, *tempveci);
     realpart = r_evec->dot(*tempvecr)+i_evec->dot(*tempveci);
     imagpart = r_evec->dot(*tempveci)-i_evec->dot(*tempvecr);
+
+    // If you have mass matrix, compute z^T(Mz) for each eigenvector
+    // and then [z^T(Jz)]/[z^T(Mz)]
+
+    if (hasMassMatrix) {
+      double rquot, iquot, rtemp, itemp, magn;
+      NOX::Abstract::Vector *r_mass = xVector.clone(NOX::ShapeCopy);
+      NOX::Abstract::Vector *i_mass = xVector.clone(NOX::ShapeCopy);
+      const LOCA::TimeDependent::AbstractGroup& timeGroup = 
+      dynamic_cast<const LOCA::TimeDependent::AbstractGroup&>(*this);
+      timeGroup.applyMassMatrix(*r_evec, *r_mass);
+      timeGroup.applyMassMatrix(*i_evec, *i_mass);
+      rquot = r_evec->dot(*r_mass)+i_evec->dot(*i_mass);
+      iquot = r_evec->dot(*i_mass)-i_evec->dot(*r_mass);
+      magn = rquot*rquot + iquot*iquot;
+      rtemp = realpart;
+      itemp = imagpart;
+      realpart = (rtemp*rquot + itemp*iquot)/magn;
+      imagpart = (itemp*rquot - rtemp*iquot)/magn;
+    }
+
+    // Print out eigenvalue and Rayleigh quotient residual
 
     if (Utils::doPrint(Utils::StepperIteration)) {
       double mag=evalr[i]*evalr[i]+evali[i]*evali[i];
@@ -193,4 +221,32 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
   }
   return NOX::Abstract::Group::Ok;
 #endif
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Continuation::AnasaziGroup::applyAnasaziOperator(NOX::Parameter::List &params, 
+                           const NOX::Abstract::Vector &input, 
+                           NOX::Abstract::Vector &result) const
+{
+   if(hasMassMatrix)   {
+    NOX::Abstract::Vector *input2 = input.clone(NOX::ShapeCopy);
+    const LOCA::TimeDependent::AbstractGroup& timeGroup = 
+      dynamic_cast<const LOCA::TimeDependent::AbstractGroup&>(*this);
+
+    if(&timeGroup != NULL) 
+       timeGroup.applyMassMatrix(input, *input2);  
+    else
+      cout <<"Error casting LOCA::Continuation::AnasaziGroup to TimeDependent Group"<<endl;
+
+    const NOX::Abstract::Vector *massinput = input2->clone(NOX::DeepCopy);
+    applyJacobianInverse(params, *massinput, result);
+    return NOX::Abstract::Group::Ok;
+  }
+  else  {  
+
+     applyJacobianInverse(params, input, result);
+     return NOX::Abstract::Group::Ok;
+
+  }
+ 
 }
