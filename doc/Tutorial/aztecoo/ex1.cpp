@@ -31,9 +31,7 @@
 // -----------------
 // Solve a 2D Laplacian problem
 //
-// (output reported at the end of the file)
-//
-// Marzio Sala, SNL, 9214, 20-Nov-2003
+// This example builds the matrix and solves it with AztecOO. 
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI
@@ -193,35 +191,3 @@ void  get_neighbours( const int i, const int nx, const int ny,
   return;
 
 }
-
-/*
-
-Output of this program (NOTE: the output produced by our code can be
-slightly different)
-
-[msala:aztecoo]> mpirun -np 2 ./ex1.exe
-
-                *******************************************************
-                ***** Preconditioned GMRES solution
-                ***** 1 step block Jacobi
-                ***** No scaling
-                *******************************************************
-
-                iter:    0           residual = 1.000000e+00
-                iter:    1           residual = 6.798693e-01
-                iter:    2           residual = 4.028772e-01
-                iter:    3           residual = 1.824286e-01
-                iter:    4           residual = 5.684696e-02
-                iter:    5           residual = 2.070778e-02
-                iter:    6           residual = 4.119793e-03
-                iter:    7           residual = 1.386616e-04
-                iter:    8           residual = 1.272363e-05
-                iter:    9           residual = 4.683774e-37
-
-
-                Solution time: 0.413255 (sec.)
-                total iterations: 9
-Solver performed 9iterations.
-Norm of the true residual = 7.91613e-15
-
-*/

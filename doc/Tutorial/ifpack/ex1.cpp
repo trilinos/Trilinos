@@ -35,10 +35,6 @@
 // examples included in the AztecOO package. Please give a look
 // to file ${TRILINOS_HOME}/packages/aztecoo/examples/IfpackAztecOO/cxx_main.cpp
 // for more details.
-//
-// (output reported at the end of the file)
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI
@@ -183,12 +179,3 @@ int main(int argc, char *argv[]) {
 
 return 0 ;
 }
-
-/*
-
-Output of this program (NOTE: the output produced by our code can be
-slightly different)
-
-[msala:ifpack]> mpirun -np 2 ./ex1.exe
-
-*/

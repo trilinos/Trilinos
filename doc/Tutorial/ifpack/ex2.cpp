@@ -30,8 +30,6 @@
 // Trilinos Tutorial
 // -----------------
 // Using IFPACK factorizations as Aztec's preconditioners
-//
-// Marzio Sala, SNL, 9214, 19-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI

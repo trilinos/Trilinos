@@ -32,14 +32,12 @@
 //  Solve a linear system with Aztec, using Aztec as a preconditioner
 // (recursive way)
 //
-// NOTE: this example implemenets minor modifications to one of the
+// NOTE: This example first builds the matrix, then solves it with AztecOO
+//
+// NOTE2: this example implemenets minor modifications to one of the
 // examples included in the AztecOO package. Please give a look  to file
 // ${TRILINOS_HOME}/packages/aztecoo/examples/AztecOO_RecursiveCall/cxx_main.cpp
 // for more details.
-//
-// (output reported at the end of the file)
-//
-// Marzio Sala, SNL, 9214, 20-Nov-2003
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI
@@ -181,25 +179,3 @@ int main(int argc, char *argv[])
   return 0;
   
 }
-
-/*
-
-Output of this program (NOTE: the output produced by our code can be
-slightly different)
-
-[msala:aztecoo]> mpirun -np 2 ./ex2
-
-                *******************************************************
-                ***** Preconditioned GMRESR solution
-                ***** AztecOO Operator
-                ***** No scaling
-                *******************************************************
-
-                iter:    0           residual = 1.000000e+00
-                iter:    1           residual = 4.809435e-17
-
-
-                Solution time: 0.002579 (sec.)
-                total iterations: 1
-
-*/		
