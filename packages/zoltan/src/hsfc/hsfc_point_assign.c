@@ -55,7 +55,7 @@ int Zoltan_HSFC_Point_Assign (ZZ *zz, double *x, int *parts)
    p = (Partition *) bsearch (&fsfc, d->final_partition, zz->LB.Num_Global_Parts,
     sizeof (Partition), Zoltan_HSFC_compare) ;
    if (p == NULL && fsfc <= 1.0 && fsfc >= 0.0)
-       p = &(d->final_partition[zz->Num_Proc - 1]) ;
+       p = &(d->final_partition[zz->LB.Num_Global_Parts - 1]) ;
    if (p == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "programming error, shouldn't happen") ;
    *parts = p->index ;
