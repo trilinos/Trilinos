@@ -103,7 +103,7 @@ extern void *malloc();
 extern void *realloc();
 extern char *getenv();
 extern int errno;
-#if !defined(linux) && !defined(freebsd) && !defined(osx)
+#if !defined(linux) && !defined(freebsd) && !defined(ppc)
 extern char *sys_errlist[];
 #endif
 extern char *getenv();
@@ -128,7 +128,7 @@ extern void clearerr();
 #    endif /* clearerr */
 #  endif /* HAS_CLEARERR */
 
-#if defined(linux) || defined(freebsd) || defined(NMcplant) || defined(dec) || defined(osx)
+#if defined(linux) || defined(freebsd) || defined(NMcplant) || defined(dec) || defined(ppc)
 extern void bzero();
 #else
 #ifndef bzero
