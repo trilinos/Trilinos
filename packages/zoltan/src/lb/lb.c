@@ -21,6 +21,7 @@ static char *cvs_lbc_id = "$Id$";
 #include "comm_const.h"
 #include "all_allo_const.h"
 #include "params_const.h"
+#include "timer_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -441,12 +442,13 @@ int LB_Balance(
  */
 
 char *yo = "LB_Balance";
-int gmax;              /* Maximum number of imported/exported objects 
-                          over all processors.                       */
-double LB_start_time, LB_end_time;
-double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
+int gmax;    /* Maximum number of imported/exported objects 
+                over all processors.                       */
+int error;    /* Error code */
+double start_time, end_time;
+double lb_time[2] = {0.0,0.0};
 
-  LB_start_time = MPI_Wtime();
+  start_time = LB_Time();
 
   /* assume no changes */
   *changes = 0;
@@ -481,9 +483,19 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
 
   LB_perform_error_checking(lb);
 
-  lb->LB_Fn(lb, num_import_objs, import_global_ids, import_local_ids,
-            import_procs, num_export_objs, export_global_ids, 
-            export_local_ids, export_procs);
+  error = lb->LB_Fn(lb, num_import_objs, import_global_ids, import_local_ids,
+          import_procs, num_export_objs, export_global_ids, 
+          export_local_ids, export_procs);
+
+  if (error == LB_FATAL){
+    printf("[%1d] FATAL ERROR: Load balancer returned error code %d\n", 
+      lb->Proc, error);
+    return (error);
+  }
+  else if (error){
+    printf("[%1d] WARNING: Load balancer returned error code %d\n", 
+      lb->Proc, error);
+  }
 
   if (*num_import_objs >= 0)
     MPI_Allreduce(num_import_objs, &gmax, 1, MPI_INT, MPI_MAX, 
@@ -542,8 +554,8 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
     }
   }
 
-  LB_end_time = MPI_Wtime();
-  LB_time[0] = LB_end_time - LB_start_time;
+  end_time = LB_Time();
+  lb_time[0] = end_time - start_time;
 
   if (lb->Debug > 6) {
     int i;
@@ -561,24 +573,27 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
    */
 
   if (lb->Migrate.Help_Migrate) {
-    LB_start_time = MPI_Wtime();
+    start_time = LB_Time();
     LB_Help_Migrate(lb, *num_import_objs, *import_global_ids,
                     *import_local_ids, *import_procs,
                     *num_export_objs, *export_global_ids,
                     *export_local_ids, *export_procs);
-    LB_end_time = MPI_Wtime();
-    LB_time[1] = LB_end_time - LB_start_time;
+    end_time = LB_Time();
+    lb_time[1] = end_time - start_time;
   }
   
-  MPI_Allreduce(LB_time, LB_max_time, 2, MPI_DOUBLE, MPI_MAX, lb->Communicator);
+  /* Print timing info */
   if (lb->Proc == 0) {
     printf("LBLIB LB  Times:  \n");
-    printf("LBLIB     Balance:        %f\n", LB_max_time[0]);
-    printf("LBLIB     HelpMigrate:    %f\n", LB_max_time[1]);
   }
+  LB_Print_Time (lb, lb_time[0], "LBLIB     Balance:     ");
+  LB_Print_Time (lb, lb_time[1], "LBLIB     HelpMigrate: ");
 
   *changes = 1;
-  return (LB_OK);
+  if (error)
+    return (error);
+  else
+    return (LB_OK);
 }
 
 /****************************************************************************/
