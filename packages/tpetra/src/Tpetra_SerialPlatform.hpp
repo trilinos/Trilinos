@@ -72,7 +72,7 @@ template<typename OrdinalType> class ElementSpace;
 
 		//@{ \name I/O Methods
 		//! print - implements Tpetra::Object virtual print method.
-		void print(ostream& os) const { os << label();};
+		void print(ostream& os) const { os << label() << endl;};
 
 		//! printInfo - implements Tpetra::Platform virtual printInfo method.
 		void printInfo(ostream& os) const {print(os);};

@@ -1,16 +1,20 @@
 // Tpetra VectorSpace tester
 // Modified: 06-Feb-2003
 
-//#define ORDINALTYPE int
-//#define SCALARTYPE float
-
 #include <iostream>
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_Vector.hpp"
 
+// function prototype
+template <typename OrdinalType, typename ScalarType>
+int unitTests(bool verbose, bool debug);
+
 int main(int argc, char* argv[]) {
+	// initialize verbose & debug flags
 	bool verbose = false;
 	bool debug = false;
 	if(argc > 1) {
@@ -22,26 +26,54 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	int returnierr = 0;
+	// call test routine
 	int ierr = 0;
+	if(verbose) cout << "Starting VectorSpaceTest..." << endl;
+	ierr += unitTests<int, float>(verbose, debug);
+	ierr += unitTests<int, double>(verbose, debug);
 
-  const Tpetra::SerialPlatform<int, int> platformE;
-	const Tpetra::SerialPlatform<int, float> platformV;
+	// finish up
+	if(ierr == 0)
+		cout << "VectorSpace test successfull." << endl;
+	else
+		cout << "VectorSpace test failed." << endl;
+	return(ierr);
+}
+
+template <typename OrdinalType, typename ScalarType>
+int unitTests(bool verbose, bool debug) {
+	int ierr = 0;
+	int returnierr = 0;
+  const Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformE;
+	const Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
+	char const * OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
+	char const * STName = Teuchos::ScalarTraits<ScalarType>::name();
+	if(verbose) cout << "Starting unit tests for VectorSpace<" << OTName << "," << STName << ">." << endl;
 
 	//
 	// code coverage section - just call functions, no testing
 	//
-
-	// ctr and cpy ctr
-	const Tpetra::ElementSpace<int> elementspace(10, 2, platformE);
-	Tpetra::VectorSpace<int, float> vectorspace(elementspace, platformV);
-	Tpetra::VectorSpace<int, float> v2(vectorspace);
+	if(verbose) cout << "Starting code coverage section..." << endl;
+	// constructors
+	if(verbose) cout << "Constructors..." << endl;
+	// taking an ElementSpace
+	Tpetra::ElementSpace<OrdinalType> elementspace(10, 2, platformE);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformV);
+	// taking a BlockElementSpace
+	const Tpetra::BlockElementSpace<OrdinalType> blockelementspace(elementspace, 3);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> blockvectorspace(blockelementspace, platformV);
+	// cpy ctr
+	Tpetra::VectorSpace<OrdinalType, ScalarType> v2(vectorspace);
 
 	// print
-	cout << vectorspace << endl;
+	if(verbose) {
+		cout << "Overloaded << operator..." << endl;
+		cout << vectorspace << endl;
+	}
 
 	// attribute access
-	int temp = 0;
+	if(verbose) cout << "Attribute access methods..." << endl;
+	OrdinalType temp = 0;
 	temp = vectorspace.getNumGlobalEntries();
 	temp = vectorspace.getNumMyEntries();
 	temp = vectorspace.getIndexBase();
@@ -53,52 +85,64 @@ int main(int argc, char* argv[]) {
 	temp = vectorspace.getGlobalIndex(temp);
 	temp = vectorspace.getLocalIndex(temp);
 
+	// vector creation
+	if(verbose) cout << "Vector creation..." << endl;
+	Tpetra::Vector<OrdinalType, ScalarType>* vecptr = vectorspace.createVector();
+	temp = vecptr->getNumMyEntries();
+	delete vecptr;
+
 	// accessors to other classes
-	v2.platform().printInfo(cout);
+	if(verbose) cout << "Class member accessors..." << endl;
+	if(verbose) v2.platform().printInfo(cout);
 	temp = v2.comm().getNumImages();
+
+	if(verbose) cout << "Code coverage section finished." << endl;
 
 	//
 	// actual testing section - affects return code
 	//
 
-	// compatibleVector
-	Tpetra::Vector<int, float> vector(vectorspace);
-	if(!vectorspace.compatibleVector(vector))
+	if(verbose) cout << "Starting actual testing section..." << endl;
+
+	// isCompatible
+	if(verbose) cout << "Testing isCompatible... ";
+	const Tpetra::ElementSpace<OrdinalType> compatibleES(10,0, platformE);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> compatibleVS(compatibleES, platformV);
+	if(!vectorspace.isCompatible(compatibleVS))
 		ierr++;
-	const Tpetra::ElementSpace<int> differentES(15, 2, platformE);
-	Tpetra::VectorSpace<int, float> differentVS(differentES, platformV);
-	if(differentVS.compatibleVector(vector))
+	const Tpetra::ElementSpace<OrdinalType> differentES(15, 2, platformE);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> differentVS(differentES, platformV);
+	if(differentVS.isCompatible(vectorspace))
 		ierr++;
-	if(ierr == 0) 
-		cout << "Compatibility test passed" << endl;
-	else
-		cout << "Compatibility test failed" << endl;
+	if(verbose)
+		if(ierr == 0) 
+			cout << "Passed" << endl;
+		else
+			cout << "Failed" << endl;
 	returnierr += ierr;
 	ierr = 0;
 
-	// vector creation
-	Tpetra::Vector<int, float>* vecptr = vectorspace.createVector();
-	temp = vecptr->getNumMyEntries();
-	delete vecptr;
-
 	// isSameAs
+	if(verbose) cout << "Testing isSameAs... ";
 	bool same = vectorspace.isSameAs(v2);
 	if(!same)
 		ierr++;
 	same = vectorspace.isSameAs(differentVS);
 	if(same)
 		ierr++;
-	if(ierr == 0) 
-		cout << "IsSameAs test passed" << endl;
-	else
-		cout << "IsSameAs test failed" << endl;
+	if(verbose)
+		if(ierr == 0) 
+			cout << "Passed" << endl;
+		else
+			cout << "Failed" << endl;
 	returnierr += ierr;
 	ierr = 0;
-
+	
 	// finish up
-	if(returnierr == 0)
-		cout << "VectorSpaceTest passed." << endl;
-	else
-		cout << "VectorSpaceTest failed." << endl;
+	if(verbose)
+		if(returnierr == 0)
+			cout << "VectorSpaceTest <" << OTName << ", " << STName << "> passed." << endl;
+		else
+			cout << "VectorSpaceTest <" << OTName << ", " << STName << ">failed." << endl;
 	return(returnierr);
 }

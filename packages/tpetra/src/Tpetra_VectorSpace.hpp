@@ -53,7 +53,7 @@ public:
 			, blockspace_(true)
 			, zero_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 			, one_(Teuchos::OrdinalTraits<OrdinalType>::one())
-			, indexBase_(elementSpace.getIndexBase())
+			, indexBase_(blockElementSpace.elementSpace().getIndexBase())
 			, numMyEntries_(blockElementSpace.getNumMyPoints())
 			, numGlobalEntries_(blockElementSpace.getNumGlobalPoints())
 			, ElementSpace_()
@@ -133,17 +133,17 @@ public:
 	
 	//@{ \name Boolean Tests
 	
-	//! Returns true if the Vector passed in is compatible with this VectorSpace.
-	bool compatibleVector(Vector<OrdinalType, ScalarType> const& Vector) const {
+	//! Returns true if the VectorSpace passed in is compatible with this VectorSpace.
+	bool isCompatible(VectorSpace<OrdinalType, ScalarType> const& vectorSpace) const {
 		// first check global length and local lenght on this image
-		if(Vector.getNumGlobalEntries() != getNumGlobalEntries() ||
-			 Vector.getNumMyEntries() != getNumMyEntries())
+		if(vectorSpace.getNumGlobalEntries() != getNumGlobalEntries() ||
+			 vectorSpace.getNumMyEntries() != getNumMyEntries())
 			return(false);
 
 		// then check to make sure distribution is the same
 		ScalarType sameNumLocal = 1.0; // we already know the length matches on this image
 		ScalarType sameNumGlobal = 0.0;
-		if(Vector.getNumMyEntries() == getNumMyEntries())
+		if(vectorSpace.getNumMyEntries() == getNumMyEntries())
 			sameNumLocal = 1.0;
 		comm().minAll(&sameNumLocal, &sameNumGlobal, 1);
 		return(sameNumGlobal == 1.0);

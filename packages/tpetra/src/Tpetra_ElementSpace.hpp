@@ -291,8 +291,8 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 
 	// platform & comm setup
 	Comm<OrdinalType, OrdinalType>* comm = Platform.createOrdinalComm();
-  OrdinalType numImages = comm->getNumImages();
-  OrdinalType myImageID = comm->getMyImageID();
+  //OrdinalType numImages = comm->getNumImages(); // unused?
+  //OrdinalType myImageID = comm->getMyImageID(); // unused?
 
 	// check for invalid numGlobalElements
   //   Sum up all local element counts to get global count, and then

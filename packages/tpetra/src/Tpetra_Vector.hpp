@@ -46,7 +46,7 @@ public:
 		, BLAS_()
 		, VectorSpace_(VectorSpace)
 	{
-		cout << "vector constructor called" << endl;
+		cout << "VECTOR:: constructor called" << endl;
 	};
   
   //! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
@@ -58,12 +58,12 @@ public:
 		, BLAS_(Source.BLAS_)
 		, VectorSpace_(Source.vectorSpace_)
 	{
-		cout << "vector copy constructor called" << endl;
+		cout << "VECTOR:: copy constructor called" << endl;
 	};
 
   //! Destructor.  
   ~Vector() {
-		cout << "vector destructor called" << endl;
+		cout << "VECTOR:: destructor called" << endl;
 	};
 
   //@}
@@ -73,12 +73,12 @@ public:
 
 	//! [] operator, nonconst version
 	ScalarType& operator[](OrdinalType index) {
-		cout << "operator[] called, nonconst version" << endl;
+		cout << "VECTOR:: operator[] called, nonconst version" << endl;
 	};
 
 	//! [] operator, const version
 	ScalarType const& operator[](OrdinalType index) const {
-		cout << "operator[] called, const version" << endl;
+		cout << "VECTOR:: operator[] called, const version" << endl;
 	};
 
 	//@}
@@ -88,13 +88,13 @@ public:
 
 	//! Returns number of vector entries owned by this image.
 	OrdinalType getNumMyEntries() const {
-		cout << "getNumMyEntries called" << endl;
+		cout << "VECTOR:: getNumMyEntries called" << endl;
 		return(vectorSpace().getNumMyEntries());
 	};
 
 	//! Returns number of vector entries across all images.
 	OrdinalType getNumGlobalEntries() const {
-		cout << "getNumGlobalEntries called" << endl;
+		cout << "VECTOR:: getNumGlobalEntries called" << endl;
 		return(vectorSpace().getNumGlobalEntries());
 	};
 
@@ -105,7 +105,7 @@ public:
 
 	//! Print method, used by overloaded << operator.
 	void print(ostream& os) const {
-		os << "Vector print function called" << endl;
+		os << "VECTOR:: print function called" << endl;
 	};
 	//@}
 
