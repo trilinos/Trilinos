@@ -1,5 +1,5 @@
 #! /bin/sh
-
+#np# This file does not need to be edited, other than removing this line.
 set -x
 # Only run aclocal if we need to create aclocal.m4
 aclocal -I config 

@@ -28,7 +28,9 @@ Examples of all of the new, non-generated Autoconf and Automake files
 required to add a packages to the Trilinos Autotools configure/build process 
 are located within the new_package directory structure.  Most of these files
 will need to be customized for each new package.  See the individual example 
-files for more details.  (Details for all files not yet available.)  
+files for more details.  Instructions for customizing are listed behind 
+'#np#'.
+(Details for all files not yet available.)  
 
 2. Generate necessary Autoconf and Automake files.
 
