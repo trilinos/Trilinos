@@ -88,7 +88,7 @@ NonlinearCG::~NonlinearCG()
 bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
                           const Solver::Generic& solver)
 {
-  bool ok = false;
+  Abstract::Group::ReturnType ok;
 
   // Initialize vector memory if haven't already
   if(oldDirPtr==NULL)
@@ -116,7 +116,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
   // getting new search direction
 
   ok = soln.computeF();
-  if (!ok) {
+  if (ok != Abstract::Group::Ok) {
     if (Utils::doPrint(Utils::Warning))
       cout << "NOX::Direction::NonlinearCG::compute - Unable to compute F." 
            << endl;
@@ -126,7 +126,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
   if(paramsPtr->isParameterEqual("Precondition", "On")) {
     if(!soln.isJacobian())
       ok = soln.computeJacobian();
-      if (!ok) {
+      if (ok != Abstract::Group::Ok) {
         if (Utils::doPrint(Utils::Warning))
           cout << "NOX::Direction::Newton::compute - "
                << "Unable to compute Jacobian." << endl;
@@ -195,6 +195,6 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
   oldDir = dir;
 
-  return ok;
+  return (ok == Abstract::Group::Ok);
 }
 
