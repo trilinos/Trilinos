@@ -284,7 +284,7 @@ zoltan:
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
-	@mv $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR)/$(LIB_NAME)
+	@mv -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR)/$(LIB_NAME)
 
 zdrive:
 	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
@@ -324,6 +324,72 @@ zfdrive:
         "LNK_LIBS=$(ZDRIVE_LIBS)"		\
 	"ZOLTAN_ARCH=$(ZOLTAN_ARCH)"		\
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
+
+zscript:
+	@echo "Building zoltan_script..."
+	@if [ -f zoltan_script ]; \
+	then /bin/rm zoltan_script; \
+	fi
+	@echo "#!/bin/sh" > zoltan_script
+	@echo "unalias rm" >> zoltan_script
+	@echo CCOMP='"$$2 $$3 $$4 $$5 $$8"' >> zoltan_script
+	@echo GDEFINES='"-DDEBUG $${6:+-DLB_PARMETIS} $${7:+-DLB_JOSTLE}"' >> zoltan_script
+	@echo DEFS='"$$1"' >> zoltan_script
+	@echo "if [ ! -d $(ZOLTAN_OBJ_DIR) ]; \\" >> zoltan_script
+	@echo "then mkdir $(ZOLTAN_OBJ_DIR); \\" >> zoltan_script
+	@echo "fi" >> zoltan_script
+	@echo "rm -f $(ZOLTAN_OBJ_DIR)/*" >> zoltan_script
+	@echo "cd $(ZOLTAN_OBJ_DIR)" >> zoltan_script
+	@echo "echo 'Zoltan:  Compiling Zoltan/all'" >> zoltan_script
+	@for iii in $(ALL_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES' '$$DEFS' ../all/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/lb'" >> zoltan_script
+	@for iii in $(LB_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES' '$$DEFS' ../lb/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/rcb'" >> zoltan_script
+	@for iii in $(RCB_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES' '$$DEFS' ../rcb/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/oct'" >> zoltan_script
+	@for iii in $(OCT_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES' '$$DEFS' ../oct/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/params'" >> zoltan_script
+	@for iii in $(PARAMS_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES' '$$DEFS' ../params/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/comm'" >> zoltan_script
+	@for iii in $(COMM_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES' '$$DEFS' ../comm/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/par'" >> zoltan_script
+	@for iii in $(PAR_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES' '$$DEFS' ../par/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/parmetis'" >> zoltan_script
+	@for iii in $(PARMETIS_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES' '$$DEFS' ../parmetis/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/timer'" >> zoltan_script
+	@for iii in $(TIMER_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES' '$$DEFS' ../timer/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/ha'" >> zoltan_script
+	@for iii in $(HA_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES' '$$DEFS' ../ha/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/reftree'" >> zoltan_script
+	@for iii in $(REFTREE_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES' '$$DEFS' ../reftree/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo Zoltan:  Linking $(LIB_NAME)" >> zoltan_script
+	@echo $(AR) $(LIB_NAME) $(OBJ_FILES) $(FOBJ_FILES) >> zoltan_script
+	@echo $(RANLIB) $(LIB_NAME) >> zoltan_script
+	@echo "mv -f $(LIB_NAME) $(ZOLTAN_LIB_DIR)" >> zoltan_script
+	@echo "cd .." >> zoltan_script
+	@chmod +x zoltan_script
 
 #
 ############################################################################
