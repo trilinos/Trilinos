@@ -154,7 +154,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
 #ifdef ZOLTAN_HG
     zz->LB.Method = PHG;
     zz->LB.LB_Fn = Zoltan_PHG;
-    zz->LB.Free_Structure = Zoltan_PHG_Free_Structure;
+    zz->LB.Free_Structure = Zoltan_HG_Free_Structure;
     zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;

@@ -277,7 +277,6 @@ extern ZOLTAN_LB_FREE_DATA_FN Zoltan_Oct_Free_Structure;
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_Reftree_Free_Structure;
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_HSFC_Free_Structure;
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_HG_Free_Structure;
-extern ZOLTAN_LB_FREE_DATA_FN Zoltan_PHG_Free_Structure;
 
 /* COPY DATA_STRUCTURE FUNCTIONS */
 extern ZOLTAN_LB_COPY_DATA_FN Zoltan_RCB_Copy_Structure;
