@@ -78,7 +78,7 @@ namespace Parameter {
 
   \code
   Foo foo();
-  params.sublist("Line Search Based Sovler").setParameter("User Defined Pre/Post Operator", foo);
+  params.sublist("Sovler Options").setParameter("User Defined Pre/Post Operator", foo);
   \endcode
 
   </ol>
