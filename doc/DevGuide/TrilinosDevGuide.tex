@@ -737,22 +737,35 @@ testing capabilities.  Within a number of Trilinos packages, we employ
 used and probed.  In addition, Trilinos performs ``black box'' testing
 of packages via the Trilinos Solver Framework (TSF) virtual class
 interfaces.  Any package that implements the TSF interfaces (see
-Section~\ref{subsect:InteropTSF} below 
+Section~\ref{subsect:InteropTSF} below)
 %**(Add this section)), 
 can be tested via this black box
 test environment.  ({\bf NOTE: Black box testing via TSF is not in
-place at this time}
-	\subsection{Periodic Testing}
+place at this time})
+	\subsection{Test Harness}
 Trilinos Packages that configure and build using Autotools can easily 
-utilize the the Trilinos test harness.  The test harness performs a CVS update
-(gets the most recent source code) every night and then builds the libraries
-and runs any tests that have been integrated into the testharness.  
-Currently the testharness only runs on Linux, IRIX64, and DEC/OSF1, but it 
-will eventually run on 5-8 platforms.  Packages that have not ported to a 
-particular platform can be excluded from the testing process on that 
-platform.  Packages that do not have any tests integrated into the 
-testharness can still benefit by ensuring that libraries build without 
-errors.  Integrating existing tests into the testharness is not difficult.  
+utilize the the Trilinos test harness.  The Trilinos test harness is composed 
+of two components.  
+
+One part of the test harness is used to run nightly tests 
+on a number of platforms.  This portion of the test harness performs a CVS 
+update (gets the most recent source code) every night and then builds the 
+libraries and runs any tests that have been integrated into the test harness.  
+Tests that are added as ``daily'' tests are run six time a week, while 
+``weekly'' tests are run once a week.  Currently the nightly test harness only 
+runs on Linux, IRIX64, and DEC/OSF1, but it will eventually run on 5-8 
+platforms.  Packages that have not ported to a particular platform can be 
+excluded from the testing process on that platform.  Packages that do not have 
+any tests integrated into the test harness can still benefit by ensuring that 
+libraries build without errors.  
+
+The second component of the test harness is a script that should be executed 
+by users before checking updates into the repository.  This script is located 
+in Trilinos/testharness/checkin-test-harness.  The script provides an easy way 
+for users to run all of the ``daily'' tests that have been added to the test 
+harness for all packages from one location.  
+
+Integrating existing tests into the testharness is not difficult.  
 The process is discussed in Trilinos/testharness/HowToAddToTestHarness.  
 Please note that this document is a work in progress.
 
