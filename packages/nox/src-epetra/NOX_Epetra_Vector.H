@@ -44,15 +44,15 @@ namespace NOX {
 namespace Epetra {
 
 //! Implementation of NOX::Abstract::Vector for %Epetra vectors.
-class Vector : public virtual Abstract::Vector {
+class Vector : public virtual NOX::Abstract::Vector {
 
  public:			
 
   //! Construct by copying map and/or elements of an Epetra_Vector.
-  Vector(const Epetra_Vector& source, CopyType type = DeepCopy);
+  Vector(const Epetra_Vector& source, NOX::CopyType type = NOX::DeepCopy);
 
   //! Copy constructor.
-  Vector(const Vector& source, CopyType type = DeepCopy);
+  Vector(const NOX::Epetra::Vector& source, NOX::CopyType type = NOX::DeepCopy);
 
   //! Destruct Vector.
   ~Vector();
@@ -61,6 +61,7 @@ class Vector : public virtual Abstract::Vector {
 
   //! Get reference to underlying Epetra vector.
   virtual Epetra_Vector& getEpetraVector();
+
   //! Get const reference to underlying Epetra vector.
   virtual const Epetra_Vector& getEpetraVector() const;
  
@@ -68,49 +69,50 @@ class Vector : public virtual Abstract::Vector {
 
   //@{ \name Initialization methods.
 
-  virtual Abstract::Vector& init(double value);
+  // derived
+  virtual NOX::Abstract::Vector& init(double value);
 
-  //! Initialize every element of this vector with random values
+  // derived
   virtual NOX::Abstract::Vector& random(bool useSeed = false, double seed = 0.0);
 
   //! Copies source vector into "this".
-  virtual Abstract::Vector& operator=(const Epetra_Vector& y);
+  virtual NOX::Abstract::Vector& operator=(const Epetra_Vector& y);
 
-  virtual Abstract::Vector& operator=(const Vector& y);
-  //! See above.
-  virtual Abstract::Vector& operator=(const Abstract::Vector& y);
+  // derived
+  virtual NOX::Abstract::Vector& operator=(const NOX::Epetra::Vector& y);
+  virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
   
-  virtual Abstract::Vector& abs(const Vector& y);
-  //! See above.
-  virtual Abstract::Vector& abs(const Abstract::Vector& y);
+  // derived
+  virtual NOX::Abstract::Vector& abs(const NOX::Epetra::Vector& y);
+  virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y);
 
-  virtual Abstract::Vector& reciprocal(const Vector& y);
-  //! See above.
-  virtual Abstract::Vector& reciprocal(const Abstract::Vector& y);
+  // derived
+  virtual NOX::Abstract::Vector& reciprocal(const NOX::Epetra::Vector& y);
+  virtual NOX::Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y);
 
   //@}
 
   //@{ \name Update methods.
 
-  virtual Abstract::Vector& scale(double gamma);
+  // derived
+  virtual NOX::Abstract::Vector& scale(double gamma);
 
-  virtual Abstract::Vector& scale(const Vector& a);
+  // derived
+  virtual NOX::Abstract::Vector& scale(const NOX::Epetra::Vector& a);
+  virtual NOX::Abstract::Vector& scale(const NOX::Abstract::Vector& a);
 
-  //! See above
-  virtual Abstract::Vector& scale(const Abstract::Vector& a);
-
-  virtual Abstract::Vector& update(double alpha, const Vector& a, 
+  // derived
+  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Epetra::Vector& a, 
 			     double gamma = 0.0);
-  //! See above.
-  virtual Abstract::Vector& update(double alpha, const Abstract::Vector& a, 
+  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, 
 			     double gamma = 0.0);
 
-  virtual Abstract::Vector& update(double alpha, const Vector& a, 
-			     double beta, const Vector& b,
+  // derived
+  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Epetra::Vector& a, 
+			     double beta, const NOX::Epetra::Vector& b,
 			     double gamma = 0.0);
-  //! See above.
-  virtual Abstract::Vector& update(double alpha, const Abstract::Vector& a, 
-			     double beta, const Abstract::Vector& b,
+  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, 
+			     double beta, const NOX::Abstract::Vector& b,
 			     double gamma = 0.0);
 
 
@@ -118,30 +120,34 @@ class Vector : public virtual Abstract::Vector {
 
   //@{ \name Creating new Vectors. 
 
-  virtual Abstract::Vector* clone(CopyType type = DeepCopy) const;
+  // derived
+  virtual NOX::Abstract::Vector* clone(CopyType type = DeepCopy) const;
 
   //@}
 
   //@{ \name Norms.
 
-  virtual double norm(Abstract::Vector::NormType type = TwoNorm) const;
+  // derived
+  virtual double norm(NOX::Abstract::Vector::NormType type = TwoNorm) const;
 
-  virtual double norm(const Vector& weights) const;
-  //! See above.
-  virtual double norm(const Abstract::Vector& weights) const;
+  // derived
+  virtual double norm(const NOX::Epetra::Vector& weights) const;
+  virtual double norm(const NOX::Abstract::Vector& weights) const;
 
   //@}
 
   //@{ \name Dot products
 
-  virtual double dot(const Vector& y) const;
-  //! See above.
-  virtual double dot(const Abstract::Vector& y) const;
+  // derived
+  virtual double dot(const NOX::Epetra::Vector& y) const;
+  virtual double dot(const NOX::Abstract::Vector& y) const;
 
   //@}
 
+  // derived
   virtual int length() const;
 
+  // derived
   virtual void print() const;
 
  protected:
