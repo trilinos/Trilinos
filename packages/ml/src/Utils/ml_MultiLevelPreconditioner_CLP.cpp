@@ -119,6 +119,9 @@ int ML_Epetra::SetParameters(int argc, char* argv[],
   // coarse type
   string ml_coarse_type = List.get("coarse: type","Amesos-KLU");
   CLP.setOption("ml-coarse-type",&ml_coarse_type,"Coarse type");
+  // prolongator smoother
+  string prol_damping = List.get("R and P damping: damping", "classic");
+  CLP.setOption("ml-prol-damping",&prol_damping);
 
   CLP.throwExceptions(false);
   // allow users to specify other options for other packages
@@ -159,6 +162,13 @@ int ML_Epetra::SetParameters(int argc, char* argv[],
   List.set("aggregation: nodes per aggregate (level 4)", ml_aggr_npa_4);
   List.set("aggregation: damping factor", ml_damping);
   List.set("coarse: type", ml_coarse_type);
+  if (prol_damping == "classic")
+    List.set("R and P smoothing: type", "classic");
+  else {
+    List.set("R and P smoothing: type", "advanced");
+    List.set("R and P smoothing: damping", prol_damping);
+    List.set("aggregation: compute field of values", true);
+  }
 
   return(0);
   

@@ -55,8 +55,14 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
   // allocate some memory if the user is not passing the vectors.
   // This is cute, but it may cause memory leaks.
 
-  if( options == NULL ) options = new int[AZ_OPTIONS_SIZE];
-  if( params  == NULL ) params  = new double[AZ_PARAMS_SIZE];
+  bool SetDefaults = false;
+  if (options == NULL || params == NULL)
+    SetDefaults = true;
+
+  if (options == NULL) options = new int[AZ_OPTIONS_SIZE];
+  if (params  == NULL) params  = new double[AZ_PARAMS_SIZE];
+  if (SetDefaults)
+    AZ_defaults(options,params);
 
   if( ProblemType == "SA" ) {
     ML_CHK_ERR( ML_Epetra::SetDefaultsSA(List, Prefix, options, params) );
@@ -103,10 +109,7 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
   - \c "smoother: sweeps" = 2
   - \c "smoother: damping factor" = 0.67
   - \c "smoother: pre or post" = both"
-  - \c "smoother: type" = Aztec". The Aztec smoother has the following features:
-    - \c  options[AZ_precond] = \c AZ_dom_decomp
-    - \c options[AZ_scaling] = \c AZ_none
-    - \c options[AZ_subdomain_solve] = \c AZ_ilut
+  - \c "smoother: type" = Aztec". 
   - \c "smoother: Aztec options" = options
   - \c "smoother: Aztec params" = params
   - \c "smoother: Aztec as solver" = false
@@ -149,11 +152,6 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix,
   List.set(Prefix+"smoother: type","Aztec");
 
 #ifdef HAVE_ML_AZTECOO
-  AZ_defaults(options,params);
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_scaling] = AZ_none;
-  options[AZ_subdomain_solve] = AZ_ilut;
-  
   List.set(Prefix+"smoother: Aztec options",options);
     
   List.set(Prefix+"smoother: Aztec params",params);
@@ -211,11 +209,6 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix,
   List.set(Prefix+"smoother: type","Aztec");
 
 #ifdef HAVE_ML_AZTECOO
-  AZ_defaults(options,params);
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_scaling] = AZ_none;
-  options[AZ_subdomain_solve] = AZ_lu;
-  
   List.set(Prefix+"smoother: Aztec options",options);
     
   List.set(Prefix+"smoother: Aztec params",params);
@@ -242,24 +235,19 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix,
  - \c "output" = 8
  - \c "increasing or decreasing" = "increasing"
  - \c "PDE equations" = 1
- - \c "aggregation: type (level 0)" = "METIS"
- - \c "aggregation: type (level 1)" = "ParMETIS"
- - \c "aggregation: nodes per aggregate (level 0)" = 512
- - \c "aggregation: nodes per aggregate (level 1)" = 32
+ - \c "aggregation: type" = "METIS"
+ - \c "aggregation: type" = "METIS"
+ - \c "aggregation: nodes per aggregate" = 64
  - \c "aggregation: damping factor" = 4.0/3
  - \c "coarse: max size" = 128
  - \c "aggregation: threshold" = 0.0
- - \c "smoother: sweeps (level 0)" = 2
- - \c "smoother: damping factor (level 0)" = 0.67
- - \c "smoother: pre or post (level 0)" = "both"
- - \c "smoother: type" = "Aztec".  The Aztec smoother has the following features:
-     - \c options[AZ_precond] = \c AZ_dom_decomp
-     - \c options[AZ_scaling] = \c AZ_none
-     - \c options[AZ_subdomain_solve] = \c AZ_ilut
-     - \c options[AZ_overlap] = 0
- - \c "smoother: Aztec options (level 0)" = options
- - \c "smoother: Aztec params (level 0)" = params
- - \c "smoother: Aztec as solver (level 0)" = false
+ - \c "smoother: sweeps" = 2
+ - \c "smoother: damping factor" = 0.67
+ - \c "smoother: pre or post" = "both"
+ - \c "smoother: type" = "Aztec".  
+ - \c "smoother: Aztec options" = options
+ - \c "smoother: Aztec params" = params
+ - \c "smoother: Aztec as solver" = false
  - \c "coarse: type" = "Amesos-KLU"
  - \c "prec type" = "MGV"
  - \c "print unused" = -2
@@ -278,41 +266,34 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"PDE equations",1);
 
-  List.set(Prefix+"aggregation: type (level 0)","METIS");
+  List.set(Prefix+"aggregation: type","METIS");
 
-  List.set(Prefix+"aggregation: type (level 1)","ParMETIS");
+  List.set(Prefix+"aggregation: type","METIS");
 
-  List.set(Prefix+"aggregation: nodes per aggregate (level 0)",512);
+  List.set(Prefix+"aggregation: nodes per aggregate",64);
 
-  List.set(Prefix+"aggregation: nodes per aggregate (level 1)",32);
-  
   List.set(Prefix+"aggregation: damping factor",4.0/3);
 
   List.set(Prefix+"coarse: max size",128);
 
   List.set(Prefix+"aggregation: threshold",0.0);
   
-  List.set(Prefix+"smoother: sweeps (level 0)",2);
+  List.set(Prefix+"smoother: sweeps",2);
 
-  List.set(Prefix+"smoother: damping factor (level 0)",0.67);
+  List.set(Prefix+"smoother: damping factor",0.67);
 
-  List.set(Prefix+"smoother: pre or post (level 0)","both");
+  List.set(Prefix+"smoother: pre or post","both");
 
   // --- Aztec --- //
   
   List.set(Prefix+"smoother: type","Aztec");
   
 #ifdef HAVE_ML_AZTECOO
-  AZ_defaults(options,params);
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_subdomain_solve] = AZ_ilut;
-  options[AZ_overlap] = 0;
-
-  List.set(Prefix+"smoother: Aztec options (level 0)",options);
+  List.set(Prefix+"smoother: Aztec options",options);
     
-  List.set(Prefix+"smoother: Aztec params (level 0)",params);
+  List.set(Prefix+"smoother: Aztec params",params);
     
-  List.set(Prefix+"smoother: Aztec as solver (level 0)",false);
+  List.set(Prefix+"smoother: Aztec as solver",false);
 #endif
   
   // --- coarse --- ///
@@ -345,13 +326,9 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
 
   List.set(Prefix+"PDE equations",1);
 
-  List.set(Prefix+"aggregation: type (level 0)","METIS");
+  List.set(Prefix+"aggregation: type","METIS");
 
-  List.set(Prefix+"aggregation: type (level 1)","ParMETIS");
-
-  List.set(Prefix+"aggregation: nodes per aggregate (level 0)",512);
-
-  List.set(Prefix+"aggregation: nodes per aggregate (level 1)",512);
+  List.set(Prefix+"aggregation: nodes per aggregate",64);
   
   List.set(Prefix+"aggregation: damping factor",4.0/3);
 
@@ -359,27 +336,22 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
 
   List.set(Prefix+"aggregation: threshold",0.0);
   
-  List.set(Prefix+"smoother: sweeps (level 0)",2);
+  List.set(Prefix+"smoother: sweeps",2);
 
-  List.set(Prefix+"smoother: damping factor (level 0)",0.67);
+  List.set(Prefix+"smoother: damping factor",0.67);
 
-  List.set(Prefix+"smoother: pre or post (level 0)","both");
+  List.set(Prefix+"smoother: pre or post","both");
 
   // --- Aztec --- //
   
   List.set(Prefix+"smoother: type","Aztec");
 
 #ifdef HAVE_ML_AZTECOO
-  AZ_defaults(options,params);
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_subdomain_solve] = AZ_lu;
-  options[AZ_overlap] = 0;
-
-  List.set(Prefix+"smoother: Aztec options (level 0)",options);
+  List.set(Prefix+"smoother: Aztec options",options);
     
-  List.set(Prefix+"smoother: Aztec params (level 0)",params);
+  List.set(Prefix+"smoother: Aztec params",params);
     
-  List.set(Prefix+"smoother: Aztec as solver (level 0)",false);
+  List.set(Prefix+"smoother: Aztec as solver",false);
 #endif
   
   // --- coarse --- ///

@@ -72,6 +72,10 @@ extern double ML_WEIGHT_THRES; // defined in ml_agg_METIS.c
 #include "Trilinos_Util_CommandLineParser.h"
 #endif
 
+#ifdef HAVE_ML_EPETRAEXT
+#include "EpetraExt_RowMatrixOut.h"
+#endif
+
 using namespace Teuchos;
 
 // ================================================ ====== ==== ==== == =
@@ -716,6 +720,26 @@ ComputePreconditioner(const bool CheckPreconditioner)
     cout << ", coarsest level = " << LevelID_[NumLevels_-1] << endl;
   }
 
+#ifdef HAVE_ML_EPETRAEXT
+  // ============================================================== //
+  // dump matrix in matrix market format using EpetraExt            //
+  // ============================================================== //
+  
+  if (List_.get("dump matrix: enable", false)) {
+    string FileName = List_.get("dump matrix: file name", "ml-matrix.mm");
+    char FileName2[80];
+    static int count = 0;
+    if (FileName == "auto-count")
+      sprintf(FileName2,"ml-matrix-%d.mm",count++);
+    else
+      sprintf(FileName2,"%s",FileName.c_str());
+
+    if (verbose_)
+      cout << PrintMsg_ << "Print matrix on file `" << FileName2 << "'..." << endl;
+    EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *RowMatrix_, 
+                                           "Epetra_RowMatrix", "printed by MultiLevelPreconditioner");
+  }
+#endif
 
   int MaxCreationLevels = NumLevels_;
   if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;
@@ -896,8 +920,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
     // set this anyway
     ML_Aggregate_Set_Threshold(agg_,-Threshold);
   }
-  else
+  else {
+    ML_USE_EDGE_WEIGHT = ML_NO;
     ML_Aggregate_Set_Threshold(agg_,Threshold);
+  }
    
   int MaxCoarseSize = 128;
   MaxCoarseSize = List_.get(Prefix_ + "coarse: max size", MaxCoarseSize);

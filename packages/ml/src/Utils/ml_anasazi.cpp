@@ -698,6 +698,7 @@ int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
   int MaxNumNonzeros;
   double CPUTime;
   
+  // FIXME: use ML_Epetra::RowMatrix!
   ML_Operator2EpetraCrsMatrix(Amat,CrsTemp,MaxNumNonzeros,
 			      true,CPUTime);
   
@@ -705,6 +706,17 @@ int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
   Teuchos::ParameterList * EigenList = (Teuchos::ParameterList *) fov->EigenList;
   
   ML_Anasazi::GetFieldOfValuesBox(CrsTemp,MaxReal,MaxImag,*EigenList);
+
+  if (MaxReal < 0.0) {
+    if (CrsTemp->Comm().MyPID() == 0)
+      cout << "Warning (GetFieldOfValuesBox) : MaxReal was negative!" << endl;
+    MaxReal = -MaxReal;
+  }
+  if (MaxImag < 0.0) {
+    if (CrsTemp->Comm().MyPID() == 0)
+      cout << "Warning (GetFieldOfValuesBox) : MaxImag was negative!" << endl;
+    MaxImag = -MaxImag;
+  }
 
   double eta = MaxImag/MaxReal;
 
@@ -726,6 +738,7 @@ int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
   int MaxNumNonzeros;
   double CPUTime;
   
+  // FIXME: use ML_Epetra::RowMatrix!
   ML_Operator2EpetraCrsMatrix(Amat,CrsTemp,MaxNumNonzeros,
 			      true,CPUTime);
   
@@ -739,6 +752,17 @@ int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
 
   EigenList->set("field-of-values: use diagonal scaling", UseDiagScaling);
   
+  if (MaxReal < 0.0) {
+    if (CrsTemp->Comm().MyPID() == 0)
+      cout << "Warning (GetFieldOfValuesBox) : MaxReal was negative!" << endl;
+    MaxReal = -MaxReal;
+  }
+  if (MaxImag < 0.0) {
+    if (CrsTemp->Comm().MyPID() == 0)
+      cout << "Warning (GetFieldOfValuesBox) : MaxReal was negative!" << endl;
+    MaxImag = -MaxImag;
+  }
+
   double eta = MaxImag/MaxReal;
 
   fov->eta = eta;
