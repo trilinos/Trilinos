@@ -191,16 +191,20 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
     else if (i == 0) {
       ptIndices[0] = minGID+i;
       ptIndices[1] = minGID+i+1;
+      ptIndices[2] = minGID+i+2;
       ptCoefs[0] = 2.0;
       ptCoefs[1] = -1.0;
-      numCols = 2;
+      ptCoefs[2] = -1.0;
+      numCols = 3;
     }
     else {
-      ptIndices[0] = minGID+i-1;
-      ptIndices[1] = minGID+i;
+      ptIndices[0] = minGID+i-2;
+      ptIndices[1] = minGID+i-1;
+      ptIndices[2] = minGID+i;
       ptCoefs[0] = -1.0;
-      ptCoefs[1] = 2.0;
-      numCols = 2;
+      ptCoefs[1] = -1.0;
+      ptCoefs[2] = 2.0;
+      numCols = 3;
     }
 
     int row = minGID+i;
