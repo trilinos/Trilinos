@@ -562,12 +562,12 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
       }
 
       /* store matrix row */
-      /*
+
       memcpy(&(Ccol[next_nz]),accum_col, sizeof(int)*Ncols);
       memcpy(&(Cval[next_nz]),accum_val, sizeof(double)*Ncols);
       next_nz += Ncols;
-      */
 
+#ifdef out
       /* above code might be a bit faster??? */
       for (k = 0; k < Ncols; k++) {
 	/* This 'if' might break some applications somewhere */
@@ -580,6 +580,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
           Cval[next_nz++] = accum_val[k];
 	}
       }
+#endif
       /*      */
 #ifdef takeout
 for (jj = 0; jj < Ncols; jj++) accum_val[jj] = 0.;
