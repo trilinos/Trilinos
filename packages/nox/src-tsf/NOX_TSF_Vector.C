@@ -47,7 +47,7 @@ NOX::TSF::Vector::Vector(const NOX::TSF::Vector& source,
     break;
 
   case NOX::ShapeCopy:
-    x = ((source.x).space())->createMember();
+    x = ((source.x).space()).createMember();
     break;
 
   default:
@@ -67,7 +67,7 @@ NOX::TSF::Vector::Vector(const TSFExtended::Vector<double>& source,
     break;
 
   case NOX::ShapeCopy:
-    x = ((source).space())->createMember();
+    x = ((source).space()).createMember();
     break;
 
   default:
@@ -280,6 +280,6 @@ double NOX::TSF::Vector::dot(const NOX::TSF::Vector& y) const
 
 int NOX::TSF::Vector::length() const
 {
-  return (x.space())->dim();
+  return (x.space()).dim();
 }
 
