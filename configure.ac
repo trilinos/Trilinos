@@ -237,13 +237,13 @@ if test "X$ac_cv_use_meros" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/meros])
 fi
 
-if test "X$ac_cv_use_nox" != "Xno" ||
-	test "X$ac_cv_use_loca" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/nox])
-fi
-
 if test "X$ac_cv_use_ml" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ml])
+fi
+
+if test "X$ac_cv_use_nox" != "Xno" ||
+        test "X$ac_cv_use_loca" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/nox])
 fi
 
 ## #np# - Copy the next three lines, and change package name
