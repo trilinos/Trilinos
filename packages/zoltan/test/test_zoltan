@@ -471,13 +471,14 @@ if (! $no_chaco ) then
     # Save generic input file 
     if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
 
-    # Special case for multiweight problems
-    if ((${ch_name[1]} == "vwgt2") || (${ch_name[1]} == "brack2_3")) then
+    # Add special test cases for some multiweight problems
+    if ((${ch_name[1]} == "vwgt2") || (${ch_name[1]} == "hammond2")) then
        if ($pmversion > 2) then
-          set methods = ( partkway-v$pmversion partgeomkway-v$pmversion adaptive-v$pmversion partkway-imbal-v$pmversion )
+          set methods = ( rcb-comparable rcb-norm2 rcb-norm3 partkway-imbal-v$pmversion )
        else
           set methods = ( )
        endif
+       set methods = ( $ch_methods $methods )
     else
        set methods = ( $ch_methods )
     endif
