@@ -1,8 +1,8 @@
-ARCH_FLAGS=-O4 
+OPT_FLAGS=-O4
+ARCH_FLAGS= $(OPT_FLAGS)
 CC=cc
 FC=cc
 RANLIB=touch
 LINKER=$(CC)
-ARCH_LIBS= -lm
-#ARCH_LIBS=-lUfor -lots -lfor -lFutil -lm
+ARCH_LIBS= -lUfor -lfor -lFutil 
 AR=ar

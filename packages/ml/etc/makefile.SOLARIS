@@ -1,5 +1,5 @@
-#ARCH_FLAGS=-fast
-ARCH_FLAGS=-xO4 -DCATCH_FPE -xarch=generic
+OPT_FLAGS=-xO4
+ARCH_FLAGS=$(OPT_FLAGS) -DCATCH_FPE -xarch=generic
 CC=cc 
 FC=f77
 RANLIB=ranlib
