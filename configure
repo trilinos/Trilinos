@@ -2531,7 +2531,8 @@ fi
 
 if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" ||
-	test "X$ac_cv_use_tsfcore" != "Xno" ||
+        test "X$ac_cv_use_tsfextended" != "Xno" ||
+ 	test "X$ac_cv_use_tsfcore" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
  	test "X$ac_cv_use_anasazi" != "Xno" ||
@@ -2695,7 +2696,8 @@ subdirs="$subdirs packages/TSF"
 
 fi
 
-if test "X$ac_cv_use_tsfcore" != "Xno"; then
+if test "X$ac_cv_use_tsfcore" != "Xno" ||
+	test "X$ac_cv_use_tsfextended" != "Xno"; then
 
 
 subdirs="$subdirs packages/TSFCore"
@@ -2710,6 +2712,7 @@ subdirs="$subdirs packages/TSFExtended"
 fi
 
 if test "X$ac_cv_use_tsfcore" != "Xno" ||
+        test "X$ac_cv_use_tsfextended" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno"; then
 
 

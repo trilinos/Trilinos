@@ -123,7 +123,8 @@ AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
 
 if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" ||
-	test "X$ac_cv_use_tsfcore" != "Xno" ||
+        test "X$ac_cv_use_tsfextended" != "Xno" ||
+ 	test "X$ac_cv_use_tsfcore" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
  	test "X$ac_cv_use_anasazi" != "Xno" ||
@@ -197,7 +198,8 @@ if test "X$ac_cv_use_tsf" != "Xno" ||
   AC_CONFIG_SUBDIRS([packages/TSF])
 fi
 
-if test "X$ac_cv_use_tsfcore" != "Xno"; then
+if test "X$ac_cv_use_tsfcore" != "Xno" ||
+	test "X$ac_cv_use_tsfextended" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/TSFCore])
 fi
 
@@ -206,6 +208,7 @@ if test "X$ac_cv_use_tsfextended" != "Xno"; then
 fi
 
 if test "X$ac_cv_use_tsfcore" != "Xno" || 
+        test "X$ac_cv_use_tsfextended" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/TSFCoreUtils])
 fi
