@@ -3,15 +3,13 @@
 
 ################################################################################
 # The Trilinos Project - Test Harness
-#
+# 
 # Jim Willenbring, Mike Phenow, Ken Stanley
 #
+# For more information, see Trilinos/testharness/README.
 ################################################################################
 
 use strict;
-
-use Getopt::Std;    # for command line options parsing
-use lib "lib";      # ended up needing to use a relative address - don't need?
 
 # Variable Declarations ========================================================
 
@@ -19,30 +17,17 @@ use lib "lib";      # ended up needing to use a relative address - don't need?
 my %flags;                  # command line flags (boolean or string)
 my %options;                # config-file hash of arrays (keys, lists of values)
 
-# Host variables
-my $hostOS;                 # host operating system
-my $hostName;               # host name
-my $hostArch;               # host architecture
-
-# Error variables
-my $errorCount;             # tally of error log appends
-my $warningCount;           # tally of warning log appends
-my $updateError;            # update error boolean
-my $trilinosCompileError;   # trilinos compile error boolean
-my $testCompileError;       # test compile error boolean
-
-# File variables        
-# ERRORS;                   # error log         # localize? pass to sendMail()?
-# WARNINGS;                 # warning log
-# BODY;                     # email body
-
-# Compile variables   
-my $comm;   # unclear use...
-my $mpi;    # unclear use...
-
-# Test variables
-my @potentialScripts;   # used by test and then sendMail
-my $potentialScript;    # can these be made local?
+# Error constants
+use constant FILE_SYSTEM_ERROR => -4;           # files absent or have incorrect permissions
+use constant SYSTEM_COMMAND_ERROR => -3;        # system command failed or doesn't exist
+use constant CONFIG_ERROR => -2;                # test-harness configure file isn't valid
+use constant UPDATE_ERROR => -1;                # cvs update failed
+use constant TRILINOS_CONFIGURE_ERROR => 1;     # Trilinos configure failed
+use constant TRILINOS_BUILD_ERROR => 2;         # Trilinos build failed
+use constant TEST_COMPILE_ERROR => 3;           # test compile failed
+use constant TEST_FAILED => 4;                  # test failed
+use constant TEST_PASSED => 5;                  # test passed
+use constant SUMMARY => 6;                      # test-harness summary
         
 ################################################################################
 # Execution ####################################################################
@@ -50,139 +35,63 @@ my $potentialScript;    # can these be made local?
 
 # Preparation ==================================================================
 
-# Get command line options
-getopts("gshf:", \%flags);
-if ($flags{h}) { printHelp(); }
-if ($flags{g}) { genConfigTemp($flags{s}); }
-if ($flags{s} && !$flags{g}) {
-    print "Error: -s option must be accompanied by the -g option.\n";
-    exit;
-}
-if (!$flags{f}) { 
-    print "Error: must specify a config file using the -f option.\n"; 
-    print "Run test-harness.plx with the -h option for a complete list of options.\n"; 
-    exit;
-} 
-
-# two-tiered config system...?
-# one and only one main test-harness config (excluded packages, default to and from emails, ...)
-# any number of possible config files with things more likely to change
-
-# Trilinos/testharness directory structure...
-#
-# test-harness(.plx)
-# dependencies?
-# README
-#
-# config/
-# elements-machine/
-# elements-trilinos/
+# Parse command line flags
+parseFlags();
 
 # Parse test-harness-config
-# >>> # for 'checkin'-test-harness functionality, maybe check in
-# >>> # a standard config file to use for that purpose?
-# >>> # what were all the differences between this and the 'checkin' version?
-%options = parseConfig($flags{f});
+parseConfig();
 
-# Determine host OS
-# >>> # should this be a config-file option?
-# >>> # is it only used for sendMail()?
-# >>> # if so, do we care what about the OS, or just the mail program?
-# >>> # should the additional libraries be supplied in the config?
-getHostOs();
+# Confirm that all options are acceptable        
+validateOptions();
 
 # Update Trilinos from CVS Repository
 cvsUpdate();
 
-# Prepare output files
-# >>> # are there more errors/warnings we could track?
-# >>> # or is there a way to track them in more detail?
-# >>> # do we need to use files, or could this be stored in memory?
-# >>> # if they do have to be stored in files, is there a universal place to put them?
-prepareFiles();
+# Start up MPI implementation if any tests are parallel
+mpiStartup();
 
-# Boot LAM if any tests are parallel
-#   (If mpich is used, comment out this section and the lamhalt section)
-# >>> # should we allow for other MPI implementations to be specified in the config file?
-# >>> # this way, we wouldn't have to hard-code the implementation at all  
-lamboot();
+# Delete and recreate build dirs
+prepareBuildDirs();
 
 # Main Execution ===============================================================
 
-# Build and test from bottom up, recording and reporting results as necessary
-# >>> # how can we have this logic driven by the config?
-# >>> # have sets of packages in a specified order...?
-# >>> # maintain a dependency table?
-run();          # core test-harness logic
-
-# >>> # should each of these run without global variables...?
-# >>> # pass directory, etc...
-# >>> # return (pass/fail, output, etc...)
-# >>> # would there be much benefit to this?
-
-# compile();    # called by run()
-# build();      # called by run()
-# test();       # called by run()
-# sendMail();   # called by run()
-
+# Configure, build, and test--mailing as necessary
+run();
 
 # Clean Up =====================================================================
 
-# Halt LAM if any tests are parallel
-#   (If mpich is used, comment out this section and the lamboot section)
-lamhalt();
-
-# Close filehandles and delete temp files
-cleanupFiles();
+# Shut down MPI implementation if any tests are parallel
+mpiShutdown();
 
 ################################################################################
 # Subroutines ##################################################################
 ################################################################################
 
     ############################################################################
-    # getHostOs()
+    # parseFlags()
     #
-    # Discovers the host's operating system.
+    # Parse command line flags.
     #   - global variables used: yes
     #   - sends mail: no
     #   - args: 
     #   - returns: 
 
-    sub getHostOs {
-        chomp ($hostOS=`uname -a`);
-        chomp ($hostName=`uname -n`);
-        chomp ($hostArch=`uname`); 
-# ???   # $hostArch must match the middle portion of the name of the log file 
-# ???   # written to by the testAll file - for example on a Linux platform, 
-# ???   # the log file is called logLinux.txt, so $hostArch=Linux
-            
-        # List of current supported platforms: 
-        #   AIX, CPLANT, DEC, IBMSP, LINUX, SGI32, SGI64, SMOS, SOLARIS, TFLOP, sun
-# ???   # If MIME::Lite is used in the end, include the file somewhere in Trilinos
-        SWITCH: {
-            if ($hostOS =~ m/^Linux/) {
-                use lib "lib"; # ended up needing to use a relative address
-                last SWITCH; 
-            };
-            if ($hostOS =~ m/^SunOS/) {
-                use lib "/local/homes/jmwille/lib";
-                last SWITCH; 
-            };
-            if ($hostOS =~ m/^CYGWIN/) {                                
-                # Cygwin doesn't have sendmail, so configure MIME::Lite to use smtp instead
-                MIME::Lite->send('smtp',"mailgate.sandia.gov");    
-                                             
-# >>> # export to config?
-                use lib "/home/jmwille/lib";
-                last SWITCH; 
-            };
-            # Fix the rest of the switch statement, currently functional for LINUX only
-            # if ($hostOS=~/^Linux.+cluster/||$hostOS=~/^Linux.+node/) 
-            #   {$TRILINOS_hostArch='linux-lam-cluster'; last SWITCH; };
-            # if ($hostOS=~/^Linux.+cluster/) {$TRILINOS_hostArch='linux-lam-cluster'; last SWITCH; };
-            die "hostOS does not match any of the OS choices.\n";
+    sub parseFlags {    
+        use Getopt::Std;
+
+        getopts("gshf:", \%flags);
+        if ($flags{h}) { printHelp(); }
+        if ($flags{g}) { genConfigTemp($flags{s}); }
+        if ($flags{s} && !$flags{g}) {
+            print "Error: -s option must be accompanied by the -g option.\n";
+            exit;
         }
-    } # getHostOs()
+        if (!$flags{f}) { 
+            print "Error: must specify a config file using the -f option.\n"; 
+            print "Run test-harness.plx with the -h option for a complete list of options.\n"; 
+            exit;
+        } 
+    } # parseFlags()
 
     ############################################################################
     # cvsUpdate()
@@ -194,191 +103,316 @@ cleanupFiles();
     #   - returns: 
 
     sub cvsUpdate {    
-        chdir "$options{'HOMEDIR'}[0]";
-        
-        my $result;
-        print "$options{'CVS_CMD'}[0] update -dP > $options{'HOMEDIR'}[0]/updatelog.txt 2>&1\n";
-        $result=system "$options{'CVS_CMD'}[0] update -dP > $options{'HOMEDIR'}[0]/updatelog.txt 2>&1";
-        if ($result) {
-            $errorCount++;
-            $updateError++;
-            print ERRORS "*** Error updating Trilinos ***\n";
-            print ERRORS "Aborting tests.\n";
-            print ERRORS "See updatelog.txt for further information";
+    
+        if ($options{'CVS_UPDATE'}[0] =~ m/YES/i) {
+            chdir "$options{'TRILINOS_DIR'}[0]";
             
-# >>> #     # sendMail(); # COMMENTING OUT EMAIL
-            die " *** ERROR updating TRILINOS! ***\n";
+            my $command = "";
+            $command .= "$options{'CVS_CMD'}[0] update -dP > $options{'TRILINOS_DIR'}[0]";
+            $command .= "/testharness/temp/update_log.txt 2>&1";
+            my $result = system $command;
+            if ($result) {
+                sendMail(UPDATE_ERROR);
+                die " *** Error updating Trilinos - aborting test-harness ***\n";
+            }
+            system "rm -f $options{'TRILINOS_DIR'}[0]/testharness/temp/update_log.txt";
         }
     } # cvsUpdate()
 
     ############################################################################
-    # prepareFiles()
+    # mpiStartup()
     #
-    # Prepares the output files.
+    # Run specified mpi startup command if an mpi build directory is given
     #   - global variables used: yes
-    #   - sends mail: no
+    #   - sends mail: on error
     #   - args: 
     #   - returns: 
 
-    sub prepareFiles {
-        chdir "$options{'HOMEDIR'}[0]";
-    
-        # Doesn't count the actual number of errors, but rather
-        # the number of times ERRORS is written to.
-        $errorCount=0; 
-        
-        # Analogous to errorCount
-        $warningCount=0; 
-        
-        # If an error occurs during the cvs update, this 
-        # indicates that updatelog.txt should be attached
-        $updateError=0; 
-        
-        # If an error occurs during the compilation of 
-        # Trilinos, this indicates that trilinosCompileLog.txt
-        # should be attached        
-        $trilinosCompileError=0; 
-        
-        # If an error occurs during the compilation of one of
-        # the tests, this indicates that testCompileLog.txt
-        # should be attached        
-        $testCompileError=0; 
-        
-        open (ERRORS, ">>errors.txt")       or die "$! error trying to open file";        
-        open (WARNINGS, ">>warnings.txt")   or die "$! error trying to open file";   
-        open (BODY, ">>EmailBody.txt")      or die "$! error trying to open file";
-    } # prepareFiles()
-
-    ############################################################################
-    # lamboot()
-    #
-    # Check if any tests are parallel tests--if so, do a lamboot.
-    #   - global variables used: yes
-    #   - sends mail: no
-    #   - args: 
-    #   - returns: 
-
-    sub lamboot {  
-        chdir "$options{'HOMEDIR'}[0]";
-        
-        if ($mpi) {
-            unless (! -f $options{'HOST_FILE'}[0]) {
-                system "lamboot $options{'HOST_FILE'}[0] -v";
-            } else {
-                system "lamboot";
+    sub mpiStartup {  
+        chdir "$options{'TRILINOS_DIR'}[0]";                
+        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]) { 
+            my $command = "$options{'MPI_STARTUP_CMD'}[0]";
+            my $commandFailed = system $command; 
+            if ($commandFailed) {
+                sendMail(SYSTEM_COMMAND_ERROR, $command);
+                print $command;          
+                die " *** Error running system command - aborting test-harness ***\n";
             }
         }
-    } # lamboot()
+    } # mpiStartup()
+
+    ############################################################################
+    # prepareBuildDirs()
+    #
+    # Delete and recreate build dirs
+    #   - global variables used: yes
+    #   - sends mail: no
+    #   - args: 
+    #   - returns: 
+
+    sub prepareBuildDirs {  
+        chdir "$options{'TRILINOS_DIR'}[0]";  
+        
+        # delete and recreate mpi dir
+        system "rm -rf $options{'MPI_DIR'}[0]";
+        system "mkdir $options{'MPI_DIR'}[0]";
+        
+        # delete and recreate serial dir
+        system "rm -rf $options{'SERIAL_DIR'}[0]";
+        system "mkdir $options{'SERIAL_DIR'}[0]";
+        
+    } # prepareBuildDirs()
 
     ############################################################################
     # run()
     #
-    # Core test-harness logic. Calls compile(), build(), test(), and sendMail()
+    # Core test-harness logic. Calls configure(), build(), test(), and sendMail()
     #   - global variables used: yes
     #   - sends mail: yes
     #   - args: 
     #   - returns: 
 
     sub run {  
-        chdir "$options{'HOMEDIR'}[0]";
-        
-        # run...
-        
+               
+        # Configure, build and test each configuration (as given by the list of
+        # machine-independent invoke-configure elements) 
+        for (my $i=0; $i <= $#{$options{'TRILINOS_CONFIG_FILES'}}; $i++) {        
+            
+            prepareConfigure($i);
+            
+            # create array of build dirs =======================================            
+            my @buildDir = ();
+            if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]) {
+                push (@buildDir, $options{'MPI_DIR'}[0]);
+            }
+            if (defined $options{'SERIAL_DIR'} && defined $options{'SERIAL_DIR'}[0]) {
+                push (@buildDir, $options{'SERIAL_DIR'}[0]);
+            }
+            
+            # for each build directory =========================================
+            for (my $j=0; $j <= $#buildDir; $j++) {
+
+                my $comm; 
+                if ($buildDir[$j] eq $options{'MPI_DIR'}[0]) {
+                    $comm = "mpi";
+                } elsif ($buildDir[$j] eq $options{'SERIAL_DIR'}[0]) {
+                    $comm = "serial";
+                } 
+                
+                # descend into build dir
+                chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";
+                
+                # test for existence of invoke-configure
+                if (!-f "invoke-configure") {
+                    my $message = "";
+                    $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                    $message .= "invoke-configure must be present\n";
+                    sendMail(FILE_SYSTEM_ERROR, $message, $comm);
+                    print $message;
+                    die " *** File missing - aborting test-harness ***\n";
+                } 
+                
+                # test for read permissions on invoke-configure
+                if (!-r "invoke-configure") {
+                    my $message = "";
+                    $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                    $message .= "invoke-configure must be readable\n";
+                    sendMail(FILE_SYSTEM_ERROR, $message, $comm);
+                    print $message;
+                    die " *** File permission wrong - aborting test-harness ***\n";
+                } 
+                
+                # test for executable permission on invoke-configure
+                if (!-x "invoke-configure") {
+                    my $message = "";
+                    $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                    $message .= "invoke-configure must be executable\n";
+                    sendMail(FILE_SYSTEM_ERROR, $message, $comm);
+                    print $message;
+                    die " *** File permission wrong - aborting test-harness ***\n";
+                }
+                
+                # configure ----------------------------------------------------
+                
+                my $configureFailed = configure($buildDir[$j]);
+                if ($configureFailed) {    
+                    sendMail(TRILINOS_CONFIGURE_ERROR, $configureFailed, $comm); 
+                } else {     
+                    print "$comm - Trilinos configured successfully.\n";                      
+                }
+                
+                # build --------------------------------------------------------
+                
+                my $buildFailed = build($buildDir[$j]);
+                if ($buildFailed) {
+                    sendMail(TRILINOS_BUILD_ERROR, $buildFailed, $comm); 
+                } else {    
+                    print "$comm - Trilinos built successfully.\n";                  
+                }
+                
+                # test ---------------------------------------------------------
+                
+                # locate all test dirs under Trilinos/packages        
+                chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";        
+                my @testDirs = `find packages/ -name test -print`; 
+                
+        	    # run all tests 
+        	    foreach my $testDir (@testDirs) {
+                    $testDir =~ s/\s*$//;  # trim trailing whitespace
+                                    
+        	        # exclude unsupported packages and invalid directories
+        	        unless ($testDir =~ m/^\s+$/ || $testDir =~ m/^$/ || 
+        	                $testDir =~ m/tpetra/ || $testDir =~ m/jpetra/ ) {
+        	                
+        	            # descend into test directory
+                        chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/$testDir";
+                
+                        # find potential scripts in test/scripts/<frequency>/<comm>
+                        my $command = "";
+                        $command .= "find $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
+                        $command .= "$testDir/scripts/$options{'FREQUENCY'}[0]/$comm -type f";
+                        my $output = `$command`;
+                        my @potentialScripts = split (/\s+/, $output);
+                                
+                        # run each test
+                        foreach my $potentialScript (@potentialScripts) {
+                            $potentialScript =~ s/\s*$//;  # trim trailing whitespace
+                            
+                            # if potential script file is executable...
+                            if (-x $potentialScript) {
+                
+                                # test
+                                my $testFailed = test($buildDir[$j], $testDir, $comm, $potentialScript);
+                                if ($testFailed) {                
+                                    print "Test failed.\n";  
+                                    sendMail(TEST_FAILED, $testFailed, $comm, $testDir, $potentialScript); 
+                                } else {                                    
+                                    print "Test passed.\n";  
+                                    sendMail(TEST_PASSED, $testFailed, $comm, $testDir, $potentialScript);
+                                }
+                                
+                            } # if (executable)
+                        } # foreach ($potentialScript)                    
+                    } # unless (unsupported)
+                } # foreach $testDir
+                
+                # email --------------------------------------------------------
+                
+            } # for (buildDirs)                       
+        } # for (TRILINOS_CONFIG_FILES)               
     } # run()
 
     ############################################################################
-    # compile()
+    # prepareConfigure()
+    #
+    # Compile the invoke configure files and move them into place
+    #   - global variables used: yes
+    #   - sends mail: no
+    #   - args: $i      (which machine-independent invoke-configure element)
+    #   - returns: 
+
+    sub prepareConfigure {   
+        my $i = $_[0];    
+        	
+        # create complete invoke-configure files from elements =============              
+        my $rawInvokeConfigure = "";  
+        
+        # append machine-dependent portion of invoke-configure
+        if (-f "$options{'TRILINOS_DIR'}[0]/testharness/elements-machine/$options{'MACHINE_CONFIG_FILE'}[0]") {
+            open (MACHINE, "<$options{'TRILINOS_DIR'}[0]/testharness/elements-machine/$options{'MACHINE_CONFIG_FILE'}[0]") 
+                or die "$! error trying to open file";  
+            undef $/;                   # undefine input record separator
+	        my $file=<MACHINE>;         # copy entire file
+    	    close MACHINE;
+    	    $rawInvokeConfigure .= $file."\n";
+        } else {
+            my $message = "";
+            $message .= "$options{'TRILINOS_DIR'}[0]/testharness/elements-machine";
+            $message .= "/$options{'MACHINE_CONFIG_FILE'}[0] does not exist\n";
+            sendMail(FILE_SYSTEM_ERROR, $message);
+            print $message;
+            die " *** File missing - aborting test-harness ***\n";
+        }   
+        
+        # append machine-independent portion of invoke-configure
+        if (-f "$options{'TRILINOS_DIR'}[0]/testharness/elements-trilinos/$options{'TRILINOS_CONFIG_FILES'}[$i]") {
+            open (COMPONENT, "<$options{'TRILINOS_DIR'}[0]/testharness/elements-trilinos/$options{'TRILINOS_CONFIG_FILES'}[$i]") 
+                or die "$! error trying to open file";  
+            undef $/;                   # undefine input record separator
+	        my $file=<COMPONENT>;       # copy entire file
+    	    close COMPONENT;
+    	    $rawInvokeConfigure .= $file;
+        } else {
+            my $message = "";
+            $message .= "$options{'TRILINOS_DIR'}[0]/testharness/elements-machine";
+            $message .= "/$options{'TRILINOS_CONFIG_FILES'}[$i] does not exist\n";
+            sendMail(FILE_SYSTEM_ERROR, $message);
+            print $message;
+            die " *** File missing - aborting test-harness ***\n";
+        }        
+	    
+	    $rawInvokeConfigure =~ s/$/ \\/mg;      # append line-continuation to each line
+	    $rawInvokeConfigure =~ s/\\$//;         # remove last line-continuation
+	                
+	    # create and copy MPI invoke configure
+	    if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]) {
+            # open INVOKE_CONFIGURE_MPI for writing
+            open (INVOKE_CONFIGURE_MPI, ">$options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-mpi")
+                or die "$! error trying to open file";
+            print INVOKE_CONFIGURE_MPI ".././configure --enable-mpi --with-mpi-compilers \\\n";
+            print INVOKE_CONFIGURE_MPI "--with-cxxflags=-DLAM_BUILDING \\\n";
+            print INVOKE_CONFIGURE_MPI $rawInvokeConfigure;
+            close INVOKE_CONFIGURE_MPI;
+            
+            # move invoke-configure file into place
+            my $command;                     
+            $command = "mv $options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-mpi ";
+            $command .= "$options{'TRILINOS_DIR'}[0]/$options{'MPI_DIR'}[0]/invoke-configure";
+            system $command;
+            
+            # set invoke-configure permissions
+            system "chmod a+rx $options{'TRILINOS_DIR'}[0]/$options{'MPI_DIR'}[0]/invoke-configure";
+        }
+        
+        # create and copy SERIAL invoke configure
+	    if (defined $options{'SERIAL_DIR'} && defined $options{'SERIAL_DIR'}[0]) {
+            # open INVOKE_CONFIGURE_SERIAL for writing
+            open (INVOKE_CONFIGURE_SERIAL, ">$options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-serial")
+                or die "$! error trying to open file";
+            print INVOKE_CONFIGURE_SERIAL ".././configure \\\n";
+            print INVOKE_CONFIGURE_SERIAL $rawInvokeConfigure;
+            close INVOKE_CONFIGURE_SERIAL;
+            
+            # move invoke-configure file into place
+            my $command;                     
+            $command = "mv $options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-serial ";
+            $command .= "$options{'TRILINOS_DIR'}[0]/$options{'SERIAL_DIR'}[0]/invoke-configure";
+            system $command;
+            
+            # set invoke-configure permissions
+            system "chmod a+rx $options{'TRILINOS_DIR'}[0]/$options{'SERIAL_DIR'}[0]/invoke-configure";
+        }
+        
+    } # prepareConfigure()
+
+    ############################################################################
+    # configure()
     #
     # Compile the required Trilinos builds for tests determined above
     #   - global variables used: yes
     #   - sends mail: no
-    #   - args: 
+    #   - args: $buildDir (name of build directory)
     #   - returns: 
 
-    sub compile {   
-    
-# >>> # why is this explicity set?
-        $comm = "serial";
-        my $compileFail = 0;
-        
-        # for each build dir (as specified in config)
-        for (my $i=0; $i <= $#{$options{'BUILD_DIRS'}}; $i++) {
-        
-            # descend into build dir
-            chdir"$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]";
-
-# >>> # could these all be centrally located under testharness?            
-            # test for rx permissions on invoke configure
-            if (!-r "invoke-configure") {
-                my $error = "$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]/";
-                $error += "invoke-configure must be readable\n";
-                die "$! $error";
-            } if (!-x "invoke-configure") {
-                my $error = "$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]/";
-                $error += "invoke-configure must be executable\n";
-                die "$! $error";
-            }
-
-            # open invoke-configure
-            open (SCRIPT, "invoke-configure") 
-                or die "$! error trying to open file\n$options{'BUILD_DIRS'}[$i]/invoke-configure\n";
-                
-# >>> # isn't this only reading the first line?
-            my $configScript=<SCRIPT>;
-            close SCRIPT;
-            
-# >>> # can this be generalized more and extracted to config?           
-            if ($configScript =~ m/--enable-mpi/i) {
-        	    $comm="mpi";
-        	} else {
-        	    $comm="serial";
-        	}
-
-# >>> # before this is all preliminary setup
-# >>> # this is where we need to start to implement our cascading scheme        	
-        	system "make clean";
+    sub configure {   
+        my $buildDir = $_[0];    
         	
-# >>> # does this have to be stored in a file?
-            my $command = "./invoke-configure >> $options{'HOMEDIR'}[0]";
-            $command += "/trilinosCompileLog.txt 2>&1";
-        	$compileFail += system "$command";
-              
-# >>> # terminology: compile or configure?
-# >>> # what's the difference, what are we doing here?
-# >>> # and for that matter: make, make clean, make dist, build...
-  
-            # compilation failed, skip associated tests, report failure
-            if ($compileFail) {
-                $errorCount++;
-                $trilinosCompileError++;
-                print ERRORS "Trilinos configure process failed for the";
-                print ERRORS "$options{'BUILD_DIRS'}[$i] test.\n";
-                print ERRORS "Will skip associated tests.\n";
-# >>> #         # sendMail(); # COMMENTING OUT EMAIL
-                $compileFail=0; # reset 
-            } 
-            
-            # compilation succeeded
-            else {
-        	    
-    	        # build failed, skip associated tests, report failure
-        		if (!build($i)) {
-        	  		$errorCount++;
-        	  		$trilinosCompileError++;
-        	  		print ERRORS "Trilinos compilation process failed for the ";
-        	  		print ERRORS "$options{'BUILD_DIRS'}[$i] test.\nWill skip associated tests.\n";
-# >>> #             # sendMail(); # COMMENTING OUT EMAIL
-        	  		$compileFail=0; # reset         		        
-        		}
-        		
-        		# compiled and built successfully - test
-        		else {
-        	        test($i);
-        	    } # else
-        	    
-            } # else (compile success)
-        } # for (buildDirs)
-    } # compile()
+        my $command = "";
+        $command .= "./invoke-configure >> $options{'TRILINOS_DIR'}[0]";
+        $command .= "/testharness/temp/trilinos_configure_log.txt 2>&1";
+    	return system $command;
+        
+    } # configure()
 
     ############################################################################
     # build()
@@ -386,13 +420,16 @@ cleanupFiles();
     # Build the given Trilinos build.
     #   - global variables used: yes
     #   - sends mail: no
-    #   - args: $i (number of build directory in $options{BUILD_DIRS})
+    #   - args: $buildDir (name of build directory)
     #   - returns: 
 
     sub build { 
-        my $i = $_[0];  
-        
-        return system "make >> $options{'HOMEDIR'}[0]/trilinosCompileLog.txt 2>&1";
+        my $buildDir = $_[0];    
+    
+        my $command = "";
+        $command .= "make $options{'MAKE_FLAGS'}[0] >> $options{'TRILINOS_DIR'}[0]";
+        $command .= "/testharness/temp/trilinos_build_log.txt 2>&1";
+        return system $command;
         
     } # build()
     
@@ -402,110 +439,41 @@ cleanupFiles();
     # Run tests
     #   - global variables used: yes
     #   - sends mail: no
-    #   - args: $i (number of build directory in $options{BUILD_DIRS})
+    #   - args: $buildDir (name of build directory) 
+    #           $testDir (name of test directory)
+    #           $comm (MPI or SERIAL)
+    #           $script (test script to run)
     #   - returns: 
 
     sub test {    
-        my $i = $_[0];        
-        my $compileFail = 0;
+        my $buildDir = $_[0];     
+        my $testDir = $_[1];  
+        my $comm = $_[2];
+        my $script = $_[3];
         
-        # locate all test dirs under Trilinos/packages        
-        chdir "$options{'HOMEDIR'}[0]";        
-# >>> # can we rely on the system having 'find'?
-# >>> # we should compile a list of required programs, modules, permissions, etc.
-        my @testDirs = `find packages/ -name test -print`;
-	          
-	    # run all tests 
-	    foreach my $testDir (@testDirs) {	        
-	        
-# ??? #     # for packages that have not been ported to a particular platform,
-# ??? #     # the tests associated with such a package could be skipped below
-# ??? #     # use unless (uname =.. && $testDir=..) to skip
-# ??? #     # Packages excluded below (jpetra, tpetra, etc) do not yet build
-# ??? #     # with autotools
-	  
-	        # exclude unsupported packages and invalid directories
-	        unless ($testDir =~ m/^\s+$/ || $testDir =~ m/^$/ || 
-	                $testDir =~ m/tpetra/ || $testDir =~ m/jpetra/ ) {
-	                
-	            # descend into test directory
-	            chdir "$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]/$testDir";
-
-                # find potential scripts in test/scripts/<frequency>/<comm>
-                my $command = "find $options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]/";
-                $command += "$testDir/scripts/$options{'FREQUENCY'}[0]/$comm -type f > list_of_files";
-	            system "$command";
-	            
-	            # extract list of potential scripts
-	            open FILELIST, "list_of_files";
-	            chomp(@potentialScripts=<FILELIST>);
-	            close FILELIST;
-	            
-	            # run each test
-# >>> # $potentialScript should be made local and passed to sendMail()
-# >>> # all such variables, for that matter, should be made local and passed to sendMail()
-	            foreach $potentialScript (@potentialScripts) {
-	            
-	                chdir "$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]/$testDir";
-	                
-	                # if potential script file is executable...
-		            if (-x $potentialScript ) {
-		            
-		                # run test script
-		                my $command = "$potentialScript $options{'BUILD_DIRS'}[$i] ";
-		                $command += "True >> $options{'HOMEDIR'}[0]/testCompileLog.txt 2>&1";
-		                $compileFail += system "$command";
-		                
-		                # script failed
-# >>> # not really a 'compile' fail, is it?
-# >>> # can this be localized?
-		                if ($compileFail) {
-		                    $errorCount++;
-		                    $testCompileError++;
-		                    print ERRORS "Trilinos test suite failed for ";
-		                    print ERRORS "$options{'BUILD_DIRS'}[$i] tests.\n\n";
-		                }
-		                
-		                # Create and send email
-		                system "rm -f list_of_files";
-# >>> #                 # sendMail(); # COMMENTING OUT EMAIL
-		                $compileFail=0; # reset 
-		            } # if (executable)
-		            
-	            } # foreach (potentialScript)
-	        } # unless (unsupported package)
-	    } # foreach (testDir)
+        # run test script
+        my $command = "";
+        $command .= "$script $buildDir True >> $options{'TRILINOS_DIR'}[0]";
+        $command .= "/testharness/temp/test_compile_log.txt 2>&1";
+        return system $command;
+        
     } # test()
     
     ############################################################################
-    # lamhalt()
+    # mpiShutdown()
     #
-    # Check if any tests were parallel tests--if so, do a lamhalt.
+    # Run the specified mpi shutdown command if an mpi build directory is given
     #   - global variables used: yes
     #   - sends mail: no
     #   - args: 
     #   - returns: 
-
-    sub lamhalt {    
-        chdir"$options{'HOMEDIR'}[0]";        
-        if ($mpi) { system "lamhalt"; }
-    } # lamhalt()
-
-    ############################################################################
-    # cleanupFiles()
-    #
-    # Close filehandles and delete temp files
-    #   - global variables used: yes
-    #   - sends mail: no
-    #   - args: 
-    #   - returns: 
-
-    sub cleanupFiles {    
-        chdir"$options{'HOMEDIR'}[0]";        
-        close BODY;
-        close ERRORS;
-        close WARNINGS;
-    } # cleanupFiles()
+        
+    sub mpiShutdown {    
+        chdir"$options{'TRILINOS_DIR'}[0]";        
+        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]) { 
+            system "$options{'MPI_SHUTDOWN_CMD'}[0]"; 
+        }
+    } # mpiShutdown()
     
     ############################################################################
     # sendMail()
@@ -515,241 +483,251 @@ cleanupFiles();
     # script cannot recover
     #   - global variables used: yes
     #   - sends mail: yes
-    #   - args: 
+    #   - args: $code       (global constant describing error)
+    #           $message    (message accompanying error)
+    #           $comm       (current comm, if relevant)
+    #           $testDir    (current package directory, if relevant)
+    #           $testName   (name of test, if code is test-related)
     #   - returns: 
 
     sub sendMail {
-        chdir"$options{'HOMEDIR'}[0]";
+        my $code = $_[0];     
+        my $message = $_[1];      
+        my $comm = $_[2];  
+        my $testDir = $_[3];
+        my $testName = $_[4];
         
-        use MIME::Lite;
+        print "\n=== SENDING EMAIL ===\n\n"; 
         
-# >>>   # Warn me that not all calls to SENDEMAIL were commented out
-        print "I'M SENDING EMAIL TO SOMEBODY!"; 
+        # preparation ##########################################################
+        
+        chdir "$options{'TRILINOS_DIR'}[0]/testharness/";
+        
+        use lib "./lib/MIME-Lite-3.01/lib";     # cvs checkin MIME::Lite
+        use MIME::Lite;                         # might need Net::SMTP
+        
+        chdir "$options{'TRILINOS_DIR'}[0]/testharness/temp";
+            
+        # host information
+        chomp (my $hostOS=`uname`);             # host operating system
+        chomp (my $hostOSRelease=`uname -r`);   # host operating system release
+        chomp (my $hostOSVersion=`uname -v`);   # host operating system version 
+        chomp (my $hostHardware=`uname -m`);    # host hardware 
+        chomp (my $hostName=`uname -n`);        # host name    
+        
+        # remove extra newlines
+        $hostOS =~ s/\s*$//; 
+        $hostOSRelease =~ s/\s*$//; 
+        $hostOSVersion =~ s/\s*$//;  
+        $hostHardware =~ s/\s*$//; 
+        $hostName =~ s/\s*$//; 
+        
+        # add rest of testDir
+        $testDir .= $testName;
+        $testDir =~ s/\/[^\/]+$//;
+        
+        # remove path from test name
+        $testName =~ s/.*\///;
 
-        # Compile list of mail recipients ######################################
+        # compile list of mail recipients --------------------------------------
 
-# ???   # The following line constructs the name of the log that is produced 
-# vvv   # during tests whether errors occurred or not.  (-v not used.)
-        my $scriptowner;
-        if (-f "log$hostArch.txt") {
-            system "mv $options{'HOMEDIR'}[0]/log$hostArch.txt EmailBody.txt";
-            open (OWNER, "EmailBody.txt") or die "$! error trying to open file";
-            $scriptowner=<OWNER>;
+        # extract $scriptOwner email from first line of log$hostOS.txt
+        # (note: the name "log$hostOS.txt" is functional--it is written-to 
+        # by the test scripts.
+        my $scriptOwner = "";
+        if (-f "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") {
+            open (OWNER, "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") or die "$! error trying to open file";
+            $scriptOwner=<OWNER>;   # read first line (email of script owner is on first line)
+            chomp $scriptOwner;     # trim newline
             close OWNER;
         }
-# ^^^
-# ???   
-# ???
-# vvv     
-        # List addresses for all emails to be sent to below
-        chomp $scriptowner;
+        
         my $mailTo;
-        # A valid email address must contain an '@'
-        if ($scriptowner =~ m/@/i) {
-            $mailTo = join ", ", 'jmwille@sandia.gov',$scriptowner 
-                or die "$! error forming 'To:' field";
+        if ($scriptOwner =~ m/\S+?\@\S+?/i) {    # look for ...@...
+            $mailTo = join ", ", $scriptOwner, "$options{'ALL_SCRIPTS_EMAIL'}";
         } else {
-            # List where emails without a script owner should be sent
-            # By sending them to the trilinos-regresstion list, we assure that
-            # results from tests without script owners and cvs and compilation 
-            # errors are recorded in Mailman
-
-            $mailTo = join ", ", 'trilinos-regression@software.sandia.gov';
+            $mailTo = join ", ", "$options{'NO_SCRIPT_OWNER_EMAIL'}", "$options{'ALL_SCRIPTS_EMAIL'}";
         }
-# ^^^
-# ???
+        
+        # OVERRIDE OTHER EMAILS
+        $mailTo = 'mnphenow@software.sandia.gov';
 
         # Create email #########################################################
 
-        print "\n**$mailTo**\n";
-        open (SUMMARY, ">>summary.txt") or die "$! error trying to open file";
+        # subject ==============================================================
         
-        # At least one problem occured =========================================
-        if ($errorCount || -f "$options{'HOMEDIR'}[0]/logErrors.txt" ||  
-            -f "$options{'HOMEDIR'}[0]/logMpiErrors.txt" || $warningCount || 
-            $updateError || $testCompileError || $trilinosCompileError) {
-
-# >>> # why the initialization and the else?
-            # create subject line
-            my $mailSubject = "$hostArch - $hostName - At least one error occurred";
-            if ($updateError) {
-                $mailSubject = "$hostArch - $hostName - CVS update error";
-            } elsif ($trilinosCompileError) {
-                $mailSubject = "$hostArch - $hostName - $comm - Trilinos compile error";
-            } else {
-                $mailSubject = "$hostArch - $hostName - $comm - At least one test failed";
-            }
-    
-            # construct message
-            my $msg;
-            $msg=MIME::Lite->new(
-    			From =>     'trilinos-regression@software.sandia.gov',
-# >>> #			# To =>     'jmwille@sandia.gov',
-    			To =>       $mailTo,
-    			Subject =>  $mailSubject,
-    			Type =>     'multipart/mixed'
-    			);
-            $msg->attach(Type=>'TEXT', Path=>'summary.txt', Disposition=>'inline');
-    	        
-    	    # append script name
-            if ($potentialScript) {
-                print SUMMARY "Test script: ";
-                print SUMMARY $potentialScript;
-                print SUMMARY "\n";
-            }
+        my $subject = "$hostOS - $hostName - ";
+        if (defined $comm) {$subject .= "$comm - ";}
+        if (defined $testName) {$subject .= "$testName - ";}
         
-            # append frequency
-            if ($options{'FREQUENCY'}[0] =~ m/weekly/) {
-                print SUMMARY "Results of weekly test:\n";
-            } elsif ($options{'FREQUENCY'}[0] =~ m/daily/) {
-                print SUMMARY "Results of daily test:\n";
-            } else {
-                print SUMMARY "Warning: Unknown test frequency, results below:\n";
-            }
-  
-            # parallel errors
-            if ( -f "$options{'HOMEDIR'}[0]/logMpiErrors.txt") {
-                print SUMMARY "--> Parallel testing did not complete successfully.\n";
-
-                if ($testCompileError) {
-                    print SUMMARY "This failure is probably due to the compile ";
-                    print SUMMARY "time errors listed in the attachment \"testCompileLog.txt\".\n";
-                    print SUMMARY "If that does not appear to be the case, ";
-                }
-
-                print SUMMARY "See attachment \"logMpiErrors.txt\".\n\n";
-                $msg->attach(Type=>'TEXT', Path=>'logMpiErrors.txt', Disposition=>'attachment');
-            }
-
-            # serial errors
-            if ( -f "$options{'HOMEDIR'}[0]/logErrors.txt") {
-                print SUMMARY "--> Serial testing did not complete successfully.\n";
-
-                if ($testCompileError) {
-                    print SUMMARY "This failure is probably due to the compile ";
-                    print SUMMARY "time errors listed in the attachment \"testCompileLog.txt\".\n";
-                    print SUMMARY "If that does not appear to be the case, ";
-                }
-                print SUMMARY "See attachment \"logErrors.txt\".\n\n";
-                $msg->attach(Type=>'TEXT', Path=>'logErrors.txt', Disposition=>'attachment');
-            }
-
-            # test error
-            if ($testCompileError && -f "testCompileLog.txt") {
-                $msg->attach(Type=>'TEXT', Path=>'testCompileLog.txt', Disposition=>'attachment');
-            }
-
-            # errors            
-            if ($errorCount && -f "errors.txt") {
-                print SUMMARY "--> For additional information about errors that occured,\n";
-                print SUMMARY "See attachment \"errors.txt\".\n\n";
-                $msg->attach(Type=>'TEXT', Path=>'errors.txt', Disposition=>'attachment');
-            }
+        my $result = "";
+        if ($code == FILE_SYSTEM_ERROR) 
+            {$result .= "file system error";}
+        elsif ($code == SYSTEM_COMMAND_ERROR) 
+            {$result .= "system command error";}
+        elsif ($code == CONFIG_ERROR) 
+            {$result .= "test-harness config error";}
+        elsif ($code == UPDATE_ERROR) 
+            {$result .= "cvs udate error";}
+        elsif ($code == TRILINOS_CONFIGURE_ERROR) 
+            {$result .= "Trilinos configure error";}
+        elsif ($code == TRILINOS_BUILD_ERROR) 
+            {$result .= "Trilinos build error";}
+        elsif ($code == TEST_COMPILE_ERROR) 
+            {$result .= "test compile error";}
+        elsif ($code == TEST_FAILED) 
+            {$result .= "test failed";}
+        elsif ($code == TEST_PASSED) 
+            {$result .= "test passed";}
+        elsif ($code == SUMMARY) 
+            {$result .= "test-harness summary";} 
+        $subject .= $result;
         
-            # warnings
-            if ($warningCount && -f "warnings.txt") {
-                print SUMMARY "--> At least one non-testing warning occurred ";
-                print SUMMARY "(i.e. script/paramter related).\n";
-                print SUMMARY "See attachment \"warnings.txt\".\n\n";
-                $msg->attach(Type=>'TEXT', Path=>'warnings.txt', Disposition =>'attachment');
-            }
-  
-            # update error
-            if ($updateError && -f "updatelog.txt") {
-                print SUMMARY "--> At least one error occurred during CVS update.\n";
-                print SUMMARY "See attachment \"updatelog.txt\".\n\n";
-                $msg->attach(Type=>'TEXT', Path=>'updatelog.txt', Disposition=>'attachment');
-            }
-  
-            # trilinos compile error
-            if ($trilinosCompileError && -f "trilinosCompileLog.txt") {
-                print SUMMARY "--> At least one error occurred while compiling Trilinos.\n";
-                print SUMMARY "See attachment \"trilinosCompileLog.txt\".\n\n";
-                $msg->attach(Type=>'TEXT', Path=>'trilinosCompileLog.txt', Disposition=>'attachment');
-            }
+        # construct email ======================================================    
         
-            # preface script output
-            print SUMMARY "************************************************\n";
-            print SUMMARY "The following is the output from the test script listed ";
-            print SUMMARY "above (or failed compile attempt).\n";
-            print SUMMARY "Please note that the -v option was not selected for this log.\n";
-            print SUMMARY "NOTE:Depending on your Mail User Agent (MUA), the test ";
-            print SUMMARY "summary will either appear below, or it will be attached ";
-            print SUMMARY "as a file called \"EmailBody.txt\".\n";
-            print SUMMARY "See any attachments listed above for more details.\n";
-            print SUMMARY "*************************************************\n";
-        
-            # Send message =====================================================
-            if (-f "EmailBody.txt") {
-                $msg->attach(Type =>'TEXT', Path=>'EmailBody.txt', Disposition=>'inline');
-            }        
-            $msg->send;
+        my $email;
+        $email=MIME::Lite->new(
+			From =>     'Trilinos test-harness <trilinos-regression@software.sandia.gov>',
+			To =>       $mailTo,
+			Subject =>  $subject,
+			Type =>     'multipart/mixed'
+		);
             
-            system "rm -f logErrors.txt logMpiErrors.txt";
-
-        # Everything successful ================================================
-        } else {
-            # No problems occurred of any kind
-            my $mailSubject = "$hostArch - $hostName - $comm - All tests passed";
-            my $msg=MIME::Lite->new(
-			    From =>'trilinos-regression@software.sandia.gov',
-			    To => $mailTo,
-			    Subject => $mailSubject,
-			    Type =>'multipart/mixed'
-			    );
-            $msg->attach(Type=>'TEXT',
-	            Path=>'summary.txt',
-	            Disposition=>'inline'
-	            );
-	     
-            if ($potentialScript) {
-                print SUMMARY "Test script: ";
-                print SUMMARY $potentialScript;
-                print SUMMARY "\n";
-            }
-    
-            if ($options{'FREQUENCY'}[0] =~/weekly/) {
-                print SUMMARY "\nResults of weekly tests:\n";
-            } elsif ($options{'FREQUENCY'}[0] =~/daily/) {
-                print SUMMARY "\nResults of daily tests:\n";
-            } else {
-                print SUMMARY "\nWarning: Unknown test frequency, results below:\n";
-            }
-
-            print SUMMARY "*****************************************************\n";
-            print SUMMARY "The following is the output from the test script listed above.\n";
-            print SUMMARY "Please note that the -v option was not selected for this log.\n";
-            print SUMMARY "While no errors occurred during this test, this log can ";
-            print SUMMARY "still be examined to see which tests were run.\n";
-            print SUMMARY "NOTE:Depending on your Mail User Agent (MUA), the test ";
-            print SUMMARY "summary will either appear below, or it will be attached ";
-            print SUMMARY "as a file called 'EmailBody.txt'\n";
-            print SUMMARY "******************************************************";
-
-            # Compile and send message =========================================
-            $msg->attach(Type =>'TEXT',
-	            Path=>'EmailBody.txt',
-		        Disposition=>'inline'
-	            );
-            $msg->send;
-            
-        } # else
-
-        # Clean up #############################################################
+        # body =================================================================
+        
+        my $body = "";
                 
-        close SUMMARY;    
+        # header section
+        $body .= "Host OS:          $hostOS\n";
+        $body .= "Host OS Release:  $hostOSRelease\n";
+        $body .= "Host OS Version:  $hostOSVersion\n";
+        $body .= "Host Hardware:    $hostHardware\n";
+        $body .= "Host Name:        $hostName\n";
+        $body .= "\n";
+        if (defined $comm) 
+            {$body .= "Comm:             $comm\n";}
+        if (defined $testDir) 
+            {$body .= "Test Directory:   $testDir\n";}
+        if (defined $testName) 
+            {$body .= "Test Name:        $testName\n";}
+        if (defined $testName) 
+            {$body .= "Frequency:        $options{'FREQUENCY'}[0]\n";}
+        $body .= "\n";        
+        $body .= "Result:           $result\n";
         
-        # Reset error/warning indicators 
-        $errorCount=0;
-        $warningCount=0;
-        $updateError=0;
-        $trilinosCompileError=0;
-        $testCompileError=0;
+        $body .= "\n";        
+        $body .= "------------------------------------------------------------\n";
+        $body .= "\n";
         
-        # remove temporary files
-        system "rm -f errors.txt warnings.txt updatelog.txt EmailBody.txt";
-        system "rm -f trilinosCompileLog.txt testCompileLog.txt summary.txt";    
+        # fatal error ----------------------------------------------------------
+        if ($code == FILE_SYSTEM_ERROR || $code == SYSTEM_COMMAND_ERROR ||
+            $code == CONFIG_ERROR || $code == UPDATE_ERROR) {
         
+            $body .= "FATAL ERROR\n";
+            $body .= "\n";       
+            $body .= "This error caused the test-harness to quit prematurely. It is\n";
+            $body .= "the sort of errorthat the test-harness is not designed to\n";
+            $body .= "recover from. It is probably either asimple human oversight,\n";
+            $body .= "or once fixed, should not occur again on this machine.\n";    
+            $body .= "\n";       
+            $body .= "Message/exit status:      $message\n";   
+        
+            $body .= "\n";        
+            $body .= "------------------------------------------------------------\n";
+            $body .= "\n";            
+        }
+        
+        # attachments ----------------------------------------------------------
+        $body .= "Attachments: \n";
+        
+        # update failed
+        if ($code == UPDATE_ERROR && -f "update_log.txt") {
+            $body .= "    update_log.txt\n";
+            $email->attach(Type=>'TEXT', Path=>'update_log.txt', Disposition=>'attachment');
+        }
+        
+        # trilinos configure failed
+        if ($code == TRILINOS_CONFIGURE_ERROR && -f "trilinos_configure_log.txt") {
+            $body .= "    trilinos_configure_log.txt\n";
+            $email->attach(Type=>'TEXT', Path=>'trilinos_configure_log.txt', Disposition=>'attachment');
+        }       
+        
+        # trilinos build failed
+        if ($code == TRILINOS_BUILD_ERROR && -f "trilinos_build_log.txt") {
+            $body .= "    trilinos_build_log.txt\n";
+            $email->attach(Type=>'TEXT', Path=>'trilinos_build_log.txt', Disposition=>'attachment');
+        }
+        
+        # test compile failed
+        if ($code == TEST_COMPILE_ERROR && -f "test_compile_log.txt") {
+            $body .= "    test_compile_log.txt\n";
+            $email->attach(Type=>'TEXT', Path=>'test_compile_log.txt', Disposition=>'attachment');
+        }
+        
+        # parallel test failed
+        if (-f "$options{'TRILINOS_DIR'}[0]/logMpiErrors.txt") {   
+            $body .= "    logMpiErrors.txt\n";
+            $email->attach(Type=>'TEXT', Path=>"$options{'TRILINOS_DIR'}[0]/logMpiErrors.txt", Disposition=>'attachment');
+        }
+        
+        # serial test failed
+        if (-f "$options{'TRILINOS_DIR'}[0]/logErrors.txt") {
+            $body .= "    logErrors.txt\n";
+            $email->attach(Type=>'TEXT', Path=>"$options{'TRILINOS_DIR'}[0]/logErrors.txt", Disposition=>'attachment');
+        }
+        
+        if (-f "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") {
+            $body .= "    log$hostOS.txt (inline)\n";
+        }                 
+        
+        $body .= "\n";        
+        $body .= "------------------------------------------------------------\n";
+        $body .= "\n";   
+        
+        # script output --------------------------------------------------------          
+        
+        if ($code == TEST_FAILED) {
+            $body .= "============================================================\n";
+            $body .= "The following is the output from the test script listed\n";
+            $body .= "above (or failedcompile attempt). Please note that the -v\n";
+            $body .= "option was not selected for this log. NOTE: Depending on\n";
+            $body .= "your Mail User Agent (MUA), the test summary will either\n";
+            $body .= "appear below, or it will be attached as a file called\n";
+            $body .= "'log$hostOS.txt'. See any attachments listed above for more\n";
+            $body .= "details.\n";   
+            $body .= "============================================================\n";
+            $body .= "\n";   
+            $body .= "Script Output (log$hostOS.txt): \n"; 
+            $body .= "\n";   
+        }  
+        
+        if ($code == TEST_PASSED) {
+            $body .= "============================================================\n";
+            $body .= "The following is the output from the test script listed\n";
+            $body .= "above. Please note that the -v option was not selected for\n";
+            $body .= "this log. While no errors occurred during this test, this\n";
+            $body .= "log can still be examined to see which tests were run.\n";
+            $body .= "NOTE: Depending on your Mail User Agent (MUA), the test\n";
+            $body .= "summary will eitherappear below, or it will be attached as\n";
+            $body .= "a file called 'log$hostOS.txt'\n";
+            $body .= "============================================================\n";
+            $body .= "\n";   
+            $body .= "Script Output (log$hostOS.txt): \n"; 
+            $body .= "\n";  
+        }   
+        
+        # attachments ==========================================================        
+        
+		$email->attach(Type=>'TEXT', Data=>$body);
+		        
+        if (-f "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") {
+            $email->attach(Type =>'TEXT', Path=>"$options{'TRILINOS_DIR'}[0]/log$hostOS.txt", Disposition=>'inline');
+        }     
+
+        # send email ===========================================================
+        
+        $email->send();
+                
     } # sendMail()
 
     ############################################################################
@@ -775,16 +753,15 @@ cleanupFiles();
     ############################################################################
     # parseConfig()
     #
-    # Parses test-harness-config and returns hash of arrays of the form
+    # Parses test-harness-config and fills global hash of arrays of the form
     # ({VARIABLE_A, [valueA1, valueA2, ...]}, {VARIABLE_B, [valueB1, ...]})
-    #   - global variables used: no
+    #   - global variables used: yes
     #   - sends mail: no
-    #   - args: String test-harness-config filename
-    #   - returns: Hash of Arrays options
+    #   - args: 
+    #   - returns: 
 
     sub parseConfig {
-        my $filename = $_[0];
-        my %options; # Hash of Arrays
+        my $filename = $flags{f};
         my $line;
         my $name;
         my $value;
@@ -794,9 +771,8 @@ cleanupFiles();
             or die "can't open $filename";
             
         while ($line = <CONFIG>) {
-            chomp($line);       # trim newline
-            $line =~ s/^\s+//;  # trim leading spaces
-            $line =~ s/\s+$//;  # trim trailing spaces
+            $line =~ s/^\s*//;  # trim leading spaces
+            $line =~ s/\s*$//;  # trim trailing spaces
             
             if (!$line || $line =~ m/^[# ]/) {
                 # skip comments and blank lines
@@ -820,8 +796,8 @@ cleanupFiles();
                 }
                 
                 while ($value) {
-                    $value =~ s/^\s+//;  # trim leading spaces
-                    $value =~ s/\s+$//;  # trim trailing spaces
+                    $value =~ s/^\s*//;  # trim leading spaces
+                    $value =~ s/\s*$//;  # trim trailing spaces
                     # print "\$value: $value\n"; # debugging
                     
                     $value =~ m/^(".*?"|\S+)/;      # grab leftmost value
@@ -835,65 +811,99 @@ cleanupFiles();
         
         close CONFIG;
         
-        # convert psuedo-variables =============================================
+        # detect current directory =============================================
+        #   this should still be ?/Trilinos/testharness
+        use Cwd;
+        use File::Basename;
         
-        # convert <USER_HOME_DIR> psuedo-variable
-        if (defined $options{'HOMEDIR'} && defined $options{'HOMEDIR'}[0]) { 
-            $options{'HOMEDIR'}[0] =~ s/<USER_HOME_DIR>/$ENV{'HOME'}/;
+        my $cwd = getcwd();             # ?/Trilinos/testharness
+        $cwd = dirname($cwd);           # ?/Trilinos
+        $options{'TRILINOS_DIR'} = ();
+        push (@{$options{'TRILINOS_DIR'}}, $cwd);
+        
+        # detect frequency =====================================================
+        $options{'FREQUENCY'} = ();
+        my $date = `date`;
+        if ($date =~ m/sun/i) {
+            push (@{$options{'FREQUENCY'}}, "weekly");
         } else {
-            print "Error: no HOMEDIR defined.\n";
-            exit;
-        }
+            push (@{$options{'FREQUENCY'}}, "daily");
+        }            
         
-        # convert <HOMEDIR> psuedo-variable
+    } # parseConfig()
+    
+    ############################################################################
+    # validateOptions()
+    #
+    # Validate options given by test-harness-config
+    #   - global variables used: yes
+    #   - sends mail: no
+    #   - args: 
+    #   - returns: 
+
+    sub validateOptions {
+             
+        # convert <TRILINOS_DIR> psuedo-variable
         for my $name (keys %options) {
             for my $i (0 .. $#{$options{$name}}) {
-                $options{$name}[$i] =~ s/<HOMEDIR>/$options{'HOMEDIR'}[0]/;
+                $options{$name}[$i] =~ s/<TRILINOS_DIR>/$options{'TRILINOS_DIR'}[0]/;
             }         
         }
         
-        # convert <BASE_HOST_FILE> psuedo-variable
-        if (defined $options{'HOST_FILE'} && defined $options{'HOST_FILE'}[0]) {
-            if (defined $options{'BASE_HOST_FILE'} && defined $options{'BASE_HOST_FILE'}[0]) { 
-                $options{'HOST_FILE'}[0] =~ s/<BASE_HOST_FILE>/$options{'BASE_HOST_FILE'}[0]/;
+        # if HOST_FILE isn't specified, assign empty string
+        if (!defined $options{'HOST_FILE'} || !defined $options{'HOST_FILE'}[0]) {
+            $options{'HOST_FILE'} = ();
+            push (@{$options{'HOST_FILE'}}, "");
+        } 
+        
+        # convert <HOST_FILE> psuedo-variable
+        for my $name (keys %options) {
+            for my $i (0 .. $#{$options{$name}}) {
+                $options{$name}[$i] =~ s/<HOST_FILE>/$options{'HOST_FILE'}[0]/;
+            }         
+        }      
+        
+        # if MAKE_FLAGS are specified, but don't begin with a '-', add one
+        if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
+            if (! $options{'MAKE_FLAGS'}[0] =~ m/^-/) {
+                $options{'MAKE_FLAGS'}[0] =~ s/^/-/;
             }
         } 
         
-        # Validate options =====================================================
-# >>> # should we reset bad values to default values or just bail?
+        # if MAKE_FLAGS weren't specified, assign the empty string
+        else {
+            $options{'MAKE_FLAGS'} = ();
+            push (@{$options{'MAKE_FLAGS'}}, "");
+        }
         
-        # check for valid build directories and check for --enable-mpi
-        if (defined $options{'BUILD_DIRS'} && defined $options{'BUILD_DIRS'}[0]) {
-            for my $i (0 .. $#{$options{'BUILD_DIRS'}}) {
-                chdir "$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]";            
-                print "$options{'HOMEDIR'}[0]/$options{'BUILD_DIRS'}[$i]\n";
-                            
-    	        open (INVOKE_CONFIGURE, "invoke-configure") or die "$! error trying to open file";
-    	        my $file=<INVOKE_CONFIGURE>;
-        	    close INVOKE_CONFIGURE;
-        	    
-        	    # Check if the configure script indicates a parallel or serial build
-        	    if ($file =~ m/--enable-mpi/i) { $mpi = 1; }
-            }
-        } else {
-            $warningCount++;
-            print WARNINGS "WARNING: No valid BUILD_DIRS found in config file.\n";
-# >>> # set default or just bail?
-        }        
+        # if SUMMARY_EMAIL are not specified, assign the empty string
+        if (!defined $options{'SUMMARY_EMAIL'} || !defined $options{'SUMMARY_EMAIL'}[0]) {
+            $options{'SUMMARY_EMAIL'} = ();
+            push (@{$options{'SUMMARY_EMAIL'}}, "");
+        } 
         
-        # print %options # debugging
-        #
-        # print "\n\%options:\n\n";
-        # for my $name (keys %options) {
-        #     my $numElements = $#{$options{$name}};
-        #     print "  $name (".($numElements+1)."): \n";
-        #     for my $i (0 .. $numElements) {
-        #         print "    $i = $options{$name}[$i]\n";
-        #     }         
-        # }
+        # if NO_SCRIPT_OWNER_EMAIL are not specified, assign the empty string
+        if (!defined $options{'NO_SCRIPT_OWNER_EMAIL'} || !defined $options{'NO_SCRIPT_OWNER_EMAIL'}[0]) {
+            $options{'NO_SCRIPT_OWNER_EMAIL'} = ();
+            push (@{$options{'NO_SCRIPT_OWNER_EMAIL'}}, "");
+        } 
         
-        return %options;        
-    } # parseConfig()
+        # if ALL_SCRIPTS_EMAIL are not specified, assign the empty string
+        if (!defined $options{'ALL_SCRIPTS_EMAIL'} || !defined $options{'ALL_SCRIPTS_EMAIL'}[0]) {
+            $options{'ALL_SCRIPTS_EMAIL'} = ();
+            push (@{$options{'ALL_SCRIPTS_EMAIL'}}, "");
+        } 
+        
+        # print the options hash of arrays -------------------------------------
+        #print "\n\%options:\n\n";                       # debugging
+        #for my $name (keys %options) {                  # debugging
+        #    my $numElements = $#{$options{$name}};      # debugging
+        #    print "  $name (".($numElements+1)."): \n"; # debugging
+        #    for my $i (0 .. $numElements) {             # debugging
+        #        print "    $i = $options{$name}[$i]\n"; # debugging
+        #    }                                           # debugging
+        #}                
+    } # validateOptions()
     
     ############################################################################
     # genConfigTemp()
@@ -935,111 +945,239 @@ cleanupFiles();
         }
         
         print outFile "#===============================================================================\n";
-        print outFile "# General configuration options\n";
+        print outFile "# Frequently changed configuration options\n";
         print outFile "#===============================================================================\n";
         print outFile "\n";
         
         if (!$short) {        
             print outFile "#-------------------------------------------------------------------------------\n";
-            print outFile "#\n";
-            print outFile "# === can't we just use ../? === \n";
-            print outFile "#\n";
-            print outFile "# Location of the directory in which this file is located. Default location is\n";
-            print outFile "# just below user's home directory. The value <USER_HOME_DIR> can be used to \n";
-            print outFile "# indicate the current user's home directory.\n";
+            print outFile "# The name of the file in \"<TRILINOS_DIR>/testharness/elements-machine\"\n";
+            print outFile "# containing the machine-dependent configure options for this machine.\n";
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";
-            print outFile "# - the HOME system environment variable can be referred to with\n";
-            print outFile "#   the value <USER_HOME_DIR>\n";
+            print outFile "# - value required: YES\n";
             print outFile "\n";
         }
         
-        print outFile "HOMEDIR                = <USER_HOME_DIR>/Trilinos \n";
+        print outFile "MACHINE_CONFIG_FILE             = software \n";
         
         if (!$short) {        
-            print outFile "\n";
+            print outFile "\n";  
             print outFile "#-------------------------------------------------------------------------------\n";
-            print outFile "# Indicate how often this test should be run.\n";
-            print outFile "# Recognized values include:\n";
-            print outFile "#   DAILY WEEKDAYS WEEKENDS \n";
-            print outFile "#   MONDAY TUESDAY WEDNESDAY THURSDAY FRIDAY SATURDAY SUNDAY.\n";
-            print outFile "# (Use one value from the first row OR any combination of values from the\n";
-            print outFile "# second row)\n";
+            print outFile "# The name of the files in \"<TRILINOS_DIR>/testharness/elements-trilinos\"\n";
+            print outFile "# containing the machine-independent configure options for this configuration\n";
+            print outFile "# of the test-harness. List multiple files in order to have the test-harness\n";
+            print outFile "# attempt to configure, build, and test each configuration in order.\n";
             print outFile "#\n";
             print outFile "# - multiple values recognized: YES\n";
+            print outFile "# - value required: YES\n";
             print outFile "\n";
         }
         
-        print outFile "FREQUENCY              = DAILY \n";
+        print outFile "MACHINE_MPI_CONFIG_FILE         = all \n";
+        
+        if (!$short) {        
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "# The name of the files in \"<TRILINOS_DIR>/testharness/elements-trilinos\"\n";
+            print outFile "# containing the machine-independent configure options for this configuration\n";
+            print outFile "# of the test-harness. List multiple files in order to have the test-harness\n";
+            print outFile "# attempt to configure, build, and test each configuration in order.\n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: YES\n";
+            print outFile "# - value required: YES\n";
+            print outFile "\n";
+        }
+        
+        print outFile "TRILINOS_CONFIG_FILES           = all \n";
+        
+        if (!$short) {      
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";         
+            print outFile "# Indicate how the test-harness should report results. If the value is EMAIL,\n";              
+            print outFile "# then emails will be sent to ________. If the value is anything but EMAIL,\n";               
+            print outFile "# then no emails will be sent at all.\n";      
+            print outFile "#\n";    
+            print outFile "# - recognized values: EMAIL <outputFile>\n";          
+            print outFile "#   (where <outputFile> is the name of the local file to which the test-harness\n"; 
+            print outFile "#   should write the results)\n"; 
+            print outFile "# - multiple values recognized: NO\n"; 
+            print outFile "# - value required: YES\n";
+            print outFile "# - the absolute path of the Trilinos directly above 'testharness' can be\n";
+            print outFile "#   referred to with the value <TRILINOS_DIR>\n";
+            print outFile "# - relative paths are relative to <TRILINOS_DIR>/testharness\n";   
+            print outFile "\n";
+        }
+        
+        print outFile "REPORT_METHOD                   = EMAIL\n";
+        
+        print outFile "\n";
+        print outFile "#===============================================================================\n";
+        print outFile "# Less frequently changed configuration options\n";
+        print outFile "#===============================================================================\n";
+        print outFile "\n";
+        
+        if (!$short) {        
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "# Provide the name of the serial build directory that should be configured,\n";
+            print outFile "# compiled and tested by the test harness, or leave blank to indicate that there\n";
+            print outFile "# should be no serial build. Directory must be a subdirectory of 'Trilinos/'.\n"; 
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: NO (unless MPI_DIR is omitted)\n";
+            print outFile "\n";
+        }
+        
+        print outFile "SERIAL_DIR                      = SERIAL\n";
+        
+        if (!$short) {    
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n"; 
+            print outFile "# Provide the name of the mpi build directory that should be configured,\n";
+            print outFile "# compiled and tested by the test harness, or leave blank to indicate that there\n";
+            print outFile "# should be no mpi build. Directory must be a subdirectory of 'Trilinos/'.\n"; 
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: NO (unless SERIAL_DIR is omitted\n";        
+            print outFile "\n";
+        }
+        
+        print outFile "MPI_DIR                         = MPI\n";
+        
+        if (!$short) {    
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";     
+            print outFile "# (LAM only) path and filename of the file containing the names of the machines\n"; 
+            print outFile "# to be used for parallel jobs. If this file doesn't exist, parallel jobs will\n";
+            print outFile "# be run on the local machine only. (If this is the case, make sure\n";  
+            print outFile "# MPI_STARTUP_CMD reflects this.)\n";           
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: NO\n";
+            print outFile "# - the absolute path of the Trilinos directly above 'testharness' can be\n";
+            print outFile "#   referred to with the value <TRILINOS_DIR>\n";          
+            print outFile "\n";
+        }
+        
+        print outFile "HOST_FILE                       = <TRILINOS_DIR>/hostfile \n";
+        
+        if (!$short) {    
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";     
+            print outFile "# Indicate how mail should be sent. The unix program sendmail is the default.\n"; 
+            print outFile "#\n";
+            print outFile "# - recognized values: sendmail smtp::<mail_server> \n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: YES\n";      
+            print outFile "\n";
+        }
+        
+        print outFile "MAIL_METHOD                     = sendmail \n";
+        
+        if (!$short) {      
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";         
+            print outFile "# Give the flags you would like passed to 'make'. These should be given as one\n";  
+            print outFile "# string, as it will be passed verbatim.\n";         
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";  
+            print outFile "# - value required: NO\n";  
+            print outFile "\n";
+        }
+        
+        print outFile "MAKE_FLAGS                      = \n";
         
         if (!$short) {      
             print outFile "\n";  
             print outFile "#-------------------------------------------------------------------------------\n";
-            print outFile "# Set location of CVS command on this system.\n";
+            print outFile "# Indicate whether or not the test-harness should attempt to update the CVS\n";
+            print outFile "# working copy.\n";
             print outFile "#\n";
+            print outFile "# - recognized values: YES NO \n";
             print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: YES\n";
             print outFile "\n";
         }
         
-        print outFile "CVS_CMD                = cvs \n";
-        
-        if (!$short) {       
-            print outFile "\n"; 
-            print outFile "#-------------------------------------------------------------------------------\n";
-            print outFile "#\n";
-            print outFile "# === Unsure about this option ===\n";
-            print outFile "#\n";
-            print outFile "# (LAM only) name of the file containing the names of the machines to be used\n"; 
-            print outFile "# for parallel jobs. If this file doesn't exist, parallel jobs will be run on\n";
-            print outFile "# the local machine only.\n";
-            print outFile "#\n";
-            print outFile "# - multiple values recognized: NO\n";
-            print outFile "# - HOMEDIR can be referred to with the value <HOMEDIR>\n";
-            print outFile "\n";
-        }
-        
-        print outFile "BASE_HOST_FILE         = hostfile \n";
+        print outFile "CVS_UPDATE                      = YES \n";
         
         if (!$short) {      
             print outFile "\n";  
             print outFile "#-------------------------------------------------------------------------------\n";
-            print outFile "#\n";
-            print outFile "# === Unsure about this option ===\n";
+            print outFile "# CVS command on this system. Note that CVS access must not require a password.\n";
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";
-            print outFile "# - HOMEDIR can be referred to with the value <HOMEDIR>\n";
-            print outFile "# - BASE_HOST_FILE can be referred to with the value <BASE_HOST_FILE>\n";            
+            print outFile "# - value required: YES\n";
             print outFile "\n";
         }
         
-        print outFile "HOST_FILE              = <HOMEDIR>/<BASE_HOST_FILE> \n";
+        print outFile "CVS_CMD                         = cvs \n";
+        
+        if (!$short) {      
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "# Specify the command to start up the MPI implementation on this machine.\n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: YES (if there are parallel tests)\n";
+            print outFile "# - the value of the HOST_FILE option can be referred to with the value\n";
+            print outFile "#   <HOST_FILE>\n";   
+            print outFile "\n";
+        }
+        
+        print outFile "MPI_STARTUP_CMD                 = \"lamboot <HOST_FILE> -v\"\n";
+        
+        if (!$short) {      
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "# Specify the command (if any) to shut down the MPI implementation on this\n";
+            print outFile "# machine.\n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: NO\n";
+            print outFile "\n";
+        }
+        
+        print outFile "MPI_SHUTDOWN_CMD                = lamhalt \n";
         
         if (!$short) {        
             print outFile "\n";
             print outFile "#-------------------------------------------------------------------------------\n";
-            print outFile "# List the names of all of the build directories that should be configured,\n";
-            print outFile "# compiled and tested for the test harness.  Each build directory must be a\n"; 
-            print outFile "# subdirectory of 'Trilinos/'.  One subdirectory per line.  Each directory\n"; 
-            print outFile "# listed must contain an \"invoke-configure\" file that contains the options\n";
-            print outFile "# that should be passed to configure.\n";
+            print outFile "# List the email addresses to which an overall summary of this run of the\n";
+            print outFile "# testharness should be sent.\n";
             print outFile "#\n";
             print outFile "# - multiple values recognized: YES\n";
+            print outFile "# - value required: NO\n";
             print outFile "\n";
         }
         
-        print outFile "BUILD_DIRS             = MPI SERIAL\n";
+        print outFile "SUMMARY_EMAIL                   = \n";
+        
+        if (!$short) {        
+            print outFile "\n";
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "# List the email addresses to which test summaries and error messages will be\n";
+            print outFile "# sent for test where no script owner exists.\n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: YES\n";
+            print outFile "# - value required: NO\n";
+            print outFile "\n";
+        }
+        
+        print outFile "NO_SCRIPT_OWNER_EMAIL           = \n";
         
         if (!$short) {        
             print outFile "\n";
             print outFile "#-------------------------------------------------------------------------------\n";
             print outFile "# List the email addresses to which summaries and error messages will be sent\n";
-            print outFile "# by default (i.e. when no script owner exists for a particular test).\n";
+            print outFile "# regardless of whether or not the script has an owner.\n";
             print outFile "#\n";
             print outFile "# - multiple values recognized: YES\n";
+            print outFile "# - value required: NO\n";
             print outFile "\n";
         }
         
-        print outFile "DEFAULT_EMAILS         = \n";
+        print outFile "ALL_SCRIPTS_EMAIL               = \n";
         
         print outFile "\n";
         print outFile "# end test-harness-config";
