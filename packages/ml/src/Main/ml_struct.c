@@ -31,9 +31,10 @@ extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 
 /* Definitions for the GGB method */
 #if defined(HAVE_ML_ARPACK) || defined(HAVE_ML_PARPACK)
-#define GGBcycFirst     /* #define GGBcycSecond */
-#define store_AQ        /* May not be defined if storage is an issue (but slower) */ 
-#define newrap          /* Should always be defined for better performance */
+#define GGBcycSecond     /* #define GGBcycFirst */
+/*#define store_AQ*/        /* May not be defined if storage is an issue (but slower) */ 
+#define newrap              /* Should always be defined for better performance */
+#define ML_ggb_SymmetricCycle  /* May not be defined. In my experence is better */
 #endif
 
 /* ************************************************************************* *
@@ -2872,13 +2873,14 @@ int ML_Iterate(ML *ml, double *sol, double *rhs)
 /*****************************************************************************/
 /* set to 1 to use another ML cycle after ggb, to 0 otherwise                */
 /*-------------------------------------------------------------------------- */
-
-static int ML_ggb_SymmetricCycle = 0;
+/*
+static int ML_ggb_SymmetricCycle = 1;
 int ML_ggb_Set_SymmetricCycle(int flag) 
 {
   ML_ggb_SymmetricCycle = flag;
   return 0;
 }
+*/
 
 static int ML_ggb_CoarseSolver = 1;
 int ML_ggb_Set_CoarseSolver(int flag) 
@@ -2987,7 +2989,17 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
        /* Manualy perform the 2 level GGB cycle */
        ML_Cycle_GGB(ml_ggb, dout, din_temp);
 
+
+       /* Used for symmetric GGB cycle */
+#ifdef ML_ggb_SymmetricCycle
+   	 ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
+		     ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
 #endif
+
+
+#endif
+     }
+
        
        /*
 	 
@@ -3013,13 +3025,9 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
        
        
        /* "after cycle" only if required (default is yes) */
-       if( ML_ggb_SymmetricCycle == 1 ) {
-	 ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
-		     ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
-       }
 
 
-     }
+
    
    
    /*
@@ -3106,10 +3114,10 @@ extern int ML_Cycle_GGB(ML *ml_ggb, double *sol, double *rhs)
         *	  u = u + Q*(Ac)^(-1) *Q'A*r =
 	*           = u + Q*(Ac)^(-1) *(Qtilde*u - Q'*b)	  
        */  
-  double *tmp1, *tmp2;
+  double *tmp1, *tmp2, *rhs_tmp;
   tmp1  = (double *) ML_allocate(lengc*sizeof(double));
   tmp2  = (double *) ML_allocate(lengf*sizeof(double));
-
+  rhs_tmp = (double *) ML_allocate(lengf*sizeof(double));
 
 #ifdef store_QtransA       
 
@@ -3133,10 +3141,10 @@ extern int ML_Cycle_GGB(ML *ml_ggb, double *sol, double *rhs)
   ML_Operator_Apply( &(ml_ggb->Amat[1]), lengf, sol, lengf, tmp2);
   
   /* Get the fine grid residual */
-  for ( i = 0; i < lengf; i++ )  rhs[i] =  rhs[i] - tmp2[i];
+  for ( i = 0; i < lengf; i++ )  rhs_tmp[i] =  rhs[i] - tmp2[i];
   
   /* Compute the rhs on the coarse grid */
-  ML_Operator_Apply(Rmat, lengf, rhs, lengc, rhs0);
+  ML_Operator_Apply(Rmat, lengf, rhs_tmp, lengc, rhs0);
  
 #endif  
   
@@ -3152,6 +3160,7 @@ extern int ML_Cycle_GGB(ML *ml_ggb, double *sol, double *rhs)
        
   ML_free(tmp1);
   ML_free(tmp2);
+  ML_free(rhs_tmp);
 
 #endif
 
@@ -6025,6 +6034,7 @@ int ML_build_ggb(ML *ml, void *data)
   /* ML_Operator_Print(Pmat, "Pmat"); */
 
   ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
+  /* ML_Operator_Set_ApplyFunc (&(ml_ggb->Rmat[1]), ML_INTERNAL, CSR_densematvec); */
  
 
 
@@ -6119,7 +6129,7 @@ int ML_build_ggb(ML *ml, void *data)
 	rap[count++] = ML_gdot(Nrows, temp,
 	&(zdata[j*Nrows]), ml->comm);
       */
-	rap[count++] =  MLFORTRAN(ddot)(&Nrows, temp, &one, &(zdata[j*Nrows]), &one);
+	rap[count++] =  DDOT_F77(&Nrows, temp, &one, &(zdata[j*Nrows]), &one);
       
     }    
         
