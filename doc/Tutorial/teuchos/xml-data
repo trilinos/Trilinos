@@ -1,0 +1,3 @@
+<solver iterations="1000" tolerance="1e-10" krylov method="gmres">
+<preconditioner type="smoothed aggregation" max levels="4"/>
+</solver>
