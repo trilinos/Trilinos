@@ -1,4 +1,24 @@
 Recommended way to use autoheader:
 
 cd nox
-find . -type f -not -name \*~ -not -path \*CVS\* -not -name .cvsignore -not -name autoheader -exec maintenance/autoheader {} maintenance/header.txt \;
+make distclean
+find . -type f \
+	-not -path \*CVS\* \
+	-not -path \*doc/html\* \
+	-not -path \*doc/latex\* \
+	-not -path \*deps\* \
+	-not -path \*config\* \
+	-not -path \*maintenance\* \
+	-not -name \*~ \
+	-not -name .cvsignore \
+	-not -name \*.o \
+	-not -name \*stamp-h\* \
+	-not -name \*.m4 \
+	-not -name \*# \
+	-not -name NOX_Config\* \
+	-not -name Doxyfile\* \
+	-not -name bootstrap \
+	-not -name configure \
+	-not -name \*.tar.gz \
+	-not -name \*.a \
+	-exec maintenance/autoheader {} maintenance/header.txt \;
