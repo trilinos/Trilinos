@@ -52,22 +52,13 @@ namespace MemMngPack {} // ToDo: Take out latter!
  */
 
 /** \class Teuchos::RefCountPtr
-    \brief Templated class for reference counted smart pointers.
+    \brief Templated class for reference counted smart pointers (see \ref RefCountPtr_stuff "description").
  *
  * This is a class for smart reference counted pointer objects
  * that deletes an object (if the object is owned) that was allocated
  * by <tt>new</tt> after all refereces to it have been removed.
  *
- * For casting, non-member template functions are \ref RefCountPtr_stuff "supplied"
- * to allow the equaivalient to implicit pointer casts and const casts.  Dynamic
- * casting with multiple inheritance is also handled by this implementation.
- *
- * The client must be very careful how this class is used.
- * Conversions from <tt>RefCountPtr<T1></tt> to
- * <tt>RefCountPtr<T2></tt> objects must be handled by the conversion
- * functions.  Never use <tt>get()</tt> to perform a conversion.
- *
- * For a more detailed discussion see this \ref RefCountPtr_stuff "description".
+ * To see how to use this class see \ref RefCountPtr_stuff "description".
  */
 
 namespace Teuchos {
@@ -77,9 +68,234 @@ namespace PrivateUtilityPack {
 }
 
 /** \defgroup RefCountPtr_stuff Reference counting smart pointer class for automatic garbage collection.
- * 
- * ToDo: Put in link to latex paper and shorten this discussion (perhaps just the quickstart).
- *
+  
+For carefully written discussion about what this class is and basic
+details on how to use it see the
+<A HREF="http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf">beginners guide</A>.
+
+<b>Quickstart for <tt>RefCountPtr</tt></b>
+ 
+Here we present ashort, but fairly comprehensive, quick-start for the
+use of <tt>RefCountPtr<></tt>.  The use cases described here
+should cover the overwhelming majority of the use instances of
+<tt>RefCountPtr<></tt> in a typical program.
+
+The following class hierarchy will be used in the C++ examples given
+below.
+
+\code
+
+class A { public: virtual ~A(){} A& operator=(const A&){} virtual void f(){} };
+class B1 : virtual public A {};
+class B2 : virtual public A {};
+class C : virtual public B1, virtual public B2 {};
+
+class D {};
+class E : public D {};
+
+\endcode
+
+All of the following code examples used in this quickstart are assumed
+to be in the namespace <tt>Teuchos</tt> or have appropriate
+<tt>using Teuchos::...</tt> declarations.  This removes the need to
+explicitly use <tt>Teuchos::</tt> to qualify classes, functions and
+other declarations from the <tt>Teuchos</tt> namespace.
+
+<ol>
+
+<li> <b>Creation of <tt>RefCountPtr<></tt> objects</b>
+
+<ol>
+
+<li> <b>Creating a <tt>RefCountPtr<></tt> object using <tt>new</tt></b>
+
+\code
+RefCountPtr<C> c_ptr = rcp(new C);
+\endcode
+
+<li> <b>Creating a <tt>RefCountPtr<></tt> object to an array allocated using <tt>new[n]</tt></b>
+
+\code
+
+RefCountPtr<C> c_ptr = rcp(new C[n],DeallocArrayDelete<C>(),true);
+\endcode
+
+<li> <b>Initializing a <tt>RefCountPtr<></tt> object to NULL</b>
+
+\code
+RefCountPtr<C> c_ptr;
+\endcode
+or
+\code
+RefCountPtr<C> c_ptr = null;
+\endcode
+
+<li> <b>Initializing a <tt>RefCountPtr<></tt> object to an object
+       \underline{not} allocated with <tt>new</tt></b>
+
+\code
+C              c;
+RefCountPtr<C> c_ptr = rcp(&c,false);
+\endcode
+
+
+<li> <b>Representing constantness and non-constantness</b>
+
+<ol>
+
+<li> <b>Non-constant pointer to non-constant object</b>
+\code
+RefCountPtr<C> c_ptr;
+\endcode
+
+<li> <b>Constant pointer to non-constant object</b>
+\code
+const RefCountPtr<C> c_ptr;
+\endcode
+
+<li> <b>Non-Constant pointer to constant object</b>
+\code
+RefCountPtr<const C> c_ptr;
+\endcode
+
+<li> <b>Constant pointer to constant object</b>
+\code
+const RefCountPtr<const C> c_ptr;
+\endcode
+
+</ol>
+
+<li> <b>Copy constructor (implicit casting)</b>
+
+\code
+RefCountPtr<C>       c_ptr  = rcp(new C); // No cast
+RefCountPtr<A>       a_ptr  = c_ptr;      // Cast to base class
+RefCountPtr<const A> ca_ptr = a_ptr;      // Cast from non-const to const
+\endcode
+
+</ol>
+
+<li> <b>Reinitialization of <tt>RefCountPtr<></tt> objects (using assignment operator)</b>
+
+<ol>
+
+<li> <b>Resetting from a raw pointer</b>
+
+\code
+RefCountPtr<A> a_ptr;
+a_ptr = rcp(new C());
+\endcode
+
+<li> <b>Resetting to null</b>
+
+\code
+RefCountPtr<A> a_ptr = rcp(new C());
+a_ptr = null; // The C object will be deleted here
+\endcode
+
+<li> <b>Assigning from a <tt>RefCountPtr<></tt> object</b>
+
+\code
+RefCountPtr<A> a_ptr1;
+RefCountPtr<A> a_ptr2 = rcp(new C());
+a_ptr1 = a_ptr2; // Now a_ptr1 and a_ptr2 point to same C object
+\endcode
+
+</ol>
+
+<li> <b>Accessing the reference-counted object</b>
+
+<ol>
+
+<li> <b>Access to object reference (runtime checked)</b> : <tt>RefCountPtr::operator*()</tt> 
+
+\code
+C &c_ref = *c_ptr;
+\endcode
+
+<li> <b>Access to object pointer (unchecked, may return <tt>NULL</tt>)</b> : <tt>RefCountPtr::get()</tt>
+
+\code
+C *c_rptr = c_ptr.get();
+\endcode
+
+<li> <b>Access to object pointer (runtime checked, will not return <tt>NULL</tt>)</b> : <tt>RefCountPtr::operator*()</tt>
+
+\code
+C *c_rptr = &*c_ptr;
+\endcode
+
+<li> <b>Access of object's member (runtime checked)</b> : <tt>RefCountPtr::operator->()</tt>
+
+\code
+c_ptr->f();
+\endcode
+
+</ol>
+
+<li> <b>Casting</b>
+
+<ol>
+
+<li> <b>Implicit casting (see copy constructor above)</b>
+
+<li> <b>Casting away <tt>const</tt></b> : <tt>rcp_const_cast()</tt>
+
+\code
+RefCountPtr<const A>  ca_ptr = rcp(new C);
+RefCountPtr<A>        a_ptr  = rcp_const_cast<A>(ca_ptr); // cast away const!
+\endcode
+
+<li> <b>Static cast (no runtime check)</b> : <tt>rcp_static_cast()</tt>
+
+\code
+RefCountPtr<D>     d_ptr = rcp(new E);
+RefCountPtr<E>     e_ptr = rcp_static_cast<E>(d_ptr); // Unchecked, unsafe?
+\endcode
+
+<li> <b>Dynamic cast (runtime checked)</b> : <tt>rcp_dynamic_cast()</tt>
+
+\code
+RefCountPtr<A>     a_ptr  = rcp(new C);
+RefCountPtr<B1>    b1_ptr = rcp_dynamic_cast<B1>(a_ptr);  // Checked, safe!
+RefCountPtr<B2>    b2_ptr = rcp_dynamic_cast<B2>(b1_ptr); // Checked, safe!
+RefCountPtr<C>     c_ptr  = rcp_dynamic_cast<C>(b2_ptr);  // Checked, safe!
+\endcode
+
+</ol>
+
+<li> <b>Managing extra data</b>
+
+<ol>
+
+<li> <b>Adding extra data (post destruction of extra data)</b> : <tt>set_extra_data()</tt>
+
+\code
+set_extra_data(rcp(new B1),"A:B1",&a_ptr);
+\endcode
+
+<li> <b>Adding extra data (pre destruction of extra data)</b> : <tt>get_extra_data()</tt>
+
+\code
+set_extra_data(rcp(new B1),"A:B1",&a_ptr,PRE_DESTORY);
+\endcode
+
+<li> <b>Retrieving extra data</b> : <tt>get_extra_data()</tt>
+
+\code
+get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1")->f();
+\endcode
+
+<li> <b>Resetting extra data</b> : <tt>get_extra_data()</tt>
+
+\code
+get_extra_data<RefCountPtr<B1> >(a_ptr,"A:B1") = rcp(new C);
+\endcode
+
+</ol>
+
+</ol>
+
  */
 //@{
 
@@ -89,7 +305,7 @@ enum ENull { null };
 /// Used to specify a pre or post destruction of extra data
 enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
 
-///
+/// Deallocator for <tt>new</tt> which calls <tt>delete</tt>
 template<class T>
 class DeallocDelete
 {
@@ -100,7 +316,7 @@ public:
 	void free( T* ptr ) { if(ptr) delete ptr; }
 };
 
-///
+/// Deallocator for <tt>new []</tt> which calls <tt>delete []</tt>
 template<class T>
 class DeallocArrayDelete
 {
@@ -400,7 +616,7 @@ template<class T, class Dealloc_T>
 RefCountPtr<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem );
 
 ///
-/** \brief Implicit cast of underlying <tt>RefCountPtr</tt> type from T1* to T2*.
+/** \brief Implicit cast of underlying <tt>RefCountPtr</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * The function will compile only if (<tt>T2* p2 = p1.get();</tt>) compiles.
  *
@@ -411,7 +627,7 @@ template<class T2, class T1>
 RefCountPtr<T2> rcp_implicit_cast(const RefCountPtr<T1>& p1);
 
 ///
-/** \brief Static cast of underlying <tt>RefCountPtr</tt> type from T1* to T2*.
+/** \brief Static cast of underlying <tt>RefCountPtr</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * The function will compile only if (<tt>static_cast<T2*>(p1.get());</tt>) compiles.
  *
@@ -423,7 +639,7 @@ template<class T2, class T1>
 RefCountPtr<T2> rcp_static_cast(const RefCountPtr<T1>& p1);
 
 ///
-/** \brief Constant cast of underlying <tt>RefCountPtr</tt> type from T1* to T2*.
+/** \brief Constant cast of underlying <tt>RefCountPtr</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * This function will compile only if (<tt>const_cast<T2*>(p1.get());</tt>) compiles.
  */
@@ -431,7 +647,7 @@ template<class T2, class T1>
 RefCountPtr<T2> rcp_const_cast(const RefCountPtr<T1>& p1);
 
 ///
-/** \brief Dynamic cast of underlying <tt>RefCountPtr</tt> type from T1* to T2*.
+/** \brief Dynamic cast of underlying <tt>RefCountPtr</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * This function will compile only if (<tt>dynamic_cast<T2*>(p1.get());</tt>) compiles.
  */
