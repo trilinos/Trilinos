@@ -469,7 +469,7 @@ int Zoltan_Build_Graph(
 
     /* Allocate recv buffer */
     recvbuf = (char *) ZOLTAN_MALLOC(nrecv * packet_size);
-    if (nrecv && (!sendbuf) ){
+    if (nrecv && (!recvbuf) ){
       /* Not enough space */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
