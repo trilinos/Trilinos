@@ -321,51 +321,6 @@ int i;
 /****************************************************************************/
 /****************************************************************************/
 
-int LB_Set_Tolerance(LB *lb, double tolerance)
-{
-/*
- *  Function to set the tolerance to which the system must be load balanced.
- *  For example, if the tolerance is set to 0.9, 10% load imbalance between
- *  the most heavily loaded processor and the average load will be accepted
- *  as balanced.
- *  Input:
- *    lb                 --  The load balancing object to which this tolerance
- *                           applies.
- *    tolerance          --  The tolerance desired.
- *  Output:
- *    lb                 --  Tolerance field set to appropriate value.
- */
-
-char *yo = "LB_Set_Tolerance";
-
-  /*
-   *  Check tolerance for errors.
-   */
-
-  if (tolerance < 0.0 || tolerance > 1.0) {
-    fprintf(stderr, "Error from %s:  LB Tolerance is invalid:  %f\n", 
-            yo, tolerance);
-    fprintf(stderr, "Tolerance must be between 0 and 1.\n");
-    return (LB_FATAL);
-  }
-
-  /*
-   *  No error; set the tolerance value.
-   */
-
-  lb->Tolerance = tolerance;
-
-  if (lb->Proc == 0) {
-    printf("LB:  Load balancing tolerance = %f\n", tolerance);
-  }
-
-  return (LB_OK);
-}
-
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-
 int LB_Set_Migration(struct LB_Struct *lb, int help)
 {
 /*

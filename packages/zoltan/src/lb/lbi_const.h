@@ -517,24 +517,6 @@ extern int LB_Set_Method(struct LB_Struct *lb, char *string);
 
 /*****************************************************************************/
 /*
- *  Function to set the tolerance to which the system must be load balanced.
- *  For example, if the tolerance is set to 0.9, 10% load imbalance between
- *  the most heavily loaded processor and the average load will be accepted
- *  as balanced.
- *  Input:
- *    struct LB_Struct *lb       --  The load balancing object to which this 
- *                                   tolerance applies.
- *    double tolerance           --  The tolerance desired.
- *  Output:
- *    struct LB_Struct *lb       --  Appropriate fields set to designated value.
- *  Returned value:
- *    int                        --  Error code
- */
-
-extern int LB_Set_Tolerance(struct LB_Struct *lb, double tolerance);
-
-/*****************************************************************************/
-/*
  *  Function to set a flag indicating whether the application wants the
  *  load-balancer to help with data migration.   If migration help is
  *  wanted, routines to pack and unpack object data must be provided by
