@@ -60,7 +60,7 @@ static int RCB_CHECK = 1;
 /*  RCB_STATS = 2  Log times and counts, print for each proc */
 static int RCB_STATS = 1;
 
-void lb_rcb(
+int lb_rcb(
   LB *lb,                     /* The load-balancing structure with info for
                                  the RCB balancer.                           */
   int *num_import,            /* Number of non-local objects assigned to this
@@ -264,7 +264,7 @@ void lb_rcb(
     MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
     if (k > 0) {
       if (proc == 0) printf("RCB ERROR: %d dot weights are <= 0\n",k);
-      return;
+      return DLB_FATAL;
     }
   }
 
@@ -387,7 +387,7 @@ void lb_rcb(
     if (!LB_find_median(coord, wgts, dotmark, dotnum, proc, fractionlo,
                         local_comm, &valuehalf, first_guess, &(counters[0]))) {
       fprintf(stderr, "[%d] %s: Error returned from find_median\n", proc, yo);
-      return;
+      return DLB_FATAL;
     }
 
     if (RCB_STATS) time3 = MPI_Wtime();
@@ -630,6 +630,9 @@ void lb_rcb(
     }
     LB_print_sync_end(lb, TRUE);
   }
+
+  /* Temporary return value until error codes are fully implemented */
+  return(DLB_OK);  
 }
 
 

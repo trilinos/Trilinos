@@ -46,11 +46,14 @@ static char *cvs_dr_exoII_io = "$Id$";
 
 #define LIST_ALLOC 10
 
-int read_elem_info(int, int, PROB_INFO_PTR, ELEM_INFO *);
-int find_surnd_elem(ELEM_INFO *, int **, int *, int *);
-int find_adjacency(int, ELEM_INFO *, int **, int *, int);
-int read_comm_map_info(int, int, PROB_INFO_PTR, ELEM_INFO *);
+static int read_elem_info(int, int, PROB_INFO_PTR, ELEM_INFO *);
+static int find_surnd_elem(ELEM_INFO *, int **, int *, int *);
+static int find_adjacency(int, ELEM_INFO *, int **, int *, int);
+static int read_comm_map_info(int, int, PROB_INFO_PTR, ELEM_INFO *);
 
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
 
 int read_exoII_mesh(int Proc,
                     int Num_Proc,
@@ -58,6 +61,11 @@ int read_exoII_mesh(int Proc,
                     PARIO_INFO_PTR pio_info,
                     ELEM_INFO **elements)
 {
+#ifdef LB_NO_NEMESIS
+  Gen_Error(0, "Fatal:  Nemesis requested but not linked with driver.");
+  return 0;
+
+#else /* !LB_NO_NEMESIS */
   /* Local declarations. */
   char   par_nem_fname[FILENAME_MAX+1], title[MAX_LINE_LENGTH+1];
   char   cmesg[256];
@@ -200,10 +208,17 @@ int read_exoII_mesh(int Proc,
 
   return 1;
 
+#endif /* LB_NO_NEMESIS */
 }
 
-int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
-                   ELEM_INFO elements[])
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+#ifndef LB_NO_NEMESIS
+
+static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
+                          ELEM_INFO elements[])
 {
   /* Local declarations. */
   int    iblk, ielem, inode, lnode, cnode, iplace, len;
@@ -403,8 +418,12 @@ int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   return 1;
 }
 
-int find_surnd_elem(ELEM_INFO elements[], int **sur_elem, int *nsurnd,
-                    int *max_nsur)
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+static int find_surnd_elem(ELEM_INFO elements[], int **sur_elem, int *nsurnd,
+                           int *max_nsur)
 {
   /* Local declarations. */
   int     ielem, inode, lnode;
@@ -472,8 +491,12 @@ int find_surnd_elem(ELEM_INFO elements[], int **sur_elem, int *nsurnd,
   return 1;
 }
 
-int find_adjacency(int Proc, ELEM_INFO elements[],
-                   int **sur_elem, int *nsurnd, int max_nsur)
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+static int find_adjacency(int Proc, ELEM_INFO elements[],
+                          int **sur_elem, int *nsurnd, int max_nsur)
 {
   /* Local declarations. */
   int     i, iblk, nsides, ielem, nscnt, inode, entry;
@@ -655,9 +678,12 @@ int find_adjacency(int Proc, ELEM_INFO elements[],
   return 1;
 }
 
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
 
-int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
-                       ELEM_INFO elements[])
+static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
+                              ELEM_INFO elements[])
 {
   /* Local declarations. */
   int  ielem, imap, loc_elem, iblk, max_len, offset, index;
@@ -847,3 +873,4 @@ int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
 
   return 1;
 }
+#endif /* !LB_NO_NEMESIS */

@@ -46,6 +46,9 @@ static int fill_elements(int, int, PROB_INFO_PTR, ELEM_INFO *, int, int *,
                          int *, int *, int *, float *, int, 
                          float *, float *, float *);
 
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
 
 int read_chaco_mesh(int Proc,
                     int Num_Proc,
@@ -220,7 +223,10 @@ static int fill_elements(
     }
 
     /* now start with the adjacencies */
-    elem[i].nadj = start[i+1] - start[i];
+    if (start != NULL)
+      elem[i].nadj = start[i+1] - start[i];
+    else
+      elem[i].nadj = 0;
     if (elem[i].nadj > 0) {
       elem[i].adj_len = elem[i].nadj;
       elem[i].adj = (int *) malloc (elem[i].nadj * sizeof(int));

@@ -33,6 +33,7 @@ static char *cvs_input_id = "$Id$";
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 
 #include <mpi.h>
 
@@ -393,17 +394,18 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
   /* default file type is nemesis */
   if (pio_info->file_type < 0) pio_info->file_type = NEMESIS_FILE;
 
-#ifndef NEMESIS_IO
+#ifdef LB_NO_NEMESIS
   /* 
-   * if not compiling with the NEMESIS_IO flag (i.e., linking with 
+   * if compiling with the LB_NO_NEMESIS flag (i.e., not linking with 
    * Nemesis library), can't use NEMESIS_FILE file type.
    */
 
   if (pio_info->file_type == NEMESIS_FILE) {
-    Gen_Error(0, "fatal: must compile with NEMESIS_IO for Nemesis file types");
+    Gen_Error(0, "fatal: must link with Nemesis libraries for Nemesis "
+                 "file types");
     return 0;
   }
-#endif /* NEMESIS_IO */
+#endif /* LB_NO_NEMESIS */
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 /*                 Check the parallel IO specifications                      */

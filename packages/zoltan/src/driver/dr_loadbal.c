@@ -36,10 +36,7 @@ static char *cvs_loadbal = "$Id$";
 
 #include "dr_const.h"
 #include "dr_err_const.h"
-
-extern int migrate_elements(int, ELEM_INFO **, struct LB_Struct *, int,
-                            LB_GID *, LB_LID *, int *, int, LB_GID *,
-                            LB_LID *, int *);
+#include "dr_loadbal_const.h"
 
 /*
  *  PROTOTYPES for load-balancer interface functions.
@@ -57,6 +54,10 @@ LB_GEOM_FN get_geom;
 
 LB_NUM_EDGES_FN get_num_edges;
 LB_EDGE_LIST_FN get_edge_list;
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 
 int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
 {
@@ -290,7 +291,7 @@ void get_geom(void *data, LB_GID global_id, LB_LID local_id,
     for (j = 0; j < Mesh.eb_nnodes[elem[local_id].elem_blk]; j++)
       tmp += elem[local_id].coord[j][i];
 
-    coor[i] = tmp / Mesh.num_dims;
+    coor[i] = tmp / Mesh.eb_nnodes[elem[local_id].elem_blk];
   }
 
   *ierr = DLB_OK;
@@ -305,7 +306,7 @@ int get_num_edges(void *data, LB_GID global_id, LB_LID local_id, int *ierr)
 
   if (data == NULL) {
     *ierr = DLB_FATAL;
-    return;
+    return 0;
   }
 
   elem = (ELEM_INFO *) data;

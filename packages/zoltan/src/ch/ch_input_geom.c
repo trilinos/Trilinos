@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "all_allo_const.h"
 #include "ch_input_const.h"
 
@@ -65,14 +66,14 @@ float   **x, **y, **z;		/* coordiates of vertices */
 
     *igeom = ndims;
 
-    *x = (float *) LB_SMALLOC((unsigned) nvtxs * sizeof(float));
+    *x = (float *) malloc((unsigned) nvtxs * sizeof(float));
     (*x)[0] = xc;
     if (ndims > 1) {
-	*y = (float *) LB_SMALLOC((unsigned) nvtxs * sizeof(float));
+	*y = (float *) malloc((unsigned) nvtxs * sizeof(float));
 	(*y)[0] = yc;
     }
     if (ndims > 2) {
-	*z = (float *) LB_SMALLOC((unsigned) nvtxs * sizeof(float));
+	*z = (float *) malloc((unsigned) nvtxs * sizeof(float));
 	(*z)[0] = zc;
     }
 

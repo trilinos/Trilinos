@@ -24,6 +24,7 @@ static char *cvs_octupdatec_id = "$Id$";
 #include "octupdate.h"
 #include "octupdate_const.h"
 #include "migreg_const.h"
+#include "migoct_const.h"
 #include "all_allo_const.h"
 
 /***************************  PROTOTYPES *************************************/
@@ -46,7 +47,7 @@ static int MAXOCTREGIONS = 1;
  *
  * initialize the calls needed to start the octree load balancing rounties
  */
-void lb_oct_init(
+int lb_oct_init(
   LB *lb,                     /* The load-balancing structure with info for
                                  the OCTPART balancer.                       */
   int *num_import,            /* Number of non-local objects assigned to this
@@ -204,6 +205,9 @@ void lb_oct_init(
     POC_delTree(root->oct);
     root = root2;
   }
+
+  /* Temporary return value until error codes are fully implemented. */
+  return(DLB_OK);
 }
 
 /*****************************************************************************/

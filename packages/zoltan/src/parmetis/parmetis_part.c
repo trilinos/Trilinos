@@ -28,7 +28,7 @@ static char *cvs_parmetis_part_id = "$Id$";
 #include "parmetis_const.h"
 #include "ParMetis/parmetis.h"
 
-void LB_ParMetis_Part(
+int LB_ParMetis_Part(
   LB *lb,             /* load balancing object */
   int *num_imp,       /* number of objects to be imported */
   LB_GID** imp_gids,  /* global ids of objects to be imported */
@@ -36,6 +36,11 @@ void LB_ParMetis_Part(
   int **imp_procs     /* list of processors to import from */
 )
 {
+#ifdef LB_NO_PARMETIS
+  fprintf(stderr, "Error: ParMetis requested but not compiled into library.\n");
+  return DLB_FATAL;
+
+#else /* !LB_NO_PARMETIS */
   int i, j, ierr, size, flag, offset, hi, ndims;
   int num_obj, nedges, sum_edges, max_edges, edgecut;
   int options[4], *destproc, *nbors_proc;
@@ -599,7 +604,7 @@ void LB_ParMetis_Part(
   if (get_geom_data){
     LB_safe_free((void **) &xyz);
   }
-
+#endif /* LB_NO_PARMETIS */
 }
 
 

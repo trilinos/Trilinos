@@ -20,10 +20,6 @@ static char *cvs_dr_input_const = "$Id$";
 #ifndef _DR_INPUT_CONST_H_
 #define _DR_INPUT_CONST_H_
 
-/* Define NEMESIS_IO to use Nemesis I/O.              */
-/* Undefine NEMESIS_IO to avoid compiling in Nemesis. */
-#define NEMESIS_IO
-
 /* define the input file types */
 #define NEMESIS_FILE 0
 #define CHACO_FILE   1
@@ -63,30 +59,45 @@ typedef struct Parallel_IO *PARIO_INFO_PTR;
 
 
 /* Function prototypes */
-extern
-int read_cmd_file(
+extern int read_cmd_file(
   char *filename,
   PROB_INFO_PTR prob,
   PARIO_INFO_PTR pio_info
 );
 
-int check_inp(
+extern int check_inp(
   PROB_INFO_PTR prob,
   PARIO_INFO_PTR pio_info
 );
 
-void brdcst_cmd_info(
+extern void brdcst_cmd_info(
   int Proc,
   PROB_INFO_PTR prob,
   PARIO_INFO_PTR pio_info
 );
 
-void gen_par_filename(
+extern void gen_par_filename(
   char *scalar_fname,
   char *par_fname,
   PARIO_INFO_PTR pio_info,
   int proc_for,
   int nprocs
+);
+
+extern int read_exoII_mesh(
+  int Proc,
+  int Num_Proc,
+  PROB_INFO_PTR prob,
+  PARIO_INFO_PTR pio_info,
+  ELEM_INFO **elements
+);
+
+extern int read_chaco_mesh(
+  int Proc,
+  int Num_Proc,
+  PROB_INFO_PTR prob,
+  PARIO_INFO_PTR pio_info,
+  ELEM_INFO **elements
 );
 
 
