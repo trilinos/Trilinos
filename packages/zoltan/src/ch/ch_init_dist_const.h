@@ -27,7 +27,7 @@ static char *cvs_ch_init_dist_const_id = "$Id$";
 /* define the Chaco initial distribution types */
 #define INITIAL_FILE   0
 #define INITIAL_LINEAR 1
-#define INITIAL_DEAL   2
+#define INITIAL_CYCLIC 2
 
 extern void ch_dist_init(int, int, PARIO_INFO_PTR);
 extern int ch_dist_num_vtx(int);

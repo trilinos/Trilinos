@@ -89,14 +89,14 @@ Zoltan Parameters	= RCB_REUSE=0
 # where <option> is
 #       linear  -- gives the first n/p vertices to proc 0, the
 #                  next n/p vertices to proc 1, etc.  
-#       deal    -- assigns the vertices to processors as one would
+#       cyclic  -- assigns the vertices to processors as one would
 #                  deal cards; i.e., gives the first vertex to proc 0, 
 #                  the second vertex to proc 1, ..., the pth vertex to 
 #                  proc (p-1),the (p+1)th vertex to proc 0, the (p+2)th 
 #                  vertex to proc 1, etc.
 # If an initial distribution is not specified, the default is linear.
 # For example,
-#       File Type = chaco, initial distribution = deal
+#       File Type = chaco, initial distribution = cyclic
 #-----------------------------------------------------------------------------
 File Type		= NemesisI
 

@@ -121,8 +121,8 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
                 if (strstr(cptr2, "linear")) {
                   pio_info->init_dist_type = INITIAL_LINEAR;
                 }
-                else if (strstr(cptr2, "deal")) {
-                  pio_info->init_dist_type = INITIAL_DEAL;
+                else if (strstr(cptr2, "cyclic")) {
+                  pio_info->init_dist_type = INITIAL_CYCLIC;
                 }
                 else {
                   Gen_Error(0, "Invalid Chaco initial distribution type.");

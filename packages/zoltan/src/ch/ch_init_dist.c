@@ -31,7 +31,7 @@ static char *cvs_ch_init_dist_id = "$Id$";
  *  Methods currently implemented:
  *    INITIAL_LINEAR:  assigns the first n/p vertices to proc 0, the
  *                     next n/p vertices to proc 1, etc.
- *    INITIAL_DEAL:    deals out the vertices like cards; i.e., proc 0
+ *    INITIAL_CYCLIC:    deals out the vertices like cards; i.e., proc 0
  *                     gets the first vertex, proc 1 gets the second vertex,
  *                     ..., proc p-1 gets the pth vertex, proc 0 gets the
  *                     (p+1)th vertex, proc 1 gets the (p+2)th vertex, etc.
@@ -83,7 +83,7 @@ void ch_dist_init(int num_proc, int gnvtxs, PARIO_INFO_PTR pio_info)
     /* create the vtxdist array. */
     create_Vtxdist();
     break;
-  case INITIAL_DEAL:
+  case INITIAL_CYCLIC:
     /* no initialization needed for this method. */
     break;
   default: {
@@ -113,7 +113,7 @@ int num;
   case INITIAL_LINEAR:
     num = Vtxdist[target_proc+1] - Vtxdist[target_proc];
     break;
-  case INITIAL_DEAL:
+  case INITIAL_CYCLIC:
     num = Gnvtxs / Num_Proc;
     if ((Gnvtxs % Num_Proc) > target_proc)
       num++;
@@ -169,7 +169,7 @@ int i;
     for (i = Vtxdist[target_proc]; i < Vtxdist[target_proc+1]; i++)
       vtx_list[(*nvtx)++] = i;
     break;
-  case INITIAL_DEAL:
+  case INITIAL_CYCLIC:
     for (i = target_proc; i < Gnvtxs; i+=Num_Proc) 
         vtx_list[(*nvtx)++] = i;
     break;
@@ -199,8 +199,8 @@ int p;
       /* Compare with <= since v is 1-based and Vtxdist is 0-based. */
       if (v <= Vtxdist[p+1]) break;
     break;
-  case INITIAL_DEAL:
-    /* test for (v-1) as v is 1-based and INITIAL_DEAL equations are 0-based */
+  case INITIAL_CYCLIC:
+    /* test for (v-1) as v is 1-based and INITIAL_CYCLIC equations are 0-based */
     p = (v-1) % Num_Proc;
     break;
   default:
