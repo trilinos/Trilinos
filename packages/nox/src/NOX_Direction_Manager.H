@@ -58,6 +58,9 @@ class Manager : public Generic {
 
 public:
 
+  //! Empty Constructor
+  Manager();
+
   //! Constructor
   Manager(Parameter::List& params);
 

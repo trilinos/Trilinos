@@ -35,13 +35,18 @@
 // All the different direction methods 
 #include "NOX_Direction_Newton.H"
 #include "NOX_Direction_SteepestDescent.H"
-//#include "NOX_Direction_Dogleg.H"
-//#include "NOX_Direction_Broyden.H"
 
+#include "NOX_Utils.H"
 #include "NOX_Parameter_List.H"
 
 using namespace NOX;
 using namespace NOX::Direction;
+
+Manager::Manager() :
+  method(""),
+  ptr(NULL)
+{
+}
 
 Manager::Manager(Parameter::List& params) :
   method(""),
@@ -57,7 +62,7 @@ Manager::~Manager()
 
 bool Manager::reset(Parameter::List& params)
 {
-   string newmethod = params.getParameter("Method", "Newton");
+  string newmethod = params.getParameter("Method", "Newton");
 
   if (method != newmethod) {
     
@@ -91,7 +96,12 @@ bool Manager::reset(Parameter::List& params)
 bool Manager::operator()(Abstract::Vector& dir, Abstract::Group& grp, 
 			 const Solver::Generic& solver) 
 {
+  if (ptr == NULL) {
+    if (Utils::doPrint(NOX::Utils::Warning)) 
+      cout << "Calling NOX::Direction::Manager::operator() on uninitialized direction" << endl;
+    return false;
+  }
+
   return ptr->operator()(dir, grp, solver);
 }
-
 
