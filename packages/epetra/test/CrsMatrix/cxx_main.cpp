@@ -52,6 +52,8 @@ int power_method(bool TransA, Epetra_CrsMatrix& A,
 		 double * lambda, int niters, double tolerance,
 		 bool verbose);
 
+int check_graph_sharing(Epetra_Comm& Comm);
+
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, forierr = 0;
@@ -200,6 +202,7 @@ int main(int argc, char *argv[])
 
   if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
 
+  EPETRA_TEST_ERR(check_graph_sharing(Comm),ierr);
 
   // Create vectors for Power method
 
@@ -969,3 +972,48 @@ int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonz
 
   return (ierr);
 }
+
+int check_graph_sharing(Epetra_Comm& Comm)
+{
+  int numLocalElems = 5;
+  int numProcs = Comm.NumProc();
+  int localProc = Comm.MyPID();
+  int firstElem = localProc*numLocalElems;
+  int i, err;
+  Epetra_Map map(-1, numLocalElems, 0, Comm);
+
+  Epetra_CrsMatrix* A = new Epetra_CrsMatrix(Copy, map, 1);
+
+  for(i=0; i<numLocalElems; ++i) {
+    int row = firstElem+i;
+    int col = row;
+    double val = 1.0;
+
+    err = A->InsertGlobalValues(row, 1, &val, &col);
+    if (err != 0) {
+      cerr << "A->InsertGlobalValues("<<row<<") returned err="<<err<<endl;
+      return(err);
+    }
+  }
+
+  A->FillComplete();
+
+  Epetra_CrsMatrix B(Copy, A->Graph());
+
+  delete A;
+
+  for(i=0; i<numLocalElems; ++i) {
+    int row = firstElem+i;
+    int col = row;
+    double val = 1.0;
+
+    err = B.ReplaceGlobalValues(row, 1, &val, &col);
+    if (err != 0) {
+      cerr << "B.InsertGlobalValues("<<row<<") returned err="<<err<<endl;
+      return(err);
+    }
+  }
+
+  return(0);
+}
+

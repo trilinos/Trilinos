@@ -42,7 +42,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_(0),
+    Graph_(CV, RowMap, NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
     constructedWithFilledGraph_(false),
@@ -50,7 +50,6 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, NumEntriesPerRow, StaticProfile);
   InitializeDefaults();
   Allocate();
 }
@@ -60,7 +59,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_(0),
+    Graph_(CV, RowMap, NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
     constructedWithFilledGraph_(false),
@@ -68,7 +67,6 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, NumEntriesPerRow, StaticProfile);
   InitializeDefaults();
   Allocate();
 }
@@ -78,7 +76,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_(0),
+    Graph_(CV, RowMap, ColMap, NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
     constructedWithFilledGraph_(false),
@@ -86,7 +84,6 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumEntriesPerRow, StaticProfile);
   InitializeDefaults();
   Allocate();
 }
@@ -97,7 +94,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_(0),
+    Graph_(CV, RowMap, ColMap,  NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
     constructedWithFilledGraph_(false),
@@ -105,7 +102,6 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
-  Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap,  NumEntriesPerRow, StaticProfile);
   InitializeDefaults();
   Allocate();
 }
@@ -114,7 +110,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& 
   : Epetra_DistObject(Graph.Map(), "Epetra::CrsMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_((Epetra_CrsGraph*) &Graph),
+    Graph_(Graph),
     Allocated_(false),
     StaticGraph_(true),
     constructedWithFilledGraph_(false),
@@ -132,7 +128,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix)
   : Epetra_DistObject(Matrix),
     Epetra_CompObject(Matrix),
     Epetra_BLAS(),
-    Graph_(0),
+    Graph_(Matrix.Graph()),
     Allocated_(Matrix.Allocated_),
     StaticGraph_(false),
     UseTranspose_(Matrix.UseTranspose_),
@@ -168,7 +164,7 @@ Epetra_CrsMatrix& Epetra_CrsMatrix::operator=(const Epetra_CrsMatrix& src)
 
   CV_ = src.CV_;
 
-  Graph_ = new Epetra_CrsGraph(src.Graph());
+  Graph_ = src.Graph_;
   Allocate();
   for (int i=0; i<NumMyRows_; i++) {
     int NumEntries = NumEntriesPerRow_[i];
@@ -202,9 +198,9 @@ int Epetra_CrsMatrix::Allocate() {
   int i, j;
 
   // Set direct access pointers to graph info (needed for speed)
-  NumEntriesPerRow_ = Graph_->NumIndicesPerRow();
-  NumAllocatedEntriesPerRow_ = Graph_->NumAllocatedIndicesPerRow();
-  Indices_ = Graph_->Indices();
+  NumEntriesPerRow_ = Graph_.NumIndicesPerRow();
+  NumAllocatedEntriesPerRow_ = Graph_.NumAllocatedIndicesPerRow();
+  Indices_ = Graph_.Indices();
 
   // Allocate Values array
   Values_ = new double*[NumMyRows_];
@@ -274,11 +270,6 @@ void Epetra_CrsMatrix::DeleteMemory()
   delete [] Values_;
   Values_ = NULL;
 
-  if (!StaticGraph()) {
-    delete Graph_; // We created the graph, so must delete it.
-    Graph_ = NULL;
-  }
-
   NumMyRows_ = 0;
 
   Allocated_ = false;
@@ -313,8 +304,8 @@ int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
     EPETRA_CHK_ERR(-2); // Cannot insert global values into local graph
   if(IndicesAreContiguous()) 
     EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and newed
-  Graph_->SetIndicesAreGlobal(true);
-  Row = Graph_->LRID(Row); // Find local row number for this global row index
+  Graph_.SetIndicesAreGlobal(true);
+  Row = Graph_.LRID(Row); // Find local row number for this global row index
 
   EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
 
@@ -330,7 +321,7 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
     EPETRA_CHK_ERR(-2); // Cannot insert global values into filled graph
   if(IndicesAreContiguous() && CV_==Copy) 
     EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and new
-  Graph_->SetIndicesAreLocal(true);
+  Graph_.SetIndicesAreLocal(true);
 
   EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
 
@@ -357,8 +348,8 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
       int* testIndices;
       int testRow = Row;
       if(IndicesAreGlobal()) 
-	testRow = Graph_->LRID( Row );
-      EPETRA_CHK_ERR(Graph_->ExtractMyRowView(testRow, testNumEntries, testIndices));
+	testRow = Graph_.LRID( Row );
+      EPETRA_CHK_ERR(Graph_.ExtractMyRowView(testRow, testNumEntries, testIndices));
 			
       bool match = true;
       if(NumEntries != testNumEntries) 
@@ -380,18 +371,18 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
 		
     int tmpNumEntries = NumEntries;
 		
-    if(Graph_->HaveColMap()) { //must insert only valid indices, values
+    if(Graph_.HaveColMap()) { //must insert only valid indices, values
       double* tmpValues = Values;
       Values = new double[NumEntries];
       int loc = 0;
       if(IndicesAreLocal()) {
         for(int i = 0; i < NumEntries; ++i)
-          if(Graph_->ColMap().MyLID(Indices[i])) 
+          if(Graph_.ColMap().MyLID(Indices[i])) 
 	    Values[loc++] = tmpValues[i];
       }
       else {
         for(int i = 0; i < NumEntries; ++i)
-          if(Graph_->ColMap().MyGID(Indices[i])) 
+          if(Graph_.ColMap().MyGID(Indices[i])) 
 	    Values[loc++] = tmpValues[i];
       }
       if(NumEntries != loc) 
@@ -422,7 +413,7 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
       Values_[Row][j] = Values[j-start];
 
     NumEntries = tmpNumEntries;
-    if(Graph_->HaveColMap()) 
+    if(Graph_.HaveColMap()) 
       delete[] Values;
   }
 
@@ -430,7 +421,7 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
 
   if(!StaticGraph()) {
-    EPETRA_CHK_ERR(Graph_->InsertIndices(Row, NumEntries, Indices));
+    EPETRA_CHK_ERR(Graph_.InsertIndices(Row, NumEntries, Indices));
   }
 
   EPETRA_CHK_ERR(ierr);
@@ -453,14 +444,14 @@ int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, double * Valu
   int ierr = 0;
   int Loc;
 
-  Row = Graph_->LRID(Row); // Normalize row range
+  Row = Graph_.LRID(Row); // Normalize row range
     
   if (Row < 0 || Row >= NumMyRows_) 
     EPETRA_CHK_ERR(-1); // Not in Row range
     
   for (j=0; j<NumEntries; j++) {
     int Index = Indices[j];
-    if (Graph_->FindGlobalIndexLoc(Row,Index,j,Loc)) 
+    if (Graph_.FindGlobalIndexLoc(Row,Index,j,Loc)) 
       Values_[Row][Loc] = Values[j];
     else 
       ierr = 2; // Value Excluded
@@ -490,7 +481,7 @@ int Epetra_CrsMatrix::ReplaceMyValues(int Row, int NumEntries, double * Values, 
   double* RowValues = Values_[Row]; 
   for (j=0; j<NumEntries; j++) {
     int Index = Indices[j];
-    if (Graph_->FindMyIndexLoc(Row,Index,j,Loc)) 
+    if (Graph_.FindMyIndexLoc(Row,Index,j,Loc)) 
       RowValues[Loc] = Values[j];
     else 
       ierr = 2; // Value Excluded
@@ -510,7 +501,7 @@ int Epetra_CrsMatrix::ReplaceOffsetValues(int Row, int NumEntries,
   int j;
   int ierr = 0;
 
-  Row = Graph_->LRID(Row); // Normalize row range
+  Row = Graph_.LRID(Row); // Normalize row range
     
   if (Row < 0 || Row >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
@@ -538,34 +529,34 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
   int ierr = 0;
   int Loc;
 
-  Row = Graph_->LRID(Row); // Normalize row range
+  Row = Graph_.LRID(Row); // Normalize row range
     
   if (Row < 0 || Row >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
   }
 
-  if (StaticGraph() && !Graph_->HaveColMap()) {
+  if (StaticGraph() && !Graph_.HaveColMap()) {
     EPETRA_CHK_ERR(-1);
   }
 
   if (!StaticGraph()) {
     for (j=0; j<NumEntries; j++) {
       int Index = Indices[j];
-      if (Graph_->FindGlobalIndexLoc(Row,Index,j,Loc))
+      if (Graph_.FindGlobalIndexLoc(Row,Index,j,Loc))
         Values_[Row][Loc] += Values[j];
       else
         ierr = 2; // Value Excluded
     }
   }
   else {
-    const Epetra_BlockMap& colmap = Graph_->ColMap();
-    int NumColIndices = Graph_->NumMyIndices(Row);
-    const int* ColIndices = Graph_->Indices(Row);
+    const Epetra_BlockMap& colmap = Graph_.ColMap();
+    int NumColIndices = Graph_.NumMyIndices(Row);
+    const int* ColIndices = Graph_.Indices(Row);
 
     double* RowValues = Values_[Row]; 
     for (j=0; j<NumEntries; j++) {
       int Index = colmap.LID(Indices[j]);
-      if (Graph_->FindMyIndexLoc(NumColIndices,ColIndices,Index,j,Loc)) 
+      if (Graph_.FindMyIndexLoc(NumColIndices,ColIndices,Index,j,Loc)) 
         RowValues[Loc] += Values[j];
       else 
         ierr = 2; // Value Excluded
@@ -597,7 +588,7 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, double * Values, 
   double* RowValues = Values_[Row];
   for (j=0; j<NumEntries; j++) {
     int Index = Indices[j];
-    if (Graph_->FindMyIndexLoc(Row,Index,j,Loc)) 
+    if (Graph_.FindMyIndexLoc(Row,Index,j,Loc)) 
       RowValues[Loc] += Values[j];
     else 
       ierr = 2; // Value Excluded
@@ -615,7 +606,7 @@ int Epetra_CrsMatrix::SumIntoOffsetValues(int Row, int NumEntries, double * Valu
   int j;
   int ierr = 0;
 
-  Row = Graph_->LRID(Row); // Normalize row range
+  Row = Graph_.LRID(Row); // Normalize row range
     
   if (Row < 0 || Row >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
@@ -646,21 +637,21 @@ int Epetra_CrsMatrix::FillComplete(const Epetra_Map& DomainMap,
 {
   int returnValue = 0;
 
-  if (Graph_->Filled()) {
+  if (Graph_.Filled()) {
     if (!constructedWithFilledGraph_ && !matrixFillCompleteCalled_) {
       returnValue = 2;
     }
   }
 
   if (!StaticGraph()) {
-    if (Graph_->MakeIndicesLocal(DomainMap, RangeMap) < 0) {
+    if (Graph_.MakeIndicesLocal(DomainMap, RangeMap) < 0) {
       return(-1);
     }
   }
   SortEntries();  // Sort column entries from smallest to largest
   MergeRedundantEntries(); // Get rid of any redundant index values
   if (!StaticGraph()) {
-    if (Graph_->FillComplete(DomainMap, RangeMap) < 0) {
+    if (Graph_.FillComplete(DomainMap, RangeMap) < 0) {
       return(-2);
     }
   }
@@ -720,7 +711,7 @@ int Epetra_CrsMatrix::SortEntries() {
       m = m/2;
     }
   }
-  Graph_->SetSorted(true); // This also sorted the graph
+  Graph_.SetSorted(true); // This also sorted the graph
   return(0);
 }
 
@@ -758,7 +749,7 @@ int Epetra_CrsMatrix::MergeRedundantEntries() {
     }
   }
   
-  EPETRA_CHK_ERR(Graph_->RemoveRedundantIndices()); // Remove redundant indices and then return
+  EPETRA_CHK_ERR(Graph_.RemoveRedundantIndices()); // Remove redundant indices and then return
   return(0);
 }
 
@@ -790,7 +781,7 @@ int Epetra_CrsMatrix::OptimizeStorage() {
   if ((CV_==View) && !Contiguous) 
     EPETRA_CHK_ERR(-1);  // This is user data, it's not contiguous and we can't make it so.
 
-  int ierr = Graph_->OptimizeStorage(); // Make sure graph has optimized storage
+  int ierr = Graph_.OptimizeStorage(); // Make sure graph has optimized storage
   if (ierr) 
     EPETRA_CHK_ERR(ierr);
 
@@ -798,7 +789,7 @@ int Epetra_CrsMatrix::OptimizeStorage() {
     return(0); // Everything is done.  Return
 
   // Compute Number of Nonzero entries (Done in FillComplete, but we may not have been there yet.)
-  int NumMyNonzeros = Graph_->NumMyNonzeros();
+  int NumMyNonzeros = Graph_.NumMyNonzeros();
 
   // Allocate one big array for all values
   if (!(Graph().StaticProfile())) { // If static profile, All_Values_ is already allocated, only need to pack data
@@ -831,7 +822,7 @@ int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries
 					   int * Indices) const 
 {
 
-  int ierr = Graph_->ExtractGlobalRowCopy(Row, Length, NumEntries, Indices);
+  int ierr = Graph_.ExtractGlobalRowCopy(Row, Length, NumEntries, Indices);
   if (ierr) 
     EPETRA_CHK_ERR(ierr);
 
@@ -843,7 +834,7 @@ int Epetra_CrsMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, do
 				       int * Indices) const 
 {
 
-  int ierr = Graph_->ExtractMyRowCopy(Row, Length, NumEntries, Indices);
+  int ierr = Graph_.ExtractMyRowCopy(Row, Length, NumEntries, Indices);
   if (ierr) 
     EPETRA_CHK_ERR(ierr);
 
@@ -863,7 +854,7 @@ int Epetra_CrsMatrix::NumMyRowEntries(int Row, int & NumEntries) const
 int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries, double * Values) const 
 {
 
-  int Row0 = Graph_->RowMap().LID(Row); // Normalize row range
+  int Row0 = Graph_.RowMap().LID(Row); // Normalize row range
 
   EPETRA_CHK_ERR(ExtractMyRowCopy(Row0, Length, NumEntries, Values));
   return(0);
@@ -943,7 +934,7 @@ int Epetra_CrsMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
 int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& Values, int *& Indices) const 
 {
 
-  int ierr = Graph_->ExtractGlobalRowView(Row, NumEntries, Indices);
+  int ierr = Graph_.ExtractGlobalRowView(Row, NumEntries, Indices);
   if (ierr) 
     EPETRA_CHK_ERR(ierr);
 
@@ -953,7 +944,7 @@ int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& 
 //==========================================================================
 int Epetra_CrsMatrix::ExtractMyRowView(int Row, int & NumEntries, double *& Values, int *& Indices) const 
 {
-  int ierr = Graph_->ExtractMyRowView(Row, NumEntries, Indices);
+  int ierr = Graph_.ExtractMyRowView(Row, NumEntries, Indices);
   if (ierr) 
     EPETRA_CHK_ERR(ierr);
 
@@ -964,7 +955,7 @@ int Epetra_CrsMatrix::ExtractMyRowView(int Row, int & NumEntries, double *& Valu
 int Epetra_CrsMatrix::ExtractGlobalRowView(int Row, int & NumEntries, double *& Values) const 
 {
 
-  int Row0 = Graph_->RowMap().LID(Row); // Normalize row range
+  int Row0 = Graph_.RowMap().LID(Row); // Normalize row range
 
   EPETRA_CHK_ERR(ExtractMyRowView(Row0, NumEntries, Values));
   return(0);
