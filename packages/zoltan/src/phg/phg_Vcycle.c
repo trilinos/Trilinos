@@ -31,7 +31,7 @@ int Zoltan_PHG_Set_Part_Options (ZZ *zz, PHGPartParams *hgp)
   }
 
   /* Set reduction method. */
-  hgp->matching = hgp->matching_opt = NULL;
+  hgp->matching = NULL;
   if (!(Zoltan_PHG_Set_Matching_Fn (hgp))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_REDUCTION_METHOD.");
     return ZOLTAN_FATAL;
@@ -191,6 +191,22 @@ int Zoltan_PHG_HPart_Lib (
         hg = vcycle->hg;
     }
 
+
+    if (hgp->output_level >= PHG_DEBUG_LIST) {
+        uprintf(hg->comm, "START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
+                hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
+                hgp->coarsepartition_str, hgp->refinement_str, p);
+        if (hgp->output_level > PHG_DEBUG_LIST) {
+            err = Zoltan_HG_Info(zz, hg);
+            if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+                goto End;
+        }
+    }
+    if (hgp->output_level >= PHG_DEBUG_PLOT)
+        Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, NULL,
+                        "coarsening plot");
+
+    
     /****** Coarse Partitioning ******/
     err = Zoltan_PHG_CoarsePartition (zz, hg, p, vcycle->part, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)

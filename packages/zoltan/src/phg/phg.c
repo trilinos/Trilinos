@@ -239,7 +239,8 @@ static int Zoltan_PHG_Initialize_Params(
   strncpy(hgp->redm_str,            "no",  MAX_PARAM_STRING_LEN);
   strncpy(hgp->coarsepartition_str, "gr0", MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "no",  MAX_PARAM_STRING_LEN);
-  
+
+  hgp->locmatching = NULL;
   hgp->ews = 1;
   hgp->check_graph = 1;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];

@@ -21,9 +21,9 @@ extern "C" {
 #include "phg.h"
 
 
-static ZOLTAN_PHG_MATCHING_FN matching_ipm;  /* inner product matching */
-static ZOLTAN_PHG_MATCHING_FN matching_loc;  /* local ipm (in other words HCM:heavy connectivity matching) */
-static ZOLTAN_PHG_MATCHING_FN matching_ipmloc;  /* local ipm along proc columns*/
+static ZOLTAN_PHG_MATCHING_FN matching_local;    /* dummy function for local matching */
+static ZOLTAN_PHG_MATCHING_FN matching_ipm;      /* inner product matching */
+static ZOLTAN_PHG_MATCHING_FN matching_col_ipm;  /* local ipm along proc columns*/
 
 
 /*****************************************************************************/
@@ -32,8 +32,23 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
     int exist=1;
     
     if (!strcasecmp(hgp->redm_str, "no"))        hgp->matching = NULL;
-    else if (!strcasecmp(hgp->redm_str, "loc"))  hgp->matching = matching_loc;    
-    else if (!strcasecmp(hgp->redm_str, "ipmloc"))  hgp->matching = matching_ipmloc;    
+    else if (!strncasecmp(hgp->redm_str, "l-", 2))  {
+        HGPartParams hp;
+
+        strcpy(hp.redm_str, hgp->redm_str+2);
+        if (!Zoltan_HG_Set_Matching_Fn(&hp)) {
+            exist = 0;
+            hgp->matching = NULL;
+        } else {            
+            hgp->matching = matching_local; /* just to make sure that coarsening will
+                                            continue.
+                                            We'll not call this code for global matching.
+                                            Actually, we'll pick the best local, but
+                                            code structure doesn't allow us to use a
+                                            function */
+            hgp->locmatching = hp.matching; 
+        }
+    } else if (!strcasecmp(hgp->redm_str, "c-ipm"))  hgp->matching = matching_col_ipm;    
     else if (!strcasecmp(hgp->redm_str, "ipm"))  hgp->matching = matching_ipm;
     else {
         exist = 0;
@@ -71,7 +86,35 @@ char  *yo = "Zoltan_PHG_Matching";
   }
 
   /* Do the matching */
-  if (hgp->matching)
+  if (hgp->locmatching) { 
+      int limit=hg->nVtx;
+      PHGComm *hgc=hg->comm;
+      struct {
+          int matchcnt;
+          int rank;
+      } rootin, root;
+      
+      
+      if (hgp->matching)
+          err = hgp->locmatching (zz, hg, match, &limit);
+      
+#ifdef _DEBUG
+      uprintf(hgc, "there are %d matches\n", matchcnt);
+#endif
+          
+      /* find the index of the proc in column group with the best match; it will be our root proc */
+      rootin.matchcnt = hg->nVtx-limit; 
+      rootin.rank = hgc->myProc_y;
+      MPI_Allreduce(&rootin, &root, 1, MPI_2INT, MPI_MAXLOC, hgc->col_comm);
+      
+#ifdef _DEBUG    
+      uprintf(hgc, "root is %d with matchcnt=%d \n", root.rank, root.matchcnt);
+#endif
+      
+      
+      MPI_Bcast(match, hg->nVtx, MPI_INT, root.rank, hgc->col_comm);
+    
+  } else if (hgp->matching)
      err = hgp->matching (zz, hg, match);
 
 End:
@@ -86,113 +129,28 @@ End:
 }
 
 
-
-/* UVC:
-   a simple HCM/IPM variant: root of each column procs find HCM using only its local data.
-   This matching is implemented just for testing purposes.
- */
-static int matching_loc(ZZ *zz, HGraph *hg, Matching match)
+static int matching_local(ZZ *zz, HGraph *hg, Matching match)
 {
-    int i, j, *eweight=NULL, *adj=NULL, *visit=NULL, degzero=0, matchcnt=0;
-    char *yo = "matching_loc";
-    PHGComm *hgc=hg->comm;
-    struct {
-        int nPins;
-        int rank;
-    } rootin, root;
-
-    /* find the index of the proc in column group with the most #nonzeros; it will be our root
-       proc for computing moves since it has better knowedge about global hypergraph */
-    rootin.nPins = hg->nPins; 
-    rootin.rank = hgc->myProc_y;
-    MPI_Allreduce(&rootin, &root, 1, MPI_2INT, MPI_MAXLOC, hgc->col_comm);
-
-    uprintf(hgc, "root is %d with %d nonzero\n", root.rank, root.nPins);
-
-    
-    if (hgc->myProc_y==root.rank) { /* only root of each column does this */
-        if (!(visit = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-            || !(adj = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-            || !(eweight = (int*) ZOLTAN_CALLOC (hg->nVtx, sizeof(int))) ) {
-            Zoltan_Multifree (__FILE__, __LINE__, 3, &visit, &adj, &eweight);
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-            return ZOLTAN_MEMERR;
-        }
-        for (i=0; i<hg->nVtx; ++i)
-            visit[i] = i;
-        Zoltan_HG_Rand_Perm_Int(visit, hg->nVtx);
-
-        for (i = 0; i<hg->nVtx; ++i) {
-            int v = visit[i];
-            if (match[v] == v) {
-                if ( hg->vindex[v] == hg->vindex[v+1] )
-                    degzero++;  /* isolated vertex detection */
-                else {
-                    int maxuv=-1, maxu=-1, adjsz=0, k;
-
-                    for (j = hg->vindex[v]; j < hg->vindex[v+1]; ++j) {
-                        int edge = hg->vedge[j];
-                        for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; ++k) {
-                            int u = hg->hvertex[k];
-                            if (u == match[u] && u != v) {
-                                if (eweight[u]==0)
-                                    adj[adjsz++] = u;
-                                ++eweight[u];
-                            }
-                        }
-                    }
-                    for (k = 0; k < adjsz; ++k) {
-                        int u = adj[k];
-                        if (eweight[u] > maxuv) {
-                            maxu = u;
-                            maxuv = eweight[u];
-                        }
-                        eweight[u] = 0;
-                    }
-                    if (maxu!=-1) {
-                        /* match the maximally connected one with the current vertex */
-                        match[v] = maxu;
-                        match[maxu] = v;
-                        ++matchcnt;
-                    }
-                }
-            }
-        }
-
-
-        /*  match isolated vertices */
-        if (degzero) {
-            int v = -1; /*  mark the first isolated vertex with -1 */
-            for (i = 0; i< hg->nVtx; ++i)
-                if (hg->vindex[i]==hg->vindex[i+1]) { /* degree zero */
-                    if (v == -1)
-                        v = i;
-                    else {
-                        match[i] = v;
-                        match[v] = i;
-                        v = -1;
-                        ++matchcnt;
-                    }                
-                }
-        }
-        uprintf(hgc, "there are %d matches\n", matchcnt);
-    }
-    MPI_Bcast(match, hg->nVtx, MPI_INT, root.rank, hgc->col_comm);
-
-    Zoltan_Multifree (__FILE__, __LINE__, 3, &visit, &adj, &eweight);
-    MPI_Barrier(hgc->Communicator);
-    uprintf(hgc, "exiting the local maching\n");
+    uprintf(hg->comm, " Something wrong! This function should not be called at all!\n");
+    /* UVC: NOTE:
+       The reason that we're not doing local matchin in this function, we don't
+       have access to parameter structure. So there is no way to figure
+       out which "local" matching needs to be called. Hence we do it
+       in Zoltan_PHG_Matching */
     return ZOLTAN_OK;
 }
+
+
+
     
 /* local inner product matching among vertices in each proc column */
 /* code adapted from serial matching_ipm method */
-static int matching_ipmloc(ZZ *zz, HGraph *hg, Matching match)
+static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 {
     int   i, j, n, v1, v2, edge, maxip, maxindex;
     int   matchcount=0;
     int   *ips, *gips, *adj;
-    char  *yo = "matching_ipmloc";
+    char  *yo = "matching_col_ipm";
     PHGComm *hgc = hg->comm;  
 
     if (!(ips = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int))) 
