@@ -35,7 +35,8 @@ noxDir = os.path.join( srcDir,"NOX")
 # defined as a list of a single or more strings.  Thus they can be added
 # together to yield a list of multiple strings.
 epetraInc    = [os.path.join(pakDir, "epetra",    "src"             )  ]
-epetraExtInc = [os.path.join(pakDir, "epetraext", "src", "transform"), \
+epetraExtInc = [os.path.join(pakDir, "epetraext", "src",            ), \
+                os.path.join(pakDir, "epetraext", "src", "transform"), \
                 os.path.join(pakDir, "epetraext", "src", "coloring" )  ]
 noxInc       = [os.path.join(pakDir, "nox",       "src"             )  ]
 noxEpetraInc = [os.path.join(pakDir, "nox",       "src-epetra"      )  ]
@@ -49,6 +50,7 @@ noxLibDir       = [os.path.join("..", "nox",       "src"       )]
 noxEpetraLibDir = [os.path.join("..", "nox",       "src-epetra")]
 aztecLibDir     = [os.path.join("..", "aztecoo",   "src"       )]
 ifpackLibDir    = [os.path.join("..", "ifpack",    "src"       )]
+teuchosLibDir   = [os.path.join("..", "teuchos",   "src"       )]
 
 # Define the library names for various packages.  Each of these is defined as a
 # list of a single string.  Thus they can be added together to yield a list of
@@ -59,6 +61,7 @@ noxEpetraLib = ["noxepetra"]
 noxLib       = ["nox"      ]
 aztecLib     = ["aztecoo"  ]
 ifpackLib    = ["ifpack"   ]
+teuchosLib   = ["teuchos"   ]
 
 # Obtain the directory path and library name for the SWIG runtime library.
 # Currently, this requires SWIG Version 1.3.21, using flags that are depricated
@@ -83,11 +86,11 @@ else:
     stdCXX = [ ]
 stdLibs    = stdCXX + swigLib
 
-# Create the extra arguments list and complete the standard liraries list.  This
+# Create the extra arguments list and complete the standard libraries list.  This
 # is accomplished by looping over the arguments in FLIB and adding them to the
 # appropriate list.
 extraArgs = swigPath
-libs = makeInfo['LDFLAGS'].split() + makeInfo['FLIBS'].split()
+libs = makeInfo['LDFLAGS'].split() + makeInfo['FLIBS'].split() + makeInfo['LIBS'].split()
 for lib in libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
@@ -119,8 +122,8 @@ RawEpetra = Extension("PyTrilinos._RawEpetra",
                        numPyArray,
                        numPyWrapper],
                       include_dirs    = epetraInc,
-                      library_dirs    = epetraLibDir + swigDir + pythonDir,
-                      libraries       = stdLibs + epetraLib + pythonLib,
+                      library_dirs    = epetraLibDir + teuchosLibDir + swigDir + pythonDir,
+                      libraries       = epetraLib + teuchosLib + stdLibs + pythonLib,
                       extra_link_args = extraArgs
                       )
 
@@ -128,9 +131,9 @@ RawEpetra = Extension("PyTrilinos._RawEpetra",
 EpetraExt = Extension("PyTrilinos._EpetraExt",
                       [epetraExtWrap],
                       include_dirs    = epetraInc + epetraExtInc,
-                      library_dirs    = epetraLibDir + epetraExtLibDir + swigDir + \
+                      library_dirs    = epetraLibDir + epetraExtLibDir + teuchosLibDir+ swigDir + \
                                         pythonDir,
-                      libraries       = stdLibs + epetraLib + epetraExtLib + \
+                      libraries       = epetraExtLib + epetraLib + teuchosLib  + stdLibs +\
                                         pythonLib,
                       extra_link_args = extraArgs
                       )
@@ -144,10 +147,11 @@ NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
                         noxCallback,
                         noxPyInterface],
                        include_dirs    = epetraInc + noxInc + noxEpetraInc,
-                       library_dirs    = epetraLibDir + noxLibDir + noxEpetraLibDir + \
+                       library_dirs    = epetraLibDir + noxLibDir + noxEpetraLibDir + aztecLibDir + ifpackLibDir + teuchosLibDir + \
                                          swigDir,
-                       libraries       = stdLibs + epetraLib + noxLib + noxEpetraLib + \
-                                         aztecLib + ifpackLib,
+                       libraries       = noxEpetraLib + noxLib  + \
+                                         aztecLib + ifpackLib + epetraLib + \
+                                         teuchosLib + stdLibs,
                        extra_link_args = extraArgs
                        )
 
@@ -155,8 +159,8 @@ NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
 NOX_Abstract = Extension("PyTrilinos.NOX._Abstract",
                          [noxAbstractWrap],
                          include_dirs    = noxInc,
-                         library_dirs    = noxLibDir + swigDir,
-                         libraries       = stdLibs + noxLib,
+                         library_dirs    = noxLibDir + teuchosLibDir + swigDir,
+                         libraries       = noxLib + teuchosLib + stdLibs,
                          extra_link_args = extraArgs
                          )
 
@@ -164,8 +168,8 @@ NOX_Abstract = Extension("PyTrilinos.NOX._Abstract",
 NOX_Parameter = Extension("PyTrilinos.NOX._Parameter",
                           [noxParameterWrap],
                           include_dirs    = noxInc,
-                          library_dirs    = noxLibDir + swigDir,
-                          libraries       = stdLibs + noxLib,
+                          library_dirs    = noxLibDir + teuchosLibDir + swigDir,
+                          libraries       = noxLib + teuchosLib + stdLibs,
                           extra_link_args = extraArgs
                           )
 
@@ -173,8 +177,8 @@ NOX_Parameter = Extension("PyTrilinos.NOX._Parameter",
 NOX_Solver = Extension("PyTrilinos.NOX._Solver",
                        [noxSolverWrap],
                        include_dirs    = noxInc,
-                       library_dirs    = noxLibDir + swigDir,
-                       libraries       = stdLibs + noxLib,
+                       library_dirs    = noxLibDir + teuchosLibDir + swigDir,
+                       libraries       = noxLib + teuchosLib + stdLibs,
                        extra_link_args = extraArgs
                        )
 
@@ -182,8 +186,8 @@ NOX_Solver = Extension("PyTrilinos.NOX._Solver",
 NOX_StatusTest = Extension("PyTrilinos.NOX._StatusTest",
                            [noxStatusTestWrap],
                            include_dirs    = noxInc,
-                           library_dirs    = noxLibDir + swigDir,
-                           libraries       = stdLibs + noxLib,
+                           library_dirs    = noxLibDir + teuchosLibDir + swigDir,
+                           libraries       = noxLib + teuchosLib + stdLibs,
                            extra_link_args = extraArgs
                            )
 
