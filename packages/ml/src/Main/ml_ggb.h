@@ -48,31 +48,38 @@ void  ML_ARPACK_driver(char which[],
 
   void ML_GGB2CSR (double *v, int nconv, int MatSize, int proc_id,
 		   struct ML_CSR_MSRdata  *mydata, int Debug_Flag );
-
-
-void  ML_GGBalp (double *NewVec, int nconv, int nloc2, struct ML_Eigenvalue_Struct 
+  
+  
+  void  ML_GGBalp (double *NewVec, int nconv, int nloc2, struct ML_Eigenvalue_Struct 
 		   *eigen_struct);
+  
+  extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, int ncols2);
+  
+  
+  
+  extern void ML_ARPACK_GGB( 
+			    struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
+			    struct ML_CSR_MSRdata *mydata, int Debug_Flag, 
+			    int GGB_alp_flag);
+  
+  extern int  ML_MGGB_angle(struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
+			    struct ML_CSR_MSRdata *mydata);
+  
+  extern int  ML_Rayleigh (ML *ml, int nrows, double *q, int count);
+  
+  extern double *ML_complex_gdot(int leng, double *ureal, double *uimag, double *vreal, double *vimag, 
+				 ML_Comm *comm);
+  
+  extern double ML_normc(double *real, double *imag,  int leng );  
+  
+  extern void ML_Eig_Destroy(void *data);
+  
+  extern int ML_OperatorGGB_Apply (double *densemat, int Nrows, int Ncols, double *din, double *dout, int Transpose);
 
-extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, int ncols2);
-
-
-
-extern void ML_ARPACK_GGB( 
-		    struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
-		    struct ML_CSR_MSRdata *mydata, int Debug_Flag, 
-		    int GGB_alp_flag);
-
-extern int  ML_MGGB_angle(struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
-		    struct ML_CSR_MSRdata *mydata);
-
-extern double ML_normc(double *real, double *imag,  int leng );  
-
-
-
-void dnaupd_(int *, char *, int *, char *, int *, double *, double *,
+   void dnaupd_(int *, char *, int *, char *, int *, double *, double *,
 		 int *, double *, int *, int *, int *, double *, double *,
-		 int *, int *);
-
+	       int *, int *);
+  
   void pdnaupd_(int *, int *, char *, int *, char *, int *, double *, double *,
 		int *, double *, int *, int *, int *, double *, double *,
 		int *, int *);
