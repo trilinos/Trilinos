@@ -336,9 +336,9 @@ zscript:
 	@echo CFLAGS='"$$3"' >> zoltan_script
 	@echo F90CFLAGS='"$$4"' >> zoltan_script
 	@echo INCLUDE_PATH='"$$5"' >> zoltan_script
-	@echo PARMETIS_FLAG='"$${6:+-DLB_PARMETIS}"' >> zoltan_script
-	@echo JOSTLE_INCPATH='"$$7"' >> zoltan_script
-	@echo JOSTLE_FLAG='"$${8:+-DLB_JOSTLE}"' >> zoltan_script
+	@echo PARMETIS_FLAG='"$${6:+-DZOLTAN_PARMETIS}"' >> zoltan_script
+	@echo PARMETIS_INCPATH='"$$7"' >> zoltan_script
+	@echo JOSTLE_FLAG='"$${8:+-DZOLTAN_JOSTLE}"' >> zoltan_script
 	@echo JOSTLE_INCPATH='"$$9"' >> zoltan_script
 	@echo shift 9 >> zoltan_script
 	@echo AR='"$$1"' >> zoltan_script

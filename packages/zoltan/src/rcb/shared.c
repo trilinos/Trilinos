@@ -862,51 +862,54 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
   }
 
   /* timer info */
+    
+  if (timetotal>0){
+
+    MPI_Allreduce(&timers[0],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+    ave = rsum/nprocs;
+    if (proc == print_proc) 
+      printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
+  	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+    MPI_Barrier(zz->Communicator);
+    if (stats > 1) 
+      printf("    Proc %d start-up time = %g\n",proc,timers[0]);
+    
+    MPI_Allreduce(&timers[1],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&timers[1],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&timers[1],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+    ave = rsum/nprocs;
+    if (proc == print_proc) 
+      printf(" Pre-median time %%: ave = %g, min = %g, max = %g\n",
+  	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+    MPI_Barrier(zz->Communicator);
+    if (stats > 1) 
+      printf("    Proc %d pre-median time = %g\n",proc,timers[1]);
+    
+    MPI_Allreduce(&timers[2],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&timers[2],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&timers[2],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+    ave = rsum/nprocs;
+    if (proc == print_proc) 
+      printf(" Median time %%: ave = %g, min = %g, max = %g\n",
+  	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+    MPI_Barrier(zz->Communicator);
+    if (stats > 1) 
+      printf("    Proc %d median time = %g\n",proc,timers[2]);
+    
+    MPI_Allreduce(&timers[3],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+    ave = rsum/nprocs;
+    if (proc == print_proc) 
+      printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
+  	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+    MPI_Barrier(zz->Communicator);
+    if (stats > 1) 
+      printf("    Proc %d comm time = %g\n",proc,timers[3]);
   
-  MPI_Allreduce(&timers[0],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
-  MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
-  MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc) 
-    printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
-	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(zz->Communicator);
-  if (stats > 1) 
-    printf("    Proc %d start-up time = %g\n",proc,timers[0]);
-  
-  MPI_Allreduce(&timers[1],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
-  MPI_Allreduce(&timers[1],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
-  MPI_Allreduce(&timers[1],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc) 
-    printf(" Pre-median time %%: ave = %g, min = %g, max = %g\n",
-	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(zz->Communicator);
-  if (stats > 1) 
-    printf("    Proc %d pre-median time = %g\n",proc,timers[1]);
-  
-  MPI_Allreduce(&timers[2],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
-  MPI_Allreduce(&timers[2],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
-  MPI_Allreduce(&timers[2],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc) 
-    printf(" Median time %%: ave = %g, min = %g, max = %g\n",
-	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(zz->Communicator);
-  if (stats > 1) 
-    printf("    Proc %d median time = %g\n",proc,timers[2]);
-  
-  MPI_Allreduce(&timers[3],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
-  MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
-  MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc) 
-    printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
-	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(zz->Communicator);
-  if (stats > 1) 
-    printf("    Proc %d comm time = %g\n",proc,timers[3]);
-  
+  }
   
   if (zz->LB.Method == RCB && stats > 1)  {
     /* RCB boxes for each proc */

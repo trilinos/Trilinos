@@ -156,53 +156,54 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
     printf("    Proc %d load after balancing = %f\n", proc, c[3]);
 
   /* timer info */
-  MPI_Allreduce(&timers[0],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
-  MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
-  MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc) 
-    printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
-	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
-    printf("    Proc %d start-up time = %g\n", proc, timers[0]);
+  if (timetotal>0){
+    MPI_Allreduce(&timers[0],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+    ave = rsum/nprocs;
+    if (proc == print_proc) 
+      printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
+  	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+    MPI_Barrier(zz->Communicator);
+    if (STATS_TYPE == 2)
+      printf("    Proc %d start-up time = %g\n", proc, timers[0]);
+    
+    MPI_Allreduce(&timers[1],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&timers[1],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&timers[1],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+    ave = rsum/nprocs;
+    if (proc == print_proc) 
+      printf(" Partition time %%: ave = %g, min = %g, max = %g\n",
+  	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+    MPI_Barrier(zz->Communicator);
+    if (STATS_TYPE == 2)
+      printf("    Proc %d partition time = %g\n",proc, timers[1]);
+    
+    MPI_Allreduce(&timers[2],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&timers[2],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&timers[2],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+    ave = rsum/nprocs;
+    if (proc == print_proc) 
+      printf(" Migration notice time %%: ave = %g, min = %g, max = %g\n",
+  	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+    MPI_Barrier(zz->Communicator);
+    if (STATS_TYPE == 2)
+      printf("    Proc %d migration notice time = %g\n",proc,timers[2]);
   
-  MPI_Allreduce(&timers[1],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
-  MPI_Allreduce(&timers[1],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
-  MPI_Allreduce(&timers[1],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc) 
-    printf(" Partition time %%: ave = %g, min = %g, max = %g\n",
-	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
-    printf("    Proc %d partition time = %g\n",proc, timers[1]);
-  
-  MPI_Allreduce(&timers[2],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
-  MPI_Allreduce(&timers[2],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
-  MPI_Allreduce(&timers[2],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc) 
-    printf(" Migration notice time %%: ave = %g, min = %g, max = %g\n",
-	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
-    printf("    Proc %d migration notice time = %g\n",proc,timers[2]);
-
-
 #if 0
-  /* ATTN: I don't time the communication */  
-  MPI_Allreduce(&timers[3],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
-  MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
-  MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
-  ave = rsum/nprocs;
-  if (proc == print_proc) 
-    printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
-	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
-    printf("    Proc %d comm time = %g\n",proc,timers[3]);
+    /* ATTN: I don't time the communication */  
+    MPI_Allreduce(&timers[3],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,zz->Communicator);
+    ave = rsum/nprocs;
+    if (proc == print_proc) 
+      printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
+  	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
+    MPI_Barrier(zz->Communicator);
+    if (STATS_TYPE == 2)
+      printf("    Proc %d comm time = %g\n",proc,timers[3]);
 #endif
+  }
   
   MPI_Barrier(zz->Communicator);
 

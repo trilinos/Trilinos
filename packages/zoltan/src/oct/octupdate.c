@@ -50,8 +50,11 @@ static int oct_ncoarse=0;                          /* number of coarsenings */
 #ifdef LGG_MIGOCT
 static int IDcount = 0;                            /* renumbering of octants */
 #endif
-static int MAXOCTREGIONS = 1;
-static int MINOCTREGIONS = 1;                    /* minimum number of regions per octant */
+#define MAXOCTREGIONS_DEF 40
+#define MINOCTREGIONS_DEF 10
+static int MAXOCTREGIONS = MAXOCTREGIONS_DEF;
+static int MINOCTREGIONS = MINOCTREGIONS_DEF;  /* min # of regions per octant */
+
 
 /*****************************************************************************/
 /* parameters for the octpart method.  Used in  */
@@ -108,8 +111,8 @@ int Zoltan_Octpart(
 {
 int oct_dim = 3;              /* Dimension of method to be used (2D or 3D)   */
 int oct_method = 2;           /* Flag specifying curve to be used.           */
-int oct_maxoctregions = 40;   /* max # of objects in leaves of octree.       */
-int oct_minoctregions = 10;   /* min # of objects in leaves of octree.       */
+int oct_maxoctregions=MAXOCTREGIONS_DEF; /* max # of objs in leaves of octree.*/
+int oct_minoctregions=MINOCTREGIONS_DEF; /* min # of objs in leaves of octree.*/
 int oct_output_level = 0;     /* Flag specifying amount of output.           */
 int oct_wgtflag = 0;          /* Flag specifying use of object weights.      */
 int error = FALSE;            /* error flag                                  */
@@ -1269,7 +1272,7 @@ static void Zoltan_Oct_set_maxregions(int max)
   if (max < 1) {
     fprintf(stderr, "OCT Warning Zoltan_Oct_set_maxregions(): %s\n",
 	    "illegal input, using default.");
-    MAXOCTREGIONS = 1;
+    MAXOCTREGIONS = MAXOCTREGIONS_DEF;
   }
   else
     MAXOCTREGIONS = max; 
@@ -1281,7 +1284,7 @@ static void Zoltan_Oct_set_minregions(int min)
   if (min < 1) {
     fprintf(stderr, "OCT Warning Zoltan_Oct_set_minregions(): %s\n",
 	    "illegal input, using default.");
-    MINOCTREGIONS = 1;
+    MINOCTREGIONS = MINOCTREGIONS_DEF;
   }
   else
     MINOCTREGIONS = min; 

@@ -25,7 +25,6 @@ extern "C" {
 #define ZOLTAN_TIME_WALL 1
 #define ZOLTAN_TIME_CPU  2
 #define ZOLTAN_TIME_USER 3
-#define ZOLTAN_TIME_USERSYS 4
 
 /* Function prototypes */
 extern double Zoltan_Time(int);
