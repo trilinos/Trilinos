@@ -109,7 +109,7 @@ public:
 
   //! Create a \b new NLS_Group of the same derived type as this one.
   //! (May invalidate Jacobian for this group.)
-  virtual NLS_Group* newCopy() const = 0;
+  virtual NLS_Group* clone() const = 0;
 
   //@}
 };

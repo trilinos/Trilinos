@@ -29,7 +29,7 @@ NLS_MethodManager::NLS_MethodManager(NLS_Group& initialguess,
   ptr(NULL),
   workgroup(NULL)
 {
-  workgroup = initialguess.newCopy();
+  workgroup = initialguess.clone();
   setup(*workgroup, initialguess, p);
 }
 

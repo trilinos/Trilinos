@@ -57,7 +57,7 @@ void NLS_PetraGroup::resetIsValid() //private
   isValidNewton = false;
 }
 
-NLS_Group* NLS_PetraGroup::newCopy() const 
+NLS_Group* NLS_PetraGroup::clone() const 
 {
   NLS_PetraGroup* newgrp = new NLS_PetraGroup(*this);
   return newgrp;

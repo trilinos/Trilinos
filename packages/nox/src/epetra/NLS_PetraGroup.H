@@ -99,7 +99,7 @@ public:
 
   //@}
 
-  virtual NLS_Group* newCopy() const;
+  virtual NLS_Group* clone() const;
 
 protected:
 
