@@ -32,6 +32,7 @@ $(srcdir)/FEGrid/ml_mapper.h \
 $(srcdir)/FEGrid/ml_gridagx.h \
 $(srcdir)/FEGrid/ml_pde.h       $(srcdir)/FEGrid/ml_bdrypts.h \
 $(srcdir)/Coarsen/ml_agg_reitzinger.h \
+$(srcdir)/Coarsen/ml_agg_METIS.h \
 $(srcdir)/FEGrid/ml_gridfunc.h \
 $(srcdir)/FEGrid/ml_setup.h \
 $(srcdir)/FEGrid/ml_elementagx.h  $(srcdir)/FEGrid/ml_grid.h \
@@ -67,6 +68,7 @@ $(srcdir)/Coarsen/ml_agg_dd.c \
 $(srcdir)/Coarsen/ml_agg_genP.c \
 $(srcdir)/Coarsen/ml_amg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_MIS.c \
+$(srcdir)/Coarsen/ml_agg_METIS.c \
 $(srcdir)/Coarsen/ml_aggregate.c \
 $(srcdir)/Coarsen/ml_ggraph.c \
 $(srcdir)/Coarsen/ml_agg_reitzinger.c  \
@@ -132,7 +134,9 @@ $(srcdir)/Utils/ml_epetra_utils.cpp \
 $(srcdir)/Utils/ml_utils.c             $(srcdir)/Utils/ml_intlist.c \
 $(srcdir)/Utils/ml_vec.c \
 $(srcdir)/Utils/ml_lapack.c \
-$(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c
+$(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c \
+$(srcdir)/Utils/ml_agg_info.c \
+$(srcdir)/Utils/ml_viz_opendx.c
 
 ENUM_H = 
 
