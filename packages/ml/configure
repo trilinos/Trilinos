@@ -969,6 +969,15 @@ Optional Packages:
                           Note 3: You also need to specify --with-ml_metis,
                           and the location of the METIS library (after that of
                           the ParMETIS one). (default is no)
+  --with-ml_amesos        Enable AMESOS support. Note 1: Amesos is a third
+                          party library. As such, configure assumes that it
+                          has already been built. Note 2: You must also
+                          specify the location of the Amesos headers and
+                          libraries like so: configure --with-libs="<other
+                          libraries> -lamesos"
+                          --with-ldflags="-L<Amesos-library-path>" and
+                          --with-incdirs="<Amesos-include-path>". Note 3:
+                          Amesos requires --with-ml_epetra (default is no)
   --with-ml-64bit-integer Support for 64-bit integers; required if ML used
                           with MPSalsa. Examples:
                           --with-ml-64bit-integer="long long" for LINUX,
@@ -3598,7 +3607,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3601:" \
+echo "$as_me:3610:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6133,6 +6142,7 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+#
 
 
 # Check whether --with-ml_parmetis2x or --without-ml_parmetis2x was given.
@@ -6158,7 +6168,8 @@ else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
- #
+
+#
 
 
 # Check whether --with-ml_parmetis3x or --without-ml_parmetis3x was given.
@@ -6184,8 +6195,34 @@ else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
- #
+
 #
+
+
+# Check whether --with-ml_amesos or --without-ml_amesos was given.
+if test "${with_ml_amesos+set}" = set; then
+  withval="$with_ml_amesos"
+  ac_cv_use_ml_amesos=$withval
+else
+  ac_cv_use_ml_amesos=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml_amesos" >&5
+echo $ECHO_N "checking whether to use ml_amesos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml_amesos" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_AMESOS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
 
 
 # Check whether --with-ml-64bit-integer or --without-ml-64bit-integer was given.
@@ -6347,7 +6384,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6350: \"$ac_link\") >&5
+(eval echo $as_me:6387: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6427,7 +6464,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6430: \"$ac_link\") >&5
+(eval echo $as_me:6467: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8858,7 +8895,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8861: \"$ac_link\") >&5
+(eval echo $as_me:8898: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8938,7 +8975,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8941: \"$ac_link\") >&5
+(eval echo $as_me:8978: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

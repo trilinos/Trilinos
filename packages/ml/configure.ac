@@ -309,13 +309,16 @@ AM_CONDITIONAL(ML_BENCHMARKING, test "X$ac_cv_use_ml_benchmarking" != "Xno")
 #fi
 
 TAC_ARG_WITH_PACKAGE(ml_metis, [Enable METIS support.  Note 1: METIS is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the METIS headers and libraries like so: configure --with-libs="<other libraries> -lmetis" --with-ldflags="-L<METIS-library-path>" and --with-incdirs="<METIS-include-path>".], ML_METIS, no)
+#
 TAC_ARG_WITH_PACKAGE(ml_parmetis2x, [Enable ParMETIS support, version 2.x.  Note
 1: ParMETIS is a third party library.  As such, configure assumes that it has
-already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries like so:  configure --with-libs="<other libraries> -lparmetis" --with-ldflags="-L<ParMETIS-library-path>" and --with-incdirs="-I<ParMETIS-include-directory>".], ML_PARMETIS_2x, no) #
+already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries like so:  configure --with-libs="<other libraries> -lparmetis" --with-ldflags="-L<ParMETIS-library-path>" and --with-incdirs="-I<ParMETIS-include-directory>".], ML_PARMETIS_2x, no) 
+#
 TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable ParMETIS support, version 3.x.  Note
 1: ParMETIS is a third party library.  As such, configure assumes that it has
-already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries like so:  configure --with-libs="<other libraries> -lparmetis" --with-ldflags="-L<METIS-library-path>" --with-incdirs="-I<ParMETIS-include-directory>". Note 3: You also need to specify --with-ml_metis, and the location of the METIS library (after that of the ParMETIS one).], ML_PARMETIS_3x, no) #
+already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries like so:  configure --with-libs="<other libraries> -lparmetis" --with-ldflags="-L<METIS-library-path>" --with-incdirs="-I<ParMETIS-include-directory>". Note 3: You also need to specify --with-ml_metis, and the location of the METIS library (after that of the ParMETIS one).], ML_PARMETIS_3x, no) 
 #
+TAC_ARG_WITH_PACKAGE(ml_amesos, [Enable AMESOS support.  Note 1: Amesos is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the Amesos headers and libraries like so: configure --with-libs="<other libraries> -lamesos" --with-ldflags="-L<Amesos-library-path>" and --with-incdirs="<Amesos-include-path>". Note 3: Amesos requires --with-ml_epetra], ML_AMESOS, no)
 
 AC_ARG_WITH(ml-64bit-integer,
 [AC_HELP_STRING([--with-ml-64bit-integer],[Support for 64-bit integers; required if ML used
