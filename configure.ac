@@ -77,6 +77,8 @@ TAC_ARG_ENABLE_DEFAULT_FEATURE(new_package, [Build new_package], NEW_PACKAGE)
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(nox, [Build nox], NOX)
 
+TAC_ARG_ENABLE_FEATURE(pytrilinos, [Build PyTrilinos], PYTRILINOS, no)
+
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
 
 TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra], TPETRA, no)
@@ -347,6 +349,17 @@ else
   BUILD_NEW_PACKAGE=no
 fi
 AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$BUILD_NEW_PACKAGE" != "Xno")
+
+if test "X$ac_cv_use_pytrilinos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/PyTrilinos])
+  BUILD_PYTRILINOS=yes
+  if test "X$ac_cv_use_pytrilinos_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-pytrilinos"
+  fi
+else
+  BUILD_PYTRILINOS=no
+fi
+AM_CONDITIONAL(BUILD_PYTRILINOS, test "X$BUILD_PYTRILINOS" != "Xno")
 
 if test "X$ac_cv_use_tpetra" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/tpetra])
