@@ -14,11 +14,11 @@
 
 @SET_MAKE@
 
-#@HEADER
+# @HEADER
 # ************************************************************************
 # 
-#            NOX: An Object-Oriented Nonlinear Solver Package
-#                 Copyright (2002) Sandia Corporation
+#                  LOCA Continuation Algorithm Package
+#                 Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -41,11 +41,16 @@
 # (rppawlo@sandia.gov), Sandia National Laboratories.
 # 
 # ************************************************************************
-#@HEADER
+# @HEADER
 
-#EXEEXT = .exe
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside NOX. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
 
-SOURCES = $(chanContinuation_exe_SOURCES) $(chanHomotopy_exe_SOURCES) $(chanTPContinuation_exe_SOURCES)
+SOURCES = $(liblocatestproblems_la_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -68,10 +73,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/config/libtool_macros.am
-subdir = test/lapack/LOCA_ChanProblem
+subdir = test/lapack/LOCA_TestProblems
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
@@ -93,29 +97,20 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-am__EXEEXT_1 = chanContinuation_exe$(EXEEXT)
-am__EXEEXT_2 = chanTPContinuation_exe$(EXEEXT)
-am__EXEEXT_3 = chanHomotopy_exe$(EXEEXT)
-PROGRAMS = $(noinst_PROGRAMS)
-am_chanContinuation_exe_OBJECTS =  \
-	chanContinuation_exe-ChanContinuation.$(OBJEXT)
-chanContinuation_exe_OBJECTS = $(am_chanContinuation_exe_OBJECTS)
+LTLIBRARIES = $(noinst_LTLIBRARIES)
 am__DEPENDENCIES_1 =
-am_chanHomotopy_exe_OBJECTS = chanHomotopy_exe-ChanHomotopy.$(OBJEXT)
-chanHomotopy_exe_OBJECTS = $(am_chanHomotopy_exe_OBJECTS)
-am__DEPENDENCIES_2 = $(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.la \
+liblocatestproblems_la_DEPENDENCIES =  \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_chanTPContinuation_exe_OBJECTS =  \
-	chanTPContinuation_exe-ChanTPContinuation.$(OBJEXT)
-chanTPContinuation_exe_OBJECTS = $(am_chanTPContinuation_exe_OBJECTS)
+am__objects_1 = liblocatestproblems_la-ChanProblemInterface.lo
+am__objects_2 =
+am_liblocatestproblems_la_OBJECTS = $(am__objects_1) $(am__objects_2)
+liblocatestproblems_la_OBJECTS = $(am_liblocatestproblems_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -124,10 +119,16 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(chanContinuation_exe_SOURCES) $(chanHomotopy_exe_SOURCES) \
-	$(chanTPContinuation_exe_SOURCES)
-DIST_SOURCES = $(chanContinuation_exe_SOURCES) \
-	$(chanHomotopy_exe_SOURCES) $(chanTPContinuation_exe_SOURCES)
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(liblocatestproblems_la_SOURCES)
+DIST_SOURCES = $(liblocatestproblems_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -355,46 +356,30 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-CHANCONT = chanContinuation_exe
-CHANTPCONT = chanTPContinuation_exe
-CHANHOMOTOPY = chanHomotopy_exe
-chanContinuation_exe_SOURCES = $(srcdir)/ChanContinuation.C 
-chanContinuation_exe_DEPENDENCIES = \
-        $(top_builddir)/src/libnox.a \
-	$(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/test/utils/libnoxtestutils.a \
-	$(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.la
+LOCA_TESTPROBLEMS_H = \
+	$(srcdir)/ChanProblemInterface.H 
 
-chanContinuation_exe_CXXFLAGS = \
-	$(TRILINOS_CXXFLAGS) \
-	$(LIBTOOL_COMPILER_FLAGS) \
+LOCA_TESTPROBLEMS = \
+	$(srcdir)/ChanProblemInterface.C 
+
+
+# ------------------------------------------------------------------------
+# localapack library specifications
+# ------------------------------------------------------------------------
+liblocatestproblems_la_SOURCES = $(LOCA_TESTPROBLEMS) $(LOCA_TESTPROBLEMS_H)
+liblocatestproblems_la_CXXFLAGS = \
+	-I$(top_srcdir)/src-loca/src \
+	-I$(top_srcdir)/src-loca/src-lapack \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src-lapack \
-	-I$(top_srcdir)/src-loca/src \
-        -I$(top_srcdir)/src-loca/src-lapack \
-        -I$(top_srcdir)/test/utils \
-	-I$(top_srcdir)/test/lapack/LOCA_TestProblems
+	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
 
-chanContinuation_exe_LDADD = \
-	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.la \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-        $(top_builddir)/src-loca/src/libloca.la \
-	-L$(top_builddir)/src \
-	-L$(top_builddir)/src-lapack \
-	-L$(top_builddir)/test/utils \
-        -lnoxtestutils -lnoxlapack -lnox \
-        $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+liblocatestproblems_la_LIBADD = \
+	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
+	$(top_builddir)/src-loca/src/libloca.la \
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS)
 
-chanTPContinuation_exe_SOURCES = $(srcdir)/ChanTPContinuation.C 
-chanTPContinuation_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
-chanTPContinuation_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
-chanTPContinuation_exe_LDADD = $(chanContinuation_exe_LDADD)
-chanHomotopy_exe_SOURCES = $(srcdir)/ChanHomotopy.C 
-chanHomotopy_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
-chanHomotopy_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
-chanHomotopy_exe_LDADD = $(chanContinuation_exe_LDADD)
+noinst_LTLIBRARIES = liblocatestproblems.la
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -418,9 +403,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/lapack/LOCA_ChanProblem/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/lapack/LOCA_TestProblems/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/lapack/LOCA_ChanProblem/Makefile
+	  $(AUTOMAKE) --foreign  test/lapack/LOCA_TestProblems/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -439,21 +424,16 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-clean-noinstPROGRAMS:
-	@list='$(noinst_PROGRAMS)'; for p in $$list; do \
-	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
-	  echo " rm -f $$p $$f"; \
-	  rm -f $$p $$f ; \
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" = "$$p" && dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
 	done
-chanContinuation_exe$(EXEEXT): $(chanContinuation_exe_OBJECTS) $(chanContinuation_exe_DEPENDENCIES) 
-	@rm -f chanContinuation_exe$(EXEEXT)
-	$(CXXLINK) $(chanContinuation_exe_LDFLAGS) $(chanContinuation_exe_OBJECTS) $(chanContinuation_exe_LDADD) $(LIBS)
-chanHomotopy_exe$(EXEEXT): $(chanHomotopy_exe_OBJECTS) $(chanHomotopy_exe_DEPENDENCIES) 
-	@rm -f chanHomotopy_exe$(EXEEXT)
-	$(CXXLINK) $(chanHomotopy_exe_LDFLAGS) $(chanHomotopy_exe_OBJECTS) $(chanHomotopy_exe_LDADD) $(LIBS)
-chanTPContinuation_exe$(EXEEXT): $(chanTPContinuation_exe_OBJECTS) $(chanTPContinuation_exe_DEPENDENCIES) 
-	@rm -f chanTPContinuation_exe$(EXEEXT)
-	$(CXXLINK) $(chanTPContinuation_exe_LDFLAGS) $(chanTPContinuation_exe_OBJECTS) $(chanTPContinuation_exe_LDADD) $(LIBS)
+liblocatestproblems.la: $(liblocatestproblems_la_OBJECTS) $(liblocatestproblems_la_DEPENDENCIES) 
+	$(CXXLINK)  $(liblocatestproblems_la_LDFLAGS) $(liblocatestproblems_la_OBJECTS) $(liblocatestproblems_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -461,9 +441,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -489,77 +467,29 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-chanContinuation_exe-ChanContinuation.o: $(srcdir)/ChanContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation_exe-ChanContinuation.o -MD -MP -MF "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" -c -o chanContinuation_exe-ChanContinuation.o `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po"; else rm -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanContinuation.C' object='chanContinuation_exe-ChanContinuation.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po' tmpdepfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.TPo' @AMDEPBACKSLASH@
+liblocatestproblems_la-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" -c -o liblocatestproblems_la-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='liblocatestproblems_la-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation_exe-ChanContinuation.o `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
 
-chanContinuation_exe-ChanContinuation.obj: $(srcdir)/ChanContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation_exe-ChanContinuation.obj -MD -MP -MF "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" -c -o chanContinuation_exe-ChanContinuation.obj `if test -f '$(srcdir)/ChanContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanContinuation.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po"; else rm -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanContinuation.C' object='chanContinuation_exe-ChanContinuation.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.Po' tmpdepfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.TPo' @AMDEPBACKSLASH@
+liblocatestproblems_la-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" -c -o liblocatestproblems_la-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='liblocatestproblems_la-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation_exe-ChanContinuation.obj `if test -f '$(srcdir)/ChanContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanContinuation.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
 
-chanContinuation_exe-ChanContinuation.lo: $(srcdir)/ChanContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanContinuation_exe-ChanContinuation.lo -MD -MP -MF "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" -c -o chanContinuation_exe-ChanContinuation.lo `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo" "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Plo"; else rm -f "$(DEPDIR)/chanContinuation_exe-ChanContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanContinuation.C' object='chanContinuation_exe-ChanContinuation.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.Plo' tmpdepfile='$(DEPDIR)/chanContinuation_exe-ChanContinuation.TPlo' @AMDEPBACKSLASH@
+liblocatestproblems_la-ChanProblemInterface.lo: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -MT liblocatestproblems_la-ChanProblemInterface.lo -MD -MP -MF "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" -c -o liblocatestproblems_la-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo" "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo"; else rm -f "$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='liblocatestproblems_la-ChanProblemInterface.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.Plo' tmpdepfile='$(DEPDIR)/liblocatestproblems_la-ChanProblemInterface.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation_exe-ChanContinuation.lo `test -f '$(srcdir)/ChanContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanContinuation.C
-
-chanHomotopy_exe-ChanHomotopy.o: $(srcdir)/ChanHomotopy.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy_exe-ChanHomotopy.o -MD -MP -MF "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" -c -o chanHomotopy_exe-ChanHomotopy.o `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po"; else rm -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='chanHomotopy_exe-ChanHomotopy.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po' tmpdepfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy_exe-ChanHomotopy.o `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C
-
-chanHomotopy_exe-ChanHomotopy.obj: $(srcdir)/ChanHomotopy.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy_exe-ChanHomotopy.obj -MD -MP -MF "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" -c -o chanHomotopy_exe-ChanHomotopy.obj `if test -f '$(srcdir)/ChanHomotopy.C'; then $(CYGPATH_W) '$(srcdir)/ChanHomotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanHomotopy.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po"; else rm -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='chanHomotopy_exe-ChanHomotopy.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Po' tmpdepfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy_exe-ChanHomotopy.obj `if test -f '$(srcdir)/ChanHomotopy.C'; then $(CYGPATH_W) '$(srcdir)/ChanHomotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanHomotopy.C'; fi`
-
-chanHomotopy_exe-ChanHomotopy.lo: $(srcdir)/ChanHomotopy.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -MT chanHomotopy_exe-ChanHomotopy.lo -MD -MP -MF "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" -c -o chanHomotopy_exe-ChanHomotopy.lo `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo" "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Plo"; else rm -f "$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='chanHomotopy_exe-ChanHomotopy.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.Plo' tmpdepfile='$(DEPDIR)/chanHomotopy_exe-ChanHomotopy.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy_exe-ChanHomotopy.lo `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C
-
-chanTPContinuation_exe-ChanTPContinuation.o: $(srcdir)/ChanTPContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_exe-ChanTPContinuation.o -MD -MP -MF "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" -c -o chanTPContinuation_exe-ChanTPContinuation.o `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation.C' object='chanTPContinuation_exe-ChanTPContinuation.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_exe-ChanTPContinuation.o `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C
-
-chanTPContinuation_exe-ChanTPContinuation.obj: $(srcdir)/ChanTPContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_exe-ChanTPContinuation.obj -MD -MP -MF "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" -c -o chanTPContinuation_exe-ChanTPContinuation.obj `if test -f '$(srcdir)/ChanTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation.C' object='chanTPContinuation_exe-ChanTPContinuation.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_exe-ChanTPContinuation.obj `if test -f '$(srcdir)/ChanTPContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation.C'; fi`
-
-chanTPContinuation_exe-ChanTPContinuation.lo: $(srcdir)/ChanTPContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_exe-ChanTPContinuation.lo -MD -MP -MF "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" -c -o chanTPContinuation_exe-ChanTPContinuation.lo `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo" "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Plo"; else rm -f "$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation.C' object='chanTPContinuation_exe-ChanTPContinuation.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.Plo' tmpdepfile='$(DEPDIR)/chanTPContinuation_exe-ChanTPContinuation.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_exe_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_exe-ChanTPContinuation.lo `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocatestproblems_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocatestproblems_la-ChanProblemInterface.lo `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -647,7 +577,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LTLIBRARIES)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -677,7 +607,7 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
+clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
@@ -727,7 +657,7 @@ ps-am:
 uninstall-am: uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstPROGRAMS ctags distclean \
+	clean-libtool clean-noinstLTLIBRARIES ctags distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-exec \

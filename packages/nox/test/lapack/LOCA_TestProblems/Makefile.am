@@ -1,10 +1,10 @@
 ## $Id$ 
 ## $Source$ 
-#@HEADER
+# @HEADER
 # ************************************************************************
 # 
-#            NOX: An Object-Oriented Nonlinear Solver Package
-#                 Copyright (2002) Sandia Corporation
+#                  LOCA Continuation Algorithm Package
+#                 Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -27,61 +27,41 @@
 # (rppawlo@sandia.gov), Sandia National Laboratories.
 # 
 # ************************************************************************
-#@HEADER
+# @HEADER
 
-#EXEEXT = .exe
 
-CHANCONT = chanContinuation_exe
-CHANTPCONT = chanTPContinuation_exe
-CHANHOMOTOPY = chanHomotopy_exe
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside NOX. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
 
-noinst_PROGRAMS = $(CHANCONT) $(CHANTPCONT) $(CHANHOMOTOPY) 
+LOCA_TESTPROBLEMS_H = \
+	$(srcdir)/ChanProblemInterface.H 
 
-chanContinuation_exe_SOURCES = $(srcdir)/ChanContinuation.C 
+LOCA_TESTPROBLEMS = \
+	$(srcdir)/ChanProblemInterface.C 
 
-chanContinuation_exe_DEPENDENCIES = \
-        $(top_builddir)/src/libnox.a \
-	$(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/test/utils/libnoxtestutils.a \
-	$(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.la
+# ------------------------------------------------------------------------
+# localapack library specifications
+# ------------------------------------------------------------------------
 
-chanContinuation_exe_CXXFLAGS = \
-	$(TRILINOS_CXXFLAGS) \
-	$(LIBTOOL_COMPILER_FLAGS) \
+liblocatestproblems_la_SOURCES = $(LOCA_TESTPROBLEMS) $(LOCA_TESTPROBLEMS_H)
+
+liblocatestproblems_la_CXXFLAGS = \
+	-I$(top_srcdir)/src-loca/src \
+	-I$(top_srcdir)/src-loca/src-lapack \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src-lapack \
-	-I$(top_srcdir)/src-loca/src \
-        -I$(top_srcdir)/src-loca/src-lapack \
-        -I$(top_srcdir)/test/utils \
-	-I$(top_srcdir)/test/lapack/LOCA_TestProblems
+	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
 
-chanContinuation_exe_LDADD = \
-	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.la \
-        $(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-        $(top_builddir)/src-loca/src/libloca.la \
-	-L$(top_builddir)/src \
-	-L$(top_builddir)/src-lapack \
-	-L$(top_builddir)/test/utils \
-        -lnoxtestutils -lnoxlapack -lnox \
-        $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+liblocatestproblems_la_LIBADD = \
+	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
+	$(top_builddir)/src-loca/src/libloca.la \
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS)
 
-chanTPContinuation_exe_SOURCES = $(srcdir)/ChanTPContinuation.C 
-
-chanTPContinuation_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
-
-chanTPContinuation_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
-
-chanTPContinuation_exe_LDADD = $(chanContinuation_exe_LDADD)
-
-chanHomotopy_exe_SOURCES = $(srcdir)/ChanHomotopy.C 
-
-chanHomotopy_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
-
-chanHomotopy_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
-
-chanHomotopy_exe_LDADD = $(chanContinuation_exe_LDADD)
+noinst_LTLIBRARIES = liblocatestproblems.la
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -99,3 +79,8 @@ MOSTLYCLEANFILES = $(CXXREPOS)
 # Include global libtool definitions
 # ------------------------------------------------------------------------
 include $(top_srcdir)/config/libtool_macros.am
+
+
+
+
+

@@ -2017,8 +2017,7 @@ AC_CONFIG_FILES([
 		test/lapack/NOX/Makefile
                 test/lapack/NOX_NewTest/Makefile
                 test/lapack/NOX_Group/Makefile
-                test/lapack/LOCA_NewTest/Makefile
-                test/lapack/LOCA_Group/Makefile
+		test/lapack/LOCA_TestProblems/Makefile
                 test/lapack/LOCA_ChanProblem/Makefile
 		test/lapack/LOCA_python/Makefile
 		test/lapack/LOCA_python/setpath.py
