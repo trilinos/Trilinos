@@ -192,6 +192,6 @@ amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
 #np# in a subdirectory of this directory, use the Makefile.am located in
 #np# example1/ rather than this file.
 # SUBDIRS = example1
-# SUBDIRS = scripts 
-SUBDIRS = scripts TestOptions
+SUBDIRS = scripts 
+# SUBDIRS = scripts TestOptions
 
