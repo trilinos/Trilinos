@@ -79,6 +79,7 @@ nodist_pkginclude_HEADERS = \
 	$(srcdir)/NOX_LineSearch_PolynomialWalker.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente2.H \
 	$(srcdir)/NOX_Direction_QuasiNewton.H \
+	$(srcdir)/NOX_Direction_Broyden.H \
 	$(srcdir)/NOX_Direction_ModifiedNewton.H
 
 nodist_libnox_a_SOURCES = \
@@ -88,6 +89,7 @@ nodist_libnox_a_SOURCES = \
 	$(srcdir)/NOX_LineSearch_PolynomialWalker.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente2.C \
 	$(srcdir)/NOX_Direction_QuasiNewton.C \
+	$(srcdir)/NOX_Direction_Broyden.C \
 	$(srcdir)/NOX_Direction_ModifiedNewton.C
 
 endif
@@ -159,6 +161,7 @@ DIRECTION_H = \
 
 DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
+	$(srcdir)/NOX_Direction_Generic.C \
 	$(srcdir)/NOX_Direction_Newton.C \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_SteepestDescent.C 

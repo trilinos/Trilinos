@@ -160,6 +160,7 @@ pkginclude_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_PolynomialWalker.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_MoreThuente2.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.H \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Broyden.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_ModifiedNewton.H
 
 
@@ -170,6 +171,7 @@ pkginclude_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_PolynomialWalker.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_MoreThuente2.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.C \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Broyden.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_ModifiedNewton.C
 
 
@@ -245,6 +247,7 @@ DIRECTION_H = \
 
 DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
+	$(srcdir)/NOX_Direction_Generic.C \
 	$(srcdir)/NOX_Direction_Newton.C \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_SteepestDescent.C 
@@ -353,7 +356,7 @@ am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
 	NOX_LineSearch_MoreThuente.$(OBJEXT) \
 	NOX_LineSearch_Polynomial.$(OBJEXT) \
 	NOX_LineSearch_Secant.$(OBJEXT) NOX_Direction_Manager.$(OBJEXT) \
-	NOX_Direction_Newton.$(OBJEXT) \
+	NOX_Direction_Generic.$(OBJEXT) NOX_Direction_Newton.$(OBJEXT) \
 	NOX_Direction_NonlinearCG.$(OBJEXT) \
 	NOX_Direction_SteepestDescent.$(OBJEXT) \
 	NOX_Parameter_Entry.$(OBJEXT) NOX_Parameter_List.$(OBJEXT) \
@@ -374,6 +377,7 @@ am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_LineSearch_PolynomialWalker.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_LineSearch_MoreThuente2.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_QuasiNewton.$(OBJEXT) \
+@BUILD_PRERELEASE_TRUE@	NOX_Direction_Broyden.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_ModifiedNewton.$(OBJEXT)
 @BUILD_PRERELEASE_FALSE@nodist_libnox_a_OBJECTS =
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS) $(nodist_libnox_a_OBJECTS)
@@ -386,6 +390,8 @@ LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@DEP_FILES = $(DEPDIR)/NOX_Abstract_Group.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Abstract_Vector.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Broyden.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Generic.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_ModifiedNewton.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Newton.Po \
@@ -516,6 +522,7 @@ NOX_LineSearch_Polynomial.$(OBJEXT): \
 	$(srcdir)/NOX_LineSearch_Polynomial.C
 NOX_LineSearch_Secant.$(OBJEXT): $(srcdir)/NOX_LineSearch_Secant.C
 NOX_Direction_Manager.$(OBJEXT): $(srcdir)/NOX_Direction_Manager.C
+NOX_Direction_Generic.$(OBJEXT): $(srcdir)/NOX_Direction_Generic.C
 NOX_Direction_Newton.$(OBJEXT): $(srcdir)/NOX_Direction_Newton.C
 NOX_Direction_NonlinearCG.$(OBJEXT): \
 	$(srcdir)/NOX_Direction_NonlinearCG.C
@@ -548,6 +555,7 @@ NOX_LineSearch_MoreThuente2.$(OBJEXT): \
 	$(srcdir)/NOX_LineSearch_MoreThuente2.C
 NOX_Direction_QuasiNewton.$(OBJEXT): \
 	$(srcdir)/NOX_Direction_QuasiNewton.C
+NOX_Direction_Broyden.$(OBJEXT): $(srcdir)/NOX_Direction_Broyden.C
 NOX_Direction_ModifiedNewton.$(OBJEXT): \
 	$(srcdir)/NOX_Direction_ModifiedNewton.C
 libnox.a: $(libnox_a_OBJECTS) $(libnox_a_DEPENDENCIES) 
@@ -563,6 +571,8 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Abstract_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Abstract_Vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Broyden.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Generic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_ModifiedNewton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Newton.Po@am__quote@
@@ -756,6 +766,18 @@ NOX_Direction_Manager.obj: $(srcdir)/NOX_Direction_Manager.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Manager.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Manager.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Manager.obj `cygpath -w $(srcdir)/NOX_Direction_Manager.C`
+
+NOX_Direction_Generic.o: $(srcdir)/NOX_Direction_Generic.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Generic.C' object='NOX_Direction_Generic.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Generic.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Generic.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Generic.o `test -f $(srcdir)/NOX_Direction_Generic.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Generic.C
+
+NOX_Direction_Generic.obj: $(srcdir)/NOX_Direction_Generic.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Generic.C' object='NOX_Direction_Generic.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Generic.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Generic.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Generic.obj `cygpath -w $(srcdir)/NOX_Direction_Generic.C`
 
 NOX_Direction_Newton.o: $(srcdir)/NOX_Direction_Newton.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Newton.C' object='NOX_Direction_Newton.o' libtool=no @AMDEPBACKSLASH@
@@ -1032,6 +1054,18 @@ NOX_Direction_QuasiNewton.obj: $(srcdir)/NOX_Direction_QuasiNewton.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_QuasiNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_QuasiNewton.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_QuasiNewton.obj `cygpath -w $(srcdir)/NOX_Direction_QuasiNewton.C`
+
+NOX_Direction_Broyden.o: $(srcdir)/NOX_Direction_Broyden.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Broyden.C' object='NOX_Direction_Broyden.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Broyden.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Broyden.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Broyden.o `test -f $(srcdir)/NOX_Direction_Broyden.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Broyden.C
+
+NOX_Direction_Broyden.obj: $(srcdir)/NOX_Direction_Broyden.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Broyden.C' object='NOX_Direction_Broyden.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Broyden.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Broyden.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Broyden.obj `cygpath -w $(srcdir)/NOX_Direction_Broyden.C`
 
 NOX_Direction_ModifiedNewton.o: $(srcdir)/NOX_Direction_ModifiedNewton.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_ModifiedNewton.C' object='NOX_Direction_ModifiedNewton.o' libtool=no @AMDEPBACKSLASH@
