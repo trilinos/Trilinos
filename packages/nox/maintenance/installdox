@@ -1,0 +1,85 @@
+#!/bin/csh
+
+if ($#argv < 1) then
+
+  echo "Usage: installdox <install location> [nox directory]";
+  exit(1);
+
+endif
+
+set INSTALLDIR = $1;
+
+if ($#argv < 2) then
+
+  set NOXDIR = $HOME/nox
+
+else
+
+  set NOXDIR = $2;
+
+endif
+
+echo "*** Installing NOX documentation from $NOXDIR to $INSTALLDIR ***";
+
+# ************************************************************
+
+echo "Updating NOX"
+
+if (! -d $NOXDIR) then
+  echo "Error: NOX directory ($NOXDIR) does not exist";
+  exit(1);
+endif
+
+cd $NOXDIR
+cvs update -d -P >& /dev/null
+
+# ************************************************************
+
+echo "Updating NOX documentation"
+
+if (! -d $NOXDIR/doc) then
+  echo "Error: NOX documentation directory ($NOXDIR/doc) does not exist";
+  exit(1);
+endif
+
+cd doc
+doxygen >& /dev/null
+
+# ************************************************************
+
+echo "Creating destination directory"
+
+if (! -d $INSTALLDIR) then
+  echo "Error: Installation directory ($INSTALLDIR) does not exist";
+  exit(1);
+endif
+
+if (! -d $INSTALLDIR/nox) then
+  mkdir $INSTALLDIR/nox
+endif
+
+if (! -d $INSTALLDIR/nox) then
+  echo "Error: Cannot create install subdirectory ($INSTALLDIR/nox)";
+  exit(1);
+endif
+
+# ************************************************************
+
+echo "Copying NOX graphics"
+
+if (! -d $INSTALLDIR/nox/images) then
+  mkdir $INSTALLDIR/nox/images
+endif
+
+if (! -d $INSTALLDIR/nox/images) then
+  echo "Error: Cannot create install subdirectory ($INSTALLDIR/nox/images)";
+  exit(1);
+endif
+
+cp -pu $NOXDIR/doc/includes/images/*.gif $INSTALLDIR/nox/images
+
+# ************************************************************
+
+echo "Processing HTML files"
+
+find $NOXDIR/doc/html -type f -exec $NOXDIR/maintenance/seddox $INSTALLDIR $NOXDIR {} \;
