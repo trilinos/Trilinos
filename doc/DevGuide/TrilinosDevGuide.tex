@@ -311,18 +311,31 @@ Specify the MPI include files location. Defaults to MPIROOT/include if
 Specify the MPI libraries location. Defaults to MPIROOT/lib if --with-mpi 
 is specified. If multiple directories must be specified, try 
 --with-ldflags="-L<dir1> -L<dir2>" instead. 
+\end{itemize}
 
 Developer-Related Options
-
+\begin{itemize}
 \item --enable-maintainer-mode 
 
 Enable make rules and dependencies not useful (and sometimes confusing) to 
 the casual installer.
+\end{itemize}
 
-\item Other important notes about the configure/build process.
-
+Other important notes about the configure/build process.
+\begin{itemize}
 \item Any code that links to Trilinos should define 'HAVE\_CONFIG\_H' (without
 quotes).
+\item Often the output from 'configure' will be inadequate for diagnosing 
+problems.  A developer should look (in the buildtree) at the config.log file 
+for the package that failed to configure properly.  To figure out which 
+package failed to configure, simply look at the bottom of the output from the 
+'configure' command.  One of the last lines should say something like:
+configure: error: /bin/sh '../../../packages/epetra/configure' failed 
+for packages/epetra.
+
+This particular error indicates to look in packages/epetra/config.log.  This 
+file is useful for developers trying to build Trilinos, and those who are 
+adding or editing autoconf-specific files such as configure.ac.
 \end{itemize}
 
 \subsection{Adding and Removing Source Files}
