@@ -177,9 +177,9 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H \
 	$(srcdir)/LOCA_Extended_Vector.C \
 	$(srcdir)/LOCA_Extended_MultiVector.C \
 	$(srcdir)/LOCA_Extended_AbstractGroup.C \
@@ -250,9 +250,9 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
 am__objects_1 =
 am__objects_2 = $(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
@@ -334,9 +334,9 @@ am__objects_18 = libloca_la-LOCA_Solver_Wrapper.lo \
 	libloca_la-LOCA_Continuation_StatusTest_ParameterResidualNorm.lo \
 	libloca_la-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.lo \
 	libloca_la-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.lo \
-	libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.lo \
-	libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.lo \
-	libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.lo
+	libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.lo \
+	libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.lo \
+	libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.lo
 am__objects_19 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
 	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
@@ -364,9 +364,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_Manager.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ExtendedGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ExtendedVector.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_AbstractGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_ExtendedGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_ExtendedVector.Plo \
@@ -522,9 +522,9 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.H
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -938,9 +938,9 @@ LOCA_STATUSTEST_H = \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.H
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H
 
 LOCA_STATUSTEST = \
 	$(srcdir)/LOCA_Solver_Wrapper.C \
@@ -949,9 +949,9 @@ LOCA_STATUSTEST = \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
 
 @BUILD_LOCAANASAZI_FALSE@LOCA_ANASAZI_H = 
 @BUILD_LOCAANASAZI_TRUE@LOCA_ANASAZI_H = \
@@ -1138,9 +1138,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_Manager.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ExtendedGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ExtendedVector.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_AbstractGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_ExtendedGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Bifurcation_TPBord_ExtendedVector.Plo@am__quote@
@@ -3001,77 +3001,77 @@ libloca_la-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.lo: $(srcdir)/L
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.lo `test -f '$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C
 
-libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.o: $(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.TPo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.o: $(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C
 
-libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.obj: $(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.TPo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.obj: $(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C'; fi`
 
-libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.lo: $(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.TPlo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.lo: $(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C
 
-libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.o: $(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.TPo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.o: $(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C
 
-libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.obj: $(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.TPo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.obj: $(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C'; fi`
 
-libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.lo: $(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.TPlo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.lo: $(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C
 
-libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.o: $(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.TPo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.o: $(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
 
-libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.obj: $(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.TPo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.obj: $(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.obj `if test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C'; fi`
 
-libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.lo: $(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.TPlo' @AMDEPBACKSLASH@
+libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.lo: $(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Tpo" -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Tpo" "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C' object='libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
 
 mostlyclean-libtool:
 	-rm -f *.lo

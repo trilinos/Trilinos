@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.H" 
+#include "LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H" 
 #include "LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"

@@ -1120,9 +1120,9 @@ static swig_type_info *swig_types[27];
 #include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"
 #include "LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H"
 #include "LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H"
-#include "LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.H"
-#include "LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.H"
-#include "LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.H"
+#include "LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H"
+#include "LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H"
+#include "LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H"
 
 // Extra includes due to importing Continuation.i below
 #include "LOCA_Continuation_FiniteDifferenceGroup.H"

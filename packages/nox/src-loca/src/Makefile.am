@@ -230,9 +230,9 @@ LOCA_STATUSTEST_H = \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.H
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H
 
 LOCA_STATUSTEST = \
 	$(srcdir)/LOCA_Solver_Wrapper.C \
@@ -241,9 +241,9 @@ LOCA_STATUSTEST = \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_ParameterUpdateNorm.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_SlackUpdateNorm.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_StatusTest_NullVectorNormWRMS.C
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C \
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
 
 if BUILD_LOCAANASAZI
 
