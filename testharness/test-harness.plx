@@ -513,7 +513,7 @@ report($SUMMARY);
                                 my $command = "";
                                 $command .= "mv $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log ";
                                 $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
-                                $command .= $hostOS."_".$comm."_".$brokenPackage."_config.log".($isLinux?" 2>&1":"");
+                                $command .= $hostOS."_".$comm."_".$brokenPackage."_config.log 2>&1";
                                 system $command;
                             }
                         
