@@ -121,7 +121,7 @@ are tags, attributes, and character content.
 <ul>
 <li> Teuchos::MPISession has methods to initialize, finalize, and query the global MPI environment.
 <li> Teuchos::MPIComm represents an MPI communicator
-<li> Teuchos::ContainerComm has methods to communicate Teuchos::Array objects
+<li> Teuchos::MPIContainerComm has methods to communicate Teuchos::Array objects
 </ul>
 
 </ul>
