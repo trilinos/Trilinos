@@ -420,7 +420,11 @@ int ierr = ZOLTAN_OK;
 
 /* Set remap type based on distribution of partitions to processors. */
 
-  if (!(zz->LB.Uniform_Parts)) {
+  if (zz->LB.Remap_Flag == 0) {
+    /* No remapping requested */
+    *remap_type = ZOLTAN_LB_REMAP_NONE;
+  }
+  else if (!(zz->LB.Uniform_Parts)) {
     /* Remapping does not respect requested non-uniform partition sizes;
        no remapping done. */
     *remap_type = ZOLTAN_LB_REMAP_NONE;
@@ -566,14 +570,19 @@ float before,                 /* Amount of data that overlaps between old and */
   max1++;
   
   /* Sanity check */
-  if (max1 != zz->LB.Num_Global_Parts) 
+  /* Ideally, max1 should equal LB.Num_Global_Parts, but ParMETIS3 sometimes
+   * does not return the correct number of non-empty partitions, allowing
+   * max1 to be less than LB.Num_Global_Parts. 
+   * (e.g., ewgt.adaptive-partlocal1-v3.4.?).
+   */
+  if (max1 > zz->LB.Num_Global_Parts) 
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unexpected value for max1.");
 
   /* Set up global HG */
 
   Zoltan_HG_HGraph_Init(&hg);
   if (total_HEcnt) {
-    hg.nVtx = max0 + max1;  
+    hg.nVtx = max0 + zz->LB.Num_Global_Parts;  
     hg.nEdge = total_HEcnt;
     hg.nInput = total_HEcnt * 2;   /* two pins per HE */
     hg.EdgeWeightDim = 1;
@@ -604,12 +613,11 @@ float before,                 /* Amount of data that overlaps between old and */
     if (zz->Proc == zz->Debug_Proc) Zoltan_HG_Print(zz, &hg, stdout);
   }
 
-  /* Diagnostics:  put into high Debug_Level later */
   before = measure_stays(zz, &hg, max0, "BEFORE");
 
   /* Do matching */
 
-  match = (int *) ZOLTAN_CALLOC(hg.nVtx + max1, sizeof(int));
+  match = (int *) ZOLTAN_CALLOC(hg.nVtx + zz->LB.Num_Global_Parts, sizeof(int));
   used = match + hg.nVtx;
   if (hg.nVtx && !match) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
@@ -617,7 +625,8 @@ float before,                 /* Amount of data that overlaps between old and */
     goto End;
   }
 
-  limit = (max0 < max1 ? max0 : max1);   /* Max # matches allowed */
+  /* Max # matches allowed */
+  limit = (max0 < zz->LB.Num_Global_Parts ? max0 : zz->LB.Num_Global_Parts); 
   do_match(zz, &hg, match, limit);
 
       
