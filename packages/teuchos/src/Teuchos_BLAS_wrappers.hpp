@@ -24,7 +24,7 @@
 #define PREFIX
 #define Teuchos_fcd fcd 
 
-#define DROTG_F77   F77_FUNC(srotg,sROTG)
+#define DROTG_F77   F77_FUNC(srotg,SROTG)
 #define DASUM_F77   F77_FUNC(sasum,DASUM) 
 #define DAXPY_F77   F77_FUNC(saxpy,DAXPY)
 #define DCOPY_F77   F77_FUNC(scopy,DCOPY)
