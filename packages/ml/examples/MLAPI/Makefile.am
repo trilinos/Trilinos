@@ -16,6 +16,7 @@ noinst_PROGRAMS = Blackboard            \
                   Richardson            \
                   AdaptiveSA            \
                   AdaptiveSA_Elasticity \
+                  AdaptiveSA_Tire       \
                   AdaptiveSA_SAMIS      \
                   NonSymmetricSA
 
@@ -54,6 +55,12 @@ AdaptiveSA_Elasticity_CPPFLAGS = ${ml_common_include_locations}
 AdaptiveSA_Elasticity_CXXFLAGS = ${ml_common_include_locations}
 AdaptiveSA_Elasticity_LDADD    = ${ml_libs} 
 AdaptiveSA_Elasticity_LINK     = ${mllink}
+
+AdaptiveSA_Tire_SOURCES  = $(srcdir)/AdaptiveSA_Tire.cpp
+AdaptiveSA_Tire_CPPFLAGS = ${ml_common_include_locations}
+AdaptiveSA_Tire_CXXFLAGS = ${ml_common_include_locations}
+AdaptiveSA_Tire_LDADD    = ${ml_libs} 
+AdaptiveSA_Tire_LINK     = ${mllink}
 
 Richardson_SOURCES  = $(srcdir)/Richardson.cpp
 Richardson_CPPFLAGS = ${ml_common_include_locations}
