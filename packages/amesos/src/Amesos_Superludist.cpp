@@ -87,7 +87,8 @@ int Superludist_NumProcRows( int NumProcs ) {
     IterRefine_("NO"),
     ReplaceTinyPivot_(false),
     FactorizationOK_(false), 
-    UseTranspose_(false)
+    UseTranspose_(false),
+    PrintStatistics_(false)
 {
 
   Problem_ = &prob ; 
@@ -97,6 +98,11 @@ int Superludist_NumProcRows( int NumProcs ) {
 //=============================================================================
 Amesos_Superludist::~Amesos_Superludist(void) {
 
+  // print out the value of used parameters.
+  // This is defaulted to no.
+  
+  if( PrintStatistics_ ) PrintStatistics();
+  
   if ( FactorizationDone_ ) {
     SUPERLU_FREE( SuperluA_.Store );
     ScalePermstructFree(&ScalePermstruct_);
@@ -153,17 +159,37 @@ int Amesos_Superludist::ReadParameterList() {
   
   PrintStat_ = true;
   
+  // Ken, I modified so that parameters are not added to the list if not present.
+  // Is it fine for you ????
+  
   // parameters for all packages
-  
-  Redistribute_ = ParameterList_->get("Redistribute",Redistribute_);  // FIXME msala turned these off kstanley turned them back on 3/17/04
-  AddZeroToDiag_ = ParameterList_->get("AddZeroToDiag",AddZeroToDiag_); // FIXME msala turned these off kstanley turned them back on 3/17/04
-  
+
+  if( ParameterList_->isParameter("Redistribute") )
+    Redistribute_ = ParameterList_->get("Redistribute",Redistribute_);  
+
+  if( ParameterList_->isParameter("AddZeroToDiag") )
+    AddZeroToDiag_ = ParameterList_->get("AddZeroToDiag",AddZeroToDiag_); 
+  // Ken, should we have a parameter like AddToDiag too ???
+  /*
+  if( ParameterList_->isParameter("AddToDiag") )
+    AddToDiag_ = ParameterList_->get("AddToDiag", 0.0);
+  */
+
+  // print some statistics (on process 0). Do not include timing
+  if( ParameterList_->isParameter("PrintStatistics") )
+    PrintStatistics_ = ParameterList_->get("PrintStatistics", false);
+
   // parameters for Superludist only
   
   if (ParameterList_->isSublist("Superludist") ) {
     Teuchos::ParameterList SuperludistParams = ParameterList_->sublist("Superludist") ;
-    ReuseSymbolic_ = SuperludistParams.get("ReuseSymbolic",ReuseSymbolic_);
-    string FactOption = SuperludistParams.get("Fact", "SamePattern_SameRowPerm");
+    if( SuperludistParams.isParameter("ReuseSymbolic") )
+      ReuseSymbolic_ = SuperludistParams.get("ReuseSymbolic",ReuseSymbolic_);
+    string FactOption;
+    
+    if( SuperludistParams.isParameter("Fact") )
+      FactOption = SuperludistParams.get("Fact", "SamePattern_SameRowPerm");
+    
 
     //
     //  Neither FactOption = DOFACT nor FactOption = FACTORED make any sense here.
@@ -182,20 +208,42 @@ int Amesos_Superludist::ReadParameterList() {
     
     MaxProcesses_ = SuperludistParams.get("MaxProcesses",MaxProcesses_);
     if( MaxProcesses_ > Comm().NumProc() ) MaxProcesses_ = Comm().NumProc();
-    nprow_ = SuperludistParams.get("nprow",MaxProcesses_);
-    npcol_ = SuperludistParams.get("npcol",MaxProcesses_);
-    Equil_ = SuperludistParams.get("Equil",true);
-    ColPerm_ = SuperludistParams.get("ColPerm","MMD_AT_PLUS_A");
-    if( ColPerm_ == "MY_PERMC" ) perm_c_ = SuperludistParams.get("perm_c",perm_c_);
-    RowPerm_ = SuperludistParams.get("RowPerm","LargeDiag");
-    if( RowPerm_ == "MY_PERMR" ) perm_r_ = SuperludistParams.get("perm_r",perm_r_);
-    IterRefine_ = SuperludistParams.get("IterRefine","DOUBLE");
-    ReplaceTinyPivot_ = SuperludistParams.get("ReplaceTinyPivot",true);
 
-    PrintStat_ = SuperludistParams.get("PrintStat",false);
+    /* Ken, should we support these too ?? 
+    if( SuperludistParams.isParameter("nprow") )
+      nprow_ = SuperludistParams.get("nprow",MaxProcesses_);
+    if( SuperludistParams.isParameter("npcol") ) 
+      npcol_ = SuperludistParams.get("npcol",MaxProcesses_);
+    */
+    
+    if(  SuperludistParams.isParameter("Equil") )
+      Equil_ = SuperludistParams.get("Equil",true);
 
-  } 
+    if( SuperludistParams.isParameter("ColPerm") )
+      ColPerm_ = SuperludistParams.get("ColPerm","MMD_AT_PLUS_A");
 
+    if( ColPerm_ == "MY_PERMC" ) {
+      if( SuperludistParams.isParameter("perm_c") )
+	perm_c_ = SuperludistParams.get("perm_c",perm_c_);
+    }
+
+    if( SuperludistParams.isParameter("RowPerm") )
+      RowPerm_ = SuperludistParams.get("RowPerm","LargeDiag");
+    if( RowPerm_ == "MY_PERMR" ) {
+      if( SuperludistParams.isParameter("perm_r") )
+	perm_r_ = SuperludistParams.get("perm_r",perm_r_);
+    }
+
+    if( SuperludistParams.isParameter("IterRefine") )
+      IterRefine_ = SuperludistParams.get("IterRefine","DOUBLE");
+
+    if( SuperludistParams.isParameter("ReplaceTinyPivot") )
+      ReplaceTinyPivot_ = SuperludistParams.get("ReplaceTinyPivot",true);
+
+    if( SuperludistParams.isParameter("PrintStat") )
+      PrintStat_ = SuperludistParams.get("PrintStat",false);
+
+  }
   
   return 0;
 }
@@ -231,12 +279,23 @@ int Amesos_Superludist::RedistributeA( ) {
     NumberOfProcesses = EPETRA_MIN( NumberOfProcesses, MaxProcesses_ ) ; 
   }
   else {
-    int ProcessNumHeuristic = 1+EPETRA_MAX( NumRows_/10000, NumGlobalNonzeros_/1000000 );
-    NumberOfProcesses = EPETRA_MIN( NumberOfProcesses,  ProcessNumHeuristic );
+    // Ken, what about this:
+    // -1 ==> classical Amesos_Superludist approach
+    // -2 ==> square root of number of processes (as we are doing in ML)
+    if( MaxProcesses_ == -1 ) {
+      int ProcessNumHeuristic = 1+EPETRA_MAX( NumRows_/10000, NumGlobalNonzeros_/1000000 );
+      NumberOfProcesses = EPETRA_MIN( NumberOfProcesses,  ProcessNumHeuristic );
+      nprow_ = Superludist_NumProcRows( NumberOfProcesses ) ; 
+      npcol_ = NumberOfProcesses / nprow_ ;
+      assert ( nprow_ * npcol_ == NumberOfProcesses ) ;
+    }
+    else if( MaxProcesses_ == -2 ) {
+      nprow_ = (int) pow(1.0 * NumberOfProcesses, 0.26 );
+      if( nprow_ < 1 ) nprow_ = 1;
+      npcol_ = nprow_;
+      NumberOfProcesses = npcol_ * nprow_;
+    }
   }
-  nprow_ = Superludist_NumProcRows( NumberOfProcesses ) ; 
-  npcol_ = NumberOfProcesses / nprow_ ;
-  assert ( nprow_ * npcol_ == NumberOfProcesses ) ; 
 
   //
   //  Compute a cannonical uniform distribution: MyFirstElement - The
@@ -779,4 +838,25 @@ int Amesos_Superludist::Solve() {
   }
 
   return(0) ; 
+}
+
+int Amesos_Superludist::PrintStatistics() 
+{
+  if( Comm().MyPID() ) return 0;
+  
+  cout << "------------------ : ---------------------------------------------------------" << endl;
+  cout << "Amesos_Superludist : Redistribute = " << Redistribute_ << endl;
+  cout << "Amesos_Superludist : # available processes = " << Comm().NumProc() << endl;
+  cout << "Amesos_Superludist : # processes used in computation = " << nprow_*npcol_
+       << " ( = " << nprow_ << "x" << npcol_ << ")" << endl;
+  cout << "Amesos_Superludist : Equil = " << Equil_ << endl;
+  cout << "Amesos_Superludist : ColPerm = " << ColPerm_ << endl;
+  cout << "Amesos_Superludist : RowPerm = " << RowPerm_ << endl;
+  cout << "Amesos_Superludist : IterRefine = " << IterRefine_ << endl;
+  cout << "Amesos_Superludist : ReplaceTinyPivot = " << ReplaceTinyPivot_ << endl;
+  cout << "Amesos_Superludist : AddZeroToDiag = " << AddZeroToDiag_ << endl;
+  cout << "Amesos_Superludist : Redistribute = " << Redistribute_ << endl;
+  cout << "------------------ : ---------------------------------------------------------" << endl;
+
+  return 0;
 }

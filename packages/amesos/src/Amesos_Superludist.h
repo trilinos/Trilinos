@@ -218,6 +218,9 @@ public:
   {
     return (const Teuchos::ParameterList *) &ParameterList_;
   }
+
+  //! Print various information about the parameters used by Superludist.
+  int PrintStatistics();
   
  private:  
 
@@ -311,6 +314,8 @@ public:
   bool UseTranspose_;      // Set by SetUseTranpose() 
   const Epetra_LinearProblem * Problem_;
   Teuchos::ParameterList * ParameterList_ ; 
-
+  bool PrintStatistics_;            // print some information in the destruction phase
+                                    // (defaulted to false)
+  
 };  // End of  class Amesos_Superludist  
 #endif /* _AMESOS_SUPERLUDIST_H_ */
