@@ -23,7 +23,7 @@ extern "C" {
  * AND add entry to CoarsePartitionFns array 
  * AND increment NUM_COARSEPARTITION_FN.
  */
-#define NUM_COARSEPARTITION_FNS 9
+#define NUM_COARSEPARTITION_FNS 8
 
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr0;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr1;
@@ -33,7 +33,6 @@ static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr4;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ran;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_lin;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip2;
 
 static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] = 
                                       {&coarse_part_gr0,
@@ -44,7 +43,6 @@ static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] =
                                        &coarse_part_ran,
                                        &coarse_part_lin,
                                        &coarse_part_rip,
-                                       &coarse_part_rip2
                                       };
 
 static int local_coarse_partitioner(ZZ *, HGraph *, int, float *, Partition,
@@ -77,7 +75,6 @@ char *str, *str2;
   else if (!strcasecmp(str, "ran"))   return coarse_part_ran;
   else if (!strcasecmp(str, "lin"))   return coarse_part_lin;
   else if (!strcasecmp(str, "rip"))   return coarse_part_rip;
-  else if (!strcasecmp(str, "rip2"))  return coarse_part_rip2;
   else if (!strcasecmp(str, "gr0"))   return coarse_part_gr0;
   else if (!strcasecmp(str, "gr1"))   return coarse_part_gr1;
   else if (!strcasecmp(str, "gr2"))   return coarse_part_gr2;
@@ -417,73 +414,13 @@ static int coarse_part_ran (
 }
 
 
-
 /**************************************************************************
- * Random inner product partitioning. 
- * Pick a random vector, compute inner products, sort the vertices
- * by the inner product values. Do sequence partitioning.
- * This is a fast method but better than pure random.
- */
-static int coarse_part_rip (
-  ZZ *zz,
-  HGraph *hg,
-  int p,
-  float *part_sizes,
-  Partition part,
-  PHGPartParams *hgp
-)
-{
-    int i, j, k, err=0, *order=NULL, *ran=NULL;
-    float *iprod = NULL;
-    char *yo = "coarse_part_rip";
-
-    order  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int));
-    ran    = (int *) ZOLTAN_MALLOC (hg->nEdge*sizeof(int));
-    iprod  = (float *) ZOLTAN_MALLOC (hg->nVtx*sizeof(float));
-    if (!(order && ran && iprod)) {
-        ZOLTAN_FREE ((void**) &order);
-        ZOLTAN_FREE ((void**) &ran);
-        ZOLTAN_FREE ((void**) &iprod);
-        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-        return ZOLTAN_MEMERR;
-    }
-    for (i=0; i<hg->nVtx; i++)
-        order[i] = i;
-
-    /* Generate random numbers (pos. or neg.) for edges */
-    for (j=0; j<hg->nEdge; j++){
-      ran[j] = Zoltan_HG_Rand(); /* conversion from unsigned to signed
-                                    will cause some negative numbers. */
-    }
-
-    /* Compute inner products with random vector. */
-    for (i=0; i<hg->nVtx; i++){
-      iprod[i] = 0.0;
-      for (k=hg->vindex[i]; k<hg->vindex[i+1]; k++) {
-        j = hg->vedge[k];
-        iprod[i] += ran[j]*(hg->ewgt ? hg->ewgt[j] : 1.0);
-      }
-    }
-
-    /* Sort inner product values. */
-    Zoltan_quicksort_pointer_dec_float(order, iprod, 0, hg->nVtx-1);
-
-    /* Call sequence partitioning. */
-    err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
-
-    ZOLTAN_FREE ((void**) &order);
-    ZOLTAN_FREE ((void**) &ran);
-    ZOLTAN_FREE ((void**) &iprod);
-    return err;
-}
-
-/**************************************************************************
- * Random inner product partitioning, slight variation.
+ * Random inner product partitioning.
  * Pick a random positive vector, compute inner products, sort the vertices
  * by the scaled inner product values. Do sequence partitioning.
  * This is a fast method but better than pure random.
  */
-static int coarse_part_rip2 (
+static int coarse_part_rip (
   ZZ *zz,
   HGraph *hg,
   int p,
@@ -496,7 +433,7 @@ static int coarse_part_rip2 (
     int *order=NULL; 
     float *ran=NULL;
     float *iprod = NULL;
-    char *yo = "coarse_part_rip2";
+    char *yo = "coarse_part_rip";
 
     order  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int));
     ran    = (float *) ZOLTAN_MALLOC (hg->nEdge*sizeof(float));
@@ -524,8 +461,10 @@ static int coarse_part_rip2 (
         iprod[i] += ran[j]*(hg->ewgt ? hg->ewgt[j] : 1.0);
       }
       nedges = (hg->vindex[i+1] - hg->vindex[i]);
+      /* scale by norm of vertex column */
+      /* no need to scale random vector */
       if (nedges)
-        iprod[i] /= nedges;
+        iprod[i] /= sqrt((double) nedges);
     }
 
     /* Sort inner product values. */
