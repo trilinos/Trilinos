@@ -42,16 +42,23 @@ static char *cvs_lbuserconsth_id = "$Id$";
 /*
  *  LB_GID and LB_LID data type definitions.
  *  For this example, global IDs (LB_GID) are integers and local IDs (LB_LID)
- *  are pointers to objects.
+ *  are pointers.
  */
 
 #define LB_GID int
 #define LB_LID void *
 
-#endif
+#else
 
+/*
+ *  LB_GID and LB_LID data type definitions.
+ *  For this example, global IDs (LB_GID) are integers and local IDs (LB_LID)
+ *  are also integers.
+ */
 #define LB_GID int
 #define LB_LID int
+
+#endif
 
 /*
  *  Macros to copy LB_GIDs and LB_LIDs.
