@@ -281,7 +281,9 @@ static int fill_elements(
     } /* End: "if (elem[i].nadj > 0)" */
   } /* End: "for (i = 0; i < Mesh.num_elems; i++)" */
 
+ /*
   print_distributed_mesh(Proc, Num_Proc, prob, elem);
+  */
 
   return 1;
 }
