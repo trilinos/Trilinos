@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG
+SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG scripts

@@ -66,9 +66,7 @@ namespace Anasazi {
     //! %Anasazi::LOBPCG constructor.
     LOBPCG( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
 	    const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
-	    const ScalarType tol=1.0e-6,
-	    const int blockSize = 1,
-	    const int maxIter=300 
+	    Teuchos::ParameterList &pl 
 	    );
     
     //! %Anasazi::LOBPCG destructor.
@@ -95,7 +93,7 @@ namespace Anasazi {
       this is not a valid stopping criteria.
     */
     int GetNumRestarts() const { return(_numRestarts); };
-
+    
     //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
     int GetBlockSize() const { return(_blockSize); }
     
@@ -130,14 +128,15 @@ namespace Anasazi {
     //
     // Internal methods
     //
-    void accuracyCheck(const MV *X, const MV *MX,
-                       const MV *R, const MV *Q,
-                       const MV *H, const MV *P) const;
+  void accuracyCheck(const MV *X, const MV *MX,
+		     const MV *R, const MV *Q,
+		     const MV *H, const MV *P) const;
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
     const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem; 
     const Teuchos::RefCountPtr<OutputManager<ScalarType> > _om; 
+    Teuchos::ParameterList _pl;
     //
     // Information obtained from the eigenproblem
     //
@@ -171,21 +170,20 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   LOBPCG<ScalarType,MV,OP>::LOBPCG(const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
 				   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
-				   const ScalarType tol,
-				   const int blockSize,
-				   const int maxIter
-				   ): 
+				   Teuchos::ParameterList &pl
+				   ):
     _problem(problem), 
     _om(om),
+    _pl(pl),
     _Op(_problem->GetOperator()),
     _BOp(_problem->GetB()),
     _Prec(_problem->GetPrec()),
     _evecs(_problem->GetEvecs()), 
     _evals(problem->GetEvals()), 
     _nev(problem->GetNEV()), 
-    _maxIter(maxIter),
-    _blockSize(blockSize),
-    _residual_tolerance(tol),
+    _maxIter(_pl.get("Max Iters", 300)),
+    _blockSize(_pl.get("Block Size", 1)),
+    _residual_tolerance(_pl.get("Tol", 1.0e-6)),
     _numRestarts(0), 
     _iter(0), 
     _knownEV(0),

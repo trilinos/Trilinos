@@ -15,39 +15,17 @@
 @SET_MAKE@
 
 #@HEADER
-# ************************************************************************
-# 
-#         	Anasazi: Block Eigensolvers Package
-#	        Copyright (2001) Sandia Corporation
-# 
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
-# 
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
-#  
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#  
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# 
-# ************************************************************************
 #@HEADER
+
+SOURCES = $(LOBPCGEpetraEx_SOURCES) $(LOBPCGEpetraExGen_SOURCES)
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ..
+top_builddir = ../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -62,7 +40,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-subdir = example
+noinst_PROGRAMS = LOBPCGEpetraEx$(EXEEXT) $(am__EXEEXT_1)
+subdir = example/LOBPCG
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -89,8 +68,26 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
-SOURCES =
-DIST_SOURCES =
+@BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@am__EXEEXT_1 = LOBPCGEpetraExGen$(EXEEXT)
+PROGRAMS = $(noinst_PROGRAMS)
+am_LOBPCGEpetraEx_OBJECTS = LOBPCGEpetraEx-LOBPCGEpetraEx.$(OBJEXT)
+LOBPCGEpetraEx_OBJECTS = $(am_LOBPCGEpetraEx_OBJECTS)
+am__DEPENDENCIES_1 =
+am_LOBPCGEpetraExGen_OBJECTS =  \
+	LOBPCGEpetraExGen-LOBPCGEpetraExGen.$(OBJEXT)
+LOBPCGEpetraExGen_OBJECTS = $(am_LOBPCGEpetraExGen_OBJECTS)
+DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+SOURCES = $(LOBPCGEpetraEx_SOURCES) $(LOBPCGEpetraExGen_SOURCES)
+DIST_SOURCES = $(LOBPCGEpetraEx_SOURCES) $(LOBPCGEpetraExGen_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -138,7 +135,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = @EXEEXT@
+EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -222,10 +219,67 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = BlockDavidson BlockKrylovSchur LOBPCG
+@BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@ANASAZI_BIRAM_EX_SI_IFPACK = LOBPCGEpetraExGen
+LOBPCGEpetraEx_SOURCES = $(srcdir)/LOBPCGEpetraEx.cpp
+LOBPCGEpetraExGen_SOURCES = $(srcdir)/LOBPCGEpetraExGen.cpp
+
+#np# Specify locations of include files within Trilinos, but outside np
+#np# Add packages that np is dependent on; remove epetra if np does not need it
+AM_CPPFLAGS = \
+		-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+		-I$(top_srcdir)/../belos/src -I$(top_builddir)/../belos/src \
+		-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
+		-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
+
+
+#np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
+#np# optional.
+LOBPCGEpetraEx_DEPENDENCIES = \
+        $(top_builddir)/src/libanasazi.a \
+        $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a 
+
+LOBPCGEpetraEx_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
+
+#np# List libraries that np is dependent on.
+LOBPCGEpetraEx_LDADD = \
+        $(top_builddir)/src/libanasazi.a \
+        $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+LOBPCGEpetraExGen_DEPENDENCIES = \
+        $(top_builddir)/src/libanasazi.a \
+        $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+LOBPCGEpetraExGen_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
+
+#np# List libraries that np is dependent on.
+LOBPCGEpetraExGen_LDADD = \
+        $(top_builddir)/src/libanasazi.a \
+        $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../ifpack/src/libifpack.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+
+#np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
+#np# List all subdirectories even if one or more are configured/built only
+#np# conditionally.
+#np# For packages whose examples are located in this directory, rather than
+#np# in a subdirectory of this directory, use the Makefile.am located in
+#np# example1/ rather than this file.
+# SUBDIRS = example1
+SUBDIRS = 
 all: all-recursive
 
 .SUFFIXES:
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -235,9 +289,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/LOBPCG/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/Makefile
+	  $(AUTOMAKE) --foreign  example/LOBPCG/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -255,6 +309,72 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+LOBPCGEpetraEx$(EXEEXT): $(LOBPCGEpetraEx_OBJECTS) $(LOBPCGEpetraEx_DEPENDENCIES) 
+	@rm -f LOBPCGEpetraEx$(EXEEXT)
+	$(CXXLINK) $(LOBPCGEpetraEx_LDFLAGS) $(LOBPCGEpetraEx_OBJECTS) $(LOBPCGEpetraEx_LDADD) $(LIBS)
+LOBPCGEpetraExGen$(EXEEXT): $(LOBPCGEpetraExGen_OBJECTS) $(LOBPCGEpetraExGen_DEPENDENCIES) 
+	@rm -f LOBPCGEpetraExGen$(EXEEXT)
+	$(CXXLINK) $(LOBPCGEpetraExGen_LDFLAGS) $(LOBPCGEpetraExGen_OBJECTS) $(LOBPCGEpetraExGen_LDADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Po@am__quote@
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+LOBPCGEpetraEx-LOBPCGEpetraEx.o: $(srcdir)/LOBPCGEpetraEx.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraEx_CXXFLAGS) $(CXXFLAGS) -MT LOBPCGEpetraEx-LOBPCGEpetraEx.o -MD -MP -MF "$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Tpo" -c -o LOBPCGEpetraEx-LOBPCGEpetraEx.o `test -f '$(srcdir)/LOBPCGEpetraEx.cpp' || echo '$(srcdir)/'`$(srcdir)/LOBPCGEpetraEx.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Tpo" "$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Po"; else rm -f "$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOBPCGEpetraEx.cpp' object='LOBPCGEpetraEx-LOBPCGEpetraEx.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Po' tmpdepfile='$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraEx_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCGEpetraEx-LOBPCGEpetraEx.o `test -f '$(srcdir)/LOBPCGEpetraEx.cpp' || echo '$(srcdir)/'`$(srcdir)/LOBPCGEpetraEx.cpp
+
+LOBPCGEpetraEx-LOBPCGEpetraEx.obj: $(srcdir)/LOBPCGEpetraEx.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraEx_CXXFLAGS) $(CXXFLAGS) -MT LOBPCGEpetraEx-LOBPCGEpetraEx.obj -MD -MP -MF "$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Tpo" -c -o LOBPCGEpetraEx-LOBPCGEpetraEx.obj `if test -f '$(srcdir)/LOBPCGEpetraEx.cpp'; then $(CYGPATH_W) '$(srcdir)/LOBPCGEpetraEx.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOBPCGEpetraEx.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Tpo" "$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Po"; else rm -f "$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOBPCGEpetraEx.cpp' object='LOBPCGEpetraEx-LOBPCGEpetraEx.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Po' tmpdepfile='$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraEx_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCGEpetraEx-LOBPCGEpetraEx.obj `if test -f '$(srcdir)/LOBPCGEpetraEx.cpp'; then $(CYGPATH_W) '$(srcdir)/LOBPCGEpetraEx.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOBPCGEpetraEx.cpp'; fi`
+
+LOBPCGEpetraExGen-LOBPCGEpetraExGen.o: $(srcdir)/LOBPCGEpetraExGen.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraExGen_CXXFLAGS) $(CXXFLAGS) -MT LOBPCGEpetraExGen-LOBPCGEpetraExGen.o -MD -MP -MF "$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Tpo" -c -o LOBPCGEpetraExGen-LOBPCGEpetraExGen.o `test -f '$(srcdir)/LOBPCGEpetraExGen.cpp' || echo '$(srcdir)/'`$(srcdir)/LOBPCGEpetraExGen.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Tpo" "$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Po"; else rm -f "$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOBPCGEpetraExGen.cpp' object='LOBPCGEpetraExGen-LOBPCGEpetraExGen.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Po' tmpdepfile='$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraExGen_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCGEpetraExGen-LOBPCGEpetraExGen.o `test -f '$(srcdir)/LOBPCGEpetraExGen.cpp' || echo '$(srcdir)/'`$(srcdir)/LOBPCGEpetraExGen.cpp
+
+LOBPCGEpetraExGen-LOBPCGEpetraExGen.obj: $(srcdir)/LOBPCGEpetraExGen.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraExGen_CXXFLAGS) $(CXXFLAGS) -MT LOBPCGEpetraExGen-LOBPCGEpetraExGen.obj -MD -MP -MF "$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Tpo" -c -o LOBPCGEpetraExGen-LOBPCGEpetraExGen.obj `if test -f '$(srcdir)/LOBPCGEpetraExGen.cpp'; then $(CYGPATH_W) '$(srcdir)/LOBPCGEpetraExGen.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOBPCGEpetraExGen.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Tpo" "$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Po"; else rm -f "$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOBPCGEpetraExGen.cpp' object='LOBPCGEpetraExGen-LOBPCGEpetraExGen.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Po' tmpdepfile='$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraExGen_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCGEpetraExGen-LOBPCGEpetraExGen.obj `if test -f '$(srcdir)/LOBPCGEpetraExGen.cpp'; then $(CYGPATH_W) '$(srcdir)/LOBPCGEpetraExGen.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOBPCGEpetraExGen.cpp'; fi`
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -415,7 +535,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile
+all-am: Makefile $(PROGRAMS)
 installdirs: installdirs-recursive
 installdirs-am:
 install: install-recursive
@@ -444,11 +564,13 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-recursive
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-tags
 
 dvi: dvi-recursive
 
@@ -471,12 +593,13 @@ install-man:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 pdf: pdf-recursive
 
@@ -491,14 +614,15 @@ uninstall-am: uninstall-info-am
 uninstall-info: uninstall-info-recursive
 
 .PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am \
-	clean clean-generic clean-recursive ctags ctags-recursive \
-	distclean distclean-generic distclean-recursive distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
+	clean clean-generic clean-noinstPROGRAMS clean-recursive ctags \
+	ctags-recursive distclean distclean-compile distclean-generic \
+	distclean-recursive distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic maintainer-clean-recursive \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
 	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-info-am
 

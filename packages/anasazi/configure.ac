@@ -405,11 +405,16 @@ AC_CONFIG_FILES([
 		example/Makefile
 		example/BlockDavidson/Makefile
 		example/BlockKrylovSchur/Makefile
+		example/LOBPCG/Makefile
 		test/Makefile
 		test/ModalSolverUtils/Makefile
 		test/BlockDavidson/Makefile
 		test/BlockKrylovSchur/Makefile
 		test/LOBPCG/Makefile
+	   	test/scripts/Makefile
+		test/scripts/daily/Makefile
+		test/scripts/daily/serial/Makefile
+		test/scripts/daily/mpi/Makefile
 		])
 
 AC_OUTPUT()

@@ -110,8 +110,14 @@ int main(int argc, char *argv[])
 
   int nev = 4;
   int blockSize = 5;
-  int maxIter = 500;
+  int maxIters = 500;
   double tol = tolCG * 10.0;
+
+  // Create parameter list to pass into solver
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Max Iters", maxIters );
+  MyPL.set( "Tol", tol );
   
   // Create eigenproblem
 
@@ -133,8 +139,7 @@ int main(int argc, char *argv[])
   
   // Create the eigensolver
  
-  Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MyOM, tol,
-					   blockSize, maxIter);
+  Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
   
   // Solve the problem to the specified tolerances or length
   MySolver.solve();

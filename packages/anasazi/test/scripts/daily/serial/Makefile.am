@@ -1,8 +1,8 @@
 #@HEADER
 # ************************************************************************
 # 
-#         	Anasazi: Block Eigensolvers Package
-#	        Copyright (2001) Sandia Corporation
+#                 Anasazi:  Block Eigensolver Package
+#                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -26,5 +26,17 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = BlockDavidson BlockKrylovSchur LOBPCG
+EXEEXT = .pl.exe
 
+# Nothing should be done for an mpi build
+if HAVE_MPI
+else
+
+noinst_PROGRAMS = run-anasazi-tests
+
+run_anasazi_tests_SOURCES = $(srcdir)/run-anasazi-tests
+
+run-anasazi-tests$(EXEEXT) : $(srcdir)/run-anasazi-tests
+	cp $(srcdir)/run-anasazi-tests run-anasazi-tests$(EXEEXT)
+
+endif

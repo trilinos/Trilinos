@@ -120,7 +120,7 @@ namespace Anasazi {
     //
     const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem; 
     const Teuchos::RefCountPtr<OutputManager<ScalarType> > _om; 
-  Teuchos::ParameterList _pl;
+    Teuchos::ParameterList _pl;
     //
     // Information obtained from the eigenproblem
     //
