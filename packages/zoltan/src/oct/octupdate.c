@@ -141,13 +141,13 @@ int error = FALSE;            /* error flag                                  */
   /* Error checking for unimplemented features */
   if (zz->LB.PartDist) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-            "# partitions != # processors not yet implemented.  "
+            "# partitions != # processors not yet implemented in OCTPART.  "
             "Try a different LB_METHOD.");
     error = TRUE;
   }
   if (!zz->LB.Uniform_Parts) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-            "Non-uniform partition sizes not yet implemented.  "
+            "Non-uniform partition sizes not yet implemented in OCTPART.  "
             "Try a different LB_METHOD.");
     error = TRUE;
   }
