@@ -43,12 +43,12 @@
     ------ NumPyWrapper
     ------ NumPyArray
 
-****** Change test scripts to use unittest python module
+[Done] Change test scripts to use unittest python module
     [Done] testNonContiguous.py
     [Done] testSerialDense.py
-    ------ testParameter.py
-    ------ testStatusTest.py
-    ------ testEpetraExt.py
+    [Done] testParameter.py
+    [Done] testStatusTest.py
+    [Done] testEpetraExt.py
 
 ****** Make testEpetra more extensive for Epetra.Vector
 
