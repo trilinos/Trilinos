@@ -46,10 +46,8 @@ class Epetra_CrsKundertSparse {
       for the relative and absolute thresholds and diagonal pivots.  The optional parameters are defined
       below using an excerpt from the internal documentation for Sparse.
 
-      \param InOut
-             Problem - An Epetra_LinearProblem with a well-defined Epetra_RowMatrix, RHS and LHS.
-      \param In
-             RelThreshold - This number determines what the pivot relative threshold will
+      \param  Problem (InOut) - An Epetra_LinearProblem with a well-defined Epetra_RowMatrix, RHS and LHS.
+      \param  RelThreshold (In) - This number determines what the pivot relative threshold will
 	     be.  It should be between zero and one.  If it is one then the
 	     pivoting method becomes complete pivoting, which is very slow
 	     and tends to fill up the matrix.  If it is set close to zero
@@ -77,8 +75,7 @@ class Epetra_CrsKundertSparse {
 	     diagonal pivoting.  For matrices without a strong diagonal, it
 	     is usually best to use a larger threshold, such as 0.01 or
 	     0.1.
-    \param In 
-           AbsThreshold - The absolute magnitude an element must have to be considered
+    \param AbsThreshold (In) - The absolute magnitude an element must have to be considered
 	   as a pivot candidate, except as a last resort.  This number
 	   should be set significantly smaller than the smallest diagonal
 	   element that is is expected to be placed in the matrix.  If
@@ -88,8 +85,7 @@ class Epetra_CrsKundertSparse {
 	   pivot an element that has suffered heavy cancellation and as a
 	   result mainly consists of roundoff error.  Once a valid
 	   threshold is given, it becomes the new default.
-    \param In
-           DiagPivoting - A flag indicating that pivot selection should be confined to the
+    \param DiagPivoting (In) - A flag indicating that pivot selection should be confined to the
 	   diagonal if possible.  If DiagPivoting is nonzero and if
 	   DIAGONAL_PIVOTING is enabled pivots will be chosen only from
 	   the diagonal unless there are no diagonal elements that satisfy
@@ -122,8 +118,13 @@ class Epetra_CrsKundertSparse {
       Typically Solve() is called many times, each time with a new Epetra_LinearProblem where the
       pattern of the matrix is identical but the values have changed.  The first call to Solve() is
       typically very expensive relative to subsequent calls, because a one-time reordering is performed.
+    \param ComputeFactor (In) - A bool flag.  If true, factorization will be computed prior to computing
+           forward/back solve for the given RHS/LHS.  If false and a factorization has already been computed,
+	   only the forward/back solve will be performed for the given RHS/LHS.  If a factorization has never 
+	   been performed, the factorization will be computed regardless of the value of this parameter.
+	   The default value for this parameter is true.
   */
-  int Solve();
+  int Solve(const bool ComputeFactor = true);
   //@}
 
  private:
@@ -133,9 +134,7 @@ class Epetra_CrsKundertSparse {
   double AbsThreshold_;
   int DiagPivoting_;
 
-  Epetra_CrsMatrix * A_;
-  Epetra_MultiVector * X_;
-  Epetra_MultiVector * B_;
+  Epetra_LinearProblem * Problem_;
 
   int NumMyRows_;
   int NumMyCols_;
