@@ -2373,7 +2373,7 @@ void ML_serial_start(ML_Comm *comm)
        neighbor = comm->ML_mypid-1;
        comm->USR_irecvbytes((void *) &data, sizeof(int), &neighbor, &type,
                 comm->USR_comm, &request);
-       comm->USR_waitbytes((void *) &data, sizeof(int), &neighbor, &type,
+       comm->USR_cheapwaitbytes((void *) &data, sizeof(int), &neighbor, &type,
                         comm->USR_comm, &request);
    }
 }

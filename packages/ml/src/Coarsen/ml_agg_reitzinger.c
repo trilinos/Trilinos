@@ -553,7 +553,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /* wait */
      for (i = 0; i <  Nneighbors_rcv ; i++) {
        partner = -1;
-       Tfine->comm->USR_waitbytes((void *) &(Nrcv_info[2*i]), 2*sizeof(int), 
+       Tfine->comm->USR_cheapwaitbytes((void *) &(Nrcv_info[2*i]), 2*sizeof(int), 
 			   &partner, &type, Tfine->comm->USR_comm, request+i);
      }
 
@@ -624,7 +624,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
      i1 = Nlocal;
      for (i = 0; i <  Nneighbors_rcv ; i++) {
-       Tfine->comm->USR_waitbytes((void *) &(new_Tfine_Pn_vec[i1]), 
+       Tfine->comm->USR_cheapwaitbytes((void *) &(new_Tfine_Pn_vec[i1]), 
 				  Nrcv_info[2*i+1]*sizeof(double),
 				  &(Nrcv_info[2*i]), &type,
 				  Tfine->comm->USR_comm, request+i);

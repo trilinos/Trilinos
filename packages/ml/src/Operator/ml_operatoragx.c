@@ -307,7 +307,7 @@ int ML_OperatorAGX_Restrict(void *vop, int inlen, double *din, int outlen,
       leng  = (recv_leng[i+1] - recv_leng[i]) * sizeof(double) * step;
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
-      comm->USR_waitbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
+      comm->USR_cheapwaitbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -506,7 +506,7 @@ int ML_OperatorAGX_Prolongate(void *vop, int inlen, double *din,
       leng  = (recv_leng[i+1] - recv_leng[i]) * sizeof(double) * step;
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
-      comm->USR_waitbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
+      comm->USR_cheapwaitbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else

@@ -1582,7 +1582,7 @@ int ML_Aggregate_ExchangeStatus(char *recvbuf,char *sendbuf,int N_neighbors,
       length = recv_leng[i] * typeleng;
       msgtype = msgid;
       if ( length > 0 )
-         comm->USR_waitbytes(&recvbuf[offset*typeleng], length, &fromproc,
+         comm->USR_cheapwaitbytes(&recvbuf[offset*typeleng], length, &fromproc,
 #ifdef ML_CPP
                              &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -1827,7 +1827,7 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
    for ( i = 0; i < new_N_neighbors; i++)
    {
       fromproc = new_neighbors[i];
-      comm->USR_waitbytes((void*) &new_recv_leng[i], sizeof(int), 
+      comm->USR_cheapwaitbytes((void*) &new_recv_leng[i], sizeof(int), 
 #ifdef ML_CPP
                &fromproc,&msgtype,comm->USR_comm,&Request[i]);
 #else
@@ -1924,7 +1924,7 @@ int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
       for ( i = 0; i < new_N_rcv; i++)
       {
          fromproc = -1;
-         comm->USR_waitbytes((void*) &new_recv_leng[i], sizeof(int), 
+         comm->USR_cheapwaitbytes((void*) &new_recv_leng[i], sizeof(int), 
 #ifdef ML_CPP
                   &fromproc,&msgtype,comm->USR_comm,&Request[i]);
 #else

@@ -928,7 +928,7 @@ int ML_Aggregate_ExchangeBdry(double *vec_data, void *in_comm)
       msgtype = 1999;
       length  = aggr_comm->recv_leng[i] * sizeof(double);
       fromproc = aggr_comm->recv_neighbors[i];
-      comm->USR_waitbytes((void *) &(vec_data[offset]), length, &fromproc,
+      comm->USR_cheapwaitbytes((void *) &(vec_data[offset]), length, &fromproc,
                            &msgtype, comm->USR_comm, request+i);
       offset += aggr_comm->recv_leng[i];
    }
@@ -989,7 +989,7 @@ int ML_Aggregate_ExchangeData(char *recvbuf, char *sendbuf, int N_neighbors,
       fromproc = neighbors[i];
       length = recv_leng[i] * typeleng;
       msgtype = msgid;
-      comm->USR_waitbytes(&recvbuf[offset*typeleng], length, &fromproc,
+      comm->USR_cheapwaitbytes(&recvbuf[offset*typeleng], length, &fromproc,
 #ifdef ML_CPP
                           &msgtype, comm->USR_comm, &Request[i] );
 #else

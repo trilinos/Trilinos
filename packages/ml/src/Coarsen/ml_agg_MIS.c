@@ -720,7 +720,7 @@ int agg_offset, vertex_offset;
          msgtype = 2000;
          length = recv_leng[i] * sizeof( int );
          procnum = neighbors[i];
-         comm->USR_waitbytes((void *) &(recv_list[offset]),length,&procnum,
+         comm->USR_cheapwaitbytes((void *) &(recv_list[offset]),length,&procnum,
                               &msgtype, comm->USR_comm, request+i);
          for (j = 0; j < recv_leng[i]; j++) recv_list[offset+j] += offset;
          offset += recv_leng[i];
@@ -787,7 +787,7 @@ int agg_offset, vertex_offset;
          msgtype = 2002;
          length = sizeof( int );
          procnum = neighbors[i];
-         comm->USR_waitbytes((void *) &(recv_leng[i]), length, &procnum,
+         comm->USR_cheapwaitbytes((void *) &(recv_leng[i]), length, &procnum,
                               &msgtype, comm->USR_comm, request+i);
       }
       if ( N_neighbors > 0 ) ML_free( request );
@@ -2058,7 +2058,7 @@ printf("%d: a couple %d %d \n", comm->ML_mypid, send_buf[j][0],
          {
             fproc = recv_proc[j];
             nbytes = (recv_leng[j] + 1) * sizeof( int );
-            comm->USR_waitbytes((char*) recv_buf[j], nbytes, &fproc,
+            comm->USR_cheapwaitbytes((char*) recv_buf[j], nbytes, &fproc,
                      &msgtype, comm->USR_comm, (void *) &Request[j] );
 #ifdef ML_AGGR_DEBUG
 printf("%d: rcvd is %d\n",comm->ML_mypid, recv_buf[0][0]); fflush(stdout);
@@ -2168,7 +2168,7 @@ comm->ML_mypid, send_buf[j][0], send_buf[j][1]);
          {
             fproc = recv_proc[j];
             nbytes = (recv_leng[j] + 1) * sizeof( int );
-            comm->USR_waitbytes((char*) recv_buf[j], nbytes, &fproc,
+            comm->USR_cheapwaitbytes((char*) recv_buf[j], nbytes, &fproc,
 #ifdef ML_CPP
                      &msgtype, comm->USR_comm, &Request[j] );
 #else

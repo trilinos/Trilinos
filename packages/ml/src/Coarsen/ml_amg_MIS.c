@@ -1911,7 +1911,7 @@ int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[],
       {
          fproc = recv_proc[j];
          nbytes = (recv_leng[j] + 1) * sizeof( int );
-         comm->USR_waitbytes((char*) recv_buf[j], nbytes, &fproc,
+         comm->USR_cheapwaitbytes((char*) recv_buf[j], nbytes, &fproc,
 #ifdef ML_CPP
                      &msgtype, comm->USR_comm, &Request[j] );
 #else

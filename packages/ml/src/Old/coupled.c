@@ -1778,7 +1778,7 @@ if (flag == 0)
       length = recv_leng[i] * typeleng;
       msgtype = msgid;
       if ( length > 0 )
-         comm->USR_waitbytes(&recvbuf[offset*typeleng], length, &fromproc,
+         comm->USR_cheapwaitbytes(&recvbuf[offset*typeleng], length, &fromproc,
                              &msgtype, comm->USR_comm, (void *) &Request[i] );
       offset += recv_leng[i];
    }
@@ -2102,7 +2102,7 @@ int ML_Aggregate_ComposeVBlockCommInfo(ML_GetrowFunc *getrow_obj,
    for ( i = 0; i < new_N_neighbors; i++)
    {
       fromproc = new_neighbors[i];
-      comm->USR_waitbytes((void*) &new_recv_leng[i], sizeof(int), 
+      comm->USR_cheapwaitbytes((void*) &new_recv_leng[i], sizeof(int), 
                &fromproc,&msgtype,comm->USR_comm,(void *) &Request[i]);
    }
 
@@ -2143,7 +2143,7 @@ int ML_Aggregate_ComposeVBlockCommInfo(ML_GetrowFunc *getrow_obj,
       msgtype = 2000;
       length = recv_leng[i] * sizeof( int );
       procnum = neighbors[i];
-      comm->USR_waitbytes((void *) &(ind_array2[offset]),length,&procnum,
+      comm->USR_cheapwaitbytes((void *) &(ind_array2[offset]),length,&procnum,
                            &msgtype, comm->USR_comm, Request+i);
       for (j = 0; j < recv_leng[i]; j++) ind_array2[offset+j] += offset; 
       offset += recv_leng[i];
@@ -2251,7 +2251,7 @@ int ML_Aggregate_ComposeRecvInfo(int nprocs, int mypid, int new_N_send,
       for ( i = 0; i < new_N_rcv; i++)
       {
          fromproc = -1;
-         comm->USR_waitbytes((void*) &new_recv_leng[i], sizeof(int), 
+         comm->USR_cheapwaitbytes((void*) &new_recv_leng[i], sizeof(int), 
                   &fromproc,&msgtype,comm->USR_comm,(void *) &Request[i]);
          new_recv_neighbors[i] = fromproc;
       }

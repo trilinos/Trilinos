@@ -842,7 +842,7 @@ void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
     neighbor = &(comm_info->neighbors[i]);
     rtype = type;   j = sizeof(double)* neighbor->N_rcv;
     if ((neighbor->ML_id & mask) == sub_proc ) {
-       comm->USR_waitbytes((void *) ptr_recv_list, (unsigned int) j, &(neighbor->ML_id),
+       comm->USR_cheapwaitbytes((void *) ptr_recv_list, (unsigned int) j, &(neighbor->ML_id),
                         &rtype, comm->USR_comm, request+i);
     }
     ptr_recv_list         += neighbor->N_rcv;

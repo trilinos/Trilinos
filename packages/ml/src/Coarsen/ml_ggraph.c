@@ -537,7 +537,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       for ( i = 0; i < recv_cnt; i++ )
       {
          fromproc = -1;
-         comm->USR_waitbytes((char*) &intarray[i], sizeof(int), &fromproc,
+         comm->USR_cheapwaitbytes((char*) &intarray[i], sizeof(int), &fromproc,
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -596,7 +596,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       {
          fromproc = recv_proc[i];
          nbytes = recv_leng[i] * sizeof( int );
-         comm->USR_waitbytes((char*) recv_list[i], nbytes, &fromproc,
+         comm->USR_cheapwaitbytes((char*) recv_list[i], nbytes, &fromproc,
 #ifdef ML_CPP
                         &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -866,7 +866,7 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm)
    {
       fproc = recv_proc[i];
       nbytes = recv_leng[i] * sizeof(char);   
-      comm->USR_waitbytes((char*) &recv_carray[offset], nbytes, &fproc, 
+      comm->USR_cheapwaitbytes((char*) &recv_carray[offset], nbytes, &fproc, 
 #ifdef ML_CPP
                         &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -1313,7 +1313,7 @@ int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
          {
             fproc = recv_proc[j];
             nbytes = (recv_leng[j] + 1) * sizeof( int );
-            comm->USR_waitbytes((char*) recv_buf[j], nbytes, &fproc,
+            comm->USR_cheapwaitbytes((char*) recv_buf[j], nbytes, &fproc,
 #ifdef ML_CPP
                         &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -1467,7 +1467,7 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
    {
       fproc = recv_proc[i];
       nbytes = recv_leng[i] * sizeof(char);   
-      comm->USR_waitbytes((char*) &recv_carray[offset], nbytes, &fproc, 
+      comm->USR_cheapwaitbytes((char*) &recv_carray[offset], nbytes, &fproc, 
 #ifdef ML_CPP
                         &msgtype, comm->USR_comm, &Request[i] );
 #else

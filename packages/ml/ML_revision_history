@@ -73,3 +73,10 @@ mystring = ml2_1_1_0-merge
 
     Merged in ml2_1_0_0-branch-patch_1 to main trunk.  (The trunk is what you
     get with "cvs checkout ml").
+
+mystring = ml3_0
+
+    ML has now been put "autotooled", i.e., autoconf and automake.
+    Hiam Waisman's GGB method has been implemented.
+    Bill Cochran's cache optimizations for multiple RHSs have been implemented.
+    Bill also has added code so that ML will compile with c++ compilers.

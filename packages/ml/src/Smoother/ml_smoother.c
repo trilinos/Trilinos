@@ -4411,7 +4411,7 @@ int ML_Smoother_GetRowLengths(ML_CommInfoOP *comm_info, ML_Comm *comm,
       msgtype = mtype;   
       length  = ML_CommInfoOP_Get_Nrcvlist(comm_info, proc_id);
       nbytes  = sizeof(int) * length;
-      comm->USR_waitbytes((void *) &((*recv_leng)[offset]), nbytes, &proc_id, 
+      comm->USR_cheapwaitbytes((void *) &((*recv_leng)[offset]), nbytes, &proc_id, 
                           &msgtype, comm->USR_comm, request+i);
       offset += length;
    }
@@ -4531,7 +4531,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
       nnz = 0;
       for (j = 0; j < length; j++)  nnz += recv_leng[offset+j];
       nbytes  = sizeof(double) * nnz;
-      comm->USR_waitbytes((void *) &((*dble_buf)[nnz_offset]), nbytes, 
+      comm->USR_cheapwaitbytes((void *) &((*dble_buf)[nnz_offset]), nbytes, 
  		   &proc_id, &msgtype, comm->USR_comm, request+i);
       offset += length;
       nnz_offset += nnz;
@@ -4615,7 +4615,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
       nnz = 0;
       for (j = 0; j < length; j++)  nnz += recv_leng[offset+j];
       nbytes  = sizeof(int) * nnz;
-      comm->USR_waitbytes((void *) &((*int_buf)[nnz_offset]), nbytes, 
+      comm->USR_cheapwaitbytes((void *) &((*int_buf)[nnz_offset]), nbytes, 
  		   &proc_id, &msgtype, comm->USR_comm, request+i);
       offset += length;
       nnz_offset += nnz;
