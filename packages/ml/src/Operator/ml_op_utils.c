@@ -104,6 +104,9 @@ int ML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2, int size,
             if ( dtemp[cols[j]] == 1.0) vals[j] = 0.0;
       }
    }
+   ML_free(dtemp);
+   ML_free(f_bdry);
+
    return(1);
 }
 
