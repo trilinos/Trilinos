@@ -20,79 +20,118 @@
 CORE_H = \
 $(srcdir)/Include/ml_defs.h     \
 $(srcdir)/Comm/ml_comm.h \
-$(srcdir)/Include/ml_include.h 
+$(srcdir)/Include/ml_include.h \
+$(srcdir)/Include/ml_common.h \
+$(srcdir)/Coarsen/ml_amg_genP.h \
+$(srcdir)/Coarsen/ml_amg.h \
+$(srcdir)/Coarsen/ml_agg_genP.h \
+$(srcdir)/Coarsen/ml_check.h \
+$(srcdir)/Coarsen/ml_aggregate.h \
+$(srcdir)/Coarsen/ml_ggraph.h \
+$(srcdir)/FEGrid/ml_mapper.h \
+$(srcdir)/FEGrid/ml_gridagx.h \
+$(srcdir)/FEGrid/ml_pde.h       $(srcdir)/FEGrid/ml_bdrypts.h \
+$(srcdir)/Coarsen/ml_agg_reitzinger.h \
+$(srcdir)/FEGrid/ml_gridfunc.h \
+$(srcdir)/FEGrid/ml_setup.h \
+$(srcdir)/FEGrid/ml_elementagx.h  $(srcdir)/FEGrid/ml_grid.h \
+$(srcdir)/Main/ml_struct.h $(srcdir)/Main/ml_seg_precond.h \
+$(srcdir)/Main/ml_1level.h \
+$(srcdir)/Main/mli_solver.h \
+$(srcdir)/Main/ml_ggb.h \
+$(srcdir)/Comm/ml_comminfoagx.h \
+$(srcdir)/Comm/ml_comminfoop.h \
+$(srcdir)/Smoother/ml_csolve.h \
+$(srcdir)/Smoother/ml_mls.h \
+$(srcdir)/Smoother/ml_smoother.h \
+$(srcdir)/Smoother/ml_solver.h \
+$(srcdir)/Smoother/ml_superlu.h \
+$(srcdir)/Smoother/ml_xxt.h \
+$(srcdir)/Smoother/ml_xyt.h \
+$(srcdir)/Krylov/ml_bicgstabl.h \
+$(srcdir)/Krylov/ml_cg.h \
+$(srcdir)/Krylov/ml_gmres.h \
+$(srcdir)/Krylov/ml_krylov.h \
+$(srcdir)/Operator/ml_mat_formats.h \
+$(srcdir)/Operator/ml_operatoragx.h \
+$(srcdir)/Operator/ml_operator_blockmat.h \
+$(srcdir)/Operator/ml_operator.h \
+$(srcdir)/Operator/ml_op_utils.h \
+$(srcdir)/Operator/ml_rap.h
 
 CORE = \
 $(srcdir)/Coarsen/ml_agg_uncoupled.c \
 $(srcdir)/Coarsen/ml_amg.c \
 $(srcdir)/Coarsen/ml_agg_coupled.c     $(srcdir)/Coarsen/ml_amg_genP.c \
-$(srcdir)/Coarsen/ml_agg_dd.c          $(srcdir)/Coarsen/ml_amg_genP.h \
-$(srcdir)/Coarsen/ml_agg_genP.c        $(srcdir)/Coarsen/ml_amg.h \
-$(srcdir)/Coarsen/ml_agg_genP.h        $(srcdir)/Coarsen/ml_amg_MIS.c \
-$(srcdir)/Coarsen/ml_agg_MIS.c         $(srcdir)/Coarsen/ml_check.c \
-$(srcdir)/Coarsen/ml_aggregate.c       $(srcdir)/Coarsen/ml_check.h \
-$(srcdir)/Coarsen/ml_aggregate.h       $(srcdir)/Coarsen/ml_ggraph.c \
-$(srcdir)/Coarsen/ml_agg_reitzinger.c  $(srcdir)/Coarsen/ml_ggraph.h \
-$(srcdir)/Coarsen/ml_agg_reitzinger.h \
+$(srcdir)/Coarsen/ml_agg_dd.c \
+$(srcdir)/Coarsen/ml_agg_genP.c \
+$(srcdir)/Coarsen/ml_amg_MIS.c \
+$(srcdir)/Coarsen/ml_agg_MIS.c \
+$(srcdir)/Coarsen/ml_aggregate.c \
+$(srcdir)/Coarsen/ml_ggraph.c \
+$(srcdir)/Coarsen/ml_agg_reitzinger.c  \
  \
-$(srcdir)/FEGrid/ml_gridagx.c   $(srcdir)/FEGrid/ml_mapper.h \
-$(srcdir)/FEGrid/ml_gridagx.h   $(srcdir)/FEGrid/ml_pde.c \
+$(srcdir)/FEGrid/ml_gridagx.c \
+$(srcdir)/FEGrid/ml_pde.c \
 $(srcdir)/FEGrid/ml_bdrypts.c   $(srcdir)/FEGrid/ml_grid.c \
-$(srcdir)/FEGrid/ml_pde.h       $(srcdir)/FEGrid/ml_bdrypts.h \
 $(srcdir)/FEGrid/ml_gridfunc.c  $(srcdir)/FEGrid/ml_setup.c \
-$(srcdir)/FEGrid/ml_elementagx.c  $(srcdir)/FEGrid/ml_gridfunc.h \
-$(srcdir)/FEGrid/ml_setup.h \
-$(srcdir)/FEGrid/ml_elementagx.h  $(srcdir)/FEGrid/ml_grid.h \
+$(srcdir)/FEGrid/ml_elementagx.c \
 $(srcdir)/FEGrid/ml_get_basis.c   $(srcdir)/FEGrid/ml_mapper.c \
  \
-$(srcdir)/Main/ml_struct.h $(srcdir)/Main/ml_seg_precond.h \
 $(srcdir)/Main/ml_struct.c $(srcdir)/Main/driver.c \
-$(srcdir)/Main/ml_1level.h $(srcdir)/Main/mli_solver.c \
-$(srcdir)/Main/mli_solver.h $(srcdir)/Main/ml_seg_precond.c \
-$(srcdir)/Main/ml_ggb.c    $(srcdir)/Main/ml_ggb.h \
+$(srcdir)/Main/mli_solver.c \
+$(srcdir)/Main/ml_seg_precond.c \
+$(srcdir)/Main/ml_ggb.c \
  \
 $(srcdir)/Comm/ml_comm.c \
-$(srcdir)/Comm/ml_comminfoagx.c $(srcdir)/Comm/ml_comminfoagx.h \
-$(srcdir)/Comm/ml_comminfoop.c $(srcdir)/Comm/ml_comminfoop.h \
+$(srcdir)/Comm/ml_comminfoagx.c \
+$(srcdir)/Comm/ml_comminfoop.c \
 $(srcdir)/Comm/ml_exch_row.c \
  \
-$(srcdir)/Smoother/ml_csolve.c $(srcdir)/Smoother/ml_csolve.h \
-$(srcdir)/Smoother/ml_mls.h $(srcdir)/Smoother/ml_smoother.c \
-$(srcdir)/Smoother/ml_smoother.h $(srcdir)/Smoother/ml_solver.c \
-$(srcdir)/Smoother/ml_solver.h $(srcdir)/Smoother/ml_superlu.c \
-$(srcdir)/Smoother/ml_superlu.h $(srcdir)/Smoother/ml_xxt.c \
-$(srcdir)/Smoother/ml_xxt.h $(srcdir)/Smoother/ml_xyt.c \
-$(srcdir)/Smoother/ml_xyt.h \
+$(srcdir)/Smoother/ml_csolve.c \
+$(srcdir)/Smoother/ml_smoother.c \
+$(srcdir)/Smoother/ml_solver.c \
+$(srcdir)/Smoother/ml_superlu.c \
+$(srcdir)/Smoother/ml_xxt.c \
+$(srcdir)/Smoother/ml_xyt.c \
  \
-$(srcdir)/Krylov/ml_bicgstabl.c $(srcdir)/Krylov/ml_bicgstabl.h \
-$(srcdir)/Krylov/ml_cg.c $(srcdir)/Krylov/ml_cg.h \
-$(srcdir)/Krylov/ml_gmres.c $(srcdir)/Krylov/ml_gmres.h \
-$(srcdir)/Krylov/ml_krylov.c $(srcdir)/Krylov/ml_krylov.h \
+$(srcdir)/Krylov/ml_bicgstabl.c \
+$(srcdir)/Krylov/ml_cg.c \
+$(srcdir)/Krylov/ml_gmres.c \
+$(srcdir)/Krylov/ml_krylov.c \
  \
-$(srcdir)/Operator/ml_mat_formats.h $(srcdir)/Operator/ml_matmat_mult.c \
-$(srcdir)/Operator/ml_operatoragx.c $(srcdir)/Operator/ml_operatoragx.h \
-$(srcdir)/Operator/ml_operator_blockmat.c $(srcdir)/Operator/ml_operator_blockmat.h \
-$(srcdir)/Operator/ml_operator.c $(srcdir)/Operator/ml_operator.h \
-$(srcdir)/Operator/ml_op_utils.c $(srcdir)/Operator/ml_op_utils.h \
-$(srcdir)/Operator/ml_rap.c $(srcdir)/Operator/ml_rap.h \
+$(srcdir)/Operator/ml_matmat_mult.c \
+$(srcdir)/Operator/ml_operatoragx.c \
+$(srcdir)/Operator/ml_operator_blockmat.c \
+$(srcdir)/Operator/ml_operator.c \
+$(srcdir)/Operator/ml_op_utils.c \
+$(srcdir)/Operator/ml_rap.c \
 $(srcdir)/Operator/ml_mat_formats.c $(srcdir)/Operator/ml_rap_utils.c
 
 UTIL_H = \
 $(srcdir)/Utils/ml_aztec_utils.h $(srcdir)/Utils/ml_epetra_utils.h \
-$(srcdir)/Utils/ml_utils.h
+$(srcdir)/Utils/ml_utils.h \
+$(srcdir)/Utils/ml_memory.h \
+$(srcdir)/Utils/ml_aztec_lapack.h      $(srcdir)/Utils/ml_rbm.h \
+$(srcdir)/Utils/ml_read_utils.h \
+$(srcdir)/Utils/ml_superlu_lapack.h \
+$(srcdir)/Utils/ml_epetra_operator.h \
+$(srcdir)/Utils/ml_twogrid_analysis.h \
+$(srcdir)/Utils/ml_intlist.h \
+$(srcdir)/Utils/ml_vec.h \
+$(srcdir)/Utils/ml_lapack.h            $(srcdir)/Utils/ml_vendor_lapack.h \
+$(srcdir)/Utils/ml_eigf2c.h
+
 
 UTIL = \
-$(srcdir)/Utils/ml_memory.h            $(srcdir)/Utils/ml_rbm.c \
-$(srcdir)/Utils/ml_aztec_lapack.h      $(srcdir)/Utils/ml_rbm.h \
+$(srcdir)/Utils/ml_rbm.c \
 $(srcdir)/Utils/ml_aztec_utils.c       $(srcdir)/Utils/ml_read_utils.c \
-$(srcdir)/Utils/ml_read_utils.h \
-$(srcdir)/Utils/ml_epetra_operator.cpp $(srcdir)/Utils/ml_superlu_lapack.h \
-$(srcdir)/Utils/ml_epetra_operator.h   $(srcdir)/Utils/ml_twogrid_analysis.c \
-$(srcdir)/Utils/ml_epetra_utils.cpp    $(srcdir)/Utils/ml_twogrid_analysis.h \
+$(srcdir)/Utils/ml_epetra_operator.cpp \
+$(srcdir)/Utils/ml_twogrid_analysis.c \
+$(srcdir)/Utils/ml_epetra_utils.cpp \
 $(srcdir)/Utils/ml_utils.c             $(srcdir)/Utils/ml_intlist.c \
-$(srcdir)/Utils/ml_intlist.h           $(srcdir)/Utils/ml_vec.c \
-$(srcdir)/Utils/ml_lapack.c            $(srcdir)/Utils/ml_vec.h \
-$(srcdir)/Utils/ml_lapack.h            $(srcdir)/Utils/ml_vendor_lapack.h \
+$(srcdir)/Utils/ml_vec.c \
+$(srcdir)/Utils/ml_lapack.c \
 $(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c
 
 ENUM_H = 
