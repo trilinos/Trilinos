@@ -327,9 +327,9 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     }
     
     SparseDirectTimingVars::SS_Result.Set_Total_Time( TotalTime.ElapsedTime() ); 
-    SparseDirectTimingVars::SS_Result.Set_First_Time( 0.0 ); 
-    SparseDirectTimingVars::SS_Result.Set_Middle_Time( 0.0 ); 
-    SparseDirectTimingVars::SS_Result.Set_Last_Time( 0.0 ); 
+    //    SparseDirectTimingVars::SS_Result.Set_First_Time( 0.0 ); 
+    //    SparseDirectTimingVars::SS_Result.Set_Middle_Time( 0.0 ); 
+    //    SparseDirectTimingVars::SS_Result.Set_Last_Time( 0.0 ); 
   }  // end for (int i=0; i<special; i++ ) 
 
   //

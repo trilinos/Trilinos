@@ -868,9 +868,6 @@ AC_SUBST(ac_aux_dir)
 # Output files
 # ------------------------------------------------------------------------
 ##
-#		test/Makefile
-#
-#  Temporarily disabled until I make it dependent on --enable-amesos-dscpack
 #
 AC_CONFIG_FILES([
 		Makefile 

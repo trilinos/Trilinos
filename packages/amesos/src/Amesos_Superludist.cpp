@@ -68,7 +68,7 @@ int Superludist_NumProcRows( int NumProcs ) {
 //=============================================================================
 Amesos_Superludist::~Amesos_Superludist(void) {
 
-  if ( false && FactorizationDone_ ) {
+  if ( FactorizationDone_ ) {
     SUPERLU_FREE( superluA_.Store );
     ScalePermstructFree(&ScalePermstruct_);
     Destroy_LU(numrows_, &grid_, &LUstruct_);

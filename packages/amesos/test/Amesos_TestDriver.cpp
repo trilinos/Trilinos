@@ -30,7 +30,7 @@
   int SuperLU_permc ; 
 
 // #undef HAVE_TIME_H
-#undef HAVE_SYS_UTSNAME_H
+// #undef HAVE_SYS_UTSNAME_H
 
 #ifdef HAVE_TIME_H
 #include <time.h>
@@ -394,10 +394,10 @@ main(int argc, char **argv)
 #endif
     }
     if (summary ) { 
-      summary_file << endl << setw(12) << hostname
+      summary_file << endl << setw(12) << hostname << " " 
 		   << setw(12) <<  argv[1] 
-		   << " " << setw(-1) << timebuffer
-		   << setw(15) << argv[2] << setw(6)
+		   << " " << setw(-1) << timebuffer << " " 
+		   << setw(15) << argv[2] << setw(6) << " " 
 		   << MatType << " " 
 		   << special << " " 
 		   << NumMpiProcs <<  setw(6)  << " " 

@@ -175,9 +175,9 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     passtmp = &serialtmp;
   }
 
-  passxexact->SetSeed(1.31) ; 
+  passxexact->SetSeed(131) ; 
   passxexact->Random();
-  passx->SetSeed(11.231) ; 
+  passx->SetSeed(11231) ; 
   passx->Random();
 
   passb->PutScalar( 0.0 );
@@ -319,9 +319,9 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     }
 
     SparseDirectTimingVars::SS_Result.Set_Total_Time( TotalTime.ElapsedTime() ); 
-    SparseDirectTimingVars::SS_Result.Set_First_Time( 0.0 ); 
-    SparseDirectTimingVars::SS_Result.Set_Middle_Time( 0.0 ); 
-    SparseDirectTimingVars::SS_Result.Set_Last_Time( 0.0 ); 
+    //    SparseDirectTimingVars::SS_Result.Set_First_Time( 0.0 ); 
+    //    SparseDirectTimingVars::SS_Result.Set_Middle_Time( 0.0 ); 
+    //    SparseDirectTimingVars::SS_Result.Set_Last_Time( 0.0 ); 
 
     //
     //  Compute the error = norm(xcomp - xexact )

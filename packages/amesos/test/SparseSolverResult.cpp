@@ -29,8 +29,15 @@ void SparseSolverResult::PrintSummary(ostream & os) const {
     { TotalWallClock += SolveTime_.WallTime() ; } ; 
   os << setw(10) << setprecision(4) << TotalWallClock  ; 
 #endif
-  os << setw(10) << setprecision(4) << first_time  ; 
-  os << setw(10) << setprecision(4) << last_time - middle_time ; 
-  os << setw(10) << setprecision(4) << last_time - first_time ; 
+  if ( first_time != UnUsedDbl ) 
+    os << setw(10) << setprecision(4) << first_time  ; 
+  if ( middle_time != UnUsedDbl ) 
+    os << setw(10) << setprecision(4) << last_time - middle_time ; 
+  else
+    os << "        na " ; 
+  if ( last_time != UnUsedDbl ) 
+    os << setw(10) << setprecision(4) << last_time - first_time ; 
+  else
+    os << "        na " ; 
 
 }
