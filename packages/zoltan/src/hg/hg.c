@@ -84,6 +84,14 @@ int i;
 char *yo = "Zoltan_HG";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  if (zz->Num_Proc > 1) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                      "LB_METHOD HG runs on only one processor; try PHG.");
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
 printf ("RTHRTH: starting\n");
 
   /* Initialization of return arguments. */
