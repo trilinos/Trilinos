@@ -14,7 +14,7 @@ Create requires 3 arguments:
 - a string, indicating the preconditioner to be built;
 - a pointer to an Epetra_RowMatrix, representing the matrix
   to be used to define the preconditioner;
-- an interger (defaulted to 0), that specifies the amoung of
+- an interger (defaulted to 0), that specifies the amount of
   overlap among the processes.
 
 The first argument can assume the following values:
@@ -41,8 +41,9 @@ The first argument can assume the following values:
   Amesos to apply the inverse of each block
   (require \c --enable-amesos)
 - \c "Amesos"
-- \c "ICT": incomplete Cholesky factorization
-- \c "RILUK": RILU(K) factorization
+- \c "gICT": graph-based incomplete Cholesky factorization
+- \c "vICT": value-based incomplete Cholesky factorization
+- \c "gRILUK": graph-based RILU(K) factorization
 - otherwise, Create() returns 0.
 
 <P> The following fragment of code shows the
@@ -55,18 +56,17 @@ basic usage of this class.
 Ifpack Factory;
 
 Epetra_RowMatrix* A; // A is FillComplete()'d.
-string PrecType = "ICT"; // use incomplete Cholesky on each process
+string PrecType = "vICT"; // use incomplete Cholesky on each process
 int OverlapLevel = 1; // one row of overlap among the processes
 Ifpack_Preconditioner* Prec = Factory.Create(PrecType, A, OverlapLevel);
 assert (Prec != 0);
 
 Teuchos::ParameterList List;
-List.set("level-of-fill", 5); // use ICT(5)
-List.set("schwarz: use RCM reordering", false); // no reordering
+List.set("fact: level-of-fill", 5); // use ICT(5)
 
-Prec->SetParameters(List);
-Prec->Initialize();
-Prec->Compute();
+IFPACK_CHK_ERR(Prec->SetParameters(List));
+IFPACK_CHK_ERR(Prec->Initialize());
+IFPACK_CHK_ERR(Prec->Compute());
 
 // now Prec can be used as AztecOO preconditioner
 // like for instance
@@ -81,6 +81,9 @@ AztecOOSolver.SetPrecOperator(Prec);
 
 // Call the solver
 AztecOOSolver.Iterate(1550,1e-8);
+
+// print information on stdout
+cout << *Prec;
 
 // delete the preconditioner
 delete Prec;

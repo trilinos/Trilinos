@@ -19,9 +19,10 @@
 #include "Ifpack_Amesos.h"
 #endif
 
+//==============================================================================
 Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
-				      Epetra_RowMatrix* Matrix,
-				      const int Overlap)
+                                      Epetra_RowMatrix* Matrix,
+                                      const int Overlap)
 {
 
   if (PrecType == "Jacobi") {
@@ -41,28 +42,28 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
   }
   else if (PrecType == "block Jacobi") {
     return(new Ifpack_AdditiveSchwarz<
-	    Ifpack_BlockJacobi<Ifpack_DenseContainer> >(Matrix,Overlap));
+           Ifpack_BlockJacobi<Ifpack_DenseContainer> >(Matrix,Overlap));
   }
   else if (PrecType == "block Gauss-Seidel") {
     return(new Ifpack_AdditiveSchwarz<
-	    Ifpack_BlockGaussSeidel<Ifpack_DenseContainer> >(Matrix,Overlap));
+           Ifpack_BlockGaussSeidel<Ifpack_DenseContainer> >(Matrix,Overlap));
   }
   else if (PrecType == "block symmetric Gauss-Seidel") {
     return(new Ifpack_AdditiveSchwarz<
-	    Ifpack_BlockSymGaussSeidel<Ifpack_DenseContainer> >(Matrix,Overlap));
+           Ifpack_BlockSymGaussSeidel<Ifpack_DenseContainer> >(Matrix,Overlap));
   }
 #ifdef HAVE_IFPACK_AMESOS
   else if (PrecType == "block Jacobi (Amesos)") {
     return(new Ifpack_AdditiveSchwarz<
-	    Ifpack_BlockJacobi<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
+            Ifpack_BlockJacobi<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
   }
   else if (PrecType == "block Gauss-Seidel (Amesos)") {
     return(new Ifpack_AdditiveSchwarz<
-	    Ifpack_BlockGaussSeidel<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
+           Ifpack_BlockGaussSeidel<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
   }
   else if (PrecType == "block symmetric Gauss-Seidel (Amesos)") {
     return(new Ifpack_AdditiveSchwarz<
-	    Ifpack_BlockSymGaussSeidel<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
+           Ifpack_BlockSymGaussSeidel<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
   }
   else if (PrecType == "Amesos") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(Matrix,Overlap));

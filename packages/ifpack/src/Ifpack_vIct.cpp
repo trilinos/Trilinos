@@ -67,12 +67,12 @@ public:
     return(aval_);
   }
 
-  inline int SetIndex(const int i)
+  inline void SetIndex(const int i)
   {
     i_ = i;
   }
 
-  inline int SetValue(const double val)
+  inline void SetValue(const double val)
   {
     val_ = val;
     aval_ = IFPACK_ABS(val_);

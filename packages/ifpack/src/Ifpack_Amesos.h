@@ -8,50 +8,58 @@
 #include "Epetra_Operator.h"
 #include "Teuchos_ParameterList.hpp"
 class Epetra_Map;
+class Epetra_Time;
 class Epetra_Comm;
 class Amesos_BaseSolver;
 class Epetra_LinearProblem;
 class Epetra_RowMatrix;
 
-//! Ifpack_Amesos: a class to use Amesos's LU solvers as preconditioners.
+//! Ifpack_Amesos: a class to use Amesos' factorizations as preconditioners.
 /*!
-Class Ifpack_Amesos enables the use of Amesos's LU factorizations as preconditioners.
-Like most other Ifpack_Preconditioner objects, this class requires the
-pointer of the precondioned matrix in the constructor. Parameters are
-set using \c SetParameters(), and the preconditioner is computed using
-Compute().
+Class Ifpack_Amesos enables the use of Amesos' factorizations as 
+Ifpack_Preconditioners.
 
-It is important to note that this class solves the linear system defined by
-the matrix, with \e all the processes contained in the \c Comm object of this
-matrix. As such, this preconditioner is seldomly used alone; moreover, it
-is used as local solver for Ifpack_AdditiveSchwarz or Ifpack_CrsAdditiveSchwarz preconditioners. (In these cases, the distributed matrix is localized using
-Ifpack_LocalRowMatrix, than this local matrix is given to Ifpack_Amesos).
+Ifpack_Amesos is just a bare-bone wrap to Amesos. Currently, the
+only parameter required recognized by SetParameters() is
+\c "amesos: solver type" (defaulted to \c
+"Amesos_Klu"), which defined the Amesos solver. The Teuchos list
+in input to SetParameters() is copied, then the copied list is
+used to set the parameters of the Amesos object.
 
-Ifpack_Amesos is just a bare-bone wrap to Amesos. The most
-important parameter
-required by this class is \c "amesos: solver type" (defaulted to \c
-"Amesos_Klu"), which defined the Amesos solver. However, the \e same
-list is used to set Amesos parameters.
+This class works with matrices whose communicator contains only one
+process, that is, either serial matrices, or Ifpack_LocalFilter'd matrices.
 
-\author Marzio Sala, SNL 9214
+\warning The number of flops is NOT updated.
 
-\date First development Sep-04, last update Oct-04
+\author Marzio Sala, SNL 9214.
+
+\date Last update Oct-04.
 
 */
 class Ifpack_Amesos : public Ifpack_Preconditioner {
       
 public:
 
+  //@{ \name Constructors/Destructors.
+
+  //! Constructor.
   Ifpack_Amesos(Epetra_RowMatrix* Matrix);
+
+  //! Copy constructor.
+  Ifpack_Amesos(const Ifpack_Amesos& rhs);
+
+  //! Operator=.
+  Ifpack_Amesos& operator=(const Ifpack_Amesos& rhs);
 
   //@{ \name Destructor.
   //! Destructor
   virtual ~Ifpack_Amesos();
+
   //@}
 
   //@{ \name Atribute set methods.
 
-    //! If set true, transpose of this operator will be applied (not implemented).
+   //! If set true, transpose of this operator will be applied (not implemented).
     /*! This flag allows the transpose of the given operator to be used 
      * implicitly.  
       
@@ -61,7 +69,8 @@ public:
 
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
   */
-    virtual int SetUseTranspose(bool UseTranspose);
+
+  virtual int SetUseTranspose(bool UseTranspose);
   //@}
   
   //@{ \name Mathematical functions.
@@ -114,13 +123,21 @@ public:
 
     //! Returns the Epetra_Map object associated with the range of this operator.
     virtual const Epetra_Map & OperatorRangeMap() const;
+
   //@}
 
+  //@{ \name Construction and application methods.
+ 
+  //! Returns \c true is the preconditioner has been successfully initialized.
   virtual bool IsInitialized() const
   {
     return(IsInitialized_);
   }
 
+  //! Initializes the preconditioners.
+  /*! \return
+   * 0 if successful, 1 if problems occurred.
+   */
   virtual int Initialize();
 
   //! Returns \c true if the preconditioner has been successfully computed.
@@ -130,19 +147,18 @@ public:
   }
 
   //! Computes the preconditioners.
-  /*! Computes the preconditioners: 
-   *
-   * \return
+  /*! \return
    * 0 if successful, 1 if problems occurred.
    */
   virtual int Compute();
 
   //! Sets all the parameters for the preconditioner.
-  /*! Only two parameters are recognized by Ifpack_Amesos:
+  /*! Parameters currently supported:
    * - \c "amesos: solver type" : Specifies the solver type
    *   for Amesos. Default: \c Amesos_Klu.
-   * - \c "amesos: compute condest" : if \c true,
-   *   computes the estimated condition number. Default: \c false.
+   *
+   * The input list will be copied, then passed to the Amesos
+   * object through Amesos::SetParameters().
    */   
   virtual int SetParameters(Teuchos::ParameterList& List);
 
@@ -157,33 +173,27 @@ public:
   {
     return(0);
   }
-  //! Returns a reference to the internally stored matrix.
+
+  //@}
+
+  //@{ \name Query methods.
+
+  //! Returns a const reference to the internally stored matrix.
   virtual const Epetra_RowMatrix& Matrix() const
   {
     return(*Matrix_);
   }
 
-  //! Returns a reference to the internally stored matrix.
-  virtual Epetra_RowMatrix& Matrix()
-  {
-    return(*Matrix_);
-  }
-
-  //! Returns the estimated condition number (if computed).
+  //! Returns the estimated condition number, computes it if necessary.
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
-			 Epetra_RowMatrix* Matrix= 0)
-  {
-    // FIXME
-    return(Condest_);
-  }
+			 Epetra_RowMatrix* Matrix= 0);
   
+  //! Returns the estimated condition number, never computes it.
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
-			 Epetra_RowMatrix* Matrix= 0) const
+			 Epetra_RowMatrix* Matrix = 0) const
   {
     return(Condest_);
   }
-
-  virtual std::ostream& Print(std::ostream& os) const;
 
   //! Returns the number of calls to Initialize().
   virtual int NumInitialize() const
@@ -203,74 +213,182 @@ public:
     return(NumApplyInverse_);
   }
 
-  //! Returns the time spent in Initialize().
+  //! Returns the total time spent in Initialize().
   virtual double InitializeTime() const
   {
     return(InitializeTime_);
   }
 
-  //! Returns the time spent in Compute().
+  //! Returns the total time spent in Compute().
   virtual double ComputeTime() const
   {
     return(ComputeTime_);
   }
 
-  //! Returns the time spent in ApplyInverse().
+  //! Returns the total time spent in ApplyInverse().
   virtual double ApplyInverseTime() const
   {
     return(ApplyInverseTime_);
   }
 
+  //! Returns the total number of flops to computate the preconditioner.
   virtual long int ComputeFlops() const
   {
     return(ComputeFlops_);
   }
 
+  //! Returns the total number of flops to apply the preconditioner.
   virtual long int ApplyInverseFlops() const
   {
     return(ApplyInverseFlops_);
   }
 
+  // Returns a constant reference to the internally stored 
+  virtual const Teuchos::ParameterList& List() const 
+  {
+    return(List_);
+  }
 
+  //! Returns the maximum numer of iterations that will be used to estimate the condition number.
+  virtual int CondestMaxIters() const
+  {
+    return(CondestMaxIters_);
+  }
+
+  //! Returns the tolerance that will be used to estimate the condition number.
+  virtual double CondestTol() const
+  {
+    return(CondestTol_);
+  }
+
+  //! Prints on ostream basic information about \c this object.
+  virtual std::ostream& Print(std::ostream& os) const;
+
+  //@}
+
+protected:
+  
+  //@{ \name Methods to get/set private data
+
+  //! Sets the label.
+  inline void SetLabel(const char* Label) 
+  {
+    Label_ = Label;
+  }
+
+  //! Sets \c IsInitialized_.
+  inline void SetIsInitialized(const bool IsInitialized)
+  {
+    IsInitialized_ = IsInitialized;
+  }
+
+  //! Sets \c IsComputed_.
+  inline void SetIsComputed(const int IsComputed)
+  {
+    IsComputed_ = IsComputed;
+  }
+
+  //! Sets \c NumInitialize_.
+  inline void SetNumInitialize(const int NumInitialize)
+  {
+    NumInitialize_ = NumInitialize;
+  }
+
+  //! Sets \c NumCompute_.
+  inline void SetNumCompute(const int NumCompute)
+  {
+    NumCompute_ = NumCompute;
+  }
+
+  //! Sets \c NumApplyInverse_.
+  inline void SetNumApplyInverse(const int NumApplyInverse)
+  {
+    NumApplyInverse_ = NumApplyInverse;
+  }
+
+  //! Sets \c InitializeTime_.
+  inline void SetInitializeTime(const double InitializeTime)
+  {
+    InitializeTime_ = InitializeTime;
+  }
+
+  //! Sets \c ComputeTime_.
+  inline void SetComputeTime(const double ComputeTime)
+  {
+    ComputeTime_ = ComputeTime;
+  }
+
+  //! Sets \c ApplyInverseTime_.
+  inline void SetApplyInverseTime(const double ApplyInverseTime)
+  {
+    ApplyInverseTime_ = ApplyInverseTime;
+  }
+
+  //! Sets \c ComputeFlops_.
+  inline void SetComputeFlops(const long int ComputeFlops)
+  {
+    ComputeFlops_ = ComputeFlops;
+  }
+
+  //! Sets \c ComputeFlops_.
+  inline void SetApplyInverseFlops(const long int ApplyInverseFlops)
+  {
+    ApplyInverseFlops_ = ApplyInverseFlops;
+  }
+
+  //! Set \c List_.
+  inline void SetList(const Teuchos::ParameterList& List)
+  {
+    List_ = List;
+  }
+  //@}
+  
 private:
 
   //! Pointers to the matrix to be preconditioned.
-  Epetra_RowMatrix* Matrix_;
+  const Epetra_RowMatrix* Matrix_;
+
   //! Amesos solver, use to apply the inverse of the local matrix.
   Amesos_BaseSolver* Solver_;
   //! Linear problem required by Solver_.
   Epetra_LinearProblem* Problem_;
+  //! Contains a copy of the input parameter list.
+  Teuchos::ParameterList List_;
+
   //! Contains the label of \c this object.
   string Label_;
   //! If true, the preconditioner has been successfully initialized.
   bool IsInitialized_;
   //! If true, the preconditioner has been successfully computed.
   bool IsComputed_;
-  //! Contains the estimated condition number.
-  double Condest_;
-  //! If true, compute the estimated condition number.
-  bool ComputeCondest_;
-  //! Contains a copy of the input parameter list.
-  Teuchos::ParameterList List_;
- 
+
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;
   //! Contains the number of successful call to Compute().
   int NumCompute_;
   //! Contains the number of successful call to ApplyInverse().
-  int NumApplyInverse_;
+  mutable int NumApplyInverse_;
 
   //! Contains the time for all successful calls to Initialize().
   double InitializeTime_;
   //! Contains the time for all successful calls to Compute().
   double ComputeTime_;
   //! Contains the time for all successful calls to ApplyInverse().
-  double ApplyInverseTime_;
+  mutable double ApplyInverseTime_;
+  //! Time object.
+  Epetra_Time* Time_;
 
   //! Contains the number of flops for Compute().
   long int ComputeFlops_;
   //! Contain sthe number of flops for ApplyInverse().
   long int ApplyInverseFlops_;
+
+  //! Contains the estimated condition number.
+  double Condest_;
+  //! Maximum number of iterations for condest
+  int CondestMaxIters_;
+  //! Tolerance for condest
+  double CondestTol_;
 
 };
 

@@ -18,10 +18,15 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-//! Ifpack_SparseContianer: a class for storing and solving linear systems.
+/*! 
+  \brief Ifpack_SparseContainer: a class for storing and solving linear systems
+  using sparse matrices.
 
-/*!
-  Containers are templated with a type T, which represent the 
+  A sparse container object contains all is necessary to allocate,
+  define and solve a (local) linear system, by storing the matrix
+  is sparse format (as Epetra_CrsMatrix).
+
+  Sparse containers are templated with a type T, which represent the 
   class to use in the application of the inverse. (T is not
   used in Ifpack_DenseContainer). In SparseContainer, T must be
   an Ifpack_Preconditioner derived class. The container will allocate
@@ -35,19 +40,24 @@ class Ifpack_SparseContainer : public Ifpack_Container {
 
 public:
 
+  //@{ Constructors/Destructors.
   //! Constructor.
-  Ifpack_SparseContainer();
+  Ifpack_SparseContainer(const int NumRows, const int NumVectors = 1);
+
+  //! Copy constructor.
+  Ifpack_SparseContainer(const Ifpack_SparseContainer<T>& rhs);
 
   //! Destructor.
   virtual ~Ifpack_SparseContainer();
+  //@}
 
-  //! Shapes the container, allocating space for \c NumRows and \c NumVectors.
-  
-  virtual int Shape(const int NumRows, const int NumVectors = 1);
+  //@{ Overloaded operators.
 
-  //! Reshapes a container.
-  virtual int Reshape(const int NumRows, const int NumVectors = 1);
+  //! Operator =
+  Ifpack_SparseContainer& operator=(const Ifpack_SparseContainer<T>& rhs);
+  //@}
 
+  //@{ Get/Set methods.
   //! Returns the number of rows of the matrix and LHS/RHS.
   virtual int NumRows() const;
 
@@ -60,8 +70,9 @@ public:
   //! Sets the number of vectors for LHS/RHS.
   virtual int SetNumVectors(const int NumVectors)
   {
-    NumVectors_ = NumVectors;
-    return(0);
+    if (NumVectors_ == NumVectors)
+      return(0);
+    IFPACK_CHK_ERR(-1); // STILL TO DO
   }
 
   //! Returns the i-th component of the vector Vector of LHS.
@@ -82,17 +93,18 @@ public:
    */
   virtual int& ID(const int i);
 
-  //! Extract the submatrices identified by the ID set int ID().
-  virtual int Extract(const Epetra_RowMatrix* Matrix);
-
   //! Set the matrix element (row,col) to \c value.
   virtual int SetMatrixElement(const int row, const int col,
 			       const double value);
 
-  //! Finalizes the linear system matrix and prepares for the application of the inverse.
-  virtual int Compute();
 
-  //! Returns \c true is the container has successfully called \c Compute().
+  //! Returns \c true is the container has been successfully initialized.
+  virtual bool IsInitialized() const
+  {
+    return(IsInitialized_);
+  }
+
+  //! Returns \c true is the container has been successfully computed.
   virtual bool IsComputed() const
   {
     return(IsComputed_);
@@ -101,41 +113,99 @@ public:
   //! Sets all necessary parameters.
   virtual int SetParameters(Teuchos::ParameterList& List);
 
-  virtual bool IsShaped() const
-  {
-    return(IsShaped_);
-  }
-
-  //! Apply the matrix to RHS, results are stored in LHS.
-  virtual int Apply();
-
-  //! Apply the inverse of the matrix to RHS, results are stored in LHS.
-  virtual int ApplyInverse();
-
-  //! Destroys all data.
-  virtual int Destroy();
-
   //! Returns the label of \e this container.
   virtual const char* Label() const
   {
     return(Label_.c_str());
   }
   
+  //! Returns a pointer to the internally stored map.
+  const Epetra_Map* Map() const
+  {
+    return(Map_);
+  }
+
+  //! Returns a pointer to the internally stored solution multi-vector.
+  const Epetra_MultiVector* LHS() const
+  {
+    return(LHS_);
+  }
+
+  //! Returns a pointer to the internally stored rhs multi-vector.
+  const Epetra_MultiVector* RHS() const
+  {
+    return(RHS_);
+  }
+
+  //! Returns a pointer to the internally stored matrix.
+  const Epetra_CrsMatrix* Matrix() const
+  {
+    return(Matrix_);
+  }
+
+  //! Returns a pointer to the internally stored ID's.
+  const Epetra_IntSerialDenseVector* ID() const
+  {
+    return(ID_);
+  }
+
+  //! Returns a pointer to the internally stored inverse operator.
+  const T* Inverse() const
+  {
+    return(Inverse_);
+  }
+  //@}
+
+  //@{ Mathematical functions.
+  /*! 
+   * \brief Initializes the container, by completing all the operations based 
+   * on matrix structure.
+   *
+   * \note After a call to Initialize(), no new matrix entries can be
+   * added.
+   */
+  virtual int Initialize();
+  //! Finalizes the linear system matrix and prepares for the application of the inverse.
+  virtual int Compute(const Epetra_RowMatrix& Matrix);
+  //! Apply the matrix to RHS, result is stored in LHS.
+  virtual int Apply();
+
+  //! Apply the inverse of the matrix to RHS, result is stored in LHS.
+  virtual int ApplyInverse();
+
+  //@}
+
+  //@{ Miscellaneous methods
+  //! Destroys all data.
+  virtual int Destroy();
+  //@}
+
 private:
   
+  //! Extract the submatrices identified by the ID set int ID().
+  virtual int Extract(const Epetra_RowMatrix& Matrix);
+
+  //! Number of rows in the local matrix.
   int NumRows_; 
+  //! Number of vectors in the local linear system.
   int NumVectors_; 
+  //! Linear map on which the local matrix is based.
   Epetra_Map* Map_;
+  //! Pointer to the local matrix.
   Epetra_CrsMatrix* Matrix_;
+  //! Solution vector.
   Epetra_MultiVector* LHS_;
+  //! right-hand side for local problems.
   Epetra_MultiVector* RHS_;
+  //! Contains the subrows/subcols of A that will be inserted in Matrix_.
   Epetra_IntSerialDenseVector GID_;
-
-  Epetra_LinearProblem* Problem_;
-
-  bool IsShaped_;
+  //! If \c true, the container has been successfully initialized.
+  bool IsInitialized_;
+  //! If \c true, the container has been successfully computed.
   bool IsComputed_;
+  //! Serial communicator (containing only MPI_COMM_SELF if MPI is used).
   Epetra_Comm* SerialComm_;
+  //! Pointer to an Ifpack_Preconditioner object whose ApplyInverse() defined the action of the inverse of the local matrix.
   T* Inverse_;
   //! Label for \c this object
   string Label_;
@@ -144,16 +214,16 @@ private:
 
 //==============================================================================
 template<typename T>
-Ifpack_SparseContainer<T>::Ifpack_SparseContainer() :
-  NumRows_(-1),
-  NumVectors_(-1),
+Ifpack_SparseContainer<T>::
+Ifpack_SparseContainer(const int NumRows, const int NumVectors) :
+  NumRows_(NumRows),
+  NumVectors_(NumVectors),
   Map_(0),
   Matrix_(0),
   Inverse_(0),
   LHS_(0),
   RHS_(0),
-  Problem_(0),
-  IsShaped_(false),
+  IsInitialized_(false),
   IsComputed_(false),
   SerialComm_(0)
 {
@@ -168,6 +238,41 @@ Ifpack_SparseContainer<T>::Ifpack_SparseContainer() :
 
 //==============================================================================
 template<typename T>
+Ifpack_SparseContainer<T>::
+Ifpack_SparseContainer(const Ifpack_SparseContainer<T>& rhs) :
+  NumRows_(rhs.NumRows()),
+  NumVectors_(rhs.NumVectors()),
+  Map_(0),
+  Matrix_(0),
+  Inverse_(0),
+  LHS_(0),
+  RHS_(0),
+  IsInitialized_(rhs.IsInitialized()),
+  IsComputed_(rhs.IsComputed()),
+  SerialComm_(0)
+{
+
+#ifdef HAVE_MPI
+  SerialComm_ = new Epetra_MpiComm(MPI_COMM_SELF);
+#else
+  SerialComm_ = new Epetra_SerialComm;
+#endif
+
+  if (rhs.Map())
+    Map_ = new Epetra_Map(*rhs.Map());
+
+  if (rhs.Matrix())
+    Matrix_ = new Epetra_CrsMatrix(*rhs.Matrix());
+
+  if (rhs.LHS())
+    LHS_ = new Epetra_MultiVector(*rhs.LHS());
+
+  if (rhs.RHS())
+    RHS_ = new Epetra_MultiVector(*rhs.RHS());
+
+}
+//==============================================================================
+template<typename T>
 Ifpack_SparseContainer<T>::~Ifpack_SparseContainer()
 {
   Destroy();
@@ -177,7 +282,7 @@ Ifpack_SparseContainer<T>::~Ifpack_SparseContainer()
 template<typename T>
 int Ifpack_SparseContainer<T>::NumRows() const
 {
-  if (IsShaped() == false)
+  if (IsInitialized() == false)
     return(0);
   else
     return(NumRows_);
@@ -185,30 +290,22 @@ int Ifpack_SparseContainer<T>::NumRows() const
 
 //==============================================================================
 template<typename T>
-int Ifpack_SparseContainer<T>::Shape(const int NumRows, const int NumVectors) 
+int Ifpack_SparseContainer<T>::Initialize()
 {
   
-  if (IsShaped() == true)
-    IFPACK_CHK_ERR(-1); // already computed
+  if (IsInitialized_ == true)
+    Destroy();
 
-  IsShaped_ = true;
-
-  NumRows_ = NumRows;
-  NumVectors_ = NumVectors;
+  IsInitialized_ = false;
 
   Map_ = new Epetra_Map(NumRows_,0,*SerialComm_);
 
-  LHS_ = new Epetra_MultiVector(*Map_,NumVectors);
-  RHS_ = new Epetra_MultiVector(*Map_,NumVectors);
-  GID_.Reshape(NumRows,1);
+  LHS_ = new Epetra_MultiVector(*Map_,NumVectors_);
+  RHS_ = new Epetra_MultiVector(*Map_,NumVectors_);
+  GID_.Reshape(NumRows_,1);
 
   // FIXME: try View??
   Matrix_ = new Epetra_CrsMatrix(Copy,*Map_,0);
-  Problem_ = new Epetra_LinearProblem;
-  
-  Problem_->SetOperator(Matrix_);
-  Problem_->SetLHS(LHS_);
-  Problem_->SetRHS(RHS_);
 
   // create the inverse
   Inverse_ = new T(Matrix_);
@@ -216,20 +313,11 @@ int Ifpack_SparseContainer<T>::Shape(const int NumRows, const int NumVectors)
   if (Inverse_ == 0)
     IFPACK_CHK_ERR(-10);
 
+  Label_ = "Ifpack_SparseContainer";
+
+  IsInitialized_ = true;
   return(0);
   
-}
-
-//==============================================================================
-template<typename T>
-int Ifpack_SparseContainer<T>::Reshape(const int NumRows, const int NumVector) 
-{
-
-  if (IsShaped() == true)
-    Destroy();
-
-  Shape(NumRows);
-  return(0); 
 }
 
 //==============================================================================
@@ -251,7 +339,7 @@ template<typename T>
 int Ifpack_SparseContainer<T>::
 SetMatrixElement(const int row, const int col, const double value)
 {
-  if (IsShaped() == false)
+  if (IsInitialized() == false)
     IFPACK_CHK_ERR(-5); // problem not shaped yet
 
   if ((row < 0) || (row >= NumRows())) {
@@ -275,14 +363,20 @@ SetMatrixElement(const int row, const int col, const double value)
 
 //==============================================================================
 template<typename T>
-int Ifpack_SparseContainer<T>::Compute()
+int Ifpack_SparseContainer<T>::Compute(const Epetra_RowMatrix& Matrix)
 {
-  if (IsComputed() == true) {
-    IFPACK_CHK_ERR(-6); // already computed
+
+  IsComputed_ = false;
+  if (IsInitialized() == false) {
+    IFPACK_CHK_ERR(Initialize()); 
   }
 
-  // complete the construction of Matrix
-  IFPACK_CHK_ERR(Matrix_->FillComplete());
+  // extract the submatrices
+  IFPACK_CHK_ERR(Extract(Matrix));
+
+  // initialize the inverse operator
+  IFPACK_CHK_ERR(Inverse_->Initialize());
+
   // compute the inverse operator
   IFPACK_CHK_ERR(Inverse_->Compute());
 
@@ -297,10 +391,6 @@ int Ifpack_SparseContainer<T>::Compute()
 template<typename T>
 int Ifpack_SparseContainer<T>::Apply()
 {
-  if (IsShaped() == false) {
-    IFPACK_CHK_ERR(-5); // not yet shaped
-  }
-
   if (IsComputed() == false) {
     IFPACK_CHK_ERR(-6); // not yet computed
   }
@@ -314,10 +404,6 @@ int Ifpack_SparseContainer<T>::Apply()
 template<typename T>
 int Ifpack_SparseContainer<T>::ApplyInverse()
 {
-  if (IsShaped() == false) {
-    IFPACK_CHK_ERR(-5); // not yet shaped
-  }
-
   if (IsComputed() == false) {
     IFPACK_CHK_ERR(-6); // not yet computed
   }
@@ -351,17 +437,13 @@ int Ifpack_SparseContainer<T>::Destroy()
   if (Inverse_)
     delete Inverse_;
 
-  if (Problem_)
-    delete Problem_;
-
   Map_ = 0;
   Matrix_ = 0;
-  Problem_ = 0;
   Inverse_ = 0;
   LHS_ = 0;
   RHS_ = 0;
 
-  IsShaped_ = false;
+  IsInitialized_ = false;
   IsComputed_ = false;
   return(0);
 }
@@ -385,7 +467,7 @@ SetParameters(Teuchos::ParameterList& List)
 //==============================================================================
 // FIXME: optimize performances of this guy...
 template<typename T>
-int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix* Matrix)
+int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix)
 {
 
   for (int j = 0 ; j < NumRows_ ; ++j) {
@@ -393,11 +475,11 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix* Matrix)
     if (ID(j) == -1)
       IFPACK_CHK_ERR(-1);
     // be sure that all are local indices
-    if (ID(j) > Matrix->NumMyRows())
+    if (ID(j) > Matrix.NumMyRows())
       IFPACK_CHK_ERR(-2);
   }
 
-  int Length = Matrix->MaxNumEntries();
+  int Length = Matrix.MaxNumEntries();
   vector<double> Values;
   Values.resize(Length);
   vector<int> Indices;
@@ -410,7 +492,7 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix* Matrix)
     int NumEntries;
 
     int ierr = 
-      Matrix->ExtractMyRowCopy(LRID, Length, NumEntries, 
+      Matrix.ExtractMyRowCopy(LRID, Length, NumEntries, 
 			       &Values[0], &Indices[0]);
     IFPACK_CHK_ERR(ierr);
 
@@ -419,7 +501,7 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix* Matrix)
       int LCID = Indices[k];
 
       // skip off-processor elements
-      if (LCID >= Matrix->NumMyRows()) 
+      if (LCID >= Matrix.NumMyRows()) 
 	continue;
 
       // for local column IDs, look for each ID in the list
@@ -435,6 +517,8 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix* Matrix)
 
     }
   }
+
+  IFPACK_CHK_ERR(Matrix_->FillComplete());
 
   return(0);
 }

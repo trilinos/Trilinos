@@ -13,7 +13,7 @@ class Epetra_RowMatrix;
 /*!
 Class Ifpack_DenseContainer enables the use of containers based on dense
 matrices. In block methods like Ifpack_BlockJacobi and Ifpack_GaussSeidel,
-if the blocks are small, it can be convenient to store then as dense
+if the blocks are small, it can be convenient to store them as dense
 matrices, as efficient solvers are available through LAPACK.
 
 A typical use of a container is as follows:
@@ -22,11 +22,10 @@ A typical use of a container is as follows:
 #include "Ifpack_DenseContainer.h"
 ...
 
-Ifpack_Container* Container = new
-  Ifpack_DenseContainer;
-  
 // local matrix of (5,5), with two vectors for solution and rhs.
-Container.Shape(5,2);
+Ifpack_Container* Container = new
+  Ifpack_DenseContainer(5,5);
+  
 // assign local rows 1, 5, 12, 13, 16 to this container
 Container(0) = 1;
 Container(1) = 5;
@@ -34,12 +33,13 @@ Container(2) = 12;
 Container(3) = 13;
 Container(4) = 16;
 
-// Now extract the submatrix corresponding to rows and columns
-// 1, 5, 12, 13, 16:
-Container.Extract();
-
-// Compute all we need (the LU factors to apply the inverse)
-Container.Compute();
+// Now extract the submatrix corresponding to rows and columns:
+// 1. initialize the container.
+Container.Initialize();
+// 2. extract matrix values from an Epetra_RowMatrix A,
+// and compute LU factors of the submatrix identified by rows
+// and columns 1, 5, 12, 13 and 16 using LAPACK
+Container.Compute(A);
 
 // We can set the RHS as follows:
 Container.RHS(0) = 1.0;
@@ -48,40 +48,82 @@ Container.RHS(2) = 3.0;
 Container.RHS(3) = 4.0;
 Container.RHS(4) = 5.0;
 
-// Solve as follows:
+// The linear system with the submatrix is solved as follows:
 Container.ApplyInverse().
 \endcode
 
-Note that method Apply() cannot be used, as the LU factorization as
-implemented in Epetra_SerialDenseMatrix (for performance reasons) 
-overwrites the matrix itself.
+A call to Compute() computes the LU factorization of the
+linear system matrix, using LAPACK. The default behavior is 
+to store the matrix factors by overwriting the linear system matrix
+itself. This way, method Apply() fails, as the original matrix
+does no longer exists. An alternative is to call
+\c KeepNonFactoredMatrix(true), which forces Ifpack_DenseContainer to
+maintain in memory a copy of the non-factored matrix.
 
-\date Sep-04
+\author Marzio Sala, SNL 9214.
+
+\date Last update Oct-04.
 */
 
 class Ifpack_DenseContainer : public Ifpack_Container {
 
 public:
 
-  Ifpack_DenseContainer() :
-    NumRows_(-1),
-    NumVectors_(1),
+  //@{ Constructors/Destructors
+
+  //! Default constructor
+  Ifpack_DenseContainer(const int NumRows, const int NumVectors = 1) :
+    NumRows_(NumRows),
+    NumVectors_(NumVectors),
     IsComputed_(false),
-    IsShaped_(false),
     KeepNonFactoredMatrix_(false)
   {}
 
+  //! Copy constructor
+  Ifpack_DenseContainer(const Ifpack_DenseContainer& rhs) :
+    NumRows_(rhs.NumRows()),
+    NumVectors_(rhs.NumVectors()),
+    IsComputed_(rhs.IsComputed()),
+    KeepNonFactoredMatrix_(rhs.KeepNonFactoredMatrix())
+  {
+    Matrix_ = rhs.Matrix();
+    if (KeepNonFactoredMatrix_)
+      NonFactoredMatrix_ = rhs.NonFactoredMatrix();
+    LHS_ = rhs.LHS();
+    RHS_ = rhs.RHS();
+    ID_ = rhs.ID();
+  }
+    
   //! Destructor.
   virtual ~Ifpack_DenseContainer()
+  {}
+  //@}
+
+  //@{ Overloaded operators.
+
+  //! Operator=
+  Ifpack_DenseContainer& operator=(const Ifpack_DenseContainer& rhs)
   {
-    Destroy();
+    if (&rhs == this)
+      return(*this);
+
+    NumRows_ = rhs.NumRows();
+    NumVectors_ = rhs.NumVectors();
+    IsComputed_ = rhs.IsComputed();
+    KeepNonFactoredMatrix_ = rhs.KeepNonFactoredMatrix();
+    Matrix_ = rhs.Matrix();
+    if (KeepNonFactoredMatrix_)
+      NonFactoredMatrix_ = rhs.NonFactoredMatrix();
+    LHS_ = rhs.LHS();
+    RHS_ = rhs.RHS();
+    ID_ = rhs.ID();
+
+    return(*this);
   }
 
-  //! Shapes the container, allocating space for \c NumRows and \c NumVectors.
-  virtual int Shape(const int NumRows, const int NumVectors = 1);
+  //@}
 
-  //! Reshapes a container.
-  virtual int Reshape(const int NumRows, const int NumVectors = 1);
+  //@{ Get/Set methods.
 
   //! Returns the number of rows of the matrix and LHS/RHS.
   virtual int NumRows() const;
@@ -95,7 +137,19 @@ public:
   //! Sets the number of vectors for LHS/RHS.
   virtual int SetNumVectors(const int NumVectors)
   {
+    if (NumVectors_ == NumVectors) 
+      return(0);
+
     NumVectors_ = NumVectors;
+    IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors_));
+    IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors_));
+    // zero out vector elements
+    for (int i = 0 ; i < NumRows_ ; ++i)
+      for (int j = 0 ; j < NumVectors_ ; ++j) {
+	LHS_(i,j) = 0.0;
+	RHS_(i,j) = 0.0;
+      }
+
     return(0);
   }
 
@@ -117,9 +171,6 @@ public:
    */
   virtual int& ID(const int i);
 
-  //! Extract the submatrices identified by the ID set int ID().
-  virtual int Extract(const Epetra_RowMatrix* Matrix);
-
   //! Set the matrix element (row,col) to \c value.
   virtual int SetMatrixElement(const int row, const int col,
 			       const double value);
@@ -130,57 +181,17 @@ public:
     return(0);
   }
 
-  //! Finalizes the linear system matrix and prepares for the application of the inverse.
-  virtual int Compute()
+  //! Returns \c true is the container has been successfully initialized.
+  virtual bool IsInitialized() const
   {
-    if (IsComputed() == true) {
-      IFPACK_CHK_ERR(-6); // already computed
-    }
-
-    if (KeepNonFactoredMatrix_)
-      NonFactoredMatrix_ = Matrix_;
-
-    // factorize the matrix using LAPACK
-    IFPACK_CHK_ERR(Solver_.Factor());
-
-    Label_ = "Ifpack_DenseContainer";
-    IsComputed_ = true;
-    return(0);
+    return(IsInitialized_);
   }
 
-  //! Returns \c true is the containers is shaped.
-  virtual bool IsShaped() const
-  {
-    return(IsShaped_);
-  }
-
-  //! Returns \c true is the container has successfully called \c Compute().
+  //! Returns \c true is the container has been successfully computed.
   virtual bool IsComputed() const
   {
     return(IsComputed_);
   }
-
-  //! Apply the matrix to RHS, results are stored in LHS.
-  virtual int Apply()
-  {
-    if (KeepNonFactoredMatrix_) {
-      IFPACK_CHK_ERR(LHS_.Multiply('N','N', 1.0,NonFactoredMatrix_,RHS_,0.0));
-    }
-    else
-      IFPACK_CHK_ERR(LHS_.Multiply('N','N', 1.0,Matrix_,RHS_,0.0));
-    return(0);
-  }
-
-  //! Apply the inverse of the matrix to RHS, results are stored in LHS.
-  virtual int ApplyInverse();
-
-  //! Destroys all data.
-  virtual int Destroy()
-  {
-    IsShaped_ = false;
-    IsComputed_ = false;
-    return(0);
-  }    
 
   //! Returns the label of \e this container.
   virtual const char* Label() const
@@ -188,14 +199,71 @@ public:
     return(Label_.c_str());
   }
 
-  virtual int KeepNonFactoredMatrix(const bool flag)
+  //! If \c flag is \c true, keeps a copy of the non-factored matrix.
+  virtual int SetKeepNonFactoredMatrix(const bool flag)
   {
     KeepNonFactoredMatrix_ = flag;
     return(0);
   }
 
+  //! Returns KeepNonFactoredMatrix_.
+  virtual bool KeepNonFactoredMatrix() const
+  {
+    return(KeepNonFactoredMatrix_);
+  }
+
+  //! Returns the dense vector containing the LHS.
+  virtual const Epetra_SerialDenseMatrix& LHS() const
+  {
+    return(LHS_);
+  }
+
+  //! Returns the dense vector containing the RHS.
+  virtual const Epetra_SerialDenseMatrix& RHS() const
+  {
+    return(RHS_);
+  }
+
+  //! Returns the dense matrix or its factors.
+  virtual const Epetra_SerialDenseMatrix& Matrix() const
+  {
+    return(Matrix_);
+  }
+
+  //! Returns the non-factored dense matrix (only if stored).
+  virtual const Epetra_SerialDenseMatrix& NonFactoredMatrix() const
+  {
+    return(NonFactoredMatrix_);
+  }
+
+  //! Returns the integer dense vector of IDs.
+  virtual const Epetra_IntSerialDenseVector& ID() const
+  {
+    return(ID_);
+  }
+
+  //@}
+
+  //@{ Mathematical methods.
+  //! Initialize the container.
+  virtual int Initialize();
+
+  //! Finalizes the linear system matrix and prepares for the application of the inverse.
+  virtual int Compute(const Epetra_RowMatrix& Matrix);
+
+  //! Apply the matrix to RHS, results are stored in LHS.
+  virtual int Apply();
+
+  //! Apply the inverse of the matrix to RHS, results are stored in LHS.
+  virtual int ApplyInverse();
+
+  //@}
+
 private:
   
+  //! Extract the submatrices identified by the ID set int ID().
+  virtual int Extract(const Epetra_RowMatrix& Matrix);
+
   //! Number of rows in the container.
   int NumRows_; 
   //! Number of vectors in the container.
@@ -214,9 +282,9 @@ private:
   Epetra_IntSerialDenseVector ID_;
   //! If \c true, keeps a copy of the non-factored matrix.
   bool KeepNonFactoredMatrix_;
-  //! If \c true, the container has been shaped.
-  bool IsShaped_;
-  //! If \c true, the container has been computed.
+  //! If \c true, the container has been successfully initialized.
+  bool IsInitialized_;
+  //! If \c true, the container has been successfully computed.
   bool IsComputed_;
   //! Label for \c this object
   string Label_;
@@ -226,27 +294,18 @@ private:
 //==============================================================================
 int Ifpack_DenseContainer::NumRows() const
 {
-  if (IsShaped() == false)
-    return(0);
-  else
-    return(NumRows_);
+  return(NumRows_);
 }
 
 //==============================================================================
-int Ifpack_DenseContainer::Shape(const int NumRows, const int NumVectors) 
+int Ifpack_DenseContainer::Initialize()
 {
   
-  if (IsShaped() == true)
-    IFPACK_CHK_ERR(-1); // already computed
+  IsInitialized_ = false;
 
-  IsShaped_ = true;
-
-  NumRows_ = NumRows;
-  NumVectors_ = NumVectors;
-
-  IFPACK_CHK_ERR(LHS_.Reshape(NumRows_,NumVectors));
-  IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors));
-  IFPACK_CHK_ERR(ID_.Reshape(NumRows_,NumVectors));
+  IFPACK_CHK_ERR(LHS_.Reshape(NumRows_,NumVectors_));
+  IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors_));
+  IFPACK_CHK_ERR(ID_.Reshape(NumRows_,NumVectors_));
 
   Matrix_.Reshape(NumRows_,NumRows_);
   // zero out matrix elements
@@ -268,20 +327,9 @@ int Ifpack_DenseContainer::Shape(const int NumRows, const int NumVectors)
   IFPACK_CHK_ERR(Solver_.SetMatrix(Matrix_));
   IFPACK_CHK_ERR(Solver_.SetVectors(LHS_,RHS_));
 
+  IsInitialized_ = true;
   return(0);
   
-}
-
-//==============================================================================
-int Ifpack_DenseContainer::Reshape(const int NumRows, const int NumVectors) 
-{
-
-  if (IsShaped() == true)
-    Destroy();
-
-  Shape(NumRows,NumVectors);
-
-  return(0);
 }
 
 //==============================================================================
@@ -300,8 +348,8 @@ double& Ifpack_DenseContainer::RHS(const int i, const int Vector)
 int Ifpack_DenseContainer::
 SetMatrixElement(const int row, const int col, const double value)
 {
-  if (IsShaped() == false)
-    IFPACK_CHK_ERR(-5); // problem not shaped yet
+  if (IsInitialized() == false)
+    IFPACK_CHK_ERR(Initialize());
 
   if ((row < 0) || (row >= NumRows())) {
     IFPACK_CHK_ERR(-2); // not in range
@@ -320,9 +368,6 @@ SetMatrixElement(const int row, const int col, const double value)
 //==============================================================================
 int Ifpack_DenseContainer::ApplyInverse()
 {
-  if (IsShaped() == false) {
-    IFPACK_CHK_ERR(-5); // not yet shaped
-  }
 
   if (IsComputed() == false) {
     IFPACK_CHK_ERR(-6); // not yet computed
@@ -341,23 +386,20 @@ int& Ifpack_DenseContainer::ID(const int i)
 
 //==============================================================================
 // FIXME: optimize performances of this guy...
-int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix* Matrix)
+int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix& Matrix)
 {
-
-  if (Matrix == 0)
-    IFPACK_CHK_ERR(-1);
 
   for (int j = 0 ; j < NumRows_ ; ++j) {
     // be sure that the user has set all the ID's
     if (ID(j) == -1)
       IFPACK_CHK_ERR(-1);
     // be sure that all are local indices
-    if (ID(j) > Matrix->NumMyRows())
+    if (ID(j) > Matrix.NumMyRows())
       IFPACK_CHK_ERR(-2);
   }
 
   // allocate storage to extract matrix rows.
-  int Length = Matrix->MaxNumEntries();
+  int Length = Matrix.MaxNumEntries();
   vector<double> Values;
   Values.resize(Length);
   vector<int> Indices;
@@ -370,8 +412,8 @@ int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix* Matrix)
     int NumEntries;
 
     int ierr = 
-      Matrix->ExtractMyRowCopy(LRID, Length, NumEntries, 
-			       &Values[0], &Indices[0]);
+      Matrix.ExtractMyRowCopy(LRID, Length, NumEntries, 
+			      &Values[0], &Indices[0]);
     IFPACK_CHK_ERR(ierr);
 
     for (int k = 0 ; k < NumEntries ; ++k) {
@@ -379,7 +421,7 @@ int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix* Matrix)
       int LCID = Indices[k];
 
       // skip off-processor elements
-      if (LCID >= Matrix->NumMyRows()) 
+      if (LCID >= Matrix.NumMyRows()) 
 	continue;
 
       // for local column IDs, look for each ID in the list
@@ -396,6 +438,42 @@ int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix* Matrix)
     }
   }
 
+  return(0);
+}
+
+//==============================================================================
+int Ifpack_DenseContainer::Compute(const Epetra_RowMatrix& Matrix)
+{
+  IsComputed_ = false;
+  if (IsInitialized() == false) {
+    IFPACK_CHK_ERR(Initialize());
+  }
+
+  if (KeepNonFactoredMatrix_)
+    NonFactoredMatrix_ = Matrix_;
+
+  // extract local rows and columns
+  IFPACK_CHK_ERR(Extract(Matrix));
+
+  // factorize the matrix using LAPACK
+  IFPACK_CHK_ERR(Solver_.Factor());
+
+  Label_ = "Ifpack_DenseContainer";
+  IsComputed_ = true;
+  return(0);
+}
+
+//==============================================================================
+int Ifpack_DenseContainer::Apply()
+{
+  if (IsComputed() == false)
+    IFPACK_CHK_ERR(-1);
+
+  if (KeepNonFactoredMatrix_) {
+    IFPACK_CHK_ERR(LHS_.Multiply('N','N', 1.0,NonFactoredMatrix_,RHS_,0.0));
+  }
+  else
+    IFPACK_CHK_ERR(LHS_.Multiply('N','N', 1.0,Matrix_,RHS_,0.0));
   return(0);
 }
 

@@ -507,28 +507,27 @@ ExtractSubmatrices()
 
   for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
 
-    Containers_[i] = new T;
+    int rows = Partitioner_->NumRowsInPart(i);
+    Containers_[i] = new T(rows);
     
     Ifpack_DenseContainer* DC = 0;
     DC = dynamic_cast<Ifpack_DenseContainer*>(Containers_[i]);
     if (DC != 0)
-      DC->KeepNonFactoredMatrix(KeepNonFactoredMatrix_);
+      DC->SetKeepNonFactoredMatrix(KeepNonFactoredMatrix_);
 
     if (Containers_[i] == 0)
       IFPACK_CHK_ERR(-10);
     
-    // set "global" ID of each partitioner row
-    int rows = Partitioner_->NumRowsInPart(i);
-    IFPACK_CHK_ERR(Containers_[i]->Shape(rows));
+    IFPACK_CHK_ERR(Containers_[i]->SetParameters(List_));
+    IFPACK_CHK_ERR(Containers_[i]->Initialize());
 
+    // set "global" ID of each partitioner row
     for (int j = 0 ; j < rows ; ++j) {
       int LRID = (*Partitioner_)(i,j);
       Containers_[i]->ID(j) = LRID;
     }
 
-    IFPACK_CHK_ERR(Containers_[i]->Extract(&Matrix()));
-    IFPACK_CHK_ERR(Containers_[i]->SetParameters(List_));
-    IFPACK_CHK_ERR(Containers_[i]->Compute());
+    IFPACK_CHK_ERR(Containers_[i]->Compute(*Matrix_));
 
   }
 
