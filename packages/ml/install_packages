@@ -439,7 +439,7 @@ rm -f make_${ARCH}.variables
 ${echo} ARCH=$ARCH                    >  make_${ARCH}.variables
 ${echo} PACKAGES=$PACKAGES  \\          >> make_${ARCH}.variables
 cd etc
-find_undefs ${CC} ${LINKER} "$LIBRARIES"
+find_undefs "${CC}" "${ARCH_FLAGS}" "${LINKER}" "$LIBRARIES"
 cd ..
 cat /tmp/thedefs >>  make_${ARCH}.variables
 ${echo} INC_PATH=$INC_PATH            >> make_${ARCH}.variables

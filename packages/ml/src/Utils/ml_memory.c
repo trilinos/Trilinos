@@ -42,11 +42,6 @@ int ML_memory_alloc( void **memptr, unsigned int leng, char *name )
    /* check for error before allocating any storage space               */
    /* ----------------------------------------------------------------- */
 
-   if (leng < 0)
-   {
-      printf("ML_malloc error : %s - leng < 0 (%d).\n",name,leng);
-      exit(-1);
-   }
 /*
 TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
    else if (leng == 0)
@@ -56,7 +51,7 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
       return 0;
    }
 */
-   else
+
    {
 
       /* -------------------------------------------------------------- */
@@ -128,7 +123,6 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
          return 0;
       }
    }
-   return 0;
 }
 
 /* ******************************************************************** */

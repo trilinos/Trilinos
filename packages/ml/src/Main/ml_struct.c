@@ -1734,7 +1734,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    * Returns: 0 on success.
    */
    const int    nSample=20000;
-   double       sample[nSample], gridStep, rho, rho2, ddeg, aux0, aux1; 
+   double        sample[20000], gridStep, rho, rho2, ddeg, aux0, aux1; 
    double       aux_om, om_loc[MLS_MAX_DEG], om2, coord;
    const double pi=4.e0 * atan(1.e0); /* 3.141592653589793115998e0; */
    int          i, j, nGrid;

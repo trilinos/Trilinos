@@ -1995,7 +1995,7 @@ void ML_find_local_indices(int N_update, int bindx[], int update[],
     }
   }
 
-  ML_free((char *) bins);
+  ML_free( bins);
 
 } /* ML_find_local_indices */
 
