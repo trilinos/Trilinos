@@ -43,39 +43,24 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-#EXTRA_DIST = bootstrap \
-#	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-#	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 
+EXTRA_DIST = bootstrap \
+	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
+	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 
 
 ## #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################
-#AUX_DIST = config/install-sh config/missing config/mkinstalldirs
+AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
 ## #######################################################################
-#MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
-#	configure config.status config.log \
-#	src/common/config-h.in src/common/stamp-h.in \
-#	$(AUX_DIST) 
+MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
+	configure config.status config.log \
+	src/common/config-h.in src/common/stamp-h.in \
+	$(AUX_DIST) 
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-if BUILD_Y12M
-Y12M_SUBDIR=y12m
-endif
-
-#if BUILD_BLAS
-#BLAS_SUBDIR=blas
-#endif
-
-#if BUILD_LAPACK
-#LAPACK_SUBDIR=lapack
-#endif
-
-#SUBDIRS = $(Y12M_SUBDIR) $(BLAS_SUBDIR) $(LAPACK_SUBDIR)
-SUBDIRS = $(Y12M_SUBDIR)
-
-
+SUBDIRS = external packages

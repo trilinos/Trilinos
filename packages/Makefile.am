@@ -63,19 +63,29 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-if BUILD_Y12M
-Y12M_SUBDIR=y12m
+#SUBDIRS = aztecoo epetra ifpack komplex petra tpetra triutils tsf TSF
+
+if BUILD_KOMPLEX
+KOMPLEX_SRCDIR = komplex
 endif
 
-#if BUILD_BLAS
-#BLAS_SUBDIR=blas
-#endif
+if BUILD_AZTECOO
+AZTECOO_SUBDIR = aztecoo
+endif
 
-#if BUILD_LAPACK
-#LAPACK_SUBDIR=lapack
-#endif
+if BUILD_IFPACK
+IFPACK_SUBDIR = ifpack
+endif
 
-#SUBDIRS = $(Y12M_SUBDIR) $(BLAS_SUBDIR) $(LAPACK_SUBDIR)
-SUBDIRS = $(Y12M_SUBDIR)
+if BUILD_TRIUTILS
+TRIUTILS_SUBDIR = triutils
+endif
 
+if BUILD_EPETRA
+EPETRA_SUBDIR = epetra
+endif
+
+#Epetra must be listed first due to aztecoo's dependence on Epetra
+SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
+	  $(AZTECOO_SUBDIR) $(KOMPLEX_SRCDIR)
 

@@ -1,0 +1,95 @@
+# Process this file with autoconf to produce a configure script.
+AC_INIT(Trilinos, 2.1, mheroux@cs.sandia.gov)
+AC_CONFIG_SRCDIR([packages/epetra/src/Epetra_Object.h])
+AM_CONFIG_HEADER([Trilinos_config.h:Trilinos_config.h.in])
+
+# Use automake, getting name and version from variables defined by
+# AC_INIT command.
+
+AM_INIT_AUTOMAKE(Trilinos, 2.1)
+
+# Specify required version of autoconf.
+
+AC_PREREQ(2.52)
+
+
+TAC_ARG_WITH_PACKAGE(referencey12m, [Build y12m lib included in the distribution], Y12M, no)
+AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
+
+# For now, blas and lapack will not be included
+#TAC_ARG_WITH_PACKAGE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
+#AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
+
+#TAC_ARG_WITH_PACKAGE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
+#AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
+
+
+TAC_ARG_WITH_PACKAGE(komplex, [Build package Komplex], KOMPLEX, yes)
+AM_CONDITIONAL(BUILD_KOMPLEX, test "X$ac_cv_use_komplex" != "Xno")
+
+TAC_ARG_WITH_PACKAGE(aztecoo, [Build package AztecOO], AZTECOO, yes)
+AM_CONDITIONAL(BUILD_AZTECOO, test "X$ac_cv_use_aztecoo" != "Xno" || 
+	test "X$ac_cv_use_komplex" != "Xno")
+
+TAC_ARG_WITH_PACKAGE(ifpack, [Build package Ifpack], IFPACK, yes)
+TAC_ARG_WITH_PACKAGE(oldifpack, [Build Ifpack and old Ifpack ], OLDIFPACK, no)
+AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno" ||
+	test "X$ac_cv_use_oldifpack" != "Xno")
+
+TAC_ARG_WITH_PACKAGE(triutils, [Build package Triutils], TRIUTILS, yes)
+AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+
+TAC_ARG_WITH_PACKAGE(epetra, [Build package Epetra], EPETRA, yes)
+AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" || 
+	test "X$ac_cv_use_ifpack" != "Xno" || 
+	test "X$ac_cv_use_oldifpack" != "Xno" ||
+	test "X$ac_cv_use_triutils" != "Xno" ||
+	test "X$ac_cv_use_aztecoo" != "Xno" ||
+	test "X$ac_cv_use_komplex" != "Xno")
+
+if test "X$ac_cv_use_y12m" != "Xno"; then
+  AC_CONFIG_SUBDIRS([external/y12m])
+fi
+
+# For now, blas and lapck will not be included
+#if test "X$ac_cv_use_reference_blasandlapack" != "Xno"; then
+#  AC_CONFIG_SUBDIRS([external/blas])
+#fi
+
+#if test "X$ac_cv_use_reference_lapack" != "Xno" || 
+#	test "X$ac_cv_use_referenceblasandlapack" != "Xno"; then
+#  AC_CONFIG_SUBDIRS([external/lapack])
+#fi
+
+
+if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
+	test "X$ac_cv_use_oldifpack" != "Xno" ||
+	test "X$ac_cv_use_triutils" != "Xno" || 
+	test "X$ac_cv_use_aztecoo" != "Xno" || 
+	test "X$ac_cv_use_komplex" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/epetra])
+fi
+
+if test "X$ac_cv_use_triutils" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/triutils])
+fi
+
+if test "X$ac_cv_use_ifpack" != "Xno" ||
+	test "X$ac_cv_use_oldifpack" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/ifpack])
+fi
+
+if test "X$ac_cv_use_aztecoo" != "Xno" || 
+	test "X$ac_cv_use_komplex" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/aztecoo])
+fi
+
+if test "X$ac_cv_use_komplex" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/komplex])
+fi
+
+AC_CONFIG_FILES([
+		Makefile
+		packages/Makefile
+		external/Makefile])
+ AC_OUTPUT
