@@ -368,7 +368,7 @@ class AztecOO {
 			  double condestThreshold, double maxFill, int maxKspace);
 
     //! Attempts to solve the given linear problem using an adaptive strategy.
-    int AdaptiveIterate(int MaxIters, double Tolerance);
+    int AdaptiveIterate(int MaxIters, int MaxSolveAttempts, double Tolerance);
   //@}
 
   //@{ \name Post-solve access functions

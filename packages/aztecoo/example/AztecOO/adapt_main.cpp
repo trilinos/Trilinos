@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
   bool bilu = false;
   //solver.SetAztecOption(AZ_output, 0);
   //solver.SetAztecOption(AZ_graph_fill, 2);
-  //solver.SetAztecOption(AZ_overlap, 1);
+  solver.SetAztecOption(AZ_overlap, 0);
   //solver.SetAztecOption(AZ_poly_ord, 9);
   solver.SetAztecParam(AZ_ilut_fill, 1.0);
   //solver.SetAztecParam(AZ_drop, 0.0);
@@ -148,10 +148,11 @@ int main(int argc, char *argv[])
   //cout << "Abs threshold = " << athresh << endl;
   //solver.SetAztecParam(AZ_athresh, athresh);
 
-  solver.SetAztecOption(AZ_conv, AZ_noscaled);
+  //solver.SetAztecOption(AZ_conv, AZ_noscaled);
+  solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e12);
 
 
-  int Niters = 50;
+  int Niters = 200;
   solver.SetAztecOption(AZ_kspace, Niters);
   
   double norminf = A.NormInf();
@@ -175,12 +176,12 @@ int main(int argc, char *argv[])
       double athresholds[] = {0.0, 1.0E-12, 1.0E-12, 1.0E-5, 1.0E-5, 1.0E-2, 1.0E-2};
       double rthresholds[] = {1.0, 1.0,     1.01,    1.0,    1.01,   1.01,   1.1   };
       double condestThreshold = 1.0E16;
-      double maxFill = 1.0;
+      double maxFill = 4.0;
       int maxKspace = 4*Niters;
       solver.SetAdaptiveParams(NumTrials, athresholds, rthresholds, condestThreshold, maxFill, maxKspace);
     }
 
-  solver.AdaptiveIterate(Niters, 5.0e-10);
+  solver.AdaptiveIterate(Niters, 20, 5.0e-10);
   norminf = A.NormInf();
   normone = A.NormOne();
   if (comm.MyPID()==0) 

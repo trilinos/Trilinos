@@ -216,6 +216,8 @@ symmetric.\n",
     (void) fprintf(stdout,"\tpolynomial order:\t\t\t%d\n",
                    options[AZ_poly_ord]);
   if (options[AZ_solver]==AZ_gmres) {
+    (void) fprintf(stdout,"\tGMRES ill conditioning threshold:\t\t\t%7.1e\n",
+                   params[AZ_ill_cond_thresh]);
     (void) fprintf(stdout,"\tGMRES restart size:\t\t\t%d\n",
                    options[AZ_kspace]);
     (void) fprintf(stdout,"\torthogonalization:\t\t\t%d\n", options[AZ_orthog]);}
@@ -912,4 +914,5 @@ void AZ_defaults(int options[], double params[])
   params[AZ_rthresh]= 0.;
   params[AZ_athresh]= 0.;
   params[AZ_update_reduction] = 10e10;
+  params[AZ_ill_cond_thresh] = 1.0e11;
 }

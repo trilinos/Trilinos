@@ -334,7 +334,8 @@
 #define AZ_athresh             5
 #define AZ_update_reduction    6
 #define AZ_temp                7
-#define AZ_weights             8 /* this parameter should be the last one */
+#define AZ_ill_cond_thresh     8
+#define AZ_weights             9 /* this parameter should be the last one */
 /* End Aztec 2.1 mheroux mod */
 
 
@@ -378,8 +379,8 @@
 #define AZ_FIRST_USER_OPTION  27 /* User can define up to 20 options
                                     values starting at AZ_FIRST_USER_OPTION */
 /* Begin Aztec 2.1 mheroux mod */
-#define AZ_PARAMS_SIZE         29 
-#define AZ_FIRST_USER_PARAM    9 /* User can define up to 20 params
+#define AZ_PARAMS_SIZE         30 
+#define AZ_FIRST_USER_PARAM    10 /* User can define up to 20 params
                                     values starting at AZ_FIRST_USER_PARAM  */
 /* End Aztec 2.1 mheroux mod */
 #define AZ_PROC_SIZE           (6+SIZEOF_MPI_AZCOMM)

@@ -327,7 +327,8 @@ char *T2 = "N";
       }
 
       if ((small == 0.0) || (dble_tmp  < DBL_EPSILON * r_2norm) ||
-          (big/small > 1.0e+11) ) {
+          (big/small > params[AZ_ill_cond_thresh]) ) {
+	/* (big/small > 1.0e+11) ) {  This is now a parameter */
 
         /* take most recent solution and get out */
 

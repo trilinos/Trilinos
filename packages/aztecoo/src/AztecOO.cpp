@@ -446,7 +446,10 @@ int AztecOO::ConstructPreconditioner(double & condest) {
     delete [] condvec;
     options_[AZ_pre_calc] = AZ_reuse;
     double tmp_condest = condest_;
-    PrecMatrix_->Comm().MaxAll(&tmp_condest, &condest_, 1); // Get the worst of all condition estimates
+    // if any processor has a tmp_condest==0.0, then it has a singular preconditioner, check for that first
+    PrecMatrix_->Comm().MinAll(&tmp_condest, &condest_, 1); // Get the min of all condition estimates
+    if (condest_!=0.0)
+      PrecMatrix_->Comm().MaxAll(&tmp_condest, &condest_, 1); // Get the worst of all condition estimates
 
     condest = condest_;
   }
@@ -603,15 +606,21 @@ int AztecOO::SetAdaptiveParams(int NumTrials, double * athresholds, double * rth
   return(0);
 }
 //=============================================================================
-int AztecOO::AdaptiveIterate(int MaxIters, double Tolerance) {
+int AztecOO::AdaptiveIterate(int MaxIters, int MaxSolveAttempts, double Tolerance) {
 
   // Check if adaptive strategy is appropriate (only works for domain decomp and if subdomain
   // solve is not AZ_lu.  If not, call standard Iterate() method
 
-  if (options_[AZ_precond] != AZ_dom_decomp) EPETRA_CHK_ERR(Iterate(MaxIters,Tolerance));
-  if (options_[AZ_subdomain_solve] == AZ_lu) EPETRA_CHK_ERR(Iterate(MaxIters,Tolerance));
+  if (options_[AZ_precond] != AZ_dom_decomp) {
+    EPETRA_CHK_ERR(Iterate(MaxIters,Tolerance));
+    return(0);
+  }
+  if (options_[AZ_subdomain_solve] == AZ_lu) {
+    EPETRA_CHK_ERR(Iterate(MaxIters,Tolerance));
+    return(0);
+  }
 
-
+  int NumSolveAttempts = 0;
   SetAztecOption(AZ_max_iter, MaxIters);
   SetAztecParam(AZ_tol, Tolerance);
 
@@ -643,10 +652,17 @@ int AztecOO::AdaptiveIterate(int MaxIters, double Tolerance) {
 
   // If no trials were defined, just call regular Iterate method
 
-  if (NumTrials_<1) EPETRA_CHK_ERR(Iterate(MaxIters,Tolerance));
+  if (NumTrials_<1) {
+    EPETRA_CHK_ERR(Iterate(MaxIters,Tolerance));
+    return(0);
+  }
 
 
   bool FirstCallToSolver = true;
+  double oldResid;
+
+  // Keep copy of best old solution
+  Epetra_MultiVector Xold(*X_);
   
   // ********************************************************************************
   //  Phase:  Tweak fill level and drop tolerances
@@ -659,10 +675,21 @@ int AztecOO::AdaptiveIterate(int MaxIters, double Tolerance) {
 
   double curMaxFill = EPETRA_MAX(fill, maxFill_);
   int curMaxKspace = EPETRA_MAX(options_[AZ_kspace], maxKspace_);
-  if (options_[AZ_solver]!=AZ_gmres) curMaxKspace = options_[AZ_kspace]; // GMRES is only solver sensitive to kspace
+
+  // GMRES is only solver sensitive to kspace
+  if (options_[AZ_solver]!=AZ_gmres) curMaxKspace = options_[AZ_kspace]; 
   int kspace =options_[AZ_kspace];
+
+  int maxLossTries = 6;
+  int numLossTries = 0;
  
-  while ((status_[AZ_why]!=AZ_normal || FirstCallToSolver) && kspace<=curMaxKspace) {
+
+  // *****************************************************************************
+  // Master "while" loop 
+  // *****************************************************************************
+
+  while ((FirstCallToSolver || status_[AZ_why]!=AZ_normal) && NumSolveAttempts<MaxSolveAttempts) {
+
     SetAztecOption(AZ_kspace,kspace);
 
     if (options_[AZ_subdomain_solve] == AZ_ilut) params_[AZ_ilut_fill] = fill;
@@ -676,60 +703,97 @@ int AztecOO::AdaptiveIterate(int MaxIters, double Tolerance) {
     int curTrial = 0;
     // Initial guess for conditioner number
     condest_ = condestThreshold_; 
-
-    // While not converged or doing at least one trial AND still have trials to execute
-    while ((status_[AZ_why]!=AZ_normal || FirstCallToSolver) && curTrial<NumTrials_) {
-
-      // Current condest threshold number (force one while iteration)
-      double curCondestThreshold = condest_;
     
-      // While condest is too large
-  
-      while ( condest_>=curCondestThreshold) {
-	if (Prec_!=0) DestroyPreconditioner(); // Get rid of any existing preconditioner
-      
-	SetAztecParam(AZ_athresh, athresholds_[curTrial]); // Set threshold values
-	SetAztecParam(AZ_rthresh, rthresholds_[curTrial]);
-      
-	// Preconstruct preconditioner and get a condition number estimate
-	ConstructPreconditioner(condest_);
-	curTrial++;
-      }
-
-  
-      // ********************************************************************************
-      // Phase:  Solve using preconditioner from first phase
-      // ********************************************************************************
+    // While condest is too large or iterative solver says the preconditioned subspace is too
+    // ill-conditioned, try to form a better-conditioned preconditioner
     
-   	Epetra_MultiVector Xold(*X_);
-	double oldResid = status_[AZ_r];
-       
-      AZ_iterate(x_, b_, options_, params_, status_, proc_config_,
-		 Amat_, Prec_, Scaling_);
+    while ( curTrial<NumTrials_ && (condest_>=condestThreshold_ || condest_==0.0)) {
+      if (Prec_!=0) DestroyPreconditioner(); // Get rid of any existing preconditioner
       
-      if (!FirstCallToSolver) {
-	if (!(oldResid>status_[AZ_r])) *X_ = Xold;
-      }
-      FirstCallToSolver = false;
-
-      if (status_[AZ_why]==AZ_maxits) { // This means we need more robust preconditioner
-	if (fill<curMaxFill) {
-	  fill = EPETRA_MIN(2*fill, curMaxFill); // double fill
-	  curTrial = NumTrials_; // force exit of current trial loop
-	}
-	else if (options_[AZ_subdomain_solve] == AZ_ilut && params_[AZ_drop]>0) {
-	  params_[AZ_drop] = 0.0; // if nonzero drop used with ILUT, try one more time with drop = 0
-	  curTrial = NumTrials_; // force exit of current trial loop
-	}
-	else {
-	  kspace *= 2; // double kspace and try again
-	  curTrial = 0;
-	}
-      }
+      SetAztecParam(AZ_athresh, athresholds_[curTrial]); // Set threshold values
+      SetAztecParam(AZ_rthresh, rthresholds_[curTrial]);
+      
+      // Preconstruct preconditioner and get a condition number estimate
+      ConstructPreconditioner(condest_);
+      curTrial++;
     }
 
+    // ********************************************************************************
+    // Try solver now, but test if solver says  preconditioned subspace is too
+    // ill-conditioned, if so try to form a better-conditioned preconditioner
+    // ********************************************************************************
+
+    if (!FirstCallToSolver) {
+      // keep old residual and solution to see if progress is made (will keep old solution if not)
+      oldResid = status_[AZ_r];
+      Xold = *X_;
+      // Adjust the tolerance to account for any progress made in the solution
+      // The test for "oldResid>0.0" insures that NaN will be ignored
+      if (options_[AZ_conv]==AZ_r0 && oldResid>0.0) {
+	Tolerance = Tolerance/oldResid;
+	SetAztecParam(AZ_tol, Tolerance);
+      }
+    }
+    AZ_iterate(x_, b_, options_, params_, status_, proc_config_,
+	       Amat_, Prec_, Scaling_);
+
+    if (!FirstCallToSolver) {
+      if (!(oldResid>status_[AZ_r])) *X_ = Xold;  // keep old solution
+    }
+
+    NumSolveAttempts++;
+    FirstCallToSolver = false;
+    
+    while ( curTrial<NumTrials_ && 
+	    (status_[AZ_why]==AZ_ill_cond || status_[AZ_why]==AZ_breakdown)) {
+      
+      if (Prec_!=0) DestroyPreconditioner(); // Get rid of any existing preconditioner
+      
+      SetAztecParam(AZ_athresh, athresholds_[curTrial]); // Set next threshold values
+      SetAztecParam(AZ_rthresh, rthresholds_[curTrial]);
+      
+      // Preconstruct preconditioner and get a condition number estimate
+      ConstructPreconditioner(condest_);
+      curTrial++;
+
+      // keep old residual and solution to see if progress is made (will keep old solution if not)
+      oldResid = status_[AZ_r];
+      Xold = *X_;
+      // Adjust the tolerance to account for any progress made in the solution
+      // The test for "oldResid>0.0" insures that NaN will be ignored
+      if (options_[AZ_conv]==AZ_r0 && oldResid>0.0) {
+	Tolerance = Tolerance/oldResid;
+	SetAztecParam(AZ_tol, Tolerance);
+      }
+
+      AZ_iterate(x_, b_, options_, params_, status_, proc_config_,
+		 Amat_, Prec_, Scaling_);
+      NumSolveAttempts++;
+      
+      if (!(oldResid>status_[AZ_r])) *X_ = Xold;  // keep old solution
+    }
+
+    if (status_[AZ_why]==AZ_loss) { // This means we should try to solve one more time only
+      if (numLossTries<maxLossTries) {
+	numLossTries++;
+      }
+    }
+    else if (status_[AZ_why]==AZ_maxits) { // This means we need more robust preconditioner
+      if (fill<curMaxFill) {
+	fill = EPETRA_MIN(2*fill, curMaxFill); // double fill
+	curTrial = 0; // force new pass through preconditioner setup
+      }
+      else if (options_[AZ_subdomain_solve] == AZ_ilut && params_[AZ_drop]>0) {
+	params_[AZ_drop] = 0.0; // if nonzero drop used with ILUT, try one more time with drop = 0
+	curTrial = 0; // force new pass through preconditioner setup
+      }
+      else if (kspace<curMaxKspace && kspace<MaxIters) {
+	kspace = EPETRA_MIN(curMaxKspace,2*kspace); // double kspace and try again
+      }
+    }
+    else break;
   }
-  DestroyPreconditioner(); // Delete preconditioner
+  if (Prec_!=0) DestroyPreconditioner(); // Delete preconditioner
   // Determine end status
 
   int ierr = 0;
