@@ -19,6 +19,7 @@
 #include "comm_const.h"
 #include "lbi_const.h"
 #include "lb_id_const.h"
+#include "zoltan_util.h"
 
 
 

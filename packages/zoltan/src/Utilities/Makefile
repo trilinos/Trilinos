@@ -64,8 +64,8 @@ endif
 #
 #   Paths to submodules
 #
-SUB_VPATH	= ../Memory ../Communication ../DDirectory
-SUBINCPATH	= -I../Memory -I../Communication -I../DDirectory -I../../lb
+SUB_VPATH	= ../shared ../Memory ../Communication ../DDirectory
+SUBINCPATH	= -I../shared -I../Memory -I../Communication -I../DDirectory -I../../lb
 SUBDIRS		= Memory Communication DDirectory
 
 ############################################################################
@@ -128,7 +128,7 @@ CCOMP		= $(CC) $(INC_PATH) $(CFLAGS)
 # lint defines
 #
 LINT		= lint 
-LINT_INC_PATH	= -IMemory -ICommunication  -IDDirectory $(INC_PATH)
+LINT_INC_PATH	= -Ishared -IMemory -ICommunication  -IDDirectory $(INC_PATH)
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 VPATH		= $(SUBDIRS) 
 

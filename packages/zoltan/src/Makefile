@@ -127,12 +127,12 @@ SUB_VPATH	= ../all ../lb ../par ../rcb ../oct ../bsfc \
 		  ../params ../driver ../ch ../parmetis ../timer \
                   ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
-                  ../Utilities/DDirectory
+                  ../Utilities/DDirectory ../Utilities/shared
 SUBINCPATH	= -I../all -I../lb -I../par -I../rcb  -I../oct  -I../bsfc \
 		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
-                  -I../Utilities/DDirectory
+                  -I../Utilities/DDirectory -I../Utilities/shared
 SUBDIRS		= driver ch all lb par rcb oct bsfc parmetis params timer ha \
 		  reftree 
 UTIL_SUBDIRS	= Utilities/Communication Utilities/Memory Utilities/DDirectory
@@ -238,7 +238,8 @@ F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 LINT		= lint
 LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams \
 		  -Ioct -Ibsfc -Iparmetis -Itimer -Iha -Ireftree \
-		  -IUtilities/Memory -IUtilities/Communication -IUtilities/DDirectory \
+		  -IUtilities/Memory -IUtilities/Communication \
+		  -IUtilities/DDirectory -IUtilities/shared \
 		  -I$(ZOLTAN_INC_PATH)
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 VPATH		= $(SUBDIRS) $(UTIL_SUBDIRS) $(THIRD_PARTY_VPATH)
