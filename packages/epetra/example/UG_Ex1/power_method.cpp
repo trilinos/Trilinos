@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
@@ -17,9 +18,9 @@ double power_method(const Epetra_CrsMatrix& A) {
   z.Random();
   // variable needed for iteration
   double normz;
-  double residual = 1.0 + tolerance;
+  double residual = 0;
   int iter = 0;
-  while (iter < niters && residual > tolerance) {
+  while (iter==0 || (iter < niters && residual > tolerance)) {
     z.Norm2(&normz); // Compute 2-norm of z
     q.Scale(1.0/normz, z);
     A.Multiply(false, q, z); // Compute z = A*q
@@ -28,9 +29,10 @@ double power_method(const Epetra_CrsMatrix& A) {
       // Compute A*q - lambda*q every 10 iterations
       resid.Update(1.0, z, -lambda, q, 0.0);
       resid.Norm2(&residual);
-      cout << "Iter = " << iter << "  Lambda = " << lambda 
-	   << "  Two-norm of A*q - lambda*q = " 
-	   << residual << endl;
+      if (q.Map().Comm().MyPID()==0)
+	cout << "Iter = " << iter << "  Lambda = " << lambda 
+	     << "  Two-norm of A*q - lambda*q = " 
+	     << residual << endl;
     } 
     iter++;
   }

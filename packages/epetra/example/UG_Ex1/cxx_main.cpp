@@ -8,6 +8,8 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
+#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 // prototype
@@ -34,20 +36,29 @@ int main(int argc, char *argv[]) {
   // Create an Epetra_CrsMatrix
   Epetra_CrsMatrix A(Copy, Map, 1);
  // Add  rows one-at-a-time
-  double two = 2.0;
+  Epetra_SerialDenseVector DiagVal(1); 
+  DiagVal[0] = 2.0; // We set all diagonal values to 2
+  Epetra_IntSerialDenseVector ColIndices(1);
   for (int i=0; i<NumMyElements; i++) {
-    int index = Map.GID(i);
+    int RowIndex = Map.GID(i);
+    ColIndices[0] = RowIndex;
     // Put in the diagonal entry
-    A.InsertGlobalValues(index, 1, &two, &index);  
+    A.InsertGlobalValues(RowIndex, DiagVal.Length(), 
+			 DiagVal.Values(), ColIndices.Values());  
   }
-  double four = 4.0;
-  int index = 0;
-  A.ReplaceGlobalValues(index, 1, &four, &index);  
+  if (Map.MyGID(0)) { // Change the first global diagonal value to 4.0
+    DiagVal[0] = 4.0;
+    int RowIndex = 0;
+    ColIndices[0] = RowIndex;
+  A.ReplaceGlobalValues(RowIndex, DiagVal.Length(), 
+			DiagVal.Values(), ColIndices.Values());
+  }
   // Finish up
  A.TransformToLocal();
   // Iterate
   double lambda = power_method(A);
-  cout << "Estimate of Dominant Eigenvalue = " << lambda << endl;		
+  if (Comm.MyPID()==0) 
+    cout << endl << "Estimate of Dominant Eigenvalue = " << lambda << endl;		
 #ifdef UG_EX1_MPI
   MPI_Finalize() ;
 #endif
