@@ -60,7 +60,15 @@ ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn (char *str)
 int Zoltan_PHG_CoarsePartition(ZZ *zz, PHGraph *hg, int p, Partition part,
 PHGPartParams *hgp)
 {
+  /* RTHRTH --- Reduce coarsest hypergraph to one processor */
+  /* RTHRTH --- Even better, reduce identical hypergraph on all procs */
+  
+  /* RTHRTH -- May need to "seed" each proc differently to compute different solutions*/ 
   return hgp->CoarsePartition(zz, hg, p, part, hgp);
+  /* RTHRTH -- Now add serial FM optimization to improve partition */
+  
+  /* RTHRTH -- After partitioning, send results back to all p procs to enable
+  ** starting the refinement in parallel. */
 }
 
 /****************************************************************************/

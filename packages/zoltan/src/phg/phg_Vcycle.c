@@ -37,10 +37,12 @@ int Zoltan_PHG_Set_Part_Options (ZZ *zz, PHGPartParams *hgp)
     return ZOLTAN_FATAL;
   }
 
-  /* Set coarse partitioning method */
-  if (!(hgp->CoarsePartition = Zoltan_PHG_Set_CoarsePartition_Fn(hgp->coarsepartition_str))) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_COARSE_PARTITIONING.");
-    return ZOLTAN_FATAL;
+  /* Set (serial) coarse partitioning method */
+  /* May need parallel partitioning method later if reduction to 1 proc fails */
+  if (!(hgp->CoarsePartition 
+   = Zoltan_PHG_Set_CoarsePartition_Fn(hgp->coarsepartition_str))) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_COARSE_PARTITIONING.");
+      return ZOLTAN_FATAL;
   }
 
   /* Set refinement method. */
@@ -70,12 +72,24 @@ int Zoltan_PHG_HPart_Lib (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  /* The partition array has to be allocated prior to this procedure */
+  /* Check - The partition array must be already allocated */
   if (!part) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Output partition array is NULL.");
     return ZOLTAN_MEMERR;
   }
+  
+  /* Check - Is something wrong with the part number? */
+  if (p <= 0) {
+    sprintf(msg, "PART ERROR...p=%d is not a positive number!\n", p);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+    return ZOLTAN_FATAL;
+  }
 
+  /* Check - the graph must be reduced no smaller than the number of parts */ 
+  /* RTHRTH - reduction might be hg->redl / p for parallel */ 
+  if (hg->redl < p)
+    hg->redl = p;
+  
   if (hgp->output_level >= PHG_DEBUG_PLOT)
     Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, NULL,
      "coarsening plot");
@@ -89,17 +103,6 @@ int Zoltan_PHG_HPart_Lib (
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
         return err;
     }
-  }
-
-  /* the graph will only be reduced no smaller than the number of parts */  
-  if (hg->redl < p)
-    hg->redl = p;
-
-  /* Something wrong with the part number? */
-  if (p <= 0) {
-    sprintf(msg, "PART ERROR...p=%d is not a positive number!\n", p);
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    return ZOLTAN_FATAL;
   }
 
   /* take care of all special cases first */
@@ -121,7 +124,7 @@ int Zoltan_PHG_HPart_Lib (
     int *match = NULL, *LevelMap = NULL, *c_part = NULL, limit;
     PHGraph c_hg;
 
-    /* Allocate Matching Array */
+    /* Allocate and initialize Matching Array */
     if (!(match = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Insufficient memory for Matching array");
       return ZOLTAN_MEMERR;
@@ -129,14 +132,14 @@ int Zoltan_PHG_HPart_Lib (
     for (i = 0; i < hg->nVtx; i++)
       match[i] = i;
 
-    /* Calculate matching */
+    /* Calculate matching (packing or grouping) */
     limit = hg->nVtx - hg->redl;
-    if (hgp->matching)
+    if (hgp->matching)  {
       err = Zoltan_PHG_Matching (zz, hg, match, hgp, &limit);
-
-    if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
-      ZOLTAN_FREE ((void**) &match);
-      return err;
+      if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
+        ZOLTAN_FREE ((void**) &match);
+        return err;
+      }
     }
 
     /* Allocate and initialize LevelMap */
@@ -154,6 +157,7 @@ int Zoltan_PHG_HPart_Lib (
       }
 
     /* Check the consistency of the coarsening */
+    /* RTHRTH - needs to be parallel */
     if (limit != c_hg.nVtx - hg->redl) {
       sprintf(msg, "limit %d is not %d-%d!\n", limit, c_hg.nVtx, hg->redl);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
@@ -171,6 +175,7 @@ int Zoltan_PHG_HPart_Lib (
     }
 
     /* heuristic: stop on diminishing returns */
+    /* RTHRTH - modify this for parallel version (need global view) */
     if (c_hg.nVtx > 0.9 * hg->nVtx)
       hg->redl = c_hg.redl = c_hg.nVtx;
 
@@ -201,7 +206,7 @@ int Zoltan_PHG_HPart_Lib (
   }
 
   /* Locally refine partition */
-  err = Zoltan_PHG_Refinement(zz, hg, p, part, hgp);
+  err = Zoltan_PHG_Refinement (zz, hg, p, part, hgp);
 
   /* print useful information (conditionally) */
   if (hgp->output_level > PHG_DEBUG_LIST) {
