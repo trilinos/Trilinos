@@ -633,7 +633,10 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
 
     //check for initial contiguous block
     int val = BlockMapData_->MyGlobalElements_[0];
-    for( i = 0 ; (++val == BlockMapData_->MyGlobalElements_[i]) && (i < numMyElements); ++i );
+    for( i = 0 ; i < numMyElements; ++i ) {
+      if (val != BlockMapData_->MyGlobalElements_[i]) break;
+      ++val;
+    }
     BlockMapData_->LastContiguousGIDLoc_ = i - 1;
     
     //Hash everything else
