@@ -24,7 +24,7 @@
 
 #ifndef _EPETRA_UTIL_H_
 #define _EPETRA_UTIL_H_
-
+#include "Epetra_Object.h"
 //! Epetra_Util:  The Epetra Util Wrapper Class.
 /*! The Epetra_Util class is a collection of useful functions that cut across a broad
     set of other classes.  Specifically, sorting is provided by this class.
@@ -63,17 +63,27 @@ class Epetra_Util {
     \param In/Out
            Keys - List of integers to be sorted.
     \param In
-           NumDoubleCompanions - Number of lists of double precision numbers to be sorted with the key.
+           NumDoubleCompanions - Number of lists of double precision numbers to be sorted with the key.  If set to zero,
+	   DoubleCompanions is ignored and can be set to zero.
     \param In
            DoubleCompanions - DoubleCompanions[i] is a pointer to the ith list of doubles to be sorted with key.
     \param In
-           NumIntCompanions - Number of lists of integers to be sorted with the key.
+           NumIntCompanions - Number of lists of integers to be sorted with the key.  If set to zero, 
+	   IntCompanions is ignored and can be set to zero.
     \param In
            IntCompanions - IntCompanions[i] is a pointer to the ith list of integers to be sorted with key.
 	   
   */
-  void Sort(bool SortAscending, int NumKeys, int * Keys, int NumDoubleCompanions,double ** DoubleCompanions, 
-            int NumIntCompanions, int ** IntCompanions) const;
+  void Sort(bool SortAscending, int NumKeys, int * Keys, 
+	    int NumDoubleCompanions,double ** DoubleCompanions, 
+	    int NumIntCompanions, int ** IntCompanions) const;
+  //! Epetra_Util Chop method.  Return zero if input Value is less than ChopValue
+  static double Chop(const double & Value){
+    if (fabs(Value) < chopVal_) return 0;
+    return Value;
+  };
+
+  static const double chopVal_ = 1.0e-15;
 };
 
 // Epetra_Util constructor
