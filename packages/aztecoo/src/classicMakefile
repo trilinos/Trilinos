@@ -83,7 +83,6 @@ az_colperm.c        az_converge.c \
 az_dd_overlap.c     az_dgemv2.c       az_dgemv3.c \
 az_domain_decomp.c  az_fix_pt.c       az_flop_cnt.c \
 az_fortran_wrap.c   az_gmres.c	   \
-az_xyce_gmres.c \
 az_gsumd_puma.c     az_icc.c	        az_ilu_util.c \
 az_ilut.c	          az_interface.c    az_lu_y12.c \
 az_matrix_util.c    az_matvec_mult.c  az_old_matvec_mult.c \
