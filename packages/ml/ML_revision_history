@@ -27,3 +27,10 @@ mystring = ml2_0_0_1
 mystring = ml2_0_0_2
 
      Symmetrize Hiptmair smoother and finished off MLS within Hiptmair. 
+
+mystring = ml2_0_0_3
+
+     Added in smoothing of Reitzinger/Schoeberl prolongator.
+     Least squares and smoothed l.s. prolongators in serial for R/S AMG.
+     Enhanced detection of degenerate coarse grid matrices in building
+     R/S AMG hierarchy.
