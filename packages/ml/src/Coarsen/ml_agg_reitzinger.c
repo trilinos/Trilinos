@@ -361,8 +361,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
    
 #ifdef postprocessscheck
       printf("Checking product Pe * e_i\n");
-      yyy = (double *) malloc( Pe->outvec_leng*sizeof(double));
-      fido = (double *) malloc( Pe->invec_leng*sizeof(double));
+      yyy = (double *) ML_allocate( Pe->outvec_leng*sizeof(double));
+      fido = (double *) ML_allocate( Pe->invec_leng*sizeof(double));
       /*
       printf("%d: Pe->invec_leng = %d\n",Pe->comm->ML_mypid,Pe->invec_leng);
       printf("%d: Tcoarse->outvec_leng = %d\n",Tcoarse->comm->ML_mypid,
@@ -402,10 +402,17 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         if (Tmat->comm->ML_mypid == 0)
            printf("Smoothing edge prolongator...\n");
         ML_Aggregate_Set_Flag_SmoothExistingTentativeP(ag, ML_YES);
-        if (smooth_factor == ML_DDEFAULT) smooth_factor = 4.0/3.0;
-        ML_Aggregate_Set_DampingFactor(ag, smooth_factor);
+        /* default: smooth_factor = 4.0/3.0 */
+        if (smooth_factor != ML_DDEFAULT)
+           ML_Aggregate_Set_DampingFactor(ag, smooth_factor);
         ML_AGG_Gen_Prolongator(ml_edges,grid_level+1,grid_level,
                                (void *) &(ml_edges->Amat[grid_level+1]), ag);
+     }
+     if (Tfine->comm->ML_mypid==0 && ag->print_flag)
+     {
+        printf("Pe: Total nonzeros = %d (Nrows = %d)\n",
+               ml_edges->Pmat[grid_level].N_nonzeros,
+               ml_edges->Pmat[grid_level].outvec_leng);
      }
    
      ML_Operator_Set_1Levels(&(ml_edges->Pmat[grid_level]),

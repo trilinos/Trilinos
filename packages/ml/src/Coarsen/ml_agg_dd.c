@@ -283,7 +283,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
 
    for (i = 0; i < aggr_count; i++)
    {
-      rows_in_aggs[i] = (int *) malloc(aggr_cnt_array[i]*sizeof(int));
+      rows_in_aggs[i] = (int *) ML_allocate(aggr_cnt_array[i]*sizeof(int));
       aggr_cnt_array[i] = 0;
       if (rows_in_aggs[i] == NULL)
       {

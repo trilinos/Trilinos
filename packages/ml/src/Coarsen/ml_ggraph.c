@@ -157,7 +157,7 @@ int ML_GGraph_Load_BdryTypes( ML_GGraph *ml_gg, int n, char *btype )
    /* ------------------------------------------------------------- */
 
    ml_gg->Npoints = n;
-   ml_gg->bdry_type = (char *) malloc( n * sizeof( char ) );
+   ml_gg->bdry_type = (char *) ML_allocate( n * sizeof( char ) );
    for ( i = 0; i < n; i++ )
    {
       if ( btype[i] != ML_BDRY_INSIDE && btype[i] != ML_BDRY_RIDGE &&
@@ -212,7 +212,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    nelements = grid_fcns->USR_grid_get_nelements( grid );
    if ( nvertices > 0 )
    {
-      adjacency_cnt  = (int *) malloc( nvertices * sizeof(int) );
+      adjacency_cnt  = (int *) ML_allocate( nvertices * sizeof(int) );
    }
    else
    {
@@ -221,7 +221,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    }
    for ( i = 0; i < nvertices; i++ ) adjacency_cnt[i] = 0;
    vlengmax = 20;
-   vlist  = (int *) malloc( vlengmax * sizeof(int) );
+   vlist  = (int *) ML_allocate( vlengmax * sizeof(int) );
    for ( i = 0; i < nelements; i++ )
    {
       vlength = grid_fcns->USR_grid_get_element_nvertices( grid, i );
@@ -229,7 +229,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       {
          vlengmax = vlength;
          free( vlist );
-         vlist = (int *) malloc( vlengmax * sizeof(int) );
+         vlist = (int *) ML_allocate( vlengmax * sizeof(int) );
       }
       grid_fcns->USR_grid_get_element_vlist( grid, i, vlist );
       for ( j = 0; j < vlength; j++ )
@@ -250,10 +250,10 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    /* allocate the node_ia and node_ja array for the graph          */
    /* ------------------------------------------------------------- */
 
-   node_ia = (int *) malloc( (nvertices + 1) * sizeof(int) );
+   node_ia = (int *) ML_allocate( (nvertices + 1) * sizeof(int) );
    if ( total_nodes > 0 )
    {
-      node_ja = (int *) malloc( total_nodes * sizeof(int) );
+      node_ja = (int *) ML_allocate( total_nodes * sizeof(int) );
    }
    else
    {
@@ -269,7 +269,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
 
    if ( nvertices > 0 ) adjacency_cnt[0] = 0;
    for ( i = 1; i < nvertices; i++ ) adjacency_cnt[i] = node_ia[i]; 
-   vlist   = (int *) malloc( vlengmax * sizeof(int) );
+   vlist   = (int *) ML_allocate( vlengmax * sizeof(int) );
    for ( i = 0; i < nelements; i++ )
    {
       vlength = grid_fcns->USR_grid_get_element_nvertices( grid, i );
@@ -546,8 +546,8 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
          ML_memory_alloc( (void **) &recv_leng, nbytes, "ggh" );
          nbytes = recv_cnt * sizeof( int * );   
          ML_memory_alloc( (void **) &recv_list, nbytes, "ggi" );
-         recv_proc = (int *) malloc( recv_cnt * sizeof( int ) );   
-         recv_leng = (int *) malloc( recv_cnt * sizeof( int ) );   
+         recv_proc = (int *) ML_allocate( recv_cnt * sizeof( int ) );   
+         recv_leng = (int *) ML_allocate( recv_cnt * sizeof( int ) );   
       }   
       recv_cnt = tot_recv_leng = 0;
       for ( i = 0; i < nprocs; i++ )
@@ -556,7 +556,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
             recv_proc[recv_cnt]   = i;
             recv_leng[recv_cnt]   = inttmp[i];
             nbytes = recv_leng[recv_cnt] * sizeof( int );
-            recv_list[recv_cnt++] = (int*) malloc( nbytes );
+            recv_list[recv_cnt++] = (int*) ML_allocate( nbytes );
             tot_recv_leng        += inttmp[i];
          }
       }
@@ -756,7 +756,7 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg,void *grid,void (*gf),ML_Comm *comm)
    ML_memory_alloc( (void**) &proclist, nbytes, "gf2" );
    for ( i = 0; i < nvertices; i++ ) 
    {
-      proclist[i] = (int *) malloc( (2*templist[i]+1) * sizeof( int ) ); 
+      proclist[i] = (int *) ML_allocate( (2*templist[i]+1) * sizeof( int ) ); 
       proclist[i][0] = 0;
       templist[i] = 0;
    }
@@ -773,7 +773,7 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg,void *grid,void (*gf),ML_Comm *comm)
    }
    for ( i = nvertices; i < ext_nvertices; i++ ) 
    {
-      proclist[i] = (int *) malloc( sizeof( int ) ); 
+      proclist[i] = (int *) ML_allocate( sizeof( int ) ); 
    }
    for ( i = 0; i < recv_cnt; i++ )
    {
@@ -833,7 +833,7 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg,void *grid,void (*gf),ML_Comm *comm)
    for ( i = 0; i < send_cnt; i++ )
    {
       nbytes = send_leng[i] * sizeof( char );
-      send_carray = (char *) malloc( nbytes );
+      send_carray = (char *) ML_allocate( nbytes );
       for ( j = 0; j < send_leng[i]; j++ )
       {
          index = send_list[i][j];
@@ -1418,7 +1418,7 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
    for ( i = 0; i < send_cnt; i++ )
    {
       nbytes = send_leng[i] * sizeof( char );
-      send_carray = (char *) malloc( nbytes );
+      send_carray = (char *) ML_allocate( nbytes );
       for ( j = 0; j < send_leng[i]; j++ )
       {
          index = send_list[i][j];
@@ -1582,16 +1582,16 @@ int ML_GGraph_Gen_ElementGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    nvertices = grid_fcns->USR_grid_get_nvertices( grid );
    nelements = grid_fcns->USR_grid_get_nelements( grid );
    if ( nvertices > 0 ) {
-      v2elem_map = (int **) malloc( nvertices * sizeof(int) );
+      v2elem_map = (int **) ML_allocate( nvertices * sizeof(int) );
       for ( i = 0; i < nvertices; i++ ) {
-         v2elem_map[i] = (int *) malloc( 7 * sizeof(int) );
+         v2elem_map[i] = (int *) ML_allocate( 7 * sizeof(int) );
          v2elem_map[i][0] = 0;
       }
    } else {
       printf("%d : ML_GGraph_Gen_ElementGraph : nvertices <= 0\n", mypid);
       return -1;
    }
-   vlist = (int *) malloc( 100 * sizeof(int) );
+   vlist = (int *) ML_allocate( 100 * sizeof(int) );
    for ( i = 0; i < nelements; i++ ) {
       vlength = grid_fcns->USR_grid_get_element_vlist( grid, i, vlist );
       for ( j = 0; j < vlength; j++ ) {
@@ -1610,9 +1610,9 @@ int ML_GGraph_Gen_ElementGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    /* now start with element 0, look for its neighboring elements   */
    /* ------------------------------------------------------------- */
 
-   vlist2 = (int *) malloc( 100 * sizeof(int) );
-   egraph_ia = (int *) malloc( ( nelements + 1 ) * sizeof(int));
-   egraph_ja = (int *) malloc( 6 * nelements * sizeof(int));
+   vlist2 = (int *) ML_allocate( 100 * sizeof(int) );
+   egraph_ia = (int *) ML_allocate( ( nelements + 1 ) * sizeof(int));
+   egraph_ja = (int *) ML_allocate( 6 * nelements * sizeof(int));
    egraph_ia[0] = 0;
    egraph_cnt = 0;
    egraph_n = nelements;
@@ -1703,7 +1703,7 @@ int ML_GGraph_Gen_Restrictor(ML_GGraph *ml_gg, struct ML_CSR_MSRdata *mat)
    vertex_state = ml_gg->vertex_state;
    row_ptr = ml_gg->row_ptr;
    col_ptr = ml_gg->col_ptr;
-   new_row_ptr = (int *) malloc( Ncoarse * sizeof(int) );
+   new_row_ptr = (int *) ML_allocate( Ncoarse * sizeof(int) );
    total_length = 0;
  
    for ( fine_index = 0; fine_index < Nfine; fine_index++ ) {

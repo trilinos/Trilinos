@@ -31,9 +31,9 @@ int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
 
    proc_id  = ml_comm->ML_mypid;
 
-   data_vec = (double *) malloc((N_cols + Nghost + 1)*sizeof(double));
-   procs    = (int    *) malloc(ml_comm->ML_nprocs * sizeof(int));
-   tempo    = (int    *) malloc(ml_comm->ML_nprocs * sizeof(int));
+   data_vec = (double *) ML_allocate((N_cols + Nghost + 1)*sizeof(double));
+   procs    = (int    *) ML_allocate(ml_comm->ML_nprocs * sizeof(int));
+   tempo    = (int    *) ML_allocate(ml_comm->ML_nprocs * sizeof(int));
    
    for (i = 0; i < N_cols+Nghost; i++) data_vec[i] = (double ) proc_id;
    user_comm(data_vec, user_data);
@@ -57,16 +57,16 @@ int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
    /* elements rcvd in rcv_length[k]. Allocate an array to hold */
    /* the rcv list and finally store the index k in procs[i].   */
 
-   rcv_neighbors  = (int * ) malloc( (N_rcv_procs+1)*sizeof(int));
-   rcv_length     = (int * ) malloc( (N_rcv_procs+1)*sizeof(int));
-   rcv_list       = (int **) malloc( (N_rcv_procs+1)*sizeof(int *));
+   rcv_neighbors  = (int * ) ML_allocate( (N_rcv_procs+1)*sizeof(int));
+   rcv_length     = (int * ) ML_allocate( (N_rcv_procs+1)*sizeof(int));
+   rcv_list       = (int **) ML_allocate( (N_rcv_procs+1)*sizeof(int *));
    N_rcv_procs    = 0;
    for (i = 0; i < ml_comm->ML_nprocs; i++) 
    {
       if ( procs[i] > 0) 
       { 
          rcv_neighbors[N_rcv_procs] = i;
-         rcv_list[N_rcv_procs] = (int *) malloc(procs[i] * sizeof(int) );
+         rcv_list[N_rcv_procs] = (int *) ML_allocate(procs[i] * sizeof(int) );
          procs[i] = N_rcv_procs++;
       }
    }
@@ -96,9 +96,9 @@ int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
    /* figure out to whom we send and how many we send to them */
 
    i = N_send_procs + N_rcv_procs + 1;
-   send_neighbors  = (int *    ) malloc( (i)*sizeof(int));
-   send_length     = (int *    ) malloc( (i)*sizeof(int));
-   request         = (USR_REQ *) malloc((N_send_procs+N_rcv_procs+1)*
+   send_neighbors  = (int *    ) ML_allocate( (i)*sizeof(int));
+   send_length     = (int *    ) ML_allocate( (i)*sizeof(int));
+   request         = (USR_REQ *) ML_allocate((N_send_procs+N_rcv_procs+1)*
                                               sizeof(USR_REQ    ));
 
    type = 4901;
@@ -124,11 +124,11 @@ int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
 
    j = 1;
    for (i = 0; i < N_send_procs; i++) j += send_length[i];
-   send_list = (int *) malloc(sizeof(int)*j);
+   send_list = (int *) ML_allocate(sizeof(int)*j);
    j = 1;
    for (i = 0; i < N_rcv_procs; i++) 
       if (j < rcv_length[i]) j = rcv_length[i];
-   collect = (int *) malloc(sizeof(int)*j);
+   collect = (int *) ML_allocate(sizeof(int)*j);
 
 
    for (i = 0; i < N_cols+Nghost ; i++) data_vec[i] = (double) i;
@@ -166,7 +166,7 @@ int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
      
    N_neighbors = N_send_procs;
    j = 0;
-   rindex = (int *) malloc(sizeof(int)*(N_send_procs+N_rcv_procs+1));
+   rindex = (int *) ML_allocate(sizeof(int)*(N_send_procs+N_rcv_procs+1));
    for (i = 0; i < N_send_procs+N_rcv_procs; i++) rindex[i] = -1;
 
    for (i = 0; i < N_rcv_procs; i++) 
@@ -188,8 +188,8 @@ int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
    /* appear first. Some of the aggregation code seems to be assuming  */
    /* this.                                                            */
 
-   itemp = (int *) malloc(sizeof(int)*(N_neighbors+1));
-   rcv_neighbors = (int *) malloc(sizeof(int)*(N_neighbors+1));
+   itemp = (int *) ML_allocate(sizeof(int)*(N_neighbors+1));
+   rcv_neighbors = (int *) ML_allocate(sizeof(int)*(N_neighbors+1));
    if (rcv_neighbors == NULL) 
    {
       printf("ML_CommInfoOP_Generate: Not enough space\n");
@@ -258,7 +258,7 @@ ML_CommInfoOP *ML_CommInfoOP_Create()
 {
    ML_CommInfoOP *comm_info;
 
-   comm_info = (ML_CommInfoOP *) malloc(sizeof(ML_CommInfoOP));
+   comm_info = (ML_CommInfoOP *) ML_allocate(sizeof(ML_CommInfoOP));
    comm_info->remap = NULL;
    comm_info->neighbors = NULL;
    comm_info->N_neighbors = 0;
@@ -315,7 +315,7 @@ int *ML_CommInfoOP_Get_neighbors(ML_CommInfoOP *c_info)
    if (c_info == NULL) return(NULL);
    else 
    {
-      itemp = (int *) malloc(sizeof(int)*c_info->N_neighbors);
+      itemp = (int *) ML_allocate(sizeof(int)*c_info->N_neighbors);
       if ((itemp == NULL) && (c_info->N_neighbors != 0))
          pr_error("ML_CommInfoOP_Get_neighbors: no space\n");
       
@@ -338,7 +338,7 @@ int *ML_CommInfoOP_Get_sendlist(ML_CommInfoOP *c_info, int neighbor)
          if ( c_info->neighbors[i].ML_id == neighbor) break;
       if (i == c_info->N_neighbors) return(NULL);
 
-      itemp = (int *) malloc(sizeof(int)*c_info->neighbors[i].N_send);
+      itemp = (int *) ML_allocate(sizeof(int)*c_info->neighbors[i].N_send);
       for (j = 0; j < c_info->neighbors[i].N_send; j++) 
          itemp[j] = c_info->neighbors[i].send_list[j];
       return(itemp);
@@ -372,7 +372,7 @@ int ML_CommInfoOP_Clone(ML_CommInfoOP **newone, ML_CommInfoOP *oldone)
       *newone = NULL;
       return(0);
    }
-   neighbors =(int *) malloc((oldone->N_neighbors+1)*sizeof(int));
+   neighbors =(int *) ML_allocate((oldone->N_neighbors+1)*sizeof(int));
    if ( neighbors == NULL) 
    {
       printf("Not enough space in ML_CommInfoOP_Clone\n"); exit(1);
@@ -455,7 +455,7 @@ int *ML_CommInfoOP_Get_rcvlist(ML_CommInfoOP *c_info, int neighbor)
       if (i == c_info->N_neighbors) return(NULL);
 
       if (NULL == c_info->neighbors[i].rcv_list) return(NULL);
-      itemp = (int *) malloc(sizeof(int)*c_info->neighbors[i].N_rcv);
+      itemp = (int *) ML_allocate(sizeof(int)*c_info->neighbors[i].N_rcv);
       for (j = 0; j < c_info->neighbors[i].N_rcv; j++) {
          itemp[j] = c_info->neighbors[i].rcv_list[j];
       }
@@ -510,7 +510,7 @@ int ML_CommInfoOP_Set_neighbors(ML_CommInfoOP **c_info, int N_neighbors,
      exit(1);
   }
 
-  comm_info = (ML_CommInfoOP *) malloc(sizeof(ML_CommInfoOP));
+  comm_info = (ML_CommInfoOP *) ML_allocate(sizeof(ML_CommInfoOP));
   *c_info   = comm_info;
   comm_info->total_rcv_length   = 0;
   comm_info->minimum_vec_size   = 0;
@@ -518,7 +518,7 @@ int ML_CommInfoOP_Set_neighbors(ML_CommInfoOP **c_info, int N_neighbors,
   comm_info->remap_max          = -1;
 
   comm_info->N_neighbors = N_neighbors;
-  comm_info->neighbors = (ML_NeighborList *) malloc(N_neighbors*
+  comm_info->neighbors = (ML_NeighborList *) ML_allocate(N_neighbors*
                                               sizeof(ML_NeighborList));
   if ((N_neighbors != 0) && (comm_info->neighbors == NULL)) 
   {
@@ -545,7 +545,7 @@ int ML_CommInfoOP_Set_neighbors(ML_CommInfoOP **c_info, int N_neighbors,
   if (remap != NULL) 
   {
       comm_info->remap_length = remap_length;
-      comm_info->remap = (int *) malloc(sizeof(int)*(remap_length+1));
+      comm_info->remap = (int *) ML_allocate(sizeof(int)*(remap_length+1));
       if (comm_info->remap == NULL) 
       {
           printf("Error: Not enough space for remap vector of length = %d\n",
@@ -623,7 +623,7 @@ int ML_CommInfoOP_Set_exch_info(ML_CommInfoOP *comm_info, int k,
 
    if (N_send > 0) 
    {
-      list = (int *) malloc(N_send*sizeof(int));
+      list = (int *) ML_allocate(N_send*sizeof(int));
       for (j = 0; j < N_send; j++) 
       {
          if (send_list[j] >= comm_info->minimum_vec_size)
@@ -638,7 +638,7 @@ int ML_CommInfoOP_Set_exch_info(ML_CommInfoOP *comm_info, int k,
 
    if ((N_rcv > 0) && (rcv_list != NULL)) 
    {
-      list = (int *) malloc(N_rcv*sizeof(int));
+      list = (int *) ML_allocate(N_rcv*sizeof(int));
       for (j = 0; j < N_rcv; j++) 
       {
          if (rcv_list[j] >= comm_info->minimum_vec_size)
@@ -703,7 +703,7 @@ void ML_create_unique_id(int N_local, int **map,
       }
    }
 
-   dtemp  = (double *) malloc((N_local + N_rcvd + 1)*sizeof(double));
+   dtemp  = (double *) ML_allocate((N_local + N_rcvd + 1)*sizeof(double));
    if (dtemp == NULL) 
    {
      printf("out of space in ML_create_unique_col_ids\n");
@@ -716,7 +716,7 @@ void ML_create_unique_id(int N_local, int **map,
 
    offset = ML_gpartialsum_int(N_local, comm);
 
-   *map = (int    *) malloc((N_local + N_rcvd + 1) * sizeof(int));
+   *map = (int    *) ML_allocate((N_local + N_rcvd + 1) * sizeof(int));
    if (map == NULL) 
    {
       printf("out of space in ML_create_unique_col_ids\n");
@@ -798,7 +798,7 @@ void ML_create_unique_col_id(int N_local, int **map,
       }
    }
 
-   dtemp  = (double *) malloc((N_local + N_rcvd + 1)*sizeof(double));
+   dtemp  = (double *) ML_allocate((N_local + N_rcvd + 1)*sizeof(double));
    if (dtemp == NULL) 
    {
      printf("out of space in ML_create_unique_col_ids\n");
@@ -811,7 +811,7 @@ void ML_create_unique_col_id(int N_local, int **map,
    *max_per_proc = ML_gmax_int(N_local, comm);
    offset       = *max_per_proc*(comm->ML_mypid);
 
-   *map = (int    *) malloc((N_local + N_rcvd + 1) * sizeof(int));
+   *map = (int    *) ML_allocate((N_local + N_rcvd + 1) * sizeof(int));
    if (map == NULL) 
    {
       printf("out of space in ML_create_unique_col_ids\n");
@@ -896,8 +896,8 @@ void ML_cheap_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
 
   /* Set up send messages: Gather send unknowns from "x" vector */
 
-  request = (USR_REQ *)  malloc(N_neighbors*sizeof(USR_REQ));
-  ptrd = (double *) malloc( (total_send+1)*sizeof(double));
+  request = (USR_REQ *)  ML_allocate(N_neighbors*sizeof(USR_REQ));
+  ptrd = (double *) ML_allocate( (total_send+1)*sizeof(double));
   if (ptrd == NULL) 
   {
      printf("Out of space in ML_cheap_exchange_bdry\n");
@@ -1004,8 +1004,8 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
 
   if ( N_neighbors > 0 )
   {
-     request = (USR_REQ  *)  malloc(N_neighbors*sizeof(USR_REQ ));
-     rcv_buf = (double  **)  malloc(N_neighbors*sizeof(double *));
+     request = (USR_REQ  *)  ML_allocate(N_neighbors*sizeof(USR_REQ ));
+     rcv_buf = (double  **)  ML_allocate(N_neighbors*sizeof(double *));
   } else { request = NULL; rcv_buf = NULL;}
 
   /*
@@ -1020,7 +1020,7 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
   {
     neighbor = &(comm_info->neighbors[i]);
     rtype = type;   j = sizeof(double)* neighbor->N_rcv;
-    rcv_buf[i] = (double *)  malloc(j);
+    rcv_buf[i] = (double *)  ML_allocate(j);
     comm->USR_irecvbytes((void *) rcv_buf[i], (unsigned int)j, 
 		&(neighbor->ML_id), &rtype, comm->USR_comm, request+i);
   }
@@ -1031,7 +1031,7 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
   {
     neighbor = &(comm_info->neighbors[i]);
     j = sizeof(double)* neighbor->N_send;
-    send_buf = (double *)  malloc(j);
+    send_buf = (double *)  ML_allocate(j);
     temp = comm_info->neighbors[i].send_list;
     for (k = 0; k < neighbor->N_send; k++) 
     {
@@ -1094,7 +1094,7 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
 
   if (comm_info->remap != NULL) 
   {
-     tempv = (double *) malloc((comm_info->remap_max+1)*sizeof(double));
+     tempv = (double *) ML_allocate((comm_info->remap_max+1)*sizeof(double));
      for (k = 0; k < comm_info->remap_length; k++) 
      {
         j = comm_info->remap[k];
@@ -1137,8 +1137,8 @@ void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
 
   if ( N_neighbors > 0 )
   {
-     request = (USR_REQ  *)  malloc(N_neighbors*sizeof(USR_REQ ));
-     rcv_buf = (double  **)  malloc(N_neighbors*sizeof(double *));
+     request = (USR_REQ  *)  ML_allocate(N_neighbors*sizeof(USR_REQ ));
+     rcv_buf = (double  **)  ML_allocate(N_neighbors*sizeof(double *));
   } else { request = NULL; rcv_buf = NULL;}
 
   type = 2001;
@@ -1149,7 +1149,7 @@ void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
   {
     neighbor = &(comm_info->neighbors[i]);
     rtype = type;   j = sizeof(double)* neighbor->N_send;
-    rcv_buf[i] = (double *)  malloc(j);
+    rcv_buf[i] = (double *)  ML_allocate(j);
     comm->USR_irecvbytes((void *) rcv_buf[i], (unsigned int)j, 
 		&(neighbor->ML_id), &rtype, comm->USR_comm, request+i);
   }
@@ -1160,7 +1160,7 @@ void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
   {
     neighbor = &(comm_info->neighbors[i]);
     j = sizeof(double)* neighbor->N_rcv;
-    send_buf = (double *)  malloc(j);
+    send_buf = (double *)  ML_allocate(j);
     temp = comm_info->neighbors[i].rcv_list;
 	if (temp == NULL && j != 0)
 	{
@@ -1213,7 +1213,7 @@ void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
 *******************************************************************************/
 int ML_Comm_Envelope_Create(ML_Comm_Envelope** envelope)
 {
-   *envelope = (ML_Comm_Envelope*) malloc( sizeof(ML_Comm_Envelope) );
+   *envelope = (ML_Comm_Envelope*) ML_allocate( sizeof(ML_Comm_Envelope) );
    ML_Comm_Envelope_Init(*envelope);
    return 0;
 }

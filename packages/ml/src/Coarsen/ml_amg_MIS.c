@@ -95,11 +95,11 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       sys_unk_filter = 1;
       count    = Nrows + 1;
       if ( mat_comm != NULL) count += mat_comm->total_rcv_length;
-      darray = (double *) malloc(sizeof(double) * count);
+      darray = (double *) ML_allocate(sizeof(double) * count);
       for (i = 0; i < Nrows; i++) darray[i] = (double) ml_amg->blk_info[i];
       if ( mat_comm != NULL )
          ML_exchange_bdry(darray,mat_comm,Nrows,comm,ML_OVERWRITE,NULL);
-      sys_info = (int *) malloc(sizeof(double) * count);
+      sys_info = (int *) ML_allocate(sizeof(double) * count);
       for (i = 0; i < count; i++) sys_info[i] = (int) darray[i];
       free(darray);
    } else sys_info = NULL;
@@ -143,7 +143,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    /* processor (offset) the data is coming from                    */
    /* ============================================================= */
 
-   if ( Nrows > 0 ) templist = (int *) malloc(sizeof(int)*Nrows);
+   if ( Nrows > 0 ) templist = (int *) ML_allocate(sizeof(int)*Nrows);
    else             templist = NULL;
    for ( i = 0; i < Nrows; i++ ) templist[i] = 0;
    for ( i = 0; i < A_Nneigh; i++ ) 
@@ -159,13 +159,13 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
          templist[index]++;
       }
    }
-   if (A_ntotal > 0) proclist = (int **) malloc(A_ntotal * sizeof(int *));
+   if (A_ntotal > 0) proclist = (int **) ML_allocate(A_ntotal * sizeof(int *));
    else              proclist = NULL;
    for ( i = 0; i < Nrows; i++ ) 
    {
       if ( templist[i] > 0 )
       {
-         proclist[i] = (int *) malloc( (2*templist[i]+1) * sizeof( int ) );
+         proclist[i] = (int *) ML_allocate( (2*templist[i]+1) * sizeof( int ) );
          proclist[i][0] = 0;
          templist[i]    = 0;
       }
@@ -184,7 +184,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    }
    for ( i = Nrows; i < A_ntotal; i++ ) 
    {
-      proclist[i] = (int *) malloc( sizeof( int ) );
+      proclist[i] = (int *) ML_allocate( sizeof( int ) );
    }
    for ( i = 0; i < A_Nneigh; i++ ) {
       for ( j = 0; j < A_rcvleng[i]; j++ ) {
@@ -198,9 +198,9 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    /* record the Dirichlet boundary and processor boundaries        */
    /* ============================================================= */
 
-   if (A_ntotal > 0) bdry = (char *) malloc(sizeof(char)*(A_ntotal + 1));
+   if (A_ntotal > 0) bdry = (char *) ML_allocate(sizeof(char)*(A_ntotal + 1));
    else              bdry = NULL;
-   if ( Nrows > 0 ) border_flag = (char *) malloc(sizeof(char)*Nrows);
+   if ( Nrows > 0 ) border_flag = (char *) ML_allocate(sizeof(char)*Nrows);
    else             border_flag = NULL;
    total_nnz = 0;
    nbdry     = 0;
@@ -236,11 +236,11 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    /* ============================================================= */
 
    A_nnz = total_nnz;
-   rowptr = (int *) malloc( (Nrows + 1)* sizeof(int) );
+   rowptr = (int *) ML_allocate( (Nrows + 1)* sizeof(int) );
    if ( total_nnz > 0 ) 
    {
-      column = (int *)    malloc( total_nnz * sizeof(int) );
-      values = (double *) malloc( total_nnz * sizeof(double) );
+      column = (int *)    ML_allocate( total_nnz * sizeof(int) );
+      values = (double *) ML_allocate( total_nnz * sizeof(double) );
    }
    else
    {
@@ -315,7 +315,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    /* communicate the boundary information                          */
    /* ============================================================= */
 
-   darray = (double *) malloc(sizeof(double)*(A_ntotal+1));
+   darray = (double *) ML_allocate(sizeof(double)*(A_ntotal+1));
    for (i = 0; i < Nrows; i++) 
    {
       if (bdry[i] == 'T') darray[i] = 1.;
@@ -334,15 +334,15 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    /* get ready for coarsening (allocate temporary arrays)          */
    /* ============================================================= */
 
-   if ( A_ntotal > 0 ) CF_array = (int *) malloc(sizeof(int)* A_ntotal);
+   if ( A_ntotal > 0 ) CF_array = (int *) ML_allocate(sizeof(int)* A_ntotal);
    else                CF_array = NULL;
    for (i = 0; i < A_ntotal; i++) CF_array[i] = -1;
 
-   if ( Nrows > 0 ) vlist = (int *) malloc(sizeof(int)* Nrows);
+   if ( Nrows > 0 ) vlist = (int *) ML_allocate(sizeof(int)* Nrows);
    else             vlist = NULL;
-   if ( A_ntotal > 0 ) state = (char *) malloc(sizeof(char)* A_ntotal);
+   if ( A_ntotal > 0 ) state = (char *) ML_allocate(sizeof(char)* A_ntotal);
    else                state = NULL;
-   if ( A_ntotal > 0 ) vtype = (char *) malloc(sizeof(char)* A_ntotal);
+   if ( A_ntotal > 0 ) vtype = (char *) ML_allocate(sizeof(char)* A_ntotal);
    else                vtype = NULL;
    for (i = 0; i < Nrows   ; i++) vlist[i] = i;
    for (i = 0; i < A_ntotal; i++) state[i] = 'F';
@@ -455,7 +455,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    total_send_leng = 0;
    for (i = 0; i < A_Nneigh ; i++) total_send_leng += A_sndleng[i]; 
    nbytes = total_send_leng * sizeof(int);
-   if ( nbytes > 0 ) int_buf = (int *) malloc( nbytes );
+   if ( nbytes > 0 ) int_buf = (int *) ML_allocate( nbytes );
    else              int_buf = NULL;
    offset = 0;
    for ( i = 0; i < A_Nneigh; i++ ) 
@@ -479,7 +479,7 @@ for ( i = 0; i < Nrows; i++ )
    /* ------------------------------------------------------------- */
 
    sortleng  = A_ntotal / (8 * sizeof(int)) + 1;
-   sort_array = (int *) malloc( sortleng * sizeof(int) );
+   sort_array = (int *) ML_allocate( sortleng * sizeof(int) );
    for ( i = 0; i < sortleng; i++ ) sort_array[i] = 0;
    sizeint = sizeof(int) * 8;
    if ( sizeint == 16 )      logsizeint = 4;
@@ -626,7 +626,7 @@ for ( i = 0; i < Nrows; i++ )
    /* ------------------------------------------------------------- */
 
    nbytes = total_send_leng * sizeof(int);
-   if ( nbytes > 0 ) int_buf = (int *) malloc( nbytes );
+   if ( nbytes > 0 ) int_buf = (int *) ML_allocate( nbytes );
    else              int_buf = NULL;
    offset = 0;
    for ( i = 0; i < A_Nneigh; i++ ) 
@@ -650,8 +650,8 @@ for ( i = 0; i < Nrows; i++ )
    /* ------------------------------------------------------------- */
 
    short_leng = 0;
-   short_list = (int *) malloc( Nrows * sizeof(int) );
-   short_size = (int *) malloc( Nrows * sizeof(int) );
+   short_list = (int *) ML_allocate( Nrows * sizeof(int) );
+   short_size = (int *) ML_allocate( Nrows * sizeof(int) );
    for ( i = 0; i < Nrows; i++ )
    {
       if (state[i] != 'B' && CF_array[i] < 0 && border_flag[i] == 'F') 
@@ -942,7 +942,7 @@ for ( i = 0; i < Nrows; i++ )
    if ( k > 0 )
    {
       nbytes = total_send_leng * sizeof(int);
-      if ( nbytes > 0 ) int_buf = (int *) malloc( nbytes );
+      if ( nbytes > 0 ) int_buf = (int *) ML_allocate( nbytes );
       else              int_buf = NULL;
       offset = 0;
       for ( i = 0; i < A_Nneigh; i++ ) 
@@ -1026,7 +1026,7 @@ for ( i = 0; i < Nrows; i++ )
    if ( num_PDE_eqns > 1 ) 
    {
       ML_Operator_UnAmalgamateAndDropWeak(Amatrix, num_PDE_eqns, 0.0);
-      if (exp_Nrows > 0) int_array = (int *) malloc(exp_Nrows*sizeof(int));
+      if (exp_Nrows > 0) int_array = (int *) ML_allocate(exp_Nrows*sizeof(int));
       else               int_array = NULL;
       for ( i = 0; i < exp_Nrows; i+= num_PDE_eqns )
          for ( j = 0; j < num_PDE_eqns; j++ )
@@ -1041,9 +1041,9 @@ for ( i = 0; i < Nrows; i++ )
    nbytes      = N_neighbors * sizeof( int );
    if ( nbytes > 0 ) 
    {
-      neighbors = (int *) malloc( nbytes );
-      recv_leng = (int *) malloc( nbytes );
-      send_leng = (int *) malloc( nbytes );
+      neighbors = (int *) ML_allocate( nbytes );
+      recv_leng = (int *) ML_allocate( nbytes );
+      send_leng = (int *) ML_allocate( nbytes );
    } 
    else neighbors = recv_leng = send_leng = NULL;
 
@@ -1060,7 +1060,7 @@ for ( i = 0; i < Nrows; i++ )
       total_send_leng += send_leng[i];
    }
    nbytes = total_send_leng * sizeof( int );
-   if ( nbytes > 0 ) send_list = (int *) malloc(nbytes);
+   if ( nbytes > 0 ) send_list = (int *) ML_allocate(nbytes);
    else              send_list = NULL;
    if ( total_recv_leng+Nrows != exp_Nrows ) 
    {
@@ -1075,7 +1075,7 @@ for ( i = 0; i < Nrows; i++ )
          send_list[count++] = getrow_obj->pre_comm->neighbors[i].send_list[j];
    }
    nbytes = total_recv_leng * sizeof( int );
-   if ( nbytes > 0 ) recv_list = (int *) malloc(nbytes);
+   if ( nbytes > 0 ) recv_list = (int *) ML_allocate(nbytes);
    else              recv_list = NULL;
    count = 0;
    for ( i = 0; i < N_neighbors; i++ ) 
@@ -1099,7 +1099,7 @@ for ( i = 0; i < Nrows; i++ )
    /* ------------------------------------------------------------- */
 
    nbytes = total_send_leng * sizeof(int);
-   if ( nbytes > 0 ) int_buf = (int *) malloc( nbytes );
+   if ( nbytes > 0 ) int_buf = (int *) ML_allocate( nbytes );
    else              int_buf = NULL;
    offset = 0;
    for ( i = 0; i < N_neighbors; i++ ) 
@@ -1145,7 +1145,7 @@ for ( i = 0; i < Nrows; i++ )
    /* ------------------------------------------------------------- */
 
    sortleng  = A_ntotal / (8 * sizeof(int)) + 1;
-   sort_array = (int *) malloc( sortleng * sizeof(int) );
+   sort_array = (int *) ML_allocate( sortleng * sizeof(int) );
    for ( i = 0; i < sortleng; i++ ) sort_array[i] = 0;
    sizeint = sizeof(int) * 8;
    if ( sizeint == 16 )      logsizeint = 4;
@@ -1207,8 +1207,8 @@ for ( i = 0; i < Nrows; i++ )
 
          /* ----- get a list for C_i ----- */
 
-         Ci_array = (int *)    malloc( numCi * sizeof(int) );
-         dsumCij  = (double *) malloc( numCi * sizeof(double) );
+         Ci_array = (int *)    ML_allocate( numCi * sizeof(int) );
+         dsumCij  = (double *) ML_allocate( numCi * sizeof(double) );
          numCi    = 0;
          for (j = 0; j < rowi_N; j++) 
          {
@@ -1520,7 +1520,7 @@ int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
    nbytes = vlist_cnt2 * sizeof(int);
    if ( nbytes > 0 ) 
    {
-      vlist = (int *) malloc( nbytes );
+      vlist = (int *) ML_allocate( nbytes );
       if ( vlist == NULL ) printf("MALLOC ERROR (LabelVertices) : vlist\n");
    }
    else              vlist = NULL;
@@ -1542,9 +1542,9 @@ int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
    if ( recv_cnt > 0 )
    {
       nbytes    = recv_cnt * sizeof( USR_REQ );
-      Request   = (USR_REQ *) malloc( nbytes );
+      Request   = (USR_REQ *) ML_allocate( nbytes );
       nbytes    = recv_cnt * sizeof( int );
-      proc_flag = (int *) malloc( nbytes );
+      proc_flag = (int *) ML_allocate( nbytes );
       if (proc_flag == NULL) printf("MALLOC ERROR (LabelVertices) : pflag.\n");
       for ( i = 0; i < recv_cnt; i++ ) proc_flag[i] = 0;
    }
@@ -1585,12 +1585,12 @@ int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
    if ( vlist_cnt > 0 )
    {
       nbytes      = vlist_cnt2 * sizeof(char);
-      in_preflist = (char *) malloc( nbytes );
+      in_preflist = (char *) ML_allocate( nbytes );
       if (in_preflist == NULL) printf("MALLOC ERROR (LabelVertices) : inplist\n");
       for (i = 0; i < vlist_cnt2; i++) in_preflist[i] = 'f';
 
       nbytes    = vlist_cnt * sizeof(int);
-      pref_rank = (int *) malloc( nbytes );
+      pref_rank = (int *) ML_allocate( nbytes );
       if ( pref_rank == NULL) printf("MALLOC ERROR (LabelVertices) : prank\n");
       for ( i = 0; i < vlist_cnt; i++ )
       {
@@ -1607,7 +1607,7 @@ int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
          vlist[vlist_cnt-1-i] = j;
       }
       nbytes    = vlist_cnt * sizeof( int );
-      pref_list = (int *) malloc( nbytes );
+      pref_list = (int *) ML_allocate( nbytes );
       if (pref_list == NULL) printf("MALLOC ERROR (LabelVertices) : plist\n");
       pref_list[0] = vlist[0];
       in_preflist[vlist[0]] = 't';
@@ -1971,12 +1971,12 @@ int ML_AMG_GetCommInfo(ML_CommInfoOP *mat_comm, int Nrows, int *A_Nneigh,
    if ( (*A_Nneigh) > 0 )
    {
       (*A_neigh)    = ML_CommInfoOP_Get_neighbors(mat_comm);
-      (*A_sendlist) = (int **) malloc(sizeof(int *)*(*A_Nneigh));
-      (*A_recvlist) = (int **) malloc(sizeof(int *)*(*A_Nneigh));
-      (*A_sndbuf)   = (int **) malloc(sizeof(int *)*(*A_Nneigh));
-      (*A_rcvbuf)   = (int **) malloc(sizeof(int *)*(*A_Nneigh));
-      (*A_sndleng)  = (int  *) malloc(sizeof(int  )*(*A_Nneigh));
-      (*A_rcvleng)  = (int  *) malloc(sizeof(int  )*(*A_Nneigh));
+      (*A_sendlist) = (int **) ML_allocate(sizeof(int *)*(*A_Nneigh));
+      (*A_recvlist) = (int **) ML_allocate(sizeof(int *)*(*A_Nneigh));
+      (*A_sndbuf)   = (int **) ML_allocate(sizeof(int *)*(*A_Nneigh));
+      (*A_rcvbuf)   = (int **) ML_allocate(sizeof(int *)*(*A_Nneigh));
+      (*A_sndleng)  = (int  *) ML_allocate(sizeof(int  )*(*A_Nneigh));
+      (*A_rcvleng)  = (int  *) ML_allocate(sizeof(int  )*(*A_Nneigh));
    }
    else
    {
@@ -1991,8 +1991,8 @@ int ML_AMG_GetCommInfo(ML_CommInfoOP *mat_comm, int Nrows, int *A_Nneigh,
       (*A_rcvleng)[i]  = ML_CommInfoOP_Get_Nrcvlist (mat_comm,(*A_neigh)[i]);
       (*A_sendlist)[i] = ML_CommInfoOP_Get_sendlist (mat_comm,(*A_neigh)[i]);
       (*A_sndleng)[i]  = ML_CommInfoOP_Get_Nsendlist(mat_comm,(*A_neigh)[i]);
-      (*A_rcvbuf)[i]   = (int *) malloc(sizeof(int)*((*A_rcvleng)[i]+1));
-      (*A_sndbuf)[i]   = (int *) malloc(sizeof(int)*((*A_sndleng)[i]+1));
+      (*A_rcvbuf)[i]   = (int *) ML_allocate(sizeof(int)*((*A_rcvleng)[i]+1));
+      (*A_sndbuf)[i]   = (int *) ML_allocate(sizeof(int)*((*A_sndleng)[i]+1));
       for (j = 0; j < (*A_rcvleng)[i]; j++) 
          if ((*A_recvlist)[i][j] > max_element ) 
             max_element = (*A_recvlist)[i][j];
@@ -2028,11 +2028,11 @@ int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
    /* set up arrays (rhs and initial guesses)                       */
    /* ------------------------------------------------------------- */
 
-   indices = (int *)    malloc( Nrows * sizeof(int) );
-   initsol = (double *) malloc( Nrows * sizeof(double) );
-   sol     = (double *) malloc((Nrows+getrow_comm->total_rcv_length+1)*
+   indices = (int *)    ML_allocate( Nrows * sizeof(int) );
+   initsol = (double *) ML_allocate( Nrows * sizeof(double) );
+   sol     = (double *) ML_allocate((Nrows+getrow_comm->total_rcv_length+1)*
                                sizeof(double));
-   rhs     = (double *) malloc( Nrows * sizeof(double) );
+   rhs     = (double *) ML_allocate( Nrows * sizeof(double) );
    for ( i = 0; i < Nrows; i++ ) rhs[i] = 0.0;
    ML_random_vec(initsol, Nrows, comm);
    for ( i = 0; i < Nrows; i++ ) initsol[i] += 1.0;
@@ -2045,8 +2045,8 @@ int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
    /* ------------------------------------------------------------- */
 
    allocated = Amat->max_nz_per_row+1;
-   cols = (int    *) malloc(allocated * sizeof(int   ));
-   vals = (double *) malloc(allocated * sizeof(double));
+   cols = (int    *) ML_allocate(allocated * sizeof(int   ));
+   vals = (double *) ML_allocate(allocated * sizeof(double));
 
    /* ------------------------------------------------------------- */
    /* iterate                                                       */

@@ -217,12 +217,12 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    mat_comm        = Asqrd->getrow->pre_comm;
    Asqrd_Nneigh    = ML_CommInfoOP_Get_Nneighbors(mat_comm);
    Asqrd_neigh     = ML_CommInfoOP_Get_neighbors(mat_comm);
-   Asqrd_sendlist  = (int **) malloc(sizeof(int *)*Asqrd_Nneigh);
-   Asqrd_recvlist  = (int **) malloc(sizeof(int *)*Asqrd_Nneigh);
-   Asqrd_rcvbuf    = (int **) malloc(sizeof(int *)*Asqrd_Nneigh);
-   Asqrd_sndbuf    = (int **) malloc(sizeof(int *)*Asqrd_Nneigh);
-   Asqrd_rcvleng   = (int  *) malloc(sizeof(int  )*Asqrd_Nneigh);
-   Asqrd_sndleng   = (int  *) malloc(sizeof(int  )*Asqrd_Nneigh);
+   Asqrd_sendlist  = (int **) ML_allocate(sizeof(int *)*Asqrd_Nneigh);
+   Asqrd_recvlist  = (int **) ML_allocate(sizeof(int *)*Asqrd_Nneigh);
+   Asqrd_rcvbuf    = (int **) ML_allocate(sizeof(int *)*Asqrd_Nneigh);
+   Asqrd_sndbuf    = (int **) ML_allocate(sizeof(int *)*Asqrd_Nneigh);
+   Asqrd_rcvleng   = (int  *) ML_allocate(sizeof(int  )*Asqrd_Nneigh);
+   Asqrd_sndleng   = (int  *) ML_allocate(sizeof(int  )*Asqrd_Nneigh);
 
    max_element = nvertices - 1;
    for (i = 0; i < Asqrd_Nneigh; i++) {
@@ -230,8 +230,8 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       Asqrd_rcvleng[i]   = ML_CommInfoOP_Get_Nrcvlist (mat_comm, Asqrd_neigh[i]);
       Asqrd_sendlist[i]  = ML_CommInfoOP_Get_sendlist (mat_comm, Asqrd_neigh[i]);
       Asqrd_sndleng[i]  = ML_CommInfoOP_Get_Nsendlist(mat_comm, Asqrd_neigh[i]);
-      Asqrd_rcvbuf[i]    = (int *) malloc(sizeof(int)*(Asqrd_rcvleng[i]+1));
-      Asqrd_sndbuf[i]    = (int *) malloc(sizeof(int)*(Asqrd_sndleng[i]+1));
+      Asqrd_rcvbuf[i]    = (int *) ML_allocate(sizeof(int)*(Asqrd_rcvleng[i]+1));
+      Asqrd_sndbuf[i]    = (int *) ML_allocate(sizeof(int)*(Asqrd_sndleng[i]+1));
                            /* +1 needed inside ML_Aggregate_LabelVertices */
       for (j = 0; j < Asqrd_rcvleng[i]; j++) 
          if (Asqrd_recvlist[i][j] > max_element ) 
@@ -240,7 +240,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    Nghost = max_element - nvertices + 1;
    Asqrd_ntotal = nvertices + Nghost;
 
-   templist = (int *) malloc(sizeof(int)*nvertices);
+   templist = (int *) ML_allocate(sizeof(int)*nvertices);
    for ( i = 0; i < nvertices; i++ ) templist[i] = 0;
    for ( i = 0; i < Asqrd_Nneigh; i++ ) {
       for ( j = 0; j < Asqrd_sndleng[i]; j++ ) {
@@ -258,9 +258,9 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    /* is a counter of how many processors, followed by a number of   */
    /* processor and index pairs.                                     */
 
-   proclist = (int **) malloc(Asqrd_ntotal * sizeof( int *));
+   proclist = (int **) ML_allocate(Asqrd_ntotal * sizeof( int *));
    for ( i = 0; i < nvertices; i++ ) {
-      proclist[i]    = (int *) malloc( (2*templist[i]+1) * sizeof( int ) );
+      proclist[i]    = (int *) ML_allocate( (2*templist[i]+1) * sizeof( int ) );
       proclist[i][0] = 0;
       templist[i]    = 0;
    }
@@ -274,7 +274,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       }
    }
    for ( i = nvertices; i < Asqrd_ntotal; i++ ) {
-      proclist[i] = (int *) malloc( sizeof( int ) );
+      proclist[i] = (int *) ML_allocate( sizeof( int ) );
    }
    for ( i = 0; i < Asqrd_Nneigh; i++ ) {
       for ( j = 0; j < Asqrd_rcvleng[i]; j++ ) {
@@ -292,7 +292,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    for (i = 0; i < N_neighbors; i++) {
       total_recv_leng += getrow_obj->pre_comm->neighbors[i].N_rcv;
    }
-   recv_list   = (int *) malloc(sizeof(int *)*total_recv_leng);
+   recv_list   = (int *) ML_allocate(sizeof(int *)*total_recv_leng);
    max_element = nvertices - 1;
    count = 0;
    for (i = 0; i < N_neighbors; i++) {
@@ -333,13 +333,13 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    ML_free(dtemp);
 
 
-   aggr_index = (int *) malloc(sizeof(int)* Asqrd_ntotal*num_PDE_eqns);
+   aggr_index = (int *) ML_allocate(sizeof(int)* Asqrd_ntotal*num_PDE_eqns);
    for (i = 0; i < Asqrd_ntotal; i++) aggr_index[i] = -1;
 
    temp   = (struct ML_CSR_MSRdata *) Asqrd->data;
-   vlist  = (int *) malloc(sizeof(int)* nvertices);
-   state  = (char *) malloc(sizeof(char)* Asqrd_ntotal);
-   vtype  = (char *) malloc(sizeof(char)* Asqrd_ntotal);
+   vlist  = (int *) ML_allocate(sizeof(int)* nvertices);
+   state  = (char *) ML_allocate(sizeof(char)* Asqrd_ntotal);
+   vtype  = (char *) ML_allocate(sizeof(char)* Asqrd_ntotal);
    for (i = 0; i < nvertices   ; i++)  vlist[i] =   i;
    for (i = 0; i < Asqrd_ntotal; i++)  state[i] = 'F';
    for (i = 0; i < Asqrd_ntotal; i++)  vtype[i] = 'x';
@@ -382,7 +382,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    /* longer receive list than Asqrd (due to dropping). The good news is that */
    /* at this point we only need information in regular variables (not ghost) */
 
-   tempaggr_index = (int *) malloc(sizeof(int)* (exp_Nrows+1)*num_PDE_eqns);
+   tempaggr_index = (int *) ML_allocate(sizeof(int)* (exp_Nrows+1)*num_PDE_eqns);
    for (i = 0;         i < nvertices ; i++) tempaggr_index[i] = aggr_index[i];
    for (i = nvertices; i < exp_Nrows ; i++) tempaggr_index[i] = -1;
    free(aggr_index);
@@ -468,9 +468,9 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
    /* communicate the aggregate information.  Use temp_index and tem2_index as */
    /* communication buffer arrays.                                             */
-   temp_index = (int *) malloc(sizeof(int)*(1+total_send_leng+total_recv_leng));
-   tem2_index = (int *) malloc(sizeof(int)*(1+total_send_leng+total_recv_leng));
-   temp_leng  = (int *) malloc(sizeof(int)*(N_neighbors+1));
+   temp_index = (int *) ML_allocate(sizeof(int)*(1+total_send_leng+total_recv_leng));
+   tem2_index = (int *) ML_allocate(sizeof(int)*(1+total_send_leng+total_recv_leng));
+   temp_leng  = (int *) ML_allocate(sizeof(int)*(N_neighbors+1));
 
    count = 0;
    send_count = 0;
@@ -511,7 +511,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
    /* count the size of each aggregate */
 
-   aggr_cnt_array = (int *) malloc(sizeof(int)*(aggr_count+1));
+   aggr_cnt_array = (int *) ML_allocate(sizeof(int)*(aggr_count+1));
    for (i = 0; i <= aggr_count; i++) aggr_cnt_array[i] = 0;
    for (i = 0; i < exp_Nrows; i++) {
      if (aggr_index[i] >= 0)
@@ -843,7 +843,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       /* ---------------------------------------------------------- */
 
       if ( N_neighbors > 0 )
-         request = (USR_REQ *) malloc(N_neighbors*sizeof(USR_REQ));
+         request = (USR_REQ *) ML_allocate(N_neighbors*sizeof(USR_REQ));
 
       offset = 0;
       for (i = 0; i < N_neighbors; i++)
@@ -915,7 +915,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       /* ---------------------------------------------------------- */
 
       if ( N_neighbors > 0 )
-         request = (USR_REQ *) malloc(N_neighbors*sizeof(USR_REQ));
+         request = (USR_REQ *) ML_allocate(N_neighbors*sizeof(USR_REQ));
 
       for (i = 0; i < N_neighbors; i++)
       {
@@ -951,7 +951,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
    /* count the size of each aggregate */
 
-   aggr_cnt_array = (int *) malloc(sizeof(int)*aggr_count);
+   aggr_cnt_array = (int *) ML_allocate(sizeof(int)*aggr_count);
    for (i = 0; i < aggr_count ; i++) aggr_cnt_array[i] = 0;
    for (i = 0; i < exp_Nrows; i++) 
       if (aggr_index[i] >= 0) 
@@ -1341,7 +1341,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    ML_memory_alloc((void**)&rows_in_aggs,aggr_count*sizeof(int*),"MLs");
    for (i = 0; i < aggr_count; i++) 
    {
-      rows_in_aggs[i] = (int *) malloc(aggr_cnt_array[i]*sizeof(int));
+      rows_in_aggs[i] = (int *) ML_allocate(aggr_cnt_array[i]*sizeof(int));
       aggr_cnt_array[i] = 0;
       if (rows_in_aggs[i] == NULL) 
       {
@@ -1608,8 +1608,8 @@ aggr_cnt_array[i],i);
 #ifdef DDEBUG
    /* count up the number of connections/edges that leave aggregate */
    /* versus those that are within the aggregate.                   */
-   good = (int *) malloc(Nrows*sizeof(int));
-   bad  = (int *) malloc(Nrows*sizeof(int));
+   good = (int *) ML_allocate(Nrows*sizeof(int));
+   bad  = (int *) ML_allocate(Nrows*sizeof(int));
    for (i = 0; i < Nrows; i++) { good[i] = 0; bad[i] = 0; }
    count = 0; 
    for (i = 0; i < Nrows; i++) {
@@ -1744,8 +1744,8 @@ aggr_cnt_array[i],i);
 #if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES)
    /* Print Pmatrix*v (where v is constructed using global indices) */
 
-   dtemp = (double *) malloc(sizeof(double)*(*Pmatrix)->invec_leng);
-   d2temp = (double *) malloc(sizeof(double)*(*Pmatrix)->outvec_leng);
+   dtemp = (double *) ML_allocate(sizeof(double)*(*Pmatrix)->invec_leng);
+   d2temp = (double *) ML_allocate(sizeof(double)*(*Pmatrix)->outvec_leng);
    for (i = 0; i < (*Pmatrix)->invec_leng; i++)
       dtemp[i] = (double) (i+agg_offset);
    sprintf(fname,"PP%d_%d",comm->ML_mypid,level_count);
@@ -1854,7 +1854,7 @@ int ML_Aggregate_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
    /* give the vertices adjacent to deleted vertices preferences */
    /* ---------------------------------------------------------- */
 
-   in_preflist = (char *) malloc(vlist_cnt*sizeof(char) );
+   in_preflist = (char *) ML_allocate(vlist_cnt*sizeof(char) );
    for (i = 0; i < vlist_cnt; i++) in_preflist[i] = 'f';
    if ( vlist_cnt > 0 )
    {

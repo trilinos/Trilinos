@@ -146,9 +146,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* also allocate space for storing the diagonal (if epsilon>0)   */
    /* ------------------------------------------------------------- */
 
-   col_ind = (int *)    malloc( maxnnz_per_row * sizeof(int) );
-   col_val = (double *) malloc( maxnnz_per_row * sizeof(double) );
-   if ( Nrows > 0 ) diagonal = (double *) malloc(Nrows * sizeof(double));
+   col_ind = (int *)    ML_allocate( maxnnz_per_row * sizeof(int) );
+   col_val = (double *) ML_allocate( maxnnz_per_row * sizeof(double) );
+   if ( Nrows > 0 ) diagonal = (double *) ML_allocate(Nrows * sizeof(double));
    else             diagonal = NULL;
 
    /* ------------------------------------------------------------- */
@@ -165,8 +165,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
          free(col_ind);
          free(col_val);
          maxnnz_per_row = maxnnz_per_row * 2 + 1; 
-         col_ind = (int *)    malloc(maxnnz_per_row*sizeof(int));
-         col_val = (double *) malloc(maxnnz_per_row*sizeof(double));
+         col_ind = (int *)    ML_allocate(maxnnz_per_row*sizeof(int));
+         col_val = (double *) ML_allocate(maxnnz_per_row*sizeof(double));
       }
       for ( j = 0; j < m; j++ ) 
       {
@@ -277,13 +277,13 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    amal_count = nvblocks + 1;
    amal_mat_indx[0] = amal_count; 
    row = 0;
-   col_entered = (char *) malloc(sizeof(char)*(1+ nvblocks) );
+   col_entered = (char *) ML_allocate(sizeof(char)*(1+ nvblocks) );
    if (col_entered == NULL) {
       printf("Not enough space in ML_aggregate\n");
       exit(1);
    }
    for ( i = 0; i < nvblocks; i++) col_entered[i] = 'F';
-   bdry_array = (int *) malloc(sizeof(int)*nvblocks);
+   bdry_array = (int *) ML_allocate(sizeof(int)*nvblocks);
    for ( i = 0; i < nvblocks; i++) bdry_array[i] = 0;
 
    for ( i = 0; i < nvblocks; i++) 
@@ -377,8 +377,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 #ifdef ML_AGGR_TEST
    if ( ml_ag->cur_level == ml_ag->max_levels-1 && nprocs > 1 )
    {
-      itmp_array  = (int *) malloc( nprocs * sizeof(int));
-      itmp_array2 = (int *) malloc( nprocs * sizeof(int));
+      itmp_array  = (int *) ML_allocate( nprocs * sizeof(int));
+      itmp_array2 = (int *) ML_allocate( nprocs * sizeof(int));
       for ( i = 0; i < nprocs; i++ ) itmp_array[i] = 0;
       itmp_array[mypid] = Nrows;
       ML_gsum_vec_int(itmp_array, itmp_array2, nprocs, comm);
@@ -485,7 +485,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    ML_memory_alloc((void**)&rows_in_aggs,aggr_count*sizeof(int*),"MLt");
    for (i = 0; i < aggr_count; i++) 
-      rows_in_aggs[i] = (int *) malloc(agg_sizes[i]*sizeof(int));
+      rows_in_aggs[i] = (int *) ML_allocate( (agg_sizes[i]+1)*sizeof(int) );
    if (rows_in_aggs[aggr_count-1] == NULL) 
    {
       printf("Error: couldn't allocate memory in CoarsenUncoupledVB\n");
@@ -832,7 +832,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    } 
    else if ( ordering == 2 )  /* graph ordering */
    {
-      new_node = (ML_Node *) malloc(sizeof(ML_Node));      
+      new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));      
       new_node->node_id = 0;
       node_head = new_node;
       node_tail = new_node;
@@ -856,7 +856,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
             {
                if ( aggr_stat[jnode] == ML_AGGR_READY )
                { 
-                  new_node = (ML_Node *) malloc(sizeof(ML_Node));      
+                  new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));      
                   new_node->node_id = jnode;
                   node_head = new_node;
                   node_tail = new_node;
@@ -879,8 +879,8 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       if ( aggr_stat[inode] == ML_AGGR_READY ) 
       {
          length = mat_indx[inode+1] - mat_indx[inode] + 1;
-         supernode = (ML_SuperNode *) malloc(sizeof(ML_SuperNode));      
-         supernode->list = (int*) malloc(length*sizeof(int));
+         supernode = (ML_SuperNode *) ML_allocate(sizeof(ML_SuperNode));      
+         supernode->list = (int*) ML_allocate(length*sizeof(int));
 
          if ((supernode->list) == NULL) 
          {
@@ -932,7 +932,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                   index = mat_indx[jnode];
                   if ( aggr_stat[index] == ML_AGGR_READY )
                   { 
-                     new_node = (ML_Node *) malloc(sizeof(ML_Node));      
+                     new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));      
                      new_node->node_id = index;
                      new_node->next = NULL;
                      if ( node_head == NULL )
@@ -960,7 +960,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                   {
                      if ( aggr_stat[mat_indx[kk]] == ML_AGGR_READY )
                      { 
-                        new_node = (ML_Node *) malloc(sizeof(ML_Node));      
+                        new_node = (ML_Node *) ML_allocate(sizeof(ML_Node));      
                         new_node->node_id = mat_indx[kk];
                         new_node->next = NULL;
                         if ( node_head == NULL )
@@ -1176,8 +1176,8 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          /* if enough neighbors have not been aggregated, form one  */
          /* ------------------------------------------------------- */
 
-         supernode = (ML_SuperNode *) malloc(sizeof(ML_SuperNode));      
-         supernode->list = (int*) malloc(count*sizeof(int));
+         supernode = (ML_SuperNode *) ML_allocate(sizeof(ML_SuperNode));      
+         supernode->list = (int*) ML_allocate(count*sizeof(int));
          if ((supernode->list) == NULL) 
          {
             printf("ML_Aggregate_Coarsen - couldn't allocate memory.\n");
