@@ -27,11 +27,11 @@ public:
 	//@{ \name Constructor/Destructor.
 	//! %AnasaziPrecondition constructor.
 	AnasaziPrecondition() {
-//		std::cout << "ctor:AnasaziPrecondition " << this << endl; 
+//		cout << "ctor:AnasaziPrecondition " << this << endl; 
 	}
 	//! %AnasaziPrecondition destructor.
 	virtual ~AnasaziPrecondition() {
-//		std::cout << "dtor:AnasaziPrecondition " << this << endl; 
+//		cout << "dtor:AnasaziPrecondition " << this << endl; 
 	};
 	//@}
 

@@ -111,14 +111,14 @@ private:
 template<class TYPE> 
 AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(): _rows(0), _ld(0), _cols(0), 
 						_created(false), _array(0), _endp1(0) { 
-//	std::cout << "ctor1:AnasaziDenseMatrix " << this << std::endl;
+//	cout << "ctor1:AnasaziDenseMatrix " << this << endl;
 }
 
 template<class TYPE> 
 AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(int rows, int cols): 
 							_rows(rows), _ld(rows), _cols(cols), 
 						_created(true), _array(0), _endp1(0) { 
-//	std::cout << "ctor2:AnasaziDenseMatrix " << this << std::endl;
+//	cout << "ctor2:AnasaziDenseMatrix " << this << endl;
 	if (_ld*_cols > 0) {
 		_array = new TYPE[_ld*_cols];
 		_endp1 = _array + _ld*_cols;
@@ -132,7 +132,7 @@ template<class TYPE>
 AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(int rows, int ld, int cols): 
 							_rows(rows), _ld(ld), _cols(cols), 
 						_created(true), _array(0), _endp1(0) { 
-//	std::cout << "ctor3:AnasaziDenseMatrix " << this << std::endl;
+//	cout << "ctor3:AnasaziDenseMatrix " << this << endl;
 	if (_ld*_cols > 0 ) {
 		_array = new TYPE[_ld*_cols];
 		_endp1 = _array + _ld*_cols;
@@ -150,7 +150,7 @@ template<class TYPE>
 AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A):
 							_rows(A.getrows()), _ld(A.getrows()), _cols(A.getcols()),
 							_created(true), _array(0), _endp1(0) {
-//	std::cout << "copy_ctor:AnasaziDenseMatrix " << this << std::endl;
+//	cout << "copy_ctor:AnasaziDenseMatrix " << this << endl;
 	if (_ld*_cols > 0 ) {
 		_array = new TYPE[_ld*_cols]; assert(_array);
 		_endp1 = _array + _ld*_cols;
@@ -173,7 +173,7 @@ template<class TYPE>
 AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A, int rows, int cols):
 							_rows(rows), _ld(A.getld()), _cols(cols),
 							_created(false), _array(0), _endp1(0) {
-//	std::cout << "view_ctor1:AnasaziDenseMatrix " << this << std::endl;
+//	cout << "view_ctor1:AnasaziDenseMatrix " << this << endl;
 	if (_rows*_cols > 0 && 
 		_rows <= A.getrows() && 
 		_cols <= A.getcols()) {
@@ -193,7 +193,7 @@ AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A, int st
 											 int start_col, int rows, int cols):
 							_rows(rows), _ld(A.getld()), _cols(cols),
 							_created(false), _array(0), _endp1(0) {
-//	std::cout << "view_ctor1:AnasaziDenseMatrix " << this << std::endl;
+//	cout << "view_ctor1:AnasaziDenseMatrix " << this << endl;
 	// start_col and start_row are zero based, i.e., rows and columns are indexed
 	// from 0.
 	if (_rows*_cols > 0 && 
@@ -216,7 +216,7 @@ AnasaziDenseMatrix<TYPE>::~AnasaziDenseMatrix() {
 	if (_created) { 
 		delete [] _array;
 	}
-//	std::cout << "dtor:AnasaziDenseMatrix " << this << std::endl;
+//	cout << "dtor:AnasaziDenseMatrix " << this << endl;
 }
 
 template<class TYPE>
@@ -299,9 +299,9 @@ void AnasaziDenseMatrix<TYPE>::print() {
 	int i,j;
 	for (i=0; i<_rows; i++ ) {
 		for (j=0; j<_cols; j++ ) {
-			std::cout <<_array[i+j*_ld]<<'\t';
+			cout <<_array[i+j*_ld]<<'\t';
 		}
-		std::cout << std::endl;
+		cout << endl;
 	}
 }
 #endif

@@ -103,31 +103,31 @@ template<class TYPE>
 AnasaziPetraVec<TYPE>::AnasaziPetraVec(const Epetra_BlockMap& Map, TYPE * array, 
 									   const int numvec, const int stride): 
 						Epetra_MultiVector(Copy, Map, array, stride, numvec) {
-//	std::cout << "ctor1:AnasaziPetraVec " << this << std::endl;
+//	cout << "ctor1:AnasaziPetraVec " << this << endl;
 }
 
 template<class TYPE>
 AnasaziPetraVec<TYPE>::AnasaziPetraVec(const Epetra_BlockMap& Map, const int numvec): 
 						Epetra_MultiVector(Map, numvec) {
-//	std::cout << "ctor2:AnasaziPetraVec " << this << std::endl;
+//	cout << "ctor2:AnasaziPetraVec " << this << endl;
 }
 
 template<class TYPE>
 AnasaziPetraVec<TYPE>::AnasaziPetraVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, 
 						int index[], int NumVecs ): 
 						Epetra_MultiVector(CV, P_vec, index, NumVecs) {
-//	std::cout << "ctor3:AnasaziPetraVec " << this << std::endl;
+//	cout << "ctor3:AnasaziPetraVec " << this << endl;
 }
 
 template<class TYPE>
 AnasaziPetraVec<TYPE>::AnasaziPetraVec(const Epetra_MultiVector& P_vec): 
 						Epetra_MultiVector(P_vec) {
-//	std::cout << "ctor4:AnasaziPetraVec " << this << std::endl;
+//	cout << "ctor4:AnasaziPetraVec " << this << endl;
 }
 
 template<class TYPE>
 AnasaziPetraVec<TYPE>::~AnasaziPetraVec() {
-//	std::cout << "dtor:AnasaziPetraVec " << this << std::endl;
+//	cout << "dtor:AnasaziPetraVec " << this << endl;
 }
 //
 //  member functions inherited from AnasaziMultiVec
@@ -295,7 +295,7 @@ void AnasaziPetraVec<TYPE>::MvInit( TYPE alpha )
 //
 template<class TYPE>
 void AnasaziPetraVec<TYPE>::MvPrint() {
-	std::cout << *this << std::endl;
+	cout << *this << endl;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -320,12 +320,12 @@ private:
 template <class TYPE>
 AnasaziPetraMat<TYPE>::AnasaziPetraMat(const Epetra_CrsMatrix& Matrix) :
 						Epetra_Mat(Matrix) {
-//	std::cout << "ctor:AnasaziPetraMat " << this << std::endl;
+//	cout << "ctor:AnasaziPetraMat " << this << endl;
 	}
 
 template <class TYPE>
 AnasaziPetraMat<TYPE>::~AnasaziPetraMat() {
-//	std::cout << "dtor:AnasaziPetraMat " << this << std::endl;
+//	cout << "dtor:AnasaziPetraMat " << this << endl;
 	}
 //
 // AnasaziMatrix matrix multiply
@@ -369,14 +369,14 @@ private:
 template <class TYPE>
 AnasaziPetraPrecMat<TYPE>::AnasaziPetraPrecMat(const Epetra_CrsMatrix& Matrix) :
                                                 Epetra_Precond(Matrix) {   
-//      std::cout << "ctor:AnasaziPetraPrecMat " << this << std::endl;
+//      cout << "ctor:AnasaziPetraPrecMat " << this << endl;
         }
 //
 // AnasaziPrecondition matrix multiply
 //
 template <class TYPE>
 AnasaziPetraPrecMat<TYPE>::~AnasaziPetraPrecMat() {
-//	std::cout << "dtor:AnasaziPetraPrecMat " << this << std::endl;
+//	cout << "dtor:AnasaziPetraPrecMat " << this << endl;
 }
 
 template <class TYPE>
@@ -420,14 +420,14 @@ private:
 //
 template <class TYPE>
 AnasaziPetraPrecOp<TYPE>::AnasaziPetraPrecOp(const Epetra_Operator& prec) : prec_(prec) {
-//      std::cout << "ctor:AnasaziPetraPrecOp " << this << std::endl;
+//      cout << "ctor:AnasaziPetraPrecOp " << this << endl;
 }
 //
 // Destructor.
 //
 template <class TYPE>
 AnasaziPetraPrecOp<TYPE>::~AnasaziPetraPrecOp() {
-//	std::cout << "dtor: AnasaziPetraPrecOp "<< this << std::endl;
+//	cout << "dtor: AnasaziPetraPrecOp "<< this << endl;
 }
 /////////////////////////////////////////////////////////////
 //
