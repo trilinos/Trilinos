@@ -57,6 +57,9 @@ namespace Linesearch {
 
   - "Recovery Step" - step to take when the line search fails
     (defaults to value for "Default Step")
+
+  - "Max Iters" - maximum number of iterations (i.e., RHS computations)
+
 */
 
 class Polynomial : public Generic {
@@ -70,7 +73,7 @@ public:
   ~Polynomial();
   
   // derived
-  void reset(const Parameter::List& params);
+  bool reset(const Parameter::List& params);
 
   // derived
   bool operator()(Abstract::Group& newgrp, double& step, 
@@ -87,6 +90,9 @@ private:
 
   //! Default step for linesearch failure
   double recoverystep;
+
+  //! Maximum itersions
+  int maxiters;
 
 };
 } // namespace Linesearch

@@ -40,12 +40,12 @@ namespace Linesearch {
 
 //! Simplest line search - always take the full step.
 /*! 
- *  This line search can be called via NOX::Linesearch::Manager.
- *
- *  The following parameters can be specified for this line search: 
- *
- *  - "Full Step" - length of a full step (defaults to 1.0)
- */  
+  This line search can be called via NOX::Linesearch::Manager.
+ 
+  The following parameters can be specified for this line search: 
+ 
+  - "Full Step" - length of a full step (defaults to 1.0)
+*/  
 
 class FullStep : public Generic {
 
@@ -58,7 +58,7 @@ public:
   ~FullStep();
   
   // derived
-  void reset(const Parameter::List& params);
+  bool reset(const Parameter::List& params);
 
   // derived
   bool operator()(Abstract::Group& newgrp, double& step, 
@@ -68,7 +68,6 @@ private:
 
   //! Full step length
   double fullstep;
-
 };
 } // namespace Linesearch
 } // namespace NOX

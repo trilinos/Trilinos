@@ -46,25 +46,26 @@ MoreThuente::~MoreThuente()
   delete tmpvecptr;
 }
 
-void MoreThuente::reset(const Parameter::List& params)
+bool MoreThuente::reset(const Parameter::List& params)
 { 
   ftol = params.getParameter("Sufficient Decrease", 1.0e-4);
   gtol = params.getParameter("Curvature Condition", 0.9999);
   xtol = params.getParameter("Interval Width", 1.0e-15);
   stpmin = params.getParameter("Minimum Step", 1.0e-12);
   stpmax = params.getParameter("Maximum Step", 1.0e+6);
-  maxfev = params.getParameter("Maximum Fevals", 20);
+  maxfev = params.getParameter("Max Iters", 20);
   defaultstep = params.getParameter("Default Step", 1.0);
   recoverystep = params.getParameter("Recovery Step", defaultstep);
 
   // Check the input parameters for errors.
-
   if ((ftol < 0.0) || (gtol < 0.0) || 
       (xtol < 0.0) || (stpmin < 0.0) || (stpmax < stpmin) || 
       (maxfev <= 0) || (defaultstep <= 0)) {
     cout << "More'-Thuente Line Search: Error in Input Parameter!" << endl;
-    throw;
+    throw "NOX Error";
   }
+
+  return true;
 }
 
 
@@ -193,7 +194,8 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     nfev ++;
 
     if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << "step = " << Utils::sci(stp);
+      cout << setw(3) << nfev << ":";
+      cout << " step = " << Utils::sci(stp);
       cout << " oldf = " << Utils::sci(2*finit);
       cout << " newf = " << Utils::sci(2*f);
     }

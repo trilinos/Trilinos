@@ -93,12 +93,12 @@ namespace Linesearch {
   - "Interval Width" - The maximum width of the interval containing
     the minimum of the modified function (defaults to 1.0e-15)
 
-  - "Maximum Step" - maximum allowable step lenght (defaults to 1.0e6)
+  - "Maximum Step" - maximum allowable step length (defaults to 1.0e6)
 
   - "Minimum Step" - minimum allowable step length (defaults to 1.0e-12)
 
-  - "Maximum Fevals" - maximum number of right-hand-side and
-    corresponding Jacobian evaluations (defaults to 20)
+  - "Max Iters" - maximum number of right-hand-side and corresponding
+    Jacobian evaluations (defaults to 20)
 
   - "Default Step" - starting step length (defaults to 1.0)
 
@@ -119,7 +119,7 @@ public:
   ~MoreThuente();
   
   // derived
-  void reset(const Parameter::List& params);
+  bool reset(const Parameter::List& params);
 
   // derived
   bool operator()(Abstract::Group& newgrp, double& step, 

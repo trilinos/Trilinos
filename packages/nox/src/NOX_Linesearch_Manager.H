@@ -64,19 +64,11 @@ public:
   ~Manager();
 
   // derived
-  void reset(const Parameter::List& params);
+  bool reset(const Parameter::List& params);
 
   // derived
   bool operator()(Abstract::Group& newgrp, double& step, 
 		  const Abstract::Group& oldgrp, const Abstract::Vector& dir) ;
-
-private:
-
-  //! Update method and return true if a new method name is specified.
-  bool isNewMethod(const Parameter::List& params);
-
-  //! Allocate a method of the type specified by method
-  void newPtr(const Parameter::List& params);
 
 private:
   //! Method name

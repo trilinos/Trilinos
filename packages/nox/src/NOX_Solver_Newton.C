@@ -49,6 +49,12 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) :
   niter(0),			// initialize to zero
   status(Status::Unconverged)	// initialize convergence status
 {
+  init();
+}
+
+// Protected
+void Newton::init()
+{
   // Print out initialization information
   if (Utils::doPrint(Utils::Parameters)) {
 
@@ -65,15 +71,24 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) :
   solnptr->computeRHS();
 }
 
+bool Newton::reset(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) 
+{
+  solnptr = &xgrp;
+  testptr = &t;
+  iparamsptr = &p;
+  linesearch.reset(p.sublist("Line Search"));
+  niter = 0;
+  status = Status::Unconverged;
+  init();
+  return true;
+}
+
 Newton::~Newton() 
 {
   delete oldsolnptr;
   delete dirptr;
 }
 
-void Newton::resetInputParameters(Parameter::List& p)
-{
-}
 
 Status::StatusType Newton::getStatus()
 {
@@ -172,9 +187,9 @@ void Newton::printUpdate()
   if (Utils::doPrint(Utils::OuterIteration)) {
     cout << "\n" << Utils::fill(72) << "\n";
     cout << "-- Newton Step " << niter << " -- \n";
-    cout << "Residual Norm = " << Utils::sci(norm_k);
-    cout << "  Step = " << Utils::sci(step);
-    cout << "  Update Norm = " << Utils::sci(norm_newton);
+    cout << "f = " << Utils::sci(norm_k);
+    cout << "  step = " << Utils::sci(step);
+    cout << "  dx = " << Utils::sci(norm_newton);
     if (status > 0)
       cout << " (Converged!)";
     if (status < 0)

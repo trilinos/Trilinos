@@ -45,11 +45,13 @@ Polynomial::~Polynomial()
 
 }
 
-void Polynomial::reset(const Parameter::List& params)
+bool Polynomial::reset(const Parameter::List& params)
 { 
   minstep = params.getParameter("Minimum Step", 1.0e-12);
   defaultstep = params.getParameter("Default Step", 1.0);
   recoverystep = params.getParameter("Recovery Step", defaultstep);
+  maxiters = params.getParameter("Max Iters", 100);
+  return true;
 }
 
 bool Polynomial::operator()(Abstract::Group& newgrp, double& step, 
@@ -76,6 +78,8 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
   newf = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();  
                             // Redefined f(), RH
 
+  int niters = 1;
+
   if (Utils::doPrint(Utils::InnerIteration)) {
    cout << "\n" << Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
   }
@@ -83,7 +87,8 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
   while (newf >= oldf+0.0001*step*oldfprime) {  //Armijo-Goldstein condition, RH
 
     if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << "step = " << Utils::sci(step);
+      cout << setw(3) << niters << ":";
+      cout << " step = " << Utils::sci(step);
       cout << " oldf = " << Utils::sci(oldf);
       cout << " newf = " << Utils::sci(newf);
       cout << endl;
@@ -127,7 +132,7 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
     else step = tempStep ;
 
 
-    if (step < minstep)
+    if ((step < minstep) || (niters > maxiters))
     {
       step = recoverystep;
       cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
@@ -138,7 +143,8 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
       isfailed = true;
       return(!isfailed);
     }
-
+    
+    niters ++;
     newgrp.computeX(oldgrp, dir, step);
     newgrp.computeRHS();    
     newf = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();  
@@ -147,7 +153,8 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
 
   
   if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << "step = " << Utils::sci(step);
+      cout << setw(3) << niters << ":";
+      cout << " step = " << Utils::sci(step);
       cout << " oldf = " << Utils::sci(oldf);
       cout << " newf = " << Utils::sci(newf);
       cout << " (STEP ACCEPTED!)" << endl;

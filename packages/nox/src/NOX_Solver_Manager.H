@@ -26,13 +26,16 @@ namespace Solver{
 class Manager : public Generic {
 
 public:
-  //! Generic interface.
-  Manager(Abstract::Group& initialGuess, Status::Test &t, Parameter::List& p);
+  /*!
+    \brief Generic interface. On input, the grp should contain the
+    initial guess. On output it will contain the solution. 
+  */
+  Manager(Abstract::Group& grp, Status::Test &t, Parameter::List& p);
 
   //! Destructor.
   ~Manager();
 
-  void resetInputParameters(Parameter::List& p);
+  bool reset(Abstract::Group& grp, Status::Test &t, Parameter::List& p);
 
   Status::StatusType getStatus();
 
@@ -49,6 +52,9 @@ public:
   const Parameter::List& getOutputParameters() const;
 
 private:
+
+  //! Name of method being used
+  string method;
 
   //! Pointer to the solver object
   Generic* ptr;

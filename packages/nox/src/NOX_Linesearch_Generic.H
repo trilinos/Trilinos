@@ -43,6 +43,11 @@ namespace NOX {
 namespace Linesearch {
 
 //! %Generic line search interface
+/*!
+  Every line search should respect the following Parameter:
+
+  - "Max Iters" - maximum number of iterations (i.e., RHS computations)
+*/
 class Generic {
 
 public:
@@ -54,7 +59,7 @@ public:
   virtual ~Generic() {};
 
   //! Reset parameters
-  virtual void reset(const Parameter::List& params) = 0;
+  virtual bool reset(const Parameter::List& params) = 0;
   
   //! Perform a line search from oldgrp along dirction dir. 
   //! Update newgrp = oldgrp + step * dir.

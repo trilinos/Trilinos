@@ -49,14 +49,22 @@ class Generic {
 
 public:
 
-  //! Constructor.
+  //! Constructor. 
   Generic() {};
 
   //! Destructor.
   virtual ~Generic() {};
 
-  //! Reset parameters for the nonlinear method.
-  virtual void resetInputParameters(Parameter::List& p) = 0;
+  /*! 
+    \brief Entirely reset the nonlinear solver for a new solve.  This
+    is an alternative to constructing a new solver which may result in
+    some internal data being reconstructed.
+    
+    On input, grp contains the initial guess. On output it contains
+    the solution.
+
+  */
+  virtual bool reset(Abstract::Group& grp, Status::Test& tests, Parameter::List& params) = 0;
 
   //! Check current convergence/failure status. 
   virtual Status::StatusType getStatus() = 0;

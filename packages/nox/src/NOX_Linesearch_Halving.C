@@ -45,11 +45,13 @@ Halving::~Halving()
 
 }
 
-void Halving::reset(const Parameter::List& params)
+bool Halving::reset(const Parameter::List& params)
 { 
   minstep = params.getParameter("Minimum Step", 1.0e-12);
   defaultstep = params.getParameter("Default Step", 1.0);
   recoverystep = params.getParameter("Recovery Step", defaultstep);
+  maxiters = params.getParameter("Max Iters", 100);
+  return true;
 }
 
 bool Halving::operator()(Abstract::Group& newgrp, double& step, 
@@ -63,6 +65,7 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
   newgrp.computeX(oldgrp, dir, step);
   newgrp.computeRHS();    
   newf = newgrp.getNormRHS();
+  int niters = 1;
 
   if (Utils::doPrint(Utils::InnerIteration)) {
    cout << "\n" << Utils::fill(72) << "\n" << "-- Interval Halving Line Search -- \n";
@@ -70,15 +73,17 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
   while ((newf >= oldf) && (!isfailed)) {
 
     if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << "step = " << Utils::sci(step);
+      cout << setw(3) << niters << ":";
+      cout << " step = " << Utils::sci(step);
       cout << " oldf = " << Utils::sci(oldf);
       cout << " newf = " << Utils::sci(newf);
       cout << endl;
     }
 
+    niters ++;
     step = step * 0.5;
 
-    if (step < minstep) {
+    if ((step < minstep) || (niters > maxiters)) {
       isfailed = true;
       step = recoverystep;
     }
@@ -89,7 +94,8 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
   } 
 
   if (Utils::doPrint(Utils::InnerIteration)) {
-    cout << "step = " << Utils::sci(step);
+    cout << setw(3) << niters << ":";
+    cout << " step = " << Utils::sci(step);
     cout << " oldf = " << Utils::sci(oldf);
     cout << " newf = " << Utils::sci(newf);
     if (isfailed)

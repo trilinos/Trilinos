@@ -45,9 +45,10 @@ FullStep::~FullStep()
 
 }
 
-void FullStep::reset(const Parameter::List& params)
+bool FullStep::reset(const Parameter::List& params)
 {
   fullstep = params.getParameter("Full Step", 1.0);
+  return true;
 }
 
 bool FullStep::operator()(Abstract::Group& newgrp, double& step, 

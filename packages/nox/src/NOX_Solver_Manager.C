@@ -18,26 +18,12 @@
 using namespace NOX;
 using namespace NOX::Solver;
 
-Manager::Manager(Abstract::Group& initialguess, Status::Test &t,
-				     Parameter::List& p) :
-  ptr(NULL)
+Manager::Manager(Abstract::Group& grp, Status::Test &t,
+		 Parameter::List& p) :
+  ptr(NULL),
+  method("")
 {
-  
-  Utils::setUtils(p);
-
-  string method = p.getParameter("Nonlinear Solver", "Newton");
-
-  if (Utils::doPrint(Utils::Parameters)) 
-    cout << "Nonlinear Solver: " << method << endl; 
-  
-  if (method == "Newton") {
-    ptr = new Newton(initialguess, t, p);
-  } 
-  else {
-    cout << "ERROR: NOX::Solver::Manager - invalid choice for nonlinear " 
-	 << "solver!" << endl;
-    throw 1;
-  }
+  reset(grp, t, p);
 }
 
 Manager::~Manager()
@@ -45,11 +31,29 @@ Manager::~Manager()
   delete ptr;
 }
 
-void Manager::resetInputParameters(Parameter::List& p)
+bool Manager::reset(Abstract::Group& grp, Status::Test& tests, Parameter::List& params)
 {
-  /* NOTE FROM TAMMY: May want to add a hook at some point to be able
-     to switch nonlinear solver methods mid-stream. */
-  ptr->resetInputParameters(p);
+  string newmethod = params.getParameter("Nonlinear Solver", "Newton");
+
+  if (method != newmethod) {
+    
+    method = newmethod;
+
+    delete ptr;
+    
+    if (method == "Newton") {
+      ptr = new Newton(grp, tests, params);
+    } 
+    else {
+      cout << "ERROR: NOX::Solver::Manager - invalid choice for nonlinear " 
+	   << "solver!" << endl;
+      throw "NOX Error";
+    }
+
+    return true;
+  }
+  else 
+    return ptr->reset(grp, tests, params);
 }
 
 Status::StatusType Manager::getStatus()

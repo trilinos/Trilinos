@@ -45,10 +45,7 @@ Manager::Manager(const Parameter::List& params) :
   method(""),
   ptr(NULL)
 {
-  if (!isNewMethod(params))
-    method = "Full Step";		// default line search
-
-  newPtr(params);
+  reset(params);
 }
 
 Manager::~Manager()
@@ -56,12 +53,33 @@ Manager::~Manager()
   delete ptr;
 }
 
-void Manager::reset(const Parameter::List& params)
+bool Manager::reset(const Parameter::List& params)
 {
-  if (isNewMethod(params))
-    newPtr(params);
-  
-  ptr->reset(params);
+   string newmethod = params.getParameter("Method", "Full Step");
+
+  if (method != newmethod) {
+    
+    method = newmethod;
+    
+    delete ptr;
+    
+    if (method == "Full Step")
+      ptr = new FullStep(params);
+    else if (method == "Interval Halving")
+      ptr = new Halving(params);
+    else if (method == "Polynomial")
+      ptr = new Polynomial(params);
+    else if (method == "More'-Thuente")
+      ptr = new MoreThuente(params);
+    else {
+      ptr = NULL;
+      cout << "ERROR: NOX::Linesearch::Manager - invalid choice \"" 
+	   << method << "\" for line search method " << endl;
+      throw "NOX Error";
+    }
+  }
+
+  return ptr->reset(params);
 }
 
 bool Manager::operator()(Abstract::Group& newgrp, double& step, 
@@ -70,41 +88,4 @@ bool Manager::operator()(Abstract::Group& newgrp, double& step,
   return ptr->operator()(newgrp, step, oldgrp, dir);
 }
 
-// private
-bool Manager::isNewMethod(const Parameter::List& params) 
-{
-  //! If a new method isn't specified, than nothing changed.
-  if (!params.isParameter("Method"))
-    return false;
-    
-  //! Check to see if the method name has changed or not
-  string newmethod = params.getParameter("Method", "bogus");
-  if (method == newmethod) 
-    return false;
-
-  // Method name has changed! Copy it and return true!
-  method = newmethod;
-  return true;
-}
-
-//private
-void Manager::newPtr(const Parameter::List& params)
-{
-  delete ptr;
-
-  if (method == "Full Step")
-    ptr = new FullStep(params);
-  else if (method == "Interval Halving")
-    ptr = new Halving(params);
-  else if (method == "Polynomial")
-    ptr = new Polynomial(params);
-  else if (method == "More'-Thuente")
-    ptr = new MoreThuente(params);
-  else {
-    ptr = NULL;
-    cout << "ERROR: invalid choice \"" << method << "\" for line search method "
-	 << "in Manager constructor" << endl;
-    throw 1;
-  }
-}
 

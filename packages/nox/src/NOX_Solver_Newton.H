@@ -81,7 +81,7 @@ public:
   //! Destructor
   virtual ~Newton();
 
-  virtual void resetInputParameters(Parameter::List& p);
+  virtual bool reset(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p);
   virtual Status::StatusType getStatus();
   virtual Status::StatusType iterate();
   virtual Status::StatusType solve();
@@ -92,6 +92,9 @@ public:
 
 protected:
   
+  //! Print out initialization information and calcuation the RHS.
+  virtual void init();
+
   //! Called each iteration to reset the forcing term (ie, the
   //! convergence tolerance for the linear solver).
   virtual void resetForcingTerm();
