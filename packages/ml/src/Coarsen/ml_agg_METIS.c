@@ -1027,7 +1027,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
       
       if( ok == 0 ) {
 	if( comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-	  printf( "*ML*WRN* input # of aggregates (%d) does not assure "
+	  printf( "*ML*WRN* input # of (block) aggregates (%d) does not assure "
 		  "non-empty aggregates.\n"
 		  "*ML*WRN* Now recalling METIS with # aggregates = %d\n",
 		  N_parts, N_parts/2 );
@@ -1395,7 +1395,7 @@ int agg_offset, vertex_offset;
 
        aggr_count = aggr_options[ml_ag->cur_level].Naggregates_local;
        if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
-	 printf( "%s Objective : %d local aggregates (on proc 0)\n",
+	 printf( "%s Objective : %d local (block) aggregates (on proc 0)\n",
 		 str,
 		 aggr_count );
        }
@@ -1413,10 +1413,10 @@ int agg_offset, vertex_offset;
        if( aggr_count < Nprocs ) {
 	 if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
 	   fprintf( stderr,
-		    "*ML*WRN* In CoarsenMETIS, %d global aggregates are required,\n"
+		    "*ML*WRN* In CoarsenMETIS, %d global (block) aggregates are required,\n"
 		    "*ML*WRN* but you have only %d processes. METIS requires at\n"
 		    "*ML*WRN* one aggregate per process. Otherwise, you can use ParMETIS\n"
-		    "*ML*WRN* as coarsen scheme. Now proceeding with 1 local aggregate\n"
+		    "*ML*WRN* as coarsen scheme. Now proceeding with 1 local (block) aggregate\n"
 		    "*ML*WRN* (file %s, line %d)\n",
 		    aggr_count,
 		    Nprocs,
@@ -1465,9 +1465,8 @@ int agg_offset, vertex_offset;
 	 
 	 if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
 	   fprintf( stderr,
-		    "*ML*WRN* (proc %d) # nodes per aggregate (%d) > # nodes (%d)\n"
-		    "*ML*WRN* now proceeding with aggr_count = %d\n",
-		    mypid,		    
+		    "*ML*WRN* # (block) nodes per (block) aggregate (%d) > # (block) nodes (%d)\n"
+		    "*ML*WRN* (on proc 0). Now proceeding with aggr_count = %d\n",
 		    i,
 		    Nrows,
 		    aggr_count);
@@ -1489,7 +1488,7 @@ int agg_offset, vertex_offset;
 #endif
        
        if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
-	 printf("%s avg %f aggr/process\n",
+	 printf("%s avg %f (block) aggr/process\n",
 		str,
 		1.0*i/Nprocs );
        }
@@ -1561,10 +1560,10 @@ int agg_offset, vertex_offset;
 #endif
 
    if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
-     printf("%s Using %d aggregates (globally)\n",
+     printf("%s Using %d (block) aggregates (globally)\n",
 	    str,
 	    j );
-     printf("%s # aggre/ # (block) rows = %8.5f %% ( = %d / %d)\n",
+     printf("%s # (block) aggre/ # (block) rows = %8.5f %% ( = %d / %d)\n",
 	    str,
 	    100.0*j/i,
 	    j, i);
@@ -1579,7 +1578,7 @@ int agg_offset, vertex_offset;
    */
    j = ML_gsum_int( aggr_count, comm );
    if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
-     printf("%s %d Aggregates (globally)\n",
+     printf("%s %d (block) aggregates (globally)\n",
 	    str,
 	    j );
    }   

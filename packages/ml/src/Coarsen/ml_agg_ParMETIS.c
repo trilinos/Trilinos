@@ -636,7 +636,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   
   if( N_parts == 1 ) {
 
-    // should never be used here, print out something
+    /* should never be used here, print out something */
     puts("ehhhhhhhhhhhhhhhhhhhhhhhhhhhhh? check me !!!!");
     for( i=0 ; i<Nrows ; i++ )
       part[i] = 0;
@@ -1646,8 +1646,6 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
       length = aggr_cnt_array[i];
 
-      new_nullspace_vect = NULL;
-      
       if (new_nullspace_vect == NULL) 
       {
          for (j = 0; j < length; j++)
