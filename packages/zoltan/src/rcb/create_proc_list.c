@@ -39,7 +39,7 @@ int LB_Create_Proc_List(
      int  a;                  /* number of dots that will be on each proc */
      int  sum_send;           /* total number sent from my group */
      int  sum_rem;            /* total number remaining in other group */
-     int  np_other;           /* number of processors in other group */
+     int  np_other = 0;       /* number of processors in other group */
      int  s, sp;              /* temporary sums on number of dots */
      int  num_to;             /* number of dots to send to a processor */
      int  i, j, k;            /* loop indexes */
@@ -86,9 +86,9 @@ int LB_Create_Proc_List(
      if (sum_send) {
         a = (sum_send + sum_rem)/np_other;
         sp = -1;
-        s = k = 0;
+        k = 0;
         while (!k) {
-           for (i = 0; i < nprocs; i++)
+           for (i = s = 0; i < nprocs; i++)
               if (sets[i] != set && rem[i] < a)
                  s += a - rem[i];
            if (s == sum_send)
