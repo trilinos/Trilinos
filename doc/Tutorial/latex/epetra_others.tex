@@ -1,0 +1,294 @@
+%@HEADER
+% ************************************************************************
+% 
+%          Trilinos: An Object-Oriented Solver Framework
+%              Copyright (2001) Sandia Corporation
+% 
+% Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+% license for use of this work by or on behalf of the U.S. Government.
+% 
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 2, or (at your option)
+% any later version.
+%   
+% This program is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+% General Public License for more details.
+%   
+% You should have received a copy of the GNU General Public License
+% along with this program; if not, write to the Free Software
+% Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+% 
+% Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+% 
+% ************************************************************************
+%@HEADER
+
+\chapter{Other Epetra Classes}
+\label{chap:epetra_others}
+
+Epetra includes a certain number of classes that can greatly help to
+develop parallel codes. In this Chapter we will recall the main
+usage of some of those classes:
+\begin{itemize}
+\item Epetra\_Time (in Section \ref{sec:time});
+\item Epetra\_Flops (in Section \ref{sec:flops}).
+\item Epetra\_Operator and Epetra\_RowMatrix (in Section \ref{sec:operator});
+\item Epetra\_LinearProblem (in Section \ref{sec:linear_problem}).
+\end{itemize}
+
+%%%
+%%%
+%%%
+
+\section{Epetra\_Time}
+\label{sec:time}
+
+To retrieve elapsed and wall-clock time can be problematic because of
+several platform-dependent and language-dependent issues. To avoid those
+problems, Epetra furnishes the Epetra\_Time class.  Epetra\_Time is
+meant to insulate the user from the specifics of timing among a variety
+of platforms.
+
+Using Epetra\_Time, it is possible to measure the wall-clock time and
+the elapsed time. We recall that wall-clock time is the time elapsed
+between the beginning and the end of a program phase. Elapsed time,
+instead, it the CPU time required to complete this phase. Of course
+elapsed time (on a single CPU machine) will be less than wall-clock
+time, since the CPU is shared with various system processes and possibly
+other users.
+
+A Epetra\_Time object is defined as
+\begin{verbatim}
+Epetra_Time time(Comm);
+\end{verbatim}
+To compute wall-clock or elapsed time required by a piece of code,
+then user should put the instruction
+\begin{verbatim}
+time.ResetStartTime();
+\end{verbatim}
+before the code to the timed. Then, 
+the methods \verb!ElapsedTime()! and \verb!WallTime()! will return the
+elapsed time and wall-clock time, respectively.
+
+%%%
+%%%
+%%%
+
+\section{Epetra\_Flops}
+\label{sec:flops}
+
+The Epetra\_Flops class provides basic support and consistent interfaces
+for counting and reporting floating point operations performed in the
+Epetra computational classes. All classes based on the Epetra\_Object can
+count flops by the user creating an Epetra\_Flops object and calling the
+SetFlopCounter() method for an Epetra\_CompObject.
+
+As an example, suppose to be interested in counting the flops required
+by a vector-vector product (between, say, \verb!x! and \verb!y!).
+The first step is to create an instance of the class:
+\begin{verbatim}
+Epetra_Flops counter();
+\end{verbatim}
+Then, it is necessary to ``hook'' the counter object to the desired
+computational object, in the following way:
+\begin{verbatim}
+x.SetFlopCounter(counter);
+\end{verbatim}
+Then, we perform the desired computations on Epetra objects (in this
+case, the vector-vector problem):
+\begin{verbatim}
+x.Dot(y,&dotProduct);
+\end{verbatim}
+Finally we can extract the number of performed operations ans stored it
+in the double variable \verb!total_flops! as
+\begin{verbatim}
+total_flops = counter.Flops();
+\end{verbatim}
+This will also reset the flop counter. 
+
+
+Epetra\_Time objects can be used in conjunction with Epetra\_Flops
+objects to estimate the number of floating point operations per second
+of a given code (or a part of it). One can proceed as here reported:
+\begin{verbatim}
+Epetra_Flops counter;
+x.SetFlopCounter(counter);
+Epetra_Time timer(Comm);
+x.Dot(y,&dotProduct);
+double elapsed_time = timer.ElapsedTime();
+double total_flops =counter.Flops();
+cout << "Total ops: " << total_flops << endl;
+double MFLOPs = total_flops/elapsed_time/1000000.0;
+cout << "Total MFLOPs  for mat-vec = " << MFLOPs << endl<< endl;
+\end{verbatim}
+This code is reported in \TriExe{epetra/ex20.cpp}. The output will be
+approximatively as follows:
+\begin{verbatim}
+[msala:epetra]> mpirun -np 2 ./ex20
+Total ops: 734
+Total MFLOPs  for mat-vec = 6.92688
+
+Total ops: 734
+Total MFLOPs  for mat-vec = 2.48021
+
+Total ops: 246
+Total MFLOPs for vec-vec = 0.500985
+
+q dot z = 2
+Total ops: 246
+Total MFLOPs for vec-vec = 0.592825
+
+q dot z = 2
+\end{verbatim}
+
+\begin{remark} Operation count are serial count, and therefore keep
+  trace of local operations only.
+\end{remark}
+
+\begin{remark}
+  Each computational class has a \verb!Flops()! method, that can queried
+  for the flop count of that object.
+\end{remark}
+
+%%%
+%%%
+%%%
+
+
+\section{Epetra\_Operator and Epetra\_RowMatrix Classes}
+\label{sec:operator}
+
+Matrix-free methods can be easily introduced in the Epetra framework
+using one of the following two classes:
+\begin{itemize}
+\item Epetra\_Operator;
+\item Epetra\_RowMatrix.
+\end{itemize}
+Technically, both classes are pure virtual classes (that is, they
+specify interfaces only), that enable the use of real-valued
+double-precision sparse matrices. Epetra\_RowMatrix, derived from
+Epetra\_Operator, is meant for matrices where the matrix entries are
+intended for row access, and it is currently implemented by both
+Epetra\_CrsMatrix and Epetra\_VbrMatrix.
+
+In the following, we consider for instance how to apply a matrix to a
+vector without explicitly constructing the matrix. The matrix is the
+classical finite-difference discretization of a Laplace on a 1D grid
+with constant grid-size. For the sake of simplicity, we avoid the issues
+related to intra-process communication (hence this code can be run with
+one process only). 
+
+The first step is the definition of a class, here called
+\verb!TriDiagonalOperator!, and derived from the Epetra\_Operator class.
+\begin{verbatim}
+class TriDiagonalOperator : public Epetra_Operator {
+public:
+ // .. definitions here, constructors and methods
+private:
+  Epetra_Map Map_;
+  double diag_minus_one_;   // value in the sub-diagonal
+  double diag_;             // value in the diagonal
+  double diag_plus_one_;    // value in the super-diagonal
+}
+\end{verbatim}
+As the class  Epetra\_Operator implements several virtual methods, we
+have to specify all those methods in our class. Among them, we are
+interested in the \verb!Apply! method, which may be coded as follows:
+\begin{verbatim}
+int Apply( const Epetra_MultiVector & X, Epetra_MultiVector & Y ) const {
+  int Length = X.MyLength();
+  
+  // need to handle multi-vectors and not only vectors
+  for( int vec=0 ; vec<X.NumVectors() ; ++vec ) {
+    
+    // one-dimensional problems here
+    if( Length == 1 ) {
+      Y[vec][0] = diag_ * X[vec][0];
+      break;
+    }
+    
+    // more general case (Lenght >= 2)
+    // first row
+    Y[vec][0] = diag_ * X[vec][0] + diag_plus_one_ * X[vec][1];
+    
+    // intermediate rows
+    for( int i=1 ; i<Length-1 ; ++i ) {
+      Y[vec][i] = diag_ * X[vec][i] + diag_plus_one_ * X[vec][i+1]
+        + diag_minus_one_ * X[vec][i-1];
+    }
+    // final row
+    Y[vec][Length-1] = diag_ * X[vec][Length-1]
+      + diag_minus_one_ * X[vec][Length-2];
+  }
+  return true;
+}
+\end{verbatim}
+Now, in the \verb!main! function, we can define a TriDiagonalOperatr object
+using the specified constructor:
+\begin{verbatim}
+  TriDiagonalOperator TriDiagOp(-1.0,2.0,-1.0,Map);
+\end{verbatim}
+and we can apply this operator to a vector as:
+\begin{verbatim}
+  DiagOp.Apply(x,y);
+\end{verbatim}
+
+The entire source can be found in
+\TriExe{epetra/ex21.cpp}. 
+
+\begin{remark}
+  The clear disadvantage of deriving Epetra\_Operator or
+  Epetra\_RowMatrix with respect to use Epetra\_CrsMatrix or
+  Epetra\_VbrMatrix, is that users must specify their communication
+  patterns for intra-process data exchange. For this purpose,
+  Epetra\_Import classes can be used.  File \TriExe{epetra/ex22.cpp}
+  shows how to extend \verb!ex21.cpp! to the multi-process case. This
+  example makes use of the Epetra\_Import class to exchange data.
+\end{remark}
+
+%%%
+%%%
+%%%
+
+\section{Epetra\_LinearProblem}
+\label{sec:linear_problem}
+
+A linear problem of type $A X = B$ is defined by an
+Epetra\_LinearProblem class. This class required an Epetra\_RowMatrix or
+an Epetra\_Operator object (often an Epetra\_CrsMatrix or
+Epetra\_VbrMatrix), and two (multi-)vectors $X$ and $B$. $X$ must have
+been defined using a map equivalent to the DomainMap of $A$, while $B$
+using a map equivalent ot the RangeMap of $A$ (see
+Section~\ref{sec:sparse_mat}).
+
+Linear problems can be used to solve linear systems with iterative
+methods (typically, using AztecOO, covered in
+Chapter~\ref{chap:aztecoo}), or with direct solvers (typically, using
+Amesos, described in Chapter~\ref{chap:amesos}. 
+
+Once the linear problem has been defined, the user can:
+
+\begin{itemize}
+\item scale the problem, using \verb!LeftScale(D)! or
+  \verb!RightScale(D)!, \verb!D! being am Epetra\_Vector of compatible
+  size;
+\item define a preconditioner for the iterative solution;
+\item change $X$ and $B$, using \verb!SetRHS(&B)! and \verb!SetLHS(&X)!;
+\item change $A$, using \verb!SetOperator(&A)!.
+\end{itemize}
+
+%%%
+%%%
+%%%
+
+
+\section{Concluding Remarks}
+\label{sec:epetra_concluding}
+
+More details about the Epetra project, and a technical description of
+classes and methods, can be found in
+\cite{Epetra-Ref-Guide,Epetra-Users-Guide}.
+

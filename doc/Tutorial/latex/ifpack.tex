@@ -1,0 +1,195 @@
+%@HEADER
+% ************************************************************************
+% 
+%          Trilinos: An Object-Oriented Solver Framework
+%              Copyright (2001) Sandia Corporation
+% 
+% Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+% license for use of this work by or on behalf of the U.S. Government.
+% 
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 2, or (at your option)
+% any later version.
+%   
+% This program is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+% General Public License for more details.
+%   
+% You should have received a copy of the GNU General Public License
+% along with this program; if not, write to the Free Software
+% Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+% 
+% Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+% 
+% ************************************************************************
+%@HEADER
+
+\chapter{Incomplete Factorizations with IFPACK}
+\label{chap:ifpack}
+
+IFPACK provides a suite of object-oriented algebraic preconditioners for
+the solution of preconditioned iterative solvers. IFPACK offers a
+variety of overlapping (one-level) Schwarz preconditioners, The packages
+uses Epetra for basic matrix-vector calculations, and accepts user
+matrices via abstract matrix interface. A concrete implementation for
+Epetra matrices is provided. The package separates graph construction
+for factorization, improving performances in a substantial manner with
+respect to other factorization packages.
+
+In this Chapter we present how to use IFPACK objects as a preconditioner
+for an AztecOO solver. 
+
+%%%
+%%%
+%%%
+
+\section{Theoretical Background}
+\label{sec:ifpack_theoretical}
+
+Aim of this Section is to briefly present some aspects on incomplete
+factorization methods, to establish a notation. The Section is not
+supposed to be exhaustive, nor complete on this subject. The reader is
+referred to the existing literature for a rigorous presentation.
+
+\medskip
+
+A broad class of effective preconditioners is based on incomplete
+factorization of the linear system matrix, and it is usually indicated
+as ILU.  The ILU-type preconditioning techniques lie between direct and
+iterative methods and provide a balance between reliability and
+numerical efficiency.
+
+The preconditioner is given in the factored form
+$P=\tilde{L} \tilde{U}$, with $\tilde{L}$ and $\tilde{U}$ being lower
+and upper triangular matrices. Solving with $P$ involves two triangular
+solutions.
+
+The incomplete LU factorization of a matrix $A$ can be described as
+follows. Let $A_0=A$. Then, for $k=2,\ldots,n$, we have
+\[
+A_{k-1} = 
+\left(
+\begin{array}{c c}
+B_k & F_k \\
+E_k & C_k \\
+\end{array}
+\right) .
+\]
+Thus, we can write the $k-$step of the Gaussian elimination in a block
+form as
+\[
+A_{k-1} = 
+\left(
+\begin{array}{c c}
+I & 0 \\
+E_k B_k^{-1} & I \\
+\end{array}
+\right)
+\;
+\left(
+\begin{array}{c c}
+B_k & F_k \\
+0 & A_k \\
+\end{array}
+\right) ,
+\]
+where $A_k = C_k - E_k B_k^{-1} F_k$. If $B_k$ is a scalar, then we have
+the typical point-wise factorization, otherwise we have a block
+factorization. Pivoting, if it is necessary, can be accomplished by
+reordering $A_k$ at every step.
+
+To make the factorization incomplete, entries as dropped in $A_k$, i.e.
+the factorization proceeds with
+\[
+\tilde{A}_k = A_k - R_k
+\]
+where $R_k$ is the matrix of dropped entries. 
+
+Dropping can be performed
+by position, for example, dropping those entries in the update matrix
+$E_k B_k^{-1} F_k$ that are not in the pattern of $C_k$. 
+This simple ILU factorization is known as ILU(0). Although effective, in
+some cases the accuracy of the ILU(0) may be insufficient to yield an
+adequate rate of convergence. More accurate factorizations will differ
+from ILU(0) by allowing some {\em fill-in}. The resulting class of
+methods is called ILU($f$), where $f$ is the level-of-fill. A
+level-of-fill is attributed to each element that is processed by
+Gaussian elimination, and dropping will be based on the level-of-fill.
+The level-of-fill should be indicative of the size of the element: the
+higher the level-of-fill, the smaller the elements.  
+
+Other strategies consider dropping by value -- for example, dropping
+entries smaller than a prescribed threshold. Alternative dropping
+techniques can be based on the numerical size of the element to be
+discarded. Numerical dropping strategies generally yield more accurate
+factorizations with the same amount of fill-in than level-of-fill
+methods. The general strategy is to compute an entire row of the
+$\tilde{L}$ and $\tilde{U}$ matrices, and then keep only the biggest
+entries in a certain number. In this way, the amount of fill-in is
+controlled; however, the structure of the resulting matrices is
+undefined. These factorizations are usually referred to as ILUT, and a
+variant which performs pivoting is called ILUTP.
+
+%%%
+%%%
+%%%
+
+\section{Using IFPACK with CRS Matrices}
+\label{sec:ifpack_crs}
+
+The complete code is reported in \TriExe{ifpack/ex1.cpp}, and it has
+been largely inspired from one of the examples contained in the AztecOO
+package.
+
+We suppose that the linear system matrix is an Epetra\_Crs matrix. 
+First, we have to create two objects: 
+\begin{verbatim}
+Ifpack_IlukGraph * IlukGraph = 0;
+IlukGraph = new Ifpack_IlukGraph(A.Graph(), LevelFill, Overlap);
+Ifpack_CrsRiluk * ILUK = 0;
+ILUK = new Ifpack_CrsRiluk(*IlukGraph);
+ILUK->SetAbsoluteThreshold(Athresh);
+ILUK->SetRelativeThreshold(Rthresh);
+\end{verbatim}
+where \verb!LevelFill! and \verb!Overlap! are two integer constant
+previously defined. This phase defined the graph for the incomplete
+factorization, without computing the actual values of the $L_i$ and
+$U_i$ factors. Instead, this operation is accomplished with
+\begin{verbatim}
+int initerr = ILUK->InitValues(A);
+\end{verbatim}
+An estimation of the condition number of the preconditioned system can
+be obtained via
+\begin{verbatim}
+double Condest;
+ILUK->Condest(transA, Condest);
+\end{verbatim}
+Here we create an AztecOO object:
+\begin{verbatim}
+AztecOO solver;
+solver.SetUserMatrix(&A);
+solver.SetLHS(&x);
+solver.SetRHS(&b);
+\end{verbatim}
+and finally, here we set the IFPACK preconditioner and specify few
+parameters, and we solve the linear problem:
+\begin{verbatim}
+solver.SetPrecOperator(ILUK);
+int Niters = 1200;
+solver.SetAztecOption(AZ_kspace, Niters); 
+solver.Iterate(Niters, 5.0e-10);
+\end{verbatim}
+
+%%%
+%%%
+%%%
+
+
+\section{Concluding Remarks}
+\label{sec:ifpack_concluding}
+
+More documentation on the IFPACK package can be found in
+\cite{Ifpack-Ref-Guide,Ifpack-User-Guide}.
+

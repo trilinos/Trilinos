@@ -1,0 +1,140 @@
+//@HEADER
+// ************************************************************************
+// 
+//          Trilinos: An Object-Oriented Solver Framework
+//              Copyright (2001) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// 
+// ************************************************************************
+//@HEADER
+
+\chapter{TriUtils}
+\label{chap:triutils}
+
+\section{Reading a HB problem}
+
+It is possible to read matrix, solution and right-hand side, from a file
+written in the Harwell/Boeing format. This is done in
+\TriExe{triutils/ex1.cpp}. The key instructions are the following.
+
+First, we define pointers to Epetra\_Vector and Epetra\_Matrix objects:
+\begin{verbatim}
+Epetra_Map * readMap; // Pointers because of Trilinos_Util_ReadHb2Epetra
+Epetra_CrsMatrix * readA; 
+Epetra_Vector * readx; 
+Epetra_Vector * readb;
+Epetra_Vector * readxexact;
+\end{verbatim}
+The HB problem is read with the instruction
+\begin{verbatim}
+Trilinos_Util_ReadHb2Epetra(FileName, Comm, readMap, readA, readx, 
+                            readb, readxexact);   
+\end{verbatim}
+Note that this has created an Epetra\_Matrix and two Epetra\_Vectors,
+with all the elements assigned to processor zero. This is because the HB
+file does not contain any information about the distribution of the
+elements to the processors. To solve the linear problem in parallel, the
+user must specify a map.  For instance, we can use a linear map:
+\begin{verbatim}
+int NumGlobalElements = readMap->NumGlobalElements();
+Epetra_Map map(NumGlobalElements,0,Comm);
+\end{verbatim}
+and create and exporter to distribute read-in matrix and vectors:
+\begin{verbatim}
+Epetra_Export exporter(*readMap, map);
+Epetra_CrsMatrix A(Copy, map, 0);
+Epetra_Vector x(map);
+Epetra_Vector b(map);
+Epetra_Vector xexact(map);
+// this is the data distribution phase
+x.Export(*readx, exporter, Add);
+b.Export(*readb, exporter, Add);
+xexact.Export(*readxexact, exporter, Add);
+A.Export(*readA, exporter, Add);
+\end{verbatim}
+Finally, we can destroy the objects used to store the non-distributed HB
+problem:
+\begin{verbatim}
+delete readA;
+delete readx;
+delete readb;
+delete readxexact;
+delete readMap;
+\end{verbatim}
+
+%%%
+%%%
+%%%
+
+\section{ShellOptions}
+
+ShellOptions is a class to manage the input arguments and shell
+variables.  With this class, it is easy to handle input line arguments
+and shell variables. For instance, the user can write 
+\begin{verbatim}
+$ ./a.out -nx 10 -tol 1e-6 -solver=cg 
+\end{verbatim}
+and then easily retrieve the value of {\tt nx}, {\tt tol}, and {\tt solver}.
+ 
+A simple code using this class is as follows:
+\begin{verbatim}
+int main(int argc, char *argv[])
+{
+
+  ShellOptions Args(argc,argv);
+  int nx = Args.GetIntOption("-nx", 123);
+  int ny = Args.GetIntOption("-ny", 145);
+  double tol = Args.GetDoubleOption("-tol", 1e-12);
+  string solver = Args.GetIntOption("-solver");
+
+  cout << "nx = " << nx << endl;
+  cout << "ny = " << ny << " (default value)" << endl;
+  cout << "tol = " << tol << endl;
+  cout << "solver = " << solver << endl;
+
+  return 0;
+}
+\end{verbatim}
+
+Each line   option can have a value or not. For options with a value,
+the user can specify this values as follows. Let \verb!-tolerance! be the
+name of the option and \verb!1e-12! its value. Both choices are valid:
+\begin{itemize}
+\item \verb!-tolerance 1e-12! (with one or more spaces)
+\item \verb!-tolerance=1e-12! (with \verb!=! sign and no spaces)
+\end{itemize}
+
+Option names must begin with one or more dashes (`\verb!-!'). Each option
+cannot have more than one value.
+
+To use this class, the user has to build the database using the 
+\verb!argc,argv! input arguments. Then, to retrieve the option value, the user
+ has to use one of the following functions:
+\verb!GetIntOption!, \verb!GetDoubleOption!, and \verb!GetStringOption!.
+ 
+If option name is not found in the database, a value of 0, 0.0 or an
+ empty string is returned. If needed, the user can also specify a
+ default value to return when the option name is not found in the
+ database. Method \verb!HaveOption! can be used to query the database for
+ an option.
+
+File \TriExe{triutils/ex2.cpp} gives an example of the usage of this class.
+ 

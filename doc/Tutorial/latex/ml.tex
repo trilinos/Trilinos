@@ -1,0 +1,351 @@
+%@HEADER
+% ************************************************************************
+% 
+%          Trilinos: An Object-Oriented Solver Framework
+%              Copyright (2001) Sandia Corporation
+% 
+% Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+% license for use of this work by or on behalf of the U.S. Government.
+% 
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 2, or (at your option)
+% any later version.
+%   
+% This program is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+% General Public License for more details.
+%   
+% You should have received a copy of the GNU General Public License
+% along with this program; if not, write to the Free Software
+% Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+% 
+% Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+% 
+% ************************************************************************
+%@HEADER
+
+\chapter{Multilevel Methods with ML}
+\label{chap:ml}
+
+The ML package defines a class of preconditioner based on multilevel
+methods~\cite{TuminaroTong:00a}. While technically any linear system can
+be considered, ML should be used on linear systems on linear systems,
+like elliptic PDEs, that are known to work well with multilevel methods.
+
+ML is a large package, that can be used to a variety of purposes. ML
+provides multilevel solvers, as well as multilevel preconditioners.
+
+In this Chapter we present:
+\begin{itemize}
+\item Outline the basic issued of multilevel schemes (in
+  Section~\ref{ml:theoretical});
+\item How to use ML objects as a preconditioner for an AztecOO solver
+  (in Section~\ref{sec:ml_prec});
+\item How to implement two-level domain decomposition methods, with a
+  coarse grid defined using aggregation procedures (in
+  Section~\ref{sec:ml_DD}).
+\end{itemize}
+
+As other Trilinos packages, ML can be compiled and run independently
+from Epetra, that is, it can accept input matrix in formats different
+from the Epetra\_RowMatrix or Epetra\_Operator.  Should the reader be
+interested in running ML without Epetra, or using a C code (and not a
+C++ code), then we refer to the ML guide, contained in the
+\verb!${TRILINOS_HOME}/packages/ml/doc/!.
+
+%%%
+%%%
+%%%
+
+\section{Theoretical Background}
+\label{ml:theoretical}
+
+Aim of this Section is to briefly present some aspects on multilevel
+methods, to establish a notation. The Section is not supposed to be
+exhaustive, nor complete on this subject. The reader is referred to the
+existing literature for a rigorous presentation.
+
+\medskip
+
+Multigrid methods require the operator to be defined on a sequence of
+coarser grids, an iterative method that evolves the solution (called a
+smoother) and interpolation operators that transfer information between
+the grids. The principle behind the algorithm is that the high-frequency
+errors can be efficiently solved on the fine grid, while the
+low-frequency are treated on the coarser one, where there frequencies
+manifest themselves as high-frequencies.  Geometric multigrid (GMG)
+methods cannot be applied without the existence of an underlying grid
+(this is their major limitation). This led to the development of
+algebraic multigrid method (AMG), initiated by Ruge and St\"uben.  In
+AMG, both the matrix hierarchy and the prolongation operators are
+constructed just from the stiffness matrix.  Since the automatic
+generation of a grid-hierarchy for GMG and especially the proper
+assembly of all components would be a very difficult task for
+unstructured problems, the automatic algebraic construction of a virtual
+grid is a big advantage.
+
+A function to solve (\ref{eq:linear_sys}) using a multilevel method can
+be defined as follows:
+\begin{verbatim}
+MGM( X, B, k)
+{
+  if( k == 0 ) X = A_k \ B;
+  else {
+    X = S_k^1 (X, B);
+    D = R_{k-1,k} ( B - A_k X );
+    V = 0;
+    MGM( V, D, k-1 );
+    X = X + P_{k,k-1} V;
+    X = S_k^2( U, B );
+  }
+}
+\end{verbatim}
+In the above method, $S_k^1$ and $S_k^2$ are two smoothers, $R_{k-1,k}$
+is a restriction operator from level $k$ to $k-1$, and $P_{k,k-1}$ is a
+prolongator from $k-1$ to $k$.
+
+%%%
+%%%
+%%%
+
+\section{ML as a Preconditioner for AztecOO}
+\label{sec:ml_prec}
+
+In order to use ML as a preconditioner, we need to define an
+AztecOO Solver, as outlined in Chapter~\ref{chap:aztecoo}. 
+
+ML requires the user to define a structure, to store internal data. This
+structure is usually called \verb!ml_handle!:
+\begin{verbatim}
+ML *ml_handle;
+\end{verbatim}
+
+Let us suppose that we intend to use ML as a ``black-box'' (or gray-box)
+multilevel preconditioner, using aggregation procedures to define the
+multilevel hierarchy. The variable 
+\begin{verbatim}
+int N_levels = 10;
+\end{verbatim}
+defines the maximum number of levels, while
+\begin{verbatim}
+ML_Set_PrintLevel(3);
+\end{verbatim}
+toggle the output level (from 0 to 10, 10 being verbose mode and 0
+silent mode).
+
+The ML handle is created using
+\begin{verbatim}
+ML_Create(&ml_handle,N_levels);
+\end{verbatim}
+ML can accept in input very general matrices. Basically, the user has to
+specify the number of local rows, and provide a function to update the
+ghost nodes (that is, nodes requires in the matrix-vector product, but
+assigned to another process). For Epetra matrices, this is done by the
+following function
+\begin{verbatim}
+EpetraMatrix2MLMatrix(ml_handle, 0, &A);
+\end{verbatim}
+Note that \verb!A! is {\sl not} converted to ML format. Instead, proper
+wrappers are defined.  (Here, \verb!A! is the Epetra matrix for which we
+aim to construct a preconditioner.)
+
+ML requires another structure, called ML\_Aggregate, to store the
+information about the aggregates at various levels:
+\begin{verbatim}
+ML_Aggregate *agg_object;
+ML_Aggregate_Create(&agg_object);
+\end{verbatim}
+
+The multilevel hierarchy is constructed with the instruction
+\begin{verbatim}
+N_levels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0,
+                                               ML_INCREASING,
+                                               agg_object);
+\end{verbatim}
+Here, \verb!0! is the index of the finest level, and the index of
+coarser levels will be obtained by incrementing this value.  (We refer
+to the ML manual for more details about the input parameters.)
+
+We still need to define the smoother, for instance a symmetric Gauss-Seidel:
+\begin{verbatim}
+ML_Gen_Smoother_SymGaussSeidel(ml_handle, ML_ALL_LEVELS,
+                               ML_BOTH, 1, ML_DEFAULT);
+\end{verbatim}
+and to generate the solver as
+\begin{verbatim}
+ML_Gen_Solver    (ml_handle, ML_MGV, 0, N_levels-1);
+\end{verbatim}
+
+Finally, we can create an Epetra\_Operator, based on the previously
+defined ML hierarchy
+\begin{verbatim}
+Epetra_ML_Operator  MLop(ml_handle,comm,map,map);
+\end{verbatim}
+and set the preconditioning operator of our AztecOO solver,
+\begin{verbatim}
+solver.SetPrecOperator(&MLop);
+\end{verbatim}
+ 
+At this point, we can call \verb!Iterate()! as usual,
+\begin{verbatim}
+solver.Iterate(Niters, 1e-12);
+\end{verbatim}
+
+The entire code is reported in \TriExe{ml/ex1.cpp}.
+The output will be approximatively as reported below.
+\begin{verbatim}
+[msala:ml]> mpirun -np 2 ./ex1.exe
+**************************************************************
+* ML Aggregation information                                 *
+==============================================================
+ML_Aggregate : ordering           = natural.
+ML_Aggregate : min nodes/aggr     = 2
+ML_Aggregate : max neigh selected = 0
+ML_Aggregate : attach scheme      = MAXLINK
+ML_Aggregate : coarsen scheme     = UNCOUPLED
+ML_Aggregate : strong threshold   = 0.000000e+00
+ML_Aggregate : P damping factor   = 1.333333e+00
+ML_Aggregate : number of PDEs     = 1
+ML_Aggregate : number of null vec = 1
+ML_Aggregate : smoother drop tol  = 0.000000e+00
+ML_Aggregate : max coarse size    = 1
+ML_Aggregate : max no. of levels  = 10
+**************************************************************
+ML_Gen_MGHierarchy : applying coarsening
+ML_Aggregate_Coarsen begins
+ML_Aggregate_CoarsenUncoupled : current level = 0
+ML_Aggregate_CoarsenUncoupled : current eps = 0.000000e+00
+Aggregation(UVB) : Total nonzeros = 128 (Nrows=30)
+Aggregation(UC) : Phase 0 - no. of bdry pts  = 0
+Aggregation(UC) : Phase 1 - nodes aggregated = 28 (30)
+Aggregation(UC) : Phase 1 - total aggregates = 8
+Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 28
+Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 8
+Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 0
+Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 8
+Aggregation(UC_Phase2_3) : Phase 2 - boundary nodes   = 0
+Aggregation(UC_Phase2_3) : Phase 3 - leftovers = 0 and singletons = 0
+ Aggregation time       = 1.854551e-03
+Gen_Prolongator : max eigen = 1.883496e+00
+ML_Gen_MGHierarchy : applying coarsening
+ML_Gen_MGHierarchy : Gen_RAP
+RAP time for level  0 = 5.319577e-04
+ML_Gen_MGHierarchy : Gen_RAP done
+ML_Gen_MGHierarchy : applying coarsening
+ML_Aggregate_Coarsen begins
+ML_Aggregate_CoarsenUncoupled : current level = 1
+ML_Aggregate_CoarsenUncoupled : current eps = 0.000000e+00
+Aggregation(UVB) : Total nonzeros = 46 (Nrows=8)
+Aggregation(UC) : Phase 0 - no. of bdry pts  = 0
+Aggregation(UC) : Phase 1 - nodes aggregated = 6 (8)
+Aggregation(UC) : Phase 1 - total aggregates = 2
+Aggregation(UC_Phase2_3) : Phase 1 - nodes aggregated = 6
+Aggregation(UC_Phase2_3) : Phase 1 - total aggregates = 2
+Aggregation(UC_Phase2_3) : Phase 2a- additional aggregates = 0
+Aggregation(UC_Phase2_3) : Phase 2 - total aggregates = 2
+Aggregation(UC_Phase2_3) : Phase 2 - boundary nodes   = 0
+Aggregation(UC_Phase2_3) : Phase 3 - leftovers = 0 and singletons = 0
+ Aggregation time       = 1.679042e-03
+Gen_Prolongator : max eigen = 1.246751e+00
+ML_Gen_MGHierarchy : applying coarsening
+ML_Gen_MGHierarchy : Gen_RAP
+RAP time for level  1 = 4.489557e-04
+ML_Gen_MGHierarchy : Gen_RAP done
+ML_Gen_MGHierarchy : applying coarsening
+ML_Aggregate_Coarsen begins
+Aggregation total setup time = 8.903003e-02 seconds
+Smoothed Aggregation : operator complexity = 1.390625e+00.
+
+                *******************************************************
+                ***** Preconditioned CG solution
+                ***** Epetra ML_Operator
+                ***** No scaling
+                *******************************************************
+
+                iter:    0           residual = 1.000000e+00
+                iter:    1           residual = 1.289136e-01
+                iter:    2           residual = 4.710371e-03
+                iter:    3           residual = 7.119470e-05
+                iter:    4           residual = 1.386302e-06
+                iter:    5           residual = 2.477133e-08
+                iter:    6           residual = 6.141025e-10
+                iter:    7           residual = 6.222216e-12
+                iter:    8           residual = 1.277534e-13
+
+
+                Solution time: 0.005845 (sec.)
+                total iterations: 8
+Residual    = 6.99704e-13
+\end{verbatim}
+
+%%%
+%%%
+%%%
+
+
+\section{Two-level Domain Decomposition Preconditioners with ML}
+\label{sec:ml_DD}
+
+In order to use the example reported in this Section, one should compile
+ML with the configure flag \verb!--with-ml_metis!. In this way, ML will
+use the graph decomposition library METIS to create the coarse-level
+matrix\footnote{Note that ML has to be aware of the location of the
+  METIS include files and the METIS library. The user can use the
+  configure flags {\tt --with-incdirs} and {\tt --with-ldflags}.  Please
+  type {\tt configure --help} for more information. If you don't have
+  METIS, or you don't want to re-configure ML, you will be able to run
+  the example of this Section. However, you will be limited to use only
+  one aggregate per process.}.
+
+Two-level domain decomposition methods have been proved to be very
+effective for the iterative solution of many different kind of linear
+systems.  For some classes of problems, a very convenient way to define
+the coarse grid operator is to use aggregation procedure. This is very
+close to what presented in Section~\ref{sec:ml_prec}. The main
+difference is that only two level methods are considered, and that the
+coarse grid remains of (relatively) small size. The idea is to define a
+small number of aggregates on each process, using a graph decomposition
+algorithm (as implemented in the library METIS, for
+instance)\footnote{Aggregation schemes based on ParMETIS as also
+  available. Please refer to the help of the ML {\tt configure} for more
+  details.}. This can be done as follows.
+
+First, we need to define an AztecOO problem, an ML structure, and an
+ML\_Aggregate structure. Then, we limit ourself to 2-level scheme.
+\begin{verbatim}
+int N_levels = 2;
+\end{verbatim}
+Then, we specify the aggregation scheme as
+\begin{verbatim}
+ML_Aggregate_Set_CoarsenScheme_METIS(agg_object);
+\end{verbatim}
+and define the number of aggregates (here, 4) to be defined on each
+process as
+\begin{verbatim}
+ML_Aggregate_Set_LocalNumber( ml_handle, agg_object, 0, 4 );
+\end{verbatim}
+
+We still have to define the smoother, which is a one-level domain
+decomposition, as implemented in the AztecOO library:
+\begin{verbatim}
+FIXME...
+\end{verbatim}
+
+The creation of the multilevel hierarchy and the solution of the linear
+system will be as reported in Section~\ref{sec:ml_prec}.
+
+The entire code is reported in \TriExe{ml/ex2.cpp}.
+
+
+%%%
+%%%
+%%%
+
+\section{Concluding Remarks}
+\label{sec:ml_concluding}
+
+More documentation about ML can be found in
+\cite{ML-home-page,TuminaroTong:00,TuminaroTong:00}.
+
