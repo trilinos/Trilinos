@@ -190,9 +190,9 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << " IntSerialDenseMatrix constructed\n";
   // since the third parameter is left out, the IntSerialDenseMatrix from PE0 is used by default
   if (verbose) cout << " putting IntSerialDenseMatrix from PE0 into Matlab as ISDM_PE0\n";
-  ierr = engine.PutIntSerialDenseMatrix(isdMatrix, "ISMD_PE0");
+  ierr = engine.PutIntSerialDenseMatrix(isdMatrix, "ISDM_PE0");
   if (ierr) {
-    if (reportErrors) cout << "There was an error in engine.PutIntSerialDenseMatrix(isdMatrix, \"ISMD_PE0\"): " << ierr << endl;
+    if (reportErrors) cout << "There was an error in engine.PutIntSerialDenseMatrix(isdMatrix, \"ISDM_PE0\"): " << ierr << endl;
   }
   if (comm.NumProc() > 1) {
     if (verbose) cout << " putting IntSerialDenseMatrix from PE1 into Matlab as ISDM_PE1\n";
