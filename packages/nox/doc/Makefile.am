@@ -32,7 +32,7 @@
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = Doxyfile
+EXTRA_DIST = Doxyfile configure.html
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -41,6 +41,6 @@ EXTRA_DIST = Doxyfile
 MAINTAINERCLEANFILES = Makefile.in 
 
 dox:
-	doxygen
+	cd $(top_srcdir)/doc; doxygen
 
 
