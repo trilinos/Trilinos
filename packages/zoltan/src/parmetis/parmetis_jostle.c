@@ -153,7 +153,7 @@ int LB_Jostle(
   char matching[MAX_PARAM_STRING_LEN+1];
   char reduction[MAX_PARAM_STRING_LEN+1];
   char connect[MAX_PARAM_STRING_LEN+1];
-  int  i, option, threshold, gather_threshold; 
+  int  i, output_level, threshold, gather_threshold; 
   int num_proc = lb->Num_Proc;     /* Temporary variables whose addresses are */
   int proc = lb->Proc;             /* passed to Jostle. We don't              */
   MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
@@ -174,13 +174,14 @@ int LB_Jostle(
   blank[MAX_PARAM_STRING_LEN] = '\0';
 
   /* Set parameters */
+  output_level = 0;
   threshold = 0;
   gather_threshold = 0;
   matching[0] = '\0';
   reduction[0] = '\0';
   connect[0] = '\0';
   LB_Bind_Param(Jostle_params, "JOSTLE_OUTPUT_LEVEL", 
-                (void *) &option);
+                (void *) &output_level);
   LB_Bind_Param(Jostle_params, "JOSTLE_THRESHOLD",    
                 (void *) &threshold);
   LB_Bind_Param(Jostle_params, "JOSTLE_GATHER_THRESHOLD", 
@@ -235,7 +236,7 @@ int LB_Jostle(
   /* Call the real Jostle/ParMetis interface */
   return LB_ParMetis_Jostle( lb, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
-            alg, &option);
+            alg, &output_level);
 
 #endif /* LB_JOSTLE */
 }
@@ -277,7 +278,7 @@ static int LB_ParMetis_Jostle(
   LB_LID **exp_lids,  /* local  ids of objects to be exported */
   int **exp_procs,    /* list of processors to export to */
   char *alg,          /* algorithm to use */
-  int  *options       /* ParMetis option array */
+  int  *options       /* option array */
 )
 {
   static char *yo = "LB_ParMetis_Jostle";
@@ -324,16 +325,23 @@ static int LB_ParMetis_Jostle(
   plist = NULL;
 
   /* Check weight dimensions */
-  if (lb->Obj_Weight_Dim>1){
-    fprintf(stderr, "Zoltan warning: This method does not support "
-            "multidimensional object weights. Using Obj_Weight_Dim = 1.\n");
+  if (lb->Obj_Weight_Dim<0){
+    fprintf(stderr, "ZOLTAN warning: Object weight dimension is %d, "
+            "but should be >= 0. Using Obj_Weight_Dim = 1.\n",
+            lb->Obj_Weight_Dim);
     obj_wgt_dim = 1;
   }
   else {
     obj_wgt_dim = lb->Obj_Weight_Dim;
   }
-  if (lb->Comm_Weight_Dim>1){
-    fprintf(stderr, "Zoltan warning: This method does not support "
+  if (lb->Comm_Weight_Dim<0){
+    fprintf(stderr, "ZOLTAN warning: Communication weight dimension is %d, "
+            "but should be >= 0. Using Comm_Weight_Dim = 1.\n",
+            lb->Comm_Weight_Dim);
+    comm_wgt_dim = 1;
+  }
+  else if (lb->Comm_Weight_Dim>1){
+    fprintf(stderr, "ZOLTAN warning: This method does not support "
         "multidimensional communication weights. Using Comm_Weight_Dim = 1.\n");
     comm_wgt_dim = 1;
   }
@@ -349,7 +357,7 @@ static int LB_ParMetis_Jostle(
   }
 
   /* Start timer */
-  get_times = ((options[OPTION_DBGLVL]>0)||(lb->Debug_Level >= LB_DEBUG_ATIME));
+  get_times = (lb->Debug_Level >= LB_DEBUG_ATIME);
   if (get_times){
     MPI_Barrier(lb->Communicator);
     times[0] = LB_Time();
@@ -912,10 +920,10 @@ static int LB_ParMetis_Jostle(
       vtxdist[i] = vtxdist[i+1] - vtxdist[i];
     }
 #ifdef LB_JOSTLE
-    jostle_env("format = contigous");
+    jostle_env("format = contiguous");
     pjostle(&tmp, &offset, &num_obj, &j, vtxdist, 
        xadj, vwgt, part, &num_edges, adjncy, adjwgt, network,
-       NULL, &(options[0]), &ndims, NULL); 
+       NULL, options, &ndims, NULL); 
 #else
     /* We don't have Jostle */
     fprintf(stderr, "Sorry, Jostle is not available on this system.\n");
