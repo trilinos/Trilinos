@@ -54,8 +54,11 @@ void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb, int num_proc)
   lb->Num_Global_Parts = num_proc;
   lb->Num_Global_Parts_Param = -1;
   lb->Num_Local_Parts_Param = -1;
+  lb->Prev_Global_Parts_Param = -2;
+  lb->Prev_Local_Parts_Param = -2;
   lb->Single_Proc_Per_Part = 1;
   lb->PartDist = NULL;
+  lb->ProcDist = NULL;
   lb->Method = RCB;
   lb->LB_Fn = Zoltan_RCB;
   lb->Return_Lists = ZOLTAN_LB_RETURN_LISTS_DEF;

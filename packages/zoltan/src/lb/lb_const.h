@@ -94,6 +94,14 @@ struct Zoltan_LB_Struct {
                                       If parameter NUM_LOCAL_PARTITIONS or 
                                       NUM_GLOBAL_PARTITIONS is not set,
                                       Num_Local_Parts_Param == -1.           */
+  int Prev_Global_Parts_Param;    /*  The previous values of
+                                      Num_Global_Parts_Param.  Stored to 
+                                      prevent unnecessary re-creations of 
+                                      PartDist. */
+  int Prev_Local_Parts_Param;     /*  The previous values of
+                                      Num_Local_Parts_Param.  Stored to 
+                                      prevent unnecessary re-creations of 
+                                      PartDist. */
   int Single_Proc_Per_Part;       /*  Flag indicating whether a partition can
                                       be spread across multiple processors.
                                       Happens only when NUM_GLOBAL_PARTITIONS
@@ -101,7 +109,18 @@ struct Zoltan_LB_Struct {
   int Return_Lists;               /*  Flag indicating which lists (if any)
                                       should be returned by Zoltan_LB_Balance.*/
   int *PartDist;                  /*  Array describing distribution of 
-                                      partitions to processors.  */
+                                      partitions to processors.  
+                                      If Single_Proc_Per_Part, partition i
+                                      is located on processor PartDist[i].
+                                      If !Single_Proc_Per_Part, partition i
+                                      is located on processors PartDist[i] to
+                                      PartDist[i+1]-1. */
+  int *ProcDist;                  /*  Array describing distribution of 
+                                      processors to partitions.  
+                                      If processor i has zero partitions,
+                                      ProcDist[i] = -1.  Otherwise,
+                                      ProcDist[i] has the lowest partition
+                                      number of partitions on processor i.  */
   ZOLTAN_LB_METHOD Method;        /*  Method to be used for load balancing.  */ 
   ZOLTAN_LB_FN *LB_Fn;            /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
@@ -198,6 +217,7 @@ struct Zoltan_Migrate_Struct {
 extern int Zoltan_LB_Set_LB_Method(struct Zoltan_Struct *, char *);
 extern void Zoltan_LB_Free_Struct(struct Zoltan_LB_Struct *);
 extern int Zoltan_LB_Part_To_Proc(struct Zoltan_Struct *, int );
+extern int Zoltan_LB_Proc_To_Part(struct Zoltan_Struct *, int, int *, int *);
 
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_RCB;

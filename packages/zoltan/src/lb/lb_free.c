@@ -96,6 +96,7 @@ int Zoltan_LB_Free_Data(
 void Zoltan_LB_Free_Struct(struct Zoltan_LB_Struct *lb)
 {
   ZOLTAN_FREE((void **) &(lb->PartDist));
+  ZOLTAN_FREE((void **) &(lb->ProcDist));
 }
 
 

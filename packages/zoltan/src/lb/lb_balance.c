@@ -307,6 +307,15 @@ int comm[3],gcomm[3];
     return (error);
   }
 
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
+    int i, np, fp;
+    for (i = 0; i < zz->Num_Proc; i++) {
+      Zoltan_LB_Proc_To_Part(zz, i, &np, &fp);
+      printf("%d Proc_To_Part Proc %d NParts %d FPart %d\n", 
+             zz->Proc, i, np, fp);
+    }
+  }
+
   /*
    * Call the actual load-balancing function.
    */
@@ -535,7 +544,7 @@ static int Zoltan_LB_Build_PartDist(ZZ *zz)
 {
 char *yo = "Zoltan_LB_Build_PartDist";
 int ierr = ZOLTAN_OK;
-int inflag[4], outflag[4] = {0,0,-1,0};
+int inflag[6], outflag[6] = {0,0,-1,0,0,0};
 int global_parts_set = 0;   /* number of procs on which NUM_GLOBAL_PARTITIONS 
                                parameter was set. */
 int local_parts_set = 0;    /* number of procs on which NUM_LOCAL_PARTITIONS
@@ -565,15 +574,24 @@ MPI_User_function Zoltan_PartDist_MPIOp;
   inflag[2] =  zz->LB.Num_Global_Parts_Param;
   inflag[3] = ((zz->LB.Num_Local_Parts_Param == -1) 
                     ? 0 : zz->LB.Num_Local_Parts_Param);
+  inflag[4] = (zz->LB.Num_Global_Parts_Param != zz->LB.Prev_Global_Parts_Param);
+  inflag[5] = (zz->LB.Num_Local_Parts_Param != zz->LB.Prev_Local_Parts_Param);
 
-  MPI_Allreduce(inflag, outflag, 4, MPI_INT, op, zz->Communicator);
+  MPI_Allreduce(inflag, outflag, 6, MPI_INT, op, zz->Communicator);
+  MPI_Op_free(&op);
+
+  if (!outflag[4] && !outflag[5]) {
+    /* Parameter values have not changed since last invocation of Zoltan. */
+    /* Do not have to change PartDist or Num_Global_Parts. */
+    goto End;
+  }
+  zz->LB.Prev_Global_Parts_Param = zz->LB.Num_Global_Parts_Param;
+  zz->LB.Prev_Local_Parts_Param = zz->LB.Num_Local_Parts_Param;
 
   global_parts_set = outflag[0];  /* Sum of inflag[0] */
   local_parts_set = outflag[1];   /* Sum of inflag[1] */
   max_global_parts = outflag[2];  /* Max of inflag[2] */
   sum_local_parts = outflag[3];   /* Sum of inflag[3] */
-
-  MPI_Op_free(&op);
 
   /* Check whether any parameters were set;
    * No need to build the PartDist array if not. 
@@ -582,6 +600,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     /* Number of parts == number of procs; do not need PartDist */
     /* Free it so that an old PartDist isn't accidentally used. */
     ZOLTAN_FREE(&(zz->LB.PartDist));
+    ZOLTAN_FREE(&(zz->LB.ProcDist));
     zz->LB.Num_Global_Parts = num_proc;
     zz->LB.Single_Proc_Per_Part = 1;
   }
@@ -709,15 +728,14 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       ZOLTAN_FREE(&local_parts_params);
     }
 
-    /* Reset Num_Global_Parts appropriately */
+    /* Reset Num_Global_Parts.  Free ProcDist since rebuilt PartDist. */
     zz->LB.Num_Global_Parts = max_global_parts;
+    ZOLTAN_FREE(&(zz->LB.ProcDist));
 
-    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL && zz->LB.PartDist != NULL) 
-    {
-      int i99;
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL && zz->LB.PartDist != NULL) {
       printf("[%1d] Debug: LB.PartDist = ", zz->Proc);
-      for (i99=0; i99<=zz->LB.Num_Global_Parts; i99++)
-        printf("%d ", zz->LB.PartDist[i99]);
+      for (i=0; i<=zz->LB.Num_Global_Parts; i++)
+        printf("%d ", zz->LB.PartDist[i]);
       printf("\n");
     }
   }
@@ -742,6 +760,8 @@ int *int_inout = (int *) inout;
   int_inout[1] += int_in[1];
   int_inout[2] = ((int_in[2] > int_inout[2]) ? int_in[2] : int_inout[2]);
   int_inout[3] += int_in[3];
+  int_inout[4] += int_in[4];
+  int_inout[5] += int_in[5];
 }
 
 #ifdef __cplusplus
