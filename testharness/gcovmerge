@@ -68,7 +68,7 @@ foreach (@ARGV){
     }
 }
 
-foreach (`find $sdir -name "*.bb"`){
+foreach (`find $sdir -name "*.bbg"`){
     $skip = 0;
     s/((.*\/)*).*$/$1/;
     chomp;
@@ -85,7 +85,7 @@ foreach (`find $sdir -name "*.bb"`){
     unless($fc) {print "\tNow in $_.\n";}
     $fexec = 0;
     $fcomp = 0;
-    foreach (<*.bb>){
+    foreach (<*.bbg>){
 	$file = $_;
 	$skip = 0;
 	foreach (@exlist){
@@ -98,43 +98,43 @@ foreach (`find $sdir -name "*.bb"`){
 	s/.bb$/.o/;
 	chomp;
 	system "gcov $_ >& /dev/null";
-	foreach (<*.cpp.gcov>){
-	    chomp;
-	    open GCOVFILE, "<$_";
-	    $lines_executed = 0;
-	    $lines_compiled = 0;
-	    foreach (<GCOVFILE>){
-		if(/^\s+(.+):\s+(\d+):/){
-		    if($1 eq "#####"){
-			$lines_compiled++;
-			$fcomp++;
-		    }elsif($1 ne "-"){
-			$lines_compiled++;
-			$fcomp++;
-			$lines_executed++;
-			$fexec++;
-		    }
-		}else{}
-	    }
-	    close GCOVFILE;
-	    unlink $_;
-	    if($lines_compiled){
-		$percent = ($lines_executed / $lines_compiled) * 100;
-	    }else{
-		$percent = 0;
-	    }
-	    if($percent <= $covmax && $percent >= $covmin){
-		$s = " " x (55 - length);
-		s/\.gcov$/$s/;
-		print "\t$_$percent%\n";
-	    }
+    }
+    foreach (<*.cpp.gcov>){
+	chomp;
+	open GCOVFILE, "<$_";
+	$lines_executed = 0;
+	$lines_compiled = 0;
+	foreach (<GCOVFILE>){
+	    if(/^\s+(.+):\s+(\d+):/){
+		if($1 eq "#####"){
+		    $lines_compiled++;
+		    $fcomp++;
+		}elsif($1 ne "-"){
+		    $lines_compiled++;
+		    $fcomp++;
+		    $lines_executed++;
+		    $fexec++;
+		}
+	    }else{}
+	}
+	close GCOVFILE;
+	unlink $_;
+	if($lines_compiled){
+	    $percent = ($lines_executed / $lines_compiled) * 100;
+	}else{
+	    $percent = "none";
+	}
+	if($percent <= $covmax && $percent >= $covmin){
+	    $s = " " x (55 - length);
+	    s/\.gcov$/$s/;
+	    print "\t$_$percent%\n";
 	}
     }
     if($fc){
 	if($fcomp > 0){
 	    $fper = 100 * $fexec / $fcomp;
 	}else{
-	    $fper = 0;
+	    $fper = "none";
 	}
 	$s = " " x (50 - length);
 	s/$/$s/;
