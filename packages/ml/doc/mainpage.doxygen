@@ -5,10 +5,7 @@
 
 \section ml_table Table of Contents
 
-- \ref ml_intro
-- \ref ml_download
-- \ref ml_desc
-- \ref ml_dev
+<!-- - \ref ml_intro - \ref ml_download - \ref ml_desc - \ref ml_dev -->
 - \ref ml_doc
 - \ref ml_examples
 - \ref ml_minitutorial
@@ -22,6 +19,7 @@
 - \ref ml_changes
 - \ref ml_copyright
 
+<!--
 \section ml_intro Introduction
 
 ML is a multigrid preconditioning package intended to solve large sparse linear
@@ -59,11 +57,15 @@ A user-friendly, MATLAB-like interface to ML, called MLAPI, is under development
 ML has been used within a number of applications at Sandia and a few applications
 outside of Sandia. ML is released for external distribution and can be obtained as
 part of the Trilinos development environment. 
+-->
 
+<!--
 \section ml_download Download ML
 
 ML can be downloaded from the web page http://software.sandia.gov/trilinos/downloads.html
+-->
 
+<!--
 \section ml_desc Project Description
 
 Many important scientific and engineering applications require the use of linear
@@ -118,16 +120,17 @@ ML is designed to be cooperate with other Trilinos project, and in particular wi
 the Aztec-2.1/AztecOO linear solver package developed at
 Sandia National Laboratories. However, ML can also be run stand-alone or the user
 can write their own functions such as an application specific smoother. 
+-->
 
-
+<!--
 \section ml_dev Developers
 The ML developers are:
 - Ray S. Tuminaro
 - Jonathan J. Hu
 - Marzio G. Sala
 - Michael W. Gee
-
-\section ml_doc Documentation about ML
+-->
+\section ml_doc Where to find documentation
 
 ML is a large package. The following documents are suggested to ML users:
 - Sandia report SAND2004-4819 (ML 3.1 Smoothed Aggregation User's Guide, by M.
