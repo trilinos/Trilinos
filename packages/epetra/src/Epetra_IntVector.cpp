@@ -37,8 +37,8 @@ Epetra_IntVector::Epetra_IntVector(const Epetra_BlockMap& Map)
 //=============================================================================
 Epetra_IntVector::Epetra_IntVector(const Epetra_IntVector& Source)
   : Epetra_DistObject(Source),
-    UserAllocated_(Source.UserAllocated_),
-    Allocated_(Source.Allocated_)
+    UserAllocated_(false),
+    Allocated_(false)
 {
   AllocateForCopy();
   DoCopy(Source.Values_);
