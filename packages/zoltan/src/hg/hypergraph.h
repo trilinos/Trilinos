@@ -165,10 +165,10 @@ typedef struct {
   ZOLTAN_HG_PACKING_FN  *packing;       /* Grouping fn specified by */
   ZOLTAN_HG_GROUPING_FN *grouping;      /* redm_str; NULL if not used */
 
-  char rli_str[MAX_PARAM_STRING_LEN];   /* Reduction Local Improvement string*/
-  ZOLTAN_HG_MATCHING_FN *matching_rli;  /* Pointers to Matching, Packing and */
-  ZOLTAN_HG_PACKING_FN  *packing_rli;   /* Grouping improvement fn specified */
-  ZOLTAN_HG_GROUPING_FN *grouping_rli;  /* by rli_str; NULL if not used */
+  char redmo_str[MAX_PARAM_STRING_LEN]; /* Matching optimization string*/
+  ZOLTAN_HG_MATCHING_FN *matching_opt;  /* Pointers to Matching, Packing and */
+  ZOLTAN_HG_PACKING_FN  *packing_opt;   /* Grouping optimization fn specified*/
+  ZOLTAN_HG_GROUPING_FN *grouping_opt;  /* by redmo_str; NULL if not used */
 
   int ews;                              /* Flag for Edge weight scaling */
 

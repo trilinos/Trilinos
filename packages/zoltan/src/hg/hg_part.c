@@ -33,9 +33,9 @@ int Zoltan_HG_Set_Part_Options(ZZ *zz, HGPartParams *hgp)
   }
 
   /* Set reduction method. */
-  hgp->matching = hgp->matching_rli = NULL ;
-  hgp->packing  = hgp->packing_rli  = NULL ;
-  hgp->grouping = hgp->grouping_rli = NULL ;
+  hgp->matching = hgp->matching_opt = NULL ;
+  hgp->packing  = hgp->packing_opt  = NULL ;
+  hgp->grouping = hgp->grouping_opt = NULL ;
 
   if (!(Zoltan_HG_Set_Matching_Fn (hgp))
    && !(Zoltan_HG_Set_Packing_Fn  (hgp))

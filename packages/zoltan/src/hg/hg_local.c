@@ -89,13 +89,13 @@ static int local_hc (
 /*
   printf("weights: %f %f\n",part_weight[0],part_weight[1]);
 */
-  if (!(boundary[0] = (int *) ZOLTAN_MALLOC(hg->nVtx* sizeof(int))) ||
-      !(boundary[1] = (int *) ZOLTAN_MALLOC(hg->nVtx* sizeof(int))) ||
-      !(cut[0]      = (int *) ZOLTAN_CALLOC(hg->nEdge,sizeof(int))) ||
-      !(cut[1]      = (int *) ZOLTAN_CALLOC(hg->nEdge,sizeof(int)))  )
+  if (!(boundary[0] = (int *) ZOLTAN_MALLOC(2*hg->nVtx* sizeof(int))) || 
+      !(cut[0]      = (int *) ZOLTAN_CALLOC(2*hg->nEdge,sizeof(int)))  )
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
+  boundary[1] = &(boundary[0][hg->nVtx]);
+  cut[1] = &(cut[0][hg->nEdge]);
 
   for (i=0; i<hg->nEdge; i++)
   { cut[0][i] = cut[1][i] = 0;
@@ -167,9 +167,7 @@ static int local_hc (
   } while (best_improvement > 0.0);
 
   ZOLTAN_FREE ((void **) &(boundary[0]));
-  ZOLTAN_FREE ((void **) &(boundary[1]));
   ZOLTAN_FREE ((void **) &(cut[0]));
-  ZOLTAN_FREE ((void **) &(cut[1]));
 
   return ZOLTAN_OK;
 }

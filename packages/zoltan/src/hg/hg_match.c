@@ -50,15 +50,14 @@ int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
   else                                         hgp->matching = NULL;
 
   if (hgp->matching)
-  { /*
-     * If reduction method is a matching, set the improvement and
+  { /* If reduction method is a matching, set the improvement and
      * edge weight scaling functions accordingly.
      */
 
-    if      (!strcasecmp(hgp->rli_str, "aug1")) hgp->matching_rli = matching_aug1;
-    else if (!strcasecmp(hgp->rli_str, "aug2")) hgp->matching_rli = matching_aug2;
-    else if (!strcasecmp(hgp->rli_str, "aug3")) hgp->matching_rli = matching_aug3;
-    else                                        hgp->matching_rli = NULL;
+    if      (!strcasecmp(hgp->redmo_str, "aug1")) hgp->matching_opt = matching_aug1;
+    else if (!strcasecmp(hgp->redmo_str, "aug2")) hgp->matching_opt = matching_aug2;
+    else if (!strcasecmp(hgp->redmo_str, "aug3")) hgp->matching_opt = matching_aug3;
+    else                                          hgp->matching_opt = NULL;
   }
   return  hgp->matching ? 1 : 0 ;
 }
@@ -133,8 +132,8 @@ int Zoltan_HG_Matching (
   }
 
   /* Optimization */
-  if (hgp->matching_rli)
-    ierr = hgp->matching_rli (zz,hg,g,match,limit);
+  if (hgp->matching_opt)
+    ierr = hgp->matching_opt (zz,hg,g,match,limit);
 
 End:
   if (g->vwgt && hgp->ews)
@@ -171,9 +170,7 @@ static int matching_mxm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
         { match[i] = vertex;
           match[vertex] = i;
           (*limit)--;
-        }
-      }
-    }
+    } } }
 
   ZOLTAN_FREE ((void **)&Hindex);
   return ZOLTAN_OK;
@@ -298,7 +295,7 @@ static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 /*****************************************************************************/
 
 static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
-{ int   i, j, *sorted, *vertex, vertex1, vertex2;
+{ int   i, j, *order, *vertex, vertex1, vertex2;
   char *yo = "matching_grm" ;
 
   if (!g->ewgt)
@@ -306,31 +303,31 @@ static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
   for (i=0; i<g->nVtx; i++)
     match[i] = i;
-  if (!(sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge)) ||
+  if (!(order  = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge)) ||
       !(vertex = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge))  )
-  { ZOLTAN_FREE ((void **) &sorted) ;
+  { ZOLTAN_FREE ((void **) &order) ;
     ZOLTAN_FREE ((void **) &vertex) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
   for (i=0; i<g->nEdge; i++)
-    sorted[i] = i;
+    order[i] = i;
 
   for (i=0; i<g->nVtx; i++)
     for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
       vertex[j] = i;
 
-  quicksort_pointer_dec_float (sorted,g->ewgt,0,g->nEdge-1);
+  quicksort_pointer_dec_float (order,g->ewgt,0,g->nEdge-1);
 
   for (i=0; i<g->nindex[g->nVtx] && (*limit)>0; i++)
-  { vertex1 = vertex[sorted[i]];
-    vertex2 = g->neigh[sorted[i]];
+  { vertex1 = vertex[order[i]];
+    vertex2 = g->neigh[order[i]];
     if (vertex1!=vertex2 && match[vertex1]==vertex1 && match[vertex2]==vertex2)
     { match[vertex1] = vertex2;
       match[vertex2] = vertex1;
       (*limit)--;
   } }
-  ZOLTAN_FREE ((void **) &sorted);
+  ZOLTAN_FREE ((void **) &order);
   ZOLTAN_FREE ((void **) &vertex);
   return ZOLTAN_OK;
 }
@@ -524,7 +521,7 @@ static int matching_aug2 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
               best_2 = neigh1;
       } } } }
 
-      if (match[i]==i && gain_2>EPS)
+      if (match[i]==i && gain_2>(double)0.0)
       { match[i] = best_2;
         stack[free_p++] = match[best_2];
         match[match[best_2]] = match[best_2];
@@ -587,14 +584,14 @@ static int matching_aug3 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
       } } } } } }
 
       if (match[i] == i)
-      { if (gain_3 >= EPS)
+      { if (gain_3 >= (double)0.0)
         { match[i] = best_near;
 	  match[best_near] = i;
 	  match[best_middle] = best_distant;
 	  match[best_distant] = best_middle;
           (*limit)--;
         }
-        else if (gain_2>EPS)
+        else if (gain_2 > (double)0.0)
         { match[i] = best_2;
           stack[free_p++] = match[best_2];
           match[match[best_2]] = match[best_2];

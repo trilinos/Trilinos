@@ -31,7 +31,7 @@ int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
     { if (g->vwgt[i]<=0.0 || g->vwgt[g->neigh[j]]<=0.0)
         new_ewgt[j] = FLT_MAX;
       else if (scale == 1)
-        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/g->vwgt[i]/g->vwgt[g->neigh[j]];
+        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(g->vwgt[i]*g->vwgt[g->neigh[j]]);
       else if (scale == 2)
         new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(g->vwgt[i]+g->vwgt[g->neigh[j]]);
       else if (scale == 3)

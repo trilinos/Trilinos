@@ -46,7 +46,7 @@ int main (int argc, char **argv)
   hgp.bal_tol = 10.0;
   hgp.redl = 0;
   strcpy(hgp.redm_str, "grg");
-  strcpy(hgp.rli_str, "aug3");
+  strcpy(hgp.redmo_str, "aug3");
   hgp.ews = 1;
   strcpy(hgp.global_str, "lin");
   strcpy(hgp.local_str, "hc");
@@ -84,7 +84,7 @@ int main (int argc, char **argv)
     else if(!strcmp(argv[i],"-bal") &&i+1<argc)hgp.bal_tol=atof(argv[++i]);
     else if(!strcmp(argv[i],"-redl")&&i+1<argc)hgp.redl=atoi(argv[++i]);
     else if(!strcmp(argv[i],"-redm")&&i+1<argc)strcpy(hgp.redm_str,argv[++i]);
-    else if(!strcmp(argv[i],"-reda")&&i+1<argc)strcpy(hgp.rli_str,argv[++i]);
+    else if(!strcmp(argv[i],"-redmo")&&i+1<argc)strcpy(hgp.redmo_str,argv[++i]);
     else if(!strcmp(argv[i],"-reds")&&i+1<argc)hgp.ews=atoi(argv[++i]);
     else if(!strcmp(argv[i],"-g")   &&i+1<argc)strcpy(hgp.global_str,argv[++i]);
     else if(!strcmp(argv[i],"-l")   &&i+1<argc)strcpy(hgp.local_str,argv[++i]);

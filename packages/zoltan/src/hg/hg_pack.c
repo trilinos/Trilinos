@@ -25,6 +25,7 @@ static ZOLTAN_HG_PACKING_FN packing_rhp;  /* random, heavy edge packing */
 static ZOLTAN_HG_PACKING_FN packing_grp;  /* greedy packing */
 static ZOLTAN_HG_PACKING_FN packing_lhp;  /* locally heaviest packing */
 static ZOLTAN_HG_PACKING_FN packing_pgp;  /* path growing packing */
+static ZOLTAN_HG_PACKING_FN packing_aug1; /* augmenting path; length 1 */
 static ZOLTAN_HG_PACKING_FN packing_aug2; /* augmenting path; length 2 */
 static ZOLTAN_HG_PACKING_FN packing_aug3; /* augmenting path; length 3 */
 
@@ -53,9 +54,10 @@ int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
   * If reduction method is a packing, set the improvement and 
   * edge weight scaling functions accordingly.
   */
-  if      (!strcasecmp(hgp->rli_str, "aug2"))  hgp->packing_rli = packing_aug2;
-  else if (!strcasecmp(hgp->rli_str, "aug3"))  hgp->packing_rli = packing_aug3;
-  else                                         hgp->packing_rli = NULL;
+    if      (!strcasecmp(hgp->redmo_str,"aug1")) hgp->packing_opt = packing_aug1;
+    else if (!strcasecmp(hgp->redmo_str,"aug2")) hgp->packing_opt = packing_aug2;
+    else if (!strcasecmp(hgp->redmo_str,"aug3")) hgp->packing_opt = packing_aug3;
+    else                                         hgp->packing_opt = NULL;
   }
   return  hgp->packing ? 1 : 0 ;
 }
@@ -84,8 +86,8 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp, int 
   ierr = hgp->packing(zz,hg,pack, limit);
   if (ierr == ZOLTAN_OK || ierr == ZOLTAN_WARN) {
      /* Optimization */
-     if (hgp->packing_rli != NULL)
-        ierr = hgp->packing_rli (zz,hg,pack,limit);
+     if (hgp->packing_opt != NULL)
+        ierr = hgp->packing_opt (zz,hg,pack,limit);
   }
 
   if (hg->vwgt && hgp->ews)
@@ -483,16 +485,40 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 }
 
 /****************************************************************************/
-static int packing_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
-{
-/* Placeholder for packing_aug2 */
+
+static int packing_aug1 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
+{ int i, j;
+
+  for (i = 0 ; i < hg->nEdge && (*limit) > 0; i++)
+  { for (j = hg->hindex[i] ; j < hg->hindex[i+1] ; j++)
+      if (pack[hg->hvertex[j]] != hg->hvertex[j])
+        break ;
+    if (j == hg->hindex[i+1])    /* if true, all vertices free for packing */
+    { for (j = hg->hindex[i] ; j < (hg->hindex[i+1]-1) && (*limit)>0; j++)
+      { pack[hg->hvertex[j]] = hg->hvertex[j+1] ;
+        (*limit)--;
+      }
+      pack[hg->hvertex[j]] = hg->hvertex[hg->hindex[i]] ;
+    }
+  }
   return ZOLTAN_OK;
 }
 
 /****************************************************************************/
+
+static int packing_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
+{
+/* Placeholder for packing_aug2 */
+  packing_aug1 (zz,hg,pack,limit);
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
+
 static int packing_aug3 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
 /* Placeholder for packing_aug3 */
+  packing_aug1 (zz,hg,pack,limit);
   return ZOLTAN_OK;
 }
 

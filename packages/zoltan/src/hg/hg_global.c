@@ -145,7 +145,7 @@ static int global_ran (
     order[number] = order[i-1];
     order[i-1] = temp;
   }
-
+ 
   /* Call sequence partitioning with random order array. */
   ierr = seq_part( zz, hg, order, p, part);
 
