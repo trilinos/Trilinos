@@ -219,8 +219,10 @@ extern int ML_Set_CoarseSolver(ML *ml, int level, int leng,
 
 extern int ML_Gen_AmatrixRAP(ML *ml, int to_level, int from_level);
 
-extern int ML_Set_EqnToGridMapFunc(ML *, int,int fleng,int tleng,void (*func)());
-extern int ML_Set_GridToEqnMapFunc(ML *, int,int fleng,int tleng,void (*func)());
+extern int ML_Set_EqnToGridMapFunc(ML *ml, int level, int fleng, int tleng,
+                           void *data, int (*func)(void*,double*,double*) );
+extern int ML_Set_GridToEqnMapFunc(ML *ml, int level, int fleng, int tleng,
+                           void *data, int (*func)(void*,double*,double*) );
 extern int ML_Set_BoundaryTypes(ML*,int level,int type,int n,int *data);
 
 extern int ML_Gen_Solver(ML *ml, int method, int finest_level, int);
