@@ -19,9 +19,13 @@
 
 // Headers needed for Coloring
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
+#include "Epetra_MapColoring.h"
 #include "EDT_CrsGraph_MapColoring.h"
 #include "EDT_CrsGraph_MapColoringIndex.h"
 #endif
+
+// Header for Timing info
+#include "Epetra_Time.h"
 
 Problem_Manager::Problem_Manager(Epetra_Comm& comm, 
                                  int numGlobalElements) :
@@ -33,6 +37,35 @@ Problem_Manager::Problem_Manager(Epetra_Comm& comm,
 
 Problem_Manager::~Problem_Manager()
 {
+  delete AA; AA = 0;
+  delete A; A = 0;
+
+  // Iterate over each problem and destroy/free the necessary objects
+
+  vector<GenericEpetraProblem*>::iterator iter = Problems.begin();
+  vector<GenericEpetraProblem*>::iterator last = Problems.end();
+
+  vector<NOX::Epetra::Group*>::iterator GroupsIter = Groups.begin();   
+  vector<Problem_Interface*>::iterator InterfacesIter = Interfaces.begin();
+  vector<NOX::Solver::Manager*>::iterator SolversIter = Solvers.begin();
+
+  vector<EpetraExt::CrsGraph_MapColoring*>::iterator TmpMapColoringsIter = TmpMapColorings.begin();
+  vector<Epetra_MapColoring*>::iterator ColorMapsIter = ColorMaps.begin();
+  vector<EpetraExt::CrsGraph_MapColoringIndex*>::iterator ColorMapIndexSetsIter = ColorMapIndexSets.begin();
+  vector<vector<Epetra_IntVector>*>::iterator ColumnsSetsIter = ColumnsSets.begin();
+  vector<Epetra_Operator*>::iterator MatrixOperatorsIter = MatrixOperators.begin();
+
+  while( iter != last)
+  {
+    delete *MatrixOperatorsIter++;
+    delete *TmpMapColoringsIter++;
+    delete *ColorMapsIter++;
+    delete *ColorMapIndexSetsIter++;
+    //delete *ColumnsSetsIter++;
+    delete *SolversIter++;
+    delete *GroupsIter++;
+    iter++; // Problems are owned by the app driver (Example.C)
+  }
 }
 
 void Problem_Manager::addProblem(GenericEpetraProblem& problem)
@@ -74,6 +107,8 @@ void Problem_Manager::registerComplete()
   // Make sure everything is starting clean
   assert(Groups.empty() && Interfaces.empty() && Solvers.empty());
 
+  int icount = 0; // Problem counter
+
   while( iter != last)
   {
     Interfaces.push_back(new Problem_Interface(**iter));
@@ -85,12 +120,19 @@ void Problem_Manager::registerComplete()
 
     // OR use this to fill matrices using Finite-Differences with Coloring
 #ifdef HAVE_NOX_EPETRAEXT
+    // Create a timer for performance
+    Epetra_Time fillTime(*Comm);
+
     bool verbose = false;
     TmpMapColorings.push_back(new EpetraExt::CrsGraph_MapColoring(verbose));
     ColorMaps.push_back(&((*TmpMapColorings.back())((*iter)->getGraph())));
     ColorMapIndexSets.push_back(new 
       EpetraExt::CrsGraph_MapColoringIndex(*ColorMaps.back()));
     ColumnsSets.push_back(&(*ColorMapIndexSets.back())((*iter)->getGraph()));
+
+    if (MyPID == 0)
+      printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
+                  icount++,fillTime.ElapsedTime());
 #else
     if(MyPID==0)
       cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
@@ -359,6 +401,10 @@ bool Problem_Manager::solveMF()
   for (int i=0; i<problemB.getSolution().MyLength(); i++)
     problemB.getSolution()[i] = finalSolution[i+solnAlength];
 
+  // Cleanup locally allocated memory
+  delete A; A = 0;
+  delete AA; AA = 0;
+
   return true;
 }
 
@@ -410,8 +456,18 @@ bool Problem_Manager::evaluate(FillType f, const Epetra_Vector *solnVector,
     Epetra_CrsMatrix* Matrix = dynamic_cast<Epetra_CrsMatrix*>(matrix);
     Matrix->PutScalar(0.0);
     
+    // Create a timer for performance
+    Epetra_Time fillTime(*Comm);
+
     grpA.computeJacobian();
+    if (MyPID == 0)
+      printf("\n\tTime to fill Jacobian A --> %e sec. \n\n",
+                  fillTime.ElapsedTime());
+    fillTime.ResetStartTime();
     grpB.computeJacobian();
+    if (MyPID == 0)
+      printf("\n\tTime to fill Jacobian B --> %e sec. \n\n",
+                  fillTime.ElapsedTime());
 
     Epetra_CrsGraph &graphA = (*Problems[0]).getGraph(),
                     &graphB = (*Problems[1]).getGraph();
@@ -498,6 +554,8 @@ bool Problem_Manager::evaluate(FillType f, const Epetra_Vector *solnVector,
       row += maxAllAGID + 1;
       Matrix->ReplaceGlobalValues(row, numValues, values, indices);
     }
+    delete [] values; values = 0;
+    delete [] indices; indices = 0;
   
     // Sync up processors to be safe
     Comm->Barrier();

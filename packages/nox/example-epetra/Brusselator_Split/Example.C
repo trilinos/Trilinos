@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
   problemManager.registerComplete(); // Trigger setup of groups, solvers, etc.
 
   // Initialize time integration parameters
-  int maxTimeSteps = 10;
+  int maxTimeSteps = 3;
   int timeStep = 0;
   double time = 0.;
   double dt = ProblemA.getdt();

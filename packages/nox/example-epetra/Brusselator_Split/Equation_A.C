@@ -59,8 +59,13 @@ Equation_A::Equation_A(Epetra_Comm& comm, int numGlobalNodes) :
 // Destructor
 Equation_A::~Equation_A()
 {
-  delete xptr;
-  delete oldSolution;
+  delete A; A = 0;
+  delete AA; AA = 0;
+  delete xptr; xptr = 0;
+  delete oldSolution; oldSolution = 0;
+  delete auxSolution; auxSolution = 0;
+  delete initialSolution; initialSolution = 0;
+  delete ColumnToOverlapImporter; ColumnToOverlapImporter = 0;
 }
 
 // Reset function
