@@ -57,7 +57,7 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
   options.resize(8);
   options[0] = 0; // default values
   
-  int numflag = 0;
+  int numflag = 0; // C style
 
   if (UseSymmetricGraph_) {
 
@@ -77,6 +77,7 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
       for (int j = 0 ; j < NumIndices ; ++j) {
 	int jj = Indices[j];
 	if (jj != i) {
+          // insert A(i,j), then A(j,i)
 	  SymGraph->InsertGlobalIndices(i,1,&jj);
 	  SymGraph->InsertGlobalIndices(jj,1,&i);
 	}
@@ -88,9 +89,7 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
     IFPACKGraph = SymIFPACKGraph;
   }
 
-  // now work on IFPACKGraph, that can be the symmetric or
-  // the non-symmetric one
-
+  // convert to METIS format
   vector<idxtype> xadj;
   xadj.resize(NumMyRows_ + 1);
 
@@ -119,6 +118,12 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
   }
 
 #ifdef HAVE_IFPACK_METIS
+  // vectors from METIS. The second last is `perm', the last is `iperm'.
+  // They store the fill-reducing permutation and inverse-permutation.
+  // Let A be the original matrix and A' the permuted matrix. The
+  // arrays perm and iperm are defined as follows. Row (column) i of A'
+  // if the perm[i] row (col) of A, and row (column) i of A is the
+  // iperm[i] row (column) of A'. The numbering starts from 0 in our case.
   METIS_NodeND(&NumMyRows_, &xadj[0], &adjncy[0],
 	       &numflag, &options[0],
 	       &InvReorder_[0], &Reorder_[0]);
