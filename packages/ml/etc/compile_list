@@ -25,7 +25,7 @@ do
    ${COMPILE} ${COMP_FLAGS} -I../Obj -c temprog.c 
    ${LINKER}  ${COMP_FLAGS} temprog.o $6 ${THELIBRARIES} ${THEARCHS} 1>/dev/null 2> .errors
    nerrors=`wc .errors | sed "s/^ *//" | sed "s/ .*//"`
-   if test ${nerrors} -gt 1
+   if test ${nerrors} -gt 0
       then
 #      t2=`${echo} ${ii} | sed "s/^/_/" | sed "s/$/_/"`
        t2="^.DML_${ii}"
