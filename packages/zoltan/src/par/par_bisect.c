@@ -105,7 +105,8 @@ int Zoltan_RB_find_bisector(
   double *weight,       /* weight of entire partition (input) NOT USED */
   double *weightlo,     /* weight of lower partition (output) */
   double *weighthi,     /* weight of upper partition (output) */
-  int    *dotlist,      /* list of active dots */
+  double *norm_max,     /* norm of largest partition (output) */
+  int    *dotlist,      /* list of active dots. EBEB: remove this parameter? */
   int rectilinear,      /* if 1, all dots with same value on same side of cut*/
   int obj_wgt_comparable /* 1 if object weights are of same units, no scaling */
 )
@@ -129,7 +130,8 @@ int Zoltan_RB_find_bisector(
   double  *tmp;                      /* temp array for Tflops_Special */
   double  *tmplo, *tmphi;            /* temp arrays for norm calculations */
   double  *invfraclo, *invfrachi;    /* inverse of fractionlo,hi */
-  double  normlo, normhi, oldnorm;   /* norms of weight vectors */
+  double  normlo=0.0, normhi=0.0;    /* norms of weight vectors */
+  double  oldnorm;                   /* temp norm */
   double  eps;                       /* abs. tolerance for imbalance */
   double  temp;                      /* temp variable */
   int     proc   = zz->Proc;         /* My proc rank. */
@@ -154,13 +156,15 @@ int Zoltan_RB_find_bisector(
 
 /***************************** BEGIN EXECUTION ******************************/
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
 #ifdef DEBUG
   printf("[%2d] Debug: Entering Zoltan_find_bisection, nwgts=%2d, fraclo[0] = %lf \n", proc, nwgts, fraclo[0]);
   printf("[%2d] Debug: %d dots on this proc\n", proc, dotnum);
   printf("[%2d] Debug: Coordinates = (", proc);
   for (i=0; i<dotnum; i++)
     printf("%lf  ", dots[i]);
-  printf(")\n", dots[i]);
+  printf(")\n");
   printf("[%2d] Debug: valuemin=%lf, valuemax=%lf\n", proc,
     valuemin, valuemax);
   printf("[%2d] Debug: total weight = (%lf %lf)\n", proc, 
@@ -232,7 +236,7 @@ int Zoltan_RB_find_bisector(
       goto End;
     }
 
-    /* allocate memory */
+    /* Allocate memory. */
     dotlist = (int *) ZOLTAN_MALLOC(dotnum*sizeof(int));
     if (!dotlist) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
@@ -534,6 +538,15 @@ int Zoltan_RB_find_bisector(
 #endif
 
       /* combine bisector data struct across current subset of procs */
+      
+      /* EBEB debug bisector structure medme */
+      /*
+      printf("[%2d] Debug: bisector struct medme before Allreduce\n", proc);
+      printf("[%2d] Debug: valuelo=%g, valuehi=%g\n", proc, medme->valuelo, medme->valuehi);
+      printf("[%2d] Debug: countlo=%d, counthi=%d\n", proc, medme->countlo, medme->counthi);
+      printf("[%2d] Debug: proclo=%d, prochi=%d\n", proc, medme->proclo, medme->prochi);
+      */
+
       if (counter != NULL) (*counter)++;
       if (Tflops_Special) {
          i = 1;
@@ -909,6 +922,9 @@ int Zoltan_RB_find_bisector(
   /* found bisector */
   *valuehalf = tmp_half;
 
+  /* return norm of largest half */
+  *norm_max = (normlo>=normhi ? normlo : normhi);
+
 End:
   /* free all memory */
   ZOLTAN_FREE(&dotlist);
@@ -921,9 +937,7 @@ End:
   MPI_Type_free(&med_type);
   MPI_Op_free(&med_op);
 
-#ifdef DEBUG
-  printf("[%2d] Debug: Exiting Zoltan_find_bisection\n", proc);
-#endif
+  ZOLTAN_TRACE_EXIT(zz, yo);
 
   return ierr;
 
