@@ -34,7 +34,6 @@ static char *cvs_rcbc_id = "$Id$";
    can extend "rcb_dot" data structure in calling program, see rcb.h
    returned RCB tree only contains one cut on each proc,
      need to do MPI_Allgather if wish to collect it on all procs
-   set RCB_CHECK and RCB_STATS at top of rcb.c as desired
 */
 
 #include <stdio.h>
@@ -52,7 +51,8 @@ static char *cvs_rcbc_id = "$Id$";
 #define RCB_DEFAULT_OVERALLOC 1.0
 #define RCB_DEFAULT_REUSE FALSE
 
-static int rcb(LB *, int *, LB_GID **, LB_LID **, int **, double, int, int);
+static int rcb(LB *, int *, LB_GID **, LB_LID **, int **, double,
+    int, int, int, int);
 
 /*  RCB_CHECK = 0  No consistency check on input or results */
 /*  RCB_CHECK = 1  Check input weights and final results for consistency */
@@ -76,6 +76,8 @@ char *val)			/* value of variable */
 	{ "RCB_OVERALLOC", NULL, "DOUBLE" },
 	{ "RCB_REUSE", NULL, "INT" },
 	{ "RCB_WGTFLAG", NULL, "INT" },
+	{ "RCB_CHECK", NULL, "INT" },
+	{ "RCB_STATS", NULL, "INT" },
 	{ NULL, NULL, NULL } };
 
     status = LB_Check_Param(name, val, RCB_params, &result, &index);
@@ -109,24 +111,34 @@ int LB_rcb(
                                  stored in treept at initial guesses.  */
     int wgtflag;              /* (0) do not (1) do use weights.
                                  Multidimensional weights not supported */
+    int check;                /* Check input & output for consistency? */
+    int stats;                /* Print timing & count summary? */
+
     PARAM_VARS RCB_params[] = {
 	{ "RCB_OVERALLOC", NULL, "DOUBLE" },
 	{ "RCB_REUSE", NULL, "INT" },
 	{ "RCB_WGTFLAG", NULL, "INT" },
+	{ "RCB_CHECK", NULL, "INT" },
+	{ "RCB_STATS", NULL, "INT" },
 	{ NULL, NULL, NULL } };
     
     RCB_params[0].ptr = (void *) &overalloc;
     RCB_params[1].ptr = (void *) &reuse;
     RCB_params[2].ptr = (void *) &wgtflag;
+    RCB_params[3].ptr = (void *) &check;
+    RCB_params[4].ptr = (void *) &stats;
 
     overalloc = RCB_DEFAULT_OVERALLOC;
     reuse = RCB_DEFAULT_REUSE;
     wgtflag = 0;
+    check = RCB_CHECK;
+    stats = RCB_STATS;
 
     LB_Assign_Param_Vals(lb->Params, RCB_params);
 
     return(rcb(lb, num_import, import_global_ids, import_local_ids,
-		 import_procs, overalloc, reuse, wgtflag));
+		 import_procs, overalloc, reuse, wgtflag, check,
+		 stats));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -150,8 +162,10 @@ static int rcb(
                                  1.0 = no extra; 1.5 = 50% extra; etc. */
   int reuse,                  /* (0) don't use (1) use previous cuts
                                  stored in treept at initial guesses.  */
-  int wgtflag                 /* (0) do not (1) do use weights.
+  int wgtflag,                 /* (0) do not (1) do use weights.
                                       Multidimensional weights not supported */
+  int check,                  /* Check input & output for consistency? */
+  int stats                   /* Print timing & count summary? */
 )
 {
   char    yo[] = "rcb";
@@ -211,7 +225,7 @@ static int rcb(
   static void RCB_error(LB *, int);
   static void RCB_check(LB *, struct rcb_dot *, int, int, struct rcb_box *);
   static void RCB_stats(LB *, double, struct rcb_dot *,int, double *, 
-		 int *, struct rcb_box *, int);
+		 int *, struct rcb_box *, int, int);
 
   /* MPI data types and user functions */
 
@@ -222,7 +236,7 @@ static int rcb(
   MPI_Datatype box_type;
   MPI_User_function rcb_box_merge;
 
-  if (RCB_STATS) {
+  if (stats) {
     MPI_Barrier(lb->Communicator);
     timestart = time1 = MPI_Wtime();
   }
@@ -260,7 +274,7 @@ static int rcb(
 
   /* initialize timers and counters */
 
-  if (RCB_STATS) {
+  if (stats) {
     counters[0] = 0;
     counters[1] = 0;
     counters[2] = 0;
@@ -312,7 +326,7 @@ static int rcb(
 
   /* check that all weights > 0 */
 
-  if (RCB_CHECK) {
+  if (check) {
     j = 0;
     for (i = 0; i < dotnum; i++) if (dotpt[i].Weight <= 0.0) j++;
     MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
@@ -342,7 +356,7 @@ static int rcb(
 
   MPI_Comm_dup(lb->Communicator,&local_comm);
 
-  if (RCB_STATS) {
+  if (stats) {
     time2 = MPI_Wtime();
     timers[0] = time2 - time1;
   }
@@ -354,7 +368,7 @@ static int rcb(
 
   while (proclower != procupper) {
 
-    if (RCB_STATS) time1 = MPI_Wtime();
+    if (stats) time1 = MPI_Wtime();
     
     /* procmid = 1st proc in upper half of partition */
     /* if odd # of procs, lower partition gets extra one */
@@ -427,13 +441,13 @@ static int rcb(
 
     /* determine if there is a first guess to use */
     if (reuse && dim == treept[procmid].dim) {
-      if (RCB_STATS) counters[5]++;
+      if (stats) counters[5]++;
       valuehalf = treept[procmid].cut;
       first_guess = 1;
     }
     else first_guess = 0;
 
-    if (RCB_STATS) time2 = MPI_Wtime();
+    if (stats) time2 = MPI_Wtime();
 
     if (!LB_find_median(coord, wgts, dotmark, dotnum, proc, fractionlo,
                         local_comm, &valuehalf, first_guess, &(counters[0]))) {
@@ -441,7 +455,7 @@ static int rcb(
       return LB_FATAL;
     }
 
-    if (RCB_STATS) time3 = MPI_Wtime();
+    if (stats) time3 = MPI_Wtime();
 
     /* store cut info in tree only if I am procmid */
 
@@ -492,10 +506,10 @@ static int rcb(
 	LB_REALLOC(dotpt,(unsigned) dotmax * sizeof(struct rcb_dot));
       if (dotpt == NULL) RCB_error(lb, dotmax*sizeof(struct rcb_dot));
       rcb->Dots = dotpt;
-      if (RCB_STATS) counters[6]++;
+      if (stats) counters[6]++;
     }
 
-    if (RCB_STATS) {
+    if (stats) {
       counters[1] += outgoing;
       counters[2] += incoming;
       if (dotnew > counters[3]) counters[3] = dotnew;
@@ -580,7 +594,7 @@ static int rcb(
     MPI_Comm_free(&local_comm);
     local_comm = tmp_comm;
 
-    if (RCB_STATS) {
+    if (stats) {
       time4 = MPI_Wtime();
       timers[1] += time2 - time1;
       timers[2] += time3 - time2;
@@ -604,16 +618,16 @@ static int rcb(
   LB_end_time = MPI_Wtime();
   LB_time[1] = LB_end_time - LB_start_time;
 
-  if (RCB_STATS) {
+  if (stats) {
     MPI_Barrier(lb->Communicator);
     timestop = time1 = MPI_Wtime();
   }
 
   /* error checking and statistics */
 
-  if (RCB_CHECK) RCB_check(lb, dotpt,dotnum,pdotnum,rcbbox);
-  if (RCB_STATS) RCB_stats(lb, timestop-timestart,dotpt,dotnum,
-			   timers,counters,rcbbox,reuse);
+  if (check) RCB_check(lb, dotpt,dotnum,pdotnum,rcbbox);
+  if (stats) RCB_stats(lb, timestop-timestart,dotpt,dotnum,
+			   timers,counters,rcbbox,reuse, stats);
 
   /* update calling routine parameters */
   
@@ -794,7 +808,7 @@ static void RCB_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
 
 static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
 	       int dotnum, double *timers, int *counters,
-	       struct rcb_box *rcbbox, int reuse)
+	       struct rcb_box *rcbbox, int reuse, int stats)
 
 {
   int i,proc,nprocs,sum,min,max;
@@ -824,7 +838,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   }
 
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2) printf("    Proc %d has weight = %g\n",proc,weight);
+  if (stats > 1)  printf("    Proc %d has weight = %g\n",proc,weight);
 
   for (i = 0, weight = 0.0; i < dotnum; i++) 
     if (dotpt[i].Weight > weight) weight = dotpt[i].Weight;
@@ -833,7 +847,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   if (proc == 0) printf(" Maximum weight of single dot = %g\n",wtmax);
 
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2) printf("    Proc %d max weight = %g\n",proc,weight);
+  if (stats > 1)  printf("    Proc %d max weight = %g\n",proc,weight);
 
   /* counter info */
 
@@ -844,7 +858,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   if (proc == 0) 
     printf(" Median iter: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2) 
+  if (stats > 1)  
     printf("    Proc %d median count = %d\n",proc,counters[0]);
 
   MPI_Allreduce(&counters[1],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
@@ -854,7 +868,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   if (proc == 0) 
     printf(" Send count: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2)
+  if (stats > 1) 
     printf("    Proc %d send count = %d\n",proc,counters[1]);
   
   MPI_Allreduce(&counters[2],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
@@ -864,7 +878,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   if (proc == 0) 
     printf(" Recv count: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2)
+  if (stats > 1) 
     printf("    Proc %d recv count = %d\n",proc,counters[2]);
   
   MPI_Allreduce(&counters[3],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
@@ -874,7 +888,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   if (proc == 0) 
     printf(" Max dots: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2)
+  if (stats > 1) 
     printf("    Proc %d max dots = %d\n",proc,counters[3]);
   
   MPI_Allreduce(&counters[4],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
@@ -884,7 +898,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   if (proc == 0) 
     printf(" Max memory: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2)
+  if (stats > 1) 
     printf("    Proc %d max memory = %d\n",proc,counters[4]);
   
   if (reuse) {
@@ -895,7 +909,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
     if (proc == 0) 
       printf(" # of Reuse: ave = %g, min = %d, max = %d\n",ave,min,max);
     MPI_Barrier(lb->Communicator);
-    if (RCB_STATS == 2)
+    if (stats > 1) 
       printf("    Proc %d # of Reuse = %d\n",proc,counters[5]);
   }
   
@@ -906,7 +920,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
   if (proc == 0) 
     printf(" # of OverAlloc: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2)
+  if (stats > 1) 
     printf("    Proc %d # of OverAlloc = %d\n",proc,counters[6]);
 
   /* timer info */
@@ -919,7 +933,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
     printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2)
+  if (stats > 1) 
     printf("    Proc %d start-up time = %g\n",proc,timers[0]);
   
   MPI_Allreduce(&timers[1],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
@@ -930,7 +944,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
     printf(" Pre-median time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2)
+  if (stats > 1) 
     printf("    Proc %d pre-median time = %g\n",proc,timers[1]);
   
   MPI_Allreduce(&timers[2],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
@@ -941,7 +955,7 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
     printf(" Median time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2)
+  if (stats > 1) 
     printf("    Proc %d median time = %g\n",proc,timers[2]);
   
   MPI_Allreduce(&timers[3],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
@@ -952,12 +966,12 @@ static void RCB_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
     printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
   MPI_Barrier(lb->Communicator);
-  if (RCB_STATS == 2)
+  if (stats > 1) 
     printf("    Proc %d comm time = %g\n",proc,timers[3]);
   
   /* RCB boxes for each proc */
   
-  if (RCB_STATS == 2) {
+  if (stats > 1)  {
     if (proc == 0) printf(" RCB sub-domain boxes:\n");
     for (i = 0; i < 3; i++) {
       MPI_Barrier(lb->Communicator);
