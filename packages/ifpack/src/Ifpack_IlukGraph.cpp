@@ -97,7 +97,14 @@ int Ifpack_IlukGraph::ConstructOverlapGraph() {
     OverlapImporter_ = (Epetra_Import *) OldGraph->Importer();
     OverlapRowMap_ = new Epetra_BlockMap(OverlapImporter_->TargetMap());
 
-    OverlapGraph_ = new Epetra_CrsGraph(Copy, *OverlapRowMap_, 0);
+    
+    if (level<LevelOverlap_)
+      OverlapGraph_ = new Epetra_CrsGraph(Copy, *OverlapRowMap_, 0);
+    else
+      // On last iteration, we want to filter out all columns except those that correspond
+      // to rows in the graph.  This assures that our matrix is square
+      OverlapGraph_ = new Epetra_CrsGraph(Copy, *OverlapRowMap_, *OverlapRowMap_, 0);
+
     EPETRA_CHK_ERR(OverlapGraph_->Import( Graph_, *OverlapImporter_, Insert));
     if (level<LevelOverlap_) {
       EPETRA_CHK_ERR(OverlapGraph_->TransformToLocal(DomainMap, RangeMap));
