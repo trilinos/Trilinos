@@ -28,8 +28,7 @@ static char *cvs_outputc_id = "$Id$";
 void LB_print_stats(LB *lb, double timetotal, double *timers, int *counters,
                     float *c, int STATS_TYPE)
 {
-  int i,                                   /* index counter */
-      proc,                                /* the processor number */
+  int proc,                                /* the processor number */
       nprocs,                              /* total number of processors */
       sum,                                 /* the sum of the counters */
       min,                                 /* minimum value */
@@ -41,12 +40,6 @@ void LB_print_stats(LB *lb, double timetotal, double *timers, int *counters,
          rsum,                             /* the sum of the timers */
          rmin,                             /* minimum timer value */
          rmax;                             /* maximum timer value */
-  double weight,                           /* weight of on object */
-         wttot,                            /* total weight of all objects */
-         wtmin,                            /* minimum weight */
-         wtmax,                            /* maximum weight */
-         mweight,                          /* max weight of an object */
-         tweight;                          /* total weight on this processor */
 
   /* get the processor number and the total number of processors */
   MPI_Comm_rank(lb->Communicator, &proc);
@@ -206,21 +199,6 @@ void LB_print_stats(LB *lb, double timetotal, double *timers, int *counters,
     printf("    Proc %d comm time = %g\n",proc,timers[3]);
 #endif
   
-  /* RCB boxes for each proc */
-  /* ATTN: Not sure this can be used generally.... */
-#if 0
-  if (RCB_STATS == 2) {
-    if (proc == 0) printf(" RCB sub-domain boxes:\n");
-    for (i = 0; i < 3; i++) {
-      MPI_Barrier(lb->Communicator);
-      if (proc == 0) printf("    Dimension %d\n",i+1);
-      MPI_Barrier(lb->Communicator);
-      printf("      Proc = %d: Box = %g %g\n",
-	     proc,rcbbox->lo[i],rcbbox->hi[i]);
-    }
-  }
-#endif
-
   MPI_Barrier(lb->Communicator);
 
 }

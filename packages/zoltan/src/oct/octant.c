@@ -80,26 +80,26 @@ pOctant POC_malloc() {
  * a pointer to it.  It will have no parents or children.
  */
 pOctant POC_new() {
-  pOctant new;                                  /* pointer to the new octant */
+  pOctant new_ptr;                              /* pointer to the new octant */
   int i;                                        /* index counter */
   
-  new=POC_malloc();                       /* create space for the new octant */
+  new_ptr=POC_malloc();                   /* create space for the new octant */
   /* Null out child pointers, and invalidate cpids */
   for (i=0; i<8; i++) {
-    new->child[i] = NULL;
-    new->cpid[i] = -1;
+    new_ptr->child[i] = NULL;
+    new_ptr->cpid[i] = -1;
   }
   /* setup default information about octant */
-  new->parent= NULL;
-  new->ppid = OCT_localpid;
-  new->id=(OCT_idcount++);
-  new->which = -1;
-  new->numChild = 0;
-  new->list=NULL;
-  new->cost = 0;
-  new->npid = OCT_localpid;
-  /* new->orientation = -1; */
-  return(new);
+  new_ptr->parent= NULL;
+  new_ptr->ppid = OCT_localpid;
+  new_ptr->id = (OCT_idcount++);
+  new_ptr->which = -1;
+  new_ptr->numChild = 0;
+  new_ptr->list=NULL;
+  new_ptr->cost = 0;
+  new_ptr->npid = OCT_localpid;
+  /* new_ptr->orientation = -1; */
+  return(new_ptr);
 }
 
 /*****************************************************************************/
@@ -112,7 +112,9 @@ pOctant POC_new() {
  */
 void POC_free(pOctant oct) {
   pRList ptr, prev;                      /* traversal pointers for root list */
-  pRegion c;                             /* pointer to region */
+/*
+  pRegion c;                    
+*/
   
   /* traverse through local root list, if octant a local root */
   ptr = OCT_rootlist;
@@ -620,7 +622,7 @@ void POC_printRegionInfo(pOctant oct) {
   parent = POC_parent(oct);
   printf("(Proc %d) ocant %d:\n",
 	 OCT_localpid, oct->id);
-  printf("\tbounds\tmin=%lf, %lf, %lf\n\t\t max %lf, %lf, %lf\n",
+  printf("\tbounds\tmin=%f, %f, %f\n\t\t max %f, %f, %f\n",
 	 oct->min[0], oct->min[1], oct->min[2],
 	 oct->max[0], oct->max[1], oct->max[2]);
   if(parent != NULL)
@@ -638,7 +640,7 @@ void POC_printRegionInfo(pOctant oct) {
     printf("\tOctant is EMPTY\n");
 
   while(ptr != NULL) {
-    printf("\tGlobal_ID:%ld Local_ID:%ld Proc:%ld coord:(%lf, %lf, %lf)\n", 
+    printf("\tGlobal_ID:%d Local_ID:%d Proc:%d coord:(%f, %f, %f)\n", 
 	   ptr->Tag.Global_ID, ptr->Tag.Local_ID, ptr->Tag.Proc,
 	   ptr->Coord[0], ptr->Coord[1], ptr->Coord[2]);
     /*
@@ -659,9 +661,6 @@ void POC_printRegionInfo(pOctant oct) {
 pOctant POC_nextDfs(pOctant octant) {
   pOctant parent,                                     /* parent of an octant */
           child;                                      /* child of an octant */
-  int ppid,                                           /* parent processor id */
-      childnum,                                       /* child number */
-      cpid;                                           /* child processor id */
   int i;                                              /* index counter */
 
   if (!octant)

@@ -33,10 +33,6 @@ static char *cvs_migregc_id = "$Id$";
 void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids, 
 			       int nregions, int *c2) {
   int i;                         /* index counter */
-  int nreceives,                 /* number of messages received */
-      from;                      /* from whom the message originated */
-  Region reg;                    /* region to be inserted into the subtree */
-  int dest;                      /* where the message is being sent */
   int n_import;
   COMM_OBJ *comm_plan;           /* Communication object returned by 
 				    Bruce and Steve's communication routines */

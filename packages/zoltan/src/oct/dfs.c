@@ -56,12 +56,10 @@ void LB_dfs_partition(LB *lb, int *counter, float *c1) {
   float mycost,                     /* cost of the octant */
         globalcost,                 /* costs of all the octants */
         prefcost;                   /* sum of costs from previous processors */
+#ifdef LGG_MIGOCT
   int nprevoct;                     /* the number of previous octants */
-  int id;                           /* octant id */
-  void *temp;                       /* temp variable for iterations */
   pRList localroots;                /* list of the local roots */
-  pOctant lr,                       /* pointer to local root octant */
-          oct;                      /* pointer to an octant */
+#endif
 
   DFS_Part_Count = 0;
   *c1 = mycost = LB_costs_global_compute();
@@ -289,7 +287,6 @@ void LB_dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
 		    float *c2, float *c3, int *counter3, int *counter4) 
 {
   pRList lroots;                              /* list of all local roots */
-  pOctant root;                               /* root of a subtree */
   pOctant oct;                                /* octree octant */
   pOctant *docts = NULL;                      /* array of octants being sent */
   int *dpids = NULL;                          /* array of octant pids */

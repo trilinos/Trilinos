@@ -37,7 +37,9 @@ static char *cvs_costsc_id = "$Id$";
  */
 void LB_costs_init(pOctant octant) {
   pOctant children[8];                 /* children of the octant */
-  float *data;                         /* value to be attached to the octant */
+/*
+  float *data;
+*/
   int i;                               /* index counter */
 
   /*  OEN_attachDataI(octant, "NPID", -1);
@@ -63,7 +65,6 @@ void LB_costs_init(pOctant octant) {
  * deletes the cost associated with the octant
  */
 void LB_costs_free(pOctant octant) {
-  float *data;                               /* value attached to the octant */
   pOctant children[8];                       /* children of the octant */
   int i;                                     /* index counter */
 
@@ -94,7 +95,6 @@ void LB_costs_free(pOctant octant) {
 float LB_costs_subtree_compute(pOctant octant, int *seq) {
   pOctant children[8];                       /* the children of the octant */
   float c;                                   /* cost of each subtree */
-  float *data;                               /* COST data attached to octant */
   int i;                                     /* index counter */
 
 #ifdef LGG_MIGOCT
@@ -141,13 +141,12 @@ float LB_costs_value(pOctant oct)
 float LB_costs_global_compute() {
   int seq;                                    /* sequencing number */
   float totcost;                              /* total cost local octree */
+#ifdef LGG_MIGOCT
   int i;                                      /* index counter */
   int nroot;                                  /* number of local roots */
   pOctant *root;                              /* root of a subtree */
-  void *temp;                                 /* temp var used for iterating */
+#endif
   pRList lroots;                              /* list of all local roots */
-  pOctant lr,                                 /* a local root */
-          oct;                                /* an octant of a subtree */
 
   /* initialize variables */
   seq=0;

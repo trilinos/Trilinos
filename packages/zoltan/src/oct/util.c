@@ -167,7 +167,8 @@ static int hilbert2d_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[])
     ihsfc[i][1] = i;
   }
 
-  qsort(ihsfc, 4, 2*sizeof(unsigned), (int (*)())compare );
+  qsort(ihsfc, 4, 2*sizeof(unsigned),
+       (int (*)(const void *, const void *))compare );
 
   for(i=0; i<4; i++) {
     k=ihsfc[i][1];
@@ -201,7 +202,8 @@ static int hilbert_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[])
     ihsfc[i][1] = i;
   }
 
-  qsort(ihsfc, 8, 2*sizeof(unsigned), (int (*)())compare );
+  qsort(ihsfc, 8, 2*sizeof(unsigned), 
+       (int (*)(const void *, const void *))compare );
 
   for(i=0; i<8; i++) {
     k=ihsfc[i][1];
@@ -413,7 +415,9 @@ int LB_convert_from_hilbert(int n, int o) {
   int i,                      /* index counter */
       k;                      /* shifting index */
   int result;                 /* value to be return to the caller */
+#if 0
   unsigned int mask = 0xE00;  /* mask to look at only specific entries */
+#endif
   unsigned int zeromask = 0xE00000;
 
   tmp = ltable[o];
@@ -454,7 +458,9 @@ int LB_convert_from_hilbert(int n, int o) {
  * 2D.
  */
 int LB_convert_to_hilbert(int n, int o) {
+#if 0
   unsigned int mask = 0xE00;        /* mask to look at only specific entries */
+#endif
   int i,                            /* index counter */
       k;                            /* shifting counter */
   unsigned int test;                /* holds intermediate results */
@@ -541,7 +547,8 @@ int LB_change_to_hilbert2d(COORD min, COORD max, COORD origin, int cnum) {
     ihsfc[i][1] = i;
   }
 
-  qsort(ihsfc, 4, 2*sizeof(unsigned), (int (*)())compare);
+  qsort(ihsfc, 4, 2*sizeof(unsigned),
+       (int (*)(const void *, const void *))compare );
 
   for(i=0; i<4; i++) {
     /* 
@@ -578,7 +585,8 @@ int LB_change_to_hilbert(COORD min, COORD max, COORD origin, int cnum) {
     ihsfc[i][1] = i;
   }
 
-  qsort(ihsfc, 8, 2*sizeof(unsigned), (int (*)())compare);
+  qsort(ihsfc, 8, 2*sizeof(unsigned),
+       (int (*)(const void *, const void *))compare );
 
   for(i=0; i<8; i++) {
     /*

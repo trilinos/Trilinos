@@ -104,7 +104,6 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 {
   int i;                /* index counter */
   pRegion regionlist;   /* list of region on this processor */
-  pRegion region;       /* pointer to a region */
   int index;            /* index counter */
   int index2;           /* yet another index counter */
   int count;            /* count of objects exported form this processor */
@@ -249,7 +248,6 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 			       int npimtags, float *c3)
 {
   int i;                                  /* index counter */
-  int from;                               /* from whom the region originated */
   int nreceives;                          /* number of messages received */
   pRegion imp;                            /* array of tags being imported */
   pRegion tmp;

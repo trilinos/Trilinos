@@ -39,7 +39,9 @@ static int lb_oct_init(LB *lb, int *num_import, LB_GID **import_global_ids,
 
 static int oct_nref=0;                              /* number of refinements */
 static int oct_ncoarse=0;                           /* number of coarsenings */
+#ifdef LGG_MIGOCT
 static int IDcount = 0;                            /* renumbering of octants */
+#endif
 static int MAXOCTREGIONS = 1;
 
 /*****************************************************************************/
@@ -180,7 +182,7 @@ static int lb_oct_init(
   pRList root;                     
   pRList root2;                     
   int count, i;
-  double time1,time2,time3,time4;  /* timers */
+  double time1,time2;              /* timers */
   double timestart,timestop;       /* timers */
   double timers[4];                /* diagnostic timers 
 			              0 = start-up time before recursion
@@ -518,7 +520,6 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   int i, found;
   pRegion tmp, ptr;
   COORD global_min, global_max;
-  double x;
   double PADDING = 0.0000001;
   int ierr = 0;
 
@@ -708,8 +709,6 @@ int LB_oct_fix(LB *lb, pRegion Region_list, int num_objs)
 {
   int nreg;                                /* number of regions not inserted */
   double pct;                              /* percentage of bad regions */
-  int mregions;                            /* total number of regions */
-  int i;
 
   /* initalize variables */
   nreg=0;
@@ -754,9 +753,8 @@ int LB_oct_global_insert_object(LB *lb, pRegion Region_list, int num_objs)
 
   /* get the next region to be inserted */
   for(i=0; i<num_objs; i++) {
-    if(region != NULL)
-
 #if 0
+    if(region != NULL)
       printf("\n%lf   %lf   %lf\n", 
 	     region->Coord[0], region->Coord[1], region->Coord[2]); 
 #endif
@@ -817,8 +815,6 @@ pOctant LB_oct_global_insert(LB *lb, pRegion region)
  */
 int LB_oct_subtree_insert(LB *lb, pOctant oct, pRegion region) 
 {
-  COORD centroid;                              /* coordintes of centroid */
-  pRegion entry;
 
   /* if oct is not terminal, find leaf node the centroid can be attahced to */
   if (!POC_isTerminal(oct)) {
@@ -849,7 +845,6 @@ int LB_oct_subtree_insert(LB *lb, pOctant oct, pRegion region)
 pOctant LB_oct_global_find(COORD point) 
 {
   pRList ptr;                      /* ptr used for iterating local root list */
-  pOctant root;                    /* root of a subtree */
   pOctant oct;                     /* octree octant */
   COORD min,                      /* minimum bounds coordinates */
         max;                      /* maximum bounds coordinates */
@@ -915,16 +910,13 @@ void LB_oct_terminal_refine(LB *lb, pOctant oct,int count)
 {
   COORD min,                      /* coordinates of minimum bounds of region */
         max,                      /* coordinates of maximum bounds of region */
-        origin,                   /* origin of region */
-        centroid;                 /* coordinates of region's centroid */
+        origin;                   /* origin of region */
   pOctant child[8];               /* array of child octants */
   int cnum;                       /* child number */
   int i, j;                       /* index counter */
   pRegion region;                 /* a region to be associated to an octant */
   pRegion entry;
-  Region reg;
   COORD cmin[8], cmax[8];
-  int new_order;
 
   for(i=0;i<3;i++)
     min[i] = max[i] = 0;
@@ -1060,7 +1052,7 @@ int LB_oct_subtree_dref(pOctant oct)
     nregions=POC_nRegions(oct);
 
     if (nregions > (MAXOCTREGIONS*2) ) {
-      printf("LB_oct_subtree_dref: warning: too many (%ld) regions "
+      printf("LB_oct_subtree_dref: warning: too many (%d) regions "
 	     "in oct %d (id=%d)\n",POC_nRegions(oct),(int)oct,POC_id(oct));
       return(-1);
     }
@@ -1117,7 +1109,6 @@ void LB_oct_terminal_coarsen(pOctant oct)
   pOctant child;                         /* child of an octant */
   pRegion region;                        /* region associated with an octant */
   int i;                                 /* index counter */
-  void *temp;                            /* temp variable for iterating */
   pRegion regionlist[8];                 /* an array of region lists */
 
   oct_ncoarse++;                             /* increment coarsening counter */
@@ -1258,7 +1249,8 @@ void LB_oct_roots_in_order(pOctant **roots_ret, int *nroots_ret)
     abort();
 
   /* sort the array of roots */
-  qsort(rootid,(size_t)nroots,sizeof(Rootid),(int(*)())idcompare);
+  qsort(rootid,(size_t)nroots,sizeof(Rootid),
+       (int(*)(const void *, const void *))idcompare);
   /* qsort(rootid, nroots, sizeof(Rootid), (int(*)())idcompare); */
   
   /* give data to the return variable */
