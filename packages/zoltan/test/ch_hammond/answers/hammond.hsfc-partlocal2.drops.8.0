@@ -3,8 +3,8 @@
 0 Zoltan_LB_Box_Assign not tested.
 0 Zoltan_LB_Box_PP_Assign LO: (0.000000e+00 0.000000e+00 0.000000e+00)
 0                         HI: (1.000000e+00 1.000000e+00 1.000000e+00)
-       On 6 Procs: 0 1 4 5 6 7 
-       In 16 Parts: 0 1 6 7 8 9 10 11 12 13 14 17 18 19 20 21 
+       On 6 Procs: 0 1 3 5 6 7 
+       In 16 Parts: 0 10 19 5 8 9 4 11 12 13 14 17 18 1 20 21 
 0 Zoltan_LB_Point_Assign not tested.
 0 Zoltan_LB_Point_PP_Assign (0.000000e+00 0.000000e+00 0.000000e+00) on proc 7 part 17
 0 Zoltan_LB_Point_Assign not tested.
@@ -30,7 +30,7 @@
 0 Zoltan_LB_Box_PP_Assign LO: (-1.000000e+06 -1.000000e+06 -1.000000e+06)
 0                         HI: (1.000000e+06 1.000000e+06 1.000000e+06)
        On 8 Procs: 0 1 2 3 4 5 6 7 
-       In 22 Parts: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 
+       In 22 Parts: 0 10 2 7 6 15 19 5 8 9 4 11 12 13 14 3 16 17 18 1 20 21 
 0 Zoltan_LB_Point_Assign not tested.
 0 Zoltan_LB_Point_PP_Assign (-1.000000e+06 -1.000000e+06 -1.000000e+06) on proc 0 part 0
 0 Zoltan_LB_Point_Assign not tested.
