@@ -904,7 +904,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   }
 
   *total_nz = count;
-
+  /* FIXME: I don't understand any more..
   if( ML_Aggregate_Get_UseDropping() == ML_NO ) {
     if( temp == 0 ) {
       fprintf( stderr, "Something wrong here...\n" );
@@ -912,7 +912,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     }
     temp->scaled_diag = scaled_diag;
   }
-
+  */
 #ifdef DUMP_MATLAB_FILE
       sprintf( str, "METIS_proc%d.m", comm->ML_mypid);
       fp = fopen(str,"w");
