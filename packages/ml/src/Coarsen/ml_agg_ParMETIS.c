@@ -229,7 +229,7 @@ int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag,
   pointer = (ML_Aggregate_Options *)ag->aggr_options;
   
   if( pointer == NULL ) {
-    ML_memory_alloc((void*)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
+    ML_memory_alloc((void**)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
 		    "aggr_options");
     if( pointer == NULL ) {
       fprintf( stderr,
@@ -1674,7 +1674,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
       if (new_nullspace_vect == NULL) 
       {
-         for (j = 0; j < length; j++)
+         for (j = 0; j < (int) length; j++)
          {
             index = rows_in_aggs[i][j];
             for (k = 0; k < nullspace_dim; k++)
@@ -1694,7 +1694,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	for (k = 0; k < nullspace_dim; k++) 
          {
 	   
-            for (j = 0; j < length; j++)
+            for (j = 0; j < (int) length; j++)
             {
                index = rows_in_aggs[i][j];
 	       
@@ -1721,7 +1721,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       /* ---------------------------------------------------------- */
       if (aggr_cnt_array[i] >= nullspace_dim) {
 
-	MLFORTRAN(dgeqrf)(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
+	DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
 			  &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
 	if (info != 0)
 	  pr_error("ErrOr in CoarsenParMETIS : "
@@ -1734,7 +1734,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    ML_memory_free((void**) &work);
 	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
 	  }
-	else lwork=work[0];
+	else lwork=(int) work[0];
 		 
 	/* ---------------------------------------------------------- */
 	/* the upper triangle of qr_tmp is now R, so copy that into   */
@@ -1757,7 +1757,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
                  nullspace_dim);
 	  printf("*ML*ERR* performing QR on a MxN matrix where M<N.\n");
 	}
-	MLFORTRAN(dorgqr)(&(aggr_cnt_array[i]), &nullspace_dim,
+	DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim,
 			  &nullspace_dim, qr_tmp, &(aggr_cnt_array[i]),
 			  tmp_vect, work, &lwork, &info);
 	if (info != 0) {
@@ -1773,7 +1773,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    ML_memory_free((void**) &work);
 	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
 	  }
-	else lwork=work[0];
+	else lwork=(int) work[0];
 
 	/* ---------------------------------------------------------- */
 	/* now copy Q over into the appropriate part of P:            */

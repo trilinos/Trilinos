@@ -43,7 +43,7 @@ extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 #define ML_AGGR_UNCOUPLED 1
 #define ML_AGGR_COUPLED   2
 
-#if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
+#if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || defined(ML_AGGR_INAGGR) || defined(ML_AGGR_OUTAGGR) || defined(ML_AGGR_MARKINAGGR)
 #ifndef MAXWELL
 #ifndef ALEGRA
 extern int *update_index, *update, *extern_index, *external;
@@ -125,7 +125,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int curagg,myagg,*good,*bad, kk;
 #endif
 
-#if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
+#if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || defined(ML_AGGR_INAGGR) || defined(ML_AGGR_OUTAGGR) || defined(ML_AGGR_MARKINAGGR)
 FILE *fp;
 char fname[80];
 static int level_count = 0;
@@ -1267,7 +1267,7 @@ Here is how we do all this:
       length = aggr_cnt_array[i];
       if (nullspace_vect == NULL) 
       {
-         for (j = 0; j < length; j++)
+         for (j = 0; j < (int) length; j++)
          {
             index = rows_in_aggs[i][j];
             for (k = 0; k < nullspace_dim; k++)
@@ -1285,7 +1285,7 @@ Here is how we do all this:
       {
          for (k = 0; k < nullspace_dim; k++)
          {
-            for (j = 0; j < length; j++)
+            for (j = 0; j < (int) length; j++)
             {
                index = rows_in_aggs[i][j];
                if ( unamalg_bdry[index] == 'T') qr_tmp[k*length+j] = 0.;
@@ -1307,7 +1307,7 @@ Here is how we do all this:
       /* ---------------------------------------------------------- */
       if (aggr_cnt_array[i] >= nullspace_dim) {
 
-	MLFORTRAN(dgeqrf)(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
+	DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
 			  &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
 	if (info != 0)
 	  pr_error("ErrOr in CoarsenMIS : dgeqrf returned a non-zero %d %d\n",
@@ -1319,7 +1319,7 @@ Here is how we do all this:
 	    ML_memory_free((void**) &work);
 	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
 	  }
-	else lwork=work[0];
+	else lwork=(int) work[0];
 		 
 	/* ---------------------------------------------------------- */
 	/* the upper triangle of qr_tmp is now R, so copy that into   */
@@ -1341,7 +1341,7 @@ Here is how we do all this:
                  nullspace_dim);
 	  printf("ERROR : performing QR on a MxN matrix where M<N.\n");
 	}
-	MLFORTRAN(dorgqr)(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
+	DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
 			  qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
 	if (info != 0) {
 	  printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
@@ -1355,7 +1355,7 @@ Here is how we do all this:
 	    ML_memory_free((void**) &work);
 	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
 	  }
-	else lwork=work[0];
+	else lwork=(int) work[0];
 
 	/* ---------------------------------------------------------- */
 	/* now copy Q over into the appropriate part of P:            */

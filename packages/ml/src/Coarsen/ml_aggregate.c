@@ -1444,6 +1444,8 @@ int ML_modified_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[
    double *dtemp, diag, best;
    
 
+   ML_avoid_unused_param((void *) &ilen);
+
    Amat  = (ML_Operator *) Amat_in;
    comm  = Amat->comm;
 
@@ -1580,7 +1582,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 			  
 {
 #ifdef throwaway
-  int    proc_index, Nsnd, Nrcv, *neighbors, flag, oldj;
+  int    proc_index, *neighbors, oldj;
   int    *NeighborList, *Nsnds, *Nrcvs, **SndIndices, **RcvIndices, count;
   int    *the_list, the_length, offset, Nnonzero, Nglobal, oldNnonzero;
   int    *remote_offsets, Nneighbors, i, j, Nrows, Nghost;
@@ -1980,8 +1982,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   rowptr = (int *) ML_allocate(sizeof(int)*(Nrows+1));
   neighbors       = (int *) ML_allocate(sizeof(int)*(Nglobal+1));
   for (i = 0; i < Nglobal; i++) neighbors[i] = -1;
-  j = 0;	Nghost = 0; proc_index = 0; Nsnd = 0; Nrcv = 0;
-  flag = 0;
+  j = 0;	Nghost = 0; proc_index = 0;
 
 
   /* First determine with which processors do we need to */
@@ -2095,7 +2096,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 
   /* Now put in the CSR data */
 
-  j = 0;	Nghost = 0; proc_index = 0; Nsnd = 0; Nrcv = 0;
+  j = 0;	Nghost = 0; proc_index = 0;
   for (i = 0; i < Nglobal; i++) {
     if (permute_array[i] - 1 == mat->comm->ML_mypid) {
       rowptr[j] = j;

@@ -101,9 +101,6 @@
 /* Define if want to build with ml_metis enabled */
 #undef HAVE_ML_METIS
 
-/* Define if want to build with ml_multiple_rhs enabled */
-#undef HAVE_ML_MULTIPLE_RHS
-
 /* Define if want to build with ml_newtpe enabled */
 #undef HAVE_ML_NEW_T_PE
 
@@ -181,6 +178,9 @@
 
 /* mallinfo with ML */
 #undef ML_MALLINFO
+
+/* Support for multiple right hand sides. */
+#undef ML_MULTIPLE_RHS_BLOCK_FACTOR
 
 /* Name of package */
 #undef PACKAGE

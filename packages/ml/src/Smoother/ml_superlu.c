@@ -92,9 +92,9 @@ int ML_SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
       A = (SuperMatrix *) solver->Mat1;
       if ( A != NULL )
       {
-         ML_memory_free((void*)&(((NRformat *) A->Store)->colind));
-         ML_memory_free((void*)&(((NRformat *) A->Store)->rowptr));
-         ML_memory_free((void*)&(((NRformat *) A->Store)->nzval));
+         ML_memory_free((void**)&(((NRformat *) A->Store)->colind));
+         ML_memory_free((void**)&(((NRformat *) A->Store)->rowptr));
+         ML_memory_free((void**)&(((NRformat *) A->Store)->nzval));
          SUPERLU_FREE( ((NRformat *) A->Store)->nzval);
          SUPERLU_FREE( A->Store );
          ML_memory_free((void**) &A);

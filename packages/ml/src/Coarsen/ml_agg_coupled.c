@@ -434,7 +434,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    if ( nbytes > 0 ) ML_memory_alloc((void**)&(new_val), nbytes, "ACQ");
    else              new_ja = NULL;
    for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_val[i] = 0.0;
-   for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_ja[i] = 0.0;
+   for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_ja[i] = 0;
 
    /* ------------------------------------------------------------- */
    /* set up the space for storing the new null space               */
@@ -604,7 +604,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
       }
       else
       {
-         MLFORTRAN(dgeqrf)(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp,
+         DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp,
                   &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
          if (info != 0)
             pr_error("CoarsenCoupled ERROR : dgeqrf returned a non-zero\n");
@@ -616,7 +616,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
          ML_memory_free((void**) &work);
          ML_memory_alloc((void**) &work, sizeof(double)*lwork, "ACa");
       }
-      else lwork=work[0];
+      else lwork=(int) work[0];
 
       /* ---------------------------------------------------------- */
       /* the upper triangle of qr_tmp is now R, so copy that into   */
@@ -646,7 +646,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
       }
       else
       {
-         MLFORTRAN(dorgqr)(&(aggr_cnt_array[i]),&nullspace_dim,&nullspace_dim,
+         DORGQR_F77(&(aggr_cnt_array[i]),&nullspace_dim,&nullspace_dim,
                  qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
          if (info != 0)
             pr_error("CoarsenCoupled ERROR : dorgqr returned a non-zero\n");
@@ -658,7 +658,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
          ML_memory_free((void**) &work);
          ML_memory_alloc((void**) &work, sizeof(double)*lwork, "ACb");
       }
-      else lwork=work[0];
+      else lwork=(int) work[0];
 
       /* ---------------------------------------------------------- */
       /* now copy Q over into the appropriate part of P:            */

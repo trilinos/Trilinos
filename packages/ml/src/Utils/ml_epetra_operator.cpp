@@ -103,8 +103,8 @@ int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
 }
 
 #else
-int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
-ctor& Y , int iBlockSize) const {
+int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X,
+                Epetra_MultiVector& Y , int iBlockSize) const {
 
 
   if (!X.Map().SameAs(OperatorDomainMap())) EPETRA_CHK_ERR(-1);
@@ -119,8 +119,6 @@ ctor& Y , int iBlockSize) const {
 
   // ML_iterate doesn't handle multivectors, so extract and iterate one at
   // a time on them.
-  double **xvectors;
-  double **yvectors;
 
    for ( int i = 0 ; i != (X.NumVectors()/iBlockSize) ; i++ )
       {
@@ -135,10 +133,8 @@ ctor& Y , int iBlockSize) const {
       {
       int  iOffset = (X.NumVectors()/iBlockSize) * iBlockSize;
 
-      Epetra_MultiVector  cur_x ( View , xtmp , iOffset , X.NumVectors() % iBloc
-kSize );
-      Epetra_MultiVector  cur_y ( View , Y , iOffset , Y.NumVectors() % iBlockSi
-ze );
+      Epetra_MultiVector  cur_x ( View , xtmp , iOffset , X.NumVectors() % iBlockSize );
+      Epetra_MultiVector  cur_y ( View , Y , iOffset , Y.NumVectors() % iBlockSize );
 
       ML_Solve_MGV(solver_, xtmp , Y );
 

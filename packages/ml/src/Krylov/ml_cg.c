@@ -542,7 +542,7 @@ if (maxiter == 0) {
 
 int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
 {
-   int         totallength, print_freq, nprocs, mypid, maxiter;
+   int         totallength, maxiter;
    int         i, j, ncnt, Nbc, *colInd = NULL, allocated, level;
    double      *p = NULL, *ap = NULL, *colVal = NULL, norm, *diag = NULL, sum;
    ML_Operator *matrix;
@@ -557,9 +557,6 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
 
    comm        = ML_Krylov_Get_Comm(data);
    totallength = ML_Comm_GsumInt(comm, length);
-   print_freq  = ML_Krylov_Get_PrintFreq(data);
-   nprocs      = comm->ML_nprocs;
-   mypid       = comm->ML_mypid;
    maxiter     = 10;
    if ( totallength < maxiter ) maxiter = totallength;
 

@@ -119,8 +119,20 @@ TAC_ARG_CONFIG_MPI
 
 AC_PROG_CXX(CC g++ gcc c++ cxx)
 
-TAC_ARG_ENABLE_OPTION(ml_multiple_rhs, [experimental], ML_MULTIPLE_RHS, no)
-#TAC_ARG_ENABLE_OPTION(ml_multiple_rhs, [Enable optimized code for multiple right hand sides.   Note: this will automatically cause all ML object files to be built with the c++ compiler.], ML_MULTIPLE_RHS, no)
+AC_ARG_WITH(ml_multiple_rhs,
+[Enables blocked code for multiple
+ right hand sides.  Example: --with-ml_multiple_rhs="4" for a blocking factor
+ of 4.], [ML_MULTIPLE_RHS=${withval}], [no])
+AC_DEFINE_UNQUOTED(ML_MULTIPLE_RHS_BLOCK_FACTOR, $ML_MULTIPLE_RHS,
+   [Support for multiple right hand sides.])
+
+#TAC_ARG_WITH(ml_multiple_rhs,
+#[TAC_HELP_STRING([--with-ml_multiple_rhs],[Enables blocked code for multiple
+# right hand sides.  Example: --with-ml_multiple_rhs="4" for a blocking factor
+# of 4.])], [ML_MULTIPLE_RHS=${withval}], [no])
+#AC_DEFINE_UNQUOTED(ML_MULTIPLE_RHS_BLOCK_FACTOR, $ML_MULTIPLE_RHS,
+#   [Support for multiple right hand sides.])
+
 if test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
 CC=${CXX}
 fi

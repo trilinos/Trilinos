@@ -29,20 +29,11 @@
 void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 		     struct ML_CSR_MSRdata *mydata, int Debug_Flag, 
 		    int GGB_alp_flag) 
-{
-
-  int i ,  j, level;
-
   /* Eigenvalue definitions */
   int      iparam[11];
   int      nev, ncv, info, mode, nconv, Fattening;
   double   tol, tm, tmp_tol;
   char     bmat[2], which[3];
-  ML_Operator *Amat;
-
-
-  
-  
 
   /* --------- Execution begins  ---------------- */
   
@@ -56,12 +47,6 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
     }
     
   tm = GetClock();
-
-  /* Some matrix information */
-    
-  level         = ml->ML_finest_level;
-  Amat          = &(ml->Amat[level]);
-
 
   /* Set parameters for ARPACK from the input file */
 
@@ -145,7 +130,6 @@ void  ML_ARPACK_driver(char which[],
   int        proc_id;
 
   double     *vecx, *vecy, *rhs, *rhs1;                       /* Dummy Pointers */
-  
   /* FILE       *ifp; */
   ML_Operator *Amat;
 
@@ -153,6 +137,8 @@ void  ML_ARPACK_driver(char which[],
   double tm;
 
   /********************************  Begin ************************************/
+
+  ML_avoid_unused_param((void*) &mode);
 
   /* Initialize some communications stuff for eig_driver */
   comm    = ml->comm->USR_comm; 

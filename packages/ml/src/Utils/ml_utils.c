@@ -398,7 +398,7 @@ int ML_selection_dsort(double *vals, int length, int *cols, int limit)
 
    /* set up data structure */
 
-   expLeng    = pow(2., (float) (level+1));
+   expLeng    = (int) pow(2.0, (double) (level+1));
    iarray     = (int    *)  ML_allocate(expLeng   * sizeof(int));
    darray     = (double *)  ML_allocate(expLeng   * sizeof(double));
    treeLengs  = (int *)     ML_allocate((level+1) * sizeof(int));
@@ -1046,7 +1046,7 @@ void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
     /* wait to receive the messages */
 
     if (comm->USR_waitbytes((void *) vals2, length*sizeof(int), &partner, &type,
-			    comm->USR_comm, &request) < length*sizeof(int)) {
+			    comm->USR_comm, &request) < (int) (length*sizeof(int))) {
       (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
       exit(-1);
     }
@@ -1075,7 +1075,7 @@ void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
       }
 
       if (comm->USR_waitbytes((void *) vals2, length*sizeof(int), &partner, 
-		       &type, comm->USR_comm, &request) < length*sizeof(int)) {
+		       &type, comm->USR_comm, &request) < (int) (length*sizeof(int))) {
         (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
         exit(-1);
       }
@@ -1105,7 +1105,7 @@ void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
 
   if (node & nprocs_small) {
     if (comm->USR_waitbytes((void *) vals, length*sizeof(int), &partner, &type, 
-			    comm->USR_comm, &request) < length*sizeof(int)) {
+			    comm->USR_comm, &request) < (int) (length*sizeof(int))) {
       (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
       exit(-1);
     }
@@ -1226,7 +1226,7 @@ void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
     /* wait to receive the messages */
 
     if (comm->USR_waitbytes((void *) vals2, length*sizeof(int), &partner, &type,
-			    comm->USR_comm, &request) < length*sizeof(int)) {
+			    comm->USR_comm, &request) < (int) (length*sizeof(int))) {
       (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
       exit(-1);
     }
@@ -1255,7 +1255,7 @@ void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
       }
 
       if (comm->USR_waitbytes((void *) vals2, length*sizeof(int), &partner, 
-		       &type, comm->USR_comm, &request) < length*sizeof(int)) {
+		       &type, comm->USR_comm, &request) < (int) (length*sizeof(int))) {
         (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
         exit(-1);
       }
@@ -1285,7 +1285,7 @@ void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
 
   if (node & nprocs_small) {
     if (comm->USR_waitbytes((void *) vals, length*sizeof(int), &partner, &type, 
-			    comm->USR_comm, &request) < length*sizeof(int)) {
+			    comm->USR_comm, &request) < (int) (length*sizeof(int))) {
       (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d \n", yo, node, type);
       exit(-1);
     }
@@ -1899,7 +1899,7 @@ double ML_gdot(int N, double r[], double z[], ML_Comm *comm)
 
   add_N = N;
 
-  return ML_gsum_double(MLFORTRAN(ddot)(&add_N, r, &one, z, &one), comm);
+  return ML_gsum_double(DDOT_F77(&add_N, r, &one, z, &one), comm);
 
 } /* dot */
 

@@ -125,13 +125,13 @@ class MultiLevelOperator: public virtual Epetra_Operator {
 #ifdef WKC
 
 #if WKC < 1
-#error WKC is not properly defined!
+#error Blocking parameter (WKC) is not properly defined!
 #endif
+
 
   int ApplyInverse_WKC(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 ;
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y, int iBloc
-kSize = WKC) const;
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y, int iBlockSize = WKC) const;
 #else
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 #endif

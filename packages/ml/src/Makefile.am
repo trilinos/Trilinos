@@ -126,7 +126,7 @@ $(srcdir)/Utils/ml_epetra_operator.h \
 $(srcdir)/Utils/ml_twogrid_analysis.h \
 $(srcdir)/Utils/ml_intlist.h \
 $(srcdir)/Utils/ml_vec.h \
-$(srcdir)/Utils/ml_lapack.h            $(srcdir)/Utils/ml_vendor_lapack.h \
+$(srcdir)/Utils/ml_lapack.h \
 $(srcdir)/Utils/ml_utils.h \
 $(srcdir)/Utils/ml_eigf2c.h \
 $(srcdir)/Utils/ml_vampir.h \
@@ -147,7 +147,6 @@ $(srcdir)/Utils/ml_twogrid_analysis.c \
 $(srcdir)/Utils/ml_epetra_utils.cpp \
 $(srcdir)/Utils/ml_utils.c             $(srcdir)/Utils/ml_intlist.c \
 $(srcdir)/Utils/ml_vec.c \
-$(srcdir)/Utils/ml_lapack.c \
 $(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c \
 $(srcdir)/Utils/ml_agg_info.c \
 $(srcdir)/Utils/ml_viz_opendx.c \

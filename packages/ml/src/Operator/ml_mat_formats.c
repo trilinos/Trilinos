@@ -1039,94 +1039,91 @@ int cCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 int CSR_densematvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
-   int i, j, jj, k, k2, /* Nrows,*/ *bindx;
-   double            *p2, *val, sum, *ap2, *oldp2;
-   struct ML_CSR_MSRdata *temp;
-   ML_CommInfoOP     *getrow_comm;
-   ML_Operator       *Amat;
-   int               *row_ptr, Nstored;
-   ML_Comm           *comm;
+           int i, jj, k, k2; /* Nrows,*/
+           double            *p2, *val, sum, *ap2, *oldp2;
+           struct ML_CSR_MSRdata *temp;
+           ML_CommInfoOP     *getrow_comm;
+           ML_Operator       *Amat;
+           int               Nstored;
+           ML_Comm           *comm;
 
-   Amat    = (ML_Operator *) Amat_in;
-   comm    = Amat->comm;
-   /* Nrows   = Amat->outvec_leng; */
-   Nstored = Amat->getrow->Nrows;
-   temp    = (struct ML_CSR_MSRdata *) Amat->data;
-   val     = temp->values;
-   bindx   = temp->columns;
-   row_ptr = temp->rowptr;
+           Amat    = (ML_Operator *) Amat_in;
+           comm    = Amat->comm;
+           /* Nrows   = Amat->outvec_leng; */
+           Nstored = Amat->getrow->Nrows;
+           temp    = (struct ML_CSR_MSRdata *) Amat->data;
+           val     = temp->values;
 
-   getrow_comm= Amat->getrow->pre_comm;
-   if (getrow_comm != NULL) {
-     p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
-                                  sizeof(double));
-     if (p2 == NULL) 
-       pr_error("CSR_dense_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+           getrow_comm= Amat->getrow->pre_comm;
+           if (getrow_comm != NULL) {
+             p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
+                                          sizeof(double));
+             if (p2 == NULL) 
+               pr_error("CSR_dense_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
-     for (i = 0; i < ilen; i++) p2[i] = p[i];
+             for (i = 0; i < ilen; i++) p2[i] = p[i];
 
-     ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
+             ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
 
-   }
-   else p2 = p;
+           }
+           else p2 = p;
 
-   getrow_comm= Amat->getrow->post_comm;
-   if (getrow_comm != NULL) {
-      i = Nstored+getrow_comm->minimum_vec_size + 1;
-      if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
-      ap2 = (double *) ML_allocate(i* sizeof(double));
-      if (ap2 == NULL) 
-	pr_error("CSR_dense_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+           getrow_comm= Amat->getrow->post_comm;
+           if (getrow_comm != NULL) {
+              i = Nstored+getrow_comm->minimum_vec_size + 1;
+              if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
+              ap2 = (double *) ML_allocate(i* sizeof(double));
+              if (ap2 == NULL) 
+            pr_error("CSR_dense_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
-   }
-   else ap2 = ap;
+           }
+           else ap2 = ap;
 
-   j = 0;
-   /*   jj = Amat->invec_leng; */
-   
-   oldp2 = p2;
+           /*   jj = Amat->invec_leng; */
+           
+           oldp2 = p2;
 
-   /* length of the product is the same for all vectors */
-   /* It is enough to get the first length */
-   k2    = row_ptr[1];
-   
-   for (i = 0; i < Nstored; i++) {
-     p2 = oldp2;
-     sum = 0.;
-     /* jj = 0 */
-     for (k = 0; k < k2; k++) {
-       /*       sum += val[j++]*p2[k];  */
-       /*  sum += val[j++]*p2[jj++];  */  
-       
-       sum += *val++ * *p2++; 
-     }
-     /*  ap2[i] = sum;  */
-     
-     *ap2++ = sum; 
-   }
-   
-   if (Amat->getrow->pre_comm != NULL) ML_free(oldp2);
- 
-   if (getrow_comm != NULL) {
-      if (getrow_comm->remap != NULL) {
-         if (getrow_comm->remap_max != olen-1) {
-            printf("Error: The largest remapping index after communication\n");
-            printf("       should be one less than the vector's output\n");
-            printf("       length (%d vs %d)???\n",getrow_comm->remap_max,olen);
-            exit(1);
-         }
-      }
-      ML_exchange_bdry(ap2,getrow_comm, Nstored, comm, ML_ADD,NULL);
-      for (jj = 0; jj < olen; jj++) ap[jj] = ap2[jj];
-      ML_free(ap2);
-  }
-  return(1);
-}
+           /* length of the product is the same for all vectors */
+           /* It is enough to get the first length */
+           k2    = row_ptr[1];
+           
+           for (i = 0; i < Nstored; i++) {
+             p2 = oldp2;
+             sum = 0.;
+             /* jj = 0 */
+             for (k = 0; k < k2; k++) {
+               /*       sum += val[j++]*p2[k];  */
+               /*  sum += val[j++]*p2[jj++];  */  
+               
+               sum += *val++ * *p2++; 
+             }
+             /*  ap2[i] = sum;  */
+             
+             *ap2++ = sum; 
+           }
+           
+           if (Amat->getrow->pre_comm != NULL) ML_free(oldp2);
+         
+           if (getrow_comm != NULL) {
+              if (getrow_comm->remap != NULL) {
+                 if (getrow_comm->remap_max != olen-1) {
+                    printf("Error: The largest remapping index after communication\n");
+                    printf("       should be one less than the vector's output\n");
+                    printf("       length (%d vs %d)???\n",getrow_comm->remap_max,olen);
+                    exit(1);
+                 }
+              }
+              ML_exchange_bdry(ap2,getrow_comm, Nstored, comm, ML_ADD,NULL);
+              for (jj = 0; jj < olen; jj++) ap[jj] = ap2[jj];
+              ML_free(ap2);
+          }
+          return(1);
+        }
 
-int CSR_ones_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
-{
+        int CSR_ones_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+        {
 
-   int i, jj, k, /* Nrows,*/ *bindx;
+           int i, jj, k, /* Nrows,*/ *bindx;
    double            *p2, sum, *ap2;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP     *getrow_comm;
@@ -1460,9 +1457,9 @@ int MSR_matvec_WKC(void *Amat_in, int ilen, double *ep_p, int olen, double *ep_a
   j = bindx[0];
   bindx_ptr = &bindx[j];
   for (i = 0; i < Nrows; i++) {
-    sum =  val[i]*p2[i];
+    *sum =  val[i]*p2[i];
     while (j+10 < bindx[i+1]) {
-      sum += val[j+9]*p2[bindx_ptr[9]] +
+      *sum += val[j+9]*p2[bindx_ptr[9]] +
         val[j+8]*p2[bindx_ptr[8]] +
         val[j+7]*p2[bindx_ptr[7]] +
         val[j+6]*p2[bindx_ptr[6]] +
@@ -1476,9 +1473,9 @@ int MSR_matvec_WKC(void *Amat_in, int ilen, double *ep_p, int olen, double *ep_a
       j += 10;
     }
     while (j < bindx[i+1]) {
-      sum += val[j++] * p2[*bindx_ptr++];
+      *sum += val[j++] * p2[*bindx_ptr++];
     }
-    ap[i] = sum;
+    ap[i] = *sum;
   }
   }
 

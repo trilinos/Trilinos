@@ -533,7 +533,7 @@ void ML_Aggregate_AnalyzeLocalGraphDec( int N_aggregates,
   
   if( std > 0.00001 && N>1 ) {
   
-    std = ML_gsum_int( std, comm );
+    std = ML_gsum_double( std, comm );
     std = sqrt(std/(N-1));
 
   }
@@ -674,9 +674,9 @@ int ML_Aggregate_VizAndStats_SetUpLevel( ML_Aggregate_Viz_Stats finer_level,
   Nlocal = finer_level.Naggregates;
 
   size = sizeof(double)*Nlocal;
-  ML_memory_alloc((void*)&(coarser_level->x),size,"x for info");
-  if( dim > 1 ) ML_memory_alloc((void*)&(coarser_level->y),size,"y for info");
-  if( dim > 2 ) ML_memory_alloc((void*)&(coarser_level->z),size,"z for info");
+  ML_memory_alloc((void**)&(coarser_level->x),size,"x for info");
+  if( dim > 1 ) ML_memory_alloc((void**)&(coarser_level->y),size,"y for info");
+  if( dim > 2 ) ML_memory_alloc((void**)&(coarser_level->z),size,"z for info");
 
   return 0;  
 }
@@ -734,7 +734,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   
   /* ------------------- execution begins --------------------------------- */
   
-  info = ag->aggr_viz_and_stats;
+  info = (ML_Aggregate_Viz_Stats *) (ag->aggr_viz_and_stats);
   comm = ml->comm;
   
   if( finest_level > coarsest_level ) incr_or_decr = ML_DECREASING;
@@ -764,7 +764,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 
   for( i=0 ; i<MaxMgLevels ; i++ ) {
     if( info[i].Amatrix != NULL )
-      ML_Operator_AmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);  
+      ML_Operator_AmalgamateAndDropWeak((ML_Operator *) info[i].Amatrix, num_PDE_eqns, 0.0);  
   }
 
   /* ********************************************************************** */
@@ -1152,7 +1152,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
     if( info[ilevel].z != NULL ) ML_free( info[ilevel].z );
 
     if( info[ilevel].Amatrix != NULL )
-      ML_Operator_UnAmalgamateAndDropWeak(info[ilevel].Amatrix, num_PDE_eqns,
+      ML_Operator_UnAmalgamateAndDropWeak((ML_Operator *) info[ilevel].Amatrix, num_PDE_eqns,
 					  0.0);
     
   }

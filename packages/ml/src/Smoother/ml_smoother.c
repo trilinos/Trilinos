@@ -1832,7 +1832,7 @@ int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
    char           N[2];
-   unsigned int   itmp=0;
+   /*unsigned int   itmp=0;*/
 	 
    smooth_ptr = (ML_Smoother *) sm;
 
@@ -1906,8 +1906,8 @@ int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
 	    correc[k]=rhs[row]-Atimesx[k];
 	 }
 				
-	 MLFORTRAN(dgetrs)(N, &blocksize, &one, blockdata[i], &blocksize, perms[i],
-			   correc, &blocksize, &info, itmp);
+	 DGETRS_F77(N, &blocksize, &one, blockdata[i], &blocksize, perms[i],
+			   correc, &blocksize, &info);
 	 for (k = 0; k < blocksize; k++)
 	    x2[k+i*blocksize] += omega*correc[k];
       }
@@ -1948,12 +1948,12 @@ int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
 }
 
 int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double out[]) {
-  unsigned int   itmp=0;
+  /*unsigned int   itmp=0;*/
   int info, one = 1;
   int nblocks, **perms, blocksize, i, *blocklengths, index;
   double **blockdata, *dtemp;
   char N[2];
-  int k,length;
+  int k;
   int maxBlocksize, *aggr_offset, *aggr_group, Nrows;
   int *block_indices;
 
@@ -1964,6 +1964,8 @@ int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double out[]) {
   blocksize = BGS_Data->blocksize;
   block_indices = BGS_Data->blockmap;
 
+  ML_avoid_unused_param((void *)&inlen);
+
   strcpy(N,"N");
 
   index = 0;
@@ -1971,10 +1973,9 @@ int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double out[]) {
     /* constant blocksize with consecutive indices in blocks */
 
     for (i = 0; i < nblocks; i++) {
-      length = blocksize;
-      MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
+      DGETRS_F77(N,&blocksize,&one,blockdata[i],&blocksize,
 			perms[i], &(out[index]), 
-			&blocksize, &info, itmp);
+			&blocksize, &info);
       index += blocksize;
       if ( info != 0 ) {
 	printf("dgetrs returns with %d at block %d\n",info,i); 
@@ -2007,14 +2008,12 @@ int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double out[]) {
 
     for (i = 0; i < nblocks; i++) {
       blocksize = blocklengths[i];
-      length = blocksize;
 
       for (k = 0; k < blocksize; k++) {
 	dtemp[k] = out[aggr_group[aggr_offset[i]+k]];
       }
-      MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-			perms[i], dtemp,
-			&blocksize, &info, itmp);
+      DGETRS_F77(N,&blocksize,&one,blockdata[i],&blocksize,
+			perms[i], dtemp, &blocksize, &info);
       if ( info != 0 ) {
 	printf("dgetrs returns with %d at block %d\n",info,i); 
 	exit(1);
@@ -2072,7 +2071,7 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
    char           N[2];
-   unsigned int   itmp=0;
+   /*unsigned int   itmp=0;*/
 	 
    /* ----------------------------------------------------- */
    /* fetch parameters                                      */
@@ -2197,8 +2196,8 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
 	   for (k = 0; k < blocksize; k++) {
 	     dtemp[k] = unprec_r[aggr_group[aggr_offset[i]+k]];
            }
-            MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-                              perms[i], dtemp, &blocksize, &info, itmp);
+            DGETRS_F77(N,&blocksize,&one,blockdata[i],&blocksize,
+                              perms[i], dtemp, &blocksize, &info);
             if ( info != 0 ) 
             {
                printf("dgetrs returns with %d at block %d\n",info,i); 
@@ -2267,7 +2266,7 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
    char           N[2];
-   unsigned int   itmp=0;
+   /*unsigned int   itmp=0;*/
 	 
    /* ----------------------------------------------------- */
    /* fetch parameters                                      */
@@ -2363,8 +2362,8 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
 				
          if ( do_update == blocksize && blocksize != 0 )
          {
-            MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-                              perms[i], res, &blocksize, &info, itmp);
+            DGETRS_F77(N,&blocksize,&one,blockdata[i],&blocksize,
+                              perms[i], res, &blocksize, &info);
             if ( info != 0 ) 
             {
                printf("dgetrs returns with %d at block %d(%d)\n",info,i,Nblocks); 
@@ -2419,8 +2418,8 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
 				
          if ( do_update == blocksize )
          {
-            MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-                              perms[i], res, &blocksize, &info, itmp);
+            DGETRS_F77(N,&blocksize,&one,blockdata[i],&blocksize,
+                              perms[i], res, &blocksize, &info);
             if ( info != 0 ) 
             {
                printf("dgetrs returns with %d at block %d(%d)\n",info,i,blocksize); 
@@ -2474,7 +2473,7 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
    char           N[2];
-   unsigned int   itmp=0;
+   /*unsigned int   itmp=0;*/
 	 
    /* ----------------------------------------------------- */
    /* fetch parameters                                      */
@@ -2576,8 +2575,8 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
                }
                if ( do_update == blocksize && blocksize != 0 )
                {
-                  MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-                                    perms[i], res, &blocksize, &info, itmp);
+                  DGETRS_F77(N,&blocksize,&one,blockdata[i],&blocksize,
+                                    perms[i], res, &blocksize, &info);
                   if ( info != 0 ) 
                   {
                      printf("dgetrs returns %d at blk %d(%d)\n",info,i,Nblocks); 
@@ -2647,8 +2646,8 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
 				
                if ( do_update == blocksize )
                {
-                  MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-                                    perms[i], res, &blocksize, &info, itmp);
+                  DGETRS_F77(N,&blocksize,&one,blockdata[i],&blocksize,
+                                    perms[i], res, &blocksize, &info);
                   if ( info != 0 ) 
                   {
                      printf("dgetrs returns %d at blk %d(%d)\n",info,i,Nblocks); 
@@ -4158,7 +4157,7 @@ int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    }
    for (i = 0; i < Nblocks; i++) 
    {
-      MLFORTRAN(dgetrf)(&blocksize, &blocksize, blockfacts[i], &blocksize,
+      DGETRF_F77(&blocksize, &blocksize, blockfacts[i], &blocksize,
 	         perms[i], &info);
       if (info != 0)
          pr_error("Error in ML_Gen_BGSFacts:dgetrf returned a non-zero value\n");
@@ -4306,7 +4305,7 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    for (i = 0; i < Nblocks; i++) 
    {
       length = block_sizes[i];
-      MLFORTRAN(dgetrf)(&length, &length, blockfacts[i], &length, 
+      DGETRF_F77(&length, &length, blockfacts[i], &length, 
                         perms[i], &info);
       if (info != 0)
       {
@@ -4384,7 +4383,7 @@ int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *Amat, ML_Comm *comm,
    if (getrow_comm != NULL)
       ML_exchange_bdry(dble_array,getrow_comm, Nrows,comm,ML_OVERWRITE,NULL);
    index_array = ( int *) ML_allocate((extNrows-Nrows) * sizeof(int));
-   for (i = Nrows; i < extNrows; i++) index_array[i-Nrows] = dble_array[i];
+   for (i = Nrows; i < extNrows; i++) index_array[i-Nrows] = (int) dble_array[i];
    index_array2  = (int *) ML_allocate((extNrows-Nrows) *sizeof(int));
    for (i = 0; i < extNrows-Nrows; i++) index_array2[i] = i;
    ML_free( dble_array );

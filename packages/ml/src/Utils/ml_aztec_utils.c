@@ -2821,8 +2821,8 @@ void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
     break;
 
   case 2:
-    nx = (int) sqrt(N);
-    ny = (int) sqrt(N);
+    nx = (int) sqrt((double)N);
+    ny = (int) sqrt((double)N);
     delta_x = 1.0/(nx-1);
     delta_y = 1.0/(ny-1);
     break;

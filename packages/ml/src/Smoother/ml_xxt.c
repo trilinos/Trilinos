@@ -239,7 +239,13 @@ int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
 if ((sub_mask & partner) == sub_cube) {
     if ( com_ptr->USR_irecvbytes((void *) &(vals[*cur_length]),
                        (total_length - *cur_length) * sizeof(int), &partner,
-                       &msgtype, com_ptr->USR_comm, (void *) &Request) ) {
+                       &msgtype, com_ptr->USR_comm,
+#ifdef ML_CPP
+                                    &Request ))
+#else
+                                    (void *)&Request ))
+#endif
+    {
       (void) fprintf(stderr, "ERROR on node %d\nread failed, message type = %d\n", mypid, msgtype);
       exit(-1);
     }
@@ -268,7 +274,12 @@ if ((sub_mask & partner) == sub_cube) {
 if ((sub_mask & partner) == sub_cube) {
     nbytes = com_ptr->USR_waitbytes((void *) &(vals[*cur_length]),
                           (total_length - *cur_length)*sizeof(int), &partner,
-                          &msgtype, com_ptr->USR_comm, (void *) &Request);
+                          &msgtype, com_ptr->USR_comm,
+#ifdef ML_CPP
+                                    &Request );
+#else
+                                    (void *)&Request );
+#endif
     (*cur_length) += (nbytes / sizeof(int));
 }
   }
@@ -281,7 +292,13 @@ if ((sub_mask & partner) == sub_cube) {
 if ((sub_mask & partner) == sub_cube) {
       if (com_ptr->USR_irecvbytes((void *) &(vals[*cur_length]),
                         (total_length - *cur_length)*sizeof(int), &partner,
-                        &msgtype, com_ptr->USR_comm, (void *) &Request)) {
+                        &msgtype, com_ptr->USR_comm,
+#ifdef ML_CPP
+                                    &Request ))
+#else
+                                    (void *)&Request ))
+#endif
+      {
         (void) fprintf(stderr, "ERROR on node %d\nread failed, message type = %d\n", mypid, msgtype);
         exit(-1);
       }
@@ -294,7 +311,12 @@ if ((sub_mask & partner) == sub_cube) {
 
       nbytes = com_ptr->USR_waitbytes((void *) &(vals[*cur_length]),
                             (total_length - *cur_length)*sizeof(int), &partner,
-                            &msgtype, com_ptr->USR_comm, (void *) &Request);
+                            &msgtype, com_ptr->USR_comm,
+#ifdef ML_CPP
+                                    &Request );
+#else
+                                    (void *)&Request );
+#endif
       (*cur_length) += (nbytes / sizeof(int));
 }
     }
@@ -306,7 +328,13 @@ if ((sub_mask & partner) == sub_cube) {
   if (mypid & nprocs_small) {
 if ((sub_mask & partner) == sub_cube) {
     if (com_ptr->USR_irecvbytes((void *) vals, total_length*sizeof(int),
-			&partner,&msgtype,com_ptr->USR_comm,(void *) &Request)){
+			&partner,&msgtype,com_ptr->USR_comm,
+#ifdef ML_CPP
+                                    &Request ))
+#else
+                                    (void *)&Request ))
+#endif
+    {
       (void) fprintf(stderr, "ERROR on node %d\nread failed, message type = %d\n", mypid, msgtype);
       exit(-1);
     }
@@ -326,7 +354,12 @@ if ((sub_mask & partner) == sub_cube) {
   if (mypid & nprocs_small) {
 if ((sub_mask & partner) == sub_cube) {
     nbytes = com_ptr->USR_waitbytes((void *) vals, total_length*sizeof(int), 
-			  &partner,&msgtype,com_ptr->USR_comm,(void *)&Request);
+			  &partner,&msgtype,com_ptr->USR_comm,
+#ifdef ML_CPP
+                                    &Request );
+#else
+                                    (void *)&Request );
+#endif
     (*cur_length) = (nbytes / sizeof(int));
 }
   }

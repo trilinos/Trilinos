@@ -83,6 +83,7 @@ Spectral norm calculation    = Anorm
 #include "az_aztec.h"
 #include "ml_include.h"
 #include "ml_read_utils.h"
+#include "ml_lapack.h"
 #include <math.h>
 
 extern int AZ_using_fortran;
@@ -351,14 +352,14 @@ int main(int argc, char *argv[])
        alpha = -AZ_gdot(N_update, mode, &(rigid[j*N_update]), proc_config)/
                   AZ_gdot(N_update, &(rigid[j*N_update]), &(rigid[j*N_update]), 
                                proc_config);
-       daxpy_(&N_update, &alpha,  &(rigid[j*N_update]),  &one, mode, &one);
+       DAXPY_F77(&N_update, &alpha,  &(rigid[j*N_update]),  &one, mode, &one);
     }
    
     /* rhs orthogonalization */
 
     alpha = -AZ_gdot(N_update, mode, rhs, proc_config)/
                     AZ_gdot(N_update, mode, mode, proc_config);
-    daxpy_(&N_update, &alpha,  mode,  &one, rhs, &one);
+    DAXPY_F77(&N_update, &alpha,  mode,  &one, rhs, &one);
 
     for (j = 0; j < N_update; j++) rigid[i*N_update+j] = mode[j];
     free(mode);
@@ -369,7 +370,7 @@ int main(int argc, char *argv[])
      alpha = -AZ_gdot(N_update, rhs, &(rigid[j*N_update]), proc_config)/
               AZ_gdot(N_update, &(rigid[j*N_update]), &(rigid[j*N_update]), 
                       proc_config);
-     daxpy_(&N_update, &alpha,  &(rigid[j*N_update]),  &one, rhs, &one);
+     DAXPY_F77(&N_update, &alpha,  &(rigid[j*N_update]),  &one, rhs, &one);
   }
 
   if (Nrigid != 0) {

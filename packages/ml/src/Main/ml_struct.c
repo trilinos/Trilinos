@@ -4059,7 +4059,9 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    /* lapack parameters */
    char trans[2];
    int nrhs=1;
+   /*
    unsigned int itmp=0;
+   */
 
    Amat = &(ml->Amat[ml->ML_finest_level]);
    V = Amat->subspace->basis_vectors;
@@ -4091,7 +4093,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
 
       /* factor VAV */
       /* see man page for description of arguments */
-      MLFORTRAN(dgetrf)(&dimV,&dimV,VAV,&dimV,pivots,&info);
+      DGETRF_F77(&dimV,&dimV,VAV,&dimV,pivots,&info);
       if (info < 0) {
         printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrf has ",-info);
         printf("illegal value\n");
@@ -4116,7 +4118,8 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    **************************************/
    /* see man page for description of arguments */
    strcpy(trans,"N");
-   MLFORTRAN(dgetrs)(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);
+   /*DGETRS_F77(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);*/
+   DGETRS_F77(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info);
    if (info < 0) {
      printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ",-info);
      printf("illegal value\n");
@@ -4171,7 +4174,8 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
      rhs[i] = ML_gdot(lengV, V[i], res2, ml->comm);
 
    /* see man page for description of arguments */
-   MLFORTRAN(dgetrs)(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);
+   /*DGETRS_F77(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);*/
+   DGETRS_F77(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info);
    if (info < 0) {
      printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ",info);
      printf("illegal value\n");
@@ -6357,7 +6361,6 @@ void ML_build_ggb_fat(ML *ml, void *data)
   ML *ml_ggb;
   ML_Aggregate *ag;
   int  Nrows, Ncols, N_levels, num_PDE_eqns ;
-  int  coarsest_level;
 
   
   ML_Operator *Amat;
@@ -6390,7 +6393,7 @@ void ML_build_ggb_fat(ML *ml, void *data)
   ML_Aggregate_Set_Threshold(ag, 0.0);
   ML_Aggregate_Set_MaxCoarseSize( ag, 300);
   ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, Ncols, mydata->values, Nrows);
-  coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml_ggb, N_levels-1,ML_DECREASING, ag);
+  ML_Gen_MGHierarchy_UsingAggregation(ml_ggb, N_levels-1,ML_DECREASING, ag);
 
   /*  ML_Operator_Print(&(ml_ggb->Pmat[0]), "Pmat");  */
 
@@ -6421,7 +6424,7 @@ int ML_Solve_MGV( ML *ml , const Epetra_MultiVector &in, Epetra_MultiVector &out
 /* Copy input to maintain const */
    Epetra_MultiVector  in_temp ( in );
    int    i, leng, dir_leng, *dir_list, k, level;
-   double *diag, *scales, *din_temp;
+   double *diag, *scales;
 
 
    /* ------------------------------------------------------------ */
@@ -6500,7 +6503,6 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
 {
 
    int         i, lengc, lengf;
-   double      *rhss, *dtmp;
    ML_Operator *Amat, *Rmat;
    ML_Smoother *pre,  *post;
    ML_CSolve   *csolve;

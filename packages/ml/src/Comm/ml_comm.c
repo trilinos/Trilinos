@@ -1114,9 +1114,19 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) vals, k, &partner, &msgtype,
-                                    com_ptr->USR_comm, (void *) &Request );
+                                    com_ptr->USR_comm,
+#ifdef ML_CPP
+                                    &Request );
+#else
+                                    (void *)&Request );
+#endif
             com_ptr->USR_cheapwaitbytes((void*) vals, k, &partner, &msgtype, 
-                                    com_ptr->USR_comm, (void *) &Request );
+                                    com_ptr->USR_comm,
+#ifdef ML_CPP
+                                    &Request );
+#else
+                                    (void *)&Request );
+#endif
          }
       }
    }

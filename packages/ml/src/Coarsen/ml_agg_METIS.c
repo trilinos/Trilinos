@@ -193,7 +193,7 @@ int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag,
   pointer = (ML_Aggregate_Options *)ag->aggr_options;
   
   if( pointer == NULL ) {
-    ML_memory_alloc((void*)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
+    ML_memory_alloc((void**)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
 		    "Naggregates");
     if( pointer == NULL ) {
       fprintf( stderr,
@@ -278,7 +278,7 @@ int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag,
   pointer = (ML_Aggregate_Options *)ag->aggr_options;
   
   if( pointer == NULL ) {
-    ML_memory_alloc((void*)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
+    ML_memory_alloc((void**)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
 		    "Naggregates");
     if( pointer == NULL ) {
       fprintf( stderr,
@@ -348,7 +348,7 @@ int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag,
   pointer = (ML_Aggregate_Options *)ag->aggr_options;
   
   if( pointer == NULL ) {
-    ML_memory_alloc((void*)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
+    ML_memory_alloc((void**)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
 		    "aggr_options");
     if( pointer == NULL ) {
       fprintf( stderr,
@@ -425,7 +425,7 @@ int ML_Aggregate_Set_ReorderingFlag( ML *ml, ML_Aggregate *ag,
   pointer = (ML_Aggregate_Options *)ag->aggr_options;
   
   if( pointer == NULL ) {
-    ML_memory_alloc((void*)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
+    ML_memory_alloc((void**)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
 		    "Naggregates");
     if( pointer == NULL ) {
       fprintf( stderr,
@@ -795,8 +795,10 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   int NcenterNodes;
   int * perm = NULL;
   char str[80];
+  /*
   struct amalg_drop * temp = 0;
   double * scaled_diag = 0;
+  */
   
   /* ------------------- execution begins --------------------------------- */
   
@@ -1968,7 +1970,7 @@ int agg_offset, vertex_offset;
       length = aggr_cnt_array[i];
       if (nullspace_vect == NULL) 
       {
-         for (j = 0; j < length; j++)
+         for (j = 0; j < (int) length; j++)
          {
             index = rows_in_aggs[i][j];
 	    
@@ -1988,7 +1990,7 @@ int agg_offset, vertex_offset;
       {
          for (k = 0; k < nullspace_dim; k++)
          {
-            for (j = 0; j < length; j++)
+            for (j = 0; j < (int) length; j++)
             {
                index = rows_in_aggs[i][j];
                if ( unamalg_bdry[index/num_PDE_eqns] == 'T')
@@ -2016,7 +2018,7 @@ int agg_offset, vertex_offset;
 
       if (aggr_cnt_array[i] >= nullspace_dim) {
 
-	MLFORTRAN(dgeqrf)(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
+	DGEQRF_F77(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
 			  &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
 	if (info != 0)
 	  pr_error("ErrOr in CoarsenMIS : dgeqrf returned a non-zero %d %d\n",
@@ -2028,7 +2030,7 @@ int agg_offset, vertex_offset;
 	    ML_memory_free((void**) &work);
 	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
 	  }
-	else lwork=work[0];
+	else lwork=(int) work[0];
 		 
 	/* ---------------------------------------------------------- */
 	/* the upper triangle of qr_tmp is now R, so copy that into   */
@@ -2050,7 +2052,7 @@ int agg_offset, vertex_offset;
                  nullspace_dim);
 	  printf("ERROR : performing QR on a MxN matrix where M<N.\n");
 	}
-	MLFORTRAN(dorgqr)(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
+	DORGQR_F77(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
 			  qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
 	if (info != 0) {
 	  printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
@@ -2064,7 +2066,7 @@ int agg_offset, vertex_offset;
 	    ML_memory_free((void**) &work);
 	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
 	  }
-	else lwork=work[0];
+	else lwork=(int) work[0];
 
 	/* ---------------------------------------------------------- */
 	/* now copy Q over into the appropriate part of P:            */

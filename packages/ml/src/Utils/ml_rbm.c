@@ -79,6 +79,6 @@ int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[],
     }
 */
    }
-   return(1);
+   return 1;
 }
 

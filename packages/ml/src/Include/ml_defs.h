@@ -3,13 +3,17 @@
 
 #include "ml_common.h"
 
+/*
 #ifdef ML_MATCHED
 #define MLFORTRAN(aaa) aaa
 #else
 #define MLFORTRAN(aaa) aaa ## _
 #endif
+*/
 
 #define ML_VERSION        ml3_0_0_0
+
+#define ML_LOCATION  __FILE__,"(", __LINE__,"): "
 
 #ifndef MB_MODIF
 #define MB_MODIF

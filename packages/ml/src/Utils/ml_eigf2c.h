@@ -2,6 +2,7 @@
 #define __MLEIGF2C__
 
 #include "ml_lapack.h"
+#include "ml_memory.h"
 
 
 #ifndef ML_CPP

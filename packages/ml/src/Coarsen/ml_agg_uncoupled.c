@@ -786,7 +786,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       }
       else
       {
-         MLFORTRAN(dgeqrf)(&(agg_sizes[i]), &nullspace_dim, qr_tmp, 
+         DGEQRF_F77(&(agg_sizes[i]), &nullspace_dim, qr_tmp, 
                            &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
          if (info != 0)
             pr_error("ERROR (CoarsenUncoupled) : dgeqrf returned a non-zero\n");
@@ -798,7 +798,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
          ML_memory_free((void**) &work);
          ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGk");
       }
-      else lwork=work[0];
+      else lwork=(int) work[0];
 		 
       /* the upper triangle of qr_tmp is now R, so copy that into the 
          new nullspace */
@@ -820,7 +820,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       }
       else
       {
-         MLFORTRAN(dorgqr)(&(agg_sizes[i]), &nullspace_dim, &nullspace_dim, 
+         DORGQR_F77(&(agg_sizes[i]), &nullspace_dim, &nullspace_dim, 
                  qr_tmp, &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
          if (info != 0)
             pr_error("ERROR (CoarsenUncoupled): dorgqr returned a non-zero\n");
@@ -832,7 +832,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
          ML_memory_free((void**) &work);
          ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AVM");
       }
-      else lwork=work[0];
+      else lwork=(int) work[0];
 		 
       /* now copy Q over into the appropriate part of P: */
       /* The rows of P get calculated out of order, so I assume the Q is 

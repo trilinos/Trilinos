@@ -10,8 +10,10 @@
 /* Date          : September, 1998                                      */
 /* ******************************************************************** */
 
-#ifndef __MLUTILH__
-#define __MLUTILH__
+#ifndef __MLRBMH__
+#define __MLRBMH__
+
+#include "ml_common.h"
 
 #ifndef ML_CPP
 #ifdef __cplusplus
@@ -19,7 +21,6 @@
 #endif
 #endif
 
-#include "ml_common.h"
 
    int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[],
                     double rbm[], int Ndof);

@@ -111,11 +111,10 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_read_utils.$(OBJEXT) ml_epetra_operator.$(OBJEXT) \
 	ml_twogrid_analysis.$(OBJEXT) ml_epetra_utils.$(OBJEXT) \
 	ml_utils.$(OBJEXT) ml_intlist.$(OBJEXT) ml_vec.$(OBJEXT) \
-	ml_lapack.$(OBJEXT) ml_memory.$(OBJEXT) ml_eigf2c.$(OBJEXT) \
-	ml_agg_info.$(OBJEXT) ml_viz_opendx.$(OBJEXT) \
-	ml_amesos.$(OBJEXT) ml_amesos_wrap.$(OBJEXT) \
-	ml_ifpack.$(OBJEXT) ml_ifpack_wrap.$(OBJEXT) \
-	ml_MultiLevelPreconditioner.$(OBJEXT) \
+	ml_memory.$(OBJEXT) ml_eigf2c.$(OBJEXT) ml_agg_info.$(OBJEXT) \
+	ml_viz_opendx.$(OBJEXT) ml_amesos.$(OBJEXT) \
+	ml_amesos_wrap.$(OBJEXT) ml_ifpack.$(OBJEXT) \
+	ml_ifpack_wrap.$(OBJEXT) ml_MultiLevelPreconditioner.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Filtering.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_NullSpace.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Defaults.$(OBJEXT) \
@@ -167,7 +166,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_ifpack.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_ifpack_wrap.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_intlist.Po ./$(DEPDIR)/ml_krylov.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_lapack.Po ./$(DEPDIR)/ml_mapper.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_mapper.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_mat_formats.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_matmat_mult.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_memory.Po \
@@ -449,7 +448,7 @@ $(srcdir)/Utils/ml_epetra_operator.h \
 $(srcdir)/Utils/ml_twogrid_analysis.h \
 $(srcdir)/Utils/ml_intlist.h \
 $(srcdir)/Utils/ml_vec.h \
-$(srcdir)/Utils/ml_lapack.h            $(srcdir)/Utils/ml_vendor_lapack.h \
+$(srcdir)/Utils/ml_lapack.h \
 $(srcdir)/Utils/ml_utils.h \
 $(srcdir)/Utils/ml_eigf2c.h \
 $(srcdir)/Utils/ml_vampir.h \
@@ -469,7 +468,6 @@ $(srcdir)/Utils/ml_twogrid_analysis.c \
 $(srcdir)/Utils/ml_epetra_utils.cpp \
 $(srcdir)/Utils/ml_utils.c             $(srcdir)/Utils/ml_intlist.c \
 $(srcdir)/Utils/ml_vec.c \
-$(srcdir)/Utils/ml_lapack.c \
 $(srcdir)/Utils/ml_memory.c            $(srcdir)/Utils/ml_eigf2c.c \
 $(srcdir)/Utils/ml_agg_info.c \
 $(srcdir)/Utils/ml_viz_opendx.c \
@@ -773,7 +771,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_ifpack_wrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_intlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_krylov.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_lapack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_mapper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_mat_formats.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_matmat_mult.Po@am__quote@
@@ -1728,22 +1725,6 @@ ml_vec.obj: $(srcdir)/Utils/ml_vec.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_vec.Po' tmpdepfile='$(DEPDIR)/ml_vec.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_vec.obj `if test -f '$(srcdir)/Utils/ml_vec.c'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_vec.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_vec.c'; fi`
-
-ml_lapack.o: $(srcdir)/Utils/ml_lapack.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_lapack.o -MD -MP -MF "$(DEPDIR)/ml_lapack.Tpo" -c -o ml_lapack.o `test -f '$(srcdir)/Utils/ml_lapack.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_lapack.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_lapack.Tpo" "$(DEPDIR)/ml_lapack.Po"; else rm -f "$(DEPDIR)/ml_lapack.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utils/ml_lapack.c' object='ml_lapack.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_lapack.Po' tmpdepfile='$(DEPDIR)/ml_lapack.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_lapack.o `test -f '$(srcdir)/Utils/ml_lapack.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_lapack.c
-
-ml_lapack.obj: $(srcdir)/Utils/ml_lapack.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_lapack.obj -MD -MP -MF "$(DEPDIR)/ml_lapack.Tpo" -c -o ml_lapack.obj `if test -f '$(srcdir)/Utils/ml_lapack.c'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_lapack.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_lapack.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_lapack.Tpo" "$(DEPDIR)/ml_lapack.Po"; else rm -f "$(DEPDIR)/ml_lapack.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Utils/ml_lapack.c' object='ml_lapack.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_lapack.Po' tmpdepfile='$(DEPDIR)/ml_lapack.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_lapack.obj `if test -f '$(srcdir)/Utils/ml_lapack.c'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_lapack.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_lapack.c'; fi`
 
 ml_memory.o: $(srcdir)/Utils/ml_memory.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_memory.o -MD -MP -MF "$(DEPDIR)/ml_memory.Tpo" -c -o ml_memory.o `test -f '$(srcdir)/Utils/ml_memory.c' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_memory.c; \

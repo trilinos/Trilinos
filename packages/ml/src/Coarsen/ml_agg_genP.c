@@ -24,6 +24,7 @@ extern int mls_or_gs, mls_order;
 #include "ml_op_utils.h"
 #include "ml_agg_genP.h"
 #include "ml_memory.h"
+#include "ml_lapack.h"
 
 extern int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 						     struct ML_Field_Of_Values * fov );
@@ -190,6 +191,8 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    double dtemp;
    struct ML_Field_Of_Values * fov;
 #endif
+
+   ML_avoid_unused_param(data);
 
    if (ag->nullspace_corrupted == ML_YES) {
      printf("Can not reuse aggregate object when the fine grid operator\n");
@@ -2308,26 +2311,20 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
 int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 {
-   int         Nfine, gNfine;
-   double      max_eigen = -1.;
    ML_Operator *Amat;
-   ML_Operator **prev_P_tentatives;
-   struct      ML_AGG_Matrix_Context widget;
    ML_Aggregate *ag = (ML_Aggregate *) data;
    struct ML_Field_Of_Values * fov;
+#if defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
    double dtemp, dtemp2, eta;
+#endif
 #ifdef ML_TIMING
    double t0;
    t0 =  GetClock();
 #endif
 
-   widget.near_bdry = NULL;
    Amat     = &(ml->Amat[level]);
    Amat->num_PDEs = ag->num_PDE_eqns;
-   prev_P_tentatives = ag->P_tentative;
 
-   Nfine    = Amat->outvec_leng;
-   gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
    ML_Aggregate_Set_CurrentLevel( ag, level );
 
    /* ********************************************************************** */
@@ -2502,20 +2499,13 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      ag->keep_P_tentative = ML_YES;
      ag->use_transpose = ML_TRUE;
 
-     max_eigen = Amat->lambda_max;
      
-   } else {
-
-     /* This is the normal ML way */
-     
-     max_eigen = Amat->lambda_max;
-
    }
    
    ML_AGG_Gen_Prolongator(ml,level,clevel,data);   
    
    return 0;
-   
+           
 }
 
 /* ************************************************************************* */
@@ -2527,15 +2517,12 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
 {
 
   ML_Operator *Amat;
-  ML_Operator **prev_P_tentatives;
   ML_Aggregate *ag = (ML_Aggregate *) data;
 
   struct ML_Field_Of_Values * fov;
   double dtemp, dtemp2, eta;
   char str[80];
 
-  prev_P_tentatives = ag->P_tentative;
-  
   Amat = &(ml->Amat[level]);
 
   if( ag->Restriction_smoothagg_transpose == ML_TRUE ) {
@@ -2635,7 +2622,7 @@ int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
   int **perms;
   double **blockdata;
   char N[2];
-  unsigned int   itmp=0;
+  /*unsigned int   itmp=0;*/
   int info, one = 1;
 
 
@@ -2703,9 +2690,11 @@ int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
      for (i = 0; i < Rtemp->outvec_leng; i++) {
        for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
 	 block  = csr_data->columns[j]/blk_size;
-	 MLFORTRAN(dgetrs)(N,&blk_size,&one,blockdata[block],&blk_size,
+	 /*MLFORTRAN(dgetrs)(N,&blk_size,&one,blockdata[block],&blk_size,*/
+	 DGETRS_F77(N,&blk_size,&one,blockdata[block],&blk_size,
 			   perms[block], &(values[j]),
-			   &blk_size, &info, itmp);
+			   &blk_size, &info);
+			   /*&blk_size, &info, itmp);*/
 	 if ( info != 0 ) {
 	   printf("dgetrs returns with %d at block %d\n",info,i); 
 	   exit(1);

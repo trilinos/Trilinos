@@ -119,7 +119,9 @@
 #endif
 
 #ifdef HAVE_ML_MULTIPLE_RHS
-#define WKC
+#define WKC ML_MULTIPLE_RHS_BLOCK_FACTOR
+#define ML_CPP
+#error "made it here"
 #endif
 
 #ifdef HAVE_ML_FLOPS
