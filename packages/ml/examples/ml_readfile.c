@@ -7,8 +7,10 @@
 
 /*****************************************************************************/
 /* Sample driver for AZTEC/ML package. The software is tested by reading     */ 
-/* input to drive ML from a file (ml_inputfile).                             */
-/*                                                                           */
+/* input to drive ML from a file (ml_inputfile). Matrices can be created     */
+/* by using Aztec's AZ_matrix_capture capability and then running            */
+/* ml/util/az_capt2read.c (see comments for ways using matlab to create      */
+/* matrices).                                                                */ 
 /*****************************************************************************/
 /* Here is a sample input file:
 #
@@ -33,8 +35,8 @@
 #      in Aztec's AZ_read_msr() format) where %d
 #      starts from 0 and increases. Each file
 #      should contain 1 rigid body mode.
-#   9) The utility ml/util/az_capt2read.c can be used
-#      to convert matlab type '*.dat' data into 
+#   9) The utility ml/util/az_capt2read.c (see comments)
+#      can be used to convert matlab/Aztec type data into 
 #      AZ_read_msr() format.
 #
 -----------------------------------------------
