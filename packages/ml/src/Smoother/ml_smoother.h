@@ -96,6 +96,14 @@ struct ML_Sm_ILUT_Data_Struct
    int           fillin;
    double        threshold;
 };
+struct DinvA_widget {
+  int ML_id;
+  int (*internal)(void *, int, double *, int, double *);
+  int (*external)(void *, int, double *, int, double *);
+  void *data;
+  ML_Operator *Amat;
+};
+
 #ifdef out
 #ifdef SUPERLU
 #include "dsp_defs.h"
@@ -285,7 +293,7 @@ extern  int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *,
 #endif
 
 extern  int ML_Smoother_GetOffProcRows(ML_CommInfoOP *, ML_Comm *, 
-                  ML_Operator *,int,int *,int,int *,int *,int **,double **);
+                  ML_Operator *,int,int *,int,int *,int **,double **);
 extern  int ML_Smoother_GetRowLengths(ML_CommInfoOP *, ML_Comm *, 
                   ML_Operator *, int *, int **);
 extern  int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *, ML_Comm *,
@@ -311,6 +319,8 @@ extern int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
 					       int outlen, double rhs[]);
 extern int ML_Smoother_MSR_SGSdamping(void *,int ,double *,int , double *);
 extern void ML_Smoother_Clean_MSR_GS(void *data);
+
+extern int DinvA(void *data,  int in, double p[], int out, double ap[]);
 
 #ifdef __cplusplus
 }

@@ -34,14 +34,19 @@ typedef struct
 }
 MLI_CSRMatrix;
 
-#ifndef ML_MPI
-#define MPI_Comm int
+#ifdef ML_MPI
+#include <mpi.h>
+#define ML_MPI_Request MPI_Request
+#define ML_MPI_Comm    MPI_Comm
+#else
+#define ML_MPI_Request int
+#define ML_MPI_Comm    int
 #endif
 
 typedef struct
 {
     MLI_CSRMatrix  *Amat;
-    MPI_Comm       comm;
+    ML_MPI_Comm    comm;
     int            globalEqns;
     int            *partition;
 }
@@ -49,7 +54,7 @@ MLI_Context;
 
 typedef struct 
 {
-    MPI_Comm     comm;
+    ML_MPI_Comm  comm;
     ML           *ml_ptr;
     int          nlevels;
     int          method;
@@ -79,7 +84,7 @@ typedef struct
 extern "C" {
 #endif
 
-MLI_Solver *MLI_Solver_Create( MPI_Comm );
+MLI_Solver *MLI_Solver_Create( ML_MPI_Comm );
 int  MLI_Solver_Destroy( MLI_Solver * );
 int  MLI_Solver_Setup(MLI_Solver *, double *x );
 int  MLI_Solver_SetupDD(MLI_Solver *,int startRow, int Nrows, int *mat_ia,
@@ -98,21 +103,27 @@ int  MLI_Solver_Set_CoarsenScheme( MLI_Solver *, int );
 int  MLI_Solver_Get_IJAFromFile(MLI_Solver *, char *matfile, char *rhsfile);
 int  MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *, char *rbmfile);
 int MLI_Irecv(void* buf, unsigned int count, int *src, int *mid,
-             MPI_Comm comm, MPI_Request *request );
+             ML_MPI_Comm comm, ML_MPI_Request *request );
 int MLI_SIrecv(void* buf, unsigned int count, int *src, int *mid,
-             MPI_Comm comm, MPI_Request *request );
+             ML_MPI_Comm comm, ML_MPI_Request *request );
 int MLI_Wait(void* buf, unsigned int count, int *src, int *mid,
-             MPI_Comm comm, MPI_Request *request );
+             ML_MPI_Comm comm, ML_MPI_Request *request );
 int MLI_SWait(void* buf, unsigned int count, int *src, int *mid,
-             MPI_Comm comm, MPI_Request *request );
-int MLI_Send(void* buf, unsigned int count, int dest, int mid, MPI_Comm comm );
-int MLI_SSend(void* buf, unsigned int count, int dest, int mid, MPI_Comm comm );
+             ML_MPI_Comm comm, ML_MPI_Request *request );
+int MLI_Send(void* buf, unsigned int count, int dest, int mid, ML_MPI_Comm comm );
+int MLI_SSend(void* buf, unsigned int count, int dest, int mid, ML_MPI_Comm comm );
 int MLI_CSRExchBdry(double *vec, void *obj);
 int MLI_CSRMatVec(void *obj, int leng1, double p[], int leng2, double ap[]);
 int MLI_CSRGetRow(void *obj, int N_requested_rows, int requested_rows[],
     int allocated_space, int columns[], double values[], int row_lengths[]);
 void MLI_Solver_Read_IJAFromFile(double **val, int **ia, int **ja, int *N,
                                 double **rhs, char *matfile, char *rhsfile);
+extern int MLI_Solver_Construct_CSRMatrix(int, int*, int*, double*, 
+                         MLI_CSRMatrix *, MLI_Solver*, int *,MLI_Context*); 
+extern int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, 
+                         int *mat_ja, double *mat_a, MLI_CSRMatrix *mli_mat,
+                         MLI_Solver *solver, int *partition, MLI_Context *obj); 
+
 
 #ifdef __cplusplus
 }

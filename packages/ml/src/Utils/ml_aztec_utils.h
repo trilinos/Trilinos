@@ -192,6 +192,9 @@ extern int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
                              int num_dirichlet_rows);
 extern void AZ_block_matvec(double *, double *, AZ_MATRIX *, int *);
 
+extern int ML_Aggregate_AztecRead(ML_Aggregate *ag);
+
+
 #endif
 
 #ifdef __cplusplus

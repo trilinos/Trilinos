@@ -62,59 +62,7 @@
 #include "ml_gridfunc.h"
 #include "ml_operatoragx.h"
 #include "ml_struct.h"
-
-/* ******************************************************************** */
-/* variable to pass to the local compute_basis_coefficients function    */
-/* ******************************************************************** */
-
-ML_GridFunc  *gridfcns_basis=NULL;
-
-/* ******************************************************************** */
-/* definition of local subroutines                                      */
-/* ******************************************************************** */
-
-void ML_compose_global_grid(     void           *c_grid, 
-                                 ML_GridFunc    *cgrid_fcns,
-                                 ML_GridAGX     **g_c_grid,
-                                 ML_Comm        *comm); 
-void ML_construct_RP0(           void           *c_grid, 
-                                 ML_GridFunc    *cgrid_fcns,
-                                 void           *f_grid, 
-                                 ML_GridFunc    *fgrid_fcns,
-                                 ML_GridAGX     *g_c_grid, 
-                                 ML_OperatorAGX **xsfer_op,
-                                 ML_Comm        *comm); 
-int  ML_remote_grid_candidates(  void           *f_grid, 
-                                 ML_GridFunc    *fgrid_fcns,
-                                 ML_GridFunc    *cgrid_fcns,
-                                 ML_GridAGX     *g_c_grid, 
-                                 ML_IntList     *cand_list, 
-                                 ML_OperatorAGX *xsfer_op,
-                                 ML_Comm        *comm); 
-void ML_exchange_candidates(     ML_IntList     *cand_list, 
-                                 void           *f_grid, 
-                                 ML_GridFunc    *fgrid_fcns,
-                                 ML_GridAGX     *g_c_grid, 
-                                 ML_CommInfoAGX *combuf,
-                                 ML_Comm        *comm);
-void ML_get_basis_functions_coef(ML_CommInfoAGX *combuf, 
-                                 void           *c_grid,
-                                 ML_GridFunc    *cgrid_fcns,
-                                 ML_OperatorAGX *xsfer_op);
-void ML_exchange_coefficients(   void           *c_grid,
-                                 ML_GridFunc    *cgrid_fcns,
-                                 ML_GridAGX     *g_c_grid, 
-                                 ML_CommInfoAGX *combuf, 
-                                 ML_OperatorAGX *xsfer_op,
-                                 ML_Comm        *comm);
-void ML_construct_RP1(           void           *fgrid,
-                                 ML_GridFunc    *fgrid_fcns,
-                                 void           *cgrid,
-                                 ML_GridFunc    *cgrid_fcns,
-                                 ML_GridAGX     *g_c_grid,
-                                 ML_CommInfoAGX *combuf,
-                                 ML_OperatorAGX *xsfer_op,
-                                 ML_Comm        *comm);
+#include "ml_setup.h"
 
 /* *********************************************************************** */
 /* ML_setup : Given a fine grid f_grid and a coarse grid c_grid, set up    */
@@ -222,7 +170,7 @@ void ML_setup_grid_xsfer_op(void *f_grid, ML_GridFunc *fgrid_fcns,
 
    checkpt = ML_Comm_GmaxInt( comm, checkpt ); 
    if ( mypid == 0 ) printf("Exchanging coefficients ... \n" );
-   ML_exchange_coefficients( c_grid, cgrid_fcns, g_c_grid, comm_info, 
+   ML_exchange_coefficients( c_grid, cgrid_fcns, comm_info, 
                              xsfer_op, comm );
 
    /* -------------------------------------------------------------------- */
@@ -1629,7 +1577,7 @@ void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid,
 /* *********************************************************************** */
 
 void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
-                              ML_GridAGX *g_c_grid, ML_CommInfoAGX *combuf, 
+                              ML_CommInfoAGX *combuf, 
                               ML_OperatorAGX  *xsfer_op, ML_Comm *comm)
 {
    int     i, j, k, sendproc_cnt, recvproc_cnt, tot_recv_leng;
@@ -2508,7 +2456,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    oper->outvec_leng = cnvert;
    xsfer_op->AGX_stride = 1;
    ML_OperatorAGX_Restrict( (void*) oper, fnvert, ext_a, cnvert, ext2_a);
-   free( oper );
+   ML_free( oper );
 
    /* ------------------------------------------------------------*/ 
    /* check normalization factors                                 */

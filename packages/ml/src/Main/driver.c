@@ -1,7 +1,9 @@
-#ifdef ML_MPI
-#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "ml_utils.h"
+
+#ifdef ML_MPI
+#include <mpi.h>
 #include "ml_include.h"
 
 void main(int argc, char *argv[])
@@ -58,9 +60,12 @@ void main(int argc, char *argv[])
 }
 #else
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
    printf("No main program.\n");
+   ML_avoid_unused_param(&argc);
+   ML_avoid_unused_param(argv);
+   return 0;
 }
 #endif
 

@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 #include "ml_struct.h"
 
 /*********************************************************************/
@@ -271,7 +272,10 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
    if (input_matrix->getrow->row_map != NULL) {
       if (input_matrix->getrow->row_map[row] != -1) 
          row = input_matrix->getrow->row_map[row];
-      else { row_lengths[0] = 0; return;}
+      else { 
+	row_lengths[0] = 0; 
+	ML_avoid_unused_param( (void *) &N_requested_rows);
+	return;}
    }
 
    next = input_matrix->sub_matrix;
@@ -349,7 +353,9 @@ void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
    if (input_matrix->getrow->row_map != NULL) {
       if (input_matrix->getrow->row_map[row] != -1) 
          row = input_matrix->getrow->row_map[row];
-      else { row_lengths[0] = 0; return;}
+      else { row_lengths[0] = 0; 
+	ML_avoid_unused_param( (void *) &N_requested_rows);
+	return;}
    }
 
    next = input_matrix->sub_matrix;
@@ -454,6 +460,7 @@ void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, int N_requested_rows,
          printf("Not enough space to get a matrix row. A row length of \n");
          printf("%d was not sufficient\n",(*allocated_space-1)/2);
 	 fflush(stdout);
+	 ML_avoid_unused_param( (void *) &N_requested_rows);
          exit(1);
       }
       for (i = 0; i < index; i++) t1[i] = (*columns)[i];

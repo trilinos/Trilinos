@@ -10,6 +10,7 @@
 /* Date          : December, 1999                                       */
 /* ******************************************************************** */
 
+#include <stdlib.h>
 #include "ml_krylov.h"
 
 /* ******************************************************************** */
@@ -51,7 +52,7 @@ int ML_Krylov_Destroy( ML_Krylov **data)
       printf("ML_Krylov_Destroy error : wrong object.\n");
       exit(-1);
    }
-   if ( (*data)->diag_scale != NULL ) free((*data)->diag_scale);
+   if ( (*data)->diag_scale != NULL ) ML_free((*data)->diag_scale);
    ML_memory_free((void**) data);
    return 0;
 }

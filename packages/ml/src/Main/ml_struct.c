@@ -9,6 +9,7 @@
 /* ************************************************************************* */
 /* ************************************************************************* */
 
+#include <stdlib.h>
 #include <math.h>
 #include <assert.h>
 #include "ml_lapack.h"
@@ -17,6 +18,7 @@
 #include "ml_amg_genP.h"
 #include "ml_smoother.h"
 #include "ml_op_utils.h"
+#include "ml_aztec_utils.h"
 #ifdef ML_MPI
 #include "mpi.h"
 #endif
@@ -904,9 +906,6 @@ int ML_Gen_Smoother_GaussSeidel( ML *ml , int nl, int pre_or_post, int ntimes,
 /* ------------------------------------------------------------------------- */
 /* generate the symmetric Gauss Seidel smoother                              */
 /* ------------------------------------------------------------------------- */
-#ifdef AZTEC
-extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
-#endif
 
 int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post, 
                                    int ntimes, double omega)
@@ -1517,11 +1516,11 @@ int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
 
    ML_Smoother_ILUTDecomposition(data,Amat,comm,total_recv_leng,recv_lengths, 
                                  int_buf, dble_buf, map, map2, offset);
-   if ( map  != NULL ) free(map);
-   if ( map2 != NULL ) free(map2);
-   if ( int_buf != NULL ) free(int_buf);
-   if ( dble_buf != NULL ) free(dble_buf);
-   if ( recv_lengths != NULL ) free(recv_lengths);
+   if ( map  != NULL ) ML_free(map);
+   if ( map2 != NULL ) ML_free(map2);
+   if ( int_buf != NULL ) ML_free(int_buf);
+   if ( dble_buf != NULL ) ML_free(dble_buf);
+   if ( recv_lengths != NULL ) ML_free(recv_lengths);
 
    /* ---------------------------------------------------------------- */
    /* set it up as smoother                                            */
@@ -1627,11 +1626,11 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
 
    ML_Smoother_VBlockSchwarzDecomposition(data,Amat,comm,total_recv_leng,
               recv_lengths, int_buf, dble_buf, map, map2, offset);
-   if ( map  != NULL ) free(map);
-   if ( map2 != NULL ) free(map2);
-   if ( int_buf != NULL ) free(int_buf);
-   if ( dble_buf != NULL ) free(dble_buf);
-   if ( recv_lengths != NULL ) free(recv_lengths);
+   if ( map  != NULL ) ML_free(map);
+   if ( map2 != NULL ) ML_free(map2);
+   if ( int_buf != NULL ) ML_free(int_buf);
+   if ( dble_buf != NULL ) ML_free(dble_buf);
+   if ( recv_lengths != NULL ) ML_free(recv_lengths);
 
    /* ---------------------------------------------------------------- */
    /* set it up as smoother                                            */
@@ -1736,11 +1735,11 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
 
    ML_Smoother_VBlockSchwarzDecomposition(data,Amat,comm,total_recv_leng,
               recv_lengths, int_buf, dble_buf, map, map2, offset);
-   if ( map  != NULL ) free(map);
-   if ( map2 != NULL ) free(map2);
-   if ( int_buf != NULL ) free(int_buf);
-   if ( dble_buf != NULL ) free(dble_buf);
-   if ( recv_lengths != NULL ) free(recv_lengths);
+   if ( map  != NULL ) ML_free(map);
+   if ( map2 != NULL ) ML_free(map2);
+   if ( int_buf != NULL ) ML_free(int_buf);
+   if ( dble_buf != NULL ) ML_free(dble_buf);
+   if ( recv_lengths != NULL ) ML_free(recv_lengths);
 
    /* ---------------------------------------------------------------- */
    /* set it up as smoother                                            */
@@ -2239,6 +2238,16 @@ for (j = 0; j < row_length; j++)
    return(status);
 #else
    printf("ParaSails not linked\n");
+   ML_avoid_unused_param((void *) ml);
+   ML_avoid_unused_param((void *) &nl);
+   ML_avoid_unused_param((void *) &pre_or_post);
+   ML_avoid_unused_param((void *) &ntimes);
+   ML_avoid_unused_param((void *) &sym);
+   ML_avoid_unused_param((void *) &thresh);
+   ML_avoid_unused_param((void *) &num_levels);
+   ML_avoid_unused_param((void *) &filter);
+   ML_avoid_unused_param((void *) &parasails_loadbal);
+   ML_avoid_unused_param((void *) &parasails_factorized);
    return(1);
 #endif
 }
@@ -2369,7 +2378,7 @@ int ML_Set_BoundaryTypes(ML *ml, int level, int type, int n, int *data)
 /* ------------------------------------------------------------------------- */
 
 int ML_Set_EqnToGridMapFunc(ML *ml, int level, int fleng, int tleng, 
-                           void *data, int (*func)(void*,double*,double*) )
+                            int (*func)(void*,double*,double*) )
 {
    ML_Mapper_SetFunc( ml->SingleLevel[level].eqn2grid,fleng,tleng,func);
    ML_Mapper_SetData( ml->SingleLevel[level].eqn2grid, 
@@ -2378,7 +2387,7 @@ int ML_Set_EqnToGridMapFunc(ML *ml, int level, int fleng, int tleng,
 }
 
 int ML_Set_GridToEqnMapFunc(ML *ml, int level, int fleng, int tleng, 
-                           void *data, int (*func)(void*,double*,double*) )
+                            int (*func)(void*,double*,double*) )
 {
    ML_Mapper_SetFunc( ml->SingleLevel[level].grid2eqn,fleng,tleng,func);
    ML_Mapper_SetData( ml->SingleLevel[level].grid2eqn,
@@ -2567,7 +2576,7 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
          for ( j = 0; j < leng2; j++ ) 
             if ( dtmp2[j] == 1.0 ) itmp3[leng1++] = j;
          ML_BdryPts_Load_Dirichlet_Eqn(current_level->BCs, leng1, itmp3);
-         free( itmp3 );
+         ML_free( itmp3 );
       } else {
          ML_BdryPts_Copy_Dirichlet_GridToEqn(current_level->BCs);
       }    
@@ -2794,7 +2803,7 @@ scales = NULL;
    ML_Cycle_MGFull(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
                 ML_ZERO, ml->comm, ML_NO_RES_NORM,ml);
 
-   free(din_temp);
+   ML_free(din_temp);
    return 0;
 }
 
@@ -2812,7 +2821,11 @@ int ML_Solve_Smoother(void *data, int isize, double *x, int osize, double *rhs)
    n = ml->Amat[0].invec_leng;
    tmp  = (double *) ML_allocate(n*sizeof(double));
    res  = (double *) ML_allocate(n*sizeof(double));
-   if (res == NULL) pr_error("swillie: out of space\n");
+   if (res == NULL) {
+     pr_error("swillie: out of space\n");
+     ML_avoid_unused_param((void *) &isize);
+     ML_avoid_unused_param((void *) &osize);
+   }
 
    ML_Operator_Apply(&(ml->Amat[0]), n, x, n, res);
    for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
@@ -2888,7 +2901,7 @@ scales = NULL;
    ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
                 ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
 
-   free(din_temp);
+   ML_free(din_temp);
    return 0;
 }
 
@@ -2946,7 +2959,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)==0)
          {
             allocated_space = 2*allocated_space + 1;
-            free(vals); free(cols);
+            ML_free(vals); ML_free(cols);
             cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
             vals = (double *) ML_allocate(allocated_space*sizeof(double));
             if (vals == NULL) {
@@ -2988,7 +3001,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhss[i] - res[i];
          res_norm = sqrt(ML_gdot(lengf, res, res, comm));
-         free(res);
+         ML_free(res);
       }
    }
    else {
@@ -3021,7 +3034,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
                   == 0)
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols);
+               ML_free(vals); ML_free(cols);
                cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
                vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
@@ -3059,7 +3072,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
                   == 0)
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols);
+               ML_free(vals); ML_free(cols);
                cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
                vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
@@ -3071,7 +3084,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
             for (j = 0; j < ncols; j++)
                squareA[cols[j]*Nrows+i] = vals[j];
          }
-         free(cols); free(vals);
+         ML_free(cols); ML_free(vals);
          eig = (double *) ML_allocate( Nrows * sizeof(double) );
          work = (double *) ML_allocate( 4 * Nrows * sizeof(double) );
          lwork = 4 * Nrows;
@@ -3093,9 +3106,9 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
                fprintf(fp, "%25.16e\n",squareA[i]);
             fclose(fp);
          }
-         free(squareA);
-         free(eig);
-         free(work);
+         ML_free(squareA);
+         ML_free(eig);
+         ML_free(work);
          fp = fopen("mlmatlab.m", "w");
          fprintf(fp, "res = [\n");
          for (i=0; i<Nrows; i++)
@@ -3139,7 +3152,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          dtmp = (double *) ML_allocate( lengf * sizeof( double ) );
          ML_Mapper_Apply(curr->eqn2grid, res, dtmp );
          for ( i = 0; i < lengf; i++ ) res[i] = dtmp[i];
-         free( dtmp );
+         ML_free( dtmp );
       }
       ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, res, lengc, rhs2);
       if ( ML_Mapper_Check(Rmat->to->grid2eqn) == 1 )
@@ -3147,7 +3160,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          dtmp = (double *) ML_allocate( lengc * sizeof( double ) );
          ML_Mapper_Apply(Rmat->to->grid2eqn, rhs2, dtmp );
          for ( i = 0; i < lengc; i++ ) rhs2[i] = dtmp[i];
-         free( dtmp );
+         ML_free( dtmp );
       }
       ML_DVector_GetDataPtr(Rmat->to->Amat_Normalization,&normalscales);
       if ( normalscales != NULL )
@@ -3169,7 +3182,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          dtmp = (double *) ML_allocate( lengc * sizeof( double ) );
          ML_Mapper_Apply(Rmat->to->eqn2grid, sol2, dtmp);
          for ( i = 0; i < lengc; i++ ) sol2[i] = dtmp[i];
-         free( dtmp );
+         ML_free( dtmp );
       }
       ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat,lengc,sol2,lengf,res);
       if ( ML_Mapper_Check(curr->grid2eqn) == 1 )
@@ -3177,7 +3190,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          dtmp = (double *) ML_allocate( lengf * sizeof( double ) );
          ML_Mapper_Apply(curr->grid2eqn, res, dtmp);
          for ( i = 0; i < lengf; i++ ) res[i] = dtmp[i];
-         free( dtmp );
+         ML_free( dtmp );
       }
 
       /* --------------------------------------------------------- */
@@ -3206,7 +3219,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
                   == 0)
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols);
+               ML_free(vals); ML_free(cols);
                cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
                vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
@@ -3269,7 +3282,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
                   == 0)
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols);
+               ML_free(vals); ML_free(cols);
                cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
                vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
@@ -3359,7 +3372,7 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
          dtmp = (double *) ML_allocate( lengf * sizeof( double ) );
          ML_Mapper_Apply(curr->eqn2grid, res, dtmp );
          for ( i = 0; i < lengf; i++ ) res[i] = dtmp[i];
-         free( dtmp );
+         ML_free( dtmp );
       }
       ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, res, lengc, rhs2);
       if ( ML_Mapper_Check(Rmat->to->grid2eqn) == 1 )
@@ -3367,7 +3380,7 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
          dtmp = (double *) ML_allocate( lengc * sizeof( double ) );
          ML_Mapper_Apply(Rmat->to->grid2eqn, rhs2, dtmp );
          for ( i = 0; i < lengc; i++ ) rhs2[i] = dtmp[i];
-         free( dtmp );
+         ML_free( dtmp );
       }
       ML_DVector_GetDataPtr(Rmat->to->Amat_Normalization,&normalscales);
       if ( normalscales != NULL )
@@ -3386,7 +3399,7 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
          dtmp = (double *) ML_allocate( lengc * sizeof( double ) );
          ML_Mapper_Apply(Rmat->to->eqn2grid, sol2, dtmp);
          for ( i = 0; i < lengc; i++ ) sol2[i] = dtmp[i];
-         free( dtmp );
+         ML_free( dtmp );
       }
       ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat,lengc,sol2,lengf,res);
       if ( ML_Mapper_Check(curr->grid2eqn) == 1 )
@@ -3394,16 +3407,16 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
          dtmp = (double *) ML_allocate( lengf * sizeof( double ) );
          ML_Mapper_Apply(curr->grid2eqn, res, dtmp);
          for ( i = 0; i < lengf; i++ ) res[i] = dtmp[i];
-         free( dtmp );
+         ML_free( dtmp );
       }
 
       for ( i = 0; i < lengf; i++ ) sol[i] += res[i];
-      free(sol2);
-      free(rhs2);
-      free(res);
+      ML_free(sol2);
+      ML_free(rhs2);
+      ML_free(res);
       approx_all_zeros = ML_NONZERO;
    }
-   free(rhss);
+   ML_free(rhss);
    res_norm = ML_Cycle_MG(curr,sol,rhs,approx_all_zeros,comm,res_norm_or_not, ml);
 
    return(res_norm);
@@ -3657,7 +3670,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)==0) 
          {
             allocated_space = 2*allocated_space + 1;
-            free(vals); free(cols);
+            ML_free(vals); ML_free(cols);
             cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
             vals = (double *) ML_allocate(allocated_space*sizeof(double));
             if (vals == NULL) {
@@ -3669,8 +3682,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          for (j = 0; j < ncols; j++)
             fprintf(fp, "A(%d,%d)=%25.16e;\n",i+1,cols[j]+1,vals[j]);
       }
-      free(cols);
-      free(vals);
+      ML_free(cols);
+      ML_free(vals);
       fprintf(fp, "[eigv,eig]=eig(full(A));\n");
       fprintf(fp, "rhs=zeros(%d,1);\n", Nrows);
       for (j = 0; j < Nrows; j++)
@@ -3703,7 +3716,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhs[i] - res[i];
          res_norm = sqrt(ML_gdot(lengf, res, res, comm));
-         free(res);
+         ML_free(res);
       }
    }
    else 
@@ -3738,7 +3751,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
                   == 0) 
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols);
+               ML_free(vals); ML_free(cols);
                cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
                vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
@@ -3777,7 +3790,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
                   == 0) 
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols);
+               ML_free(vals); ML_free(cols);
                cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
                vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
@@ -3789,7 +3802,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
             for (j = 0; j < ncols; j++)
                squareA[cols[j]*Nrows+i] = vals[j];
          }
-         free(cols); free(vals);
+         ML_free(cols); ML_free(vals);
          eig = (double *) ML_allocate( Nrows * sizeof(double) );
          work = (double *) ML_allocate( 4 * Nrows * sizeof(double) );
          lwork = 4 * Nrows;
@@ -3814,9 +3827,9 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
                fprintf(fp, "%25.16e\n",squareA[i]);
             fclose(fp);
          }
-         free(squareA);
-         free(eig);
-         free(work);
+         ML_free(squareA);
+         ML_free(eig);
+         ML_free(work);
          fp = fopen("mlmatlab.m", "w");
          fprintf(fp, "res = [\n");
          for (i=0; i<Nrows; i++) 
@@ -3894,7 +3907,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
                   == 0) 
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols);
+               ML_free(vals); ML_free(cols);
                cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
                vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
@@ -3932,8 +3945,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
       if (comm->ML_mypid == 0) printf("|R r| = %e, |r| =  %e\n",norm1, norm2);
 
 #endif
-      if ( lengc > 0 ) free(sol2);
-      if ( lengc > 0 ) free(rhs2);
+      if ( lengc > 0 ) ML_free(sol2);
+      if ( lengc > 0 ) ML_free(rhs2);
 
       ML_Smoother_Apply(post, lengf, sol, lengf, rhs, ML_NONZERO);
 
@@ -3953,7 +3966,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
                   == 0) 
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols);
+               ML_free(vals); ML_free(cols);
                cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
                vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL) {
@@ -3965,7 +3978,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
             for (j = 0; j < ncols; j++)
                fprintf(fp, "A(%d,%d)=%25.16e;\n",i+1,cols[j]+1,vals[j]);
          }
-         free(cols); free(vals);
+         ML_free(cols); ML_free(vals);
          fprintf(fp, "[eigv,eig]=eig(full(A));\n");
          fprintf(fp, "rhs=zeros(%d,1);\n", Nrows);
          for (j = 0; j < ncols; j++)
@@ -3980,7 +3993,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          scanf("%s", instring);
      }
 #endif
-      free(res);
+      ML_free(res);
    }
    return(res_norm);
 }
@@ -4261,10 +4274,10 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 
    csr2_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
-   free(row_ptr);
-   free(cols);
-   free(vals);
-   free(csr_mat);
+   ML_free(row_ptr);
+   ML_free(cols);
+   ML_free(vals);
+   ML_free(csr_mat);
 
    /* Throw away some information to make it cheaper for LU. We do this   */ 
    /* by using metis to generate some blocks and factor the block matrix. */
@@ -4286,7 +4299,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
                              subml->Amat[0].outvec_leng, CSR_getrows);
       ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
       ML_Destroy(&subml);
-      free(temp_ptr);
+      ML_free(temp_ptr);
       for (i = 0; i < nrows; i++) {
          me = block_list[i];
          for (j = mat_ia[i]; j < mat_ia[i+1]; j++) {
@@ -4417,7 +4430,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    ML_memory_free( (void **) &mat_ia );
    ML_memory_free( (void **) &mat_ja );
    ML_memory_free( (void **) &mat_val ); */
-   free(csr2_mat);
+   ML_free(csr2_mat);
 #ifdef ML_TIMING
    sl->csolve->build_time = GetClock() - t0;
    ml_handle->timing->total_build_time += sl->csolve->build_time;
@@ -4516,10 +4529,10 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 
    csr2_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
-   free(cols);
-   free(vals);
-   free(row_ptr);
-   free(csr_mat);
+   ML_free(cols);
+   ML_free(vals);
+   ML_free(row_ptr);
+   ML_free(csr_mat);
 
    /* Throw away some information to make it cheaper for LU. We do this   */ 
    /* by using metis to generate some blocks and factor the block matrix. */
@@ -4542,7 +4555,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       ML_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
       ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
       ML_Destroy(&subml);
-      free(temp_ptr);
+      ML_free(temp_ptr);
       for (i = 0; i < nrows; i++) {
          me = block_list[i];
          for (j = mat_ia[i]; j < mat_ia[i+1]; j++) {
@@ -4699,7 +4712,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    ML_memory_alloc( (void **) &A, sizeof(SuperMatrix), "KLJ" );
    dCreate_CompCol_Matrix(A,nrows,nrows,nnz,mat_val,mat_ja,mat_ia,NC,_D,GE);
    solver->Mat1 = (void *) A;
-   free(csr2_mat);
+   ML_free(csr2_mat);
 #else
    printf("ML : SuperLU not linked.\n");
 #endif
@@ -4739,6 +4752,8 @@ int ML_Print_Timing(ML *ml)
    if (t2 != 0.0) printf(" Time to build kernels        (average) = %e\n",t2);
    if (t4 != 0.0) printf(" Time to build kernels        (maximum) = %e\n",t4);
    if (t6 != 0.0) printf(" Time to build kernels        (minimum) = %e\n",t6);
+#else
+   if (ml != NULL) ML_avoid_unused_param((void *) ml);
 #endif
    return(0);
 }
@@ -4908,8 +4923,8 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
          dsize = 1.2*dsize/di;
          space = (int) ( ((double) space)*dsize);
          space++;
-         free(vals);
-         free(cols);
+         ML_free(vals);
+         ML_free(cols);
       }
    }
    csr_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
@@ -4926,10 +4941,10 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
    ML_memory_alloc((void**) &csr2_mat, sizeof(ML_Matrix_DCSR), "DCR");
    ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
    csr2_mat->comminfo = NULL;
-   free(cols);
-   free(vals);
-   free(row_ptr);
-   free(csr_mat);
+   ML_free(cols);
+   ML_free(vals);
+   ML_free(row_ptr);
+   ML_free(csr_mat);
 
    /* ----------------------------------------------------------------- */
    /* set Aggregation as solver                                         */
@@ -5012,7 +5027,7 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
       }
    }
    ML_Set_Amatrix_Diag( local_ml, local_nlevels-1, N_local, diagonal);
-   free( diagonal );
+   ML_free( diagonal );
    ML_Aggregate_Create( &newag );
    if (ml_handle->comm->ML_mypid == 0) ML_Aggregate_Set_OutputLevel(newag,1);
    else                                ML_Aggregate_Set_OutputLevel(newag,0);

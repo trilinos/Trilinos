@@ -51,12 +51,11 @@
 /*   - sparse approximate inverse                                            */
 /* ************************************************************************* */
 
+#include <stdlib.h>
 #include "ml_smoother.h"
 #include "ml_lapack.h"
 #include "ml_utils.h"
-#ifdef AZTEC
-extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
-#endif
+#include "ml_aztec_utils.h"
 
 #ifdef out
 /* ************************************************************************* */
@@ -374,8 +373,11 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
 
    omega = smooth_ptr->omega;
    Amat = smooth_ptr->my_level->Amat;
-   if (Amat->matvec->ML_id == ML_EMPTY) 
+   if (Amat->matvec->ML_id == ML_EMPTY) {
          pr_error("Error(ML_Jacobi): Need matvec\n");
+	 ML_avoid_unused_param((void *) &inlen);
+	 ML_avoid_unused_param((void *) &outlen);
+   }
 
    /* ----------------------------------------------------------------- */
    /* extract diagonal using getrow function if not found               */
@@ -500,8 +502,10 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
    Nrows = Amat->getrow->Nrows;
    omega = smooth_ptr->omega;
 
-   if (Amat->getrow->ML_id == ML_EMPTY) 
+   if (Amat->getrow->ML_id == ML_EMPTY) {
       pr_error("Error(ML_GaussSeidel): Need getrow() for GS smoother\n");
+      ML_avoid_unused_param((void *) &outlen);
+   }
 
    allocated_space = Amat->max_nz_per_row+2;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
@@ -612,8 +616,10 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    ilut_data  = smooth_ptr->smoother->data;
 #endif
 
-   if (Amat->getrow->ML_id == ML_EMPTY) 
+   if (Amat->getrow->ML_id == ML_EMPTY) {
       pr_error("Error(ML_SGS): Need getrow() for SGS smoother\n");
+      ML_avoid_unused_param((void *) &outlen);
+   }
 
    /* ----------------------------------------------------------------- */
    /* if matrix not found, get it (more efficient implementation, but   */
@@ -1694,8 +1700,10 @@ int ML_Smoother_SGSSequential(void *sm,int inlen,double x[],int outlen,
    mypid      = comm->ML_mypid;
    Nrows      = Amat->getrow->Nrows;
 
-   if (Amat->getrow->ML_id == ML_EMPTY)
+   if (Amat->getrow->ML_id == ML_EMPTY) {
       pr_error("Error(ML_SGSSequential): Need getrow() for SGS smoother\n");
+      ML_avoid_unused_param((void *) &outlen);
+   }
 
    allocated_space = Amat->max_nz_per_row+2;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
@@ -1825,8 +1833,10 @@ int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
    blocksize=dataptr->blocksize;
    Nblocks=Nrows/blocksize;
 
-   if (Amat->getrow->ML_id == ML_EMPTY) 
+   if (Amat->getrow->ML_id == ML_EMPTY) {
       pr_error("Error(ML_blockGaussSeidel): Need getrow() for smoother\n");
+      ML_avoid_unused_param((void *) &outlen);
+   }
 
    allocated_space = Amat->max_nz_per_row+2;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
@@ -1949,8 +1959,11 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    comm          = smooth_ptr->my_level->comm;
    Amat          = smooth_ptr->my_level->Amat;
    omega         = smooth_ptr->omega;
-   if (Amat->getrow->ML_id == ML_EMPTY) 
+   if (Amat->getrow->ML_id == ML_EMPTY) {
       pr_error("Error(ML_VBlockJacobi): Need getrow() for smoother\n");
+      ML_avoid_unused_param((void *) &outlen);
+   }
+
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for VBJacobi smoother\n");
    Nrows         = Amat->getrow->Nrows;
@@ -2139,8 +2152,11 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
    comm          = smooth_ptr->my_level->comm;
    Amat          = smooth_ptr->my_level->Amat;
    omega         = smooth_ptr->omega;
-   if (Amat->getrow->ML_id == ML_EMPTY) 
+   if (Amat->getrow->ML_id == ML_EMPTY) {
       pr_error("Error(ML_VBlockSymGS): Need getrow() for smoother\n");
+      ML_avoid_unused_param((void *) &outlen);
+   }
+
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for VBSymGS smoother\n");
    Nrows         = Amat->getrow->Nrows;
@@ -2343,8 +2359,11 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
    comm          = smooth_ptr->my_level->comm;
    Amat          = smooth_ptr->my_level->Amat;
    omega         = smooth_ptr->omega;
-   if (Amat->getrow->ML_id == ML_EMPTY) 
+   if (Amat->getrow->ML_id == ML_EMPTY) {
       pr_error("Error(ML_VBlockSymGSSeq): Need getrow() for smoother\n");
+      ML_avoid_unused_param((void *) &outlen);
+   }
+
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for VBSGSSeq smoother\n");
    Nrows         = Amat->getrow->Nrows;
@@ -2556,6 +2575,7 @@ int ML_Smoother_VBlockKrylovJacobi(void *sm,int inlen,double x[],int outlen,
    ML_Smoother    *smooth_ptr;
    ML_Krylov      *ml_kry;
 
+   if (outlen == - 47) ML_avoid_unused_param((void *) &outlen);
    smooth_ptr = (ML_Smoother *) sm;
    comm       = smooth_ptr->my_level->comm;
    Amat       = smooth_ptr->my_level->Amat;
@@ -3416,13 +3436,13 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
    if ( ml_data->perm_c != NULL )
    {
       for ( i = 0; i < ml_data->nblocks; i++ )
-         if ( ml_data->perm_c[i] ) free (ml_data->perm_c[i]);
+         if ( ml_data->perm_c[i] ) ML_free(ml_data->perm_c[i]);
       ML_free( ml_data->perm_c );
    }
    if ( ml_data->perm_r != NULL )
    {
       for ( i = 0; i < ml_data->nblocks; i++ )
-         if ( ml_data->perm_r[i] ) free (ml_data->perm_r[i]);
+         if ( ml_data->perm_r[i] ) ML_free(ml_data->perm_r[i]);
       ML_free( ml_data->perm_r );
    }
 #endif
@@ -4286,7 +4306,7 @@ int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *Amat, ML_Comm *comm,
                              recv_lengths); 
    ML_Smoother_GetOffProcRows(getrow_comm, comm, Amat, *total_recv_leng, 
                               *recv_lengths, NrowsOffset, index_array,
-                              index_array2, int_buf, dble_buf); 
+                               int_buf, dble_buf); 
 
    ML_free(proc_array);
    ML_az_sort(index_array, extNrows-Nrows, index_array2, NULL);
@@ -4403,7 +4423,7 @@ int ML_Smoother_GetRowLengths(ML_CommInfoOP *comm_info, ML_Comm *comm,
 
 int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm, 
                            ML_Operator *Amat, int leng, int *recv_leng,
-                           int Noffset, int *map, int *map2, int **int_buf, 
+                           int Noffset, int *map, int **int_buf, 
                            double **dble_buf)
 {
    int     N_neighbors, *neighbors, total_recv, mtype, msgtype, proc_id;
@@ -4628,6 +4648,8 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
 
 #ifdef ML_DEBUG_SMOOTHER
    mypid       = comm->ML_mypid;
+#else
+   if (Noffset == -47) ML_avoid_unused_param((void *) comm);
 #endif
    ilut_ptr    = (ML_Sm_ILUT_Data *) data;
    fillin      = ilut_ptr->fillin;
@@ -5637,6 +5659,7 @@ int ML_Smoother_MSR_SGS(void *sm,int inlen,double x[],int outlen,double rhs[])
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
+      if (inlen == -47) ML_avoid_unused_param((void *) &outlen);
    }
 #ifdef AZTEC
    else AZ_get_MSR_arrays(Amat, &bindx, &val);
@@ -5748,6 +5771,7 @@ extra  = (int *) data[3];
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
+      if (inlen == -47) ML_avoid_unused_param((void *) &outlen);
    }
 #ifdef AZTEC
    else AZ_get_MSR_arrays(Amat, &bindx, &val);
@@ -5900,6 +5924,7 @@ int ML_Smoother_BackGS(void *sm,int inlen,double x[],int outlen,double rhs[])
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
+      if (inlen == -47) ML_avoid_unused_param((void *) &outlen);
    }
 #ifdef AZTEC
    else AZ_get_MSR_arrays(Amat, &bindx, &val);
@@ -6015,6 +6040,7 @@ int ML_Smoother_OrderedSGS(void *sm,int inlen,double x[],int outlen,
       ptr   = (struct ML_CSR_MSRdata *) Amat->data;
       val   = ptr->values;
       bindx = ptr->columns;
+      if (inlen == -47) ML_avoid_unused_param((void *) &outlen);
    }
 #ifdef AZTEC
    else AZ_get_MSR_arrays(Amat, &bindx, &val);
@@ -6336,14 +6362,6 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
 
     return 0; 
 }
-struct DinvA_widget {
-  int ML_id;
-  int (*internal)(void *, int, double *, int, double *);
-  int (*external)(void *, int, double *, int, double *);
-  void *data;
-  ML_Operator *Amat;
-};
-extern int DinvA(void *data,  int in, double p[], int out, double ap[]);
 int DinvA(void *data,  int in, double p[], int out, double ap[])
 {
   void *olddata;
@@ -6393,6 +6411,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 #endif
    n = outlen;
    widget = (struct MLSthing *) smooth_ptr->smoother->data;
+   if (outlen == -47) ML_avoid_unused_param((void *) &inlen);
 
    deg    = widget->mlsDeg;
    mlsCf  = widget->mlsCf;
@@ -6760,6 +6779,7 @@ ML *ML_Smoother_Get_Hiptmair_nodal(ML *ml, int level, int pre_or_post)
 
   if (level == ML_ALL_LEVELS) {
     printf("ML_Smoother_Get_Hiptmair_nodal: ML_ALL_LEVELS not supported.\n");
+    ML_avoid_unused_param((void *) &pre_or_post);
     exit(1);
   }
   if (ml == NULL) {
@@ -7034,7 +7054,10 @@ double tmp;
    dk     = (double *) ML_allocate((n+1)*sizeof(double));
 
    if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
-   if (dk    == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+   if (dk    == NULL) {
+     pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+     ML_avoid_unused_param((void *) &inlen);
+   }
 
    beta = 1.1*Amat->lambda_max;   /* try and bracket high */
    alpha = Amat->lambda_max/(widget->eig_ratio);
@@ -7402,7 +7425,10 @@ int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
   dk     = (double *) ML_allocate(2*(n+1)*sizeof(double));
 
   if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
-  if (dk    == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+  if (dk    == NULL) {
+    pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+    ML_avoid_unused_param((void *) &inlen);
+  }
 
   beta_real = 1.1*widget->beta_real;   /* try and bracket high */
   beta_img  = 1.1*widget->beta_img;    /* frequency errors.    */

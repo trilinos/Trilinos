@@ -62,6 +62,15 @@ extern void ML_matmat_mult(ML_Operator *Amat, ML_Operator *Bmat,
 extern void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
 			ML_Operator *Result, int matrix_type);
 
+extern void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
+			      ML_Operator **Cmatrix);
+extern void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
+        int requested_rows[], int *allocated_space, int **columns,
+        double **values, int row_lengths[], int index);
+extern void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, 
+        int N_requested_rows, int requested_rows[], int *allocated_space, 
+        int **columns, double **values, int row_lengths[], int index);
+
 extern void ML_getrow_matvec(ML_Operator *matrix, double *vec, 
                              int Nvec, double *ovec, int *Novec);
 
@@ -77,14 +86,6 @@ extern void ML_set_message_info(int N_external, int external[],
                                 int max_per_proc, ML_Operator *omatrix);
 
 extern void ML_sum_duplicates(int accum_col[],double accum_val[],int *Ncols);
-
-extern void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
-        int requested_rows[], int *allocated_space, int **columns,
-        double **values, int row_lengths[], int index);
-
-extern void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, 
-        int N_requested_rows, int requested_rows[], int *allocated_space, 
-        int **columns, double **values, int row_lengths[], int index);
 
 extern int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
 		       int *rows[], int *rows_length, int *NBrows,

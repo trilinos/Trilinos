@@ -11,6 +11,7 @@
 /* ******************************************************************** */
 
 #include <math.h>
+#include <stdlib.h>
 #include "ml_utils.h"
 #include "ml_comm.h"
 #include "ml_lapack.h"
@@ -2279,4 +2280,8 @@ void ML_PauseForDebugger(ML_Comm *comm)
 	  scanf("%c",&go);
     }
   }
+}
+void ML_use_param(void *data, int junk)
+{
+  if ( (junk == -365) && (data == NULL)) printf("ML_avoid_unused_param\n");
 }

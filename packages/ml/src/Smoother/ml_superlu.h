@@ -50,6 +50,8 @@ extern  int ML_Smoother_Create_Schwarz_Data(ML_Sm_Schwarz_Data **data);
 extern  int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *, 
                     ML_Operator *, ML_Comm *, int, int *,int*,double *,int *, 
                     int *,int);
+extern void ML_SuperLU_Set_Tile( int nprocs, int* tsz, int* stile, 
+                                 int* mtile, int* ltile);
 
 #ifdef __cplusplus
 }

@@ -13,6 +13,7 @@
 /*   Author : Charles Tong (LLNL) and Ray Tuminaro (SNL)                */
 /*   Date   : April, 1998                                               */
 /* ******************************************************************** */
+#include <stdlib.h>
 #ifdef SUPERLU
 #include "dsp_defs.h"
 #include "util.h"
@@ -30,13 +31,6 @@
 #include "ml_superlu.h"
 #define REPLACE 1
 #define NEQU    0
-
-extern void ML_SuperLU_Set_Tile( int nprocs, int* tsz, int* stile, 
-                                 int* mtile, int* ltile);
-/*
-extern int heap_info(int*, int*, int*, int*);
-extern int get_heap_info(int*, int*, int*, int*);
-*/
 
 /* ******************************************************************** */
 /* This subroutine calls the SuperLU subroutine to perform LU           */
@@ -309,12 +303,12 @@ int ML_SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
      Destroy_LU(n, mygrid, LUstruct);
      ScalePermstructFree(ScalePermstruct);
      LUstructFree(LUstruct);
-     free(LUstruct);
-     free(ScalePermstruct);
+     ML_free(LUstruct);
+     ML_free(ScalePermstruct);
      solver->PERMspl = NULL;
      solver->LUspl = NULL;
      superlu_gridexit(mygrid);
-     free (lugrid_tiles);
+     ML_free(lugrid_tiles);
      solver->gridtiles = NULL;
      return 0;
    } 
@@ -386,7 +380,7 @@ int ML_SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
          printf("Error nprocs %d  k %d \n", nprocs, k);
          exit(-1);
       }
-      free (usermap);
+      ML_free(usermap);
       solver->ML_subgroup = mygroup;
       /*
        * Fact = DOFACT Trans = NOTRANS Equil = EQUI RowPerm = LargeDiag
@@ -488,6 +482,11 @@ printf("memory usage: fragments %d free: total %d, largest %d, total_used %d\n",
    ML_memory_free( (void **) &local_rhs );
 #else
    printf("ML_SuperLU_Solve : SuperLU not used.\n");
+   ML_avoid_unused_param( (void *) vsolver);
+   ML_avoid_unused_param( (void *) &ilen);
+   ML_avoid_unused_param( (void *) x);
+   ML_avoid_unused_param( (void *) &olen);
+   ML_avoid_unused_param( (void *) rhs);
 #endif
 #endif
    return 0;
@@ -561,6 +560,9 @@ int ML_SuperLU_SolveLocal(void *vsolver, double *x, double *rhs)
    solver->reuse_flag = 1;
 #else
    printf("ML_SuperLU_SolveLocal : SuperLU not used.\n");
+   ML_avoid_unused_param( (void *) vsolver);
+   ML_avoid_unused_param( (void *) x);
+   ML_avoid_unused_param( (void *) rhs);
 #endif
    return 0;
 }
@@ -844,10 +846,10 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 
    csr2_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
-   free(row_ptr);
-   free(cols);
-   free(vals);
-   free(csr_mat);
+   ML_free(row_ptr);
+   ML_free(cols);
+   ML_free(vals);
+   ML_free(csr_mat);
 
    /* Throw away some information to make it cheaper for LU. We do this   */ 
    /* by using metis to generate some blocks and factor the block matrix. */
@@ -869,7 +871,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
                              subml->Amat[0].outvec_leng, CSR_getrows);
       ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
       ML_Destroy(&subml);
-      free(temp_ptr);
+      ML_free(temp_ptr);
       for (i = 0; i < nrows; i++) {
          me = block_list[i];
          for (j = mat_ia[i]; j < mat_ia[i+1]; j++) {
@@ -1000,7 +1002,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    ML_memory_free( (void **) &mat_ia );
    ML_memory_free( (void **) &mat_ja );
    ML_memory_free( (void **) &mat_val ); */
-   free(csr2_mat);
+   ML_free(csr2_mat);
 #ifdef ML_TIMING
    sl->csolve->build_time = GetClock() - t0;
    ml_handle->timing->total_build_time += sl->csolve->build_time;
@@ -1100,10 +1102,10 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 
    csr2_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
-   free(cols);
-   free(vals);
-   free(row_ptr);
-   free(csr_mat);
+   ML_free(cols);
+   ML_free(vals);
+   ML_free(row_ptr);
+   ML_free(csr_mat);
 
    /* Throw away some information to make it cheaper for LU. We do this   */ 
    /* by using metis to generate some blocks and factor the block matrix. */
@@ -1126,7 +1128,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       ML_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
       ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
       ML_Destroy(&subml);
-      free(temp_ptr);
+      ML_free(temp_ptr);
       for (i = 0; i < nrows; i++) {
          me = block_list[i];
          for (j = mat_ia[i]; j < mat_ia[i+1]; j++) {
@@ -1283,9 +1285,11 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    ML_memory_alloc( (void **) &A, sizeof(SuperMatrix), "KLJ" );
    dCreate_CompCol_Matrix(A,nrows,nrows,nnz,mat_val,mat_ja,mat_ia,NC,_D,GE);
    solver->Mat1 = (void *) A;
-   free(csr2_mat);
+   ML_free(csr2_mat);
 #else
    printf("ML : SuperLU not linked.\n");
+   ML_avoid_unused_param( (void *) ml_handle);
+   ML_avoid_unused_param( (void *) &level);
 #endif
 #endif
    return 0;
@@ -1445,11 +1449,11 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
    /* clean up                                                  */
    /* --------------------------------------------------------- */
 
-   if (ntimes > 1) free(xbuffer);
-   free( rhsbuf );
-   free( solbuf );
-   free( dbuffer );
-   free( etree );
+   if (ntimes > 1) ML_free(xbuffer);
+   ML_free( rhsbuf );
+   ML_free( solbuf );
+   ML_free( dbuffer );
+   ML_free( etree );
    SUPERLU_FREE (R);
    SUPERLU_FREE (C);
    SUPERLU_FREE (ferr);
@@ -1457,6 +1461,11 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
    return 0;
 #else
    printf("ML_Smoother_VBlockAdditiveSchwarz : not available.\n");
+   ML_avoid_unused_param( (void *) sm);
+   ML_avoid_unused_param( (void *) &inlen);
+   ML_avoid_unused_param( (void *) x);
+   ML_avoid_unused_param( (void *) &outlen);
+   ML_avoid_unused_param( (void *) rhs);
    exit(1);
    return 1;
 #endif
@@ -1621,11 +1630,11 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
    /* clean up                                                  */
    /* --------------------------------------------------------- */
 
-   if (ntimes > 1) free(xbuffer);
-   free( rhsbuf );
-   free( solbuf );
-   free( dbuffer );
-   free( etree );
+   if (ntimes > 1) ML_free(xbuffer);
+   ML_free( rhsbuf );
+   ML_free( solbuf );
+   ML_free( dbuffer );
+   ML_free( etree );
    SUPERLU_FREE (R);
    SUPERLU_FREE (C);
    SUPERLU_FREE (ferr);
@@ -1633,6 +1642,11 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
    return 0;
 #else
    printf("ML_Smoother_VBlockMultiplicativeSchwarz : not available.\n");
+   ML_avoid_unused_param( (void *) sm);
+   ML_avoid_unused_param( (void *) &inlen);
+   ML_avoid_unused_param( (void *) x);
+   ML_avoid_unused_param( (void *) &outlen);
+   ML_avoid_unused_param( (void *) rhs);
    exit(1);
    return 1;
 #endif
@@ -1684,41 +1698,41 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
    ml_data = (ML_Sm_Schwarz_Data *) data;
    if ( ml_data->bmat_ia  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->bmat_ia[i]);
-      free(ml_data->bmat_ia);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->bmat_ia[i]);
+      ML_free(ml_data->bmat_ia);
    }
    if ( ml_data->bmat_ja  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->bmat_ja[i]);
-      free(ml_data->bmat_ja);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->bmat_ja[i]);
+      ML_free(ml_data->bmat_ja);
    }
    if ( ml_data->bmat_aa  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->bmat_aa[i]);
-      free(ml_data->bmat_aa);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->bmat_aa[i]);
+      ML_free(ml_data->bmat_aa);
    }
    if ( ml_data->aux_bmat_ia  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->aux_bmat_ia[i]);
-      free(ml_data->aux_bmat_ia);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->aux_bmat_ia[i]);
+      ML_free(ml_data->aux_bmat_ia);
    }
    if ( ml_data->aux_bmat_ja  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->aux_bmat_ja[i]);
-      free(ml_data->aux_bmat_ja);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->aux_bmat_ja[i]);
+      ML_free(ml_data->aux_bmat_ja);
    }
    if ( ml_data->aux_bmat_aa  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->aux_bmat_aa[i]);
-      free(ml_data->aux_bmat_aa);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->aux_bmat_aa[i]);
+      ML_free(ml_data->aux_bmat_aa);
    }
-   if ( ml_data->blk_size != NULL ) free(ml_data->blk_size);
-   if ( ml_data->blk_info != NULL ) free(ml_data->blk_info);
+   if ( ml_data->blk_size != NULL ) ML_free(ml_data->blk_size);
+   if ( ml_data->blk_info != NULL ) ML_free(ml_data->blk_info);
    if ( ml_data->blk_indices != NULL ) 
    {
       for ( i = 0; i < ml_data->nblocks; i++ )
          if ( ml_data->blk_indices[i] != NULL ) 
-            free( ml_data->blk_indices[i] );
+            ML_free( ml_data->blk_indices[i] );
    }
 #ifdef SUPERLU
    if ( ml_data->slu_Amat != NULL )
@@ -1729,10 +1743,10 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
          if ( A != NULL )
          {
             SUPERLU_FREE( A->Store );
-            free(A);
+            ML_free(A);
          }
       }
-      free( ml_data->slu_Amat );
+      ML_free( ml_data->slu_Amat );
    }
    if ( ml_data->slu_Lmat != NULL )
    {
@@ -1742,10 +1756,10 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
          if ( L != NULL )
          {
             Destroy_SuperNode_Matrix(L);
-            free(L);
+            ML_free(L);
          }
       }
-      free( ml_data->slu_Lmat );
+      ML_free( ml_data->slu_Lmat );
    }
    if ( ml_data->slu_Umat != NULL )
    {
@@ -1758,22 +1772,22 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
             SUPERLU_FREE( ((NRformat *) U->Store)->rowptr);
             SUPERLU_FREE( ((NRformat *) U->Store)->nzval);
             SUPERLU_FREE( U->Store );
-            free(U);
+            ML_free(U);
          }
       }
-      free( ml_data->slu_Umat );
+      ML_free( ml_data->slu_Umat );
    }
    if ( ml_data->perm_c != NULL )
    {
       for ( i = 0; i < ml_data->nblocks; i++ )
-         if ( ml_data->perm_c[i] ) free (ml_data->perm_c[i]);
-      free( ml_data->perm_c );
+         if ( ml_data->perm_c[i] ) ML_free(ml_data->perm_c[i]);
+      ML_free( ml_data->perm_c );
    }
    if ( ml_data->perm_r != NULL )
    {
       for ( i = 0; i < ml_data->nblocks; i++ )
-         if ( ml_data->perm_r[i] ) free (ml_data->perm_r[i]);
-      free( ml_data->perm_r );
+         if ( ml_data->perm_r[i] ) ML_free(ml_data->perm_r[i]);
+      ML_free( ml_data->perm_r );
    }
 #endif
    ML_memory_free( (void **) &ml_data);
@@ -1894,7 +1908,7 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
             tmp_blk_leng[i] = 2 * ( blk_size[i] + rowleng ) + 2;
             blk_indices[i] = (int *) ML_allocate(tmp_blk_leng[i] * sizeof(int));
             for (k = 0; k < blk_size[i]; k++) blk_indices[i][k] = tmp_indices[k]; 
-            free( tmp_indices );
+            ML_free( tmp_indices );
          }   
          for ( k = 0; k < rowleng; k++ ) 
          {
@@ -2094,15 +2108,25 @@ if ( info != 0 && info != (nrows+1) )
    SUPERLU_FREE (C);
    SUPERLU_FREE (ferr);
    SUPERLU_FREE (berr);
-   free(etree);
-   free(trhs);
-   free(tsol);
-   free(vals);
-   free(cols);
-   free(tmp_blk_leng);
+   ML_free(etree);
+   ML_free(trhs);
+   ML_free(tsol);
+   ML_free(vals);
+   ML_free(cols);
+   ML_free(tmp_blk_leng);
    return 0;
 #else
    printf("ML_Smoother_VBlockSchwarzDecomposition : not available.\n");
+   ML_avoid_unused_param( (void *) data);
+   ML_avoid_unused_param( (void *) Amat);
+   ML_avoid_unused_param( (void *) comm);
+   ML_avoid_unused_param( (void *) &total_recv_leng);
+   ML_avoid_unused_param( (void *) recv_lengths);
+   ML_avoid_unused_param( (void *) ext_ja);
+   ML_avoid_unused_param( (void *) ext_aa);
+   ML_avoid_unused_param( (void *) map);
+   ML_avoid_unused_param( (void *) map2);
+   ML_avoid_unused_param( (void *) &Noffset);
    exit(1);
    return 1;
 #endif
@@ -2183,11 +2207,11 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
 
    ML_Smoother_VBlockSchwarzDecomposition(data,Amat,comm,total_recv_leng,
               recv_lengths, int_buf, dble_buf, map, map2, offset);
-   if ( map  != NULL ) free(map);
-   if ( map2 != NULL ) free(map2);
-   if ( int_buf != NULL ) free(int_buf);
-   if ( dble_buf != NULL ) free(dble_buf);
-   if ( recv_lengths != NULL ) free(recv_lengths);
+   if ( map  != NULL ) ML_free(map);
+   if ( map2 != NULL ) ML_free(map2);
+   if ( int_buf != NULL ) ML_free(int_buf);
+   if ( dble_buf != NULL ) ML_free(dble_buf);
+   if ( recv_lengths != NULL ) ML_free(recv_lengths);
 
    /* ---------------------------------------------------------------- */
    /* set it up as smoother                                            */
@@ -2292,11 +2316,11 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
 
    ML_Smoother_VBlockSchwarzDecomposition(data,Amat,comm,total_recv_leng,
               recv_lengths, int_buf, dble_buf, map, map2, offset);
-   if ( map  != NULL ) free(map);
-   if ( map2 != NULL ) free(map2);
-   if ( int_buf != NULL ) free(int_buf);
-   if ( dble_buf != NULL ) free(dble_buf);
-   if ( recv_lengths != NULL ) free(recv_lengths);
+   if ( map  != NULL ) ML_free(map);
+   if ( map2 != NULL ) ML_free(map2);
+   if ( int_buf != NULL ) ML_free(int_buf);
+   if ( dble_buf != NULL ) ML_free(dble_buf);
+   if ( recv_lengths != NULL ) ML_free(recv_lengths);
 
    /* ---------------------------------------------------------------- */
    /* set it up as smoother                                            */

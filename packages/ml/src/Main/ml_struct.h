@@ -259,9 +259,9 @@ extern int ML_Gen_AmatrixRAP(ML *ml, int to_level, int from_level);
 extern int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, 
      ML_Matrix_DCSR *outmat, ML_Comm *comm, int *offset);
 
-extern int ML_Set_EqnToGridMapFunc(ML *, int,int fleng,int tleng, void *data,
+extern int ML_Set_EqnToGridMapFunc(ML *, int,int fleng,int tleng, 
                                    int (*func)(void*,double*,double*));
-extern int ML_Set_GridToEqnMapFunc(ML *, int,int fleng,int tleng, void *data,
+extern int ML_Set_GridToEqnMapFunc(ML *, int,int fleng,int tleng, 
                                    int (*func)(void*,double*,double*));
 extern int ML_Set_BoundaryTypes(ML*,int level,int type,int n,int *data);
 

@@ -156,14 +156,14 @@ void ML_SEG_Destroy(struct ML_SEG_Struct **seg)
 
    for (i=0; i < noffdiags; i++) ML_SEG_Matrix_Destroy(&(offdiags[i]));
 
-   for (i=0; i < nblocks; i++) free(rowlists[i]);
+   for (i=0; i < nblocks; i++) ML_free(rowlists[i]);
 
-   free(rowlistlengs);
-   free(rowlists);
-   free(diags);
-   if (offdiags != NULL) free(offdiags);
+   ML_free(rowlistlengs);
+   ML_free(rowlists);
+   ML_free(diags);
+   if (offdiags != NULL) ML_free(offdiags);
 	
-   free(*seg);
+   ML_free(*seg);
 } /* ML_SEG_Destroy */
 
 /************************************************************************/
@@ -227,13 +227,13 @@ void ML_SEG_Matrix_Destroy(struct ML_SEG_MATRIX_Struct **Smat)
       AZ_precond_destroy(&precond);
    }
 	
-   if ((*Smat)->AZ_options != NULL) free((*Smat)->AZ_options);
+   if ((*Smat)->AZ_options != NULL) ML_free((*Smat)->AZ_options);
 
-   if ((*Smat)->AZ_params != NULL) free((*Smat)->AZ_params);
+   if ((*Smat)->AZ_params != NULL) ML_free((*Smat)->AZ_params);
 	
    if((*Smat)->AZ_scale != NULL) AZ_scaling_destroy(&((*Smat)->AZ_scale));
 	
-   free(*Smat);
+   ML_free(*Smat);
 } /* ML_SEG_Datrix_Destroy */
 
 
@@ -408,8 +408,8 @@ void ML_SEG_Precondition(double ff[], int options[], int proc_config[],
       exit(-1);
    }
 	
-   free(fftmp);
-   free(vect);
+   ML_free(fftmp);
+   ML_free(vect);
 } /* ML_SEG_Precondition */
 
 
@@ -621,9 +621,8 @@ void ML_SEG_Set_AZ_Precond(struct ML_SEG_Struct *seg,int block_row,
 } /* ML_SEG_Set_AZ_Precond */
 
 #else
-#include <stdio.h>
-extern void garbage(int arg);
-void garbage(int arg) { printf("empty function\n"); }
+/* to satisfy the requirement of certain compilers */
+int ML_empty2;
 
 #endif
 

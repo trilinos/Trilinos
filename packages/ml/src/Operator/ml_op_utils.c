@@ -3,6 +3,7 @@
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
 
+#include <stdlib.h>
 #include "ml_struct.h"
 #include "ml_op_utils.h"
 #include "ml_agg_genP.h"
@@ -163,9 +164,9 @@ int ML_Compute_Coarse_Bdry(ML *ml_handle, int level, int size, int fine_size)
    ML_Set_BoundaryTypes(ml_handle, ml_handle->Pmat[level].from->levelnum,
                         ML_BDRY_DIRICHLET,cboundary_length,cboundary_list);
 
-   free(c_bdry);
-   free(f_bdry);
-   free(cboundary_list);
+   ML_free(c_bdry);
+   ML_free(f_bdry);
+   ML_free(cboundary_list);
    return(1);
 }
 
@@ -553,6 +554,13 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
 
 #else
   printf("ML_partitionBlocksNodes: Metis not linked\n");
+  ML_avoid_unused_param( (void *) matrix);
+  ML_avoid_unused_param( (void *) &nLocalNd);
+  ML_avoid_unused_param( (void *) nblk);
+  ML_avoid_unused_param( (void *) pnode_part);
+  ML_avoid_unused_param( (void *) ndwts);
+  ML_avoid_unused_param( (void *) egwts);
+  ML_avoid_unused_param( (void *) &nedges);
 #endif
 
   return 0;
@@ -789,7 +797,10 @@ int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
 {
    int    i;
 
-   if (allocated_space < N_requested_rows) return(0);
+   if (allocated_space < N_requested_rows) {
+     ML_avoid_unused_param( data);
+     return(0);
+   }
 
    for (i = 0; i < N_requested_rows; i++) {
       row_lengths[i] = 1;
@@ -806,6 +817,9 @@ int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
 int eye_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 {
   int i;
+
+  if (ilen == -57) ML_avoid_unused_param( Amat_in);
+
 
   for (i = 0; i < olen; i++) ap[i] = p[i];
 

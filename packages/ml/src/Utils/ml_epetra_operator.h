@@ -90,7 +90,8 @@ class Epetra_ML_Operator: public virtual Epetra_Operator {
 
     \warning - This method has no effect and returns -1 as error code.
   */
-  int SetUseTranspose(bool UseTranspose){return(-1);};
+  int SetUseTranspose(bool UseTranspose){ ML_avoid_unused_param((void *) UseTranspose); 
+    return(-1);}
   //@}
   
   //@{ \name Mathematical functions.
@@ -104,7 +105,8 @@ class Epetra_ML_Operator: public virtual Epetra_Operator {
 
     \warning - This method has no effect and returns -1 as error code.
   */
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return(-1);};
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    return(-1);}
 
   //! Returns the result of a Epetra_ML_Operator inverse applied to an Epetra_MultiVector X in Y.
   /*! 

@@ -13,6 +13,7 @@
 #include "ml_operator.h"
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 
 /************************************************************************/
 /* Create an ML_matrix and initialize relevant fields.                  */
@@ -432,7 +433,7 @@ int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag)
                                      cols,vals,&n) == 0)
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols);
+               ML_free(vals); ML_free(cols);
                cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
                vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL)
@@ -572,7 +573,7 @@ int ML_Operator_Set_Label( ML_Operator *mat, char *label)
 {
   int size;
 
-   if (mat->label != NULL) { free(mat->label); mat->label = NULL; }
+   if (mat->label != NULL) { ML_free(mat->label); mat->label = NULL; }
    size = strlen(label) + 1;
    mat->label = (char *) ML_allocate(size*sizeof(char));
    if (mat->label == NULL) pr_error("Not enough space in ML_Operator_Set_Label\n");
@@ -792,9 +793,9 @@ int ML_Operator_UnAmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
       Amat->invec_leng  *= temp->block_size;
       Amat->outvec_leng *= temp->block_size;
       Amat->num_PDEs     = temp->block_size;
-      if (temp->blk_inds != NULL) free(temp->blk_inds);
-      if (temp->scaled_diag != NULL) free(temp->scaled_diag);
-      free(temp);
+      if (temp->blk_inds != NULL) ML_free(temp->blk_inds);
+      if (temp->scaled_diag != NULL) ML_free(temp->scaled_diag);
+      ML_free(temp);
    }
    return 0;
 }
@@ -1009,9 +1010,6 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
 /* need it for now.                                                     */
 /* ******************************************************************** */
 
-extern int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked, 
-                                            int **unblocked, int *size);
-
 /* ******************************************************************** */
 /* Take a vector created in the blocked matrix and transform it to a    */
 /* vector corresponding to the unblocked matrix. This is a bit tricky   */
@@ -1149,9 +1147,9 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
          }
       }
    }
-   if ( dbuf    != NULL ) free(dbuf);
-   if ( col_ind != NULL ) free(col_ind);
-   if ( col_val != NULL ) free(col_val);
+   if ( dbuf    != NULL ) ML_free(dbuf);
+   if ( col_ind != NULL ) ML_free(col_ind);
+   if ( col_val != NULL ) ML_free(col_val);
    return 0;
 }
 
@@ -1174,9 +1172,6 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
 /*          C->data = NULL;                                         */
 /*          Epetra2MLMatrix(tmp, C);                                */
 /* ---------------------------------------------------------------- */
-#ifdef ML_WITH_EPETRA
-extern int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
-#endif
 int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 		    int matrix_type, double scalar)
 {

@@ -26,6 +26,7 @@ int ML_memory_alloc( void **memptr, unsigned int leng, char *name )
 {
    int  i, *int_ptr, nchunks, ndouble=sizeof(double);
    char *var_ptr;
+   double *dptr;
 
    /* ----------------------------------------------------------------- */
    /* if the first time, initialize the bookkeeping array               */
@@ -61,7 +62,9 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
       nchunks = leng / ndouble;
       if ((nchunks * ndouble) < leng) nchunks = nchunks + 3;
       else                            nchunks = nchunks + 2;
-      var_ptr = (char*) calloc( nchunks, ndouble );
+      var_ptr = (char *) ML_allocate(nchunks*ndouble);
+      dptr = (double *) var_ptr;
+      for (i = 0; i < nchunks; i++) dptr[i] = 0.;
 
       /* -------------------------------------------------------------- */
       /* if an error is returned from malloc, terminate execution       */
@@ -188,7 +191,7 @@ int ML_memory_free(void ** var_ptr)
 */
 
       int_ptr = (int *) ((long) char_ptr - ndouble);
-      free(int_ptr);
+      ML_free(int_ptr);
    }
    (*var_ptr) = NULL;
    return 0;
@@ -374,7 +377,7 @@ int ML_memory_clean( char *name, int inlen )
          }
          if ( clean_flag == 0 )
          {
-            free( (int *) malloc_addr_log[i] );
+            ML_free( (int *) malloc_addr_log[i] );
             malloc_leng_log[i] = -1;
          }
       }
@@ -440,11 +443,11 @@ char *ML_allocate(unsigned int isize) {
     size = (int) isize;
 
     size = size + 7*sizeof(double);
-    ml_widget = (struct ml_widget *) malloc(sizeof(struct ml_widget));
+    ml_widget = (struct ml_widget *) ML_allocate(sizeof(struct ml_widget));
     if (ml_widget == NULL) return(NULL);
-    ptr = (char *) malloc(size);
+    ptr = (char *) ML_allocate(size);
     if (ptr == NULL) {
-       free(ml_widget);
+       ML_free(ml_widget);
        return(NULL);
     }
     ml_allo_count++;
@@ -583,10 +586,10 @@ ml_widget_head = NULL;
 
            /* free the space and the ml_widget */
 
-           free(ptr);
+           ML_free(ptr);
            if (ml_widget_head == current) ml_widget_head = current->next;
            else prev->next = current->next;
-           free(current);
+           ML_free(current);
 
        }
    }
@@ -644,7 +647,7 @@ data1 = ptr;
 
 
     newmsize = new_size + 7*sizeof(double);
-    new_ptr = (char *) malloc(newmsize);
+    new_ptr = (char *) ML_allocate(newmsize);
     if (new_ptr == NULL) return(NULL);
 
 
@@ -671,7 +674,7 @@ data2 = (char *) &(new_dptr[4]);
     if (smaller > new_size ) smaller = new_size;
     for (i = 0 ; i < smaller; i++) data2[i] = data1[i];
 
-    free(dptr);
+    ML_free(dptr);
     current->size  = new_size;
     current->address = (char *) new_dptr;
     return( (char *) &(new_dptr[4]));

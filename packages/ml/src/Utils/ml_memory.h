@@ -15,12 +15,23 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-/* #include <stdlib.h> */
-/*
-#include <malloc.h>
-*/
 
 #define MAX_MALLOC_LOG 1000
+
+#ifdef size_t
+#define ml_size_t size_t
+#else
+#define ml_size_t int
+#endif
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+extern void ML_free(void *);
+extern void *ML_allocate(ml_size_t size);
+#ifdef __cplusplus
+}
+#endif
 
 #ifndef ML_MEM_CHECK
 #define ML_allocate(i)    malloc((i + sizeof(double) ))

@@ -1,14 +1,8 @@
 #include "ml_operator.h"
-#ifdef XYT
-#include "xyt.h"
-#endif
 #include "ml_xyt.h"
 #include "ml_utils.h"
 #include "ml_memory.h"
-extern int ML_gpartialsum_int(int val, ML_Comm *comm);
-
-extern int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
-                    int total_length,int sub_mask);
+ 
 void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
         int **sep_size, int *Nseparators, int *Nlocal, int *Nghost,
         ML_Operator **matvec_data) {
@@ -66,7 +60,7 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
 
    mapper  = (int    *) ML_allocate((Nrows+Nrecv)*sizeof(int));
    for (i = 0; i < Nrows+Nrecv; i++) mapper[i] = (int) dmapper[i];
-   free(dmapper);
+   ML_free(dmapper);
 
    /* generate a bunch of separators */
 
@@ -148,7 +142,7 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
                         &row_length, 0);
       N_nz += row_length;
    }
-   free(bindx); free(val);
+   ML_free(bindx); ML_free(val);
 
    bindx = (int    *) ML_allocate((N_nz+1)*sizeof(int));
    val   = (double *) ML_allocate((N_nz+1)*sizeof(double));
@@ -190,7 +184,7 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    ML_CommInfoOP_Set_neighbors( &(omatrix->getrow->pre_comm), 
 			        getrow_comm->N_neighbors, neighbors,
 	                        ML_OVERWRITE, NULL, 0);
-   free(neighbors);
+   ML_free(neighbors);
    for (i = 0; i < getrow_comm->N_neighbors; i++)
       ML_CommInfoOP_Set_exch_info(omatrix->getrow->pre_comm, 
 			getrow_comm->neighbors[i].ML_id,
@@ -518,10 +512,6 @@ if ((sub_mask & partner) == sub_cube) {
 
 } /* ML_gappend */
 
-extern void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
-                      int start_location, int total_send, ML_Comm *comm,
-                      int mask);
-
 #ifdef out
 /*int CSR_submv(ML_Operator *Amat, double p[], double ap[], int mask)*/
 int oldCSR_submv(ML_Operator *Amat, double p[], double ap[])
@@ -565,7 +555,6 @@ int oldCSR_submv(ML_Operator *Amat, double p[], double ap[])
   return(1);
 }
 #endif
-double total_submv = 0.;
 int CSR_submv(ML_Operator *Amat, double p[], double ap[])
 {
    int i, k, Nrows, *bindx;
@@ -876,9 +865,9 @@ int ML_Gen_CoarseSolverXYT( ML *ml, int i)
 
   ML_XYT_factor(local_xyt_handle,local2global,Nlocal,Nlocal+Nghost,
                 CSR_submv,matrix_data,i,ml);
-  free(separator);
-  free(sep_size);
-  free(local2global);
+  ML_free(separator);
+  ML_free(sep_size);
+  ML_free(local2global);
 
   ml->SingleLevel[i].csolve->data_destroy = ML_XYTfree;
   ML_CSolve_Set_Label( ml->SingleLevel[i].csolve, "XYT");
@@ -891,6 +880,8 @@ int ML_Gen_CoarseSolverXYT( ML *ml, int i)
 #endif
 #else
   printf("Error: XYT not linked.\n");
+  ML_avoid_unused_param( (void *) ml);
+  ML_avoid_unused_param( (void *) &i);
 #endif
   
   return 0;
@@ -905,6 +896,7 @@ void ML_XYTfree(void *temp)
   ML_Operator_Destroy(&matrix_data);
 #else
   printf("Error: XYT not linked.\n");
+  ML_avoid_unused_param( temp);
 #endif
 }
 

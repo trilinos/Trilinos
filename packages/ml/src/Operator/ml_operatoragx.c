@@ -12,6 +12,7 @@
 /* ******************************************************************** */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "ml_operatoragx.h"
 
 /* ******************************************************************** */
@@ -95,8 +96,8 @@ int ML_OperatorAGX_Destroy(ML_OperatorAGX **opp)
    if (op->ext2_a     != 0) ML_memory_free( (void **) &(op->ext2_a) ); 
    if (op->fnode_flag != 0) ML_memory_free( (void **) &(op->fnode_flag) ); 
    if (op->restrict_wgts != 0) ML_memory_free((void **) &(op->restrict_wgts)); 
-   if (op->remote_restrict_wgts != 0) free(op->remote_restrict_wgts);
-   if (op->coarse_bdry_list!= 0) free(op->coarse_bdry_list);
+   if (op->remote_restrict_wgts != 0) ML_free(op->remote_restrict_wgts);
+   if (op->coarse_bdry_list!= 0) ML_free(op->coarse_bdry_list);
    op->remote_restrict_wgts = 0;
    op->coarse_bdry_list     = 0;
    op->coarse_bdry_leng     = -1;
@@ -168,6 +169,8 @@ int ML_OperatorAGX_Restrict(void *vop, int inlen, double *din, int outlen,
    if ( oplocal->ML_id != ML_ID_OPAGX )
    {
       printf("ML_OperatorAGX_Restrict : Wrong object. \n");
+      ML_avoid_unused_param((void *) &inlen);
+      ML_avoid_unused_param((void *) &outlen);
       exit(1);
    }
 
@@ -373,6 +376,7 @@ int ML_OperatorAGX_Prolongate(void *vop, int inlen, double *din,
    if ( oplocal->ML_id != ML_ID_OPAGX )
    {
       printf("ML_OperatorAGX_Prolongate : Wrong object. \n");
+      ML_avoid_unused_param((void *) &inlen);
       exit(1);
    }
    comm = oplocal->AGX_comm;
@@ -645,14 +649,14 @@ int ML_OperatorAGX_Getrows(void *data, int N_requested_rows,
          if ( outvec[i] < 0.0 ) 
 	    coarse_bdry_list[coarse_bdry_leng++]= i+Nlocal*step;
       if ( Nlocal > 0 ) {
-         free( new_local_ia );
-         free( invec );
+         ML_free( new_local_ia );
+         ML_free( invec );
       }
       if ( Nremote > 0 ) {
-         free( new_remote_ia );
-         free( new_remote_ja );
-         free( new_remote_a );
-         free( outvec );
+         ML_free( new_remote_ia );
+         ML_free( new_remote_ja );
+         ML_free( new_remote_a );
+         ML_free( outvec );
       }
       local_op->local_ia = temp_local_ia;
       local_op->local_ja = temp_local_ja;
@@ -859,8 +863,8 @@ int ML_OperatorAGX_Clean_Getrows(ML_Operator **opp)
       printf("ML_OperatorAGX_Clean_Getrows: Wrong object. \n");
       exit(1);
    }
-   if (op->remote_restrict_wgts != 0) free(op->remote_restrict_wgts);
-   if (op->coarse_bdry_list!= 0) free(op->coarse_bdry_list);
+   if (op->remote_restrict_wgts != 0) ML_free(op->remote_restrict_wgts);
+   if (op->coarse_bdry_list!= 0) ML_free(op->coarse_bdry_list);
    op->remote_restrict_wgts = 0;
    op->coarse_bdry_list     = 0;
    op->coarse_bdry_leng     = -1;

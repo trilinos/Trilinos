@@ -207,6 +207,12 @@ extern void *ML_Operator_ArrayCreate( int length);
 extern int ML_Operator_ArrayDestroy( void *array, int length);
 extern int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs,
                                    int vecleng);
+extern int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked, 
+                                            int **unblocked, int *size);
+
+#ifdef ML_WITH_EPETRA
+extern int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
+#endif
 
 #ifdef __cplusplus
 }

@@ -9,6 +9,7 @@
 /* ******************************************************************** */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "ml_struct.h"
 #include "ml_rap.h"

@@ -23,6 +23,7 @@
 #define ML_abs(x) (((x) > 0) ? x : (-(x)))
 #define ML_min(a,b) (((a) <= (b)) ? (a) : (b))
 #define ML_max(x,y) (((x) > (y)) ? (x) : (y))
+#define ML_avoid_unused_param(x) ML_use_param(x,0)
 
 
 
@@ -95,8 +96,8 @@
    double ML_gmax_double(double val, ML_Comm *comm);
    int    ML_gmax_int(int val, ML_Comm *comm);
    int    ML_find_index(int key, int list[], int length);
-
-   void  ML_PauseForDebugger(ML_Comm *comm);
+   void   ML_use_param(void *data, int junk);
+   void   ML_PauseForDebugger(ML_Comm *comm);
 
 #ifdef __cplusplus
 }

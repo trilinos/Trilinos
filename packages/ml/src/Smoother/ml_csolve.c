@@ -10,14 +10,10 @@
 /* Date          : March, 1999                                             */
 /* *********************************************************************** */
 
+#include <stdlib.h>
 #include "ml_csolve.h"
 #include <string.h>
-
-/* *********************************************************************** */
-/* references to external functions                                        */
-/* ----------------------------------------------------------------------- */
-
-extern int ML_SuperLU_Solve(void *,int ,double *,int ,double *);
+#include "ml_superlu.h"
 
 /* *********************************************************************** */
 /* Constructor                                                             */
@@ -192,7 +188,7 @@ int ML_CSolve_Set_Label( ML_CSolve *csolve, char *label)
 {
   int size;
 
-   if (csolve->label != NULL) { free(csolve->label); csolve->label = NULL; }
+   if (csolve->label != NULL) { ML_free(csolve->label); csolve->label = NULL; }
    size = strlen(label) + 1;
    csolve->label = (char *) ML_allocate(size*sizeof(char));
    if (csolve->label == NULL) pr_error("Not enough space in ML_CSolve_Set_Label\n");
@@ -288,6 +284,7 @@ int ML_CSolve_Clean_Aggr( void *vsolver, ML_CSolveFunc *func)
       solver->void_params1 = NULL;
       ML_memory_free( (void**) &solver );
    }
+   else ML_avoid_unused_param( (void *) func);
    return 0;
 }
 

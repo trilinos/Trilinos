@@ -1,14 +1,14 @@
-#include "ml_include.h"
-extern int ML_gpartialsum_int(int val, ML_Comm *comm);
+#include "ml_operator.h"
+#include "ml_xyt.h"
+#include "ml_utils.h"
+#include "ml_memory.h"
 
-extern int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
-                    int total_length,int sub_mask);
-setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
+void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
         int **sep_size, int *Nseparators, int *Nlocal, int *Nghost,
         ML_Operator **matvec_data) {
 
    int *sep, *s_sizes, *mapper;
-   int i, j, jj, kk, *global_numbering, Nsend, Nrecv, N_procs, N_bits;
+   int i, j, jj, kk, Nsend, Nrecv, N_procs, N_bits;
    int start, mask2;
    int Nrows;
    ML_Operator *Amat, *omatrix;
@@ -19,7 +19,6 @@ setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    int *neighbors;
    double *val;
    struct ML_CSR_MSRdata *temp;
-int kkk;
 
    Amat = &(my_ml->Amat[grid0]);
    if (Amat->matvec->ML_id == ML_EMPTY)
@@ -55,7 +54,7 @@ int kkk;
 
    mapper  = (int    *) ML_allocate((Nrows+Nrecv)*sizeof(int));
    for (i = 0; i < Nrows+Nrecv; i++) mapper[i] = (int) dmapper[i];
-   free(dmapper);
+   ML_free(dmapper);
 
    /* generate a bunch of separators */
 
@@ -134,7 +133,7 @@ int kkk;
                         &row_length, 0);
       N_nz += row_length;
    }
-   free(bindx); free(val);
+   ML_free(bindx); ML_free(val);
 
    bindx = (int    *) ML_allocate((N_nz+1)*sizeof(int));
    val   = (double *) ML_allocate((N_nz+1)*sizeof(double));
@@ -182,7 +181,7 @@ for(kkk = 0; kkk < row_length; kkk++)
    ML_CommInfoOP_Set_neighbors( &(omatrix->getrow->pre_comm), 
 			        getrow_comm->N_neighbors, neighbors,
 	                        ML_OVERWRITE, NULL, 0);
-   free(neighbors);
+   ML_free(neighbors);
    for (i = 0; i < getrow_comm->N_neighbors; i++)
       ML_CommInfoOP_Set_exch_info(omatrix->getrow->pre_comm, 
 			getrow_comm->neighbors[i].ML_id,
@@ -197,6 +196,7 @@ for(kkk = 0; kkk < row_length; kkk++)
   *separator = sep;
   *sep_size  = s_sizes;
   *imapper   = mapper;
+
 }
 
 /*************************************************************************/
@@ -248,7 +248,6 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
   int   mask;             /* bit pattern identifying partner */
   int   hbit;             /* largest nonzero bit in nprocs */
   int   nprocs_small;     /* largest power of 2 <= nprocs */
-  int   k;
   int   node, nprocs;
   char *yo = "ML_gpartial_sum_int: ";
   int   partial_sum = 0, temp;
@@ -280,8 +279,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
 
     if (comm->USR_irecvbytes((void *) &temp, sizeof(int), &partner,
                              &type, comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -294,8 +292,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
 
     if (comm->USR_sendbytes((void *) &val, sizeof(int), partner, type,
                             comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -306,8 +303,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
 
     if (comm->USR_waitbytes((void *) &temp, sizeof(int), &partner, &type,
                             comm->USR_comm, &request) < sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
 
@@ -325,22 +321,19 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
 
       if (comm->USR_irecvbytes((void *) &temp, sizeof(int), &partner,
                                &type, comm->USR_comm, &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_sendbytes((void *) &val, sizeof(int), partner, type,
                                 comm->USR_comm)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (comm->USR_waitbytes((void *) &temp, sizeof(int), &partner,
                        &type, comm->USR_comm, &request) < sizeof(int)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                       "type = %d\n", yo, node, type);
+        (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
         exit(-1);
       }
 
@@ -355,8 +348,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_irecvbytes((void *) &val, sizeof(int), &partner,
                              &type, comm->USR_comm, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nrecv failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -364,8 +356,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
   else if (node+nprocs_small < nprocs ) {
     if (comm->USR_sendbytes((void *) &val, sizeof(int), partner, type,
                             comm->USR_comm)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nsend failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -373,8 +364,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
   if (node & nprocs_small) {
     if (comm->USR_waitbytes((void *) &val, sizeof(int), &partner, &type,
                             comm->USR_comm, &request) < sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message "
-                     "type = %d\n", yo, node, type);
+      (void) fprintf(stderr, "%sERROR on node %d\nwait failed, message type = %d\n", yo, node, type);
       exit(-1);
     }
   }
@@ -388,7 +378,7 @@ int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
                     int total_length,int sub_mask)
 {
    int     mask, partner, hbit, msgtype, msgbase=145;
-   int     i, k, nbytes, mypid, nprocs, sub_cube, nprocs_small;
+   int     nbytes, mypid, nprocs, sub_cube, nprocs_small;
    USR_REQ Request;
 
   /*********************** first executable statment *****************/
@@ -425,8 +415,7 @@ if ((sub_mask & partner) == sub_cube) {
     if ( com_ptr->USR_irecvbytes((void *) &(vals[*cur_length]),
                        (total_length - *cur_length) * sizeof(int), &partner,
                        &msgtype, com_ptr->USR_comm, (void *) &Request) ) {
-      (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
-                     "type = %d\n", mypid, msgtype);
+      (void) fprintf(stderr, "ERROR on node %d\nread failed, message type = %d\n", mypid, msgtype);
       exit(-1);
     }
 }
@@ -441,8 +430,7 @@ if ((sub_mask & partner) == sub_cube) {
 if ((sub_mask & partner) == sub_cube) {
     if (com_ptr->USR_sendbytes((void *) vals, (*cur_length)*sizeof(int), 
 			       partner, msgtype, com_ptr->USR_comm)) {
-      (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
-                     "type = %d\n", mypid, msgtype);
+      (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message type = %d\n", mypid, msgtype);
       exit(-1);
     }
 }
@@ -469,15 +457,13 @@ if ((sub_mask & partner) == sub_cube) {
       if (com_ptr->USR_irecvbytes((void *) &(vals[*cur_length]),
                         (total_length - *cur_length)*sizeof(int), &partner,
                         &msgtype, com_ptr->USR_comm, (void *) &Request)) {
-        (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
-                       "type = %d\n", mypid, msgtype);
+        (void) fprintf(stderr, "ERROR on node %d\nread failed, message type = %d\n", mypid, msgtype);
         exit(-1);
       }
 
       if (com_ptr->USR_sendbytes((void *) vals, *cur_length*sizeof(int), 
 			partner, msgtype, com_ptr->USR_comm)) {
-        (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
-                       "type = %d\n", mypid, msgtype);
+        (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message type = %d\n", mypid, msgtype);
         exit(-1);
       }
 
@@ -496,8 +482,7 @@ if ((sub_mask & partner) == sub_cube) {
 if ((sub_mask & partner) == sub_cube) {
     if (com_ptr->USR_irecvbytes((void *) vals, total_length*sizeof(int),
 			&partner,&msgtype,com_ptr->USR_comm,(void *) &Request)){
-      (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
-                     "type = %d\n", mypid, msgtype);
+      (void) fprintf(stderr, "ERROR on node %d\nread failed, message type = %d\n", mypid, msgtype);
       exit(-1);
     }
 }
@@ -507,8 +492,7 @@ if ((sub_mask & partner) == sub_cube) {
 if ((sub_mask & partner) == sub_cube) {
     if (com_ptr->USR_sendbytes((void *) vals, *cur_length*sizeof(int), partner,
 				msgtype, com_ptr->USR_comm )) {
-      (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
-                     "type = %d\n", mypid, msgtype);
+      (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message type = %d\n", mypid, msgtype);
       exit(-1);
     }
 }
@@ -521,21 +505,18 @@ if ((sub_mask & partner) == sub_cube) {
     (*cur_length) = (nbytes / sizeof(int));
 }
   }
+  return 0;
 
 } /* ML_gappend */
 
-extern void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
-                      int start_location, int total_send, ML_Comm *comm,
-                      int mask);
 
-/*int CSR_submv(ML_Operator *Amat, double p[], double ap[], int mask)*/
 int CSR_submv(ML_Operator *Amat, double p[], double ap[])
 {
-   int i, j, k, Nrows, *bindx, total_send, total_rcv, bindx_row, nzeros;
-   double *p2, *val, sum, dtemp;
-   struct ML_CSR_MSRdata *temp;
-   ML_CommInfoOP *getrow_comm;
-   int *row_ptr;
+  int i, k, Nrows, *bindx, total_send, total_rcv;
+  double *p2, *val, sum;
+  struct ML_CSR_MSRdata *temp;
+  ML_CommInfoOP *getrow_comm;
+  int *row_ptr;
 
    Nrows = Amat->matvec->Nrows;
    temp  = (struct ML_CSR_MSRdata *) Amat->data;
@@ -571,9 +552,9 @@ int CSR_submv(ML_Operator *Amat, double p[], double ap[])
 }
 int ML_submv(ML_Operator *Amat, double p[], double ap[])
 {
-   int i, j, k, Nrows, total_send, total_rcv, nzeros, *cols, allocated_space;
+   int i, j, Nrows, total_send, total_rcv, *cols, allocated_space;
    int length, col;
-   double *p2, *vals, sum, dtemp;
+   double *p2, *vals, dtemp;
    ML_CommInfoOP *getrow_comm;
 
    Nrows = Amat->matvec->Nrows;
@@ -617,9 +598,9 @@ int ML_submv(ML_Operator *Amat, double p[], double ap[])
 }
 int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 {
-   int i, j, k, Nrows, total_send, total_rcv, nzeros, *cols, allocated_space;
+   int i, j, Nrows, total_send, total_rcv, *cols, allocated_space;
    int col, length;
-   double *p2, *vals, sum, dtemp;
+   double *p2, *vals, dtemp;
    ML_CommInfoOP *getrow_comm;
 
    Nrows = Amat->matvec->Nrows;
@@ -665,7 +646,7 @@ int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 }
 int CSR_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 {
-   int i, j, k, Nrows, *bindx, total_send, total_rcv, bindx_row, nzeros;
+  int i, k, Nrows, *bindx, total_send, total_rcv;
    double *p2, *val, sum;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP *getrow_comm;

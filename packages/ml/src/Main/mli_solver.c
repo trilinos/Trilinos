@@ -21,12 +21,6 @@
 #include "ml_agg_genP.h"
 #include "mli_solver.h"
 
-extern int MLI_Solver_Construct_CSRMatrix(int, int*, int*, double*, 
-                         MLI_CSRMatrix *, MLI_Solver*, int *,MLI_Context*); 
-extern int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, 
-                         int *mat_ja, double *mat_a, MLI_CSRMatrix *mli_mat,
-                         MLI_Solver *solver, int *partition, MLI_Context *obj); 
-
 /****************************************************************************/ 
 /* communication functions on parallel platforms                            */
 /*--------------------------------------------------------------------------*/
@@ -147,7 +141,7 @@ int MLI_CSRExchBdry(double *vec, void *obj)
          dbuf[j] = vec[tempList[j]];
       }
       MLI_Send((void*) dbuf, leng, dest, msgid, comm);
-      if ( dbuf != NULL ) free( dbuf );
+      if ( dbuf != NULL ) ML_free( dbuf );
    }
    offset = nRows;
    for ( i = 0; i < recvProcCnt; i++ )
@@ -157,7 +151,7 @@ int MLI_CSRExchBdry(double *vec, void *obj)
       MLI_Wait((void*) &(vec[offset]), leng, &src, &msgid, comm, &request[i]);
       offset += recvLeng[i];
    }
-   free ( request );
+   ML_free( request );
    return 1;
 }
 
@@ -199,7 +193,7 @@ int MLI_CSRMatVec(void *obj, int leng1, double p[], int leng2, double ap[])
        }
        ap[i] = sum;
     }
-    if ( dbuf != NULL ) free( dbuf );
+    if ( dbuf != NULL ) ML_free( dbuf );
     return 1;
 }
 
@@ -289,32 +283,32 @@ int MLI_Solver_Destroy( MLI_Solver *solver )
     if ( solver->ml_ag  != NULL ) ML_Aggregate_Destroy( &(solver->ml_ag) );
     if ( solver->ml_amg != NULL ) ML_AMG_Destroy( &(solver->ml_amg) );
     if ( solver->ml_ptr != NULL ) ML_Destroy( &(solver->ml_ptr) );
-    if ( solver->contxt->partition != NULL ) free( solver->contxt->partition );
+    if ( solver->contxt->partition != NULL ) ML_free( solver->contxt->partition );
     if ( solver->contxt->Amat != NULL )
     {
        Amat = (MLI_CSRMatrix *) solver->contxt->Amat;
-       if ( Amat->sendProc != NULL ) free (Amat->sendProc);
-       if ( Amat->sendLeng != NULL ) free (Amat->sendLeng);
+       if ( Amat->sendProc != NULL ) ML_free(Amat->sendProc);
+       if ( Amat->sendLeng != NULL ) ML_free(Amat->sendLeng);
        if ( Amat->sendList != NULL ) 
        {
           for (i = 0; i < Amat->sendProcCnt; i++ )
-             if (Amat->sendList[i] != NULL) free (Amat->sendList[i]);
-          free (Amat->sendList);
+             if (Amat->sendList[i] != NULL) ML_free(Amat->sendList[i]);
+          ML_free(Amat->sendList);
        }
-       if ( Amat->recvProc != NULL ) free (Amat->recvProc);
-       if ( Amat->recvLeng != NULL ) free (Amat->recvLeng);
-       if ( Amat->map      != NULL ) free (Amat->map);
-       free( Amat );
+       if ( Amat->recvProc != NULL ) ML_free(Amat->recvProc);
+       if ( Amat->recvLeng != NULL ) ML_free(Amat->recvLeng);
+       if ( Amat->map      != NULL ) ML_free(Amat->map);
+       ML_free( Amat );
     }
-    if ( solver->contxt != NULL ) free( solver->contxt );
-    if ( solver->diag_scale != NULL ) free( solver->diag_scale );
-    if ( solver->mat_ia    != NULL ) free( solver->mat_ia );
-    if ( solver->mat_ja    != NULL ) free( solver->mat_ja );
-    if ( solver->mat_a     != NULL ) free( solver->mat_a );
-    if ( solver->rhs       != NULL ) free( solver->rhs   );
-    if ( solver->sol       != NULL ) free( solver->sol   );
-    if ( solver->nullSpace != NULL ) free( solver->nullSpace );
-    free( solver );
+    if ( solver->contxt != NULL ) ML_free( solver->contxt );
+    if ( solver->diag_scale != NULL ) ML_free( solver->diag_scale );
+    if ( solver->mat_ia    != NULL ) ML_free( solver->mat_ia );
+    if ( solver->mat_ja    != NULL ) ML_free( solver->mat_ja );
+    if ( solver->mat_a     != NULL ) ML_free( solver->mat_a );
+    if ( solver->rhs       != NULL ) ML_free( solver->rhs   );
+    if ( solver->sol       != NULL ) ML_free( solver->sol   );
+    if ( solver->nullSpace != NULL ) ML_free( solver->nullSpace );
+    ML_free( solver );
 
     return 0;
 }
@@ -429,7 +423,7 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
        nPDE = solver->nPDE;
        nullDim = solver->nNullVectors;
        ML_Aggregate_Set_NullSpace(solver->ml_ag,nPDE,nullDim,dble_array,localEqns);
-       free(dble_array);
+       ML_free(dble_array);
 
        /* ----------------------------------------------------- */ 
        /* perform aggregation                                   */
@@ -676,7 +670,7 @@ int MLI_Solver_Solve( MLI_Solver *solver)
     for ( i = 0; i < leng; i++ )
        diag[i] = diag_scale[i] * diag_scale[i];
     ML_Krylov_Set_Diagonal(ml_kry, leng, diag);
-    free( diag );
+    ML_free( diag );
     *******************************************************/
 
     rhs = solver->rhs;
@@ -971,8 +965,8 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     diag_scale = (double *) ML_allocate((nrows+externLeng)*sizeof(double)); 
     nnz = 0; 
     for (i = 0; i < localEqns; i++) nnz += diagSize[i] + offdiagSize[i]; 
-    free( diagSize );
-    free( offdiagSize );
+    ML_free( diagSize );
+    ML_free( offdiagSize );
 
     /* -------------------------------------------------------- */ 
     /* put the matrix data in the CSR matrix                    */
@@ -1073,7 +1067,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
        for ( i = 0; i < recvProcCnt; i++ ) tempCnt[recvProc[i]] = 1;
        MPI_Allreduce(tempCnt, sendLeng, nprocs, MPI_INT, MPI_SUM, comm );
        sendProcCnt = sendLeng[my_id];
-       free( sendLeng );
+       ML_free( sendLeng );
        if ( sendProcCnt > 0 )
        {
           sendLeng = (int *)  ML_allocate( sendProcCnt * sizeof(int) );
@@ -1178,7 +1172,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
        /* clean up                                              */
        /* ----------------------------------------------------- */ 
 
-       free( tempCnt );
+       ML_free( tempCnt );
     }
 
     /* -------------------------------------------------------- */ 
@@ -1202,7 +1196,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     }
     else
     {
-       free( diag_scale );
+       ML_free( diag_scale );
        solver->diag_scale = NULL;
     }
     return 0;
@@ -1391,9 +1385,9 @@ int MLI_Solver_Get_IJAFromFile(MLI_Solver *solver, char *matfile, char *rhsfile)
    solver->mat_ja = ja;
    solver->mat_a  = val;
    solver->rhs    = rhs;
-   free( mat_ia);
-   free( mat_ja);
-   free( mat_a);
+   ML_free( mat_ia);
+   ML_free( mat_ja);
+   ML_free( mat_a);
    return local_N;
 } 
 
@@ -1475,7 +1469,7 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
    else                      solver->nPDE = 3;
    solver->nNullVectors = nullDimension;
    solver->nullSpace = rbm;
-   free( rbm_global);
+   ML_free( rbm_global);
    return mybegin;
 } 
 
@@ -1737,7 +1731,7 @@ int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     diag_scale = (double *) ML_allocate(nrows*sizeof(double)); 
     nnz = 0; 
     for (i = 0; i < localEqns; i++) nnz += diagSize[i]; 
-    free( diagSize );
+    ML_free( diagSize );
 
     /* -------------------------------------------------------- */ 
     /* put the matrix data in the CSR matrix                    */

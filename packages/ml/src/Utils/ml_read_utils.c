@@ -612,8 +612,8 @@ int ML_strcmp(char *input, char *string)
   }
 
   i = strcmp(input_copy, string_copy);
-  free(input_copy);
-  free(string_copy);
+  ML_free(input_copy);
+  ML_free(string_copy);
 
   return(i);
 }

@@ -10,6 +10,7 @@
 /* ******************************************************************** */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "ml_rbm.h"
 
 int ML_Coord2RBM(int Nnodes, double x[], double y[], double z[], 

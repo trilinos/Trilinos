@@ -9,6 +9,7 @@
 /* ******************************************************************** */
 /* ******************************************************************** */
 
+#include <stdlib.h>
 #include "ml_mat_formats.h"
 #include "ml_memory.h"
 /*********************************************************************/
@@ -33,6 +34,8 @@ void ML_restricted_MSR_mult(ML_Operator *matrix, int Nrows,
    struct ML_CSR_MSRdata *temp;
    ML_Comm *comm;
 
+   if (Nrows == -57) 
+     ML_avoid_unused_param( (void *) &Nsend);
    comm = matrix->comm;
    ML_exchange_bdry(b, matrix->getrow->pre_comm, Nrows, comm,
                     ML_OVERWRITE,NULL);
@@ -182,7 +185,10 @@ int MSR_getrows(void *data, int N_requested_rows, int requested_rows[],
   start  = bindx[row];
   finish = bindx[row+1];
   *row_lengths = finish - start + 1;
-  if (*row_lengths > allocated_space) return(0);
+  if (*row_lengths > allocated_space) {
+    ML_avoid_unused_param( (void *) &N_requested_rows);
+    return(0);
+  }
 
   /* diagonal */
 
@@ -214,7 +220,10 @@ int MSR_get_ones_rows(void *data, int N_requested_rows, int requested_rows[],
   start  = bindx[row];
   finish = bindx[row+1];
   *row_lengths = finish - start + 1;
-  if (*row_lengths > allocated_space) return(0);
+  if (*row_lengths > allocated_space) {
+    ML_avoid_unused_param( (void *) &N_requested_rows);
+    return(0);
+  }
 
   /* diagonal */
 
@@ -333,7 +342,10 @@ int CSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    *row_lengths = rowptr[row+1] - itemp;
 
 
-   if (*row_lengths > allocated_space) return(0);
+   if (*row_lengths > allocated_space) {
+    ML_avoid_unused_param( (void *) &N_requested_rows);
+    return(0);
+  }
 
    bindx  = &(input_matrix->columns[itemp]);
    for (j = 0 ; j < *row_lengths; j++) {
@@ -360,7 +372,10 @@ int CSR_get_ones_rows(void *data, int N_requested_rows, int requested_rows[],
    *row_lengths = rowptr[row+1] - itemp;
 
 
-   if (*row_lengths > allocated_space) return(0);
+   if (*row_lengths > allocated_space) {
+     ML_avoid_unused_param( (void *) &N_requested_rows);
+     return(0);
+   }
 
    bindx  = &(input_matrix->columns[itemp]);
    for (j = 0 ; j < *row_lengths; j++) {
@@ -719,6 +734,10 @@ int localCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 
    p2 = p;
    ap2 = ap;
+   if (ilen == -57) {
+     ML_avoid_unused_param( (void *) &ilen);
+   }
+
 
    for (i = 0; i < Nstored; i++) {
      sum = 0;
@@ -751,9 +770,9 @@ int ML_Matrix_DCSR_Create( ML_Matrix_DCSR **mat)
 
 void ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR **mat )
 {
-   if ( (*mat)->mat_ia != NULL ) free((*mat)->mat_ia);
-   if ( (*mat)->mat_ja != NULL ) free((*mat)->mat_ja);
-   if ( (*mat)->mat_a  != NULL ) free((*mat)->mat_a);
+   if ( (*mat)->mat_ia != NULL ) ML_free((*mat)->mat_ia);
+   if ( (*mat)->mat_ja != NULL ) ML_free((*mat)->mat_ja);
+   if ( (*mat)->mat_a  != NULL ) ML_free((*mat)->mat_a);
    if ( (*mat)->comminfo != NULL )
       ML_CommInfoOP_Destroy( &((*mat)->comminfo) );
 }
@@ -801,7 +820,11 @@ int ML_Matrix_DCSR_Getrow(void *data, int N_req_rows, int req_rows[],
    rowptr = Amat->mat_ia;
    itemp  = rowptr[row];
    *row_lengths = rowptr[row+1] - itemp;
-   if (*row_lengths > allocated) return(0);
+   if (*row_lengths > allocated) {
+     ML_avoid_unused_param( (void *) &N_req_rows);
+     return(0);
+   }
+
    bindx  = &(Amat->mat_ja[itemp]);
    for (i = 0 ; i < *row_lengths; i++) *columns++ = *bindx++;
    val    = &(Amat->mat_a[itemp]);
@@ -831,6 +854,10 @@ int ML_Matrix_DCSR_Matvec(void *data,int ilen,double *x,int olen,double y[])
    row_ptr     = Amat->mat_ia;
    getrow_comm = Amat->comminfo;
 
+   if (olen != -57) {
+     ML_avoid_unused_param( (void *) &olen);
+   }
+
    if (getrow_comm != NULL)
    {
       nbytes = (getrow_comm->minimum_vec_size+ilen+1) * sizeof(double);
@@ -848,7 +875,7 @@ int ML_Matrix_DCSR_Matvec(void *data,int ilen,double *x,int olen,double y[])
       y[i] = sum;
    }
 
-   if (getrow_comm != NULL) free(y2);
+   if (getrow_comm != NULL) ML_free(y2);
 
    return(1);
 }

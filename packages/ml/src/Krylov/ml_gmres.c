@@ -71,15 +71,15 @@ int ML_GMRES_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
        printf("ML_GMRES initial residual norm = %e \n", init_norm);
    if ( init_norm == 0.0 ) 
    {
-      for (i=0; i<=mlen+2; i++) free(ws[i]);
-      free(ws);
-      free(darray);
-      for (i=1; i<=mlen+1; i++) free( HH[i] );
-      free(HH);
-      free(indlist);
-      free(RS);
-      free(S);
-      free(C);
+      for (i=0; i<=mlen+2; i++) ML_free(ws[i]);
+      ML_free(ws);
+      ML_free(darray);
+      for (i=1; i<=mlen+1; i++) ML_free( HH[i] );
+      ML_free(HH);
+      ML_free(indlist);
+      ML_free(RS);
+      ML_free(S);
+      ML_free(C);
       return 1;
    }
 
@@ -180,15 +180,15 @@ int ML_GMRES_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
   /* de-allocate storage for temporary vectors*/
   /* -----------------------------------------------------------------*/
 
-   for (i=0; i<=mlen+2; i++) free(ws[i]);
-   free(ws);
-   free(darray);
-   for (i=1; i<=mlen+1; i++) free( HH[i] );
-   free(HH);
-   free(indlist);
-   free(RS);
-   free(S);
-   free(C);
+   for (i=0; i<=mlen+2; i++) ML_free(ws[i]);
+   ML_free(ws);
+   ML_free(darray);
+   for (i=1; i<=mlen+1; i++) ML_free( HH[i] );
+   ML_free(HH);
+   ML_free(indlist);
+   ML_free(RS);
+   ML_free(S);
+   ML_free(C);
    return 1;
 }
 

@@ -9,13 +9,17 @@
 /* Author : Ray Tuminaro (SNL)                                          */
 /************************************************************************/
 
+#include "ml_struct.h"
 #ifdef AZTEC
 #ifdef ML_MPI
 #define AZ_MPI
 #endif
-#include "ml_struct.h"
 #include "ml_aztec_utils.h"
 #include "ml_memory.h"
+#include "ml_utils.h"
+#ifdef ML_WITH_EPETRA
+#include "az_blas_wrappers.h"
+#endif
 
 int warning_flag = 0;
 
@@ -162,6 +166,11 @@ int az_matvec_wrapper(void *data,  int in, double p[], int out, double ap[])
    int      i, n,n2, *data_org;
    double   *p2;
 
+   /* bogus code to avoid warnings */
+   if (in == -37) {
+     ML_avoid_unused_param((void *) & out);
+   }
+
    temp = (struct aztec_context *) data;
    data_org = temp->Amat->data_org;
    n        = data_org[AZ_N_internal] + data_org[AZ_N_border];
@@ -182,6 +191,8 @@ void az_wrap_ml_matvec(double invec[], double outvec[], AZ_MATRIX *Amat,
 		       int proc_config[])
 {
   ML_Operator *ML_Amat;
+
+  if (proc_config == NULL) printf("az_wrap_ml_matvec: proc_config is null\n");
 
   ML_Amat = (ML_Operator *) AZ_get_matvec_data(Amat);
   ML_Operator_Apply(ML_Amat, ML_Amat->invec_leng, invec, 
@@ -357,8 +368,8 @@ void AZ_ML_set_userdiagonal(ML *ml, int mesh_level, AZ_MATRIX *matrix)
 		tmp = matrix->getrow(cols, vals, &row_len, matrix, 1, 
 												 &i, max_nnz_per_row);
 		while (tmp == 0) {
-			free(cols);
-			free(vals);
+			ML_free(cols);
+			ML_free(vals);
 			max_nnz_per_row=max_nnz_per_row*2+1;
 			cols=(int *)ML_allocate(max_nnz_per_row*sizeof(int));
 			vals=(double *)ML_allocate(max_nnz_per_row*sizeof(double));
@@ -378,8 +389,8 @@ void AZ_ML_set_userdiagonal(ML *ml, int mesh_level, AZ_MATRIX *matrix)
 		
   ML_Set_Amatrix_Diag( ml, mesh_level, fixed_leng, diagonal );
   ML_free(diagonal);
-	free(cols);
-	free(vals);
+	ML_free(cols);
+	ML_free(vals);
 }
 /*****************************************************************************/
 /*****************************************************************************/
@@ -400,6 +411,14 @@ void MLsmoother_precondition(double ff[], int options[], int proc_config[],
 #endif
   invec_leng = pre_smoother->my_level->Amat->invec_leng;
   rhs = (double *) ML_allocate(invec_leng*sizeof(double));
+
+  /* bogus code so that we don't get warnings about unused parameters */
+  if (invec_leng == -37) {
+    ML_avoid_unused_param( (void *) options);
+    ML_avoid_unused_param( (void *) proc_config);
+    ML_avoid_unused_param( (void *) params);
+    ML_avoid_unused_param( (void *) mat);
+  }
 
   for (i = 0; i < invec_leng; i++) {
     rhs[i] = ff[i];
@@ -484,6 +503,9 @@ void ML_precondition(double ff[], int options[], int proc_config[],
         printf("\tunsupported solver intended to handle changing \n");
         printf("\tpreconditioners or ML_Iterate() can be used to run\n");
         printf("\tthe multilevel method.\n\n"); 
+	ML_avoid_unused_param( (void *) proc_config);
+	ML_avoid_unused_param( (void *) params);
+	ML_avoid_unused_param( (void *) mat);
      }
   }
   lenf  = ml->SingleLevel[ml->ML_finest_level].Amat->outvec_leng;
@@ -499,7 +521,7 @@ void ML_precondition(double ff[], int options[], int proc_config[],
   else if (ml->ML_scheme == ML_PAMGV) ML_Solve_ProjectedAMGV( ml, ff, ffout);
   else ML_Solve_MGV( ml, ff, ffout );
   for (i = 0; i < lenf; i++) ff[i] = ffout[i];
-  free(ffout);
+  ML_free(ffout);
 #ifdef ML_TIMING
   ml->timing->precond_apply_time += (GetClock() - t0);
 #endif
@@ -788,10 +810,10 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
    
       csr2_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
       ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
-      free(row_ptr);
-      free(cols);
-      free(vals);
-      free(csr_mat);
+      ML_free(row_ptr);
+      ML_free(cols);
+      ML_free(vals);
+      ML_free(csr_mat);
       nrows = csr2_mat->mat_n;
       AZ_Amat = AZ_matrix_create(nrows);
       sub_proc_config = (int *) ML_allocate(AZ_PROC_SIZE*sizeof(int));
@@ -987,7 +1009,8 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
    p2       = (double *) AZ_allocate( (n2+1)*sizeof(double));
 
    if (p2 == NULL) {
-      printf("az_wrap_solvers: Out of space\n"); exit(1);
+     ML_avoid_unused_param((void *) &out);
+     printf("az_wrap_solvers: Out of space\n"); exit(1);
    }
 
    /* we have replicated entire linear system on each processor */
@@ -1082,8 +1105,8 @@ void AZ_ML_SmootherClean(void *data)
       ML_memory_free( (void **) &(csr2_mat->mat_ja));
       ML_memory_free( (void **) &(csr2_mat->mat_a) );
       ML_memory_free( (void **) &(csr2_mat->mat_ia) );
-      free(csr2_mat);
-      free(context->proc_config);
+      ML_free(csr2_mat);
+      ML_free(context->proc_config);
    }
    AZ_matrix_destroy(&(context->Amat) );
    AZ_precond_destroy(&(context->Prec));
@@ -1358,7 +1381,7 @@ int  wrapper_DCSR_getrow(int columns[], double values[], int row_lengths[],
    status = CSR_getrows(temp_ptr, N_requested_rows, requested_rows,
                         allocated_space, columns, values, row_lengths);
 
-   free(temp_ptr);
+   ML_free(temp_ptr);
    return(status);
 
 }
@@ -1378,7 +1401,7 @@ void wrapper_DCSR_matvec(double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
    temp_ptr->values = csr2_mat->mat_a;
 
    localCSR_matvec(temp_ptr, csr2_mat->mat_n, b, csr2_mat->mat_n, c);
-   free(temp_ptr);
+   ML_free(temp_ptr);
 }
 /*****************************************************************************/
 extern int AZ_using_fortran;
@@ -1970,6 +1993,7 @@ void AZ_add_new_row_nodiag(int therow, int *nz_ptr, int *current, double **val,
 #endif
 
     if (kk <= 0) {
+      ML_avoid_unused_param((void *) &therow);
          (void) fprintf(stderr,"\nError: format error in '.data' file ");
          (void) fprintf(stderr,"on row '%d'\n",*current);
          (void) fprintf(stderr,"      This can be caused if exponents are\n");
@@ -2448,7 +2472,6 @@ int ML_MSR_scalesol(double *x, double *scale_vect,int length)
   for (i = 0; i < length; i++) x[i] /= scale_vect[i];
   return 0;
 }
-extern int ML_Aggregate_AztecRead(ML_Aggregate *ag);
 
 int ML_Aggregate_AztecRead(ML_Aggregate *ag) {
 
@@ -2553,7 +2576,7 @@ void AZ_block_matvec(double *x, double *y, AZ_MATRIX *Amat,
 #else
 
 /* to satisfy the requirement of certain compilers */
-int ML_empty;
+int ML_emptyjunk;
 
 #endif
 

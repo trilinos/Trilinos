@@ -66,7 +66,7 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
        printf("ML_BICGSTABL initial residual norm = %e \n", init_norm);
    if ( init_norm == 0.0 )
    {
-      free(r); 
+      ML_free(r); 
       return 1;
    }
 
@@ -227,17 +227,17 @@ int ML_BICGSTABL_Solve(ML_Krylov *data,int length,double *rhs,double *sol)
   /* de-allocate storage for temporary vectors*/
   /* -----------------------------------------------------------------*/
 
-   free(r);
+   ML_free(r);
    for (i=1; i<=blen; i++) {
-      free( mat[i] );
-      free( tau[i] );
+      ML_free( mat[i] );
+      ML_free( tau[i] );
    }
-   free( gammap );
-   free( gammanp );
-   free( gammapp );
-   free( mat );
-   free( tau );
-   free( sigma );
+   ML_free( gammap );
+   ML_free( gammanp );
+   ML_free( gammapp );
+   ML_free( mat );
+   ML_free( tau );
+   ML_free( sigma );
    return 1;
 }
 
