@@ -11,6 +11,8 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
+#include "Epetra_BlockMap.h"
+#include "Epetra_MapColoring.h"
 #include "Epetra_CrsMatrix.h"
 
 using namespace std;
@@ -217,6 +219,11 @@ int main(int argc, char * argv[]) {
     cout << "color_map[" << column << "] = " << color_map[column] << endl;
   } // end col loop
 
+  // New section to Epetra_MapColoring
+  Epetra_MapColoring C1(color_map, Map);
+
+  cout << C1;
+  
   // Clean up
 
   delete [] MyGlobalElements;
@@ -226,3 +233,4 @@ int main(int argc, char * argv[]) {
   cout << endl << argv[0] << " done." << endl;
 
 } // end main
+
