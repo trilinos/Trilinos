@@ -42,11 +42,6 @@
 */
 
 #include "Teuchos_LAPACK.hpp"
-#include "Teuchos_ConfigDefs.hpp"
-#if ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_COMPLEX)
-#define ComplexFloat complex<float>
-#define ComplexDouble complex<double>
-#endif
 
 #ifdef HAVE_TEUCHOS_ARPREC
 #include "mp/mpreal.h"
@@ -65,93 +60,65 @@
 
     \note 
      <ol>
-	<li> The default defined specializations for ScalarTraits are: \c int, \c float, and \c double.
-     	<li> If Teuchos is configured with \c --enable-teuchos-complex then ScalarTraits also has the specializations:
-	\c complex<float> and \c complex<double>
-     	<li>ScalarTraits can be used with the Arbitrary Precision Library ( \c http://crd.lbl.gov/~dhbailey/mpdist/ )
-	by configuring Teuchos with \c --enable-teuchos-arprec and giving the appropriate paths to ARPREC.
-	Then ScalarTraits has the specialization: \c mp_real
+       <li> The default defined specializations for ScalarTraits are: \c int, \c float, and \c double.
+     	 <li> If Teuchos is configured with \c --enable-teuchos-complex then ScalarTraits also has the specializations:
+            \c complex<float> and \c complex<double>.
+     	<li> ScalarTraits can be used with the Arbitrary Precision Library ( \c http://crd.lbl.gov/~dhbailey/mpdist/ )
+           by configuring Teuchos with \c --enable-teuchos-arprec and giving the appropriate paths to ARPREC.
+           Then ScalarTraits has the specialization: \c mp_real.
      </ol>
 */
 
 namespace Teuchos {
-  
+
   template<class T>
-  struct ScalarTraits 
+  struct UndefinedScalarTraits
   {
+    // This function should not compile if there is an attempt to instantiate!
+    static inline T notDefined() { return T::this_type_is_missing_a_specialization(); };
+  };
+
+  template<class T>
+  struct ScalarTraits
+  {
+    //! Madatory typedef for result of magnitude
     typedef T magnitudeType;
-    
-    //! Aborting function to restrict non-supported implementations of ScalarTraits.
-    static inline int undefinedParameters()
-    {
-#ifndef TEUCHOS_NO_ERROR_REPORTS
-      cerr << endl << "Teuchos::ScalarTraits: Machine parameters are undefined for this scalar type." << endl;
-#endif
-      return(-1);
-    }
-    
-    //! Aborting function to restrict non-supported implementations of ScalarTraits.
-    static inline int unsupportedType()
-    {
-#ifndef TEUCHOS_NO_ERROR_REPORTS
-      cerr << endl << "Teuchos::ScalarTraits: unsupported scalar type." << endl;
-#endif
-      return(-2);
-    }
-    
     //! Does this scalar type have machine-specific parameters.
     static inline bool haveMachineParameters() { return false; };
-
     //! Returns relative machine precision.
-    static inline magnitudeType eps()   { throw(undefinedParameters()); };
-
+    static inline magnitudeType eps()   { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns safe minimum (sfmin), such that 1/sfmin does not overflow.
-    static inline magnitudeType sfmin() { throw(undefinedParameters()); };
-
+    static inline magnitudeType sfmin() { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns the base of the machine.
-    static inline magnitudeType base()  { throw(undefinedParameters()); };
-
+    static inline magnitudeType base()  { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns \c eps*base.
-    static inline magnitudeType prec()  { throw(undefinedParameters()); };
-
+    static inline magnitudeType prec()  { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns the number of (base) digits in the mantissa.
-    static inline magnitudeType t()     { throw(undefinedParameters()); };
-
+    static inline magnitudeType t()     { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns 1.0 when rounding occurs in addition, 0.0 otherwise
-    static inline magnitudeType rnd()   { throw(undefinedParameters()); };
-
+    static inline magnitudeType rnd()   { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns the minimum exponent before (gradual) underflow.
-    static inline magnitudeType emin()  { throw(undefinedParameters()); };
-
+    static inline magnitudeType emin()  { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns the underflow threshold - \c base^(emin-1)
-    static inline magnitudeType rmin()  { throw(undefinedParameters()); };
-
+    static inline magnitudeType rmin()  { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns the largest exponent before overflow.
-    static inline magnitudeType emax()  { throw(undefinedParameters()); };
-
+    static inline magnitudeType emax()  { return UndefinedScalarTraits<T>::notDefined(); };
     //! Overflow theshold - \c (base^emax)*(1-eps)
-    static inline magnitudeType rmax()  { throw(undefinedParameters()); };
-
+    static inline magnitudeType rmax()  { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns the magnitudeType of the scalar type \c a.
-    static inline magnitudeType magnitude(T a) { throw(unsupportedType()); };
-
+    static inline magnitudeType magnitude(T a) { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns representation of zero for this scalar type.
-    static inline T zero()                     { throw(unsupportedType()); };
-
+    static inline T zero()                     { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns representation of one for this scalar type.
-    static inline T one()                      { throw(unsupportedType()); };
-
+    static inline T one()                      { return UndefinedScalarTraits<T>::notDefined(); };
     //! Seed the random number generator returned by <tt>random()</tt>.
-    static inline void seedrandom(unsigned int s) { throw(unsupportedType()); };
-
+    static inline void seedrandom(unsigned int s) { int i; T t = &i; };
     //! Returns a random number (between -one() and +one()) of this scalar type.
-    static inline T random()                   { throw(unsupportedType()); };
-
+    static inline T random()                   { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns the name of this scalar type.
-    static inline const char* name()           { throw(unsupportedType()); };
-
+    static inline const char* name()           { (void)UndefinedScalarTraits<T>::notDefined(); return 0; };
     //! Returns a number of magnitudeType that is the square root of this scalar type \c x. 
-    static inline magnitudeType squareroot(T x) { throw(unsupportedType()); };
+    static inline magnitudeType squareroot(T x) { return UndefinedScalarTraits<T>::notDefined(); };
   };
   
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -160,26 +127,8 @@ namespace Teuchos {
   struct ScalarTraits<int>
   {
     typedef int magnitudeType;
-    
-    static inline int undefinedParameters()
-    {
-#ifndef TEUCHOS_NO_ERROR_REPORTS
-      cerr << endl << "Teuchos::ScalarTraits: Machine parameters are undefined for this scalar type." << endl;
-#endif
-      return(-1);
-    }
-
     static inline bool haveMachineParameters() { return false; };
-    static inline magnitudeType eps()   { throw(undefinedParameters()); };
-    static inline magnitudeType sfmin() { throw(undefinedParameters()); };
-    static inline magnitudeType base()  { throw(undefinedParameters()); };
-    static inline magnitudeType prec()  { throw(undefinedParameters()); };
-    static inline magnitudeType t()     { throw(undefinedParameters()); };
-    static inline magnitudeType rnd()   { throw(undefinedParameters()); };
-    static inline magnitudeType emin()  { throw(undefinedParameters()); };
-    static inline magnitudeType rmin()  { throw(undefinedParameters()); };
-    static inline magnitudeType emax()  { throw(undefinedParameters()); };
-    static inline magnitudeType rmax()  { throw(undefinedParameters()); };
+    // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
     static inline magnitudeType magnitude(int a) { return abs(a); };
     static inline int zero()  { return 0; };
     static inline int one()   { return 1; };
@@ -238,8 +187,14 @@ namespace Teuchos {
     static inline const char* name() { return "double"; };
     static inline double squareroot(double x) { return sqrt(x); };
   };
-  
+ 
 #if ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_COMPLEX)
+
+#if defined(HAVE_COMPLEX)
+  typedef std::complex<float>   ComplexFloat;
+#elif  defined(HAVE_COMPLEX_H)
+  typedef ::complex<float>      ComplexFloat;
+#endif
   
   template<> 
   struct ScalarTraits<ComplexFloat>
@@ -267,7 +222,6 @@ namespace Teuchos {
       return ComplexFloat(rnd1, rnd2);
     };
     static inline const char* name() { return "std::complex<float>"; };
-
     // This will only return one of the square roots of x, the other can be obtained by taking its conjugate
     static inline ComplexFloat squareroot(ComplexFloat x)
     {
@@ -278,9 +232,14 @@ namespace Teuchos {
       ComplexFloat result = ComplexFloat(nr, ni);
       return result;
     };
-
   };
-  
+
+#if defined(HAVE_COMPLEX)
+  typedef std::complex<double>   ComplexDouble;
+#elif  defined(HAVE_COMPLEX_H)
+  typedef ::complex<double>      ComplexDouble;
+#endif
+
   template<>
   struct ScalarTraits<ComplexDouble>
   {
@@ -307,7 +266,6 @@ namespace Teuchos {
       return ComplexDouble(rnd1, rnd2);
     };
     static inline const char* name() { return "std::complex<double>"; };
-
     // This will only return one of the square roots of x, the other can be obtained by taking its conjugate
     static inline ComplexDouble squareroot(ComplexDouble x)
     {
@@ -327,32 +285,13 @@ namespace Teuchos {
   template<>
   struct ScalarTraits<mp_real>
   {
-
-    static inline int undefinedParameters()
-    {
-#ifndef TEUCHOS_NO_ERROR_REPORTS
-      cerr << endl << "Teuchos::ScalarTraits: Machine parameters are undefined for this scalar type." << endl;
-#endif
-      return(-1);
-    }
-
     typedef mp_real magnitudeType;
     static inline bool haveMachineParameters() { return false; };
-    static inline mp_real eps()   { throw(undefinedParameters()); };
-    static inline mp_real sfmin() { throw(undefinedParameters()); };
-    static inline mp_real base()  { throw(undefinedParameters()); };
-    static inline mp_real prec()  { throw(undefinedParameters()); };
-    static inline mp_real t()     { throw(undefinedParameters()); };
-    static inline mp_real rnd()   { throw(undefinedParameters()); };
-    static inline mp_real emin()  { throw(undefinedParameters()); };
-    static inline mp_real rmin()  { throw(undefinedParameters()); };
-    static inline mp_real emax()  { throw(undefinedParameters()); };
-    static inline mp_real rmax()  { throw(undefinedParameters()); };
-
+    // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
     static magnitudeType magnitude(mp_real a) { return abs(a); };
     static inline mp_real zero() { mp_real zero = 0.0; return zero; };
     static inline mp_real one() { mp_real one = 1.0; return one; };    
-    static inline void seedrandom(unsigned int s) { mp_rand(s); };
+    static inline void seedrandom(unsigned int s) { mp_srand(s); };
     static inline mp_real random() { return mp_rand(); };
     static inline const char* name() { return "mp_real"; };
     static inline mp_real squareroot(mp_real x) { return sqrt(x); };
