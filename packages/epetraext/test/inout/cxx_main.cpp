@@ -77,9 +77,9 @@ int main(int argc, char *argv[]) {
   }
 
   // Uncomment the next three lines to debug in mpi mode
-  int tmp;
-  if (MyPID==0) cin >> tmp;
-  Comm.Barrier();
+  //int tmp;
+  //if (MyPID==0) cin >> tmp;
+  //Comm.Barrier();
 
   Epetra_Map * readMap;
   Epetra_CrsMatrix * readA; 
@@ -142,7 +142,6 @@ int main(int argc, char *argv[]) {
 
   Comm.Barrier();
 
-  cout << "Calling Output function" << endl << endl << endl;
   RowMatrixToFile("test.mm", "test matrix", "This is a test matrix", A);
 				       
 #ifdef EPETRA_MPI

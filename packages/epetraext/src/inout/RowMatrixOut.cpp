@@ -91,19 +91,20 @@ int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
     int stripSize = allGids.GlobalLength()/numChunks;
     int remainder = allGids.GlobalLength()%numChunks;
     int curStart = 0;
+    int curStripSize = 0;
     Epetra_IntSerialDenseVector importGidList;
     int numImportGids = 0;
     if (comm.MyPID()==0) 
       importGidList.Size(stripSize+1); // Set size of vector to max needed
     for (int i=0; i<numChunks; i++) {
       if (comm.MyPID()==0) { // Only PE 0 does this part
-	int curStripSize = stripSize;
+	curStripSize = stripSize;
 	if (i<remainder) curStripSize++; // handle leftovers
-	for (int j=0; j<stripSize; j++) importGidList[j] = j + curStart;
+	for (int j=0; j<curStripSize; j++) importGidList[j] = j + curStart;
 	curStart += curStripSize;
       }
       // The following import map will be non-trivial only on PE 0.
-      Epetra_Map importGidMap(-1, importGidList.Length(), importGidList.Values(), 0, comm);
+      Epetra_Map importGidMap(-1, curStripSize, importGidList.Values(), 0, comm);
       Epetra_Import gidImporter(importGidMap, allGidsMap);
       Epetra_IntVector importGids(importGidMap);
       if (importGids.Import(allGids, gidImporter, Insert)) return(-1); 
@@ -116,9 +117,7 @@ int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
       Epetra_Import importer(importMap, map);
       Epetra_CrsMatrix importA(Copy, importMap, 0);
       if (importA.Import(A, importer, Insert)) return(-1); 
-      cout << "Calling FillComplete on PE" << comm.MyPID() << endl;
       if (importA.FillComplete()) return(-1);
-      cout << "Done with FillComplete on PE" << comm.MyPID() << endl;
 
       // Finally we are ready to write this strip of the matrix to ostream
       if (writeRowMatrix(handle, importA)) return(-1);
