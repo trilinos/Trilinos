@@ -1,4 +1,5 @@
 #include "Ifpack_ConfigDefs.h"
+#if defined(HAVE_IFPACK_TEUCHOS)
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MultiVector.h"
 #include "Ifpack_Graph.h"
@@ -256,3 +257,4 @@ ostream& Ifpack_RCMReordering::Print(std::ostream& os) const
    
   return(os);
 }
+#endif // HAVE_IFPACK_TEUCHOS

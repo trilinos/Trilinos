@@ -1,4 +1,5 @@
 #include "Ifpack_ConfigDefs.h"
+#if defined(HAVE_IFPACK_TEUCHOS)
 #include "Ifpack.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_PointRelaxation.h"
@@ -50,3 +51,5 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
     return(0);
 
 }
+
+#endif // HAVE_IFPACK_TEUCHOS

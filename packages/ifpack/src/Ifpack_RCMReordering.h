@@ -2,6 +2,7 @@
 #define IFPACK_RCMREORDERING_H
 
 #include "Ifpack_ConfigDefs.h"
+#if defined(HAVE_IFPACK_TEUCHOS)
 #include "Ifpack_Reordering.h"
 
 namespace Teuchos {
@@ -34,10 +35,8 @@ public:
   //! Sets double parameters `Name'.
   virtual int SetParameter(const string Name, const double Value);
   
-#ifdef HAVE_IFPACK_TEUCHOS  
   //! Sets all parameters.
   virtual int SetParameters(Teuchos::ParameterList& List);
-#endif
 
   //! Computes all it is necessary to initialize the reordering object.
   virtual int Compute(const Ifpack_Graph& Graph);
@@ -94,4 +93,5 @@ private:
   vector<int> InvReorder_;
 }; 
 
+#endif
 #endif
