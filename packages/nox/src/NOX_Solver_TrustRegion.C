@@ -99,8 +99,8 @@ void TrustRegion::init()
   fnew = 0.5 * solnPtr->getNormRHS() * solnPtr->getNormRHS();
 
   // Get parameter settings
-  if (!iparams.sublist("Newton Direction").isParameter("Method"))
-    iparams.sublist("Newton Direction").setParameter("Method", "Newton");
+  if (!iparams.sublist("Direction").isParameter("Method"))
+    iparams.sublist("Direction").setParameter("Method", "Newton");
 
   if (!iparams.sublist("Cauchy Direction").isParameter("Method"))
     iparams.sublist("Cauchy Direction").setParameter("Method", "Steepest Descent");
@@ -108,21 +108,22 @@ void TrustRegion::init()
   if (!iparams.sublist("Cauchy Direction").isParameter("Scaling Type"))
     iparams.sublist("Cauchy Direction").setParameter("Scaling Type", "Quadratic Model Min");
 
-  newton.reset(iparams.sublist("Newton Direction"));
+  newton.reset(iparams.sublist("Direction"));
   cauchy.reset(iparams.sublist("Cauchy Direction"));
 
-  radius = iparams.getParameter("Initial Radius", 1.0);
+  initRadius = iparams.getParameter("Initial Radius", 1.0);
+  radius = initRadius;
 
   if (radius <= 0) {
-    cerr << "NOX::Solver::TrustRegion::init() - Invalid \"Initial Radius\" (" 
+    cerr << "NOX::Solver::TrustRegion::init - Invalid \"Initial Radius\" (" 
 	 << radius << ")" << endl;
     throw "NOX Error";
   }
 
-  minRadius = iparams.getParameter("Minimum Trust Region Radius", 1.0e-12);
+  minRadius = iparams.getParameter("Minimum Trust Region Radius", 1.0e-3);
 
   if (minRadius <= 0) {
-    cerr << "NOX::Solver::TrustRegion::init() - Invalid \"Minimum Trust Region Radius\" (" 
+    cerr << "NOX::Solver::TrustRegion::init - Invalid \"Minimum Trust Region Radius\" (" 
 	 << minRadius << ")" << endl;
     throw "NOX Error";
   }
@@ -130,7 +131,7 @@ void TrustRegion::init()
   maxRadius = iparams.getParameter("Maximum Trust Region Radius", 1.0e+10);
 
   if (maxRadius <= minRadius) {
-    cerr << "NOX::Solver::TrustRegion::init() - Invalid \"Maximum Trust Region Radius\" (" 
+    cerr << "NOX::Solver::TrustRegion::init - Invalid \"Maximum Trust Region Radius\" (" 
 	 << maxRadius << ")" << endl;
     throw "NOX Error";
   }
@@ -138,7 +139,7 @@ void TrustRegion::init()
   minRatio = iparams.getParameter("Minimum Improvement Ratio", 1.0e-4);
 
   if (minRatio <= 0) {
-    cerr << "NOX::Solver::TrustRegion::init() - Invalid \"Minimum Improvement Ratio\" (" 
+    cerr << "NOX::Solver::TrustRegion::init - Invalid \"Minimum Improvement Ratio\" (" 
 	 << minRatio << ")" << endl;
     throw "NOX Error";
   }
@@ -146,7 +147,7 @@ void TrustRegion::init()
   contractTriggerRatio = iparams.getParameter("Contraction Trigger Ratio", 0.25);
 
   if (contractTriggerRatio < minRatio) {
-    cerr << "NOX::Solver::TrustRegion::init() - Invalid \"Contraction Trigger Ratio\" (" 
+    cerr << "NOX::Solver::TrustRegion::init - Invalid \"Contraction Trigger Ratio\" (" 
 	 << contractTriggerRatio << ")" << endl;
     throw "NOX Error";
   }
@@ -155,7 +156,7 @@ void TrustRegion::init()
   expandTriggerRatio = iparams.getParameter("Expansion Trigger Ratio", 0.75);
 
   if (expandTriggerRatio <= contractTriggerRatio) {
-    cerr << "NOX::Solver::TrustRegion::init() - Invalid \"Expansion Trigger Ratio\" (" 
+    cerr << "NOX::Solver::TrustRegion::init - Invalid \"Expansion Trigger Ratio\" (" 
 	 << expandTriggerRatio << ")" << endl;
     throw "NOX Error";
   }
@@ -163,7 +164,7 @@ void TrustRegion::init()
   contractFactor = iparams.getParameter("Contraction Factor", 0.25);
 
   if ((contractFactor <= 0) || (contractFactor >= 1)) {
-    cerr << "NOX::Solver::TrustRegion::init() - Invalid \"Contraction Factor\" (" 
+    cerr << "NOX::Solver::TrustRegion::init - Invalid \"Contraction Factor\" (" 
 	 << contractFactor << ")" << endl;
     throw "NOX Error";
   }
@@ -171,10 +172,19 @@ void TrustRegion::init()
   expandFactor = iparams.getParameter("Expansion Factor", 2.0);
 
   if (expandFactor <= 1) {
-    cerr << "NOX::Solver::TrustRegion::init() - Invalid \"Expansion Factor\" (" 
+    cerr << "NOX::Solver::TrustRegion::init - Invalid \"Expansion Factor\" (" 
 	 << expandFactor << ")" << endl;
     throw "NOX Error";
   }
+
+  recoveryStep = iparams.getParameter("Recovery Step", 1.0);
+
+  if (recoveryStep < 0) {
+    cerr << "NOX::Solver::TrustRegion::init - Invalid \"Recovery Step\" (" 
+	 << recoveryStep << ")" << endl;
+    throw "NOX Error";
+  }
+
 
   // Test the initial guess
   status = testPtr->operator()(*this);
@@ -221,14 +231,16 @@ Status::StatusType TrustRegion::iterate()
   bool ok;
   ok = newton(newtonVec, soln, *this);
   if (!ok) {
-    cerr << "NOX::Solver::TrustRegion::iterate() - unable to calculate Newton-like direction" << endl;
-    throw "NOX Error";
+    cout << "NOX::Solver::TrustRegion::iterate - unable to calculate Newton direction" << endl;
+    status = Status::Failed;
+    return status;
   }
 
   ok = cauchy(cauchyVec, soln, *this);
   if (!ok) {
-    cerr << "NOX::Solver::TrustRegion::iterate() - unable to calculate Cauchy direction" << endl;
-    throw "NOX Error";
+    cerr << "NOX::Solver::TrustRegion::iterate - unable to calculate Cauchy direction" << endl;
+    status = Status::Failed;
+    return status;
   }
 
   // Copy current soln to the old soln.
@@ -241,20 +253,6 @@ Status::StatusType TrustRegion::iterate()
   if (Utils::doPrint(Utils::InnerIteration)) {
     cout << Utils::fill(72) << endl;
     cout << "-- Trust Region Inner Iteration --" << endl;
-    cout << " " 
-	 << "[" << setw(7) << "dx" << "] "
-	 << "[" << setw(7) << "radius" << "] "
-	 << "[" << setw(7) << "oldf" << "] "
-	 << "[" << setw(7) << "newf" << "] "
-	 << "[" << setw(7) << "ratio" << "] "
-	 << endl;
-
-    /*cout << " " << Utils::fill(9,'-') 
-	 << " " << Utils::fill(9,'-') 
-	 << " " << Utils::fill(9,'-') 
-	 << " " << Utils::fill(9,'-') 
-	 << " " << Utils::fill(9,'-') 
-	 << endl;*/
   }
 
 
@@ -291,14 +289,14 @@ Status::StatusType TrustRegion::iterate()
       // sqrt of quadratic equation
       double tmp = (cta * cta) - ((ctc - (radius * radius)) * ata);
       if (tmp < 0) {
-	cerr << "NOX::Solver::TrustRegion::iterate() - invalid computation" << endl;
+	cerr << "NOX::Solver::TrustRegion::iterate - invalid computation" << endl;
 	throw "NOX Error";
       }
       
       // final soln to quadratic equation
       double gamma = (sqrt(tmp) - cta) / ata;
       if ((gamma < 0) || (gamma > 1)) {
-	cerr << "NOX::Solver::TrustRegion::iterate() - invalid trust region step" << endl;
+	cerr << "NOX::Solver::TrustRegion::iterate - invalid trust region step" << endl;
 	throw "NOX Error";
       }
       
@@ -323,7 +321,7 @@ Status::StatusType TrustRegion::iterate()
     // Compute RHS for new current solution.
     ok = soln.computeRHS();
     if (!ok) {
-      cerr << "NOX::Solver::TrustRegion::iterate() - unable to compute RHS" << endl;
+      cerr << "NOX::Solver::TrustRegion::iterate - unable to compute RHS" << endl;
       throw "NOX Error";
     }
 
@@ -336,7 +334,7 @@ Status::StatusType TrustRegion::iterate()
 
       ok = oldSoln.applyJacobian(*dirPtr, bVec);
       if (!ok) {
-	cerr << "NOX::Solver::TrustRegion::iterate() - unable to compute RHS" << endl;
+	cerr << "NOX::Solver::TrustRegion::iterate - unable to compute RHS" << endl;
 	throw "NOX Error";
       }
       ratio = (fnew - fold) / (dir.dot(oldSoln.getGrad()) + 0.5 * bVec.dot(bVec));
@@ -344,11 +342,10 @@ Status::StatusType TrustRegion::iterate()
 
 
     if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << " " << Utils::sci(dx);
-      cout << " " << Utils::sci(radius);
-      cout << " " << Utils::sci(fold);
-      cout << " " << Utils::sci(fnew);
-      cout << " " << Utils::sci(ratio);
+      cout << "radius = " << Utils::sci(radius, 1);
+      cout << " ratio = " << setprecision(1) << setw(3) << ratio;
+      cout << " f = " << Utils::sci(sqrt(2*fnew));
+      cout << " fold = " << Utils::sci(sqrt(2*fold));
       cout << " ";
 
       switch(stepType) {
@@ -362,7 +359,6 @@ Status::StatusType TrustRegion::iterate()
 	cout << "Dogleg";
 	break;
       }
-
 
       cout << endl;
     }
@@ -382,10 +378,15 @@ Status::StatusType TrustRegion::iterate()
 
 
   // Evaluate the current status
-  if ((radius <= minRadius) && (ratio < minRatio))   
-    status = Status::Failed;
-  else
-    status = test(*this);
+  if ((radius <= minRadius) && (ratio < minRatio)) {
+    if (Utils::doPrint(Utils::InnerIteration))
+      cout << "Using recovery step and resetting trust region." << endl;
+    soln.computeX(oldSoln, newtonVec, recoveryStep);
+    soln.computeRHS();
+    radius = initRadius;
+  }
+
+  status = test(*this);
  
   if (Utils::doPrint(Utils::InnerIteration)) 
     cout << Utils::fill(72) << endl;
@@ -432,11 +433,12 @@ const Parameter::List& TrustRegion::getOutputParameters() const
 // protected
 void TrustRegion::printUpdate() 
 {
-  // ...But only the print process actually prints the result.
+  double fmax = solnPtr->getRHS().norm(Abstract::Vector::INF);
   if (Utils::doPrint(Utils::OuterIteration)) {
     cout << "\n" << Utils::fill(72) << "\n";
     cout << "-- Newton Trust-Region Step " << niter << " -- \n";
     cout << "f = " << Utils::sci(sqrt(2*fnew));
+    cout << " fmax = " << Utils::sci(fmax);
     cout << "  dx = " << Utils::sci(dx);
     cout << "  radius = " << Utils::sci(radius);
     if (status == Status::Converged)

@@ -80,7 +80,7 @@ The "improvement ratio" for a given step \f$ s \f$ is defined as
     to Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
     within this list may be modified. Defaults to an empty list.
 
-  - "%Newton %Direction" - Sublist of the direction parameters for the
+  - "%Direction" - Sublist of the direction parameters for the
     %Newton point, passed to the NOX::Direction::Manager
     constructor. If "Method" is not specified, it defaults to
     "%Newton".
@@ -203,6 +203,9 @@ protected:
   //! Radius of the trust region
   double radius;
 
+  //! Initial radius
+  double initRadius;
+
   //! Minimum improvement ratio to accept step
   double minRatio;
 
@@ -223,6 +226,10 @@ protected:
 
   //! Constraction factor
   double contractFactor;
+
+  //! Take a step of this length in the Newton direction if the
+  //! trust-region search fails
+  double recoveryStep;
 
   //! Value of \f$ f \f$ at current solution
   double fnew;
