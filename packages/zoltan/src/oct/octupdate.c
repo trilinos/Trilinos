@@ -19,8 +19,8 @@ static int IDcount = 0;                            /* renumbering of octants */
 
 /* static int dimension = 3; */             /* number of dimensions (2 or 3) */
 
-extern void print_stats(double timetotal, LB *objptr, int numobj, 
-			double *timers, int *counters, int STAT_TYPE);
+extern void print_stats(double timetotal, double *timers, int *counters, 
+			int STAT_TYPE);
 
 /*
  * void oct_init(LB *load_balancing_structure, int *number_of_objects,
@@ -106,21 +106,20 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   timers[1] = time2 - time1;              /* time took to partition octree */
 
   /* intermediate result print out */
-
-  /*
-   *for(i=0; i<msg_nprocs; i++) {
-   *   if(msg_mypid == i)
-   *     POC_printResults();
-   *    msg_sync();
-   *}
-   */
+#if 0
+  for(i=0; i<msg_nprocs; i++) {
+    if(msg_mypid == i)
+      POC_printResults();
+    msg_sync();
+  }
+#endif
 
   /* set up tags for migrations */
   time1 = MPI_Wtime();
   dfs_migrate(&export_tags, &nsentags, &import_tags, &nrectags);
   time2 = MPI_Wtime();
   timers[2] = time2 - time1;               /* time took to setup migration */
-  
+
   *non_local_objs = import_tags;
   *num_non_local = nrectags;
 
@@ -144,7 +143,7 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   MPI_Barrier(MPI_COMM_WORLD);
   timestop = MPI_Wtime();
   
-  print_stats(timestop - timestart, lb, count, timers, counters, 2);
+  print_stats(timestop - timestart, timers, counters, 1);
  
   /*
    * fprintf(stderr, "%d) non_local %d, count %d, nsent %d, top %d, num %d\n",
@@ -495,9 +494,11 @@ int oct_fix(LB *lb, pRegion Region_list, int num_objs) {
   else
     pct=0;
 
-  PRINT_IN_ORDER()
-    printf("refs: %5d  drefs: %5d  bad regions: %5d  = %4.1f%%\n",
-	   oct_nref,oct_ncoarse,nreg,pct);
+  /*
+   *  PRINT_IN_ORDER()
+   *    printf("refs: %5d  drefs: %5d  bad regions: %5d  = %4.1f%%\n",
+   *	   oct_nref,oct_ncoarse,nreg,pct);
+   */
 
   return(nreg);
 }

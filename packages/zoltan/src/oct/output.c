@@ -7,8 +7,8 @@
  *
  * Prints out statistic on the octree load balancing partitioner 
  */
-void print_stats(double timetotal, LB *lb, int numobj, double *timers, 
-		 int *counters, int STATS_TYPE)
+void print_stats(double timetotal, double *timers, int *counters, 
+		 int STATS_TYPE)
 {
   LB_ID *obj_ids;                          /* pointer to all the objects ids */
   int i,                                   /* index counter */
@@ -39,6 +39,10 @@ void print_stats(double timetotal, LB *lb, int numobj, double *timers,
   MPI_Barrier(MPI_COMM_WORLD);
 
 #if 0
+{
+  int numobj;
+  LB *lb;
+
   obj_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1, numobj,
                                      sizeof(LB_ID));
   lb->Get_All_Local_Objs(lb->Object_Type, obj_ids);
@@ -78,7 +82,7 @@ void print_stats(double timetotal, LB *lb, int numobj, double *timers,
   MPI_Barrier(MPI_COMM_WORLD);
   if (STATS_TYPE == 2)
     printf("    Proc %d max weight of a sigle object = %g\n", proc, mweight);
-
+}
 #endif
 
   /* counter info */

@@ -140,8 +140,9 @@ float costs_global_compute() {
       costs_init(root[i]);
       /* calculate cost of all the subtree */
       totcost+=costs_subtree_compute(root[i], &seq);
-      fprintf(stderr, "Computing costs on local root %d.%d seq=%d tot=%f\n",
-	     OCT_localpid, POC_id(root[i]), seq, totcost);
+      /* fprintf(stderr, "Computing costs on local root %d.%d seq=%d tot=%f\n",
+       *         OCT_localpid, POC_id(root[i]), seq, totcost);
+       */
     }
   }
 
