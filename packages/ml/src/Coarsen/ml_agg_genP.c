@@ -156,6 +156,9 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
         void *data, int internal_or_external, ML_Aggregate *ag)
 {
    int level, next, flag, count=1;
+   int i, j, bail_flag, N_input_vector;
+   ML_Operator *Pmat;
+   ML_CommInfoOP *getrow_comm; 
 #ifdef ML_TIMING
    double t0;
 #endif
@@ -195,6 +198,43 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
          flag = user_gen_prolongator(ml, level, next, data, ag);
       }
       if (flag < 0) break;
+
+      /* Now check to make sure prolongator has zero columns. */
+      Pmat = ml->Pmat+next;
+      bail_flag = 0;
+      N_input_vector = Pmat->invec_leng;
+      getrow_comm = Pmat->getrow->pre_comm;
+      if ( getrow_comm != NULL)
+      {
+         for (i = 0; i < getrow_comm->N_neighbors; i++) {
+            for (j = 0; j < getrow_comm->neighbors[i].N_send; j++) {
+               if (getrow_comm->neighbors[i].send_list[j] >= N_input_vector) {
+                  bail_flag = 1;
+               }
+            }
+         }
+      }
+      /* If check has failed on any processor, clean up current level & break
+         from main loop. */
+      ML_gsum_vec_int(&bail_flag,&j,1,ml->comm);
+      if (bail_flag)
+      {
+         if (Pmat->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+            printf("(%d) In ML_Gen_MGHierarchy: Bailing from AMG hierarchy "
+                   "build on level %d, where fine level = %d ........\n",
+                   Pmat->comm->ML_mypid,level,fine_level);
+            fflush(stdout);
+         }
+         if (ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+            printf("(%d) In ML_Gen_MGHierarchy: "
+                "Nlevels = %d fine_level = %d  coarsest_level = %d\n",
+               ml->comm->ML_mypid,fine_level-count+1,fine_level,count);
+            fflush(stdout);
+         }
+         break; /* from main loop */
+ 
+      }
+      /* end of check */
       if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("ML_Gen_MGHierarchy : applying coarsening \n");
       ML_Gen_Restrictor_TransP(ml, level, next);
@@ -417,7 +457,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ml->Pmat[clevel].max_nz_per_row = 4;
    ml->Pmat[clevel].N_nonzeros = bindx[Nfine];
    ML_Operator_Set_ApplyFunc (&(ml->Pmat[clevel]), ML_INTERNAL, CSR_matvec);
-   //   ML_Operator_Print( &(ml->Pmat[clevel]),"Pmat");
+   /*   ML_Operator_Print( &(ml->Pmat[clevel]),"Pmat");*/
    return 1;
 #endif
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
