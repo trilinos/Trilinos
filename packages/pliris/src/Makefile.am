@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#                     New_Package Example Package
+#                Pliris: Parallel Dense Solver Package 
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -43,26 +43,24 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 EXTRA_CORE_H = \
+        $(srcdir)/block.h \
+        $(srcdir)/distribute.h \
         $(srcdir)/exchange_pivots.h \
         $(srcdir)/factor.h \
         $(srcdir)/forwardall.h \
         $(srcdir)/forward.h \
         $(srcdir)/pcomm.h \
+        $(srcdir)/perm1.h \
+        $(srcdir)/permute.h \
         $(srcdir)/permute_mat.h \
         $(srcdir)/permute_rhs.h \
         $(srcdir)/solve.h \
+        $(srcdir)/vars.h \
+        $(srcdir)/x_factor.h \
+        $(srcdir)/x_solve.h \
         $(srcdir)/xlu_solve.h
-#        $(srcdir)/block.h \
-#        $(srcdir)/cblassp.h \
-#        $(srcdir)/dblassp.h \
 #        $(srcdir)/dim.h \
-#        $(srcdir)/distribute.h \
-#        $(srcdir)/init.h \
-#        $(srcdir)/perm1.h \
-#        $(srcdir)/permute.h \
-#        $(srcdir)/vars.h \
-#        $(srcdir)/x_factor.h \
-#        $(srcdir)/x_solve.h
+#        $(srcdir)/init.h
 
 EXTRA_CORE = \
 	$(srcdir)/distribute.c \
@@ -86,14 +84,16 @@ EXTRA_CORE = \
 #        $(srcdir)/xlu_solve.c
 
 EXTRA_UTIL_H = \
-        $(srcdir)/defines.h
-#        $(srcdir)/BLAS_prototypes.h \
-#        $(srcdir)/clean_code.h \
-#        $(srcdir)/extern_vars.h \
-#        $(srcdir)/macros.h \
-#        $(srcdir)/mytime.h \
-#        $(srcdir)/sblassp.h \
-#        $(srcdir)/zblassp.h
+        $(srcdir)/BLAS_prototypes.h \
+        $(srcdir)/cblassp.h \
+        $(srcdir)/dblassp.h \
+        $(srcdir)/defines.h \
+        $(srcdir)/extern_vars.h \
+        $(srcdir)/macros.h \
+        $(srcdir)/mytime.h \
+        $(srcdir)/sblassp.h \
+        $(srcdir)/zblassp.h
+#        $(srcdir)/clean_code.h
 
 EXTRA_UTIL =  \
 	$(srcdir)/clean_code.c \

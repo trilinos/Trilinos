@@ -17,7 +17,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#                     New_Package Example Package
+#                Pliris: Parallel Dense Solver Package 
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -274,11 +274,16 @@ SOURCES = $(libclu_a_SOURCES) $(libdlu_a_SOURCES) \
 DIST_SOURCES = $(am__libclu_a_SOURCES_DIST) \
 	$(am__libdlu_a_SOURCES_DIST) $(EXTRA_libdlu_a_SOURCES) \
 	$(am__libslu_a_SOURCES_DIST) $(am__libzlu_a_SOURCES_DIST)
-am__include_HEADERS_DIST = $(srcdir)/defines.h \
-	$(srcdir)/exchange_pivots.h $(srcdir)/factor.h \
-	$(srcdir)/forwardall.h $(srcdir)/forward.h $(srcdir)/pcomm.h \
+am__include_HEADERS_DIST = $(srcdir)/BLAS_prototypes.h \
+	$(srcdir)/cblassp.h $(srcdir)/dblassp.h $(srcdir)/defines.h \
+	$(srcdir)/extern_vars.h $(srcdir)/macros.h $(srcdir)/mytime.h \
+	$(srcdir)/sblassp.h $(srcdir)/zblassp.h $(srcdir)/block.h \
+	$(srcdir)/distribute.h $(srcdir)/exchange_pivots.h \
+	$(srcdir)/factor.h $(srcdir)/forwardall.h $(srcdir)/forward.h \
+	$(srcdir)/pcomm.h $(srcdir)/perm1.h $(srcdir)/permute.h \
 	$(srcdir)/permute_mat.h $(srcdir)/permute_rhs.h \
-	$(srcdir)/solve.h $(srcdir)/xlu_solve.h $(srcdir)/Pliris.h
+	$(srcdir)/solve.h $(srcdir)/vars.h $(srcdir)/x_factor.h \
+	$(srcdir)/x_solve.h $(srcdir)/xlu_solve.h $(srcdir)/Pliris.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -405,27 +410,25 @@ target_vendor = @target_vendor@
 #
 #np# Make sure to list all source files in one of the following categories.
 EXTRA_CORE_H = \
+        $(srcdir)/block.h \
+        $(srcdir)/distribute.h \
         $(srcdir)/exchange_pivots.h \
         $(srcdir)/factor.h \
         $(srcdir)/forwardall.h \
         $(srcdir)/forward.h \
         $(srcdir)/pcomm.h \
+        $(srcdir)/perm1.h \
+        $(srcdir)/permute.h \
         $(srcdir)/permute_mat.h \
         $(srcdir)/permute_rhs.h \
         $(srcdir)/solve.h \
+        $(srcdir)/vars.h \
+        $(srcdir)/x_factor.h \
+        $(srcdir)/x_solve.h \
         $(srcdir)/xlu_solve.h
 
-#        $(srcdir)/block.h \
-#        $(srcdir)/cblassp.h \
-#        $(srcdir)/dblassp.h \
 #        $(srcdir)/dim.h \
-#        $(srcdir)/distribute.h \
-#        $(srcdir)/init.h \
-#        $(srcdir)/perm1.h \
-#        $(srcdir)/permute.h \
-#        $(srcdir)/vars.h \
-#        $(srcdir)/x_factor.h \
-#        $(srcdir)/x_solve.h
+#        $(srcdir)/init.h
 EXTRA_CORE = \
 	$(srcdir)/distribute.c \
         $(srcdir)/exchange_pivots.c \
@@ -448,15 +451,17 @@ EXTRA_CORE = \
 #        $(srcdir)/steve.c \
 #        $(srcdir)/xlu_solve.c
 EXTRA_UTIL_H = \
-        $(srcdir)/defines.h
+        $(srcdir)/BLAS_prototypes.h \
+        $(srcdir)/cblassp.h \
+        $(srcdir)/dblassp.h \
+        $(srcdir)/defines.h \
+        $(srcdir)/extern_vars.h \
+        $(srcdir)/macros.h \
+        $(srcdir)/mytime.h \
+        $(srcdir)/sblassp.h \
+        $(srcdir)/zblassp.h
 
-#        $(srcdir)/BLAS_prototypes.h \
-#        $(srcdir)/clean_code.h \
-#        $(srcdir)/extern_vars.h \
-#        $(srcdir)/macros.h \
-#        $(srcdir)/mytime.h \
-#        $(srcdir)/sblassp.h \
-#        $(srcdir)/zblassp.h
+#        $(srcdir)/clean_code.h
 EXTRA_UTIL = \
 	$(srcdir)/clean_code.c \
         $(srcdir)/time.c

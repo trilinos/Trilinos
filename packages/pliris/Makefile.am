@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#                     New_Package Example Package
+#                Pliris: Parallel Dense Solver Package
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -49,23 +49,21 @@ ACLOCAL	= aclocal -I config
 #np# configure script for other packages. 
 EXTRA_DIST = \
 config/ac_cxx_bool.m4                   config/depcomp \
-config/ac_cxx_have_std.m4               config/install-sh \
+config/install-sh 			config/compile \
 config/ac_cxx_have_stl.m4               config/missing \
-config/ac_cxx_mutable.m4                config/mkinstalldirs \
+config/ac_cxx_mutable.m4 \
 config/ac_cxx_namespaces.m4             config/tac_arg_check_mpi.m4 \
 config/ac_cxx_new_for_scoping.m4        config/tac_arg_config_mpi.m4 \
-config/ac_cxx_reinterpret_cast.m4 \
-config/tac_arg_enable_compiler_options.m4 \
-config/ac_cxx_std_ios_base_fmtflags.m4  config/tac_arg_enable_feature.m4 \
-config/ac_cxx_std_sprintf.m4            config/tac_arg_enable_option.m4 \
-config/ac_prompt_user.m4                config/tac_arg_with_ar.m4 \
-config/ac_prompt_user_no_define.m4      config/tac_arg_with_blaslib.m4 \
-config/acx_blas.m4                      config/tac_arg_with_compiler.m4 \
-config/acx_check_dos_filesys.m4         config/tac_arg_with_flags.m4 \
-config/acx_lapack.m4                    config/tac_arg_with_incdirs.m4 \
-config/acx_pthread.m4                   config/tac_arg_with_lapacklib.m4 \
+config/tac_arg_enable_feature.m4 \
+config/ac_cxx_std_sprintf.m4 \
+config/tac_arg_with_ar.m4 \
+config/tac_arg_with_blaslib.m4 \
+config/tac_arg_enable_can_use_package.m4 \
+config/acx_blas.m4 \
+config/tac_arg_with_flags.m4 \
+config/tac_arg_with_incdirs.m4 \
 config/config.guess                     config/tac_arg_with_libdirs.m4 \
-config/config.sub                       config/tac_arg_with_package.m4 \
+config/config.sub \
 bootstrap 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
