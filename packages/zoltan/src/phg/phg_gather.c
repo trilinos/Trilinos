@@ -24,11 +24,6 @@ extern "C" {
 
 /****************************************************************************/
 
-#define NIDX 3
-#define VIDX 0
-#define EIDX 1
-#define PIDX 2
-
 #define MEMORY_ERROR {ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
                       ierr = ZOLTAN_MEMERR;                              \
                       goto End;                                          \
@@ -53,30 +48,27 @@ int Zoltan_PHG_Gather_To_All_Procs(
  */
 char *yo = "Zoltan_PHG_Gather_To_All_Procs";
 int ierr = ZOLTAN_OK;
-int i, tmpv, tmpp;
-int *each = NULL, 
-    *disp = NULL;        /* Size and displacement arrays for MPI_Allgatherv */
+int i, tmp, sum;
+int *mpitmp = NULL;      /* Size/displacement array for MPI_Allgatherv */
 int *send_buf = NULL;    /* Buffer of values to be sent */
 int send_size;           /* Size of buffer send_buf */
 int *col_vedge = NULL;   /* vedge array for the proc-column hypergraph */
 int *col_vindex = NULL;  /* vindex array for the proc-column hypergraph */
 int *col_hvertex = NULL; /* hvertex array for the proc-column hypergraph */
 int *col_hindex = NULL;  /* hindex array for the proc-column hypergraph */
-int col_size[NIDX];      /* array of nvtx, nedge & nnz for the proc-column
-                            hypergraph.  */
-int size[NIDX];          /* array of nvtx, nedge & nnz for the input
-                            parallel hypergraph.  */
+int col_nVtx;            /* Number of vertices in processor column */
+int col_nEdge;           /* Number of edges in processor column */
+int col_nPin;            /* Number of pins in processor column */
 
-int *recv_size = NULL;   /* nvtx, nedge, & nnz for each proc in col or row */
+int *recv_size = NULL;   /* nPins for each proc in col or row */
 
-HGraph *shg;            /* Pointer to the serial hypergraph to be
+HGraph *shg;             /* Pointer to the serial hypergraph to be
                             returned by this function. */
 
 int myProc_x = phg->comm->myProc_x;
 int nProc_x = phg->comm->nProc_x;
 int nProc_y = phg->comm->nProc_y;
-int max_nProc_xy;        /* Max of nProc_x, nProc_y */
-int first_vtx = phg->dist_x[myProc_x];
+int max_nProc_xy = MAX(nProc_x, nProc_y);
 
 
   /******************************************************************
@@ -128,72 +120,52 @@ int first_vtx = phg->dist_x[myProc_x];
 
   /* Gather local size info for each proc in column */
 
-  max_nProc_xy = MAX(nProc_x, nProc_y); 
-            /* Use MAX so can reuse recv_size in step 2 */
-  recv_size = (int *) ZOLTAN_MALLOC(NIDX * max_nProc_xy * sizeof(int));
+  recv_size = (int *) ZOLTAN_MALLOC(max_nProc_xy * sizeof(int));
   if (!recv_size) MEMORY_ERROR;
 
-  size[VIDX] = phg->nVtx;
-  size[EIDX] = phg->nEdge;
-  size[PIDX] = phg->nPins;
-
-  MPI_Allgather(size, 3, MPI_INT, recv_size, 3, MPI_INT, 
+  MPI_Allgather(&(phg->nPins), 1, MPI_INT, recv_size, 1, MPI_INT, 
                 phg->comm->col_comm);
   
   /* Compute number of vtx, edge, and nnz in column */
-  col_size[VIDX] = phg->dist_x[myProc_x+1] - phg->dist_x[myProc_x];
-  col_size[EIDX] = col_size[PIDX] = 0;
+  col_nVtx = phg->dist_x[myProc_x+1] - phg->dist_x[myProc_x];
+  col_nEdge = phg->dist_y[nProc_y];   /* SCHEMEA */
+  col_nPin = 0;
   for (i = 0; i < nProc_y; i++) {
-    col_size[EIDX] += recv_size[NIDX*i + EIDX];
-    col_size[PIDX] += recv_size[NIDX*i + PIDX];
+    col_nPin += recv_size[i];
   }
   
   /* Allocate arrays for column hypergraph */
-  col_hindex = (int *) ZOLTAN_CALLOC((col_size[EIDX]+1), sizeof(int));
-  col_hvertex = (int *) ZOLTAN_MALLOC(col_size[PIDX] * sizeof(int));
+  col_hindex = (int *) ZOLTAN_CALLOC((col_nEdge+1), sizeof(int));
+  col_hvertex = (int *) ZOLTAN_MALLOC(col_nPin * sizeof(int));
 
-  col_vindex = (int *) ZOLTAN_CALLOC((col_size[VIDX]+1), sizeof(int));
-  col_vedge = (int *) ZOLTAN_MALLOC(col_size[PIDX] * sizeof(int));
+  col_vindex = (int *) ZOLTAN_CALLOC((col_nVtx+1), sizeof(int));
+  col_vedge = (int *) ZOLTAN_MALLOC(col_nPin * sizeof(int));
 
   /* Allocate arrays for use in gather operations */
 
-  send_size = MAX(col_size[PIDX],col_size[EIDX]+1);
+  send_size = MAX(col_nVtx, col_nEdge);
   send_buf = (int *) ZOLTAN_MALLOC(send_size * sizeof(int));
 
-  each = (int *) ZOLTAN_MALLOC(2 * max_nProc_xy * sizeof(int));
-  disp = each + max_nProc_xy;
+  mpitmp = (int *) ZOLTAN_MALLOC(max_nProc_xy * sizeof(int));
 
-  if (!each || !send_buf || !col_vindex || !col_hindex || 
-      (col_size[PIDX] && (!col_vedge || !col_hvertex)))
+  if (!mpitmp || !send_buf || !col_vindex || !col_hindex || 
+      (col_nPin && (!col_vedge || !col_hvertex)))
     MEMORY_ERROR;
   
   /* Gather hvertex data for all procs in column */
 
-  for (i = 0; i < phg->nPins; i++)
-    send_buf[i] = VTX_LNO_TO_GNO(phg, phg->hvertex[i]);
+  /* SCHEMEA uses same vertex LNO on each proc in column. */
+  /* SCHEMEB would require conversion from vertex LNO to GNO here. */
 
-  for (i = 0; i < nProc_y; i++)
-    each[i] = recv_size[NIDX * i + PIDX];
-
-  disp[0] = 0;
+  mpitmp[0] = 0;
   for (i = 1; i < nProc_y; i++)
-    disp[i] = disp[i-1] + each[i-1];
+    mpitmp[i] = mpitmp[i-1] + recv_size[i-1];
 
-  MPI_Allgatherv(send_buf, phg->nPins, MPI_INT,
-                 col_hvertex, each, disp, MPI_INT, phg->comm->col_comm);
+  MPI_Allgatherv(phg->hvertex, phg->nPins, MPI_INT,
+                 col_hvertex, recv_size, mpitmp, MPI_INT, phg->comm->col_comm);
 
-  /* 
-   * Convert vertex GNOs to LNOs with respect to the column hypergraph
-   * Assume LNOs in densely within range 
-   * phg->dist_x[myProc_x]:(phg->distx[myProc_x+1]-1).
-   * This dense distribution is correct regardless of whether we use
-   * Scheme A or Scheme B for parallel distribution.
-   * Conversion is needed for Zoltan_PHG_Mirror to work correctly;
-   * it assumes a local numbering system.
-   */
-
-  for (i = 0; i < col_size[PIDX]; i++)
-    col_hvertex[i] = col_hvertex[i] - first_vtx;
+  /* SCHEMEA uses same vertex LNO on each proc in column. */
+  /* SCHEMEB would require conversion from vertex GNO to LNO here */
 
   /* Gather hindex data for all procs in column */
 
@@ -201,31 +173,34 @@ int first_vtx = phg->dist_x[myProc_x];
     send_buf[i] = phg->hindex[i+1] - phg->hindex[i];
 
   for (i = 0; i < nProc_y; i++) 
-    each[i] = recv_size[NIDX * i + EIDX];
+    mpitmp[i] = phg->dist_y[i+1] - phg->dist_y[i];
 
-  disp[0] = 0;
-  for (i = 1; i < nProc_y; i++)
-    disp[i] = disp[i-1] + each[i-1];
+  /* SCHEMEA can use phg->dist_y for displacement array.
+   * SCHEMEB requires separate displacement array. 
+   */
 
   MPI_Allgatherv(send_buf, phg->nEdge, MPI_INT, 
-                 col_hindex, each, disp, MPI_INT, phg->comm->col_comm);
+                 col_hindex, mpitmp, phg->dist_y, MPI_INT, phg->comm->col_comm);
 
   /* Perform prefix sum on col_hindex */
-
-  for (i = 1; i <= col_size[EIDX]; i++)
-    col_hindex[i] += col_hindex[i-1];
-  col_hindex[0] = 0;
+  sum = 0;
+  for (i = 0; i < col_nEdge; i++) {
+    tmp = col_hindex[i];
+    col_hindex[i] = sum;
+    sum += tmp;
+  }
+  col_hindex[col_nEdge] = sum;
 
   /* Sanity check */
-  if (col_hindex[col_size[EIDX]] != col_size[PIDX]) {
+  if (col_hindex[col_nEdge] != col_nPin) {
     printf("%d Sanity check failed:  "
-           "col_hindex[col_size[EIDX]] %d != col_size[PIDX] %d\n", 
-            zz->Proc, col_hindex[col_size[EIDX]], col_size[PIDX]);
+           "col_hindex[col_nEdge] %d != col_nPin %d\n", 
+            zz->Proc, col_hindex[col_nEdge], col_nPin);
     exit(-1);
   }
 
-  Zoltan_PHG_Mirror(col_size[EIDX], col_hindex, col_hvertex, 
-                    col_size[VIDX], col_vindex, col_vedge);
+  Zoltan_HG_Mirror(col_nEdge, col_hindex, col_hvertex, 
+                   col_nVtx, col_vindex, col_vedge);
 
 
   /*************************************************************
@@ -236,63 +211,59 @@ int first_vtx = phg->dist_x[myProc_x];
 
   /* Gather info about size within the row */
 
-  MPI_Allgather(col_size, 3, MPI_INT, recv_size, 3, MPI_INT, 
+  MPI_Allgather(&col_nPin, 1, MPI_INT, recv_size, 1, MPI_INT, 
                 phg->comm->row_comm);
 
   /* Sanity checks  KDDKDD remove later */
-  tmpv = tmpp = 0;
+  tmp = 0;
   for (i = 0; i < nProc_x; i++) {
-    tmpv += recv_size[NIDX*i + VIDX];
-    tmpp += recv_size[NIDX*i + PIDX];
+    tmp += recv_size[i];
   }
 
-  if (tmpp != shg->nPins) {
+  if (tmp != shg->nPins) {
     printf("%d sum_size[PIDX] %d != shg->nPins %d\n", 
-            zz->Proc, tmpp, shg->nPins);
+            zz->Proc, tmp, shg->nPins);
     exit(-1);
   }
 
-  if (tmpv != shg->nVtx) {
-    printf("%d sum_size[VIDX] %d != shg->nVtx %d\n", 
-            zz->Proc, tmpv, shg->nVtx);
-    exit(-1);
-  }
   /* End sanity checks */
   
   /* Gather vedge data for all procs in row */
 
-  for (i = 0; i < col_size[PIDX]; i++)
-    send_buf[i] = EDGE_LNO_TO_GNO(phg, col_vedge[i]);
+  /* SCHEMEA can send local edge numbers; 
+     SCHEMEB requires edge LNO to GNO conversion. */
 
-  for (i = 0; i < nProc_x; i++)
-    each[i] = recv_size[NIDX * i + PIDX];
-
-  disp[0] = 0;
+  mpitmp[0] = 0;
   for (i = 1; i < nProc_x; i++)
-    disp[i] = disp[i-1] + each[i-1];
+    mpitmp[i] = mpitmp[i-1] + recv_size[i-1];
 
-  MPI_Allgatherv(send_buf, col_size[PIDX], MPI_INT,
-                 shg->vedge, each, disp, MPI_INT, phg->comm->row_comm);
+  MPI_Allgatherv(col_vedge, col_nPin, MPI_INT,
+                 shg->vedge, recv_size, mpitmp, MPI_INT, phg->comm->row_comm);
 
   /* Gather vindex data for all procs in row */
 
-  for (i = 0; i < col_size[VIDX]; i++)
+  for (i = 0; i < col_nVtx; i++)
     send_buf[i] = col_vindex[i+1] - col_vindex[i];
 
   for (i = 0; i < nProc_x; i++) 
-    each[i] = recv_size[NIDX * i + VIDX];
+    mpitmp[i] = phg->dist_x[i+1] - phg->dist_x[i];
 
-  disp[0] = 0;
-  for (i = 1; i < nProc_x; i++)
-    disp[i] = disp[i-1] + each[i-1];
+  /* SCHEMEA can use phg->dist_x as displacement array;
+   * SCHEMEB requires separate displacement array. 
+   */
 
-  MPI_Allgatherv(send_buf, col_size[VIDX], MPI_INT, 
-                 shg->vindex, each, disp, MPI_INT, phg->comm->row_comm);
+  MPI_Allgatherv(send_buf, col_nVtx, MPI_INT, 
+                 shg->vindex, mpitmp, phg->dist_x, 
+                 MPI_INT, phg->comm->row_comm);
 
   /* Perform prefix sum on shg->vindex */
-  for (i = 1; i <= shg->nVtx; i++)
-    shg->vindex[i] += shg->vindex[i-1];
-  shg->vindex[0] = 0;
+  sum = 0;
+  for (i = 0; i < shg->nVtx; i++) {
+    tmp = shg->vindex[i];
+    shg->vindex[i] = sum;
+    sum += tmp;
+  }
+  shg->vindex[shg->nVtx] = sum;
 
   /* Sanity check */
   if (shg->vindex[shg->nVtx] != shg->nPins) {
@@ -302,11 +273,13 @@ int first_vtx = phg->dist_x[myProc_x];
     exit(-1);
   }
 
-  Zoltan_PHG_Mirror(shg->nVtx, shg->vindex, shg->vedge, 
-                    shg->nEdge, shg->hindex, shg->hvertex);
+  Zoltan_HG_Mirror(shg->nVtx, shg->vindex, shg->vedge, 
+                   shg->nEdge, shg->hindex, shg->hvertex);
 
+#ifdef KDDKDD_CHECK
   Zoltan_PHG_Plot_2D_Distrib(zz, phg);
   Zoltan_PHG_Plot_2D_Distrib(zz, shg);
+#endif
 
 End:
 
@@ -315,7 +288,7 @@ End:
     ZOLTAN_FREE(gathered_hg);
   }
 
-  Zoltan_Multifree(__FILE__, __LINE__, 7, &each,
+  Zoltan_Multifree(__FILE__, __LINE__, 7, &mpitmp,
                                           &send_buf, 
                                           &col_vedge,
                                           &col_vindex,

@@ -89,7 +89,6 @@ static int first_time = 1;
       part[i] = phg->dist_x[phg->comm->myProc_x]+i;
   }
   else {
-#define KDDKDD_NOT_READY_YET
 #ifdef KDDKDD_NOT_READY_YET
     ierr = hgp->CoarsePartition(zz, phg, numPart, part, hgp);
 #else
@@ -100,7 +99,7 @@ static int first_time = 1;
       scomm.Communicator = MPI_COMM_SELF;
       scomm.row_comm = MPI_COMM_SELF;
       scomm.col_comm = MPI_COMM_SELF;
-      scomm.Proc = 0;
+      scomm.myProc = 0;
       scomm.nProc = 1;
       first_time = 0;
     }
@@ -116,7 +115,7 @@ static int first_time = 1;
     }
 
     /* 
-     * Allocate a partition array spart for the serial hypergraph shg
+     * Allocate partition array spart for the serial hypergraph shg
      * and partition shg.
      * KDDKDD Add logic here to compute different coarse partitions on
      * KDDKDD different processors.
@@ -132,7 +131,7 @@ static int first_time = 1;
       /* KDDKDD For now, want all processors to give same partition, so
        * KDDKDD initialize the seed identically on all.
        */
-      Zoltan_PHG_Srand(shg->nVtx);
+      Zoltan_HG_Srand(shg->nVtx);
       ierr = hgp->CoarsePartition(zz, shg, numPart, spart, hgp);
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
