@@ -5,7 +5,7 @@
 #
 # Usage: test_zoltan [-arch arch-type] [-cmd command] 
 #
-# where arch-type is one of {sun, sunos, smos, tflop, cplant}.
+# where arch-type is one of {solaris, gcc, smos, tflop, cplant}.
 # Alternatively, give a run command with the -cmd option.
 #
 # Initial version by Erik Boman, SNL 9226, 99/09/15.
@@ -72,8 +72,7 @@ while ( $#argv )
     set arch = $1
     
     switch ( $arch )
-    case sun:
-    case sunos:
+    case gcc:
     case solaris:
       set run = "mpirun -np"
       breaksw
@@ -114,6 +113,11 @@ if ( $?arch ) then
   set zdrive = zdrive.$arch
 else
   set zdrive = zdrive
+endif
+if (! -x $zdrive ) then
+  echo "Warning Cannot find executable $zdrive"
+  echo "Will look for ../Obj_"$arch"/zdrive"
+  set zdrive = ../Obj_$arch/zdrive
 endif
 if (! -x $zdrive ) then
   echo "Error Cannot find executable $zdrive"
@@ -328,7 +332,7 @@ exit 0
 # Print usage and exit with error
 usage:
   echo "Usage: $0 [-arch arch-type] [-cmd command]"
-  echo "where arch-type is one of {sun, sunos, smos, tflop, cplant}."
+  echo "where arch-type is one of {gcc, solaris, smos, tflop, cplant}."
   echo "Alternatively, specify the command to load and run a parallel "
   echo "program with the -cmd option."
   echo "Other options:"
