@@ -274,7 +274,7 @@ pkginclude_HEADERS = $(NOX_H)
 # to install it in the machine-dependent directory. However, that is
 # not a default installation directory, so we had to create it
 # special.
-pkgexecincludedir = $(exec_prefix)/include
+pkgexecincludedir = $(exec_prefix)/include/nox
 pkgexecinclude_HEADERS = NOX_Config.h
 
 

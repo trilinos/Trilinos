@@ -189,7 +189,7 @@ pkginclude_HEADERS = $(NOX_H)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include
+pkgexecincludedir = $(exec_prefix)/include/nox
 pkgexecinclude_HEADERS = NOX_Config.h
 
 # ------------------------------------------------------------------------
