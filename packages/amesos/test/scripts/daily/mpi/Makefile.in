@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES)
+SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestExamples_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -66,7 +66,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 @HAVE_MPI_TRUE@noinst_PROGRAMS = TestAmesos$(EXEEXT) \
-@HAVE_MPI_TRUE@	TestBasic$(EXEEXT)
+@HAVE_MPI_TRUE@	TestBasic$(EXEEXT) TestExamples$(EXEEXT)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -107,14 +107,19 @@ am__TestBasic_SOURCES_DIST = $(srcdir)/TestBasic.sh
 am_TestBasic_OBJECTS =
 TestBasic_OBJECTS = $(am_TestBasic_OBJECTS)
 TestBasic_LDADD = $(LDADD)
+am__TestExamples_SOURCES_DIST = $(srcdir)/TestExamples.sh
+am_TestExamples_OBJECTS =
+TestExamples_OBJECTS = $(am_TestExamples_OBJECTS)
+TestExamples_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES)
+SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) \
+	$(TestExamples_SOURCES)
 DIST_SOURCES = $(am__TestAmesos_SOURCES_DIST) \
-	$(am__TestBasic_SOURCES_DIST)
+	$(am__TestBasic_SOURCES_DIST) $(am__TestExamples_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -260,6 +265,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 @HAVE_MPI_TRUE@TestAmesos_SOURCES = $(srcdir)/TestAmesos.sh
 @HAVE_MPI_TRUE@TestBasic_SOURCES = $(srcdir)/TestBasic.sh
+@HAVE_MPI_TRUE@TestExamples_SOURCES = $(srcdir)/TestExamples.sh
 all: all-am
 
 .SUFFIXES:
@@ -301,6 +307,9 @@ clean-noinstPROGRAMS:
 @HAVE_MPI_FALSE@TestBasic$(EXEEXT): $(TestBasic_OBJECTS) $(TestBasic_DEPENDENCIES) 
 @HAVE_MPI_FALSE@	@rm -f TestBasic$(EXEEXT)
 @HAVE_MPI_FALSE@	$(LINK) $(TestBasic_LDFLAGS) $(TestBasic_OBJECTS) $(TestBasic_LDADD) $(LIBS)
+@HAVE_MPI_FALSE@TestExamples$(EXEEXT): $(TestExamples_OBJECTS) $(TestExamples_DEPENDENCIES) 
+@HAVE_MPI_FALSE@	@rm -f TestExamples$(EXEEXT)
+@HAVE_MPI_FALSE@	$(LINK) $(TestExamples_LDFLAGS) $(TestExamples_OBJECTS) $(TestExamples_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -430,6 +439,8 @@ uninstall-am: uninstall-info-am
 @HAVE_MPI_TRUE@	cp $(srcdir)/TestAmesos.sh TestAmesos$(EXEEXT) 
 @HAVE_MPI_TRUE@TestBasic$(EXEEXT):
 @HAVE_MPI_TRUE@	cp $(srcdir)/TestBasic.sh TestBasic$(EXEEXT) 
+@HAVE_MPI_TRUE@TestExamples$(EXEEXT):
+@HAVE_MPI_TRUE@	cp $(srcdir)/TestExamples.sh TestExamples$(EXEEXT) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

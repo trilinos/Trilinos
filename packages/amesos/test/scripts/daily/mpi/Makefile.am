@@ -30,7 +30,7 @@ EXEEXT = .exe
 # Nothing should be done for a serial build
 if  HAVE_MPI
 
-noinst_PROGRAMS = TestAmesos TestBasic
+noinst_PROGRAMS = TestAmesos TestBasic TestExamples
 
 TestAmesos_SOURCES = $(srcdir)/TestAmesos.sh
 TestAmesos$(EXEEXT):
@@ -39,6 +39,10 @@ TestAmesos$(EXEEXT):
 TestBasic_SOURCES = $(srcdir)/TestBasic.sh
 TestBasic$(EXEEXT):
 	cp $(srcdir)/TestBasic.sh TestBasic$(EXEEXT) 
+
+TestExamples_SOURCES = $(srcdir)/TestExamples.sh
+TestExamples$(EXEEXT):
+	cp $(srcdir)/TestExamples.sh TestExamples$(EXEEXT) 
 
 endif
 
