@@ -25,6 +25,23 @@ get_field "USE LAPACK" .input_nocomments  >> .installer_input
 get_field "USE BLAS" .input_nocomments >> .installer_input
 use_mpi=`get_field "USE MPI" .input_nocomments`
 echo $use_mpi >> .installer_input
+if test `expr ${use_mpi}` = 'yes'
+then
+   ins_mpi=`get_field "LOCATION OF MPICC" .input_nocomments`
+   tins_mpi=`echo ${ins_mpi} xxx | sed "s/ *//g" `
+   if test `expr ${tins_mpi}` = 'xxx'
+   then
+      echo  no >> .installer_input
+   else 
+      if test `expr ${ins_mpi}` = 'default'
+      then
+         echo  >> .installer_input
+      else
+         echo ${ins_mpi} >> .installer_input
+      fi
+   fi
+fi
+
 echo yes >> .installer_input
 lib=`get_field "LIBRARY INCLUDE PATH" .input_nocomments`
 for i in $lib
@@ -122,5 +139,5 @@ else
 fi
 \rm -f .input_nocomments
 cd ..
-installer < etc/.installer_input
+./installer CALLED_BY_ML_INSTALL < etc/.installer_input
 \rm -f etc/.installer_input

@@ -41,44 +41,39 @@ if test `expr $yes_or_no` = 'yess' ||
 then
    USING_MPI=yes
    PACKAGES=`${echo} $PACKAGES -DML_MPI`
-#
-#  Haven't finished the mpicc stuff yet so I am turning it off
-#
-#   ${echo} -n "Do you use mpicc? [no] " | sed "s/-n//"
-#   read yes_or_no
-   yes_or_no=no
-   yes_or_no=`${echo} ${yes_or_no}s`
-   if test `expr $yes_or_no` = 'yess' 
-   then 
-      cdirectory= 
-      fdirectory= 
-      ${echo} "Is mpicc in your path? [yes] "
-      read yes_or_no
-      yes_or_no=`${echo} ${yes_or_no}s`
-      if test `expr $yes_or_no` = 'nos' 
-      then
-         ${echo} -n "Where is mpicc? [/usr/local/mpich] " | sed "s/-n//"
-         read cdirectory
-         cdirectory=`${echo} ${cdirectory}/`
-         if test `expr $cdirectory` = '/'
-         then
-            cdirectory=/usr/local/mpich/
-         fi
-         ${echo} -n "Where is mpif77? [/usr/local/mpich] " | sed "s/-n//"
-         read fdirectory
-         fdirectory=`${echo} ${fdirectory}/`
-         if test `expr $fdirectory` = '/'
-         then
-            fdirectory=/usr/local/mpich/
-         fi
-      fi
-      \rm -f .t1
-      cat .arch_env | sed "s/^CC.*/CC=\${cdirectory}mpicc/" > .t1
-      \rm -f .arch_env
-      cat .t1       | sed "s/^FC.*/FC=${fdirectory}mpif77/" > .arch_env
-      \rm -f .t1
+   temp=`which mpicc 2>/dev/null | wc | sed "s/^ *//" | sed "s/. *//" | sed "s/ .*//"`
+   if test `expr $temp` = '1'
+   then
+      cur_ins_mpicc=`which mpicc 2>/dev/null`
+   else
+      cur_ins_mpicc='no'
    fi
-fi 
+   ${echo} -n "Where is mpicc (enter 'no' to not use mpicc)[${cur_ins_mpicc}]:" | sed "s/-n//"
+   read ins_mpicc
+   temp=`${echo} ${ins_mpicc}s`
+   if test `expr $temp` = 's'
+   then
+      ins_mpicc=${cur_ins_mpicc}
+   fi
+   if test `expr $ins_mpicc` = 'no'
+   then
+      temp= #nop
+   else
+      \rm -f etc/Makefile.${ARCH}_MPI
+      cat etc/makefile.${ARCH} | sed "s/^CC.*//" | sed "s/FC.*//" > etc/makefile.${ARCH}_MPI
+      echo  >> etc/makefile.${ARCH}_MPI
+      temp=`${echo} "CC="${ins_mpicc}`
+      echo ${temp} >> etc/makefile.${ARCH}_MPI
+      temp=`${echo} "FC="${ins_mpicc} | sed "s/mpicc$/mpif77/"`
+      echo ${temp} >> etc/makefile.${ARCH}_MPI
+      ARCH=${ARCH}_MPI
+      CC=${ins_mpicc}
+      FC=`${echo} ${ins_mpicc} | sed "s/mpicc$/mpif77/"`
+   fi
+fi
+
+
+
 ${echo} "=================================================================="
    ${echo} "Does the compiler need to know the location of these libraries or any"
    ${echo} -n "other libraries (not including: Aztec, SuperLU, ParaSails, Metis)? [yes] " | sed "s/-n//"
@@ -90,12 +85,12 @@ ${echo} "=================================================================="
       ${echo}
       ${echo} "List each library include path (e.g. /usr/local/mympi/include) on a"
       ${echo} "separate line followed by a line with just 'x'"
-      MPI_INC_PATH=
+      ins_MPI_INC_PATH=
       read directory
       while (test `expr $directory ` != 'x')
       do
          INC_PATH=`${echo} ${INC_PATH}  -I$directory`
-         MPI_INC_PATH=`${echo} ${MPI_INC_PATH}  -I$directory`
+         ins_MPI_INC_PATH=`${echo} ${ins_MPI_INC_PATH}  -I$directory`
          read directory
       done
       ${echo}
@@ -176,7 +171,7 @@ then
             AZCOMM=md_wrap_scalar_c.c
          else 
             AZCOMM=md_wrap_mpi_c.c
-            tFLAGS=`${echo} ${tFLAGS}  ${MPI_INC_PATH}`
+            tFLAGS=`${echo} ${tFLAGS}  ${ins_MPI_INC_PATH}`
          fi
          BLAS=
          if test `expr $GOT_BLAS` = 'no'
@@ -278,7 +273,7 @@ else
          ${echo} "Here goes ..."
          cd ${directory}/SRC
          make "CC=${CC}" "ARCH=${AR}" "RANLIB=${RANLIB}" "PLAT=${ARCH}" \
-              "CFLAGS=${ARCH_FLAGS} ${MPI_INC_PATH}" "LOADER=${LINKER}"  double
+              "CFLAGS=${ARCH_FLAGS} ${ins_MPI_INC_PATH}" "LOADER=${LINKER}"  double
          cd $ML_HOME
       fi
       ${echo} "=================================================================="
@@ -323,7 +318,7 @@ then
    then
       ${echo} "Here goes ..."
       cd ${directory}
-      t=`${echo} ${ARCH_FLAGS} ${MPI_INC_PATH} -DPARASAILS_DEBUG -DPARASAILS_CG_PRINT`
+      t=`${echo} ${ARCH_FLAGS} ${ins_MPI_INC_PATH} -DPARASAILS_DEBUG -DPARASAILS_CG_PRINT`
       make "CC=${CC}" "RANLIB=${RANLIB}" \
            "CFLAGS=${t}"
       cd $ML_HOME
@@ -361,7 +356,7 @@ then
    then
       ${echo} "Here goes ..."
       cd ${directory}/METISLib
-      t=`${echo} ${ARCH_FLAGS} -I. ${MPI_INC_PATH}`
+      t=`${echo} ${ARCH_FLAGS} -I. ${ins_MPI_INC_PATH}`
       make "CC=${CC}" "RANLIB=${RANLIB}" "INCDIR=${MPI_INC_DIR}" \
            "AR=${AR} rcv" "CFLAGS=${t}"
       cd $ML_HOME
@@ -370,7 +365,7 @@ then
 fi
 
 
-
+${echo}
 ${echo} "The  file 'makefile_${ARCH}.variables will being created with environment variables."
 ${echo} "This file will be sourced when trying to compile ml"
 
@@ -388,10 +383,21 @@ ${echo} LIBRARIES=$LIBRARIES          >> make_${ARCH}.variables
 
 ${echo}
 ${echo} "Now trying to make the ml library with a sample program ..."
-sleep 2
 
 cd Obj
 make ARCH=${ARCH}
+temp=`${echo} ${1}s`
+if test `expr $temp` = 's'
+then
+   chdir_command="cd Obj"
+else
+   if test `expr ${1}` = 'CALLED_BY_ML_INSTALL'
+   then
+      chdir_command="cd ../Obj"
+   else
+      chdir_command="cd Obj"
+   fi
+fi
 ${echo} "=================================================================="
 ${echo}
 ${echo} "In the future you can set the ARCH environment variable and do a make in"
@@ -400,11 +406,11 @@ ${echo}
 ${echo} "That is"
 ${echo}
 ${echo} "setenv ARCH " $ARCH
-${echo} "cd Obj"
+${echo} ${chdir_command}
 ${echo} "make"
 ${echo}
 ${echo} "or just"
-${echo} "cd Obj"
+${echo} ${chdir_command}
 ${echo} "make ARCH=${ARCH}"
 cd ..
-\rm -f .arch_env
+\rm -f .arch_env etc/a.out

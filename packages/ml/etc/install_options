@@ -16,6 +16,12 @@ ARCHITECTURE                     PCLINUX
 #                 General Libraries: mpi, blas, lapack, ...
 #############################################################
 USE MPI                          no  # [yes, no]
+LOCATION OF MPICC                default   # (e.g. /usr/local/mpi/mpicc)
+                                           #############################
+                                           # LEAVE BLANK IF YOU DO NOT #
+                                           # WANT TO USE mpicc, default#
+                                           # USES `which mpicc`        #
+                                           #############################
 USE LAPACK                       no  # [yes, no]
 USE BLAS                         no  # [yes, no]
 LIBRARY INCLUDE PATH                 # (e.g. /usr/local/mpi/include)

@@ -67,10 +67,12 @@ LIBRARIES=
 PWD=`pwd`
 ML_HOME=$PWD
 
+
 ${echo} "What platform you are using?"
 ${echo} "    CPLANT, DEC, HP, PCLINUX, SGI, SMOS, SOLARIS, SP2, SUN, TFLOP"
 ${echo} "Note: To add other machines, create a new etc/makefile.xxx."
 ${echo}
+ARCH=`${echo} ${ARCH} | sed "s/_MPI//"`
 tARCH=`${echo} ${ARCH},`
 if test `expr $tARCH` = ','
 then
@@ -110,6 +112,7 @@ then
   \rm -f make_${ARCH}.variables
   ${echo}  >  make_${ARCH}.variables
   cd Obj; make "ARCH=${ARCH}" clean; cd ..
+  \rm -f make_${ARCH}.variables
 else
   cd etc; ./flatten;  cd ..
 fi
@@ -153,7 +156,7 @@ grep "=" etc/makefile.${ARCH} \
          | sed 's/=/=\"/' | sed 's/$/\"/' \
          | sed "s/(/{/g"  \
          | sed "s/)/}/g"  >> .arch_env
-echo "./install_packages" >> .arch_env
+echo "./install_packages $1" >> .arch_env
 chmod a+x .arch_env
 sh .arch_env
 \rm -f .arch_env etc/makefile.copy
