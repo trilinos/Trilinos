@@ -223,6 +223,7 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	else {
 	  $comm="serial";
 	}
+	system "make clean";
 #Note that the 'invoke-configure' script must be executable
 	$compileFail+=system "./invoke-configure >> $homedir/trilinosCompileLog.txt 2>&1";
 	$compileFail+=system "make >> $homedir/trilinosCompileLog.txt 2>&1";

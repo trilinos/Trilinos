@@ -215,18 +215,22 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 #  Ken Stanley added the following line to allow two scripts in the same directory to work
 	        chdir "$homedir/$subdirs[$i]/$testdirectory";
 		if (-x $potentialscript ) {
+		  print "Testing $potentialscript ...  ";
 		  $compileFail+=system "$potentialscript $subdirs[$i] True >> $homedir/testCompileLog.txt";
 		  if ($compileFail) {
 		    ++$errorcount;
 		    ++$testCompileError;
 		    print ERRORS "Trilinos test suite failed for $subdirs[$i] tests.\n\n";
+		    print "Failed.\n\n";
+		  }
+		  else {
+		    print "Passed!\n\n";
 		  }
 		  #
 		  # Compile and report results
 		  #
 		  system "rm -f list_of_files";
 		  &reportresults;
-		  print "Testing...\n";
 		  $compileFail=0; # reset so the positive value doesn't trigger an error again
 		}
 	      }
