@@ -287,8 +287,9 @@ AM_CONDITIONAL(NEED_PARAMETER_LIST, false )
 #  known evil ways of dealing with stl template instantiation
 #
 case "$target" in
+  alpha*-dec-osf*)  
     if test $CXX = cxx; then
-      alpha*-dec-osf*)  CXXFLAGS="-tweak ${CXXFLAGS}"
+      CXXFLAGS="-tweak ${CXXFLAGS}"
     fi
   ;;
 fi

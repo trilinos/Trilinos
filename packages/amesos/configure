@@ -6796,8 +6796,9 @@ fi
 #  known evil ways of dealing with stl template instantiation
 #
 case "$target" in
+  alpha*-dec-osf*)
     if test $CXX = cxx; then
-      alpha*-dec-osf*)  CXXFLAGS="-tweak ${CXXFLAGS}"
+      CXXFLAGS="-tweak ${CXXFLAGS}"
     fi
   ;;
 fi
@@ -9302,7 +9303,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9305: \"$ac_link\") >&5
+(eval echo $as_me:9306: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9382,7 +9383,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9385: \"$ac_link\") >&5
+(eval echo $as_me:9386: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
