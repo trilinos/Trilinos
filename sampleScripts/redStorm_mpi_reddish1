@@ -1,0 +1,14 @@
+../configure --enable-mpi --prefix=/localhome/jmwille/install \
+CXX=mpiCC CC=mpicc F77=mpif77 \
+CPPFLAGS="-Wc,-tlocal -tp=k8-64" \
+--with-blas="-L/usr/pgi/linux86-64/5.1/lib -lacml -lpgmp -lpgthread" \
+--with-lapack="-L/usr/pgi/linux86-64/5.1/lib -lacml" \
+--enable-belos --enable-teuchos --enable-teuchos-extended \
+--enable-teuchos-complex --enable-teuchos-abc \
+--enable-tsfcoreutils \
+--enable-tsfcore --disable-tsf --enable-ml \
+--disable-tsfextended --disable-meros --enable-tsfcore-epetra \
+--disable-anasazi --enable-tpetra --enable-epetraext \
+--enable-kokkos --enable-amesos --enable-amesos-klu \
+--enable-nox --disable-loca \
+--disable-nox-epetra-examples --enable-nox-lapack-examples
