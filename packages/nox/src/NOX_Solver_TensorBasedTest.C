@@ -49,7 +49,7 @@
 
 #define CHECK_RESIDUALS
 #define DEBUG_LEVEL 0
-#undef ALPHA   // Idea for ensuring that tensor model has a root
+#define ALPHA   // Idea for ensuring that tensor model has a root
 
 NOX::Solver::TensorBasedTest::TensorBasedTest(NOX::Abstract::Group& xGrp,
 				      NOX::StatusTest::Generic& t,
@@ -80,6 +80,9 @@ NOX::Solver::TensorBasedTest::TensorBasedTest(NOX::Abstract::Group& xGrp,
   havePrePostOperator(false)
 {
   init();
+#ifdef ALPHA    
+  printf("Using ALPHA scaling\n");
+#endif
 }
 
 // Protected
@@ -116,7 +119,8 @@ void NOX::Solver::TensorBasedTest::init()
   }
   
   // Print out initialization information
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters))
+  {
     cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
     paramsPtr->print(cout,5);
@@ -125,7 +129,8 @@ void NOX::Solver::TensorBasedTest::init()
 
   // Compute F of initial guess
   NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
-  if (rtype != NOX::Abstract::Group::Ok)    {
+  if (rtype != NOX::Abstract::Group::Ok)
+  {
     cout << "NOX::Solver::TensorBasedTest::init - Unable to compute F" << endl;
     throw "NOX Error";
   }
@@ -133,7 +138,8 @@ void NOX::Solver::TensorBasedTest::init()
   // Test the initial guess
   status = testPtr->checkStatus(*this);
   if ((status == NOX::StatusTest::Converged) &&
-      (utils.isPrintProcessAndType(NOX::Utils::Warning)))  {
+      (utils.isPrintProcessAndType(NOX::Utils::Warning)))
+  {
     cout << "Warning: NOX::Solver::TensorBasedTest::init() - The solution passed "
 	 << "into the solver (either through constructor or reset method) "
 	 << "is already converged!  The solver will not "
@@ -142,7 +148,8 @@ void NOX::Solver::TensorBasedTest::init()
   }
 
   // Print out status tests
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters))  {
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters))
+  {
     cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
     testPtr->print(cout, 5);
     cout <<"\n" << NOX::Utils::fill(72) << "\n";
@@ -157,14 +164,17 @@ void NOX::Solver::TensorBasedTest::init()
   // list or just use Method instead of this.  Then we could have separate
   // parameter lists for this one.
   string choice = localParams.getParameter("Compute Step", "Tensor");
-  if (choice == "Tensor") {
+  if (choice == "Tensor")
+  {
     requestedBaseStep = TensorStep;
   }
-  else if (choice == "Newton") {
+  else if (choice == "Newton")
+  {
     //cout << "\n\n\n\n    **** Newton step is requested ***** \n\n\n\n";
     requestedBaseStep = NewtonStep;
   }
-  else {
+  else
+  {
     cout << "Warning: NOX::Direction::Tensor::reset() - The choice of "
 	 << "\"Compute Step\" \nparameter \"" << choice
 	 << "\" is invalid.  Using \"Tensor\" instead." << endl;
@@ -201,7 +211,8 @@ void NOX::Solver::TensorBasedTest::init()
     lsType = Standard;
   else if (choice == "Newton")
     lsType = Newton;
-  else {
+  else
+  {
     if (print.isPrintProcessAndType(NOX::Utils::Warning)) {
       cout << "Warning: NOX::Direction::Tensor::reset() - the choice of "
 	   << "\"Line Search\" \nparameter " << choice
@@ -211,20 +222,17 @@ void NOX::Solver::TensorBasedTest::init()
     lsType = Curvilinear;
   }
 
-
   choice = lsparams.getParameter("Lambda Selection", "Halving");
-  if (choice == "Halving") {
+  if (choice == "Halving")
     lambdaSelection = Halving;
-  }
-  else if (choice == "Quadratic") {
+  else if (choice == "Quadratic") 
     lambdaSelection = Quadratic;
-  }
-  else {
+  else
+  {
     cout << "Warning: NOX::Solver::TensorBasedTest::init() - the choice of "
 	 << "\"Lambda Selection\" parameter is invalid." << endl;
     lambdaSelection = Halving;
   }
-
 
   choice = lsparams.getParameter("Sufficient Decrease Condition",
 				 "Armijo-Goldstein");
@@ -249,7 +257,7 @@ bool NOX::Solver::TensorBasedTest::reset(NOX::Abstract::Group& xGrp,
   testPtr = &t;
   paramsPtr = &p;
   utils.reset(paramsPtr->sublist("Printing"));
-
+  
   //direction.reset(paramsPtr->sublist("Direction"));
   dirParams = paramsPtr->sublist("Direction");
 
@@ -309,7 +317,8 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
 
   // Compute the direction for the update vector at the current solution.
   bool ok = computeTensorDirection(soln, *this);
-  if (!ok) {
+  if (!ok)
+  {
     cout << "NOX::Solver::TensorBasedTest::iterate - "
 	 << "unable to calculate direction" << endl;
     status = NOX::StatusTest::Failed;
@@ -327,8 +336,10 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
   // Do line search and compute new soln.
   //ok = lineSearch.compute(soln, step, dir, *this);
   ok = implementGlobalStrategy(soln, step, *this);
-  if (!ok) {
-    if (step == 0) {
+  if (!ok)
+  {
+    if (step == 0)
+    {
       cout << "NOX::Solver::TensorBasedTest::iterate - line search failed"
 	   << endl;
       status = NOX::StatusTest::Failed;
@@ -337,13 +348,14 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::iterate()
       return status;
     }
     else if (utils.isPrintProcessAndType(NOX::Utils::Warning))
-       cout << "NOX::Solver::TensorBasedTest::iterate - "
-	    << "using recovery step for line search" << endl;
+      cout << "NOX::Solver::TensorBasedTest::iterate - "
+	   << "using recovery step for line search" << endl;
   }
 
   // Compute F for new current solution.
   NOX::Abstract::Group::ReturnType rtype = soln.computeF();
-  if (rtype != NOX::Abstract::Group::Ok)  {
+  if (rtype != NOX::Abstract::Group::Ok)
+  {
     cout << "NOX::Solver::LineSearchBased::iterate - "
 	 << "unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
@@ -369,7 +381,8 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBasedTest::solve()
   printUpdate();
 
   // Iterate until converged or failed
-  while (status == NOX::StatusTest::Unconverged) {
+  while (status == NOX::StatusTest::Unconverged)
+  {
     status = iterate();
     printUpdate();
   }
@@ -415,7 +428,8 @@ void NOX::Solver::TensorBasedTest::printUpdate()
 
   // Print the status test parameters at each iteration if requested  
   if ((status == NOX::StatusTest::Unconverged) &&
-      (utils.isPrintProcessAndType(NOX::Utils::OuterIterationStatusTest))) {
+      (utils.isPrintProcessAndType(NOX::Utils::OuterIterationStatusTest)))
+  {
     cout << NOX::Utils::fill(72) << "\n";
     cout << "-- Status Test Results --\n";    
     testPtr->print(cout);
@@ -423,13 +437,15 @@ void NOX::Solver::TensorBasedTest::printUpdate()
   }
 
   // All processes participate in the computation of these norms...
-  if (utils.isPrintType(NOX::Utils::InnerIteration)) {
+  if (utils.isPrintType(NOX::Utils::InnerIteration))
+  {
     normSoln = solnPtr->getNormF();
     normStep = (nIter > 0) ? tensorVec.norm() : 0;
   }
 
   // ...But only the print process actually prints the result.
-  if (utils.isPrintProcessAndType(NOX::Utils::OuterIteration)) {
+  if (utils.isPrintProcessAndType(NOX::Utils::OuterIteration))
+  {
     cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "-- Nonlinear Solver Step " << nIter << " -- \n";
     cout << "f = " << utils.sciformat(normSoln);
@@ -474,7 +490,8 @@ bool NOX::Solver::TensorBasedTest::computeTensorDirection(
   // Begin processing for the tensor step, if necessary.
   double sDotS = 0.0;
   int tempVal1 = 0;
-  if ((nIter > 0)  &&  (requestedBaseStep == TensorStep)) {
+  if ((nIter > 0)  &&  (requestedBaseStep == TensorStep))
+    {
 
     // Save old Newton step as initial guess to second system  (not necessary)
     tmpVec = newtonVec;
@@ -860,11 +877,13 @@ bool NOX::Solver::TensorBasedTest::performLinesearch(
   }
 
 
-  if (isFailed) {
+  if (isFailed)
+  {
     counter.incrementNumFailedLineSearches();
     step = recoveryStep;
 
-    if (step != 0.0) {
+    if (step != 0.0)
+    {
       // Update the group using Newton direction and recovery step
       newsoln.computeX(oldSoln, newtonVec, step);
       newsoln.computeF();    
