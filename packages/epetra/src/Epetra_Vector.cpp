@@ -30,6 +30,7 @@
 Epetra_Vector::Epetra_Vector(const Epetra_BlockMap& Map)
   : Epetra_MultiVector(Map,1) // Vector is just special case of MultiVector
 {
+  SetLabel("Epetra::Vector");
 }
 //=============================================================================
 Epetra_Vector::Epetra_Vector(const Epetra_Vector& Source)

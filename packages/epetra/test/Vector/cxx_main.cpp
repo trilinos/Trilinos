@@ -305,6 +305,12 @@ int main(int argc, char *argv[]) {
       Epetra_Vector B(Map2);B.Random();
       Epetra_Vector C(Map3);C.Random();
 
+      // Test Epetra_Vector label
+      char* VecLabel = A.Label();
+      char* VecLabel1 = "Epetra::Vector";
+      if (verbose) cout << endl << endl <<"This should say " << VecLabel1 << ": " << VecLabel << endl << endl << endl;
+      ierr = strcmp(VecLabel1,VecLabel);
+      assert (ierr==0);
       if (verbose) cout << "Testing Assignment operator" << endl;
 
       double tmp1 = 1.00001* (double) (MyPID+1);
@@ -317,7 +323,7 @@ int main(int argc, char *argv[]) {
  
       Comm.Barrier();
 	  
-      if (verbose) cout << "Testing MFLOPs" << endl;
+      if (verbose) cout << endl << endl << "Testing MFLOPs" << endl;
       Epetra_Flops counter;
       C.SetFlopCounter(counter);
       Epetra_Time mytimer(Comm);
