@@ -142,14 +142,14 @@ int main(int argc, char *argv[])
   ML_Aggregate_Set_CoarsenScheme_ParMETIS(ag);
   ML_Aggregate_Set_MaxCoarseSize(ag, 30);
   ML_Aggregate_Set_Threshold(ag, 0.0); 
-  /*
+
   ML_Aggregate_Set_GlobalNumber( ml, ag, MaxMgLevels-1, 1024 );
   ML_Aggregate_Set_GlobalNumber( ml, ag, MaxMgLevels-2, 256 );
   ML_Aggregate_Set_GlobalNumber( ml, ag, MaxMgLevels-3, 64 );
   ML_Aggregate_Set_GlobalNumber( ml, ag, MaxMgLevels-4, 8 );
   ML_Aggregate_Set_GlobalNumber( ml, ag, MaxMgLevels-5, 1 );
   ML_Aggregate_Set_ReqLocalCoarseSize( ml, ag, -1, 1 );
-  */  
+
   /********************************************************************/
   /* Build hierarchy using smoothed aggregation.                      */
   /*------------------------------------------------------------------*/
@@ -166,8 +166,11 @@ int main(int argc, char *argv[])
   for (level = MaxMgLevels-1; level > coarsest_level; level--)
     ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 30., 3);
 
+#ifdef HAVE_ML_AMESOS
+  ML_Gen_Smoother_Amesos(ml,coarsest_level, ML_AMESOS_KLU, -1);
+#else
   ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
-
+#endif
 
   /* Must be called before invoking the preconditioner */
   ML_Gen_Solver(ml, ML_MGV, MaxMgLevels-1, coarsest_level); 
@@ -185,7 +188,7 @@ int main(int argc, char *argv[])
   AZ_defaults(options, params);
   options[AZ_solver]   = AZ_cg;
   params[AZ_tol]       = tolerance;
-  options[AZ_conv]     = AZ_noscaled;
+  options[AZ_output]   = 32;
   
   AZ_set_ML_preconditioner(&Pmat, Kn_mat, ml, options); 
   AZ_iterate(xxx, rhs, options, params, status, proc_config, Kn_mat, Pmat, NULL);
