@@ -53,8 +53,61 @@ MatrixMatrix_test_LDADD = \
   $(BLAS_LIBS) \
   $(FLIBS)
 
+EXTRA_DIST = \
+	src_infileAB \
+	src_infileATBT \
+	src_infileAB2 \
+	src_infiles \
+	src_infileABT \
+	src_infileAB3 \
+	src_infileATB \
+	src_infileATB2 \
+	src_C.mtx \
+	src_C4x4.mtx \
+	src_C4x12x12x4.mtx \
+	src_C4x6.mtx \
+	src_C6x4.mtx \
+	src_C6x6.mtx \
+	src_mat6x4.mtx \
+	src_mat6x6.mtx \
+	src_mat12x4.mtx \
+	src_mat4x12.mtx \
+	src_mat4x4.mtx \
+	src_mat4x6.mtx \
+	src_Y.mtx \
+	src_YTC.mtx \
+	src_Y_transp.mtx \
+	src_roman \
+	src_roman2 \
+	src_romancase \
+	src_romancase2
+
 copyfiles$(EXEEXT): $(copyfiles_SOURCES)
-	cp $(top_srcdir)/test/MatrixMatrix/infile* $(top_builddir)/test/MatrixMatrix
-	cp $(top_srcdir)/test/MatrixMatrix/roman* $(top_builddir)/test/MatrixMatrix
-	cp $(top_srcdir)/test/MatrixMatrix/*.mtx $(top_builddir)/test/MatrixMatrix
+	cp $(top_srcdir)/test/MatrixMatrix/src_infileAB $(top_builddir)/test/MatrixMatrix/infileAB
+	cp $(top_srcdir)/test/MatrixMatrix/src_infileATBT $(top_builddir)/test/MatrixMatrix/infileATBT
+	cp $(top_srcdir)/test/MatrixMatrix/src_infileAB2 $(top_builddir)/test/MatrixMatrix/infileAB2
+	cp $(top_srcdir)/test/MatrixMatrix/src_infiles $(top_builddir)/test/MatrixMatrix/infiles
+	cp $(top_srcdir)/test/MatrixMatrix/src_infileABT $(top_builddir)/test/MatrixMatrix/infileABT
+	cp $(top_srcdir)/test/MatrixMatrix/src_infileAB3 $(top_builddir)/test/MatrixMatrix/infileAB3
+	cp $(top_srcdir)/test/MatrixMatrix/src_infileATB $(top_builddir)/test/MatrixMatrix/infileATB
+	cp $(top_srcdir)/test/MatrixMatrix/src_infileATB2 $(top_builddir)/test/MatrixMatrix/infileATB2
+	cp $(top_srcdir)/test/MatrixMatrix/src_C.mtx $(top_builddir)/test/MatrixMatrix/C.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_C4x4.mtx $(top_builddir)/test/MatrixMatrix/C4x4.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_C4x12x12x4.mtx $(top_builddir)/test/MatrixMatrix/C4x12x12x4.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_C4x6.mtx $(top_builddir)/test/MatrixMatrix/C4x6.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_C6x4.mtx $(top_builddir)/test/MatrixMatrix/C6x4.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_C6x6.mtx $(top_builddir)/test/MatrixMatrix/C6x6.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_mat6x4.mtx $(top_builddir)/test/MatrixMatrix/mat6x4.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_mat6x6.mtx $(top_builddir)/test/MatrixMatrix/mat6x6.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_mat12x4.mtx $(top_builddir)/test/MatrixMatrix/mat12x4.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_mat4x12.mtx $(top_builddir)/test/MatrixMatrix/mat4x12.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_mat4x4.mtx $(top_builddir)/test/MatrixMatrix/mat4x4.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_mat4x6.mtx $(top_builddir)/test/MatrixMatrix/mat4x6.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_Y.mtx $(top_builddir)/test/MatrixMatrix/Y.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_YTC.mtx $(top_builddir)/test/MatrixMatrix/YTC.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_Y_transp.mtx $(top_builddir)/test/MatrixMatrix/Y_transp.mtx
+	cp $(top_srcdir)/test/MatrixMatrix/src_roman $(top_builddir)/test/MatrixMatrix/roman
+	cp $(top_srcdir)/test/MatrixMatrix/src_roman2 $(top_builddir)/test/MatrixMatrix/roman2
+	cp $(top_srcdir)/test/MatrixMatrix/src_romancase $(top_builddir)/test/MatrixMatrix/romancase
+	cp $(top_srcdir)/test/MatrixMatrix/src_romancase2 $(top_builddir)/test/MatrixMatrix/romancase2
 
