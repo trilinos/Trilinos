@@ -298,6 +298,9 @@ AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_ml_aztecoo" != "Xyes")
 #  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  ml requires at least one or the other.]])
 #fi
 
+TAC_ARG_WITH_PACKAGE(ml_metis, [Enable METIS support.  Note 1: METIS is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the METIS headers and libraries via the configure options --with-ldflags=<METIS-library-path/library-name> and --with-incdirs=METIS-include-directory.], ML_METIS, no)
+ #
+
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
