@@ -1,0 +1,108 @@
+#@HEADER
+#@HEADER
+
+This README explains some fundamentals of how to unpack, configure,
+make, install, and link to NOX.
+
+** UNPACKING
+
+To unpack NOX, type
+
+> tar xzvf nox-<version>.tar.gz
+
+or 
+
+> gunzip -c nox-<version>.tar.gz | tar xvf -
+
+In either case, rename the directory to simply "nox":
+
+> mv nox-<version> nox
+
+** COMPILING - SINGLE
+
+> cd nox
+> ./configure
+> make
+
+Add the following to your CPPFLAGS:
+
+  -I$(NOX_HOME)/src
+
+Add the following to your LDFLAGS:
+
+  -L$(NOX_HOME)/src
+
+Add the following to you LIBS:
+
+  -lnox -lnoxepetra
+
+** COMPILING - MULTI
+
+> cd nox
+> mkdir builds
+> cd builds
+> mkdir <BUILD_NAME>
+> cd <BUILD_NAME>
+> ../../configure
+> make
+
+Add the following to your CPPFLAGS:
+
+  -I$(NOX_HOME)/builds/<BUILD_NAME>/src -I$(NOX_HOME)/src
+
+Add the following to your LDFLAGS:
+
+  -L$(NOX_HOME)/builds/<BUILD_NAME>/src
+
+Add the following to you LIBS:
+
+  -lnox -lnoxepetra
+
+** INSTALLING NOX - SINGLE
+
+> cd $(NOX_HOME)
+> ./configure --prefix=<directory>
+> make install
+
+Headers: $(prefix)/include/nox
+Libraries: $(prefix)/lib
+
+Add the following to your CPPFLAGS:
+
+  -I$(prefix)/include/nox
+
+Add the following to your LDFLAGS:
+
+  -L$(prefix)/lib
+
+Add the following to you LIBS:
+
+  -lnox -lnoxepetra
+
+** INSTALLING NOX - MULTI
+
+> cd $(NOX_HOME)
+> ./configure --prefix=<directory> --exec_prefix=<exec_directory>
+> make install
+
+Headers: $(prefix)/include/nox $(exec_prefix)/include/nox
+Libraries: $(exec_prefix)/lib
+
+Add the following to your CPPFLAGS:
+
+  -I$(prefix)/include/nox -I$(exec_prefix)/include/nox
+
+Add the following to your LDFLAGS:
+
+  -L$(exec_prefix)/lib
+
+Add the following to you LIBS:
+
+  -lnox -lnoxepetra
+
+
+
+
+
+
+
