@@ -212,6 +212,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
      to the same function later.  
   */
   r_2norm = DDOT_F77(&N, v[0], &one, v[0], &one);
+  AZ_gdot_vec(1, &r_2norm, &rec_residual, proc_config);  
   rec_residual = r_2norm;
 
   AZ_compute_global_scalars(Amat, x, b, v[0],
@@ -248,7 +249,8 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
     rs[0] = r_2norm;  /* initialize 1st rhs term of H system */
     i     = 0;
 
-    while (i < kspace && !(convergence_info->converged) && iter < options[AZ_max_iter]) {
+    while (i < kspace && !(convergence_info->converged) && iter < options[AZ_max_iter]
+	   && !(convergence_info->isnan)) {
       iter++;
     convergence_info->iteration = iter;
       i1 = i + 1;

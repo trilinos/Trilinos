@@ -180,6 +180,17 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
    *       est_residual.
    */
 
+  /* Change to support AztecOO_StatusTest:
+     Even though AZ_compute_global_scalars can compute est_residual for us,
+     we want to compute the initial residual prior to calling 
+     this function because we need this value passed in to 
+     AZ_compute_global_scalars in order to be consistent with subsequent calls
+     to the same function later.  
+  */
+  scaled_r_norm = DDOT_F77(&N, r_cgs, &one, r_cgs, &one);
+  AZ_gdot_vec(1, &scaled_r_norm, &est_residual, proc_config);  
+  est_residual = scaled_r_norm;
+
   AZ_compute_global_scalars(Amat, x, b, r_cgs,
                             weight, &est_residual, &scaled_r_norm, options,
                             data_org, proc_config, &r_avail, r_cgs, rtilda,
@@ -197,7 +208,8 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
   /* Set up aux-vector if we need to compute the qmr residual */
 
-  if (r_avail) {
+  /* We always want the residual for AztecOO tests */
+  if (r_avail || (options[AZ_conv]==AZTECOO_conv_test)) {
     sprintf(label,"Ad%s",suffix);
     Ad = (double *) AZ_manage_memory(NN*sizeof(double),AZ_ALLOC,
 				     AZ_SYS, label, &j);
@@ -302,7 +314,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
     for (i = 0; i < N; i++) d[i] = ubar[i] + dtemp * d[i];
     DAXPY_F77(&N, &eta_m, d, &one, x, &one); /* x = x - eta_m d  */
 
-    if (r_avail) {
+    if (r_avail || (options[AZ_conv]==AZTECOO_conv_test)) {
       for (i = 0; i < N; i++) Ad[i] = Aubar[i] + dtemp * Ad[i];
     }
 
@@ -331,7 +343,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
     for (i = 0; i < N; i++) d[i] = qbar[i] + dtemp * d[i];
     DAXPY_F77(&N, &eta_m, d, &one, x, &one); /* x = x - eta_m d  */
 
-    if (r_avail) {
+    if (r_avail || (options[AZ_conv]==AZTECOO_conv_test)) {
       for (i = 0; i < N; i++) Ad[i] = Aqbar[i] + dtemp * Ad[i];
     }
 
@@ -341,11 +353,17 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
     nu_mm1  = nu_m;   norm_r_nm1_cgs = norm_r_n_cgs;
     rhonm1  = rhon;
 
-    if (r_avail) {
+    if (r_avail || (options[AZ_conv]==AZTECOO_conv_test)) {
       for (i = 0; i < N; i++) Aubar[i] = r_cgs[i] - (eta_m - alpha) * Ad[i];
-
+      if (options[AZ_conv]==AZTECOO_conv_test) {
+	
+	scaled_r_norm = DDOT_F77(&N, Aubar, &one, Aubar, &one);
+	AZ_gdot_vec(1, &scaled_r_norm, &est_residual, proc_config);  
+	est_residual = scaled_r_norm;
+      }
+      
       /* Note: Aubar temporarily holds qmr residual */
-
+      
     }
     else {
 

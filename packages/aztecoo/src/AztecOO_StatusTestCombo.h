@@ -29,11 +29,34 @@
 #include <vector>
 class Epetra_MultiVector;
 
-//! AztecOO_StatusTestCombo: A pure virtual class for extending the status testing capabilities of AztecOO.
+//! AztecOO_StatusTestCombo: A  class for extending the status testing capabilities of AztecOO via logical combinations.
 
-/* AztecOO_StatusTestCombo is an interface that can be implemented to extend the convergence testing
+/*! AztecOO_StatusTestCombo is an interface that can be implemented to extend the convergence testing
    capabilities of AztecOO.  This class supports composite tests.  In this situation,
-   two existing AztecOO_StatusTestCombo objects test1 and test2 can be used to create a new test.
+   two or more existing AztecOO_StatusTestCombo objects test1 and test2 can be used to create a new test.
+   For all combinations, if any tests returns Failed or returns not-a-number (NaN) status, then the combination test 
+   returns Failed.
+   There are three possible combinations:
+   <ol>
+   <li> OR combination:
+   If an OR combination is selected, the status returns Converged if any one of the subtest returns
+   as Converged.  
+   <li> AND combination:
+   If an AND combination is selected, the status returns Converged only when all subtests return as Converged.
+   <li> SEQ combination:
+   SEQ is a form of AND that will perform subtests in sequence.  If the first test returns Unconverged, Failed or NaN,
+   no other subtests are done, and the status is returned as Unconverged if the first test was Unconverged, or as
+   Failed if the first test was Failed or NaN.  If the first test returns Converged, the second test is checked in 
+   the same fashion as the first.  If the second test is Converged, the third one is tested, and so on.
+
+   The purpose of the SEQ combination is to allow the addition of expensive but more rigorous convergence tests.  For
+   example, we could define a test that used the implicit residual vector (the one produced by the iterative method)
+   as the first subtest and define a second test using the explicitly computed residual vector.  Explicitly computing
+   the residual requires a matrix multiplication with the original matrix operator, an expensive operation.  By using
+   the SEQ combination, we can avoid the matrix multiplication associated with the explicit residual calculation
+   until the implicit residual is small.
+   </ol>
+   
 
 */
 
@@ -44,10 +67,12 @@ class AztecOO_StatusTestCombo: public AztecOO_StatusTest {
   //@{ \name Enums.
   /*! 
     \brief The test can be either the AND of all the component tests,
-    or the OR of all the component tests.
+    or the OR of all the component tests, or a sequential AND (SEQ).
   */
-  enum ComboType {AND, /*!< Require both subtests to be satisfied. */
-		  OR   /*!< Require one or the other subtests to be satisfied. */
+  enum ComboType {AND,  /*!< Require all subtests to be satisfied. */
+		  OR,   /*!< Require one or the other subtests to be satisfied. */
+		  SEQ   /*!< Requires all subtests to be satisfied, but stops check after the first failed 
+			  or unconverged status. */
   };
   //@}
 
@@ -110,6 +135,10 @@ protected:
 
   //! Use this for checkStatus when this is an AND type combo. Updates status.
   virtual void AndOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
+		     bool SolutionUpdated);
+
+  //! Use this for checkStatus when this is a sequential AND type combo. Updates status.
+  virtual void SeqOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
 		     bool SolutionUpdated);
 
   //! Check whether or not it is safe to add a to the list of

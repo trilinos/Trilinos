@@ -27,14 +27,14 @@
 AztecOO_StatusTestCombo::AztecOO_StatusTestCombo(ComboType t)
   : AztecOO_StatusTest() {
   type_ = t;
-  status_ = Unconverged;
+  status_ = Unchecked;
 }
 
 AztecOO_StatusTestCombo::AztecOO_StatusTestCombo(ComboType t, AztecOO_StatusTest& a)
   : AztecOO_StatusTest() {
   type_ = t;
   tests_.push_back(&a);
-  status_ = Unconverged;
+  status_ = Unchecked;
 }
 
 AztecOO_StatusTestCombo::AztecOO_StatusTestCombo(ComboType t, AztecOO_StatusTest& a, AztecOO_StatusTest& b)
@@ -42,7 +42,7 @@ AztecOO_StatusTestCombo::AztecOO_StatusTestCombo(ComboType t, AztecOO_StatusTest
   type_ = t;
   tests_.push_back(&a);
   AddStatusTest(b);
-  status_ = Unconverged;
+  status_ = Unchecked;
 }
 
 AztecOO_StatusTestCombo& AztecOO_StatusTestCombo::AddStatusTest(AztecOO_StatusTest& a)
@@ -109,8 +109,10 @@ AztecOO_StatusType AztecOO_StatusTestCombo::CheckStatus(int CurrentIter,
 
   if (type_ == OR)
     OrOp(CurrentIter, CurrentResVector, CurrentResNormEst, SolutionUpdated);
-  else
+  else if (type_ == AND)
     AndOp(CurrentIter, CurrentResVector, CurrentResNormEst, SolutionUpdated);
+  else
+    SeqOp(CurrentIter, CurrentResVector, CurrentResNormEst, SolutionUpdated);
 
   return status_;
 }
@@ -123,17 +125,26 @@ AztecOO_StatusType AztecOO_StatusTestCombo::GetStatus() const
 void AztecOO_StatusTestCombo::OrOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
 			   bool SolutionUpdated)
 {
+
+  bool isFailed = false;
+
   // Checks the status of each test. The first test it encounters, if
   // any, that is unconverged is the status that it sets itself too.
   for (std::vector<AztecOO_StatusTest*>::const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
 
     AztecOO_StatusType s = (*i)->CheckStatus(CurrentIter, CurrentResVector, CurrentResNormEst, SolutionUpdated);
+    
+    // Check for failure and NaN.  Combo treats NaNs as Fails
+    if (s==Failed || s==NaN) isFailed = true;
 
     if ((status_ == Unconverged) && (s != Unconverged)) {
       status_ = s;
     }
 
   }
+
+    // Any failure is a complete failure
+    if (isFailed) status_ = Failed;
 
   return;
 }
@@ -142,10 +153,14 @@ void AztecOO_StatusTestCombo::AndOp(int CurrentIter, Epetra_MultiVector * Curren
 			   bool SolutionUpdated)
 {
   bool isUnconverged = false;
+  bool isFailed = false;
 
   for (std::vector<AztecOO_StatusTest*>::const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
 
     AztecOO_StatusType s = (*i)->CheckStatus(CurrentIter, CurrentResVector, CurrentResNormEst, SolutionUpdated);
+
+    // Check for failure and NaN.  Combo treats NaNs as Fails
+    if (s==Failed || s==NaN) isFailed = true;
 
     // If any of the tests are unconverged, then the AND test is
     // unconverged.
@@ -162,6 +177,34 @@ void AztecOO_StatusTestCombo::AndOp(int CurrentIter, Epetra_MultiVector * Curren
 
   }
 
+    // Any failure is a complete failure
+    if (isFailed) status_ = Failed;
+
+  return;
+}
+
+void AztecOO_StatusTestCombo::SeqOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
+			   bool SolutionUpdated)
+{
+
+  for (std::vector<AztecOO_StatusTest*>::const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
+
+    AztecOO_StatusType s = (*i)->CheckStatus(CurrentIter, CurrentResVector, CurrentResNormEst, SolutionUpdated);
+
+    // Check for failure and NaN.  Combo treats NaNs as Fails
+    if (s==Failed || s==NaN) {
+      status_ = Failed;
+      return;
+    }
+    else if (s==Unconverged) {
+      status_ = s;
+      return;
+    }
+  }
+
+  // If we make it here, we have converged
+  status_ = Converged;
+
   return;
 }
 
@@ -171,7 +214,7 @@ ostream& AztecOO_StatusTestCombo::Print(ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   PrintStatus(stream, status_);
-  stream << ((type_ == OR) ? "OR" : "AND");
+  stream << ((type_ == OR) ? "OR" : (type_ == AND) ? "AND" :"SEQ");
   stream << " Combination";
   stream << " -> " << endl;
 

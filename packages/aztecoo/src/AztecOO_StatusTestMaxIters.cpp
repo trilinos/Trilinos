@@ -30,7 +30,7 @@ AztecOO_StatusTestMaxIters::AztecOO_StatusTestMaxIters(int MaxIters)
   if (MaxIters < 1) MaxIters_ = 1;
     
   MaxIters_ = MaxIters;
-  status_ = Unconverged;
+  status_ = Unchecked;
 }
 
 AztecOO_StatusType AztecOO_StatusTestMaxIters::CheckStatus(int CurrentIter, 

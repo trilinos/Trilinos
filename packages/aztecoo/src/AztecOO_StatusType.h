@@ -35,9 +35,11 @@
 
 
 
-enum AztecOO_StatusType { Unconverged = 1, /*!< Convergence is not reached. */
+enum AztecOO_StatusType { Unchecked = 2,   /*!< Initial state of status */
+			  Unconverged = 1, /*!< Convergence is not reached. */
 			  Converged = 0,   /*!< Convergence is reached. */
-			  NaN = -2,        /*!< Result from test contains a NaN value.  Should stop */
-			  Failed = -1      /*!< Some failure occured.  Should stop */
+			  Failed = -1,      /*!< Some failure occured.  Should stop */
+			  NaN = -2         /*!< Result from test contains a NaN value.  Should stop */
+			  
 };
 #endif /* AZTECOO_STATUSTYPE_H */

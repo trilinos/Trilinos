@@ -42,7 +42,7 @@ AztecOO_StatusTestResNorm::AztecOO_StatusTestResNorm(const Epetra_Operator & Ope
     weights_(0),
     scalevalue_(1.0),
     resvalue_(0.0),
-    status_(Unconverged),
+    status_(Unchecked),
     resvecrequired_(false),
     firstcallCheckStatus_(true),
     firstcallDefineResForm_(true),
@@ -173,7 +173,7 @@ ostream& AztecOO_StatusTestResNorm::Print(ostream& stream, int indent) const
     stream << ' ';
   PrintStatus(stream, status_);
     stream << "(";
-  stream << ((resnormtype_==OneNorm) ? "1-Norm" : ((resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm"));
+  stream << ((resnormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
   stream << ((curresvecexplicit_) ? " Exp" : " Imp");
   stream << " Res Vec) ";
   if (scaletype_!=None)
@@ -182,15 +182,19 @@ ostream& AztecOO_StatusTestResNorm::Print(ostream& stream, int indent) const
     stream << " (User Scale)";
   else {
     stream << "(";
-    stream << ((scalenormtype_==OneNorm) ? "1-Norm" : ((resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm"));
+    stream << ((scalenormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
     if (scaletype_==NormOfInitRes)
       stream << " Res0";
     else
       stream << " RHS ";
     stream << ")";
   }
-  stream << " = " << testvalue_;
-  stream << ((testvalue_<tolerance_) ? " < " : ((testvalue_==tolerance_) ? " = " : " > "));
+  if (status_==Unchecked)
+    stream << " Unchecked << ";
+  else {
+    stream << " = " << testvalue_;
+    stream << ((testvalue_<tolerance_) ? " < " : (testvalue_==tolerance_) ? " = " : (testvalue_>tolerance_) ? " > " : " <> ");
+  }
   stream << tolerance_;
   stream << endl;
     
