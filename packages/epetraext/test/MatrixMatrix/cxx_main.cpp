@@ -70,7 +70,7 @@ int test_find_rows(Epetra_Comm& Comm);
 
 int main(int argc, char** argv) {
   if (argc < 2) {
-    std::cout << "Usage: " << argv[0] << "-i file_name" << std::endl;
+    std::cout << "Usage: " << argv[0] << " -i file_name" << std::endl;
     std::cout << "  (where file_name contains a list of input-files)"<<std::endl;
     return(-1);
   }

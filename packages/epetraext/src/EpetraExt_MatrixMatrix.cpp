@@ -990,6 +990,17 @@ Epetra_Map* find_rows_containing_cols(const Epetra_CrsMatrix& M,
   int numProcs = colmap->Comm().NumProc();
   int localProc = colmap->Comm().MyPID();
 
+  if (numProcs < 2) {
+    Epetra_Map* result_map = NULL;
+
+    int err = form_map_union(&(M.RowMap()), NULL,
+                             (const Epetra_Map*&)result_map);
+    if (err != 0) {
+      return(NULL);
+    }
+    return(result_map);
+  }
+
   int MnumRows = M.NumMyRows();
   int numCols = colmap->NumMyElements();
 
