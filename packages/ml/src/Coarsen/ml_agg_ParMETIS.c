@@ -1554,7 +1554,10 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    ML_Operator_Destroy( &Pstart );
    ML_Operator_Destroy( &QQ );
+
+#ifdef ML_WITH_EPETRA
    ML_DestroyQ( );
+#endif
    
    /* ------------------------------------------------------------- */
    /* clean up                                                      */

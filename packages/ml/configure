@@ -934,6 +934,7 @@ Optional Packages:
                           --with-ldflags=<SuperLU_DIST-library-path/library-name>
                           and --with-incdirs=SuperLU_DIST-include-directory.
                           (default is no)
+  --with-ml_aztec2_1      Enable Aztec 2.1 support (default is no)
   --with-ml_metis         Enable METIS support. Note 1: METIS is a third party
                           library. As such, configure assumes that it has
                           already been built. Note 2: You must also specify
@@ -3591,7 +3592,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3594:" \
+echo "$as_me:3595:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5932,6 +5933,33 @@ fi
 
 #
 
+
+# Check whether --with-ml_aztec2_1 or --without-ml_aztec2_1 was given.
+if test "${with_ml_aztec2_1+set}" = set; then
+  withval="$with_ml_aztec2_1"
+  ac_cv_use_ml_aztec2_1=$withval
+else
+  ac_cv_use_ml_aztec2_1=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml_aztec2_1" >&5
+echo $ECHO_N "checking whether to use ml_aztec2_1... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml_aztec2_1" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_AZTEC2_1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+#
+
 # Check whether --enable-ml_complex_maxwell or --disable-ml_complex_maxwell was given.
 if test "${enable_ml_complex_maxwell+set}" = set; then
   enableval="$enable_ml_complex_maxwell"
@@ -6292,7 +6320,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6295: \"$ac_link\") >&5
+(eval echo $as_me:6323: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6372,7 +6400,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6375: \"$ac_link\") >&5
+(eval echo $as_me:6403: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8803,7 +8831,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8806: \"$ac_link\") >&5
+(eval echo $as_me:8834: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8883,7 +8911,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8886: \"$ac_link\") >&5
+(eval echo $as_me:8914: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

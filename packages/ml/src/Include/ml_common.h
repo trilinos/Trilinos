@@ -63,6 +63,12 @@
 #define ML_WITH_EPETRA
 #endif
 
+#ifdef HAVE_ML_AZTEC2_1
+#ifndef AZTEC
+#define AZTEC
+#endif
+#endif
+
 /* ... but not vice versa */
 #ifdef HAVE_ML_EPETRA
 #ifndef ML_WITH_EPETRA

@@ -287,6 +287,8 @@ AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_ml_aztecoo" != "Xyes")
 #
  TAC_ARG_WITH_PACKAGE(ml_superlu_dist, [Enable SuperLU_DIST support.  Note 1: SuperLU_DIST is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the SuperLU_DIST headers and libraries via the configure options --with-ldflags=<SuperLU_DIST-library-path/library-name> and --with-incdirs=SuperLU_DIST-include-directory.], ML_SUPERLU_DIST, no)
 #
+ TAC_ARG_WITH_PACKAGE(ml_aztec2_1, [Enable Aztec 2.1 support], ML_AZTEC2_1, no)
+#
  TAC_ARG_ENABLE_OPTION(ml_complex_maxwell, [Enable complex maxwell solver capability], ML_COMPLEX_MAXWELL, no)
  #
 #
