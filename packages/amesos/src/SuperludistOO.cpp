@@ -13,9 +13,6 @@
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
-#ifdef SPARSE_DIRECT_TIMINGS
-#include "SparseDirectTimingVars.h"
-#endif
 #include "supermatrix.h"      
 #include "superlu_ddefs.h"
 #include "CrsMatrixTranspose.h"
@@ -169,7 +166,6 @@ int SuperludistOO::Solve(bool factor) {
   if ( iam == 0 )  cin >> hatever ; 
   Comm.Barrier();
 #endif
-  //  SparseDirectTimingVars::SS_Result.RedistribTime().Time_First( ) ; //  Initializes the global time
 
   //
   //  Step 1)  Convert the matrix to an Epetra_CrsMatrix
@@ -358,8 +354,6 @@ int SuperludistOO::Solve(bool factor) {
   Ap[ numrows ] = Ai_index ; 
   }
 
-  //  SparseDirectTimingVars::SS_Result.RedistribTime().Time_First( ) ; //  Initializes the global time
-
   //
   //  Step 7)  Call SuperLUdist
   //  
@@ -471,14 +465,6 @@ int SuperludistOO::Solve(bool factor) {
       }
     }
   }
-
-
-  //
-  //  For now, all times are the same.  
-  //
-  //  SparseDirectTimingVars::SS_Result.SymbolicTime().Time_First( ) ;
-  //  SparseDirectTimingVars::SS_Result.FactorTime().Time_First( ) ; 
-  //  SparseDirectTimingVars::SS_Result.SolveTime().Time_First( ) ; 
 
   return(0) ; 
 }

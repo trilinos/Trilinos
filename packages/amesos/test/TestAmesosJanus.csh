@@ -150,7 +150,7 @@ yod -sz 4 cxx_AME_mpi.exe SuperLUdist K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
 
 
 yod -sz 1 cxx_AME_mpi.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
-#   THIS ONE FAILS IN SUPERLU_MALLOC ON JANUS yod -sz 6 cxx_AME_mpi.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+yod -sz 6 cxx_AME_mpi.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 echo "\nCOMMENT End TestAmesosJanus.csh" >> SST.summary 
 

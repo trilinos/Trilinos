@@ -8,7 +8,7 @@ DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) $(EPETRA_DEF
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) $(EPETRA_DEFAULT_DEFINES) 
 
 INCLUDES = $(ARCH_INCLUDES) $(EPETRA_INCLUDES) $(KUNDERT_INCLUDE) \
-	$(SUPERLU_INCLUDES)
+	$(SUPERLU_INCLUDES)  $(SPOOLES_INCLUDES)
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) 
@@ -22,7 +22,8 @@ TEMPORARY_AMESOS_CC = CrsMatrixTranspose.cpp CrsMatricesAreIdentical.cpp \
 	ExtractCrsFromRowMatrix.cpp Comm_assert_equal.cpp 
 TEMPORARY_AMESOS_CC =  CrsMatrixTranspose.cpp 
 
-AMESOS_CC = SuperludistOO.cpp KundertOO.cpp $(TEMPORARY_AMESOS_CC) 
+AMESOS_XCC = SuperludistOO.cpp KundertOO.cpp $(TEMPORARY_AMESOS_CC)
+AMESOS_CC = $(AMESOS_XCC) $(SPOOLESOO_FILES)
 
 AMESOS_F =
 
@@ -53,4 +54,4 @@ clean:
 	@rm -f *.$(OBJ_EXT)  $(LIBAMESOS) *~
 
 tar:
-	tar cf AMESOSsrc.tar $(AMESOS_CC) $(AMESOS_INC)  classicMakefile 
+	tar cf AMESOSsrc.tar $(AMESOS_XCC) SpoolesOO.cpp SpoolesOO.h $(AMESOS_INC)  classicMakefile 

@@ -137,8 +137,6 @@ main(int argc, char **argv)
     
     time_t now = time( NULL ) ; 
     tm *localnow = localtime( &now ) ; 
-    cout << ctime( &now ) << endl ;
-    
     (void) strftime( timebuffer, MAXNAMELENGTH, "20%g%b%d@%H:%M", localnow ) ;
   }
 
@@ -358,6 +356,18 @@ main(int argc, char **argv)
       if ( maxresid == -2 && maxerror == -2 ) summary_file << "Failure OK" ; 
       flush( summary_file ) ; 
     }
+    if (MyPID == 0 ) { 
+      cerr << endl << setw(12) << hostname
+		   << setw(12) <<  argv[1] 
+		   << " " << setw(-1) << timebuffer
+		   << setw(15) << argv[2] << setw(6)
+		   << MatType << " " 
+		   << special << " " 
+		   << NumMpiProcs <<  setw(6) 
+		   << numsolves << setw(3) << transpose << setprecision(12) ;
+      if ( maxresid == -2 && maxerror == -2 ) cerr << "Failure OK" ; 
+      flush( cerr ) ; 
+    }
     //
     //  Perform the test
     //    
@@ -404,16 +414,21 @@ main(int argc, char **argv)
       }
       if (summary ) { 
 	SparseDirectTimingVars::SS_Result.PrintSummary(summary_file) ;
+	SparseDirectTimingVars::SS_Result.PrintSummary(cerr) ;
 	bool ErrorOK = maxerror <= -1 ||  
 	  SparseDirectTimingVars::SS_Result.Get_Error() < maxerror ;
 	bool ResidualOK = maxresid <= -1 ||  
 	  SparseDirectTimingVars::SS_Result.Get_Residual() < maxresid ;
 	if ( ErrorOK && ResidualOK ) summary_file << " OK" ; 
-	if ( ! ErrorOK ) 
+	if ( ErrorOK && ResidualOK ) cerr << " OK" ; 
+	if ( ! ErrorOK ) {
 	  summary_file << " Error too large is: " << 
 	    SparseDirectTimingVars::SS_Result.Get_Error() <<
 	    " should be < " << maxerror  ; 
-
+	  cerr << " Error too large is: " << 
+	    SparseDirectTimingVars::SS_Result.Get_Error() <<
+	    " should be < " << maxerror  ; 
+	}
 	//
 	//  Here we check to see if the answer is better than we expect.
 	//
@@ -425,30 +440,43 @@ main(int argc, char **argv)
 	//
 	if (maxerror == 1e30 ) maxerror = 10 ; 
 	if (SparseDirectTimingVars::SS_Result.Get_Error() < maxerror / MAX_TOLERANCE_RATIO && 
-	    maxerror > 1.1e-15 ) 
+	    maxerror > 1.1e-15 ) {
 	  summary_file << " Error TOLERANCE is too large: " << 
 	    SparseDirectTimingVars::SS_Result.Get_Error() <<
 	    " is allowed to be " << maxerror  ; 
-
-	if ( ! ResidualOK ) summary_file << " Residual too large is:" <<
+	  cerr << " Error TOLERANCE is too large: " << 
+	    SparseDirectTimingVars::SS_Result.Get_Error() <<
+	    " is allowed to be " << maxerror  ; 
+	}
+	if ( ! ResidualOK ) {
+	  summary_file << " Residual too large is:" <<
 	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
 	    " should be < " << maxresid  ; 
+	  cerr << " Residual too large is:" <<
+	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
+	    " should be < " << maxresid  ; 
+	}
 
 	if (maxresid == 1e30 ) maxresid = 10 ; 
 	if (SparseDirectTimingVars::SS_Result.Get_Residual() < maxresid / MAX_TOLERANCE_RATIO && 
-	    maxresid > 1.1e-15 ) 
+	    maxresid > 1.1e-15 ) {
 	  summary_file << " Residual TOLERANCE is too large: " << 
 	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
 	    " is allowed to be " << maxresid  ; 
+	  cerr << " Residual TOLERANCE is too large: " << 
+	    SparseDirectTimingVars::SS_Result.Get_Residual() <<
+	    " is allowed to be " << maxresid  ; 
+	}
 
       flush( summary_file ) ; 
+      flush( cerr ) ; 
       }
     }
     catch(string errormsg)
       {
-	if ( summary ) summary_file << errormsg ; 
+	if ( summary ) { summary_file << errormsg ; } 
 	if ( log ) SparseDirectTimingVars::log_file << errormsg ; 
-	if ( verbose) cerr << errormsg << endl;
+	if ( verbose || summary ) cerr << errormsg << endl;
       }
 
   }

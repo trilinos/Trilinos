@@ -10,12 +10,8 @@
 #include "Epetra_Operator.h"
 #include "Epetra_Import.h"
 #include "Epetra_CrsMatrix.h"
-#ifdef SPARSE_DIRECT_TIMINGS
-#include "SparseDirectTimingVars.h"
-#endif
 #include <sstream>
 #include <vector>
-#include "Comm_assert_equal.h"
 
 //
 //  SPOOLES include file:
@@ -126,7 +122,6 @@ int SpoolesOO::Solve() {
   int IsLocal = ( matAmap.NumMyElements() == 
 		  matAmap.NumGlobalElements() )?1:0;
   Comm.Broadcast( &IsLocal, 1, 0 ) ; 
-  assert( Comm_assert_equal( &Comm, IsLocal ) );
 
   EPETRA_CHK_ERR( 1 - IsLocal  ); // SuperludistOO shows hows to 
   // deal with distributed matrices.  
@@ -147,8 +142,6 @@ int SpoolesOO::Solve() {
   } else { 
     assert( matAmap.NumMyElements() == 0 ) ;
   } 
-
-  SparseDirectTimingVars::SS_Result.Set_Residual( 0.0 ) ; 
 
   int numentries = matA->NumGlobalNonzeros();
   vector <int>rowindices( numentries ) ; 
@@ -377,7 +370,4 @@ int SpoolesOO::Solve() {
 
   return(0) ; 
 }
-
-
-
 

@@ -23,7 +23,7 @@ SRC_CXX = Comm_assert_equal.cpp
 SRC_CXX = SuperludistOO.cpp Comm_assert_equal.cpp Trilinos_Util_CountTriples.cpp \
 	Trilinos_Util_ReadTriples2Epetra.cpp   
 SRC_CXX =  Comm_assert_equal.cpp Trilinos_Util_CountTriples.cpp \
-	Trilinos_Util_ReadTriples2Epetra.cpp SpoolesOO.cpp 
+	Trilinos_Util_ReadTriples2Epetra.cpp
 
 #=======================================================================
 # test source files
@@ -44,7 +44,6 @@ TEST_INCLUDE = TestSolver.h \
 	SparseSolverResult.h \
 	Trilinos_Util_ReadTriples2Epetra.h \
 	Trilinos_Util_CountTriples.h  \
-	SpoolesOO.h \
 	$(DEBUG_INCLUDE) 
 
 TEST_INC = $(TRILINOS3PL_HOME)/SuperLU_DIST_1.0/SRC and garbage
@@ -55,7 +54,9 @@ include ./Makefile.template
 #=======================================================================
 # TEST script and matrix files
 #=======================================================================
-TEST_CSH = TestAmesos.csh TestAmesosJanus.csh TestAmesosSerial.csh
+TEST_CSH = TestAmesos.csh TestAmesosJanus.csh TestAmesosSerial.csh \
+	TestSpooles.csh TestSpoolesJanus.csh TestSpoolesJanusSerial.csh \
+	TestSpoolesJanusPara.csh 
 TEST_MATRICES = SuperLU.rua ImpcolA.rua ImpcolB.rua ImpcolC.rua ImpcolD.rua \
 	ImpcolE.rua fidapm05.rua bcsstk18.rsa bcsstk24.rsa \
 	Khead.triS K4989.triS K5000.triS SuperLU.triU
