@@ -1655,10 +1655,10 @@ int&nbsp;<i>num_lid_entries</i>,
 <a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
 int&nbsp;*<i>assigned</i>,
 int&nbsp;*<i>num_vert</i>,
-int&nbsp;*<i>vertices</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>vertices</i>, 
 int&nbsp;*<i>in_order</i>,
-int&nbsp;*<i>in_vertex</i>,
-int&nbsp;*<i>out_vertex</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>in_vertex</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>out_vertex</i>, 
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
@@ -1684,9 +1684,9 @@ query functions</a> for an explanation.&nbsp;</td>
 
 <hr WIDTH="100%">A <b>ZOLTAN_COARSE_OBJ_LIST_FN</b> query function returns
 lists of global IDs, local IDs, vertices, and order information for all
-objects (elements) of the initial coarse grid. The vertices are a designation
-on the local processor of the vertices such that if two elements share
-a vertex then the same integer designates that vertex in both elements.
+objects (elements) of the initial coarse grid. The vertices are designated
+by a global ID such that if two elements share a vertex then the same ID
+designates that vertex in both elements and on all processors.
 The user may choose to provide the order in which the elements should be
 traversed or have Zoltan determine the order. If the user provides the
 order, then entry and exit vertices for a path through the elements may
@@ -1760,9 +1760,10 @@ are assigned to interior nodes of the tree.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
 
-<td>Upon return, an array containing the vertices of each object. If the
+<td>Upon return, an array of global IDs of the vertices of each object. If the
 number of vertices for objects 0 through <i>i</i>-1 is <i>N</i>, then the
-vertices for object <i>i</i> are in <i>vertices</i>[<i>N:N+num_vert</i>[<i>i</i>]]</td>
+vertices for object <i>i</i> are in <i>vertices</i>[<i>N*num_gid_entries:
+(N+num_vert</i>[<i>i</i>]<i>)*num_gid_entries</i>]</td>
 </tr>
 
 <tr>
@@ -1775,7 +1776,7 @@ which they should be traversed, or 0 if Zoltan should determine the order.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_vertex</i></td>
 
-<td>Upon return, an array containing the vertex through which to enter
+<td>Upon return, an array of global IDs of the vertices through which to enter
 each element in the user provided traversal. It is required only if the
 user is providing the order for the coarse grid objects (i.e., <i>in_order</i>==1)
 and allowing Zoltan to select the order of the children in at least one
@@ -1786,7 +1787,7 @@ invocation of
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; out_vertex</i></td>
 
-<td>Upon return, an array containing the vertex through which to exit each
+<td>Upon return, an array of global IDs of the vertex through which to exit each
 element in the user provided traversal. The same provisions hold as for
 <i>in_vertex</i>.</td>
 </tr>
@@ -1817,10 +1818,10 @@ int&nbsp;<i>num_lid_entries</i>,
 <a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>, 
 int&nbsp;*<i>assigned</i>,
 int&nbsp;*<i>num_vert</i>,
-int&nbsp;*<i>vertices</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>vertices</i>, 
 int&nbsp;*<i>in_order</i>,
-int&nbsp;*<i>in_vertex</i>,
-int&nbsp;*<i>out_vertex</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>in_vertex</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>out_vertex</i>, 
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
@@ -1834,9 +1835,8 @@ assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</i>)&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: global_id&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT) :: assigned, num_vert, in_order, in_vertex,
-out_vertex, ierr&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: assigned, num_vert, in_order, ierr&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vertices, in_vertex, out_vertex&nbsp;
 <p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
 REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
@@ -1850,9 +1850,9 @@ an iteration over the objects of the initial coarse grid. It returns the
 global ID, local ID, vertices, and order information for the first object
 (element) of the initial coarse grid. Subsequent calls to a <b><a href="#ZOLTAN_NEXT_COARSE_OBJ_FN">ZOLTAN_NEXT_COARSE_OBJ_FN</a></b>
 iterate over and return other objects from the coarse grid. The vertices
-are a designation on the local processor of the vertices such that if two
-elements share a vertex then the same integer designates that vertex in
-both elements. The user may choose to provide the order in which the elements
+are designated by a global ID such that if two elements share a vertex then
+the same ID designates that vertex in both elements and on all processors.
+The user may choose to provide the order in which the elements
 should be traversed, or have Zoltan determine the order. If the user provides
 the order, then entry and exit vertices for a path through the elements
 may also be provided.
@@ -1923,7 +1923,7 @@ to interior nodes of the tree.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
 
-<td>Upon return, an array containing the vertices of this object.</td>
+<td>Upon return, an array of global IDs of the vertices of this object.</td>
 </tr>
 
 <tr>
@@ -1998,9 +1998,9 @@ int&nbsp;<i>num_lid_entries</i>,
 <a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_local_id</i>, 
 int&nbsp;*<i>assigned</i>,
 int&nbsp;*<i>num_vert</i>,
-int&nbsp;*<i>vertices</i>,
-int&nbsp;*<i>in_vertex</i>,
-int&nbsp;*<i>out_vertex</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>vertices</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>in_vertex</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>out_vertex</i>, 
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
@@ -2017,9 +2017,8 @@ assigned, num_vert, vertices, in_vertex, out_vertex, ierr</i>)&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT) :: assigned, num_vertex, in_vertex, out_vertex,
-ierr&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: assigned, num_vertex, ierr&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vertices, in_vertex, out_vertex&nbsp;
 <p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
 REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
@@ -2112,7 +2111,7 @@ to interior nodes of the tree.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
 
-<td>Upon return, an array containing the vertices of this object.</td>
+<td>Upon return, an array of global IDs of the vertices of this object.</td>
 </tr>
 
 <tr>
@@ -2289,10 +2288,10 @@ int&nbsp;<i>num_lid_entries</i>,
 <a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>child_lids</i>,
 int&nbsp;*<i>assigned</i>,
 int&nbsp;*<i>num_vert</i>,
-int&nbsp;*<i>vertices</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>vertices</i>,
 <b>ZOLTAN_REF_TYPE</b>&nbsp;*<i>ref_type</i>,
-int&nbsp;*<i>in_vertex</i>,
-int&nbsp;*<i>out_vertex</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>in_vertex</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>out_vertex</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
@@ -2321,9 +2320,9 @@ query functions</a> for an explanation.&nbsp;</td>
 
 <hr WIDTH="100%">A <b>ZOLTAN_CHILD_LIST_FN</b> query function returns lists
 of global IDs, local IDs, vertices, and order information for all children
-of a refined element. The vertices are a designation on the local processor
-of the vertices such that if two elements share a vertex then the same
-integer designates that vertex in both elements. The user may choose to
+of a refined element. The vertices are designated by a global ID
+such that if two elements share a vertex then the same ID designates that
+vertex in both elements and on all processors. The user may choose to
 provide the order in which the children should be traversed, or have Zoltan
 determine the order based on the type of element refinement used to create
 the children. If the user provides the order, then entry and exit vertices
@@ -2410,9 +2409,10 @@ weights are assigned to interior nodes of the tree.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
 
-<td>Upon return, an array containing the vertices of each object. If the
+<td>Upon return, an array of global IDs of the vertices of each object. If the
 number of vertices for objects 0 through <i>i</i>-1 is <i>N</i>, then the
-vertices for object <i>i</i> are in <i>vertices</i>[<i>N:N+num_vert</i>[<i>i</i>]]</td>
+vertices for object <i>i</i> are in <i>vertices</i>[<i>N*num_gid_entries:
+(N+num_vert</i>[<i>i</i>]<i>)*num_gid_entries</i>]</td>
 </tr>
 
 <tr>
@@ -2452,7 +2452,7 @@ in the order in which they are provided.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_vertex</i></td>
 
-<td>Upon return, an array containing the vertex through which to enter
+<td>Upon return, an array of global IDs of the vertex through which to enter
 each element in the user provided traversal. It is required only if the
 user is providing the order for the children of this element (i.e.,
 <i>ref_type</i>==<i>ZOLTAN_IN_ORDER</i>)
@@ -2463,7 +2463,7 @@ children.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; out_vertex</i></td>
 
-<td>Upon return, an array containing the vertex through which to exit each
+<td>Upon return, an array of global IDs of the vertex through which to exit each
 element in the user provided traversal. The same provisions hold as for
 <i>in_vertex</i>.</td>
 </tr>
