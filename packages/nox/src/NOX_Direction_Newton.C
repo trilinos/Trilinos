@@ -157,16 +157,14 @@ bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir,
 
 
 // protected
-bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln, 
-			      const NOX::Abstract::Group& oldsoln, 
-			      int niter,
-			      const NOX::Parameter::List& solverParams)
+bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
+				     const NOX::Abstract::Group& oldsoln, 
+				     int niter,
+				     const NOX::Parameter::List& solverParams)
 {
-  // Reset the forcing term at the beginning on a nonlinear iteration,
-  // based on the last iteration.
-
-  // Get linear solver current tolerance.
-
+  // Get linear solver current tolerance. 
+  // NOTE: These valuse are changing at each nonlinear iteration and 
+  // must be updated from the parameter list each time a reset is called!
   double eta_km1 = 0.0;
   if (((method == "Type 1") || (method == "Type 2")) 
 	&& (solverParams.sublist("Line Search").isParameterDouble("Adjusted Tolerance"))) {

@@ -59,6 +59,7 @@ NOX::StatusTest::Stagnation::checkStatus(const Solver::Generic& problem)
   int niters = problem.getNumIterations(); 
   if (niters == 0) {
     lastIteration = 0;
+    numSteps = 0;
     return Unconverged;
   } 
 
