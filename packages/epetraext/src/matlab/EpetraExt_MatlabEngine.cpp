@@ -109,15 +109,17 @@ int EpetraExt_MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* 
     mxArray* matlabA = 0;
     if (Comm_.MyPID() == 0)
 	  // since matlab uses column major for matrices, switch row and column numbers
-	  matlabA = mxCreateSparse(A.RowMatrixColMap().NumGlobalElements(), A.NumGlobalRows(), A.NumGlobalNonzeros(), mxREAL);
+	  matlabA = mxCreateSparse(A.RowMatrixColMap().MaxAllGID() - A.RowMatrixColMap().MinAllGID()+1, A.RowMatrixRowMap().MaxAllGID() - A.RowMatrixRowMap().MinAllGID() + 1, A.NumGlobalNonzeros(), mxREAL);
 	
 	//cout << "numrows: " << A.RowMatrixColMap().NumGlobalElements() << " numCols: " << A.NumGlobalRows() << "numNonZeros: " << A.NumGlobalNonzeros() << "\n";
 
+	cout << "calling CopyRowMatrix\n";
 	if (Matlab::CopyRowMatrix(matlabA, A)) {
 	  mxDestroyArray(matlabA);
 	  return(-2);
 	}
 
+	cout << "done doing CopyRowMatrix\n";
 	if (Comm_.MyPID() == 0) {
 
 	  /*cout << "printing matlabA pointers\n";
@@ -144,7 +146,9 @@ int EpetraExt_MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* 
 	  }
 	}
 
+	cout << "done with everything in PutRowMatrix, going to destroy matlabA\n" << "matlabA=" << matlabA << "\n";
 	mxDestroyArray(matlabA);
+	cout << "done destroying matlabA\n";
 	return(0);
 }
 
