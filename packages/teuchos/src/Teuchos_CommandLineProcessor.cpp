@@ -204,16 +204,26 @@ void CommandLineProcessor::print_help_msg(
 		<< spc_chars << "options:\n"
 		<< spc_chars
 		<< "--"
+#ifdef HAVE_STD_IOS_BASE_FMTFLAGS
 		<< std::left << setw(opt_name_w) << "help"
 		<< std::left << setw(opt_type_w) << " "
+#else
+	        << std::setiosflags(std::ios::left) << setw(opt_name_w) << "help"
+	        << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
+#endif
 		<< "Prints this help message"
 		<< endl;
 	for( itr = options_documentation_list_.begin(); itr != options_documentation_list_.end(); ++itr ) {
 		*errout
 			<< spc_chars
 			<< "--"
+#ifdef HAVE_STD_IOS_BASE_FMTFLAGS
 			<< std::left << setw(opt_name_w) << itr->opt_name
 			<< std::left << setw(opt_type_w) << opt_type_str(itr->opt_type)
+#else
+			<< std::setiosflags(std::ios::left) << setw(opt_name_w) << itr->opt_name
+			<< std::setiosflags(std::ios::left) << setw(opt_type_w) << opt_type_str(itr->opt_type)
+#endif
 			<< ( itr->documentation.length() ? itr->documentation.c_str() : "No documentation" )
 			<< endl;
 		if( itr->opt_type == OPT_BOOL_TRUE ) {
