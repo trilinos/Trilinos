@@ -91,6 +91,7 @@ public:
     return initialGuess;
   };
 
+  //! Return true solution vector
   const NOX::LAPACK::Vector& getSolution()
   {
     return solution;

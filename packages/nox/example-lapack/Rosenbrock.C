@@ -108,6 +108,7 @@ public:
     return initialGuess;
   };
 
+  //! Return true solution vector
   const NOX::LAPACK::Vector& getSolution()
   {
     return solution;
@@ -142,7 +143,7 @@ private:
 int main()
 {
   // Set up the problem interface
-  Rosenbrock rosenbrock;;
+  Rosenbrock rosenbrock;
   
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
