@@ -122,6 +122,13 @@ extern void ML_precondition(double ff[], int options[], int proc_config[],
                      double params[], AZ_MATRIX *mat, AZ_PRECOND *prec);
 
 extern void AZ_ML_Clean(void *data);
+
+extern int  wrapper_DCSR_getrow(int columns[], double values[], int row_lengths[],
+        	     struct AZ_MATRIX_STRUCT *Amat, int N_requested_rows,
+                     int requested_rows[], int allocated_space);
+extern void wrapper_DCSR_matvec(double *b, double *c,AZ_MATRIX *Amat,
+                     int proc_config[]);
+
 #endif
 
 #ifdef __cplusplus
