@@ -60,14 +60,14 @@ int Zoltan_PHG_Coarsening
      return ZOLTAN_MEMERR;
   }     
   for (i = 0; i < hg->nVtx; i++)
-     cmatch[i] = match[i];
+     cmatch[i] = match[i];  /* working copy of match array */
     
   /* Assume all rows in a column have the entire (column's) matching info */
   /* Calculate the number of coarse vertices. */
   c_hg->nVtx = 0;                 /* counts number of new (coarsened) vertices */
-  me = hgc->myProc_x;  
-  size = 0;
-  count = 0;
+  me = hgc->myProc_x;             /* convenience variable */
+  size = 0;                       /* number of ints to communicate */
+  count = 0;                      /* number of messages to communicate */
   for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertice */
     if (match[i] < 0)  {               /* external processor match */
       int gx, proc;
@@ -80,7 +80,7 @@ int Zoltan_PHG_Coarsening
         list[count++] = i;
         }
       else 
-        c_hg->nVtx++;         /* myProc owns a matching across processors */ 
+        c_hg->nVtx++;         /* myProc owns the matching across processors */ 
     }
       
     /* allow for possible (local only) packing and groupings */    
@@ -123,7 +123,7 @@ int Zoltan_PHG_Coarsening
   /* Message is list of <gno, gno's edge count, list of edge gno's> */
   ip = (int*) buffer;
   for (i = 0; i < count; i++)  {
-     *ip++ = VTX_LNO_TO_GNO (hg, match[i]);       /* destination vertex gno */        
+     *ip++ = VTX_LNO_TO_GNO (hg, list[i]);       /* destination vertex gno */        
      *ip++ = hg->vindex[list[i]+1] - hg->vindex[list[i]];   /* count */
                                                               /* weights??? */
      for (j = hg->vindex[list[i]]; j < hg->vindex[list[i]+1]; j++)
@@ -159,15 +159,17 @@ int Zoltan_PHG_Coarsening
   c_hg->nVtx     = 0;   /* count of coarsened vertices */
   new_vertex     = 0;       /* counts LevelMap entries */
   for (i = 0; i < hg->nVtx; i++)  {
-    if (match[i] < 0 && cmatch[i] < 0)   /* match to external vertex */                  
+    if (match[i] < 0 && cmatch[i] < 0)      /* match to external vertex */                  
        LevelMap [new_vertex++] = match[i];  /* negative value => external vtx */         
-    else if (match[i] < 0) {     /* match from external vertex */
+    else if (match[i] < 0) {                /* match from external vertex */
        LevelMap[i] = new_vertex;
       
-       c_hg->vwgt  [c_hg->nVtx] = hg->vwgt ? hg->vwgt[i] : 1.0;
+/*       c_hg->vwgt  [c_hg->nVtx] = hg->vwgt ? hg->vwgt[i] : 1.0;  */
+
        c_hg->vindex[c_hg->nVtx] = c_hg->nNonZero;
-      
-       for (j = 0; j < *ip++; j++)  {
+       ip = ((int*) buffer) + i;
+       count = *++ip;
+       for (j = 0; j < count; j++)  {
           edge = EDGE_GNO_TO_LNO (hg, *ip++);
           used_edges [edge]     = i+1;
           c_hg->vedge[c_hg->nNonZero++] = edge;
