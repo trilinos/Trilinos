@@ -32,6 +32,7 @@
 
 #include "NOX_Common.H"
 #include "NOX_TSF_Vector.H"
+#include "NOX_Utils.H"
 #include "TSFCoreVectorStdOps.hpp"
 #include "NOX_Random.H" // for Random class
 
@@ -253,7 +254,7 @@ double NOX::TSF::Vector::norm(const NOX::TSF::Vector& weights) const
     cerr << "NOX::TSF::Vector::norm - size mismatch for weights vector" << endl;
     throw "NOX::TSF Error";
   }
-  return 0.0;
+  return x.norm2(weights.getTSFVector());
   // change here when TSFExtended gets a weighted 2 norm
 }
 
@@ -281,8 +282,8 @@ int NOX::TSF::Vector::length() const
 ostream& NOX::TSF::Vector::leftshift(ostream& stream) const
 {
   stream << "[ ";
-  for (int i = 0; i < this->length(); i ++)
-    stream << x.getElement(i) << " ";
+  for (int i = 0; i < this->length(); i ++) 
+    stream << NOX::Utils::sciformat(x.getElement(i),8)<< " ";
   stream << "]";
   return stream;
 }
