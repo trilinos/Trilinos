@@ -1140,6 +1140,18 @@ fi
 # Trilinos include file check for building noxepetra library
 # ------------------------------------------------------------------------
 
+AC_ARG_WITH(trilinos-basedir,
+[AC_HELP_STRING([--with-trilinos-basedir],[specify location of trilinos source base directory, e.g., ${home}/Trilinos])],
+[trilinos_basedir=$withval])
+
+AC_ARG_WITH(trilinos-builddir,
+[AC_HELP_STRING([--with-trilinos-builddir],[specify location of trilinos build directory, e.g., ${home}/Trilinos/build])],
+[trilinos_builddir=$withval])
+
+AC_ARG_WITH(epetra-libdir,
+[AC_HELP_STRING([--with-epetra-libdir],[specify location of epetra library])],
+[epetra_LIBDIR=$withval])
+
 AC_ARG_WITH(epetra-incdir,
 [AC_HELP_STRING([--with-epetra-incdir],[specify location of all epetra header files])],
 [epetra_INCDIR=$withval])
@@ -1260,6 +1272,46 @@ AC_DEFUN([TRILINOS_HEADER],
 #include "$2"
   ]])],[done=yes],[])
   CPPFLAGS=$save_CPPFLAGS
+
+  # Next  try the specified trilinos base directory (if any)
+  if test $done = no && test -n "${trilinos_basedir}"; then
+    CPPFLAGS="-I${trilinos_basedir}/packages/$1/$3 $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    AC_PREPROC_IFELSE([AC_LANG_SOURCE(
+  [[
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "$2"
+  ]])],[ done=yes
+      REL_TRILINOS_CPPFLAGS="-I${trilinos_basedir}/packages/$1/$3 ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I${trilinos_basedir}/packages/$1/$3 ${ABS_TRILINOS_CPPFLAGS}"
+    ],[])
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next  try the specified trilinos build directory (if any)
+  if test $done = no && test -n "${trilinos_builddir}"; then
+    CPPFLAGS="-I${trilinos_builddir}/packages/$1/$3 $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    AC_PREPROC_IFELSE([AC_LANG_SOURCE(
+  [[
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "$2"
+  ]])],[ done=yes
+      REL_TRILINOS_CPPFLAGS="-I${trilinos_builddir}/packages/$1/$3 ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I${trilinos_builddir}/packages/$1/$3 ${ABS_TRILINOS_CPPFLAGS}"
+    ],[])
+    CPPFLAGS=$save_CPPFLAGS
+  fi
 
   # Next  try the specified incdir (if any)
   if test $done = no && test -n "${$1_INCDIR}"; then
@@ -1393,6 +1445,12 @@ if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 fi
 
+if test X${BUILD_PYTHON} = Xyes && test X${ADDON_epetra} = Xyes; then
+  TRILINOS_HEADER(PyTrilinos,PyTrilinos_config.h,src)
+  TRILINOS_HEADER(PyTrilinos,PyTrilinos.h,src)
+  TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
+fi
+
 AC_SUBST(MF_INCDIR)
 
 AC_SUBST(TRILINOS_CXXFLAGS)
@@ -1425,6 +1483,18 @@ AC_DEFUN([TRILINOS_LIB_CHECK],
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[])
     LDFLAGS=$save_LDFLAGS
   fi
+
+  # Next try the specified Trilinos base dir (if any)
+   if test $done = no && test -n "${trilinos_basedir}"; then
+     LDFLAGS="-L${trilinos_basedir}/packages/$1/$3 $save_LDFLAGS"
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[LDFLAGS=$save_LDFLAGS])
+   fi
+
+  # Next try the specified Trilinos build dir (if any)
+   if test $done = no && test -n "${trilinos_builddir}"; then
+     LDFLAGS="-L${trilinos_builddir}/packages/$1/$3 $save_LDFLAGS"
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[LDFLAGS=$save_LDFLAGS])
+   fi
 
   # Next try the specified libdir (if any)
    if test $done = no && test -n "${$1_LIBDIR}"; then
