@@ -28,7 +28,7 @@ public:
   //! Constructor.
   Ifpack_METISPartitioner(const Ifpack_Graph* Graph) :
     Ifpack_OverlappingPartitioner(Graph),
-    UseSymmetricGraph_(false)
+    UseSymmetricGraph_(true)
   {}
 
   //! Destructor.
@@ -37,6 +37,11 @@ public:
   //! Sets all the parameters for the partitioner (none at moment).
   int SetPartitionParameters(Teuchos::ParameterList& List)
   {
+    // `true' is the safest option, as singletons may still be
+    // in the system, even after Ifpack_SingletonFilter (think
+    // for example to an upper triangular matrix, which has one
+    // singleton, and still has one after the elimination of 
+    // the first one...)
     UseSymmetricGraph_ = List.get("partitioner: use symmetric graph", 
 				  UseSymmetricGraph_);
 
