@@ -2,11 +2,14 @@
 #include "CRD_utils.hpp"
 #include <assert.h>
 
-CLOP_constraint::CLOP_constraint(const Epetra_CrsMatrix* A_) 
-  : A(A_), Comm(A->Comm())
+CLOP_constraint::CLOP_constraint(const Epetra_CrsMatrix* A_, 
+				 ofstream  *fout_,
+				 const int print_flag_) 
+  : A(A_), Comm(A->Comm()), print_flag(print_flag_)
 {
   int i, j, col, NumEntries, *Indices;
   double *Values;
+  fout = fout_;
   //
   // initialize and load data into variables
   //
@@ -68,9 +71,9 @@ int CLOP_constraint::factor()
   // determine if all constraints are simple
   //
   determine_if_all_simple(simple_flag);
-  if (MyPID == 0) {
-    if (simple_flag != 0) cout << "constraints of type simple " << endl;
-    else                  cout << "constraints of type complex" << endl;
+  if (print_flag > 0) {
+    if (simple_flag != 0) *fout << "constraints of type simple " << endl;
+    else                  *fout << "constraints of type complex" << endl;
   }
   //
   // forward factorization of constraints
@@ -95,6 +98,7 @@ int CLOP_constraint::factor()
     for (col=ncol_global-1; col>=0; col--) {
       icol = find_column(col);
       get_old_info(col, iproc, con_num);
+      assert ((iproc >= 0) && (iproc <= 3));
       if (MyPID == iproc) n = get_ncol(col, 1);
       Comm.Broadcast(&n, 1, iproc);
       if (n > dimsfac) resize_c_and_s(n);
@@ -120,7 +124,7 @@ int CLOP_constraint::factor()
   //
   delete [] dimcol; delete [] dvec; delete [] imap; delete [] max_abs_con;
   delete [] row_degree; delete [] cola; delete [] sfaca;
-  if (MyPID == 0) cout << "CLOP_constraint::factor completed" << endl;
+  if (print_flag > 0) *fout << "CLOP_constraint::factor completed" << endl;
   return 0;
 }
 
@@ -338,6 +342,7 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
     assert (ierr == 0);
   }
   CtT->FillComplete(A->DomainMap(), A->RangeMap());
+  //  cout << *CtT << endl;
   /*
   char filename[101];
   sprintf(filename,"%s%d","CtT", MyPID);
@@ -386,6 +391,10 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
       row_flag[con_row[i]] = true;
       nc1++;
     }
+  }
+  if (nc1 < ncon_me) {
+    *fout << "Warning: " << ncon_me - nc1 << " redundant constraint(s) "
+	  << "owned by processor " << MyPID << endl;
   }
   //
   // determine non-constrained (type 1) dofs in sub_gdofs array
@@ -459,7 +468,8 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   int *Iarray = new int[max_nnz_con];
   double *Darray = new double[max_nnz_con];
   for (i=0; i<ncon_me; i++) {
-    if (nnz_con[con_col[i]] <= max_nnz_con) {
+    if ((nnz_con[con_col[i]] <= max_nnz_con) && 
+	(con_flag[con_col[i]] == false)) {
       ConMat1.ExtractMyRowView(nc1, NumEntries, Values, Indices);
       assert (NumEntries <= max_nnz_con);
       for (j=0; j<NumEntries; j++) {
@@ -469,15 +479,17 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
 	Iarray[j] = loc_col;
 	Darray[j] = -Values[j];
       }
+      assert(con_row[i] >= 0);
       ierr = Tran->InsertMyValues(con_row[i], NumEntries, Darray, Iarray);
       assert (ierr == 0);
       nc1++;
     }
   }
-  delete [] Iarray; delete [] Darray;
+  delete [] Iarray; delete [] Darray; delete [] con_flag;
   Epetra_Map RowMapu(-1, ndof_u, dof_u, 0, Comm);
   delete [] dof_u; delete [] gcol_all; delete [] row_flag; 
   Tran->FillComplete(RowMapu, A->RowMap());
+  //  cout << *Tran << endl;
   /*
   sprintf(filename,"%s%d","Tran", MyPID);
   CRD_utils::Epetra_datfile(Tran, filename);
@@ -566,18 +578,30 @@ void CLOP_constraint::get_best_row(int col, int icol, int & iproc)
 {
   int i, row;
   double max_value(0), colv, max_value_g, tol(1e-3), tol_con(1e-8);
+  int max_iproc(-1), max_iproc_g, red_flag(0), red_flag_g;
   //
   // find largest entry in column
   //
   if (icol != -1) {
+    max_iproc = MyPID;
     for (i=0; i<nnzcol[icol]; i++) {
       colv = colvals[icol][i];
       if (fabs(colv) > max_value) max_value = fabs(colv);
     }
   }
   Comm.MaxAll(&max_value, &max_value_g, 1);
-  if (icol != -1) {
-    if (max_value_g < max_abs_con[icol]*tol_con) con_flag[icol] = true;
+  Comm.MaxAll(&max_iproc, &max_iproc_g, 1);
+  if (icol != -1)
+    if (max_value_g < max_abs_con[icol]*tol_con) red_flag = 1;
+  Comm.MaxAll(&red_flag, &red_flag_g, 1);
+  if (red_flag_g == 1) {
+    //
+    // redundant constraint
+    //
+    if (icol != -1) con_flag[icol] = true;
+    my_best_row = -1;
+    iproc = max_iproc_g;
+    return;
   }
   //
   // determine lowest possible degree

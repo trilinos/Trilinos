@@ -26,19 +26,20 @@ CLOP_solver::CLOP_solver(const Epetra_CrsMatrix* AStandard_,
 			 const Epetra_Map* SubMap_,
 			 const Epetra_CrsMatrix* ConStandard_,
 			 const Epetra_IntVector* GNStandard_,
-			 const int overlap_,
-			 const double solver_tol_,
-			 const int maxiter_,
-			 const int max_orthog_,
-			 const int atype_,
-			 const int ndim_,
-			 const int local_solver_)
+			 const double* clop_params_)
   : AStandard(AStandard_), LDStandard(LDStandard_), 
     CStandard(CStandard_), SubMap(SubMap_), ConStandard(ConStandard_), 
-    GNStandard(GNStandard_), overlap(overlap_), solver_tol(solver_tol_), 
-    maxiter(maxiter_), max_orthog(max_orthog_), atype(atype_), ndim(ndim_), 
-    local_solver(local_solver_), Comm(AStandard->Comm())
+    GNStandard(GNStandard_), clop_params(clop_params_), Comm(AStandard->Comm())
 {
+  overlap      = int(clop_params[0]); 
+  solver_tol   = clop_params[1];
+  maxiter      = int(clop_params[2]);
+  max_orthog   = int(clop_params[3]);
+  atype        = int(clop_params[4]);
+  ndim         = int(clop_params[5]);
+  local_solver = int(clop_params[6]);
+  prt_debug    = int(clop_params[7]);
+  prt_summary  = int(clop_params[8]);
   double starttime, endtime;
   //  const Epetra_MpiComm &empicomm = 
   //               dynamic_cast<const Epetra_MpiComm &>(Comm);
@@ -49,7 +50,15 @@ CLOP_solver::CLOP_solver(const Epetra_CrsMatrix* AStandard_,
   NumProc = Comm.NumProc();
   ndof_Standard = AStandard->NumMyRows();
   ndof_global = AStandard->NumGlobalRows();
-  if (MyPID == 0) cout << "ndof_global = " << ndof_global << endl;
+  print_flag = -1;
+  if (MyPID == 0) {
+    print_flag = prt_summary + 10*prt_debug;
+    fout.open("CLOP_solver.data");
+    fout << "----------------- CLOP solver summary information "
+	 << "-----------------" << endl;
+  }
+  if (print_flag > 0) fout << "number of global dofs        = " << ndof_global 
+			   << endl;
   zero_pointers();
   //
   // process constraints
@@ -82,10 +91,11 @@ CLOP_solver::CLOP_solver(const Epetra_CrsMatrix* AStandard_,
   //
   solve_init();
   Comm.Barrier();
-  if (MyPID == 0) {
+  if (print_flag > 0) {
     endtime = MPI_Wtime();
-    cout << "elapsed time for clop solver init  = " 
+    fout << "elapsed time for clop solver init  = " 
 	 << endtime-starttime << " seconds" << endl;
+    fout.close();
   }
 }
 
@@ -158,7 +168,8 @@ void CLOP_solver::process_constraints()
   }
   ncon_global = 0;
   if (ConStandard) ncon_global = ConStandard->NumGlobalCols();
-  if (MyPID == 0) cout << "ncon_global = " << ncon_global << endl;
+  if (print_flag > 0) fout << "number of global constraints = " 
+			   << ncon_global << endl;
   if (ncon_global == 0) {
     ASt_red = AStandard;
     return;
@@ -195,12 +206,19 @@ void CLOP_solver::process_constraints()
   if (MyPID == 0) {
     double nnz_before = AStandard->NumGlobalNonzeros();
     double nnz_after  =   ASt_red->NumGlobalNonzeros();
-    cout << "ratio of nnzs after static condensation = "
-	 << nnz_after/nnz_before << endl;
-    cout << "normalized constraint error check       = " << con_error_norm << endl;
-    cout << "maximum nnz in any row of T matrix      = " << max_nnz_row << endl;
-    cout << "infinity norm of T matrix               = " << inf_norm_Tran << endl;
+    if (print_flag > 0) {
+      fout << "constraint data ------------------------------" << endl;
+      fout << "ratio of nnzs after static condensation = "
+	   << nnz_after/nnz_before << endl;
+      fout << "normalized constraint error check       = " << con_error_norm 
+	   << endl;
+      fout << "maximum nnz in any row of T matrix      = " << max_nnz_row 
+	   << endl;
+      fout << "infinity norm of T matrix               = " << inf_norm_Tran 
+	   << endl;
+    }
   }
+  assert(con_error_norm < 1e-10);
   delete KTran;
   delete TranT;
 }
@@ -209,7 +227,7 @@ int CLOP_solver::transform_constraints()
 {
   int flag(0);
   CLOP_constraint *A;
-  A = new CLOP_constraint(ConStandard);
+  A = new CLOP_constraint(ConStandard, &fout, print_flag);
   flag = A->factor();
   A->Tran(Tran, RowMapMyCon, mycdof, nx2, x2_dof, nsub_gdofs, sub_gdofs, CtT);
   nmycon = RowMapMyCon->NumMyElements();
@@ -224,12 +242,6 @@ int CLOP_solver::transform_constraints()
   assert(nx2_global == 0);
   delete A;
   return flag;
-}
-
-int CLOP_solver::factor_constraints(Epetra_CrsMatrix *CC)
-{
-  cout << *CC << endl;
-  return 0;
 }
 
 void CLOP_solver::construct_transpose(Epetra_CrsMatrix* & A, 
@@ -276,7 +288,7 @@ void CLOP_solver::construct_transpose(Epetra_CrsMatrix* & A,
 
 void CLOP_solver::construct_Overlap()
 {
-  if (MyPID == 0) cout << "in construct_Overlap " << endl;
+  if (print_flag > 9) fout << "in construct_Overlap " << endl;
   ndof_global_red = ASt_red->NumGlobalRows();
   int i;
   assert (overlap >= 0);
@@ -289,21 +301,21 @@ void CLOP_solver::construct_Overlap()
   char fname[101]; int NumIndices, *Indices;
   sprintf(fname,"%s%d","test", MyPID);
   sprintf(fname, "%s.dat", fname);
-  ofstream fout;
-  fout.open(fname);
-  fout << ASt_red->NumMyRows() << endl;
-  for (i=0; i<ASt_red->NumMyRows(); i++) fout << ASt_red->GRID(i) << endl;
-  fout << ASt_red->NumMyCols() << endl;
-  for (i=0; i<ASt_red->NumMyCols(); i++) fout << ASt_red->GCID(i) << endl;
-  fout << RowMap->NumMyElements() << endl;
-  for (i=0; i<RowMap->NumMyElements(); i++) fout << RowMap->GID(i) << endl;
-  fout << ASt_red->Graph().MaxNumIndices() << endl;
+  ofstream ffout;
+  ffout.open(fname);
+  ffout << ASt_red->NumMyRows() << endl;
+  for (i=0; i<ASt_red->NumMyRows(); i++) ffout << ASt_red->GRID(i) << endl;
+  ffout << ASt_red->NumMyCols() << endl;
+  for (i=0; i<ASt_red->NumMyCols(); i++) ffout << ASt_red->GCID(i) << endl;
+  ffout << RowMap->NumMyElements() << endl;
+  for (i=0; i<RowMap->NumMyElements(); i++) ffout << RowMap->GID(i) << endl;
+  ffout << ASt_red->Graph().MaxNumIndices() << endl;
   for (i=0; i<ASt_red->Graph().NumMyRows(); i++) {
     ASt_red->Graph().ExtractMyRowView(i, NumIndices, Indices);
-    fout << NumIndices << endl;
-    for (int j=0; j<NumIndices; j++) fout << Indices[j] << endl;
+    ffout << NumIndices << endl;
+    for (int j=0; j<NumIndices; j++) ffout << Indices[j] << endl;
   }
-  fout.close();
+  ffout.close();
   */
   for (i=0; i<= overlap; i++) {
     Importer = new Epetra_Import(*RowMap, ASt_red->RowMap());
@@ -399,7 +411,7 @@ void CLOP_solver::construct_Overlap()
 
 void CLOP_solver::construct_subdomains()
 {
-  if (MyPID == 0) cout << "in construct_subdomains" << endl;
+  if (print_flag > 9) fout << "in construct_subdomains" << endl;
   int i, j, partition_option(0);
   ndof_overlap = AOverlap->NumMyRows();
   count1 = new int[ndof_overlap];
@@ -436,7 +448,7 @@ void CLOP_solver::construct_subdomains()
 
 int CLOP_solver::initialize_subdomains()
 {
-  if (MyPID == 0) cout << "in initialize_subdomains" << endl;
+  if (print_flag > 9) fout << "in initialize_subdomains" << endl;
   int i, j, max_nnz(0), nnz, dof, gdof, ipres, ipres_max, *locdof;
   max_ndof = 0; gmres_flag = 0;
   //
@@ -451,7 +463,7 @@ int CLOP_solver::initialize_subdomains()
   Comm.MaxAll(&ipres, &ipres_max, 1);
   if (ipres_max > 0) {
     gmres_flag = 1;
-    if (MyPID == 0) cout << "Note: pressure dofs present" << endl;
+    if (print_flag > 0) fout << "Note: pressure dofs present" << endl;
   }
   //
   // initialize variables to be used later
@@ -523,7 +535,7 @@ int CLOP_solver::initialize_subdomains()
     //
     // factor stiffness matrix of each subdomain
     //
-    if (MyPID == 0) cout << "factoring subdomain matrices" << endl;
+    if (print_flag > 9) fout << "factoring subdomain matrices" << endl;
     for (i=0; i<npart; i++) {
       Asub[i].factormatrix(AOverlap, imap, rowbeg_work, colidx_work, A_work);
     }
@@ -548,9 +560,9 @@ int CLOP_solver::initialize_subdomains()
     //  assert (nneg_max == 0);
     if (nneg_max > 0) {
       gmres_flag = 1;
-      if (MyPID == 0) {
-	cout << "Warning: stiffness matrix is not positive definite " << endl;
-	cout << "         gmres_flag set to 1" << endl;
+      if (print_flag >= 0) {
+	fout << "Warning: stiffness matrix is not positive definite " << endl;
+	fout << "         gmres_flag set to 1" << endl;
       }
     }
     Epetra_Vector Edof_Overlap( View, AOverlap->RowMap(), Edof);
@@ -671,16 +683,16 @@ void CLOP_solver::construct_Overlap_Subs(Epetra_CrsGraph* & Overlap_Subs)
   char fname[101];
   sprintf(fname,"%s%d","test_g", MyPID);
   sprintf(fname, "%s.dat", fname);
-  ofstream fout;
-  fout.open(fname);
+  ofstream ffout;
+  ffout.open(fname);
   int NumEntries, *Indices;
-  fout << Overlap_Graph.MaxNumIndices() << endl;
+  ffout << Overlap_Graph.MaxNumIndices() << endl;
   for (i=0; i<Overlap_Graph.NumMyRows(); i++) {
     Overlap_Graph.ExtractMyRowView(i, NumEntries, Indices);
-    fout << NumEntries << endl;
-    for (j=0; j<NumEntries; j++) fout << Indices[j] << endl;
+    ffout << NumEntries << endl;
+    for (j=0; j<NumEntries; j++) ffout << Indices[j] << endl;
   }
-  fout.close();
+  ffout.close();
   */
   Standard_Graph.Export(Overlap_Graph, *ExporterO2ST, Insert);
   Standard_Graph.FillComplete(ColMap, ASt_red->RowMap());
@@ -795,7 +807,7 @@ void CLOP_solver::correct_shape_dkt(int rbm, double Edof[],
 
 void CLOP_solver::assemble_Phi()
 {
-  if (MyPID == 0) cout << "in assemble_Phi" << endl;
+  if (print_flag > 9) fout << "in assemble_Phi" << endl;
   int i, j, k, ldof, row, ibeg, jbeg, col, ierr;
   //
   // determine starting coarse dof number for each processor
@@ -893,30 +905,30 @@ void CLOP_solver::assemble_Phi()
   char fname[101];
   sprintf(fname,"%s%d","test", MyPID);
   sprintf(fname, "%s.dat", fname);
-  ofstream fout;
-  fout.open(fname);
+  ofstream ffout;
+  ffout.open(fname);
   int N, NumEntries, *Indices;
   double *Values;
   N = ExporterO2ST->SourceMap().NumMyElements();
-  fout << N << endl;
-  for (i=0; i<N; i++) fout << ExporterO2ST->SourceMap().GID(i) << endl;
+  ffout << N << endl;
+  for (i=0; i<N; i++) ffout << ExporterO2ST->SourceMap().GID(i) << endl;
 
   N = ExporterO2ST->TargetMap().NumMyElements();
-  fout << N << endl;
-  for (i=0; i<N; i++) fout << ExporterO2ST->TargetMap().GID(i) << endl;
+  ffout << N << endl;
+  for (i=0; i<N; i++) ffout << ExporterO2ST->TargetMap().GID(i) << endl;
 
   N = PhiTRowMap.NumMyElements();
-  fout << N << endl;
-  for (i=0; i<N; i++) fout << PhiTRowMap.GID(i) << endl;
+  ffout << N << endl;
+  for (i=0; i<N; i++) ffout << PhiTRowMap.GID(i) << endl;
 
-  fout << Phi_Overlap.MaxNumEntries() << endl;
+  ffout << Phi_Overlap.MaxNumEntries() << endl;
   for (i=0; i<Phi_Overlap.NumMyRows(); i++) {
     Phi_Overlap.ExtractMyRowView(i, NumEntries, Values, Indices);
-    fout << NumEntries << endl;
-    for (j=0; j<NumEntries; j++) fout << Indices[j] << " " 
+    ffout << NumEntries << endl;
+    for (j=0; j<NumEntries; j++) ffout << Indices[j] << " " 
 				      << Values[j] << endl;
   }
-  fout.close();
+  ffout.close();
   }
   */
   Phi->Export(Phi_Overlap, *ExporterO2ST, Insert);
@@ -943,7 +955,7 @@ void CLOP_solver::assemble_Phi()
 
 void CLOP_solver::calculate_coarse_stiff()
 {
-  if (MyPID == 0) cout << "in calculate_coarse_stiff" << endl;
+  if (print_flag > 9) fout << "in calculate_coarse_stiff" << endl;
   Epetra_CrsMatrix *KPhi;
   EpetraExtCD::MatrixMatrix::Multiply(*ASt_red, *Phi, KPhi);
   EpetraExtCD::MatrixMatrix::Multiply(*PhiT, *KPhi, Kc);
@@ -952,7 +964,7 @@ void CLOP_solver::calculate_coarse_stiff()
 
 void CLOP_solver::gather_coarse_stiff()
 {
-  if (MyPID == 0) cout << "in gather_coarse_stiff" << endl;
+  if (print_flag > 9) fout << "in gather_coarse_stiff" << endl;
   int i, ncdof_solver;
   assert (Kc->NumGlobalCols() == Kc->NumGlobalRows());
   ncdof = Kc->NumGlobalRows();
@@ -977,7 +989,7 @@ void CLOP_solver::gather_coarse_stiff()
 
 void CLOP_solver::factor_coarse_stiff()
 {
-  if (MyPID == 0) cout << "factoring coarse matrix" << endl;
+  if (print_flag > 9) fout << "factoring coarse matrix" << endl;
   int i, j;
   Kc_gathered->MakeDataContiguous();
   int *rowbeg_KC, *colidx_KC, NumEntries;
@@ -997,13 +1009,13 @@ void CLOP_solver::factor_coarse_stiff()
 	cout << i << " " << colidx_KC[j] << " " << KC[j] << endl;
       }
     }
-    ofstream fout;
-    fout.open("coarse_rcv.dat");
-    fout << ncdof << endl;
-    fout << nnz_KC << endl;
-    for (i=0; i<=ncdof; i++) fout << rowbeg_KC[i] << endl;
-    for (i=0; i<nnz_KC; i++) fout << colidx_KC[i] << " " << KC[i] << endl;
-    fout.close();
+    ofstream ffout;
+    ffout.open("coarse_rcv.dat");
+    ffout << ncdof << endl;
+    ffout << nnz_KC << endl;
+    for (i=0; i<=ncdof; i++) ffout << rowbeg_KC[i] << endl;
+    for (i=0; i<nnz_KC; i++) ffout << colidx_KC[i] << " " << KC[i] << endl;
+    ffout.close();
     */
 
     Kc_fac = new sparse_lu();
@@ -1085,6 +1097,7 @@ void CLOP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   double starttime, endtime;
   Comm.Barrier();
   if (MyPID == 0) starttime = MPI_Wtime();
+  if (print_flag >= 0) fout.open("CLOP_solver.data", ios::app);
   if (gmres_flag == 0) {
     pcg_solve(uStand, fStand, num_iter, pcg_status);
     solver_status = pcg_status;
@@ -1094,11 +1107,12 @@ void CLOP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     solver_status = gmres_status;
   }
   Comm.Barrier();
-  if (MyPID == 0) {
+  if (print_flag > 0) {
     endtime = MPI_Wtime();
-    cout << "elapsed time for clop solver solve = " << endtime-starttime
+    fout << "elapsed time for clop solver solve = " << endtime-starttime
 	 << " seconds" << endl;
   }
+  if (print_flag >= 0) fout.close();
 }
 
 void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
@@ -1118,7 +1132,7 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   //
   rSt_red->Dot(*rSt_red, &dprod);
   rorig = sqrt(dprod);
-  if (MyPID == 0) cout << "rorig = " << rorig << endl;
+  if (print_flag > 0) fout << "rorig = " << rorig << endl;
   rcurra[0] = rorig;
 
   //
@@ -1236,23 +1250,25 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   }
   if (MyPID == 0) {
     //    cout << "rorig                 = " << rorig << endl;
-    if (num_iter > 0) cout << "rcurr(recursive)      = " << rcurr << endl;
-    cout << "rcurr(actual)         = " << ractual << endl;
-    if (ncon_global > 0) {
-      cout << "rcurr(constraint)     = " << norm_rconstraint << endl;
-      cout << "constraint error norm = " << norm_conerror << endl;
+    if (print_flag > 0) {
+      if (num_iter > 0) fout << "rcurr(recursive)      = " << rcurr << endl;
+      fout << "rcurr(actual)         = " << ractual << endl;
+      if (ncon_global > 0) {
+	fout << "rcurr(constraint)     = " << norm_rconstraint << endl;
+	fout << "constraint error norm = " << norm_conerror << endl;
+      }
+      fout << "number of iterations  = " << num_iter << endl;
+      fout << "solver tolerance      = " << solver_tol << endl;
     }
-    cout << "number of iterations  = " << num_iter << endl;
-    cout << "solver tolerance      = " << solver_tol << endl;
-    if (iflag == 2) {
-      cout << "condition # estimate      relative residual" 
+    if ((print_flag == 2) || (print_flag == 12)) {
+      fout << "condition # estimate      relative residual" 
 	   << "   iteration" << endl;
       if (pcg_iter == num_iter) calculate_condition(pcg_iter);
-      cout << setiosflags(ios::scientific | ios::uppercase);
+      fout << setiosflags(ios::scientific | ios::uppercase);
       for (i=0; i<num_iter; i++) {
 	double ee = 0;
 	if (pcg_iter == num_iter) ee = econa[i]; 
-	cout << " " 
+	fout << " " 
 	     << setw(17) << setprecision(10) << ee 
 	     << "       " 
 	     << setw(17) << setprecision(10) << rcurra[i+1]/rorig
@@ -1260,9 +1276,9 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 	     << i+1 << endl;
       }
     }
-    cout << resetiosflags(ios::scientific);
-    cout << resetiosflags(ios::uppercase);
-    cout << setprecision(6);
+    fout << resetiosflags(ios::scientific);
+    fout << resetiosflags(ios::uppercase);
+    fout << setprecision(6);
   }
 }
 
@@ -1714,46 +1730,46 @@ void CLOP_solver::calculate_multipliers(Epetra_Vector* uStand,
   char fname[101];
   sprintf(fname,"%s%d","test", MyPID);
   sprintf(fname, "%s.dat", fname);
-  ofstream fout;
-  fout.open(fname);
+  ofstream ffout;
+  ffout.open(fname);
   int N;
   N = Exporter_lam->SourceMap().NumMyElements();
-  fout << N << endl;
-  for (i=0; i<N; i++) fout << Exporter_lam->SourceMap().GID(i) << endl;
+  ffout << N << endl;
+  for (i=0; i<N; i++) ffout << Exporter_lam->SourceMap().GID(i) << endl;
 
   N = Exporter_lam->TargetMap().NumMyElements();
-  fout << N << endl;
-  for (i=0; i<N; i++) fout << Exporter_lam->TargetMap().GID(i) << endl;
+  ffout << N << endl;
+  for (i=0; i<N; i++) ffout << Exporter_lam->TargetMap().GID(i) << endl;
 
   N = ConStandard->NumMyRows();
-  fout << N << endl;
-  for (i=0; i<N; i++) fout << ConStandard->GRID(i) << endl;
+  ffout << N << endl;
+  for (i=0; i<N; i++) ffout << ConStandard->GRID(i) << endl;
 
   N = ConStandard->NumMyCols();
-  fout << N << endl;
-  for (i=0; i<N; i++) fout << ConStandard->GCID(i) << endl;
+  ffout << N << endl;
+  for (i=0; i<N; i++) ffout << ConStandard->GCID(i) << endl;
 
   N = CtT->NumMyCols();
-  fout << N << endl;
-  for (i=0; i<N; i++) fout << CtT->GCID(i) << endl;
+  ffout << N << endl;
+  for (i=0; i<N; i++) ffout << CtT->GCID(i) << endl;
   
-  fout << ConStandard->MaxNumEntries() << endl;
+  ffout << ConStandard->MaxNumEntries() << endl;
   for (i=0; i<ConStandard->NumMyRows(); i++) {
     ConStandard->ExtractMyRowView(i, NumEntries, Values, Indices);
-    fout << NumEntries << endl;
-    for (j=0; j<NumEntries; j++) fout << Indices[j] << " " 
+    ffout << NumEntries << endl;
+    for (j=0; j<NumEntries; j++) ffout << Indices[j] << " " 
 				      << Values[j] << endl;
   }
 
-  fout << CtT->MaxNumEntries() << endl;
+  ffout << CtT->MaxNumEntries() << endl;
   for (i=0; i<CtT->NumMyRows(); i++) {
     CtT->ExtractMyRowView(i, NumEntries, Values, Indices);
-    fout << NumEntries << endl;
-    for (j=0; j<NumEntries; j++) fout << Indices[j] << " " 
+    ffout << NumEntries << endl;
+    for (j=0; j<NumEntries; j++) ffout << Indices[j] << " " 
 				      << Values[j] << endl;
   }
 
-  fout.close();
+  ffout.close();
   */
   Lambda->Export(*Lambda_local, *Exporter_lam, Insert);
   CtT->Multiply(false, *Lambda, *wStand);
@@ -1813,20 +1829,20 @@ void CLOP_solver::spmat_datfile(const Epetra_CrsMatrix & A, char fname[],
 {
   int i, j, NumEntries, *Indices, grow, gcol;
   double *Values;
-  ofstream fout;
-  fout.open(fname);
+  ofstream ffout;
+  ffout.open(fname);
   for (i=0; i<A.NumMyRows(); i++) { 
     A.ExtractMyRowView(i, NumEntries, Values, Indices);
     for (j=0; j<NumEntries; j++) {
       if (opt == 1)
-	fout << i+1 << " " << Indices[j]+1 << setw(22) << setprecision(15)
+	ffout << i+1 << " " << Indices[j]+1 << setw(22) << setprecision(15)
 	     << Values[j] << endl;
       if (opt == 2) {
 	grow = A.GRID(i); gcol = A.GCID(Indices[j]);
-	fout << grow+1 << " " << gcol+1 << setw(22) 
+	ffout << grow+1 << " " << gcol+1 << setw(22) 
 	     << setprecision(15) << Values[j] << endl;
       }
     }
   }
-  fout.close();
+  ffout.close();
 }

@@ -31,13 +31,7 @@ class CLOP_solver
      const Epetra_Map* SubMap_,            // map for subdomain dofs
      const Epetra_CrsMatrix* ConStandard_, // subdomain constraint matrix
      const Epetra_IntVector* GNStandard_,  // global nodes for subdomain dofs
-     const int overlap_,                   // overlap
-     const double solver_tol_,             // solver tolerance
-     const int max_iter_,                  // maximum number of iterations
-     const int max_orthog_,                // max number of reorthog vectors
-     const int atype_,                     // analysis type
-     const int ndim_,                      // spatial dimension
-     const int local_solver_);             // local solver type
+     const double* clop_params_);          // array of solver parameters
   ~CLOP_solver();
   void solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 	     int & num_iter, int & solver_status);
@@ -46,7 +40,6 @@ class CLOP_solver
   void zero_pointers();
   void process_constraints();
   int transform_constraints();
-  int factor_constraints(Epetra_CrsMatrix *CC);
   void construct_transpose(Epetra_CrsMatrix* & A, Epetra_CrsMatrix* & AT);
   void construct_Overlap();
   void construct_subdomains();
@@ -87,8 +80,7 @@ class CLOP_solver
   const Epetra_IntVector *LDStandard, *GNStandard;
   const Epetra_MultiVector* CStandard;
   const Epetra_Map* SubMap;
-  const int overlap, maxiter, atype, ndim, local_solver;
-  const double solver_tol;
+  const double* clop_params;
   const Epetra_Comm & Comm;
 
   Epetra_CrsMatrix *AOverlap, *Tran, *ASt_red_keep;
@@ -106,18 +98,22 @@ class CLOP_solver
   Epetra_BLAS EB;
   Epetra_LAPACK EL;
   MPI_Comm mpicomm;
+  int overlap, maxiter, atype, ndim, local_solver, prt_debug, prt_summary;
+  int max_orthog;
+  double solver_tol;
   int npart, ndof, ndof_overlap, MyPID, NumProc, gpart0, gcdof0;
   int ndof_rot, *count1, *cs_local, *csdima, ncdof_proc, max_csdim;
   int *dofpart1, *dofpart2, *imap, *cdof_proc, ncdof, max_ndof;
   int ndof_Standard, *sub_gdofs, nsub_gdofs, ncon_global, nx2, nx2_global;
-  int *x2_dof, nmycon, *mycdof, gmres_flag, max_orthog, n_orthog_used;
+  int *x2_dof, nmycon, *mycdof, gmres_flag, n_orthog_used;
   int pre_type_orthog, pre_type_coarse, orthog_option, *IPIV, ndof_global;
-  int ndof_global_red;
+  int ndof_global_red, print_flag;
   double *xcent, *ycent, *zcent, *sol_coarse, *temp_coarse, *rhs_coarse;
   double *rcurra, *r_overlap, *z_overlap, *rhs_work, *sol_work, *tmp_work;
   double *rhoa, *betaa, *pApa, *Etri, *Dtri, *econa, *lambda_local;
   double *lambda, *ortho_vec, *pAp_vec, *ortho_sum, *PAP, *PAP_sum, *PAP_store;
   double *VV, *HH, *RR, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;
+  ofstream fout;
   CLOP_sub *Asub;
   sparse_lu *Kc_fac;
 };

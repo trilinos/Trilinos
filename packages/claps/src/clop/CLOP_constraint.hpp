@@ -13,7 +13,9 @@
 
 class CLOP_constraint {
  public:
-  CLOP_constraint(const Epetra_CrsMatrix* A_);
+  CLOP_constraint(const Epetra_CrsMatrix* A_,
+		  ofstream *fout_,
+		  const int print_flag_);
   ~CLOP_constraint();
   int factor();
   void Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
@@ -43,6 +45,8 @@ class CLOP_constraint {
   void expand(double** pdouble_temp, double** & a, int n);
 
   const Epetra_CrsMatrix* A;
+  ofstream *fout;
+  const int print_flag;
   const Epetra_Comm & Comm;
   Epetra_CrsMatrix *E2T;
   int nrow, ncol, ncol_global, maxcol, *nnzcol, *dimcol, **colrows, blocksize;
