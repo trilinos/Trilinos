@@ -5728,7 +5728,6 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
 
 
-   for (i = 0; i < Amat->outvec_leng; i++) pAux[i] = pAux[i]/diagonal[i];
 
 #endif
 
@@ -5736,6 +5735,9 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
    if (deg == 1) { 
 
+#ifdef RST_MODIF
+     for (i = 0; i < Amat->outvec_leng; i++) pAux[i] = pAux[i]/diagonal[i];
+#endif
        cf = over * mlsCf[0]; 
 
        for (i=0; i<n; i++) x[i] += cf * pAux[i]; 
