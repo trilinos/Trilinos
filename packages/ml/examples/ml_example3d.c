@@ -18,8 +18,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "az_aztec.h"
 #include "ml_include.h"
+
+#if defined(HAVE_ML_AZTEC) || defined(HAVE_ML_AZTECOO) || defined(HAVE_ML_AZTEC2_1)
+
+#include "az_aztec.h"
 #include "ml_read_utils.h"
 extern int AZ_using_fortran;
 
@@ -1223,4 +1226,30 @@ nz = (row/(NP*m*m));
 */
 
 } /* add_row_3D */
+
+#else
+
+#include <stdlib.h>
+#include <stdio.h>
+#include "mpi.h"
+
+int main(int argc, char *argv[])
+{
+
+  // still need to deal with MPI, some architecture don't like
+  // an exit(0) without MPI_Finalize()
+#ifdef ML_MPI
+  MPI_Init(&argc,&argv);
+#endif
+
+  puts("This test requires Aztec");
+
+#ifdef ML_MPI
+  MPI_Finalize();
+#endif
+
+  return(0);
+}
+
+#endif
 
