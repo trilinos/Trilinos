@@ -740,9 +740,11 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    upper = lower + max_per_proc;
 
    allocated = imatrix->N_nonzeros+2;
+   rowptr = (int   *)  ML_allocate( (1+imatrix->getrow->Nrows)*sizeof(int));
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
    val   = (double *)  ML_allocate( allocated*sizeof(double));
-   rowptr = (int   *)  ML_allocate( (1+imatrix->getrow->Nrows)*sizeof(int));
+   if (val == NULL) 
+     pr_error("ML_back_to_csrlocal: out of space\n");
 
    Nexternal = 0;
    for (i = 0 ; i < imatrix->getrow->Nrows; i++) {
