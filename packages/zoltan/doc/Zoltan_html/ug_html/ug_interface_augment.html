@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
    <TITLE>Zoltan User's Guide:  Interface</TITLE>
 <!
   ------------------------
@@ -22,21 +22,35 @@
 <H2>
 Functions for Augmenting a Decomposition</H2>
 The following functions support the addition of new items to an existing
-decomposition.  Given a decomposition, they determine which processor(s)
-a new item should be assigned to.  Currently, they only work in conjunction
-with the RCB <A HREF="ug_alg_rcb.html#RCB">RCB</A> algorithm.
+decomposition. Given a decomposition, they determine which processor(s)
+a new item should be assigned to. Currently, they work in conjunction with
+only the&nbsp; <A HREF="ug_alg_rcb.html#RCB">RCB</A> algorithm.
 <BLOCKQUOTE><B><A HREF="#LB_Point_Assign">LB_Point_Assign</A></B>
 <BR><B><A HREF="#LB_Box_Assign">LB_Box_Assign</A></B></BLOCKQUOTE>
 
-<HR WIDTH="100%"><A NAME="LB_Point_Assign"></A>int <B>LB_Point_Assign</B>
-(struct <B>LB_Struct</B> * <I>lb</I>, double * <I>coords</I>,
-int * <I>proc</I>);&nbsp;
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_Point_Assign"></A>int <B>LB_Point_Assign</B> (struct <B>LB_Struct</B>
+* <I>lb</I>, double * <I>coords</I>, int * <I>proc</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD>&nbsp;</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%"><B>LB_Point_Assign</B> is used to determine which processor
-a new point should be assigned to.  It is only applicable to geometrically
-generated decompositions (currently only RCB).  If the parameter 
-<B>RCB_TREE</B> is set to TRUE, then the recursive sequence of cuts which define
-an RCB decomposition is saved.  Given a new geometric point, the processor
-which owns it can be determined.
+a new point should be assigned to. It is only applicable to geometrically
+generated decompositions (currently only RCB). If the parameter <B>RCB_TREE</B>
+is set to TRUE, then the recursive sequence of cuts which define an RCB
+decomposition is saved. Given a new geometric point, the processor which
+owns it can be determined.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR>
@@ -72,25 +86,39 @@ which owns it can be determined.
 
 <TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
 </TR>
-</TABLE>&nbsp;
+</TABLE>
+&nbsp;
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
 
-<HR WIDTH="100%"><A NAME="LB_Box_Assign"></A>int <B>LB_Box_Assign</B>
-(struct <B>LB_Struct</B> *<I> lb</I>,
-double <I>xmin</I>, double <I>ymin</I>, double <I>zmin</I>,
-double <I>xmax</I>, double <I>ymax</I>, double <I>zmax</I>,
-int * <I>procs</I>, int * <I>numprocs</I>);&nbsp;
+<TD><A NAME="LB_Box_Assign"></A>int <B>LB_Box_Assign</B> (struct <B>LB_Struct</B>
+*<I> lb</I>, double <I>xmin</I>, double <I>ymin</I>, double <I>zmin</I>,
+double <I>xmax</I>, double <I>ymax</I>, double <I>zmax</I>, int * <I>procs</I>,
+int * <I>numprocs</I>);&nbsp;&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD>&nbsp;</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">In many settings, it is useful to know which processors
-might need to know about an extended geometric object.  <B>LB_Box_Assign</B> 
-addresses this problem.  Given a geometric decomposition of space (currently
+might need to know about an extended geometric object. <B>LB_Box_Assign</B>
+addresses this problem. Given a geometric decomposition of space (currently
 only RCB is supported), and given an axis-aligned box around the geometric
 object, <B>LB_Box_Assign</B> determines which processors own geometry that
-intersects the box.  To use this routine, the parameter <B>RCB_TREE</B> must
-be set to TRUE when the RCB decomposition is generated.  This parameter will
-cause the recursive sequence of geometric cuts to be saved, which is necessary
-for <B>LB_Box_Assign</B> to do its job.
+intersects the box. To use this routine, the parameter <B>RCB_TREE</B>
+must be set to TRUE when the RCB decomposition is generated. This parameter
+will cause the recursive sequence of geometric cuts to be saved, which
+is necessary for <B>LB_Box_Assign</B> to do its job.
 <BR>&nbsp;
-<TABLE WIDTH="100%" >
-<BR>&nbsp;
+
+<P>&nbsp;
 <TABLE WIDTH="100%" >
 <TR>
 <TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
@@ -105,30 +133,32 @@ for <B>LB_Box_Assign</B> to do its job.
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp; xmin, ymin, zmin</I></TD>
 
-<TD>The coordinates of the lower extent of the bounding box around the object.&nbsp;
-If your geometry is only 2- dimensional then the z value will be ignored.
+<TD>The coordinates of the lower extent of the bounding box around the
+object.&nbsp; If your geometry is only 2- dimensional then the z value
+will be ignored.&nbsp;</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp; xmax, ymax, zmax</I></TD>
 
-<TD>The coordinates of the upper extent of the bounding box around the object.&nbsp;
-If your geometry is only 2- dimensional then the z value will be ignored.
+<TD>The coordinates of the upper extent of the bounding box around the
+object.&nbsp; If your geometry is only 2- dimensional then the z value
+will be ignored.&nbsp;</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp; procs</I></TD>
 
-<TD>The list of processors intersecting the box are returned starting at this
-address.  Note that it is the responsibility of the calling routine to ensure
-that there is sufficient space for the return list.
+<TD>The list of processors intersecting the box are returned starting at
+this address. Note that it is the responsibility of the calling routine
+to ensure that there is sufficient space for the return list.&nbsp;</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp; numprocs</I></TD>
 
 <TD>Upon return, this value contains the number of processors which intersect
-the box (i.e. the number of entries placed in the <I>procs</I> list).
+the box (i.e. the number of entries placed in the <I>procs</I> list).&nbsp;</TD>
 </TR>
 
 <TR>
@@ -142,24 +172,10 @@ the box (i.e. the number of entries placed in the <I>procs</I> list).
 
 <TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
 </TR>
-
-<TR>
-<TD></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD></TD>
-
-<TD></TD>
-</TR>
 </TABLE>
 
-<P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
 <A HREF="ug_interface_mig.html">Next:&nbsp; Migration-Help Functions</A>&nbsp;
-|&nbsp; <A HREF="ug_interface_init.html">Previous:&nbsp; Initialization
-Functions</A>]
+|&nbsp; <A HREF="ug_interface_lb.html">Previous:&nbsp; Load-Balancing Functions</A>]&nbsp;
 </BODY>
 </HTML>
