@@ -102,7 +102,7 @@ int Zoltan_Get_Obj_List(
                        num_gid_entries, num_lid_entries,
                        *global_ids, *local_ids, 
                        wdim, *objwgts, &ierr);
-  }
+    }
     else if ((zz->Get_First_Obj != NULL) && (zz->Get_Next_Obj != NULL)){
       /* Use iterator functions to loop through object list */
       if (zz->Get_First_Obj(zz->Get_First_Obj_Data, 
