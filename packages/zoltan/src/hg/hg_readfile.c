@@ -21,113 +21,35 @@ extern "C" {
 
 #define BUF_LEN 1000000
 
-int Zoltan_HG_Readfile (
-  ZZ *zz, 
-  HGraph *hg,
-  char *hgraphfile
-)
-{ 
-  FILE  *f;
-  int   i, Hedge, pin, code=0;
-  char  *s, string[BUF_LEN];
-  char  errstr[200] ;
-  char  *yo = "Zoltan_HG_Readfile" ;
+int Zoltan_HG_Readfile   (ZZ*, FILE*, int*, int*, int*, int**, int**, int*, float**, int*, float**) ;
 
-/* TODO: edge weights, multiple edge/vertex weights */
 
-  Zoltan_HG_HGraph_Init(hg);
+int HG_Readfile (ZZ *zz, HGraph *hg, char *hgraphfile)
+   {
+   FILE *f;
+   char line1[81], errstr[200] ;
+   char *yo = "Zoltan_HG_Readfile" ;
 
-  if (!(f = fopen( hgraphfile, "r" )))
-  { sprintf(errstr, "ERROR...not able to read file %s!\n",hgraphfile);
-    ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
-    return ZOLTAN_WARN;
-  }
-  if (!(fgets (string, BUF_LEN, f)))
-  { sprintf(errstr, "ERROR... read line 1 of file %s!\n",hgraphfile);
-    ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
-    return ZOLTAN_WARN;
-  }
+   Zoltan_HG_HGraph_Init(hg);
 
-/* HEAD LINE */
-  hg->nVtx = atoi (strtok(string," \n\t"));
-  if ((s=strtok(0," \n\t")))
-    hg->nEdge = atoi(s);
-  else
-  { sprintf(errstr, "ERROR...missing number of hyperedges in head line");
-    ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
-    return ZOLTAN_WARN;
-  }
-  if ((s=strtok(0," \n\t")))
-    hg->nPin = atoi(s);
-  else
-  { sprintf(errstr,"ERROR...missing number of pins in head line");
-    ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
-    return ZOLTAN_WARN;
-  }
-  if ((s=strtok(0," \n\t")))
-    code = atoi (s);
-
-/* nEdge HYPEREDGE LINES */
-  if (!(hg->hindex  = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nEdge+1))) ||
-      !(hg->hvertex = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nPin))       )
-     {
-     ZOLTAN_FREE ((void **) &hg->hindex) ;
-     ZOLTAN_FREE ((void **) &hg->hvertex) ;
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
-  Hedge = 0;
-  for (i=0; i<hg->nEdge; i++)
-  { hg->hindex[i] = Hedge;
-    if (!(fgets (string, BUF_LEN, f)))
-    { sprintf(errstr, "ERROR... read hvertex %d from %s!\n",i,hgraphfile);
+   f = fopen (hgraphfile, "r") ;
+   if (!f)
+      {
+      sprintf(errstr, "ERROR...not able to open file %s!\n",hgraphfile);
       ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
       return ZOLTAN_WARN;
-    }
-    s = strtok(string," \n");
-
-    while (s)
-    { pin = atoi(s);
-      s = strtok(NULL," \n");
-      if (pin<=0 || pin>hg->nVtx)
-      { sprintf(errstr, "ERROR...pin %d of vertex %d is out of range [%d,%d]!\n",
-         pin,i+1,1,hg->nVtx);
-        ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
-        return ZOLTAN_WARN;
       }
-      hg->hvertex[Hedge++] = pin-1;
-  } }
-  hg->hindex[hg->nEdge] = Hedge;
 
-/* nVtx vertex weights */
-  if ((code/10)%10 == 1)
-  { if (!(hg->vwgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nVtx)))
-       {
-       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-       return ZOLTAN_MEMERR;
-       }
-    for (i=0; i<hg->nVtx; i++)
-    { if (!(fgets (string, BUF_LEN, f)))
-        { sprintf(errstr, "ERROR... read weight %d from %s!\n",i,hgraphfile);
-          ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
-          return ZOLTAN_WARN;
-        }
-      s = strtok(string," \n");
-      hg->vwgt[i] = (float)(atoi(s));
-  } }
+   Zoltan_HG_Readfile (zz, f, &hg->nVtx, &hg->nEdge, &hg->nPin, &hg->hindex,
+    &hg->hvertex, &hg->VertexWeightDim, &hg->vwgt, &hg->EdgeWeightDim, &hg->ewgt) ;
 
-  if (fscanf(f, "%d", &i) != EOF)
-  { sprintf(errstr, "ERROR... file %s is too long!\n", hgraphfile);
-    ZOLTAN_PRINT_WARN (zz->Proc, yo, errstr) ;
-    return ZOLTAN_WARN;
-  }
+   if (Zoltan_HG_Create_Mirror (zz, hg))
+      return ZOLTAN_WARN;
+   if (fclose(f))
+      return ZOLTAN_WARN;
+   return ZOLTAN_OK;
+   }
 
-  if (Zoltan_HG_Create_Mirror (zz, hg))
-    return ZOLTAN_WARN;
-  if (fclose(f))
-    return ZOLTAN_WARN;
-  return ZOLTAN_OK;
-}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -136,7 +136,7 @@ int Zoltan_HG_HGraph_to_Graph(ZZ *, HGraph *, Graph *);
 int Zoltan_HG_Graph_to_HGraph(ZZ *, Graph *, HGraph *);
 
 /* Hypergraph read from file */
-int Zoltan_HG_Readfile     (ZZ *, HGraph *, char *hgraphfile);
+int HG_Readfile (ZZ *, HGraph *, char *hgraphfile);
 
 /* Hypergraph Partitioning */
 /* Function types for options to hypergraph partitioning */
