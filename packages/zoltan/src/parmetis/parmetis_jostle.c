@@ -524,21 +524,6 @@ static int LB_ParMetis_Jostle(
     if (lb->Debug_Level >= LB_DEBUG_ALL)
       printf("[%1d] Debug: num_edges = %d\n", lb->Proc, num_edges);
 
-    if (num_edges==0){
-      /* No edges on a proc is a fatal error in ParMETIS 2.0
-         but fine with Jostle.                                */
-      if (strcmp(alg, "JOSTLE")){
-        LB_PRINT_ERROR(lb->Proc, yo, "No edges on this proc; "
-                      "ParMETIS 2.0 will crash. "
-                      "Please use a different load balancing method.");
-        ierr = LB_FATAL;
-        FREE_MY_MEMORY; 
-        LB_TRACE_EXIT(lb, yo);
-        return (ierr);
-      }
-    }
-
-  
     /* Allocate space for ParMETIS data structs */
     xadj   = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
     adjncy = (idxtype *)LB_MALLOC(num_edges * sizeof(idxtype));
@@ -893,7 +878,7 @@ static int LB_ParMetis_Jostle(
       if ((tmp=hash_lookup(lb, hashtab, &(proc_list_nbor[i*num_gid_entries]), 
                            nrecv)) <0){
         /* Error. This should never happen! */
-        LB_PRINT_ERROR(lb->Proc, yo,"Off-proc global ID is not in hash table.");
+        LB_PRINT_ERROR(lb->Proc, yo,"Internal Zoltan error: Off-proc global ID is not in hash table.");
         FREE_MY_MEMORY;
         LB_TRACE_EXIT(lb, yo);
         return LB_FATAL;
@@ -1043,6 +1028,21 @@ static int LB_ParMetis_Jostle(
   if (get_graph_data){
      ierr = LB_Verify_Graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, 
                adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph, 1);
+  }
+  
+  /* Special error checks to avoid certain death in ParMETIS */
+  if (xadj[tmp_num_obj] == 0){
+    /* No edges on a proc is a fatal error in ParMETIS 2.0
+       but fine with Jostle.                                */
+    if (strcmp(alg, "JOSTLE")){
+      LB_PRINT_ERROR(lb->Proc, yo, "No edges on this proc; "
+                    "ParMETIS 2.0 will crash. "
+                    "Please use a different load balancing method.");
+      ierr = LB_FATAL;
+      FREE_MY_MEMORY; 
+      LB_TRACE_EXIT(lb, yo);
+      return (ierr);
+    }
   }
   
   /* Get a time here */
