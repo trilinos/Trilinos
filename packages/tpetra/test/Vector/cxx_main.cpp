@@ -87,6 +87,14 @@ int unitTests(bool verbose, bool debug) {
 	ScalarType const temp1 = vector[1];
 	vector[0] = temp1;
 
+	// set all to scalar
+	if(verbose) cout << "setAllToScalar..." << endl;
+	vector.setAllToScalar(3.0);
+
+	// set all to random
+	if(verbose) cout << "setAllToRandom..." << endl;
+	vector.setAllToRandom();
+
 	if(verbose) cout << "Code coverage section finished." << endl;
 
 	//

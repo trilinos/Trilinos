@@ -48,11 +48,13 @@ public:
 		, BLAS_()
 		, VectorSpace_(VectorSpace)
 		, A_(VectorSpace.getNumMyEntries())
+		, seed_(Teuchos::ScalarTraits<ScalarType>::zero())
 	{
-		ScalarType const zero = Teuchos::ScalarTraits<ScalarType>::zero();
+		ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 		OrdinalType const length = getNumMyEntries();
-		for(OrdinalType i = 0; i < length; i++)
-			A_[i] = zero;
+		for(OrdinalType i = ordinalZero; i < length; i++)
+			A_[i] = scalarZero;
 	};
   
   //! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
@@ -61,11 +63,13 @@ public:
 		, BLAS_()
 		, VectorSpace_(VectorSpace)
 		, A_(VectorSpace.getNumMyEntries())
+		, seed_(Teuchos::ScalarTraits<ScalarType>::zero())
 	{
 		OrdinalType const length = getNumMyEntries();
 		if(numEntries != length)
 			throw reportError("numEntries = " + toString(numEntries) + ".  Should be = " + toString(length) + ".", -1);
-		for(OrdinalType i = 0; i < length; i++)
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		for(OrdinalType i = ordinalZero; i < length; i++)
 			A_[i] = vectorEntries[i];
 	};
 
@@ -75,6 +79,7 @@ public:
 		, BLAS_(Source.BLAS_)
 		, VectorSpace_(Source.VectorSpace_)
 		, A_(Source.A_)
+		, seed_(Source.seed_)
 	{};
 
   //! Destructor.  
@@ -85,13 +90,27 @@ public:
 	//@{ \name Post-Construction Modification Routines
 
 	//! Submit entries. Values submitted will be summed with existing values.
-	void submitEntries(OrdinalType numEntries, OrdinalType* indices, ScalarType* values);
+	void submitEntries(OrdinalType numEntries, OrdinalType* indices, ScalarType* values) {
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		for(OrdinalType i = 0; i < numEntries; i++)
+			A_[indices[i]] = values[i];
+	};
 
 	//! Set all entries to scalarValue.
-	void setAllToScalar(ScalarType const value);
+	void setAllToScalar(ScalarType const value) {
+		OrdinalType const max = getNumMyEntries();
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		for(OrdinalType i = ordinalZero; i < max; i++)
+			A_[i] = value;
+	};
 
 	//! Set all entries to random values.
-	void setAllToRandom();
+	void setAllToRandom() {
+		OrdinalType const max = getNumMyEntries();
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		for(OrdinalType i = ordinalZero; i < max; i++)
+			A_[i] = Teuchos::ScalarTraits<ScalarType>::random();
+	};
 
 	//@}
 
@@ -99,10 +118,20 @@ public:
 	//@{ \name Extraction Methods
 
 	//! Put vector entries into user array (copy)
-	void extractCopy(ScalarType* userArray) const;
+	void extractCopy(ScalarType* userArray) const {
+		OrdinalType const max = getNumMyEntries();
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		for(OrdinalType i = ordinalZero; i < max; i++)
+			userArray[i] = A_[i];
+	}
 
 	//! Put pointers to vector entries into user array (view)
-	void extractView(ScalarType** userPointerArray) const;
+	void extractView(ScalarType** userPointerArray) const {
+		OrdinalType const max = getNumMyEntries();
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		for(OrdinalType i = ordinalZero; i < max; i++)
+			userPointerArray[i] = &A_[i];
+	};
 
 	//@}
 
@@ -168,10 +197,14 @@ public:
 	//@{ \name Random number utilities
 
 	//! Get seed
-	ScalarType getSeed() const;
+	ScalarType getSeed() const {
+	 return(seed_);
+	};
 
 	//! Set seed
-	void setSeed(ScalarType seed);
+	void setSeed(ScalarType seed) {
+		seed_ = seed;
+	};
 
 	//@}
 
@@ -240,6 +273,7 @@ private:
 	Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
 	VectorSpace<OrdinalType, ScalarType> VectorSpace_;
 	std::vector<ScalarType> A_;
+	ScalarType seed_;
 
 }; // class Vector
 
