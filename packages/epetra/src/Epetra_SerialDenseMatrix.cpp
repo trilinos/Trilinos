@@ -125,16 +125,37 @@ Epetra_SerialDenseMatrix & Epetra_SerialDenseMatrix::operator = ( const Epetra_S
   return(*this);
 }
 //=============================================================================
-void Epetra_SerialDenseMatrix::CopyMat(double * A, int LDA, int NumRows, int NumCols, 
-					double * B, int LDB) {
+Epetra_SerialDenseMatrix & Epetra_SerialDenseMatrix::operator+= ( const Epetra_SerialDenseMatrix & Source) {
 
+  if (M()!=Source.M()) throw ReportError("Row dimension of source = " + toString(Source.M()) +
+					  " is different than  row dimension of target = " + toString(LDA()), -1);
+  if (N()!=Source.N()) throw ReportError("Column dimension of source = " + toString(Source.N()) +
+					  " is different than column dimension of target = " + toString(N()), -2);
+
+  CopyMat(Source.A(), Source.LDA(), Source.M(), Source.N(), A(), LDA(), true);
+  return(*this);
+}
+//=============================================================================
+void Epetra_SerialDenseMatrix::CopyMat(double * A,
+				       int LDA,
+				       int NumRows,
+				       int NumCols, 
+				       double * B,
+				       int LDB,
+				       bool add)
+{
   int i, j;
   double * ptr1 = B;
   double * ptr2;
   for (j=0; j<NumCols; j++) {
     ptr1 = B + j*LDB;
     ptr2 = A + j*LDA;
-    for (i=0; i<NumRows; i++) *ptr1++ = *ptr2++;
+    if (add) {
+      for (i=0; i<NumRows; i++) *ptr1++ += *ptr2++;
+    }
+    else {
+      for (i=0; i<NumRows; i++) *ptr1++ = *ptr2++;
+    }
   }
   return;
 }

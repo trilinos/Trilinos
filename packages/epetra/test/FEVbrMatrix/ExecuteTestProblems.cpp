@@ -3,8 +3,10 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Vector.h"
 #include <Epetra_FEVector.h>
-  int MatrixTests(const Epetra_Map & Map, const Epetra_LocalMap & LocalMap, int NumVectors,
-		      bool verbose)
+  int MatrixTests(const Epetra_Map & Map,
+		  const Epetra_LocalMap & LocalMap,
+		  int NumVectors,
+		  bool verbose)
   {
     const Epetra_Comm & Comm = Map.Comm();
     int ierr = 0;
@@ -64,13 +66,13 @@ int quad1(const Epetra_Map& map, bool verbose)
   Epetra_BlockMap blkMap(-1, numMyNodes, myNodes, dofPerNode,
 			 indexBase, Comm);
 
-  int rowLengths = 4; //each element-matrix will have 4 block-columns.
+  int rowLengths = 8; //each element-matrix will have 4 block-columns.
                       //the rows of the assembled matrix will be longer than
                       //this, but we don't need to worry about that because the
                       //VbrMatrix will add memory as needed. For a real
                       //application where efficiency is a concern, better
-                      //performance would be obtained by giving a more accurate
-                      //row-length here.
+                      //performance would be obtained by giving more accurate
+                      //row-lengths here.
 
   Epetra_FEVbrMatrix A(Copy, blkMap, rowLengths);
 
@@ -109,6 +111,9 @@ int quad1(const Epetra_Map& map, bool verbose)
 		    ierr);
 
     for(j=0; j<nodesPerElem; ++j) {
+      for(int ii=0; ii<dofPerNode*dofPerNode; ii++) {
+        blockEntry[ii] = blkrow+elemNodes[j];
+      }
       EPETRA_TEST_ERR( A.SubmitBlockEntry( blockEntry, dofPerNode,
 					  dofPerNode, dofPerNode), ierr);
     }

@@ -300,17 +300,17 @@ int main(int argc, char *argv[])
   
   if (A.MyGlobalBlockRow(0)) {
     int numvals = A.NumGlobalBlockEntries(0);
-    double ** Rowvals;
+    Epetra_SerialDenseMatrix ** Rowvals;
     int* Rowinds = new int[numvals];
     int  RowDim;
-    int* ColDims;
-    int* LDAs;
     A.ExtractGlobalBlockRowPointers(0, numvals, RowDim, numvals, Rowinds, 
-				   ColDims, LDAs, Rowvals); // Get A[0,:]
+				    Rowvals); // Get A[0,:]
 
-    for (i=0; i<numvals; i++) if (Rowinds[i] == 0)
-      Rowvals[i][0] *= 10.0; // Multiply first diag value by 10.0
-    
+    for (i=0; i<numvals; i++) {
+      if (Rowinds[i] == 0) {
+	Rowvals[i]->A()[0] *= 10.0; // Multiply first diag value by 10.0
+      }
+    }
     delete [] Rowinds;
   }
   // Iterate (again)
@@ -570,15 +570,18 @@ int check(Epetra_VbrMatrix& A,
   
   // Test RowMatrix interface implementations
   int RowDim, NumBlockEntries, * BlockIndices, * ColDims, * LDAs;
-  double ** Values;
+  Epetra_SerialDenseMatrix ** Values;
   // Get View of last block row
-  A.ExtractMyBlockRowView(NumMyBlockRows-1, RowDim, NumBlockEntries, BlockIndices, ColDims,
-			  LDAs, Values);
+  A.ExtractMyBlockRowView(NumMyBlockRows-1, RowDim, NumBlockEntries,
+			  BlockIndices, Values);
   int NumMyEntries1 = 0;
-  {for (int i=0; i < NumBlockEntries; i++) NumMyEntries1 += ColDims[i];}
+  {for (int i=0; i < NumBlockEntries; i++) NumMyEntries1 += Values[i]->N();}
   int NumMyEntries;
   A.NumMyRowEntries(NumMyRows-1, NumMyEntries);
-  if (verbose) cout << "\n\nNumber of nonzero values in last row = " << NumMyEntries << endl<< endl;
+  if (verbose) {
+    cout << "\n\nNumber of nonzero values in last row = "
+	 << NumMyEntries << endl<< endl;
+  }
 
   EPETRA_TEST_ERR(!(NumMyEntries==NumMyEntries1),ierr);
   
@@ -607,13 +610,11 @@ int check(Epetra_VbrMatrix& A,
   //   Local index
   int MyPointersRowDim, MyPointersNumBlockEntries;
   int * MyPointersBlockIndices = new int[MaxNumBlockEntries];
-  int * MyPointersColDims, * MyPointersLDAs;
-  double **MyPointersValuesPointers;
+  Epetra_SerialDenseMatrix **MyPointersValuesPointers;
   //   Global Index
   int GlobalPointersRowDim, GlobalPointersNumBlockEntries;
   int * GlobalPointersBlockIndices = new int[MaxNumBlockEntries];
-  int * GlobalPointersColDims, * GlobalPointersLDAs;
-  double **GlobalPointersValuesPointers;
+  Epetra_SerialDenseMatrix **GlobalPointersValuesPointers;
 
   // Copy Extraction approach
 
@@ -647,14 +648,12 @@ int check(Epetra_VbrMatrix& A,
   //   Local index (There is no global view available)
   int MyView1RowDim, MyView1NumBlockEntries;
   int * MyView1BlockIndices;
-  int * MyView1ColDims, * MyView1LDAs;
-  double **MyView1ValuesPointers = new double*[MaxNumBlockEntries];
+  Epetra_SerialDenseMatrix **MyView1ValuesPointers = new Epetra_SerialDenseMatrix*[MaxNumBlockEntries];
 
   //   Local index version 2 (There is no global view available)
   int MyView2RowDim, MyView2NumBlockEntries;
   int * MyView2BlockIndices;
-  int * MyView2ColDims, * MyView2LDAs;
-  double **MyView2ValuesPointers;
+  Epetra_SerialDenseMatrix **MyView2ValuesPointers;
 
 
   // For each row, test six approaches to extracting data from a given local index matrix
@@ -664,12 +663,12 @@ int check(Epetra_VbrMatrix& A,
     int GlobalRow = A.GRID(i);
     // Get a copy of block indices in local index space, pointers to everything else
     A.ExtractMyBlockRowPointers(MyRow, MaxNumBlockEntries, MyPointersRowDim, 
-				    MyPointersNumBlockEntries, MyPointersBlockIndices,
-				    MyPointersColDims, MyPointersLDAs,MyPointersValuesPointers);
+				MyPointersNumBlockEntries, MyPointersBlockIndices,
+				MyPointersValuesPointers);
     // Get a copy of block indices in local index space, pointers to everything else
     A.ExtractGlobalBlockRowPointers(GlobalRow, MaxNumBlockEntries, GlobalPointersRowDim, 
 				    GlobalPointersNumBlockEntries, GlobalPointersBlockIndices,
-				    GlobalPointersColDims, GlobalPointersLDAs,GlobalPointersValuesPointers);
+				    GlobalPointersValuesPointers);
 
     // Initiate a copy of block row in local index space.
     A.BeginExtractMyBlockRowCopy(MyRow, MaxNumBlockEntries, MyCopyRowDim, 
@@ -693,8 +692,7 @@ int check(Epetra_VbrMatrix& A,
 
     // Initiate a view of block row in local index space (Version 1)
     A.BeginExtractMyBlockRowView(MyRow, MyView1RowDim, 
-				 MyView1NumBlockEntries, MyView1BlockIndices,
-				 MyView1ColDims, MyView1LDAs);
+				 MyView1NumBlockEntries, MyView1BlockIndices);
     // Set pointers to values
     for (j=0; j<MyView1NumBlockEntries; j++) 
       A.ExtractEntryView(MyView1ValuesPointers[j]);
@@ -702,8 +700,8 @@ int check(Epetra_VbrMatrix& A,
 
     // Extract a view of block row in local index space (version 2)
     A.ExtractMyBlockRowView(MyRow, MyView2RowDim, 
-				 MyView2NumBlockEntries, MyView2BlockIndices,
-				 MyView2ColDims, MyView2LDAs, MyView2ValuesPointers);
+			    MyView2NumBlockEntries, MyView2BlockIndices,
+			    MyView2ValuesPointers);
 
     forierr += !(MyPointersNumBlockEntries==GlobalPointersNumBlockEntries);
     forierr += !(MyPointersNumBlockEntries==MyCopyNumBlockEntries);
@@ -719,39 +717,45 @@ int check(Epetra_VbrMatrix& A,
       forierr += !(A.LCID(GlobalPointersBlockIndices[j])==MyPointersBlockIndices[j]);
       forierr += !(GlobalPointersBlockIndices[j]==GlobalCopyBlockIndices[j]);
       
-      forierr += !(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
-			   MyPointersRowDim, MyPointersColDims[j], 
-			   GlobalPointersValuesPointers[j], GlobalPointersLDAs[j], 
-			   GlobalPointersRowDim, GlobalPointersColDims[j])==0);
-      forierr += !(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
-			   MyPointersRowDim, MyPointersColDims[j], 
+      Epetra_SerialDenseMatrix* my = MyPointersValuesPointers[j];
+      Epetra_SerialDenseMatrix* global = GlobalPointersValuesPointers[j];
+
+      Epetra_SerialDenseMatrix* myview1 = MyView1ValuesPointers[j];
+      Epetra_SerialDenseMatrix* myview2 = MyView2ValuesPointers[j];
+
+      forierr += !(CompareValues(my->A(), my->LDA(), 
+			   MyPointersRowDim, my->N(), 
+			   global->A(), global->LDA(), 
+			   GlobalPointersRowDim, global->N())==0);
+      forierr += !(CompareValues(my->A(), my->LDA(), 
+			   MyPointersRowDim, my->N(), 
 			   MyCopyValuesPointers[j], MyCopyLDAs[j], 
 			   MyCopyRowDim, MyCopyColDims[j])==0);
-      forierr += !(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
-			   MyPointersRowDim, MyPointersColDims[j], 
+      forierr += !(CompareValues(my->A(), my->LDA(), 
+			   MyPointersRowDim, my->N(), 
 			   GlobalCopyValuesPointers[j], GlobalCopyLDAs[j], 
 			   GlobalCopyRowDim, GlobalCopyColDims[j])==0);
-      forierr += !(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
-			   MyPointersRowDim, MyPointersColDims[j], 
-			   MyView1ValuesPointers[j], MyView1LDAs[j], 
-			   MyView1RowDim, MyView1ColDims[j])==0);
-      forierr += !(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
-			   MyPointersRowDim, MyPointersColDims[j], 
-			   MyView2ValuesPointers[j], MyView2LDAs[j], 
-			   MyView2RowDim, MyView2ColDims[j])==0);
+      forierr += !(CompareValues(my->A(), my->LDA(), 
+			   MyPointersRowDim, my->N(), 
+			   myview1->A(), myview1->LDA(), 
+			   MyView1RowDim, myview1->N())==0);
+      forierr += !(CompareValues(my->A(), my->LDA(),
+			   MyPointersRowDim, my->N(),
+				 myview2->A(), myview2->LDA(),
+			   MyView2RowDim, myview2->N())==0);
     }
   }
   EPETRA_TEST_ERR(forierr,ierr);
 
   // GlobalRowView should be illegal (since we have local indices)
   EPETRA_TEST_ERR(!(A.BeginExtractGlobalBlockRowView(A.GRID(0), MyView1RowDim, 
-					  MyView1NumBlockEntries, MyView1BlockIndices,
-					  MyView1ColDims, MyView1LDAs)==-2),ierr);
+						     MyView1NumBlockEntries,
+						     MyView1BlockIndices)==-2),ierr);
   
   // Extract a view of block row in local index space (version 2)
   EPETRA_TEST_ERR(!(A.ExtractGlobalBlockRowView(A.GRID(0), MyView2RowDim, 
 				     MyView2NumBlockEntries, MyView2BlockIndices,
-				     MyView2ColDims, MyView2LDAs, MyView2ValuesPointers)==-2),ierr);
+				     MyView2ValuesPointers)==-2),ierr);
   
   delete [] MyPointersBlockIndices;
   delete [] GlobalPointersBlockIndices;
@@ -846,20 +850,17 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
   int numBlockEntries = 0;
   int RowDim;
   int* BlockIndices = new int[numMyRows];
-  int* ColDims;
-  int* LDAs;
-  double** Values;
+  Epetra_SerialDenseMatrix** Values;
 
   for(i=myFirstRow; i<=myLastRow; ++i) {
     EPETRA_TEST_ERR( A.ExtractGlobalBlockRowPointers(i, numCols,
 					       RowDim, numBlockEntries,
-					       BlockIndices, ColDims,
-					       LDAs, Values), ierr);
+					       BlockIndices, Values), ierr);
 
     if (numMyRows != numBlockEntries) return(-1);
     if (RowDim != 1) return(-2);
     for(j=0; j<numBlockEntries; ++j) {
-      if (Values[j][0] != 1.0) {
+      if (Values[j]->A()[0] != 1.0) {
 	cout << "Row " << i << " Values["<<j<<"][0]: "<< Values[j][0]
 	     << " should be 1.0" << endl;
 	return(-3); //comment-out this return to de-activate this test

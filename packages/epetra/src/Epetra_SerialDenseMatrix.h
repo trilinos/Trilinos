@@ -152,7 +152,7 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
   */
   int Reshape(int NumRows, int NumCols);
   //@}
-  
+
   //@{ \name Mathematical methods
 
   //! Matrix-Matrix multiplication, \e this = ScalarThis*\e this + ScalarAB*A*B.
@@ -238,6 +238,16 @@ This function performs a variety of matrix-matrix multiply operations.
   */
     Epetra_SerialDenseMatrix & operator = (const Epetra_SerialDenseMatrix & Source);
 
+  //! Add one matrix to another.
+  /*!
+    The operator+= allows one to add the values from one existin SerialDenseMatrix to another, as
+    long as there is enough room in the target to hold the source.
+
+    \return Values of the left hand side matrix are modified by the addition
+    of the values of the right hand side matrix.
+  */
+    Epetra_SerialDenseMatrix & operator += (const Epetra_SerialDenseMatrix & Source);
+
   //! Element access function.
   /*!
     The parentheses operator returns the element in the ith row and jth column if A(i,j) is
@@ -294,7 +304,9 @@ This function performs a variety of matrix-matrix multiply operations.
   //@}
  protected:
 
-  void CopyMat(double * A, int LDA, int NumRows, int NumCols, double * B, int LDB);
+  void CopyMat(double * A, int LDA, int NumRows, int NumCols,
+	       double * B, int LDB,
+	       bool add=false);
   void DeleteArrays(void);
 
   int M_;

@@ -25,12 +25,13 @@
 #ifndef _EPETRA_VBRMATRIX_H_
 #define _EPETRA_VBRMATRIX_H_
 
-#include "Epetra_DistObject.h" 
-#include "Epetra_CompObject.h" 
-#include "Epetra_BLAS.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_Operator.h"
-#include "Epetra_CrsGraph.h"
+#include <Epetra_DistObject.h> 
+#include <Epetra_CompObject.h> 
+#include <Epetra_BLAS.h>
+#include <Epetra_RowMatrix.h>
+#include <Epetra_Operator.h>
+#include <Epetra_CrsGraph.h>
+#include <Epetra_SerialDenseMatrix.h>
 class Epetra_BlockMap;
 class Epetra_Map;
 class Epetra_Import;
@@ -346,17 +347,14 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param Out
 	   BlockIndices - Extracted global column indices for the corresponding block entries.
     \param Out
-	   ColDim - Pointer to list of column dimensions for each corresponding block entry that pointed to by Values.
-    \param Out
-	   LDAs - Pointer to list of leading dimensions for each corresponding block entry that is pointed to by Values.
-    \param Out
 	   Values - Pointer to list of pointers to block entries. Note that the actual values are not copied.
 	  
     \return Integer error code, set to 0 if successful.
   */
     int ExtractGlobalBlockRowPointers(int BlockRow, int MaxNumBlockEntries, 
 				      int & RowDim,  int & NumBlockEntries, 
-				      int * BlockIndices, int * & ColDims, int * & LDAs, double ** & Values) const;
+				      int * BlockIndices,
+				      Epetra_SerialDenseMatrix ** & Values) const;
 
     //! Copy the block indices into user-provided array, set pointers for rest of data for specified local block row.
     /*! 
@@ -377,17 +375,14 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param Out
 	   BlockIndices - Extracted local column indices for the corresponding block entries.
     \param Out
-	   ColDim - Pointer to list of column dimensions for each corresponding block entry that pointed to by Values.
-    \param Out
-	   LDAs - Pointer to list of leading dimensions for each corresponding block entry that is pointed to by Values.
-    \param Out
 	   Values - Pointer to list of pointers to block entries. Note that the actual values are not copied.
 	  
     \return Integer error code, set to 0 if successful.
   */
     int ExtractMyBlockRowPointers(int BlockRow, int MaxNumBlockEntries, 
-				       int & RowDim, int & NumBlockEntries, 
-				       int * BlockIndices, int * & ColDims, int * & LDAs, double ** & Values) const;
+				  int & RowDim, int & NumBlockEntries, 
+				  int * BlockIndices,
+				  Epetra_SerialDenseMatrix** & Values) const;
 
     //! Initiates a copy of the specified global row in user-provided arrays.
     /*! 
@@ -428,8 +423,8 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful.
   */
     int BeginExtractMyBlockRowCopy(int BlockRow, int MaxNumBlockEntries, 
-				       int & RowDim, int & NumBlockEntries, 
-				       int * BlockIndices, int * ColDims) const;
+				   int & RowDim, int & NumBlockEntries, 
+				   int * BlockIndices, int * ColDims) const;
 
     //! Extract a copy of an entry from the block row specified by one of the BeginExtract routines.
     /*! Once BeginExtractGlobalBlockRowCopy() or BeginExtractMyBlockRowCopy() is called, you can extract
@@ -459,15 +454,11 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	   NumBlockEntries - Number of nonzero entries to be viewed.
     \param Out
 	   BlockIndices - Pointer to global column indices for the corresponding block entries.
-    \param Out
-	   ColDim - Pointer to list of column dimensions for each corresponding block entry that will be viewed.
-    \param Out
-	   LDAs - Pointer to list of leading dimensions for each corresponding block entry that will be viewed.
 	  
     \return Integer error code, set to 0 if successful.
   */
     int BeginExtractGlobalBlockRowView(int BlockRow, int & RowDim, int & NumBlockEntries, 
-				       int * & BlockIndices, int * & ColDims, int * & LDAs) const;
+				       int * & BlockIndices) const;
 
     //! Initiates a view of the specified local row, only works if matrix indices are in local mode.
     /*! 
@@ -479,26 +470,22 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	   NumBlockEntries - Number of nonzero entries to be viewed.
     \param Out
 	   BlockIndices - Pointer to local column indices for the corresponding block entries.
-    \param Out
-	   ColDim - Pointer to list of column dimensions for each corresponding block entry that will be viewed.
-    \param Out
-	   LDAs - Pointer to list of leading dimensions for each corresponding block entry that will be viewed.
 	  
     \return Integer error code, set to 0 if successful.
   */
     int BeginExtractMyBlockRowView(int BlockRow, int & RowDim, int & NumBlockEntries, 
-				       int * & BlockIndices, int * & ColDims, int * & LDAs) const;
+				   int * & BlockIndices) const;
 
 
-    //! Returns a pointer to, and leading dimension o, the current block entry.
+    //! Returns a pointer to the current block entry.
     /*! After a call to BeginExtractGlobal() or BlockRowViewBeginExtractMyBlockRowView(),
-        ExtractEntryView() can be called up to NumBlockEntries times to get pointer and stride
-	information for each block entry in the specified block row.
+        ExtractEntryView() can be called up to NumBlockEntries times to get each block entry in the
+	specified block row.
     \param InOut
-           Values - A pointer that will be set to point to the starting address of the current block entry.
+           entry - A pointer that will be set to the current block entry.
     */
     
-    int ExtractEntryView(double * & Values) const;
+    int ExtractEntryView(Epetra_SerialDenseMatrix* & entry) const;
 
     //! Initiates a view of the specified global row, only works if matrix indices are in global mode.
     /*! 
@@ -511,16 +498,13 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param Out
 	   BlockIndices - Pointer to global column indices for the corresponding block entries.
     \param Out
-	   ColDim - Pointer to list of column dimensions for each corresponding block entry that will be viewed.
-    \param Out
-	   LDAs - Pointer to list of leading dimensions for each corresponding block entry that will be viewed.
-    \param Out
 	   Values - Pointer to an array of pointers to the block entries in the specified block row.
 	  
     \return Integer error code, set to 0 if successful.
   */
     int ExtractGlobalBlockRowView(int BlockRow, int & RowDim, int & NumBlockEntries, 
-				  int * & BlockIndices, int * & ColDims, int * & LDAs, double ** & Values) const;
+				  int * & BlockIndices,
+				  Epetra_SerialDenseMatrix** & Values) const;
 
     //! Initiates a view of the specified local row, only works if matrix indices are in local mode.
     /*! 
@@ -533,16 +517,13 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param Out
 	   BlockIndices - Pointer to local column indices for the corresponding block entries.
     \param Out
-	   ColDim - Pointer to list of column dimensions for each corresponding block entry that will be viewed.
-    \param Out
-	   LDAs - Pointer to list of leading dimensions for each corresponding block entry that will be viewed.
-    \param Out
 	   Values - Pointer to an array of pointers to the block entries in the specified block row.
 	  
     \return Integer error code, set to 0 if successful.
   */
     int ExtractMyBlockRowView(int BlockRow, int & RowDim, int & NumBlockEntries, 
-			      int * & BlockIndices, int * & ColDims, int * & LDAs, double ** & Values) const;
+			      int * & BlockIndices,
+			      Epetra_SerialDenseMatrix** & Values) const;
 
 
     //! Returns a copy of the main diagonal in a user-provided vector.
@@ -1056,7 +1037,7 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
  protected:
     bool Allocated() const {return(Allocated_);};
     int SetAllocated(bool Flag) {Allocated_ = Flag; return(0);};
-    double *** Values() const {return(Values_);};
+    Epetra_SerialDenseMatrix *** Values() const {return(Entries_);};
 
   // Internal utilities
 
@@ -1083,13 +1064,13 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 		       bool ExtractView, bool IndicesAreLocal) const;
   int ExtractBlockDimsCopy(int NumBlockEntries, int * ColDims) const;
   int ExtractBlockRowPointers(int BlockRow, int MaxNumBlockEntries, 
-				  int & RowDim, int & NumBlockEntries, 
-				  int * BlockIndices, int * & ColDims, 
-				  int * & LDAs, double ** & Values, bool IndicesAreLocal) const;
+			      int & RowDim, int & NumBlockEntries, 
+			      int * BlockIndices, 
+			      Epetra_SerialDenseMatrix ** & Values,
+			      bool IndicesAreLocal) const;
   int BeginExtractBlockRowView(int BlockRow, int & RowDim, int & NumBlockEntries, 
-			       int * & BlockIndices, int * & ColDims, 
-			       int * & LDAs, bool IndicesAreLocal) const;
-  int ExtractBlockDimsView(int NumBlockEntries, int * & ColDims, int * & LDAs) const;
+			       int * & BlockIndices, 
+			       bool IndicesAreLocal) const;
   int CopyMatDiag(double * A, int LDA, int NumRows, int NumCols, 
 		  double * Diagonal) const;
   int ReplaceMatDiag(double * A, int LDA, int NumRows, int NumCols, 
@@ -1098,15 +1079,15 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   void BlockRowMultiply(bool TransA, int RowDim, int NumEntries, 
 			int * BlockIndices, int RowOff,
 			int * FirstPointInElementList, int * ElementSizeList,
-			double Alpha, double ** As, int * LDAs, 
+			double Alpha, Epetra_SerialDenseMatrix** As,
 			double ** X, double Beta, double ** Y, int NumVectors) const;
   int InverseSums(bool DoRows, Epetra_Vector& x) const;
   int Scale(bool DoRows, const Epetra_Vector& x);
   void BlockRowNormInf(int RowDim, int NumEntries, 
-		       int * ColDims, int * LDAs, double ** As, 
+		       Epetra_SerialDenseMatrix** As, 
 		       double * Y) const;
   void BlockRowNormOne(int RowDim, int NumEntries, int * BlockRowIndices,
-		       int * ColDims, int * LDAs, double ** As, 
+		       Epetra_SerialDenseMatrix** As, 
 		       int * ColFirstPointInElementList, double * x) const;
   void SetStaticGraph(bool Flag) {StaticGraph_ = Flag;};
 
@@ -1151,9 +1132,8 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   int * ElementSizeList_;
   int * FirstPointInElementList_;
 
-  double ***Values_;
-  int ** ColDims_;
-  int ** LDAs_;
+  Epetra_SerialDenseMatrix ***Entries_;
+
   double **All_Values_;
   mutable double NormInf_;
   mutable double NormOne_;
@@ -1163,9 +1143,7 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
   // State variables needed for constructing matrix entry-by-entry
   mutable int *TempRowDims_;
-  mutable int *TempColDims_;
-  mutable int *TempLDAs_;
-  mutable double **TempValues_;
+  mutable Epetra_SerialDenseMatrix **TempEntries_;
   mutable int LenTemps_;
   mutable int CurBlockRow_;
   mutable int CurNumBlockEntries_;
@@ -1185,19 +1163,19 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   // State variable for extracting block diagonal entries
   mutable int CurBlockDiag_;
 
-	// Maps and importer that support the Epetra_RowMatrix interface
-	mutable Epetra_Map * RowMatrixRowMap_;
-	mutable Epetra_Map * RowMatrixColMap_;
-	mutable Epetra_Import * RowMatrixImporter_;
+  // Maps and importer that support the Epetra_RowMatrix interface
+  mutable Epetra_Map * RowMatrixRowMap_;
+  mutable Epetra_Map * RowMatrixColMap_;
+  mutable Epetra_Import * RowMatrixImporter_;
 
-	// Maps that support the Epetra_Operator interface
-	mutable Epetra_Map * OperatorDomainMap_;
-	mutable Epetra_Map * OperatorRangeMap_;
-	mutable Epetra_MultiVector * OperatorX_;
-	mutable Epetra_MultiVector * OperatorY_;
+  // Maps that support the Epetra_Operator interface
+  mutable Epetra_Map * OperatorDomainMap_;
+  mutable Epetra_Map * OperatorRangeMap_;
+  mutable Epetra_MultiVector * OperatorX_;
+  mutable Epetra_MultiVector * OperatorY_;
 
-	// bool to indicate if above four point maps and importer have already been created
-	mutable bool HavePointObjects_;
+  // bool to indicate if above four point maps and importer have already been created
+  mutable bool HavePointObjects_;
 
 };
 
