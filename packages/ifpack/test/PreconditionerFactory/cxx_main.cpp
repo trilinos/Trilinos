@@ -43,7 +43,9 @@
 #include "AztecOO.h"
 #include "Ifpack_CrsIct.h"
 #include "Ifpack_DropFilter.h"
+#ifdef HAVE_IFPACK_AMESOS
 #include "Amesos_TestRowMatrix.h"
+#endif
 
 using namespace Trilinos_Util;
 
