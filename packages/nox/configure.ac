@@ -601,13 +601,13 @@ BUILD_ANY_EXAMPLES=no
 AC_DEFUN(NOX_INTERFACE,
 [
   
-  AC_ARG_ENABLE(nox$1,
+  AC_ARG_ENABLE(nox-$1,
   [AC_HELP_STRING([--enable-nox-$1],[compile $1 interace libraries])],
   [ADDON_$1=$enableval],
   [ADDON_$1=no]
   )
   
-  AC_ARG_ENABLE(nox$1-examples,
+  AC_ARG_ENABLE(nox-$1-examples,
   [AC_HELP_STRING([--enable-nox-$1-examples],[compile $1 interface examples])],
   [ADDON_$1_EXAMPLES=${enableval}],
   [ADDON_$1_EXAMPLES=no]

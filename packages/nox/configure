@@ -3611,18 +3611,18 @@ BUILD_ANY_EXAMPLES=no
 
 
 
-  # Check whether --enable-noxlapack or --disable-noxlapack was given.
-if test "${enable_noxlapack+set}" = set; then
-  enableval="$enable_noxlapack"
+  # Check whether --enable-nox-lapack or --disable-nox-lapack was given.
+if test "${enable_nox_lapack+set}" = set; then
+  enableval="$enable_nox_lapack"
   ADDON_lapack=$enableval
 else
   ADDON_lapack=no
 
 fi;
 
-  # Check whether --enable-noxlapack-examples or --disable-noxlapack-examples was given.
-if test "${enable_noxlapack_examples+set}" = set; then
-  enableval="$enable_noxlapack_examples"
+  # Check whether --enable-nox-lapack-examples or --disable-nox-lapack-examples was given.
+if test "${enable_nox_lapack_examples+set}" = set; then
+  enableval="$enable_nox_lapack_examples"
   ADDON_lapack_EXAMPLES=${enableval}
 else
   ADDON_lapack_EXAMPLES=no
@@ -3671,18 +3671,18 @@ fi
 
 
 
-  # Check whether --enable-noxepetra or --disable-noxepetra was given.
-if test "${enable_noxepetra+set}" = set; then
-  enableval="$enable_noxepetra"
+  # Check whether --enable-nox-epetra or --disable-nox-epetra was given.
+if test "${enable_nox_epetra+set}" = set; then
+  enableval="$enable_nox_epetra"
   ADDON_epetra=$enableval
 else
   ADDON_epetra=no
 
 fi;
 
-  # Check whether --enable-noxepetra-examples or --disable-noxepetra-examples was given.
-if test "${enable_noxepetra_examples+set}" = set; then
-  enableval="$enable_noxepetra_examples"
+  # Check whether --enable-nox-epetra-examples or --disable-nox-epetra-examples was given.
+if test "${enable_nox_epetra_examples+set}" = set; then
+  enableval="$enable_nox_epetra_examples"
   ADDON_epetra_EXAMPLES=${enableval}
 else
   ADDON_epetra_EXAMPLES=no
@@ -3731,18 +3731,18 @@ fi
 
 
 
-  # Check whether --enable-noxpetsc or --disable-noxpetsc was given.
-if test "${enable_noxpetsc+set}" = set; then
-  enableval="$enable_noxpetsc"
+  # Check whether --enable-nox-petsc or --disable-nox-petsc was given.
+if test "${enable_nox_petsc+set}" = set; then
+  enableval="$enable_nox_petsc"
   ADDON_petsc=$enableval
 else
   ADDON_petsc=no
 
 fi;
 
-  # Check whether --enable-noxpetsc-examples or --disable-noxpetsc-examples was given.
-if test "${enable_noxpetsc_examples+set}" = set; then
-  enableval="$enable_noxpetsc_examples"
+  # Check whether --enable-nox-petsc-examples or --disable-nox-petsc-examples was given.
+if test "${enable_nox_petsc_examples+set}" = set; then
+  enableval="$enable_nox_petsc_examples"
   ADDON_petsc_EXAMPLES=${enableval}
 else
   ADDON_petsc_EXAMPLES=no
