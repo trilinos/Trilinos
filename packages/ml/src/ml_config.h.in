@@ -77,6 +77,9 @@
 /* Define if want to build with ml_aztec2_1 enabled */
 #undef HAVE_ML_AZTEC2_1
 
+/* Define if want to build with aztecoo enabled */
+#undef HAVE_ML_AZTECOO
+
 /* Define if want to build with ml_benchmarking enabled */
 #undef HAVE_ML_BENCHMARKING
 
