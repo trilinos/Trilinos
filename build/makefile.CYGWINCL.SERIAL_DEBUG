@@ -18,7 +18,7 @@ include $(TRILINOS_HOME)/build/makefile.defaults
 ###    "$(TRILINOS_HOME_WIN)\packages\anasazi\src" where
 ###    Note that TRILINOS_HOME_WIN and TRILINOS_HOME must be the
 ###    same.
-TRILINOS_HOME_WIN = d:\software\Trilinos
+### TRILINOS_HOME_WIN = d:\software\Trilinos
 ###
 ### 2. Object files are created with .obj AND libraries end with .lib
 ###    Roscoe suggested the folllowing obvious approach:
@@ -107,7 +107,7 @@ RANLIB=
 # flags. Note that cl and f77 accept flags pre-appended with
 # a "-" or a "/".
 #
-ARCH_CXXFLAGS= -ZI -GR -nologo
+ARCH_CXXFLAGS= -ZI -GR -GX -nologo
 ARCH_CFLAGS= -ZI -Za -nologo
 ARCH_FFLAGS= -debug -nologo
 
@@ -123,7 +123,12 @@ MPI_INCLUDES =
 ARCH_INCLUDES = $(MPI_INCLUDES)
 
 LIBMPI =
-ARCH_LIBS = 
+ARCH_LIBS0 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfconsol.lib"
+ARCH_LIBS1 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfor.lib"
+ARCH_LIBS2 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dformd.lib"
+ARCH_LIBS3 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfport.lib"
+ARCH_LIBS = $(ARCH_LIBS0) $(ARCH_LIBS1) $(ARCH_LIBS2) $(ARCH_LIBS3)
+#ARCH_LIBS=
 
 # Only hard links are avialable on cygwin. The default on
 # unix/linux systems is to use soft links.
@@ -145,8 +150,9 @@ LN=ln -v
 
 # LIBBLAS = mkl_c.lib mkl_p3.lib
 # LIBLAPACK = mkl_lapack.lib
-LIBBLAS = cxml.lib
-LIBLAPACK = cxml.lib
+LIBBLAS = "C:\Program Files\Microsoft Visual Studio\DF98\CXML\LIB\cxml.lib"
+#LIBBLAS = cxml.lib
+LIBLAPACK = 
 LIBSPBLAS = "$(TRILINOS_HOME_WIN)\external\spblas\lib\$(TRILINOS_TARGET)\libspblas.lib"
 LIBSUPERLU   = "d:\software\SuperLU\superlu_win2000.lib"
 LIBY12M   = "$(TRILINOS_HOME_WIN)\external\y12m\lib\$(TRILINOS_TARGET)\y12m.lib"
