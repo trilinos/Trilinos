@@ -30,11 +30,12 @@ echo "}" >> temprog.c
 #cat temprog.c
 ${COMPILE} ${COMP_FLAGS} -I ../Obj -c temprog.c
 ${LINKER} ${COMP_FLAGS} temprog.o ${THELIBRARIES} ${THEARCHS} 2> .undefs
-bb=`cat .undefs | sed "s/$i.o//g" | sed "s/In function.*://" | grep -i $i | wc | sed "s/^ *//" | sed "s/ .*//"`
+bb=`cat .undefs | sed "s/$i.o//g"| sed "s/$i.f//g" | sed "s/In function.*://" | grep -i $i | wc | sed "s/^ *//" | sed "s/ .*//"`
 echo $i $bb
+grep -i $i .undefs
 if test $bb -eq 0
 then
-NAME=`echo $i | capper`
+NAME=`echo $i | ./capper`
 ${echo} "\\" >> .thedefs
 ${echo} -n "-DML_${NAME}_FUNC ">> .thedefs
 fi
