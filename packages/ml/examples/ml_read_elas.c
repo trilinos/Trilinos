@@ -29,18 +29,21 @@
 
 extern int AZ_using_fortran;
 int    parasails_factorized = 0;
-int    parasails_sym        = 0;
-double parasails_thresh     = 0.0;
-int    parasails_nlevels    = 1;
+int    parasails_sym        = 1;
+double parasails_thresh     = 0.01;
+int    parasails_nlevels    = 0;
 double parasails_filter     = 0.;
 double parasails_loadbal    = 0.;
 
 
+  int    *data_org = NULL, *update = NULL, *external = NULL;
+  int    *update_index = NULL, *extern_index = NULL;
+  int    *cpntr = NULL, *bindx = NULL, N_update, iii;
 
 
 int main(int argc, char *argv[])
 {
-	int num_PDE_eqns=1, N_levels=10, nsmooth=1;
+	int num_PDE_eqns=3, N_levels=3, nsmooth=2;
 
 	int    leng, level, N_grid_pts, coarsest_level;
 
@@ -52,9 +55,6 @@ int main(int argc, char *argv[])
 
   /* data structure for matrix corresponding to the fine grid */
 
-  int    *data_org = NULL, *update = NULL, *external = NULL;
-  int    *update_index = NULL, *extern_index = NULL;
-  int    *cpntr = NULL, *bindx = NULL, N_update, iii;
   double *val = NULL, *xxx, *rhs, solve_time, setup_time, start_time;
   AZ_MATRIX *Amat;
   AZ_PRECOND *Pmat = NULL;
@@ -67,7 +67,18 @@ double *mode, *rigid;
 char filename[80];
 double alpha;
 int    one = 1;
+int allocated, *newbindx, offset, current, *block_list = NULL,  k, block;
+double *newval;
+#ifdef ML_partition
+   FILE *fp2;
+   int *block_list, count, k;
 
+   if (argc != 2) {
+     printf("Usage: ml_read_elas num_processors\n");
+     exit(1);
+   }
+   else sscanf(argv[1],"%d",&nblocks);
+#endif
 
 
 #ifdef ML_MPI
@@ -108,12 +119,19 @@ int    one = 1;
   /* initialize the list of global indices. NOTE: the list of global */
   /* indices must be in ascending order so that subsequent calls to  */
   /* AZ_find_index() will function properly. */
-	
-  AZ_read_update(&N_update, &update, proc_config, N_grid_pts, num_PDE_eqns,
-                 AZ_linear);
-	
+
+  if (proc_config[AZ_N_procs] == 1) i = AZ_linear;
+  else i = AZ_file;
+  AZ_read_update(&N_update, &update, proc_config, N_grid_pts, num_PDE_eqns,i);
 	
   AZ_read_msr_matrix(update, &val, &bindx, N_update, proc_config);
+
+
+  /* This code is to fix things up so that we are sure we have */ 
+  /* all block (including the ghost nodes the same size.       */
+
+  AZ_block_MSR(&bindx, &val, N_update, num_PDE_eqns, update);
+
 
   AZ_transform(proc_config, &external, bindx, val,  update, &update_index,
 	       &extern_index, &data_org, N_update, 0, 0, 0, &cpntr,
@@ -135,11 +153,38 @@ int    one = 1;
   /* set up discretization matrix and matrix vector function */
 	
   AZ_ML_Set_Amat(ml, N_levels-1, N_update, N_update, Amat, proc_config);
+
+#ifdef ML_partition
+
+  /* this code is meant to partition the matrices so that things can be */
+  /* run in parallel later.                                             */
+  /* It is meant to be run on only one processor.                       */
+  fp2 = fopen("partition_file","w");
+
+  ML_Operator_AmalgamateAndDropWeak(&(ml->Amat[N_levels-1]), num_PDE_eqns, 0.0);
+  ML_Gen_Blocks_Metis(ml, N_levels-1, &nblocks, &block_list);
+
+  for (i = 0; i < nblocks; i++) {
+     count = 0;
+     for (j = 0; j < ml->Amat[N_levels-1].outvec_leng; j++) {
+        if (block_list[j] == i) count++;
+     }
+     fprintf(fp2,"   %d\n",count*num_PDE_eqns);
+     for (j = 0; j < ml->Amat[N_levels-1].outvec_leng; j++) {
+        if (block_list[j] == i) {
+           for (k = 0; k < num_PDE_eqns; k++)  fprintf(fp2,"%d\n",j*num_PDE_eqns+k);
+        }
+     }
+  }
+  fclose(fp2);
+  ML_Operator_UnAmalgamateAndDropWeak(&(ml->Amat[N_levels-1]),num_PDE_eqns,0.0);
+  exit(1);
+#endif
 	
   ML_Aggregate_Create( &ag );
-ML_Aggregate_Set_CoarsenScheme_MIS(ag);
-ML_Aggregate_Set_Threshold(ag, 0.0);
-ML_Aggregate_Set_MaxCoarseSize( ag, 300);
+  ML_Aggregate_Set_CoarsenScheme_MIS(ag);
+  ML_Aggregate_Set_Threshold(ag, 0.0);
+   ML_Aggregate_Set_MaxCoarseSize( ag, 300);
 
 
   /* read in the rigid body modes */
@@ -163,7 +208,10 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
     }
 
     rhs=(double *)malloc(leng*sizeof(double));
+/*
     AZ_random_vector(rhs, data_org, proc_config);
+*/
+for (i = 0; i < N_update; i++) rhs[i] = (double) update[i];
 
     for (i = 0; i < Nrigid; i++) {
            sprintf(filename,"rigid_body_mode%d",i+1);
@@ -216,30 +264,46 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
 	printf("Coarse level = %d \n", coarsest_level);
 	
    /* set up smoothers */
+   blocks = (int *) ML_allocate(sizeof(int)*N_update);
 	
    for (level = N_levels-1; level > coarsest_level; level--) {
 		
-      ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, parasails_sym, 
-                                parasails_thresh, parasails_nlevels, parasails_filter,0,0);
+/*
+      ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 
+                                parasails_sym, parasails_thresh, 
+                                parasails_nlevels, parasails_filter,
+                                parasails_loadbal, parasails_factorized);
+*/
 /*
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,1.);
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
 */
+/*
+      ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth,.4);
+      ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth,.4);
+*/
 
-      /*   
+/*   
       nblocks = ML_Aggregate_Get_AggrCount( ag, level );
       ML_Aggregate_Get_AggrMap( ag, level, &blocks);
+      nblocks = 250;
+      ML_Gen_Blocks_Metis(ml, level, &nblocks, &blocks);
+      ML_Gen_Smoother_VBlockSymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
+                                        nblocks, blocks);
+*/
+      nblocks = ml->Amat[level].invec_leng;
+      for (i =0; i < nblocks; i++) blocks[i] = i;
+      ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml , level, ML_PRESMOOTHER,
+                                                  nsmooth, 1., nblocks, blocks);
+      ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml, level, ML_POSTSMOOTHER,
+                                                  nsmooth, 1., nblocks, blocks);
+/*
       ML_Gen_Smoother_VBlockGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,
                                         nblocks, blocks);
       ML_Gen_Smoother_VBlockGaussSeidel( ml , level, ML_POSTSMOOTHER, nsmooth,
                                                  nblocks, blocks);
-
-      ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth, 0.67, 
-                                       num_PDE_eqns);
-      ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth, 0.67, 
-                                       num_PDE_eqns); 
-        Note: num_PDE_eqns needs to be set to 6 after first time through
-      */
+*/
+      num_PDE_eqns = 6;
    }
 	
    ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
@@ -253,7 +317,7 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
    options[AZ_precond]  = AZ_user_precond;
    options[AZ_conv]     = AZ_r0;
    options[AZ_output]   = 1;
-   options[AZ_max_iter] = 1500;
+   options[AZ_max_iter] = 300;
    options[AZ_poly_ord] = 5;
    options[AZ_kspace]   = 130;
    params[AZ_tol]       = 1.0e-8;
@@ -262,7 +326,6 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
    setup_time = AZ_second() - start_time;
 	
    xxx = (double *) malloc( leng*sizeof(double));
-   rhs=(double *)malloc(leng*sizeof(double));
 
    for (iii = 0; iii < leng; iii++) xxx[iii] = 0.0; 
 	
@@ -271,7 +334,6 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
    fp = fopen("AZ_capture_rhs.dat","r");
    if (fp == NULL) {
       if (proc_config[AZ_node] == 0) printf("taking random vector for rhs\n");
-      AZ_random_vector(rhs, data_org, proc_config);
       AZ_reorder_vec(rhs, data_org, update_index, NULL);
    }
    else {
@@ -372,5 +434,3 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
   return 0;
 	
 }
-
-

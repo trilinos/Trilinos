@@ -110,36 +110,40 @@ printf("the length is %d\n",leng);
                  AZ_linear);
 	
 	
-	AZ_read_msr_matrix(update, &val, &bindx, N_update, proc_config);
+  AZ_read_msr_matrix(update, &val, &bindx, N_update, proc_config);
 
-	AZ_transform( proc_config, &external, bindx,
-								val,  update, &update_index,
-								&extern_index, &data_org, N_update,
-								0, 0, 0, &cpntr, AZ_MSR_MATRIX);
-	
-	Amat = AZ_matrix_create( leng );
-	AZ_set_MSR(Amat, bindx, val, data_org, 0, NULL, AZ_LOCAL);
+  /* This code is to fix things up so that we are sure we have */
+  /* all block (including the ghost nodes the same size.       */               
 
-	Amat->matrix_type  = data_org[AZ_matrix_type];
-	
-	data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
-			
-start_time = AZ_second();
-	
-	ML_Create(&ml, N_levels);
-			
-			
-	/* set up discretization matrix and matrix vector function */
-	
-	AZ_ML_Set_Amat(ml, N_levels-1, N_update, N_update, Amat, proc_config);
-	
-        ML_Aggregate_Create( &ag );
-ML_Aggregate_Set_CoarsenScheme_MIS(ag);
-ML_Aggregate_Set_Threshold(ag,0.0);
-ML_Aggregate_Set_SpectralNormScheme_Anorm(ag);
-ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, num_PDE_eqns, NULL, N_update);
-ML_Aggregate_Set_MaxCoarseSize( ag, 1);
+  AZ_block_MSR(&bindx, &val, N_update, num_PDE_eqns, update);
 
+
+  AZ_transform(proc_config, &external, bindx, val,  update, &update_index,
+	       &extern_index, &data_org, N_update, 0, 0, 0, &cpntr, 
+               AZ_MSR_MATRIX);
+	
+  Amat = AZ_matrix_create( leng );
+  AZ_set_MSR(Amat, bindx, val, data_org, 0, NULL, AZ_LOCAL);
+
+  Amat->matrix_type  = data_org[AZ_matrix_type];
+	
+  data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
+			
+  start_time = AZ_second();
+	
+  ML_Create(&ml, N_levels);
+			
+			
+  /* set up discretization matrix and matrix vector function */
+	
+  AZ_ML_Set_Amat(ml, N_levels-1, N_update, N_update, Amat, proc_config);
+	
+  ML_Aggregate_Create( &ag );
+  ML_Aggregate_Set_CoarsenScheme_MIS(ag);
+  ML_Aggregate_Set_Threshold(ag,0.0);
+  ML_Aggregate_Set_SpectralNormScheme_Anorm(ag);
+  ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, num_PDE_eqns, NULL, N_update);
+  ML_Aggregate_Set_MaxCoarseSize( ag, 1);
 
 /*
 ML_Aggregate_Set_RandomOrdering( ag );
@@ -168,48 +172,47 @@ options[AZ_reorder] = 1;
                         proc_config, status, AZ_ONLY_PRECONDITIONER, 
                         ML_PRESMOOTHER,NULL);
 */
- ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 0, parasails_thresh, 0, 0.0,0,0);
-parasails_thresh /= 4.;
+                ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
+                                parasails_sym, parasails_thresh,
+                                parasails_nlevels, parasails_filter,
+                                parasails_loadbal, parasails_factorized);
+
+                parasails_thresh /= 4.;
 
 
 		
-		ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,1.);
-		ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
+		ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, 
+                                               nsmooth,1.);
+		ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, 
+                                               nsmooth,1.);
 /*
                 nblocks = ML_Aggregate_Get_AggrCount( ag, level );
                 ML_Aggregate_Get_AggrMap( ag, level, &blocks);
-                ML_Gen_Smoother_VBlockGaussSeidel( ml , level, ML_PRESMOOTHER, nsmooth,
-                                                 nblocks, blocks);
-                ML_Gen_Smoother_VBlockGaussSeidel( ml , level, ML_POSTSMOOTHER, nsmooth,
-                                                 nblocks, blocks);
+                ML_Gen_Smoother_VBlockGaussSeidel( ml , level, ML_PRESMOOTHER,
+                                                      nsmooth, nblocks, blocks);
+                ML_Gen_Smoother_VBlockGaussSeidel( ml , level, ML_POSTSMOOTHER,
+                                                      nsmooth, nblocks, blocks);
 */
 /*
-		ML_Gen_Smoother_GaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth);
-		ML_Gen_Smoother_GaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth);    
+		ML_Gen_Smoother_GaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth);
+		ML_Gen_Smoother_GaussSeidel(ml, level, ML_POSTSMOOTHER,nsmooth);    
 */
-		
-		/*	ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth, 0.67, num_PDE_eqns);
-				ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth, 0.67, num_PDE_eqns); */
-
 /*
-			ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, .67);
-			ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth, .67 );
-*/
 		
+		ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_PRESMOOTHER, 
+                                                nsmooth, 0.67, num_PDE_eqns);
+		ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_POSTSMOOTHER, 
+                                                nsmooth, 0.67, num_PDE_eqns);
+*/
+/*
+		ML_Gen_Smoother_Jacobi(ml, level, ML_PRESMOOTHER, nsmooth, .67);
+		ML_Gen_Smoother_Jacobi(ml, level, ML_POSTSMOOTHER,nsmooth, .67);
+*/
 		
 	}
 	
 	ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
-/*
-ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 0, parasails_thresh, 0, 0.0,0,0);
-*/
-/*
-ML_Gen_SmootherAztec(ml, coarsest_level, options, params, 
-                        proc_config, status, AZ_ONLY_PRECONDITIONER, 
-                        ML_POSTSMOOTHER,NULL);
-*/
 		
-	
 	ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
 	AZ_defaults(options, params);
 	
