@@ -1,0 +1,11 @@
+PyTrilinos prerequisites:
+
+  python
+  swig version 1.3.19 or better, including runtime libraries
+  Numeric (python module)
+
+Installation procedure:
+
+  make
+  make test
+  make install

@@ -1,0 +1,22 @@
+----
+Test Parameter.List interface
+----
+Direction -> 
+  Method = "Newton"   [unused]
+  Newton -> 
+    Forcing Term Method = "Constant"   [unused]
+    Linear Solver -> 
+      Aztec Solver = "GMRES"   [unused]
+      Max Iterations = 800   [unused]
+      Output Frequency = 50   [unused]
+      Preconditioning = "AztecOO: Jacobian Matrix"   [unused]
+      Scaling = "None"   [unused]
+      Tolerance = 0.0001   [unused]
+Line Search -> 
+  Method = "Full Step"   [unused]
+Nonlinear Solver = "Line Search Based"   [unused]
+Printing -> 
+  MyPID = 0   [unused]
+  Output Information = 63   [unused]
+  Output Precision = 3   [unused]
+  Output Processor = 0   [unused]

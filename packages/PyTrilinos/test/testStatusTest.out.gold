@@ -1,0 +1,12 @@
+----
+Test the StatusTest interface
+----
+??...........OR Combination -> 
+  ??...........AND Combination -> 
+    ??...........F-Norm = 0.000e+00 < 1.000e-06
+                 (Length-Scaled Two-Norm, Absolute Tolerance)
+    ??...........F-Norm = 0.000e+00 < 1.000e-06
+                 (Unscaled Two-Norm, Absolute Tolerance)
+    **...........WRMS-Norm = 0.000e+00 < 1.000e+00
+    ??...........Absolute Update-Norm = 0.000e+00 < 1.000e-05
+  ??...........Number of Iterations = 0 < 20

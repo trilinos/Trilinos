@@ -1,0 +1,35 @@
+----
+Test the SerialDense interface
+----
+v1 = Data access mode: Copy
+A_Copied: yes
+Length(M): 4
+0 1 4 9 
+v2 = Data access mode: Copy
+A_Copied: yes
+Length(M): 4
+0 3 4 3 
+v3 = Data access mode: Copy
+A_Copied: yes
+Length(M): 4
+0 3 4 3 
+m2    = 
+Data access mode: Copy
+A_Copied: yes
+Rows(M): 4
+Columns(N): 4
+LDA: 4
+-2 1 0 0 
+1 -2 1 0 
+0 1 -2 1 
+0 0 1 -2 
+m2inv = 
+Data access mode: Copy
+A_Copied: yes
+Rows(M): 4
+Columns(N): 4
+LDA: 4
+-0.8 -0.6 -0.4 -0.2 
+-0.6 -1.2 -0.8 -0.4 
+-0.4 -0.8 -1.2 -0.6 
+-0.2 -0.4 -0.6 -0.8 

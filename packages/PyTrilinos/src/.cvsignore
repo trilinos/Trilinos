@@ -1,0 +1,7 @@
+.DS_Store
+*~
+*.o
+*_wrap.cxx
+Epetra.py
+EpetraExt.py
+NOX_Epetra.py

@@ -1,0 +1,127 @@
+----
+Test Epetra interface
+----
+comm = { ::Processor 0 of 1 total processors }
+pm = { 
+Number of Global Elements  = 4
+Number of Global Points = 4
+Maximum of all GIDs        = 3
+Minimum of all GIDs        = 0
+Index Base                 = 0
+Constant Element Size      = 1
+
+Number of Local Elements   = 4
+Number of Local Points  = 4
+Maximum of my GIDs         = 3
+Minimum of my GIDs         = 0
+
+         MyPID           Local Index        Global Index  
+             0                 0                 0    
+             0                 1                 1    
+             0                 2                 2    
+             0                 3                 3     }
+pbm = { 
+Number of Global Elements  = 2
+Number of Global Points = 4
+Maximum of all GIDs        = 1
+Minimum of all GIDs        = 0
+Index Base                 = 0
+Constant Element Size      = 2
+
+Number of Local Elements   = 2
+Number of Local Points  = 4
+Maximum of my GIDs         = 1
+Minimum of my GIDs         = 0
+
+         MyPID           Local Index        Global Index  
+             0                 0                 0    
+             0                 1                 1     }
+pv1 = {
+     MyPID           GID               Value  
+         0             0                       1
+         0             1                       1
+         0             2                       1
+         0             3                       1 }
+pv2 = {
+     MyPID         GID/Point             Value  
+         0             0/0                       2
+         0             0/1                       2
+         0             1/0                       2
+         0             1/1                       2 }
+pv3 = {
+     MyPID           GID               Value               Value  
+         0             0                       3                   3
+         0             1                       3                   3
+         0             2                       3                   3
+         0             3                       3                   3 }
+pv4 = {
+     MyPID         GID/Point             Value               Value  
+         0             0/0                       4                   4
+         0             0/1                       4                   4
+         0             1/0                       4                   4
+         0             1/1                       4                   4 }
+Created nparray = [  0.  11.  22.  33.  44.  55.  66.  77.  88.  99.]
+Using nparray, created pvector_1 = {
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       0
+         0             2                       0
+         0             3                       0
+         0             4                       0
+         0             5                       0
+         0             6                       0
+         0             7                       0
+         0             8                       0
+         0             9                       0 }
+Scaled nparray by 1/11.0
+Using nparray, created pvector_2 = {
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       1
+         0             2                       2
+         0             3                       3
+         0             4                       4
+         0             5                       5
+         0             6                       6
+         0             7                       7
+         0             8                       8
+         0             9                       9 }
+Scaled nparray by 11.0
+Using nparray, created pvector_2 = {
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                      11
+         0             2                      22
+         0             3                      33
+         0             4                      44
+         0             5                      55
+         0             6                      66
+         0             7                      77
+         0             8                      88
+         0             9                      99 }
+Scaled nparray by 1/11.0
+Using nparray, loaded pvector_2 = {
+     MyPID           GID               Value  
+         0             0                       0
+         0             1                       1
+         0             2                       2
+         0             3                       3
+         0             4                       4
+         0             5                       5
+         0             6                       6
+         0             7                       7
+         0             8                       8
+         0             9                       9 }
+Scaled pvector_2 in place by 11.0
+pvector_2 = {      MyPID           GID               Value  
+         0             0                       0
+         0             1                      11
+         0             2                      22
+         0             3                      33
+         0             4                      44
+         0             5                      55
+         0             6                      66
+         0             7                      77
+         0             8                      88
+         0             9                      99 }
+Unloaded nparray from modified pvector_2 = [  0.  11.  22.  33.  44.  55.  66.  77.  88.  99.]

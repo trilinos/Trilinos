@@ -1,0 +1,51 @@
+----
+Test an example NOX_Epetra nonlinear problem
+----
+probSize = 11
+colorMap = { 
+ *****************************************
+ Coloring information arranged map element
+ *****************************************
+
+     MyPID           GID               Color  
+         0             0                       3
+         0             1                       2
+         0             2                       1
+         0             3                       3
+         0             4                       2
+         0             5                       1
+         0             6                       3
+         0             7                       2
+         0             8                       1
+         0             9                       3
+         0            10                       2
+
+ **************************************
+ Coloring information arranged by color
+ **************************************
+
+Number of colors in map = 3
+Default color           = 0
+
+     MyPID           LID               Color  
+         0             2                       1
+         0             5                       1
+         0             8                       1
+         0             1                       2
+         0             4                       2
+         0             7                       2
+         0            10                       2
+         0             0                       3
+         0             3                       3
+         0             6                       3
+         0             9                       3 
+}
+
+Status test:
+Nonlinear solver converged!
+
+Final Parameters
+****************
+Nonlinear iterations:    3 
+Total linear iterations: 3 
+Final residual:          2.38600087632e-10
