@@ -54,6 +54,8 @@ static int LB_ParMetis_Jostle(LB *lb, int *num_imp, LB_GID **imp_gids,
   LB_LID **imp_lids, int **imp_procs, int *num_exp, LB_GID **exp_gids,
   LB_LID **exp_lids, int **exp_procs, char *alg, int  *options);
 static int hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n);
+static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
+                 int max_wgt_sum, MPI_Comm comm);
 
 #endif  /* (defined(LB_JOSTLE) || defined(LB_PARMETIS)) */
 
@@ -854,51 +856,11 @@ static int LB_ParMetis_Jostle(
     if (obj_wgt_dim){
       vwgt = (idxtype *)LB_MALLOC(obj_wgt_dim*num_obj
                           * sizeof(idxtype));
+      scale_round_weights(float_vwgt, vwgt, num_obj, obj_wgt_dim, 
+                          MAX_WGT_SUM, lb->Communicator);
 
-      /* Compute local sum of the obj weights (over all dimensions) */
-      /* Check if all weights are integers */
-      flag = 0;
-      sum_wgt_local = 0;
-      for (i=0; i<num_obj*obj_wgt_dim; i++){
-        if (!flag){ 
-          tmp = float_vwgt[i]; /* Converts to nearest int */
-          if (fabs((double)tmp-float_vwgt[i]) > .001){
-            flag = 1;
-          }
-        }
-        sum_wgt_local += float_vwgt[i];
-      }
-      /* Compute global sum of the obj weights */
-      MPI_Allreduce(&flag, &nonint_wgt, 1, 
-          MPI_INT, MPI_LOR, lb->Communicator);
-      MPI_Allreduce(&sum_wgt_local, &sum_wgt, 1, 
-          MPI_FLOAT, MPI_SUM, lb->Communicator);
-
-      if (sum_wgt == 0){
-        fprintf(stderr, "ZOLTAN ERROR: All object weights are zero.\n");
-        FREE_MY_MEMORY;
-        LB_TRACE_EXIT(lb, yo);
-        return LB_FATAL;
-      }
-
-      /* Convert weights to integers between 1 and MAX_WGT_SUM/sum_wgt */
-      scale = 1;
-      /* Scale unless all weights are integers */
-      if (nonint_wgt || (sum_wgt > MAX_WGT_SUM)){
-        scale = MAX_WGT_SUM/sum_wgt;
-      }
       if (lb->Debug_Level >= LB_DEBUG_ALL)
-        printf("[%1d] Debug: Converting vertex (object) weights, nonint_wgt = %d "
-               "sum_wgt = %g, scale = %g\n", lb->Proc, nonint_wgt, sum_wgt, scale);
-
-      for (i=0; i<num_obj*obj_wgt_dim; i++){
-        if (scale==1)
-           vwgt[i] = (int) float_vwgt[i];
-        else
-           vwgt[i] = (int) ceil(float_vwgt[i]*scale);
-      }
-      if (lb->Debug_Level >= LB_DEBUG_ALL)
-        printf("[%1d] Debug: First vertex (object) weights are = %d, %d, %d\n",
+        printf("[%1d] Debug: First object weights are (after scaling) = %d, %d, %d\n",
           lb->Proc, vwgt[0], vwgt[1], vwgt[2]);
       LB_FREE(&float_vwgt);
     }
@@ -1204,6 +1166,60 @@ static int LB_ParMetis_Jostle(
   }
 
   LB_TRACE_EXIT(lb, yo);
+  return LB_OK;
+}
+
+/* 
+ * Scale and round float weights to integer (non-negative) weights 
+ * subject to sum(weights) <= max_wgt_sum.
+ * Only scale if deemed necessary. All weight dimensions are scaled by
+ * the same scaling factor. 
+ */
+
+static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
+                 int max_wgt_sum, MPI_Comm comm)
+{
+  int i, flag, tmp, nonint_wgt; 
+  float scale, sum_wgt_local, sum_wgt;
+
+      /* Compute local sum of the weights (over all dimensions) */
+      /* Check if all weights are integers */
+      flag = 0;
+      sum_wgt_local = 0;
+      for (i=0; i<n*dim; i++){
+        if (!flag){ 
+          tmp = fwgts[i]; /* Converts to nearest int */
+          if (fabs((double)tmp-fwgts[i]) > .001){
+            flag = 1;
+          }
+        }
+        sum_wgt_local += fwgts[i];
+      }
+      /* Compute global sum of the weights */
+      MPI_Allreduce(&flag, &nonint_wgt, 1, 
+          MPI_INT, MPI_LOR, comm);
+      MPI_Allreduce(&sum_wgt_local, &sum_wgt, 1, 
+          MPI_FLOAT, MPI_SUM, comm);
+
+      if (sum_wgt == 0){
+        fprintf(stderr, "ZOLTAN ERROR: All weights are zero.\n");
+        return LB_FATAL;
+      }
+
+      /* Convert weights to integers between 1 and max_wgt_sum/sum_wgt */
+      scale = 1;
+      /* Scale unless all weights are integers */
+      if (nonint_wgt || (sum_wgt > max_wgt_sum)){
+        scale = max_wgt_sum/sum_wgt;
+      }
+
+      for (i=0; i<n*dim; i++){
+        if (scale==1)
+           iwgts[i] = (int) fwgts[i];
+        else
+           iwgts[i] = (int) ceil(fwgts[i]*scale);
+      }
+
   return LB_OK;
 }
 
