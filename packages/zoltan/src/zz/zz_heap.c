@@ -22,7 +22,7 @@ extern "C" {
  *           Not in arranged order.
  */
 
-int heap_init (HEAP *h, int space)
+int heap_init (ZZ *zz, HEAP *h, int space)
 { char *yo = "heap_init";
 
   h->space = space;

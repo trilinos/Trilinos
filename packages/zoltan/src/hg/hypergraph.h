@@ -241,7 +241,7 @@ typedef struct
 #define heap_empty(H)         (((H)->n)==0)
 #define heap_not_empty(H)     (((H)->n)!=0)
 #define heap_max_value(H)     ((H)->d[(H)->ele[0]])
-extern int  heap_init         (HEAP*, int);
+extern int  heap_init         (ZZ *, HEAP*, int);
 extern void heap_free         (HEAP*);
 extern int  heap_check        (HEAP*);
 extern int  heap_input        (HEAP*, int, float);

@@ -114,7 +114,7 @@ static int local_fm (
 
   /* Initialize the heaps and fill them with the gain values */
   for (i=0; i<p; i++)
-    heap_init(&(heap[i]),hg->nVtx);
+    heap_init(zz, &(heap[i]),hg->nVtx);
   for (i=0; i<hg->nVtx; i++)
     heap_input(&(heap[part[i]]),i,gain[i]);
   for (i=0; i<p; i++)
