@@ -256,10 +256,12 @@ IDs of processors that will own the exported objects in the new decomposition
 ** <I>import_global_ids</I>, <B>LB_LID</B> ** <I>import_local_ids</I>,
 int ** <I>import_procs</I>, <B>LB_GID </B>** <I>export_global_ids</I>,
 <B>LB_LID</B> ** <I>export_local_ids</I>, int ** <I>export_procs</I>);&nbsp;
-<HR WIDTH="100%"><B>LB_Free_Data</B> frees the memory allocated by the
+<HR WIDTH="100%"><B>
+LB_Free_Data</B> frees the memory allocated by the
 load-balancing routines to return the results of <B><A HREF="#LB_Balance">LB_Balance</A></B>.
 Memory pointed to by the arguments is freed and the arguments are set to
-NULL.
+NULL.  Note that this does not destroy the load balancing object itself.
+That requires a call to <B><A HREF="#LB_Destroy_Object">LB_Destroy_Object</A></B>.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR>
@@ -327,6 +329,11 @@ objects in the new decomposition (i.e., the destination processors).</TD>
 <HR WIDTH="100%">
 <B>LB_Destroy_Object</B> frees the memory associated with
 a load balancing object and sets the object to NULL.
+Note that <B>LB_Destroy_Object</B> does not deallocate the
+import and export arrays returned from
+<B><A HREF="#LB_Balance">LB_Balance</A></B>.
+This requires a separate call to 
+<B><A HREF="#LB_Free_Data">LB_Free_Data</A></B>.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR>

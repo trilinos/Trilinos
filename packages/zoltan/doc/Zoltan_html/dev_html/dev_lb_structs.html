@@ -88,7 +88,7 @@ set in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method<
 </TR>
 
 <TR>
-<TD VALIGN=TOP>double *<I> Params</I></TD>
+<TD VALIGN=TOP>LB_PARAM *<I> Params</I></TD>
 
 <TD>A linked list of string pairs.  The first item in each pair is the name
 of a modifiable parameter.  The second string is the new value the parameter
@@ -100,8 +100,14 @@ for different LB objects to have different parameter settings.</TD>
 <TR>
 <TD VALIGN=TOP>double <I>Tolerance</I></TD>
 
+<!--
+  BAH: Revisit this discussion.  Add pointer to LB_Set_Param section.
+       Perhaps change meaning of Tolerance.  Mention name of variable
+       in call to Set_Param.
+-->
+
 <TD>The tolerance to which to load balance; <I>Tolerance</I> = 0.9 implies
-a 10% imbalance is acceptable. Set in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Tolerance">LB_Set_Tolerance</A></B>.</TD>
+a 10% imbalance is acceptable. Set via a call to <B>LB_Set_Param</B>.
 </TR>
 
 <TR>

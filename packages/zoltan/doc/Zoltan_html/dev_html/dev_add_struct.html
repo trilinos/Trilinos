@@ -54,19 +54,16 @@ first;</TT>
 <BR><TT>&nbsp;* the other fields can be reused.</TT>
 <BR><TT>&nbsp;*/</TT>
 <BR><TT>if (lb->Data_Structure == NULL) {</TT>
-<BR><TT>&nbsp;&nbsp; rcb = (RCB_STRUCT *) LB_SMALLOC(sizeof(RCB_STRUCT));</TT>
+<BR><TT>&nbsp;&nbsp; rcb = (RCB_STRUCT *) LB_MALLOC(sizeof(RCB_STRUCT));</TT>
 <BR><TT>&nbsp;&nbsp; lb->Data_Structure = (void *) rcb;</TT>
-<BR><TT>&nbsp;&nbsp; rcb->Tree_Ptr = (struct rcb_tree *) LB_array_alloc(__FILE__,</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-__LINE__,1, lb->Num_Proc,&nbsp;</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-sizeof(struct rcb_tree));</TT>
-<BR><TT>&nbsp;&nbsp; rcb->Box = (struct rcb_box *) LB_SMALLOC(sizeof(struct
+<BR><TT>&nbsp;&nbsp; rcb->Tree_Ptr = (struct rcb_tree *)
+LB_MALLOC(lb->Num_Proc*sizeof(struct rcb_tree));</TT>
+<BR><TT>&nbsp;&nbsp; rcb->Box = (struct rcb_box *) LB_MALLOC(sizeof(struct
 rcb_box));</TT>
 <BR><TT>}</TT>
 <BR><TT>else {</TT>
 <BR><TT>&nbsp;&nbsp; rcb = (RCB_STRUCT *) lb->Data_Structure;</TT>
-<BR><TT>&nbsp;&nbsp; LB_safe_free((void **) &amp;(rcb->Dots));</TT>
+<BR><TT>&nbsp;&nbsp; LB_Free((void **) &amp;(rcb->Dots));</TT>
 <BR><TT>}</TT><TT></TT>
 
 <P><TT>/* Allocate space for objects in RCB data structure.&nbsp; Allow
@@ -75,24 +72,20 @@ space</TT>
 <BR><TT>&nbsp;*/</TT>
 <BR><TT>*num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data);</TT>
 <BR><TT>*max_obj = 1.5 * *num_obj;</TT>
-<BR><TT>rcb->Dots = (struct rcb_dot *) LB_array_alloc(__FILE__, __LINE__,
-1,&nbsp;</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-*max_obj, sizeof(struct rcb_dot));</TT><TT></TT>
+<BR><TT>rcb->Dots = (struct rcb_dot *)
+LB_MALLOC((*max_obj)*sizeof(struct rcb_dot));</TT>
+
 
 <P><TT>/*&nbsp; Access objects based on the method provided by the application.*/</TT>
 <BR><TT>if (lb->Get_Obj_List != NULL) {</TT>
 <BR><TT>&nbsp;&nbsp; /* Call the application for the IDs of all objects
 and initialize&nbsp;</TT>
 <BR><TT>&nbsp;&nbsp;&nbsp; * the dot for each object. */</TT>
-<BR><TT>&nbsp;&nbsp; objs_global = (LB_GID *) LB_array_alloc(__FILE__,
-__LINE__, 1,</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-*num_obj, sizeof(LB_GID));</TT>
-<BR><TT>&nbsp;&nbsp; objs_local&nbsp; = (LB_LID *) LB_array_alloc(__FILE__,
-__LINE__, 1,&nbsp;</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-*num_obj, sizeof(LB_LID));</TT>
+<BR><TT>&nbsp;&nbsp; objs_global = (LB_GID *)
+LB_MALLOC((*num_obj)*sizeof(LB_GID));</TT>
+<BR><TT>&nbsp;&nbsp; objs_local&nbsp; = (LB_LID *)
+LB_MALLOC((*num_obj)*sizeof(LB_LID));</TT>
+
 <BR><TT>&nbsp;&nbsp; lb->Get_Obj_List(lb->Get_Obj_List_Data, objs_global,
 objs_local);</TT>
 <BR><TT>&nbsp;&nbsp; for (i = 0; i &lt; *num_obj; i++)&nbsp;</TT>
@@ -100,8 +93,8 @@ objs_local);</TT>
 objs_global[i],&nbsp;</TT>
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 objs_local[i]);</TT>
-<BR><TT>&nbsp;&nbsp; LB_safe_free((void **) &amp;objs_global);</TT>
-<BR><TT>&nbsp;&nbsp; LB_safe_free((void **) &amp;objs_local);</TT>
+<BR><TT>&nbsp;&nbsp; LB_Free((void **) &amp;objs_global);</TT>
+<BR><TT>&nbsp;&nbsp; LB_Free((void **) &amp;objs_local);</TT>
 <BR><TT>}</TT>
 <BR><TT>else if (lb->Get_First_Obj != NULL &amp;&amp; lb->Get_Next_Obj
 != NULL) {</TT>
