@@ -550,6 +550,18 @@ static int rib_fn(
                     *import_global_ids, *import_procs);
   }
 
+  /* Free memory allocated by the algorithm. */
+  if (!gen_tree) {
+    /* Free all memory used. */
+    LB_RIB_Free_Structure(lb);
+  }
+  else {
+    /* Free only Dots and IDs; keep other structures. */
+    LB_FREE(&(rib->Global_IDs));
+    LB_FREE(&(rib->Local_IDs));
+    LB_FREE(&(rib->Dots));
+  }
+
   LB_TRACE_EXIT(lb, yo);
   /* Temporary return value until error codes are fully implemented */
   return(LB_OK);

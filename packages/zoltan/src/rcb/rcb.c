@@ -684,6 +684,18 @@ static int rcb_fn(
                     *import_global_ids, *import_procs);
   }
 
+  /* Free memory allocated by the algorithm. */
+  if (!reuse && !gen_tree) {
+    /* Free all memory used. */
+    LB_RCB_Free_Structure(lb);
+  }
+  else {
+    /* Free only Dots and IDs; keep other structures. */
+    LB_FREE(&(rcb->Global_IDs));
+    LB_FREE(&(rcb->Local_IDs));
+    LB_FREE(&(rcb->Dots));
+  }
+
   LB_TRACE_EXIT(lb, yo);
   /* Temporary return value until error codes are fully implemented */
   return(LB_OK);  
