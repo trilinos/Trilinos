@@ -80,7 +80,7 @@ class BlockPCGSolver : public virtual Epetra_Operator {
 
     ~BlockPCGSolver();
 
-    char * Label() const { return "Epetra_Operator for Block PCG solver"; };
+    const char* Label() const { return "Epetra_Operator for Block PCG solver"; };
 
     bool UseTranspose() const { return (false); };
     int SetUseTranspose(bool UseTranspose) { return 0; };
