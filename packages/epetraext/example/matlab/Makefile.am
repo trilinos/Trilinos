@@ -26,26 +26,26 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_EXAMPLES
+EXEEXT = .exe
 
-if BUILD_INOUT
+noinst_PROGRAMS = matlab_example
 
-INOUT_SUBDIRS = inout
+matlab_example_SOURCES = \
+  $(srcdir)/cxx_main.cpp
 
-endif
+matlab_example_DEPENDENCIES = \
+  $(top_builddir)/src/libepetraext.a \
+  $(top_builddir)/../epetra/src/libepetra.a
 
-if BUILD_ZOLTAN
+matlab_example_CXXFLAGS = -I$(top_builddir)/src \
+                         -I$(top_srcdir)/src \
+                         -I$(top_srcdir)/../epetra/src \
+                         -I$(top_builddir)/../epetra/src 
 
-ZOLTAN_SUBDIRS = zoltan
+matlab_example_LDADD = \
+  $(top_builddir)/src/libepetraext.a \
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(LIBS) \
+  $(BLAS_LIBS) \
+  $(FLIBS)
 
-endif
-
-if BUILD_MATLAB
-
-MATLAB_SUBDIRS = matlab
-
-endif
-
-SUBDIRS = $(INOUT_SUBDIRS) $(ZOLTAN_SUBDIRS) $(MATLAB_SUBDIRS)
-
-endif

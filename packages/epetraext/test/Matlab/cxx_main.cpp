@@ -28,21 +28,21 @@
 */
 
 #include "Epetra_ConfigDefs.h"
-#include "EpetraExt_Version.h"
+//#include "EpetraExt_Version.h"
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Trilinos_Util.h"
+//#include "Trilinos_Util.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
-#include "Epetra_Time.h"
+//#include "Epetra_Time.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Export.h"
+//#include "Epetra_Export.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_IntSerialDenseMatrix.h"

@@ -168,7 +168,7 @@ class EpetraExt_MatlabEngine {
 
 	\return Error Codes, see Detailed Description for more information
   */
-  int PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const char* variableName, int proc);
+  int PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const char* variableName, int proc=0);
 
   //! Put a copy of the IntSerialDenseMatrix into the Matlab workspace.
   /*!
@@ -186,7 +186,7 @@ class EpetraExt_MatlabEngine {
 
 	\return Error Codes, see Detailed Description for more information
   */
-  int PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName, int proc);
+  int PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName, int proc=0);
 
   //! not implemented yet
   int PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName, bool transA);
