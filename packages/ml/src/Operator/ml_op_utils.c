@@ -439,6 +439,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
   /* set 'xadj' & 'adjncy' adjacentcy data */
 
   xadj = (idxtype *) ML_allocate( (nLocalNd+1) * sizeof(idxtype) );
+  if (xadj == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
 
   ii = 0;
   for( locid = 0 ; locid < nLocalNd ; locid++ ) {
@@ -450,7 +451,8 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
     }
   }
   numadjac = ii;
-  adjncy = (idxtype *) ML_allocate( numadjac * sizeof(idxtype) );
+  adjncy = (idxtype *) ML_allocate( (numadjac+1) * sizeof(idxtype) );
+  if (adjncy == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
 
   ii = 0;
   for( locid = 0 ; locid < nLocalNd ; locid++ ) {
