@@ -1207,7 +1207,8 @@ void LB_Eval (LB *lb, int print_stats,
  *
  * Output:
  *   nobj      - number of objects (for each proc)
- *   obj_wgt   - obj_wgt[0:lb->Obj_Weight_Dim-1] are the object weights (on each proc)
+ *   obj_wgt   - obj_wgt[0:lb->Obj_Weight_Dim-1] are the object weights (on 
+ *               each proc)
  *   cut_wgt   - cut size/weight (for each proc)
  *   nboundary - number of boundary objects (for each proc)
  *   nadj      - the number of adjacent procs (for each proc)
