@@ -445,6 +445,8 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
    /* set up                                                            */
    /* ----------------------------------------------------------------- */
 
+   printf("Entering GS\n");
+
    Amat = smooth_ptr->my_level->Amat;
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
@@ -753,7 +755,6 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    return 0;
 }
 
-
 /* ************************************************************************* */
 /* Hiptmair smoother                                                         */
 /* ------------------------------------------------------------------------- */
@@ -762,6 +763,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
                          double rhs[])
 {
    int i, j, kk, length, allocated_space = 0, *cols = NULL, Nrows;
+   int iter;
    double *vals = NULL, numer, denom, alpha, *g, *res;
    double *local_x;
    ML_Operator *Amat, *Tmat_trans, *ATmat_trans;
@@ -771,6 +773,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    ML_Sm_Hiptmair_Data *dataptr;
    ML_CommInfoOP *getrow_comm;
    int totalsize;
+#define ML_SMOOTHER_DEBUG
 #ifdef ML_SMOOTHER_DEBUG
    double *res2, res_norm, dtemp;
 #endif
@@ -790,8 +793,11 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    if (Amat->getrow->ML_id == ML_EMPTY) 
       pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
 
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
+   {
+
 #ifdef ML_SMOOTHER_DEBUG
-   printf("\n\n\t%d: (before SGS on edges) norm of global x = %e\n",
+   printf("\n\n\t%d: (before SGS on edges) norm of global x = %15.10e\n",
           ATmat_trans->comm->ML_mypid, sqrt(ML_gdot(Nrows, x, x, comm)));
    printf("\t%d: (before SGS on edges) norm of rhs = %15.10e\n",
           ATmat_trans->comm->ML_mypid, sqrt((ML_gdot(Nrows, rhs, rhs, comm))));
@@ -799,10 +805,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #endif
 
    /* Symmetric GS on edges */
-   /*
    ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
-   */
-   ML_Smoother_Jacobi(sm, inlen, x, outlen, rhs);
 
 #ifdef ML_SMOOTHER_DEBUG
    printf("\t%d:After SGS on edges, norm of x = %15.10e\n",
@@ -817,18 +820,12 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    fflush(stdout);
    ML_free(res2);
 #endif
+
    getrow_comm= Tmat_trans->getrow->pre_comm;
    if (getrow_comm != NULL) 
       totalsize = inlen+getrow_comm->total_rcv_length;
    else
       totalsize = inlen;
-
-/*
-   if (getrow_comm != NULL) 
-   printf("%d: inlen = %d, totalsize = %d, total_rcv_length = %d\n",
-	         ATmat_trans->comm->ML_mypid,inlen,
-			 totalsize,getrow_comm->total_rcv_length);
-*/
 
    /* Local portion (local+ghost columns) of residual vector. */
    res = (double *) ML_allocate( (totalsize)*sizeof(double));
@@ -846,25 +843,10 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    for (kk = 0; kk < outlen; kk++)
       res[kk] = rhs[kk] - res[kk];
 
-   /* TMP CODE 
-   for (kk = 0; kk < inlen; kk++) local_x[kk] = kk;
-      TMP CODE */
-
    if (getrow_comm != NULL)
       ML_exchange_bdry(res,getrow_comm, inlen, comm, ML_OVERWRITE);
 
-   /* TMP CODE
-   for (kk = 0; kk < inlen; kk++) local_x[kk] = 0;
-   ML_transposed_exchange_bdry(local_x,getrow_comm, inlen, comm, ML_ADD);
-      TMP CODE */
-
 #ifdef ML_SMOOTHER_DEBUG
-   printf("\tnorm of Initial residual going into nodal smoothing = %15.10e\n",
-          sqrt(ML_gdot(Nrows, res, res, comm)));
-   printf("\tnorm of local solution going into nodal smoothing = %15.10e\n",
-	  sqrt(ML_gdot(totalsize,local_x,local_x,comm)));
-   fflush(stdout);
-
 #ifdef vecdump
    if (ATmat_trans->comm->ML_mypid == 1)
    for (kk = 0; kk < ATmat_trans->outvec_leng; kk++)
@@ -906,6 +888,17 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 	  denom = TtAT_diag[i];
 	  alpha = numer / denom;
 
+#ifdef printcoeff
+	  if (Amat->outvec_leng == 2265)
+	  {
+	     printf("%d (%d):  numer = %e   denom = %e    alpha = %e\n",i,
+	            ATmat_trans->comm->ML_mypid,numer,denom,alpha);
+	     for (kk = 0; kk < length; kk++)
+	        printf("\tvals = %12.9e   res[%d] = %12.9e\n",vals[kk],cols[kk],
+			       res[cols[kk]]);
+      }
+#endif
+
 #ifdef ML_SMOOTHER_DEBUG
 #define PIDNUM 0
 #ifdef dump
@@ -921,7 +914,6 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       for (j=0; j < length; j++)
 	  {
 #ifdef ML_SMOOTHER_DEBUG
-#define dump
 #ifdef dump
          if ((ATmat_trans->comm->ML_mypid == 1 && cols[j] == 45)
 		     || (ATmat_trans->comm->ML_mypid == 0 && cols[j] == 270 ))
@@ -935,20 +927,16 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 	     local_x[cols[j]] += alpha * vals[j];
 #ifdef ML_SMOOTHER_DEBUG
 #ifdef dump
-         if ((ATmat_trans->comm->ML_mypid == 1 && cols[j] == 45)
-		     || (ATmat_trans->comm->ML_mypid == 0 && cols[j] == 270 ))
-		 /*
-         if (cols[j] == 45)
-		 */
-		 {
 	         printf("%d (%d):  numer = %e   denom = %e    alpha = %e\n",i,
 	                ATmat_trans->comm->ML_mypid,numer,denom,alpha);
+/*
 		     printf("%d (%d): (after update) x[%d] = %e, vals[%d] = %e\n",
 	                i,ATmat_trans->comm->ML_mypid,cols[j],local_x[cols[j]],
 					cols[j], vals[j]);
+*/
              fflush(stdout);
-		 }
 #endif
+#undef dump
 #endif
       }
 	     
@@ -957,13 +945,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
                         &length, 0);
 
 	  /* Update edge-based local residual. */
-      /*for (j=0; j < length; j++) res[cols[j]] -= alpha * vals[j];*/
-	  /*
-      if (ATmat_trans->comm->ML_mypid == 0)
-      for (j=0; j < length; j++)
-	     printf("%d: res column= %d\n", ATmat_trans->comm->ML_mypid, cols[j]);
-      fflush(stdout);
-	  */
+      for (j=0; j < length; j++) res[cols[j]] -= alpha * vals[j];
    }
 
 #ifdef ML_SMOOTHER_DEBUG
@@ -1036,15 +1018,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 
 	  /* Update edge-based residual. */
       for (kk=0; kk < length; kk++)
-	  {
-	     if (cols[kk] < 0 || cols[kk] > totalsize - 1)
-		 {
-		    printf("%d: bounds exceeded (c)\ncols[%d] = %d\n",
-	               ATmat_trans->comm->ML_mypid, kk,cols[kk]);
-			fflush(stdout);
-		 }
-	     /*res[cols[kk]] -= alpha * vals[kk];*/
-      }
+	     res[cols[kk]] -= alpha * vals[kk];
    }
 
    /* Exchange local_x information here. */
@@ -1054,6 +1028,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    for (kk = 0; kk < inlen; kk++) x[kk] = local_x[kk];
 
 #ifdef ML_SMOOTHER_DEBUG
+
    dtemp = sqrt(ML_gdot(Nrows, res, res, comm));
    printf("\tnorm of residual  after backward sweep on nodes %15.10e\n",dtemp);
    printf("\tnorm of local solution after backward sweep on nodes %15.10e\n",
@@ -1064,6 +1039,8 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #endif
 
    ML_free(res); ML_free(local_x);
+
+   } /* for iter = 1... */
 
    return 0;
 }
