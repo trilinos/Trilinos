@@ -254,6 +254,7 @@ bool EpetraExt::RowMatrix_Transpose::fwd()
 bool EpetraExt::RowMatrix_Transpose::rvs()
 {
   EPETRA_CHK_ERR(-1); //Not Implemented Yet
+  return false;
 }
 
 } // namespace EpetraExt
