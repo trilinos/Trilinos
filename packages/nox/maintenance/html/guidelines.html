@@ -167,10 +167,10 @@ directly after a function name.
 <ul>
 <li>Only one variable per line.
 <PRE>
-   int i,j;        // No!!
+   int i,j;   // No!!
 
-   int i;          // Yes   
-   int j;          // Yes
+   int i;     // Yes   
+   int j;   
 </PRE>
 
 <li>
@@ -180,8 +180,8 @@ names of variables in order to emphasize that they are part of the type
 definition. Instead of saying that <CODE>*i</CODE> is an <CODE>int</CODE>,
 say that <CODE>i</CODE> is an <CODE>int*</CODE>.
 <PRE>
-   int *i; // No!!
-   int* i; // Yes   
+   int *i;   // No!!
+   int* i;   // Yes   
 </PRE>
 </ul>
 
@@ -193,9 +193,11 @@ say that <CODE>i</CODE> is an <CODE>int*</CODE>.
 <li>User parens to make code readable.
 <pre>
   if (a == b && c < d || e == f) { // No!
+    /* Stuff */
   }
 
   if (((a == b) && (c < d)) || (e == f)) { // Yes
+    /* Stuff */
   } 
 </pre>
 <li>The block of any <code>if</code> statement should always follow on
@@ -264,9 +266,17 @@ to printing. To use it, include <code>NOX_Utils.H</code>.
 <ul>
 <li>For <b>any</b> non-error print statement, call the
 <code>NOX::Utils::doPrint()</code> function with the appropriate
-flag. <br>
-<em>(The flags are still being worked out, for now
-just use <code>1</code>.)</em> 
+MsgType flag. The flags are:
+<br>&nbsp;
+<ul>
+<li><code>NOX::Utils::Error  </code>
+<li><code>NOX::Utils::Warning</code>
+<li><code>NOX::Utils::OuterIteration</code>
+<li><code>NOX::Utils::InnerIteration</code>
+<li><code>NOX::Utils::Parameters</code>
+<li><code>NOX::Utils::Details</code>
+</ul>
+
 <br>&nbsp;
 
 <li><em>We need to add a mechanism for controlling the
@@ -301,33 +311,145 @@ following:
 
 <pre>
 cd nox/doc
-doxygen doxygen.config
+doxygen 
 </pre>
 
 <ul>
-<li> Document each class.
+<li> Document each class, function, and enum in the header
+files.
+<br>&nbsp;
+<ul>
+<li> The one exception is that functions in derived objects do not
+need to be documented <b>if</b> the documentation is inherited from
+the base class. This should be tested in Doxygen to be sure that it
+works correctly.
+<br>&nbsp;
+</ul>
+<li> Here's an example of documented a class. Note the formatting of
+the comments. It's a C-style comment. The open comment marker
+(<code>/*</code>) is followed by an exclamation mark to indicate that
+it's a Doxygen comment. The open and close comment markers are on
+lines by themselves, and the text of the comment is indented two
+spaces. Always include a <code>\brief</code> description. The long
+description follows. Observe the use of the formatting tags
+<code>\c</code> and <code>\e</code>. The <code>\note</code> tag is
+used for any special notes. The <code>\author</code> tag is
+recommended.
 
 <pre>
-/*! \brief BRIEF DESCRIPTION
- *
- *  \author <em>names of authors, seperated by commas</em>
- * 
- *  \date <em>date of creation of class</em>
- *
- * <em>long description</em>
- * <em>...</em>
- * 
- * The following parameters are valid for this solver:
- *
- * - "
+/*!
+  \brief Arbitrary combination of status tests.
 
- * \note <em>any special notes</em>
- * 
- * \todo <em>todo's</em>
- */
-class Group {
+  In the \c AND (see NOX::Status::Combo::ComboType) combination, the
+  result is \c Unconverged (see NOX::Status::StatusType) if \e any of
+  the tests is \c Unconverged. Otherwise, the result is equal to the
+  result of the \e first test in the list that is either \c Converged
+  or \c Failed. It is not recommended to mix \c Converged and \c
+  Failed tests in an \c AND combination.
+
+  In the \c OR combination, the result is \c Unconverged if \e all of
+  the tests are \c Unconverged. Otherwise, it is the result of the \e
+  first test in the list that is either \c Converged or \c
+  Failed. Therefore, it will generally make sense to put the \c Failed
+  -type tests at the end of the \c OR list.
+
+  \note We always runs through all tests, even if we don't need
+  to. This is useful so that the user knows which tests have and have
+  not be satisfied.
+
+  \author Tammy Kolda (SNL 8950)
+*/
+class Combo : public Test {
 ...
-}; // class Group
+}; // class Combo
+</pre>
+
+<li>Any parameters that are used within the class <b>must</b> be
+documented in the class description as done in the following example.
+Note that the name, a brief description, and the default value for
+each parameter is listed.
+<pre>
+/*!
+  \brief %Newton-like solver with a line search.
+  
+  The following parameters are valid for this solver:
+
+  - "Line Search" - Sublist of the line search parameters, passed to
+    the NOX::Linesearch::Manager constructor. Defaults to an empty list.
+
+  - "Linear %Solver" - Sublist of the linear solver paramaters, passed
+    to Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
+    within this list may be modified by the
+    resetForcingTerm(). Defaults to an empty list.
+
+  - "Forcing Term Method" - Method to compute the forcing term, i.e.,
+    the tolerance for the linear solver. Defaults to ""
+    (nothing). Choices are "Type 1" and "Type 2".
+
+  - "Forcing Term Minimum Tolerance" - Minimum acceptable linear
+    solver tolerance. Defaults to 1.0e-6.
+
+  - "Forcing Term Maximum Tolerance" = Maximum acceptable linear
+    solver tolerance. Default to 0.01.
+
+  - "Forcing Term Alpha" - Used for the "Type 2" forcing term
+    calcuation. Defaults to 1.5.
+
+  - "Forcing Term Gamma" - Used for the "Type 2" forcing term
+    calcuation. Defaults to 0.9.
+
+  \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
+*/
+</pre>
+Here's a more complicated example to produce a two-tiered list.
+<pre>
+/*! 
+   The parameters must specify the type of line search as well as all
+   the corresponding parameters for that line search.
+ 
+   &lt;ul&gt;
+   &lt;li&gt; "Method" - Name of the line search. Valid choices are
+   &lt;ul&gt; 
+   &lt;li&gt; "Full Step" (NOX::Linesearch::FullStep)
+   &lt;li&gt; "Interval %Halving" (NOX::Linesearch::Halving)
+   &lt;li&gt; "%Polynomial" (NOX::Linesearch::Polynomial)
+   &lt;li&gt; "More'-Thuente" (NOX::Linesearch::MoreThuente)
+   &lt;/ul&gt;
+   &lt;/ul&gt;
+ */
+</pre>
+
+
+<li>Constants and enums can generally be described with simple
+<code>\brief</code> comments. Those can be formatted in either of two
+ways, as follows.
+
+<pre>
+  /*! 
+    \brief The test can be either the AND of all the component
+    tests, or the OR of all the component tests.
+  */
+  enum ComboType {AND, OR};
+
+  //! Constructor
+  Combo(ComboType t = OR);
+</pre>
+
+<li>Doxygen does automatically cross-linking, which is very
+convienent. However, sometimes it cross-links when you don't intend
+for it to. For example, the following line would automatically
+generate a link from the word <code>Newton</code> to the
+NOX::Solver::Newton class. 
+
+<pre>
+//! Newton-like solver with a line search.
+</pre>
+ 
+To prevent that automatic link, insert a percent sign (<code>%</code>)
+immediately before the word that is causing the link. For example,
+
+<pre>
+//! %Newton-like solver with a line search.
 </pre>
 
 </ul>
