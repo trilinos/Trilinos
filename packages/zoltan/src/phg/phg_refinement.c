@@ -86,7 +86,7 @@ static void fm2_move_vertex_oneway(int v, PHGraph *hg, Partition part, float *ga
 {
     int   pno=part[v], vto=1-pno, adjsz=0, j, i;
     
-    mark[v] = 1;
+    mark[v] = 1;  /* mark as moved */
     part[v] = vto;
     weights[pno] -= (hg->vwgt ? hg->vwgt[v] : 1.0);
     weights[vto] += (hg->vwgt ? hg->vwgt[v] : 1.0);
@@ -117,7 +117,7 @@ static void fm2_move_vertex_oneway(int v, PHGraph *hg, Partition part, float *ga
                     gain[u] += w;
                     if (!mark[u]) {
                         adj[adjsz++] = u;
-                        mark[u] = -1;
+                        mark[u] = -1;  /* mark neighbors with -1 */
                     }
                 }
             }
@@ -130,7 +130,7 @@ static void fm2_move_vertex_oneway(int v, PHGraph *hg, Partition part, float *ga
                     gain[u] += w;
                     if (!mark[u]) {
                         adj[adjsz++] = u;
-                        mark[u] = -1;
+                        mark[u] = -1;  /* mark neighbors with -1 */
                     }
                 }
             }
@@ -467,16 +467,25 @@ static int refine_fm2 (
                     errexit("hooop from=%d part[%d]=%d", from, v, part[v]);
 #endif
 
-
+                /* Mark vertex we picked from the heap so it is "locked". 
+                   For the current strategy, moving only one direction 
+                   at a time, the mark information is not critical.
+                   Note that the mark array is also used in the move/update 
+                   routine so don't remove it! */
                 ++mark[v];
                 if (lweights[to]+((hg->vwgt)? hg->vwgt[v] : 1.0) > lmax_weight[to]) {
 #ifdef _DEBUG2                    
                     printf("%s %4d: %6d (g: %5.1lf), p:%2d [%4.0lf, %4.0lf] NF\n", uMe(hgc), movecnt, v, gain[v], from, weights[0], weights[1]);
 #endif
+                    /* Negative value in moves array means we have examined 
+                       the vertex but couldn't move it. Note offset by one,
+                       otherwise zero would be ambiguous. */
                     moves[movecnt++] = -(v+1);
                     continue;
                 } 
 	
+                /* Positive value means we actually moved the vertex. 
+                   Offset by one not really necessary here? */
                 moves[movecnt] = (v+1);
                 ++neggaincnt;
                 cutsize -= gain[v];
