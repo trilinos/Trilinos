@@ -31,6 +31,9 @@
 #include "BuildTestProblems.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Vector.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_Import.h"
+
   int MatrixTests(const Epetra_BlockMap & Map, const Epetra_LocalMap & LocalMap, int NumVectors,
 		      bool verbose)
   {
@@ -395,7 +398,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   }
   
   err = 0;
-  if (verbose) cout << "XXXXX Testing random_A     ";
+  if (verbose) cout << "XXXXX Testing random_A (Test1) ";
   // Test A.Random()
   Epetra_MultiVector Rand1_A(A);
   Epetra_MultiVector Rand2_A(A);
@@ -409,7 +412,71 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   else {
     EPETRA_TEST_ERR(BadResidual1(verbose,residual, NumVectors),ierr);
   }
+
+  err = 0;
+  if (verbose) cout << "XXXXX Testing random_A (Test2) ";
+
+  // Next test that each column of the multivector is different from all other columns by testing the first value
+  // of each vector against the first value of every other vector.
+  int randvalsdiffer = 1; // Assume they all differ
+  for (i=0; i< NumVectors; i++) 
+    for (int j=i+1; j<NumVectors; j++) 
+      if (Rand1_A[i][0]==Rand1_A[j][0]) randvalsdiffer = 0; // make false if equal
+  int allrandvals = 0;
+  Comm.MinAll(&randvalsdiffer, &allrandvals, 1); // get min of all values across all processors
+
+  EPETRA_TEST_ERR(1-allrandvals, err); // If allrandvals is anything but 1, this will cause an error
+  int locerr = err;
+  Comm.MinAll(&locerr, &err, 1);
+
+  if (verbose)
+    if (err==0) {
+      cout << "\t Checked OK" << endl;
+    } else {
+      cout << "\t Checked Failed" << endl;
+    }
+
+  err = 0;
+  if (verbose) cout << "XXXXX Testing random_A (Test3) ";
+
+  // Next test that the first element on each processor of the first column of Rand1_A is different from all others
+  // First we will gather them all to PE 0
   
+
+  Epetra_Map RandstartsMap(-1, 1, 0, Comm); // This Map has a single element on each PE
+  int itmp = 0;
+  int nproc = Comm.NumProc();
+  if (MyPID==0) itmp = nproc;
+  Epetra_Map AllrandstartsMap(nproc, itmp, 0, Comm); // Map has NumProc elements on PE 0, none elsewhere
+  Epetra_MultiVector Randstarts(RandstartsMap, NumVectors);
+  Epetra_MultiVector Allrandstarts(AllrandstartsMap, NumVectors);
+  for (i=0; i< NumVectors; i++) Randstarts[i][0] = Rand1_A[i][0]; // Load first value of local multivector
+
+  Epetra_Import Randimporter(AllrandstartsMap,RandstartsMap);
+  EPETRA_TEST_ERR(Allrandstarts.Import(Randstarts,Randimporter,Insert),err);
+  // cout << "Randstarts = " << Randstarts << endl << "Allrandstarts = " << Allrandstarts << endl;
+  // Allrandstarts now contains the first values for each local section of Rand1_A.
+  // Next test that this is true.
+  randvalsdiffer = 1; // Assume they all differ
+  if (MyPID==0) {
+    for (i=0; i< NumVectors; i++) 
+      for (int irand=0; irand<nproc; irand++)
+	for (int jrand=irand+1; jrand<NumVectors; jrand++) 
+	  if (Allrandstarts[i][irand]==Allrandstarts[i][jrand]) randvalsdiffer = 0; // make false if equal
+  }
+  allrandvals = 0;
+  Comm.MinAll(&randvalsdiffer, &allrandvals, 1); // get min of all values across all processors
+
+  EPETRA_TEST_ERR(1-allrandvals, err); // If allrandvals is anything but 1, this will cause an error 
+  locerr = err;
+  Comm.MinAll(&locerr, &err, 1);
+  if (verbose)
+    if (err==0) {
+      cout << "\t Checked OK" << endl;
+    } else {
+      cout << "\t Checked Failed" << endl;
+    }
+
   // Delete everything
   
   delete [] dotvec_AB;
@@ -453,7 +520,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   // ========================================================================
 
   double newGIDValue = 4.0;
-  int locerr = X.ReplaceGlobalValue(testGID, testVecIndex, newGIDValue);
+  locerr = X.ReplaceGlobalValue(testGID, testVecIndex, newGIDValue);
 
   if (Map.MyGID(testGID)) {
     if (X[testVecIndex][FirstEntryOfGID]!=newGIDValue) err++;
