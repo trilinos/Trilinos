@@ -56,9 +56,11 @@ int Zoltan_PHG_Set_Part_Options (ZZ *zz, PHGPartParams *hgp)
 
 typedef struct _tagVCycle {
     HGraph             *hg;         /* for finer==NULL, hg and part contains   */
-    Partition           part;        /* original hg and part, don't delete them */  
-    int                 *LevelMap;
-    struct _tagVCycle   *finer; 
+    Partition           part;       /* original hg and part, don't delete them */  
+    int                *LevelMap;   /* necessary to uncoarsen */
+    int                 LevelCnt;   /* count of external vertices to uncoarsen */
+    int                *LevelData;  /* buffer for external vertex information */
+    struct _tagVCycle  *finer; 
 } VCycle; 
 
 static int allocVCycle(VCycle *v)
@@ -179,7 +181,8 @@ int Zoltan_PHG_Partition (
         }
         
         /* Construct coarse hypergraph and LevelMap */
-        err = Zoltan_PHG_Coarsening (zz, hg, match, coarser->hg, vcycle->LevelMap);
+        err = Zoltan_PHG_Coarsening (zz, hg, match, coarser->hg, 
+         vcycle->LevelMap, &vcycle->LevelCnt, &vcycle->LevelData);
         if (err != ZOLTAN_OK && err != ZOLTAN_WARN) 
             goto End;
         
@@ -232,14 +235,48 @@ int Zoltan_PHG_Partition (
                             "partitioned plot");
         
         /* Project coarse partition to fine partition */
-        if (finer) 
-            for (i = 0; i < finer->hg->nVtx; i++)
+        if (finer)  { 
+           PHGComm *hgc = hg->comm;
+           int each_size [hgc->nProc_x], displs[hgc->nProc_x];
+           int gno, lpart, size, *ip;
+           char *rbuffer;
+
+           for (i = 0; i < finer->hg->nVtx; i++)
+             if (finer->LevelMap[i] >= 0)
                 finer->part[i] = vcycle->part[finer->LevelMap[i]];
+                 
+           for (i = 0; i < finer->LevelCnt; i++)  {
+              i++;                         /* skip gno entry */
+              finer->LevelData[i] = vcycle->part [finer->LevelMap [finer->LevelData[i]]];
+           }
+                         
+           MPI_Allgather (&finer->LevelCnt, 1, MPI_INT, each_size, 1, MPI_INT,
+            hgc->row_comm);
+
+           displs[0] = size = 0;
+           for (i = 0; i < hgc->nProc_x; i++)
+             size += each_size[i];                 /* compute total size of rbuffer */
+           for (i = 1; i < hgc->nProc_x; i++)
+             displs[i] = displs[i-1] + each_size[i-1];    /* message displacements */
         
+           if (!(rbuffer = (char*) ZOLTAN_MALLOC (1 + size * sizeof(int))))    {
+             ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+             return ZOLTAN_MEMERR;
+           }          
+        
+           MPI_Allgatherv (finer->LevelData, each_size[hgc->myProc_x], MPI_INT, rbuffer,
+             each_size, displs, MPI_INT, hgc->row_comm);
+                
+           ip = (int*) rbuffer;  
+           for (i = 0; i < size; i += 2)   {
+              gno   = *ip++;
+              lpart = *ip++;
+              if (VTX_TO_PROC_X (finer->hg, gno) == hgc->myProc_x)
+                 finer->part[VTX_GNO_TO_LNO (finer->hg, gno)] = lpart;
+           }          
+        }
         vcycle = finer;
     }
-    
-    
     
  End:
     vcycle = del;

@@ -155,7 +155,7 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
 /**************/
 /* Coarsening */
 /**************/
-int Zoltan_PHG_Coarsening(ZZ*, HGraph*, Matching, HGraph*, int*);
+int Zoltan_PHG_Coarsening(ZZ*, HGraph*, Matching, HGraph*, int*, int*, int**);
 
 /*********************************/
 /* Coarse Partitioning functions */

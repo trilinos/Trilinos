@@ -283,7 +283,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   }
 
   m_vedge = m_vindex = m_gno = m_bestsum = m_bestv = b_gno = b_bestsum = 0;
-  if (!(m_vedge   = (int*) ZOLTAN_MALLOC  (hg->nPins * 2         * sizeof(int)))
+  if (!(m_vedge   = (int*) ZOLTAN_MALLOC  (hg->nPins * 3         * sizeof(int)))
    || !(m_vindex  = (int*) ZOLTAN_MALLOC ((NDO * hgc->nProc_x+1) * sizeof(int)))
    || !(m_gno     = (int*) ZOLTAN_MALLOC  (NDO * hgc->nProc_x    * sizeof(int)))
    || !(m_bestsum = (int*) ZOLTAN_MALLOC  (NDO * hgc->nProc_x    * sizeof(int)))
@@ -417,10 +417,10 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        *ip++ = VTX_LNO_TO_GNO (hg, m_bestv [vertex]);
        *ip++ = m_bestsum [vertex];
      }
-        
+      
      /* send/rec to all columns in my row */     
      MPI_Allgather(buffer, size, MPI_INT, rbuffer, size, MPI_INT, hgc->row_comm);
-                                                  
+             
      for (i = 0; i < hg->nVtx; i++)
        b_bestsum[i] = -2;   
                  

@@ -33,7 +33,9 @@ int Zoltan_PHG_Coarsening
   HGraph *hg,         /* information about hypergraph, weights, etc. */
   int    *match,      /* Matching, Packing or Grouping array */
   HGraph *c_hg,       /* points to a working copy of hg structure */
-  int    *LevelMap)   /* information to reverse coarsenings later */
+  int    *LevelMap,
+  int    *LevelCnt,
+  int   **LevelData)   /* information to reverse coarsenings later */
 {
   int i, j, vertex, edge, *ip, me, size, count;
   int *cmatch=NULL, *used_edges=NULL, *c_vindex=NULL, *c_vedge=NULL;
@@ -47,21 +49,21 @@ int Zoltan_PHG_Coarsening
   Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   
   /* (over) estimate number of external matches that we to send data to */
-  count = 1;
+  count = 0;
   for (i = 0; i < hg->nVtx; i++)
     if (match[i] < 0)
       ++count;
-                
+ 
   if (!(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int)))
    || !(listgno   = (int*) ZOLTAN_MALLOC (count        * sizeof(int)))
    || !(listlno   = (int*) ZOLTAN_MALLOC (count        * sizeof(int)))
    || !(displs    = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))
-   || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int))))   {   
+   || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))
+   || !(*LevelData= (int*) ZOLTAN_MALLOC (count * 2    * sizeof(int))))   {   
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      ZOLTAN_TRACE_EXIT (zz, yo);
      return ZOLTAN_MEMERR;
-  }    
-  
+  }        
   c_hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx * hg->VtxWeightDim,
       sizeof(float));   
  
@@ -70,27 +72,33 @@ int Zoltan_PHG_Coarsening
        
   /* Assume all rows in a column have the entire (column's) matching info */
   /* Calculate the number of resulting coarse vertices. */
+  *LevelCnt   = 0;
   c_hg->nVtx = 0;                 /* counts number of new (coarsened) vertices */
   me = hgc->myProc_x;             /* short name, convenience variable */
   size  = 0;                      /* size (in ints) to communicate */
   count = 0;                      /* number of vertices to communicate */
   for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertice */
     if (match[i] < 0)  {               /* external processor match */
-      int proc, gx = -match[i]-1;
+      int proc, gx;
+      gx = -match[i]-1;
+      proc = VTX_TO_PROC_X(hg,gx);
       
       /* rule to determine "ownership" of coarsened vertices between procs */
-      proc = ((gx + VTX_LNO_TO_GNO (hg,i)) & 1) ? MIN(gx, me) : MAX(gx, me);
+      proc = ((gx + VTX_LNO_TO_GNO (hg,i)) & 1) ? MIN(proc, me) : MAX(proc, me);
       
-      /* prepare to send data to owner or to receive data I will own */
+      /* prepare to send data to owner */
       if (proc != me)   {             /* another processor owns this vertex */
         size += hg->vindex[i+1] - hg->vindex[i];  /* send buffer sizing */ 
         listgno[count]   = gx;                    /* listgno of vtx's to send */
-        listlno[count++] = i;                     /* gno for destination */
-        }                                         /* lno of my match to gno */
-      else 
+        listlno[count++] = i;                     /* lno of my match to gno */
+      }
+      else   {       
         c_hg->nVtx++;         /* myProc owns the matching across processors */ 
+        (*LevelData)[(*LevelCnt)++] = gx;
+        (*LevelData)[(*LevelCnt)++] = i;        
+      }
     }
-    else if (cmatch[i] >= 0)  { /* allow (local only) packing and groupings */    
+    else if (cmatch[i] >= 0)  {     /* local matching, packing and groupings */    
       c_hg->nVtx++;
       vertex = i;
       while (cmatch[vertex] >= 0)  {
@@ -143,12 +151,12 @@ int Zoltan_PHG_Coarsening
   ip = (int*) rbuffer;
   for (i = 0; i < size; i++)  {
     if (VTX_TO_PROC_X (hg, ip[i]) == me)
-      cmatch [VTX_GNO_TO_LNO (hg,ip[i])] = i;   
+      cmatch [VTX_GNO_TO_LNO (hg, ip[i])] = i;     
     i++;                    /* destination gno */
     i += hg->VtxWeightDim;  /* skip vertex weights */
     i += ip[i];             /* skip hyperedges */
   }
-       
+  
   if (!(used_edges = (int*) ZOLTAN_CALLOC (hg->nEdge,      sizeof(int)))
    || !(c_vindex   = (int*) ZOLTAN_MALLOC ((hg->nVtx+1)  * sizeof(int)))
    || !(c_vedge    = (int*) ZOLTAN_MALLOC (2 * hg->nPins * sizeof(int)))) {
@@ -172,20 +180,21 @@ int Zoltan_PHG_Coarsening
     if (match[i] < 0 && cmatch[i] < 0)  /* match to external vertex, don't own */
       LevelMap [i] = match[i];         /* negative value => external vtx */         
     else if (match[i] < 0) {            /* match from external vertex, I own */
-      LevelMap[i] = c_hg->nVtx;        /* next available coarse vertex */
-      c_vindex[c_hg->nVtx] = c_hg->nPins;
-      ip =  ((int*) rbuffer) + cmatch[i];      /* point to received data */
-      ip++;                                    /* skip over vtx gno */
-      for (j = 0; j < hg->VtxWeightDim; j++) {
-        pwgt = (float*) ip++;
-        c_hg->vwgt[c_hg->nVtx*hg->VtxWeightDim+j] = *pwgt;
-      }  
-      count = *ip++;           /* extract edge count, advance to first edge */
-      while (count--)  {
-        edge = *ip++;           
-        used_edges [edge]      = i+1;
-        c_vedge[c_hg->nPins++] = edge;
-      }
+       LevelMap[i] = c_hg->nVtx;        /* next available coarse vertex */
+       c_vindex[c_hg->nVtx] = c_hg->nPins;
+       ip =  ((int*) rbuffer) + cmatch[i];      /* point to received data */               
+       ip++;                                    /* skip over gno */
+      
+       for (j = 0; j < hg->VtxWeightDim; j++)  {
+          pwgt = (float*) ip++;
+          c_hg->vwgt[c_hg->nVtx*hg->VtxWeightDim+j] = *pwgt;
+       }  
+       count = *ip++;           /* extract edge count, advance to first edge */
+       while (count--)  {
+          edge = *ip++;           
+          used_edges [edge]      = i+1;
+          c_vedge[c_hg->nPins++] = edge;
+       }
   
       for (j = 0; j < hg->VtxWeightDim; j++)
         c_hg->vwgt[c_hg->nVtx * hg->VtxWeightDim + j]
@@ -268,7 +277,7 @@ int Zoltan_PHG_Coarsening
   c_hg->vmap    = hg->vmap;
   c_hg->hindex  = NULL;
   c_hg->hvertex = NULL;
-  c_hg->coor    = hg->coor;  /* ??? needs to be fixed -- YES!! size of 
+  c_hg->coor    = hg->coor;     /* ??? needs to be fixed -- YES!! size of 
                                 coor should be proportional to c_hg->nVtx */
   c_hg->nDim    = hg->nDim;    
   c_hg->nEdge   = hg->nEdge;
