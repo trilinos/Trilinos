@@ -1,13 +1,13 @@
 Decomposition Method 	= parmetis
-Zoltan Parameters	= edge_weight_dim=1
+Zoltan Parameters       = num_global_partitions=7
 Zoltan Parameters       = parmetis_method=partkway
+Zoltan Parameters       = debug_level=10
 File Type		= Chaco
-File Name		= ewgt
+File Name		= nograph
 Parallel Disk Info	= number=0
+zdrive debug level      = 4
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-8	0	-1	-1
-13	0	-1	-1
-14	0	-1	-1
-18	0	-1	-1
-23	0	-1	-1
+7	0	-1	-1
+11	0	-1	-1
+19	0	-1	-1

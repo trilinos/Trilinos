@@ -1,13 +1,8 @@
 Decomposition Method 	= parmetis
-Zoltan Parameters	= edge_weight_dim=1
 Zoltan Parameters       = parmetis_method=partkway
 File Type		= Chaco
-File Name		= ewgt
+File Name		= simple
 Parallel Disk Info	= number=0
+test local partitions   = 4
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-8	0	-1	-1
-13	0	-1	-1
-14	0	-1	-1
-18	0	-1	-1
-23	0	-1	-1
