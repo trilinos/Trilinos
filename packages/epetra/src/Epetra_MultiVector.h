@@ -929,6 +929,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   double** Pointers() const {return Pointers_;};
   //@}
 
+  // Expert-only function
+  int Reduce(); 
 
  protected:
 
@@ -936,21 +938,20 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   void Assign(const Epetra_MultiVector& rhs);
   int CheckInput();
 
-  int IndexBase_;
   double *Values_;    // local MultiVector coefficients
-  double **Pointers_;        // Pointers to each vector;
-  
-  friend class Epetra_CrsMatrix;
-  friend class Epetra_VbrMatrix;
+
  private:
 
 
   // Internal utilities
 
-  int Reduce(); 
-
   int AllocateForCopy(void);
   int DoCopy(void);
+  inline void UpdateDoubleTemp() const {if (DoubleTemp_==0) DoubleTemp_=new double[NumVectors_]; return;}
+  inline void UpdateVectors()  const {if (Vectors_==0) Vectors_ = new Epetra_Vector *[NumVectors_]; 
+    for (int i=0; i<NumVectors_; i++) Vectors_[i] = 0;
+    return;
+  }
 
   int AllocateForView(void);
   int DoView(void);
@@ -994,6 +995,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor );
 
+  double **Pointers_;        // Pointers to each vector;
+  
   int MyLength_;
   int GlobalLength_;
   int NumVectors_;
@@ -1001,9 +1004,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   bool ConstantStride_;
   int Stride_;
   bool Allocated_;
-  double * DoubleTemp_;
-  int * IntTemp_;
-  Epetra_Vector ** Vectors_;
+  mutable double * DoubleTemp_;
+  mutable Epetra_Vector ** Vectors_;
   Epetra_Util Util_;
 
 };

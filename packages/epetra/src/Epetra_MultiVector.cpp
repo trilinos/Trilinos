@@ -43,7 +43,6 @@
 Epetra_MultiVector::Epetra_MultiVector(const Epetra_BlockMap& Map, int NumVectors, bool zeroOut)
   : Epetra_DistObject(Map, "Epetra::MultiVector"),
     Epetra_CompObject(),
-    IndexBase_(Map.IndexBase()),
     Values_(0),
     Pointers_(0),
     MyLength_(Map.NumMyPoints()),
@@ -69,7 +68,6 @@ Epetra_MultiVector::Epetra_MultiVector(const Epetra_BlockMap& Map, int NumVector
 Epetra_MultiVector::Epetra_MultiVector(const Epetra_MultiVector& Source)
   : Epetra_DistObject(Source),
     Epetra_CompObject(Source),
-    IndexBase_(Source.IndexBase_),
     Values_(0),
     Pointers_(0),
     MyLength_(Source.MyLength_),
@@ -97,7 +95,6 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockM
 					     double *A, int MyLDA, int NumVectors)
   : Epetra_DistObject(Map, "Epetra::MultiVector"),
     Epetra_CompObject(),
-    IndexBase_(Map.IndexBase()),
     Values_(0),
     Pointers_(0),
     MyLength_(Map.NumMyPoints()),
@@ -128,7 +125,6 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockM
 					      double **ArrayOfPointers, int NumVectors)
   : Epetra_DistObject(Map, "Epetra::MultiVector"),
     Epetra_CompObject(),
-    IndexBase_(Map.IndexBase()),
     Values_(0),
     Pointers_(0),
     MyLength_(Map.NumMyPoints()),
@@ -160,7 +156,6 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_MultiV
 					     int *Indices, int NumVectors)
   : Epetra_DistObject(Source.Map(), "Epetra::MultiVector"),
     Epetra_CompObject(),
-    IndexBase_(Source.IndexBase_),
     Values_(0),
     Pointers_(0),
     MyLength_(Source.MyLength_),
@@ -192,7 +187,6 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_MultiV
 					     int StartIndex, int NumVectors)
   : Epetra_DistObject(Source.Map(), "Epetra::MultiVector"),
     Epetra_CompObject(),
-    IndexBase_(Source.IndexBase_),
     Values_(0),
     Pointers_(0),
     MyLength_(Source.MyLength_),
@@ -220,16 +214,16 @@ Epetra_MultiVector::~Epetra_MultiVector(){
 
   if (!Allocated_) return;
 
-  for (int i=0; i<NumVectors_; i++) if (Vectors_[i]!=0) delete Vectors_[i];
-
-  delete [] Vectors_;
-
+  delete [] Pointers_;
   if (!UserAllocated_ && Values_!=0) delete [] Values_;
 
-  delete [] Pointers_;
+  if (Vectors_!=0) {
+    for (int i=0; i<NumVectors_; i++) if (Vectors_[i]!=0) delete Vectors_[i];
+    delete [] Vectors_;
+  }
 
-  delete [] DoubleTemp_;
-  delete [] IntTemp_;
+
+  if (DoubleTemp_!=0) delete [] DoubleTemp_;
 
 }
 
@@ -246,11 +240,8 @@ int Epetra_MultiVector::AllocateForCopy(void)
   if (Stride_>0) Values_ = new double[Stride_ * NumVectors_];
   Pointers_ = new double *[NumVectors_];
 
-  DoubleTemp_ = new double[NumVectors_];
-  IntTemp_ = new int[NumVectors_];
-
-  Vectors_ = new Epetra_Vector *[NumVectors_];
-  for (int i=0; i<NumVectors_; i++) Vectors_[i] = 0;
+  DoubleTemp_ = 0;
+  Vectors_ = 0;
   
   int randval = rand(); // Use POSIX standard random function
   if (DistributedGlobal_)
@@ -297,11 +288,8 @@ int Epetra_MultiVector::AllocateForView(void)
  
   Pointers_ = new double *[NumVectors_];
   
-  DoubleTemp_ = new double[NumVectors_];
-  IntTemp_ = new int[NumVectors_];
-
-  Vectors_ = new Epetra_Vector *[NumVectors_];
-  for (int i=0; i<NumVectors_; i++) Vectors_[i] = 0;
+  DoubleTemp_ = 0;
+  Vectors_ = 0;
   
   int randval = rand(); // Use POSIX standard random function
   if (DistributedGlobal_)
@@ -967,6 +955,7 @@ int Epetra_MultiVector::Dot(const Epetra_MultiVector& A, double *Result) const {
   int i;
   if (NumVectors_ != A.NumVectors()) EPETRA_CHK_ERR(-1);
   if (MyLength_ != A.MyLength()) EPETRA_CHK_ERR(-2);
+  UpdateDoubleTemp();
     
   double **A_Pointers = A.Pointers();
 
@@ -1205,6 +1194,9 @@ int  Epetra_MultiVector::Norm1 (double* Result) const {
   // 1-norm of each vector in MultiVector 
     
   int i;
+
+  UpdateDoubleTemp();
+
   for (i=0; i < NumVectors_; i++) DoubleTemp_[i] = ASUM(MyLength_, Pointers_[i]);
   
   Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
@@ -1220,6 +1212,9 @@ int  Epetra_MultiVector::Norm2 (double* Result) const {
   // 2-norm of each vector in MultiVector 
   
   int i, j;
+
+  UpdateDoubleTemp();
+
   for (i=0; i < NumVectors_; i++) 
     {
       double sum = 0.0;
@@ -1240,6 +1235,9 @@ int  Epetra_MultiVector::NormInf (double* Result) const {
   // Inf-norm of each vector in MultiVector 
     
   int i, j;
+
+  UpdateDoubleTemp();
+
   for (i=0; i < NumVectors_; i++) 
     {
       DoubleTemp_[i] = 0.0;
@@ -1265,6 +1263,9 @@ int  Epetra_MultiVector::NormWeighted (const Epetra_MultiVector& Weights, double
   else if (NumVectors_ != Weights.NumVectors()) EPETRA_CHK_ERR(-1);
 
   if (MyLength_ != Weights.MyLength()) EPETRA_CHK_ERR(-2);
+
+
+  UpdateDoubleTemp();
 
   double *W = Weights.Values();
   double **W_Pointers = Weights.Pointers();
@@ -1295,6 +1296,9 @@ int  Epetra_MultiVector::MinValue (double* Result) const {
   
   int i, j, ierr = 0;
 
+
+  UpdateDoubleTemp();
+
   for (i=0; i < NumVectors_; i++) 
     {
       double MinVal = Epetra_MaxDouble;
@@ -1318,6 +1322,9 @@ int  Epetra_MultiVector::MaxValue (double* Result) const {
   // Maximum value of each vector in MultiVector 
   
   int i, j, ierr = 0;
+
+  UpdateDoubleTemp();
+
   for (i=0; i < NumVectors_; i++) 
     {
       double MaxVal = - Epetra_MaxDouble;
@@ -1344,6 +1351,9 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
   int i, j;
   double fGlobalLength = 1.0/EPETRA_MAX((double) GlobalLength_, 1.0);
   
+
+  UpdateDoubleTemp();
+
   for (i=0; i < NumVectors_; i++) 
     {
       double sum = 0.0;
@@ -1672,29 +1682,6 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
   return(0);
 }
 
-/*
-//=======================================================================
-double*& Epetra_MultiVector::operator [] (int index)  {
-  
-  //  Epetra_MultiVector::operator [] --- return non-const reference 
-  
-  if (index < 0 || index >=NumVectors_) 
-    throw ReportError("Vector index = " + toString(index) + "is out of range. Number of Vectors = " + toString(NumVectors_), -1);
-  return(Pointers_[index]);
-}
-
-//=======================================================================
-const double*& Epetra_MultiVector::operator [] (int index) const {
-  
-  //  Epetra_MultiVector::operator [] --- return non-const reference 
-
-  if (index < 0 || index >=NumVectors_) 
-    throw ReportError("Vector index = " + toString(index) + "is out of range. Number of Vectors = " + toString(NumVectors_), -1);
-
-  const double * & temp = (const double * &) (Pointers_[index]);
-  return(temp);
-}
-*/
 
 //=======================================================================
 Epetra_Vector *& Epetra_MultiVector::operator () (int index)  {
@@ -1703,6 +1690,8 @@ Epetra_Vector *& Epetra_MultiVector::operator () (int index)  {
   
   if (index < 0 || index >=NumVectors_) 
     throw ReportError("Vector index = " + toString(index) + "is out of range. Number of Vectors = " + toString(NumVectors_), -1);
+
+  UpdateVectors();
 
   // Create a new Epetra_Vector that is a view of ith vector, if not already present
   if (Vectors_[index]==0)
@@ -1717,6 +1706,8 @@ const Epetra_Vector *& Epetra_MultiVector::operator () (int index) const {
 
   if (index < 0 || index >=NumVectors_) 
     throw ReportError("Vector index = " + toString(index) + "is out of range. Number of Vectors = " + toString(NumVectors_), -1);
+
+  UpdateVectors();
 
   if (Vectors_[index]==0)
     Vectors_[index] = new Epetra_Vector(View, Map(), Pointers_[index]);
