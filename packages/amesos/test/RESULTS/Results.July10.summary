@@ -15,5 +15,7 @@ Here are the results for some other tests:
   AmesosShell (A more copmlete test of SuperLUdist) fails on herouxsmp, paunchy and stratus.  
 The failures on herouxsmp adn paunchy are in bcsstk18.  The failures in stratus are in 
 bcsstk18 (except for a couple fidapm15 errors with errors slightly too large).  
+  AmesosDist works on herouxsmp, paunchy, stratus and my laptop running cygwin, but exhibits
+frou failures on atlantis.
 
 Refer to the other .summary files for details.
