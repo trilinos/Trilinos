@@ -1839,7 +1839,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
        coord   = (double)(j+1) * gridStep;
        samplej = 1.e0 - om_loc[0] * coord;
        for(i=1; i<deg; i++) { 
-	 samplej *= samplej * coord;
+	 samplej *= ( 1.e0 -  om_loc[i] * coord );
        }
        samplej *= samplej * coord; 
        if (samplej > rho2) {rho2 = samplej; }
@@ -1851,8 +1851,10 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
 
    
    if (deg < 2) {
+           widget->mlsBoost = 1.5e0;
 	   widget->mlsBoost = 1.019e0;
    } else {
+           widget->mlsBoost = 1.600e0;
 	   widget->mlsBoost = 1.025e0;
    }
    rho2 *= widget->mlsBoost;
