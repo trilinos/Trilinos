@@ -209,7 +209,7 @@ class Transform
 
   NewTypePtr      newObj_;
 
-}; // end class Tranform
+}; // end class Transform
 
 template<typename T,typename U>
 bool
@@ -238,17 +238,19 @@ isConstructed()
 }
 
 template<typename T, typename U>
-struct StructuralTransform : public Transform<T,U>
+class StructuralTransform : public Transform<T,U>
 {
+ public:
   bool fwd() { return true; }
   bool rvs() { return true; }
 
   virtual ~StructuralTransform() {}
 };
 
-template<class T>
-struct SameTypeTransform : public Transform<T,T>
+template<typename T>
+class SameTypeTransform : public Transform<T,T>
 {
+ public:
   typedef T  TransformType;
   typedef T* TransformTypePtr;
   typedef T& TransformTypeRef;
@@ -257,31 +259,34 @@ struct SameTypeTransform : public Transform<T,T>
 };
 
 template<typename T>
-struct StructuralSameTypeTransform : public SameTypeTransform<T>
+class StructuralSameTypeTransform : public SameTypeTransform<T>
 {
+ public:
   bool fwd() { return true; }
   bool rvs() { return true; }
 
   virtual ~StructuralSameTypeTransform() {}
 };
 
-template<class T>
-struct InPlaceTransform : public SameTypeTransform<T>
+template<typename T>
+class InPlaceTransform : public SameTypeTransform<T>
 {
-  typename Transform<T,T>::NewTypeRef
-  operator()
-  ( typename Transform<T,T>::OriginalTypeRef orig )
-  { origObj_ = &orig;
-    newObj_ = &orig;
-    return orig;
-  }
+ public:
+  //typename Transform<T,T>::NewTypeRef
+  //operator()
+  //( typename Transform<T,T>::OriginalTypeRef orig )
+  //{ origObj_ = &orig;
+  //  newObj_ = &orig;
+  //  return orig;
+  //}
 
   virtual ~InPlaceTransform() {}
 };
 
-template<class T>
-struct ViewTransform : public SameTypeTransform<T>
+template<typename T>
+class ViewTransform : public SameTypeTransform<T>
 {
+ public:
   bool fwd() { return true; }
   bool rvs() { return true; }
 

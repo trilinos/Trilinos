@@ -92,8 +92,7 @@ namespace EpetraExt {
 	 Epetra_MultiVector Pv = P(v);
 </pre>
 
-Questions and comments about this class may be directed to /dev/null.
-Just kidding. Direct them to Alan Williams.
+Questions and comments about this class may be directed to Alan Williams.
 */
 template<typename T>
 class Permutation : public Epetra_IntVector,
@@ -127,39 +126,39 @@ class Permutation : public Epetra_IntVector,
   /** Destructor */
   virtual ~Permutation();
 
-  typedef typename EpetraExt::Permutation<T>::NewTypeRef NewTypeR;
-  typedef typename EpetraExt::Permutation<T>::OriginalTypeRef OriginalTypeR;
-  typedef typename EpetraExt::Permutation<T>::NewTypePtr NewTypeP;
-  typedef typename EpetraExt::Permutation<T>::OriginalTypePtr OriginalTypeP;
+  typedef typename EpetraExt::SameTypeTransform<T>::TransformTypeRef OutputRef;
+  typedef typename EpetraExt::SameTypeTransform<T>::TransformTypeRef InputRef;
+  typedef typename EpetraExt::SameTypeTransform<T>::TransformTypePtr OutputPtr;
+  typedef typename EpetraExt::SameTypeTransform<T>::TransformTypePtr InputPtr;
 
   /** This method creates a new object which is a permuted copy of
       the input argument. Note that the new object will be destroyed by this
       permutation object.
 
-      @param orig Input Matrix to be permuted.
+      @param orig Input Object to be permuted.
   */
-  NewTypeR operator()( OriginalTypeR orig );
+  OutputRef operator()( InputRef orig );
 
   /** This method creates a new object which is a permuted copy of
       the input argument. Note: Column permutations are not yet implemented.
       Note that the new object will be destroyed by this
       permutation object.
 
-      @param orig Input Matrix to be permuted.
+      @param orig Input Object to be permuted.
 
       @param column_permutation Optional Input, defaults to false if not
       provided. A value of false means that a row-permutation will be 
       performed (result = P*orig), a value of true means that a
       column-permutation will be performed (result = orig*P).
   */
-  NewTypeR operator()( OriginalTypeR orig,
-			 bool column_permutation );
+  OutputRef operator()( InputRef orig,
+		      bool column_permutation );
 
  private:
   bool isTypeSupported();
 
-  NewTypeP newObj_;
-  OriginalTypeP origObj_;
+  OutputPtr newObj_;
+  InputPtr origObj_;
 };
 
 }//namespace EpetraExt
