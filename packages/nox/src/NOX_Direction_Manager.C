@@ -40,7 +40,9 @@
 
 #ifdef WITH_PRERELEASE
 #include "NOX_Direction_Tensor.H"
+#include "NOX_Direction_ModifiedNewton.H"
 #endif
+
 
 #include "NOX_Utils.H"
 #include "NOX_Parameter_List.H"
@@ -85,6 +87,8 @@ bool Manager::reset(Parameter::List& params)
 #ifdef WITH_PRERELEASE
     else if (method == "Tensor")
       ptr = new Tensor(params);
+    else if (method == "Modified-Newton")
+      ptr = new ModifiedNewton(params);
 #endif
     else if (method == "Quasi-Newton")
       ptr = new QuasiNewton(params);
