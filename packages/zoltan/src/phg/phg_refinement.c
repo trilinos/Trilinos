@@ -281,12 +281,15 @@ static int refine_fm2 (ZZ *zz,
                        float bal_tol
     )
 {
-    int    i, j,  *pins[2], *lpins[2], *moves=0, *mark=0, *adj=0, passcnt=0;
+    int    i, j, ierr=ZOLTAN_OK, *pins[2]={NULL,NULL}, *lpins[2]={NULL,NULL};
+    int    *moves=NULL, *mark=NULL, *adj=NULL, passcnt=0;
+    float  *gain=NULL, *lgain=NULL;
     int    best_cutsizeat, cont, successivefails=0;
-    double total_weight, weights[2], lweights[2], max_weight[2], lmax_weight[2];
+    double total_weight, weights[2], lweights[2],
+        max_weight[2], lmax_weight[2];
     double targetw0, ltargetw0, minvw=DBL_MAX;
-    double cutsize, best_cutsize, ratio = hg->ratio, best_imbal, best_limbal, imbal, limbal;
-    float  *gain=0, *lgain=0;
+    double cutsize, best_cutsize, ratio = hg->ratio,
+        best_imbal, best_limbal, imbal, limbal;
     HEAP   heap[2];
     char   *yo="local_fm2";
     PHGComm *hgc=hg->comm;
@@ -296,15 +299,16 @@ static int refine_fm2 (ZZ *zz,
     } root;
     
     /*    SelectFunc select_func = fm2_select;*/
-        
-
+    
+    
     if (p != 2) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not allowed for phg_fm2.");
         return ZOLTAN_FATAL;
     }
     
-    
-    if (hg->nEdge == 0 || hg->nVtx == 0)
+
+    /* return only if globally there is no edge or vertex */
+    if (!hg->dist_y[hgc->nProc_y] || hg->dist_x[hgc->nProc_x] == 0)
         return ZOLTAN_OK;
 
     /* find the index of the proc in column group with 
@@ -349,25 +353,21 @@ static int refine_fm2 (ZZ *zz,
 #endif
 
     
-    if (!(pins[0]     = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
-        || !(lpins[0] = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
-        || !(moves    = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
-        || !(lgain    = (float*) ZOLTAN_CALLOC(hg->nVtx, sizeof(float))) ) {
-         Zoltan_Multifree(__FILE__,__LINE__, 4, &pins[0], &lpins[0], &moves, &lgain);
-         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-         return ZOLTAN_MEMERR;
-    }
+    if ((hg->nEdge && (!(pins[0]     = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
+                      || !(lpins[0] = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int))))) ||
+        (hg->nVtx && (!(moves    = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
+                     || !(lgain    = (float*) ZOLTAN_CALLOC(hg->nVtx, sizeof(float))))))
+        MEMORY_ERROR;
+
     pins[1] = &(pins[0][hg->nEdge]);
     lpins[1] = &(lpins[0][hg->nEdge]);
 
     if (hgc->myProc_y==root.rank) { /* only root needs mark, adj, gain and heaps*/
-        if (!(mark     = (int*)   ZOLTAN_CALLOC(hg->nVtx, sizeof(int)))
-            || !(adj   = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))   
-            || !(gain  = (float*) ZOLTAN_CALLOC(hg->nVtx, sizeof(float)))) {
-         Zoltan_Multifree(__FILE__,__LINE__, 3, &mark, &adj, &gain);
-         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-         return ZOLTAN_MEMERR;
-        }        
+        if (hg->nVtx &&
+            (!(mark     = (int*)   ZOLTAN_CALLOC(hg->nVtx, sizeof(int)))
+             || !(adj   = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))   
+             || !(gain  = (float*) ZOLTAN_CALLOC(hg->nVtx, sizeof(float)))))
+            MEMORY_ERROR;
         Zoltan_heap_init(zz, &heap[0], hg->nVtx);
         Zoltan_heap_init(zz, &heap[1], hg->nVtx);  
     }
@@ -602,7 +602,9 @@ static int refine_fm2 (ZZ *zz,
         Zoltan_heap_free(&heap[1]);        
     }
     
-    Zoltan_Multifree(__FILE__, __LINE__, 4, &pins[0], &lpins[0], &moves, &lgain);
+ End:    
+    Zoltan_Multifree(__FILE__, __LINE__, 7, &pins[0], &lpins[0], &moves, &lgain,
+                     &mark, &adj, &gain);
     return ZOLTAN_OK;
 }
 

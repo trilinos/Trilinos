@@ -150,13 +150,13 @@ int Zoltan_PHG_Partition (
       prevVcnt=hg->dist_x[hgc->nProc_x];
         
       if (hgp->output_level >= PHG_DEBUG_LIST) {
-        uprintf(hgc,"START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s/%s p=%d...\n",
-        hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
-        hgp->coarsepartition_str, hgp->refinement_str, p);
+          uprintf(hgc,"START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s/%s p=%d...\n",
+                  hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
+                  hgp->coarsepartition_str, hgp->refinement_str, p);
           if (hgp->output_level > PHG_DEBUG_LIST) {
-            err = Zoltan_HG_Info(zz, hg);
-            if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-              goto End;
+              err = Zoltan_HG_Info(zz, hg);
+              if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+                  goto End;
           }
       }
       if (hgp->output_level >= PHG_DEBUG_PLOT)
@@ -227,10 +227,10 @@ int Zoltan_PHG_Partition (
         
     if (hgp->output_level >= PHG_DEBUG_LIST)     
       uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
-       hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
-       hgp->coarsepartition_str, hgp->refinement_str, p,
-         Zoltan_PHG_Compute_Balance(zz, hg, p, vcycle->part),
-         Zoltan_PHG_hcut_size_links(hgc, hg, vcycle->part, p));
+              hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
+              hgp->coarsepartition_str, hgp->refinement_str, p,
+              Zoltan_PHG_Compute_Balance(zz, hg, p, vcycle->part),
+              Zoltan_PHG_hcut_size_links(hgc, hg, vcycle->part, p));
 
     if (hgp->output_level >= PHG_DEBUG_PLOT)
       Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, vcycle->part,
@@ -250,7 +250,7 @@ int Zoltan_PHG_Partition (
                  
       /* the rest is to undo external matches */    
       MPI_Allgather (&finer->LevelCnt, 1, MPI_INT, each_size, 1, MPI_INT,
-       hgc->row_comm);
+                     hgc->row_comm);
 
       displs[0] = size = 0;
       for (i = 0; i < hgc->nProc_x; i++)

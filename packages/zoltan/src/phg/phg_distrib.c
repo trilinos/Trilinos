@@ -18,12 +18,6 @@
 #define _DEBUG3
     */
 
-#define MEMORY_ERROR { \
-  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
-  ierr = ZOLTAN_MEMERR; \
-  goto End; \
-}
-
     
 int Zoltan_PHG_Gno_To_Proc_Block(
   int gno,
@@ -66,17 +60,17 @@ static void PrintArr(PHGComm *hgc, char *st, int *ar, int n)
 
 
 static int Zoltan_PHG_Redistribute_Hypergraph(
-  ZZ *zz, 
-  HGraph  *ohg,           /* Input:  Local part of distributed hypergraph */
-  int     firstproc,      /* Input:  rank (in ocomm) of the first proc of the ncomm*/
-  int     *v2Col,         /* Input:  Vertex to processor Column Mapping */
-  int     *n2Row,         /* Input:  Net to processor Row Mapping */
-  PHGComm *ncomm,         /* Input:  communicators of new distribution */
-  HGraph  *nhg,           /* Output: Newly redistributed hypergraph */
-  int     **vmap,         /* Output: allocated with the size nhg->nVtx and
-                             vertex map from nhg to ohg's local vertex number*/
-  int     **vdest         /* Output: allocated with the size nhg->nVtx and
-                             stores dest proc in ocomm */
+    ZZ *zz, 
+    HGraph  *ohg,           /* Input:  Local part of distributed hypergraph */
+    int     firstproc,      /* Input:  rank (in ocomm) of the first proc of the ncomm*/
+    int     *v2Col,         /* Input:  Vertex to processor Column Mapping */
+    int     *n2Row,         /* Input:  Net to processor Row Mapping */
+    PHGComm *ncomm,         /* Input:  communicators of new distribution */
+    HGraph  *nhg,           /* Output: Newly redistributed hypergraph */
+    int     **vmap,         /* Output: allocated with the size nhg->nVtx and
+                               vertex map from nhg to ohg's local vertex number*/
+    int     **vdest         /* Output: allocated with the size nhg->nVtx and
+                               stores dest proc in ocomm */
     )
 {
     char * yo = "Zoltan_PHG_Redistribute_Hypergraph";
@@ -88,10 +82,10 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     int *vno=NULL, *nno=NULL, *dist_x=NULL, *dist_y=NULL,
         *vsn=NULL, *nsn=NULL, *pins=NULL, *cnt=NULL;
     ZOLTAN_COMM_OBJ *plan;    
-
+    
     Zoltan_HG_HGraph_Init (nhg);
     nhg->comm = ncomm;
-
+    
     nhg->dist_x = (int *) ZOLTAN_CALLOC(ncomm->nProc_x+1, sizeof(int));
     nhg->dist_y = (int *) ZOLTAN_CALLOC(ncomm->nProc_y+1, sizeof(int));
     dist_x = (int *) ZOLTAN_CALLOC(ncomm->nProc_x+1, sizeof(int));
@@ -112,6 +106,13 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     for (n = 0; n < ohg->nEdge; ++n)
         ++dist_y[n2Row[n]];
 
+    /* UVCUVC: CHECK ASSUMPTION
+       This code assumes that the objects in the receive buffer of
+       Zoltan_Comm_Do function are
+         1- in the increasing processor order,
+         2- order of the items send by a processor is preserved.
+     */
+    
 
     /* compute prefix sum to find new vertex start numbers; for each processor */
     MPI_Scan(dist_x, vsn, ncomm->nProc_x, MPI_INT, MPI_SUM, ocomm->row_comm);
@@ -142,11 +143,10 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
 
     nsend = MAX(MAX(ohg->nPins, ohg->nVtx), ohg->nEdge);
     elemsz = MAX(MAX(2, ohg->VtxWeightDim), ohg->EdgeWeightDim);
+    elemsz = (sizeof(float)>sizeof(int)) ? sizeof(float)*elemsz : sizeof(int)*elemsz;
 
     proclist = (int *) ZOLTAN_MALLOC(nsend * sizeof(int));
-    sendbuf = (int *) ZOLTAN_MALLOC(nsend * elemsz * sizeof(int));
-    if (sizeof(float)>sizeof(int))
-        errexit("Zoltan_PHG_Redistribute_Hypergraph: this code assumes sizeof(float)(%d)<=sizeof(int)(%d)", sizeof(float), sizeof(int));
+    sendbuf = (int *) ZOLTAN_MALLOC(nsend * elemsz);
 
     /* first communicate pins */
     nPins = 0;
@@ -209,9 +209,11 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     }
 #endif
 
-    *vmap = *vdest = NULL;  /* those are only needed in the first row of ncomm */
-    if (!ncomm->myProc_y && nVtx && (!(*vmap = (int *) ZOLTAN_MALLOC(nVtx * sizeof(int))) ||
-                                     !(*vdest = (int *) ZOLTAN_MALLOC(nVtx * sizeof(int)))))
+    /* those are only needed in the first row of ncomm */
+    *vmap = *vdest = NULL;  
+    if (!ncomm->myProc_y && nVtx &&
+        (!(*vmap = (int *) ZOLTAN_MALLOC(nVtx * sizeof(int))) ||
+         !(*vdest = (int *) ZOLTAN_MALLOC(nVtx * sizeof(int)))))
         MEMORY_ERROR;
     
     --msg_tag;
@@ -292,7 +294,6 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     } else 
         nEdge = (ncomm->myProc==-1) ? 0 : nhg->dist_y[ncomm->myProc_y+1] - nhg->dist_y[ncomm->myProc_y];
     
-    uprintf(ocomm, "all communication done! newH(%d, %d, %d)\n", nVtx, nEdge, nPins);
 
     if (ncomm->myProc==-1) {
 #ifdef _DEBUG1

@@ -36,6 +36,14 @@ extern void Zoltan_PHG_errexit(char *,...);
 
 extern void Zoltan_PHG_Find_Root(int, int, MPI_Comm, int *, int *);
 
+
+/****************************************************************************/
+#define MEMORY_ERROR { \
+  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
+  ierr = ZOLTAN_MEMERR; \
+  goto End; \
+}
+
     
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

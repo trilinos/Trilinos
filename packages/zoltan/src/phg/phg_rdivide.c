@@ -15,24 +15,23 @@
 #include "phg_distrib.h"
 
 
+/*
 #define _DEBUG1
 #define _DEBUG2
 #define _DEBUG3
-
-
-
-#define MEMORY_ERROR { \
-  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
-  ierr = ZOLTAN_MEMERR; \
-  goto End; \
-}
+*/
 
 
 static int split_hypergraph (int *pins[2], HGraph*, HGraph*, Partition, int, ZZ*);
 
 
+static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
+                                PHGPartParams *hgp, int level,
+                                int *proclist, int *sendbuf, int *dest, int *map, int *nsend);
 
-/* recursively divides problem into 2 parts until all p found */
+
+/* Recursively divides both the problem and the processes (if enabled)
+   into 2 parts untill all parts are found */
 int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
                        PHGPartParams *hgp, int level)
 {
@@ -95,7 +94,7 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
         
   /* now compute global pin distribution */
   MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
-  ZOLTAN_FREE (&lpins[0]);                        /* we don't need lpins */
+  ZOLTAN_FREE (&lpins[0]);   /* we don't need lpins anymore */
     
   /* recursively divide in two parts and repartition hypergraph */
   if (mid>lo) { /* only split if we really need it */
@@ -138,22 +137,19 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
       if (procmid<0 || (procmid+1>hgc->nProc-1))
           errexit("hey hey Proc Number range is [0, %d] prcomid=%d for left #pins=%d nPins=%d", hgc->nProc-1, procmid, left->dist_x[hgc->nProc_x] , hg->dist_x[hgc->nProc_x]);
       uprintf(hgc, "before redistribute for left procmid=%d ------------------\n", procmid);
-#endif      
-      Zoltan_PHG_Redistribute(zz, left,
-                              0, procmid, 
-                              &leftcomm, 
-                              &newleft,
-                              &leftvmap, &leftdest);
+#endif
+      
+      Zoltan_PHG_Redistribute(zz, left, 0, procmid, &leftcomm, &newleft, &leftvmap, &leftdest);
+      if (hgp->output_level >= PHG_DEBUG_LIST)     
+          uprintf(hgc, "Left: H(%d, %d, %d) ----> H(%d, %d, %d)\n", left->nVtx, left->nEdge, left->nPins, newleft.nVtx, newleft.nEdge, newleft.nPins);
       Zoltan_HG_HGraph_Free (left);
       
 #ifdef _DEBUG1
       uprintf(hgc, "before redistribute for right ++++++++++++++++++++++\n");
 #endif
-      Zoltan_PHG_Redistribute(zz, right,
-                              procmid+1, hgc->nProc-1, 
-                              &rightcomm, 
-                              &newright,
-                              &rightvmap, &rightdest);
+      Zoltan_PHG_Redistribute(zz, right, procmid+1, hgc->nProc-1, &rightcomm, &newright, &rightvmap, &rightdest);
+      if (hgp->output_level >= PHG_DEBUG_LIST)     
+          uprintf(hgc, "Right: H(%d, %d, %d) ----> H(%d, %d, %d)\n", right->nVtx, right->nEdge, right->nPins, newright.nVtx, newright.nEdge, newright.nPins);
       Zoltan_HG_HGraph_Free (right);
       
       nsend = MAX(newleft.nVtx, newright.nVtx);
@@ -164,53 +160,14 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
       if ((nsend && (!proclist || !sendbuf || !part)) ||
           (hg->nVtx && !recvbuf))
           MEMORY_ERROR;
-      nsend = 0;
       if (hgc->myProc<=procmid) {/* I'm on the left part so I should partition newleft */
-#ifdef _DEBUG1
-          uprintf(hgc, "-----------------I'm partitioning left---------------\n");
-          Zoltan_HG_Check(zz, &newleft);
-#endif
-          ierr = Zoltan_PHG_rdivide (lo, mid, part, zz, &newleft, hgp, level+1);
-          for (i=0; i<newleft.nVtx; ++i) {
-              proclist[nsend] = leftdest[i];
-              sendbuf[nsend*2] = leftvmap[i];
-              sendbuf[nsend*2+1] = part[i];
-              ++nsend;
-          }
-
-          Zoltan_HG_HGraph_Free (&newleft);
-          ZOLTAN_FREE(&leftvmap);
-          ZOLTAN_FREE(&leftdest);
-#ifdef _DEBUG1
-          if (leftcomm.col_comm==MPI_COMM_NULL || leftcomm.row_comm==MPI_COMM_NULL || leftcomm.Communicator==MPI_COMM_NULL)
-              errexit("hey comm is NULL com=%x col=%x row=%x", leftcomm.Communicator, leftcomm.col_comm, leftcomm.row_comm);
-#endif
-          MPI_Comm_free(&leftcomm.col_comm);
-          MPI_Comm_free(&leftcomm.row_comm);
-          MPI_Comm_free(&leftcomm.Communicator);
+          ierr = rdivide_and_prepsend (lo, mid, part, zz, &newleft, hgp, level+1,
+                                       proclist, sendbuf, leftdest, leftvmap, &nsend);
+          Zoltan_HG_HGraph_Free (&newright); /* free dist_x and dist_y allocated in Redistribute*/
       } else { /* I'm on the right part so I should partition newright */
-#ifdef _DEBUG1          
-          uprintf(hgc, "*****************I'm partitioning right****************\n");          
-          Zoltan_HG_Check(zz, &newright);
-#endif
-          ierr |= Zoltan_PHG_rdivide (mid+1, hi, part, zz, &newright, hgp, level+1);
-          for (i=0; i<newright.nVtx; ++i) {
-              proclist[nsend] = rightdest[i];
-              sendbuf[nsend*2]   = rightvmap[i];
-              sendbuf[nsend*2+1] = part[i];
-              ++nsend;
-          }
-
-          Zoltan_HG_HGraph_Free (&newright);
-          ZOLTAN_FREE(&rightvmap);
-          ZOLTAN_FREE(&rightdest);
-#ifdef _DEBUG1          
-          if (rightcomm.col_comm==MPI_COMM_NULL || rightcomm.row_comm==MPI_COMM_NULL || rightcomm.Communicator==MPI_COMM_NULL)
-              errexit("hey comm is NULL com=%x col=%x row=%x", rightcomm.Communicator, rightcomm.col_comm, rightcomm.row_comm);
-#endif
-          MPI_Comm_free(&rightcomm.col_comm);
-          MPI_Comm_free(&rightcomm.row_comm);
-          MPI_Comm_free(&rightcomm.Communicator);
+          ierr |= rdivide_and_prepsend (mid+1, hi, part, zz, &newright, hgp, level+1,
+                                        proclist, sendbuf, rightdest, rightvmap, &nsend);
+          Zoltan_HG_HGraph_Free (&newleft); /* free dist_x and dist_y allocated in Redistribute*/
       }
 
       --msg_tag;
@@ -249,10 +206,14 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
       Zoltan_Comm_Destroy(&plan);
   } else {
       if (left) {
+          if (hgp->output_level >= PHG_DEBUG_LIST)     
+              uprintf(hgc, "Left: H(%d, %d, %d)\n", left->nVtx, left->nEdge, left->nPins);
           ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, left, hgp, level+1);
           Zoltan_HG_HGraph_Free (left);
       }
       if (right) {
+          if (hgp->output_level >= PHG_DEBUG_LIST)     
+              uprintf(hgc, "Right: H(%d, %d, %d)\n", right->nVtx, right->nEdge, right->nPins);
           ierr |= Zoltan_PHG_rdivide (mid+1, hi, final, zz, right, hgp, level+1);
           Zoltan_HG_HGraph_Free (right);
       }
@@ -264,6 +225,40 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
 
   return ierr;
 }
+
+
+static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
+                                PHGPartParams *hgp, int level,
+                                int *proclist, int *sendbuf, int *dest, int *vmap, int *nsend)
+{
+    int      ierr=ZOLTAN_OK, i;
+    PHGComm  *hgc=hg->comm;
+#ifdef _DEBUG1
+    Zoltan_HG_Check(zz, hg);
+#endif
+    ierr = Zoltan_PHG_rdivide (lo, hi, final, zz, hg, hgp, level);
+    for (*nsend=i=0; i<hg->nVtx; ++i) {
+        proclist[*nsend] = dest[i];
+        sendbuf[(*nsend)*2] = vmap[i];
+        sendbuf[(*nsend)*2+1] = final[i];
+        ++(*nsend);
+    }
+    
+    Zoltan_HG_HGraph_Free (hg);
+    ZOLTAN_FREE(&vmap);
+    ZOLTAN_FREE(&dest);
+#ifdef _DEBUG1
+    if (hgc->col_comm==MPI_COMM_NULL || hgc->row_comm==MPI_COMM_NULL || hgc->Communicator==MPI_COMM_NULL)
+              errexit("hey comm is NULL com=%x col=%x row=%x", hgc->Communicator, hgc->col_comm, hgc->row_comm);
+#endif
+    MPI_Comm_free(&hgc->col_comm);
+    MPI_Comm_free(&hgc->row_comm);
+    MPI_Comm_free(&hgc->Communicator);
+    return ierr;
+}
+
+
+
 
 
 
@@ -374,6 +369,10 @@ int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGra
 
   return ierr;
 }
+
+
+
+
 
 
 static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition part,

@@ -150,13 +150,9 @@ int **exp_to_part )         /* list of partitions to which exported objs
     for (i = 0; i < hg->nVtx; ++i)
       hg->vmap[i] = i;
 
-
     /* tighten balance tolerance for recursive bisection process */
     hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
 
-
-    for (i = 0; i < hg->nVtx; ++i)
-        output_parts[i] = -1;
     /* partition hypergraph */
     err = Zoltan_PHG_rdivide (0, p-1, output_parts, zz, hg, &hgp, 0);
     for (i = 0; i < hg->nVtx; ++i)
