@@ -18,7 +18,7 @@
 # To compile the library, type
 #    gmake ZOLTAN_ARCH=<targetmachine> zoltan
 # where
-#    targetmachine = sun, sunos, smos, or tflop.
+#    targetmachine = solaris, cplant, smos, or tflop.
 #
 # To compile zdrive, type
 #    gmake <optional flags> zdrive
@@ -40,7 +40,7 @@ LIB_TARGET=zoltan
 ##############################################################################
 
 ifndef ZOLTAN_ARCH
-  ZOLTAN_ARCH=generic
+ZOLTAN_ARCH	= generic
 endif
 
 include Makefiles/Makefile.$(ZOLTAN_ARCH)
@@ -112,6 +112,8 @@ SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct \
 SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct \
 		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree 
+SUBDIRS		= driver ch all lb par rcb comm oct parmetis params timer ha \
+		  reftree
 
 
 ALL_CSRC	= all_allo.c free_structure.c
@@ -180,29 +182,6 @@ endif
 
 
 
-############################################################################
-#                  LINT DEFINITIONS KDDKDD
-############################################################################
-#
-# lint defines
-#
-#LINT		= alint # SunOs4
-LINT		= lint
-LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
-		  -Icomm -Ioct -Iparmetis -Itimer -Iha -Ireftree\
-		  -I/Net/local/lang/SC3.0.1/include \
-		  -I/Net/local/lang/SC3.0.1/ansi_include \
-		  -I/Net/local/mpi/include \
-		  -I/Net/local/mpi/mpich/include \
-                  -I/Net/local/mpi/build/solaris/ch_p4/include \
-		  -I/Net/proj/zoltan/arch/sun/include
-LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
-LINT_TARGET	= llib-l$(LIB_TARGET).ln
-SUBDIRS		= driver ch all lb par rcb comm oct parmetis params timer ha \
-		  reftree
-VPATH		= $(SUBDIRS)
-
-
 ##############################################################################
 #  Architecture-independent definitions
 ##############################################################################
@@ -222,6 +201,26 @@ ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS) 
 F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
+
+############################################################################
+#                  LINT DEFINITIONS KDDKDD
+############################################################################
+#
+# lint defines
+#
+LINT		= lint
+LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
+		  -Icomm -Ioct -Iparmetis -Itimer -Iha -Ireftree\
+		  -I$(ZOLTAN_INC_PATH)
+#		  -I/Net/local/lang/SC3.0.1/include \
+#		  -I/Net/local/lang/SC3.0.1/ansi_include \
+#		  -I/Net/local/mpi/include \
+#		  -I/Net/local/mpi/mpich/include \
+#                  -I/Net/local/mpi/build/solaris/ch_p4/include \
+#		  -I/Net/proj/zoltan/arch/sun/include
+LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
+LINT_TARGET	= llib-l$(LIB_TARGET).ln
+VPATH		= $(SUBDIRS) $(THIRD_PARTY_VPATH)
 
 ###########################################################################
 #      HELP HELP HELP HELP HELP  
@@ -323,16 +322,16 @@ zfdrive:
 ############################################################################
 #
 
-$(LINT_TARGET): $(LIB_SRC_C)
+$(LINT_TARGET): $(ZOLTAN_CSRC)
 	@echo "Generating lint file for library..."
-	$(LINT) $(LINT_FLAGS) $? -o $(LIB_TARGET)
+	$(LINT) $(LINT_FLAGS)  $? -o $(LIB_TARGET)
 
-lint: $(DR_CSRC) $(CH_CSRC) $(LINT_TARGET)
+lint: $(ZDRIVE_CSRC) $(LINT_TARGET)
 	@echo "running lint..."
-	$(LINT) $(LINT_FLAGS) $?
+	$(LINT) $(LINT_FLAGS) "VPATH=$(LINT_VPATH) $?
 
 printout:
-	cat $(MAIN) $(LIB_SRC_C) > source.c
+	cat $(MAIN) $(ZOLTAN_CSRC) > source.c
 	tps -c source.c | lpr
 	-rm source.c
 	tps  $(INC) | lpr
@@ -350,4 +349,5 @@ clean:
 	 cd fdriver; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
 	 cd $$a; $(RM) -f *.o *.d *.d@ $(TARGET) $(TARGET).pure $(LIB_NAME); cd ..; \
 	 done;
+	 $(RM) $(LINT_TARGET)
 	 exit 0
