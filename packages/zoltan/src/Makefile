@@ -127,6 +127,9 @@ SUBDIRS		= driver ch all lb par rcb comm oct parmetis params timer ha \
 ALL_CSRC	= all_allo.c free_structure.c
 ALL_INC		= all_const.h all_allo_const.h
 
+MEM_CSRC	= mem.c
+MEM_INC		= mem_const.h
+
 LB_CSRC		= lb.c lb_util.c 
 LB_INC		= lb_const.h lb.h lbi_const.h lb_util_const.h
 
@@ -195,7 +198,7 @@ endif
 ##############################################################################
 
 ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
-ZOLTAN_CSRC    += $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
+ZOLTAN_CSRC    += $(LB_CSRC) $(ALL_CSRC) $(MEM_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 		  $(COMM_CSRC) $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
@@ -360,7 +363,7 @@ zscript:
 	@echo 'rm -f $$ZOLTAN_OBJ_DIR/*' >> zoltan_script
 	@echo 'cd $$ZOLTAN_OBJ_DIR' >> zoltan_script
 	@echo "echo 'Zoltan:  Compiling Zoltan/all'" >> zoltan_script
-	@for iii in $(ALL_CSRC) ; do \
+	@for iii in $(ALL_CSRC) $(MEM_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../all/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/lb'" >> zoltan_script
