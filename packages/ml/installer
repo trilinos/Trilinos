@@ -51,6 +51,7 @@ ${echo}
 export USING_MPI
 export GOT_BLAS
 export GOT_LAPACK
+export GOT_EPETRA
 export ARCH
 export PACKAGES
 export INC_PATH
@@ -59,6 +60,7 @@ export ML_HOME
 USING_MPI=no
 GOT_BLAS=no
 GOT_LAPACK=no
+GOT_EPETRA=no
 #ARCH=
 PACKAGES=-DML_PACKAGE
 INC_PATH=

@@ -27,6 +27,7 @@ USE BLAS                         no  # [yes, no]
 BINARY INPUT DATA                no  # [yes, no]
                                      # whether ML/Aztec read ascii or binary
                                      # see file ../util/README
+USE EPETRA                       no  # [yes, no]
 LIBRARY INCLUDE PATH                 # (e.g. /usr/local/mpi/include)
                                      ####################################
 LIBRARY INCLUDE PATH                 # PUT AS MANY INCLUDE, DIRECTORIES,#

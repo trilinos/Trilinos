@@ -40,6 +40,17 @@ if test `expr $yes_or_no` = 'yess'
 then
    PACKAGES=`${echo} $PACKAGES -Dbinary` 
 fi
+#
+${echo} -n "Do you want to use epetra? [no] " | sed "s/-n//"
+read yes_or_no
+yes_or_no=`${echo} ${yes_or_no}s`
+if test `expr $yes_or_no` = 'yess'
+#   test `expr $yes_or_no` = 's'
+then
+   GOT_EPETRA=yes
+   PACKAGES=`${echo} $PACKAGES -DML_WITH_EPETRA` 
+fi
+#
 ${echo} -n "Do you want to use MPI? [yes] " | sed "s/-n//"
 read yes_or_no
 yes_or_no=`${echo} ${yes_or_no}s`
@@ -153,7 +164,11 @@ then
       LIBRARIES=`${echo} ${dir}/libaztec.a ${LIBRARIES}`
    else
       INC_PATH=`${echo} -I${directory} ${INC_PATH}`
-      LIBRARIES=`${echo} ${directory}/libaztec.a ${LIBRARIES}`
+      if test `expr $GOT_EPETRA` != 'yes'
+      then
+         #if no epetra, assume making classic aztec
+         LIBRARIES=`${echo} ${directory}/libaztec.a ${LIBRARIES}`
+      fi
 
       ${echo}
       ${echo} -n "Do you need to build Aztec? [yes] " | sed "s/-n//"
