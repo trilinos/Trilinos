@@ -241,6 +241,8 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     passtmp = &readtmp;
   }
 
+  Epetra_MultiVector CopyB( *passb ) ;
+
 
   double Anorm = passA->NormInf() ; 
   SparseDirectTimingVars::SS_Result.Set_Anorm(Anorm) ;
@@ -440,6 +442,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 
   multiplyA->Multiply( transpose, *passx, *passtmp);
   passresid->Update(1.0, *passtmp, -1.0, *passb, 0.0); 
+  //  passresid->Update(1.0, *passtmp, -1.0, CopyB, 0.0); 
   passresid->Norm2(&residual);
 
   SparseDirectTimingVars::SS_Result.Set_Residual(residual) ;

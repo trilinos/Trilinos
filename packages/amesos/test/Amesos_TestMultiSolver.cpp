@@ -44,6 +44,9 @@
 #ifdef HAVE_AMESOS_SLUD
 #include "SuperludistOO.h"
 #endif
+#ifdef HAVE_AMESOS_SLUS
+#include "Epetra_SLU.h"
+#endif
 #ifdef HAVE_AMESOS_SLUD2
 #include "Superludist2_OO.h"
 #endif
@@ -217,6 +220,8 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   passb->PutScalar( 0.0 );
   passA->Multiply( transpose, *passxexact, *passb ) ; 
 
+  Epetra_MultiVector CopyB( *passb ) ;
+
   double Anorm = passA->NormInf() ; 
   SparseDirectTimingVars::SS_Result.Set_Anorm(Anorm) ;
 
@@ -306,6 +311,12 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       EPETRA_CHK_ERR( klu.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( klu.NumericFactorization(  ) ); 
       EPETRA_CHK_ERR( klu.Solve( ) ); 
+#endif
+#ifdef HAVE_AMESOS_SLUS
+    } else if ( SparseSolver == SuperLU ) { 
+      Epetra_SLU superluserial( &Problem ) ; 
+
+      EPETRA_CHK_ERR( superluserial.Solve( ) ); 
 #endif
 #ifdef HAVE_AMESOS_SCALAPACK
     } else if ( SparseSolver == SCALAPACK ) { 
@@ -401,6 +412,7 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     passtmp->PutScalar(0.0);
     passA->Multiply( transpose, *passx, *passtmp);
     passresid->Update(1.0, *passtmp, -1.0, *passb, 0.0); 
+    //    passresid->Update(1.0, *passtmp, -1.0, CopyB, 0.0); 
     passresid->Norm2(&residual[0]);
 
     for ( int i = 0 ; i< numsolves; i++ ) 

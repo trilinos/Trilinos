@@ -45,6 +45,9 @@
 #ifdef HAVE_AMESOS_SCALAPACK
 #include "Amesos_Scalapack.h"
 #endif
+#ifdef HAVE_AMESOS_SLUS
+#include "Epetra_SLU.h"
+#endif
 #ifdef HAVE_AMESOS_UMFPACK
 #include "Amesos_Umfpack.h"
 #endif
@@ -219,6 +222,8 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 
   passb->PutScalar( 0.0 );
   passA->Multiply( transpose, *passxexact, *passb ) ; 
+
+  Epetra_MultiVector CopyB( *passb ) ;
 
   double Anorm = passA->NormInf() ; 
   SparseDirectTimingVars::SS_Result.Set_Anorm(Anorm) ;
@@ -401,6 +406,31 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 
       }
 #endif
+#ifdef HAVE_AMESOS_SLUS
+    } else if ( SparseSolver == SuperLU ) { 
+      Epetra_SLU superluserial( &Problem ) ;
+      
+      bool factor = true; 
+
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( superluserial.Solve( true, false, factor, 2, -1, true, transpose ) ); 
+	//	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	else { 
+	  if ( i < numsolves-1 ) 
+	    SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	  else
+	    SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+	}
+
+      }
+#endif
 #ifdef HAVE_AMESOS_KLU
     } else if ( SparseSolver == KLU ) { 
       Teuchos::ParameterList ParamList ;
@@ -471,7 +501,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
 	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
 	EPETRA_CHK_ERR( mumps.Solve( ) ); 
-	factor = false; 
+	//	factor = false; 
 	if ( i == 0 ) 
 	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
 	else { 
@@ -578,6 +608,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     passtmp->PutScalar(0.0);
     passA->Multiply( transpose, *passx, *passtmp);
     passresid->Update(1.0, *passtmp, -1.0, *passb, 0.0); 
+    //    passresid->Update(1.0, *passtmp, -1.0, CopyB, 0.0); 
     passresid->Norm2(&residual[0]);
 
     for ( int i = 0 ; i< numsolves; i++ ) 

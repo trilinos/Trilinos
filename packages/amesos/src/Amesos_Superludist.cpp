@@ -155,8 +155,8 @@ int Amesos_Superludist::ReadParameterList() {
   
   // parameters for all packages
   
-  //FIXME  Redistribute_ = ParameterList_->get("Redistribute",Redistribute_);
-  //FIXME  AddZeroToDiag_ = ParameterList_->get("AddZeroToDiag",AddZeroToDiag_);
+  Redistribute_ = ParameterList_->get("Redistribute",Redistribute_);  // FIXME msala turned these off kstanley turned them back on 3/17/04
+  AddZeroToDiag_ = ParameterList_->get("AddZeroToDiag",AddZeroToDiag_); // FIXME msala turned these off kstanley turned them back on 3/17/04
   
   // parameters for Superludist only
   
@@ -164,6 +164,17 @@ int Amesos_Superludist::ReadParameterList() {
     Teuchos::ParameterList SuperludistParams = ParameterList_->sublist("Superludist") ;
     ReuseSymbolic_ = SuperludistParams.get("ReuseSymbolic",ReuseSymbolic_);
     string FactOption = SuperludistParams.get("Fact", "SamePattern_SameRowPerm");
+
+    //
+    //  Neither FactOption = DOFACT nor FactOption = FACTORED make any sense here.
+    //    FactOption is only relevant if ReuseSympolic_ is set true.
+    //        FactOption = DOFACT does not reuse the symbolic factorization, 
+    //      the correct way not to reuse symbolic factorization is to 
+    //      set reusesymbolic_ to false 
+    //        FactOption == FACTORED causes the call to NumericFactorization 
+    //      to have no affect.  
+    //
+
     if( FactOption == "SamePattern_SameRowPerm" ) FactOption_ = SamePattern_SameRowPerm;
     else if( FactOption == "DOFACT" ) FactOption_ = DOFACT;
     else if( FactOption == "SamePattern" ) FactOption_ = SamePattern;

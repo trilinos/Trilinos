@@ -41,6 +41,9 @@
 #ifdef HAVE_AMESOS_SUPERLUDIST
 #include "Amesos_Superludist.h"
 #endif
+#ifdef HAVE_AMESOS_SUPERLU
+#include "Amesos_Superlu.h"
+#endif
 #ifdef HAVE_AMESOS_DSCPACK
 #include "Amesos_Dscpack.h"
 #endif
@@ -97,6 +100,13 @@ Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType,
     return new Amesos_Superludist(LinearProblem,ParameterList); 
 #else
     cerr << "Amesos_Superludist is not implemented" << endl ; 
+    return 0 ; 
+#endif
+  case AMESOS_SUPERLU:
+#ifdef HAVE_AMESOS_SUPERLU
+    return new Amesos_Superlu(LinearProblem,ParameterList); 
+#else
+    cerr << "Amesos_Superlu is not implemented" << endl ; 
     return 0 ; 
 #endif
     break;

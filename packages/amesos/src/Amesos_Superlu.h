@@ -36,7 +36,7 @@
 //  0)  Factor called twice
 //  1)  Refactor()
 //  2)  Parameter list
-//  3)  Transpose 
+//  3)  Transpose  - DONE 
 //  4)  Destructor - In particular, need to call the SuperLU_FREE routines.
 //  5)  Coments - especially in Amesos_Superlu.h
 //
@@ -79,59 +79,14 @@
 
 class SLUData;
 
-//! Amesos_Klu:  A serial, unblocked code ideal for getting started and for very sparse matrices, such as circuit matrces.  AmesosKlu computes <p class="code">A<sup>T</sup> X = B</p> more efficiently than <p class="code">A X = B</p>.
-/*!  Amesos_Klu, an object-oriented wrapper for Klu, will solve a linear systems of equations: <TT>A X = B</TT>
-   using Epetra objects and the Klu solver library, where
+//! Amesos_Superlu:  Amesos interface to Xioye Li's SuperLU serial code.  
+/*!  Amesos_Superlu, an object-oriented wrapper for Superlu, will solve a linear systems of equations: <TT>A X = B</TT>
+   using Epetra objects and the Superlu solver library, where
   <TT>A</TT> is an Epetra_RowMatrix and <TT>X</TT> and <TT>B</TT> are 
   Epetra_MultiVector objects.
-
-<br /><br /><p>AmesosKlu computes <p class="code">A<sup>T</sup> X = B</p> 
-more efficiently than <p class="code">A X = B</p>.  The
-latter requires a matrix transpose - which costs both time and space.
-
-<br /><br /><p>klu is Davis' implementation of Gilbert-Peierl's left-looking
-sparse partial pivoting algorithm, with Eisenstat & Liu's symmetric
-pruning.  Gilbert's version appears as [L,U,P]=lu(A) in MATLAB.
-It doesn't exploit dense matrix kernels, but it is the only sparse
-LU factorization algorithm known to be asymptotically optimal,
-in the sense that it takes time proportional to the number of
-floating-point operations.  It is the precursor to SuperLU,
-thus the name ("clark Kent LU").  For very sparse matrices that
-do not suffer much fill-in (such as most circuit matrices when
-permuted properly) dense matrix kernels do not help, and the
-asymptotic run-time is of practical importance.
-
-<br /><br /><p>The klu_btf code first permutes the matrix to upper block
-triangular form (using two algorithms by Duff and Reid,
-MC13 and MC21, in the ACM Collected Algorithms).  It then permutes
-each block via a symmetric minimum degree ordering (AMD, by Amestoy,
-Davis, and Duff).  This ordering phase can be done just once
-for a sequence of matrices.  Next, it factorizes each reordered
-block via the klu routine, which also attempts to preserve
-diagonal pivoting, but allows for partial pivoting if the diagonal
-is to small.    
-<!-- A fast-factorization version of klu is
-available, which does not do any partial pivoting at all.  -->
-
-
-<br /><br /><p>  Klu execution can be tuned through a variety of parameters.
-  Amesos_Klu.h allows control of these parameters through the
-  following named parameters, ignoring parameters with names that it
-  does not recognize.  Where possible, the parameters are common to
-  all direct solvers (although some may ignore them).  However, some
-  parameters, in particular tuning parameters, are unique to each
-  solver.
     
 */
 
-// Amesos_Superlu_Pimpl contains a pointer to two sructures defined in 
-// klu.h:  klu_symbolic and klu_numeric.  This prevents Amesos_Klu.h 
-// from having to include klu.h.
-//
-//  Doxygen does not handle forward class references well.
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-class Amesos_Superlu_Pimpl ; 
-#endif
 
 class Amesos_Superlu: public Amesos_BaseSolver { 
 
@@ -274,8 +229,25 @@ public:
 
   //! Reads the parameter list and updates internal variables. 
   /*!
-    ReadParameterList is called by SymbolicFactorization.  Hence, few codes 
-    will need to make an explicit call to ReadParameterList.
+    Amesos_Superlu accepts the following parameters:
+    <ul>
+      <li>"Verbose" - boolean:false - If true prints out some debug information
+      <li>"Superlu" - list containing the following parameters:
+      <ul>
+        <li>"FactOption" - string:["SamePattern"] "SamePattern-SameRowPerm"
+	<li>"ColPerm" - string:["COLAMD"] "..."
+	<li>"Equil" - boolean:true 
+        <li>"fill_fac" - int:-1
+        <li>"panel_size" - int:-1
+        <li>"relax" - int:-1
+	<li>"pivot_thresh" - double:-1
+	<li>"Iter_Refine" - string:["DOUBLE"] "NOREFINE" 
+      </ul>
+    </ul>
+
+    
+
+
    */
   int ReadParameterList() ;
 
@@ -326,6 +298,8 @@ public:
  protected:
 
   SLUData * data_;
+  double *DummyArray;
+
 
   //
   //  Ap, Ai, Aval form the compressed row storage used by Superlu
@@ -388,6 +362,7 @@ public:
   vector<double> C_;
 #endif
   char equed_;
+  bool DestroyBandX_ ; 
 
 };  // End of  class Amesos_Superlu  
 #endif /* _AMESOS_SUPERLU_H_ */

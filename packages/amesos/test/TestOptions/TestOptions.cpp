@@ -271,11 +271,15 @@ int main( int argc, char *argv[] ) {
 				   AMESOS_UMFPACK,
 				   AMESOS_MUMPS,
 				   AMESOS_SUPERLUDIST,
+				   AMESOS_SCALAPACK,
+				   AMESOS_SUPERLU,
 				   AMESOS_DSCPACK }; 
   char *AmesosClassNames[] =  { "AMESOS_KLU",   
 				"AMESOS_UMFPACK",
 				"AMESOS_MUMPS",
 				"AMESOS_SUPERLUDIST",
+				"AMESOS_SCALAPACK",
+				"AMESOS_SUPERLU",
 				"AMESOS_DSCPACK" }; 
 
   Teuchos::ParameterList ParamList ;

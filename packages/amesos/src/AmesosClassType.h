@@ -43,6 +43,7 @@ enum AmesosClassType {
   AMESOS_UMFPACK,
   AMESOS_MUMPS,
   AMESOS_SUPERLUDIST,
+  AMESOS_SUPERLU,
   AMESOS_DSCPACK };
 
 const int NumAmesosClasses = 5 ; 

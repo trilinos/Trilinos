@@ -49,6 +49,18 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
 			     maxrelresidual, 
 			     NumTests ) ;
   
+  if ( verbose) cout << " Testing SCALAPACK " << endl ; 
+
+  errors += TestOtherClasses(AMESOS_SCALAPACK,
+			     Amat, 
+			     transpose, 
+			     verbose, 
+			     Levels, 
+			     Rcond, 
+			     maxrelerror, 
+			     maxrelresidual, 
+			     NumTests ) ;
+  
   if ( verbose) cout << " Testing KLU " << endl ; 
 
   errors += TestOtherClasses(AMESOS_KLU,
@@ -73,6 +85,18 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
 			     maxrelresidual, 
 			     NumTests ) ;
 
+  if ( verbose) cout << " Testing SUPERLU " << endl ; 
+
+  errors += TestOtherClasses(AMESOS_SUPERLU,
+			     Amat, 
+			     transpose, 
+			     verbose, 
+			     Levels, 
+			     Rcond, 
+			     maxrelerror, 
+			     maxrelresidual, 
+			     NumTests ) ;
+  
 
   if ( verbose) cout << " TestAllClasses errors = " << errors << endl ; 
 

@@ -201,7 +201,16 @@ public:
   //! Reads the parameter list and updates internal variables. 
   /*!
     ReadParameterList is called by SymbolicFactorization.  Hence, few codes 
-    will need to make an explicit call to ReadParameterList.
+    will need to make an explicit call to ReadParameterList.  DEPRECATED.
+    This routine will soon be renamed SetParameters()
+    Amesos_Superludist accepts the following parameters:
+    <ul>
+    <li>"AddZeroToDiag" - boolean:false - Adds zero to the diagonal, only active if Redistribute is true 
+    <li>"Redistribute" - boolean:true - Redistributes the matrix 
+    </ul>
+
+
+
    */
   int ReadParameterList() ;
 
