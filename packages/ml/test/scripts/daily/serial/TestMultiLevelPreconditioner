@@ -98,7 +98,6 @@ foreach f ( VerySimple AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPre
 		  echo "[TEST] Testing file >>" $g "<<" >>& ../$file
 		  if( "$2" == "True" ) then
 		      ./$g >>& /dev/null
-                    # run with 1 process		    
 		      if( $status != 0 ) then
 		        # A test failed.
 			    set AnError = True

@@ -109,12 +109,12 @@ foreach f ( AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPreconditioner
 		  echo "[TEST] Testing file >>" $g "<<" >>& ../$file
                   echo "[TEST]" >>& ../$file
 		  if( "$2" == "True" ) then
-		      $mpigo ./$g >>& /dev/null
-                    # run with 1 process		    
+                      # run with 4 processors
+		      $mpigo 4 ./$g >>& /dev/null
 		      if( $status != 0 ) then
 		        # A test failed.
 			    set AnError = True
-			    echo "[TEST] ERROR: Test w/ 4 proc failed!" >>& ../$file
+			    echo "[TEST] ERROR: Test w/ 4 proc failed" >>& ../$file
                             echo "[TEST] ERROR: now re-running with output" >>& ../$file
                             $mpigo 4 ./$g >>& ../$file
 			    echo "[TEST] Errors for script " $g " are listed above." >>& ../$file2
@@ -124,7 +124,7 @@ foreach f ( AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPreconditioner
 		      endif
 		  else
 		    # This is not an automated test.
-		    ./$g >>& ../$file
+		    $mpigo 4 ./$g >>& ../$file
 		  endif
 	  end
     else
