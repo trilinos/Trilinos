@@ -1,0 +1,144 @@
+#!/usr/bin/perl
+#==========================================================================
+# gcovmerge
+#
+# A script for automatically extracting and merging coverage information
+# from C++ programs compiled using 'g++ -fprofile-arcs -ftest-coverage'.
+#
+# Usage: 
+#
+#        gcovmerge [--with-files=min-max]           \
+#                  [--with-directories]             \
+#                  [--without-files]                \
+#                  [--exclude=word]                 \
+#                  path
+#
+# Arguments:
+#
+#        path
+#            The path to search for .bb and .bbg files (which are the
+#            markers for programs compiled with the appropriate
+#            arguments).
+#
+#        --with-files=min-max [0-100]
+#            When specified, no coverage information is displayed for
+#            any individual files with a coverage percent outside of 
+#            the range given.
+#
+#        --with-directories
+#            When specified, coverage percentages are displayed for
+#            each directory examined.
+#
+#        --without-files
+#            No coverage information will be given for individual files.
+#
+#        --exclude=word []
+#            No files with word in their name or path will be examined.
+#            This option may be specified more than once, in order to
+#            exclude a variety of files.
+#
+# Written by Joe Outzen, for the Trilinos project.
+#
+#==========================================================================
+use Cwd;
+chomp($base = cwd);
+$last = "!";
+$sdir = pop;
+$covmax = 100;
+$covmin = 0;
+$fc = 0;
+@exlist = ();
+foreach (@ARGV){
+    if(/--with-files=(\d+)-(\d+)/){
+	$covmin = $1;
+	$covmax = $2;
+    }
+    elsif(/--with-directories/){
+	$fc = 1;
+    }
+    elsif(/--without-files/){
+	$covmin = 100;
+	$covmax = 0;
+    }
+    elsif(/--exclude=(.*)/){
+	push @exlist, $1;
+    }
+    else{ 
+	die "Invalid paramater: $_"; 
+    }
+}
+
+foreach (`find $sdir -name "*.bb"`){
+    $skip = 0;
+    s/((.*\/)*).*$/$1/;
+    chomp;
+    next if $_ eq $last;
+    $last = $_;
+    foreach (@exlist){
+	if($last =~ /$_/){
+	    $skip = 1;
+	    last;
+	}
+    }
+    if($skip){ next;}
+    chdir $_ or die "could not cd to $_\n";
+    unless($fc) {print "\tNow in $_.\n";}
+    $fexec = 0;
+    $fcomp = 0;
+    foreach (<*.bb>){
+	$file = $_;
+	$skip = 0;
+	foreach (@exlist){
+	    if($file =~ /$_/){
+		$skip = 1;
+		last;
+	    }
+	}
+	if($skip){next;}
+	s/.bb$/.o/;
+	chomp;
+	system "gcov $_ >& /dev/null";
+	foreach (<*.cpp.gcov>){
+	    chomp;
+	    open GCOVFILE, "<$_";
+	    $lines_executed = 0;
+	    $lines_compiled = 0;
+	    foreach (<GCOVFILE>){
+		if(/^\s+(.+):\s+(\d+):/){
+		    if($1 eq "#####"){
+			$lines_compiled++;
+			$fcomp++;
+		    }elsif($1 ne "-"){
+			$lines_compiled++;
+			$fcomp++;
+			$lines_executed++;
+			$fexec++;
+		    }
+		}else{}
+	    }
+	    close GCOVFILE;
+	    unlink $_;
+	    if($lines_compiled){
+		$percent = ($lines_executed / $lines_compiled) * 100;
+	    }else{
+		$percent = 0;
+	    }
+	    if($percent <= $covmax && $percent >= $covmin){
+		$s = " " x (55 - length);
+		s/\.gcov$/$s/;
+		print "\t$_$percent%\n";
+	    }
+	}
+    }
+    if($fc){
+	if($fcomp > 0){
+	    $fper = 100 * $fexec / $fcomp;
+	}else{
+	    $fper = 0;
+	}
+	$s = " " x (50 - length);
+	s/$/$s/;
+	print "$_$fper%\n";
+    }
+    chdir $base;
+}

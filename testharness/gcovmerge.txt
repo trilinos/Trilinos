@@ -1,0 +1,79 @@
+GCOV
+
+GCOV can be used to gather code coverage information.  GCOV is a component of G++, and therefore can only be used on machines which use that compiler (this should not be an issue, as code coverage is machine-independent).  In order to use GCOV, the configure script needs a few extra options.  Under normal conditions, this should just be:
+
+$./configure CXXFLAGS="-fprofile-arcs -ftest-coverage" [other options]
+
+If the configure script does not automatically detect G++, you may have to specify it as an option:
+
+$./configure CXX=g++ CXXFLAGS="-fprofile-arcs -ftest-coverage" [other options]
+
+Then do:
+
+$make
+
+and possibly:
+
+$make install
+
+Now, run whatever functionality tests you wish to run.  In theory, this should be every test you have.  Time lapses and test order do not matter.  If you are not testing the entirety of Trilinos, it may also be a good idea to run tests for packages that depend on the packages you are testing, as these external tests may test your packages in ways that your tests do not.  Note that since GCOV will eventually be part of the daily or weekly tests, it would be a good idea for these functionality tests to reflect what is on the CVS repository (whether that means updating your files or the repository's).
+
+Unfortunately, GCOV by itself cannot work with multiple files at once.  However, there is a Perl script (Trilinos/testharness/gcovmerge) which automates the process of running GCOV over a directory and summarizing the resulting information.
+
+At minimum, gcovmerge takes one argument: the path to search for .bb files (which indicate files that have been compiled as explained above).  There are 4 other arguments that can change the output (these should come before the path):
+    --with-files=min-max
+    gcovmerge will only display information regarding individual files whose percentage of lines executed is within [min, max].  This is useful for restricting the output to the worst files or for executing the script multiple times to create straited data.
+    --without-files
+    gcovmerge will not display information regarding individual files.  This is the same as --with-files=100-0.  This is generally only useful if you are doing directory coverage.
+    --with-directories
+    gcovmerge will display the percentage of lines executed for entire directories as well as any information about individual files that would normally be displayed.
+    --exclude=word
+    gcovmerge will not look at files whose names and paths include word.  This can be used to prevent the test and example files from being analyzed.  Since the file will be excluded if word is located anywhere in the path, to exclude directories you should do --exclude=directoryname/.
+
+Running gcovmerge with the default options from the Trilinos level will most likely generate too much information to really use.  Specifying the search path and the options will tone this down to something more useful.  For example, so check the coverage percentages on all members of the EPetra package (but not tests or examples), one would do this:
+
+$./testharness/gcovmerge --exclude=test/ --exclude=example/ ./build/packages/epetra
+
+To get a summary of the coverage on each package, one could do this:
+
+$./testharness/gcovmerge --without-files --with-directories --exclude=test/ --exclude=example/ --exclude=examples/ ./build
+
+In theory, every package should have 100% test coverage.  This, however, is not a practical goal.  A more realistic goal is for every source file to have 85% test coverage.
+
+If you want to see specific coverage information for any particular file, you should use GCOV directly:
+
+$gcov dotofile.o
+100.00% of 1 lines executed in file /usr/lib/.../ansilib
+Creating ansilib.gcov.
+80.00% of 10 lines executed in file ../.../dotofile.cpp
+Creating dotofile.cpp.gcov
+
+(Note that this command must be run from the same directory as g++ was invoked.  When following the configure/make/make install pattern, this would normally be the directory that contains dotofile.o.)
+
+Obviously, the information regarding library files is quite useless, so it will be ignored here.
+
+The .gcov files are recreations of the original source files, with extra annotation to indicate how often certain lines have been executed:
+
+$cat dotofile.cpp.gcov
+     -:		0:Source:dotofile.cpp
+     -:		0:Object:dotofile.bb
+     -:		1:#include <iostream>
+     -:		2:using namespace std;
+     -:		3:
+     1:		4:main(){
+     1:		6:  int num;
+     1:		7:  cout << "Please enter a number:\n";
+     1:		8:  cin >> num;
+     -:		9:  //comment
+     4:	       10:  for(int i = 2;
+     -:        11:	i < num;
+     -:	       12:	i++){
+     4:	       13:    if(num % i == 0){
+     1:	       14:      cout << num << " is divisible by << i << ".\n";
+     1:	       15:      exit(0);
+     -:	       16:    }
+     -:	       17:  }
+ #####:	       18:  cout << num << " is prime.\n";
+     -:        19:}
+
+The first column indicates how many times each line was executed (- means that the line is not executable and ##### means the line was never executed).  The second is the line number in the code (lines 0 are for gcov's use). The remainder of the file is the actual source.

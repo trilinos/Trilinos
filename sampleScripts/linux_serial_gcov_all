@@ -1,0 +1,10 @@
+../configure CXXFLAGS="-fprofile-arcs -ftest-coverage" \
+--with-lapack=/home/joutzen/LAPACK/lapack_LINUX.a \
+--enable-meros \
+--enable-tsf \
+--enable-komplex \
+--enable-belos \
+--enable-anasazi \
+--enable-triutils \
+--prefix=/home/joutzen/builds/trilinos-all
+
