@@ -1356,86 +1356,109 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
       /* ---------------------------------------------------------- */
       /* now calculate QR using an LAPACK routine                   */
       /* ---------------------------------------------------------- */
+      if (aggr_cnt_array[i] >= nullspace_dim) {
 
-      MLFORTRAN(dgeqrf)(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
-                        &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
-      if (info != 0)
-         pr_error("ErrOr in CoarsenMIS : dgeqrf returned a non-zero %d %d\n",
-aggr_cnt_array[i],i);
+	MLFORTRAN(dgeqrf)(&(aggr_cnt_array[i]), &nullspace_dim, qr_tmp, 
+			  &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
+	if (info != 0)
+	  pr_error("ErrOr in CoarsenMIS : dgeqrf returned a non-zero %d %d\n",
+		   aggr_cnt_array[i],i);
 
-      if (work[0] > lwork) 
-      {
-         lwork=(int) work[0]; 
-         ML_memory_free((void**) &work);
-         ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
-      }
-      else lwork=work[0];
+	if (work[0] > lwork) 
+	  {
+	    lwork=(int) work[0]; 
+	    ML_memory_free((void**) &work);
+	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGx");
+	  }
+	else lwork=work[0];
 		 
-      /* ---------------------------------------------------------- */
-      /* the upper triangle of qr_tmp is now R, so copy that into   */
-      /* the new nullspace                                          */
-      /* ---------------------------------------------------------- */
+	/* ---------------------------------------------------------- */
+	/* the upper triangle of qr_tmp is now R, so copy that into   */
+	/* the new nullspace                                          */
+	/* ---------------------------------------------------------- */
 
-      for (j = 0; j < nullspace_dim; j++)
-         for (k = j; k < nullspace_dim; k++)
+	for (j = 0; j < nullspace_dim; j++)
+	  for (k = j; k < nullspace_dim; k++)
             new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
-               qr_tmp[j+aggr_cnt_array[i]*k];
+	      qr_tmp[j+aggr_cnt_array[i]*k];
 		 
-      /* ---------------------------------------------------------- */
-      /* to get this block of P, need to run qr_tmp through another */
-      /* LAPACK function:                                           */
-      /* ---------------------------------------------------------- */
+	/* ---------------------------------------------------------- */
+	/* to get this block of P, need to run qr_tmp through another */
+	/* LAPACK function:                                           */
+	/* ---------------------------------------------------------- */
 
-      if ( aggr_cnt_array[i] < nullspace_dim ){
-         printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
+	if ( aggr_cnt_array[i] < nullspace_dim ){
+	  printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
                  nullspace_dim);
-         printf("ERROR : performing QR on a MxN matrix where M<N.\n");
-      }
-      MLFORTRAN(dorgqr)(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
-              qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
-      if (info != 0) {
-         printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
+	  printf("ERROR : performing QR on a MxN matrix where M<N.\n");
+	}
+	MLFORTRAN(dorgqr)(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
+			  qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
+	if (info != 0) {
+	  printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
                  nullspace_dim);
-         pr_error("Error in CoarsenMIS: dorgqr returned a non-zero\n");
+	  pr_error("Error in CoarsenMIS: dorgqr returned a non-zero\n");
+	}
+
+	if (work[0] > lwork) 
+	  {
+	    lwork=(int) work[0]; 
+	    ML_memory_free((void**) &work);
+	    ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
+	  }
+	else lwork=work[0];
+
+	/* ---------------------------------------------------------- */
+	/* now copy Q over into the appropriate part of P:            */
+	/* The rows of P get calculated out of order, so I assume the */
+	/* Q is totally dense and use what I know of how big each Q   */
+	/* will be to determine where in ia, ja, etc each nonzero in  */
+	/* Q belongs.  If I did not assume this, I would have to keep */
+	/* all of P in memory in order to determine where each entry  */
+	/* should go                                                  */
+	/* ---------------------------------------------------------- */
+
+	for (j = 0; j < aggr_cnt_array[i]; j++)
+	  {
+	    index = rows_in_aggs[i][j];
+	    if ( index < Nrows )
+	      {
+		index3 = new_ia[index];
+		for (k = 0; k < nullspace_dim; k++) 
+		  {
+		    new_ja [index3+k] = i * nullspace_dim + k;
+		    new_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
+		  }
+	      }
+	    else 
+	      {
+		index3 = (index - Nrows) * nullspace_dim;
+		for (k = 0; k < nullspace_dim; k++)
+		  comm_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
+	      }
+	  }
+      }
+      else {
+	/* We have a small aggregate such that the QR factorization can not */
+	/* be performed. Instead let us copy the null space from the fine   */
+        /* into the coarse grid nullspace and put the identity for the      */
+	/* prolongator????                                                  */
+	for (j = 0; j < nullspace_dim; j++)
+	  for (k = 0; k < nullspace_dim; k++)
+            new_null[i*nullspace_dim+j+k*Ncoarse*nullspace_dim] = 
+	      qr_tmp[j+aggr_cnt_array[i]*k];
+	for (j = 0; j < aggr_cnt_array[i]; j++) {
+	  index = rows_in_aggs[i][j];
+	  index3 = new_ia[index];
+	  for (k = 0; k < nullspace_dim; k++) {
+	    new_ja [index3+k] = i * nullspace_dim + k;
+	    if (k == j) new_val[index3+k] = 1.;
+	    else new_val[index3+k] = 0.;
+	  }
+	}
       }
 
-      if (work[0] > lwork) 
-      {
-         lwork=(int) work[0]; 
-         ML_memory_free((void**) &work);
-         ML_memory_alloc((void**) &work, sizeof(double)*lwork, "AGy");
-      }
-      else lwork=work[0];
-		 
-      /* ---------------------------------------------------------- */
-      /* now copy Q over into the appropriate part of P:            */
-      /* The rows of P get calculated out of order, so I assume the */
-      /* Q is totally dense and use what I know of how big each Q   */
-      /* will be to determine where in ia, ja, etc each nonzero in  */
-      /* Q belongs.  If I did not assume this, I would have to keep */
-      /* all of P in memory in order to determine where each entry  */
-      /* should go                                                  */
-      /* ---------------------------------------------------------- */
 
-      for (j = 0; j < aggr_cnt_array[i]; j++)
-      {
-         index = rows_in_aggs[i][j];
-         if ( index < Nrows )
-         {
-            index3 = new_ia[index];
-            for (k = 0; k < nullspace_dim; k++) 
-            {
-               new_ja [index3+k] = i * nullspace_dim + k;
-               new_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
-            }
-         }
-         else 
-         {
-            index3 = (index - Nrows) * nullspace_dim;
-            for (k = 0; k < nullspace_dim; k++)
-               comm_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
-         }
-      }
    }
 	 
    ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim, 
@@ -2326,7 +2349,41 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	   number_connections[current_agg] = 0;
 	 }
        }
-       if (best_score < 0) aggr_index[i] = (*aggr_count)++;
+       if (best_score < 0) { 
+	 /* We don't want a singleton. So lets see if there is an unaggregated */
+	 /* neighbor that we can also but with this point.                     */
+
+	 for (j = 0; j < rowi_N; j++) {
+	   if (rowi_col[j] != i) {
+	     current_agg = aggr_index[rowi_col[j]];
+	     if ( current_agg == -1) break;
+	   }
+	 }
+	 if (j < rowi_N) {
+	   aggr_index[rowi_col[j]] = *aggr_count;
+	   connect_type[rowi_col[j]] = 100;
+	   connect_type[i] = 100;
+	   aggr_index[i] = (*aggr_count)++;
+	 }
+	 else {
+
+	   /* We don't want a singleton. So lets see if we can connect it to */
+	   /* any higher phase aggregate.                                    */
+	   for (j = 0; j < rowi_N; j++) {
+	     current_agg = aggr_index[rowi_col[j]];
+	     if ( current_agg >= 0) break;
+	   }
+	   if (j < rowi_N) {
+	     aggr_index[i] = current_agg;
+	     agg_incremented[current_agg]++;
+	     connect_type[i] = connect_type[rowi_col[j]] - 11;
+	   }
+	   else {
+	     aggr_index[i] = (*aggr_count)++;
+	     connect_type[i] = 100;
+	   }
+	 } 
+       }
        else {
 	 aggr_index[i] = best_agg;
 	 agg_incremented[best_agg]++;
