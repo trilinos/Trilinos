@@ -495,6 +495,9 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
    int            length, zero_flag, j, offset, nrows, *sub_proc_config;
    double         *vals, dsize, di;
    ML_Matrix_DCSR *csr_mat, *csr2_mat;
+   #ifdef ML_MPI
+      MPI_AZComm *tptr;
+   #endif
 #ifdef ML_EXPERIMENT
    /* invoke Aztec once to build preconditioner. */
    int size;
