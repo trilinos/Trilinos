@@ -136,19 +136,19 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 SUB_VPATH	= ../include ../Utilities/shared \
 		  ../zz ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
-                  ../ha ../reftree \
+                  ../order ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory 
 SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../zz -I../all -I../lb -I../par -I../rcb  -I../oct  \
-		  -I../bsfc -I../hsfc \
+		  -I../order -I../bsfc -I../hsfc \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory 
-SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb par rcb oct bsfc hsfc parmetis params \
-		  timer ha \
-		  reftree include
+SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb oct \
+                  bsfc hsfc parmetis params \
+		  timer ha  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory
 
@@ -163,6 +163,9 @@ LB_CSRC		= lb_balance.c lb_eval.c lb_init.c lb_migrate.c \
 		  lb_set_fn.c lb_set_method.c  \
 		  lb_point_assign.c lb_box_assign.c
 LB_INC		= lb_const.h lb_init_const.h
+
+ORDER_CSRC	= order.c order_struct.c 
+ORDER_INC	= order_const.h 
 
 RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \
                   create_proc_list.c rib.c rib_util.c \
@@ -260,7 +263,8 @@ F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 # for an example.
 #
 LINT		= lint
-LINT_INC_PATH	= -Iinclude -Idriver$(ZOLTAN_OLD) -Ich -Izz -Iall -Ilb -Ipar -Ircb -Iparams \
+LINT_INC_PATH	= -Iinclude -Idriver$(ZOLTAN_OLD) -Ich -Izz -Iall -Ilb \
+		  -Iorder -Ipar -Ircb -Iparams \
 		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree \
 		  -IUtilities/shared -IUtilities/Memory \
 		  -IUtilities/Communication -IUtilities/DDirectory \
@@ -409,6 +413,10 @@ zscript:
 	@echo "echo 'Zoltan:  Compiling Zoltan/lb'" >> zoltan_script
 	@for iii in $(LB_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../lb/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/order'" >> zoltan_script
+	@for iii in $(ORDER_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../order/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/rcb'" >> zoltan_script
 	@for iii in $(RCB_CSRC) ; do \
