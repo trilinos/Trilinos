@@ -368,7 +368,7 @@ int main(int argc, char *argv[])
     
   puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
 
-#ifdef HAVEML_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 

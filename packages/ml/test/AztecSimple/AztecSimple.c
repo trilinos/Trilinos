@@ -208,7 +208,9 @@ AZ_MATRIX *user_Kn_build(struct user_partition_data *Partition)
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_MPI
 #include "mpi.h"
+#endif
 
 int main(int argc, char *argv[])
 {
