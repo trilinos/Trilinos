@@ -2404,8 +2404,11 @@ void ML_PauseForDebugger(ML_Comm *comm)
   char buf[80];
   char hostname[80];
   char go = ' ';
+  char *str;
 
-  i = (int) getenv("ML_BREAK_FOR_DEBUGGER");
+  str = (char *) getenv("ML_BREAK_FOR_DEBUGGER");
+  i = 0;
+  if (str != NULL) i++;
   ML_gsum_scalar_int(&i, &j, comm);
   if (i != 0)
   {
