@@ -340,6 +340,7 @@ libnoxtsf_a_CXXFLAGS = \
 	-I$(top_builddir)/../TSFCore/src \
 	-I$(top_srcdir)/../TSFCore \
 	-I$(top_srcdir)/../TSFCore/src \
+	-I$(top_srcdir)/../TSFCore/src/utilities/Core \
 	-I$(top_srcdir)/../TSFCore/src/adapters/epetra \
 	-I$(top_srcdir)/../TSFCore/src/adapters/mpi-base \
 	-I$(top_srcdir)/../TSFCore/src/interfaces/Core \
