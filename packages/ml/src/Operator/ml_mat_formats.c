@@ -34,7 +34,8 @@ void ML_restricted_MSR_mult(ML_Operator *matrix, int Nrows,
    ML_Comm *comm;
 
    comm = matrix->comm;
-   ML_exchange_bdry(b, matrix->getrow->pre_comm, Nrows, comm, ML_OVERWRITE);
+   ML_exchange_bdry(b, matrix->getrow->pre_comm, Nrows, comm,
+                    ML_OVERWRITE,NULL);
    temp  = (struct ML_CSR_MSRdata *) matrix->data;
    val   = temp->values;
    bindx = temp->columns;
@@ -449,7 +450,7 @@ int MSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
       p2 = (double *) ML_allocate((Nrows+getrow_comm->minimum_vec_size+1)*
                                   sizeof(double));
       for (i = 0; i < Nrows; i++) p2[i] = p[i];
-      ML_exchange_bdry(p2,getrow_comm, Nrows, comm, ML_OVERWRITE);
+      ML_exchange_bdry(p2,getrow_comm, Nrows, comm, ML_OVERWRITE,NULL);
    }
    else p2 = p;
 
@@ -509,7 +510,7 @@ int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
                                   sizeof(double));
      for (i = 0; i < ilen; i++) p2[i] = p[i];
 
-     ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE);
+     ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
 
    }
    else p2 = p;
@@ -543,7 +544,7 @@ int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
             exit(1);
          }
       }
-      ML_exchange_bdry(ap2,getrow_comm, Nstored, comm, ML_ADD);
+      ML_exchange_bdry(ap2,getrow_comm, Nstored, comm, ML_ADD,NULL);
       for (jj = 0; jj < olen; jj++) ap[jj] = ap2[jj];
       ML_free(ap2);
   }
@@ -602,7 +603,7 @@ void ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR **mat )
    if ( (*mat)->mat_ja != NULL ) free((*mat)->mat_ja);
    if ( (*mat)->mat_a  != NULL ) free((*mat)->mat_a);
    if ( (*mat)->comminfo != NULL )
-      ML_CommInfoOP_Destroy( (*mat)->comminfo );
+      ML_CommInfoOP_Destroy( &((*mat)->comminfo) );
 }
 
 /* ******************************************************************** */
@@ -683,7 +684,7 @@ int ML_Matrix_DCSR_Matvec(void *data,int ilen,double *x,int olen,double y[])
       nbytes = (getrow_comm->minimum_vec_size+ilen+1) * sizeof(double);
       y2 = (double *) malloc( nbytes );
       for (i = 0; i < ilen; i++) y2[i] = x[i];
-      ML_exchange_bdry(y2, getrow_comm, ilen, comm, ML_OVERWRITE);
+      ML_exchange_bdry(y2, getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
    }
    else y2 = x;
 
