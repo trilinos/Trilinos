@@ -1,0 +1,129 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov).
+// 
+// ************************************************************************
+//@HEADER
+
+#include "NOX_StatusTest_Stagnation.H" // class definition
+#include "NOX_Common.H"
+#include "NOX_Solver_Generic.H"
+#include "NOX_Abstract_Group.H"
+
+NOX::StatusTest::Stagnation::Stagnation(int maxSteps_, double tolerance_) :
+  maxSteps(maxSteps_),
+  numSteps(0),
+  lastIteration(-1),
+  tolerance(tolerance_),
+  convRate(1.0),
+  status(NOX::StatusTest::Unconverged)
+{
+    
+}
+
+NOX::StatusTest::Stagnation::~Stagnation()
+{
+
+}
+
+NOX::StatusTest::StatusType 
+NOX::StatusTest::Stagnation::checkStatus(const Solver::Generic& problem)
+{
+  status = Unconverged;
+
+  // Make sure we have not already counted the last nonlinear iteration.
+  // This protects against multiple calls to checkStatus() in between 
+  // nonlinear iterations.
+  bool isCounted = false;
+  int niters = problem.getNumIterations();  
+  if (niters == lastIteration) {
+    isCounted = true;
+  }
+  else if (niters == 0) 
+    return Unconverged;
+  else
+    lastIteration = niters;
+
+  // Compute the convergenc rate and set counter appropriately
+  if (!isCounted) {
+
+    convRate = problem.getSolutionGroup().getNormF() / 
+               problem.getPreviousSolutionGroup().getNormF();
+    
+    if (convRate >= tolerance)
+      numSteps ++;
+    else
+      numSteps = 0;
+   
+  }
+
+  if (numSteps >= maxSteps)
+    status = Failed;
+
+  return status;
+}
+
+NOX::StatusTest::StatusType NOX::StatusTest::Stagnation::getStatus() const
+{
+  return status;
+}
+
+ostream& NOX::StatusTest::Stagnation::print(ostream& stream, int indent) const
+{
+  for (int j = 0; j < indent; j ++)
+    stream << ' ';
+  stream << status;
+  stream << "Stagnation Count = " << numSteps << " < " << maxSteps << "\n";
+
+  for (int j = 0; j < indent; j ++)
+    stream << ' ';
+  stream << "             (convergence rate = " << convRate << ")";
+  stream << endl;
+ return stream;
+}
+
+
+int NOX::StatusTest::Stagnation::getMaxNumSteps() const
+{
+  return maxSteps;
+}
+
+int NOX::StatusTest::Stagnation::getCurrentNumSteps() const
+{
+  return numSteps;
+}
+
+double NOX::StatusTest::Stagnation::getTolerance() const
+{
+  return tolerance;
+}
+
+double NOX::StatusTest::Stagnation::getConvRate() const
+{
+  return convRate;
+}

@@ -39,4 +39,5 @@
 #include "NOX_StatusTest_NormUpdate.H"
 #include "NOX_StatusTest_NormWRMS.H"
 #include "NOX_StatusTest_MaxIters.H"
+#include "NOX_StatusTest_Stagnation.H"
 #include "NOX_Utils.H"
