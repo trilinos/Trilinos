@@ -1,5 +1,53 @@
-#
-#  AmesosShortScript.exe should take less than a minute to run 23 short tests
-#
-#  AmesosShellScript.exe should take about five minutes to run 38 tests
-#
+Organization of Amesos tests:
+(M. Sala, SNL 9214, Sep-04)
+
+- Test_Epetra_RowMatrix
+  =====================
+
+  The linear system matrix is an Epetra_RowMatrix object, 
+  that is not derived from either Epetra_CrsMatrix or Epetra_VbrMatrix. 
+  Multiple RHS are tested.
+
+  Tests for default options only, with matrix and its transpose.
+
+  Amesos_Descpack is NOT tested.
+
+- Test_Epetra_CrsMatrix
+  =====================
+
+  The linear system matrix is an Epetra_CrsMatrix.
+  Multiple RHS are tested.
+
+  Tests for default options only, with matrix and its transpose.
+
+- Test_Epetra_VbrMatrix
+  The linear system matrix is an Epetra_CrsMatrix.
+  Multiple RHS are tested.
+
+  Tests for default options only, with matrix and its transpose.
+
+  Amesos_Descpack is NOT tested.
+
+- Test_Detailed
+  =============
+
+  The linear system matrix is an Epetra_RowMatrix object, 
+  that is not derived from either Epetra_CrsMatrix or Epetra_VbrMatrix. 
+  Transpose it NOT tested.
+  Multiple RHS are tested.
+
+  Test the behavior of SymbolicFactorization(), NumericFactorization(),
+  and Solve(). For a given problem, the matrix, RHS and solution are
+  changed in several ways (values and underlying maps).
+
+  Amesos_Descpack is NOT tested.
+
+- Test_MultipleSolves
+  ===================
+  
+  The linear system matrix is an Epetra_CrsMatrix.
+  Transpose it NOT tested.
+  Multiple RHS are tested.
+
+  Test multiple successive solutions with different rhs, to
+  solve A^3 x = b.
