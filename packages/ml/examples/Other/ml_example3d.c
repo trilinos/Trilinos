@@ -976,7 +976,7 @@ int ML_mapper0b( void *ml, double *din, double *dout)
 {
    int     i, k, index, step, istep, jstep;
    
-   k = (int) ml;
+   ML_avoid_unused_param(ml);
    step = num_PDE_eqns;
    for (i = 0; i < local_index_c_leng; i++) {
       index = local_index_c[i];
@@ -1009,7 +1009,7 @@ int ML_mapper1b( void *ml, double *din, double *dout)
 {
    int     i, k, index, step, istep, jstep;
    
-   k = (int) ml;
+   ML_avoid_unused_param(ml);
    step = num_PDE_eqns;
    for (i = 0; i < local_index_f_leng; i++) {
       index = local_index_f[i];
