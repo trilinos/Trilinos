@@ -32,6 +32,7 @@ class Epetra_Map;
 class Epetra_MultiVector;
 class Epetra_Import;
 class Epetra_Export;
+class Epetra_MapColoring;
 
 //! Epetra_CrsSingletonFilter: A class for explicitly eliminating matrix rows and columns.
 
@@ -141,26 +142,48 @@ class Epetra_CrsSingletonFilter {
 
   //! Returns pointer to the original unreduced Epetra_LinearProblem.
   Epetra_LinearProblem * FullProblem() const {return(FullProblem_);};
+
   //! Returns pointer to the derived reduced Epetra_LinearProblem.
   Epetra_LinearProblem * ReducedProblem() const {return(ReducedProblem_);};
+
   //! Returns pointer to Epetra_CrsMatrix from full problem.
-  Epetra_CrsMatrix * FullMatrix() const {return(FullMatrix_);};
+  Epetra_RowMatrix * FullMatrix() const {return(FullMatrix_);};
+
+  //! Returns pointer to Epetra_CrsMatrix from full problem.
+  Epetra_CrsMatrix * FullCrsMatrix() const {return(FullCrsMatrix_);};
+
   //! Returns pointer to Epetra_CrsMatrix from full problem.
   Epetra_CrsMatrix * ReducedMatrix() const {return(ReducedMatrix_);};
-  //! Returns Epetra_Map containing Global Row IDs of full matrix.
-  const Epetra_Map & FullMatrixRowMap() const {return(FullMatrix()->RowMap());};
+
+  //! Returns Epetra_Map containing global row IDs of full matrix.
+  const Epetra_Map & FullMatrixRowMap() const {return(FullMatrix()->RowMatrixRowMap());};
+
+  //! Returns Epetra_Map containing column map of full matrix.
+  const Epetra_Map & FullMatrixColMap() const {return(FullMatrix()->RowMatrixColMap());};
+
   //! Returns Epetra_Map containing domain map of full matrix.
-  const Epetra_Map & FullMatrixDomainMap() const {return(dynamic_cast<const Epetra_Map &>(FullMatrix()->DomainMap()));};
-  //! Returns Epetra_Map containing import map of full matrix.
-  const Epetra_Map & FullMatrixImportMap() const {return(FullMatrix()->ImportMap());};
+  const Epetra_Map & FullMatrixDomainMap() const {return((FullMatrix()->OperatorDomainMap()));};
+
+  //! Returns Epetra_Map containing range map of full matrix.
+  const Epetra_Map & FullMatrixRangeMap() const {return((FullMatrix()->OperatorRangeMap()));};
+
   //! Returns pointer to Epetra_Map containing Global Row IDs that are eliminated from full problem.
   Epetra_Map * RowEliminateMap() const {return(RowEliminateMap_);};
+
   //! Returns pointer to Epetra_Map containing Global Column IDs that are eliminated from full problem.
   Epetra_Map * ColEliminateMap() const {return(ColEliminateMap_);};
+
   //! Returns pointer to Epetra_Map describing the reduced system row distribution.
   Epetra_Map * ReducedMatrixRowMap() const {return(ReducedMatrixRowMap_);};
+
+  //! Returns pointer to Epetra_Map describing the reduced system column distribution.
+  Epetra_Map * ReducedMatrixColMap() const {return(ReducedMatrixColMap_);};
+
   //! Returns pointer to Epetra_Map describing the domain map for the reduced system.
   Epetra_Map * ReducedMatrixDomainMap() const {return(ReducedMatrixDomainMap_);};
+
+  //! Returns pointer to Epetra_Map describing the range map for the reduced system.
+  Epetra_Map * ReducedMatrixRangeMap() const {return(ReducedMatrixRangeMap_);};
   //@}
 
  protected:
@@ -168,13 +191,23 @@ class Epetra_CrsSingletonFilter {
     void InitializeDefaults();
     int ComputeEliminateMaps();
     int Setup(Epetra_LinearProblem * Problem);
+    int InitFullMatrixAccess();
+    int GetRow(int Row, int & NumIndices, int * & Indices);
+    int GetRow(int Row, int & NumIndices, double * & Values, int * & Indices);
+    int CreatePostSolveArrays(int * RowIDs,
+			      const Epetra_MapColoring & RowMapColors,
+			      const Epetra_IntVector & ColProfiles,
+			      const Epetra_IntVector & NewColProfiles,
+			      const Epetra_IntVector & ColHasRowWithSingleton);
+
     int ConstructRedistributeExporter(Epetra_Map * SourceMap, Epetra_Map * TargetMap,
 				      Epetra_Export * & RedistributeExporter,
 				      Epetra_Map * & RedistributeMap);
 
     Epetra_LinearProblem * FullProblem_;
     Epetra_LinearProblem * ReducedProblem_;
-    Epetra_CrsMatrix * FullMatrix_;
+    Epetra_RowMatrix * FullMatrix_;
+    Epetra_CrsMatrix * FullCrsMatrix_;
     Epetra_CrsMatrix * ReducedMatrix_;
     Epetra_MultiVector * ReducedRHS_;
     Epetra_MultiVector * ReducedLHS_;
@@ -182,7 +215,10 @@ class Epetra_CrsSingletonFilter {
     Epetra_Map * RowEliminateMap_;
     Epetra_Map * ColEliminateMap_;
     Epetra_Map * ReducedMatrixRowMap_;
+    Epetra_Map * ReducedMatrixColMap_;
     Epetra_Map * ReducedMatrixDomainMap_;
+    Epetra_Map * ReducedMatrixRangeMap_;
+    Epetra_Map * OrigReducedMatrixDomainMap_;
     Epetra_Import * Full2ReducedRHSImporter_;
     Epetra_Import * Full2ReducedLHSImporter_;
     Epetra_Export * RedistributeDomainExporter_;
@@ -210,10 +246,12 @@ class Epetra_CrsSingletonFilter {
     int * ReducedIndices_;
     double * ReducedValues_;
     int * Indices_;
-    double Values_;
+    double * Values_;
 
     Epetra_MapColoring * RowMapColors_;
     Epetra_MapColoring * ColMapColors_;
+    bool FullMatrixIsCrsMatrix_;
+    int MaxNumMyEntries_;
 	
     
  private:
