@@ -1,3 +1,11 @@
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -48,7 +56,7 @@ static int find_inout(int elem, int prev, int prevprev,
                       ZOLTAN_ID_PTR vertices, int *num_vert, int *first_vert,
                       ZZ *zz);
 static double InvSierpinski2d(ZZ *zz, double *coord);
-double sier2d(double x, double y, int state, int level, double addf,
+static double sier2d(double x, double y, int state, int level, double addf,
               double addp, double peakx, double peaky);
 static void sort_index(int n, double ra[], int indx[]);
 
@@ -1787,7 +1795,7 @@ int success1, j1, k1, l1;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
+static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
                          ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
                          int *order, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
                          char *initgrid_method, int all_triangles, ZZ *zz)
@@ -1900,7 +1908,7 @@ int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
     if (coords[num_geom*i+1] < ymin) ymin = coords[num_geom*i+1];
     if (coords[num_geom*i+1] > ymax) ymax = coords[num_geom*i+1];
     if (num_geom == 3) {
-      if (coords[num_geom*i+1] < zmin) zmin = coords[num_geom*i+2];
+      if (coords[num_geom*i+2] < zmin) zmin = coords[num_geom*i+2];
       if (coords[num_geom*i+2] > zmax) zmax = coords[num_geom*i+2];
     }
   }
@@ -2011,7 +2019,7 @@ int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
 /*****************************************************************************/
 /*****************************************************************************/
 
-int find_inout(int elem, int prev, int prevprev,
+static int find_inout(int elem, int prev, int prevprev,
                ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
                ZOLTAN_ID_PTR vertices, int *num_vert, int *first_vert,
                ZZ *zz)
@@ -2197,7 +2205,7 @@ int find_inout(int elem, int prev, int prevprev,
 /*****************************************************************************/
 /*****************************************************************************/
 
-double InvSierpinski2d(ZZ *zz, double *coord)
+static double InvSierpinski2d(ZZ *zz, double *coord)
 {
 
 /*
@@ -2222,7 +2230,7 @@ double InvSierpinski2d(ZZ *zz, double *coord)
 /*****************************************************************************/
 /*****************************************************************************/
 
-double sier2d(double x, double y, int state, int level, double addf,
+static double sier2d(double x, double y, int state, int level, double addf,
               double addp, double peakx, double peaky)
 {
 
@@ -2298,7 +2306,7 @@ static int MAXLEV = 24;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void sort_index(int n, double ra[], int indx[])
+static void sort_index(int n, double ra[], int indx[])
   
 /*
 *       Numerical Recipies in C source code
