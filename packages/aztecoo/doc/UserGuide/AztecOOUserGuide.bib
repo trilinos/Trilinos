@@ -309,6 +309,7 @@ eigenvectors.",
      note = "http://www.mathworks.com/access/helpdesk/help/techdoc/ref/eigs.shtml"}
 
 @misc{Trilinos-home-page,
+     author = "M.~N.~Phenow",
      title = "Trilinos Home Page.",
      note = "http://software.sandia.gov/Trilinos"}
 
@@ -317,43 +318,60 @@ eigenvectors.",
      note = "http://software.sandia.gov/Trilinos/packages/aztecoo"}
 
 @misc{Epetra-home-page,
+     author = "M.~A.~Heroux",
      title = "Epetra Home Page.",
      note = "http://software.sandia.gov/Trilinos/packages/epetra"}
 
 @misc{Ifpack-home-page,
+     author = "M.~A.~Heroux",
      title = "IFPACK Home Page.",
      note = "http://software.sandia.gov/Trilinos/packages/ifpack"}
 
 @misc{ML-home-page,
+     author = "R.~S.~Tuminaro",
      title = "ML Home Page.",
      note = "http://software.sandia.gov/Trilinos/packages/ml"}
 
-@misc{Automake,
-     title = "Automake Home Page.",
+@Unpublished{Automake,
+     author = "{Free\ Software\ Foundation}",
+     key = "Automake",
+     title = "{Automake Home Page.}",
      note = "http://www.gnu.org/software/automake"}
 
-@misc{Libtool,
-     title = "Libtool Home Page.",
+@Unpublished{Libtool,
+     author = "{Free\ Software\ Foundation}",
+     key = "Libtool",
+     title = "{Libtool Home Page.}",
      note = "http://www.gnu.org/software/libtool"}
 
-@misc{Autoconf,
-     title = "Autoconf Home Page.",
+@Unpublished{Autoconf,
+     author = "{Free\ Software\ Foundation}",
+     key = "Autoconf",
+     title = "{Autoconf Home Page.}",
      note = "http://www.gnu.org/software/autoconf"}
 
-@misc{M4,
+@Unpublished{M4,
+     author = "{Free\ Software\ Foundation}",
+     key = "m4",
      title = "Gnu M4 Home Page.",
      note = "http://www.gnu.org/software/m4"}
 
-@misc{CVS,
-     title = "Gnu CVS Home Page.",
+@Unpublished{CVS,
+     author = "{Free\ Software\ Foundation}",
+     key = "{CVS}",
+     title = "{Gnu CVS Home Page.}",
      note = "http://www.gnu.org/software/cvs"}
 
-@misc{Bonsai,
-     title = "Mozilla Bonsai Home Page.",
+@Unpublished{Bonsai,
+     author = "{The\ Mozilla\ Organization}",
+     key = "Bonsai",
+     title = "{Mozilla Bonsai Home Page.}",
      note = "http://www.mozilla.org/bonsai.html"}
 
-@misc{Bugzilla,
-     title = "Mozilla Bugzilla Home Page.",
+@Unpublished{Bugzilla,
+     author = "{The\ Mozilla\ Organization}",
+     key = "Bugzilla",
+     title = "{Mozilla Bugzilla Home Page.}",
      note = "http://www.mozilla.org/projects/bugzilla"}
 
 @book{Goatbook,
@@ -1738,6 +1756,24 @@ year = 1994,
          pages = "631--644",
          year = "1992"
 }
+@inproceedings{Saad:94a,
+   author = "Y.~Saad",
+   title = "Preconditioned Krylov subspace methods for {CFD} applications",
+   editor = "W.~G.~Habashi",
+   booktitle = "Proceedings of the International Workshop on Solution
+                Techniques for Large-scale {CFD} problems",
+   pages = "179--195",
+   year = 1994
+}
+@article{vanderVorst:81,
+   author = "H. van der Vorst",
+   title  = "Iterative solution methods for certain sparse linear
+            systems with a non-symmetric matrix arising from {PDE}-problems",
+   journal = jcp,
+   volume = 44,
+   pages = "1--19",
+   year = 1981
+}
 @phdthesis{Chow:97,
     author = "E.~Chow",
     title = "Robust Preconditioning for Sparse Linear Systems",
@@ -1756,4 +1792,54 @@ year = 1994,
   number=       {SAND98-0730},
   address=      {Albuquerque, New Mexico 87185 and Livermore,
 California 94550},
+}
+@TechReport{y12m,
+  author =      "Zlatev, Z. and Barker, V.A. and Thomsen, P.G.",
+  title =       "{SSLEST} -  a  {FORTRAN  IV}  Subroutine  for Solving
+            Sparse Systems of Linear Equations (USER's GUIDE)",
+  institution =  "Institute  for   Numerical Analysis, Technical
+            University  of Denmark  ",
+  year =   "1978",
+  address =     "Lyngby,Denmark ",
+  month =       "",
+  note =   "",
+  annote =      "Report 78-01"
+}
+@Article{ilut,
+  author =      "Y. Saad",
+  title =       "{ILUT:} A dual threshold incomplete {ILU}
+        factorization",
+  journal =     "Numerical Linear Algebra with Applications",
+  year =   "1994",
+  volume =      "1",
+  pages =       "387-402",
+  month =       "",
+  note =   "",
+  annote =      ""
+}
+@Article{icc,
+  author =      "Meijerink, J. A. and  van der Vorst, H. A.",
+  title =       "An iterative solution method for systems of
+                  which the coefficient matrix is a symmetric
+                  M-matrix",
+  journal =     "Math. Comp.",
+  year =   "1977",
+  volume =      "31",
+  number =      "137",
+  pages =       "148-162",
+  month =       "",
+  note =   "",
+  annote =      ""
+}
+@Article{milu,
+  author =      "Gustafsson, I.",
+  title =       "A class of first-order factorization methods",
+  journal =     "Bit",
+  year =   "1978",
+  volume =      "18",
+  number =      "",
+  pages =       "142-156",
+  month =       "",
+  note =   "",
+  annote =      ""
 }

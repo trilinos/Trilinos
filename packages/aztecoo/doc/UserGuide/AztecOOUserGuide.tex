@@ -3,12 +3,7 @@
 \SANDsubtitle{}
 \title{\AztecOOTM{} User Guide}
 
-\author{Michael A. Heroux \\
-	\\
-	    Sandia National Laboratories\\
-	    P.O. Box 5800\\
-	    Albuquerque, NM 87185-1110 
-	 }
+\author{Michael A. Heroux}
 
     % There is a "Printed" date on the title page of a SAND report, so
     % the generic \date should generally be empty.
@@ -88,7 +83,7 @@
 The \TrilinosTM{} Project is an effort to facilitate the design, development,
 integration and ongoing support of mathematical software libraries.
 \AztecOOTM{} is a package within Trilinos that enables the use of the Aztec solver 
-library~\cite{Aztec2.1} with \EpetraTM{}~\cite{Epetra-Users-Guide} objects.  
+library~\cite{Aztec2.1} with \EpetraTM{}~\cite{Epetra-home-page} objects.  
 AztecOO provides access to Aztec preconditioners and solvers by
 implementing the Aztec ``matrix-free'' interface using Epetra.
 While Aztec is written in C and procedure-oriented, 
@@ -891,7 +886,7 @@ simply compute the perturbed diagonal at this point.  The actual
 perturbation values we use are discussed below.
 
 
-\subsection{Strategies for Managing Preconditioner Condition Numbers}
+\subsection{Strategies for Managing Condition Numbers}
 
 Without any prior knowledge of a problem, the first step to take when
 computing a preconditioner is to compute the original factors without
@@ -913,8 +908,8 @@ increasing fill.
 
 The goal when applying {\it a priori} perturbations is to find a close to minimal
 perturbation that reduces the condition estimate below machine
-precision (roughly 1.0e16).  For the results presented in
-Section~\ref{s:test_problems} we use the strategy outlined in
+precision (roughly 1.0e16).  In some practical settings, 
+we use the strategy outlined in
 Figure~\ref{f:aprioristrategy}.
 {\small
 \begin{figure}
@@ -977,7 +972,8 @@ will never be reset by AztecOO.  Instead, the user has this responsibility.
 
 \clearpage
 \bibliographystyle{plain}
-\bibliography{../../../../doc/CommonFiles/TrilinosBibliography}
+%\bibliography{../../../../doc/CommonFiles/TrilinosBibliography}
+\bibliography{AztecOOUserGuide}
 \addcontentsline{toc}{section}{References}
 
 \appendix
