@@ -252,7 +252,7 @@ int *hindex = NULL, *hvertex = NULL;
 int *dist_x = NULL, *dist_y = NULL;
 int nEdge, nVtx, nwgt = 0;
 int nrecv, *recv_gno = NULL; 
-int *tmpparts = NULL, *recvparts = NULL;
+int *tmpparts = NULL;
 
 ZOLTAN_ID_PTR global_ids;
 int num_gid_entries = zz->Num_GID;
