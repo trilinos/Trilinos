@@ -396,28 +396,9 @@ AC_TRY_CPP(iomanip,
 )
 
 #cmath
-dnl AC_LANG_CPLUSPLUS 
-dnl AC_MSG_CHECKING([for cmath])
-dnl AC_TRY_CPP(cmath,
-dnl [
-dnl   AC_MSG_RESULT(yes)
-dnl   AC_DEFINE(HAVE_CMATH,,[define if we can include <cmath>])
-dnl ], 
-dnl [
-dnl   AC_MSG_RESULT(no)
-dnl   AC_MSG_CHECKING([for math.h])
-dnl   AC_TRY_CPP(math.h,
-dnl   [
-dnl     AC_MSG_RESULT(yes)
-dnl     AC_DEFINE(HAVE_MATH_H,,[define if we can include <math.h>])
-dnl   ], 
-dnl   [
-dnl     AC_MSG_RESULT(no)
-dnl     AC_MSG_NOTICE([You do not appear to have cmath nor math.h!!])
-dnl   ]
-dnl   )
-dnl ]
-dnl )
+
+# Note that the check for cmath had to be changed from AC_TRY_CPP to
+# AC_TRY_COMPILE to accomodate the TFLOPS cross-compilation.
 
 AC_LANG_CPLUSPLUS 
 AC_MSG_CHECKING(for cmath)

@@ -3059,6 +3059,9 @@ rm -f conftest.err conftest.$ac_ext
 
 #cmath
 
+# Note that the check for cmath had to be changed from AC_TRY_CPP to
+# AC_TRY_COMPILE to accomodate the TFLOPS cross-compilation.
+
 ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3758,7 +3761,7 @@ done
 fi
 
 # Provide some information about the compiler.
-echo "$as_me:3761:" \
+echo "$as_me:3764:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -3924,7 +3927,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:3927: \"$ac_link\") >&5
+(eval echo $as_me:3930: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -3996,7 +3999,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:3999: \"$ac_link\") >&5
+(eval echo $as_me:4002: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
