@@ -39,8 +39,8 @@ typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
 #endif
 
 /* -------------------------------------------------------------------- */
-/* data structure used to store pointers to functions such as matvec    */
-/* used by the operator class.                                          */
+/*! data structure used to store pointers to functions such as matvec   
+    used by the operator class.                                         */
 /* -------------------------------------------------------------------- */
 
 struct ML_Function_Struct {
@@ -51,8 +51,8 @@ struct ML_Function_Struct {
 };
 
 /* -------------------------------------------------------------------- */
-/* This data structure stores all information pertaining to performing  */
-/* the Getrow function on an operator object.                           */
+/*! This data structure stores all information pertaining to performing  
+    the Getrow function on an operator object.                          */
 /* -------------------------------------------------------------------- */
 
 struct ML_GetrowFunc_Struct {
@@ -69,25 +69,25 @@ struct ML_GetrowFunc_Struct {
 };
 
 /* -------------------------------------------------------------------- */
-/* This data structure stores all information necessary to be able to   */
-/* project out a subspace (e.g., a known nullspace).                    */
+/*! This data structure stores all information necessary to be able to   
+    project out a subspace (e.g., a known nullspace).                   */
 /* -------------------------------------------------------------------- */
 
 struct ML_Operator_Subspace_Struct {
    double **basis_vectors;
-   int    dimension;                /* number of basis vectors */
-   int    vecleng;                  /* length of basis vectors */
+   int    dimension;                /** number of basis vectors */
+   int    vecleng;                  /** length of basis vectors */
    void   (*data_destroy)(void *);
-   double *VAV;                     /* dimension by dimension system to solve */
-   int    *pivots;                  /* pivots for VAV factorization */
-   int    VAVdone;                  /* true if VAV is calculated already */
+   double *VAV;                     /** dimension by dimension system to solve */
+   int    *pivots;                  /** pivots for VAV factorization */
+   int    VAVdone;                  /** true if VAV is calculated already */
    double *res1,*res2,*vec1,*vec2;      /* work vectors */
 };
 
 /* -------------------------------------------------------------------- */
-/* This data structure defines an enriched operator class for the       */
-/* specification of the discretization matrix, the restriction and the  */
-/* prolongation operator.                                               */
+/*! This data structure defines an enriched operator class for the       
+    specification of the discretization matrix, the restriction and the  
+    prolongation operator.                                              */
 /* -------------------------------------------------------------------- */
 
 struct ML_Operator_Struct {
@@ -99,7 +99,7 @@ struct ML_Operator_Struct {
    void          (*data_destroy)(void *);
    ML_Function   *matvec;
    ML_GetrowFunc *getrow;
-   ML_DVector    *diagonal;      /* diagonal of matrix.     */
+   ML_DVector    *diagonal;      /** diagonal of matrix.     */
    int           N_nonzeros;
    int           max_nz_per_row;
    int           from_an_ml_operator;
@@ -121,10 +121,10 @@ struct ML_Operator_Struct {
 };
 
 /* -------------------------------------------------------------------- */
-/* This structure is used to implement both drop tolerances and matrix  */
-/* amalgamation (used in ML_aggregateCoarsenMIS()). The idea is to wrap */
-/* the getrow() of the original matrix such that it handles the blocking*/
-/* and the dropping.                                                    */
+/*! This structure is used to implement both drop tolerances and matrix  
+    amalgamation (used in ML_aggregateCoarsenMIS()). The idea is to wrap 
+    the getrow() of the original matrix such that it handles the blocking
+    and the dropping.                                                   */ 
 /* -------------------------------------------------------------------- */
 
 struct amalg_drop {

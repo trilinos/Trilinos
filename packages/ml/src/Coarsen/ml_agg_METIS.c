@@ -23,14 +23,17 @@
 #include "ml_agg_info.h"
 
 /* ********************************************************************** */
-/* metis.h is required to properly define idxtype, and to declare the     */
-/* function `METIS_PartGraphRecursive' or `METIS_PartGraphKway'.          */
-/* By default, idxtype is defined as int, so in principle you can         */
-/* compile also without including metis.h. However, to be sure            */
-/* that use has specified include and library, I require ML_METIS         */
-/* to be defined at compilation time.                                     */
-/* NOTE: without metis this function compiles, but does not do any  job.  */
-/* ********************************************************************** */
+/*! \file ml_agg_METIS.c: functions to decompose a local graph using METIS
+
+   \note metis.h is required to properly define idxtype, and to declare the     
+   function `METIS_PartGraphRecursive' or `METIS_PartGraphKway'.          
+   By default, idxtype is defined as int, so in principle you can         
+   compile also without including metis.h. However, to be sure            
+   that use has specified include and library, I require ML_METIS         
+   to be defined at compilation time.                                     
+
+   \warning without metis this function compiles, but does not do any  job.  
+ ********************************************************************** */
 
 #ifdef HAVE_ML_METIS
 #include "metis.h"
@@ -148,6 +151,8 @@ int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag,
 				  int level, int Nnodes_per_aggre  )
 {
 
+  /*! ciao */
+  
   int i;
   ML_Aggregate_Options *pointer = NULL;
   int Nlevels = ml->ML_num_levels;
@@ -167,6 +172,8 @@ int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag,
 	     Nnodes_per_aggre);
     Nnodes_per_aggre = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
   }
+
+  /*! figa */
   
   /* ********************************************************************** */
   /* take the pointer from the ag object. If it is NULL, this is the first  */

@@ -24,57 +24,57 @@ typedef struct ML_Aggregate_Struct
 {
    int    ML_id;
    double print_flag;
-   int    max_coarse_size;             /* maximum size of coarsest grid */
-   int    ordering;                    /* natural, random, graph        */
-   int    min_nodes_per_aggregate;     /* aggregate size control        */
-   int    max_neigh_already_selected;  /* complexity control            */
-   double threshold;                   /* for pruning matrix            */ 
-   double curr_threshold;              /* adjusted for levels           */
-   double drop_tol_for_smoothing;      /* self-explanatory              */
-   int    attach_scheme;               /* aggregate shape control       */
-   int    spectral_radius_scheme;      /* way to compute approx maxeigen*/
-   double smoothP_damping_factor;      /* for prolongator smoother      */
-   int    smoothP_type;                /* point, block                  */
-   int    coarsen_scheme;              /* Uncoupled, Coupled, MIS       */
+   int    max_coarse_size;             /** maximum size of coarsest grid */
+   int    ordering;                    /** natural, random, graph        */
+   int    min_nodes_per_aggregate;     /** aggregate size control        */
+   int    max_neigh_already_selected;  /** complexity control            */
+   double threshold;                   /** for pruning matrix            */ 
+   double curr_threshold;              /** adjusted for levels           */
+   double drop_tol_for_smoothing;      /** self-explanatory              */
+   int    attach_scheme;               /** aggregate shape control       */
+   int    spectral_radius_scheme;      /** way to compute approx maxeigen*/
+   double smoothP_damping_factor;      /** for prolongator smoother      */
+   int    smoothP_type;                /** point, block                  */
+   int    coarsen_scheme;              /** Uncoupled, Coupled, MIS       */
    int   * coarsen_scheme_level;  
-   int    num_PDE_eqns;                /* block size                    */
-   int    nullspace_dim;               /* self-explanatory              */
-   double *nullspace_vect;             /* for null space vectors        */
-   int    nullspace_corrupted;         /* indicates whether fine grid   */
-                                       /* nullspace has been overwritten*/
-   int    *aggr_count;                 /* no. aggregates at each level  */
-   int    **aggr_info;                 /* node to aggregate map         */
-   int    max_levels;                  /* maximum number of levels      */
-   int    begin_level;                 /* finest grid level             */
-   int    cur_level;                   /* temporary variable            */
-   double operator_complexity;         /* sum of nnz for all A's        */
-   double fine_complexity;             /* nnz of the finest A           */
-   int    nvblocks;                    /* for variable blocks (finest)  */
-   int    *vblock_info;                /* for variable blocks (finest)  */
-   int    keep_P_tentative;            /* keeping tentative prolongator */
-   void   *P_tentative;                /* so it can be reused later.    */
-   int    smooth_existing_P_tentative; /* already have P tent, don't create it*/
-  int use_transpose;                   /* Used to build restriction by doing */
-  int Restriction_smoothagg_transpose; /* smoothed aggregation on A^T */
+   int    num_PDE_eqns;                /** block size                    */
+   int    nullspace_dim;               /** self-explanatory              */
+   double *nullspace_vect;             /** for null space vectors        */
+   int    nullspace_corrupted;         /** indicates whether fine grid   */
+                                       /** nullspace has been overwritten*/
+   int    *aggr_count;                 /** no. aggregates at each level  */
+   int    **aggr_info;                 /** node to aggregate map         */
+   int    max_levels;                  /** maximum number of levels      */
+   int    begin_level;                 /** finest grid level             */
+   int    cur_level;                   /** temporary variable            */
+   double operator_complexity;         /** sum of nnz for all A's        */
+   double fine_complexity;             /** nnz of the finest A           */
+   int    nvblocks;                    /** for variable blocks (finest)  */
+   int    *vblock_info;                /** for variable blocks (finest)  */
+   int    keep_P_tentative;            /** keeping tentative prolongator */
+   void   *P_tentative;                /** so it can be reused later.    */
+   int    smooth_existing_P_tentative; /** already have P tent, don't create it*/
+  int use_transpose;                   /** Used to build restriction by doing */
+  int Restriction_smoothagg_transpose; /** smoothed aggregation on A^T */
 /*MS*/
-  void *aggr_options;                  /* option about METIS and ParMETIS    */
-  void *aggr_viz_and_stats;            /* information about the aggregates   */
-                                       /* only if the user explicitely       */
-                                       /* requires them                      */
+  void *aggr_options;                  /** option about METIS and ParMETIS    */
+  void *aggr_viz_and_stats;            /** information about the aggregates   */
+                                       /** only if the user explicitely       
+                                           requires them                      */
   void * field_of_values;
-  int    block_scaled_SA;              /* = 1 indicates that the prolongator */
-                                       /* smoother should use block diagonal */
-                                       /* scaling (blocksize = num_PDE_eqns) */
+  int    block_scaled_SA;              /** = 1 indicates that the prolongator 
+                                          smoother should use block diagonal 
+                                          scaling (blocksize = num_PDE_eqns) */
 
-  double phase3_agg_creation;          /* Steers how the MIS  and Uncoupled  */
-                                       /* handle phase 3 of aggregation.     */
-                                       /* Values near 0 create few additional*/
-                                       /* aggregates.Large values create many*/
-                                       /* additional aggregates. Convergence */
-                                       /* can be improve convergence by new  */
-                                       /* aggregates but nonzero fill-in     */
-                                       /* increases on coarse meshes.        */
-                                       /* Default: .5                        */
+  double phase3_agg_creation;          /** Steers how the MIS  and Uncoupled 
+                                          handle phase 3 of aggregation.     
+                                          Values near 0 create few additional
+                                          aggregates.Large values create many
+                                          additional aggregates. Convergence 
+                                          can be improve convergence by new  
+                                          aggregates but nonzero fill-in     
+                                          increases on coarse meshes.        
+                                          Default: .5                        */
 /*ms*/
 } ML_Aggregate;
 

@@ -58,20 +58,20 @@ typedef struct ML_Struct ML;
 /* ******************************************************************** */
 /* data definition for the ML Class                                     */
 /* ******************************************************************** */
-/* -------------------------------------------------------------------- */
-/* This is the primary data structure which users interact directly     */
-/* with via the provided functions.                                     */
-/* -------------------------------------------------------------------- */
+/* -------------------------------------------------------------------- 
+/*! This is the primary data structure which users interact directly     
+    with via the provided functions.                                    
+   -------------------------------------------------------------------- */
 
 struct ML_Struct {
    int            id;
-   int            ML_init_flag;    /* indicate initialization done */
-   int            ML_scheme;       /* which ML scheme to pick      */
-   int            ML_num_levels;   /* number of levels available   */
+   int            ML_init_flag;    /** indicate initialization done */
+   int            ML_scheme;       /** which ML scheme to pick      */
+   int            ML_num_levels;   /** number of levels available   */
    int            ML_num_actual_levels;
-                                   /* number of levels actually used */
-                                   /* by the multigrid method.       */
-   int            ML_num_transfers;/* number of transfers  */
+                                   /** number of levels actually used */
+                                   /** by the multigrid method.       */
+   int            ML_num_transfers;/** number of transfers  */
    int            ML_finest_level, ML_coarsest_level;
    int            symmetrize_matrix;
    int            output_level;
@@ -90,12 +90,12 @@ struct ML_Struct {
    ML_1Level      *SingleLevel;
    ML_DVector     *Amat_Normalization;
    struct ML_Timing
-                  *timing;       /* Used for timing information.    */
-   ML_Comm        *comm;         /* communicator for ML             */
-   int            *int_options;  /* optional integer parameters     */
-   double         *dble_options; /* optional double parameters      */
-   void           *void_options; /* optional other parameters       */
-   int            (*func)(void);     /* optional function               */
+                  *timing;       /** Used for timing information.    */
+   ML_Comm        *comm;         /** communicator for ML             */
+   int            *int_options;  /** optional integer parameters     */
+   double         *dble_options; /** optional double parameters      */
+   void           *void_options; /** optional other parameters       */
+   int            (*func)(void);     /** optional function               */
 
 };
 struct ML_Timing {
@@ -103,7 +103,7 @@ struct ML_Timing {
    double         total_build_time;
 };
 
-/* ******************************************************************** *
+/** ******************************************************************* *
  * Control structure for the amount of information that ML prints.      *
  * ******************************************************************** */
 

@@ -34,7 +34,7 @@ struct ML_AGG_Matrix_Context
 
 struct ML_Field_Of_Values
 {
-  double real_max;
+  double real_max;                          
   double imag_max;
   double eta;
   int poly_order;

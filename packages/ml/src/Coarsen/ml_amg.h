@@ -53,18 +53,18 @@ typedef struct ML_AMG_Struct
 {
    int    ML_id;
    double print_flag;
-   int    max_coarse_size;             /* maximum size of coarsest grid */
-   double threshold;                   /* for pruning matrix            */ 
-   double curr_threshold;              /* adjusted for levels           */
-   int    coarsen_scheme;              /* MIS                           */
-   int    amg_scheme;                  /* scalar(0),unknown(1),system(2)*/
-   int    num_PDE_eqns;                /* block size                    */
-   int    *blk_info;                   /* store dof information         */
-   int    max_levels;                  /* maximum number of levels      */
-   int    begin_level;                 /* finest grid level             */
-   int    cur_level;                   /* temporary variable            */
-   double operator_complexity;         /* sum of nnz for all A's        */
-   double fine_complexity;             /* nnz of the finest A           */
+   int    max_coarse_size;             /** maximum size of coarsest grid */
+   double threshold;                   /** for pruning matrix            */ 
+   double curr_threshold;              /** adjusted for levels           */
+   int    coarsen_scheme;              /** MIS                           */
+   int    amg_scheme;                  /** scalar(0),unknown(1),system(2)*/
+   int    num_PDE_eqns;                /** block size                    */
+   int    *blk_info;                   /** store dof information         */
+   int    max_levels;                  /** maximum number of levels      */
+   int    begin_level;                 /** finest grid level             */
+   int    cur_level;                   /** temporary variable            */
+   double operator_complexity;         /** sum of nnz for all A's        */
+   double fine_complexity;             /** nnz of the finest A           */
 
    ML_Operator *fine_Amat;
    int    presmoother_type;
