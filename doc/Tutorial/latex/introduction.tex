@@ -95,8 +95,8 @@ We will describe the following subset of the Trilinos packages.
 \item {\bf Amesos}. The package provides a common interface to certain
   sparse direct linear solvers (generally available outside the Trilinos
   framework), both sequential and parallel.
-\item {\bf Anasazi}. The package provides a common interface to parallel eigenvalue 
-  and eigenvector solvers, for both symmetric and non-symmetric linear problems.
+%\item {\bf Anasazi}. The package provides a common interface to parallel eigenvalue 
+%  and eigenvector solvers, for both symmetric and non-symmetric linear problems.
 \item {\bf NOX}. This is a collection of nonlinear solvers, designed to
   be easily integrated into an application and used with many different
   linear solvers.
@@ -292,11 +292,12 @@ and delete the \verb!--enable-mpi --with-mpi-compilers! options.
 
 \begin{remark}
   Compiling Trilinos requires time! For instance, on a Pentium 4, 1.7
-  Ghz with Intel compilers, to configure Trilinos with LOCA, NOX,
+  GHz with Intel compilers, to configure Trilinos with LOCA, NOX,
   AztecOO, Anasazi, IFPACK, Triutils, EpetraExt, Teuchos, ML and Epetra,
-  required 2 minutes and 11 seconds. The compilation took 5 minutes and
-  41 seconds. The reader is encouraged to start by enabling a limited
-  number of packages, then re-configuring Trilinos as required.
+  required 2 minutes and 11 seconds. The compilation (without the
+  examples) took 5 minutes and 41 seconds. The reader is encouraged to
+  start by enabling a limited number of packages, then re-configuring
+  Trilinos as required.
 \end{remark}
 
 %%%
