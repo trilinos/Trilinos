@@ -211,8 +211,10 @@ PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c
 PARAMS_INC	= params_const.h
 
-PAR_CSRC	= par_median.c par_sync.c par_stats.c par_bisect.c
-PAR_INC		= par_const.h par_median_const.h par_bisect_const.h
+PAR_CSRC	= par_median.c par_sync.c par_stats.c par_bisect.c \
+                  par_tflops_special.c
+PAR_INC		= par_const.h par_median_const.h par_bisect_const.h \
+                  par_tflops_special_const.c
 
 PARMETIS_CSRC	= parmetis_jostle.c build_graph.c verify_graph.c \
                   scatter_graph.c
@@ -235,7 +237,8 @@ DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_migrate.c dr_output.c dr_chaco_io.c dr_random_io.c \
                   dr_elem_util.c dr_maps.c dr_eval.c dr_gnuplot.c  
  
-DR_CSRC        += dr_hg_io.c dr_hg_readfile.c
+DR_CSRC        += dr_hg_io.c 
+DR_CSRC        += dr_hg_readfile.c
 
 DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_err_const.h dr_par_util_const.h dr_elem_const.h \
