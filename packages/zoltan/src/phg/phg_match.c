@@ -858,10 +858,12 @@ skip_phase1:
         m = 0;        
         gno = (cFLAG) ? permute[n] : edgebuf [permute[n]];
         
+#ifdef RTHRTH        
         /* Not sure if this test makes any speedup ???, works without! */
         if (gno % hgc->nProc_y != hgc->myProc_y)
           continue;                           /* this gno is not on this proc */
-        
+#endif
+
         /* merge step: look for target gno from each row's data */
         for (i = 0; i < hgc->nProc_y; i++)  {
           if (rows[i] < &rec[recsize] && *rows[i] == gno)  {       
