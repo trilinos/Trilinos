@@ -42,6 +42,7 @@
 #include "Epetra_SerialDenseMatrix.h"
 #include "Amesos_EpetraBaseSolver.h"
 #include "EpetraExt_Redistor.h"
+#include "Epetra_Util.h"
 
 #define ICNTL(I) icntl[(I)-1]
 #define CNTL(I)  cntl[(I)-1]
@@ -560,16 +561,14 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
   if( ParameterList.isParameter("ComputeTrueResidual") )
     ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
 
-  int OptNumProcs = (int)sqrt(1.0*Comm().NumProc());
-  if( OptNumProcs < 1 ) OptNumProcs = 1;
+  // on how many processes distribute the matrix
   if( ParameterList.isParameter("MaxProcsMatrix") )
-    MaxProcsInputMatrix_ = ParameterList.get("MaxProcsMatrix",OptNumProcs);
+    MaxProcsInputMatrix_ = ParameterList.get("MaxProcsMatrix",-1);
 
   // define on how many processes matrix should be converted into MUMPS
   // format. (this value must be less than available procs)
-
   if( ParameterList.isParameter("MaxProcs") )
-    MaxProcs_ = ParameterList.get("MaxProcs",OptNumProcs);
+    MaxProcs_ = ParameterList.get("MaxProcs",-1);
 
   // some verbose output:
   // 0 - no output at all
@@ -633,16 +632,63 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
      // that's all folks
   }  
 
-  // ================ //
-  // check parameters //
-  // ================ //
+  return 0;
+}
 
-  // check available processes; -1 means use all available processes
-  if( MaxProcs_ == -1 ||  MaxProcs_ > Comm().NumProc() )
+//=============================================================================
+
+void Amesos_Mumps::CheckParameters() 
+{
+  // check parameters and fix values of MaxProcs_ and MaxProcsInputMatrix_
+
+  int NumGlobalNonzeros=0, NumRows=0;
+  
+  NumGlobalNonzeros = GetMatrix()->NumGlobalNonzeros(); 
+  NumRows == GetMatrix()->NumGlobalRows(); 
+
+  // optimal value for MaxProcs == -1
+  
+  int OptNumProcs1 = 1+EPETRA_MAX( NumRows/10000, NumGlobalNonzeros/1000000 );
+  OptNumProcs1 = EPETRA_MIN(Comm().NumProc(),OptNumProcs1 );
+
+  // optimal value for MaxProcs == -2
+
+  int OptNumProcs2 = (int)sqrt(1.0*Comm().NumProc());
+  if( OptNumProcs2 < 1 ) OptNumProcs2 = 1;
+
+  // fix the value of MaxProcs
+
+  switch( MaxProcs_ ) {
+  case -1:
+    MaxProcs_ = OptNumProcs1;
+    break;
+  case -2:
+    MaxProcs_ = OptNumProcs2;
+    break;
+  case -3:
     MaxProcs_ = Comm().NumProc();
+    break;
+  }
+
+  // fix the value of MaxProcsInputMatrix
+  
+  switch( MaxProcsInputMatrix_ ) {
+  case -1:
+    MaxProcsInputMatrix_ = OptNumProcs1;
+    break;
+  case -2:
+    MaxProcsInputMatrix_ = OptNumProcs2;
+    break;
+  case -3:
+    MaxProcsInputMatrix_ = Comm().NumProc();
+    break;  
+  }
+  
+  // check available processes; -1 means use all available processes
+  if( MaxProcs_ < -3 || MaxProcs_ > Comm().NumProc() ) MaxProcs_ = Comm().NumProc();
 
   // check available processes; -1 means use all available processes
-  if( MaxProcsInputMatrix_ == -1 ||  MaxProcsInputMatrix_ > Comm().NumProc() )
+  if( MaxProcsInputMatrix_ < -3 ||  MaxProcsInputMatrix_ > Comm().NumProc() )
     MaxProcsInputMatrix_ = Comm().NumProc();
 
   // cannot distribute input matrix to this number,
@@ -653,7 +699,8 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
 
   if( Comm().NumProc() == 1 || MaxProcsInputMatrix_ == 1 ) KeepMatrixDistributed_ = false;
 
-  return 0;
+  return;
+  
 }
 
 //=============================================================================

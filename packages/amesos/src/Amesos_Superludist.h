@@ -334,6 +334,9 @@ revert to their default values.
   int NumSymbolicFact_;
   int NumNumericFact_;
   int NumSolve_;
+
+  bool ComputeTrueResidual_;
+  bool ComputeVectorNorms_;
   
 };  // End of  class Amesos_Superludist  
 #endif /* _AMESOS_SUPERLUDIST_H_ */

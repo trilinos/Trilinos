@@ -372,6 +372,8 @@ protected:
   int PerformNumericFactorization(); 
 
   void CheckError();
+
+  void CheckParameters();
   
   void SetICNTLandCNTL();
 

@@ -95,7 +95,9 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob ) :
     SolveTime_(0.0),
     NumSymbolicFact_(0),
     NumNumericFact_(0),
-    NumSolve_(0)
+    NumSolve_(0),
+    ComputeTrueResidual_(false),
+    ComputeVectorNorms_(false)
 {
 
   Problem_ = &prob ; 
@@ -174,6 +176,9 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
   ReplaceTinyPivot_ = true;
   
   PrintNonzeros_ = false;
+
+  ComputeTrueResidual_ = false;
+  ComputeVectorNorms_ = false;
   
   // Ken, I modified so that parameters are not added to the list if not present.
   // Is it fine for you ????
@@ -205,9 +210,16 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
   if( ParameterList.isParameter("DebugLevel") )
     debug_ = ParameterList.get("DebugLevel", 0);
 
-  MaxProcesses_ = ParameterList.get("MaxProcs",MaxProcesses_);
+  if( ParameterList.isParameter("MaxProcs") ) 
+    MaxProcesses_ = ParameterList.get("MaxProcs",MaxProcesses_);
   if( MaxProcesses_ > Comm().NumProc() ) MaxProcesses_ = Comm().NumProc();
-  
+
+  if( ParameterList.isParameter("ComputeTrueResidual") )
+    ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",ComputeTrueResidual_);
+
+  if( ParameterList.isParameter("ComputeVectorNorms") )
+    ComputeVectorNorms_ = ParameterList.get("ComputeVectorNorms",ComputeVectorNorms_);
+
   // parameters for Superludist only
   
   if (ParameterList.isSublist("Superludist") ) {
@@ -294,27 +306,39 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
 int Amesos_Superludist::RedistributeA( ) {
 
   if( debug_ == 1 ) cout << "Entering `RedistributeA()' ..." << endl;
- 
+
+  // Ken, I added two more options to what you did.
+  // Your heuristic if the default one (MaxProcs == -1), but for large runs
+  // users may decide to use MaxProcs == -2
+  // MaxProcs == -3 will redistribute on all avaiable processes
+  
   const Epetra_Map &OriginalMap = RowMatrixA_->RowMatrixRowMap() ; 
 
-  //  Establish the grid (nprow vs. npcol) 
-  //  Note:  The simple heuristic below is untested and 
-  //  will lead to a poor grid shape if ProcessNumHeuristic is large
-  //  and nearly prime.
-  //
   NumGlobalNonzeros_ = RowMatrixA_->NumGlobalNonzeros() ; 
   assert( NumRows_ == RowMatrixA_->NumGlobalRows() ) ; 
 
   const Epetra_Comm &Comm_ = RowMatrixA_->Comm();
-  int NumberOfProcesses = Comm_.NumProc() ; 
+  int NumberOfProcesses = Comm_.NumProc() ;
+
+  // if user wants to use all processes
+  if( MaxProcesses_ == -3 ) MaxProcesses_ = NumberOfProcesses;
+  
   if ( MaxProcesses_ > 0 ) {
-    NumberOfProcesses = EPETRA_MIN( NumberOfProcesses, MaxProcesses_ ) ; 
+    NumberOfProcesses = EPETRA_MIN( NumberOfProcesses, MaxProcesses_ );
+    // MS // added the following
+    nprow_ = Superludist_NumProcRows( NumberOfProcesses );
+    if( nprow_ < 1 ) nprow_ = 1;
+    npcol_ = NumberOfProcesses / nprow_;
+    
   }
   else {
-    // Ken, what about this:
-    // -1 ==> classical Amesos_Superludist approach
-    // -2 ==> square root of number of processes (as we are doing in ML)
     if( MaxProcesses_ == -1 ) {
+      //  Establish the grid (nprow vs. npcol) 
+      //  Note:  The simple heuristic below is untested and 
+      //  will lead to a poor grid shape if ProcessNumHeuristic is large
+      //  and nearly prime.
+      //
+      // ken's approach to determine the number of processes
       int ProcessNumHeuristic = 1+EPETRA_MAX( NumRows_/10000, NumGlobalNonzeros_/1000000 );
       NumberOfProcesses = EPETRA_MIN( NumberOfProcesses,  ProcessNumHeuristic );
       nprow_ = Superludist_NumProcRows( NumberOfProcesses ) ; 
@@ -322,13 +346,20 @@ int Amesos_Superludist::RedistributeA( ) {
       assert ( nprow_ * npcol_ == NumberOfProcesses ) ;
     }
     else if( MaxProcesses_ == -2 ) {
-      nprow_ = (int) pow(1.0 * NumberOfProcesses, 0.26 );
+      // ML's approach: square root of the number of processes,
+      // in a 2D square grid
+      nprow_ = (int) pow(1.0 * NumberOfProcesses, 0.25001 );
+      npcol_ = (int) sqrt(1.0 * NumberOfProcesses);
       if( nprow_ < 1 ) nprow_ = 1;
-      npcol_ = nprow_;
+      npcol_ /= nprow_;
       NumberOfProcesses = npcol_ * nprow_;
+    } else {
+      cerr << "Amesos_Superludist:Error: wrong value for MaxProcs ("
+	   << MaxProcesses_ << ")" << endl;
+      exit( EXIT_FAILURE );
     }
   }
-
+  
   //
   //  Compute a cannonical uniform distribution: MyFirstElement - The
   //  first element which this processor would have
@@ -883,6 +914,34 @@ int Amesos_Superludist::Solve() {
     vecX->Import( *vecXptr, *ImportBackToOriginal_, Insert ) ;
   }
 
+  // MS // compute vector norms, as done in Amesos_Mumps
+  if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
+    double NormLHS, NormRHS;
+    for( int i=0 ; i<nrhs ; ++i ) {
+      assert((*vecX)(i)->Norm2(&NormLHS)==0);
+      assert((*vecB)(i)->Norm2(&NormRHS)==0);
+      if( verbose_ && Comm().MyPID() == 0 ) {
+	cout << "Amesos_Superludist : vector " << i << ", ||x|| = " << NormLHS
+	     << ", ||b|| = " << NormRHS << endl;
+      }
+    }
+  }
+  
+  // MS // add compute true residual, as done in Amesos_Mumps
+  if( ComputeTrueResidual_ == true || verbose_ == 2  ) {
+    double Norm;
+    Epetra_MultiVector Ax(vecB->Map(),nrhs);
+    for( int i=0 ; i<nrhs ; ++i ) {
+      (RowMatrixA_->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
+      (Ax.Update(1.0, *((*vecB)(i)), -1.0));
+      (Ax.Norm2(&Norm));
+      
+      if( verbose_ && Comm().MyPID() == 0 ) {
+	cout << "Amesos_Superludist : vector " << i << ", ||Ax - b|| = " << Norm << endl;
+      }
+    }
+  }
+  
   SolveTime_ += Time.ElapsedTime();
   return 0;
 }
