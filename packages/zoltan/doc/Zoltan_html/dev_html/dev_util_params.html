@@ -12,55 +12,70 @@
 <IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
 </H3></DIV>
 
-<H2>
-<A NAME="Memory"></A>Parameter Setting Utilities</H2>
-<!--
-	Check params & place in data structure
-	Evaluate at time of invocation
-	Describe data structures for doing this.
-	Mention that parameters can be undocumented
-	Mention that static variables can be set instead.
+<H2><A NAME="Memory"></A>Parameter Setting Utilities</H2>
 
+Zoltan allows applications to change a number of parameter settings at runtime.
+This facility supports debugging by, for instance, allowing control over the
+type and quantity of output.  It also allows users to modify some of the parameters
+that characterize the partitioning algorithms.  The design of the parameter
+setting routines was driven by several considerations.  First, we wanted to
+keep the user interface as simple as possible.  Second, we wanted to allow
+different load balancing objects to have different parameter settings associated
+with them.  This second consideration precluded the use of C's static global
+variables (except in a few special places).  The parameter routines described
+below allow developers to provide runtime access to any appropriate variables.
+In some cases (e.g. <A HREF="dev_util_mem.html#Debug_Memory"> MEMORY_DEBUG</A>)
+it is appropriate to allow developers to tinker with parameters which will
+never be documented for users.
 
-Several memory allocation and deallocation routines are provided in the
-load-balancing library. They are defined in the file <I>all/all_allo.c</I>;
-their prototypes for inclusion in other files are in <I>all/all_allo_const.h</I>.
-The use of these routines is not mandatory in algorithm development, but
-the routines provide helpful error-checking and
-<A HREF="#Debug_Memory"> debugging capabilities</A>,
-and the use of them is strongly suggested.
+<P>Our solution to parameter setting is to have a single interface routine
+<B><A HREF="#LB_Set_Param">LB_Set_Param</A></B>.  This function calls a set
+of more domain-specific parameter setting routines, each of which is responsible
+for a domain-specific set of parameters.  Assuming there are no errors, the
+parameter name and new value are placed in a linked list of new parameters
+which is maintained by the load balance object.  When a partitioning method
+is invoked on a load balance object, it scans through this linked list using
+the <B><A HREF="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</A></B> function,
+resetting parameter values which are appropriate to the method.
 
-<P>The routines included in the utility are listed below.
-<BLOCKQUOTE><B><A HREF="#LB_Array_Alloc">LB_Array_Alloc</A></B>:&nbsp;
-allocates arrays of dimension <I>n</I>, <I>n</I>=0,1,...,4
-<BR><B><A HREF="#LB_Malloc">LB_Malloc</A></B>:&nbsp; wrapper for system
-malloc.
-<BR><B><A HREF="#LB_Realloc">LB_Realloc</A></B>:&nbsp; wrapper for system
-realloc.
-<BR><B><A HREF="#LB_Free">LB_Free</A></B>:&nbsp; frees memory
-and sets the pointer to NULL.</BLOCKQUOTE>
+<P>The routines that control parameter setting are listed below.
 
+<BLOCKQUOTE>
+<B><A HREF="#LB_Set_Param">LB_Set_Param</A></B>:&nbsp;
+User interface function which calls a set of method-specific routines.
+<BR><B><A HREF="#LB_Check_Param">LB_Check_Param</A></B>:&nbsp;
+Routine to check if parameter name and value are OK.
+<BR><B><A HREF="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</A></B>:&nbsp;
+Scans list of parameter names & values, setting relevant parameters accordingly.
+</BLOCKQUOTE>
 
-<P>
-<HR><A NAME="LB_Malloc"></A>double *<B>LB_Malloc</B>(int <I>n</I>,
-char *<I> file</I> , int <I>line</I>);&nbsp;
+<HR><A NAME="LB_Set_Param"></A>int <B>LB_Set_Param</B>(struct <B>LB_Struct</B> 
+* <I>lb</I>, char * <I>param_name</I>, char * <I>new_val</I>); <BR>
 <HR>
+<P>The <B>LB_Set_Param</B> function is the user interface for parameter
+setting.  It's principle purpose is to call a sequence of more domain-specific
+routines for setting domain-specific paramters (e.g. <B>LB_Set_RCB_Param</B>).
+If you are adding parameters to Zoltan, you must write one of these
+domain-specific paramater routines and modify <B>LB_Set_Param</B> to call it.
+<B>LB_Set_RCB_Param</B> can serve as a template for this task.  The arguments
+to this routine are two strings <I>param_name</I> and <I>new_val</I>.
+The domain-specific routines return an integer value with the following meaning.
 
-<P>The <B>LB_Malloc</B> function is a wrapper around the standard C malloc
-routine. It allocates a block of memory of size <I>n</I> bytes.
-The principle advantage of using the wrapper is that it allows you
-to track memory leaks via the DEBUG_MEMORY parameter.
+<BLOCKQUOTE>
+0 - The parameter name was found, and the value passed all error checks.
+<BR>1 - The parameter name was not found among the parameters known by the
+domain-specific routine.
+<BR>2 - The parameter name was found, but the value failed failed the error checking.
+<BR>3 - Same as 0, but do not add parameter and value to linked list.
+<BR>Other - More serious error, value is an 
+<A HREF="../ug_html/ug_interface.html#Error Codes">error code</A>.
+</BLOCKQUOTE>
 
-<P>A macro <B>LB_MALLOC</B> is defined in <I>all/all_allo_const.h</I>.
-It takes the argument <I>n</I>, and adds the <I>__FILE__</I> and <I>__LINE__</I>
-macros to the argument list of the <B>LB_Malloc</B> call:
-<BLOCKQUOTE>#define&nbsp;&nbsp;&nbsp; <B>LB_MALLOC</B>(<I>n</I>)
-&nbsp;&nbsp;&nbsp; <B>LB_Malloc</B>((<I>n</I>),
-<I>__FILE__</I>, <I>__LINE__</I>)</BLOCKQUOTE>
-Using this macro, the developer gains the file and line debugging information
-without having to type file and line information in each memory allocation
-call.
-<BR>&nbsp;
+If one of the domain-specific parameter routines returns with a 0, then
+<B>LB_Set_Param</B> adds the parameter and the value (both strings) to a
+linked list of such pairs that is pointed to by the <I>Params</I> field
+of the <i>lb</i> object.
+
 <TABLE WIDTH="100%" >
 <TR VALIGN=TOP>
 <TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
@@ -69,25 +84,22 @@ call.
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I> n</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I>lb</I></TD>
 
-<TD>The size (in bytes) of the memory-allocation request.</TD>
+<TD>The load balancing object whose parameter value is being modified.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; file</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I>param_name</I></TD>
 
-<TD>A string containing the name of the file calling the function. The
-<I>__FILE__</I> macro can be passed as this argument. This argument is
-useful for debugging memory allocation problems.</TD>
+<TD>A string containing the name of the parameter being modified.  It is
+automatically converted to all capitals.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; line</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I>new_val</I></TD>
 
-<TD>The line number within <I>file</I> of the call to the function. The
-<I>__LINE__</I> macro can be passed as this argument. This argument is
-useful for debugging memory allocation problems.</TD>
+<TD>The new value desired for the parameter, expressed as a string.</TD>
 </TR>
 
 <TR>
@@ -97,39 +109,153 @@ useful for debugging memory allocation problems.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; double *</TD>
+<TD VALIGN=TOP>&nbsp;&nbsp; int</TD>
 
-<TD>A pointer to the starting address of memory allocated.&nbsp; NULL is
-returned if <I>n</I> = 0 or the routine is unsuccessful.</TD>
+<TD> <A HREF="../ug_html/ug_interface.html#Error Codes">Error code</A>.</TD>
 </TR>
 
-<TR>
-<TD VALIGN=TOP><B>Example:</B></TD>
+</TABLE>
+
+
+<HR><A NAME="LB_Check_Param"></A>int <B>LB_Check_Param</B>(
+char * <I>param_name</I>, char * <I>new_val</I>,
+struct <B> PARAM_VARS</B> * <I> params</I>,
+struct <B> PARAM_UTYPE</B> * <I> result</I>,
+int * <I> matched_index</I>); <BR>
+<HR>
+
+The <B>LB_Check_Param</B> routine simplifies the task of writing your own
+domain-specific parameter setting function.  <B>LB_Check_Param</B> compares
+the <I>param_name</I> string against a list of strings that you provide,
+and if a match is found it extracts the new value from the <I>new_val</I>
+string.  See <B>LB_Set_RCB_Param.c</B> for an example of how to use this
+routine.
+
+<TABLE WIDTH="100%" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
 
 <TD></TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I>param_name</I></TD>
 
-<TD>struct <B>LB_Struct</B> *<I>b</I> = (struct <B>LB_Struct</B> *) <B>LB_MALLOC</B>(<I>sizeof</I>(struct
-<B>LB_Struct</B>));</TD>
+<TD>A capitalized string containing the name of the parameter being modified.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I>new_val</I></TD>
 
-<TD>Allocates memory for one <B>LB_Struct</B> data structure.&nbsp;</TD>
+<TD>The new value desired for the parameter, expressed as a string.</TD>
 </TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I>params</I></TD>
+
+<TD>The data structure describing the domain-specific parameters to be matched
+against.  The data structure is an array of items, each of which consists of
+three fields.  The first field is a string which is  a capitalized name of
+a parameter.  The second field is an address which is unused in <B>LB_Check_Param</B>,
+but is used in <B><A HREF="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</A></B>.
+The third field is another capitalized string which indicates the type of the
+parameter from the first field.  Currently supported types are "INT",
+"INTEGER", "DOUBLE", "LONG", "STRING" and "CHAR".  It is easy to add additional
+types by simple modifications to <B>LB_Check_Param</B> and
+<B>LB_Assign_Param_Vals</B>.  The array is terminated by an item consisting of
+three NULL fields.  See <B>LB_Set_RCB_Param.c</B> for an example of how to set
+up this data structure.
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I>result</I></TD>
+
+<TD>If <I>param_name</I> matches any of the parameter names from the first field
+of the <I>params</I> data structure, then <B>LB_Check_Param</B> attempts to decode
+the value in <I>new_val</I>.  The type of the value is determined by the third
+field in the <I>params</I> data structure.  If the value decodes properly, then
+it is returned in <I>result</I>.
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I>matched_index</I></TD>
+
+<TD>If <I>param_name</I> matches, then <I>matched_index</I> returns then index
+into the <I>params</I> array which corresponds to the matched parameter name.
+The <I>matched_index</I> and <I>result</I> values allow the developer to check
+that values being assigned to parameters are valid.
+</TD>
+</TR>
+
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+<TD></TD>
+
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp; int</TD>
+
+<TD>0 - <I>param_name</I> found in <I>params</I> data structure and <I>new_val</I>
+	decodes OK.
+<BR>1 - <I>param_name</I> not found in <I>params</I> data structure. 
+<BR>2 - <I>param_name</I> found in <I>params</I> data structure
+	but <I>new_val</I> doesn't decode properly. 
+</TD>
+</TR>
+
 </TABLE>
 
 
-<P>&nbsp;
+<HR><A NAME="LB_Assign_Param_Vals"></A>void <B>LB_Assign_Param_Vals</B>(
+struct <B>LB_PARAM</B> * <I>change_list</I>,  struct <B> PARAM_VARS</B> *
+<I>params</I>); <BR>
+<HR>
 
--->
+This routine changes parameter values as specified by the list of names
+and new values which is associated with a load balance object.  To use
+this routine, parameter values should first be set to their defaults, and
+then <B>LB_Assign_Param_Vals</B> should be called to alter the values as
+appropriate.  See <B>LB_rcb</B> for a template.
 
-<HR><A NAME="Set_Param"></A>int <B>LB_Set_param</B>(<I>struct <B>LB_Struct</B> 
-* <I>lb</I>, char * <I>param_name</I>, char * <I>new_val</I>); <BR>
+<TABLE WIDTH="100%" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I>change_list</I></TD>
+
+<TD>The linked list of parameter names names and new values which is
+constructed by <B><A HREF="#LB_Set_Param">LB_Set_Param</A></B> and is
+a field of the structure defining a load balance object.
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp;<I>params</I></TD>
+
+<TD>The data structure describing the domain-specific parameters to be matched
+against.  The data structure is an array of items, each of which consists of
+three fields.  The first field is a string which is  a capitalized name of
+a parameter.  The second field is an address of the parameter which should be
+altered. The third field is another capitalized string which indicates the
+type of the parameter being altered.  Currently supported types are "INT",
+"INTEGER", "DOUBLE", "LONG", "STRING" and "CHAR".  It is easy to add additional
+types by simple modifications to <B>LB_Check_Param</B> and
+<B>LB_Assign_Param_Vals</B>.  The array is terminated by an item consisting of
+three NULL fields.
+</TD>
+</TR>
+
+</TABLE>
+
+
 
 <HR WIDTH="100%">
 <BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_util_comm.html">Next:&nbsp;
