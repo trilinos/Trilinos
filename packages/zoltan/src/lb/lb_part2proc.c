@@ -41,18 +41,14 @@ int *pdist = zz->LB.PartDist;    /* Temporary variable */
 static int first_time = 1;
 int num_procs_for_part;
 
-  if (zz->LB.Num_Global_Parts == zz->Num_Proc) {
-    /*  number of parts == number of procs. return input part. */
+  if (zz->LB.PartDist == NULL) {
+    /*  number of parts == number of procs, uniformly distributed. 
+     *  return input part. */
     proc = part;
   }
   else {
     /*  number of parts != number of procs */
-    if (part < 0 || part >= zz->LB.Num_Global_Parts) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid partition number.");
-      proc = -1;
-    }
-    else {
-
+    if (part >= 0 && part < zz->LB.Num_Global_Parts) {
       num_procs_for_part = pdist[part+1] - pdist[part];
       if (num_procs_for_part <= 1)
         proc = pdist[part];
@@ -65,6 +61,10 @@ int num_procs_for_part;
         }
         proc = (rand() % num_procs_for_part) + pdist[part];
       }
+    }
+    else {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid partition number.");
+      proc = -1;
     }
   }
   return proc;

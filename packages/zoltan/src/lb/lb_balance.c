@@ -533,40 +533,100 @@ static int Zoltan_LB_Build_PartDist(ZZ *zz)
 {
 char *yo = "Zoltan_LB_Build_PartDist";
 int ierr = ZOLTAN_OK;
-int inflag[3], outflag[3];
-int global_parts_set = 0;   /* flag indicating that NUM_GLOBAL_PARTITIONS 
-                               parameter was used on some processor. */
-int local_parts_set = 0;    /* flag indicating that NUM_LOCAL_PARTITIONS 
-                               parameter was used on some processor. */
-int max_global_parts = 0;   /* Max value of Num_Global_Parts on all procs. */
+int inflag[4], outflag[4] = {0,0,-1,0};
+int global_parts_set = 0;   /* number of procs on which NUM_GLOBAL_PARTITIONS 
+                               parameter was set. */
+int local_parts_set = 0;    /* number of procs on which NUM_LOCAL_PARTITIONS
+                               parameter was set. */
+int max_global_parts = 0;   /* Max value of Num_Global_Parts_Param on all 
+                               procs. */
+int sum_local_parts = 0;    /* Sum of Num_Local_Parts over all procs.
+                               Procs on which NUM_LOCAL_PARTITIONS was not
+                               set assume one part on them.  Thus,
+                               sum_local_parts may be < max_global_parts. */
+int remaining_procs;        /* Num of procs not setting NUM_LOCAL_PARTITIONS */
+int specified_local_parts;  /* Total (over all procs) num of parts specified 
+                               by NUM_LOCAL_PARTITIONS parameters. */
+int avail_local_parts;      /* max_global_parts - specified_local_parts */
 int num_proc = zz->Num_Proc;
 int *pdist;
 int local_parts = 0;
-int *local_parts_per_proc = NULL;
-int i, j, cnt;
+int *local_parts_params = NULL;
+int i, j, cnt, pcnt;
 int frac, mod;
+MPI_Op op;
+MPI_User_function Zoltan_PartDist_MPIOp;
+
+  MPI_Op_create(&Zoltan_PartDist_MPIOp,1,&op);
 
   /* Check whether global parts or local parts parameters were used. */
-  inflag[0] = (zz->LB.Num_Global_Parts_Param != zz->Num_Proc); 
+  inflag[0] = (zz->LB.Num_Global_Parts_Param != -1); 
   inflag[1] = (zz->LB.Num_Local_Parts_Param != -1); 
   inflag[2] = zz->LB.Num_Global_Parts_Param;
+  inflag[3] = ((zz->LB.Num_Local_Parts_Param == -1) 
+                    ? 1 : zz->LB.Num_Local_Parts_Param);
 
-  MPI_Allreduce(inflag, outflag, 3, MPI_INT, MPI_MAX, zz->Communicator);
+  MPI_Allreduce(inflag, outflag, 4, MPI_INT, op, zz->Communicator);
 
-  global_parts_set = outflag[0];
-  local_parts_set = outflag[1];
-  max_global_parts = outflag[2];
+  global_parts_set = outflag[0];  /* Sum of inflag[0] */
+  local_parts_set = outflag[1];   /* Sum of inflag[1] */
+  max_global_parts = outflag[2];  /* Max of inflag[2] */
+  sum_local_parts = outflag[3];   /* Sum of inflag[3] */
+
+  MPI_Op_free(&op);
 
   /* Check whether any parameters were set;
    * No need to build the PartDist array if not. 
    */
-  if ((global_parts_set && (max_global_parts != num_proc)) || local_parts_set) {
-    /* Do extensive error checking. */
+  if ((!global_parts_set || (max_global_parts==num_proc)) && !local_parts_set) {
+    /* Number of parts == number of procs; do not need PartDist */
+    /* Free it so that an old PartDist isn't accidentally used. */
+    ZOLTAN_FREE(&(zz->LB.PartDist));
+    zz->LB.Num_Global_Parts = max_global_parts;
+  }
+
+  else {
+    /* Either NUM_GLOBAL_PARTITIONS is set != num_proc or NUM_LOCAL_PARTITIONS
+     * is set.  Build PartDist, distributing partitions to processors as 
+     * specified. 
+     */
+
+    /* error checking. */
+    if (local_parts_set) {
+      if (!global_parts_set) 
+        max_global_parts = sum_local_parts;
+      else if (sum_local_parts > max_global_parts) {
+        char emsg[256];
+        sprintf(emsg, 
+                "Sum of NUM_LOCAL_PARTITIONS %d > NUM_GLOBAL_PARTITIONS %d", 
+                sum_local_parts, max_global_parts);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, emsg);
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
+      else if (sum_local_parts < max_global_parts && 
+               local_parts_set == num_proc) {
+        char emsg[256];
+        sprintf(emsg, 
+                "Sum of NUM_LOCAL_PARTITIONS %d < NUM_GLOBAL_PARTITIONS %d", 
+                sum_local_parts, max_global_parts);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, emsg);
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
+    }
+
+    if (max_global_parts == 0) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zero partitions requested");
+      ierr = ZOLTAN_FATAL;
+      goto End;
+    }
 
     /* Allocate space for PartDist, if needed. */
     if (zz->LB.PartDist == NULL)
       zz->LB.PartDist = (int *) ZOLTAN_MALLOC((max_global_parts+1)*sizeof(int));
     else if (max_global_parts != zz->LB.Num_Global_Parts)
+      /* New parameter values since last build PartDist; reallocate. */
       zz->LB.PartDist = (int *) ZOLTAN_REALLOC(zz->LB.PartDist, 
                                               (max_global_parts+1)*sizeof(int));
     if (zz->LB.PartDist == NULL) {
@@ -577,18 +637,10 @@ int frac, mod;
     pdist = zz->LB.PartDist;
  
     /* Compute the PartDist array. */
-    if (max_global_parts > num_proc) {
 
-      if (local_parts_set) {
-        local_parts_per_proc = (int *) ZOLTAN_MALLOC(num_proc * sizeof(int));
-        /* All_Gather(local_parts_per_proc); */
-        for (cnt = 0, i = 0; i < num_proc; i++)
-          for (j = 0; j < local_parts_per_proc[i]; j++)
-            pdist[cnt++] = i;
-        pdist[cnt] = num_proc;
-        ZOLTAN_FREE(&local_parts_per_proc);
-      }
-      else {
+    if (!local_parts_set) {
+      if (max_global_parts > num_proc) {
+        /* NUM_LOCAL_PARTITIONS is not set; NUM_GLOBAL_PARTITIONS > num_proc. */
         /* Even distribution of partitions to processors. */
         frac = max_global_parts / num_proc;
         mod  = max_global_parts % num_proc;
@@ -600,48 +652,93 @@ int frac, mod;
         }
         pdist[cnt] = num_proc;
       }
+      else { /* num_proc < max_global_parts */
+        /* NUM_LOCAL_PARTITIONS is not set; NUM_GLOBAL_PARTITIONS < num_proc. */
+        /* Even distribution of processors to partitions. */
+        pdist[0] = 0;
+        frac = num_proc / max_global_parts;
+        mod  = num_proc % max_global_parts;
+        for (i = 1; i < max_global_parts; i++)
+          pdist[i] = pdist[i-1] + frac + ((max_global_parts - i) <= mod);
+        pdist[max_global_parts] = num_proc;
+      }
     }
-    else { /* num_proc < max_global_parts */
-      /* Even distribution of processors to partitions. */
-      /* NUM_LOCAL_PARTITIONS specification is not valid. */
-      pdist[0] = 0;
-      frac = num_proc / max_global_parts;
-      mod  = num_proc % max_global_parts;
-      for (i = 1; i < max_global_parts; i++)
-        pdist[i] = pdist[i-1] + frac + ((max_global_parts - i) <= mod);
-      pdist[max_global_parts] = num_proc;
+    else /* local_parts_set */ {
+
+      /* NUM_LOCAL_PARTITIONS is set on at least some processors. */
+      /* Distribute partitions to processors to match NUM_LOCAL_PARTITIONS
+         where specified; distribute remaining partitions (at least one per
+         processor) to processors that didn't specify NUM_LOCAL_PARTITIONS */
+
+      /* Gather the parameter values from all processors. */
+
+      local_parts_params = (int *) ZOLTAN_MALLOC((num_proc+1)* sizeof(int));
+      MPI_Allgather(&(zz->LB.Num_Local_Parts_Param), 1, MPI_INT, 
+                    local_parts_params, 1, MPI_INT, zz->Communicator);
+
+      /* Compute number of parts not specified by NUM_LOCAL_PARTITIONS */
+      /* In MPI_Allreduce above, processors not specifying NUM_LOCAL_PARTITIONS
+       * specified contributed one partition to sum_local_parts.  */
+
+      remaining_procs = num_proc - local_parts_set;
+      specified_local_parts = sum_local_parts - remaining_procs;
+      avail_local_parts = max_global_parts - specified_local_parts;
+      if (remaining_procs > 0) {
+        frac = avail_local_parts / remaining_procs;
+        mod  = avail_local_parts % remaining_procs;
+      }
+
+      for (cnt = 0, pcnt = 0, i = 0; i < num_proc; i++)
+        if (local_parts_params[i] != -1) {
+          /* Fill in processor for its NUM_LOCAL_PARTITIONS partitions. */
+          for (j = 0; j < local_parts_params[i]; j++)
+            pdist[cnt++] = i;
+        }
+        else {
+          /* Equally distribute avail_local_parts among remaining_procs. */
+          local_parts = frac + ((remaining_procs - pcnt) <= mod);
+          for (j = 0; j < local_parts; j++)
+            pdist[cnt++] = i;
+          pcnt++;
+        }
+  
+      pdist[cnt] = num_proc;
+      ZOLTAN_FREE(&local_parts_params);
     }
+
+    /* Reset Num_Global_Parts appropriately */
     zz->LB.Num_Global_Parts = max_global_parts;
-  }
 
-
-
-#ifdef KDD_OLD_JUNK
-
-
-    MPI_Scan (&(zz->LB.Num_Local_Parts), tmp, 1, MPI_INT, MPI_SUM, 
-              zz->Communicator);
-    /* Gather data from all procs */
-    MPI_Allgather (&(tmp[0]), 1, MPI_INT,
-                   &(tmp[1]), 1, MPI_INT, zz->Communicator);
-    tmp[0] = 0;
-
-    if (local_parts_set) 
-      zz->LB.Num_Global_Parts = tmp[zz->Num_Proc];
-  }
-
-#endif
-  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL && zz->LB.PartDist != NULL) {
-    int i99;
-    printf("[%1d] Debug: LB.PartDist = ", zz->Proc);
-    for (i99=0; i99<=zz->LB.Num_Global_Parts; i99++)
-      printf("%d ", zz->LB.PartDist[i99]);
-    printf("\n");
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL && zz->LB.PartDist != NULL) 
+    {
+      int i99;
+      printf("[%1d] Debug: LB.PartDist = ", zz->Proc);
+      for (i99=0; i99<=zz->LB.Num_Global_Parts; i99++)
+        printf("%d ", zz->LB.PartDist[i99]);
+      printf("\n");
+    }
   }
 
 End:
   return ierr;
+}
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void Zoltan_PartDist_MPIOp(
+  void *in, 
+  void *inout, 
+  int *len, 
+  MPI_Datatype *dptr)
+{
+int *int_in = (int *) in;
+int *int_inout = (int *) inout;
+
+  int_inout[0] += int_in[0];
+  int_inout[1] += int_in[1];
+  int_inout[2] = ((int_in[2] > int_inout[2]) ? int_in[2] : int_inout[2]);
+  int_inout[3] += int_in[3];
 }
 
 #ifdef __cplusplus
