@@ -48,6 +48,9 @@ class NLS_PetraVector : public NLS_Vector {
 
   //! Returns the underlying vector that NLS wraps (EPetra_Vector).  
   Epetra_Vector& getPetraVector();
+
+  //! Returns the underlying vector that NLS wraps (EPetra_Vector).  
+  const Epetra_Vector& getPetraVector() const;
  
   NLS_Vector& init(double value);
 
@@ -61,10 +64,15 @@ class NLS_PetraVector : public NLS_Vector {
   //! See above for definition
   virtual NLS_Vector& copy(const NLS_PetraVector& y, double scale = 1.0);
 
-  NLS_Vector& update(double alpha, const NLS_Vector& y, double beta);
+  virtual NLS_Vector& update(const NLS_Vector& x, double alpha, const NLS_Vector& y, double beta, double gamma);
 
   //! See above for definition.
-  NLS_Vector& update(double alpha, const NLS_PetraVector& y, double beta);
+  virtual NLS_Vector& update(const NLS_PetraVector& x, double alpha, const NLS_PetraVector& y, double beta, double gamma);
+
+  virtual NLS_Vector& update(const NLS_Vector& x, const NLS_Vector& d, double step);
+
+  //! See above for definition.
+  virtual NLS_Vector& update(const NLS_PetraVector& x, const NLS_PetraVector& d, double step);
 
   NLS_Vector&  scale(double alpha);
 
