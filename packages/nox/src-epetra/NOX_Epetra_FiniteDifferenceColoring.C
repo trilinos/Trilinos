@@ -106,7 +106,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   Epetra_CrsMatrix& jac = *testMatrix->jacobian;
 
   // Zero out Jacobian
-  jacobian->PutScalar(0.0);
+  jac->PutScalar(0.0);
 
   // Create an extra perturbed residual vector pointer if needed
   if ( diffType == Centered )
