@@ -375,7 +375,8 @@ int Amesos_Dscpack::PerformNumericFactorization()
 						 &mat_values[0], &col_indices[0] ) ) ; 
 #endif
     int OldRowNumber =  LocalStructOldNum[i] ;
-    assert( GlobalStructOwner[ OldRowNumber ] != -1 ) ; 
+    if (GlobalStructOwner[ OldRowNumber ] == -1)
+      AMESOS_CHK_ERR(-1);
     
     int NewRowNumber = GlobalStructNewColNum[ my_global_elements[ i ] ] ; 
     
@@ -506,7 +507,8 @@ int Amesos_Dscpack::Solve()
 
   // MS // some checks on matrix size
   int numrows = RowMatrixA->NumGlobalRows();
-  assert( numrows == RowMatrixA->NumGlobalCols() );
+  if (numrows != RowMatrixA->NumGlobalCols())
+    AMESOS_CHK_ERR(-1);
 
   //  Convert vector b to a vector in the form that DSCPACK needs it
   //
@@ -522,13 +524,16 @@ int Amesos_Dscpack::Solve()
   double *dscmapXvalues ;
   int dscmapXlda ;
   Epetra_MultiVector dscmapX(*DscMap_,NumVectors) ; 
-  assert( dscmapX.ExtractView(&dscmapXvalues,&dscmapXlda ) == 0 ) ; 
+  int ierr;
+  ierr = dscmapX.ExtractView(&dscmapXvalues,&dscmapXlda );
+  AMESOS_CHK_ERR(ierr);
   assert( dscmapXlda == NumLocalCols ) ; 
 
   double *dscmapBvalues ;
   int dscmapBlda ;
   Epetra_MultiVector dscmapB( *DscMap_, NumVectors ) ; 
-  assert( dscmapB.ExtractView( &dscmapBvalues, &dscmapBlda ) == 0 ) ; 
+  ierr = dscmapB.ExtractView( &dscmapBvalues, &dscmapBlda );
+  AMESOS_CHK_ERR(ierr);
   assert( dscmapBlda == NumLocalCols ) ; 
 
   // MS // erase this, use Import allocated only once
@@ -572,8 +577,8 @@ int Amesos_Dscpack::Solve()
   if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
     double NormLHS, NormRHS;
     for( int i=0 ; i<NumVectors ; ++i ) {
-      assert((*vecX)(i)->Norm2(&NormLHS)==0);
-      assert((*vecB)(i)->Norm2(&NormRHS)==0);
+      (*vecX)(i)->Norm2(&NormLHS);
+      (*vecB)(i)->Norm2(&NormRHS);
       if( verbose_ && Comm().MyPID() == 0 ) {
 	cout << "Amesos_Dscpack : vector " << i << ", ||x|| = " << NormLHS
 	     << ", ||b|| = " << NormRHS << endl;

@@ -459,8 +459,11 @@ int Amesos_Umfpack::Solve()
   int SerialBlda, SerialXlda ; 
   int UmfpackRequest = UseTranspose()?UMFPACK_A:UMFPACK_At ;
   if ( iam == 0 ) {
-    assert( SerialB->ExtractView( &SerialBvalues, &SerialBlda ) == 0 ) ; 
-    assert( SerialX->ExtractView( &SerialXvalues, &SerialXlda ) == 0 ) ; 
+    int ierr;
+    ierr = SerialB->ExtractView(&SerialBvalues, &SerialBlda);
+    assert (ierr == 0);
+    ierr = SerialX->ExtractView(&SerialXvalues, &SerialXlda);
+    assert (ierr == 0);
     assert( SerialBlda == NumGlobalElements_ ) ; 
     assert( SerialXlda == NumGlobalElements_ ) ; 
     
@@ -494,8 +497,8 @@ int Amesos_Umfpack::Solve()
   if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
     double NormLHS, NormRHS;
     for( int i=0 ; i<NumVectors ; ++i ) {
-      assert((*vecX)(i)->Norm2(&NormLHS)==0);
-      assert((*vecB)(i)->Norm2(&NormRHS)==0);
+      (*vecX)(i)->Norm2(&NormLHS);
+      (*vecB)(i)->Norm2(&NormRHS);
       if( verbose_ && Comm().MyPID() == 0 ) {
 	cout << "Amesos_Umfpack : vector " << i << ", ||x|| = " << NormLHS
 	     << ", ||b|| = " << NormRHS << endl;

@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
   b.Export(*readb, exporter, Add);
   xexact.Export(*readxexact, exporter, Add);
   A.Export(*readA, exporter, Add);
-  assert(A.FillComplete()==0);    
+  A.FillComplete();
     
   // create an epetra linear problem, contaning matrix
   // A, solution x and rhs b.

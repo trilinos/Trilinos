@@ -559,11 +559,14 @@ int Amesos_Superlu::Solve()
   int SerialBlda ; 
 
   if ( iam_ == 0 ) {
-    assert( SerialX->ExtractView( &SerialXvalues, &SerialXlda ) == 0 ) ; 
-    assert( SerialXlda == NumGlobalElements_ ) ; 
+    int ierr;
+    ierr = SerialX->ExtractView(&SerialXvalues, &SerialXlda);
+    assert (ierr == 0);
+    assert (SerialXlda == NumGlobalElements_ ) ; 
 
-    assert( SerialB->ExtractView( &SerialBvalues, &SerialBlda ) == 0 ) ; 
-    assert( SerialBlda == NumGlobalElements_ ) ; 
+    ierr = SerialB->ExtractView(&SerialBvalues, &SerialBlda);
+    assert (ierr == 0);
+    assert (SerialBlda == NumGlobalElements_ ) ; 
     
     SLU::SuperMatrix& dataX = (data_->X) ;
     dataX.nrow =   NumGlobalElements_; 

@@ -331,7 +331,6 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
         $(srcdir)/In_bcsstk01.mtx \
         $(srcdir)/In_bcsstk02.mtx \
         $(srcdir)/In_bcsstk04.mtx \
-        $(srcdir)/In_bcsstk08.mtx \
         $(srcdir)/In_nos1.mtx \
         $(srcdir)/In_nos5.mtx \
         $(srcdir)/In_FourByFour.mtx \

@@ -1065,7 +1065,8 @@ Epetra_RowMatrix& Amesos_Mumps::RedistrMatrix(const bool ImportMatrix)
     if (ImportMatrix) {
       int ierr =RedistrMatrix_->Import(Matrix(),RedistrImporter(),Insert);
       assert (ierr == 0);
-      assert(RedistrMatrix_->FillComplete() == 0);
+      ierr = RedistrMatrix_->FillComplete();
+      assert (ierr == 0);
     }
   }
 

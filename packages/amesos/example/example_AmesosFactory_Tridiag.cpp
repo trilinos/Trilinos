@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 					NumEntries, Values, Indices));
   }
 
-  assert(A.FillComplete()==0);
+  A.FillComplete();
 
   // Finish up. Now the matrix STRUCTURE is set. We cannot add
   // new nonzero elements, but we can still change the

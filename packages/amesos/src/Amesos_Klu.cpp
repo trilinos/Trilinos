@@ -70,13 +70,13 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   Matrix_(0),
   UseTranspose_(false),
   Problem_(&prob),
+  IsSymbolicFactorizationOK_(false),
+  IsNumericFactorizationOK_(false),
   PrintTiming_(false),
   PrintStatus_(false),
   ComputeVectorNorms_(false),
   ComputeTrueResidual_(false),
   verbose_(1),
-  IsSymbolicFactorizationOK_(false),
-  IsNumericFactorizationOK_(false),
   refactorize_(false),
   rcond_threshold_(1e-12),
   ScaleMethod_(1),
@@ -448,8 +448,9 @@ int Amesos_Klu::PerformNumericFactorization( ) {
 }
 
 //=============================================================================
-bool Amesos_Klu::MatrixShapeOK() const {
-  bool OK ;
+bool Amesos_Klu::MatrixShapeOK() const 
+{
+  bool OK = true;
 
   // Comment by Tim:  The following code seems suspect.  The variable "OK"
   // is not set if the condition is true.
@@ -458,7 +459,7 @@ bool Amesos_Klu::MatrixShapeOK() const {
        GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints() ) {
     OK = false;
   }
-  return OK;
+  return(OK);
 }
 
 //=============================================================================
@@ -616,8 +617,8 @@ int Amesos_Klu::Solve()
   if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
     double NormLHS, NormRHS;
     for( int i=0 ; i<NumVectors ; ++i ) {
-      assert((*vecX)(i)->Norm2(&NormLHS)==0);
-      assert((*vecB)(i)->Norm2(&NormRHS)==0);
+      (*vecX)(i)->Norm2(&NormLHS);
+      (*vecB)(i)->Norm2(&NormRHS);
       if( verbose_ && Comm().MyPID() == 0 ) {
 	cout << "Amesos_Klu : vector " << i << ", ||x|| = " << NormLHS
 	     << ", ||b|| = " << NormRHS << endl;

@@ -128,12 +128,13 @@ int main(int argc, char *argv[]) {
       else
 	Values[jGlobal] = 1.0*(iGlobal+1);
     }
-    assert(Matrix.InsertGlobalValues(MyGlobalElements[i],
-				     NumGlobalElements, Values, Indices)==0);
+   Matrix.InsertGlobalValues(MyGlobalElements[i],
+                             NumGlobalElements, Values, Indices);
 
   }
 
-  assert(Matrix.FillComplete()==0);
+  Matrix.FillComplete();
+
   delete [] MyGlobalElements;
   delete [] Indices;
   delete [] Values;
