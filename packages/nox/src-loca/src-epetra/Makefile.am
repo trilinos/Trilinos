@@ -40,10 +40,12 @@
 LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra.H \
 	$(srcdir)/LOCA_Epetra_Group.H \
-	$(srcdir)/LOCA_Epetra_Interface.H
+	$(srcdir)/LOCA_Epetra_Interface.H \
+	$(srcdir)/LOCA_Epetra_BorderedOp.H
 
 LOCA_EPETRA = \
-	$(srcdir)/LOCA_Epetra_Group.C 
+	$(srcdir)/LOCA_Epetra_Group.C \
+	$(srcdir)/LOCA_Epetra_BorderedOp.C
 
 # ------------------------------------------------------------------------
 # Noxepetra library specifications

@@ -39,6 +39,27 @@
 #include "NOX_Epetra_SharedOperator.H"
 #include "Epetra_Vector.h"
 #include "LOCA_Utils.H"
+#include "LOCA_Epetra_BorderedOp.H"
+
+// Trilinos Objects
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+#include "Epetra_LinearProblem.h"
+#include "Epetra_Map.h" 
+#include "Epetra_Vector.h"
+
+// External include files - linking to Aztec00 and Epetra in Trilinos
+#include "AztecOO.h"
+#include "AztecOO_Operator.h"
+#include "AztecOO_StatusTest.h"
+#include "AztecOO_StatusTestCombo.h"
+#include "AztecOO_StatusTestMaxIters.h"
+#include "AztecOO_StatusTestResNorm.h"
+
+#include "Ifpack_CrsRiluk.h"
 
 LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
 			   NOX::Parameter::List& par, 
@@ -359,5 +380,185 @@ LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
   }
   return LOCA::Abstract::Group::Ok;
 #endif
+}
+    
+NOX::Abstract::Group::ReturnType 
+LOCA::Epetra::Group::applyBorderedJacobianInverse(bool trans,
+				     NOX::Parameter::List& p,
+				     const NOX::Abstract::Vector& ca,
+				     const NOX::Abstract::Vector& cb,
+				     const NOX::Abstract::Vector& cvInput,
+				     double sInput,
+				     NOX::Abstract::Vector& vResult,
+				     double& sResult) const
+{
+  // Get non-const input
+  NOX::Abstract::Vector& vInput = const_cast<NOX::Abstract::Vector&>(cvInput);
+  NOX::Abstract::Vector& a = const_cast<NOX::Abstract::Vector&>(ca);
+  NOX::Abstract::Vector& b = const_cast<NOX::Abstract::Vector&>(cb);
+
+  // cast vectors to nox epetra vectors
+  NOX::Epetra::Vector& nox_epetra_vInput = 
+    dynamic_cast<NOX::Epetra::Vector&>(vInput);
+  NOX::Epetra::Vector& nox_epetra_a = 
+    dynamic_cast<NOX::Epetra::Vector&>(a);
+  NOX::Epetra::Vector& nox_epetra_b = 
+    dynamic_cast<NOX::Epetra::Vector&>(b);
+  NOX::Epetra::Vector& nox_epetra_vResult = 
+    dynamic_cast<NOX::Epetra::Vector&>(vResult);
+  
+  // Get underlying epetra vectors
+  Epetra_Vector& epetra_vInput = nox_epetra_vInput.getEpetraVector();
+  Epetra_Vector& epetra_a = nox_epetra_a.getEpetraVector();
+  Epetra_Vector& epetra_b = nox_epetra_b.getEpetraVector();
+  Epetra_Vector& epetra_vResult = nox_epetra_vResult.getEpetraVector();
+
+  // Create preconditioner
+  createIfpackPreconditioner(p);
+
+  // Get Jacobian, preconditioner operators
+  const Epetra_Operator& cjac = sharedJacobianPtr->getOperator();
+  Epetra_Operator& jac = const_cast<Epetra_Operator&>(cjac);
+  Epetra_Operator& prec = *ifpackPreconditioner;
+
+  // Build bordered matrix-free Jacobian, preconditioning operator
+  LOCA::Epetra::BorderedOp extended_jac(jac, epetra_a, epetra_b);
+  LOCA::Epetra::BorderedOp extended_prec(prec, epetra_a, epetra_b);
+  extended_jac.SetUseTranspose(trans);
+  extended_prec.SetUseTranspose(trans);
+
+  // Build extended epetra vectors
+  Epetra_Vector *epetra_extended_input = 
+    extended_jac.buildEpetraExtendedVec(epetra_vInput, sInput, true);
+  Epetra_Vector *epetra_extended_result = 
+    extended_jac.buildEpetraExtendedVec(epetra_vResult, 0.0, false);
+
+  // Create Epetra linear problem object for the linear solve
+  Epetra_LinearProblem Problem(&extended_jac, 
+  			       epetra_extended_result, 
+			       epetra_extended_input);
+
+  // Set the default Problem parameters to "hard" (this sets Aztec defaults
+  // during the AztecOO instantiation)
+  Problem.SetPDL(hard);
+
+  // Create the solver. 
+  AztecOO borderedAztecSolver(Problem);
+
+  // Set specific Aztec parameters requested by NOX
+  setBorderedAztecOptions(p, borderedAztecSolver);
+
+  // Set preconditioner
+  borderedAztecSolver.SetPrecOperator(&extended_prec);
+
+  // Get linear solver convergence parameters
+  int maxit = p.getParameter("Max Iterations", 400);
+  double tol = p.getParameter("Tolerance", 1.0e-6);
+  
+  // Solve linear problem
+  int aztecStatus = borderedAztecSolver.Iterate(maxit, tol);
+
+  // Set the output parameters in the "Output" sublist
+  NOX::Parameter::List& outputList = p.sublist("Output");
+  int prevLinIters = 
+    outputList.getParameter("Total Number of Linear Iterations", 0);
+  int curLinIters = borderedAztecSolver.NumIters();
+  double achievedTol = borderedAztecSolver.ScaledResidual();
+
+  outputList.setParameter("Number of Linear Iterations", curLinIters);
+  outputList.setParameter("Total Number of Linear Iterations", 
+			  (prevLinIters + curLinIters));
+  outputList.setParameter("Achieved Tolerance", achievedTol);
+
+  extended_jac.setEpetraExtendedVec(epetra_vResult, sResult, 
+				    *epetra_extended_result);
+  
+  delete epetra_extended_input;
+  delete epetra_extended_result;
+
+  // Destroy preconditioner
+  destroyPreconditioner();
+
+  if (aztecStatus != 0) 
+    return NOX::Abstract::Group::NotConverged;
+  
+  return NOX::Abstract::Group::Ok;
+}
+
+void 
+LOCA::Epetra::Group::setBorderedAztecOptions(const NOX::Parameter::List& p, 
+					     AztecOO& aztec) const
+{
+  // Set the Aztec Solver
+  string linearSolver = p.getParameter("Aztec Solver", "GMRES");
+  if (linearSolver == "CG")
+    aztec.SetAztecOption(AZ_solver, AZ_cg);
+  else if (linearSolver == "GMRES")
+    aztec.SetAztecOption(AZ_solver, AZ_gmres);
+  else if (linearSolver == "CGS")
+    aztec.SetAztecOption(AZ_solver, AZ_cgs);
+  else if (linearSolver == "TFQMR")
+    aztec.SetAztecOption(AZ_solver, AZ_tfqmr);
+  else if (linearSolver == "BiCGStab")
+    aztec.SetAztecOption(AZ_solver, AZ_bicgstab);
+  else if (linearSolver == "LU")
+    aztec.SetAztecOption(AZ_solver, AZ_lu);
+  else {
+    cout << "ERROR: LOCA::Epetra::Group::setAztecOptions" 
+	 << endl
+	 << "\"Aztec Solver\" parameter \"" << linearSolver 
+	 <<  "\" is invalid!" << endl;
+    throw "NOX Error";
+  }
+    
+  // Gram-Schmidt orthogonalization procedure
+  string orthog = p.getParameter("Orthogonalization", "Classical");
+  if (orthog == "Classical") 
+    aztec.SetAztecOption(AZ_orthog, AZ_classic);
+  else if (orthog == "Modified")
+    aztec.SetAztecOption(AZ_orthog, AZ_modified);
+  else {
+    cout << "ERROR: LOCA::Epetra::Group::setAztecOptions" 
+	 << endl
+	 << "\"Orthogonalization\" parameter \"" << orthog
+	 << "\" is invalid!" << endl;
+    throw "NOX Error";
+  }
+
+  // Size of the krylov space
+  aztec.SetAztecOption(AZ_kspace, 
+		       p.getParameter("Size of Krylov Subspace", 300));
+
+  // Convergence criteria to use in the linear solver
+  string convCriteria = p.getParameter("Convergence Criteria", "r0");
+  if (convCriteria == "r0") 
+    aztec.SetAztecOption(AZ_conv, AZ_r0);
+  else if (convCriteria == "rhs")
+    aztec.SetAztecOption(AZ_conv, AZ_rhs);
+  else if (convCriteria == "Anorm")
+    aztec.SetAztecOption(AZ_conv, AZ_Anorm);
+  else if (convCriteria == "no scaling")
+    aztec.SetAztecOption(AZ_conv, AZ_noscaled);
+  else if (convCriteria == "sol")
+    aztec.SetAztecOption(AZ_conv, AZ_sol);
+  else {
+    cout << "ERROR: LOCA::Epetra::Group::setAztecOptions" 
+	 << endl
+	 << "\"Convergence Criteria\" parameter \"" << convCriteria
+	 << "\" is invalid!" << endl;
+    throw "NOX Error";
+  }
+
+  // Set the ill-conditioning threshold for the upper hessenberg matrix
+  if (p.isParameter("Ill-Conditioning Threshold")) {
+    aztec.SetAztecParam(AZ_ill_cond_thresh, 
+			p.getParameter("Ill-Conditioning Threshold", 1.0e+11));
+  }
+
+  // Frequency of linear solve residual output
+  aztec.SetAztecOption(AZ_output, 
+		       p.getParameter("Output Frequency", AZ_last));
+
+  return;
 }
 

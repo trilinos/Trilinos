@@ -185,6 +185,10 @@ namespace LOCA {
       //! Call the user interface print() routine, solution vector
       virtual void printSolution(const double conParam) const;
 
+      //! Call the user interface print() routine, any vector
+      virtual void printSolution(const NOX::Abstract::Vector& x,
+                                 const double conParam) const;
+
       //! Computes leading eigenvalues/eigenvectors using Anasazi package
       /*!
        * To use Anasazi for computing eigenvalues, NOX/LOCA must be
@@ -192,6 +196,45 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType
       computeEigenvalues(NOX::Parameter::List& params);
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //@}
+
+      /*!
+       * \brief Solve a bordered system of equations
+       */
+      /*!
+       * Compute the solution to the bordered system of equations
+       * \f[
+       *     \begin{bmatrix}
+       *        J & a \\
+       *        b^T & 0
+       *     \end{bmatrix}
+       *     \begin{bmatrix}
+       *        \text{vResult} \\
+       *        \text{sResult}
+       *     \end{bmatrix} = 
+       *     \begin{bmatrix}
+       *        \text{vInput} \\
+       *        \text{sInput}
+       *     \end{bmatrix}
+       * \f]
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyBorderedJacobianInverse(bool trans,
+				   NOX::Parameter::List& params,
+				   const NOX::Abstract::Vector& a,
+				   const NOX::Abstract::Vector& b,
+				   const NOX::Abstract::Vector& vInput,
+				   double sInput,
+				   NOX::Abstract::Vector& vResult,
+				   double& sResult) const;
 
       //@}
 
@@ -216,9 +259,11 @@ namespace LOCA {
       virtual void printSolution(const NOX::Epetra::Vector& x,
                                  const double conParam) const;
 
-      //! Call the user interface print() routine, any vector
-      virtual void printSolution(const NOX::Abstract::Vector& x,
-                                 const double conParam) const;
+      protected:
+
+      //! Sets aztec solver options for matrix-free bordered system
+      void setBorderedAztecOptions(const NOX::Parameter::List& p, 
+				   AztecOO& aztec) const;
 
     protected:
 
