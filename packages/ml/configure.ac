@@ -360,6 +360,8 @@ TAC_ARG_WITH_PACKAGE(ml_arpack, [Enable ARPACK support. See notes for --with-ml_
 #
 TAC_ARG_WITH_PACKAGE(ml_parpack, [Enable PARPACK support. See notes for --with-ml_metis.], ML_PARPACK, no) 
 #
+TAC_ARG_WITH_PACKAGE(ml_parasails, [Enable Parasails support. See notes for --with-ml_metis.], ML_PARASAILS, no) 
+#
 ############################################
 #### interfaces to other Trilinos packages
 ############################################

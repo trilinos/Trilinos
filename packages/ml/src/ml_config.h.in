@@ -110,6 +110,9 @@
 /* Define if want to build with ml_newtpe enabled */
 #undef HAVE_ML_NEW_T_PE
 
+/* Define if want to build with ml_parasails enabled */
+#undef HAVE_ML_PARASAILS
+
 /* Define if want to build with ml_parmetis2x enabled */
 #undef HAVE_ML_PARMETIS_2x
 
