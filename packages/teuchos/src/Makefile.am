@@ -22,28 +22,87 @@ CORE_H = \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
 	$(srcdir)/Teuchos_CombineMode.hpp \
 	$(srcdir)/Teuchos_Comm.hpp \
+	$(srcdir)/Teuchos_CommandLine.hpp \
 	$(srcdir)/Teuchos_CompObject.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
+	$(srcdir)/Teuchos_ContainerComm.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
+	$(srcdir)/Teuchos_DefaultRaiseHandler.hpp \
+	$(srcdir)/Teuchos_DefaultWriter.hpp \
 	$(srcdir)/Teuchos_DenseMatrix.hpp \
+	$(srcdir)/Teuchos_DLARAN.hpp \
+	$(srcdir)/Teuchos_Error.hpp \
+	$(srcdir)/Teuchos_ExpatHandlerAdapter.hpp \
+	$(srcdir)/Teuchos_FileInputSource.hpp \
+	$(srcdir)/Teuchos_FileInputStream.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
+	$(srcdir)/Teuchos_HashSet.hpp \
+	$(srcdir)/Teuchos_Hashtable.hpp \
+	$(srcdir)/Teuchos_HashUtils.hpp \
 	$(srcdir)/Teuchos_LAPACK.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
+	$(srcdir)/Teuchos_MPIComm.hpp \
+	$(srcdir)/Teuchos_MPISession.hpp \
+	$(srcdir)/Teuchos_MPITraits.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
+	$(srcdir)/Teuchos_Out.hpp \
 	$(srcdir)/Teuchos_PacketTraits.hpp \
 	$(srcdir)/Teuchos_ParameterArbitrary.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
+	$(srcdir)/Teuchos_RaiseHandlerBase.hpp \
+	$(srcdir)/Teuchos_RandomNumberGeneratorBase.hpp \
+	$(srcdir)/Teuchos_RefCountPtr.hpp \
+	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_ReportError.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
-	$(srcdir)/Teuchos_Time.hpp
+	$(srcdir)/Teuchos_StringInputSource.hpp \
+	$(srcdir)/Teuchos_StringInputStream.hpp \
+	$(srcdir)/Teuchos_StrUtils.hpp \
+	$(srcdir)/Teuchos_SystemRand.hpp \
+	$(srcdir)/Teuchos_Time.hpp\
+	$(srcdir)/Teuchos_TimeMonitor.hpp\
+	$(srcdir)/Teuchos_ThrowException.hpp\
+	$(srcdir)/Teuchos_TreeBuildingXMLHandler.hpp\
+	$(srcdir)/Teuchos_Utils.hpp\
+	$(srcdir)/Teuchos_WriterBase.hpp\
+	$(srcdir)/Teuchos_XMLInputSource.hpp\
+	$(srcdir)/Teuchos_XMLInputStream.hpp\
+	$(srcdir)/Teuchos_XMLObject.hpp\
+	$(srcdir)/Teuchos_XMLObjectImplem.hpp
 
 CORE = \
+	$(srcdir)/Teuchos_CommandLine.cpp \
 	$(srcdir)/Teuchos_CompObject.cpp \
+	$(srcdir)/Teuchos_DefaultRaiseHandler.cpp \
+	$(srcdir)/Teuchos_DefaultWriter.cpp \
+	$(srcdir)/Teuchos_DLARAN.cpp \
+	$(srcdir)/Teuchos_Error.cpp \
+	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp \
+	$(srcdir)/Teuchos_FileInputSource.cpp \
+	$(srcdir)/Teuchos_FileInputStream.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
+	$(srcdir)/Teuchos_HashUtils.cpp \
+	$(srcdir)/Teuchos_MPIComm.cpp \
+	$(srcdir)/Teuchos_MPISession.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
-	$(srcdir)/Teuchos_Time.cpp
+	$(srcdir)/Teuchos_Out.cpp \
+	$(srcdir)/Teuchos_RandomNumberGeneratorBase.cpp \
+	$(srcdir)/Teuchos_RefCountPtr.cpp \
+	$(srcdir)/Teuchos_StrUtils.cpp \
+	$(srcdir)/Teuchos_StringInputSource.cpp \
+	$(srcdir)/Teuchos_StringInputStream.cpp \
+	$(srcdir)/Teuchos_SystemRand.cpp \
+	$(srcdir)/Teuchos_Time.cpp\
+	$(srcdir)/Teuchos_TimeMonitor.cpp\
+	$(srcdir)/Teuchos_ThrowException.cpp\
+	$(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp\
+	$(srcdir)/Teuchos_Utils.cpp\
+	$(srcdir)/Teuchos_XMLInputSource.cpp\
+	$(srcdir)/Teuchos_XMLInputStream.cpp\
+	$(srcdir)/Teuchos_XMLObject.cpp\
+	$(srcdir)/Teuchos_XMLObjectImplem.cpp
 
 
 UTIL_H =

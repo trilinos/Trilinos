@@ -14,7 +14,7 @@ BLAS_test_SOURCES = $(srcdir)/cxx_main.cpp
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
-BLAS_test_DEPENDENCIES =
+BLAS_test_DEPENDENCIES = 
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.

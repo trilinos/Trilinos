@@ -2,20 +2,35 @@
 // 07.08.03 -- Move into Teuchos package/namespace
 
 #include "Teuchos_Time.hpp"
+#include <sys/time.h>
+#include <sys/resource.h>
 
-namespace Teuchos {
+using namespace Teuchos;
+
 //=============================================================================
-Time::Time(const Comm<double, int>& Comm) : Object("Teuchos::Time"), Comm_(&Comm) {
+Time::Time(const string& name) 
+  : startTime_(0), totalTime_(0), isRunning_(false), name_(name)
+{}
+
+void Time::start()
+{
+  isRunning_ = true;
   startTime_ = wallTime();
 }
 
-//=============================================================================
-Time::Time(const Time& Time) : Object(Time.label()), Comm_(Time.Comm_) {
-  startTime_ = Time.startTime_; // We do want to do this in a copy constructor, after all, right?
+void Time::stop()
+{
+  totalTime_ += wallTime() - startTime_;
+  isRunning_ = false;
+  startTime_ = 0;
 }
 
+
+
 //=============================================================================
-double Time::wallTime() const {
+double Time::wallTime() 
+{
+  /* KL: warning: this code is probably not portable! */
   struct timeval tp;
   static long start = 0, startu;
   if (!start)
@@ -29,14 +44,3 @@ double Time::wallTime() const {
   return( ((double) (tp.tv_sec - start)) + (tp.tv_usec-startu)/1000000.0 );
 }
 
-//=============================================================================
-void Time::resetStartTime() {
-  startTime_ = wallTime();
-}
-
-//=============================================================================
-double Time::elapsedTime() const {
-  return(wallTime() - startTime_);
-}
-
-}  // namespace Teuchos

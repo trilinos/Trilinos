@@ -5,7 +5,7 @@
 
 // The Arbitrary class is included in ParameterList for backward compatibility with NOX and any other packages that use the NOX-style parameter list.
 
-// #include "NOX_Common.H"		// class data element (string)
+// #include "NOX_Common.hpp"		// class data element (string)
 #include <string>
 #include <iostream>
 

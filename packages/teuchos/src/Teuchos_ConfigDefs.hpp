@@ -67,22 +67,76 @@
 
 // end of ScalarTraits configs
 
-#ifdef HAVE_IOSTREAM
-#include <iostream>
-#elif defined(HAVE_IOSTREAM_H)
-#include <iostream.h>
-#endif
-  
-#ifdef HAVE_CSTDIO
-#include <cstdio>
+
+
+/******************************************************************************
+ *   Choose header file flavor: either ANSI-style (no .h, e.g. <iostream>) or
+ * old-style (with .h, e.g., <iostream.h>). 
+ * KL 9/26/03
+ *****************************************************************************/
+
+#if HAVE_CMATH
+#include <cmath>
+#elif HAVE_MATH_H
+#include <math.h>
 #else
-#include <stdio.h>   
+#error "Found neither cmath nor math.h"
 #endif
 
-#ifdef HAVE_CSTDLIB
-#include <cstdlib>
+#if HAVE_CSTDIO
+#include <cstdio>
+#elif HAVE_STDIO_H
+#include <stdio.h>
 #else
-#include <stdlib.h>   
+#error "Found neither cstdio nor stdio.h"
+#endif
+
+#if HAVE_CSTDARG
+#include <cstdarg>
+#elif HAVE_STDARG_H
+#include <stdarg.h>
+#else
+#error "Found neither cstdarg nor stdarg.h"
+#endif
+
+#if HAVE_CSTDLIB
+#include <cstdlib>
+#elif HAVE_STDLIB_H
+#include <stdlib.h>
+#else
+#error "Found neither cstdlib nor stdlib.h"
+#endif
+
+#if HAVE_STRING
+#include <string>
+#elif HAVE_STRING_H
+#include <string.h>
+#else
+#error "Found neither string nor string.h"
+#endif
+
+#if HAVE_IOSTREAM
+#include <iostream>
+#elif HAVE_IOSTREAM_H
+#include <iostream.h>
+#else
+#error "Found neither iostream nor iostream.h"
+#endif
+
+#if HAVE_IOSTREAM
+#include <fstream>
+#elif HAVE_IOSTREAM_H
+#include <fstream.h>
+#else
+#error "Found neither fstream nor fstream.h"
+#endif
+
+#if HAVE_STDEXCEPT
+#include <stdexcept>
+#elif HAVE_IOSTREAM_H
+#include <stdexcept.h>
+#else
+#error "Found neither stdexcept nor stdexcept.h"
 #endif
 
 #ifdef HAVE_CASSERT
@@ -123,15 +177,38 @@
 #include <strings.h>
 #endif
 
+
+
+
+/******************************************************************************
+ * Choose string stream type: preferably std::ostringstream, otherwise
+ * ostringstream or (gasp!) ostrstream. 
+ *
+ * Ross is going to write ANSI-compatible stringstreams to replace ostrstream
+ * on our non-compliant platforms.
+ *
+ * KL 09/26/03
+ ******************************************************************************/
+
+#if HAVE_SSTREAM
+#include <sstream>
+typedef std::ostringstream TeuchosOStringStream;
+#elif HAVE_SSTREAM_H
+#include <sstream.h>
+typedef ostringstream TeuchosOStringStream;
+#elif HAVE_STRSTREAM
+#include <strstream>
+typedef std::ostrstream TeuchosOStringStream;
+#elif HAVE_STRSTREAM_H
+#include <strstream.h>
+typedef ostrstream TeuchosOStringStream;
+#else
+#error "Found neither sstream, sstream.h, strstream.h, nor strstream"
+#endif
+
 using namespace std;
 
-#ifndef TFLOP
-#ifdef HAVE_CMATH
-#include <cmath>
-#else
-#include <math.h>  
-#endif
-#else /* TFLOP defined */
+#ifdef TFLOP
 #ifdef HAVE_IOMANIP
 #include <iomanip>
 #else
@@ -153,9 +230,10 @@ using std::complex;
 
 #endif /* TFLOP */
 
-#else
+#else /* fallback for the amazingly unlikely event we have no HAVE_CONFIG_H! */
 
 #include <iostream>
+#include <fstream>
 #include <string>
 
 #if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT) || defined (TFLOP)
@@ -182,6 +260,16 @@ using namespace std;
 
 #endif /* end HAVE_CONFIG_H */
 
+
+
+/* Define bool in case we are running on an ancient, quirky, or merely
+ * stupid compiler having no built-in bool.  WARNING: THIS IS EXTREMELY
+ * DANGEROUS, BECAUSE OTHER CODES TO WHICH WE LINK MAY HACK THEIR BOOL
+ * DEFINITIONS IN DIFFERENT WAYS, E.G. VIA A TYPEDEF. If that happens, 
+ * a whole bunch of link errors will result. Avoid this hack if at all 
+ * possible.
+ */ 
+
 #ifdef TEUCHOS_SIMULATE_BOOL
 
 #ifdef bool
@@ -200,6 +288,9 @@ using namespace std;
 
 #endif
 
+/* 
+ *
+ */
 #define TEUCHOS_MAX(x,y) (( (x) > (y) ) ? x : y)     /* max function  */
 #define TEUCHOS_MIN(x,y) (( (x) < (y) ) ? x : y)     /* min function  */
 #define TEUCHOS_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */

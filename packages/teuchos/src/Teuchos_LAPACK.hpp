@@ -37,6 +37,9 @@ namespace Teuchos
 
   // BEGIN GENERAL TEMPLATE DECLARATION //
 
+  /**
+   * Templated LAPACK wrapper class. Somebody needs to document the methods...
+   */
   template<typename OrdinalType, typename ScalarType>
   class LAPACK
   {    

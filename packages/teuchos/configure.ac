@@ -149,6 +149,8 @@ AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
 AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
 AC_CHECK_HEADERS([string string.h complex complex.h algorithm algorithm.h],,,)
 AC_CHECK_HEADERS([map map.h vector vector.h],,,)
+AC_CHECK_HEADERS([sstream strstream sstream.h strstream.h],,,)
+AC_CHECK_HEADERS([stdexcept stdexcept.h],,,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Teuchos requires at least one or the other.]])
@@ -196,6 +198,10 @@ else
     AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Teuchos requires at least one or the other.]])
   fi
 fi  
+
+if test "X$ac_cv_header_sstream" != "Xyes" && test "X$ac_cv_header_strstream" != "Xyes" && test "X$ac_cv_header_sstream" != "Xyes" && test "X$ac_cv_header_strstream" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find sstream, strstream, sstream.h, or strstream.h.  TSF requires at least one of these.]])
+fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -394,6 +400,17 @@ AC_F77_LIBRARY_LDFLAGS
 # Checks for system services
 # ------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------
+# Check to see if expat enabled and if any special configuration done
+# ------------------------------------------------------------------------
+
+TAC_ARG_CONFIG_EXPAT
+
+# ------------------------------------------------------------------------
+# Check to see if array boundschecking has been enabled
+# ------------------------------------------------------------------------
+
+TAC_ARG_CONFIG_BOUNDSCHECK
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
@@ -417,6 +434,10 @@ AC_CONFIG_FILES([
 		test/LAPACK/Makefile
 		test/DenseMatrix/Makefile
 		test/ParameterList/Makefile
+		test/Containers/Makefile
+		test/Time/Makefile
+		test/Random/Makefile
+		test/XML/Makefile
 		])
 
 AC_OUTPUT()

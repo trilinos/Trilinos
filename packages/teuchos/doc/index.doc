@@ -1,0 +1,116 @@
+/*! \mainpage Trilinos/Teuchos Tools Library
+
+\section intro Teuchos provides a suite of common tools for Trilinos
+
+
+
+\section startup Overview of Teuchos
+
+\subsection formulations Teuchos Classes
+
+Teuchos contains a number of classes.  They can be categorized as follows:
+
+<ul>
+
+<li> <b> Memory Management: </b>
+<ul>
+<li> Smart pointer: Teuchos::RefCountPtr - a reference-counted pointer that is safe under multiple
+inheritance. 
+</ul>
+
+<br>
+<li> <b> Error Handling</b>
+
+<ul>
+<li> Common interface for error reporting: Teuchos::Error. A call to Teuchos::Error::raise() triggers the error handler.  
+The default error handler is Teuchos::DefaultRaiseHandler, which throws a standard exception. If some other behavior
+is desired (for example, if you are calling from a C program and thus cannot use exceptions) you can override
+the default behavior by deriving a custom error handler from Teuchos::RaiseHandlerBase, and installing
+it with a call to Teuchos::Error::setRaiseHandler().
+<li> Base class for customizable error handlers: Teuchos::RaiseHandlerBase. 
+<li> A default error handler: Teuchos::DefaultRaiseHandler. Throws an exception when its handleRaise() method is called.
+</ul>
+
+<br>
+<li> <b> Customizable output </b>
+
+<ul>
+<li> Teuchos::Out allows customizable control of output in a parallel environment. 
+    Out writes text using a user-selected writer. The default writer is
+    class DefaultWriter which prepends a processor identifier to every line; this 
+   is helpful in debugging.
+    All methods of Out are static. Methods such as println() and printf() work
+    on every processor. The "root" methods such as rootPrinln() and rootPrintf()
+    write if called on the root processor, but are ignored on all non-root processors.
+<li> Teuchos::WriterBase is the base class for user-defined writers.
+</ul>
+
+<br>
+<li> <b> Performance Monitoring </b>
+
+<ul>
+<li> Timing class: Teuchos::TimeMonitor - Provides timing functions for the
+     purposes of performance analysis. 
+
+<li> Floating point operation class: Teuchos::Flops - Provides floating point operations (FLOPS)
+     counting and reporting functions for the purposes of performance analysis.  All Teuchos computational
+     classes accumulate FLOP counts associated with the \e this object of the computations.
+</ul>
+
+<br>
+<li> <b> Low-level math</b>
+<ul>
+
+<li> BLAS wrapper class: Teuchos::BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
+     This class provides a single instance interface between Teuchos and the BLAS.  In this way we can easily
+     switch BLAS interfaces and manage the C++/Fortran translation differences that exist between different
+     computer systems.  This class also provides a very convenient way to templatize the BLAS.
+
+<li> LAPACK wrapper class: Teuchos::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Teuchos::BLAS,
+     it provides nice C++ access to LAPACK.
+
+</ul>
+
+<br>
+<li> <b> Containers </b>
+<ul>
+<li> Teuchos::Array is a templated
+array class similar to the STL vector, but with optional boundschecking.
+Boundschecking is useful for debugging, and can be turned on at compile time with
+the <pre> --enable-boundscheck </pre> configure flag. Boundschecking incurs a significant
+performance penalty and so is not recommended for production builds. 
+<li> Teuchos::Hashtable is a templated map with constant-time lookup.
+<li> Teuchos::HashSet is a templated set with constant-time lookup.
+</ul>
+
+<br>
+<li> <b> XML </b>
+<ul>
+<li> Teuchos::XMLObject is an object representation of a subset of XML data. Supported XML features
+are tags, attributes, and character content. 
+<li> Teuchos::FileInputSource can read XML from a file and produce a Teuchos::XMLObject
+<li> Teuchos::StringInputSource can read XML from a character string and produce a Teuchos::XMLObject
+</ul>
+
+<br>
+<li> <b> MPI </b>
+<ul>
+<li> Teuchos::MPISession has methods to initialize, finalize, and query the global MPI environment.
+<li> Teuchos::MPIComm represents an MPI communicator
+<li> Teuchos::ContainerComm has methods to communicate Teuchos::Array objects
+</ul>
+
+<br>
+<li> <b> Random numbers </b>
+<ul>
+<li> Teuchos::RandomNumberGeneratorBase is a base class for random number generators
+<li> Teuchos::DLARAN uses the LAPACK dlaran() subroutine to generate uniform deviates
+<li> Teuchos::SystemRand uses the srand() call to generate uniform deviates
+</ul>
+
+
+</ul>
+     
+
+
+*/

@@ -4,48 +4,67 @@
 #ifndef _TEUCHOS_TIME_HPP_
 #define _TEUCHOS_TIME_HPP_
 
-#include "Teuchos_Object.hpp"
-#include "Teuchos_Comm.hpp"
-#include <sys/time.h>
-#include <sys/resource.h>
+#include "Teuchos_ConfigDefs.hpp"
 
-namespace Teuchos {
+namespace Teuchos 
+{
 
-//! Teuchos::Time class, utility for timing code segments.
-/*! To time a section of code, place it in between calls to resetStartTime and elapsedTime. 
-   Note that resetStartTime is called by the constructor, so it is also possible to time a section of code 
-   by placing it in between the creation of the Time object, and a call to elapsedTime. 
-   A call to resetStartTime must be used for all subsequent timings though.
+  /** Teuchos::Time class is a wall-clock timer. For exception safety and correct
+   * behavior in reentrant code, this class should
+   * generally be used only through the Teuchos::TimeMonitor mechanism. 
+   *
+   * To time a section of code, place it in between calls to start() 
+   * and stop(). 
+   *
+   * Initial version by Mike Heroux and Kris Campshaw. 
+   * Modified as follows by Kevin Long, 9/29/03:
+   * <ul>
+   * <li> There is no need to define explicit copy ctor and dtor for this class.
+   * <li> The wallTime() method returns the same value for every instance of this class, so
+   * it would be best to make it a static method.
+   * <li> Removed the communicator data member. Cross-processor comparisons of timings
+   * can be done by the TimeMonitor.
+   * </ul>
+   */ 
 
-   A Comm object is also required to use Time, although I don't know why.
-*/
 
-class Time : public Teuchos::Object {
+  class Time
+  {
 
-public:
-  //! Default constructor
-  Time(const Comm<double, int>& Comm);
+  public:
+    /** Construct with a descriptive name */
+    Time(const string& name);
   
-  //! Copy Constructor
-  Time(const Time& Time);
+    /** returns current wall-clock time in seconds.*/
+    static double wallTime();
   
-  //! Destructor
-  virtual ~Time() {};
-  
-  //! returns current wall-clock time in seconds
-  double wallTime() const;
-  
-  //! resets the timer to the current walltime
-  void resetStartTime();
-  
-  //! returns the elapsed time in between when the timer was set, and the current walltime.
-  double elapsedTime() const;
+    /** starts the timer */
+    void start();
 
+    /** stop the timer */
+    void stop();
 
-private:
-  double startTime_;
-  const Comm<double, int> * Comm_;
-};
+    /** returns the total time accumulated by this timer. Note that this should be called
+     * only when the clock is stopped. */
+    double totalElapsedTime() const {return totalTime_;}
+
+    /** indicates if this timer is currently running, i.e., if it has been started but
+     * not yet stopped. It is necessary to know if a timer is running to avoid 
+     * incorrectly starting or stopping in reentrant code. */
+    bool isRunning() const {return isRunning_;}
+
+    /** return the name of this timer */
+    const string& name() const {return name_;}
+    
+  private:
+    double startTime_;
+
+    double totalTime_;
+
+    bool isRunning_;
+
+    string name_;
+  };
 
 } // namespace Teuchos
 
