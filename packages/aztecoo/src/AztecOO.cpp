@@ -689,13 +689,10 @@ int AztecOO::AdaptiveIterate(int MaxIters, int MaxSolveAttempts, double Toleranc
   SetAztecOption(AZ_max_iter, MaxIters);
   SetAztecParam(AZ_tol, Tolerance);
 
-  // Make sure we are using IFPACK BILU
-  if (options_[AZ_subdomain_solve] == AZ_bilu) options_[AZ_subdomain_solve] = AZ_bilu_ifp;
-
   // Construct adaptive strategy if necessary
   if (useAdaptiveDefaults_) {
 
-    if (options_[AZ_subdomain_solve] == AZ_bilu_ifp) {
+    if (options_[AZ_subdomain_solve] == AZ_bilu) {
       int NumTrials = 3;
       double athresholds[] = {0.0, 1.0E-14, 1.0E-3};
       double rthresholds[] = {0.0, 1.0E-14, 1.0E-3};
