@@ -356,6 +356,16 @@ int main( int argc, char* argv[] ) {
 			}
 			catch( const std::logic_error )
 			{}
+			try {
+				// Try to cast form one interface to another that is not supported (B2 -> B1).
+				// Note that rcp_dynamic_cast<B1>(...,true) should throw an exception but even
+				// so no memory leak occurs.  If you don't believe me then step through with a
+				// debugger and see for yourself.
+				rcp_dynamic_cast<B1>( rcp(new B2), true );
+				return -1; // Should not be executed!
+			}
+			catch( const std::bad_cast )
+			{}
 #endif
 
 			// Manually clean up some memory

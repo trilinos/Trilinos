@@ -253,13 +253,22 @@ RefCountPtr<D>     d_ptr = rcp(new E);
 RefCountPtr<E>     e_ptr = rcp_static_cast<E>(d_ptr); // Unchecked, unsafe?
 \endcode
 
-<li> <b>Dynamic cast (runtime checked)</b> : <tt>rcp_dynamic_cast()</tt>
+<li> <b>Dynamic cast (runtime checked, failed cast allowed)</b> : <tt>rcp_dynamic_cast()</tt>
 
 \code
 RefCountPtr<A>     a_ptr  = rcp(new C);
 RefCountPtr<B1>    b1_ptr = rcp_dynamic_cast<B1>(a_ptr);  // Checked, safe!
 RefCountPtr<B2>    b2_ptr = rcp_dynamic_cast<B2>(b1_ptr); // Checked, safe!
 RefCountPtr<C>     c_ptr  = rcp_dynamic_cast<C>(b2_ptr);  // Checked, safe!
+\endcode
+
+<li> <b>Dynamic cast (runtime checked, failed cast not allowed)</b> : <tt>rcp_dynamic_cast()</tt>
+
+\code
+RefCountPtr<A>     a_ptr1  = rcp(new C);
+RefCountPtr<A>     a_ptr2  = rcp(new A);
+RefCountPtr<B1>    b1_ptr1 = rcp_dynamic_cast<B1>(a_ptr1,true);  // Success!
+RefCountPtr<B1>    b1_ptr2 = rcp_dynamic_cast<B1>(a_ptr2,true);  // Throw std::bad_cast!
 \endcode
 
 </ol>
@@ -567,7 +576,7 @@ RefCountPtr<T> rcp( T* p, bool owns_mem
 	= true
 #endif
 	);
-#ifdef __sun // RAB: 20040303: Sun needs to fixe there &^**%F$ compiler
+#ifdef __sun // RAB: 20040303: Sun needs to fix their compiler
 template<class T> inline RefCountPtr<T> rcp( T* p ) { return rcp(p,true); }
 #endif
 
@@ -633,7 +642,7 @@ RefCountPtr<T2> rcp_implicit_cast(const RefCountPtr<T1>& p1);
  *
  * This can safely be used for conversion down an inheritance hierarchy
  * with polymorphic types only if <tt>dynamic_cast<T2>(p1.get()) == static_cast<T2>(p1.get())</tt>.
- * If not then you have to use #rcp_dynamic_cast<tt><T2>(p1)</tt>.
+ * If not then you have to use <tt>rcp_dynamic_cast<tt><T2>(p1)</tt>.
  */
 template<class T2, class T1>
 RefCountPtr<T2> rcp_static_cast(const RefCountPtr<T1>& p1);
@@ -649,10 +658,36 @@ RefCountPtr<T2> rcp_const_cast(const RefCountPtr<T1>& p1);
 ///
 /** \brief Dynamic cast of underlying <tt>RefCountPtr</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
+ * @param  p1             [in] The smart pointer casting from
+ * @param  throw_on_fail  [in] If <tt>true</tt> then if the cast fails (for <tt>p1.get()!=NULL) then
+ *                        a <tt>std::bad_cast</tt> exception is thrown with a very informative
+ *                        error message.
+ *
+ * Postconditions:<ul>
+ * <li> If <tt>( p1.get()!=NULL && throw_on_fail==true && dynamic_cast<T2*>(p1.get())==NULL ) == true</tt>
+ *      then an <tt>std::bad_cast</tt> exception is thrown with a very informative error message.
+ * <li> If <tt>( p1.get()!=NULL && dynamic_cast<T2*>(p1.get())!=NULL ) == true</tt>
+ *      then <tt>return.get() == dynamic_cast<T2*>(p1.get())</tt>.
+ * <li> If <tt>( p1.get()!=NULL && throw_on_fail==false && dynamic_cast<T2*>(p1.get())==NULL ) == true</tt>
+ *      then <tt>return.get() == NULL</tt>.
+ * <li> If <tt>( p1.get()==NULL ) == true</tt>
+ *      then <tt>return.get() == NULL</tt>.
+ * </ul>
+ *
  * This function will compile only if (<tt>dynamic_cast<T2*>(p1.get());</tt>) compiles.
  */
 template<class T2, class T1>
-RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
+RefCountPtr<T2> rcp_dynamic_cast(
+	const RefCountPtr<T1>& p1
+	,bool throw_on_fail
+#ifndef __sun
+	= false
+#endif
+	);
+#ifdef __sun // RAB: 20041019: Sun needs to fix their compiler
+template<class T2, class T1> inline RefCountPtr<T2> rcp_dynamic_cast( const RefCountPtr<T1>& p1 )
+{ return rcp_dynamic_cast<T2>(p1,true); }
+#endif
 
 ///
 /** \brief Set extra data associated with a <tt>RefCountPtr</tt> object.

@@ -38,6 +38,7 @@
 
 #include "Teuchos_RefCountPtrDecl.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_map.hpp"
 
 // /////////////////////////////////////////////////////////////////////////
@@ -368,11 +369,15 @@ Teuchos::rcp_const_cast(const RefCountPtr<T1>& p1)
 template<class T2, class T1>
 REFCOUNTPTR_INLINE
 Teuchos::RefCountPtr<T2>
-Teuchos::rcp_dynamic_cast(const RefCountPtr<T1>& p1)
+Teuchos::rcp_dynamic_cast(const RefCountPtr<T1>& p1, bool throw_on_fail)
 {
 	RefCountPtr<T2> p2; // NULL by default
 	if( p1.get() ) {
-		T2 *check = dynamic_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
+		T2 *check = NULL;
+		if(throw_on_fail)
+			check = &dyn_cast<T2>(*p1);
+		else
+			check = dynamic_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
 		if(check) {
 			p2.access_ptr()  = check;
 			p2.access_node() = const_cast<RefCountPtr<T1>&>(p1).access_node();
