@@ -48,7 +48,7 @@ void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
   MPI_Allreduce(&counters[0],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
   if (proc == print_proc) 
-    printf(" Number of parition iters: ave = %g, min = %d, max = %d\n", 
+    printf(" Number of partition iters: ave = %g, min = %d, max = %d\n", 
 	   ave, min, max);
   MPI_Barrier(lb->Communicator);
   if (STATS_TYPE == 2) 

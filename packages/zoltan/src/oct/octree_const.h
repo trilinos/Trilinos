@@ -60,7 +60,6 @@ extern pOctant LB_POct_new(OCT_Global_Info *);
 extern void    LB_POct_free(OCT_Global_Info *OCT_info, pOctant *oct);
 extern void    LB_POct_setparent(OCT_Global_Info *OCT_info,pOctant oct, pOctant parent, int ppid);
 extern pRList  LB_POct_localroots(OCT_Global_Info *);
-extern void    LB_POct_printResults(LB *lb, OCT_Global_Info *OCT_info);
 extern pOctant LB_POct_nextDfs(OCT_Global_Info *OCT_info, pOctant octant);
 extern int     LB_POct_local(OCT_Global_Info *OCT_info, pOctant octant, int i);
 extern int     LB_POct_delTree(OCT_Global_Info *OCT_info,pOctant *root);

@@ -98,10 +98,10 @@ int LB_octpart(
 ) 
 {
 int oct_dim = 3;              /* Dimension of method to be used (2D or 3D)   */
-int oct_method = 0;           /* Flag specifying curve to be used.           */
+int oct_method = 2;           /* Flag specifying curve to be used.           */
 int oct_maxoctregions = 1;    /* max # of objects in leaves of octree.       */
 int oct_minoctregions = 1;    /* min # of objects in leaves of octree.       */
-int oct_output_level = 1;     /* Flag specifying amount of output.           */
+int oct_output_level = 0;     /* Flag specifying amount of output.           */
 int oct_wgtflag = 0;          /* Flag specifying use of object weights.      */
 int error = FALSE;            /* error flag                                  */
 
@@ -141,8 +141,8 @@ int error = FALSE;            /* error flag                                  */
                     "must be greater than 0\n");
     error = TRUE;
   }
-  if (oct_output_level < 1 || oct_output_level > 3) {
-    fprintf(stderr, "OCT Error in OCTPART: OCT_OUTPUT_LEVEL must be 1, 2, or 3\n");
+  if (oct_output_level < 0 || oct_output_level > 2) {
+    fprintf(stderr, "OCT Error in OCTPART: OCT_OUTPUT_LEVEL must be 0, 1, or 2\n");
     error = TRUE;
   }
 
@@ -192,7 +192,7 @@ static int lb_oct_init(
   int nsentags;                    /* number of tags being sent */
   pRegion import_regs;             /* */
   int nrectags;                    /* number of tags received */               
-  int count, i, kk;
+  int count, kk;
   double time1,time2;              /* timers */
   double timestart,timestop;       /* timers */
   double timers[4];                /* diagnostic timers 
@@ -246,6 +246,7 @@ static int lb_oct_init(
   /* create the octree structure */
   time1 = MPI_Wtime();
 
+  LB_TRACE_DETAIL(lb, yo, "Calling LB_oct_gen_tree_from_input_data");
   LB_oct_gen_tree_from_input_data(lb, oct_wgtflag, &counters[1], &counters[2], 
 			          &counters[3], &c[0], createpartree);
 
@@ -254,19 +255,10 @@ static int lb_oct_init(
 /*   LB_POct_printResults(OCT_info); */
   /* partition the octree structure */
   time1 = MPI_Wtime();
+  LB_TRACE_DETAIL(lb, yo, "Calling LB_dfs_partition");
   LB_dfs_partition(lb, &counters[0], &c[1]);
   time2 = MPI_Wtime();
   timers[1] = time2 - time1;              /* time took to partition octree */
-
-  if (oct_output_level == 3) {
-    for(i=0; i<lb->Num_Proc; i++) {
-      if(lb->Proc == i) {
-	LB_POct_printResults(lb, OCT_info);
-	printf("\n\n");
-      }
-      MPI_Barrier(lb->Communicator);
-    }
-  }	
 
   /* set up tags for migrations */
   time1 = MPI_Wtime();
@@ -282,10 +274,12 @@ static int lb_oct_init(
     }
   }
 
+  LB_TRACE_DETAIL(lb, yo, "Calling LB_dfs_migrate");
   LB_dfs_migrate(lb, &nsentags, &import_regs, &nrectags, 
 	         &c[2], &c[3], &counters[3], &counters[5]);
 
 
+  LB_TRACE_DETAIL(lb, yo, "Calling LB_fix_tags");
   if (lb->Return_Lists) {
     *num_import = nrectags;
     if (nrectags > 0)
@@ -313,8 +307,11 @@ static int lb_oct_init(
   MPI_Barrier(lb->Communicator);
   timestop = MPI_Wtime();
 
-  LB_oct_print_stats(lb, timestop-timestart, timers, counters, c, 
-                     oct_output_level);
+  if (oct_output_level > 0) {
+    LB_TRACE_DETAIL(lb, yo, "Calling LB_oct_print_stats");
+    LB_oct_print_stats(lb, timestop-timestart, timers, counters, c, 
+                       oct_output_level);
+  }
 
   for (kk = 0; kk < nrectags; kk++) {
     LB_FREE(&(import_regs[kk].Global_ID));
@@ -322,6 +319,7 @@ static int lb_oct_init(
   }
   LB_FREE(&import_regs);
 
+  LB_TRACE_DETAIL(lb, yo, "Calling LB_oct_global_clear");
   LB_oct_global_clear(OCT_info);
   /* KDDKDD Don't understand how re-used octree will work, especially without
    * KDDKDD the LB_Bounds_Geom function.  For now, we'll delete everything;
@@ -382,6 +380,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
 
   OCT_Global_Info *OCT_info = (OCT_Global_Info *) (lb->Data_Structure);
 
+  LB_TRACE_ENTER(lb, yo);
   /*
    * If there are no objects on this processor, do not create a root octant.
    * The partitioner will probably assign objects to this processor
@@ -399,6 +398,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
   }
   ptr1 = NULL;
 
+  LB_TRACE_DETAIL(lb, yo, "Calling LB_get_bounds");
   /* Need A Function To Get The Bounds Of The Local Objects */
   LB_get_bounds(lb, &ptr1, &num_objs, min, max, oct_wgtflag, c0);
   
@@ -456,6 +456,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
       }
       level--;
     }
+  LB_TRACE_DETAIL(lb, yo, "Before createpartree");
 
   if(createpartree) {
     /* create the global root octant */
@@ -486,6 +487,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
 	  fprintf(stderr, "child %d exists\n", i);
 #endif
 
+  LB_TRACE_DETAIL(lb, yo, "Before create map array");
     /* this part creates the map array */
     if(OCT_info->OCT_dimension == 2) {
       hold = (int)POW(4, level);                  /* ignoring the z+ octants */
@@ -573,6 +575,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
    */    
   num_extra = LB_oct_fix(lb, ptr1, num_objs);
  
+  LB_TRACE_DETAIL(lb, yo, "Calling LB_migreg_migrate_orphans");
   LB_migreg_migrate_orphans(lb, ptr1, num_extra, level, OCT_info->map, c1, c2);
 
 /*   LB_FREE(&array); */
@@ -583,6 +586,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
     LB_FREE(&ptr1);
     ptr1 = ptr;
   }
+  LB_TRACE_EXIT(lb, yo);
 }
 
 /*****************************************************************************/
@@ -636,6 +640,7 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
       abort();
     }
 
+    lid = (num_lid_entries ? &(obj_local_ids[0]) : NULL);
     if (lb->Get_Obj_List != NULL) {
       lb->Get_Obj_List(lb->Get_Obj_List_Data,
                        num_gid_entries, num_lid_entries,
@@ -644,7 +649,6 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
       found = TRUE;
     }
     else {
-      lid = (num_lid_entries ? &(obj_local_ids[0]) : NULL);
       found = lb->Get_First_Obj(lb->Get_First_Obj_Data, 
                                 num_gid_entries, num_lid_entries,
                                 &(obj_global_ids[0]), lid, 
@@ -665,13 +669,13 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     }
     *ptr1 = tmp;
     for (i = 1; i < (*num_objs); i++) {
+      if (num_lid_entries) {
+        lid = &(obj_local_ids[(i-1)*num_lid_entries]);
+        next_lid = &(obj_local_ids[i*num_lid_entries]);
+      }
+      else
+        lid = next_lid = NULL;
       if (lb->Get_Obj_List == NULL) {
-        if (num_lid_entries) {
-          lid = &(obj_local_ids[(i-1)*num_lid_entries]);
-          next_lid = &(obj_local_ids[i*num_lid_entries]);
-        }
-        else
-          lid = next_lid = NULL;
         found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data, 
                                  num_gid_entries, num_lid_entries,
                                  &(obj_global_ids[(i-1)*num_gid_entries]),
@@ -1042,6 +1046,9 @@ static void LB_oct_terminal_refine(LB *lb, pOctant oct,int count)
   LB_child_bounds_wrapper(OCT_info,oct, cmin, cmax);
   for (i=0; i<8; i++) {
     if(OCT_info->OCT_dimension == 2) {
+      /* KDDKDD 3/01 see changes to LB_child_bounds_wrapper that allow this
+       * KDDKDD 3/01 test to work for GRAY and HILBERT mappings.
+       */
       if(cmin[i][2] > OCT_info->OCT_gmin[2]) {                /* ignore the z+ octants */
 	child[i] = NULL;
 	continue;

@@ -11,6 +11,7 @@
 #include "octant_const.h"
 #include "oct_util_const.h"
 #include "dfs_const.h"
+#include <values.h>
 
 int LB_get_child_dir(OCT_Global_Info *OCT_info, int dir, int cnum) {
   if(OCT_info->HILBERT) {
@@ -168,7 +169,7 @@ void LB_bounds_to_origin(COORD min, COORD max, COORD origin)
 
 void LB_child_bounds_wrapper(OCT_Global_Info *OCT_info,
                              pOctant oct, COORD cmin[], COORD cmax[]) {
-  int i;
+  int i, j;
   COORD min,
         max;
   COORD origin;
@@ -176,8 +177,36 @@ void LB_child_bounds_wrapper(OCT_Global_Info *OCT_info,
   LB_Oct_bounds(oct,min,max);
   /* calculate the origin from the bounds */
   LB_bounds_to_origin(min,max,origin);
-  for(i=0; i<8; i++) {
-    LB_child_bounds(min, max, origin, LB_convert_idx_to_map(OCT_info, oct->dir, i), cmin[i], cmax[i]);
+
+  /* KDDKDD 3/01  Added special cases depending on OCT_info->OCT_dimension.
+   * KDDKDD 3/01  When OCT_dimension == 2, LB_convert_idx_to_map was called
+   * KDDKDD 3/01  with values >= 4, which are not supported in the GRAY and
+   * KDDKDD 3/01  HILBERT maps used in LB_convert_idx_to_map.
+   * KDDKDD 3/01  This change calls LB_convert_idx_to_map with only valid 
+   * KDDKDD 3/01  values, and sets cmin and cmax so that the loop following 
+   * KDDKDD 3/01  the call to LB_child_bounds_wrapper "continues" for children
+   * KDDKDD 3/01  4-7, rather than initializing them.
+   */
+
+  if (OCT_info->OCT_dimension == 3) {
+    for(i=0; i<8; i++) {
+      LB_child_bounds(min, max, origin, LB_convert_idx_to_map(OCT_info, oct->dir, i), cmin[i], cmax[i]);  
+    }  
+  }
+  else if (OCT_info->OCT_dimension == 2) {
+    for(i=0; i<4; i++) {
+      LB_child_bounds(min, max, origin, LB_convert_idx_to_map(OCT_info, oct->dir, i), cmin[i], cmax[i]);  
+    }  
+    for(i=4; i<8; i++) {
+      for(j=0;j<3;j++) {
+        cmin[i][j] = MAXDOUBLE;
+        cmax[i][j] = -MAXDOUBLE;
+      }
+    }
+  }
+  else {
+    fprintf(stderr, "LB_child_bounds_wrapper:  Invalid OCT_dimension\n");
+    abort();
   }
 }
 

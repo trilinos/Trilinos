@@ -3,12 +3,6 @@
 #include "octree_const.h"
 
 
-static void    LB_POct_DfsTraversal(LB *lb, OCT_Global_Info *OCT_info, 
-                                    pOctant oct);
-static void    LB_POct_printRegionInfo(LB *lb, OCT_Global_Info * OCT_info, 
-                                       pOctant oct);
-
-
 /*****************************************************************************/
 /*
  * void LB_POct_init(int processor_id)
@@ -125,96 +119,6 @@ pRList LB_POct_localroots(OCT_Global_Info *OCT_info)
   return(OCT_info->OCT_rootlist);
 }
 
-/*****************************************************************************/
-/*
- * void LB_POct_printResults()
- *
- * prints out the intermediate results of the octree structure
- */
-void LB_POct_printResults(LB *lb, OCT_Global_Info *OCT_info) {
-  pRList ptr;                                  /* pointer to local root list */
-
-  ptr = OCT_info->OCT_rootlist;
-  /* go through each entry in local root list and travers down subtree */
-  while(ptr != NULL) {
-    LB_POct_DfsTraversal(lb, OCT_info, ptr->oct);
-    ptr = ptr->next;
-  }
-}
-
-/*****************************************************************************/
-/*
- * void LB_POct_DfsTraversal(pOctant octant)
- *
- * traverse through the octree in DFS order to get a printout
- */
-static void LB_POct_DfsTraversal(LB *lb, OCT_Global_Info *OCT_info, pOctant oct)
-{
-  int i;                                                    /* index counter */
-
-  if(oct == NULL)
-    return;
-  if(LB_Oct_isTerminal(oct))
-    LB_POct_printRegionInfo(lb, OCT_info, oct);
-  else {
-    for(i=0; i<8; i++)
-      LB_POct_DfsTraversal(lb, OCT_info, oct->child[i]);
-    LB_POct_printRegionInfo(lb, OCT_info, oct);
-  }
-}
-
-/*****************************************************************************/
-/*
- * void LB_POct_printRegionInfo(pOctant octant)
- *
- * prints out region information
- */
-static void LB_POct_printRegionInfo(LB *lb, OCT_Global_Info * OCT_info, pOctant oct) {
-  pRegion ptr;            /* pointer to iterate through octant's region list */
-  pOctant parent;
-
-#if 0
-  if(!LB_Oct_isTerminal(oct)) {
-    fprintf(stderr, "WARNING: printing regions in a non-terminal octant.\n");
-    return;
-  }
-#endif
-
-  parent = LB_Oct_parent(oct);
-  printf("(Proc %d) ocant %d:\n",
-	 OCT_info->OCT_localpid, oct->id);
-  printf("\tbounds\tmin=%f, %f, %f\n\t\t max %f, %f, %f\n",
-	 oct->min[0], oct->min[1], oct->min[2],
-	 oct->max[0], oct->max[1], oct->max[2]);
-  if(parent != NULL)
-    printf("\tparent octant: %d", parent->id);
-  else
-    printf("\tparent octant: NULL");
-  printf(" \tmigrate: from %d to %d\n", OCT_info->OCT_localpid, oct->npid);
-
-  if(!LB_Oct_isTerminal(oct)) {
-    return;
-  }
-  ptr = oct->list;
-
-  if(ptr==NULL)
-    printf("\tOctant is EMPTY\n");
-
-  while(ptr != NULL) {
-    printf("\tGlobal_ID:");
-    LB_PRINT_GID(lb, ptr->Global_ID);
-    printf(" Local_ID:");
-    LB_PRINT_LID(lb, ptr->Local_ID);
-    printf(" Proc:%d coord:(%f, %f, %f)\n", 
-	   ptr->Proc, ptr->Coord[0], ptr->Coord[1], ptr->Coord[2]);
-    /*
-      printf("%lf %lf %lf,  %d -> %d\n", 
-      ptr->Coord[0], ptr->Coord[1], ptr->Coord[2],
-      OCT_info->OCT_localpid,oct->npid);
-    */
-    ptr = ptr->next;
-  }
-}
 
 /*****************************************************************************/
 /*

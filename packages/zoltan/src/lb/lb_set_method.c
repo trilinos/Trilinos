@@ -101,6 +101,7 @@ int LB_Set_Method(LB *lb, char *method_name)
   else {  
     sprintf(msg, "Invalid LB method specified:  %s\n", method_name);
     LB_PRINT_ERROR(lb->Proc, yo, msg);
+    LB_FREE(&method_upper);
     return (LB_FATAL);
   }
 

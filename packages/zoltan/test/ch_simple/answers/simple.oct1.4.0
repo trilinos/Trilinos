@@ -1,0 +1,13 @@
+Decomposition Method	= octpart
+Zoltan Parameters	= oct_method=1
+Zoltan Parameters	= 
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+1
+2
+3
+6
+7
+8
