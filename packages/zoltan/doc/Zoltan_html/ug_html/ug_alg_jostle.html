@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Jostle Interface</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,24 +19,16 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
-   <TITLE>Zoltan User's Guide:  Jostle Interface</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+<div ALIGN=right>
+<h3>
+<img SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></h3></div>
 
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H3></DIV>
-
-<H2>
-<A NAME="Jostle"></A>Jostle</H2>
-<A HREF="http://www.gre.ac.uk/jostle/">Jostle</A> is a library for graph/mesh
+<h2>
+<a NAME="Jostle"></a>Jostle</h2>
+<a href="http://www.gre.ac.uk/jostle/">Jostle</a> is a library for graph/mesh
 partitioning and load balancing developed at the University of Greenwich,
 London, UK, by Chris Walshaw. The parallel version of Jostle is sometimes
 called pjostle. In the Zoltan context, the name Jostle always refers to
@@ -36,102 +36,127 @@ the parallel version of the library. The main algorithm used in Jostle
 is based on multilevel graph partitioning, and a diffusion-type method
 is also available. Hence the Jostle library is similar to ParMETIS. Zoltan
 provides an interface to Jostle to give users an alternative to ParMETIS.
-
-<P>At present, only a subset of the Jostle options are supported by Zoltan.
+<p>At present, only a subset of the Jostle options are supported by Zoltan.
 These are briefly described below. For further details, see the documentation
 available from the Jostle home page. More options may be added to Zoltan
 upon request.
+<p>Note that Jostle is not distributed with Zoltan. If you wish to use
+Jostle within Zoltan, you must first obtain a <a href="http://www.gre.ac.uk/jostle/plicense.ps.gz">license
+for Parallel Jostle</a> and install it on your system. The license is currently
+free for academic use.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Method String:</b></td>
 
-<P>Note that Jostle is not distributed with Zoltan. If you wish to use
-Jostle within Zoltan, you must first obtain a <A HREF="http://www.gre.ac.uk/jostle/plicense.ps.gz">license
-for Parallel Jostle</A> and install it on your system. The license is free
-for academic use.
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Method String:</B></TD>
+<td><b>JOSTLE</b></td>
+</tr>
 
-<TD><B>JOSTLE</B></TD>
-</TR>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<td></td>
+</tr>
 
-<TD></TD>
-</TR>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>JOSTLE_OUTPUT_LEVEL</i></td>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>JOSTLE_OUTPUT_LEVEL</I></TD>
+<td>Amount of output Jostle should produce.&nbsp; (integer)</td>
+</tr>
 
-<TD>Amount of output Jostle should produce.&nbsp; (integer)</TD>
-</TR>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>JOSTLE_THRESHOLD</i></td>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>JOSTLE_THRESHOLD</I></TD>
+<td>Threshold at which the graph contraction phase is stopped. (integer)</td>
+</tr>
 
-<TD>Threshold at which the graph contraction phase is stopped. (integer)</TD>
-</TR>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>JOSTLE_GATHER_THRESHOLD</i></td>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>JOSTLE_GATHER_THRESHOLD</I></TD>
+<td>Duplicate coarse graph on all processors when there are fewer than
+this number of nodes. (integer)</td>
+</tr>
 
-<TD>Duplicate coarse graph on all processors when there are fewer than
-this number of nodes. (integer)</TD>
-</TR>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>JOSTLE_MATCHING</i></td>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>JOSTLE_MATCHING</I></TD>
+<td>Matching algorithm for graph contraction. (Valid values are "local"
+and "global".)</td>
+</tr>
 
-<TD>Matching algorithm for graph contraction. (Valid values are "local"
-and "global".)</TD>
-</TR>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>JOSTLE_REDUCTION</i></td>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>JOSTLE_REDUCTION</I></TD>
+<td>When reduction is turned off, Jostle performs a diffusion-type algorithm
+instead of multilevel graph partitioning. (Valid values are "on" and "off".)</td>
+</tr>
 
-<TD>When reduction is turned off, Jostle performs a diffusion-type algorithm
-instead of multilevel graph partitioning. (Valid values are "on" and "off".)</TD>
-</TR>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>JOSTLE_CONNECT</i></td>
 
-<TR>
-<TD VALIGN=TOP><B>Default values:</B></TD>
+<td>Make a diconnected graph connected before partitioning. (Valid values
+are "on" and "off".)</td>
+</tr>
 
-<TD>See the Jostle documentation.</TD>
-</TR>
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp; <i>CHECK_GRAPH</i></td>
 
-<TR>
-<TD VALIGN=TOP><B>Required Query Functions:</B></TD>
+<td NOSAVE>Level of error checking for graph input.: 0 = no checking, 1
+= on-processor checking, 2 = full checking (this is very slow and should
+only be used during debugging).</td>
+</tr>
 
-<TD></TD>
-</TR>
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp; <i>SCALED_WEIGHT_MAX</i></td>
 
-<TR>
-<TD></TD>
+<td NOSAVE>Jostle requires integer vertex weights, while Zoltan allows
+real valued object weights. The object weights are therefore scaled and
+rounded to an integer.&nbsp; This affects only the local copy of the data
+passed to Jostle and is thus transparent to the user. A positive value
+<i>n</i> means that the weights are scaled such that&nbsp; all the nonzero
+weights (over all dimensions) are between 1 and <i>n.</i> No scaling is
+employed if <i>SCALED_WEIGHT_MAX</i> is zero.</td>
+</tr>
 
-<TD><B><A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B></TD>
-</TR>
+<tr>
+<td VALIGN=TOP><b>Default values:</b></td>
 
-<TR>
-<TD></TD>
+<td>See the <a href="http://www.gre.ac.uk/jostle/">Jostle</a>&nbsp; documentation.&nbsp;
+See our <a href="ug_alg_parmetis.html">ParMETIS</a> documentation for the
+last two parameters.</td>
+</tr>
 
-<TD><B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
-or <B><A HREF="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>/<B><A HREF="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
-pair</TD>
-</TR>
+<tr>
+<td VALIGN=TOP><b>Required Query Functions:</b></td>
 
-<TR VALIGN=TOP NOSAVE>
-<TD></TD>
+<td></td>
+</tr>
 
-<TD NOSAVE><B><A HREF="ug_query_lb.html#Graph-based Functions">LB_NUM_EDGES_FN</A></B>&nbsp;
-<BR><B><A HREF="ug_query_lb.html#Graph-based Functions">LB_EDGE_LIST_FN</A></B></TD>
-</TR>
-</TABLE>
-&nbsp;
+<tr>
+<td></td>
 
-<P>
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_alg_oct.html">Next:&nbsp; Octree/Space-Filling Curve (SFC)
-Partitioning</A>&nbsp; |&nbsp; <A HREF="ug_alg_parmetis.html">Previous:&nbsp;
-ParMetis</A>]
-</BODY>
-</HTML>
+<td><b><a href="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a></b></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
+or <b><a href="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>/<b><a href="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
+pair</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td></td>
+
+<td NOSAVE><b><a href="ug_query_lb.html#Graph-based Functions">LB_NUM_EDGES_FN</a></b>
+<br><b><a href="ug_query_lb.html#Graph-based Functions">LB_EDGE_LIST_FN</a></b></td>
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_alg_oct.html">Next:&nbsp;
+Octree/Space-Filling Curve (SFC) Partitioning</a>&nbsp; |&nbsp; <a href="ug_alg_parmetis.html">Previous:&nbsp;
+ParMetis</a>]
+</body>
+</html>
