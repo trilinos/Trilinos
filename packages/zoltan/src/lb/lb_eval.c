@@ -64,14 +64,12 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
  * EBEB: These data can be computed both w.r.t. processors and partitions.
  * EBEB: Not all partition stats have been implemented yet.
  *
- * EBEB: Current version only works if every partition is wholly
- *       contained within a processor.
  */
 
 {
   char *yo = "Zoltan_LB_Eval";
-  int i, j, k, p, num_obj = 0, max_edges, nedges, cuts, flag, found;
-  int num_adj, num_boundary, ierr, compute_part;
+  int i, j, k, p, max_edges, nedges, cuts, proc_flag, part_flag, found;
+  int num_obj = 0, num_adj, num_boundary, ierr, compute_part;
   int nproc = zz->Num_Proc, nparts = zz->LB.Num_Global_Parts;
   int stats[4*NUM_STATS];
   int imin, imax, isum;
@@ -209,7 +207,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       tmp_cutwgt[i] = 0;
 
     for (k=0; k<num_obj; k++){
-      flag = 0;
+      proc_flag = part_flag = 0;
       gid_off = k * num_gid_entries;
       lid_off = k * num_lid_entries;
       lid = (num_lid_entries > 0 ? &(local_ids[lid_off]) : NULL);
@@ -234,9 +232,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           cuts++;
           for (i=0; i<zz->Edge_Weight_Dim; i++)
             tmp_cutwgt[i] += ewgts[j*(zz->Edge_Weight_Dim)+i];
-          if (flag==0){
+          if (proc_flag==0){
             num_boundary++;
-            flag = 1;
+            proc_flag = 1;
           }
           proc_count[nbors_proc[j]]++;
         }
@@ -244,7 +242,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           if (nbors_proc[j] == zz->Proc){
             /* Need to find the nbors_global ID in global_ids.
              * For now, look through the global_id list and compare
-             * every time. This is very slow, O(n^2), so
+             * every time. This is quite slow, O(n^2), so
              * in the future we should use a hash table.
              */
             found = -1;
@@ -265,12 +263,17 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           }
           else
             p = -1; /* Assume remote data belong to different partition. */
+                    /* EBEB: This is not necessarily true! */
 
           if (p != part[k]){
             cut_arr[part[k]]++;
             for (i=0; i<zz->Edge_Weight_Dim; i++)
               cutwgt_arr[part[k]*zz->Edge_Weight_Dim+i] 
                 += ewgts[j*zz->Edge_Weight_Dim+i];
+            if (part_flag==0){
+              bndry_arr[part[k]]++;
+              part_flag = 1;
+            }
           }
         }
 
@@ -498,7 +501,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         }
       }
 
-      for (i=1; i<2 /* NUM_STATS */; i++){
+      for (i=1; i<3 /* NUM_STATS */; i++){
         switch(i){
         case 1:  sprintf(msg, "%s", "No. of cuts      : ");
                  break;
