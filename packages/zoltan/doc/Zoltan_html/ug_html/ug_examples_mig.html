@@ -12,14 +12,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="Migration Example"></A>Migration Examples</H2>
@@ -57,7 +55,56 @@ to their new processors. The application then frees the arrays returned
 by <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B> and
 can continue computation without having to perform any additional operations
 for data migration.
-<BR><A NAME="Auto-Migration Example Fig"></A><IMG SRC="figures/call_automig.gif" USEMAP="#ug-10" HEIGHT=370 WIDTH=469>
+<BR>&nbsp;
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><TT>/* <I>Register load-balancing query functions.</I> */</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</A>,
+user_return_dimension, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,
+user_return_coords, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</A>,
+user_return_num_particles, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,
+user_return_particle_list, NULL);</TT>&nbsp;
+
+<P><TT>/* <I>Tell library to automatically migrate data for the application.</I>
+*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_mig.html#LB_Set_Migration">LB_Set_Migration</A>(lb,
+TRUE);</TT>&nbsp;
+
+<P><TT>/* <I>Register additional functions for packing and unpacking data</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>by migration-help tools. </I>*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>,
+user_return_particle_data_size, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>,
+user_pack_particle_data, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,
+user_unpack_particle_data, NULL);</TT>&nbsp;
+<BR><TT>...</TT>&nbsp;
+<BR><TT>/* <I>Perform computations</I> */</TT>&nbsp;
+<BR><TT>...</TT>&nbsp;
+<BR><TT>/* <I>Perform load balancing AND automatic data migration!</I>
+*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,&amp;new,&amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>&nbsp;
+
+<P><TT>/* <I>Free memory allocated for load-balancing results by DLB library</I>
+*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A>(&amp;imp_global_ids,
+&amp;imp_local_ids, &amp;imp_procs,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_ids, &amp;exp_local_ids,
+&amp;exp_procs);&nbsp;</TT>&nbsp;
+<BR><TT>...</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><A NAME="Auto-Migration Example Fig"></A><I>Typical
+calling sequence for using the migration-help tools' auto-migration capability
+with the dynamic load-balancing tools.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
 <H2>
 <A NAME="User-guided Migration Example"></A>User-Guided Migration Example</H2>
 In the following <A HREF="#User-guided Migration Example Fig">figure</A>,
@@ -82,23 +129,85 @@ that node. The unpacking routine <I>migrate_node_unpack</I> examines the
 list of element IDs and builds a list of requests for elements the processor
 needs but does not already store. At the end of the nodal migration, each
 processor has a list of element IDs for elements that it needs to support
-imported nodes but does not already store. Through a call to <B><A HREF="ug_interface_mig.html#LB_Computer_Destinations">LB_Compute_Destinations</A></B>,
+imported nodes but does not already store. Through a call to <B><A HREF="ug_interface_mig.html#LB_Compute_Destinations">LB_Compute_Destinations</A></B>,
 each processor computes the list of elements it has to send to other processors
 to satisfy their element requests. Packing and unpacking routines for elements
 are registered, and <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
 is again used to move element data to new processors. Requests for ghost
 nodes can be built within the element packing and unpacking routines, and
-calls to <B><A HREF="ug_interface_mig.html#LB_Computer_Destinations">LB_Compute_Destinations</A></B>
+calls to <B><A HREF="ug_interface_mig.html#LB_Compute_Destinations">LB_Compute_Destinations</A></B>
 and <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
 with node packing and unpacking, satisfy requests for ghost nodes. In all
 three phases of migration, the migration-help tools handle communication;
 the application is responsible only for packing and unpacking data and
 for building the appropriate request lists.
-<BR><A NAME="User-guided Migration Example Fig"></A><IMG SRC="figures/call_mig.gif" USEMAP="#ug-11" HEIGHT=506 WIDTH=469>
 <BR>&nbsp;
 <BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR NOSAVE>
+<TD NOSAVE><TT>/* <I>Assume the load-balancing library returns a decomposition
+of the</I> */</TT>&nbsp;
+<BR><TT>/* <I>nodes of a finite element mesh.</I> */</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,&amp;new,&amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>&nbsp;
 
-<P>
+<P><TT>/* <I>Migrate the nodes as directed by the results of LB_Balance.</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>While unpacking nodes, build list of requests for elements
+needed</I> */</TT>&nbsp;
+<BR><TT>/* <I>to support the imported nodes.</I>*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>,
+migrate_node_size, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>,
+migrate_pack_node, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,
+migrate_unpack_node, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A>(lb,num_import,imp_global_ids,imp_local_ids,imp_procs,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_export,exp_global_ids,exp_local_ids,exp_procs);&nbsp;</TT>&nbsp;
+
+<P><TT>/* <I>Prepare for migration of requested elements.</I> */</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>,
+migrate_pack_element, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,
+migrate_unpack_element, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>,
+migrate_element_size, NULL);</TT>&nbsp;
+
+<P><TT>/* <I>From the request lists, a processor knows which elements it
+needs</I> */</TT>&nbsp;
+<BR><TT>/* <I>to support the imported nodes; it must compute which elements
+to</I> */</TT>&nbsp;
+<BR><TT>/* <I>send to other processors. </I>*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_mig.html#LB_Compute_Destinations">LB_Compute_Destinations</A>(lb,
+Num_Elt_Requests, Elt_Requests_Global_IDs,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Elt_Requests_Local_IDs,
+Elt_Requests_Procs,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_tmp_exp,
+&amp;tmp_exp_global_ids,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;tmp_exp_local_ids,
+&amp;tmp_exp_procs);&nbsp;</TT>&nbsp;
+
+<P><TT>/* <I>Processor now knows which elements to send to other processors.</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>Send the requested elements. While unpacking elements, build
+</I>*/</TT>&nbsp;
+<BR><TT>/* <I>request lists for "ghost" nodes needed by the imported elements.</I>
+*/</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A>(lb,
+Num_Elt_Requests, Elt_Requests_Global_IDs,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Elt_Requests_Local_IDs, Elt_Requests_Procs,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_tmp_exp_objs, tmp_exp_global_ids,&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tmp_exp_local_ids, tmp_exp_procs);</TT>&nbsp;
+
+<P><TT>/* <I>Repeat process for "ghost" nodes.</I> */</TT>&nbsp;
+<BR><TT>...</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><A NAME="User-guided Migration Example Fig"></A><I>Typical
+calling sequence for user-guided use of the migration-help tools in Zoltan</I>.</CAPTION>
+</TABLE></CENTER>
+&nbsp;
+<BR>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
 <A HREF="ug_future.html">Next:&nbsp; Future Work</A>&nbsp; |&nbsp; <A HREF="ug_examples_lb.html">Previous:&nbsp;
 Load-Balancing Example</A>]

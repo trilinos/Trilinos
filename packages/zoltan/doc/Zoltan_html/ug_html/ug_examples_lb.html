@@ -12,14 +12,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="Load-Balancing Example"></A>Load-Balancing Example</H2>
@@ -46,11 +44,52 @@ in this <A HREF="#LB Example Fig">figure</A> but will be addressed in the
 is completed, the arrays of information about imported and exported nodes
 returned by <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
 are freed by a call to <B><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A></B>.
+<BR>&nbsp;
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><TT>char *lb_method;</TT>
+<BR><TT>int new, num_imp, num_exp, *imp_procs, *exp_procs;</TT>
+<BR><TT><A HREF="ug_usage.html#Macro defs">LB_GID</A> *imp_global_ids,
+*exp_global_ids;</TT>
+<BR><TT><A HREF="ug_usage.html#Macro defs">LB_LID</A> *imp_local_ids, *exp_local_ids;</TT><TT></TT>
 
-<P><A NAME="LB Example Fig"></A><IMG SRC="figures/call_lb.gif" USEMAP="#ug-9" HEIGHT=388 WIDTH=469>
-<BR>&nbsp;
-<BR>&nbsp;
-<BR>&nbsp;
+<P><TT>/* <I>Set load-balancing method and parameters.</I> */</TT>
+<BR><TT>read_load_balancing_info_from_input_file(&amp;lb_method, &amp;(lb_params[0]);</TT>
+<BR><TT><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A>(lb,
+lb_method, &amp;(lb_params[0]));</TT><TT></TT>
+
+<P><TT>/* <I>Register load-balancing query functions.</I> */</TT>
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</A>,
+user_return_dimension, NULL);</TT>
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,
+user_return_coords, NULL);</TT>
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</A>,
+user_return_num_node, NULL);</TT>
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,
+user_return_owned_nodes, NULL);</TT><TT></TT>
+
+<P><TT>/* <I>Perform computations</I> */</TT>
+<BR><TT>...</TT>
+<BR><TT>/* <I>Perform load balancing</I> */</TT>
+<BR><TT><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,&amp;new,&amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>
+<BR><TT>if (new)</TT>
+<BR><TT>&nbsp; perform_data_migration(...);</TT><TT></TT>
+
+<P><TT>/* <I>Free memory allocated for load-balancing results by DLB library</I>
+*/</TT>
+<BR><TT><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A>(&amp;imp_global_ids,
+&amp;imp_local_ids, &amp;imp_procs,&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_ids, &amp;exp_local_ids,
+&amp;exp_procs);&nbsp;</TT>
+<BR><TT>...</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><A NAME="LB Example Fig"></A><I>Typical calling sequence
+for performing load balancing with the Zoltan library.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
 
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;

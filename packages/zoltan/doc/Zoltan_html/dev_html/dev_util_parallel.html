@@ -12,14 +12,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="parallel_compute"></A>Parallel Computing</H2>
@@ -70,9 +68,7 @@ and after the synchronization block. If <I>do_print_line</I> is TRUE, a
 line is printed; no line is printed otherwise.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR><A NAME="LB_print_sync_end"></A>void <B>LB_print_sync_end</B>(struct
@@ -118,11 +114,31 @@ and after the synchronization block. If <I>do_print_line</I> is TRUE, a
 line is printed; no line is printed otherwise.</TD>
 </TR>
 </TABLE>
+&nbsp;
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="print_sync_example"></A><TT>...</TT>
+<BR><TT>if (lb->Debug > 6) {</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; int i;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; LB_print_sync_start(lb, TRUE);</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; printf("LBLB: Objects to be exported from Proc
+%d\n", lb->Proc);</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; *num_export_objs; i++) {</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf("&nbsp;&nbsp;&nbsp;
+Obj: %10d&nbsp; Destination: %4d\n",</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(*export_global_ids)[i], (*export_procs)[i]);</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; }</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; LB_print_sync_end(lb, TRUE);</TT>
+<BR><TT>}</TT></TD>
+</TR>
 
-
-<P>&nbsp;
-
-<P><A NAME="print_sync_example"></A><IMG SRC="figures/print_examp.gif" USEMAP="#print_examp" HEIGHT=190 WIDTH=469>
+<CAPTION ALIGN=BOTTOM><I>Example usage of LB_print_sync_start and LB_print_sync_end
+to synchronize output among processors.&nbsp; (Taken from LB_Balance in
+lb/lb.c.)</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
 
 <P>
 <HR WIDTH="100%">

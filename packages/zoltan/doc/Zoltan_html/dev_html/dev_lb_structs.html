@@ -12,14 +12,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="interface_structs"></A>Data Structures</H2>
@@ -30,8 +28,8 @@ Fields of the data structure are then set through calls from the application
 to load-balancing interface routines such as <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>
 and <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.
 The fields of the <B>LB_Struct</B> data structure are listed and described
-in the table below. See the <A HREF="../ug_html/ug.html">Zoltan User's
-Guide</A> for descriptions of the function types used in the <B>LB_Struct</B>.
+in the <A HREF="#LB_Struct">table</A> below. See the <A HREF="../ug_html/ug.html">Zoltan
+User's Guide</A> for descriptions of the function types used in the <B>LB_Struct</B>.
 
 <P>An <B>LB_Struct</B> data structure <I>lb</I> is passed from the application
 to the load-balancing library in the call to <B><A HREF="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
@@ -44,7 +42,7 @@ different <B>LB_Struct</B> structures) can be used by the application.
 <BR>&nbsp;
 <CENTER><TABLE BORDER WIDTH="90%" >
 <TR>
-<TH>Field of LB_Struct</TH>
+<TH><A NAME="LB_Struct"></A>Fields of LB_Struct</TH>
 
 <TH>Description</TH>
 </TR>
@@ -320,8 +318,7 @@ pointed to by <I>Get_Next_Border_Obj</I>. Set in <B><A HREF="../ug_html/ug_inter
 below.</TD>
 </TR>
 
-<CAPTION ALIGN=BOTTOM><A NAME="LB_Struct"></A><I>Fields of the </I><B>LB_Struct</B><I>
-data structure.</I></CAPTION>
+<CAPTION ALIGN=BOTTOM><I>Fields of the </I><B>LB_Struct</B><I> data structure.</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;
 
@@ -335,7 +332,7 @@ in in the following <A HREF="#Migrate_Fields">table</A>.
 <BR>&nbsp;
 <CENTER><TABLE BORDER WIDTH="90%" >
 <TR>
-<TH>Field of LB_Migrate</TH>
+<TH><A NAME="Migrate_Fields"></A>Fields of LB_Migrate</TH>
 
 <TH>Description</TH>
 </TR>
@@ -416,8 +413,7 @@ for each imported object; set in <B><A HREF="../ug_html/ug_interface_init.html#L
 pointed to by <I>Unpack_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
 </TR>
 
-<CAPTION ALIGN=BOTTOM><A NAME="Migrate_Fields"></A><I>Fields of the </I><B>LB_Migrate</B><I>
-data structure.</I></CAPTION>
+<CAPTION ALIGN=BOTTOM><I>Fields of the </I><B>LB_Migrate</B><I> data structure.</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;
 
@@ -430,19 +426,19 @@ processor or as the "home" processor of the object.
 <BR>&nbsp;
 <CENTER><TABLE BORDER WIDTH="90%" >
 <TR>
-<TH>Field of LB_Tag_Struct</TH>
+<TH><A NAME="Tag_Struct"></A>Fields of LB_Tag_Struct</TH>
 
 <TH>Description</TH>
 </TR>
 
 <TR>
-<TD VALIGN=TOP><A HREF="dev_lb_types.html">LB_GID</A> <I>Global_ID</I></TD>
+<TD VALIGN=TOP><A HREF="dev_lb_types.html#Macros">LB_GID</A> <I>Global_ID</I></TD>
 
 <TD>The unique global ID for an object, provided by the application.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP><A HREF="dev_lb_types.html">LB_LID</A> <I>Local_ID</I></TD>
+<TD VALIGN=TOP><A HREF="dev_lb_types.html#Macros">LB_LID</A> <I>Local_ID</I></TD>
 
 <TD>A local ID for an object, provided by the application. This field is
 used for performance optimization within the application. It is not used
@@ -458,12 +454,10 @@ This field may be the eventual destination of the object or the source
 processor for the object; its use is determined by the load-balancing algorithm.</TD>
 </TR>
 
-<CAPTION ALIGN=BOTTOM><A NAME="Tag_Struct"></A><I>Fields of the</I> <B>LB_Tag_Struct</B><I>
-data structure.</I></CAPTION>
+<CAPTION ALIGN=BOTTOM><I>Fields of the</I> <B>LB_Tag_Struct</B><I> data
+structure.</I></CAPTION>
 </TABLE></CENTER>
 
-
-<P>
 <HR WIDTH="100%">
 <BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_util.html">Next:&nbsp;
 Utilities</A>&nbsp; |&nbsp; <A HREF="dev_lb_types.html">Previous:&nbsp;

@@ -12,14 +12,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="philosophy"></A>Philosophy of Zoltan</H2>
@@ -59,8 +57,82 @@ pointer to <I>user_return_elem_list_fn</I> to get a list of the objects.
 For each object, it follows the <I>lb->Get_Geom</I> pointer to <I>user_return_coords_fn</I>
 to get the coordinates of the object. After gathering this data, the load-balancing
 library can perform the desired load balancing.
+<BR>&nbsp;
+<BR>&nbsp;
+<TABLE CELLSPACING=0 CELLPADDING=0 WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD NOSAVE><A NAME="interact figure"></A><FONT SIZE=-1>Application</FONT>
+<TABLE BORDER=2 WIDTH="80%" NOSAVE >
+<TR>
+<TD><FONT SIZE=-1>.</FONT>..
+<BR>/<TT>* <I>Register method and application query functions</I> */</TT>
+<BR><TT>lb = LB_Create_Object();</TT>
+<BR><TT>LB_Set_Method(lb, "RCB", parameters);</TT>
+<BR><TT>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,user_return_coords_fn, NULL);</TT>
+<BR><TT>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,user_return_num_elems_fn,NULL);</TT>
+<BR><TT>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,user_return_elem_list_fn,NULL);</TT>
+<BR><TT>...</TT>
+<BR><TT>/* <I>Call the load balancer</I> */</TT>
+<BR><TT>LB_Balance(lb,&amp;new,&amp;num_imp,&amp;imp_glob_ids,&amp;imp_loc_ids,&amp;imp_procs,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_glob_ids,&amp;exp_loc_ids,&amp;exp_procs);&nbsp;</TT></TD>
+</TR>
+</TABLE>
+<TT></TT>&nbsp;</TD>
+</TR>
 
-<P><A NAME="interact figure"></A><IMG SRC="figures/interact.gif" USEMAP="#interact" HEIGHT=506 WIDTH=469>
+<TR>
+<TD>
+<CENTER><IMG SRC="figures/arrow.gif" HEIGHT=48 WIDTH=112></CENTER>
+</TD>
+</TR>
+
+<TR>
+<TD>
+<DIV ALIGN=right><FONT SIZE=-1>Dynamic Load Balancer</FONT></DIV>
+
+<DIV ALIGN=right><TABLE BORDER=2 WIDTH="80%" NOSAVE >
+<TR>
+<TD><TT>...</TT>
+<BR><TT>/* <I>call registered functions to build DLB data structures.</I>*/</TT>
+<BR><TT>/* <I>get the number of objects assigned to the processor.</I>
+*/</TT>
+<BR><TT>num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data);&nbsp;</TT><TT></TT>
+
+<P><TT>/* <I>allocate memory for object global and local IDs.</I> */</TT>
+<BR><TT>global_ids = Allocate array of size num_objs for global IDs;</TT>
+<BR><TT>local_ids = Allocate array of size num_objs for local IDs;</TT><TT></TT>
+
+<P><TT>/* <I>get lists of object IDs from the application.</I> */</TT>
+<BR><TT>lb->Get_Obj_List(lb->Get_Obj_List_Data, global_ids,&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+local_ids);&nbsp;</TT><TT></TT>
+
+<P><TT>/* <I>allocate memory for the load-balancing data structures.</I>*/</TT>
+<BR><TT>/* <I>store pointer to that data in the lb object. </I>*/</TT>
+<BR><TT>data = <I>Allocate array of size num_objs for object data</I>;</TT>
+<BR><TT>lb->Data_Structure = (void *) data;</TT><TT></TT>
+
+<P><TT>/* <I>initialize load-balancing data structure; get geometry</I>
+*/</TT>
+<BR><TT>/* <I>info for each object.</I> */</TT>
+<BR><TT>for (i = 0; i &lt; num_objs; i++) {</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; data[i].Global_Tag = global_ids[i];</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; data[i].Local_Tag = local_ids[i];</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; lb->Get_Geom(lb->Get_Geom_Data, global_ids[i],</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+local_ids[i], data[i].Coords);</TT>
+<BR><TT>}</TT>
+<BR><TT>/* <I>perform balancing on lb->Data_Structure.</I> */</TT>
+<BR><TT>...</TT></TD>
+</TR>
+</TABLE></DIV>
+<TT></TT>&nbsp;</TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>An example of the interaction between an application
+and the load-balancing library.</I></CAPTION>
+</TABLE>
+&nbsp;
 
 <P>In developing new load-balancing algorithms for the library, the developer
 must write the code that calls the query functions to build the needed

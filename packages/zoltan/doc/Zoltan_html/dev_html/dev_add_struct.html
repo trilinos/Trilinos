@@ -12,14 +12,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="new_data_structs"></A>Data Structures</H2>
@@ -45,9 +43,95 @@ calls to <I>lb->Get_First_Obj</I> and <I>lb->Get_Next_Obj</I>, depending
 on which functions are registered by the application. The data for each
 <I>Dot</I> is set in the function <I>initialize_dot</I>, which includes
 calls to <I>lb->Get_Geom</I> and <I>lb->Get_Obj_Weight</I>.
-
-<P><A NAME="RCB_example"></A><IMG SRC="figures/RCB_examp.gif" HEIGHT=650 WIDTH=469>
 <BR>&nbsp;
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="RCB_example"></A>
+<BR><TT>/* Allocate an RCB data structure for this load balancing object.</TT>
+<BR><TT>&nbsp;* If the previous data structure still exists, free the Dots
+first;</TT>
+<BR><TT>&nbsp;* the other fields can be reused.</TT>
+<BR><TT>&nbsp;*/</TT>
+<BR><TT>if (lb->Data_Structure == NULL) {</TT>
+<BR><TT>&nbsp;&nbsp; rcb = (RCB_STRUCT *) LB_SMALLOC(sizeof(RCB_STRUCT));</TT>
+<BR><TT>&nbsp;&nbsp; lb->Data_Structure = (void *) rcb;</TT>
+<BR><TT>&nbsp;&nbsp; rcb->Tree_Ptr = (struct rcb_tree *) LB_array_alloc(__FILE__,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+__LINE__,1, lb->Num_Proc,&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+sizeof(struct rcb_tree));</TT>
+<BR><TT>&nbsp;&nbsp; rcb->Box = (struct rcb_box *) LB_SMALLOC(sizeof(struct
+rcb_box));</TT>
+<BR><TT>}</TT>
+<BR><TT>else {</TT>
+<BR><TT>&nbsp;&nbsp; rcb = (RCB_STRUCT *) lb->Data_Structure;</TT>
+<BR><TT>&nbsp;&nbsp; LB_safe_free((void **) &amp;(rcb->Dots));</TT>
+<BR><TT>}</TT><TT></TT>
+
+<P><TT>/* Allocate space for objects in RCB data structure.&nbsp; Allow
+space</TT>
+<BR><TT>&nbsp;* for objects that are imported to the processor.&nbsp;</TT>
+<BR><TT>&nbsp;*/</TT>
+<BR><TT>*num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data);</TT>
+<BR><TT>*max_obj = 1.5 * *num_obj;</TT>
+<BR><TT>rcb->Dots = (struct rcb_dot *) LB_array_alloc(__FILE__, __LINE__,
+1,&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*max_obj, sizeof(struct rcb_dot));</TT><TT></TT>
+
+<P><TT>/*&nbsp; Access objects based on the method provided by the application.*/</TT>
+<BR><TT>if (lb->Get_Obj_List != NULL) {</TT>
+<BR><TT>&nbsp;&nbsp; /* Call the application for the IDs of all objects
+and initialize&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; * the dot for each object. */</TT>
+<BR><TT>&nbsp;&nbsp; objs_global = (LB_GID *) LB_array_alloc(__FILE__,
+__LINE__, 1,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*num_obj, sizeof(LB_GID));</TT>
+<BR><TT>&nbsp;&nbsp; objs_local&nbsp; = (LB_LID *) LB_array_alloc(__FILE__,
+__LINE__, 1,&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*num_obj, sizeof(LB_LID));</TT>
+<BR><TT>&nbsp;&nbsp; lb->Get_Obj_List(lb->Get_Obj_List_Data, objs_global,
+objs_local);</TT>
+<BR><TT>&nbsp;&nbsp; for (i = 0; i &lt; *num_obj; i++)&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; initialize_dot(lb, &amp;(rcb->Dots[i]),
+objs_global[i],&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+objs_local[i]);</TT>
+<BR><TT>&nbsp;&nbsp; LB_safe_free((void **) &amp;objs_global);</TT>
+<BR><TT>&nbsp;&nbsp; LB_safe_free((void **) &amp;objs_local);</TT>
+<BR><TT>}</TT>
+<BR><TT>else if (lb->Get_First_Obj != NULL &amp;&amp; lb->Get_Next_Obj
+!= NULL) {</TT>
+<BR><TT>&nbsp;&nbsp; /* Call the application for each object and initialize
+the dot for</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; * that object. */</TT>
+<BR><TT>&nbsp;&nbsp; i = 0;</TT>
+<BR><TT>&nbsp;&nbsp; found = lb->Get_First_Obj(lb->Get_First_Obj_Data,
+&amp;obj_global_id,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&amp;obj_local_id);</TT>
+<BR><TT>&nbsp;&nbsp; while (found) {</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; initialize_dot(lb, &amp;(rcb->Dots[i]),
+obj_global_id,&nbsp;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+obj_local_id);</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; i++;</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data,
+obj_global_id,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+obj_local_id, &amp;obj_global_id, &amp;obj_local_id);</TT>
+<BR><TT>&nbsp;&nbsp; }</TT>
+<BR><TT>}</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Example demonstrating how data structures are
+built for the RCB algorithm.&nbsp; (Taken from rcb_build_data_structure
+in rcb/rcb_util.c.)</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
 
 <P>
 <HR WIDTH="100%">
