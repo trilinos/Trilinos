@@ -6274,7 +6274,7 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    }
    for (i = 0; i < n; i++) res[i] = rhs[i] - pAux[i]; 
 
-   beta = Amat->lambda_max;   /* try and bracket high */
+   beta = 1.1*Amat->lambda_max;   /* try and bracket high */
    alpha = beta/8.;           /* frequency errors.    */
    /*
    ML_Operator_Print(Amat,"hi");
@@ -6331,6 +6331,7 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
 
    for (i = 0; i < Amat->outvec_leng; i++) dk[i] = res[i] /(theta*diagonal[i]);
 
+   if (outlen == 1) { theta = 1.; deg = 0; }
    for (k = 0; k < deg; k++) {
      for (i = 0; i < Amat->outvec_leng; i++) x[i] += dk[i];
      rhokp1 = 1./(2.*s1 - rhok);
@@ -6348,5 +6349,5 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    ML_free(dk);
    ML_free(res);
    ML_free(pAux);
-   return 0;
+   return 0;	
 }
