@@ -277,7 +277,7 @@ AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_ml_aztecoo" != "Xyes")
  TAC_ARG_WITH_PACKAGE(ml_external_mpi_functions, [Use mpi-provided global communication functions (not ml's internal implementation)], ML_EXTERNAL_MPI_FUNCTIONS, yes)
 # TAC_ARG_WITH_PACKAGE(ml_vendor_blas, [Use system blas library (not ml's internal reference blas)], ML_VENDOR_BLAS, yes)
 # TAC_ARG_WITH_PACKAGE(ml_vendor_lapack, [Use system lapack library (not ml's internal reference lapack)], ML_VENDOR_LAPACK, yes)
- TAC_ARG_ENABLE_OPTION(ml_enrich, [Enable latest enriched Maxwell prolongator], ML_ENRICH, yes)
+ TAC_ARG_ENABLE_OPTION(ml_enrich, [Enable latest enriched Maxwell prolongator], ML_ENRICH, no)
 #
  TAC_ARG_ENABLE_OPTION(ml_newtpe, [Enable latest Maxwell prolongator fixes], ML_NEW_T_PE, yes)
 

@@ -877,7 +877,7 @@ Optional Features:
   --enable-ml_multiple_rhs
                           experimental (default is no)
   --enable-ml_enrich      Enable latest enriched Maxwell prolongator (default
-                          is yes)
+                          is no)
   --enable-ml_newtpe      Enable latest Maxwell prolongator fixes (default is
                           yes)
   --enable-ml_complex_maxwell
@@ -5854,7 +5854,7 @@ if test "${enable_ml_enrich+set}" = set; then
   enableval="$enable_ml_enrich"
   ac_cv_use_ml_enrich=$enableval
 else
-  ac_cv_use_ml_enrich=yes
+  ac_cv_use_ml_enrich=no
 fi;
 
 echo "$as_me:$LINENO: checking whether to use ml_enrich" >&5
