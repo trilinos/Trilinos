@@ -236,17 +236,18 @@ typedef struct
   int n;
   int *ele;
   int *pos;
-  float *d;
+  float *value;
 } HEAP;
 #define heap_empty(H)         (((H)->n)==0)
 #define heap_not_empty(H)     (((H)->n)!=0)
+#define heap_max_value(H)     ((H)->d[(H)->ele[0]])
 extern int  heap_init         (HEAP*, int);
 extern void heap_free         (HEAP*);
 extern int  heap_check        (HEAP*);
 extern void heap_input        (HEAP*, int, float);
 extern void heap_make         (HEAP*);
 extern void heapify           (HEAP*, int);
-extern void heap_change_key   (HEAP*, int, float);
+extern void heap_change_value (HEAP*, int, float);
 extern int  heap_extract_max  (HEAP*);
 
 

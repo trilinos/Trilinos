@@ -1,97 +1,110 @@
+/*****************************************************************************
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
+ * For more info, see the README file in the top-level Zoltan directory.     *
+ *****************************************************************************/
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include "hypergraph.h"
 
 #define INT_CHANGE(A,B)         {int    _C_=(A);(A)=(B);(B)=_C_;}
 
-int heap_init (HEAP *heap, int n)
+int heap_init (HEAP *h, int space)
 { char *yo = "heap_init";
 
-  heap->space = n;
-  heap->n = 0;
-
-  if (!(heap->ele = (int *)  ZOLTAN_CALLOC(n,sizeof(int))) ||
-      !(heap->pos = (int *)  ZOLTAN_CALLOC(n,sizeof(int))) ||
-      !(heap->d   = (float *)ZOLTAN_CALLOC(n,sizeof(float))) )
+  h->space = space;
+  h->n = 0;
+  if (!(h->ele   = (int *)  ZOLTAN_CALLOC(space,sizeof(int))) ||
+      !(h->pos   = (int *)  ZOLTAN_CALLOC(space,sizeof(int))) ||
+      !(h->value = (float *)ZOLTAN_CALLOC(space,sizeof(float))) )
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
-
   return ZOLTAN_OK;
 }
 
-void heap_free (HEAP *heap)
-{ ZOLTAN_FREE ((void **) &(heap->ele));
-  ZOLTAN_FREE ((void **) &(heap->pos));
-  ZOLTAN_FREE ((void **) &(heap->d));
+void heap_free (HEAP *h)
+{ ZOLTAN_FREE ((void **) &(h->ele));
+  ZOLTAN_FREE ((void **) &(h->pos));
+  ZOLTAN_FREE ((void **) &(h->value));
 }
 
-int heap_check (HEAP *heap)
+int heap_check (HEAP *h)
 { int i, left, right;
 
-  for (i=0; i<heap->n; i++)
+  for (i=0; i<h->n; i++)
   { left = 2*i+1;
     right = 2*i+2;
-    if ((left<heap->n && heap->d[heap->ele[left]]>heap->d[heap->ele[i]]) ||
-        (right<heap->n && heap->d[heap->ele[right]]>heap->d[heap->ele[i]]))
+    if ((left <h->n && h->value[h->ele[left ]]>h->value[h->ele[i]]) ||
+        (right<h->n && h->value[h->ele[right]]>h->value[h->ele[i]]))
     { printf("ERROR...no heap property!\n");
       return ZOLTAN_FATAL;
-    }
-  }
+  } }
   return ZOLTAN_OK;
 }
 
-void heap_input (HEAP *heap, int element, float d)
+void heap_input (HEAP *h, int element, float value)
 {
-  heap->ele[heap->n] = element;
-  heap->pos[element] = (heap->n)++;
-  heap->d[element] = d;
+  h->ele[h->n] = element;
+  h->pos[element] = (h->n)++;
+  h->value[element] = value;
 }
 
-void heap_make (HEAP *heap)
+void heap_make (HEAP *h)
 { int i;
   
-  for (i=heap->n/2; i>=0; i--)
-    heapify(heap, i);
+  for (i=h->n/2; i>=0; i--)
+    heapify(h, i);
 }
 
-void heapify (HEAP *heap, int root)
+void heapify (HEAP *h, int root)
 { int	left=root*2+1, right=root*2+2, largest=root; 
 
-  if ((left < heap->n) && (heap->d[heap->ele[left]] > heap->d[heap->ele[largest]]))
+  if ((left <h->n) && (h->value[h->ele[left ]]>h->value[h->ele[largest]]))
     largest = left;
-  if((right < heap->n) && (heap->d[heap->ele[right]] > heap->d[heap->ele[largest]]))
+  if ((right<h->n) && (h->value[h->ele[right]]>h->value[h->ele[largest]]))
     largest = right;
   if (largest != root)
-  { heap->pos[heap->ele[root]] = largest;
-    heap->pos[heap->ele[largest]] = root;
-    INT_CHANGE(heap->ele[root],heap->ele[largest]);
-    heapify(heap,largest);
+  { h->pos[h->ele[root]] = largest;
+    h->pos[h->ele[largest]] = root;
+    INT_CHANGE(h->ele[root],h->ele[largest]);
+    heapify(h,largest);
   }
 }
 
-void heap_change_key (HEAP *heap, int element, float d)
-{ int position=heap->pos[element], father;
+void heap_change_value (HEAP *h, int element, float value)
+{ int position=h->pos[element], father;
 
-  if (heap->d[element] > d)
-  { heap->d[element] = d;
-    heapify(heap,position);
+  if (h->value[element] > value)
+  { h->value[element] = value;
+    heapify(h,position);
   }
-  else if (heap->d[element] < d)
-  { heap->d[element] = d;
+  else if (h->value[element] < value)
+  { h->value[element] = value;
     father = (position-1)/2;
-    while (position>0 && heap->d[element]>heap->d[heap->ele[father]])
-    { heap->pos[heap->ele[position]] = father;
-      heap->pos[heap->ele[father]] = position;
-      INT_CHANGE(heap->ele[father],heap->ele[position]);
+    while (position>0 && h->value[element]>h->value[h->ele[father]])
+    { h->pos[h->ele[position]] = father;
+      h->pos[h->ele[father]] = position;
+      INT_CHANGE(h->ele[father],h->ele[position]);
       position = father;
       father = (father-1)/2;
-    } 
-  }
+  } }
 }
 
-int heap_extract_max (HEAP *heap)
-{ int max = heap->ele[0];
-  heap->d[max] = 0.0;
-  heap->pos[heap->ele[0]=heap->ele[--(heap->n)]] = 0;
-  heapify(heap,0);
+int heap_extract_max (HEAP *h)
+{ int max = h->ele[0];
+
+  h->value[max] = 0.0;
+  h->pos[h->ele[0]=h->ele[--(h->n)]] = 0;
+  heapify(h,0);
   return max;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
+

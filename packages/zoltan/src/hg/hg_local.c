@@ -169,14 +169,14 @@ static int local_fm (
         { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
             if (!locked[v=hg->hvertex[j]])
             { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              heap_change_value(&(heap[part[v]]),v,gain[v]);
             }
         }
         else if (cut[sour][edge] == 2)
         { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
             if (!locked[v=hg->hvertex[j]] && part[v] == sour)
             { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              heap_change_value(&(heap[part[v]]),v,gain[v]);
               break;
             }
         }
@@ -184,14 +184,14 @@ static int local_fm (
         { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
             if (!locked[v=hg->hvertex[j]])
             { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              heap_change_value(&(heap[part[v]]),v,gain[v]);
             }
         }
         else if (cut[dest][edge] == 1)
         { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
             if (!locked[v=hg->hvertex[j]] && part[v]==dest)
             { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              heap_change_value(&(heap[part[v]]),v,gain[v]);
               break;
             }
         }
@@ -224,14 +224,14 @@ static int local_fm (
         { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
             if (!locked[v=hg->hvertex[j]])
             { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              heap_change_value(&(heap[part[v]]),v,gain[v]);
             }
         }
         else if (cut[sour][edge] == 2)
         { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
             if (!locked[v=hg->hvertex[j]] && part[v] == sour)
             { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              heap_change_value(&(heap[part[v]]),v,gain[v]);
               break;
             }
         }
@@ -239,14 +239,14 @@ static int local_fm (
         { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
             if (!locked[v=hg->hvertex[j]])
             { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              heap_change_value(&(heap[part[v]]),v,gain[v]);
             }
         }
         else if (cut[dest][edge] == 1)
         { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
             if (!locked[v=hg->hvertex[j]] && part[v]==dest)
             { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              heap_change_value(&(heap[part[v]]),v,gain[v]);
               break;
             }
         }
