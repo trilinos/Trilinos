@@ -85,6 +85,8 @@ char *str, *str2;
 
 /****************************************************************************/
 
+#define NUM_PART_KEEP 5            /* No. of partition vectors to keep. 
+                                      Only partially implemented so far. */
 
 int Zoltan_PHG_CoarsePartition(
   ZZ *zz, 
@@ -109,6 +111,14 @@ int Zoltan_PHG_CoarsePartition(
 char *yo = "Zoltan_PHG_CoarsePartition";
 int ierr = ZOLTAN_OK;
 int i, si, j;
+static PHGComm scomm;          /* Serial communicator info */
+static int first_time = 1;
+HGraph *shg = NULL;            /* Serial hypergraph gathered from phg */
+int *spart = NULL;             /* Partition vectors for shg. */
+int *new_part = NULL;          /* Ptr to new partition vector. */
+float *bestvals = NULL;        /* Best cut values found so far */
+int worst, new_cand;
+float bal, worst_cut;
 
   /* take care of all special cases first */
 
@@ -149,16 +159,6 @@ int i, si, j;
       }
     }
 
-#define NUM_PART_KEEP 5            /* No. of partition vectors to keep. */
-                                   /* Only partially implemented so far. */
-    static PHGComm scomm;          /* Serial communicator info */
-    static int first_time = 1;
-    HGraph *shg = NULL;            /* Serial hypergraph gathered from phg */
-    int *spart = NULL;             /* Partition vectors for shg. */
-    int *new_part = NULL;          /* Ptr to new partition vector. */
-    float *bestvals = NULL;        /* Best cut values found so far */
-    int worst, new_cand;
-    float bal, worst_cut;
 
     if (phg->comm->nProc == 1) {
       /* Serial and parallel hgraph are the same. */
@@ -232,6 +232,7 @@ int i, si, j;
       bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, new_part); 
       bestvals[new_cand] = Zoltan_PHG_hcut_size_links(shg->comm, 
              shg, new_part, numPart);
+      uprintf(phg->comm, " **** UMIT bal = %.3lf Cut =%.2lf \n", bal, bestvals[new_cand]);
       if (i<NUM_PART_KEEP)
         new_cand = i+1;
       else {
@@ -407,6 +408,7 @@ static int seq_part (
       printf("COARSE_PART i=%2d, part[%2d] = %2d, part_sum=%f, cutoff=%f\n", 
        i, j, part[j], part_sum, cutoff);
   }
+
   return ZOLTAN_OK;
 }
 
@@ -447,8 +449,9 @@ static int coarse_part_ran (
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
-    for (i=0; i<hg->nVtx; i++)
+    for (i=0; i<hg->nVtx; i++) {
         order[i] = i;
+    }
 
     /* Randomly permute order array */
     Zoltan_Rand_Perm_Int (order, hg->nVtx);
@@ -957,6 +960,8 @@ float cut, bal;
 
   MPI_Allreduce(local, global, 2, MPI_FLOAT_INT, MPI_MINLOC, 
                 phg_comm->Communicator);
+
+  uprintf(phg_comm, "Local Bal: %.3lf Cut= %.2lf   Global: bal= %.3lf  Cut= %.2lf\n", local[0].val, local[1].val, global[0].val, global[1].val);
 
   /* What do we say is "best"?   For now, say lowest cut size. */
   MPI_Bcast(spart, shg->nVtx, MPI_INT, global[1].rank, 
