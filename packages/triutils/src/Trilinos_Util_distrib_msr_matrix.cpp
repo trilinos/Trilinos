@@ -4,7 +4,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 
-void Trilinos_Util_distrib_msr_matrix(Epetra_Comm & Comm, int *N_global,
+void Trilinos_Util_distrib_msr_matrix(const Epetra_Comm & Comm, int *N_global,
 	      int *n_nonzeros, int *N_update, int **update,
 	      double **val, int **bindx,
 	      double **x, double **b, double **xexact)
