@@ -19,7 +19,7 @@
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
+&nbsp;<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="migration_help"></A>Using the test script <I>test_zoltan</I></H2>
@@ -41,13 +41,13 @@ with a summary of results. The summary of results is also saved in a log
 file. If&nbsp; an error occured, look at the log file to find out what
 went wrong. The script currently assumes that runs are deterministic&nbsp;
 and reproducable which is not necessarily true in a parallel environment
-Hence false alarms may occur, but the test problems have been selected
-to minimize this problem.
+Hence false alarms may occur.
 <BR>&nbsp;
 <H3>
 Syntax</H3>
-<B>&nbsp;&nbsp;&nbsp;&nbsp; test_zoltan </B>[-arch arch-type] [-cmd command]
-[-logfile filename] [-no_parmetis] [-no_nemesis] [-no_chaco]
+<B>&nbsp;&nbsp;&nbsp;&nbsp; test_zoltan </B>[-arch <I>arch-type</I>] [-cmd
+<I>command</I>] [-logfile <I>filename</I>] [-no_parmetis] [-no_nemesis]
+[-no_chaco]
 
 <P>It is required to use either the -arch or the -cmd option.&nbsp; The
 other arguments are optional.
@@ -55,7 +55,7 @@ other arguments are optional.
 <P>Options:
 <BR>&nbsp;
 <TABLE BORDER=0 WIDTH="100%" NOSAVE >
-<TR NOSAVE>
+<TR VALIGN=TOP NOSAVE>
 <TD WIDTH="25%" NOSAVE>-arch <I>arch-type</I></TD>
 
 <TD WIDTH="75%" NOSAVE>Currently the supported architectures (<I>arch-type</I>)
@@ -64,21 +64,23 @@ are sun, sunos, smos, tflop, cplant.</TD>
 <TD></TD>
 </TR>
 
-<TR NOSAVE>
+<TR VALIGN=TOP NOSAVE>
 <TD>-cmd <I>command</I></TD>
 
 <TD WIDTH="25%" NOSAVE>The <I>command</I> is the command that the script
-will use to launch the driver. Default settings have been provided for
-all the supported architectures.</TD>
+uses to launch the driver. One must include an option to specify the number
+of processors as part of the command. Use quotes appropriately, for example,
+<I>-cmd 'mpirun -np'</I>. Default settings have been provided for all the
+supported architectures.</TD>
 
 <TD></TD>
 </TR>
 
-<TR>
+<TR VALIGN=TOP NOSAVE>
 <TD>-logfile <I>filename</I></TD>
 
-<TD>The name of the log file. The default is <I>test_zoltan.log</I>. If
-an old log file exists, it will be moved to <I>test_zoltan.log.old.</I>&nbsp;</TD>
+<TD NOSAVE>The name of the log file. The default is <I>test_zoltan.log</I>.
+If an old log file exists, it will be moved to <I>test_zoltan.log.old.</I>&nbsp;</TD>
 
 <TD></TD>
 </TR>
@@ -108,7 +110,7 @@ an old log file exists, it will be moved to <I>test_zoltan.log.old.</I>&nbsp;</T
 </TR>
 </TABLE>
 &nbsp;
-<BR>The default behaviour is to run all methods on all types of input format.
+<BR>The default behavior is to run all methods on all types of input format.
 <BR>&nbsp;
 <H3>
 Load balancing methods</H3>
@@ -119,6 +121,16 @@ and Octpart.
 <P>&nbsp;If you would like to run only a subset of these methods, you have
 to edit the script manually.
 <BR>&nbsp;
+<H3>
+Test problems</H3>
+The current test problems are:
+
+<P>Chaco format:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; simple, nograph, vwgt,
+grid20x19, film, hammond
+<BR>Nemesis format:&nbsp; box_064, ti_300, ti_4k
+
+<P>Please see the README files located in each test directory for more
+details on these test problems.
 <H3>
 <B>Number of processors</B></H3>
 Each test problem is run on a predetermined number of processors, currently
