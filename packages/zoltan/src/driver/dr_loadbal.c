@@ -166,8 +166,8 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   }
 
   /* Free tenmporary arrays for partition sizes. */
-  free(psize);
-  free(partid);
+  safe_free((void **) &psize);
+  safe_free((void **) &partid);
 
   /*
    * Set the callback functions
@@ -445,9 +445,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
 
     /* Free order data */
-    free(order);
-    free(order_gids);
-    free(order_lids);
+    safe_free((void **) &order);
+    safe_free((void **) &order_gids);
+    safe_free((void **) &order_lids);
   }
 
   DEBUG_TRACE_END(Proc, yo);

@@ -313,7 +313,7 @@ char msg[256];
                           &exp_elem);
 
     if (export_procs[i] != proc) {
-      /* Export is moving to a new partition, but not to a new processor */
+      /* Export is moving to a new processor */
       New_Elem_Index[exp_elem] = -1;
       proc_ids[exp_elem] = export_procs[i];
     }
