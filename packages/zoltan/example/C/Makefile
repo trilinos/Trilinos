@@ -1,7 +1,10 @@
 # $Id$
 #
 
-CEXAMPLES = zoltanSimple zoltanExample1 
+CEXAMPLES = zoltanSimple zoltanExample1 subDirs
+
+DOTDOTINCLUDE= $(subst -I../, -I../../, $(INCLUDE))
+DOTDOTLIBDIR= $(subst -L../, -L../../, $(LIBDIR))
 
 all:    $(CEXAMPLES)
 
@@ -11,8 +14,14 @@ all:    $(CEXAMPLES)
 ../lib/libexzoltan.a:
 	cd ..; $(MAKE) exampleLibrary
 
+subDirs:
+	cd sparse_matrix; \
+        $(MAKE) all "CC=$(CC)" "CFLAGS=$(CFLAGS)" \
+                    "INCLUDE=$(DOTDOTINCLUDE)" \
+                    "LIBDIR=$(DOTDOTLIBDIR)" "LIBS=$(LIBS)"
 clean:
 	rm -f *.o $(CEXAMPLES)
+	cd sparse_matrix; $(MAKE) clean
 
 
 
