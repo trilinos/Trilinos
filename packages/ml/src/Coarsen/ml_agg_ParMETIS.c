@@ -57,12 +57,16 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
 					int Naggre, int * NnodesPerAggre,
 					USR_COMM Comm);
-extern ML_Operator * ML_BuildQt( int StartingNumElements,
-				 int ReorderedNumElements,
-				 int reordered_decomposition[],
-				 USR_COMM mpi_communicator,
-				 ML_Comm *ml_communicator );
-
+static ML_Operator * ML_BuildQ( int StartingNumElements,
+	 		 int ReorderedNumElements,
+			 int reordered_decomposition[],
+			 double StartingNullSpace[],
+			 double ReorderedNullSpace[],
+			 int ComputeNewNullSpace,
+			 double StartingBdry[], double ReorderedBdry[],
+			 USR_COMM mpi_communicator,
+			 ML_Comm *ml_communicator );
+{
 /* ********************************************************************** */
 /* parmetis.h is required to properly define idxtype, and to declare the  */
 /* used functions. By default, idxtype is defined as int, so in principle */
