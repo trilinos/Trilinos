@@ -65,7 +65,6 @@ int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
   if (!Y.Map().SameAs(OperatorRangeMap())) EPETRA_CHK_ERR(-2);
   if (Y.NumVectors()!=X.NumVectors()) EPETRA_CHK_ERR(-3);
 
-// These to fcns are unnecessary!
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
                               // in solver or if X = Y
   Y.PutScalar(0.0); // Always start with Y = 0
@@ -73,7 +72,7 @@ int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
   // a time on them.
   double **xvectors;
   double **yvectors;
-  int ierr = X.ExtractView(&xvectors);
+  int ierr = xtmp.ExtractView(&xvectors);
   ierr = Y.ExtractView(&yvectors);
 
   //note: solver_ is the ML handle
@@ -154,7 +153,6 @@ int Epetra_ML_Operator::ApplyInverse_WKC(const Epetra_MultiVector& X, Epetra_Mul
   if (!Y.Map().SameAs(OperatorRangeMap())) EPETRA_CHK_ERR(-2);
   if (Y.NumVectors()!=X.NumVectors()) EPETRA_CHK_ERR(-3);
 
-// These to fcns are unnecessary!
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
                               // in solver or if X = Y
   Y.PutScalar(0.0); // Always start with Y = 0
@@ -162,7 +160,7 @@ int Epetra_ML_Operator::ApplyInverse_WKC(const Epetra_MultiVector& X, Epetra_Mul
   // a time on them.
   double **xvectors;
   double **yvectors;
-  int ierr = X.ExtractView(&xvectors);
+  int ierr = xtmp.ExtractView(&xvectors);
   ierr = Y.ExtractView(&yvectors);
 
   //note: solver_ is the ML handle
