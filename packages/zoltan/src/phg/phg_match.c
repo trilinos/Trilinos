@@ -387,6 +387,21 @@ static int matching_ipm(ZZ *zz, PHGraph *hg, Matching match)
  *  this won't produce the highest-quality matching, but it is simple and 
  *  requires no extra communication.
  * 
+ *****************************************************************************
+ *  Notes by EB 8/6/2004:
+ *  The approach above is similar to the LHM and RHM matching schemes.
+ *  RHM will pick a random vertex and match it with the "best" vertex,
+ *  where best is defined by a similarity function similar to inner products.
+ *  LHM is more clever but more expensive, as it computes all similarities
+ *  (inner products) and then performs an approximate maximal matching
+ *  algorithm (LAM). Note that we should try to leverage earlier
+ *  work as much as possible.
+ *
+ *  As mentioned earlier, computing all inner products is impractical.
+ *  Instead, each processor could send a chunk of its data in each 
+ *  of several communication rounds; then we do a partial matching using
+ *  this partial data after each round. The greedy matching algorithm 
+ *  may be used, or possibly LAM.
  *****************************************************************************/
  
     } else
