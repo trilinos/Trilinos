@@ -313,12 +313,12 @@ ZCPPDRIVE_DEPS	= $(ZDRIVE_DEPS)
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
 F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 
-ifndef CPPC
-# See if C compiler will work with C++ files
-CPCC = $(CC)
-endif
-
+ifdef CPPC
 CPPCOMP		= $(CPPC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
+else
+# See if C compiler will work with C++ files
+CPPCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
+endif
 
 ############################################################################
 #                  LINT DEFINITIONS KDDKDD
