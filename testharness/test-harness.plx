@@ -552,7 +552,7 @@ report($SUMMARY);
                                     
                     # exclude unsupported packages and invalid directories
                     unless ($testDir =~ m/^\s+$/ || $testDir =~ m/^$/ || 
-                            $testDir =~ m/tpetra/ || $testDir =~ m/jpetra/ ) {
+                            $testDir =~ m/jpetra/ ) {
                             
                         # descend into test directory
                         chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/$testDir";
