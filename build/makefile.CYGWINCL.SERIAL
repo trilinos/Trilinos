@@ -107,8 +107,8 @@ RANLIB=
 # flags. Note that cl and f77 accept flags pre-appended with
 # a "-" or a "/".
 #
-ARCH_CXXFLAGS= -O -GR -GX -nologo
-ARCH_CFLAGS= -O -Za -nologo
+ARCH_CXXFLAGS= -Ox -GR -GX -nologo
+ARCH_CFLAGS= -Ox -Za -nologo
 ARCH_FFLAGS= -Ox -nologo
 
 # Define compiler commands
