@@ -76,12 +76,12 @@ MultiLevelPreconditioner_Maxwell_SOURCES = $(srcdir)/MultiLevelPreconditioner_Ma
 
 MultiLevelPreconditioner_Maxwell_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
-        ${aztecoo_lib} \
-        ${epetra_lib} \
-        ${triutils_lib} \
-        ${amesos_lib} \
-	${anasazi_lib} \
-	${teuchos_lib} 
+        $(aztecoo_lib) \
+        $(epetra_lib) \
+        $(triutils_lib) \
+        $(amesos_lib) \
+	$(anasazi_lib) \
+	$(teuchos_lib) 
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Coarsen                  \
@@ -104,11 +104,11 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(aztecoo_lib)    \
-                ${ifpack_lib} \
-                ${amesos_lib} \
-                ${anasazi_lib} \
-                ${teuchos_lib} \
-                ${triutils_lib} \
+                $(ifpack_lib) \
+                $(amesos_lib) \
+                $(anasazi_lib) \
+                $(teuchos_lib) \
+                $(triutils_lib) \
                 $(epetra_lib) \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \

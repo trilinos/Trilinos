@@ -93,9 +93,9 @@ GetNecessaryFiles: $(EXTRA_DIST)
 2d_Poisson_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
 	$(aztecoo_lib) \
-        ${amesos_lib} \
+        $(amesos_lib) \
 	$(epetra_lib) \
-        ${teuchos_lib} \
+        $(teuchos_lib) \
 	GetNecessaryFiles
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
@@ -117,10 +117,10 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(aztecoo_lib) \
-                ${ifpack_lib} \
-	        ${amesos_lib} \
+                $(ifpack_lib) \
+	        $(amesos_lib) \
                 $(epetra_lib) \
-	        ${teuchos_lib} \
+	        $(teuchos_lib) \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \

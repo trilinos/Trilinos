@@ -101,11 +101,11 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(aztecoo_lib) \
-                ${ifpack_lib} \
-                ${amesos_lib} \
-                ${anasazi_lib} \
-                ${teuchos_lib} \
-                ${triutils_lib} \
+                $(ifpack_lib) \
+                $(amesos_lib) \
+                $(anasazi_lib) \
+                $(teuchos_lib) \
+                $(triutils_lib) \
                 $(epetra_lib) \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
