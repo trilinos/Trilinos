@@ -1,4 +1,4 @@
-#!/bin/csh -v
+#!/bin/csh 
 ##############################################################################
 # Zoltan Library for Parallel Applications                                   #
 # Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
@@ -260,7 +260,15 @@ if ( $yes_fortran ) then
     if ( $pmversion == 2) then
       set ch_methods = ( $ch_methods partkway partgeom diffusion )
     else
-      set ch_methods = ( $ch_methods partkway-v$pmversion partgeom-v$pmversion diffusion-v$pmversion )
+      set ch_methods = ( $ch_methods partkway-v$pmversion \
+        partkway-partless-v$pmversion partkway-partmore-v$pmversion \
+        partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
+        partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
+        partgeom-v$pmversion diffusion-v$pmversion \
+        partgeomkway-v$pmversion adaptive-v$pmversion \
+        adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+        adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
+        adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion )
     endif
   endif
 else
@@ -296,8 +304,15 @@ else
       set ch_methods = ( $ch_methods partkway partkway-oneproc partkway-cyclic partgeom diffusion )
       set nem_methods = ( $nem_methods partkway partgeom diffusion )
     else
-      set ch_methods = ( $ch_methods partkway-v$pmversion partkway-oneproc-v$pmversion partkway-cyclic-v$pmversion partgeom-v$pmversion diffusion-v$pmversion )
-      set nem_methods = ( $nem_methods partkway-v$pmversion partgeom-v$pmversion diffusion-v$pmversion )
+      set ch_methods = ( $ch_methods partkway-v$pmversion \
+        partkway-partless-v$pmversion partkway-partmore-v$pmversion \
+        partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
+        partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
+        partgeom-v$pmversion diffusion-v$pmversion \
+        partgeomkway-v$pmversion adaptive-v$pmversion \
+        adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+        adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
+        adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion )
     endif
   endif
 endif
