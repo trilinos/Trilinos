@@ -13,6 +13,7 @@
 
 // Header files for different solvers
 #include "NOX_Solver_Newton.H"		// Newton's method
+#include "NOX_Solver_NonlinearCG.H"	// Nonlinear Conjugate Gradient method
 
 
 using namespace NOX;
@@ -43,6 +44,9 @@ bool Manager::reset(Abstract::Group& grp, Status::Test& tests, Parameter::List& 
     
     if (method == "Newton") {
       ptr = new Newton(grp, tests, params);
+    } 
+    else if (method == "NonlinearCG") {
+      ptr = new NonlinearCG(grp, tests, params);
     } 
     else {
       cout << "ERROR: NOX::Solver::Manager - invalid choice for nonlinear " 

@@ -60,12 +60,13 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
 
   double oldf = 0.5*oldgrp.getNormRHS()*oldgrp.getNormRHS();  
                             // Redefined f(), RH
-  double oldfprime = -2.0*oldf;  //  This holds for Newton direction, RH
-//  Check that this indeed holds.....DONE !!  12-12-2001  RH
-//  const NLS_Vector& chkvec = oldgrp.getGrad();
-//  double chk = dir.dot(chkvec);
-//  cout << "\n Computed Grad ....."<<oldfprime<<", "<<chk;
-//  getchar();
+
+//   General computation of directional derivative used in curvature condition
+//   Note that for Newton direction, oldfprime = -2.0*oldf
+  Abstract::Vector* tmpvecptr = oldgrp.getX().clone(CopyShape);
+  bool flag = oldgrp.applyJacobian(dir,*tmpvecptr);
+  double oldfprime = tmpvecptr->dot(oldgrp.getRHS());
+
   double newf, prevf;
   double tempStep, previousStep;
   double a,b,term1,term2,disc ;
@@ -89,8 +90,8 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
     if (Utils::doPrint(Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
       cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(oldf);
-      cout << " newf = " << Utils::sci(newf);
+      cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
+      cout << " newf = " << Utils::sci(sqrt(2.*newf));
       cout << endl;
     }
 
@@ -136,8 +137,8 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
     {
       step = recoverystep;
       cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(oldf);
-      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(newf);
+      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
+      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
       cout << " (USING RECOVERY STEP!)" << endl;
       cout << Utils::fill(72) << "\n" << endl;
       isfailed = true;
@@ -155,8 +156,8 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
   if (Utils::doPrint(Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
       cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(oldf);
-      cout << " newf = " << Utils::sci(newf);
+      cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
+      cout << " newf = " << Utils::sci(sqrt(2.*newf));
       cout << " (STEP ACCEPTED!)" << endl;
       cout << Utils::fill(72) << "\n" << endl;
 

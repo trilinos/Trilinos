@@ -77,14 +77,26 @@ int main(int argc, char *argv[])
   NOX::Parameter::List nlParams;
   nlParams.setParameter("Output Level", 4);
   nlParams.setParameter("MyPID", MyPID); 
+//  nlParams.setParameter("Nonlinear Solver", "NonlinearCG"); 
+//  nlParams.setParameter("Diagonal Precondition", "On");  // default = "Off"
+//  nlParams.setParameter("Direction", "Steepest Descent");  // default
+//  nlParams.setParameter("Direction", "Richardson"); 
+//  nlParams.setParameter("Max Iterations", 100); 
+//  nlParams.setParameter("Orthogonalize", "Fletcher-Reeves");  // default
+//  nlParams.setParameter("Orthogonalize", "Polak-Ribiere"); 
+//  nlParams.setParameter("Restart Frequency", 5);  // default = 10
+//  nlParams.setParameter("Output Frequency", 10);  // default = 1
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   // searchParams.setParameter("Method", "Full Step");
+  // searchParams.setParameter("Full Step", 0.01);
   // searchParams.setParameter("Method", "Interval Halving");
-  searchParams.setParameter("Method", "Polynomial");
+   searchParams.setParameter("Method", "Polynomial");
   // searchParams.setParameter("Method", "More'-Thuente");
-  searchParams.setParameter("Default Step", 1.0);
+   searchParams.setParameter("Default Step", 1.0000);
+//   searchParams.setParameter("Recovery Step", 0.0001);
+//   searchParams.setParameter("Minimum Step", 0.0001);
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
@@ -115,7 +127,7 @@ int main(int argc, char *argv[])
 
   // Create the convergence tests
   NOX::Status::AbsResid absresid(1.0e-6);
-  NOX::Status::MaxIters maxiters(20);
+  NOX::Status::MaxIters maxiters(5000);
   NOX::Status::Combo combo(NOX::Status::Combo::OR);
   combo.addTest(absresid);
   combo.addTest(maxiters);
