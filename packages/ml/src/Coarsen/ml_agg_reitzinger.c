@@ -9,7 +9,7 @@
 double checkit(ML_Operator *A, double *v);
 #endif
 
-int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes, 
+int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes, 
                     int fine_level, int incr_or_decrease,
                     ML_Aggregate *ag, ML_Operator *Tmat,
                     ML_Operator *Tmat_trans,
@@ -26,6 +26,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int    *pid_fine_edge;
   ML_Operator *Kn_coarse, *Rn_coarse, *Tcoarse, *Pn_coarse;
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
+  ML     *ml_nodes;
 /*
   char filename[80];
   FILE *fid2;
@@ -82,7 +83,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   double alpha;
   double *diag;
 #endif
-
+  ml_nodes = *iml_nodes;
   if (incr_or_decrease != ML_DECREASING)
     pr_error("Hiptmair: Only ML_DECREASING is supported\n");
 
@@ -105,8 +106,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_Aggregate_Set_Threshold( ag, 0.0);
   }
   Tfine = Tmat;
-  ML_Operator_ChangeToSinglePrecision(Tfine);
-  ML_Operator_ChangeToSinglePrecision(Tmat_trans);
+  ML_Operator_ChangeToChar(Tfine);
+  ML_Operator_ChangeToChar(Tmat_trans);
 
 
   /********************************************************************/
@@ -401,6 +402,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_free(pos_coarse_dirichlet);
      ML_free(neg_coarse_dirichlet);
 #endif
+     ML_Operator_Clean(Rn_coarse);
 
 #ifdef DEBUG_T_BUILD
      else
@@ -434,9 +436,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                          ml_nodes->Amat[grid_level].getrow->pre_comm);
      (*Tmat_array)[grid_level] = Tcoarse;
      ML_memory_check("L%d Tcoarse end",grid_level);
+     ML_Operator_Clean(Kn_coarse);
    
      Pn_coarse = &(ml_nodes->Pmat[grid_level]);
-     Rn_coarse = &(ml_nodes->Rmat[grid_level+1]);
 
      /* Test every coarse grid edge to make sure that it is really */
      /* necessary. This test is needed because Kn has connections  */
@@ -1454,6 +1456,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
     if (Tfine->comm->ML_mypid==0)
       printf("AMG setup time \t= %e seconds\n",t0);
 
+  ML_Destroy(iml_nodes);
   ML_memory_check("reitz end");
 
   return(Nlevels_nodal);

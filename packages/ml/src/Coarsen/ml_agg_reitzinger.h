@@ -37,7 +37,7 @@ extern "C" {
 #endif
 #endif
 
-extern int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes, 
+extern int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** ml_nodes, 
                                       int fine_level, int incr_or_decrease,
                                       ML_Aggregate *ag, ML_Operator *Tmat,
                                       ML_Operator *Tmat_trans,
