@@ -242,7 +242,7 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 #include "ml_anasazi.h"
 
 #ifdef HAVE_ML_TRIUTILS
-#include "Trilinos_Util_ShellOptions.h"
+#include "Trilinos_Util_CommandLineParser.h"
 #endif
 
 using namespace Teuchos;

@@ -25,7 +25,7 @@
 // includes required by ML
 #include "ml_epetra_preconditioner.h"
 
-#include "Trilinos_Util_MatrixGallery.h"
+#include "Trilinos_Util_CrsMatrixGallery.h"
 
 using namespace Teuchos;
 
@@ -41,9 +41,9 @@ int main(int argc, char *argv[])
 
   Epetra_Time Time(Comm);
 
-  // Create the linear problem using the class `Trilinos_Util_MatrixGallery.'
+  // Create the linear problem using the class `Trilinos_Util_CrsMatrixGallery.'
   // Various matrix examples are supported; please refer to file
-  // $TRILINOS_HOME/packages/triutils/src/Trilinos_Util_MatrixGallery.h
+  // $TRILINOS_HOME/packages/triutils/src/Trilinos_Util_CrsMatrixGallery.h
   // for more details.
   
   Trilinos_Util_CrsMatrixGallery Gallery("laplace_2d", Comm);
