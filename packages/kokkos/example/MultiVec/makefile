@@ -6,7 +6,7 @@ TIMER=second_linux.o
 TARGET1=tgemmV1
 TARGET2=tgemmV2
 
-LIBS = -lblas_fast
+LIBS = -lblas
 
 all: $(TARGET1) $(TARGET2)
 
