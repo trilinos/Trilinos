@@ -1,4 +1,6 @@
+#ifndef MB_MODIF
 #define MB_MODIF
+#endif
 /*
 #define ML_partition 
 */
@@ -165,6 +167,7 @@ double max_diag, min_diag, max_sum, sum;
 
   options[AZ_scaling] = AZ_none;
   ML_Create(&ml, N_levels);
+  ML_Set_PrintLevel(3);
 			
 			
   /* set up discretization matrix and matrix vector function */
@@ -216,6 +219,7 @@ double max_diag, min_diag, max_sum, sum;
 #endif
   ML_Aggregate_Set_Threshold(ag, 0.0);
   ML_Aggregate_Set_MaxCoarseSize( ag, 300);
+  /*  ML_Aggregate_Set_MaxCoarseSize( ag, 7); */
 
 
   /* read in the rigid body modes */
@@ -381,20 +385,10 @@ double max_diag, min_diag, max_sum, sum;
      /* does a Gauss-Seidel on its local submatrix independent of the     */
      /* other processors.                                                 */
 
-#ifdef MB_MODIF
-      ML_Gen_Smoother_MLS(ml, level, ML_BOTH, nsmooth); 	   
-
-      /* This is the Aztec ls smoother
-      options[AZ_precond] = AZ_ls;
-      options[AZ_poly_ord] = 5;
-      ML_Gen_SmootherAztec(ml, level, options, params, 
-                        proc_config, status, AZ_ONLY_PRECONDITIONER, 
-                        ML_BOTH,NULL);
-      */
-#else
+     ML_Gen_Smoother_MLS(ml, level, ML_BOTH, nsmooth);
+     /*
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
-#endif
-
+     */
      
 
       /* This is a true Gauss Seidel in parallel. This seems to work for  */
@@ -447,27 +441,32 @@ double max_diag, min_diag, max_sum, sum;
    }
    /*
    ML_Gen_Smoother_MLS(ml, coarsest_level, ML_BOTH, nsmooth); 	   
-   */
    ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
-/*
    ML_Gen_Smoother_SymGaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);
-*/
+   */
+
 
    /* Aztec smoother on the coarsest grid */
-   /*
+
    old_prec = options[AZ_precond];
    old_sol  = options[AZ_solver];
    old_tol  = params[AZ_tol];
-   params[AZ_tol] = 1.0e-13;
-   options[AZ_precond] = AZ_Jacobi;
+   params[AZ_tol] = 1.0e-20;
+   options[AZ_precond] = AZ_none;
    options[AZ_solver]  = AZ_cg;
    options[AZ_poly_ord] = 1;
+   options[AZ_conv] = AZ_noscaled;
+   options[AZ_orth_kvecs] = AZ_TRUE;
+   options[AZ_keep_kvecs] = ml->Amat[coarsest_level].outvec_leng - 6;
    ML_Gen_SmootherAztec(ml, coarsest_level, options, params,
-            proc_config, status, 700, ML_PRESMOOTHER, NULL);
+            proc_config, status, options[AZ_keep_kvecs], ML_PRESMOOTHER, NULL);
+
+   options[AZ_keep_kvecs] = 0;
+   options[AZ_orth_kvecs] = 0;
    options[AZ_precond] = old_prec;
    options[AZ_solver] = old_sol;
    params[AZ_tol] = old_tol;
-   */
+
 
 #ifdef RST_MODIF
    ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
@@ -480,6 +479,7 @@ double max_diag, min_diag, max_sum, sum;
 #endif
 	
    options[AZ_solver]   = AZ_cg;
+   options[AZ_solver]   = AZ_gmres;
    options[AZ_scaling]  = AZ_none;
    options[AZ_precond]  = AZ_user_precond;
    options[AZ_conv]     = AZ_r0;
@@ -488,13 +488,13 @@ double max_diag, min_diag, max_sum, sum;
    options[AZ_max_iter] = 500;
    options[AZ_poly_ord] = 5;
    options[AZ_kspace]   = 130;
-   params[AZ_tol]       = 1.0e-11;
+   params[AZ_tol]       = 4.8e-6;
 	
    AZ_set_ML_preconditioner(&Pmat, Amat, ml, options); 
    setup_time = AZ_second() - start_time;
 	
    /* Set rhs */
- 
+
    fp = fopen("AZ_capture_rhs.dat","r");
    if (fp == NULL) {
       AZ_random_vector(rhs, data_org, proc_config);
@@ -510,6 +510,7 @@ double max_diag, min_diag, max_sum, sum;
       free(garbage);
    }
    AZ_reorder_vec(rhs, data_org, update_index, NULL);
+
 
    /* Set x */
 
@@ -559,6 +560,8 @@ printf("hey .... should we do something here?\n");
    else {
       options[AZ_keep_info] = 1;
       options[AZ_conv] = AZ_noscaled;
+      options[AZ_conv] = AZ_r0;
+      params[AZ_tol] = 1.0e-8;
       /* ML_Iterate(ml, xxx, rhs); */
 alpha = AZ_gdot(N_update, xxx, xxx, proc_config);
 printf("init guess = %e\n",alpha);
@@ -587,7 +590,9 @@ for (i = 0; i < N_update; i++) {
 }
 printf("Largest diagonal = %e, min diag = %e large abs row sum = %e\n",
 max_diag, min_diag, max_sum);
+
       AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
+
       options[AZ_pre_calc] = AZ_reuse;
       options[AZ_conv] = AZ_expected_values;
 /*
