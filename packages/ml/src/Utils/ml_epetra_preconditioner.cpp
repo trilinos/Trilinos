@@ -15,6 +15,7 @@
 
 #include "ml_common.h"
 #include "ml_epetra_preconditioner.h"
+#include <iomanip>
 
 extern "C" {
 
@@ -30,6 +31,9 @@ extern double ML_DD_Hybrid(ML_1Level *curr, double *sol, double *rhs,
 extern double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 			     int approx_all_zeros, ML_Comm *comm,
 			     int res_norm_or_not, ML *ml);
+extern int ML_MaxAllocatableSize();
+extern int ML_MaxMemorySize();
+
 }
 
 extern "C" {
@@ -246,7 +250,16 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 
 using namespace Teuchos;
 using namespace ML_Epetra;
-  
+
+void ML_Epetra::MultiLevelPreconditioner::PrintMem(char *fmt, int min, int avg, int max)
+{
+
+  if( Comm().MyPID() == 0 ) printf(fmt,min, avg, max);
+  puts(" (Mb)");
+
+  return;
+}
+
 // ================================================ ====== ==== ==== == =
 
 void MultiLevelPreconditioner::PrintLine() const
@@ -316,22 +329,83 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
 
   sprintf(parameter,"%snumber of applications", Prefix_);
   OutputList_.set(parameter,NumApplications_);
-    
+
+  int min[ML_MEM_SIZE], max[ML_MEM_SIZE], avg[ML_MEM_SIZE];
+  for( int i=0 ; i<ML_MEM_SIZE ; ++i ) avg[i] = 0;
+
+  if( AnalyzeMemory_ ) {
+    memory_[ML_MEM_TOT2] = memory_[ML_MEM_TOT1] + memory_[ML_MEM_PREC_FIRST];
+    memory_[ML_MEM_TOT2_USED] = memory_[ML_MEM_TOT1_USED] + memory_[ML_MEM_PREC_FIRST_USED];
+    Comm().MinAll(memory_,min,ML_MEM_SIZE);
+    Comm().MaxAll(memory_,max,ML_MEM_SIZE);
+    Comm().SumAll(memory_,avg,ML_MEM_SIZE);
+  }
+  
+  for( int i=0 ; i<ML_MEM_SIZE ; ++i ) avg[i] /= Comm().NumProc();
+
+
   if( verbose_ && NumApplications_ ) {
 
     // print on screen
     
     PrintLine();
     double TotalTime = FirstApplicationTime_ + ApplicationTime_;
-    cout << PrintMsg_ << "Construction time             = " << ConstructionTime_ << " (s)" << endl;
-    cout << PrintMsg_ << "Time for all applications     = " << TotalTime << " (s)" << endl;
-    cout << PrintMsg_ << "Time for first application(s) = " << FirstApplicationTime_ << " (s)" << endl;
-    cout << PrintMsg_ << "Each of " << NumApplications_
+    cout << PrintMsg_ << "   ML time information" << endl << endl
+	 << "   1- Construction time             = " << ConstructionTime_ << " (s)" << endl;
+    cout << PrintMsg_ << "   2- Time for all applications     = " << TotalTime << " (s)" << endl;
+    cout << PrintMsg_ << "   3- Time for first application(s) = " << FirstApplicationTime_ << " (s)" << endl;
+    cout << PrintMsg_ << "   4- Each of " << NumApplications_
 	 << " applications took " << TotalTime/NumApplications_ << " (s)" << endl;
-    PrintLine();
+    
   }
 
-  if( NullSpaceToFree_ != 0 ) delete [] NullSpaceToFree_;
+  if( verbose_ && AnalyzeMemory_ ) {
+    
+    // print memory usage
+
+    cout << endl;
+    cout << "   ML memory information:                 min     avg     max" << endl
+	 << "   (warning: data may be incorrect for small runs, or" << endl
+	 << "    if more processes share the same physical memory)" << endl
+	 << endl
+	 << "   1- max allocatable contiguous chunk, using malloc()" << endl;
+    PrintMem("      before the ML construction     = %5d   %5d   %5d",
+	     min[ML_MEM_INITIAL],avg[ML_MEM_INITIAL],max[ML_MEM_INITIAL]);
+    PrintMem("      after the ML construction      = %5d   %5d   %5d",
+	     min[ML_MEM_FINAL],avg[ML_MEM_FINAL],max[ML_MEM_FINAL]);
+    cout << endl
+	 << "   2- estimated ML memory usage, using malloc()" << endl;
+    PrintMem("      for the hierarchy              = %5d   %5d   %5d",
+	     min[ML_MEM_HIERARCHY],avg[ML_MEM_HIERARCHY],max[ML_MEM_HIERARCHY]);
+    PrintMem("      for the smoother(s)            = %5d   %5d   %5d",
+	     min[ML_MEM_SMOOTHER],avg[ML_MEM_SMOOTHER],max[ML_MEM_SMOOTHER]);
+    PrintMem("      for the coarse solver          = %5d   %5d   %5d",
+	     min[ML_MEM_COARSE],avg[ML_MEM_COARSE],max[ML_MEM_COARSE]);
+    PrintMem("      preconditioning                = %5d   %5d   %5d",
+	     min[ML_MEM_PREC_FIRST],avg[ML_MEM_PREC_FIRST],max[ML_MEM_PREC_FIRST]);
+    PrintMem("      total (w/o other prec data)    = %5d   %5d   %5d",
+	     min[ML_MEM_TOT1],avg[ML_MEM_TOT1],max[ML_MEM_TOT1]);
+    PrintMem("      total (w/  other prec data)    = %5d   %5d   %5d",
+	     min[ML_MEM_TOT2],avg[ML_MEM_TOT2],max[ML_MEM_TOT2]);
+    cout << endl;
+    cout << "   3- estimated ML memory usage, using mallinfo()" << endl;
+    PrintMem("      for the hierarchy              = %5d   %5d   %5d",
+	     min[ML_MEM_HIERARCHY_USED],avg[ML_MEM_HIERARCHY_USED],max[ML_MEM_HIERARCHY_USED]);
+    PrintMem("      for the smoother(s)            = %5d   %5d   %5d",
+	     min[ML_MEM_SMOOTHER_USED],avg[ML_MEM_SMOOTHER_USED],max[ML_MEM_SMOOTHER_USED]);
+    PrintMem("      for the coarse solver          = %5d   %5d   %5d",
+	     min[ML_MEM_COARSE_USED],avg[ML_MEM_COARSE_USED],max[ML_MEM_COARSE_USED]);
+    PrintMem("      preconditioning                = %5d   %5d   %5d",
+	     min[ML_MEM_PREC_FIRST_USED],avg[ML_MEM_PREC_FIRST_USED],max[ML_MEM_PREC_FIRST_USED]);
+    PrintMem("      total (w/o other prec data)    = %5d   %5d   %5d",
+	     min[ML_MEM_TOT1_USED],avg[ML_MEM_TOT1_USED],max[ML_MEM_TOT1_USED]);
+    PrintMem("      total (w/  other prec data)    = %5d   %5d   %5d",
+	     min[ML_MEM_TOT2_USED],avg[ML_MEM_TOT2_USED],max[ML_MEM_TOT2_USED]);
+  }
+
+  if( verbose_ && NumApplications_ ) PrintLine();
+    
+  // FIXME  if( NullSpaceToFree_ != 0 ) delete [] NullSpaceToFree_;
 
   if( RowMatrixAllocated_ ) delete RowMatrixAllocated_;
   
@@ -454,6 +528,8 @@ int ML_Epetra::Set(Teuchos::ParameterList & List,
       List.set("increasing or decreasing",CLP.Get("-ml_incr_or_decr","increasing"));
   if( CLP.Has("-ml_output" ) )
       List.set("output",CLP.Get("-ml_output",10));
+  if( CLP.Has("-ml_memory" ) )
+      List.set("analyze memory",CLP.Get("-ml_memory",false));
   
   // smoother
   if( CLP.Has("-ml_smoother_type") )
@@ -684,6 +760,11 @@ void MultiLevelPreconditioner::Initialize()
   // some tracking here
   int NumInitializations = OutputList_.get("number of initialization phases", 0);
   OutputList_.set("number of initialization phases", ++NumInitializations);
+
+  // memory
+  AnalyzeMemory_ = false;
+
+  for( int i=0 ; i<ML_MEM_SIZE ; ++i ) memory_[i] = 0;
 }
 
 // ================================================ ====== ==== ==== == =
@@ -706,12 +787,6 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     Destroy_ML_Preconditioner();
   }
 
-  FirstApplication_ = true;
-
-  if( Label_ ) delete [] Label_;
-  
-  Label_ = new char[80];
-  
 #ifdef HAVE_MPI
   const Epetra_MpiComm * MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
   AZ_set_proc_config(ProcConfig_,MpiComm->Comm());
@@ -719,6 +794,11 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   AZ_set_proc_config(ProcConfig_,AZ_NOT_MPI);
 #endif
 
+  // user's defined output message
+  sprintf(parameter,"%soutput prefix", Prefix_);
+  PrintMsg_ = List_.get(parameter,PrintMsg_);
+
+  
   sprintf(parameter,"%smax levels", Prefix_);
   NumLevels_ = List_.get(parameter,10);  
 
@@ -729,11 +809,25 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   verbose_ = ( 5 < ML_Get_PrintLevel() && ProcConfig_[AZ_node] == 0);
 
   if( verbose_ ) PrintLine();
+  
+  FirstApplication_ = true;
 
-  // user's defined output message
-  sprintf(parameter,"%soutput prefix", Prefix_);
-  PrintMsg_ = List_.get(parameter,PrintMsg_);
+  int call1, call2, call1_used, call2_used;
 
+  sprintf(parameter,"%sanalyze memory", Prefix_);
+  AnalyzeMemory_ = List_.get(parameter, false);  
+
+  if( AnalyzeMemory_ ) {
+    memory_[ML_MEM_INITIAL] = ML_MaxAllocatableSize();
+    call1 = memory_[ML_MEM_INITIAL];
+    call1_used = ML_MaxMemorySize();
+    if( verbose_ ) cout << "Memory : max allocatable block = " << call1 << " Mbytes" << endl;
+  }
+
+  if( Label_ ) delete [] Label_;
+  
+  Label_ = new char[80];
+  
   // compute how to traverse levels (increasing of descreasing)
   // By default, use ML_INCREASING.
   
@@ -958,7 +1052,18 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     int NL2 = OutputList_.get("max number of levels", 0);
     OutputList_.set("max number of levels", NL2+NumLevels_);
   }
+  
+  if( AnalyzeMemory_ ) {
+    call2 = ML_MaxAllocatableSize();
+    if( verbose_ ) cout << "Memory : max allocatable block = " << call2 << " Mbytes" << endl;    
+    memory_[ML_MEM_HIERARCHY] = call1-call2;
+    call1 = call2;
 
+    call2_used = ML_MaxMemorySize();
+    memory_[ML_MEM_HIERARCHY_USED] = call2_used-call1_used;
+    call1_used = call2_used;
+  }
+  
   if( verbose_ ) cout << PrintMsg_ << "Number of actual levels : " << NumLevels_ << endl;
 
   /* ********************************************************************** */
@@ -968,6 +1073,16 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   if( SolvingMaxwell_ == false ) SetSmoothers();
   else                           SetSmoothersMaxwell();
 
+  if( AnalyzeMemory_ ) {
+    call2 = ML_MaxAllocatableSize();
+    if( verbose_ ) cout << "Memory : max allocatable block = " << call2 << " Mbytes" << endl;        
+    memory_[ML_MEM_SMOOTHER] = call1 - call2;
+    call1 = call2;
+    call2_used = ML_MaxMemorySize();
+    memory_[ML_MEM_SMOOTHER_USED] = call2_used - call1_used;
+    call1_used = call2_used;
+  }
+  
   /* ********************************************************************** */
   /* solution of the coarse problem                                         */
   /* ********************************************************************** */
@@ -984,12 +1099,45 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   /* be implemented as a post smoother (FIXME)                              */
   /* ********************************************************************** */
 
+  if( AnalyzeMemory_ ) {
+    call2 = ML_MaxAllocatableSize();
+    if( verbose_ ) cout << "Memory : max allocatable block = " << call2 << " Mbytes" << endl;        
+    memory_[ML_MEM_COARSE] = call1 - call2;
+    call1 = call2;
+    call2_used = ML_MaxMemorySize();
+    memory_[ML_MEM_COARSE_USED] = call2_used - call1_used;
+    call1_used = call2_used;
+  }
+  
   if( SolvingMaxwell_ == false ) 
     ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
   else {
     ML_Gen_Solver(ml_edges_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
   }
+
+  /* ********************************************************************** */
+  /* Use of GGB functions, here called `detect non-converging modes'        */
+  /* If this option is true, the code detects the non-converging modes of   */
+  /* I - ML^{-1}A (where ML is the preconditioner we have just built), and  */
+  /* creates a new V cycle to be added to the preconditioner. This part is  */
+  /* equivalent to the GGB files of Heim Waisman (files ml_struct.c and     */
+  /* ml_ggb.c, in the Main subdirectory).                                   */
+  /* ********************************************************************** */
+
+  sprintf(parameter,"%sdetect non-converging modes", Prefix_);
+  bool DetectModes = List_.get(parameter,false);
+
+  if( DetectModes == true ) {
+
+
+
     
+  }
+  
+  /* ********************************************************************** */
+  /* Other minor settings                                                   */
+  /* ********************************************************************** */
+
   // may want to print some internal stuff 
   // ML_Operator_Print(&(ml_->Pmat[1]),"Pmat");
   // ML_Operator_Print(&(ml_->Rmat[0]),"Rmat");
@@ -998,6 +1146,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   CreateLabel();
   
   if( SolvingMaxwell_ == false ) SetPreconditioner();
+
   if( verbose_ ) PrintLine();
 
   sprintf(parameter,"%sprint unused", Prefix_);
@@ -1006,8 +1155,15 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     if( Comm().MyPID() == ProcID || ProcID == -1 ) PrintUnused();
   }
 
+  if( AnalyzeMemory_ ) {
+    memory_[ML_MEM_FINAL] = ML_MaxAllocatableSize();
+    memory_[ML_MEM_TOT1] = memory_[ML_MEM_INITIAL] - memory_[ML_MEM_FINAL];
+    memory_[ML_MEM_FINAL_USED] = ML_MaxMemorySize();
+    memory_[ML_MEM_TOT1_USED] = memory_[ML_MEM_FINAL_USED] - memory_[ML_MEM_INITIAL_USED];
+  }
+  
   /* ------------------- that's all folks --------------------------------- */
-
+  
   IsComputePreconditionerOK_ = true;
 
   ConstructionTime_ += Time.ElapsedTime();
@@ -1100,6 +1256,12 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
 					   Epetra_MultiVector& Y) const
 {
 
+  int before, after, before_used, after_used;
+  if( AnalyzeMemory_ ) {
+    before = ML_MaxAllocatableSize();
+    before_used = ML_MaxMemorySize();
+  }
+    
   Epetra_Time Time(Comm());
   
   if (!X.Map().SameAs(OperatorDomainMap())) EPETRA_CHK_ERR(-1);
@@ -1159,11 +1321,21 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
   }
 
   MultiLevelPreconditioner * This = const_cast<MultiLevelPreconditioner *>(this);
+
+  if( AnalyzeMemory_ ) {
+    after = ML_MaxAllocatableSize();
+    after_used = ML_MaxMemorySize();
+  }
   
   double t = Time.ElapsedTime();
   if( FirstApplication_ ) {
     This->FirstApplication_ = false;
     This->FirstApplicationTime_ += t;
+    This->memory_[ML_MEM_PREC_FIRST] = before - after;
+    This->memory_[ML_MEM_PREC_FIRST_USED] = after_used - before_used;
+  } else {
+    This->memory_[ML_MEM_PREC_OTHER] = before - after;
+    This->memory_[ML_MEM_PREC_OTHER_USED] = after_used - before_used;
   }
   
   This->ApplicationTime_ += t;
@@ -1638,7 +1810,7 @@ void MultiLevelPreconditioner::SetNullSpace()
 {
 
   char parameter[80];
-
+  
   const Epetra_VbrMatrix * VbrMatrix = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
   if( VbrMatrix == 0 ) {
     sprintf(parameter,"%sPDE equations", Prefix_);
@@ -1657,85 +1829,190 @@ void MultiLevelPreconditioner::SetNullSpace()
 
   int NullSpaceDim = NumPDEEqns_;
   double * NullSpacePtr = NULL;
-  
-  sprintf(parameter,"%snull space dimension", Prefix_);
-  NullSpaceDim = List_.get(parameter, NumPDEEqns_);
-  sprintf(parameter,"%snull space vectors", Prefix_);
-  NullSpacePtr = List_.get(parameter, NullSpacePtr);
 
-  sprintf(parameter,"%scompute null space", Prefix_);
-  bool ComputeNullSpace = List_.get(parameter, false);
+  sprintf(parameter,"%snull space: type", Prefix_);
+  string option = List_.get(parameter, "use default vectors");
+
+  // Null space can be obtained in 3 ways:
+  // 1. default vectors, one constant vector for each physical unknown
+  // 2. precomputed, the user is furnishing a pointer to a double vector,
+  //    containing all the required components
+  // 3. by computing the eigenvalues of a suitable matrix (for instance, the
+  //    lowest of A, or the largest of I-A). Default space can be added
+  //    if required.
   
-  if( ComputeNullSpace == false ) {
+  if( option == "default vectors" ) {
 
     // sanity check for default null-space
     if( NullSpacePtr == NULL ) NullSpaceDim = NumPDEEqns_;
-    ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr,
+    ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NumPDEEqns_,NULL,
 			       RowMatrix_->NumMyRows());
     
-  } else {
+  } else if( option == "pre-computed" ) {
 
+    sprintf(parameter,"%snull space: dimension", Prefix_);    
+    NullSpaceDim = List_.get(parameter, NumPDEEqns_);
+    sprintf(parameter,"%snull space: vectors", Prefix_);
+    NullSpacePtr = List_.get(parameter, NullSpacePtr);
+
+    if( NullSpacePtr == 0 ) {
+      if( Comm().MyPID() == 0 ) cerr << ErrorMsg_ << "Null space vectors is NULL!" << endl;
+      exit( EXIT_FAILURE );
+    }
+    
+    ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NullSpaceDim,NullSpacePtr,
+			       RowMatrix_->NumMyRows());
+  
+  } else if( option == "enriched" ) {
+
+    sprintf(parameter,"%snull space: vectors to compute", Prefix_);    
+    NullSpaceDim = List_.get(parameter, 1);
+    
 #ifdef HAVE_ML_ANASAZI
 
     Epetra_Time Time(Comm());
     
-    if( NullSpacePtr != NULL && Comm().MyPID() == 0 ) {
-      cerr << ErrorMsg_ << "Null space vectors is not NULL!" << endl
-	   << ErrorMsg_ << "Now reallocating memory and computing null space " << endl
-	   << ErrorMsg_ << "using eigenvectors estimates, for " << NullSpaceDim << " vector(s)..." << endl;
-    }
-
-    sprintf(parameter,"%sadd default null space", Prefix_);
+    sprintf(parameter,"%snull space: add default vectors", Prefix_);
     bool UseDefaultVectors = List_.get(parameter, true);
 
-    if( verbose_ ) {
-      cout << PrintMsg_ << "Computing " << NullSpaceDim << " null space vector(s)" << endl;
-      if( UseDefaultVectors ) cout << PrintMsg_ << "(plus " << NumPDEEqns_ << " constant vector(s))" << endl;
-    }
+    // NOTE: NullSpaceDim always refers to the number of eigenvectors,
+    //       if this flag is true we will keep also the imaginary part
+    sprintf(parameter,"%snull space: add imaginary components", Prefix_);
+    bool UseImaginaryComponents = List_.get(parameter, true);
     
+    if( verbose_ ) {
+      cout << PrintMsg_ << "Enriching null space with " << NullSpaceDim << " vector(s)";
+      if( UseImaginaryComponents ) cout << PrintMsg_ << ", both real and imaginary components";
+      if( UseDefaultVectors ) cout << PrintMsg_ << endl << "plus " << NumPDEEqns_ << " constant vector(s)" << endl;
+      else cout << endl;
+    }
+
+    // allocate space for the entire null space, that contains:
+    // 1- the default one, a constant for each unknown (if required)
+    // 2- the real part of the Anasazi computations
+    // 3- the imaginary part of the Anasazi computions (if required)
     int TotalNullSpaceDim = NullSpaceDim;
+    if( UseImaginaryComponents ) TotalNullSpaceDim *= 2;
     if( UseDefaultVectors ) TotalNullSpaceDim += NumPDEEqns_;
 
     // create a double vector hosting null space
-    int LDA = NumMyRows();
-    
-    NullSpacePtr = new double[TotalNullSpaceDim*LDA];
+    if( NullSpacePtr ) {
+      cerr << ErrorMsg_ << "NullSpacePtr is not NULL. Is null space already defined?" << endl
+	   << ErrorMsg_ << "Now I delete the old null space, and proceed with finger crossed..." << endl;
+      delete [] NullSpacePtr;
+    }
 
-    // and fill it with normal 0's and 1's
-    if( UseDefaultVectors )
-      for( int i=0 ; i<NumPDEEqns_ ; ++i )
-	for( int j=0 ; j<LDA ; ++j )
-	  if( j%NumPDEEqns_ == i ) NullSpacePtr[j+i*LDA] = 1.0;
-	  else                     NullSpacePtr[j+i*LDA] = 0.0;
+    NullSpacePtr = new double[TotalNullSpaceDim*NumMyRows()];
+    
+    if( NullSpacePtr == 0 ) {
+      cerr << ErrorMsg_ << "Not enough space to allocate " << TotalNullSpaceDim*NumMyRows()*8
+	   << " bytes" << endl
+	   << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+    }
 
-    double * start = NullSpacePtr;
-    if( UseDefaultVectors ) start += NumPDEEqns_*LDA;
-    
-    Epetra_MultiVector EigenVectors(View,OperatorDomainMap(),start,LDA, NullSpaceDim);
-    
-    EigenVectors.Random();
-    
+    // here NullSpaceDim is the number of eigenvalues/vectors that Anasazi has to compute
+
+    // will contain the eigenVALUES
     double * RealEigenvalues = new double[NullSpaceDim];
     double * ImagEigenvalues = new double[NullSpaceDim];
-    
+
+    int offset;
+    if( UseDefaultVectors ) offset = NumPDEEqns_;
+    else                    offset = 0;
+
     // create List for Anasazi (kept separate from List_, I don't want to pollute it)
-    // Also, I keep it local (not use EigenList_
-    ParameterList AnasaziList(EigenList_);
+    ParameterList AnasaziList;
     
-    // new parameters specific for this function only (not set by the user)
-    AnasaziList.set("matrix operation", "I-A");
-    AnasaziList.set("action", "SM");
-    AnasaziList.set("eigen-analysis: use diagonal scaling",true);
+    {
+      
+      sprintf(parameter,"%snull space: matrix operation", Prefix_);
+      string opt = List_.get(parameter, "I-A");
+      if( opt == "I-A" ) {
+	AnasaziList.set("eigen-analysis: matrix operation", opt);
+	AnasaziList.set("eigen-analysis: action", "LM");
+	AnasaziList.set("eigen-analysis: use diagonal scaling",false);
+      }	else if( opt == "I-D^{-1}A" ) {
+	AnasaziList.set("eigen-analysis: matrix operation", "I-A");
+	AnasaziList.set("eigen-analysis: action", "LM");
+	AnasaziList.set("eigen-analysis: use diagonal scaling",true);
+      } else if( opt == "A" ) {
+	AnasaziList.set("eigen-analysis: matrix operation", opt);
+	AnasaziList.set("eigen-analysis: action", "SM");	
+	AnasaziList.set("eigen-analysis: use diagonal scaling",false);
+      } else if( opt == "D^{-1}A" ) {
+	AnasaziList.set("eigen-analysis: matrix operation", "A");
+	AnasaziList.set("eigen-analysis: action", "SM");	
+	AnasaziList.set("eigen-analysis: use diagonal scaling",true);
+      } else {
+	cerr << ErrorMsg_ << "value for `null space: matrix operation' not recognized" << endl
+	     << ErrorMsg_ << "(" << opt << "). It should be: " << endl
+	     << ErrorMsg_ << "<I-A> / <A> / <D^{-1}A> / <I-D^{-1}A>" << endl;
+	exit( EXIT_FAILURE );
+      }
+
+      AnasaziList.set("eigen-analysis: length", List_.get("eigen-analysis: length", 20));
+      AnasaziList.set("eigen-analysis: tolerance", List_.get("eigen-analysis: tolerance", 1.0e-1));
+      AnasaziList.set("eigen-analysis: restart", List_.get("eigen-analysis: restart", 100));
+    }
+    
+    // this is the starting value -- random
+    Epetra_MultiVector EigenVectors(OperatorDomainMap(),NullSpaceDim);
+    EigenVectors.Random();
+    
+    // call Anasazi. Real and imaginary part of the selected eigenvalues
+    // will be copied into RealEigenvalues
+
+    double * RealEigenvectors = 0, * ImagEigenvectors = 0;
+    if( UseDefaultVectors ) RealEigenvectors = NullSpacePtr+NumPDEEqns_*NumMyRows();
+    else                    RealEigenvectors = NullSpacePtr;
+    if( UseImaginaryComponents ) ImagEigenvectors = RealEigenvectors+NullSpaceDim*NumMyRows();
+    else                         ImagEigenvectors = 0;
     
     ML_Anasazi::Interface(RowMatrix_,EigenVectors,RealEigenvalues,
-			  ImagEigenvalues, AnasaziList);
-    
+			  ImagEigenvalues, AnasaziList, RealEigenvectors,
+			  ImagEigenvectors);
+
+    // fill it with normal 0's and 1's for standard vectors
+    if( UseDefaultVectors )
+      for( int i=0 ; i<NumPDEEqns_ ; ++i )
+	for( int j=0 ; j<NumMyRows() ; ++j )
+	  if( j%NumPDEEqns_ == i ) NullSpacePtr[j+i*NumMyRows()] = 1.0;
+	  else                     NullSpacePtr[j+i*NumMyRows()] = 0.0;
+
     NullSpaceToFree_ = NullSpacePtr; // this null space will be freed later
+
+    int Discarded = 0;
+    if( verbose_ ) {
+      cout << PrintMsg_ << "\tComputed eigenvalues:" << endl;
+      for( int i=0 ; i<NullSpaceDim ; ++i ) {
+	cout << PrintMsg_ << "\t" << std::setw(10) << RealEigenvalues[i]
+	     << " + " << std::setw(10) << ImagEigenvalues[i] << " i" << endl;
+	if( RealEigenvalues[i] == 0 ) ++Discarded;
+	if( ImagEigenvalues[i] == 0 ) ++Discarded;
+      }
+      cout << endl;
+    }
+
+    if( Discarded && verbose_ ) {
+      cout << PrintMsg_ << "Discarded " << Discarded << " eigenvectors" << endl;
+    }
     
-    ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,TotalNullSpaceDim,
+      
+    if( 0 ) { // debugging only, print all computed eigenvectors
+      for( int i=0 ; i<NumMyRows() ; ++i ) {
+	cout << i << ": ";
+	for( int j=0 ; j<TotalNullSpaceDim-Discarded ; ++j ) {
+	  cout << NullSpacePtr[i+j*NumMyRows()] << " ";
+	}
+	cout << endl;
+      }
+    }
+
+    
+    ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,TotalNullSpaceDim-Discarded,
 			       NullSpacePtr,
 			       NumMyRows());
-   
+
     delete [] RealEigenvalues;
     delete [] ImagEigenvalues;
     
@@ -1747,7 +2024,15 @@ void MultiLevelPreconditioner::SetNullSpace()
      exit( EXIT_FAILURE );
 #endif
 
+  } else {
+
+    cerr << ErrorMsg_ << "Option `null space: type' not recognized ("
+	 << option << ")" << endl
+	 << ErrorMsg_ << "It should be:" << endl
+	 << ErrorMsg_ << "<default vectors> / <pre-computed> / <enriched>" << endl;
+    exit( EXIT_FAILURE );
   }
+  
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1778,10 +2063,6 @@ void MultiLevelPreconditioner::SetEigenList()
   itemp =  List_.get(parameter, 20);
   EigenList_.set("eigen-analysis: length", itemp);
 
-  sprintf(parameter,"%seigen-analysis: normalize eigenvectors", Prefix_);
-  bool btemp =  List_.get(parameter, false);
-  EigenList_.set("eigen-analysis: normalize eigenvectors",btemp);
-
   // field of values:
 
   sprintf(parameter,"%sfield-of-values: tolerance", Prefix_);
@@ -1799,7 +2080,7 @@ void MultiLevelPreconditioner::SetEigenList()
   EigenList_.set("field-of-values: ", itemp);
 
   sprintf(parameter,"%sfield-of-values: print current status", Prefix_);
-  btemp =  List_.get(parameter, false);
+  bool btemp =  List_.get(parameter, false);
   EigenList_.set("field-of-values: print current status", btemp);
 
   // general output

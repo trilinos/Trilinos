@@ -11,6 +11,26 @@ class Epetra_MultiVector;
 class Epetra_Comm;
 class Epetra_CrsMatrix;
 
+#define ML_MEM_SIZE      20
+#define ML_MEM_INITIAL    0
+#define ML_MEM_FINAL      1
+#define ML_MEM_SMOOTHER   2
+#define ML_MEM_COARSE     3
+#define ML_MEM_HIERARCHY  4
+#define ML_MEM_PREC_FIRST 5
+#define ML_MEM_PREC_OTHER 6
+#define ML_MEM_TOT1       7
+#define ML_MEM_TOT2       8
+#define ML_MEM_INITIAL_USED    10
+#define ML_MEM_FINAL_USED      11
+#define ML_MEM_SMOOTHER_USED   12
+#define ML_MEM_COARSE_USED     13
+#define ML_MEM_HIERARCHY_USED  14
+#define ML_MEM_PREC_FIRST_USED 15
+#define ML_MEM_PREC_OTHER_USED 16
+#define ML_MEM_TOT1_USED       17
+#define ML_MEM_TOT2_USED       18
+
 #ifdef HAVE_ML_TRIUTILS
 #include "Trilinos_Util_CommandLineParser.h"
 #endif
@@ -397,6 +417,10 @@ private:
   //! Creates label for this object (printed out by AztecOO)
   int CreateLabel();
 
+  void PrintMem(char *fmt, int size, int, int);
+
+  void PrintMemoryUsage();
+  
   //@}
 
   //@{ \name Internal data
@@ -490,7 +514,11 @@ private:
   
   // other stuff for old ML's compatibility
   Epetra_CrsMatrix * RowMatrixAllocated_;
+
+  bool AnalyzeMemory_;
   
+  int memory_[ML_MEM_SIZE];
+
 }; // class MultiLevelPreconditioner
  
 } // namespace ML_Epetra
