@@ -25,7 +25,7 @@ Jonathan J. Hu $\quad$ and $\quad$
 Ray S. Tuminaro \\
 Computational Math \& Algorithms \\
 Sandia National Laboratories\\
-P.O.~Box 0969 \\
+P.O.~Box 0969, MS 9159\\
 Livermore, CA 94551-0969\\
 }
 
@@ -475,7 +475,7 @@ external reviews.
 %%%
 %%%
 
-\section{FAQ (SKIP THIS??)}
+\section{FAQ}
 \label{sec:faq}
 
 \begin{enumerate}
@@ -486,18 +486,30 @@ checking for Fortran 77 libraries...
 checking for dummy main to link with Fortran 77 libraries... unknown
 configure: error: linking to Fortran libraries from C fails
 See `config.log' for more details.
-\end{verbatim}
-{\bf Answer:} The most likely problem is an incorrect configure line option.   Check
-that all of the library and include locations that you've specified are
+\end{verbatim}~\\
+{\bf Answer:} The most likely problem is an incorrect configure line option.
+Check that all of the library and include locations that you've specified are
 correct.
+Look in config.log to find the exact error.
 %
 \item {\bf Question:} I am building with LAM under PH9 Linux, and
-  {\tt configure} complains that it cannot find {\tt mpi++.h}.
+  {\tt configure} complains that it cannot find {\tt mpi++.h}.\\
 {\bf Answer:} Add \verb!-DLAM_BUILDING! to your CXX parameters; for
 instance,
 \begin{verbatim}
-../configure --with-cxxflags='-DLAM_BUILDING
+../configure --with-cxxflags="-DLAM_BUILDING"
 \end{verbatim}
+%
+\item {\bf Question:} I'm getting warnings about non-modifiable left hand sides
+when using ML\_free.\\
+{\bf Answer:} ML\_free is a macro.  No casting of the argument is necessary or
+even correct.
+The argument to ML\_free is used within the
+macro source on the left hand side of a logical check.
+  \begin{enumerate}
+    \item[ ] Good: ML\_free(i);
+    \item[ ] Bad: ML\_free( (void *) i); (does not compile on SGI, for instance)
+  \end{enumerate}
 \end{enumerate}
 
 %%% ================================ %%%
