@@ -73,6 +73,7 @@ KLU_H = \
 	$(srcdir)/Amesos_Klu.h \
 	$(srcdir)/cbtf.h \
 	$(srcdir)/klu.h \
+	$(srcdir)/klu_dump.h \
 	$(srcdir)/klu_kernel.h
 KLU = \
 	$(srcdir)/btf.f \
