@@ -340,6 +340,7 @@ AC_SUBST(ac_aux_dir)
 ##
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export
 		src/Makefile
 		test/Makefile
 		test/BlockMap/Makefile
@@ -350,6 +351,7 @@ AC_CONFIG_FILES([
 		test/FECrsMatrix/Makefile
 		test/FEVbrMatrix/Makefile
 		test/FEVector/Makefile
+		test/FEVector/Makefile.include
 		test/ImportExport/Makefile
                 test/IntSerialDense/Makefile
 		test/Map/Makefile
