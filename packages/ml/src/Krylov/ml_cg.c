@@ -332,6 +332,21 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    }
    ML_free(colInd); ML_free(colVal);
    if ( totallength-Nbc < maxiter ) maxiter = totallength-Nbc;
+   /* if maxiter is zero we will assume that we have a diagonal matrix? */
+   if (maxiter == 0) {
+     if (totallength == 0) {
+       data->ML_eigen_max = 0.;
+       data->ML_eigen_min = 0.;
+     }
+     else {
+       data->ML_eigen_max = 1.;
+       data->ML_eigen_min = 1.;
+     }
+     if (r  != NULL) ML_free(r);
+     if (p  != NULL) ML_free(p);
+     if (ap != NULL) ML_free(ap);
+     return 1;
+   }
 
    /* ----------------------------------------------------------------*/
    /* compute initial residual vector and norm */
@@ -378,10 +393,11 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       ML_Operator_Apply(matrix, length, u, length, ap);
       for (i=0; i<length; i++) ap[i] = ap[i] * diag[i];
       sigma = ML_gdot(length, p, ap, comm);
-      if ( fabs(sigma) < 1.0E-20 )
+      if ( fabs(sigma) < 1.0E-12 )
       {
-         maxiter = its;
-         break;
+	alpha_array[its] = sigma;
+	maxiter = its + 1;
+	break;
       }
       alpha  = rho / sigma;
       alpha_array[its] = sigma;
@@ -418,8 +434,9 @@ if (maxiter == 0) {
       rnorm_array[i] = 1.0 / rnorm_array[i];
    }
    for ( i = 0; i < maxiter; i++ )
-      for ( j = 0; j < maxiter; j++ )
+     for ( j = 0; j < maxiter; j++ ) {
          Tmat[i][j] = Tmat[i][j] * rnorm_array[i] * rnorm_array[j];
+     }
    
    /* ----------------------------------------------------------------*/
    /* diagonalize T using Jacobi iteration */
