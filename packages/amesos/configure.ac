@@ -246,8 +246,8 @@ TAC_ARG_WITH_INCDIRS
   AC_SEARCH_LIBS(SuperLU_timer_,[superludist],,
   AC_MSG_ERROR([[Cannot find SuperLU Dist library, please specify additional locations using --with-libdirs]]))  
 #  AC_LANG_C
-  AC_SEARCH_LIBS(spSolve,[epetra_sparse],,
-  AC_MSG_ERROR([[Cannot find Kundert Sparse library, please specify additional locations using --with-libdirs]]))
+#  AC_SEARCH_LIBS(spSolve,[epetra_sparse],,
+#  AC_MSG_ERROR([[Cannot find Kundert Sparse library, please specify additional locations using --with-libdirs]]))
   AC_LANG_RESTORE
 
 

@@ -469,6 +469,7 @@ main(int argc, char **argv)
 	}
 
       flush( summary_file ) ; 
+      cerr << endl ; // Atlantis won't print anything without this.
       flush( cerr ) ; 
       }
     }

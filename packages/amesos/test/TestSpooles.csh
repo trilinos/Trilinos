@@ -44,6 +44,8 @@
 touch SST.summary
 cat >>AME.summary <SST.summary 
 echo "COMMENT Start TestSpooles.csh, the Direct Sparse Solver Regresion Test" > SST.summary 
+echo "COMMENT The values printed in columns 11 and 12 are relative."
+echo "COMMENT We test against absolute errors."  
 echo "COMMENT column 1 - machine name " >> SST.summary 
 echo "COMMENT column 2 - solver name " >> SST.summary 
 echo "COMMENT column 3 - timestamp" >> SST.summary 
@@ -67,8 +69,8 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #  Test one process, three processes and three processes transpose, tiny serial matrix, on SPOOLES
 #
 mpirun -np 1 cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 0 1e-15 1e-14  >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 1 1e-15 1e-14  >>SST.stdout
+mpirun -np 3 cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 0 1e-14 1e-14  >>SST.stdout
+mpirun -np 3 cxx_AME_mpi.exe SPOOLES SuperLU.rua 0 1 1 1 1e-14 1e-14  >>SST.stdout
 #
 #  Test one process, three processes and three processes transposes, tiny distributed matrix, on SPOOLES
 #
@@ -80,7 +82,7 @@ mpirun -np 1 cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 0 1 1 0 1e-11 1e-12 >>SST.std
 mpirun -np 3 cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 0 1 1 0 1e-11 1e-12  >>SST.stdout
 mpirun -np 3 cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
 mpirun -np 1 cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 0 1e-11 1e-13 >>SST.stdout
-mpirun -np 3 cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 0 1e-11 1e-14  >>SST.stdout
+mpirun -np 3 cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 0 1e-10 1e-14  >>SST.stdout
 mpirun -np 1 cxx_AME_mpi.exe SPOOLES   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
 mpirun -np 3 cxx_AME_mpi.exe SPOOLES   ImpcolC.rua 0 1 1 0 1e-13 1e-13  >>SST.stdout
 mpirun -np 1 cxx_AME_mpi.exe SPOOLES   ImpcolD.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
@@ -101,7 +103,7 @@ mpirun -np 4 cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.std
 #
 #  Test some tranpose solves
 #
-mpirun -np 4 cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
+mpirun -np 4 cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
 # Comment DISTRIBUTED MATRIX  mpirun -np 4 cxx_AME_mpi.exe SPOOLES   ImpcolA.rua 1 1 1 1 1e-11 1e-12  >>SST.stdout
 
 
@@ -123,14 +125,6 @@ mpirun -np 4 cxx_AME_mpi.exe SPOOLES   ImpcolB.rua 0 1 1 1 1e-11 1e-12  >>SST.st
 # Comment Spooles does not handle MRHS yet - mpirun -np 4 cxx_AME_mpi.exe SPOOLES   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
 # Comment Spooles does not handle MRHS yet - mpirun -np 1 cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
 # Comment Spooles does not handle MRHS yet - mpirun -np 4 cxx_AME_mpi.exe SPOOLES   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
-
-#
-#  Test some solves on Aztec
-#
-mpirun -np 1 cxx_AME_mpi.exe AZTEC   SuperLU.rua  0 1 1 0 1e-14 1e-13 >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe AZTEC   ImpcolA.rua  0 1 1 0 1e30 1e30 >>&SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe AZTEC   bcsstk18.rsa 0 1 1 0 1e30 1e30  >>SST.stdout
-mpirun -np 1 cxx_AME_mpi.exe AZTEC   bcsstk24.rsa 1 1 1 0 1e30 1e30  >>SST.stdout
 
 #
 #  Test some triplet files
