@@ -1014,7 +1014,7 @@ Optional Packages:
                           ${tac_with_amesos_slusdir}/SRC, )
   --with-amesos-superludir
                           Set SuperLU serial directory (default is
-                          ${tac_with_trilinos3pldir}/SuperLU, )
+                          ${tac_with_trilinos3pldir}/SuperLU_3.0, )
   --with-amesos-superlulib
                           Set SuperLU serial library (default is
                           ${tac_with_amesos_superludir}/libsuperlu.a, )
@@ -11817,7 +11817,7 @@ if test "${with_amesos_superludir+set}" = set; then
   withval="$with_amesos_superludir"
   tac_with_amesos_superludir=$withval
 else
-  tac_with_amesos_superludir=${tac_with_trilinos3pldir}/SuperLU
+  tac_with_amesos_superludir=${tac_with_trilinos3pldir}/SuperLU_3.0
 fi;
 
 

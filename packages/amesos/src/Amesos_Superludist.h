@@ -219,7 +219,7 @@ revert to their default values.
 
 
    */
-  int SetParameters( const Teuchos::ParameterList &ParameterList ) = 0 ;
+  int SetParameters( Teuchos::ParameterList &ParameterList ) ;
 
 
   //! Print various information about the parameters used by Superludist.

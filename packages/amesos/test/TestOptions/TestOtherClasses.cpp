@@ -1,6 +1,6 @@
 #include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Amesos_Factory.h"
+#include "Amesos.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -8,7 +8,7 @@
 #include "TestOtherClasses.h"
 #include "PerformOneSolveAndTest.h"
 
-int TestOtherClasses(AmesosClassType AmesosClass,
+int TestOtherClasses(char* AmesosClass,
 		     Epetra_CrsMatrix *& Amat, 
 		     bool transpose, 
 		     bool verbose, 

@@ -27,7 +27,7 @@
 // @HEADER
 
 //
-//  CallAmesosSuperludist.ccp shows how to call Amesos_Factory() with 
+//  CallAmesosSuperludist.ccp shows how to call Amesos::Create() with 
 //  Superludist, allowing the entries of A to change, but not the 
 //  non-zero pattern.
 //
@@ -38,7 +38,7 @@
 //  Where A" = A' except that A"(0,0) = A'(0,0) + 1 
 //
 #include "Amesos_config.h"
-#include "Amesos_Factory.h"
+#include "Amesos.h"
 #include "Teuchos_ParameterList.hpp"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -82,20 +82,17 @@ int SubTest(Epetra_Comm &Comm, Teuchos::ParameterList ParamList )
   Epetra_Vector x2(Map), x1(Map), x(Map), b(Map), residual(Map), temp(Map);
 
   //
-  //  Solve Ax = b using Amesos_KLU via the Amesos_Factory interface
+  //  Solve Ax = b using Amesos_KLU via the Amesos interface
   //
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
-  Amesos_Factory Afactory;
+  Amesos Afactory;
   //
   //  Note that Abase is created with an empty Problem, none of A, x or b
   //  have been specified at this point.  
-  //  Abase = Afactory.Create( AMESOS_UMFPACK, Problem, ParamList ) ; 
-  //  Abase = Afactory.Create( AMESOS_DSCPACK, Problem, ParamList ) ; 
-  Abase = Afactory.Create( AMESOS_SUPERLUDIST, Problem, ParamList ) ; 
-  //  Abase = Afactory.Create( AMESOS_KLU, Problem, ParamList ) ; 
+  Abase = Afactory.Create( "Amesos_Superludist", Problem ) ; 
   if ( Abase == 0 ) {
-    cout << " AMESOS_SUPERLUDIST not implemented " << endl ; 
+    cout << " Amesos_Superludist not implemented " << endl ; 
     exit(13);
   }
 

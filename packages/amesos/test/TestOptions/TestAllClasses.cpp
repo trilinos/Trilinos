@@ -27,7 +27,7 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
   
   if ( verbose) cout << " Testing UMFPACK " << endl ; 
 
-  errors += TestOtherClasses(AMESOS_UMFPACK,
+  errors += TestOtherClasses("Amesos_Umfpack",
 			     Amat, 
 			     transpose, 
 			     verbose, 
@@ -39,7 +39,7 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
   
   if ( verbose) cout << " Testing DSCPACK " << endl ; 
 
-  errors += TestOtherClasses(AMESOS_DSCPACK,
+  errors += TestOtherClasses("Amesos_Dscpack",
 			     Amat, 
 			     transpose, 
 			     verbose, 
@@ -51,7 +51,7 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
   
   if ( verbose) cout << " Testing SCALAPACK " << endl ; 
 
-  errors += TestOtherClasses(AMESOS_SCALAPACK,
+  errors += TestOtherClasses("Amesos_Scalapack",
 			     Amat, 
 			     transpose, 
 			     verbose, 
@@ -63,7 +63,7 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
   
   if ( verbose) cout << " Testing KLU " << endl ; 
 
-  errors += TestOtherClasses(AMESOS_KLU,
+  errors += TestOtherClasses("Amesos_Klu",
 			     Amat, 
 			     transpose, 
 			     verbose, 
@@ -75,7 +75,7 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
   
   if ( verbose) cout << " Testing MUMPS " << endl ; 
 
-  errors += TestOtherClasses(AMESOS_MUMPS,
+  errors += TestOtherClasses("Amesos_Mumps",
 			     Amat, 
 			     transpose, 
 			     verbose, 
@@ -87,12 +87,13 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
 
   if ( verbose) cout << " Testing SUPERLU " << endl ; 
 
-  errors += TestOtherClasses(AMESOS_SUPERLU,
+  errors += TestOtherClasses("Amesos_Superlu",
 			     Amat, 
 			     transpose, 
 			     verbose, 
 			     Levels, 
 			     Rcond, 
+
 			     maxrelerror, 
 			     maxrelresidual, 
 			     NumTests ) ;

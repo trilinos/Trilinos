@@ -1,9 +1,8 @@
 #include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Amesos_Factory.h"
 #include "Epetra_CrsMatrix.h"
 
-int PerformOneSolveAndTest(AmesosClassType AmesosClass,
+int PerformOneSolveAndTest(char* AmesosClass,
 			   const Epetra_Comm &Comm, 
 			   bool transpose, 
 			   bool verbose, 

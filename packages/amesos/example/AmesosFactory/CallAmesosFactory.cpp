@@ -34,7 +34,7 @@
 //  Solve Ax2 = x1
 //
 #include "Amesos_config.h"
-#include "Amesos_Factory.h"
+#include "Amesos.h"
 #include "Teuchos_ParameterList.hpp"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -84,11 +84,11 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList ParamList ;
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
-  Amesos_Factory Afactory;
+  Amesos Afactory;
   //
   //  Note that Abase is created with an empty Problem, none of A, x or b
   //  have been specified at this point.  
-  Abase = Afactory.Create( AMESOS_MUMPS, Problem, ParamList ) ; 
+  Abase = Afactory.Create( "Amesos_Mumps", Problem ) ; 
   if ( Abase == 0 ) {
     cout << " AMESOS_KLU not implemented " << endl ; 
     exit(13);

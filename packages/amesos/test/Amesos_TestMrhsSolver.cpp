@@ -330,7 +330,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_DSCPACK
     } else if ( SparseSolver == DSCPACK ) { 
       Teuchos::ParameterList ParamList ;
-      Amesos_Dscpack dscpack( Problem, ParamList ) ; 
+      Amesos_Dscpack dscpack( Problem ) ; 
 
       bool factor = true; 
       for ( int i= 0 ; i < numsolves ; i++ ) { 
@@ -355,7 +355,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_UMFPACK
     } else if ( SparseSolver == UMFPACK ) { 
       Teuchos::ParameterList ParamList ;
-      Amesos_Umfpack umfpack( Problem, ParamList ) ; 
+      Amesos_Umfpack umfpack( Problem ) ; 
       EPETRA_CHK_ERR( umfpack.SetUseTranspose( transpose ) ); 
 
       bool factor = true; 
@@ -381,7 +381,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_SUPERLU
     } else if ( SparseSolver == SUPERLU ) { 
       Teuchos::ParameterList ParamList ;
-      Amesos_Superlu superlu( Problem, ParamList ) ; 
+      Amesos_Superlu superlu( Problem ) ; 
       EPETRA_CHK_ERR( superlu.SetUseTranspose( transpose ) ); 
 
       bool factor = true; 
@@ -434,7 +434,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_KLU
     } else if ( SparseSolver == KLU ) { 
       Teuchos::ParameterList ParamList ;
-      Amesos_Klu klu( Problem, ParamList ) ; 
+      Amesos_Klu klu( Problem ) ; 
       EPETRA_CHK_ERR( klu.SetUseTranspose( transpose ) ); 
 
       bool factor = true; 
@@ -462,7 +462,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_SCALAPACK
     } else if ( SparseSolver == SCALAPACK ) { 
       Teuchos::ParameterList ParamList ;
-      Amesos_Scalapack scalapack( Problem, ParamList ) ; 
+      Amesos_Scalapack scalapack( Problem ) ; 
       EPETRA_CHK_ERR( scalapack.SetUseTranspose( transpose ) ); 
 
       bool factor = true; 
@@ -490,7 +490,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_MUMPS
     } else if ( SparseSolver == MUMPS ) { 
       Teuchos::ParameterList ParamList ;
-      Amesos_Mumps mumps( Problem, ParamList ) ; 
+      Amesos_Mumps mumps( Problem ) ; 
       EPETRA_CHK_ERR( mumps.SetUseTranspose( transpose ) ); 
 
       bool factor = true; 
@@ -516,7 +516,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_SUPERLUDIST
     } else if ( SparseSolver == SUPERLUDIST ) { 
       Teuchos::ParameterList ParamList ;
-      Amesos_Superludist superludist( Problem, ParamList ) ; 
+      Amesos_Superludist superludist( Problem ) ; 
       EPETRA_CHK_ERR( superludist.SetUseTranspose( transpose ) ); 
       EPETRA_CHK_ERR( superludist.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( superludist.NumericFactorization(  ) ); 

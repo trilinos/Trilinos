@@ -175,9 +175,13 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   // Create uniform distributed map
   Epetra_Map map(readMap->NumGlobalElements(), 0, Comm);
 
-  Epetra_Export exporter(*readMap, map);
-  Epetra_Export exporter2(*readMap, map);
   Epetra_CrsMatrix A(Copy, map, 0);
+
+  const Epetra_Map &OriginalMap = serialA->RowMatrixRowMap() ; 
+  assert( OriginalMap.SameAs(*readMap) ); 
+  Epetra_Export exporter(OriginalMap, map);
+  Epetra_Export exporter2(OriginalMap, map);
+  Epetra_Export MatrixExporter(OriginalMap, map);
   Epetra_CrsMatrix AwithDiag(Copy, map, 0);
 
   Epetra_Vector x(map);
@@ -283,7 +287,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #ifdef HAVE_AMESOS_SUPERLUDIST
     } else if ( SparseSolver == SUPERLUDIST ) {
 	Teuchos::ParameterList ParamList ;
-	Amesos_Superludist A_Superludist( Problem, ParamList ) ; 
+	Amesos_Superludist A_Superludist( Problem ) ; 
 
   //ParamList.setParameter( "Redistribute", true );
   //ParamList.setParameter( "AddZeroToDiag", true );
@@ -291,6 +295,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   //SuperludistParams.setParameter( "ReuseSymbolic", true );
   //SuperludistParams.setParameter( "MaxProcesses", 100 );
 
+	EPETRA_CHK_ERR( A_Superludist.SetParameters( ParamList ) ); 
 	EPETRA_CHK_ERR( A_Superludist.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_Superludist.SymbolicFactorization(  ) ); 
 	EPETRA_CHK_ERR( A_Superludist.NumericFactorization(  ) ); 
@@ -311,9 +316,8 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     } else if ( SparseSolver == DSCPACK ) {
       
       Teuchos::ParameterList ParamList ;
-      //      (void) ParamList.sublist("Bogus");   // At one point, I thought that this kept parameter list from crashing when run on paunchy with Purify
 
-      Amesos_Dscpack A_dscpack( Problem, ParamList ) ; 
+      Amesos_Dscpack A_dscpack( Problem ) ; 
       EPETRA_CHK_ERR( A_dscpack.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( A_dscpack.NumericFactorization(  ) ); 
       EPETRA_CHK_ERR( A_dscpack.Solve(  ) ); 
@@ -322,7 +326,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     } else if ( SparseSolver == MUMPS ) {
 
 	Teuchos::ParameterList ParamList ;
-	Amesos_Mumps A_mumps( Problem, ParamList ) ; 
+	Amesos_Mumps A_mumps( Problem ) ; 
 	EPETRA_CHK_ERR( A_mumps.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_mumps.SymbolicFactorization(  ) ); 
 	EPETRA_CHK_ERR( A_mumps.NumericFactorization(  ) ); 
@@ -333,7 +337,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     } else if ( SparseSolver == SUPERLU ) {
 
 	Teuchos::ParameterList ParamList ;
-	Amesos_Superlu A_superlu( Problem, ParamList ) ; 
+	Amesos_Superlu A_superlu( Problem ) ; 
 	EPETRA_CHK_ERR( A_superlu.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_superlu.SymbolicFactorization(  ) ); 
 	EPETRA_CHK_ERR( A_superlu.NumericFactorization(  ) ); 
@@ -344,7 +348,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     } else if ( SparseSolver == SCALAPACK ) {
 
 	Teuchos::ParameterList ParamList ;
-	Amesos_Scalapack A_scalapack( Problem, ParamList ) ; 
+	Amesos_Scalapack A_scalapack( Problem ) ; 
 	EPETRA_CHK_ERR( A_scalapack.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_scalapack.SymbolicFactorization(  ) ); 
 	EPETRA_CHK_ERR( A_scalapack.NumericFactorization(  ) ); 
@@ -354,7 +358,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     } else if ( SparseSolver == UMFPACK ) {
 
 	Teuchos::ParameterList ParamList ;
-	Amesos_Umfpack A_umfpack( Problem, ParamList ) ; 
+	Amesos_Umfpack A_umfpack( Problem ) ; 
 	EPETRA_CHK_ERR( A_umfpack.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_umfpack.SymbolicFactorization(  ) ); 
 	EPETRA_CHK_ERR( A_umfpack.NumericFactorization(  ) ); 
@@ -364,7 +368,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     } else if ( SparseSolver == KLU ) {
 
 	Teuchos::ParameterList ParamList ;
-	Amesos_Klu A_klu( Problem, ParamList ) ; 
+	Amesos_Klu A_klu( Problem ) ; 
 	EPETRA_CHK_ERR( A_klu.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 
 	EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 

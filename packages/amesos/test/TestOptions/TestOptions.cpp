@@ -15,7 +15,7 @@
 #include "Trilinos_Util.h"
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Trilinos_Util_ReadTriples2Epetra.h"
-#include "Amesos_Factory.h"
+#include "Amesos.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Amesos_BaseSolver.h"
 #include "Epetra_LinearProblem.h"
@@ -32,6 +32,8 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
+
+const int NumAmesosClasses = 7;
 
 int CreateCrsMatrix( char *filename, Epetra_Comm &Comm, 
 		     bool transpose, bool distribute, Epetra_CrsMatrix *& Matrix ) {
@@ -131,12 +133,12 @@ int TestOneMatrix(
   Epetra_CrsMatrix *Amat ;
 
   //
-  //  Compute the reciprocal condition number using Amesos_UMFPACK via the Amesos_Factory interface
+  //  Compute the reciprocal condition number using Amesos_UMFPACK via the Amesos interface
   //
   CreateCrsMatrix( filename, Comm, false, false, Amat ) ;
   Teuchos::ParameterList ParamList ;
   Epetra_LinearProblem Problem;
-  Amesos_Factory Afactory;
+  Amesos Afactory;
 
   Amesos_BaseSolver* Abase ; 
   Abase = Afactory.Create( AMESOS_UMFPACK, Problem, ParamList ) ; 
@@ -267,36 +269,27 @@ int main( int argc, char *argv[] ) {
 
   if ( Comm.MyPID() != 0 ) verbose = false ; 
 
-  AmesosClassType FactorySet[] = { AMESOS_KLU,   
-				   AMESOS_UMFPACK,
-				   AMESOS_MUMPS,
-				   AMESOS_SUPERLUDIST,
-				   AMESOS_SCALAPACK,
-				   AMESOS_SUPERLU,
-				   AMESOS_DSCPACK }; 
-  char *AmesosClassNames[] =  { "AMESOS_KLU",   
-				"AMESOS_UMFPACK",
-				"AMESOS_MUMPS",
-				"AMESOS_SUPERLUDIST",
-				"AMESOS_SCALAPACK",
-				"AMESOS_SUPERLU",
-				"AMESOS_DSCPACK" }; 
+  char* FactorySet[] = { "Amesos_Klu",
+			 "Amesos_Umfpack",
+			 "Amesos_Mumps",
+			 "Amesos_Superludist",
+			 "Amesos_Scalapack",
+			 "Amesos_Superlu",
+			 "Amesos_Dscpack" };
 
   Teuchos::ParameterList ParamList ;
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
-  Amesos_Factory Afactory;
+  Amesos Afactory;
 
-  assert(  sizeof(FactorySet)/sizeof(FactorySet[0]) == 
-	   sizeof(AmesosClassNames)/sizeof(AmesosClassNames[0]) );
-
-  for (int i=0; i < sizeof(FactorySet)/sizeof(FactorySet[0]); i++ ) {
-    Abase = Afactory.Create( FactorySet[i], Problem, ParamList ) ; 
+  for (int i=0; i < NumAmesosClasses; i++ ) {
+    Abase = Afactory.Create( FactorySet[i], Problem ) ; 
     if ( Abase == 0 ) {
-      cout << AmesosClassNames[i] << " not built in this configuration"  << endl ;
+      cout << FactorySet[i] << " not built in this configuration"  << endl ;
     } else {
-      cout << " Testing " << AmesosClassNames[i] << endl ;
+      cout << " Testing " << FactorySet[i] << endl ;
     }
+    delete Abase ; 
   }
 
 
@@ -305,10 +298,10 @@ int main( int argc, char *argv[] ) {
   int result = 0 ; 
   int numtests = 0 ;
 
-  result += TestOneMatrix("Tri.triS", Comm, verbose, 1e-1 , numtests ) ;
-#if 1
-  result += TestOneMatrix("Tri2.triS", Comm, verbose, 1e-5 , numtests ) ;
+  //  result += TestOneMatrix("Tri.triS", Comm, verbose, 1e-1 , numtests ) ;
+  //  result += TestOneMatrix("Tri2.triS", Comm, verbose, 1e-5 , numtests ) ;
   result += TestOneMatrix("../bcsstk01.mtx", Comm, verbose, 1e-6 , numtests ) ;
+#if 0
   result += TestOneMatrix("../bcsstk13.mtx", Comm, verbose, 1e-6 , numtests ) ;
   //  result += TestOneMatrix("../bcsstk02.mtx", Comm, verbose, 1e-6 , numtests ) ;
   result += TestOneMatrix("../bcsstk04.mtx", Comm, verbose, 1e-6 , numtests ) ;

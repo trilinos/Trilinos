@@ -1,7 +1,6 @@
-#include "AmesosClassType.h"
 #include "Epetra_CrsMatrix.h"
  
-int TestOtherClasses(AmesosClassType AmesosClass,
+int TestOtherClasses(char* AmesosClass,
 		     Epetra_CrsMatrix *& Amat, 
 		     bool transpose, 
 		     bool verbose, 

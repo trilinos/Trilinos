@@ -1,6 +1,6 @@
 #include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Amesos_Factory.h"
+#include "Amesos.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -48,7 +48,7 @@
 //  call NumericFactorization() between the second and third call to Solve. 
 //   
 
-int PerformOneSolveAndTest(AmesosClassType AmesosClass,
+int PerformOneSolveAndTest(char* AmesosClass,
 			   const Epetra_Comm &Comm, 
 			   bool transpose, 
 			   bool verbose, 
@@ -85,9 +85,9 @@ int PerformOneSolveAndTest(AmesosClassType AmesosClass,
 
   Epetra_LinearProblem Problem;
   Amesos_BaseSolver* Abase ; 
-  Amesos_Factory Afactory;
+  Amesos Afactory;
 
-  Abase = Afactory.Create( AmesosClass, Problem, ParamList ) ; 
+  Abase = Afactory.Create( AmesosClass, Problem ) ; 
 
   relerror = 0 ; 
   relresidual = 0 ; 
@@ -169,6 +169,9 @@ int PerformOneSolveAndTest(AmesosClassType AmesosClass,
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
 	EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
+	
+	const Teuchos::ParameterList* NullList = (Teuchos::ParameterList*) 0 ;  
+	EPETRA_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
 	EPETRA_CHK_ERR( Abase->Solve(  ) ); 
 	
       }

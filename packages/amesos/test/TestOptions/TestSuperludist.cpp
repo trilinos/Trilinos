@@ -1,6 +1,6 @@
 #include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Amesos_Factory.h"
+#include "Amesos.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -76,7 +76,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
     SuperludistParams.set( "MaxProcesses", 2 );
     //  ParamList.print( cerr, 10 ) ; 
     
-    NumErrors += PerformOneSolveAndTest(AMESOS_SUPERLUDIST,
+    NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
 					Comm, 
 					transpose, 
 					verbose,
@@ -106,7 +106,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
     SuperludistParams.set( "MaxProcesses", 2 );
     //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest(AMESOS_SUPERLUDIST,
+    NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
 					Comm, 
 					transpose, 
 					verbose,
