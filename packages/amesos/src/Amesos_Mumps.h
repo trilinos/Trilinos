@@ -448,6 +448,8 @@ protected:
   Epetra_CrsMatrix * CrsSchurComplement_;
   Epetra_SerialDenseMatrix * DenseSchurComplement_;
 
+  int MyPID_;
+  int NumProcs_;
   int verbose_;
   int debug_;
   
