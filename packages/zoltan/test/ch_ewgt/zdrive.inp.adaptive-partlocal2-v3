@@ -1,0 +1,7 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters       = edge_weight_dim=1
+Zoltan Parameters       = parmetis_method=adaptiverepart
+File Type		= Chaco
+File Name		= ewgt
+Parallel Disk Info	= number=0
+test local partitions   = 2

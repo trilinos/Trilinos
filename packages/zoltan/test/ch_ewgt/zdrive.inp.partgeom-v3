@@ -1,5 +1,5 @@
 Decomposition Method 	= parmetis
-Zoltan Parameters	= comm_weight_dim=1
+Zoltan Parameters	= edge_weight_dim=1
 Zoltan Parameters       = parmetis_method=partgeom
 File Type		= Chaco
 File Name		= ewgt
