@@ -158,7 +158,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   //@}
   
   //@{ \name Insertion/Replace/SumInto methods.
-	
+
+  Epetra_CrsMatrix& operator=(const Epetra_CrsMatrix& src);
+
   //! Initialize all values in the matrix with constant value.
   /*!
     \param In
@@ -872,8 +874,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	int TransformToLocal(const Epetra_Map* DomainMap, const Epetra_Map* RangeMap);
 
   //@}
-	
-	
+
+
  protected:
 	bool Allocated() const {return(Allocated_);};
 	int SetAllocated(bool Flag) {Allocated_ = Flag; return(0);};
@@ -903,12 +905,14 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 										 int& LenExports, char*& Exports, int& LenImports, 
 										 char*& Imports, 
 										 int& SizeOfPacket, Epetra_Distributor& Distor);
-  
+
   int UnpackAndCombine(const Epetra_SrcDistObject& Source, 
-											 int NumImportIDs, int* ImportLIDs, 
-											 char* Imports, int& SizeOfPacket, 
-											 Epetra_Distributor& Distor, Epetra_CombineMode CombineMode);
-  
+		       int NumImportIDs, int* ImportLIDs, 
+		       char* Imports, int& SizeOfPacket, 
+		       Epetra_Distributor& Distor, Epetra_CombineMode CombineMode);
+
+  void DeleteMemory();
+
   Epetra_CrsGraph* Graph_;
   bool Allocated_;
   bool StaticGraph_;

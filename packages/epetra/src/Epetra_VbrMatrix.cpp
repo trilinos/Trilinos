@@ -124,23 +124,48 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix & Source)
     Epetra_BLAS(),
     Graph_(Source.Graph_),
     Allocated_(Source.Allocated_),
-    StaticGraph_(Source.StaticGraph_),
+    StaticGraph_(true),
     UseTranspose_(Source.UseTranspose_),
-    NumMyBlockRows_(Source.NumMyBlockRows_),
+    NumMyBlockRows_(0),
+    HavePointObjects_(false),
     CV_(Copy) {
   InitializeDefaults();
-  if (!Source.StaticGraph()) Graph_ = new Epetra_CrsGraph(Source.Graph());
-  assert(Allocate()==0);
+  operator=(Source);
+}
+
+//==============================================================================
+Epetra_VbrMatrix& Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix& src)
+{
+  if (this == &src) {
+    return(*this);
+  }
+
+  DeleteMemory();
+
+  Graph_ = src.Graph_;
+  Allocated_ = src.Allocated_;
+  StaticGraph_ = src.StaticGraph_;
+  UseTranspose_ = src.UseTranspose_;
+  NumMyBlockRows_ = src.NumMyBlockRows_;
+  CV_ = src.CV_;
+
+  InitializeDefaults();
+  if (!src.StaticGraph()) {
+    Graph_ = new Epetra_CrsGraph(src.Graph());
+  }
+
+  assert( Allocate() == 0 );
 
   int i, j;
   
   for (i=0; i<NumMyBlockRows_; i++) {
     int NumBlockEntries = NumBlockEntriesPerRow_[i];
     for (j=0; j < NumBlockEntries; j++) {
-      Entries_[i][j] = new Epetra_SerialDenseMatrix(*(Source.Entries_[i][j]));
+      Entries_[i][j] = new Epetra_SerialDenseMatrix(*(src.Entries_[i][j]));
     }
   }
 
+  return( *this );
 }
 
 //==============================================================================
@@ -231,8 +256,14 @@ int Epetra_VbrMatrix::Allocate() {
   return(0);
 }
 //==============================================================================
-Epetra_VbrMatrix::~Epetra_VbrMatrix(){
+Epetra_VbrMatrix::~Epetra_VbrMatrix()
+{
+  DeleteMemory();
+}
 
+//==============================================================================
+void Epetra_VbrMatrix::DeleteMemory()
+{
   int i;
 
   for (i=0; i<NumMyBlockRows_; i++) {
@@ -285,7 +316,6 @@ Epetra_VbrMatrix::~Epetra_VbrMatrix(){
   Allocated_ = false;
 
   if (!StaticGraph())   delete Graph_; // We created the graph, so must delete it.
-  
 }
 
 //==============================================================================

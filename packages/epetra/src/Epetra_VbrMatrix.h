@@ -163,6 +163,8 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
   
   //@{ \name Insertion/Replace/SumInto methods.
 
+  Epetra_VbrMatrix& operator=(const Epetra_VbrMatrix& src);
+
   //! Initialize all values in graph of the matrix with constant value.
   /*!
     \param In
@@ -1067,17 +1069,18 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 
   //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
 
-		//! Use BlockColMap() instead. 
+    //! Use BlockColMap() instead. 
     const Epetra_BlockMap & BlockImportMap() const {return(Graph_->ImportMap());};
 
-		//! Use FillComplete() instead.
-		int TransformToLocal();
+    //! Use FillComplete() instead.
+    int TransformToLocal();
 		
-		//! Use FillComplete(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap) instead.
-		int TransformToLocal(const Epetra_BlockMap* DomainMap, const Epetra_BlockMap* RangeMap);
-		//@}
+    //! Use FillComplete(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap) instead.
+    int TransformToLocal(const Epetra_BlockMap* DomainMap, const Epetra_BlockMap* RangeMap);
+    //@}
 
  protected:
+    void DeleteMemory();
     bool Allocated() const {return(Allocated_);};
     int SetAllocated(bool Flag) {Allocated_ = Flag; return(0);};
     Epetra_SerialDenseMatrix *** Values() const {return(Entries_);};

@@ -128,17 +128,40 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix)
     All_Values_(0),
     NormInf_(-1.0),
     NormOne_(-1.0),
-    NumMyRows_(Matrix.NumMyRows_),
+    NumMyRows_(0),
     ImportVector_(0),
     ExportVector_(0),
     CV_(Copy)
 {
-  Graph_ = new Epetra_CrsGraph(Matrix.Graph());
+  operator=(Matrix);
+}
+
+//==============================================================================
+Epetra_CrsMatrix& Epetra_CrsMatrix::operator=(const Epetra_CrsMatrix& src)
+{
+  if (this == &src) {
+    return( *this );
+  }
+
+  DeleteMemory();
+
+  Allocated_ = src.Allocated_;
+  UseTranspose_ = src.UseTranspose_;
+  NormInf_ = -1.0;
+  NormOne_ = -1.0;
+
+  NumMyRows_ = src.NumMyRows_;
+
+  CV_ = src.CV_;
+
+  Graph_ = new Epetra_CrsGraph(src.Graph());
   Allocate();
   for (int i=0; i<NumMyRows_; i++) {
     int NumEntries = NumEntriesPerRow_[i];
-    for (int j=0; j< NumEntries; j++) Values_[i][j] = Matrix.Values_[i][j];
+    for (int j=0; j< NumEntries; j++) Values_[i][j] = src.Values_[i][j];
   }
+
+  return( *this );
 }
 
 //==============================================================================
@@ -195,8 +218,14 @@ int Epetra_CrsMatrix::Allocate() {
   return(0);
 }
 //==============================================================================
-Epetra_CrsMatrix::~Epetra_CrsMatrix(){
+Epetra_CrsMatrix::~Epetra_CrsMatrix()
+{
+  DeleteMemory();
+}
 
+//==============================================================================
+void Epetra_CrsMatrix::DeleteMemory()
+{
   int i;
 
   if (CV_==Copy) {
