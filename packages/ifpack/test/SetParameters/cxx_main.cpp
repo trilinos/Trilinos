@@ -35,6 +35,7 @@
 
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_Map.h>
 
 #ifdef HAVE_IFPACK_TEUCHOS
 #include <Teuchos_ParameterList.hpp>
