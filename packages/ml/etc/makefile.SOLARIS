@@ -1,6 +1,6 @@
 ARCH_FLAGS=-fast
 CC=cc 
-FC=cc 
+FC=f77
 RANLIB=ranlib
 LINKER=$(CC)
 ARCH_LIBS=-lmalloc -lM77 -lF77 -lsunmath -lnsl -lsocket
