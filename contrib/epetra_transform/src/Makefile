@@ -25,6 +25,7 @@ EPETRA_TRANSFORM_CC = EDT_MultiVector_View.cpp \
                       EDT_CrsGraph_Overlap.cpp \
                       EDT_CrsGraph_Transpose.cpp \
                       EDT_CrsGraph_MapColoring.cpp \
+                      EDT_CrsGraph_MapColoringIndex.cpp \
                       EDT_CrsGraph_View.cpp \
                       EDT_CrsMatrix_View.cpp 
 #                      EDT_CrsGraph_Zoltan.cpp \
