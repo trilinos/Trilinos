@@ -27,53 +27,90 @@
 // ************************************************************************
 //@HEADER
 
-#ifdef HAVE_MPI
-
 #include "LOCA_EpetraNew_Interface_xyzt.H"
+#include "EpetraExt_MatrixMatrix.h"
   
+#ifdef HAVE_MPI
+#ifdef HAVE_NOX_EPETRAEXT
+
 using namespace  LOCA::EpetraNew::Interface;
 
 xyzt::xyzt(NOX::EpetraNew::Interface::Required &iReq_, NOX::EpetraNew::Interface::Jacobian &iJac_,
-       Epetra_Vector &splitVec_, Epetra_RowMatrix &splitJac_, Epetra_MpiComm &globalComm_,
+       Epetra_Vector &splitVec_, Epetra_CrsMatrix &splitJac_, Epetra_MpiComm &globalComm_,
        int replica_) : iReq(iReq_), iJac(iJac_), splitVec(splitVec_), splitJac(splitJac_),
-       globalComm(globalComm_), replica(replica_), solution(0), jacobian(0)
+       globalComm(globalComm_), replica(replica_),
+       splitRes(splitVec_), solution(0), jacobian(0), stencil(0), numReplicas(-1)
 {
-  cout << " In xyzt constructor: global rank " << globalComm.MyPID() 
-       << " and total procs " << globalComm.NumProc()<< endl;
-  cout << "                      local  rank " << splitVec.Comm().MyPID() 
-       << " and local procs " << splitVec.Comm().NumProc()<< endl;
-    
-   // Bogus redundant calcs for now
-//   solution = new Epetra_Vector(splitVec);
-//   jacobian = new Epetra_RowMatrix(splitJac);
+  numReplicas = globalComm.NumProc() / splitVec.Comm().NumProc();
+    cout << " In xyzt constructor: NumReplicas =  " << numReplicas << endl;
+
+  // Allocate and fill stencil for time integratror
+
+   std::vector<int> sten(1);
+   sten[0]=0;
+
+   cout << "xyztCalling  EpetraExt::BlockCrsMatrix" << endl;
+
+   // Construct global block matrix graph from split matrix and stencil
+   jacobian = new EpetraExt::BlockCrsMatrix(splitJac.Graph(), sten, replica, globalComm);
+
+   cout << "xyztCalling  EpetraExt::BlockVector" << endl;
+   // Construct global solution vector, and fill with initial guess
+   solution = new EpetraExt::BlockVector(splitVec.Map(), jacobian->RowMap());
+
+   solution->Block() = splitVec;
+
+   cout << "Ending xyzt constructor" << endl;
 }
 
 xyzt::~xyzt()
 {
-//  delete solution;
-//  delete jacobian;
+  delete solution;
+  delete jacobian;
+  delete stencil;
 }
 
 bool xyzt::computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 {
-  return iReq.computeF(x, F, fillFlag);
+
+  // Copy owned parts of vector from vector with global map to one with split map
+  solution->Block() = x;
+  splitVec = F;
+
+  bool stat = iReq.computeF(solution->Block(),  splitVec, fillFlag);
+
+  // Copy residual vector
+  F = splitVec;
+
+  return stat;
 }
 
 bool xyzt::computeJacobian(const Epetra_Vector& x)
 {
-  return iJac.computeJacobian(x);
+  /*
+  const Epetra_Vector& splitX =  (dynamic_cast<const EpetraExt::BlockVector&>(x)).Block();
+
+  // This will load Jacobian for this time step into splitJac
+  bool stat =  iJac.computeJacobian(splitX);
+  */
+
+  solution->Block() = x;
+  bool stat =  iJac.computeJacobian( solution->Block() );
+
+  EpetraExt::MatrixMatrix::Add(splitJac, false, 1.0, jacobian->Block(0), 0.0);
+
+  return stat;
 }
 
-Epetra_Vector& xyzt::getSolution()
+EpetraExt::BlockVector& xyzt::getSolution()
 {
-    return  splitVec;
-//  return  solution; 
+  return  *solution; 
 }
 
-Epetra_RowMatrix& xyzt::getJacobian()
+EpetraExt::BlockCrsMatrix& xyzt::getJacobian()
 {
-  return  splitJac; 
-  //return  jacobian; 
+  return  *jacobian; 
 }
 
+#endif
 #endif

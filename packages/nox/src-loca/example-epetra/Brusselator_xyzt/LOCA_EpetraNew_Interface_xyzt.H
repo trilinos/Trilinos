@@ -30,19 +30,23 @@
 #ifndef LOCA_EPETRANEW_INTERFACE_XYZT_H
 #define LOCA_EPETRANEW_INTERFACE_XYZT_H
 
-#ifdef HAVE_MPI
-
-#include <iostream>
-#include "Epetra_Vector.h"
-#include "Epetra_Operator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_DistObject.h"
-#include "Epetra_MpiComm.h"
-
 #include "NOX_Common.H"
 #include "NOX_EpetraNew_Interface_Required.H"
 #include "NOX_EpetraNew_Interface_Jacobian.H"
   
+#ifdef HAVE_MPI
+#ifdef HAVE_NOX_EPETRAEXT
+
+#include <iostream>
+#include "Epetra_Vector.h"
+#include "Epetra_Operator.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_DistObject.h"
+#include "Epetra_MpiComm.h"
+
+#include "EpetraExt_BlockVector.h"
+#include "EpetraExt_BlockCrsMatrix.h"
+
 namespace LOCA {
 namespace EpetraNew {
 
@@ -72,7 +76,7 @@ public:
 
   //! Constructor
   xyzt(NOX::EpetraNew::Interface::Required &iReq,  NOX::EpetraNew::Interface::Jacobian &iJac,
-     Epetra_Vector &splitVec, Epetra_RowMatrix &splitJac, Epetra_MpiComm &globalComm,
+     Epetra_Vector &splitVec, Epetra_CrsMatrix &splitJac, Epetra_MpiComm &globalComm,
      int replica);
 
   //! Destructor
@@ -84,27 +88,32 @@ public:
   
   virtual bool computeJacobian(const Epetra_Vector& x);
 
-  virtual Epetra_Vector& getSolution();
-  virtual Epetra_RowMatrix& getJacobian();
+  virtual EpetraExt::BlockVector& getSolution();
+  virtual EpetraExt::BlockCrsMatrix& getJacobian();
 
 private:
+  //  void createGlobalVector();
   
   // Info from split (3D) problem
   NOX::EpetraNew::Interface::Required &iReq;
   NOX::EpetraNew::Interface::Jacobian &iJac;
   Epetra_Vector& splitVec;
-  Epetra_RowMatrix& splitJac;
+  Epetra_CrsMatrix& splitJac;
   Epetra_MpiComm& globalComm;
   int replica;
 
   // xyzt objects created in constructor
-  Epetra_RowMatrix* jacobian;
-  Epetra_Vector* solution;
+  Epetra_Vector& splitRes;
+  EpetraExt::BlockCrsMatrix* jacobian;
+  EpetraExt::BlockVector* solution;
+  int numReplicas;
+  std::vector<int>* stencil;
 
 };
 } // namespace Interface
 } // namespace EpetraNew
 } // namespace LOCA
 
+#endif
 #endif
 #endif

@@ -68,6 +68,7 @@
 // NOX Objects
 #include "NOX.H"
 #include "NOX_Epetra.H"
+#include "NOX_Common.H"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -98,8 +99,10 @@
 #include "Problem_Interface.H" // Interface file to NOX
 #include "Brusselator.H"              
 
+#ifdef HAVE_NOX_EPETRAEXT
 // Comment out following line for usual implicit time stepping on all procs
-//#define DO_XYZT 1
+#define DO_XYZT 1
+#endif
 
 #ifdef DO_XYZT
 #include "LOCA_EpetraNew_Interface_xyzt.H"              
@@ -122,12 +125,11 @@ int main(int argc, char *argv[])
   // MPI MANIPULATION FOR XYZT PROBLEMS
  
   int ierrmpi, size, rank;
-  int ranksplit;
+  int ranksplit, sizesplit;
   MPI_Comm split_MPI_Comm;
 
   ierrmpi = MPI_Comm_size(MPI_COMM_WORLD, &size);
   ierrmpi = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  cout << "XYZT Initially: size = " << size << "  rank  =" << rank << endl;
 
   // Divide in chunks of spatialProcs = 2
 
@@ -142,11 +144,11 @@ int main(int argc, char *argv[])
 
   ierrmpi =  MPI_Comm_split(MPI_COMM_WORLD, replica, rank, &split_MPI_Comm);
 
-  ierrmpi = MPI_Comm_size(split_MPI_Comm, &size);
+  ierrmpi = MPI_Comm_size(split_MPI_Comm, &sizesplit);
   ierrmpi = MPI_Comm_rank(split_MPI_Comm, &ranksplit);
 
-  cout << "XYZT Split: size = " << size << "(replica "<< replica <<
-	  ")    rank  =" << ranksplit << "(was "<<rank<<")  " << endl;
+  cout << "XYZT: Global rank(size) = " << rank << "(" << size <<  "), replica = " << replica
+       << ":  rank(size) = " << ranksplit << "("<< sizesplit << ")" << endl;
 
   Epetra_MpiComm Comm(split_MPI_Comm);
   Epetra_MpiComm globalComm(MPI_COMM_WORLD);
@@ -156,6 +158,7 @@ int main(int argc, char *argv[])
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #endif
 #else
+  cout << "RUNNING IN SERIAL, NOT MPI " << endl;
   Epetra_SerialComm Comm;
 #endif
 
@@ -265,7 +268,9 @@ int main(int argc, char *argv[])
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
-  Epetra_RowMatrix& A = Problem.getJacobian(); // Default
+  //
+  Epetra_CrsMatrix& A = Problem.getJacobian(); // Default
+
   //NOX::EpetraNew::Interface::Jacobian& iJac = interface;
   // 2. Matrix-Free (Epetra_Operator)
   //NOX::EpetraNew::MatrixFree A(interface, soln);
@@ -277,7 +282,7 @@ int main(int argc, char *argv[])
   // 5. Finite Difference with Coloring......uncomment the following
 // -------------- Uncomment this block to use coloring --------------- //
 /*
-#ifndef HAVE_NOX_EPETRAEXT 
+#ifndef HAVE_NOX_EPETRAEXT
   cout << "Cannot use Coloring without package epetraext !!!!" << endl;
   exit(0);
 #else 
@@ -309,7 +314,7 @@ int main(int argc, char *argv[])
 #ifdef DO_XYZT
   LOCA::EpetraNew::Interface::xyzt ixyzt(interface, interface, soln, A,
 		                        globalComm, replica);
-  Epetra_RowMatrix& Axyzt = ixyzt.getJacobian();
+  Epetra_CrsMatrix& Axyzt = ixyzt.getJacobian();
   Epetra_Vector& solnxyzt = ixyzt.getSolution();
 
   NOX::EpetraNew::Interface::Required& iReq = ixyzt;

@@ -42,13 +42,15 @@
 #include "NOX_EpetraNew_Interface_Required.H" // base class
 #include "NOX_EpetraNew_Interface_Jacobian.H" // base class
 #include "NOX_EpetraNew_Interface_Preconditioner.H" // base class
+#include "LOCA_EpetraNew_Interface_MassMatrix.H" // base class
 
 // ---------- Forward Declarations ----------
 class Brusselator;
 
 class Problem_Interface : public NOX::EpetraNew::Interface::Required,
                           public NOX::EpetraNew::Interface::Jacobian,
-                          public NOX::EpetraNew::Interface::Preconditioner
+                          public NOX::EpetraNew::Interface::Preconditioner,
+                          public LOCA::EpetraNew::Interface::MassMatrix
 {
 public:
   Problem_Interface(Brusselator& Problem);
@@ -66,6 +68,9 @@ public:
   
   //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
   bool computePreconditioner(const Epetra_Vector& x, NOX::Parameter::List* p);
+
+  //! Compute an explicit MassMatrix
+  bool computeMassMatrix(const Epetra_Vector& x);
 
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 

@@ -64,5 +64,12 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, NOX::Param
   cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << endl;
   throw 1;
 }
+
+bool Problem_Interface::computeMassMatrix(const Epetra_Vector& x)
+{
+  cout << "ERROR: Problem_Interface::computeMassMatrix() - not yet implemented for this test problem!" << endl;
+  throw 1;
+  //return problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, 0, 0);
+}
 //-----------------------------------------------------------------------------
 
