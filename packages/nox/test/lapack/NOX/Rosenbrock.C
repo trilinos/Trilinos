@@ -80,12 +80,13 @@
 #include "NOX_Common.H"
 #include "NOX.H"  // NOX headers
 #include "NOX_LAPACK.H" // NOX LAPACK Interface headers
-#include "NOX_TestUtils.H"
+#include "NOX_TestUtils.H" // NOX test parameter input headers
 
 #ifdef HAVE_MPI
 #include <mpi.h>
 #else 
 #endif
+
 
 //! An interface to the example described in Rosenbrock.C
 class Rosenbrock : public NOX::LAPACK::Interface {
@@ -217,7 +218,7 @@ int main(int argc, char *argv[]) {
   NOX::Parameter::List solverParameters;
 
   // Read parameters from file paramFilename - command line arg#1
-  if (usingParamInputFile && !parseTextInputFile(paramFilename, solverParameters))
+  if (usingParamInputFile && !NOX::parseTextInputFile(paramFilename, solverParameters))
      cout << "Using unchanged parameters " << endl;
   
   // Create the solver

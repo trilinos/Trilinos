@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
     }
 
   // Read parameters from file paramFilename - command line arg#1
-  if (usingParamInputFile && !parseTextInputFile(paramFilename, solverParameters))
+  if (usingParamInputFile && !NOX::parseTextInputFile(paramFilename, solverParameters))
      cout << "Using unchanged parameters " << endl;
 
   // Create the convergence tests
