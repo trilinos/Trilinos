@@ -233,7 +233,7 @@ int Zoltan_PHG_Partition (
          Zoltan_PHG_hcut_size_links(hgc, hg, vcycle->part, p));
 
     if (hgp->output_level >= PHG_DEBUG_PLOT)
-      Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, Parts,
+      Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, vcycle->part,
        "partitioned plot");
         
     /* Project coarse partition to fine partition */

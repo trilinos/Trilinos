@@ -185,14 +185,21 @@ ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(PHGPartParams*,
 int Zoltan_PHG_Refinement (ZZ*, HGraph*, int, Partition, PHGPartParams*);
 ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char*);
 
-/*****************/
-/* Communication */
-/*****************/
-extern int Zoltan_PHG_gather_slice_root(
-        int, int, int, int, int, char*, int*, char**, MPI_Comm*, int);
-extern int Zoltan_PHG_gather_slice(
-        int, int, int, int, int, char*, int*, char**, MPI_Comm*, int);
+/*******************/
+/* 2D Distribution */
+/*******************/
+extern int Zoltan_PHG_Set_2D_Proc_Distrib(
+    ZZ *zz,                /* Input:  ZZ struct; for debuging   */
+    MPI_Comm Communicator, /* Input:  The MPI Communicator      */
+    int proc,              /* Input:  Rank of current processor */
+    int nProc,             /* Input:  Total # of processors     */    
+    int nProc_x,           /* Input:  Suggested #procs in x-direction */
+    int nProc_y,           /* Input:  Suggested #procs in y-direction */
+    PHGComm *comm          /* Ouput: filled */
+    );
 
+extern int Zoltan_PHG_Gno_To_Proc_Block(int gno, int*, int);
+    
 /*****************************/
 /* Other Function Prototypes */
 /*****************************/
@@ -212,7 +219,7 @@ extern void Zoltan_PHG_HGraph_Print(ZZ*, ZPHG*,  HGraph*, FILE*);
 extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);
 extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 
-extern int Zoltan_PHG_Gno_To_Proc_Block(int gno, int*, int);
+
 
 
 #ifdef __cplusplus

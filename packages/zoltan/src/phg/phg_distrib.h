@@ -22,6 +22,7 @@ extern "C" {
 
 int Zoltan_PHG_Gno_To_Proc_Block(int gno, int *dist_dim, int nProc_dim);
 
+    
 int Zoltan_PHG_Redistribute(
     ZZ *zz, 
     HGraph  *ohg,           /* Input: Local part of distributed hypergraph */
@@ -29,22 +30,12 @@ int Zoltan_PHG_Redistribute(
                                to be included in new communicator: ncomm */
     PHGComm *ncomm,         /* Output: Communicators of new distribution */
     HGraph  *nhg,           /* Output: Newly redistributed hypergraph */
-    int     **vmap          /* Output: allocated with the size nhg->nVtx and
-                             vertex map from nhg to ohg's GLOBAL vertex number*/
-    
+    int     **vmap,         /* Output: allocated with the size nhg->nVtx and
+                               vertex map from nhg to ohg's local vertex number*/
+    int     **vdest         /* Output: allocated with the size nhg->nVtx and
+                               stores dest proc in ocomm */    
     );
     
-    /* a helper function for Zoltan_PHG_Redistribute */
-int Zoltan_PHG_Redistribute_Hypergraph(
-    ZZ *zz, 
-    HGraph  *ohg,           /* Input:  Local part of distributed hypergraph */
-    int     *v2Col,         /* Input:  Vertex to processor Column Mapping */
-    int     *n2Row,         /* Input:  Net to processor Row Mapping */
-    PHGComm *ncomm,         /* Input:  communicators of new distribution */
-    HGraph  *nhg,           /* Output: Newly redistributed hypergraph */ 
-    int     **vmap          /* Output: allocated with the size nhg->nVtx and
-                               vertex map from nhg to ohg's GLOBAL vertex number*/
-    );
 
     
 

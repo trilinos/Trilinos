@@ -53,7 +53,7 @@ static PARAM_VARS PHG_params[] = {
 };
 
 /* prototypes for static functions: */
-static int set_proc_distrib (MPI_Comm, int, int, PHGComm*);
+
 static int Zoltan_PHG_Initialize_Params (ZZ*, float *, PHGPartParams*);
 static int Zoltan_PHG_Return_Lists (ZZ*, ZPHG*, Partition, int*,
  ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
@@ -214,11 +214,12 @@ static int Zoltan_PHG_Initialize_Params(
   PHGPartParams *hgp
 )
 {
-  int err;
+  int err, nProc_x, nProc_y;
+  
   
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL",         &hgp->output_level);
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",            &(hgp->comm.nProc_x));
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",            &(hgp->comm.nProc_y));
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",                        &nProc_x);
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",                        &nProc_y);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT",              &hgp->redl);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD",          hgp->redm_str);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LOCAL_IMPROVEMENT", hgp->redmo_str);  
@@ -253,8 +254,8 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
   hgp->redl = MAX(2*zz->LB.Num_Global_Parts, 100);
   hgp->output_level = PHG_DEBUG_LIST;
-  hgp->comm.nProc_x = -1;
-  hgp->comm.nProc_y = -1;
+  nProc_x = -1;
+  nProc_y = -1;
   hgp->kway = 0;
   hgp->fm_loop_limit = 99;
   hgp->fm_max_neg_move = 250;  
@@ -265,7 +266,7 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
    zz->Debug_Proc);
 
-  err = set_proc_distrib(zz->Communicator, zz->Proc, zz->Num_Proc, &hgp->comm);
+  err = Zoltan_PHG_Set_2D_Proc_Distrib (zz, zz->Communicator, zz->Proc, zz->Num_Proc, nProc_x, nProc_y, &hgp->comm);
   if (err != ZOLTAN_OK) 
       goto End;
 
@@ -433,19 +434,15 @@ void Zoltan_PHG_HGraph_Print(
 
 /*****************************************************************************/
 
-static int set_proc_distrib(
-  MPI_Comm Communicator, /* Input:  The MPI Communicator      */
-  int proc,              /* Input:  Rank of current processor */
-  int nProc,             /* Input:  Total # of processors     */
-  PHGComm *comm          /* Input/Ouput: for nProc_x and nProc_y members;
-                            Output: for the rest:
-  int *nProc_x,      Input/Output:  # processors in x-direction of 2D 
-                        data distrib; if -1 on input, compute. 
-  int *nProc_y,      Input/Output:  # processors in y-direction of 2D 
-                        data distrib; if -1 on input, compute. 
-  int *myProc_x,     Output:  x block of proc in [0,nProc_x-1]. 
-  int *myProc_y      Output:  y block of proc in [0,nProc_y-1]. */
-)
+int Zoltan_PHG_Set_2D_Proc_Distrib(
+    ZZ *zz,                /* Input:  ZZ struct; for debuging   */
+    MPI_Comm Communicator, /* Input:  The MPI Communicator      */
+    int proc,              /* Input:  Rank of current processor */
+    int nProc,             /* Input:  Total # of processors     */    
+    int nProc_x,           /* Input:  Suggested #procs in x-direction */
+    int nProc_y,           /* Input:  Suggested #procs in y-direction */
+    PHGComm *comm          /* Ouput: filled */
+    )    
 {
 /* Computes the processor distribution for the 2D data distrib.
  * Sets nProc_x, nProc_y.
@@ -458,18 +455,18 @@ char *yo = "set_proc_distrib";
 int tmp;
 int ierr = ZOLTAN_OK;
     
-  if (comm->nProc_x == -1 && comm->nProc_y == -1) {
+  if (nProc_x == -1 && nProc_y == -1) {
     /* Compute default */
     tmp = (int) sqrt((double)nProc+0.1);
     while (nProc % tmp) tmp--;
     comm->nProc_y = tmp;
     comm->nProc_x = nProc / tmp;
-  } else if (comm->nProc_x == -1) {
+  } else if (nProc_x == -1) {
     /* nProc_y set by user parameter */
-    comm->nProc_x = nProc / comm->nProc_y;
-  } else if (comm->nProc_y == -1) {
+    comm->nProc_x = nProc / nProc_y;
+  } else if (nProc_y == -1) {
     /* nProc_x set by user parameter */
-    comm->nProc_y = nProc / comm->nProc_x;
+    comm->nProc_y = nProc / nProc_x;
   }
     
   /* Error check */
@@ -481,7 +478,8 @@ int ierr = ZOLTAN_OK;
     ierr = ZOLTAN_FATAL;
     goto End;
   }
-    
+
+  comm->zz = zz;
   comm->myProc_x = proc % comm->nProc_x;
   comm->myProc_y = proc / comm->nProc_x;
   comm->Communicator = Communicator;

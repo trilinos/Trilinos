@@ -53,7 +53,7 @@ int egno, vgno;
   if (zz->Proc == 0) {
     sprintf(filename, "phg%02d.gnuload", cnt);
     fp = fopen(filename, "w");
-    fprintf(fp, "set data style dots\n");
+    fprintf(fp, "set data style points\n");
     fprintf(fp, "set nokey\n");
     fprintf(fp, "set xlabel \"vertices\"\n");
     fprintf(fp, "set ylabel \"-hyperedges\"\n");
@@ -85,7 +85,7 @@ int egno, vgno;
   if (zz->Proc == 0) {
     sprintf(filename, "phgmirror%02d.gnuload", cnt);
     fp = fopen(filename, "w");
-    fprintf(fp, "set data style dots\n");
+    fprintf(fp, "set data style points\n");
     fprintf(fp, "set nokey\n");
     fprintf(fp, "set xlabel \"vertices\"\n");
     fprintf(fp, "set ylabel \"-hyperedges\"\n");
@@ -168,7 +168,7 @@ int *vtx = NULL;
   if (proc == 0) {
     sprintf(filename, "hgplot%02d.gnuload", cnt);
     fp = fopen(filename, "w");
-    fprintf(fp, "set data style dots\n");
+    fprintf(fp, "set data style points\n");
     fprintf(fp, "set nokey\n");
     fprintf(fp, "set title \"%s\"\n", str);
     fprintf(fp, "set xlabel \"hyperedges\"\n");

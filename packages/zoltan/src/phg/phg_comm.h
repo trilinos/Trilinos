@@ -39,6 +39,7 @@ struct PHGCommStruct {
   int myProc_y;   /* my processor's column block number in [0,nProc_y-1] */
   MPI_Comm row_comm; /* my processor's row communicator */
   MPI_Comm col_comm; /* my processor's column communicator */
+  ZZ  *zz;        /* for debugging purpose */
 };
 
 typedef struct PHGCommStruct PHGComm;

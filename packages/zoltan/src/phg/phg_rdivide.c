@@ -14,15 +14,25 @@
 #include "phg.h"
 #include "phg_distrib.h"
 
+
+/*
+#define SPLIT_PROCESSORS
+*/
+
+#define _DEBUG1
+#define _DEBUG2
+#define _DEBUG3
+
+
 #define MEMORY_ERROR { \
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
   ierr = ZOLTAN_MEMERR; \
   goto End; \
 }
 
-/* #define SPLIT_PROCESSORS */
 
 static int split_hypergraph (int *pins[2], HGraph*, HGraph*, Partition, int, ZZ*);
+
 
 
 /* recursively divides problem into 2 parts until all p found */
@@ -33,6 +43,10 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   int i, j, mid, ierr=ZOLTAN_OK, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
   Partition part=NULL;
   HGraph *left=NULL, *right=NULL;
+  int    *proclist=NULL, *sendbuf=NULL, *recvbuf=NULL;
+#ifdef SPLIT_PROCESSORS
+  int  nsend, msg_tag=7777;
+#endif
   PHGComm *hgc = hg->comm;
   float tgpartsize[2]={0.0,0.0};    /* Target partition sizes; dimension is 2 
                                      because we are doing bisection */
@@ -42,7 +56,7 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   /* only one part remaining, record results and exit */
   if (lo == hi) {
     for (i = 0; i < hg->nVtx; ++i)
-      final [hg->vmap[i]] = lo;
+      final[hg->vmap[i]] = lo;
     return ZOLTAN_OK;
   }
 
@@ -67,7 +81,7 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   /* if only two parts total, record results and exit */
   if (lo + 1 == hi)  {
     for (i = 0; i < hg->nVtx; ++i)
-      final [hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
+      final[hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
     ZOLTAN_FREE (&part);
     return ZOLTAN_OK;
   }
@@ -101,7 +115,7 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   } else {
       for (i = 0; i < hg->nVtx; ++i)
           if (part[i]==0)
-              final [hg->vmap[i]] = lo;
+              final[hg->vmap[i]] = lo;
   }
 
   if (hi>mid+1) { /* only split if we need it */
@@ -117,38 +131,103 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
       ZOLTAN_FREE (&pins[0]); /* we don't need pins */
       for (i = 0; i < hg->nVtx; ++i)
           if (part[i]==1)
-              final [hg->vmap[i]] = hi;
+              final[hg->vmap[i]] = hi;
   }
 
 #ifdef SPLIT_PROCESSORS
   if (hgc->nProc>1 && left && right) {
       PHGComm  leftcomm, rightcomm;
       HGraph  newleft, newright;
-      int     *leftvmap, *rightvmap, mid;
+      int     *leftvmap, *rightvmap, *leftdest, *rightdest, mid;
+      ZOLTAN_COMM_OBJ *plan;    
 
       Zoltan_HG_HGraph_Init (&newleft);
       Zoltan_HG_HGraph_Init (&newright);
 
       /* redistribute left and right parts */
-      mid = (int)((float) hgc->nProc * (float) left->nPins / (float) hg->nPins);
+      mid = (int)((float) hgc->nProc * (float) left->dist_x[hgc->nProc_x] / (float) hg->dist_x[hgc->nProc_x])-1;
+      uprintf(hgc, "before redistribute for left mid=%d ------------------\n", mid);
       Zoltan_PHG_Redistribute(zz, left,
                               0, mid, 
                               &leftcomm, 
                               &newleft,
-                              &leftvmap);
+                              &leftvmap, &leftdest);
+      uprintf(hgc, "before redistribute for right ++++++++++++++++++++++\n");
       Zoltan_PHG_Redistribute(zz, right,
                               mid+1, hgc->nProc-1, 
                               &rightcomm, 
                               &newright,
-                              &rightvmap);
-      
+                              &rightvmap, &rightdest);
+
+      nsend = MAX(newleft.nVtx, newright.nVtx);
+      proclist = (int *) ZOLTAN_MALLOC (nsend * sizeof (int));
+      sendbuf =  (int *) ZOLTAN_MALLOC (nsend * 2 * sizeof (int));
+      recvbuf =  (int *) ZOLTAN_MALLOC (hg->nVtx * 2 * sizeof (int));
+      if ((nsend && (!proclist || !sendbuf)) ||
+          (hg->nVtx && !recvbuf))
+          MEMORY_ERROR;
+      nsend = 0;
       if (hgc->myProc<=mid) {/* I'm on the left part so I should partition newleft */
-          ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, &newleft, hgp, level+1);
+
+          uprintf(hgc, "-----------------I'm partitioning left---------------\n");
+          ierr = Zoltan_PHG_rdivide (lo, mid, part, zz, &newleft, hgp, level+1);
+          for (i=0; i<newleft.nVtx; ++i) {
+              proclist[nsend] = leftdest[i];
+              sendbuf[nsend*2] = leftvmap[i];
+              sendbuf[nsend*2+1] = part[i];
+              ++nsend;
+          }
           Zoltan_HG_HGraph_Free (&newleft);
+          ZOLTAN_FREE(&leftvmap);
+          ZOLTAN_FREE(&leftdest);
+          MPI_Comm_free(&leftcomm.col_comm);
+          MPI_Comm_free(&leftcomm.row_comm);
+          MPI_Comm_free(&leftcomm.Communicator);
       } else { /* I'm on the right part so I should partition newright */
-          ierr |= Zoltan_PHG_rdivide (mid+1, hi, final, zz, &newright, hgp, level+1);
+          uprintf(hgc, "*****************I'm partitioning right****************\n");
+          ierr |= Zoltan_PHG_rdivide (mid+1, hi, part, zz, &newright, hgp, level+1);
+          for (i=0; i<newright.nVtx; ++i) {
+              proclist[nsend] = rightdest[i];
+              sendbuf[nsend*2]   = rightvmap[i];
+              sendbuf[nsend*2+1] = part[i];
+              ++nsend;
+          }
           Zoltan_HG_HGraph_Free (&newright);
+          ZOLTAN_FREE(&rightvmap);
+          ZOLTAN_FREE(&rightdest);
+          MPI_Comm_free(&rightcomm.col_comm);
+          MPI_Comm_free(&rightcomm.row_comm);
+          MPI_Comm_free(&rightcomm.Communicator);          
       }
+
+      --msg_tag;
+      ierr |= Zoltan_Comm_Create(&plan, nsend, proclist, hgc->row_comm,
+                                 msg_tag, &i);
+
+#ifdef _DEBUG1
+      if (i!=hg->nVtx) 
+          errexit("I should be receiving nVtx(%d) part info but received %d", hg->nVtx, i);
+#endif
+      
+      --msg_tag;
+      Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, 2*sizeof(int),
+                     (char *) recvbuf);
+
+      for (i=0; i<hg->nVtx; ++i) {
+#ifdef _DEBUG1
+          int p=recvbuf[i*2+1];
+          int v=recvbuf[i*2];
+
+          if (v<0 || v>hg->nVtx)
+              errexit("sanity check failed for v=%d nVtx=%d\n", v, hg->nVtx);
+          if (p<lo || p>hi)
+              errexit("sanity check failed for v=%d p=%d lo=%d hi=%d\n", v, p, lo, hi);
+#endif
+          final[recvbuf[i*2]] = recvbuf[i*2+1];
+      }
+      
+
+      Zoltan_Comm_Destroy(&plan);      
   } else {
 #endif
       if (left) 
@@ -164,7 +243,8 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
       Zoltan_HG_HGraph_Free (left);
   if (right)
       Zoltan_HG_HGraph_Free (right);
-  Zoltan_Multifree (__FILE__, __LINE__, 5, &pins[0], &lpins[0], &part, &left, &right);
+  Zoltan_Multifree (__FILE__, __LINE__, 8, &pins[0], &lpins[0], &part, &left, &right,
+                    &proclist, &sendbuf, &recvbuf);
 
   return ierr;
 }
