@@ -75,7 +75,7 @@ int i;
    * for objects that are imported to the processor.
    */
 
-  *num_obj = lb->Get_Num_Obj();
+  *num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data);
   *max_obj = 1.5 * *num_obj;
   rcb->Dots = (struct rcb_dot *) LB_array_alloc(__FILE__, __LINE__, 1, *max_obj,
                                                 sizeof(struct rcb_dot));
@@ -86,7 +86,7 @@ int i;
    * value should be one, two or three, describing the x-, y-, and z-coords.
    */
 
-  num_geom = lb->Get_Num_Geom();
+  num_geom = lb->Get_Num_Geom(lb->Get_Num_Geom_Data);
   if (num_geom > 3) {
     fprintf(stderr, "Error in %s:  Number of geometry fields %d is too great "
                     "for RCB; valid range is 1-3\n", yo, num_geom);
@@ -108,7 +108,7 @@ int i;
                                            sizeof(LB_GID));
     objs_local  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1, *num_obj,
                                            sizeof(LB_LID));
-    lb->Get_Obj_List(objs_global, objs_local);
+    lb->Get_Obj_List(lb->Get_Obj_List_Data, objs_global, objs_local);
 
     for (i = 0; i < *num_obj; i++) {
       initialize_dot(lb, &(rcb->Dots[i]), objs_global[i], objs_local[i]);
@@ -124,12 +124,13 @@ int i;
      */
 
     i = 0;
-    found = lb->Get_First_Obj(&obj_global_id, &obj_local_id);
+    found = lb->Get_First_Obj(lb->Get_First_Obj_Data, &obj_global_id,
+                              &obj_local_id);
     while (found) {
       initialize_dot(lb, &(rcb->Dots[i]), obj_global_id, obj_local_id);
       i++;
-      found = lb->Get_Next_Obj(obj_global_id, obj_local_id, 
-                                     &obj_global_id, &obj_local_id);
+      found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data, obj_global_id,
+                               obj_local_id, &obj_global_id, &obj_local_id);
     }
     if (i != *num_obj) {
       fprintf(stderr, "Error in %s:  Number of objects returned %d != "
@@ -164,8 +165,9 @@ static void initialize_dot(LB *lb, struct rcb_dot *dot, LB_GID global_id,
   LB_SET_LID(dot->Tag.Local_ID, local_id);
   dot->Tag.Proc = lb->Proc;
   dot->X[0] = dot->X[1] = dot->X[2] = 0.0;
-  lb->Get_Geom(global_id, local_id, dot->X);
+  lb->Get_Geom(lb->Get_Geom_Data, global_id, local_id, dot->X);
   if (lb->Get_Obj_Weight != NULL) {
-    dot->Weight = lb->Get_Obj_Weight(global_id, local_id);
+    dot->Weight = lb->Get_Obj_Weight(lb->Get_Obj_Weight_Data, global_id,
+                                     local_id);
   }
 }

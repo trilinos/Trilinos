@@ -248,7 +248,7 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
 	    "Must register Get_Num_Local_Objects function");
     abort();
   }
-  *c3 = num_objs = lb->Get_Num_Obj();
+  *c3 = num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data);
   Region_list = NULL;
   ptr1 = NULL;
   if(num_objs > 0) {
@@ -427,7 +427,7 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   double x;
   double PADDING = 0.0000001;
 
-  *num_objs = lb->Get_Num_Obj();
+  *num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data);
 
   /* ATTN: an arbitrary choice, is this necessary? */
   max_num_objs = 2 * (*num_objs); 
@@ -445,11 +445,12 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   }
 
   if (lb->Get_Obj_List != NULL) {
-    lb->Get_Obj_List(obj_global_ids, obj_local_ids);
+    lb->Get_Obj_List(lb->Get_Obj_List_Data, obj_global_ids, obj_local_ids);
     found = TRUE;
   }
   else {
-    found = lb->Get_First_Obj(&(obj_global_ids[0]), &(obj_local_ids[0]));
+    found = lb->Get_First_Obj(lb->Get_First_Obj_Data, &(obj_global_ids[0]),
+                              &(obj_local_ids[0]));
   }
 
   if(*num_objs > 0 && found) {
@@ -461,8 +462,9 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   *ptr1 = tmp;
   for (i = 1; i < (*num_objs); i++) {
     if (lb->Get_Obj_List == NULL)
-      found = lb->Get_Next_Obj(obj_global_ids[i-1], obj_local_ids[i-1],
-                               &(obj_global_ids[i]), &(obj_local_ids[i]));
+      found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data, obj_global_ids[i-1],
+                               obj_local_ids[i-1], &(obj_global_ids[i]),
+                               &(obj_local_ids[i]));
     if (!found) {
       fprintf(stderr, "Error in octree load balance:  number of objects "
              "declared by LB_NUM_OBJ_FN %d != number obtained by "
@@ -535,7 +537,7 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
   reg->Tag.Proc = lb->Proc;
   /* reg->Proc = 0; */
   reg->Coord[0] = reg->Coord[1] = reg->Coord[2] = 0.0;
-  lb->Get_Geom(global_id, local_id, reg->Coord);
+  lb->Get_Geom(lb->Get_Geom_Data, global_id, local_id, reg->Coord);
 
 #if 0
   LB_print_sync_start(lb, TRUE);
@@ -546,7 +548,8 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
 #endif
 
   if (lb->Get_Obj_Weight != NULL)
-    reg->Weight = lb->Get_Obj_Weight(global_id, local_id);
+    reg->Weight = lb->Get_Obj_Weight(lb->Get_Obj_Weight_Data, global_id,
+                                     local_id);
   else
     reg->Weight = 1;
   reg->next = NULL;
