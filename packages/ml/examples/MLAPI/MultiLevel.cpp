@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
 
     // define the linear system matrix, solution and RHS
     Operator FineMatrix = Gallery("laplace_2d", FineSpace);
-    DoubleVector LHS(FineSpace);
-    DoubleVector RHS(FineSpace);
+    MultiVector LHS(FineSpace);
+    MultiVector RHS(FineSpace);
 
     LHS = 0.0;
     RHS.Random();

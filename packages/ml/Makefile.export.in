@@ -45,23 +45,26 @@ ML_EXPORT_INCLUDES = $(ML_INCLUDES) \
 # Set the absolute path to the ml build directory
 ##########################################################################
 
+ML_SOURCE_DIRECTORY = @srcdir@
 ML_BUILD_DIRECTORY = @ML_BUILD_DIRECTORY@
 
 ##########################################################################
 # ML's include directories
 ##########################################################################
 
-ML_INCLUDES = -I$(top_srcdir)/src/Include            \
-              -I$(top_srcdir)/src/Coarsen            \
-              -I$(top_srcdir)/src/Comm               \
-              -I$(top_srcdir)/src/FEGrid             \
-              -I$(top_srcdir)/src/Include            \
-              -I$(top_srcdir)/src/Krylov             \
-              -I$(top_srcdir)/src/Main               \
-              -I$(top_srcdir)/src/Operator           \
-              -I$(top_srcdir)/src/Smoother           \
-              -I$(top_srcdir)/src/Utils              \
-              -I$(top_srcdir)/src/MLAPI
+ML_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/src/Include            \
+              -I$(ML_SOURCE_DIRECTORY)/src/Coarsen            \
+              -I$(ML_SOURCE_DIRECTORY)/src/Comm               \
+              -I$(ML_SOURCE_DIRECTORY)/src/FEGrid             \
+              -I$(ML_SOURCE_DIRECTORY)/src/Include            \
+              -I$(ML_SOURCE_DIRECTORY)/src/Krylov             \
+              -I$(ML_SOURCE_DIRECTORY)/src/Main               \
+              -I$(ML_SOURCE_DIRECTORY)/src/Operator           \
+              -I$(ML_SOURCE_DIRECTORY)/src/Smoother           \
+              -I$(ML_SOURCE_DIRECTORY)/src/Utils              \
+              -I$(ML_SOURCE_DIRECTORY)/src/MLAPI              \
+              -I$(ML_SOURCE_DIRECTORY)/src/                   \
+	      -I$(ML_BUILD_DIRECTORY)/src
 
 ##########################################################################
 # Using the absolute location of ml's build directory as
@@ -108,14 +111,14 @@ TRIUTILS_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../triutils
 # Other Trilinos package include directories
 ##########################################################################
 
-@ML_USING_AZTECOO_TRUE@AZTECOO_INCLUDES = -I$(top_srcdir)/../aztecoo/src -I$(AZTECOO_BUILD_DIRECTORY)/src
-@ML_USING_AMESOS_TRUE@AMESOS_INCLUDES = -I$(top_srcdir)/../amesos/src -I$(AMESOS_BUILD_DIRECTORY)/src
-@ML_USING_IFPACK_TRUE@IFPACK_INCLUDES = -I$(top_srcdir)/../ifpack/src -I$(IFPACK_BUILD_DIRECTORY)/src
-@ML_USING_TEUCHOS_TRUE@TEUCHOS_INCLUDES = -I$(top_srcdir)/../teuchos/src -I$(TEUCHOS_BUILD_DIRECTORY)/src
-@ML_USING_ANASAZI_TRUE@ANASAZI_INCLUDES = -I$(top_srcdir)/../anasazi/src -I$(ANASAZI_BUILD_DIRECTORY)/src
-@ML_USING_TRIUTILS_TRUE@TRIUTILS_INCLUDES = -I$(top_srcdir)/../triutils/src -I$(TRIUTILS_BUILD_DIRECTORY)/src
-@ML_USING_EPETRA_TRUE@EPETRA_INCLUDES = -I$(top_srcdir)/../epetra/src -I$(EPETRA_BUILD_DIRECTORY)/src
-@ML_USING_EPETRAEXT_TRUE@EPETRAEXT_INCLUDES = -I$(top_srcdir)/../epetraext/src -I$(EPETRAEXT_BUILD_DIRECTORY)/src
+@ML_USING_AZTECOO_TRUE@AZTECOO_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../aztecoo/src -I$(AZTECOO_BUILD_DIRECTORY)/src
+@ML_USING_AMESOS_TRUE@AMESOS_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../amesos/src -I$(AMESOS_BUILD_DIRECTORY)/src
+@ML_USING_IFPACK_TRUE@IFPACK_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../ifpack/src -I$(IFPACK_BUILD_DIRECTORY)/src
+@ML_USING_TEUCHOS_TRUE@TEUCHOS_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../teuchos/src -I$(TEUCHOS_BUILD_DIRECTORY)/src
+@ML_USING_ANASAZI_TRUE@ANASAZI_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../anasazi/src -I$(ANASAZI_BUILD_DIRECTORY)/src
+@ML_USING_TRIUTILS_TRUE@TRIUTILS_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../triutils/src -I$(TRIUTILS_BUILD_DIRECTORY)/src
+@ML_USING_EPETRA_TRUE@EPETRA_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../epetra/src -I$(EPETRA_BUILD_DIRECTORY)/src
+@ML_USING_EPETRAEXT_TRUE@EPETRAEXT_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../epetraext/src -I$(EPETRAEXT_BUILD_DIRECTORY)/src
 
 ##########################################################################
 #

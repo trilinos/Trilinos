@@ -71,8 +71,8 @@ int main(int argc, char *argv[])
     MLAPI::Space MySpace(NumGlobalRows);
 
     // Define vectors and operator
-    MLAPI::DoubleVector x(MySpace), y(MySpace);
-    MLAPI::Operator A = Gallery("laplace_2d", MySpace);
+    MLAPI::MultiVector x(MySpace), y(MySpace);
+    MLAPI::Operator A = Gallery("laplace_1d", MySpace);
 
     // We can now start coding the power method. We want a random vector of
     // unitary 2-norm. First, we set random elements in the vector. Then,
@@ -83,13 +83,15 @@ int main(int argc, char *argv[])
     x = x / sqrt(x * x);
 
     // loop for power method.
-    int MaxIters = 10;
+    int MaxIters = 20;
     for (int i = 0 ; i < MaxIters ; ++i) {
       // matrix-vector product
       y = A * x;
-      // note that you need parenthesis in the following expression!
-      if (MyPID() == 0)
-        cout << "iter = " << i << ", RQ = " << (y * x) / (x * x) << endl;
+      // note that you need parenthesis in the following expression
+      // and that x * y is a global operation
+      double RQ = (y * x) / (x * x);
+      if (GetMyPID() == 0)
+        cout << "iter = " << i << ", RQ = " << RQ << endl;
       x = y / sqrt(y * y);
     }
 

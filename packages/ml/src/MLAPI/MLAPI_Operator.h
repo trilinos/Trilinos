@@ -100,8 +100,10 @@ public:
     RCPOperatorBox_ = Teuchos::rcp(new ML_Operator_Box(Op,Ownership));
     if (RangeSpace == DomainSpace) // FIXME !!!!!!!
       RCPRowMatrix_ = Teuchos::rcp(new ML_Epetra::RowMatrix(Op,&(GetEpetra_Comm())),Ownership);
+    // FIXME!
     else
-      ML_THROW("FIX BUG IN ml_RowMatrix (for rect matrices)", -1);
+      RCPRowMatrix_ = Teuchos::null;
+    //  ML_THROW("FIX BUG IN ml_RowMatrix (for rect matrices)", -1);
 
     BuildColumnSpace();
   }

@@ -43,7 +43,7 @@ host_triplet = @host@
 noinst_PROGRAMS = ml_aztec_simple$(EXEEXT) ml_operator$(EXEEXT) \
 	ml_preconditioner$(EXEEXT) ml_readex$(EXEEXT)
 subdir = examples/BasicExamples
-DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \

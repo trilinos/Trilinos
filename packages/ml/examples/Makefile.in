@@ -240,7 +240,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwell StandAlone MultipleRHS TwoLevelDD Other Visualization
+SUBDIRS = Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwell StandAlone MultipleRHS TwoLevelDD Other MLAPI Visualization
 all: all-recursive
 
 .SUFFIXES:

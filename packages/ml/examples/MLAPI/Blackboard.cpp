@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     int NumGlobalElements = 16;
     Space MySpace(NumGlobalElements);
 
-    DoubleVector x(MySpace), y(MySpace), z(MySpace);
+    MultiVector x(MySpace), y(MySpace), z(MySpace);
 
     x = 1.0;
     y = 2.0;

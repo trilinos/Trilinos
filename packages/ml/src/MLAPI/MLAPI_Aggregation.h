@@ -57,7 +57,6 @@ void BuildPtent(const Operator& A, const AggregationDataBase& Data,
   // HOW TO FREE THIS MEMORY??
   ML_memory_alloc((void **)&(agg_object->nullspace_vect), 
                   sizeof(double) * size, "ns");
-  cout << size << endl;
   for (int i = 0 ; i < size ; ++i)
     agg_object->nullspace_vect[i] = 1.0 ; //////ThisNS.Values()[i];
 

@@ -71,11 +71,11 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
+DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.export.in $(srcdir)/Makefile.in \
-	$(top_srcdir)/configure ChangeLog config/compile \
-	config/config.guess config/config.sub config/depcomp \
-	config/install-sh config/missing config/mkinstalldirs
+	$(top_srcdir)/configure config/compile config/config.guess \
+	config/config.sub config/depcomp config/install-sh \
+	config/missing config/mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -274,7 +274,7 @@ AUTOMAKE_OPTIONS = foreign
 EXTRA_DIST = bootstrap \
 	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
 	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 \
-	config/depcomp
+	config/depcomp ChangeLog-ML README-ML COPYRIGHT
 
 
 #

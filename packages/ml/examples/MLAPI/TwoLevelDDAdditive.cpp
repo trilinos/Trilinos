@@ -66,10 +66,30 @@ public:
     CoarseSolver_(CoarseSolver)
   {}
       
-  int Solve(const DoubleVector& r_f, DoubleVector& x_f) const
+  TwoLevelDDAdditive(const TwoLevelDDAdditive& rhs) :
+    FineMatrix_(rhs.GetFineMatrix()),
+    R_(rhs.GetR()),
+    P_(rhs.GetP()),
+    FineSolver_(rhs.GetFineSolver()),
+    CoarseSolver_(rhs.GetCoarseSolver())
+  {}
+      
+  TwoLevelDDAdditive& operator=(const TwoLevelDDAdditive& rhs)
+  {
+    if (this != &rhs) {
+      FineMatrix_ = rhs.GetFineMatrix();
+      R_ = rhs.GetR();
+      P_ = rhs.GetP();
+      FineSolver_ = rhs.GetFineSolver();
+      CoarseSolver_ = rhs.GetCoarseSolver();
+    }
+    return(*this);
+  }
+    
+  int Solve(const MultiVector& r_f, MultiVector& x_f) const
   {
     
-    DoubleVector r_c(FineSolver_.DomainSpace());
+    MultiVector r_c(FineSolver_.GetDomainSpace());
 
     // apply fine level preconditioner
     x_f = FineSolver_ * r_f;
@@ -83,29 +103,54 @@ public:
     return(0);
   }
 
-  const Space DomainSpace() const {
-    return(FineMatrix_.DomainSpace());
+  const Space GetDomainSpace() const {
+    return(FineMatrix_.GetDomainSpace());
   }
 
-  const Space RangeSpace() const {
-    return(FineMatrix_.RangeSpace());
+  const Space GetRangeSpace() const {
+    return(FineMatrix_.GetRangeSpace());
+  }
+
+  const Operator GetFineMatrix() const 
+  {
+    return(FineMatrix_);
+  }
+
+  const Operator GetR() const 
+  {
+    return(R_);
+  }
+
+  const Operator GetP() const 
+  {
+    return(P_);
+  }
+
+  const InverseOperator GetFineSolver() const 
+  {
+    return(FineSolver_);
+  }
+
+  const InverseOperator GetCoarseSolver() const 
+  {
+    return(CoarseSolver_);
   }
 
   ostream& Print(ostream& os, const bool verbose = true) const 
   {
-    if (MyPID() == 0) {
-      os << "*** MLAPI::TwoLevelAdditiveSA ***" << endl;
+    if (GetMyPID() == 0) {
+      os << "*** MLAPI::TwoLevelDDAdditive ***" << endl;
     }
 
     return(os);
   }
 
 private:
-  const Operator FineMatrix_;
-  const Operator R_;
-  const Operator P_;
-  const InverseOperator FineSolver_;
-  const InverseOperator CoarseSolver_;
+  Operator FineMatrix_;
+  Operator R_;
+  Operator P_;
+  InverseOperator FineSolver_;
+  InverseOperator CoarseSolver_;
 
 }; // TwoLevelDDAdditive
 
@@ -138,10 +183,12 @@ int main(int argc, char *argv[])
 
   Trilinos_Util::CrsMatrixGallery Gallery("laplace_2d", GetEpetra_Comm());
   Gallery.Set("problem_size", NumGlobalElements);
-  Operator FineMatrix(FineSpace,FineSpace,*(Gallery.GetMatrix()));
+  // `false' as last argument means that the user will deallocate
+  // the matrix, not MLAPI
+  Operator FineMatrix(FineSpace,FineSpace,Gallery.GetMatrix(),false);
 
-    DoubleVector LHS(FineSpace);
-    DoubleVector RHS(FineSpace);
+    MultiVector LHS(FineSpace);
+    MultiVector RHS(FineSpace);
 
     LHS = 0.0;
     RHS.Random();

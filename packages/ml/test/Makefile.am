@@ -33,6 +33,9 @@ SUBDIRS = MultiLevelPreconditioner_NonSym \
           Scalability \
 	  VerySimple \
 	  AztecSimple \
-      2d_Poisson \
-      3d_Poisson \
+          Zoltan \
+          IFPACKSmoothers \
+          MLAPICompare \
+          2d_Poisson \
+          3d_Poisson \
 	  scripts

@@ -38,7 +38,11 @@
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = Doxyfile \
-  mlguide.pdf
+             mainpage.doxygen \
+             mlguide.pdf \
+             footer.html \
+             header.tex \
+             ml-image.jpg
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

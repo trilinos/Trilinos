@@ -240,13 +240,17 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 EXTRA_DIST = Doxyfile \
-  mlguide.pdf
+             mainpage.doxygen \
+             mlguide.pdf \
+             footer.html \
+             header.tex \
+             ml-image.jpg
 
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
-MAINTAINERCLEANFILES = Makefile.in 
+MAINTAINERCLEANFILES = Makefile.in
 all: all-am
 
 .SUFFIXES:
