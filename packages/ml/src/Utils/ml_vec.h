@@ -60,6 +60,7 @@ extern int  ML_DVector_Scale( double, ML_DVector * );
 extern int  ML_DVector_Copy( ML_DVector *, ML_DVector * );
 extern int  ML_DVector_Axpy( double, ML_DVector *, ML_DVector * );
 extern int  ML_DVector_Aypx( double, ML_DVector *, ML_DVector * );
+extern int ML_DVector_Print(int length, double *data, char *label, ML_Comm *comm);
 
 #ifdef __cplusplus
 }

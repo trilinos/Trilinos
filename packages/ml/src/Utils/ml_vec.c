@@ -374,4 +374,22 @@ int ML_DVector_Aypx( double alpha, ML_DVector *src, ML_DVector *dest )
    return 0;
 }
 
+int ML_DVector_Print(int length, double *data, char *label, ML_Comm *comm)
+{
+   int i;
+   char filename[128];
+   FILE *fid;
 
+   if (comm->ML_nprocs == 1)
+      sprintf(filename,"%s.serial",label);
+   else
+      sprintf(filename,"%s.%d",label,comm->ML_mypid);
+   printf("Writing matrix to file %s...\n",filename);
+   fid = fopen(filename,"w");
+
+   for (i=0; i<length; i++)
+   {
+      fprintf(fid,"%d      %20.15e\n",i,data[i]);
+   }
+   fclose(fid);
+}
