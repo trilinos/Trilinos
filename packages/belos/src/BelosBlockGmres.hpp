@@ -411,7 +411,6 @@ void BlockGmres<TYPE>::GetSolutions(Anasazi::MultiVec<TYPE>& soln) {
 template <class TYPE>
 void BlockGmres<TYPE>::Solve (bool vb) {
 	int i,j, maxidx, numrhs_to_solve;
-	const int izero=0;
 	const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
 	const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
 	TYPE sigma, mu, vscale, maxelem;
@@ -1390,7 +1389,7 @@ void BlockGmres<TYPE>::CheckBlkArnRed( const int j, bool vb ) {
 template<class TYPE>
 void BlockGmres<TYPE>::CheckGmresResids(Anasazi::MultiVec<TYPE> & x, Anasazi::MultiVec<TYPE> & b,
 					Teuchos::SerialDenseMatrix<int,TYPE> & z, bool vb) const {
-        const TYPE one=1.0, zero=0.0;
+        const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
         int i, m = (_iter+1)*_blocksize;
 	Teuchos::BLAS<int,TYPE> blas;
         int *index = new int[m]; assert(index!=NULL);
