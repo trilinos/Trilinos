@@ -25,7 +25,6 @@ AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
 	cp  $(srcdir)/AmesosDscpackShort  AmesosDscpackShort$(EXEEXT)
 	cp  $(srcdir)/AmesosShellScript  AmesosShellScript$(EXEEXT)
 	cp  $(srcdir)/AmesosShortSuperLU  AmesosShortSuperLU$(EXEEXT)
-	cp  $(srcdir)/AmesosShortKundert  AmesosShortKundert$(EXEEXT)
 	cp  $(srcdir)/AmesosDistScript  AmesosDistScript$(EXEEXT)
 	cp  $(srcdir)/AmesosShortScript  AmesosShortScript$(EXEEXT)
 	cp  $(srcdir)/AmesosJanusScript  AmesosJanusScript$(EXEEXT)
