@@ -54,9 +54,11 @@ typedef struct ML_CommInfoAGX_Struct
 /* functions to manipulate the ML_CommInfoAGX structure                 */
 /* -------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
 {
+#endif
 #endif
 
 extern int ML_CommInfoAGX_Create(ML_CommInfoAGX **);
@@ -71,8 +73,10 @@ extern int ML_CommInfoAGX_Get_RecvList(ML_CommInfoAGX *,int,int*,int*,int**);
 extern int ML_CommInfoAGX_Destroy(ML_CommInfoAGX **);
 extern int ML_CommInfoAGX_Print(ML_CommInfoAGX *);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

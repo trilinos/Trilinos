@@ -75,8 +75,10 @@ struct ML_Comm_Envelope_Struct {
    int             tag;
 };
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 extern int  ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
@@ -123,8 +125,10 @@ extern int ML_Comm_Envelope_Set_Tag(ML_Comm_Envelope*, int, int);
 extern int ML_Comm_Envelope_Increment_Tag(ML_Comm_Envelope*);
 #define ML_Comm_Envelope_Print
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

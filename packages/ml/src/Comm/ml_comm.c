@@ -237,10 +237,18 @@ int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
             k = sizeof(int);
             com_ptr->USR_irecvbytes((void*) &indata, k, &partner, 
                                     &msgtype, com_ptr->USR_comm, 
-                                    (void *) &Request );
+#ifdef ML_CPP
+                                    &Request );
+#else
+                                    (void *)&Request );
+#endif
             com_ptr->USR_waitbytes((void*) &indata, k, &partner, 
                                    &msgtype, com_ptr->USR_comm, 
-                                   (void *) &Request );
+#ifdef ML_CPP
+                                   &Request );
+#else
+                                   (void *)&Request );
+#endif
             if ( indata > outdata ) outdata = indata;
          } 
          else if (partner < nprocs)
@@ -276,9 +284,17 @@ int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) &outdata, k, &partner, &msgtype,
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
                                      com_ptr->USR_comm, (void *) &Request );
+#endif
             com_ptr->USR_waitbytes((void*) &outdata, k, &partner, &msgtype,
-                                   com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
          }
       }
    }
@@ -341,9 +357,17 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
          {
             k = sizeof(int);
             com_ptr->USR_irecvbytes((void*) &indata, k, &partner, &msgtype, 
-                                    com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                    com_ptr->USR_comm, &Request );
+#else
+                                    com_ptr->USR_comm, (void *)&Request );
+#endif
             com_ptr->USR_waitbytes((void*) &indata, k, &partner, &msgtype, 
-                                   com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                    com_ptr->USR_comm, &Request );
+#else
+                                    com_ptr->USR_comm, (void *)&Request );
+#endif
             outdata = outdata + indata;
          } 
          else if (partner < nprocs)
@@ -379,9 +403,17 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) &outdata, k, &partner, &msgtype,
-                                    com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                    com_ptr->USR_comm, &Request );
+#else
+                                    com_ptr->USR_comm, (void *)&Request );
+#endif
             com_ptr->USR_waitbytes((void*) &outdata, k, &partner, &msgtype,
-                                   com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                    com_ptr->USR_comm, &Request );
+#else
+                                    com_ptr->USR_comm, (void *)&Request );
+#endif
          }
       }
    }
@@ -442,9 +474,17 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
          {
             k = sizeof(double);
             com_ptr->USR_irecvbytes((void*) &indata, k, &partner, &msgtype, 
-                                    com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                    com_ptr->USR_comm, &Request );
+#else
+                                    com_ptr->USR_comm, (void *)&Request );
+#endif
             com_ptr->USR_waitbytes((void*) &indata, k, &partner, &msgtype, 
-                                   com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                    com_ptr->USR_comm, &Request );
+#else
+                                    com_ptr->USR_comm, (void *)&Request );
+#endif
             outdata = outdata + indata;
          } 
          else if (partner < nprocs)
@@ -480,9 +520,17 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) &outdata, k, &partner, &msgtype,
-                                    com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             com_ptr->USR_waitbytes((void*) &outdata, k, &partner, &msgtype,
-                                   com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
          }
       }
    }
@@ -544,9 +592,17 @@ double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
          {
             k = sizeof(double);
             com_ptr->USR_irecvbytes((void*) &indata, k, &partner, &msgtype, 
-                                    com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             com_ptr->USR_waitbytes((void*) &indata, k, &partner, &msgtype, 
-                                   com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             outdata = (outdata > indata) ? outdata : indata;
          } 
          else if (partner < nprocs)
@@ -582,9 +638,17 @@ double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) &outdata, k, &partner, &msgtype,
-                                    com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             com_ptr->USR_waitbytes((void*) &outdata, k, &partner, &msgtype,
-                                   com_ptr->USR_comm, (void *) &Request );
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
          }
       }
    }
@@ -646,9 +710,17 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
          {
             k = leng * sizeof(int);
             com_ptr->USR_irecvbytes((void*) itmp, k, &partner, &msgtype,
-                                    com_ptr->USR_comm, (void *) &Request);
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             com_ptr->USR_waitbytes((void*) itmp, k, &partner, &msgtype,
-                                   com_ptr->USR_comm, (void *) &Request);
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             for ( j = 0; j < leng; j++ ) idata[j] += itmp[j];
          } 
          else if (partner < nprocs)
@@ -684,9 +756,17 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) idata, k, &partner, &msgtype,
-                                    com_ptr->USR_comm, (void *) &Request);
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             com_ptr->USR_waitbytes((void*) idata, k, &partner, &msgtype,
-                                   com_ptr->USR_comm, (void *) &Request);
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
          }
       }
    }
@@ -746,10 +826,18 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
             k = (total_length - (*cur_length)) * sizeof(int);
             com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), k, 
                                    &partner, &msgtype, 
-                                   com_ptr->USR_comm, (void *) &Request);
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), k, 
                                    &partner, &msgtype, 
-                                   com_ptr->USR_comm, (void *) &Request);
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             (*cur_length) += (nbytes / sizeof(int));
          } 
          else if (partner < nprocs)
@@ -785,9 +873,17 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) vals, k, &partner, &msgtype, 
-                                   com_ptr->USR_comm, (void *) &Request);
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             com_ptr->USR_waitbytes((void*) vals, k, &partner, &msgtype, 
-                                   com_ptr->USR_comm, (void *) &Request);
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
          }
       }
    }
@@ -848,10 +944,18 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
             k = (total_length - (*cur_length)) * sizeof(double);
             com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), k, 
                                     &partner, &msgtype, 
-                                    com_ptr->USR_comm, (void *) &Request);
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), k, 
                                     &partner, &msgtype, 
-                                    com_ptr->USR_comm, (void *) &Request);
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
             (*cur_length) += (nbytes / sizeof(double));
          }
          else if (partner < nprocs)

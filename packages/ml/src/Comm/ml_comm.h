@@ -80,9 +80,11 @@ extern ML_Comm *global_comm; /* should be made obsolete */
 /* functions for the ML communicator                                    */
 /* -------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
 {
+#endif
 #endif
 
 extern int    ML_Comm_Create( ML_Comm ** comm );
@@ -122,8 +124,10 @@ extern int    ML_Comm_ErrorHandlerDestroy(USR_ERRHANDLER**);
 extern void   ML_Comm_ErrorHandler(USR_COMM*, int*);
 #endif
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif
