@@ -63,7 +63,7 @@ extern "C" {
 /* function prototypes */
 
 static int rcb_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
-  double, int, int, int, int, int, int, int, int, int, float *);
+  double, int, int, int, int, int, int, int, int, int, int, float *);
 static void print_rcb_tree(ZZ *, int, int, struct rcb_tree *);
 static int cut_dimension(int, struct rcb_tree *, int, int, int *, int *, 
   struct rcb_box *);
@@ -87,6 +87,7 @@ static PARAM_VARS RCB_params[] = {
                   { "RCB_SET_DIRECTIONS", NULL, "INT", 0 },
                   { "RCB_RECTILINEAR_BLOCKS", NULL, "INT", 0 },
                   { "OBJ_WEIGHTS_COMPARABLE", NULL, "INT", 0 },
+                  { "MULTICRITERIA_NORM", NULL, "INT", 0 },
                   { NULL, NULL, NULL, 0 } };
 /*****************************************************************************/
 
@@ -158,6 +159,7 @@ int Zoltan_RCB(
     int rectilinear_blocks;   /* (0) do (1) don't break ties in find_median */
     int obj_wgt_comp;         /* 1 if all (multi-)weights for an object 
                                  have same units, 0 otherwise. */
+    int mcnorm;               /* norm (1,2,3) to use in multicriteria alg. */
     int ierr;
 
 
@@ -172,6 +174,8 @@ int Zoltan_RCB(
                               (void *) &rectilinear_blocks);
     Zoltan_Bind_Param(RCB_params, "OBJ_WEIGHTS_COMPARABLE",
                               (void *) &obj_wgt_comp);
+    Zoltan_Bind_Param(RCB_params, "MULTICRITERIA_NORM",
+                              (void *) &mcnorm);
 
     /* Set default values. */
     overalloc = RCB_DEFAULT_OVERALLOC;
@@ -183,7 +187,8 @@ int Zoltan_RCB(
     reuse_dir = 0;
     preset_dir = 0;
     rectilinear_blocks = 0;
-    obj_wgt_comp = 1;      /* EBEB Change to 0 later. */
+    obj_wgt_comp = 0;     
+    mcnorm = 1; 
 
     Zoltan_Assign_Param_Vals(zz->Params, RCB_params, zz->Debug_Level, zz->Proc,
                          zz->Debug_Proc);
@@ -195,7 +200,7 @@ int Zoltan_RCB(
     ierr = rcb_fn(zz, num_import, import_global_ids, import_local_ids,
 		 import_procs, import_to_part, overalloc, reuse, wgtflag,
                  check_geom, stats, gen_tree, reuse_dir, preset_dir,
-                 rectilinear_blocks, obj_wgt_comp, part_sizes);
+                 rectilinear_blocks, obj_wgt_comp, mcnorm, part_sizes);
 
     return(ierr);
 }
@@ -234,6 +239,7 @@ static int rcb_fn(
                                     4: yxz,        5: zxy,      6: zyx  */
   int rectilinear_blocks,       /* (0) do (1) don't break ties in find_median*/
   int obj_wgt_comp,             /* (1) obj wgts have same units, no scaling */
+  int mcnorm,                   /* norm for multicriteria bisection */
   float *part_sizes             /* Input:  Array of size zz->LB.Num_Global_Parts
                                    * wgtflag containing the percentage of work 
                                    to be assigned to each partition.    */
@@ -646,12 +652,12 @@ static int rcb_fn(
     else { 
       if (Zoltan_RB_find_bisector(
              zz, coord, wgts, dotmark, dotnum, 
-             wgtflag, 1, fraclo, local_comm, 
+             wgtflag, mcnorm, fraclo, local_comm, 
              &valuehalf, first_guess, counters,
              old_nprocs, proclower, old_nparts, 
              rcbbox->lo[dim], rcbbox->hi[dim], 
              weight, weightlo, weighthi,
-             dotlist, rectilinear_blocks, obj_wgt_comp) 
+             dotlist, rectilinear_blocks, obj_wgt_comp)
         != ZOLTAN_OK) {
         ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
         ierr = ZOLTAN_FATAL;
