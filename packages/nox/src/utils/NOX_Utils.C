@@ -36,6 +36,7 @@ ostream& operator<<(ostream& os, const NOX::Utils::Fill& f)
 NOX::Utils::Sci& NOX::Utils::sci(double dval)
 {
   sciobj.d = dval;
+  return sciobj;
 }
 
 ostream& operator<<(ostream& os, const NOX::Utils::Sci& s)
