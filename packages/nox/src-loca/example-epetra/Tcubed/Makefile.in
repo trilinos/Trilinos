@@ -123,8 +123,9 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 @BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLE = example
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLETP = exampleTP
 
-noinst_PROGRAMS = $(EXAMPLE)
+noinst_PROGRAMS = $(EXAMPLE) $(EXAMPLETP)
 
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -152,11 +153,24 @@ example_LDADD = -L$(top_builddir)/src \
                 -L$(top_builddir)/src-loca/src-epetra \
 		-llocaepetra -lnoxepetra -lloca -lnox $(LIBS)
 
+
+exampleTP_SOURCES = $(srcdir)/ExampleTP.C \
+	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
+
+
+exampleTP_DEPENDENCIES = $(example_DEPENDENCIES)
+
+exampleTP_CXXFLAGS = $(example_CXXFLAGS)
+
+exampleTP_LDADD = $(example_LDADD)
 subdir = src-loca/example-epetra/Tcubed
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@noinst_PROGRAMS = example$(EXEEXT)
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@noinst_PROGRAMS = example$(EXEEXT) \
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@	exampleTP$(EXEEXT)
 @BUILD_LOCA_EPETRA_EXAMPLES_FALSE@noinst_PROGRAMS =
 PROGRAMS = $(noinst_PROGRAMS)
 
@@ -165,6 +179,11 @@ am_example_OBJECTS = example-Example.$(OBJEXT) \
 	example-Problem_Interface.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 example_LDFLAGS =
+am_exampleTP_OBJECTS = exampleTP-ExampleTP.$(OBJEXT) \
+	exampleTP-FiniteElementProblem.$(OBJEXT) \
+	exampleTP-Basis.$(OBJEXT) exampleTP-Problem_Interface.$(OBJEXT)
+exampleTP_OBJECTS = $(am_exampleTP_OBJECTS)
+exampleTP_LDFLAGS =
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -176,7 +195,11 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/example-Basis.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Interface.Po
+@AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Interface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTP-Basis.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTP-ExampleTP.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTP-FiniteElementProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/exampleTP-Problem_Interface.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -188,9 +211,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(example_SOURCES)
+DIST_SOURCES = $(example_SOURCES) $(exampleTP_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(example_SOURCES)
+SOURCES = $(example_SOURCES) $(exampleTP_SOURCES)
 
 all: all-am
 
@@ -211,6 +234,14 @@ example-Problem_Interface.$(OBJEXT): $(srcdir)/Problem_Interface.C
 example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
 	@rm -f example$(EXEEXT)
 	$(CXXLINK) $(example_LDFLAGS) $(example_OBJECTS) $(example_LDADD) $(LIBS)
+exampleTP-ExampleTP.$(OBJEXT): $(srcdir)/ExampleTP.C
+exampleTP-FiniteElementProblem.$(OBJEXT): \
+	$(srcdir)/FiniteElementProblem.C
+exampleTP-Basis.$(OBJEXT): $(srcdir)/Basis.C
+exampleTP-Problem_Interface.$(OBJEXT): $(srcdir)/Problem_Interface.C
+exampleTP$(EXEEXT): $(exampleTP_OBJECTS) $(exampleTP_DEPENDENCIES) 
+	@rm -f exampleTP$(EXEEXT)
+	$(CXXLINK) $(exampleTP_LDFLAGS) $(exampleTP_OBJECTS) $(exampleTP_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -222,6 +253,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-FiniteElementProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Problem_Interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP-Basis.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP-ExampleTP.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP-FiniteElementProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exampleTP-Problem_Interface.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -285,6 +320,54 @@ example-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.obj `cygpath -w $(srcdir)/Problem_Interface.C`
+
+exampleTP-ExampleTP.o: $(srcdir)/ExampleTP.C
+@AMDEP_TRUE@	source='$(srcdir)/ExampleTP.C' object='exampleTP-ExampleTP.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP-ExampleTP.Po' tmpdepfile='$(DEPDIR)/exampleTP-ExampleTP.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-ExampleTP.o `test -f '$(srcdir)/ExampleTP.C' || echo '$(srcdir)/'`$(srcdir)/ExampleTP.C
+
+exampleTP-ExampleTP.obj: $(srcdir)/ExampleTP.C
+@AMDEP_TRUE@	source='$(srcdir)/ExampleTP.C' object='exampleTP-ExampleTP.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP-ExampleTP.Po' tmpdepfile='$(DEPDIR)/exampleTP-ExampleTP.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-ExampleTP.obj `cygpath -w $(srcdir)/ExampleTP.C`
+
+exampleTP-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTP-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTP-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.C' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.C
+
+exampleTP-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
+@AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='exampleTP-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/exampleTP-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-FiniteElementProblem.obj `cygpath -w $(srcdir)/FiniteElementProblem.C`
+
+exampleTP-Basis.o: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='exampleTP-Basis.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTP-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
+
+exampleTP-Basis.obj: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='exampleTP-Basis.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP-Basis.Po' tmpdepfile='$(DEPDIR)/exampleTP-Basis.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-Basis.obj `cygpath -w $(srcdir)/Basis.C`
+
+exampleTP-Problem_Interface.o: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='exampleTP-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTP-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+
+exampleTP-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='exampleTP-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/exampleTP-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/exampleTP-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(exampleTP_CXXFLAGS) $(CXXFLAGS) -c -o exampleTP-Problem_Interface.obj `cygpath -w $(srcdir)/Problem_Interface.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 

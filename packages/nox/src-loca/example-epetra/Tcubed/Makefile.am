@@ -32,10 +32,11 @@
 if BUILD_LOCA_EPETRA_EXAMPLES
 
 EXAMPLE = example
+EXAMPLETP = exampleTP
 
 endif
 
-noinst_PROGRAMS = $(EXAMPLE)
+noinst_PROGRAMS = $(EXAMPLE) $(EXAMPLETP)
 
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -59,3 +60,14 @@ example_LDADD = -L$(top_builddir)/src \
                 -L$(top_builddir)/src-loca/src \
                 -L$(top_builddir)/src-loca/src-epetra \
 		-llocaepetra -lnoxepetra -lloca -lnox $(LIBS)
+
+exampleTP_SOURCES = $(srcdir)/ExampleTP.C \
+	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
+
+exampleTP_DEPENDENCIES = $(example_DEPENDENCIES)
+
+exampleTP_CXXFLAGS = $(example_CXXFLAGS)
+
+exampleTP_LDADD = $(example_LDADD)
