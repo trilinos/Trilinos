@@ -27,14 +27,14 @@
 /* Define if want to build meros */
 #undef HAVE_MEROS
 
+/* Define if want to build ml */
+#undef HAVE_ML
+
 /* Define if want to build new_package */
 #undef HAVE_NEW_PACKAGE
 
 /* Define if want to build nox */
 #undef HAVE_NOX
-
-/* Define if want to build oldifpack */
-#undef HAVE_OLDIFPACK
 
 /* Define if want to build teuchos */
 #undef HAVE_TEUCHOS

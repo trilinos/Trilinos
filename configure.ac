@@ -75,10 +75,8 @@ TAC_ARG_ENABLE_FEATURE(anasazi, [Build anasazi], ANASAZI, no)
 AM_CONDITIONAL(BUILD_ANASAZI, test "X$ac_cv_use_anasazi" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(ifpack, [Build ifpack], IFPACK, yes)
-TAC_ARG_ENABLE_FEATURE(oldifpack, [Build ifpack and old ifpack ], OLDIFPACK, no)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno" ||
-	test "X$ac_cv_use_oldifpack" != "Xno")
+	test "X$ac_cv_use_belos" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, yes)
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno" || 
@@ -107,7 +105,6 @@ AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_ifpack" != "Xno" || 
 	test "X$ac_cv_use_tsf" != "Xno" || 
 	test "X$ac_cv_use_amesos" != "Xno" || 
-	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
@@ -122,7 +119,6 @@ if test "X$ac_cv_use_y12m" != "Xno"; then
 fi
 
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
-	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" || 
 	test "X$ac_cv_use_tsf" != "Xno" || 
 	test "X$ac_cv_use_amesos" != "Xno" || 
@@ -141,8 +137,7 @@ if test "X$ac_cv_use_triutils" != "Xno" ||
 fi
 
 if test "X$ac_cv_use_ifpack" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno" ||
-	test "X$ac_cv_use_oldifpack" != "Xno"; then
+	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ifpack])
 fi
 

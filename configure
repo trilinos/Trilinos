@@ -824,7 +824,6 @@ Optional Features:
   --enable-belos          Build belos (default is no)
   --enable-anasazi        Build anasazi (default is no)
   --enable-ifpack         Build ifpack (default is yes)
-  --enable-oldifpack      Build ifpack and old ifpack (default is no)
   --enable-triutils       Build triutils (default is yes)
   --enable-epetraext      Build epetraext (default is no)
   --enable-teuchos        Build teuchos (default is no)
@@ -2129,35 +2128,9 @@ echo "${ECHO_T}no" >&6
 fi
 
 
-# Check whether --enable-oldifpack or --disable-oldifpack was given.
-if test "${enable_oldifpack+set}" = set; then
-  enableval="$enable_oldifpack"
-  ac_cv_use_oldifpack=$enableval
-else
-  ac_cv_use_oldifpack=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use oldifpack" >&5
-echo $ECHO_N "checking whether to use oldifpack... $ECHO_C" >&6
-
-if test "X$ac_cv_use_oldifpack" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_OLDIFPACK
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
 
 if test "X$ac_cv_use_ifpack" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno" ||
-	test "X$ac_cv_use_oldifpack" != "Xno"; then
+	test "X$ac_cv_use_belos" != "Xno"; then
   BUILD_IFPACK_TRUE=
   BUILD_IFPACK_FALSE='#'
 else
@@ -2384,7 +2357,6 @@ if test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_tsf" != "Xno" ||
 	test "X$ac_cv_use_amesos" != "Xno" ||
-	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
@@ -2409,7 +2381,6 @@ subdirs="$subdirs external/y12m"
 fi
 
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
-	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_tsf" != "Xno" ||
 	test "X$ac_cv_use_amesos" != "Xno" ||
@@ -2434,8 +2405,7 @@ subdirs="$subdirs packages/triutils"
 fi
 
 if test "X$ac_cv_use_ifpack" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno" ||
-	test "X$ac_cv_use_oldifpack" != "Xno"; then
+	test "X$ac_cv_use_belos" != "Xno"; then
 
 
 subdirs="$subdirs packages/ifpack"
