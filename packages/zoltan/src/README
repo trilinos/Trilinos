@@ -149,10 +149,9 @@ fdriver         -- Fortran version of driver, primarily used for testing
 OTHER DIRECTORIES
 -----------------
 
-test		-- test problems in both Nemesis/Exodus and Chaco formats.
+test		-- Test problems in both Nemesis/Exodus and Chaco formats.
+                   Also contains the script test_zoltan that runs the test driver
+                   with all the test problems.
 
-util		-- utility scripts.
-
-docs/Zoltan_ps	-- script to convert HTML to PS. (This is very crude; you should rather
-                   print the Zoltan PDF files.)
+util		-- Utility scripts.
 
