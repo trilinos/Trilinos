@@ -1349,7 +1349,6 @@ void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat,
   int          rblksz, numblk, cblksz, index;
   int          N;   /* number of unknowns  (rows) */
   int          m;   /* number of blocks (c.f. vbr) */
-  int          nnzers;
   double       row_sum = 0.0, *sc_vec, one = 1.0;
   char        *yo = "AZ_sym_row_sum_scaling: ";
   char         label[80];
@@ -1359,7 +1358,11 @@ void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat,
   /**************************** execution begins ******************************/
 
   val = Amat->val;
+  indx = Amat->indx;
   bindx = Amat->bindx;
+  rptr = Amat->rpntr;
+  cptr = Amat->cpntr;
+  bptr = Amat->bpntr;
   data_org = Amat->data_org;
   N = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
@@ -1435,7 +1438,6 @@ void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat,
       /***** VBR Matrix *****/
 
       m = data_org[AZ_N_int_blk] + data_org[AZ_N_bord_blk];
-      nnzers = indx[bptr[m]];
 
       for (blkrow = 0; blkrow < m; blkrow++) {
         rblksz = rptr[blkrow+1] - rptr[blkrow];
