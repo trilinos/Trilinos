@@ -429,6 +429,15 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
   
   IsComputePreconditionerOK_ = false;
 
+#ifdef ML_MEM_CHECK
+  // print out allocated memory. It should be zero.
+  if( Comm().MyPID() == 0 ) 
+    cout << PrintMsg_ << "Calling ML_Print_it()..." << endl
+         << PrintMsg_ << "no memory should be allocated by the ML preconditioner" << endl
+	 << PrintMsg_ << "at this point." << endl;
+  ML_print_it();
+#endif
+
 }
 
 // ================================================ ====== ==== ==== == =
@@ -484,11 +493,11 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & Edg
   // some sanity checks
   bool ok = true;
   if( ! TMatrix.OperatorDomainMap().SameAs(NodeMatrix.OperatorRangeMap() ) ) {
-    cerr << ErrorMsg_ << "discrete grad DomainMap != node RangeMap()..." << endl;
+    cerr << ErrorMsg_ << "discrete grad DomainMap != node RangeMap..." << endl;
     ok = false;
   }
   if( ! TMatrix.OperatorRangeMap().SameAs(EdgeMatrix.OperatorDomainMap() ) ) {
-    cerr << ErrorMsg_ << "discrete grad RangeMap != edge DomainMap()..." <<endl;
+    cerr << ErrorMsg_ << "discrete grad RangeMap != edge DomainMap..." <<endl;
     ok = false;
   }
 
@@ -1129,6 +1138,17 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   else                      ML_Aggregate_Set_UseDropping( ML_NO );  
  
   /* ********************************************************************** */
+  /* alternatively, one can use dropping on a symmetrized matrix            */
+  /* (although, this can be quite expensive for the finest levels)          */
+  /* ********************************************************************** */
+     
+  bool UseSymmetrize = false;
+  sprintf(parameter,"%saggregation: symmetrize", Prefix_);
+  UseSymmetrize = List_.get(parameter, UseSymmetrize);
+  if( UseSymmetrize == true ) ML_Set_Symmetrize(ml_, ML_YES );
+  else                      ML_Set_Symmetrize(ml_, ML_NO );  
+
+  /* ********************************************************************** */
   /* Define scheme to determine damping parameter in prolongator and        */
   /* restriction smoother. Only for non-Maxwell.                            */
   /* ********************************************************************** */
@@ -1456,13 +1476,57 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   SetFiltering();
   
   /* ********************************************************************** */
+  /* One may decide to print out the entire hierarchy (to be analyzed in    */
+  /* MATLAB, for instance).                                                 */
+  /* ********************************************************************** */
+
+  sprintf(parameter,"%sprint hierarchy", Prefix_);
+  bool PrintHierarchy = List_.get(parameter, false);
+  
+  if( Comm().NumProc() > 1 ) {
+    cerr << endl;
+    cerr << ErrorMsg_ << "Option `print hierarchy' == `true' is available" << endl
+         << ErrorMsg_ << "only for serial runs." << endl;
+    cerr << endl;
+  }
+  
+  if( PrintHierarchy == true && Comm().NumProc() == 1 ) {
+    if( Comm().MyPID() == 0 ) {
+      cout << endl;
+      cout << PrintMsg_ << "You are printing the entire hierarchy," << endl
+	   << PrintMsg_ << "from finest level (" << LevelID_[0] 
+	                << ") to coarsest (" << LevelID_[NumLevels_-1] << ")." << endl
+	   << PrintMsg_ << "MATLAB can be used to load the matrices, using spconvert()" << endl;
+      cout << endl;
+    }
+
+    // Amat (one for each level)
+    for( int i=0 ; i<NumLevels_ ; ++i ) {
+      char name[80];
+      sprintf(name,"Amat_%d", LevelID_[i]);
+      ML_Operator_Print(&(ml_->Amat[LevelID_[i]]), name);
+    }
+    
+    // Pmat (one for each level, except last)
+    for( int i=1 ; i<NumLevels_ ; ++i ) {
+      char name[80];
+      sprintf(name,"Pmat_%d", LevelID_[i]);
+      ML_Operator_Print(&(ml_->Pmat[LevelID_[i]]), name);
+    }
+
+    // Rmat (one for each level, except first)
+    for( int i=0 ; i<NumLevels_-1 ; ++i ) {
+      char name[80];
+      sprintf(name,"Rmat_%d", LevelID_[i]);
+      ML_Operator_Print(&(ml_->Rmat[LevelID_[i]]), name);
+    }
+  
+  }
+
+  /* ********************************************************************** */
   /* Other minor settings                                                   */
   /* ********************************************************************** */
 
-  // may want to print some internal stuff 
-  // ML_Operator_Print(&(ml_->Pmat[1]),"Pmat");
-  // ML_Operator_Print(&(ml_->Rmat[0]),"Rmat");
-  // ML_Operator_Print(&(ml_->Amat[2]),"Amat");
   
   CreateLabel();
   
@@ -1580,7 +1644,7 @@ int MultiLevelPreconditioner::CreateLabel()
   char coarsest[80];
   finest[0] = '\0';
   coarsest[0] = '\0';
-
+  char * label;
 
   ML * ml_ptr;
   if( SolvingMaxwell_ == false ) ml_ptr = ml_;
@@ -1588,11 +1652,16 @@ int MultiLevelPreconditioner::CreateLabel()
  
   int i = ml_ptr->ML_finest_level;
      
-  if (ml_ptr->pre_smoother[i].ML_id != ML_EMPTY) 
-    sprintf(finest, "%s", ml_ptr->pre_smoother[i].label);
-  if (ml_ptr->post_smoother[i].ML_id != ML_EMPTY) 
-    sprintf(finest, "%s/%s", finest,ml_ptr->post_smoother[i].label);
-  
+  if (ml_ptr->pre_smoother[i].ML_id != ML_EMPTY) {
+    label = ml_ptr->pre_smoother[i].label;
+    if( strncmp(label,"PreS_",4) == 0 ) sprintf(finest, "%s", "~");
+    else                                sprintf(finest, "%s", label);
+  }
+  if (ml_ptr->post_smoother[i].ML_id != ML_EMPTY) {
+    label = ml_ptr->pre_smoother[i].label;
+    if( strncmp(label,"PostS_", 5) == 0 ) sprintf(finest, "%s/~", finest);
+    else                                  sprintf(finest, "%s/%s", finest, label);
+  } 
   if (i != ml_ptr->ML_coarsest_level) {
     i = ml_ptr->ML_coarsest_level;
     if ( ML_CSolve_Check( &(ml_ptr->csolve[i]) ) == 1 ) {
@@ -1600,17 +1669,23 @@ int MultiLevelPreconditioner::CreateLabel()
     }
     
     else {
-      if (ml_ptr->pre_smoother[i].ML_id != ML_EMPTY) 
-	sprintf(coarsest, "%s", ml_ptr->pre_smoother[i].label);
-      if (ml_ptr->post_smoother[i].ML_id != ML_EMPTY) 
-	sprintf(coarsest, "%s/%s", coarsest,ml_ptr->post_smoother[i].label);
+      if (ml_ptr->pre_smoother[i].ML_id != ML_EMPTY) {
+	label = ml_ptr->pre_smoother[i].label;
+	if( strncmp(label,"PreS_",4) == 0 ) sprintf(coarsest, "~");
+	else                                sprintf(coarsest, "%s", label);
+      }
+      if (ml_ptr->post_smoother[i].ML_id != ML_EMPTY) {
+	label = ml_ptr->post_smoother[i].label;
+	if( strncmp(label,"PostS_", 5) == 0 ) sprintf(coarsest, "%s/~", coarsest); 
+	else                                  sprintf(coarsest, "%s/%s",coarsest, label);
+      }
     }
   }
 
   if( SolvingMaxwell_ == false ) 
-    sprintf(Label_,"%d level SA (%s, %s)", ml_->ML_num_actual_levels, finest, coarsest);
+    sprintf(Label_,"ML (L=%d, %s, %s)", ml_->ML_num_actual_levels, finest, coarsest);
   else
-    sprintf(Label_,"%d level MW (%s, %s)", ml_ptr->ML_num_actual_levels, finest, coarsest);
+    sprintf(Label_,"ML (Maxwell, L=%d, %s, %s)", ml_ptr->ML_num_actual_levels, finest, coarsest);
   
   return 0;
     
@@ -2705,8 +2780,9 @@ int ML_Epetra::MultiLevelPreconditioner::PrintStencil2D(const int nx, const int 
     }
   }
   
-  cout << "2D computational stencil for equation " << EquationID << " at node " << NodeID;
-  cout << endl << endl;
+  cout << "2D computational stencil for equation " << EquationID << " at node " << NodeID
+       << " (grid is " << nx << " x " << ny << ")" << endl;
+  cout << endl;
   for( int iy=0 ; iy<3 ; ++iy ) {
     cout << "\t";
     for( int ix=0 ; ix<3 ; ++ix ) {
