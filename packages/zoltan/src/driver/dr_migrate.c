@@ -91,7 +91,7 @@ static int Use_Edge_Wgts = 0;         /* Flag indicating whether elements
 int migrate_elements(
   int Proc,
   MESH_INFO_PTR mesh,
-  struct LB_Struct *lb_obj,
+  struct LB_Struct *lb,
   int num_imp,
   LB_GID *imp_gids,
   LB_LID *imp_lids,
@@ -110,37 +110,37 @@ char *yo = "migrate_elements";
   /*
    * register migration functions
    */
-  if (LB_Set_Fn(lb_obj, LB_PRE_MIGRATE_FN_TYPE, (void *) migrate_pre_process,
+  if (LB_Set_Fn(lb, LB_PRE_MIGRATE_FN_TYPE, (void *) migrate_pre_process,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb_obj, LB_POST_MIGRATE_FN_TYPE, (void *) migrate_post_process,
+  if (LB_Set_Fn(lb, LB_POST_MIGRATE_FN_TYPE, (void *) migrate_post_process,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb_obj, LB_OBJ_SIZE_FN_TYPE, (void *) migrate_elem_size,
+  if (LB_Set_Fn(lb, LB_OBJ_SIZE_FN_TYPE, (void *) migrate_elem_size,
                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb_obj, LB_PACK_OBJ_FN_TYPE, (void *) migrate_pack_elem,
+  if (LB_Set_Fn(lb, LB_PACK_OBJ_FN_TYPE, (void *) migrate_pack_elem,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb_obj, LB_UNPACK_OBJ_FN_TYPE, (void *) migrate_unpack_elem,
+  if (LB_Set_Fn(lb, LB_UNPACK_OBJ_FN_TYPE, (void *) migrate_unpack_elem,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Help_Migrate(lb_obj, num_imp, imp_gids, imp_lids, imp_procs,
+  if (LB_Help_Migrate(lb, num_imp, imp_gids, imp_lids, imp_procs,
                       num_exp, exp_gids, exp_lids, exp_procs) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Help_Migrate()\n");
     return 0;

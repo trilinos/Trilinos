@@ -62,7 +62,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
 {
 /* Local declarations. */
   char *yo = "run_zoltan";
-  struct LB_Struct *lb_obj;
+  struct LB_Struct *lb;
 
   /* Variables returned by Zoltan */
   LB_GID *import_gids = NULL;    /* Global node nums of nodes to be imported */
@@ -91,7 +91,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   /*
    *  Create a load-balancing structure.
    */
-  if ((lb_obj = LB_Create(MPI_COMM_WORLD)) == NULL) {
+  if ((lb = LB_Create(MPI_COMM_WORLD)) == NULL) {
     Gen_Error(0, "fatal:  NULL returned from LB_Create()\n");
     return 0;
   }
@@ -99,7 +99,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
 
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
-    ierr = LB_Set_Param(lb_obj, prob->params[i][0], prob->params[i][1]);
+    ierr = LB_Set_Param(lb, prob->params[i][0], prob->params[i][1]);
     if (!((ierr == 0) || (ierr == 3))) {
       sprintf(errmsg,"fatal: error in LB_Set_Param when setting parameter %s\n",
               prob->params[i][0]);
@@ -110,7 +110,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
 
 
   /* Set the method */
-  if (LB_Set_Method(lb_obj, prob->method) == LB_FATAL) {
+  if (LB_Set_Method(lb, prob->method) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Method()\n");
     return 0;
   }
@@ -119,45 +119,45 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
    * Set the callback functions
    */
 
-  if (LB_Set_Fn(lb_obj, LB_NUM_OBJ_FN_TYPE, (void *) get_num_elements,
+  if (LB_Set_Fn(lb, LB_NUM_OBJ_FN_TYPE, (void *) get_num_elements,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb_obj, LB_FIRST_OBJ_FN_TYPE, (void *) get_first_element,
+  if (LB_Set_Fn(lb, LB_FIRST_OBJ_FN_TYPE, (void *) get_first_element,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb_obj, LB_NEXT_OBJ_FN_TYPE, (void *) get_next_element,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
-    return 0;
-  }
-
-  /* Functions for geometry based algorithms */
-  if (LB_Set_Fn(lb_obj, LB_NUM_GEOM_FN_TYPE, (void *) get_num_geom,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
-    return 0;
-  }
-
-  if (LB_Set_Fn(lb_obj, LB_GEOM_FN_TYPE, (void *) get_geom,
+  if (LB_Set_Fn(lb, LB_NEXT_OBJ_FN_TYPE, (void *) get_next_element,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   /* Functions for geometry based algorithms */
-  if (LB_Set_Fn(lb_obj, LB_NUM_EDGES_FN_TYPE, (void *) get_num_edges,
+  if (LB_Set_Fn(lb, LB_NUM_GEOM_FN_TYPE, (void *) get_num_geom,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb_obj, LB_EDGE_LIST_FN_TYPE, (void *) get_edge_list,
+  if (LB_Set_Fn(lb, LB_GEOM_FN_TYPE, (void *) get_geom,
+                (void *) mesh) == LB_FATAL) {
+    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+    return 0;
+  }
+
+  /* Functions for geometry based algorithms */
+  if (LB_Set_Fn(lb, LB_NUM_EDGES_FN_TYPE, (void *) get_num_edges,
+                (void *) mesh) == LB_FATAL) {
+    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+    return 0;
+  }
+
+  if (LB_Set_Fn(lb, LB_EDGE_LIST_FN_TYPE, (void *) get_edge_list,
                 (void *) mesh)== LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
@@ -167,14 +167,14 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   if (Debug_Driver > 0) {
     if (Proc == 0) printf("\nBEFORE load balancing\n");
     driver_eval(mesh);
-    LB_Eval(lb_obj, 1, NULL, NULL, NULL, NULL, NULL, &i);
+    LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, &i);
     if (i) printf("Warning: LB_Eval returned error code %d\n", i);
   }
 
   /*
    * Call Zoltan
    */
-  if (LB_Balance(lb_obj, &new_decomp, &num_imported, &import_gids,
+  if (LB_Balance(lb, &new_decomp, &num_imported, &import_gids,
                  &import_lids, &import_procs, &num_exported, &export_gids,
                  &export_lids, &export_procs) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Balance()\n");
@@ -185,7 +185,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
    * Call another routine to perform the migration
    */
   if (new_decomp) {
-    if (!migrate_elements(Proc, mesh, lb_obj, num_imported, import_gids,
+    if (!migrate_elements(Proc, mesh, lb, num_imported, import_gids,
                           import_lids, import_procs, num_exported, export_gids,
                           export_lids, export_procs)) {
       Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
@@ -197,7 +197,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   if (Debug_Driver > 0) {
     if (Proc == 0) printf("\nAFTER load balancing\n");
     driver_eval(mesh);
-    LB_Eval(lb_obj, 1, NULL, NULL, NULL, NULL, NULL, &i);
+    LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, &i);
     if (i) printf("Warning: LB_Eval returned error code %d\n", i);
   }
 
@@ -205,7 +205,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   (void) LB_Free_Data(&import_gids, &import_lids, &import_procs,
                       &export_gids, &export_lids, &export_procs);
 
-  LB_Destroy(&lb_obj);
+  LB_Destroy(&lb);
 
   LB_Memory_Stats();
 
