@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <TITLE>Zoltan User's Guide:  Interface</TITLE>
 <!
   ------------------------
@@ -26,6 +26,7 @@ Zoltan library; their descriptions are included below.
 <BLOCKQUOTE><B><A HREF="#LB_Set_Method">LB_Set_Method</A></B>
 <BR><B><A HREF="#LB_Set_Param">LB_Set_Param</A></B>
 <BR><B><A HREF="#LB_Balance">LB_Balance</A></B>
+<BR><B><A HREF="#LB_Eval">LB_Eval</A></B>
 <BR><B><A HREF="#LB_Free_Data">LB_Free_Data</A></B>
 <BR><B><A HREF="#LB_Destroy_Object">LB_Destroy_Object</A></B></BLOCKQUOTE>
 
@@ -110,7 +111,7 @@ is used.</TD>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
 <TD><A NAME="LB_Set_Param"></A>int <B>LB_Set_Param</B>(struct <B>LB_Struct</B>
-*<I> lb</I>, char * <I>param_name</I>, char * <I>new_val</I>);&nbsp;&nbsp;
+*<I> lb</I>, char * <I>param_name</I>, char * <I>new_val</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
@@ -190,7 +191,7 @@ being set. As above, the string is case-insensitive.&nbsp;
 ** <I>import_global_ids</I>, <B>LB_LID</B> ** <I>import_local_ids</I>,
 int ** <I>import_procs</I>, int * <I>num_export</I>, <B>LB_GID </B>**<I>
 export_global_ids</I>, <B>LB_LID</B> ** <I>export_local_ids</I>, int **
-<I>export_procs</I>);&nbsp;&nbsp;&nbsp;
+<I>export_procs</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
@@ -318,10 +319,152 @@ IDs of processors that will own the exported objects in the new decomposition
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD><A NAME="LB_Free_Data"></A>int <B>LB_Free_Data</B>(<B>LB_GID</B> **
-<I>import_global_ids</I>, <B>LB_LID</B> ** <I>import_local_ids</I>, int
-** <I>import_procs</I>, <B>LB_GID </B>** <I>export_global_ids</I>, <B>LB_LID</B>
-** <I>export_local_ids</I>, int ** <I>export_procs</I>);&nbsp;&nbsp;&nbsp;
+<TD><A NAME="LB_Free_Data"></A>void <B>LB_Eval</B>(struct <B>LB_struct
+*</B><I>lb</I>, int <I>print_stats</I>, int <I>vwgt_dim</I>, int <I>ewgt_dim</I>,
+int *<I>nobj</I>, float *o<I>bj_wgt</I>, int *<I>cut_wgt</I>, int *<I>nboundary</I>,
+int *<I>nadj</I>, int *<I>ierr</I>);
+
+<P>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD></TD>
+</TR>
+</TABLE>
+
+<HR WIDTH="100%"><B>LB_Eval </B>evaluates the quality of the load balance
+in the load balance object pointed to by <I>lb</I>. Some quality metrics
+are only available if the graph query functions have been registered. <B>LB_Eval
+</B>may either print a summary of the results to <I>stdout</I> or return
+the results in the output parameters.
+<BR>&nbsp;
+<TABLE WIDTH="100%" NOSAVE >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+
+<TD>The load-balancing object.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; print_stats</I></TD>
+
+<TD>If <I>print_stats</I>>0, print a summary (maximum and sum) of the quality
+metrics to <I>stdout.</I></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; vwgt_dim</I></TD>
+
+<TD>Object (vertex) weight dimension: compute statistics for the <I>vwgt_dim
+</I>first weights<I>. </I>(0 if no weights)</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ewgt_dim</I></TD>
+
+<TD>Edge weight dimension: compute statistics for the <I>ewgt_dim </I>first
+weights<I>. </I>(must be 0 or 1 in this version)</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; nobj</I></TD>
+
+<TD>Upon return, the number of objects on this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; obj_wgt</I></TD>
+
+<TD>Upon return, an array containing the sum of object weights on this
+processor.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>cut_wgt</I></TD>
+
+<TD>Upon return, the cut size (weight) for this processor.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>nboundary</I></TD>
+
+<TD>Upon return,&nbsp; the number of boundary objects on this processor.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>nadj</I></TD>
+
+<TD>Upon return,&nbsp; the number of adjacent processors as defined by the
+communication graph.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>ierr</I></TD>
+
+<TD>Upon return, an error code.</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;</TD>
+
+<TD>None.&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR VALIGN=TOP NOSAVE>
+<TD><B>Query functions:</B>
+<BR>&nbsp;&nbsp;&nbsp;&nbsp; Required:</TD>
+
+<TD NOSAVE>
+
+<P>LB_NUM_OBJ_FN&nbsp;
+<BR>LB_OBJ_LIST_FN or LB_FIRST_OBJ_FN/LB_NEXT_OBJ_FN</TD>
+</TR>
+
+<TR VALIGN=TOP NOSAVE>
+<TD>&nbsp;&nbsp;&nbsp;&nbsp; Optional:</TD>
+
+<TD NOSAVE>LB_NUM_EDGES_FN
+<BR>LB_EDGE_LIST_FN</TD>
+</TR>
+</TABLE>
+
+<P>
+An output parameter is only returned if the input value of that
+parameter was not NULL. (Except that the error code is always returned.)
+The rationale for this feature is that if one wishes just to print the 
+evaluation results, one can simply set all (or some of) the output
+parameters to NULL in the function call.
+
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_Eval"></A>int <B>LB_Free_Data</B>(<B>LB_GID</B> ** <I>import_global_ids</I>,
+<B>LB_LID</B> ** <I>import_local_ids</I>, int ** <I>import_procs</I>, <B>LB_GID
+</B>** <I>export_global_ids</I>, <B>LB_LID</B> ** <I>export_local_ids</I>,
+int ** <I>export_procs</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
@@ -381,8 +524,7 @@ the imported objects in the previous decomposition (i.e., the source processors)
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
 
-<TD>&nbsp;The array containing the local IDs of objects exported from this
-processor.</TD>
+<TD>The array containing the local IDs of objects exported from this processor.</TD>
 </TR>
 
 <TR>
@@ -412,7 +554,7 @@ objects in the new decomposition (i.e., the destination processors).</TD>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
 <TD><A NAME="LB_Destroy_Object"></A>int <B>LB_Destroy_Object</B> (struct
-<B>LB_Struct</B> ** <I>lb</I>);&nbsp;&nbsp;&nbsp;&nbsp;
+<B>LB_Struct</B> ** <I>lb</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
