@@ -80,10 +80,13 @@ ml_analyze_OBJECTS = $(am_ml_analyze_OBJECTS)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+ml_analyze_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_ml_filtering_OBJECTS = ml_filtering-ml_filtering.$(OBJEXT)
 ml_filtering_OBJECTS = $(am_ml_filtering_OBJECTS)
+ml_filtering_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_ml_user_aggr_OBJECTS = ml_user_aggr-ml_user_aggr.$(OBJEXT)
 ml_user_aggr_OBJECTS = $(am_ml_user_aggr_OBJECTS)
+ml_user_aggr_DEPENDENCIES = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -376,15 +379,6 @@ ml_example_elasticity_LINK = ${mllink}
 ml_readex_CFLAGS = ${ml_common_include_locations}
 ml_readex_LDADD = ${ml_libs}
 ml_readex_LINK = ${mllink}
-ml_user_aggr_DEPENDENCIES = \
-    .linktosources
-
-ml_filtering_DEPENDENCIES = \
-    .linktosources
-
-ml_analyze_DEPENDENCIES = \
-    .linktosources
-
 all: all-am
 
 .SUFFIXES:
@@ -673,13 +667,6 @@ uninstall-am: uninstall-info-am
 include $(top_builddir)/Makefile.export
 
 # source file definitions, link lines
-
-#make a symbolic link to these files in the build area
-.linktosources:
-	@if (! [ -h ml_user_aggr.cpp ] ); then ln -s $(ml_user_aggr_SOURCES) .;fi
-	@if (! [ -h ml_filtering.cpp ] ); then ln -s $(ml_filtering_SOURCES) .;fi
-	@if (! [ -h ml_analyze.cpp ] ); then ln -s $(ml_analyze_SOURCES) .; fi
-	touch .linktosources
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
