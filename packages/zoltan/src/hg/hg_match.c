@@ -105,16 +105,25 @@ int Zoltan_HG_Matching (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  if (g->vwgt && hgp->ews)
+  if (g->vwgt && hgp->ews>0)
   { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nEdge)))
     { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
     }
-    Zoltan_HG_Scale_Graph_Weight (zz, g, new_ewgt);
+    Zoltan_HG_Scale_Graph_Weight (zz, g, new_ewgt,hgp->ews);
     old_ewgt = g->ewgt;
     g->ewgt = new_ewgt;
   }
+
+/*
+{ int i, j;
+  for (i=0; i<g->nVtx; i++)
+    for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
+      if (abs(g->ewgt[j] - sim(hg,i,g->neigh[j])) > EPS*(g->ewgt[j]))
+        printf("%d %d %.20f %.20f\n",i,g->neigh[j],g->ewgt[j],sim(hg,i,g->neigh[j]));
+}
+*/
 
   /* Call matching routine specified by parameters. */
   ierr = hgp->matching(zz,hg,g,match,limit);
@@ -156,46 +165,41 @@ static int matching_mxm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 /*****************************************************************************/
 
 static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
-   {
-   int i, j, k=0, *v1, *v2, random ;
-   char *yo = "matching_rem" ;
+{ int i, j, k=0, *v1, *v2, random ;
+  char *yo = "matching_rem" ;
 
-   if (!(v1 = (int *) ZOLTAN_MALLOC (sizeof (int) * 2*g->nEdge) ) )
-      {
-      ZOLTAN_FREE ((void **) &v1) ;
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      return ZOLTAN_MEMERR ;
-      }
-   v2 = &(v1[g->nEdge]);
+  if (!(v1 = (int *) ZOLTAN_MALLOC (sizeof (int) * 2*g->nEdge) ) )
+  { ZOLTAN_FREE ((void **) &v1) ;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR ;
+  }
+  v2 = &(v1[g->nEdge]);
 
-   for (i = 0 ; i < g->nVtx ; i++)
-      match[i] = i ;
+  for (i = 0 ; i < g->nVtx ; i++)
+    match[i] = i ;
 
-   for (i = 0 ; i < g->nVtx ; i++)
-      for (j = g->nindex[i] ; j < g->nindex[i+1] ; j++)
-          if (i < g->neigh[j])
-             {
-             v1[k] = i ;
-             v2[k++] = g->neigh[j] ;
-             }
-
-   while (k>0 && (*limit)>0)
-      {
-      i = v1[random=rand()%k];
-      j = v2[random];
-      v1[random] = v1[--k] ;
-      v2[random] = v2[k] ;
-      if (match[i] == i && match[j] == j)
-         {
-         match[i] = j ;
-         match[j] = i ;
-         (*limit)-- ;
-         }
+  for (i = 0 ; i < g->nVtx ; i++)
+    for (j = g->nindex[i] ; j < g->nindex[i+1] ; j++)
+      if (i < g->neigh[j])
+      { v1[k] = i ;
+        v2[k++] = g->neigh[j] ;
       }
 
-   ZOLTAN_FREE ((void **) &v1) ;
-   return ZOLTAN_OK ;
-   }
+  while (k>0 && (*limit)>0)
+  { i = v1[random=rand()%k];
+    j = v2[random];
+    v1[random] = v1[--k] ;
+    v2[random] = v2[k] ;
+    if (match[i] == i && match[j] == j)
+    { match[i] = j ;
+      match[j] = i ;
+      (*limit)-- ;
+    }
+  }
+
+  ZOLTAN_FREE ((void **) &v1) ;
+  return ZOLTAN_OK ;
+}
 
 /*****************************************************************************/
 

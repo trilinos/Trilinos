@@ -188,7 +188,7 @@ int Zoltan_HG_HPart_Lib    (ZZ *, HGraph *, int, Partition, HGPartParams *);
 int Zoltan_HG_HPart_Info   (ZZ *, HGraph *, int, Partition);
 
 /* Scale Edge Weight */
-int Zoltan_HG_Scale_Graph_Weight  (ZZ *, Graph *, float *);
+int Zoltan_HG_Scale_Graph_Weight  (ZZ *, Graph *, float *, int);
 int Zoltan_HG_Scale_HGraph_Weight (ZZ *, HGraph *, float *);
 
 /* Matching functions */

@@ -20,7 +20,7 @@ extern "C" {
 
 /****************************************************************************/
 
-int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt)
+int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
 { int   i, j;
 
   if (!g->vwgt)
@@ -30,8 +30,14 @@ int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt)
     for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
     { if (g->vwgt[i]<=0.0 || g->vwgt[g->neigh[j]]<=0.0)
         new_ewgt[j] = FLT_MAX;
-      else
+      else if (scale == 1)
         new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/g->vwgt[i]/g->vwgt[g->neigh[j]];
+      else if (scale == 2)
+        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/(g->vwgt[i]+g->vwgt[g->neigh[j]]);
+      else if (scale == 3)
+        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MAX(g->vwgt[i],g->vwgt[g->neigh[j]]);
+      else if (scale == 4)
+        new_ewgt[j] = (g->ewgt?g->ewgt[j]:1.0)/MIN(g->vwgt[i],g->vwgt[g->neigh[j]]);
     }
   return ZOLTAN_OK;
 }
