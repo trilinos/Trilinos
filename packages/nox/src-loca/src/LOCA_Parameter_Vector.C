@@ -242,7 +242,7 @@ void ParameterVector::print(ostream& stream) const
   cout << endl;
 }
 
-ostream& operator<<(ostream& stream, ParameterVector& p)
+ostream& operator<<(ostream& stream, const ParameterVector& p)
 {
   p.print(stream);
   return stream;
