@@ -160,9 +160,7 @@ private:
 	// Private member functions
 
 	///
-	IterateReturn nextBlock( const int maxNumIter, int *numRhsSolved );
-	///
-	void setCurrSystem( const int firstRhsOffset );
+	IterateReturn nextBlock( const int maxNumIter, bool *allFinished );
 	/// Returns true of solver breakdown has occured
 	bool computeIteration();
 	///
@@ -291,8 +289,8 @@ IterateReturn NonblockGmres<Scalar>::iterate( const int maxNumIter )
 {
 	int numCumulativeIter = 0;
 	bool allConverged = true;
-	// Get the combined operator
-	TSFCore::LinOpNonPersisting<Scalar> Op = lpi_->getCombinedOperator();
+	// Get the composite operator
+	TSFCore::LinearOpHandle<Scalar> Op = lpi_->getCompositeOperator();
 	if(get_out().get()) {
 		*get_out() << "\n*** Entering NonblockGmres<Scalar>::iterate(...)\n" << std::setprecision(16);
 		if(dump_all()) {
@@ -312,10 +310,9 @@ IterateReturn NonblockGmres<Scalar>::iterate( const int maxNumIter )
 		sn_.resize(maxKrylovDim);
 	}
 	// Solve the systems as a set of single RHS solves
-	const int numTotalRhs = lpi_->getTotalNumRhs();
-	int numRhsSolved = 0;
-	while ( numRhsSolved < numTotalRhs ) {
-		IterateReturn nextBlockReturn = nextBlock( maxNumIter, &numRhsSolved );
+	bool allFinished = false;
+	while ( !allFinished  ) {
+		IterateReturn nextBlockReturn = nextBlock( maxNumIter, &allFinished );
 		numCumulativeIter += nextBlockReturn.numCumulativeIter;
 		if( nextBlockReturn.iterateTermination != TERMINATION_STATUS_TEST ) allConverged = false;
 	}
@@ -332,12 +329,10 @@ void NonblockGmres<Scalar>::finalize()
 // private
 
 template<class Scalar>
-IterateReturn NonblockGmres<Scalar>::nextBlock( const int maxNumIter, int *numRhsSolved )
+IterateReturn NonblockGmres<Scalar>::nextBlock( const int maxNumIter, bool *allFinished )
 {
-	// Setup for next RHS to solve
-	const int firstRhsOffset = *numRhsSolved;
-	const int numCurrRhs = 1; // We can only solve one RHS at a time
-	this->setCurrSystem(firstRhsOffset);
+	*allFinished = !lpi_->setupCurrSystem();
+	if(*allFinished) return IterateReturn();
 	// Inform the status test that we are solving a new block of systems
 	StatusTest<Scalar> *statusTest = lpi_->getStatusTest();
 	if(statusTest) statusTest->reset();
@@ -359,7 +354,7 @@ IterateReturn NonblockGmres<Scalar>::nextBlock( const int maxNumIter, int *numRh
 				}
 				Teuchos::RefCountPtr<TSFCore::Vector<Scalar> > v_1 = V_->col(1);	// Get a mutable view of the first column of V_
 				RefCountPtr<TSFCore::Vector<Scalar> > r_curr_0 = v_1;             // Just a name change!
-				lpi_->computeCurrPrecResidual(NULL,NULL,&*r_curr_0);
+				lpi_->computeCurrCompositeResidual(NULL,NULL,&*r_curr_0);
 				const ScalarMag r_curr_0_nrm = norm(*r_curr_0);
 				if( currTotalNumIters_ == 0 ) r0_nrm_ = r_curr_0_nrm;             // Remember initial residual for convergence test!
 				rel_r_nrm_ = r_curr_0_nrm / r0_nrm_;
@@ -373,6 +368,7 @@ IterateReturn NonblockGmres<Scalar>::nextBlock( const int maxNumIter, int *numRh
 				const int currNumRhs = 1;
 				std::vector<EStatusType> status(currNumRhs,STATUS_UNCHECKED);
 				statusTest->checkStatus(*this,currNumRhs,currNumRhs,&status[0]);
+				TEST_FOR_EXCEPTION( status[0]==STATUS_FAILED || status[0] == STATUS_NAN, Exceptions::SolverBreakdown, "Error!" );
 				if(status[0]==STATUS_CONVERGED) {
 					doIterationReturn = TERMINATION_STATUS_TEST;
 					break;
@@ -398,21 +394,13 @@ IterateReturn NonblockGmres<Scalar>::nextBlock( const int maxNumIter, int *numRh
 	}
 	catch(...) {
 		// Copy whatever is remaining in current LHS into full LHS
-		lpi_->setCurrToFullLhs(*this);
+		lpi_->finalizeCurrSystem(*this);
 		throw;
 	}
 	// Copy whatever is remaining in current LHS into full LHS
-	lpi_->setCurrToFullLhs(*this);
-	*numRhsSolved += numCurrRhs;
+	lpi_->finalizeCurrSystem(*this);
 	// Return status of this block
 	return IterateReturn(doIterationReturn,currTotalNumIters_);
-}
-
-template<class Scalar>
-void NonblockGmres<Scalar>::setCurrSystem( const int firstRhsOffset )
-{	
-	// Only one RHS at a time!
-	lpi_->setCurrSystem(firstRhsOffset,1,1);
 }
 
 #define BELOS_NONBLOCK_CG_SOLVER_ERR_MSG "NonblockGmres<Scalar>::computeIteration(...): iteration = " << this->getCurrNumIters() << ": Error, "
@@ -422,7 +410,7 @@ bool NonblockGmres<Scalar>::computeIteration()
 {
 	const Scalar one = ST::one();
 	int i;
-	TSFCore::LinOpNonPersisting<Scalar> Op = lpi_->getCombinedOperator();
+	TSFCore::LinearOpHandle<Scalar> Op = lpi_->getCompositeOperator();
 	Teuchos::SerialDenseMatrix<int, Scalar> &H = H_;
 	std::valarray<Scalar> &z = z_, &cs = cs_, &sn = sn_;
 	const int jm1 = currNumIters_;

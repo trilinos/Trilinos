@@ -44,7 +44,7 @@ class LinearProblemSetup : public LinearProblemIteration<Scalar> {
 public:
 
 	///
-  using LinearProblemState<Scalar>::getOperator;
+  using LinearProblemIteration<Scalar>::getOperator;
 
 	/** @name Setup functions */
 	//@{
@@ -76,7 +76,7 @@ public:
 	 * </ul>
 	 */
 	virtual void initialize(
-		const TSFCore::LinOpPersisting<Scalar>                   &op
+		const TSFCore::LinearOpHandle<Scalar>                    &op
 		,const EOpSymmetry                                       symmetry
 		,const RefCountPtr<const TSFCore::MultiVector<Scalar> >  &rhs
 		,const RefCountPtr<TSFCore::MultiVector<Scalar> >        &lhs
@@ -98,12 +98,12 @@ public:
 	 * <li><tt>this->getTotalNumRhs() == 0</tt>
 	 * </ul>
 	 */
-	virtual void setOperator( const TSFCore::LinOpPersisting<Scalar> &op, const EOpSymmetry symmetry = OP_UNSYMMETRIC ) = 0;
+	virtual void setOperator( const TSFCore::LinearOpHandle<Scalar> &op, const EOpSymmetry symmetry = OP_UNSYMMETRIC ) = 0;
 
 	///
 	/** Get persisting relationship with the operator \f$A\f$ or \f$\tilde{A}\f$.
 	 */
-	virtual TSFCore::LinOpPersisting<Scalar> getOperator() = 0;
+	virtual TSFCore::LinearOpHandle<Scalar> getOperator() = 0;
 
 	///
 	/** Set the right preconditioner.
@@ -123,12 +123,12 @@ public:
 	 * <li><tt>this->getCurrNumRhs() == 0</tt>
 	 * </ul>
 	 */
-	virtual void setRightPrec( const TSFCore::LinOpPersisting<Scalar> &rightPrec, const EOpSymmetry symmetry = OP_UNSYMMETRIC ) = 0;
+	virtual void setRightPrec( const TSFCore::LinearOpHandle<Scalar> &rightPrec, const EOpSymmetry symmetry = OP_UNSYMMETRIC ) = 0;
 
 	///
 	/** Get persisting relationship with the right preconditioner \f$P_R\f$.
 	 */
-	virtual TSFCore::LinOpPersisting<Scalar> getRightPrec() = 0;
+	virtual TSFCore::LinearOpHandle<Scalar> getRightPrec() = 0;
 
 	///
 	/** Set the left preconditioner.
@@ -148,12 +148,12 @@ public:
 	 * <li><tt>this->getCurrNumRhs() == 0</tt>
 	 * </ul>
 	 */
-	virtual void setLeftPrec( const TSFCore::LinOpPersisting<Scalar> &leftPrec, const EOpSymmetry symmetry = OP_UNSYMMETRIC ) = 0;
+	virtual void setLeftPrec( const TSFCore::LinearOpHandle<Scalar> &leftPrec, const EOpSymmetry symmetry = OP_UNSYMMETRIC ) = 0;
 
 	///
 	/** Get persisting relationship with the left preconditioner \f$P_L\f$.
 	 */
-	virtual TSFCore::LinOpPersisting<Scalar> getLeftPrec() = 0;
+	virtual TSFCore::LinearOpHandle<Scalar> getLeftPrec() = 0;
 
 	///
 	/** Set the RHS multi-vector \f$B\f$.
@@ -201,23 +201,6 @@ public:
 	/** Set the LHS multi-vector \f$X\f$.
 	 */
 	virtual RefCountPtr<TSFCore::MultiVector<Scalar> > getLhs() = 0;
-
-	///
-	/** Set the block size \f$b\f$.
-	 *
-	 * @param  blockSize  [in] The block size \f$b\f$.
-	 *
-	 * Preconditions:<ul>
-	 * <li><tt>blockSize > 0</tt>
-	 * </ul>
-	 *
-	 * Preconditions:<ul>
-	 * <li><tt>this->getBlockSize() == blockSize0</tt>
-	 * <li><tt>this->getTotalNumRhs() == 0</tt>
-	 * <li><tt>this->getCurrNumRhs() == 0</tt>
-	 * </ul>
-	 */
-	virtual void setBlockSize( const int blockSize ) = 0;
 
 	///
 	/** Set the status test.

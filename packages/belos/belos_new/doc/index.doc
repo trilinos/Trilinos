@@ -7,29 +7,43 @@
 
 <ul>
 
-<li><b>Fundamental Belos interface classes</b>
+<li><b>%Belos interface classes</b>
 
-The following abstract classes define the fundumental %Belos
-interfaces required for standardization:
+The most fundamental of the interface classes define a protocol for
+determining when a set of RHSs are sufficiently converged or when
+iteration should be ended.  These interfaces are shown below:
 
 <ul>
 <li>
 <tt>Belos::StatusTest</tt> defines an interface for checking the
-status of a block iterative solver.  This class decouples concrete iterative
+status of a block iterative linear solver.  This class decouples concrete iterative
 solvers from user-defined status tests.
 <li>
 <tt>Belos::BasicIterationState</tt> defines an interface for
 presenting the current state of the block iterative solver to a
 <tt>Belos::StatusTest</tt>.
 <li>
+<tt>Belos::LinearProblemState</tt> presents the current state of a
+linear problem to a <tt>Belos::StatusTest</tt>.
+<li>
+</ul>
+
+It is absoluting critical that the above interfaces be standarized
+upon since it is impossible to write a sophisticated nonlinear
+abstract numerical algorithm (ANA) that allows inexact solves without
+precise control of the linear solver.
+
+The next set of abstract classes provide a convenient means to access
+and invoke a concrete iterative linear solver and to help in making
+the development of concrete iterative linear solvers easier.
+
+<ul>
+<li>
 <tt>Belos::BasicIteration</tt> defines an interface for presenting
 abstracting concrete iterative solver implementations away for
 clients.  This is the basic interface that allows a client to access
 an iterative linear solver without knowing the exact concrete
 implemenation.
-<li>
-<tt>Belos::LinearProblemState</tt> presents the current state of a
-linear problem to a <tt>Belos::StatusTest</tt>.
 <li>
 <tt>Belos::LinearProblemIteration</tt> defines an interface to a
 linear problem for managing the current block system that is designed
@@ -97,5 +111,9 @@ GMRES solvers.
 </ul>
 
 </ul>
+
+\todo Add an output manager
+
+\todo Add functions for manipulating a parameter list
 
 */

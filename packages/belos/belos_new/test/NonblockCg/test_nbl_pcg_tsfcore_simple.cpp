@@ -40,7 +40,7 @@
 #include "TSFCoreMultiVectorStdOps.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Time.hpp"
-
+#include "Teuchos_getConst.hpp"
 int main(int argc, char *argv[]) {
 
 	typedef double Scalar;
@@ -49,7 +49,9 @@ int main(int argc, char *argv[]) {
 	using Teuchos::CommandLineProcessor;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
+	using Teuchos::getConst;
   Teuchos::Time timer("");
+	typedef TSFCore::LinearOpHandle<Scalar> LOH;
   bool success = true;
   bool verbose = true;
 
@@ -98,13 +100,15 @@ int main(int argc, char *argv[]) {
 			TSFCore::Solvers::SummaryOutputter<Scalar> sumOut(rcp(&std::cout,false)," ");
 			assign( &*lpup.getLhs(), ST::zero() );
 			oldCgSolver.solve(
-				*lpup.getOperator().op(),lpup.getOperator().defaultTrans()
+				*lpup.getOperator().op()
+				,lpup.getOperator().defaultTrans()
 				,*lpup.getRhs(),&*lpup.getLhs(),ST::one(),maxNumIters
 				,&sumOut,NULL,TSFCore::NOTRANS,NULL,TSFCore::NOTRANS
 				);
-			const Belos::LinearProblemState<Scalar> &lps = lpup;
 			if(!checkResidual(
-					 lps.getOperator(),lps.getRhs(),lps.getLhs()
+					 linearProblemGenerator.useNativeNormStatusTest() && getConst(lpup).getLeftPrec().op().get() && getConst(lpup).getRightPrec().op().get()
+					 ? getConst(lpup).getLeftPrec() : LOH()
+					 ,getConst(lpup).getOperator(),getConst(lpup).getRhs(),getConst(lpup).getLhs()
 					 ,verbose,tols,std::cout)
 				) success = false;
 		}
@@ -127,9 +131,10 @@ int main(int argc, char *argv[]) {
 				<< std::endl;
 		}
 		// E) Compute actual residual norms relative to B: R = A*X - B
-		const Belos::LinearProblemState<Scalar> &lps = lpup;
 		if(!checkResidual(
-				 lps.getOperator(),lps.getRhs(),lps.getLhs()
+				 linearProblemGenerator.useNativeNormStatusTest() && getConst(lpup).getLeftPrec().op().get() && getConst(lpup).getRightPrec().op().get()
+				 ? getConst(lpup).getLeftPrec() : LOH()
+				 ,getConst(lpup).getOperator(),getConst(lpup).getRhs(),getConst(lpup).getLhs()
 				 ,verbose,tols,std::cout)
 			) success = false;
   }

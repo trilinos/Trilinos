@@ -136,9 +136,6 @@ void ResidualNormStatusTest<Scalar>::protectedCheckStatus(
 {
 	const std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &tols = this->tols();
 	const LinearProblemState<Scalar> &lps = bis.getProblem();
-#ifdef _DEBUG
-	TEST_FOR_EXCEPT( tols.size() > 1 && ( lps.getTotalNumRhs() != static_cast<int>(tols.size()) ) );
-#endif
 	// Force update of currLhs
 	if(!lps.isCurrLhsUpdated()) bis.forceCurrLhsUpdate();	
 	// Get the current and initial unscaled unpreconditioned residuals and compute their norms
@@ -161,9 +158,13 @@ void ResidualNormStatusTest<Scalar>::protectedCheckStatus(
 		bis.getProblem().getCurrRhsIndexes( currNumRhs, &currRhsIndexes_[0] );
 		for( int k = 0; k < currNumRhs; ++k ) {
 			const int origRhsIndex = currRhsIndexes_[k];
+#ifdef _DEBUG
+			TEST_FOR_EXCEPT( origRhsIndex > static_cast<int>(tols.size())  );
+#endif
 			const typename ST::magnitudeType R_rel_norm = R_bar_norms_[k] / R_bar_0_norms_[k];
-			if( R_rel_norm <= tols[origRhsIndex-1] )  status[k] = STATUS_CONVERGED;
-			else                                      status[k] = STATUS_UNCONVERGED;
+			if( ST::isnaninf(R_rel_norm) )                 status[k] = STATUS_NAN;
+			else if( R_rel_norm <= tols[origRhsIndex-1] )  status[k] = STATUS_CONVERGED;
+			else                                           status[k] = STATUS_UNCONVERGED;
 		}
 	}
 }

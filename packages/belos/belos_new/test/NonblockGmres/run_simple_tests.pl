@@ -59,6 +59,15 @@ $overallOpCondNum=5.0;
 $useNativeStatusTest = 0;
 run_case();
 
+$precType=-1; # Left preconditioning!
+$numRhs = 1;
+$maxKrylovDim=$dim;
+$maxNumIters = 16;
+$opCondNum=100.0;
+$overallOpCondNum=5.0;
+$useNativeStatusTest = 1;
+run_case();
+
 $precType=+1; # Right preconditioning!
 $useNativeStatusTest = 1;
 run_case();

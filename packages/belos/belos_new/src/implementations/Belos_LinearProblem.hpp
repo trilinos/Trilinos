@@ -29,13 +29,20 @@
 #ifndef BELOS_LINEAR_PROBLEM_HPP
 #define BELOS_LINEAR_PROBLEM_HPP
 
+// Define if you want to see a dump of information for detailed debugging
 //#define BELOS_LINEAR_PROBLEM_DUMP_COUT
+
+// Define if you want to see a dump multi-vectors as well
+//#define BELOS_LINEAR_PROBLEM_DUMP_COUT_ALL
 
 #include "Belos_LinearProblemSetup.hpp"
 #include "Belos_deflate.hpp"
-#include "TSFCoreLinOp.hpp"
+#include "TSFCoreLinearOpHandle.hpp"
 #include "TSFCoreMultiVectorStdOps.hpp"
 #include "TSFCoreMultiplicativeLinearOp.hpp"
+#ifdef BELOS_LINEAR_PROBLEM_DUMP_COUT
+#include "TSFCoreTestingTools.hpp"
+#endif
 #include "TSFCoreAssertOp.hpp"
 #include "Teuchos_arrayArg.hpp"
 
@@ -65,30 +72,6 @@ public:
 	/** @name Overridden from LinearProblemState */
 	//@{
 
-	///
-	int getTotalNumRhs() const;
-	///
-	TSFCore::LinOpNonPersisting<Scalar> getOperator() const;
-	///
-	EOpSymmetry getOperatorSymmetry() const;
-	///
-	TSFCore::LinOpNonPersisting<Scalar> getRightPrec() const;
-	///
-	EOpSymmetry getRightPrecSymmetry() const;
-	///
-	TSFCore::LinOpNonPersisting<Scalar> getLeftPrec() const;
-	///
-	EOpSymmetry getLeftPrecSymmetry() const;
-	///
-	TSFCore::LinOpNonPersisting<Scalar> getCombinedOperator() const;
-	///
-	const TSFCore::Vector<Scalar>* getRightScaling() const;
-	///
-	const TSFCore::Vector<Scalar>* getLeftScaling() const;
-	///
-	const TSFCore::MultiVector<Scalar>& getRhs() const;
-	///
-	TSFCore::MultiVector<Scalar>& getLhs() const;
 	///
 	int getCurrNumRhs() const;
 	///
@@ -121,15 +104,41 @@ public:
 	//@{
 
 	///
+	int getTotalNumRhs() const;
+	///
+	TSFCore::LinearOpHandle<Scalar> getOperator() const;
+	///
+	EOpSymmetry getOperatorSymmetry() const;
+	///
+	TSFCore::LinearOpHandle<Scalar> getRightPrec() const;
+	///
+	EOpSymmetry getRightPrecSymmetry() const;
+	///
+	TSFCore::LinearOpHandle<Scalar> getLeftPrec() const;
+	///
+	EOpSymmetry getLeftPrecSymmetry() const;
+	///
+	TSFCore::LinearOpHandle<Scalar> getCompositeOperator() const;
+	///
+	const TSFCore::Vector<Scalar>* getRightScaling() const;
+	///
+	const TSFCore::Vector<Scalar>* getLeftScaling() const;
+	///
+	const TSFCore::MultiVector<Scalar>& getRhs() const;
+	///
+	TSFCore::MultiVector<Scalar>& getLhs() const;
+	///
+	void setBlockSize( const int blockSize );
+	///
 	int getBlockSize() const;
+	///
+	void setAugmentationAllowed( const bool augmentationAllowed );
+	///
+	bool getAugmentationAllowed() const;
 	///
 	StatusTest<Scalar>* getStatusTest();
 	///
-	void setCurrSystem(
-		const int                   firstRhsOffset
-		,const int                  numRhs
-		,const int                  blockSize
-		);
+	bool setupCurrSystem();
 	///
 	RefCountPtr<TSFCore::MultiVector<Scalar> > getCurrLhs();
 	///
@@ -143,10 +152,10 @@ public:
 	///
 	void setCurrResidualComputed( const bool isCurrResidualComputed );
 	///
-	void computeCurrPrecResidual(
+	void computeCurrCompositeResidual(
 		const TSFCore::MultiVector<Scalar>    *currLhs
 		,const TSFCore::MultiVector<Scalar>   *currRhs
-		,TSFCore::MultiVector<Scalar>         *currPrecResidual
+		,TSFCore::MultiVector<Scalar>         *currCompositeResidual
 		);
 	///
 	void deflate(
@@ -157,7 +166,7 @@ public:
 	///
 	void restart( const BasicIterationState<Scalar> &bis );
 	///
-	void setCurrToFullLhs( const BasicIterationState<Scalar> &bis );
+	void finalizeCurrSystem( const BasicIterationState<Scalar> &bis );
 
 	//@}
 
@@ -166,23 +175,23 @@ public:
 
 	///
 	void initialize(
-		const TSFCore::LinOpPersisting<Scalar>                   &op
+		const TSFCore::LinearOpHandle<Scalar>                    &op
 		,const EOpSymmetry                                       symmetry
 		,const RefCountPtr<const TSFCore::MultiVector<Scalar> >  &rhs
 		,const RefCountPtr<TSFCore::MultiVector<Scalar> >        &lhs
 		);
 	///
-	void setOperator( const TSFCore::LinOpPersisting<Scalar> &op, const EOpSymmetry symmetry );
+	void setOperator( const TSFCore::LinearOpHandle<Scalar> &op, const EOpSymmetry symmetry );
 	///
-	TSFCore::LinOpPersisting<Scalar> getOperator();
+	TSFCore::LinearOpHandle<Scalar> getOperator();
 	///
-	void setRightPrec( const TSFCore::LinOpPersisting<Scalar> &rightPrec, const EOpSymmetry symmetry );
+	void setRightPrec( const TSFCore::LinearOpHandle<Scalar> &rightPrec, const EOpSymmetry symmetry );
 	///
-	TSFCore::LinOpPersisting<Scalar> getRightPrec();
+	TSFCore::LinearOpHandle<Scalar> getRightPrec();
 	///
-	void setLeftPrec( const TSFCore::LinOpPersisting<Scalar> &leftPrec, const EOpSymmetry symmetry );
+	void setLeftPrec( const TSFCore::LinearOpHandle<Scalar> &leftPrec, const EOpSymmetry symmetry );
 	///
-	TSFCore::LinOpPersisting<Scalar> getLeftPrec();
+	TSFCore::LinearOpHandle<Scalar> getLeftPrec();
 	///
 	void setRhs( const RefCountPtr<const TSFCore::MultiVector<Scalar> > &rhs );
 	///
@@ -191,8 +200,6 @@ public:
 	void setLhs( const RefCountPtr<TSFCore::MultiVector<Scalar> > &lhs );
 	///
 	RefCountPtr<TSFCore::MultiVector<Scalar> > getLhs();
-	///
-	void setBlockSize( const int blockSize );
 	///
 	void setStatusTest( const RefCountPtr<StatusTest<Scalar> > &statusTest );
 	///
@@ -214,22 +221,27 @@ private:
 	// Private data members
 
 	// Members for overall set of systems
-	int                                               blockSize_;
 	int                                               totalNumRhs_;
-	TSFCore::LinOpPersisting<Scalar>                  operator_;
+	TSFCore::LinearOpHandle<Scalar>                   operator_;
 	EOpSymmetry                                       operatorSymmetry_;
-	TSFCore::LinOpPersisting<Scalar>                  rightPrec_;
+	TSFCore::LinearOpHandle<Scalar>                   rightPrec_;
 	EOpSymmetry                                       rightPrecSymmetry_;
-	TSFCore::LinOpPersisting<Scalar>                  leftPrec_;
+	TSFCore::LinearOpHandle<Scalar>                   leftPrec_;
 	EOpSymmetry                                       leftPrecSymmetry_;
 	RefCountPtr<const TSFCore::Vector<Scalar> >       rightScaling_;
 	RefCountPtr<const TSFCore::Vector<Scalar> >       leftScaling_;
-	TSFCore::LinOpPersisting<Scalar>                  combinedOperator_;
+	TSFCore::LinearOpHandle<Scalar>                   compositeOperator_;
 	RefCountPtr<const TSFCore::MultiVector<Scalar> >  rhs_;
 	RefCountPtr<TSFCore::MultiVector<Scalar> >        lhs_;
 	RefCountPtr<StatusTest<Scalar> >                  statusTest_;
 
+	// Members for controlling setup of current block	
+	int                                               blockSize_;
+	bool                                              augmentationAllowed_;
+
 	// Members for current block	
+	int                                               currFirstRhsOffset_;
+	int                                               currInitNumRhs_;
 	int                                               currNumRhs_;
 	int                                               currBlockSize_;
 	std::vector<int>                                  currRhsIndexes_;
@@ -288,95 +300,13 @@ void LinearProblem<Scalar>::assertCurrNumRhs() const
 
 template<class Scalar>
 LinearProblem<Scalar>::LinearProblem()
-	:blockSize_(1)
-	,totalNumRhs_(0)
+	:totalNumRhs_(0)
+	,blockSize_(1)
+	,augmentationAllowed_(true)
 	,currNumRhs_(0)
 {}
 
 // Overridden from LinearProblemState
-
-template<class Scalar>
-int LinearProblem<Scalar>::getTotalNumRhs() const
-{
-	return totalNumRhs_;
-}
-
-template<class Scalar>
-TSFCore::LinOpNonPersisting<Scalar> LinearProblem<Scalar>::getOperator() const
-{
-	assertTotalNumRhs();
-	return operator_;
-}
-
-template<class Scalar>
-EOpSymmetry LinearProblem<Scalar>::getOperatorSymmetry() const
-{
-	assertTotalNumRhs();
-	return operatorSymmetry_;
-}
-
-template<class Scalar>
-TSFCore::LinOpNonPersisting<Scalar> LinearProblem<Scalar>::getRightPrec() const
-{
-	assertTotalNumRhs();
-	return rightPrec_;
-}
-
-template<class Scalar>
-EOpSymmetry LinearProblem<Scalar>::getRightPrecSymmetry() const
-{
-	assertTotalNumRhs();
-	return rightPrecSymmetry_;
-}
-
-template<class Scalar>
-TSFCore::LinOpNonPersisting<Scalar> LinearProblem<Scalar>::getLeftPrec() const
-{
-	assertTotalNumRhs();
-	return leftPrec_;
-}
-
-template<class Scalar>
-EOpSymmetry LinearProblem<Scalar>::getLeftPrecSymmetry() const
-{
-	assertTotalNumRhs();
-	return leftPrecSymmetry_;
-}
-
-template<class Scalar>
-TSFCore::LinOpNonPersisting<Scalar> LinearProblem<Scalar>::getCombinedOperator() const
-{
-	assertTotalNumRhs();
-	return combinedOperator_;
-}
-
-template<class Scalar>
-const TSFCore::Vector<Scalar>* LinearProblem<Scalar>::getRightScaling() const
-{
-	assertTotalNumRhs();
-	return rightScaling_.get();
-}
-
-template<class Scalar>
-const TSFCore::Vector<Scalar>* LinearProblem<Scalar>::getLeftScaling() const
-{
-	assertTotalNumRhs();
-	return leftScaling_.get();
-}
-
-template<class Scalar>
-const TSFCore::MultiVector<Scalar>& LinearProblem<Scalar>::getRhs() const
-{
-	assertTotalNumRhs();
-	return *rhs_;
-}
-
-template<class Scalar>
-TSFCore::MultiVector<Scalar>& LinearProblem<Scalar>::getLhs() const
-{
-	assertTotalNumRhs();
-	return *lhs_;
-}
 
 template<class Scalar>
 int LinearProblem<Scalar>::getCurrNumRhs() const
@@ -468,6 +398,9 @@ bool LinearProblem<Scalar>::isCurrLhsUpdated() const
 template<class Scalar>
 const TSFCore::MultiVector<Scalar>& LinearProblem<Scalar>::getCurrResidual() const
 {
+#if defined(BELOS_LINEAR_PROBLEM_DUMP_COUT)
+	std::cout << "\nLinearProblem<Scalar>::getCurrResidual(...):\n";
+#endif
 	assertCurrNumRhs();
 	TEST_FOR_EXCEPT( leftScaling_.get() ); // Can't handle scaling yet!
 #ifdef _DEBUG
@@ -476,8 +409,20 @@ const TSFCore::MultiVector<Scalar>& LinearProblem<Scalar>::getCurrResidual() con
 	if(!isCurrResidualComputed_) {
 		// currResidual = operator * curLhs - currRhs
 		assign( &*currResidual_, *currRhs_ );
+#if defined(BELOS_LINEAR_PROBLEM_DUMP_COUT)
+		std::cout << "\n||currResidual = currRhs||1 = " << norm_1(*currResidual_) << std::endl;
+#endif
+#if defined(BELOS_LINEAR_PROBLEM_DUMP_COUT) && (BELOS_LINEAR_PROBLEM_DUMP_COUT_ALL)
+		std::cout << "\ncurrResidual = currRhs =\n" << *currResidual_;
+#endif
 		const ScalarMag currLhs_norm_1 = norm_1(*currLhs_);
 		if( currLhs_norm_1 != ST::zero() ) {
+#if defined(BELOS_LINEAR_PROBLEM_DUMP_COUT)
+			std::cout << "\n||currLhs|| = " << currLhs_norm_1 << std::endl;
+#endif
+#if defined(BELOS_LINEAR_PROBLEM_DUMP_COUT) && (BELOS_LINEAR_PROBLEM_DUMP_COUT_ALL)
+			std::cout << "\ncurrLhs = \n" << *currLhs_;
+#endif
 			operator_.apply(
 				TSFCore::NOTRANS
 				,*currLhs_
@@ -485,6 +430,12 @@ const TSFCore::MultiVector<Scalar>& LinearProblem<Scalar>::getCurrResidual() con
 				,+ST::one()
 				,-ST::one()
 				);
+#if defined(BELOS_LINEAR_PROBLEM_DUMP_COUT)
+			std::cout << "\n||currResidual = operator*currLhs - currResidual|| = " << norm_1(*currResidual_) << std::endl;
+#endif
+#if defined(BELOS_LINEAR_PROBLEM_DUMP_COUT) && (BELOS_LINEAR_PROBLEM_DUMP_COUT_ALL)
+			std::cout << "\ncurrResidual = operator*currLhs - currResidual = \n" << *currResidual_;
+#endif
 		}
 		else {
 			scale( -ST::one(), &*currResidual_ );
@@ -508,9 +459,114 @@ bool LinearProblem<Scalar>::isCurrResidualComputed() const
 // Overridden from LinearProblemIteration
 
 template<class Scalar>
+int LinearProblem<Scalar>::getTotalNumRhs() const
+{
+	return totalNumRhs_;
+}
+
+template<class Scalar>
+TSFCore::LinearOpHandle<Scalar> LinearProblem<Scalar>::getOperator() const
+{
+	assertTotalNumRhs();
+	return operator_;
+}
+
+template<class Scalar>
+EOpSymmetry LinearProblem<Scalar>::getOperatorSymmetry() const
+{
+	assertTotalNumRhs();
+	return operatorSymmetry_;
+}
+
+template<class Scalar>
+TSFCore::LinearOpHandle<Scalar> LinearProblem<Scalar>::getRightPrec() const
+{
+	assertTotalNumRhs();
+	return rightPrec_;
+}
+
+template<class Scalar>
+EOpSymmetry LinearProblem<Scalar>::getRightPrecSymmetry() const
+{
+	assertTotalNumRhs();
+	return rightPrecSymmetry_;
+}
+
+template<class Scalar>
+TSFCore::LinearOpHandle<Scalar> LinearProblem<Scalar>::getLeftPrec() const
+{
+	assertTotalNumRhs();
+	return leftPrec_;
+}
+
+template<class Scalar>
+EOpSymmetry LinearProblem<Scalar>::getLeftPrecSymmetry() const
+{
+	assertTotalNumRhs();
+	return leftPrecSymmetry_;
+}
+
+template<class Scalar>
+TSFCore::LinearOpHandle<Scalar> LinearProblem<Scalar>::getCompositeOperator() const
+{
+	assertTotalNumRhs();
+	return compositeOperator_;
+}
+
+template<class Scalar>
+const TSFCore::Vector<Scalar>* LinearProblem<Scalar>::getRightScaling() const
+{
+	assertTotalNumRhs();
+	return rightScaling_.get();
+}
+
+template<class Scalar>
+const TSFCore::Vector<Scalar>* LinearProblem<Scalar>::getLeftScaling() const
+{
+	assertTotalNumRhs();
+	return leftScaling_.get();
+}
+
+template<class Scalar>
+const TSFCore::MultiVector<Scalar>& LinearProblem<Scalar>::getRhs() const
+{
+	assertTotalNumRhs();
+	return *rhs_;
+}
+
+template<class Scalar>
+TSFCore::MultiVector<Scalar>& LinearProblem<Scalar>::getLhs() const
+{
+	assertTotalNumRhs();
+	return *lhs_;
+}
+
+template<class Scalar>
+void LinearProblem<Scalar>::setBlockSize( const int blockSize )
+{
+#ifdef _DEBUG
+	TEST_FOR_EXCEPT( blockSize <= 0 );
+#endif
+	blockSize_ = blockSize;
+	currNumRhs_ = 0;
+}
+
+template<class Scalar>
 int LinearProblem<Scalar>::getBlockSize() const
 {
 	return blockSize_;
+}
+
+template<class Scalar>
+void LinearProblem<Scalar>::setAugmentationAllowed( const bool augmentationAllowed )
+{
+	augmentationAllowed_ = augmentationAllowed;
+}
+
+template<class Scalar>
+bool LinearProblem<Scalar>::getAugmentationAllowed() const
+{
+	return augmentationAllowed_;
 }
 
 template<class Scalar>
@@ -520,19 +576,27 @@ StatusTest<Scalar>* LinearProblem<Scalar>::getStatusTest()
 }
 
 template<class Scalar>
-void LinearProblem<Scalar>::setCurrSystem(
-	const int                   firstRhsOffset
-	,const int                  numRhs
-	,const int                  blockSize
-	)
+bool LinearProblem<Scalar>::setupCurrSystem()
 {
 #ifdef _DEBUG
-	TEST_FOR_EXCEPT( ! ( firstRhsOffset + numRhs <= totalNumRhs_ ) );
-	TEST_FOR_EXCEPT( ! ( blockSize >= numRhs ) );
+	TEST_FOR_EXCEPT( currFirstRhsOffset_  > totalNumRhs_ );
 #endif
+	// See if we are finished yet or not
+	if( currFirstRhsOffset_  == totalNumRhs_ )
+		return false; // Finished with all of the RHSs
+	// Determine the block size of the next set of RHS
+	int currNumRhs, blockSize;
+	if( augmentationAllowed_ ) {
+		blockSize = currNumRhs = blockSize_;
+	}
+	else {
+		// Determine how many RHS are remaining
+		const int numRhsRemaining = totalNumRhs_ - currFirstRhsOffset_;
+		blockSize = currNumRhs = min( numRhsRemaining,blockSize);
+	}
+	// Setup the current block system
 	RefCountPtr<const TSFCore::VectorSpace<Scalar> > rhs_range = rhs_->range();
 	RefCountPtr<const TSFCore::VectorSpace<Scalar> > lhs_range = lhs_->range();
-	// Initialize current RHS, LHS and initial LHS
 	currRhs_store_ = rhs_range->createMembers(blockSize);
 	currRhs_ = currRhs_store_;
 	currInitLhs_store_ = lhs_range->createMembers(blockSize);
@@ -543,27 +607,29 @@ void LinearProblem<Scalar>::setCurrSystem(
 	currInitResidual_ = currInitResidual_store_;
 	currResidual_store_ = rhs_range->createMembers(blockSize);
 	currResidual_ = currResidual_store_;
-	const TSFCore::Range1D currRhsRng(1,numRhs);
-	const TSFCore::Range1D currOrigRhsRng = currRhsRng + firstRhsOffset;
+	const TSFCore::Range1D currRhsRng(1,currNumRhs);
+	const TSFCore::Range1D currOrigRhsRng = currRhsRng + currFirstRhsOffset_;
 	assign( &*currRhs_->subView(currRhsRng), *rhs_->subView(currOrigRhsRng) );
 	assign( &*currLhs_->subView(currRhsRng), *lhs_->subView(currOrigRhsRng) );
 	isCurrLhsUpdated_ = true;
 	currLhsIsCurrInitLhs_ = true;
-	if( blockSize > numRhs ) {
-		const TSFCore::Range1D currAugRng(numRhs+1,blockSize);
-		randomize( -ST::one(), +ST::one(), &*currRhs_->subView(currAugRng) ); // Random RHS for augmented systems
-		assign( &*currLhs_->subView(currAugRng), ST::zero() );                // Zero initial guess for augmented systems
+	if( blockSize > currNumRhs ) {
+		const TSFCore::Range1D currAugRng(currNumRhs+1,blockSize);
+		randomize( Scalar(-ST::one()), Scalar(+ST::one()), &*currRhs_->subView(currAugRng) ); // Random RHS for augmented systems
+		assign( &*currLhs_->subView(currAugRng), ST::zero() );                                // Zero initial guess for augmented systems
 	}
 	assign( &*currInitLhs_, *currLhs_ );
 	// Initialize list of active RHSs (one-based)
-	currRhsIndexes_.resize(numRhs);
-	for( int k = 0; k < numRhs; ++k ) currRhsIndexes_[k] = firstRhsOffset+k+1;
+	currRhsIndexes_.resize(currNumRhs);
+	for( int k = 0; k < currNumRhs; ++k ) currRhsIndexes_[k] = currFirstRhsOffset_+k+1;
 	// Mark derived quantities as uninitialized (unscaled unpreconditioned residuals)
 	isCurrInitResidualComputed_ = false;
 	isCurrResidualComputed_ = false;
 	// Finish up initialization
-	currNumRhs_ = numRhs;
-	currBlockSize_ = numRhs;
+	currInitNumRhs_  = currNumRhs;
+	currNumRhs_      = currNumRhs;
+	currBlockSize_   = blockSize;
+	return true;
 }
 
 template<class Scalar>
@@ -603,12 +669,19 @@ void LinearProblem<Scalar>::updateCurrLhs( const TSFCore::MultiVector<Scalar> &n
 template<class Scalar>
 void LinearProblem<Scalar>::setCurrLhs( const TSFCore::MultiVector<Scalar> &nativeLhs )
 {
+#if defined(BELOS_LINEAR_PROBLEM_DUMP_COUT)
+	std::cout << "\nLinearProblem<Scalar>::setCurrLhs(nativeLhs):\n";
+	std::cout << "\n||nativeLhs|| = " << norm_1(nativeLhs) << std::endl;
+#endif
 	assertCurrNumRhs();
 	TEST_FOR_EXCEPT( rightScaling_.get() ); // Can't handle scaling yet!
 	if(rightPrec_.op().get())
-		rightPrec_.apply(TSFCore::NOTRANS,nativeLhs,&*currLhs_,ST::one());
+		rightPrec_.apply(TSFCore::NOTRANS,nativeLhs,&*currLhs_);
 	else
 		assign( &*currLhs_, nativeLhs );
+#if defined(BELOS_LINEAR_PROBLEM_DUMP_COUT)
+	std::cout << "\n||currLhs|| = " << norm_1(*currLhs_) << std::endl;
+#endif
 	isCurrLhsUpdated_ = true;
 	isCurrResidualComputed_ = false;
 	currLhsIsCurrInitLhs_ = false;
@@ -630,10 +703,10 @@ void LinearProblem<Scalar>::setCurrResidualComputed( const bool isCurrResidualCo
 }
 
 template<class Scalar>
-void LinearProblem<Scalar>::computeCurrPrecResidual(
+void LinearProblem<Scalar>::computeCurrCompositeResidual(
 	const TSFCore::MultiVector<Scalar>    *currLhs
 	,const TSFCore::MultiVector<Scalar>   *currRhs
-	,TSFCore::MultiVector<Scalar>         *currPrecResidual
+	,TSFCore::MultiVector<Scalar>         *currCompositeResidual
 	)
 {
 	assertCurrNumRhs();
@@ -643,9 +716,9 @@ void LinearProblem<Scalar>::computeCurrPrecResidual(
 #endif
 		const TSFCore::MultiVector<Scalar> &currResidual = const_cast<const LinearProblem<Scalar>*>(this)->getCurrResidual();
 		if( leftPrec_.op().get() )
-			leftPrec_.apply( TSFCore::NOTRANS, currResidual, currPrecResidual );
+			leftPrec_.apply( TSFCore::NOTRANS, currResidual, currCompositeResidual );
 		else
-			assign( currPrecResidual, currResidual );
+			assign( currCompositeResidual, currResidual );
 	}
 	else {
 		TEST_FOR_EXCEPT(true); // Can't handle this case yet but it is faily easy to do so!
@@ -722,10 +795,11 @@ void LinearProblem<Scalar>::restart( const BasicIterationState<Scalar> &bis )
 }
 
 template<class Scalar>
-void LinearProblem<Scalar>::setCurrToFullLhs( const BasicIterationState<Scalar> &bis )
+void LinearProblem<Scalar>::finalizeCurrSystem( const BasicIterationState<Scalar> &bis )
 {
 	if(!isCurrLhsUpdated_) bis.forceCurrLhsUpdate();
 	assign( &*lhs_->subView(currNumRhs_,&currRhsIndexes_[0]), *currLhs_->subView(TSFCore::Range1D(1,currNumRhs_)) );
+	currFirstRhsOffset_ += currInitNumRhs_;
 	currNumRhs_ = 0; // Set as uninitialized
 }
 
@@ -733,7 +807,7 @@ void LinearProblem<Scalar>::setCurrToFullLhs( const BasicIterationState<Scalar> 
 
 template<class Scalar>
 void LinearProblem<Scalar>::initialize(
-	const TSFCore::LinOpPersisting<Scalar>                   &op
+	const TSFCore::LinearOpHandle<Scalar>                    &op
 	,const EOpSymmetry                                       symmetry
 	,const RefCountPtr<const TSFCore::MultiVector<Scalar> >  &rhs
 	,const RefCountPtr<TSFCore::MultiVector<Scalar> >        &lhs
@@ -752,7 +826,7 @@ void LinearProblem<Scalar>::initialize(
 }
 
 template<class Scalar>
-void LinearProblem<Scalar>::setOperator( const TSFCore::LinOpPersisting<Scalar> &op, const EOpSymmetry symmetry )
+void LinearProblem<Scalar>::setOperator( const TSFCore::LinearOpHandle<Scalar> &op, const EOpSymmetry symmetry )
 {
 #ifdef _DEBUG
 	TEST_FOR_EXCEPT( op.op().get() == NULL );
@@ -764,13 +838,13 @@ void LinearProblem<Scalar>::setOperator( const TSFCore::LinOpPersisting<Scalar> 
 }
 
 template<class Scalar>
-TSFCore::LinOpPersisting<Scalar> LinearProblem<Scalar>::getOperator()
+TSFCore::LinearOpHandle<Scalar> LinearProblem<Scalar>::getOperator()
 {
 	return operator_;
 }
 
 template<class Scalar>
-void LinearProblem<Scalar>::setRightPrec( const TSFCore::LinOpPersisting<Scalar> &rightPrec, const EOpSymmetry symmetry )
+void LinearProblem<Scalar>::setRightPrec( const TSFCore::LinearOpHandle<Scalar> &rightPrec, const EOpSymmetry symmetry )
 {
 #ifdef _DEBUG
 	TEST_FOR_EXCEPT( rightPrec.op().get() == NULL );
@@ -782,13 +856,13 @@ void LinearProblem<Scalar>::setRightPrec( const TSFCore::LinOpPersisting<Scalar>
 }
 
 template<class Scalar>
-TSFCore::LinOpPersisting<Scalar> LinearProblem<Scalar>::getRightPrec()
+TSFCore::LinearOpHandle<Scalar> LinearProblem<Scalar>::getRightPrec()
 {
 	return rightPrec_;
 }
 
 template<class Scalar>
-void LinearProblem<Scalar>::setLeftPrec( const TSFCore::LinOpPersisting<Scalar> &leftPrec, const EOpSymmetry symmetry )
+void LinearProblem<Scalar>::setLeftPrec( const TSFCore::LinearOpHandle<Scalar> &leftPrec, const EOpSymmetry symmetry )
 {
 #ifdef _DEBUG
 	TEST_FOR_EXCEPT( leftPrec.op().get() == NULL );
@@ -800,7 +874,7 @@ void LinearProblem<Scalar>::setLeftPrec( const TSFCore::LinOpPersisting<Scalar> 
 }
 
 template<class Scalar>
-TSFCore::LinOpPersisting<Scalar> LinearProblem<Scalar>::getLeftPrec()
+TSFCore::LinearOpHandle<Scalar> LinearProblem<Scalar>::getLeftPrec()
 {
 	return leftPrec_;
 }
@@ -842,17 +916,6 @@ LinearProblem<Scalar>::getLhs()
 }
 
 template<class Scalar>
-void LinearProblem<Scalar>::setBlockSize( const int blockSize )
-{
-#ifdef _DEBUG
-	TEST_FOR_EXCEPT( blockSize <= 0 );
-#endif
-	blockSize_ = blockSize;
-	totalNumRhs_ = 0;
-	currNumRhs_ = 0;
-}
-
-template<class Scalar>
 void LinearProblem<Scalar>::setStatusTest( const RefCountPtr<StatusTest<Scalar> > &statusTest )
 {
 	statusTest_ = statusTest;
@@ -890,22 +953,22 @@ void LinearProblem<Scalar>::completeSetup()
 		TSFCORE_ASSERT_VEC_SPACES( funcName, *lhs_->range(), *rightScaling_->space() );
 	}
 #endif
-	// Build the combined operator.
+	// Build the composite operator.
 	if( leftPrec_.op().get() ) {
 		if( rightPrec_.op().get() ) {
-			combinedOperator_ = TSFCore::LinOpPersisting<Scalar>(
+			compositeOperator_ = TSFCore::LinearOpHandle<Scalar>(
 				rcp(
 					new TSFCore::MultiplicativeLinearOp<Scalar>(
-						3, Teuchos::arrayArg<TSFCore::LinOpPersisting<Scalar> >(leftPrec_,operator_,rightPrec_)()
+						3, Teuchos::arrayArg<TSFCore::LinearOpHandle<Scalar> >(leftPrec_,operator_,rightPrec_)()
 						)
 					)
 				);
 		}
 		else {
-			combinedOperator_ = TSFCore::LinOpPersisting<Scalar>(
+			compositeOperator_ = TSFCore::LinearOpHandle<Scalar>(
 				rcp(
 					new TSFCore::MultiplicativeLinearOp<Scalar>(
-						2, Teuchos::arrayArg<TSFCore::LinOpPersisting<Scalar> >(leftPrec_,operator_)()
+						2, Teuchos::arrayArg<TSFCore::LinearOpHandle<Scalar> >(leftPrec_,operator_)()
 						)
 					)
 				);
@@ -913,20 +976,21 @@ void LinearProblem<Scalar>::completeSetup()
 	}
 	else {
 		if( rightPrec_.op().get() ) {
-			combinedOperator_ = TSFCore::LinOpPersisting<Scalar>(
+			compositeOperator_ = TSFCore::LinearOpHandle<Scalar>(
 				rcp(
 					new TSFCore::MultiplicativeLinearOp<Scalar>(
-						2, Teuchos::arrayArg<TSFCore::LinOpPersisting<Scalar> >(operator_,rightPrec_)()
+						2, Teuchos::arrayArg<TSFCore::LinearOpHandle<Scalar> >(operator_,rightPrec_)()
 						)
 					)
 				);
 		}
 		else {
-			combinedOperator_ = operator_;
+			compositeOperator_ = operator_;
 		}
 	}
 	// Finish initialization
 	totalNumRhs_ = rhs_->domain()->dim();
+	currFirstRhsOffset_ = 0;
 	currNumRhs_ = 0;
 }
 
@@ -934,13 +998,14 @@ template<class Scalar>
 void LinearProblem<Scalar>::uninitialize()
 {
 	totalNumRhs_ = 0;
-	operator_ = TSFCore::LinOpPersisting<Scalar>();
-	leftPrec_ = TSFCore::LinOpPersisting<Scalar>();
-	rightPrec_ = TSFCore::LinOpPersisting<Scalar>();
-	combinedOperator_ = TSFCore::LinOpPersisting<Scalar>();
+	operator_ = TSFCore::LinearOpHandle<Scalar>();
+	leftPrec_ = TSFCore::LinearOpHandle<Scalar>();
+	rightPrec_ = TSFCore::LinearOpHandle<Scalar>();
+	compositeOperator_ = TSFCore::LinearOpHandle<Scalar>();
 	rhs_ = null;
 	lhs_ = null;
 	statusTest_ = null;
+	currFirstRhsOffset_ = 0;
 	currNumRhs_ = 0;
 	currBlockSize_ = 0;
 	currRhsIndexes_.resize(0);

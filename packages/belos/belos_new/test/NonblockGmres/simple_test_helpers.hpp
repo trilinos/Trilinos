@@ -31,11 +31,11 @@
 #include "Belos_SummaryOutputterStatusTest.hpp"
 #include "Belos_NativeNormStatusTest.hpp"
 #include "Belos_ResidualNormStatusTest.hpp"
+#include "TSFCoreSerialVectorSpaceStd.hpp"
 #include "TSFCoreDiagonalLinearOp.hpp"
-#include "TSFCoreExplicitVectorView.hpp"
-//#include "TSFCoreExplicitMultiVectorView.hpp"
 #include "TSFCoreVectorStdOps.hpp"
 #include "TSFCoreMultiVectorStdOps.hpp"
+#include "TSFCoreExplicitVectorView.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 ///
@@ -106,6 +106,9 @@ public:
 			clp->setOption( "use-native-status-test", "use-non-native-status-test", &useNativeNormStatusTest_
 											, "Use the native or non-native residual status tests" );
 		}
+
+	///
+	bool useNativeNormStatusTest() const { return useNativeNormStatusTest_; }
 		
 	/// Create tolerances and linear problem
 	void setupLinearProblemEtc(
@@ -124,7 +127,7 @@ public:
 			//
 			if(verbose)
 				*out << "\nCreating diagonal opeator of dimension " << dim_ << " with condition number " << opCondNum_ << " ...\n";
-			RefCountPtr<TSFCore::VectorSpace<Scalar> > space = rcp(new TSFCore::SerialVectorSpace<Scalar>(dim_));
+			RefCountPtr<TSFCore::VectorSpace<Scalar> > space = rcp(new TSFCore::SerialVectorSpaceStd<Scalar>(dim_));
 			RefCountPtr<TSFCore::Vector<Scalar> > A_diag = space->createMember();
 			if(1) {
 				TSFCore::ExplicitMutableVectorView<Scalar> A_diag_ev(*A_diag);
@@ -193,6 +196,7 @@ public:
 					new Belos::SummaryOutputterStatusTest<Scalar>(
 						out,std::string("  "),false
 						,useNativeNormStatusTest_,!useNativeNormStatusTest_
+						//,true,true,true,true
 						)
 					);
 			}
@@ -207,9 +211,9 @@ public:
 			else
 				statusTest = compStatusTest;
 			// D) Setup the LinearProblem object
-			lpup->setOperator(TSFCore::LinOpPersisting<Scalar>(A),Belos::OP_SYMMETRIC);
-			if(P_L.get()) lpup->setLeftPrec(TSFCore::LinOpPersisting<Scalar>(P_L),Belos::OP_SYMMETRIC);
-			if(P_R.get()) lpup->setRightPrec(TSFCore::LinOpPersisting<Scalar>(P_R),Belos::OP_SYMMETRIC);
+			lpup->setOperator(TSFCore::LinearOpHandle<Scalar>(A),Belos::OP_SYMMETRIC);
+			if(P_L.get()) lpup->setLeftPrec(TSFCore::LinearOpHandle<Scalar>(P_L),Belos::OP_SYMMETRIC);
+			if(P_R.get()) lpup->setRightPrec(TSFCore::LinearOpHandle<Scalar>(P_R),Belos::OP_SYMMETRIC);
 			lpup->setRhs(B);
 			lpup->setLhs(X);
 			lpup->setBlockSize(blockSize_);
@@ -223,7 +227,8 @@ public:
  */
 template<class Scalar>
 bool checkResidual(
-	const TSFCore::LinOpNonPersisting<Scalar>                                  &A
+	const TSFCore::LinearOpHandle<Scalar>                                      &P_L
+	,const TSFCore::LinearOpHandle<Scalar>                                     &A
 	,const TSFCore::MultiVector<Scalar>                                        &B
 	,const TSFCore::MultiVector<Scalar>                                        &X
 	,const bool                                                                verbose
@@ -236,25 +241,41 @@ bool checkResidual(
 	using Teuchos::CommandLineProcessor;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
-	if(verbose)
-		out << "\nChecking actual residual norms ...\n";
+	if(verbose) {
+		if(P_L.op().get()) out << "\nChecking preconditioned residual norms ...\n";
+		else               out << "\nChecking unpreconditioned residual norms ...\n";
+	}
 	const int numRhs = B.domain()->dim();
-	RefCountPtr<TSFCore::MultiVector<Scalar> >
-		R = B.range()->createMembers(numRhs);
+	RefCountPtr<TSFCore::MultiVector<Scalar> > R = A.range()->createMembers(numRhs);
 	assign( &*R, B );
 	A.apply( TSFCore::NOTRANS, X, &*R, ST::one(), -ST::one() );
-	std::vector<ScalarMag> R_norms(numRhs);
-	std::vector<ScalarMag> B_norms(numRhs);
-	TSFCore::norms( *R, &R_norms[0] );
-	TSFCore::norms( B, &B_norms[0] );
+	RefCountPtr<const TSFCore::MultiVector<Scalar> > PR, PB;
+	if(P_L.op().get()) {
+		RefCountPtr<TSFCore::MultiVector<Scalar> > _PR, _PB;
+		_PR = P_L.range()->createMembers(numRhs);
+		_PB = P_L.range()->createMembers(numRhs);
+		P_L.apply( TSFCore::NOTRANS, *R, &*_PR );
+		P_L.apply( TSFCore::NOTRANS, B, &*_PB );
+		PR = _PR;
+		PB = _PB;
+	}
+	else {
+		PR = R;
+		PB = Teuchos::rcp(&B,false);
+	}
+	std::vector<ScalarMag> PR_norms(numRhs);
+	std::vector<ScalarMag> PB_norms(numRhs);
+	TSFCore::norms( *PR, &PR_norms[0] );
+	TSFCore::norms( *PB, &PB_norms[0] );
 	bool success = true;
 	for( int k = 0; k < numRhs; ++k ) {
-		const ScalarMag R_norm_rel = R_norms[k] / B_norms[k];
+		const ScalarMag R_norm_rel = PR_norms[k] / PB_norms[k];
 		const bool result = ( R_norm_rel <= tols[k] );
 		if(!result) success = false;
 		if(verbose) {
 			out
-				<< "  ||R(:,"<<k+1<<")|| / ||B(:,j)|| = "<<R_norms[k]<<" / "<<B_norms[k]<<" = "<<R_norm_rel
+				<< "  ||"<<(P_L.op().get()?"P_L*R":"R")<<"(:,"<<k+1<<")|| / ||"<<(P_L.op().get()?"P_L*B":"B")<<"(:,"<<k+1<<")|| = "
+				<< PR_norms[k] << " / " << PB_norms[k] << " = " << R_norm_rel
 				<< ( result ? " <= " : " > " ) << tols[k] << " : "
 				<< ( result ? "passed" : "failed" )
 				<< std::endl;

@@ -37,6 +37,7 @@
 #include "TSFCoreMultiVectorStdOps.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_arrayArg.hpp"
+#include "Teuchos_getConst.hpp"
 #include "StandardCompositionMacros.hpp"
 
 namespace Belos {
@@ -114,7 +115,7 @@ private:
 
 	typedef Teuchos::ScalarTraits<Scalar> ST;
 	typedef typename ST::magnitudeType ScalarMag;
-	enum EOpPrec { OP_ONLY, COMBINED_OP, LEFT_PREC, RIGHT_PREC };
+	enum EOpPrec { OP_ONLY, COMPOSITE_OP, LEFT_PREC, RIGHT_PREC };
 
 	// //////////////////////////////////
 	// Private data members
@@ -140,17 +141,17 @@ private:
 	// Private member functions
 
 	///
-	IterateReturn nextBlock( const int maxNumIter, int *numRhsSolved );
+	IterateReturn nextBlock( const int maxNumIter, bool *allFinished );
 	///
-	void setCurrSystem( const int firstRhsOffset, const int currNumRhs );
+	bool setupCurrSystem();
 	///
 	EIterateTermination doIteration();
 	///
 	void computeIteration();
 	///
-	TSFCore::LinOpNonPersisting<Scalar> getOperator() const;
+	TSFCore::LinearOpHandle<Scalar> getOperator() const;
 	///
-	TSFCore::LinOpNonPersisting<Scalar> getPrec() const;
+	TSFCore::LinearOpHandle<Scalar> getPrec() const;
 	///
 	RefCountPtr<TSFCore::MultiVector<Scalar> > getCurrLhs() const;
 	///
@@ -186,7 +187,7 @@ int NonblockCg<Scalar>::getCurrNumRestarts() const
 template<class Scalar>
 void NonblockCg<Scalar>::forceCurrLhsUpdate() const
 {
-	if(opPrecType_==COMBINED_OP) {
+	if(opPrecType_==COMPOSITE_OP) {
 		lpi_->setCurrLhs(*this->getCurrLhs());
 	}
 }
@@ -194,7 +195,14 @@ void NonblockCg<Scalar>::forceCurrLhsUpdate() const
 template<class Scalar>
 ENativeResidualType NonblockCg<Scalar>::getCurrNativeResidualType() const
 {
-	return NATIVE_RESIDUAL_UNPRECONDITIONED;
+	switch(opPrecType_) {
+		case OP_ONLY: return NATIVE_RESIDUAL_UNPRECONDITIONED;
+		case COMPOSITE_OP: return  NATIVE_RESIDUAL_PRECONDITIONED;
+		case RIGHT_PREC: case LEFT_PREC: return NATIVE_RESIDUAL_UNPRECONDITIONED;
+		default:
+			TEST_FOR_EXCEPT(true);
+	}
+	return NATIVE_RESIDUAL_UNPRECONDITIONED; // Should never be executed!
 }
 
 template<class Scalar>
@@ -259,15 +267,15 @@ IterateReturn NonblockCg<Scalar>::iterate( const int maxNumIter )
 	bool allConverged = true;
 	try{
 		// Determine the types of the operators
-		const TSFCore::LinOpNonPersisting<Scalar>
+		const TSFCore::LinearOpHandle<Scalar>
 			rightPrec = lpi_->getRightPrec(),
 			leftPrec  = lpi_->getLeftPrec();
-		if(rightPrec.op()) {
-			if(leftPrec.op()) {
+		if(rightPrec.op().get()) {
+			if(leftPrec.op().get()) {
 				// Here we can just hope that the overall operator is
 				// symmetric since the P_L must equal P_R' but P_L and P_R
 				// need not be symmetric
-				opPrecType_ = COMBINED_OP;
+				opPrecType_ = COMPOSITE_OP;
 			}
 			else {
 #ifdef _DEBUG
@@ -277,7 +285,7 @@ IterateReturn NonblockCg<Scalar>::iterate( const int maxNumIter )
 			}
 		}
 		else {
-			if(leftPrec.op()) {
+			if(leftPrec.op().get()) {
 #ifdef _DEBUG
 				TEST_FOR_EXCEPT( lpi_->getLeftPrecSymmetry() != OP_SYMMETRIC );
 #endif
@@ -288,7 +296,7 @@ IterateReturn NonblockCg<Scalar>::iterate( const int maxNumIter )
 			}
 		}
 		// Print linear system
-		TSFCore::LinOpNonPersisting<Scalar> Op = lpi_->getOperator();
+		TSFCore::LinearOpHandle<Scalar> Op = lpi_->getOperator();
 		if(get_out().get()) {
 			*get_out() << "\n*** Entering NonblockCg<Scalar>::iterate(...)\n" << std::setprecision(16);
 			if(dump_all()) {
@@ -299,10 +307,11 @@ IterateReturn NonblockCg<Scalar>::iterate( const int maxNumIter )
 			}
 		}
 		// Solve the systems as a set of block solves
-		const int numTotalRhs = lpi_->getTotalNumRhs();
-		int numRhsSolved = 0;
-		while ( numRhsSolved < numTotalRhs ) {
-			IterateReturn nextBlockReturn = nextBlock( maxNumIter, &numRhsSolved );
+		lpi_->setAugmentationAllowed(false);
+		bool allFinished = false; 
+		while ( !allFinished ) {
+			IterateReturn nextBlockReturn = nextBlock( maxNumIter, &allFinished );
+			if(allFinished) break;
 			numCumulativeIter += nextBlockReturn.numCumulativeIter;
 			if( nextBlockReturn.iterateTermination != TERMINATION_STATUS_TEST ) allConverged = false;
 		}
@@ -324,14 +333,11 @@ void NonblockCg<Scalar>::finalize()
 // private
 
 template<class Scalar>
-IterateReturn NonblockCg<Scalar>::nextBlock( const int maxNumIter, int *numRhsSolved )
+IterateReturn NonblockCg<Scalar>::nextBlock( const int maxNumIter, bool *allFinished )
 {
 	// Setup for next block of RHSs to solve
-	const int blockSize = lpi_->getBlockSize();
-	const int firstRhsOffset = *numRhsSolved;
-	const int numRhsRemaining = lpi_->getTotalNumRhs() - (*numRhsSolved);
-	const int currNumRhs = min( numRhsRemaining,blockSize);
-	this->setCurrSystem(firstRhsOffset,currNumRhs);
+	*allFinished = !this->setupCurrSystem(); // We are all finished if there is no current block system
+	if(*allFinished) return IterateReturn();
 	// Inform the status test that we are solving a new block of systems
 	StatusTest<Scalar> *statusTest = lpi_->getStatusTest();
 	if(statusTest) statusTest->reset();
@@ -345,41 +351,38 @@ IterateReturn NonblockCg<Scalar>::nextBlock( const int maxNumIter, int *numRhsSo
 	if( currNumIters_==maxNumIter && doIterationReturn!=TERMINATION_STATUS_TEST )
 		doIterationReturn = TERMINATION_MAX_NUM_ITER;
 	// Copy whatever is remaining in current LHS into full LHS
-	lpi_->setCurrToFullLhs(*this);
-	*numRhsSolved += currNumRhs;
+	lpi_->finalizeCurrSystem(*this);
 	// Return status of this block
 	return IterateReturn(doIterationReturn,currNumIters_);
 }
 
 template<class Scalar>
-void NonblockCg<Scalar>::setCurrSystem(
-	const int    firstRhsOffset
-	,const int   currNumRhs
-	)
+bool NonblockCg<Scalar>::setupCurrSystem()
 {	
-	// Because of the nature of this solver I will not use augmentation so use currNumRhs for blockSize
-	lpi_->setCurrSystem(firstRhsOffset,currNumRhs,currNumRhs); 
+	if(!lpi_->setupCurrSystem()) return false; // All systems are solved!
 	// Create private objects needed by the algorithm
+	const int currInitNumRhs = lpi_->getCurrNumRhs();
 	const RefCountPtr<const TSFCore::VectorSpace<Scalar> >
-		space = (opPrecType_==COMBINED_OP ? lpi_->getCombinedOperator() : lpi_->getOperator() ).op()->range();
-	if(opPrecType_==COMBINED_OP) {
-		X_ = space->createMembers(currNumRhs);
-		R_ = space->createMembers(currNumRhs);
+		space = this->getOperator().range(); // Range and domain should be the same for a symmetric operator!
+	if(opPrecType_==COMPOSITE_OP) {
+		X_ = space->createMembers(currInitNumRhs);
+		R_ = space->createMembers(currInitNumRhs);
 	}
-	Q_ = space->createMembers(currNumRhs);
-	Z_ = space->createMembers(currNumRhs);
-	P_ = space->createMembers(currNumRhs);
-	rho_.resize(currNumRhs);
-	rho_old_.resize(currNumRhs);
-	beta_.resize(currNumRhs);
-	gamma_.resize(currNumRhs);
-	alpha_.resize(currNumRhs);
-	R_native_init_norms_.resize(currNumRhs);
-	R_native_norms_.resize(currNumRhs);
+	Q_ = space->createMembers(currInitNumRhs);
+	Z_ = space->createMembers(currInitNumRhs);
+	P_ = space->createMembers(currInitNumRhs);
+	rho_.resize(currInitNumRhs);
+	rho_old_.resize(currInitNumRhs);
+	beta_.resize(currInitNumRhs);
+	gamma_.resize(currInitNumRhs);
+	alpha_.resize(currInitNumRhs);
+	R_native_init_norms_.resize(currInitNumRhs);
+	R_native_norms_.resize(currInitNumRhs);
 	// Compute the initial residual and set it equal to the current
 	// residual (for the computeIteration() function)
-	if(opPrecType_==COMBINED_OP) {
-		lpi_->computeCurrPrecResidual(NULL,NULL,&*R_);
+	if(opPrecType_==COMPOSITE_OP) {
+		assign( &*X_, Teuchos::getConst(*lpi_).getCurrLhs() );
+		lpi_->computeCurrCompositeResidual(NULL,NULL,&*R_);
 		norms( *R_, &R_native_init_norms_[0] );
 	}
 	else {
@@ -389,8 +392,9 @@ void NonblockCg<Scalar>::setCurrSystem(
 		// Remember the natural norms of this initial residual for the convergence tests
 		norms( R0, &R_native_init_norms_[0] );
 	}
-	std::copy( &R_native_init_norms_[0], &R_native_init_norms_[0]+currNumRhs, &R_native_norms_[0] );
+	std::copy( &R_native_init_norms_[0], &R_native_init_norms_[0]+currInitNumRhs, &R_native_norms_[0] );
 	R_native_norms_updated_ = true;
+	return true;
 }
 
 template<class Scalar>
@@ -408,6 +412,7 @@ EIterateTermination NonblockCg<Scalar>::doIteration()
 		int numToRemove = 0;
 		std::vector<int> indexesToRemove(currNumRhs);
 		for( int k = 0; k < currNumRhs; ++k ) {
+			TEST_FOR_EXCEPTION( status[k]==STATUS_FAILED || status[k] == STATUS_NAN, Exceptions::SolverBreakdown, "Error!" );
 			if(status[k]==STATUS_CONVERGED)
 				indexesToRemove[numToRemove++] = k+1; // These are one-based
 			else
@@ -421,7 +426,7 @@ EIterateTermination NonblockCg<Scalar>::doIteration()
 			// Deflate private workspace
 			deflate(
 				numToRemove, &indexesToRemove[0], currNumRhs
-				,opPrecType_==COMBINED_OP ? 5 : 3
+				,opPrecType_==COMPOSITE_OP ? 5 : 3
 				,Teuchos::arrayArg<TSFCore::MultiVector<Scalar>*>(
 					&*Q_, &*Z_, &*P_, X_.get(), R_.get()
 					)()
@@ -445,8 +450,8 @@ EIterateTermination NonblockCg<Scalar>::doIteration()
 	// Perform linear algebra for current iteration
 	computeIteration();
 	// Inform that the current solution and the residual are up to date
-	lpi_->setCurrLhsUpdated(opPrecType_==COMBINED_OP?false:true);
-	lpi_->setCurrResidualComputed(opPrecType_==COMBINED_OP?false:true);
+	lpi_->setCurrLhsUpdated(opPrecType_==COMPOSITE_OP?false:true);
+	lpi_->setCurrResidualComputed(opPrecType_==COMPOSITE_OP?false:true);
 	return TERMINATION_UNDEFINED;
 }
 
@@ -458,8 +463,8 @@ void NonblockCg<Scalar>::computeIteration()
 	const int m = lpi_->getCurrNumRhs(); // Same as getCurrBlockSize()
 	const TSFCore::Range1D currRng(1,m); // Range for active RHSs
 	// Get the operator and preconditioner
-	TSFCore::LinOpNonPersisting<Scalar> Op   = this->getOperator();
-	TSFCore::LinOpNonPersisting<Scalar> Prec = this->getPrec();
+	TSFCore::LinearOpHandle<Scalar> Op   = this->getOperator();
+	TSFCore::LinearOpHandle<Scalar> Prec = this->getPrec();
 	// Get current views of data
 	RefCountPtr<TSFCore::MultiVector<Scalar> >
 		X = this->getCurrLhs(),
@@ -480,7 +485,7 @@ void NonblockCg<Scalar>::computeIteration()
 	RefCountPtr<const TSFCore::VectorSpace<Scalar> >
 		space = R->range(); // Operator should be symmetric so any space will do!
 	int j;
-	if( Prec.op() ) {        // Preconditioner is available
+	if( Prec.op().get() ) {  // Preconditioner is available
 		Prec.apply( TSFCore::NOTRANS, *R, &*Z );                   // Prec*R^{i-1}                    -> Z^{i-1}
 	}
 	else {                   // No preconditioner is available
@@ -556,35 +561,35 @@ void NonblockCg<Scalar>::computeIteration()
 #undef BELOS_NONBLOCK_CG_SOLVER_ERR_MSG
 
 template<class Scalar>
-TSFCore::LinOpNonPersisting<Scalar> NonblockCg<Scalar>::getOperator() const
+TSFCore::LinearOpHandle<Scalar> NonblockCg<Scalar>::getOperator() const
 {
 	switch(opPrecType_) {
 		case OP_ONLY: return lpi_->getOperator();
-		case COMBINED_OP: return lpi_->getCombinedOperator();
+		case COMPOSITE_OP: return lpi_->getCompositeOperator();
 		case RIGHT_PREC: case LEFT_PREC: return lpi_->getOperator();
 		default:
 			TEST_FOR_EXCEPT(true);
 	}
-	return TSFCore::LinOpNonPersisting<Scalar>(); // Should never be executed!
+	return TSFCore::LinearOpHandle<Scalar>(); // Should never be executed!
 }
 
 template<class Scalar>
-TSFCore::LinOpNonPersisting<Scalar> NonblockCg<Scalar>::getPrec() const
+TSFCore::LinearOpHandle<Scalar> NonblockCg<Scalar>::getPrec() const
 {
 	switch(opPrecType_) {
-		case OP_ONLY: case COMBINED_OP: return TSFCore::LinOpNonPersisting<Scalar>();
+		case OP_ONLY: case COMPOSITE_OP: return TSFCore::LinearOpHandle<Scalar>();
 		case RIGHT_PREC: return lpi_->getRightPrec();
 		case LEFT_PREC: return lpi_->getLeftPrec();
 		default:
 			TEST_FOR_EXCEPT(true);
 	}
-	return TSFCore::LinOpNonPersisting<Scalar>(); // Should never be executed!
+	return TSFCore::LinearOpHandle<Scalar>(); // Should never be executed!
 }
 
 template<class Scalar>
 RefCountPtr<TSFCore::MultiVector<Scalar> > NonblockCg<Scalar>::getCurrLhs() const
 {
-	if(opPrecType_ == COMBINED_OP)
+	if(opPrecType_ == COMPOSITE_OP)
 		return X_->subView(TSFCore::Range1D(1,lpi_->getCurrBlockSize()));
 	else
 		return lpi_->getCurrLhs();
@@ -593,7 +598,7 @@ RefCountPtr<TSFCore::MultiVector<Scalar> > NonblockCg<Scalar>::getCurrLhs() cons
 template<class Scalar>
 RefCountPtr<TSFCore::MultiVector<Scalar> > NonblockCg<Scalar>::getCurrResidual() const
 {
-	if(opPrecType_ == COMBINED_OP)
+	if(opPrecType_ == COMPOSITE_OP)
 		return R_->subView(TSFCore::Range1D(1,lpi_->getCurrBlockSize()));
 	else
 		return lpi_->getCurrResidual();

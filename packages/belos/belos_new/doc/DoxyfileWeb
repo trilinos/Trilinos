@@ -77,6 +77,8 @@ CLASS_DIAGRAMS         = YES
 SOURCE_BROWSER         = YES
 INLINE_SOURCES         = NO
 STRIP_CODE_COMMENTS    = YES
+REFERENCED_BY_RELATION = NO
+REFERENCES_RELATION    = NO
 CASE_SENSE_NAMES       = YES
 HIDE_SCOPE_NAMES       = NO
 VERBATIM_HEADERS       = YES
@@ -102,7 +104,7 @@ EXCLUDE                =
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATH           = ../example
 EXAMPLE_PATTERNS       = *.cpp *.hpp
-IMAGE_PATH             = ./images 
+IMAGE_PATH             = ../../../../Trilinos/packages/belos/doc/images 
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES
 COLS_IN_ALPHA_INDEX    = 5
@@ -137,6 +139,7 @@ TAGFILES               = ../../../../Trilinos/packages/teuchos/doc/teuchos.tag=.
                          ../../../../Trilinos/packages/epetra/doc/epetra.tag=../../../../../Trilinos/packages/epetra/doc/html
 GENERATE_TAGFILE       = belos.tag
 ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO
 #
 # Environment
 #

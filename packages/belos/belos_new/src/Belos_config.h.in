@@ -38,7 +38,7 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build ifpack */
+/* Define if want to build with ifpack enabled */
 #undef HAVE_IFPACK
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -107,7 +107,7 @@
 /* Define if want to build tests */
 #undef HAVE_TESTS
 
-/* Define if want to build tsfcore */
+/* Define if want to build with tsfcore enabled */
 #undef HAVE_TSFCORE
 
 /* Define if want to build tsfcore-epetra */

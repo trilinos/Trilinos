@@ -72,7 +72,7 @@ const char* toString( const EStatusType status )
 #ifdef _DEBUG
 	TEST_FOR_EXCEPT(true); // Should never get here!
 #endif
-	return "***Invalid value for status ***";
+	return "*** Invalid value for status ***";
 }
 
 ///
@@ -95,7 +95,7 @@ const char* toString( const EIterateTermination iterateTermination )
 #ifdef _DEBUG
 	TEST_FOR_EXCEPT(true); // Should never get here!
 #endif
-	return "***Invalid value for iterateTermination ***";
+	return "*** Invalid value for iterateTermination ***";
 }
 
 ///
@@ -113,6 +113,18 @@ enum ENativeResidualType {
 	NATIVE_RESIDUAL_UNPRECONDITIONED  ///< The native residual is scaled and unpreconditioned \f$S_L \bar{R}\f$.
 	,NATIVE_RESIDUAL_PRECONDITIONED   ///< The native residual is scaled and preconditioned \f$P_L S_L \bar{R}\f$.
 };
+
+///
+inline
+const char* toString( const ENativeResidualType nativeResidualType )
+{
+ 	if(nativeResidualType==NATIVE_RESIDUAL_UNPRECONDITIONED) return "NATIVE_RESIDUAL_UNPRECONDITIONED";
+	if(nativeResidualType==NATIVE_RESIDUAL_PRECONDITIONED) return "NATIVE_RESIDUAL_PRECONDITIONED";
+#ifdef _DEBUG
+	TEST_FOR_EXCEPT(true); // Should never get here!
+#endif
+	return "*** Invalid value for nativeResidualType ***";
+}
 
 namespace Exceptions {
 

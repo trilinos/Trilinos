@@ -64,6 +64,12 @@ public:
 	/// Print norms for each original RHS separately.
 	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printEachOrigRhsNorm )
 
+	/// Print norms for each original RHS numerator separately.
+	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printEachOrigRhsNormNumer )
+
+	/// Print norms for each original RHS denominator separately.
+	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printEachOrigRhsNormDecom )
+
 	/** @name Constructors / initializers */
 	//@{
 	
@@ -118,6 +124,8 @@ public:
 		,const bool                              printMaxNativeRhsNorm   = true
 		,const bool                              printEachNativeRhsNorm  = false
 		,const bool                              printEachOrigRhsNorm    = false
+		,const bool                              printEachOrigRhsNormNumer = false
+		,const bool                              printEachOrigRhsNormDecom = false
 		);
 
 	//@}
@@ -179,6 +187,8 @@ SummaryOutputterStatusTest<Scalar>::SummaryOutputterStatusTest()
 	,printMaxNativeRhsNorm_(true)
 	,printEachNativeRhsNorm_(false)
 	,printEachOrigRhsNorm_(false)
+	,printEachOrigRhsNormNumer_(false)
+	,printEachOrigRhsNormDecom_(false)
 	,resetCalled_(true)
 	,currNumRestarts_(0)
 {}
@@ -190,6 +200,8 @@ SummaryOutputterStatusTest<Scalar>::SummaryOutputterStatusTest(
 	,const bool                               printMaxNativeRhsNorm
 	,const bool                               printEachNativeRhsNorm
 	,const bool                               printEachOrigRhsNorm
+	,const bool                               printEachOrigRhsNormNumer
+	,const bool                               printEachOrigRhsNormDecom
 	)
 	:AttachStatusTestBase<Scalar>(ATTACHED_TEST_INSTEAD)
 	,out_(out)
@@ -197,6 +209,8 @@ SummaryOutputterStatusTest<Scalar>::SummaryOutputterStatusTest(
 	,printMaxNativeRhsNorm_(printMaxNativeRhsNorm)
 	,printEachNativeRhsNorm_(printEachNativeRhsNorm)
 	,printEachOrigRhsNorm_(printEachOrigRhsNorm)
+	,printEachOrigRhsNormNumer_(printEachOrigRhsNormNumer)
+	,printEachOrigRhsNormDecom_(printEachOrigRhsNormDecom)
 	,resetCalled_(true)
 	,currNumRestarts_(0)
 {
@@ -234,12 +248,15 @@ void SummaryOutputterStatusTest<Scalar>::checkStatus(
 		// Print header
 		if(resetCalled_) {
 			*out_
-				<<leadstr<<"Solving RHSs = ["
-				<<currRhsIndexes_[0]<<"..."<<currRhsIndexes_[currNumRhs-1]<<"], solve = \'"<<typeid(bis).name()
-				<<", attachedStatusTest = \'";
+				<< leadstr << "Solving RHSs = ["
+				<< currRhsIndexes_[0] << ",...," << currRhsIndexes_[currNumRhs-1] << "]"
+				<< "\n  , solver = \'" << typeid(bis).name() << "\'"
+				<< "\n  , attachedStatusTest = \'";
 			if(attachedStatusTest.get()) *out_ << typeid(*attachedStatusTest).name();
 			else *out_ << "NULL";
-			*out_ << "\':\n"; 
+			*out_	
+				<< "\'"
+				<< "\n  , currNativeResidualType = \'" << toString(bis.getCurrNativeResidualType()) << "\'\n"; 
 		}
 		// Compute/get norms
 		if(printMaxNativeRhsNorm() || printEachNativeRhsNorm()) {
@@ -285,6 +302,22 @@ void SummaryOutputterStatusTest<Scalar>::checkStatus(
 			for( int k = 0; k < currNumRhs; ++k ) {
 				if( k != 0 ) *out_ << ",";
 				*out_ << "(" << currRhsIndexes_[k] << "," << (R_bar_norms_[k]/R_bar_0_norms_[k]) << ")";
+			}
+			*out_ << "}\n";
+		}
+		if( printEachOrigRhsNormNumer() ) {
+			*out_ << leadstr << "    (j(k),||R_orig(:,k)||) = {";
+			for( int k = 0; k < currNumRhs; ++k ) {
+				if( k != 0 ) *out_ << ",";
+				*out_ << "(" << currRhsIndexes_[k] << "," << (R_bar_norms_[k]) << ")";
+			}
+			*out_ << "}\n";
+		}
+		if( printEachOrigRhsNormDecom() ) {
+			*out_ << leadstr << "    (j(k),||R_orig_0(:,k)||) = {";
+			for( int k = 0; k < currNumRhs; ++k ) {
+				if( k != 0 ) *out_ << ",";
+				*out_ << "(" << currRhsIndexes_[k] << "," << (R_bar_0_norms_[k]) << ")";
 			}
 			*out_ << "}\n";
 		}

@@ -61,6 +61,13 @@ $combinedOpCondNum=5.0;
 $useNativeStatusTest = 0;
 run_case();
 
+$precType=+2; # Left and right preconditioning!
+$maxNumIters = 80;
+$opCondNum = 1e+4;
+$combinedOpCondNum=5.0;
+$useNativeStatusTest = 1;
+run_case();
+
 $precType=0; # No preconditioning!
 $maxNumIters = 500;
 $useNativeStatusTest = 1;

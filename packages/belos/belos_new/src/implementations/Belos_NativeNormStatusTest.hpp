@@ -134,17 +134,15 @@ void NativeNormStatusTest<Scalar>::protectedCheckStatus(
 	)
 {
 	const std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &tols = this->tols();
-#ifdef _DEBUG
-	TEST_FOR_EXCEPT( tols.size() > 1 && ( bis.getProblem().getTotalNumRhs() != static_cast<int>(tols.size()) ) );
-#endif
 	if(static_cast<int>(R_native_norms_.size()) < currBlockSize) R_native_norms_.resize(currBlockSize);
 	bis.getCurrNativeResiduals( currBlockSize, &R_native_norms_[0] );
 	if(tols.size()==1 && currNumRhs > 1) {
 		// One tolerance for all RHSs.
 		const typename Teuchos::ScalarTraits<Scalar>::magnitudeType tol = tols[0];
 		for( int k = 0; k < currNumRhs; ++k ) {
-			if( R_native_norms_[k] <= tol )  status[k] = STATUS_CONVERGED;
-			else                             status[k] = STATUS_UNCONVERGED;
+			if( ST::isnaninf(R_native_norms_[k]) ) status[k] = STATUS_NAN;
+			else if( R_native_norms_[k] <= tol )   status[k] = STATUS_CONVERGED;
+			else                                   status[k] = STATUS_UNCONVERGED;
 		}
 	}
 	else {
@@ -153,6 +151,9 @@ void NativeNormStatusTest<Scalar>::protectedCheckStatus(
 		bis.getProblem().getCurrRhsIndexes( currNumRhs, &currRhsIndexes_[0] );
 		for( int k = 0; k < currNumRhs; ++k ) {
 			const int origRhsIndex = currRhsIndexes_[k];
+#ifdef _DEBUG
+			TEST_FOR_EXCEPT( origRhsIndex > static_cast<int>(tols.size()) );
+#endif
 			if( R_native_norms_[k] <= tols[origRhsIndex-1] )  status[k] = STATUS_CONVERGED;
 			else                                              status[k] = STATUS_UNCONVERGED;
 		}
