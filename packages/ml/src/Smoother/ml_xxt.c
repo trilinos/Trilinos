@@ -262,17 +262,48 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
 {
 
   /* local variables */
+#ifdef out
 
   int   type;             /* type of next message */
   int   partner;          /* processor I exchange with */
   int   mask;             /* bit pattern identifying partner */
   int   hbit;             /* largest nonzero bit in nprocs */
   int   nprocs_small;     /* largest power of 2 <= nprocs */
-  int   node, nprocs;
+  int   node, nprocs, temp;
   char *yo = "ML_gpartial_sum_int: ";
-  int   partial_sum = 0, temp;
-
   USR_REQ     request;  /* Message handle */
+#endif
+  int   partial_sum = 0;
+  int   *allvalues, *itemp;
+
+
+int i;
+
+  itemp = (int *) ML_allocate(comm->ML_nprocs*sizeof(int));
+  allvalues = (int *) ML_allocate(comm->ML_nprocs*sizeof(int));
+  if (allvalues == NULL) pr_error("ML_gpartialsum_int: out of space\n");
+  for (i = 0; i < comm->ML_nprocs; i++) allvalues[i] = 0;
+  allvalues[comm->ML_mypid] = val;
+  ML_gsum_vec_int(allvalues, itemp, comm->ML_nprocs, comm);
+/*
+if (comm->ML_mypid == 0) 
+   for (i = 0; i < comm->ML_nprocs; i++ ) printf("vvv(%d) = %d\n",i,allvalues[i]);
+*/
+
+  for (i = 0; i < comm->ML_mypid; i++) partial_sum += allvalues[i];
+
+/*
+printf("%d: partial sum %d\n",comm->ML_mypid,partial_sum);
+*/
+  
+  ML_free(itemp);
+  ML_free(allvalues);
+  return(partial_sum);
+
+#ifdef out
+
+  partial_sum = 0;
+
 
   /*********************** first executable statment *****************/
 
@@ -398,6 +429,7 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
     }
   }
   return(partial_sum);
+#endif
 
 } /* ML_gpartial_sum_int */
 

@@ -45,8 +45,6 @@
 #include "ml_smoother.h"
 #include "ml_aztec_utils.h"
 #include "ml_lapack.h"
-#include "Matrix.h"
-#include "ParaSails.h"
 
 #ifdef SUPERLU
 #include "dsp_defs.h"
@@ -3954,6 +3952,9 @@ void ML_Smoother_Clean_OrderedSGS(void *data)
 /* Sparse approximate inverse smoother                                       */
 /* ------------------------------------------------------------------------- */
 
+#ifdef PARASAILS
+#include "Matrix.h"
+#include "ParaSails.h"
 extern int parasails_factorized;
 
 int ML_Smoother_ParaSails(void *sm,int inlen,double x[],int outlen,
@@ -4080,4 +4081,4 @@ void ML_Smoother_Clean_ParaSails(void *data)
 {
    ParaSailsDestroy((ParaSails *) data);
 }
-
+#endif
