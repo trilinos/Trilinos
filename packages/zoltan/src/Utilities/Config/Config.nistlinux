@@ -43,7 +43,7 @@ FARG = farg_typical
 F90_MODULE_PREFIX = -I
 else
 ifeq "$(F90_COMPILER)" "intel"
-F90 = ifc
+F90 = ifort
 FFLAGS =
 F90CFLAGS = -DFMANGLE=UNDERSCORE
 SPPR_HEAD = spprinc.most

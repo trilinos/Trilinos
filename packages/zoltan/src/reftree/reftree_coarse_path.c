@@ -11,6 +11,7 @@ extern "C" {
 #include <stdio.h>
 #include "zz_const.h"
 #include "reftree.h"
+#include "hsfc_hilbert_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -23,7 +24,7 @@ static int init_stack(ZZ *zz);
 static int push(int elem, int list, ZZ *zz);
 static int pop(int list);
 static int set_neigh(ZOLTAN_ID_PTR vertices, int *num_vert,
-                     int *all_triangles, ZZ *zz);
+                     int all_triangles, ZZ *zz);
 static int add_neigh_pair(int v,int e1,int e2, ZZ *zz);
 static int add_to_to_add(int element, ZZ *zz);
 static int initial_cycle(ZZ *zz);
@@ -38,6 +39,19 @@ static int element_swap_recur(int element, int *ierr, ZZ *zz);
 static int hanging_nodes(int *ierr, ZZ *zz);
 static int vertex_swap(int *ierr, ZZ *zz);
 static int broken_link(int *ierr, ZZ *zz);
+static int sfc_coarse_grid_path(int nobj,int *num_vert, ZOLTAN_ID_PTR vertices,
+                          ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
+                          int *order, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+                          char *initpath_method, int all_triangles, ZZ *zz);
+static int find_inout(int elem, int prev, int prevprev,
+                      ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
+                      ZOLTAN_ID_PTR vertices, int *num_vert, int *first_vert,
+                      ZZ *zz);
+static double InvSierpinski2d(ZZ *zz, double *coord);
+double sier2d(double x, double y, int state, int level, double addf,
+              double addp, double peakx, double peaky);
+static void sort_index(int n, double ra[], int indx[]);
+
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -235,7 +249,7 @@ static int pop(int list)
 /*****************************************************************************/
 
 static int set_neigh(ZOLTAN_ID_PTR vertices, int *num_vert,
-                     int *all_triangles, ZZ *zz)
+                     int all_triangles, ZZ *zz)
 {
 
 /* 
@@ -303,15 +317,10 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
  * vertices.  And while we're going through, see if they're all triangles.
  */
 
-   *all_triangles = TRUE;
    nvert = 0;
    index = -1;
 
    for (element=0; element<num_obj; element++) {
-
-/* check for a non-triangle */
-
-      if (num_vert[element] != 3) *all_triangles = FALSE;
 
 /* go through the vertices of this element */
 
@@ -492,7 +501,7 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
 
 /* free memory for element lists, unless all elements are triangles */
 
-   if (!(*all_triangles)) {
+   if (!all_triangles) {
       for (j=0; j<element_list_dim; j++) ZOLTAN_FREE(&(element_list[j]));
       Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
                                               &num_elem,
@@ -1778,9 +1787,566 @@ int success1, j1, k1, l1;
 /*****************************************************************************/
 /*****************************************************************************/
 
+int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
+                         ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
+                         int *order, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+                         char *initgrid_method, int all_triangles, ZZ *zz)
+{
+
+/*
+ * This routine uses either the Hilbert or Sierpinski Space Filling Curve to
+ * find a path through the coarse grid.  This path is not necessarily connected
+ * in non-convex domains.  Even if it is connected, the path through refinements
+ * of the * grid may not be connected if the in/out vertices can't be assigned
+ * to match up.
+ * This uses the Hilbert routines to map from 2D and 3D to 1D in
+ * hsfc/hsfc_hilbert.c.  It has its own Sierpinski routine, which only
+ * applies to 2D problems.
+ */
+
+  char *yo = "sfc_coarse_grid_path";
+  int ierr, num_geom, i, elem, prev, prevprev;
+  int *ind, *first_vert;
+  double *sfccoord, *coords;
+  double xmin,xmax,ymin,ymax,zmin,zmax;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+  ierr = ZOLTAN_OK;
+
+/*
+ * Find out if this is a 2D or 3D problem
+ */
+
+  if (zz->Get_Num_Geom == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Must register ZOLTAN_NUM_GEOM_FN.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_FATAL);
+  }
+  num_geom = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &ierr);
+  if (ierr) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                   "Error returned from user function Get_Num_Geom.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ierr); 
+  }
+  if (!(num_geom==2 || num_geom==3)) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Geometry must be either 2D or 3D.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_FATAL);
+  }
+
+/*
+ * For each element, determine its SFC mapping from its coordinates to 1D
+ */
+
+/* verify the geometry function has be registered */
+
+  if (zz->Get_Geom == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Must register ZOLTAN_GEOM_FN.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_FATAL);
+  }
+
+/* allocate space for the element coordinates and the SFC coordinate */
+
+  coords = (double *) ZOLTAN_MALLOC(nobj*num_geom*sizeof(double));
+  sfccoord = (double *) ZOLTAN_MALLOC(nobj*sizeof(double));
+  if (sfccoord == NULL || coords == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_MEMERR);
+  }
+
+/* get the coordinates of each element and find max and min */
+
+  xmin =  1.0e50;
+  xmax = -1.0e50;
+  ymin =  1.0e50;
+  ymax = -1.0e50;
+  zmin =  1.0e50;
+  zmax = -1.0e50;
+  for (i=0; i<nobj; i++) {
+
+    zz->Get_Geom(zz->Get_Geom_Data, zz->Num_GID, zz->Num_LID, 
+                 &(gids[zz->Num_GID*i]), &(lids[zz->Num_GID*i]),
+                 &(coords[num_geom*i]),&ierr);
+    if (ierr) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                         "Error returned from user function Get_Geom.");
+      Zoltan_Multifree(__FILE__,__LINE__, 2, &coords, &sfccoord);
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return(ierr);
+    }
+    if (coords[num_geom*i  ] < xmin) xmin = coords[num_geom*i  ];
+    if (coords[num_geom*i  ] > xmax) xmax = coords[num_geom*i  ];
+    if (coords[num_geom*i+1] < ymin) ymin = coords[num_geom*i+1];
+    if (coords[num_geom*i+1] > ymax) ymax = coords[num_geom*i+1];
+    if (num_geom == 3) {
+      if (coords[num_geom*i+1] < zmin) zmin = coords[num_geom*i+2];
+      if (coords[num_geom*i+2] > zmax) zmax = coords[num_geom*i+2];
+    }
+  }
+
+/* scale the coordinates to [0,1] and compute the SFC mapping */
+
+  for (i=0; i<nobj; i++) {
+    coords[num_geom*i  ] = (coords[num_geom*i  ]-xmin)/(xmax-xmin);
+    coords[num_geom*i+1] = (coords[num_geom*i+1]-ymin)/(ymax-ymin);
+    if ((strcmp(initgrid_method, "SIERPINSKI") == 0) ||
+        (strcmp(initgrid_method, "REFTREE_DEFAULT") == 0 && all_triangles)) {
+      if (num_geom == 2) {
+        sfccoord[i] = InvSierpinski2d(zz,&(coords[num_geom*i]));
+      } else {
+        ierr = ZOLTAN_FATAL;
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                           "Sierpinski SFC only applies to 2D problems.");
+        Zoltan_Multifree(__FILE__,__LINE__, 2, &coords, &sfccoord);
+        ZOLTAN_TRACE_EXIT(zz, yo);
+        return(ierr);
+      }
+    } else { /* Hilbert */
+      if (num_geom == 2) {
+        sfccoord[i] = Zoltan_HSFC_InvHilbert2d(zz,&(coords[num_geom*i]));
+      } else {
+        coords[num_geom*i+2] = (coords[num_geom*i+2]-zmin)/(zmax-zmin);
+        sfccoord[i] = Zoltan_HSFC_InvHilbert3d(zz,&(coords[num_geom*i]));
+      }
+    }
+  }
+
+/*
+ * sort the Hilbert coordinates to get the order of the elements
+ */
+
+  ind = (int *) ZOLTAN_MALLOC(nobj*sizeof(int));
+  if (ind == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    Zoltan_Multifree(__FILE__,__LINE__, 2, &coords, &sfccoord);
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_MEMERR);
+  }
+
+  for (i=0; i<nobj; i++) ind[i] = i;
+  sort_index(nobj, sfccoord, ind);
+
+/*
+ * Determine where each element's vertices start in vertices
+ */
+
+  first_vert = (int *) ZOLTAN_MALLOC(nobj*sizeof(int));
+  if (first_vert == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    Zoltan_Multifree(__FILE__,__LINE__, 3, &coords, &sfccoord, &ind);
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_MEMERR);
+  }
+
+  first_vert[0] = 0;
+  for (i=1; i<nobj; i++) first_vert[i] = first_vert[i-1] + num_vert[i-1];
+
+/* 
+ * pass through the elements in order setting order and looking for
+ * in/out vertices
+ */
+
+  
+  elem = ind[0];
+  order[elem] = 0;
+  ZOLTAN_SET_GID(zz,&(in_vertex[zz->Num_GID*elem]),
+                    &(vertices[zz->Num_GID*first_vert[elem]]));
+
+  for (i=1; i<nobj; i++) {
+    elem = ind[i];
+    order[elem] = i;
+    prev = ind[i-1];
+    if (i==1) {
+      prevprev = -1;
+    } else {
+      prevprev = ind[i-2];
+    }
+
+    ierr = find_inout(elem, prev, prevprev, in_vertex, out_vertex,
+                      vertices, num_vert, first_vert, zz);
+    if (ierr) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                     "Error returned from find_inout.");
+      Zoltan_Multifree(__FILE__,__LINE__, 4, &coords,&sfccoord,&ind,&first_vert);
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return(ierr); 
+    }
+  }
+
+  if (ZOLTAN_EQ_GID(zz,&(in_vertex[zz->Num_GID*elem]),
+                       &( vertices[zz->Num_GID*first_vert[elem]]))) {
+    ZOLTAN_SET_GID(zz,&(out_vertex[zz->Num_GID*elem]),
+                      &(  vertices[zz->Num_GID*(first_vert[elem]+1)]));
+  } else {
+    ZOLTAN_SET_GID(zz,&(out_vertex[zz->Num_GID*elem]),
+                      &(  vertices[zz->Num_GID*first_vert[elem]]));
+  }
+
+  Zoltan_Multifree(__FILE__,__LINE__, 4, &coords, &sfccoord, &ind, &first_vert);
+  return(ZOLTAN_OK);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int find_inout(int elem, int prev, int prevprev,
+               ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
+               ZOLTAN_ID_PTR vertices, int *num_vert, int *first_vert,
+               ZZ *zz)
+{
+
+/*
+ * This routine finds and sets an in-vertex for elem and out-vertex for prev.
+ * Usually they will be the same vertex, but if necessary they will be
+ * different which will cause the Hamiltonian path to be disconnected.
+ * If necessary and possible, this routine will change the in-vertex of prev
+ * and out-vertex of prevprev to make in and out be the same.
+ */
+
+  char *yo = "find_inout";
+  int looking, i, j, ngid, shared;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+  ngid = zz->Num_GID;
+
+/*
+ * first look for a shared vertex of elem and prev that is not the
+ * in-vertex of prev
+ */
+
+  looking = TRUE;
+  for (i=0; i<num_vert[elem] && looking; i++) {
+    for (j=0; j<num_vert[prev] && looking; j++) {
+      if (ZOLTAN_EQ_GID(zz,&(vertices[ngid*(first_vert[prev]+j)]),
+                           &(vertices[ngid*(first_vert[elem]+i)])) &&
+          !ZOLTAN_EQ_GID(zz,&( vertices[ngid*(first_vert[prev]+j)]),
+                            &(in_vertex[ngid*prev]))) {
+        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*elem]),
+                          &( vertices[ngid*(first_vert[elem]+i)]));
+        ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
+                          &(vertices[ngid*(first_vert[elem]+i)]));
+        looking = FALSE;
+      }
+    }
+  }
+
+/*
+ * If that failed then the in-vertex of prev must be shared, or else there
+ * are no shared vertices between elem and prev.
+ */
+
+  if (looking) {
+    shared = FALSE;
+    for (i=0; i<num_vert[elem] && !shared; i++) {
+      if (ZOLTAN_EQ_GID(zz,&( vertices[ngid*(first_vert[elem]+i)]),
+                           &(in_vertex[ngid*prev]))) {
+        shared = TRUE;
+      }
+    }
+
+/*
+ * If the in-vertex of prev is not shared, then prev and elem are not adjacent,
+ * so pick any vertices for the in and out.
+ */
+
+    if (!shared) {
+      ZOLTAN_SET_GID(zz,&(in_vertex[ngid*elem]),
+                        &( vertices[ngid*(first_vert[elem])]));
+      if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*prev]),
+                           &( vertices[ngid*first_vert[prev]]))) {
+        ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
+                          &(  vertices[ngid*(first_vert[prev]+1)]));
+      } else {
+        ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
+                          &(  vertices[ngid*first_vert[prev]]));
+      }
+      looking = FALSE;
+    }
+  }
+
+/*
+ * If the in-vertex of prev is shared, then it must be the only shared vertex
+ * between elem and prev (otherwise the first approach would have worked).
+ * Try to change the in-vertex of prev and use it as the out-vertex of prev
+ * and in-vertex of elem.
+ */
+
+/*
+ * First, if prev is the beginning of the path then set in-vertex to be
+ * any other vertex.
+ */
+
+  if (looking) {
+    if (prevprev == -1) {
+      ZOLTAN_SET_GID(zz,&( in_vertex[ngid*elem]),
+                        &( in_vertex[ngid*prev]));
+      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
+                        &( in_vertex[ngid*prev]));
+      if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*prev]),
+                           &( vertices[ngid*first_vert[prev]]))) {
+        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*prev]),
+                          &( vertices[ngid*(first_vert[prev]+1)]));
+      } else {
+        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*prev]),
+                          &( vertices[ngid*first_vert[prev]]));
+      }
+      looking = FALSE;
+    }
+  }
+
+/*
+ * Second, if prev and prevprev are not adjacent or contain a broken link,
+ * i.e., out_vertex of prevprev is not the in_vertex of prev, then change
+ * the in_vertex of prev to any other vertex.
+ */
+
+  if (looking) {
+    if (!ZOLTAN_EQ_GID(zz,&( in_vertex[ngid*prev]),
+                          &(out_vertex[ngid*prevprev]))) {
+      ZOLTAN_SET_GID(zz,&( in_vertex[ngid*elem]),
+                        &( in_vertex[ngid*prev]));
+      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
+                        &( in_vertex[ngid*prev]));
+      if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*prev]),
+                           &( vertices[ngid*first_vert[prev]]))) {
+        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*prev]),
+                          &( vertices[ngid*(first_vert[prev]+1)]));
+      } else {
+        ZOLTAN_SET_GID(zz,&(in_vertex[ngid*prev]),
+                          &( vertices[ngid*first_vert[prev]]));
+      }
+      looking = FALSE;
+    }
+  }
+
+/*
+ * Third and final, look for a shared vertex between prev and prevprev that
+ * is not the in-vertex of either prev or prevprev and use that as the new
+ * out-vertex of prevprev and in-vertex of prev.
+ */
+
+  if (looking) {
+    for (i=0; i<num_vert[prev] && looking; i++) {
+      if (!ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*prev]),
+                            &( vertices[ngid*(first_vert[prev]+i)]))) {
+        for (j=0; j<num_vert[prevprev] && looking; j++) {
+          if (ZOLTAN_EQ_GID(zz,&(vertices[ngid*(first_vert[prevprev]+j)]),
+                               &(vertices[ngid*(first_vert[prev]+i)])) &&
+              !ZOLTAN_EQ_GID(zz,&( vertices[ngid*(first_vert[prevprev]+j)]),
+                                &(in_vertex[ngid*prevprev]))) {
+            ZOLTAN_SET_GID(zz,&( in_vertex[ngid*elem]),
+                              &( in_vertex[ngid*prev]));
+            ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
+                              &( in_vertex[ngid*prev]));
+            ZOLTAN_SET_GID(zz,&(in_vertex[ngid*prev]),
+                              &( vertices[ngid*(first_vert[prev]+i)]));
+            ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prevprev]),
+                              &(  vertices[ngid*(first_vert[prev]+i)]));
+            looking = FALSE;
+          }
+        }
+      }
+    }
+  }
+
+/*
+ * If that failed, give up and put in a broken link by using the in-vertex
+ * of prev (the only shared vertex between elem and prev) as the in-vertex
+ * of elem and any other vertex of prev as the out-vertex of prev
+ */
+
+  if (looking) {
+    ZOLTAN_SET_GID(zz,&( in_vertex[ngid*elem]),
+                      &( in_vertex[ngid*prev]));
+    if (ZOLTAN_EQ_GID(zz,&(in_vertex[ngid*prev]),
+                         &( vertices[ngid*first_vert[prev]]))) {
+      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
+                        &(  vertices[ngid*(first_vert[prev]+1)]));
+    } else {
+      ZOLTAN_SET_GID(zz,&(out_vertex[ngid*prev]),
+                        &(  vertices[ngid*first_vert[prev]]));
+    }
+  }
+
+  return(ZOLTAN_OK);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+double InvSierpinski2d(ZZ *zz, double *coord)
+{
+
+/*
+ * Given x,y coordinates in [0,1]x[0,1], returns the Sierpinski key [0,1]
+ */
+
+  char *yo = "InvSierpinski2d";
+
+   /* sanity check for input arguments */
+  if ((coord[0] < 0.0) || (coord[0] > 1.0) || (coord[1] < 0.0) ||
+      (coord[1] > 1.0))
+     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Spatial Coordinates out of range.");
+
+/* begin recursion that computes key */
+
+  return sier2d(coord[0], coord[1], 0, 0, (double) 0.5, (double) 0.5,
+                (double) 0.0, (double) 0.0);
+
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+double sier2d(double x, double y, int state, int level, double addf,
+              double addp, double peakx, double peaky)
+{
+
+static int MAXLEV = 24;
+
+/*
+ * Recursively compute the Sierpinski mapping from the unit square to the
+ * unit interval
+ */
+
+  if (level >= MAXLEV) return (double) 0;
+
+  switch (state) {
+
+  case 0:
+    if (y > x)
+      return sier2d(x,y,1,level+1,addf/2,addp,(double) 0.0, (double) 1.0);
+    else
+      return sier2d(x,y,2,level+1,addf/2,addp,(double) 1.0, (double) 0.0)+addf;
+
+  case 1:
+    if ( y-peaky < -(x-peakx) )
+      return sier2d(x,y,5,level+1,addf/2,addp,peakx+addp,peaky-addp);
+    else
+      return sier2d(x,y,6,level+1,addf/2,addp,peakx+addp,peaky-addp) + addf;
+
+  case 2:
+    if ( y-peaky >= -(x-peakx) )
+      return sier2d(x,y,7,level+1,addf/2,addp,peakx-addp,peaky+addp);
+    else
+      return sier2d(x,y,8,level+1,addf/2,addp,peakx-addp,peaky+addp) + addf;
+
+  case 3:
+    if ( y-peaky <= x-peakx )
+      return sier2d(x,y,8,level+1,addf/2,addp,peakx+addp,peaky+addp);
+    else
+      return sier2d(x,y,5,level+1,addf/2,addp,peakx+addp,peaky+addp) + addf;
+
+  case 4:
+    if ( y-peaky > x-peakx )
+      return sier2d(x,y,6,level+1,addf/2,addp,peakx-addp,peaky-addp);
+    else
+      return sier2d(x,y,7,level+1,addf/2,addp,peakx-addp,peaky-addp) + addf;
+
+  case 5:
+    if ( y < peaky )
+      return sier2d(x,y,1,level+1,addf/2,addp/2,peakx-addp,peaky);
+    else
+      return sier2d(x,y,3,level+1,addf/2,addp/2,peakx-addp,peaky) + addf;
+
+  case 6:
+    if ( x < peakx )
+      return sier2d(x,y,4,level+1,addf/2,addp/2,peakx,peaky+addp);
+    else
+      return sier2d(x,y,1,level+1,addf/2,addp/2,peakx,peaky+addp) + addf;
+
+  case 7:
+    if ( y >= peaky )
+      return sier2d(x,y,2,level+1,addf/2,addp/2,peakx+addp,peaky);
+    else
+      return sier2d(x,y,4,level+1,addf/2,addp/2,peakx+addp,peaky) + addf;
+
+  case 8:
+    if ( x >= peakx )
+      return sier2d(x,y,3,level+1,addf/2,addp/2,peakx,peaky-addp);
+    else
+      return sier2d(x,y,2,level+1,addf/2,addp/2,peakx,peaky-addp) + addf;
+
+  }
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+void sort_index(int n, double ra[], int indx[])
+  
+/*
+*       Numerical Recipies in C source code
+*       modified to have first argument an integer array
+*       WFM 8/4/2004 I copied this routine from driver/dr_util.c and
+*       modified it to take ra as a double.
+*
+*       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
+*       heapsort algorithm.
+*       Array ra is not reorganized.  An index array indx is built that
+*       gives the new order.
+*
+*/
+
+{
+  int   l, j, ir, i;
+  int   irra;
+  double rra;
+
+  /*
+   *  No need to sort if one or fewer items.
+   */
+  if (n <= 1) return;
+
+  l=n >> 1;
+  ir=n-1;
+  for (;;) {
+    if (l > 0) {
+      rra=ra[indx[--l]];
+      irra = indx[l];
+    }
+    else {
+      rra=ra[indx[ir]];
+      irra=indx[ir];
+
+      indx[ir]=indx[0];
+      if (--ir == 0) {
+        indx[0]=irra;
+        return;
+      }
+    }
+    i=l; 
+    j=(l << 1)+1;
+    while (j <= ir) {
+      if (j < ir &&
+          (ra[indx[j]] <  ra[indx[j+1]]))
+        ++j;
+      if (rra <  ra[indx[j]]) {
+        indx[i] = indx[j];
+        j += (i=j)+1;
+      }
+      else j=ir+1;
+    }
+    indx[i]=irra;
+  }
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
 int Zoltan_Reftree_Coarse_Grid_Path(int nobj, int *num_vert, 
                                ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
-                               ZOLTAN_ID_PTR out_vertex, int *order, ZZ *zz)
+                               ZOLTAN_ID_PTR out_vertex, int *order,
+                               ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+                               char *initpath_method, ZZ *zz)
 {
 
 /*
@@ -1796,6 +2362,27 @@ int all_triangles = 0, i, element, success, ierr;
    num_obj = nobj;
    ierr = ZOLTAN_OK;
 
+/* check for a non-triangle */
+
+   all_triangles = TRUE;
+   for (element=0; element<num_obj; element++) {
+      if (num_vert[element] != 3) all_triangles = FALSE;
+   }
+
+/* see if an space filling curve method was requested */
+
+   if (strcmp(initpath_method, "HILBERT") == 0 ||
+       strcmp(initpath_method, "SIERPINSKI") == 0 ||
+       strcmp(initpath_method, "REFTREE_DEFAULT") == 0 ) {
+      ierr = sfc_coarse_grid_path(nobj, num_vert, vertices, in_vertex,
+                                  out_vertex, order, gids, lids, 
+                                  initpath_method, all_triangles, zz);
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return (ierr);
+   }
+
+/* otherwise, use the method for connected partitions */
+
 /* initialize the stacks of elements that can be added to the path */
 
    ierr = init_stack(zz);
@@ -1808,7 +2395,7 @@ int all_triangles = 0, i, element, success, ierr;
 
 /* determine the neighbor relationships and list of shared vertices */
 
-   ierr = set_neigh(vertices, num_vert, &all_triangles, zz);
+   ierr = set_neigh(vertices, num_vert, all_triangles, zz);
    if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                          "Error returned from set_neigh.");

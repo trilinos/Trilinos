@@ -54,7 +54,10 @@ one element to the next (and does not go out the same vertex it came in).
 
 <P>The user may allow Zoltan to determine the order of the coarse grid
 elements, or may specify the order, which might be faster or produce a
-better path.  If the user provides the order, then
+better path.  If Zoltan determines the order, the user can select between
+an order that will produce connected partitions, an order based on a Hilbert
+Space Filling Curve, or an order based on a Sierpinski Space Filling Curve.
+See the parameter REFTREE_INITPATH below.  If the user provides the order, then
 the in/out vertices must also be supplied.  Similarly, the
 user may specify the order and in/out vertices of the child elements, or
 allow Zoltan to determine them.  If the user knows how to provide a good
@@ -118,6 +121,42 @@ nodes.  Larger values require more memory but may reduce search time.</TD>
 <TD><I>REFTREE_HASH_SIZE</I> = 16384</TD>
 </TR>
 
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>REFTREE_INITPATH</I></TD>
+
+<TD>
+Determines the method for finding an order of the elements in the initial
+grid. </BR>
+"SIERPINSKI" uses a Sierpinski Space Filling Curve and is most appropriate
+for grids consisting of triangles.  It is currently limited to 2D. </BR>
+"HILBERT" uses a Hilbert Space Filling Curve and is most appropriate for grids
+consisting of quadralaterals or hexahedra. </BR>
+"CONNECTED" attempts to produce connected partitions (guaranteed for triangles
+and tetrahedra), however they tend to be stringy, i.e., less compact than the
+SFC methods.  It is most appropriate when connected partitions are required. </BR>
+An invalid character string will invoke the default method.
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>REFTREE_INITPATH</I> = "SIERPINSKI" if the grid contains only triangles</BR>
+<I>REFTREE_INITPATH</I> = "HILBERT" otherwise
+</BR></BR>
+<I>NOTE:</I> In Zoltan versions 1.53 and earlier the default was "CONNECTED".
+To reproduce old results, use <I>REFTREE_INITPATH</I> = "CONNECTED".
+</TD>
+</TR>
 <TR>
 <TD VALIGN=TOP><B>Required Query Functions:</B></TD>
 

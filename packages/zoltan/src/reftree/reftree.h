@@ -22,8 +22,9 @@ extern "C" {
 /* Used for dimensioning space for a query function to return vertices */
 #define MAXVERT 8
 
-/* Default dimension of the hash table */
+/* Default parameter values */
 #define DEFAULT_HASH_TABLE_SIZE 16384
+#define DEFAULT_INITPATH "REFTREE_DEFAULT"
 
 /* Data structures for refinement tree */
 
@@ -89,7 +90,9 @@ extern void Zoltan_Reftree_Print(ZZ *zz,ZOLTAN_REFTREE *subroot, int level);
 
 extern int Zoltan_Reftree_Coarse_Grid_Path(int nobj, int *num_vert,
                                ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
-                               ZOLTAN_ID_PTR out_vertex, int *order, ZZ *zz);
+                               ZOLTAN_ID_PTR out_vertex, int *order,
+                               ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+                               char *initpath_method, ZZ *zz);
 
 extern ZOLTAN_REFTREE* Zoltan_Reftree_hash_lookup(ZZ *zz, 
                                       struct Zoltan_Reftree_hash_node **hashtab,
