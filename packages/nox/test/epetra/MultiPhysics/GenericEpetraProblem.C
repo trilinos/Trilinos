@@ -47,7 +47,7 @@
 #include "GenericEpetraProblem.H"
 #include "Xfer_Operator.H"
 
-GenericEpetraProblem::GenericEpetraProblem(Epetra_Comm& comm, 
+GenericEpetraProblem::GenericEpetraProblem(const Epetra_Comm& comm, 
                                            int numGlobalNodes,
                                            string name_) :
   Comm(&comm),

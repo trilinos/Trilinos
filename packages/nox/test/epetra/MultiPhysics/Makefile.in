@@ -134,6 +134,7 @@ example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
 	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
+	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
 	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H
 
 
@@ -162,6 +163,7 @@ am_example_OBJECTS = example-Example.$(OBJEXT) \
 	example-Basis.$(OBJEXT) example-GenericEpetraProblem.$(OBJEXT) \
 	example-Problem_Interface.$(OBJEXT) \
 	example-Problem_Manager.$(OBJEXT) \
+	example-OffBlock_Manager.$(OBJEXT) \
 	example-Xfer_Operator.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 example_LDFLAGS =
@@ -178,6 +180,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/example-Equation_B.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-GenericEpetraProblem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/example-OffBlock_Manager.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Interface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Manager.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Xfer_Operator.Po
@@ -215,6 +218,7 @@ example-Basis.$(OBJEXT): $(srcdir)/Basis.C
 example-GenericEpetraProblem.$(OBJEXT): $(srcdir)/GenericEpetraProblem.C
 example-Problem_Interface.$(OBJEXT): $(srcdir)/Problem_Interface.C
 example-Problem_Manager.$(OBJEXT): $(srcdir)/Problem_Manager.C
+example-OffBlock_Manager.$(OBJEXT): $(srcdir)/OffBlock_Manager.C
 example-Xfer_Operator.$(OBJEXT): $(srcdir)/Xfer_Operator.C
 example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
 	@rm -f example$(EXEEXT)
@@ -231,6 +235,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Equation_B.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-GenericEpetraProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-OffBlock_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Problem_Interface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Problem_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Xfer_Operator.Po@am__quote@
@@ -333,6 +338,18 @@ example-Problem_Manager.obj: $(srcdir)/Problem_Manager.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/example-Problem_Manager.Po' tmpdepfile='$(DEPDIR)/example-Problem_Manager.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Manager.obj `cygpath -w $(srcdir)/Problem_Manager.C`
+
+example-OffBlock_Manager.o: $(srcdir)/OffBlock_Manager.C
+@AMDEP_TRUE@	source='$(srcdir)/OffBlock_Manager.C' object='example-OffBlock_Manager.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-OffBlock_Manager.Po' tmpdepfile='$(DEPDIR)/example-OffBlock_Manager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-OffBlock_Manager.o `test -f '$(srcdir)/OffBlock_Manager.C' || echo '$(srcdir)/'`$(srcdir)/OffBlock_Manager.C
+
+example-OffBlock_Manager.obj: $(srcdir)/OffBlock_Manager.C
+@AMDEP_TRUE@	source='$(srcdir)/OffBlock_Manager.C' object='example-OffBlock_Manager.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-OffBlock_Manager.Po' tmpdepfile='$(DEPDIR)/example-OffBlock_Manager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-OffBlock_Manager.obj `cygpath -w $(srcdir)/OffBlock_Manager.C`
 
 example-Xfer_Operator.o: $(srcdir)/Xfer_Operator.C
 @AMDEP_TRUE@	source='$(srcdir)/Xfer_Operator.C' object='example-Xfer_Operator.o' libtool=no @AMDEPBACKSLASH@

@@ -35,14 +35,13 @@
 
 #include "Problem_Interface.H"
 #include "GenericEpetraProblem.H"
+//#include "OffBlock_Manager.H"
+class OffBlock_Manager;
 
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 #endif  
-
-//Forward declarations
-//class GenericEpetraProblem;
 
 #include <vector>
 
@@ -53,7 +52,8 @@ public:
   enum VectorType { SOLUTION, GROUP_F };
 
   // Constructor
-  Problem_Manager(Epetra_Comm& Comm, int NumGlobalElements = 0);
+  Problem_Manager(Epetra_Comm& Comm, bool doOffBlocks = false,
+                  int NumGlobalElements = 0);
 
   // Destructor
   virtual ~Problem_Manager();
@@ -63,6 +63,12 @@ public:
 
   // Get a problem given its unique id
   GenericEpetraProblem& getProblem(int id);
+
+  // Get a group given its unique id
+  NOX::EpetraNew::Group& getGroup(int id);
+
+  // Get the compositeSoln vector
+  Epetra_Vector& getCompositeSoln();
 
   // Create a dependence of Problem A equations on Problem B variables
   void createDependency(string nameA, string nameB);
@@ -92,12 +98,18 @@ public:
   // Set all groups with the current solution contained in each problem
   bool setAllGroupX();
 
+  // Set all off-block groups with the current composite-size solution
+  bool setAllOffBlockGroupX(const Epetra_Vector&);
+
   // Reset all problems by copying the current solution into the old solution
   // Needed for time-dependent problems
   void resetProblems();
 
   // Compute residual (F) in solution groups for all registered problems
   bool computeAllF();
+
+  // Compute residual (F) in solution group specified by id
+  bool computeGroupF(int id);
 
   // Compute Jacobian in solution groups for all registered problems
   bool computeAllJacobian();
@@ -114,8 +126,16 @@ public:
   // Copy a composite problem vector to each problem's vector
   void copyCompositeToProblems(const Epetra_Vector& compositeVec, VectorType);
 
+  // Copy part of a composite problem vector to a problem's vector
+  void copyCompositeToVector(const Epetra_Vector& compositeVec, int id,
+                             Epetra_Vector& problemVec);
+
   // Copy vectors from each problem into a composite problem vector
   void copyProblemsToComposite(Epetra_Vector& compositeVec, VectorType);
+
+  // Copy a vector from a problem into part of a composite problem vector
+  void copyVectorToComposite(Epetra_Vector& compositeVec, int id,
+                             const Epetra_Vector& problemVec);
 
   // Copy problem Jacobians as block diagonal contributions to 
   // composite Jacobian
@@ -145,20 +165,19 @@ public:
 
 private:
 
-  // Copy part of a composite problem vector to a problem's vector
-  void copyCompositeToVector(const Epetra_Vector& compositeVec, int id,
-                             Epetra_Vector& problemVec);
-
-  // Copy a vector from a problem into part of a composite problem vector
-  void copyVectorToComposite(Epetra_Vector& compositeVec, int id,
-                             const Epetra_Vector& problemVec);
-
   // Creates a composite graph from existing graphs of registered problems
-  void generateGraph(bool doOffBlocks = false);
+  void generateGraph();
+
+public:
+  // Made these public for now
+  NOX::Parameter::List* nlParams;           // NLSolver parameter list
+  NOX::StatusTest::Combo* statusTest;       // Convergence criterion (ia)
 
 private:
 
   int problemCount;                         // Number of registered Problems
+  bool doOffBlocks;	// Flag to specify whether or not to compute
+			// off-diagonal composite Jacobian blocks via FDC
 
   Epetra_Map* compositeMap;	// Composite map for all registered problems
   Epetra_Vector* compositeSoln;	// Composite map for all registered problems
@@ -174,8 +193,8 @@ private:
   map<int, Epetra_IntVector*> ProblemToCompositeIndices;
     // Essentially a mapping from a problems indices to the composite indices
 
-  NOX::Parameter::List* nlParams;           // NLSolver parameter list
-  NOX::StatusTest::Combo* statusTest;       // Convergence criterion (ia)
+  Problem_Interface *compositeProblemInterface; // A problem interface to 
+  // the composite problem manager.  Needed for off-diagonal FDC blocks
 
 #ifdef HAVE_NOX_EPETRAEXT
   // Additional containers to allow each problem to use FD Coloring
@@ -184,6 +203,18 @@ private:
   map<int, EpetraExt::CrsGraph_MapColoringIndex*> ColorMapIndexSets;
   map<int, vector<Epetra_IntVector>*> ColumnsSets;
   map<int, Epetra_Operator*> MatrixOperators;
+
+  // These containers allow off-diagonal block contributions representing
+  // inter-problem coupling
+  map<int, vector<OffBlock_Manager*> > OffBlock_Managers;    
+//  map<int, vector<Epetra_CrsGraph*> > Off_Graphs;    
+//  map<int, vector<EpetraExt::CrsGraph_MapColoring*> > Off_TmpMapColorings;
+//  map<int, vector<Epetra_MapColoring*> > Off_ColorMaps;
+//  map<int, vector<EpetraExt::CrsGraph_MapColoringIndex*> > Off_ColorMapIndexSets;
+//  map<int, vector<vector<Epetra_IntVector>*> > Off_ColumnsSets;
+//  map<int, vector<Epetra_Operator*> > Off_MatrixOperators;
+//  map<int, vector<NOX::EpetraNew::LinearSystemAztecOO*> > Off_LinearSystems;
+//  map<int, vector<NOX::EpetraNew::Group*> > Off_Groups;    
 #endif
 
 

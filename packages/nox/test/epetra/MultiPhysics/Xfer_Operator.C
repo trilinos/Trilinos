@@ -106,7 +106,6 @@ XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
 // Destructor
 XferOp::~XferOp() { };
 
-// Calculates the values of u and x at the specified gauss point
 void XferOp::transferField(Epetra_Vector& vecTo, Epetra_Vector& vecFrom)
 {
   // Do the transfer using Epetra_Vectors

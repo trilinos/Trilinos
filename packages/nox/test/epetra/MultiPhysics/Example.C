@@ -204,6 +204,7 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Preconditioning", "None");   
 //  lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
   lsParams.setParameter("Preconditioner", "AztecOO");
+  //lsParams.setParameter("Graph Fill", 2);
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
   //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
   //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
@@ -217,15 +218,16 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Polynomial Order", 6); 
 
   // Create each part of the Brusselator problem class.  
-  Equation_A ProblemA(Comm, NumGlobalNodes);//, "Temperature");
+  Equation_A ProblemA(Comm, NumGlobalNodes, "Temperature");
 //  Equation_A ProblemA2(Comm, 11);
 //  Equation_A ProblemA3(Comm, 501);
-  Equation_B ProblemB(Comm, NumGlobalNodes);//, "Species");
+//  Equation_B ProblemB(Comm, 4, "Species");
+  Equation_B ProblemB(Comm, NumGlobalNodes, "Species");
 //  Equation_B ProblemB2(Comm, 11);
 //  Equation_B ProblemB3(Comm, 501);
 
   // Create the Problem Manager
-  Problem_Manager problemManager(Comm);
+  Problem_Manager problemManager(Comm, true);
 
   // An interesting note: the order of solving each problem is based on the
   // order of adding.  For this decoupled problem, problem B is linear
@@ -298,9 +300,9 @@ int main(int argc, char *argv[])
     cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
   
     // Solve decoupled
-    problemManager.solve(); // Need a status test check here ....
+//    problemManager.solve(); // Need a status test check here ....
     // .... OR solve using matrix-free
-//    problemManager.solveMF(); // Need a status test check here ....
+    problemManager.solveMF(); // Need a status test check here ....
   
     problemManager.outputSolutions(timeStep);
 

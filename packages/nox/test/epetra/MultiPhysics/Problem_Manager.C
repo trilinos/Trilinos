@@ -47,6 +47,7 @@
 #include "Problem_Manager.H"
 #include "GenericEpetraProblem.H"
 #include "Xfer_Operator.H"
+#include "OffBlock_Manager.H"
 
 // Headers needed for Coloring
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
@@ -63,14 +64,19 @@
 #undef USE_FD
 
 Problem_Manager::Problem_Manager(Epetra_Comm& comm, 
+                                 bool doOffBlocks_,
                                  int numGlobalElements) :
   GenericEpetraProblem(comm, numGlobalElements),
   problemCount(0),
+  doOffBlocks(doOffBlocks_),
   compositeMap(0),
   compositeSoln(0),
   nlParams(0),
   statusTest(0)
 {
+  // Create a problem interface to the manager
+  compositeProblemInterface = new Problem_Interface(*this);
+
   // Reset composite number of dofs (overwrites base constructor assignment)
   NumMyNodes = 0;
 
@@ -158,6 +164,29 @@ GenericEpetraProblem& Problem_Manager::getProblem(int id_)
   }
   else
     return *problem;
+}
+
+NOX::EpetraNew::Group& Problem_Manager::getGroup(int id_)
+{
+  // Get a group given its unique id
+  NOX::EpetraNew::Group* group = Groups.find(id_)->second;
+  if( !group ) {
+    cout << "ERROR: Could not get Group for Problem with id --> " << id_ 
+         << " !!" << endl;
+    throw "Problem_Manager ERROR";
+  }
+  else
+    return *group;
+}
+
+Epetra_Vector& Problem_Manager::getCompositeSoln()
+{
+  if( !compositeSoln ) {
+    cout << "ERROR: No valid Composite Solution vector with Problem Manager !!"
+         << endl;
+    throw "Problem_Manager ERROR";
+  }
+  return *compositeSoln;
 }
 
 void Problem_Manager::createDependency(string nameA, string nameB)
@@ -402,6 +431,24 @@ bool Problem_Manager::setGroupX(int probId)
   }
 
   grp->setX(problem->getSolution());
+
+  // We must also sync the solutions for each group used in FDC
+  /*
+  if( doOffBlocks ) {
+
+    for( int k = 0; k<problem->auxProblems.size(); k++) {
+
+      vector<NOX::EpetraNew::Group*> &offGroupsVec =
+        Off_Groups.find(probId)->second;
+
+      // The container can be empty if evaluate() is called before
+      // createGraph
+      if( !offGroupsVec.empty() )
+        offGroupsVec[k]->setX(*compositeSoln);
+
+    }
+  }
+  */
 }
 
 bool Problem_Manager::setAllGroupX()
@@ -421,6 +468,24 @@ bool Problem_Manager::setAllGroupX()
     int probId = problemIter->first;
 
     setGroupX(probId);
+  }
+}
+
+bool Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
+{
+  map<int, vector<OffBlock_Manager*> >::iterator offBlockIter = 
+                                                   OffBlock_Managers.begin();
+  map<int, vector<OffBlock_Manager*> >::iterator offBlockLast = 
+                                                   OffBlock_Managers.end();
+
+  // Loop over each off-block manager and set the contained groups X-vector
+  // with the incoming vector
+  for( ; offBlockIter != offBlockLast; offBlockIter++) {
+
+    vector<OffBlock_Manager*> managerVec = offBlockIter->second;
+
+    for( int i = 0; i<managerVec.size(); i++ )
+      managerVec[i]->getGroup().setX(inVec);
   }
 }
 
@@ -452,14 +517,20 @@ bool Problem_Manager::computeAllF()
   // residual evaluation
   for( ; problemIter != problemLast; problemIter++) {
     int probId = problemIter->first;
-    NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
-    if( !grp ) {
-      cout << "ERROR: No problems registered with Problem_Manager !!"
-           << endl;
-      throw "Problem_Manager ERROR";
-    }
-    grp->computeF();
+
+    computeGroupF(probId);
   }
+}
+
+bool Problem_Manager::computeGroupF(int probId)
+{
+  NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
+  if( !grp ) {
+    cout << "ERROR: Could not get a group for problem with id --> "
+         << probId << endl;
+    throw "Problem_Manager ERROR";
+  }
+  grp->computeF();
 }
 
 bool Problem_Manager::computeAllJacobian()
@@ -488,6 +559,24 @@ bool Problem_Manager::computeAllJacobian()
     if (MyPID == 0)
       printf("\n\tTime to fill Jacobian %d --> %e sec. \n\n",
                   probId, fillTime.ElapsedTime());
+
+
+    if( doOffBlocks ) {
+
+      fillTime.ResetStartTime();
+  
+      vector<OffBlock_Manager*> &offBlocksVec =
+        OffBlock_Managers.find(probId)->second;
+
+      for( int i = 0; i<offBlocksVec.size(); i++ ) {
+        
+        offBlocksVec[i]->getGroup().computeJacobian();
+  
+        if (MyPID == 0)
+          printf("\n\tTime to fill Jacobian %d (%d) --> %e sec. \n\n",
+                      probId, i, fillTime.ElapsedTime());
+      }
+    }
   }
 }
 
@@ -607,8 +696,11 @@ void Problem_Manager::copyCompositeToVector(
 {
   // Copy part of a composite problem vector to a problem's vector
   Epetra_IntVector& indices = *ProblemToCompositeIndices.find(id)->second;
+  // This map is needed to get correct LID of indices
+  const Epetra_BlockMap &map = compositeVec.Map();
+
   for (int i=0; i<problemVec.MyLength(); i++)
-    problemVec[i] = compositeVec[indices[i]];
+    problemVec[i] = compositeVec[map.LID(indices[i])];
 }
 
 void Problem_Manager::copyVectorToComposite(
@@ -631,6 +723,8 @@ void Problem_Manager::copyProblemJacobiansToComposite()
   map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
+  int problemMaxNodes = compositeSoln->GlobalLength();
+
   // Loop over each problem being managed and copy its Jacobian into 
   // the composite diagonal blocks
   for( ; problemIter != problemLast; problemIter++) {
@@ -649,7 +743,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
             *ProblemToCompositeIndices.find(probId)->second;
 
 
-    // Each problem's Jacobian will be ascertained 
+    // Each problem's Jacobian will be determined by type 
     Epetra_CrsMatrix *problemMatrixPtr(0);
 
     // Use each group's operator test to determine the type of Jacobian
@@ -676,7 +770,6 @@ void Problem_Manager::copyProblemJacobiansToComposite()
 
     // Create convenient reference for each Jacobian matrix
     Epetra_CrsMatrix &problemMatrix = *problemMatrixPtr;
-    int problemMaxNodes = problem.NumMyNodes;
 
     // Temporary storage arrays for extracting/inserting matrix row data
     int* columnIndices = new int[problemMaxNodes];
@@ -709,10 +802,52 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     // Sync up processors to be safe
     Comm->Barrier();
 
-#ifdef DEBUG
-    problemMatrix.Print(cout);
-#endif
+    // Add off-diagonal FDC block contributions if waranted
+    if( doOffBlocks ) {
+
+      // Loop over each problem on which this one depends
+      for( int k = 0; k<problem.auxProblems.size(); k++) {
+
+        // Copy the off-block jacobian matrices for this 
+        // problem-problem coupling
+        // NOTE: the map used for the off-block graph is the composite Map
+        // to allow valid global indexing.  This also allows us to
+        // simply copy values directly from the off-block matrices to the
+        // composite Jacobian matrix
+	Epetra_CrsMatrix *offMatrixPtr = 
+          &( (OffBlock_Managers.find(probId)->second)[k]->getMatrix() );
+	if( !offMatrixPtr ) {
+          cout << "ERROR: Unable to get FDColoring underlying matrix for "
+               << "dependence of problem " << probId << " on problem "
+               << problem.auxProblems[k] << " !!" << endl;
+          throw "Problem_Manager ERROR";
+        }
+        Epetra_CrsMatrix &offMatrix = *offMatrixPtr;
+
+        int* columnIndices = new int[problemMaxNodes];
+        double* values = new double[problemMaxNodes];
+
+        // Loop over each row and copy into composite matrix
+        for (int i = 0; i<offMatrix.NumMyRows(); i++) {
+
+          problemRow = offMatrix.Map().GID(i);
+
+          offMatrix.ExtractGlobalRowCopy(problemRow, problemMaxNodes,
+                           numValues, values, columnIndices);
+          compositeMatrix.ReplaceGlobalValues(problemRow, 
+                       numValues, values, columnIndices);
+        }
+        delete [] columnIndices; columnIndices = 0;
+        delete [] values; values = 0;
+
+        // Sync up processors to be safe
+        Comm->Barrier();
+      }
+    }
   }
+#ifdef DEBUG
+    compositeMatrix.Print(cout);
+#endif
 }
 
 double Problem_Manager::getNormSum()
@@ -762,7 +897,7 @@ bool Problem_Manager::solve()
   map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
-  // Sync the two problems and get initial convergence state
+  // Sync all the problems and get initial convergence state
   syncAllProblems();
   setAllGroupX();
   computeAllF();
@@ -835,7 +970,7 @@ bool Problem_Manager::solveMF()
     throw "Problem_Manager ERROR";
   }
 
-  // Sync the two problems and get initial convergence state
+  // Sync all the problems and get initial convergence state
   syncAllProblems();
 
   setAllGroupX();
@@ -960,10 +1095,35 @@ bool Problem_Manager::evaluate(
   // Note that incoming matrix is no longer used.  Instead, the problem
   // should own the matrix to be filled into.
 
+  // Also, if the incoming vector is from FDC for off-diagonal block 
+  // contributions to the Jacobian, an Import operation is generally 
+  // needed since the solumn space is typically smaller than the row
+  // space of the off-block, i.e. not every row has a column entry
+
+  // This import object could be created and stored for each FDC off-block
+  // column map
+//  Epetra_Import myImporter(compositeSoln->Map(), solnVector->Map());
+//  Epetra_Vector mySolnVector(*compositeSoln);
+//  mySolnVector.Import(*solnVector, myImporter, Insert);
+//  copyCompositeToProblems(mySolnVector, SOLUTION);
   copyCompositeToProblems(*solnVector, SOLUTION);
 
+  // If used, give each off-block FDC manager a copy of the current total
+  // solution vector
+  if( fillMatrix && doOffBlocks )
+    setAllOffBlockGroupX(*solnVector);
+
+  // This is needed for FDC since each FDC group needs the whole compositeSoln
+//  cout << "\n\n\tmySolnVector : " << mySolnVector
+//       << "\n\n\tand solnVector : " << *solnVector << endl << endl;
+//  cout << "\n\t\tHERE\n" << endl;
+//  *compositeSoln = *solnVector;
+  //  Need a new interface for each off-diagonal block --> RHooper
+
+  // Do transfers from problem solution vectors into problem auxillary vectors
   syncAllProblems();
 
+  // Set each problem group Xvec with its problem solution vector
   setAllGroupX();
 
   if (fillF) {
@@ -990,7 +1150,7 @@ bool Problem_Manager::evaluate(
   return true;
 }
 
-void Problem_Manager::generateGraph(bool doOffBlocks)
+void Problem_Manager::generateGraph()
 { 
 
   // First construct a graph for each problem's self-dependence
@@ -1035,11 +1195,13 @@ void Problem_Manager::generateGraph(bool doOffBlocks)
     delete [] columnIndices; columnIndices = 0;
   }
 
-  // Hard-wired to test --> RHooper
-  doOffBlocks = true;
-
   // Next create inter-problem block graph contributions if desired;
   // default is false
+
+  // Two things are achieved here: 1) The composite Graph is augmented to
+  // accommodate off-diagonal blocks and 2) these blocks are packaged as
+  // individual NOX::EpetreNew::Group's owneed by the manager.
+
   if( doOffBlocks ) { 
 
     problemIter = Problems.begin();
@@ -1058,12 +1220,27 @@ void Problem_Manager::generateGraph(bool doOffBlocks)
       Epetra_IntVector& problemIndices = 
               *ProblemToCompositeIndices.find(probId)->second;
   
+      // Create containers for the off-block objects
+//      vector<Epetra_CrsGraph*> offGraphs;
+      vector<OffBlock_Manager*> OffBlock_ManagersVec;
+
       int problemMaxNodes = problemGraph.Map().NumGlobalElements();
 
       int problemRow, compositeRow, numCols, numDepCols;
   
       // Loop over each problem on which this one depends
       for( int k = 0; k<problem.auxProblems.size(); k++) {
+
+        // Create the off-block graph to be constructed for this 
+        // problem-problem coupling
+        // NOTE: the map used for the off-block graph is the composite Map
+        // to allow valid global indexing
+        Epetra_CrsGraph* offGraphPtr = 
+          new Epetra_CrsGraph(Copy, *compositeMap, 0);
+	Epetra_CrsGraph &offGraph = *offGraphPtr;
+
+//        offGraphs.push_back(new Epetra_CrsGraph(Copy, *compositeMap, 0));
+//	Epetra_CrsGraph &offGraph = *offGraphs.back();
 
         // Get the needed objects for the depend problem
         GenericEpetraProblem &dependProblem = 
@@ -1116,10 +1293,25 @@ void Problem_Manager::generateGraph(bool doOffBlocks)
               dependentColIndices[numDepCols++] = dependIndices[iterN->second];
           }
           AA->InsertGlobalIndices(compositeRow, numDepCols, dependentColIndices);
+          offGraph.InsertGlobalIndices(compositeRow, numDepCols, dependentColIndices);
         }
         delete [] columnIndices; columnIndices = 0;
         delete [] dependentColIndices; dependentColIndices = 0;
+
+	offGraph.TransformToLocal();
+	offGraph.SortIndices();
+	offGraph.RemoveRedundantIndices();
+#ifdef DEBUG
+	offGraph.Print(cout);
+#endif
+        OffBlock_ManagersVec.push_back( new OffBlock_Manager(*this, offGraph,
+                                                        probId, dependId) );
       }
+//      Off_Graphs.insert( pair<int, vector<Epetra_CrsGraph*> >
+//                         (probId, offGraphs) );
+//      createFDCobjects(probId);
+      OffBlock_Managers.insert( pair<int, vector<OffBlock_Manager*> >
+                         (probId, OffBlock_ManagersVec) );
     }
   } // end doOffBlocks
 

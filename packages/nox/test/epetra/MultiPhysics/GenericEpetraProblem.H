@@ -68,7 +68,7 @@ class GenericEpetraProblem {
 public:
 
   // Constructor
-  GenericEpetraProblem(Epetra_Comm& Comm, int NumGlobalElements = 0,
+  GenericEpetraProblem(const Epetra_Comm& Comm, int NumGlobalElements = 0,
                        string name = "");
 
   // Destructor
@@ -169,7 +169,6 @@ protected:
   Epetra_Vector *initialSolution;
   Epetra_CrsGraph *AA;
   Epetra_CrsMatrix *A;
-  Epetra_Comm *Comm;
   vector<int> auxProblems;      // List of problems that this one depends on
   map<int, Epetra_Vector*> auxSolutions; // Auxillary data; solutions from 
                                   // other Problems needed by this Problem
@@ -177,6 +176,7 @@ protected:
 
 public: // for now
 
+  const Epetra_Comm *Comm;
   Epetra_Map *StandardMap;
   int MyPID;              // Process number
   int NumProc;            // Total number of processes
