@@ -464,6 +464,9 @@ AC_CONFIG_FILES([
 		test/Random/Makefile
 		test/RefCountPtr/Makefile
 		test/XML/Makefile
+		test/scripts/Makefile
+		test/scripts/daily/Makefile
+		test/scripts/daily/serial/Makefile
 		])
 
 AC_OUTPUT()

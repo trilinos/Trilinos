@@ -1,5 +1,5 @@
 // ////////////////////////////////////////////////////
-// ref_count_ptr.cpp
+// RefCountPtr.cpp
 //
 // Copyright (C) 2001 Roscoe Ainsworth Bartlett
 //
@@ -22,7 +22,7 @@ void PrivateUtilityPack::assert_not_null(const void *ptr)
 {
 	TEST_FOR_EXCEPTION(
 		!ptr, std::logic_error
-		,"ref_count_ptr<...>::assert_not_null() : You can not "
+		,"RefCountPtr<...>::assert_not_null() : You can not "
 		" call operator->() or operator*() if get() == 0" );
 }
 

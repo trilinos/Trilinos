@@ -24,6 +24,8 @@
 #define REFCOUNTPTR_INLINE
 #endif
 
+namespace MemMngPack {} // ToDo: Take out latter!
+
 namespace Teuchos {
 
 namespace PrivateUtilityPack {
@@ -410,10 +412,15 @@ RefCountPtr<T2> rcp_dynamic_cast(const RefCountPtr<T1>& p1);
  *               Otherwise, if <tt>ctx < 0</tt> (the default value), then a new
  *               bit of extra data will be added to <tt>*p</tt>.
  *
- * @return Returns a context number that must be used to access this object
- * in a latter call to <tt>get_extra_data()</tt> or <tt>set_extra_data()</tt>.
- * If <tt>ctx >= 0</tt> on input and this function returns without throwing
- * an exception, then the return value will equal the value input in <tt>ctx</tt>.
+ * @return Returns a context number that must be used to access this
+ * object in a latter call to <tt>get_extra_data()</tt> or
+ * <tt>set_extra_data()</tt>.  If <tt>ctx >= 0</tt> on input and this
+ * function returns without throwing an exception, then the return
+ * value will equal the value input in <tt>ctx</tt>.  Note that
+ * context numbers will be assigned starting at <tt>0</tt> and then
+ * incremented as more extra data is added.  This feature is designed
+ * to make it easier for clients to use this class without stomping on
+ * each other.
  *
  * Preconditions:<ul>
  * <li> <tt>p->get() != NULL</tt> (throws <tt>std::logic_error</tt>)

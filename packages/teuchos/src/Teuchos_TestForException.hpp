@@ -1,5 +1,5 @@
 // ////////////////////////////////////////////////////////////////
-// ThrowException.hpp
+// Teuchos_TestForException.hpp
 //
 // Copyright (C) 2001 Roscoe Ainsworth Bartlett
 //

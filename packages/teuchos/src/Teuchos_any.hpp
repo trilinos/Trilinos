@@ -155,16 +155,21 @@ public:
 template<typename ValueType>
 ValueType& any_cast(any &operand)
 {
-	ValueType *result = 0;
-	if( operand.type() == typeid(ValueType) )
-		result = &dynamic_cast<any::holder<ValueType>*>(operand.access_content())->held;
 	TEST_FOR_EXCEPTION(
-		result==NULL, bad_any_cast
+		operand.type() != typeid(ValueType), bad_any_cast
 		,"any_cast<" << typeid(ValueType).name() << "(operand): Error, cast to type \'"
 		<< typeid(any::holder<ValueType>).name() << "\' failed since the actual underlying type is \'"
 		<< typeid(*operand.access_content()).name() << "!"
 		);
-	return *result;
+	any::holder<ValueType>
+		*dyn_cast_content = dynamic_cast<any::holder<ValueType>*>(operand.access_content());
+	TEST_FOR_EXCEPTION(
+		!dyn_cast_content, std::logic_error
+		,"any_cast<" << typeid(ValueType).name() << "(operand): Error, cast to type \'"
+		<< typeid(any::holder<ValueType>).name() << "\' failed but should not have and the actual underlying type is \'"
+		<< typeid(*operand.access_content()).name() << "!"
+		);
+	return dyn_cast_content->held;
 }
 
 ///

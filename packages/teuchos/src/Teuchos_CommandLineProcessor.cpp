@@ -2,7 +2,7 @@
 // Teuchos_CommandLineProcessor.cpp
 
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_ThrowException.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace {
 
@@ -259,7 +259,7 @@ void CommandLineProcessor::print_help_msg(
 		*errout << ")\n";
 	}
 	if(throwExceptions_)
-		THROW_EXCEPTION( true, HelpPrinted, "Help message was printed" );
+		TEST_FOR_EXCEPTION( true, HelpPrinted, "Help message was printed" );
 }
 
 void CommandLineProcessor::print_bad_opt(
@@ -272,7 +272,7 @@ void CommandLineProcessor::print_bad_opt(
 	if(errout)
 		*errout << argv[0] << " : " << CLP_ERR_MSG << std::endl;
 	if(throwExceptions_)
-		THROW_EXCEPTION( true, UnrecognisedOption, CLP_ERR_MSG );
+		TEST_FOR_EXCEPTION( true, UnrecognisedOption, CLP_ERR_MSG );
 #   undef CLP_ERR_MSG
 }
 
