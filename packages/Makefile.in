@@ -136,6 +136,8 @@ AUTOMAKE_OPTIONS = foreign
 
 @BUILD_NEW_PACKAGE_TRUE@NEW_PACKAGE_SUBDIR = new_package
 
+@BUILD_TEUCHOS_TRUE@TEUCHOS_SUBDIR = teuchos
+
 @BUILD_NOX_TRUE@NOX_SUBDIR = nox
 
 @BUILD_KOMPLEX_TRUE@KOMPLEX_SUBDIR = komplex
@@ -158,7 +160,7 @@ SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
 	  $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) $(TSF_SUBDIR) \
 	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR) $(BELOS_SUBDIR) \
 	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR) $(ANASAZI_SUBDIR) \
-          $(NOX_SUBDIR)
+          $(NOX_SUBDIR) $(TEUCHOS_SUBDIR)
 
 subdir = packages
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -173,7 +175,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 DIST_COMMON = Makefile.am Makefile.in
 DIST_SUBDIRS = epetra triutils ifpack aztecoo komplex TSFCoreUtils \
 	TSFCore TSF amesos epetraext belos meros new_package anasazi \
-	nox
+	nox teuchos
 all: all-recursive
 
 .SUFFIXES:

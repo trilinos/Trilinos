@@ -289,7 +289,8 @@ ac_subdirs_all="$ac_subdirs_all packages/anasazi"
 ac_subdirs_all="$ac_subdirs_all packages/meros"
 ac_subdirs_all="$ac_subdirs_all packages/nox"
 ac_subdirs_all="$ac_subdirs_all packages/new_package"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE BUILD_Y12M_TRUE BUILD_Y12M_FALSE BUILD_AMESOS_TRUE BUILD_AMESOS_FALSE BUILD_NOX_TRUE BUILD_NOX_FALSE BUILD_MEROS_TRUE BUILD_MEROS_FALSE BUILD_TSF_TRUE BUILD_TSF_FALSE BUILD_TSFCORE_TRUE BUILD_TSFCORE_FALSE BUILD_TSFCOREUTILS_TRUE BUILD_TSFCOREUTILS_FALSE BUILD_KOMPLEX_TRUE BUILD_KOMPLEX_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_ANASAZI_TRUE BUILD_ANASAZI_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_EPETRAEXT_TRUE BUILD_EPETRAEXT_FALSE BUILD_NEW_PACKAGE_TRUE BUILD_NEW_PACKAGE_FALSE BUILD_EPETRA_TRUE BUILD_EPETRA_FALSE subdirs LIBOBJS LTLIBOBJS'
+ac_subdirs_all="$ac_subdirs_all packages/teuchos"
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE BUILD_Y12M_TRUE BUILD_Y12M_FALSE BUILD_AMESOS_TRUE BUILD_AMESOS_FALSE BUILD_NOX_TRUE BUILD_NOX_FALSE BUILD_MEROS_TRUE BUILD_MEROS_FALSE BUILD_TSF_TRUE BUILD_TSF_FALSE BUILD_TSFCORE_TRUE BUILD_TSFCORE_FALSE BUILD_TSFCOREUTILS_TRUE BUILD_TSFCOREUTILS_FALSE BUILD_KOMPLEX_TRUE BUILD_KOMPLEX_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_ANASAZI_TRUE BUILD_ANASAZI_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_EPETRAEXT_TRUE BUILD_EPETRAEXT_FALSE BUILD_TEUCHOS_TRUE BUILD_TEUCHOS_FALSE BUILD_NEW_PACKAGE_TRUE BUILD_NEW_PACKAGE_FALSE BUILD_EPETRA_TRUE BUILD_EPETRA_FALSE subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -825,6 +826,7 @@ Optional Features:
   --enable-oldifpack      Build ifpack and old ifpack (default is no)
   --enable-triutils       Build triutils (default is yes)
   --enable-epetraext      Build epetraext (default is no)
+  --enable-teuchos        Build teuchos (default is no)
   --enable-new_package    Build new_package (default is no)
   --enable-epetra         Build epetra (default is yes)
 
@@ -2235,6 +2237,42 @@ else
 fi
 
 
+
+# Check whether --enable-teuchos or --disable-teuchos was given.
+if test "${enable_teuchos+set}" = set; then
+  enableval="$enable_teuchos"
+  ac_cv_use_teuchos=$enableval
+else
+  ac_cv_use_teuchos=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use teuchos" >&5
+echo $ECHO_N "checking whether to use teuchos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_teuchos" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_teuchos" != "Xno"; then
+  BUILD_TEUCHOS_TRUE=
+  BUILD_TEUCHOS_FALSE='#'
+else
+  BUILD_TEUCHOS_TRUE='#'
+  BUILD_TEUCHOS_FALSE=
+fi
+
+
 ## #np# - Copy the next two lines, and change the name
 
 # Check whether --enable-new_package or --disable-new_package was given.
@@ -2453,6 +2491,15 @@ subdirs="$subdirs packages/new_package"
 
 fi
 
+###
+if test "X$ac_cv_use_teuchos" != "Xno"; then
+
+
+subdirs="$subdirs packages/teuchos"
+
+fi
+###
+
 # Check whether --enable- or --disable- was given.
 if test "${enable_+set}" = set; then
   enableval="$enable_"
@@ -2654,6 +2701,13 @@ if test -z "${BUILD_EPETRAEXT_TRUE}" && test -z "${BUILD_EPETRAEXT_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRAEXT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_EPETRAEXT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TEUCHOS_TRUE}" && test -z "${BUILD_TEUCHOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TEUCHOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TEUCHOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -3240,6 +3294,8 @@ s,@BUILD_TRIUTILS_TRUE@,$BUILD_TRIUTILS_TRUE,;t t
 s,@BUILD_TRIUTILS_FALSE@,$BUILD_TRIUTILS_FALSE,;t t
 s,@BUILD_EPETRAEXT_TRUE@,$BUILD_EPETRAEXT_TRUE,;t t
 s,@BUILD_EPETRAEXT_FALSE@,$BUILD_EPETRAEXT_FALSE,;t t
+s,@BUILD_TEUCHOS_TRUE@,$BUILD_TEUCHOS_TRUE,;t t
+s,@BUILD_TEUCHOS_FALSE@,$BUILD_TEUCHOS_FALSE,;t t
 s,@BUILD_NEW_PACKAGE_TRUE@,$BUILD_NEW_PACKAGE_TRUE,;t t
 s,@BUILD_NEW_PACKAGE_FALSE@,$BUILD_NEW_PACKAGE_FALSE,;t t
 s,@BUILD_EPETRA_TRUE@,$BUILD_EPETRA_TRUE,;t t

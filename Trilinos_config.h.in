@@ -36,6 +36,9 @@
 /* Define if want to build oldifpack */
 #undef HAVE_OLDIFPACK
 
+/* Define if want to build teuchos */
+#undef HAVE_TEUCHOS
+
 /* Define if want to build triutils */
 #undef HAVE_TRIUTILS
 
