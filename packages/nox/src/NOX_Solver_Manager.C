@@ -41,13 +41,20 @@ bool Manager::reset(Abstract::Group& grp, StatusTest::Generic& tests, const Para
     delete ptr;
     ptr = NULL;
     
-    if (method == "Newton") {
+    if ((method == "Newton") || (method == "Line Search")) {	// deprecated
+      cout << "Warning: NOX::Solver::Manager - Nonlinear Solver choice \"" << method << "\" is deprecated.\n"
+	   << "                                Use \"Line Search Based\" instead." << endl;
       ptr = new LineSearchBased(grp, tests, params);
     } 
-    else if (method == "Line Search") {
+    else if (method == "Line Search Based") {
       ptr = new LineSearchBased(grp, tests, params);
     } 
-    else if (method == "Trust Region") {
+    else if (method == "Trust Region") { // deprecated
+      cout << "Warning: NOX::Solver::Manager - Nonlinear Solver choice \"" << method << "\" is deprecated.\n"
+	   << "                                Use \"Trust Region Based\" instead." << endl;
+      ptr = new TrustRegionBased(grp, tests, params);
+    } 
+    else if (method == "Trust Region Based") {
       ptr = new TrustRegionBased(grp, tests, params);
     } 
     else {

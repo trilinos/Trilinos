@@ -40,29 +40,33 @@ namespace Solver{
 
 /*! 
 
-  \brief Concrete class to control the instatiation of the derived 
-  NLS_Method class.  
+  \brief %Manager class to control the instatiation of the derived 
+  NOX::Solver class.  
 
-  This is the class that takes control from the user code and hands it
-  over to the nonlinear solver component.
-
-  The parameters may specify the method:
+  The following parameter may be used in the main parameter list that
+  is used in the constructor.
 
    <ul>
    <li> "Nonlinear %Solver" - Name of the solver method. Valid choices are
    <ul> 
-   <li> "Line Search" (NOX::Solver::LineSearch) [Default]
-   <li> "Nonlinear CG" (NOX::Solver::NonlinearCG)
-   <li> "Trust Region" (NOX::Solver::TrustRegion)
+   <li> "Line Search Based" (NOX::Solver::LineSearch) [Default]
+   <li> "Trust Region Based" (NOX::Solver::TrustRegion)
    </ul>
    </ul>
+   
+   \deprecated The "Nonlinear %Solver" choices "Newton" and "Line
+   Search" are deprecated and revert to "Line Search Based". Likewise,
+   the choice "Trust Region" is deprecated and reverts to "Trust
+   Region Based".
+
+  \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
 
 class Manager : public Generic {
 
 public:
   /*!
-    \brief Generic interface. On input, the grp should contain the
+    \brief %Generic interface. On input, the grp should contain the
     initial guess. On output it will contain the solution. 
   */
   Manager(Abstract::Group& grp, StatusTest::Generic &t, const Parameter::List& p);
