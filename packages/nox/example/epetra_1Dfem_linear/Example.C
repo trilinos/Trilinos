@@ -80,11 +80,22 @@ int main(int argc, char *argv[])
   NOX::Parameter::List nlParams;
   nlParams.setParameter("Output Level", 4);
   nlParams.setParameter("MyPID", MyPID); 
+  nlParams.setParameter("Nonlinear Solver", "Newton"); 
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
+  //searchParams.setParameter("Method", "Interval Halving");
+  //searchParams.setParameter("Method", "Polynomial");
+  //searchParams.setParameter("Method", "More'-Thuente");
   searchParams.setParameter("Default Step", 1.0);
+
+  // Sublist for direction
+  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
+  dirParams.setParameter("Method", "Newton");
+  //dirParams.setParameter("Method", "Steepest Descent");
+  //dirParams.setParameter("Method", "Dogleg Trust Region");
+  //dirParams.setParameter("Method", "Broyden");
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
@@ -120,7 +131,7 @@ int main(int argc, char *argv[])
   converged.addTest(absresid);
   converged.addTest(relresid);
   NOX::Status::MaxResid maxresid(1.0e-10);
-  NOX::Status::MaxIters maxiters(2); // Needs only 1 nonlinear it. to converge
+  NOX::Status::MaxIters maxiters(2);
   NOX::Status::Combo combo(NOX::Status::Combo::OR);
   combo.addTest(converged);
   combo.addTest(maxresid);

@@ -56,6 +56,7 @@ Group::Group(const Group& source, CopyType type) :
   RHSVector(source.RHSVector.getEpetraVector(), type), 
   gradVector(source.gradVector.getEpetraVector(), type), 
   NewtonVector(source.NewtonVector.getEpetraVector(), type),
+  tmpVectorPtr(NULL),
   linearOperator(source.linearOperator),
   sharedJacobian(source.sharedJacobian)
 {
@@ -88,7 +89,8 @@ Group::Group(const Group& source, CopyType type) :
 
 Group::~Group() 
 {
-  delete tmpVectorPtr;
+  if (tmpVectorPtr != NULL) 
+    delete tmpVectorPtr;
 }
 
 void Group::resetIsValid() //private

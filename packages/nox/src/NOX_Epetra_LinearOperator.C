@@ -146,7 +146,7 @@ SharedJacobian& LinearOperator::getSharedJacobian()
   return *sharedJacobian;
 }
 
-Interface& LinearOperator::getuserInterface()
+Interface& LinearOperator::getUserInterface()
 {
   return userInterface;
 }

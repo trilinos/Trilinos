@@ -61,6 +61,7 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p)
   iparams(p),			// copy p
   oparams(),			// empty list
   linesearch(iparams.sublist("Line Search")), // initialize line search
+  direction(iparams.sublist("Direction")), // initialize direction
   step(0.0),			// initialize to zero
   niter(0),			// initialize to zero
   status(Status::Unconverged)	// initialize convergence status
@@ -94,7 +95,8 @@ bool Newton::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List
   solnptr = &xgrp;
   testptr = &t;
   iparams = p;			
-  linesearch.reset(iparams.sublist("Line Search"));
+  linesearch.reset(iparams.sublist("Line Search"));	
+  direction.reset(iparams.sublist("Direction"));
   niter = 0;
   status = Status::Unconverged;
   init();
@@ -123,15 +125,9 @@ Status::StatusType Newton::iterate()
   // Reset forcing term.
   resetForcingTerm();
 
-  // Compute Jacobian at current solution.
-  soln.computeJacobian();
-
-  // Compute Newton direction for current solution.
+  // Compute the direction for the update vector at the current solution.
   /* NOTE FROM TAMMY: Need to check the return status! */
-  soln.computeNewton(iparams.sublist("Linear Solver"));
-
-  // Set search direction.
-  dir = soln.getNewton();
+  direction(iparams,soln,dir);
 
   // Copy current soln to the old soln.
   oldsoln = soln;
@@ -198,7 +194,8 @@ void Newton::printUpdate()
   // All processes participate in the computation of these norms...
   if (Utils::doAllPrint(Utils::OuterIteration)) {
     norm_k = solnptr->getNormRHS();
-    norm_newton = (niter > 0) ? oldsoln.getNewton().norm() : 0;
+    //norm_newton = (niter > 0) ? oldsoln.getNewton().norm() : 0;
+    norm_newton = (niter > 0) ? dir.norm() : 0;
   }
 
   // ...But only the print process actually prints the result.

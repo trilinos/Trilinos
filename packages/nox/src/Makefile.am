@@ -55,6 +55,17 @@ LINESEARCH = \
 	$(srcdir)/NOX_Linesearch_MoreThuente.C \
 	$(srcdir)/NOX_Linesearch_Polynomial.C 
 
+DIRECTION_H = \
+	$(srcdir)/NOX_Direction_Generic.H \
+	$(srcdir)/NOX_Direction_Manager.H \
+	$(srcdir)/NOX_Direction_Newton.H \
+	$(srcdir)/NOX_Direction_SteepestDescent.H
+
+DIRECTION = \
+	$(srcdir)/NOX_Direction_Manager.C \
+	$(srcdir)/NOX_Direction_Newton.C \
+	$(srcdir)/NOX_Direction_SteepestDescent.C
+
 PARAMETER_H = \
 	$(srcdir)/NOX_Parameter_Entry.H \
 	$(srcdir)/NOX_Parameter_List.H 
@@ -123,6 +134,7 @@ NOX_LIB = libnox.a
 NOX_H = \
 	$(ABSTRACT_H) \
 	$(LINESEARCH_H) \
+	$(DIRECTION_H) \
 	$(PARAMETER_H) \
 	$(SOLVER_H) \
 	$(STATUS_H) \
@@ -131,6 +143,7 @@ NOX_H = \
 
 libnox_a_SOURCES = \
 	$(LINESEARCH) \
+	$(DIRECTION) \
 	$(PARAMETER) \
 	$(SOLVER) \
 	$(STATUS) \

@@ -134,6 +134,19 @@ LINESEARCH = \
 	$(srcdir)/NOX_Linesearch_Polynomial.C 
 
 
+DIRECTION_H = \
+	$(srcdir)/NOX_Direction_Generic.H \
+	$(srcdir)/NOX_Direction_Manager.H \
+	$(srcdir)/NOX_Direction_Newton.H \
+	$(srcdir)/NOX_Direction_SteepestDescent.H
+
+
+DIRECTION = \
+	$(srcdir)/NOX_Direction_Manager.C \
+	$(srcdir)/NOX_Direction_Newton.C \
+	$(srcdir)/NOX_Direction_SteepestDescent.C
+
+
 PARAMETER_H = \
 	$(srcdir)/NOX_Parameter_Entry.H \
 	$(srcdir)/NOX_Parameter_List.H 
@@ -211,6 +224,7 @@ NOX_LIB = libnox.a
 NOX_H = \
 	$(ABSTRACT_H) \
 	$(LINESEARCH_H) \
+	$(DIRECTION_H) \
 	$(PARAMETER_H) \
 	$(SOLVER_H) \
 	$(STATUS_H) \
@@ -219,6 +233,7 @@ NOX_H = \
 
 libnox_a_SOURCES = \
 	$(LINESEARCH) \
+	$(DIRECTION) \
 	$(PARAMETER) \
 	$(SOLVER) \
 	$(STATUS) \
@@ -291,6 +306,8 @@ am_libnox_a_OBJECTS = NOX_Linesearch_FullStep.$(OBJEXT) \
 	NOX_Linesearch_Manager.$(OBJEXT) \
 	NOX_Linesearch_MoreThuente.$(OBJEXT) \
 	NOX_Linesearch_Polynomial.$(OBJEXT) \
+	NOX_Direction_Manager.$(OBJEXT) NOX_Direction_Newton.$(OBJEXT) \
+	NOX_Direction_SteepestDescent.$(OBJEXT) \
 	NOX_Parameter_Entry.$(OBJEXT) NOX_Parameter_List.$(OBJEXT) \
 	NOX_Solver_Manager.$(OBJEXT) NOX_Solver_Newton.$(OBJEXT) \
 	NOX_Solver_NonlinearCG.$(OBJEXT) NOX_Status_AbsResid.$(OBJEXT) \
@@ -315,7 +332,10 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/NOX_Linesearch_FullStep.Po \
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/NOX_Direction_Manager.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Newton.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_SteepestDescent.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_FullStep.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_Halving.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_MoreThuente.Po \
@@ -422,6 +442,10 @@ NOX_Linesearch_MoreThuente.$(OBJEXT): \
 	$(srcdir)/NOX_Linesearch_MoreThuente.C
 NOX_Linesearch_Polynomial.$(OBJEXT): \
 	$(srcdir)/NOX_Linesearch_Polynomial.C
+NOX_Direction_Manager.$(OBJEXT): $(srcdir)/NOX_Direction_Manager.C
+NOX_Direction_Newton.$(OBJEXT): $(srcdir)/NOX_Direction_Newton.C
+NOX_Direction_SteepestDescent.$(OBJEXT): \
+	$(srcdir)/NOX_Direction_SteepestDescent.C
 NOX_Parameter_Entry.$(OBJEXT): $(srcdir)/NOX_Parameter_Entry.C
 NOX_Parameter_List.$(OBJEXT): $(srcdir)/NOX_Parameter_List.C
 NOX_Solver_Manager.$(OBJEXT): $(srcdir)/NOX_Solver_Manager.C
@@ -459,6 +483,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Manager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Newton.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_SteepestDescent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_FullStep.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_Halving.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_Manager.Po@am__quote@
@@ -556,6 +583,42 @@ NOX_Linesearch_Polynomial.obj: $(srcdir)/NOX_Linesearch_Polynomial.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_Polynomial.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_Polynomial.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_Polynomial.obj `cygpath -w $(srcdir)/NOX_Linesearch_Polynomial.C`
+
+NOX_Direction_Manager.o: $(srcdir)/NOX_Direction_Manager.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Manager.C' object='NOX_Direction_Manager.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Manager.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Manager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Manager.o `test -f $(srcdir)/NOX_Direction_Manager.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Manager.C
+
+NOX_Direction_Manager.obj: $(srcdir)/NOX_Direction_Manager.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Manager.C' object='NOX_Direction_Manager.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Manager.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Manager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Manager.obj `cygpath -w $(srcdir)/NOX_Direction_Manager.C`
+
+NOX_Direction_Newton.o: $(srcdir)/NOX_Direction_Newton.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Newton.C' object='NOX_Direction_Newton.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Newton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Newton.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Newton.o `test -f $(srcdir)/NOX_Direction_Newton.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Newton.C
+
+NOX_Direction_Newton.obj: $(srcdir)/NOX_Direction_Newton.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Newton.C' object='NOX_Direction_Newton.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Newton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Newton.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Newton.obj `cygpath -w $(srcdir)/NOX_Direction_Newton.C`
+
+NOX_Direction_SteepestDescent.o: $(srcdir)/NOX_Direction_SteepestDescent.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_SteepestDescent.C' object='NOX_Direction_SteepestDescent.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_SteepestDescent.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_SteepestDescent.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_SteepestDescent.o `test -f $(srcdir)/NOX_Direction_SteepestDescent.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_SteepestDescent.C
+
+NOX_Direction_SteepestDescent.obj: $(srcdir)/NOX_Direction_SteepestDescent.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_SteepestDescent.C' object='NOX_Direction_SteepestDescent.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_SteepestDescent.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_SteepestDescent.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_SteepestDescent.obj `cygpath -w $(srcdir)/NOX_Direction_SteepestDescent.C`
 
 NOX_Parameter_Entry.o: $(srcdir)/NOX_Parameter_Entry.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Parameter_Entry.C' object='NOX_Parameter_Entry.o' libtool=no @AMDEPBACKSLASH@

@@ -84,7 +84,17 @@ int main(int argc, char *argv[])
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
+  //searchParams.setParameter("Method", "Interval Halving");
+  //searchParams.setParameter("Method", "Polynomial");
+  //searchParams.setParameter("Method", "More'-Thuente");
   searchParams.setParameter("Default Step", 1.0);
+
+  // Sublist for direction
+  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
+  dirParams.setParameter("Method", "Newton");
+  //dirParams.setParameter("Method", "Steepest Descent");
+  //dirParams.setParameter("Method", "Dogleg Trust Region");
+  //dirParams.setParameter("Method", "Broyden");
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:

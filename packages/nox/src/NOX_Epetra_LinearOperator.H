@@ -67,7 +67,7 @@ public:
   SharedJacobian& getSharedJacobian();
 
   //! Return the userInterface owned by LinearOperator.
-  Interface& getuserInterface();
+  Interface& getUserInterface();
 
   // Derived from NOX::Epetra::Interface
   bool computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS);

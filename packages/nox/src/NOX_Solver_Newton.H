@@ -35,6 +35,7 @@
 
 #include "NOX_Solver_Generic.H"	    // base class
 #include "NOX_Linesearch_Manager.H" // line search
+#include "NOX_Direction_Manager.H" // line search
 
 namespace NOX {
 namespace Solver {
@@ -46,6 +47,9 @@ namespace Solver {
 
   - "Line Search" - Sublist of the line search parameters, passed to
     the NOX::Linesearch::Manager constructor. Defaults to an empty list.
+
+  - "Direction" - Sublist of the direction parameters, passed to
+    the NOX::Direction::Manager constructor. Defaults to an empty list.
 
   - "Linear %Solver" - Sublist of the linear solver paramaters, passed
     to Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
@@ -132,6 +136,9 @@ protected:
 
   //! Linesearch. 
   Linesearch::Manager linesearch; 
+
+  //! Direction. 
+  Direction::Manager direction; 
 
   //! Current step.
   double step;			
