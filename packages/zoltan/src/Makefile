@@ -15,15 +15,54 @@
 #====================================================================
 #
 
+##############################################################################
+# Top-level Makefile for Zoltan library and Zoltan driver zdrive.
+#
+# To compile the library, type
+#    gmake <optional flags> targetmachine
+# where
+#    targetmachine = sun, sunos, smos, or tflop.
+#
+# To compile the driver, type
+#    gmake <optional flags> targetmachine-dr
+#
+# The optional flags are:
+#    NO_PARMETIS=1   Use to compile and link a version of Zoltan that runs
+#                    without ParMETIS.
+#    NO_NEMESIS=1    Use to compile and link a version of zdrive that runs
+#                    without Nemesis (i.e., reads only Chaco files).
+#
+# Example:
+# To compile a version of zdrive for SunOS 4 that doesn't use PARMETIS or
+# NEMESIS, type
+#    gmake NO_PARMETIS=1 NO_NEMESIS=1 sunos-dr
+##############################################################################
+
 GDEFINES	= -DDEBUG
 
+# If NO_PARMETIS, don't compile ParMetis into the library.
+ifdef NO_PARMETIS
+GDEFINES       += -DLB_NO_PARMETIS
+endif
+
+# If NO_NEMESIS, don't compile Nemesis, Exodus and Netcdf into the library.
+ifdef NO_NEMESIS
+GDEFINES       += -DLB_NO_NEMESIS
+endif
+
 TARGET		= zdrive
-LIB_TARGET	= dlb
-LIB_NAME	= libdlb.a
+LIB_TARGET	= zoltan
+LIB_NAME	= libzoltan.a
 
-SUPP_TARGS	= "sgi10k smos sun tflop"
+SUPP_TARGS	= "smos sun tflop"
 
-#
+# Paths to third party libraries (not really part of Zoltan)
+# 
+# If you already have ParMetis on your machine, give the path here.
+# Otherwise you need to type "make parmetis" to compile 
+# the source that was distributed with Zoltan.
+PARMETISLIB_PATH = parmetis/ParMetis
+
 # Makefile for load-balancing library.
 ############################################################################
 #                  SOURCE CODE
@@ -64,15 +103,14 @@ OCT_INC		= msg_const.h octant_const.h util_const.h octupdate_const.h \
 		  octupdate.h dfs_const.h dfs.h migoct_const.h \
 		  migreg.h hilbert_const.h
 
-PARMETIS_CSRC	= parmetis_part.c parmetis_util.c
-
-PARMETIS_INC	= parmetis_const.h
-
 COMM_CSRC	= comm.c
 COMM_INC	= comm.h
 
 PAR_CSRC	= par_util.c
 PAR_INC		= par_const.h par.h
+
+PARMETIS_CSRC	= parmetis_part.c parmetis_util.c 
+PARMETIS_INC	= parmetis_const.h
 
 # source code and defines for driver
 DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
@@ -86,8 +124,16 @@ CH_CSRC		= ch_dist_graph.c ch_input_geom.c ch_input_graph.c \
 
 CH_INC		= ch_input.h ch_input_const.h
 
+# libraries and paths
 ROOT_ARCHD	= /Net/pecos/rf_crew/arch
+
+ifndef NO_NEMESIS
 NEM_LIBS	= -lnemIc -lexoIIc -lnetcdf
+endif
+
+ifndef NO_PARMETIS
+PARMETIS_LIBS   = -lparmetis -lmetis
+endif
 
 # machine independent routines
 INC		= $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) \
@@ -103,11 +149,11 @@ LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o)
 LINT		= alint
 LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb \
 		  -Icomm -Ioct -Iparmetis \
-		  -I/Net/local/lang/SC2.0.1/include \
-		  -I/Net/local/lang/SC2.0.1/ansi_include \
-		  -I/Net/pecos/puma/pumatmp1/tools/mpi/include \
+		  -I/Net/local/lang/SC3.0.1/include \
+		  -I/Net/local/lang/SC3.0.1/ansi_include \
+		  -I/Net/local/mpi/mpich/include \
 		  -I/Net/pecos/rf_crew/arch/sun/include
-LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES) -DSUNOS
+LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 LINT_TARGET	= llib-l$(LIB_TARGET).ln
 SUBDIRS		= driver ch all lb par rcb comm oct
 VPATH		= $(SUBDIRS)
@@ -137,8 +183,10 @@ SMOS_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
 SMOS_DR_OBJ	= $(SMOS_DR_CSRC:.c=.o)
 SMOS_DR_IPATH	= -I$(SMOS_ARCHD)/include
 SMOS_MPI_LIB	= -L/Net/local/mpi/lib/paragon/sunmos -lmpi
+SMOS_PAR_LPATH  = -L$(PARMETISLIB_PATH)/Obj_smos \
+                  -L../$(PARMETISLIB_PATH)/Obj_smos 
 SMOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SMOS_ARCHD)/lib $(NEM_LIBS) \
-		   $(SMOS_MPI_LIB)
+		   $(SMOS_MPI_LIB) $(SMOS_PAR_LPATH) $(PARMETIS_LIBS)
 
 #
 # Intel P6 defines
@@ -158,21 +206,28 @@ TFLOP_INC_PATH	= $(SUBINCPATH)
 
 TFLOP_CCOMP	= $(TFLOP_CC) $(TFLOP_INC_PATH) $(TFLOP_DBG_FLAGS)
 
-TFLOP_DEFS	= $(GDEFINES) -DMPI
+TFLOP_DEFS	= $(GDEFINES)
 
 # driver stuff
 TFLOP_ARCHD	= $(ROOT_ARCHD)/tflop
 TFLOP_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
 TFLOP_DR_OBJ	= $(TFLOP_DR_CSRC:.c=.o)
 TFLOP_DR_IPATH	= -I$(TFLOP_ARCHD)/include
-TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) -lmpi
+TFLOP_MPI_LIB	= -lmpi
+TFLOP_PAR_LPATH = -L$(PARMETISLIB_PATH)/Obj_tflop \
+                  -L../$(PARMETISLIB_PATH)/Obj_tflop 
+TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) \
+	          $(TFLOP_MPI_LIB) $(TFLOP_PAR_LPATH) $(PARMETIS_LIBS)
 
 #
 # SUN defines
 #
-SUN_CC		= acc-2.0.1 -vc -Xc
-SUN_DBG_FLAGS	= -g
-SUN_OPT_FLAGS	= -O4
+#SUN_CC          = acc -vc -Xa -DUSE_STDARG -DHAVE_STDLIB_H=1 \
+#                -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
+#                -DUSE_STDARG=1 -DMALLOC_RET_VOID=1
+SUN_CC		= gcc
+SUN_DBG_FLAGS	= -g 
+SUN_OPT_FLAGS	= -O
 SUN_RANLIB	= ranlib
 SUN_AR		= ar r
 
@@ -180,21 +235,69 @@ SUN_CSRC	= $(LIB_SRC_C)
 SUN_INC		= $(INC)
 SUN_OBJ		= $(SUN_CSRC:.c=.o)
 
-SUN_INC_PATH	= -I/Net/local/lang/SC2.0.1/include \
-		  -I/Net/local/lang/SC2.0.1/ansi_include \
-		  -I/Net/pecos/puma/pumatmp1/tools/mpi/include \
+SUN_INC_PATH	= -I/Net/local/lang/SC3.0.1/include \
+		  -I/Net/local/lang/SC3.0.1/ansi_include \
+		  -I/Net/local/mpi/include \
+                  -I/Net/local/mpi/build/solaris/ch_p4/include \
 		  $(SUBINCPATH)
 
 SUN_CCOMP	= $(SUN_CC) $(SUN_INC_PATH) $(SUN_OPT_FLAGS)
 
-SUN_DEFS	= $(GDEFINES) -DSUNOS
+SUN_PAR_LPATH   = -L$(PARMETISLIB_PATH)/Obj_sun \
+                  -L../$(PARMETISLIB_PATH)/Obj_sun 
 
+SUN_DEFS	= $(GDEFINES)
 # driver stuff
-SUN_ARCHD	= $(ROOT_ARCHD)/sun
+SUN_ARCHD	= $(ROOT_ARCHD)/solaris
+SUN_MPI_LIBS	= -L/Net/local/mpi/build/solaris/ch_p4/lib \
+		  -lpmpich -lmpich -lsocket -lnsl -laio \
+		  -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.6/2.8.1 -lgcc
+
 SUN_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
 SUN_DR_OBJ	= $(SUN_DR_CSRC:.c=.o)
 SUN_DR_IPATH	= -I$(SUN_ARCHD)/include
-SUN_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUN_ARCHD)/lib $(NEM_LIBS) -lmpi
+
+SUN_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUN_ARCHD)/lib $(NEM_LIBS) \
+	          $(SUN_PAR_LPATH) $(PARMETIS_LIBS) $(SUN_MPI_LIBS) -lm 
+		  
+#
+# SUNOS Definitions
+#
+
+SUNOS_CC          = acc-2.0.1 -vc -Xa -DUSE_STDARG -DHAVE_STDLIB_H=1 \
+                -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
+                -DUSE_STDARG=1 -DMALLOC_RET_VOID=1
+SUNOS_DBG_FLAGS   = -g
+SUNOS_OPT_FLAGS   = -O4
+SUNOS_RANLIB      = ranlib
+SUNOS_AR          = ar r
+
+SUNOS_CSRC        = $(LIB_SRC_C)
+SUNOS_INC         = $(INC)
+SUNOS_OBJ         = $(SUNOS_CSRC:.c=.o)
+SUNOS_INC_PATH	= -I/Net/local/lang/SC2.0.1/include \
+		  -I/Net/local/lang/SC2.0.1/ansi_include \
+		  -I/Net/local/mpi/mpich/include \
+                  -I/Net/local/mpi/mpich/lib/sun4/ch_p4 \
+		  $(SUBINCPATH)
+SUNOS_PAR_LPATH   = -L$(PARMETISLIB_PATH)/Obj_sunos \
+                  -L../$(PARMETISLIB_PATH)/Obj_sunos
+SUNOS_DEFS	= $(GDEFINES)
+
+SUNOS_CCOMP	= $(SUNOS_CC) $(SUNOS_INC_PATH) $(SUN_OPT_FLAGS)
+
+# driver stuff
+SUNOS_ARCHD	= $(ROOT_ARCHD)/sun
+SUNOS_MPI_LIBS	= -L/Net/local/mpi/mpich/lib/sun4/ch_p4 -lpmpich -lmpich \
+		  -L/Net/local/gnu/lib/gcc-lib/sparc-sun-sunos4.1.3_U1/2.6.3 \
+		  -lgcc
+
+SUNOS_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
+SUNOS_DR_OBJ	= $(SUNOS_DR_CSRC:.c=.o)
+SUNOS_DR_IPATH	= -I$(SUNOS_ARCHD)/include
+
+SUNOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUNOS_ARCHD)/lib $(NEM_LIBS) \
+	          $(SUNOS_PAR_LPATH) $(PARMETIS_LIBS) $(SUNOS_MPI_LIBS) -lm 
 
 ###########################################################################
 #      TARGETS FOR DIFFERENT MACHINES
@@ -268,6 +371,47 @@ sun:
 	"RANLIB=$(SUN_RANLIB)"
 #	@cscope -b $(MAIN) $(SUN_CSRC) $(SUN_INC)
 
+sun-dr:
+	@if [ ! -d Obj_sun ]; \
+	then mkdir Obj_sun; \
+	fi
+	@rm -f Obj_sun/Makefile
+	@cp Makefile_sub Obj_sun/Makefile
+	@cd Obj_sun; \
+	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
+	"CC=$(SUN_CCOMP) $(SUN_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
+	"AR=$(SUN_AR)" "OBJ_FILES=$(SUN_OBJ)" \
+	"DEFS=$(SUN_DEFS)" "VPATH=$(SUB_VPATH)" \
+	"RANLIB=$(SUN_RANLIB)" "MAIN_OBJ=$(SUN_DR_OBJ)" \
+	"LNK_LIBS=$(SUN_DR_LIBS)"
+
+sunos:
+	@if [ ! -d Obj_sunos ]; \
+	then mkdir Obj_sunos; \
+	fi
+	@rm -f Obj_sunos/Makefile
+	@cp Makefile_sub Obj_sunos/Makefile
+	@cd Obj_sunos; \
+	$(MAKE) $(LIB_NAME) "CC=$(SUNOS_CCOMP)"\
+	"LIB_NAME=$(LIB_NAME)" "INC=$(SUNOS_INC)"\
+	"AR=$(SUNOS_AR)" "OBJ_FILES=$(SUNOS_OBJ)" \
+	"DEFS=$(SUNOS_DEFS)" "VPATH=$(SUB_VPATH)" \
+	"RANLIB=$(SUNOS_RANLIB)"
+#	@cscope -b $(MAIN) $(SUNOS_CSRC) $(SUNOS_INC)
+
+sunos-dr:
+	@if [ ! -d Obj_sunos ]; \
+	then mkdir Obj_sunos; \
+	fi
+	@rm -f Obj_sunos/Makefile
+	@cp Makefile_sub Obj_sunos/Makefile
+	@cd Obj_sunos; \
+	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
+	"CC=$(SUNOS_CCOMP) $(SUNOS_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
+	"AR=$(SUNOS_AR)" "OBJ_FILES=$(SUNOS_OBJ)" \
+	"DEFS=$(SUNOS_DEFS)" "VPATH=$(SUB_VPATH)" \
+	"RANLIB=$(SUNOS_RANLIB)" "MAIN_OBJ=$(SUNOS_DR_OBJ)" \
+	"LNK_LIBS=$(SUNOS_DR_LIBS)"
 #
 ############################################################################
 #          UTILITY TARGETS
