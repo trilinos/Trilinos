@@ -53,6 +53,19 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const LOCA::Abstract::Group& g,
     isValidNewton(false)
 {
   tpXVec.getBifParam() = getBifParam();
+
+  // Rescale length vector so that the normalization condition is met
+  double lVecDotNullVec;
+  lVecDotNullVec = tpXVec.getNullVec().dot(*lengthVecPtr);
+  if (lVecDotNullVec == 0.0) {
+    cout << "ERROR: LOCA::Bifurcation::TPBordGroup::TPPBordGroup\n"
+         << "     : length vector can not have Norm zero " << endl;
+
+    throw "LOCA Error";
+  }
+  cout << "\tIn TPBordGroup Constructor, scaling lenVec by:" 
+       << (1.0 / lVecDotNullVec) << endl;
+  lengthVecPtr->scale(1.0 / lVecDotNullVec);
 }
 
 LOCA::Bifurcation::TPBordGroup::TPBordGroup(const LOCA::Bifurcation::TPBordGroup& source, 

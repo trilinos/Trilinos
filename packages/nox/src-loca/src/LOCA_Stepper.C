@@ -209,6 +209,8 @@ LOCA::Abstract::Iterator::IteratorStatus
 LOCA::Stepper::start() {
   NOX::StatusTest::StatusType solverStatus;
 
+  printStartStep();
+
   // Perform solve of initial conditions
   solverStatus = solverPtr->solve();
 
@@ -217,6 +219,12 @@ LOCA::Stepper::start() {
     dynamic_cast<const LOCA::Abstract::Group&>(solverPtr->getSolutionGroup());
   curGroupPtr = 
     conGroupManagerPtr->createContinuationGroup(solnGrp, paramListPtr->sublist("NOX").sublist("Direction").sublist("Linear Solver"));
+
+  // Do printing (stepNumber==0 case) after continuation group set up
+  if (solverStatus == NOX::StatusTest::Failed) 
+    printEndStep(LOCA::Abstract::Iterator::Unsuccessful);
+  else
+    printEndStep(LOCA::Abstract::Iterator::Successful);
 
   // Set the initial step size
   curGroupPtr->setStepSize(stepSize);
@@ -437,11 +445,17 @@ LOCA::Stepper::printStartStep()
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout << "\n" << Utils::fill(72, '~') << "\n";
     cout << "Start of Continuation Step " << stepNumber << endl;
-    cout << "Continuation Method: " << conGroupManagerPtr->getMethod() << endl;
-    cout << "Continuation Parameter: " << conGroupManagerPtr->getConParamID()
-	 << " = " << curGroupPtr->getContinuationParameter() << " from " << prevGroupPtr->getContinuationParameter() << endl;
-    cout << "Current step size  = " << stepSize << "   "
-	 << "Previous step size = " << stepSizeManagerPtr->getPrevStepSize() << endl;
+    if (stepNumber==0) {
+      cout << "Attempting to converge initial guess at initial parameter values." << endl;
+    }
+    else {
+      cout << "Continuation Method: " << conGroupManagerPtr->getMethod() << endl;
+      cout << "Continuation Parameter: " << conGroupManagerPtr->getConParamID()
+  	   << " = " << curGroupPtr->getContinuationParameter() 
+           << " from " << prevGroupPtr->getContinuationParameter() << endl;
+      cout << "Current step size  = " << stepSize << "   "
+	   << "Previous step size = " << stepSizeManagerPtr->getPrevStepSize() << endl;
+    }
     cout << Utils::fill(72, '~') << "\n" << endl;
   }
 }
@@ -455,8 +469,10 @@ LOCA::Stepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
       cout << "\n" << Utils::fill(72, '~') << "\n";
       cout << "End of  Continuation Step " << stepNumber << endl;
       cout << "Continuation Parameter: " << conGroupManagerPtr->getConParamID()
-	   << " = " << curGroupPtr->getContinuationParameter() << " from " << prevGroupPtr->getContinuationParameter() << endl;
-      cout << "--> Step Converged in "
+	   << " = " << curGroupPtr->getContinuationParameter();
+      if (stepNumber != 0) 
+        cout << " from " << prevGroupPtr->getContinuationParameter();
+      cout << endl << "--> Step Converged in "
            << solverPtr->getNumIterations() <<" Nonlinear Solver Iterations!\n";
       cout << Utils::fill(72, '~') << "\n" << endl;
     }
@@ -469,9 +485,11 @@ LOCA::Stepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
       cout << "Continuation Step Number " << stepNumber 
            << " experienced a convergence failure in\n"
            << "the nonlinear solver after "<< solverPtr->getNumIterations() <<" Iterations\n";
-      cout << "Value of continuation parameter at failed step = " << curGroupPtr->getContinuationParameter()
-	   << " from " << prevGroupPtr->getContinuationParameter() << endl;
-      cout << Utils::fill(72, '~') << endl;
+      cout << "Value of continuation parameter at failed step = "
+           << curGroupPtr->getContinuationParameter();
+      if (stepNumber != 0) 
+        cout << " from " << prevGroupPtr->getContinuationParameter();
+      cout << endl << Utils::fill(72, '~') << endl;
     }
   }
 }

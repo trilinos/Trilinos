@@ -256,8 +256,6 @@ LOCA::Continuation::ArcLengthGroup::computeF()
   fVec.getParam() =  
     scaledDotProduct(predictorVec, *tmpVec) - arclengthStep;
 
-  cout << "fVec.norm() = " << fVec.norm() << endl;
-
   delete tmpVec;
   
   isValidF = true;

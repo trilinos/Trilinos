@@ -56,6 +56,19 @@ LOCA::Bifurcation::PitchforkBordGroup::PitchforkBordGroup(
     isValidNewton(false)
 {
   pfXVec.getBifParam() = getBifParam();
+
+  // Rescale length vector so that the normalization condition is met
+  double lVecDotNullVec;
+  lVecDotNullVec = lengthVecPtr->dot(pfXVec.getNullVec());
+  if (lVecDotNullVec == 0.0) {
+    cout << "ERROR: LOCA::Bifurcation::PitchforkBordGroup::PitchforkBordGroup\n"
+         << "     : length vector can not have Norm zero " << endl;
+
+    throw "LOCA Error";
+  }
+  cout << "\tIn PotchforkBordGroup Constructor, scaling lenVec by:" 
+       << (1.0 / lVecDotNullVec) << endl;
+  lengthVecPtr->scale(1.0 / lVecDotNullVec);
 }
 
 LOCA::Bifurcation::PitchforkBordGroup::PitchforkBordGroup(

@@ -87,6 +87,8 @@ LOCA::Predictor::Manager::compute(LOCA::Continuation::Group& prevGroup,
     return NOX::Abstract::Group::Failed;
   }
 
+  cout << "\n\tCalling Predictor with method: " << method << endl;
+
   return predictorPtr->compute(prevGroup, curGroup, result);
 }
 

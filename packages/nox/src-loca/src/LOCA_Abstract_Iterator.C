@@ -96,6 +96,8 @@ LOCA::Abstract::Iterator::run()
       iteratorStatus == LOCA::Abstract::Iterator::Failed)
     return iteratorStatus;
 
+  stepNumber++;
+
   iteratorStatus = iterate();
   if (iteratorStatus == LOCA::Abstract::Iterator::Finished ||
       iteratorStatus == LOCA::Abstract::Iterator::Failed)
