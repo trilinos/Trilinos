@@ -69,11 +69,14 @@ FiniteDifferenceColoring::~FiniteDifferenceColoring()
 
 bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 {
-  // First check to make sure Jac is a NOX::Epetra::FiniteDifferenceColoring object
-  FiniteDifferenceColoring* testMatrix = dynamic_cast<FiniteDifferenceColoring*>(&Jac);
+  // First check to make sure Jac is a 
+  // NOX::Epetra::FiniteDifferenceColoring object
+  FiniteDifferenceColoring* testMatrix = 
+         dynamic_cast<FiniteDifferenceColoring*>(&Jac);
   if (testMatrix == 0) {
     cout << "ERROR: NOX::Epetra::FiniteDifferenceColoring::computeJacobian() - "
-	 << "Jacobian to evaluate is not a FiniteDifferenceColoring object!" << endl;
+	 << "Jacobian to evaluate is not a FiniteDifferenceColoring object!" 
+         << endl;
     throw "NOX Error";
   } 
 
@@ -83,6 +86,18 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
 
   // Zero out Jacobian
   jacobian->PutScalar(0.0);
+
+  // Create an extra perturbed residual vector pointer if needed
+  if ( diffType == Centered )
+    if ( !fmPtr )
+      fmPtr = new Epetra_Vector(x);
+
+  // Create a reference to the extra perturbed residual vector
+  Epetra_Vector& fm = *fmPtr;
+
+  double scaleFactor = 1.0;
+  if ( diffType == Backward )
+    scaleFactor = -1.0;
 
   int numColors = colorMap->NumColors();
   int* colorList = colorMap->ListOfColors();
@@ -107,20 +122,30 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     Epetra_Map* cMap = colorMap->GenerateMap(colorList[k]);
     Epetra_Import Importer(map, *cMap);
     Epetra_Vector colorVect(*cMap);
-    colorVect.PutScalar(eta);
+    colorVect.PutScalar( scaleFactor * eta );
     Epetra_Vector mappedColorVect(map);
     mappedColorVect.PutScalar(0.0);
     mappedColorVect.Import(colorVect, Importer, Insert);
     x_perturb.Update(1.0, mappedColorVect, 1.0);
-    delete cMap; // clean up 
 
     // Compute the perturbed RHS
     interface.computeF(x_perturb, fp, Interface::Jacobian);
     
+    if ( diffType == Centered ) {
+      x_perturb.Update(-2.0, mappedColorVect, 1.0);
+      interface.computeF(x_perturb,fm, Interface::Jacobian);
+    }
+
     // Compute the column k of the Jacobian
-    Jc.Update(1.0, fp, -1.0, fo, 0.0);
-    Jc.Scale(1.0/eta);
-   
+    if ( diffType != Centered ) {
+      Jc.Update(1.0, fp, -1.0, fo, 0.0);
+      Jc.Scale( 1.0/(scaleFactor * eta) );
+    }
+    else {
+      Jc.Update(1.0, fp, -1.0, fm, 0.0);
+      Jc.Scale( 1.0/(2.0 * eta) );
+    }
+
     // Insert nonzero column entries into the jacobian    
     for (int j = myMin; j < myMax+1; j++) {
       int globalColumnID = columns->operator[](k)[j];
@@ -132,6 +157,8 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
         }
       }
     }
+
+    delete cMap; // clean up 
 
     // Unperturb the solution vector
     x_perturb = x;    
