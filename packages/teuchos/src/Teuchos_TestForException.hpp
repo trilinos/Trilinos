@@ -17,7 +17,8 @@
 #define TEUCHOS_TEST_FOR_EXCEPTION_H
 
 #include "Teuchos_ConfigDefs.hpp"
-///
+
+/// The only purpose for this function is to set a breakpoint in.
 void TestForException_break();
 
 ///
