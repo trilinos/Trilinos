@@ -128,7 +128,7 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
 	/* Now sort the outgoing procs. */
 	/* This keeps recvs deterministic if I ever invert communication */
 	/* It also allows for better balance of traffic in comm_do */
-	LB_Sort_Ints(procs_to, starts_to, nsends);
+	LB_Comm_Sort_Ints(procs_to, starts_to, nsends);
 
 	max_send_size = 0;
 	for (i = 0; i < nsends; i++) {

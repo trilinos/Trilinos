@@ -96,7 +96,7 @@ MPI_Comm  comm)			/* communicator */
     
     /* Sort recv lists to keep execution deterministic (e.g. for debugging) */
 
-    LB_Sort_Ints(procs_from, lengths_from, nrecvs);
+    LB_Comm_Sort_Ints(procs_from, lengths_from, nrecvs);
 
     *plengths_from = lengths_from;
     *pprocs_from = procs_from;

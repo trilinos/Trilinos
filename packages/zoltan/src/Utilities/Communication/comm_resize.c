@@ -132,7 +132,7 @@ int       tag)			/* message tag I can use */
 		sort_val[i] = plan->starts_to[i];
 		index[i] = i;
 	    }
-	    LB_Sort_Ints(sort_val, index, nsends + self_msg);
+	    LB_Comm_Sort_Ints(sort_val, index, nsends + self_msg);
 
 
 	    sum = 0;
@@ -207,7 +207,7 @@ int       tag)			/* message tag I can use */
 		sort_val[i] = plan->starts_from[i];
 		index[i] = i;
 	    }
-	    LB_Sort_Ints(sort_val, index, nrecvs + self_msg);
+	    LB_Comm_Sort_Ints(sort_val, index, nrecvs + self_msg);
 
 	    sum = 0;
 	    for (i = 0; i < nrecvs + self_msg; i++) {

@@ -7,7 +7,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-int       LB_Sort_Ints(
+int       LB_Comm_Sort_Ints(
 int      *vals_sort,		/* values to be sorted */
 int      *vals_other,		/* other array to be reordered w/ sort */
 int       nvals)		/* length of these two arrays */
@@ -52,9 +52,9 @@ int       nvals)		/* length of these two arrays */
     } 
 
     /* Recurse */
-    if (hi + 1 > 1) LB_Sort_Ints(vals_sort, vals_other, hi + 1);
+    if (hi + 1 > 1) LB_Comm_Sort_Ints(vals_sort, vals_other, hi + 1);
     if (nvals - hi - 1 > 1)
-	LB_Sort_Ints(&vals_sort[hi + 1], &vals_other[hi + 1], nvals - hi - 1);
+	LB_Comm_Sort_Ints(&vals_sort[hi + 1], &vals_other[hi + 1], nvals - hi - 1);
 
 
     return(COMM_OK);
