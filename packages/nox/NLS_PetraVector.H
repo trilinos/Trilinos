@@ -27,10 +27,7 @@ class NLS_PetraVector : public NLS_Vector {
     only copied if doCopyEntries is true.  If false, the vector is 
     initialized to all zeros.  */
   NLS_PetraVector(const Petra_RDP_Vector& copyFrom, 
-<<<<<<< NLS_PetraVector.H
 		  bool doCopyEntries = false);
-=======
-		  bool doCopyEntries);
 
   //! Construct an NLS_PetraVector by pointing to an external Petra_RDP_Vector.
   //! Creates a shallow copy (view) of the original vector.
@@ -38,7 +35,6 @@ class NLS_PetraVector : public NLS_Vector {
     this is deleted.  The difference between this constructor and the
     other constuctor is the CONSTness of the Petra_RDP_Vector.  */
   NLS_PetraVector(Petra_RDP_Vector& pointTo);
->>>>>>> 1.4
 
   //! Deconstruct NLS_PetraVector
   /*! The memory for the actual Petra_RDP_Vector should only be
@@ -47,24 +43,17 @@ class NLS_PetraVector : public NLS_Vector {
 
   //! Deep copy operator. Copies both the vector and its map.
   NLS_PetraVector& operator=(const NLS_PetraVector& copyFrom);
-<<<<<<< NLS_PetraVector.H
-=======
 
->>>>>>> 1.3
-
-<<<<<<< NLS_PetraVector.H
   // Derived
   NLS_PetraVector& scale(double alpha);
 
   // Derived
   double norm() const;
-=======
   void random();
   
   void putScalar (double scalar);
 
   void update(double scalarA, const NLS_Vector& y, double scalar);
->>>>>>> 1.3
 
   //! See above for definition.
   void update(double scalarA, const NLS_PetraVector& y, double scalar);
