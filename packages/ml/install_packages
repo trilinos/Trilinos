@@ -15,7 +15,7 @@ ${echo}
 ${echo} "At this point you need to tell us what other libraries are needed"
 ${echo}
 ${echo}
-${echo} -n "Do you want to supply the lapack library? [no] "
+${echo} -n "Do you want to supply the lapack library? [no] " | sed "s/-n//"
 read yes_or_no
 yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $yes_or_no` = 'yess'
@@ -23,7 +23,7 @@ then
    GOT_LAPACK=yes
    PACKAGES=`${echo} $PACKAGES -DUSE_VENDOR_LAPACK`
 fi
-${echo} -n "Do you want to supply the blas library? [no] "
+${echo} -n "Do you want to supply the blas library? [no] " | sed "s/-n//"
 read yes_or_no
 yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $yes_or_no` = 'yess'
@@ -33,7 +33,7 @@ then
    PACKAGES=`${echo} $PACKAGES -DUSE_VENDOR_BLAS` 
 fi
 
-${echo} -n "Do you want to use MPI? [yes] "
+${echo} -n "Do you want to use MPI? [yes] " | sed "s/-n//"
 read yes_or_no
 yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $yes_or_no` = 'yess' ||
@@ -44,7 +44,7 @@ then
 #
 #  Haven't finished the mpicc stuff yet so I am turning it off
 #
-#   ${echo} -n "Do you use mpicc? [no] "
+#   ${echo} -n "Do you use mpicc? [no] " | sed "s/-n//"
 #   read yes_or_no
    yes_or_no=no
    yes_or_no=`${echo} ${yes_or_no}s`
@@ -57,14 +57,14 @@ then
       yes_or_no=`${echo} ${yes_or_no}s`
       if test `expr $yes_or_no` = 'nos' 
       then
-         ${echo} -n "Where is mpicc? [/usr/local/mpich] "
+         ${echo} -n "Where is mpicc? [/usr/local/mpich] " | sed "s/-n//"
          read cdirectory
          cdirectory=`${echo} ${cdirectory}/`
          if test `expr $cdirectory` = '/'
          then
             cdirectory=/usr/local/mpich/
          fi
-         ${echo} -n "Where is mpif77? [/usr/local/mpich] "
+         ${echo} -n "Where is mpif77? [/usr/local/mpich] " | sed "s/-n//"
          read fdirectory
          fdirectory=`${echo} ${fdirectory}/`
          if test `expr $fdirectory` = '/'
@@ -81,7 +81,7 @@ then
 fi 
 ${echo} "=================================================================="
    ${echo} "Does the compiler need to know the location of these libraries or any"
-   ${echo} -n "other libraries (not including: Aztec, SuperLU, ParaSails, Metis)? [yes] "
+   ${echo} -n "other libraries (not including: Aztec, SuperLU, ParaSails, Metis)? [yes] " | sed "s/-n//"
    read yes_or_no
    yes_or_no=`${echo} ${yes_or_no}s`
    if test `expr $yes_or_no` = 'yess' ||
@@ -121,7 +121,7 @@ ${echo}
 ${echo} "Aztec can be used to supply some smoothers and an outer Krylov"
 ${echo} "iteration (i.e. using ML as a preconditioner)."
 ${echo}
-${echo} -n "Do you want to use Aztec? [yes] "
+${echo} -n "Do you want to use Aztec? [yes] " | sed "s/-n//"
 read yes_or_no
 yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $yes_or_no` = 'yess' ||
@@ -129,24 +129,24 @@ if test `expr $yes_or_no` = 'yess' ||
 then
    AZTEC_INTERNAL=no 
    PACKAGES=`${echo} $PACKAGES -DAZTEC`
-   ${echo} -n "Where is the Aztec include directory? [$PWD/lib/Aztec/lib] "
+   ${echo} -n "Where is the Aztec include directory? [$PWD/lib/Aztec/lib] " | sed "s/-n//"
    read directory
    tdirectory=`${echo} ${directory}x`
    if test `expr $tdirectory` = 'x'
    then
       directory=$PWD/lib/Aztec/lib
    fi
-   ${echo} -n "Are you using an internal developer distribution of Aztec? [no] "
+   ${echo} -n "Are you using an internal developer distribution of Aztec? [no] " | sed "s/-n//"
    read yes_or_no
    yes_or_no=`${echo} ${yes_or_no}s`
    if test `expr $yes_or_no` = 'yess'
    then
-      ${echo} -n "Where is y12m and blas? "
+      ${echo} -n "Where is y12m and blas? " | sed "s/-n//"
       read dir
       AZTEC_INTERNAL=yes 
       LIBRARIES=`${echo} -L${dir} -ly12m -lblas ${LIBRARIES}`
       INC_PATH=`${echo} -I${directory} ${INC_PATH}`
-      ${echo} -n "Where is Aztec library? "
+      ${echo} -n "Where is Aztec library? " | sed "s/-n//"
       read dir
       LIBRARIES=`${echo} ${dir}/libaztec.a ${LIBRARIES}`
    else
@@ -154,7 +154,7 @@ then
       LIBRARIES=`${echo} ${directory}/libaztec.a ${LIBRARIES}`
 
       ${echo}
-      ${echo} -n "Do you need to build Aztec? [yes] "
+      ${echo} -n "Do you need to build Aztec? [yes] " | sed "s/-n//"
       read yes_or_no
       yes_or_no=`${echo} ${yes_or_no}s`
       if test `expr $yes_or_no` = 'yess' ||
@@ -189,17 +189,18 @@ then
          then
             tFLAGS=`${echo} ${tFLAGS}  -DMB_MODIF`
          fi
+         tfFLAGS=`${echo} ${tFLAGS} ${ARCH_FLAGS} | sed "s/-Dmatched//g" | sed "s/-DNoChange//g"`
          if test `expr ${GOT_LAPACK}` = 'no'
          then
             LA_SRC="blas1.f blas2.f blas3.f"
             make "CC=${CC}" "FC=${FC}" "AR=${AR}" "TIMER=md_timer_generic.c" \
                  "COMMUNICATION=${AZCOMM}" "RNLIB=${RANLIB}" \
-                 "CFLAGS=${tFLAGS} -Dlint ${ARCH_FLAGS} ${PACKAGES}" "FFLAGS=${tFLAGS} ${ARCH_FLAGS}" \
+                 "CFLAGS=${tFLAGS} -Dlint ${ARCH_FLAGS} ${PACKAGES}" "FFLAGS=${tfFLAGS}" \
 		 "BLAS=${BLAS}" -f Makefile.template
          else
             make "CC=${CC}" "FC=${FC}" "AR=${AR}" "TIMER=md_timer_generic.c" \
                  "COMMUNICATION=${AZCOMM}" "RNLIB=${RANLIB}" \
-                 "CFLAGS=${tFLAGS} ${ARCH_FLAGS} ${PACKAGES}" "LA_SRC=" "BLAS=${BLAS}" \
+                 "CFLAGS=${tFLAGS} ${ARCH_FLAGS} ${PACKAGES}" "FFLAGS=${tfFLAGS}" "LA_SRC=" "BLAS=${BLAS}" \
                  -f Makefile.template
          fi
       fi
@@ -212,14 +213,14 @@ ${echo}
 ${echo} "SuperLU (serial or distributed) can be used as a coarsest grid "
 ${echo} "solver within ML."
 ${echo}
-${echo} -n "Do you want to use Serial SuperLU? [yes] "
+${echo} -n "Do you want to use Serial SuperLU? [yes] " | sed "s/-n//"
 read yes_or_no
 yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $yes_or_no` = 'yess' ||
    test `expr $yes_or_no` = 's'
 then
    PACKAGES=`${echo} $PACKAGES -DSUPERLU`
-   ${echo} -n "Where is the superlu directory? [$PWD/lib/DSuperLU] "
+   ${echo} -n "Where is the superlu directory? [$PWD/lib/DSuperLU] " | sed "s/-n//"
    read directory
    tdirectory=`${echo} ${directory}x`
    if test `expr $tdirectory` = 'x'
@@ -230,7 +231,7 @@ then
    INC_PATH=`${echo} -I${directory}/SRC ${INC_PATH}`
    LIBRARIES=`${echo} ${directory}/superlu${ARCH}.a ${LIBRARIES}`
    ${echo}
-   ${echo} -n "Do you need to build SuperLU? [yes] "
+   ${echo} -n "Do you need to build SuperLU? [yes] " | sed "s/-n//"
    read yes_or_no
    yes_or_no=`${echo} ${yes_or_no}s`
    if test `expr $yes_or_no` = 'yess' ||
@@ -244,7 +245,7 @@ then
    fi
    ${echo} "=================================================================="
 else
-   ${echo} -n "Do you want to use Distributed SuperLU? [no] "
+   ${echo} -n "Do you want to use Distributed SuperLU? [no] " | sed "s/-n//"
    read yes_or_no
    yes_or_no=`${echo} ${yes_or_no}s`
    if  test `expr $USING_MPI` = 'no' &&
@@ -258,7 +259,7 @@ else
    if test `expr $yes_or_no` = 'yess' 
    then
       PACKAGES=`${echo} $PACKAGES -DDSUPERLU`
-      ${echo} -n "Where is the superlu directory? [$PWD/lib/SuperLU_DIST] "
+      ${echo} -n "Where is the superlu directory? [$PWD/lib/SuperLU_DIST] " | sed "s/-n//"
       read directory
       tdirectory=`${echo} ${directory}x`
       if test `expr $tdirectory` = 'x'
@@ -268,7 +269,7 @@ else
       INC_PATH=`${echo} -I${directory}/SRC ${INC_PATH}`
       LIBRARIES=`${echo} ${directory}/superlu_${ARCH}.a ${LIBRARIES}`
       ${echo}
-      ${echo} -n "Do you need to build SuperLU? [yes] "
+      ${echo} -n "Do you need to build SuperLU? [yes] " | sed "s/-n//"
       read yes_or_no
       yes_or_no=`${echo} ${yes_or_no}s`
       if test `expr $yes_or_no` = 'yess' ||
@@ -288,7 +289,7 @@ ${echo}
 ${echo} "ParaSails can be  used to supply a sparse approximate inverse "
 ${echo} "smoother on any level."
 ${echo}
-${echo} -n "Do you want to use ParaSails? [no] "
+${echo} -n "Do you want to use ParaSails? [no] " | sed "s/-n//"
 read yes_or_no
 yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $USING_MPI` = 'no' &&
@@ -304,7 +305,7 @@ if test `expr $yes_or_no` = 'yess'
 #   test `expr $yes_or_no` = 's'
 then
    PACKAGES=`${echo} $PACKAGES -DPARASAILS`
-   ${echo} -n "Where is the ParaSails directory? [$PWD/lib/ParaSails] "
+   ${echo} -n "Where is the ParaSails directory? [$PWD/lib/ParaSails] " | sed "s/-n//"
    read directory
    tdirectory=`${echo} ${directory}x`
    if test `expr $tdirectory` = 'x'
@@ -314,7 +315,7 @@ then
    INC_PATH=`${echo} -I${directory} ${INC_PATH}`
    LIBRARIES=`${echo} ${directory}/libParaSails.a ${LIBRARIES}`
    ${echo}
-   ${echo} -n "Do you need to build ParaSails? [yes] "
+   ${echo} -n "Do you need to build ParaSails? [yes] " | sed "s/-n//"
    read yes_or_no
    yes_or_no=`${echo} ${yes_or_no}s`
    if test `expr $yes_or_no` = 'yess' ||
@@ -334,14 +335,14 @@ ${echo}
 ${echo} "ParMetis  can be  used to create variable sized blocks for block"
 ${echo} "Jacobi or block Gauss-Seidel smoothers" 
 ${echo}
-${echo} -n "Do you want to use ParMetis? [no] "
+${echo} -n "Do you want to use ParMetis? [no] " | sed "s/-n//"
 read yes_or_no
 yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $yes_or_no` = 'yess'
 #   test `expr $yes_or_no` = 's'
 then
    PACKAGES=`${echo} $PACKAGES -DMETIS`
-   ${echo} -n "Where is the ParMetis directory? [$PWD/lib/ParMetis-2.0] "
+   ${echo} -n "Where is the ParMetis directory? [$PWD/lib/ParMetis-2.0] " | sed "s/-n//"
    read directory
    tdirectory=`${echo} ${directory}x`
    if test `expr $tdirectory` = 'x'
@@ -352,7 +353,7 @@ then
    LIBRARIES=`${echo} ${directory}/libmetis.a ${LIBRARIES}`
 
    ${echo}
-   ${echo} -n "Do you need to build ParMetis? [yes] "
+   ${echo} -n "Do you need to build ParMetis? [yes] " | sed "s/-n//"
    read yes_or_no
    yes_or_no=`${echo} ${yes_or_no}s`
    if test `expr $yes_or_no` = 'yess' ||

@@ -71,7 +71,7 @@ ${echo} "What platform you are using?"
 ${echo} "    CPLANT, DEC, HP, PCLINUX, SGI, SMOS, SOLARIS, SP2, SUN, TFLOP"
 ${echo} "Note: To add other machines, create a new etc/makefile.xxx."
 ${echo}
-${echo} -n "What machine? [PCLINUX] "
+${echo} -n "What machine? [PCLINUX] " | sed "s/-n//"
 read ARCH
 ARCH=`${echo} ${ARCH},`
 if test `expr $ARCH` = ','
@@ -90,6 +90,7 @@ if test `expr $ARCH` != 'CPLANT'   &&
    test `expr $ARCH` != 'SOLARIS'  &&
    test `expr $ARCH` != 'SP2'      &&
    test `expr $ARCH` != 'SUN'      &&
+   test `expr $ARCH` != 'XTFLOP'   &&
    test `expr $ARCH` != 'TFLOP'   
 then
    ${echo} Unsupported machine
@@ -126,7 +127,8 @@ echo "export RANLIB"     >> .arch_env
 #
 \rm -f etc/makefile.copy
 cp etc/makefile.${ARCH} etc/makefile.copy
-if test `expr ${ARCH}` = 'TFLOP' 
+if test `expr ${ARCH}` = 'TFLOP' ||
+   test `expr ${ARCH}` = 'XTFLOP' 
 then
 \rm -f .artemp
 which xar 2>>.artemp 1>>.artemp
