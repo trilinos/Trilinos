@@ -62,6 +62,9 @@
 /* Define if want to build with ml_amesos enabled */
 #undef HAVE_ML_AMESOS
 
+/* Define if want to build with ml_anasazi enabled */
+#undef HAVE_ML_ANASAZI
+
 /* Define if want to build with ml_aztecoo enabled */
 #undef HAVE_ML_AZTEC
 
@@ -115,6 +118,9 @@
 
 /* Define if want to build with ml_timing enabled */
 #undef HAVE_ML_TIMING
+
+/* Define if want to build with ml_triutils enabled */
+#undef HAVE_ML_TRIUTILS
 
 /* define if we want to use MPI */
 #undef HAVE_MPI

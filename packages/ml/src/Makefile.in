@@ -223,7 +223,8 @@ $(srcdir)/Utils/ml_amesos.h \
 $(srcdir)/Utils/ml_amesos_wrap.h \
 $(srcdir)/Utils/ml_ifpack.h \
 $(srcdir)/Utils/ml_ifpack_wrap.h \
-$(srcdir)/Utils/ml_epetra_preconditioner.h
+$(srcdir)/Utils/ml_epetra_preconditioner.h \
+$(srcdir)/Utils/ml_anasazi.h
 
 
 UTIL = \
@@ -242,7 +243,8 @@ $(srcdir)/Utils/ml_amesos.c \
 $(srcdir)/Utils/ml_amesos_wrap.cpp \
 $(srcdir)/Utils/ml_ifpack.c \
 $(srcdir)/Utils/ml_ifpack_wrap.cpp \
-$(srcdir)/Utils/ml_epetra_preconditioner.cpp
+$(srcdir)/Utils/ml_epetra_preconditioner.cpp \
+$(srcdir)/Utils/ml_anasazi.cpp
 
 
 ENUM_H = 
@@ -453,7 +455,7 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_agg_info.$(OBJEXT) ml_viz_opendx.$(OBJEXT) \
 	ml_amesos.$(OBJEXT) ml_amesos_wrap.$(OBJEXT) \
 	ml_ifpack.$(OBJEXT) ml_ifpack_wrap.$(OBJEXT) \
-	ml_epetra_preconditioner.$(OBJEXT)
+	ml_epetra_preconditioner.$(OBJEXT) ml_anasazi.$(OBJEXT)
 am__objects_3 =
 @HAVE_MPI_TRUE@am__objects_4 = $(am__objects_3)
 @HAVE_MPI_FALSE@am__objects_4 =
@@ -483,6 +485,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_amesos_wrap.Po ./$(DEPDIR)/ml_amg.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_amg_MIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_amg_genP.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_anasazi.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_utils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_bdrypts.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_bicgstabl.Po ./$(DEPDIR)/ml_cg.Po \
@@ -665,6 +668,7 @@ ml_ifpack.$(OBJEXT): $(srcdir)/Utils/ml_ifpack.c
 ml_ifpack_wrap.$(OBJEXT): $(srcdir)/Utils/ml_ifpack_wrap.cpp
 ml_epetra_preconditioner.$(OBJEXT): \
 	$(srcdir)/Utils/ml_epetra_preconditioner.cpp
+ml_anasazi.$(OBJEXT): $(srcdir)/Utils/ml_anasazi.cpp
 libml.a: $(libml_a_OBJECTS) $(libml_a_DEPENDENCIES) 
 	-rm -f libml.a
 	$(libml_a_AR) libml.a $(libml_a_OBJECTS) $(libml_a_LIBADD)
@@ -692,6 +696,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_amg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_amg_MIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_amg_genP.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_anasazi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_bdrypts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_bicgstabl.Po@am__quote@
@@ -1601,6 +1606,18 @@ ml_epetra_preconditioner.obj: $(srcdir)/Utils/ml_epetra_preconditioner.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_epetra_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_epetra_preconditioner.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_epetra_preconditioner.obj `cygpath -w $(srcdir)/Utils/ml_epetra_preconditioner.cpp`
+
+ml_anasazi.o: $(srcdir)/Utils/ml_anasazi.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_anasazi.cpp' object='ml_anasazi.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_anasazi.Po' tmpdepfile='$(DEPDIR)/ml_anasazi.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_anasazi.o `test -f '$(srcdir)/Utils/ml_anasazi.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_anasazi.cpp
+
+ml_anasazi.obj: $(srcdir)/Utils/ml_anasazi.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_anasazi.cpp' object='ml_anasazi.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_anasazi.Po' tmpdepfile='$(DEPDIR)/ml_anasazi.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_anasazi.obj `cygpath -w $(srcdir)/Utils/ml_anasazi.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 includeHEADERS_INSTALL = $(INSTALL_HEADER)

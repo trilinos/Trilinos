@@ -131,7 +131,8 @@ $(srcdir)/Utils/ml_amesos.h \
 $(srcdir)/Utils/ml_amesos_wrap.h \
 $(srcdir)/Utils/ml_ifpack.h \
 $(srcdir)/Utils/ml_ifpack_wrap.h \
-$(srcdir)/Utils/ml_epetra_preconditioner.h
+$(srcdir)/Utils/ml_epetra_preconditioner.h \
+$(srcdir)/Utils/ml_anasazi.h
 
 
 UTIL = \
@@ -150,7 +151,8 @@ $(srcdir)/Utils/ml_amesos.c \
 $(srcdir)/Utils/ml_amesos_wrap.cpp \
 $(srcdir)/Utils/ml_ifpack.c \
 $(srcdir)/Utils/ml_ifpack_wrap.cpp \
-$(srcdir)/Utils/ml_epetra_preconditioner.cpp
+$(srcdir)/Utils/ml_epetra_preconditioner.cpp \
+$(srcdir)/Utils/ml_anasazi.cpp
 
 
 ENUM_H = 
