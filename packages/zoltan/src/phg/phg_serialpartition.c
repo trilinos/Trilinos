@@ -23,7 +23,7 @@ extern "C" {
  * AND add entry to CoarsePartitionFns array 
  * AND increment NUM_COARSEPARTITION_FN.
  */
-#define NUM_COARSEPARTITION_FNS 8
+#define NUM_COARSEPARTITION_FNS 9
 
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr0;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr1;
@@ -33,6 +33,7 @@ static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr4;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ran;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_lin;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ripk;
 
 static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] = 
                                       {&coarse_part_gr0,
@@ -42,7 +43,7 @@ static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] =
                                        &coarse_part_gr4,
                                        &coarse_part_ran,
                                        &coarse_part_lin,
-                                       &coarse_part_rip,
+                                       &coarse_part_ripk,
                                       };
 
 static int local_coarse_partitioner(ZZ *, HGraph *, int, float *, Partition,
@@ -75,6 +76,7 @@ char *str, *str2;
   else if (!strcasecmp(str, "ran"))   return coarse_part_ran;
   else if (!strcasecmp(str, "lin"))   return coarse_part_lin;
   else if (!strcasecmp(str, "rip"))   return coarse_part_rip;
+  else if (!strcasecmp(str, "ripk"))   return coarse_part_ripk;
   else if (!strcasecmp(str, "gr0"))   return coarse_part_gr0;
   else if (!strcasecmp(str, "gr1"))   return coarse_part_gr1;
   else if (!strcasecmp(str, "gr2"))   return coarse_part_gr2;
@@ -522,12 +524,93 @@ static int coarse_part_rip (
     /* Call sequence partitioning. */
     err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
 
-    ZOLTAN_FREE ((void**) &order);
-    ZOLTAN_FREE ((void**) &ran);
-    ZOLTAN_FREE ((void**) &iprod);
+    ZOLTAN_FREE (&order);
+    ZOLTAN_FREE (&ran);
+    ZOLTAN_FREE (&iprod);
     return err;
 }
 
+
+
+/**************************************************************************
+ * Random inner product partitioning; k-cluster version.
+ * Pick k random positive vectors. For each vertex (column),
+ * compute inner product with each of the k "cluster" vectors.
+ * Assign the vertex to the most similar cluster vector.
+ * 
+ * This is a fast method but better than pure random.
+ * 
+ * EBEB: We could iterate and obtain a k-means clustering method. 
+ */
+static int coarse_part_ripk (
+  ZZ *zz,
+  HGraph *hg,
+  int p,
+  float *part_sizes,
+  Partition part,
+  PHGPartParams *hgp
+)
+{
+    int i, j, k, err=0, pp, best_part;
+    float *ran=NULL, *target_wgt=NULL;
+    float iprod, best_val, sum;
+    char *yo = "coarse_part_ripk";
+
+    ran         = (float *) ZOLTAN_MALLOC (p*hg->nEdge*sizeof(float));
+    target_wgt  = (float *) ZOLTAN_MALLOC (p*sizeof(float));
+    if (!(ran && target_wgt)) {
+        ZOLTAN_FREE (&ran);
+        ZOLTAN_FREE (&target_wgt);
+        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+
+    /* Compute target partition weights */
+    if (hg->vwgt){
+      sum = 0.0;
+      for (i=0; i<hg->nVtx; i++){
+        sum += hg->vwgt[i];
+      }
+    }
+    else
+      sum = hg->nVtx;
+
+    for (pp=0; pp<p; pp++){
+      target_wgt[pp] = sum * part_sizes[pp];
+    }
+
+    /* Generate positive random numbers for edges */
+    for (j=0; j<p*hg->nEdge; j++){
+      ran[j] = ((float) Zoltan_Rand())/ZOLTAN_RAND_MAX; 
+    }
+
+    /* Compute inner products with the random vectors. */
+    for (i=0; i<hg->nVtx; i++){
+      best_part = -1;
+      best_val = -1;
+      for (pp=0; pp<p; pp++){
+        iprod = 0.0;
+        for (k=hg->vindex[i]; k<hg->vindex[i+1]; k++) {
+          j = hg->vedge[k];
+          iprod += ran[pp*(hg->nEdge)+j]*(hg->ewgt ? hg->ewgt[j] : 1.0);
+        }
+        /* Scale iprod value by target part weight to ensure balance. */
+        iprod *= target_wgt[pp];
+        /* Pick best partition (cluster). */
+        if (iprod > best_val){
+          best_val  = iprod;
+          best_part = pp;
+        }
+      }
+      /* Found best partition. Update target weight. */
+      part[i] = best_part;
+      target_wgt[best_part] = MAX(target_wgt[best_part]-hg->vwgt[i], 0.0);
+    }
+
+    ZOLTAN_FREE (&ran);
+    ZOLTAN_FREE (&target_wgt);
+    return err;
+}
 
 /*********************************************************************/
 /* Greedy ordering/partitioning based on a priority function
