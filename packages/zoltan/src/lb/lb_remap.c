@@ -606,11 +606,6 @@ float before,                 /* Amount of data that overlaps between old and */
 
     ierr = Zoltan_HG_Create_Mirror(zz, &hg);
     if (ierr < 0) goto End;
-
-    /* Call serial matching routine. */
-    /* Store remap vector in zz->LB. */
-  
-    if (zz->Proc == zz->Debug_Proc) Zoltan_HG_Print(zz, &hg, stdout);
   }
 
   before = measure_stays(zz, &hg, max0, "BEFORE");
