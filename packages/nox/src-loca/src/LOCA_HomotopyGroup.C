@@ -35,7 +35,9 @@
 #include "NOX_Parameter_List.H"      // data member
 
 LOCA::HomotopyGroup::HomotopyGroup(NOX::Parameter::List& locaSublist,
-				   const LOCA::Abstract::Group& g) :
+				   const LOCA::Abstract::Group& g,
+				   double scalarRandom,
+				   double scalarInitialGuess) :
   grpPtr(dynamic_cast<LOCA::Abstract::Group*>(g.clone(NOX::DeepCopy))),
   gVecPtr(g.getF().clone(NOX::ShapeCopy)),
   randomVecPtr(gVecPtr->clone(NOX::ShapeCopy)),
@@ -48,6 +50,8 @@ LOCA::HomotopyGroup::HomotopyGroup(NOX::Parameter::List& locaSublist,
 {
   // construct a random vector for the problem 
   randomVecPtr->random();
+  randomVecPtr->abs(*randomVecPtr);
+  randomVecPtr->update(scalarInitialGuess, grpPtr->getX(), scalarRandom);
 
   // Set the isValid flags to false
   resetIsValidFlags();
