@@ -38,7 +38,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT([nox],[1.0a-dev],[nox-developers@software.sandia.gov])
+AC_INIT([nox],[3.1a-dev],[nox-developers@software.sandia.gov])
 
 # Hello World!
 echo "----------------------------------------"
@@ -137,7 +137,6 @@ AC_ARG_WITH(ldflags,
 # ------------------------------------------------------------------------
 # Alternate archiver
 # ------------------------------------------------------------------------
-
 
 AC_ARG_WITH(ar,
 [AC_HELP_STRING([--with-ar],[specify archiver command @<:@"ar cru"@:>@])],
@@ -300,7 +299,9 @@ AC_PROG_CXXCPP
 AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
+# ------------------------------------------------------------------------
 # Check for doxygen dot program.  Used in doxygen config files Doxyfile.in
+# ------------------------------------------------------------------------
 AC_CHECK_PROG(HAVE_DOXYGEN_DOT, dot, "YES", "NO")
 
 # ------------------------------------------------------------------------
@@ -573,9 +574,9 @@ AC_COMPILE_IFELSE(
 # ------------------------------------------------------------------------
 
 BUILD_ANY_EXAMPLES=no
+
 AC_DEFUN(NOX_INTERFACE,
 [
-  
   AC_ARG_ENABLE(nox-$1,
   [AC_HELP_STRING([--enable-nox-$1],[compile $1 interace libraries])],
   [ADDON_$1=$enableval],
@@ -634,7 +635,7 @@ AM_CONDITIONAL(BUILD_PETSC_EXAMPLES, test X${ADDON_petsc_EXAMPLES} = Xyes)
 AC_ARG_ENABLE(loca,
 [AC_HELP_STRING([--enable-loca],[compile the loca libraries])],
 [BUILD_LIBLOCA=${enableval}],
-[BUILD_LIBLOCA=no]
+[BUILD_LIBLOCA=yes]
 )
 AC_MSG_CHECKING(whether we should build the loca libraries)
 AC_MSG_RESULT([${BUILD_LIBLOCA}])
