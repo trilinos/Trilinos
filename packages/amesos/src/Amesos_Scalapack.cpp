@@ -892,7 +892,7 @@ int Amesos_Scalapack::Solve() {
   //
   //  Copy B to the scalapack version of B
   //
-  const Epetra_Map &OriginalMap = RowMatrixA->RowMap();
+  const Epetra_Map &OriginalMap = RowMatrixA->RowMatrixRowMap();
   Epetra_MultiVector *ScalapackXextract = new Epetra_MultiVector( *VectorMap_, nrhs ) ; 
   Epetra_MultiVector *ScalapackBextract = new Epetra_MultiVector( *VectorMap_, nrhs ) ; 
   
