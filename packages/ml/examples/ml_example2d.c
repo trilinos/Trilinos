@@ -611,7 +611,7 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 	 if (temp1[1] != 0)
 	   eig_ratio = ((double) temp1[0])/ ((double) temp1[1]);
 	 if (eig_ratio < 4.) eig_ratio = 4.;
-	 ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 1, eig_ratio,nsmooth);
+	 ML_Gen_Smoother_MLS(ml, level, ML_BOTH, eig_ratio,nsmooth);
 #endif
       }
 

@@ -358,7 +358,7 @@ Nglobal_nodes = (Nglobal_edges+1)*(Nglobal_edges+1)*(Nglobal_edges+1); /* rst di
 #if defined(HARDWIRE3D) || defined(HARDWIRE2D)
   sigma = 1.0e-14;
   sigma = 0.000000001;
-  sigma = 0.0;
+  sigma = 0.001;
 #ifdef HARDWIRE2D
   nx = (int) sqrt( ((double) Nglobal_nodes) + .00001);
   Ke_bindx = (int    *) malloc((8*Nlocal_edges+5)*sizeof(int));
@@ -1995,7 +1995,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   options[AZ_conv]     = AZ_rhs;
 #endif
   options[AZ_output]   = 1;
-  options[AZ_max_iter] = 10;
+  options[AZ_max_iter] = 500;
   options[AZ_poly_ord] = 5;
   options[AZ_kspace]   = 130;
   params[AZ_tol]       = context->tol;
