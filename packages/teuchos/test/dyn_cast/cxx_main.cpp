@@ -31,7 +31,7 @@
 #include "Teuchos_Version.hpp"
 
 class A { public: virtual ~A(){} };
-class B : public A {};
+class B : public A { public: void f() { std::cout << "\nB::f() called!\n"; } };
 class C : public A {};
 
 int main( int argc, char* argv[] ) {
@@ -45,18 +45,21 @@ int main( int argc, char* argv[] ) {
   B b;
   A &a = b;
   try {
-    std::cout << "\nTrying: dynamic_cast<C&>(a);\n";
+    std::cout << "\nTrying: dynamic_cast<C&>(a); [Should throw a std::bad_cast exception with very bad error message]\n";
     dynamic_cast<C&>(a);
   }
   catch( const std::bad_cast &e ) {
     std::cout << "\nCaught std::bad_cast exception e where e.what() = \"" << e.what() << "\"\n";
   }
   try {
-    std::cout << "\nTrying: Teuchos::dyn_cast<C>(a);\n";
+    std::cout << "\nTrying: Teuchos::dyn_cast<C>(a); [Should throw a std::bad_cast exception with a very good error message]\n";
     Teuchos::dyn_cast<C>(a);
   }
   catch( const std::bad_cast &e ) {
     std::cout << "\nCaught std::bad_cast exception e where e.what() = \"" << e.what() << "\"\n";
   }
+	std::cout << "\nTrying:  Teuchos::dyn_cast<B>(a).f(); [Should succeed and print \"B::f() called\"]\n";
+	Teuchos::dyn_cast<B>(a).f();
+	std::cout << "\nAll tests check out!\n";
 	return 0;
 }
