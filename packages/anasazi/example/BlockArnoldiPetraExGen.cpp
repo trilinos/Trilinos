@@ -142,8 +142,10 @@ int main(int argc, char *argv[]) {
          
         // Finish up
         assert(A.TransformToLocal()==0);
+	assert(A.OptimizeStorage()==0);
         A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
         assert(B.TransformToLocal()==0);
+	assert(B.OptimizeStorage()==0);
         B.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
 
@@ -197,11 +199,11 @@ int main(int argc, char *argv[]) {
 	//*******************************************************
 
         int block = 3;  // blocksize used by solver
-	int numrhs = block; // number of right hand sides
         int maxits = NumGlobalElements - 1; // maximum number of iterations to run
-        double btol = 1.0e-10;  // relative residual tolerance
+	int debuglevel = 0; // debuglevel of solver; how much information should be displayed.
+        double btol = 1.0e-7;  // relative residual tolerance
 
-	BelosEpetraOperator<double> BelosOp( BelosMat, EpetraOpPrec, "BlockCG", btol, maxits, block, 0, 0 );
+	BelosEpetraOperator<double> BelosOp( BelosMat, EpetraOpPrec, "BlockCG", btol, maxits, block, debuglevel, verbose );
 
 	//************************************
 	// Start the block Arnoldi iteration
@@ -211,7 +213,7 @@ int main(int argc, char *argv[]) {
 	//
 	int length = 20;
 	int nev = 10;
-	double tol = 1.0e-8;
+	double tol = 1.0e-6;
 	string which="LM";
 	int step = 5;
 	int restarts = 5;
@@ -235,7 +237,7 @@ int main(int argc, char *argv[]) {
 						which, step, restarts);
 	
 	// inform the solver that the problem is symmetric
-	//MyBlockArnoldi.setSymmetric(true);
+	MyBlockArnoldi.setSymmetric(true);
 	MyBlockArnoldi.setDebugLevel(0);
 
 #ifdef UNIX
