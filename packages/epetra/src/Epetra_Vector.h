@@ -353,7 +353,7 @@ class Epetra_Vector : public Epetra_MultiVector {
 
     \return Integer error code, set to 0 if successful.
   */
-  int ExtractCopy(double *V);
+  int ExtractCopy(double *V) const;
   
   //! Set user-provided address of V.
   /*!
@@ -362,7 +362,7 @@ class Epetra_Vector : public Epetra_MultiVector {
 
     \return Integer error code, set to 0 if successful.
   */
-  int ExtractView(double **V);
+  int ExtractView(double **V) const;
   //@}
 
   //@{ \name Overloaded operators

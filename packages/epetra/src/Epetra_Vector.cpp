@@ -57,14 +57,12 @@ Epetra_Vector::Epetra_Vector(Epetra_DataAccess CV, const Epetra_MultiVector& Sou
 Epetra_Vector::~Epetra_Vector(){}
 
 //=============================================================================
-int Epetra_Vector::ExtractCopy(double *V)
-{
+int Epetra_Vector::ExtractCopy(double *V) const {
   return(Epetra_MultiVector::ExtractCopy(V, 1));
 }
 
 //=============================================================================
-int Epetra_Vector::ExtractView(double **V)
-{
+int Epetra_Vector::ExtractView(double **V) const {
   int junk;
   return(Epetra_MultiVector::ExtractView(V, &junk));
 }
