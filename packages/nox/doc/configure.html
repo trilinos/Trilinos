@@ -1,4 +1,35 @@
 <html>
+<!--
+@HEADER
+# ************************************************************************
+# 
+#            NOX: An Object-Oriented Nonlinear Solver Package
+#                 Copyright (2002) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#   
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#   
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# 
+# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+# (rppawlo@sandia.gov).
+# 
+# ************************************************************************
+@HEADER
+-->
+
 <head>
 <title>NOX Configuration Instructions</title>
 </head>
@@ -8,31 +39,70 @@
 <h3>Basic Setup</h3>
 
 <P>To just compile the basic NOX library, type
-<ul>
-<li>
+<blockquote>
 <code>
-configure
+configure<br>
+make
 </code>
-</ul>
+</blockquote>
+This only compiles the library <code>libnox.a</code>
+- it does not build any of the
+examples. See below for more information on compiling the examples.
 
 <h3>Generating Documentation</h3>
 
 <P>After running configure, type 
-<ul>
-<li><code>make dox</code> 
-</ul>
+<blockquote>
+<code>
+make dox
+</code>
+</blockquote>
 <p>to generate the documentation.</p>
 
 <p>Once the documentation is generated, you should be able to access
 it by <a href="html/index.html">clicking here</a>.</p>
 
-<h3>Using Epetra/Trilinos</h3>
+<h3>Compiling the examples</h3>
+
+NOX is distributed with a simple set of examples that have no other
+external dependencies besides LAPACK. These are primarily useful to
+allow some basic testing of NOX without requiring an interface to a
+more complicated linear algebra system. To enable these examples, type
+
+<blockquote>
+<code>
+configure --enable-examples<br>
+make
+</code>
+</blockquote>
+
+The compiled examples are located in the <code>examples</code>
+subdirectory.  To run each example, follow the instructions given below.
+
+<ol>
+<li>To run a simple 2D example based on the Rosenbrock function, type
+<blockquote>
+<code>
+rosenbrock
+</code>
+</blockquote>
+<li><em>More examples to come...</em>
+</ol>
+
+<h3>Using Epetra/Trilinos With NOX</h3>
+
+To use NOX's interface to the Epetra and AztecOO libraries in
+Trilinos, follow the instructions given below.
 
 <h5>Building the library</h5>
 
 <p>To compile NOX's Epetra library <code>libnoxepetra.a</code>, use one
 of the following sets of configuration options.</p>
 <ul>
+<li><code>configure --enable-epetra</code>
+<p>This will automatically use the environmental variable 
+<code>TRILINOS_HOME</code>
+to find the necessary headers and libraries.</p>
 <li><code>configure --with-trilinos=/home/jdoe/Trilinos</code>
 <p>This will automatically search the directory
 <code>/home/jdoe/Trilinos</code> to find the necessary headers and
@@ -67,29 +137,21 @@ directories:</p>
 </ul>
 <p>In the above, if <code>TRILINOS_TARGET</code> is not defined as an
 environmental variable, configure will define it.</p>
-<li><code>configure --enable-epetra</code>
-<p>This will automatically use the environmental variable 
-<li><code>configure --with-trilinos</code>
-<p>This will automatically use the environmental variable 
-<code>TRILINOS_HOME</code>
-to find the necessary headers and libraries.</p>
 </ul>
 
 
-<h5>Building the Examples</h5>
+<h5>Building the Epetra Examples</h5>
 
-The set of examples for NOX-Epetra are built by default whenever
-<code>libnoxepetra.a</code> is build.
-To disable building these
-examples (and the corresponding library checks), use, for example, 
-<ul>
-<li>
-<code>configure --enable-epetra --disable-epetra-examples</code>.
-</li>
-</ul>
+To compile the examples for NOX-Epetra, do the following:
+<blockquote>
+<code>configure --enable-epetra --enable-epetra-examples</code>.
+</blockquote>
 
 <h3>Using MPI</h3>
 
+NOX itself does not care about MPI. However, the Epetra-based examples
+can make use of MPI. So, we include some configuration options to
+support MPI.
 
 
 <h5>Using the MPI C++ Compiler</h5>
@@ -145,7 +207,6 @@ is explicitly specified.
 <p>Explicitly specify the MPI library without specifying the library directory.
 </p>
 </ul>
-
 
 </body>
 </html>
