@@ -896,7 +896,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     }      
   }
 
-  *total_nz = count;
+  *total_nz = count + Nrows; /* graph information for METIS exclude diag */
 
   if (count > N_nonzeros || count2 != NrowsMETIS) {
     fprintf( stderr,
@@ -1564,6 +1564,8 @@ int agg_offset, vertex_offset;
    /* take the decomposition as created by METIS and form the aggregates     */
    /* ********************************************************************** */
    
+   /* Note that total_nz is the number of nonzero blocks */
+
    total_nz = ML_Comm_GsumInt( comm, total_nz);
    i = ML_Comm_GsumInt( comm, Nrows);
 
