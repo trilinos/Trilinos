@@ -37,6 +37,7 @@
 #include "NOX_LineSearch_Manager.H" // class data element
 #include "NOX_Direction_Manager.H"  // class data element
 #include "NOX_Parameter_List.H"	    // class data element
+#include "NOX_Utils.H"		    // class data element
 
 namespace NOX {
 namespace Solver {
@@ -94,33 +95,36 @@ protected:
 protected:
   
   //! Current solution.
-  Abstract::Group* solnPtr;		
+  NOX::Abstract::Group* solnPtr;		
 
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Group* oldSolnPtr;	
+  NOX::Abstract::Group* oldSolnPtr;	
   //! Previous solution reference.
-  Abstract::Group& oldSoln;	
+  NOX::Abstract::Group& oldSoln;	
 
   //! Current search direction.pointer.
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Vector* dirPtr;
+  NOX::Abstract::Vector* dirPtr;
   //! Current search direction.reference.
-  Abstract::Vector& dir;
+  NOX::Abstract::Vector& dir;
 
   //! Stopping test.
-  StatusTest::Generic* testPtr;		
+  NOX::StatusTest::Generic* testPtr;		
 
   //! Input parameters.
-  Parameter::List params;	
+  NOX::Parameter::List params;	
 
+  //! Utils
+  NOX::Utils utils;
+  
   //! Linesearch. 
-  LineSearch::Manager lineSearch; 
+  NOX::LineSearch::Manager lineSearch; 
 
   //! %Search %Direction. 
-  Direction::Manager direction; 
+  NOX::Direction::Manager direction; 
 
   //! Current step.
   double step;			
@@ -129,7 +133,7 @@ protected:
   int nIter;                    
 
   //! %Status of nonlinear solver.
-  StatusTest::StatusType status;
+  NOX::StatusTest::StatusType status;
 
 };
 } // namespace Solver

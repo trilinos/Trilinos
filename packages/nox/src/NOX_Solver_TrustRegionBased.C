@@ -70,6 +70,7 @@ TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t,
   bVec(*bVecPtr),		// reference to just-created pointer
   testPtr(&t),			// pointer to t
   params(p),			// copy p
+  utils(params.sublist("Printing")), // inititalize utils
   newton(),			// initialize direction
   cauchy()			// initialize direction
 {
@@ -84,12 +85,9 @@ void TrustRegionBased::init()
   dx = 0;
   status = StatusTest::Unconverged;
 
-  // Set up utilities (i.e., set print processor, etc)
- Utils::setUtils(params);
-  
   // Print out initialization information
-  if (Utils::doPrint(Utils::Parameters)) {
-    cout << "\n" << Utils::fill(72) << "\n";
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+    cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
     params.print(cout,5);
   }
@@ -175,10 +173,10 @@ void TrustRegionBased::init()
   // Test the initial guess
   status = testPtr->checkStatus(*this);
 
-  if (Utils::doPrint(Utils::Parameters)) {
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
     cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
     testPtr->print(cout, 5);
-    cout <<"\n" << Utils::fill(72) << "\n";
+    cout <<"\n" << NOX::Utils::fill(72) << "\n";
   }
 
 }
@@ -188,6 +186,7 @@ bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t, const
   solnPtr = &grp;
   testPtr = &t;
   params = p;			
+  utils.reset(params.sublist("Printing"));
   init();
   return true;
 }
@@ -245,8 +244,8 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
   //! Improvement ratio = (oldF - newF) / (mold - mnew)
   double ratio = -1;
 
-  if (Utils::doPrint(Utils::InnerIteration)) {
-    cout << Utils::fill(72) << endl;
+  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+    cout << NOX::Utils::fill(72) << endl;
     cout << "-- Trust Region Inner Iteration --" << endl;
   }
 
@@ -335,19 +334,19 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
       double numerator = oldF - newF;
       double denominator = fabs(dir.dot(oldSoln.getGradient()) + 0.5 * bVec.dot(bVec));
       ratio = numerator / denominator;
-      if (Utils::doPrint(Utils::InnerIteration))
-	cout << "Ratio computation: " << Utils::sci(numerator) << "/" 
-	     << Utils::sci(denominator) << "=" << ratio << endl;
+      if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
+	cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
+	     << utils.sciformat(denominator) << "=" << ratio << endl;
       if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
 	ratio = -1;
     }
 
 
-    if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << "radius = " << Utils::sci(radius, 1);
+    if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
+      cout << "radius = " << utils.sciformat(radius, 1);
       cout << " ratio = " << setprecision(1) << setw(3) << ratio;
-      cout << " f = " << Utils::sci(sqrt(2*newF));
-      cout << " oldF = " << Utils::sci(sqrt(2*oldF));
+      cout << " f = " << utils.sciformat(sqrt(2*newF));
+      cout << " oldF = " << utils.sciformat(sqrt(2*oldF));
       cout << " ";
 
       switch(stepType) {
@@ -380,7 +379,7 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 
   // Evaluate the current status
   if ((radius <= minRadius) && (ratio < minRatio)) {
-    if (Utils::doPrint(Utils::InnerIteration))
+    if (utils.isPrintProcessAndType(Utils::InnerIteration))
       cout << "Using recovery step and resetting trust region." << endl;
     soln.computeX(oldSoln, newtonVec, recoveryStep);
     soln.computeF();
@@ -391,8 +390,8 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 
   status = test.checkStatus(*this);
  
-  if (Utils::doPrint(Utils::InnerIteration)) 
-    cout << Utils::fill(72) << endl;
+  if (utils.isPrintProcessAndType(Utils::InnerIteration)) 
+    cout << NOX::Utils::fill(72) << endl;
 
   // Return status.
   return status;
@@ -440,34 +439,34 @@ void TrustRegionBased::printUpdate()
 {
   // Print the status test parameters at each iteration if requested  
   if ((status == StatusTest::Unconverged) && 
-      (Utils::doPrint(Utils::OuterIterationStatusTest))) {
-    cout << Utils::fill(72) << "\n";
+      (utils.isPrintProcessAndType(NOX::Utils::OuterIterationStatusTest))) {
+    cout << NOX::Utils::fill(72) << "\n";
     cout << "-- Status Test Results --\n";    
     testPtr->print(cout);
-    cout << Utils::fill(72) << "\n";
+    cout << NOX::Utils::fill(72) << "\n";
   }
   
   double fmax = solnPtr->getF().norm(Abstract::Vector::MaxNorm);
-  if (Utils::doPrint(Utils::OuterIteration)) {
-    cout << "\n" << Utils::fill(72) << "\n";
+  if (utils.isPrintProcessAndType(NOX::Utils::OuterIteration)) {
+    cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "-- Newton Trust-Region Step " << nIter << " -- \n";
-    cout << "f = " << Utils::sci(sqrt(2*newF));
-    cout << " fmax = " << Utils::sci(fmax);
-    cout << "  dx = " << Utils::sci(dx);
-    cout << "  radius = " << Utils::sci(radius);
+    cout << "f = " << utils.sciformat(sqrt(2*newF));
+    cout << " fmax = " << utils.sciformat(fmax);
+    cout << "  dx = " << utils.sciformat(dx);
+    cout << "  radius = " << utils.sciformat(radius);
     if (status == StatusTest::Converged)
       cout << " (Converged!)";
     if (status == StatusTest::Failed)
       cout << " (Failed!)";
-    cout << "\n" << Utils::fill(72) << "\n" << endl;
+    cout << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   }
   
   if ((status != StatusTest::Unconverged) && 
-      (Utils::doPrint(Utils::OuterIteration))) {
-    cout << Utils::fill(72) << "\n";
+      (utils.isPrintProcessAndType(NOX::Utils::OuterIteration))) {
+    cout << NOX::Utils::fill(72) << "\n";
     cout << "-- Final Status Test Results --\n";    
     testPtr->print(cout);
-    cout << Utils::fill(72) << "\n";
+    cout << NOX::Utils::fill(72) << "\n";
   }
 }
 

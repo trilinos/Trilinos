@@ -63,6 +63,7 @@ NOX::Solver::LineSearchBased::LineSearchBased(NOX::Abstract::Group& xGrp,
   dir(*dirPtr),			// reference to just-created pointer
   testPtr(&t),			// pointer to t
   params(p),			// copy p
+  utils(params.sublist("Printing")), // intialize the utils
   lineSearch(params.sublist("Line Search")), // initialize the line search
   direction(params.sublist("Direction")) // initialize the direction
 {
@@ -77,11 +78,8 @@ void NOX::Solver::LineSearchBased::init()
   nIter = 0;
   status = NOX::StatusTest::Unconverged;
 
-  // Set up utilities (i.e., set print processor, etc)
-  NOX::Utils::setUtils(params);
-  
   // Print out initialization information
-  if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
     cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
     params.print(cout,5);
@@ -97,7 +95,7 @@ void NOX::Solver::LineSearchBased::init()
   // Test the initial guess
   status = testPtr->checkStatus(*this);
   if (status == NOX::StatusTest::Converged) {
-    if (NOX::Utils::doPrint(NOX::Utils::Warning)) {
+    if (utils.isPrintProcessAndType(NOX::Utils::Warning)) {
       cout << "Warning: NOX::Solver::LineSearchBased::init() - The solution passed "
 	   << "into the solver (either through constructor or reset method) "
 	   << "is already converged!  The solver wil not "
@@ -106,7 +104,7 @@ void NOX::Solver::LineSearchBased::init()
     }
   }
 
-  if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
     cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
     testPtr->print(cout, 5);
     cout <<"\n" << NOX::Utils::fill(72) << "\n";
@@ -120,7 +118,8 @@ bool NOX::Solver::LineSearchBased::reset(NOX::Abstract::Group& xGrp,
 {
   solnPtr = &xGrp;
   testPtr = &t;
-  params = p;			
+  params = p;		
+  utils.reset(params.sublist("Printing"));
   lineSearch.reset(params.sublist("Line Search"));	
   direction.reset(params.sublist("Direction"));
   init();
@@ -172,7 +171,7 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::iterate()
       status = NOX::StatusTest::Failed;
       return status;
     }
-    else if (NOX::Utils::doPrint(NOX::Utils::Warning))
+    else if (utils.isPrintProcessAndType(NOX::Utils::Warning))
       cout << "NOX::Solver::LineSearchBased::iterate - using recovery step for line search" << endl;
   }
 
@@ -239,7 +238,7 @@ void NOX::Solver::LineSearchBased::printUpdate()
 
   // Print the status test parameters at each iteration if requested  
   if ((status == NOX::StatusTest::Unconverged) && 
-      (NOX::Utils::doPrint(NOX::Utils::OuterIterationStatusTest))) {
+      (utils.isPrintProcessAndType(NOX::Utils::OuterIterationStatusTest))) {
     cout << NOX::Utils::fill(72) << "\n";
     cout << "-- Status Test Results --\n";    
     testPtr->print(cout);
@@ -247,18 +246,18 @@ void NOX::Solver::LineSearchBased::printUpdate()
   }
 
   // All processes participate in the computation of these norms...
-  if (NOX::Utils::doAllPrint(NOX::Utils::OuterIteration)) {
+  if (utils.isPrintType(NOX::Utils::OuterIteration)) {
     normSoln = solnPtr->getNormF();
     normStep = (nIter > 0) ? dir.norm() : 0;
   }
 
   // ...But only the print process actually prints the result.
-  if (NOX::Utils::doPrint(NOX::Utils::OuterIteration)) {
+  if (utils.isPrintProcessAndType(NOX::Utils::OuterIteration)) {
     cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "-- Nonlinear Solver Step " << nIter << " -- \n";
-    cout << "f = " << NOX::Utils::sci(normSoln);
-    cout << "  step = " << NOX::Utils::sci(step);
-    cout << "  dx = " << NOX::Utils::sci(normStep);
+    cout << "f = " << utils.sciformat(normSoln);
+    cout << "  step = " << utils.sciformat(step);
+    cout << "  dx = " << utils.sciformat(normStep);
     if (status == NOX::StatusTest::Converged)
       cout << " (Converged!)";
     if (status == NOX::StatusTest::Failed)
@@ -268,7 +267,7 @@ void NOX::Solver::LineSearchBased::printUpdate()
 
   // Print the final parameter values of the status test
   if ((status != NOX::StatusTest::Unconverged) && 
-      (NOX::Utils::doPrint(NOX::Utils::OuterIteration))) {
+      (utils.isPrintProcessAndType(NOX::Utils::OuterIteration))) {
     cout << NOX::Utils::fill(72) << "\n";
     cout << "-- Final Status Test Results --\n";    
     testPtr->print(cout);
@@ -281,3 +280,4 @@ double NOX::Solver::LineSearchBased::getStepSize() const
 {
   return step;
 }
+

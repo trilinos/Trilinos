@@ -37,6 +37,7 @@
 #include "NOX_LineSearch_Manager.H" // class data element
 #include "NOX_Direction_Manager.H"  // class data element
 #include "NOX_Parameter_List.H"	    // class data element
+#include "NOX_Utils.H"	            // class data element
 
 namespace NOX {
 namespace Solver {
@@ -192,6 +193,9 @@ protected:
 
   //! Input parameters.
   NOX::Parameter::List params;	
+
+  //! Printing Utils
+  NOX::Utils utils;
 
   //! %Newton %Search %Direction. 
   NOX::Direction::Manager newton; 
