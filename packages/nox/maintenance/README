@@ -9,6 +9,9 @@ find . -type f \
 	-not -path \*deps\* \
 	-not -path \*config\* \
 	-not -path \*maintenance\* \
+	-not -path \*autom4te\* \
+	-not -path \*doc/includes\* \
+	-not -path \*src-loca/doc\* \
 	-not -name \*~ \
 	-not -name .cvsignore \
 	-not -name \*.o \
@@ -21,4 +24,8 @@ find . -type f \
 	-not -name configure \
 	-not -name \*.tar.gz \
 	-not -name \*.a \
+	-not -name LICENSE \
+	-not -name .\* \
+	-not -name \*.gif \
+	-not -name nox.tag \
 	-exec maintenance/autoheader {} maintenance/header.txt \;
