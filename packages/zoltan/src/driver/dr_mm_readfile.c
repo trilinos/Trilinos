@@ -11,11 +11,6 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
@@ -24,6 +19,11 @@ extern "C" {
 #include "dr_util_const.h"
 #include "dr_input_const.h" /* just for the matrix_obj define's */
 #include "dr_mmio.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 /* struct for indices i & j and a value */
 struct ijv
@@ -222,3 +222,6 @@ static int comp(const void *a, const void *b)
   return ((struct ijv *)a)->i - ((struct ijv *)b)->i;
 }
 
+#ifdef __cplusplus
+}
+#endif
