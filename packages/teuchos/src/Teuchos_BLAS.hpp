@@ -72,22 +72,21 @@ namespace Teuchos
     //@}
 
     //@{ \name Level 2 BLAS Routines.
-    void GEMV(char Trans, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda,
-                ScalarType* x, OrdinalType incx, ScalarType beta, ScalarType* y, OrdinalType incy);
-    void GER(int m, int n, ScalarType alpha, ScalarType* x, int incx, ScalarType* y, int incy,
-                ScalarType* A, int lda);
-    void TRMV(char Uplo, char Trans, char Diag, int n, ScalarType* A, int lda, ScalarType* x, int incx);
+    void GEMV(char Trans, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, 
+	      OrdinalType lda, ScalarType* x, OrdinalType incx, ScalarType beta, ScalarType* y, OrdinalType incy);
+    void TRMV(char Uplo, char Trans, char Diag, OrdinalType n, ScalarType* A, 
+	      OrdinalType lda, ScalarType* x, OrdinalType incx);
+    void GER(OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx, 
+	     ScalarType* y, OrdinalType incy, ScalarType* A, OrdinalType lda);
     //@}
     
     //@{ \name Level 3 BLAS Routines. 
-    void GEMM(char TransA, char TransB, int m, int n, int k, ScalarType alpha, ScalarType* A, int lda,
-                ScalarType* B, int ldb, ScalarType beta, ScalarType* C, int ldc);
-    void SYMM(char Side, char Uplo, int m, int n, ScalarType alpha, ScalarType* A, int lda,
-                ScalarType* B, int ldb, ScalarType beta, ScalarType* C, int ldc);
-    void TRMM(char Side, char Uplo, char TransA, char Diag, int m, int n,
-                ScalarType alpha, ScalarType* A, int lda, ScalarType* B, int ldb);
-    void TRSM(char Side, char Uplo, char TransA, char Diag, int m, int n,
-                ScalarType alpha, ScalarType* A, int lda, ScalarType* B, int ldb);
+    void GEMM(char TransA, char TransB, OrdinalType m, OrdinalType n, OrdinalType k, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc);
+    void SYMM(char Side, char Uplo, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc);
+    void TRMM(char Side, char Uplo, char TransA, char Diag, OrdinalType m, OrdinalType n,
+                ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb);
+    void TRSM(char Side, char Uplo, char TransA, char Diag, OrdinalType m, OrdinalType n,
+                ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb);
     //@}
   };
 
@@ -111,7 +110,7 @@ namespace Teuchos
             ix += incx;
         }
     }
-  }
+  } /* end SCAL */
 
   template<typename OrdinalType, typename ScalarType>
   void BLAS<OrdinalType, ScalarType>::COPY(OrdinalType n, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy)
@@ -131,7 +130,7 @@ namespace Teuchos
 	    iy += incy;
           }
       }
-  }
+  } /* end COPY */
 
   template<typename OrdinalType, typename ScalarType>
   void BLAS<OrdinalType, ScalarType>::AXPY(OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy)
@@ -152,7 +151,7 @@ namespace Teuchos
 	    iy += incy;
           }
       }
-  }
+  } /* end AXPY */
 
   template<typename OrdinalType, typename ScalarType>
   ScalarType BLAS<OrdinalType, ScalarType>::ASUM(OrdinalType n, ScalarType* x, OrdinalType incx)
@@ -172,7 +171,7 @@ namespace Teuchos
           }
     } 
    return result;
-  }
+  } /* end ASUM */
   
   template<typename OrdinalType, typename ScalarType>
   ScalarType BLAS<OrdinalType, ScalarType>::DOT(OrdinalType n, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy)
@@ -195,7 +194,7 @@ namespace Teuchos
 	  }
       }
     return result;
-  }
+  } /* end DOT */
   
   template<typename OrdinalType, typename ScalarType>
   ScalarType BLAS<OrdinalType, ScalarType>::NRM2(OrdinalType n, ScalarType* x, OrdinalType incx)
@@ -217,7 +216,7 @@ namespace Teuchos
     	result = ScalarTraits<ScalarType>::squareroot(result);
       }	
     return result;
-  }
+  } /* end NRM2 */
   
   template<typename OrdinalType, typename ScalarType>
   OrdinalType BLAS<OrdinalType, ScalarType>::IAMAX(OrdinalType n, ScalarType* x, OrdinalType incx)
@@ -243,7 +242,7 @@ namespace Teuchos
 	  }
       }
     return result + 1; // the BLAS I?AMAX functions return 1-indexed (Fortran-style) values
-  }
+  } /* end IAMAX */
 
 //------------------------------------------------------------------------------------------
 //      LEVEL 2 BLAS ROUTINES
@@ -278,11 +277,11 @@ namespace Teuchos
 	cout << "BLAS::GEMV Error: LDA < MAX(1,M)"<< endl;	    
 	BadArgument = true;
     }
-    if( incx == 0 ) {
+    if( incx == izero ) {
 	cout << "BLAS::GEMV Error: INCX == 0"<< endl;
 	BadArgument = true;
     }
-    if( incy == 0 ) {
+    if( incy == izero ) {
 	cout << "BLAS::GEMV Error: INCY == 0"<< endl;
 	BadArgument = true;
     }
@@ -383,570 +382,838 @@ namespace Teuchos
 	}
       }
     } /* if (!BadArgument) */
-  }
+  } /* end GEMV */
 
+ template<typename OrdinalType, typename ScalarType>
+ void BLAS<OrdinalType, ScalarType>::TRMV(char Uplo, char Trans, char Diag, OrdinalType n, ScalarType* A, OrdinalType lda, ScalarType* x, OrdinalType incx)
+  {
+    OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
+    OrdinalType ione = OrdinalTraits<OrdinalType>::one();
+    ScalarType zero = ScalarTraits<ScalarType>::zero();
+    ScalarType one = ScalarTraits<ScalarType>::one();
+    bool BadArgument = false;
+
+    // Quick return if there is nothing to do!
+    if( n == izero ){ return; }
     
-  template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::GER(int m, int n, ScalarType alpha, ScalarType* x, int incx, ScalarType* y, int incy, ScalarType* A, int lda)
-  {
-    OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
-    OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    int i, j;
-    for(i = 0; i < m; i++) {
-      for(j = 0; j < n; j++) {
-	A[(j * m) + i] += (alpha * x[i] * y[j]); }}
-  }
-  
-  template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::TRMV(char Uplo, char Trans, char Diag, int n, ScalarType* A, int lda, ScalarType* x, int incx)
-  {
-    OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
-    OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    bool BadArgument = 0;
-    if(!((Uplo == 'U') || (Uplo == 'L'))) {
-      cout << "BLAS::TRMV Error: TRIANGULAR == " << Uplo << endl;
-      BadArgument = 1; }
-    if(!((Trans == 'N') || (Trans == 'T') || (Trans == 'C'))) {
-      cout << "BLAS::TRMV Error: TRANSPOSE == " << Trans << endl;
-      BadArgument = 1; }
-    if(!((Diag == 'N') || (Diag == 'U'))) {
-      cout << "BLAS::TRMV Error: UNITDIAGONAL == " << Diag << endl;
-      BadArgument = 1; }
+    // Otherwise, we need to check the argument list.
+    if(!((toupper(Uplo) == 'U') || (toupper(Uplo) == 'L'))) {
+      cout << "BLAS::TRMV Error: UPLO == "<< Uplo << endl;
+      BadArgument = true;
+    }
+    if(!((toupper(Trans) == 'N') || (toupper(Trans) == 'T') || (toupper(Trans) == 'C'))) {
+      cout << "BLAS::TRMV Error: TRANS == " << Trans << endl;
+      BadArgument = true; 
+    }
+    if(!((toupper(Diag) == 'U') || (toupper(Diag) == 'N'))) {
+      cout << "BLAS::TRMV Error: DIAG == "<< Diag << endl;
+      BadArgument = true;
+    }
+    if( n < izero ) { 
+      cout << "BLAS::TRMV Error: N == " << n << endl;	    
+      BadArgument = true;
+    }
+    if( lda < n ) { 
+      cout << "BLAS::TRMV Error: LDA < MAX(1,N)"<< endl;	    
+      BadArgument = true;
+    }
+    if( incx == izero ) {
+      cout << "BLAS::TRMV Error: INCX == 0"<< endl;
+      BadArgument = true;
+    }
+
     if(!BadArgument) {
-      ScalarType* temp = new ScalarType[n];
-      int i, j;
-      for(i = 0; i < n; i++) {
-	temp[i] = ScalarTraits<ScalarType>::zero(); }
-      if((Uplo == 'U') || ((Uplo == 'L') && ((Trans == 'T') || (Trans == 'C')))) {
-	if(Diag == 'N') {
-	  for(i = 0; i < n; i++) {
-	    for(j = i; j < n; j++) {
-	      temp[i] += A[(j * n) + i] * x[j]; }}}
-	else if(Diag == 'U') {
-	  for(i = 0; i < n; i++) {
-	    for(j = i; j < n; j++) {
-	      if(i == j) {
-		temp[i] += x[j]; }
-	      else {
-		temp[i] += A[(j * n) + i] * x[j]; }}}}}
-      else if((Uplo == 'L') || ((Uplo == 'U') && ((Trans == 'T') || (Trans == 'C')))) {
-	if(Diag == 'N') {
-	  for(i = 0; i < n; i++) {
-	    for(j = i; j < n; j++) {
-	      temp[i] += A[(j * n) + i] * x[j]; }}}
-	else if(Diag == 'U') {
-	  for(i = 0; i < n; i++) {
-	    for(j = i; j < n; j++) {
-	      if(i == j) {
-		temp[i] += x[j]; }
-	      else {
-		temp[i] += A[(j * n) + i] * x[j]; }}}}}
-      for(i = 0; i < n; i++) {
-	x[i] = temp[i]; } 
-      delete [] temp; }
-  }
+      OrdinalType i, j, ix, jx, kx = izero;
+      ScalarType temp;
+      bool NoUnit = (toupper(Diag) == 'N');
+
+      // Set the starting pointer for the vector x if incx < 0.
+      if (incx < izero) { kx = (-n+ione)*incx; }
+
+      // Start the operations for a nontransposed triangular matrix 
+      if (toupper(Trans) == 'N') {
+	/* Compute x = A*x */
+	if (toupper(Uplo) == 'U') {
+	  /* A is an upper triangular matrix */
+	  if (incx == ione) {
+	    for (j=izero; j<n; j++) {
+	      if (x[j] != zero) {
+		temp = x[j];
+		for (i=izero; i<j; i++) {
+		  x[i] += temp*A[j*lda + i];
+		}
+		if (NoUnit) 
+		  x[j] *= A[j*lda + j];
+	      }
+	    }
+	  } else {
+	    jx = kx;
+	    for (j=izero; j<n; j++) {
+	      if (x[jx] != zero) {
+		temp = x[jx];
+		ix = kx;
+		for (i=izero; i<j; i++) {
+		  x[ix] += temp*A[j*lda + i];
+		  ix += incx;
+		}
+		if (NoUnit)
+		  x[jx] *= A[j*lda + j];
+	      }
+	      jx += incx;
+	    }
+	  } /* if (incx == ione) */
+	} else { /* A is a lower triangular matrix */
+	  if (incx == ione) {
+	    for (j=n-ione; j>-ione; j--) {
+	      if (x[j] != zero) {
+		temp = x[j];
+		for (i=n-ione; i>j; i--) {
+		  x[i] += temp*A[j*lda + i];
+		}
+		if (NoUnit)
+		  x[j] *= A[j*lda + j];
+	      }
+	    }
+	  } else {
+	    kx += (n-ione)*incx;
+	    jx = kx;
+	    for (j=n-ione; j>-ione; j--) {
+	      if (x[jx] != zero) {
+		temp = x[jx];
+		ix = kx;
+		for (i=n-ione; i>j; i--) {
+		  x[ix] += temp*A[j*lda + i];
+		  ix -= incx;
+		}
+		if (NoUnit) 
+		  x[jx] *= A[j*lda + j];
+	      }
+	      jx -= incx;
+	    }
+	  }
+	} /* if (toupper(Uplo)=='U') */
+      } else { /* A is transposed/conjugated */
+	/* Compute x = A'*x */
+	if (toupper(Uplo)=='U') {
+	  /* A is an upper triangular matrix */
+	  if (incx == ione) {
+	    for (j=n-ione; j>-ione; j--) {
+	      temp = x[j];
+	      if (NoUnit)
+		temp *= A[j*lda + j];
+	      for (i=j-ione; i>-ione; i--) {
+		temp += A[j*lda + i]*x[i];
+	      }
+	      x[j] = temp;
+	    }
+	  } else {
+	    jx = kx + (n-ione)*incx;
+	    for (j=n-ione; j>-ione; j--) {
+	      temp = x[jx];
+	      ix = jx;
+	      if (NoUnit)
+		temp *= A[j*lda + j];
+	      for (i=j-ione; i>-ione; i--) {
+		ix -= incx;
+		temp += A[j*lda + i]*x[ix];
+	      }
+	      x[jx] = temp;
+	      jx -= incx;
+	    }
+	  }
+	} else {
+	  /* A is a lower triangular matrix */
+	  if (incx == ione) {
+	    for (j=izero; j<n; j++) {
+	      temp = x[j];
+	      if (NoUnit)
+		temp *= A[j*lda + j];
+	      for (i=j+ione; i<n; i++) {
+		temp += A[j*lda + i]*x[i];
+	      }
+	      x[j] = temp;
+	    }
+	  } else {
+	    jx = kx;
+	    for (j=izero; j<n; j++) {
+	      temp = x[jx];
+	      ix = jx;
+	      if (NoUnit) 
+		temp *= A[j*lda + j];
+	      for (i=j+ione; i<n; i++) {
+		ix += incx;
+		temp += A[j*lda + i]*x[ix];
+	      }
+	      x[jx] = temp;
+	      jx += incx;	      
+	    }
+	  }
+	} /* if (toupper(Uplo)=='U') */
+      } /* if (toupper(Trans)=='N') */
+    } /* if (!BadArgument) */
+  } /* end TRMV */
+        
+  template<typename OrdinalType, typename ScalarType>
+  void BLAS<OrdinalType, ScalarType>::GER(OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* x, OrdinalType incx, ScalarType* y, OrdinalType incy, ScalarType* A, OrdinalType lda)
+  {
+    OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
+    OrdinalType ione = OrdinalTraits<OrdinalType>::one();
+    ScalarType zero = ScalarTraits<ScalarType>::zero();
+    ScalarType one = ScalarTraits<ScalarType>::one();
+    bool BadArgument = false;
+
+    // Quick return if there is nothing to do!
+    if( m == izero || n == izero || alpha == zero ){ return; }
     
+    // Otherwise, we need to check the argument list.
+    if( m < izero ) { 
+	cout << "BLAS::GER Error: M == " << m << endl;	    
+	BadArgument = true;
+    }
+    if( n < izero ) { 
+	cout << "BLAS::GER Error: N == " << n << endl;	    
+	BadArgument = true;
+    }
+    if( lda < m ) { 
+	cout << "BLAS::GER Error: LDA < MAX(1,M)"<< endl;	    
+	BadArgument = true;
+    }
+    if( incx == 0 ) {
+	cout << "BLAS::GER Error: INCX == 0"<< endl;
+	BadArgument = true;
+    }
+    if( incy == 0 ) {
+	cout << "BLAS::GER Error: INCY == 0"<< endl;
+	BadArgument = true;
+    }
+
+    if(!BadArgument) {
+      OrdinalType i, j, ix, jy = izero, kx = izero;
+      ScalarType temp;
+
+      // Set the starting pointers for the vectors x and y if incx/y < 0.
+      if (incx < izero) { kx = (-m+ione)*incx; }
+      if (incy < izero) { jy = (-n+ione)*incy; }
+
+      // Start the operations for incx == 1
+      if( incx == ione ) {
+	for( j=izero; j<n; j++ ) {
+	  if ( y[jy] != zero ) {
+	    temp = alpha*y[jy];
+	    for ( i=izero; i<m; i++ ) {
+	      A[j*lda + i] += x[i]*temp;
+	    }
+	  }
+	  jy += incy;
+	}
+      } 
+      else { // Start the operations for incx != 1
+	for( j=izero; j<n; j++ ) {
+	  if ( y[jy] != zero ) {
+	    temp = alpha*y[jy];
+	    ix = kx;
+	    for( i=izero; i<m; i++ ) {
+	      A[j*lda + i] += x[ix]*temp;
+	      ix += incx;
+	    }
+	  }
+	  jy += incy;
+	}
+      }
+    } /* if(!BadArgument) */
+  } /* end GER */
+  
 //------------------------------------------------------------------------------------------
 //      LEVEL 3 BLAS ROUTINES
 //------------------------------------------------------------------------------------------
         
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::GEMM(char TransA, char TransB, int m, int n, int p, ScalarType alpha, ScalarType* A, int lda, ScalarType* B, int ldb, ScalarType beta, ScalarType* C, int ldc)
+  void BLAS<OrdinalType, ScalarType>::GEMM(char TransA, char TransB, OrdinalType m, OrdinalType n, OrdinalType k, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    bool BadArgument = 0;
-    if(!((TransA == 'N') || (TransA == 'T') || (TransA == 'C'))) {
+    ScalarType zero = ScalarTraits<ScalarType>::zero();
+    ScalarType one = ScalarTraits<ScalarType>::one();
+    OrdinalType i, j, p;
+    OrdinalType NRowA = m, NColA = k, NRowB = k;
+    ScalarType temp;
+    bool BadArgument = false;
+
+    // Change dimensions of matrix if either matrix is transposed
+    if( !(toupper(TransA)=='N') ) {
+      NRowA = k;
+      NColA = m;
+    }
+    if( !(toupper(TransB)=='N') ) {
+      NRowB = n;
+    }
+
+    // Quick return if there is nothing to do!
+    if( (m==izero) || (n==izero) || (((alpha==zero)||(k==izero)) && (beta==one)) ){ return; }
+    
+    // Otherwise, we need to check the argument list.
+    if(!((toupper(TransA) == 'N') || (toupper(TransA) == 'T') || (toupper(TransA) == 'C'))) {
       cout << "BLAS::GEMM Error: TRANSA == " << TransA << endl;
-      BadArgument = 1; }
-    if(!((TransB == 'N') || (TransB == 'T') || (TransB == 'C'))) {
+      BadArgument = true; 
+    }
+    if(!((toupper(TransB) == 'N') || (toupper(TransB) == 'T') || (toupper(TransB) == 'C'))) {
       cout << "BLAS::GEMM Error: TRANSB == " << TransB << endl;
-      BadArgument = 1; }
+      BadArgument = true; 
+    }
+    if( m < izero ) { 
+      cout << "BLAS::GEMM Error: M == " << m << endl;	    
+      BadArgument = true;
+    }
+    if( n < izero ) { 
+      cout << "BLAS::GEMM Error: N == " << n << endl;	    
+      BadArgument = true;
+    }
+    if( k < izero ) { 
+      cout << "BLAS::GEMM Error: K == " << k << endl;	    
+      BadArgument = true;
+    }
+    if( lda < NRowA ) { 
+      cout << "BLAS::GEMM Error: LDA < MAX(1,M)"<< endl;	    
+      BadArgument = true;
+    }
+    if( ldb < NRowB ) { 
+      cout << "BLAS::GEMM Error: LDB < MAX(1,K)"<< endl;	    
+      BadArgument = true;
+    }
+     if( ldc < m ) { 
+      cout << "BLAS::GEMM Error: LDC < MAX(1,M)"<< endl;	    
+      BadArgument = true;
+    }
+
     if(!BadArgument) {
-      ScalarType zero = ScalarTraits<ScalarType>::zero();
-      ScalarType one = ScalarTraits<ScalarType>::one();
-      int i, j, k;
-      if(beta == zero) {
-	for(i = 0; i < (m * n); i++) {
-	  C[i] = zero; }}
-      else {
-	for(i = 0; i < (m * n); i++) {
-	  C[i] *= beta; }}
-      if(alpha != zero) {
-	if(alpha == one) {
-	  if(TransA == 'N') {
-	    if(TransB == 'N') {
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < p; k++) {
-		    C[i + (j * m)] += (A[i + (k * m)] * B[k + (j * p)]); }}}}
-	    else { // TransB == T || C
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < p; k++) {
-		    C[i + (j * m)] += (A[i + (k * m)] * B[j + (k * n)]); }}}}}
-	  else { // TransA == T || C
-	    if(TransB == 'N') {
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < p; k++) {
-		    C[i + (j * m)] += (A[k + (i * p)] * B[k + (j * p)]); }}}}
-	    else { // TransB == T || C
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < p; k++) {
-		    C[i + (j * m)] += (A[k + (i * p)] * B[j + (k * n)]); }}}}}}
-	else { // alpha is neither 1 nor 0 
-	  if(TransA == 'N') {
-	    if(TransB == 'N') {
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < p; k++) {
-		    C[i + (j * m)] += (alpha * A[i + (k * m)] * B[k + (j * p)]); }}}}
-	    else { // TransB == T || C
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < p; k++) {
-		    C[i + (j * m)] += (alpha * A[i + (k * m)] * B[j + (k * n)]); }}}}}
-	  else { // TransA == T || C
-	    if(TransB == 'N') {
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < p; k++) {
-		    C[i + (j * m)] += (alpha * A[k + (i * p)] * B[k + (j * p)]); }}}}
-	    else { // TransB == T || C
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < p; k++) {
-		    C[i + (j * m)] += (alpha * A[k + (i * p)] * B[j + (k * n)]); }}}}}}}}
-  }
+
+      // Only need to scale the resulting matrix C.
+      if( alpha == zero ) {
+	if( beta == zero ) {
+	  for (j=izero; j<n; j++) {
+	    for (i=izero; i<m; i++) {
+	      C[j*ldc + i] = zero;
+	    }
+	  }
+	} else {
+	  for (j=izero; j<n; j++) {
+	    for (i=izero; i<m; i++) {
+	      C[j*ldc + i] *= beta;
+	    }
+	  }
+	}
+	return;
+      }
+      //
+      // Now start the operations.
+      //
+      if ( toupper(TransB)=='N' ) {
+	if ( toupper(TransA)=='N' ) {
+	  // Compute C = alpha*A*B + beta*C
+	  for (j=izero; j<n; j++) {
+	    if( beta == zero ) {
+	      for (i=izero; i<m; i++){
+		C[j*ldc + i] = zero;
+	      }
+	    } else if( beta != one ) {
+	      for (i=izero; i<m; i++){
+		C[j*ldc + i] *= beta;
+	      }
+	    }
+	    for (p=izero; p<k; p++){
+	      if (B[j*ldb + p] != zero ){
+		temp = alpha*B[j*ldb + p];
+		for (i=izero; i<m; i++) {
+		  C[j*ldc + i] += temp*A[p*lda + i];
+		}
+	      }
+	    }
+	  }
+	} else {
+	  // Compute C = alpha*A'*B + beta*C
+	  for (j=izero; j<n; j++) {
+	    for (i=izero; i<m; i++) {
+	      temp = zero;
+	      for (p=izero; p<k; p++) {
+		temp += A[i*lda + p]*B[j*ldb + p];
+	      }
+	      if (beta == zero) {
+		C[j*ldc + i] = alpha*temp;
+	      } else {
+		C[j*ldc + i] = alpha*temp + beta*C[j*ldc + i];
+	      }
+	    }
+	  }
+	}
+      } else {
+	if ( toupper(TransA)=='N' ) {
+	  // Compute C = alpha*A*B' + beta*C
+	  for (j=izero; j<n; j++) {
+	    if (beta == zero) {
+	      for (i=izero; i<m; i++) {
+		C[j*ldc + i] = zero;
+	      } 
+	    } else if ( beta != one ) {
+	      for (i=izero; i<m; i++) {
+		C[j*ldc + i] *= beta;
+	      }
+	    }
+	    for (p=izero; p<k; p++) {
+	      if (B[p*ldb + j] != zero) {
+		temp = alpha*B[p*ldb + j];
+		for (i=izero; i<m; i++) {
+		  C[j*ldc + i] += temp*A[p*lda + i];
+		}
+	      }
+	    }
+	  }
+	} else {
+	  // Compute C += alpha*A'*B' + beta*C
+	  for (j=izero; j<n; j++) {
+	    for (i=izero; i<m; i++) {
+	      temp = zero;
+	      for (p=izero; p<k; p++) {
+		temp += A[i*lda + p]*B[p*ldb + j];
+	      }
+	      if (beta == zero) {
+		C[j*ldc + i] = alpha*temp;
+	      } else {
+		C[j*ldc + i] = alpha*temp + beta*C[j*ldc + i];
+	      }
+	    }
+	  }
+	} // end if (toupper(TransA)=='N') ...
+      } // end if (toupper(TransB)=='N') ...
+    } // end if (!BadArgument) ...
+  } // end of GEMM
+
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::SYMM(char Side, char Uplo, int m, int n, ScalarType alpha, ScalarType* A, int lda, ScalarType* B, int ldb, ScalarType beta, ScalarType* C, int ldc)
+  void BLAS<OrdinalType, ScalarType>::SYMM(char Side, char Uplo, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb, ScalarType beta, ScalarType* C, OrdinalType ldc)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     ScalarType zero = ScalarTraits<ScalarType>::zero();
     ScalarType one = ScalarTraits<ScalarType>::one();
-    bool BadArgument = 0;
-    if(!((Side == 'L') || (Side == 'R'))) {
-      cout << "BLAS::GEMM Error: SIDE == " << Side << endl;
-      BadArgument = 1; }
-    if(!((Uplo == 'L') || (Uplo == 'U'))) {
-      cout << "BLAS::GEMM Error: UPLO == " << Uplo << endl;
-      BadArgument = 1; }
+    OrdinalType i, j, k, NRowA = m;
+    ScalarType temp1, temp2;
+    bool BadArgument = false;
+    bool Upper = (toupper(Uplo) == 'U');
+    if (toupper(Side) == 'R') { NRowA = n; }
+    
+    // Quick return.
+    if ( (m==izero) || (n==izero) || ( (alpha==zero)&&(beta==one) ) ) { return; }
+
+    if(!((toupper(Side) == 'L') || (toupper(Side) == 'R'))) {
+      cout << "BLAS::SYMM Error: SIDE == " << Side << endl;
+      BadArgument = true; }
+    if(!((toupper(Uplo) == 'L') || Upper)) {
+      cout << "BLAS::SYMM Error: UPLO == " << Uplo << endl;
+      BadArgument = true; }
+    if( m < 0 ) { 
+      cout << "BLAS::SYMM Error: M == "<< m << endl;
+      BadArgument = true; }
+    if( n < 0 ) {
+      cout << "BLAS::SYMM Error: N == "<< n << endl;
+      BadArgument = true; }
+    if( lda < NRowA ) {
+      cout << "BLAS::SYMM Error: LDA == "<<lda<<endl;
+      BadArgument = true; }
+    if( ldb < m ) {
+      cout << "BLAS::SYMM Error: LDB == "<<ldb<<endl;
+      BadArgument = true; }
+    if( ldc < m ) {
+      cout << "BLAS::SYMM Error: LDC == "<<ldc<<endl;
+      BadArgument = true; }
+
     if(!BadArgument) {
-      int i, j, k;
-      if(beta == zero) {
-	for(i = 0; i < (m * n); i++) {
-	  C[i] = zero; }} 
-      else {
-	for(i = 0; i < (m * n); i++) {
-	  C[i] *= beta; }}
-      if(alpha != zero) {
-	if(alpha == one) {
-	  if(Side == 'L') {
-	    if(Uplo == 'U') {
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < m; k++) {
-		    if(k < i) {
-		      C[i + (j * m)] += (A[k + (i * m)] * B[k + (j * m)]); }
-		    else {
-		      C[i + (j * m)] += (A[i + (k * m)] * B[k + (j * m)]); }}}}}
-	    else { // Uplo == L
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < m; k++) {
-		    if(k < i) {
-		      C[i + (j * m)] += (A[i + (k * m)] * B[k + (j * m)]); }
-		    else {
-		      C[i + (j * m)] += (A[k + (i * m)] * B[k + (j * m)]); }}}}}}
-	  else { // Side == R
-	    if(Uplo == 'U') {
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < n; k++) {
-		    if(k < j) {
-		      C[i + (j * m)] += (B[i + (k * m)] * A[k + (j * n)]); }
-		    else {
-		      C[i + (j * m)] += (B[i + (k * m)] * A[j + (k * n)]); }}}}}
-	    else { // Uplo == L
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < n; k++) {
-		    if(k < j) {
-		      C[i + (j * m)] += (B[i + (k * m)] * A[j + (k * n)]); } 
-		    else {
-		      C[i + (j * m)] += (B[i + (k * m)] * A[k + (j * n)]); }}}}}}}
-	else { // alpha is neither 1 nor 0
-	  if(Side == 'L') {
-	    if(Uplo == 'U') {
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < m; k++) {
-		    if(k < i) {
-		      C[i + (j * m)] += (alpha * A[k + (i * m)] * B[k + (j * m)]); }
-		    else {
-		      C[i + (j * m)] += (alpha * A[i + (k * m)] * B[k + (j * m)]); }}}}}
-	    else { // Uplo == L
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < m; k++) {
-		    if(k < i) {
-		      C[i + (j * m)] += (alpha * A[i + (k * m)] * B[k + (j * m)]); }
-		    else {
-		      C[i + (j * m)] += (alpha * A[k + (i * m)] * B[k + (j * m)]); }}}}}}
-	  else { // Side == R
-	    if(Uplo == 'U') {
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < n; k++) {
-		    if(k < j) {
-		      C[i + (j * m)] += (alpha * B[i + (k * m)] * A[k + (j * n)]); }
-		    else {
-		      C[i + (j * m)] += (alpha * B[i + (k * m)] * A[j + (k * n)]); }}}}}
-	    else { // Uplo == L
-	      for(i = 0; i < m; i++) {
-		for(j = 0; j < n; j++) {
-		  for(k = 0; k < n; k++) { 
-		    if(k < j) { 
-		      C[i + (j * m)] += (alpha * B[i + (k * m)] * A[j + (k * n)]); }
-		    else {
-		      C[i + (j * m)] += (alpha * B[i + (k * m)] * A[k + (j * n)]); }}}}}}}}}
-  }
+
+      // Only need to scale C and return.
+      if (alpha == zero) {
+	if (beta == zero ) {
+	  for (j=izero; j<n; j++) {
+	    for (i=izero; i<m; i++) {
+	      C[j*ldc + i] = zero;
+	    }
+	  }
+	} else {
+	  for (j=izero; j<n; j++) {
+	    for (i=izero; i<m; i++) {
+	      C[j*ldc + i] *= beta;
+	    }
+	  }
+	}
+	return;
+      }
+
+      if ( toupper(Side) == 'L') {
+	// Compute C = alpha*A*B + beta*C
+
+	if (Upper) {
+	  // The symmetric part of A is stored in the upper triangular part of the matrix.
+	  for (j=izero; j<n; j++) {
+	    for (i=izero; i<m; i++) {
+	      temp1 = alpha*B[j*ldb + i];
+	      temp2 = zero;
+	      for (k=izero; k<i; k++) {
+		C[j*ldc + k] += temp1*A[i*lda + k];
+		temp2 += B[j*ldb + k]*A[i*lda + k];
+	      }
+	      if (beta == zero) {
+		C[j*ldc + i] = temp1*A[i*lda + i] + alpha*temp2;
+	      } else {
+		C[j*ldc + i] = beta*C[j*ldc + i] + temp1*A[i*lda + i] + alpha*temp2;
+	      }
+	    }
+	  }
+	} else {
+	  // The symmetric part of A is stored in the lower triangular part of the matrix.
+	  for (j=izero; j<n; j++) {
+	    for (i=m-ione; i>-ione; i--) {
+	      temp1 = alpha*B[j*ldb + i];
+	      temp2 = zero;
+	      for (k=i+ione; k<m; k++) {
+		C[j*ldc + k] += temp1*A[i*lda + k];
+		temp2 += B[j*ldb + k]*A[i*lda + k];
+	      }
+	      if (beta == zero) {
+		C[j*ldc + i] = temp1*A[i*lda + i] + alpha*temp2;
+	      } else {
+		C[j*ldc + i] = beta*C[j*ldc + i] + temp1*A[i*lda + i] + alpha*temp2;
+	      }
+	    }
+	  }
+	}
+      } else {
+	// Compute C = alpha*B*A + beta*C.
+	for (j=izero; j<n; j++) {
+	  temp1 = alpha*A[j*lda + j];
+	  if (beta == zero) {
+	    for (i=izero; i<m; i++) {
+	      C[j*ldc + i] = temp1*B[j*ldb + i];
+	    }
+	  } else {
+	    for (i=izero; i<m; i++) {
+	      C[j*ldc + i] = beta*C[j*ldc + i] + temp1*B[j*ldb + i];
+	    }
+	  }
+	  for (k=izero; k<j; k++) {
+	    if (Upper) {
+	      temp1 = alpha*A[j*lda + k];
+	    } else {
+	      temp1 = alpha*A[k*lda + j];
+	    }
+	    for (i=izero; i<m; i++) {
+	      C[j*ldc + i] += temp1*B[k*ldb + i];
+	    }
+	  }
+	  for (k=j+ione; k<n; k++) {
+	    if (Upper) {
+	      temp1 = alpha*A[k*lda + j];
+	    } else {
+	      temp1 = alpha*A[j*lda + k];
+	    }
+	    for (i=izero; i<m; i++) {
+	      C[j*ldc + i] += temp1*B[k*ldb + i];
+	    }
+	  }
+	}
+      } // end if (toupper(Side)=='L') ...
+    } // end if(!BadArgument) ...
+} // end SYMM
   
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::TRMM(char Side, char Uplo, char TransA, char Diag, int m, int n, ScalarType alpha, ScalarType* A, int lda, ScalarType* B, int ldb)
+  void BLAS<OrdinalType, ScalarType>::TRMM(char Side, char Uplo, char TransA, char Diag, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     ScalarType zero = ScalarTraits<ScalarType>::zero();
     ScalarType one = ScalarTraits<ScalarType>::one();
-    bool BadArgument = 0;
-    if(!((Side == 'L') || (Side == 'R'))) {
-      cout << "BLAS::GEMM Error: SIDE == " << Side << endl;
-      BadArgument = 1; }
-    if(!((Uplo == 'L') || (Uplo == 'U'))) {
-      cout << "BLAS::GEMM Error: UPLO == " << Uplo << endl;
-      BadArgument = 1; }
-    if(!((TransA == 'N') || (TransA == 'T') || (TransA == 'C'))) {
-      cout << "BLAS::GEMM Error: TRANSA == " << TransA << endl;
-      BadArgument = 1; }
-    if(!((Diag == 'N') || (Diag == 'U'))) {
-      cout << "BLAS::GEMM Error: DIAG == " << Diag << endl;
-      BadArgument = 1; }
+    OrdinalType i, j, k, NRowA = m;
+    ScalarType temp;
+    bool BadArgument = false;
+    bool LSide = (toupper(Side) == 'L');
+    bool NoUnit = (toupper(Diag) == 'N');
+    bool Upper = (toupper(Uplo) == 'U');
+
+    if(!LSide) { NRowA = n; }
+
+    // Quick return.
+    if (n==izero || m==izero) { return; }
+
+    if(!( LSide || (toupper(Side) == 'R'))) {
+      cout << "BLAS::TRMM Error: SIDE == " << Side << endl;
+      BadArgument = true; }
+    if(!((toupper(Uplo) == 'L') || Upper )) {
+      cout << "BLAS::TRMM Error: UPLO == " << Uplo << endl;
+      BadArgument = true; }
+    if(!((toupper(TransA) == 'N') || (toupper(TransA) == 'T') || (toupper(TransA) == 'C'))) {
+      cout << "BLAS::TRMM Error: TRANSA == " << TransA << endl;
+      BadArgument = true; }
+    if(!( NoUnit || (toupper(Diag) == 'U'))) {
+      cout << "BLAS::TRMM Error: DIAG == " << Diag << endl;
+      BadArgument = true; }
+    if( m < 0 ) {
+      cout << "BLAS::TRMM Error: M == "<< m <<endl;
+      BadArgument = true; }
+    if( n < 0 ) {
+      cout << "BLAS::TRMM Error: N == "<< n <<endl;
+      BadArgument = true; }
+    if( lda < NRowA ) {
+      cout << "BLAS::TRMM Error: LDA == "<< lda << endl;
+      BadArgument = true; }
+    if( ldb < m ) {
+      cout << "BLAS::TRMM Error: M == "<< ldb << endl;
+      BadArgument = true; }
+
     if(!BadArgument) {
-      int i, j, k;
-      if(alpha == zero) {
-	for(i = 0; i < (m * n); i++) {
-	  B[i] = zero; }}
-      else {
-	ScalarType* temp = new ScalarType[m * n];
-	for(i = 0; i < (m * n); i++) {
-	  temp[i] = B[i];
-	  B[i] = zero; }
-	if(alpha == one) {
-	  if(Side == 'L') {
-	    if(Uplo == 'U') {
-	      if(TransA == 'N') {
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = i; k < m; k++) {
-			B[i + (j * m)] += (A[i + (k * m)] * temp[k + (j * m)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = i; k < m; k++) {
-			if(i == k) {
-			  B[i + (j * m)] += temp[k + (j * m)]; }
-			else {
-			  B[i + (j * m)] += (A[i + (k * m)] * temp[k + (j * m)]); }}}}}}
-	      else { // TransA == T or C
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (i + 1); k++) {
-			B[i + (j * m)] += (A[k + (i * m)] * temp[k + (j * m)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (i + 1); k++) {
-			if(i == k) {
-			  B[i + (j * m)] += temp[k + (j * m)]; }
-			else {
-			  B[i + (j * m)] += (A[k + (i * m)] * temp[k + (j * m)]); }}}}}}}
-	    else { // Uplo == L
-	      if(TransA == 'N') {
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (i + 1); k++) { 
-			B[i + (j * m)] += (A[i + (k * m)] * temp[k + (j * m)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (i + 1); k++) {
-			if(i == k) {
-			  B[i + (j * m)] += temp[k + (j * m)]; }
-			else {
-			  B[i + (j * m)] += (A[i + (k * m)] * temp[k + (j * m)]); }}}}}}
-	      else { // TransA == T or C
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = i; k < m; k++) {		    
-			B[i + (j * m)] += (A[k + (i * m)] * temp[k + (j * m)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = i; k < m; k++) {
-			if(i == k) {
-			  B[i + (j * m)] += temp[k + (j * m)]; }
-			else {
-			  B[i + (j * m)] += (A[k + (i * m)] * temp[k + (j * m)]); }}}}}}}}
-	  else { // Side == R
-	    if(Uplo == 'U') {
-	      if(TransA == 'N') {
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (j + 1); k++) {
-			B[i + (j * m)] += (temp[i + (k * m)] * A[k + (j * n)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (j + 1); k++) {
-			if(j == k) {
-			  B[i + (j * m)] += temp[i + (k * m)]; }
-			else {
-			  B[i + (j * m)] += (temp[i + (k * m)] * A[k + (j * n)]); }}}}}}
-	      else { // TransA == T or C
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = j; k < n; k++) {
-			B[i + (j * m)] += (temp[i + (k * m)] * A[j + (k * n)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = j; k < n; k++) {
-			if(j == k) {
-			  B[i + (j * m)] += temp[i + (k * m)]; }
-			else {
-			  B[i + (j * m)] += (temp[i + (k * m)] * A[j + (k * n)]); }}}}}}}
-	    else { // Uplo == L
-	      if(TransA == 'N') {
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = j; k < n; k++) {
-			B[i + (j * m)] += (temp[i + (k * m)] * A[k + (j * n)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = j; k < n; k++) {
-			if(j == k) {
-			  B[i + (j * m)] += temp[i + (k * m)]; }
-			else {
-			  B[i + (j * m)] += (temp[i + (k * m)] * A[k + (j * n)]); }}}}}}
-	      else { // TransA == T or C
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (j + 1); k++) {
-			B[i + (j * m)] += (temp[i + (k * m)] * A[j + (k * n)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (j + 1); k++) {
-			if(j == k) {
-			  B[i + (j * m)] += temp[i + (k * m)]; } 
-			else {
-			  B[i + (j * m)] += (temp[i + (k * m)] * A[j + (k * n)]); }}}}}}}}}
-	else // alpha is neither 0 nor 1
-	  {
-	  if(Side == 'L') {
-	    if(Uplo == 'U') {
-	      if(TransA == 'N') {
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = i; k < m; k++) {
-			B[i + (j * m)] += (alpha * A[i + (k * m)] * temp[k + (j * m)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = i; k < m; k++) {
-			if(i == k) {
-			  B[i + (j * m)] += (alpha * temp[k + (j * m)]); }
-			else {
-			  B[i + (j * m)] += (alpha * A[i + (k * m)] * temp[k + (j * m)]); }}}}}}
-	      else { // TransA == T or C
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (i + 1); k++) {
-			B[i + (j * m)] += (alpha * A[k + (i * m)] * temp[k + (j * m)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (i + 1); k++) {
-			if(i == k) {
-			  B[i + (j * m)] += (alpha * temp[k + (j * m)]); }
-			else {
-			  B[i + (j * m)] += (alpha * A[k + (i * m)] * temp[k + (j * m)]); }}}}}}}
-	    else { // Uplo == L
-	      if(TransA == 'N') {
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (i + 1); k++) { 
-			B[i + (j * m)] += (alpha * A[i + (k * m)] * temp[k + (j * m)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (i + 1); k++) {
-			if(i == k) {
-			  B[i + (j * m)] += (alpha * temp[k + (j * m)]); }
-			else {
-			  B[i + (j * m)] += (alpha * A[i + (k * m)] * temp[k + (j * m)]); }}}}}}
-	      else { // TransA == T or C
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = i; k < m; k++) {		    
-			B[i + (j * m)] += (alpha * A[k + (i * m)] * temp[k + (j * m)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = i; k < m; k++) {
-			if(i == k) {
-			  B[i + (j * m)] += (alpha * temp[k + (j * m)]); }
-			else {
-			  B[i + (j * m)] += (alpha * A[k + (i * m)] * temp[k + (j * m)]); }}}}}}}}
-	  else { // Side == R
-	    if(Uplo == 'U') {
-	      if(TransA == 'N') {
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (j + 1); k++) {
-			B[i + (j * m)] += (alpha * temp[i + (k * m)] * A[k + (j * n)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (j + 1); k++) {
-			if(j == k) {
-			  B[i + (j * m)] += (alpha * temp[i + (k * m)]); }
-			else {
-			  B[i + (j * m)] += (alpha * temp[i + (k * m)] * A[k + (j * n)]); }}}}}}
-	      else { // TransA == T or C
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = j; k < n; k++) {
-			B[i + (j * m)] += (alpha * temp[i + (k * m)] * A[j + (k * n)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = j; k < n; k++) {
-			if(j == k) {
-			  B[i + (j * m)] += (alpha * temp[i + (k * m)]); }
-			else {
-			  B[i + (j * m)] += (alpha * temp[i + (k * m)] * A[j + (k * n)]); }}}}}}}
-	    else { // Uplo == L
-	      if(TransA == 'N') {
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = j; k < n; k++) {
-			B[i + (j * m)] += (alpha * temp[i + (k * m)] * A[k + (j * n)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = j; k < n; k++) {
-			if(j == k) {
-			  B[i + (j * m)] += (alpha * temp[i + (k * m)]); }
-			else {
-			  B[i + (j * m)] += (alpha * temp[i + (k * m)] * A[k + (j * n)]); }}}}}}
-	      else { // TransA == T or C
-		if(Diag == 'N') {
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (j + 1); k++) {
-			B[i + (j * m)] += (alpha * temp[i + (k * m)] * A[j + (k * n)]); }}}}
-		else { // Diag == U
-		  for(i = 0; i < m; i++) {
-		    for(j = 0; j < n; j++) {
-		      for(k = 0; k < (j + 1); k++) {
-			if(j == k) {
-			  B[i + (j * m)] += (alpha * temp[i + (k * m)]); } 
-			else {
-			  B[i + (j * m)] += (alpha * temp[i + (k * m)] * A[j + (k * n)]); }}}}}}}}}
-	delete [] temp; }}
-  }
+
+      // B only needs to be zeroed out.
+      if( alpha == zero ) {
+	for( j=izero; j<n; j++ ) {
+	  for( i=izero; i<m; i++ ) {
+	    B[j*ldb + i] = zero;
+	  }
+	}
+	return;
+      }
+      
+      //  Start the computations. 
+      if ( LSide ) {
+	// A is on the left side of B.
+	
+	if ( toupper(TransA)=='N' ) {
+	  // Compute B = alpha*A*B
+
+	  if ( Upper ) {
+	    // A is upper triangular
+	    for( j=izero; j<n; j++ ) {
+	      for( k=izero; k<m; k++) {
+		if ( B[j*ldb + k] != zero ) {
+		  temp = alpha*B[j*ldb + k];
+		  for( i=izero; i<k; i++ ) {
+		    B[j*ldb + i] += temp*A[k*lda + i];
+		  }
+		  if ( NoUnit )
+		    temp *=A[k*lda + k];
+		  B[j*ldb + k] = temp;
+		}
+	      }
+	    }
+	  } else {
+	    // A is lower triangular
+	    for( j=izero; j<n; j++ ) {
+	      for( k=m-ione; k>-ione; k-- ) {
+		if( B[j*ldb + k] != zero ) {
+		  temp = alpha*B[j*ldb + k];
+		  B[j*ldb + k] = temp;
+		  if ( NoUnit )
+		    B[j*ldb + k] *= A[k*lda + k];
+		  for( i=k+ione; i<m; i++ ) {
+		    B[j*ldb + i] += temp*A[k*lda + i];
+		  }
+		}
+	      }
+	    }
+	  }
+	} else {
+	  // Compute B = alpha*A'*B
+	  if( Upper ) {
+	    for( j=izero; j<n; j++ ) {
+	      for( i=m-ione; i>-ione; i-- ) {
+		temp = B[j*ldb + i];
+		if( NoUnit )
+		  temp *= A[i*lda + i];
+		for( k=izero; k<i; k++ ) {
+		  temp += A[i*lda + k]*B[j*ldb + k];
+		}
+		B[j*ldb + i] = alpha*temp;
+	      }
+	    }
+	  } else {
+	    for( j=izero; j<n; j++ ) {
+	      for( i=izero; i<m; i++ ) {
+		temp = B[j*ldb + i];
+		if( NoUnit ) 
+		  temp *= A[i*lda + i];
+		for( k=i+ione; k<m; k++ ) {
+		  temp += A[i*lda + k]*B[j*ldb + k];
+		}
+		B[j*ldb + i] = alpha*temp;
+	      }
+	    }
+	  }
+	}
+      } else {
+	// A is on the right hand side of B.
+	
+	if( toupper(TransA) == 'N' ) {
+	  // Compute B = alpha*B*A
+
+	  if( Upper ) {
+	    // A is upper triangular.
+	    for( j=n-ione; j>-ione; j-- ) {
+	      temp = alpha;
+	      if( NoUnit )
+		temp *= A[j*lda + j];
+	      for( i=izero; i<m; i++ ) {
+		B[j*ldb + i] *= temp;
+	      }
+	      for( k=izero; k<j; k++ ) {
+		if( A[j*lda + k] != zero ) {
+		  temp = alpha*A[j*lda + k];
+		  for( i=izero; i<m; i++ ) {
+		    B[j*ldb + i] += temp*B[k*ldb + i];
+		  }
+		}
+	      }
+	    }
+	  } else {
+	    // A is lower triangular.
+	    for( j=izero; j<n; j++ ) {
+	      temp = alpha;
+	      if( NoUnit )
+		temp *= A[j*lda + j];
+	      for( i=izero; i<m; i++ ) {
+		B[j*ldb + i] *= temp;
+	      }
+	      for( k=j+ione; k<n; k++ ) {
+		if( A[j*lda + k] != zero ) {
+		  temp = alpha*A[j*lda + k];
+		  for( i=izero; i<m; i++ ) {
+		    B[j*ldb + i] += temp*B[k*ldb + i];
+		  }
+		}
+	      }
+	    }
+	  }
+	} else {
+	  // Compute B = alpha*B*A'
+
+	  if( Upper ) {
+	    for( k=izero; k<n; k++ ) {
+	      for( j=izero; j<k; j++ ) {
+		if( A[k*lda + j] != zero ) {
+		  temp = alpha*A[k*lda + j];
+		  for( i=izero; i<m; i++ ) {
+		    B[j*ldb + i] += temp*B[k*ldb + i];
+		  }
+		}
+	      }
+	      temp = alpha;
+	      if( NoUnit ) 
+		temp *= A[k*lda + k];
+	      if( temp != one ) {
+		for( i=izero; i<m; i++ ) {
+		  B[k*ldb + i] *= temp;
+		}
+	      }
+	    }
+	  } else {
+	    for( k=n-ione; k>-ione; k-- ) {
+	      for( j=k+ione; j<n; j++ ) {
+		if( A[k*lda + j] != zero ) {
+		  temp = alpha*A[k*lda + j];
+		  for( i=izero; i<m; i++ ) {
+		    B[j*ldb + i] += temp*B[k*ldb + i];
+		  }
+		}
+	      }
+	      temp = alpha;
+	      if( NoUnit )
+		temp *= A[k*lda + k];
+	      if( temp != one ) {
+		for( i=izero; i<m; i++ ) {
+		  B[k*ldb + i] *= temp;
+		}
+	      }
+	    }
+	  }
+	} // end if( toupper(TransA) == 'N' ) ...
+      } // end if ( LSide ) ...
+    } // end if (!BadArgument)
+  } // end TRMM
   
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::TRSM(char Side, char Uplo, char TransA, char Diag, int m, int n, ScalarType alpha, ScalarType* A, int lda, ScalarType* B, int ldb)
+  void BLAS<OrdinalType, ScalarType>::TRSM(char Side, char Uplo, char TransA, char Diag, OrdinalType m, OrdinalType n, ScalarType alpha, ScalarType* A, OrdinalType lda, ScalarType* B, OrdinalType ldb)
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     ScalarType zero = ScalarTraits<ScalarType>::zero();
     ScalarType one = ScalarTraits<ScalarType>::one();
     ScalarType temp;
-    bool BadArgument = 0;
-    if(!((Side == 'L') || (Side == 'R'))) {
-      cout << "BLAS::GEMM Error: SIDE == " << Side << endl;
-      BadArgument = 1; }
-    if(!((Uplo == 'L') || (Uplo == 'U'))) {
-      cout << "BLAS::GEMM Error: UPLO == " << Uplo << endl;
-      BadArgument = 1; }
-    if(!((TransA == 'N') || (TransA == 'T') || (TransA == 'C'))) {
-      cout << "BLAS::GEMM Error: TRANSA == " << TransA << endl;
-      BadArgument = 1; }
-    if(!((Diag == 'N') || (Diag == 'U'))) {
-      cout << "BLAS::GEMM Error: DIAG == " << Diag << endl;
-      BadArgument = 1; }
-    if(!BadArgument && n!=0)
+    OrdinalType NRowA = m;
+    bool BadArgument = false;
+    bool NoUnit = (toupper(Diag)=='N');
+    
+    if (!(toupper(Side) == 'L')) { NRowA = n; }
+
+    // Quick return.
+    if (n == izero || m == izero) { return; }
+
+    if(!((toupper(Side) == 'L') || (toupper(Side) == 'R'))) {
+      cout << "BLAS::TRSM Error: SIDE == " << Side << endl;
+      BadArgument = true; }
+    if(!((toupper(Uplo) == 'L') || (toupper(Uplo) == 'U'))) {
+      cout << "BLAS::TRSM Error: UPLO == " << Uplo << endl;
+      BadArgument = true; }
+    if(!((toupper(TransA) == 'N') || (toupper(TransA) == 'T') || (TransA == 'C'))) {
+      cout << "BLAS::TRSM Error: TRANSA == " << TransA << endl;
+      BadArgument = true; }
+    if(!((toupper(Diag) == 'N') || (toupper(Diag) == 'U'))) {
+      cout << "BLAS::TRSM Error: DIAG == " << Diag << endl;
+      BadArgument = true; }
+    if( m < izero ) {
+      cout << "BLAS::TRSM Error: M == "<<m<<endl;
+      BadArgument = true; }
+    if( n < izero ) {
+      cout << "BLAS::TRSM Error: N == "<<n<<endl;
+      BadArgument = true; }
+    if( lda < NRowA ) {
+      cout << "BLAS::TRSM Error: LDA == "<<lda<<endl;
+      BadArgument = true; }
+    if( ldb < m ) {
+      cout << "BLAS::TRSM Error: LDB == "<<ldb<<endl;
+      BadArgument = true; }
+
+    if(!BadArgument)
       {
 	int i, j, k;
 	// Set the solution to the zero vector.
 	if(alpha == zero) {
-	    for(j = 0; j < n; j++) {
-	    	for( i = 0; i < m; i++) {
+	    for(j = izero; j < n; j++) {
+	    	for( i = izero; i < m; i++) {
 		    B[j*ldb+i] = zero;
 	      	}
 	    }
 	}
 	else 
 	{ // Start the operations.
-	    if(Side == 'L') {
+	    if(toupper(Side) == 'L') {
 		//
 	    	// Perform computations for OP(A)*X = alpha*B	    
 		//
-		if(TransA == 'N') {
+		if(toupper(TransA) == 'N') {
 		    //
 		    //  Compute B = alpha*inv( A )*B
 		    //
-		    if(Uplo == 'U') { 
+		    if(toupper(Uplo) == 'U') { 
 			// A is upper triangular.
-			for(j = 0; j < n; j++) {
+			for(j = izero; j < n; j++) {
 	    		    // Perform alpha*B if alpha is not 1.
 	    		    if(alpha != one) {
-	    	    		for( i = 0; i < m; i++) {
+	    	    		for( i = izero; i < m; i++) {
 		    		    B[j*ldb+i] *= alpha;
 		    		}
 			    }
 			    // Perform a backsolve for column j of B.
-			    for(k = (m - 1); k > -1; k--) {
+			    for(k = (m - ione); k > -ione; k--) {
 				// If this entry is zero, we don't have to do anything.
 				if (B[j*ldb + k] != zero) {
-				    if (Diag == 'N') {
+				    if (NoUnit) {
 					B[j*ldb + k] /= A[k*lda + k];
 				    }
-				    for(i = 0; i < k; i++) {
+				    for(i = izero; i < k; i++) {
 					B[j*ldb + i] -= B[j*ldb + k] * A[k*lda + i];
 				    }
 				}
@@ -955,21 +1222,21 @@ namespace Teuchos
 		    }
 		    else 
 		    { // A is lower triangular.
-                        for(j = 0; j < n; j++) {
+                        for(j = izero; j < n; j++) {
                             // Perform alpha*B if alpha is not 1.
                             if(alpha != one) {
-                                for( i = 0; i < m; i++) {
+                                for( i = izero; i < m; i++) {
                                     B[j*ldb+i] *= alpha;
                                 }
                             }
                             // Perform a forward solve for column j of B.
-                            for(k = 0; k < m; k++) {
+                            for(k = izero; k < m; k++) {
                                 // If this entry is zero, we don't have to do anything.
                                 if (B[j*ldb + k] != zero) {   
-                                    if (Diag == 'N') {
+                                    if (NoUnit) {
                                         B[j*ldb + k] /= A[k*lda + k];
                                     }
-                                    for(i = k+1; i < m; i++) {
+                                    for(i = k+ione; i < m; i++) {
                                         B[j*ldb + i] -= B[j*ldb + k] * A[k*lda + i];
                                     }
                                 }
@@ -983,13 +1250,13 @@ namespace Teuchos
 		    //
 		    if(Uplo == 'U') { 
 			// A is upper triangular.
-			for(j = 0; j < n; j++) {
-	    	    	    for( i = 0; i < m; i++) {
+			for(j = izero; j < n; j++) {
+	    	    	    for( i = izero; i < m; i++) {
 		    		temp = alpha*B[j*ldb+i];
-			    	for(k = 0; k < i; k++) {
+			    	for(k = izero; k < i; k++) {
 				    temp -= A[i*lda + k] * B[j*ldb + k];
 				}
-				if (Diag == 'N') {
+				if (NoUnit) {
 				    temp /= A[i*lda + i];
 				}
 				B[j*ldb + i] = temp;
@@ -998,13 +1265,13 @@ namespace Teuchos
 		    }
 		    else
 		    { // A is lower triangular.
-                        for(j = 0; j < n; j++) {
-                            for(i = (m - 1) ; i > -1; i--) {
+                        for(j = izero; j < n; j++) {
+                            for(i = (m - ione) ; i > -ione; i--) {
                                 temp = alpha*B[j*ldb+i];
-                            	for(k = i+1; k < m; k++) {
+                            	for(k = i+ione; k < m; k++) {
 				    temp -= A[i*lda + k] * B[j*ldb + k];
 				}
-				if (Diag == 'N') {
+				if (NoUnit) {
 				    temp /= A[i*lda + i];
 				}
 				B[j*ldb + i] = temp;
@@ -1018,31 +1285,31 @@ namespace Teuchos
 	       //
 	       // Perform computations for X*OP(A) = alpha*B	    
 	       //
-	      if (TransA == 'N') {
+	      if (toupper(TransA) == 'N') {
 		    //
 		    //  Compute B = alpha*B*inv( A )
 		    //
-		    if(Uplo == 'U') { 
+		    if(toupper(Uplo) == 'U') { 
 			// A is upper triangular.
 	    		// Perform a backsolve for column j of B.
-			for(j = 0; j < n; j++) {
+			for(j = izero; j < n; j++) {
 	    		    // Perform alpha*B if alpha is not 1.
 	    		    if(alpha != one) {
-	    	    		for( i = 0; i < m; i++) {
+	    	    		for( i = izero; i < m; i++) {
 		    		    B[j*ldb+i] *= alpha;
 		    		}
 			    }
-			    for(k = 0; k < j; k++) {
+			    for(k = izero; k < j; k++) {
 				// If this entry is zero, we don't have to do anything.
 				if (A[j*lda + k] != zero) {
-				    for(i = 0; i < m; i++) {
+				    for(i = izero; i < m; i++) {
 					B[j*ldb + i] -= A[j*lda + k] * B[k*ldb + i];
 				    }
 				}
 			    }
-			    if (Diag == 'N') {
+			    if (NoUnit) {
 				temp = one/A[j*lda + j];
-				for(i = 0; i < m; i++) {
+				for(i = izero; i < m; i++) {
 				    B[j*ldb + i] *= temp;
 				}
 			    }
@@ -1050,25 +1317,25 @@ namespace Teuchos
 		    }
 		    else 
 		    { // A is lower triangular.
-                        for(j = (n - 1); j > -1; j--) {
+                        for(j = (n - ione); j > -ione; j--) {
                             // Perform alpha*B if alpha is not 1.
                             if(alpha != one) {
-                                for( i = 0; i < m; i++) {
+                                for( i = izero; i < m; i++) {
                                     B[j*ldb+i] *= alpha;
                                 }
                             }
                             // Perform a forward solve for column j of B.
-                            for(k = j+1; k < n; k++) {
+                            for(k = j+ione; k < n; k++) {
                                 // If this entry is zero, we don't have to do anything.
 				if (A[j*lda + k] != zero) {
-				    for(i = 0; i < m; i++) {
+				    for(i = izero; i < m; i++) {
                                         B[j*ldb + i] -= A[j*lda + k] * B[k*ldb + i]; 
                                     }
                                 } 
                             }
-			    if (Diag == 'N') {
+			    if (NoUnit) {
 				temp = one/A[j*lda + j];
-				for(i = 0; i < m; i++) {
+				for(i = izero; i < m; i++) {
 				    B[j*ldb + i] *= temp;
 				}
 			    }			
@@ -1081,23 +1348,23 @@ namespace Teuchos
 		    //
 		    if(Uplo == 'U') { 
 			// A is upper triangular.
-			for(k = (n - 1); k > -1; k--) {
-			    if (Diag == 'N') {
+			for(k = (n - ione); k > -ione; k--) {
+			    if (NoUnit) {
 				temp = one/A[k*lda + k];
-	    	    	    	for(i = 0; i < m; i++) {
+	    	    	    	for(i = izero; i < m; i++) {
 		    		    B[k*ldb + i] *= temp;
 				}
 			    }
-			    for(j = 0; j < k; j++) {
+			    for(j = izero; j < k; j++) {
 				if (A[k*lda + j] != zero) {
 				    temp = A[k*lda + j];
-				    for(i = 0; i < m; i++) {
+				    for(i = izero; i < m; i++) {
 					B[j*ldb + i] -= temp*B[k*ldb + i];
 				    }
 				}
 			    }
 			    if (alpha != one) {
-				for (i = 0; i < m; i++) {
+				for (i = izero; i < m; i++) {
 				    B[k*ldb + i] *= alpha;
 				}
 			    }
@@ -1105,23 +1372,23 @@ namespace Teuchos
 		    }
 		    else
 		    { // A is lower triangular.
-			for(k = 0; k < n; k++) {
-			    if (Diag == 'N') {
+			for(k = izero; k < n; k++) {
+			    if (NoUnit) {
 				temp = one/A[k*lda + k];
-				for (i = 0; i < m; i++) {
+				for (i = izero; i < m; i++) {
 				    B[k*ldb + i] *= temp;
 				}
 			    }
-			    for(j = k+1; j < n; j++) {
+			    for(j = k+ione; j < n; j++) {
 				if(A[k*lda + j] != zero) {
 				    temp = A[k*lda + j];
-				    for(i = 0; i < m; i++) {
+				    for(i = izero; i < m; i++) {
 					B[j*ldb + i] -= temp*B[k*ldb + i];
 				    }
 				}
 			    }
 			    if (alpha != one) {
-				for (i = 0; i < m; i++) {
+				for (i = izero; i < m; i++) {
 				    B[k*ldb + i] *= alpha;
 				}
 			    }
