@@ -21,6 +21,24 @@ int warning_flag = 0;
 /***************************************************************************/
 /***************************************************************************/
 /***************************************************************************/
+int AZ_convert_aztec_matrix_2ml_matrix(AZ_MATRIX *AZmat, ML_Operator *MLmat,
+				       int *proc_config)
+{
+  ML *bogus;
+  int size;
+  ML_Operator *temp;
+
+  size = AZmat->data_org[AZ_N_internal] +  AZmat->data_org[AZ_N_border];
+
+  ML_Create(&bogus,1);
+  temp = bogus->Amat;
+  bogus->Amat = MLmat;
+  AZ_ML_Set_Amat(bogus, 0, size, size,  AZmat, proc_config);
+  bogus->Amat = temp;
+  ML_Destroy(&bogus);
+  return 1;
+}
+
 int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize, 
 	AZ_MATRIX *Amat, int *proc_config)
 {
