@@ -33,12 +33,12 @@
 #include "Kokkos_Permutation.hpp"
 #include "Kokkos_CisMatrix.hpp" 
 #include "Kokkos_SparseOperation.hpp" 
-extern "C" {
+/* extern "C" {
 void scsrmm2_(const int *, const int *, const double *,const int *, const int *, 
 	      const double *, const double *, const int *);
 void daxpy_(const int *, const double *, const double *, const int *, const double *, const int *);
 
-}
+} */
 
 namespace Kokkos {
 
