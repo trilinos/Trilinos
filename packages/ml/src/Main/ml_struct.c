@@ -2421,7 +2421,11 @@ int ML_Setup(ML *ml, int scheme, int finest_level, int incr_or_decr, void *obj)
             exit(1);
          }
       }
+#ifdef ML_CPP
+      ML_Gen_MGHierarchy_UsingAMG(ml, finest_level, incr_or_decr, (ML_AMG *)obj);
+#else
       ML_Gen_MGHierarchy_UsingAMG(ml, finest_level, incr_or_decr, obj);
+#endif
    }
    else if ( scheme == ML_SAAMG )
    {
@@ -2434,7 +2438,11 @@ int ML_Setup(ML *ml, int scheme, int finest_level, int incr_or_decr, void *obj)
             exit(1);
          }
       }
+#ifdef ML_CPP
+      ML_Gen_MGHierarchy_UsingAggregation(ml, finest_level, incr_or_decr, (ML_Aggregate *)obj);
+#else
       ML_Gen_MGHierarchy_UsingAggregation(ml, finest_level, incr_or_decr, obj);
+#endif
    }
    else
    {
@@ -4971,11 +4979,19 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
          ML_memory_free(  (void**) &(solver->dble_params1) );
          solver->dble_params1 = NULL;
       }
+#ifdef ML_CPP
+      local_ml = (ML *)solver->void_params1;
+#else
       local_ml = solver->void_params1;
+#endif
       if ( reuse == 1 ) ML_Destroy( &local_ml );
       if (solver->Mat1 != NULL )
       {
+#ifdef ML_CPP
+         ML_Matrix_DCSR_Destroy((ML_Matrix_DCSR **)solver->Mat1);
+#else
          ML_Matrix_DCSR_Destroy(solver->Mat1);
+#endif
          ML_memory_free(  (void**) &(solver->Mat1) );
          solver->Mat1 = NULL;
       }
@@ -5306,3 +5322,273 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
    else return(pr_error("ML_Gen_Smoother_Hiptmair: unknown pre_or_post choice\n"));
    return(status);
 }
+
+
+
+
+#ifdef WKC
+/////////////////////////////////////////////////////////////////////////
+
+// WKC -- herein lies all modified code for using Epetra_MultiVectors!
+
+#include <iostream>
+#include <stdio.h>
+#include <unistd.h>
+
+int ML_Solve_MGV( ML *ml , const Epetra_MultiVector &in, Epetra_MultiVector &out)
+{
+// Copy input to maintain const
+   Epetra_MultiVector  in_temp ( in );
+   int    i, leng, dir_leng, *dir_list, k, level;
+   double *diag, *scales, *din_temp;
+
+
+   /* ------------------------------------------------------------ */
+   /* initially set the solution to be all 0           	           */
+   /* ------------------------------------------------------------ */
+
+   level = ml->ML_finest_level;
+   leng = ml->Amat[level].outvec_leng;
+   out.PutScalar(0.0);
+
+
+   /* ------------------------------------------------------------ */
+   /* on the fixed boundaries, set them to be each to the solution */
+   /* ------------------------------------------------------------ */
+
+   ML_BdryPts_Get_Dirichlet_Eqn_Info(&(ml->BCs[level]),&dir_leng,&dir_list);
+   if ( dir_leng != 0 )
+   {
+      if (ml->Amat[level].diagonal != NULL) { 
+         ML_DVector_GetDataPtr(ml->Amat[level].diagonal,&diag);
+         for ( i = 0; i < dir_leng; i++ ) {
+            for ( int KK = 0 ; KK != in.NumVectors() ; KK++ ) {
+               k = dir_list[i]; 
+               out[KK][k] = in_temp[KK][k] / diag[k];
+            }
+         } 
+      } else {
+         diag = NULL;
+         for ( i = 0; i < dir_leng; i++ ) {
+            for ( int KK = 0 ; KK != in.NumVectors() ; KK++ ) {
+               k = dir_list[i]; 
+               out[KK][k] = in_temp[KK][k];
+            }
+         }
+      }
+   }
+
+   /* ------------------------------------------------------------ */
+   /* normalization                                                */
+   /* ------------------------------------------------------------ */
+
+   ML_DVector_GetDataPtr(&(ml->Amat_Normalization[level]), &scales) ;
+
+/* watch out for this !!!!! */
+scales = NULL;
+
+// This can be made much faster by not copying the data above
+   if ( scales != NULL ) {
+      for ( i = 0; i < leng; i++ ) 
+      for ( int KK = 0 ; KK != in.NumVectors() ; KK++ )
+         in_temp[KK][i] = in[KK][i] / scales[i];
+   } else {
+      scales = NULL;
+   }
+
+
+   /* ------------------------------------------------------------ */
+   /* call MG v-cycle                                              */
+   /* ------------------------------------------------------------ */
+
+   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), out, 
+                in_temp, ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+
+   return 0;
+}
+
+/*****************************************************************************/
+/* solve using V-cycle multigrid                                             */
+/*-------------------------------------------------------------------------- */
+
+// FOR SIMPLICITY,  #ifdef ML_ANALYSIS ... #endif is removed
+
+double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol, 
+        Epetra_MultiVector &ep_rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
+{
+
+   int         i, lengc, lengf;
+   double      *rhss, *dtmp;
+   ML_Operator *Amat, *Rmat;
+   ML_Smoother *pre,  *post;
+   ML_CSolve   *csolve;
+#ifdef RAP_CHECK
+   double    norm1, norm2;
+#endif
+
+
+   double      res_norm , *normalscales;
+
+   Amat     = curr->Amat;
+   Rmat     = curr->Rmat;
+   pre      = curr->pre_smoother;
+   post     = curr->post_smoother;
+   csolve   = curr->csolve;
+   lengf    = Amat->outvec_leng;
+
+   /* ------------------------------------------------------------ */
+   /* first do the normalization                                   */
+   /* ------------------------------------------------------------ */
+
+   ML_DVector_GetDataPtr(curr->Amat_Normalization, &normalscales) ;
+   Epetra_MultiVector ep_rhss ( ep_rhs );
+
+   /* ------------------------------------------------------------ */
+   /* smoothing or coarse solve                                    */
+   /* ------------------------------------------------------------ */
+   if (Rmat->to == NULL) {    /* coarsest grid */
+
+//if ( comm->ML_mypid == 0 ) cout << ep_sol.MyLength() << " " << ep_sol.GlobalLength() << " " << endl;
+
+      if ( ML_CSolve_Check( csolve ) == 1 ) {
+         ML_CSolve_Apply(csolve, lengf, ep_sol, lengf, ep_rhss);
+      } else {
+         ML_Smoother_Apply(pre, lengf, ep_sol, lengf, ep_rhss, approx_all_zeros);
+         ML_Smoother_Apply(post, lengf, ep_sol, lengf, ep_rhss, ML_NONZERO);
+      }
+      if (res_norm_or_not == ML_COMPUTE_RES_NORM) {
+// Need to do this better!
+            res_norm = 0.0;
+      }
+   }
+   else {
+
+      Epetra_MultiVector ep_res ( ep_rhss );
+
+
+      /* --------------------------------------------------------- */
+      /* pre-smoothing and compute residual                        */
+      /* --------------------------------------------------------- */
+      ML_Smoother_Apply(pre, lengf, ep_sol, lengf, ep_rhss, approx_all_zeros);
+
+      if ( ( approx_all_zeros != ML_ZERO ) || 
+           ( pre->smoother->ML_id != ML_EMPTY ) ) 
+      {
+         ML_Operator_Apply(Amat, lengf, ep_sol, lengf, ep_res);
+         for ( i = 0; i < lengf; i++ ) 
+            for ( int LL = 0 ; LL != ep_res.NumVectors() ; LL++ )
+               ep_res[LL][i] = ep_rhss[LL][i] - ep_res[LL][i];
+      }
+      else {
+         for ( i = 0; i < lengf; i++ ) 
+            for ( int LL = 0 ; LL != ep_res.NumVectors() ; LL++ )
+               ep_res[LL][i] = ep_rhss[LL][i];
+      }
+
+
+      if (res_norm_or_not == ML_COMPUTE_RES_NORM)
+// need to think of something to do here!
+         res_norm = 0.0;
+//         res_norm = sqrt(ML_gdot(lengf, res, res, comm));
+
+      lengc = Rmat->outvec_leng;
+
+// ADDED COMMUNICATION HERE!!!
+      int tot_size_WKC;
+      MPI_Allreduce ( (void *)&lengc , (void *)&tot_size_WKC , 1 , MPI_INT ,
+                      MPI_SUM , comm->USR_comm );
+
+//if ( comm->ML_mypid == 0 ) cout << "Recursing down" << endl;
+
+      Epetra_Map Map ( tot_size_WKC , lengc , 0 , ep_res.Comm() );
+      Epetra_MultiVector ep_rhs2 ( Map , ep_res.NumVectors() );
+      Epetra_MultiVector ep_sol2 ( Map , ep_res.NumVectors() );
+
+      /* --------------------------------------------------------- */
+      /* normalization                                             */
+      /* --------------------------------------------------------- */
+
+      ML_DVector_GetDataPtr(curr->Amat_Normalization, &normalscales) ;
+      if ( normalscales != NULL )
+         for ( i = 0; i < lengf; i++ ) 
+            for ( int KK = 0 ; KK != ep_res.NumVectors() ; KK++ )
+               ep_res[KK][i] /= normalscales[i];
+
+
+      /* ------------------------------------------------------------ */
+      /* transform the data from equation to grid space, do grid      */
+      /* transfer and then transfer back to equation space            */
+      /* ------------------------------------------------------------ */
+      if ( ML_Mapper_Check(curr->eqn2grid) == 1 )
+      {
+         Epetra_MultiVector dTmp ( ep_rhs2 );
+         ML_Mapper_Apply(curr->eqn2grid, ep_res, dTmp );
+         for ( i = 0; i < lengf; i++ ) 
+            for ( int KK = 0 ; KK != ep_res.NumVectors() ; KK++ )
+               ep_res[KK][i] = dTmp[KK][i];
+      }
+
+      ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, ep_res, lengc, ep_rhs2);
+      if ( ML_Mapper_Check(Rmat->to->grid2eqn) == 1 )
+      {
+         Epetra_MultiVector dTmp ( ep_rhs2 );
+         ML_Mapper_Apply(Rmat->to->grid2eqn, ep_rhs2, dTmp );
+         for ( i = 0; i < lengc; i++ ) 
+            for ( int KK = 0 ; KK != ep_sol2.NumVectors() ; KK++ )
+                ep_rhs2[KK][i] = dTmp[KK][i];
+      }
+
+      ML_DVector_GetDataPtr(Rmat->to->Amat_Normalization,&normalscales);
+      if ( normalscales != NULL )
+         for ( i = 0; i < lengc; i++ ) 
+            for ( int KK = 0 ; KK != ep_rhs2.NumVectors() ; KK++ )
+               ep_rhs2[KK][i] = ep_rhs2[KK][i] * normalscales[i];
+
+      /* --------------------------------------------------------- */
+      /* process the next level and transfer back to this level    */
+      /* --------------------------------------------------------- */
+      ML_Cycle_MG( Rmat->to, ep_sol2, ep_rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if (ml->ML_scheme == ML_MGW) 
+	ML_Cycle_MG( Rmat->to, ep_sol2, ep_rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+
+//if ( comm->ML_mypid == 0 ) cout << "Recursing up" << endl;
+      /* ------------------------------------------------------------ */
+      /* transform the data from equation to grid space, do grid      */
+      /* transfer and then transfer back to equation space            */
+      /* ------------------------------------------------------------ */
+      if ( ML_Mapper_Check(Rmat->to->eqn2grid) == 1 )
+      {
+         Epetra_MultiVector dTmp ( ep_sol2 );
+         ML_Mapper_Apply(Rmat->to->eqn2grid, ep_sol2, dTmp);
+         for ( i = 0; i < lengc; i++ ) 
+            for ( int KK = 0 ; KK != ep_sol2.NumVectors() ; KK++ )
+                ep_sol2[KK][i] = dTmp[KK][i];
+      }
+
+      ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat,lengc,ep_sol2,
+                                       lengf,ep_res);
+
+      if ( ML_Mapper_Check(curr->grid2eqn) == 1 )
+      {
+         Epetra_MultiVector dTmp ( ep_res );
+         ML_Mapper_Apply(curr->grid2eqn, ep_res, dTmp);
+         for ( i = 0; i < lengf; i++ ) 
+            for ( int KK = 0 ; KK != ep_res.NumVectors() ; KK++ )
+               ep_res[KK][i] = dTmp[KK][i];
+      }
+
+      /* --------------------------------------------------------- */
+      /* post-smoothing                                            */
+      /* --------------------------------------------------------- */
+      for ( i = 0; i < lengf; i++ ) 
+        for ( int KK = 0 ; KK != ep_sol.NumVectors() ; KK++ )
+           ep_sol[KK][i] += ep_res[KK][i];
+
+      ML_Smoother_Apply(post, lengf, ep_sol, lengf, ep_rhss, ML_NONZERO);
+   }
+
+   return(res_norm);
+}
+
+#endif

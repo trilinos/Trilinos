@@ -80,8 +80,10 @@ typedef   struct ML_SEG_MATRIX_Struct   ML_SEG_MATRIX;
 /* ******************************************************************** */
 /* ******************************************************************** */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 extern int  ML_SEG_Create(struct ML_SEG_Struct **seg, AZ_MATRIX *Amat, 
                           int nblocks, int **rowlist, int *rowlengs, 
@@ -209,8 +211,10 @@ extern int ML_Solve_MGV( ML *ml , double *din, double *dout);
 extern double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
                 int approx_all_zeros, ML_Comm *comm);
 */
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 #endif
 

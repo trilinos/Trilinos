@@ -46,6 +46,12 @@ typedef struct ML_Struct ML;
 #include "ml_aggregate.h"
 #include <string.h>
 
+#ifdef WKC
+// WKC -- added header(s) for the new datastructures
+#include <Epetra_MultiVector.h> 
+#include <Epetra_LocalMap.h>
+#endif
+
 /* ******************************************************************** */
 /* ******************************************************************** */
 /* data definition for the ML Class                                     */
@@ -113,9 +119,12 @@ extern ML_PrintControl ML_PrintLevel;
 /* ******************************************************************** */
 /* ******************************************************************** */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
+#endif
+
 extern int ML_Create(ML **ml, int Nlevels);
 extern int ML_Set_Symmetrize(ML *ml, int true_or_false);
 extern int ML_Set_OutputLevel(ML *ml, int output_level);
@@ -270,13 +279,29 @@ extern int ML_Setup(ML *ml, int method, int finest_level, int, void *);
 extern int ML_Gen_Solver(ML *ml, int method, int finest_level, int);
 extern int ML_Iterate(ML *ml, double *sol, double *rhs);
 extern int ML_Solve(ML *ml, int inlen, double *sol, int outlen, double *rhs);
-extern int ML_Solve_MGV( ML *ml , double *din, double *dout);
+
+int ML_Solve_MGV( ML *ml , double *din, double *dout);
+
+#ifdef WKC
+// WKC -- new prototype for V-cycle solve
+int ML_Solve_MGV( ML *ml , const Epetra_MultiVector &in ,
+                         Epetra_MultiVector &out );
+#endif
+
 extern int ML_Solve_MGFull( ML *ml , double *din, double *dout);
 extern int ML_Solve_Smoother(void *data, int isize, double *x, int osize, 
 			     double *rhs);
 
 extern double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
                      int approx_all_zeros, ML_Comm *comm, int, ML *ml);
+
+#ifdef WKC
+// WKC -- new prototype for V-cycle solve
+extern double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol, 
+                     Epetra_MultiVector &ep_rhs,
+                     int approx_all_zeros, ML_Comm *comm, int, ML *ml);
+#endif
+
 extern double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
                      int approx_all_zeros, ML_Comm *comm, int, ML *ml);
 extern int ML_Solve_AMGV( ML *ml , double *din, double *dout);
@@ -292,9 +317,12 @@ extern int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func);
 extern int ML_Solver_SetScheme(ML *ml, int scheme);
 extern int ML_Smoother_Reinit(ML *ml);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
 #endif
+#endif
+
 #endif
 
 

@@ -80,8 +80,10 @@ typedef struct
     double       *sol;
 } MLI_Solver;
 
+#ifndef ML_CPP |
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 MLI_Solver *MLI_Solver_Create( ML_MPI_Comm );
@@ -124,9 +126,10 @@ extern int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia,
                          int *mat_ja, double *mat_a, MLI_CSRMatrix *mli_mat,
                          MLI_Solver *solver, int *partition, MLI_Context *obj); 
 
-
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif
