@@ -505,6 +505,9 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
 #   At this point, LIBS and amesos_libs both have our best shot, if they don't work now
 #   we give up
 #
+
+     AC_MSG_RESULT( " :::509 LIBS = ${LIBS} " ) 
+
      AC_TRY_LINK_FUNC(DSC_CloseSolver,,
       AC_MSG_ERROR([[Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/username/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
     LIBS="${SAVE_LIBS}"
