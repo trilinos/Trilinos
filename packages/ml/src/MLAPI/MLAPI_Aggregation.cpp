@@ -56,14 +56,27 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
                              ThisNS.GetNumVectors(), null_vect, 
                              ThisNS.GetMyLength());
 
-  //DELETE agg_object->nullspace_dim = ThisNS.GetNumVectors();
-  //agg_object->num_PDE_eqns = NumPDEEquations;
 
+  if (CoarsenType == "Uncoupled") 
+    agg_object->coarsen_scheme = ML_AGGR_UNCOUPLED;
+  else if (CoarsenType == "Uncoupled-MIS")
+    agg_object->coarsen_scheme = ML_AGGR_HYBRIDUM;
+  else if (CoarsenType == "MIS") 
+    agg_object->coarsen_scheme = ML_AGGR_MIS;
+  else if (CoarsenType == "METIS")
+    agg_object->coarsen_scheme = ML_AGGR_METIS;
+  else {
+    ML_THROW("Requested aggregation scheme (" + CoarsenType +
+             ") not recognized", -1);
+  }
+  int NextSize = ML_Aggregate_Coarsen(agg_object, A.GetML_Operator(), 
+                                      &ML_Ptent, GetML_Comm());
+
+  /* This is the old version
   int NextSize;
   
   if (CoarsenType == "Uncoupled") {
     NextSize = ML_Aggregate_CoarsenUncoupled(agg_object, A.GetML_Operator(),
-                                             &ML_Ptent, GetML_Comm());
   }
   else if (CoarsenType == "MIS") {
     NextSize = ML_Aggregate_CoarsenMIS(agg_object, A.GetML_Operator(),
@@ -80,6 +93,7 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
     ML_THROW("Requested aggregation scheme (" + CoarsenType +
              ") not recognized", -1);
   }
+  */
 
   int NumMyElements = NextSize;
   Space CoarseSpace(-1,NumMyElements);

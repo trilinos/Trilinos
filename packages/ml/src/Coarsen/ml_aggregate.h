@@ -16,6 +16,20 @@
 #include <stdio.h>
 /* #include <stdlib.h> */
 
+#define ML_AGGR_UNCOUPLED    1
+#define ML_AGGR_COUPLED      2
+#define ML_AGGR_MIS          3
+#define ML_AGGR_DD           4
+#define ML_AGGR_HYBRIDUC     5
+#define ML_AGGR_HYBRIDUM     6
+/*MS*/
+#define ML_AGGR_METIS        7
+#define ML_AGGR_PARMETIS     8
+#define ML_AGGR_ZOLTAN       9
+#define ML_AGGR_VBMETIS     10  /*mgee*/
+#define ML_AGGR_USER        11
+/*ms*/
+
 /* ************************************************************************* */
 /** definition of the aggregate structure                                     */
 /* ------------------------------------------------------------------------- */
