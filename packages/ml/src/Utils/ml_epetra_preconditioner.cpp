@@ -505,7 +505,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   /* ********************************************************************** */
   /* back to normal initialization                                          */
   /* ********************************************************************** */
-  
+
   Initialize();
   
   // construct hierarchy
@@ -534,7 +534,7 @@ void MultiLevelPreconditioner::Initialize()
   LevelID_ = new int[MaxLevels_];
   
   sprintf(ErrorMsg_,"ERROR (ML_Prec) : ");
-  PrintMsg_ = "ML_Prec : ";
+  PrintMsg_ = "";
   
   AZ_defaults(SmootherOptions_,SmootherParams_);
   SmootherOptions_[AZ_precond] = AZ_dom_decomp;
@@ -640,6 +640,9 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     }  
 
   if( verbose_ ) {
+    cout << PrintMsg_ << "*** " << endl;
+    cout << PrintMsg_ << "*** ML_Epetra::MultiLevelPreconditioner" << endl;
+    cout << PrintMsg_ << "***" << endl;
     cout << PrintMsg_ << "Maximum number of levels = " << NumLevels_ << endl;
     if( IsIncreasing == "increasing" ) cout << PrintMsg_ << "Using increasing levels. ";
     else                               cout << PrintMsg_ << "Using decreasing levels. ";
@@ -1127,11 +1130,12 @@ void MultiLevelPreconditioner::SetSmoothers()
 				       num_smoother_steps, omega, NumPDEEqns_);
     } else if( Smoother == "MLS" ) {
       sprintf(parameter,"smoother: MLS polynomial order (level %d)", LevelID_[level]);
-      if( verbose_ ) cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : MLS,"
+      if( verbose_ ) cout << msg << "MLS,"
 			 << PreOrPostSmoother << endl;
       
       ML_Gen_Smoother_MLS(ml_, LevelID_[level], pre_or_post, MLSalpha,
 			  MLSPolynomialOrder);
+      
     } else if( Smoother == "Aztec" ) {
       
       sprintf(parameter,"%ssmoother: Aztec options (level %d)", Prefix_, LevelID_[level]);
@@ -1150,7 +1154,7 @@ void MultiLevelPreconditioner::SetSmoothers()
       }
 
       if( verbose_ ) {
-	cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : Aztec";
+	cout << msg << "Aztec";
 	if( SmootherOptionsPtr[AZ_precond] == AZ_dom_decomp ) {
 	  cout << " DD, overlap=" << SmootherOptionsPtr[AZ_overlap] << ", ";
 	  if( SmootherOptionsPtr[AZ_reorder] == 1 ) cout << "reord, ";
@@ -1176,15 +1180,15 @@ void MultiLevelPreconditioner::SetSmoothers()
 	    break;
 	  }
 	} else if( SmootherOptionsPtr[AZ_precond] == AZ_Jacobi ) {
-	  cout << PrintMsg_ << " Jacobi preconditioner";
+	  cout << msg << " Jacobi preconditioner";
 	} else if( SmootherOptionsPtr[AZ_precond] == AZ_Neumann ) {
-	  cout << PrintMsg_ << " Neumann preconditioner, order = " << SmootherOptionsPtr[AZ_poly_ord];
+	  cout << msg << " Neumann preconditioner, order = " << SmootherOptionsPtr[AZ_poly_ord];
 	} else if( SmootherOptionsPtr[AZ_precond] == AZ_ls ) {
-	  cout << PrintMsg_ << " LS preconditioner, order = " << SmootherOptionsPtr[AZ_poly_ord];
+	  cout << msg << " LS preconditioner, order = " << SmootherOptionsPtr[AZ_poly_ord];
 	} else if( SmootherOptionsPtr[AZ_precond] == AZ_sym_GS ) {
-	  cout << PrintMsg_ << " symmetric Gauss-Seidel preconditioner, sweeps = " << SmootherOptionsPtr[AZ_poly_ord];
+	  cout << msg << " symmetric Gauss-Seidel preconditioner, sweeps = " << SmootherOptionsPtr[AZ_poly_ord];
 	} else if( SmootherOptionsPtr[AZ_precond] == AZ_none ) {
-	  cout << PrintMsg_ << " with no preconditioning";
+	  cout << msg << " with no preconditioning";
 	}
 	cout << ", "  << PreOrPostSmoother << endl;
       }
@@ -1194,7 +1198,7 @@ void MultiLevelPreconditioner::SetSmoothers()
 			   aztec_its, pre_or_post, NULL);
       
     } else if( Smoother == "IFPACK" ) {
-      if( verbose_ ) cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : IFPACK" << ","
+      if( verbose_ ) cout << msg << "IFPACK" << ","
 			 << PreOrPostSmoother << endl;
       // get ifpack options from list ??? pass list ???
       ML_Gen_Smoother_Ifpack(ml_, LevelID_[level], pre_or_post, NULL, NULL);
@@ -1294,6 +1298,8 @@ void MultiLevelPreconditioner::SetCoarse()
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_SUPERLUDIST, MaxProcs);
   else if( CoarseSolution == "Amesos-MUMPS" )
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_MUMPS, MaxProcs);
+  else if( CoarseSolution == "Amesos-ScaLAPACK" )
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_SCALAPACK, MaxProcs);
   else
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
     
@@ -1317,7 +1323,7 @@ void MultiLevelPreconditioner::SetAggregation()
    
        sprintf(parameter,"%saggregation: type (level %d)",Prefix_,LevelID_[level]);
        CoarsenScheme = List_.get(parameter,CoarsenScheme);
-   
+
        if( CoarsenScheme == "METIS" )
          ML_Aggregate_Set_CoarsenSchemeLevel_METIS(level,NumLevels_,agg_);
        else if( CoarsenScheme == "ParMETIS" ) 
@@ -2354,14 +2360,8 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, char * Prefix_)
   List.set(parameter,"increasing");
 
   // aggregation: Uncoupled for first levels, then MIS
-  sprintf(parameter,"%saggregation: type (level 0)",Prefix_);
-  List.set(parameter,"Uncoupled");
-
-  sprintf(parameter,"%saggregation: type (level 1)",Prefix_);
-  List.set(parameter,"Uncoupled");
-
-  sprintf(parameter,"%saggregation: type (level 2)",Prefix_);
-  List.set(parameter,"MIS");
+  sprintf(parameter,"%saggregation: type",Prefix_);
+  List.set(parameter,"Uncoupled-MIS");
   
   // optimal value for smoothed aggregation
   sprintf(parameter,"%saggregation: damping factor",Prefix_);
