@@ -22,7 +22,7 @@
 #with aztecoo and epetra support enabled, then a c++ linker is invoked
 #for ML's interfaces to those two packages.
 
-SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_epetra_operator_SOURCES) $(ml_example_epetra_preconditioner_SOURCES) $(ml_example_epetra_preconditioner_2level_SOURCES) $(ml_filtering_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_test_bench_SOURCES) $(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
+SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_epetra_operator_SOURCES) $(ml_example_epetra_preconditioner_SOURCES) $(ml_example_epetra_preconditioner_2level_SOURCES) $(ml_example_epetra_preconditioner_AztecMSR_SOURCES) $(ml_filtering_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_test_bench_SOURCES) $(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -64,6 +64,7 @@ host_triplet = @host@
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner_2level$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_operator$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner_AztecMSR$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_test_bench$(EXEEXT)
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS =  \
@@ -87,6 +88,7 @@ host_triplet = @host@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner_2level$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_operator$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner_AztecMSR$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_test_bench$(EXEEXT)
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide$(EXEEXT) \
@@ -109,6 +111,7 @@ host_triplet = @host@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner_2level$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_operator$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner_AztecMSR$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_test_bench$(EXEEXT)
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS =  \
@@ -234,6 +237,13 @@ ml_example_epetra_preconditioner_2level_OBJECTS =  \
 	$(am_ml_example_epetra_preconditioner_2level_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_2level_DEPENDENCIES =  \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+am__ml_example_epetra_preconditioner_AztecMSR_SOURCES_DIST =  \
+	$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_example_epetra_preconditioner_AztecMSR_OBJECTS = ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.$(OBJEXT)
+ml_example_epetra_preconditioner_AztecMSR_OBJECTS =  \
+	$(am_ml_example_epetra_preconditioner_AztecMSR_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_AztecMSR_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
 am__ml_filtering_SOURCES_DIST = $(srcdir)/ml_filtering.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_filtering_OBJECTS =  \
 @ML_STANDALONE_MODE_FALSE@	ml_filtering-ml_filtering.$(OBJEXT)
@@ -308,6 +318,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example_epetra_operator-ml_example_epetra_operator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example_epetra_preconditioner-ml_example_epetra_preconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example_epetra_preconditioner_2level-ml_example_epetra_preconditioner_2level.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_filtering-ml_filtering.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_elas-ml_read_elas.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po \
@@ -335,6 +346,7 @@ SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) \
 	$(ml_example3d_SOURCES) $(ml_example_epetra_operator_SOURCES) \
 	$(ml_example_epetra_preconditioner_SOURCES) \
 	$(ml_example_epetra_preconditioner_2level_SOURCES) \
+	$(ml_example_epetra_preconditioner_AztecMSR_SOURCES) \
 	$(ml_filtering_SOURCES) $(ml_read_elas_SOURCES) \
 	$(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) \
 	$(ml_readfile_SOURCES) $(ml_recirc_SOURCES) \
@@ -351,6 +363,7 @@ DIST_SOURCES = $(am__ml_aztec_simple_SOURCES_DIST) \
 	$(am__ml_example_epetra_operator_SOURCES_DIST) \
 	$(am__ml_example_epetra_preconditioner_SOURCES_DIST) \
 	$(am__ml_example_epetra_preconditioner_2level_SOURCES_DIST) \
+	$(am__ml_example_epetra_preconditioner_AztecMSR_SOURCES_DIST) \
 	$(am__ml_filtering_SOURCES_DIST) \
 	$(am__ml_read_elas_SOURCES_DIST) \
 	$(am__ml_read_maxwell_SOURCES_DIST) \
@@ -516,6 +529,7 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_SOURCES = $(srcdir)/ml_example_epetra_preconditioner.cpp
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_2level_SOURCES = $(srcdir)/ml_example_epetra_preconditioner_2level.cpp
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_operator_SOURCES = $(srcdir)/ml_example_epetra_operator.cpp
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_AztecMSR_SOURCES = $(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp
 @ML_STANDALONE_MODE_FALSE@ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
 @ML_STANDALONE_MODE_FALSE@ml_test_bench_SOURCES = $(srcdir)/ml_test_bench.cpp
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
@@ -660,6 +674,10 @@ mlguide_par_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_2level_CXXFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_2level_LDADD = ${ml_libs} 
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_2level_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_AztecMSR_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_AztecMSR_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_AztecMSR_LDADD = ${ml_libs} 
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_AztecMSR_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_operator_CPPFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_operator_CXXFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_example_epetra_operator_LDADD = ${ml_libs}
@@ -741,6 +759,9 @@ ml_example_epetra_preconditioner$(EXEEXT): $(ml_example_epetra_preconditioner_OB
 ml_example_epetra_preconditioner_2level$(EXEEXT): $(ml_example_epetra_preconditioner_2level_OBJECTS) $(ml_example_epetra_preconditioner_2level_DEPENDENCIES) 
 	@rm -f ml_example_epetra_preconditioner_2level$(EXEEXT)
 	$(ml_example_epetra_preconditioner_2level_LINK) $(ml_example_epetra_preconditioner_2level_LDFLAGS) $(ml_example_epetra_preconditioner_2level_OBJECTS) $(ml_example_epetra_preconditioner_2level_LDADD) $(LIBS)
+ml_example_epetra_preconditioner_AztecMSR$(EXEEXT): $(ml_example_epetra_preconditioner_AztecMSR_OBJECTS) $(ml_example_epetra_preconditioner_AztecMSR_DEPENDENCIES) 
+	@rm -f ml_example_epetra_preconditioner_AztecMSR$(EXEEXT)
+	$(ml_example_epetra_preconditioner_AztecMSR_LINK) $(ml_example_epetra_preconditioner_AztecMSR_LDFLAGS) $(ml_example_epetra_preconditioner_AztecMSR_OBJECTS) $(ml_example_epetra_preconditioner_AztecMSR_LDADD) $(LIBS)
 ml_filtering$(EXEEXT): $(ml_filtering_OBJECTS) $(ml_filtering_DEPENDENCIES) 
 	@rm -f ml_filtering$(EXEEXT)
 	$(ml_filtering_LINK) $(ml_filtering_LDFLAGS) $(ml_filtering_OBJECTS) $(ml_filtering_LDADD) $(LIBS)
@@ -794,6 +815,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_epetra_operator-ml_example_epetra_operator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_epetra_preconditioner-ml_example_epetra_preconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_epetra_preconditioner_2level-ml_example_epetra_preconditioner_2level.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_filtering-ml_filtering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_elas-ml_read_elas.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po@am__quote@
@@ -1158,6 +1180,22 @@ ml_example_epetra_preconditioner_2level-ml_example_epetra_preconditioner_2level.
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_epetra_preconditioner_2level-ml_example_epetra_preconditioner_2level.Po' tmpdepfile='$(DEPDIR)/ml_example_epetra_preconditioner_2level-ml_example_epetra_preconditioner_2level.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_epetra_preconditioner_2level_CPPFLAGS) $(CPPFLAGS) $(ml_example_epetra_preconditioner_2level_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_epetra_preconditioner_2level-ml_example_epetra_preconditioner_2level.obj `if test -f '$(srcdir)/ml_example_epetra_preconditioner_2level.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_epetra_preconditioner_2level.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_epetra_preconditioner_2level.cpp'; fi`
+
+ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.o: $(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_epetra_preconditioner_AztecMSR_CPPFLAGS) $(CPPFLAGS) $(ml_example_epetra_preconditioner_AztecMSR_CXXFLAGS) $(CXXFLAGS) -MT ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.o -MD -MP -MF "$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Tpo" -c -o ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.o `test -f '$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Tpo" "$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Po"; else rm -f "$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp' object='ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Po' tmpdepfile='$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_epetra_preconditioner_AztecMSR_CPPFLAGS) $(CPPFLAGS) $(ml_example_epetra_preconditioner_AztecMSR_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.o `test -f '$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp
+
+ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.obj: $(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_epetra_preconditioner_AztecMSR_CPPFLAGS) $(CPPFLAGS) $(ml_example_epetra_preconditioner_AztecMSR_CXXFLAGS) $(CXXFLAGS) -MT ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.obj -MD -MP -MF "$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Tpo" -c -o ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.obj `if test -f '$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Tpo" "$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Po"; else rm -f "$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp' object='ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.Po' tmpdepfile='$(DEPDIR)/ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_example_epetra_preconditioner_AztecMSR_CPPFLAGS) $(CPPFLAGS) $(ml_example_epetra_preconditioner_AztecMSR_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_epetra_preconditioner_AztecMSR-ml_example_epetra_preconditioner_AztecMSR.obj `if test -f '$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp'; fi`
 
 ml_filtering-ml_filtering.o: $(srcdir)/ml_filtering.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -MT ml_filtering-ml_filtering.o -MD -MP -MF "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" -c -o ml_filtering-ml_filtering.o `test -f '$(srcdir)/ml_filtering.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_filtering.cpp; \
