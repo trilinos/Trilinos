@@ -516,7 +516,9 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_SUPERLUDIST
     } else if ( SparseSolver == SUPERLUDIST ) { 
       Teuchos::ParameterList ParamList ;
+      ParamList.set( "MaxProcs", -3 );
       Amesos_Superludist superludist( Problem ) ; 
+      EPETRA_CHK_ERR( superludist.SetParameters( ParamList ) ); 
       EPETRA_CHK_ERR( superludist.SetUseTranspose( transpose ) ); 
       EPETRA_CHK_ERR( superludist.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( superludist.NumericFactorization(  ) ); 

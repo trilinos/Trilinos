@@ -292,7 +292,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   //ParamList.set( "Redistribute", true );
   //ParamList.set( "AddZeroToDiag", true );
   Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-  //  SuperludistParams.set( "IterRefine", "DOUBLE" );
+  ParamList.set( "MaxProcs", -3 );
 
 	EPETRA_CHK_ERR( A_Superludist.SetParameters( ParamList ) ); 
 	EPETRA_CHK_ERR( A_Superludist.SetUseTranspose( transpose ) ); 

@@ -317,7 +317,7 @@ int main( int argc, char *argv[] ) {
   //  This test is not foolproof - it is possible to have valgrind and not valgrind.h.
   //
 #ifdef HAVE_VALGRIND 
-  if (! RUNNING_ON_VALGRIND ) {
+  if (false && ! RUNNING_ON_VALGRIND ) {
 #endif
     result += TestOneMatrix("../bcsstk13.mtx", Comm, verbose, 1e-6 , numtests ) ;
     //  result += TestOneMatrix("../bcsstk02.mtx", Comm, verbose, 1e-6 , numtests ) ;

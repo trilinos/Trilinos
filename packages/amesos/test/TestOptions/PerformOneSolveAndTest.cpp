@@ -313,14 +313,19 @@ int PerformOneSolveAndTest(char* AmesosClass,
 
 
 
-
+    //    if ( Amesos_Solver != "Amesos_Scalapack" ) { 
     const int BNumPoints = 6;  // Must be between 2 and 100 (on large matrices,
     // the problem is quite ill-conditioned) 
-
+    
     // Construct a Map that puts approximately the same number of 
     // equations on each processor.
     Epetra_Map BMap(BNumPoints, 0, Comm);
-
+    //    }  else {
+    //      Epetra_Map Bmap = Map ; 
+    //    }
+    
+    Bmap = Map ;
+      
     //  Create an empty EpetraCrsMatrix 
     Epetra_CrsMatrix B(Copy, BMap, 0);
 

@@ -79,32 +79,31 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob ) :
   SuperluMat_(0),
   vecBdistributed_(0),
   vecXdistributed_(0),
-  nprow_(0),
-  npcol_(0),
+  nprow_(0),               // Overwritten by call to SetParameters below
+  npcol_(0),               // Overwritten by call to SetParameters below
   PrintNonzeros_(false),
-  ColPerm_("MMD_AT_PLUS_A"),
-  RowPerm_("NATURAL"),
-  perm_c_(0),
-  perm_r_(0),
-  IterRefine_("DOUBLE"),
-  ReplaceTinyPivot_(false),
-  FactorizationOK_(false), 
+  ColPerm_("NOT SET"),     // Overwritten by call to SetParameters below
+  RowPerm_("NOT SET"),     // Overwritten by call to SetParameters below
+  perm_c_(0),              // Overwritten by call to SetParameters below
+  perm_r_(0),              // Overwritten by call to SetParameters below
+  IterRefine_("NOT SET"),  // Overwritten by call to SetParameters below
+  ReplaceTinyPivot_(true), // Overwritten by call to SetParameters below - WAS false
+  FactorizationOK_(false),    
   UseTranspose_(false),
-  PrintStatus_(false),
-  PrintTiming_(false),    
-  verbose_(1),
-  debug_(0),
+  PrintStatus_(false),     // Overwritten by call to SetParameters below
+  PrintTiming_(false),     // Overwritten by call to SetParameters below - WAS false
+  verbose_(1),             // Set here and nowhere else
+  debug_(0),               // Overwritten by call to SetParameters below
   NumTime_(0.0),
   SolTime_(0.0),
   ConTime_(0.0),
   VecTime_(0.0),
   MatTime_(0.0),
   Time_(0),
-  NumSymbolicFact_(0),
   NumNumericFact_(0),
   NumSolve_(0),
-  ComputeTrueResidual_(false),
-  ComputeVectorNorms_(false)
+  ComputeTrueResidual_(false), // Overwritten by call to SetParameters below
+  ComputeVectorNorms_(false)   // Overwritten by call to SetParameters below
 {
   Teuchos::ParameterList ParamList ;
   SetParameters( ParamList ) ; 
@@ -157,6 +156,13 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   if( debug_ == 1 ) cout << "Entering `SetParameters()' ..." << endl;
   
+  debug_ = 0 ; 
+  // debug level:
+  // 0 - no debug output
+  // 1 - some output
+  if( ParameterList.isParameter("DebugLevel") )
+    debug_ = ParameterList.get("DebugLevel", 0);
+
   //  Some compilers reject the following cast:
   //  if( (int) &ParameterList == 0 ) return 0;
 
@@ -180,13 +186,15 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
   perm_c_ = 0;
   RowPerm_ = "LargeDiag";
   perm_r_ = 0;
-  IterRefine_ = "NO";
+  IterRefine_ = "DOUBLE";
   ReplaceTinyPivot_ = true;
   
   PrintNonzeros_ = false;
 
   ComputeTrueResidual_ = false;
   ComputeVectorNorms_ = false;
+  PrintStatus_ = false ; 
+  PrintTiming_ = false ; 
   
   // Ken, I modified so that parameters are not added to the list if not present.
   // Is it fine for you ????
@@ -212,15 +220,8 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
   if( ParameterList.isParameter("PrintTiming") )
     PrintTiming_ = ParameterList.get("PrintTiming", false);
 
-  // debug level:
-  // 0 - no debug output
-  // 1 - some output
-  if( ParameterList.isParameter("DebugLevel") )
-    debug_ = ParameterList.get("DebugLevel", 0);
-
   if( ParameterList.isParameter("MaxProcs") ) 
     MaxProcesses_ = ParameterList.get("MaxProcs",MaxProcesses_);
-  if( MaxProcesses_ > Comm().NumProc() ) MaxProcesses_ = Comm().NumProc();
 
   if( ParameterList.isParameter("ComputeTrueResidual") )
     ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",ComputeTrueResidual_);
@@ -263,10 +264,10 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
     */
     
     if(  SuperludistParams.isParameter("Equil") )
-      Equil_ = SuperludistParams.get("Equil",true);
+      Equil_ = SuperludistParams.get("Equil",Equil_);
 
     if( SuperludistParams.isParameter("ColPerm") )
-      ColPerm_ = SuperludistParams.get("ColPerm","MMD_AT_PLUS_A");
+      ColPerm_ = SuperludistParams.get("ColPerm",ColPerm_);
 
     if( ColPerm_ == "MY_PERMC" ) {
       if( SuperludistParams.isParameter("perm_c") )
@@ -274,20 +275,20 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
     }
 
     if( SuperludistParams.isParameter("RowPerm") )
-      RowPerm_ = SuperludistParams.get("RowPerm","LargeDiag");
+      RowPerm_ = SuperludistParams.get("RowPerm",RowPerm_);
     if( RowPerm_ == "MY_PERMR" ) {
       if( SuperludistParams.isParameter("perm_r") )
 	perm_r_ = SuperludistParams.get("perm_r",perm_r_);
     }
 
     if( SuperludistParams.isParameter("IterRefine") )
-      IterRefine_ = SuperludistParams.get("IterRefine","NO");
+      IterRefine_ = SuperludistParams.get("IterRefine",IterRefine_);
 
     if( SuperludistParams.isParameter("ReplaceTinyPivot") )
-      ReplaceTinyPivot_ = SuperludistParams.get("ReplaceTinyPivot",true);
+      ReplaceTinyPivot_ = SuperludistParams.get("ReplaceTinyPivot",ReplaceTinyPivot_);
 
     if( SuperludistParams.isParameter("PrintNonzeros") )
-      PrintNonzeros_ = SuperludistParams.get("PrintNonzeros",false);
+      PrintNonzeros_ = SuperludistParams.get("PrintNonzeros",PrintNonzeros_);
 
   }
   
@@ -325,52 +326,24 @@ int Amesos_Superludist::RedistributeA( ) {
   const Epetra_Comm &Comm_ = RowMatrixA_->Comm();
   int NumberOfProcesses = Comm_.NumProc() ;
 
+
   // if user wants to use all processes
   if( MaxProcesses_ == -3 ) MaxProcesses_ = NumberOfProcesses;
-  
-  if ( MaxProcesses_ > 0 ) {
-    NumberOfProcesses = EPETRA_MIN( NumberOfProcesses, MaxProcesses_ );
-    // MS // added the following
-    nprow_ = Superludist_NumProcRows( NumberOfProcesses );
-    if( nprow_ < 1 ) nprow_ = 1;
-    npcol_ = NumberOfProcesses / nprow_;
-    
-  }
-  else {
-    if( MaxProcesses_ == -1 ) {
-      //  Establish the grid (nprow vs. npcol) 
-      //  Note:  The simple heuristic below is untested and 
-      //  will lead to a poor grid shape if ProcessNumHeuristic is large
-      //  and nearly prime.
-      //
-      // ken's approach to determine the number of processes
-      int ProcessNumHeuristic = 1+EPETRA_MAX( NumRows_/10000, NumGlobalNonzeros_/1000000 );
-      NumberOfProcesses = EPETRA_MIN( NumberOfProcesses,  ProcessNumHeuristic );
-      nprow_ = Superludist_NumProcRows( NumberOfProcesses ) ; 
-      npcol_ = NumberOfProcesses / nprow_ ;
-      assert ( nprow_ * npcol_ == NumberOfProcesses ) ;
-    }
-    else if( MaxProcesses_ == -2 ) {
-      // ML's approach: square root of the number of processes,
-      // in a 2D square grid
-      nprow_ = (int) pow(1.0 * NumberOfProcesses, 0.25001 );
-      npcol_ = (int) sqrt(1.0 * NumberOfProcesses);
-      if( nprow_ < 1 ) nprow_ = 1;
-      if( npcol_ < 1 ) npcol_ = 1;
-      npcol_ /= nprow_;
-      NumberOfProcesses = npcol_ * nprow_;
-    } else {
-      cerr << "Amesos_Superludist:Error: wrong value for MaxProcs ("
-	   << MaxProcesses_ << ")" << endl;
-      exit( EXIT_FAILURE );
-    }
-  }
+  if ( MaxProcesses_ == -2 ) MaxProcesses_ = (int) sqrt(1.0 * NumberOfProcesses );
+  if ( MaxProcesses_ <= 0 ) MaxProcesses_ = 1+EPETRA_MAX( NumRows_/10000, NumGlobalNonzeros_/1000000 );
+
+  assert( MaxProcesses_ > 0 ) ;
+
+  NumberOfProcesses = EPETRA_MIN( NumberOfProcesses, MaxProcesses_ );
+  nprow_ = Superludist_NumProcRows( NumberOfProcesses );
+  if( nprow_ < 1 ) nprow_ = 1;
+  npcol_ = NumberOfProcesses / nprow_;
   
   if( nprow_ <=0 || npcol_ <= 0 || NumberOfProcesses <=0 ) {
     cerr << "Amesos_Superludist:Error: wrong value for MaxProcs ("
 	 << MaxProcesses_ << "), or nprow (" << nprow_ 
 	 << ") or npcol (" << npcol_ << ")" << endl;
-    exit( EXIT_FAILURE );
+    return( EXIT_FAILURE );
   }
 
   //
@@ -943,9 +916,9 @@ int Amesos_Superludist::Solve() {
       for ( int j =0 ; j < nrhs; j++ ) { 
 	pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues[j*ldx], ldx, 1, &grid_,
 		&LUstruct_, &SOLVEstruct_, &berr[0], &stat, &info);
-	if ( options_.SolveInitialized ) {
-	  dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
-	}
+	//	if ( options_.SolveInitialized ) {
+	//	  dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
+	//	}
 	EPETRA_CHK_ERR( info ) ;
       }
     } 

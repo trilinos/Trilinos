@@ -215,6 +215,13 @@ revert to their default values.
     <ul>
     <li>"AddZeroToDiag" - boolean:false - Adds zero to the diagonal, only active if Redistribute is true 
     <li>"Redistribute" - boolean:true - Redistributes the matrix 
+    <li>"MaxProcs" - Maximum Number of Processors to use
+      <ul>
+      <li>&gt 0: Specifies the maximum number of processes to use
+      <li>-1 : Maximum number of processes chosen via an internal heuristic based on the matrix size
+      <li>-2 : Maximum number of processes set to the square root of the number of processes
+      <li>-3 : Use all processes
+      </ul>
     </ul>
 
 
@@ -335,7 +342,7 @@ revert to their default values.
   double ConTime_;
   Epetra_Time * Time_;
   
-  int NumSymbolicFact_;
+  //  int NumSymbolicFact_;  //  Amesos_Superludist_ does not separate Symbolic from Numeric Factorization
   int NumNumericFact_;
   int NumSolve_;
 
