@@ -2612,16 +2612,21 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
    int             fillin, *mat_ia, *mat_ja, i, m, allocated_space, *cols;
    int             index, first, Lcount, Ucount, j, k, total_nnz;
    int             sortcnt, colIndex, offset, nnz_count, Nrows, extNrows;
-   int             mypid, track_leng, *track_array, *sortcols;
+   int             track_leng, *track_array, *sortcols;
    double          *vals, ddata, tau, *mat_aa, *diagonal, *rowNorms;
    double          *dble_buf, *sortvals, absval, rel_tau;
    ML_Sm_ILUT_Data *ilut_ptr;
+#ifdef ML_SMOOTHER_DEBUG
+   int             mypid;
+#endif
 
    /* ---------------------------------------------------------- */
    /* fetch ILUT parameters                                      */
    /* ---------------------------------------------------------- */
 
+#ifdef ML_SMOOTHER_DEBUG
    mypid       = comm->ML_mypid;
+#endif
    ilut_ptr    = (ML_Sm_ILUT_Data *) data;
    fillin      = ilut_ptr->fillin;
    tau         = ilut_ptr->threshold;

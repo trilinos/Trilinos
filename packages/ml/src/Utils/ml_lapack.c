@@ -227,9 +227,6 @@ typedef doublereal E_f;	/* real function with -R not specified */
 {
 
 
-    /* System generated locals */
-    integer i__1, i__2;
-
     /* Local variables */
     static integer info;
     static doublereal temp;
@@ -431,14 +428,12 @@ typedef doublereal E_f;	/* real function with -R not specified */
 	    }
 	} else {
 	    if (*incx == 1) {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    if (X(j) != 0.) {
 			if (nounit) {
 			    X(j) /= A(j,j);
 			}
 			temp = X(j);
-			i__2 = *n;
 			for (i = j + 1; i <= *n; ++i) {
 			    X(i) -= temp * A(i,j);
 /* L50: */
@@ -448,7 +443,6 @@ typedef doublereal E_f;	/* real function with -R not specified */
 		}
 	    } else {
 		jx = kx;
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    if (X(jx) != 0.) {
 			if (nounit) {
@@ -456,7 +450,6 @@ typedef doublereal E_f;	/* real function with -R not specified */
 			}
 			temp = X(jx);
 			ix = jx;
-			i__2 = *n;
 			for (i = j + 1; i <= *n; ++i) {
 			    ix += *incx;
 			    X(ix) -= temp * A(i,j);
@@ -474,10 +467,8 @@ typedef doublereal E_f;	/* real function with -R not specified */
 
 	if (lsame_(uplo, "U")) {
 	    if (*incx == 1) {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    temp = X(j);
-		    i__2 = j - 1;
 		    for (i = 1; i <= j-1; ++i) {
 			temp -= A(i,j) * X(i);
 /* L90: */
@@ -490,11 +481,9 @@ typedef doublereal E_f;	/* real function with -R not specified */
 		}
 	    } else {
 		jx = kx;
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    temp = X(jx);
 		    ix = kx;
-		    i__2 = j - 1;
 		    for (i = 1; i <= j-1; ++i) {
 			temp -= A(i,j) * X(ix);
 			ix += *incx;
@@ -512,7 +501,6 @@ typedef doublereal E_f;	/* real function with -R not specified */
 	    if (*incx == 1) {
 		for (j = *n; j >= 1; --j) {
 		    temp = X(j);
-		    i__1 = j + 1;
 		    for (i = *n; i >= j+1; --i) {
 			temp -= A(i,j) * X(i);
 /* L130: */
@@ -529,7 +517,6 @@ typedef doublereal E_f;	/* real function with -R not specified */
 		for (j = *n; j >= 1; --j) {
 		    temp = X(jx);
 		    ix = kx;
-		    i__1 = j + 1;
 		    for (i = *n; i >= j+1; --i) {
 			temp -= A(i,j) * X(ix);
 			ix -= *incx;
@@ -625,7 +612,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
     static doublereal c_b19 = -1.;
     
     /* System generated locals */
-    integer   i__1, i__2, i__3, i__4, i__5;
+    integer   i__1, i__3, i__4, i__5;
     /* Local variables */
     static integer i, j;
     extern /* Subroutine */ int MLFORTRAN(dgemm)(char *, char *, integer *, integer *, 
@@ -683,7 +670,6 @@ typedef doublereal E_f;	/* real function with -R not specified */
 /*        Use blocked code. */
 
 	i__1 = min(*m,*n);
-	i__2 = nb;
 	for (j = 1; nb < 0 ? j >= min(*m,*n) : j <= min(*m,*n); j += nb) {
 /* Computing MIN */
 	    i__3 = min(*m,*n) - j + 1;
@@ -1594,8 +1580,6 @@ e
     
    Parameter adjustments   
        Function Body */
-    /* System generated locals */
-    integer   i__1;
     /* Local variables */
     static integer i;
     extern /* Subroutine */ int MLFORTRAN(dswap)(integer *, doublereal *, integer *, 
@@ -1616,7 +1600,6 @@ e
 	ix = (1 - *k2) * *incx + 1;
     }
     if (*incx == 1) {
-	i__1 = *k2;
 	for (i = *k1; i <= *k2; ++i) {
 	    ip = IPIV(i);
 	    if (ip != i) {
@@ -1625,7 +1608,6 @@ e
 /* L10: */
 	}
     } else if (*incx > 1) {
-	i__1 = *k2;
 	for (i = *k1; i <= *k2; ++i) {
 	    ip = IPIV(ix);
 	    if (ip != i) {
@@ -1635,7 +1617,6 @@ e
 /* L20: */
 	}
     } else if (*incx < 0) {
-	i__1 = *k1;
 	for (i = *k2; i >= *k1; --i) {
 	    ip = IPIV(ix);
 	    if (ip != i) {
@@ -2747,9 +2728,6 @@ L30:
 {
 
 
-    /* System generated locals */
-    integer   i__1, i__2;
-
     /* Local variables */
     static integer info;
     static doublereal temp;
@@ -2873,11 +2851,9 @@ L30:
 	jy = 1 - (*n - 1) * *incy;
     }
     if (*incx == 1) {
-	i__1 = *n;
 	for (j = 1; j <= *n; ++j) {
 	    if (Y(jy) != 0.) {
 		temp = *alpha * Y(jy);
-		i__2 = *m;
 		for (i = 1; i <= *m; ++i) {
 		    A(i,j) += X(i) * temp;
 /* L10: */
@@ -2892,12 +2868,10 @@ L30:
 	} else {
 	    kx = 1 - (*m - 1) * *incx;
 	}
-	i__1 = *n;
 	for (j = 1; j <= *n; ++j) {
 	    if (Y(jy) != 0.) {
 		temp = *alpha * Y(jy);
 		ix = kx;
-		i__2 = *m;
 		for (i = 1; i <= *m; ++i) {
 		    A(i,j) += X(ix) * temp;
 		    ix += *incx;
@@ -5351,9 +5325,6 @@ L40:
 {
 
 
-    /* System generated locals */
-    integer   i__1, i__2;
-
     /* Local variables */
     static integer info;
     static doublereal temp;
@@ -5524,13 +5495,11 @@ L40:
     if (*beta != 1.) {
 	if (*incy == 1) {
 	    if (*beta == 0.) {
-		i__1 = leny;
 		for (i = 1; i <= leny; ++i) {
 		    Y(i) = 0.;
 /* L10: */
 		}
 	    } else {
-		i__1 = leny;
 		for (i = 1; i <= leny; ++i) {
 		    Y(i) = *beta * Y(i);
 /* L20: */
@@ -5539,14 +5508,12 @@ L40:
 	} else {
 	    iy = ky;
 	    if (*beta == 0.) {
-		i__1 = leny;
 		for (i = 1; i <= leny; ++i) {
 		    Y(iy) = 0.;
 		    iy += *incy;
 /* L30: */
 		}
 	    } else {
-		i__1 = leny;
 		for (i = 1; i <= leny; ++i) {
 		    Y(iy) = *beta * Y(iy);
 		    iy += *incy;
@@ -5564,11 +5531,9 @@ L40:
 
 	jx = kx;
 	if (*incy == 1) {
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
 		if (X(jx) != 0.) {
 		    temp = *alpha * X(jx);
-		    i__2 = *m;
 		    for (i = 1; i <= *m; ++i) {
 			Y(i) += temp * A(i,j);
 /* L50: */
@@ -5578,12 +5543,10 @@ L40:
 /* L60: */
 	    }
 	} else {
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
 		if (X(jx) != 0.) {
 		    temp = *alpha * X(jx);
 		    iy = ky;
-		    i__2 = *m;
 		    for (i = 1; i <= *m; ++i) {
 			Y(iy) += temp * A(i,j);
 			iy += *incy;
@@ -5600,10 +5563,8 @@ L40:
 
 	jy = ky;
 	if (*incx == 1) {
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
 		temp = 0.;
-		i__2 = *m;
 		for (i = 1; i <= *m; ++i) {
 		    temp += A(i,j) * X(i);
 /* L90: */
@@ -5613,11 +5574,9 @@ L40:
 /* L100: */
 	    }
 	} else {
-	    i__1 = *n;
 	    for (j = 1; j <= *n; ++j) {
 		temp = 0.;
 		ix = kx;
-		i__2 = *m;
 		for (i = 1; i <= *m; ++i) {
 		    temp += A(i,j) * X(ix);
 		    ix += *incx;
@@ -5650,7 +5609,6 @@ L40:
 
 
     /* System generated locals */
-    integer   i__1, i__2;
 
     /* Local variables */
     static integer info;
@@ -5816,11 +5774,9 @@ L40:
 
 	if (MLFORTRAN(lsame)(uplo, "U")) {
 	    if (*incx == 1) {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    if (X(j) != 0.) {
 			temp = X(j);
-			i__2 = j - 1;
 			for (i = 1; i <= j-1; ++i) {
 			    X(i) += temp * A(i,j);
 /* L10: */
@@ -5833,12 +5789,10 @@ L40:
 		}
 	    } else {
 		jx = kx;
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    if (X(jx) != 0.) {
 			temp = X(jx);
 			ix = kx;
-			i__2 = j - 1;
 			for (i = 1; i <= j-1; ++i) {
 			    X(ix) += temp * A(i,j);
 			    ix += *incx;
@@ -5857,7 +5811,6 @@ L40:
 		for (j = *n; j >= 1; --j) {
 		    if (X(j) != 0.) {
 			temp = X(j);
-			i__1 = j + 1;
 			for (i = *n; i >= j+1; --i) {
 			    X(i) += temp * A(i,j);
 /* L50: */
@@ -5875,7 +5828,6 @@ L40:
 		    if (X(jx) != 0.) {
 			temp = X(jx);
 			ix = kx;
-			i__1 = j + 1;
 			for (i = *n; i >= j+1; --i) {
 			    X(ix) += temp * A(i,j);
 			    ix -= *incx;
@@ -5928,13 +5880,11 @@ L40:
 	    }
 	} else {
 	    if (*incx == 1) {
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    temp = X(j);
 		    if (nounit) {
 			temp *= A(j,j);
 		    }
-		    i__2 = *n;
 		    for (i = j + 1; i <= *n; ++i) {
 			temp += A(i,j) * X(i);
 /* L130: */
@@ -5944,14 +5894,12 @@ L40:
 		}
 	    } else {
 		jx = kx;
-		i__1 = *n;
 		for (j = 1; j <= *n; ++j) {
 		    temp = X(jx);
 		    ix = jx;
 		    if (nounit) {
 			temp *= A(j,j);
 		    }
-		    i__2 = *n;
 		    for (i = j + 1; i <= *n; ++i) {
 			ix += *incx;
 			temp += A(i,j) * X(ix);
@@ -7471,6 +7419,7 @@ for(i = 0 ; i < n ; ++i)
         }
 while(--ll >= 0)
         *lp++ = ' ';
+        return 0;
 }
 #endif
 
