@@ -186,11 +186,17 @@ LOCA::Continuation::ExtendedGroup::computeTangent() {
   // that of the secant vector
   if (isPrevXVec()) {
     // Compute secant vector xVec-prevXVec
-    LOCA::Continuation::ExtendedVector secantVec(getPrevX());
-    secantVec.update(1.0, getX(), -1.0);
+    //LOCA::Continuation::ExtendedVector secantVec(getPrevX());
+    //secantVec.update(1.0, getX(), -1.0);
     
     // Give tangent vector same orientation as secant vector
-    if (computeScaledDotProduct(secantVec, predictorVec) < 0.0) 
+    //if (computeScaledDotProduct(secantVec, predictorVec) < 0.0) 
+    //  predictorVec.scale(-1.0);
+
+    double pold = getPrevX().getParam();
+    double pnew = getContinuationParameter();
+    double deltap = pnew-pold;
+    if (deltap < 0)
       predictorVec.scale(-1.0);
    
   }

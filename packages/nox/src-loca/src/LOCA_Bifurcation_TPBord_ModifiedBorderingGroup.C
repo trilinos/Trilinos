@@ -223,33 +223,176 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse(
   delete e;
   delete tmp;
   delete u;
-
-//   NOX::Abstract::Vector *residual = input.clone(NOX::ShapeCopy);
-//   applyJacobian(result, *residual);
-//   residual->update(-1.0, input, 1.0);
-//   residual->scale(1.0/input.norm(NOX::Abstract::Vector::TwoNorm));
-//   cout << "Scaled L2 Norm of linear solve residual = " 
-//        << residual->norm(NOX::Abstract::Vector::TwoNorm) << endl;
-
-//   delete residual;
  
   return NOX::Abstract::Group::Ok;
 }
+
+// NOX::Abstract::Group::ReturnType
+// LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverseMulti(
+// 			    NOX::Parameter::List& params,
+// 			    const NOX::Abstract::Vector* const* inputs,
+// 			    NOX::Abstract::Vector** results, int nVecs) const 
+// {
+//   NOX::Abstract::Group::ReturnType res;
+
+//   for (int i=0; i<nVecs; i++) {
+//     res = applyJacobianInverse(params, *(inputs[i]), *(results[i]));
+//     if (res != NOX::Abstract::Group::Ok)
+//       return res;
+//   }
+
+//   return res;
+// }
 
 NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverseMulti(
 			    NOX::Parameter::List& params,
 			    const NOX::Abstract::Vector* const* inputs,
-			    NOX::Abstract::Vector** results, int nVecs) const 
+			    NOX::Abstract::Vector** results, int nVecs) const
 {
-  NOX::Abstract::Group::ReturnType res;
+  // Number of input vectors
+  int m = nVecs; 
 
-  for (int i=0; i<nVecs; i++) {
-    res = applyJacobianInverse(params, *(inputs[i]), *(results[i]));
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
+  // Return type
+  NOX::Abstract::Group::ReturnType res;
+  
+  // Build arrays of solution, null vector and parameter components
+  const NOX::Abstract::Vector** inputs_x = 
+    new const NOX::Abstract::Vector*[m+1];
+  const NOX::Abstract::Vector** inputs_null =
+    new const NOX::Abstract::Vector*[m+2];
+  double *inputs_params = new double[m];
+  double *zeros = new double[m+2];
+
+  NOX::Abstract::Vector** tmp1 = new NOX::Abstract::Vector*[m+2];
+  NOX::Abstract::Vector** tmp2 = new NOX::Abstract::Vector*[m+2];
+  NOX::Abstract::Vector** tmp3 = new NOX::Abstract::Vector*[m+2];
+  double *scalars_x = new double[m+1];
+  double *scalars_null = new double[m+2];
+
+  // Get reference to null vector, Jn vectors
+  const NOX::Abstract::Vector& v = tpXVec.getNullVec();
+  const NOX::Abstract::Vector& Jv = tpFVec.getNullVec();
+
+  // Compute s = ||Jv||_2, u = v/s
+  double s = Jv.norm(NOX::Abstract::Vector::TwoNorm);
+  NOX::Abstract::Vector *u = Jv.clone(NOX::DeepCopy);
+  u->scale(1.0/s);
+
+  const LOCA::Bifurcation::TPBord::ExtendedVector* constTPVecPtr;
+
+  for (int i=0; i<m; i++) {
+    constTPVecPtr = 
+      dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector*>(inputs[i]);
+    inputs_x[i] = &(constTPVecPtr->getXVec());
+    inputs_null[i] = &(constTPVecPtr->getNullVec());
+    inputs_params[i] = constTPVecPtr->getBifParam();
+
+    tmp1[i] = inputs_x[i]->clone(NOX::ShapeCopy); tmp1[i]->init(0.0);
+    tmp2[i] = inputs_x[i]->clone(NOX::ShapeCopy); tmp2[i]->init(0.0);
+    tmp3[i] = inputs_x[i]->clone(NOX::ShapeCopy); tmp3[i]->init(0.0);
+    zeros[i] = 0.0;
+    scalars_x[i] = 0.0;
+    scalars_null[i] = 0.0;
   }
+
+  // Set last components to deriv. w.r.t. parameter
+  inputs_x[m] = derivResidualParamPtr;
+  inputs_null[m] = derivNullResidualParamPtr;
+  tmp1[m] = inputs_x[m]->clone(NOX::ShapeCopy); tmp1[m]->init(0.0);
+  tmp2[m] = inputs_x[m]->clone(NOX::ShapeCopy); tmp2[m]->init(0.0);
+  tmp3[m] = inputs_x[m]->clone(NOX::ShapeCopy); tmp3[m]->init(0.0);
+  zeros[m] = 0.0;
+  scalars_x[m] = 0.0;
+  scalars_null[m] = 0.0;
+
+  tmp1[m+1] = v.clone(NOX::DeepCopy);
+  tmp2[m+1] = inputs_x[m]->clone(NOX::ShapeCopy); tmp2[m+1]->init(0.0);
+  tmp3[m+1] = inputs_x[m]->clone(NOX::ShapeCopy); tmp3[m+1]->init(0.0);
+  zeros[m+1] = 0.0;
+  scalars_null[m+1] = 0.0;
+
+  // Solve J*tmp1 = inputs_x
+  res = grpPtr->applyBorderedJacobianInverseMulti(false, params, *u, v,
+						  inputs_x, zeros, tmp1,
+						  scalars_x, m+1);
+
+  // Compute tmp2 = inputs_null - (dJv/dx)*tmp1 
+  for (int i=0; i<m+2; i++) {
+    res = grpPtr->computeDJnDxa(v, *tmp1[i], Jv, *tmp2[i]);
+
+    if (i < m+1)
+      tmp2[i]->update(1.0, *inputs_null[i], -1.0);
+  } 
+
+  // Solve J*tmp3 = tmp2
+  res = grpPtr->applyBorderedJacobianInverseMulti(false, params, *u, v,
+						  tmp2, zeros, tmp3,
+						  scalars_null, m+2);
+
+  // Fill coefficient arrays
+  double A[9];
+  double *B = new double[3*m];
+  NOX::Abstract::Vector& b = *tmp1[m];   double bb = scalars_x[m];
+  NOX::Abstract::Vector& d = *tmp3[m];   double dd = scalars_null[m];
+  NOX::Abstract::Vector& e = *tmp3[m+1]; double ee = scalars_null[m+1];
+  A[0] = s;   A[1] = ee;  A[2] = -lTransNorm(e);
+  A[3] = 0.0; A[4] = s;   A[5] =  lTransNorm(v);
+  A[6] = bb;  A[7] = dd;  A[8] = -lTransNorm(d);
+
+  for (int i=0; i<m; i++) {
+    B[0 + 3*i] = scalars_x[i];  
+    B[1 + 3*i] = scalars_null[i];  
+    B[2 + 3*i] = inputs_params[i] - lTransNorm(*tmp3[i]);
+  }
+  // Solve A*C = B
+  int three = 3;
+  int piv[3];
+  int info;
+  DGESV_F77(&three, &m, A, &three, piv, B, &three, &info);
+  if (info != 0)
+    return NOX::Abstract::Group::Failed;
+  
+  // Compute and set results
+  double alpha, beta, w;
+  LOCA::Bifurcation::TPBord::ExtendedVector* tpVecPtr;
+  for (int i=0; i<m; i++) {
+    tpVecPtr = 
+      dynamic_cast<LOCA::Bifurcation::TPBord::ExtendedVector*>(results[i]);
+    alpha = B[0 + 3*i];
+    beta = B[1 + 3*i];
+    w = B[2 + 3*i];
+
+    tpVecPtr->getXVec() = *tmp1[i];
+    (tpVecPtr->getXVec()).update(-w, b, alpha, v, 1.0);
+
+    (tpVecPtr->getNullVec()).update(1.0, *tmp3[i], -w, d, 0.0);
+    (tpVecPtr->getNullVec()).update(-alpha, e, beta, v, 1.0);
+    tpVecPtr->getBifParam() = w;
+
+    delete tmp1[i];
+    delete tmp2[i];
+    delete tmp3[i];
+  }
+
+  delete tmp1[m];
+  delete tmp2[m];
+  delete tmp3[m];
+
+  delete tmp1[m+1];
+  delete tmp2[m+1];
+  delete tmp3[m+1];
+
+  delete [] tmp1;
+  delete [] tmp2;
+  delete [] tmp3;
+  delete [] inputs_x;
+  delete [] inputs_null;
+  delete [] inputs_params;
+  delete [] zeros;
+  delete [] scalars_x;
+  delete [] scalars_null;
+  delete [] B;
 
   return res;
 }
-
