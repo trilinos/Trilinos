@@ -84,8 +84,6 @@ SuperludistOO::~SuperludistOO(void) {
     ScalePermstructFree(&ScalePermstruct);
     LUstructFree(&LUstruct);
     SUPERLU_FREE(berr);
-
-    cout << " Here we are in the destructor " << endl ; 
   }
 
 }
