@@ -48,6 +48,14 @@ double Epetra_Time::WallTime(void) const
 
   return(MPI_Wtime());
 
+#elif ICL
+
+   clock_t start;
+   double duration;
+
+   start = clock();
+  return (double)( start ) / CLOCKS_PER_SEC;
+
 #else
 
 #ifndef MINGW

@@ -26,13 +26,14 @@ TRILINOS_UTIL_F =
 
 TRILINOS_UTIL_INC =
 
-TRILINOS_UTIL_OBJ = $(TRILINOS_UTIL_CC:.cpp=.o) \
-                    $(TRILINOS_UTIL_C:.c=.o) \
-                    $(TRILINOS_UTIL_F:.for=.o)
+TRILINOS_UTIL_OBJ = $(TRILINOS_UTIL_CC:.cpp=.$(OBJ_EXT)) \
+                    $(TRILINOS_UTIL_C:.c=.$(OBJ_EXT)) \
+                    $(TRILINOS_UTIL_F:.for=.$(OBJ_EXT))
 
-$(LIBTRILINOS_UTIL): $(TRILINOS_UTIL_OBJ)
+#$(LIBTRILINOS_UTIL): $(TRILINOS_UTIL_OBJ)
+LIBTRILINOS_UTIL: $(TRILINOS_UTIL_OBJ)
 	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
-	$(AR) $(ARFLAGS) $(LIBTRILINOS_UTIL) $(TRILINOS_UTIL_OBJ)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBTRILINOS_UTIL) $(TRILINOS_UTIL_OBJ)
 	$(RANLIB) $(LIBTRILINOS_UTIL)
 
 #
@@ -41,5 +42,5 @@ $(LIBTRILINOS_UTIL): $(TRILINOS_UTIL_OBJ)
 #include ../../build/depends.petra
 
 clean:
-	@echo "junk" > dummy.o
-	@rm -f *.o  $(LIBTRILINOS_UTIL) *~
+	@echo "junk" > dummy.$(OBJ_EXT)
+	@rm -f *.$(OBJ_EXT)  $(LIBTRILINOS_UTIL) *~

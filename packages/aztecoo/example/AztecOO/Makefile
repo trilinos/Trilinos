@@ -9,7 +9,8 @@ DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
 
 INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src \
            -I$(TRILINOS_HOME)/packages/aztecoo/src \
-           -I$(TRILINOS_HOME)/packages/triutils/src
+           -I$(TRILINOS_HOME)/packages/triutils/src \
+           $(EPETRA_INCLUDES) $(AZTECOO_INCLUDES) $(TRIUTILS_INCLUDES)
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
@@ -19,8 +20,7 @@ LDFLAGS=$(ARCH_LDFLAGS)
 
 
 LIB_PATHS= $(LIBAZTECOO) $(LIBEPETRA) $(LIBIFPACK) \
-           $(LIBLAPACK) $(LIBBLAS) $(LIBY12M) \
-           $(LIBTRIUTILS)
+           $(LIBY12M) $(LIBTRIUTILS) $(LIBLAPACK) $(LIBBLAS) 
 
 #=======================================================================
 # Epetra test source files
@@ -36,7 +36,7 @@ TEST_F =
 
 TEST_INC =
 
-TEST_OBJ          =  $(TEST_CC:.cpp=.o) $(TEST_C:.c=.o)  $(TEST_F:.f=.o)
+TEST_OBJ =  $(TEST_CC:.cpp=.$(OBJ_EXT)) $(TEST_C:.c=.$(OBJ_EXT))  $(TEST_F:.f=.$(OBJ_EXT))
 
 TARGET_MPI_MSR = aztecoo_msr_mpi.exe
 TARGET_SERIAL_MSR = aztecoo_msr_serial.exe
@@ -55,6 +55,6 @@ $(TARGET): $(TEST_OBJ)
 #include ../../build/depends.epetra
 
 clean:
-	@echo "junk" > dummy.o
-	@rm -f *.o  *~ $(TARGET_MPI_MSR) $(TARGET_SERIAL_MSR) \
+	@echo "junk" > dummy.$(OBJ_EXT)
+	@rm -f *.$(OBJ_EXT)  *~ $(TARGET_MPI_MSR) $(TARGET_SERIAL_MSR) \
                     $(TARGET_MPI_VBR) $(TARGET_SERIAL_VBR)

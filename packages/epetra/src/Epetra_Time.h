@@ -40,6 +40,8 @@
 #include "Epetra_Comm.h"
 #ifdef EPETRA_MPI
 #include "mpi.h"
+#elif ICL
+#include <time.h>
 #else
 #include <sys/time.h>
 #ifndef MINGW

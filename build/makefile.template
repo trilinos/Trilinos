@@ -103,3 +103,7 @@ EPETRA_ARCH_DEFINES =
 #                  (Not defined by default).
 
 AZTECOO_ARCH_DEFINES = 
+
+# Define object and library extensions, defaults are 'o' and 'a', respectively
+#OBJ_EXT = 
+#LIB_EXT = 

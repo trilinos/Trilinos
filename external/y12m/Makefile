@@ -36,12 +36,14 @@ Y12M_F = y12mae.f  y12maf.f  y12mfe.f
 
 Y12M_INC = 
 
-Y12M_OBJ          = $(Y12M_F:.f=.o)
+Y12M_OBJ          = $(Y12M_F:.f=.$(OBJ_EXT))
 
-$(LIBY12M): $(Y12M_OBJ)
+#$(LIBY12M): $(Y12M_OBJ)
+LIBY12M: $(Y12M_OBJ)
 	mkdir -p $(TRILINOS_HOME)/external/y12m/lib/$(TRILINOS_TARGET)
-	$(AR) $(ARFLAGS) $(LIBY12M) $(Y12M_OBJ)
-	$(RANLIB) $(LIBY12M)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBY12M) $(Y12M_OBJ)
+# following ranlib commented out by rbl
+#	$(RANLIB) $(LIBY12M)
 
 #
 # dependencies for 'f' files (none at this time)
@@ -49,10 +51,10 @@ $(LIBY12M): $(Y12M_OBJ)
 #include ../../build/depends.y12m
 
 clean:
-	@echo "junk" > dummy.o
-	@rm -f *.o
+	echo "junk" > dummy.$(OBJ_EXT)
+	rm -f *.$(OBJ_EXT)
 
 clobber:
-	@echo "junk" > dummy.o
-	@rm -f *.o  $(LIBY12M)
+	echo "junk" > dummy.$(OBJ_EXT)
+	rm -f *.$(OBJ_EXT)  $(LIBY12M)
 

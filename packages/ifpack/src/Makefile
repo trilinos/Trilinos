@@ -39,11 +39,13 @@ IFPACK_C  = az_ifpack_prec_create.c   az_ifpack_precon.c  \
 
 IFPACK_INC =
 
-IFPACK_OBJ          = $(IFPACK_CC_new:.cpp=.o) $(IFPACK_CC_old:.cc=.o)  $(IFPACK_C:.c=.o) 
+IFPACK_OBJ = $(IFPACK_CC_new:.cpp=.$(OBJ_EXT)) $(IFPACK_CC_old:.cc=.$(OBJ_EXT)) $(IFPACK_C:.c=.$(OBJ_EXT)) 
 
-$(LIBIFPACK): $(IFPACK_OBJ)
-	$(AR) $(ARFLAGS) $(LIBIFPACK) $(IFPACK_OBJ)
-	$(RANLIB) $(LIBIFPACK)
+#$(LIBIFPACK): $(IFPACK_OBJ)
+LIBIFPACK: $(IFPACK_OBJ)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBIFPACK) $(IFPACK_OBJ)
+# following ranlib commented out by rbl
+#	$(RANLIB) $(LIBIFPACK)
 
 #
 # dependencies for 'f' files (none at this time)
@@ -51,5 +53,5 @@ $(LIBIFPACK): $(IFPACK_OBJ)
 #include ../../build/depends.ifpack
 
 clean:
-	@echo "junk" > dummy.o
-	@rm -f *.o  $(LIBIFPACK) *~
+	@echo "junk" > dummy.$(OBJ_EXT)
+	@rm -f *.$(OBJ_EXT)  $(LIBIFPACK) *~

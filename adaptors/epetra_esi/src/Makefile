@@ -23,14 +23,16 @@ CCFLAGS=$(CXXFLAGS)
 EPETRA_ESI_SRC = \
 	Epetra_ESI_inst.cpp
 
-EPETRA_ESI_OBJ          = $(EPETRA_ESI_SRC:.cpp=.o)
+EPETRA_ESI_OBJ          = $(EPETRA_ESI_SRC:.cpp=.$(OBJ_EXT))
 
-$(LIBEPETRA_ESI): $(EPETRA_ESI_OBJ)
+#$(LIBEPETRA_ESI): $(EPETRA_ESI_OBJ)
+LIBEPETRA_ESI: $(EPETRA_ESI_OBJ)
 	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
-	$(AR) $(ARFLAGS) $(LIBEPETRA_ESI) $(EPETRA_ESI_OBJ)
-	$(RANLIB) $(LIBEPETRA_ESI)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBEPETRA_ESI) $(EPETRA_ESI_OBJ)
+# following ranlib commented out by rbl
+#	$(RANLIB) $(LIBEPETRA_ESI)
 
 clean:
-	@rm -rf $(TRILINOS_TARGET)
-	@rm -f *.o  $(LIBEPETRA_ESI) *~
+	rm -rf $(TRILINOS_TARGET)
+	rm -f *.$(OBJ_EXT)  $(LIBEPETRA_ESI) *~
 

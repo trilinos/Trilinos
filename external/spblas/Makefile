@@ -36,12 +36,14 @@ SPBLAS_C = cblas_duscr_vbr.c cblas_dusmm.c
 
 SPBLAS_INC = spblas.h
 
-SPBLAS_OBJ          = $(SPBLAS_C:.c=.o)
+SPBLAS_OBJ          = $(SPBLAS_C:.c=.$(OBJ_EXT))
 
-$(LIBSPBLAS): $(SPBLAS_OBJ)
+#$(LIBSPBLAS): $(SPBLAS_OBJ)
+LIBSPBLAS: $(SPBLAS_OBJ)
 	mkdir -p $(TRILINOS_HOME)/external/spblas/lib/$(TRILINOS_TARGET)
-	$(AR)  $(ARFLAGS) $(LIBSPBLAS) $(SPBLAS_OBJ)
-	$(RANLIB) $(LIBSPBLAS)
+	$(AR)  $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBSPBLAS) $(SPBLAS_OBJ)
+# following ranlib commented out by rbl
+#	$(RANLIB) $(LIBSPBLAS)
 
 #
 # dependencies for 'f' files (none at this time)
@@ -49,9 +51,9 @@ $(LIBSPBLAS): $(SPBLAS_OBJ)
 #include ../../build/depends.spblas
 
 clean:
-	@echo "junk" > dummy.o
-	@rm -f *.o
+	echo "junk" > dummy.$(OBJ_EXT)
+	rm -f *.$(OBJ_EXT)
 
 clobber:
-	@echo "junk" > dummy.o
-	@rm -f *.o  $(LIBSPBLAS)
+	echo "junk" > dummy.$(OBJ_EXT)
+	rm -f *.$(OBJ_EXT)  $(LIBSPBLAS)

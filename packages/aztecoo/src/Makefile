@@ -48,6 +48,7 @@ TIME_TFLOP      = md_timer_intel.c
 TIME_CPLANT_SERIAL = md_timer_generic.c
 TIME_CPLANT_MPI    = md_timer_mpi.c
 TIME_CPLANT        = $(TIME_CPLANT_$(TRILINOS_COMM))
+TIME_WIN2000       = md_timer_win2000.c
 
 #
 # Communication package
@@ -90,7 +91,7 @@ az_tools.c	     az_util.c
 #az_gmresr.c
 
 
-AZTEC_F = az_reorder.f
+AZTEC_F = az_reorder.f dlaswp.f dlaic1.f
 
 AZTEC_CC = AZOO_iterate.cpp Aztec2Petra.cpp AztecOO.cpp AztecOO_Operator.cpp
 
@@ -100,12 +101,14 @@ AZTEC_CC = AZOO_iterate.cpp Aztec2Petra.cpp AztecOO.cpp AztecOO_Operator.cpp
 
 AZTEC_INC = az_aztec.h  az_aztec_defs.h  az_aztecf.h
 
-AZTEC_OBJ          = $(AZTEC_C:.c=.o) $(AZTEC_F:.f=.o) $(AZTEC_CC:.cpp=.o) 
+AZTEC_OBJ = $(AZTEC_C:.c=.$(OBJ_EXT)) $(AZTEC_F:.f=.$(OBJ_EXT)) $(AZTEC_CC:.cpp=.$(OBJ_EXT)) 
 
-$(LIBAZTECOO): $(AZTEC_OBJ)
+#$(LIBAZTECOO): $(AZTEC_OBJ)
+LIBAZTECOO: $(AZTEC_OBJ)
 	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
-	$(AR) $(ARFLAGS) $(LIBAZTECOO) $(AZTEC_OBJ)
-	$(RANLIB) $(LIBAZTECOO)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBAZTECOO) $(AZTEC_OBJ)
+# following ranlib commented out by rbl
+#	$(RANLIB) $(LIBAZTECOO)
 
 #
 # dependencies for 'f' files (none at this time)
@@ -113,5 +116,5 @@ $(LIBAZTECOO): $(AZTEC_OBJ)
 #include ../../build/depends.aztecoo
 
 clean:
-	@echo "junk" > dummy.o
-	@rm -f *.o  $(LIBAZTECOO) *~
+	@echo "junk" > dummy.$(OBJ_EXT)
+	@rm -f *.$(OBJ_EXT)  $(LIBAZTECOO) *~

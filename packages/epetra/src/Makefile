@@ -89,12 +89,14 @@ EPETRA_F =
 
 EPETRA_INC =
 
-EPETRA_OBJ          = $(EPETRA_CC:.cpp=.o) $(EPETRA_C:.c=.o) $(EPETRA_F:.f=.o)
+EPETRA_OBJ = $(EPETRA_CC:.cpp=.$(OBJ_EXT)) $(EPETRA_C:.c=.$(OBJ_EXT)) $(EPETRA_F:.f=.$(OBJ_EXT))
 
-$(LIBEPETRA): $(EPETRA_OBJ)
-	mkdir -p $(TRILINOS_LIB_PATH)
-	$(AR) $(ARFLAGS) $(LIBEPETRA) $(EPETRA_OBJ) $(TEMPLATE_OBJS)
-	$(RANLIB) $(LIBEPETRA)
+#$(LIBEPETRA): $(EPETRA_OBJ)
+LIBEPETRA: $(EPETRA_OBJ)
+	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBEPETRA) $(EPETRA_OBJ) $(TEMPLATE_OBJS)
+# following ranlib commented out by rbl
+#	$(RANLIB) $(LIBEPETRA)
 
 #
 # dependencies for 'f' files (none at this time)
@@ -102,5 +104,5 @@ $(LIBEPETRA): $(EPETRA_OBJ)
 #include ../../build/depends.epetra
 
 clean:
-	@echo "junk" > dummy.o
-	@rm -f *.o  $(LIBEPETRA) *~
+	@echo "junk" > dummy.$(OBJ_EXT)
+	@rm -f *.$(OBJ_EXT)  $(LIBEPETRA) *~

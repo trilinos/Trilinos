@@ -47,14 +47,16 @@ TRIUTILS_F =
 
 TRIUTILS_INC =
 
-TRIUTILS_OBJ = $(TRIUTILS_CC:.cpp=.o) \
-                    $(TRIUTILS_C:.c=.o) \
-                    $(TRIUTILS_F:.for=.o)
+TRIUTILS_OBJ = $(TRIUTILS_CC:.cpp=.$(OBJ_EXT)) \
+                    $(TRIUTILS_C:.c=.$(OBJ_EXT)) \
+                    $(TRIUTILS_F:.f=.$(OBJ_EXT))
 
-$(LIBTRIUTILS): $(TRIUTILS_OBJ)
+#$(LIBTRIUTILS): $(TRIUTILS_OBJ)
+LIBTRIUTILS: $(TRIUTILS_OBJ)
 	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
-	$(AR) $(ARFLAGS) $(LIBTRIUTILS) $(TRIUTILS_OBJ)
-	$(RANLIB) $(LIBTRIUTILS)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBTRIUTILS) $(TRIUTILS_OBJ)
+# following ranlib commented out by rbl
+#	$(RANLIB) $(LIBTRIUTILS)
 
 #
 # dependencies for 'f' files (none at this time)
@@ -62,5 +64,5 @@ $(LIBTRIUTILS): $(TRIUTILS_OBJ)
 #include ../../build/depends.epetra
 
 clean:
-	@echo "junk" > dummy.o
-	@rm -f *.o  $(LIBTRIUTILS) *~
+	echo "junk" > dummy.$(OBJ_EXT)
+	rm -f *.$(OBJ_EXT)  $(LIBTRIUTILS) *~

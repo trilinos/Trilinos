@@ -47,12 +47,14 @@ PETRA_F =
 
 PETRA_INC =
 
-PETRA_OBJ          = $(PETRA_CC:.cc=.o) $(PETRA_C:.c=.o) $(PETRA_F:.f=.o)
+PETRA_OBJ = $(PETRA_CC:.cc=.$(OBJ_EXT)) $(PETRA_C:.c=.$(OBJ_EXT)) $(PETRA_F:.f=.$(OBJ_EXT))
 
-$(LIBPETRA): $(PETRA_OBJ)
+#$(LIBPETRA): $(PETRA_OBJ)
+LIBPETRA: $(PETRA_OBJ)
 	mkdir -p $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
-	$(AR) $(ARFLAGS) $(LIBPETRA) $(PETRA_OBJ)
-	$(RANLIB) $(LIBPETRA)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBPETRA) $(PETRA_OBJ)
+# following ranlib commented out by rbl
+#	$(RANLIB) $(LIBPETRA)
 
 #
 # dependencies for 'f' files (none at this time)
@@ -60,5 +62,5 @@ $(LIBPETRA): $(PETRA_OBJ)
 #include ../../build/depends.petra
 
 clean:
-	@echo "junk" > dummy.o
-	@rm -f *.o  $(LIBPETRA) *~
+	@echo "junk" > dummy.$(OBJ_EXT)
+	@rm -f *.$(OBJ_EXT)  $(LIBPETRA) *~

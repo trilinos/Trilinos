@@ -16,6 +16,8 @@
 #include "Petra_Comm.h"
 #ifdef PETRA_MPI
 #include "mpi.h"
+#elif ICL
+#include <time.h>
 #else
 #include <stdlib.h>
 #include <sys/time.h>

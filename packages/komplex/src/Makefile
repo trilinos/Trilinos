@@ -30,11 +30,13 @@ azk_precon.c		azk_residual_norm.c
 
 KOMPLEX_INC = azk_komplex.h
 
-KOMPLEX_OBJ          = $(KOMPLEX_C:.c=.o)
+KOMPLEX_OBJ          = $(KOMPLEX_C:.c=.$(OBJ_EXT))
 
-$(LIBKOMPLEX): $(KOMPLEX_OBJ)
-	$(AR) $(ARFLAGS) $(LIBKOMPLEX) $(KOMPLEX_OBJ)
-	$(RANLIB) $(LIBKOMPLEX)
+#$(LIBKOMPLEX): $(KOMPLEX_OBJ)
+LIBKOMPLEX: $(KOMPLEX_OBJ)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBKOMPLEX) $(KOMPLEX_OBJ)
+# following ranlib commented out by rbl
+#	$(RANLIB) $(LIBKOMPLEX)
 
 #
 # dependencies for 'f' files (none at this time)
@@ -42,5 +44,5 @@ $(LIBKOMPLEX): $(KOMPLEX_OBJ)
 #include ../../build/depends.komplex
 
 clean:
-	@echo "junk" > dummy.o
-	@rm -f *.o  $(LIBKOMPLEX) *~
+	@echo "junk" > dummy.$(OBJ_EXT)
+	@rm -f *.$(OBJ_EXT)  $(LIBKOMPLEX) *~

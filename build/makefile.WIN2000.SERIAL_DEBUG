@@ -103,9 +103,9 @@ RANLIB=
 .f.$(OBJ_EXT):
 	$(FC) $(FFLAGS) -c $<
 
-ARCH_CXXFLAGS= -Zd -GR -Zc:forScope
-ARCH_CFLAGS= -Zd -Za
-ARCH_FFLAGS= -debug
+ARCH_CXXFLAGS= -Zd -GR -Zc:forScope -nologo
+ARCH_CFLAGS= -Zd -Za -nologo
+ARCH_FFLAGS= -debug -nologo
 
 # Define compiler commands
 

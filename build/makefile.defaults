@@ -200,3 +200,7 @@ ifeq ($(TRILINOS_COMM),MPI)
 EPETRA_DEFAULT_DEFINES += -DRTOp_USE_MPI
 endif
 endif
+
+# Define object and library extensions
+OBJ_EXT = o
+LIB_EXT = a
