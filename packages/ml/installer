@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -f
 #
 # see if echo is messed up (i.e. -n does not work)
 # and see if we can find another one
@@ -69,7 +69,7 @@ ML_HOME=$PWD
 
 
 ${echo} "What platform you are using?"
-${echo} "    CPLANT, DEC, HP, PCLINUX, SGI, SMOS, SOLARIS, SP2, SUN, TFLOP"
+${echo} " CPLANT, DEC, HP, PCLINUX, SGI, SMOS, SOLARIS, SP2, SUN, TFLOP, XTFLOP"
 ${echo} "Note: To add other machines, create a new etc/makefile.xxx."
 ${echo}
 ARCH=`${echo} ${ARCH} | sed "s/_MPI//"`
