@@ -17,8 +17,8 @@
 #@HEADER
 # ************************************************************************
 # 
-#                 Amesos: Direct Sparse Solver Package
-#                 Copyright (2004) Sandia Corporation
+#               Epetra: Linear Algebra Services Package 
+#                 Copyright (2001) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -41,9 +41,6 @@
 # 
 # ************************************************************************
 #@HEADER
-
-SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) $(AmesosKluJanus_SOURCES) $(AmesosKluSerial_SOURCES) $(AmesosKluShort_SOURCES) $(AmesosMumps_SOURCES) $(AmesosScalapack_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(AmesosSuperludist_SOURCES) $(AmesosSuperludistJanus_SOURCES) $(AmesosSuperludistShort_SOURCES) $(AmesosUmfpack_SOURCES) $(AmesosUmfpackJanus_SOURCES) $(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) $(Amesos_Superlu_SOURCES) $(Amesos_SuperluSerial_SOURCES) $(B_Superludist_SOURCES) $(C_Superludist_SOURCES) $(DscpackTiming_SOURCES) $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(Timings_SOURCES) $(amesos_test_SOURCES)
-
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -65,22 +62,6 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = amesos_test$(EXEEXT) AmesosShellScript$(EXEEXT) \
-	AmesosDscpack$(EXEEXT) AmesosDscpackShort$(EXEEXT) \
-	AmesosShortSuperLU$(EXEEXT) AmesosShortKundert$(EXEEXT) \
-	AmesosDistScript$(EXEEXT) AmesosShortScript$(EXEEXT) \
-	AmesosJanusScript$(EXEEXT) SpoolesJanusScript$(EXEEXT) \
-	SpoolesScript$(EXEEXT) AmesosSuperLUserial$(EXEEXT) \
-	AmesosUmfpack$(EXEEXT) AmesosUmfpackShort$(EXEEXT) \
-	AmesosUmfpackSerial$(EXEEXT) AmesosMumps$(EXEEXT) \
-	AmesosKlu$(EXEEXT) AmesosKluShort$(EXEEXT) \
-	AmesosKluSerial$(EXEEXT) AmesosScalapack$(EXEEXT) \
-	Amesos_Superlu$(EXEEXT) Amesos_SuperluSerial$(EXEEXT) \
-	AmesosSuperludist$(EXEEXT) AmesosSuperludistShort$(EXEEXT) \
-	AmesosSuperludistJanus$(EXEEXT) AmesosUmfpackJanus$(EXEEXT) \
-	AmesosKluJanus$(EXEEXT) A_Superludist$(EXEEXT) \
-	B_Superludist$(EXEEXT) C_Superludist$(EXEEXT) Timings$(EXEEXT) \
-	DscpackTiming$(EXEEXT)
 subdir = test
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -98,6 +79,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_enable_option.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -111,158 +93,8 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
-PROGRAMS = $(noinst_PROGRAMS)
-am_A_Superludist_OBJECTS =
-A_Superludist_OBJECTS = $(am_A_Superludist_OBJECTS)
-A_Superludist_LDADD = $(LDADD)
-am_AmesosDistScript_OBJECTS =
-AmesosDistScript_OBJECTS = $(am_AmesosDistScript_OBJECTS)
-AmesosDistScript_LDADD = $(LDADD)
-am_AmesosDscpack_OBJECTS =
-AmesosDscpack_OBJECTS = $(am_AmesosDscpack_OBJECTS)
-AmesosDscpack_LDADD = $(LDADD)
-am_AmesosDscpackShort_OBJECTS =
-AmesosDscpackShort_OBJECTS = $(am_AmesosDscpackShort_OBJECTS)
-AmesosDscpackShort_LDADD = $(LDADD)
-am_AmesosJanusScript_OBJECTS =
-AmesosJanusScript_OBJECTS = $(am_AmesosJanusScript_OBJECTS)
-AmesosJanusScript_LDADD = $(LDADD)
-am_AmesosKlu_OBJECTS =
-AmesosKlu_OBJECTS = $(am_AmesosKlu_OBJECTS)
-AmesosKlu_LDADD = $(LDADD)
-am_AmesosKluJanus_OBJECTS =
-AmesosKluJanus_OBJECTS = $(am_AmesosKluJanus_OBJECTS)
-AmesosKluJanus_LDADD = $(LDADD)
-am_AmesosKluSerial_OBJECTS =
-AmesosKluSerial_OBJECTS = $(am_AmesosKluSerial_OBJECTS)
-AmesosKluSerial_LDADD = $(LDADD)
-am_AmesosKluShort_OBJECTS =
-AmesosKluShort_OBJECTS = $(am_AmesosKluShort_OBJECTS)
-AmesosKluShort_LDADD = $(LDADD)
-am_AmesosMumps_OBJECTS =
-AmesosMumps_OBJECTS = $(am_AmesosMumps_OBJECTS)
-AmesosMumps_LDADD = $(LDADD)
-am_AmesosScalapack_OBJECTS =
-AmesosScalapack_OBJECTS = $(am_AmesosScalapack_OBJECTS)
-AmesosScalapack_LDADD = $(LDADD)
-am_AmesosShellScript_OBJECTS =
-AmesosShellScript_OBJECTS = $(am_AmesosShellScript_OBJECTS)
-AmesosShellScript_LDADD = $(LDADD)
-am_AmesosShortKundert_OBJECTS =
-AmesosShortKundert_OBJECTS = $(am_AmesosShortKundert_OBJECTS)
-AmesosShortKundert_LDADD = $(LDADD)
-am_AmesosShortScript_OBJECTS =
-AmesosShortScript_OBJECTS = $(am_AmesosShortScript_OBJECTS)
-AmesosShortScript_LDADD = $(LDADD)
-am_AmesosShortSuperLU_OBJECTS =
-AmesosShortSuperLU_OBJECTS = $(am_AmesosShortSuperLU_OBJECTS)
-AmesosShortSuperLU_LDADD = $(LDADD)
-am_AmesosSuperLUserial_OBJECTS =
-AmesosSuperLUserial_OBJECTS = $(am_AmesosSuperLUserial_OBJECTS)
-AmesosSuperLUserial_LDADD = $(LDADD)
-am_AmesosSuperludist_OBJECTS =
-AmesosSuperludist_OBJECTS = $(am_AmesosSuperludist_OBJECTS)
-AmesosSuperludist_LDADD = $(LDADD)
-am_AmesosSuperludistJanus_OBJECTS =
-AmesosSuperludistJanus_OBJECTS = $(am_AmesosSuperludistJanus_OBJECTS)
-AmesosSuperludistJanus_LDADD = $(LDADD)
-am_AmesosSuperludistShort_OBJECTS =
-AmesosSuperludistShort_OBJECTS = $(am_AmesosSuperludistShort_OBJECTS)
-AmesosSuperludistShort_LDADD = $(LDADD)
-am_AmesosUmfpack_OBJECTS =
-AmesosUmfpack_OBJECTS = $(am_AmesosUmfpack_OBJECTS)
-AmesosUmfpack_LDADD = $(LDADD)
-am_AmesosUmfpackJanus_OBJECTS =
-AmesosUmfpackJanus_OBJECTS = $(am_AmesosUmfpackJanus_OBJECTS)
-AmesosUmfpackJanus_LDADD = $(LDADD)
-am_AmesosUmfpackSerial_OBJECTS =
-AmesosUmfpackSerial_OBJECTS = $(am_AmesosUmfpackSerial_OBJECTS)
-AmesosUmfpackSerial_LDADD = $(LDADD)
-am_AmesosUmfpackShort_OBJECTS =
-AmesosUmfpackShort_OBJECTS = $(am_AmesosUmfpackShort_OBJECTS)
-AmesosUmfpackShort_LDADD = $(LDADD)
-am_Amesos_Superlu_OBJECTS =
-Amesos_Superlu_OBJECTS = $(am_Amesos_Superlu_OBJECTS)
-Amesos_Superlu_LDADD = $(LDADD)
-am_Amesos_SuperluSerial_OBJECTS =
-Amesos_SuperluSerial_OBJECTS = $(am_Amesos_SuperluSerial_OBJECTS)
-Amesos_SuperluSerial_LDADD = $(LDADD)
-am_B_Superludist_OBJECTS =
-B_Superludist_OBJECTS = $(am_B_Superludist_OBJECTS)
-B_Superludist_LDADD = $(LDADD)
-am_C_Superludist_OBJECTS =
-C_Superludist_OBJECTS = $(am_C_Superludist_OBJECTS)
-C_Superludist_LDADD = $(LDADD)
-am_DscpackTiming_OBJECTS =
-DscpackTiming_OBJECTS = $(am_DscpackTiming_OBJECTS)
-DscpackTiming_LDADD = $(LDADD)
-am_SpoolesJanusScript_OBJECTS =
-SpoolesJanusScript_OBJECTS = $(am_SpoolesJanusScript_OBJECTS)
-SpoolesJanusScript_LDADD = $(LDADD)
-am_SpoolesScript_OBJECTS =
-SpoolesScript_OBJECTS = $(am_SpoolesScript_OBJECTS)
-SpoolesScript_LDADD = $(LDADD)
-am_Timings_OBJECTS =
-Timings_OBJECTS = $(am_Timings_OBJECTS)
-Timings_LDADD = $(LDADD)
-am__objects_1 = amesos_test-SparseDirectTimingVars.$(OBJEXT) \
-	amesos_test-SparseSolverResult.$(OBJEXT)
-am_amesos_test_OBJECTS = amesos_test-Amesos_TestDriver.$(OBJEXT) \
-	amesos_test-Amesos_TestSolver.$(OBJEXT) \
-	amesos_test-Amesos_TestMultiSolver.$(OBJEXT) \
-	amesos_test-Amesos_TestMrhsSolver.$(OBJEXT) $(am__objects_1)
-amesos_test_OBJECTS = $(am_amesos_test_OBJECTS)
-am__DEPENDENCIES_1 =
-DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
-depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestSolver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-SparseSolverResult.Po
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) \
-	$(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) \
-	$(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) \
-	$(AmesosKluJanus_SOURCES) $(AmesosKluSerial_SOURCES) \
-	$(AmesosKluShort_SOURCES) $(AmesosMumps_SOURCES) \
-	$(AmesosScalapack_SOURCES) $(AmesosShellScript_SOURCES) \
-	$(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) \
-	$(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) \
-	$(AmesosSuperludist_SOURCES) $(AmesosSuperludistJanus_SOURCES) \
-	$(AmesosSuperludistShort_SOURCES) $(AmesosUmfpack_SOURCES) \
-	$(AmesosUmfpackJanus_SOURCES) $(AmesosUmfpackSerial_SOURCES) \
-	$(AmesosUmfpackShort_SOURCES) $(Amesos_Superlu_SOURCES) \
-	$(Amesos_SuperluSerial_SOURCES) $(B_Superludist_SOURCES) \
-	$(C_Superludist_SOURCES) $(DscpackTiming_SOURCES) \
-	$(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) \
-	$(Timings_SOURCES) $(amesos_test_SOURCES)
-DIST_SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) \
-	$(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) \
-	$(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) \
-	$(AmesosKluJanus_SOURCES) $(AmesosKluSerial_SOURCES) \
-	$(AmesosKluShort_SOURCES) $(AmesosMumps_SOURCES) \
-	$(AmesosScalapack_SOURCES) $(AmesosShellScript_SOURCES) \
-	$(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) \
-	$(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) \
-	$(AmesosSuperludist_SOURCES) $(AmesosSuperludistJanus_SOURCES) \
-	$(AmesosSuperludistShort_SOURCES) $(AmesosUmfpack_SOURCES) \
-	$(AmesosUmfpackJanus_SOURCES) $(AmesosUmfpackSerial_SOURCES) \
-	$(AmesosUmfpackShort_SOURCES) $(Amesos_Superlu_SOURCES) \
-	$(Amesos_SuperluSerial_SOURCES) $(B_Superludist_SOURCES) \
-	$(C_Superludist_SOURCES) $(DscpackTiming_SOURCES) \
-	$(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) \
-	$(Timings_SOURCES) $(amesos_test_SOURCES)
+SOURCES =
+DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -303,7 +135,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = .exe
+EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -313,6 +145,8 @@ HAVE_AMESOS_KLU_FALSE = @HAVE_AMESOS_KLU_FALSE@
 HAVE_AMESOS_KLU_TRUE = @HAVE_AMESOS_KLU_TRUE@
 HAVE_AMESOS_KUNDERT_FALSE = @HAVE_AMESOS_KUNDERT_FALSE@
 HAVE_AMESOS_KUNDERT_TRUE = @HAVE_AMESOS_KUNDERT_TRUE@
+HAVE_AMESOS_LAPACK_FALSE = @HAVE_AMESOS_LAPACK_FALSE@
+HAVE_AMESOS_LAPACK_TRUE = @HAVE_AMESOS_LAPACK_TRUE@
 HAVE_AMESOS_MERIKOS_FALSE = @HAVE_AMESOS_MERIKOS_FALSE@
 HAVE_AMESOS_MERIKOS_TRUE = @HAVE_AMESOS_MERIKOS_TRUE@
 HAVE_AMESOS_MUMPS_FALSE = @HAVE_AMESOS_MUMPS_FALSE@
@@ -325,6 +159,8 @@ HAVE_AMESOS_SUPERLUDIST_FALSE = @HAVE_AMESOS_SUPERLUDIST_FALSE@
 HAVE_AMESOS_SUPERLUDIST_TRUE = @HAVE_AMESOS_SUPERLUDIST_TRUE@
 HAVE_AMESOS_SUPERLU_FALSE = @HAVE_AMESOS_SUPERLU_FALSE@
 HAVE_AMESOS_SUPERLU_TRUE = @HAVE_AMESOS_SUPERLU_TRUE@
+HAVE_AMESOS_TRIUTILS_FALSE = @HAVE_AMESOS_TRIUTILS_FALSE@
+HAVE_AMESOS_TRIUTILS_TRUE = @HAVE_AMESOS_TRIUTILS_TRUE@
 HAVE_AMESOS_UMFPACK_FALSE = @HAVE_AMESOS_UMFPACK_FALSE@
 HAVE_AMESOS_UMFPACK_TRUE = @HAVE_AMESOS_UMFPACK_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
@@ -413,124 +249,20 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
-A_Superludist_SOURCES = $(srcdir)/A_Superludist
-B_Superludist_SOURCES = $(srcdir)/B_Superludist
-C_Superludist_SOURCES = $(srcdir)/C_Superludist
-Timings_SOURCES = $(srcdir)/Timings
-AmesosDscpack_SOURCES = $(srcdir)/AmesosDscpack
-AmesosDscpackShort_SOURCES = $(srcdir)/AmesosDscpackShort
-AmesosMumps_SOURCES = $(srcdir)/AmesosMumps
-AmesosUmfpack_SOURCES = $(srcdir)/AmesosUmfpack
-AmesosUmfpackShort_SOURCES = $(srcdir)/AmesosUmfpackShort
-AmesosUmfpackSerial_SOURCES = $(srcdir)/AmesosUmfpackSerial
-AmesosScalapack_SOURCES = $(srcdir)/AmesosScalapack
-AmesosKlu_SOURCES = $(srcdir)/AmesosKlu
-AmesosKluShort_SOURCES = $(srcdir)/AmesosKluShort
-AmesosKluSerial_SOURCES = $(srcdir)/AmesosKluSerial
-Amesos_Superlu_SOURCES = $(srcdir)/Amesos_Superlu
-Amesos_SuperluSerial_SOURCES = $(srcdir)/Amesos_SuperluSerial
-AmesosSuperludist_SOURCES = $(srcdir)/AmesosSuperludist
-AmesosSuperludistShort_SOURCES = $(srcdir)/AmesosSuperludistShort
-AmesosShortSuperLU_SOURCES = $(srcdir)/AmesosShortSuperLU
-AmesosShortKundert_SOURCES = $(srcdir)/AmesosShortKundert
-AmesosDistScript_SOURCES = $(srcdir)/AmesosDistScript
-AmesosShortScript_SOURCES = $(srcdir)/AmesosShortScript
-AmesosSuperLUserial_SOURCES = $(srcdir)/AmesosSuperLUserial
-AmesosJanusScript_SOURCES = $(srcdir)/AmesosJanusScript
-SpoolesJanusScript_SOURCES = $(srcdir)/SpoolesJanusScript
-SpoolesScript_SOURCES = $(srcdir)/SpoolesScript
-AmesosKluJanus_SOURCES = $(srcdir)/AmesosKluJanus
-AmesosSuperludistJanus_SOURCES = $(srcdir)/AmesosSuperludistJanus
-AmesosUmfpackJanus_SOURCES = $(srcdir)/AmesosUmfpackJanus
-DscpackTiming_SOURCES = $(srcdir)/DscpackTiming
-SRC_CXX = $(srcdir)/SparseDirectTimingVars.cpp \
-	$(srcdir)/SparseDirectTimingVars.h $(srcdir)/SparseSolverResult.cpp \
-	SparseSolverResult.h 
+SUBDIRS = Test_Epetra_RowMatrix Test_Epetra_CrsMatrix \
+	  Test_Epetra_VbrMatrix Test_MultipleSolves \
+	  Test_Detailed \
+	  Test_LAPACK \
+	  Test_KLU \
+	  Test_UMFPACK \
+	  Test_SuperLU \
+	  Test_SuperLU_DIST \
+	  Test_MUMPS \
+	  Test_DSCPACK
 
-
-#	$(srcdir)/Comm_assert_equal.cpp $(srcdir)/Trilinos_Util_CountTriples.cpp \
-#	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp \
-#	$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp \
-#	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
-amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp \
-	 $(srcdir)/Amesos_TestSolver.cpp $(srcdir)/Amesos_TestSolver.h \
-	 $(srcdir)/Amesos_TestMultiSolver.cpp  $(srcdir)/Amesos_TestMrhsSolver.cpp \
-	 $(SRC_CXX)
-
-
-#Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src 
-
-
-#	-I$(top_srcdir)/src/AMD/Include 
-#	-I$(top_srcdir)/src/AMD/Source 
-#	-I$(top_srcdir)/src/colamd 
-#	-I$(top_srcdir)/src/btf 
-#	-I$(top_srcdir)/src/klu_btf 
-#	-I$(top_srcdir)/src/klu_kernel 
-amesos_test_DEPENDENCIES = \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../triutils/src/libtriutils.a 
-
-amesos_test_CXXFLAGS = -I$(top_srcdir)/src
-
-#
-#  libamesos.a is loaded twice.  The second time allows umfpack to pick up AMD.
-#
-amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(AMESOS_LIBS)  $(top_builddir)/src/libamesos.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS) $(FLIBS)
-
-EXTRA_DIST = $(srcdir)/662_bus.rsa \
-	$(srcdir)/In_ImpcolA.rua \
-        $(srcdir)/In_ImpcolB.rua \
-        $(srcdir)/In_ImpcolC.rua \
-        $(srcdir)/In_ImpcolD.rua \
-        $(srcdir)/In_ImpcolE.rua \
-        $(srcdir)/In_fidapm05.rua \
-        $(srcdir)/In_SuperLU.rua \
-        $(srcdir)/In_K4989.triS \
-        $(srcdir)/In_K5000.triS \
-        $(srcdir)/In_SuperLU.triU \
-        $(srcdir)/In_Khead.triS \
-        $(srcdir)/In_bcsstk01.mtx \
-        $(srcdir)/In_bcsstk02.mtx \
-        $(srcdir)/In_bcsstk04.mtx \
-        $(srcdir)/In_bcsstk08.mtx \
-        $(srcdir)/In_nos1.mtx \
-        $(srcdir)/In_nos5.mtx \
-        $(srcdir)/In_FourByFour.mtx \
-        $(srcdir)/In_Diagonal.mtx \
-        $(srcdir)/In_KheadK.mtx \
-        $(srcdir)/In_KheadSorted.mtx \
-        $(srcdir)/In_ZD2.triU \
-        $(srcdir)/In_ZD5.triU \
-        $(srcdir)/In_ZD16.triU
-
-
-#np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
-#np# List all subdirectories even if one or more are configured/built only
-#np# conditionally.
-#np# For packages whose examples are located in this directory, rather than
-#np# in a subdirectory of this directory, use the Makefile.am located in
-#np# example1/ rather than this file.
-# SUBDIRS = example1
-# SUBDIRS = scripts 
-SUBDIRS = scripts TestOptions TestWithTriutils
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -560,137 +292,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-amesos_test$(EXEEXT): $(amesos_test_OBJECTS) $(amesos_test_DEPENDENCIES) 
-	@rm -f amesos_test$(EXEEXT)
-	$(CXXLINK) $(amesos_test_LDFLAGS) $(amesos_test_OBJECTS) $(amesos_test_LDADD) $(LIBS)
-
-mostlyclean-compile:
-	-rm -f *.$(OBJEXT)
-
-distclean-compile:
-	-rm -f *.tab.c
-
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestSolver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-SparseSolverResult.Po@am__quote@
-
-.cpp.o:
-@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
-
-.cpp.obj:
-@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-amesos_test-Amesos_TestDriver.o: $(srcdir)/Amesos_TestDriver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestDriver.o -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo" -c -o amesos_test-Amesos_TestDriver.o `test -f '$(srcdir)/Amesos_TestDriver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestDriver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestDriver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestDriver.cpp' object='amesos_test-Amesos_TestDriver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestDriver.o `test -f '$(srcdir)/Amesos_TestDriver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestDriver.cpp
-
-amesos_test-Amesos_TestDriver.obj: $(srcdir)/Amesos_TestDriver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestDriver.obj -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo" -c -o amesos_test-Amesos_TestDriver.obj `if test -f '$(srcdir)/Amesos_TestDriver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestDriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestDriver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestDriver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestDriver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestDriver.cpp' object='amesos_test-Amesos_TestDriver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestDriver.obj `if test -f '$(srcdir)/Amesos_TestDriver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestDriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestDriver.cpp'; fi`
-
-amesos_test-Amesos_TestSolver.o: $(srcdir)/Amesos_TestSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestSolver.o -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo" -c -o amesos_test-Amesos_TestSolver.o `test -f '$(srcdir)/Amesos_TestSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestSolver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestSolver.cpp' object='amesos_test-Amesos_TestSolver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestSolver.o `test -f '$(srcdir)/Amesos_TestSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestSolver.cpp
-
-amesos_test-Amesos_TestSolver.obj: $(srcdir)/Amesos_TestSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestSolver.obj -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo" -c -o amesos_test-Amesos_TestSolver.obj `if test -f '$(srcdir)/Amesos_TestSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestSolver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestSolver.cpp' object='amesos_test-Amesos_TestSolver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestSolver.obj `if test -f '$(srcdir)/Amesos_TestSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestSolver.cpp'; fi`
-
-amesos_test-Amesos_TestMultiSolver.o: $(srcdir)/Amesos_TestMultiSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestMultiSolver.o -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo" -c -o amesos_test-Amesos_TestMultiSolver.o `test -f '$(srcdir)/Amesos_TestMultiSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMultiSolver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMultiSolver.cpp' object='amesos_test-Amesos_TestMultiSolver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMultiSolver.o `test -f '$(srcdir)/Amesos_TestMultiSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMultiSolver.cpp
-
-amesos_test-Amesos_TestMultiSolver.obj: $(srcdir)/Amesos_TestMultiSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestMultiSolver.obj -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo" -c -o amesos_test-Amesos_TestMultiSolver.obj `if test -f '$(srcdir)/Amesos_TestMultiSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMultiSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMultiSolver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMultiSolver.cpp' object='amesos_test-Amesos_TestMultiSolver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMultiSolver.obj `if test -f '$(srcdir)/Amesos_TestMultiSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMultiSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMultiSolver.cpp'; fi`
-
-amesos_test-Amesos_TestMrhsSolver.o: $(srcdir)/Amesos_TestMrhsSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestMrhsSolver.o -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo" -c -o amesos_test-Amesos_TestMrhsSolver.o `test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMrhsSolver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMrhsSolver.cpp' object='amesos_test-Amesos_TestMrhsSolver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMrhsSolver.o `test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMrhsSolver.cpp
-
-amesos_test-Amesos_TestMrhsSolver.obj: $(srcdir)/Amesos_TestMrhsSolver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-Amesos_TestMrhsSolver.obj -MD -MP -MF "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo" -c -o amesos_test-Amesos_TestMrhsSolver.obj `if test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMrhsSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMrhsSolver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo" "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po"; else rm -f "$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Amesos_TestMrhsSolver.cpp' object='amesos_test-Amesos_TestMrhsSolver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMrhsSolver.obj `if test -f '$(srcdir)/Amesos_TestMrhsSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_TestMrhsSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_TestMrhsSolver.cpp'; fi`
-
-amesos_test-SparseDirectTimingVars.o: $(srcdir)/SparseDirectTimingVars.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-SparseDirectTimingVars.o -MD -MP -MF "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo" -c -o amesos_test-SparseDirectTimingVars.o `test -f '$(srcdir)/SparseDirectTimingVars.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseDirectTimingVars.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo" "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po"; else rm -f "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseDirectTimingVars.cpp' object='amesos_test-SparseDirectTimingVars.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseDirectTimingVars.o `test -f '$(srcdir)/SparseDirectTimingVars.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseDirectTimingVars.cpp
-
-amesos_test-SparseDirectTimingVars.obj: $(srcdir)/SparseDirectTimingVars.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-SparseDirectTimingVars.obj -MD -MP -MF "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo" -c -o amesos_test-SparseDirectTimingVars.obj `if test -f '$(srcdir)/SparseDirectTimingVars.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseDirectTimingVars.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseDirectTimingVars.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo" "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po"; else rm -f "$(DEPDIR)/amesos_test-SparseDirectTimingVars.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseDirectTimingVars.cpp' object='amesos_test-SparseDirectTimingVars.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseDirectTimingVars.obj `if test -f '$(srcdir)/SparseDirectTimingVars.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseDirectTimingVars.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseDirectTimingVars.cpp'; fi`
-
-amesos_test-SparseSolverResult.o: $(srcdir)/SparseSolverResult.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-SparseSolverResult.o -MD -MP -MF "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo" -c -o amesos_test-SparseSolverResult.o `test -f '$(srcdir)/SparseSolverResult.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseSolverResult.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo" "$(DEPDIR)/amesos_test-SparseSolverResult.Po"; else rm -f "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseSolverResult.cpp' object='amesos_test-SparseSolverResult.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-SparseSolverResult.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseSolverResult.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseSolverResult.o `test -f '$(srcdir)/SparseSolverResult.cpp' || echo '$(srcdir)/'`$(srcdir)/SparseSolverResult.cpp
-
-amesos_test-SparseSolverResult.obj: $(srcdir)/SparseSolverResult.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -MT amesos_test-SparseSolverResult.obj -MD -MP -MF "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo" -c -o amesos_test-SparseSolverResult.obj `if test -f '$(srcdir)/SparseSolverResult.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseSolverResult.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseSolverResult.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo" "$(DEPDIR)/amesos_test-SparseSolverResult.Po"; else rm -f "$(DEPDIR)/amesos_test-SparseSolverResult.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SparseSolverResult.cpp' object='amesos_test-SparseSolverResult.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/amesos_test-SparseSolverResult.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseSolverResult.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseSolverResult.obj `if test -f '$(srcdir)/SparseSolverResult.cpp'; then $(CYGPATH_W) '$(srcdir)/SparseSolverResult.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SparseSolverResult.cpp'; fi`
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -810,7 +411,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/$(srcdir)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -852,7 +452,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile
 installdirs: installdirs-recursive
 installdirs-am:
 install: install-recursive
@@ -881,13 +481,11 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic mostlyclean-am
 
 distclean: distclean-recursive
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+distclean-am: clean-am distclean-generic distclean-tags
 
 dvi: dvi-recursive
 
@@ -910,13 +508,12 @@ install-man:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-generic
 
 pdf: pdf-recursive
 
@@ -931,136 +528,17 @@ uninstall-am: uninstall-info-am
 uninstall-info: uninstall-info-recursive
 
 .PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am \
-	clean clean-generic clean-noinstPROGRAMS clean-recursive ctags \
-	ctags-recursive distclean distclean-compile distclean-generic \
-	distclean-recursive distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic maintainer-clean-recursive \
-	mostlyclean mostlyclean-compile mostlyclean-generic \
+	clean clean-generic clean-recursive ctags ctags-recursive \
+	distclean distclean-generic distclean-recursive distclean-tags \
+	distdir dvi dvi-am html html-am info info-am install \
+	install-am install-data install-data-am install-exec \
+	install-exec-am install-info install-info-am install-man \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	maintainer-clean-recursive mostlyclean mostlyclean-generic \
 	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-info-am
 
-
-AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
-	cp  $(srcdir)/AmesosShellScript  AmesosShellScript$(EXEEXT)
-
-A_Superludist$(EXEEXT): $(srcdir)/A_Superludist
-	cp  $(srcdir)/A_Superludist  A_Superludist$(EXEEXT)
-
-B_Superludist$(EXEEXT): $(srcdir)/B_Superludist
-	cp  $(srcdir)/B_Superludist  B_Superludist$(EXEEXT)
-
-C_Superludist$(EXEEXT): $(srcdir)/C_Superludist
-	cp  $(srcdir)/C_Superludist  C_Superludist$(EXEEXT)
-
-Timings$(EXEEXT): $(srcdir)/Timings
-	cp  $(srcdir)/Timings  Timings$(EXEEXT)
-
-DscpackTiming$(EXEEXT): $(srcdir)/DscpackTiming
-	cp  $(srcdir)/DscpackTiming  DscpackTiming$(EXEEXT)
-
-AmesosDscpack$(EXEEXT): $(srcdir)/AmesosDscpack
-	cp  $(srcdir)/AmesosDscpack  AmesosDscpack$(EXEEXT)
-
-AmesosDscpackShort$(EXEEXT): $(srcdir)/AmesosDscpackShort
-	cp  $(srcdir)/AmesosDscpackShort  AmesosDscpackShort$(EXEEXT)
-
-AmesosMumps$(EXEEXT): $(srcdir)/AmesosMumps
-	cp  $(srcdir)/AmesosMumps  AmesosMumps$(EXEEXT)
-
-AmesosUmfpack$(EXEEXT): $(srcdir)/AmesosUmfpack
-	cp  $(srcdir)/AmesosUmfpack  AmesosUmfpack$(EXEEXT)
-
-AmesosUmfpackShort$(EXEEXT): $(srcdir)/AmesosUmfpackShort
-	cp  $(srcdir)/AmesosUmfpackShort  AmesosUmfpackShort$(EXEEXT)
-
-AmesosUmfpackSerial$(EXEEXT): $(srcdir)/AmesosUmfpackSerial
-	cp  $(srcdir)/AmesosUmfpackSerial  AmesosUmfpackSerial$(EXEEXT)
-
-AmesosScalapack$(EXEEXT): $(srcdir)/AmesosScalapack
-	cp  $(srcdir)/AmesosScalapack  AmesosScalapack$(EXEEXT)
-
-AmesosKlu$(EXEEXT): $(srcdir)/AmesosKlu
-	cp  $(srcdir)/AmesosKlu  AmesosKlu$(EXEEXT)
-
-AmesosKluShort$(EXEEXT): $(srcdir)/AmesosKluShort
-	cp  $(srcdir)/AmesosKluShort  AmesosKluShort$(EXEEXT)
-
-AmesosKluSerial$(EXEEXT): $(srcdir)/AmesosKluSerial
-	cp  $(srcdir)/AmesosKluSerial  AmesosKluSerial$(EXEEXT)
-
-Amesos_Superlu$(EXEEXT): $(srcdir)/Amesos_Superlu
-	cp  $(srcdir)/Amesos_Superlu  Amesos_Superlu$(EXEEXT)
-
-Amesos_SuperluSerial$(EXEEXT): $(srcdir)/Amesos_SuperluSerial
-	cp  $(srcdir)/Amesos_SuperluSerial  Amesos_SuperluSerial$(EXEEXT)
-
-AmesosSuperludist$(EXEEXT): $(srcdir)/AmesosSuperludist
-	cp  $(srcdir)/AmesosSuperludist  AmesosSuperludist$(EXEEXT)
-
-AmesosSuperludistShort$(EXEEXT): $(srcdir)/AmesosSuperludistShort
-	cp  $(srcdir)/AmesosSuperludistShort  AmesosSuperludistShort$(EXEEXT)
-
-AmesosShortSuperLU$(EXEEXT): $(srcdir)/AmesosShortSuperLU
-	cp  $(srcdir)/AmesosShortSuperLU  AmesosShortSuperLU$(EXEEXT)
-
-AmesosShortKundert$(EXEEXT): $(srcdir)/AmesosShortKundert
-	cp  $(srcdir)/AmesosShortKundert  AmesosShortKundert$(EXEEXT)
-
-AmesosDistScript$(EXEEXT): $(srcdir)/AmesosDistScript
-	cp  $(srcdir)/AmesosDistScript  AmesosDistScript$(EXEEXT)
-
-AmesosShortScript$(EXEEXT): $(srcdir)/AmesosShortScript
-	cp  $(srcdir)/AmesosShortScript  AmesosShortScript$(EXEEXT)
-
-AmesosSuperLUserial$(EXEEXT): $(srcdir)/AmesosSuperLUserial
-	cp  $(srcdir)/AmesosSuperLUserial  AmesosSuperLUserial$(EXEEXT)
-
-AmesosJanusScript$(EXEEXT): $(srcdir)/AmesosJanusScript
-	cp  $(srcdir)/AmesosJanusScript  AmesosJanusScript$(EXEEXT)
-
-SpoolesJanusScript$(EXEEXT): $(srcdir)/SpoolesJanusScript
-	cp  $(srcdir)/SpoolesJanusScript  SpoolesJanusScript$(EXEEXT)
-
-AmesosSuperludistJanus$(EXEEXT): $(srcdir)/AmesosSuperludistJanus
-	cp  $(srcdir)/AmesosSuperludistJanus  AmesosSuperludistJanus$(EXEEXT)
-
-AmesosKluJanus$(EXEEXT): $(srcdir)/AmesosKluJanus
-	cp  $(srcdir)/AmesosKluJanus  AmesosKluJanus$(EXEEXT)
-
-AmesosUmfpackJanus$(EXEEXT): $(srcdir)/AmesosUmfpackJanus
-	cp  $(srcdir)/AmesosUmfpackJanus  AmesosUmfpackJanus$(EXEEXT)
-
-SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
-	cp  $(srcdir)/SpoolesScript  SpoolesScript$(EXEEXT)
-	cp  $(srcdir)/662_bus.rsa  662_bus_out.rsa
-	cp  $(srcdir)/In_ImpcolA.rua  ImpcolA.rua
-	cp  $(srcdir)/In_ImpcolB.rua  ImpcolB.rua
-	cp  $(srcdir)/In_ImpcolC.rua  ImpcolC.rua
-	cp  $(srcdir)/In_ImpcolD.rua  ImpcolD.rua
-	cp  $(srcdir)/In_ImpcolE.rua  ImpcolE.rua
-	cp  $(srcdir)/In_fidapm05.rua  fidapm05.rua
-	cp  $(srcdir)/In_SuperLU.rua  SuperLU.rua
-	cp  $(srcdir)/In_K4989.triS  K4989.triS
-	cp  $(srcdir)/In_K5000.triS  K5000.triS
-	cp  $(srcdir)/In_SuperLU.triU  SuperLU.triU
-	cp  $(srcdir)/In_Khead.triS  Khead.triS
-	cp  $(srcdir)/In_bcsstk01.mtx bcsstk01.mtx
-	cp  $(srcdir)/In_bcsstk02.mtx bcsstk02.mtx 
-	cp  $(srcdir)/In_bcsstk04.mtx bcsstk04.mtx 
-	cp  $(srcdir)/In_bcsstk08.mtx bcsstk08.mtx 
-	cp  $(srcdir)/In_nos1.mtx nos1.mtx 
-	cp  $(srcdir)/In_nos5.mtx nos5.mtx 
-	cp  $(srcdir)/In_FourByFour.mtx FourByFour.mtx 
-	cp  $(srcdir)/In_Diagonal.mtx Diagonal.mtx 
-	cp  $(srcdir)/In_KheadK.mtx KheadK.mtx 
-	cp  $(srcdir)/In_KheadSorted.mtx KheadSorted.mtx 
-	cp  $(srcdir)/In_ZD2.triU ZD2.triU 
-	cp  $(srcdir)/In_ZD5.triU ZD5.triU 
-	cp  $(srcdir)/In_ZD16.triU ZD16.triU 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

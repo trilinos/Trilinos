@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(example_AmesosFactory_SOURCES) $(example_AmesosFactory_HB_SOURCES) $(example_AmesosFactory_Tridiag_SOURCES)
+SOURCES = $(compare_solvers_SOURCES) $(example_AmesosFactory_SOURCES) $(example_AmesosFactory_HB_SOURCES) $(example_AmesosFactory_Tridiag_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -99,13 +99,17 @@ CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = example_AmesosFactory$(EXEEXT) \
 	example_AmesosFactory_HB$(EXEEXT) \
-	example_AmesosFactory_Tridiag$(EXEEXT)
+	example_AmesosFactory_Tridiag$(EXEEXT) \
+	compare_solvers$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+am_compare_solvers_OBJECTS =  \
+	compare_solvers-compare_solvers.$(OBJEXT)
+compare_solvers_OBJECTS = $(am_compare_solvers_OBJECTS)
+@HAVE_AMESOS_TRIUTILS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../triutils/src/libtriutils.a
+am__DEPENDENCIES_2 =
 am_example_AmesosFactory_OBJECTS =  \
 	example_AmesosFactory-example_AmesosFactory.$(OBJEXT)
 example_AmesosFactory_OBJECTS = $(am_example_AmesosFactory_OBJECTS)
-@HAVE_AMESOS_TRIUTILS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../triutils/src/libtriutils.a
-am__DEPENDENCIES_2 =
 am_example_AmesosFactory_HB_OBJECTS =  \
 	example_AmesosFactory_HB-example_AmesosFactory_HB.$(OBJEXT)
 example_AmesosFactory_HB_OBJECTS =  \
@@ -116,7 +120,9 @@ example_AmesosFactory_Tridiag_OBJECTS =  \
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Po \
+@AMDEP_TRUE@DEP_FILES =  \
+@AMDEP_TRUE@	./$(DEPDIR)/compare_solvers-compare_solvers.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -124,10 +130,11 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(example_AmesosFactory_SOURCES) \
+SOURCES = $(compare_solvers_SOURCES) $(example_AmesosFactory_SOURCES) \
 	$(example_AmesosFactory_HB_SOURCES) \
 	$(example_AmesosFactory_Tridiag_SOURCES)
-DIST_SOURCES = $(example_AmesosFactory_SOURCES) \
+DIST_SOURCES = $(compare_solvers_SOURCES) \
+	$(example_AmesosFactory_SOURCES) \
 	$(example_AmesosFactory_HB_SOURCES) \
 	$(example_AmesosFactory_Tridiag_SOURCES)
 ETAGS = etags
@@ -173,6 +180,8 @@ HAVE_AMESOS_KLU_FALSE = @HAVE_AMESOS_KLU_FALSE@
 HAVE_AMESOS_KLU_TRUE = @HAVE_AMESOS_KLU_TRUE@
 HAVE_AMESOS_KUNDERT_FALSE = @HAVE_AMESOS_KUNDERT_FALSE@
 HAVE_AMESOS_KUNDERT_TRUE = @HAVE_AMESOS_KUNDERT_TRUE@
+HAVE_AMESOS_LAPACK_FALSE = @HAVE_AMESOS_LAPACK_FALSE@
+HAVE_AMESOS_LAPACK_TRUE = @HAVE_AMESOS_LAPACK_TRUE@
 HAVE_AMESOS_MERIKOS_FALSE = @HAVE_AMESOS_MERIKOS_FALSE@
 HAVE_AMESOS_MERIKOS_TRUE = @HAVE_AMESOS_MERIKOS_TRUE@
 HAVE_AMESOS_MUMPS_FALSE = @HAVE_AMESOS_MUMPS_FALSE@
@@ -275,7 +284,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-EXAMPLE = example_AmesosFactory example_AmesosFactory_HB example_AmesosFactory_Tridiag
+EXAMPLE = example_AmesosFactory example_AmesosFactory_HB example_AmesosFactory_Tridiag compare_solvers
 EXTRA_DIST = 662_bus.rsa
 @HAVE_AMESOS_TRIUTILS_FALSE@TRIUTILS_INCDIR = 
 @HAVE_AMESOS_TRIUTILS_TRUE@TRIUTILS_INCDIR = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
@@ -343,6 +352,24 @@ example_AmesosFactory_HB_LDADD = $(top_builddir)/src/libamesos.a \
 	$(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 
+compare_solvers_SOURCES = $(srcdir)/compare_solvers.cpp
+compare_solvers_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/src/libamesos.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	${TRIUTILS_LIBS}
+
+compare_solvers_CXXFLAGS = -I$(top_srcdir)/src \
+				 ${TRIUTILS_INCDIR}
+
+compare_solvers_LDADD = $(top_builddir)/src/libamesos.a \
+	$(AMESOS_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
 all: all-am
 
 .SUFFIXES:
@@ -379,6 +406,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+compare_solvers$(EXEEXT): $(compare_solvers_OBJECTS) $(compare_solvers_DEPENDENCIES) 
+	@rm -f compare_solvers$(EXEEXT)
+	$(CXXLINK) $(compare_solvers_LDFLAGS) $(compare_solvers_OBJECTS) $(compare_solvers_LDADD) $(LIBS)
 example_AmesosFactory$(EXEEXT): $(example_AmesosFactory_OBJECTS) $(example_AmesosFactory_DEPENDENCIES) 
 	@rm -f example_AmesosFactory$(EXEEXT)
 	$(CXXLINK) $(example_AmesosFactory_LDFLAGS) $(example_AmesosFactory_OBJECTS) $(example_AmesosFactory_LDADD) $(LIBS)
@@ -395,6 +425,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compare_solvers-compare_solvers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_AmesosFactory_HB-example_AmesosFactory_HB.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_AmesosFactory_Tridiag-example_AmesosFactory_Tridiag.Po@am__quote@
@@ -414,6 +445,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+compare_solvers-compare_solvers.o: $(srcdir)/compare_solvers.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compare_solvers_CXXFLAGS) $(CXXFLAGS) -MT compare_solvers-compare_solvers.o -MD -MP -MF "$(DEPDIR)/compare_solvers-compare_solvers.Tpo" -c -o compare_solvers-compare_solvers.o `test -f '$(srcdir)/compare_solvers.cpp' || echo '$(srcdir)/'`$(srcdir)/compare_solvers.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/compare_solvers-compare_solvers.Tpo" "$(DEPDIR)/compare_solvers-compare_solvers.Po"; else rm -f "$(DEPDIR)/compare_solvers-compare_solvers.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/compare_solvers.cpp' object='compare_solvers-compare_solvers.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/compare_solvers-compare_solvers.Po' tmpdepfile='$(DEPDIR)/compare_solvers-compare_solvers.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compare_solvers_CXXFLAGS) $(CXXFLAGS) -c -o compare_solvers-compare_solvers.o `test -f '$(srcdir)/compare_solvers.cpp' || echo '$(srcdir)/'`$(srcdir)/compare_solvers.cpp
+
+compare_solvers-compare_solvers.obj: $(srcdir)/compare_solvers.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compare_solvers_CXXFLAGS) $(CXXFLAGS) -MT compare_solvers-compare_solvers.obj -MD -MP -MF "$(DEPDIR)/compare_solvers-compare_solvers.Tpo" -c -o compare_solvers-compare_solvers.obj `if test -f '$(srcdir)/compare_solvers.cpp'; then $(CYGPATH_W) '$(srcdir)/compare_solvers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/compare_solvers.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/compare_solvers-compare_solvers.Tpo" "$(DEPDIR)/compare_solvers-compare_solvers.Po"; else rm -f "$(DEPDIR)/compare_solvers-compare_solvers.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/compare_solvers.cpp' object='compare_solvers-compare_solvers.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/compare_solvers-compare_solvers.Po' tmpdepfile='$(DEPDIR)/compare_solvers-compare_solvers.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(compare_solvers_CXXFLAGS) $(CXXFLAGS) -c -o compare_solvers-compare_solvers.obj `if test -f '$(srcdir)/compare_solvers.cpp'; then $(CYGPATH_W) '$(srcdir)/compare_solvers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/compare_solvers.cpp'; fi`
 
 example_AmesosFactory-example_AmesosFactory.o: $(srcdir)/example_AmesosFactory.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_AmesosFactory_CXXFLAGS) $(CXXFLAGS) -MT example_AmesosFactory-example_AmesosFactory.o -MD -MP -MF "$(DEPDIR)/example_AmesosFactory-example_AmesosFactory.Tpo" -c -o example_AmesosFactory-example_AmesosFactory.o `test -f '$(srcdir)/example_AmesosFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/example_AmesosFactory.cpp; \
