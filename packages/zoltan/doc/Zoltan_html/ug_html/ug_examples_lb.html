@@ -48,46 +48,46 @@ are freed by a call to <B><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Da
 <BR>&nbsp;
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <TR>
-<TD><TT>char *lb_method;</TT>
-<BR><TT>int new, num_imp, num_exp, *imp_procs, *exp_procs;</TT>
+<TD><A NAME="LB Example Fig"></A><TT>char *lb_method;</TT>&nbsp;
+<BR><TT>int new, num_imp, num_exp, *imp_procs, *exp_procs;</TT>&nbsp;
 <BR><TT><A HREF="ug_usage.html#Macro defs">LB_GID</A> *imp_global_ids,
-*exp_global_ids;</TT>
-<BR><TT><A HREF="ug_usage.html#Macro defs">LB_LID</A> *imp_local_ids, *exp_local_ids;</TT><TT></TT>
+*exp_global_ids;</TT>&nbsp;
+<BR><TT><A HREF="ug_usage.html#Macro defs">LB_LID</A> *imp_local_ids, *exp_local_ids;</TT>&nbsp;
 
-<P><TT>/* <I>Set load-balancing method and parameters.</I> */</TT>
-<BR><TT>read_load_balancing_info_from_input_file(&amp;lb_method, &amp;(lb_params[0]);</TT>
+<P><TT>/* <I>Set load-balancing method and parameters.</I> */</TT>&nbsp;
+<BR><TT>read_load_balancing_info_from_input_file(&amp;lb_method, &amp;(lb_params[0]);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A>(lb,
-lb_method, &amp;(lb_params[0]));</TT><TT></TT>
+lb_method, &amp;(lb_params[0]));</TT>&nbsp;
 
-<P><TT>/* <I>Register load-balancing query functions.</I> */</TT>
+<P><TT>/* <I>Register load-balancing query functions.</I> */</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</A>,
-user_return_dimension, NULL);</TT>
+user_return_dimension, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,
-user_return_coords, NULL);</TT>
+user_return_coords, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</A>,
-user_return_num_node, NULL);</TT>
+user_return_num_node, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,
-user_return_owned_nodes, NULL);</TT><TT></TT>
+user_return_owned_nodes, NULL);</TT>&nbsp;
 
-<P><TT>/* <I>Perform computations</I> */</TT>
-<BR><TT>...</TT>
-<BR><TT>/* <I>Perform load balancing</I> */</TT>
-<BR><TT><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,&amp;new,&amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>
-<BR><TT>if (new)</TT>
-<BR><TT>&nbsp; perform_data_migration(...);</TT><TT></TT>
+<P><TT>/* <I>Perform computations</I> */</TT>&nbsp;
+<BR><TT>...</TT>&nbsp;
+<BR><TT>/* <I>Perform load balancing</I> */</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,&amp;new,&amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>&nbsp;
+<BR><TT>if (new)</TT>&nbsp;
+<BR><TT>&nbsp; perform_data_migration(...);</TT>&nbsp;
 
 <P><TT>/* <I>Free memory allocated for load-balancing results by DLB library</I>
-*/</TT>
+*/</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A>(&amp;imp_global_ids,
-&amp;imp_local_ids, &amp;imp_procs,&nbsp;</TT>
+&amp;imp_local_ids, &amp;imp_procs,&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_ids, &amp;exp_local_ids,
-&amp;exp_procs);&nbsp;</TT>
+&amp;exp_procs);&nbsp;</TT>&nbsp;
 <BR><TT>...</TT></TD>
 </TR>
 
-<CAPTION ALIGN=BOTTOM><A NAME="LB Example Fig"></A><I>Typical calling sequence
-for performing load balancing with the Zoltan library.</I></CAPTION>
+<CAPTION ALIGN=BOTTOM><I>Typical calling sequence for performing load balancing
+with the Zoltan library.</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;
 

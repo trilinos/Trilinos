@@ -59,7 +59,8 @@ for data migration.
 <BR>&nbsp;
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <TR>
-<TD><TT>/* <I>Register load-balancing query functions.</I> */</TT>&nbsp;
+<TD><A NAME="Auto-Migration Example Fig"></A><TT>/* <I>Register load-balancing
+query functions.</I> */</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</A>,
 user_return_dimension, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,
@@ -100,9 +101,8 @@ user_unpack_particle_data, NULL);</TT>&nbsp;
 <BR><TT>...</TT></TD>
 </TR>
 
-<CAPTION ALIGN=BOTTOM><A NAME="Auto-Migration Example Fig"></A><I>Typical
-calling sequence for using the migration-help tools' auto-migration capability
-with the dynamic load-balancing tools.</I></CAPTION>
+<CAPTION ALIGN=BOTTOM><I>Typical calling sequence for using the migration-help
+tools' auto-migration capability with the dynamic load-balancing tools.</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;
 <H2>
@@ -145,8 +145,8 @@ for building the appropriate request lists.
 <BR>&nbsp;
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <TR NOSAVE>
-<TD NOSAVE><TT>/* <I>Assume the load-balancing library returns a decomposition
-of the</I> */</TT>&nbsp;
+<TD NOSAVE><A NAME="User-guided Migration Example Fig"></A><TT>/* <I>Assume
+the load-balancing library returns a decomposition of the</I> */</TT>&nbsp;
 <BR><TT>/* <I>nodes of a finite element mesh.</I> */</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,&amp;new,&amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>&nbsp;
@@ -203,8 +203,8 @@ Num_Elt_Requests, Elt_Requests_Global_IDs,&nbsp;</TT>&nbsp;
 <BR><TT>...</TT></TD>
 </TR>
 
-<CAPTION ALIGN=BOTTOM><A NAME="User-guided Migration Example Fig"></A><I>Typical
-calling sequence for user-guided use of the migration-help tools in Zoltan</I>.</CAPTION>
+<CAPTION ALIGN=BOTTOM><I>Typical calling sequence for user-guided use of
+the migration-help tools in Zoltan</I>.</CAPTION>
 </TABLE></CENTER>
 &nbsp;
 <BR>
