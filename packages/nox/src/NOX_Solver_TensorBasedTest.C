@@ -343,10 +343,12 @@ void NOX::Solver::TensorBasedTest::printUpdate()
 
 
 NOX::LineSearch::Tensor::Tensor(const NOX::Utils& u, Parameter::List& params) :
-  paramsPtr(NULL),
-  print(u)
+  paramsPtr(&params),
+  utils(u),   //paramsPtr->sublist("Printing")),
+  print(utils)
 {
-  reset(params);
+  //  reset(paramsPtr->sublist("Line Search"));
+  reset(*paramsPtr);
 }
 
 NOX::LineSearch::Tensor::~Tensor()
@@ -354,18 +356,100 @@ NOX::LineSearch::Tensor::~Tensor()
   printf("multsJv = %d   (linesearch)\n", multsJv);
 }
 
-bool NOX::LineSearch::Tensor::reset(Parameter::List& params)
+bool NOX::LineSearch::Tensor::reset(NOX::Parameter::List& lsParams)
 {
   multsJv = 0;
   
-  //NOX::Parameter::List& lsparams = params.sublist("Tensor");
-  NOX::Parameter::List& lsparams =
-    params.sublist(params.getParameter("Method", "Tensor"));
+  //NOX::Parameter::List& lsParams = paramsPtr->sublist("Line Search");
+
+  // Determine the specific type of tensor linesearch to perform
+  string choice = lsParams.getParameter("Method", "Curvilinear");
+
+  cout << choice << endl;
   
+  if (choice == "Curvilinear")
+    lsType = Curvilinear;
+  else if (choice == "Dual")
+    lsType = Dual;
+  else if (choice == "Standard")
+    lsType = Standard;
+  //  else if (choice == "Full Step")
+  //    lsType = FullStep;
+  else if (choice == "Newton")
+    lsType = Newton;
+  else
+  {
+    if (utils.isPrintProcessAndType(NOX::Utils::Error))
+      cerr << "NOX::Direction::Tensor::reset() - The choice of "
+	   << "\"Line Search\" parameter " << choice
+	   << " is invalid." << endl;
+    throw "NOX Error";
+  }
+  //  Copy Method into "Submethod" (temporary hack for data scripts)
+  lsParams.setParameter("Submethod", choice);
+
+  // Make a reference to the sublist holding the global strategy parameters
+  NOX::Parameter::List& gsParams = lsParams.sublist(choice);
+
+#ifdef CODE_FROM_TENSORBASED  
+  // Decide what step to use in case of linesearch failure
+  choice = gsParams.getParameter("Recovery Step Type", "Constant");
+  if (choice == "Constant")
+    recoveryStepType = Constant;          // Use value in "Recovery Step"
+  else if (choice == "Last Computed Step") 
+    recoveryStepType = LastComputedStep;  // Use last step from linesearch
+  else
+  {
+    cerr << "NOX::Solver::TensorBased::reset() - "
+	 << "Invalid \"Recovery Step Type\"" << endl;
+    throw "NOX Error";
+  }
+#endif
+
+  // Initialize linesearch parameters for this object
+  minStep = gsParams.getParameter("Minimum Step", 1.0e-12);
+  defaultStep = gsParams.getParameter("Default Step", 1.0);
+  recoveryStep = gsParams.getParameter("Recovery Step", 0.0); // exit on fail
+  maxIters = gsParams.getParameter("Max Iters", 40);
+  alpha = gsParams.getParameter("Alpha Factor", 1.0e-4);
+
+  choice = gsParams.getParameter("Lambda Selection", "Halving");
+  if (choice == "Halving")
+    lambdaSelection = Halving;
+  else if (choice == "Quadratic") 
+    lambdaSelection = Quadratic;
+  else
+  {
+    if (utils.isPrintProcessAndType(NOX::Utils::Error))
+      cerr << "NOX::Solver::TensorBased::reset() - The choice of "
+	   << "\"Lambda Selection\" parameter " << choice
+	   << " is invalid." << endl;
+    throw "NOX Error";
+  }
+
+  choice = gsParams.getParameter("Sufficient Decrease Condition",
+				 "Armijo-Goldstein");
+  if (choice == "Armijo-Goldstein") 
+    suffDecrCond = ArmijoGoldstein;     // This is the only one implemented
+  else if (choice == "Ared/Pred") 
+    suffDecrCond = AredPred;
+  else if (choice == "None")
+    suffDecrCond = None;
+  else
+  {
+    if (utils.isPrintProcessAndType(NOX::Utils::Error))
+      cerr << "NOX::Solver::TensorBased::reset() - The choice of "
+	   << "\"Sufficient Decrease Condition\" parameter " << choice
+	   << " is invalid." << endl;
+    throw "NOX Error";
+  }
+
+
+#ifdef OLD_CODE
   // Initialize linesearch parameters for this object
   minStep = lsparams.getParameter("Minimum Step", 1.0e-12);
   defaultStep = lsparams.getParameter("Default Step", 1.0);
-  recoveryStep = lsparams.getParameter("Recovery Step", 0.0); // force exit on linesearch failure
+  recoveryStep = lsparams.getParameter("Recovery Step", 0.0); // exit on fail
   maxIters = lsparams.getParameter("Max Iters", 40);
   alpha = lsparams.getParameter("Alpha Factor", 1.0e-4);
   paramsPtr = &params;
@@ -382,7 +466,7 @@ bool NOX::LineSearch::Tensor::reset(Parameter::List& params)
   else if (choice == "Newton")
     lsType = Newton;
   else {
-    if (print.isPrintProcessAndType(NOX::Utils::Warning)) {
+    if (utils.isPrintProcessAndType(NOX::Utils::Warning)) {
       cout << "Warning: NOX::Direction::Tensor::reset() - the choice of "
 	   << "\"Line Search\" \nparameter is invalid.  Using curvilinear "
 	   << "line search." << endl;
@@ -414,7 +498,8 @@ bool NOX::LineSearch::Tensor::reset(Parameter::List& params)
     convCriteria = None;
   else 
     convCriteria = ArmijoGoldstein;     // bwb - the others aren't implemented
-
+#endif 
+  
   counter.reset();
 
   return true;
@@ -472,10 +557,10 @@ bool NOX::LineSearch::Tensor::compute(NOX::Abstract::Group& newGrp,
     //const NOX::Abstract::Vector& dir2 = direction.getNewton();
     //ok = performLinesearch(newGrp, step, dir2, s, direction);
     ok = performLinesearch(newGrp, step, direction.getNewton(), s, direction);
-    double newf = 0.5*newGrp.getNormF()*newGrp.getNormF();
+    double newValue = 0.5*newGrp.getNormF()*newGrp.getNormF();
 
     // If backtracking on the tensor step produced a better step, then use it.
-    if (isTensorDescent  &&  tensorf < newf) {
+    if (isTensorDescent  &&  tensorf < newValue) {
       newGrp.computeX(oldGrp, dir, tensorStep);
       newGrp.computeF();    
     }
@@ -491,54 +576,67 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
 				const NOX::Solver::Generic& s,
 				const NOX::Direction::Tensor& direction)
 {
-  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
     cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "-- Tensor Line Search ("
-	 << paramsPtr->sublist("Tensor").getParameter("Submethod","Curvilinear")
+	 << paramsPtr->getParameter("Submethod","Curvilinear")
 	 << ") -- \n";
   }
 
   // Local variables
   NOX::Abstract::Vector* dir2 = NULL;
   bool isFailed = false;
-  bool isAcceptable = false;
+  bool isAccepted = false;
   bool isFirstPass = true;
   string message = "(STEP ACCEPTED!)";
 
   // Set counters
   int lsIterations = 1;
 
-  // Get Old F
+  // Get the linear solve tolerance if doing ared/pred for conv criteria
+  string dirString = s.getParameterList().sublist("Direction").
+    getParameter("Method", "Tensor");
+  double eta = (suffDecrCond == AredPred) ? 
+    s.getParameterList().sublist("Direction").sublist(dirString).
+    sublist("Linear Solver").getParameter("Tolerance", -1.0) : 0.0;
+
+  // Get Old function value
   const Abstract::Group& oldsoln = s.getPreviousSolutionGroup();
-  double oldf = 0.5*oldsoln.getNormF()*oldsoln.getNormF();  
+  double oldValue = 0.5*oldsoln.getNormF()*oldsoln.getNormF();  
+
+  // Compute directional derivative at old solution
+  double fprime = (lsType == Curvilinear) ? 
+    slopeObj.computeSlope(direction.getNewton(), oldsoln) :
+    slopeObj.computeSlope(dir, oldsoln);
+  multsJv++;
 
   // Compute first trial point and its function value
   step = defaultStep;
   newsoln.computeX(oldsoln, dir, step);
   newsoln.computeF();    
-  double newf = 0.5*newsoln.getNormF()*newsoln.getNormF();  
+  double newValue = 0.5*newsoln.getNormF()*newsoln.getNormF();  
 
-  // Compute directional derivative
-  double fprime;
-  if (lsType == Curvilinear) 
-    fprime = slopeObj.computeSlope(direction.getNewton(), oldsoln);
-  else 
-    fprime = slopeObj.computeSlope(dir, oldsoln);
-  multsJv++;
-  
   // Compute the convergence criteria for the line search 
-  double threshold = oldf + alpha*step*fprime;
-  isAcceptable = (newf < threshold);
+  //  double threshold = oldValue + alpha*step*fprime;
+  //  isAccepted = (newValue < threshold);
+//   if (fprime >= 0.0) 
+//   {
+//     printBadSlopeWarning(fprime);
+//     isFailed = true;
+//   }
+//   else 
+    isAccepted = checkConvergence(newValue, oldValue, fprime, step, eta,
+				  lsIterations, 0);
 
   // Update counter and allocate memory for dir2 if a linesearch is needed
-  if (!isAcceptable) { 
+  if (!isAccepted) { 
     counter.incrementNumNonTrivialLineSearches();
     dir2 = dir.clone(ShapeCopy);
     *dir2 = dir;
   }
 
   // Iterate until the trial point is accepted....
-  while (!isAcceptable) {  
+  while ((!isAccepted) && (!isFailed)) {  
       
     // Check for linesearch failure
     if (lsIterations > maxIters) {
@@ -547,7 +645,7 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
       break;
     }
 
-    print.printStep(lsIterations, step, oldf, newf);
+    print.printStep(lsIterations, step, oldValue, newValue);
 
     // Is the full tensor step a descent direction?  If not, switch to Newton
     if ((!isNewtonDirection) && (isFirstPass && fprime >= 0)) {
@@ -559,7 +657,7 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
       printf("  Switching to Newton.  New fprime = %e\n", fprime);
     }
     else {
-      step = selectLambda(newf, oldf, fprime, step);
+      step = selectLambda(newValue, oldValue, fprime, step);
     }
     
     isFirstPass = false;
@@ -588,13 +686,14 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
       newsoln.computeX(oldsoln, *dir2, step);
     }
     newsoln.computeF();    
-    newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
+    newValue = 0.5*newsoln.getNormF()*newsoln.getNormF();
 
     // Recompute convergence criteria based on new step
-    threshold = oldf + alpha*step*fprime;
-    isAcceptable = (newf < threshold);
+    // threshold = oldValue + alpha*step*fprime;
+    // isAccepted = (newValue < threshold);
+    isAccepted = checkConvergence(newValue, oldValue, fprime, step, eta,
+				  lsIterations, 0);
   }
-
 
   if (isFailed) {
     counter.incrementNumFailedLineSearches();
@@ -604,23 +703,71 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
       // Update the group using Newton direction and recovery step
       newsoln.computeX(oldsoln, direction.getNewton(), step);
       newsoln.computeF();    
-      newf = 0.5*newsoln.getNormF()*newsoln.getNormF();
+      newValue = 0.5*newsoln.getNormF()*newsoln.getNormF();
 
       message = "(USING RECOVERY STEP!)";
     }
   }
   
-  print.printStep(lsIterations, step, oldf, newf, message);
+  print.printStep(lsIterations, step, oldValue, newValue, message);
   counter.setValues(*paramsPtr);
 
   if (dir2 != NULL) {
     delete dir2;
     dir2 = NULL;
   }
-    
+
+  if (suffDecrCond == AredPred)
+    paramsPtr->setParameter("Adjusted Tolerance", 1.0 - step * (1.0 - eta));
+
   return (!isFailed);
 }
 
+
+bool NOX::LineSearch::Tensor::checkConvergence(double newValue, double oldValue, 
+					       double oldSlope,
+					       double step, double eta, 
+					       int nIters,
+					       int nNonlinearIters) const
+{
+  /*
+  if ((nIters == 1) && (doForceInterpolation))
+    return false;
+
+  if ((doAllowIncrease) && (nNonlinearIters <= maxIncreaseIter))
+  {
+    double relativeIncrease = newValue / oldValue;
+    if (relativeIncrease < maxRelativeIncrease)
+      return true;
+  }
+  */
+  
+  switch (suffDecrCond)
+  {
+
+  case ArmijoGoldstein:
+    
+    return (newValue <= oldValue + alpha * step * oldSlope);
+    break;
+
+  case AredPred:
+    {
+      double newEta = 1.0 - step * (1.0 - eta);
+      return (newValue <= oldValue * (1.0 - alpha * (1.0 - newEta)));
+      break;
+    }
+  case None:
+
+    return true;
+    break;
+
+  default:
+
+    cerr << "NOX::LineSearch::Tensor::checkConvergence - Unknown convergence criteria" << endl;
+    throw "NOX Error";
+
+  }
+}
 
 double NOX::LineSearch::Tensor::selectLambda(double newf, double oldf,
 					     double oldfprime, double lambda)
@@ -640,5 +787,14 @@ double NOX::LineSearch::Tensor::selectLambda(double newf, double oldf,
   return lambdaRet;
 }
 
+
+void NOX::LineSearch::Tensor::printBadSlopeWarning(double slope) const
+{
+  if (print.isPrintProcessAndType(NOX::Utils::Warning))
+    cout << "WARNING: Computed slope is positive (slope = " 
+	 << slope
+	 << ").\n" << "Using recovery step!" 
+	 << endl;
+}
 
 #endif

@@ -61,7 +61,7 @@ public:
   ~Tensor();
   
   // derived
-  bool reset(NOX::Parameter::List& params);
+  bool reset(NOX::Parameter::List& lsParams);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 
@@ -77,9 +77,16 @@ protected:
 			 const NOX::Solver::Generic& s,
 			 const NOX::Direction::Tensor& direction);
 
+  //! Returns true if converged.
+  bool checkConvergence(double newValue, double oldValue, double oldSlope, double step,
+			double eta, int nIters, int nNonlinearIters) const;
+
   //! Select lambda for linesearch (quadratic or halving)
   double selectLambda(double newf, double oldf,
 		      double oldfprime, double lambda);
+
+  //! Prints a warning message saying that the slope is negative
+  void printBadSlopeWarning(double slope) const;
 
 protected:
 
@@ -102,8 +109,8 @@ protected:
   //! Flag for lambda selection (Halving/Quadratic)
   LambdaSelectionType lambdaSelection;
 
-  //! Choice of convergence criteria   (currently unused)
-  ConvergenceCriteriaType convCriteria;
+  //! Choice of convergence criteria
+  ConvergenceCriteriaType suffDecrCond;
 
   //! Choice of line search
   LineSearchType lsType;
@@ -129,6 +136,9 @@ protected:
   //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters from the counter object.  
   NOX::Parameter::List* paramsPtr;
 
+  //! Printing Utils
+  NOX::Utils utils;
+  
   //! Common line search printing utilities.
   NOX::LineSearch::Utils::Printing print;
 
