@@ -39,9 +39,12 @@
 #include "FiniteElementProblem.H"
 
 // Constructor - creates the Epetra objects (maps and vectors) 
-FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& comm) :
+FiniteElementProblem::FiniteElementProblem(int numGlobalElements, 
+					   Epetra_Comm& comm,
+					   double s) :
   Comm(&comm),
-  NumGlobalElements(numGlobalElements)
+  NumGlobalElements(numGlobalElements),
+  scale(s)
 {
 
   // Commonly used variables
@@ -266,7 +269,7 @@ bool FiniteElementProblem::setParameter(string label, double value)
   else if (label == "Left BC")
     leftBC = value;
   else if (label == "Right BC")
-    rightBC = value;
+    rightBC = value*scale;
   else if (label == "Homotopy Continuation Parameter") {
     // do nothing for now
   }

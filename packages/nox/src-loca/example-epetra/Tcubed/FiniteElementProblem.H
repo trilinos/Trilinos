@@ -58,7 +58,8 @@ class FiniteElementProblem {
 public:
 
   // Constructor
-  FiniteElementProblem(int NumGlobalElements, Epetra_Comm& Comm);
+  FiniteElementProblem(int NumGlobalElements, Epetra_Comm& Comm, 
+		       double s = 1.0);
   
   // Destructor
   ~FiniteElementProblem();
@@ -104,6 +105,7 @@ private:
   double factor;          // factor used on nonlinear term
   double leftBC;          // value of the essential BC at x = 0.
   double rightBC;         // value of the essential BC at x = 1.
+  double scale;           // scale factor to test parameter scaling
 
 };
 #endif

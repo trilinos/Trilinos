@@ -65,6 +65,9 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   int ierr = 0, i;
+  
+  // scale factor to test arc-length scaling
+  double scale = 1.0e-6;
 
   // Initialize MPI
 #ifdef HAVE_MPI
@@ -100,7 +103,7 @@ int main(int argc, char *argv[])
   // Create the FiniteElementProblem class.  This creates all required
   // Epetra objects for the problem and allows calls to the 
   // function (RHS) and Jacobian evaluation routines.
-  FiniteElementProblem Problem(NumGlobalElements, Comm);
+  FiniteElementProblem Problem(NumGlobalElements, Comm, scale);
 
   // Get the vector from the Problem
   Epetra_Vector& soln = Problem.getSolution();
@@ -123,9 +126,9 @@ int main(int argc, char *argv[])
   //locaStepperList.setParameter("Continuation Method", "Householder Arc Length");
   locaStepperList.setParameter("Continuation Parameter", "Right BC");
   //locaStepperList.setParameter("Continuation Parameter", "Nonlinear Factor");
-  locaStepperList.setParameter("Initial Value", 0.1);
-  locaStepperList.setParameter("Max Value", 100.0);
-  locaStepperList.setParameter("Min Value", 0.05);
+  locaStepperList.setParameter("Initial Value", 0.1/scale);
+  locaStepperList.setParameter("Max Value", 100.0/scale);
+  locaStepperList.setParameter("Min Value", 0.05/scale);
   locaStepperList.setParameter("Max Steps", 30);
   locaStepperList.setParameter("Max Nonlinear Iterations", 15);
   locaStepperList.setParameter("Enable Arc Length Scaling", true);
@@ -164,9 +167,9 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
   //stepSizeList.setParameter("Method", "Constant");
   stepSizeList.setParameter("Method", "Adaptive");
-  stepSizeList.setParameter("Initial Step Size", 0.1);
-  stepSizeList.setParameter("Min Step Size", 1.0e-3);
-  stepSizeList.setParameter("Max Step Size", 2000.0);
+  stepSizeList.setParameter("Initial Step Size", 0.1/scale);
+  stepSizeList.setParameter("Min Step Size", 1.0e-3/scale);
+  stepSizeList.setParameter("Max Step Size", 2000.0/scale);
   stepSizeList.setParameter("Aggressiveness", 0.1);
   stepSizeList.setParameter("Failed Step Reduction Factor", 0.5);
   stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
