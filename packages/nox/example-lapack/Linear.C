@@ -34,21 +34,95 @@
 
 /*! 
   \file Linear.C
-  \brief A simple linear example based on NOX::LAPACK.
-  
-   This is an example of using %NOX with the NOX::LAPACK::Group and
-   NOX::LAPACK::Vector classes. These are very basic classes intended
-   only to illustrate and test NOX. They are based on a combination of
-   C++ STL and LAPACK.
 
-   This example is a simple linear problem.
-   
+  \brief A simple linear example based on NOX::LAPACK. Creates the
+  executable named \c linear.
+  
+  <b>Usage</b>
+
+  <tt>linear \<problem size\> [line search type] [direction type] [memory size] </tt>
+
+  <ul>
+
+  <li> <tt>problem size</tt> - Specify the size of the linear problem
+
+  <li> <tt>line search type</tt> - Optional argument specifying the type
+       of line search to be used. Choices are the following:
+
+       <ul>
+       <li> None - Always take a step of length 1. Uses NOX::LineSearch::FullStep.
+
+       <li> Exact - Always perform an exact quadratic line search,
+            even if the first step decreases the function value.  Uses
+            NOX::LineSearch::Polynomial the following settings:
+
+	    <ul>
+	    <li>"Force Interpolation" = true
+	    <li>"Sufficient Decrease Condition" = "None"
+	    <li>"Default Step"= 1.0
+	    <li>"Min Bounds Factor" = 0.0
+	    </ul>
+
+       <li> Poly - Uses NOX::LineSearch::Polynomial with the default
+            settings.
+
+       </ul>
+
+  <li> <tt>direction type</tt> - Optional argument specifying the type
+       of direction to be used. Choices are the following:
+
+       <ul>
+       <li>Newton - NOX::Direction::Newton [default]
+       <li>Quasi-Newton - NOX::Direction::QuasiNewton
+       <li>%Broyden - NOX::Direction::Broyden
+       </ul>
+
+  <li> <tt>memory size</tt> - Optional argument to specify the memory
+       size for the Quasi-Newton and %Broyden methods. (Defaults to
+       the default for the given direction.)
+
+  </ul>
+
+  <b>Description</b>
+
+  This is an example of using %NOX with the NOX::LAPACK::Group and
+  NOX::LAPACK::Vector classes. These are very basic classes intended
+  only to illustrate and test %NOX. They are based on a combination of
+  C++ STL and LAPACK.
+
+  The function is linear:
+  \f[
+  F(x) = Ax -b.
+  \f]
+  The matrix \f$A\f$ is filled with random values in the interval [-1,1) using NOX::Random.
+  The right hand side is specified by
    \f[
-   F(x) = Ax -b 
+   b = \left[
+   \begin{array}{c}
+   1 \\
+   1 \\
+   1 \\
+   1
+   \end{array}
+   \right],
+   \f]
+   and the initial guess is given by
+   \f[
+   x^{(0)} = \left[
+   \begin{array}{c}
+   0\\
+   0\\
+   0\\
+   0
+   \end{array}
+   \right].
    \f]
 
-   If the program is called with the first argument being a 0 (zero),
-   then the following problem is used:
+
+   <b>Special Case</b>
+
+  If the program is called with problem size set to zero,
+  then the following 4 x 4 problem is used instead:
 
    \f[
    A = 
@@ -96,10 +170,6 @@
    \right]
    \f]
 
-   Otherwise, if the program is called with an n > 0, a matrix of size
-   n is constructed and each element is filledwith a random elements
-   in the interval [-1,1).
-
 */
 
 
@@ -124,7 +194,7 @@ public:
     if (useDefaultProblem)
     {
       if (n != 4)
-	throw "Linear::Linear - Problem size mismatch";
+	throw "Linear::Linear (from NOX) - Problem size mismatch";
 
       initialGuess.init(4);
       
@@ -150,12 +220,16 @@ public:
     }
     else
     {
+      if (n < 0)
+	throw "Linear::Linear (from NOX) - Invalid problem size";
+
       initialGuess.init(1);
       b.init(1);
+      NOX::Random random(1.0);
 
       for (int i = 0; i < n; i ++)
 	for (int j = 0; j < n; j ++)
-	  A(i,j) = drand48();
+	  A(i,j) = random();
     }
 
     int info;
@@ -168,6 +242,7 @@ public:
   //! Destructor
   ~Linear() {};
 
+  // Derived
   const NOX::LAPACK::Vector& getInitialGuess()
   {
     return initialGuess;
@@ -179,6 +254,7 @@ public:
     return solution;
   };
 
+  // Derived
   bool computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x)
   {
     int n = f.length();
@@ -193,6 +269,7 @@ public:
     return true;
   };
   
+  // Derived
   bool computeJacobian(NOX::LAPACK::Matrix& J, const NOX::LAPACK::Vector& x)
   {
     J = A;
@@ -206,10 +283,8 @@ private:
   //! Correct solution
   NOX::LAPACK::Vector solution;
   //! Matrix for linear problem
-  /*! See Linear.C */
   NOX::LAPACK::Matrix A;
   //! RHS for linear problem
-  /*! See Linear.C */
   NOX::LAPACK::Vector b;
 
 };
@@ -219,14 +294,17 @@ int main(int argc, char* argv[])
 {
   if (argc < 2)
   {
-    cout << "Usage: " << argv[0] << " <linear problem size> [memory size]" << endl;
+    cout << "Usage: " << argv[0] << " <problem size> [line search type] [direction type] [memory size]" << endl;
     exit(1);
   }
+
+  // ** Problem Set Up **
 
   // Set problem size and type
   int n = atoi(argv[1]);
   bool useDefaultProblem = false;
-  if (n <= 0)
+
+  if (n == 0)
   {
     n = 4;
     useDefaultProblem = true;
@@ -241,71 +319,89 @@ int main(int argc, char* argv[])
   // specified problem.
   NOX::LAPACK::Group grp(linear);
 
-  // Set up the status tests
+  // ** Status Tests **
   NOX::StatusTest::NormF normf(grp, 1.0e-8);
   NOX::StatusTest::MaxIters maxiters( 5 * n );
   NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, normf, maxiters);
 
-  // Create the list of solver parameters
-  NOX::Parameter::List solverParameters;
+  // ** Paramter List **
+  NOX::Parameter::List solverParams;
 
-  // Set the level of output (this is the default)
-  solverParameters.sublist("Printing").setParameter("Output Information", 
+  // -- Output Level --
+  solverParams.sublist("Printing").setParameter("Output Information", 
 						    NOX::Utils::Warning + 
 						    NOX::Utils::OuterIteration + 
 						    NOX::Utils::InnerIteration + 
 						    NOX::Utils::Parameters);
 
-  // Set the solver (this is the default)
-  solverParameters.setParameter("Nonlinear Solver", "Line Search Based");
+  // -- Solver --
+  solverParams.setParameter("Nonlinear Solver", "Line Search Based");
 
-  // Create direction sublist
-  NOX::Parameter::List& directionParameters = solverParameters.sublist("Direction");
+  // -- Line Search --
+  NOX::Parameter::List& lineSearchParams = solverParams.sublist("Line Search");
+
+
+  string lineSearchType = (argc >= 3) ? argv[2] : "Exact";
+
+  if (lineSearchType == "None")
+  {
+    lineSearchParams.setParameter("Method", "Full Step");
+  }
+  else if (lineSearchType == "Poly")
+  {
+    lineSearchParams.setParameter("Method", "Polynomial");
+  }
+  else if (lineSearchType == "Backtrack")
+  {
+    lineSearchParams.setParameter("Method", "Backtrack");
+  }
+  else // "Exact"
+  {
+    lineSearchParams.setParameter("Method", "Polynomial");
+    NOX::Parameter::List& polyParams = lineSearchParams.sublist("Polynomial");
+    polyParams.setParameter("Force Interpolation", true);
+    polyParams.setParameter("Sufficient Decrease Condition", "None");
+    polyParams.setParameter("Default Step", 1.0);
+    polyParams.setParameter("Min Bounds Factor", 0.0);
+  }
+
+  // -- Direction --
+  NOX::Parameter::List& directionParams = solverParams.sublist("Direction");
   
-  // Set direction
-  directionParameters.setParameter("Method", "Quasi-Newton");
+  // Set direction type
+  string directionMethod = (argc >= 4) ? argv[3] : "Newton";
+  directionParams.setParameter("Method", directionMethod);
 
   // Set memory size
-  int m = 5;
-  if (argc >= 3) 
-    m = atoi(argv[2]);
-  if (m <= 0)
-    m = 5;
-  directionParameters.sublist("Quasi-Newton").setParameter("Memory", m);
+  if (argc >= 5) 
+    directionParams.sublist(directionMethod).setParameter("Memory", atoi(argv[4]));
 
-  // Create the line search parameters sublist
-  NOX::Parameter::List& lineSearchParameters = solverParameters.sublist("Line Search");
+  // One last detail
+  if ((directionMethod == "Broyden") && (lineSearchType == "Poly"))
+    directionParams.sublist(directionMethod).setParameter("Compute Jacobian", true);
 
-  // Set the line search method
-  lineSearchParameters.setParameter("Method", "Polynomial");
-
-  // Create the line search parameters sublist
-  NOX::Parameter::List& polynomialParameters = lineSearchParameters.sublist("Polynomial");
-
-  polynomialParameters.setParameter("Force Interpolation", true);
-  polynomialParameters.setParameter("Convergence Criteria", "None");
-  polynomialParameters.setParameter("Default Step", 1.0);
-  polynomialParameters.setParameter("Min Bounds Factor", 0.0);
-
+  // ** Solve **
+  
   // Create the solver
-  NOX::Solver::Manager solver(grp, statusTestsCombo, solverParameters);
+  NOX::Solver::Manager solver(grp, statusTestsCombo, solverParams);
 
   // Solve the nonlinesar system
   NOX::StatusTest::StatusType status = solver.solve();
 
-  // Print the answer
+  // ** Output solution **
+
+  // Print the final parameter list from the solver
   cout << "\n" << "-- Parameter List From Solver --" << "\n";
   solver.getParameterList().print(cout);
 
-  // Get the answer
+  // Get the answer from the solver
   grp = solver.getSolutionGroup();
   
-
-  // Print the answer
+  // Print the answer from the solver
   cout << "\n" << "-- Final Solution From Solver --" << "\n";
   grp.print();
 
-  // Print the expected answer
+  // Print the true answer
   grp.setX(linear.getSolution());
   grp.computeF();
   cout << "\n" << "-- Expected Solution --" << "\n";
