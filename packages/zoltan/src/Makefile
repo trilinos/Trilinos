@@ -64,6 +64,14 @@ else
 ZOLTAN_SUBLIB_DIR = $(ZOLTAN_LIB_DIR)
 endif
 
+# If ZOLTAN_OLD_INTERFACE is defined, builds zdrive executable using the
+# old LB_* interface.  Source code from driver_old and fdriver_old is used.
+ifdef ZOLTAN_OLD_INTERFACE
+ZOLTAN_OLD = _old
+else
+ZOLTAN_OLD = 
+endif
+
 ##############################################################################
 # Process input flags
 ##############################################################################
@@ -106,7 +114,7 @@ endif
 
 # If NEMESIS_LIBPATH is defined, link Nemesis, Exodus and Netcdf into zdrive.
 ifdef NEMESIS_LIBPATH
-  GDEFINES += -DLB_NEMESIS
+  GDEFINES += -DZOLTAN_NEMESIS
   THIRD_PARTY_LIBS += -lnemIc -lexoIIv2c -lnetcdf
   THIRD_PARTY_LIBPATH += $(NEMESIS_LIBPATH)
   THIRD_PARTY_INCPATH += $(NEMESIS_INCPATH)
@@ -127,18 +135,18 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #
 SUB_VPATH	= ../include ../Utilities/shared \
 		  ../zz ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc \
-		  ../params ../driver ../ch ../parmetis ../timer \
+		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory 
 SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../zz -I../all -I../lb -I../par -I../rcb  -I../oct  \
 		  -I../bsfc -I../hsfc \
-		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
+		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory 
-SUBDIRS		= driver ch zz all lb par rcb oct bsfc hsfc parmetis params \
+SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb par rcb oct bsfc hsfc parmetis params \
 		  timer ha \
 		  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
@@ -251,7 +259,7 @@ F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 # for an example.
 #
 LINT		= lint
-LINT_INC_PATH	= -Iinclude -Idriver -Ich -Izz -Iall -Ilb -Ipar -Ircb -Iparams \
+LINT_INC_PATH	= -Iinclude -Idriver$(ZOLTAN_OLD) -Ich -Izz -Iall -Ilb -Ipar -Ircb -Iparams \
 		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree \
 		  -IUtilities/shared -IUtilities/Memory \
 		  -IUtilities/Communication -IUtilities/DDirectory \
@@ -344,7 +352,7 @@ zdrive:
 
 zfdrive: 
 	$(MAKE) YES_FORTRAN=1 ZOLTAN_ARCH=$(ZOLTAN_ARCH) zoltan
-	@cd fdriver; 				\
+	@cd fdriver$(ZOLTAN_OLD); 				\
 	$(MAKE) zfdrive 			\
 	"CC=$(CCOMP)"				\
 	"ZOLTAN_INC_PATH=$(ZOLTAN_INC_PATH)"	\
@@ -478,6 +486,7 @@ clean:
          echo $$a; \
 	 cd fort; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
 	 cd fdriver; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
+	 cd fdriver_old; $(MAKE) "ZOLTAN_OBJ_DIR=$$a" clean; cd ..; \
 	 $(RM) -rf $$a/*; \
 	 done;
 	 cd Utilities; $(MAKE) clean; cd ..
