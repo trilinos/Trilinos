@@ -63,7 +63,7 @@ public:
   // Handles the case when a user sets the parameter with a character
   // string in parenthesis.
   void setParameter(const string& name, const char value[])
-	{ return setParameter(name, std::string(value) ); }
+	{ setParameter(name, std::string(value) ); }
   //@}
 
   /** @name Getting Parameters 
