@@ -63,12 +63,17 @@ int RCB_STATS = 1;
 void lb_rcb(
   LB *lb,                     /* The load-balancing structure with info for
                                  the RCB balancer.                           */
-  int *pdotnum,               /* # of dots - decomposition changes it */
-  int *pdottop,               /* dots >= this index are new */
-  int *num_non_local,         /* Number of non-local objects assigned to this
+  int *num_import,            /* Number of non-local objects assigned to this
                                  processor in the new decomposition.         */
-  LB_TAG **non_local_objs     /* Array of returned non-local obj info for the
-                                 new decomposition.                          */
+  LB_ID **import_global_ids,  /* Returned value:  array of global IDs for
+                                 non-local objects in this processor's new
+                                 decomposition.                              */
+  LB_ID **import_local_ids,   /* Returned value:  array of local IDs for
+                                 non-local objects in this processor's new
+                                 decomposition.                              */
+  int **import_procs          /* Returned value:  array of processor IDs for
+                                 processors owning the non-local objects in
+                                 this processor's new decomposition.         */
 )
 {
   int    proc,nprocs;              /* my proc id, total # of procs */
@@ -77,6 +82,8 @@ void lb_rcb(
   struct rcb_box boxtmp;           /* tmp rcb box */
   int    keep, outgoing;           /* message exchange counters */
   int    incoming, incoming2;      /* message exchange counters */
+  int    pdotnum;                  /* # of dots - decomposition changes it */
+  int    pdottop;                  /* dots >= this index are new */
   int   *dotmark;                  /* which side of median for each dot */
   int   *dotlist;                  /* list of active dots */
   int    dotnum;                   /* number of dots */
@@ -117,7 +124,7 @@ void lb_rcb(
 				      4 = most dot memory this proc ever allocs
 				      5 = # of times a previous cut is re-used
 				      6 = # of reallocs of dot array */
-  int    i,j,k;                    /* local variables */
+  int    i,ii,j,k;                 /* local variables */
 
   RCB_STRUCT *rcb;                 /* Pointer to data structures for RCB.  */
   int wtflag;                      /* (0) do not (1) do use weights.  */
@@ -165,7 +172,7 @@ void lb_rcb(
    */
 
   LB_start_time = MPI_Wtime();
-  rcb_build_data_structure(lb, pdotnum, &dotmax);
+  rcb_build_data_structure(lb, &pdotnum, &dotmax);
 
   rcb = (RCB_STRUCT *) (lb->Data_Structure);
 
@@ -199,7 +206,7 @@ void lb_rcb(
   
   /* local copies of calling parameters */
 
-  dottop = dotnum = *pdotnum;
+  dottop = dotnum = pdotnum;
 
   /* initialize timers and counters */
 
@@ -725,7 +732,7 @@ void lb_rcb(
 
   /* error checking and statistics */
 
-  if (RCB_CHECK) rcb_check(dotpt,dotnum,*pdotnum,rcbbox);
+  if (RCB_CHECK) rcb_check(dotpt,dotnum,pdotnum,rcbbox);
   if (RCB_STATS) rcb_stats(timestop-timestart,dotpt,dotnum,
 			   timers,counters,rcbbox,reuse);
 
@@ -733,19 +740,25 @@ void lb_rcb(
   
   LB_start_time = MPI_Wtime();
 
-  *pdotnum = dotnum;
-  *pdottop = dottop;
+  pdotnum = dotnum;
+  pdottop = dottop;
 
   /*  build return arguments */
 
-  *num_non_local = dotnum - dottop;
-  if (*num_non_local > 0) {
-    *non_local_objs = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1,
-                                                *num_non_local, sizeof(LB_TAG));
+  *num_import = dotnum - dottop;
+  if (*num_import > 0) {
+    *import_global_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                                  *num_import, sizeof(LB_ID));
+    *import_local_ids  = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                                  *num_import, sizeof(LB_ID));
+    *import_procs      = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                                  *num_import, sizeof(int));
 
-    for (i = 0; i < *num_non_local; i++) {
-      memcpy((char *) &((*non_local_objs)[i]), (char *) &(dotpt[i+dottop].Tag),
-              sizeof(LB_TAG));
+    for (i = 0; i < *num_import; i++) {
+      ii = i + dottop;
+      (*import_global_ids)[i] = dotpt[ii].Tag.Global_ID;
+      (*import_local_ids)[i]  = dotpt[ii].Tag.Local_ID;
+      (*import_procs)[i]      = dotpt[ii].Tag.Proc;
     }
   }
   LB_end_time = MPI_Wtime();
@@ -762,16 +775,16 @@ void lb_rcb(
     int i;
     LB_print_sync_start(TRUE);
     printf("DLBLIB RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
-           LB_Proc, *pdotnum, *pdottop, *num_non_local);
+           LB_Proc, pdotnum, pdottop, *num_import);
     printf("  Assigned objects:\n");
-    for (i = 0; i < *pdotnum; i++) {
+    for (i = 0; i < pdotnum; i++) {
       printf("    Obj:  %10d      Orig: %4d\n", rcb->Dots[i].Tag.Global_ID,
              rcb->Dots[i].Tag.Proc);
     }
     printf("  Non_locals:\n");
-    for (i = 0; i < *num_non_local; i++) {
+    for (i = 0; i < *num_import; i++) {
       printf("    Obj:  %10d      Orig: %4d\n",
-             (*non_local_objs)[i].Global_ID, (*non_local_objs)[i].Proc);
+             (*import_global_ids)[i], (*import_procs)[i]);
     }
     LB_print_sync_end(TRUE);
   }
