@@ -336,8 +336,10 @@ This function performs a variety of matrix-matrix multiply operations.
 
   int M_;
   int N_;
-  int LDA_;
   bool A_Copied_;
+
+ public:
+  int LDA_;
   double * A_;
 
 

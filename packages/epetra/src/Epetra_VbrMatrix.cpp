@@ -1518,17 +1518,19 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
 
   int j, k;
   if (!TransA) {
-    for (j=0; j < NumEntries; j++) {
-      Epetra_SerialDenseMatrix* Asub = As[j];
-      double * A = Asub->A();
-      int LDA = Asub->LDA();
-      int BlockIndex = BlockIndices[j];
-      int xoff = FirstPointInElementList[BlockIndex];
-      int ColDim = ElementSizeList[BlockIndex];
+    for (k=0; k<NumVectors; k++) {
+      double * y = Y[k] + RowOff;
+      double * xptr = X[k];
 
-      for (k=0; k<NumVectors; k++) {
-	double * x = X[k] + xoff;
-	double * y = Y[k] + RowOff;
+      for (j=0; j < NumEntries; ++j) {
+	Epetra_SerialDenseMatrix* Asub = As[j];
+	double * A = Asub->A_;
+	int LDA = Asub->LDA_;
+	int BlockIndex = BlockIndices[j];
+	int xoff = FirstPointInElementList[BlockIndex];
+	int ColDim = ElementSizeList[BlockIndex];
+
+	double * x = xptr + xoff;
 
 	//Call GEMV if sub-block is non-square or if LDA != RowDim.
 	if (LDA != RowDim || ColDim != RowDim) {
