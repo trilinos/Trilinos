@@ -46,11 +46,12 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
       free ((void *) cpntr);
     }
   
-  int * ElementSizeList = new int[NumMyElements];
+  int * ElementSizeList = 0;
+  if (NumMyElements>0) ElementSizeList = new int[NumMyElements];
   
   for (int i=0; i<NumMyElements; i++) ElementSizeList[i] = rpntr[i+1] - rpntr[i];
   
-  map = new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, 
+  map = new Epetra_BlockMap(-1, NumMyElements, MyGlobalElements, 
 			    ElementSizeList, 0, comm);
   
    A = new Epetra_VbrMatrix(Copy, *map, 0);
@@ -93,5 +94,13 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
   x = new Epetra_Vector(Copy, *map, x_in);
   b = new Epetra_Vector(Copy, *map, b_in);
 
+  if(comm.MyPID()==0)
+    {
+      free ((void *) val);
+      free ((void *) indx);
+      free ((void *) rpntr);
+      free ((void *) bpntr);
+      free ((void *) bindx);
+    }
   return;
 }

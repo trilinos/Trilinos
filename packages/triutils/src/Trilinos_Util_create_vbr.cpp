@@ -136,6 +136,10 @@ void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
 
       *n_nonzeros = (*indx)[(*bpntr)[*N_blk_global]];
       *n_blk_nonzeros = (*bpntr)[*N_blk_global];
+      *N_update = N_blk_equations;
+
+      *update = (int *) malloc(N_blk_equations*sizeof(int));
+      for (int i=0; i<N_blk_equations; i++) (*update)[i] = i;
       
       *bindx = (int   *) realloc((void *) (*bindx),
 				 (*n_blk_nonzeros+1)*sizeof(int)) ;
