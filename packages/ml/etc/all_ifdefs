@@ -117,7 +117,7 @@ HAVE_ML_IFPACK	3                        MS
 HAVE_ML_METIS	8                        MS
      Operator/ml_op_utils.c  2
      Coarsen/ml_agg_METIS.c  6
-HAVE_ML_NEW_T_PE	1
+HAVE_ML_NEW_T_PE	1                    JJH on by default, should be deleted
      Include/ml_common.h  1
 HAVE_ML_PARASAILS	3
      Smoother/ml_smoother.c  1
@@ -193,12 +193,12 @@ ML_ANALYSIS	15
      Main/ml_struct.c  10
 ML_BINARY	8
      Utils/ml_aztec_utils.c  8
-ML_CATCH_MPI_ERRORS_IN_DEBUGGER	5
+ML_CATCH_MPI_ERRORS_IN_DEBUGGER	5   JJH keep, useful for debugging
      Comm/ml_comm.c  2
      Comm/ml_comm.h  3
-ML_CLASSIC_BUILD	1
+ML_CLASSIC_BUILD	1               JJH delete -- old makefile system not supported
      Include/ml_common.h  1
-ML_CPP	104
+ML_CPP	104                       JJH keep -- needed if build with c++ compiler
      Coarsen/ml_aggregate.c  4
      Operator/ml_operator_blockmat.c  2
      Comm/ml_comm.c  32
@@ -232,7 +232,7 @@ ML_FAST	4
      Smoother/ml_smoother.c  4
 ML_FLOPS	4
      Operator/ml_operator.c  4
-ML_FUNCTION_NAME	8
+ML_FUNCTION_NAME	8           JJH maybe keep -- I store the function name here -- that way, the name is always available in the function if I have to print any error messages with pr_error()
      Utils/ml_memory.c  1
      Comm/ml_exch_row.c  7
 ML_MALLINFO	2                   MS or Ray? for memory info
@@ -244,7 +244,7 @@ ML_MEMORY_CHK	1
 ML_MEM_CHECK	2
      Utils/ml_memory.c  1
      Utils/ml_memory.h  1
-ML_MPI	72
+ML_MPI	72                      JJH replace with HAVE_MPI??
      Utils/ml_viz_opendx.c  1
      Main/mli_solver.h  1
      Comm/ml_comm.c  9
@@ -266,13 +266,13 @@ ML_MPI	72
      Main/driver.c  1
      Main/ml_struct.c  2
      FEGrid/ml_pde.c  1
-ML_MULTIPLE_RHS_BLOCK_FACTOR	1
+ML_MULTIPLE_RHS_BLOCK_FACTOR	1       JJH keep -- replaces macros WKC
      Include/ml_common.h  1
 ML_NEWDROPSCHEME	5
      Coarsen/ml_agg_uncoupled.c  5
-ML_NEWNORM	3
+ML_NEWNORM	3                           JJH T-norm for Maxwell -- should be deleted once this is better integrated
      Utils/tumi.c  3
-ML_NEW_T_PE	9
+ML_NEW_T_PE	9                           JJH on by default -- should be deleted
      Coarsen/ml_agg_reitzinger.c  9
 ML_NONSYMMETRIC	1
      Coarsen/ml_agg_genP.c  1
@@ -310,10 +310,13 @@ ML_TIMING_DETAILED	16
      Smoother/ml_superlu.c  8
      Smoother/ml_smoother.c  5
      Smoother/ml_csolve.c  2
-ML_USEMPIFUNCTIONS	13
+ML_USEMPIFUNCTIONS	13          JJH changed this to ML_USE_INTERNAL_COMM_FUNCTIONS -- this should go away when ML's internal reduction routines are eliminated
      Utils/ml_utils.c  9
      Comm/ml_comm.c  4
-ML_VAMPIR	17
+ML_VAMPIR	17                  JJH useful if you want to use vampir to profile
+communication patterns -- the agg_reitzinger parts can be deleted;  before
+doing do, this should be documented in the developer's guide so we don't forget
+how to do this
      Utils/ml_vampir.c  1
      Utils/ml_vampir.h  1
      Coarsen/ml_agg_reitzinger.c  15
@@ -333,9 +336,11 @@ ML_repartition	1
      Coarsen/ml_aggregate.c  1
 MODELPROBLEM	2
      Utils/ml_aztec_utils.c  2
-MatrixFreeHiptmair	2
+MatrixFreeHiptmair	2           JJH obselete, should be deleted, along with
+functions
      Smoother/ml_smoother.c  2
-MatrixProductHiptmair	2
+MatrixProductHiptmair	2       JJH default, should be deleted once above macro
+and functions are deleted
      Smoother/ml_smoother.c  2
 NOTSTRICT_PROTO	2
      FEGrid/ml_gridfunc.h  1
@@ -394,7 +399,7 @@ USE_AT	6
      Coarsen/ml_agg_genP.c  6
 VERSION	1
      Include/ml_common.h  1
-WKC	24
+WKC	24                          JJH should be replaced with ML_MULTIPLE_RHS_BLOCK_FACTOR
      Operator/ml_operator.c  1
      Smoother/ml_smoother.c  1
      Smoother/ml_csolve.h  2
