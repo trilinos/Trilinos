@@ -1162,10 +1162,14 @@ static int LB_ParMetis_Jostle(
   /* Output timing results if desired */
   if (get_times){
     if (lb->Proc==0) printf("\nZOLTAN timing statistics:\n");
-    LB_Print_Stats(lb, times[1]-times[0], " Partitioner Pre-processing time  ");
-    LB_Print_Stats(lb, times[2]-times[1], " Partitioner Library time         ");
-    LB_Print_Stats(lb, times[3]-times[2], " Partitioner Post-processing time ");
-    LB_Print_Stats(lb, times[3]-times[0], " Partitioner Total time           ");
+    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, times[1]-times[0], 
+                   " Partitioner Pre-processing time  ");
+    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, times[2]-times[1], 
+                   " Partitioner Library time         ");
+    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, times[3]-times[2], 
+                   " Partitioner Post-processing time ");
+    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, times[3]-times[0], 
+                   " Partitioner Total time           ");
     if (lb->Proc==0) printf("\n");
   }
 

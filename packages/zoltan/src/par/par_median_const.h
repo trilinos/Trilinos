@@ -11,13 +11,11 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef __PAR_CONST_H
-#define __PAR_CONST_H
+#ifndef __PAR_UTIL_CONST_H
+#define __PAR_UTIL_CONST_H
 
-#include <mpi.h>
-
-extern void LB_Print_Sync_Start(MPI_Comm, int);
-extern void LB_Print_Sync_End(MPI_Comm, int);
-extern void LB_Print_Stats (MPI_Comm, int, double, char *);
+extern int LB_find_median(double *dots, double *wgts, int *dotmark, int dotnum,
+  int proc, double fractionlo, MPI_Comm local_comm, double *valuehalf,
+  int first_guess, int *counter);
 
 #endif

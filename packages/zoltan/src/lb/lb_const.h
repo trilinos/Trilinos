@@ -25,6 +25,7 @@
 
 #include "lbi_const.h"
 #include "mem_const.h"
+#include "par_const.h"
 
 /*
  *  See bottom for other included files.
@@ -497,6 +498,5 @@ extern LB_FN LB_Jostle;
 extern LB_FN LB_Reftree_Part;
 extern LB_FN LB_irb;
 
-#include "par_const.h"
 
 #endif

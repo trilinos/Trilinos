@@ -262,7 +262,7 @@ double lb_time[2] = {0.0,0.0};
 
   if (lb->Debug_Level >= LB_DEBUG_LIST) {
     int i;
-    LB_Print_Sync_Start(lb, TRUE);
+    LB_Print_Sync_Start(lb->Communicator, TRUE);
     printf("ZOLTAN: Objects to be imported to Proc %d\n", lb->Proc);
     for (i = 0; i < *num_import_objs; i++) {
       printf("    Obj: %10d  From processor: %4d\n", 
@@ -274,7 +274,7 @@ double lb_time[2] = {0.0,0.0};
       printf("    Obj: %10d  Destination: %4d\n", 
              (*export_global_ids)[i], (*export_procs)[i]);
     }
-    LB_Print_Sync_End(lb, TRUE);
+    LB_Print_Sync_End(lb->Communicator, TRUE);
   }
 
   /*
@@ -306,9 +306,11 @@ double lb_time[2] = {0.0,0.0};
     if (lb->Proc == lb->Debug_Proc) {
       printf("ZOLTAN Times:  \n");
     }
-    LB_Print_Stats (lb, lb_time[0], "ZOLTAN     Balance:     ");
+    LB_Print_Stats (lb->Communicator, lb->Debug_Proc, lb_time[0], 
+                   "ZOLTAN     Balance:     ");
     if (lb->Migrate.Auto_Migrate)
-      LB_Print_Stats (lb, lb_time[1], "ZOLTAN     HelpMigrate: ");
+      LB_Print_Stats (lb->Communicator, lb->Debug_Proc, lb_time[1], 
+                      "ZOLTAN     HelpMigrate: ");
   }
 
   *changes = 1;

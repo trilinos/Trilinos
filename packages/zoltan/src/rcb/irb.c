@@ -17,12 +17,12 @@
 #include "lb_const.h"
 #include "irb_const.h"
 #include "all_allo_const.h"
-#include "par_const.h"
 #include "params_const.h"
 #include "timer_const.h"
 #include "create_proc_list_const.h"
 #include "comm_const.h"
 #include "ha_const.h"
+#include "par_median_const.h"
 
 /* Inertial recursive bisection (IRB) load balancing routine operates on
    "dots" as defined in irb.h */
@@ -648,13 +648,15 @@ static int irb_fn(
      if (lb->Debug_Level >= LB_DEBUG_ATIME) {
         if (lb->Proc == lb->Debug_Proc)
            printf("ZOLTAN IRB Times:  \n");
-        LB_Print_Stats(lb, lb_time[0], "ZOLTAN       Build:       ");
-        LB_Print_Stats(lb, lb_time[1], "ZOLTAN         IRB:         ");
+        LB_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[0], 
+                       "ZOLTAN       Build:       ");
+        LB_Print_Stats(lb->Communicator, lb->Debug_Proc, lb_time[1], 
+                       "ZOLTAN         IRB:         ");
      }
 
      if (lb->Debug_Level >= LB_DEBUG_ALL) {
         int kk;
-        LB_Print_Sync_Start(lb, TRUE);
+        LB_Print_Sync_Start(lb->Communicator, TRUE);
         printf("ZOLTAN IRB Proc %d Num_Obj=%d Num_Keep=%d Num_Non_Local=%d\n",
                lb->Proc, pdotnum, pdottop, *num_import);
         printf("  Assigned objects:\n");
@@ -667,7 +669,7 @@ static int irb_fn(
            printf("    Obj:  %10d      Orig: %4d\n", (*import_global_ids)[kk],
                   (*import_procs)[kk]);
         }
-        LB_Print_Sync_End(lb, TRUE);
+        LB_Print_Sync_End(lb->Communicator, TRUE);
      }
 
      LB_TRACE_EXIT(lb, yo);

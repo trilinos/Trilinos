@@ -663,11 +663,11 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
   }
 
 #if 0
-  LB_Print_Sync_Start(lb, TRUE);
+  LB_Print_Sync_Start(lb->Communicator, TRUE);
     fprintf(stderr, "Result info on %d: %d %d %d  %lf  %lf  %lf\n", lb->Proc, 
 	    reg->Tag.Local_ID, reg->Tag.Global_ID, reg->Tag.Proc,
 	    reg->Coord[0], reg->Coord[1], reg->Coord[2]); 
-  LB_Print_Sync_End(lb, TRUE);
+  LB_Print_Sync_End(lb->Communicator, TRUE);
 #endif
 
   if (wgtflag)

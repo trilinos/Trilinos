@@ -13,11 +13,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "lb_const.h"
-#include "par_const.h"
-
-
-#define PRINT_SYNC 5000   /* definition needed for print sync */
+#include <mpi.h>
+#include "par_median_const.h"
+#include "mem_const.h"
 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
@@ -39,26 +37,27 @@ struct median {          /* median cut info */
 ----------------------------------------------------------------------
 	LB_find_median			void
 	LB_median_merge			void
-	LB_Print_Sync_Start		void
-	LB_Print_Sync_End		void
-	LB_Print_Stats			void
 
 ******************************************************************************/
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+
 int LB_find_median(
-  double *dots,
-  double *wgts,
-  int *dotmark,
-  int dotnum,
-  int proc,
-  double fractionlo,
-  MPI_Comm local_comm,
-  double *valuehalf,
-  int first_guess,
-  int *counter
+  double *dots,         /* array of coordinates                              */
+  double *wgts,         /* array of weights associated with dots             */
+  int *dotmark,         /* returned list of which side of the median
+                           each dot is on:
+                                0 - dot is < valuehalf
+                                1 - dot is > valuehalf                       */
+  int dotnum,           /* number of dots (length of three previous arrays   */
+  int proc,             /* this proc number (rank)                           */
+  double fractionlo,    /* fraction of weight that should be in bottom half  */
+  MPI_Comm local_comm,  /* MPI communicator on which to find median          */
+  double *valuehalf,    /* on entry - first guess at median (if first_guess set)                           on exit - the median value                        */
+  int first_guess,      /* if set, use value in valuehalf as first guess     */
+  int *counter          /* returned for stats, # of median interations       */
 )
 {
 /* Local declarations. */
@@ -420,134 +419,3 @@ void LB_median_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
     if (med1->prochi < med2->prochi) med2->prochi = med1->prochi;
   }
 }
-
-void LB_Print_Sync_Start(LB *lb, int do_print_line)
-{
-/* 
- * Routine to allow I/O between LB_Print_Sync_Start and LB_Print_Sync_End to be 
- * printed by each processor in the lb->Communicator entirely before the next
- * processor begins its I/O.  The printing sequence is from proc = 0 to the
- * last processor, where the last processor is lb->Num_Proc - 1.
- *
- * The do_print_line argument is a boolean variable.  If true, a line of # 
- * is printed to indicate the start of a Print_Sync I/O block.
- *
- * NOTE: THERE CAN BE NO COMMUNICATON BETWEEN THESE CALLS.
- *
- * Author: John Shadid (9221, SNL)
- */
-
-int        flag = 1, from, type;
-static int offset = 0;
-MPI_Status st;
-char *yo = "LB_Print_Sync_Start";
-
-  offset = (offset + 1)%100;
-  type   = PRINT_SYNC + offset;
-
-  if (lb->Proc != 0) {
-    from = lb->Proc -1;
-    if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, lb->Communicator, &st)
-        != 0) {
-      fprintf(stderr, "%s: ERROR on processor %d\n", yo, lb->Proc);
-      fprintf(stderr, "MPI_Recv failed, message type %d\n", type);
-      exit (-1);
-    }
-  }
-  else {
-    if (do_print_line) {
-      printf("\n");
-      for (flag = 0; flag < 37; flag++) printf("#");
-      printf(" PRINT_SYNC_START ");
-      for (flag = 0; flag < 25; flag++) printf("#");
-      printf("\n");
-    }
-  }
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
-void LB_Print_Sync_End(LB *lb, int do_print_line)
-{
-/*
- * Routine to allow I/O between LB_Print_Sync_Start and LB_Print_Sync_End to be 
- * printed by each processor in the lb->Communicator entirely before the next
- * processor begins its I/O.  The printing sequence is from proc = 0 to the
- * last processor, where the last processor is lb->Num_Proc - 1.
- *
- * The do_print_line argument is a boolean variable.  If true, a line of # 
- * is printed to indicate the start of a Print_Sync I/O block.
- *
- * NOTE: THERE CAN BE NO COMMUNICATON BETWEEN THESE CALLS.
- *
- * Author: John Shadid (9221, SNL)
- */
-
-int         flag = 1, from, type, to;
-static int  offset = 0;
-MPI_Status  st;
-char *yo = "LB_Print_Sync_End";
-
-  fflush(stdout);
-
-  offset = (offset + 1)%100;
-  type   = PRINT_SYNC + offset;
-
-  if (lb->Proc < lb->Num_Proc -1)
-    to = lb->Proc + 1;
-  else {
-    to = 0;
-    if (do_print_line) {
-      printf("\n");
-      for (flag = 0; flag < 37; flag++) printf("#");
-      printf(" PRINT_SYNC_END__ ");
-      for (flag = 0; flag < 25; flag++) printf("#");
-      printf("\n\n");
-    }
-  }
-
-  if (MPI_Send((void *) &flag, 1, MPI_INT, to, type, lb->Communicator) != 0 ) {
-    fprintf(stderr, "%s: ERROR on node %d\n", yo, lb->Proc);
-    fprintf(stderr, "MPI_Send failed, message type %d\n", type);
-    exit (-1);
-  }
-  if (lb->Proc == 0) {
-    from = lb->Num_Proc -1;
-    if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, lb->Communicator, &st)
-        != 0) {
-      fprintf(stderr, "%s: ERROR on node %d\n", yo, lb->Proc);
-      fprintf(stderr, "MPI_Recv failed, message type %d/n", type);
-      exit (-1);
-    }
-  }
-
-  /*
-   * Do a final sync among all the processors, so that all of the other
-   * processors must wait for Proc 0 to receive the final message from Proc
-   * (lb->Num_Proc-1)
-   */
-
-  MPI_Barrier(lb->Communicator);
-}
-
-/****************************************************************/
-/* Print max, sum, and imbalance for a variable over all procs. */
-/****************************************************************/
-void LB_Print_Stats (LB *lb, double x, char *msg)
-{
-  double sum, max;
-
-  MPI_Reduce((void *)&x, (void *)&sum, 1, MPI_DOUBLE, MPI_SUM, lb->Debug_Proc, 
-             lb->Communicator);
-
-  MPI_Reduce((void *)&x, (void *)&max, 1, MPI_DOUBLE, MPI_MAX, lb->Debug_Proc, 
-             lb->Communicator);
-
-  if (lb->Proc == lb->Debug_Proc && sum != 0.0)
-    printf("%s: Max: %g, Sum: %g, Imbal.: %g\n",
-            msg, max, sum, max*(lb->Num_Proc)/sum);
-
-}
-
