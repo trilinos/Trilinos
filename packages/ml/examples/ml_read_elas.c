@@ -368,6 +368,14 @@ double max_diag, min_diag, max_sum, sum;
 
 #ifdef MB_MODIF
       ML_Gen_Smoother_MLS(ml, level, ML_BOTH, nsmooth); 	   
+
+      /* This is the Aztec ls smoother
+      options[AZ_precond] = AZ_ls;
+      options[AZ_poly_ord] = 5;
+      ML_Gen_SmootherAztec(ml, level, options, params, 
+                        proc_config, status, AZ_ONLY_PRECONDITIONER, 
+                        ML_BOTH,NULL);
+      */
 #else
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
 #endif
