@@ -3,11 +3,10 @@
     --enable-mpi \
     --enable-referencey12m --enable-aztecoo-azlu \
     --with-ar="ar -X64 csrv" \
-    --with-blas="-lessl -L/sierra/Release/lapack/3.0/lib/dbg_dp_ibm -lblas" \
+    --with-blas="-lessl -L/sierra/Release/lapack/3.0/lib/dbg_dp_ibm -llapack" \
     --with-lapack="-lessl -L/sierra/Release/lapack/3.0/lib/dbg_dp_ibm -llapack" \
-    --with-mpi-incdir=/usr/lpp/ppe.poe/include \
-    --with-mpi-libdir=/usr/lpp/ppe.poe/lib \
-    --with-mpi-cxx=xlC --with-mpi-cc=xlc --with-mpi-f77=f77 \
+    --with-mpi=/usr/lpp/ppe.poe \
+    --with-mpi-libs="-lmpi -lmpi_r"\
     --enable-nox --enable-nox-epetra \
     --enable-prerelease --enable-epetraext --enable-loca \
     CXX="xlC -q64 -qlanglvl=redefmac" \
