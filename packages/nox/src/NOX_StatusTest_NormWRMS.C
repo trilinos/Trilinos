@@ -143,7 +143,7 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
   u->scale(factor);
 
   // Compute the sum of u^2 then divide by vector length: tmp = u*u/N
-  double tmp = u->dot(*u)/((double) u->length());
+  double tmp = u->dot(*u)/(static_cast<double>(u->length()));
 
   // Finally, compute the WRMS norm value by taking the sqrt
   value = sqrt(tmp);

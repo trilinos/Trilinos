@@ -72,25 +72,25 @@ class Backtrack : public Generic {
 public:
 
   //! Constructor
-  Backtrack(Parameter::List& params);
+  Backtrack(NOX::Parameter::List& params);
 
   //! Destructor
   ~Backtrack();
   
   // derived
-  bool reset(Parameter::List& params);
+  bool reset(NOX::Parameter::List& params);
 
   // derived
-  bool compute(Abstract::Group& newgrp, double& step, 
-	       const Abstract::Vector& dir,
-	       const Solver::Generic& s);
+  bool compute(NOX::Abstract::Group& newgrp, double& step, 
+	       const NOX::Abstract::Vector& dir,
+	       const NOX::Solver::Generic& s);
   
 private:
 
   /*! \brief Compute the correct norm (according to the input
       parameters) of the given grp. 
   */
-  double getNormF(const Abstract::Group& grp) const;
+  double getNormF(const NOX::Abstract::Group& grp) const;
 
 private:
 

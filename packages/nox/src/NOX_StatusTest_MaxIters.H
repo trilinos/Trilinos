@@ -50,9 +50,9 @@ public:
   //! Destructor.
   virtual ~MaxIters();
 
-  virtual StatusType checkStatus(const Solver::Generic& problem);
+  virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem);
 
-  virtual StatusType getStatus() const;
+  virtual NOX::StatusTest::StatusType getStatus() const;
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
 
@@ -65,7 +65,7 @@ private:
   int niters;
 
   //! %Status
-  StatusType status;
+  NOX::StatusTest::StatusType status;
 
 
 };

@@ -76,18 +76,18 @@ class Secant : public Generic {
 public:
 
   //! Constructor
-  Secant(Parameter::List& params);
+  Secant(NOX::Parameter::List& params);
 
   //! Destructor
   ~Secant();
   
   // derived
-  bool reset(Parameter::List& params);
+  bool reset(NOX::Parameter::List& params);
 
   // derived
-  bool compute(Abstract::Group& newgrp, double& step, 
-	       const Abstract::Vector& dir,
-	       const Solver::Generic& s);
+  bool compute(NOX::Abstract::Group& newgrp, double& step, 
+	       const NOX::Abstract::Vector& dir,
+	       const NOX::Solver::Generic& s);
   
 private:
 

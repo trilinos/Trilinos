@@ -37,9 +37,6 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
-using namespace NOX;
-using namespace NOX::Solver;
-
 /* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
  * fail to find the max and min function.  Therfore we redefine them 
  * here. 
@@ -56,9 +53,9 @@ using namespace NOX::Solver;
 
 #define min(a,b) ((a)<(b)) ? (a) : (b);
 
-LineSearchBased::LineSearchBased(Abstract::Group& xGrp, 
-				 StatusTest::Generic& t, 
-				 const Parameter::List& p) :
+NOX::Solver::LineSearchBased::LineSearchBased(NOX::Abstract::Group& xGrp, 
+					      NOX::StatusTest::Generic& t, 
+					      const NOX::Parameter::List& p) :
   solnPtr(&xGrp),		// pointer to xGrp
   oldSolnPtr(xGrp.clone(DeepCopy)), // create via clone
   oldSoln(*oldSolnPtr),		// reference to just-created pointer
@@ -73,34 +70,34 @@ LineSearchBased::LineSearchBased(Abstract::Group& xGrp,
 }
 
 // Protected
-void LineSearchBased::init()
+void NOX::Solver::LineSearchBased::init()
 {
   // Initialize 
   step = 0;
   nIter = 0;
-  status = StatusTest::Unconverged;
+  status = NOX::StatusTest::Unconverged;
 
   // Set up utilities (i.e., set print processor, etc)
-  Utils::setUtils(params);
+  NOX::Utils::setUtils(params);
   
   // Print out initialization information
-  if (Utils::doPrint(Utils::Parameters)) {
-    cout << "\n" << Utils::fill(72) << "\n";
+  if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
+    cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
     params.print(cout,5);
   }
 
   // Compute F of initital guess
-  bool ok = solnPtr->computeF();
-  if (!ok) {
+  NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
+  if (rtype != NOX::Abstract::Group::Ok) {
     cout << "NOX::Solver::LineSearchBased::init - Unable to compute F" << endl;
     throw "NOX Error";
   }
 
   // Test the initial guess
   status = testPtr->checkStatus(*this);
-  if (status == StatusTest::Converged) {
-    if (Utils::doPrint(Utils::Warning)) {
+  if (status == NOX::StatusTest::Converged) {
+    if (NOX::Utils::doPrint(NOX::Utils::Warning)) {
       cout << "Warning: NOX::Solver::LineSearchBased::init() - The solution passed "
 	   << "into the solver (either through constructor or reset method) "
 	   << "is already converged!  The solver wil not "
@@ -109,15 +106,17 @@ void LineSearchBased::init()
     }
   }
 
-  if (Utils::doPrint(Utils::Parameters)) {
+  if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
     cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
     testPtr->print(cout, 5);
-    cout <<"\n" << Utils::fill(72) << "\n";
+    cout <<"\n" << NOX::Utils::fill(72) << "\n";
   }
 
 }
 
-bool LineSearchBased::reset(Abstract::Group& xGrp, StatusTest::Generic& t, const Parameter::List& p) 
+bool NOX::Solver::LineSearchBased::reset(NOX::Abstract::Group& xGrp, 
+					 NOX::StatusTest::Generic& t, 
+					 const NOX::Parameter::List& p) 
 {
   solnPtr = &xGrp;
   testPtr = &t;
@@ -128,34 +127,34 @@ bool LineSearchBased::reset(Abstract::Group& xGrp, StatusTest::Generic& t, const
   return true;
 }
 
-LineSearchBased::~LineSearchBased() 
+NOX::Solver::LineSearchBased::~LineSearchBased() 
 {
   delete oldSolnPtr;
   delete dirPtr;
 }
 
 
-NOX::StatusTest::StatusType LineSearchBased::getStatus()
+NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::getStatus()
 {
   return status;
 }
 
-NOX::StatusTest::StatusType LineSearchBased::iterate()
+NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::iterate()
 {
   // First check status
-  if (status != StatusTest::Unconverged) 
+  if (status != NOX::StatusTest::Unconverged) 
     return status;
 
   // Copy pointers into temporary references
-  Abstract::Group& soln = *solnPtr;
-  StatusTest::Generic& test = *testPtr;
+  NOX::Abstract::Group& soln = *solnPtr;
+  NOX::StatusTest::Generic& test = *testPtr;
 
   // Compute the direction for the update vector at the current solution.
   bool ok;
   ok = direction.compute(dir, soln, *this);
   if (!ok) {
     cout << "NOX::Solver::LineSearchBased::iterate - unable to calculate direction" << endl;
-    status = StatusTest::Failed;
+    status = NOX::StatusTest::Failed;
     return status;
   }
 
@@ -170,18 +169,18 @@ NOX::StatusTest::StatusType LineSearchBased::iterate()
   if (!ok) {
     if (step == 0) {
       cout << "NOX::Solver::LineSearchBased::iterate - line search failed" << endl;
-      status = StatusTest::Failed;
+      status = NOX::StatusTest::Failed;
       return status;
     }
-    else if (Utils::doPrint(Utils::Warning))
+    else if (NOX::Utils::doPrint(NOX::Utils::Warning))
       cout << "NOX::Solver::LineSearchBased::iterate - using recovery step for line search" << endl;
   }
 
   // Compute F for new current solution.
-  ok = soln.computeF();
-  if (!ok) {
+  NOX::Abstract::Group::ReturnType rtype = soln.computeF();
+  if (rtype != NOX::Abstract::Group::Ok) {
     cout << "NOX::Solver::LineSearchBased::iterate - unable to compute F" << endl;
-    status = StatusTest::Failed;
+    status = NOX::StatusTest::Failed;
     return status;
   }
 
@@ -192,90 +191,93 @@ NOX::StatusTest::StatusType LineSearchBased::iterate()
   return status;
 }
 
-NOX::StatusTest::StatusType LineSearchBased::solve()
+NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::solve()
 {
   printUpdate();
 
   // Iterate until converged or failed
-  while (status == StatusTest::Unconverged) {
+  while (status == NOX::StatusTest::Unconverged) {
     status = iterate();
     printUpdate();
   }
 
-  Parameter::List& outputParams = params.sublist("Output");
+  NOX::Parameter::List& outputParams = params.sublist("Output");
   outputParams.setParameter("Nonlinear Iterations", nIter);
   outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
 
   return status;
 }
 
-const Abstract::Group& LineSearchBased::getSolutionGroup() const
+const NOX::Abstract::Group& 
+NOX::Solver::LineSearchBased::getSolutionGroup() const
 {
   return *solnPtr;
 }
 
-const Abstract::Group& LineSearchBased::getPreviousSolutionGroup() const
+const NOX::Abstract::Group& 
+NOX::Solver::LineSearchBased::getPreviousSolutionGroup() const
 {
   return oldSoln;
 }
 
-int LineSearchBased::getNumIterations() const
+int NOX::Solver::LineSearchBased::getNumIterations() const
 {
   return nIter;
 }
 
-const Parameter::List& LineSearchBased::getParameterList() const
+const NOX::Parameter::List& 
+NOX::Solver::LineSearchBased::getParameterList() const
 {
   return params;
 }
 
 // protected
-void LineSearchBased::printUpdate() 
+void NOX::Solver::LineSearchBased::printUpdate() 
 {
-  double normSoln;
-  double normStep;
+  double normSoln = 0;
+  double normStep = 0;
 
   // Print the status test parameters at each iteration if requested  
-  if ((status == StatusTest::Unconverged) && 
-      (Utils::doPrint(Utils::OuterIterationStatusTest))) {
-    cout << Utils::fill(72) << "\n";
+  if ((status == NOX::StatusTest::Unconverged) && 
+      (NOX::Utils::doPrint(NOX::Utils::OuterIterationStatusTest))) {
+    cout << NOX::Utils::fill(72) << "\n";
     cout << "-- Status Test Results --\n";    
     testPtr->print(cout);
-    cout << Utils::fill(72) << "\n";
+    cout << NOX::Utils::fill(72) << "\n";
   }
 
   // All processes participate in the computation of these norms...
-  if (Utils::doAllPrint(Utils::OuterIteration)) {
+  if (NOX::Utils::doAllPrint(NOX::Utils::OuterIteration)) {
     normSoln = solnPtr->getNormF();
     normStep = (nIter > 0) ? dir.norm() : 0;
   }
 
   // ...But only the print process actually prints the result.
-  if (Utils::doPrint(Utils::OuterIteration)) {
-    cout << "\n" << Utils::fill(72) << "\n";
+  if (NOX::Utils::doPrint(NOX::Utils::OuterIteration)) {
+    cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "-- Nonlinear Solver Step " << nIter << " -- \n";
-    cout << "f = " << Utils::sci(normSoln);
-    cout << "  step = " << Utils::sci(step);
-    cout << "  dx = " << Utils::sci(normStep);
-    if (status == StatusTest::Converged)
+    cout << "f = " << NOX::Utils::sci(normSoln);
+    cout << "  step = " << NOX::Utils::sci(step);
+    cout << "  dx = " << NOX::Utils::sci(normStep);
+    if (status == NOX::StatusTest::Converged)
       cout << " (Converged!)";
-    if (status == StatusTest::Failed)
+    if (status == NOX::StatusTest::Failed)
       cout << " (Failed!)";
-    cout << "\n" << Utils::fill(72) << "\n" << endl;
+    cout << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   }
 
   // Print the final parameter values of the status test
-  if ((status != StatusTest::Unconverged) && 
-      (Utils::doPrint(Utils::OuterIteration))) {
-    cout << Utils::fill(72) << "\n";
+  if ((status != NOX::StatusTest::Unconverged) && 
+      (NOX::Utils::doPrint(NOX::Utils::OuterIteration))) {
+    cout << NOX::Utils::fill(72) << "\n";
     cout << "-- Final Status Test Results --\n";    
     testPtr->print(cout);
-    cout << Utils::fill(72) << "\n";
+    cout << NOX::Utils::fill(72) << "\n";
   }
 }
 
 
-double LineSearchBased::getStepSize() const
+double NOX::Solver::LineSearchBased::getStepSize() const
 {
   return step;
 }

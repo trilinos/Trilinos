@@ -68,7 +68,12 @@ public:
     \brief The test can be either the AND of all the component tests,
     or the OR of all the component tests.
   */
-  enum ComboType {AND, OR};
+  enum ComboType {
+    //! Logically "AND" together the results of the tests in this combination
+    AND, 
+    //! Logically "OR" together the results of the tests in this combination
+    OR
+  };
 
   //! Constructor
   Combo(ComboType t);
@@ -79,12 +84,20 @@ public:
   //! Constructor with two tests.
   Combo(ComboType t, Generic& a, Generic& b);
 
-  //! Add another test to this combination.
+  //! Add another test to this combination. 
+  /*!
+    Calls isSafe() to determine if it is safe to add \c a to the combination.
+  */
   virtual Combo& addStatusTest(Generic& a);
 
   //! Destructor
   virtual ~Combo();
 
+  /*!
+    \brief Tests stopping criterion.
+
+    See addOp() and orOp() for details.
+   */
   virtual StatusType checkStatus(const Solver::Generic& problem);
 
   virtual StatusType getStatus() const;
@@ -93,18 +106,51 @@ public:
   
 protected:
 
-  //! Use this for checkStatus when this is an OR type combo. Updates status.
+  //! Use this for checkStatus when this is an OR type combo. Updates NOX::StatusTest::Combo::status.
+  /*!  
+    If there is a combination of NOX::StatusTest::Failed and
+    NOX::StatusTest::Converged in the tests that are OR'd together,
+    the value of status for this test is set to the status of the
+    first test it encounters which is not NOX::Status::Unconvered. The
+    tests are evaluated in the order that they were added to the
+    combination.
+
+    \note We compute the status of all tests in the combination for
+    the sake of completeness, even if we could determine the status of
+    this combination test without that check.
+
+  */
   virtual void orOp(const Solver::Generic& problem);
 
-  //! Use this for checkStatus when this is an AND type combo. Updates status.
+  //! Use this for checkStatus when this is an AND type combo. Updates NOX::StatusTest::Combo::status.
+  /*!  
+
+    If any tests are NOX::StatusTest::Unconverged, then the status of
+    this test is NOX::StatusTest::Unconverged.  If there is a
+    combination of NOX::StatusTest::Failed and
+    NOX::StatusTest::Converged in the tests that are AND'd together,
+    the value of status for this test is set to the status of the
+    first test it encounters.  The tests are evaluated in the
+    order that they were added to the combination.
+
+    \note We compute the status of all tests in the combination for
+    the sake of completeness, even if we could determine the status of
+    this combination test without that check.
+  */
   virtual void andOp(const Solver::Generic& problem);
 
-  //! Check whether or not it is safe to add a to the list of
-  //! tests. This is necessary to avoid any infinite recursions.
+  /*! \brief Check whether or not it is safe to add \c a to this list
+   of tests.
+
+   This is necessary to avoid any infinite recursions 
+   (i.e., a test cannot own a copy of itself).
+  */
   bool isSafe(Generic& a);
 
+private:
+
   //! Type of test
-  ComboType type;
+  const ComboType type;
 
   //! Vector of generic status tests
   vector<Generic*> tests;

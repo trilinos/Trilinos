@@ -31,70 +31,72 @@
 //@HEADER
 
 #include "NOX_Abstract_Group.H"
+NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::computeJacobian()
+{
+  return NOX::Abstract::Group::NotDefined;
+}
 
-using namespace NOX;
-using namespace NOX::Abstract;
+NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::computeGradient()
+{
+  return NOX::Abstract::Group::NotDefined;
+}
 
-bool Group::computeJacobian()
+NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::computeNewton(NOX::Parameter::List& params)
+{
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::applyJacobian(const NOX::Abstract::Vector& input, 
+				    NOX::Abstract::Vector& result) const
+{
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::applyJacobianTranspose(const NOX::Abstract::Vector& input, 
+					     NOX::Abstract::Vector& result) const
+{
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::applyJacobianInverse(NOX::Parameter::List& params, 
+					   const NOX::Abstract::Vector& input, 
+					   NOX::Abstract::Vector& result) const
+{
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::applyRightPreconditioning(NOX::Parameter::List& params, 
+						const NOX::Abstract::Vector& input, 
+						NOX::Abstract::Vector& result) const
+{
+  return NOX::Abstract::Group::NotDefined;
+}
+
+bool NOX::Abstract::Group::isJacobian() const
 {
   return false;
 }
 
-bool Group::computeGradient()
+bool NOX::Abstract::Group::isGradient() const
 {
   return false;
 }
 
-bool Group::computeNewton(NOX::Parameter::List& params)
+bool NOX::Abstract::Group::isNewton() const
 {
   return false;
 }
 
-bool Group::applyJacobian(const Vector& input, Vector& result) const
+NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::getNormLastLinearSolveResidual(double& residual) const
 {
-  return false;
-}
-
-bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
-{
-  return false;
-}
-
-bool Group::applyJacobianInverse(NOX::Parameter::List& params, const Vector& input, 
-				 Vector& result) const
-{
-  return false;
-}
-
-bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) const
-{
-  return false;
-}
-
-bool Group::applyRightPreconditioning(Parameter::List& params, const Vector& input, 
-				      Vector& result) const
-{
-  result = input;
-  return true;
-}
-
-bool Group::isJacobian() const
-{
-  return false;
-}
-
-bool Group::isGradient() const
-{
-  return false;
-}
-
-bool Group::isNewton() const
-{
-  return false;
-}
-
-double Group::getNormNewtonSolveResidual() const
-{
-  return -1;
+  return NOX::Abstract::Group::NotDefined;
 }
 

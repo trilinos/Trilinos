@@ -121,7 +121,8 @@ bool ModifiedNewton::compute(Abstract::Vector& dir,
       // It didn't work, but maybe it's ok anyway...
       if (!ok) {
 
-        double accuracy = soln.getNormNewtonSolveResidual();
+        double accuracy;
+	soln.getNormLastLinearSolveResidual(accuracy);
 
         if (accuracy < 0) 
           cerr << "NOX::Direction::ModifiedNewton::compute " 

@@ -66,19 +66,19 @@ class LineSearchBased : public Generic {
 public:
 
   //! %LineSearchBased-method constructor. 
-  LineSearchBased(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
+  LineSearchBased(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, const NOX::Parameter::List& p);
 
   //! Destructor
   virtual ~LineSearchBased();
 
-  virtual bool reset(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
-  virtual StatusTest::StatusType getStatus();
-  virtual StatusTest::StatusType iterate();
-  virtual StatusTest::StatusType solve();
-  virtual const Abstract::Group& getSolutionGroup() const;
-  virtual const Abstract::Group& getPreviousSolutionGroup() const;
+  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, const NOX::Parameter::List& p);
+  virtual NOX::StatusTest::StatusType getStatus();
+  virtual NOX::StatusTest::StatusType iterate();
+  virtual NOX::StatusTest::StatusType solve();
+  virtual const NOX::Abstract::Group& getSolutionGroup() const;
+  virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
-  virtual const Parameter::List& getParameterList() const;
+  virtual const NOX::Parameter::List& getParameterList() const;
 
   //! Return the line search step size from the current iteration.
   virtual double getStepSize() const;

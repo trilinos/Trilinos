@@ -250,22 +250,22 @@ bool Tensor::compute(Abstract::Vector& dir,
   }
 
   // Compute F at current solution....
-  ok = soln.computeF();
-  if (!ok) {
-    if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::Tensor::compute - " 
-	   << "Unable to compute F." << endl;
-    return false;
-  }
+  soln.computeF();
+//   if (!ok) {
+//     if (Utils::doPrint(Utils::Warning))
+//       cout << "NOX::Direction::Tensor::compute - " 
+// 	   << "Unable to compute F." << endl;
+//     return false;
+//   }
 
   // Compute Jacobian at current solution....
-  ok = soln.computeJacobian();
-  if (!ok) {
-    if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::Tensor::compute - "
-	   << "Unable to compute Jacobian." << endl;
-    return false;
-  }
+  soln.computeJacobian();
+//   if (!ok) {
+//     if (Utils::doPrint(Utils::Warning))
+//       cout << "NOX::Direction::Tensor::compute - "
+// 	   << "Unable to compute Jacobian." << endl;
+//     return false;
+//   }
 
 
   /*** Compute the tensor direction ***/
@@ -277,13 +277,13 @@ bool Tensor::compute(Abstract::Vector& dir,
 
   // Calculate the Newton step if this is the first iteration...
   if (normS == 0) {
-    ok = soln.computeNewton(paramsPtr->sublist("Linear Solver"));
-    if (!ok) {
-      if (Utils::doPrint(Utils::Warning))
-	cout << "NOX::Direction::Tensor::compute - "
-	     << "Unable to compute Newton direction." << endl;
-      return false;
-    }
+    soln.computeNewton(paramsPtr->sublist("Linear Solver"));
+//     if (!ok) {
+//       if (Utils::doPrint(Utils::Warning))
+// 	cout << "NOX::Direction::Tensor::compute - "
+// 	     << "Unable to compute Newton direction." << endl;
+//       return false;
+//     }
     *dNewton = soln.getNewton();
     dTensor->init(0);
     dTLambda->init(0);
@@ -306,13 +306,13 @@ bool Tensor::compute(Abstract::Vector& dir,
 
   // Compute the tensor term ac, if needed....
   if (precondition == Right) {
-    ok = soln.applyJacobian(*basisVptr[0], *basisVptr[1]);
-    if (!ok) {
-      if (Utils::doPrint(Utils::Warning))
-	cout << "NOX::Direction::Tensor::compute - "
-	     << "Unable to apply Jacobian." << endl;
-      return false;
-    }
+    soln.applyJacobian(*basisVptr[0], *basisVptr[1]);
+//     if (!ok) {
+//       if (Utils::doPrint(Utils::Warning))
+// 	cout << "NOX::Direction::Tensor::compute - "
+// 	     << "Unable to apply Jacobian." << endl;
+//       return false;
+//     }
     basisVptr[1]->update(1.0, solver.getPreviousSolutionGroup().getF(),
 		  -1.0, soln.getF(), -1.0);    
     basisVptr[1]->scale(1/(normS*normS*normS*normS));
@@ -321,14 +321,14 @@ bool Tensor::compute(Abstract::Vector& dir,
   // Continue processing the vector sc for right preoconditioning....
   if (precondition == Right) {
     *vecw = *basisVptr[0];
-    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"), 
+    soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"), 
 					*vecw, *basisVptr[0]);
-    if (!ok) {
-      if (Utils::doPrint(Utils::Warning))
-	cout << "NOX::Direction::Tensor::compute - "
-	     << "Unable to apply Preconditioning." << endl;
-      return false;
-    }
+//     if (!ok) {
+//       if (Utils::doPrint(Utils::Warning))
+// 	cout << "NOX::Direction::Tensor::compute - "
+// 	     << "Unable to apply Preconditioning." << endl;
+//       return false;
+//     }
     normS = basisVptr[0]->norm();
   }
 
@@ -357,24 +357,24 @@ bool Tensor::compute(Abstract::Vector& dir,
 
   // Construct initial n x 3 matrix...
   if (precondition == Left) {
-    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"), 
+    soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"), 
 				solver.getPreviousSolutionGroup().getF(), 
 				*basisVptr[1]);
-    if (!ok) {
-      if (Utils::doPrint(Utils::Warning))
-	cout << "NOX::Direction::Tensor::compute - "
-	     << "Unable to apply Preconditioning." << endl;
-      return false;
-    }
+//     if (!ok) {
+//       if (Utils::doPrint(Utils::Warning))
+// 	cout << "NOX::Direction::Tensor::compute - "
+// 	     << "Unable to apply Preconditioning." << endl;
+//       return false;
+//     }
 
-    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"), 
+    soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"), 
 					soln.getF(), *basisVptr[2]);
-    if (!ok) {
-      if (Utils::doPrint(Utils::Warning))
-	cout << "NOX::Direction::Tensor::compute - "
-	     << "Unable to apply Preconditioning." << endl;
-      return false;
-    }
+//     if (!ok) {
+//       if (Utils::doPrint(Utils::Warning))
+// 	cout << "NOX::Direction::Tensor::compute - "
+// 	     << "Unable to apply Preconditioning." << endl;
+//       return false;
+//     }
   }
   else if (precondition == Right) {
     // *basisVptr[1] is calculated above
@@ -516,49 +516,52 @@ bool Tensor::compute(Abstract::Vector& dir,
 
     // Begin Arnoldi process...
     if (precondition == Left) {
-      ok = soln.applyJacobian(*basisVptr[k], *vecw);
-      if (!ok) {
-	if (Utils::doPrint(Utils::Warning))
-	  cout << "NOX::Direction::Tensor::compute - "
-	       << "Unable to apply Jacobian." << endl;
-	return false;
-      }
-
-      ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
+      soln.applyJacobian(*basisVptr[k], *vecw);
+//       if (!ok) {
+// 	if (Utils::doPrint(Utils::Warning))
+// 	  cout << "NOX::Direction::Tensor::compute - "
+// 	       << "Unable to apply Jacobian." << endl;
+// 	return false;
+//       }
+      
+      soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
 					  *vecw, *basisVptr[k+p]);
-      if (!ok) {
-	if (Utils::doPrint(Utils::Warning))
-	  cout << "NOX::Direction::Tensor::compute - "
-	       << "Unable to apply Preconditioning." << endl;
-	return false;
-      }
+//       if (!ok) {
+// 	if (Utils::doPrint(Utils::Warning))
+// 	  cout << "NOX::Direction::Tensor::compute - "
+// 	       << "Unable to apply Preconditioning." << endl;
+// 	return false;
+//       }
     }
     else if (precondition == Right) {
-      ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
+      soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
 					  *basisVptr[k], *vecw);
-      if (!ok) {
-	if (Utils::doPrint(Utils::Warning))
-	  cout << "NOX::Direction::Tensor::compute - "
-	       << "Unable to apply Preconditioning." << endl;
-	return false;
-      }
 
-      ok = soln.applyJacobian(*vecw, *basisVptr[k+p]);
-      if (!ok) {
-	if (Utils::doPrint(Utils::Warning))
-	  cout << "NOX::Direction::Tensor::compute - "
-	       << "Unable to apply Jacobian." << endl;
-	return false;
-      }
+//      if (!ok) {
+// 	if (Utils::doPrint(Utils::Warning))
+// 	  cout << "NOX::Direction::Tensor::compute - "
+// 	       << "Unable to apply Preconditioning." << endl;
+// 	return false;
+//       }
+	
+      soln.applyJacobian(*vecw, *basisVptr[k+p]);
+//       if (!ok) {
+// 	if (Utils::doPrint(Utils::Warning))
+// 	  cout << "NOX::Direction::Tensor::compute - "
+// 	       << "Unable to apply Jacobian." << endl;
+// 	return false;
+//       }
     }
     else {
-      ok = soln.applyJacobian(*basisVptr[k], *basisVptr[k+p]);
-      if (!ok) {
-	if (Utils::doPrint(Utils::Warning))
-	  cout << "NOX::Direction::Tensor::compute - "
-	       << "Unable to apply Jacobian." << endl;
-	return false;
-      }
+      soln.applyJacobian(*basisVptr[k], *basisVptr[k+p]);
+
+
+//       if (!ok) {
+// 	if (Utils::doPrint(Utils::Warning))
+// 	  cout << "NOX::Direction::Tensor::compute - "
+// 	       << "Unable to apply Jacobian." << endl;
+// 	return false;
+//       }
     }
     double normav = basisVptr[k+p]->norm();
   
@@ -768,14 +771,14 @@ bool Tensor::compute(Abstract::Vector& dir,
     dNewton->update(-yn[i], *basisVptr[i], 1);
   if (precondition == Right) {
     *vecw = *dNewton;
-    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
+    soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
 					*vecw, *dNewton);
-    if (!ok) {
-      if (Utils::doPrint(Utils::Warning))
-	cout << "NOX::Direction::Tensor::compute - "
-	     << "Unable to apply Preconditioning." << endl;
-      return false;
-    }
+//     if (!ok) {
+//       if (Utils::doPrint(Utils::Warning))
+// 	cout << "NOX::Direction::Tensor::compute - "
+// 	     << "Unable to apply Preconditioning." << endl;
+//       return false;
+//     }
   }
 
 #if DEBUG_LEVEL > 1
@@ -796,37 +799,38 @@ bool Tensor::compute(Abstract::Vector& dir,
 
   
   // Compute the Newton direction directly (temporary code)
-  ok = soln.computeNewton(paramsPtr->sublist("Linear Solver"));
+  soln.computeNewton(paramsPtr->sublist("Linear Solver"));
 
   // Computing the Newton step failed, but maybe the step is okay to use...
-  if (!ok) {
-    double accuracy = soln.getNormNewtonSolveResidual();
+//   if (!ok) {
+//     double accuracy;
+//     soln.getNormLastLinearSolveResidual(accuracy);
 
-    if (accuracy < 0) {
-      cerr << "NOX::Direction::Newton::compute " 
-           << "- getNormNewtonSolveResidual returned a negative value" 
-	   << endl;
-    }
+//     if (accuracy < 0) {
+//       cerr << "NOX::Direction::Newton::compute " 
+//            << "- getNormNewtonSolveResidual returned a negative value" 
+// 	   << endl;
+//     }
  
-    if (accuracy < soln.getNormF() ) {
-      ok = true;
-      double tolerance = paramsPtr->
-	sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
-      if (Utils::doPrint(Utils::Warning)) 
-	cout << "WARNING: NOX::Direction::Tensor::compute - "
-	     << "Newton solve failure.\n" 
-	     << "Desired accuracy is " 
-	     << Utils::sci(tolerance) << ".\n"
-	     << "Using solution with accuracy of " << Utils::sci(accuracy) 
-	     << "." << endl;
-    }
-  }
-  if (!ok) {
-    if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::Tensor::compute - "
-	   << "Unable to compute backup Newton direction." << endl;
-    return false;
-  }
+//     if (accuracy < soln.getNormF() ) {
+//       ok = true;
+//       double tolerance = paramsPtr->
+// 	sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
+//       if (Utils::doPrint(Utils::Warning)) 
+// 	cout << "WARNING: NOX::Direction::Tensor::compute - "
+// 	     << "Newton solve failure.\n" 
+// 	     << "Desired accuracy is " 
+// 	     << Utils::sci(tolerance) << ".\n"
+// 	     << "Using solution with accuracy of " << Utils::sci(accuracy) 
+// 	     << "." << endl;
+//     }
+//   }
+//   if (!ok) {
+//     if (Utils::doPrint(Utils::Warning))
+//       cout << "NOX::Direction::Tensor::compute - "
+// 	   << "Unable to compute backup Newton direction." << endl;
+//     return false;
+//   }
 
 #if DEBUG_LEVEL > 1
   cout << "Newton Direction 2: ";
@@ -851,14 +855,14 @@ bool Tensor::compute(Abstract::Vector& dir,
     dTensor->update(yt[i], *basisVptr[i], 1);
   if (precondition == Right) {
     *vecw = *dTensor;
-    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
+    soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
 					*vecw, *dTensor);
-    if (!ok) {
-      if (Utils::doPrint(Utils::Warning))
-	cout << "NOX::Direction::Tensor::compute - "
-	     << "Unable to apply Preconditioning." << endl;
-      return false;
-    }
+//     if (!ok) {
+//       if (Utils::doPrint(Utils::Warning))
+// 	cout << "NOX::Direction::Tensor::compute - "
+// 	     << "Unable to apply Preconditioning." << endl;
+//       return false;
+//     }
   }
   isTensorCalculated = true;
   isCLParamsCalculated = false;
@@ -995,15 +999,15 @@ bool Tensor::computeCurvilinearStep(Abstract::Vector& dir,
       // Precondition the answer, if preconditioning from the right...
       if (precondition == Right) {
 	*vecw = *dTLambda;
-	ok = soln.applyRightPreconditioning(paramsPtr->
+	soln.applyRightPreconditioning(paramsPtr->
 					    sublist("Linear Solver"),
 					    *vecw, *dTLambda);
-	if (!ok) {
-	  if (Utils::doPrint(Utils::Warning))
-	    cout << "NOX::Direction::Tensor::compute - "
-		 << "Unable to apply Preconditioning." << endl;
-	  return false;
-	}
+// 	if (!ok) {
+// 	  if (Utils::doPrint(Utils::Warning))
+// 	    cout << "NOX::Direction::Tensor::compute - "
+// 		 << "Unable to apply Preconditioning." << endl;
+// 	  return false;
+// 	}
       }
       delete yt;
       delete pindex;

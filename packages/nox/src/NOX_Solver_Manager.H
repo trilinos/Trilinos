@@ -69,26 +69,26 @@ public:
     \brief %Generic interface. On input, the grp should contain the
     initial guess. On output it will contain the solution. 
   */
-  Manager(Abstract::Group& grp, StatusTest::Generic &t, const Parameter::List& p);
+  Manager(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &t, const NOX::Parameter::List& p);
 
   //! Destructor.
   ~Manager();
 
-  bool reset(Abstract::Group& grp, StatusTest::Generic &t, const Parameter::List& p);
+  bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &t, const NOX::Parameter::List& p);
 
-  StatusTest::StatusType getStatus();
+  NOX::StatusTest::StatusType getStatus();
 
-  StatusTest::StatusType iterate();
+  NOX::StatusTest::StatusType iterate();
 
-  StatusTest::StatusType solve();
+  NOX::StatusTest::StatusType solve();
 
-  const Abstract::Group& getSolutionGroup() const;
+  const NOX::Abstract::Group& getSolutionGroup() const;
   
-  const Abstract::Group& getPreviousSolutionGroup() const;
+  const NOX::Abstract::Group& getPreviousSolutionGroup() const;
 
   int getNumIterations() const;
 
-  const Parameter::List& getParameterList() const;
+  const NOX::Parameter::List& getParameterList() const;
 
 private:
 
@@ -96,7 +96,7 @@ private:
   string method;
 
   //! Pointer to the solver object
-  Generic* ptr;
+  NOX::Solver::Generic* ptr;
 
 };
 }

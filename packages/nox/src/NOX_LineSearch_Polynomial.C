@@ -39,21 +39,18 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
-using namespace NOX;
-using namespace NOX::LineSearch;
-
-Polynomial::Polynomial(Parameter::List& params) :
+NOX::LineSearch::Polynomial::Polynomial(Parameter::List& params) :
   paramsPtr(NULL)
 {
   reset(params);
 }
 
-Polynomial::~Polynomial()
+NOX::LineSearch::Polynomial::~Polynomial()
 {
 
 }
 
-bool Polynomial::reset(Parameter::List& params)
+bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
 { 
 
   string choice = params.getParameter("Convergence Criteria", "Armijo-Goldstein");
@@ -91,7 +88,7 @@ bool Polynomial::reset(Parameter::List& params)
   return true;
 }
 
-bool Polynomial::compute(Abstract::Group& newGrp, double& step, 
+bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step, 
 			 const Abstract::Vector& dir,
 			 const Solver::Generic& s) 
 {
@@ -150,8 +147,8 @@ bool Polynomial::compute(Abstract::Group& newGrp, double& step,
     totalNumIterations += 1;
     nIters ++;
 
-    double prevf;
-    double previousStep;
+    double prevf = 0;
+    double previousStep = 0;
     double tempStep;
     
     if ((isFirstPass) || (interpolationType == Quadratic)) {
@@ -243,7 +240,7 @@ bool Polynomial::compute(Abstract::Group& newGrp, double& step,
   return (!isFailed);
 }
 
-bool Polynomial::isSufficientDecrease(double newf, double oldf, double step, double slope, double eta) const
+bool NOX::LineSearch::Polynomial::isSufficientDecrease(double newf, double oldf, double step, double slope, double eta) const
 {
   double rhs = 0.0;
   if (convCriteria == ArmijoGoldstein) {
@@ -262,7 +259,7 @@ bool Polynomial::isSufficientDecrease(double newf, double oldf, double step, dou
   return (newf <= rhs);
 }
 
-bool Polynomial::setOutputParameters() {
+bool NOX::LineSearch::Polynomial::setOutputParameters() {
   NOX::Parameter::List& outputList = paramsPtr->sublist("Output");
   outputList.setParameter("Total Number of Line Search Calls", totalNumLineSearchCalls);
   outputList.setParameter("Total Number of Non-trivial Line Searches", totalNumNonTrivialLineSearches);

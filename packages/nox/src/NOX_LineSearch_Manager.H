@@ -62,25 +62,25 @@ class Manager : public Generic {
 public:
 
   //! Constructor
-  Manager(Parameter::List& params);
+  Manager(NOX::Parameter::List& params);
 
   //! Destructor
   ~Manager();
 
   // derived
-  bool reset(Parameter::List& params);
+  bool reset(NOX::Parameter::List& params);
 
   // derived
-  bool compute(Abstract::Group& newgrp, double& step, 
-	       const Abstract::Vector& dir,
-	       const Solver::Generic& s) ;
+  bool compute(NOX::Abstract::Group& newgrp, double& step, 
+	       const NOX::Abstract::Vector& dir,
+	       const NOX::Solver::Generic& s) ;
 
 private:
   //! Method name
   string method;
 
   //! Pointer to method
-  LineSearch::Generic* ptr;
+  NOX::LineSearch::Generic* ptr;
 
 };
 } // namespace LineSearch

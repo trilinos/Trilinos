@@ -52,18 +52,18 @@ class FullStep : public Generic {
 public:
 
   //! Constructor
-  FullStep(Parameter::List& params);
+  FullStep(NOX::Parameter::List& params);
 
   //! Destructor
   ~FullStep();
   
   // derived
-  bool reset(Parameter::List& params);
+  bool reset(NOX::Parameter::List& params);
 
   // derived
-  bool compute(Abstract::Group& newgrp, double& step, 
-	       const Abstract::Vector& dir,
-	       const Solver::Generic& s);
+  bool compute(NOX::Abstract::Group& newgrp, double& step, 
+	       const NOX::Abstract::Vector& dir,
+	       const NOX::Solver::Generic& s);
 private:
 
   //! Full step length

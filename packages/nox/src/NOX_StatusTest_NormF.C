@@ -37,10 +37,7 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
 
-using namespace NOX;
-using namespace NOX::StatusTest;
-
-NormF::NormF(double tolerance, Abstract::Vector::NormType ntype, ScaleType stype) :
+NOX::StatusTest::NormF::NormF(double tolerance, NOX::Abstract::Vector::NormType ntype, ScaleType stype) :
   status(Unconverged),
   normType(ntype),
   scaleType(stype),
@@ -51,7 +48,7 @@ NormF::NormF(double tolerance, Abstract::Vector::NormType ntype, ScaleType stype
 {
 }
 
-NormF::NormF(double tolerance, ScaleType stype) :
+NOX::StatusTest::NormF::NormF(double tolerance, ScaleType stype) :
   status(Unconverged),
   normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
@@ -62,7 +59,9 @@ NormF::NormF(double tolerance, ScaleType stype) :
 {
 }
 
-NormF::NormF(Abstract::Group& initialGuess, double tolerance, Abstract::Vector::NormType ntype, ScaleType stype) :
+NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double tolerance, 
+			      NOX::Abstract::Vector::NormType ntype, 
+			      NOX::StatusTest::NormF::ScaleType stype) :
   status(Unconverged),
   normType(ntype),
   scaleType(stype),
@@ -77,9 +76,9 @@ NormF::NormF(Abstract::Group& initialGuess, double tolerance, Abstract::Vector::
 }
 
 
-NormF::NormF(Abstract::Group& initialGuess, double tolerance, ScaleType stype) :
+NOX::StatusTest::NormF::NormF(NOX::Abstract::Group& initialGuess, double tolerance, ScaleType stype) :
   status(Unconverged),
-  normType(Abstract::Vector::TwoNorm),
+  normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
   toleranceType(Relative),
   specifiedTolerance(tolerance),
@@ -91,14 +90,14 @@ NormF::NormF(Abstract::Group& initialGuess, double tolerance, ScaleType stype) :
   trueTolerance = specifiedTolerance / initialTolerance;
 }
 
-NormF::~NormF()
+NOX::StatusTest::NormF::~NormF()
 {
 }
 
-StatusType NormF::checkStatus(const Solver::Generic& problem)
+NOX::StatusTest::StatusType NOX::StatusTest::NormF::checkStatus(const NOX::Solver::Generic& problem)
 {
   status = Unconverged;
-  const Abstract::Group& grp = problem.getSolutionGroup();
+  const NOX::Abstract::Group& grp = problem.getSolutionGroup();
   int n = grp.getX().length();
 
   switch (normType) {
@@ -123,12 +122,12 @@ StatusType NormF::checkStatus(const Solver::Generic& problem)
   return status;
 }
 
-StatusType NormF::getStatus() const
+NOX::StatusTest::StatusType NOX::StatusTest::NormF::getStatus() const
 {
   return status;
 }
 
-ostream& NormF::print(ostream& stream, int indent) const
+ostream& NOX::StatusTest::NormF::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
@@ -149,11 +148,11 @@ ostream& NormF::print(ostream& stream, int indent) const
 
   stream << " ";
 
-  if (normType == Abstract::Vector::TwoNorm)
+  if (normType == NOX::Abstract::Vector::TwoNorm)
     stream << "Two-Norm";
-  else if (normType == Abstract::Vector::OneNorm)
+  else if (normType == NOX::Abstract::Vector::OneNorm)
     stream << "One-Norm";
-  else if (normType == Abstract::Vector::MaxNorm)
+  else if (normType == NOX::Abstract::Vector::MaxNorm)
     stream << "Max-Norm";
   
   stream << ", ";

@@ -132,7 +132,7 @@ public:
   virtual ~NormWRMS();
 
   // Derived classes
-  virtual StatusType checkStatus(const Solver::Generic& problem);
+  virtual StatusType checkStatus(const NOX::Solver::Generic& problem);
   virtual StatusType getStatus() const;
   virtual ostream& print(ostream& stream, int indent = 0) const;
 

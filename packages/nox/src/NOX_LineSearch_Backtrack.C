@@ -39,20 +39,17 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
-using namespace NOX;
-using namespace NOX::LineSearch;
-
-Backtrack::Backtrack(Parameter::List& params) 
+NOX::LineSearch::Backtrack::Backtrack(NOX::Parameter::List& params) 
 {
   reset(params);
 }
 
-Backtrack::~Backtrack()
+NOX::LineSearch::Backtrack::~Backtrack()
 {
 
 }
 
-bool Backtrack::reset(Parameter::List& params)
+bool NOX::LineSearch::Backtrack::reset(NOX::Parameter::List& params)
 { 
   minStep = params.getParameter("Minimum Step", 1.0e-12);
   defaultStep = params.getParameter("Default Step", 1.0);
@@ -74,15 +71,15 @@ bool Backtrack::reset(Parameter::List& params)
   return true;
 }
 
-double Backtrack::getNormF(const Abstract::Group& grp) const
+double NOX::LineSearch::Backtrack::getNormF(const NOX::Abstract::Group& grp) const
 {
   return (normType == NOX::Abstract::Vector::MaxNorm) ? 
     grp.getF().norm(normType) : grp.getNormF();
 }
 
-bool Backtrack::compute(Abstract::Group& grp, double& step, 
-			const Abstract::Vector& dir,
-			const Solver::Generic& s)
+bool NOX::LineSearch::Backtrack::compute(NOX::Abstract::Group& grp, double& step, 
+					 const NOX::Abstract::Vector& dir,
+					 const NOX::Solver::Generic& s)
 {
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
   double oldF = getNormF(oldGrp);

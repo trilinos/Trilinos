@@ -89,7 +89,6 @@ QuasiNewton::Updates::Updates(int m) :
 
 QuasiNewton::Updates::~Updates()
 {
-  Update* u;
   deque<Update*>::iterator i;
 
   // Clean out update deque
@@ -195,45 +194,38 @@ bool QuasiNewton::compute(Abstract::Vector& dir,
 			   Abstract::Group& soln, 
 			   const Solver::Generic& solver)
 {
+  NOX::Abstract::Group::ReturnType status;
+  
   // Compute F at current solution
-  bool ok = soln.computeF();
-  double normF = soln.getNormF();
-
-  if (!ok) {
-    if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::QuasiNewton::compute - Unable to compute F." << endl;
-    return false;
-  }
+  status = soln.computeF();
+  if (status != NOX::Abstract::Group::Ok) 
+    throwError("compute", "Unable to compute F");
 
   // Compute Jacobian at current solution.
-  ok = soln.computeJacobian();
-
-  if (!ok) {
-    if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::QuasiNewton::compute - Unable to compute Jacobian." << endl;
-    return false;
-  }
+  status = soln.computeJacobian();
+  if (status != NOX::Abstract::Group::Ok) 
+    throwError("compute", "Unable to compute Jacobian");
 
   // Compute the gradient at the current solution
-  ok = soln.computeGradient();
+  status = soln.computeGradient();
+  if (status != NOX::Abstract::Group::Ok) 
+    throwError("compute", "Unable to compute gradient");
 
-  if (!ok) {
-    if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::QuasiNewton::compute - Unable to compute gradient." << endl;
-    return false;
-  }
-  
-  if (solver.getNumIterations() > 0) {
-    const Abstract::Group& oldsoln = solver.getPreviousSolutionGroup();
-    updates.push_back(soln.getX(), oldsoln.getX(), soln.getGradient(), oldsoln.getGradient());
+  // Push the old information onto the updates, but only after at least one previous iteration
+  if (solver.getNumIterations() > 0) 
+  {
+    const Abstract::Group& oldSoln = solver.getPreviousSolutionGroup();
+    if (oldSoln.isGradient())
+      updates.push_back(soln.getX(), oldSoln.getX(), soln.getGradient(), oldSoln.getGradient());
   }
 
+  // Calculate the QN direction
   dir = soln.getGradient();
 
   if (!updates.empty()) {
 
     deque<double> alpha;
-    double a, b, c;
+    double a, b;
   
     for (UpdateConstReverseIterator i = updates.rbegin(); i != updates.rend(); i++) {
 
@@ -268,5 +260,12 @@ bool QuasiNewton::compute(Abstract::Vector& dir,
 
   dir.scale(-1.0);
 
-  return ok;
+  return true;
+}
+
+void NOX::Direction::QuasiNewton::throwError(const string& functionName, const string& errorMsg)
+{
+    if (Utils::doPrint(Utils::Error))
+      cerr << "NOX::Direction::QuasiNewton::" << functionName << " - " << errorMsg << endl;
+    throw "NOX Error";
 }

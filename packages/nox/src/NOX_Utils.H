@@ -102,7 +102,7 @@ public:
     <li> "Output Processor" - Ranges from 0 to MyPID-1.
     <li> "Output Precision" - Precision of values to be printed by output.
   */
-  static void setUtils(Parameter::List& p);
+  static void setUtils(NOX::Parameter::List& p);
 
   /*! 
     \brief Returns true if the current processor is designated as the

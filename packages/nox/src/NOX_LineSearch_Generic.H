@@ -68,7 +68,7 @@ public:
   virtual ~Generic() {};
 
   //! Reset parameters
-  virtual bool reset(Parameter::List& params) = 0;
+  virtual bool reset(NOX::Parameter::List& params) = 0;
   
   //! Perform a line search from the old solution along dirction dir. 
   /*!
@@ -86,10 +86,10 @@ public:
     \f]
     satisfies the conditions of the line search.
    */
-  virtual bool compute(Abstract::Group& grp, 
+  virtual bool compute(NOX::Abstract::Group& grp, 
 		       double& step,
-		       const Abstract::Vector& dir, 
-		       const Solver::Generic& s) = 0;
+		       const NOX::Abstract::Vector& dir, 
+		       const NOX::Solver::Generic& s) = 0;
 
 };
 } // namespace LineSearch

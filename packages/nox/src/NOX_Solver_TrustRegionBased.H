@@ -124,19 +124,19 @@ class TrustRegionBased : public Generic {
 public:
 
   //! %TrustRegionBased-method constructor. 
-  TrustRegionBased(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
+  TrustRegionBased(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, const NOX::Parameter::List& p);
 
   //! Destructor
   virtual ~TrustRegionBased();
 
-  virtual bool reset(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
-  virtual StatusTest::StatusType getStatus();
-  virtual StatusTest::StatusType iterate();
-  virtual StatusTest::StatusType solve();
-  virtual const Abstract::Group& getSolutionGroup() const;
-  virtual const Abstract::Group& getPreviousSolutionGroup() const;
+  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, const NOX::Parameter::List& p);
+  virtual NOX::StatusTest::StatusType getStatus();
+  virtual NOX::StatusTest::StatusType iterate();
+  virtual NOX::StatusTest::StatusType solve();
+  virtual const NOX::Abstract::Group& getSolutionGroup() const;
+  virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
-  virtual const Parameter::List& getParameterList() const;
+  virtual const NOX::Parameter::List& getParameterList() const;
 
 protected:
   
@@ -149,54 +149,54 @@ protected:
 protected:
   
   //! Current solution.
-  Abstract::Group* solnPtr;		
+  NOX::Abstract::Group* solnPtr;		
 
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Group* oldSolnPtr;	
+  NOX::Abstract::Group* oldSolnPtr;	
   //! Previous solution reference.
-  Abstract::Group& oldSoln;	
+  NOX::Abstract::Group& oldSoln;	
 
   //! Current search direction.pointer.
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Vector* newtonVecPtr;
+  NOX::Abstract::Vector* newtonVecPtr;
   //! Current Newton direction.reference.
-  Abstract::Vector& newtonVec;
+  NOX::Abstract::Vector& newtonVec;
 
   //! Current search direction.pointer.
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Vector* cauchyVecPtr;
+  NOX::Abstract::Vector* cauchyVecPtr;
   //! Current Cauchy direction.reference.
-  Abstract::Vector& cauchyVec;
+  NOX::Abstract::Vector& cauchyVec;
 
   //! Extra vector used in computations
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Vector* aVecPtr;
+  NOX::Abstract::Vector* aVecPtr;
   //! Extra vector
-  Abstract::Vector& aVec;
+  NOX::Abstract::Vector& aVec;
 
   //! Extra vector used in computations
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Vector* bVecPtr;
+  NOX::Abstract::Vector* bVecPtr;
   //! Extra vector
-  Abstract::Vector& bVec;
+  NOX::Abstract::Vector& bVec;
 
   //! Stopping test.
-  StatusTest::Generic* testPtr;		
+  NOX::StatusTest::Generic* testPtr;		
 
   //! Input parameters.
-  Parameter::List params;	
+  NOX::Parameter::List params;	
 
   //! %Newton %Search %Direction. 
-  Direction::Manager newton; 
+  NOX::Direction::Manager newton; 
 
   //! Cauchy %Search %Direction. 
-  Direction::Manager cauchy; 
+  NOX::Direction::Manager cauchy; 
 
   //! Radius of the trust region
   double radius;
@@ -238,10 +238,17 @@ protected:
   int nIter;                    
 
   //! %Status of nonlinear solver.
-  StatusTest::StatusType status;
+  NOX::StatusTest::StatusType status;
 
   //! Enumerated list for each direction that may be required in the Trust region computation.
-  enum StepType {Newton, Cauchy, Dogleg};
+  enum StepType {
+    //! Use the Newton direction
+    Newton, 
+    //! Use the Cauchy direction
+    Cauchy, 
+    //! Use the doglog direction
+    Dogleg
+  };
 
   //! Type of step to be taken.
   StepType stepType;

@@ -120,18 +120,18 @@ class MoreThuente : public Common {
 public:
 
   //! Constructor
-  MoreThuente(Parameter::List& params);
+  MoreThuente(NOX::Parameter::List& params);
 
   //! Destructor
   ~MoreThuente();
   
   // derived
-  bool reset(Parameter::List& params);
+  bool reset(NOX::Parameter::List& params);
 
   // derived
-  bool compute(Abstract::Group& newgrp, double& step, 
-	       const Abstract::Vector& dir,
-	       const Solver::Generic& s);
+  bool compute(NOX::Abstract::Group& newgrp, double& step, 
+	       const NOX::Abstract::Vector& dir,
+	       const NOX::Solver::Generic& s);
 
 
 private:
@@ -283,8 +283,8 @@ private:
 
 
    */
-  int cvsrch(Abstract::Group& newgrp, double& step, 
-	     const Abstract::Group& oldgrp, const Abstract::Vector& dir);
+  int cvsrch(NOX::Abstract::Group& newgrp, double& step, 
+	     const NOX::Abstract::Group& oldgrp, const NOX::Abstract::Vector& dir);
 
 
   //! More'-Thuente's cstep subroutine.

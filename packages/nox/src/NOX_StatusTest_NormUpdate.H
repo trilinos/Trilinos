@@ -92,14 +92,24 @@ class NormUpdate : public Generic {
 public:
 
   //! Type that determines whether to scale the norm by the problem size.
-  enum ScaleType {Unscaled, Scaled};
+  enum ScaleType {
+    //! No norm scaling
+    Unscaled, 
+    //! Scale the norm by the length of the vector
+    Scaled
+  };
 
   //! Type that determines whether the norm is absolute or relative to the intial guess
-  enum ToleranceType {Relative, Absolute};
+  enum ToleranceType {
+    //! Relative to starting guess
+    Relative, 
+    //! Absolute
+    Absolute
+  };
 
   //! Constructor for absolute norm. 
   /*! This constructor defaults to the \c Absolute tolerance type. */
-  NormUpdate(double tolerance, Abstract::Vector::NormType ntype, ScaleType stype = Scaled);
+  NormUpdate(double tolerance, NOX::Abstract::Vector::NormType ntype, ScaleType stype = Scaled);
 
   //! Constructor for absolute norm
   /*! This constructor defaults to the \c Absolute ToleranceType and \c TWO NormType. */
@@ -107,31 +117,32 @@ public:
 
   //! Constructor with initial guess (for relative norms)
   /*! This constructor defaults to the \c Relative tolerance type. */
-  NormUpdate(Abstract::Group& initialGuess, double tolerance, Abstract::Vector::NormType ntype, ScaleType stype = Scaled);
+  NormUpdate(NOX::Abstract::Group& initialGuess, double tolerance, 
+	     NOX::Abstract::Vector::NormType ntype, ScaleType stype = Scaled);
 
   //! Constructor with initial guess (for relative norms)
   /*! This constructor defaults to the \c Relative ToleranceType and \c TWO NormType. */
-  NormUpdate(Abstract::Group& initialGuess, double tolerance, ScaleType stype = Scaled);
+  NormUpdate(NOX::Abstract::Group& initialGuess, double tolerance, ScaleType stype = Scaled);
 
   //! Destructor.
   virtual ~NormUpdate();
 
-  virtual StatusType checkStatus(const Solver::Generic& problem);
+  virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem);
 
-  virtual StatusType getStatus() const;
+  virtual NOX::StatusTest::StatusType getStatus() const;
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
 
 private:
 
   //! %Status
-  StatusType status;
+  NOX::StatusTest::StatusType status;
 
   //! Vector containing the update for the current outer iteration 
-  Abstract::Vector* updateVector;
+  NOX::Abstract::Vector* updateVector;
 
   //! Type of norm to use
-  Abstract::Vector::NormType normType;
+  NOX::Abstract::Vector::NormType normType;
 
   //! Scaling to use
   ScaleType scaleType;

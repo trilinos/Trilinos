@@ -32,11 +32,8 @@
 
 #include "NOX_Abstract_Vector.H"
 
-using namespace NOX;
-using namespace NOX::Abstract;
-
-bool Vector::print() const
+void NOX::Abstract::Vector::print() const
 {
-  return false;
+  return;
 }
 

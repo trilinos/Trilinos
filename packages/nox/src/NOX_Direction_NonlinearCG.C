@@ -122,7 +122,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     if(!soln.isJacobian())
       soln.computeJacobian();
     tmpVec = dir;
-    status = soln.applyJacobianDiagonalInverse(tmpVec, dir);
+    //    status = soln.applyJacobianDiagonalInverse(tmpVec, dir);
   }
 
   dir.scale(-1.0);

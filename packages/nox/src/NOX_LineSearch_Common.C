@@ -75,9 +75,9 @@ double Common::computeSlope(const Abstract::Vector& dir, const Abstract::Group& 
   }
 
   // v = J * dir
-  bool flag = grp.applyJacobian(dir,*vecPtr);
+  NOX::Abstract::Group::ReturnType status = grp.applyJacobian(dir,*vecPtr);
   
-  if (!flag) {
+  if (status != NOX::Abstract::Group::Ok) {
     cout << "NOX::LineSearch::Common::computeSlope -  Unable to apply Jacobian!" << endl;
     throw "NOX Error";
   }

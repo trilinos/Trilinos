@@ -35,22 +35,22 @@
 
 using namespace NOX::StatusTest;
 
-Combo::Combo(ComboType t)
+Combo::Combo(ComboType t) :
+  type(t)
 {
-  type = t;
   status = Unconverged;
 }
 
-Combo::Combo(ComboType t, Generic& a)
+Combo::Combo(ComboType t, Generic& a) :
+  type(t)
 {
-  type = t;
   tests.push_back(&a);
   status = Unconverged;
 }
 
-Combo::Combo(ComboType t, Generic& a, Generic& b)
+Combo::Combo(ComboType t, Generic& a, Generic& b) :
+  type(t)
 {
-  type = t;
   tests.push_back(&a);
   addStatusTest(b);
   status = Unconverged;

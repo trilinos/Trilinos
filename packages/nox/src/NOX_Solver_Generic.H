@@ -70,28 +70,30 @@ public:
     the solution.
 
   */
-  virtual bool reset(Abstract::Group& grp, StatusTest::Generic& tests, const Parameter::List& params) = 0;
+  virtual bool reset(NOX::Abstract::Group& grp, 
+		     NOX::StatusTest::Generic& tests, 
+		     const NOX::Parameter::List& params) = 0;
 
   //! Check current convergence/failure status. 
-  virtual StatusTest::StatusType getStatus() = 0;
+  virtual NOX::StatusTest::StatusType getStatus() = 0;
 
   //! Do one nonlinear method iteration and return status.
-  virtual StatusTest::StatusType iterate() = 0;
+  virtual NOX::StatusTest::StatusType iterate() = 0;
 
   //! Solve the nonlinear problem and return final status.
-  virtual StatusTest::StatusType solve() = 0;
+  virtual NOX::StatusTest::StatusType solve() = 0;
 
   //! Return a reference to the current solution group.
-  virtual const Abstract::Group& getSolutionGroup() const = 0;
+  virtual const NOX::Abstract::Group& getSolutionGroup() const = 0;
 
   //! Return a reference to the previous solution group.
-  virtual const Abstract::Group& getPreviousSolutionGroup() const = 0;
+  virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const = 0;
 
   //! Get number of iterations.
   virtual int getNumIterations() const = 0;
 
   //! Return list containing various all parameters.
-  virtual const Parameter::List& getParameterList() const = 0;
+  virtual const NOX::Parameter::List& getParameterList() const = 0;
 
 };
 } // namespace Solver

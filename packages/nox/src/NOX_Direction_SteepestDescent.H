@@ -75,20 +75,33 @@ class SteepestDescent : public Generic {
 public:
 
   //! Scaling types
-  enum ScalingType {TwoNorm, QuadMin, FunctionTwoNorm, None};
+  enum ScalingType {
+    //! Scale by the 2-norm of the gradient
+    TwoNorm, 
+    //! Scale by the step that minimizes the 1-D quadratic
+    QuadMin, 
+    //! Scale by the 2-norm of F
+    FunctionTwoNorm, 
+    //! No scaling at all
+    None};
 
   //! Constructor
-  SteepestDescent(Parameter::List& params);
+  SteepestDescent(NOX::Parameter::List& params);
 
   //! Destructor
   ~SteepestDescent();
 
   // derived
-  bool reset(Parameter::List& params);
+  bool reset(NOX::Parameter::List& params);
 
   // derived
-  bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
-		  const Solver::Generic& solver);
+  bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
+	       const NOX::Solver::Generic& solver);
+
+private:
+
+  //! Print error message and throw error
+  void throwError(const string& functionName, const string& errorMsg);
 
 private:
 

@@ -70,7 +70,7 @@ public:
   virtual ~Generic() {};
 
   //! Reset parameters
-  virtual bool reset(Parameter::List& params) = 0;
+  virtual bool reset(NOX::Parameter::List& params) = 0;
   
   /*!
     \brief Compute the direction vector, \c d, for a specific method given
@@ -83,7 +83,7 @@ public:
     information such as the past solution, the iteration number, and
     so on.
   */
-  virtual bool compute(Abstract::Vector& d, Abstract::Group& g, const Solver::Generic& s) = 0;
+  virtual bool compute(NOX::Abstract::Vector& d, NOX::Abstract::Group& g, const NOX::Solver::Generic& s) = 0;
 
 };
 } // namespace Direction

@@ -209,18 +209,18 @@ class Polynomial : public Common {
 public:
 
   //! Constructor
-  Polynomial(Parameter::List& params);
+  Polynomial(NOX::Parameter::List& params);
 
   //! Destructor
   ~Polynomial();
   
   // derived
-  bool reset(Parameter::List& params);
+  bool reset(NOX::Parameter::List& params);
 
   // derived
-  bool compute(Abstract::Group& newgrp, double& step, 
-	       const Abstract::Vector& dir,
-	       const Solver::Generic& s);
+  bool compute(NOX::Abstract::Group& newgrp, double& step, 
+	       const NOX::Abstract::Vector& dir,
+	       const NOX::Solver::Generic& s);
 	       
 protected:
 
@@ -261,7 +261,8 @@ protected:
     //! Use quadratic interpolation throughout
     Quadratic, 
     //! Use quadratic interpolation in the first inner iteration and cubic interpolation otherwise
-    Cubic};
+    Cubic
+  };
 
   //! Choice of convergence criteria
   ConvergenceCriteriaType convCriteria;

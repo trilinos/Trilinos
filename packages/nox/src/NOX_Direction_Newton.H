@@ -85,6 +85,11 @@ namespace Direction {
   The following options may be specified in the "Direction" sublist of
   the solver parameters.
 
+  - "Resuce Bad Newton Solve" (Boolean) - Says whether or not we should
+    try to use the solution from a bad linear solve. If set to true, 
+    we will accept the solution if it produces any reduction whatsoever
+    in the linear residual. Defaults to true.
+
   - "Forcing Term Method" - Method to compute the forcing term, i.e.,
     the tolerance for the linear solver. Choices are "Constant", 
     "Type 1", and "Type 2".  Defaults to "Constant". 
@@ -122,23 +127,45 @@ class Newton : public Generic {
 public:
 
   //! Constructor
-  Newton(Parameter::List& params);
+  Newton(NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~Newton();
 
   // derived
-  virtual bool reset(Parameter::List& params);
+  virtual bool reset(NOX::Parameter::List& params);
 
   // derived
-  virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
-		       const Solver::Generic& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
+		       const NOX::Solver::Generic& solver);
 
 protected:
 
   //! Called each iteration to reset the forcing term (ie, the
   //! convergence tolerance for the linear solver).
-  virtual bool resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln, int niter, const Parameter::List& solverParams);
+  virtual bool resetForcingTerm(const NOX::Abstract::Group& soln, 
+				const NOX::Abstract::Group& oldSoln, 
+				int niter, 
+				const NOX::Parameter::List& solverParams);
+
+
+private:
+
+  //! Return true if we can recover from a bad Newton solve
+  /*!
+    In other words, sometimes we'll use the calculated Newton
+    direction even if it doesn't satisfy the convergence tolerance.
+
+    If doRescue is true,
+    \f[
+    \|J s - (-F) \| / \|F\| < 1,
+    \f]
+    and we don't encounter any other errors, return true.
+  */
+  bool rescueBadNewtonSolve(const NOX::Abstract::Group& soln) const;
+
+  //! Print an error message
+  void throwError(const string& functionName, const string& errorMsg);
 
 
 private:
@@ -148,13 +175,16 @@ private:
     \note This is pointer rather than a reference to allow for the
     reset function. 
    */
-  Parameter::List* paramsPtr;
+  NOX::Parameter::List* paramsPtr;
+
+  //! Determined based on "Resuce Bad Newton Solve". Used in rescueBadNewtonSolve
+  bool doRescue;
 
   //! Vector containing the predicted RHS
-  Abstract::Vector* predrhs;
+  NOX::Abstract::Vector* predRhs;
 
   //! Vector containing the computed direction
-  Abstract::Vector* stepdir;
+  NOX::Abstract::Vector* stepDir;
 
 };
 } // namespace Direction

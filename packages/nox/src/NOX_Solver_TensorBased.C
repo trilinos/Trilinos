@@ -98,11 +98,11 @@ void TensorBased::init()
   }
 
   // Compute F of initial guess
-  bool ok = solnptr->computeF();
-  if (!ok) {
-    cout << "NOX::Solver::TensorBased::init - Unable to compute F" << endl;
-    throw "NOX Error";
-  }
+  solnptr->computeF();
+//   if (!ok) {
+//     cout << "NOX::Solver::TensorBased::init - Unable to compute F" << endl;
+//     throw "NOX Error";
+//   }
 
   // Test the initial guess
   status = testptr->checkStatus(*this);
@@ -201,12 +201,12 @@ NOX::StatusTest::StatusType TensorBased::iterate()
       
 
   // Compute F for new current solution.
-  ok = soln.computeF();
-  if (!ok) {
-    cout << "NOX::Solver::TensorBased::iterate - unable to compute F" << endl;
-    status = StatusTest::Failed;
-    return status;
-  }
+  soln.computeF();
+//   if (!ok) {
+//     cout << "NOX::Solver::TensorBased::iterate - unable to compute F" << endl;
+//     status = StatusTest::Failed;
+//     return status;
+//   }
 
   // Evaluate the current status.
   status = test.checkStatus(*this);

@@ -62,17 +62,17 @@ public:
   Manager();
 
   //! Constructor
-  Manager(Parameter::List& params);
+  Manager(NOX::Parameter::List& params);
 
   //! Destructor
   ~Manager();
 
   // derived
-  bool reset(Parameter::List& params);
+  bool reset(NOX::Parameter::List& params);
 
   // derived
-  bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
-	       const Solver::Generic& solver);
+  bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
+	       const NOX::Solver::Generic& solver);
 
 private:
 
@@ -80,7 +80,7 @@ private:
   string method;
 
   //! Pointer to actual direction calculation method
-  Direction::Generic* ptr;
+  NOX::Direction::Generic* ptr;
 
 };
 } // namespace Direction

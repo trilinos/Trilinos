@@ -81,17 +81,22 @@ class QuasiNewton : public Generic {
 public:
 
   //! Constructor
-  QuasiNewton(Parameter::List& params);
+  QuasiNewton(NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~QuasiNewton();
 
   // derived
-  virtual bool reset(Parameter::List& params);
+  virtual bool reset(NOX::Parameter::List& params);
 
   // derived
-  virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
-		       const Solver::Generic& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
+		       const NOX::Solver::Generic& solver);
+
+private:
+
+  //! Print an error message and throw and error
+  void throwError(const string& functionName, const string& errorMsg);
 
 protected:
 
@@ -103,8 +108,8 @@ protected:
     
     //! Constructor
     /*! See reset(). */
-    Update(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
-	   const Abstract::Vector& newG, const Abstract::Vector& oldG);
+    Update(const NOX::Abstract::Vector& newX, const NOX::Abstract::Vector& oldX, 
+	   const NOX::Abstract::Vector& newG, const NOX::Abstract::Vector& oldG);
     
     //! Destuctor
     ~Update();
@@ -116,14 +121,14 @@ protected:
        y = g_{\rm new} - g_{\rm old} 
        \f]
     */
-    void reset(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
-	       const Abstract::Vector& newG, const Abstract::Vector& oldG);
+    void reset(const NOX::Abstract::Vector& newX, const NOX::Abstract::Vector& oldX, 
+	       const NOX::Abstract::Vector& newG, const NOX::Abstract::Vector& oldG);
     
     //! Get s
-    const Abstract::Vector& s() const;
+    const NOX::Abstract::Vector& s() const;
 
     //! Get y
-    const Abstract::Vector& y() const;
+    const NOX::Abstract::Vector& y() const;
 
     //! Get \f$s^T y \f$
     double sdoty() const;
@@ -131,10 +136,10 @@ protected:
   private:
     
     //! s-vector pointer
-    Abstract::Vector* sptr;
+    NOX::Abstract::Vector* sptr;
 
     //! y-vector pointer
-    Abstract::Vector* yptr;
+    NOX::Abstract::Vector* yptr;
 
     //! \f$\rho = s^Ty\f$
     double rho;
@@ -172,8 +177,8 @@ protected:
     void reset(int m = 0);
 
     //! Add an element at the end of the deque
-    void push_back(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
-		   const Abstract::Vector& newG, const Abstract::Vector& oldG);
+    void push_back(const NOX::Abstract::Vector& newX, const NOX::Abstract::Vector& oldX, 
+		   const NOX::Abstract::Vector& newG, const NOX::Abstract::Vector& oldG);
 
     //! Returns the last update
     const Update* back() const;
@@ -200,10 +205,10 @@ protected:
     int maxUpdates;
 
     //! Update deque
-    deque<Update*> updateDeque;
+    deque<NOX::Direction::QuasiNewton::Update*> updateDeque;
 
     //! Deque for storing allocated but unused updates
-    deque<Update*> recycleDeque;
+    deque<NOX::Direction::QuasiNewton::Update*> recycleDeque;
   
   };
 
@@ -212,11 +217,10 @@ protected:
     \note This is pointer rather than a reference to allow for the
     reset function. It should not be deleted.
    */
-  Parameter::List* paramsPtr;
+  NOX::Parameter::List* paramsPtr;
 
   //! Updates 
   Updates updates;
-
 
 };
 } // namespace Direction

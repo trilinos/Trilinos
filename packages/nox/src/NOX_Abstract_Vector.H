@@ -37,7 +37,12 @@
 namespace NOX {
 
   //! Specify whether to copy using deep copy or just copy by shape.
-  enum CopyType { DeepCopy, ShapeCopy };
+  enum CopyType { 
+    //! Copy object including all data
+    DeepCopy, 
+    //! Copy the shape of the object only
+    ShapeCopy 
+  };
 
 //! %NOX abstract interface for vector and group
 namespace Abstract {
@@ -59,52 +64,59 @@ class Vector {
 public:
   
   //! Norm types.
-  enum NormType {TwoNorm, OneNorm, MaxNorm};
+  enum NormType {
+    //! Use the 2-norm
+    TwoNorm, 
+    //! Use the 1-norm
+    OneNorm, 
+    //! Use the max-norm, a.k.a. the \f$\infty\f$-norm
+    MaxNorm
+  };
 
-  //! %Vector constructor.
+  //! %Abstract %Vector constructor (does nothing)
   Vector() {};
 
-  //! %Vector destructor.
+  //! %Abstract %Vector destructor (does nothing)
   virtual ~Vector() {};
 
   //@{ \name Initialization methods.
 
-  //! Initialize every element of "this" with the specified value, gamma.
+  //! Initialize every element of this vector with \c gamma.
   /*! \f[ x_i = \alpha \quad \mbox{for } i=1,\dots,n \f] */
-  virtual Vector& init(double gamma) = 0;
+  virtual NOX::Abstract::Vector& init(double gamma) = 0;
 
-  //! Puts element-wise absolute values of source vector y into "this".
+  //! Put element-wise absolute values of source vector \c y into this vector.
   /*! \f[ x_i = | y_i | \quad \mbox{for } i=1,\dots,n \f] */
-  virtual Vector& abs(const Vector& y) = 0;
+  virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y) = 0;
 
-  //! Copies source vector y into "this".
+  //! Copy source vector \c y into this vector.
   /*! \f[ x_i = y_i \quad \mbox{for } i=1,\dots,n \f] */
-  virtual Vector& operator=(const Vector& y) = 0;
+  virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y) = 0;
 
-  //! Puts element-wise reciprocal of source vector into "this".
+  //! Put element-wise reciprocal of source vector \c y into this vector.
   /*! \f[ x_i =  \frac{1}{y_i} \quad \mbox{for } i=1,\dots,n  \f] */
-  virtual Vector& reciprocal(const Vector& y) = 0;
+  virtual NOX::Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y) = 0;
 
   //@}
 
   //@{ \name Update methods.
 
-  //! this = gamma * this.
+  //! Scale each element of this vector by \c gamma.
   /*! \f[ x_i = \gamma x_i \quad \mbox{for } i=1,\dots,n \f] */
-  virtual Vector& scale(double gamma) = 0;
+  virtual NOX::Abstract::Vector& scale(double gamma) = 0;
 
-  //! Scale "this" by another vector, element-by-element.
+  //! Scale this vector <em>element-by-element<\em> by \c a.
   /*! \f[ x_i = x_i \cdot a_i \quad \mbox{for } i=1,\dots,n \f] */
-  virtual Vector& scale(const Vector& a) = 0;
+  virtual NOX::Abstract::Vector& scale(const NOX::Abstract::Vector& a) = 0;
 
-  //! this = (alpha * a) + (gamma * this).
+  //! Compute x = (alpha * a) + (x * this) where x is this vector.
   /*! \f[ x_i = \alpha \; a_i + \gamma \; x_i \quad \mbox{for } i=1,\dots,n \f] */
-  virtual Vector& update(double alpha, const Vector& a, double gamma = 0.0) = 0;
+  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, double gamma = 0.0) = 0;
 
-  //! this = (alpha * a) + (beta * b) + (gamma * this).
+  //! Compute x = (alpha * a) + (beta * b) + (x * this) where x is this vector.
   /*! \f[ x_i = \alpha \; a_i + \beta \; b_i + \gamma \; x_i \quad \mbox{for } i=1,\dots,n \f] */
-  virtual Vector& update(double alpha, const Vector& a, 
-			 double beta, const Vector& b,
+  virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, 
+			 double beta, const NOX::Abstract::Vector& b,
 			 double gamma = 0.0) = 0;
 
   //@}
@@ -113,47 +125,51 @@ public:
 
   /*! \brief Create a new %Vector of the same underlying type by
     cloning "this", and return a pointer to the new vector.  */
-  /*! If type is \c DeepCopy, then we need to create an exact replica
-    of "this". Otherwise, if type is \c ShapeCopy, we need only
-    replicate the shape of "this". Returns \c NULL if clone is not
+  /*! If type is NOX::DeepCopy, then we need to create an exact replica
+    of "this". Otherwise, if type is NOX::ShapeCopy, we need only
+    replicate the shape of "this". Returns NULL if clone is not
     supported. */
-  virtual Vector* clone(CopyType type = DeepCopy) const = 0;
+  virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
   //@}
 
   //@{ \name Norms.
 
   //! Norm.
-  /*! Defined as follows for each NormType:
+  /*! Defined as follows for each NOX::Abstract::Vector::NormType:
     <ul>
     <li>\c TWO : 2-norm \f[ \sqrt{\sum_{i=1}^{n} x_i^2} \f] 
     <li>\c ONE : 1-norm \f[ \sum_{i=1}^{n} |x_i| \f]
     <li>\c INF : infinity- or max-norm \f[ \max_{i} |x_i| \f]
     </uL>
   */
-  virtual double norm(Abstract::Vector::NormType type = TwoNorm) const = 0;
+  virtual double norm(NOX::Abstract::Vector::NormType type = NOX::Abstract::Vector::TwoNorm) const = 0;
 
   //! Weighted 2-Norm.
   /*! Defined as 
     \f[ \sqrt{\sum_{i=1}^{n} w_i \; x_i^2} \f] 
   */
-  virtual double norm(const Vector& weights) const = 0;
+  virtual double norm(const NOX::Abstract::Vector& weights) const = 0;
 
   //@}
 
   //@{ \name Dot products.
 
-  //! Dot product with y-vector.
+  //! Dot product with \c y.
   /*! \f[\sum_{i=1}^n x_i y_i\f] */
-  virtual double dot(const Vector& y) const = 0;
+  virtual double dot(const NOX::Abstract::Vector& y) const = 0;
   
   //@}
 
-  //! Return length of vector.
+  //! Return the length of vector.
+  /*! 
+    \note Even if the vector is distributed across processors, this
+    should return the \e global length of the vector.
+   */
   virtual int length() const = 0;
 
-  //! Print the vector.  This is meant for debuggin purposes only.
-  virtual bool print() const;
+  //! Print the vector.  This is meant for debugging purposes only and does not need to be defined.
+  virtual void print() const;
 
 }; // class Vector
 } // namespace Abstract

@@ -35,32 +35,30 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Parameter_List.H"
+#include "NOX_Utils.H"
 
-using namespace NOX;
-using namespace NOX::Direction;
-
-SteepestDescent::SteepestDescent(Parameter::List& params) :
+NOX::Direction::SteepestDescent::SteepestDescent(NOX::Parameter::List& params) :
   tmpVecPtr(NULL)
 {
   reset(params);
 }
 
-SteepestDescent::~SteepestDescent()
+NOX::Direction::SteepestDescent::~SteepestDescent()
 {
   delete tmpVecPtr;
 }
 
-bool SteepestDescent::reset(Parameter::List& params)
+bool NOX::Direction::SteepestDescent::reset(NOX::Parameter::List& params)
 {
   const string tmp = params.getParameter("Scaling Type", "2-Norm");
   if (tmp == "2-Norm")
-    scaleType = SteepestDescent::TwoNorm;
+    scaleType = NOX::Direction::SteepestDescent::TwoNorm;
   else if (tmp == "F 2-Norm")
-    scaleType = SteepestDescent::FunctionTwoNorm;
+    scaleType = NOX::Direction::SteepestDescent::FunctionTwoNorm;
   else if (tmp == "Quadratic Model Min")
-    scaleType = SteepestDescent::QuadMin;
+    scaleType = NOX::Direction::SteepestDescent::QuadMin;
   else if (tmp == "None")
-    scaleType = SteepestDescent::None;
+    scaleType = NOX::Direction::SteepestDescent::None;
   else {
     cout << "NOX::Direction::SteepestDescent::reset - Invalid choice \""
 	  << tmp << "\" for \"Scaling Type\"" << endl;
@@ -70,51 +68,45 @@ bool SteepestDescent::reset(Parameter::List& params)
  return true;
 }
 
-bool SteepestDescent::compute(Abstract::Vector& dir, 
+bool NOX::Direction::SteepestDescent::compute(Abstract::Vector& dir, 
 				 Abstract::Group& soln, 
 				 const Solver::Generic& solver) 
 {
+  NOX::Abstract::Group::ReturnType status;
+
+
   // Compute F at current solution
-  bool ok = soln.computeF();
+  status = soln.computeF();
+  if (status != NOX::Abstract::Group::Ok) 
+    throwError("compute", "Unable to compute F");
 
-  if (!ok) {
-    cerr << "NOX::Direction::SteepestDescent::compute - Unable to compute F." << endl;
-    throw "NOX Error";
-  }
-  
   // Compute Jacobian at current solution.
-  ok = soln.computeJacobian();
+  status = soln.computeJacobian();
+  if (status != NOX::Abstract::Group::Ok) 
+    throwError("compute", "Unable to compute Jacobian");
 
-  if (!ok) {
-    cerr << "NOX::Direction::SteepestDescent::compute - Unable to compute Jacobian." << endl;
-    return false;
-  }
-  
-  // Compute the gradient
-  ok = soln.computeGradient();
+  // Compute the gradient at the current solution
+  status = soln.computeGradient();
+  if (status != NOX::Abstract::Group::Ok) 
+    throwError("compute", "Unable to compute gradient");
 
-  if (!ok) {
-    cerr << "NOX::Direction::SteepestDescent::compute - Unable to compute gradient." << endl;
-    return false;
-  }
-  
   // Get the gradient direction.
   dir = soln.getGradient();
 
   // Scale
   switch (scaleType) {
 
-  case SteepestDescent::TwoNorm:
+  case NOX::Direction::SteepestDescent::TwoNorm:
 
     dir.scale(-1.0/dir.norm());
     break;
 
-  case SteepestDescent::FunctionTwoNorm:
+  case NOX::Direction::SteepestDescent::FunctionTwoNorm:
 
     dir.scale(-1.0/soln.getNormF());
     break;
 
-  case SteepestDescent::QuadMin:
+  case NOX::Direction::SteepestDescent::QuadMin:
   {
     // If necessary, allocate space for tmpVecPtr
     if (tmpVecPtr == NULL) 
@@ -124,26 +116,24 @@ bool SteepestDescent::compute(Abstract::Vector& dir,
     Abstract::Vector& tmpVec(*tmpVecPtr);
     
     // Compute denominator
-    ok = soln.applyJacobian(dir, tmpVec);
-    if (!ok) {
-      cerr << "NOX::Direction::SteepestDescent::compute - Unable to apply Jacobian" << endl;
-      return false;
-    }
+    status = soln.applyJacobian(dir, tmpVec);
+    if (status != NOX::Abstract::Group::Ok) 
+      throwError("compute", "Unable to compute apply Jacobian");
 
     // Scale
     dir.scale( -1.0 * dir.dot(dir) / tmpVec.dot(tmpVec) );
 
     break;
   }
-  case SteepestDescent::None:
+
+  case NOX::Direction::SteepestDescent::None:
 
     dir.scale( -1.0 );
     break;
 
   default:
-
-    cout << "NOX::Direction::compute - Invalid scaleType" << endl;
-    throw "NOX Error";
+    
+    throwError("compute", "Invalid scaleType");
 
   }
 
@@ -151,3 +141,9 @@ bool SteepestDescent::compute(Abstract::Vector& dir,
 }
 
 
+void NOX::Direction::SteepestDescent::throwError(const string& functionName, const string& errorMsg)
+{
+    if (Utils::doPrint(Utils::Error))
+      cerr << "NOX::Direction::SteepestDescent::" << functionName << " - " << errorMsg << endl;
+    throw "NOX Error";
+}

@@ -46,7 +46,14 @@ class Generic;			// forward declaration (included below)
 namespace StatusTest {
 
   //! Status type.
-  enum StatusType { Unconverged = 0, Converged = 1, Failed = -1 };
+  enum StatusType { 
+    //! Neither Converged nor Failed
+    Unconverged = 0, 
+    //! Converged
+    Converged = 1,
+    //! Failed
+    Failed = -1 
+  };
 
 //! Generic status test.
 class Generic {
@@ -60,10 +67,10 @@ public:
   virtual ~Generic() {};
 
   //! %Test stopping criterion, given a generic problem.
-  virtual StatusType checkStatus(const Solver::Generic& problem) = 0;
+  virtual NOX::StatusTest::StatusType checkStatus(const NOX::Solver::Generic& problem) = 0;
 
   //! Return the result of the most recent checkStatus call
-  virtual StatusType getStatus() const = 0;
+  virtual NOX::StatusTest::StatusType getStatus() const = 0;
 
   //! Output formatted description of stopping test to output stream.
   virtual ostream& print(ostream& stream, int indent = 0) const = 0;
