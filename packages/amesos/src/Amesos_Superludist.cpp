@@ -387,7 +387,7 @@ int Amesos_Superludist::Solve() {
 
     bool BlockSolve = false ; 
     if ( BlockSolve ) { 
-      pdgssvx(&options_, &superluA_, &ScalePermstruct_, &xValues[0], ldx, 1, &grid_,
+      pdgssvx(&options_, &superluA_, &ScalePermstruct_, &xValues[0], ldx, nrhs, &grid_,
 	      &LUstruct_, &SOLVEstruct_, &berr[0], &stat, &info);
       EPETRA_CHK_ERR( info ) ;
     } else {
