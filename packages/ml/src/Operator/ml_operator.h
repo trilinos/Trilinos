@@ -152,7 +152,7 @@ extern "C" {
 #endif
 
 extern int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
-                          int *pnode_part, int which_partitioner, 
+                          int *pnode_part, ML_Partitioner which_partitioner, 
 		          double *x_coord, double *y_coord, double *z_coord);
 
 extern ML_Operator *ML_Operator_Create(ML_Comm *comm);

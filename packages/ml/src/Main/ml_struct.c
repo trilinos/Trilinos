@@ -72,6 +72,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->max_iterations  = 1000;
    (*ml_ptr)->MinPerProc_repartition = -1;
    (*ml_ptr)->LargestMinMaxRatio_repartition = -1.;
+   (*ml_ptr)->use_repartitioning = 0;
 
 
    ML_Comm_Create( &((*ml_ptr)->comm) );
@@ -6518,8 +6519,50 @@ void ML_build_ggb_fat(ML *ml, void *data)
  
 }
 
+void ML_Repartition_Set_LargestMinMaxRatio(ML* ml, double ratio)
+{
+  ml->LargestMinMaxRatio_repartition = ratio;
+}
 
+double ML_Repartition_Get_LargestMinMaxRatio(ML* ml)
+{
+  return ml->LargestMinMaxRatio_repartition;
+}
 
+void ML_Repartition_Set_MinPerProc(ML* ml, int minperproc)
+{
+  ml->MinPerProc_repartition = minperproc;
+}
+
+int ML_Repartition_Get_MinPerProc(ML* ml)
+{
+  return ml->MinPerProc_repartition;
+}
+
+void ML_Repartition_Set_Partitioner(ML* ml, ML_Partitioner partitioner)
+{
+  ml->partitioner = partitioner;
+}
+
+ML_Partitioner ML_Repartition_Get_Partitioner(ML* ml)
+{
+  return ml->partitioner;
+}
+
+void ML_Repartition_Activate(ML* ml)
+{
+  ml->use_repartitioning = ML_TRUE;
+}
+
+void ML_Repartition_Deactivate(ML* ml)
+{
+  ml->use_repartitioning = ML_FALSE;
+}
+
+int ML_Repartition_Status(ML* ml)
+{
+  return ml->use_repartitioning;
+}
 
 
 

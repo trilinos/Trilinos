@@ -424,14 +424,14 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
 #endif
 
 int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
-                         int *pnode_part, int which_partitioner, 
+                         int *pnode_part, ML_Partitioner which_partitioner, 
 			 double *x_coord, double *y_coord, double *z_coord)
 {
 #ifndef METIS
 #define idxtype int
 #endif
 
-  idxtype *vtxdist = NULL, *tpwts = NULL, *adjncy = NULL, *xadj = NULL; 
+  idxtype *vtxdist = NULL, *tpwts = NULL, *adjncy = NULL, *xadj = NULL, *node_wt = NULL; 
   int *map = NULL, *bindx = NULL, *blks = NULL, nprocs, myid, j, ii, jj;
   int allocated = 0, row_length, itemp1, itemp2, Nrows;
   double *val = NULL; 
@@ -485,10 +485,18 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     return 1;
   }
 #endif
-#if !(defined(HAVE_ML_PARMETIS_2x)||defined(HAVE_ML_PARMETIS_3x)||defined(HAVE_ML_JOSTLE))
-  if ( which_partitioner == ML_USEPARMETIS) {
+#if !(defined(HAVE_ML_PARMETIS_2x)||defined(HAVE_ML_PARMETIS_3x))
+  if ( which_partitioner == ML_USEPARMETIS ) {
     if (myid == 0) 
-      printf("ML_partitionBlocksNodes: Parmetis and Jostle are not linked\n");
+      printf("ML_partitionBlocksNodes: Parmetis is not linked\n");
+    for (ii = 0; ii < n; ii++) pnode_part[ii] = myid;
+    return 1;
+  }
+#endif
+#if !(defined(HAVE_ML_JOSTLE))
+  if ( which_partitioner==ML_USEJOSTLE) {
+    if (myid == 0) 
+      printf("ML_partitionBlocksNodes: Jostle is not linked\n");
     for (ii = 0; ii < n; ii++) pnode_part[ii] = myid;
     return 1;
   }
@@ -515,7 +523,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     /*  shipped to the active processors.                          */
     
 #ifdef HAVE_ML_JOSTLE
-    if ( (which_partitioner == ML_USEPARMETIS) && (*nblks != nprocs)) {
+    if ( (which_partitioner == ML_USEJOSTLE) && (*nblks != nprocs)) {
       total_nz  = (int *) ML_allocate(sizeof(int)*nprocs);
       total_rows= (int *) ML_allocate(sizeof(int)*nprocs);
       itmp      = (int *) ML_allocate(sizeof(int)*nprocs);
@@ -587,7 +595,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
 
   /* Ship rows from "idle" processors to "active" processors. */
 
-  if ( (which_partitioner == ML_USEPARMETIS) && (*nblks != nprocs)) {
+  if ( (which_partitioner == ML_USEJOSTLE) && (*nblks != nprocs)) {
     if ( myid < *nblks ) {
       ii = n;
       zz = 0;
@@ -655,6 +663,8 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   switch(which_partitioner) {
   case ML_USEZOLTAN:
 #ifdef HAVE_ML_ZOLTAN
+    if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
+      printf("Repartitioning using Zoltan\n");
     if (ML_DecomposeGraph_with_Zoltan(matrix, *nblks, pnode_part, NULL,
 				      x_coord, y_coord, z_coord, -1) < 0)
       for (ii = 0; ii < n; ii++) pnode_part[ii] = myid;
@@ -662,6 +672,8 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     break;
   case ML_USEMETIS:
 #ifdef HAVE_ML_METIS
+    if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
+      printf("Repartitioning using METIS\n");
     if (*nblks < 8)
       METIS_PartGraphRecursive( &n, xadj, adjncy, NULL, NULL, &weightflag,
 				&Cstyle, nblks, options, &dummy, pnode_part );
@@ -687,7 +699,49 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     *nblks = ii;
     break;
   case ML_USEPARMETIS:
-#ifdef HAVE_ML_JOSTLE
+    tpwts   = (idxtype *) ML_allocate(sizeof(idxtype)*ML_max(*nblks,nprocs));
+    vtxdist = (idxtype *) ML_allocate(sizeof(idxtype)*(nprocs+1));
+    for (ii = 0; ii <= nprocs; ii++) vtxdist[ii] = 0;
+    vtxdist[myid] = n;
+    ML_gsum_vec_int(&vtxdist,&tpwts,nprocs,matrix->comm);
+
+    itemp1 = 0;
+    for (ii = 0; ii < nprocs ; ii++) {
+      itemp2 = vtxdist[ii];
+      vtxdist[ii] = itemp1;
+      itemp1 += itemp2;
+    }
+    vtxdist[nprocs] = itemp1;
+    
+    for (ii = 0; ii < n; ii++) pnode_part[ii] = matrix->comm->ML_mypid;
+
+#ifdef HAVE_ML_PARMETIS_3x
+    node_wt = (idxtype *) ML_allocate( (Nrows+1) * sizeof(idxtype) );
+    for (j = 0; j < Nrows; j++) {
+      node_wt[j] = xadj[j+1] - xadj[j] + 1;
+    }
+    weightflag = 2;  /*node weights*/
+
+    if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
+      printf("Repartitioning using ParMETIS3x\n");
+    ParMETIS_V3_AdaptiveRepart( vtxdist,xadj,adjncy, node_wt,
+				NULL, NULL, &weightflag,
+				&Cstyle, &ncon, nblks, NULL, &ubvec, 
+				&itr, options, &dummy, pnode_part,
+				&(matrix->comm->USR_comm));
+#endif
+#ifdef HAVE_ML_PARMETIS_2x
+    if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
+      printf("Repartitioning using ParMETIS2x\n");
+    ParMETIS_PartKway( vtxdist,xadj,adjncy, NULL, NULL, &weightflag,
+		       &Cstyle, nblks, options, &dummy, pnode_part,
+		       &(matrix->comm->USR_comm));
+#endif
+    break;
+
+  case ML_USEJOSTLE:
+    if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
+      printf("Repartitioning using jostle\n");
     if (jostle_called == 0) {
       pjostle_init(&nprocs, &myid);
       jostle_called = 1;
@@ -701,9 +755,20 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     for (j = 0; j < nprocs; j++) proc_ids[j] = 0;
     proc_ids[myid] = Nrows;
     ML_gsum_vec_int(&proc_ids, &itmp, nprocs, matrix->comm);
-    for (j = 0; j < Nrows; j++) 
+    node_wt = (idxtype *) ML_allocate( (Nrows+1) * sizeof(idxtype) );
+
+    for (j = 0; j < Nrows; j++) {
       xadj[j] = xadj[j+1] - xadj[j];
+      node_wt[j] = xadj[j] + 1;
+    }
     ML_free(itmp);
+    jostle_env("matching = local");
+    /*
+    jostle_env("threshold = 2");
+    jostle_env("imbalance = 0");
+    */
+    /*    jostle_env("connect on"); */
+    /*    jostle_env("check = on"); */
 
     dummy = 0;
 
@@ -713,7 +778,8 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
       sprintf(str,"idle = %d",nprocs - *nblks);
       jostle_env(str); 
     }
-    pjostle(&nnodes,&Cstyle,&Nrows,&dummy,proc_ids,xadj,(int *) NULL,temp_part,
+    pjostle(&nnodes,&Cstyle,&Nrows,&dummy,proc_ids,xadj,node_wt,temp_part,
+	    /*    pjostle(&nnodes,&Cstyle,&Nrows,&dummy,proc_ids,xadj,(int *) NULL,temp_part, */
 	    &(xadj[Nrows]),adjncy,(int *) NULL, &nprocs, (int *) NULL,
 	    &output_level, &dummy, (double *) NULL);
 
@@ -755,37 +821,8 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     }
     if (request != NULL) ML_free(request);
 
-#else
-    tpwts   = (idxtype *) ML_allocate(sizeof(idxtype)*ML_max(*nblks,nprocs));
-    vtxdist = (idxtype *) ML_allocate(sizeof(idxtype)*(nprocs+1));
-    for (ii = 0; ii <= nprocs; ii++) vtxdist[ii] = 0;
-    vtxdist[myid] = n;
-    ML_gsum_vec_int(&vtxdist,&tpwts,nprocs,matrix->comm);
-
-    itemp1 = 0;
-    for (ii = 0; ii < nprocs ; ii++) {
-      itemp2 = vtxdist[ii];
-      vtxdist[ii] = itemp1;
-      itemp1 += itemp2;
-    }
-    vtxdist[nprocs] = itemp1;
-    
-    for (ii = 0; ii < n; ii++) pnode_part[ii] = matrix->comm->ML_mypid;
-
-#ifdef HAVE_ML_PARMETIS_3x
-    ParMETIS_V3_AdaptiveRepart( vtxdist,xadj,adjncy, NULL,
-				NULL, NULL, &weightflag,
-				&Cstyle, &ncon, nblks, NULL, &ubvec, 
-				&itr, options, &dummy, pnode_part,
-				&(matrix->comm->USR_comm));
-#endif
-#ifdef HAVE_ML_PARMETIS_2x
-    ParMETIS_PartKway( vtxdist,xadj,adjncy, NULL, NULL, &weightflag,
-		       &Cstyle, nblks, options, &dummy, pnode_part,
-		       &(matrix->comm->USR_comm));
-#endif
-#endif
     break;
+/* -------------------------------------- */
   default:
     printf("ML_partitionBlocksNodes: Unknown partitioner requested %d\n",
 	   which_partitioner);
@@ -798,6 +835,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   if (tpwts   != NULL) ML_free(tpwts);
   if (adjncy  != NULL) ML_free(adjncy);
   if (xadj    != NULL) ML_free(xadj);
+  if (node_wt != NULL) ML_free(node_wt);
 
   return 0;
 }
@@ -1378,6 +1416,7 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 				  ML_Operator *Pmat,
 				  int PostCommAlreadySet)
 {
+
 #ifndef ML_LOWMEMORY
   return 1;
 #endif
@@ -2794,30 +2833,34 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel)
   int mypid = mat->comm->ML_mypid;
   int maxrows,maxproc,minrows,minproc;
   int total_rcv_leng = 0;
-  char *origlabel, *modlabel;
+  char *origlabel = NULL, *modlabel = NULL;
   ML_CommInfoOP *c_info;
+  int reset_label = 0;
+  int minnzs,maxnzs;
 
   modlabel = (char *) ML_allocate(80 * sizeof(char));
 
-  if (mat->label != NULL) {
-    if (mat->invec_leng > 0 || mat->outvec_leng > 0)
-      proc_active = 1;
-    else proc_active = 0;
-    NumActiveProc = ML_gsum_int(proc_active, comm);
+  if (mat->label != NULL)
+    reset_label = 1;
+  else ML_Operator_Set_Label(mat,"unlabeled_operator");
 
-    if (appendlabel != NULL) {
-      origlabel = mat->label;
-      sprintf(modlabel,"%s_%s",mat->label,appendlabel);
-      mat->label = modlabel;
-    }
+  if (appendlabel != NULL) {
+     origlabel = mat->label;
+     sprintf(modlabel,"%s_%s",mat->label,appendlabel);
+     mat->label = modlabel;
   }
+
+  if (mat->invec_leng > 0 || mat->outvec_leng > 0)
+    proc_active = 1;
+  else proc_active = 0;
+  NumActiveProc = ML_gsum_int(proc_active, comm);
 
   i = mat->invec_leng; 
   Nglobcols = ML_gsum_int(i, comm);
   i = mat->outvec_leng; 
   Nglobrows = ML_gsum_int(i, comm);
 
-  if  (mat->label != NULL && (NumActiveProc > 0) && mat->ntimes > 0)
+  if  (NumActiveProc > 0 && mat->ntimes > 0)
   {
 
     /* static operator statistics */
@@ -2826,12 +2869,19 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel)
     else i = 0;
     i = ML_Comm_GsumInt(comm, i);
     j = ML_Comm_GsumInt(comm, mat->N_nonzeros);
+    maxnzs = ML_gmax_int(mat->N_nonzeros, comm);
+    maxproc = ML_gmax_int( (maxnzs == mat->N_nonzeros ? mypid:0), comm);
+    minnzs = ML_gmin_int(mat->N_nonzeros, comm);
+    minproc = ML_gmax_int((minnzs == mat->N_nonzeros ? mypid:0), comm);
     if (mypid == 0) {
        printf("===========================================\n");
-       printf("Operator %s: %d rows, %d cols, %d nnz\n",
+       printf("Operator %s: %d rows, %d cols, %d global nonzeros\n",
               mat->label,Nglobrows,Nglobcols, j);
        printf("Operator %s: %e avg nbrs, %d active proc.\n",
               mat->label,((double) i)/((double) NumActiveProc), NumActiveProc);
+       printf("Operator %s: max nonzeros=%d (pid %d), min nonzeros=%d (pid %d)\n",
+              mat->label,maxnzs,maxproc,minnzs,minproc);
+
     }
 
     maxrows = ML_gmax_int( mat->outvec_leng , comm);
@@ -2990,12 +3040,11 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel)
        printf("===========================================\n");
        fflush(stdout);
     }
-    if (appendlabel != NULL)
-      mat->label = origlabel;
   }
-  if  (mat->label == NULL && ML_Get_PrintLevel() > 0 && comm->ML_mypid == 0)
-    printf("%s: Matrix label  is not set, not printing statistics\n",
-           ML_FUNCTION_NAME);
+  if (reset_label == 1 && appendlabel != NULL)
+    mat->label = origlabel;
+  else if (reset_label == 0)
+    ML_free(mat->label);
 
   ML_free(modlabel);
 }
@@ -3043,11 +3092,12 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
   t0 = GetClock();
-  for (j=0; j<numits; j++)
+  for (j=0; j<numits; j++) {
     ML_Operator_Apply(A,A->invec_leng,xvec,A->outvec_leng,bvec);
 #ifdef ML_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
+  }
   ML_Operator_ReportStatistics(A,appendlabel);
 
   A->apply_time = apply_time;
@@ -3064,4 +3114,16 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
   if (A->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
     printf("ML_Operator_Profile: not compiled with -DML_TIMING\n");
 #endif
+}
+
+int ML_profile_num_its=0;
+void ML_Operator_Profile_SetIterations(int numits)
+{
+  if (numits >= 0)
+    ML_profile_num_its = numits;
+}
+
+int ML_Operator_Profile_GetIterations()
+{
+  return ML_profile_num_its;
 }

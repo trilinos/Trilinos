@@ -979,10 +979,15 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    ML_CommInfoOP *getrow_comm;
    ML_Operator   *Mat2comm, *Mat1Mat2, *tptr, *Mat1Mat2comm;
    ML_Comm       *comm;
+   char          label1[80],label2[80];
 
    if (Mat1->invec_leng != Mat2->outvec_leng)
    {
-     pr_error("In ML_2matmult: matrix dimensions do not agree:\n\tMat1->invec_leng = %d, Mat2->outvec_leng = %d\n", Mat1->invec_leng, Mat2->outvec_leng);
+     if (Mat1->label == NULL) sprintf(label1,"%s","mat1_not_labeled");
+     else sprintf(label1,"%s",Mat1->label);
+     if (Mat2->label == NULL) sprintf(label2,"%s","mat2_not_labeled");
+     else sprintf(label2,"%s",Mat2->label);
+     pr_error("In ML_2matmult: matrix dimensions do not agree:\n\tMat1->invec_leng = %d, Mat2->outvec_leng = %d, (%s & %s)\n", Mat1->invec_leng, Mat2->outvec_leng,label1,label2);
    }
 
    comm = Mat1->comm;

@@ -30,7 +30,6 @@
 #ifdef ML_AGGR_PARTEST
 extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 #endif
-int ML_dont_call_implicit_transpose= 0;
 
 /* ************************************************************************* */
 /* local defines                                                             */
@@ -989,12 +988,6 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
                           ML_Operator **Pmatrix, ML_Comm *comm)
 {
    int i=1, ndofs, Ncoarse, coarsen_scheme;
-#ifdef oldML_repartition
-   int j, offset1, offset2, status;
-   double *new_null;
-   ML_Operator *newA = NULL, *permt = NULL, *perm = NULL, *oldA = NULL;
-   ML_Operator *newP = NULL, *oldP = NULL;
-#endif
    int mypid, nprocs, relative_level;
    char *label;
 
@@ -1078,11 +1071,12 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    }
    else 
    {
-#ifdef ML_repartition
+/* JJH why????????????????????? */
+/*#ifdef ML_repartition*/
       if (coarsen_scheme == ML_AGGR_UNCOUPLED) 
          coarsen_scheme = ML_AGGR_UNCOUPLED;
       else 
-#endif
+/*#endif*/
       if (coarsen_scheme == ML_AGGR_COUPLED) 
          coarsen_scheme = ML_AGGR_COUPLED;
       else if (coarsen_scheme == ML_AGGR_MIS) 
@@ -1116,36 +1110,6 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    /* prolongator, and permute everything back so that it works with the     */
    /* original A.                                                            */
 
-#ifdef oldML_repartition
-   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs,Amatrix->comm->ML_nprocs, NULL, NULL, NULL);
-   
-   if (status == 0) {
-     if (ag->nullspace_vect != NULL) {
-       new_null = (double *) ML_allocate(sizeof(double)*ag->nullspace_dim*
-			      perm->outvec_leng);
-       offset1 = 0;
-       offset2 = 0;
-       for (j = 0; j < ag->nullspace_dim; j++) {
-	 ML_Operator_Apply(perm, perm->invec_leng, 
-			   &((ag->nullspace_vect)[offset1]), 
-			   perm->outvec_leng, &(new_null[offset2]));
-
-	 offset1 += perm->invec_leng;
-	 offset2 += perm->outvec_leng;
-       }
-       ML_Aggregate_Set_NullSpace(ag, ag->num_PDE_eqns, ag->nullspace_dim,
-				  new_null,perm->outvec_leng);
-       ML_free(new_null);
-
-     }
-     ML_Operator_Destroy(&perm);
-     oldA = Amatrix;
-     Amatrix= newA;
-     newP = ML_Operator_Create(permt->comm);
-     oldP = *Pmatrix;
-     *Pmatrix = newP;
-   }
-#endif
    switch ( coarsen_scheme ) 
    {
       case ML_AGGR_UNCOUPLED :
@@ -1186,23 +1150,6 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
            exit(1);
            break;
    } 
-#ifdef oldML_repartition
-
-   /* restore Amatrix and delete repartitioned one */
-
-   if (status == 0) {
-     Amatrix = oldA;
-     ML_Operator_Destroy(&newA);
-
-     /* do a mat-mat mult to get the appropriate P for the */
-     /* unpartitioned matrix.                              */
-
-     ML_2matmult(permt, *Pmatrix, oldP, ML_CSR_MATRIX);
-     ML_Operator_Destroy(Pmatrix);
-     ML_Operator_Destroy(&permt);
-     *Pmatrix = oldP;
-   }
-#endif
 
 
 #ifdef ML_DEBUG
@@ -1674,9 +1621,10 @@ int ML_random_global_subset(ML_Operator *Amat, double reduction,
 /*****************************************************************************/
 
 int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
-			  ML_Operator **permutation, ML_Operator **permt,
-			  int num_PDE_eqns, int Nprocs_ToUse,
-			  double *xcoord, double *ycoord, double *zcoord)
+              ML_Operator **permutation, ML_Operator **permt,
+              int num_PDE_eqns, int Nprocs_ToUse,
+              double *xcoord, double *ycoord, double *zcoord,
+              int UseImplicitTranspose, ML_Partitioner which_partitioner)
 {
  int mypid, nprocs, Nglobal, i, j, the_length;
 #if !defined(HAVE_ML_PARMETIS_2x) && !defined(HAVE_ML_PARMETIS_3x) && !defined(HAVE_ML_ZOLTAN) && !defined(HAVE_ML_JOSTLE)
@@ -1696,8 +1644,8 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
  double *dvec, *values = NULL;
  USR_REQ *request = NULL; 
  ML_Comm *comm;
-
  int *block_list; 
+ ML_Partitioner which_repartitioner;
 
  comm = mat->comm;
  mypid = comm->ML_mypid;
@@ -1719,7 +1667,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
      ML_Operator_AmalgamateAndDropWeak(mat, num_PDE_eqns, 0.);
 
    ML_Operator_BlockPartition(mat, mat->outvec_leng, &the_length,
-			      block_list,ML_USEPARMETIS,xcoord,ycoord,zcoord);
+			      block_list,which_partitioner,xcoord,ycoord,zcoord);
    if (num_PDE_eqns != 1)
      ML_Operator_UnAmalgamateAndDropWeak(mat, num_PDE_eqns, 0.);
 
@@ -2057,11 +2005,13 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   permuted_Amat = ML_Operator_Create(comm);
 
   ML_rap(perm_mat,mat,*permt,permuted_Amat, ML_CSR_MATRIX);
-  if (!ML_dont_call_implicit_transpose)
+  if (UseImplicitTranspose)
     ML_Operator_ImplicitTranspose(perm_mat,*permt, ML_FALSE);
 
   *new_mat = permuted_Amat;
   *permutation = perm_mat;
+  ML_Operator_Set_Label(*permutation,"perm");
+  ML_Operator_Set_Label(*permt,"permt");
 
   if (dvec != NULL) ML_free(dvec);
   if (remote_offsets != NULL) ML_free(remote_offsets);
@@ -2147,14 +2097,16 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 {
   ML_Operator *Amatrix, *Rmat, *Pmat, *perm, *permt, *newA, *newP, *newR;
   ML_Operator **permvec;
-  int status, offset1, offset2, j, flag = 0;
+  int status, offset1, offset2, i,j, flag = 0;
   double *new_null;
   int ml_gmin, ml_gmax, ml_gsum, Nprocs_ToUse;
   double *xcoord = NULL, *ycoord = NULL, *zcoord = NULL;
+  double *new_coords;
+  int UseImplicitTranspose;
+  ML_Partitioner which_partitioner;
 
-#ifndef ML_repartition
-  return 0;
-#endif
+  if (ML_Repartition_Status(ml) == ML_FALSE)
+    return NULL;
 
   Amatrix = &(ml->Amat[coarse]);
   Rmat = &(ml->Rmat[fine]);
@@ -2162,7 +2114,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 
   if ((ml->MinPerProc_repartition == -1) && 
       (ml->LargestMinMaxRatio_repartition == -1.)) 
-    return 0;
+    return NULL;
 
   ml_gmax = ML_gmax_int(Amatrix->invec_leng,ml->comm);
   ml_gmin = Amatrix->invec_leng;
@@ -2174,12 +2126,13 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
        (ml_gmin < ml->MinPerProc_repartition))
     flag = 1;
   else if ((ml->LargestMinMaxRatio_repartition != -1.) &&
-	     ((((double) ml_gmax)/((double) ml_gmin)) > 
-	      ml->LargestMinMaxRatio_repartition))
+         ((((double) ml_gmax)/((double) ml_gmin)) > 
+          ml->LargestMinMaxRatio_repartition))
     flag = 1;
 
   Nprocs_ToUse = ml->comm->ML_nprocs;
-  if ( (flag == 1) && (ml->MinPerProc_repartition != -1)) {
+  if ( (flag == 1) && (ml->MinPerProc_repartition != -1))
+  {
     /* compute how many processors to use in the repartitioning */
     ml_gsum = ML_gsum_int(Amatrix->invec_leng,ml->comm);
     Nprocs_ToUse = ml_gsum/ml->MinPerProc_repartition;
@@ -2188,48 +2141,95 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     if (Nprocs_ToUse < 1) Nprocs_ToUse = 1;
   }
 
-  if (flag == 0) return 0;
+  if (flag == 0) return NULL;
 
-  j = fabs(ag->begin_level - ag->cur_level) + 1;
-  if ((ag->nodal_coord != NULL) && ((ag->nodal_coord)[j] != NULL) ) {
-    if (ag->N_dimensions > 0) xcoord = &((ag->nodal_coord)[j][0]);
-    if (ag->N_dimensions > 1) 
-      ycoord = &((ag->nodal_coord)[j][Pmat->invec_leng/ag->nullspace_dim]);
-    if (ag->N_dimensions > 2) 
-      zcoord = &((ag->nodal_coord)[j][2*Pmat->invec_leng/ag->nullspace_dim]);
+  if (ag != NULL)
+  {
+    j = fabs(ag->begin_level - ag->cur_level) + 1;
+/*
+    printf("(pid %d, level %d):  ag->begin_level = %d, ag->cur_level = %d, j = %d\n",
+            ml->comm->ML_mypid, fine,ag->begin_level, ag->cur_level,j);
+*/
+    if ((ag->nodal_coord != NULL) && ((ag->nodal_coord)[j] != NULL) ) {
+      if (ag->N_dimensions > 0) xcoord = &((ag->nodal_coord)[j][0]);
+      if (ag->N_dimensions > 1) 
+        ycoord = &((ag->nodal_coord)[j][Pmat->invec_leng/ag->nullspace_dim]);
+      if (ag->N_dimensions > 2) 
+        zcoord = &((ag->nodal_coord)[j][2*Pmat->invec_leng/ag->nullspace_dim]);
+    }
+/*
+    printf("(pid %d, level %d) (x,y,z) = %p, %p, %p\n",ml->comm->ML_mypid, fine,xcoord,ycoord,zcoord);
+    printf("(pid %d, level 0) (x,y,z) = %p, %p, %p\n",ml->comm->ML_mypid, 
+                 &((ag->nodal_coord)[0][0]),
+                 &((ag->nodal_coord)[0][Pmat->invec_leng/ag->nullspace_dim]),
+                 &((ag->nodal_coord)[0][2*Pmat->invec_leng/ag->nullspace_dim]));
+*/
   }
 
-#ifdef ML_LOWMEMORY
+  which_partitioner = ML_Repartition_Get_Partitioner(ml);
   /* Turn off implicit transpose because the getrow is needed to apply
      the permutation matrices. */
-  if (ReturnPerm == ML_TRUE) ML_dont_call_implicit_transpose = 1;
-#endif
+   if (ReturnPerm == ML_TRUE) UseImplicitTranspose = ML_FALSE;
+   else UseImplicitTranspose = ML_TRUE;
    status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, 
-				  Amatrix->num_PDEs, Nprocs_ToUse, 
-				  xcoord, ycoord, zcoord);
-#ifdef ML_LOWMEMORY
-   ML_dont_call_implicit_transpose = 0;
-#endif
+                  Amatrix->num_PDEs, Nprocs_ToUse, 
+                  xcoord, ycoord, zcoord, UseImplicitTranspose,
+                  which_partitioner);
 
    if (status == 0) {
+    if (ag !=NULL)
+    {
+     /* repartition the coodinates if they are present */
+     if (xcoord != NULL)
+     {
+       if (ag->nullspace_dim != 1)
+         pr_error("repartitioning of coordinates does not work with null space greater than one.\n");
+       j = fabs(ag->begin_level - ag->cur_level) + 1;
+       /*
+       printf("repartitioning coords %u %u %u\n",xcoord,ycoord,zcoord);
+       */
+       new_coords = (double *) ML_allocate(sizeof(double)*(ag->N_dimensions)*
+                       (perm->outvec_leng +1));
+       ML_Operator_Apply(perm, perm->invec_leng, 
+             xcoord, perm->outvec_leng, new_coords);
+       if (ycoord != NULL) 
+         ML_Operator_Apply(perm, perm->invec_leng, ycoord, perm->outvec_leng,
+               &(new_coords[perm->outvec_leng]));
+       if (zcoord != NULL) 
+          ML_Operator_Apply(perm, perm->invec_leng, zcoord, perm->outvec_leng, 
+               &(new_coords[2*perm->outvec_leng]));
+/*
+       for (i = 0; i < perm->invec_leng; i++)
+         printf("%d: old coords(%d) =  %e %e\n",perm->comm->ML_mypid,i,
+                xcoord[i],ycoord[i]);
+       for (i = 0; i < perm->outvec_leng; i++)
+         printf("%d: new coords(%d) =  %e %e\n",perm->comm->ML_mypid,i,
+                new_coords[i], new_coords[i+perm->outvec_leng]);
+*/
+       if ((ag->nodal_coord)[j] != NULL)
+         ML_free( (ag->nodal_coord)[j]);
+       (ag->nodal_coord)[j] = new_coords;
+     } /* if (xcoord != NULL) */
+
      if (ag->nullspace_vect != NULL) {
        new_null = (double *) ML_allocate(sizeof(double)*ag->nullspace_dim*
-			      perm->outvec_leng);
+                  perm->outvec_leng);
        offset1 = 0;
        offset2 = 0;
-       for (j = 0; j < ag->nullspace_dim; j++) {
-	 ML_Operator_Apply(perm, perm->invec_leng, 
-			   &((ag->nullspace_vect)[offset1]), 
-			   perm->outvec_leng, &(new_null[offset2]));
+       for (j = 0; j < ag->nullspace_dim; j++)
+       {
+         ML_Operator_Apply(perm, perm->invec_leng, 
+               &((ag->nullspace_vect)[offset1]), 
+               perm->outvec_leng, &(new_null[offset2]));
 
-	 offset1 += perm->invec_leng;
-	 offset2 += perm->outvec_leng;
+         offset1 += perm->invec_leng;
+         offset2 += perm->outvec_leng;
        }
        ML_Aggregate_Set_NullSpace(ag, ag->num_PDE_eqns, ag->nullspace_dim,
-				  new_null,perm->outvec_leng);
+                                  new_null,perm->outvec_leng);
        ML_free(new_null);
-
-     }
+     } /* if (ag->nullspace_vect != NULL) */
+    } /* if (ag !=NULL) */
 
      ML_Operator_Move2HierarchyAndDestroy(&newA, Amatrix);
 

@@ -306,6 +306,8 @@ void ML_get_entries(void *data, int num_gid_entries, int num_lid_entries,
 
   ML_Operator* A;
   int k;
+  int allocated, *bindx, row_length;
+  double *val;
 
   *ierr = ZOLTAN_OK; 
 
@@ -313,19 +315,31 @@ void ML_get_entries(void *data, int num_gid_entries, int num_lid_entries,
     *ierr = ZOLTAN_FATAL;
     return;
   }
+  A = (ML_Operator *) data;
 
   /* We should be using (at least) one int for each GID. */
   if (num_gid_entries < 1) {
     *ierr = ZOLTAN_FATAL;
     return;
   }
-  
+  allocated = 100;
+  bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
+  val   = (double *)  ML_allocate( allocated*sizeof(double));
+
   A = (ML_Operator*) data;
   for (k = 0; k < A->getrow->Nrows; k++) {
     global_id[k] = (ZOLTAN_ID_TYPE) (k + MLZ_offset);
 
     /* Add (optional) local ids and/or weights here if desired.  */
+
+    ML_get_matrix_row(A, 1, &k, &allocated, &bindx, &val,
+                        &row_length, 0);
+    wgt[k] = row_length;
+    
   }
+  ML_free(bindx);
+  ML_free(val);
+
 
 }
 
@@ -489,6 +503,7 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
    */
   Zoltan_Set_Param(zz, "num_gid_entries", "1");
   Zoltan_Set_Param(zz, "num_lid_entries", "0");
+  Zoltan_Set_Param(zz, "obj_weight_dim", "1");
   
   /*
    *  Set up Zoltan query functions for our Matrix data structure.

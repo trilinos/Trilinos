@@ -3,7 +3,6 @@
 #define NoDampingFactor
 #define MatrixFreeHiptmair
 */
-
 /* ************************************************************************* */
 /* See the file COPYRIGHT for a complete copyright notice, contact person,   */
 /* and disclaimer.                                                           */
@@ -3833,6 +3832,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    double *val_ptr;
    double *dbl_arg1, *diagonal;
    char   str[80];
+   int num_its;
 #ifdef ML_TIMING_DETAILED
    double t0;
 
@@ -3950,10 +3950,14 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
       }
    }
    ML_Operator_ChangeToSinglePrecision(tmpmat);
-   ML_Operator_ImplicitTranspose(Tmat_trans,
-				 Tmat, ML_FALSE);
-   if (Amat->to != NULL) 
-     sprintf(str,"TAT_%d",Amat->to->levelnum); ML_Operator_Set_Label( tmpmat,str);
+   ML_Operator_ImplicitTranspose(Tmat_trans, Tmat, ML_FALSE);
+   if (Amat->to != NULL) {
+     sprintf(str,"TAT_%d",Amat->to->levelnum);
+     ML_Operator_Set_Label( tmpmat,str);
+     num_its = ML_Operator_Profile_GetIterations();
+     ML_Operator_Profile(tmpmat, NULL, num_its);
+
+   }
 
 /*
    kdata = ML_Krylov_Create( tmpmat->comm );

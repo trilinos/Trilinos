@@ -77,7 +77,9 @@ struct ML_Struct {
    int            output_level;
    int            res_output_freq;
    int            MinPerProc_repartition;
-   double LargestMinMaxRatio_repartition; 
+   double         LargestMinMaxRatio_repartition; 
+   int            use_repartitioning; /* turn repartitioning [off]/on */
+   ML_Partitioner partitioner; /*which partitioner to use: zoltan,parmetis,jostle */
    double         tolerance;
    int            max_iterations;
    double         *spectral_radius;
@@ -345,6 +347,16 @@ extern int ML_Seg_Solve( ML *ml , double *din, double *dout);
 extern int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func);
 extern int ML_Solver_SetScheme(ML *ml, int scheme);
 extern int ML_Smoother_Reinit(ML *ml);
+
+extern void ML_Repartition_Set_LargestMinMaxRatio(ML*, double);
+extern double  ML_Repartition_Get_LargestMinMaxRatio(ML* ml);
+extern void ML_Repartition_Set_MinPerProc(ML*, int);
+extern int  ML_Repartition_Get_MinPerProc(ML* ml);
+extern void ML_Repartition_Set_Partitioner(ML*, ML_Partitioner);
+extern ML_Partitioner ML_Repartition_Get_Partitioner(ML* ml);
+extern void ML_Repartition_Activate(ML* ml);
+extern void ML_Repartition_Deactivate(ML* ml);
+extern int ML_Repartition_Status(ML* ml);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

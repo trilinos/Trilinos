@@ -145,9 +145,8 @@
 #define ML_MAX_SUBSPACE_DIM 3
 
 /* block partitioning option to use Parmetis */
-#define ML_USEPARMETIS       1
-#define ML_USEMETIS          2
-#define ML_USEZOLTAN         3
+enum ml_partitioner_enum {ML_USEPARMETIS,ML_USEMETIS,ML_USEZOLTAN,ML_USEJOSTLE};
+typedef enum ml_partitioner_enum ML_Partitioner;
 
 
 

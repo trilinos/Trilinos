@@ -70,8 +70,10 @@ int ML_Operator_Eigensolver_Dense(ML_Operator* Amat,
 				  double* Er,
 				  double* Ei,
 				  double* vectors);
-void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel);
-void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits);
+extern void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel);
+extern void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits);
+extern void ML_Operator_Profile_SetIterations(int numits);
+extern int ML_Operator_Profile_GetIterations();
 
 #ifndef ML_CPP
 #ifdef __cplusplus
