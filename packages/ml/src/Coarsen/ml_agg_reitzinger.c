@@ -1732,7 +1732,7 @@ int ml_comp_Pe_entries(int coef_cols[], double coef_values[], int coef_count,
 
 }
 
-
+#include "ml_operator_blockmat.h"
 /****************************************************************************/
 /* Generate the new grid hierarchy for 2x2 block matrices from the original */
 /* hierarchy stored in 'ml_edges'.                                          */
