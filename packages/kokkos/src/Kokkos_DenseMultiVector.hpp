@@ -92,10 +92,21 @@ namespace Kokkos {
       colInc_(source.colInc_),
       values_(source.values_),
       allValues_(source.allValues_),
-      isStrided_(source.isStrided_) {};
+      isStrided_(source.isStrided_) {
+
+    if (isStrided_ && numCols_>0) {
+      ScalarType ** tmpValues = new ScalarType*[numCols_];
+      for (OrdinalType i=0;i<numCols_; i++) tmpValues[i] = values_[i];
+      values_ = tmpValues;
+    }
+};
 
     //! DenseMultiVector Destructor
-    virtual ~DenseMultiVector(){};
+    virtual ~DenseMultiVector(){
+
+    if (isStrided_) delete [] values_;
+    
+    };
     //@}
 
     //@{ \name Initialization methods
@@ -146,12 +157,24 @@ namespace Kokkos {
       allValues_ = values;
       isStrided_ = true;
       dataInitialized_ = true;
+
+    if (numCols_>0) {
+      values_ = new ScalarType*[numCols_];
+      for (OrdinalType i=0;i<numCols_; i++) values_[i] = allValues_+i*rowInc;
+    }
       return(0);
       };
 	
     //@}
 
     //@{ \name Multivector entry access methods.
+
+    //! Returns an array of pointers such that the ith pointer points to an array of values in the ith column of the multivector.
+    /*! Extract an array of pointers such that the ith pointer points to the values in the ith column of the multivector.  Note that
+        the values are not copied by this method.  Memory allocation is 
+	handled by the multivector object itself.  
+    */
+    virtual ScalarType ** getValues() const {return(values_);};
 
     //! Returns a pointer to an array of values for the ith column of the multivector.
     /*! Extract a pointer to the values in the ith column of the multivector.  Note that
@@ -167,11 +190,7 @@ namespace Kokkos {
 	  i<0 || // Out of range
 	  i>=numRows_ // Out of range
 	  ) return(0);
-      
-      if (isStrided_) 
-	return(allValues_+i*rowInc_);
-      else
-	return(values_[i]);
+      return(values_[i]);
     };
 	
 	

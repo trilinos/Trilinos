@@ -77,6 +77,13 @@ namespace Kokkos {
 
     //@{ \name Multivector entry access methods.
 
+    //! Returns an array of pointers such that the ith pointer points to an array of values in the ith column of the multivector.
+    /*! Extract an array of pointers such that the ith pointer points to the values in the ith column of the multivector.  Note that
+        the values are not copied by this method.  Memory allocation is 
+	handled by the multivector object itself.  
+    */
+    virtual ScalarType ** getValues() const = 0;
+
     //! Returns a pointer to an array of values in the ith column of the multivector.
     /*! Extract a pointer to the values in the ith column of the multivector.  Note that
         the values are not copied by this method.  Memory allocation is 

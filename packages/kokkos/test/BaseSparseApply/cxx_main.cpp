@@ -3,6 +3,7 @@
 #include "Kokkos_DenseMultiVector.hpp"
 #include "Kokkos_DenseVector.hpp"
 #include "Kokkos_HbMatrix.hpp"
+#include "Kokkos_BaseSparseMultiply.hpp"
 #include "GenerateHbProblem.hpp"
 
 using namespace std;
@@ -81,6 +82,17 @@ int main(int argc, char* argv[])
     } else {
       if (verbose) cout << "successful."<<endl;
     }
+    Kokkos::BaseSparseMultiply<OTYPE, STYPE> opA;
+    opA.initializeStructure(*A, true);
+    opA.initializeValues(*A, true);
+
+    opA.apply(*xexact, *x); // Use x for results
+    
+    STYPE * bv = b->getValues();
+    STYPE * xv = x->getValues();
+    STYPE sum = 0.0;
+    for (OTYPE i=0; i<numEquations; i++) sum += xv[i] - bv[i];
+    if (verbose) cout << "Difference between exact and computed = " << sum << endl;
   }
   {
     bool generateClassicHbMatrix = false;

@@ -241,9 +241,9 @@ GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented,
   bd1->initializeValues(b1->getNumRows(), b1->getValues(0), b1->getColInc());
   xexactd1->initializeValues(xexact1->getNumRows(), xexact1->getValues(0), xexact1->getColInc());
 
-  x = dynamic_cast<Kokkos::Vector<OrdinalType, ScalarType> *>(xd);
-  b = dynamic_cast<Kokkos::Vector<OrdinalType, ScalarType> *>(bd);
-  xexact = dynamic_cast<Kokkos::Vector<OrdinalType, ScalarType> *>(xexactd);
+  x = dynamic_cast<Kokkos::Vector<OrdinalType, ScalarType> *>(xd1);
+  b = dynamic_cast<Kokkos::Vector<OrdinalType, ScalarType> *>(bd1);
+  xexact = dynamic_cast<Kokkos::Vector<OrdinalType, ScalarType> *>(xexactd1);
 
   return;
 }
