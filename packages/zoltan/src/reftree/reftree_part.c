@@ -33,7 +33,7 @@ static int LB_Reftree_Partition(LB *lb, int *num_export,
        int **export_procs);
 static void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
        float *current_size, int *num_exp, float *cutoff,
-       float partition_size, float eps);
+       int num_part, float partition_size, float eps);
 static void LB_Reftree_Mark_and_Count(LB_REFTREE *subroot, int part, 
        int *num_exp);
 static void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, 
@@ -1021,6 +1021,7 @@ float cutoff;         /* the value at which the current partition is full */
 int part;             /* partition under construction */
 float current_size;   /* amount of weight consumed so far */
 float eps;            /* allowed deviation from average partition size */
+int num_part;         /* number of partitions */
 
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
 
@@ -1035,7 +1036,10 @@ float eps;            /* allowed deviation from average partition size */
         of the processors.
         Don't know what to do about unequal communication */
 
-  partition_size = root->summed_weight[0]/lb->Num_Proc;
+/* TEMP using Num_Proc for number of partitions */
+
+  num_part = lb->Num_Proc;
+  partition_size = root->summed_weight[0]/num_part;
   eps = (lb->Imbalance_Tol - 1.0)*partition_size/2.0;
 
   /*
@@ -1047,7 +1051,7 @@ float eps;            /* allowed deviation from average partition size */
   current_size = 0.0;
   cutoff = partition_size;
   LB_Reftree_Part_Recursive(lb,root,&part,&current_size,&num_exp,&cutoff,
-                            partition_size,eps);
+                            num_part,partition_size,eps);
 
   /*
    * if no exports, we're done
@@ -1104,7 +1108,7 @@ float eps;            /* allowed deviation from average partition size */
 
 static void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
                               float *current_size, int *num_exp, float *cutoff,
-                              float partition_size, float eps)
+                              int num_part, float partition_size, float eps)
 
 {
 /*
@@ -1146,7 +1150,7 @@ float newsize; /* size of partition if this subroot gets added to it */
    * See if it is close enough to filling the partition
    */
 
-    if (*current_size >= *cutoff - eps) {
+    if (*current_size >= *cutoff - eps && *part < num_part-1) {
       *part += 1;
       *cutoff = (*part + 1)*partition_size;
     }
@@ -1165,7 +1169,7 @@ float newsize; /* size of partition if this subroot gets added to it */
       subroot->partition = -1;
       for (i=0; i<subroot->num_child; i++)
         LB_Reftree_Part_Recursive(lb, &(subroot->children[i]),part,current_size,
-                                  num_exp, cutoff, partition_size, eps);
+                               num_exp, cutoff, num_part, partition_size, eps);
     }
     else {
 
@@ -1173,7 +1177,7 @@ float newsize; /* size of partition if this subroot gets added to it */
    * If there are no children, move on to the next partition
    */
 
-      while (newsize > *cutoff+eps) {
+      while (newsize > *cutoff+eps && *part < num_part-1) {
         *part += 1;
         *cutoff = (*part + 1)*partition_size;
       }
