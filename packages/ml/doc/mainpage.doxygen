@@ -1,12 +1,7 @@
 /*! \mainpage ML: Multi Level Preconditioning Package File List
 
-\htmlonly
-<CENTER>
-<IMG SRC="../ml-logo.jpg">
-</CENTER>
-\endhtmlonly
-
-
+\image html ml-logo.jpg
+\image latex ml-logo.eps
 
 \section table Table of Contents
 
@@ -15,6 +10,8 @@
 - \ref dev
 - \ref doc
 - \ref minitutorial
+- \ref mainstruct
+- \ref conversion
 - \ref debug 
 - \ref changes
 - \ref copyright
@@ -291,7 +288,35 @@ At this point, we can compute the true residual, and quit.
   return 0 ;
 }
 \endcode
-																									     
+
+
+\section mainstruct Main Structures of ML
+
+The following structure are used by ML:
+- ML_Struct (aliased simply as ML) contains the main information about the
+  ML hierarchy;
+- ML_Aggregate_Struct (aliased as ML_Aggregate) contains the main information
+  about the aggregates (for smoothed aggregates only)
+- ML_Operator_Struct (aliased as ML_Operator) defined the ML's internal matrix
+  format.
+
+ 
+\section conversion Conversion utilities from/to Epetra matrices.
+
+ML is bases on a particular (and very flexible) matrix format, defined by the
+ML_Operator struct. A set of conversion utilities exists to:
+- convert an ML_Operator into an Epetra CrsMatrix with ML_Operator2EpetraCrsMatrix()
+- convert (wrap) an Epetra_RowMatrix into an ML_Operator with
+  EpetraMatrix2MLMatrix(). This is a light-weight
+  conversion, as a suitable wrapper is created. This means that data are still
+  stored in the original Epetra_RowMatrix. Functions Epetra_ML_comm_wrapper(),
+  Epetra_ML_getrow() and Epetra_ML_matvec() are used to perform the getrow, data
+  exchange and matrix-vector product.
+
+All the conversion functions are declared in file ml_epetra_utils.h.
+
+
+
 \section debug Debugging Utilities
 
 It is possible to instruct ML_Epetra::MultiLevelPreconditioner to print out the
