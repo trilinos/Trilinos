@@ -131,16 +131,8 @@ int AztecOO::AllocAzArrays()
 
   if (proc_config_ ==0 ||options_ == 0 || params_ == 0 || status_ == 0) EPETRA_CHK_ERR(-1);
 
-#ifdef AZTEC_MPI
-  const Epetra_MpiComm * comm1 = dynamic_cast<const Epetra_MpiComm *> (&(B_->Comm()));
-  AZ_set_proc_config(proc_config_, comm1->Comm());
-#else
-  AZ_set_proc_config(proc_config_, 0);
-#endif
-
   return(0);
 }
-
 //=============================================================================
 void AztecOO::DeleteMemory() {
   if (Prec_!=0) {
@@ -231,6 +223,7 @@ int AztecOO::SetUserMatrix(Epetra_RowMatrix * UserMatrix) {
 
   UserMatrix_ = UserMatrix;
 
+  SetProcConfig(UserMatrix_->Comm());
   EPETRA_CHK_ERR(SetUserOperator(UserMatrix));
   AZ_set_MATFREE(Amat_, (void *) UserMatrix_, Epetra_Aztec_matvec);
   int N_ghost = UserMatrix_->NumMyCols() - UserMatrix_->NumMyRows();
@@ -258,6 +251,7 @@ int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
   }
 
   PrecMatrix_ = PrecMatrix;
+  SetProcConfig(PrecMatrix_->Comm());
   Pmat_ = AZ_matrix_create(N_local_);
   AZ_set_MATFREE(Pmat_, (void *) PrecMatrix_, Epetra_Aztec_matvec);
   
@@ -318,6 +312,21 @@ int AztecOO::SetRHS(Epetra_MultiVector * B) {
   if (B == 0) EPETRA_CHK_ERR(-1);
   B_ = B;
   B_->ExtractView(&b_, &b_LDA_);
+
+  return(0);
+}
+//=============================================================================
+int AztecOO::SetProcConfig(const Epetra_Comm & Comm) {
+
+  if (!procConfigSet_) {
+#ifdef AZTEC_MPI
+    const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm);
+    AZ_set_proc_config(proc_config_, comm1.Comm());
+#else
+    AZ_set_proc_config(proc_config_, 0);
+#endif
+    procConfigSet_ = true;
+  }
   return(0);
 }
 //=============================================================================

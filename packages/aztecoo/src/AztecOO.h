@@ -398,6 +398,8 @@ class AztecOO {
   int SetAztecVariables();
   int SetProblemOptions(ProblemDifficultyLevel PDL,
                             bool ProblemSymmetric);
+  int SetProcConfig(const Epetra_Comm & Comm);
+
   void DeleteMemory();
   
 
@@ -433,6 +435,7 @@ class AztecOO {
   double * rthresholds_;
   double condestThreshold_;
   bool inConstructor_; // Shuts down zero pointer error reporting while in a constructor
+  bool procConfigSet_;
 };
 
 // External prototypes
