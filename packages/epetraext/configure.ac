@@ -403,6 +403,7 @@ AC_CONFIG_FILES([
                 test/Overlap/Makefile
                 test/Permutation/Makefile
                 test/SingletonFilter/Makefile
+                test/Transpose/Makefile
                 test/SymmRCM/Makefile
                 test/View/Makefile
                 test/Zoltan/Makefile

@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP HAVE_THREADS_TRUE HAVE_THREADS_FALSE BUILD_TRANSFORM_TRUE BUILD_TRANSFORM_FALSE BUILD_INOUT_TRUE BUILD_INOUT_FALSE BUILD_COLORING_TRUE BUILD_COLORING_FALSE BUILD_ZOLTAN_TRUE BUILD_ZOLTAN_FALSE BUILD_BTF_TRUE BUILD_BTF_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_EXPERIMENTAL_TRUE BUILD_EXPERIMENTAL_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP HAVE_THREADS_TRUE HAVE_THREADS_FALSE BUILD_TRANSFORM_TRUE BUILD_TRANSFORM_FALSE BUILD_INOUT_TRUE BUILD_INOUT_FALSE BUILD_COLORING_TRUE BUILD_COLORING_FALSE BUILD_ZOLTAN_TRUE BUILD_ZOLTAN_FALSE BUILD_BTF_TRUE BUILD_BTF_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_EXPERIMENTAL_TRUE BUILD_EXPERIMENTAL_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -870,10 +870,10 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-maintainer-mode  enable make rules and dependencies not useful
-			  (and sometimes confusing) to the casual installer
-  --disable-dependency-tracking  speeds up one-time build
-  --enable-dependency-tracking   do not reject slow dependency extractors
+  --enable-maintainer-mode enable make rules and dependencies not useful
+                          (and sometimes confusing) to the casual installer
+  --disable-dependency-tracking Speeds up one-time builds
+  --enable-dependency-tracking  Do not reject slow dependency extractors
   --enable-mpi            MPI support
   --enable-threads        enable shared memory threads (default is no)
   --enable-fatal_messages enable printing of fatal error messages (default is
@@ -1454,7 +1454,11 @@ ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
 
 # Configure should create src/EpetraExt_config.h from src/EpetraExt_config.h.in
 
+# Add the stamp file to the list of files AC keeps track of,
+# along with our hook.
           ac_config_headers="$ac_config_headers src/EpetraExt_config.h:src/EpetraExt_config.h.in"
+
+
 
 
 # AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
@@ -1578,7 +1582,7 @@ test -n "$target_alias" &&
 
 # Use automake
 
-am__api_version="1.8"
+am__api_version="1.6"
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
 # incompatible versions:
@@ -1716,6 +1720,7 @@ _ACEOF
 program_transform_name=`echo $program_transform_name | sed -f conftest.sed`
 rm conftest.sed
 
+
 # expand $ac_aux_dir to an absolute path
 am_aux_dir=`cd $ac_aux_dir && pwd`
 
@@ -1727,31 +1732,6 @@ else
   am_missing_run=
   { echo "$as_me:$LINENO: WARNING: \`missing' script is too old or missing" >&5
 echo "$as_me: WARNING: \`missing' script is too old or missing" >&2;}
-fi
-
-if mkdir -p -- . 2>/dev/null; then
-  # Keeping the `.' argument allows $(mkdir_p) to be used without
-  # argument.  Indeed, we sometimes output rules like
-  #   $(mkdir_p) $(somedir)
-  # where $(somedir) is conditionally defined.
-  # (`test -n '$(somedir)' && $(mkdir_p) $(somedir)' is a more
-  # expensive solution, as it forces Make to start a sub-shell.)
-  mkdir_p='mkdir -p -- .'
-else
-  # On NextStep and OpenStep, the `mkdir' command does not
-  # recognize any option.  It will interpret all options as
-  # directories to create, and then abort because `.' already
-  # exists.
-  for d in ./-p ./--;
-  do
-    test -d $d && rmdir $d
-  done
-  # $(mkinstalldirs) is defined by Automake if mkinstalldirs exists.
-  if test -f "$ac_aux_dir/mkinstalldirs"; then
-    mkdir_p='$(mkinstalldirs)'
-  else
-    mkdir_p='$(install_sh) -d'
-  fi
 fi
 
 for ac_prog in gawk mawk nawk awk
@@ -1823,32 +1803,13 @@ echo "${ECHO_T}no" >&6
   SET_MAKE="MAKE=${MAKE-make}"
 fi
 
-rm -rf .tst 2>/dev/null
-mkdir .tst 2>/dev/null
-if test -d .tst; then
-  am__leading_dot=.
-else
-  am__leading_dot=_
-fi
-rmdir .tst 2>/dev/null
-
-# test to see if srcdir already configured
+ # test to see if srcdir already configured
 if test "`cd $srcdir && pwd`" != "`pwd`" &&
    test -f $srcdir/config.status; then
   { { echo "$as_me:$LINENO: error: source directory already configured; run \"make distclean\" there first" >&5
 echo "$as_me: error: source directory already configured; run \"make distclean\" there first" >&2;}
    { (exit 1); exit 1; }; }
 fi
-
-# test whether we have cygpath
-if test -z "$CYGPATH_W"; then
-  if (cygpath --version) >/dev/null 2>/dev/null; then
-    CYGPATH_W='cygpath -w'
-  else
-    CYGPATH_W=echo
-  fi
-fi
-
 
 # Define the identity of the package.
  PACKAGE=EpetraExt
@@ -2703,16 +2664,24 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
-DEPDIR="${am__leading_dot}deps"
+rm -f .deps 2>/dev/null
+mkdir .deps 2>/dev/null
+if test -d .deps; then
+  DEPDIR=.deps
+else
+  # MS-DOS does not allow filenames that begin with a dot.
+  DEPDIR=_deps
+fi
+rmdir .deps 2>/dev/null
+
 
           ac_config_commands="$ac_config_commands depfiles"
 
 
 am_make=${MAKE-make}
 cat > confinc << 'END'
-am__doit:
+doit:
 	@echo done
-.PHONY: am__doit
 END
 # If we don't find an include directive, just comment out the code.
 echo "$as_me:$LINENO: checking for style of include used by $am_make" >&5
@@ -2727,7 +2696,7 @@ echo "include confinc" > confmf
 # In particular we don't look at `^make:' because GNU make might
 # be invoked under some other name (usually "gmake"), in which
 # case it prints its new name instead of `make'.
-if test "`$am_make -s -f confmf 2> /dev/null | grep -v 'ing directory'`" = "done"; then
+if test "`$am_make -s -f confmf 2> /dev/null | fgrep -v 'ing directory'`" = "done"; then
    am__include=include
    am__quote=
    _am_result=GNU
@@ -2787,32 +2756,18 @@ else
   # using a relative directory.
   cp "$am_depcomp" conftest.dir
   cd conftest.dir
-  # We will build objects and dependencies in a subdirectory because
-  # it helps to detect inapplicable dependency modes.  For instance
-  # both Tru64's cc and ICC support -MD to output dependencies as a
-  # side effect of compilation, but ICC will put the dependencies in
-  # the current directory while Tru64 will put them in the object
-  # directory.
-  mkdir sub
 
   am_cv_CC_dependencies_compiler_type=none
   if test "$am_compiler_list" = ""; then
      am_compiler_list=`sed -n 's/^#*\([a-zA-Z0-9]*\))$/\1/p' < ./depcomp`
   fi
   for depmode in $am_compiler_list; do
-    # Setup a source with many dependencies, because some compilers
-    # like to wrap large dependency lists on column 80 (with \), and
-    # we should not choose a depcomp mode which is confused by this.
-    #
     # We need to recreate these files for each test, as the compiler may
     # overwrite some of them when testing with obscure command lines.
     # This happens at least with the AIX C compiler.
-    : > sub/conftest.c
-    for i in 1 2 3 4 5 6; do
-      echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      : > sub/conftst$i.h
-    done
-    echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+    echo '#include "conftest.h"' > conftest.c
+    echo 'int i;' > conftest.h
+    echo "${am__include} ${am__quote}conftest.Po${am__quote}" > confmf
 
     case $depmode in
     nosideeffect)
@@ -2830,20 +2785,13 @@ else
     # mode.  It turns out that the SunPro C++ compiler does not properly
     # handle `-M -o', and we need to detect this.
     if depmode=$depmode \
-       source=sub/conftest.c object=sub/conftest.${OBJEXT-o} \
-       depfile=sub/conftest.Po tmpdepfile=sub/conftest.TPo \
-       $SHELL ./depcomp $depcc -c -o sub/conftest.${OBJEXT-o} sub/conftest.c \
-         >/dev/null 2>conftest.err &&
-       grep sub/conftst6.h sub/conftest.Po > /dev/null 2>&1 &&
-       grep sub/conftest.${OBJEXT-o} sub/conftest.Po > /dev/null 2>&1 &&
+       source=conftest.c object=conftest.o \
+       depfile=conftest.Po tmpdepfile=conftest.TPo \
+       $SHELL ./depcomp $depcc -c conftest.c -o conftest.o >/dev/null 2>&1 &&
+       grep conftest.h conftest.Po > /dev/null 2>&1 &&
        ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
-      # icc doesn't choke on unknown options, it will just issue warnings
-      # (even with -Werror).  So we grep stderr for any message
-      # that says an option was ignored.
-      if grep 'ignoring option' conftest.err >/dev/null 2>&1; then :; else
-        am_cv_CC_dependencies_compiler_type=$depmode
-        break
-      fi
+      am_cv_CC_dependencies_compiler_type=$depmode
+      break
     fi
   done
 
@@ -2857,18 +2805,6 @@ fi
 echo "$as_me:$LINENO: result: $am_cv_CC_dependencies_compiler_type" >&5
 echo "${ECHO_T}$am_cv_CC_dependencies_compiler_type" >&6
 CCDEPMODE=depmode=$am_cv_CC_dependencies_compiler_type
-
-
-
-if
-  test "x$enable_dependency_tracking" != xno \
-  && test "$am_cv_CC_dependencies_compiler_type" = gcc3; then
-  am__fastdepCC_TRUE=
-  am__fastdepCC_FALSE='#'
-else
-  am__fastdepCC_TRUE='#'
-  am__fastdepCC_FALSE=
-fi
 
 
 ac_ext=cc
@@ -3244,32 +3180,18 @@ else
   # using a relative directory.
   cp "$am_depcomp" conftest.dir
   cd conftest.dir
-  # We will build objects and dependencies in a subdirectory because
-  # it helps to detect inapplicable dependency modes.  For instance
-  # both Tru64's cc and ICC support -MD to output dependencies as a
-  # side effect of compilation, but ICC will put the dependencies in
-  # the current directory while Tru64 will put them in the object
-  # directory.
-  mkdir sub
 
   am_cv_CXX_dependencies_compiler_type=none
   if test "$am_compiler_list" = ""; then
      am_compiler_list=`sed -n 's/^#*\([a-zA-Z0-9]*\))$/\1/p' < ./depcomp`
   fi
   for depmode in $am_compiler_list; do
-    # Setup a source with many dependencies, because some compilers
-    # like to wrap large dependency lists on column 80 (with \), and
-    # we should not choose a depcomp mode which is confused by this.
-    #
     # We need to recreate these files for each test, as the compiler may
     # overwrite some of them when testing with obscure command lines.
     # This happens at least with the AIX C compiler.
-    : > sub/conftest.c
-    for i in 1 2 3 4 5 6; do
-      echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      : > sub/conftst$i.h
-    done
-    echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
+    echo '#include "conftest.h"' > conftest.c
+    echo 'int i;' > conftest.h
+    echo "${am__include} ${am__quote}conftest.Po${am__quote}" > confmf
 
     case $depmode in
     nosideeffect)
@@ -3287,20 +3209,13 @@ else
     # mode.  It turns out that the SunPro C++ compiler does not properly
     # handle `-M -o', and we need to detect this.
     if depmode=$depmode \
-       source=sub/conftest.c object=sub/conftest.${OBJEXT-o} \
-       depfile=sub/conftest.Po tmpdepfile=sub/conftest.TPo \
-       $SHELL ./depcomp $depcc -c -o sub/conftest.${OBJEXT-o} sub/conftest.c \
-         >/dev/null 2>conftest.err &&
-       grep sub/conftst6.h sub/conftest.Po > /dev/null 2>&1 &&
-       grep sub/conftest.${OBJEXT-o} sub/conftest.Po > /dev/null 2>&1 &&
+       source=conftest.c object=conftest.o \
+       depfile=conftest.Po tmpdepfile=conftest.TPo \
+       $SHELL ./depcomp $depcc -c conftest.c -o conftest.o >/dev/null 2>&1 &&
+       grep conftest.h conftest.Po > /dev/null 2>&1 &&
        ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
-      # icc doesn't choke on unknown options, it will just issue warnings
-      # (even with -Werror).  So we grep stderr for any message
-      # that says an option was ignored.
-      if grep 'ignoring option' conftest.err >/dev/null 2>&1; then :; else
-        am_cv_CXX_dependencies_compiler_type=$depmode
-        break
-      fi
+      am_cv_CXX_dependencies_compiler_type=$depmode
+      break
     fi
   done
 
@@ -3314,18 +3229,6 @@ fi
 echo "$as_me:$LINENO: result: $am_cv_CXX_dependencies_compiler_type" >&5
 echo "${ECHO_T}$am_cv_CXX_dependencies_compiler_type" >&6
 CXXDEPMODE=depmode=$am_cv_CXX_dependencies_compiler_type
-
-
-
-if
-  test "x$enable_dependency_tracking" != xno \
-  && test "$am_cv_CXX_dependencies_compiler_type" = gcc3; then
-  am__fastdepCXX_TRUE=
-  am__fastdepCXX_FALSE='#'
-else
-  am__fastdepCXX_TRUE='#'
-  am__fastdepCXX_FALSE=
-fi
 
 
 BASE_CXX=${CXX}
@@ -3421,7 +3324,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3424:" \
+echo "$as_me:3327:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6817,7 +6720,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6820: \"$ac_link\") >&5
+(eval echo $as_me:6723: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6895,7 +6798,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6898: \"$ac_link\") >&5
+(eval echo $as_me:6801: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10030,7 +9933,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10033: \"$ac_link\") >&5
+(eval echo $as_me:9936: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10108,7 +10011,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10111: \"$ac_link\") >&5
+(eval echo $as_me:10014: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10305,7 +10208,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Output files
 # ------------------------------------------------------------------------
 ##
-                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/MapColoring/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/inout/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile example/Makefile example/inout/Makefile example/zoltan/Makefile"
+                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/MapColoring/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/Transpose/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/inout/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile example/Makefile example/inout/Makefile example/zoltan/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10410,20 +10313,6 @@ if test -z "${AMDEP_TRUE}" && test -z "${AMDEP_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"AMDEP\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"AMDEP\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"am__fastdepCC\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"am__fastdepCC\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"am__fastdepCXX\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"am__fastdepCXX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -10986,6 +10875,7 @@ do
   "test/Overlap/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Overlap/Makefile" ;;
   "test/Permutation/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Permutation/Makefile" ;;
   "test/SingletonFilter/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SingletonFilter/Makefile" ;;
+  "test/Transpose/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Transpose/Makefile" ;;
   "test/SymmRCM/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SymmRCM/Makefile" ;;
   "test/View/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/View/Makefile" ;;
   "test/Zoltan/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Zoltan/Makefile" ;;
@@ -11105,7 +10995,6 @@ s,@target_os@,$target_os,;t t
 s,@INSTALL_PROGRAM@,$INSTALL_PROGRAM,;t t
 s,@INSTALL_SCRIPT@,$INSTALL_SCRIPT,;t t
 s,@INSTALL_DATA@,$INSTALL_DATA,;t t
-s,@CYGPATH_W@,$CYGPATH_W,;t t
 s,@PACKAGE@,$PACKAGE,;t t
 s,@VERSION@,$VERSION,;t t
 s,@ACLOCAL@,$ACLOCAL,;t t
@@ -11118,10 +11007,8 @@ s,@install_sh@,$install_sh,;t t
 s,@STRIP@,$STRIP,;t t
 s,@ac_ct_STRIP@,$ac_ct_STRIP,;t t
 s,@INSTALL_STRIP_PROGRAM@,$INSTALL_STRIP_PROGRAM,;t t
-s,@mkdir_p@,$mkdir_p,;t t
 s,@AWK@,$AWK,;t t
 s,@SET_MAKE@,$SET_MAKE,;t t
-s,@am__leading_dot@,$am__leading_dot,;t t
 s,@CC@,$CC,;t t
 s,@CFLAGS@,$CFLAGS,;t t
 s,@LDFLAGS@,$LDFLAGS,;t t
@@ -11136,14 +11023,10 @@ s,@AMDEP_TRUE@,$AMDEP_TRUE,;t t
 s,@AMDEP_FALSE@,$AMDEP_FALSE,;t t
 s,@AMDEPBACKSLASH@,$AMDEPBACKSLASH,;t t
 s,@CCDEPMODE@,$CCDEPMODE,;t t
-s,@am__fastdepCC_TRUE@,$am__fastdepCC_TRUE,;t t
-s,@am__fastdepCC_FALSE@,$am__fastdepCC_FALSE,;t t
 s,@CXX@,$CXX,;t t
 s,@CXXFLAGS@,$CXXFLAGS,;t t
 s,@ac_ct_CXX@,$ac_ct_CXX,;t t
 s,@CXXDEPMODE@,$CXXDEPMODE,;t t
-s,@am__fastdepCXX_TRUE@,$am__fastdepCXX_TRUE,;t t
-s,@am__fastdepCXX_FALSE@,$am__fastdepCXX_FALSE,;t t
 s,@F77@,$F77,;t t
 s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t
@@ -11645,28 +11528,12 @@ echo "$as_me: error: cannot create directory \"$ac_dir\"" >&2;}
     cat $tmp/config.h
     rm -f $tmp/config.h
   fi
-# Compute $ac_file's index in $config_headers.
-_am_stamp_count=1
-for _am_header in $config_headers :; do
-  case $_am_header in
-    $ac_file | $ac_file:* )
-      break ;;
-    * )
-      _am_stamp_count=`expr $_am_stamp_count + 1` ;;
+  # Run the commands associated with the file.
+  case $ac_file in
+    src/EpetraExt_config.h ) # update the timestamp
+echo 'timestamp for src/EpetraExt_config.h:src/EpetraExt_config.h.in' >"src/stamp-h1"
+ ;;
   esac
-done
-echo "timestamp for $ac_file" >`(dirname $ac_file) 2>/dev/null ||
-$as_expr X$ac_file : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X$ac_file : 'X\(//\)[^/]' \| \
-	 X$ac_file : 'X\(//\)$' \| \
-	 X$ac_file : 'X\(/\)' \| \
-	 .     : '\(.\)' 2>/dev/null ||
-echo X$ac_file |
-    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{ s//\1/; q; }
-  	  /^X\(\/\/\)[^/].*/{ s//\1/; q; }
-  	  /^X\(\/\/\)$/{ s//\1/; q; }
-  	  /^X\(\/\).*/{ s//\1/; q; }
-  	  s/.*/./; q'`/stamp-h$_am_stamp_count
 done
 _ACEOF
 cat >>$CONFIG_STATUS <<\_ACEOF

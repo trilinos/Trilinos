@@ -49,6 +49,7 @@ EXTRA_TRANSFORM_H = \
      $(srcdir)/transform/EpetraExt_View_CrsMatrix.h \
      $(srcdir)/transform/EpetraExt_View_MultiVector.h \
      $(srcdir)/transform/EpetraExt_Transpose_CrsGraph.h \
+     $(srcdir)/transform/EpetraExt_Transpose_RowMatrix.h \
      $(srcdir)/transform/EpetraExt_Scale_LinearProblem.h \
      $(srcdir)/transform/EpetraExt_CrsSingletonFilter_LinearProblem.h \
      $(srcdir)/transform/EpetraExt_Overlap_CrsGraph.h \
@@ -66,6 +67,7 @@ EXTRA_TRANSFORM = \
      $(srcdir)/transform/EpetraExt_View_CrsMatrix.cpp \
      $(srcdir)/transform/EpetraExt_View_MultiVector.cpp \
      $(srcdir)/transform/EpetraExt_Transpose_CrsGraph.cpp \
+     $(srcdir)/transform/EpetraExt_Transpose_RowMatrix.cpp \
      $(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.cpp \
      $(srcdir)/transform/EpetraExt_Scale_LinearProblem.cpp \
      $(srcdir)/transform/EpetraExt_CrsSingletonFilter_LinearProblem.cpp \

@@ -32,11 +32,11 @@ if BUILD_TRANSFORM
 
 if BUILD_EXPERIMENTAL
 
-TRANSFORM_SUBDIRS = Composite Permutation SingletonFilter View Overlap SymmRCM scripts
+TRANSFORM_SUBDIRS = Composite Permutation SingletonFilter View Overlap Transpose SymmRCM scripts
 
 else
 
-TRANSFORM_SUBDIRS = Composite Permutation SingletonFilter View Overlap scripts
+TRANSFORM_SUBDIRS = Composite Permutation SingletonFilter View Overlap Transpose scripts
 
 endif
 

@@ -40,6 +40,7 @@ TRANSFORM_H = \
 	$(srcdir)/EDT_CrsMatrix_View.h \
 	$(srcdir)/EDT_MultiVector_View.h \
 	$(srcdir)/EDT_CrsGraph_Transpose.h \
+	$(srcdir)/EDT_RowMatrix_Transpose.h \
         $(srcdir)/EDT_CrsGraph_MapColoring.h \
         $(srcdir)/EDT_CrsGraph_MapColoringIndex.h \
 	$(srcdir)/EDT_LinearProblem_StaticCondensation.h \
@@ -52,6 +53,7 @@ TRANSFORM = \
 	$(srcdir)/EDT_CrsMatrix_View.cpp \
 	$(srcdir)/EDT_MultiVector_View.cpp \
 	$(srcdir)/EDT_CrsGraph_Transpose.cpp \
+	$(srcdir)/EDT_RowMatrix_Transpose.cpp \
         $(srcdir)/EDT_CrsGraph_MapColoring.cpp \
         $(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp \
 	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp \
