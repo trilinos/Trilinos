@@ -63,14 +63,15 @@ namespace LOCA {
 
     public:
 
-      //! Constructor with default scaling vector set to all one's
-      Group(LOCA::LAPACK::Interface& i);
+      //! Constructor 
+      Group(LOCA::LAPACK::Interface& i, bool hasMassMat = false);
 
-      //! Constructor with specified scaling vector
-      Group(LOCA::LAPACK::Interface& i, const NOX::LAPACK::Vector& s);
+      //! Constructor
+      Group(NOX::Parameter::List& params,
+	    LOCA::LAPACK::Interface& i, bool hasMassMat = false);
 
       //! Copy constructor
-      Group(const LOCA::LAPACK::Group& source, 
+      Group(const Group& source, 
 	    NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
@@ -136,22 +137,39 @@ namespace LOCA {
       //! Print out a vector and a parameter
       void printSolution(const NOX::Abstract::Vector& x_, const double conParam) const;
 
-      //! Set scale vector
-      virtual void setScaleVec(const NOX::Abstract::Vector& s);
-
-      //! Set scale vector
-      void setScaleVec(const NOX::LAPACK::Vector& s);
-
-      //! Get scale vector
-      virtual const NOX::Abstract::Vector& getScaleVec() const;
+      //! Compute eigenvalues/eigenvectors
+      virtual NOX::Abstract::Group::ReturnType
+      computeEigenvalues(NOX::Parameter::List& params);
 
       virtual NOX::Abstract::Group::ReturnType 
       augmentJacobianForHomotopy(double conParamValue);
 
+      virtual NOX::Abstract::Group::ReturnType
+      computeMassMatrix();
+
+      virtual NOX::Abstract::Group::ReturnType
+      applyMassMatrix(const NOX::Abstract::Vector& input,
+		      NOX::Abstract::Vector& result) const;
+
+      virtual NOX::Abstract::Group::ReturnType
+      applyMassMatrix(const NOX::LAPACK::Vector& input,
+		      NOX::LAPACK::Vector& result) const;
+
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplexInverseMulti(NOX::Parameter::List& params,
+			       const NOX::Abstract::Vector* const* inputs_real,
+			       const NOX::Abstract::Vector* const* inputs_imag,
+			       double frequency,
+			       NOX::Abstract::Vector** results_real,
+			       NOX::Abstract::Vector** results_imag,
+			       int nVecs) const;
+
+      bool hasMass() const;
+      bool isMass() const;
+
     protected:
 
-      //! Compute a default scale vector (vector of all one's)
-      void computeScaleVec();
+      void resetIsValid();
 
     protected:
       //! Referece to current problem
@@ -160,8 +178,15 @@ namespace LOCA {
       //! vector of parameters
       ParameterVector params;
 
-      //! Scaling vector
-      NOX::LAPACK::Vector scaleVec;
+      //! Mass matrix
+      NOX::LAPACK::Matrix massMatrix;
+
+      //! Flag indicating whether we have a mass matrix
+      bool hasMassMatrix;
+
+      //! Flag indicating whether mass matrix is valid
+      bool isValidMass;
+      
     };
 
   } // namespace LAPACK

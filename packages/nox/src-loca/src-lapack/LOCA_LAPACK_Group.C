@@ -31,32 +31,49 @@
 //@HEADER
 
 #include "LOCA_LAPACK_Group.H"	// class definition
+#include "NOX_BLAS_Wrappers.H"
 #include "NOX_LAPACK_Wrappers.H"
 
-LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface) : 
+LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface,
+			   bool hasMassMat) : 
   NOX::LAPACK::Group(interface), 
+  LOCA::Abstract::Group(),
   locaProblemInterface(interface), 
   params(),
-  scaleVec(dynamic_cast<const NOX::LAPACK::Vector&>(getX()))
+  massMatrix(),
+  hasMassMatrix(hasMassMat),
+  isValidMass(false)
 {
-  computeScaleVec();  // use default method for computing scale vector
+  if (hasMassMat)
+    massMatrix = NOX::LAPACK::Matrix(jacobianMatrix.numRows(),
+				     jacobianMatrix.numCols());
 }
 
-LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface, 
-			   const NOX::LAPACK::Vector& s) : 
+LOCA::LAPACK::Group::Group(NOX::Parameter::List& params,
+			   LOCA::LAPACK::Interface& interface,
+			   bool hasMassMat) : 
   NOX::LAPACK::Group(interface), 
+  LOCA::Abstract::Group(params),
   locaProblemInterface(interface), 
   params(),
-  scaleVec(s)
+  massMatrix(),
+  hasMassMatrix(hasMassMat),
+  isValidMass(false)
 {
+  if (hasMassMat)
+    massMatrix = NOX::LAPACK::Matrix(jacobianMatrix.numRows(),
+				     jacobianMatrix.numCols());
 }
 
 LOCA::LAPACK::Group::Group(const LOCA::LAPACK::Group& source, 
 			   NOX::CopyType type) : 
   NOX::LAPACK::Group(source,type), 
+  LOCA::Abstract::Group(source,type),
   locaProblemInterface(source.locaProblemInterface), 
   params(source.params),
-  scaleVec(source.scaleVec)
+  massMatrix(source.massMatrix),
+  hasMassMatrix(source.hasMassMatrix),
+  isValidMass(source.isValidMass)
 {
 }
 
@@ -80,9 +97,15 @@ LOCA::LAPACK::Group::operator=(const NOX::LAPACK::Group& source) {
 
 LOCA::LAPACK::Group& 
 LOCA::LAPACK::Group::operator=(const LOCA::LAPACK::Group& source) {
+
   NOX::LAPACK::Group::operator=(source);
+  LOCA::Abstract::Group::operator=(source);
+
   params = source.params;
-  scaleVec = source.scaleVec;
+  massMatrix = source.massMatrix;
+  hasMassMatrix = source.hasMassMatrix;
+  isValidMass = source.isValidMass;
+
   return *this;
 }
 
@@ -213,30 +236,95 @@ LOCA::LAPACK::Group::printSolution(const NOX::Abstract::Vector& x_,
    printSolution(dynamic_cast<const NOX::LAPACK::Vector&>(x_), conParam);
 }
 
-void
-LOCA::LAPACK::Group::setScaleVec(const NOX::Abstract::Vector& s) {
-  setScaleVec( dynamic_cast<const NOX::LAPACK::Vector&>(s) );
-}
+NOX::Abstract::Group::ReturnType 
+LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
+{
+  // Size of matrix
+  int n = jacobianMatrix.numRows();
 
-void
-LOCA::LAPACK::Group::setScaleVec(const NOX::LAPACK::Vector& s) {
-  scaleVec = s;
-}
+  // Space to hold right eigenvectors
+  double *vr = new double[n*n];
 
-const NOX::Abstract::Vector&
-LOCA::LAPACK::Group::getScaleVec() const {
-  return scaleVec;
-}
+  // Space to hold real and imaginary eigenvalues
+  double *alphar = new double[n];
+  double *alphai = new double[n];
+  double *beta = new double[n];
 
-void
-LOCA::LAPACK::Group::computeScaleVec() {
-  scaleVec.init(1.0);
+  // Size of work array, set to -1 to do a workspace query
+  int lwork = -1;
+
+  // Initial work "array"
+  double work0;
+
+  // Actual work array
+  double *work;
+
+  // Return code
+  int info;
+
+  // Copy Jacobian matrix since lapack routines overwrite it
+  NOX::LAPACK::Matrix J(NOX::LAPACK::Group::jacobianMatrix);
+
+  NOX::LAPACK::Matrix M;
+
+  // First do a workspace query
+  if (hasMassMatrix) {
+    // Copy mass matrix since lapack routines overwrite it
+    M = massMatrix;
+
+    DGGEV_F77("N", "V", &n, &J(0,0), &n, &M(0,0), &n, alphar, alphai, beta,
+	      vr, &n, vr, &n, &work0, &lwork, &info);
+
+  }
+  else {
+    DGEEV_F77("N", "V", &n, &J(0,0), &n, alphar, alphai, 
+	      vr, &n, vr, &n, &work0, &lwork, &info);
+  }
+
+  // Allocate work array
+  lwork = (int) work0;
+  work = new double[lwork];
+
+  // Calculate eigenvalues, eigenvectors
+  if (hasMassMatrix) {
+    DGGEV_F77("N", "V", &n, &J(0,0), &n, &M(0,0), &n, alphar, alphai, beta,
+	      vr, &n, vr, &n, work, &lwork, &info);
+  }
+  else {
+    DGEEV_F77("N", "V", &n, &J(0,0), &n, alphar, alphai, 
+	      vr, &n, vr, &n, work, &lwork, &info);
+  }
+
+  // Check for success
+  if (info != 0)
+    return NOX::Abstract::Group::Failed;
+
+  // Print out eigenvalues
+  if (hasMassMatrix) {
+    cout << "Generalized eigenvalues: " << endl;
+    for (int i=0; i<n; i++)
+      cout << alphar[i]/beta[i] << " + i" << alphai[i]/beta[i] << endl;
+  }
+  else {
+    cout << "Eigenvalues: " << endl;
+    for (int i=0; i<n; i++)
+      cout << alphar[i] << " + i" << alphai[i] << endl;
+  }
+
+  delete [] alphar;
+  delete [] alphai;
+  delete [] beta;
+  delete [] vr;
+  delete [] work;
+
+  return NOX::Abstract::Group::Ok;
+  
 }
 
 NOX::Abstract::Group::ReturnType 
 LOCA::LAPACK::Group::augmentJacobianForHomotopy(double conParamValue)
 {
-  int size = scaleVec.length();
+  int size = NOX::LAPACK::Group::xVector.length();
 
   // Scale the matrix by the value of the homotopy continuation param
   jacobianMatrix.scale(conParamValue);
@@ -246,4 +334,133 @@ LOCA::LAPACK::Group::augmentJacobianForHomotopy(double conParamValue)
     jacobianMatrix(i,i) += (1.0 - conParamValue);
 
   return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::LAPACK::Group::computeMassMatrix()
+{
+  // Skip if the mass matrix is already valid
+  if (isValidMass || !hasMassMatrix)
+    return NOX::Abstract::Group::Ok;
+
+  isValidMass = locaProblemInterface.computeMass(massMatrix, xVector);
+
+  if (isValidMass)
+    return NOX::Abstract::Group::Ok;
+  else
+    return NOX::Abstract::Group::Failed;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::LAPACK::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
+				     NOX::Abstract::Vector& result) const
+{
+  const NOX::LAPACK::Vector& lapackInput = 
+    dynamic_cast<const NOX::LAPACK::Vector&>(input);
+  NOX::LAPACK::Vector& lapackResult = 
+    dynamic_cast<NOX::LAPACK::Vector&>(result);
+  return applyMassMatrix(lapackInput, lapackResult);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::LAPACK::Group::applyMassMatrix(const NOX::LAPACK::Vector& input,
+		      NOX::LAPACK::Vector& result) const
+{
+  // Check validity of the mass matrix
+  if (!isMass()) 
+    return NOX::Abstract::Group::BadDependency;
+
+  // Compute result = M * input
+  int n = input.length();
+
+  DGEMV_F77("N", &n, &n, &NOX::LAPACK::d_one, &massMatrix(0,0), &n, &input(0),
+	    &NOX::LAPACK::i_one, &NOX::LAPACK::d_zero, &result(0), 
+	    &NOX::LAPACK::i_one);
+
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::LAPACK::Group::applyComplexInverseMulti(
+			       NOX::Parameter::List& params,
+			       const NOX::Abstract::Vector* const* inputs_real,
+			       const NOX::Abstract::Vector* const* inputs_imag,
+			       double frequency,
+			       NOX::Abstract::Vector** results_real,
+			       NOX::Abstract::Vector** results_imag,
+			       int nVecs) const
+{
+  if (!isMass()) 
+    return NOX::Abstract::Group::BadDependency;
+
+  if (nVecs < 1)
+    return NOX::Abstract::Group::Failed;
+
+  int n = inputs_real[0]->length();
+  int m = nVecs;
+  int info;
+  int *piv = new int[n];
+
+  // Copy all input vectors into one (complex) matrix
+  NOX::LAPACK::Matrix B(2*n,m);
+  const NOX::LAPACK::Vector* constVecPtrR;
+  const NOX::LAPACK::Vector* constVecPtrI;
+  for (int j=0; j<m; j++) {
+    constVecPtrR = dynamic_cast<const NOX::LAPACK::Vector*>(inputs_real[j]);
+    constVecPtrI = dynamic_cast<const NOX::LAPACK::Vector*>(inputs_imag[j]);
+    for (int i=0; i<n; i++) {
+      B(2*i,j) = (*constVecPtrR)(i);
+      B(2*i+1,j) = (*constVecPtrI)(i);
+    }
+  }
+
+  // Create complex matrix J+i*w*M
+  NOX::LAPACK::Matrix A(2*n,n);
+  for (int j=0; j<n; j++) {
+    for (int i=0; i<n; i++) {
+      A(2*i,j) = jacobianMatrix(i,j);
+      A(2*i+1,j) = frequency*massMatrix(i,j);
+    }
+  }
+
+  // Solve A*X = B
+  ZGESV_F77(&n, &m, &A(0,0), &n, piv, &B(0,0), &n, &info);
+
+  if (info != 0)
+      return NOX::Abstract::Group::Failed;
+
+  // Copy result from matrix
+  NOX::LAPACK::Vector* vecPtrR;
+  NOX::LAPACK::Vector* vecPtrI;
+  for (int j=0; j<m; j++) {
+    vecPtrR = dynamic_cast<NOX::LAPACK::Vector*>(results_real[j]);
+    vecPtrI = dynamic_cast<NOX::LAPACK::Vector*>(results_imag[j]);
+    for (int i=0; i<n; i++) {
+      (*vecPtrR)(i) = B(2*i,j);
+      (*vecPtrI)(i) = B(2*i+1,j);
+    }
+  }
+
+  delete [] piv;
+
+  return NOX::Abstract::Group::Ok;
+}
+
+bool
+LOCA::LAPACK::Group::hasMass() const 
+{
+  return hasMassMatrix;
+}
+
+bool
+LOCA::LAPACK::Group::isMass() const 
+{
+  return isValidMass && hasMassMatrix;
+}
+
+void
+LOCA::LAPACK::Group::resetIsValid()
+{
+  NOX::LAPACK::Group::resetIsValid();
+  isValidMass = false;
 }

@@ -68,6 +68,10 @@ namespace LOCA {
       virtual void printSolution(const NOX::LAPACK::Vector& x_,
                                  const double conParam) {}
 
+      //! Compute mass matrix.  Returns true if computation was successful.
+      virtual bool computeMass(NOX::LAPACK::Matrix& J, 
+			       const NOX::LAPACK::Vector & x) { return false; }
+
     };
   } // namespace LAPACK
 } // namespace LOCA
