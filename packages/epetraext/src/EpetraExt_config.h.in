@@ -92,6 +92,9 @@
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
 
+/* Define if want to build epetraext-matlab */
+#undef HAVE_MATLAB
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 

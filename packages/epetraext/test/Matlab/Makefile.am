@@ -26,57 +26,31 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_TESTS
+EXEEXT = .exe
 
-if BUILD_TRANSFORM
+noinst_PROGRAMS = matlab_test
 
-if BUILD_EXPERIMENTAL
-COMPOSITE_SUBDIR = Composite
-SYMMRCM_SUBDIR = SymmRCM
-endif
+inout_test_SOURCES = \
+  $(srcdir)/cxx_main.cpp \
+  $(top_srcdir)/test/epetra_test_err.h
 
-PERMUTATION_SUBDIR = Permutation
-SINGLETONFILTER_SUBDIR = SingletonFilter
-VIEW_SUBDIR = View
-OVERLAP_SUBDIR = Overlap
-TRANSPOSE_SUBDIR = Transpose
-SCRIPTS_SUBDIR = scripts
-endif
+inout_test_DEPENDENCIES = \
+  $(top_builddir)/src/libepetraext.a \
+  $(top_builddir)/../epetra/src/libepetra.a
 
-TRANSFORM_SUBDIRS = $(COMPOSITE_SUBDIR) $(PERMUTATION_SUBDIR) \
-	$(SINGLETONFILTER_SUBDIR) $(VIEW_SUBDIR) $(OVERLAP_SUBDIR) \
-	$(TRANSPOSE_SUBDIR) $(SYMMRCM_SUBDIR) $(SCRIPTS_SUBDIR) 
+inout_test_CXXFLAGS = -I$(top_srcdir)/src/matlab \
+                      -I$(top_srcdir)/src \
+                      -I$(top_builddir)/src \
+                      -I$(top_srcdir)/../epetra/src \
+                      -I$(top_builddir)/../epetra/src \
+                      -I$(top_srcdir)/../triutils/src \
+                      -I$(top_builddir)/../triutils/src
 
-if BUILD_BTF
+inout_test_LDADD = \
+  $(top_builddir)/src/libepetraext.a \
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../triutils/src/libtriutils.a \
+  $(LIBS) \
+  $(BLAS_LIBS) \
+  $(FLIBS)
 
-BTF_SUBDIRS = BTF
-
-endif
-
-if BUILD_INOUT
-
-INOUT_SUBDIRS = inout
-
-endif 
-
-if BUILD_ZOLTAN
-
-ZOLTAN_SUBDIRS = Zoltan
-
-endif
-
-if BUILD_COLORING
-
-COLORING_SUBDIRS = MapColoring
-
-endif
-
-if BUILD_MATLAB
-
-MATLAB_SUBDIRS = Matlab
-
-endif
-
-SUBDIRS = MatrixMatrix $(TRANSFORM_SUBDIRS) $(BTF_SUBDIRS) $(INOUT_SUBDIRS) $(ZOLTAN_SUBDIRS) $(COLORING_SUBDIRS) $(MATLAB_SUBDIRS)
-
-endif

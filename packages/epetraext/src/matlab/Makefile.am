@@ -34,12 +34,10 @@
 # ------------------------------------------------------------------------
 
 MATLAB_H = \
-     $(srcdir)/EpetraExt_RowMatrixOut.h \
-     $(srcdir)/EpetraExt_VectorIn.h
+     $(srcdir)/EpetraExt_MatlabEngine.h
 
 MATLAB = \
-     $(srcdir)/EpetraExt_RowMatrixOut.cpp \
-     $(srcdir)/EpetraExt_MultiVectorOut.cpp \
+     $(srcdir)/EpetraExt_MatlabEngine.cpp
 
 # ------------------------------------------------------------------------
 # EpetraExt inout library specifications
