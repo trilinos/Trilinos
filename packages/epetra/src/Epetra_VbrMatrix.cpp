@@ -613,7 +613,9 @@ int Epetra_VbrMatrix::EndInsertValues() {
       LDAs_[CurBlockRow_][j] = RowDim;
     }
   }
-    
+
+  delete [] ValidBlockIndices;
+
   EPETRA_CHK_ERR(Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_)); // Update graph
   
   EPETRA_CHK_ERR(ierr);
