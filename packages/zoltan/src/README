@@ -12,6 +12,53 @@
 #    $Revision$
 ##############################################################################
 
+Contacts:
+
+  Karen Devine or Bruce Hendrickson
+  Parallel Computing Sciences Department
+  Sandia National Laboratories
+  P.O. Box 5800
+  Albuquerque, NM  87185-1111
+
+  kddevin@cs.sandia.gov or bahendr@cs.sandia.gov
+
+##############################################################################
+
+License:
+
+Zoltan is distributed under the terms of the GNU Lesser General Public 
+License 2.1.  A copy of this license is included in this directory.
+
+This library is free software; you can redistribute it and/or modify it under
+the terms of the GNU Lesser General Public License as published by the Free
+Software Foundation, either version 2.1 of the License or (at your option) any
+later version.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this library; if not, write to the Free Software Foundation, Inc., 
+59 Temple Place, Suite 330, Boston, MA  02111-1307, USA.
+
+##############################################################################
+
+Important Notice:
+
+Neither Sandia, the government, the DOE, nor any of their employees, makes
+any warranty, express or implied, or assumes any legal liability or
+responsibility for the accuracy, completeness, or usefulness of any
+information, apparatus, product, or process disclosed, or represents that
+its use would not infringe privately owned rights. This information is made
+available on an "AS-IS" basis.
+ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+EXCLUDED HEREUNDER.
+Neither Sandia nor the Government, nor their agents, officers and employees
+shall be liable for any loss, damage (including, incidental, consequential
+and special), injury or other casualty of whatsoever kind, or by whomsoever
+caused, to the person or property of anyone arising out of or resulting from
+this information, or the accuracy and validity of this information. 
+
+##############################################################################
+
 
 Top-Level Zoltan Library Directory
 
