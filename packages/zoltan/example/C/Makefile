@@ -9,19 +9,20 @@ DOTDOTLIBDIR= $(subst -L../, -L../../, $(LIBDIR))
 all:    $(CEXAMPLES)
 
 % : %.c ../lib/libexzoltan.a 
-	$(CC) $(CFLAGS) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
+	@echo "Building $@"
+	@$(CC) $(CFLAGS) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
 
 ../lib/libexzoltan.a:
-	cd ..; $(MAKE) exampleLibrary
+	@cd ..; $(MAKE) exampleLibrary
 
 subDirs:
-	cd sparse_matrix; \
+	@cd sparse_matrix; \
         $(MAKE) all "CC=$(CC)" "CFLAGS=$(CFLAGS)" \
                     "INCLUDE=$(DOTDOTINCLUDE)" \
                     "LIBDIR=$(DOTDOTLIBDIR)" "LIBS=$(LIBS)"
 clean:
-	rm -f *.o $(CEXAMPLES)
-	cd sparse_matrix; $(MAKE) clean
+	rm -f *.o  $(CEXAMPLES)
+	@cd sparse_matrix; $(MAKE) clean
 
 
 

@@ -107,20 +107,20 @@ endif
 all: $(TARGETS)
 
 exampleLibrary:
-	cd lib; $(MAKE) all "CC=$(CC)" "AR=$(AR)" "CFLAGS=$(CFLAGS)"\
+	@cd lib; $(MAKE) all "CC=$(CC)" "AR=$(AR)" "CFLAGS=$(CFLAGS)"\
                             "INCLUDE=$(INCLUDE)" 
 
 C_Examples:
-	cd C; $(MAKE) all "CC=$(CC)" "CFLAGS=$(CFLAGS)" "INCLUDE=$(INCLUDE)" \
+	@cd C; $(MAKE) all "CC=$(CC)" "CFLAGS=$(CFLAGS)" "INCLUDE=$(INCLUDE)" \
                           "LIBDIR=$(LIBDIR)" "LIBS=$(LIBS)"
 
 CPP_Examples:
-	cd CPP; $(MAKE) all "CC=$(CPPC)" "CFLAGS=$(CFLAGS)" "INCLUDE=$(INCLUDE)" \
+	@cd CPP; $(MAKE) all "CC=$(CPPC)" "CFLAGS=$(CFLAGS)" "INCLUDE=$(INCLUDE)" \
                           "LIBDIR=$(LIBDIR)" "LIBS=$(LIBS)"
 
 
 clean:
-	cd lib; $(MAKE) clean
-	cd C; $(MAKE) clean
-	cd CPP; $(MAKE) clean
+	@cd lib; $(MAKE) clean
+	@cd C; $(MAKE) clean
+	@cd CPP; $(MAKE) clean
 
