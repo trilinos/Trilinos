@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_TRIUTILS)
+#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_TRIUTILS)
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 #endif
 
   // size of the global matrix (must be a square number)
-  const int NumPoints = 10000;
+  const int NumPoints = 900;
 
   // build the matrix corresponding to a 2D Laplacian on a
   // structured grid.
@@ -168,8 +168,10 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  puts("please configure IFPACK with --enable-aztecoo --enable-teuchos");
-  puts("--enable-amesos --enable-triutils to run this test");
+  puts("please configure IFPACK with:");
+  puts("--enable-aztecoo");
+  puts("--enable-teuchos");
+  puts("--enable-triutils");
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
