@@ -28,6 +28,7 @@
 !/****************************************************************************/
 !/****************************************************************************/
 
+
 program fdriver
 use zoltan
 use mpi_h
@@ -47,13 +48,13 @@ implicit none
   integer(LB_INT) :: error, i, j
 
   type(PARIO_INFO) :: pio_info
-  type(ELEM_INFO), pointer :: elements(:)
   type(PROB_INFO) :: prob
 
   integer, parameter :: MAX_PROCNAME_LEN = 64
   character(len=MAX_PROCNAME_LEN) :: procname
   integer(LB_INT) :: int_procname(MAX_PROCNAME_LEN)
   integer(LB_INT) :: namelen
+  integer(LB_INT) :: alloc_stat
 
 ! interface blocks for external procedures
 
@@ -78,11 +79,13 @@ interface
    type(PROB_INFO) :: prob
    end subroutine print_input_info
 
-   logical function output_results(Proc, Num_Proc, prob, pio_info, elements)
+   logical function output_results(cmd_file, Proc, Num_Proc, prob, pio_info, &
+                                   elements)
    use zoltan
    use dr_const
    use dr_input
    use lb_user_const
+   character(len=*) :: cmd_file
    integer(LB_INT) :: Proc, Num_Proc
    type(PROB_INFO) :: prob
    type(PARIO_INFO) :: pio_info
@@ -124,9 +127,15 @@ end interface
 
 !  /* initialize some variables */
 
+  allocate(Mesh, stat=alloc_stat)
+  if (alloc_stat /= 0) then
+    print *, "fatal: insufficient memory"
+    exit
+  endif
+
   nullify(Mesh%eb_names,Mesh%eb_ids,Mesh%eb_cnts,Mesh%eb_nnodes, &
                Mesh%eb_nattrs,Mesh%ecmap_id,Mesh%ecmap_cnt,Mesh%ecmap_elemids,&
-               Mesh%ecmap_sideids,Mesh%ecmap_neighids)
+               Mesh%ecmap_sideids,Mesh%ecmap_neighids,Mesh%elements)
   Mesh%necmap = 0
 
   pio_info%dsk_list_cnt   = -1
@@ -168,7 +177,7 @@ end interface
 !   * This is the only function call to do this. Upon return,
 !   * the mesh struct and the elements array should be filled.
 !   */
-  if (.not. read_mesh(Proc, Num_Proc, prob, pio_info, elements)) then
+  if (.not. read_mesh(Proc, Num_Proc, prob, pio_info, Mesh%elements)) then
       print *, "fatal: Error returned from read_mesh"
       stop
   endif
@@ -177,7 +186,7 @@ end interface
 !   * now run zoltan to get a new load balance and perform
 !   * the migration
 !   */
-  if (.not. run_zoltan(Proc, prob, elements)) then
+  if (.not. run_zoltan(Proc, prob)) then
       print *, "fatal: Error returned from run_zoltan"
       stop
   endif
@@ -185,17 +194,18 @@ end interface
 !  /*
 !   * output the results
 !   */
-  if (.not. output_results(Proc, Num_Proc, prob, pio_info, elements)) then
+  if (.not. output_results(cmd_file, Proc, Num_Proc, prob, pio_info, Mesh%elements)) then
       print *, "fatal: Error returned from output_results"
       stop
   endif
 
-  if (associated(elements)) then
+  if (associated(Mesh%elements)) then
     do i = 0, Mesh%elem_array_len-1
-      call free_element_arrays(elements(i))
+      call free_element_arrays(Mesh%elements(i))
     end do
-    deallocate(elements)
+    deallocate(Mesh%elements)
   endif
+  if (associated(Mesh)) deallocate(Mesh)
   if (associated(prob%params)) deallocate(prob%params)
   call LB_Memory_Stats()
   call MPI_Finalize(error)
@@ -276,11 +286,13 @@ end subroutine print_input_info
 
 !************************************************************************
 
-logical function output_results(Proc, Num_Proc, prob, pio_info, elements)
+logical function output_results(cmd_file, Proc, Num_Proc, prob, pio_info, &
+                                elements)
 use zoltan
 use dr_const
 use dr_input
 use lb_user_const
+character(len=*) :: cmd_file
 integer(LB_INT) :: Proc, Num_Proc
 type(PROB_INFO) :: prob
 type(PARIO_INFO) :: pio_info
@@ -301,13 +313,10 @@ type(ELEM_INFO), pointer :: elements(:)
   integer ::  fp=21
 
   interface
-   subroutine print_input_info(fp, Num_Proc, prob)
-   use zoltan
-   use dr_const
-   integer(LB_INT) :: fp
-   integer(LB_INT) :: Num_Proc
-   type(PROB_INFO) :: prob
-   end subroutine print_input_info
+   subroutine echo_cmd_file(fp, cmd_file)
+   character(len=*) :: cmd_file
+   integer :: fp
+   end subroutine echo_cmd_file
 
    subroutine sort_int(n, ra)
    use zoltan
@@ -341,7 +350,7 @@ type(ELEM_INFO), pointer :: elements(:)
 
   open(unit=fp,file=par_out_fname,action="write")
   if (Proc == 0) then
-    call print_input_info(fp, Num_Proc, prob)
+    call echo_cmd_file(fp, cmd_file)
   endif
 
   write(fp,*) "Global element ids assigned to processor ", Proc
@@ -407,3 +416,30 @@ integer(LB_INT) :: ra(0:)
     ra(i)=rra
   end do
 end subroutine sort_int
+
+!************************************************************************
+subroutine echo_cmd_file(fp, cmd_file)
+character(len=*) :: cmd_file
+integer :: fp
+integer, parameter :: file_cmd = 11
+character(len=4096+1) :: inp_line
+
+! Routine to echo the input file into the output results (so that
+! we know what conditions were used to produce a given result).
+
+
+!  /* Open the file */
+  open(unit=file_cmd,file=cmd_file,action='read',iostat=iostat)
+  if (iostat /= 0) then
+    print *, "Error:  Could not find command file ", cmd_file
+    return
+  endif
+
+  do
+    read(unit=file_cmd,fmt="(a)",iostat=iostat) inp_line
+    if (iostat /= 0) exit ! end of data
+    write(fp, *) trim(inp_line)
+  end do
+
+  close(file_cmd)
+end subroutine echo_cmd_file

@@ -131,6 +131,12 @@ type(PARIO_INFO) :: pio_info
     return
   endif
 
+! assume no more than 15 parameters 
+  allocate(prob%params(0:15))
+  prob%num_params = 1
+  prob%params(0)%str(0) = "DEBUG_MEMORY"
+  prob%params(0)%str(1) = "1"
+
 !  /* Begin parsing the input file */
   do ! while not end of data
     read(unit=file_cmd,fmt="(a)",iostat=iostat) inp_line
@@ -157,26 +163,45 @@ type(PARIO_INFO) :: pio_info
        pio_info%pexo_fname = trim(inp_line(index(inp_line,"=")+2:))
     endif
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! hacks to allow more of input file to be read (KDD, 10/2000) !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (lowercase(trim(command)) == "decomposition method") then
+! assumes there is one blank between "=" and the method
+       prob%method = trim(inp_line(index(inp_line,"=")+2:))
+    endif
+
+    if (lowercase(trim(command)) == "file type") then
+! assumes there is one blank between "=" and the file type
+       if (lowercase(trim(inp_line(index(inp_line,"=")+2:))) == "chaco") then
+          pio_info%file_type = CHACO_FILE
+       else
+          print *, "Error:  zfdrive can read only Chaco format files."  
+          read_cmd_file = .false.
+       endif
+    endif
+
+    if (lowercase(trim(command)) == "zoltan parameters") then
+! assumes only one parameter per command line
+! assumes there is one blank between "=" and the parameter name
+       prob%params(prob%num_params)%str(0) = lowercase(trim(inp_line(index(inp_line,"=")+2:)))
+! assumes no blanks between second "=" and the parameter name
+! skip the input line if there are no parameters specified on it.
+       if (index(prob%params(prob%num_params)%str(0),"=").gt.0) then
+           prob%params(prob%num_params)%str(1) = lowercase(trim(prob%params(prob%num_params)%str(0)(index(prob%params(prob%num_params)%str(0),"=")+1:)))
+           prob%params(prob%num_params)%str(0) = lowercase(trim(prob%params(prob%num_params)%str(0)(1:index(prob%params(prob%num_params)%str(0),"=")-1)))
+           prob%num_params = prob%num_params+1
+        endif
+    endif
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! end of hacks to allow more of input file to be read (KDD, 10/2000) !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 ! The other commands are not processed.  In the initial tests they either
 ! always have the same value (in which case they are set after this loop)
 ! or they do not appear.
 
   end do ! while not end of data
-
-! Cop out constant settings
-
-! Assume the method is "rcb"
-
-  prob%method = "rcb"
-
-  allocate(prob%params(0:0))
-  prob%num_params = 1
-  prob%params(0)%str(0) = "DEBUG_MEMORY"
-  prob%params(0)%str(1) = "1"
-
-! Assume the file type is Chaco
-
-  pio_info%file_type = CHACO_FILE
 
 ! Assume parallel disk info is number=0
 
