@@ -1736,6 +1736,353 @@ bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
   return true;
 }                                  
 
+/*----------------------------------------------------------------------*
+ |                                                           m.gee 03/05|
+ |                                                                      |
+ | writes column of Epetra_Multivecotr to GID viz                       |
+ |                                                                      |
+ *----------------------------------------------------------------------*/
+bool Epetra_ML_writegidviz(char* filename, int label, 
+                           Epetra_MultiVector& vector, int ivec, 
+                           Epetra_Map& map, Epetra_Comm& comm)
+{
+  char* bptr;
+  char buffer[1000];
+  char filename2[1000];
+  
+  int  numeq_total = map.NumGlobalElements();
+  int  numeq       = map.NumMyElements();
+  int  nproc       = comm.NumProc();
+  int  proc        = comm.MyPID();
+
+  //----------------- reduce content of ivec Vector in vector to proc 0    
+  double* values  = vector[ivec];
+  double* send    = new double[numeq_total];
+  double* gvalues = new double[numeq_total];
+  for (int i=0; i<numeq_total; i++) send[i] = 0.0;
+  for (int i=0; i<numeq; i++) 
+  {
+     int gID = map.GID(i);
+     if (gID==-1) {
+        cout << "**ERR Cannot find GID\n"; throw -1; }
+     send[gID] = values[i];
+  }
+  comm.SumAll(send,gvalues,numeq_total);
+  delete [] send;
+  if (proc) delete [] gvalues;
+  
+  // ---------------------------------------------------open all files
+  // copy filename not to midfy it 
+  strcpy(filename2,filename);
+  int   ok    = 0;
+  FILE* fin   = 0;
+  FILE* foutr = 0;
+  FILE* foutm = 0;
+  if (proc==0)
+  {
+     fin = fopen(filename2,"r");
+     if (fin) ok = 1;
+  }
+  comm.Broadcast(&ok,1,0);
+  if (!ok)
+  {
+     delete [] gvalues;
+     return false;
+  } 
+  if (proc==0)
+  {
+     bptr=strpbrk(filename2,"/");
+     if (!bptr) ok = 0;
+  }
+  comm.Broadcast(&ok,1,0);
+  if (!ok)
+  {
+     delete [] gvalues;
+     return false;
+  } 
+  bool newresfile=true;
+  if (proc==0)
+  {
+     bptr++;
+     sprintf(bptr,"data.flavia.msh");
+     // try to open the mesh file for read to see whether it exists
+     foutm = fopen(filename2,"r");
+     if (foutm) // mesh exists, don't have to recreate
+     {
+        fclose(foutm); foutm = 0;
+     }
+     else // mesh file does not exist, create      
+        foutm = fopen(filename2,"w");
+     
+     // try to open the mesh file for read to see whether it exists
+     sprintf(bptr,"data.flavia.res");
+     foutr = fopen(filename2,"r");
+     if (foutr) // result file exists, attach to it
+     {
+        fclose(foutr);
+        foutr = fopen(filename2,"a+w");
+        newresfile=false;
+     }
+     else // result file does nopt exist yet, create it
+     {
+        foutr = fopen(filename2,"w");
+        newresfile=true;
+     }
+  }
+  
+  
+  //----------------------------------- read the grid file
+  int nnode      = 0;
+  int dofpernode = 0; 
+  int readnumeq  = 0;
+  bool isshell=false;
+  if (proc==0)
+  {
+     // read the grid file
+     fgets(buffer,999,fin);
+     while (strpbrk(buffer,"#"))
+        fgets(buffer,999,fin);
+     nnode      = strtol(buffer,&bptr,10);
+     dofpernode = strtol(bptr,&bptr,10);
+     readnumeq  = strtol(bptr,&bptr,10);
+     if (strncmp(" SHELL",bptr,6)==0) 
+        isshell=true;
+     else                            
+        isshell=false;
+     if (readnumeq==numeq_total) ok=1;
+     else                        ok=0;  
+  }
+  comm.Broadcast(&ok,1,0);
+  if (!ok)
+  {
+     delete [] gvalues;
+     return false;
+  }
+  
+  //-------------------------- read nodal coordinates and dofs
+  double* x   = 0;
+  double* y   = 0;
+  double* z   = 0;
+  int**   dof = 0;
+  if (proc==0)
+  {
+     // allocate vectors for nodal coordinates
+     x = new double[nnode];
+     y = new double[nnode];
+     z = new double[nnode];
+     // create array for dofs on each node
+     dof    = new (int*)[nnode];
+     dof[0] = new int[nnode*dofpernode];
+     for (int i=1; i<nnode; i++)
+        dof[i] = &(dof[0][i*dofpernode]);
+     // read the nodes
+     for (int i=0; i<nnode; i++)
+     {
+        fgets(buffer,999,fin);
+        int node    = strtol(buffer,&bptr,10);
+        x[node-1]   = strtod(bptr,&bptr);
+        y[node-1]   = strtod(bptr,&bptr);
+        z[node-1]   = strtod(bptr,&bptr);
+        for (int j=0; j<dofpernode; j++)
+           dof[node-1][j] = strtol(bptr,&bptr,10); 
+     }
+     // check whether we arrived at the line, were the elements begin
+     fgets(buffer,999,fin);
+     if (!(strpbrk(buffer,"#")))
+     {
+        ok = 0;
+        delete [] x; delete [] y; delete [] z;
+        delete [] dof[0]; delete [] dof;
+     }
+     else ok = 1;
+  }     
+  comm.Broadcast(&ok,1,0);
+  if (!ok)
+  {
+     delete [] gvalues;
+     return false;
+  }
+
+  //---------------------------- read the element topology
+  int   nelement    = 0;
+  int   nodesperele = 0;
+  int** top         = 0;
+  if (proc==0)
+  {
+     // read the elements
+     fgets(buffer,999,fin);
+     nelement    = strtol(buffer,&bptr,10);
+     nodesperele = strtol(bptr,&bptr,10);
+     // allocate array for topology
+     top    = new (int*)[nelement];
+     top[0] = new int[nelement*nodesperele];
+     for (int i=1; i<nelement; i++)
+        top[i] = &(top[0][i*nodesperele]);
+     // read the elements
+     for (int i=0; i<nelement; i++)
+     {
+        fgets(buffer,999,fin);
+        int element    = strtol(buffer,&bptr,10);
+        for (int j=0; j<nodesperele; j++)
+          top[element-1][j] = strtol(bptr,&bptr,10);
+     }
+     // check for end of elements marker
+     fgets(buffer,999,fin);
+     if (!(strpbrk(buffer,"#")))
+     {
+        ok = 0;
+        delete [] x; delete [] y; delete [] z;
+        delete [] dof[0]; delete [] dof;
+        delete [] top[0]; delete [] top;        
+     }
+     else ok = 1;
+     fclose(fin);   fin   = 0;
+  }  
+  comm.Broadcast(&ok,1,0);
+  if (!ok)
+  {
+     delete [] gvalues;
+     return false;
+  }
+
+  //------------------------- printf the .flavia.msh file
+  if (proc==0 && foutm)
+  {
+     // print nodal coordinates
+     fprintf(foutm,"#-------------------------------------------------------------------------------\n");
+     fprintf(foutm,"# visualization using GID\n");
+     fprintf(foutm,"#-------------------------------------------------------------------------------\n");
+     fprintf(foutm,"MESH datamesh DIMENSION 3 ELEMTYPE Hexahedra NNODE 8\n");
+     fprintf(foutm,"COORDINATES\n");
+     for (int i=0; i<nnode; i++)
+     fprintf(foutm,"%6d   %20.10f   %20.10f   %20.10f\n",i+1,x[i],y[i],z[i]);
+     fprintf(foutm,"END COORDINATES\n");
+     
+     // print elements
+     fprintf(foutm,"ELEMENTS\n");
+     for (int i=0; i<nelement; i++)
+     {
+        fprintf(foutm,"%6d   ",i+1);
+        for (int j=0; j<nodesperele; j++)
+           fprintf(foutm,"%6d   ",top[i][j]);
+        fprintf(foutm,"\n");
+     }
+     fprintf(foutm,"END ELEMENTS\n");
+     fflush(foutm);
+     fclose(foutm); foutm = 0;
+  }
+
+  //------------- printf the .flavia.res file with the vector
+  if (proc==0)
+  {
+     char sign='"';
+     if (newresfile)
+     {
+     fprintf(foutr,"Gid Post Results File 1.0\n");
+     fprintf(foutr,"#-------------------------------------------------------------------------------\n");
+     fprintf(foutr,"# visualization using GID\n");
+     fprintf(foutr,"#-------------------------------------------------------------------------------\n");
+     fprintf(foutr,"RESULTRANGESTABLE %cstandard%c\n",sign,sign);
+     fprintf(foutr,"            - -1000000.0 : %cvery small%c\n",sign,sign);
+     fprintf(foutr," -1000000.0 -  1000000.0 : %cnormal%c\n",sign,sign);
+     fprintf(foutr,"  1000000.0 -            : %cvery large%c\n",sign,sign);
+     fprintf(foutr,"END RESULTRANGESTABLE\n");
+     fprintf(foutr,"#-------------------------------------------------------------------------------\n");
+     fprintf(foutr,"GAUSSPOINTS %cdatamesh%c ELEMTYPE Hexahedra %cdatamesh%c\n",sign,sign,sign,sign);
+     fprintf(foutr,"NUMBER OF GAUSS POINTS: 8\n");
+     fprintf(foutr,"NATURAL COORDINATES: Internal\n");
+     fprintf(foutr,"END GAUSSPOINTS\n");
+     fprintf(foutr,"#-------------------------------------------------------------------------------\n");
+     }
+     fprintf(foutr,"#===============================================================================\n");
+     fprintf(foutr,"#===============================================================================\n");
+     fprintf(foutr,"RESULT %cdisplacement%c %cML%c %d VECTOR ONNODES\n",sign,sign,sign,sign,label);
+     fprintf(foutr,"RESULTRANGESTABLE %cstandard%c\n",sign,sign);
+     fprintf(foutr,"COMPONENTNAMES %cx-displ%c,%cy-displ%c,%cz-displ%c\n",sign,sign,sign,sign,sign,sign);
+     fprintf(foutr,"VALUES\n"); fflush(foutr);
+     if (!isshell) // result does not come from a shell element
+     {
+        for (int i=0; i<nnode; i++)
+        {
+           fprintf(foutr," %6d   ",i+1);
+           for (int j=0; j<dofpernode; j++)
+           {
+              int thisdof = dof[i][j];
+              double val  = 0.0;
+              if (thisdof<numeq_total)
+                 val = gvalues[thisdof];
+              else
+                 val = 0.0;
+              fprintf(foutr,"%20.10e   ",val); 
+           }
+           fprintf(foutr,"\n"); 
+        }
+     }
+     else // results come from a shell element
+     {
+        int realnnode = nnode/2;
+        for (int i=0; i<realnnode; i++)
+        {
+           int node_lower = i;
+           int node_upper = i+realnnode;
+           // print the lower surface node
+           fprintf(foutr," %6d   ",node_lower+1);
+           for (int j=0; j<dofpernode; j++)
+           {
+              int thisdof = dof[node_lower][j];
+              double val = 0.0;
+              if (thisdof<numeq_total)
+                 val = gvalues[thisdof];
+              else
+                 val = 0.0;
+              // this is mid surface displacement, subtract the relativ displacement
+              int reldof  = dof[node_upper][j];
+              double val2 = 0.0;
+              if (reldof<numeq_total)
+                 val2 = gvalues[reldof];
+              else
+                 val2 = 0.0;
+              val -= val2;
+              fprintf(foutr,"%20.10e   ",val); 
+           }
+           fprintf(foutr,"\n"); fflush(foutr);
+           // print the upper surface node
+           fprintf(foutr," %6d   ",node_upper+1);
+           for (int j=0; j<dofpernode; j++)
+           {
+              int thisdof = dof[node_upper][j];
+              double val = 0.0;
+              if (thisdof<numeq_total)
+                 val = gvalues[thisdof];
+              else
+                 val = 0.0;
+              // this is a relativ displcement, add mid surface displacement to get upper total displ.
+              int middof  = dof[node_lower][j];
+              double val2 = 0.0;
+              if (middof<numeq_total)
+                 val2 = gvalues[middof];
+              else
+                 val2 = 0.0;
+              val += val2;
+              fprintf(foutr,"%20.10e   ",val); 
+           }
+           fprintf(foutr,"\n"); fflush(foutr);
+        }
+     }
+     fprintf(foutr,"END VALUES\n");
+  }
+  // clean up
+  if (proc==0)
+  {
+     delete [] x; delete [] y; delete [] z;
+     delete [] dof[0]; delete [] dof;
+     delete [] top[0]; delete [] top;        
+     delete [] gvalues; 
+     fclose(foutr);
+  }
+  return true;
+}                           
+
 #else
 
   /*noop for certain compilers*/

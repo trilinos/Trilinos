@@ -164,6 +164,9 @@ bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector,
 bool Epetra_ML_readvariableblocks(char* filename, Epetra_Map& map,
                                   Epetra_Comm& comm, 
                                   int**blocks, int** block_pde);
+bool Epetra_ML_writegidviz(char* filename, int label, 
+                           Epetra_MultiVector& vector, int ivec, 
+                           Epetra_Map& map, Epetra_Comm& comm);
                                   
 #ifdef __cplusplus
 }
