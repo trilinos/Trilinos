@@ -182,7 +182,7 @@ ZZ_INC		= zz_const.h zz_id_const.h zz_util_const.h zz_rand.h zz_sort.h
 ALL_CSRC	= all_allo.c 
 ALL_INC		= all_const.h all_allo_const.h
 
-LB_CSRC		= lb_balance.c lb_eval.c lb_free.c lb_init.c \
+LB_CSRC		= lb_balance.c lb_eval.c lb_free.c lb_copy.c lb_init.c \
 		  lb_invert.c lb_migrate.c \
 		  lb_set_fn.c lb_set_method.c  \
 		  lb_point_assign.c lb_box_assign.c lb_part2proc.c \
