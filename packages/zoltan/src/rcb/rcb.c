@@ -700,7 +700,7 @@ static int rcb(
 
   if (lb->Debug > 6) {
     int i;
-    LB_print_sync_start(lb, TRUE);
+    LB_Print_Sync_Start(lb, TRUE);
     printf("LBLIB RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
            lb->Proc, pdotnum, pdottop, *num_import);
     printf("  Assigned objects:\n");
@@ -713,7 +713,7 @@ static int rcb(
       printf("    Obj:  %10d      Orig: %4d\n",
              (*import_global_ids)[i], (*import_procs)[i]);
     }
-    LB_print_sync_end(lb, TRUE);
+    LB_Print_Sync_End(lb, TRUE);
   }
 
   /* Temporary return value until error codes are fully implemented */
