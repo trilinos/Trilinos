@@ -33,35 +33,94 @@
 #define TEUCHOS_ARRAY_ARG_HPP
 
 /*! \file Teuchos_arrayArg.hpp
-    \brief Utility class that allows arrays to be passed into argument list
+    \brief Utility that allows arrays to be passed into argument list
 */
 
 #include "Teuchos_TestForException.hpp"
 
 namespace Teuchos {
 
-/** \defgroup Teuchos_Array_Arguments Utility class for passing arrays into argument lists.
+/** \defgroup Teuchos_Array_Arguments Utility functions for passing arrays into argument lists.
 
 \brief The purpose of this utility is to make passing arrays into argument lists easier.
 
-Declaring arrays outside of a function just to pass a (small) list of values into a function
-can be tiresome.  This class allows you to pass in an array into an argument list using
-the \c arrayArg helper functions.  For example, an integer Teuchos::ArrayArg object can be 
-passed to a function \c g like:
-\verbatim
+Declaring arrays outside of a function just to pass a (small) list of
+values into a function can be tiresome. The templated function
+<tt>arrayArg()</tt> simplifies this process.  With this function you
+can construct (using stack memory not dynamically allocated memory) an
+array of data to be passed into a function.
 
-	int a, b, c;
-	...
-	g(arrayArg(a,b,c));
-\endverbatim
-where the function \c g is prototyped to receive a Teuchos::ArrayArg object:
-\verbatim
+For example, consider the following function prototype:
 
-	void g(Teuchos::ArrayArg<3,int>& input_array);
-\endverbatim
+\code
+void f( const int x_size, const double x[] );
+\endcode
+
+which takes a <tt>const</tt> array of <tt>double</tt>s of length
+<tt>x_size</tt>.  Generally, to call this function one would have to
+first declare an array and then call the function as:
+
+\code
+void f()
+{
+  ...
+  double x[] = { 1.0, 2.0, 3.0 };
+  f( 3, x );
+  ...
+\endcode
+
+Now, however, one can create the array in the call to <tt>f()</tt> as:
+
+\code
+void f()
+{
+  ...
+  f( 3, arrayArg<double>(1.0,2.0,3.0)() );
+  ...
+}
+\endcode
+
+In the above situation, one may be able to write the call as:
+
+\code
+void f()
+{
+  ...
+  f( 3, arrayArg(1.0,2.0,3.0) );
+  ...
+}
+\endcode
+
+but the former, slightly more verbose, version is to be preferred
+since it makes explicit what type of array is being created and insures
+that the compiler will not get confused about the final implicit conversion
+to a raw <tt>const double*</tt> pointer.
+
+The <tt>arrayArg()</tt> function is overloaded to accept 1, 2, 3, 4, 5 and 6 
+arguments.  If more elements are needed, then more overrides are easy to add.
+
+The utility functions <tt>arrayArg()</tt> can only be used
+to pass in arrays of <tt>const</tt> objects.  Using this utility for
+non-<tt>const</tt> objects is generally not possible due to the fact that
+compilers are not allowed to pass in compiler-generated objects into
+a function through non-<tt>const</tt> reference arguments.  For example,
+to pass in a non-<tt>const</tt> array for the function:
+
+\code
+void f2( const int y_size, double y[] );
+\endcode
+
+one would have to call it as:
+
+\code
+void g2()
+{
+  double y[3]; // Output argument
+  f2(3,y );
+}
+\endcode
+
 */
-
-//ToDo: Finish documentation.
 
 ///
 /** \brief Utility class that allows arrays to be passed into argument list.
