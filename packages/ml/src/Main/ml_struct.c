@@ -5942,6 +5942,31 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
    return(status);
 }
 
+int ML_Gen_Smoother_SubdomainOverlap(ML *ml, int level, int overlap) {
+  ML *sub_ml;
+  ML_Operator *newA, *Afine;
+  ML_CommInfoOP *nonOverlapped_2_Overlapped;
+
+  Afine = &(ml->Amat[level]);
+  ML_Create(&sub_ml,1);
+  newA = &(sub_ml->Amat[0]);
+  ML_overlap( Afine, newA, overlap , &nonOverlapped_2_Overlapped);
+  /* ML_Gen_Smoother_Jacobi(sub_ml , 0, ML_PRESMOOTHER, 1,.4); */
+  ML_Gen_CoarseSolverSuperLU( sub_ml,0); 
+  ML_Set_MaxIterations(sub_ml, 1);
+
+  ML_Gen_Solver(sub_ml, ML_MGV, 0, 0);
+
+  sub_ml->void_options = (void *) nonOverlapped_2_Overlapped;
+
+  ML_Smoother_Set(&(ml->pre_smoother[level]), sub_ml,
+		  ML_Smoother_ApplySubdomainOverlap, 1, .8, "Over");
+  ml->pre_smoother[level].data_destroy = ML_Smoother_DestroySubdomainOverlap; 
+
+  return 0;
+}
+
+
 #include "ml_amesos.h"
 #define newrap       /* Should always be defined for better performance */
 
