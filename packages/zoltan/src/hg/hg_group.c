@@ -134,7 +134,7 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
    for (i = hg->nEdge ; i > 0 && (*limit)>0 ; i--)
       {
-      random = hg_rand() % i ;
+      random = Zoltan_HG_Rand() % i ;
       edge = edges[random] ;
       edges[random] = edges[i-1] ;
 
@@ -173,7 +173,7 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
    for (i = hg->nVtx ; i > 0 && (*limit)>0; i--)
       {
-      random = hg_rand() % i ;
+      random = Zoltan_HG_Rand() % i ;
       vertex = vertices[random] ;
       vertices[random] = vertices[i-1] ;
       if (pack[vertex] != vertex)
@@ -183,7 +183,7 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
       if (count == 0)
          continue ;
 
-      edge = hg->vedge[hg->vindex[vertex] + (hg_rand() % count)] ;  /* random edge */
+      edge = hg->vedge[hg->vindex[vertex] + (Zoltan_HG_Rand() % count)] ;  /* random edge */
       for (j = hg->hindex[edge] ; j < hg->hindex[edge+1] ; j++)
          if (pack[hg->hvertex[j]] == hg->hvertex[j])
             {
@@ -224,7 +224,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
    for (i = hg->nVtx ; i > 0 && (*limit)>0 ; i--)
       {
-      number = hg_rand() % i ;
+      number = Zoltan_HG_Rand() % i ;
       vertex = vertices[number] ;
       vertices[number] = vertices[i-1] ;
       if (pack[vertex] != vertex)
@@ -258,7 +258,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
       if (best_neighbors > 1)
          {
-         random = hg_rand() % best_neighbors;
+         random = Zoltan_HG_Rand() % best_neighbors;
          for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
             {
             edge = hg->vedge[j] ;

@@ -192,7 +192,7 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
       }
 
   while (k>0 && (*limit)>0)
-  { i = v1[random=hg_rand()%k];
+  { i = v1[random=Zoltan_HG_Rand()%k];
     j = v2[random];
     v1[random] = v1[--k] ;
     v2[random] = v2[k] ;
@@ -220,7 +220,7 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   for (i=0; i<g->nVtx; i++)
     match[i] = vertices[i] = i;
   for (i=g->nVtx; i>0 && (*limit)>0; i--)
-  { vertex = vertices[number=hg_rand()%i];
+  { vertex = vertices[number=Zoltan_HG_Rand()%i];
     vertices[number] = vertices[i-1];
     if (match[vertex] == vertex)
     { free_neighbors = 0;
@@ -228,7 +228,7 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
         if (match[g->neigh[j]]==g->neigh[j])
           free_neighbors++;
       if (free_neighbors > 0)
-      { random = hg_rand()%free_neighbors;
+      { random = Zoltan_HG_Rand()%free_neighbors;
         for (j=g->nindex[vertex]; j<g->nindex[vertex+1]; j++)
           if (match[g->neigh[j]]==g->neigh[j] && --free_neighbors==random)
           { match[vertex] = g->neigh[j];
@@ -257,7 +257,7 @@ static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   for (i=0; i<g->nVtx; i++)
     match[i] = vertices[i] = i;
   for (i=g->nVtx; i>0 && (*limit)>0; i--)
-  { vertex = vertices[number=hg_rand()%i];
+  { vertex = vertices[number=Zoltan_HG_Rand()%i];
     vertices[number] = vertices[i-1];
     if (match[vertex] == vertex)
     { best_neighbors = 0;
@@ -272,7 +272,7 @@ static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
             best_neighbors++;
         }
       if (best_neighbors > 0)
-      { random = hg_rand()%best_neighbors;
+      { random = Zoltan_HG_Rand()%best_neighbors;
         for (j=g->nindex[vertex]; j<g->nindex[vertex+1]; j++)
           if (match[g->neigh[j]]==g->neigh[j] && g->ewgt[j]==best_ewgt
               && --best_neighbors==random)

@@ -132,7 +132,7 @@ static int global_ran (
 
   /* Randomly permute order array */
   for (i=hg->nVtx; i>0; i--)
-  { number=hg_rand()%i;
+  { number=Zoltan_HG_Rand()%i;
     temp = order[number];
     order[number] = order[i-1];
     order[i-1] = temp;
@@ -171,7 +171,7 @@ static int global_bfs (
   }
 
   /* Find pseudo-peripheral start vertex */
-  start = hg_rand()%(hg->nVtx);
+  start = Zoltan_HG_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
     ierr = bfs_order(zz, hg, order, &start, NULL, NULL, NULL);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
@@ -359,7 +359,7 @@ static int global_bfsr (
     printf("GLOBAL_PART weight_sum:%f\n",weight_sum);
 
   /* Find pseudo-peripheral start vertex */
-  start = hg_rand()%(hg->nVtx);
+  start = Zoltan_HG_Rand()%(hg->nVtx);
   for (j=0; j<2; j++){
     ierr = bfs_order(zz, hg, order, &start, NULL, NULL, NULL);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
