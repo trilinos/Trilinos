@@ -57,7 +57,7 @@ LAM/MPI  is available from the <a href="http://www.lam-mpi.org/"> LAM/MPI websit
 
 <li><b>For existing Trilinos users:</b> Trilinos uses configure to help
 find mpi and the blas.  If you have already configured Trilinos with
-mpi, configure presumably found mpi and the blas.  To find a lin
+mpi, configure presumably found mpi and the blas.  To find a link
 command which configure used, cd to packages/epetra in your build
 directory and type: "grep conftest config.log | tail" and examine the
 last line.
