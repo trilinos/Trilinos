@@ -162,13 +162,9 @@ before Epetra_ConfigDefs.h, or PACKAGE will get redefined. Some
 compilers will object to this.
 
 You should also include Epetra_ConfigDefs.h in all your source files.
-(This will happen automatically if you include just about any Epetra.*.h 
+(This will happen automatically if you include just about any Epetra_*.h 
 file).  
 
 
 Avoid including <stdio>, <assert> or <stdio.h> or <assert.h>.  These
 are handled nicely in Epetra_ConfigDefs.h.  
-
-Don't use PACKAGE, PACKAGE_TARNAME, PACKAGE_VERSION, VERSION,
-PACKAGE_NAME, PACKAGE_STRING or PACKAGE_BUGREPORT unless you know what
-you are doing.  Epetra_config.h will redefine these.
