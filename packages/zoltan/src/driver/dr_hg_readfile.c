@@ -408,6 +408,11 @@ int err = ZOLTAN_OK;
 int prev_edge;
 int rowhedges=1; /* default is row hyperedge model */
 char *yo = "MM_readfile";
+int ret_code;
+MM_typecode matcode;
+int M, N, nz;   
+int j, k, tmp;
+struct ijv *mat;
 
     *base = 0;   /* MatrixMarket is 1-based, but we convert to 0-based. */
     rewind(f);   /* need to read first line again! */
@@ -431,11 +436,6 @@ char *yo = "MM_readfile";
 */
 
 
-    int ret_code;
-    MM_typecode matcode;
-    int M, N, nz;   
-    int j, k, tmp;
-    struct ijv *mat;
 
     if (mm_read_banner(f, &matcode) != 0)
     {
