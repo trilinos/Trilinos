@@ -26,6 +26,7 @@
 <div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
 |&nbsp; <a href="ug_fortran.html">Next</a>&nbsp; |&nbsp; <a href="ug_examples_mig.html">Previous</a></i></b></div>
 
+<!-------------------------------------------------------------------------->
 <h2>
 <a NAME="Query-Function Example"></a>Query-Function Examples</h2>
 Examples of query functions provided by a simple application are included
@@ -47,6 +48,7 @@ these nodes are the objects passed to Zoltan.&nbsp; A node is described by
 its 3D coordinates and a global ID number that is unique across all processors.&nbsp;&nbsp;
 The type definitions for the mesh and node data structures used in the
 examples are included <a href="#query example data types">below</a>.
+<!-------------------------------------------------------------------------->
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
@@ -70,6 +72,7 @@ examples are included <a href="#query example data types">below</a>.
 <caption ALIGN=BOTTOM><i>Data types for the query-function examples.</i></caption>
 </table></center>
 
+<!-------------------------------------------------------------------------->
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
@@ -94,6 +97,7 @@ examples are included <a href="#query example data types">below</a>.
 <caption ALIGN=BOTTOM><i>Data types for the Fortran query-function examples.</i></caption>
 </table></center>
 
+<!-------------------------------------------------------------------------->
 <h3>
 <a NAME="lb_query_example"></a>General Interface Query Function Examples</h3>
 In the following examples, <b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
@@ -131,6 +135,7 @@ identifier is an integer representing the index in the <i>Mesh.Nodes</i>
 array of the node.&nbsp; The local identifier is set to the index's value
 in<i> user_return_owned_nodes</i>.&nbsp; It is used to access the global
 <i>Mesh.Nodes</i> array in <i>user_return_coords</i>.
+<!-------------------------------------------------------------------------->
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
@@ -144,10 +149,10 @@ file</i> */&nbsp;</tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>Indicate that local and global IDs are
 one integer each. */</i></tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
-"<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
-"<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"<a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"<a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; /* <i>Register query functions.</i>
 */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>Do not register a data pointer with the
@@ -201,6 +206,7 @@ used.</i> */</tt>
 implementation).</i></caption>
 </table></center>
 
+<!-------------------------------------------------------------------------->
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
@@ -215,10 +221,10 @@ file</i>&nbsp;</tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>Indicate that local and global IDs are
 one integer each.&nbsp;</i></tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
-"<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
-"<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"<a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"<a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; ! <i>Register query functions.</i></tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>Do not register a data pointer with the
 functions;</i></tt>
@@ -276,6 +282,7 @@ used.</i></tt>
 (simplest implementation).</i></caption>
 </table></center>
 
+<!-------------------------------------------------------------------------->
 <h4>
 <a NAME="data_ptr_query_example"></a>User-Defined Data Pointer Example</h4>
 In this example, the address of a local mesh data structure is registered
@@ -297,6 +304,7 @@ mesh.&nbsp; Calls to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Se
 would define which mesh should be balanced, and the query routines would
 access the mesh currently designated by the <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 calls.
+<!-------------------------------------------------------------------------->
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
@@ -311,10 +319,10 @@ file</i> */</tt>
 <br><tt>...</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>Indicate that local and global IDs are
 one integer each. */</i></tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
-"<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
-"<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"<a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"<a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; /* <i>Register query functions.</i>
 */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i><font color="#FF0000">Register the address
@@ -375,6 +383,7 @@ of mesh as the data pointer.</font></i> */</tt>
 the application-defined data pointer.</i></caption>
 </table></center>
 
+<!-------------------------------------------------------------------------->
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
@@ -397,10 +406,10 @@ and a User_Data to point to it.</i></font></tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>Indicate that local and global IDs are
 one integer each.&nbsp;</i></tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
-"<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
-"<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"<a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"<a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; ! <i>Register query functions.</i></tt>
 <br><tt><font color="#FF0000">&nbsp;&nbsp;&nbsp; ! <i>Use the User_Data
 variable to pass the mesh data
@@ -413,8 +422,8 @@ variable to pass the mesh data
 <br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
 <a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN_TYPE</a>,</tt>
 
-<tt>user_return_owned_nodes<font color="#FF0000">,</font> </tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#FF0000">data</font>)&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;user_return_owned_nodes<font color="#FF0000">, data</font>)</tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>end program&nbsp;</tt>
 <p><tt>subroutine user_return_owned_nodes(data, &amp;</tt>
@@ -464,6 +473,7 @@ User_Data argument</i></font></tt>
 using the application-defined data pointer.</i></caption>
 </table></center>
 
+<!-------------------------------------------------------------------------->
 <h3>
 <a NAME="mig_query_example"></a>Migration Examples</h3>
 

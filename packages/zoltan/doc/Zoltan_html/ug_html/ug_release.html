@@ -1,0 +1,155 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Release Notes</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_usage.html">Next</a>&nbsp; |&nbsp; <a href="ug_intro.html">Previous</a></i></b></div>
+
+<!---------------------------------------------------------------------------->
+<h2>
+<a NAME="Release Notes"></a>Zoltan Release Notes v1.3</h2>
+
+This section describes improvements to Zoltan in Version 1.3.
+Every attempt was made to keep Zoltan v1.3 backwardly compatible with
+previous versions.
+Users of previous versions of Zoltan should refer to the 
+<a href="ug_backward.html">Backward Compatibility Notes</a>.
+<p>
+Short descriptions of the following features are included below;
+follow the links for more details.
+<blockquote>
+<a href="#Data Services">More Data Services</a>
+<br><a href="#New HSFC">New Hilbert Space-Filling Curve Partitioning</a>
+<br><a href="#New Structured">Support for Structured-Grid Partitioning</a>
+<br><a href="#ParMETIS3">Support for ParMETIS v3.0</a>
+<br><a href="#Performance">Performance Improvements</a>
+<br><a href="#New Interface">Zoltan Interface Updated</a>
+<br><a href="#TestSuite">Improved Test Suite</a>
+<br><a href="#BugFixes">Bug Fixes</a>
+</blockquote>
+
+<!---------------------------------------------------------------------------->
+<a NAME="Data Services"></a><hr><h4>More Data Services</h4>
+Zoltan's mission has been widened beyond its original focus on dynamic
+load-balancing algorithms.  Now Zoltan also provides data management
+services to parallel, unstructured, and adaptive computations.
+Several packages of parallel data services have been added and made available to
+application developers.  These services include the following:
+<ul>
+<li>An 
+<a href="../dev_html/dev_util_comm.html">unstructured communication package</a> 
+that simplifies complicated 
+communication by insulating applications from the details of message
+sends and receives.
+</li>
+<li>A 
+<a href="../dev_html/dev_util_dd.html">distributed data directory</a> 
+that allows applications to efficiently
+(in memory and time) locate off-processor data.
+</li>
+<li>A 
+<a href="../dev_html/dev_util_mem.html">dynamic memory management package</a> 
+that simplifies debugging of
+memory allocation problems on state-of-the-art parallel computers.
+</li>
+</ul>
+
+<!---------------------------------------------------------------------------->
+<a NAME="New HSFC"></a><hr><h4>New Hilbert Space-Filling Curve Partitioning</h4>
+Zoltan now includes a fast, efficient implementation of 
+<a href="ug_alg_hsfc.html">Hilbert Space-Filling Curve (HSFC)</a> 
+partitioning.  
+This geometric method also includes
+support for 
+<a href="ug_interface_augment.html#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</a> 
+and 
+<a href="ug_interface_augment.html#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</a>
+functions.   
+
+<!---------------------------------------------------------------------------->
+<a NAME="New Structured"></a><hr><h4>Support for Structured-Grid Partitioning</h4>
+Zoltan's 
+<a href="ug_alg_rcb.html">Recursive Coordinate Bisection (RCB)</a> 
+partitioning algorithm has 
+been enhanced to allow
+generation of strictly rectilinear subdomains.  This capability can be 
+used for partitioning of grids for structured-grid applications.  See
+parameter 
+<a href="ug_alg_rcb.html"><i>RCB_RECTILINEAR_BLOCKS</i></a>.
+
+<!---------------------------------------------------------------------------->
+<a NAME="ParMETIS3"></a><hr><h4>Support for ParMETIS v3.0</h4>
+In addition to providing interfaces to 
+<a href="ug_alg_parmetis.html">ParMETIS v2.0</a> and 
+<a href="ug_alg_jostle.html">PJostle</a>,
+Zoltan now provides an interfaces 
+<a href="ug_alg_parmetis.html">ParMETIS v3.0</a>.  Full support of 
+ParMETIS v3.0's multiconstraint and multiobjective partitioning is
+included.
+
+<!---------------------------------------------------------------------------->
+<a NAME="Performance"></a><hr><h4>Performance Improvements</h4>
+Performance of Zoltan's partitioning algorithms has been 
+improved through a number of code optimizations and new features.  
+In addition, user parameter 
+<a href="ug_alg.html#LB Parameters"><i>RETURN_LISTS</i></a> can be 
+used to specify which returned arguments 
+are computed by 
+<a href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>, 
+allowing reduced work in partitioning.
+In the 
+<a href="ug_alg_rcb.html">Recursive Coordinate Bisection (RCB)</a> 
+partitioning algorithm, user parameters allow cut directions
+to be locked in an attempt to minimize data movement; see parameters
+<a href="ug_alg_rcb.html"><i>RCB_LOCK_DIRECTIONS</i></a> and 
+<a href="ug_alg_rcb.html"><i>RCB_SET_DIRECTIONS</i></a>.
+
+
+<!---------------------------------------------------------------------------->
+<a NAME="New Interface"></a><hr><h4>Zoltan Interface Updated</h4>
+Zoltan has adopted a more modular design, making it easier to use by 
+applications and easier to modify by algorithm developers.
+Names in the <a href="ug_interface.html">Zoltan interface</a> 
+and code are tied more closely to their functionality.
+Full <a href="ug_backward.html">backward compatibility</a> is supported
+for users of previous versions of Zoltan.
+
+<!---------------------------------------------------------------------------->
+<a NAME="TestSuite"></a><hr><h4>Improved Test Suite</h4>
+The Zoltan <a href="../dev_html/dev_test_script.html">test suite</a> 
+has been improved, with more tests providing greater
+code coverage and platform-specific answer files accounting for differences
+due to computer architectures.
+
+<!---------------------------------------------------------------------------->
+<a NAME="BugFixes"></a><hr><h4>Bug Fixes</h4>
+Some bug fixes were made to Zoltan's algorithms and interface.  Users
+of previous versions of Zoltan are encouraged to upgrade.
+
+<!---------------------------------------------------------------------------->
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_usage.html">Next:&nbsp;
+Using the Zoltan Library</a>&nbsp; |&nbsp; <a href="ug_intro.html">Previous:&nbsp; Introduction</a>]
+</body>
+</html>

@@ -24,7 +24,7 @@
 <body bgcolor="#FFFFFF">
 
 <div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_interface.html">Next</a>&nbsp; |&nbsp; <a href="ug_intro.html">Previous</a></i></b></div>
+|&nbsp; <a href="ug_interface.html">Next</a>&nbsp; |&nbsp; <a href="ug_release.html">Previous</a></i></b></div>
 
 <h2>
 <a NAME="Using the Library"></a>Using the Zoltan library</h2>
@@ -71,8 +71,8 @@ Application query functions and application callable library functions
 use global and local identifiers (IDs) for objects. <i>All objects to be
 used in load balancing must have unique global IDs.</i> Zoltan stores an
 ID as an array of unsigned integers. The number of entries in these arrays
-can be set using the <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
-and <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> parameters;
+can be set using the <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
+and <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> parameters;
 by default, one unsigned integer represents an ID. Applications may use
 whatever format is most convenient to store their IDs; the IDs can then
 be converted to and from Zoltan's ID format in the <a href="ug_query.html">application-registered
@@ -97,7 +97,7 @@ query function routines. See the <a href="ug_query.html">application-registered
 query functions</a> for more details. The source code distribution contains
 an example application <i><a href="../dev_html/dev_driver.html">zdrive</a></i>
 in which global IDs are integers and local IDs are local array indices.
-One may choose not to use local ids at all, in which case <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>
+One may choose not to use local ids at all, in which case <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>
 may be set to zero.
 <h3>
 <a NAME="Building the Library"></a>Building the Zoltan Library</h3>
@@ -190,7 +190,7 @@ needed; see the section on <a href="ug_backward.html">backward
 compatibility</a> of Zoltan.
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_interface.html">Next:&nbsp;
-Zoltan Interface Functions</a>&nbsp; |&nbsp; <a href="ug_intro.html">Previous:
-Introduction</a>]
+Zoltan Interface Functions</a>&nbsp; |&nbsp; <a href="ug_release.html">Previous:
+Zoltan Release Notes</a>]
 </body>
 </html>

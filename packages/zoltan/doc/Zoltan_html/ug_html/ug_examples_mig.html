@@ -54,7 +54,7 @@ of the load-balancing calling sequence for a particle simulation using
 Zoltan's auto-migration tools is shown. 
 The application 
 requests auto-migration by turning on the <B>AUTO_MIGRATE</B> option
-through a call to <B><A HREF="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</A></B>
+through a call to <B><A HREF="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</A></B>
 and registers functions to pack and unpack a particle's data. During the
 call to <B><A HREF="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A></B>,
 Zoltan computes the new decomposition and, using calls
@@ -70,7 +70,7 @@ for data migration.
 <TD><A NAME="Auto-Migration Example Fig"></A>
 <TT>/* <I>Tell Zoltan to automatically migrate data for the application.</I>
 */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</A>(zz, "AUTO_MIGRATE",
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</A>(zz, "AUTO_MIGRATE",
 "TRUE");</TT>&nbsp;
 
 <P><TT>/* <I>Register additional functions for packing and unpacking data</I>

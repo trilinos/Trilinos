@@ -24,8 +24,9 @@
 <body bgcolor="#FFFFFF">
 
 <div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_alg_rcb.html">Next</a>&nbsp; |&nbsp; <a href="ug_query_mig.html">Previous</a></i></b></div>
+|&nbsp; <a href="ug_alg_rcb.html">Next</a>&nbsp; |&nbsp; <a href="ug_param.html">Previous</a></i></b></div>
 
+<!---------------------------------------------------------------------------->
 <h2>
 <a NAME="Algorithms"></a>Load-Balancing Algorithms</h2>
 The following dynamic load-balancing algorithms are currently included
@@ -41,44 +42,27 @@ in the Zoltan library:
 </blockquote>
 The parenthetical string is the input argument for <b><a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>
 to enable the corresponding method.
-<p><a href="#General_Parameters">Parameters
-</a>and
-<a href="#Debug Levels in Zoltan">debugging-output
-levels</a> may be set to control the behavior of Zoltan.
 <p>For further analysis and discussion of the algorithms, see [<a href="ug_refs.html#hendrickson-devine">Hendrickson
 and Devine</a>].
-<br>&nbsp;
-<br>&nbsp;
+<p>
+<!---------------------------------------------------------------------------->
 <h3>
-<a NAME="General_Parameters"></a><b>General Parameters</b></h3>
-The behavior of Zoltan is controlled by several parameters
-which can be set by calls to <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
-Many of the parameters are specific to individual partitioning algorithms,
+<a NAME="LB Parameters"></a><hr><b>Load-Balancing Parameters</b></h3>
+While the overall behavior of Zoltan is controlled by 
+<a href="ug_param.html">general Zoltan parameters</a>,
+the behavior of each load-balancing method is controlled by parameters
+specific to partitioning
+which are also set by calls to <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+Many of these parameters are specific to individual partitioning algorithms,
 and are listed in the descriptions of the individual algorithms.&nbsp;
-However, several have meaning across multiple algorithms. These more general
-parameters are described below.  Reasonable 
-<a href="#Default_Parameter_Values">default values</a> for all parameters
-are set in Zoltan and are listed below.
+However, several have meaning across multiple partitioning algorithms. 
+These load-balancing parameters are described below. 
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
 <td VALIGN=TOP><b>Parameters:</b></td>
 
 <td></td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a NAME="NUM_GID_ENTRIES"></a>&nbsp;&nbsp;&nbsp; <i><a href="ug_usage.html#Data Types for Object IDs">NUM_GID_ENTRIES</a></i></td>
-
-<td>The number of unsigned integers that should be used to represent a
-global identifier (ID). Values greater than zero are accepted.&nbsp;</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a NAME="NUM_LID_ENTRIES"></a>&nbsp;&nbsp;&nbsp; <i><a href="ug_usage.html#Data Types for Object IDs">NUM_LID_ENTRIES</a></i></td>
-
-<td>The number of unsigned integers that should be used to represent a
-local identifier (ID). Values greater than or equal to zero are accepted.&nbsp;</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -91,34 +75,6 @@ imported to a processor), "EXPORT" (to return only information about objects
 to be exported from a processor), "ALL" (to return both import and export 
 information) and "NONE" (to return neither import nor export information).
 </td>
-</tr>
-<tr VALIGN=TOP>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp;<i> <a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i></td>
-
-<td>An integer indicating how much debugging information is printed by
-Zoltan.&nbsp; Higher values of<i> <a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>
-produce more output and potentially slow down Zoltan's computations.&nbsp;
-The least output is produced when <i><a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>=
-0.&nbsp; <i><a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>&nbsp;
-primarily controls Zoltan's behavior; most algorithms have their own parameters
-to control their output level. Values used within Zoltan are listed <a href="#Debug Levels in Zoltan">below</a>.
-<br>Note:&nbsp; Because some debugging levels use processor synchronization,
-all processors should use the same value of <i><a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a NAME="Debug_Processor"></a><i>&nbsp;&nbsp;&nbsp; DEBUG_PROCESSOR</i></td>
-
-<td>Processor number from which trace output should be printed when <i><a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>
-is 5.</td>
-</tr>
-
-<tr VALIGN=TOP>
-<td>&nbsp;&nbsp;&nbsp; <a name="TIMER"></a><i>TIMER</i></td>
-
-<td>The timer with which you wish to measure time. Valid choices include
-<i>wall
-</i>and <i>cpu</i>.&nbsp;</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -133,36 +89,6 @@ shouldn't exceed 1.2.&nbsp;</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td>&nbsp;&nbsp;&nbsp; <a name="OBJ_WEIGHT_DIM"></a><i>OBJ_WEIGHT_DIM</i></td>
-
-<td NOSAVE>The number of weights associated with an object.
-If this parameter is zero, all objects have equal weight.
-Some algorithms may not support
-multiple (multidimensional) weights.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td>&nbsp;&nbsp;&nbsp; <a name="EDGE_WEIGHT_DIM"></a><i>EDGE_WEIGHT_DIM</i></td>
-
-<td NOSAVE>The number of weights associated with an edge.
-If this parameter is zero, all edges have equal weight. 
-Many algorithms do not support multiple (multidimensional)
-weights.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE>&nbsp;&nbsp;&nbsp; <a name="DETERMINISTIC"></a><i>DETERMINISTIC</i></td>
-
-<td NOSAVE>If this value is set to TRUE (non-zero), Zoltan's computation
-of a new decomposition is deterministic; i.e., executing the same algorithm
-with the same input on the same number and type of processors will always
-produce the&nbsp; same results.&nbsp; Execution time may be slightly slower,
-however, when <i>DETERMINISTIC </i>is TRUE.&nbsp;&nbsp; When this parameter
-is FALSE, message order and other factors may cause variations in decompositions
-even under identical operating conditions.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
 <td NOSAVE><i>&nbsp;&nbsp;&nbsp; <a name="AUTO_MIGRATE"></a>AUTO_MIGRATE</i></td>
 
 <td>If this value is set to TRUE (non-zero), Zoltan will automatically
@@ -172,27 +98,6 @@ of the <a href="ug_interface_mig.html">migration interface functions</a>.&nbsp;<
 </tr>
 
 
-<tr VALIGN=TOP NOSAVE>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>USE_MACHINE_DESC</i></td>
-
-<td NOSAVE>Currently unused; will be used when heterogeneous
-computers are supported.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>MACHINE_DESC_FILE</i></td>
-
-<td NOSAVE>Currently unused; will be used when heterogeneous
-computers are supported.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a NAME="DEBUG_MEMORY"></a><i>&nbsp;&nbsp;&nbsp; DEBUG_MEMORY</i></td>
-
-<td> Integer indicating the amount of low-level debugging information about 
-memory-allocation should be kept by Zoltan's <a href="../dev_html/dev_util_mem.html">Memory Management utilities</a>.  Valid values are 0, 1, 2, and 3.
-</td>
-</tr>
 <tr VALIGN=TOP>
 <td VALIGN=TOP><a name="Default_Parameter_Values"></a><b>Default Values:</b></td>
 
@@ -201,39 +106,7 @@ memory-allocation should be kept by Zoltan's <a href="../dev_html/dev_util_mem.h
 <tr VALIGN=TOP>
 <td></td>
 
-<td><i>NUM_GID_ENTRIES</i> = 1</td>
-</tr>
-
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>NUM_LID_ENTRIES</i> = 1</td>
-</tr>
-
-<tr VALIGN=TOP>
-<td></td>
-
 <td><i>RETURN_LISTS</i> = ALL</td>
-</tr>
-
-
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>DEBUG_LEVEL</i> = 1</td>
-</tr>
-
-
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>DEBUG_PROCESSOR</i> = 0</td>
-</tr>
-
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>TIMER</i> = wall</td>
 </tr>
 
 <tr VALIGN=TOP>
@@ -242,159 +115,18 @@ memory-allocation should be kept by Zoltan's <a href="../dev_html/dev_util_mem.h
 <td><i>IMBALANCE_TOL</i> = 1.1</td>
 </tr>
 
-<tr VALIGN=TOP NOSAVE>
-<td></td>
-
-<td NOSAVE><i>OBJ_WEIGHT_DIM = 0</i></td>
-</tr>
-
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>EDGE_WEIGHT_DIM = 0</i></td>
-</tr>
-
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>DETERMINISTIC </i>= TRUE</td>
-</tr>
-
 <tr VALIGN=TOP>
 <td></td>
 
 <td><i>AUTO_MIGRATE</i> = FALSE</td>
 </tr>
 
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>USE_MACHINE_DESC</i> = 0</td>
-</tr>
-
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>MACHINE_DESC_FILE</i> = /etc/local/Zoltan_Machine_Desc</td>
-</tr>
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>DEBUG_MEMORY</i> = 1</td>
-</tr>
-</table>
-
-<h3>
-<a NAME="Debug Levels in Zoltan"></a>Debugging Levels in Zoltan</h3>
-The <i>DEBUG_LEVEL</i> parameter determines how much debugging information
-is printed to <i>stdout</i> by Zoltan.&nbsp; It is set by a call to <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.&nbsp;
-Higher values of<i> DEBUG_LEVEL</i> produce more output and can slow down
-Zoltan's computations, especially when the output is printed by one processor
-at a time.&nbsp; The least output is produced when <i>DEBUG_LEVEL</i> =
-0.
-<p>Descriptions of the output produced by Zoltan for each value of <i>DEBUG_LEVEL
-</i>are
-included below.&nbsp; For a given <i>DEBUG_LEVEL</i> value<i> n,</i> all
-output for values less than or equal to<i> n</i> is produced.
-<p>Some high debugging levels use processor synchronization to force processors
-to write one-at-a-time.&nbsp;&nbsp; For example, when <i>DEBUG_LEVEL</i>
-is greater than or equal to eight, each processor writes its list in turn
-so that the lists from all processors are not jumbled together in the output.&nbsp;
-This synchronization requires all processors to use the same value of <i>DEBUG_LEVEL</i>.
-<br>&nbsp;
-<table WIDTH="100%" NOSAVE >
-<tr VALIGN=TOP>
-<td VALIGN=TOP><b><i>DEBUG_LEVEL&nbsp;</i></b></td>
-
-<td><b>Output Produced</b></td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE>&nbsp;&nbsp;&nbsp; 0</td>
-
-<td>Quiet mode; no output unless an error or warning is produced.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td>&nbsp;&nbsp;&nbsp; 1</td>
-
-<td NOSAVE>Values of all parameters set by <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-and used by Zoltan.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td>&nbsp;&nbsp;&nbsp; 2</td>
-
-<td NOSAVE>Timing information for Zoltan's main
-routines.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE>&nbsp;&nbsp;&nbsp; 3</td>
-
-<td NOSAVE>Timing information within Zoltan's algorithms (support
-by algorithms is optional).</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE><i>&nbsp;&nbsp;</i>&nbsp; 4</td>
-
-<td></td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 5</td>
-
-<td NOSAVE>Trace information (enter/exit) for major Zoltan interface routines
-(printed by the processor specified by the <i><a href="#Debug_Processor">DEBUG_PROCESSOR</a></i>
-parameter).</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE>&nbsp;&nbsp;&nbsp; 6</td>
-
-<td>Trace information (enter/exit) for major Zoltan interface routines
-(printed by all processors).</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE>&nbsp;&nbsp;&nbsp; 7</td>
-
-<td>More detailed trace information in major Zoltan interface routines.</td>
-</tr>
-
-<tr VALIGN=TOP NOSAVE>
-<td>&nbsp;&nbsp;&nbsp; 8</td>
-
-<td NOSAVE>List of objects to be imported to and exported from each processor.
-&sup1;</td>
-</tr>
-
-<tr VALIGN=TOP>
-<td>&nbsp;&nbsp;&nbsp; 9</td>
-
-<td></td>
-</tr>
-
-<tr VALIGN=TOP>
-<td>&nbsp;&nbsp; 10</td>
-
-<td>Maximum debug output; may include algorithm-specific output. &sup1;</td>
-</tr>
-
-<tr NOSAVE>
-<td COLSPAN="2" NOSAVE>&sup1; <i>Output may be serialized; that is, one
-processor may have to complete its output before the next processor is
-allowed to begin its output.&nbsp; This serialization is not scalable and
-can significantly increase execution time on large number of processors.</i></td>
-
-<td></td>
-</tr>
 </table>
 
 <p>
+<!---------------------------------------------------------------------------->
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_alg_rcb.html">Next:&nbsp;
-Recursive Coordinate Bisection (RCB)</a>&nbsp; |&nbsp; <a href="ug_query_mig.html">Previous:&nbsp;
-Migration Query Functions</a>]
+Recursive Coordinate Bisection (RCB)</a>&nbsp; |&nbsp; <a href="ug_param.html">Previous:&nbsp;
+Zoltan Parameters and Output Levels</a>]
 </body>
 </html>

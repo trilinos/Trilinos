@@ -41,13 +41,13 @@ as the communicator.
 Several application query functions are then registered with Zoltan through
 calls to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>.  
 Parameters are set through calls to 
-<b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.  
+<b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.  
 The application then performs in computations,
 including making calls to Zoltan functions and utilities.  
 <p>
 Before its execution ends, the application frees memory used by Zoltan by
 calling 
-<b><a href="ug_interface_lb.html#Zoltan_Destroy">Zoltan_Destroy</a></b>.  
+<b><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a></b>.  
 <BR>&nbsp;
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <TR NOSAVE>
@@ -69,11 +69,11 @@ argv, &amp;version);</TT>&nbsp;&nbsp;
 <br><tt><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz, <a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN_TYPE</a>,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_owned_nodes, NULL);</tt>
 <p><tt>/* <i>Set some Zoltan parameters.</i> */</tt>
-<br><tt><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz, "debug_level", "4");</tt>
+<br><tt><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz, "debug_level", "4");</tt>
 <p><tt>/* <i>Perform application computations, call Zoltan, etc.</i> */</tt>
 <br><tt>...</tt>
 <p><tt>/* <i>Free Zoltan data structure before ending application.</i> */</tt>
-<br><tt><a href="ug_interface_lb.html#Zoltan_Destroy">Zoltan_Destroy</a> (&amp;zz);&nbsp;</tt>
+<br><tt><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a> (&amp;zz);&nbsp;</tt>
 </TD>
 </TR>
 
@@ -103,11 +103,11 @@ the Zoltan library.</I></CAPTION>
 <br><tt>ierr = <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
 <a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN_TYPE</a>, user_return_owned_nodes)</tt>
 <p><tt>! <i>Set some Zoltan parameters.</i></tt>
-<br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz, "debug_level", "4")</tt>
+<br><tt>ierr = <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz, "debug_level", "4")</tt>
 <p><tt>! <i>Perform application computations, call Zoltan, etc.</i></tt>
 <br><tt>...</tt>
 <p><tt>! <i>Free Zoltan data structure before ending application.</i></tt>
-<br><tt>call <a href="ug_interface_lb.html#Zoltan_Destroy">Zoltan_Destroy</a>(zz)&nbsp;</tt>
+<br><tt>call <a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a>(zz)&nbsp;</tt>
 
 
 </TD>

@@ -31,11 +31,10 @@
 The following functions are the load-balancing interface functions in the
 Zoltan library; their descriptions are included below.
 <blockquote><b><a href="#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>
-<br><b><a href="#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 <br><b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 <br><b><a href="#Zoltan_LB_Eval">Zoltan_LB_Eval</a></b>
 <br><b><a href="#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>
-<br><b><a href="#Zoltan_Destroy">Zoltan_Destroy</a></b></blockquote>
+</blockquote>
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
@@ -125,90 +124,6 @@ is used.</td>
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="Zoltan_Set_Param"></a>
-<hr WIDTH="100%">
-<table WIDTH="100%" NOSAVE >
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
-
-<td WIDTH="85%">
-int <b>Zoltan_Set_Param</b>
-(struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
-char&nbsp;*<i>param_name</i>,
-char&nbsp;*<i>new_val</i>);&nbsp;</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
-
-<td>FUNCTION <b>Zoltan_Set_Param</b>(<i>zz, param_name, new_val</i>)&nbsp;
-<br>INTEGER(Zoltan_INT) :: Zoltan_Set_Param&nbsp;
-<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
-<br>CHARACTER(LEN=*), INTENT(IN) :: param_name, new_value&nbsp;</td>
-</tr>
-</table>
-
-<hr WIDTH="100%"><b>Zoltan_Set_Param</b> is used to alter the value of one
-of the parameters used by Zoltan.&nbsp; All Zoltan parameters have reasonable
-default values, but this routine allows a user to provide alternative values
-if desired.
-<br>&nbsp;
-<table WIDTH="100%" >
-<tr>
-<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
-<td WIDTH="80%"></td>
-</tr>
-
-<tr>
-<td><i>&nbsp;&nbsp;&nbsp; zz</i></td>
-
-<td>Pointer to the Zoltan structure created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp; param_name</i></td>
-
-<td>A string containing the name of the parameter to be altered.&nbsp;
-Note that the string is case-insensitive.&nbsp; Also, different Zoltan
-structures can have different parameter values.&nbsp;</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp; new_val</i></td>
-
-<td>A string containing the new value for the parameter.&nbsp; Example
-strings include "3.154", "True", "7" or anything appropriate for the parameter
-being set. As above, the string is case-insensitive.&nbsp;</td>
-</tr>
-
-<tr>
-<td><b>Returned Value:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
-
-<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td></td>
-
-<td></td>
-</tr>
-</table>
-
-
-<!------------------------------------------------------------------------->
-<hr WIDTH="100%">
 <a NAME="Zoltan_LB_Balance"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
@@ -280,7 +195,7 @@ method; 0 or .FALSE. otherwise.</td>
 
 <td>Upon return, the number of array entries used to describe a single
 global ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 </tr>
 
 <tr NOSAVE>
@@ -288,7 +203,7 @@ the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 
 <td>Upon return, the number of array entries used to describe a single
 local ID.&nbsp; This value is the maximum value over all processors of
-the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -450,7 +365,7 @@ min,&nbsp; and sum) of the quality metrics to <i>stdout.</i></td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; obj_wgt</i></td>
 
-<td>Upon return, an array (of dimension <a href="ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>) 
+<td>Upon return, an array (of dimension <a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>) 
 containing the sum of object weights on this processor.</td>
 </tr>
 
@@ -464,7 +379,7 @@ this processor.</td>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>cut_wgt</i></td>
 
-<td>Upon return, an array (of dimension <a href="ug_alg.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>) 
+<td>Upon return, an array (of dimension <a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>) 
 of cut weights for this processor.&nbsp;</td>
 </tr>
 
@@ -562,7 +477,7 @@ Zoltan to return the results of <b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balanc
 Memory pointed to by the arguments is freed and the arguments are set to
 NULL in C or nullified in Fortran. NULL arguments may be passed to 
 <b>Zoltan_LB_Free_Data</b>.  Note that this function does not destroy the
-Zoltan data structure itself; it is deallocated through a call to <b><a href="#Zoltan_Destroy">Zoltan_Destroy</a></b>.
+Zoltan data structure itself; it is deallocated through a call to <b><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -621,50 +536,6 @@ objects in the new decomposition (i.e., the destination processors).</td>
 </tr>
 </table>
 
-
-<!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="Zoltan_Destroy"></a>
-<hr WIDTH="100%">
-<table WIDTH="100%" NOSAVE >
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
-
-<td WIDTH="85%">
-void <b>Zoltan_Destroy</b>
-(struct&nbsp;<b>Zoltan_Struct</b>&nbsp;**<i>zz</i>);&nbsp;</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
-
-<td>SUBROUTINE <b>Zoltan_Destroy</b>(<i>zz</i>)&nbsp;
-<br>TYPE(Zoltan_Struct), POINTER :: zz&nbsp;</td>
-</tr>
-</table>
-
-<hr WIDTH="100%"><b>Zoltan_Destroy</b> frees the memory associated with a Zoltan
-structure and sets the structure to NULL in C or nullifies the structure
-in Fortran. Note that <b>Zoltan_Destroy</b> does not deallocate the import
-and export arrays returned from <b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>;
-these arrays can be deallocated through a separate call to <b><a href="#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>.
-<br>&nbsp;
-<table WIDTH="100%" >
-<tr>
-<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
-<td WIDTH="80%"></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
-
-<td>A pointer to the address of the Zoltan structure, created by
-<b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
-to be destroyed.&nbsp;</td>
-</tr>
-</table>
-
-<p>
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_interface_augment.html">Next:&nbsp;
