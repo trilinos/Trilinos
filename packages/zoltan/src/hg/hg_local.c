@@ -51,6 +51,69 @@ static int local_no (
 
 /****************************************************************************/
 
+static int gain_check (HGraph *hg, float *gain, int *part, int **cut)
+{ float g;
+  int vertex, j, edge;
+
+  for (vertex=0; vertex<hg->nVtx; vertex++)
+  { g = 0.0;
+    for (j=hg->vindex[vertex]; j<hg->vindex[vertex+1]; j++)
+    { edge = hg->vedge[j];
+      if (cut[part[vertex]][edge] == 1)
+        g += (hg->ewgt?(hg->ewgt[edge]):1.0);
+      else if (cut[1-part[vertex]][edge] == 0)
+        g -= (hg->ewgt?(hg->ewgt[edge]):1.0);
+    }
+    if (g != gain[vertex])
+      printf("Wrong gain %f %f\n",g,gain[vertex]);
+  }
+}
+
+static void move (HGraph *hg, int vertex, int sour, int dest, int *part, int **cut, float *gain, HEAP *heap, float *part_weight)
+{ int i, j, edge, v;
+
+  part[vertex] = dest;
+  gain[vertex] *= -1;
+  part_weight[sour] -= (hg->vwgt?hg->vwgt[vertex]:1.0);
+  part_weight[dest] += (hg->vwgt?hg->vwgt[vertex]:1.0);
+  
+  for (i=hg->vindex[vertex]; i<hg->vindex[vertex+1]; i++)
+  { edge = hg->vedge[i];
+    if (cut[sour][edge] == 1)
+    { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+      { v=hg->hvertex[j];
+        if (v!=vertex)
+        { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
+          heap_change_value(&(heap[part[v]]),v,gain[v]);
+    } } }
+    else if (cut[sour][edge] == 2)
+    { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+      { v=hg->hvertex[j];
+        if (v!=vertex && part[v] == sour)
+        { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
+          heap_change_value(&(heap[part[v]]),v,gain[v]);
+          break;
+    } } }
+    if (cut[dest][edge] == 0)
+    { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+      { v=hg->hvertex[j];
+        if (v!=vertex)
+        { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
+          heap_change_value(&(heap[part[v]]),v,gain[v]);
+    } } }
+    else if (cut[dest][edge] == 1)
+    { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+      { v=hg->hvertex[j];
+        if (v!=vertex && part[v]==dest)
+        { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
+          heap_change_value(&(heap[part[v]]),v,gain[v]);
+          break;
+    } } }
+    cut[sour][edge]--;
+    cut[dest][edge]++;
+  }
+}
+
 static int local_fm (
   ZZ *zz, 
   HGraph *hg,
@@ -148,7 +211,10 @@ static int local_fm (
         sour = 0;
       else if (part_weight[1] > max_weight)
         sour = 1;
+/*
       else if (part_weight[0] > part_weight[1])
+*/
+      else if (heap_max_value(&(heap[0])) > heap_max_value(&(heap[1])))
         sour = 0;
       else
         sour = 1;
@@ -157,47 +223,9 @@ static int local_fm (
       vertex = heap_extract_max(&(heap[sour]));
       locked[vertex] = part[vertex]+1;
       locked_list[number_locked++] = vertex;
-      part[vertex] = dest;
       akt_cutsize -= gain[vertex];
-      part_weight[sour] -= (hg->vwgt?hg->vwgt[vertex]:1.0);
-      part_weight[dest] += (hg->vwgt?hg->vwgt[vertex]:1.0);
-      gain[vertex] *= -1;
 
-      for (i=hg->vindex[vertex]; i<hg->vindex[vertex+1]; i++)
-      { edge = hg->vedge[i];
-        if (cut[sour][edge] == 1)
-        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
-            if (!locked[v=hg->hvertex[j]])
-            { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_value(&(heap[part[v]]),v,gain[v]);
-            }
-        }
-        else if (cut[sour][edge] == 2)
-        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
-            if (!locked[v=hg->hvertex[j]] && part[v] == sour)
-            { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_value(&(heap[part[v]]),v,gain[v]);
-              break;
-            }
-        }
-        if (cut[dest][edge] == 0)
-        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
-            if (!locked[v=hg->hvertex[j]])
-            { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_value(&(heap[part[v]]),v,gain[v]);
-            }
-        }
-        else if (cut[dest][edge] == 1)
-        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
-            if (!locked[v=hg->hvertex[j]] && part[v]==dest)
-            { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_value(&(heap[part[v]]),v,gain[v]);
-              break;
-            }
-        }
-        cut[sour][edge]--;
-        cut[dest][edge]++;
-      }
+      move (hg,vertex,sour,dest,part,cut,gain,heap,part_weight);
 
       max = MAX(part_weight[0],part_weight[1]);
       if ((best_max_weight>max_weight && max<best_max_weight) ||
@@ -218,45 +246,7 @@ static int local_fm (
     { vertex = locked_list[--number_locked];
       sour = part[vertex];
       dest = locked[vertex]-1;
-      for (i=hg->vindex[vertex]; i<hg->vindex[vertex+1]; i++)
-      { edge = hg->vedge[i];
-        if (cut[sour][edge] == 1)
-        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
-            if (!locked[v=hg->hvertex[j]])
-            { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_value(&(heap[part[v]]),v,gain[v]);
-            }
-        }
-        else if (cut[sour][edge] == 2)
-        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
-            if (!locked[v=hg->hvertex[j]] && part[v] == sour)
-            { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_value(&(heap[part[v]]),v,gain[v]);
-              break;
-            }
-        }
-        if (cut[dest][edge] == 0)
-        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
-            if (!locked[v=hg->hvertex[j]])
-            { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_value(&(heap[part[v]]),v,gain[v]);
-            }
-        }
-        else if (cut[dest][edge] == 1)
-        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
-            if (!locked[v=hg->hvertex[j]] && part[v]==dest)
-            { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
-              heap_change_value(&(heap[part[v]]),v,gain[v]);
-              break;
-            }
-        }
-        cut[sour][edge]--;
-        cut[dest][edge]++;
-      }
-      part[vertex] = dest;
-      part_weight[sour] -= (hg->vwgt?hg->vwgt[vertex]:1.0);
-      part_weight[dest] += (hg->vwgt?hg->vwgt[vertex]:1.0);
-      gain[vertex] *= -1;
+      move (hg,vertex,sour,dest,part,cut,gain,heap,part_weight);
       heap_input(&(heap[dest]),vertex,gain[vertex]);
       locked[vertex] = 0;
     }
@@ -264,35 +254,16 @@ static int local_fm (
     while (number_locked)
     { vertex = locked_list[--number_locked];
       locked[vertex] = 0;
-      gain[vertex] = 0.0;
-      for (j=hg->vindex[vertex]; j<hg->vindex[vertex+1]; j++)
-      { edge = hg->vedge[j];
-        if (cut[part[vertex]][edge] == 1)
-          gain[vertex] += (hg->ewgt?(hg->ewgt[edge]):1.0);
-        else if (cut[1-part[vertex]][edge] == 0)
-          gain[vertex] -= (hg->ewgt?(hg->ewgt[edge]):1.0);
-      }
       heap_input(&(heap[part[vertex]]),vertex,gain[vertex]);
     }
+   
     for (i=0; i<p; i++)
       heap_make(&(heap[i]));
   } while (best_cutsize < cutsize);
 
-/*
-  for (i=0; i<hg->nVtx; i++)
-  { for (j=hg->vindex[i]; j<hg->vindex[i+1]; j++)
-    { edge = hg->vedge[j];
-      if (cut[part[i]][edge] == 1)
-        gain[i] -= (hg->ewgt?(hg->ewgt[edge]):1.0);
-      else if (cut[1-part[i]][edge] == 0)
-        gain[i] += (hg->ewgt?(hg->ewgt[edge]):1.0);
-    }
 
-    if (gain[i] != 0.0) 
-    { printf("gain[%d]=%f\n",i,gain[i]);
-      exit(0);
-    }
-  }
+/*
+  gain_check (hg, gain, part, cut);
 */
 
   ZOLTAN_FREE ((void **) &(cut[0]));

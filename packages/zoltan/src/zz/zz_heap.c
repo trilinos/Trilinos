@@ -26,6 +26,7 @@ static void heapify (HEAP*, int);
 
 int heap_init (ZZ *zz, HEAP *h, int space)
 { char *yo = "heap_init";
+  int i;
 
   h->space = space;
   h->n = 0;
@@ -35,6 +36,8 @@ int heap_init (ZZ *zz, HEAP *h, int space)
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
+  for (i=0; i<space; i++)
+    h->pos[i] = -1; 
   return ZOLTAN_OK;
 }
 
@@ -108,26 +111,28 @@ static void heapify (HEAP *h, int root)
 void heap_change_value (HEAP *h, int element, float value)
 { int position=h->pos[element], father;
 
-  if (value < h->value[element])
-  { h->value[element] = value;
-    heapify(h,position);
-  }
-  else if (value > h->value[element])
-  { h->value[element] = value;
-    father = (position-1)/2;
-    while (position>0 && h->value[element]>h->value[h->ele[father]])
-    { h->pos[h->ele[position]] = father;
-      h->pos[h->ele[father]] = position;
-      INT_SWAP(h->ele[father],h->ele[position]);
-      position = father;
-      father = (father-1)/2;
-  } }
+  if (position >=0)
+  { if (value < h->value[element])
+    { h->value[element] = value;
+      heapify(h,position);
+    }
+    else if (value > h->value[element])
+    { h->value[element] = value;
+      father = (position-1)/2;
+      while (position>0 && h->value[element]>h->value[h->ele[father]])
+      { h->pos[h->ele[position]] = father;
+        h->pos[h->ele[father]] = position;
+        INT_SWAP(h->ele[father],h->ele[position]);
+        position = father;
+        father = (father-1)/2;
+  } } }
 }
 
 int heap_extract_max (HEAP *h)
 { int max = h->ele[0];
 
   h->value[max] = 0.0;
+  h->pos[max] = -1;
   h->pos[h->ele[0]=h->ele[--(h->n)]] = 0;
   heapify(h,0);
   return max;

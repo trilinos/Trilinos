@@ -57,6 +57,7 @@ int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
 
 /*****************************************************************************/
 
+/*
 static float sim (HGraph *hg, int a, int b)
 { int   i, j, edge, pins;
   float sim=0.0, weight;
@@ -83,7 +84,7 @@ static float sim (HGraph *hg, int a, int b)
   return sim;
 }
 
-static sim_check (HGraph *hg, Graph *g)
+static void sim_check (HGraph *hg, Graph *g)
 { int i, j;
   for (i=0; i<g->nVtx; i++)
   { for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
@@ -92,6 +93,7 @@ static sim_check (HGraph *hg, Graph *g)
 );
   }
 }
+*/
 
 /*****************************************************************************/
 
@@ -118,7 +120,7 @@ int Zoltan_HG_Matching (
    || hgp->matching == matching_pgm
    || hgp->matching_opt == matching_aug2
    || hgp->matching_opt == matching_aug3)
-      {
+  {
       need_graph = 1 ;
       Zoltan_HG_Graph_Init (&g) ;
       ierr = Zoltan_HG_HGraph_to_Graph (zz, hg, &g) ;
@@ -128,28 +130,23 @@ int Zoltan_HG_Matching (
          return ierr ;
          }
 /*
-      graph_connected_components (g.nVtx,g.nindex,g.neigh,zz->Debug_Level);
+    graph_connected_components (g.nVtx,g.nindex,g.neigh,zz->Debug_Level);
 */
+    if (g.vwgt && hgp->ews>0)
+    { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (g.nEdge*sizeof(float))))
+      { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        ZOLTAN_TRACE_EXIT(zz, yo);
+        return ZOLTAN_MEMERR;
       }
-
-if (need_graph == 1)
-{
-  if (g.vwgt && hgp->ews>0)
-  { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (g.nEdge*sizeof(float))))
-    { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return ZOLTAN_MEMERR;
+      Zoltan_HG_Scale_Graph_Weight (zz, &g, new_ewgt,hgp->ews);
+      old_ewgt = g.ewgt;
+      g.ewgt = new_ewgt;
     }
-    Zoltan_HG_Scale_Graph_Weight (zz, &g, new_ewgt,hgp->ews);
-    old_ewgt = g.ewgt;
-    g.ewgt = new_ewgt;
-  }
-}
-
 /*
-  if (need_graph == 1)
-    sim_check(hg,&g);
+    if (need_graph == 1)
+      sim_check(hg,&g);
 */
+  }
 
   for (i=0; i<hg->nVtx; i++)
     match[i] = i;
