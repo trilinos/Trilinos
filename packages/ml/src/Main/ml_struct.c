@@ -1477,10 +1477,12 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
 
 extern int    parasails_factorized;
 extern double parasails_loadbal;
+#endif
 
 int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
    int sym, double thresh, int num_levels, double filter)
 {
+#ifdef PARASAILS
    int            (*fun1)(void *, int, double *, int, double *);
    int            (*fun2)(void *, int, double *, int, double *);
    int            start_level, end_level, i, status;
@@ -1579,10 +1581,11 @@ for (j = 0; j < row_length; j++)
    /* note: in free, post and pre are the same */
 
    return(status);
-}
-#elseif
+#else
      printf("ParaSails not linked\n");
+     return(1);
 #endif
+}
 
 /* ************************************************************************* */
 /* functions to generate Galerkin coarse grid operator                       */
