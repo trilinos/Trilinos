@@ -187,6 +187,14 @@ libnoxepetra_a_AR = $(AR) cru
 endif
 
 # ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+
+libnox_a_LIBADD = $(XTRALDADD)
+libnoxepetra_a_LIBADD = $(XTRALDADD)
+
+# ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 

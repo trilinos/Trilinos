@@ -75,32 +75,45 @@ dnl committing.
 dnl AC_REVISION($Revision$)
 
 # ------------------------------------------------------------------------
+# Extra flags and includes
+# ------------------------------------------------------------------------
+
+AC_ARG_WITH(flags,
+[  --with-flags            Specifies flags (\"-Dflag1 -Dflag2 ...\")],
+[
+XTRAFLAGS=$withval
+echo Using extra flags: $withval
+]
+)
+
+AC_ARG_WITH(include,
+[  --with-include          Specifies include directories (\"-Idir1 -Idir2 ...\")],
+[
+XTRAINC=$withval
+echo Using extra include directories: $withval
+]
+)
+
+# ------------------------------------------------------------------------
 # Debug configure command line option
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(debug,
 [  --enable-debug          Compile with debugging options],
 [
+DEBUG=$enableval
 case $enableval in
-  yes)
-    DEBUG=yes
-    CXXFLAGS="${CXXFLAGS} -g"
-    CFLAGS="${CFLAGS} -g"
-  ;;
-  opt)
-    DEBUG=opt
-    CXXFLAGS="${CXXFLAGS} -O2"
-    CFLAGS="${CFLAGS} -O2"
-  ;;
-  no)
-    DEBUG=no
-  ;;
-  *)
-    AC_MSG_ERROR([Invalid value for --enable-debug ($enableval)])
-  ;;
+
+  yes) CXXFLAGS="${CXXFLAGS} -g"
+       CFLAGS="${CFLAGS} -g"
+       ;;
+
+  no)  CXXFLAGS="${CXXFLAGS} -O2"
+       CFLAGS="${CFLAGS} -O2"
+       ;;
 esac
 ],
-[DEBUG=no]
+[DEBUG=default]
 )
 AC_MSG_CHECKING(whether debugging is on)
 AC_MSG_RESULT([${DEBUG}])
@@ -110,7 +123,7 @@ AC_MSG_RESULT([${DEBUG}])
 # ------------------------------------------------------------------------
 
 AC_ARG_WITH(ar,
-[  --with-ar         Specify archiver to use to build NOX libraries],
+[  --with-ar               Specify archiver to use to build NOX libraries],
 [
 AC_MSG_CHECKING(user-defined archiver)
 AC_MSG_RESULT([${withval}])
@@ -278,7 +291,7 @@ if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
    if test -d ${TRILINOS_HOME}; then
       AC_MSG_RESULT(yes)
    else
-      AC_MSG_RESULT([no (disabling Trilinos)])
+      AC_MSG_RESULT([no (WARNING: DISABLING TRILINOS!!!!)])
       USE_TRILINOS=no
    fi
 fi
@@ -386,6 +399,11 @@ fi
 # Checks for header files
 # ------------------------------------------------------------------------
 
+AC_CHECK_HEADERS([iostream iostream.h],[break],[],[])
+AC_CHECK_HEADERS([iomanip iomanip.h],[break],[],[])
+AC_CHECK_HEADERS([string],[],[],[])
+AC_CHECK_HEADERS([cmath math.h],[break],[],[])
+
 # ------------------------------------------------------------------------
 # Checks for types
 # ------------------------------------------------------------------------
@@ -403,23 +421,58 @@ AC_CXX_MUTABLE
 AC_CXX_HAVE_STL
 AC_CXX_HAVE_STD
 
-AC_MSG_CHECKING([for special compiler options])
+# IBM test
 case $target in
   rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
     # -qnolm squashes warnings about compiler licences
     COPTIONS="-qnolm"
     # -qrtti allows for dynamic casts
     CXXOPTIONS="-qnolm -qrtti"
-    AC_MSG_RESULT([rs6000 or powerpc])
-  ;;
-  *)
-    AC_MSG_RESULT([none])
   ;;
 esac
+
+AC_MSG_CHECKING([for extra preprocessor flags])
+if test X$XTRAFLAGS = X && test X$XTRAINC = X; then
+AC_MSG_RESULT(none)
+else
+AC_MSG_RESULT([$XTRAFLAGS $XTRAINC])
+fi
+
+AC_MSG_CHECKING([for extra C flags])
+if test X$COPTIONS = X; then
+AC_MSG_RESULT(none)
+else
+AC_MSG_RESULT($COPTIONS)
+fi
+
+AC_MSG_CHECKING([for extra C++ flags])
+if test X$CXXOPTIONS = X; then
+AC_MSG_RESULT(none)
+else
+AC_MSG_RESULT($CXXOPTIONS)
+fi
 
 CFLAGS="${CFLAGS} ${COPTIONS}"
 CXXFLAGS="${CXXFLAGS} ${CXXOPTIONS}"
 CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS} ${XTRAINC}"
+
+# ------------------------------------------------------------------------
+# Checks for linker characteristics
+# ------------------------------------------------------------------------
+
+# -- DEC CXX --
+if test X${target_cpu} = Xalpha &&  test X${CXX} = Xcxx; then
+   XTRALDADD="cxx_repository/*.o"
+fi
+
+AC_MSG_CHECKING([for extra object files to be linked])
+if test X$XTRALDADD = X; then
+AC_MSG_RESULT(none)
+else
+AC_MSG_RESULT($XTRALDADD)
+fi
+
+AC_SUBST(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Checks for library functions
@@ -443,12 +496,12 @@ fi
 # Alternate archiver
 # ------------------------------------------------------------------------
 
-AC_MSG_CHECKING(for special archiver)
+AC_MSG_CHECKING(for special archiver command)
 if test X${USE_ALTERNATE_AR} = Xyes; then
    AC_MSG_RESULT([yes (${ALTERNATE_AR})])
    AM_CONDITIONAL(USE_ALTERNATE_AR, true)
 else
-   AC_MSG_RESULT([no])
+   AC_MSG_RESULT([none])
    AM_CONDITIONAL(USE_ALTERNATE_AR, false)
 fi
 AC_SUBST(ALTERNATE_AR)

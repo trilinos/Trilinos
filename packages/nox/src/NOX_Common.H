@@ -33,6 +33,48 @@
 #ifndef NOX_COMMON_H
 #define NOX_COMMON_H
 
+#include "NOX_Config.h"
+
+#ifdef HAVE_IOSTREAM
+#include <iostream>
+#elif defined(HAVE_IOSTREAM_H)
+#include <iostream.h>
+#else
+*** MISSING HEADER FILE ***
+#endif
+
+#ifdef HAVE_IOMANIP
+#include <iomanip>
+#elif defined(HAVE_IOMANIP_H)
+#include <iomanip.h>
+#else
+*** MISSING HEADER FILE ***
+#endif
+
+#ifdef HAVE_CMATH
+#include <cmath>
+#elif defined(HAVE_MATH_H)
+#include <math.h>
+#else
+*** MISSING HEADER FILE ***
+#endif
+
+#ifdef HAVE_STRING
+#include <string>
+#else
+*** MISSING HEADER FILE ***
+#endif
+
+
+#include <vector>
+#include <map>
+using std::map;
+using std::vector;
+
+
+// ------------------------------------------------------------------------
+#ifdef ROGERS_OLD_STUFF
+
 #if defined(SGI) || defined(SGI64) || defined(SGI32)
 #include <stdlib.h>
 #include <stdio.h>
@@ -79,5 +121,8 @@ using namespace std;
 #include <map>
 using std::map;
 using std::vector;
+
+#endif // ROGERS_OLD_STUFF
+// ------------------------------------------------------------------------
 
 #endif

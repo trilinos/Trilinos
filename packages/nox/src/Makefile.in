@@ -107,6 +107,7 @@ RANLIB = @RANLIB@
 TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 TRILINOS_LDADD = @TRILINOS_LDADD@
 VERSION = @VERSION@
+XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@
@@ -267,6 +268,14 @@ libnox_a_SOURCES = \
 
 
 # ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+libnox_a_LIBADD = $(XTRALDADD)
+libnoxepetra_a_LIBADD = $(XTRALDADD)
+
+
+# ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 lib_LIBRARIES = $(NOX_LIB) $(NOXEPETRA_LIB)
@@ -300,7 +309,7 @@ CONFIG_HEADER = NOX_Config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
-libnox_a_LIBADD =
+libnox_a_DEPENDENCIES =
 am_libnox_a_OBJECTS = NOX_Linesearch_FullStep.$(OBJEXT) \
 	NOX_Linesearch_Halving.$(OBJEXT) \
 	NOX_Linesearch_Manager.$(OBJEXT) \
@@ -315,7 +324,7 @@ am_libnox_a_OBJECTS = NOX_Linesearch_FullStep.$(OBJEXT) \
 	NOX_Status_RelResid.$(OBJEXT) NOX_Status_MaxIters.$(OBJEXT) \
 	NOX_Utils.$(OBJEXT)
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS)
-libnoxepetra_a_LIBADD =
+libnoxepetra_a_DEPENDENCIES =
 @BUILD_NOXEPETRA_TRUE@am_libnoxepetra_a_OBJECTS = \
 @BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
 @BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT) \

@@ -98,6 +98,7 @@ RANLIB = @RANLIB@
 TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 TRILINOS_LDADD = @TRILINOS_LDADD@
 VERSION = @VERSION@
+XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@
