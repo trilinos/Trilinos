@@ -7,8 +7,8 @@ Parallel Disk Info	= number=0
 test local partitions	= 2
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-12	1	-1	-1
-16	0	-1	-1
-17	1	-1	-1
-21	0	-1	-1
-22	0	-1	-1
+3	1	-1	-1
+8	1	-1	-1
+9	1	-1	-1
+12	0	-1	-1
+17	0	-1	-1
