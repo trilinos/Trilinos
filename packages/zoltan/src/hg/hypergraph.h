@@ -36,6 +36,7 @@ typedef struct
 #define ZOLTAN_TRACE_EXIT(a,b)       {}
 #define ZOLTAN_TRACE_DETAIL(a,b,c)   {}
 #define ZOLTAN_MALLOC                malloc
+#define ZOLTAN_CALLOC                calloc
 #define ZOLTAN_FREE(a)               {free(*(a)); *a = NULL;}
 #define ZOLTAN_OK                    0
 #define ZOLTAN_WARN                  1
@@ -141,12 +142,11 @@ int Zoltan_HG_Readfile     (ZZ *, HGraph *, char *hgraphfile);
 
 /* Hypergraph Partitioning */
 /* Function types for options to hypergraph partitioning */
-
-typedef int ZOLTAN_HG_MATCHING_FN (ZZ *, Graph *,  Matching, int);
-typedef int ZOLTAN_HG_PACKING_FN  (ZZ *, HGraph *, Packing,  int);
-typedef int ZOLTAN_HG_GROUPING_FN (ZZ *, HGraph *, Grouping, int);
+typedef int ZOLTAN_HG_MATCHING_FN   (ZZ *, Graph *,  Matching, int);
+typedef int ZOLTAN_HG_PACKING_FN    (ZZ *, HGraph *, Packing,  int);
+typedef int ZOLTAN_HG_GROUPING_FN   (ZZ *, HGraph *, Grouping, int);
 typedef int ZOLTAN_HG_GLOBAL_PART_FN(ZZ *, HGraph *, int, Partition);
-typedef int ZOLTAN_HG_LOCAL_REF_FN(ZZ *, HGraph *);
+typedef int ZOLTAN_HG_LOCAL_REF_FN  (ZZ *, HGraph *, int, Partition, float);
 
 /* Function types for edge-weight scaling functions. */
 /* Placeholder for now; if these functions end up having the same argument */
@@ -158,20 +158,20 @@ typedef int ZOLTAN_HG_GROUPING_EWS_FN (ZZ *, HGraph *);
 
 
 /* Parameters to the hypergraph functions */
-
 typedef struct {
-  int redl;                              /* Reduction limit. */
+  float bal_tol;                        /*Balance tolerance in % of average */
+  int redl;                             /*Reduction limit. */
 
-  char redm_str[MAX_PARAM_STRING_LEN];   /* Reduction method string. */
-  ZOLTAN_HG_MATCHING_FN *matching;       /* Pointers to Matching, Packing and */
-  ZOLTAN_HG_PACKING_FN  *packing;        /* Grouping fn specified by */
-  ZOLTAN_HG_GROUPING_FN *grouping;       /* redm_str; NULL if not used */
+  char redm_str[MAX_PARAM_STRING_LEN];  /*Reduction method string. */
+  ZOLTAN_HG_MATCHING_FN *matching;      /*Pointers to Matching, Packing and */
+  ZOLTAN_HG_PACKING_FN  *packing;       /* Grouping fn specified by */
+  ZOLTAN_HG_GROUPING_FN *grouping;      /* redm_str; NULL if not used */
 
-  char global_str[MAX_PARAM_STRING_LEN]; /* Global partitioning string and */
-  ZOLTAN_HG_GLOBAL_PART_FN *global_part; /* pointer to Global partitioning fn */
+  char global_str[MAX_PARAM_STRING_LEN];/*Global partitioning string and */
+  ZOLTAN_HG_GLOBAL_PART_FN *global_part;/* pointer to Global partitioning fn */
 
-  char local_str[MAX_PARAM_STRING_LEN];  /* Local refinement string and */
-  ZOLTAN_HG_LOCAL_REF_FN *local_ref;     /* pointer to Local refinement fn */
+  char local_str[MAX_PARAM_STRING_LEN]; /*Local refinement string and */
+  ZOLTAN_HG_LOCAL_REF_FN *local_ref;    /* pointer to Local refinement fn */
 
   char rli_str[MAX_PARAM_STRING_LEN];    /* Reduction Local Improvement string*/
   ZOLTAN_HG_MATCHING_FN *matching_rli;   /* Pointers to Matching, Packing and */
@@ -189,7 +189,7 @@ typedef struct {
                                             errors. */
 } HGPartParams;
 
-int Zoltan_HG_Set_Options  (ZZ *, HGPartParams *);
+int Zoltan_HG_Set_Part_Options  (ZZ *, HGPartParams *);
 int Zoltan_HG_HPart_Lib    (ZZ *, HGraph *, int, Partition, HGPartParams *);
 int Zoltan_HG_HPart_Info   (ZZ *, HGraph *, int, Partition);
 int Zoltan_HG_Scale_Graph_Weight (ZZ *, Graph *);
@@ -215,6 +215,7 @@ int Zoltan_HG_Global (ZZ *, HGraph *, int, Partition, HGPartParams *);
 ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *);
 
 /* Local refinement functions */ /* KDD Placeholder for later. */
+int Zoltan_HG_Local (ZZ *, HGraph *, int, Partition, HGPartParams *);
 ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *);
 
 /* Sorting */

@@ -23,40 +23,43 @@ static float hcut_size_links (ZZ *, HGraph *, int, Partition);
 
 /****************************************************************************/
 /* Routine to set function pointers corresponding to input-string options. */
-int Zoltan_HG_Set_Options(ZZ *zz, HGPartParams *hgp)
+int Zoltan_HG_Set_Part_Options(ZZ *zz, HGPartParams *hgp)
 {
   char *yo = "Zoltan_HG_Set_Options";
-  int ierr = ZOLTAN_OK;
+
+  if (hgp->bal_tol < 0.0)
+  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid HG_BALANCE_TOLERANCE.");
+    return ZOLTAN_FATAL;
+  }
 
   /* Set reduction method. */
-   hgp->packing  = hgp->packing_rli  = NULL ;
-   hgp->matching = hgp->matching_rli = NULL ;
-   hgp->grouping = hgp->grouping_rli = NULL ;
-   hgp->packing_ews = NULL;
-   hgp->matching_ews = NULL;
-   hgp->grouping_ews = NULL;
+  hgp->packing  = hgp->packing_rli  = NULL ;
+  hgp->matching = hgp->matching_rli = NULL ;
+  hgp->grouping = hgp->grouping_rli = NULL ;
+  hgp->packing_ews = NULL;
+  hgp->matching_ews = NULL;
+  hgp->grouping_ews = NULL;
 
-   if (!(Zoltan_HG_Set_Packing_Fn  (hgp))
-    && !(Zoltan_HG_Set_Matching_Fn (hgp))
-    && !(Zoltan_HG_Set_Grouping_Fn (hgp)))
-   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid HG_REDUCTION_METHOD.");
-     ierr = ZOLTAN_FATAL;
-   }
+  if (!(Zoltan_HG_Set_Packing_Fn  (hgp))
+   && !(Zoltan_HG_Set_Matching_Fn (hgp))
+   && !(Zoltan_HG_Set_Grouping_Fn (hgp)))
+  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid HG_REDUCTION_METHOD.");
+    return ZOLTAN_FATAL;
+  }
 
-   /* Set global partitioning method */
-   if (!(hgp->global_part = Zoltan_HG_Set_Global_Part_Fn(hgp->global_str)))
-   { ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Invalid HG_GLOBAL_PARTITIONING.");
-     ierr = ZOLTAN_FATAL;
-   }
+  /* Set global partitioning method */
+  if (!(hgp->global_part = Zoltan_HG_Set_Global_Part_Fn(hgp->global_str)))
+  { ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Invalid HG_GLOBAL_PARTITIONING.");
+    return ZOLTAN_FATAL;
+  }
 
-   /* Set local refinement method, if any. */
-   hgp->local_ref = Zoltan_HG_Set_Local_Ref_Fn(hgp->local_str);
-   if (strcmp(hgp->local_str,"no") && !(hgp->local_ref))
-   { ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Invalid HG_LOCAL_REFINEMENT.");
-     ierr = ZOLTAN_FATAL;
-   }
+  /* Set local refinement method, if any. */
+  if (!(hgp->local_ref = Zoltan_HG_Set_Local_Ref_Fn(hgp->local_str)))
+  { ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Invalid HG_LOCAL_REFINEMENT.");
+    return ZOLTAN_FATAL;
+  }
 
-   return ierr;
+  return ZOLTAN_OK;
 }
 
 /****************************************************************************/
@@ -80,9 +83,9 @@ int Zoltan_HG_HPart_Lib (
   if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
   {  printf("START %3d |V|=%6d |E|=%6d %d/%s/%s-%s p=%d...\n", hg->info,hg->nVtx,
       hg->nEdge, hgp->redl, hgp->redm_str, hgp->global_str, hgp->local_str, p);
-  if (zz->Debug_Level > ZOLTAN_DEBUG_LIST){
-     ierr = Zoltan_HG_Info(zz, hg);
-     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+    if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
+    { ierr = Zoltan_HG_Info(zz, hg);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
         return ierr;
     }
   }
@@ -103,114 +106,111 @@ int Zoltan_HG_HPart_Lib (
   if (p == 1)             /* everything goes in the one partition */
   { for (i=0; i<hg->nVtx; i++)
       part[i] = 0 ;
-    goto end ;
+    return ZOLTAN_OK;
   }
   else if (p >= hg->nVtx) /* more partitions than vertices, trivial answer */
   { for (i=0; i<hg->nVtx; i++)
       part[i] = i;
-    goto end ;
+    return ZOLTAN_OK;
   }
   else if (hg->nVtx <= hgp->redl) /* fewer vertices than desired */
   { ierr = Zoltan_HG_Global (zz, hg, p, part, hgp);
-    goto end;
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+      return ierr;
   }
+  else /* normal multilevel situation */
+  { int    *pack=NULL, *LevelMap=NULL, *c_part=NULL;
+    HGraph c_hg;
 
-{/* normal partitioning situation, rest of code */
-  int    *pack=NULL, *LevelMap=NULL, *c_part=NULL;
-  HGraph c_hg;
+    /* Allocate Packing Array (used for matching, packing & grouping) */
+    if (!(pack = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
+    { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
 
-  /* Allocate Packing Array (used for matching, packing & grouping) */
-  if (!(pack = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
-  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    return ZOLTAN_MEMERR;
-  }
-
-  /* Calculate Packing, Grouping or Matching */
-  if (hgp->packing)
-    ierr = Zoltan_HG_Packing (zz,hg,pack,hgp);
-  else if (hgp->grouping)
-    ierr = Zoltan_HG_Grouping (zz,hg,pack,hgp) ;
-  else
-  { Graph g;
-    ierr = Zoltan_HG_HGraph_to_Graph (zz, hg, &g) ;
+    /* Calculate Packing, Grouping or Matching */
+    if (hgp->packing)
+      ierr = Zoltan_HG_Packing (zz,hg,pack,hgp);
+    else if (hgp->grouping)
+      ierr = Zoltan_HG_Grouping (zz,hg,pack,hgp) ;
+    else
+    { Graph g;
+      ierr = Zoltan_HG_HGraph_to_Graph (zz, hg, &g) ;
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+      { ZOLTAN_FREE((void **) &pack);
+        Zoltan_HG_Graph_Free(&g);
+        return ierr ;
+      }
+      ierr = Zoltan_HG_Matching(zz, &g, pack, hgp, g.nVtx-hgp->redl) ;
+      Zoltan_HG_Graph_Free(&g);
+    }
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     { ZOLTAN_FREE((void **) &pack);
-      Zoltan_HG_Graph_Free(&g);
       return ierr ;
     }
-    ierr = Zoltan_HG_Matching(zz, &g, pack, hgp, g.nVtx-hgp->redl) ;
-    Zoltan_HG_Graph_Free(&g);
-  }
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-  { ZOLTAN_FREE((void **) &pack);
-    return ierr ;
-  }
 
-  /* Allocate and initialize LevelMap */
-  if (!(LevelMap = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
-  { ZOLTAN_FREE ((void **) &pack);
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    return ZOLTAN_MEMERR;
-  }
-  for (i=0; i<hg->nVtx; i++)
-    LevelMap[i]=0 ;
+    /* Allocate and initialize LevelMap */
+    if (!(LevelMap = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
+    { ZOLTAN_FREE ((void **) &pack);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
+    for (i=0; i<hg->nVtx; i++)
+      LevelMap[i]=0 ;
+  
+    /* Construct coarse hypergraph and LevelMap */
+    ierr = Zoltan_HG_Coarsening(zz, hg,pack,&c_hg,LevelMap);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+    { ZOLTAN_FREE ((void **) &pack);
+      ZOLTAN_FREE ((void **) &LevelMap);
+      return ierr ;
+    }
 
-  /* Construct coarse hypergraph and LevelMap */
-  ierr = Zoltan_HG_Coarsening(zz, hg,pack,&c_hg,LevelMap);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-  { ZOLTAN_FREE ((void **) &pack);
+    /* Free Packing */
+    ZOLTAN_FREE ((void **) &pack);
+
+    /* Allocate Partition of coarse graph */
+    if (!(c_part = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg.nVtx)))
+    { ZOLTAN_FREE ((void **) &LevelMap);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
+    for (i=0; i<c_hg.nVtx; i++)
+      c_part[i]=0 ;
+  
+    /* Recursively partition coarse hypergraph */
+    ierr = Zoltan_HG_HPart_Lib (zz,&c_hg,p,c_part,hgp);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+    { ZOLTAN_FREE ((void **) &c_part);
+      ZOLTAN_FREE ((void **) &LevelMap);
+      return ierr ;
+    }
+
+    /* Project coarse partition to fine partition */
+    for (i=0; i<hg->nVtx; i++)
+      part[i] = c_part[LevelMap[i]];
+  
+    /* Free coarse graph, coarse partition and LevelMap */
+    Zoltan_HG_HGraph_Free (&c_hg);
+    ZOLTAN_FREE ((void **) &c_part);
     ZOLTAN_FREE ((void **) &LevelMap);
-    return ierr ;
   }
-
-  /* Free Packing */
-  ZOLTAN_FREE ((void **) &pack);
-
-  /* Allocate Partition of coarse graph */
-  if (!(c_part = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg.nVtx)))
-  { ZOLTAN_FREE ((void **) &LevelMap);
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    return ZOLTAN_MEMERR;
-  }
-  for (i=0; i<c_hg.nVtx; i++)
-    c_part[i]=0 ;
-
-  /* Recursively partition coarse hypergraph */
-  ierr = Zoltan_HG_HPart_Lib (zz,&c_hg,p,c_part,hgp);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-  { ZOLTAN_FREE ((void **) &c_part);
-    ZOLTAN_FREE ((void **) &LevelMap);
-    return ierr ;
-  }
-
-  /* Project coarse partition to fine partition */
-  for (i=0; i<hg->nVtx; i++)
-    part[i] = c_part[LevelMap[i]];
-
-  /* Free coarse graph, coarse partition and LevelMap */
-  Zoltan_HG_HGraph_Free (&c_hg);
-  ZOLTAN_FREE ((void **) &c_part);
-  ZOLTAN_FREE ((void **) &LevelMap);
 
   /* Locally refine partition */
-  if (hgp->local_ref)
-  {
-       /* Perform local refinement here */
-  }
-}
+  ierr = Zoltan_HG_Local (zz, hg, p, part, hgp);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+    return ierr ;
 
-end:
   /* print useful information (conditionally) */
   if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
-     {
-     ierr = Zoltan_HG_HPart_Info (zz,hg,p,part);
-     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-        return ierr ;
-     }
+  { ierr = Zoltan_HG_HPart_Info (zz,hg,p,part);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+      return ierr ;
+  }
   if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
-     printf("FINAL %3d |V|=%6d |E|=%6d %d/%s/%s-%s p=%d cut=%.2f\n",
-      hg->info, hg->nVtx, hg->nEdge, hgp->redl, hgp->redm_str, hgp->global_str,
-      hgp->local_str, p, hcut_size_links(zz,hg,p,part));
+    printf("FINAL %3d |V|=%6d |E|=%6d %d/%s/%s-%s p=%d cut=%.2f\n",
+     hg->info,hg->nVtx,hg->nEdge,hgp->redl,hgp->redm_str,hgp->global_str,
+     hgp->local_str, p,hcut_size_links(zz,hg,p,part));
 
   return ierr ;
 }
@@ -272,7 +272,7 @@ static int hmin_max (ZZ *zz, int P, int *q)
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
       printf("%9d    %12.2f %9d    %9d\n",values[0], (float)(values[2])/P,
        values[1],values[2]);
-    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    if (zz->Debug_Level > ZOLTAN_DEBUG_ALL)
     { for (i=0; i<P; i++)
         printf ("%d ",q[i]);
       printf("\n");
@@ -294,7 +294,7 @@ static float hmin_max_float (ZZ *zz, int P, float *q)
       values[0] = MIN(values[0],q[i]);
       values[1] = MAX(values[1],q[i]);
     }
-    if (zz->Debug_Level > ZOLTAN_DEBUG_ALL)
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
       printf("%12.2f %12.2f %12.2f %12.2f\n",values[0],values[2]/P,values[1],values[2]);
     if (zz->Debug_Level > ZOLTAN_DEBUG_ALL)
     { for (i=0; i<P; i++)
@@ -337,10 +337,9 @@ int Zoltan_HG_HPart_Info (ZZ *zz, HGraph *hg, int p, Partition part)
   if (hg->vwgt)
   { float *size_w, max_size_w, tot_w=0.0;
     if (!(size_w = (float *) ZOLTAN_MALLOC (sizeof (float) * p)))
-       {
-       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-       return ZOLTAN_MEMERR;
-       }
+    { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
     for (i=0; i < p; i++)
       size_w[i] = 0.0 ;
     for (i=0; i<hg->nVtx; i++)

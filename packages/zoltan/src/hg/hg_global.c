@@ -53,10 +53,9 @@ static int global_ran (
   char *yo = "global_ran" ;
 
   if (srand_set == 0)
-     {
-     srand_set = 1 ;
-     srand ((unsigned long) RANDOM_SEED) ;
-     }
+  { srand_set = 1 ;
+    srand ((unsigned long) RANDOM_SEED) ;
+  }
 
   if (!(order = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)) ||
       !(weight = (float *) ZOLTAN_MALLOC (sizeof (float) * p))    )
@@ -82,7 +81,7 @@ static int global_ran (
   }
   ZOLTAN_FREE ((void **) &order);
   ZOLTAN_FREE ((void **) &weight);
-  return 0;
+  return ZOLTAN_OK;
 }
 
 
@@ -106,7 +105,7 @@ static int global_lin (ZZ *zz, HGraph *hg, int p, Partition part)
     part[i] = number-1;
     weight_sum += hg->vwgt?hg->vwgt[i]:1.0;
   }
-  return 0;
+  return ZOLTAN_OK;
 }
 
 

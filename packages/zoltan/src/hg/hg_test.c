@@ -42,12 +42,13 @@ int main (int argc, char **argv)
   HGPartParams hgp;
   ZZ     zz;
 
+  hgp.bal_tol = 10.0;
   hgp.redl = 0;
   strcpy(hgp.redm_str, "grg");
   strcpy(hgp.global_str, "lin");
-  strcpy(hgp.local_str, "no");
+  strcpy(hgp.local_str, "hc");
   strcpy(hgp.rli_str, "aug3");
-  strcpy(hgp.ews_str, "no");
+  strcpy(hgp.ews_str, "vertex_product");
 
   zz.Debug_Level = 1;
 
@@ -82,7 +83,7 @@ int main (int argc, char **argv)
       return 1;
     }
   }
-  if (Zoltan_HG_Set_Options(&zz, &hgp))
+  if (Zoltan_HG_Set_Part_Options(&zz, &hgp))
     return 1;
   ADD_NEW_TIME(t_rest);
 

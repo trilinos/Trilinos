@@ -39,10 +39,9 @@ int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
   char *str;
   static int srand_set = 0;
   if (srand_set == 0)
-     {
-     srand_set = 1 ;
-     srand ((unsigned long) RANDOM_SEED) ;
-     }
+  { srand_set = 1 ;
+    srand ((unsigned long) RANDOM_SEED) ;
+  }
 
   str = hgp->redm_str;
   if      (!strcasecmp(str, "mxp"))  hgp->packing = packing_mxp;

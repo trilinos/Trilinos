@@ -2,7 +2,7 @@
 #C_pre          = purify -best-effort -cache-dir=/tmp
 
 #Compiler
-C_comp		= /Net/local/bin/cc -DHTEST 
+C_comp		= cc -DHTEST 
 
 # Assume that environment OSTYPE is set to 'solaris' or 'linux'!
 # OSTYPE        = solaris
