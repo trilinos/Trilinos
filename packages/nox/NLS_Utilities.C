@@ -11,19 +11,15 @@
 int NLS_Utilities::myPID = 0;
 int NLS_Utilities::outputLevel = 2;
 int NLS_Utilities::printProc = 0;
+int NLS_Utilities::precision = 4;
+string NLS_Utilities::stars = "***********************************************************************\n";
 
 void NLS_Utilities::setUtilities(NLS_ParameterList& p)
 {
-  outputLevel = p.getParameter("Output Level", 2);
-  myPID = p.getParameter("MyPID", 0);
-  printProc = p.getParameter("Print Processor", 0);
-
-  if (doPrint(4))
-    cout << "Output Level " << outputLevel << "." << endl; 
-
-  if (doPrint(5)) 
-    cout << "NLS_Utilities: Processor " << myPID 
-	 << " is online." << endl;  
+  outputLevel = p.getParameter("Output Level", outputLevel);
+  myPID = p.getParameter("MyPID", myPID);
+  printProc = p.getParameter("Output Processor", printProc);
+  precision = p.getParameter("Output Precision", precision);
 }
 
 bool NLS_Utilities::isPrintProc()

@@ -49,9 +49,12 @@ public:
   //! for serial jobs.
   /*! Returns the rank of calling process */
   static int getMyPID();
-  
-protected:
 
+public:
+  
+  static string stars;
+  static int precision;
+  
   //! Processor ID.  Defaults to 0 for serial.
   static int myPID;
   
