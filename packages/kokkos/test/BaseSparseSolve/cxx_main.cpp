@@ -5,7 +5,7 @@
 #include "Kokkos_DenseVector.hpp"
 #include "Kokkos_HbMatrix.hpp"
 #include "Kokkos_BaseSparseMultiply.hpp"
-#include "Kokkos_PackedSparseMultiply.hpp"
+#include "Kokkos_BaseSparseSolve.hpp"
 #include "Kokkos_Time.hpp"
 #include "Kokkos_Flops.hpp"
 #include "GenerateHbProblem.hpp"
@@ -15,15 +15,18 @@ using namespace Kokkos;
 
 #define OTYPE long long
 #define STYPE double
-#define MULTCLASS PackedSparseMultiply
+#define MULTCLASS BaseSparseMultiply
+#define SOLVECLASS BaseSparseSolve
+
+typedef MultiVector<OTYPE, STYPE> DMultiVector;
+typedef Vector<OTYPE, STYPE> DVector;
+typedef CisMatrix<OTYPE, STYPE> DHbMatrix;
 
 template<typename TYPE>
 int PrintTestResults(string, TYPE, TYPE, bool);
 
-int ReturnCodeCheck(string, int, int, bool);
-
 template<typename OrdinalType, typename ScalarType>
-void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
+void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		       OrdinalType * xoff, OrdinalType * yoff,
 		       Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -33,7 +36,7 @@ void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
 		       OrdinalType & numEntries);
 
 template<typename OrdinalType, typename ScalarType>
-void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
+void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		       OrdinalType * xoff, OrdinalType * yoff, OrdinalType nrhs,
 		       Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -42,9 +45,15 @@ void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
 		       Kokkos::MultiVector<OrdinalType, ScalarType> *&xexact,
 		       OrdinalType & numEntries);
 
-typedef MultiVector<OTYPE, STYPE> DMultiVector;
-typedef Vector<OTYPE, STYPE> DVector;
-typedef CisMatrix<OTYPE, STYPE> DHbMatrix;
+void runChecks (bool verbose, bool generateClassicHbMatrix, bool isRowOriented, 
+		int numEquations, int numEntries, int nrhs,
+		bool isLowerTriangular, bool isUpperTriangular, bool hasImplicitUnitDiagonal,
+		bool canUseStructure, bool canUseValues,
+		DHbMatrix * A, DMultiVector * x, DMultiVector * b, DMultiVector * xx, 
+		int & numberFailedTests);
+
+int compareMultiVecs(const DMultiVector & v1, const DMultiVector & v2, bool verbose);
+int compareVecs(const DVector & v1, const DVector & v2, bool verbose);
 
 int main(int argc, char* argv[]) 
 {
@@ -58,125 +67,241 @@ int main(int argc, char* argv[])
   string testName = "";
 
   DHbMatrix * A;
-  DVector * x;
-  DVector * b;
   DVector * xexact;
   DMultiVector * xm;
   DMultiVector * bm;
   DMultiVector * xexactm;
-  OTYPE nx = 100;
+  OTYPE nrhs = 20;
+  OTYPE nx = 150;
   OTYPE ny = nx;
-  OTYPE npoints = 11;
+  OTYPE npointsU = 4;
+  OTYPE npointsL = 6;
+  OTYPE npointsU1 = 5;
+  OTYPE npointsL1 = 7;
  
-  OTYPE xoff[] = {-2, -1, -1,  0,  1, -1,  0,  1,  0, 1, 2};
-  OTYPE yoff[] = {-1, -2, -1, -1, -1,  0,  0,  0,  1, 2, 1};
+  OTYPE xoffU[] = {1,  0, 1, 2};
+  OTYPE yoffU[] = {0,  1, 2, 1}; 
+
+  OTYPE xoffL[] = {-2, -1, -1,  0,  1, -1};
+  OTYPE yoffL[] = {-1, -2, -1, -1, -1,  0};
+
+  OTYPE xoffU1[] = {0, 1,  0, 1, 2};
+  OTYPE yoffU1[] = {0, 0,  1, 2, 1};
+
+  OTYPE xoffL1[] = {-2, -1, -1,  0,  1, -1,  0};
+  OTYPE yoffL1[] = {-1, -2, -1, -1, -1,  0,  0};
 
   OTYPE numEquations = nx*ny;
   OTYPE numEntries; 
-    if (verbose) cout << "Size of Ordinal Type (in bytes) = " << sizeof(OTYPE) << endl
-		      << "Size of Scalar  Type (in bytes) = " << sizeof(STYPE) << endl;
+  if (verbose) cout << "Size of Ordinal Type (in bytes) = " << sizeof(OTYPE) << endl
+		    << "Size of Scalar  Type (in bytes) = " << sizeof(STYPE) << endl;
 
-  {
-    bool generateClassicHbMatrix = true;
-    bool isRowOriented = true;
-    KokkosTest::GenerateHbProblem<OTYPE, STYPE>
-      problem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
-    
-    if (verbose) cout<<endl<<"********** CHECKING KOKKOS  Classic HbMatrix **********" << " Dim = " << numEquations <<endl<<endl;
-    
-    // Check output objects
-    if (verbose) cout <<"Checking Attribute accessors .......";
-    if ( A->getNumRows()!=numEquations || A->getNumCols()!=numEquations || 
-	 A->getIsRowOriented()!=isRowOriented ||A->getNumEntries()!=numEntries) {
-      if (verbose) cout << "unsuccessful."<<endl;
-      numberFailedTests++;
-    } else {
-      if (verbose) cout << "successful."<<endl;
+  bool canUseStructure = true;
+  bool canUseValues = true;
+
+  bool hasImplicitUnitDiagonal = true;
+  bool isUpper;
+
+  bool generateClassicHbMatrix;
+  bool isRowOriented;
+  for (int ii=0; ii<2; ii++) {
+    for (int jj=0; jj<2; jj++) {
+      generateClassicHbMatrix = (ii==1);
+      isRowOriented = (jj==1);
+      KokkosTest::GenerateHbProblem<OTYPE, STYPE>
+	problem(generateClassicHbMatrix, isRowOriented, hasImplicitUnitDiagonal,
+		nx, ny, npointsU, xoffU, yoffU, 
+		nrhs, A, xm, bm, xexactm, numEntries);
+       
+      isUpper = isRowOriented;
+      runChecks(verbose, generateClassicHbMatrix, isRowOriented, numEquations, numEntries, nrhs, !isUpper, 
+		isUpper, hasImplicitUnitDiagonal, canUseStructure, canUseValues, A, xm, bm, xexactm, numberFailedTests);
+       
     }
-    if (verbose) cout <<"Checking if attribute set/check is working.......";
-
-    Kokkos::HbMatrix<OTYPE, STYPE> * HbA = dynamic_cast<Kokkos::HbMatrix<OTYPE, STYPE> *>(A);
-    HbA->setHasDiagonalEntries(false); // Invalid, but testing it
-    assert(HbA->checkStructure()==-3);
-    HbA->setIsLowerTriangular(true); // Invalid, but testing it
-    assert(HbA->checkStructure()==-2);
-    HbA->setIsUpperTriangular(true); // Invalid, but testing it
-    assert(HbA->checkStructure()==-1);
-    assert(HbA->checkStructure()==0);
-    if (verbose) cout << "successful."<<endl;
-    
-    Kokkos::MULTCLASS<OTYPE, STYPE> opA;
-    opA.initializeStructure(*A, true);
-    opA.initializeValues(*A, true);
-    
-    Kokkos::Flops counter;
-    opA.setFlopCounter(counter);
-    Kokkos::Time timer;
-
-    for (int ii=0; ii<20; ii++)
-      opA.apply(*xexact, *x); // Use x for results
-
-    double opAtime = timer.elapsedTime();
-    double opAflops = opA.getFlops();
-
-    double mflops = opAflops/opAtime/1000000.0;
-    
-    STYPE * bv = b->getValues();
-    STYPE * xv = x->getValues();
-    STYPE sum = 0.0;
-    for (OTYPE i=0; i<numEquations; i++) sum += xv[i] - bv[i];
-    if (verbose) cout << "Difference between exact and computed = " << sum << endl;
-    if (verbose) cout << "MFLOPS = " << mflops << endl;
   }
-  {
-    bool generateClassicHbMatrix = false;
-    bool isRowOriented = false;
-    OTYPE nrhs = 10;
+
+  for (int ii=0; ii<2; ii++) {
+    for (int jj=0; jj<2; jj++) {
+      generateClassicHbMatrix = (ii==1);
+      isRowOriented = (jj==1);
+      KokkosTest::GenerateHbProblem<OTYPE, STYPE>
+	problem(generateClassicHbMatrix, isRowOriented, hasImplicitUnitDiagonal,
+		nx, ny, npointsL, xoffL, yoffL, 
+		nrhs, A, xm, bm, xexactm, numEntries);
+       
+      isUpper = !isRowOriented;
+      runChecks(verbose, generateClassicHbMatrix, isRowOriented, numEquations, numEntries, nrhs, !isUpper, 
+		isUpper, hasImplicitUnitDiagonal, canUseStructure, canUseValues, A, xm, bm, xexactm, numberFailedTests);
     
-    KokkosTest::GenerateHbProblem<OTYPE, STYPE>
-      problem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, nrhs, A, xm, bm, xexactm, numEntries);
-    
-    if (verbose) cout<<endl<<"********** CHECKING KOKKOS  Generalized HbMatrix **********"<<endl<<endl;
-    
-    // Check output objects
-    if (verbose) cout <<"Checking Attribute accessors ";
-    if ( A->getNumRows()!=numEquations || A->getNumCols()!=numEquations || 
-	 A->getIsRowOriented()!=isRowOriented ||A->getNumEntries()!=numEntries) {
-      if (verbose) cout << "unsuccessful."<<endl;
-      numberFailedTests++;
-    } else {
-      if (verbose) cout << "successful."<<endl;
     }
-    Kokkos::MULTCLASS<OTYPE, STYPE> opA;
-    opA.initializeStructure(*A, true);
-    opA.initializeValues(*A, true);
+  }
+  hasImplicitUnitDiagonal = false;
+  for (int ii=0; ii<2; ii++) {
+    for (int jj=0; jj<2; jj++) {
+      generateClassicHbMatrix = (ii==1);
+      isRowOriented = (jj==1);
+      KokkosTest::GenerateHbProblem<OTYPE, STYPE>
+	problem(generateClassicHbMatrix, isRowOriented, hasImplicitUnitDiagonal,
+		nx, ny, npointsL1, xoffL1, yoffL1, 
+		nrhs, A, xm, bm, xexactm, numEntries);
+       
+      isUpper = !isRowOriented;
+      runChecks(verbose, generateClassicHbMatrix, isRowOriented, numEquations, numEntries, nrhs, !isUpper, 
+		isUpper, hasImplicitUnitDiagonal, canUseStructure, canUseValues, A, xm, bm, xexactm, numberFailedTests);
+       
+    }
+  }
+  for (int ii=0; ii<2; ii++) {
+    for (int jj=0; jj<2; jj++) {
+      generateClassicHbMatrix = (ii==1);
+      isRowOriented = (jj==1);
+      KokkosTest::GenerateHbProblem<OTYPE, STYPE>
+	problem(generateClassicHbMatrix, isRowOriented, hasImplicitUnitDiagonal,
+		nx, ny, npointsU1, xoffU1, yoffU1, 
+		nrhs, A, xm, bm, xexactm, numEntries);
+
+      isUpper = isRowOriented;
+      runChecks(verbose, generateClassicHbMatrix, isRowOriented, numEquations, numEntries, nrhs, !isUpper, 
+		isUpper, hasImplicitUnitDiagonal, canUseStructure, canUseValues, A, xm, bm, xexactm, numberFailedTests);
     
-    Kokkos::Flops counter;
-    opA.setFlopCounter(counter);
-    Kokkos::Time timer;
-
-    for (int ii=0; ii<20; ii++)
-      opA.apply(*xexactm, *xm); // Use x for results
-
-    double opAtime = timer.elapsedTime();
-    double opAflops = opA.getFlops();
-
-    double mflops = opAflops/opAtime/1000000.0;
-    
-    STYPE * bv = bm->getValues(0);
-    STYPE * xv = xm->getValues(0);
-    STYPE sum = 0.0;
-    for (OTYPE i=0; i<numEquations; i++) sum += xv[i] - bv[i];
-    if (verbose) cout << "Difference between exact and computed = " << sum << endl;
-    if (verbose) cout << "MFLOPS = " << mflops << endl;
+    }
   }
   //
   // If a test failed output the number of failed tests.
   //
-  if(numberFailedTests > 0) cout << "Number of failed tests: " << numberFailedTests << endl;
+  if(numberFailedTests > 0) cout << endl<< "Number of failed tests: " << numberFailedTests << endl;
+  else cout << endl << "All Tests Passed!"<<endl;
 
- return 0;
-}  
+  return 0;
+}
+void runChecks (bool verbose, bool generateClassicHbMatrix, bool isRowOriented, 
+		int numEquations, int numEntries, int nrhs,
+		bool isLowerTriangular, bool isUpperTriangular, bool hasImplicitUnitDiagonal,
+		bool canUseStructure, bool canUseValues,
+		DHbMatrix * A, DMultiVector * x, DMultiVector * b, DMultiVector * xx, 
+		int & numberFailedTests) {
+  if (verbose) {
+    
+    cout <<"********** CHECKING KOKKOS HbMatrix **********" 
+	 << " Dim = " << numEquations << " Num Nonzeros = " <<numEntries <<endl<<endl;
+    cout <<"  generateClassicHbMatrix = "<< generateClassicHbMatrix << endl;
+    cout <<"  isRowOriented           = "<< isRowOriented << endl;
+    cout <<"  isLowerTriangular       = "<< isLowerTriangular << endl;
+    cout <<"  isUpperTriangular       = "<< isUpperTriangular << endl;
+    cout <<"  hasImplicitUnitDiagonal = "<< hasImplicitUnitDiagonal << endl;
+  }
+  
+
+  Kokkos::HbMatrix<OTYPE, STYPE> * HbA = dynamic_cast<Kokkos::HbMatrix<OTYPE, STYPE> *>(A);
+  HbA->setHasDiagonalEntries((!hasImplicitUnitDiagonal));
+  HbA->setHasImplicitUnitDiagonal(hasImplicitUnitDiagonal);
+  HbA->setIsLowerTriangular(isLowerTriangular);
+  HbA->setIsUpperTriangular(isUpperTriangular);
+  
+  // Check output objects
+  if (verbose) cout <<"Checking Attribute accessors ......."<<endl<<endl;
+  numberFailedTests += PrintTestResults<OTYPE>("getNumRows()", A->getNumRows(), numEquations, verbose);
+  numberFailedTests += PrintTestResults<OTYPE>("getNumCols()", A->getNumCols(), numEquations, verbose);
+  numberFailedTests += PrintTestResults<OTYPE>("getNumEntries()", A->getNumEntries(), numEntries, verbose);
+  numberFailedTests += PrintTestResults<bool>("getIsRowOriented()", A->getIsRowOriented(), isRowOriented, verbose);
+  numberFailedTests += PrintTestResults<bool>("getIsUpperTriangular()", A->getIsUpperTriangular(), isUpperTriangular, verbose);
+  numberFailedTests += PrintTestResults<bool>("getIsLowerTriangular()", A->getIsLowerTriangular(), isLowerTriangular, verbose);
+  numberFailedTests += PrintTestResults<bool>("getHasImplicitUnitDiagonal()", A->getHasImplicitUnitDiagonal(), hasImplicitUnitDiagonal, verbose);
+
+  Kokkos::MULTCLASS<OTYPE, STYPE> multA;
+  multA.initializeStructure(*A, true);
+  multA.initializeValues(*A, true);
+  
+  Kokkos::SOLVECLASS<OTYPE, STYPE> solveA;
+  solveA.initializeStructure(*A, true);
+  solveA.initializeValues(*A, true);
+  
+  numberFailedTests += PrintTestResults<bool>("getCanUseStructure()", solveA.getCanUseStructure(), canUseStructure, verbose);
+  numberFailedTests += PrintTestResults<bool>("getCanUseValues()", solveA.getCanUseValues(), canUseValues, verbose);
+  Kokkos::Flops multCounter;
+  Kokkos::Flops solveCounter;
+  multA.setFlopCounter(multCounter);
+  solveA.setFlopCounter(solveCounter);
+  Kokkos::Time timer;
+
+  // First solve for Multiple RHS, then multiply
+  
+  double start = timer.elapsedTime();
+  solveA.apply(*b, *x);
+  double solveAtime = timer.elapsedTime();
+  double solveAflops = solveA.getFlops();
+  double mflops = solveAflops/solveAtime/1000000.0;
+  if (verbose) cout << "Solve MFLOPS = " << mflops << endl; 
+  numberFailedTests += compareMultiVecs(*x, *xx, verbose);
+
+  start = timer.elapsedTime();
+  multA.apply(*xx, *x);
+  double multAtime = timer.elapsedTime();
+  double multAflops = multA.getFlops();
+  mflops = multAflops/multAtime/1000000.0;
+  if (verbose) cout << "Multiply MFLOPS = " << mflops << endl; 
+  numberFailedTests += compareMultiVecs(*x, *b, verbose);
+
+  // Next solve for single RHS, then multiply
+
+  DenseVector<OTYPE, STYPE> x1;
+  DenseVector<OTYPE, STYPE> b1;
+  DenseVector<OTYPE, STYPE> xx1;
+  x1.initializeValues(x->getNumRows(), x->getValues(0)); 
+  b1.initializeValues(b->getNumRows(), b->getValues(0)); 
+  xx1.initializeValues(xx->getNumRows(), xx->getValues(0)); 
+  
+  start = timer.elapsedTime();
+  solveA.apply(b1, x1);
+  solveAtime = timer.elapsedTime();
+  solveAflops = solveA.getFlops(); 
+  mflops = solveAflops/solveAtime/1000000.0;
+  if (verbose) cout << "Solve MFLOPS = " << mflops << endl; 
+  numberFailedTests += compareVecs(x1, xx1, verbose);
+  
+  start = timer.elapsedTime();
+  multA.apply(xx1, x1);
+  multAtime = timer.elapsedTime();
+  multAflops = multA.getFlops();
+  mflops = multAflops/multAtime/1000000.0;
+  if (verbose) cout << "Multiply MFLOPS = " << mflops << endl; 
+  numberFailedTests += compareVecs(x1, b1, verbose); 
+  return;
+}
+
+int compareMultiVecs(const DMultiVector & v1, const DMultiVector & v2, bool verbose) {
+  
+  STYPE sum = 0.0;
+  for (OTYPE i=0; i<v1.getNumCols(); i++) {
+    STYPE * v1v = v1.getValues(i);
+    STYPE * v2v = v2.getValues(i);
+    for (OTYPE i=0; i<v1.getNumRows(); i++) sum += v1v[i] - v2v[i];
+  }
+  
+  if (sum<0.0) sum = - sum;
+  if (verbose) cout << "Difference between exact and computed multivectors = " << sum << endl;
+  if (!(sum<1.0E-4)) {
+    if (verbose) cout << "********** Difference too large **********" << endl;
+    return(1); 
+  }
+  return(0);
+}
+
+int compareVecs(const DVector & v1, const DVector & v2, bool verbose) {
+
+  STYPE sum = 0.0;
+  STYPE * v1v = v1.getValues();
+  STYPE * v2v = v2.getValues();
+  for (OTYPE i=0; i < v1.getLength(); i++) sum += v1v[i] - v2v[i];
+  if (sum<0.0) sum = - sum;
+
+  if (verbose) cout << "Difference between exact and computed vectors = " << sum << endl;  
+  if (!(sum<1.0E-4)) {
+    if (verbose) cout << "********** Difference too large **********" << endl;
+    return(1); 
+  }
+  return(0);
+}
 
 template<typename TYPE>
 int PrintTestResults(string testName, TYPE calculatedResult, TYPE expectedResult, bool verbose)
@@ -195,34 +320,3 @@ int PrintTestResults(string testName, TYPE calculatedResult, TYPE expectedResult
   return result;
 }
 
-int ReturnCodeCheck(string testName, int returnCode, int expectedResult, bool verbose)
-{
-  int result;
-  if(expectedResult == 0)
-    {
-      if(returnCode == 0)
-	{
-	  if(verbose) cout << testName << " test successful." << endl;
-	  result = 0;
-	}
-      else
-	{
-	  if(verbose) cout << testName << " test unsuccessful. Return code was " << returnCode << "." << endl;
-	  result = 1;
-	}
-    }
-  else
-    {
-      if(returnCode != 0)
-	{
-	  if(verbose) cout << testName << " test successful -- failed as expected." << endl;
-	  result = 0;
-	}
-      else
-	{
-	  if(verbose) cout << testName << " test unsuccessful -- did not fail as expected. Return code was " << returnCode << "." << endl;
-	  result = 1;
-	}
-    }
-  return result;
-}

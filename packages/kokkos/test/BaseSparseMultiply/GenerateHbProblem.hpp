@@ -80,7 +80,7 @@ namespace KokkosTest {
     //@{ \name Constructors/Destructor.
 
     //! Single RHS constuctor.
-    GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
+    GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		      OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		      OrdinalType * xoff, OrdinalType * yoff,
 		      Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -90,7 +90,7 @@ namespace KokkosTest {
 		      OrdinalType & numEntries);
 
     //! Multi RHS constuctor.
-    GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
+    GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		      OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		      OrdinalType * xoff, OrdinalType * yoff, OrdinalType nrhs,
 		      Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -110,7 +110,7 @@ namespace KokkosTest {
     //! Copy constructor (Not implemented).
     GenerateHbProblem(const GenerateHbProblem& source){};
 
-   void GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented,
+   void GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 			   OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 			   OrdinalType * xoff, OrdinalType * yoff,
 			   Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -119,7 +119,7 @@ namespace KokkosTest {
 			   Kokkos::Vector<OrdinalType, ScalarType> *&xexact,
 			   OrdinalType & numEntries);
 
-      void GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented,
+      void GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		       OrdinalType * xoff, OrdinalType * yoff, OrdinalType nrhs,
 		       Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -150,6 +150,7 @@ namespace KokkosTest {
     ScalarType * allValues;
     OrdinalType * profiles;
     bool generateClassicHbMatrix_;
+    bool hasImplicitUnitDiagonal_;
   };
 } // namespace KokkosTest
 
@@ -157,7 +158,7 @@ using namespace KokkosTest;
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
 GenerateHbProblem<OrdinalType, ScalarType>::
-GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
+GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		      OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		      OrdinalType * xoff, OrdinalType * yoff,
 		      Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -183,15 +184,17 @@ GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
   allIndices(0),
   allValues(0),
   profiles(0),
-  generateClassicHbMatrix_(generateClassicHbMatrix) 
+  generateClassicHbMatrix_(generateClassicHbMatrix),
+  hasImplicitUnitDiagonal_(hasImplicitUnitDiagonal)
  {
-  GenerateProblem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
+  GenerateProblem(generateClassicHbMatrix, isRowOriented, hasImplicitUnitDiagonal,
+		  nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
 }
   
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
 GenerateHbProblem<OrdinalType, ScalarType>::
-GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
+GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		      OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		      OrdinalType * xoff, OrdinalType * yoff, OrdinalType nrhs,
 		      Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -217,14 +220,16 @@ GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
   allIndices(0),
   allValues(0),
   profiles(0),
-  generateClassicHbMatrix_(generateClassicHbMatrix) {
-  GenerateProblem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, nrhs, A, x, b, xexact, numEntries);
+  generateClassicHbMatrix_(generateClassicHbMatrix),
+  hasImplicitUnitDiagonal_(hasImplicitUnitDiagonal) {
+  GenerateProblem(generateClassicHbMatrix, isRowOriented,  hasImplicitUnitDiagonal, 
+		  nx, ny, npoints, xoff, yoff, nrhs, A, x, b, xexact, numEntries);
 }
   
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
 void GenerateHbProblem<OrdinalType, ScalarType>::
-GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented,
+GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		OrdinalType * xoff, OrdinalType * yoff,
 		Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -235,7 +240,8 @@ GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented,
 
   Kokkos::MultiVector<OrdinalType, ScalarType> * x1, * b1, * xexact1;
 	
-  GenerateProblem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, 1, A, x1, b1, xexact1, numEntries);
+  GenerateProblem(generateClassicHbMatrix, isRowOriented,  hasImplicitUnitDiagonal,
+		  nx, ny, npoints, xoff, yoff, 1, A, x1, b1, xexact1, numEntries);
 
   xd1 = new Kokkos::DenseVector<OrdinalType, ScalarType>();
   bd1 = new Kokkos::DenseVector<OrdinalType, ScalarType>();
@@ -254,7 +260,7 @@ GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented,
 
 template<typename OrdinalType, typename ScalarType>
 void GenerateHbProblem<OrdinalType, ScalarType>::
-GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented,
+GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		       OrdinalType * xoff, OrdinalType * yoff, OrdinalType nrhs,
 		       Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -338,12 +344,15 @@ GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented,
       values[i] = curValues;
     }
       
-
+    if (hasImplicitUnitDiagonal_) 
+      for (k=0; k<nrhs; k++)
+	bv[k][i] += xexactv[k][i];
     for (j=0; j<npoints; j++) {
       OrdinalType colID = rowID + xoff[j] + nx*yoff[j]; // Compute column ID based on stencil offsets
       if (colID>-1 && colID<numEquations) {
 	curIndices[numIndices] = colID;
 	ScalarType value = - ((ScalarType) rand())/ ((ScalarType) RAND_MAX);
+	if (hasImplicitUnitDiagonal_) value /= dnpoints; // scale off diagonal if diagonal is unit
 	if (colID==rowID)
 	  curValues[numIndices] = dnpoints - value; // Make diagonal dominant
 	else

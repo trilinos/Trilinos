@@ -23,7 +23,7 @@ int PrintTestResults(string, TYPE, TYPE, bool);
 int ReturnCodeCheck(string, int, int, bool);
 
 template<typename OrdinalType, typename ScalarType>
-void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
+void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		       OrdinalType * xoff, OrdinalType * yoff,
 		       Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -33,7 +33,7 @@ void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
 		       OrdinalType & numEntries);
 
 template<typename OrdinalType, typename ScalarType>
-void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
+void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		       OrdinalType * xoff, OrdinalType * yoff, OrdinalType nrhs,
 		       Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -79,8 +79,10 @@ int main(int argc, char* argv[])
   {
     bool generateClassicHbMatrix = true;
     bool isRowOriented = true;
+    bool hasImplicitUnitDiagonal = false;
     KokkosTest::GenerateHbProblem<OTYPE, STYPE>
-      problem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
+      problem(generateClassicHbMatrix, isRowOriented,hasImplicitUnitDiagonal,
+	      nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
     
     if (verbose) cout<<endl<<"********** CHECKING KOKKOS  Classic HbMatrix **********" << " Dim = " << numEquations <<endl<<endl;
     
@@ -131,10 +133,12 @@ int main(int argc, char* argv[])
   {
     bool generateClassicHbMatrix = false;
     bool isRowOriented = false;
+    bool hasImplicitUnitDiagonal = false;
     OTYPE nrhs = 10;
     
     KokkosTest::GenerateHbProblem<OTYPE, STYPE>
-      problem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, nrhs, A, xm, bm, xexactm, numEntries);
+      problem(generateClassicHbMatrix, isRowOriented, hasImplicitUnitDiagonal, 
+	      nx, ny, npoints, xoff, yoff, nrhs, A, xm, bm, xexactm, numEntries);
     
     if (verbose) cout<<endl<<"********** CHECKING KOKKOS  Generalized HbMatrix **********"<<endl<<endl;
     
