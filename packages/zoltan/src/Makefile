@@ -243,8 +243,8 @@ REFTREE_INC     = reftree_const.h
 # source code and defines for zdrive
 DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
-		  dr_migrate.c dr_output.c dr_chaco_io.c dr_elem_util.c \
-		  dr_maps.c dr_eval.c dr_gnuplot.c 
+		  dr_migrate.c dr_output.c dr_chaco_io.c dr_random_io.c \
+                  dr_elem_util.c dr_maps.c dr_eval.c dr_gnuplot.c 
 ifdef ZOLTAN_HG
 DR_CSRC        += dr_hypergraph_io.c
 endif

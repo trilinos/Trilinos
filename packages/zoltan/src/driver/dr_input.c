@@ -145,6 +145,48 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
             pio_info->init_dist_type = INITIAL_LINEAR;
             pio_info->init_dist_procs = -1;
           }
+          else if (strstr(cptr, "random")) {
+            /* No input file; generate random coordinates. */
+            pio_info->file_type = NO_FILE;
+            pio_info->init_dist_type = INITIAL_LINEAR;
+            pio_info->init_dist_procs = -1;
+            pio_info->init_size = 100;  /* default */
+            pio_info->init_dim = 3;     /* default */
+            if(strlen(pio_info->pexo_fname) == 0)
+              strcpy(pio_info->pexo_fname, "random");
+            while ((cptr = strtok(NULL, ",")) != NULL){ 
+              strip_string(cptr, " \t\n");
+              string_to_lower(cptr, '=');
+              if (strstr(cptr, "dimension")) {
+                cptr2 = strchr(cptr, '=');
+                if (cptr2 == NULL) {
+                  Gen_Error(0, "fatal: dimension is not specified");
+                  return 0;
+                }
+                cptr2++;
+                if (sscanf(cptr2, "%d", &(pio_info->init_dim)) != 1) {
+                  Gen_Error(0, "fatal: dimension must be an integer.");
+                  return 0;
+                }
+                if (pio_info->init_dim < 1 || pio_info->init_dim > 3) {
+                  Gen_Error(0, "fatal: invalid dimension.");
+                  return 0;
+                }
+              }
+              else if (strstr(cptr, "size")) {
+                cptr2 = strchr(cptr, '=');
+                if (cptr2 == NULL) {
+                  Gen_Error(0, "fatal: initial size is not specified");
+                  return 0;
+                }
+                cptr2++;
+                if(sscanf(cptr2, "%d", &(pio_info->init_size)) != 1) {
+                  Gen_Error(0, "fatal: initial size must be an integer.");
+                  return 0;
+                }
+              }
+            }
+          }
           else {
             sprintf(cmesg, "fatal(%s): unknown file type, %s", yo, cptr);
             Gen_Error(0, cmesg);
@@ -637,6 +679,7 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
 
   switch (pio_info->file_type) {
   case CHACO_FILE:
+  case NO_FILE:
     mesh->data_type = GRAPH;
     break;
   case NEMESIS_FILE:

@@ -194,6 +194,8 @@ extern int Chaco_In_Assign_Inv;
 extern struct Test_Flags Test;
 extern struct Output_Flags Output;
 
+extern double Total_Partition_Time;
+
 #define DEBUG_TRACE_START(proc,yo) \
   if (((proc) == 0 && Debug_Driver > 1) || (Debug_Driver > 2))  \
     printf("%d DRIVER ENTERING %s\n", (proc), yo);

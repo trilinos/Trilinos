@@ -25,6 +25,7 @@ extern "C" {
 #define NEMESIS_FILE 0
 #define CHACO_FILE   1
 #define HYPERGRAPH_FILE   2
+#define NO_FILE 3
 #define MAX_INPUT_STR_LN 4096   /* maximum string length for read_string()  */
 
 
@@ -51,6 +52,10 @@ struct Parallel_IO
                                   should be initially distributed.     */
   int     init_dist_procs;     /* How many procs to use in 
                                   the initial distribution.            */
+  int     init_size;           /* For NO_FILE (random) input, the 
+                                  of objects to be created. */
+  int     init_dim;            /* For NO_FILE (random) input, the 
+                                  dimension of the problem (1, 2, or 3D) */
 
   /* The root location of the parallel disks */
   char    pdsk_root[FILENAME_MAX+1];
@@ -127,11 +132,23 @@ extern int read_hypergraph_file(
   MESH_INFO_PTR mesh
 );
 
+extern int create_random_input(
+  int Proc,
+  int Num_Proc,
+  PROB_INFO_PTR prob,
+  PARIO_INFO_PTR pio_info,
+  MESH_INFO_PTR mesh
+);
+
 extern int chaco_fill_elements(int, int, PROB_INFO_PTR,
                          MESH_INFO_PTR, int, int, int *,
                          int *, int, float *, int, float *, int,
                          float *, float *, float *, short *, int);
 
+extern int chaco_setup_mesh_struct(int, int, PROB_INFO_PTR,
+                         MESH_INFO_PTR, int, int, int *,
+                         int *, int, float *, int, float *, int,
+                         float *, float *, float *, short *, int, int);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

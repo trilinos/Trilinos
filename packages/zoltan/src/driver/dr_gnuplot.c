@@ -133,6 +133,7 @@ int output_gnu(char *cmd_file,
 
 
   if (pio_info->file_type == CHACO_FILE ||
+      pio_info->file_type == NO_FILE ||
       pio_info->file_type == HYPERGRAPH_FILE) {
     /* 
      * For each node of Chaco graph, print the coordinates of the node.

@@ -53,6 +53,8 @@ int Chaco_In_Assign_Inv = 0;
 struct Test_Flags Test;
 struct Output_Flags Output;
 
+double Total_Partition_Time = 0.0;  /* Total over Number_Iterations */
+
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
 static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob);
 static void initialize_mesh(MESH_INFO_PTR);
@@ -139,6 +141,8 @@ int main(int argc, char *argv[])
   pio_info.zeros		= -1;
   pio_info.file_type		= -1;
   pio_info.init_dist_type	= -1;
+  pio_info.init_size		= -1;
+  pio_info.init_dim 		= -1;
   pio_info.pdsk_root[0]		= '\0';
   pio_info.pdsk_subdir[0]	= '\0';
   pio_info.pexo_fname[0]	= '\0';
@@ -187,6 +191,8 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
+  srand(Proc);
+
   /* Loop over read and balance for a number of iterations */
   /* (Useful for testing REUSE parameters in Zoltan.) */
   for (iteration = 1; iteration <= Number_Iterations; iteration++) {
@@ -196,11 +202,12 @@ int main(int argc, char *argv[])
      * This is the only function call to do this. Upon return,
      * the mesh struct and the elements array should be filled.
      */
-    if (!read_mesh(Proc, Num_Proc, &prob, &pio_info, &mesh)) {
-      Gen_Error(0, "fatal: Error returned from read_mesh\n");
-      error_report(Proc);
-      exit(1);
-    }
+    if (iteration == 1)
+      if (!read_mesh(Proc, Num_Proc, &prob, &pio_info, &mesh)) {
+        Gen_Error(0, "fatal: Error returned from read_mesh\n");
+        error_report(Proc);
+        exit(1);
+      }
 
 /* KDD Cool test of changing number of partitions 
     sprintf(cmesg, "%d", Num_Proc * iteration);
@@ -210,18 +217,19 @@ int main(int argc, char *argv[])
     /*
      * Produce files to verify input.
      */
-    if (Debug_Driver > 2) {
-      if (!output_results(cmd_file,"in",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
-        Gen_Error(0, "fatal: Error returned from output_results\n");
-        error_report(Proc);
-        exit(1);
-      }
-      if (Output.Gnuplot)
-        if (!output_gnu(cmd_file,"in",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
-          Gen_Error(0, "warning: Error returned from output_gnu\n");
+    if (iteration == 1)
+      if (Debug_Driver > 2) {
+        if (!output_results(cmd_file,"in",Proc,Num_Proc,&prob,&pio_info,&mesh)){
+          Gen_Error(0, "fatal: Error returned from output_results\n");
           error_report(Proc);
+          exit(1);
         }
-    }
+        if (Output.Gnuplot)
+          if (!output_gnu(cmd_file,"in",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
+            Gen_Error(0, "warning: Error returned from output_gnu\n");
+            error_report(Proc);
+          }
+      }
 
     /*
      * now run Zoltan to get a new load balance and perform
@@ -235,11 +243,27 @@ int main(int argc, char *argv[])
 
     /* Reset the mesh data structure for next iteration. */
     if (iteration < Number_Iterations) {
-      free_mesh_arrays(&mesh);
-      initialize_mesh(&mesh);
+      int i, j;
+      float tmp;
+      float twiddle = 0.01;
+      /* Perturb coordinates of mesh */
+      if (mesh.data_type == GRAPH)
+        for (i = 0; i < mesh.num_elems; i++) {
+          for (j = 0; j < mesh.num_dims; j++) {
+            tmp = ((float) rand())/RAND_MAX;
+            mesh.elements[i].coord[0][j] += twiddle * (2.0*tmp-1.0);
+          }
+        }
     }
 
   } /* End of loop over read and balance */
+
+  if (Proc == 0) {
+    printf("FILE %s:  Total:    %e seconds in Partitioning\n", 
+           cmd_file, Total_Partition_Time);
+    printf("FILE %s:  Average:  %e seconds per Iteration\n", 
+           cmd_file, Total_Partition_Time/Number_Iterations);
+  }
 
   Zoltan_Destroy(&zz);
 
@@ -305,6 +329,12 @@ static int read_mesh(
     }
   }
 #endif
+  else if (pio_info->file_type == NO_FILE) {
+    if (!create_random_input(Proc, Num_Proc, prob, pio_info, mesh)) {
+        Gen_Error(0, "fatal: Error returned from create_random_input\n");
+        return 0;
+    }
+  }
   else {
     Gen_Error(0, "fatal: Invalid file type.\n");
     return 0;

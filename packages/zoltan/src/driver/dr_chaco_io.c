@@ -54,7 +54,7 @@ int read_chaco_file(int Proc,
   char   cmesg[256];
   char   chaco_fname[FILENAME_MAX + 8];
 
-  int    i, nvtxs, gnvtxs;
+  int    nvtxs, gnvtxs;
   int    vwgt_dim=0, ewgt_dim=0;
   int    ndim = 0;
   int   *start = NULL, *adj = NULL;
@@ -140,9 +140,62 @@ int read_chaco_file(int Proc,
   if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, &gnvtxs, &nvtxs, 
              &start, &adj, &vwgt_dim, &vwgts, &ewgt_dim, &ewgts, 
              &ndim, &x, &y, &z, &assignments) != 0) {
-      Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
-      return 0;
+    Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
+    return 0;
   }
+
+  if (!chaco_setup_mesh_struct(Proc, Num_Proc, prob, mesh, gnvtxs, nvtxs,
+                     start, adj, vwgt_dim, vwgts, ewgt_dim, ewgts, 
+                     ndim, x, y, z, assignments, 1, no_geom)) {
+    Gen_Error(0, "fatal: Error returned from chaco_setup_mesh_struct");
+    return 0;
+  }
+
+  safe_free((void **) &adj);
+  safe_free((void **) &vwgts);
+  safe_free((void **) &ewgts);
+  safe_free((void **) &start);
+  safe_free((void **) &x);
+  safe_free((void **) &y);
+  safe_free((void **) &z);
+  safe_free((void **) &assignments);
+
+  DEBUG_TRACE_END(Proc, yo);
+  return 1;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int chaco_setup_mesh_struct(
+  int        Proc,
+  int        Num_Proc,
+  PROB_INFO_PTR prob,            /* problem description */
+  MESH_INFO_PTR mesh,            /* mesh information for the problem */
+  int        gnvtxs,             /* global number of vertices across all procs*/
+  int        nvtxs,              /* number of vertices in local graph */
+  int       *start,              /* start of edge list for each vertex */
+  int       *adj,                /* edge list data */
+  int        vwgt_dim,           /* # of weights per vertex */
+  float     *vwgts,              /* vertex weight list data */
+  int        ewgt_dim,           /* # of weights per edge */
+  float     *ewgts,              /* edge weight list data */
+  int        ndim,               /* dimension of the geometry */
+  float     *x,                  /* x-coordinates of the vertices */
+  float     *y,                  /* y-coordinates of the vertices */
+  float     *z,                  /* z-coordinates of the vertices */
+  short     *assignments,        /* assignments from Chaco file; may be NULL */
+  int       base,                /* smallest vertex number to use; 
+                                    base == 1 for Chaco; 
+                                    may be 0 or 1 for HG files. */
+  int       no_geom              /* flag indicating whether coords are avail. */
+)
+{
+char *yo = "chaco_setup_mesh_struct";
+int i;
+
+  DEBUG_TRACE_START(Proc, yo);
 
   /* Initialize mesh structure for Chaco mesh. */
   mesh->data_type = GRAPH;
@@ -216,15 +269,6 @@ int read_chaco_file(int Proc,
     Gen_Error(0, "fatal: Error returned from chaco_fill_elements");
     return 0;
   }
-
-  if (adj != NULL) free(adj);
-  if (vwgts != NULL) free(vwgts);
-  if (ewgts != NULL) free(ewgts);
-  if (start != NULL) free(start);
-  if (x != NULL) free(x);
-  if (y != NULL) free(y);
-  if (z != NULL) free(z);
-  if (assignments != NULL) free(assignments);
 
   DEBUG_TRACE_END(Proc, yo);
   return 1;

@@ -358,6 +358,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)
       printf("DRIVER:  Zoltan_LB_Partition time = %g\n", maxtime);
+    Total_Partition_Time += maxtime;
 
     {int mine[2], gmax[2], gmin[2];
     mine[0] = num_imported;
@@ -382,7 +383,8 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
      */
     MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
-    if (new_decomp) {
+    if (new_decomp && num_exported != -1 && num_imported != -1) {
+      /* Migrate if new decomposition and RETURN_LISTS != NONE */
       if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
           num_imported, import_gids, import_lids, import_procs, import_to_part,
           num_exported, export_gids, export_lids, export_procs, export_to_part))
