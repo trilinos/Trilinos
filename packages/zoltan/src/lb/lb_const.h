@@ -24,6 +24,7 @@
 #endif  /* __STDC__ */
 
 #include "lbi_const.h"
+#include "lb_id_const.h"
 #include "mem_const.h"
 #include "par_const.h"
 #include "timer_const.h"
@@ -66,10 +67,9 @@ typedef struct LB_Param {
 #endif /* !TRUE */
 
 typedef struct LB_Struct LB;
-typedef struct LB_Tag_Struct LB_TAG;
 
-typedef int LB_FN(LB *, int *, LB_GID **, LB_LID **, int **,
-                        int *, LB_GID **, LB_LID **, int **);
+typedef int LB_FN(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **,
+                        int *, LB_ID_PTR *, LB_ID_PTR *, int **);
 
 /*
  *  Define the possible load balancing methods allowed.
@@ -123,29 +123,8 @@ typedef enum LB_Method {
 #define LB_COMM_WEIGHT_DEF   0
 #define LB_AUTO_MIGRATE_DEF  FALSE
 #define LB_DETERMINISTIC_DEF TRUE
+#define LB_NUM_ID_ENTRIES_DEF 1
 #define LB_TIMER_DEF         LB_TIME_WALL
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
-/*
- *  Define a data structure for object information.
- */
-
-struct LB_Tag_Struct {
-  LB_GID Global_ID;               /* Global ID for the object; provided by 
-                                     the application.                        */
-  LB_LID Local_ID;                /* Local ID for the object; the application
-                                     determines what is meant by "local ID";
-                                     the load-balancer stores this field only
-                                     so the application can take advantage of
-                                     local indexing in the query routines.   */
-  int   Proc;                     /* A processor ID for the tag.  Could be 
-                                     the destination of an object to be 
-                                     exported or the source of an object to
-                                     be imported.                            */
-};
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -286,6 +265,8 @@ struct LB_Struct {
                                       Communicator.                          */
   int Num_Proc;                   /*  The number of processors in the MPI
                                       Communicator.                          */
+  int Num_GID;                    /*  The number of entries in Global IDs.   */
+  int Num_LID;                    /*  The number of entries in Local IDs.    */
   int Debug_Level;                /*  Debug level for this instance of
                                       load balancing.                        */
   int Debug_Proc;                 /*  Print from this processor any debugging 

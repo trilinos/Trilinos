@@ -24,29 +24,41 @@
  * i.e., by calling either Get_Obj_List or Get_First_Obj+Get_Next_Obj.
  */
 
-void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids, 
+void LB_Get_Obj_List(LB *lb, LB_ID_PTR global_ids, LB_ID_PTR local_ids, 
      int wdim, float *objwgts, int *ierr)
 {
   int i, n;
+  int num_gid_entries = lb->Num_GID;
+  int num_lid_entries = lb->Num_LID;
+  int gid_off, lid_off;
 
   *ierr = LB_OK;
   if (lb->Get_Obj_List != NULL){
     /* Get object list directly */
-    lb->Get_Obj_List(lb->Get_Obj_List_Data, global_ids, local_ids, 
+    lb->Get_Obj_List(lb->Get_Obj_List_Data, 
+                     num_gid_entries, num_lid_entries,
+                     global_ids, local_ids, 
                      wdim, objwgts, ierr);
   }
   else if ((lb->Get_First_Obj != NULL) && (lb->Get_Next_Obj != NULL)){
     /* Use iterator functions to loop through object list */
-    if (lb->Get_First_Obj(lb->Get_First_Obj_Data, global_ids, local_ids, 
-        wdim, objwgts, ierr)){
+    if (lb->Get_First_Obj(lb->Get_First_Obj_Data, 
+                          num_gid_entries, num_lid_entries, 
+                          global_ids, local_ids, 
+                          wdim, objwgts, ierr)){
       /* Determine the number of objects since we don't trust the user
          to write the Get_Next_Obj query function in a safe way! */
       n = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, ierr);
       i = 0;
       while (!(*ierr) && (i<n-1)){ 
-        lb->Get_Next_Obj(lb->Get_Next_Obj_Data, global_ids[i], 
-          local_ids[i], &global_ids[i+1], &local_ids[i+1], 
-          wdim, &objwgts[(i+1)*wdim], ierr);
+        gid_off = i * num_gid_entries;
+        lid_off = i * num_lid_entries;
+        lb->Get_Next_Obj(lb->Get_Next_Obj_Data, 
+                         num_gid_entries, num_lid_entries, 
+                         &(global_ids[gid_off]), &(local_ids[lid_off]), 
+                         &(global_ids[gid_off+num_gid_entries]),
+                         &(local_ids[lid_off+num_lid_entries]),
+                         wdim, &(objwgts[(i+1)*wdim]), ierr);
         i++;
       }
     }
@@ -63,7 +75,7 @@ void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids,
 /* LB_Hash is a hash function for global ids. 
  *
  * Input:
- *   key: a key to hash of type LB_GID (any data type)
+ *   key: a key to hash of type LB_ID_PTR
  *   n: the range of the hash function is 0..n-1
  *
  * Return value:
@@ -83,15 +95,17 @@ void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids,
  */
 
 
-unsigned int LB_Hash(LB_GID key, int n)
+unsigned int LB_Hash(LB_ID_PTR key, int n, int num_id_entries)
 {
   unsigned int h, rest, *p;
   char *byteptr;
   int bytes;
+  int num_bytes = num_id_entries * sizeof(LB_ID_TYPE);
 
   /* First hash the int-sized portions of the key */
   h = 0;
-  for (p = (unsigned int *)&key, bytes=sizeof(LB_GID); bytes >= sizeof(int); 
+  for (p = (unsigned int *)key, bytes=num_bytes;
+       bytes >= sizeof(int); 
        bytes-=sizeof(int), p++){
     h = (h*2654435761U) ^ (*p);
   }

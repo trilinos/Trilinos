@@ -80,6 +80,8 @@ LB *lb;
    *  Set defaults for fields of lb:
    */
 
+  lb->Num_GID = LB_NUM_ID_ENTRIES_DEF;
+  lb->Num_LID = LB_NUM_ID_ENTRIES_DEF;
   lb->Method = RCB;    
   lb->LB_Fn = LB_rcb;
   lb->Debug_Level = LB_DEBUG_LEVEL_DEF;
