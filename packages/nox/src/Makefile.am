@@ -37,6 +37,7 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 ABSTRACT = \
+	$(srcdir)/NOX_Abstract_Vector.C  \
 	$(srcdir)/NOX_Abstract_Group.C
 
 ABSTRACT_H = \

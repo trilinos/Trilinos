@@ -152,6 +152,9 @@ public:
   //! Return length of vector.
   virtual int length() const = 0;
 
+  //! Print the vector.  This is meant for debuggin purposes only.
+  virtual bool print() const;
+
 }; // class Vector
 } // namespace Abstract
 } // namespace NOX

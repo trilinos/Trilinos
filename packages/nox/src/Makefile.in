@@ -115,6 +115,7 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 ABSTRACT = \
+	$(srcdir)/NOX_Abstract_Vector.C  \
 	$(srcdir)/NOX_Abstract_Group.C
 
 
@@ -297,8 +298,8 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 libnox_a_DEPENDENCIES =
-am_libnox_a_OBJECTS = NOX_Abstract_Group.$(OBJEXT) \
-	NOX_LineSearch_FullStep.$(OBJEXT) \
+am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
+	NOX_Abstract_Group.$(OBJEXT) NOX_LineSearch_FullStep.$(OBJEXT) \
 	NOX_LineSearch_Backtrack.$(OBJEXT) \
 	NOX_LineSearch_Manager.$(OBJEXT) \
 	NOX_LineSearch_MoreThuente.$(OBJEXT) \
@@ -326,6 +327,7 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@DEP_FILES = $(DEPDIR)/NOX_Abstract_Group.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Abstract_Vector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Newton.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_NonlinearCG.Po \
@@ -427,6 +429,7 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+NOX_Abstract_Vector.$(OBJEXT): $(srcdir)/NOX_Abstract_Vector.C
 NOX_Abstract_Group.$(OBJEXT): $(srcdir)/NOX_Abstract_Group.C
 NOX_LineSearch_FullStep.$(OBJEXT): $(srcdir)/NOX_LineSearch_FullStep.C
 NOX_LineSearch_Backtrack.$(OBJEXT): $(srcdir)/NOX_LineSearch_Backtrack.C
@@ -470,6 +473,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Abstract_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Abstract_Vector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Newton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_NonlinearCG.Po@am__quote@
@@ -508,6 +512,18 @@ distclean-depend:
 @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+NOX_Abstract_Vector.o: $(srcdir)/NOX_Abstract_Vector.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Abstract_Vector.C' object='NOX_Abstract_Vector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Abstract_Vector.Po' tmpdepfile='$(DEPDIR)/NOX_Abstract_Vector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Abstract_Vector.o `test -f $(srcdir)/NOX_Abstract_Vector.C || echo '$(srcdir)/'`$(srcdir)/NOX_Abstract_Vector.C
+
+NOX_Abstract_Vector.obj: $(srcdir)/NOX_Abstract_Vector.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Abstract_Vector.C' object='NOX_Abstract_Vector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Abstract_Vector.Po' tmpdepfile='$(DEPDIR)/NOX_Abstract_Vector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Abstract_Vector.obj `cygpath -w $(srcdir)/NOX_Abstract_Vector.C`
 
 NOX_Abstract_Group.o: $(srcdir)/NOX_Abstract_Group.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Abstract_Group.C' object='NOX_Abstract_Group.o' libtool=no @AMDEPBACKSLASH@
