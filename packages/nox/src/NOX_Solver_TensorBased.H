@@ -452,6 +452,9 @@ protected:
   //! Flag for Newton direction
   bool isNewtonDirection;
 
+  //! Flag for rescuing Linear Solver from a bad solve
+  bool doRescue;
+
   //! Minimum step length (i.e., when we give up)
   double minStep;
  

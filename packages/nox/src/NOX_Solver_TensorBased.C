@@ -206,8 +206,9 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
       cout << "Using Modifed Bouaricha method" << endl;
   }
 
-  //NOX::Parameter::List& teParams = dirParams.sublist("Tensor");
-  //doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
+  NOX::Parameter::List& teParams =
+    dirParams.sublist(dirParams.getParameter("Method","Tensor"));
+  doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
 
   
   // *** Reset parameters for Line Search ***
@@ -570,7 +571,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     else
 #endif // USE_INITIAL_GUESS_LOGIC    
     {
-      //printf("Initial guess is BAD... do not use!\n");
+      //cout << "Initial guess is BAD... do not use!\n";
       isInitialGuessGood = false;
       *residualVecPtr = solver.getPreviousSolutionGroup().getF();
     }
@@ -578,8 +579,23 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     // Compute the term inv(J)*Fp....
     //tmpVec.init(0.0);
     status = soln.applyJacobianInverse(linearParams, *residualVecPtr, tmpVec);
-    if (status != NOX::Abstract::Group::Ok)
+
+    // If it didn't converge, maybe we can recover. 
+    if ((status != NOX::Abstract::Group::Ok) && (doRescue == false))
+    {
       throwError("computeTensorDirection", "Unable to apply Jacobian inverse");
+    }
+    else if ((status != NOX::Abstract::Group::Ok) &&
+	     (doRescue == true))
+    {
+      if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+	cout << "WARNING: NOX::Solver::TensorBased::computeTensorDirection() - "
+	     << "Linear solve failed to achieve convergence - "
+	     << "using the step anyway " 
+	     << "since \"Rescue Bad Newton Solve\" is true." << endl;
+    }
+
+    // Continue processing
     if (isInitialGuessGood) 
       tmpVec.update(1.0, tensorVec, 1.0);
     linearParams.setParameter("Tolerance",  tol);
@@ -606,8 +622,23 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 
   // Compute the Newton direction
   status = soln.computeNewton(linearParams);
-  if (status != NOX::Abstract::Group::Ok)
+
+  // If it didn't converge, maybe we can recover. 
+  if ((status != NOX::Abstract::Group::Ok) && (doRescue == false))
+  {
     throwError("computeTensorDirection", "Unable to compute Newton step");
+  }
+  else if ((status != NOX::Abstract::Group::Ok) &&
+	   (doRescue == true))
+  {
+    if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+      cout << "WARNING: NOX::Solver::TensorBased::computeTensorDirection() - "
+	   << "Linear solve failed to achieve convergence - "
+	   << "using the step anyway " 
+	   << "since \"Rescue Bad Newton Solve\" is true." << endl;
+  }
+
+  // Set Newton direction
   newtonVec = soln.getNewton();
   int tempVal2 = linearParams.sublist("Output").
     getParameter("Number of Linear Iterations", 0);
