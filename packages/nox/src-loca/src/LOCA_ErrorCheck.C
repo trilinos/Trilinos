@@ -45,23 +45,23 @@ LOCA::ErrorCheck::~ErrorCheck()
 }
 
 
-void LOCA::ErrorCheck::throwError(string callingFunction, 
-				  string message, 
-				  string throwLabel) const
+void LOCA::ErrorCheck::throwError(const string& callingFunction, 
+				  const string& message, 
+				  const string& throwLabel) const
 {
   if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
     cout << "************************" << "\n";
-    cout << "ERROR in " << callingFunction << "\n";
+    cout << "ERROR: " << callingFunction << "\n";
     if (message != "") 
       cout << message << "\n";       
     cout << "************************" << endl;
-  }  
-  throw throwLabel;
+  }
+  throw (throwLabel.c_str());
   return;    
 }
 
-void LOCA::ErrorCheck::printWarning(string callingFunction, 
-				    string message) const
+void LOCA::ErrorCheck::printWarning(const string& callingFunction, 
+				    const string& message) const
 {
   if (LOCA::Utils::doPrint(LOCA::Utils::Warning)) {
     cout << "WARNING: " << callingFunction << " - ";
@@ -73,20 +73,20 @@ void LOCA::ErrorCheck::printWarning(string callingFunction,
 
 void LOCA::ErrorCheck::checkReturnType(NOX::Abstract::Group::ReturnType status,
 				       ActionType action,
-				       string callingFunction,
-				       string message) const
+				       const string& callingFunction,
+				       const string& message) const
 {
   if (status != NOX::Abstract::Group::Ok) {
     
     if (action == ThrowError) {
-      string messageWithReturnType = message + "\n" + "Return Type = " + 
-	                             getReturnTypeString(status);
+      const string messageWithReturnType = message + "\n" + "Return Type = " + 
+	                                   getReturnTypeString(status);
 
       throwError(callingFunction, messageWithReturnType);
     }
     else if (action == PrintWarning) {
-      string messageWithReturnType = message + "\n" + "Return Type = " + 
-	                             getReturnTypeString(status);
+      const string messageWithReturnType = message + "\n" + "Return Type = " + 
+	                                   getReturnTypeString(status);
 
       printWarning(callingFunction, messageWithReturnType);
     }
@@ -100,8 +100,8 @@ void LOCA::ErrorCheck::checkReturnType(NOX::Abstract::Group::ReturnType status,
   return;
 }
 
-string 
-LOCA::ErrorCheck::getReturnTypeString(NOX::Abstract::Group::ReturnType status) const
+string LOCA::ErrorCheck::
+getReturnTypeString(NOX::Abstract::Group::ReturnType status) const
 {
   if (status == NOX::Abstract::Group::Ok)
     return "Ok";
