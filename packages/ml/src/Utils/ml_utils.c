@@ -1178,7 +1178,7 @@ void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
   *tvals = *tvals2;
   *tvals2 = tmpptr;
   return;
-#endif
+#else
 
   node   = comm->ML_mypid;
   nprocs = comm->ML_nprocs;
@@ -1290,6 +1290,7 @@ void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
       exit(-1);
     }
   }
+#endif
 
 } /* ML_gsum_vec_int */
 
