@@ -26,7 +26,7 @@ extern "C" {
 /* EBEB: The following constants, structs, and function prototypes should 
    probably be moved to a header file. */
 
-#define NO_DEBUG 
+#define NODEBUG 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
 #define FRACTION_SMALL 0.001  /* Smallest fraction of load allowed on 
@@ -386,28 +386,36 @@ int Zoltan_RB_find_bisector(
      MPI_Allreduce(localsum, wtsum, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
   }
 
-  if (valuemin2 != valuemin){
-    printf("[%2d] Warning: computed valuemin %lf does not match input %lf\n",
-      proc, valuemin2, valuemin);
-    if (valuemin2<valuemin) valuemin = valuemin2;
+  /* The actual coordinate interval is [valuemin2,valuemax2]. 
+   * The given input [[valuemin,valuemax] may be a slightly larger interval, 
+   * which is OK. We don't really need to compute [valuemin2,valuemax2].
+   */
+  if (valuemin2 < valuemin){
+    if (zz->Debug_Level > ZOLTAN_DEBUG_NONE)
+      printf("[%2d] Warning in %s: computed valuemin %lf < input %lf\n",
+        proc, yo, valuemin2, valuemin);
+    /* Safest bet is to use smaller value. */
+    valuemin = valuemin2;
   }
-  if (valuemax2 != valuemax){
-    printf("[%2d] Warning: computed valuemax %lf does not match input %lf\n",
-      proc, valuemax2, valuemax);
-    if (valuemax2>valuemax) valuemax = valuemax2;
+  if (valuemax2 > valuemax){
+    if (zz->Debug_Level > ZOLTAN_DEBUG_NONE)
+      printf("[%2d] Warning in %s: computed valuemax %lf > input %lf\n",
+        proc, yo, valuemax2, valuemax);
+    /* Safest bet is to use larger value. */
+    valuemax = valuemax2;
   }
 
   /* Verify that input 'weight' equals computed 'wtsum'. */
   for (j=0; j<nwgts; j++){
 #ifdef DEBUG
-    printf("[%2d] Debug: computed wtsum[%1d] = %lf, input weight = %lf\n", proc, j, wtsum[j], weight[j]);
+      printf("[%2d] Debug: computed wtsum[%1d] = %lf, input weight = %lf\n", proc, j, wtsum[j], weight[j]);
 #endif
-    /* EBEB: Disable sanity check because 'weight' is sometimes incorrect. */
-    /*
-    if (wtsum[j] != weight[j])
-      printf("[%2d] Warning: computed wtsum[%1d] %lf does not match "
-        "input %lf\n", proc, j, wtsum[j], weight[j]);
-    */
+    /* Disable sanity check because 'weight' is sometimes incorrect. */
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+      if (wtsum[j] != weight[j])
+        printf("[%2d] Warning: computed wtsum[%1d] %lf does not match "
+          "input %lf\n", proc, j, wtsum[j], weight[j]);
+    /* Use the weight sum we computed, do not trust input 'weight'. */
     weight[j] = wtsum[j];
   }
 
