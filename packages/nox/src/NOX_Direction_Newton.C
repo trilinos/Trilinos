@@ -211,9 +211,9 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 	    cout << indent << "Forcing Term Norm: " << userNorm->getType()
 		 << endl;
 	  }
-	  normpredf = userNorm->computeNorm(*predRhs);
-	  normf = userNorm->computeNorm(soln.getF());
-	  normoldf = userNorm->computeNorm(oldsoln.getF());
+	  normpredf = userNorm->norm(*predRhs);
+	  normf = userNorm->norm(soln.getF());
+	  normoldf = userNorm->norm(oldsoln.getF());
 	}
 	else {
 	  if (utils.isPrintProcessAndType(Utils::Warning)) {
@@ -282,8 +282,8 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 	    cout << indent << "Forcing Term Norm: " << userNorm->getType()
 		 << endl;
 	  }
-	  normf = userNorm->computeNorm(soln.getF());
-	  normoldf = userNorm->computeNorm(oldsoln.getF());
+	  normf = userNorm->norm(soln.getF());
+	  normoldf = userNorm->norm(oldsoln.getF());
 	}
 	else {
 	  if (utils.isPrintProcessAndType(Utils::Warning)) {
