@@ -1,235 +1,283 @@
+<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
  !----------------------------------------------------------------------------!
--->
-<!-- CVS File Information
+--><!-- CVS File Information
      $RCSfile$
      $Author$
      $Date$
      $Revision$
 -->
-
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
-<html>
-<head>
-   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
-   <meta name="sandia.approved" content="SAND99-1377">
-   <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title>Zoltan User's Guide:  RCB</title>
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=iso-8859-1">
+  <meta name="GENERATOR"
+ content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+  <meta name="sandia.approved" content="SAND99-1377">
+  <meta name="author" content="karen devine, kddevin@sandia.gov">
+  <title>Zoltan User's Guide: RCB</title>
 </head>
-<body bgcolor="#FFFFFF">
-
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_rib.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg.html">Previous</a></i></b></div>
-
-
+<body bgcolor="#ffffff">
+<div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_alg_rib.html">Next</a>&nbsp; |&nbsp; <a
+ href="ug_alg.html">Previous</a></i></b></div>
 <h2>
-<a NAME="RCB"></a>Recursive Coordinate Bisection (RCB)</h2>
+<a name="RCB"></a>Recursive Coordinate Bisection (RCB)</h2>
 An implementation of Recursive Coordinate Bisection (RCB) due to Steve
 Plimpton of Sandia National Laboratories is included in Zoltan.
 RCB was first proposed as a static load-balancing algorithm by
 <a href="ug_refs.html#berger">Berger
-and Bokhari</a>, but is attractive as a dynamic load-balancing algorithm
-because it implicitly produces incremental partitions. In RCB, the computational
+and Bokhari</a>, but is attractive as a dynamic load-balancing
+algorithm
+because it implicitly produces incremental partitions. In RCB, the
+computational
 domain is first divided into two regions by a cutting plane orthogonal
 to one of the coordinate axes so that half the work load is in each of
 the sub-regions. The splitting direction is determined by computing in
 which coordinate direction the set of objects is most elongated, based
-upon the geometric locations of the objects. The sub-regions are then further
+upon the geometric locations of the objects. The sub-regions are then
+further
 divided by recursive application of the same splitting algorithm until
-the number of sub-regions equals the number of processors. Although this
-algorithm was first devised to cut into a number of sets which is a power
-of two, the set sizes in a particular cut needn't be equal. By adjusting
+the number of sub-regions equals the number of processors. Although
+this
+algorithm was first devised to cut into a number of sets which is a
+power
+of two, the set sizes in a particular cut needn't be equal. By
+adjusting
 the partition sizes appropriately, any number of equally-sized sets can
-be created. If the parallel machine has processors with different speeds,
-sets with nonuniform sizes can also be easily generated. The Zoltan implementation
-of RCB has several parameters which can be modified by the <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-function.
-<br>&nbsp;
-<br>&nbsp;
-<table WIDTH="100%" NOSAVE >
-<tr>
-<td VALIGN=TOP><b>Method String:</b></td>
-
-<td><b>RCB</b></td>
-</tr>
-
-<tr>
-<td><b>Parameters:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>RCB_OVERALLOC</i></td>
-
-<td>The amount by which to over-allocate temporary storage arrays for objects
-within the RCB algorithm when additional storage is due to changes in processor
-assignments.&nbsp;
-<br>1.0 = no extra storage allocated; 1.5 = 50% extra storage; etc.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; RCB_REUSE</i></td>
-
-<td>Flag to indicate whether to use previous cuts as initial guesses for
-the current RCB invocation.&nbsp;
-<br>0 = don't use previous cuts; 1 = use previous cuts.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_OUTPUT_LEVEL</i></td>
-
-<td>Flag controlling the amount of timing and diagnostic output the routine
-produces.&nbsp;
-<br>0 = no output; 1 = print summary; 2 = print data for each processor.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> CHECK_GEOM</i></td>
-
-<td>Flag controlling the invocation of input and output error checking.&nbsp;
-<br>0 = don't do checking; 1 = do checking.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> KEEP_CUTS</i></td>
-
-<td>Should information about the cuts determining the RCB decomposition
-be retained? It costs a bit of time to do so, but this information is necessary
+be created. If the parallel machine has processors with different
+speeds,
+sets with nonuniform sizes can also be easily generated. The Zoltan
+implementation
+of RCB has several parameters which can be modified by the <b><a
+ href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+function. A recent feature is that RCB allows multiple weights, that
+is, one can balance with respect to several load criteria
+simultaneously.
+Note that there is no guarantee that a desired load balance tolerance
+can be achieved using RCB, especially in the multiconstraint case.<br>
+&nbsp;
+<br>
+&nbsp;
+<table width="100%" nosave="">
+  <tbody>
+    <tr>
+      <td valign="top"><b>Method String:</b></td>
+      <td><b>RCB</b></td>
+    </tr>
+    <tr>
+      <td><b>Parameters:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top">&nbsp;&nbsp;&nbsp; <i>RCB_OVERALLOC</i></td>
+      <td>The amount by which to over-allocate temporary storage arrays
+for objects
+within the RCB algorithm when additional storage is due to changes in
+processor
+assignments.&nbsp; <br>
+1.0 = no extra storage allocated; 1.5 = 50% extra storage; etc.</td>
+    </tr>
+    <tr>
+      <td valign="top"><i>&nbsp;&nbsp;&nbsp; RCB_REUSE</i></td>
+      <td>Flag to indicate whether to use previous cuts as initial
+guesses for
+the current RCB invocation.&nbsp; <br>
+0 = don't use previous cuts; 1 = use previous cuts.</td>
+    </tr>
+    <tr>
+      <td valign="top" nosave="">&nbsp;&nbsp;<i> RCB_OUTPUT_LEVEL</i></td>
+      <td>Flag controlling the amount of timing and diagnostic output
+the routine
+produces.&nbsp; <br>
+0 = no output; 1 = print summary; 2 = print data for each processor.</td>
+    </tr>
+    <tr>
+      <td valign="top" nosave="">&nbsp;&nbsp;<i> CHECK_GEOM</i></td>
+      <td>Flag controlling the invocation of input and output error
+checking.&nbsp; <br>
+0 = don't do checking; 1 = do checking.</td>
+    </tr>
+    <tr>
+      <td valign="top" nosave="">&nbsp;&nbsp;<i> KEEP_CUTS</i></td>
+      <td>Should information about the cuts determining the RCB
+decomposition
+be retained? It costs a bit of time to do so, but this information is
+necessary
 if application wants to add more objects to the decomposition via calls
 to <b><a href="ug_interface_augment.html#Zoltan_LB_Point_PP_Assign">Zoltan_LB_Point_PP_Assign</a></b>
 or to <b><a href="ug_interface_augment.html#Zoltan_LB_Box_PP_Assign">Zoltan_LB_Box_PP_Assign</a></b>.&nbsp;
-<br>0 = don't keep cuts; 1 = keep cuts.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_LOCK_DIRECTIONS</i></td>
-
-<td>Flag that determines whether the order of the directions of the cuts is kept
-constant after they are determined the first time RCB is called.&nbsp;
-<br>0 = don't lock directions; 1 = lock directions.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_SET_DIRECTIONS</i></td>
-
-<td>If this flag is set, the order of cuts is changed so that all of the cuts
-in any direction are done as a group.  The number of cuts in each direction is
-determined and then the value of the parameter is used to determine the order
-that those cuts are made in.  When 1D and 2D problems are partitioned, the
-directions corresponding to unused dimensions are ignored.&nbsp;
-<br>0 = don't order cuts;  1 = xyz;  2 = xzy;  3 = yzx;  4 = yxz;  5 = zxy; 6 = zyx;</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_RECTILINEAR_BLOCKS</i></td>
-
-<td>Flag controlling the shape of the resulting regions.  If this option is
-specified, then when a cut is made, all of the dots located on the cut are
-moved to the same side of the cut.  The resulting regions are then
-rectilinear.  When these dots are treated as a group, then the resulting
-load balance may not be as good as when the group of dots is split by the
-cut.&nbsp;
-<br>0 = move dots individually; 1 = move dots in groups.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><b>Default:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><i>RCB_OVERALLOC</i> = 1.0</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><i>RCB_REUSE</i> = 0</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><i>RCB_OUTPUT_LEVEL</i> = 0</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><i>CHECK_GEOM</i> = 1</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><i>KEEP_CUTS</i> = 0</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><i>RCB_LOCK_DIRECTIONS</i> = 0</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><i>RCB_SET_DIRECTIONS</i> = 0</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><i>RCB_RECTILINEAR_BLOCKS</i> = 0</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><b>Required Query Functions:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
-or <b><a href="ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a href="ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
+      <br>
+0 = don't keep cuts; 1 = keep cuts.</td>
+    </tr>
+    <tr>
+      <td valign="top" nosave="">&nbsp;&nbsp;<i> RCB_LOCK_DIRECTIONS</i></td>
+      <td>Flag that determines whether the order of the directions of
+the cuts is kept
+constant after they are determined the first time RCB is called.&nbsp; <br>
+0 = don't lock directions; 1 = lock directions.</td>
+    </tr>
+    <tr>
+      <td valign="top" nosave="">&nbsp;&nbsp;<i> RCB_SET_DIRECTIONS</i></td>
+      <td>If this flag is set, the order of cuts is changed so that all
+of the cuts
+in any direction are done as a group. The number of cuts in each
+direction is
+determined and then the value of the parameter is used to determine the
+order
+that those cuts are made in. When 1D and 2D problems are partitioned,
+the
+directions corresponding to unused dimensions are ignored.&nbsp; <br>
+0 = don't order cuts; 1 = xyz; 2 = xzy; 3 = yzx; 4 = yxz; 5 = zxy; 6 =
+zyx;</td>
+    </tr>
+    <tr>
+      <td valign="top" nosave="">&nbsp;&nbsp;<i> RCB_RECTILINEAR_BLOCKS</i></td>
+      <td>Flag controlling the shape of the resulting regions. If this
+option is
+specified, then when a cut is made, all of the dots located on the cut
+are
+moved to the same side of the cut. The resulting regions are then
+rectilinear. When these dots are treated as a group, then the resulting
+load balance may not be as good as when the group of dots is split by
+the
+cut.&nbsp; <br>
+0 = move dots individually; 1 = move dots in groups.<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><span style="font-style: italic;">OBJ_WEIGHTS_COMPARABLE</span><br>
+      </td>
+      <td style="vertical-align: top;">In the multiconstraint case, are
+the object weights comparable? Do they have the same units and is the
+scaling meaningful? For example, if the jth weight corresponds to the
+expected time in phase j (measured in seconds), set this parameter to
+1. (0 = incomparable, 1 =&nbsp; comparable)<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; font-style: italic;">RCB_MULTICRITERIA_NORM<br>
+      </td>
+      <td style="vertical-align: top;">Norm used in multicriteria
+algorithm; this determines how to balance the different weight
+constraints. Valid values are 1,2,3. Try a different value if you're
+not happy with the balance. <br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><span style="font-style: italic;">RCB_MAX_ASPECT_RATIO</span><br>
+      </td>
+      <td style="vertical-align: top;">Maximum allowed ratio between
+the largest and smallest side of a subdomain.<br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Default:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>RCB_OVERALLOC</i> = 1.0</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>RCB_REUSE</i> = 0</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>RCB_OUTPUT_LEVEL</i> = 0</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>CHECK_GEOM</i> = 1</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>KEEP_CUTS</i> = 0</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>RCB_LOCK_DIRECTIONS</i> = 0</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>RCB_SET_DIRECTIONS</i> = 0</td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>RCB_RECTILINEAR_BLOCKS</i> = 0</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">OBJ_WEIGHTS_COMPARABLE
+      </span>= 0<span style="font-style: italic;"><br>
+      </span></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top; font-style: italic;">RCB_MULTICRITERIA_NORM
+= 1<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">RCB_MAX_ASPECT_RATIO
+      </span>= 10<span style="font-style: italic;"><br>
+      </span></td>
+    </tr>
+    <tr>
+      <td valign="top"><b>Required Query Functions:</b></td>
+      <td><br>
+      </td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+or <b><a href="ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a
+ href="ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
 pair</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b></td>
-</tr>
-
-<tr>
-<td></td>
-
-<td>
-<b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td> <b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>
 or <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
-</td>
-</tr>
+      </td>
+    </tr>
+  </tbody>
 </table>
-
 <p>
-<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
-<a href="ug_alg_rib.html">Next:&nbsp; Recursive Inertial Bisection (RIB)</a>
+</p>
+<hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
+ href="ug_alg_rib.html">Next:&nbsp; Recursive Inertial Bisection (RIB)</a>
 |&nbsp; <a href="ug_alg.html">Previous:&nbsp; Load-Balancing Algorithms</a>]
 </body>
 </html>
