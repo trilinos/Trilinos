@@ -1,0 +1,19 @@
+Aztec Version 1.1 Release Notes
+
+* We have fixed a bug in our communication routines which use MPI.
+
+* Other minor bug fixes.
+
+* We have added certain functionality which allows one to reorder
+  vectors in accordance with a user defined matrix ordering (see
+  AZ_reorder_vec and AZ_invorder_vec descriptions on pages 38 and 30
+  of the User's Guide , respectively).
+
+* The User's Guide has been updated to reflect these changes.
+
+* Figure 4 in the User's Guide has been corrected. In particular, the
+  column numbers (in bindx) were not in the correct order and thus do
+  not correspond to the nonzero values contained in the val array.
+
+-------------------------------------------------------------------------------
+

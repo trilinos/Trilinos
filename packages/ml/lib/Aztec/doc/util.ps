@@ -1,0 +1,6019 @@
+%!PS-Adobe-3.0
+%%BoundingBox: (atend)
+%%Pages: (atend)
+%%PageOrder: (atend)
+%%DocumentFonts: (atend)
+%%Creator: Frame 4.0
+%%DocumentData: Clean7Bit
+%%EndComments
+%%BeginProlog
+%
+% Frame ps_prolog 4.0, for use with Frame 4.0 products
+% This ps_prolog file is Copyright (c) 1986-1993 Frame Technology
+% Corporation.  All rights reserved.  This ps_prolog file may be
+% freely copied and distributed in conjunction with documents created
+% using FrameMaker, FrameBuilder and FrameViewer as long as this 
+% copyright notice is preserved.
+%
+% Frame products normally print colors as their true color on a color printer
+% or as shades of gray, based on luminance, on a black-and white printer. The
+% following flag, if set to True, forces all non-white colors to print as pure
+% black. This has no effect on bitmap images.
+/FMPrintAllColorsAsBlack             false def
+%
+% Frame products can either set their own line screens or use a printer's 
+% default settings. Three flags below control this separately for no 
+% separations, spot separations and process separations. If a flag
+% is true, then the default printer settings will not be changed. If it is
+% false, Frame products will use their own settings from a table based on
+% the printer's resolution.
+/FMUseDefaultNoSeparationScreen      true  def
+/FMUseDefaultSpotSeparationScreen    true  def
+/FMUseDefaultProcessSeparationScreen false def
+%
+% For any given PostScript printer resolution, Frame products have two sets of 
+% screen angles and frequencies for printing process separations, which are 
+% recomended by Adobe. The following variable chooses the higher frequencies
+% when set to true or the lower frequencies when set to false. This is only
+% effective if the appropriate FMUseDefault...SeparationScreen flag is false.
+/FMUseHighFrequencyScreens true def
+%
+% PostScript Level 2 printers contain an "Accurate Screens" feature which can
+% improve process separation rendering at the expense of compute time. This 
+% flag is ignored by PostScript Level 1 printers.
+/FMUseAcccurateScreens true def
+%
+% The following PostScript procedure defines the spot function that Frame
+% products will use for process separations. You may un-comment-out one of
+% the alternative functions below, or use your own.
+%
+% Dot function
+/FMSpotFunction {abs exch abs 2 copy add 1 gt 
+		{1 sub dup mul exch 1 sub dup mul add 1 sub }
+		{dup mul exch dup mul add 1 exch sub }ifelse } def
+%
+% Line function
+% /FMSpotFunction { pop } def
+%
+% Elipse function
+% /FMSpotFunction { dup 5 mul 8 div mul exch dup mul exch add 
+%		sqrt 1 exch sub } def
+%
+%
+/FMversion (4.0) def 
+/FMLevel1 /languagelevel where {pop languagelevel} {1} ifelse 2 lt def
+/FMPColor
+	FMLevel1 {
+		false
+		/colorimage where {pop pop true} if
+	} {
+		true
+	} ifelse
+def
+/FrameDict 400 dict def 
+systemdict /errordict known not {/errordict 10 dict def
+		errordict /rangecheck {stop} put} if
+% The readline in PS 23.0 doesn't recognize cr's as nl's on AppleTalk
+FrameDict /tmprangecheck errordict /rangecheck get put 
+errordict /rangecheck {FrameDict /bug true put} put 
+FrameDict /bug false put 
+mark 
+% Some PS machines read past the CR, so keep the following 3 lines together!
+currentfile 5 string readline
+00
+0000000000
+cleartomark 
+errordict /rangecheck FrameDict /tmprangecheck get put 
+FrameDict /bug get { 
+	/readline {
+		/gstring exch def
+		/gfile exch def
+		/gindex 0 def
+		{
+			gfile read pop 
+			dup 10 eq {exit} if 
+			dup 13 eq {exit} if 
+			gstring exch gindex exch put 
+			/gindex gindex 1 add def 
+		} loop
+		pop 
+		gstring 0 gindex getinterval true 
+		} bind def
+	} if
+/FMshowpage /showpage load def
+/FMquit /quit load def
+/FMFAILURE { 
+	dup = flush 
+	FMshowpage 
+	/Helvetica findfont 12 scalefont setfont
+	72 200 moveto
+	show FMshowpage 
+	FMquit 
+	} def 
+/FMVERSION {
+	FMversion ne {
+		(Frame product version does not match ps_prolog!) FMFAILURE
+		} if
+	} def 
+/FMBADEPSF { 
+	(PostScript Lang. Ref. Man., 2nd Ed., H.2.4 says EPS must not call X              )
+	dup dup (X) search pop exch pop exch pop length 
+	4 -1 roll 
+	putinterval 
+	FMFAILURE
+	} def
+/FMLOCAL {
+	FrameDict begin
+	0 def 
+	end 
+	} def 
+/concatprocs
+	{
+	/proc2 exch cvlit def/proc1 exch cvlit def/newproc proc1 length proc2 length add array def
+	newproc 0 proc1 putinterval newproc proc1 length proc2 putinterval newproc cvx
+}def
+FrameDict begin 
+/FMnone 0 def
+/FMcyan 1 def
+/FMmagenta 2 def
+/FMyellow 3 def
+/FMblack 4 def
+/FMcustom 5 def
+/FrameNegative false def 
+/FrameSepIs FMnone def 
+/FrameSepBlack 0 def
+/FrameSepYellow 0 def
+/FrameSepMagenta 0 def
+/FrameSepCyan 0 def
+/FrameSepRed 1 def
+/FrameSepGreen 1 def
+/FrameSepBlue 1 def
+/FrameCurGray 1 def
+/FrameCurPat null def
+/FrameCurColors [ 0 0 0 1 0 0 0 ] def 
+/FrameColorEpsilon .001 def	
+/eqepsilon {		
+	sub dup 0 lt {neg} if
+	FrameColorEpsilon le
+} bind def
+/FrameCmpColorsCMYK { 
+	2 copy 0 get exch 0 get eqepsilon {
+		2 copy 1 get exch 1 get eqepsilon {
+			2 copy 2 get exch 2 get eqepsilon {
+				3 get exch 3 get eqepsilon
+			} {pop pop false} ifelse
+		}{pop pop false} ifelse
+	} {pop pop false} ifelse
+} bind def
+/FrameCmpColorsRGB { 
+	2 copy 4 get exch 0 get eqepsilon {
+		2 copy 5 get exch 1 get eqepsilon {
+			6 get exch 2 get eqepsilon
+		}{pop pop false} ifelse
+	} {pop pop false} ifelse
+} bind def
+/RGBtoCMYK { 
+	1 exch sub 
+	3 1 roll 
+	1 exch sub 
+	3 1 roll 
+	1 exch sub 
+	3 1 roll 
+	3 copy 
+	2 copy 
+	le { pop } { exch pop } ifelse 
+	2 copy 
+	le { pop } { exch pop } ifelse 
+	dup dup dup 
+	6 1 roll 
+	4 1 roll 
+	7 1 roll 
+	sub 
+	6 1 roll 
+	sub 
+	5 1 roll 
+	sub 
+	4 1 roll 
+} bind def
+/CMYKtoRGB { 
+	dup dup 4 -1 roll add 						  
+	5 1 roll 3 -1 roll add 						  
+	4 1 roll add 								  
+	1 exch sub dup 0 lt {pop 0} if 3 1 roll 	  
+	1 exch sub dup 0 lt {pop 0} if exch 	      
+	1 exch sub dup 0 lt {pop 0} if exch	  		  
+} bind def
+/FrameSepInit {
+	1.0 RealSetgray
+} bind def
+/FrameSetSepColor { 
+	/FrameSepBlue exch def
+	/FrameSepGreen exch def
+	/FrameSepRed exch def
+	/FrameSepBlack exch def
+	/FrameSepYellow exch def
+	/FrameSepMagenta exch def
+	/FrameSepCyan exch def
+	/FrameSepIs FMcustom def
+	setCurrentScreen	
+} bind def
+/FrameSetCyan {
+	/FrameSepBlue 1.0 def
+	/FrameSepGreen 1.0 def
+	/FrameSepRed 0.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 1.0 def
+	/FrameSepIs FMcyan def
+	setCurrentScreen	
+} bind def
+ 
+/FrameSetMagenta {
+	/FrameSepBlue 1.0 def
+	/FrameSepGreen 0.0 def
+	/FrameSepRed 1.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 1.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMmagenta def
+	setCurrentScreen
+} bind def
+ 
+/FrameSetYellow {
+	/FrameSepBlue 0.0 def
+	/FrameSepGreen 1.0 def
+	/FrameSepRed 1.0 def
+	/FrameSepBlack 0.0 def
+	/FrameSepYellow 1.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMyellow def
+	setCurrentScreen
+} bind def
+ 
+/FrameSetBlack {
+	/FrameSepBlue 0.0 def
+	/FrameSepGreen 0.0 def
+	/FrameSepRed 0.0 def
+	/FrameSepBlack 1.0 def
+	/FrameSepYellow 0.0 def
+	/FrameSepMagenta 0.0 def
+	/FrameSepCyan 0.0 def
+	/FrameSepIs FMblack def
+	setCurrentScreen
+} bind def
+ 
+/FrameNoSep { 
+	/FrameSepIs FMnone def
+	setCurrentScreen
+} bind def
+/FrameSetSepColors { 
+	FrameDict begin
+	[ exch 1 add 1 roll ]
+	/FrameSepColors  
+	exch def end
+	} bind def
+/FrameColorInSepListCMYK { 
+	FrameSepColors {  
+       		exch dup 3 -1 roll 
+       		FrameCmpColorsCMYK 
+       		{ pop true exit } if
+    	} forall 
+	dup true ne {pop false} if
+	} bind def
+/FrameColorInSepListRGB { 
+	FrameSepColors {  
+       		exch dup 3 -1 roll 
+       		FrameCmpColorsRGB 
+       		{ pop true exit } if
+    	} forall 
+	dup true ne {pop false} if
+	} bind def
+/RealSetgray /setgray load def
+/RealSetrgbcolor /setrgbcolor load def
+/RealSethsbcolor /sethsbcolor load def
+end 
+/setgray { 
+	FrameDict begin
+	FrameSepIs FMnone eq
+		{ RealSetgray } 
+		{ 
+		FrameSepIs FMblack eq 
+			{ RealSetgray } 
+			{ FrameSepIs FMcustom eq 
+			  FrameSepRed 0 eq and
+			  FrameSepGreen 0 eq and
+			  FrameSepBlue 0 eq and {
+			  	RealSetgray
+			  } {
+				1 RealSetgray pop 
+			  } ifelse
+			} ifelse
+		} ifelse
+	end
+} bind def
+/setrgbcolor { 
+	FrameDict begin
+	FrameSepIs FMnone eq
+	{  RealSetrgbcolor }
+	{
+		3 copy [ 4 1 roll ] 
+		FrameColorInSepListRGB
+		{
+				FrameSepBlue eq exch 
+			 	FrameSepGreen eq and exch 
+			 	FrameSepRed eq and
+			 	{ 0 } { 1 } ifelse
+		}
+		{
+			FMPColor {
+				RealSetrgbcolor
+				currentcmykcolor
+			} {
+				RGBtoCMYK
+			} ifelse
+			FrameSepIs FMblack eq
+			{1.0 exch sub 4 1 roll pop pop pop} {
+			FrameSepIs FMyellow eq
+			{pop 1.0 exch sub 3 1 roll pop pop} {
+			FrameSepIs FMmagenta eq
+			{pop pop 1.0 exch sub exch pop } {
+			FrameSepIs FMcyan eq
+			{pop pop pop 1.0 exch sub } 
+			{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+		} ifelse
+		RealSetgray
+	} 
+	ifelse
+	end
+} bind def
+/sethsbcolor {
+	FrameDict begin
+	FrameSepIs FMnone eq 
+	{ RealSethsbcolor } 
+	{
+		RealSethsbcolor 
+		currentrgbcolor  
+		setrgbcolor 
+	} 
+	ifelse
+	end
+} bind def
+FrameDict begin
+/setcmykcolor where {
+	pop /RealSetcmykcolor /setcmykcolor load def
+} {
+	/RealSetcmykcolor {
+		4 1 roll
+		3 { 3 index add 0 max 1 min 1 exch sub 3 1 roll} repeat 
+		setrgbcolor pop
+	} bind def
+} ifelse
+userdict /setcmykcolor { 
+		FrameDict begin
+		FrameSepIs FMnone eq
+		{ RealSetcmykcolor } 
+		{
+			4 copy [ 5 1 roll ]
+			FrameColorInSepListCMYK
+			{
+				FrameSepBlack eq exch 
+				FrameSepYellow eq and exch 
+				FrameSepMagenta eq and exch 
+				FrameSepCyan eq and 
+				{ 0 } { 1 } ifelse
+			}
+			{
+				FrameSepIs FMblack eq
+				{1.0 exch sub 4 1 roll pop pop pop} {
+				FrameSepIs FMyellow eq
+				{pop 1.0 exch sub 3 1 roll pop pop} {
+				FrameSepIs FMmagenta eq
+				{pop pop 1.0 exch sub exch pop } {
+				FrameSepIs FMcyan eq
+				{pop pop pop 1.0 exch sub } 
+				{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+			} ifelse
+			RealSetgray
+		}
+		ifelse
+		end
+	} bind put
+FMLevel1 not { 
+	
+	/patProcDict 5 dict dup begin
+		<0f1e3c78f0e1c387> { 3 setlinewidth -1 -1 moveto 9 9 lineto stroke 
+											4 -4 moveto 12 4 lineto stroke
+											-4 4 moveto 4 12 lineto stroke} bind def
+		<0f87c3e1f0783c1e> { 3 setlinewidth -1 9 moveto 9 -1 lineto stroke 
+											-4 4 moveto 4 -4 lineto stroke
+											4 12 moveto 12 4 lineto stroke} bind def
+		<8142241818244281> { 1 setlinewidth -1 9 moveto 9 -1 lineto stroke
+											-1 -1 moveto 9 9 lineto stroke } bind def
+		<03060c183060c081> { 1 setlinewidth -1 -1 moveto 9 9 lineto stroke 
+											4 -4 moveto 12 4 lineto stroke
+											-4 4 moveto 4 12 lineto stroke} bind def
+		<8040201008040201> { 1 setlinewidth -1 9 moveto 9 -1 lineto stroke 
+											-4 4 moveto 4 -4 lineto stroke
+											4 12 moveto 12 4 lineto stroke} bind def
+	end def
+	/patDict 15 dict dup begin
+		/PatternType 1 def		
+		/PaintType 2 def		
+		/TilingType 3 def		
+		/BBox [ 0 0 8 8 ] def 	
+		/XStep 8 def			
+		/YStep 8 def			
+		/PaintProc {
+			begin
+			patProcDict bstring known {
+				patProcDict bstring get exec
+			} {
+				8 8 true [1 0 0 -1 0 8] bstring imagemask
+			} ifelse
+			end
+		} bind def
+	end def
+} if
+/combineColor {
+    FrameSepIs FMnone eq
+	{
+		graymode FMLevel1 or not {
+			
+			[/Pattern [/DeviceCMYK]] setcolorspace
+			FrameCurColors 0 4 getinterval aload pop FrameCurPat setcolor
+		} {
+			FrameCurColors 3 get 1.0 ge {
+				FrameCurGray RealSetgray
+			} {
+				FMPColor graymode and {
+					0 1 3 { 
+						FrameCurColors exch get
+						1 FrameCurGray sub mul
+					} for
+					RealSetcmykcolor
+				} {
+					4 1 6 {
+						FrameCurColors exch get
+						graymode {
+							1 exch sub 1 FrameCurGray sub mul 1 exch sub
+						} {
+							1.0 lt {FrameCurGray} {1} ifelse
+						} ifelse
+					} for
+					RealSetrgbcolor
+				} ifelse
+			} ifelse
+		} ifelse
+	} { 
+		FrameCurColors 0 4 getinterval aload
+		FrameColorInSepListCMYK {
+			FrameSepBlack eq exch 
+			FrameSepYellow eq and exch 
+			FrameSepMagenta eq and exch 
+			FrameSepCyan eq and
+			FrameSepIs FMcustom eq and
+			{ FrameCurGray } { 1 } ifelse
+		} {
+			FrameSepIs FMblack eq
+			{FrameCurGray 1.0 exch sub mul 1.0 exch sub 4 1 roll pop pop pop} {
+			FrameSepIs FMyellow eq
+			{pop FrameCurGray 1.0 exch sub mul 1.0 exch sub 3 1 roll pop pop} {
+			FrameSepIs FMmagenta eq
+			{pop pop FrameCurGray 1.0 exch sub mul 1.0 exch sub exch pop } {
+			FrameSepIs FMcyan eq
+			{pop pop pop FrameCurGray 1.0 exch sub mul 1.0 exch sub } 
+			{pop pop pop pop 1} ifelse } ifelse } ifelse } ifelse 
+		} ifelse
+		graymode FMLevel1 or not {
+			
+			[/Pattern [/DeviceGray]] setcolorspace
+			FrameCurPat setcolor
+		} { 
+			graymode not FMLevel1 and {
+				
+				dup 1 lt {pop FrameCurGray} if
+			} if
+			RealSetgray
+		} ifelse
+	} ifelse
+} bind def
+/savematrix {
+	orgmatrix currentmatrix pop
+	} bind def
+/restorematrix {
+	orgmatrix setmatrix
+	} bind def
+/dmatrix matrix def
+/dpi    72 0 dmatrix defaultmatrix dtransform
+    dup mul exch   dup mul add   sqrt def
+	
+/freq dpi dup 72 div round dup 0 eq {pop 1} if 8 mul div def
+/sangle 1 0 dmatrix defaultmatrix dtransform exch atan def
+/dpiranges   [  2540    2400    1693     1270    1200     635      600      0      ] def
+/CMLowFreqs  [ 100.402  94.8683 89.2289 100.402  94.8683  66.9349  63.2456 47.4342 ] def
+/YLowFreqs   [  95.25   90.0    84.65    95.25   90.0     70.5556  66.6667 50.0    ] def
+/KLowFreqs   [  89.8026 84.8528 79.8088  89.8026 84.8528  74.8355  70.7107 53.033  ] def
+/CLowAngles  [  71.5651 71.5651 71.5651 71.5651  71.5651  71.5651  71.5651 71.5651 ] def
+/MLowAngles  [  18.4349 18.4349 18.4349 18.4349  18.4349  18.4349  18.4349 18.4349 ] def
+/YLowTDot    [  true    true    false    true    true     false    false   false   ] def
+/CMHighFreqs [ 133.87  126.491 133.843  108.503 102.523  100.402   94.8683 63.2456 ] def
+/YHighFreqs  [ 127.0   120.0   126.975  115.455 109.091   95.25    90.0    60.0    ] def
+/KHighFreqs  [ 119.737 113.137 119.713  128.289 121.218   89.8026  84.8528 63.6395 ] def
+/CHighAngles [  71.5651 71.5651 71.5651  70.0169 70.0169  71.5651  71.5651 71.5651 ] def
+/MHighAngles [  18.4349 18.4349 18.4349  19.9831 19.9831  18.4349  18.4349 18.4349 ] def
+/YHighTDot   [  false   false   true     false   false    true     true    false   ] def
+/PatFreq     [	10.5833 10.0     9.4055  10.5833 10.0	  10.5833  10.0	   9.375   ] def
+/screenIndex {
+	0 1 dpiranges length 1 sub { dup dpiranges exch get 1 sub dpi le {exit} {pop} ifelse } for
+} bind def
+/getCyanScreen {
+	FMUseHighFrequencyScreens { CHighAngles CMHighFreqs} {CLowAngles CMLowFreqs} ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get /FMSpotFunction load
+} bind def
+/getMagentaScreen {
+	FMUseHighFrequencyScreens { MHighAngles CMHighFreqs } {MLowAngles CMLowFreqs} ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get /FMSpotFunction load
+} bind def
+/getYellowScreen {
+	FMUseHighFrequencyScreens { YHighTDot YHighFreqs} { YLowTDot YLowFreqs } ifelse
+		screenIndex dup 3 1 roll get 3 1 roll get { 3 div
+			{2 { 1 add 2 div 3 mul dup floor sub 2 mul 1 sub exch} repeat
+			FMSpotFunction } } {/FMSpotFunction load } ifelse
+			0.0 exch
+} bind def
+/getBlackScreen  {
+	FMUseHighFrequencyScreens { KHighFreqs } { KLowFreqs } ifelse
+		screenIndex get 45.0 /FMSpotFunction load 
+} bind def
+/getSpotScreen {
+	getBlackScreen
+} bind def
+/getCompositeScreen {
+	getBlackScreen
+} bind def
+/FMSetScreen 
+	FMLevel1 { /setscreen load 
+	}{ {
+		8 dict begin
+		/HalftoneType 1 def
+		/SpotFunction exch def
+		/Angle exch def
+		/Frequency exch def
+		/AccurateScreens FMUseAcccurateScreens def
+		currentdict end sethalftone
+	} bind } ifelse
+def
+/setDefaultScreen {
+	FMPColor {
+		orgrxfer cvx orggxfer cvx orgbxfer cvx orgxfer cvx setcolortransfer
+	}
+	{
+		orgxfer cvx settransfer
+	} ifelse
+	orgfreq organgle orgproc cvx setscreen
+} bind def
+/setCurrentScreen {
+	FrameSepIs FMnone eq {
+		FMUseDefaultNoSeparationScreen {
+			setDefaultScreen
+		} {
+			getCompositeScreen FMSetScreen
+		} ifelse
+	} {
+		FrameSepIs FMcustom eq {
+			FMUseDefaultSpotSeparationScreen {
+				setDefaultScreen
+			} {
+				getSpotScreen FMSetScreen
+			} ifelse
+		} {
+			FMUseDefaultProcessSeparationScreen {
+				setDefaultScreen
+			} {
+				FrameSepIs FMcyan eq {
+					getCyanScreen FMSetScreen
+				} {
+					FrameSepIs FMmagenta eq {
+						getMagentaScreen FMSetScreen
+					} {
+						FrameSepIs FMyellow eq {
+							getYellowScreen FMSetScreen
+						} {
+							getBlackScreen FMSetScreen
+						} ifelse
+					} ifelse
+				} ifelse
+			} ifelse
+		} ifelse
+	} ifelse 
+} bind def
+end
+	/gstring FMLOCAL
+	/gfile FMLOCAL
+	/gindex FMLOCAL
+	/orgrxfer FMLOCAL
+	/orggxfer FMLOCAL
+	/orgbxfer FMLOCAL
+	/orgxfer FMLOCAL
+	/orgproc FMLOCAL
+	/orgrproc FMLOCAL
+	/orggproc FMLOCAL
+	/orgbproc FMLOCAL
+	/organgle FMLOCAL
+	/orgrangle FMLOCAL
+	/orggangle FMLOCAL
+	/orgbangle FMLOCAL
+	/orgfreq FMLOCAL
+	/orgrfreq FMLOCAL
+	/orggfreq FMLOCAL
+	/orgbfreq FMLOCAL
+	/yscale FMLOCAL
+	/xscale FMLOCAL
+	/edown FMLOCAL
+	/manualfeed FMLOCAL
+	/paperheight FMLOCAL
+	/paperwidth FMLOCAL
+/FMDOCUMENT { 
+	array /FMfonts exch def 
+	/#copies exch def
+	FrameDict begin
+	0 ne /manualfeed exch def
+	/paperheight exch def
+	/paperwidth exch def
+	0 ne /FrameNegative exch def 
+	0 ne /edown exch def 
+	/yscale exch def
+	/xscale exch def
+	FMLevel1 {
+		manualfeed {setmanualfeed} if
+		/FMdicttop countdictstack 1 add def 
+		/FMoptop count def 
+		setpapername 
+		manualfeed {true} {papersize} ifelse 
+		{manualpapersize} {false} ifelse 
+		{desperatepapersize} {false} ifelse 
+		{ (Can't select requested paper size for Frame print job!) FMFAILURE } if
+		count -1 FMoptop {pop pop} for
+		countdictstack -1 FMdicttop {pop end} for 
+		}
+		{{1 dict dup /PageSize [paperwidth paperheight]put setpagedevice}stopped
+		{ (Can't select requested paper size for Frame print job!) FMFAILURE } if
+		 {1 dict dup /ManualFeed manualfeed put setpagedevice } stopped pop }
+	ifelse 
+	
+	FMPColor {
+		currentcolorscreen
+			cvlit /orgproc exch def
+				  /organgle exch def 
+				  /orgfreq exch def
+			cvlit /orgbproc exch def
+				  /orgbangle exch def 
+				  /orgbfreq exch def
+			cvlit /orggproc exch def
+				  /orggangle exch def 
+				  /orggfreq exch def
+			cvlit /orgrproc exch def
+				  /orgrangle exch def 
+				  /orgrfreq exch def
+			currentcolortransfer 
+			FrameNegative {
+				1 1 4 { 
+					pop { 1 exch sub } concatprocs 4 1 roll
+				} for
+				4 copy
+				setcolortransfer
+			} if
+			cvlit /orgxfer exch def
+			cvlit /orgbxfer exch def
+			cvlit /orggxfer exch def
+			cvlit /orgrxfer exch def
+	} {
+		currentscreen 
+			cvlit /orgproc exch def
+				  /organgle exch def 
+				  /orgfreq exch def
+				  
+		currenttransfer 
+		FrameNegative {
+			{ 1 exch sub } concatprocs
+			dup settransfer
+		} if 
+		cvlit /orgxfer exch def
+	} ifelse
+	end 
+} def 
+/pagesave FMLOCAL
+/orgmatrix FMLOCAL
+/landscape FMLOCAL
+/pwid FMLOCAL
+/FMBEGINPAGE { 
+	FrameDict begin 
+	/pagesave save def
+	3.86 setmiterlimit
+	/landscape exch 0 ne def
+	landscape { 
+		90 rotate 0 exch dup /pwid exch def neg translate pop 
+	}{
+		pop /pwid exch def
+	} ifelse
+	edown { [-1 0 0 1 pwid 0] concat } if
+	0 0 moveto paperwidth 0 lineto paperwidth paperheight lineto 
+	0 paperheight lineto 0 0 lineto 1 setgray fill
+	xscale yscale scale
+	/orgmatrix matrix def
+	gsave 
+} def 
+/FMENDPAGE {
+	grestore 
+	pagesave restore
+	end 
+	showpage
+	} def 
+/FMFONTDEFINE { 
+	FrameDict begin
+	findfont 
+	ReEncode 
+	1 index exch 
+	definefont 
+	FMfonts 3 1 roll 
+	put
+	end 
+	} def 
+/FMFILLS {
+	FrameDict begin dup
+	array /fillvals exch def
+	dict /patCache exch def
+	end 
+	} def 
+/FMFILL {
+	FrameDict begin
+	 fillvals 3 1 roll put
+	end 
+	} def 
+/FMNORMALIZEGRAPHICS { 
+	newpath
+	0.0 0.0 moveto
+	1 setlinewidth
+	0 setlinecap
+	0 0 0 sethsbcolor
+	0 setgray 
+	} bind def
+	/fx FMLOCAL
+	/fy FMLOCAL
+	/fh FMLOCAL
+	/fw FMLOCAL
+	/llx FMLOCAL
+	/lly FMLOCAL
+	/urx FMLOCAL
+	/ury FMLOCAL
+/FMBEGINEPSF { 
+	end 
+	/FMEPSF save def 
+	/showpage {} def 
+% See Adobe's "PostScript Language Reference Manual, 2nd Edition", page 714.
+% "...the following operators MUST NOT be used in an EPS file:" (emphasis ours)
+	/banddevice {(banddevice) FMBADEPSF} def
+	/clear {(clear) FMBADEPSF} def
+	/cleardictstack {(cleardictstack) FMBADEPSF} def 
+	/copypage {(copypage) FMBADEPSF} def
+	/erasepage {(erasepage) FMBADEPSF} def
+	/exitserver {(exitserver) FMBADEPSF} def
+	/framedevice {(framedevice) FMBADEPSF} def
+	/grestoreall {(grestoreall) FMBADEPSF} def
+	/initclip {(initclip) FMBADEPSF} def
+	/initgraphics {(initgraphics) FMBADEPSF} def
+	/initmatrix {(initmatrix) FMBADEPSF} def
+	/quit {(quit) FMBADEPSF} def
+	/renderbands {(renderbands) FMBADEPSF} def
+	/setglobal {(setglobal) FMBADEPSF} def
+	/setpagedevice {(setpagedevice) FMBADEPSF} def
+	/setshared {(setshared) FMBADEPSF} def
+	/startjob {(startjob) FMBADEPSF} def
+	/lettertray {(lettertray) FMBADEPSF} def
+	/letter {(letter) FMBADEPSF} def
+	/lettersmall {(lettersmall) FMBADEPSF} def
+	/11x17tray {(11x17tray) FMBADEPSF} def
+	/11x17 {(11x17) FMBADEPSF} def
+	/ledgertray {(ledgertray) FMBADEPSF} def
+	/ledger {(ledger) FMBADEPSF} def
+	/legaltray {(legaltray) FMBADEPSF} def
+	/legal {(legal) FMBADEPSF} def
+	/statementtray {(statementtray) FMBADEPSF} def
+	/statement {(statement) FMBADEPSF} def
+	/executivetray {(executivetray) FMBADEPSF} def
+	/executive {(executive) FMBADEPSF} def
+	/a3tray {(a3tray) FMBADEPSF} def
+	/a3 {(a3) FMBADEPSF} def
+	/a4tray {(a4tray) FMBADEPSF} def
+	/a4 {(a4) FMBADEPSF} def
+	/a4small {(a4small) FMBADEPSF} def
+	/b4tray {(b4tray) FMBADEPSF} def
+	/b4 {(b4) FMBADEPSF} def
+	/b5tray {(b5tray) FMBADEPSF} def
+	/b5 {(b5) FMBADEPSF} def
+	FMNORMALIZEGRAPHICS 
+	[/fy /fx /fh /fw /ury /urx /lly /llx] {exch def} forall 
+	fx fw 2 div add fy fh 2 div add  translate
+	rotate
+	fw 2 div neg fh 2 div neg translate
+	fw urx llx sub div fh ury lly sub div scale 
+	llx neg lly neg translate 
+	/FMdicttop countdictstack 1 add def 
+	/FMoptop count def 
+	} bind def
+/FMENDEPSF {
+	count -1 FMoptop {pop pop} for 
+	countdictstack -1 FMdicttop {pop end} for 
+	FMEPSF restore
+	FrameDict begin 
+	} bind def
+FrameDict begin 
+/setmanualfeed {
+%%BeginFeature *ManualFeed True
+	 statusdict /manualfeed true put
+%%EndFeature
+	} bind def
+/max {2 copy lt {exch} if pop} bind def
+/min {2 copy gt {exch} if pop} bind def
+/inch {72 mul} def
+/pagedimen { 
+	paperheight sub abs 16 lt exch 
+	paperwidth sub abs 16 lt and
+	{/papername exch def} {pop} ifelse
+	} bind def
+	/papersizedict FMLOCAL
+/setpapername { 
+	/papersizedict 14 dict def 
+	papersizedict begin
+	/papername /unknown def 
+		/Letter 8.5 inch 11.0 inch pagedimen
+		/LetterSmall 7.68 inch 10.16 inch pagedimen
+		/Tabloid 11.0 inch 17.0 inch pagedimen
+		/Ledger 17.0 inch 11.0 inch pagedimen
+		/Legal 8.5 inch 14.0 inch pagedimen
+		/Statement 5.5 inch 8.5 inch pagedimen
+		/Executive 7.5 inch 10.0 inch pagedimen
+		/A3 11.69 inch 16.5 inch pagedimen
+		/A4 8.26 inch 11.69 inch pagedimen
+		/A4Small 7.47 inch 10.85 inch pagedimen
+		/B4 10.125 inch 14.33 inch pagedimen
+		/B5 7.16 inch 10.125 inch pagedimen
+	end
+	} bind def
+/papersize {
+	papersizedict begin
+		/Letter {lettertray letter} def
+		/LetterSmall {lettertray lettersmall} def
+		/Tabloid {11x17tray 11x17} def
+		/Ledger {ledgertray ledger} def
+		/Legal {legaltray legal} def
+		/Statement {statementtray statement} def
+		/Executive {executivetray executive} def
+		/A3 {a3tray a3} def
+		/A4 {a4tray a4} def
+		/A4Small {a4tray a4small} def
+		/B4 {b4tray b4} def
+		/B5 {b5tray b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	statusdict begin stopped end 
+	} bind def
+/manualpapersize {
+	papersizedict begin
+		/Letter {letter} def
+		/LetterSmall {lettersmall} def
+		/Tabloid {11x17} def
+		/Ledger {ledger} def
+		/Legal {legal} def
+		/Statement {statement} def
+		/Executive {executive} def
+		/A3 {a3} def
+		/A4 {a4} def
+		/A4Small {a4small} def
+		/B4 {b4} def
+		/B5 {b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	stopped 
+	} bind def
+/desperatepapersize {
+	statusdict /setpageparams known
+		{
+		paperwidth paperheight 0 1 
+		statusdict begin
+		{setpageparams} stopped 
+		end
+		} {true} ifelse 
+	} bind def
+/DiacriticEncoding [
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /space /exclam /quotedbl
+/numbersign /dollar /percent /ampersand /quotesingle /parenleft
+/parenright /asterisk /plus /comma /hyphen /period /slash /zero /one
+/two /three /four /five /six /seven /eight /nine /colon /semicolon
+/less /equal /greater /question /at /A /B /C /D /E /F /G /H /I /J /K
+/L /M /N /O /P /Q /R /S /T /U /V /W /X /Y /Z /bracketleft /backslash
+/bracketright /asciicircum /underscore /grave /a /b /c /d /e /f /g /h
+/i /j /k /l /m /n /o /p /q /r /s /t /u /v /w /x /y /z /braceleft /bar
+/braceright /asciitilde /.notdef /Adieresis /Aring /Ccedilla /Eacute
+/Ntilde /Odieresis /Udieresis /aacute /agrave /acircumflex /adieresis
+/atilde /aring /ccedilla /eacute /egrave /ecircumflex /edieresis
+/iacute /igrave /icircumflex /idieresis /ntilde /oacute /ograve
+/ocircumflex /odieresis /otilde /uacute /ugrave /ucircumflex
+/udieresis /dagger /.notdef /cent /sterling /section /bullet
+/paragraph /germandbls /registered /copyright /trademark /acute
+/dieresis /.notdef /AE /Oslash /.notdef /.notdef /.notdef /.notdef
+/yen /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/ordfeminine /ordmasculine /.notdef /ae /oslash /questiondown
+/exclamdown /logicalnot /.notdef /florin /.notdef /.notdef
+/guillemotleft /guillemotright /ellipsis /.notdef /Agrave /Atilde
+/Otilde /OE /oe /endash /emdash /quotedblleft /quotedblright
+/quoteleft /quoteright /.notdef /.notdef /ydieresis /Ydieresis
+/fraction /currency /guilsinglleft /guilsinglright /fi /fl /daggerdbl
+/periodcentered /quotesinglbase /quotedblbase /perthousand
+/Acircumflex /Ecircumflex /Aacute /Edieresis /Egrave /Iacute
+/Icircumflex /Idieresis /Igrave /Oacute /Ocircumflex /.notdef /Ograve
+/Uacute /Ucircumflex /Ugrave /dotlessi /circumflex /tilde /macron
+/breve /dotaccent /ring /cedilla /hungarumlaut /ogonek /caron
+] def
+/ReEncode { 
+	dup 
+	length 
+	dict begin 
+	{
+	1 index /FID ne 
+		{def} 
+		{pop pop} ifelse 
+	} forall 
+	0 eq {/Encoding DiacriticEncoding def} if 
+	currentdict 
+	end 
+	} bind def
+FMPColor 
+	
+	{
+	/BEGINBITMAPCOLOR { 
+		BITMAPCOLOR} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPCOLORc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUECOLOR } def
+	/BEGINBITMAPTRUECOLORc { 
+		BITMAPTRUECOLORc } def
+	}
+	
+	{
+	/BEGINBITMAPCOLOR { 
+		BITMAPGRAY} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPGRAYc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUEGRAY } def
+	/BEGINBITMAPTRUECOLORc { 
+		BITMAPTRUEGRAYc } def
+	}
+ifelse
+/K { 
+	FMPrintAllColorsAsBlack {
+		dup 1 eq 2 index 1 eq and 3 index 1 eq and not
+			{7 {pop} repeat 0 0 0 1 0 0 0} if
+	} if 
+	FrameCurColors astore 
+	pop combineColor
+} bind def
+/graymode true def
+	/bwidth FMLOCAL
+	/bpside FMLOCAL
+	/bstring FMLOCAL
+	/onbits FMLOCAL
+	/offbits FMLOCAL
+	/xindex FMLOCAL
+	/yindex FMLOCAL
+	/x FMLOCAL
+	/y FMLOCAL
+/setPatternMode {
+	FMLevel1 {
+		/bwidth  exch def
+		/bpside  exch def
+		/bstring exch def
+		/onbits 0 def  /offbits 0 def
+		freq sangle landscape {90 add} if 
+			{/y exch def
+			 /x exch def
+			 /xindex x 1 add 2 div bpside mul cvi def
+			 /yindex y 1 add 2 div bpside mul cvi def
+			 bstring yindex bwidth mul xindex 8 idiv add get
+			 1 7 xindex 8 mod sub bitshift and 0 ne FrameNegative {not} if
+			 {/onbits  onbits  1 add def 1}
+			 {/offbits offbits 1 add def 0}
+			 ifelse
+			}
+			setscreen
+		offbits offbits onbits add div FrameNegative {1.0 exch sub} if
+		/FrameCurGray exch def
+	} { 
+		pop pop
+		dup patCache exch known {
+			patCache exch get
+		} { 
+			dup
+			patDict /bstring 3 -1 roll put
+			patDict 
+			9 PatFreq screenIndex get div dup matrix scale
+			makepattern
+			dup 
+			patCache 4 -1 roll 3 -1 roll put
+		} ifelse
+		/FrameCurGray 0 def
+		/FrameCurPat exch def
+	} ifelse
+	/graymode false def
+	combineColor
+} bind def
+/setGrayScaleMode {
+	graymode not {
+		/graymode true def
+		FMLevel1 {
+			setCurrentScreen
+		} if
+	} if
+	/FrameCurGray exch def
+	combineColor
+} bind def
+/normalize {
+	transform round exch round exch itransform
+	} bind def
+/dnormalize {
+	dtransform round exch round exch idtransform
+	} bind def
+/lnormalize { 
+	0 dtransform exch cvi 2 idiv 2 mul 1 add exch idtransform pop
+	} bind def
+/H { 
+	lnormalize setlinewidth
+	} bind def
+/Z {
+	setlinecap
+	} bind def
+	
+/PFill {
+	graymode FMLevel1 or not {
+		gsave 1 setgray eofill grestore
+	} if
+} bind def
+/PStroke {
+	graymode FMLevel1 or not {
+		gsave 1 setgray stroke grestore
+	} if
+	stroke
+} bind def
+	/fillvals FMLOCAL
+/X { 
+	fillvals exch get
+	dup type /stringtype eq
+	{8 1 setPatternMode} 
+	{setGrayScaleMode}
+	ifelse
+	} bind def
+/V { 
+	PFill gsave eofill grestore
+	} bind def
+/Vclip {
+	clip
+	} bind def
+/Vstrk {
+	currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+/N { 
+	PStroke
+	} bind def
+/Nclip {
+	strokepath clip newpath
+	} bind def
+/Nstrk {
+	currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+/M {newpath moveto} bind def
+/E {lineto} bind def
+/D {curveto} bind def
+/O {closepath} bind def
+	/n FMLOCAL
+/L { 
+ 	/n exch def
+	newpath
+	normalize
+	moveto 
+	2 1 n {pop normalize lineto} for
+	} bind def
+/Y { 
+	L 
+	closepath
+	} bind def
+	/x1 FMLOCAL
+	/x2 FMLOCAL
+	/y1 FMLOCAL
+	/y2 FMLOCAL
+/R { 
+	/y2 exch def
+	/x2 exch def
+	/y1 exch def
+	/x1 exch def
+	x1 y1
+	x2 y1
+	x2 y2
+	x1 y2
+	4 Y 
+	} bind def
+	/rad FMLOCAL
+/rarc 
+	{rad 
+	 arcto
+	} bind def
+/RR { 
+	/rad exch def
+	normalize
+	/y2 exch def
+	/x2 exch def
+	normalize
+	/y1 exch def
+	/x1 exch def
+	mark
+	newpath
+	{
+	x1 y1 rad add moveto
+	x1 y2 x2 y2 rarc
+	x2 y2 x2 y1 rarc
+	x2 y1 x1 y1 rarc
+	x1 y1 x1 y2 rarc
+	closepath
+	} stopped {x1 y1 x2 y2 R} if 
+	cleartomark
+	} bind def
+/RRR { 
+	/rad exch def
+	normalize /y4 exch def /x4 exch def
+	normalize /y3 exch def /x3 exch def
+	normalize /y2 exch def /x2 exch def
+	normalize /y1 exch def /x1 exch def
+	newpath
+	normalize moveto 
+	mark
+	{
+	x2 y2 x3 y3 rarc
+	x3 y3 x4 y4 rarc
+	x4 y4 x1 y1 rarc
+	x1 y1 x2 y2 rarc
+	closepath
+	} stopped
+	 {x1 y1 x2 y2 x3 y3 x4 y4 newpath moveto lineto lineto lineto closepath} if
+	cleartomark
+	} bind def
+/C { 
+	grestore
+	gsave
+	R 
+	clip
+	setCurrentScreen
+} bind def
+/CP { 
+	grestore
+	gsave
+	Y 
+	clip
+	setCurrentScreen
+} bind def
+	/FMpointsize FMLOCAL
+/F { 
+	FMfonts exch get
+	FMpointsize scalefont
+	setfont
+	} bind def
+/Q { 
+	/FMpointsize exch def
+	F 
+	} bind def
+/T { 
+	moveto show
+	} bind def
+/RF { 
+	rotate
+	0 ne {-1 1 scale} if
+	} bind def
+/TF { 
+	gsave
+	moveto 
+	RF
+	show
+	grestore
+	} bind def
+/P { 
+	moveto
+	0 32 3 2 roll widthshow
+	} bind def
+/PF { 
+	gsave
+	moveto 
+	RF
+	0 32 3 2 roll widthshow
+	grestore
+	} bind def
+/S { 
+	moveto
+	0 exch ashow
+	} bind def
+/SF { 
+	gsave
+	moveto
+	RF
+	0 exch ashow
+	grestore
+	} bind def
+/B { 
+	moveto
+	0 32 4 2 roll 0 exch awidthshow
+	} bind def
+/BF { 
+	gsave
+	moveto
+	RF
+	0 32 4 2 roll 0 exch awidthshow
+	grestore
+	} bind def
+/G { 
+	gsave
+	newpath
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath 
+	PFill fill
+	grestore
+	} bind def
+/Gstrk {
+	savematrix
+    newpath
+    2 index 2 div add exch 3 index 2 div sub exch 
+    normalize 2 index 2 div sub exch 3 index 2 div add exch 
+    translate
+    scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    restorematrix
+    currentlinewidth exch setlinewidth PStroke setlinewidth
+    } bind def
+/Gclip { 
+	newpath
+	savematrix
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath 
+	clip newpath
+	restorematrix
+	} bind def
+/GG { 
+	gsave
+	newpath
+	normalize translate 0.0 0.0 moveto 
+	rotate 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath
+	PFill
+	fill
+	grestore
+	} bind def
+/GGclip { 
+	savematrix
+	newpath
+    normalize translate 0.0 0.0 moveto 
+    rotate 
+    dnormalize scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    closepath
+	clip newpath
+	restorematrix
+	} bind def
+/GGstrk { 
+	savematrix
+    newpath
+    normalize translate 0.0 0.0 moveto 
+    rotate 
+    dnormalize scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    closepath 
+	restorematrix
+    currentlinewidth exch setlinewidth PStroke setlinewidth
+	} bind def
+/A { 
+	gsave
+	savematrix
+	newpath
+	2 index 2 div add exch 3 index 2 div sub exch 
+	normalize 2 index 2 div sub exch 3 index 2 div add exch 
+	translate 
+	scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	restorematrix
+	PStroke
+	grestore
+	} bind def
+/Aclip {
+	newpath
+	savematrix
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath 
+	strokepath clip newpath
+	restorematrix
+} bind def
+/Astrk {
+	Gstrk
+} bind def
+/AA { 
+	gsave
+	savematrix
+	newpath
+	
+	3 index 2 div add exch 4 index 2 div sub exch 
+	
+	normalize 3 index 2 div sub exch 4 index 2 div add exch
+	translate 
+	rotate 
+	scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	restorematrix
+	PStroke
+	grestore
+	} bind def
+/AAclip {
+	savematrix
+	newpath
+    normalize translate 0.0 0.0 moveto 
+    rotate 
+    dnormalize scale 
+    0.0 0.0 1.0 5 3 roll arc 
+    closepath
+	strokepath clip newpath
+	restorematrix
+} bind def
+/AAstrk {
+	GGstrk
+} bind def
+	/x FMLOCAL
+	/y FMLOCAL
+	/w FMLOCAL
+	/h FMLOCAL
+	/xx FMLOCAL
+	/yy FMLOCAL
+	/ww FMLOCAL
+	/hh FMLOCAL
+	/FMsaveobject FMLOCAL
+	/FMoptop FMLOCAL
+	/FMdicttop FMLOCAL
+/BEGINPRINTCODE { 
+	/FMdicttop countdictstack 1 add def 
+	/FMoptop count 7 sub def 
+	/FMsaveobject save def
+	userdict begin 
+	/showpage {} def 
+	FMNORMALIZEGRAPHICS 
+	3 index neg 3 index neg translate
+	} bind def
+/ENDPRINTCODE {
+	count -1 FMoptop {pop pop} for 
+	countdictstack -1 FMdicttop {pop end} for 
+	FMsaveobject restore 
+	} bind def
+/gn { 
+	0 
+	{	46 mul 
+		cf read pop 
+		32 sub 
+		dup 46 lt {exit} if 
+		46 sub add 
+		} loop
+	add 
+	} bind def
+	/str FMLOCAL
+/cfs { 
+	/str sl string def 
+	0 1 sl 1 sub {str exch val put} for 
+	str def 
+	} bind def
+/ic [ 
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0
+	{0 hx} {1 hx} {2 hx} {3 hx} {4 hx} {5 hx} {6 hx} {7 hx} {8 hx} {9 hx}
+	{10 hx} {11 hx} {12 hx} {13 hx} {14 hx} {15 hx} {16 hx} {17 hx} {18 hx}
+	{19 hx} {gn hx} {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}
+	{13} {14} {15} {16} {17} {18} {19} {gn} {0 wh} {1 wh} {2 wh} {3 wh}
+	{4 wh} {5 wh} {6 wh} {7 wh} {8 wh} {9 wh} {10 wh} {11 wh} {12 wh}
+	{13 wh} {14 wh} {gn wh} {0 bl} {1 bl} {2 bl} {3 bl} {4 bl} {5 bl} {6 bl}
+	{7 bl} {8 bl} {9 bl} {10 bl} {11 bl} {12 bl} {13 bl} {14 bl} {gn bl}
+	{0 fl} {1 fl} {2 fl} {3 fl} {4 fl} {5 fl} {6 fl} {7 fl} {8 fl} {9 fl}
+	{10 fl} {11 fl} {12 fl} {13 fl} {14 fl} {gn fl}
+	] def
+	/sl FMLOCAL
+	/val FMLOCAL
+	/ws FMLOCAL
+	/im FMLOCAL
+	/bs FMLOCAL
+	/cs FMLOCAL
+	/len FMLOCAL
+	/pos FMLOCAL
+/ms { 
+	/sl exch def 
+	/val 255 def 
+	/ws cfs 
+	/im cfs 
+	/val 0 def 
+	/bs cfs 
+	/cs cfs 
+	} bind def
+400 ms 
+/ip { 
+	is 
+	0 
+	cf cs readline pop 
+	{	ic exch get exec 
+		add 
+		} forall 
+	pop 
+	
+	} bind def
+/rip { 
+	   
+	  
+	  bis ris copy pop 
+      is
+      0
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop 
+	  ris gis copy pop 
+	  dup is exch 
+	  
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+	  pop pop
+	  gis bis copy pop 
+	  dup add is exch 
+	  
+      cf cs readline pop 
+      {       ic exch get exec 
+              add 
+              } forall 
+      pop 
+      
+      } bind def
+/wh { 
+	/len exch def 
+	/pos exch def 
+	ws 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/bl { 
+	/len exch def 
+	/pos exch def 
+	bs 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/s1 1 string def
+/fl { 
+	/len exch def 
+	/pos exch def 
+	/val cf s1 readhexstring pop 0 get def
+	pos 1 pos len add 1 sub {im exch val put} for
+	pos len 
+	} bind def
+/hx { 
+	3 copy getinterval 
+	cf exch readhexstring pop pop 
+	} bind def
+	/h FMLOCAL
+	/w FMLOCAL
+	/d FMLOCAL
+	/lb FMLOCAL
+	/bitmapsave FMLOCAL
+	/is FMLOCAL
+	/cf FMLOCAL
+/wbytes { 
+      dup dup
+      24 eq { pop pop 3 mul }
+      { 8 eq {pop} {1 eq {7 add 8 idiv} {3 add 4 idiv} ifelse} ifelse } ifelse
+	} bind def
+/BEGINBITMAPBWc { 
+	1 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAPGRAYc { 
+	8 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAP2BITc { 
+	2 {} COMMONBITMAPc
+	} bind def
+/COMMONBITMAPc { 
+		 
+	/r exch def
+	/d exch def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	r                    
+	/is im 0 lb getinterval def 
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{ip} image 
+	bitmapsave restore 
+	grestore
+	} bind def
+/BEGINBITMAPBW { 
+	1 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAPGRAY { 
+	8 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAP2BIT { 
+	2 {} COMMONBITMAP
+	} bind def
+/COMMONBITMAP { 
+	/r exch def
+	/d exch def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/bitmapsave save def 
+	r                    
+	/is w d wbytes string def
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{cf is readhexstring pop} image
+	bitmapsave restore 
+	grestore
+	} bind def
+/ngrayt 256 array def
+/nredt 256 array def
+/nbluet 256 array def
+/ngreent 256 array def
+	/gryt FMLOCAL
+	/blut FMLOCAL
+	/grnt FMLOCAL
+	/redt FMLOCAL
+	/indx FMLOCAL
+	/cynu FMLOCAL
+	/magu FMLOCAL
+	/yelu FMLOCAL
+	/k FMLOCAL
+	/u FMLOCAL
+FMLevel1 {
+/colorsetup {
+	currentcolortransfer
+	/gryt exch def
+	/blut exch def
+	/grnt exch def
+	/redt exch def
+	0 1 255 {
+		/indx exch def
+		/cynu 1 red indx get 255 div sub def
+		/magu 1 green indx get 255 div sub def
+		/yelu 1 blue indx get 255 div sub def
+		/k cynu magu min yelu min def
+		/u k currentundercolorremoval exec def
+%		/u 0 def
+		nredt indx 1 0 cynu u sub max sub redt exec put
+		ngreent indx 1 0 magu u sub max sub grnt exec put
+		nbluet indx 1 0 yelu u sub max sub blut exec put
+		ngrayt indx 1 k currentblackgeneration exec sub gryt exec put
+	} for
+	{255 mul cvi nredt exch get}
+	{255 mul cvi ngreent exch get}
+	{255 mul cvi nbluet exch get}
+	{255 mul cvi ngrayt exch get}
+	setcolortransfer
+	{pop 0} setundercolorremoval
+	{} setblackgeneration
+	} bind def
+}
+{
+/colorSetup2 {
+	[ /Indexed /DeviceRGB 255 
+		{dup red exch get 255 div 
+		 exch dup green exch get 255 div 
+		 exch blue exch get 255 div}
+	] setcolorspace
+} bind def
+} ifelse
+	/tran FMLOCAL
+/fakecolorsetup {
+	/tran 256 string def
+	0 1 255 {/indx exch def 
+		tran indx
+		red indx get 77 mul
+		green indx get 151 mul
+		blue indx get 28 mul
+		add add 256 idiv put} for
+	currenttransfer
+	{255 mul cvi tran exch get 255.0 div}
+	exch concatprocs settransfer
+} bind def
+/BITMAPCOLOR { 
+	/d 8 def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/bitmapsave save def
+	FMLevel1 {	
+		colorsetup
+		/is w d wbytes string def
+		/cf currentfile def 
+		w h d [w 0 0 h neg 0 h] 
+		{cf is readhexstring pop} {is} {is} true 3 colorimage 
+	} {
+		colorSetup2
+		/is w d wbytes string def
+		/cf currentfile def 
+		7 dict dup begin
+			/ImageType 1 def
+			/Width w def
+			/Height h def
+			/ImageMatrix [w 0 0 h neg 0 h] def
+			/DataSource {cf is readhexstring pop} bind def
+			/BitsPerComponent d def
+			/Decode [0 255] def
+		end image	
+	} ifelse
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPCOLORc { 
+	/d 8 def
+	gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	FMLevel1 {	
+		colorsetup
+		/is im 0 lb getinterval def 
+		ws 0 lb getinterval is copy pop 
+		/cf currentfile def 
+		w h d [w 0 0 h neg 0 h] 
+		{ip} {is} {is} true 3 colorimage
+	} {
+		colorSetup2
+		/is im 0 lb getinterval def 
+		ws 0 lb getinterval is copy pop 
+		/cf currentfile def 
+		7 dict dup begin
+			/ImageType 1 def
+			/Width w def
+			/Height h def
+			/ImageMatrix [w 0 0 h neg 0 h] def
+			/DataSource {ip} bind def
+			/BitsPerComponent d def
+			/Decode [0 255] def
+		end image	
+	} ifelse
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPTRUECOLORc { 
+	/d 24 def
+        gsave
+ 	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+        /bitmapsave save def 
+        
+	/is im 0 lb getinterval def	
+	/ris im 0 w getinterval def	
+	/gis im w w getinterval def	
+	/bis im w 2 mul w getinterval def 
+        
+        ws 0 lb getinterval is copy pop 
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        {w rip pop ris} {gis} {bis} true 3 colorimage
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPTRUECOLOR { 
+        gsave
+		
+		3 index 2 div add exch	
+		4 index 2 div add exch	
+		translate		
+		rotate			
+		1 index 2 div neg	
+		1 index 2 div neg	
+		translate		
+		scale			
+		/h exch def /w exch def
+        /bitmapsave save def 
+        /is w string def
+        /gis w string def
+        /bis w string def
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        { cf is readhexstring pop } 
+        { cf gis readhexstring pop } 
+        { cf bis readhexstring pop } 
+        true 3 colorimage 
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPTRUEGRAYc { 
+	/d 24 def
+        gsave
+	
+	3 index 2 div add exch	
+	4 index 2 div add exch	
+	translate		
+	rotate			
+	1 index 2 div neg	
+	1 index 2 div neg	
+	translate		
+	scale			
+	/h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+        /bitmapsave save def 
+        
+	/is im 0 lb getinterval def	
+	/ris im 0 w getinterval def	
+	/gis im w w getinterval def	
+	/bis im w 2 mul w getinterval def 
+        ws 0 lb getinterval is copy pop 
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        {w rip pop ris gis bis w gray} image
+        bitmapsave restore 
+        grestore
+        } bind def
+/ww FMLOCAL
+/r FMLOCAL
+/g FMLOCAL
+/b FMLOCAL
+/i FMLOCAL
+/gray { 
+        /ww exch def
+        /b exch def
+        /g exch def
+        /r exch def
+        0 1 ww 1 sub { /i exch def r i get .299 mul g i get .587 mul
+			b i get .114 mul add add r i 3 -1 roll floor cvi put } for
+        r
+        } bind def
+/BITMAPTRUEGRAY { 
+        gsave
+		
+		3 index 2 div add exch	
+		4 index 2 div add exch	
+		translate		
+		rotate			
+		1 index 2 div neg	
+		1 index 2 div neg	
+		translate		
+		scale			
+		/h exch def /w exch def
+        /bitmapsave save def 
+        /is w string def
+        /gis w string def
+        /bis w string def
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        { cf is readhexstring pop 
+          cf gis readhexstring pop 
+          cf bis readhexstring pop w gray}  image
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPGRAY { 
+	8 {fakecolorsetup} COMMONBITMAP
+	} bind def
+/BITMAPGRAYc { 
+	8 {fakecolorsetup} COMMONBITMAPc
+	} bind def
+/ENDBITMAP {
+	} bind def
+end 
+	/ALDsave FMLOCAL
+	/ALDmatrix matrix def ALDmatrix currentmatrix pop
+/StartALD {
+	/ALDsave save def
+	 savematrix
+	 ALDmatrix setmatrix
+	} bind def
+/InALD {
+	 restorematrix
+	} bind def
+/DoneALD {
+	 ALDsave restore
+	} bind def
+/I { setdash } bind def
+/J { [] 0 setdash } bind def
+%%EndProlog
+%%BeginSetup
+(4.0) FMVERSION
+1 1 0 0 612 792 0 1 24 FMDOCUMENT
+0 0 /Times-Roman FMFONTDEFINE
+1 0 /Times-Italic FMFONTDEFINE
+2 0 /Times-Bold FMFONTDEFINE
+3 1 /Symbol FMFONTDEFINE
+4 0 /Courier FMFONTDEFINE
+5 0 /NewCenturySchlbk-Roman FMFONTDEFINE
+6 0 /Courier-Bold FMFONTDEFINE
+32 FMFILLS
+0 0 FMFILL
+1 0.1 FMFILL
+2 0.3 FMFILL
+3 0.5 FMFILL
+4 0.7 FMFILL
+5 0.9 FMFILL
+6 0.97 FMFILL
+7 1 FMFILL
+8 <0f1e3c78f0e1c387> FMFILL
+9 <0f87c3e1f0783c1e> FMFILL
+10 <cccccccccccccccc> FMFILL
+11 <ffff0000ffff0000> FMFILL
+12 <8142241818244281> FMFILL
+13 <03060c183060c081> FMFILL
+14 <8040201008040201> FMFILL
+16 1 FMFILL
+17 0.9 FMFILL
+18 0.7 FMFILL
+19 0.5 FMFILL
+20 0.3 FMFILL
+21 0.1 FMFILL
+22 0.03 FMFILL
+23 0 FMFILL
+24 <f0e1c3870f1e3c78> FMFILL
+25 <f0783c1e0f87c3e1> FMFILL
+26 <3333333333333333> FMFILL
+27 <0000ffff0000ffff> FMFILL
+28 <7ebddbe7e7dbbd7e> FMFILL
+29 <fcf9f3e7cf9f3f7e> FMFILL
+30 <7fbfdfeff7fbfdfe> FMFILL
+%%EndSetup
+%%Page: "1" 1
+%%BeginPaperSize: Letter
+%%EndPaperSize
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+J
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 32.67 540 42.67 R
+7 X
+0 0 0 1 0 0 0 K
+V
+0 10 Q
+0 X
+(1) 499 36 T
+72 746 540 756 R
+7 X
+V
+72 54 540 54 2 L
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 756 R
+7 X
+V
+0 12 Q
+0 X
+(SAND95-1540J) 267.34 748 T
+(Unlimited Release) 261.5 734 T
+(Printed July 1995) 263.66 720 T
+0 16 Q
+(Parallel Sparse Matrix-V) 150.02 611.33 T
+(ector Multiply Software) 308.22 611.33 T
+(for Matrices with Data Locality) 201.49 588.33 T
+0 12.8 Q
+(1) 404.11 594.73 T
+1 12 Q
+(Ray S. T) 168.19 522 T
+(uminar) 207.86 522 T
+(o) 242.08 522 T
+1 9.6 Q
+(2) 248.08 526.8 T
+1 12 Q
+(, John N. Shadid) 252.88 522 T
+1 9.6 Q
+(3) 332.55 526.8 T
+1 12 Q
+(, Scott A. Hutchinson) 337.35 522 T
+1 9.6 Q
+(3) 439.01 526.8 T
+0 12 Q
+(Sandia National Laboratories) 235.68 480 T
+(Albuquerque, New Mexico 87185) 224.02 466 T
+0 16 Q
+-0.05 (Key W) 72 380.33 P
+-0.05 (ords. parallel, software, sparse matrix, performance, Krylov meth-) 116.43 380.33 P
+(ods) 72 362.33 T
+(AMS subject classi\336cation. 35, 68M20, 68N99, 65Y05) 72 316.33 T
+(DRAFT) 185.8 247.33 T
+(: submitted to BIT \0501) 237.45 247.33 T
+(1/27/95\051) 371.98 247.33 T
+72 157 540 171.98 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 157 540 171.98 R
+7 X
+0 0 0 1 0 0 0 K
+V
+81 169.96 225 169.96 2 L
+V
+0.5 H
+2 Z
+0 X
+N
+0 -208 1000 792 C
+0 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(1. This work was partially funded by the Applied Mathematical Sciences Program, US Depart-) 72 149 T
+(ment of Ener) 72 135 T
+(gy) 134.44 135 T
+(, Of) 145.66 135 T
+(\336ce of Ener) 164.1 135 T
+(gy Research, and was performed at Sandia National Laboratories) 219.86 135 T
+(operated for the US Department of Ener) 72 121 T
+(gy under contract no. DE-ACO4-76DP00789.) 264.4 121 T
+(2. Applied and Numerical Mathematics Department) 72 102 T
+(3. Parallel Computational Sciences Department) 72 83 T
+441 711 531 756 R
+7 X
+V
+0 X
+(Distribution) 441 748 T
+(Category UC-405) 441 734 T
+FMENDPAGE
+%%EndPage: "1" 1
+%%Page: "2" 2
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(2) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 16 Q
+0 X
+(Parallel Sparse Matrix V) 150.69 709.33 T
+(ector Multiply Software) 307.55 709.33 T
+(for Matrices with Data Locality) 201.49 686.33 T
+0 12.8 Q
+(2) 404.11 692.73 T
+1 12 Q
+(Ray S. T) 168.19 666 T
+(uminar) 207.86 666 T
+(o) 242.08 666 T
+1 9.6 Q
+(3) 248.08 670.8 T
+1 12 Q
+(, John N. Shadid) 252.88 666 T
+1 9.6 Q
+(4) 332.55 670.8 T
+1 12 Q
+(, Scott A. Hutchinson) 337.35 666 T
+1 9.6 Q
+(4) 439.01 670.8 T
+0 12 Q
+(Sandia National Laboratories) 235.68 652 T
+(Albuquerque, New Mexico 87185) 224.02 638 T
+0 14 Q
+(Key W) 72 603.67 T
+(ords. parallel, software, sparse matrix, performance, Krylov methods) 110.92 603.67 T
+(AMS subject classi\336cation. 35, 68M20, 68N99, 65Y05) 72 583.67 T
+2 F
+(Abstract) 279.95 544.67 T
+0 12 Q
+-0.21 (In this paper we describe general software utilities for performing unstructured sparse matrix-vec-) 72 525 P
+-0.24 (tor multiplications on distributed-memory message-passing computers. Our focus is to present the) 72 504 P
+1.04 (data structures and communication parameters necessary for matrices with data locality) 72 483 P
+1.04 (. In this) 501.57 483 P
+-0.05 (discussion we also present representative examples and timings which demonstrate the utility and) 72 462 P
+(performance of the software.) 72 441 T
+2 F
+(1. Intr) 72 392 T
+(oduction) 104.45 392 T
+0 F
+-0.26 (The operation of multiplying a sparse matrix by a vector is one of the most heavily used kernels in) 72 364 P
+1.03 (scienti\336c computing. Among the computations relying on this operation are applications which) 72 336 P
+-0.27 (numerically solve partial dif) 72 308 P
+-0.27 (ferential equations \050PDEs\051 \050e.g. computational \337uid mechanics, struc-) 206.62 308 P
+0.95 (tural analysis, semiconductor device modeling, etc.\051 as well as optimization problems. In many) 72 280 P
+0.24 (cases the sparse matrix-vector operation is performed explicitly on a stored matrix while in other) 72 252 P
+0.47 (applications, the full matrix is never actually formed. In either case, matrix-vector multiplies are) 72 224 P
+(by far the most time consuming aspect of a number of scienti\336c calculations.) 72 196 T
+72 176 540 190.98 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 176 540 190.98 R
+7 X
+0 0 0 1 0 0 0 K
+V
+81 188.96 225 188.96 2 L
+V
+0.5 H
+2 Z
+0 X
+N
+0 0 612 792 C
+0 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(2. This work was partially funded by the Applied Mathematical Sciences Program, US Depart-) 72 168 T
+(ment of Ener) 72 154 T
+(gy) 134.44 154 T
+(, Of) 145.66 154 T
+(\336ce of Ener) 164.1 154 T
+(gy Research, and was performed at Sandia National Laboratories) 219.86 154 T
+(operated for the US Department of Ener) 72 140 T
+(gy under contract no. DE-ACO4-76DP00789.) 264.4 140 T
+(3. Applied and Numerical Mathematics Department) 72 121 T
+(4. Parallel Computational Sciences Department) 72 102 T
+FMENDPAGE
+%%EndPage: "2" 2
+%%Page: "3" 3
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(3) 499 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+1.22 (Sparse matrix-vector multiply software is not normally available for several reasons. Foremost) 72 684 P
+-0.18 (among these is the fact that the matrix-vector multiply is often not a very complex operation. That) 72 656 P
+0.37 (is, users can frequently write their own routine. Another reason is that dif) 72 628 P
+0.37 (ferent users \336nd dif) 428.15 628 P
+0.37 (fer-) 522.68 628 P
+2.75 (ent sparse matrix storage formats convenient and there are no widely agreed upon formats) 72 600 P
+0.98 (\050although this is beginning to be addressed by the sparse BLAS ef) 72 572 P
+0.98 (fort[1]\051. In fact, not only are) 399.49 572 P
+0.53 (several formats in use but many applications require no format at all as they ef) 72 544 P
+0.53 (fectively perform) 455.83 544 P
+-0.04 (matrix-vector products implicitly to avoid storage of the matrix. However) 72 516 P
+-0.04 (, in the parallel comput-) 425.16 516 P
+1.14 (ing context, ef) 72 488 P
+1.14 (\336ciency issues \050minimizing communication costs and maximizing computational) 143.05 488 P
+-0.16 (rates\051[4,5,7] and programming issues make such software critical to the development of advanced) 72 460 P
+0.1 (applications[8]. In this paper) 72 432 P
+0.1 (, a set of programming tools are described to help transform a global) 209.81 432 P
+0.18 (matrix description to a distributed matrix partitioned over multiple processors such that a general) 72 404 P
+0.56 (unstructured sparse matrix-vector product can be performed. Our goal in this paper is to explain) 72 376 P
+0.59 (the transformation steps, illustrate the signi\336cant reduction in programming dif) 72 348 P
+0.59 (\336culty associated) 456.42 348 P
+0.4 (with these tools, and to demonstrate the overall computational ef) 72 320 P
+0.4 (\336ciency of the approach. In this) 386.03 320 P
+0.71 (discussion it is assumed that the global matrix exhibits data locality in the graph of it\325) 72 292 P
+0.71 (s nonzero) 492.97 292 P
+-0.04 (structure, i.e. it is possible to reorder the matrix into a nearly block diagonal matrix with a limited) 72 264 P
+0.34 (number of of) 72 236 P
+0.34 (f diagonal block entries. This, data locality) 135.11 236 P
+0.34 (, is common for numerical PDE approxi-) 341.67 236 P
+-0.18 (mations by methods with local support such as \336nite element \050FE\051 and \336nite dif) 72 208 P
+-0.18 (ference \050FD\051 tech-) 451.74 208 P
+1.41 (niques or spectral methods using sparse FE or FD preconditioners. For matrices which do not) 72 180 P
+-0.01 (have this data locality the implementation of similar transformation tools is possible however) 72 152 P
+-0.01 (, the) 519.35 152 P
+(tar) 72 124 T
+(get of a row-wise decomposition for the distributed sparse matrix is no longer appropriate[3].) 84.44 124 T
+FMENDPAGE
+%%EndPage: "3" 3
+%%Page: "4" 4
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(4) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 81 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.71 (The paper proceeds in the following manner) 72 712 P
+0.71 (. Section 2 outlines the data or) 288.22 712 P
+0.71 (ganization and struc-) 437.93 712 P
+0.05 (tures needed to perform a low level sparse matrix-vector product. Section 3 de\336nes the user input) 72 684 P
+0.13 (for the software tools described in following section, Section 4. Section 5 gives a number of high) 72 656 P
+0.82 (level sample programs using these software tools. Finally) 72 628 P
+0.82 (, Section 6 gives typical run time data) 352.94 628 P
+0.03 (for a parallel application where an iterative method is used in conjunction with a low-level sparse) 72 600 P
+(matrix-vector multiply to solve a linear system.) 72 572 T
+2 F
+(2. Communication and Data Organization) 72 516 T
+0 F
+1.44 (Before discussing the transformation tools, we begin with the data structures and or) 72 460 P
+1.44 (ganization) 490.01 460 P
+(needed to perform a low-level parallel matrix-vector product. Although the description follows) 72 432 T
+0.41 (the data structures needed to use) 72 404 P
+1 F
+0.41 (our) 233.06 404 P
+0 F
+0.41 ( low-level matrix-vector routine, it is intended to be general) 249.73 404 P
+(enough to clarify issues underlying all matrix-vector product software.) 72 376 T
+-0.16 (In this description we consider the operation) 72 320 P
+-0.16 ( where) 326.72 320 P
+1 F
+-0.16 (A) 361.72 320 P
+0 F
+-0.16 ( is an) 369.05 320 P
+-0.16 ( sparse matrix and) 424.49 320 P
+1 F
+-0.16 (x) 514.5 320 P
+0 F
+-0.16 ( and) 519.83 320 P
+1 F
+0.05 (y) 72 292 P
+0 F
+0.05 ( are vectors of length) 77.33 292 P
+1 F
+0.05 (n) 181.9 292 P
+0 F
+0.05 (. It is assumed that a subset of the components in) 187.9 292 P
+1 F
+0.05 (y) 426.48 292 P
+0 F
+0.05 ( have been assigned to) 431.81 292 P
+0.37 (a particular processor and that this subset is also used to assign the rows of the matrix to proces-) 72 264 P
+0.05 (sors. This assignment, for a matrix with data locality) 72 236 P
+0.05 (, can be produced by graph partitioning tools) 324.31 236 P
+0.45 (such as Chaco[2]. In performing a matrix-vector multiply) 72 208 P
+0.45 (, each processor is only responsible for) 350.33 208 P
+0.1 (computing/updating its components of) 72 180 P
+1 F
+0.1 (y) 260.43 180 P
+0 F
+0.1 (. It is further assumed that all) 264.97 180 P
+1 F
+0.1 (distributed vectors) 409.03 180 P
+0 F
+0.1 (, such as) 498.8 180 P
+1 F
+0.01 (x) 72 152 P
+0 F
+0.01 ( and) 77.33 152 P
+1 F
+0.01 (y) 100.68 152 P
+0 F
+0.01 (, use the same assignment of components to processors. In addition to these assigned com-) 105.23 152 P
+1.26 (ponents each processor will have copies of additional components \050external\051 which it needs to) 72 124 P
+0.06 (perform its updates. Thus, each processor contains a subset of the vectors) 72 96 P
+1 F
+0.06 (x) 428.04 96 P
+0 F
+0.06 ( and) 433.37 96 P
+1 F
+0.06 (y) 456.83 96 P
+0 F
+0.06 ( and the compo-) 462.15 96 P
+287.19 315 326.72 330 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(y) 288.19 320 T
+(A) 311.36 320 T
+(x) 319.39 320 T
+3 F
+(\254) 296.51 320 T
+0 0 612 792 C
+396.91 315 424.49 330 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(n) 397.91 320 T
+(n) 416.49 320 T
+3 F
+(\264) 406.9 320 T
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "4" 4
+%%Page: "5" 5
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(5) 499 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+(nents of these vectors are classi\336ed into three types:) 72 712 T
+1 F
+(internal) 86.4 656 T
+0 F
+(- components which are updated on this processor without performing any communi-) 127.4 656 T
+(cation. That is,) 86.4 644 T
+1 F
+(y) 160.73 644 T
+1 9.6 Q
+(i) 166.06 641 T
+0 12 Q
+( is an) 168.73 644 T
+1 F
+(internal) 197.06 644 T
+0 F
+(component if it is updated on this processor and if the column) 238.06 644 T
+-0.24 (index) 86.4 632 P
+1 F
+-0.24 (j) 115.82 632 P
+0 F
+-0.24 ( associated with each nonzero) 119.16 632 P
+1 F
+-0.24 (A) 264.25 632 P
+1 9.6 Q
+-0.19 (ij) 271.58 629 P
+0 12 Q
+-0.24 ( in row) 276.92 632 P
+1 F
+-0.24 (i) 313.2 632 P
+0 F
+-0.24 ( corresponds to a component \050) 316.53 632 P
+1 F
+-0.24 (x) 460.3 632 P
+1 9.6 Q
+-0.19 (j) 465.63 629 P
+0 12 Q
+-0.24 (\051 which is also) 468.3 632 P
+(updated on this processor) 86.4 620 T
+(.) 208.06 620 T
+1 F
+(bor) 86.4 596 T
+(der) 102.62 596 T
+0 F
+( - components which are updated on this processor but require some communication) 118.62 596 T
+(before the update can be completed. That is,) 86.4 584 T
+1 F
+(y) 301.68 584 T
+1 9.6 Q
+(j) 307.01 581 T
+0 12 Q
+( is a) 309.68 584 T
+1 F
+(bor) 332.01 584 T
+(der) 348.23 584 T
+0 F
+(component if it is updated on this) 367.23 584 T
+-0.02 (processor and if at least one column index) 86.4 572 P
+1 F
+-0.02 ( j) 288.58 572 P
+0 F
+-0.02 ( associated with a nonzero) 294.89 572 P
+1 F
+-0.02 (A) 424.44 572 P
+1 9.6 Q
+-0.01 (ij) 431.78 569 P
+0 12 Q
+-0.02 ( found in row) 437.11 572 P
+1 F
+-0.02 (i) 505.04 572 P
+0 F
+-0.02 ( corre-) 508.37 572 P
+(sponds to a component \050) 86.4 560 T
+1 F
+(x) 203.72 560 T
+1 9.6 Q
+(j) 209.05 557 T
+0 12 Q
+(\051 which is not updated on this processor) 211.72 560 T
+(.) 402.04 560 T
+1 F
+(external) 86.4 536 T
+0 F
+(- components which are not updated on this processor but which correspond to col-) 128.72 536 T
+(umn indices associated with nonzeros de\336ned in the rows assigned to this processor) 86.4 524 T
+(.) 487.69 524 T
+0.67 (The ordering of the components of a distributed vector on each processor is also of importance.) 72 484 P
+0.06 (Each of the internal components is local numbered between) 72 456 P
+1 F
+0.06 (0) 362.18 456 P
+0 F
+0.06 (and) 371.24 456 P
+1 F
+0.06 (N) 391.64 456 P
+1 9.6 Q
+0.05 (i) 399.64 453 P
+1 12 Q
+0.06 (-1) 402.31 456 P
+0 F
+0.06 ( where) 412.3 456 P
+1 F
+0.06 (N) 447.75 456 P
+1 9.6 Q
+0.05 (i) 455.75 453 P
+0 12 Q
+0.06 ( is the number of) 458.42 456 P
+0.71 (internal vector elements. Each of the border components is locally labeled between) 72 428 P
+1 F
+0.71 (N) 482.1 428 P
+1 9.6 Q
+0.57 (i) 490.1 425 P
+0 12 Q
+0.71 ( and) 492.77 428 P
+1 F
+0.71 (N) 517.52 428 P
+1 9.6 Q
+0.57 (i) 525.52 425 P
+1 12 Q
+0.71 ( +) 528.19 428 P
+0.73 (N) 72 400 P
+1 9.6 Q
+0.58 (b) 80 397 P
+1 12 Q
+0.73 (-1) 84.8 400 P
+0 F
+0.73 ( where) 94.8 400 P
+1 F
+0.73 (N) 131.57 400 P
+1 9.6 Q
+0.58 (b) 139.58 397 P
+0 12 Q
+0.73 ( is the number of border components. Finally) 144.38 400 P
+0.73 (, each of the) 365.35 400 P
+1 F
+0.73 (N) 429.92 400 P
+1 9.6 Q
+0.58 (e) 437.92 397 P
+0 12 Q
+0.73 ( external vector ele-) 442.18 400 P
+0.69 (ments is labeled between) 72 372 P
+1 F
+0.69 (N) 198.06 372 P
+1 9.6 Q
+0.55 (i) 206.06 369 P
+1 12 Q
+0.69 (+N) 208.73 372 P
+1 9.6 Q
+0.55 (b) 224.84 369 P
+0 12 Q
+0.69 ( and) 229.64 372 P
+1 F
+0.69 (N) 254.34 372 P
+1 9.6 Q
+0.55 (i) 262.34 369 P
+1 12 Q
+0.69 (+N) 265.01 372 P
+1 9.6 Q
+0.55 (b) 281.12 369 P
+1 12 Q
+0.69 (+N) 285.92 372 P
+1 9.6 Q
+0.55 (e) 302.02 369 P
+1 12 Q
+0.69 (-1) 306.28 372 P
+0 F
+0.69 (. These external components are ordered such) 316.28 372 P
+0.37 (that components updated by the same processor are labeled consecutively) 72 344 P
+0.37 (. It is important to note) 428.14 344 P
+0.3 (that on each processor the row and column indices of each matrix nonzero are renumbered using) 72 316 P
+-0.12 (this local ordering scheme. In particular) 72 288 P
+-0.12 (, each row and column index is assigned the same number) 262.22 288 P
+0.31 (as the local index assigned to the corresponding vector component. A sample using this ordering) 72 260 P
+FMENDPAGE
+%%EndPage: "5" 5
+%%Page: "6" 6
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(6) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+(scheme is given in Figure 1 for processor 0.) 72 712 T
+0.05 ( In order to update/receive the external variables on all processors, it is necessary that a few more) 72 308 P
+-0.14 (data structures be speci\336ed. First, each processor must know on which processor it\325) 72 280 P
+-0.14 (s external vec-) 470.3 280 P
+0.29 (tor components are updated. Second, each processor must know which vector components that it) 72 252 P
+1.53 (updates are needed by other processors \050and the relative ordering of these components on the) 72 224 P
+0.03 (neighboring processors\051. This information is depicted in Figure 2 for the example given in Figure) 72 196 P
+1.6 (1. All the required information for the interprocessor communication is encoded in the arrays) 72 168 P
+4 F
+3.92 (send_list) 72 140 P
+0 F
+1.63 (,) 136.8 140 P
+4 F
+3.92 (neighbors,) 144.43 140 P
+3.92 (send_length) 221.07 140 P
+0 F
+1.63 (,) 300.27 140 P
+4 F
+3.92 (receive_length) 307.9 140 P
+0 F
+1.63 (. In our example,) 408.7 140 P
+1 F
+1.63 (N) 499.89 140 P
+1 9.6 Q
+1.31 (n) 507.9 137 P
+0 12 Q
+1.63 ( indi-) 512.7 140 P
+0.55 (cates that processor 0 has two neighbors:) 72 112 P
+1 F
+0.55 (pr) 275.51 112 P
+0.55 (ocessor 2) 285.73 112 P
+0 F
+0.55 (and) 335.5 112 P
+1 F
+0.55 ( pr) 352.83 112 P
+0.55 (ocessor 1) 366.6 112 P
+0 F
+0.55 (. Processor 0 receives two) 412.82 112 P
+0.6 (components from processor 1 and stores them in the lowest numbered external components \050i.e.) 72 84 P
+72 72 540 720 C
+90 360 522 708 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+306 615.73 M
+ 358 610.64 358 610.64 359.5 606.82 D
+ 361 603 361 603 416 614.03 D
+0.5 H
+2 Z
+0 X
+0 0 0 1 0 0 0 K
+N
+0 12 Q
+(Figure 1: Or) 158.26 369.82 T
+(ganization of vector components for a sample problem.) 217.37 369.82 T
+113 401 491 524 R
+7 X
+V
+0 11 Q
+0 X
+(matrix:) 116 516 T
+(                             row       nonzero columns) 113 504.67 T
+(0) 203.25 482.67 T
+(0) 248.25 482.67 T
+(1) 262.25 482.67 T
+(2) 275.25 482.67 T
+(1) 203.25 471.67 T
+(1) 248.25 471.67 T
+(0) 262.25 471.67 T
+(2) 275.25 471.67 T
+(5) 286.25 471.67 T
+(2) 203.25 460.67 T
+(2) 248.25 460.67 T
+(0) 262.25 460.67 T
+(1) 275.25 460.67 T
+(5) 286.25 460.67 T
+(3) 297.25 460.67 T
+(4) 307.25 460.67 T
+1 F
+(N) 160 438.67 T
+1 9.6 Q
+(i) 167.34 435.67 T
+0 11 Q
+(= 1) 205 438.67 T
+1 F
+(N) 160 427.67 T
+1 9.6 Q
+(b) 167.34 424.67 T
+0 11 Q
+(= 2) 205 427.67 T
+1 F
+(N) 160 416.67 T
+1 9.6 Q
+(e) 167.34 413.67 T
+0 11 Q
+(= 3) 205 416.67 T
+6 X
+90 450 54 67.5 256 605.8 G
+0 X
+90 450 54 67.5 256 605.8 A
+283 628.3 292 574.3 2 L
+N
+0 12 Q
+(0) 220 601.3 T
+(2) 274 629.11 T
+(1) 283 565.3 T
+(5) 364 574.3 T
+(3) 355 619.3 T
+(4) 337 684.9 T
+(Proc 0) 225 567.9 T
+(Proc 2) 360 656.3 T
+346 619.3 283 628.3 364 583.3 3 L
+N
+364 583 292 574 229 601 283 628 337 682 292 637 6 L
+N
+(Proc 1) 361 554.3 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "6" 6
+%%Page: "7" 7
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(7) 499 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+1.74 (components 3 and 4\051. Processor 0 receives 1 component from processor 1 which is stored in) 72 595 P
+0.31 (memory) 72 567 P
+1 F
+0.31 (after) 115.31 567 P
+0 F
+0.31 ( the components received from processor 2 \050i.e. component 5\051. Processor 0 sends 1) 137.98 567 P
+0.42 (component to processor 2 \050the \336rst component listed in) 72 539 P
+4 F
+1.01 (send_list) 343.44 539 P
+0 F
+0.42 (\051 and 2 components to pro-) 408.24 539 P
+1.78 (cessor 1 \050the components following those sent to processor 2 in) 72 511 P
+4 F
+4.27 (send_list) 399.2 511 P
+0 F
+1.78 (\051. Once all this) 464.01 511 P
+(information is available the matrix-vector can be performed [4].) 72 483 T
+(T) 72 427 T
+(o summarize, a typical matrix-vector product requires the following initialization steps:) 78.49 427 T
+(1 .) 93.6 367 T
+(Assign a subset of vector components and associated matrix rows to each processor) 126 367 T
+(.) 526.6 367 T
+(2 .) 93.6 349 T
+(Compute and store nonzeros and column indices contained in each of the rows) 126 349 T
+(assigned to each processor) 126 335 T
+(.) 252.97 335 T
+(3 .) 93.6 317 T
+-0.46 (Make a list of external vector components by \336nding all column indices de\336ned in step) 126 317 P
+(2 above which are not updated by this processor) 126 303 T
+(.) 356.63 303 T
+(4 .) 93.6 285 T
+(Split the update components into a set of internal and border components based on) 126 285 T
+(whether the row associated with the element contains any external column indices.) 126 271 T
+(5 .) 93.6 253 T
+(Assign a local ordering to the internal and border components.) 126 253 T
+(6 .) 93.6 235 T
+(Determine which processor updates each external component.) 126 235 T
+(7 .) 93.6 217 T
+(Assign a local ordering to each external component such that components updated by) 126 217 T
+(the same processor are numbered contiguously) 126 203 T
+(.) 350.17 203 T
+(8 .) 93.6 185 T
+(Renumber row and column indices in the matrix to use the newly de\336ned local indi-) 126 185 T
+(ces.) 126 171 T
+(9 .) 93.6 153 T
+(Determine which vector components need to be sent to other processors \050i.e. which) 126 153 T
+(update elements are external on other processors\051.) 126 139 T
+(10 .) 93.6 121 T
+(Initialize) 126 121 T
+4 F
+(send_list) 171.66 121 T
+0 F
+(,) 236.46 121 T
+4 F
+(neighbors) 242.46 121 T
+0 F
+(,) 307.26 121 T
+4 F
+(send_length) 313.26 121 T
+0 F
+( and) 392.46 121 T
+4 F
+(receive_length) 415.79 121 T
+0 F
+(.) 516.59 121 T
+-0.19 (From the description above it is evident that there is a lar) 72 79 P
+-0.19 (ge number of initialization tasks required) 343.32 79 P
+72 72 540 720 C
+118.33 603 493.67 720 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(Figure 2: Communication data structures for sample problem.) 154.33 621.82 T
+140 638 464 704 R
+7 X
+V
+1 11 Q
+0 X
+(N) 162 696.67 T
+1 8.8 Q
+(n) 169.34 693.92 T
+4 11 Q
+(2) 284 696.67 T
+(neighbors:) 162 684.67 T
+(2 1) 284 684.67 T
+(receive_length:) 162 672.67 T
+(2 1) 284 672.67 T
+(send_length:) 162 660.67 T
+(1 2) 284 660.67 T
+(send_list:) 162 648.67 T
+(2 1 2) 284 648.67 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "7" 7
+%%Page: "8" 8
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(8) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.23 (before performing a parallel sparse matrix-vector product. In the remainder of this paper) 72 712 P
+0.23 (, we dis-) 498.54 712 P
+0.24 (cuss software tools which perform tasks 3-10 above using only the information provided in steps) 72 684 P
+(1 and 2.) 72 656 T
+2 F
+(3. Global Matrix Speci\336cation) 72 572 T
+0 F
+0.41 (In order to perform tasks 3-10 itemized above, the user needs to partition the vector components) 72 525 P
+-0.28 (among the processors. Additionally) 72 497 P
+-0.28 (, the user needs to give the sparsity pattern of the global matrix) 241.04 497 P
+-0.22 (where each processor speci\336es only the sparsity pattern for its rows. The partitioning of the vector) 72 469 P
+-0.05 (elements can be done in a linear fashion \050i.e. elements) 72 441 P
+1 F
+-0.05 (0) 334.11 441 P
+0 F
+-0.05 ( to) 340.11 441 P
+1 F
+-0.05 (N/P-1) 355.34 441 P
+0 F
+-0.05 ( are assigned to processor) 384.01 441 P
+1 F
+-0.05 (0) 510.06 441 P
+0 F
+-0.05 (, ele-) 516.06 441 P
+0.15 (ments) 72 413 P
+1 F
+0.15 (N/P) 103.82 413 P
+0 F
+0.15 ( to) 122.49 413 P
+1 F
+0.15 (2N/P-1) 138.13 413 P
+0 F
+0.15 ( are assigned to processor) 172.8 413 P
+1 F
+0.15 (1) 299.86 413 P
+0 F
+0.15 (, etc. where) 305.86 413 P
+1 F
+0.15 (N) 364.62 413 P
+0 F
+0.15 ( is the total number of vector com-) 372.63 413 P
+-0.13 (ponents and) 72 385 P
+1 F
+-0.13 (P) 132.4 385 P
+0 F
+-0.13 ( is the total number of processors\051. However) 139.73 385 P
+-0.13 (, there are much better methods such as) 351.62 385 P
+0.5 (those in Chaco[2] which perform this task and reduce communication costs. For the purposes of) 72 357 P
+0.32 (our software, it is necessary that the user initialize the array) 72 329 P
+4 F
+0.76 (update_pts) 364.09 329 P
+0 F
+0.32 ( on each processor so) 436.09 329 P
+0.63 (that it contains the global index of each vector component assigned to that processor) 72 301 P
+0.63 (. A subrou-) 484.42 301 P
+0.92 (tine) 72 273 P
+5 F
+1.02 (read_update_pts) 93.92 273 P
+0 F
+0.92 ( is available which reads an input \336le and assigns vector components to) 186.37 273 P
+0.39 (processors \050i.e. initializes) 72 245 P
+4 F
+0.93 (N_update_pts) 198.14 245 P
+0 F
+0.39 ( and) 284.54 245 P
+4 F
+0.93 (update_pts) 308.64 245 P
+0 F
+0.39 (\051. The input \336le contains a list of) 380.64 245 P
+0.29 (global indices for each processor preceded by an integer indicating the number of vector compo-) 72 217 P
+0.03 (nents assigned to each processor) 72 189 P
+0.03 (. Each processor is then responsible for the vector components in) 227.42 189 P
+4 F
+-0.1 (update_pts) 72 161 P
+0 F
+-0.04 ( as well as the rows of the matrix corresponding to an entry in) 144 161 P
+4 F
+-0.1 (update_pts) 443.38 161 P
+0 F
+-0.04 (. The) 515.38 161 P
+-0.2 (user must further specify the sparsity pattern for each of the rows listed in) 72 133 P
+4 F
+-0.49 (update_pts) 426.41 133 P
+0 F
+-0.2 ( in terms) 498.41 133 P
+-0.15 (of the global numbering scheme. The speci\336cation of the sparsity pattern is application dependent) 72 105 P
+0.94 (and is essentially unchanged from its serial counterpart. The sparsity pattern can be encoded in) 72 77 P
+FMENDPAGE
+%%EndPage: "8" 8
+%%Page: "9" 9
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(9) 499 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.17 (one of two formats: a modi\336ed sparse row \050MSR\051 format, or a variable block row \050VBR\051 format.) 72 712 P
+1.26 (In the MSR format it is assumed that the diagonal is nonzero. The column numbers,) 72 684 P
+4 F
+3.04 (j) 496.61 684 P
+0 F
+1.26 (, of the) 503.81 684 P
+(other nonzeros in row) 72 656 T
+4 F
+(update_pts[i]) 179.98 656 T
+0 F
+( are given by the user speci\336ed array) 273.58 656 T
+4 F
+(ija) 452.86 656 T
+0 F
+( where) 474.46 656 T
+4 F
+(j = ija[k], ija[i]) 108 600 T
+( k < ija[i+1] .) 272.39 600 T
+0 F
+1.41 (In the VBR format the matrix is viewed as having a series of block rows and block columns.) 72 544 P
+1.7 (Thus, the user partitions blocks of variables over the processors and the array) 72 516 P
+4 F
+4.08 (update_pts) 468 516 P
+0 F
+1.07 (actually contains the block rows assigned to each processor) 72 488 P
+1.07 (. The number of rows in block row) 365.19 488 P
+4 F
+2.71 (update_pts[i]) 72 460 P
+0 F
+1.13 ( is given by) 165.6 460 P
+4 F
+2.71 (rpntr[i+1]-rpntr[i]) 228.79 460 P
+0 F
+1.13 (. The user must now specify which) 365.58 460 P
+0.53 (column blocks,) 72 432 P
+4 F
+1.27 (j) 149.39 432 P
+0 F
+0.53 (, are nonzero in block row) 156.59 432 P
+4 F
+1.27 (update_pts[i]) 288.72 432 P
+0 F
+0.53 (. This is given by the two arrays) 382.32 432 P
+4 F
+(bpntr) 72 404 T
+0 F
+( and) 108 404 T
+4 F
+(bindx) 131.33 404 T
+0 F
+( where) 167.33 404 T
+4 F
+(j = bindx[k], bpntr[i]) 108 348 T
+( k < bpntr[i+1] .) 301.18 348 T
+0 F
+-0.22 (Figure 3 illustrates the adjacency graph of the matrix corresponding to a simple example. Figure 4) 72 292 P
+0.39 (illustrates the initialized data structures corresponding to the adjacency graph and the vector ele-) 72 264 P
+(ment to processor assignment.) 72 236 T
+0.28 (W) 72 180 P
+0.28 (e have omitted the details of how the matrix nonzeros would be speci\336ed in MSR or VBR for-) 82.37 180 P
+0.76 (mat in order to simplify the description. Detailed descriptions of the MSR and VBR sparse for-) 72 152 P
+-0.1 (mats can be found in [1]. It should be noted that only the sparsity pattern of the matrix, and not its) 72 124 P
+-0.17 (actual nonzero entries is necessary to completely describe the distributed sparse matrix data struc-) 72 96 P
+244.8 595 272.39 610 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+3 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(\243) 254.8 600 T
+0 0 612 792 C
+273.6 343 301.19 358 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+3 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(\243) 283.6 348 T
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "9" 9
+%%Page: "10" 10
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(10) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.03 (tures and their communication pattern. Using only this information, the software that is described) 72 154 P
+(in the next section can perform tasks 3-10.) 72 126 T
+72 72 540 720 C
+116.39 495 495.61 720 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 12 Q
+0 X
+0 0 0 1 0 0 0 K
+( Figure 3: Adjacency graph for a sample problem.) 197.39 513 T
+1 0 0 0 0 1 1 K
+276.26 576.92 M
+ 267.1 546.37 267.1 546.37 276.26 541.27 D
+ 285.43 536.18 285.43 536.18 322.1 531.09 D
+ 358.77 526 358.77 526 377.11 556.55 D
+ 395.45 587.11 395.45 587.11 386.28 597.29 D
+ 377.11 607.48 377.11 607.48 335.86 617.66 D
+ 294.6 627.84 294.6 627.84 290.02 617.66 D
+ 285.43 607.48 285.43 607.48 276.26 576.92 D
+O
+3 X
+1 0 0 0 0 1 1 K
+V
+0.5 H
+2 Z
+0 X
+N
+1 1 0 0 0 0 1 K
+249.39 666.47 M
+ 307.41 709.07 302.57 709.07 355.76 700.55 D
+ 408.94 692.03 413.78 692.03 404.11 640.91 D
+ 394.44 589.8 375.1 589.8 288.07 615.35 D
+5 X
+1 1 0 0 0 0 1 K
+V
+0 X
+N
+0 0 0 1 0 0 0 K
+6 X
+0 0 0 1 0 0 0 K
+90 450 54 67.5 242.39 602.8 G
+0 X
+90 450 54 67.5 242.39 602.8 A
+269.39 625.3 278.39 571.3 2 L
+6 X
+V
+0 X
+N
+(1) 206.39 598.3 T
+(3) 260.39 626.11 T
+(0) 269.39 562.3 T
+(4) 350.39 571.3 T
+(2) 341.39 616.3 T
+(5) 323.39 681.9 T
+2 F
+(Pr) 211.39 564.9 T
+(oc 0) 223.84 564.9 T
+(Pr) 350.39 670.3 T
+(oc 2) 362.83 670.3 T
+(Pr) 305.39 544.3 T
+(oc 1) 317.83 544.3 T
+332.39 616.3 269.39 625.3 350.39 580.3 3 L
+N
+269.39 625.3 323.39 679.3 332.39 616.3 350.39 580.3 278.39 571.3 215.39 598.3 6 Y
+N
+72 72 540 720 C
+0 0 612 792 C
+72 72 540 720 C
+102.96 162 509.04 495 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+111.96 198 498.96 486 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 11 Q
+0 X
+(proc 0:) 147.96 478.67 T
+(update_pts: 0  1  3) 175.96 465.67 T
+(N_update_pts: 3) 175.96 452.67 T
+(matrix:) 243.96 439.67 T
+(                             row       nonzero columns) 111.96 426.67 T
+(                              0        0  1  3  4) 111.96 413.67 T
+(                              1        1  0  3) 111.96 400.67 T
+(                              3        3  1  0  4  2  5) 111.96 387.67 T
+(proc 1:) 147.96 374.67 T
+(update_pts: 4) 175.96 361.67 T
+(N_update_pts: 1) 175.96 348.67 T
+(matrix:) 243.96 335.67 T
+(                             row       nonzero columns) 111.96 322.67 T
+(                              4        4  0  3  2) 111.96 309.67 T
+(proc 2:) 147.96 283.67 T
+(update_pts: 2  5) 175.96 270.67 T
+(N_update_pts: 2) 175.96 257.67 T
+(matrix:) 243.96 244.67 T
+(                             row       nonzero columns) 111.96 231.67 T
+(                              2        2  4  3  5) 111.96 218.67 T
+(                              5        5  3  2) 111.96 205.67 T
+0 12 Q
+(Figure 4: User input to initialize the problem depicted in Figure 3.) 144.98 180.82 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "10" 10
+%%Page: "11" 11
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(1) 494.37 36 T
+(1) 499 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+2 12 Q
+0 X
+(4. Softwar) 72 712 T
+(e T) 124.44 712 T
+(ools: Parallel Matrix Speci\336cation) 139.67 712 T
+0 F
+-0.27 (The \336rst step in or) 72 656 P
+-0.27 (ganizing the data for parallel computation is to identify the external vector com-) 158.68 656 P
+0.58 (ponents needed on each processor) 72 628 P
+0.58 (. Here, each column number entry must correspond to either a) 236.94 628 P
+1.65 (vector component updated by this processor or an external vector component. The subroutine) 72 600 P
+5 F
+3.19 (\336nd_local_indices) 72 572 P
+0 F
+2.87 ( simply checks to see which column entries are not found in the array) 169.78 572 P
+4 F
+4.29 (update_pts) 72 544 P
+0 F
+1.79 (. If a column is in) 144 544 P
+4 F
+4.29 (update_pts) 242.39 544 P
+0 F
+1.79 ( the column number entry is replaced by the) 314.39 544 P
+3.8 (index into) 72 516 P
+4 F
+9.11 (update_pts) 130.93 516 P
+0 F
+3.8 ( corresponding to the entry \050i.e.) 202.93 516 P
+4 F
+9.11 (update_pts[new column) 379.69 516 P
+2.21 (index] = old column index) 72 488 P
+0 F
+0.92 (\051. If a column is not found in) 260.86 488 P
+4 F
+2.21 (update_pts) 409.23 488 P
+0 F
+0.92 (, it is stored) 481.23 488 P
+1.21 (among the list of external variables and the column number entry is replaced by an index into) 72 460 P
+4 F
+4.85 (extern_pts) 72 432 P
+0 F
+2.02 ( \050i.e.) 144 432 P
+4 F
+4.85 (extern_pts[new column index) 172.71 432 P
+0 F
+2.02 ( - \050) 376.81 432 P
+1 F
+2.02 (N) 394.85 432 P
+1 9.6 Q
+1.62 (i) 402.85 429 P
+0 12 Q
+2.02 ( +) 405.52 432 P
+1 F
+2.02 (N) 422.33 432 P
+1 9.6 Q
+1.62 (b) 430.34 429 P
+0 12 Q
+2.02 (\051) 435.14 432 P
+4 F
+4.85 (]) 439.13 432 P
+0 F
+2.02 ( =) 446.33 432 P
+4 F
+4.85 (old column) 463.15 432 P
+(index) 72 404 T
+0 F
+(\051.) 108 404 T
+-0.13 (Figure 5 shows the new data structures for our sample problem. The nonzero column numbers are) 72 348 P
+(in the same order as those given in Figure 4.) 72 320 T
+0.78 (On a given processor) 72 264 P
+0.78 (, each external vector component must also be associated with a processor) 175.5 264 P
+0.4 (responsible for updating it. The subroutine) 72 236 P
+5 F
+0.44 (\336nd_proc_for_externs) 282.03 236 P
+0 F
+0.4 ( queries the other processors) 401.78 236 P
+-0.21 (to determine which processor update each of its external variables. Given the amount of searching) 72 208 P
+4.25 (this requires, it is quite important to use an ef) 72 180 P
+4.25 (\336cient algorithm. Our implementation of) 327.34 180 P
+5 F
+-0.17 (\336nd_proc_for_externs) 72 152 P
+0 F
+-0.15 ( assumes that many external variables on a node are updated by the same) 191.75 152 P
+1.57 (processor) 72 124 P
+1.57 (. The basic idea is to identify the updating processor for only a small trial subset of) 117.32 124 P
+0.16 (external components and then gather all the trial elements together on all processors using a tree-) 72 96 P
+FMENDPAGE
+%%EndPage: "11" 11
+%%Page: "12" 12
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(12) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+1.18 (type gather operation with the number of messages scaling as) 72 712 P
+1 F
+1.18 (O\050log) 381.72 712 P
+1 9.6 Q
+0.94 (2) 409.71 709 P
+1 12 Q
+1.18 (\050P\051\051) 414.51 712 P
+0 F
+1.18 (. Once the processors) 433.83 712 P
+0.51 (assigned to the trial elements are known, the algorithm checks for other external components on) 72 320 P
+-0.16 (this processor updated by the processors associated with the trial elements. For the remaining uni-) 72 292 P
+1.08 (denti\336ed external components the above procedure is repeated. It should also be noted that the) 72 264 P
+1.28 (assignment of external components to processors is often known. For example, load balancing) 72 236 P
+0.21 (software will often have this information readily available. In this case, the user can initialize the) 72 208 P
+5.98 (array) 72 180 P
+4 F
+14.35 (extern_proc) 105.62 180 P
+0 F
+5.98 ( \050where) 184.82 180 P
+4 F
+14.35 ( extern_proc[i]) 227.11 180 P
+0 F
+5.98 ( indicates which processor updates) 349.46 180 P
+4 F
+-0.09 (extern_pts[i]) 72 152 P
+0 F
+-0.04 (\051 without calling this routine. Figure 6 gives the) 165.6 152 P
+4 F
+-0.09 (extern_proc) 397.27 152 P
+0 F
+-0.04 ( array for our) 476.47 152 P
+(sample problem.) 72 124 T
+72 72 540 720 C
+106.88 348 505.12 708 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+124.88 384 493.88 699 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 11 Q
+0 X
+(proc 0:) 196.88 691.67 T
+(                    update_pts: 0  1  3) 124.88 678.67 T
+(                    extern_pts: 2  4  5) 124.88 665.67 T
+(                    N_extern_pts: 3) 124.88 652.67 T
+(                    matrix:) 124.88 639.67 T
+(                             row       nonzero columns) 124.88 626.67 T
+(                              0        0  1  2  4) 124.88 613.67 T
+(                              1        1  0  2) 124.88 600.67 T
+(                              2        2  1  0  4  3  5) 124.88 587.67 T
+(proc 1:) 196.88 574.67 T
+(                    update_pts: 4) 124.88 561.67 T
+(                    extern_pts: 0  2  3) 124.88 548.67 T
+(                    N_extern_pts: 3) 124.88 535.67 T
+(                    matrix:) 124.88 522.67 T
+(                             row       nonzero columns) 124.88 509.67 T
+(                              0        0  1  3  2) 124.88 496.67 T
+(proc 2:) 196.88 483.67 T
+(                    update_pts: 2  5) 124.88 470.67 T
+(                    extern_pts: 3  4) 124.88 457.67 T
+(                    N_extern_pts: 2) 124.88 444.67 T
+(                    matrix:) 124.88 431.67 T
+(                             row       nonzero columns) 124.88 418.67 T
+(                              0        0  3  2  1) 124.88 405.67 T
+(                              1        1  2  0) 124.88 392.67 T
+0 12 Q
+(Figure 5: Data or) 169.88 357.82 T
+(ganization after calling) 251.99 357.82 T
+5 F
+(\336nd_local_indices) 365.63 357.82 T
+0 F
+(.) 463.4 357.82 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "12" 12
+%%Page: "13" 13
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(13) 494 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+1.08 (Once the external processors are known, it is possible to reorder the external components such) 72 550 P
+1.88 (that vector components updated by the same processor are ordered contiguously) 72 522 P
+1.88 (. The routine) 474.59 522 P
+5 F
+0.67 (order_pts) 72 494 P
+0 F
+0.61 ( does this reordering as well as the reordering of the update components such that all) 124.66 494 P
+1.49 (matrix rows which contain no external components are ordered \336rst. Figure 7 illustrates these) 72 466 P
+(orderings for our sample problem.) 72 438 T
+1.83 (W) 72 382 P
+1.83 (e are now ready to initialize the communication structures \050) 82.37 382 P
+4 F
+4.38 (send_list, neighbors,) 384.42 382 P
+12.45 (send_length, receive_length) 72 354 P
+0 F
+5.19 (\051 described in Section 2. This is performed by) 278.85 354 P
+5 F
+0.29 (set_message_info) 72 326 P
+0 F
+0.26 ( where the data structures corresponding to processor 0 are illustrated in Fig-) 168.23 326 P
+0.02 (ure 2. Once these arrays are set it is possible to use the local communication routine to update the) 72 298 P
+-0.01 (external vector components whenever necessary) 72 270 P
+-0.01 (. For matrix free applications, the initialization of) 303.1 270 P
+0.85 (the local communication routine is essentially the goal of the software. The user can now write) 72 242 P
+0.28 (their own implicitly de\336ned matrix-vector product using the communication routine and the vec-) 72 214 P
+0.77 (tor component ordering information. Since one of the motivations for matrix-free products is to) 72 186 P
+1.24 (minimize storage, a potential user might object to the storage required for the sparsity pattern.) 72 158 P
+0.57 (However) 72 130 P
+0.57 (, at this point these sparsity pattern arrays are no longer needed in the computation and) 115.5 130 P
+1.38 (so they can be deallocated. Thus, if there is enough space for these arrays in the initialization) 72 102 P
+72 72 540 720 C
+100.98 558 511.02 720 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+118.98 585 487.98 702 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 11 Q
+0 X
+(proc 0:) 182.98 694.67 T
+(                    extern_pts:  2  4  5) 118.98 681.67 T
+(                    extern_proc: 2  1  2) 118.98 668.67 T
+(proc 1:) 182.98 655.67 T
+(                    extern_pts:  0  2  3) 118.98 642.67 T
+(                    extern_proc: 0  2  0) 118.98 629.67 T
+(proc 2:) 182.98 616.67 T
+(                    extern_pts:  3  4) 118.98 603.67 T
+(                    extern_proc: 0  1) 118.98 590.67 T
+0 12 Q
+(Figure 6: Data or) 163.98 567.82 T
+(ganization after calling) 246.08 567.82 T
+5 F
+(\336nd_proc_for_externs) 359.72 567.82 T
+0 F
+(.) 479.47 567.82 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "13" 13
+%%Page: "14" 14
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(14) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.28 (phase \050which can occur before other the arrays are allocated in the computation\051, it is possible to) 72 316 P
+(use the software tools described here.) 72 288 T
+0.06 (In situations where the matrix is stored there are two ways in which to use the software described) 72 232 P
+0.73 (in this section. In one situation, the values of the matrix nonzeros are known without the use of) 72 204 P
+0.4 (communication. In this case the matrix nonzero values can be speci\336ed at the same time that the) 72 176 P
+0.46 (sparsity pattern is de\336ned. In a second situation communication is needed to compute the values) 72 148 P
+0.91 (of the matrix nonzeros to be stored \050see the \336nite element example in the next section\051. At this) 72 120 P
+0.21 (point the user might proceed with those computations using the communication routine. In either) 72 92 P
+72 72 540 720 C
+102.96 324 509.04 720 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+111.96 369 498.96 711 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 11 Q
+0 X
+(proc 0:) 175.96 703.67 T
+(                    update_pts:  0  1  3) 111.96 690.67 T
+(                    update_indx: 1  0  2) 111.96 677.67 T
+(                    extern_pts:  2  4  5) 111.96 664.67 T
+(                    extern_indx: 3  5  4) 111.96 651.67 T
+(                    extern_proc: 2  1  2) 111.96 638.67 T
+1 F
+(N) 243.96 625.67 T
+1 8.8 Q
+(i) 251.3 622.92 T
+4 11 Q
+(:) 253.74 625.67 T
+(1) 260.34 625.67 T
+1 F
+(N) 243.96 612.67 T
+1 8.8 Q
+(b) 251.3 609.92 T
+4 11 Q
+(:) 255.7 612.67 T
+(2) 262.3 612.67 T
+(proc 1:) 175.96 586.67 T
+(                    update_pts:  4) 111.96 573.67 T
+(                    update_indx: 0) 111.96 560.67 T
+(                    extern_pts:  0  2  3) 111.96 547.67 T
+(                    extern_indx: 1  3  2) 111.96 534.67 T
+(                    extern_proc: 0  2  0) 111.96 521.67 T
+1 F
+(N) 243.96 508.67 T
+1 8.8 Q
+(i) 251.3 505.92 T
+4 11 Q
+(:) 253.74 508.67 T
+(0) 260.34 508.67 T
+1 F
+(N) 243.96 495.67 T
+1 8.8 Q
+(b) 251.3 492.92 T
+4 11 Q
+(:) 255.7 495.67 T
+(1) 262.3 495.67 T
+(proc 2:) 175.96 469.67 T
+(                    update_pts:  2  5) 111.96 456.67 T
+(                    update_indx: 0  1) 111.96 443.67 T
+(                    extern_pts:  3  4) 111.96 430.67 T
+(                    extern_indx: 2  3) 111.96 417.67 T
+(                    extern_proc: 0  1) 111.96 404.67 T
+1 F
+(N) 243.96 391.67 T
+1 8.8 Q
+(i) 251.3 388.92 T
+4 11 Q
+(:) 253.74 391.67 T
+(0) 260.34 391.67 T
+1 F
+(N) 243.96 378.67 T
+1 8.8 Q
+(b) 251.3 375.92 T
+4 11 Q
+(:) 255.7 378.67 T
+(2) 262.3 378.67 T
+0 12 Q
+( Figure 7: Data or) 177.9 342.82 T
+(ganization after calling) 263 342.82 T
+5 F
+(order_pts) 376.64 342.82 T
+0 F
+(.) 429.3 342.82 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "14" 14
+%%Page: "15" 15
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(15) 494 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.5 (case, the matrix nonzeros must be reordered so that the entries correspond to the reordered local) 72 712 P
+1.44 (vector components. This is performed by the subroutine) 72 684 P
+5 F
+1.6 (reorder_matrix) 355.14 684 P
+0 F
+1.44 ( and is illustrated in) 439.58 684 P
+(Figure 8 for our sample problem.) 72 656 T
+0.17 (At this point the communication structures and the matrix are in a form suitable for the low-level) 72 321 P
+(matrix-vector product \050) 72 293 T
+5 F
+(matrix_vector_mult) 183.97 293 T
+0 F
+(\051 that we have written [4].) 293.75 293 T
+2 F
+(5. Examples) 72 237 T
+0 F
+-0.09 (In this section we give a number of sample programs to illustrate the use of the software. The rea-) 72 181 P
+0.6 (son for giving these examples is two-fold: 1\051 to illustrate that the overhead time associated with) 72 153 P
+0.56 (initializing the communication data structures is minimal when compared to the total simulation) 72 125 P
+(time and 2\051 to illustrate the ease of setting up a number of dif) 72 97 T
+(ferent problems using the software.) 365.41 97 T
+72 72 540 720 C
+96.48 345 515.52 624 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+105.48 390 510.48 615 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 11 Q
+0 X
+(proc 0:) 169.48 607 T
+(                    matrix:) 105.48 593.67 T
+(                             row       nonzero columns) 105.48 580.67 T
+(                              1        1  0  2  5) 105.48 567.67 T
+(                              0        0  1  2) 105.48 554.67 T
+(                              2        2  0  1  5  3  4) 105.48 541.67 T
+(proc 1:) 169.48 515.67 T
+(                    matrix:) 105.48 502.67 T
+(                             row       nonzero columns) 105.48 489.67 T
+(                              0        0  1  2  3) 105.48 476.67 T
+(proc 2:) 169.48 450.67 T
+(                    matrix:) 105.48 437.67 T
+(                             row       nonzero columns) 105.48 424.67 T
+(                              0        0  3  2  1) 105.48 411.67 T
+(                              1        1  2  0) 105.48 398.67 T
+0 12 Q
+(Figure 8: Data or) 177.48 363.82 T
+(ganization after calling) 259.58 363.82 T
+5 F
+(reorder_matrix) 373.22 363.82 T
+0 F
+(.) 457.66 363.82 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "15" 15
+%%Page: "16" 16
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(16) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+-0.18 (W) 72 684 P
+-0.18 (e begin by giving the main program for a 2D Poisson problem in Figure 9. The c code-like frag-) 82.37 684 P
+0.16 (ment in Figure 9 represents the entire main program. The only changes to the working c code are) 72 656 P
+0.21 (that the declarations and some unimportant parameters in the subroutine calls have been omitted,) 72 628 P
+0.74 (and we have assumed that subroutines pass parameters by reference \050i.e. we do pass pointers to) 72 600 P
+4.28 (obtain values\051. W) 72 572 P
+4.28 (e now explain the only subroutines that have not yet been discussed:) 164.59 572 P
+5 F
+(get_parallel_info) 72 544 T
+0 F
+(,) 165.12 544 T
+5 F
+(create_matrix) 171.12 544 T
+0 F
+(,) 248.68 544 T
+5 F
+(krystart) 254.68 544 T
+0 F
+(, and) 300.46 544 T
+5 F
+(krysolve) 326.78 544 T
+0 F
+(.) 373.45 544 T
+0.26 (The subroutine) 72 488 P
+5 F
+0.29 (get_parallel_info) 152.41 488 P
+0 F
+0.26 ( returns the number of processors being used and the node id) 245.53 488 P
+0.17 (of the processor executing the code. This type of routine is typically provided by the vendor) 72 460 P
+0.17 (. The) 515.17 460 P
+0.63 (subroutines) 72 432 P
+5 F
+0.7 (krystart) 130.97 432 P
+0 F
+0.63 ( and) 176.75 432 P
+5 F
+0.7 (krysolve) 201.34 432 P
+0 F
+0.63 ( initialize and invoke an iterative solver package[4], respec-) 248.01 432 P
+0.12 (tively) 72 404 P
+0.12 (. The iterative solver package makes extensive use of matrix-vector products using a matrix) 98.56 404 P
+0.11 (set up by the software described in this paper) 72 376 P
+0.11 (. W) 288.87 376 P
+0.11 (e do not discuss the iterative solver package as it) 305.35 376 P
+0.91 (is only used here to give comparisons between the execution time to set up the communication) 72 348 P
+1.32 (data structures \050which represents overhead\051 and the execution time of an application using the) 72 320 P
+-0.02 (matrix-vector multiply) 72 292 P
+-0.02 (. This leaves only) 180.2 292 P
+5 F
+-0.02 (create_matrix) 267.78 292 P
+0 F
+-0.02 (that must be supplied by the user along) 352.48 292 P
+(with an input \336le for) 72 264 T
+5 F
+(read_update_pts) 173.66 264 T
+0 F
+(.) 266.11 264 T
+2.31 (In Figure 10 we illustrate our) 72 208 P
+5 F
+2.57 (create_matrix) 229.18 208 P
+0 F
+2.31 ( subroutine. Dif) 306.73 208 P
+2.31 (ferent matrix problems can be) 386.8 208 P
+-0.03 (implemented by changing the subroutine) 72 180 P
+5 F
+-0.04 (add_row) 270.81 180 P
+0 F
+-0.03 ( which adds the MSR entries corresponding to) 317.93 180 P
+(a new row of the matrix.) 72 152 T
+0.55 (The speci\336c subroutine,) 72 96 P
+5 F
+0.61 (add_row) 191.63 96 P
+0 F
+0.55 (, for implementing a 5-point 2D Poisson operator on an) 237.96 96 P
+512.41 91 540 106 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(n) 513.41 96 T
+(n) 532 96 T
+3 F
+(\264) 522.41 96 T
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "16" 16
+%%Page: "17" 17
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(17) 494 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+-0.17 (grid is shown in Figure 1) 72 277 P
+-0.17 (1 \050) 191.01 277 P
+1 F
+-0.17 (n) 203.84 277 P
+0 F
+-0.17 ( is a global variable set by the user\051. W) 209.84 277 P
+-0.17 (ith just these few lines of code) 395.07 277 P
+0.04 (and the subroutines described earlier) 72 249 P
+0.04 (, the user implements a distributed matrix corresponding to a) 247.65 249 P
+0.14 (parallel 2D Poisson problem. All the communication and variable renumbering is done automati-) 72 221 P
+-0.03 (cally such that a parallel matrix-vector multiply can be invoked. In fact, there are no references to) 72 193 P
+0.17 (processors, communication, or any other aspects of parallel computing. Further) 72 165 P
+0.17 (, it is important to) 453.64 165 P
+1.25 (notice that we have not assumed that the assignment of points to processors is structured. The) 72 137 P
+0.05 (unknown-to-processor mapping could be irregular and require complicated irregular communica-) 72 109 P
+(tion. All of these details are hidden from the user) 72 81 T
+(.) 306.64 81 T
+72 72 540 720 C
+81.99 285 530.01 720 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+90.99 330 522.99 711 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 10 Q
+0 X
+(/* Determine processor number and the total number of processors */) 90.99 704.33 T
+(   get_parallel_info\050proc, nprocs\051;) 90.99 684.33 T
+(   read_update_pts\050N_update_pts, update_pts\051;) 90.99 673.33 T
+(   create_matrix\050update_pts, a, ija, N_update_pts, N_nonzeros\051;) 90.99 662.33 T
+(   f) 90.99 640.33 T
+(ind_local_indices\050ija, N_update_pts, update_pts, N_extern_pts,) 114.99 640.33 T
+(extern_pts\051;) 234.99 629.33 T
+(   f) 90.99 618.33 T
+(ind_procs_for_externs\050N_update_pts, update_pts, N_extern_pts,) 114.99 618.33 T
+(extern_pts, extern_proc\051;) 234.99 607.33 T
+(   order_pts\050N_internal, N_update_pts, update_indx, N_extern_pts,) 90.99 596.33 T
+(extern_indx, extern_proc, ija, N_border\051;) 234.99 585.33 T
+(   set_message_info\050info, N_update_pts, update_pts, N_extern_pts,) 90.99 574.33 T
+(extern_pts, extern_proc, update_indx,) 234.99 563.33 T
+(extern_indx, N_neighbors, send_list\051;) 234.99 552.33 T
+(   reorder_matrix\050ija, a, N_update_pts, update_indx, N_extern_pts) 90.99 541.33 T
+(extern_indx, N_nonzeros\051;) 234.99 530.33 T
+(/* Initialize right hand side and initial guess */) 90.99 508.33 T
+(   for \050i = 0; i < N_update_pts; i = i + 1\051 {) 90.99 486.33 T
+(rhs[update_indx[i]] = \050double\051 update_pts[i];) 126.99 475.33 T
+(      x[i] = 0.0;) 90.99 464.33 T
+(   }) 90.99 453.33 T
+(/* initialize Krylov package */) 90.99 431.33 T
+(   krystart\050N_update_pts,N_extern_pts,N_internal,N_nonzeros,) 90.99 409.33 T
+(N_neighbors,send_list,info\051;) 234.99 398.33 T
+4 11 Q
+(/* Invoke Krylov package */) 90.99 375.67 T
+(   krysolve\050b, x, ija, a\051;) 90.99 351.67 T
+0 12 Q
+(Figure 9: main program for a Poisson problem.) 165.33 306.82 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "17" 17
+%%Page: "18" 18
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(18) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.79 (T) 72 540 P
+0.79 (o emphasize the ease of use of this software a few more examples are given. W) 78.49 540 P
+0.79 (e begin with a) 469.97 540 P
+1.21 (discrete approximation to the 3D Poisson operator on an) 72 176 P
+1.21 ( cube. Starting from the 2D) 402.66 176 P
+0.23 (Poisson program, the only needed changes are: 1\051 the input \336le for) 72 148 P
+5 F
+0.26 (read_update_pts) 397.08 148 P
+0 F
+0.23 ( must now) 489.53 148 P
+0.47 (indicate how the) 72 120 P
+0.47 ( points are to be distributed over the processors and 2\051 a modi\336ed) 169.83 120 P
+5 F
+0.52 (add_row) 492.89 120 P
+0 F
+0.6 (routine must be supplied. In Figure 12,) 72 92 P
+5 F
+0.67 (add_row) 265.86 92 P
+0 F
+0.6 ( for a 3D Poisson operator is shown where the) 312.97 92 P
+72 72 540 720 C
+96.48 576 515.52 720 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+109.44 612 514.44 711 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 10 Q
+0 X
+(create_matrix\050update_pts, a, ija, N_update_pts, N_nonzeros\051) 109.44 704.33 T
+(   N_nonzeros = N_update_pts+1;) 109.44 680.33 T
+(   ija[0] = N_nonzeros;) 109.44 668.33 T
+(   for \050i = 0; i < N_update_pts; i = i + 1\051) 109.44 644.33 T
+(      add_row\050update_pts[i], i, N_nonzeros, a, ija\051;) 109.44 632.33 T
+0 12 Q
+(Figure 10:) 186.48 594 T
+5 F
+(create_matrix) 239.15 594 T
+0 F
+( for a Poisson problem) 316.7 594 T
+0 11 Q
+(.) 425.36 594 T
+72 72 540 720 C
+0 0 612 792 C
+72 72 540 720 C
+96.48 200 515.52 536 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+105.48 239 510.48 527 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 10 Q
+0 X
+(add_row\050row, location, next_nonzero, a, ija\051) 105.48 520.33 T
+(/* compute \050i,j\051 location of global point \324row\325 */) 105.48 500.33 T
+(   i = mod\050row,n\051;) 105.48 480.33 T
+(   j = \050row-i\051/n;) 105.48 470.33 T
+(   old_ptr = next_nonzero;) 105.48 450.33 T
+(/* check neighboring points in each direction */) 105.48 430.33 T
+(/* and add nonzero entry if the neighbor exits.   */) 105.48 420.33 T
+(   for \050stride = 1; stride <= n; stride = stride*n\051 {) 105.48 400.33 T
+(      if \050i != 0 \051 {) 105.48 390.33 T
+(         a[next_nonzero]   = -1.0;) 105.48 380.33 T
+(         ija[next_nonzero] = row - stride;) 105.48 370.33 T
+(         next_nonzero      = next_nonzero + 1;) 105.48 360.33 T
+(      }) 105.48 350.33 T
+(      if \050i != n-1\051 {) 105.48 340.33 T
+(         a[next_nonzero]   = -1.0;) 105.48 330.33 T
+(         ija[next_nonzero] = row + stride;) 105.48 320.33 T
+(         next_nonzero      = next_nonzero + 1;) 105.48 310.33 T
+(      }) 105.48 300.33 T
+(i = j;) 141.48 290.33 T
+(   }) 105.48 280.33 T
+(a[location]     = 4.0; /* matrix diagonal */) 127.48 260.33 T
+(ija[location+1] = ija[location] + \050next_nonzero - old_ptr\051;) 127.48 250.33 T
+0 12 Q
+(Figure 1) 159.48 212.82 T
+(1:) 199.37 212.82 T
+5 F
+(add_row) 211.7 212.82 T
+0 F
+( for a 2D Poisson problem.) 258.82 212.82 T
+72 72 540 720 C
+0 0 612 792 C
+356.49 171 402.65 186 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(n) 357.49 176 T
+(n) 376.07 176 T
+(n) 394.66 176 T
+3 F
+(\264) 385.07 176 T
+(\264) 366.48 176 T
+0 0 612 792 C
+155.73 115 169.83 131.35 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 12 Q
+0 X
+0 0 0 1 0 0 0 K
+(n) 156.73 120 T
+0 9 Q
+(3) 163.33 123.6 T
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "18" 18
+%%Page: "19" 19
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(19) 494 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.2 (only lines that are changed from the 2D Poisson operator are highlighted. Thus, by making small) 72 712 P
+0.78 (changes to) 72 684 P
+5 F
+0.87 (add_row) 127.55 684 P
+0 F
+0.78 ( it is easy to convert a parallel 2D Poisson matrix to a parallel 3D Poisson) 174.66 684 P
+0.89 (matrix. All the communication issues associated with changing from a 2D to a 3D problem are) 72 656 P
+(hidden from the user by the software utilities.) 72 628 T
+1.23 (Our next example is again a 2D Poisson operator) 72 203 P
+1.23 (. This time a higher order 9-point operator is) 316.5 203 P
+0.04 (used in the domain interior instead of the 5-point formula. Once again the only code that needs to) 72 175 P
+0.51 (be changed is) 72 147 P
+5 F
+0.57 (add_row) 141.85 147 P
+0 F
+0.51 (which is shown in Figure 13. Although this code is more complicated,) 197.39 147 P
+-0.04 (none of the complications stem from parallel computing requirements. In this case all of the com-) 72 119 P
+1.69 (munication complications arising from the use of dif) 72 91 P
+1.69 (ferent stencils \050e.g. points in row) 335.9 91 P
+1 F
+1.69 (2) 506.66 91 P
+0 F
+1.69 ( need) 512.66 91 P
+72 72 540 720 C
+102.96 227 509.04 596 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+111.96 263 489.96 587 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 10 Q
+0 X
+(add_row\050row, location, next_nonzero, a, ija\051) 111.96 580.33 T
+(/* compute \050i, j, k\051 location of global point \324row\325 */) 111.96 560.33 T
+(   i = mod\050row, n\051;) 111.96 540.33 T
+6 F
+(   k = \050row-i\051/n;) 111.96 530.33 T
+(   j = mod\050k, n\051;) 111.96 520.33 T
+(   k = \050k-j\051/n;) 111.96 510.33 T
+4 F
+(   old_ptr = next_nonzero;) 111.96 500.33 T
+(/* check neighboring points in each direction */) 111.96 480.33 T
+(/* and add nonzero entry if the neighbor exits.   */) 111.96 470.33 T
+(   for \050stride = 1; stride <=) 111.96 450.33 T
+6 F
+(n*n) 291.96 450.33 T
+4 F
+(; stride = stride*n\051 {) 309.96 450.33 T
+(      if \050i != 0 \051 {) 111.96 440.33 T
+(         a[next_nonzero]   = -1.0;) 111.96 430.33 T
+(         ija[next_nonzero] = row - stride;) 111.96 420.33 T
+(         next_nonzero      = next_nonzero + 1;) 111.96 410.33 T
+(      }) 111.96 400.33 T
+(      if \050i != n-1\051 {) 111.96 390.33 T
+(         a[next_nonzero]   = -1.0;) 111.96 380.33 T
+(         ija[next_nonzero] = row + stride;) 111.96 370.33 T
+(         next_nonzero      = next_nonzero + 1;) 111.96 360.33 T
+(      }) 111.96 350.33 T
+6 F
+(if \050stride == 1\051) 147.96 340.33 T
+4 F
+( i = j;) 243.96 340.33 T
+6 F
+(else i = k;) 147.96 330.33 T
+4 F
+(   }) 111.96 320.33 T
+(   a[location] =) 111.96 300.33 T
+6 F
+(6.0;) 213.96 300.33 T
+4 F
+(/* matrix diagonal */) 243.96 300.33 T
+-0.52 (   ija[location+1] = ija[location] + \050next_n) 111.96 289.67 P
+4 11 Q
+-0.57 (onzero - old_ptr\051;) 372.31 289.67 P
+0 12 Q
+(Figure 12:) 174.96 245 T
+5 F
+(add_row) 227.63 245 T
+0 F
+( for a 3D Poisson problem.) 274.74 245 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "19" 19
+%%Page: "20" 20
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(20) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+1.08 (information from row) 72 712 P
+1 F
+1.08 (0) 182.88 712 P
+0 F
+1.08 ( and row) 188.88 712 P
+1 F
+1.08 (1) 237.1 712 P
+0 F
+1.08 ( while points in row) 243.1 712 P
+1 F
+1.08 (0) 347.48 712 P
+0 F
+1.08 ( need information from row) 353.48 712 P
+1 F
+1.08 (1) 495.17 712 P
+0 F
+1.08 ( but not) 501.17 712 P
+(from row) 72 684 T
+1 F
+(2) 119.99 684 T
+0 F
+(\051 and wider stencils are hidden from the user) 125.99 684 T
+(.) 339.28 684 T
+0.65 (W) 72 88 P
+0.65 (e conclude this section with two applications in which the values of the matrix entries are not) 82.37 88 P
+72 72 540 720 C
+102.96 112 509.04 652 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+111.96 139 498.96 643 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 10 Q
+0 X
+(add_row\050row, location, next_nonzero, a, ija\051) 111.96 626.33 T
+(/* compute \050i, j\051 location of global point \324row\325 */) 111.96 606.33 T
+(   i = mod\050row, n\051;) 111.96 586.33 T
+(   j = \050row-i\051/n;) 111.96 576.33 T
+(   old_ptr = next_nonzero;) 111.96 566.33 T
+(   a[location] = 0.0;) 111.96 556.33 T
+(   for \050stride = 1; stride <= n; stride = stride*n\051 {) 111.96 536.33 T
+-0.69 (/* If we are on the bottom boundary, create entries for 2nd order) 111.96 516.33 P
+(discretization. Otherwise create high order discretization.*/) 122.76 506.33 T
+(      if \050\050i != 0\051 && \050i != n-1\051\051 {) 111.96 486.33 T
+(         if \050i != 1\051 {) 111.96 476.33 T
+(            a[next_nonzero]   = 1.0/12.0;) 111.96 466.33 T
+(            ija[next_nonzero] = row - stride*2;) 111.96 456.33 T
+(            next_nonzero      = next_nonzero + 1;) 111.96 446.33 T
+(         }) 111.96 436.33 T
+(         a[next_nonzero]   = -16.0/12.0;) 111.96 426.33 T
+(         ija[next_nonzero] = row - stride;) 111.96 416.33 T
+(         next_nonzero      = next_nonzero + 1;) 111.96 406.33 T
+(         if \050i != n-2\051 {) 111.96 396.33 T
+(            a[next_nonzero]   =   1.0/12.0;) 111.96 386.33 T
+(            ija[next_nonzero] = row + stride*2;) 111.96 376.33 T
+(            next_nonzero      = next_nonzero + 1;) 111.96 366.33 T
+(         }) 111.96 356.33 T
+(         a[next_nonzero]   = -16.0/12.0;) 111.96 346.33 T
+(         ija[next_nonzero] = row + stride;) 111.96 336.33 T
+(         next_nonzero      = next_nonzero + 1;) 111.96 326.33 T
+(      }) 111.96 316.33 T
+(      else if \050i != n-1\051 {) 111.96 306.33 T
+(         a[next_nonzero]   = -1.0;) 111.96 296.33 T
+(         ija[next_nonzero] = row + stride;) 111.96 286.33 T
+(         next_nonzero      = next_nonzero + 1;) 111.96 276.33 T
+(      }) 111.96 266.33 T
+(      else if \050i != 0\051 {) 111.96 256.33 T
+(         a[next_nonzero]   = -1.0;) 111.96 246.33 T
+(         ija[next_nonzero] = row - stride;) 111.96 236.33 T
+(         next_nonzero      = next_nonzero + 1;) 111.96 226.33 T
+(      }) 111.96 216.33 T
+(      if \050\050i != 0\051 && \050i != n-1\051\051 a[location] += 30.0/12;) 111.96 206.33 T
+(      else a[location] += 2.0;) 111.96 196.33 T
+(i = j;) 147.96 186.33 T
+(   }) 111.96 176.33 T
+(   ija[location+1] = ija[location] + \050next_nonzero - old_ptr\051;) 111.96 156.33 T
+0 12 Q
+(Figure 13:) 165.96 121.82 T
+5 F
+(add_row) 218.63 121.82 T
+0 F
+( for a 2D high order Poisson problem.) 265.74 121.82 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "20" 20
+%%Page: "21" 21
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(21) 494 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+1.67 (de\336ned inside) 72 712 P
+5 F
+1.86 (create_matrix) 145.34 712 P
+0 F
+1.67 (. In particular) 222.9 712 P
+1.67 (,) 290.75 712 P
+5 F
+1.86 (create_matrix) 298.42 712 P
+0 F
+1.67 ( only de\336nes the sparsity pattern) 375.98 712 P
+1.8 (\050i.e.) 72 684 P
+4 F
+4.31 (ija) 95.46 684 P
+0 F
+1.8 (\051. In the \336rst example, a matrix-free 2D Poisson operator) 117.06 684 P
+1.8 (, the matrix entries are not) 405.04 684 P
+0.31 (de\336ned in order to save storage. The subroutine) 72 656 P
+5 F
+0.35 (add_row) 306.14 656 P
+0 F
+0.31 ( is identical to that shown in Figure 1) 353.26 656 P
+0.31 (1) 534 656 P
+-0.13 (except that the 3 lines referencing) 72 628 P
+4 F
+-0.31 (a) 236.51 628 P
+0 F
+-0.13 ( are removed. Here it is the user) 243.71 628 P
+-0.13 (\325) 396.53 628 P
+-0.13 (s responsibility to replace the) 399.87 628 P
+0.88 (provided matrix-vector multiply) 72 600 P
+0.88 (. Figure 14 gives an example of a matrix-vector multiply corre-) 227.63 600 P
+0.29 (sponding to the 2D Poisson operator) 72 572 P
+0.29 (. The subroutines) 247.79 572 P
+5 F
+0.32 (exchange_bdry) 334.65 572 P
+0 F
+0.29 ( and) 417.53 572 P
+5 F
+0.32 (\336nd_index) 441.44 572 P
+0 F
+0.29 ( are also) 499.44 572 P
+0.52 (supplied with the software where) 72 544 P
+5 F
+0.58 (exchange_bdry) 236.9 544 P
+0 F
+0.52 ( performs the local communication necessary) 319.78 544 P
+0.1 (for the matrix-vector multiply and) 72 516 P
+5 F
+0.11 (\336nd_index) 239.48 516 P
+0 F
+0.1 ( \336nds the index within an array corresponding to a) 297.47 516 P
+0.55 (value. In this sample we have made no ef) 72 488 P
+0.55 (fort to improve ef) 274.5 488 P
+0.55 (\336ciency) 360.93 488 P
+0.55 (. For structured programs the) 398.14 488 P
+0 (data lay-out is often quite simple and the user can avoid using) 72 460 P
+5 F
+0.01 (order_pts) 372.03 460 P
+0 F
+0 ( and eliminate the refer-) 424.68 460 P
+1.58 (ences to) 72 432 P
+5 F
+1.75 (update_indx) 117.14 432 P
+0 F
+1.58 ( and) 186.03 432 P
+5 F
+1.75 (extern_indx) 212.52 432 P
+0 F
+1.58 ( in Figure 14. Further) 278.73 432 P
+1.58 (, it may be possible to replace) 387.56 432 P
+5 F
+0.03 (\336nd_index) 72 404 P
+0 F
+0.03 ( by a simple expression taking advantage of the relationship between the global num-) 130 404 P
+0.38 (bering and the local numbering in structured problems. W) 72 376 P
+0.38 (e do not discuss the details of optimiz-) 352.36 376 P
+0.8 (ing the matrix-free code for structured problems. However) 72 348 P
+0.8 (, we note that in situations where the) 358.4 348 P
+0.51 (data or) 72 320 P
+0.51 (ganization is simple, the user might quickly write an unoptimized version using all of the) 105.28 320 P
+0.07 (software described here and then proceed by making incremental changes to produce a more ef) 72 292 P
+0.07 (\336-) 529.33 292 P
+(cient code by eliminating some of the calls to software described in this paper) 72 264 T
+(.) 444.95 264 T
+0.37 (Our last example is also a 2D Poisson equation. However) 72 208 P
+0.37 (, this time the computational domain is) 350.79 208 P
+1.01 (irregular and the discretization is obtained using triangular \336nite elements. Additionally) 72 180 P
+1.01 (, in this) 502.3 180 P
+0.62 (implementation the matrix entries cannot be computed without communication. In this case it is) 72 152 P
+0.16 (necessary to de\336ne only the sparsity pattern in) 72 124 P
+5 F
+0.18 (create_matrix) 298.58 124 P
+0 F
+0.16 (and to use the sparsity pattern in) 383.72 124 P
+0.46 (conjunction with the transformation tools to set up the communication data structures. Once this) 72 96 P
+FMENDPAGE
+%%EndPage: "21" 21
+%%Page: "22" 22
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(22) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+1.08 (is done, another subroutine is called to perform the necessary communication and compute the) 72 262 P
+-0.27 (matrix entries. Figure 15 depicts) 72 234 P
+5 F
+-0.3 (create_matrix) 229.32 234 P
+0 F
+-0.27 ( while Figure 16 depicts an additional subroutine) 306.88 234 P
+5 F
+(matrix_\336ll) 72 206 T
+0 F
+( that must be called before) 130.45 206 T
+5 F
+(krysolve) 260.42 206 T
+0 F
+( in Figure 9.) 307.09 206 T
+0.12 (Once again, we have not made any ef) 72 150 P
+0.12 (fort to optimize these routines. In both \336gures the new lines) 252.53 150 P
+2.41 (that have been added speci\336cally for a parallel implementation are highlighted. Speci\336cally) 72 122 P
+2.41 (,) 537 122 P
+5 F
+0.66 (create_matrix) 72 94 P
+0 F
+0.6 ( and) 149.56 94 P
+5 F
+0.66 (matrix_\336ll) 174.07 94 P
+0 F
+0.6 ( have been created by taking a serial program that provides the) 232.53 94 P
+72 72 540 720 C
+82.93 270 529.07 720 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+95.81 306 518.81 711 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 10 Q
+0 X
+(matrix_free_mult\050N_update_pts, update_pts, update_indx,) 95.81 704.33 T
+( N_extern_pts, extern_pts, extern_indx, x, y\051) 199.93 694.33 T
+( exchange_bdry\050x\051;) 127.93 674.33 T
+( for \050k = 0; k < N_update_pts; k = k + 1\051 {) 127.93 654.33 T
+(/* compute the location */) 145.93 634.33 T
+( point = update_pts[k];) 145.93 614.33 T
+( i     = mod\050point,n\051;) 145.93 604.33 T
+( j     = \050point-i\051/n;) 145.93 594.33 T
+( y[k] = 4.0*x[k];) 145.93 574.33 T
+( for \050stride = 1; stride <= n; stride = stride*n\051 {) 145.93 554.33 T
+(if \050i != 0\051 {) 163.93 544.33 T
+( new = f) 181.93 534.33 T
+(ind_index\050point-stride,update_pts,N_update_pts\051;) 229.93 534.33 T
+( if \050new == NOT_FOUND\051 {) 181.93 524.33 T
+(new = f) 199.93 514.33 T
+(ind_index\050pointstride,extern_pts,) 241.93 514.33 T
+(N_extern_pts\051;) 226.93 504.33 T
+(new = extern_indx[new];) 199.93 494.33 T
+(}) 181.93 484.33 T
+(else new = update_indx[new];) 181.93 474.33 T
+(y[k] = y[k] - x[new];) 181.93 464.33 T
+(}) 163.93 454.33 T
+(if \050i != n-1\051 {) 163.93 434.33 T
+(new = f) 181.93 424.33 T
+(ind_index\050point+stride,update_pts,N_update_pts\051;) 223.93 424.33 T
+(if \050new == NOT_FOUND\051 {) 181.93 414.33 T
+(new = f) 199.93 404.33 T
+(ind_index\050point+stride, extern_pts,) 241.93 404.33 T
+(N_extern_pts\051;) 226.93 394.33 T
+(new = extern_indx[new];) 199.93 384.33 T
+(}) 181.93 374.33 T
+(else new = update_indx[new];) 181.93 364.33 T
+(y[k] = y[k] - x[new];) 181.93 354.33 T
+(}) 163.93 344.33 T
+(i = j;) 163.93 334.33 T
+(}) 145.93 324.33 T
+(}) 127.93 314.33 T
+0 12 Q
+(Figure 14: matrix-free Poisson operator) 171.96 284.6 T
+(.) 361.27 284.6 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "22" 22
+%%Page: "23" 23
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(23) 494 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.98 (\336nite element discretization, splitting this program over two subroutines and then adding a few) 72 118 P
+0.31 (new lines for the parallel implementation. The only additional change corresponds to replacing a) 72 90 P
+91.98 495 520.02 720 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+109.98 540 505.98 702 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 10 Q
+0 X
+(read_triangles\050\051;) 109.98 685.33 T
+(init_msr\050a, ija, N_update_pts\051;) 109.98 675.33 T
+(for \050k = 0; k < N_triang; k = k + 1\051 {) 109.98 655.33 T
+(for \050i = 0; i < 3; i = i + 1\051 {) 131.98 645.33 T
+6 F
+(row = f) 145.98 635.33 T
+(ind_index\050T[k][i], update_pts, N_update_pts\051;) 187.98 635.33 T
+4 F
+(for \050j = 0; j < 3; j = j + 1\051 {) 163.98 625.33 T
+6 F
+(if \050row  != NOT_FOUND\051) 173.98 615.33 T
+4 F
+(add_to_element\050) 190.98 605.33 T
+6 F
+(row) 280.98 605.33 T
+4 F
+(, T[k][j],) 298.98 605.33 T
+6 F
+(0.0) 364.98 605.33 T
+4 F
+(, a, ija, i==j\051;) 382.98 605.33 T
+(}) 173.98 595.33 T
+(}) 145.98 585.33 T
+(}) 131.98 575.33 T
+(compress_matrix\050a, ija, N_points\051;) 109.98 555.33 T
+0 12 Q
+(Figure 15:) 173.22 515.39 T
+5 F
+(create_matrix) 225.89 515.39 T
+0 F
+( for Poisson \336nite element problem.) 303.45 515.39 T
+0 0 612 792 C
+72 72 540 720 C
+91.98 126 520.02 495 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+100.98 162 514.98 486 R
+7 X
+0 0 0 1 0 0 0 K
+V
+4 10 Q
+0 X
+(/* read the x and y coordinates from an input f) 100.98 479.33 T
+(ile */) 382.98 479.33 T
+(  for \050i = 0; i < N_update_pts; i = i + 1\051 {) 100.98 459.33 T
+(     read_from_f) 100.98 449.33 T
+(ile\050x[update_indx[i]],y[update_indx[i]]\051;) 196.98 449.33 T
+6 F
+(exchange_bdry\050x\051;) 112.98 429.33 T
+(  exchange_bdry\050y\051;) 100.98 419.33 T
+(for \050k = 0; k < N_triang; k = k + 1\051 {) 112.98 399.33 T
+(     for \050i = 0; i < 3; i = i + 1\051 {) 100.98 389.33 T
+(        row = f) 100.98 379.33 T
+(ind_index\050T[k][i], update_pts, N_update_pts\051;) 190.98 379.33 T
+(        if \050row == NOT_FOUND\051) 100.98 369.33 T
+(           row = f) 100.98 359.33 T
+(ind_index\050T[k][i], extern_pts, N_extern_pts\051;) 208.98 359.33 T
+(           T[k][i] = extern_indx[row];) 100.98 349.33 T
+(        }) 100.98 339.33 T
+(        else T[k][i]= update_indx[row];) 100.98 329.33 T
+(     }) 100.98 319.33 T
+(  }) 100.98 309.33 T
+4 F
+(  for \050k = 0; k < N_triang; k = k + 1\051 {) 100.98 289.33 T
+(     setup_Ke\050Ke, x[T[k][0]], y[T[k][0]], x[T[k][1]],) 100.98 279.33 T
+(y[T[k][1]], x[T[k][2]], y[T[k][2]]\051;) 164.98 269.33 T
+(     for \050i = 0; i < 3; i = i + 1\051 {) 100.98 249.33 T
+(        for \050j = 0; j < 3; j = j + 1\051 {) 100.98 239.33 T
+6 F
+(if \050T[k][i] < N_update_pts\051) 166.98 229.33 T
+4 F
+(add_to_element\050T[k][i], T[k][j], Ke[i][j],) 181.98 219.33 T
+(a, ija, i==j\051) 244.98 209.33 T
+(        }) 100.98 199.33 T
+(     }) 100.98 189.33 T
+( }) 100.98 179.33 T
+0 12 Q
+(Figure 16:) 172.98 144 T
+5 F
+(matrix_\336ll) 225.65 144 T
+0 F
+( for Poisson \336nite element problem.) 284.1 144 T
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "23" 23
+%%Page: "24" 24
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(24) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.92 (single data \336le containing the triangle connectivity read using) 72 712 P
+5 F
+1.03 (read_triangles) 379.28 712 P
+0 F
+0.92 ( by a set of data) 459.73 712 P
+0.42 (\336les containing the triangle connectivity for each processor) 72 684 P
+0.42 (. W) 358.58 684 P
+0.42 (e do not discuss the details of this) 375.37 684 P
+0.22 (program but only wish to draw attention to the number of lines that need changing to convert the) 72 656 P
+1.04 (serial application to a parallel application. Most of the main routines such as) 72 628 P
+5 F
+1.16 (setup_Ke) 454.85 628 P
+0 F
+1.04 ( which) 506.63 628 P
+0.25 (compute the element contributions and) 72 600 P
+5 F
+0.28 (add_to_element) 262.88 600 P
+0 F
+0.25 ( which stores the element contributions) 350.45 600 P
+-0.29 (in the MSR data structures remain the same. In fact, almost all the new lines of code correspond to) 72 572 P
+0.38 (adding the communication \050) 72 544 P
+5 F
+0.42 (exchange_bdry) 208.11 544 P
+0 F
+0.38 (\051 and the conversion of global index values to local) 291 544 P
+(index values with the help of) 72 516 T
+5 F
+(\336nd_index) 213.98 516 T
+0 F
+(.) 271.98 516 T
+0.56 (A set of sample programs have been given to set up a variety of dif) 72 460 P
+0.56 (ferent matrices. In each case) 401.5 460 P
+0.72 (the user sets up the matrix using global column indices without concerning themselves with the) 72 432 P
+0.31 (details of data lay-out and communication. The purpose of showing these examples is to demon-) 72 404 P
+-0.2 (strate how the user needs only to supply a few lines of code in order to implement all of the exam-) 72 376 P
+1.81 (ples. W) 72 348 P
+1.81 (ith the exception of the \336nite element example, the complete code excluding variable) 109.99 348 P
+0.63 (declarations and a few subroutine parameters have been given. In the \336nite element code all the) 72 320 P
+(new code that needed to be added for creating a parallel version has been shown.) 72 292 T
+2 F
+(6. Performance) 72 236 T
+0 F
+0.81 (In this section we give some performance numbers on a 1840 processor Intel Paragon. Our pri-) 72 180 P
+0.59 (mary goal is to illustrate that the overhead incurred using the software described in this paper is) 72 152 P
+0.6 (not signi\336cant when compared to the simulation cost of a typical application \050taken as the itera-) 72 124 P
+-0.28 (tive solution of the 3D Poisson equation\051. Therefore, we compare the run time associated with set-) 72 96 P
+FMENDPAGE
+%%EndPage: "24" 24
+%%Page: "25" 25
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(25) 494 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.38 (ting up distributed matrix communication data structures with the actual run time of the iterative) 72 712 P
+-0.23 (solver) 72 684 P
+-0.23 (. The results represent worst case situations due to the low simulation time. In particular) 100.67 684 P
+-0.23 (, the) 519.57 684 P
+1.48 (solution of a Poisson system represents a fairly small supercomputing task. W) 72 656 P
+1.48 (e feel that most) 461.92 656 P
+0.39 (application problems involve far more computational work \050e.g. many linear system solutions or) 72 628 P
+0.12 (single linear systems that take many more iterations than the simple Poisson equation\051. However) 72 600 P
+0.12 (,) 537 600 P
+-0.19 (while overall run times may be greater) 72 572 P
+-0.19 (, overhead times required to set up the communication soft-) 255.7 572 P
+0.02 (ware should remain similar) 72 544 P
+0.02 (. This is because the communication set up phase is only related to the) 202.39 544 P
+-0.09 (sparsity pattern and the example gives a good estimate of overhead time as a function of the num-) 72 516 P
+0.92 (ber of matrix nonzeros and the number of processors. In fact, in many applications the sparsity) 72 488 P
+1.62 (pattern does not change during the computation even though many computing hours are used) 72 460 P
+0.47 (solving dif) 72 432 P
+0.47 (ferent linear systems. Since the sparsity pattern remains the same, the communication) 123.92 432 P
+(set up phase need only be performed one time.) 72 404 T
+0.48 (W) 72 348 P
+0.48 (e \336rst show that the MFlop/s rating and scaled speedups are high for the iterative solver pack-) 82.37 348 P
+(age where scaled speedup on) 72 320 T
+1 F
+(p) 214.28 320 T
+0 F
+( processors is given as) 220.28 320 T
+0.55 (T) 72 186 P
+0.55 (wo sets of examples are given. One corresponds to solving a single 3D Poisson equation using) 78.49 186 P
+1.41 (the MSR format. The second example corresponds to solving 8 Poisson operators at the same) 72 158 P
+0.08 (time using the VBR format with 8 x 8 blocks. Our VBR results are representative of actual appli-) 72 130 P
+0.57 (cations where a number of unknown quantities occur at a given mesh point. Normally) 72 102 P
+0.57 (, the VBR) 490.53 102 P
+72 72 540 720 C
+75.87 210 536.13 288 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+83.61 216 524.61 281 R
+7 X
+0 0 0 1 0 0 0 K
+V
+1 12 Q
+0 X
+( \050time for 1 iteration of a pr) 147.61 254 T
+(oblem with N points on 1 pr) 280.17 254 T
+(ocessor\051) 413.75 254 T
+( S\050p, N\051 = p *) 83.61 240 T
+( \050time for 1 iteration of a pr) 147.61 226 T
+(oblem with Np points on p pr) 280.17 226 T
+(ocessors\051) 419.75 226 T
+152.87 244 467.87 244 2 L
+0.5 H
+2 Z
+N
+72 72 540 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "25" 25
+%%Page: "26" 26
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(26) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+1.54 (format should be used to solve multiple PDE equations which are coupled to each other \050e.g.) 72 712 P
+0.63 (Navier) 72 684 P
+0.63 (-Stokes equations\051. T) 104.41 684 P
+0.63 (o mimic the MFlop/s performance for this type of problem, we treat) 207.15 684 P
+1.53 (the 8 x 8 blocks as dense \050even though they are really diagonal for our simple test problem\051.) 72 656 P
+1.06 (These results are representative since the MFlop/s rating will be equivalent to real applications) 72 628 P
+0.04 (and the solution time for our test problem will actually be shorter due to the simplicity of the sys-) 72 600 P
+0.05 (tem of equations. All of the examples are solved via the conjugate gradient method[6] where par-) 72 572 P
+3.12 (allelization is accomplished using a box decomposition \050i.e. each processor is assigned an) 72 544 P
+0.77 ( block of unknowns\051. In these examples a ninth-order least squares polyno-) 170.97 516 P
+-0.25 (mial preconditioner [7] is used in conjunction with the conjugate gradient method. T) 72 488 P
+-0.25 (o estimate the) 473.83 488 P
+0.02 (MFlop/s rating we use a 32 x 32 x 32 grid within each processor for the MSR problem and a 16 x) 72 460 P
+0.35 (16 x 16 grid within each processor for the VBR problem.) 72 432 P
+0.35 ( By counting the Flops and dividing by) 349.84 432 P
+0.13 (the run time we get an idea of the MFlop/s rate. For example, 15 preconditioned conjugate gradi-) 72 196 P
+0.93 (ent iterations on 1 processor require 19.98 seconds and approximately 83 million \337oating point) 72 168 P
+-0.25 (operations. This corresponds to 4.2 MFlop/s on a single processor using the MSR format. In T) 72 140 P
+-0.25 (able) 520.01 140 P
+0.13 (1, we illustrate the MFlop/s and scaled speedups for the MSR and VBR formats.) 72 112 P
+0.13 (Both the MFlop) 463.07 112 P
+-0.15 (rating \050especially for the VBR example\051 and the scaled speedups are fairly high and compare well) 72 84 P
+1 F
+(p) 96.88 387 T
+0 F
+(MSR) 210.38 400 T
+(VBR) 416.84 400 T
+1 F
+(n) 140.38 374 T
+0 F
+(scaled speedup) 172.9 374 T
+(MFlop/s) 268.39 374 T
+(n) 339.16 374 T
+(scaled speedup) 368.2 374 T
+(MFlop/s) 471.02 374 T
+(1) 96.88 350 T
+(32) 137.38 350 T
+(1) 206.05 350 T
+(4.2) 281.23 350 T
+(16) 336.16 350 T
+(1) 401.35 350 T
+(20.85) 477.86 350 T
+(8) 96.88 328 T
+(64) 137.38 328 T
+(7.8) 201.55 328 T
+(32.7) 278.23 328 T
+(32) 336.16 328 T
+(7.9) 396.85 328 T
+(165.3) 477.86 328 T
+(64) 93.88 306 T
+(128) 134.38 306 T
+(60.4) 198.55 306 T
+(254.0) 275.23 306 T
+(64) 336.16 306 T
+(62.4) 393.85 306 T
+(1301.7) 474.86 306 T
+(512) 90.88 284 T
+(256) 134.38 284 T
+(481.6) 195.55 284 T
+(2024.5) 272.23 284 T
+(128) 333.16 284 T
+(505.5) 390.85 284 T
+(10539.0) 471.86 284 T
+2 F
+(T) 195.28 262 T
+(able 1: Scaling of example iterative solver) 202.18 262 T
+(.) 413.72 262 T
+78.38 415.75 78.38 276.25 2 L
+V
+0.5 H
+0 Z
+N
+121.38 416.25 121.38 275.75 2 L
+V
+N
+165.38 390.25 165.38 275.75 2 L
+V
+N
+252.73 390.25 252.73 275.75 2 L
+V
+N
+324.73 416.25 324.73 275.75 2 L
+V
+N
+359.6 390.25 359.6 275.75 2 L
+V
+N
+449.1 390.25 449.1 275.75 2 L
+V
+N
+533.62 415.75 533.62 276.25 2 L
+V
+N
+78.13 416 533.87 416 2 L
+V
+N
+121.13 390 533.87 390 2 L
+V
+N
+78.63 365.25 533.37 365.25 2 L
+V
+N
+78.63 362.75 533.37 362.75 2 L
+V
+N
+78.13 342 533.87 342 2 L
+V
+N
+78.13 320 533.87 320 2 L
+V
+N
+78.13 298 533.87 298 2 L
+V
+N
+78.13 276 533.87 276 2 L
+V
+N
+72 511.5 170.97 530.11 C
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+1 9 Q
+0 X
+0 0 0 1 0 0 0 K
+(N) 81.5 516 T
+(p) 93.5 516 T
+3 F
+(\244) 89.75 516 T
+0 F
+(3) 73 519.86 T
+1 F
+(N) 116.99 516 T
+(p) 128.99 516 T
+3 F
+(\244) 125.24 516 T
+0 F
+(3) 108.49 519.86 T
+3 10 Q
+(\264) 100.5 516 T
+1 9 Q
+(N) 152.47 516 T
+(p) 164.47 516 T
+3 F
+(\244) 160.72 516 T
+0 F
+(3) 143.97 519.86 T
+3 10 Q
+(\264) 135.98 516 T
+97 523.95 81.5 523.95 78.5 514.95 3 L
+0.45 H
+2 Z
+N
+78.5 514.95 76.5 517.56 75.5 516.26 3 L
+N
+132.49 523.95 116.98 523.95 113.99 514.95 3 L
+N
+113.99 514.95 111.99 517.56 110.99 516.26 3 L
+N
+167.97 523.95 152.47 523.95 149.47 514.95 3 L
+N
+149.47 514.95 147.47 517.56 146.47 516.26 3 L
+N
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "26" 26
+%%Page: "27" 27
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(27) 494 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.08 (with other sparse applications running on the Intel Paragon[5,7,8]. Thus we can conclude that the) 72 712 P
+(iterative solvers perform well on a single processor or on many processors.) 72 684 T
+-0.02 (In T) 72 628 P
+-0.02 (able 2 and 3 we compare the time of the matrix transformation software with that of the itera-) 91.47 628 P
+0.43 (tive solvers for the same set of test problems.  The main result from T) 72 600 P
+0.43 (able 2 is that the overhead) 412.19 600 P
+1.38 (time is small compared to the conjugate gradient iterations \0502% - 5%\051. In general, the time to) 72 392 P
+0.93 (order the points and to reorder the matrix is approximately the same as all of the test problems) 72 364 P
+0.23 (have the same number of points per processor) 72 336 P
+0.23 (. The time for the local index calculation rises with) 293.26 336 P
+-0.14 (the number of processors and then levels out once we have reached 64 processors. This initial rise) 72 308 P
+1.19 (is due to a increase in the number of external points \050e.g. on 1 processor there are no external) 72 280 P
+-0.12 (points, on 8 processors there are only 3 external surfaces\051. Once the number of external points per) 72 252 P
+0.39 (processor stops increasing, the time for the local index calculation levels out. The only overhead) 72 224 P
+0.34 (cost that increases is the time required to \336nd the) 72 196 P
+0.34 (processors associated with each of the external) 313.36 196 P
+1 10 Q
+(p) 86 563.33 T
+(n) 120 563.33 T
+4 F
+(local_indx) 146 563.33 T
+(f) 218.6 563.33 T
+(ind_ext) 224.6 563.33 T
+(order_pts) 280.4 563.33 T
+(order_mtrx) 347.6 563.33 T
+0 F
+(all) 428.99 569.33 T
+(tools) 424.27 557.33 T
+(cg) 471.66 563.33 T
+(iters) 508.17 563.33 T
+(1) 86 535.33 T
+(32) 117.5 535.33 T
+(.74) 169.75 535.33 T
+(0.0) 236.35 535.33 T
+(.06) 301.15 535.33 T
+(.10) 371.35 535.33 T
+(0.92) 425.24 535.33 T
+(20.00) 465.13 535.33 T
+(15) 511.78 535.33 T
+(8) 86 515.33 T
+(64) 117.5 515.33 T
+(1.12) 167.25 515.33 T
+(0.22) 233.85 515.33 T
+(.06) 301.15 515.33 T
+(.30) 371.35 515.33 T
+(1.74) 425.24 515.33 T
+(37.17) 465.13 515.33 T
+(28) 511.78 515.33 T
+(64) 83.5 495.33 T
+(128) 115 495.33 T
+(1.36) 167.25 495.33 T
+(0.61) 233.85 495.33 T
+(.07) 301.15 495.33 T
+(.31) 371.35 495.33 T
+(2.41) 425.24 495.33 T
+(72.48) 465.13 495.33 T
+(54) 511.78 495.33 T
+(512) 81 475.33 T
+(256) 115 475.33 T
+(1.36) 167.25 475.33 T
+(0.80) 233.85 475.33 T
+(.07) 301.15 475.33 T
+(.31) 371.35 475.33 T
+(2.62) 425.24 475.33 T
+(143.6) 465.13 475.33 T
+(103) 509.28 475.33 T
+2 F
+(T) 142.16 455.33 T
+(able 2: Run time \050in seconds\051 of softwar) 147.91 455.33 T
+(e tools: Scaled MSR pr) 316.88 455.33 T
+(oblem sizes.) 414.47 455.33 T
+1 F
+(p) 86 159.33 T
+(n) 120 159.33 T
+4 F
+(local_indx) 146 159.33 T
+(f) 218.6 159.33 T
+(ind_ext) 224.6 159.33 T
+(order_pts) 280.4 159.33 T
+(order_mtrx) 347.6 159.33 T
+0 F
+(all) 428.99 165.33 T
+(tools) 424.27 153.33 T
+(cg) 471.66 159.33 T
+(iters) 508.17 159.33 T
+(1) 86 131.33 T
+(16) 117.5 131.33 T
+(.1) 169.93 131.33 T
+(1) 177.07 131.33 T
+(0.0) 236.35 131.33 T
+(.008) 298.65 131.33 T
+(.04) 371.35 131.33 T
+(.15) 427.74 131.33 T
+(17.7) 467.63 131.33 T
+(10) 511.78 131.33 T
+(8) 86 111.33 T
+(32) 117.5 111.33 T
+(.17) 169.75 111.33 T
+(.04) 236.35 111.33 T
+(.009) 298.65 111.33 T
+(.50) 371.35 111.33 T
+(.72) 427.74 111.33 T
+(27.2) 467.63 111.33 T
+(15) 511.78 111.33 T
+2 F
+(T) 142.71 91.33 T
+(able 3: Run time \050in seconds\051 of softwar) 148.46 91.33 T
+(e tools: Scaled VBR pr) 317.43 91.33 T
+(oblem sizes.) 413.91 91.33 T
+72 583.75 72 468.25 2 L
+V
+0.5 H
+0 Z
+N
+105 584.25 105 467.75 2 L
+V
+N
+140 584.25 140 467.75 2 L
+V
+N
+212 584.25 212 467.75 2 L
+V
+N
+273.2 584.25 273.2 467.75 2 L
+V
+N
+341.6 584.25 341.6 467.75 2 L
+V
+N
+413.6 584.25 413.6 467.75 2 L
+V
+N
+454.38 584.25 454.38 467.75 2 L
+V
+N
+498.38 584.25 498.38 467.75 2 L
+V
+N
+535.18 583.75 535.18 468.25 2 L
+V
+N
+71.75 584 535.43 584 2 L
+V
+N
+72.25 549.25 534.93 549.25 2 L
+V
+N
+72.25 546.75 534.93 546.75 2 L
+V
+N
+71.75 528 535.43 528 2 L
+V
+N
+71.75 508 535.43 508 2 L
+V
+N
+71.75 488 535.43 488 2 L
+V
+N
+71.75 468 535.43 468 2 L
+V
+N
+72 179.75 72 104.25 2 L
+V
+N
+105 180.25 105 103.75 2 L
+V
+N
+140 180.25 140 103.75 2 L
+V
+N
+212 180.25 212 103.75 2 L
+V
+N
+273.2 180.25 273.2 103.75 2 L
+V
+N
+341.6 180.25 341.6 103.75 2 L
+V
+N
+413.6 180.25 413.6 103.75 2 L
+V
+N
+454.38 180.25 454.38 103.75 2 L
+V
+N
+498.38 180.25 498.38 103.75 2 L
+V
+N
+535.18 179.75 535.18 104.25 2 L
+V
+N
+71.75 180 535.43 180 2 L
+V
+N
+72.25 145.25 534.93 145.25 2 L
+V
+N
+72.25 142.75 534.93 142.75 2 L
+V
+N
+71.75 124 535.43 124 2 L
+V
+N
+71.75 104 535.43 104 2 L
+V
+N
+FMENDPAGE
+%%EndPage: "27" 27
+%%Page: "28" 28
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(28) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+0.32 (nodes. As we can see the increase in this time is fairly modest and even on 512 processors is not) 72 608 P
+0.17 (dominant. Of course the small increase in overhead time is more than of) 72 580 P
+0.17 (fset by an increase in the) 420.16 580 P
+(simulation run time as the problem size grows.) 72 552 T
+-0.16 (The VBR results shown in T) 72 496 P
+-0.16 (able 3 are similar in that the overhead time associated with the matrix) 208.01 496 P
+-0.25 (transformation is insigni\336cant compared to the iterative solvers. In the case of block computations) 72 468 P
+1 (it is the matrix reordering calculation which requires the most time for the transformation soft-) 72 440 P
+1.57 (ware. This is because all the other set up routines operate in a block fashion \050e.g.) 72 412 P
+5 F
+1.74 (order_pts) 487.34 412 P
+0 F
+0.09 (orders blocks\051 and so these times are insigni\336cant compared to the time required to operate on an) 72 384 P
+0.12 (8 x 8 block. By contrast,) 72 356 P
+5 F
+0.13 (reorder_matrix) 193.38 356 P
+0 F
+0.12 (moves blocks around and so its run time increases as) 285.29 356 P
+(the block size increases.) 72 328 T
+0.4 (In the tables above all of the simulations correspond to reasonably ef) 72 272 P
+0.4 (\336cient computations from a) 406.47 272 P
+-0.28 (parallel computing point of view) 72 244 P
+-0.28 (. This is because each processor contains many points. In the next) 227.43 244 P
+0.59 (two tables we demonstrate that the overhead costs remain small even when there are only a few) 72 216 P
+0.11 (points per processor) 72 188 P
+0.11 (. In T) 168.21 188 P
+0.11 (able 4, we illustrate run times when the number of processors is \336xed at) 193.93 188 P
+0 10 Q
+(64) 83.5 671.33 T
+(64) 117.5 671.33 T
+(.19) 169.75 671.33 T
+(.13) 236.35 671.33 T
+(.01) 298.83 671.33 T
+(1) 310.96 671.33 T
+(.55) 371.35 671.33 T
+(.88) 427.74 671.33 T
+(50.1) 467.63 671.33 T
+(27) 511.78 671.33 T
+(512) 81 651.33 T
+(128) 115 651.33 T
+(.21) 169.75 651.33 T
+(.20) 236.35 651.33 T
+(.01) 298.83 651.33 T
+(1) 310.96 651.33 T
+(.55) 371.35 651.33 T
+(.96) 427.74 651.33 T
+(77.0) 467.63 651.33 T
+(42) 511.78 651.33 T
+1 F
+(p) 86 699.33 T
+(n) 120 699.33 T
+4 F
+(local_indx) 146 699.33 T
+(f) 218.6 699.33 T
+(ind_ext) 224.6 699.33 T
+(order_pts) 280.4 699.33 T
+(order_mtrx) 347.6 699.33 T
+0 F
+(all) 428.99 705.33 T
+(tools) 424.27 693.33 T
+(cg) 471.66 699.33 T
+(iters) 508.17 699.33 T
+2 F
+(T) 142.71 631.33 T
+(able 3: Run time \050in seconds\051 of softwar) 148.46 631.33 T
+(e tools: Scaled VBR pr) 317.43 631.33 T
+(oblem sizes.) 413.91 631.33 T
+72 719.75 72 644.25 2 L
+V
+0.5 H
+0 Z
+N
+105 720.25 105 643.75 2 L
+V
+N
+140 720.25 140 643.75 2 L
+V
+N
+212 720.25 212 643.75 2 L
+V
+N
+273.2 720.25 273.2 643.75 2 L
+V
+N
+341.6 720.25 341.6 643.75 2 L
+V
+N
+413.6 720.25 413.6 643.75 2 L
+V
+N
+454.38 720.25 454.38 643.75 2 L
+V
+N
+498.38 720.25 498.38 643.75 2 L
+V
+N
+535.18 719.75 535.18 644.25 2 L
+V
+N
+71.75 720 535.43 720 2 L
+V
+N
+72.25 685.25 534.93 685.25 2 L
+V
+N
+72.25 682.75 534.93 682.75 2 L
+V
+N
+71.75 664 535.43 664 2 L
+V
+N
+71.75 644 535.43 644 2 L
+V
+N
+FMENDPAGE
+%%EndPage: "28" 28
+%%Page: "29" 29
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(29) 494 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+1.12 (512 and the problem size varies.) 72 712 P
+1.12 (In T) 237.06 712 P
+1.12 (able 5, we give run times where the problem size is held) 257.67 712 P
+0.36 (\336xed and the number of processors varies. It is clear that in each case the overhead time is small) 72 448 P
+0.43 (compared with simulation time. Thus, we would anticipate that the cost of using the transforma-) 72 420 P
+1.6 (tion software is negligible for most users. Before concluding we point out that in those cases) 72 392 P
+0.94 (where the overhead time is not negligible, it is often possible to reduce the overhead execution) 72 184 P
+0.08 (time by changing some of the options. For example, if we do not order the update points into two) 72 156 P
+2.44 (sets \050internal and border\051 but instead label them all as border points, the run time for both) 72 128 P
+5 F
+0.85 (order_pts) 72 100 P
+0 F
+0.76 ( and) 124.66 100 P
+5 F
+0.85 (reorder_matrix) 149.51 100 P
+0 F
+0.76 ( drops drastically) 233.94 100 P
+0.76 (. In other situations where information on the) 317.35 100 P
+1 10 Q
+(p) 134.22 663.33 T
+0 F
+(MSR) 214.88 681.33 T
+(VBR) 385.72 681.33 T
+1 F
+(n) 168.22 651.33 T
+0 F
+(all) 201.58 657.33 T
+(tools) 196.85 645.33 T
+(cg) 240.02 651.33 T
+(iters) 272.49 651.33 T
+(n) 314.28 651.33 T
+(all tools) 342.58 651.33 T
+(cg) 406.06 651.33 T
+(iter) 458.12 651.33 T
+(512) 129.22 623.33 T
+(32) 165.72 623.33 T
+(0.06) 197.83 623.33 T
+(0.2) 238.49 623.33 T
+(15) 276.1 623.33 T
+(16) 311.78 623.33 T
+(.04) 352.31 623.33 T
+(.35) 404.53 623.33 T
+(10) 459.78 623.33 T
+(512) 129.22 603.33 T
+(64) 165.72 603.33 T
+(0.1) 198.01 603.33 T
+(1) 210.14 603.33 T
+(1.1) 238.49 603.33 T
+(28) 276.1 603.33 T
+(32) 311.78 603.33 T
+(.06) 352.31 603.33 T
+(.76) 404.53 603.33 T
+(15) 459.78 603.33 T
+(512) 129.22 583.33 T
+(128) 163.22 583.33 T
+(0.46) 197.83 583.33 T
+(10.2) 235.99 583.33 T
+(54) 276.1 583.33 T
+(64) 311.78 583.33 T
+(.18) 352.31 583.33 T
+(7.16) 402.03 583.33 T
+(27) 459.78 583.33 T
+(512) 129.22 563.33 T
+(160) 163.22 563.33 T
+(0.75) 197.83 563.33 T
+(23.2) 235.99 563.33 T
+(66) 276.1 563.33 T
+(80) 311.78 563.33 T
+(.29) 352.31 563.33 T
+(15.86) 399.53 563.33 T
+(33) 459.78 563.33 T
+(512) 129.22 543.33 T
+(200) 163.22 543.33 T
+(1.31) 197.83 543.33 T
+(54.0) 235.99 543.33 T
+(82) 276.1 543.33 T
+(104) 309.28 543.33 T
+(.49) 352.31 543.33 T
+(41.22) 399.53 543.33 T
+(41) 459.78 543.33 T
+(512) 129.22 523.33 T
+(256) 163.22 523.33 T
+(2.62) 197.83 523.33 T
+(141.6) 233.49 523.33 T
+(103) 273.6 523.33 T
+(128) 309.28 523.33 T
+(.96) 352.31 523.33 T
+(76.93) 399.53 523.33 T
+(42) 459.78 523.33 T
+2 F
+(T) 164.99 503.33 T
+(able 4: Run time \050in seconds\051 of softwar) 170.74 503.33 T
+(e tools on 512 pr) 339.7 503.33 T
+(ocessors.) 409.52 503.33 T
+1 F
+(p) 163.76 343.33 T
+0 F
+(MSR) 244.42 361.33 T
+(VBR) 385.72 361.33 T
+1 F
+(n) 197.76 331.33 T
+0 F
+(all) 231.12 337.33 T
+(tools) 226.4 325.33 T
+(cg) 269.56 331.33 T
+(iters) 302.03 331.33 T
+(n) 343.82 331.33 T
+(all) 374.44 337.33 T
+(tools) 369.71 325.33 T
+(cg) 407.84 331.33 T
+(iter) 439.01 331.33 T
+(1) 163.76 303.33 T
+(32) 195.26 303.33 T
+(0.92) 227.37 303.33 T
+(20.0) 265.53 303.33 T
+(15) 305.64 303.33 T
+(16) 341.32 303.33 T
+(.15) 373.19 303.33 T
+(17.7) 403.81 303.33 T
+(10) 440.68 303.33 T
+(8) 163.76 283.33 T
+(32) 195.26 283.33 T
+(0.25) 227.37 283.33 T
+(2.8) 268.03 283.33 T
+(15) 305.64 283.33 T
+(16) 341.32 283.33 T
+(.10) 373.19 283.33 T
+(2.8) 406.31 283.33 T
+(10) 440.68 283.33 T
+(64) 161.26 263.33 T
+(32) 195.26 263.33 T
+(0.07) 227.37 263.33 T
+(0.8) 268.03 263.33 T
+(15) 305.64 263.33 T
+(16) 341.32 263.33 T
+(.03) 373.19 263.33 T
+(.66) 406.31 263.33 T
+(10) 440.68 263.33 T
+(512) 158.76 243.33 T
+(32) 195.26 243.33 T
+(0.06) 227.37 243.33 T
+(0.2) 268.03 243.33 T
+(15) 305.64 243.33 T
+(16) 341.32 243.33 T
+(.04) 373.19 243.33 T
+(.35) 406.31 243.33 T
+(10) 440.68 243.33 T
+2 F
+(T) 160.54 223.33 T
+(able 5: Run time \050in seconds\051 of softwar) 166.29 223.33 T
+(e tools: \336xed pr) 335.26 223.33 T
+(oblem sizes.) 400.91 223.33 T
+120.22 695.75 120.22 516.25 2 L
+V
+0.5 H
+0 Z
+N
+153.22 696.25 153.22 515.75 2 L
+V
+N
+188.22 672.25 188.22 515.75 2 L
+V
+N
+224.94 672.25 224.94 515.75 2 L
+V
+N
+264.54 672.25 264.54 515.75 2 L
+V
+N
+297.66 696.25 297.66 515.75 2 L
+V
+N
+300.22 696.25 300.22 515.75 2 L
+V
+N
+333.34 672.25 333.34 515.75 2 L
+V
+N
+383.78 672.25 383.78 515.75 2 L
+V
+N
+437.78 672.25 437.78 515.75 2 L
+V
+N
+491.78 695.75 491.78 516.25 2 L
+V
+N
+119.97 696 492.03 696 2 L
+V
+N
+152.97 672 492.03 672 2 L
+V
+N
+120.47 637.25 491.53 637.25 2 L
+V
+N
+120.47 634.75 491.53 634.75 2 L
+V
+N
+119.97 616 492.03 616 2 L
+V
+N
+119.97 596 492.03 596 2 L
+V
+N
+119.97 576 492.03 576 2 L
+V
+N
+119.97 556 492.03 556 2 L
+V
+N
+119.97 536 492.03 536 2 L
+V
+N
+119.97 516 492.03 516 2 L
+V
+N
+149.76 375.75 149.76 236.25 2 L
+V
+N
+182.76 376.25 182.76 235.75 2 L
+V
+N
+217.76 352.25 217.76 235.75 2 L
+V
+N
+254.48 352.25 254.48 235.75 2 L
+V
+N
+294.08 352.25 294.08 235.75 2 L
+V
+N
+327.2 376.25 327.2 235.75 2 L
+V
+N
+329.76 376.25 329.76 235.75 2 L
+V
+N
+362.88 352.25 362.88 235.75 2 L
+V
+N
+396 352.25 396 235.75 2 L
+V
+N
+429.12 352.25 429.12 235.75 2 L
+V
+N
+462.24 375.75 462.24 236.25 2 L
+V
+N
+149.51 376 462.49 376 2 L
+V
+N
+182.51 352 462.49 352 2 L
+V
+N
+150.01 317.25 461.99 317.25 2 L
+V
+N
+150.01 314.75 461.99 314.75 2 L
+V
+N
+149.51 296 462.49 296 2 L
+V
+N
+149.51 276 462.49 276 2 L
+V
+N
+149.51 256 462.49 256 2 L
+V
+N
+149.51 236 462.49 236 2 L
+V
+N
+FMENDPAGE
+%%EndPage: "29" 29
+%%Page: "30" 30
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(30) 108 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+0 12 Q
+0 X
+(neighboring processors is available we need not call the subroutine) 72 712 T
+5 F
+(\336nd_proc_for_externs) 396.61 712 T
+0 F
+(.) 516.36 712 T
+2 F
+(7. Conclusion) 72 656 T
+0 F
+1.58 (W) 72 600 P
+1.58 (e have described software tools that transform serial sparse-matrix descriptions into parallel) 82.37 600 P
+1.08 (distributed sparse matrices. The tools enable users to easily use parallel matrix kernels like the) 72 572 P
+0.53 (sparse matrix-vector multiply) 72 544 P
+0.53 (. A number of examples have been given which demonstrate a sig-) 214.26 544 P
+0.31 (ni\336cant reduction in programming ef) 72 516 P
+0.31 (fort when using these tools. Additionally) 250.34 516 P
+0.31 (, it has been shown) 447.1 516 P
+(that the overhead time is low when compared to the simulation time of most real applications.) 72 488 T
+FMENDPAGE
+%%EndPage: "30" 30
+%%Page: "31" 31
+612 792 0 FMBEGINPAGE
+[0 0 0 1 0 0 0]
+[ 0 1 1 0 1 0 0]
+[ 1 0 1 0 0 1 0]
+[ 1 1 0 0 0 0 1]
+[ 1 0 0 0 0 1 1]
+[ 0 1 0 0 1 0 1]
+[ 0 0 1 0 1 1 0]
+ 7 FrameSetSepColors
+FrameNoSep
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+0 0 0 1 0 0 0 K
+72 746 540 756 R
+7 X
+0 0 0 1 0 0 0 K
+V
+72 32.67 540 42.67 R
+V
+0 10 Q
+0 X
+(31) 494 36 T
+72 54 540 54 2 L
+7 X
+V
+1 H
+2 Z
+0 X
+N
+72 72 540 720 R
+7 X
+V
+2 12 Q
+0 X
+(8. Refer) 72 712 T
+(ences) 112.43 712 T
+0 F
+(1.  Carney) 72 656 T
+(, S., Heroux, M. A., and Li, G., \322A Proposal for a Sparse BLAS T) 120.88 656 T
+(oolkit- SP) 436 656 T
+(ARKER) 483.24 656 T
+(W) 82.8 642 T
+(orking Note #2\323, August 1993) 93.17 642 T
+(2.  Hendrickson, B. A., and Leland, R. W) 72 623 T
+(., \322The Chaco User) 269.87 623 T
+(\325) 362.62 623 T
+(s Guide - V) 365.95 623 T
+(ersion 1.0\323, T) 420.28 623 T
+(echnical) 485.42 623 T
+(Report, Sandia National Laboratories, SAND93-2339, November 1993.) 82.8 609 T
+(3.  Hendrickson, B. A., Leland, R. W) 72 590 T
+(., and Plimpton, S. J., \322An Ef) 249.54 590 T
+(\336cient Parallel Algorithm for) 389.33 590 T
+(Matrix-V) 82.8 576 T
+(ector Multiplication\323, to appear in Int. J. High Speed Computing, 1995.) 126.79 576 T
+-0.19 (4.  Hutchinson, S. A., Shadid, J. N. and T) 72 557 P
+-0.19 (uminaro, R. S., \322The Aztec User) 268.85 557 P
+-0.19 (\325) 424.64 557 P
+-0.19 (s Guide - V) 427.98 557 P
+-0.19 (ersion 1.0\323,) 481.73 557 P
+(in preparation.) 82.8 543 T
+(5.  Jones, J. T) 72 524 T
+(., and Plassmann, P) 136.78 524 T
+(. E., \322Computational results for parallel unstructured mesh com-) 228.78 524 T
+(putations\323, T) 82.8 510 T
+(echnical Report, Ar) 144.62 510 T
+(gonne National Laboratory) 238.72 510 T
+(, MCS-P466-0894.) 367.91 510 T
+(6.  Golub, G. H. and V) 72 491 T
+(an Loan, C. F) 179.99 491 T
+(., \322Matrix Computations\323, Johns Hopkins University Press,) 244.69 491 T
+(Baltimore, 1983.) 82.8 477 T
+(7.  Saad, Y) 72 458 T
+(., \322Practical use of polynomial preconditioning for the conjugate gradient method\323,) 123.44 458 T
+(SIAM J. Sci & Stat. Comput., 6\0504\051:865-881, Oct 1985.) 82.8 444 T
+-0.14 (8.  Shadid, J. N., Hutchinson, S. A. and T) 72 425 P
+-0.14 (uminaro, R. S., \322Parallel Sparse Matrix-V) 269.33 425 P
+-0.14 (ector Multiply) 468.28 425 P
+(Software: Performance Issues\323, in preparation.) 82.8 411 T
+-0.18 (9.  Shadid, J. N., Hutchinson, S. A., and Mof) 72 392 P
+-0.18 (fat, H. K., \322Parallel performance of a preconditioned) 285.51 392 P
+(CG solver for unstructured \336nite element applications\323 Proceedings of the Colorado Confer-) 82.8 378 T
+(ence on Iterative Methods, Breckenridge, Colorado, April 5-9, 1994) 82.8 364 T
+(10.  Shadid, J. N., Hutchinson S. A., Mof) 72 345 T
+(fat, H. K., Hennigan, G. L., Hendrickson, B. A., and) 269.78 345 T
+(Leland, R. W) 82.8 331 T
+(., \322A 65+ G\337op/s unstructured \336nite element simulation of chemically reacting) 146.35 331 T
+-0.45 (\337ows on the Intel Paragon\323, Proceedings of Supercomputing \32494, W) 82.8 317 P
+-0.45 (ashington, DC, pp 673-679,) 405.45 317 P
+(Nov) 82.8 303 T
+(. 14-18, 1994.) 102.68 303 T
+FMENDPAGE
+%%EndPage: "31" 31
+%%Trailer
+%%BoundingBox: 0 0 612 792
+%%PageOrder: Ascend
+%%Pages: 31
+%%DocumentFonts: Times-Roman
+%%+ Times-Italic
+%%+ Times-Bold
+%%+ Symbol
+%%+ Courier
+%%+ NewCenturySchlbk-Roman
+%%+ Courier-Bold
+%%EOF

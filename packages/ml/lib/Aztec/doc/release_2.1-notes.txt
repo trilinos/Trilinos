@@ -1,0 +1,81 @@
+*******************************************************************************
+
+In addition to bug fixes, Aztec 2.1 has the following new features:
+
+1) MPI communicators can now be used with Aztec.
+2) Matrix-free interface is much improved.
+   a) easier to provide matrices and preconditioners
+   b) an experimental getrow capability allows matrix-free codes
+      use Aztec preconditioners.
+3) A matrix-capture facility for exporting matrices to programs
+   like matlab.
+4) total solution time now appears in AZ_status
+5) There are a number of experimental features that are not
+   officially released (and so not discussed in the manual)
+   such as solving complex arithmetic matrices, using pivoting 
+   within the bilu scheme, and using Aztec with multi-level preconditioners. 
+   Those interested in these should contact us.
+
+*******************************************************************************
+In order for Aztec 2.0 users to be compatible with Aztec2.1, several
+changes need to be made.
+
+   1) The only real makefile change is that MPI_LIB_DIR has been
+      replaced by MPI_LIB in which the mpi library must be given
+      (see the install README). 
+
+   2) Calls to AZ_matvec_mult() should be replaced by either 
+         AZ_MSR_matvec_mult() or AZ_VBR_matvec_mult() 
+
+   3) Calls to AZ_exchange_bdry(x, data_org) need to append proc_config to parameters:
+      AZ_exchange_bdry(x, data_org, proc_config)
+
+   4) Calls to AZ_processor_info(proc_config) should be replaced by 
+      AZ_set_proc_config():
+
+         MPI USERS    ==> AZ_set_proc_config( proc_config, MPI_COMM_WORLD); 
+         nonMPI USERS ==> AZ_set_proc_config( proc_config, AZ_NO_MPI); 
+
+   5) For AZ_iterate() users, matrices have changed (see user's manual).  In particular,
+
+      a) The structure AZ_MATRIX should not be declared. Instead an AZ_MATRIX
+         pointer is declared followed by 
+            Amat = AZ_matrix_create(N_equations);
+         where N_equations is the number of local matrix rows on this processor 
+
+      b) Fields in AZ_MATRIX should be set via 
+
+            AZ_set_MSR(Amat, bindx, val, data_org, 0, NULL, AZ_LOCAL),
+            AZ_set_VBR(Amat, rpntr, cpntr, bpntr, indx, bindx,
+                       val, data_org, 0, NULL, AZ_LOCAL),
+         or
+            AZ_set_MATFREE(Amat, &pass_data, example_specific_matvec);
+
+         where  '0, NULL, AZ_LOCAL' currently are not used but will allow 
+                for globally numbered matrices in the future, 
+                'example_specific_matvec' is a user defined matvec function 
+         and    'pass_data' is a user defined void* data pointer passed back to 
+                the users 'matvec'.
+
+      c) AZ_matrix_destroy(&Amat) should be used for freeing.
+
+         NOTE: Does not free arrays passed in via set functions: bindx, val, 
+         data_org, rpntr, cpntr, bpntr, indx. 
+
+      d) AZ_create_matrix(), AZ_create_commless_matrix(), AZ_delete_matrix(), and 
+         AZ_delete_commless_matrix() should no longer be used.
+
+   6) Preconditioners within the AZ_iterate() interface have changed. In particular,
+
+      a) The structure AZ_PRECOND should not be declared. Instead an AZ_PRECOND 
+         pointer is declared followed by 
+
+            Prec = AZ_precond_create(Pmat, precond_function, precond_data);
+
+         where Pmat is an AZ_MATRIX*, precond_function is either AZ_precondition 
+         (to use Aztec preconditioners) or a user-defined preconditioning function, 
+         and precond_data is a data pointer for use with a user's preconditioner.
+
+      b) AZ_precond_destroy(&Prec) should be used for freeing.
+
+         NOTE: Does not free Pmat or precond_data.
