@@ -32,6 +32,17 @@
 #include "Teuchos_ParameterList.hpp"
 #include "ml_epetra.h"
 #include "ml_MultiLevelPreconditioner.h"
+#ifdef HAVE_ML_IFPACK
+#include "Ifpack_Preconditioner.h"
+#endif
+extern "C" {
+extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
+                                               ML_Smoother* Smoother,
+                                               int MaxIters, double Tolerance,
+                                               int IsProblemSymmetric,
+                                               int UseDiagonalScaling,
+                                               double * LambdaMax );
+}
 
 using namespace Teuchos;
 
@@ -282,7 +293,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
       sprintf(parameter,"%ssmoother: ifpack overlap", Prefix_.c_str());
       int IfpackOverlap = List_.get(parameter,0);
-
+      
       if( verbose_ ) {
 	cout << msg << "IFPACK, type = `" << IfpackType << "', " << endl
 	     << msg << PreOrPostSmoother
@@ -291,9 +302,56 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
       sprintf(parameter,"%ssmoother: ifpack list", Prefix_.c_str());
       Teuchos::ParameterList& IfpackList = List_.sublist(parameter);
+      int NumAggr = ML_Aggregate_Get_AggrCount(agg_,level);
+      int* AggrMap = 0;
+      ML_CHK_ERR(ML_Aggregate_Get_AggrMap(agg_,level,&AggrMap));
+      assert (AggrMap != 0);
+
+      // set these in the case the user wants "partitioner: type" = "user"
+      // (if not, these values are ignored).
+      IfpackList.set("partitioner: local parts", NumAggr);
+      IfpackList.set("partitioner: map", AggrMap);
+      double Omega = IfpackList.get("relaxation: damping factor", -1.0);
+      if (Omega == -1.0)
+        IfpackList.set("relaxation: damping factor", 1.0);
+
       ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
                              IfpackOverlap, LevelID_[level], pre_or_post,
                              IfpackList,*Comm_);
+      
+      // omega = -1.0 means compute it through Anasazi, using
+      // 10 iterations and 1e-5 as tolerance
+      if (Omega == -1.0) {
+        double LambdaMax;
+        ML_Anasazi_Get_SpectralNorm_Anasazi(&(ml_->Amat[LevelID_[level]]),
+                                            &(ml_->post_smoother[LevelID_[level]]),
+                                            10, 1e-5, false, false, &LambdaMax);
+
+        // compute optimal damping parameter
+        Omega = 1.0 / LambdaMax;
+        IfpackList.set("relaxation: damping factor", Omega);
+
+        // some crap to re-set the damping parameter
+        if (pre_or_post == ML_PRESMOOTHER || pre_or_post == ML_BOTH) {
+          Ifpack_Preconditioner* Ifp = 
+            (Ifpack_Preconditioner*)(ml_->pre_smoother[LevelID_[level]].smoother->data);
+          assert (Ifp != 0);
+          Ifp->SetParameters(IfpackList);
+        }
+        if (pre_or_post == ML_POSTSMOOTHER || pre_or_post == ML_BOTH) {
+          Ifpack_Preconditioner* Ifp = 
+            (Ifpack_Preconditioner*)(ml_->post_smoother[LevelID_[level]].smoother->data);
+          assert (Ifp != 0);
+          Ifp->SetParameters(IfpackList);
+        }
+
+        if (verbose_)
+          cout << msg << "new damping parameter = " << Omega 
+               << " (= 1 / " << LambdaMax << ")" << endl; 
+
+        // set to -1 for the next level
+        IfpackList.set("relaxation: damping factor", -1.0);
+      }
 
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl

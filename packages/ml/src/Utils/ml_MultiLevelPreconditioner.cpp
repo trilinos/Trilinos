@@ -756,7 +756,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
   
   ML_Aggregate_Create(&agg_);
-  
+  // FIXME!
+  agg_->keep_agg_information = 1;
+
   /* **********************************************************************
    * visualize aggregate shape and other statistics. 
    * ********************************************************************** */
@@ -841,6 +843,15 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
   else 
     ML_Aggregate_Set_DampingFactor( agg_, 0.0);
+
+  // FIXME: this requires the previous FIXME that sets
+  // aggr_keep_info = 1 (above)
+  if ((agg_)->aggr_info != NULL) {
+    for (int i = 0 ; i < NumLevels_ ; ++i) {
+      if ((agg_)->aggr_info[i] != NULL) 
+        ML_memory_free((void **)&((agg_)->aggr_info[i]));
+    } 
+  }
 
   /* ********************************************************************** */
   /* set scaling                                                            */
@@ -2177,14 +2188,10 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
 
   int NumMyRows = RowMatrix_->NumMyRows();
 
-  // create the auxiliary matrix as VBR matrix. This should help
-  // to save memory with respect to the creation of "pure" VBR
-  // matrices.
-
   // FIXME
-  Epetra_Map Map(-1,NumMyRows,0,Comm());
-  FakeMatrix = new Epetra_FECrsMatrix(Copy,Map,
+  FakeMatrix = new Epetra_FECrsMatrix(Copy,RowMatrix_->RowMatrixRowMap(),
 				      2*RowMatrix_->MaxNumEntries());
+
   if (FakeMatrix == 0) {
     ML_CHK_ERR(-1); // something went wrong
   }
@@ -2193,7 +2200,7 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
 
   double* x_coord = List_.get(Prefix_ + "aggregation: x-coordinates",
 			      (double *)0);
-  if( x_coord != 0 ) ++NumDimensions;
+  if (x_coord != 0) ++NumDimensions;
 
   // at least x-coordinates myst be not null
   if( NumDimensions == 0 ) {
@@ -2209,17 +2216,17 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
 			       (double *)0);
   if( y_coord != 0 ) ++NumDimensions;
 
-      double * z_coord = List_.get(Prefix_ + "aggregation: z-coordinates",
-				   (double *)0);
-      if( z_coord != 0 ) ++NumDimensions;
+  double * z_coord = List_.get(Prefix_ + "aggregation: z-coordinates",
+                               (double *)0);
+  if( z_coord != 0 ) ++NumDimensions;
 
-      // small check to avoid strange behavior
-      if( z_coord != 0 && y_coord == 0 ) {
-        cerr << ErrorMsg_ << "Something wrong: `aggregation: y-coordinates'" << endl
-             << ErrorMsg_ << "is null, while `aggregation: z-coordinates' is null" << endl;
-	ML_CHK_ERR(-3); // something went wrong
-      }
-  
+  // small check to avoid strange behavior
+  if( z_coord != 0 && y_coord == 0 ) {
+    cerr << ErrorMsg_ << "Something wrong: `aggregation: y-coordinates'" << endl
+      << ErrorMsg_ << "is null, while `aggregation: z-coordinates' is null" << endl;
+    ML_CHK_ERR(-3); // something went wrong
+  }
+
   double theta = List_.get(Prefix_ + "aggregation: theta",0.0);
 
   bool SymmetricPattern = List_.get(Prefix_ + "aggregation: use symmetric pattern",false);
@@ -2248,20 +2255,21 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
   }
 
   // get global column number
-  int isize  = RowMatrix_->OperatorDomainMap().NumMyElements();
+  int isize  = RowMatrix_->RowMatrixRowMap().NumMyElements();
   int Nghost = RowMatrix_->RowMatrixColMap().NumMyElements() - isize;
   if (Nghost < 0) Nghost = 0; 
   assert(isize == NumMyRows);
 
-  vector<double> global_isize;        global_isize.resize(isize+Nghost+1);
-  vector<int>    global_isize_as_int; global_isize_as_int.resize(isize+Nghost+1);
+  vector<double> global_isize(isize+Nghost+1);
+  vector<int>    global_isize_as_int(isize+Nghost+1);
 
   int isize_offset;
   Comm().ScanSum(&isize,&isize_offset,1); 
   isize_offset -= isize;
 
-  for (int i = 0 ; i < isize ; ++i) {
-    global_isize[i] = (double) (isize_offset + i);
+  int* MyGlobalElements = RowMatrix_->RowMatrixRowMap().MyGlobalElements();
+  for (int i = 0 ; i < NumMyRows ; ++i) {
+    global_isize[i] = MyGlobalElements[i];
   }
 
   for (int i = 0 ; i < Nghost; ++i) 
@@ -2270,7 +2278,7 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
   ML_exchange_bdry(&global_isize[0],(&(ml_->Amat[LevelID_[0]]))->getrow->pre_comm,
                   (&(ml_->Amat[LevelID_[0]]))->invec_leng,ml_->comm,ML_OVERWRITE,NULL);
 
-  for ( int j = 0; j < isize+Nghost; ++j) {
+  for (int j = 0; j < isize + Nghost; ++j) {
     global_isize_as_int[j] = (int) global_isize[j];
   }
   
@@ -2330,6 +2338,9 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
 
       for (int j = 0 ; j < NnzRow ; j += NumPDEEqns_) {
 
+        if (colInd[j] >= NumMyRows)
+          continue;
+
 	if (colInd[j]%NumPDEEqns_ == 0) { 
 
 	  // insert diagonal later
@@ -2376,10 +2387,7 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
 	    for (int k = 0 ; k < NumPDEEqns_ ; ++k) {
 	      int row = GlobalRow+k;
 	      int col = GlobalCol+k;
-	      if (row >= NumGlobalRows())
-		ML_CHK_ERR(-9);
-	      if (col >= NumGlobalCols())
-		ML_CHK_ERR(-9);
+              // no checks on the row/col because Salsa is strange on this...
 /*
 	      assert(FakeMatrix->InsertGlobalValues(row,1,&val,&col) == 0);
 */
@@ -2399,10 +2407,6 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
 	      for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
 		int row = GlobalCol+k;
 		int col = GlobalRow+k;
-		if (row >= NumGlobalRows())
-		  ML_CHK_ERR(-9);
-		if (col >= NumGlobalCols())
-		  ML_CHK_ERR(-9);
 /*
 		assert(FakeMatrix->InsertGlobalValues(row,1,&val,&col) == 0);
 */
@@ -2420,8 +2424,6 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
       // create lines with zero-row sum
       for (int k = 0 ; k < NumPDEEqns_ ; ++k) {
 	int row = GlobalRow + k;
-	if (row >= NumGlobalRows())
-	  ML_CHK_ERR(-9); // something went wrong
 	/*
 	assert(FakeMatrix->InsertGlobalValues(row,1,&total,&row) == 0);
 	*/

@@ -143,10 +143,9 @@ namespace ML_Epetra
   int SetDefaultsSA(Teuchos::ParameterList & List, const string Prefix = "",
 		    int * options = 0, double * params = 0);
 
-#ifdef HAVE_ML_TRIUTILS
-  //! Add values set in Command Line Parser to the internally stored parameter list object.
-  int Set(Teuchos::ParameterList & List, Trilinos_Util::CommandLineParser & CLP);  
-#endif
+  //! Sets parameters in the given list from the command line.
+  int SetParameters(int argc, char* argv[],
+                    Teuchos::ParameterList& List);
 
 //! MultiLevelPreconditioner: An implementation of the Epetra_RowMatrix class.
 /*! MultiLevelPreconditioner class implements Epetra_RowMatrix using a
@@ -210,14 +209,6 @@ public:
   MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
                            const bool ComputePrec );
 
-#ifdef HAVE_ML_TRIUTILS
-  //! Constructs an MultiLevelPreconditioner, input parameters are specific in the command line
-
-  MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-			   Trilinos_Util::CommandLineParser & CLP,
-                           const bool ComputePrec );
-#endif
-  
   //! Constructs an MultiLevelPreconditioner. Retrives parameters (with prefix \c Prefix) from \c List.
   
   MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,

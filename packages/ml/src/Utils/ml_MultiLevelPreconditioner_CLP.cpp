@@ -1,11 +1,11 @@
 /*!
  *  \file ml_MultiLevelPreconditioner_CLP.cpp
  *
- *  \brief ML black-box preconditioner for Epetra_RowMatrix derived classes.
+ *  \brief Sets up a parameters list from Teuchos CommandLineParser.
  *
  *  \author Marzio Sala, SNL, 9214
  *
- *  \date Last update do Doxygen: 22-Jul-04
+ *  \date Last updated on Nov-04
  *
  */
 
@@ -30,6 +30,7 @@
 #endif
 #include "ml_ifpack_wrap.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 #include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
@@ -37,198 +38,131 @@ using namespace ML_Epetra;
 
 // ================================================ ====== ==== ==== == =
 
-#ifdef HAVE_ML_TRIUTILS
-int ML_Epetra::Set(Teuchos::ParameterList & List,
-		   Trilinos_Util::CommandLineParser & CLP) 
+int ML_Epetra::SetParameters(int argc, char* argv[],
+                             Teuchos::ParameterList& List)
 {
  
-  if( CLP.Has("-ml_defaults") )
-    SetDefaults(CLP.Get("-ml_defaults","DD"),List);
+  Teuchos::CommandLineProcessor CLP;
+  string ml_defaults = "not-set";
+  CLP.setOption("ml-defaults",&ml_defaults,"Default values for ML");
 
-  // general
-  if( CLP.Has("-ml_num_levels") )
-    List.set("max levels",CLP.Get("-ml_num_levels",2));
-  if( CLP.Has("-ml_incr_or_decr" ) )
-      List.set("increasing or decreasing",CLP.Get("-ml_incr_or_decr","increasing"));
-  if( CLP.Has("-ml_output" ) )
-      List.set("output",CLP.Get("-ml_output",10));
-  if( CLP.Has("-ml_memory" ) )
-      List.set("analyze memory",CLP.Get("-ml_memory",false));
-  
-  // smoother
-  if( CLP.Has("-ml_smoother_type") )
-    List.set("smoother: type", CLP.Get("-ml_smoother_type","Gauss-Seidel"));
-  
-  if( CLP.Has("-ml_smoother_type_level_0") )
-    List.set("smoother: type (level 0)", CLP.Get("-ml_smoother_type_level_0","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_1") )
-    List.set("smoother: type (level 1)", CLP.Get("-ml_smoother_type_level_1","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_2") )
-    List.set("smoother: type (level 2)", CLP.Get("-ml_smoother_type_level_2","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_3") )
-    List.set("smoother: type (level 3)", CLP.Get("-ml_smoother_type_level_3","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_4") )
-    List.set("smoother: type (level 4)", CLP.Get("-ml_smoother_type_level_4","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_5") )
-    List.set("smoother: type (level 5)", CLP.Get("-ml_smoother_type_level_5","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_6") )
-    List.set("smoother: type (level 6)", CLP.Get("-ml_smoother_type_level_6","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_7") )
-    List.set("smoother: type (level 7)", CLP.Get("-ml_smoother_type_level_7","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_8") )
-    List.set("smoother: type (level 8)", CLP.Get("-ml_smoother_type_level_8","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_9") )
-    List.set("smoother: type (level 9)", CLP.Get("-ml_smoother_type_level_9","Gauss-Seidel"));
-  
-  if( CLP.Has("-ml_smoother_sweeps") )
-    List.set("smoother: sweeps", CLP.Get("-ml_smoother_sweeps",1));
-  if( CLP.Has("-ml_smoother_pre_or_post") )
-    List.set("smoother: pre or post", CLP.Get("-ml_smoother_pre_or_post","both"));
-  if( CLP.Has("-ml_smoother_damping_factor") )
-    List.set("smoother: damping factor", CLP.Get("-ml_smoother_damping_factor",1.0));
+  int ml_levels = List.get("max levels",5);
+  CLP.setOption("ml-levels",&ml_levels,"Maximum number of levels");
+  int ml_output = List.get("output",5);
+  CLP.setOption("ml-output",&ml_output,"Output level (from 0 to 10)");
+  // damping factor
+  double ml_damping = List.get("aggregation: damping factor", 1.333);
+  CLP.setOption("ml-damping",&ml_damping,"Damping for prolongator");
+  // smoothers type
+  string ml_smoother_type = List.get("smoother: type","Gauss-Seidel");
+  CLP.setOption("ml-smoother-type",&ml_smoother_type,"Smoother type");
+  string ml_smoother_type_0 = List.get("smoother: type (level 0)","Gauss-Seidel");
+  CLP.setOption("ml-smoother-type-0",&ml_smoother_type_0,"Smoother type for level 0");
+  string ml_smoother_type_1 = List.get("smoother: type (level 1)","Gauss-Seidel");
+  CLP.setOption("ml-smoother-type-1",&ml_smoother_type_1,"Smoother type for level 1");
+  string ml_smoother_type_2 = List.get("smoother: type (level 2)","Gauss-Seidel");
+  CLP.setOption("ml-smoother-type-2",&ml_smoother_type_2,"Smoother type for level 2");
+  string ml_smoother_type_3 = List.get("smoother: type (level 3)","Gauss-Seidel");
+  CLP.setOption("ml-smoother-type-3",&ml_smoother_type_3,"Smoother type for level 2");
+  string ml_smoother_type_4 = List.get("smoother: type (level 4)","Gauss-Seidel");
+  CLP.setOption("ml-smoother-type-4",&ml_smoother_type_4,"Smoother type for level 2");
+  // smoother sweeps
+  int ml_smoother_sweeps = List.get("smoother: sweeps",1);
+  CLP.setOption("ml-smoother-sweeps",&ml_smoother_sweeps,"Sweeps");
+  // smoother damping
+  double ml_smoother_damping = List.get("smoother: damping factor", 0.67);
+  CLP.setOption("ml-smoother-damping",&ml_smoother_damping,"damping factor");
+  double ml_smoother_damping_0 = List.get("smoother: damping factor (level 0)", 0.67);
+  CLP.setOption("ml-smoother-damping-0",&ml_smoother_damping_0,"Damping for level 0");
+  double ml_smoother_damping_1 = List.get("smoother: damping factor (level 1)", 0.67);
+  CLP.setOption("ml-smoother-damping-1",&ml_smoother_damping_1,"Damping for level 1");
+  double ml_smoother_damping_2 = List.get("smoother: damping factor (level 2)", 0.67);
+  CLP.setOption("ml-smoother-damping-2",&ml_smoother_damping_2,"Damping for level 2");
+  double ml_smoother_damping_3 = List.get("smoother: damping factor (level 3)", 0.67);
+  CLP.setOption("ml-smoother-damping-3",&ml_smoother_damping_3,"Damping for level 3");
+  double ml_smoother_damping_4 = List.get("smoother: damping factor (level 4)", 0.67);
+  CLP.setOption("ml-smoother-damping-4",&ml_smoother_damping_4,"Damping for level 4");
+  // pre or post smoother
+  string ml_smoother_pre_or_post = List.get("smoother: pre or post","both");
+  CLP.setOption("ml-smoother-pre-or-post",&ml_smoother_pre_or_post,"pre, post smoother or both");
+  // aggregation type
+  string ml_aggr_type = List.get("aggregation: type","Uncoupled");
+  CLP.setOption("ml-aggr-type",&ml_aggr_type,"Aggregation scheme");
+  string ml_aggr_type_0 = List.get("aggregation: type","Uncoupled");
+  CLP.setOption("ml-aggr-type-0",&ml_aggr_type_0,"Aggregation scheme (level 0)");
+  string ml_aggr_type_1 = List.get("aggregation: type","Uncoupled");
+  CLP.setOption("ml-aggr-type-1",&ml_aggr_type_1,"Aggregation scheme (level 1)");
+  string ml_aggr_type_2 = List.get("aggregation: type","Uncoupled");
+  CLP.setOption("ml-aggr-type-2",&ml_aggr_type_2,"Aggregation scheme (level 2)");
+  string ml_aggr_type_3 = List.get("aggregation: type","Uncoupled");
+  CLP.setOption("ml-aggr-type-3",&ml_aggr_type_3,"Aggregation scheme (level 3)");
+  string ml_aggr_type_4 = List.get("aggregation: type","Uncoupled");
+  CLP.setOption("ml-aggr-type-4",&ml_aggr_type_4,"Aggregation scheme (level 4)");
+  // aggregation options
+  int ml_aggr_local = List.get("aggregation: local aggregates",16);
+  CLP.setOption("ml-aggr-local",&ml_aggr_local,"Local number of aggregates");
+  int ml_aggr_global = List.get("aggregation: global aggregates",16);
+  CLP.setOption("ml-aggr-global",&ml_aggr_global,"Global number of aggregates");
+  // aggregation (nodes per aggregate)
+  int ml_aggr_npa = List.get("aggregation: nodes per aggregate",16);
+  CLP.setOption("ml-aggr-npa",&ml_aggr_npa,"Number of nodes per aggregate");
+  int ml_aggr_npa_0 = List.get("aggregation: nodes per aggregate (level 0)",16);
+  CLP.setOption("ml-aggr-npa-0",&ml_aggr_npa_0,"Number of nodes per aggregate (level 0)");
+  int ml_aggr_npa_1 = List.get("aggregation: nodes per aggregate (level 1)",16);
+  CLP.setOption("ml-aggr-npa-1",&ml_aggr_npa_1,"Number of nodes per aggregate (level 1)");
+  int ml_aggr_npa_2 = List.get("aggregation: nodes per aggregate (level 2)",16);
+  CLP.setOption("ml-aggr-npa-2",&ml_aggr_npa_2,"Number of nodes per aggregate (level 2)");
+  int ml_aggr_npa_3 = List.get("aggregation: nodes per aggregate (level 3)",16);
+  CLP.setOption("ml-aggr-npa-3",&ml_aggr_npa_3,"Number of nodes per aggregate (level 3)");
+  int ml_aggr_npa_4 = List.get("aggregation: nodes per aggregate (level 4)",16);
+  CLP.setOption("ml-aggr-npa-4",&ml_aggr_npa_4,"Number of nodes per aggregate (level 4)");
+  // coarse type
+  string ml_coarse_type = List.get("coarse: type","Amesos-KLU");
+  CLP.setOption("ml-coarse-type",&ml_coarse_type,"Coarse type");
 
-  // smoother-advanced
-  if( CLP.Has("-ml_RP_smoothing") )
-    List.set("R and P smoothing: type", CLP.Get("-ml_RP_smoothing","classic"));
-  if( CLP.Has("-ml_RP_damping") )
-    List.set("R and P smoothing: damping", CLP.Get("-ml_RP_damping","fov-10"));
-  if( CLP.Has("-ml_fov_not_scaled") )
-    List.set("field-of-values: use diagonal scaling", false);
+  CLP.throwExceptions(false);
+  // allow users to specify other options for other packages
+  CLP.recogniseAllOptions(false);
+  CLP.parse(argc,argv);
 
-  
-  // aggregation
-  if( CLP.Has("-ml_aggr_type") )
-    List.set("aggregation: type", CLP.Get("-ml_aggr_type","Uncoupled"));
+  // now insert the read values into `List'
+  if (ml_defaults != "not-set")
+    SetDefaults(ml_defaults,List);
+  List.set("max levels", ml_levels);
+  List.set("output", ml_output);
+  List.set("smoother: type", ml_smoother_type);
+  List.set("smoother: type (level 0)", ml_smoother_type_0);
+  List.set("smoother: type (level 1)", ml_smoother_type_1);
+  List.set("smoother: type (level 2)", ml_smoother_type_2);
+  List.set("smoother: type (level 3)", ml_smoother_type_3);
+  List.set("smoother: type (level 4)", ml_smoother_type_4);
+  List.set("smoother: sweeps", ml_smoother_sweeps);
+  List.set("smoother: damping factor", ml_smoother_damping);
+  List.set("smoother: damping factor (level 0)", ml_smoother_damping_0);
+  List.set("smoother: damping factor (level 1)", ml_smoother_damping_1);
+  List.set("smoother: damping factor (level 2)", ml_smoother_damping_2);
+  List.set("smoother: damping factor (level 3)", ml_smoother_damping_3);
+  List.set("smoother: damping factor (level 4)", ml_smoother_damping_4);
+  List.set("smoother: pre or post", ml_smoother_pre_or_post);
+  List.set("aggregation: type", ml_aggr_type);
+  List.set("aggregation: type (level 0)", ml_aggr_type_0);
+  List.set("aggregation: type (level 1)", ml_aggr_type_1);
+  List.set("aggregation: type (level 2)", ml_aggr_type_2);
+  List.set("aggregation: type (level 3)", ml_aggr_type_3);
+  List.set("aggregation: type (level 4)", ml_aggr_type_4);
+  List.set("aggregation: local aggregates", ml_aggr_local);
+  List.set("aggregation: nodes per aggregate", ml_aggr_npa);
+  List.set("aggregation: nodes per aggregate (level 0)", ml_aggr_npa_0); 
+  List.set("aggregation: nodes per aggregate (level 1)", ml_aggr_npa_1);
+  List.set("aggregation: nodes per aggregate (level 2)", ml_aggr_npa_2);
+  List.set("aggregation: nodes per aggregate (level 3)", ml_aggr_npa_3);
+  List.set("aggregation: nodes per aggregate (level 4)", ml_aggr_npa_4);
+  List.set("aggregation: damping factor", ml_damping);
+  List.set("coarse: type", ml_coarse_type);
 
-  if( CLP.Has("-ml_aggr_type_level_0") )
-    List.set("aggregation: type (level 0)", CLP.Get("-ml_aggr_type_level_0","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_1") )
-    List.set("aggregation: type (level 1)", CLP.Get("-ml_aggr_type_level_1","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_2") )
-    List.set("aggregation: type (level 2)", CLP.Get("-ml_aggr_type_level_2","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_3") )
-    List.set("aggregation: type (level 3)", CLP.Get("-ml_aggr_type_level_3","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_4") )
-    List.set("aggregation: type (level 4)", CLP.Get("-ml_aggr_type_level_4","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_5") )
-    List.set("aggregation: type (level 5)", CLP.Get("-ml_aggr_type_level_5","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_6") )
-    List.set("aggregation: type (level 6)", CLP.Get("-ml_aggr_type_level_6","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_7") )
-    List.set("aggregation: type (level 7)", CLP.Get("-ml_aggr_type_level_7","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_8") )
-    List.set("aggregation: type (level 8)", CLP.Get("-ml_aggr_type_level_8","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_9") )
-    List.set("aggregation: type (level 9)", CLP.Get("-ml_aggr_type_level_9","Uncoupled"));
-
-  if( CLP.Has("-ml_num_nodes_per_aggr") )
-    List.set("aggregation: nodes per aggregate", CLP.Get("-ml_num_nodes_per_aggr",512));
-
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_0") )
-    List.set("aggregation: nodes per aggregate (level 0)", CLP.Get("-ml_num_nodes_per_aggr_level_0",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_1") )
-    List.set("aggregation: nodes per aggregate (level 1)", CLP.Get("-ml_num_nodes_per_aggr_level_1",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_2") )
-    List.set("aggregation: nodes per aggregate (level 2)", CLP.Get("-ml_num_nodes_per_aggr_level_2",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_3") )
-    List.set("aggregation: nodes per aggregate (level 3)", CLP.Get("-ml_num_nodes_per_aggr_level_3",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_4") )
-    List.set("aggregation: nodes per aggregate (level 4)", CLP.Get("-ml_num_nodes_per_aggr_level_4",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_5") )
-    List.set("aggregation: nodes per aggregate (level 5)", CLP.Get("-ml_num_nodes_per_aggr_level_5",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_6") )
-    List.set("aggregation: nodes per aggregate (level 6)", CLP.Get("-ml_num_nodes_per_aggr_level_6",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_7") )
-    List.set("aggregation: nodes per aggregate (level 7)", CLP.Get("-ml_num_nodes_per_aggr_level_7",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_8") )
-    List.set("aggregation: nodes per aggregate (level 8)", CLP.Get("-ml_num_nodes_per_aggr_level_8",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_9") )
-    List.set("aggregation: nodes per aggregate (level 9)", CLP.Get("-ml_num_nodes_per_aggr_level_9",512));
-
-  if( CLP.Has("-ml_num_local_aggr") )
-    List.set("aggregation: local aggregates", CLP.Get("-ml_num_local_aggr",512));
-
-  if( CLP.Has("-ml_num_local_aggr_level_0") )
-    List.set("aggregation: local aggregates (level 0)", CLP.Get("-ml_num_local_aggr_level_0",512));
-  if( CLP.Has("-ml_num_local_aggr_level_1") )
-    List.set("aggregation: local aggregates (level 1)", CLP.Get("-ml_num_local_aggr_level_1",512));
-  if( CLP.Has("-ml_num_local_aggr_level_2") )
-    List.set("aggregation: local aggregates (level 2)", CLP.Get("-ml_num_local_aggr_level_2",512));
-  if( CLP.Has("-ml_num_local_aggr_level_3") )
-    List.set("aggregation: local aggregates (level 3)", CLP.Get("-ml_num_local_aggr_level_3",512));
-  if( CLP.Has("-ml_num_local_aggr_level_4") )
-    List.set("aggregation: local aggregates (level 4)", CLP.Get("-ml_num_local_aggr_level_4",512));
-  if( CLP.Has("-ml_num_local_aggr_level_5") )
-    List.set("aggregation: local aggregates (level 5)", CLP.Get("-ml_num_local_aggr_level_5",512));
-  if( CLP.Has("-ml_num_local_aggr_level_6") )
-    List.set("aggregation: local aggregates (level 6)", CLP.Get("-ml_num_local_aggr_level_6",512));
-  if( CLP.Has("-ml_num_local_aggr_level_7") )
-    List.set("aggregation: local aggregates (level 7)", CLP.Get("-ml_num_local_aggr_level_7",512));
-  if( CLP.Has("-ml_num_local_aggr_level_8") )
-    List.set("aggregation: local aggregates (level 8)", CLP.Get("-ml_num_local_aggr_level_8",512));
-  if( CLP.Has("-ml_num_local_aggr_level_9") )
-    List.set("aggregation: local aggregates (level 9)", CLP.Get("-ml_num_local_aggr_level_9",512));
-
-  if( CLP.Has("-ml_aggr_damping_factor") )
-    List.set("aggregation: damping factor", CLP.Get("-ml_aggr_damping_factor",1.333));
-  if( CLP.Has("-ml_compute_field_of_values") )
-    List.set("aggregation: compute field of values", true);
-  if( CLP.Has("-ml_compute_field_of_values_non_scaled") )
-    List.set("aggregation: compute field of values for non-scaled", true);
-  
-  // preconditioning type
-  if( CLP.Has("-ml_prec_type") ) {
-    List.set("prec type", CLP.Get("-ml_prec_type","full-MGV"));
-  }
-
-  // coarse
-  if( CLP.Has("-ml_coarse_type") )
-    List.set("coarse: type", CLP.Get("-ml_coarse_type","Amesos-KLU"));
-  if( CLP.Has("-ml_coarse_max_procs") ) 
-    List.set("coarse: max processes", CLP.Get("-ml_coarse_max_procs",4));
-
-  // eigen-analysis
-  if( CLP.Has("-ml_eigen_analysis_type") )
-    List.set("eigen-analysis: type", CLP.Get("-ml_eigen_analysis_type","Anorm"));
-  if( CLP.Has("-ml_eigen_analysis_tol") )
-    List.set("eigen-analysis: tolerance", CLP.Get("-ml_eigen_analysis_tol",1e-2));
-  if( CLP.Has("-ml_compute_null_space") )
-    List.set("compute null space", CLP.Has("-ml_compute_null_space"));
-  if( CLP.Has("-ml_null_space_dim") )
-    List.set("null space dimension", CLP.Get("-ml_null_space_dim",1));
-  if( CLP.Has("-ml_add_default_null_space") )
-    List.set("add default null space", CLP.Has("-ml_add_default_null_space"));
-
-  return 0;
+  return(0);
   
 }
-
-// ================================================ ====== ==== ==== == =
-
-MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-						   Trilinos_Util::CommandLineParser & CLP,
-						   const bool ComputePrec ) :
-  RowMatrix_(&RowMatrix),
-  RowMatrixAllocated_(0)
-{
-  Prefix_[0] = '\0';
-
-  /* ********************************************************************** */
-  /* Parse command line to get main options                                 */
-  /* ********************************************************************** */
-
-  Set(List_,CLP);
-   
-  /* ********************************************************************** */
-  /* back to normal initialization                                          */
-  /* ********************************************************************** */
-
-  Initialize();
-  
-  // construct hierarchy
-  if( ComputePrec == true ) ComputePreconditioner();
-}
-#endif
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
 
