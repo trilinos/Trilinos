@@ -101,7 +101,8 @@ public:
    */
   Laplace3D(Epetra_Comm& InputComm,
             const int nx, const int ny, const int nz,
-            const int mx, const int my, const int mz) :
+            const int mx, const int my, const int mz,
+            const bool BuildCoord = false) :
     Comm_(InputComm),
     nx_(nx),
     ny_(ny),
@@ -202,6 +203,9 @@ public:
     }
     
     // from now on, the Graph object is no longer necessary.
+    
+    if (BuildCoord)
+      CreateCoordinates();
   }
 
   virtual ~Laplace3D()
@@ -445,7 +449,49 @@ public:
     return(mz_);
   }
 
+  inline const double* XCoord() const
+  {
+    return(&x_coord[0]);
+  }
+    
+  inline const double* YCoord() const
+  {
+    return(&y_coord[0]);
+  }
+    
+  inline const double* ZCoord() const
+  {
+    return(&z_coord[0]);
+  }
+    
 private:
+
+  void CreateCoordinates()
+  {
+    x_coord.resize(NumMyRows());
+    y_coord.resize(NumMyRows());
+    z_coord.resize(NumMyRows());
+
+    double lx = 1.0, ly = 1.0, lz = 1.0;
+
+    double delta_x = lx / (nx() - 1);
+    double delta_y = ly / (ny() - 1);
+    double delta_z = lz / (nz() - 1);
+
+    for (int i = 0 ; i < NumMyRows() ; i++) 
+    {
+      int GlobalRow = RowMatrixRowMap().GID(i);
+      int ixy = GlobalRow % (nx() * ny());
+      int iz = (GlobalRow - ixy) / (nx() * ny());
+
+      int ix = ixy % nx();
+      int iy = (ixy - ix) / ny();
+      
+      x_coord[i] = delta_x * ix;
+      y_coord[i] = delta_y * iy;
+      z_coord[i] = delta_z * iz;
+    }
+  }
 
   //! Interal getrow, to be inlined.
   inline int getrow(int MyRow, int Length, int & NumEntries, 
@@ -606,6 +652,9 @@ private:
   vector<vector<int> > RowIndices_;
   //! Contains the number of nonzeros in each local row.
   vector<int> RowEntries_;
+  vector<double> x_coord;
+  vector<double> y_coord;
+  vector<double> z_coord;
 
 }; // class Laplace3D
 
@@ -633,14 +682,16 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  Teuchos::CommandLineProcessor CLP;
+  CommandLineProcessor CLP;
 
   int n = 10;
   int m = (int)pow((double)Comm.NumProc(), 0.3334);
   double DampingFactor = 1.333;
   string AggregationScheme = "Uncoupled";
   int NPA = 16;
+  int MaxLevels = 5;
 
+  CLP.setOption("l", &MaxLevels, "number of levels");
   CLP.setOption("n", &n, "number of nodes along each axis");
   CLP.setOption("damp", &DampingFactor, "prolongator damping factor");
   CLP.setOption("aggr", &AggregationScheme, "aggregation scheme");
@@ -671,8 +722,6 @@ int main(int argc, char *argv[])
   // Construct a solver object for this problem
   AztecOO solver(Problem);
 
-  // =========================== begin of ML part ===========================
-
   // create a parameter list for ML options
   ParameterList MLList;
 
@@ -681,7 +730,7 @@ int main(int argc, char *argv[])
   
   // overwrite some parameters. Please refer to the user's guide
   // for more information
-  MLList.set("max levels",5);
+  MLList.set("max levels",MaxLevels);
   MLList.set("increasing or decreasing","increasing");
   MLList.set("aggregation: type", AggregationScheme);
   MLList.set("aggregation: damping factor", DampingFactor);
@@ -692,17 +741,18 @@ int main(int argc, char *argv[])
   MLList.set("coarse: type","Amesos-KLU");
   MLList.set("analyze memory", true);
   MLList.set("repartition: enable", true);
-  MLList.set("repartition: min max ratio", 1.2);
+  MLList.set("repartition: min max ratio", 1.1);
   MLList.set("repartition: min per proc", 512);
-
+  MLList.set("low memory usage", true);
+  MLList.set("x-coordinates", (double*) A.XCoord());
+  MLList.set("y-coordinates", (double*) A.YCoord());
+  MLList.set("z-coordinates", (double*) A.ZCoord());
+  
   // create the preconditioner object and compute hierarchy
   MultiLevelPreconditioner* MLPrec = new MultiLevelPreconditioner(A, MLList);
 
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
-
-  // =========================== end of ML part =============================
-  
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, 8);
   solver.Iterate(500, 1e-7);
