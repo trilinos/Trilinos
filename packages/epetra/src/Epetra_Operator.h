@@ -107,7 +107,7 @@ class Epetra_Operator {
   //@{ \name Atribute access functions
 
     //! Returns a character string describing the operator
-    virtual char * Label() const = 0;
+    virtual const char * Label() const = 0;
 
     //! Returns the current UseTranspose setting.
     virtual bool UseTranspose() const = 0;

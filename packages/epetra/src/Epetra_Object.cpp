@@ -93,7 +93,7 @@ Epetra_Object::~Epetra_Object()
   if (Label_!=0) delete [] Label_;
 }
 //=============================================================================
-char * Epetra_Object::Label() const {
+const char * Epetra_Object::Label() const {
   return(Label_);
 }
 //=============================================================================

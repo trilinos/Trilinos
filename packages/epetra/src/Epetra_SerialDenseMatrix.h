@@ -408,7 +408,7 @@ This function performs a variety of matrix-matrix multiply operations.
     virtual int ApplyInverse(const Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & Y) { return (-1); }
  
     //! Returns a character string describing the operator
-    virtual char * Label() const { return Epetra_Object::Label(); }
+    virtual const char * Label() const { return Epetra_Object::Label(); }
  
     //! Returns the current UseTranspose setting.
     virtual bool UseTranspose() const { return UseTranspose_; }

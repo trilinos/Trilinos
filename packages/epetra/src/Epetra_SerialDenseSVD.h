@@ -379,7 +379,7 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
     virtual double NormInf() const { return Matrix()->NormInf(); }
   
     //! Returns a character string describing the operator
-    virtual char * Label() const { return Epetra_Object::Label(); }
+    virtual const char * Label() const { return Epetra_Object::Label(); }
 
     //! Returns the current UseTranspose setting.
     virtual bool UseTranspose() const { return UseTranspose_; }

@@ -79,7 +79,7 @@ class Epetra_Object {
   //! Epetra_Object Label access funtion.
   /*! Returns the string used to define this object.  
   */
-  virtual char * Label() const;
+  virtual const char * Label() const;
 
   //! Set the value of the Epetra_Object error traceback report mode.
   /*! Sets the integer error traceback behavior.  
