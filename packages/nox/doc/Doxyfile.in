@@ -176,6 +176,13 @@ SHOW_INCLUDE_FILES     = YES
 
 JAVADOC_AUTOBRIEF      = NO
 
+# If the DETAILS_AT_TOP tag is set to YES then Doxygen 
+# will output the detailed description near the top, like JavaDoc.
+# If set to NO, the detailed description appears after the member 
+# documentation.
+
+DETAILS_AT_TOP         = YES
+
 # If the INHERIT_DOCS tag is set to YES (the default) then an undocumented 
 # member inherits the documentation from any documented member that it 
 # reimplements.
@@ -192,7 +199,7 @@ INLINE_INFO            = YES
 # alphabetically by member name. If set to NO the members will appear in 
 # declaration order.
 
-SORT_MEMBER_DOCS       = YES
+SORT_MEMBER_DOCS       = NO
 
 # If member grouping is used in the documentation and the DISTRIBUTE_GROUP_DOC 
 # tag is set to YES, then doxygen will reuse the documentation of the first 
