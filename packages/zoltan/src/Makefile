@@ -307,7 +307,8 @@ ZDRIVE_DEPS	= libzoltan_comm.a libzoltan_mem.a libzoltan_dd.a
 ZCPPDRIVE_CSRC 	= $(DR_CPP_SRC) $(DR_BOTH_SRC) $(CH_CSRC)
 ZCPPDRIVE_OBJ	= $(DR_BOTH_SRC:.c=.o) $(CH_CSRC:.c=.o) $(DR_CPP_SRC:.cpp=.o)
 ZCPPDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
-	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) -lm
+	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
+		  $(MPI_LIBPATH) $(MPI_LIB) -lm 
 ZCPPDRIVE_DEPS	= $(ZDRIVE_DEPS)
 
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS)
