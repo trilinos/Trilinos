@@ -422,8 +422,6 @@ AC_CONFIG_FILES([
 		test/SetParameters/Makefile.include
 		test/Relaxation/Makefile
 		test/Relaxation/Makefile.include
-		test/AdditiveSchwarz/Makefile
-		test/AdditiveSchwarz/Makefile.include
 		test/Container/Makefile
 		test/Container/Makefile.include
 		test/OverlappingRowMatrix/Makefile

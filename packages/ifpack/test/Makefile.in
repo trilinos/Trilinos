@@ -227,9 +227,9 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 SUBDIRS = CrsRiluk IlukGraph SetParameters scripts \
-          AdditiveSchwarz CompareWithAztecOO Container \
+          CompareWithAztecOO Container \
           OverlappingRowMatrix PreconditionerFactory \
-          Relaxation TestAll
+          Relaxation
 
 all: all-recursive
 

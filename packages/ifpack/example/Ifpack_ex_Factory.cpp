@@ -40,7 +40,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "AztecOO.h"
 #include "Ifpack.h"
-#include "Ifpack_vIct.h"
 #include "Ifpack_AdditiveSchwarz.h"
 
 using namespace Trilinos_Util;

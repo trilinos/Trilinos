@@ -26,4 +26,7 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = CrsRiluk IlukGraph SetParameters scripts
+SUBDIRS = CrsRiluk IlukGraph SetParameters scripts \
+          CompareWithAztecOO Container \
+          OverlappingRowMatrix PreconditionerFactory \
+          Relaxation
