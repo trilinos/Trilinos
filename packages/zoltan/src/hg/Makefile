@@ -15,7 +15,7 @@ C_flag_linux    = -g -Wall
 DTIME		= -DWITHTIME
 
 VPATH           = ../Utilities/Memory
-I		= -I../Utilities/Memory -I.
+I		= -I../Utilities/Memory -I. -I../driver
 C		= $(C_pre) $(C_comp) $(C_flag_$(OSTYPE)) $(DTIME) $(I)
 L		= -L. -lhg -lm
 
@@ -27,12 +27,12 @@ src.c		= hg_exec.c hg_readfile.c hg_util.c hg_plot.c \
 all:            	./hg_exec
 ./hg_exec:		./libhg.a hg_exec.o
 			$(C) hg_exec.o $(L) -o $@
-./libhg.a:		$(src.c:.c=.o) zoltan_hg_readfile.o
+./libhg.a:		$(src.c:.c=.o) dr_hg_readfile.o
 			ar rv $@ $?
-zoltan_hg_readfile.o:   ../driver/zoltan_hg_readfile.c
-			$(C) -c ../driver/zoltan_hg_readfile.c
+dr_hg_readfile.o:   	../driver/dr_hg_readfile.c
+			$(C) -c ../driver/dr_hg_readfile.c
 .c.o:			$<
 	  		$(C) -c $<
 
 clean:	
-	  		rm -f ./hg_exec ./libhg.a $(src.c:.c=.o)
+	 	rm -f ./hg_exec ./libhg.a $(src.c:.c=.o) dr_hg_readfile.o

@@ -19,6 +19,7 @@ extern "C" {
 /*  This file is included only in hg_test, not in Zoltan. */
 
 #include "hypergraph.h"
+#include "dr_hg_readfile.h"
 
 #define BUF_LEN 1000000
 
@@ -42,7 +43,7 @@ char *yo = "hg_readfile";
       goto End;
       }
 
-   err = Zoltan_HG_Readfile (zz, 0, f, &hg->nVtx, &hg->nEdge, &hg->nInput,
+   err = Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nInput,
     &hg->hindex, &hg->hvertex, &hg->VertexWeightDim, &hg->vwgt,
     &hg->EdgeWeightDim, &hg->ewgt, base);
    if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
