@@ -139,6 +139,8 @@ install: build
 
 clean:
 	$(srcdir)/setup.py clean
+	rm -f $(srcdir)/src/*_wrap.cxx
+	rm -f $(srcdir)/src/NOX/*_wrap.cxx
 
 test:
 	cd test && make test

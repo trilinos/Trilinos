@@ -208,7 +208,7 @@ NOX_StatusTest = Extension("PyTrilinos.NOX._StatusTest",
 
 # PyTrilinos setup
 setup(name         = "PyTrilinos",
-      version      = "4.0",
+      version      = "1.0",
       description  = "Python Trilinos Interface",
       author       = "Bill Spotz",
       author_email = "wfspotz@sandia.gov",
