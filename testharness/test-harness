@@ -87,7 +87,7 @@ SWITCH: {
     use lib "lib"; #ended up needing to use a relative address
     last SWITCH; };
   if ($hostos=~/^SunOS/) {
-    use lib "/Net/pecos/home1/jmwille/lib";
+    use lib "/local/homes/jmwille/lib";
     last SWITCH; };
   if ($hostos=~/^CYGWIN/) {
     MIME::Lite->send('smtp',"mailgate.sandia.gov"); #doesn't have sendmail
@@ -334,19 +334,20 @@ sub sendemail {
     $scriptowner=<OWNER>;
     close OWNER;
   }
-  # List addresses for all emails to be sent to below - should eventually
-  # make the 'To' field package specific
-  my $to=join ", ", 'jmwille@sandia.gov';
+  # List addresses for all emails to be sent to below
   chomp $scriptowner;
   my $mail_to;
   # A valid email address must contain a '@'
   if ($scriptowner =~/@/i) {
-#    my $mail_to=join ", ", 'jmwille@sandia.gov','jmwille',$scriptowner;
-    $mail_to=join ", ", $to,$scriptowner or die "$! error forming To: field";
+    $mail_to=join ", ", 'jmwill@sandia.gov',$scriptowner or die "$! error forming To: field";
   }
   else {
     # List where emails without a script owner should be sent
-    $mail_to=join ", ", $to;
+    #By sending them to the trilinos-regresstion list, we assure that
+    #results from tests without script owners and cvs and compilation errors
+    #are recorded in Mailman
+
+    $mail_to=join ", ", 'Trilinos-regression@software.sandia.gov';
   }
 
   print "\n**$mail_to**\n";
