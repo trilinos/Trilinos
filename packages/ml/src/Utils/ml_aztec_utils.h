@@ -159,6 +159,8 @@ extern void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *r
 
 extern void AZ_zeroDirichletcolumns(AZ_MATRIX *Amat, double rhs[], 
 				    int proc_config[] );
+extern int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
+                             int num_dirichlet_rows);
 #endif
 
 #ifdef __cplusplus
