@@ -82,3 +82,13 @@ using namespace std;
 // Local interface includes
 %include "Callback.h"
 %include "PyInterface.h"
+
+// Extensions
+%extend NOX::Epetra::Group {
+  void getSoln(PyObject * p_pyObject) {
+    Epetra_VectorHelper::unloadViaCopy(& const_cast<Epetra_Vector &> 
+                                    ((dynamic_cast<const NOX::Epetra::Vector &>
+                                      (self->getX())).getEpetraVector()),
+                                    p_pyObject);
+  }
+}
