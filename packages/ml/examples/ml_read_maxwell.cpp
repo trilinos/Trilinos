@@ -861,6 +861,7 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
 	      ML_allocate((Nlocal_edges + Ke_mat->data_org[AZ_N_external])
                       *sizeof(double)); 
     for (i = 0; i < Nlocal_edges; i++) rhs[i] = 0.0;
+    /*
     rhs[Nlocal_edges/2] = 1.;
     rhs[Nlocal_edges/2+1] = -1.;
 
@@ -873,18 +874,19 @@ for (i = 0; i < Nlocal_edges; i++) {
     sin(( (double) jj*1)/( (double) nx) ) *
     sin(( (double) kk*1)/( (double) nx) );
     if (horv == HORIZONTAL) {
-      if ((jj==0) || (kk==0)) rhs[i] = 0.;/* rst dirichlet */
+      if ((jj==0) || (kk==0)) rhs[i] = 0.;// rst dirichlet 
     }
     if (horv == VERTICAL) {
-      if ((ii==0) || (kk==0)) rhs[i] = 0.;/* rst dirichlet */
+      if ((ii==0) || (kk==0)) rhs[i] = 0.;// rst dirichlet
     }
     if (horv == OUT) {
-      if ((ii==0) || (jj==0)) rhs[i] = 0.;/* rst dirichlet */
+      if ((ii==0) || (jj==0)) rhs[i] = 0.;// rst dirichlet
     }
 }
 Ke_mat->matvec(rhs, xxx, Ke_mat, proc_config);
 for (i = 0; i < Nlocal_edges; i++) rhs[i] = xxx[i];
 free(xxx);
+    */
 
 #ifdef HARDWIRE2D
   jj = AZ_gsum_int(Nlocal_edges,proc_config);
