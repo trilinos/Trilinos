@@ -45,6 +45,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
 ModalSolverUtils_test_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -55,6 +56,7 @@ ModalSolverUtils_test_CXXFLAGS = -I$(top_srcdir)/src
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
 ModalSolverUtils_test_LDADD = \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)

@@ -76,14 +76,13 @@ namespace Anasazi {
     //@{ \name Eigensolver Projection Methods
 
     int massOrthonormalize(MV &X, MV &MX, const OP *M, const MV &Q, int howMany,
-			   int type = 0, STYPE kappa = 1.5625) const;
+			   int orthoType = 0, STYPE kappa = 1.5625) const;
     
-    void localProjection(int numRow, int numCol, int length,
-			 STYPE *U, int ldU, STYPE *MatV, int ldV,
-			 STYPE *UtMatV, int ldUtMatV, STYPE *work) const;
-    
-    int directSolver(int, STYPE*, int, STYPE*, int, int&, 
-		     STYPE*, int, STYPE*, int, int = 0) const;
+    int directSolver(int size, const Teuchos::SerialDenseMatrix<int,STYPE> &KK, 
+		     const Teuchos::SerialDenseMatrix<int,STYPE> &MM,
+		     Teuchos::SerialDenseMatrix<int,STYPE> *EV,
+		     std::vector<STYPE>* theta,
+		     int nev, int esType = 0) const;
 
     //@}
 
@@ -94,9 +93,6 @@ namespace Anasazi {
     STYPE errorOrthonormality(const MV *X, const OP *M = 0) const;
     
     STYPE errorEquality(const MV *X, const MV *MX, const OP *M = 0) const;
-    
-    int inputArguments(const int &numEigen, const OP &K, const OP &M, const OP &P,
-		       const MV &Q, const int &minSize) const;
     
     //@}
     
@@ -254,7 +250,7 @@ namespace Anasazi {
   
   template<class STYPE, class MV, class OP>
   int ModalSolverUtils<STYPE, MV, OP>::massOrthonormalize(MV &X, MV &MX, const OP *M, const MV &Q, 
-							  int howMany, int type, STYPE kappa) const
+							  int howMany, int orthoType, STYPE kappa) const
   {
     // For the inner product defined by the operator M or the identity (M = 0)
     //   -> Orthogonalize X against Q
@@ -276,9 +272,9 @@ namespace Anasazi {
     //           then it is assumed that the last "howMany" vectors are not orthogonal
     //           while the other vectors in X are othogonal to Q and orthonormal.
     //
-    // type = 0 (default) > Performs both operations
-    // type = 1           > Performs Q^T M X = 0
-    // type = 2           > Performs X^T M X = I
+    // orthoType = 0 (default) > Performs both operations
+    // orthoType = 1           > Performs Q^T M X = 0
+    // orthoType = 2           > Performs X^T M X = I
     //
     // kappa= Coefficient determining when to perform a second Gram-Schmidt step
     //        Default value = 1.5625 = (1.25)^2 (as suggested in Parlett's book)
@@ -302,7 +298,7 @@ namespace Anasazi {
     
     // Orthogonalize X against Q
     //timeProj -= MyWatch.WallTime();
-    if (type != 2) {
+    if (orthoType != 2) {
       
       int xc = howMany;
       int xr = MVT::GetNumberVecs( X );
@@ -398,18 +394,18 @@ namespace Anasazi {
 	} // if (kappa*newDot[j] < oldDot[j])
       } // for (j = 0; j < xc; ++j)
       
-    } // if (type != 2)
+    } // if (orthoType != 2)
 
     //timeProj += MyWatch.WallTime();
     
     // Orthonormalize X 
     //  timeNorm -= MyWatch.WallTime();
-    if (type != 1) {
+    if (orthoType != 1) {
       
       int j;
       int xc = MVT::GetNumberVecs( X );
       int xr = MVT::GetVecLength( X );
-      int shift = (type == 2) ? 0 : MVT::GetNumberVecs( Q );
+      int shift = (orthoType == 2) ? 0 : MVT::GetNumberVecs( Q );
       int mxc = (M) ? MVT::GetNumberVecs( MX ) : xc;
 
       std::vector<int> index( 1 );      
@@ -542,7 +538,7 @@ namespace Anasazi {
 	      //timeNorm_MassMult += MyWatch.WallTime();
 	      //numNorm_MassMult += 1;
 	    }
-	    if (type == 0)
+	    if (orthoType == 0)
 	      massOrthonormalize(*Xj, *MXj, M, Q, 1, 1, kappa);
 	  } // if (norm > oldDot*eps*eps)
 	  
@@ -558,7 +554,7 @@ namespace Anasazi {
 	
       } // for (j = 0; j < howMany; ++j)
 	
-    } // if (type != 1)
+    } // if (orthoType != 1)
     //timeNorm += MyWatch.WallTime();
 
     return info;
@@ -566,16 +562,248 @@ namespace Anasazi {
   }
   
   template<class STYPE, class MV, class OP>
-  void ModalSolverUtils<STYPE, MV, OP>::localProjection(int numRow, int numCol, int length,
-							STYPE *U, int ldU, STYPE *MatV, int ldV,
-							STYPE *UtMatV, int ldUtMatV, STYPE *work) const
+  int ModalSolverUtils<STYPE, MV, OP>::directSolver(int size, const Teuchos::SerialDenseMatrix<int,STYPE> &KK, 
+						    const Teuchos::SerialDenseMatrix<int,STYPE> &MM,
+						    Teuchos::SerialDenseMatrix<int,STYPE>* EV,
+						    std::vector<STYPE>* theta,
+						    int nev, int esType) const
   {
-  }
-  
-  template<class STYPE, class MV, class OP>
-  int ModalSolverUtils<STYPE, MV, OP>::directSolver(int, STYPE*, int, STYPE*, int, int&, 
-						    STYPE*, int, STYPE*, int, int) const
-  {
+    // Routine for computing the first NEV generalized eigenpairs of the symmetric pencil (KK, MM)
+    //
+    // Parameter variables:
+    //
+    // size : Dimension of the eigenproblem (KK, MM)
+    //
+    // KK : Symmetric "stiffness" matrix 
+    //
+    // MM : Symmetric Positive "mass" matrix
+    //
+    // EV : Array to store the nev eigenvectors 
+    //
+    // theta : Array to store the eigenvalues (Size = nev )
+    //
+    // nev : Number of the smallest eigenvalues requested (input)
+    //       Number of the smallest computed eigenvalues (output)
+    //
+    // esType : Flag to select the algorithm
+    //
+    // esType =  0 (default) Uses LAPACK routine (Cholesky factorization of MM)
+    //                       with deflation of MM to get orthonormality of 
+    //                       eigenvectors (S^T MM S = I)
+    //
+    // esType =  1           Uses LAPACK routine (Cholesky factorization of MM)
+    //                       (no check of orthonormality)
+    //
+    // esType = 10           Uses LAPACK routine for simple eigenproblem on KK
+    //                       (MM is not referenced in this case)
+    //
+    // Note: The code accesses only the upper triangular part of KK and MM.
+    //
+    // Return the integer info on the status of the computation
+    //
+    // info = 0 >> Success
+    //
+    // info = - 20 >> Failure in LAPACK routine
+    
+    // Define local arrays
+
+    // Create blas/lapack objects.
+    Teuchos::LAPACK<int,STYPE> lapack;
+    Teuchos::BLAS<int,STYPE> blas;
+    
+    int i, j;
+    int rank = 0;
+    int info = 0;
+   
+    std::string lapack_name = "dsytrd";
+    std::string lapack_opts = "u";
+    // I need to get around knowing the scalar type, but will leave this hear right now.
+    int NB = 5 + lapack.ILAENV(1, lapack_name, lapack_opts, size, -1, -1, -1);
+    int lwork = size*NB;
+    std::vector<STYPE> work(lwork);
+    std::vector<STYPE> tt( size );
+    
+    //  STYPE tol = sqrt(eps);
+    STYPE tol = 1e-12;
+    STYPE zero = Teuchos::ScalarTraits<STYPE>::zero();
+    STYPE one = Teuchos::ScalarTraits<STYPE>::one();
+
+    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,STYPE> > KKcopy, MMcopy;
+    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,STYPE> > U;
+ 
+    switch (esType) {
+      
+    default:
+    case 0:
+      //
+      // Use the Cholesky factorization of MM to compute the generalized eigenvectors
+      //
+      for (rank = size; rank > 0; --rank) {
+
+	U = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>(size,size) );      
+	//
+	// Copy KK & MM
+	//
+	KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, KK, rank, rank ) );
+	MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, MM, rank, rank ) );
+	//
+	// Solve the generalized eigenproblem with LAPACK
+	//
+	info = 0;
+	lapack.SYGV(1, 'V', 'U', rank, KKcopy->values(), KKcopy->stride(), 
+		    MMcopy->values(), MMcopy->stride(), &tt[0], &work[0], lwork, &info);
+	//
+	// Treat error messages
+	//
+	if (info < 0) {
+	  //	    if (verbose > 0) {
+	  cerr << endl;
+	  cerr << " In DSYGV, argument " << -info << "has an illegal value.\n";
+	  cerr << endl;
+	  //}
+	  return -20;
+	}
+	if (info > 0) {
+	  if (info > rank)
+	    rank = info - rank;
+	  continue;
+	}
+	//
+	// Check the quality of eigenvectors
+	// ( using mass-orthonormality )
+	//
+	Teuchos::SerialDenseMatrix<int,STYPE> MMcopy2( Teuchos::Copy, MM, size, size );	  
+	for (i = 0; i < size; ++i) {
+	  for (j = 0; j < i; ++j)
+	    MMcopy2(i,j) = MM(j,i);
+	}
+	blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, size, rank, size, one, MMcopy2.values(), MMcopy2.stride(), 
+		  KKcopy->values(), KKcopy->stride(), zero, U->values(), U->stride());
+	blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, rank, rank, size, one, KKcopy->values(), KKcopy->stride(), 
+		  U->values(), U->stride(), zero, MMcopy2.values(), MMcopy2.stride());
+	STYPE maxNorm = zero;
+	STYPE maxOrth = zero;
+	for (i = 0; i < rank; ++i) {
+	  for (j = i; j < rank; ++j) {
+	    if (j == i)
+	      maxNorm = (Teuchos::ScalarTraits<STYPE>::magnitude(MMcopy2(i,j)-one) > maxNorm) 
+		? Teuchos::ScalarTraits<STYPE>::magnitude(MMcopy2(i,j)-one) : maxNorm;	    
+	    else 
+	      maxOrth = (Teuchos::ScalarTraits<STYPE>::magnitude(MMcopy2(i,j)) > maxOrth)
+		? Teuchos::ScalarTraits<STYPE>::magnitude(MMcopy2(i,j)) : maxOrth;
+	  }
+	}
+	/*        if (verbose > 4) {
+	cout << " >> Local eigensolve >> Size: " << rank;
+	cout.precision(2);
+	cout.setf(ios::scientific, ios::floatfield);
+	cout << " Normalization error: " << maxNorm;
+	cout << " Orthogonality error: " << maxOrth;
+	cout << endl;
+	}*/
+	if ((maxNorm <= tol) && (maxOrth <= tol))
+	  break;
+      } // for (rank = size; rank > 0; --rank)
+      //
+      // Copy the computed eigenvectors and eigenvalues
+      // ( they may be less than the number requested because of deflation )
+      //
+      nev = (rank < nev) ? rank : nev;
+      EV->putScalar( zero );
+      blas.COPY( nev, &tt[0], 1, &(*theta)[0], 1 );
+      for (i = 0; i < nev; ++i) {
+	blas.COPY( rank, (*KKcopy)[i], 1, (*EV)[i], 1 );
+      }
+      
+      break;
+      
+    case 1:
+      //
+      // Use the Cholesky factorization of MM to compute the generalized eigenvectors
+      //
+      // Copy KK & MM
+      //
+      KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, KK, size, size ) );
+      MMcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, MM, size, size ) );
+      //
+      // Solve the generalized eigenproblem with LAPACK
+      //
+      info = 0;
+      lapack.SYGV(1, 'V', 'U', size, KKcopy->values(), KKcopy->stride(), 
+		  MMcopy->values(), MMcopy->stride(), &tt[0], &work[0], lwork, &info);
+      //
+      // Treat error messages
+      //
+      if (info < 0) {
+	//if (verbose > 0) {
+	cerr << endl;
+	cerr << " In DSYGV, argument " << -info << "has an illegal value.\n";
+	cerr << endl;
+	//      }
+	return -20;
+      }
+      if (info > 0) {
+	if (info > size)
+	  nev = 0;
+	else {
+	  //	if (verbose > 0) {
+	  cerr << endl;
+	  cerr << " In DSYGV, DPOTRF or DSYEV returned an error code (" << info << ").\n";
+	  cerr << endl;
+	  //          }
+	  return -20; 
+	}
+      }
+      //
+      // Copy the eigenvectors and eigenvalues
+      //
+      blas.COPY( nev, &tt[0], 1, &(*theta)[0], 1 );
+      for (i = 0; i < nev; ++i) {
+	blas.COPY( size, (*KKcopy)[i], 1, (*EV)[i], 1 );
+      }
+      
+      break;
+      
+    case 10:
+      //
+      // Simple eigenproblem
+      //
+      // Copy KK
+      //
+      KKcopy = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,STYPE>( Teuchos::Copy, KK, size, size ) );
+      //
+      // Solve the generalized eigenproblem with LAPACK
+      //
+      lapack.SYEV('V', 'U', size, KKcopy->values(), KKcopy->stride(), &tt[0], &work[0], lwork, &info);
+      //
+      // Treat error messages
+      if (info != 0) {
+	//      if (verbose > 0) {
+	cerr << endl;
+	if (info < 0) 
+	  cerr << " In DSYEV, argument " << -info << " has an illegal value\n";
+	else
+	  cerr << " In DSYEV, the algorithm failed to converge (" << info << ").\n";
+	cerr << endl;
+	//}
+	info = -20;
+	break;
+      }
+      //
+      // Copy the eigenvectors
+      //
+      blas.COPY( nev, &tt[0], 1, &(*theta)[0], 1 );
+      for (i = 0; i < nev; ++i) {
+	blas.COPY( size, (*KKcopy)[i], 1, (*EV)[i], 1 );
+      }
+      
+      break;
+      
+    }
+    
+    // Clear the memory
+    
+    return info;
   }
   
   //-----------------------------------------------------------------------------
@@ -714,13 +942,6 @@ namespace Anasazi {
     
   }    
   
-  template<class STYPE, class MV, class OP>
-  int ModalSolverUtils<STYPE, MV, OP>::inputArguments(const int &numEigen, const OP &K, 
-						      const OP &M, const OP &P,
-						      const MV &Q, const int &minSize) const
-  {
-  }  
-
 } // end namespace Anasazi
 
 #endif // ANASAZI_MODAL_SOLVER_UTILS_HPP

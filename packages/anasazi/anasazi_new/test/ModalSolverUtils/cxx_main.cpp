@@ -31,6 +31,7 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziModalSolverUtils.hpp"
+#include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 
 #ifdef EPETRA_MPI
@@ -62,11 +63,12 @@ int main(int argc, char *argv[])
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
   
+  bool testFailed = false;
   bool verbose = 0;
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
   
-  //	if (verbose)
-  //	  cout << Anasazi::Anasazi_Version() << endl << endl;
+  if (verbose && MyPID == 0)
+    cout << Anasazi::Anasazi_Version() << endl << endl;
   
   int numberFailedTests = 0;
   int returnCode = 0;  
@@ -85,8 +87,12 @@ int main(int argc, char *argv[])
   // equations on each processor.
   Epetra_Map Map(NumGlobalElements, 0, Comm);
   
-  typedef Anasazi::MultiVec<double> MV;
-  typedef Anasazi::Operator<double> OP;
+  int NumMyElements = Map.NumMyElements();
+  std::vector<int> MyGlobalElements(NumMyElements);
+  Map.MyGlobalElements(&MyGlobalElements[0]);
+  
+  typedef Epetra_MultiVector MV;
+  typedef Epetra_Operator OP;
 
   //--------------------------------------------------------------------------
   //  test sortScalars methods
@@ -158,6 +164,7 @@ int main(int argc, char *argv[])
     cout<< endl <<"*********** sortScalars_Vectors Test ***********" << endl << endl;
   
   // Sort vector with random entries and corresponding multi_vector.
+  info = 0;
   info = msUtils.sortScalars_Vectors( NumColumns, &Avec2[0], &Bvec );
   if (info != 0)
     numberFailedTests++;
@@ -212,59 +219,80 @@ int main(int argc, char *argv[])
   // randomize the multivector
   Bvec.Random();
 
+  // create mass matrix
+  Epetra_CrsMatrix MM(Copy, Map, 1);
+  std::vector<double> diag(NumMyElements);
+  for (i=0; i<NumMyElements; i++) {
+    diag[i] = Teuchos::ScalarTraits<double>::random() + 2;
+    MM.InsertGlobalValues( MyGlobalElements[i], 1, &diag[i], &MyGlobalElements[i] );
+  }
+  assert(MM.TransformToLocal()==0);
+  MM.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
+
+  // create a multivector that is the random matrix times the mass matrix
+  Epetra_MultiVector MBvec(Map, Bvec.NumVectors());
+  
+  // multiply the Bvec by the mass matrix
+  MM.Apply( Bvec, MBvec );
+
   if (verbose && MyPID == 0)
     cout<< endl <<"*********** Orthonormalization Test ***********" << endl << endl;
 
   // orthonormalize Bvec
-  msUtils.massOrthonormalize( Bvec, Bvec, 0, Bvec, NumColumns, 2 );
+  info = 0;
+  info = msUtils.massOrthonormalize( Bvec, MBvec, &MM, Bvec, NumColumns, 2 );
 
   // check error
-  err = msUtils.errorOrthonormality( &Bvec );
+  err = msUtils.errorOrthonormality( &Bvec, &MM );
 
-  if (err > 1.0e-14) {
+  if (err > 1.0e-14 || info != 0) {
     numberFailedTests++;
     if (verbose)
       cout<< Bvec << endl;
     if (verbose && MyPID == 0) {
+      cout<< "massOrthonormalize return code: "<< info << endl;
       cout<< "Orthonormality error: "<< err << endl;
-      cout<< "ERROR:  ORTHONORMALITY TEST FAILED!"<<endl;
+      cout<< "ERROR:  ORTHONORMALITY TEST FAILED [MASS ORTHONORMALIZATION]!"<<endl;
     }
    } 
   else {
     if (verbose && MyPID == 0) {
       cout<< "Orthonormality error: "<< err << endl;
-      cout<< "ORTHONORMALITY TEST PASSED!"<<endl;
+      cout<< "ORTHONORMALITY TEST PASSED [MASS ORTHONORMALIZATION]!"<<endl;
     }
   }    
   
   // create and randomize some test matrices
-  Epetra_MultiVector Bvec_big( Map, NumColumns + 2 );
-  Bvec_big.Random();
-  Epetra_MultiVector Bvec_small( Map, NumColumns - 2 );
+  Epetra_MultiVector Bvec_small( Map, NumColumns - 2 ), MBvec_small( Map, NumColumns - 2 );
   Bvec_small.Random();
-  
+
+  // multiply Bvec_small by the mass matrix 
+  MM.Apply( Bvec_small, MBvec_small );
+
   if (verbose && MyPID == 0)
     cout<< endl <<"*********** Orthogonalization Test ***********" << endl << endl;
 
   // orthogonalize Bvec_small against Bvec
-  msUtils.massOrthonormalize( Bvec_small, Bvec_small, 0, Bvec, NumColumns-2, 1 );
+  info = 0;
+  info = msUtils.massOrthonormalize( Bvec_small, MBvec_small, &MM, Bvec, NumColumns-2, 1 );
 
   // check error
-  err = msUtils.errorOrthogonality( &Bvec_small, &Bvec );  
+  err = msUtils.errorOrthogonality( &Bvec_small, &Bvec, &MM );  
 
-  if (err > 1.0e-14) {
+  if (err > 1.0e-14 || info != 0) {
     numberFailedTests++;
     if (verbose)
       cout<< Bvec_small << endl;
     if (verbose && MyPID == 0) {
+      cout<< "massOrthonormalize return code: "<< info << endl;
       cout<< "Orthogonality error: "<< err << endl;
-      cout<< "ERROR:  ORTHOGONALITY TEST FAILED!"<<endl;
+      cout<< "ERROR:  ORTHOGONALITY TEST FAILED [MASS ORTHOGONALIZATION]!"<<endl;
     }
   }
   else {
     if (verbose && MyPID == 0) {
       cout<< "Orthogonality error: "<< err << endl;
-      cout<< "ORTHOGONALITY TEST PASSED!"<<endl;
+      cout<< "ORTHOGONALITY TEST PASSED [MASS ORTHOGONALIZATION]!"<<endl;
     }
   }    
   
@@ -276,30 +304,173 @@ int main(int argc, char *argv[])
   if (verbose && MyPID == 0)
     cout<< endl <<"*********** Orthonormalization Combo Test ***********" << endl << endl;
 
+  Epetra_MultiVector Bvec_big( Map, NumColumns + 2 );
+  Bvec_big.Random();
+
+  // randomize the multivector
+  Bvec.Random();
+
+  // orthonormalize Bvec
+  info = 0;
+  info = msUtils.massOrthonormalize( Bvec, Bvec, 0, Bvec, NumColumns, 2 );
+
+  // check error
+  err = msUtils.errorOrthonormality( &Bvec );
+
+  if (err > 1.0e-14 || info != 0) {
+    numberFailedTests++;
+    if (verbose)
+      cout<< Bvec << endl;
+    if (verbose && MyPID == 0) {
+      cout<< "massOrthonormalize return code: "<< info << endl;
+      cout<< "Orthonormality error: "<< err << endl;
+      cout<< "ERROR:  ORTHO COMBO TEST FAILED [NO MASS ORTHOGONALIZATION]!"<<endl;
+    }
+   } 
+  else {
+    if (verbose && MyPID == 0) {
+      cout<< "Orthonormality error: "<< err << endl;
+      cout<< "ORTHO COMBO TEST PASSED [NO MASS ORTHOGONALIZATION]!"<<endl;
+    }
+  }    
+
   // orthonormalize Bvec_large against Bvec
-  msUtils.massOrthonormalize( Bvec_big, Bvec_big, 0, Bvec, NumColumns+2, 0 );
+  info = 0;
+  info = msUtils.massOrthonormalize( Bvec_big, Bvec_big, 0, Bvec, NumColumns+2, 0 );
 
   // check error
   double err1 = msUtils.errorOrthonormality( &Bvec_big );
   double err2 = msUtils.errorOrthogonality( &Bvec_big, &Bvec );  
 
-  if ((err1 > 1.0e-14) || (err2 > 1.0e-14)) {
+  if ((err1 > 1.0e-14) || (err2 > 1.0e-14) || info != 0) {
     numberFailedTests++;
     if (verbose)
       cout<< Bvec_big << endl;
     if (verbose && MyPID == 0) {
+      cout<< "massOrthonormalize return code: "<< info << endl;
       cout<< "Orthonormality error: "<< err1 << endl;
       cout<< "Orthogonality error: "<< err2 << endl;
-      cout<< "ERROR:  ORTHO COMBO TEST FAILED!"<<endl;
+      cout<< "ERROR:  ORTHO COMBO TEST FAILED [NO MASS ORTHONORMALIZATION]!"<<endl;
     }
   }
   else {
     if (verbose && MyPID == 0) {
       cout<< "Orthonormality error: "<< err1 << endl;
       cout<< "Orthogonality error: "<< err2 << endl;
-      cout<< "ORTHO COMBO TEST PASSED!"<<endl;
+      cout<< "ORTHO COMBO TEST PASSED [NO MASS ORTHONORMALIZATION]!"<<endl;
     }
   }    
+  
+  // check direct solver code
+
+  if (verbose && MyPID == 0)
+    cout<< endl <<"************* Direct Solver Test *************" << endl << endl;
+
+  // using orthogonal vectors in Bvec in previous test to project the
+  // matrix with sorted vectors in Avec as diagonal entries.
+
+  int nev = ((NumColumns - 3) > 0) ? NumColumns - 3 : 3;
+  std::vector<double> lambda( nev );
+  Teuchos::SerialDenseMatrix<int,double> K( NumColumns, NumColumns );
+  Teuchos::SerialDenseMatrix<int,double> M( NumColumns, NumColumns );
+  Teuchos::SerialDenseMatrix<int,double> EV( NumColumns, nev );
+
+  for (i=0; i<NumColumns; i++) {
+    M(i,i) = 1.0;
+    K(i,i) = Avec[i];
+  }
+  
+  Anasazi::MultiVecTraits<double,MV>::MvTimesMatAddMv( 1.0, Bvec, K, 0.0, MBvec );
+  Anasazi::MultiVecTraits<double,MV>::MvTransMv( 1.0, Bvec, MBvec, K );
+
+  // Compute eigenvalues
+  info = 0;
+  info = msUtils.directSolver( NumColumns, K, M, &EV, &lambda, nev, 10 );
+
+  testFailed = false;
+  if (info != 0) {
+    numberFailedTests++;
+    if (verbose && MyPID == 0) {
+      cout<< "directSolver return code: "<< info << endl;
+      cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 10]!"<<endl;
+    }
+  }
+  else {
+    for (i=0; i<nev; i++) {
+      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-Avec[i] ) > 1.0e-15 ) {
+	numberFailedTests++;
+	cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 10]!"<<endl;
+	testFailed = true;
+	break;
+      }      
+    }
+    if (!testFailed && (verbose && MyPID == 0)) {
+      cout<< "DIRECT SOLVER PASSED [esType = 10]!"<<endl;
+    }
+  }
+
+  // now use non identity mass matrix and see how it goes
+
+  std::vector<double> Mdiag(NumColumns);
+  std::vector<double> true_lambda(NumColumns);
+  for (i=0; i<NumColumns; i++) {
+    Mdiag[i] = Teuchos::ScalarTraits<double>::random() + 1.0;
+    M(i,i) = Mdiag[i];
+    true_lambda[i] = Avec[i] / Mdiag[i];
+  }
+  msUtils.sortScalars( NumColumns, &true_lambda[0] );
+
+  // Compute eigenvalues
+  info = 0;
+  info = msUtils.directSolver( NumColumns, K, M, &EV, &lambda, nev, 1 );
+
+  testFailed = false;
+  if (info != 0) {
+    if (verbose && MyPID == 0) {
+      cout<< "directSolver return code: "<< info << endl;
+      cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 1]!"<<endl;
+    }
+  }
+  else {
+    for (i=0; i<nev; i++) {
+      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-15 ) {
+	numberFailedTests++;
+	cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 1]!"<<endl;
+	testFailed = true;
+	break;
+      }      
+    }
+    if (!testFailed && (verbose && MyPID == 0)) {
+      cout<< "DIRECT SOLVER PASSED [esType = 1]!"<<endl;
+    }
+  }
+  
+  // same test using deflated eigensolver
+
+  // Compute eigenvalues
+  info = 0;
+  info = msUtils.directSolver( NumColumns, K, M, &EV, &lambda, nev, 0 );
+
+  testFailed = false;
+  if (info != 0) {
+    if (verbose && MyPID == 0) {
+      cout<< "directSolver return code: "<< info << endl;
+      cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 0]!"<<endl;
+    }
+  }
+  else {
+    for (i=0; i<nev; i++) {
+      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-15 ) {
+	numberFailedTests++;
+	cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 0]!"<<endl;
+	testFailed = true;
+	break;
+      }      
+    }
+    if (!testFailed && (verbose && MyPID == 0)) {
+      cout<< "DIRECT SOLVER PASSED [esType = 0]!"<<endl;
+    }
+  }
   
   // Check to see if any tests have failed
   if (numberFailedTests)
