@@ -84,6 +84,8 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
+  precQueryCounter(0),
+  maxAgeOfPrec(1),
   isPrecConstructed(false)
 {
   // Neither Jacobian or Preconditioner are supplied
@@ -119,6 +121,8 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
+  precQueryCounter(0),
+  maxAgeOfPrec(1),
   isPrecConstructed(false)
 {
   // Jacobian operator is supplied 
@@ -155,6 +159,8 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
+  precQueryCounter(0),
+  maxAgeOfPrec(1),
   isPrecConstructed(false)
 {
   // Jacobian operator is not supplied
@@ -192,6 +198,8 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
   conditionNumberEstimate(0.0),
+  precQueryCounter(0),
+  maxAgeOfPrec(1),
   isPrecConstructed(false)
 {
   // Both operators are supplied
@@ -276,6 +284,7 @@ reset(NOX::Parameter::List& linearSolverParams)
   // SetProblem() call.
   setAztecOptions(linearSolverParams, *aztecSolverPtr);
 
+  maxAgeOfPrec = linearSolverParams.getParameter("Max Age Of Prec", 1);
 }
 
 //***********************************************************************
@@ -513,7 +522,7 @@ applyJacobianTranspose(const NOX::Epetra::Vector& input,
 bool NOX::EpetraNew::LinearSystemAztecOO::
 applyJacobianInverse(Parameter::List &p,
 		     const NOX::Epetra::Vector& input, 
-		     NOX::Epetra::Vector& result) const
+		     NOX::Epetra::Vector& result)
 {
   // Need non-const version of the input vector
   // Epetra_LinearProblem requires non-const versions so we can perform
@@ -558,8 +567,9 @@ applyJacobianInverse(Parameter::List &p,
   double tol = p.getParameter("Tolerance", 1.0e-6);
   bool reusePrec = p.getParameter("Reuse Preconditioner", false);
   
-  if ((reusePrec) && (precAlgorithm == AztecOO_))
-    aztecSolverPtr->SetAztecOption(AZ_pre_calc, AZ_reuse);
+  if ( precAlgorithm == AztecOO_ )
+    if ( !checkPreconditionerReuse() )
+      aztecSolverPtr->SetAztecOption(AZ_pre_calc, AZ_reuse);
 
   int aztecStatus = -1;
 
@@ -955,4 +965,33 @@ const Epetra_Operator&
 NOX::EpetraNew::LinearSystemAztecOO::getPrecOperator() const
 {
   return *precPtr;
+}
+
+//***********************************************************************
+bool NOX::EpetraNew::LinearSystemAztecOO::checkPreconditionerReuse()
+{
+  if (!isPrecConstructed)
+    return false;
+
+  precQueryCounter++;
+
+  // This allows reuse for the entire nonlinear solve
+  if( maxAgeOfPrec == -2 )
+    return true;
+  
+  // This allows one recompute of the preconditioner followed by reuse 
+  // for the remainder of the nonlinear solve
+  else if( maxAgeOfPrec == -1 ) {
+    maxAgeOfPrec = -2;
+    return false;
+  }
+  
+  // This is the typical use 
+  else
+    if( precQueryCounter == maxAgeOfPrec ) {
+      precQueryCounter = 0;
+      return false;
+    }
+    else
+      return true;
 }

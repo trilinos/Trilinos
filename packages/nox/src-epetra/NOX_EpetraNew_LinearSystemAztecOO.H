@@ -349,7 +349,7 @@ public:
   
   virtual bool applyJacobianInverse(NOX::Parameter::List& linearSolverParams, 
 				    const NOX::Epetra::Vector& input, 
-				    NOX::Epetra::Vector& result) const;
+				    NOX::Epetra::Vector& result);
 
   virtual bool applyRightPreconditioning(bool useTranspose,
 				   NOX::Parameter::List& linearSolverParams, 
@@ -438,6 +438,9 @@ protected:
   virtual void throwError(const string& functionName, 
 			  const string& errorMsg) const;
 
+  // Allow reuse of Preconditioner
+  virtual bool checkPreconditionerReuse();
+
 protected:
 
   //! Printing Utilities object
@@ -507,6 +510,11 @@ protected:
   //! Zero out the initial guess for linear solves performed through applyJacobianInverse calls (i.e. zero out the result vector before the linear solve).
   bool zeroInitialGuess;
 
+  //! Counter for number of times called since reset or construction
+  int precQueryCounter;
+  
+  //! Parameter to determine whether or not to recompute Preconditioner
+  int maxAgeOfPrec;
 };
 
 } // namespace Epetra

@@ -96,7 +96,7 @@ public:
   */
   virtual bool applyJacobianInverse(NOX::Parameter::List &params, 
 				    const NOX::Epetra::Vector &input, 
-				    NOX::Epetra::Vector &result) const = 0;
+				    NOX::Epetra::Vector &result) = 0;
 
   /*!
     \brief Apply right preconditiong to the given input vector
@@ -150,6 +150,14 @@ public:
     The NOX::EpetraNew::Group controls the isValid flag for the preconditioner and will control when to call this.
   */
   virtual bool destroyPreconditioner() const = 0;
+
+  /*!
+    \brief Allows reuse of a preconditioner
+
+    The child object will manage setting of this bool flag.  Default implementation is to return false.
+  */
+  virtual bool checkPreconditionerReuse()
+    { return false; } 
 };
 
 } // namespace EpetraNew
