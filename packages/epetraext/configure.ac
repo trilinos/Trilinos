@@ -138,6 +138,40 @@ TAC_ARG_WITH_AR
 TAC_ARG_CHECK_MPI
 
 # ------------------------------------------------------------------------
+# Build Tests?
+# ------------------------------------------------------------------------
+
+AC_DEFUN(EPETRAEXT_SUBPKG,
+[
+  AC_ARG_ENABLE(epetraext-$1,
+  [AC_HELP_STRING([--enable-epetraext-$1],[compile $1 sub-package])],
+  [SUBPKG_$1=$enableval],
+  [SUBPKG_$1=$2]
+  )
+
+  AC_ARG_ENABLE(epetraext-$1-tests,
+  [AC_HELP_STRING([--enable-epetraext-$1-tests],[compile $1 tests])],
+  [SUBPKG_$1_TESTS=$enableval],
+  [SUBPKG_$1_TESTS=no]
+  )
+
+  #Cannot build tests if associated sub-package not built
+  if test ${SUBPKG_$1_TESTS} = yes; then
+    SUBPKG_$1=yes;
+  fi
+
+  AC_MSG_CHECKING(whether the sub-package $1 should be built)
+  AC_MSG_RESULT(${SUBPKG_$1})
+
+  AC_MSG_CHECKING(whether the $1 tests should be built)
+  AC_MSG_RESULT(${SUBPKG_$1_TESTS})
+])
+
+EPETRAEXT_SUBPKG(transform,yes)
+AM_CONDITIONAL(BUILD_TRANSFORM, test X${SUBPKG_transform} = Xyes)
+AM_CONDITIONAL(BUILD_TRANSFORM_TESTS, test X${SUBPKG_transform_TESTS} = Xyes)
+
+# ------------------------------------------------------------------------
 # Special check for case of running on TFLOP
 # ------------------------------------------------------------------------
 AC_MSG_CHECKING([if host is TFLOP (and therefore needs special TFLOP define statement)])
@@ -285,6 +319,7 @@ dnl fi
 
 AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 AC_SUBST(XTRALDADD)
+
 # ------------------------------------------------------------------------
 # Checks for library functions
 # ------------------------------------------------------------------------
@@ -292,7 +327,6 @@ AC_SUBST(XTRALDADD)
 # ------------------------------------------------------------------------
 # Checks for system services
 # ------------------------------------------------------------------------
-
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
@@ -308,6 +342,22 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		src/transform/Makefile
+                test/Makefile
+                test/BTF/Makefile
+                test/Composite/Makefile
+                test/MapColoring/Makefile
+                test/Overlap/Makefile
+                test/SingletonFilter/Makefile
+                test/SymmRCM/Makefile
+                test/View/Makefile
+                test/Zoltan/Makefile
+                test/scripts/Makefile
+                test/scripts/daily/Makefile
+                test/scripts/daily/serial/Makefile
+                test/scripts/daily/mpi/Makefile
+                test/scripts/weekly/Makefile
+                test/scripts/weekly/serial/Makefile
+                test/scripts/weekly/mpi/Makefile
 		])
 
 AC_OUTPUT()
