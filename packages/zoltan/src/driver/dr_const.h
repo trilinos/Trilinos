@@ -136,11 +136,11 @@ extern int Debug_Chaco_Input;
 extern int Chaco_In_Assign_Inv;
 
 #define DEBUG_TRACE_START(proc,yo) \
-  if ((proc) == 0 && Debug_Driver > 1) \
-    printf("DRIVER ENTERING %s\n", yo);
+  if (((proc) == 0 && Debug_Driver > 1) || (Debug_Driver > 2))  \
+    printf("%d DRIVER ENTERING %s\n", (proc), yo);
 #define DEBUG_TRACE_END(proc,yo) \
-  if ((proc) == 0 && Debug_Driver > 1) \
-    printf("DRIVER LEAVING %s\n", yo);
+  if (((proc) == 0 && Debug_Driver > 1) || (Debug_Driver > 2))  \
+    printf("%d DRIVER LEAVING %s\n", (proc), yo);
 #define DEBUG_TRACE_DETAIL(proc,yo,str) \
   if (Debug_Driver > 2) \
     printf("%d DRIVER %s: %s\n", proc,yo, str);
