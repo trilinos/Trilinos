@@ -4,14 +4,14 @@
 #ifndef TEUCHOS_BLAS_TYPES_HPP
 #define TEUCHOS_BLAS_TYPES_HPP
 
-/*! 	\file Teuchos_BLAS_types.hpp
+/*! \file Teuchos_BLAS_types.hpp
 	\brief Enumerated types for BLAS input characters.
 */
 
-///@{
 /*! \defgroup BLASEnum_grp Enumerations for character inputs in Teuchos::BLAS methods
-    \brief These enumerated lists are used in compile time checking of the input characters
-	for BLAS methods.  
+
+  \brief These enumerated lists are used in compile time checking of the input characters
+  for BLAS methods.  
 
 	\note Any other input other than those specified here will result
 	in an error at compile time and are not supported by the templated BLAS/LAPACK interface.
@@ -40,7 +40,6 @@
 		</ul><br>
         </ul>
 */
-///@}
 
 namespace Teuchos {
   enum ESide { 	
