@@ -64,19 +64,19 @@ endif
 
 while ( $#argv )
 
-  if ( ($1 == "-h") || ($1 == "-help") ) then
+  if ( ("$1" == "-h") || ("$1" == "-help") ) then
      goto usage
-  else if ( $1 == "-no_nemesis" ) then
+  else if ( "$1" == "-no_nemesis" ) then
      @ no_nemesis = 1
-  else if ( $1 == "-no_parmetis" ) then
+  else if ( "$1" == "-no_parmetis" ) then
      @ no_parmetis = 1
-  else if ( $1 == "-no_chaco" ) then
+  else if ( "$1" == "-no_chaco" ) then
      @ no_chaco = 1
-  else if ( $1 == "-yes_fortran" ) then
+  else if ( "$1" == "-yes_fortran" ) then
      @ yes_fortran = 1
      @ no_nemesis = 1
      set out_tag = fout
-  else if ( $1 == "-logfile" ) then
+  else if ( "$1" == "-logfile" ) then
   
     if ( $#argv < 2 ) then
       echo "Error: No argument for -logfile"
@@ -84,9 +84,9 @@ while ( $#argv )
     endif
     
     shift argv
-    set logfile = $1
+    set logfile = "$1"
     
-  else if ( $1 == "-arch" ) then
+  else if ( "$1" == "-arch" ) then
   
     if ( $#argv < 2 ) then
       echo "Error: No argument for -arch"
@@ -94,9 +94,9 @@ while ( $#argv )
     endif
     
     shift argv
-    set arch = $1
+    set arch = "$1"
     
-  else if ( $1 == "-cmd" ) then
+  else if ( "$1" == "-cmd" ) then
     if ( $#argv < 2 ) then
       echo "Error: No argument for -cmd"
       goto usage
