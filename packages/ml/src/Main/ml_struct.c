@@ -47,7 +47,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->output_level    = 10;
    (*ml_ptr)->res_output_freq = 1;
    (*ml_ptr)->tolerance       = 1.e-8;
-   (*ml_ptr)->max_iterations  = 1;
+   (*ml_ptr)->max_iterations  = 1000;
 
    ML_Comm_Create( &((*ml_ptr)->comm) );
    global_comm = (*ml_ptr)->comm;
@@ -479,6 +479,11 @@ int ML_Set_Amatrix_Matvec(ML *ml, int level,
 
    return(ML_Operator_Set_ApplyFunc(matrix,ML_EXTERNAL,matvec));
 }
+int ML_Get_Amatrix(ML *ml, int level, ML_Operator **matrix)
+{
+   *matrix = &(ml->Amat[level]);
+   return 0;
+}
 
 /* ------------------------------------------------------------------------- */
 
@@ -716,6 +721,14 @@ int ML_Set_Prolongator_GetrowCommInfo(ML *ml, int level, int neighbor,
 int ML_Set_Smoother( ML *ml , int nl , int pre_or_post, void *data, 
                      int (*func)(void *, int, double *, int, double *) ) 
 {
+   if (nl == ML_ALL_LEVELS) { 
+      printf("ML_Set_Smoother: ML_ALL_LEVELS not allowed\n");
+      return 1;
+   }
+   if (nl < 0) {
+      printf("ML_Set_Smoother: cannot set smoother on level %d\n",nl);
+      return 1;
+   }
    if (pre_or_post == ML_PRESMOOTH)
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_EXTERNAL, data,
                               NULL, func, 1,(double) ML_DEFAULT));
@@ -737,6 +750,10 @@ int ML_Gen_Smoother_Jacobi( ML *ml , int nl, int pre_or_post, int ntimes,
 
    if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
    else { start_level = nl; end_level = nl;}
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_Jacobi: cannot set smoother on level %d\n",start_level);
+      return 1;
+   }
 
    fun = ML_Smoother_Jacobi;
    if (omega == ML_DEFAULT) omega = .5;
@@ -765,6 +782,10 @@ int ML_Gen_Smoother_GaussSeidel( ML *ml , int nl, int pre_or_post, int ntimes,
 
    if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
    else { start_level = nl; end_level = nl;}
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_GaussSeidel: cannot set smoother on level %d\n",start_level);
+      return 1;
+   }
 
    fun = ML_Smoother_GaussSeidel;
 
@@ -798,6 +819,10 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
 
    if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
    else { start_level = nl; end_level = nl;}
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_SymGaussSeidel: cannot set smoother on level %d\n",start_level);
+      return 1;
+   }
 	
    for (i = start_level; i <= end_level; i++) {
 
@@ -876,6 +901,10 @@ int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, int ntimes,
 
    if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
    else { start_level = nl; end_level = nl;}
+   if (start_level < 0) {
+      printf("ML_Gen_SmootherGSextra: cannot set smoother on level %d\n",start_level);
+      return 1;
+   }
 	
    if (omega == ML_DEFAULT) omega = 1.;
    Amat = &(ml->Amat[nl]);
@@ -950,6 +979,10 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
 
    if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
    else { start_level = nl; end_level = nl;}
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_OrderedSymGaussSeidel: cannot set smoother on level %d\n",start_level);
+      return 1;
+   }
 	
    fun = ML_Smoother_OrderedSGS;
    if (omega == ML_DEFAULT) omega = 1.;
@@ -1003,6 +1036,10 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 
    if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
    else { start_level = nl; end_level = nl;}
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_BlockGaussSeidel: cannot set smoother on level %d\n",start_level);
+      return 1;
+   }
 	
    fun = ML_Smoother_BlockGS;
    if (omega == ML_DEFAULT) omega = 1.;
@@ -1048,6 +1085,14 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
    double         myomega;
    ML_Sm_BGS_Data *data;
 	
+   if (nl == ML_ALL_LEVELS) { 
+      printf("ML_Gen_Smoother_VBlockJacobi: ML_ALL_LEVELS not allowed\n");
+      return 1;
+   }
+   if (nl < 0) {
+      printf("ML_Gen_Smoother_VBlockJacobi: cannot set smoother on level %d\n",nl);
+      return 1;
+   }
    fun = ML_Smoother_VBlockJacobi;
    if (omega == ML_DEFAULT) myomega = .5;
    else                     myomega = omega;
@@ -1075,6 +1120,14 @@ int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
    int            (*fun)(void *, int, double *, int, double *);
    ML_Sm_BGS_Data *data;
 	
+   if (nl == ML_ALL_LEVELS) { 
+      printf("ML_Gen_Smoother_VBlockSymGaussSeidel: ML_ALL_LEVELS not allowed\n");
+      return 1;
+   }
+   if (nl < 0) {
+      printf("ML_Gen_Smoother_VBlockSymGaussSeidel: cannot set smoother on level %d\n",nl);
+      return 1;
+   }
    fun = ML_Smoother_VBlockSGS;
 	
    ML_Smoother_Create_BGS_Data(&data);
@@ -1100,6 +1153,14 @@ int ML_Gen_Smoother_VBlockSymGaussSeidelSequential( ML *ml , int nl,
    int            (*fun)(void *, int, double *, int, double *);
    ML_Sm_BGS_Data *data;
 	
+   if (nl == ML_ALL_LEVELS) { 
+      printf("ML_Gen_Smoother_VBlockSymGaussSeidelSequential: ML_ALL_LEVELS not allowed\n");
+      return 1;
+   }
+   if (nl < 0) {
+      printf("ML_Gen_Smoother_VBlockSymGaussSeidelSequential: cannot set smoother on level %d\n",nl);
+      return 1;
+   }
    fun = ML_Smoother_VBlockSGSSequential;
 	
    ML_Smoother_Create_BGS_Data(&data);
@@ -1126,6 +1187,14 @@ int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
    double         myomega;
    ML_Sm_BGS_Data *data;
 	
+   if (nl == ML_ALL_LEVELS) { 
+      printf("ML_Gen_Smoother_VBlockKrylovJacobi: ML_ALL_LEVELS not allowed\n");
+      return 1;
+   }
+   if (nl < 0) {
+      printf("ML_Gen_Smoother_VBlockKrylovJacobi: cannot set smoother on level %d\n",nl);
+      return 1;
+   }
    fun = ML_Smoother_VBlockKrylovJacobi;
    if (omega == ML_DEFAULT) myomega = .5;
    else                     myomega = omega;
@@ -1160,6 +1229,14 @@ int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
    /* ---------------------------------------------------------------- */
    /* initialize the ILUT data object                                  */
    /* ---------------------------------------------------------------- */
+   if (nl == ML_ALL_LEVELS) { 
+      printf("ML_Gen_Smoother_OverlappedDDILUT: ML_ALL_LEVELS not allowed\n");
+      return 1;
+   }
+   if (nl < 0) {
+      printf("ML_Gen_Smoother_OverlappedDDILUT: cannot set smoother on level %d\n",nl);
+      return 1;
+   }
 
    fun = ML_Smoother_OverlappedILUT;
 	
@@ -1222,6 +1299,14 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
    /* ---------------------------------------------------------------------- */
    /* check for valid incoming data                                          */
    /* ---------------------------------------------------------------------- */
+   if (nl == ML_ALL_LEVELS) { 
+      printf("ML_Gen_Smoother_VBlockAdditiveSchwarz: ML_ALL_LEVELS not allowed\n");
+      return 1;
+   }
+   if (nl < 0) {
+      printf("ML_Gen_Smoother_VBlockAdditiveSchwarz: cannot set smoother on level %d\n",nl);
+      return 1;
+   }
 
    Amat = &(ml->Amat[nl]);
    if ( length != 0 && length != Amat->outvec_leng )
@@ -1308,6 +1393,14 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    /* check for valid incoming data                                          */
    /* ---------------------------------------------------------------------- */
 
+   if (nl == ML_ALL_LEVELS) { 
+      printf("ML_Gen_Smoother_VBlockMultiplicativeSchwarz: ML_ALL_LEVELS not allowed\n");
+      return 1;
+   }
+   if (nl < 0) {
+      printf("ML_Gen_Smoother_VBlockMultiplicativeSchwarz: cannot set smoother on level %d\n",nl);
+      return 1;
+   }
    Amat = &(ml->Amat[nl]);
    if ( length != 0 && length != Amat->outvec_leng )
    {
