@@ -350,13 +350,6 @@ Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p)
   return Abstract::Group::Ok;
 }
 
-Abstract::Group::ReturnType Group::computePreconditioner()
-{
-  cout << "NOX::Petsc::Group::computePreconditioner() - Not yet implemented!" << endl;
-  exit(0);
-  return Abstract::Group::NotDefined;
-}
-
 Abstract::Group::ReturnType 
 Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
 {
@@ -383,15 +376,17 @@ Group::applyJacobian(const Vector& input, Vector& result) const
 
 
 Abstract::Group::ReturnType 
-Group::applyPreconditionerInverse(const Abstract::Vector& input, Abstract::Vector& result) const
+Group::applyRightPreconditioning(Parameter::List& params, 
+                                 const Abstract::Vector& input, 
+                                 Abstract::Vector& result) const
 {
   const Vector& petscinput = dynamic_cast<const Vector&> (input);
   Vector& petscresult = dynamic_cast<Vector&> (result);
-  return applyPreconditionerInverse(petscinput, petscresult);
+  return applyRightPreconditioning(petscinput, petscresult);
 }
 
 Abstract::Group::ReturnType 
-Group::applyPreconditionerInverse(const Vector& input, Vector& result) const
+Group::applyRightPreconditioning(const Vector& input, Vector& result) const
 {
   if (!isJacobian()) 
     return Abstract::Group::BadDependency;

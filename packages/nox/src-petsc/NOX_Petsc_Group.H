@@ -97,8 +97,6 @@ public:
 
   virtual Abstract::Group::ReturnType computeNewton(Parameter::List& params);
 
-  virtual Abstract::Group::ReturnType computePreconditioner();
-
   //@}
 
   /** @name Jacobian operations.
@@ -130,10 +128,10 @@ public:
       whereas diagonal scaling can be achieved via \b -pc_type \b jacobi.
   */ 
   virtual Abstract::Group::ReturnType 
-  applyPreconditionerInverse(const Vector& input, Vector& result) const;
+  applyRightPreconditioning(const Vector& input, Vector& result) const;
   //! See above
   virtual Abstract::Group::ReturnType 
-  applyPreconditionerInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
+  applyRightPreconditioning(Parameter::List&, const Abstract::Vector& input, Abstract::Vector& result) const;
   
   //@}
 
