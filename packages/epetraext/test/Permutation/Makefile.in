@@ -150,8 +150,7 @@ CONFIG_CLEAN_FILES =
 noinst_PROGRAMS = Permutation_test$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
-am_Permutation_test_OBJECTS = \
-	Permutation_test-cxx_main.$(OBJEXT)
+am_Permutation_test_OBJECTS = Permutation_test-cxx_main.$(OBJEXT)
 Permutation_test_OBJECTS = $(am_Permutation_test_OBJECTS)
 Permutation_test_LDFLAGS =
 
