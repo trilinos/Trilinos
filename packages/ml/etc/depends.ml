@@ -117,6 +117,10 @@ driver.o : ../Obj/driver.c ../Obj/ml_agg_genP.h ../Obj/ml_agg_reitzinger.h \
         ../Obj/ml_aggregate.h ../Obj/ml_amg.h ../Obj/ml_amg_genP.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_memory.h ../Obj/ml_op_utils.h ../Obj/ml_operator.h ../Obj/ml_operator_blockmat.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h ../Obj/ml_xyt.h ../Obj/mli_solver.h
 	$(CC) -c $(CFLAGS) ../Obj/driver.c -o $@
 
+ml_ggb.o : ../Obj/ml_ggb.c ../Obj/ml_defs.h ../Obj/ml_ggb.h \
+        ../Obj/ml_lapack.h ../Obj/ml_mat_formats.h ../Obj/ml_utils.h
+	$(CC) -c $(CFLAGS) ../Obj/ml_ggb.c -o $@
+
 mli_solver.o : ../Obj/mli_solver.c ../Obj/ml_1level.h ../Obj/ml_agg_genP.h \
         ../Obj/ml_aggregate.h ../Obj/ml_amg.h ../Obj/ml_amg_genP.h ../Obj/ml_bdrypts.h ../Obj/ml_comm.h ../Obj/ml_comminfoop.h ../Obj/ml_csolve.h ../Obj/ml_defs.h ../Obj/ml_grid.h ../Obj/ml_gridfunc.h ../Obj/ml_krylov.h ../Obj/ml_mapper.h ../Obj/ml_mat_formats.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_rap.h ../Obj/ml_smoother.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_utils.h ../Obj/ml_vec.h ../Obj/mli_solver.h
 	$(CC) -c $(CFLAGS) ../Obj/mli_solver.c -o $@
