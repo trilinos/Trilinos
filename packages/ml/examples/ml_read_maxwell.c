@@ -179,7 +179,9 @@ int main(int argc, char *argv[])
   int Nexterns;
   int Nnz;
   int mg_cycle_type;
-  double omega;
+  double omega, nodal_omega, edge_omega;
+  void **edge_args, **nodal_args, *edge_smoother, *nodal_smoother;
+  int  edge_its, nodal_its;
 #ifndef debugSmoother
   double *xxx;
 #endif
@@ -509,7 +511,7 @@ int main(int argc, char *argv[])
   {
      if (proc_config[AZ_node]== 0 && 0.5 < ML_Get_PrintLevel())
      {
-        printf("\a\n*****************\n"
+        printf("\n\n*****************\n"
                        "WARNING: Edge matrix may not be symmetric.\n");
         printf("\n              ||vvv^{t} * Ke_mat * yyy|| = %20.15e\n",
                 dtemp);
@@ -960,7 +962,26 @@ int main(int argc, char *argv[])
   {printf("Ending reuse\n"); fflush(stdout);}
 #endif
 
+  /* Here is the stuff to set the subsmoothers within the Hiptmair */
+  /* smoother.                                                     */
 
+  nodal_smoother = ML_Gen_Smoother_SymGaussSeidel;
+  edge_smoother  = ML_Gen_Smoother_SymGaussSeidel;
+  edge_smoother  = ML_Gen_Smoother_MLS;
+  nodal_smoother = ML_Gen_Smoother_MLS;
+
+  nodal_its      = 1;
+  edge_its       = 1;
+  nodal_omega    = 1.0;
+  edge_omega     = 1.0;
+  nodal_omega    = (double) ML_DEFAULT;
+  edge_omega     = (double) ML_DEFAULT;
+  nodal_args = ML_Smoother_Arglist_Create(1);
+  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
+  /*  ML_Smoother_Arglist_Set(nodal_args, 1, &nodal_omega); */
+  edge_args = ML_Smoother_Arglist_Create(1);
+  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
+  /*  ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega); */
 
   /****************************************************
   * Set up smoothers for all levels but the coarsest. *
@@ -988,10 +1009,14 @@ int main(int argc, char *argv[])
           omega = (double) ML_DEFAULT;
           if (level == N_levels-1)
              ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-                    omega,Tmat_array, Tmat_trans_array,Tmatbc);
+				      Tmat_array, Tmat_trans_array,
+				      Tmatbc, 
+edge_smoother,edge_args, nodal_smoother,nodal_args);
           else
              ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-                    omega,Tmat_array, Tmat_trans_array, NULL);
+				      Tmat_array, Tmat_trans_array, 
+				      NULL, 
+edge_smoother,edge_args, nodal_smoother,nodal_args);
 	  }
       /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
       /* In parallel, it is not a true Gauss-Seidel in that each processor */
@@ -1082,10 +1107,12 @@ int main(int argc, char *argv[])
     omega = (double) ML_DEFAULT;
     if (coarsest_level == N_levels-1)
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-             omega,Tmat_array, Tmat_trans_array, Tmatbc);
+				Tmat_array, Tmat_trans_array, Tmatbc, 
+edge_smoother,edge_args, nodal_smoother,nodal_args);
     else
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-             omega,Tmat_array, Tmat_trans_array, NULL);
+				Tmat_array, Tmat_trans_array, NULL, 
+				edge_smoother,edge_args, nodal_smoother,nodal_args);
   }
   else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
     ML_Gen_Smoother_GaussSeidel(ml_edges , coarsest_level, ML_BOTH, nsmooth,1.);
@@ -1124,6 +1151,7 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
+
 #ifdef ReuseOps
 
   ML_Smoother_Reinit(ml_edges);
@@ -1148,12 +1176,14 @@ int main(int argc, char *argv[])
         omega = (double) ML_DEFAULT;
          if (level == N_levels-1)
 	        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-				        omega,Tmat_array, Tmat_trans_array, Tmat,
-                        Tmat_trans, Tmatbc);
+					 Tmat_array, Tmat_trans_array, 
+					 Tmat, Tmat_trans, Tmatbc,
+				edge_smoother,edge_args, nodal_smoother,nodal_args);
          else
 	        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-				        omega,Tmat_array, Tmat_trans_array, Tmat,
-                        Tmat_trans, NULL);
+					 Tmat_array, Tmat_trans_array,
+					 Tmat, Tmat_trans,NULL, 
+				edge_smoother,edge_args, nodal_smoother,nodal_args);
      }
   }
   nsmooth   = context->coarse_its;
@@ -1170,11 +1200,14 @@ int main(int argc, char *argv[])
      omega = (double) ML_DEFAULT;
      if (coarsest_level == N_levels-1)
         ML_Gen_Smoother_Hiptmair(ml_edges , coarsest_level, ML_BOTH,
-              nsmooth,omega,Tmat_array, Tmat_trans_array, Tmat, 
-              Tmat_trans, Tmatbc);
+				 nsmooth,Tmat_array, Tmat_trans_array, 
+				 Tmat, Tmat_trans, Tmatbc, 
+				edge_smoother,edge_args, nodal_smoother,nodal_args);
      else
-        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-              omega,Tmat_array, Tmat_trans_array, Tmat, Tmat_trans, NULL);
+        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth, 
+				 Tmat_array, Tmat_trans_array, Tmat, 
+				 Tmat_trans, NULL, 
+				edge_smoother,edge_args, nodal_smoother,nodal_args);
   }
   else if (ML_strcmp(context->coarse_solve,"SuperLU") == 0)
   {
@@ -1435,6 +1468,8 @@ int main(int argc, char *argv[])
   if (proc_config[AZ_node] == 0) 
     printf("Solve time = %e, MG Setup time = %e\n", solve_time, setup_time);
 
+  ML_Smoother_Arglist_Delete(&nodal_args);
+  ML_Smoother_Arglist_Delete(&edge_args);
   ML_Aggregate_Destroy(&ag);
   ML_Destroy(&ml_edges);
   ML_Destroy(&ml_nodes);
