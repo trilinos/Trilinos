@@ -80,7 +80,7 @@ int main(int argc, char *argv[]){
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
-   return(1);
+  exit(EXIT_SUCCESS);
 }
 
 int Poisson_getrow(ML_Operator *A_data, int N_requested_rows, int requested_rows[],
