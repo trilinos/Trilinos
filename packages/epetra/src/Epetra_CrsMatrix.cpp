@@ -885,11 +885,16 @@ int Epetra_CrsMatrix::OptimizeStorage() {
       }
       tmp += NumEntries;
     }
-    
   } // End of !Contiguous section
+  else {
+    //if already contiguous, we'll simply set All_Values_ to be
+    //a copy of Values_[0].
+    All_Values_ = Values_[0];
+  }
   
   // Delete unneeded storage
   delete [] Values_; Values_=0;
+
   StorageOptimized_ = true;
 
   

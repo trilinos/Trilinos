@@ -1067,14 +1067,24 @@ int Epetra_CrsGraph::OptimizeStorage() {
       tmp += NumIndices; 	// tmp points to the offset in All_Indices_ where Indices_[i] starts.
     }
   } // End of !Contiguous section
+  else {
+    //if contiguous, set All_Indices_ from CrsGraphData_->Indices_[0].
+    int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
+    int* all_indices_values = CrsGraphData_->All_Indices_.Values();
+    int* indices_values = CrsGraphData_->Indices_[0];
+    for(int ii=0; ii<CrsGraphData_->NumMyNonzeros_; ++ii) {
+      all_indices_values[ii] = indices_values[ii];
+    }
+  }
 
   // Delete unneeded storage
   CrsGraphData_->NumAllocatedIndicesPerRow_.Resize(0);
   delete [] CrsGraphData_->Indices_; CrsGraphData_->Indices_=0;
+
   SetIndicesAreContiguous(true); // Can no longer dynamically add or remove indices
   CrsGraphData_->StorageOptimized_ = true;
 
-    return(0);
+  return(0);
 }
 
 //==============================================================================
