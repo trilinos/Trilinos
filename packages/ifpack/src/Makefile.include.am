@@ -126,6 +126,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_DropFilter.h          \
 	$(srcdir)/Ifpack_SparsityFilter.h      \
 	$(srcdir)/Ifpack_ReorderFilter.h       \
+	$(srcdir)/Ifpack_SingletonFilter.h     \
 	$(srcdir)/Ifpack_Graph.h               \
 	$(srcdir)/Ifpack_Container.h           \
 	$(srcdir)/Ifpack_SparseContainer.h     \
@@ -166,6 +167,7 @@ COMP = \
 	$(srcdir)/Ifpack_DropFilter.cpp             \
 	$(srcdir)/Ifpack_SparsityFilter.cpp         \
 	$(srcdir)/Ifpack_ReorderFilter.cpp          \
+	$(srcdir)/Ifpack_SingletonFilter.cpp        \
 	$(srcdir)/Ifpack_Graph_Epetra_RowMatrix.cpp \
 	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.cpp  \
 	$(srcdir)/Ifpack_Amesos.cpp                 \
