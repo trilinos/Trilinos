@@ -370,7 +370,7 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
 int  ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *, ML_Comm *,
                 ML_Operator *, int *mat_indx, int *bdry_array, 
-                int *aggr_count_in, int **aggr_index_in);
+                int *aggr_count_in, int **aggr_index_in, char *true_bdry);
 int ML_Aggregate_Set_CoarsenScheme_METIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  );
 
