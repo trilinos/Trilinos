@@ -586,7 +586,7 @@ int ML_Operator_Set_Label( ML_Operator *mat, char *label)
 /* print this matrix                                                    */
 /* ******************************************************************** */
 
-int ML_Operator_Print(ML_Operator *matrix, char label[])
+int ML_Operator_Print(ML_Operator *matrix, const char label[])
 {
 
    int    i, j;
