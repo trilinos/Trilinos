@@ -652,6 +652,77 @@ int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
   return(1);
 }
 
+int CSR_denseserialmatvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+{
+
+   int i, j, jj, k, /* Nrows,*/ *bindx;
+   double            *p2, *val, sum, *ap2, *oldp2;
+   struct ML_CSR_MSRdata *temp;
+   ML_CommInfoOP     *getrow_comm;
+   ML_Operator       *Amat;
+   int               *row_ptr, Nstored;
+   ML_Comm           *comm;
+
+   Amat    = (ML_Operator *) Amat_in;
+   comm    = Amat->comm;
+   /* Nrows   = Amat->outvec_leng; */
+   Nstored = Amat->getrow->Nrows;
+   temp    = (struct ML_CSR_MSRdata *) Amat->data;
+   val     = temp->values;
+   bindx   = temp->columns;
+   row_ptr = temp->rowptr;
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+     p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
+                                  sizeof(double));
+     for (i = 0; i < ilen; i++) p2[i] = p[i];
+
+     ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
+
+   }
+   else p2 = p;
+
+   getrow_comm= Amat->getrow->post_comm;
+   if (getrow_comm != NULL) {
+      i = Nstored+getrow_comm->minimum_vec_size + 1;
+      if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
+      ap2 = (double *) ML_allocate(i* sizeof(double));
+   }
+   else ap2 = ap;
+
+   j = 0;
+   /*   jj = Amat->invec_leng; */
+   oldp2 = p2;
+   for (i = 0; i < Nstored; i++) {
+     p2 = oldp2;
+     sum = 0.;
+     for (k = 0; k < Amat->invec_leng; k++) {
+       /*       sum += val[j++]*p2[k]; */
+       sum += *val++ * *p2++;
+     }
+     /* ap2[i] = sum; */
+     *ap2++ = sum;
+   }
+
+   if (Amat->getrow->pre_comm != NULL) ML_free(p2);
+
+   if (getrow_comm != NULL) {
+      if (getrow_comm->remap != NULL) {
+         if (getrow_comm->remap_max != olen-1) {
+            printf("Error: The largest remapping index after communication\n");
+            printf("       should be one less than the vector's output\n");
+            printf("       length (%d vs %d)???\n",getrow_comm->remap_max,olen);
+            exit(1);
+         }
+      }
+      ML_exchange_bdry(ap2,getrow_comm, Nstored, comm, ML_ADD,NULL);
+      for (jj = 0; jj < olen; jj++) ap[jj] = ap2[jj];
+      ML_free(ap2);
+  }
+  return(1);
+}
+
 int CSR_ones_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
