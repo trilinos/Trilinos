@@ -125,6 +125,6 @@ protected:
 } //namespace LOCA
 
 //! Overload the operator<< to print ParameterVector objects.
-ostream& std::operator<<(ostream& stream, const LOCA::ParameterVector& p);
+ostream& operator<<(ostream& stream, const LOCA::ParameterVector& p);
 
 #endif
