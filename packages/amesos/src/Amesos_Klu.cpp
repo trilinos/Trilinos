@@ -201,7 +201,9 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
 
   Time_->ResetStartTime();
   
-  if ( UseTranspose() ) { 
+  // Deliberate BUG 
+
+  if ( false || UseTranspose() ) { 
     Matrix_ = SerialMatrix_ ; 
   } else { 
 #if 1

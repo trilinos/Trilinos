@@ -76,7 +76,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
     SuperludistParams.set( "MaxProcesses", 2 );
     //  ParamList.print( cerr, 10 ) ; 
     
-    NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+    int Errors = PerformOneSolveAndTest("Amesos_Superludist",
 					Comm, 
 					transpose, 
 					verbose,
@@ -86,235 +86,246 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					Rcond, 
 					relerror, 
 					relresidual ) ; 
-    maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
-    maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
-    NumTests++ ; 
-    
-    if (verbose) cout << " TestSuperludist relresidual = " <<relresidual << endl ; 
-    if (verbose) cout << " TestSuperludist relerror = " << relerror << endl ; 
-    if (verbose) cout << " TestSuperludist maxrelresidual = " << maxrelresidual << endl ; 
-    if (verbose) cout << " TestSuperludist maxrelerror = " << maxrelerror << endl ; 
-    
-  }
-  
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", true );
-    ParamList.set( "AddZeroToDiag", true );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", false );
-    SuperludistParams.set( "MaxProcesses", 2 );
-    //  ParamList.print( cerr, 10 ) ; 
-   
-    NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
-					Comm, 
-					transpose, 
-					verbose,
-					ParamList, 
-					Amat, 
-					Levels,
-					Rcond, 
-					relerror, 
-					relresidual ) ; 
-    maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
-    maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
-    NumTests++ ; 
 
-  }
+    if ( Errors == -1 ) {
+      if ( verbose ) {
+	cout << "Amesos_Superludist not built in this executable" << endl ; 
+	return 0 ; 
+      }
+    } else { 
 
+      NumErrors += Errors ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+					  
+      if (verbose) cout << " TestSuperludist relresidual = " <<relresidual << endl ; 
+      if (verbose) cout << " TestSuperludist relerror = " << relerror << endl ; 
+      if (verbose) cout << " TestSuperludist maxrelresidual = " << maxrelresidual << endl ; 
+      if (verbose) cout << " TestSuperludist maxrelerror = " << maxrelerror << endl ; 
+					  
+    }
+      
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", true );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "MaxProcesses", 2 );
+      //  ParamList.print( cerr, 10 ) ; 
+	
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  Comm, 
+					  transpose, 
+					  verbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+    }
+      
 #if 0
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", true );
-    ParamList.set( "AddZeroToDiag", true );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", true );
-    SuperludistParams.set( "MaxProcesses", 1 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", true );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "MaxProcesses", 1 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", true );
-    ParamList.set( "AddZeroToDiag", true );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", false );
-    SuperludistParams.set( "MaxProcesses", 1 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", true );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "MaxProcesses", 1 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", true );
-    ParamList.set( "AddZeroToDiag", true );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", false );
-    SuperludistParams.set( "MaxProcesses", 2 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", true );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "MaxProcesses", 2 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", true );
-    ParamList.set( "AddZeroToDiag", false );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", true );
-    SuperludistParams.set( "MaxProcesses", 1 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "MaxProcesses", 1 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", true );
-    ParamList.set( "AddZeroToDiag", false );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", true );
-    SuperludistParams.set( "MaxProcesses", 2 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "MaxProcesses", 2 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", true );
-    ParamList.set( "AddZeroToDiag", false );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", false );
-    SuperludistParams.set( "MaxProcesses", 1 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "MaxProcesses", 1 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", true );
-    ParamList.set( "AddZeroToDiag", false );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", false );
-    SuperludistParams.set( "MaxProcesses", 2 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "MaxProcesses", 2 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
 
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", false );
-    ParamList.set( "AddZeroToDiag", true );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", true );
-    SuperludistParams.set( "MaxProcesses", 1 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", false );
+      ParamList.set( "AddZeroToDiag", true );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "MaxProcesses", 1 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", false );
-    ParamList.set( "AddZeroToDiag", true );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", true );
-    SuperludistParams.set( "MaxProcesses", 2 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", false );
+      ParamList.set( "AddZeroToDiag", true );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "MaxProcesses", 2 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", false );
-    ParamList.set( "AddZeroToDiag", true );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", false );
-    SuperludistParams.set( "MaxProcesses", 1 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", false );
+      ParamList.set( "AddZeroToDiag", true );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "MaxProcesses", 1 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", false );
-    ParamList.set( "AddZeroToDiag", true );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", false );
-    SuperludistParams.set( "MaxProcesses", 2 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", false );
+      ParamList.set( "AddZeroToDiag", true );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "MaxProcesses", 2 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", false );
-    ParamList.set( "AddZeroToDiag", false );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", true );
-    SuperludistParams.set( "MaxProcesses", 1 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", false );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "MaxProcesses", 1 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", false );
-    ParamList.set( "AddZeroToDiag", false );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", true );
-    SuperludistParams.set( "MaxProcesses", 2 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", false );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "MaxProcesses", 2 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", false );
-    ParamList.set( "AddZeroToDiag", false );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", false );
-    SuperludistParams.set( "MaxProcesses", 1 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", false );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "MaxProcesses", 1 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
   
   
-  {
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "Redistribute", false );
-    ParamList.set( "AddZeroToDiag", false );
-    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-    SuperludistParams.set( "ReuseSymbolic", false );
-    SuperludistParams.set( "MaxProcesses", 2 );
-    //  ParamList.print( cerr, 10 ) ; 
+    {
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", false );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "MaxProcesses", 2 );
+      //  ParamList.print( cerr, 10 ) ; 
    
-    NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-  }
+      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
 #endif
   
-  return NumErrors; 
+    return NumErrors; 
+  }
+
 }

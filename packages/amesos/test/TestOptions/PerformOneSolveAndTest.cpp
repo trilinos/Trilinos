@@ -92,7 +92,9 @@ int PerformOneSolveAndTest(char* AmesosClass,
   relerror = 0 ; 
   relresidual = 0 ; 
 
-  if ( Abase != 0 ) {
+  if ( Abase == 0 ) 
+    return - 1; 
+  else {
 
     //
     //  Phase 1:  Compute b = A' A' A xexact

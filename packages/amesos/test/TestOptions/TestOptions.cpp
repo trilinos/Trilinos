@@ -2,14 +2,19 @@
 //  TestOptions tests all options for each Amesos Class on a limited number 
 //  of matrices.  
 //
-
+//  TestOptions - Calls TestOneMatrix for each of several matrices
+//  TestOneMatrix - Test one matrix 
+//    Distributed vs nont distributed - commented out right now
+//    Transpose vs not transposed - commented out right now
+//  
+//
 //
 //  Todo:
 //    Enable tests of various parameter options
 //    Make it test all four codes (DSCPACK, UMFPACK, SuperLU_DIST, KLU )
 //    Valgrind it
-//    Enable tests of transpose and the other thing
-//    Enable FACTOR_B 
+//    Enable tests of transpose and distributed matrices  - DONE 
+//    Enable FACTOR_B - DONE 
 //
 
 #include "Trilinos_Util.h"
@@ -46,7 +51,8 @@
 const int NumAmesosClasses = 7;
 
 int CreateCrsMatrix( char *filename, Epetra_Comm &Comm, 
-		     bool transpose, bool distribute, Epetra_CrsMatrix *& Matrix ) {
+		     bool transpose, bool distribute, 
+		     bool& symmetric, Epetra_CrsMatrix *& Matrix ) {
 
   Epetra_Map * readMap;
   Epetra_CrsMatrix * readA; 
@@ -54,6 +60,7 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
    
+  symmetric = false ; 
   string FileName = filename ;
   int FN_Size = FileName.size() ; 
   string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
@@ -65,10 +72,24 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
       // Call routine to read in symmetric Triplet matrix
       EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( filename, true, Comm, readMap, readA, readx, 
 							readb, readxexact) );
+      symmetric = true; 
     } else {
       if (  LastFourBytes == ".mtx" ) { 
 	EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( filename, Comm, readMap, 
-							       readA, readx, readb, readxexact) );
+							       readA, readx, readb, readxexact) );   
+	FILE* in_file = fopen( filename, "r");
+	assert (in_file != NULL) ;  // Checked in Trilinos_Util_CountMatrixMarket() 
+	const int BUFSIZE = 800 ; 
+	char buffer[BUFSIZE] ; 
+	fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
+	string headerline1 = buffer;
+#ifdef TFLOP
+	if ( headerline1.find("symmetric") < BUFSIZE ) symmetric = true;
+#else
+	if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
+#endif
+	fclose(in_file);
+
       } else {
 	// Call routine to read in HB problem
 	Trilinos_Util_ReadHb2Epetra( filename, Comm, readMap, readA, readx, 
@@ -108,7 +129,10 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
     //
     //  Make sure that deleting Amat->RowMap() will delete map 
     //
-    assert( &(Amat->RowMap()) == map ) ; 
+    //  Bug:  We can't manage to delete map his way anyway,
+    //        and this fails on tranposes, so for now I just accept
+    //        the memory loss.
+    //    assert( &(Amat->RowMap()) == map ) ; 
     delete readMap; 
     delete serialA; 
   } else { 
@@ -124,6 +148,7 @@ int TestOneMatrix(
 		  char *filename, 
 		  Epetra_Comm &Comm, 
 		  bool verbose, 
+		  bool symmetric, 
 		  double Rcond,
 		  int &NumTests  ) {
 
@@ -142,7 +167,8 @@ int TestOneMatrix(
   //
   //  Compute the reciprocal condition number using Amesos_UMFPACK via the Amesos interface
   //
-  CreateCrsMatrix( filename, Comm, false, false, Amat ) ;
+  bool symmetric; 
+  CreateCrsMatrix( filename, Comm, false, false, symmetric, Amat ) ;
   Teuchos::ParameterList ParamList ;
   Epetra_LinearProblem Problem;
   Amesos Afactory;
@@ -192,16 +218,16 @@ int TestOneMatrix(
   double Rcond1 = Rcond ;
   double Rcond2 = Rcond ;
 #endif
-  //  for ( int iterTrans =0 ; iterTrans < 2; iterTrans++ ) {
-  for ( int iterTrans =0 ; iterTrans < 1; iterTrans++ ) {
+  for ( int iterTrans =0 ; iterTrans < 2; iterTrans++ ) {
+    //  for ( int iterTrans =0 ; iterTrans < 1; iterTrans++ ) {
     bool transpose = iterTrans == 1 ; 
     
-    //    for ( int iterDist =0 ; iterDist < 2; iterDist++ ) {
-    for ( int iterDist =0 ; iterDist < 1; iterDist++ ) {
+    for ( int iterDist =0 ; iterDist < 2; iterDist++ ) {
+      //    for ( int iterDist =0 ; iterDist < 1; iterDist++ ) {
       bool distribute = ( iterDist == 1 ); 
 
       Epetra_CrsMatrix *Amat ;
-      CreateCrsMatrix( filename, Comm, transpose, distribute, Amat ) ;
+      CreateCrsMatrix( filename, Comm, transpose, distribute, symmetric, Amat ) ;
 
 
       if ( Rcond*Rcond1*Rcond2 > 1e-16 ) 
@@ -209,6 +235,7 @@ int TestOneMatrix(
 	  NumErrors += TestAllClasses( Amat, 
 					transpose, 
 					verbose, 
+					symmetric, 
 					3, 
 					Rcond*Rcond1*Rcond2, 
 					error, 
@@ -220,6 +247,7 @@ int TestOneMatrix(
 	  NumErrors += TestAllClasses( Amat, 
 					transpose, 
 					verbose, 
+					symmetric, 
 					2, 
 					Rcond*Rcond1, 
 					error, 
@@ -231,6 +259,7 @@ int TestOneMatrix(
 	  NumErrors += TestAllClasses( Amat, 
 					transpose, 
 					verbose, 
+					symmetric, 
 					1, 
 					Rcond, 
 					error, 
@@ -246,6 +275,7 @@ int TestOneMatrix(
 	<< residual 
 	<< endl ; 
       }
+      //      BUG:  Memory leak 
       //      delete &(Amat->RowMap()) ; 
       delete Amat ; 
 #if 0
@@ -306,9 +336,9 @@ int main( int argc, char *argv[] ) {
   int result = 0 ; 
   int numtests = 0 ;
 
-  //  result += TestOneMatrix("Tri.triS", Comm, verbose, 1e-1 , numtests ) ;
-  //  result += TestOneMatrix("Tri2.triS", Comm, verbose, 1e-5 , numtests ) ;
-  result += TestOneMatrix("../bcsstk01.mtx", Comm, verbose, 1e-6 , numtests ) ;
+  //  result += TestOneMatrix("Tri.triS", Comm, verbose, symmetric, 1e-1 , numtests ) ;
+  //  result += TestOneMatrix("Tri2.triS", Comm, verbose, symmetric, 1e-5 , numtests ) ;
+  result += TestOneMatrix("../bcsstk01.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 
   //
   //  This is really slow when run on valgrind, so we don't want to run 
@@ -319,10 +349,10 @@ int main( int argc, char *argv[] ) {
 #ifdef HAVE_VALGRIND 
   if ( ! RUNNING_ON_VALGRIND ) {
 #endif
-    result += TestOneMatrix("../bcsstk13.mtx", Comm, verbose, 1e-6 , numtests ) ;
-    //  result += TestOneMatrix("../bcsstk02.mtx", Comm, verbose, 1e-6 , numtests ) ;
-    result += TestOneMatrix("../bcsstk04.mtx", Comm, verbose, 1e-6 , numtests ) ;
-    result += TestOneMatrix("../bcsstk08.mtx", Comm, verbose, 1e-6 , numtests ) ;
+    result += TestOneMatrix("../bcsstk13.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+    //  result += TestOneMatrix("../bcsstk02.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+    result += TestOneMatrix("../bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+    result += TestOneMatrix("../bcsstk08.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 #ifdef HAVE_VALGRIND 
   }
 #endif

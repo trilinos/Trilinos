@@ -23,39 +23,47 @@ int TestOtherClasses(char* AmesosClass,
   maxrelresidual = 0.0;
   const Epetra_Comm& Comm = Amat->Comm();
 
-{
-   Teuchos::ParameterList ParamList ;
-   ParamList.set( "Redistribute", true );
-   ParamList.set( "AddZeroToDiag", true );
-   Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-   SuperludistParams.set( "ReuseSymbolic", true );
-   SuperludistParams.set( "MaxProcesses", 2 );
-   //  ParamList.print( cerr, 10 ) ; 
+  {
+    Teuchos::ParameterList ParamList ;
+    ParamList.set( "Redistribute", true );
+    ParamList.set( "AddZeroToDiag", true );
+    Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+    SuperludistParams.set( "ReuseSymbolic", true );
+    SuperludistParams.set( "MaxProcesses", 2 );
+    //  ParamList.print( cerr, 10 ) ; 
 
-   double relerror;
-   double relresidual;
+    double relerror;
+    double relresidual;
    
-   NumErrors += PerformOneSolveAndTest(AmesosClass,
-				       Comm, 
-				       transpose, 
-				       verbose,
-				       ParamList, 
-				       Amat, 
-				       Levels,
-				       Rcond, 
-				       relerror, 
-				       relresidual ) ; 
-   maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
-   maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
-   NumTests++ ; 
+    int Errors = PerformOneSolveAndTest(AmesosClass,
+					Comm, 
+					transpose, 
+					verbose,
+					ParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual ) ; 
 
-   if (verbose) cout << " TestOtherClasses relresidual = " <<relresidual << endl ; 
-   if (verbose) cout << " TestOtherClasses relerror = " << relerror << endl ; 
-   if (verbose) cout << " TestOtherClasses maxrelresidual = " << maxrelresidual << endl ; 
-   if (verbose) cout << " TestOtherClasses maxrelerror = " << maxrelerror << endl ; 
+    if (Errors < 0 ) {
+      if (verbose ) cout << AmesosClass << " not built in this executable " << endl ; 
+      return 0 ; 
+    } else { 
+      NumErrors += Errors ; 
 
- }
-  if (verbose)  cout << " TestOtherClasses NumErrors = " << NumErrors << endl ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+
+      if (verbose) cout << " TestOtherClasses relresidual = " <<relresidual << endl ; 
+      if (verbose) cout << " TestOtherClasses relerror = " << relerror << endl ; 
+      if (verbose) cout << " TestOtherClasses maxrelresidual = " << maxrelresidual << endl ; 
+      if (verbose) cout << " TestOtherClasses maxrelerror = " << maxrelerror << endl ; 
+
+    }
+    if (verbose)  cout << " TestOtherClasses NumErrors = " << NumErrors << endl ; 
   
- return NumErrors; 
+    return NumErrors; 
+  }
 }

@@ -3,6 +3,7 @@
 int TestAllClasses(Epetra_CrsMatrix *& Amat, 
 		   bool transpose, 
 		   bool verbose, 
+		   bool symmetric, 
 		   int Levels,
 		   const double Rcond,
 		   double &maxrelerror, 
