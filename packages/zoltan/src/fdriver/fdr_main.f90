@@ -307,7 +307,7 @@ type(ELEM_INFO), pointer :: elements(:)
 !  /* Local declarations. */
   character(len=FILENAME_MAX+1) :: par_out_fname, ctemp
 
-  integer(Zoltan_INT), allocatable :: global_ids(:)
+  integer(Zoltan_INT), allocatable :: global_ids(:), parts(:), index(:)
   integer(Zoltan_INT) ::    i, j, alloc_stat
 
   integer ::  fp=21
@@ -318,11 +318,12 @@ type(ELEM_INFO), pointer :: elements(:)
    integer :: fp
    end subroutine echo_cmd_file
 
-   subroutine sort_int(n, ra)
+   subroutine sort_index(n, ra, indx)
    use zoltan
    integer(Zoltan_INT) :: n
    integer(Zoltan_INT) :: ra(0:)
-   end subroutine sort_int
+   integer(Zoltan_INT) :: indx(0:)
+   end subroutine sort_index
   end interface
 
 !/***************************** BEGIN EXECUTION ******************************/
@@ -333,16 +334,30 @@ type(ELEM_INFO), pointer :: elements(:)
     output_results = .false.
     return
   endif
+  allocate(parts(0:Mesh%num_elems),stat=alloc_stat)
+  if (alloc_stat /= 0) then
+    print *, "fatal: insufficient memory"
+    output_results = .false.
+    return
+  endif
+  allocate(index(0:Mesh%num_elems),stat=alloc_stat)
+  if (alloc_stat /= 0) then
+    print *, "fatal: insufficient memory"
+    output_results = .false.
+    return
+  endif
 
   j = 0
   do i = 0, Mesh%elem_array_len-1
     if (elements(i)%globalID >= 0) then
       global_ids(j) = elements(i)%globalID
+      parts(j) = elements(i)%my_part
+      index(j) = j
       j = j+1
     endif
   end do
 
-  call sort_int(Mesh%num_elems, global_ids)
+  call sort_index(Mesh%num_elems, global_ids, index)
 
 !  /* generate the parallel filename for this processor */
   ctemp = trim(pio_info%pexo_fname)//".fout"
@@ -356,20 +371,24 @@ type(ELEM_INFO), pointer :: elements(:)
   write(fp,*) "Global element ids assigned to processor ", Proc
   write(fp,*) "GID	Part	Perm	IPerm"
   do i = 0, Mesh%num_elems-1
-    write(fp,*) global_ids(i),"	", Proc, "	", -1, "	", -1
+    j = index(i)
+    write(fp,*) global_ids(j),"	", parts(j), "	", -1, "	", -1
   end do
 
   close(fp)
   deallocate(global_ids)
+  deallocate(parts)
+  deallocate(index)
 
   output_results = .true.
 end function output_results
 
 !/*****************************************************************************/
-subroutine sort_int(n, ra)
+subroutine sort_index(n, ra, indx)
 use zoltan
 integer(Zoltan_INT) :: n
 integer(Zoltan_INT) :: ra(0:)
+integer(Zoltan_INT) :: indx(0:)
 
 !/*
 !*       Numerical Recipies in C source code
@@ -381,7 +400,7 @@ integer(Zoltan_INT) :: ra(0:)
 !*/
 
   integer(Zoltan_INT) :: l, j, ir, i
-  integer(Zoltan_INT) :: rra
+  integer(Zoltan_INT) :: rra, irra
 !  /*
 !   *  No need to sort if one or fewer items.
 !   */
@@ -392,31 +411,34 @@ integer(Zoltan_INT) :: ra(0:)
   do
     if (l > 0) then
       l = l-1
-      rra=ra(l)
+      rra=ra(indx(l))
+      irra=indx(l)
     else
-      rra=ra(ir)
-      ra(ir)=ra(0)
+      rra=ra(indx(ir))
+      irra=indx(ir)
+
+      indx(ir)=indx(0)
       ir = ir-1
       if (ir == 0) then
-        ra(0)=rra
+        indx(0)=irra
         return
       endif
     endif
     i=l
     j=2*l+1
     do while (j <= ir)
-      if (j < ir .and. ra(j) < ra(j+1)) j = j+1
-      if (rra < ra(j)) then
-        ra(i)=ra(j)
+      if (j < ir .and. ra(indx(j)) < ra(indx(j+1))) j = j+1
+      if (rra < ra(indx(j))) then
+        indx(i)=indx(j)
         i = j
         j = j+i+1
       else
         j=ir+1
       endif
     end do
-    ra(i)=rra
+    indx(i)=irra
   end do
-end subroutine sort_int
+end subroutine sort_index
 
 !************************************************************************
 subroutine echo_cmd_file(fp, cmd_file)

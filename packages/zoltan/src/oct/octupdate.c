@@ -32,13 +32,12 @@ extern "C" {
 static int Zoltan_Oct_nUniqueRegions(OCT_Global_Info *OCT_info, pOctant oct);
 static int Zoltan_Oct_CompareCoords(int dim, COORD pt1, COORD pt2);
 static void initialize_region(ZZ *, pRegion *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float);
-static int lb_oct_init(ZZ *zz, int *num_import, ZOLTAN_ID_PTR *import_global_ids,
-  ZOLTAN_ID_PTR *import_local_ids, int **import_procs, int oct_dim, int oct_method,
-  int oct_maxoctregions, int oct_minoctregions, int oct_output_level, int oct_wgtflag); 
-static void    Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int, int *c1, int *c2,
-                                               int *c3, float *c0, int createpartree);
+static int lb_oct_init(ZZ *, int *, ZOLTAN_ID_PTR *,
+  ZOLTAN_ID_PTR *, int **, int **, int, int, int, int, int, int); 
+static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int, int *c1, int *c2,
+                                        int *c3, float *c0, int createpartree);
 static pOctant Zoltan_Oct_global_insert(ZZ *, pRegion region);
-static void    Zoltan_Oct_terminal_refine(ZZ *, pOctant oct,int count);
+static void Zoltan_Oct_terminal_refine(ZZ *, pOctant oct,int count);
 
 
 
@@ -162,7 +161,8 @@ int error = FALSE;            /* error flag                                  */
     return(ZOLTAN_FATAL);
   else
     return(lb_oct_init(zz, num_import, import_global_ids, import_local_ids, 
-                       import_procs, oct_dim, oct_method, oct_maxoctregions, 
+                       import_procs, import_to_part, 
+                       oct_dim, oct_method, oct_maxoctregions, 
                        oct_minoctregions, oct_output_level, oct_wgtflag));
 }
 
@@ -186,7 +186,9 @@ static int lb_oct_init(
   int **import_procs,           /* Returned value:  array of processor IDs for
                                    processors owning the non-local objects in
                                    this processor's new decomposition.       */
-
+  int **import_to_part,         /* Returned value:  array of partitions to 
+                                   which objects are imported.
+                                   KDDKDD Assume #parts==#procs.             */
   int oct_dim,                  /* Dimension of method to be used (2D or 3D) */
   int oct_method,               /* Flag specifying curve to be used.         */
   int oct_maxoctregions,        /* max # of objects in leaves of octree.     */
@@ -294,7 +296,7 @@ static int lb_oct_init(
     *num_import = nrectags;
     if (nrectags > 0)
       Zoltan_Oct_fix_tags(zz, import_global_ids, import_local_ids, import_procs,
-                  nrectags, import_regs);
+                  import_to_part, nrectags, import_regs);
   }
 
   time2 = MPI_Wtime();

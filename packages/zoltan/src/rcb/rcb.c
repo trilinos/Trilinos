@@ -58,8 +58,8 @@ extern "C" {
 
 /* function prototypes */
 
-static int rcb_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, double,
-                 int, int, int, int, int, int, int, int);
+static int rcb_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
+                  double, int, int, int, int, int, int, int, int);
 static void print_rcb_tree(ZZ *, struct rcb_tree *);
 
 
@@ -113,7 +113,7 @@ int Zoltan_RCB(
                                    this processor's new decomposition.       */
   int **import_to_part,         /* Returned value:  array of partitions to
                                    which imported objects should be assigned. 
-                                   KDDKDD  Currently unused.  */
+                                   KDDKDD  Currently assumes #parts == #procs.*/
   int *num_export,              /* Not computed, set to -1 */
   ZOLTAN_ID_PTR *export_global_ids, /* Not computed. */
   ZOLTAN_ID_PTR *export_local_ids,  /* Not computed. */
@@ -169,7 +169,7 @@ int Zoltan_RCB(
     *num_export = -1;  /* We don't compute the export map. */
 
     return(rcb_fn(zz, num_import, import_global_ids, import_local_ids,
-		 import_procs, overalloc, reuse, wgtflag,
+		 import_procs, import_to_part, overalloc, reuse, wgtflag,
                  check_geom, stats, gen_tree, reuse_dir, preset_dir,
                  rectilinear_blocks));
 }
@@ -190,6 +190,9 @@ static int rcb_fn(
   int **import_procs,           /* Returned value:  array of processor IDs for
                                    processors owning the non-local objects in
                                    this processor's new decomposition.       */
+  int **import_to_part,         /* Returned value:  array of partitions
+                                   to which objects are imported.
+                                   KDDKDD Currently Assume #parts == #procs. */
   double overalloc,             /* amount to overallocate by when realloc
                                    of dot array must be done.     
                                    1.0 = no extra; 1.5 = 50% extra; etc.     */
@@ -838,7 +841,7 @@ static int rcb_fn(
     if (*num_import > 0) {
       ierr = Zoltan_RB_Return_Arguments(zz, gidpt, lidpt, dotpt, *num_import,
                                     import_global_ids, import_local_ids,
-                                    import_procs, dottop);
+                                    import_procs, import_to_part, dottop);
       if (ierr) {
          ZOLTAN_PRINT_ERROR(proc,yo,"Error returned from Zoltan_RB_Return_Arguments.");
          ZOLTAN_TRACE_EXIT(zz, yo);

@@ -31,10 +31,11 @@ integer(Zoltan_INT), parameter :: MAX_EB_NAME_LEN = 32 ! chars for element block
 ! */
 type ELEM_INFO
   integer(Zoltan_INT) :: border   ! set to 1 if this element is a border element
-  integer(Zoltan_INT) :: globalID ! Global ID of this element, the local ID is the
-                             ! position in the array of elements
-  integer(Zoltan_INT) :: elem_blk ! element block number which this element is in
-  real(Zoltan_FLOAT)  :: cpu_wgt  ! the computational weight associated with the elem
+  integer(Zoltan_INT) :: globalID ! Global ID of this element; local ID is the
+                                  ! position in the array of elements
+  integer(Zoltan_INT) :: elem_blk ! elem block number which this element is in
+  integer(Zoltan_INT) :: my_part  ! partition to which this element is assigned
+  real(Zoltan_FLOAT)  :: cpu_wgt  ! computational weight associated with elem
   real(Zoltan_FLOAT)  :: mem_wgt  ! the memory weight associated with the elem
   real(Zoltan_FLOAT), pointer ::  coord(:,:) ! array for the coordinates of the
                                         ! element. For Nemesis meshes, nodal

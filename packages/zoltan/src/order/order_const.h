@@ -32,7 +32,7 @@ struct Zoltan_Order_Struct {
   int num_objects;              /* # of objects (local) */
   ZOLTAN_ID_PTR gids;           /* ptr to list of global ids */
   ZOLTAN_ID_PTR lids;           /* ptr to list of local ids */
-  int *rank;        		/* rank[i] is the rank of gigs[i] */
+  int *rank;        		/* rank[i] is the rank of gids[i] */
   char method[80];   		/* Ordering method used */
   int  num_separators;          /* Optional: # of separators. */
   int *sep_sizes;               /* Optional: Separator sizes. */

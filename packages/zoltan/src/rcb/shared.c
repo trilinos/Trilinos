@@ -504,9 +504,11 @@ int Zoltan_RB_Return_Arguments(
   ZOLTAN_ID_PTR lidpt,         /* pointer to array of local IDs. */
   struct Dot_Struct *dotpt,/* pointer to array of Dots. */
   int num_import,          /* number of objects to be imported. */
-  ZOLTAN_ID_PTR *import_global_ids,   /* global IDs of objects to be imported. */
-  ZOLTAN_ID_PTR *import_local_ids,    /* local IDs of objects to be imported. */
+  ZOLTAN_ID_PTR *import_global_ids,  /* global IDs of objects to be imported. */
+  ZOLTAN_ID_PTR *import_local_ids,   /* local IDs of objects to be imported. */
   int **import_procs,             /* processors from which objects will be 
+                                     imported. */
+  int **import_to_part,           /* partitions to which objects will be 
                                      imported. */
   int dottop               /* index of first dot to import on this processor. */
 )
@@ -542,6 +544,15 @@ int num_lid_entries = zz->Num_LID;
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
+  if (!Zoltan_Special_Malloc(zz,(void **)import_to_part,num_import,
+                         ZOLTAN_SPECIAL_MALLOC_INT)) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    Zoltan_Special_Free(zz,(void **)import_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
+    Zoltan_Special_Free(zz,(void **)import_local_ids,ZOLTAN_SPECIAL_MALLOC_LID);
+    Zoltan_Special_Free(zz,(void **)import_procs,ZOLTAN_SPECIAL_MALLOC_INT);
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return ZOLTAN_MEMERR;
+  }
 
   for (i = 0; i < num_import; i++) {
     ii = i + dottop;
@@ -551,6 +562,7 @@ int num_lid_entries = zz->Num_LID;
       ZOLTAN_SET_LID(zz, &((*import_local_ids)[i*num_lid_entries]),
                  &(lidpt[ii*num_lid_entries]));
     (*import_procs)[i] = dotpt[ii].Proc;
+    (*import_to_part)[i] = zz->Proc;  /* Assumes #parts == #procs */
   }
 
   return(ZOLTAN_OK);

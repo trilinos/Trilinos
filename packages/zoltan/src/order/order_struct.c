@@ -60,6 +60,7 @@ int Zoltan_Order_Create(ZOS **order_info, ZZ *zz)
   (*order_info)->method[0] = '\0';
   (*order_info)->num_separators = 0;
   (*order_info)->sep_sizes = NULL;
+  (*order_info)->rank = NULL;
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
@@ -74,8 +75,8 @@ int Zoltan_Order_Destroy(ZOS **order_info)
 
   if ((*order_info)->gids)      ZOLTAN_FREE(&((*order_info)->gids));
   if ((*order_info)->lids)      ZOLTAN_FREE(&((*order_info)->lids));
-  if ((*order_info)->method)    ZOLTAN_FREE(&((*order_info)->method));
   if ((*order_info)->sep_sizes) ZOLTAN_FREE(&((*order_info)->sep_sizes));
+  if ((*order_info)->rank)     ZOLTAN_FREE(&((*order_info)->rank));
 
   ZOLTAN_FREE(order_info);
   order_info = NULL;

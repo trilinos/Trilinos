@@ -289,11 +289,9 @@ void Zoltan_HG_HGraph_Print(
  * Lots of output; synchronized across processors, so is a bottleneck.
  */
 char *yo = "Zoltan_HG_HGraph_Print";
-int i, j;
+int i;
 int num_gid = zz->Num_GID;
 int num_lid = zz->Num_LID;
-int num_vwgt = zz->Obj_Weight_Dim;
-int num_ewgt = zz->Edge_Weight_Dim;
 
   if ((zoltan_hg != NULL) && (hg != &(zoltan_hg->HG))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input hg != Zoltan HG");

@@ -488,8 +488,14 @@ static int malloc_new_objects(ZZ *zz, int nsentags, pRegion export_tags,
  * fixes the import tags so that region tags that were previously
  * exported aren't counted when imported back.
  */
-int Zoltan_Oct_fix_tags(ZZ *zz, ZOLTAN_ID_PTR *import_global_ids, ZOLTAN_ID_PTR *import_local_ids,
-                 int **import_procs, int nrectags, pRegion import_regs)
+int Zoltan_Oct_fix_tags(
+  ZZ *zz, 
+  ZOLTAN_ID_PTR *import_global_ids, 
+  ZOLTAN_ID_PTR *import_local_ids,
+  int **import_procs, 
+  int **import_to_part,
+  int nrectags, 
+  pRegion import_regs)
 {
   char *yo = "Zoltan_Oct_fix_tags";
   int i;                                  /* index counter */
@@ -520,6 +526,15 @@ int Zoltan_Oct_fix_tags(ZZ *zz, ZOLTAN_ID_PTR *import_global_ids, ZOLTAN_ID_PTR 
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
     }
+    if (!Zoltan_Special_Malloc(zz,(void **)import_to_part,nrectags,
+                           ZOLTAN_SPECIAL_MALLOC_INT)) {
+      Zoltan_Special_Free(zz,(void **)import_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
+      Zoltan_Special_Free(zz,(void **)import_local_ids,ZOLTAN_SPECIAL_MALLOC_LID);
+      Zoltan_Special_Free(zz,(void **)import_procs,ZOLTAN_SPECIAL_MALLOC_INT);
+      ZOLTAN_PRINT_ERROR(zz->Proc,yo, "Insufficient memory.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return ZOLTAN_MEMERR;
+    }
 
     /* for each region imported, look at its originating processor */
     for(i=0; i<nrectags; i++) {
@@ -527,7 +542,8 @@ int Zoltan_Oct_fix_tags(ZZ *zz, ZOLTAN_ID_PTR *import_global_ids, ZOLTAN_ID_PTR 
                  import_regs[i].Global_ID);
       ZOLTAN_SET_LID(zz, &((*import_local_ids)[i*num_lid_entries]),
                  import_regs[i].Local_ID);
-      (*import_procs)[i]      = import_regs[i].Proc;
+      (*import_procs)[i]   = import_regs[i].Proc;
+      (*import_to_part)[i] = zz->Proc;
     }
 
     return ierr;

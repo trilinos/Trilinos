@@ -24,6 +24,8 @@ extern "C" {
 #define TAG1 32111
 #define TAG2 32112
 
+static int owner(int *, int, int);
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -89,7 +91,6 @@ int Zoltan_Inverse_Perm(
   ZOLTAN_COMM_OBJ *comm_plan;
   char msg[256];
   char *yo = "Zoltan_Inverse_Perm";
-  static int owner();
 
   ierr = ZOLTAN_OK;
   proclist = sendlist = recvlist = NULL;

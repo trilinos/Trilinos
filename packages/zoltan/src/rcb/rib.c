@@ -47,8 +47,8 @@ extern "C" {
 #define RIB_DEFAULT_OVERALLOC 1.0
 
 
-static int rib_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, double,
-            int, int, int, int);
+static int rib_fn(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
+                  double, int, int, int, int);
 static void print_rib_tree(ZZ *, struct rib_tree *);
 /* for Tflops_Special */
 static void Zoltan_RIB_min_max(double *, double *, int, int, int, MPI_Comm);
@@ -95,8 +95,8 @@ int Zoltan_RIB(
                                 processors owning the non-local objects in
                                 this processor's new decomposition.     */
   int **import_to_part,         /* Returned value:  array of partitions to
-                                   which imported objects should be assigned.
-                                   KDDKDD  Currently unused.  */
+                                 which imported objects should be assigned.
+                                 KDDKDD  Currently assumes #parts == #proc. */
   int *num_export,              /* Not computed, set to -1 */
   ZOLTAN_ID_PTR *export_global_ids, /* Not computed. */
   ZOLTAN_ID_PTR *export_local_ids,  /* Not computed. */
@@ -134,7 +134,8 @@ int Zoltan_RIB(
   *num_export = -1;  /* We don't compute the export map. */
 
   return(rib_fn(zz, num_import, import_global_ids, import_local_ids,
-                import_procs, overalloc, wgtflag, check_geom, stats, gen_tree));
+                import_procs, import_to_part,
+                overalloc, wgtflag, check_geom, stats, gen_tree));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -153,6 +154,9 @@ static int rib_fn(
   int **import_procs,           /* Returned value: array of processor IDs for
                                 processors owning the non-local objects in
                                 this processor's new decomposition. */
+  int **import_to_part,         /* Returned value: array of partitions to
+                                which objects are imported.
+                                KDDKDD Currently assumes #parts == #procs */
   double overalloc,             /* amount to overallocate by when realloc
                                 of dot array must be done.
                                   1.0 = no extra; 1.5 = 50% extra; etc. */
@@ -597,7 +601,7 @@ static int rib_fn(
     if (*num_import > 0) {
       ierr = Zoltan_RB_Return_Arguments(zz, gidpt, lidpt, dotpt, *num_import,
                                     import_global_ids, import_local_ids,
-                                    import_procs, dottop);
+                                    import_procs, import_to_part, dottop);
       if (ierr) {
         ZOLTAN_PRINT_ERROR(proc, yo,
                        "Error returned from Zoltan_RB_Return_Arguments.");

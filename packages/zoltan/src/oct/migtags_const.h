@@ -21,8 +21,8 @@ extern int Zoltan_Oct_migrate_objects(ZZ *zz, pOctant *octs, int *newpids, int n
 			       float *c2, float *c3, int *counter3, 
 			       int *counter4);
 
-extern int Zoltan_Oct_fix_tags(ZZ *zz, ZOLTAN_ID_PTR *import_global_ids, ZOLTAN_ID_PTR *import_local_ids,
-                        int **import_procs, int nrectags, pRegion import_regs);
+extern int Zoltan_Oct_fix_tags(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
+                        int **, int **, int, pRegion);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

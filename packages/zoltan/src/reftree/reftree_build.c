@@ -2361,7 +2361,7 @@ char *yo = "Zoltan_Reftree_Reinit_Coarse";
 ZOLTAN_REFTREE *root;     /* Root of the refinement tree */
 struct Zoltan_Reftree_hash_node **hashtab; /* hash table */
 int hashsize;         /* dimension of hash table */
-int i, j;             /* loop counter */
+int i;                /* loop counter */
 ZOLTAN_ID_PTR local_gids; /* coarse element Global IDs from user */
 ZOLTAN_ID_PTR local_lids; /* coarse element Local IDs from user */
 ZOLTAN_ID_PTR lid;        /* temporary coarse element Local ID; used to pass

@@ -344,10 +344,7 @@ char msg[256];
       search_by_global_id(mesh, export_global_ids[gid+i*num_gid_entries], 
                           &exp_elem);
 
-    if (export_to_part != NULL)
-      elements[exp_elem].my_part = export_to_part[i];
-    else
-      elements[exp_elem].my_part = export_procs[i];
+    elements[exp_elem].my_part = export_to_part[i];
 
     if (export_procs[i] == proc) 
       continue;  /* No adjacency changes needed if export is changing

@@ -76,8 +76,9 @@ contains
 logical function migrate_elements(Proc, zz_obj, &
                                   num_gid_entries, num_lid_entries, &
                                   num_imp, imp_gids, &
-                                  imp_lids, imp_procs, num_exp, exp_gids, &
-                                  exp_lids, exp_procs)
+                                  imp_lids, imp_procs, imp_to_part, &
+                                  num_exp, exp_gids, &
+                                  exp_lids, exp_procs, exp_to_part)
   integer(Zoltan_INT) :: Proc
   type(Zoltan_Struct) :: zz_obj
   integer(Zoltan_INT) :: num_gid_entries, num_lid_entries
@@ -85,10 +86,12 @@ logical function migrate_elements(Proc, zz_obj, &
   integer(Zoltan_INT),pointer :: imp_gids(:)
   integer(Zoltan_INT),pointer :: imp_lids(:)
   integer(Zoltan_INT), pointer :: imp_procs(:)
+  integer(Zoltan_INT), pointer :: imp_to_part(:)
   integer(Zoltan_INT) :: num_exp
   integer(Zoltan_INT),pointer :: exp_gids(:)
   integer(Zoltan_INT),pointer :: exp_lids(:)
   integer(Zoltan_INT), pointer :: exp_procs(:)
+  integer(Zoltan_INT), pointer :: exp_to_part(:)
 
 !/* Local declarations. */
 type(Zoltan_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
@@ -101,9 +104,9 @@ type(Zoltan_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
 !  /*
 !   * register migration functions
 !   */
-! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PRE_MIGRATE_FN_TYPE, migrate_pre_process, &
+! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, migrate_pre_process, &
 !               mesh_wrapper) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Pre_Migrate_Fn(zz_obj, migrate_pre_process, &
+  if (Zoltan_Set_Pre_Migrate_PP_Fn(zz_obj, migrate_pre_process, &
                 mesh_wrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
     migrate_elements = .false.; return
@@ -164,10 +167,12 @@ type(Zoltan_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
 
   endif
 
-  if (Zoltan_Help_Migrate(zz_obj, &
-                      num_imp, imp_gids, imp_lids, imp_procs, &
-                      num_exp, exp_gids, exp_lids, exp_procs) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Help_Migrate()"
+  if (Zoltan_Migrate(zz_obj, &
+                     num_imp, imp_gids, imp_lids, &
+                     imp_procs, imp_to_part, &
+                     num_exp, exp_gids, exp_lids, &
+                     exp_procs, exp_to_part) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_Migrate()"
     migrate_elements = .false.; return
   endif
 
@@ -179,15 +184,17 @@ end function migrate_elements
 !/*****************************************************************************/
 subroutine migrate_pre_process(data, num_gid_entries, num_lid_entries, &
                                num_import, import_global_ids, &
-                               import_local_ids, import_procs, num_export, &
+                               import_local_ids, import_procs, import_to_part, &
+                               num_export, &
                                export_global_ids, export_local_ids, &
-                               export_procs, ierr)
+                               export_procs, export_to_part, ierr)
 type(Zoltan_User_Data_2), intent(in) :: data
 integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
 integer(Zoltan_INT), intent(in) :: num_import, num_export
 integer(Zoltan_INT), intent(in) :: import_global_ids(*), import_local_ids(*), &
                     export_global_ids(*), export_local_ids(*)
 integer(Zoltan_INT), intent(in) :: import_procs(*), export_procs(*)
+integer(Zoltan_INT), intent(in) :: import_to_part(*), export_to_part(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
 integer(Zoltan_INT) :: i, j, k, idx, maxlen, proc, offset, mpierr, allocstat
@@ -295,6 +302,14 @@ integer(Zoltan_INT) :: lid
       exp_elem_ptr => search_by_global_id(mesh_data, &
                        export_global_ids(gid+(i-1)*num_gid_entries), exp_elem)
     endif
+
+    elements(exp_elem)%my_part = export_to_part(i)
+
+    if (export_procs(i) == proc) then
+      cycle  ! /* No adjacency changes needed if export is changing
+             !    only partition, not processor. */
+    endif
+
     do j = 0, elements(exp_elem)%adj_len-1
 
 !     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
@@ -507,6 +522,7 @@ type(MESH_INFO), pointer :: mesh_data
 
     element(last)%globalID = -1
     element(last)%border = 0
+    element(last)%my_part = -1
     element(last)%nadj = 0
     element(last)%adj_len = 0
     element(last)%elem_blk = -1
@@ -566,7 +582,7 @@ integer(Zoltan_INT) :: lid
 !   * Compute size of one element's data.
 !   */
 
-  size = 5 * SIZE_OF_INT + 2 * SIZE_OF_FLOAT
+  size = 6 * SIZE_OF_INT + 2 * SIZE_OF_FLOAT
   num_nodes =  mesh_data%eb_nnodes(current_elem%elem_blk)
  
 !  /* Add space for connect table. */
@@ -668,12 +684,13 @@ integer(Zoltan_INT), intent(out) :: ierr
   buf(5) = transfer(current_elem%mem_wgt,1_Zoltan_INT)
   buf(6) = current_elem%nadj
   buf(7) = current_elem%adj_len
+  buf(8) = current_elem%my_part
 
 !  /*
 !   * copy the allocated integer fields for this element.
 !   */
 
-  size = 7
+  size = 8
 
 !  /* copy the connect table */
   if (Mesh%num_dims > 0) then
@@ -822,8 +839,9 @@ integer(Zoltan_INT), intent(out) :: ierr
   current_elem%nadj = buf(6)
   current_elem%adj_len = buf(7)
   num_nodes = Mesh%eb_nnodes(current_elem%elem_blk)
+  current_elem%my_part = buf(8)
 
-  size = 7
+  size = 8
 
 !  /*
 !   * copy the allocated integer fields for this element.

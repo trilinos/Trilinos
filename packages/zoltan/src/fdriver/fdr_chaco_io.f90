@@ -218,6 +218,7 @@ logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
       elem(i)%cpu_wgt = 1.0
     endif
     elem(i)%elem_blk = 0        !/* only one element block for all vertices */
+    elem(i)%my_part = Proc
     if (Mesh%num_dims > 0) then
 !      /* One set of coords per element. */
       allocate(elem(i)%connect(0:0))
@@ -1111,6 +1112,7 @@ type(ELEM_INFO) :: elem
 ! */
   elem%globalID = -1
   elem%border = 0
+  elem%my_part = -1
   elem%elem_blk = -1
   elem%cpu_wgt = 0
   elem%mem_wgt = 0
@@ -1135,6 +1137,7 @@ type(ELEM_INFO) :: elem
   if (associated(elem%edge_wgt)) deallocate(elem%edge_wgt)
   elem%globalID = -1
   elem%border = 0
+  elem%my_part = -1
   elem%nadj = 0
   elem%adj_len = 0
   elem%elem_blk = -1

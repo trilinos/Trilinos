@@ -49,18 +49,22 @@ type(PROB_INFO) :: prob
   type(Zoltan_Struct), pointer :: zz_obj
 
 !  /* Variables returned by the load balancer */
-  integer(Zoltan_INT),pointer :: import_gids(:)  !/* Global node nums of nodes to
-                                             ! be imported
-  integer(Zoltan_INT),pointer :: import_lids(:)  !/* Pointers to nodes to be
-                                             ! imported
-  integer(Zoltan_INT), pointer :: import_procs(:) !/* Proc IDs of procs owning
-                                             ! nodes to be imported.
-  integer(Zoltan_INT),pointer :: export_gids(:)  !/* Global node nums of nodes to
-                                             ! be exported
-  integer(Zoltan_INT),pointer :: export_lids(:)  !/* Pointers to nodes to be
-                                             ! exported
-  integer(Zoltan_INT), pointer :: export_procs(:) !/* Proc IDs of destination procs
-                                             ! for nodes to be exported.
+  integer(Zoltan_INT),pointer :: import_gids(:)  !/* Global nums of elements to
+                                                 ! be imported
+  integer(Zoltan_INT),pointer :: import_lids(:)  !/* Pointers to elements to be
+                                                 ! imported
+  integer(Zoltan_INT),pointer :: import_procs(:) !/* Proc IDs of procs owning
+                                                 ! elements to be imported.
+  integer(Zoltan_INT),pointer :: import_to_part(:)!/* Partition to which 
+                                                 ! elements are to be imported.
+  integer(Zoltan_INT),pointer :: export_gids(:)  !/* Global nums of elements to
+                                                 ! be exported
+  integer(Zoltan_INT),pointer :: export_lids(:)  !/* Pointers to elements to be
+                                                 ! exported
+  integer(Zoltan_INT),pointer :: export_procs(:) !/* Proc IDs of destination 
+                                                 ! for elements to be exported.
+  integer(Zoltan_INT),pointer :: export_to_part(:)!/* Partition to which 
+                                                 ! elements are to be exported.
   integer(Zoltan_INT) :: num_imported !/* Number of nodes to be imported.
   integer(Zoltan_INT) :: num_exported !/* Number of nodes to be exported.
   logical :: new_decomp           !/* Flag indicating whether the decomposition
@@ -74,8 +78,8 @@ type(PROB_INFO) :: prob
 
 !/***************************** BEGIN EXECUTION ******************************/
 
-  nullify(zz_obj, import_gids, import_lids, import_procs, &
-                  export_gids, export_lids, export_procs)
+  nullify(zz_obj, import_gids, import_lids, import_procs, import_to_part, &
+                  export_gids, export_lids, export_procs, export_to_part)
 
 ! make Mesh passable to the callback functions
   mesh_wrapper%ptr => Mesh
@@ -181,11 +185,13 @@ type(PROB_INFO) :: prob
 !  /*
 !   * Call the load balancer
 !   */
-  if (Zoltan_LB_Balance(zz_obj, new_decomp, num_gid_entries, num_lid_entries, &
-                 num_imported, import_gids,        &
-                 import_lids, import_procs, num_exported, export_gids, &
-                 export_lids, export_procs) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_LB_Balance()"
+  if (Zoltan_LB_Partition(zz_obj, new_decomp, &
+                 num_gid_entries, num_lid_entries, &
+                 num_imported, import_gids, import_lids, &
+                 import_procs, import_to_part,  &
+                 num_exported, export_gids, export_lids, &
+                 export_procs, export_to_part) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_LB_Partition()"
     run_zoltan = .false.
     return
   endif
@@ -197,8 +203,9 @@ type(PROB_INFO) :: prob
     if (.not.migrate_elements(Proc,zz_obj, &
                           num_gid_entries, num_lid_entries, &
                           num_imported,import_gids, &
-                          import_lids,import_procs,num_exported,export_gids, &
-                          export_lids,export_procs)) then
+                          import_lids,import_procs,import_to_part, &
+                          num_exported,export_gids, &
+                          export_lids,export_procs,export_to_part)) then
       print *, "fatal:  error returned from migrate_elements()"
       run_zoltan = .false.
       return
@@ -215,8 +222,10 @@ type(PROB_INFO) :: prob
 !  }
 
 !  /* Clean up */
-  ierr = Zoltan_LB_Free_Data(import_gids, import_lids, import_procs, &
-                      export_gids, export_lids, export_procs)
+  ierr = Zoltan_LB_Free_Part(import_gids,  import_lids, &
+                             import_procs, import_to_part) 
+  ierr = Zoltan_LB_Free_Part(export_gids,  export_lids, &
+                             export_procs, export_to_part) 
 
   call Zoltan_Destroy(zz_obj)
 

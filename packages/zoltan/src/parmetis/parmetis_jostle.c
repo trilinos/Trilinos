@@ -66,10 +66,12 @@ static int Zoltan_ParMetis_Shared(
   ZOLTAN_ID_PTR *imp_gids,
   ZOLTAN_ID_PTR *imp_lids,
   int **imp_procs,
+  int **imp_to_part,
   int *num_exp,
   ZOLTAN_ID_PTR *exp_gids,
   ZOLTAN_ID_PTR *exp_lids,
   int **exp_procs,
+  int **exp_to_part,
   int *rank,
   int *iperm,
   ZOOS *order_opt,
@@ -79,8 +81,9 @@ static int Zoltan_ParMetis_Shared(
 #if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
 
 static int Zoltan_ParMetis_Jostle(ZZ *zz, int *num_imp, ZOLTAN_ID_PTR *imp_gids,
-  ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int *num_exp, ZOLTAN_ID_PTR *exp_gids,
-  ZOLTAN_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options, 
+  ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int **imp_to_part,
+  int *num_exp, ZOLTAN_ID_PTR *exp_gids, ZOLTAN_ID_PTR *exp_lids, 
+  int **exp_procs, int **exp_to_part, char *alg, int  *options, 
   float *itr, int *rank, int *iperm, ZOOS *order_opt, ZOS *order_info);
 static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
                  int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
@@ -110,12 +113,12 @@ int Zoltan_ParMetis(
   ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
   int **exp_procs,      /* list of processors to export to */
   int **exp_to_part     /* list of partitions to which exported objects are
-                           assigned. KDDKDD Currently unused.  */
+                           assigned. KDDKDD Currently assumes #parts==#procs. */
 )
 {
   return Zoltan_ParMetis_Shared(zz, num_imp, imp_gids, imp_lids,
-         imp_procs, num_exp, exp_gids, exp_lids, exp_procs, 
-         NULL, NULL, NULL, NULL);
+         imp_procs, imp_to_part, num_exp, exp_gids, exp_lids, exp_procs, 
+         exp_to_part, NULL, NULL, NULL, NULL);
 }
 
 /* Zoltan_ParMetis_Shared is shared by Zoltan_ParMetis
@@ -127,10 +130,12 @@ static int Zoltan_ParMetis_Shared(
   ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
   ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
   int **imp_procs,      /* list of processors to import from */
+  int **imp_to_part,    /* list of partitions to import to */
   int *num_exp,         /* number of objects to be exported */
   ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
   ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
   int **exp_procs,      /* list of processors to export to */
+  int **exp_to_part,    /* list of partitions to export to */
   int *rank,            /* rank[i] is the rank of gids[i] */
   int *iperm,           /* inverse permutation of rank */
   ZOOS *order_opt,	/* ordering options */
@@ -222,8 +227,9 @@ static int Zoltan_ParMetis_Shared(
   }
 
   /* Call the real ParMetis interface */
-  return Zoltan_ParMetis_Jostle( zz, num_imp, imp_gids, imp_lids,
-            imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
+  return Zoltan_ParMetis_Jostle(zz, 
+            num_imp, imp_gids, imp_lids, imp_procs, imp_to_part, 
+            num_exp, exp_gids, exp_lids, exp_procs, exp_to_part,
             alg, options, &itr, rank, iperm, order_opt, order_info);
 
 #endif /* ZOLTAN_PARMETIS */
@@ -288,7 +294,7 @@ int Zoltan_ParMetis_Order(
   }
    
   /* Call ParMetis_Shared */
-  return Zoltan_ParMetis_Shared(zz, NULL, &gids, &lids, NULL,
+  return Zoltan_ParMetis_Shared(zz, NULL, &gids, &lids, NULL, NULL, NULL,
          NULL, NULL, NULL, NULL, rank, iperm, order_opt, order_info);
 }
 
@@ -305,13 +311,13 @@ int Zoltan_Jostle(
   ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
   int **imp_procs,      /* list of processors to import from */
   int **imp_to_part,    /* list of partitions to which imported objects are 
-                           assigned.  KDDKDD Currently unused. */
+                           assigned.  KDDKDD Currently assume #parts == #proc.*/
   int *num_exp,         /* number of objects to be exported */
   ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
   ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
   int **exp_procs,      /* list of processors to export to */
   int **exp_to_part     /* list of partitions to which exported objects are
-                           assigned. KDDKDD Currently unused.  */
+                           assigned. KDDKDD Currently assume #parts == #proc. */
 )
 {
 #ifndef ZOLTAN_JOSTLE
@@ -423,8 +429,9 @@ int Zoltan_Jostle(
   }
 
   /* Call the real Jostle/ParMetis interface */
-  return Zoltan_ParMetis_Jostle( zz, num_imp, imp_gids, imp_lids,
-            imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
+  return Zoltan_ParMetis_Jostle(zz, 
+            num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
+            num_exp, exp_gids, exp_lids, exp_procs, exp_to_part,
             alg, &output_level, NULL, NULL, NULL, NULL, NULL);
 
 #endif /* ZOLTAN_JOSTLE */
@@ -445,10 +452,12 @@ static int Zoltan_ParMetis_Jostle(
   ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
   ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
   int **imp_procs,      /* list of processors to import from */
+  int **imp_to_part,    /* list of partitions to import to */
   int *num_exp,         /* number of objects to be exported */
   ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
   ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
   int **exp_procs,      /* list of processors to export to */
+  int **exp_to_part,    /* list of partitions to export to */
   char *alg,            /* algorithm to use */
   int  *options,        /* ParMetis option array */
   float *itr,    	/* ParMetis 3.0 parameter for adaptive repart. */
@@ -1109,6 +1118,12 @@ static int Zoltan_ParMetis_Jostle(
           Zoltan_Special_Free(zz,(void **)exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
           ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
         }
+        if (!Zoltan_Special_Malloc(zz,(void **)exp_to_part,nsend,ZOLTAN_SPECIAL_MALLOC_INT)) {
+          Zoltan_Special_Free(zz,(void **)exp_lids,ZOLTAN_SPECIAL_MALLOC_LID);
+          Zoltan_Special_Free(zz,(void **)exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
+          Zoltan_Special_Free(zz,(void **)exp_procs,ZOLTAN_SPECIAL_MALLOC_INT);
+          ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
+        }
         j = 0;
         for (i=0; i<num_obj; i++){
           if (part[i] != zz->Proc){
@@ -1118,6 +1133,7 @@ static int Zoltan_ParMetis_Jostle(
               ZOLTAN_SET_LID(zz, &((*exp_lids)[j*num_lid_entries]),
                              &(local_ids[i*num_lid_entries]));
             (*exp_procs)[j] = part[i];
+            (*exp_to_part)[j] = part[i];  /* Assumes #part == #proc */
             j++;
           }
         }

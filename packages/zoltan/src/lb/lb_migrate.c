@@ -765,6 +765,15 @@ int ierr;
     goto End;
   }
 
+  if (zz->Migrate.Pre_Migrate_PP || zz->Migrate.Mid_Migrate_PP || 
+      zz->Migrate.Post_Migrate_PP) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+      "Partition information not available in Zoltan_Help_Migrate for "
+      "ZOLTAN_*_MIGRATE_PP_FNs; use ZOLTAN_*_MIGRATE_FNs instead.");
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
   /*
    * Wrapper (for backward compatilibity) around Zoltan_Migrate.
    * Passes NULL for partition assignment arrays.

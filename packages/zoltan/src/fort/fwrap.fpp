@@ -109,11 +109,14 @@ public :: &
    Zoltan_Set_Param, &
    Zoltan_LB_Partition, &
    Zoltan_LB_Eval, &
+   Zoltan_LB_Free_Part, &
    Zoltan_LB_Free_Data, &
    Zoltan_LB_Point_Assign, &
    Zoltan_LB_Box_Assign, &
    Zoltan_LB_Balance, &
+   Zoltan_Invert_Lists, &
    Zoltan_Compute_Destinations, &
+   Zoltan_Migrate, &
    Zoltan_Help_Migrate
 
 ! Registration functions with strict type checking.
@@ -762,11 +765,37 @@ end function Zfw_LB_Box_Assign
 end interface
 
 interface
+!NAS$ ALIEN "F77 zfw_invert_lists"
+function Zfw_Invert_Lists(zz,nbytes, &
+                       num_input,input_global_ids,input_local_ids, &
+                       input_procs,input_to_part, &
+                       num_output,output_global_ids,output_local_ids, &
+                       output_procs,output_to_part)
+use zoltan_types
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_Invert_Lists
+integer(Zoltan_INT), dimension(*) INTENT_IN zz
+integer(Zoltan_INT) INTENT_IN nbytes
+integer(Zoltan_INT) INTENT_IN num_input
+integer(Zoltan_INT), intent(out) :: num_output
+integer(Zoltan_INT), dimension(*) INTENT_IN input_global_ids
+integer(Zoltan_INT), pointer, dimension(:) :: output_global_ids
+integer(Zoltan_INT), dimension(*) INTENT_IN input_local_ids
+integer(Zoltan_INT), pointer, dimension(:) :: output_local_ids
+integer(Zoltan_INT), dimension(*) INTENT_IN input_procs
+integer(Zoltan_INT), pointer, dimension(:) :: output_procs
+integer(Zoltan_INT), dimension(*) INTENT_IN input_to_part
+integer(Zoltan_INT), pointer, dimension(:) :: output_to_part
+end function Zfw_Invert_Lists
+end interface
+
+interface
 !NAS$ ALIEN "F77 zfw_compute_destinations"
 function Zfw_Compute_Destinations(zz,nbytes, &
-                       num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
+                       num_input,input_global_ids, &
+                       input_local_ids,input_procs,num_output, &
+                       output_global_ids,output_local_ids,output_procs)
 use zoltan_types
 use lb_user_const
 use zoltan_user_data
@@ -774,15 +803,36 @@ implicit none
 integer(Zoltan_INT) :: Zfw_Compute_Destinations
 integer(Zoltan_INT), dimension(*) INTENT_IN zz
 integer(Zoltan_INT) INTENT_IN nbytes
-integer(Zoltan_INT) INTENT_IN num_import
-integer(Zoltan_INT), intent(out) :: num_export
-integer(Zoltan_INT), dimension(*) INTENT_IN import_global_ids
-integer(Zoltan_INT), pointer, dimension(:) :: export_global_ids
-integer(Zoltan_INT), dimension(*) INTENT_IN import_local_ids
-integer(Zoltan_INT), pointer, dimension(:) :: export_local_ids
-integer(Zoltan_INT), dimension(*) INTENT_IN import_procs
-integer(Zoltan_INT), pointer, dimension(:) :: export_procs
+integer(Zoltan_INT) INTENT_IN num_input
+integer(Zoltan_INT), intent(out) :: num_output
+integer(Zoltan_INT), dimension(*) INTENT_IN input_global_ids
+integer(Zoltan_INT), pointer, dimension(:) :: output_global_ids
+integer(Zoltan_INT), dimension(*) INTENT_IN input_local_ids
+integer(Zoltan_INT), pointer, dimension(:) :: output_local_ids
+integer(Zoltan_INT), dimension(*) INTENT_IN input_procs
+integer(Zoltan_INT), pointer, dimension(:) :: output_procs
 end function Zfw_Compute_Destinations
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_migrate"
+function Zfw_Migrate(zz,nbytes, &
+                     num_import,import_global_ids,import_local_ids, &
+                     import_procs,import_to_part, &
+                     num_export,export_global_ids,export_local_ids, &
+                     export_procs,export_to_part)
+use zoltan_types
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_Migrate
+integer(Zoltan_INT), dimension(*) INTENT_IN zz
+integer(Zoltan_INT) INTENT_IN nbytes
+integer(Zoltan_INT) INTENT_IN num_import, num_export
+integer(Zoltan_INT), dimension(*) INTENT_IN import_global_ids, export_global_ids
+integer(Zoltan_INT), dimension(*) INTENT_IN import_local_ids, export_local_ids
+integer(Zoltan_INT), dimension(*) INTENT_IN import_procs, export_procs
+integer(Zoltan_INT), dimension(*) INTENT_IN import_to_part, export_to_part
+end function Zfw_Migrate
 end interface
 
 interface
@@ -917,6 +967,10 @@ interface Zoltan_LB_Eval
    module procedure Zf90_LB_Eval
 end interface
 
+interface Zoltan_LB_Free_Part
+   module procedure Zf90_LB_Free_Part
+end interface
+
 interface Zoltan_LB_Free_Data
    module procedure Zf90_LB_Free_Data
 end interface
@@ -929,8 +983,16 @@ interface Zoltan_LB_Box_Assign
    module procedure Zf90_LB_Box_Assign
 end interface
 
+interface Zoltan_Invert_Lists
+   module procedure Zf90_Invert_Lists
+end interface
+
 interface Zoltan_Compute_Destinations
    module procedure Zf90_Compute_Destinations
+end interface
+
+interface Zoltan_Migrate
+   module procedure Zf90_Migrate
 end interface
 
 interface Zoltan_Help_Migrate
@@ -1010,6 +1072,7 @@ contains
 
 !--------------------------------------------------------------------------
 ! Utilities
+!--------------------------------------------------------------------------
 
 subroutine fort_malloc_int(array,n,ret_addr)
 ! This gets called by the C special_malloc to do the allocation
@@ -1040,6 +1103,7 @@ end subroutine fort_free_int
 
 !--------------------------------------------------------------------------
 ! Fortran wrapper procedures
+!--------------------------------------------------------------------------
 
 function Zf90_Initialize(ver)
 integer(Zoltan_INT) :: Zf90_Initialize
@@ -1052,6 +1116,7 @@ call Zfw_Register_Fort_Malloc(fort_malloc_int,fort_free_int)
 Zf90_Initialize = Zfw_Initialize(ver)
 end function Zf90_Initialize
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Initialize1(argc,argv,ver)
 integer(Zoltan_INT) :: Zf90_Initialize1
 integer(Zoltan_INT) INTENT_IN argc
@@ -1077,6 +1142,7 @@ Zf90_Initialize1 = Zfw_Initialize1(argc,int_argv,starts,ver)
 deallocate(starts,int_argv)
 end function Zf90_Initialize1
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Create(communicator)
 type(Zoltan_Struct), pointer :: Zf90_Create
 integer INTENT_IN communicator
@@ -1097,6 +1163,7 @@ if (isnull) then
 endif
 end function Zf90_Create
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine Zf90_Destroy(zz)
 type(Zoltan_Struct), pointer :: zz
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
@@ -1110,10 +1177,12 @@ deallocate(zz)
 nullify(zz)
 end subroutine Zf90_Destroy
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine Zf90_Memory_Stats()
 call Zfw_Memory_Stats()
 end subroutine Zf90_Memory_Stats
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn0f(zz,fn_type,fn_ptr)
 integer(Zoltan_INT) :: Zf90_Set_Fn0f
 type(Zoltan_Struct) INTENT_IN zz
@@ -1132,6 +1201,7 @@ Zf90_Set_Fn0f = Zfw_Set_Fn0f(zz_addr,nbytes,fn_type%choice,fn_ptr)
 #endif
 end function Zf90_Set_Fn0f
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn0s(zz,fn_type,fn_ptr)
 integer(Zoltan_INT) :: Zf90_Set_Fn0s
 type(Zoltan_Struct) INTENT_IN zz
@@ -1150,6 +1220,7 @@ Zf90_Set_Fn0s = Zfw_Set_Fn0s(zz_addr,nbytes,fn_type%choice,fn_ptr)
 #endif
 end function Zf90_Set_Fn0s
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn1f(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn1f
 type(Zoltan_Struct) INTENT_IN zz
@@ -1169,6 +1240,7 @@ Zf90_Set_Fn1f = Zfw_Set_Fn1f(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn1f
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn1s(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn1s
 type(Zoltan_Struct) INTENT_IN zz
@@ -1188,6 +1260,7 @@ Zf90_Set_Fn1s = Zfw_Set_Fn1s(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn1s
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn2f(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn2f
 type(Zoltan_Struct) INTENT_IN zz
@@ -1207,6 +1280,7 @@ Zf90_Set_Fn2f = Zfw_Set_Fn2f(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn2f
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn2s(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn2s
 type(Zoltan_Struct) INTENT_IN zz
@@ -1226,6 +1300,7 @@ Zf90_Set_Fn2s = Zfw_Set_Fn2s(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn2s
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn3f(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn3f
 type(Zoltan_Struct) INTENT_IN zz
@@ -1245,6 +1320,7 @@ Zf90_Set_Fn3f = Zfw_Set_Fn3f(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn3f
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn3s(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn3s
 type(Zoltan_Struct) INTENT_IN zz
@@ -1264,6 +1340,7 @@ Zf90_Set_Fn3s = Zfw_Set_Fn3s(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn3s
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn4f(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn4f
 type(Zoltan_Struct) INTENT_IN zz
@@ -1283,6 +1360,7 @@ Zf90_Set_Fn4f = Zfw_Set_Fn4f(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn4f
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn4s(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn4s
 type(Zoltan_Struct) INTENT_IN zz
@@ -1302,6 +1380,7 @@ Zf90_Set_Fn4s = Zfw_Set_Fn4s(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn4s
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn5f(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn5f
 type(Zoltan_Struct) INTENT_IN zz
@@ -1321,6 +1400,7 @@ Zf90_Set_Fn5f = Zfw_Set_Fn5f(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn5f
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn5s(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn5s
 type(Zoltan_Struct) INTENT_IN zz
@@ -1340,6 +1420,7 @@ Zf90_Set_Fn5s = Zfw_Set_Fn5s(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn5s
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn6f(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn6f
 type(Zoltan_Struct) INTENT_IN zz
@@ -1359,6 +1440,7 @@ Zf90_Set_Fn6f = Zfw_Set_Fn6f(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn6f
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn6s(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn6s
 type(Zoltan_Struct) INTENT_IN zz
@@ -1378,6 +1460,7 @@ Zf90_Set_Fn6s = Zfw_Set_Fn6s(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn6s
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn7f(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn7f
 type(Zoltan_Struct) INTENT_IN zz
@@ -1397,6 +1480,7 @@ Zf90_Set_Fn7f = Zfw_Set_Fn7f(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn7f
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Fn7s(zz,fn_type,fn_ptr,data)
 integer(Zoltan_INT) :: Zf90_Set_Fn7s
 type(Zoltan_Struct) INTENT_IN zz
@@ -1416,6 +1500,7 @@ Zf90_Set_Fn7s = Zfw_Set_Fn7s(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn7s
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Set_Param(zz,param_name,new_value)
 integer(Zoltan_INT) :: Zf90_Set_Param
 type(Zoltan_Struct) INTENT_IN zz
@@ -1440,6 +1525,7 @@ Zf90_Set_Param = Zfw_Set_Param(zz_addr,nbytes,int_param_name, &
                                     param_name_len,int_new_value,new_value_len)
 end function Zf90_Set_Param
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_LB_Partition(zz,changes,num_gid_entries,num_lid_entries, &
                  num_import,import_global_ids, &
                  import_local_ids,import_procs,import_to_part,num_export, &
@@ -1468,6 +1554,7 @@ Zf90_LB_Partition = Zfw_LB_Partition(zz_addr,nbytes,int_changes, &
 changes = .not.(int_changes==0)
 end function Zf90_LB_Partition
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_LB_Balance(zz,changes,num_gid_entries,num_lid_entries, &
                        num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
@@ -1504,6 +1591,7 @@ if (associated(export_to_part)) deallocate(export_to_part,stat=stat)
 changes = .not.(int_changes==0)
 end function Zf90_LB_Balance
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_LB_Eval(zz,print_stats,nobj,obj_wgt, &
                     ncuts,cut_wgt,nboundary,nadj)
 integer(Zoltan_INT) :: Zf90_LB_Eval
@@ -1581,6 +1669,30 @@ if (present(nadj)) nadj = loc_nadj
 deallocate(loc_obj_wgt)
 end function Zf90_LB_Eval
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_LB_Free_Part(global_ids, local_ids, procs, part)
+integer(Zoltan_INT) :: Zf90_LB_Free_Part
+integer(Zoltan_INT), pointer, dimension(:) :: global_ids
+integer(Zoltan_INT), pointer, dimension(:) :: local_ids
+integer(Zoltan_INT), pointer, dimension(:) :: procs, part
+integer :: stat
+stat = 0
+Zf90_LB_Free_Part = ZOLTAN_OK
+if (associated(global_ids)) deallocate(global_ids,stat=stat)
+if (stat /= 0) Zf90_LB_Free_Part = ZOLTAN_WARN
+nullify(global_ids)
+if (associated(local_ids)) deallocate(local_ids,stat=stat)
+if (stat /= 0) Zf90_LB_Free_Part = ZOLTAN_WARN
+nullify(local_ids)
+if (associated(procs)) deallocate(procs,stat=stat)
+if (stat /= 0) Zf90_LB_Free_Part = ZOLTAN_WARN
+nullify(procs)
+if (associated(part)) deallocate(part,stat=stat)
+if (stat /= 0) Zf90_LB_Free_Part = ZOLTAN_WARN
+nullify(part)
+end function Zf90_LB_Free_Part
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_LB_Free_Data(import_global_ids, import_local_ids,import_procs, &
                          export_global_ids,export_local_ids,export_procs)
 integer(Zoltan_INT) :: Zf90_LB_Free_Data
@@ -1610,6 +1722,7 @@ if (stat /= 0) Zf90_LB_Free_Data = ZOLTAN_WARN
 nullify(export_procs)
 end function Zf90_LB_Free_Data
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_LB_Point_Assign(zz,coords,proc)
 integer(Zoltan_INT) :: Zf90_LB_Point_Assign
 type(Zoltan_Struct) INTENT_IN zz
@@ -1624,6 +1737,7 @@ end do
 Zf90_LB_Point_Assign = Zfw_LB_Point_Assign(zz_addr,nbytes,coords,proc)
 end function Zf90_LB_Point_Assign
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_LB_Box_Assign(zz,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs)
 integer(Zoltan_INT) :: Zf90_LB_Box_Assign
 type(Zoltan_Struct) INTENT_IN zz
@@ -1640,22 +1754,56 @@ Zf90_LB_Box_Assign = Zfw_LB_Box_Assign(zz_addr,nbytes,xmin,ymin,zmin,xmax,ymax, 
                                     zmax,procs,numprocs)
 end function Zf90_LB_Box_Assign
 
-function Zf90_Compute_Destinations(zz, &
-                       num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-integer(Zoltan_INT) :: Zf90_Compute_Destinations
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_Invert_Lists(zz, &
+                       num_input,input_global_ids,input_local_ids, &
+                       input_procs,input_to_part, &
+                       num_output,output_global_ids,output_local_ids, &
+                       output_procs,output_to_part)
+integer(Zoltan_INT) :: Zf90_Invert_Lists
 type(Zoltan_Struct) INTENT_IN zz
-integer(Zoltan_INT) INTENT_IN num_import
-integer(Zoltan_INT), intent(out) :: num_export
-integer(Zoltan_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
-integer(Zoltan_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(Zoltan_INT), pointer, dimension(:) :: import_procs, export_procs
+integer(Zoltan_INT) INTENT_IN num_input
+integer(Zoltan_INT), intent(out) :: num_output
+integer(Zoltan_INT), pointer, dimension(:) :: input_global_ids,output_global_ids
+integer(Zoltan_INT), pointer, dimension(:) :: input_local_ids, output_local_ids
+integer(Zoltan_INT), pointer, dimension(:) :: input_procs, output_procs
+integer(Zoltan_INT), pointer, dimension(:) :: input_to_part, output_to_part
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
 integer(Zoltan_INT) :: nbytes, i
-if (.not.associated(import_global_ids) .or. .not.associated(import_local_ids) &
-    .or. .not.associated(import_procs)) then
-   write(stderr,*) "Error from Zoltan_Compute_Destinations: import pointers are not associated"
+if (.not.associated(input_global_ids) .or. .not.associated(input_local_ids) &
+    .or. .not.associated(input_procs) .or. .not.associated(input_to_part)) then
+   write(stderr,*) "Error from Zoltan_Invert_Lists: input pointers are not associated"
+   Zf90_Invert_Lists = ZOLTAN_WARN
+   return
+endif
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+Zf90_Invert_Lists = Zfw_Invert_Lists(zz_addr,nbytes, &
+                             num_input,input_global_ids,input_local_ids, &
+                             input_procs,input_to_part, &
+                             num_output,output_global_ids, &
+                             output_local_ids,output_procs,output_to_part)
+end function Zf90_Invert_Lists
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_Compute_Destinations(zz, &
+                       num_input,input_global_ids, &
+                       input_local_ids,input_procs,num_output, &
+                       output_global_ids,output_local_ids,output_procs)
+integer(Zoltan_INT) :: Zf90_Compute_Destinations
+type(Zoltan_Struct) INTENT_IN zz
+integer(Zoltan_INT) INTENT_IN num_input
+integer(Zoltan_INT), intent(out) :: num_output
+integer(Zoltan_INT), pointer, dimension(:) :: input_global_ids, output_global_ids
+integer(Zoltan_INT), pointer, dimension(:) :: input_local_ids, output_local_ids
+integer(Zoltan_INT), pointer, dimension(:) :: input_procs, output_procs
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT) :: nbytes, i
+if (.not.associated(input_global_ids) .or. .not.associated(input_local_ids) &
+    .or. .not.associated(input_procs)) then
+   write(stderr,*) "Error from Zoltan_Compute_Destinations: input pointers are not associated"
    Zf90_Compute_Destinations = ZOLTAN_WARN
    return
 endif
@@ -1664,12 +1812,117 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 Zf90_Compute_Destinations = Zfw_Compute_Destinations(zz_addr,nbytes, &
-                             num_import,import_global_ids,import_local_ids, &
-                             import_procs,num_export,export_global_ids, &
-                             export_local_ids,export_procs)
+                             num_input,input_global_ids,input_local_ids, &
+                             input_procs,num_output,output_global_ids, &
+                             output_local_ids,output_procs)
 end function Zf90_Compute_Destinations
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_Migrate(zz, &
+                       num_import,import_global_ids,import_local_ids, &
+                       import_procs,import_to_part, &
+                       num_export,export_global_ids,export_local_ids, &
+                       export_procs,export_to_part)
+integer(Zoltan_INT) :: Zf90_Migrate
+type(Zoltan_Struct) INTENT_IN zz
+integer(Zoltan_INT) INTENT_IN num_import, num_export
+integer(Zoltan_INT), pointer, dimension(:) :: import_global_ids
+integer(Zoltan_INT), pointer, dimension(:) :: export_global_ids
+integer(Zoltan_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
+integer(Zoltan_INT), pointer, dimension(:) :: import_procs, export_procs
+integer(Zoltan_INT), pointer, dimension(:) :: import_to_part, export_to_part
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT) :: nbytes, i
+logical :: free_import_global_ids, free_import_local_ids, free_import_procs
+logical :: free_export_global_ids, free_export_local_ids, free_export_procs
+logical :: free_import_to_part, free_export_to_part
 
+if ((num_import.gt.0).and.(.not.associated(import_global_ids) .or. &
+                           .not.associated(import_local_ids)  .or. &
+                           .not.associated(import_procs))) then
+   ! OK if import_to_part is not associated; some methods don't return parts.
+   write(stderr,*) "Error from Zoltan_Migrate: import pointers are not associated"
+   Zf90_Migrate = ZOLTAN_WARN
+   return
+endif
+if ((num_export.gt.0).and.(.not.associated(export_procs) .or. &
+                           .not.associated(export_global_ids) .or. &
+                           .not.associated(export_local_ids))) then
+   ! OK if export_to_part is not associated; some methods don't return parts.
+   write(stderr,*) "Error from Zoltan_Migrate: export pointers are not associated"
+
+   Zf90_Migrate = ZOLTAN_WARN
+   return
+endif
+
+! generate place-holders to make call to Zfw_Migrate valid;
+! can't call it with non-associated arrays, even if we aren't importing
+! or exporting items.
+free_import_global_ids = .false.
+free_import_local_ids  = .false.
+free_import_procs      = .false.
+free_import_to_part    = .false.
+free_export_global_ids = .false.
+free_export_local_ids  = .false.
+free_export_procs      = .false.
+free_export_to_part    = .false.
+
+if (.not.associated(import_global_ids)) then
+   free_import_global_ids = .true.
+   allocate(import_global_ids(0)) 
+endif
+if (.not.associated(import_local_ids)) then
+   free_import_local_ids = .true.
+   allocate(import_local_ids(0)) 
+endif
+if (.not.associated(import_procs)) then
+   free_import_procs = .true.
+   allocate(import_procs(0)) 
+endif
+if (.not.associated(import_to_part)) then
+   free_import_to_part = .true.
+   allocate(import_to_part(0)) 
+endif
+if (.not.associated(export_global_ids)) then
+   free_export_global_ids = .true.
+   allocate(export_global_ids(0)) 
+endif
+if (.not.associated(export_local_ids)) then
+   free_export_local_ids = .true.
+   allocate(export_local_ids(0)) 
+endif
+if (.not.associated(export_procs)) then
+   free_export_procs = .true.
+   allocate(export_procs(0)) 
+endif
+if (.not.associated(export_to_part)) then
+   free_export_to_part = .true.
+   allocate(export_to_part(0)) 
+endif
+
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+Zf90_Migrate = Zfw_Migrate(zz_addr,nbytes, &
+                           num_import,import_global_ids,import_local_ids, &
+                           import_procs,import_to_part, &
+                           num_export,export_global_ids, &
+                           export_local_ids,export_procs,export_to_part)
+
+! clean up the place holders
+if (free_import_global_ids) deallocate(import_global_ids)
+if (free_import_local_ids) deallocate(import_local_ids)
+if (free_import_procs) deallocate(import_procs)
+if (free_import_to_part) deallocate(import_to_part)
+if (free_export_global_ids) deallocate(export_global_ids)
+if (free_export_local_ids) deallocate(export_local_ids)
+if (free_export_procs) deallocate(export_procs)
+if (free_export_to_part) deallocate(export_to_part)
+
+end function Zf90_Migrate
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_Help_Migrate(zz, &
                        num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
@@ -1755,6 +2008,7 @@ if (free_export_procs) deallocate(export_procs)
 
 end function Zf90_Help_Migrate
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! TEMP child_order
 subroutine Zf90_Reftree_Get_Child_Order(zz,order,ierr)
 type(Zoltan_Struct) INTENT_IN zz
@@ -1770,6 +2024,7 @@ call Zfw_Reftree_Get_Child_Order(zz_addr,nbytes,order,ierr)
 end subroutine Zf90_Reftree_Get_Child_Order
 ! end TEMP child_order
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #include "set_numgeom.fn"
 #include "set_geom.fn"
 #include "set_partition.fn"
@@ -1805,6 +2060,7 @@ end subroutine Zf90_Reftree_Get_Child_Order
 
 !-------------------------------------------------------------------------
 ! Include LB_* interface for backward compatibility.
+!-------------------------------------------------------------------------
 
 #include "lbfn.fpp"
 #include "set_numgeom.fn.lbfn"

@@ -2195,7 +2195,7 @@ extern int Zoltan_Invert_Lists(
 );
 /*****************************************************************************/
 /*
- *  Wrapper around Zoltan_Compute_Inverse_Lists, appropriate only when 
+ *  Wrapper around Zoltan_Invert_Lists, appropriate only when 
  *  number of partitions == number of processors (or when partition information
  *  is not desired).
  *
