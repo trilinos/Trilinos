@@ -441,7 +441,15 @@ AC_TRY_COMPILE(
 # ------------------------------------------------------------------------
 # With Trilinos
 # ------------------------------------------------------------------------
-BUILD_LIBNOXEPETRA=no
+
+
+AC_ARG_ENABLE(noxepetra,
+[  --enable-noxepetra      compile noxepetra library],
+[BUILD_LIBNOXEPETRA=$enableval],
+[BUILD_LIBNOXEPETRA=no]
+)
+
+TRILINOS_DIR=${TRILINOS_HOME}
 
 AC_ARG_WITH(trilinos,
 [  --with-trilinos         specify Trilinos root directory
@@ -509,24 +517,24 @@ AC_SUBST(TRILINOS_CXXFLAGS)
 # Checks for building examples
 # ------------------------------------------------------------------------
 
-AC_ARG_ENABLE(epetra-examples,
-[  --disable-epetra-examples   do not compile epetra examples],
-[BUILD_EPETRAEXAMPLES=${enableval}],
-[BUILD_EPETRAEXAMPLES=yes]
+AC_ARG_ENABLE(noxepetra-examples,
+[  --enable-noxepetra-examples  compile epetra examples],
+[BUILD_NOXEPETRA_EXAMPLES=${enableval}],
+[BUILD_NOXEPETRA_EXAMPLES=${BUILD_LIBNOXEPETRA}]
 )
 
-if test X${BUILD_LIBNOXEPETRA} != Xyes; then
-  BUILD_EPETRAEXAMPLES=no
-fi
+dnl if test X${BUILD_LIBNOXEPETRA} != Xyes; then
+dnl   BUILD_NOXEPETRA_EXAMPLES=no
+dnl fi
 
-AC_MSG_CHECKING(whether we should build the epetra examples)
-AC_MSG_RESULT(${BUILD_EPETRAEXAMPLES})
+AC_MSG_CHECKING(whether we should build the noxepetra examples)
+AC_MSG_RESULT(${BUILD_NOXEPETRA_EXAMPLES})
 
 # ------------------------------------------------------------------------
 # Checks for basic libraries
 # ------------------------------------------------------------------------
 
-if test ${BUILD_EPETRAEXAMPLES} = yes; then
+if test ${BUILD_NOXEPETRA_EXAMPLES} = yes; then
 
   AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
   AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -537,7 +545,7 @@ fi
 # Check for MPI library
 # ------------------------------------------------------------------------
 
-if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${BUILD_EPETRAEXAMPLES} = Xyes; then
+if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${BUILD_NOXEPETRA_EXAMPLES} = Xyes; then
 
   if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
     MPI_LIBDIR="${MPI_DIR}/lib"
@@ -598,7 +606,7 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 
 ])
 
-if test X${BUILD_EPETRAEXAMPLES} = Xyes; then
+if test X${BUILD_NOXEPETRA_EXAMPLES} = Xyes; then
 
   dnl Checks for libraries.
   AC_F77_LIBRARY_LDFLAGS
@@ -661,7 +669,19 @@ fi
 # ------------------------------------------------------------------------
 
 AM_CONDITIONAL(BUILD_LIBNOXEPETRA, test X${BUILD_LIBNOXEPETRA} = Xyes)
-AM_CONDITIONAL(BUILD_EPETRAEXAMPLES, test X${BUILD_EPETRAEXAMPLES} = Xyes)
+AM_CONDITIONAL(BUILD_NOXEPETRA_EXAMPLES, test X${BUILD_NOXEPETRA_EXAMPLES} = Xyes)
+
+# ------------------------------------------------------------------------
+# LOCA Stuff
+# ------------------------------------------------------------------------
+AC_ARG_ENABLE(loca,
+[  --enable-loca           enable loca],
+[BUILD_LOCA=${enableval}],
+[BUILD_LOCA=no]
+)
+AC_MSG_CHECKING(whether debugging is on)
+AC_MSG_RESULT([${DEBUG}])
+AM_CONDITIONAL(BUILD_LOCA, test X${BUILD_LOCA} = Xyes)
 
 # ------------------------------------------------------------------------
 # Checks for types

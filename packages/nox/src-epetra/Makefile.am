@@ -38,12 +38,14 @@
 # ------------------------------------------------------------------------
 
 EPETRA_H = \
+	$(srcdir)/NOX_Epetra.H \
 	$(srcdir)/NOX_Epetra_Vector.H \
 	$(srcdir)/NOX_Epetra_Group.H \
 	$(srcdir)/NOX_Epetra_SharedJacobian.H \
         $(srcdir)/NOX_Epetra_MatrixFree.H \
         $(srcdir)/NOX_Epetra_FiniteDifference.H \
-	$(srcdir)/NOX_Epetra_Interface.H 
+	$(srcdir)/NOX_Epetra_Interface.H \
+	$(srcdir)/NOX_Epetra_Preconditioner.H
 
 EPETRA = \
 	$(srcdir)/NOX_Epetra_Vector.C \
@@ -60,13 +62,13 @@ if BUILD_LIBNOXEPETRA
 
 NOXEPETRA_LIB = libnoxepetra.a
 
+endif
+
 NOXEPETRA_H = $(EPETRA_H)
 
 libnoxepetra_a_SOURCES = $(EPETRA)
 
 libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
-
-endif
 
 # ------------------------------------------------------------------------
 # For using a special archiver

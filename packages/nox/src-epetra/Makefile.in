@@ -114,12 +114,14 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 EPETRA_H = \
+	$(srcdir)/NOX_Epetra.H \
 	$(srcdir)/NOX_Epetra_Vector.H \
 	$(srcdir)/NOX_Epetra_Group.H \
 	$(srcdir)/NOX_Epetra_SharedJacobian.H \
         $(srcdir)/NOX_Epetra_MatrixFree.H \
         $(srcdir)/NOX_Epetra_FiniteDifference.H \
-	$(srcdir)/NOX_Epetra_Interface.H 
+	$(srcdir)/NOX_Epetra_Interface.H \
+	$(srcdir)/NOX_Epetra_Preconditioner.H
 
 
 EPETRA = \
@@ -136,11 +138,11 @@ EPETRA = \
 # ------------------------------------------------------------------------
 @BUILD_LIBNOXEPETRA_TRUE@NOXEPETRA_LIB = libnoxepetra.a
 
-@BUILD_LIBNOXEPETRA_TRUE@NOXEPETRA_H = $(EPETRA_H)
+NOXEPETRA_H = $(EPETRA_H)
 
-@BUILD_LIBNOXEPETRA_TRUE@libnoxepetra_a_SOURCES = $(EPETRA)
+libnoxepetra_a_SOURCES = $(EPETRA)
 
-@BUILD_LIBNOXEPETRA_TRUE@libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
+libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
 
 
 # ------------------------------------------------------------------------
@@ -184,13 +186,11 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 libnoxepetra_a_DEPENDENCIES =
-@BUILD_LIBNOXEPETRA_TRUE@am_libnoxepetra_a_OBJECTS = \
-@BUILD_LIBNOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
-@BUILD_LIBNOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT) \
-@BUILD_LIBNOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT) \
-@BUILD_LIBNOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT) \
-@BUILD_LIBNOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT)
-@BUILD_LIBNOXEPETRA_FALSE@am_libnoxepetra_a_OBJECTS =
+am_libnoxepetra_a_OBJECTS = libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
+	libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT) \
+	libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT) \
+	libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT) \
+	libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT)
 libnoxepetra_a_OBJECTS = $(am_libnoxepetra_a_OBJECTS)
 
 DEFS = @DEFS@

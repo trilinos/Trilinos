@@ -80,7 +80,7 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-EXAMPLE = example
+@BUILD_LOCA_TRUE@EXAMPLE = example
 
 noinst_PROGRAMS = $(EXAMPLE)
 
@@ -105,7 +105,8 @@ subdir = example-epetra/1Dfem_LOCA
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = example$(EXEEXT)
+@BUILD_LOCA_TRUE@noinst_PROGRAMS = example$(EXEEXT)
+@BUILD_LOCA_FALSE@noinst_PROGRAMS =
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_example_OBJECTS = example-Example.$(OBJEXT) \

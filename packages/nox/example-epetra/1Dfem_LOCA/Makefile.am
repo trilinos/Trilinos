@@ -3,7 +3,11 @@
 #@HEADER
 #@HEADER
 
+if BUILD_LOCA
+
 EXAMPLE = example
+
+endif
 
 noinst_PROGRAMS = $(EXAMPLE)
 
