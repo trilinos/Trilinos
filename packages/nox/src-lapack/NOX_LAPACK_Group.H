@@ -51,7 +51,7 @@ namespace NOX {
   namespace LAPACK {
 
     //! A simple example of a group structure, based on BLAS/LAPACK.
-    class Group : public virtual Abstract::Group {
+    class Group : public virtual NOX::Abstract::Group {
 
     public:
 
@@ -59,35 +59,34 @@ namespace NOX {
       Group(Interface& i);
 
       //! Copy constructor
-      Group(const Group& source, CopyType type = DeepCopy);
+      Group(const NOX::LAPACK::Group& source, NOX::CopyType type = DeepCopy);
 
       //! Destructor.
       ~Group();
 
-      Abstract::Group& operator=(const Group& source);
 
+      NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
       //! See above.
-      Abstract::Group& operator=(const Abstract::Group& source);
+      NOX::Abstract::Group& operator=(const NOX::LAPACK::Group& source);
 
       /** @name "Compute" functions. */
       //@{
 
-      bool setX(const Vector& y);
-
+      void setX(const NOX::Abstract::Vector& y);
       //! See above
-      bool setX(const Abstract::Vector& y);
+      void setX(const NOX::LAPACK::Vector& y);
 
-      bool computeX(const Group& grp, const Vector& d, double step);
+      void computeX(const NOX::Abstract::Group& grp, const NOX::Abstract::Vector& d, double step);
       //! See above.
-      bool computeX(const Abstract::Group& grp, const Abstract::Vector& d, double step);
+      void computeX(const NOX::LAPACK::Group& grp, const NOX::LAPACK::Vector& d, double step);
 
-      bool computeF();
+      NOX::Abstract::Group::ReturnType computeF();
 
-      bool computeJacobian();
+      NOX::Abstract::Group::ReturnType computeJacobian();
 
-      bool computeGradient();
+      NOX::Abstract::Group::ReturnType computeGradient();
 
-      bool computeNewton(Parameter::List& params);
+      NOX::Abstract::Group::ReturnType computeNewton(NOX::Parameter::List& params);
 
       //@}
 
@@ -98,22 +97,27 @@ namespace NOX {
 
       //@{
   
-      bool applyJacobian(const Vector& input, Vector& result) const;
+      NOX::Abstract::Group::ReturnType applyJacobian(const NOX::LAPACK::Vector& input, 
+						     NOX::LAPACK::Vector& result) const;
 
       //! See above
-      bool applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const;
+      NOX::Abstract::Group::ReturnType applyJacobian(const NOX::Abstract::Vector& input, 
+						     NOX::Abstract::Vector& result) const;
 
-      bool applyJacobianTranspose(const Vector& input, Vector& result) const;
+      NOX::Abstract::Group::ReturnType applyJacobianTranspose(const NOX::LAPACK::Vector& input, 
+							      NOX::LAPACK::Vector& result) const;
 
       //! See above
-      bool applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const;
+      NOX::Abstract::Group::ReturnType applyJacobianTranspose(const NOX::Abstract::Vector& input, 
+							      NOX::Abstract::Vector& result) const;
 
-      bool applyJacobianInverse(Parameter::List& params, const Vector& input, 
+      NOX::Abstract::Group::ReturnType applyJacobianInverse(NOX::Parameter::List& params, 
+							    const NOX::LAPACK::Vector& input, 
 				Vector& result) const;
 
-      bool applyJacobianInverse(Parameter::List& params, 
-				const Abstract::Vector& input, 
-				Abstract::Vector& result) const;
+      NOX::Abstract::Group::ReturnType applyJacobianInverse(NOX::Parameter::List& params, 
+							    const NOX::Abstract::Vector& input, 
+							    NOX::Abstract::Vector& result) const;
   
       //@}
 
@@ -138,19 +142,19 @@ namespace NOX {
        * are valid. Must use the "Is" functions for that purpose. */
       //@{
 
-      const Abstract::Vector& getX() const;
+      const NOX::Abstract::Vector& getX() const;
 
-      const Abstract::Vector& getF() const;
+      const NOX::Abstract::Vector& getF() const;
   
       double getNormF() const;
 
-      const Abstract::Vector& getGradient() const;
+      const NOX::Abstract::Vector& getGradient() const;
 
-      const Abstract::Vector& getNewton() const;
+      const NOX::Abstract::Vector& getNewton() const;
 
       //@}
 
-      virtual Abstract::Group* clone(CopyType type = DeepCopy) const;
+      virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Print out the group
       void print() const;
@@ -165,21 +169,21 @@ namespace NOX {
       /** @name Vectors */
       //@{
       //! Solution vector.
-      Vector xVector;
+      NOX::LAPACK::Vector xVector;
       //! Right-hand-side vector (function evaluation).
-      Vector fVector;
+      NOX::LAPACK::Vector fVector;
       //! Newton direction vector.
-      Vector newtonVector;
+      NOX::LAPACK::Vector newtonVector;
       //! Gradient vector (steepest descent vector).
-      Vector gradientVector;
+      NOX::LAPACK::Vector gradientVector;
       //@}
 
 
       //! Jacobian Matrix
-      Matrix jacobianMatrix;
+      NOX::LAPACK::Matrix jacobianMatrix;
 
       //! Problem interface
-      Interface& problemInterface;
+      NOX::LAPACK::Interface& problemInterface;
 
       /** @name IsValid flags 
        *  

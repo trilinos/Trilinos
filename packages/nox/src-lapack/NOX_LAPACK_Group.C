@@ -35,10 +35,7 @@
 #include "NOX_BLAS_Wrappers.H"
 #include "NOX_LAPACK_Wrappers.H"
 
-using namespace NOX;
-using namespace NOX::LAPACK;
-
-Group::Group(Interface& interface):
+NOX::LAPACK::Group::Group(NOX::LAPACK::Interface& interface):
   xVector(interface.getInitialGuess()),	// deep copy      
   fVector(xVector, ShapeCopy),	// new vector of same size
   gradientVector(xVector, ShapeCopy),   // new vector of same size
@@ -50,7 +47,7 @@ Group::Group(Interface& interface):
   resetIsValid();
 }
 
-Group::Group(const Group& source, CopyType type) :
+NOX::LAPACK::Group::Group(const NOX::LAPACK::Group& source, NOX::CopyType type) :
   xVector(source.xVector, type), 
   fVector(source.fVector, type), 
   gradientVector(source.gradientVector, type), 
@@ -61,7 +58,7 @@ Group::Group(const Group& source, CopyType type) :
  
   switch (type) {
     
-  case DeepCopy:
+  case NOX::DeepCopy:
     
     isValidF = source.isValidF;
     isValidGradient = source.isValidGradient;
@@ -70,7 +67,7 @@ Group::Group(const Group& source, CopyType type) :
     normF = source.normF;
     break;
 
-  case ShapeCopy:
+  case NOX::ShapeCopy:
     resetIsValid();
     normF = 0.0;
     break;
@@ -82,11 +79,11 @@ Group::Group(const Group& source, CopyType type) :
 
 }
 
-Group::~Group() 
+NOX::LAPACK::Group::~Group() 
 {
 }
 
-void Group::resetIsValid() //private
+void NOX::LAPACK::Group::resetIsValid() //private
 {
   isValidF = false;
   isValidJacobian = false;
@@ -94,18 +91,18 @@ void Group::resetIsValid() //private
   isValidNewton = false;
 }
 
-Abstract::Group* Group::clone(CopyType type) const 
+NOX::Abstract::Group* NOX::LAPACK::Group::clone(NOX::CopyType type) const 
 {
   Group* newgrp = new Group(*this, type);
   return newgrp;
 }
 
-Abstract::Group& Group::operator=(const Abstract::Group& source)
+NOX::Abstract::Group& NOX::LAPACK::Group::operator=(const NOX::Abstract::Group& source)
 {
   return operator=(dynamic_cast<const Group&> (source));
 }
 
-Abstract::Group& Group::operator=(const Group& source)
+NOX::Abstract::Group& NOX::LAPACK::Group::operator=(const Group& source)
 {
   if (this != &source) {
 
@@ -138,72 +135,70 @@ Abstract::Group& Group::operator=(const Group& source)
   return *this;
 }
 
-bool Group::setX(const Abstract::Vector& y) 
+void NOX::LAPACK::Group::setX(const NOX::Abstract::Vector& y) 
 {
-  return setX(dynamic_cast<const Vector&> (y));
+  setX(dynamic_cast<const Vector&> (y));
 }
 
-bool Group::setX(const Vector& y) 
+void NOX::LAPACK::Group::setX(const Vector& y) 
 {
   resetIsValid();
   xVector = y;
-  return true;
 }
 
-bool Group::computeX(const Abstract::Group& grp, 
-		     const Abstract::Vector& d, 
+void NOX::LAPACK::Group::computeX(const NOX::Abstract::Group& grp, 
+		     const NOX::Abstract::Vector& d, 
 		     double step) 
 {
   // Cast to appropriate type, then call the "native" computeX
   const Group& lapackgrp = dynamic_cast<const Group&> (grp);
   const Vector& lapackd = dynamic_cast<const Vector&> (d);
-  return computeX(lapackgrp, lapackd, step); 
+  computeX(lapackgrp, lapackd, step); 
 }
 
-bool Group::computeX(const Group& grp, const Vector& d, double step) 
+void NOX::LAPACK::Group::computeX(const Group& grp, const Vector& d, double step) 
 {
   resetIsValid();
   xVector.update(1.0, grp.xVector, step, d);
-  return true;
 }
 
-bool Group::computeF() 
+NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeF() 
 {
   if (isValidF)
-    return true;
+    return NOX::Abstract::Group::Ok;
 
   isValidF = problemInterface.computeF(fVector, xVector);
 
   if (isValidF) 
     normF = fVector.norm();
 
-  return isValidF;
+  return (isValidF) ? (NOX::Abstract::Group::Ok) : (NOX::Abstract::Group::Failed);
 }
 
-bool Group::computeJacobian() 
+NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeJacobian() 
 {
   // Skip if the Jacobian is already valid
   if (isValidJacobian)
-    return true;
+    return NOX::Abstract::Group::Ok;
 
   isValidJacobian = problemInterface.computeJacobian(jacobianMatrix, xVector);
 
-  return isValidJacobian;
+  return (isValidJacobian) ? (NOX::Abstract::Group::Ok) : (NOX::Abstract::Group::Failed);
 }
 
-bool Group::computeGradient() 
+NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeGradient() 
 {
   if (isValidGradient)
-    return true;
+    return NOX::Abstract::Group::Ok;
   
   if (!isF()) {
     cerr << "ERROR: NOX::LAPACK::Group::computeGrad() - F is out of date wrt X!" << endl;
-    return false;
+    return NOX::Abstract::Group::BadDependency;
   }
 
   if (!isJacobian()) {
     cerr << "ERROR: NOX::LAPACK::Group::computeGrad() - Jacobian is out of date wrt X!" << endl;
-    return false;
+    return NOX::Abstract::Group::BadDependency;
   }
   
   // Compute Gradient = J' * F
@@ -215,13 +210,13 @@ bool Group::computeGradient()
   isValidGradient = true;
 
   // Return result
-  return true;
+  return NOX::Abstract::Group::Ok;
 }
 
-bool Group::computeNewton(NOX::Parameter::List& p) 
+NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeNewton(NOX::Parameter::List& p) 
 {
   if (isNewton())
-    return true;
+    return NOX::Abstract::Group::Ok;
 
   if (!isF()) {
     cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid F" << endl;
@@ -233,27 +228,31 @@ bool Group::computeNewton(NOX::Parameter::List& p)
     throw "NOX Error";
   }
 
-  isValidNewton = applyJacobianInverse(p, fVector, newtonVector);
+  NOX::Abstract::Group::ReturnType status = applyJacobianInverse(p, fVector, newtonVector);
+  isValidNewton = (status == NOX::Abstract::Group::Ok);
 
   // Scale soln by -1
   newtonVector.scale(-1.0);
 
   // Return solution
-  return isValidNewton;
+  return status;
 }
 
-bool Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
+NOX::Abstract::Group::ReturnType 
+NOX::LAPACK::Group::applyJacobian(const Abstract::Vector& input, 
+				  NOX::Abstract::Vector& result) const
 {
   const Vector& lapackinput = dynamic_cast<const Vector&> (input);
   Vector& lapackresult = dynamic_cast<Vector&> (result);
   return applyJacobian(lapackinput, lapackresult);
 }
 
-bool Group::applyJacobian(const Vector& input, Vector& result) const
+NOX::Abstract::Group::ReturnType 
+NOX::LAPACK::Group::applyJacobian(const Vector& input, Vector& result) const
 {
   // Check validity of the Jacobian
   if (!isJacobian()) 
-    return false;
+    return NOX::Abstract::Group::BadDependency;
 
   // Compute result = J * input
   int n = input.length();
@@ -261,40 +260,46 @@ bool Group::applyJacobian(const Vector& input, Vector& result) const
   DGEMV_F77("N", &n, &n, &d_one, &jacobianMatrix(0,0), &n, &input(0),
 	    &i_one, &d_zero, &result(0), &i_one);
 
-  return true;
+  return NOX::Abstract::Group::Ok;
 }
 
-bool Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const
+NOX::Abstract::Group::ReturnType 
+NOX::LAPACK::Group::applyJacobianTranspose(const NOX::Abstract::Vector& input, 
+					   NOX::Abstract::Vector& result) const
 {
   const Vector& lapackinput = dynamic_cast<const Vector&> (input);
   Vector& lapackresult = dynamic_cast<Vector&> (result);
   return applyJacobianTranspose(lapackinput, lapackresult);
 }
 
-bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
+NOX::Abstract::Group::ReturnType 
+NOX::LAPACK::Group::applyJacobianTranspose(const Vector& input, Vector& result) const
 {
   // Check validity of the Jacobian
   if (!isJacobian()) 
-    return false;
+    return NOX::Abstract::Group::BadDependency;
 
   // Compute result = J * input
   int n = input.length();
   DGEMV_F77("T", &n, &n, &d_one, &jacobianMatrix(0,0), &n, &input(0),
 	    &i_one, &d_zero, &result(0), &i_one);
 
-  return true;
+  return NOX::Abstract::Group::Ok;
 }
 
-bool Group::applyJacobianInverse(NOX::Parameter::List& p, 
-				 const Abstract::Vector& input, 
-				 Abstract::Vector& result) const {
- const Vector& lapackinput = dynamic_cast<const Vector&> (input);
- Vector& lapackresult = dynamic_cast<Vector&> (result); 
- return applyJacobianInverse(p, lapackinput, lapackresult);
+NOX::Abstract::Group::ReturnType 
+NOX::LAPACK::Group::applyJacobianInverse(NOX::Parameter::List& p, 
+					 const Abstract::Vector& input, 
+					 NOX::Abstract::Vector& result) const 
+{
+  const Vector& lapackinput = dynamic_cast<const Vector&> (input);
+  Vector& lapackresult = dynamic_cast<Vector&> (result); 
+  return applyJacobianInverse(p, lapackinput, lapackresult);
 }
 
-bool Group::applyJacobianInverse(NOX::Parameter::List& p, 
-				 const Vector& input, Vector& result) const 
+NOX::Abstract::Group::ReturnType 
+NOX::LAPACK::Group::applyJacobianInverse(NOX::Parameter::List& p, 
+					 const Vector& input, Vector& result) const 
 {
 
   if (!isF()) {
@@ -317,71 +322,71 @@ bool Group::applyJacobianInverse(NOX::Parameter::List& p,
   result = input;
   DGESV_F77(&n, &i_one, &J(0,0), &n, &ipiv[0], &result(0), &n, &info);
     
-  return (info == 0);
+  return (info == 0) ? (NOX::Abstract::Group::Ok) : (NOX::Abstract::Group::Failed);
 }
 
-bool Group::isF() const 
+bool NOX::LAPACK::Group::isF() const 
 {   
   return isValidF;
 }
 
-bool Group::isJacobian() const 
+bool NOX::LAPACK::Group::isJacobian() const 
 {  
   return isValidJacobian;
 }
 
-bool Group::isGradient() const 
+bool NOX::LAPACK::Group::isGradient() const 
 {   
   return isValidGradient;
 }
 
-bool Group::isNewton() const 
+bool NOX::LAPACK::Group::isNewton() const 
 {   
   return isValidNewton;
 }
 
-const Abstract::Vector& Group::getX() const 
+const NOX::Abstract::Vector& NOX::LAPACK::Group::getX() const 
 {
   return xVector;
 }
 
-const Abstract::Vector& Group::getF() const 
+const NOX::Abstract::Vector& NOX::LAPACK::Group::getF() const 
 {  
   return fVector;
 }
 
-double Group::getNormF() const
+double NOX::LAPACK::Group::getNormF() const
 {
   return normF;
 }
 
-const Abstract::Vector& Group::getGradient() const 
+const NOX::Abstract::Vector& NOX::LAPACK::Group::getGradient() const 
 { 
   return gradientVector;
 }
 
-const Abstract::Vector& Group::getNewton() const 
+const NOX::Abstract::Vector& NOX::LAPACK::Group::getNewton() const 
 {
   return newtonVector;
 }
 
 
-void Group::print() const
+void NOX::LAPACK::Group::print() const
 {
-  cout << "x = " << endl << xVector << "\n";
+  cout << "x = " << xVector << "\n";
 
   if (isValidF) {
-    cout << "F(x) = " << endl << fVector << "\n";
+    cout << "F(x) = " << fVector << "\n";
     cout << "|| F(x) || = " << normF << "\n";
   }
   else
     cout << "F(x) has not been computed" << "\n";
 
   // if (isValidJacobian) {
-//     cout << "J(x) = " << endl << jacobianMatrix << "\n";
-//   }
-//   else
-//     cout << "J(x) has not been computed" << "\n";
-
+  //     cout << "J(x) = " << endl << jacobianMatrix << "\n";
+  //   }
+  //   else
+  //     cout << "J(x) has not been computed" << "\n";
+  
   cout << endl;
 }

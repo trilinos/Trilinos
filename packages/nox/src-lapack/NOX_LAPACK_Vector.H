@@ -144,7 +144,7 @@ namespace NOX {
       ostream& leftshift(ostream& stream) const;
 
       //! Prints out the vector to the cout stream. 
-      bool print() const;
+      void print() const;
 
     private:
 

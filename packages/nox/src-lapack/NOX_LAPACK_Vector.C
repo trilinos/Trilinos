@@ -83,7 +83,7 @@ Abstract::Vector& Vector::abs(const Abstract::Vector& base)
 Abstract::Vector& Vector::abs(const Vector& base)
 {
   for (int i = 0; i < x.size(); i ++)
-    x[i] = fabs(x[i]);
+    x[i] = fabs(base[i]);
   return *this;
 }
 
@@ -95,14 +95,14 @@ Abstract::Vector& Vector::reciprocal(const Abstract::Vector& base)
 Abstract::Vector& Vector::reciprocal(const Vector& base)
 {
   for (int i = 0; i < x.size(); i ++)
-    x[i] = 1.0 / x[i];
+    x[i] = 1.0 / base[i];
   return *this;
 }
 
 Abstract::Vector& Vector::scale(double alpha)
 {
-  int n = x.size();
-  DSCAL_F77(&n, &alpha, &x[0], &i_one);
+  for (int i = 0; i < x.size(); i ++)
+    x[i] *= alpha;
   return *this;
 }
 
@@ -151,8 +151,8 @@ Abstract::Vector& Vector::scale(const Vector& a)
 
 Abstract::Vector* Vector::clone(CopyType type) const
 {
-  Vector* y = new Vector(*this, type);
-  return y;
+  NOX::LAPACK::Vector* ptr = new Vector(*this, type);
+  return ptr;
 }
 
 double Vector::norm(Abstract::Vector::NormType type) const
@@ -173,11 +173,11 @@ double Vector::norm(Abstract::Vector::NormType type) const
 	value = fabs(x[i]);
     break;
   case OneNorm:
-    value = DASUM_F77(&n,&x[0],&i_one);
+    value = DASUM_F77(&n, &x[0], &i_one);
     break;
   case TwoNorm:
   default:
-    value = DNRM2_F77(&n,&x[0],&i_one);
+    value = DNRM2_F77(&n, &x[0], &i_one);
    break;
   }
 
@@ -192,8 +192,8 @@ double Vector::norm(const Abstract::Vector& weights) const
 double Vector::norm(const Vector& weights) const
 {
   if (weights.length() != x.size()) {
-    cerr << "NOX::BLAS::Vector::norm - size mismatch for weights vector" << endl;
-    return 0.0;
+    cerr << "NOX::LAPACK::Vector::norm - size mismatch for weights vector" << endl;
+    throw "NOX::LAPACK Error";
   }
 
   int n = x.size();		// size of x
@@ -213,13 +213,13 @@ double Vector::dot(const Abstract::Vector& y) const
 double Vector::dot(const Vector& y) const
 {
   if (y.length() != x.size()) {
-    cerr << "NOX::BLAS::Vector::norm - size mismatch for weights vector" << endl;
-    return 0.0;
+    cerr << "NOX::LAPACK::Vector::norm - size mismatch for weights vector" << endl;
+    throw "NOX::LAPACK Error";
   }
 
   int n = x.size();		// size of x
   
-  return DDOT_F77(&n,&x[0],&i_one,&y[0],&i_one);
+  return DDOT_F77(&n, &x[0], &i_one, &y[0], &i_one);
 }
 
 int Vector::length() const
@@ -261,8 +261,7 @@ ostream& operator<<(ostream& stream, const Vector& v)
   return v.leftshift(stream);
 }
 
-bool Vector::print() const
+void Vector::print() const
 {
   cout << *this << endl;
-  return true;
 }
