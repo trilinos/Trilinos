@@ -98,7 +98,7 @@ int Zoltan_RB_find_median(
 
   int     i, j, k, numlist;
   int     first_iteration;
-  int     indexlo, indexhi;          /* indices of dot closest to median */
+  int     indexlo=0, indexhi=0;      /* indices of dot closest to median */
   int     breakflag;                 /* for breaking out of median iteration */
   int     markactive;                /* which side of cut is active = 0/1 */
   int     rank;                      /* rank in partition (Tflops_Special) */
