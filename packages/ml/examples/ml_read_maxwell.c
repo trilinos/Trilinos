@@ -177,6 +177,8 @@ int main(int argc, char *argv[])
   int Nnz;
   char str[80];
   int Nghost;
+  int mg_cycle_type;
+  double omega;
 #ifndef debugSmoother
   double *xxx;
 #endif
@@ -185,6 +187,8 @@ int main(int argc, char *argv[])
   FILE *fp2;
   int count, *pcounts, *proc_id;
   int Tmat_size, *proc_assignment, p1, p2, col1, col2;
+  int evenodd[2]; int Iwin[4];
+  int tiebreaker;
 
   nblocks = -1;
   if (argc < 2) {
@@ -196,8 +200,7 @@ int main(int argc, char *argv[])
     printf("Usage: ml_readfile num_processors\n");
     exit(1);
   }
-
-#endif
+#endif /* ifdef ML_partition */
 
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);
@@ -227,7 +230,7 @@ int main(int argc, char *argv[])
 #else
   context = (struct reader_context *) malloc(sizeof(struct reader_context));
   ML_Reader_InitContext(context);
-#endif
+#endif /* ifndef ML_partition */
 
   /* read in the number of edge matrix equations */
   Nglobal_edges = 0;
@@ -290,9 +293,19 @@ int main(int argc, char *argv[])
   /*     indices and to set up Aztec's communication structure.       */
   /*  3) Stuff the arrays into an Aztec matrix.                       */
   /*------------------------------------------------------------------*/
-	
+
+  if (proc_config[AZ_node] == 0)
+  {
+     printf("Reading edge matrix.\n"); fflush(stdout);
+  }
+
   AZ_input_msr_matrix("Ke_mat.az", global_edge_inds, &Ke_val, &Ke_bindx, 
                       Nlocal_edges, proc_config);
+
+  if (proc_config[AZ_node] == 0)
+  {
+     printf("Done reading edge matrix.\n"); fflush(stdout);
+  }
 
   /* For now we add something to the diagonal instead of adding in the */
   /* real mass matrix.                                                 */
@@ -316,25 +329,41 @@ int main(int argc, char *argv[])
 
   /* Set rhs */
 
-  rhs=(double *)malloc(Nlocal_edges*sizeof(double));
+  /*rhs=(double *) ML_allocate(Nlocal_edges*sizeof(double));*/
+  rhs = (double *) ML_allocate((Nlocal_edges + Ke_mat->data_org[AZ_N_external])
+                               *sizeof(double)); 
  
   fp = fopen("rhsfile","r");
   if (fp == NULL)
   {
+    printf("%d: rhsfile file pointer is NULL\n",proc_config[AZ_node]); fflush(stdout);
     if (proc_config[AZ_node] == 0) printf("taking zero vector for rhs\n");
+    fflush(stdout);
     for (i = 0; i < Nlocal_edges; i++) rhs[i] = 0.0;
   }
   else
   {
     fclose(fp);
-    if (proc_config[AZ_node] == 0) printf("reading rhs from a file\n");
+    if (proc_config[AZ_node] == 0)
+    {
+       printf("%d: reading rhs from a file\n",proc_config[AZ_node]);
+       fflush(stdout);
+    }
     AZ_input_msr_matrix("rhsfile", global_edge_inds, &rhs, &garbage, 
 			            Nlocal_edges, proc_config);
+    if (proc_config[AZ_node] == 0)
+    {
+       printf("%d: Done reading rhs from a file\n",proc_config[AZ_node]);
+       fflush(stdout);
+    }
   }
 
-/*
+#ifdef ZEROOUTDIRICHLET
+  if (proc_config[AZ_node] == 0) printf("Zeroing out Dirichlet columns\n");
   AZ_zeroDirichletcolumns(Ke_mat, rhs, proc_config);
-*/
+#else
+  if (proc_config[AZ_node] == 0) printf("Not zeroing out Dirichlet columns\n");
+#endif
 
   /*******************************************************************/
   /* initialize the list of global indices indicating which rows are */
@@ -356,8 +385,16 @@ int main(int argc, char *argv[])
   /*  3) Stuff the arrays into an Aztec matrix.                       */
   /*------------------------------------------------------------------*/
 
+  if (proc_config[AZ_node] == 0)
+  {
+     printf("Reading node matrix.\n"); fflush(stdout);
+  }
   AZ_input_msr_matrix("Kn_mat.az", global_node_inds, &Kn_val, &Kn_bindx, 
 		      Nlocal_nodes, proc_config);
+  if (proc_config[AZ_node] == 0)
+  {
+     printf("Done reading node matrix.\n"); fflush(stdout);
+  }
 
   AZ_transform_norowreordering(proc_config, &global_node_externs, Kn_bindx, 
 			       Kn_val, global_node_inds, &reordered_glob_nodes, 
@@ -381,8 +418,16 @@ int main(int argc, char *argv[])
   /*     a communicator and done the ML_Create() later.               */
   /*------------------------------------------------------------------*/
 	
+  if (proc_config[AZ_node] == 0)
+  {
+     printf("Reading T matrix\n"); fflush(stdout);
+  }
   AZ_input_msr_matrix_nodiag("Tmat.az", global_edge_inds, &Tmat_val, 
 			     &Tmat_bindx,  Nlocal_edges, proc_config);
+  if (proc_config[AZ_node] == 0)
+  {
+     printf("Done reading T matrix\n"); fflush(stdout);
+  }
 
   /* compress out any zeros which might occur due to empty rows  */
 
@@ -428,10 +473,42 @@ int main(int argc, char *argv[])
   /* ML matrices and stuff them into the ml grid hierarchies.         */
   /*------------------------------------------------------------------*/
 
+  
   AZ_ML_Set_Amat(ml_edges, N_levels-1, Nlocal_edges, Nlocal_edges, Ke_mat, 
 		 proc_config);
   AZ_ML_Set_Amat(ml_nodes, N_levels-1, Nlocal_nodes, Nlocal_nodes, Kn_mat, 
 		 proc_config);
+
+/**** check symmetry of Ke ****/
+    Amat = &(ml_edges->Amat[N_levels-1]);
+    yyy = (double *) ML_allocate( Amat->invec_leng * sizeof(double) );
+    vvv = (double *) ML_allocate( Amat->invec_leng * sizeof(double) );
+    zzz = (double *) ML_allocate( Amat->invec_leng * sizeof(double) );
+
+    AZ_random_vector(yyy, Ke_data_org, proc_config);
+    AZ_random_vector(vvv, Ke_data_org, proc_config);
+
+    ML_Operator_Apply(Amat, Amat->invec_leng, yyy,Amat->outvec_leng,zzz);
+    dtemp = sqrt(abs(ML_gdot(Amat->outvec_leng, vvv, zzz, ml_edges->comm)));
+    ML_Operator_Apply(Amat, Amat->invec_leng, vvv,Amat->outvec_leng,zzz);
+    dtemp2 =  sqrt(abs(ML_gdot(Amat->outvec_leng, yyy, zzz, ml_edges->comm)));
+
+    if ( (abs(dtemp-dtemp2) > 1e-15) && proc_config[AZ_node]== 0)
+    {
+       fprintf(stderr,"\a\n*****************\n"
+                      "WARNING: Edge matrix may not be symmetric.\n");
+       fprintf(stderr,"\n              ||vvv^{t} * Ke_mat * yyy|| = %20.15e\n",
+               dtemp);
+       fprintf(stderr,"\n              ||yyy^{t} * Ke_mat * vvv|| = %20.15e\n",
+               dtemp2);
+       fprintf(stderr,"               (vvv and yyy are random)\n");
+       fprintf(stderr,"*****************\n\n");
+       fflush(stdout);
+    }      
+    else if (proc_config[AZ_node]== 0)
+       printf("\nEdge matrix passed symmetry check.\n\n");
+    ML_free(yyy); ML_free(zzz); ML_free(vvv);
+/**** end of Ke symmetry check ****/
 
   ML_CommInfoOP_Clone(&(Tmat->getrow->pre_comm),
                       ml_nodes->Amat[N_levels-1].getrow->pre_comm);
@@ -450,28 +527,38 @@ int main(int argc, char *argv[])
 
 #ifdef ML_partition
 
+  evenodd[0] = 0; evenodd[1] = 0;
+  for (i=0; i<nblocks; i++) Iwin[i] = 0;
+
   /* this code is meant to partition the matrices so that things can be */
   /* run in parallel later.                                             */
   /* It is meant to be run on only one processor.                       */
+
+  ML_Operator_AmalgamateAndDropWeak(&(ml_nodes->Amat[N_levels-1]),
+                                    num_PDE_eqns, 0.0);
+  ML_Gen_Blocks_Metis(ml_nodes, N_levels-1, &nblocks, &block_list);
+
   fp2 = fopen("node_partition","w");
-
-  ML_Operator_AmalgamateAndDropWeak(&(ml_nodes->Amat[N_levels-1]), num_PDE_eqns, 0.0);
-  ML_Gen_Blocks_Metis(ml_edges, N_levels-1, &nblocks, &block_list);
-
-  for (i = 0; i < nblocks; i++) {
+  for (i = 0; i < nblocks; i++)
+  {
     count = 0;
-    for (j = 0; j < ml_nodes->Amat[N_levels-1].outvec_leng; j++) {
+    for (j = 0; j < ml_nodes->Amat[N_levels-1].outvec_leng; j++)
+    {
       if (block_list[j] == i) count++;
     }
     fprintf(fp2,"   %d\n",count*num_PDE_eqns);
-    for (j = 0; j < ml_nodes->Amat[N_levels-1].outvec_leng; j++) {
-      if (block_list[j] == i) {
-	for (k = 0; k < num_PDE_eqns; k++)  fprintf(fp2,"%d\n",j*num_PDE_eqns+k);
+    for (j = 0; j < ml_nodes->Amat[N_levels-1].outvec_leng; j++)
+    {
+      if (block_list[j] == i)
+      {
+	     for (k = 0; k < num_PDE_eqns; k++)
+            fprintf(fp2,"%d\n",j*num_PDE_eqns+k);
       }
     }
   }
   fclose(fp2);
-  ML_Operator_UnAmalgamateAndDropWeak(&(ml_nodes->Amat[N_levels-1]),num_PDE_eqns,0.0);
+  ML_Operator_UnAmalgamateAndDropWeak(&(ml_nodes->Amat[N_levels-1]),
+                                      num_PDE_eqns,0.0);
 
   /* Need to partition Tmat given a partitioning of Ke_mat */
   /* Here's how it should work:                          */
@@ -484,6 +571,7 @@ int main(int argc, char *argv[])
   csr_data = (struct ML_CSR_MSRdata *) Tmat->data;
   proc_assignment = (int *) AZ_allocate( Tmat->outvec_leng*sizeof(int));
 
+  j = 0;
   for (i = 0; i < Tmat->outvec_leng; i++)
   {
     /* Calculate the actual number of nonzeros (<=2) in the row. */
@@ -517,19 +605,50 @@ int main(int argc, char *argv[])
       col2 = (csr_data->columns)[row_start+1];
       p1   = block_list[col1];
       p2   = block_list[col2];
-      if ( (col1*col2)%2 == 0 )
+      /* 1+(int) (  2.0*rand()/(RAND_MAX+1.0)); */
+      /* Randomly pick an integer between 1 and 10. */
+      tiebreaker =  1+(int) (  10.0*rand()/(RAND_MAX+1.0));
+      if ( tiebreaker > 5  )
+      /*if ( (col1*col2)%2 == 0 ) */
       {
-         if (p1 < p2) proc_assignment[i] = p1;
-         else proc_assignment[i] = p2;
+         evenodd[0]++;
+         if (p1 < p2)
+         {
+            proc_assignment[i] = p1;
+            Iwin[p1]++;
+         }
+         else
+         {
+            proc_assignment[i] = p2;
+            Iwin[p2]++;
+         }
       }
       else
       {
-         if (p2 < p1) proc_assignment[i] = p1;
-         else proc_assignment[i] = p2;
+         evenodd[1]++;
+         if (p2 < p1)
+         {
+            proc_assignment[i] = p1;
+            Iwin[p1]++;
+         }
+         else
+         {
+            proc_assignment[i] = p2;
+            Iwin[p2]++;
+         }
       }
     }
-    else proc_assignment[i] = -1;
+    else
+    {
+       proc_assignment[i] = -1;
+       j = 1;
+    }
   }
+  if (j==0) printf("\aWarning: no Dirichlet edges found in Tmat.\n");
+  printf("even tie breakers = %d\n",evenodd[0]);
+  printf("odd tie breakers = %d\n",evenodd[1]);
+  for (i=0; i<nblocks; i++)
+     printf("proc. %d won %d times\n",i,Iwin[i]);
   pcounts = (int *) ML_allocate( sizeof(int)*nblocks);
   proc_id = (int *) ML_allocate( sizeof(int)*nblocks);
   for (i = 0; i < nblocks; i++) pcounts[i] = 0;
@@ -542,12 +661,18 @@ int main(int argc, char *argv[])
     else count++;
   }
 
+  printf("%d:Tmat->invec_leng = %d\n",Tmat->comm->ML_mypid,Tmat->invec_leng);
+  printf("%d:Tmat->outvec_leng = %d\n",Tmat->comm->ML_mypid,Tmat->outvec_leng);
+  fflush(stdout);
   
   ML_az_sort(pcounts, nblocks, proc_id, NULL);
 
   i = 0; j = 0;
-  while ( (i < nblocks) && (pcounts[i] < pcounts[nblocks-1])) {
-    if ( proc_assignment[j] == -1) {
+  while ( (i < nblocks) && (pcounts[i] < pcounts[nblocks-1]) &&
+          (j < Tmat->outvec_leng) )
+  {
+    if ( proc_assignment[j] == -1)
+    {
       proc_assignment[j] = proc_id[i];
       pcounts[i]++;
       if (pcounts[i] == pcounts[nblocks-1]) i++;
@@ -576,7 +701,7 @@ int main(int argc, char *argv[])
 
 
   exit(1);
-#endif
+#endif /*ifdef ML_partition*/
 
   /********************************************************************/
   /* Set some ML parameters.                                          */
@@ -676,14 +801,16 @@ int main(int argc, char *argv[])
   }
 
 #ifdef HierarchyCheck
-  xxx = (double *) malloc( Nlocal_edges*sizeof(double));
+  xxx = (double *) ML_allocate((Nlocal_edges + Ke_mat->data_org[AZ_N_external])
+                               *sizeof(double)); 
 
 
   for (iii = 0; iii < Nlocal_edges; iii++) xxx[iii] = 0.0; 
 
   /* Set xxx */
 
-  printf("putting in an edge based xxx\n");
+  if (proc_config[AZ_node]== 0)
+     printf("putting in an edge based initial guess\n");
   fp = fopen("initguessfile","r");
   if (fp != NULL)
   {
@@ -713,7 +840,6 @@ int main(int argc, char *argv[])
   {
 
       num_PDE_eqns = ml_edges->Amat[level].num_PDEs;
-      if (proc_config[AZ_node]==0) printf("block size = %d\n",num_PDE_eqns);
 		
       /*  Sparse approximate inverse smoother that acutally does both */
       /*  pre and post smoothing.                                     */
@@ -728,8 +854,11 @@ int main(int argc, char *argv[])
 
       else if (ML_strcmp(context->smoother,"Hiptmair") == 0)
 	{
+       omega = 1.0;
+       if ( proc_config[AZ_node] == 0 )
+          printf("Damping parameter = %lf\n",omega);
 	  ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-				   1.,Tmat_array, Tmat_trans_array);
+				   omega,Tmat_array, Tmat_trans_array);
 	}
       /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
       /* In parallel, it is not a true Gauss-Seidel in that each processor */
@@ -812,8 +941,11 @@ int main(int argc, char *argv[])
 
   else if (ML_strcmp(context->coarse_solve,"Hiptmair") == 0)
     {
+       omega = 1.0;
+       if ( proc_config[AZ_node] == 0 )
+          printf("Damping parameter = %lf\n",omega);
       ML_Gen_Smoother_Hiptmair(ml_edges , coarsest_level, ML_BOTH,
-			       nsmooth,1.,Tmat_array, Tmat_trans_array);
+			       nsmooth,omega,Tmat_array, Tmat_trans_array);
     }
   else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
     ML_Gen_Smoother_GaussSeidel(ml_edges , coarsest_level, ML_BOTH, nsmooth,1.);
@@ -852,7 +984,8 @@ int main(int argc, char *argv[])
     exit(1);
   }
 		
-  ML_Gen_Solver(ml_edges, ML_MGV, N_levels-1, coarsest_level); 
+  mg_cycle_type = ML_MGV;
+  ML_Gen_Solver(ml_edges, mg_cycle_type, N_levels-1, coarsest_level); 
   AZ_defaults(options, params);
 	
   if (ML_strcmp(context->krylov,"Cg") == 0) {
@@ -873,8 +1006,8 @@ int main(int argc, char *argv[])
   }
   options[AZ_scaling]  = AZ_none;
   options[AZ_precond]  = AZ_user_precond;
-  options[AZ_conv]     = AZ_noscaled;
-  /*options[AZ_conv]     = AZ_r0;*/
+  /*options[AZ_conv]     = AZ_noscaled;*/
+  options[AZ_conv]     = AZ_r0;
   options[AZ_output]   = 1;
   options[AZ_max_iter] = 300;
   options[AZ_poly_ord] = 5;
@@ -885,14 +1018,15 @@ int main(int argc, char *argv[])
   AZ_set_ML_preconditioner(&Pmat, Ke_mat, ml_edges, options); 
   setup_time = AZ_second() - start_time;
 	
-  xxx = (double *) malloc( Nlocal_edges*sizeof(double));
-
+  xxx = (double *) ML_allocate((Nlocal_edges + Ke_mat->data_org[AZ_N_external])
+                               *sizeof(double)); 
 
   for (iii = 0; iii < Nlocal_edges; iii++) xxx[iii] = 0.0; 
 
   /* Set xxx */
 
-  printf("putting in an edge based xxx\n");
+  if (proc_config[AZ_node]== 0)
+     printf("putting in an edge based xxx\n");
   fp = fopen("initguessfile","r");
   if (fp != NULL) {
     fclose(fp);
@@ -908,11 +1042,17 @@ int main(int argc, char *argv[])
   AZ_reorder_vec(xxx, Ke_data_org, reordered_glob_edges, NULL);
 
   dtemp = sqrt(ML_gdot(Nlocal_edges, xxx, xxx, ml_edges->comm));
-  printf("length of initial guess = %d\n",Nlocal_edges);
-  printf("||xxx|| = %e\n",dtemp);
+  if (proc_config[AZ_node]== 0)
+  {
+    printf("length of initial guess = %d\n",Nlocal_edges);
+    printf("||xxx|| = %e\n",dtemp);
+  }
   dtemp = sqrt(ML_gdot(Nlocal_edges, rhs, rhs, ml_edges->comm));
+  if (proc_config[AZ_node]== 0)
+  {
   printf("||rhs|| = %e\n",dtemp);
   fflush(stdout);
+  }
 
   /*
     printf("putting in an node based xxxx\n");
@@ -961,8 +1101,8 @@ int main(int argc, char *argv[])
   else
   {
     options[AZ_keep_info] = 1;
-    options[AZ_conv] = AZ_noscaled;
-    /*options[AZ_conv] = AZ_r0;*/
+    /*options[AZ_conv] = AZ_noscaled;*/
+    options[AZ_conv] = AZ_r0;
     options[AZ_output] = 1;
 
     /*
@@ -974,8 +1114,8 @@ int main(int argc, char *argv[])
       printf("huhhhh %e\n",Ke_mat->val[0]);
       */
 
-    options[AZ_conv] = AZ_noscaled;
-    /*options[AZ_conv] = AZ_r0;*/
+    /*options[AZ_conv] = AZ_noscaled;*/
+    options[AZ_conv] = AZ_r0;
     /*options[AZ_conv] = AZ_expected_values;*/
 
 #ifdef CHECKOPERATORS
@@ -1045,49 +1185,17 @@ int main(int argc, char *argv[])
     free(vvv);
 **** end of check ****/
 
-/**** check symmetry of Ke ****/
-    Amat = &(ml_edges->Amat[N_levels-1]);
-    yyy = (double *) malloc( Amat->invec_leng * sizeof(double) );
-    vvv = (double *) malloc( Amat->invec_leng * sizeof(double) );
-    AZ_random_vector(yyy, Ke_data_org, proc_config);
-    AZ_random_vector(vvv, Ke_data_org, proc_config);
-    zzz = (double *) malloc( Amat->invec_leng * sizeof(double) );
-
-    /*
-    printf("size of Ke_mat = %d,%d\n",Amat->invec_leng,Amat->outvec_leng);
-    */
-
-    ML_Operator_Apply(Amat, Amat->invec_leng, yyy,Amat->outvec_leng,zzz);
-    /*
-    printf("||yyy|| = %10.7e\n",sqrt(ML_gdot(Amat->outvec_leng,yyy,yyy,
-                                     ml_edges->comm)));
-    printf("||vvv|| = %10.7e\n",sqrt(ML_gdot(Amat->outvec_leng,vvv,vvv,
-                                     ml_edges->comm)));
-    printf("\n++++++++++++++++++ ||Ke_mat * yyy|| = %10.7e\n\n",
-         sqrt(ML_gdot(Amat->outvec_leng, zzz, zzz, ml_edges->comm)));
-    printf("\n++++++++++++++++++ ||vvv^{t} * Ke_mat * yyy|| = %10.7e\n\n",
-         sqrt(abs(ML_gdot(Amat->outvec_leng, vvv, zzz, ml_edges->comm))));
-    */
-    dtemp = sqrt(abs(ML_gdot(Amat->outvec_leng, vvv, zzz, ml_edges->comm)));
-
-    ML_Operator_Apply(Amat, Amat->invec_leng, vvv,Amat->outvec_leng,zzz);
-    /*
-    printf("\n++++++++++++++++++ ||Ke_mat * vvv|| = %10.7e\n\n",
-         sqrt(ML_gdot(Amat->outvec_leng, zzz, zzz, ml_edges->comm)));
-    printf("\n++++++++++++++++++ ||yyy^{t} * Ke_mat * vvv|| = %10.7e\n\n",
-         sqrt(abs(ML_gdot(Amat->outvec_leng, yyy, zzz, ml_edges->comm))));
-    */
-    dtemp2 =  sqrt(abs(ML_gdot(Amat->outvec_leng, yyy, zzz, ml_edges->comm)));
-
-    if (dtemp != dtemp2)
-       fprintf(stderr,"\a\n*****************\nMatrix is not symmetric!\n"
-                     "*****************\n\n");
-
-    free(yyy); free(zzz); free(vvv);
-/**** end of Ke symmetry check ****/
-
 #endif /*ifdef CHECKOPERATORS*/
 
+    if (proc_config[AZ_node]== 0)
+    {
+       if (mg_cycle_type == ML_MGV)
+          printf("Cycle type = MGV\n");
+       else if (mg_cycle_type == ML_MGW)
+          printf("Cycle type = MGW\n");
+       else
+          printf("Cycle type = other\n");
+    }
     fflush(stdout);
     AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, Pmat, scaling); 
 
