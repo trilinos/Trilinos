@@ -248,31 +248,20 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   int i;                                  /* index counter */
   int nreceives;                          /* number of messages received */
   pRegion imp;                            /* array of tags being imported */
-<<<<<<< migoct.c
-  pRegion tmp;
-  int msgtag, msgtag2;
-=======
   pRegion tmp = NULL;
->>>>>>> 1.18
+  int msgtag, msgtag2;
   int j;
   float im_load;
   COMM_OBJ *comm_plan;           /* Object returned by communication routines */
 
   im_load = 0;
-<<<<<<< migoct.c
   msgtag = 32768;
   LB_Comm_Create(&comm_plan, nsentags, tag_pids, lb->Communicator, 
       msgtag, &nreceives);
-  tmp = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, nreceives,
-                                 sizeof(Region));
-=======
-  comm_plan = LB_Comm_Create(nsentags, tag_pids, lb->Communicator, &nreceives);
 
   if (nreceives > 0) {
     tmp = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, nreceives,
                                    sizeof(Region));
->>>>>>> 1.18
-  
     if(tmp == NULL) {
       fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
   	    "cannot allocate memory for import_objs.");

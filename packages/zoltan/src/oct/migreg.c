@@ -31,15 +31,9 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
 			       int nregions, int *c2) {
   int i;                         /* index counter */
   int n_import;
-<<<<<<< migreg.c
   int msgtag, msgtag2;
   COMM_OBJ *comm_plan;           /* Object returned by communication routines */
-  Region *import_objs;          /* Array of import objects used to request 
-=======
-  COMM_OBJ *comm_plan;           /* Communication object returned by 
-				    Bruce and Steve's communication routines */
   Region *import_objs = NULL;    /* Array of import objects used to request 
->>>>>>> 1.16
 				    the objs from other processors. */
 
   msgtag = 32768;
