@@ -523,7 +523,7 @@ pdgssvx_ABglobal(superlu_options_t *options, SuperMatrix *A,
 
     /* Initialization */
     factored = (Fact == FACTORED);
-    Equil = (!factored && options->Equil == EQUI);
+    Equil = (!factored && options->Equil == YES);
     notran = (options->Trans == NOTRANS);
     iam = grid->iam;
     job = 5;
