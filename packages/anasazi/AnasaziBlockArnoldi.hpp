@@ -6,7 +6,6 @@
 #include "AnasaziBLAS.hpp"
 #include "AnasaziMatrix.hpp"
 #include "AnasaziCommon.hpp"
-
 // 
 // BlockArnoldi base class
 //
@@ -18,7 +17,7 @@ public:
 		const int block=1, const string which="LM", const int step=25, 
 		const int restarts=0 );
 	virtual ~BlockArnoldi();
-	void iterate( int steps=1 );
+	void iterate( const int steps=1 );
 	void solve();
 	void getEvecs(AnasaziMultiVec<TYPE>& evecs); 
 	void getiEvecs(AnasaziMultiVec<TYPE>& ievecs);
@@ -44,13 +43,12 @@ private:
 	AnasaziMultiVec<TYPE> &_ivec; // must be passed in by the user
 	AnasaziMultiVec<TYPE> *_basisvecs, *_evecr, *_eveci;
 	AnasaziDenseMatrix<TYPE>* _hessmatrix;
-	AnasaziDenseMatrix<TYPE>* _resB; // needed for block Krylov decomposition
 	const int _nev, _length, _block, _restarts, _step;
 	const TYPE _residual_tolerance;
 	TYPE *_ritzresiduals, *_evalr, *_evali;
-	int _restartiter, _iter, _jstart, _jend, _nevblock, _debuglevel, _nconv;
-	bool _initialguess, _issym, _isconv, exit_flg, dep_flg;
-	TYPE _schurerror, _dep_tol, _blk_tol, _sing_tol;
+	int _restartiter, _iter, _jstart, _jend, _nevblock, _debuglevel, _nconv, _defblock;
+	bool _initialguess, _issym, _iscurrent, exit_flg, dep_flg;
+	TYPE _schurerror, _dep_tol, _blk_tol, _sing_tol, _def_tol;
 	string _which;
 	int *_order;
 };
@@ -66,11 +64,11 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE
 				_amat(mat), _ivec(vec), _basisvecs(0), _evecr(0), _eveci(0), 
 				_hessmatrix(0), _nev(nev), _length(length), _block(block), 
 				_restarts(restarts), _residual_tolerance(tol), _step(step),
-				_ritzresiduals(0), _evalr(0), _evali(0), _restartiter(0), _resB(0), 
-				_iter(0), _jstart(0), _jend(0), _which(which), _isconv(false),
-				_initialguess(true), _debuglevel(0), _nevblock(0),
+				_ritzresiduals(0), _evalr(0), _evali(0), _restartiter(0), 
+				_iter(0), _jstart(0), _jend(0), _which(which), _iscurrent(false),
+				_initialguess(true), _debuglevel(0), _nevblock(0), _defblock(0),
 				_issym(false), _nconv(0), _schurerror(1.0), dep_flg(false),
-				_dep_tol(0), _sing_tol(0), _blk_tol(0), exit_flg(false) {
+				_dep_tol(0), _sing_tol(0), _blk_tol(0), _def_tol(0), exit_flg(false) {
 	//	std::cout << "ctor:BlockArnoldi " << this << std::endl;
 	//
 	// Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
@@ -104,26 +102,27 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE
 		_ritzresiduals = new TYPE[ _block*_length ]; assert(_ritzresiduals);
 		_order = new int[ _block*_length ]; assert(_order);
 		//
-		// Create the block matrix B need for Krylov decomposition, initialize it to I_b. 
+		//  Set the tolerances for bloch orthogonality
 		//
-		_resB = new AnasaziDenseMatrix<TYPE>(_block, _block); assert(_resB);
-		int i, _block2 = _block*_block;
-		TYPE * array = new TYPE [ _block2 ];
-		TYPE one = 1.0, zero = 0.0;
-		for (i=0; i<_block2; i++) {
-			array[i] = zero;
-		}
-		for (i=0; i<_block; i++) {
-			array[i*_block + i] = one;				
-		}
-		_resB->setvalues( array, _block );
-		SetBlkTols();  // Set the tolerances for block orthogonality
-		delete [] array;
+		SetBlkTols();  
 	}
 	else {
 		std::cout << "BlockArnoldi:ctor " << _length << _block << _basisvecs << std::endl;
 		exit(-1);
 	}
+}
+
+template <class TYPE>
+void BlockArnoldi<TYPE>::SetBlkTols() {
+        const TYPE two = 2.0;
+        TYPE eps;
+        char precision = 'P';
+        AnasaziLAPACK lapack;
+        lapack.LAMCH(precision, eps);
+        _blk_tol = 10*sqrt(eps);
+        _sing_tol = 10 * eps;
+        _dep_tol = 1/sqrt(two);
+	_def_tol = eps;
 }
 
 template <class TYPE>
@@ -208,41 +207,66 @@ template <class TYPE>
 void BlockArnoldi<TYPE>::setSymmetric( const bool sym ) {
 	_issym = sym;
 }
-	
+
 template <class TYPE>
 void BlockArnoldi<TYPE>::currentStatus() {
 	int i;
 	std::cout<<" "<<std::endl;
 	std::cout<<"********************CURRENT STATUS********************"<<std::endl;
-	std::cout<<"Iteration\t"<<_iter<<" of\t"<< _length*(_restarts+1)<<std::endl;
+	std::cout<<"Iteration\t"<<_iter<<" of\t"<< _length+_restarts*(_length-_nevblock)<<std::endl;
 	std::cout<<"Restart \t"<<_restartiter<<" of\t"<< _restarts<<std::endl;
-	std::cout<<"Converged Eigenvalues : "<<_nconv<<std::endl;
 	std::cout<<"Requested Eigenvalues : "<<_nev<<std::endl;
 	std::cout<<"Requested Ordering : "<<_which<<std::endl;
 	std::cout<<"Residual Tolerance : "<<_residual_tolerance<<std::endl;	
-	if (exit_flg && _iter != _length*(_restarts+1)) {
-		std::cout<<"ERROR: Complete orthogonal basis could not be computed"<<std::endl;
-	}
-	std::cout<<"------------------------------------------------------"<<std::endl;
-	std::cout<<"Current Eigenvalue Estimates: "<<std::endl;
-	if (_issym) {
-		std::cout<<"Eigenvalue \t Ritz Residual"<<std::endl;
+	std::cout<<"Error for the partial Schur decomposition is : "<< _schurerror <<std::endl;
+	//
+	if ( _schurerror < _residual_tolerance ) {
 		std::cout<<"------------------------------------------------------"<<std::endl;
-		for (i=0; i<_nev; i++) {
-			std::cout.width(10);
-			std::cout<<_evalr[i]<<"\t"<<_ritzresiduals[i]<<std::endl;
+		std::cout<<"Computed Eigenvalues: "<<std::endl;
+		if (_issym) {
+			std::cout<<"Eigenvalue \t Ritz Residual"<<std::endl;
+			std::cout<<"------------------------------------------------------"<<std::endl;
+			for (i=0; i<_nev; i++) {
+				std::cout.width(10);
+				std::cout<<_evalr[i]<<"\t"<<_ritzresiduals[i]<<std::endl;
+			}
+			std::cout<<"------------------------------------------------------"<<std::endl;
+		} else {
+			std::cout<<"Real Part \t Imag Part \t Ritz Residual"<<std::endl;
+			std::cout<<"------------------------------------------------------"<<std::endl;
+			for (i=0; i<_nev; i++) {
+				std::cout.width(10);
+				std::cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t"<<_ritzresiduals[i]<<std::endl;
+			}
+			std::cout<<"------------------------------------------------------"<<std::endl;
+			std::cout<<" "<<std::endl;
 		}
-		std::cout<<"------------------------------------------------------"<<std::endl;
 	} else {
-		std::cout<<"Real Part \t Imag Part \t Ritz Residual"<<std::endl;
-		std::cout<<"------------------------------------------------------"<<std::endl;
-		for (i=0; i<_nev; i++) {
-			std::cout.width(10);
-			std::cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t"<<_ritzresiduals[i]<<std::endl;
+		if (exit_flg && _iter != _length+_restarts*(_length-_nevblock)) {
+			std::cout<<"ERROR: Complete orthogonal basis could not be computed"<<std::endl;
 		}
 		std::cout<<"------------------------------------------------------"<<std::endl;
+		std::cout<<"Current Eigenvalue Estimates: "<<std::endl;
+		if (_issym) {
+			std::cout<<"Eigenvalue \t Ritz Residual"<<std::endl;
+			std::cout<<"------------------------------------------------------"<<std::endl;
+			for (i=0; i<_nev; i++) {
+				std::cout.width(10);
+				std::cout<<_evalr[i]<<"\t"<<_ritzresiduals[i]<<std::endl;
+			}
+			std::cout<<"------------------------------------------------------"<<std::endl;
+		} else {
+			std::cout<<"Real Part \t Imag Part \t Ritz Residual"<<std::endl;
+			std::cout<<"------------------------------------------------------"<<std::endl;
+			for (i=0; i<_nev; i++) {
+				std::cout.width(10);
+				std::cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t"<<_ritzresiduals[i]<<std::endl;
+			}
+			std::cout<<"------------------------------------------------------"<<std::endl;
+			std::cout<<" "<<std::endl;
+		}
 	}
-	std::cout<<" "<<std::endl;
+	std::cout<<"******************************************************"<<std::endl;
 }	
 
 template <class TYPE>
@@ -301,20 +325,9 @@ void BlockArnoldi<TYPE>::SetInitBlock() {
 }
 
 template <class TYPE>
-void BlockArnoldi<TYPE>::SetBlkTols() {
-        const TYPE two = 2.0;
-        TYPE eps;
-        char precision = 'P';
-        AnasaziLAPACK lapack;
-        lapack.LAMCH(precision, eps);
-        _blk_tol = 10*sqrt(eps);
-        _sing_tol = 10 * eps;
-        _dep_tol = 1/sqrt(two);
-}
-
-template <class TYPE>
-void BlockArnoldi<TYPE>::iterate(int steps) {
+void BlockArnoldi<TYPE>::iterate(const int steps) {
 	int i,j,temp;
+	int tempsteps = steps;
 	const int izero=0;
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
@@ -340,58 +353,44 @@ void BlockArnoldi<TYPE>::iterate(int steps) {
 	if (exit_flg) { return; }	
 	//			
 	// Now we go the number of steps requested by the user.  This may cause
-	// a restart or hit the number of maximum iterations (restarts).  Currently this
-	// doesn't look at the residuals.
+	// a restart or hit the number of maximum iterations (restarts).  
 	//
-	// Lets see how many loops we'll have to do, take into account that we may not
-	// be in the beginning of the factorization.
-	//
-	if (_jstart+steps < _length) {
-		// If we don't need to restart, just get it over with.
-		_jend = _jstart+steps;
-		_iter += steps;
-		BlockReduction();
-		_jstart = _jend;  // Move the pointer
-	}
-	else {  
-		// Finish off this factorization and restart;
-		_jend = _length;
-		temp = _length-_jstart;
-		_iter += temp;
-		steps -= temp;
-		BlockReduction();
-		_jstart = _length; // Move the pointer
-		//
-		// Now restart and do the necessary loops required by the number of steps given.
-		//
-		while (steps > 0 && _restartiter <  _restarts && !exit_flg) {
-			ComputeResiduals( true );
-			Restart();  // Assuming _jstart is set in Restart()
-
-			// Output current information if necessary
-			if (_debuglevel > 0) {
-				currentStatus();
-			}
-			_restartiter++;
-
-			//  Reset _jend if we don't have many steps left
-			if (steps < (_length-_jstart)) {
-				_jend = _jstart+steps;
-			}
+	while(tempsteps > 0 && _restartiter <= _restarts && !exit_flg) {
+		// If we don't need to restart, just get it over with and return.
+		if (_jstart+tempsteps < _length) {
+			_jend = _jstart+tempsteps;
+			_iter += tempsteps;
+			tempsteps = 0;
 			BlockReduction();
-			temp = _jend-_jstart;
+			if (exit_flg) { break; } // We need to leave before we move the pointer
+			_jstart = _jend;  // Move the pointer
+			ComputeResiduals( false );		
+			_iscurrent = false;
+		}
+		// Finish off this factorization and restart.
+		else {  
+			_jend = _length;
+			temp = _length-_jstart;
 			_iter += temp;
-			steps -= temp;
-			_jstart = _jend; // Move the pointer
+			tempsteps -= temp;
+			BlockReduction();
+			if (exit_flg) { break; } // We need to leave before we move the pointer
+			_jstart = _length; // Move the pointer
+			//
+			//  Compute the Schur factorization and prepare for a restart.
+			//
+			ComputeResiduals( true );  
+			Restart();  
+			_iscurrent = true;
+			_restartiter++;
 		}
 	}
 	//
 	// Compute the current eigenvalue estimates before returning.
 	//
-//	std::cout<<"Upper Hessenberg matrix as of iteration :"<<_iter<<std::endl<<std::endl;
-//	_hessmatrix->print();
-	ComputeResiduals( false );		
-	
+	//std::cout<<"Upper Hessenberg matrix as of iteration :"<<_iter<<std::endl<<std::endl;
+	//_hessmatrix->print();
+
 	// Output current information if necessary
 	if (_debuglevel > 0) {
 		currentStatus();
@@ -400,11 +399,12 @@ void BlockArnoldi<TYPE>::iterate(int steps) {
 
 template <class TYPE>
 void BlockArnoldi<TYPE>::solve () {
-	int rem_iters = _length*(_restarts+1)-_iter;
-
+	int rem_iters = _length+_restarts*(_length-_nevblock)-_iter;
+	//
 	// Right now the solver will just go the remaining iterations, but this design will allow
 	// for checking of the residuals every so many iterations, independent of restarts.
-	while (_nconv < _nev && _iter < (_restarts+1)*_length && !exit_flg) {
+	//
+	while (_schurerror > _residual_tolerance && _iter < _length+_restarts*(_length-_nevblock) && !exit_flg) {
 		iterate( _step );
 	}
 }
@@ -971,8 +971,7 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	int mm1 = (_jstart-1)*_block;
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
-	AnasaziDenseMatrix<TYPE>* Hj;
-	
+	AnasaziDenseMatrix<TYPE>* Hj;	
 	//
 	// If we are going to restart then we can overwrite the 
 	// hessenberg matrix with the Schur factorization, else we
@@ -1013,15 +1012,12 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	// Sort the eigenvalues, this also sorts the _order vector so we know
 	// which ones we want. 
 	//
-//	std::cout<<"Before sorting:"<<std::endl;
-//	for (i=0; i<n; i++) {
-//		std::cout<< _evalr[i] << "\t" << _evali[i] << std::endl;
-//	}
+//	std::cout<<"Before sorting (Hj):"<<std::endl;
+//	Hj->print();
+//	std::cout<<"Before sorting (Q):"<<std::endl;
+//	Q.print();
+
 	Sort( true );
-//	std::cout<<"After sorting:"<<std::endl;
-//	for (i=0; i<n; i++) {
-//		std::cout<< _evalr[i] << '\t' << _evali[i] << std::endl;
-//	}
 	//
 	// Reorder real Schur factorization, remember to add one to the indices for the
 	// fortran call and determine offset.  The offset is necessary since the TREXC
@@ -1030,11 +1026,11 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	//
 	AnasaziBLAS blas;
 
-	int _nevtemp;
+	int _nevtemp, _nevtemp2;
 	if (_jstart < _nevblock) {
-		_nevtemp = n;
+		_nevtemp = n; _nevtemp2 = n;
 	} else {
-		_nevtemp = _nevblock*_block;
+		_nevtemp = _nevblock*_block; _nevtemp2 = _nev;
 	}		
 	char * compq = "V";
 	int *offset = new int[ _nevtemp ]; assert(offset);
@@ -1049,13 +1045,54 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 				1, work, &info );
 		assert(info==0);
 //		std::cout<<"Moving "<<_order[i]+1+offset[i]<<" to "<<1<<std::endl;
-//		std::cout<<"After sorting and reordering"<<std::endl;
+
 //		for (j=0; j<n; j++) {
 //	  		std::cout<<j<<"\t"<<ptr_hj[j*ldhj + j]<<std::endl;
 //		}
 	}
-
-	if (apply) { // We're headed for a restart, so update the Krylov basis
+//	std::cout<<"After sorting and reordering (Hj):"<<std::endl;
+//	Hj->print();
+//	std::cout<<"After sorting and reordering(Q):"<<std::endl;
+//	Q.print();
+	//
+	// Check the residual error for the Krylov-Schur decomposition.
+	// The residual for the Schur decomposition A(VQ) = (VQ)T + FB_m^TQ
+	// where HQ = QT is || FB_m^TQ || <= || H_{m+1,m} || || B_m^TQ ||.
+	//
+	// We are only interested in the partial Krylov-Schur decomposition corresponding
+	// to the _nev eigenvalues of interest or the _nevblock*_block number of
+	// eigenvalues we're keeping.
+	//
+	if (apply) {	
+		//
+		//  Calculate the B matrix for the Krylov-Schur basis F_vec*B^T
+		//
+		AnasaziDenseMatrix<TYPE> sub_block_hess(*_hessmatrix, m, mm1, _block, _block);
+		TYPE *ptr_sbh = sub_block_hess.getarray();
+		int ld_sbh = sub_block_hess.getld();
+		//
+		AnasaziDenseMatrix<TYPE> sub_block_q( Q, mm1, 0, _block, _nevtemp );
+		TYPE *ptr_sbq = sub_block_q.getarray();
+		int ld_sbq = sub_block_q.getld();
+		//
+		AnasaziDenseMatrix<TYPE> sub_block_b( _block, _nevtemp );
+		TYPE *ptr_sbb = sub_block_b.getarray();
+		char* trans = "N";	
+		blas.GEMM( *trans, *trans, _block, _nevtemp, _block, one, ptr_sbh, ld_sbh, 
+			ptr_sbq, ld_sbq, zero, ptr_sbb, _block );
+		AnasaziDenseMatrix<TYPE> sub_block_b2(sub_block_b, 0, 0, _block, _nevtemp2);
+		_schurerror = sub_block_b2.getfronorm();
+		//
+		//  Compute approximate ritzresiduals for each eigenvalue
+		//
+                for (i=0; i<_nevtemp ; i++) {
+                        AnasaziDenseMatrix<TYPE> s(sub_block_b,0,i,_block,1);
+                        TYPE *ptr_s=s.getarray();
+                        _ritzresiduals[i] = blas.NRM2(_block, ptr_s);
+                }   
+		//
+		// Update the Krylov basis.
+		//	
 		int *index = new int[ n ]; assert(index);
 		for (i = 0; i < n; i++ ) {
 			index[i] = i;
@@ -1064,93 +1101,32 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 		AnasaziMultiVec<TYPE>* basistemp = _basisvecs->CloneView( index, _nevtemp );
 		AnasaziMultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
 		basistemp->MvTimesMatAddMv ( one, *basistemp2, Qnev, zero );
-
+		//
+		// Update the Krylov-Schur form (quasi-triangular matrix).
+		//
+		AnasaziDenseMatrix<TYPE> Hjp1(*_hessmatrix,_nevtemp,0,_block,_nevtemp);
+		TYPE* ptr_hjp1 = Hjp1.getarray();
+		int ld_hjp1 = Hjp1.getld();
+		for (i=0; i<_block; i++) {
+		    for (j=0; j<_nevtemp; j++) {
+			ptr_hjp1[j*ld_hjp1 + i] = ptr_sbb[j*_block + i];
+		    }
+		}
 		delete basistemp, basistemp2;
 		delete [] index;
-	}
-	//
-	// Check the residual error for the Schur decomposition.
-	// The residual for the Schur decomposition A(VQ) = (VQ)T + FE_mQ
-	// where HQ = QT is || FE_mQ || <= || H_{m+1,m} || || E_mQ ||.
-	//
-	// We are only interested in the partial Schur decomposition corresponding
-	// to the _nev eigenvalues of interest.
-	//
-	//==========================================================
-	//	need a matrix matrix multiply here, but not sure what form B should be in !
-	//	AnasaziDenseMatrix<TYPE> s(Q, (_jstart-1)*_block, 0, _block, n)
-	//==========================================================
-	//
-	// Compute the norm of the submatrix H_{j+1,j} to determine the
-	// partial Schur decomposition error for the current Arnoldi factorization
-	// The norm of the Schur factor T will also be used to normalize the error.
-	//
-	AnasaziDenseMatrix<TYPE> sub_block_hess(*_hessmatrix, m, mm1, _block, _block);
-	const TYPE nrm_h = sub_block_hess.getfronorm();
-	//
-	// Since we're only interested in the partial Schur decomp for _nev eigenvalues
-	// nevtemp needs to be changed.
-	//
-	if ( _nevtemp > _nev ) { _nevtemp = _nev; }
-	AnasaziDenseMatrix<TYPE> sub_block_q( Q, mm1, 0, _block, _nevtemp );
-	const TYPE nrm_q = sub_block_q.getfronorm();
-	AnasaziDenseMatrix<TYPE> sub_block_t( *Hj, 0, 0, _nevtemp, _nevtemp );
-	const TYPE nrm_t = sub_block_t.getfronorm();
-	_schurerror = (nrm_h * nrm_q ) / nrm_t;
-	std::cout<< "The error for the partial Schur decomposition is : "<< _schurerror
-		<<std::endl;
-	//
-	// Now compute Ritz residuals for each Ritz pair.
-	// First:  Compute the eigenvectors of the Schur form
-	//
-	char * side = "R";
-	char * howmny = "B";
-	int mm, ldvl = 1;
-	TYPE *vl = new TYPE[ ldvl ];
-	lapack.TREVC( *side, *howmny, select, n, ptr_hj, ldhj, vl, ldvl,
-               		ptr_q, ldq, n, &mm, work, &info );
-	assert(info==0);
-	if (_issym) {
-		for (i=0; i<n ; i++) {
- 	     		AnasaziDenseMatrix<TYPE> s(Q,mm1,_order[i],_block,1);
-        		TYPE *ptr_s=s.getarray();
-        		_ritzresiduals[i] = blas.NRM2(_block, ptr_s)/nrm_t;
-		}
-	} else {  // There is a chance that complex eigenvectors exist.
-		i=0;
-		while ( i<n ) {
-			if ( _evali[i] != zero ) { // The eigenvector is complex
-				AnasaziDenseMatrix<TYPE> sr(Q,mm1,i,_block,1);
-				TYPE *ptr_sr=sr.getarray();
-				_ritzresiduals[i] = blas.NRM2(_block, ptr_sr);
-				AnasaziDenseMatrix<TYPE> si(Q,mm1,i,_block,1);
-				TYPE *ptr_si=si.getarray();
-				_ritzresiduals[i] += blas.NRM2(_block, ptr_si);
-				_ritzresiduals[i] /= sqrt(2.0)*nrm_t;
-				// The conjugate has the same residual
-				_ritzresiduals[i+1] = _ritzresiduals[i]; 
-				i += 2;
-			} else {
- 	     			AnasaziDenseMatrix<TYPE> s(Q,mm1,i,_block,1);
-        			TYPE *ptr_s=s.getarray();
-        			_ritzresiduals[i] = blas.NRM2(_block, ptr_s)/nrm_t;
-				i++;
-			}
-		}										
-	}		
-	//
-	// Check convergence before returning to iterate/solve routine
-	//
-	_nconv = 0;
-//	std::cout<<"Checking residuals for tolerance : "<<_residual_tolerance<<std::endl;
-	for (i=0; i<_nevtemp; i++) {
-//		std::cout<<"Eigenvalue "<<i<<" : "<<_ritzresiduals[i]<<std::endl;
-		if ( _ritzresiduals[i] < _residual_tolerance ) {
-			_nconv++;		
-		}
 	}			
-//	std::cout<<"Converged eigenvalues : "<<_nconv<<std::endl<<std::endl;
-
+	else {
+		//
+		// Compute the error in the Krylov-Schur factorization
+		//
+		AnasaziDenseMatrix<TYPE> sub_block_hess(*_hessmatrix, m, mm1, _block, _block);
+		TYPE nrm_h = sub_block_hess.getfronorm();
+		//
+		AnasaziDenseMatrix<TYPE> sub_block_q( Q, mm1, 0, _block, _nevtemp2 );
+		TYPE nrm_q = sub_block_q.getfronorm();
+		//
+		_schurerror = nrm_h*nrm_q;
+	}
 	delete [] work; 
 	delete [] bwork, select;
 	delete [] offset;
@@ -1247,6 +1223,44 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 		_evecr->SetBlock( *evecstemp2, index, _nev );
 		delete evecstempi, evecstemp2;
 	}
+	//
+	// Now compute Ritz residuals for each Ritz pair.
+	// First:  Compute the eigenvectors of the Schur form
+	//
+	side = "R";
+	howmny = "B";
+	ldvl = 1;
+	lapack.TREVC( *side, *howmny, select, n, ptr_hj, ldhj, vl, ldvl,
+               		ptr_q, ldq, n, &mm, work, &info );
+	assert(info==0);
+	if (_issym) {
+		for (i=0; i<n ; i++) {
+ 	     		AnasaziDenseMatrix<TYPE> s(Q,mm1,i,_block,1);
+        		TYPE *ptr_s=s.getarray();
+        		_ritzresiduals[i] = blas.NRM2(_block, ptr_s);
+		}
+	} else {  // There is a chance that complex eigenvectors exist.
+		i=0;
+		while ( i<n ) {
+			if ( _evali[i] != zero ) { // The eigenvector is complex
+				AnasaziDenseMatrix<TYPE> sr(Q,mm1,i,_block,1);
+				TYPE *ptr_sr=sr.getarray();
+				_ritzresiduals[i] = blas.NRM2(_block, ptr_sr);
+				AnasaziDenseMatrix<TYPE> si(Q,mm1,i,_block,1);
+				TYPE *ptr_si=si.getarray();
+				_ritzresiduals[i] += blas.NRM2(_block, ptr_si);
+				_ritzresiduals[i] /= sqrt(2.0);
+				// The conjugate has the same residual
+				_ritzresiduals[i+1] = _ritzresiduals[i]; 
+				i += 2;
+			} else {
+ 	     			AnasaziDenseMatrix<TYPE> s(Q,mm1,i,_block,1);
+        			TYPE *ptr_s=s.getarray();
+        			_ritzresiduals[i] = blas.NRM2(_block, ptr_s);
+				i++;
+			}
+		}										
+	}		
 
 	delete [] index;
 	delete evecstemp, basistemp;
@@ -1257,20 +1271,54 @@ void BlockArnoldi<TYPE>::Restart() {
 	//  This routine assumes the ComputeResiduals has been called before it
 	//  to compute the Schur vectors and residuals.  This information is used to 
 	//  restart the factorization.
-
-	int i;
-	int *index = new int[ _block ];
+	//
+	int i,j, defcnt;
+	int _nevtemp = _nevblock*_block;
+	int *index = new int[ _nevtemp ];
+	//
+	//  Move the F_vec block to the _jstart+1 position.	
+	//
 	for (i=0; i<_block; i++) {
 		index[i] = _jstart*_block + i;
 	}
-	// Move the F_vec block to the _jstart+1 position before resetting the pointer.	
-
 	AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneCopy(index, _block);
 	for (i=0; i<_block; i++) {
-		index[i] = _nevblock*_block + i;
+		index[i] = _nevtemp + i;
 	}
 	_basisvecs->SetBlock( *F_vec, index, _block);
-	_jstart = _nevblock; // or is it +1?
+	//
+	//  Orthogonalize the first _nevblock blocks of vectors
+	//
+	//for (i=0; i<_nevtemp; i++) {
+	//	index[i] = i;
+	//}
+	//AnasaziMultiVec<TYPE>* U_vec = _basisvecs->CloneView(index, _nevtemp);
+	//assert(U_vec);
+	//AnasaziDenseMatrix<TYPE> G10(_nevtemp,_nevtemp);
+	//QRFactorization( *U_vec, G10 );
+	//
+	//  Check for blocks to deflate
+	//
+	std::cout<<"Deflating blocks with eigenvalue residuals below : "<<_def_tol<<std::endl;
+	for (i=_defblock; i<_nevblock; i++) {
+		defcnt = 0;
+		for (j=0; j<_block; j++) {
+			if (_ritzresiduals[i*_block+j] < _def_tol ) { defcnt++; }
+		}
+		if (defcnt == _block) {
+			std::cout<<"We can deflate a block!"<<std::endl;
+		}
+	}		
+	//
+	//  Reset the pointer.
+	//
+	_jstart = _nevblock; 
+	//
+	//  Clean up
+	//
+	delete F_vec;
+	//delete U_vec;
+	delete [] index;
 }
 
 template<class TYPE>
@@ -1284,7 +1332,7 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
         assert(F_vec);
                         
-        TYPE *ptr_norms = new double[m];
+        TYPE *ptr_norms = new TYPE[m];
         TYPE sum=0.0;
                         
         F_vec->MvNorm(ptr_norms);
@@ -1337,7 +1385,7 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
 }
         std::cout << " " << std::endl;
                  
-        AnasaziMultiVec<TYPE>* AVj = _basisvecs->Clone(m); assert(_basisvecs);
+        AnasaziMultiVec<TYPE>* AVj = _basisvecs->Clone(m); assert(AVj);
         _amat.ApplyMatrix(*Vj,*AVj);
                         
         int row_offset=0;
@@ -1347,9 +1395,10 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         for ( i=0; i<_block; i++ ) {  
                 index[i] = j*_block+i;
         }
+
         AnasaziMultiVec<TYPE>* Fj = AVj->CloneView(index, _block);
         Fj->MvAddMv(-one, *F_vec, one, *Fj);
-        
+	
         AVj->MvNorm(ptr_norms);
         
         for ( i=0; i<m; i++ ) { 
