@@ -29,32 +29,31 @@
 \section{Working with Epetra Matrices}
 \label{chap:epetra_mat}
 
-Epetra contains several matrix classes.  Epetra matrices can be
-defined to be {\em serial} or {\em parallel}:
+Epetra contains several matrix classes.  Epetra matrices can be defined
+to be either {\em serial} or {\em distributed}. A serial matrix could be
+the matrix corresponding to a given element in a finite-element
+discretization, or the Hessemberg matrix in the GMRES method. Those
+matrices are of (relatively) small size, so that it is not convenient to
+distribute them across the processes.
+
+Other matrices, like for instance the linear system matrices for
+large-scale computing, must be distributed to obtain scalability.  For
+distributed sparse matrices, the basic Epetra class is
+Epetra\_RowMatrix, meant for double-precision matrices with row access.
+Epetra\_RowMatrix is a pure virtual class.  Various classes are derived
+\verb!Epetra_RowMatrix!. Among them, here we recall:
 \begin{itemize}
-\item Examples of serial matrices are, for instance, the matrix
-  corresponding to a given element in a finite-element discretization,
-  or the Hessemberg matrix in the GMRES method. Those matrices are of
-  small size, and therefore they are not distributed among the
-  processors (but they can be replicated).
-\item For distributed sparse matrices, the basic class is
-  Epetra\_RowMatrix. This class is meant for double-precision matrices
-  with row access (as required in a matrix-vector product), and it is a
-  pure virtual class.  Various classes are derived
-  \verb!Epetra_RowMatrix!. Among them, here we recall:
-  \begin{itemize}
-  \item \verb!Epetra_CrsMatrix! for point matrices;
-  \item \verb!Epetra_VbrMatrix! for block matrices (that is, for
-    matrices which have a block structure, for example the ones deriving
-    from the discretization of a PDE problem with multiple unknowns for
-    node);
-  \item \verb!Epetra_FECrsMatrix! and \verb!Epetra_FEVbrMatrix! for
-    matrices arising from FE discretizations.
-  \end{itemize}
+\item \verb!Epetra_CrsMatrix! for point matrices;
+\item \verb!Epetra_VbrMatrix! for block matrices (that is, for
+  matrices which have a block structure, for example the ones deriving
+  from the discretization of a PDE problem with multiple unknowns for
+  node);
+\item \verb!Epetra_FECrsMatrix! and \verb!Epetra_FEVbrMatrix! for
+  matrices arising from FE discretizations.
 \end{itemize}
 
-This Chapter will show some of the Trilinos capabilities to work with
-matrices. During the Chapter, the user be introduced to:
+This Chapter will show the fundamental Trilinos capabilities to work
+with matrices. During the Chapter, the user be introduced to:
 \begin{itemize}
 \item Create (serial) dense matrices (in Section~\ref{sec:dense_mat});
 \item Create sparse point matrices (in Section~\ref{sec:sparse_mat});
@@ -112,10 +111,14 @@ B.Shape(NumRowsB, NumColsB);
 // ... here set the elements of A and B
 Epetra_SerialDenseMatrix AtimesB;
 AtimesB.Shape(NumRowsA,NumColsB);  
-AtimesB.Multiply('N','N',1.0, A, B, 0.0);
+double alpha = 1.0, beta = 1.0;
+AtimesB.Multiply('N','N',alpha, A, B, beta);
 cout << AtimesB;
 \end{verbatim}
-The complete code is reported in file
+\verb!Multiply()! performs the operation $C = \alpha A^{opA} + \beta
+B^{opA}$, where $A$ replaced by $A^T$ if the first input parameter is
+\verb!T!, and $B$ replaced by $B^T$ if the second input parameter is
+\verb!T!.  The complete code is reported in file
 \TriExe{epetra/ex10.cpp}.
 
 \smallskip
@@ -147,8 +150,8 @@ Epetra\_SerialDenseSolver class.
 
 \smallskip
 
-The Epetra\_LAPACK class provides access to most of the same
-functionality as Epetra\_SerialDenseSolver. The primary difference is
+Another Epetra class provides functionality similar to those of
+Epetra\_SerialDenseSolver: Epetra\_LAPACK. The primary difference is
 that Epetra\_LAPACK is a ``thin'' layer on the top of LAPACK, while
 Epetra\_SerialDenseSolver attempts to provide easy access to the more
 sophisticated aspects of solving dense linear systems.
@@ -167,26 +170,26 @@ will probably use Epetra\_SerialDenseMatrix.
 \subsection{Distributed Sparse Matrices}
 \label{sec:sparse_mat}
 
-Epetra provided an extensive set of methods to create and fill
+Epetra provides an extensive set of classes to create and fill
 distributed sparse matrices. These classes allow row-by-row or
 element-by-element constructions. Support is provided for common matrix
 operations, as scaling, norm, matrix-vector multiplication and
-matrix-multivector multiplication\footnote{At the present stage of
-  development, no functions are provided to perform a matrix-matrix
-  product between to distributed objects. However, the interested user
-  can convert the Epetra matrix into an ML matrix (called ML\_Operator),
-  perform the matrix-matrix multiplication with ML functions, and
-  convert back the resulting ML\_Operator into an Epetra matrix.}.
+matrix-multivector multiplication\footnote{Methods for matrix-matrix
+  products are avaiable through the EpetraExt package. Another
+  alternative is to use the efficient matrix-matrix product of ML, which
+  requires ML\_Operator objects. One may use light-weight conversions to
+  ML\_Operator, perform the ML matrix-matrix product, then convert the
+  result to Epetra Matrix.}.
 
-Application do not need to know about the particular storage format, and
-other implementation details such as data layout, number and location of
-ghost nodes. Epetra furnishes two basic formats, one suited for point
-matrices, the other for block matrices. The former is presented in this
-Section; the latter, generally much more efficient for problems with
-multiple degree of freedom per node, is introduced in
-Section~\ref{sec:sparse_vbr}. If required, other matrix formats can be
-supported via the Epetra\_Operator, described in
-Section~\ref{sec:operator}.
+Using Epetra objects, applications do not need to know about the
+particular storage format, and other implementation details such as data
+layout, number and location of ghost nodes. Epetra furnishes two basic
+formats, one suited for point matrices, the other for block matrices.
+The former is presented in this Section; the latter, generally much more
+efficient for problems with multiple degree of freedom per node, is
+introduced in Section~\ref{sec:sparse_vbr}. If required, other matrix
+formats can be introduced by deriving the Epetra\_RowMatrix virtual
+class.
 
 \begin{remark}
 Some numerical algorithms require  the application of the linear
@@ -293,27 +296,29 @@ for( int i=0 ; i<NumMyElements; ++i ) {
     Indices[1] = MyGlobalElements[i]+1;
     NumEntries = 2;
   }
-  A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
+  A.InsertGlobalValues(MyGlobalElements[i], NumEntries, 
+                       Values, Indices);
   // Put in the diagonal entry
-  A.InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i);
+  A.InsertGlobalValues(MyGlobalElements[i], 1, &two, 
+                       MyGlobalElements+i);
 }
 \end{verbatim}
-
-Note that column indexes have been inserted using global indexes.
-As a final operation, we can transform the matrix into local
-indexes. This phase in required in order to perform efficient parallel
-matrix-vector products and other matrix operations.
+Note that column indexes have been inserted using global indexes (but a
+method called \verb!InsertMyValues! can be used as well) .  As a final
+operation, we can transform the matrix into local indexes. This phase in
+required in order to perform efficient parallel matrix-vector products
+and other matrix operations.
 \begin{verbatim}
 A.FillComplete();
 \end{verbatim}
 
-The above presentation refers to a rather common case: In a parallel
+We have just presented a rather common situation: In a parallel
 matrix-vector product
 \[
 A X = B ,
 \]
 the map used to define the parallel distribution of the matrix, is the
-same of the (multi-)vectors $X$ and $B$.  This means that the rows of
+same of the multi-vectors $X$ and $B$.  This means that the rows of
 $A$ are distributed among the processes in the same way of the elements
 of $X$ and $B$.  However, Epetra allows the user to handle the more
 general case of a matrix defined using a Map, is different from that of
@@ -323,14 +328,15 @@ $X$ and that of $B$. In fact, each Epetra matrix is defined by {\sl
 \item Two maps, called RowMap and ColumnMap, are used to determine the
   set of rows and the columns of the elements assigned to a given
   processor. In general, one processor cannot set elements assigned to
-  other processors.  (However, some classes, derived from the
-  Epetra\_RowMatrix, can perform data exchange; see for instance
-  Epetra\_FECrsMatrix or Epetra\_FEVbrMatrix.) RowMap and ColumnMap
+  other processors\footnote{Some classes, derived from the
+    Epetra\_RowMatrix, can perform data exchange; see for instance
+    Epetra\_FECrsMatrix or Epetra\_FEVbrMatrix.}. RowMap and ColumnMap
   determine the pattern of the matrix, as it is used during the
-  construction. They can be obtained using the methods \verb!RowMap()!
-  and \verb!ColMap()! of the Epetra\_RowMatrix class. Usually, the user
-  dos not specify a ColumnMap, which is automatically created by Epetra.
-  RowMap and ColumnMap can differ.
+  construction. They can be obtained using the methods
+  \verb!RowMatrixRowMap()!  and \verb!RowMatrixColMap()! of the
+  Epetra\_RowMatrix class. Usually, the user dos not specify a
+  ColumnMap, which is automatically created by Epetra.  RowMap and
+  ColumnMap can differ.
 \item DomainMap and RangeMap define, instead, the parallel data layout
   of $X$ and $B$, respectively. Note that those two maps can completely
   different from RowMap and ColumnMap, meaning that a matrix can be
@@ -451,15 +457,20 @@ A(5,5) = 2;
 %%%
 %%%
 
-\subsection{Creating VBR Matrices}
+\subsection{Creating Block Matrices}
 \label{sec:sparse_vbr}
 
-The following code shows how to work with VBR matrices. This format has
-been designed for PDE problems with more than one unknown per grid node.
-The resulting matrix has a sparse block structure, and the size of each
-dense block equals the number of PDE equations defined on that block.
-This format is quite general, and can handle matrices with variable
-block size, as it is done is the following example.
+In this section we will show how to work with block matrices (where each
+block has a small dimension with respect to the dimension of the entire
+matrix)\footnote{Trilinos offers capabilities to deal with matrices
+  composed by few large blocks, like for instance matrices arising from
+  the discretization of the incompressible Navier-Stokes equations,
+  through the Meros package.}. This format has been designed for PDE
+problems with more than one unknown per grid node.  The resulting matrix
+has a sparse block structure, and the size of each dense block equals
+the number of PDE equations defined on that block.  This format is quite
+general, and can handle matrices with variable block size, as it is done
+is the following example.
 
 First, we create a map, containing the distribution of the blocks:
 \begin{verbatim}
@@ -540,7 +551,6 @@ Please refer to \TriExe{epetra/ex17.cpp} for the entire source.
 %%%
 %%%
 
-
 \subsection{Insert non-local Elements Using FE Matrices}
 \label{sec:fematrix}
 
@@ -585,3 +595,16 @@ A simple
 cout << A;
 \end{verbatim}
 can be used to verify the data exchange.
+
+%%%
+%%%
+%%%
+
+\subsection{Concluding Remarks on Epetra Matrices}
+\label{sec:epetra_mat_conclusions}
+
+Teuchos::BLAS and Teuchos::LAPACK provide functionalities similar to
+Epetra\_BLAS, Epetra\_SerialDenseSolver and Epetra\_LAPACK; see
+Section~(\ref{sec:teuchos:lapack}).
+
+

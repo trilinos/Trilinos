@@ -35,7 +35,7 @@ systems of type
 \label{eq:nonlinear}
 F(x) = 0,
 \end{equation}
-with
+where
 \[
 F(x) = 
 \begin{pmatrix}
@@ -94,13 +94,12 @@ J_k  (x_{k-1}) =  \left[ \frac{ \partial F}{
         \partial x}( x_{k-1}) \right] .
 \label{eq:newton_step}
 \end{equation}
-Newton method introduces a local full linearizion of the
-equation. Solving a system of linear equations at each Newton step can
-be very expensive if the number of unknowns is large, and may not be
-justified if the current iterate is far from the solution. Therefore,
-a departure from the Newton framework consists of considering {\em
-inexact} Newton methods, which solve system~(\ref{eq:newton_step})
-only approximatively.
+Newton method introduces a local full linearizion of the equations.
+Solving a system of linear equations at each Newton step can be very
+expensive if the number of unknowns is large, and may not be justified
+if the current iterate is far from the solution. Therefore, a departure
+from the Newton framework consists of considering {\em inexact} Newton
+methods, which solve system~(\ref{eq:newton_step}) only approximatively.
 
 In fact, in practical implementation of the Newton method, one or more
 of the following approximations are used:
@@ -230,7 +229,7 @@ UserInterface interface(...),
 \end{verbatim}
 and finally construct the group,
 \begin{verbatim}
-NOX::Epetra::Group gourp(printParams, lsParams, interface, FIXME).
+NOX::Epetra::Group group(printParams, lsParams, interface).
 \end{verbatim}
 
 %%%
@@ -357,7 +356,7 @@ Epetra::Vector
 %%%
 %%%
 
-\subsection{A 2D Nonlinear PDE Problem}
+\subsection{A 2D Nonlinear PDE}
 \label{sec:nox_2d}
 
 In this Section, we consider the solution of the following nonlinear PDE
@@ -373,7 +372,7 @@ problem:
   \right.   
 \end{equation}
 For the sake of simplicity, we use a finite difference scheme ona
-Cartesian gri, with constant mesh sizes $h_x$ and $h_y$. Using standard
+Cartesian grid, with constant mesh sizes $h_x$ and $h_y$. Using standard
 procedures, the discrete equation at node $(i,j)$ reads
 \[
 \frac{ - u_{i-1,j} + 2 u_{i,j} - u_{i+1,j} }{ h_x^2} +
@@ -409,10 +408,10 @@ almost identical to that of the previous Section.
 \label{sec:nox_jacobian_free}
 
 In Section \ref{sec:nox_2d}, the entries of the Jacobian matrix have
-been explicitly coded. FOr more complex discretization schemes, it is
-not always possible nor convenient to compute the exact entries of
-$J$. For those cases, NOX can automatically build Jacobian matrices
-based on finite difference approximation, that is,
+been explicitly coded. Sometimes, it is not always possible nor
+convenient to compute the exact entries of $J$.  For those cases, NOX
+can automatically build Jacobian matrices based on finite difference
+approximation, that is,
 \[
 J_{i,j} = \frac{F_i(u + h_j e_j) - F_i(x)}{h_j} ,
 \] 
@@ -423,7 +422,7 @@ NOX, to reduce the number of function evaluations.
 %%%
 %%%
 
-\subsection{Concluding Remarks}
+\subsection{Concluding Remarks on NOX}
 \label{sec:local}
 
 The documentation of NOX can be found in \cite{NOX-home-page}.

@@ -114,12 +114,13 @@ and solve the distributed linear system with the method of choice.
 %%%
 %%%
 
-\subsection{ShellOptions}
+\subsection{Trilinos\_Util\_ShellOptions}
 \label{sec:triutils:shell}
 
-ShellOptions is a class to manage the input arguments and shell
-variables.  With this class, it is easy to handle input line arguments
-and shell variables. For instance, the user can write 
+\verb!Trilinos\_Util\_ShellOptions! is a class to manage the input
+arguments and shell variables.  With this class, it is easy to handle
+input line arguments and shell variables. For instance, the user can
+write
 \begin{verbatim}
 $ ./ex2.exe -nx 10 -tol 1e-6 -solver=cg 
 \end{verbatim}
@@ -130,7 +131,7 @@ A simple code using this class is as follows:
 int main(int argc, char *argv[])
 {
 
-  ShellOptions Args(argc,argv);
+  Trilinos_Util_ShellOptions Args(argc,argv);
   int nx = Args.GetIntOption("-nx", 123);
   int ny = Args.GetIntOption("-ny", 145);
   double tol = Args.GetDoubleOption("-tol", 1e-12);
@@ -169,3 +170,180 @@ If option name is not found in the database, a value of 0, 0.0 or an
 
 File \TriExe{triutils/ex2.cpp} gives an example of the usage of this class.
  
+%%%
+%%%
+%%%
+
+\subsection{Trilinos\_Util\_MatrixGallery}
+\label{sec:triutils:gallery}
+
+\verb!Trilinos\_Util\_MatrixGallery! is a class to define linear
+problems. It is meant to provide  functionalities  similar to the
+MATLAB's \verb!gallery! function. A typical constructor requires the
+problem type and an Epetra\_Comm, and it is followed by a set of
+instructions to specify the problem. For instance, we may have:
+\begin{verbatim}
+Trilinos_Util_MatrixGallery Gallery("laplace_2d", Comm);
+Gallery.set("problem_size",100);
+Gallery.set("map_type","linear");
+Gallery.set("solution_type","random");
+\end{verbatim}
+which creates a matrix corresponding to the discretization of a 2D
+Laplacian on a Cartesian grid with 100 points. The nodes are decomposed
+linearly, and the exact solution is a random vector.
+
+A list of currently avaialble problems is reported below.
+
+\vskip .1 in
+
+\choicebox{\tt eye}{Creates an identity matrix. The dimension of the
+  problem is set using Set("problem size", IntValue), or, alternatively,
+  by Set("nx", IntValue).}
+
+\choicebox{\tt diag}{Creates a diagonal matrix. The elements on the diagonal
+  can set using Set("a",value), where value is either a double, or an
+  Epetra\_Vector. Problem size set as for "eye."}
+
+\choicebox{\tt tridiag}{ Creates a tridiagonal matrix. The diagonal element
+  is set using Set("a", DiagValue), the subdiagonal using
+  Set("b",SubDiagValue), and the superdiagonal using
+  Set("c",SupDiagValue).  DiagValue, SubDiagValue, and SupDiagValue can
+  be scalar or Epetra vectors.  In the latter case, all vectors must
+  have the same number of elements. Elements i will be use to define row
+  i. Problem size specified as for "eye."}
+
+\choicebox{\tt laplace\_1d}{ Create the classical tridiagonal matrix with
+  stencil [-1, 2, -1].  Problem size specified as for "eye."}
+
+\choicebox{\tt laplace\_2d}{Creates a matrix corresponding to the stencil of
+  a 2D Laplacian operator on a structured cartesian grid. Problem size
+  is specified using Set("problem size", IntValue). In this case,
+  IntValue must be a square number. Alternatively, one can set the
+  number of nodes along the x-axis and y-axis, using Set("nx",IntValue)
+  and Set("ny",IntValue).}
+
+\choicebox{\tt cross\_stencil\_2d}{Creates a matrix with the same stencil of
+  "laplace\_2d", but with arbitrary values. The stencil is
+  \[
+  A = \begin{tabular}{ccc}
+    & e &  \\
+  b & a & c \\
+    & d &   \\
+  \end{tabular}
+  \]
+  and each value can be either a double, or and Epetra\_Vector. Problem
+  size specified as in "laplace\_2d."}
+
+\choicebox{\tt laplace\_3d}{Creates a matrix corresponding to the stencil of
+  a 3D Laplacian operator on a structured cartesian grid. Problem size
+  specified using Set("problme size",IntValue). In this case, IntValue
+  must be a cube. Alternatively, one can specify the number of nodes
+  along the axis, using Set("nx",IntValue), Set("ny",IntValue), and
+  Set("nz",IntValue).}
+
+\choicebox{\tt cross\_stencil\_3d}{Similar to the 2D case. The matrix stencil
+  correspond to that of a 3D Laplace operator on a structured grid. On a
+  given x-y plane, the stencil is a in "laplace 2d". The value on the
+  plane below is set using Set("f",F), and in the plane above with
+  Set("g",G"). Problem size specifed as in "laplace3d."}
+
+\choicebox{\tt hb}{The matrix is read from file. File name is specified by
+  Set("file name", FileName). FileName is a C++ string. Problem size is
+  automatically read from file.}
+
+\choicebox{\tt lehmer}{Returns a symmetric positive definite matrix, such
+  that A(i,j) = (i+1)/(j+1) (for j>=i), and (j+1)/(i+1) (for j<j). This
+  matrix has three properties: - is totally nonnegative; - the inverse
+  is tridiagonal and esplicitly known; - The condition number is bounded
+  as n <= cond(A) <= 4*n (n is the problem size).}
+
+\choicebox{\tt minij}{Returns the symmetric positive definite matrix
+  defined sd A(i,j) = min(i+1,j+1). More information can be found in the
+  help of MATLAB's gallery function.}
+
+\choicebox{\tt ris}{Returns a symmetric Hankel matrix with elements
+  A(i,j) = 0.5/(n-(i+1)-(j+1)+1.5), with n equals problem size. (i and j
+  start from 0.)  The eigenvalues of A cluster around -pi/2 and pi/2.}
+
+\choicebox{\tt hilbert}{This is a famous example of a badly conditioned
+  matrix. The elements are defined as 1/((i+1)+(j+1)-1). (i and j start
+  from 0.)}
+
+\choicebox{\tt jordblock}{Creates a Jordan block with eigenvalue set via
+  Set("a",DoubleVal).}
+
+\medskip
+
+Some choices are available to define the exact solution, using
+Set("exact solution", value). value can be: 
+
+\vskip .1 in
+
+\choicebox{\tt constant}{The exact solution vector is made up of 1's.}
+
+\choicebox{\tt random}{Create a random solution vector}
+
+\choicebox{\tt linear}{Set value at node i is defined as alpha*i. The
+  double value alpha can be set via Set("alpha",DoubleVal).}
+
+\medskip
+
+\verb!CreateMap()! allows some different maps. The type of map is set
+using Set("map",value). Value is a string, defined as reported below.
+
+\vskip .1 in
+
+\choicebox{\tt linear}{Create a linear map. Elements are divided into
+  continuous chunks among the processors.}
+
+\choicebox{\tt box}{Used for problems defined on cartesian grids over a
+  square. The nodes is subdivided into mx x my subdomains. mx and my are
+  specified via Set("mx",IntValue) and Set("my",IntValue).}
+
+\choicebox{\tt interlaces}{Elements are subdivided so that element i is
+  assigned to process i\%NumProcs.}
+  
+\choicebox{\tt random}{Assign each node to a random process}
+
+\choicebox{\tt greedy}{(only for HB matrices) implements a greedy
+  algorithm to decompose the graph of the HB matrix among the processes}
+
+\bigskip
+
+Once all the required parameters have been specified, the user can get a
+pointer to the constructed Epetra\_CrsMatrix, to the exact and starting
+solution, and to the right-hand side (all Epetra\_Vector's) by using
+\begin{verbatim}
+A = G.GetMatrix();
+ExactSolution = G.GetExactSolution();
+RHS = G.GetRHS();
+StartingSolution = G.GetStartingSolution();
+\end{verbatim}
+and a pointer to the Epetra\_LinearProblem as
+\begin{verbatim}  
+Epetra_LinearProblem Problem(A,StartingSolution,RHS);
+\end{verbatim}
+At this point, one can for instance solve the linear problem as
+\begin{verbatim}  
+AztecOO Solver(Problem);
+Solver.SetAztecOption( AZ_precond, AZ_dom_decomp );  
+Solver.Iterate(1000,1E-9);
+\end{verbatim}
+Using Trilinos\_Util\_MatrixGallery, one can easily compute the true
+residual and the difference between computed and exact solution, as
+\begin{verbatim} 
+double residual;
+G.ComputeResidual(residual);
+  
+G.ComputeDiffBetweenStartingAndExactSolutions(residual);
+\end{verbatim}
+
+An Epetra\_VrbMatrix pointer is returned by calling
+\verb!GetVbrMatrix()!.  This matrix is formed starting from the
+Epetra\_CsrMatrix, and it is formally equivalent to the CrsMatrix
+returned by \verb!GetMatrix()!, the difference being that each node of
+the CrsMatrix is replicated num\_PDE\_eqns times (this value is passed in
+input, or set via Set("num pde eqns",IntValue)). 
+A pointer to the linear problem defined by the Vbr matrix is returned by
+method \verb!GetVbrLinearProblem()!.
+

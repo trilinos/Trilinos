@@ -56,21 +56,68 @@ AmesosProblem.Solver();
 Amesos will take care of redistributing data among the processors, if
 necessary.
 
-This Chapter starts with few notes on the installation of the third-part
-packages required by Amesos. Then, the Chapter will present the use of
-Amesos objects, to interface with the following packages:
+Amesos contains several classes: 
 \begin{itemize}
-\item UMFPACK, version 4.1 (in Section~\ref{sec:umfpack});
-\item SuperLUdist, version 2.0 (in Section~\ref{sec:superludist});
-\item A generic interface to various direct solvers is presented (in
-  Section~\ref{sec:amesos_generic}).
+\item \verb!Amesos_KLU!: Interface to Amesos's internal solver
+  KLU~\cite{KLU}, described in Section~\ref{sec:klu}.
+\item \verb!Amesos_Umfpack!: Interface to Tim Davis's
+  UMFPACK~\cite{umfpack-home-page}. Section~\ref{sec:umfpack} presents the basic
+  functionalities of this class.
+\item \verb!Amesos_Dscpack!: Interface to Padma Raghavan's
+  DSCPACK~\cite{dscpack-home-page}, presented in Section~\ref{sec:DSCPACK}.
+\item \verb!Amesos_Superludist!: Interface to Xiaoye S.~Li's SuperLU
+  solver suite, including SuperLU, SuperLU\_DIST 1.0 and SuperLU\_DIST
+  2.0~\cite{superlu-home-page}. The SuperLU\_DIST 2.0 interface is
+  presented in Section~\ref{sec:superludist}.
+\item \verb!Amesos_Mumps!: Interface to MUMPS 4.3.1~\cite{mumps-home-page}, see
+  Section~\ref{sec:mumps}.
+\item \verb!Amesos_Scalapack!: Interface to ScaLAPACK~\cite{scalapack}, 
+  presented in Section~\ref{sec:scalapack}.
+\end{itemize}
+
+
+Note that Amesos does {\sl not} contain interfaces to LAPACK routines.
+Other Trilinos packages already offer those routines (Epetra and
+Kokkos).
+
+All the Amesos classes are derived from a base class mode,
+\verb!Amesos_BaseSolver!. This abstract interface provides the basic
+functionalities for all Amesos solvers, and allows users to choose
+different direct solvers very easily -- by changing an input scalar
+parameter. See Section~\ref{sec:amesos_generic} for more details.
+
+In this Chapter, we will suppose that matrix $A$ in
+equation~(\ref{eq:linear_system}) is defined as an Epetra\_RowMatrix, in
+principle with nonzero entries on all the processes defined in the
+Epetra\_Comm communicator in use. $X$ and $B$, instead, are
+Epetra\_MultiVector, defined on the same communicator.  Some of the
+supported packages are serial solvers: in this case, if solving with
+more than one processor, the linear problem is shipped to processor 0,
+solved, then the solution is broadcasted in the solution vector $X$. For
+parallel solvers, instead, various options are supported, depending on
+the package at hand:
+\begin{itemize}
+\item The Amesos\_Superludist interface can be used over all the
+  processes, as well as on a subset of them. The matrix is kept in
+  distributed form over the processes of interest;
+\item Amesos\_Mumps can keep the matrix in a distributed form over all
+  the processes, or the matrix can be shipped to processor 0. In both
+  cases, all the processes in the MPI communicator will be used.
+\end{itemize}
+
+This Chapter, we will cover:
+\begin{itemize}
+\item The installation of the third-part packages required by Amesos, in
+  Section~\ref{sec:3pl};
+\item The Amesos\_BaseSolver interface to various direct solvers,
+  presented (in Section~\ref{sec:amesos_generic}).
 \end{itemize}
 
 %%%
 %%%
 %%%
 
-\subsection{Installation of Trilinos third-part Packages}
+\subsection{Installation of Third-Party Packages}
 \label{sec:3pl}
 
 Amesos is an interface to other packages, mainly developed outside the
@@ -78,7 +125,7 @@ Trilinos framework\footnote{Currently, SuperLU is included in the
   Trilinos framework.}. In order to use those packages, the user should
 carefully check copyright and licensing of those third party codes.
 Please refer to the web page or the documentation of each particular
-package for details. 
+package for details.
 
 Amesos supports a variety of direct solvers for linear systems of
 equations, and you are likely to use Amesos with only few of them. We
@@ -111,7 +158,7 @@ $ ./configure --prefix=${TRILINOS_HOME}/LINUX_MPI \
   "${TRILINOS_3PL}/SuperLU_DIST_2.0/libsuperlu_LINUX.a"
 \end{verbatim}
 (This command is followed by \verb!make! and \verb!make install!, as
-usual.)  This will enable UMFPACK and SuperLUdist, which are the two
+usual.)  This will enable UMFPACK and SuperLU\_DIST, which are the two
 packages covered in this Chapter.
 
 For more details about the configuration options of Amesos, please refer
@@ -121,116 +168,109 @@ to Amesos documentation.
 %%%
 %%%
 
-\subsection{UMFPACK}
-\label{sec:umfpack}
 
-File \TriExe{amesos/ex1.cpp} shows how to use Amesos to solve a linear
-system with UMFPACK\footnote{UMFPACK is a set of routines solving sparse
-  linear systems via LU factorization. It is copyrighted by Timothy
-  A.~Davis. More information can be obtained at the web page 
-  {\tt http://www.cise.ufl.edu/research/sparse/umfpack}. }.
-
-Suppose that \verb!A!, \verb!x! and \verb!b! are an Epetra\_RowMatrix
-and two Epetra\_MultiVector, respectively, or compatible dimensions.
-Amesos objects for the solution of linear systems requires an
-Epetra\_LinearProblem object, plus another object,
-\verb!AMESOS::Parameter::List!, used to specify the parameters.
-\begin{verbatim}
-Epetra_LinearProblem Problem(&A,&x,&b);
-AMESOS::Parameter::List params;
-\end{verbatim}
-Then, only few lines are required: We can define an Amesos object and
-solve the problem,
-\begin{verbatim}
-Amesos_Umfpack UmfpackProblem(Problem,params);
-UmfpackProblem.Solve();
-\end{verbatim}
-or, alternatively, it is possible to specify when symbolical
-factorization, numerical factorization and solution occur,
-\begin{verbatim}
-Amesos_Umfpack UmfpackProblem(Problem,params); 
-UmfpackProblem.SymbolicFactorization();
-UmfpackProblem.NumericFactorization();
-UmfpackProblem.Solve();
-\end{verbatim}
-Note that {\sl exactly} the same code can be run with more than one
-processor. In this case, being UMFPACK a serial solver, Amesos will take
-care to gather all required data on a processor, solve sequentially
-the linear system, and then broadcast the solution.
 
 %%%
 %%%
 %%%
 
-\subsection{SuperLUdist}
-\label{sec:superludist}
-
-Solving using SuperLUdist\footnote{SuperLU\_DIST is a parallel extension
-  to the  serial SuperLU library.   It  is targeted for the  distributed
-  memory parallel  machines. 
-Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory.
-Please refer
-  to  the  web site {\tt  http://www.nersc.gov/~xiaoye/SuperLU} for more
-  information.}  is not   much  different    from  what presented     in
-Section~\ref{sec:umfpack}.    Instead of   declaring  an Amesos\_Umfpack
-object, one can proceed as follows:
-\begin{verbatim}
-Amesos_Superludist * SuperludistProblem = 
- new Amesos_Superludist(Problem,params);
-\end{verbatim}
-followed by a call to Solve(), possibly preceded by
-SymbolicFactorization() and NumericFactorization().
-
-\begin{remark}
-  We have declared a pointer to and Amesos\_Superludist object because
-  the destructor of this object contains some MPI
-  calls. As in example \newline \TriExe{amesos/ex2.cpp} the destructor is called
-  at the end of the main function (after a call to
-  \verb!MPI_Finalize()!, we have to delete this object using the C++
-  statement
-\begin{verbatim}
-delete SuperludisProblem;
-\end{verbatim}
-  before the call to \verb!MPI_Finalize()!.
-\end{remark}
-
-%%%
-%%%
-%%%
-
-\subsection{A Generic Interface to Various Direct Solvers}
+\subsection{Amesos\_BaseSolver: A Generic Interface to Direct Solvers}
 \label{sec:amesos_generic}
 
-All Amesos objects are derived from the Amesos\_BaseClass object. Using
-the capabilities of C++, one may decide to code a generic interface to a
-direct solver as follows:
+All Amesos objects are constructed from the function class
+\verb!Amesos_Factory!.  Amesos\_Factory allows a code to delay the
+decision about which concrete class to use to implement the
+Amesos\_BaseSolver interface. The main goal of this class is to allow
+the user to select any supported (and enabled at configuration time)
+direct solver, simply changing an input parameter. Another remarkable
+advantage of Amesos\_BaseSolver is that, using this class, users does
+not have to include the header files of the 3-part libraries in their
+code\footnote{Using Amesos\_BaseSolver, 3-part libraries header files
+  are required in the compilation of Amesos only.}.
+
+An example of use of this class is as follows. First, the following
+header files must be included:
 \begin{verbatim}
-// parameter vector for Amesos
-AMESOS::Parameter::List ParamList;
+  #include "Amesos_Factory.h" 
+  #include "AmesosClassType.h"
+\end{verbatim}
+Then, let \verb!A! be an Epetra\_RowMatrix object (for instance, and
+Epetra\_CrsMatrix). We need to define a linear problem,
+\begin{verbatim}
+  Epetra_LinearProblem * Amesos_LinearProblem = 
+                         new Epetra_LinearProblem;
+  Amesos_LinearProblem->SetOperator( A ) ; 
+\end{verbatim}
+and to create an Amesos parameter list (which can be empty):
+\begin{verbatim}
+  Teuchos::ParameterList ParamList ;
+\end{verbatim}
+Now, let \verb!Choice! be an AmesosClassType variable, with one of the
+following values: 
+\begin{itemize}
+\item AMESOS\_KLU;
+\item AMESOS\_UMFPACK;
+\item AMESOS\_MUMPS;
+\item AMESOS\_SUPERLUDIST;
+\item AMESOS\_DSCPACK.
+\end{itemize}
+We can construct an \verb!Amesos_BaseSolver! object as follows:
+\begin{verbatim}
+  Amesos_BaseSolver * A_Base;
+  Amesos_Factory A_Factory;
 
-// prepare the linear solver
-Amesos_BaseSolver * AmesosProblem;
+  A_Base = A_Factory.Create(Choice, *Amesos_LinearProblem, 
+                            ParamList );
+  assert(A_Base!=0);
+\end{verbatim}
+Symbolic and numeric factorizations are computed using methods
+\begin{verbatim}
+  A_Base->SymbolicFactorization();
+  A_Base->NumericFactorization();
+\end{verbatim}
+The numeric factorization phase will checl whether a symbolic
+factorization exists or not. If not, method
+\verb!SymbolicFactorization()! is invoked.  Solution is computed (after
+setting of LHS and RHS in the linear problem), using
+\begin{verbatim}
+  A_Base->Solve();
+\end{verbatim}
+The solution phase will checl whether a numeric factorization exists or
+not. If not, method \verb!SymbolicFactorization()! is called.
 
-switch( choice ) {
-case ML_SOLVE_WITH_AMESOS_UMFPACK:
-    AmesosProblem = 
-      new Amesos_Umfpack( *LinearProblem, ParamList );
-    break;
-  case ML_SOLVE_WITH_AMESOS_SUPERLUDIST:
-    AmesosProblem = 
-      new Amesos_Superludist( *LinearProblem, ParamList );
-    break;
-  default:
-    cerr << ``Error'' << endl;
-}
+Users must provide the nonzero structure of the matrix for the symbolic
+phase, and the actual nonzero values for the numeric
+factorization. Right-hand side and solution vectors must be set before
+the solution phase, for instance using
+\begin{verbatim}
+  Amesos_LinearProblem->SetLHS(x);
+  Amesos_LinearProblem->SetRHS(b);
 \end{verbatim}
 
-Now, factorization and solution are the same for all the packages:
-\begin{verbatim}  
-AmesosProblem->SymbolicFactorization();
-AmesosProblem->NumericFactorization();
-AmesosProblem = (void *) AmesosProblem ;
+A common ingredient to all the Amesos classes is the Teuchos parameters'
+list. This object, whose definition requires the input file
+\verb!Teuchos_ParameterList.hpp!, is used to specify the parameters that
+affect the 3-part libraries. For a detailed presentation of Teuchos, we
+refer to~\cite{Teuchos-home-page}. Here, we simply recall that the
+parameters' list can be created as
+\begin{verbatim}
+  Teuchos::ParameterList AmesosList;
 \end{verbatim}
+and parameters can be set as
+\begin{verbatim}
+  AmesosList.setParameter(ParameterName,ParameterValue);
+\end{verbatim}
+Here, \verb!ParameterName! is a string containing the parameter name,
+and \verb!ParameterValue! is any valid C++ object that specifies the
+parameter value (for instance, an integer, a pointer to an array or to
+an object).
+
+Amesos has to level of parameters: 
+\begin{enumerate}
+\item a first level refers to parameters that affect all solvers;
+\item a second level refers to parameters that are specific to a
+  particular solver.
+\end{enumerate}
 
 
+For a detailed list of parameters we refer to the Amesos documentation.

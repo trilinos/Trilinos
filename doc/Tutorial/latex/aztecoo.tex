@@ -34,7 +34,7 @@ Aztec is the legacy iterative solver at the Sandia National
 Laboratories.  It has been extracted from the MPSalsa reacting flow
 code~\cite{MPSalsa-Theory,MPSalsa-User-Guide}, and it is currently
 installed in dozens of Sandia's applications. AztecOO extends this
-package, using C++ classes to enable more sophisticated use.
+package, using C++ classes to enable more sophisticated uses.
 
 AztecOO is intended for the iterative solution of linear systems of the
 form
@@ -150,19 +150,20 @@ respectively.
 %%%
 %%%
 
-\subsection{Basic Usage of AztecOO}
+\subsection{Basic Usage}
 \label{sec:basic_aztecoo}
 
 To solve a linear system with AztecOO, one must create an
-\verb!Epetra_LinearProblem!  object with the command
+\verb!Epetra_LinearProblem!  object (see
+Section~\ref{sec:linear_problem}) with the command
 \begin{verbatim}
 Epetra_LinearProblem Problem(&A,&x,&b);
 \end{verbatim}
 where \verb!A! is an Epetra matrix, and \verb!x,b! two Epetra
 vectors\footnote{At the current stage of development, AztecOO does not
-  handle Epetra\_MultiVectors. It accepts Multi\_Vectors, but it will
-  solve the linear system corresponding to the first multivector only.}.
-Then, the user must create an AztecOO object,
+  take advantage of the Epetra\_MultiVectors. It accepts Multi\_Vectors,
+  but it will solve the linear system corresponding to the first
+  multivector only.}.  Then, the user must create an AztecOO object,
 \begin{verbatim}
 AztecOO Solver(Problem);
 \end{verbatim}
@@ -222,7 +223,7 @@ performed by the linear solver using \verb!Solver.NumIters()!, while
 %%%
 
 
-\subsection{One-level Domain Decomposition Preconditioners with AztecOO}
+\subsection{One-level Domain Decomposition Preconditioners}
 \label{sec:aztecoo_dd}
 
 In this Section, we will consider preconditioners based on one-level
@@ -279,11 +280,18 @@ Solver.SetAztecOption( AZ_overlap, 1 );
 %%%
 %%%
 
-\subsection{Use of AztecOO Problems as a Preconditioner for AztecOO}
+\subsection{AztecOO Problems as Preconditioners}
 \label{sec:prec_aztecoo}
 
-One may wish to use an AztecOO solver in the preconditioning phase, as
-done in \TriExe{aztecoo/ex2.cpp}.  The main steps are here reported.
+AztecOO can accept Epetra\_Operator objects as preconditioners. This
+means that any class, derived from Epetra\_Operator an implementing
+method \verb!ApplyInverse()!, can be used in the preconditioning
+phase. AztecOO itself can be used to define a preconditioner for
+AztecOO, as class AztecOO\_Operator (which takes an AztecOO object in
+the construction phase) is derived from Epetra\_Operator.
+
+File \TriExe{aztecoo/ex2.cpp} shows how to use an AztecOO solver in the
+preconditioning phase.  The main steps are here reported.
 
 First, we have to specify the linear problem to be solved (set the
 linear operator, the solution and the right-hand side), and create an
@@ -344,7 +352,7 @@ A_Solver.Iterate(Niters, 1.0E-12);
 %%%
 %%%
 
-\subsection{Concluding Remarks}
+\subsection{Concluding Remarks on AztecOO}
 
 The following methods are often used:
 \begin{itemize}

@@ -51,10 +51,39 @@ In this Chapter we present:
 
 As other Trilinos packages, ML can be compiled and run independently
 from Epetra, that is, it can accept input matrix in formats different
-from the Epetra\_RowMatrix or Epetra\_Operator.  Should the reader be
-interested in running ML without Epetra, or using a C code (and not a
-C++ code), then we refer to the ML guide, contained in the
-\verb!${TRILINOS_HOME}/packages/ml/doc/!.
+from the Epetra\_RowMatrix or Epetra\_Operator. However, as part of the
+Trilinos project, ML can be used to define a preconditioner operator for
+\verb!Epetra_LinearProblem! objects (see for
+instance~\cite{Epetra-Ref-Guide}). This means that, in a C++ framework,
+ML can be defined as an \verb!Epetra_Operator! object, applied to an
+\verb!Epetra_MultiVector!  object, and used as a preconditioner for
+AztecOO.  This can be done in two ways:
+\begin{itemize}
+\item By defining an \verb!Epetra_ML_Operator! object, derived from the
+  Epetra\_Operator class. The constructor of this object requires
+  already filled ML\_Struct and ML\_Aggregate structures.  ML must have
+  been configure with the option \verb!--with-ml_epetra!.
+\item By defining an \verb!Epetra_ML_Preconditioner! object, derived
+  from the Epetra\_RowMatrix class. Basically, the constructor of
+  this object demands for an Epetra\_RowMatrix  pointer and a
+  Teuchos parameter list, that contains all the user's defined
+  parameters. ML must have been configure with options
+  \verb!--with-ml_epetra --with-ml_teuchos!.
+\end{itemize}
+
+The first approach, described in Section~\ref{ML_Operator}, is more
+general, and can be applied to geometric and algebraic multilevel
+preconditioner, but it requires a deeper knowledge of the ML package.
+This is because the user has to explicitly construct the ML hierarchy,
+define the aggregation strategies, the smoothers, and the coarse grid
+solver. The second approach, presented in
+Section~\ref{ML_Preconditioner}, instead, although limited to algebraic
+multilevel preconditioners, allows the use of ML as a black-box
+preconditioner. This class automatically constructs all the components
+of the preconditioner, following the parameters specified in a Teuchos
+parameters' list. Section~\ref{2-level DD} details an example of use of
+Epetra\_ML\_Preconditioner class.
+
 
 %%%
 %%%
@@ -299,7 +328,7 @@ Residual    = 6.99704e-13
 %%%
 
 
-\subsection{Two-level Domain Decomposition Preconditioners with ML}
+\subsection{Two-Level Domain Decomposition Preconditioners with ML}
 \label{sec:ml_DD}
 
 In order to use the example reported in this Section, one should compile
@@ -308,10 +337,10 @@ use the graph decomposition library METIS to create the coarse-level
 matrix\footnote{Note that ML has to be aware of the location of the
   METIS include files and the METIS library. The user can use the
   configure flags {\tt --with-incdirs} and {\tt --with-ldflags}.  Please
-  type {\tt configure --help} for more information. If you don't have
-  METIS, or you don't want to re-configure ML, you will be able to run
-  the example of this Section. However, you will be limited to use only
-  one aggregate per process.}.
+  type {\tt configure --help} in the ML subdirectory for more
+  information. If you don't have METIS, or you don't want to
+  re-configure ML, you will be able to run the example of this Section.
+  However, you will be limited to use only one aggregate per process.}.
 
 Two-level domain decomposition methods have been proved to be very
 effective for the iterative solution of many different kind of linear
@@ -352,7 +381,200 @@ The entire code is reported in \TriExe{ml/ex2.cpp}.
 %%%
 %%%
 
-\subsection{Concluding Remarks}
+\subsection{Class Epetra\_ML\_Operator}
+\label{ML_Operator}
+
+Class \verb!Epetra_ML_Operator! is defined in a header file, that must
+be included as
+\begin{verbatim}
+#include "Epetra_ML_Operator.h" 
+\end{verbatim}
+Users may also need to include \verb!ml_config.h!,
+\verb!Epetra_Operator.h!, \verb!Epetra_MultiVector.h!,
+\verb!Epetra_LinearProblem.h!,  \verb!AztecOO.h!. Check the Epetra and
+AztecOO documentation for more details.
+
+Let \verb!A! be an \verb!Epetra_RowMatrix! for which we aim to construct
+a preconditioner, and let \verb!ml_handle! be the structure ML requires
+to store internal data (see Section~\ref{high level sample}), created
+with the instruction
+\begin{verbatim}
+ML_Create(&ml_handle,N_levels);
+\end{verbatim}
+where \verb!N_levels! is the specified (maximum) number of levels.  As
+already pointed out, ML can accept in input very general matrices.
+Basically, the user has to specify the number of local rows, and provide
+a function to update the ghost nodes (that is, nodes requires in the
+matrix-vector product, but assigned to another process). For Epetra
+matrices, this is done by the following function
+\begin{verbatim}
+EpetraMatrix2MLMatrix(ml_handle, 0, &A);
+\end{verbatim}
+and it is important to note that \verb!A! is {\sl not} converted to ML
+format. Instead, \verb!EpetraMatrix2MLMatrix! defines a suitable getrow
+function (and other minor data structures) that allows ML to work with
+\verb!A!.
+
+Let \verb!agg_object! a \verb!ML_Aggregate! pointer, created using
+\begin{verbatim}
+ML_Aggregate_Create(&agg_object);
+\end{verbatim}
+At this point, users have to create the multilevel hierarchy, define the
+aggregation schemes, the smoothers, the coarse solver, and create the solver.
+Then, we can finally create the ML\_Epetra\_Operator object
+\begin{verbatim}
+Epetra_ML_Operator  MLop(ml_handle,comm,map,map);
+\end{verbatim}
+(\verb!map! being the Epetra\_Map used to create the matrix) and set the
+preconditioning operator of our AztecOO solver,
+\begin{verbatim}
+Epetra_LinearProblem Problem(A,&x,&b);
+AztecOO Solver(Problem);
+solver.SetPrecOperator(&MLop);
+\end{verbatim}
+where \verb!x! and \verb!b! are \verb!Epetra_MultiVector!'s defining
+solution and right-hand side. The linear problem can now be solved as,
+for instance,
+\begin{verbatim}
+Solver.SetAztecOption( AZ_solver, AZ_gmres );
+solver.Iterate(Niters, 1e-12);
+\end{verbatim}
+
+%%%
+%%%
+%%%
+
+\subsection{Class Epetra\_ML\_Preconditioner}
+\label{ML_Preconditioner}
+
+Alternatively to Epetra\_ML\_Operator, users can create
+\verb!Epetra_ML_Preconditioner!  objects.  Class
+\verb!Epetra_ML_Preconditioner! is defined in a header file, that must
+be included as
+\begin{verbatim}
+#include "Epetra_ML_Preconditioner.h" 
+\end{verbatim}
+Users may also need to include \verb!ml_config.h!,
+\verb!Epetra_RowMatrix.h!, \verb!Epetra_MultiVector.h!,
+\verb!Epetra_LinearProblem.h!,  \verb!AztecOO.h!. Check the Epetra and
+AztecOO documentation for more details.
+
+A very simple fragment of code using this class is reported
+below. The reader may refer to file
+\verb!$ML_HOME/examples/ml_example_epetra_preconditioner.cpp! for a more
+complex example. (In order to be effectively compiled, this example
+required ML to be configured with option \verb!--with-ml_triutils!; see
+Section~\ref{configure}.) 
+\begin{verbatim}
+#include "ml_include.h"
+#include "Epetra_ML_Preconditioner.h"
+#include "Teuchos_ParameterList.hpp"
+
+...
+
+  // A is an Epetra_RowMatrix derived class object
+  // solver is an AztecOO object
+
+  Teuchos::ParameterList MList;
+
+  MLList.setParameter("max levels",6);
+  MLList.setParameter("increasing or decreasing","decreasing");
+  MLList.setParameter("aggregation: type", "MIS");
+  MLList.setParameter("coarse: type","Amesos_KLU");
+  
+  Epetra_ML_Preconditioner * MLPrec = 
+    new Epetra_ML_Preconditioner(A, MLList, true);
+
+  solver.SetPrecOperator(MLPrec);
+  solver.SetAztecOption(AZ_solver, AZ_gmres);
+  solver.Iterate(Niters, 1e-12);
+
+  ...
+
+  delete MLPrec;
+\end{verbatim}
+The general procedure is as follows. First, the users define a Teuchos
+parameters' list. Input parameters are set via method
+\verb!setParameter(ParameterName,ParameterValue)!, where
+\verb!ParameterName! is a string defining the parameter, and
+\verb!ParameterValue! is the specified parameter, that can be any C++
+object or pointer. A complete list of parameters is reported later in
+this section. This list is passed to the constructor, together with a
+pointer to the matrix, and a boolean flag.  If this flag is set to
+\verb!false!, the constructor will not compute the multilevel hierarchy
+until when \verb!MLPrec->ComputePreconditioner()! is called. The
+hierarchy can be destroyed using \verb!MLPrec->Destroy()!.  For
+instance, the user may define a code like:
+\begin{verbatim}
+  // A is still not filled with numerical values
+  Epetra_ML_Preconditioner * MLPrec = 
+    new Epetra_ML_Preconditioner(A, MLList, false);
+  
+  // compute the elements of A
+  ...
+  // now compute the preconditioner
+  MLPrec->ComputePreconditioner();
+
+  // solve the linear system, and refill A
+  ...
+  // destroy the previously define preconditioner, and build a new one
+  MLPrec->Destroy();
+  MLPrec->ComputePreconditioner();
+\end{verbatim}
+In this fragment of code, the user defines the ML preconditioner, but
+does not create the preconditioner in the construction phase. This is of
+particular interest, for example, when ML is used in conjuction with
+nonlinear solvers (like NOX~\cite{NOX-home-page}).
+
+We point out that the input parameter list is {\sl copied} in the
+construction phase, hence later changes to \verb!MLList! will not affect
+the preconditioner. Should one need to modify parameters in the
+\verb!MLPrec!'s internally stored parameter list, he can proceed as
+follows:
+\begin{verbatim}
+  ParameterList & List = MLPrec->GetList();
+\end{verbatim}
+and then directly modify \verb!List!.
+
+\medskip
+
+All ML options can have a common prefix, specified by the
+user in the construction phase. For example, suppose that we require
+\verb!ML: ! to be the prefix. The constructor will be
+\begin{verbatim}
+  MLLIst.setParameter("ML: aggregation: type", "METIS");
+  Epetra_ML_Preconditioner * MLPrec = 
+    new Epetra_ML_Preconditioner(*A, MLList, true, Prefix);
+\end{verbatim}
+where \verb!Prefix! is a char array containing \verb!ML: !.
+
+The complete list of input parameters is reported below. Some parameters
+are identified with the symbol $\dagger$ (that is not part of the
+parameter name). Those parameters define quantities that can be
+different at each level of the hierarchy. By default, the specified
+parameter will affect all levels. However, the user can tune a specific
+level (say, \verb!d!) assing a further parameter, whose name contains
+\verb! (level d)! at the trailing edge of the string (note the space
+before the open parenthesis). For instance,  assuming
+decreasing levels starting from 4, one could set the aggregation schemes
+as follows:
+\begin{verbatim}
+  MLList.setParameter("aggregation: type (level 4)","METIS");
+  MLList.setParameter("aggregation: type (level 1)","MIS");
+\end{verbatim}
+The code will use the METIS scheme for levels 4, 3 and 2, then the MIS
+scheme for levels 1 and 0.
+
+Note that spaces are important: Do not include leading or trailing
+spaces, and separate words by just one space! Mispelled parameters will
+not be used, and can be detected calling method \verb!PrintUnused()!
+{\sl after} the construction of the multilevel hierarchy. 
+
+%%%
+%%%
+%%%
+
+\subsection{Concluding Remarks on ML}
 \label{sec:ml_concluding}
 
 More documentation about ML can be found in

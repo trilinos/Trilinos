@@ -26,12 +26,15 @@
 % ***********************************************************************
 % @HEADER
 
-\documentclass[12pt,relax]{SANDreport}
+\documentclass[11pt,relax]{SANDreport}
 \usepackage{graphicx}
 \usepackage{amsmath,amsfonts,amsthm}
 \usepackage{amssymb}
 
 \usepackage{times}
+
+\def\choicebox#1#2{\noindent$\hphantom{th}$\parbox[t]{1.5in}{\sf
+#1}\parbox[t]{4.5in}{#2}\\[0.8em]}
 
 \newcommand{\TriExe}[1]{{\tt\$\{TRILINOS\_HOME\}/doc/tutorial/#1}}
 \author{Marzio Sala and Michael Heroux \\
@@ -41,8 +44,8 @@ P.O. Box 5800 \\
 Albuquerque, NM 87185-1110
 }
 
-\title{Trilinos 3.1 Tutorial}
-\SANDnum{SAND2004-0154}
+\title{Trilinos 4.0 Tutorial}
+\SANDnum{SAND2004-XXX}
 \SANDauthor{
 Marzio Sala and Michael Heroux}
 
@@ -67,24 +70,26 @@ Marzio Sala and Michael Heroux}
 
   \medskip
   
-  Aim of this manuscript is to present the basic features of some of the
-  Trilinos packages. The presented material includes the definition of
-  distributed matrices and vectors with Epetra, the iterative solution
-  of linear system with AztecOO, incomplete factorizations with IFPACK,
-  multilevel methods with ML, direct solution of linear system with
-  Amesos, and iterative solution of nonlinear systems with NOX. With the
-  help of several examples, some of the most important classes and
-  methods are detailed to the unexperienced user.  For the most
-  majority, each example is largely commented throughout the text. Other
-  comments can be found in the source of each example.
+  The aim of this manuscript is to present the basic features of some of
+  the Trilinos packages. The presented material includes the definition
+  of distributed matrices and vectors with Epetra, the iterative
+  solution of linear systems with AztecOO, incomplete factorizations
+  with IFPACK, multilevel methods with ML, direct solution of linear
+  system with Amesos, eigenvalues and eigenvectors computations with
+  Anasazi, and iterative solution of nonlinear systems with NOX, and a
+  description of several utility classes provided by other Trilinos
+  packages.  With the help of several examples, some of the most
+  important classes and methods are explained to the unexperienced user.
+  For the most part, each example is largely annotated.  Other comments
+  can be found in the source of each example.
 
   \medskip
   
   This document is a companion to the Trilinos User's
   Guide~\cite{Trilinos-Users-Guide} and Trilinos Development
-  Guides~\cite{Trilinos-Dev-Guide,Trilinos-Dev-Guide-II}. Also, the
-  documentation included in each of the Trilinos' packages is of
-  fundamental importance.
+  Guides~\cite{Trilinos-Dev-Guide,Trilinos-Dev-Guide-II}. Please note
+  that the documentation included in each of the Trilinos' packages is
+  of fundamental importance.
  
 \end{abstract}
 
@@ -92,6 +97,13 @@ Marzio Sala and Michael Heroux}
 \section*{Acknowledgments}
 The authors would like to acknowledge the support of the ASCI and LDRD programs
 that funded development of Trilinos.
+
+\medskip
+
+The developers of each Trilinos' package are acknowledged for providing
+excellent documentation and examples, without which this document would
+have never been possible.
+
 
 \clearpage
 
@@ -103,24 +115,52 @@ that funded development of Trilinos.
 
 \include{introduction}
 
+\clearpage
+\newpage
 \include{getting_started}
 
+\clearpage
+\newpage
 \include{epetra_vector}
 
+\clearpage
+\newpage
 \include{epetra_matrix}
 
+\clearpage
+\newpage
 \include{epetra_others}
 
+\clearpage
+\newpage
 \include{aztecoo}
 
+\clearpage
+\newpage
 \include{ifpack}
 
+\clearpage
+\newpage
 \include{ml}
 
+\clearpage
+\newpage
 \include{amesos}
 
+\clearpage
+\newpage
+\include{anasazi}
+
+\clearpage
+\newpage
 \include{nox}
 
+\clearpage
+\newpage
+\include{teuchos}
+
+\clearpage
+\newpage
 \include{triutils}
 
 \bibliographystyle{plain}

@@ -1,0 +1,173 @@
+%@HEADER
+% ************************************************************************
+% 
+%          Trilinos: An Object-Oriented Solver Framework
+%              Copyright (2001) Sandia Corporation
+% 
+% Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+% license for use of this work by or on behalf of the U.S. Government.
+% 
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 2, or (at your option)
+% any later version.
+%   
+% This program is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+% General Public License for more details.
+%   
+% You should have received a copy of the GNU General Public License
+% along with this program; if not, write to the Free Software
+% Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+% 
+% Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+% 
+% ************************************************************************
+%@HEADER
+
+\section{Eigenvalues and Eigenvectors Computations with Anasazi}
+\label{chap:anasazi}
+
+The Anasazi package has been desigend as an extensible and interoperable
+framework for large-scale eigenvalue algorithms. Anasazi provides a
+generic interface to a collection of algorithms for solving large-scale
+eigenvalue problems. Anasazi requires matrices and vectors to be derived
+from abstract classes, and therefore it can be used with any matrix and
+vector classes that implemenents this interface. In this section, we
+present how to use Anasazi with Epetra vectors and matrices.
+
+The algorithm that is currently available through Anasazi is block
+implicitly restarted Arnoldi, for symmetric and non-symmetric problems.
+
+In this Chapter we present:
+\begin{itemize}
+\item the Epetra interface to Anasazi objects (in
+  Section~\ref{sec:anasazi_interface});
+\item the use of Anasazi to the solution of an eigenvalue problem (in
+  Section~\ref{sec:anasazi_solver}).
+\end{itemize}
+
+%%%
+%%%
+%%%
+
+\subsection{Epetra interface to Anasazi Objects}
+\label{sec:anasazi_interface}
+
+In order to use the Epetra interface to Anasazi, the user must include
+the following files:
+\begin{verbatim}
+#include "AnasaziPetraInterface.hpp"
+#include "AnasaziBlockArnoldi.hpp"
+#include "AnasaziConfigDefs.hpp"
+#include "AnasaziReturnType.hpp"
+#include "AnasaziMultiVec.hpp"
+\end{verbatim}
+Let \verb!Problem! be an Epetra\_LinearProblem, and \verb!Map! an
+Epetra\_BlockMap, \verb!A! an Epetra\_RowMatrix, and \verb!X! an
+Epetra\_MultiVector. Anasazi vectors and matrices are defined as
+follows:
+\begin{verbatim}
+Anasazi::PetraVec<double> Vector(X);
+Anasazi::PetraMat<double> Mat(A);
+\end{verbatim}
+The user can also create Anasazi vectors that do no rely on any
+Epetra\_MultiVector's, as
+\begin{verbatim}
+Anasazi::PetraVec<double> ivec(Map, block);
+\end{verbatim}
+
+%%%
+%%%
+%%%
+
+\subsection{Solving Eigenvalue Problems}
+\label{sec:anasazi_solver}
+
+Anasazi requires the definition of an Eigenproblem object, that
+specifies the linear system matrix and the right-hand side, as
+\begin{verbatim}
+Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
+Anasazi::BlockArnoldi<double> MyBlockArnoldi(Problem, tol, nev, 
+                                             length, block, 
+                                             which, step, restarts);
+\end{verbatim}
+Before solving the eigenproblem, the user must define a set of
+parameters. For instance, one might have:
+\begin{verbatim}
+int block = 1;
+int length = 20;
+int nev = 4;
+double tol = 1.0e-14;
+string which="SM";
+int restarts = 300;
+int step = restarts*length*block;
+MyBlockArnoldi.setSymmetric(true);
+MyBlockArnoldi.setDebugLevel(0);
+\end{verbatim}
+Here, \verb!SM! means that we are interested in the \verb!nev!
+eigenvalues with smallest magniture. Other choices are reported in
+Table~\ref{tab:anasazi}. (Please refer to the Anasazi user's guide more
+a comprehensive list.)
+
+
+\begin{table}
+\begin{center}
+\begin{tabular}{| p{2cm} l |}
+\hline
+option & action \\
+\hline
+
+{\tt SM} & Sort eigenvalues in increasing order of magnitude \\
+
+{\tt SR} & Sort eigenvalues in increasing order of real part \\
+
+{\tt SI} & Sort eigenvalues in increasing order of imaginary part \\
+
+{\tt LM} & Sort eigenvalues in decreasing order of magnitude \\
+
+{\tt LR} & Sort eigenvalues in decreasing order of real part \\
+
+{\tt LI} & Sort eigenvalues in decreasing order of imaginary part \\
+\hline
+\end{tabular}
+\caption{Options for Anasazi.}
+\label{tab:anasazi}
+\end{center}
+\end{table}
+
+
+The eigenproblem is solved with the instruction
+\begin{verbatim}
+MyBlockArnoldi.solve();
+\end{verbatim}
+A summary of results can be printed on the screen, simply typing
+\begin{verbatim}
+MyBlockArnoldi.currentStatus();
+\end{verbatim}
+Eigenvectors and eigenvalues can be retrived using
+\begin{verbatim}
+double * resids = MyBlockArnoldi.getResiduals();
+double * evalr = MyBlockArnoldi.getEvals(); 
+double * evali = MyBlockArnoldi.getiEvals();
+
+Anasazi::PetraVec<double> evecr(Map, nev);
+MyBlockArnoldi.getEvecs( evecr );
+Anasazi::PetraVec<double> eveci(Map, nev);
+MyBlockArnoldi.getiEvecs( eveci )
+\end{verbatim}
+
+%%%
+%%%
+%%%
+
+
+
+
+\subsection{Concluding Remarks on Anasazi}
+\label{sec:anasazi_concluding}
+
+More documentation on the Anasazi package can be found in
+\cite{Anasazi-Ref-Guide,Anasazi-User-Guide}.
+

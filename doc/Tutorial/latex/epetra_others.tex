@@ -29,8 +29,8 @@
 \section{Other Epetra Classes}
 \label{chap:epetra_others}
 
-Epetra includes a certain number of classes that can greatly help to
-develop parallel codes. In this Chapter we will recall the main
+Epetra includes a certain number of classes that can greatly help the
+development of parallel codes. In this Chapter we will recall the main
 usage of some of those classes:
 \begin{itemize}
 \item Epetra\_Time (in Section \ref{sec:time});
@@ -55,7 +55,7 @@ of platforms.
 Using Epetra\_Time, it is possible to measure the elapsed time. This is
 the time elapsed between two phases of a program.
 
-A Epetra\_Time object is defined as
+An Epetra\_Time object is defined as
 \begin{verbatim}
 Epetra_Time time(Comm);
 \end{verbatim}
@@ -329,9 +329,9 @@ Once the linear problem has been defined, the user can:
 
 \begin{itemize}
 \item scale the problem, using \verb!LeftScale(D)! or
-  \verb!RightScale(D)!, \verb!D! being am Epetra\_Vector of compatible
+  \verb!RightScale(D)!, \verb!D! being an Epetra\_Vector of compatible
   size;
-\item define a preconditioner for the iterative solution;
+%\item define a preconditioner for the iterative solution;
 \item change $X$ and $B$, using \verb!SetRHS(&B)! and \verb!SetLHS(&X)!;
 \item change $A$, using \verb!SetOperator(&A)!.
 \end{itemize}
@@ -341,7 +341,7 @@ Once the linear problem has been defined, the user can:
 %%%
 
 
-\subsection{Concluding Remarks}
+\subsection{Concluding Remarks on Epetra}
 \label{sec:epetra_concluding}
 
 More details about the Epetra project, and a technical description of
