@@ -33,82 +33,92 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 \subsection sclasses Teuchos "Standard" Classes
 
 <ul>
-<li> <b> Low-level math</b>
-<ul>
 
-<li> Numerical scalar traits : Teuchos::ScalarTraits - a traits class defining basic propertys and elementary
-functions for various scalar data types to be used in numerical computations.
+<li> <b>Low-level math</b>
 
-<li> BLAS wrapper class: Teuchos::BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
-     This class provides a single instance interface between Teuchos and the BLAS.  In this way we can easily
-     switch BLAS interfaces and manage the C++/Fortran translation differences that exist between different
-     computer systems.  This class also provides a very convenient way to templatize the BLAS.
+  <ul>
 
-<li> LAPACK wrapper class: Teuchos::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Teuchos::BLAS,
-     it provides nice C++ access to LAPACK.
+  <li> Numerical scalar traits : Teuchos::ScalarTraits - a traits class defining basic propertys and elementary
+  functions for various scalar data types to be used in numerical computations.
 
-<li> Serial Dense Matrix class:  Teuchos::SerialDenseMatrix - A templated, dense rectangular matrix class that provides basic
-     operations like addition, multiplication, scaling, logical comparison, norms, etc.  This class also provides support for a dense
-     matrix that needs to be replicated across processors in a parallel application.  Teuchos::SerialDenseVector inherits from
-     Teuchos::SerialDenseMatrix, providing some additional methods that are useful to dense vectors.  Boundschecking
-     can be turned on at compile time with the <pre> --enable-teuchos-abc </pre> configure flag.   
+  <li> BLAS wrapper class: Teuchos::BLAS - A ``thin'' layer of C++ code wrapping the basic linear algebra subprograms (BLAS).
+       This class provides a single instance interface between Teuchos and the BLAS.  In this way we can easily
+       switch BLAS interfaces and manage the C++/Fortran translation differences that exist between different
+       computer systems.  This class also provides a very convenient
+       way to templatize the BLAS.
 
-</ul>
-<br>
+  <li> LAPACK wrapper class: Teuchos::LAPACK - A ``thin'' layer of C++ code wrapping LAPACK.  Like Teuchos::BLAS,
+       it provides nice C++ access to LAPACK.
+
+  <li> Serial Dense Matrix class:  Teuchos::SerialDenseMatrix - A templated, dense rectangular matrix class that provides basic
+       operations like addition, multiplication, scaling, logical comparison, norms, etc.  This class also provides support for a dense
+       matrix that needs to be replicated across processors in a parallel application.  Teuchos::SerialDenseVector inherits from
+       Teuchos::SerialDenseMatrix, providing some additional methods that are useful to dense vectors.  Boundschecking
+       can be turned on at compile time with the
+       <tt>--enable-teuchos-abc </tt> configure flag.
+
+  </ul>
 
 <li> <b> Parameter Options: </b>
-<ul>
 
-<li> Parameter Entry:  Teuchos::ParameterEntry - A structure that holds a Teuchos::any object as the value
-     and information on the status of the parameter.  The type of parameter is chosen through the templated Set/Get methods.
-     Teuchos::ParameterEntry object is held as the "value" in the Teuchos::ParameterList map.
+  <ul>
 
-<li> Parameter List:  Teuchos::ParameterList - A templated parameter list which holds a map of <key,value> pairs, where the
-     "value" is a Teuchos::ParameterEntry object and the "key" is a string object.  The type of parameter is chosen through
-     the templated Set/Get methods, which allows it to be any standard type (float, double, int, ...) or another parameter list.
+  <li> Parameter Entry:  Teuchos::ParameterEntry - A structure that holds a Teuchos::any object as the value
+       and information on the status of the parameter.  The type of parameter is chosen through the templated Set/Get methods.
+       Teuchos::ParameterEntry object is held as the "value" in the Teuchos::ParameterList map.
 
-<li> Commandline arguments: Teuchos::CommandLineProcessor - processes commandline arguments from (argc,argv[])
-in a validated manner and automatically generates a documented --help option. 
+  <li> Parameter List:  Teuchos::ParameterList - A templated parameter list which holds a map of <key,value> pairs, where the
+       "value" is a Teuchos::ParameterEntry object and the "key" is a string object.  The type of parameter is chosen through
+       the templated Set/Get methods, which allows it to be any standard type (float, double, int, ...) or another parameter list.
 
-</ul>
-<br>
+  <li> Commandline arguments: Teuchos::CommandLineProcessor - processes commandline arguments from (argc,argv[])
+       in a validated manner and automatically generates a documented --help option. 
+
+  </ul>
 
 <li> <b> Low-Level Language Support: </b>
-<ul>
 
-<li> Smart pointer: Teuchos::RefCountPtr - a reference-counted pointer for managing dynamically allocated
-memory that is safe under multiple inheritance. 
+  <ul>
 
-<li> Dynamic casting: Teuchos::dyn_cast - a wrapper for <tt>dynamic_cast<></tt> that throws <tt>std::bad_cast</tt>
-exceptions with very detailed error messages on what types are involved.
+  <li> Smart pointer: Teuchos::RefCountPtr - a reference-counted
+  pointer for managing dynamically allocated memory that is safe under
+  multiple inheritance.
 
-<li> Array argument call generation : \ref Teuchos_Array_Arguments "arrayArg()" - a set of overloaded
-templated functions for generating inline array arguments for function calls.
+  <li> Dynamic casting: Teuchos::dyn_cast - a wrapper for
+  <tt>dynamic_cast<></tt> that throws <tt>std::bad_cast</tt>
+  exceptions with very detailed error messages on what types are involved.
 
-</ul>
-<br>
+  <li> Array argument call generation : \ref Teuchos_Array_Arguments "arrayArg()" - a set of overloaded
+  templated functions for generating inline array arguments for
+  function calls.
+
+  </ul>
+
 
 <li> <b> Performance Monitoring </b>
-<ul>
 
-<li> Timing class: Teuchos::TimeMonitor - Provides timing functions for the
-     purposes of performance analysis. 
+  <ul>
 
-<li> Floating point operation class: Teuchos::Flops - Provides floating point operations (FLOPS)
-     counting and reporting functions for the purposes of performance analysis.  All Teuchos computational
-     classes accumulate FLOP counts associated with the \e this object of the computations.
+  <li> Timing class: Teuchos::TimeMonitor - Provides timing functions for the
+       purposes of performance analysis. 
 
-</ul>
-<br>
+  <li> Floating point operation class: Teuchos::Flops - Provides floating point operations (FLOPS)
+       counting and reporting functions for the purposes of performance analysis.  All Teuchos computational
+       classes accumulate FLOP counts associated with the \e this object of the computations.
+
+  </ul>
 
 <li> <b> Exception Handling </b>
-<ul>
 
-<li> Test for Exception:  The TEST_FOR_EXCEPTION() macro accepts a logical test, an exception handler, and a
-     message.  It then throws an "intelligent" exception informing the user of the file, line, and message where
-     the exception was thrown.
+  <ul>
 
-</ul>
+  <li> Test for Exception: The TEST_FOR_EXCEPTION() macro accepts a
+  logical test, an exception handler, and a
+  message.  It then throws an "intelligent" exception informing the
+  user of the file, line, and message where
+  the exception was thrown.
+
+  </ul>
 
 </ul>
 
@@ -122,7 +132,7 @@ templated functions for generating inline array arguments for function calls.
 <li> Teuchos::Array is a templated
 array class similar to the STL vector, but with optional boundschecking.
 Boundschecking is useful for debugging, and can be turned on at compile time with
-the <pre> --enable-teuchos-abc </pre> configure flag. 
+the <tt>--enable-teuchos-abc</tt> configure flag. 
 
 <li> Teuchos::Hashtable is a templated map with constant-time lookup.
 
@@ -156,7 +166,5 @@ are tags, attributes, and character content.
 </ul>
 
 </ul>
-     
-
 
 */
