@@ -518,10 +518,6 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
   int tempVal1 = 0;
   if ((nIter > 0)  &&  (requestedBaseStep == TensorStep))
   {
-    // Save old Newton step as initial guess to second system 
-    tmpVec = newtonVec;
-    tmpVec.scale(-1.0);   // could I rewrite to avoid this?
-
     // Compute the tensor term s = x_{k-1} - x_k
     sVec = soln.getX();
     sVec.update(1.0, solver.getPreviousSolutionGroup().getX(), -1.0);
@@ -536,6 +532,10 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     if (sDotS != 0)
       aVec.scale(1 / (sDotS * sDotS));
     
+    // Save old Newton step as initial guess to second system 
+    tmpVec = newtonVec;
+    tmpVec.scale(-1.0);   // Rewrite to avoid this?
+
     // Compute residual of linear system using initial guess...
     soln.applyJacobian(tmpVec, *residualVecPtr);
     numJvMults++;
@@ -548,9 +548,9 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
       solver.getPreviousSolutionGroup().getNormF();
     if (utils.isPrintProcessAndType(NOX::Utils::Details))
     {
-      cout << " Norm of initial guess: " << utils.sciformat(tmpVecNorm, 6)
+      cout << "  Norm of initial guess: " << utils.sciformat(tmpVecNorm, 6)
 	   << endl;
-      cout << " initg norm of model residual =   "
+      cout << "  initg norm of model residual =   "
 	   << utils.sciformat(residualNorm, 6) << " (abs)     "
 	   << utils.sciformat(residualNormRel, 6) << " (rel)" << endl;
     }
@@ -567,7 +567,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     if (relativeResidual < 1.0)
     {
       if (utils.isPrintProcessAndType(NOX::Utils::Details))
-	cout << "Initial guess is good..." << endl;
+	cout << "  Initial guess is good..." << endl;
       isInitialGuessGood = true;
       tensorVec = tmpVec;
       double newTol = tol / relativeResidual;
@@ -575,29 +575,27 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 	newTol = 0.99;  // force at least one iteration
       linearParams.setParameter("Tolerance",  newTol);
       if (utils.isPrintProcessAndType(NOX::Utils::Details))
-	cout << "Setting tolerance to " << utils.sciformat(newTol,6) << endl;
+	cout << "  Setting tolerance to " << utils.sciformat(newTol,6) << endl;
     }
     else
 #endif // USE_INITIAL_GUESS_LOGIC    
     {
-      //cout << "Initial guess is BAD... do not use!\n";
+      //cout << "  Initial guess is BAD... do not use!\n";
       isInitialGuessGood = false;
       *residualVecPtr = solver.getPreviousSolutionGroup().getF();
     }
     
     // Compute the term inv(J)*Fp....
-    //tmpVec.init(0.0);
+    tmpVec.init(0.0);
     status = soln.applyJacobianInverse(linearParams, *residualVecPtr, tmpVec);
 
     // If it didn't converge, maybe we can recover. 
-    if ((status != NOX::Abstract::Group::Ok) && (doRescue == false))
+    if (status != NOX::Abstract::Group::Ok)
     {
-      throwError("computeTensorDirection", "Unable to apply Jacobian inverse");
-    }
-    else if ((status != NOX::Abstract::Group::Ok) &&
-	     (doRescue == true))
-    {
-      if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+      if (doRescue == false)
+	throwError("computeTensorDirection", "Unable to apply Jacobian inverse");
+      else if ((doRescue == true) &&
+	       (utils.isPrintProcessAndType(NOX::Utils::Warning)))
 	cout << "WARNING: NOX::Solver::TensorBased::computeTensorDirection() - "
 	     << "Linear solve failed to achieve convergence - "
 	     << "using the step anyway " 
@@ -605,12 +603,19 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     }
 
     // Continue processing
+#ifdef USE_INITIAL_GUESS_LOGIC    
     if (isInitialGuessGood) 
+    {
       tmpVec.update(1.0, tensorVec, 1.0);
-    linearParams.setParameter("Tolerance",  tol);
-    tempVal1 = linearParams.sublist("Output").
-    getParameter("Number of Linear Iterations", 0);
-    
+      linearParams.setParameter("Tolerance",  tol);
+    }
+#endif
+
+    // Save iteration count for comparison later
+    if (linearParams.sublist("Output").isParameter("Number of Linear Iterations"))
+      tempVal1 = linearParams.sublist("Output").
+	getParameter("Number of Linear Iterations",0);
+
 #if DEBUG_LEVEL > 0
     // Compute residual of linear system with initial guess...
     soln.applyJacobian(tmpVec, *residualVecPtr);
@@ -623,9 +628,6 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
       cout << " jifp norm of model residual =   "
 	   << utils.sciformat(residualNorm2, 6) << " (abs)     "
 	   << utils.sciformat(residualNorm2Rel, 6) << " (rel)" << endl;
-    //printf(" jifp norm of model residual = %14.6e (abs)   %14.6e (rel)\n",
-    //   residualNorm2,
-    //   residualNorm2 / solver.getPreviousSolutionGroup().getNormF());
 #endif
   }
 
@@ -633,14 +635,12 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
   status = soln.computeNewton(linearParams);
 
   // If it didn't converge, maybe we can recover. 
-  if ((status != NOX::Abstract::Group::Ok) && (doRescue == false))
+  if (status != NOX::Abstract::Group::Ok)
   {
-    throwError("computeTensorDirection", "Unable to compute Newton step");
-  }
-  else if ((status != NOX::Abstract::Group::Ok) &&
-	   (doRescue == true))
-  {
-    if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+    if (doRescue == false)
+      throwError("computeTensorDirection", "Unable to apply Jacobian inverse");
+    else if ((doRescue == true) &&
+	     (utils.isPrintProcessAndType(NOX::Utils::Warning)))
       cout << "WARNING: NOX::Solver::TensorBased::computeTensorDirection() - "
 	   << "Linear solve failed to achieve convergence - "
 	   << "using the step anyway " 
@@ -649,9 +649,12 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 
   // Set Newton direction
   newtonVec = soln.getNewton();
-  int tempVal2 = linearParams.sublist("Output").
-    getParameter("Number of Linear Iterations", 0);
-
+      
+  // Update counter
+  int tempVal2 = 0;
+  if (linearParams.sublist("Output").isParameter("Number of Linear Iterations"))
+    tempVal2 = linearParams.sublist("Output").
+      getParameter("Number of Linear Iterations",0);
   numJ2vMults += (tempVal1 > tempVal2) ? tempVal1 : tempVal2;
   
 #ifdef CHECK_RESIDUALS
@@ -709,9 +712,9 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     printDirectionInfo("tensorVec", tensorVec, soln, true);
 #endif // CHECK_RESIDUALS
 #if DEBUG_LEVEL > 0
-    double sDotT = tensorVec.dot(sVec), 6);
+    double sDotT = tensorVec.dot(sVec);
     if (utils.isPrintProcessAndType(NOX::Utils::Details))
-      cout << "Beta = " << utils.sciformat(beta, 6)
+      cout << "  Beta = " << utils.sciformat(beta, 6)
 	   << "  std = " << utils.sciformat(sDotT, 6)
 	   << "  qval = " << utils.sciformat(qval, 2)
 	   << "  lambdaBar = " << lambdaBar << endl;
