@@ -44,8 +44,6 @@
 
     /* get ID of this processor */
 
-    int MyPID   = Comm.MyPID();
-
 
     // Test GEMM first.  7 cases:
     

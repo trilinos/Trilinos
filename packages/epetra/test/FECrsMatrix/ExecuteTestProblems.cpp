@@ -305,8 +305,6 @@ int Drumm3(const Epetra_Map& map, bool verbose)
 
   // Construct FECrsMatrix
 
-  int NumLocalRows = Map.NumMyElements();
-  int MinLocalRow = Map.MinMyGID();
   int NumEntriesPerRow = 3;
 
   Epetra_FECrsMatrix A(Copy, Map, NumEntriesPerRow);
@@ -438,7 +436,6 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   //specific matrix positions (in terms of which processor owns them) will vary.
   //
 
-  int myPID = Comm.MyPID();
   int numProcs = Comm.NumProc();
 
   int numNodes = 9;

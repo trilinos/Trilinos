@@ -177,6 +177,7 @@ class Epetra_LinearProblem {
   bool RightScaled_;
   Epetra_Vector * LeftScaleVector_;
   Epetra_Vector * RightScaleVector_;
+  Epetra_LinearProblem & operator=(const Epetra_LinearProblem& Problem);
     
 };
 

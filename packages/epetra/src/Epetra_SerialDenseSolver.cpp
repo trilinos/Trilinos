@@ -37,10 +37,48 @@ Epetra_SerialDenseSolver::Epetra_SerialDenseSolver()
     Epetra_LAPACK(),
     Equilibrate_(false),
     ShouldEquilibrate_(false),
+    A_Equilibrated_(false),
+    B_Equilibrated_(false),
     Transpose_(false),
+    Factored_(false),
     EstimateSolutionErrors_(false),
+    SolutionErrorsEstimated_(false),
+    Solved_(false),
+    Inverted_(false),
+    ReciprocalConditionEstimated_(false),
     RefineSolution_(false),
-    TRANS_('N')    
+    SolutionRefined_(false),
+    TRANS_('N'),
+    M_(0),
+    N_(0),
+    Min_MN_(0),
+    NRHS_(0),
+    LDA_(0),
+    LDAF_(0),
+    LDB_(0),
+    LDX_(0),
+    INFO_(0),
+    LWORK_(0),
+    IPIV_(0),
+    IWORK_(0),
+    ANORM_(0.0),
+    RCOND_(0.0),
+    ROWCND_(0.0),
+    COLCND_(0.0),
+    AMAX_(0.0),
+    Matrix_(0),
+    LHS_(0),
+    RHS_(0),
+    Factor_(0),
+    A_(0),
+    FERR_(0),
+    BERR_(0),
+    AF_(0),
+    WORK_(0),
+    R_(0),
+    C_(0),
+    B_(0),
+    X_(0)
 {
   InitPointers();
   ResetMatrix();
@@ -236,7 +274,10 @@ int Epetra_SerialDenseSolver::Solve(void) {
 
     if (!Factored()) Factor(); // Matrix must be factored
     
-    if (B_!=X_) *LHS_ = *RHS_; // Copy B to X if needed
+    if (B_!=X_) {
+       *LHS_ = *RHS_; // Copy B to X if needed
+       X_ = LHS_->A(); LDX_ = LHS_->LDA();
+    }
     GETRS(TRANS_, N_, NRHS_, AF_, LDAF_, IPIV_, X_, LDX_, &INFO_);
     if (INFO_!=0) EPETRA_CHK_ERR(INFO_);
     UpdateFlops(2.0*DN*DN*DNRHS);

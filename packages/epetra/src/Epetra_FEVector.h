@@ -67,6 +67,9 @@ class Epetra_FEVector : public Epetra_MultiVector {
    Epetra_FEVector(const Epetra_BlockMap& Map,
 		   bool ignoreNonLocalEntries=false);
 
+  /** Copy constructor. */
+  Epetra_FEVector(const Epetra_FEVector& source);
+
    /** Destructor */
    virtual ~Epetra_FEVector();
 

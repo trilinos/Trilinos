@@ -407,7 +407,8 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS, p
  private:
   // Epetra_SerialDenseSolver copy constructor (put here because we don't want user access)
   
-  Epetra_SerialDenseSolver(const Epetra_SerialDenseSolver& Source){};
+  Epetra_SerialDenseSolver(const Epetra_SerialDenseSolver& Source);
+  Epetra_SerialDenseSolver & operator=(const Epetra_SerialDenseSolver& Source);
 };
 
 #endif /* EPETRA_SERIALDENSESOLVER_H */

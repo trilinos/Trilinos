@@ -89,6 +89,8 @@ class Epetra_OffsetIndex: public Epetra_Object {
                                const int * RemoteLIDs,
                                Epetra_Distributor & Distor );
 
+  //! Epetra_OffsetIndex copy constructor. 
+  Epetra_OffsetIndex & operator=(const Epetra_OffsetIndex & Indexor);
  public:
 
   int NumSame_;

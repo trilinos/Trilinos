@@ -291,6 +291,7 @@ class Epetra_CrsSingletonFilter {
   
  private:
   //! Copy constructor (defined as private so it is unavailable to user).
-  Epetra_CrsSingletonFilter(const Epetra_CrsSingletonFilter & Problem){};
+  Epetra_CrsSingletonFilter(const Epetra_CrsSingletonFilter & Problem);
+  Epetra_CrsSingletonFilter & operator=(const Epetra_CrsSingletonFilter & Problem);
 };
 #endif /* EPETRA_CRSSINGLETONFILTER_H */

@@ -70,7 +70,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #elif defined(INTEL_CXML)
 
 #define PREFIX __stdcall
-#define Epetra_fcd char *, unsigned int
+#define Epetra_fcd const char *, const unsigned int
 
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
 #define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
@@ -95,7 +95,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #elif defined(INTEL_MKL)
 
 #define PREFIX
-#define Epetra_fcd char *
+#define Epetra_fcd const char *
 
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
 #define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
@@ -138,7 +138,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #else /* Define Epetra_fcd for all other machines */
 
 #define PREFIX
-#define Epetra_fcd char * 
+#define Epetra_fcd const char * 
 
 /* Use autoconf's definition of F77_FUNC 
    unless using old make system */
@@ -207,52 +207,52 @@ extern "C" {
 #endif
 
 /* Double precision BLAS 1 */
-double PREFIX DASUM_F77(int* n, double x[], int* incx);
-void PREFIX DAXPY_F77(int* n, double* alpha, double x[], int* incx, double y[], int* incy);
-void PREFIX DCOPY_F77(int* n, double *x, int* incx, double *y, int* incy);
-double PREFIX DDOT_F77(int* n, double x[], int* incx, double y[], int* incy);
-double PREFIX DNRM2_F77(int* n, double x[], int* incx);
-void PREFIX DSCAL_F77(int* n, double* alpha, double *x, int* incx);
-int PREFIX IDAMAX_F77(int* n, double *x, int* incx);
+double PREFIX DASUM_F77(const int* n, const double x[], const int* incx);
+void PREFIX DAXPY_F77(const int* n, const double* alpha, const double x[], const int* incx, double y[], const int* incy);
+void PREFIX DCOPY_F77(const int* n, const double *x, const int* incx, double *y, const int* incy);
+double PREFIX DDOT_F77(const int* n, const double x[], const int* incx, const double y[], const int* incy);
+double PREFIX DNRM2_F77(const int* n, const double x[], const int* incx);
+void PREFIX DSCAL_F77(const int* n, const double* alpha, double *x, const int* incx);
+int PREFIX IDAMAX_F77(const int* n, const double *x, const int* incx);
 
 /* Single precision BLAS 1 */
-float PREFIX SASUM_F77(int* n, float x[], int* incx);
-void PREFIX SAXPY_F77(int* n, float* alpha, float x[], int* incx, float y[], int* incy);
-void PREFIX SCOPY_F77(int* n, float *x, int* incx, float *y, int* incy);
-float PREFIX SDOT_F77(int* n, float x[], int* incx, float y[], int* incy);
-float PREFIX SNRM2_F77(int* n, float x[], int* incx);
-void PREFIX SSCAL_F77(int* n, float* alpha, float *x, int* incx);
-int PREFIX ISAMAX_F77(int* n, float *x, int* incx);
+float PREFIX SASUM_F77(const int* n, const float x[], const int* incx);
+void PREFIX SAXPY_F77(const int* n, const float* alpha, const float x[], const int* incx, float y[], const int* incy);
+void PREFIX SCOPY_F77(const int* n, const float *x, const int* incx, float *y, const int* incy);
+float PREFIX SDOT_F77(const int* n, const float x[], const int* incx, const float y[], const int* incy);
+float PREFIX SNRM2_F77(const int* n, const float x[], const int* incx);
+void PREFIX SSCAL_F77(const int* n, const float* alpha, float *x, const int* incx);
+int PREFIX ISAMAX_F77(const int* n, const float *x, const int* incx);
 
 /* Double precision BLAS 2 */
-void PREFIX DGEMV_F77(Epetra_fcd, int* m, int* n, double* alpha, double A[], int* lda,
-		       double x[], int* incx, double* beta, double y[], int* incy);
-void PREFIX DTRMV_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, int *n, 
-		      double *a, int *lda, double *x, int *incx);
-void PREFIX DGER_F77(int *m, int *n, double *alpha, double *x, int *incx, double *y, 
-		     int *incy, double *a, int *lda);
+void PREFIX DGEMV_F77(Epetra_fcd, const int* m, const int* n, const double* alpha, const double A[], const int* lda,
+		       const double x[], const int* incx, const double* beta, double y[], const int* incy);
+void PREFIX DTRMV_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, const int *n, 
+		      const double *a, const int *lda, double *x, const int *incx);
+void PREFIX DGER_F77(const int *m, const int *n, const double *alpha, const double *x, const int *incx, const double *y, 
+		     const int *incy, double *a, const int *lda);
 
 
 /* Single precision BLAS 2 */
-void PREFIX SGEMV_F77(Epetra_fcd, int* m, int* n, float* alpha, float A[], int* lda,
-		       float x[], int* incx, float* beta, float y[], int* incy);
-void PREFIX STRMV_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, int *n, 
-		      float *a, int *lda, float *x, int *incx);
-void PREFIX SGER_F77(int *m, int *n, float *alpha, float *x, int *incx, float *y, 
-		     int *incy, float *a, int *lda);
+void PREFIX SGEMV_F77(Epetra_fcd, const int* m, const int* n, const float* alpha, const float A[], const int* lda,
+		       const float x[], const int* incx, const float* beta, float y[], const int* incy);
+void PREFIX STRMV_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, const int *n, 
+		      const float *a, const int *lda, float *x, const int *incx);
+void PREFIX SGER_F77(const int *m, const int *n, const float *alpha, const float *x, const int *incx, const float *y, 
+		     const int *incy, float *a, const int *lda);
 
 /* Double precision BLAS 3 */
-void PREFIX DGEMM_F77(Epetra_fcd, Epetra_fcd, int *m, int *
-		      n, int *k, double *alpha, double *a, int *lda, 
-		      double *b, int *ldb, double *beta, double *c, int *ldc);
-void PREFIX DSYMM_F77(Epetra_fcd, Epetra_fcd, int *m, int * n,
-		      double *alpha, double *a, int *lda, 
-		      double *b, int *ldb, double *beta, double *c, int *ldc);
+void PREFIX DGEMM_F77(Epetra_fcd, Epetra_fcd, const int *m, const int *
+		      n, const int *k, const double *alpha, const double *a, const int *lda, 
+		      const double *b, const int *ldb, const double *beta, double *c, const int *ldc);
+void PREFIX DSYMM_F77(Epetra_fcd, Epetra_fcd, const int *m, const int * n,
+		      const double *alpha, const double *a, const int *lda, 
+		      const double *b, const int *ldb, const double *beta, double *c, const int *ldc);
 void PREFIX DTRMM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
-		      int *m, int *n, double *alpha, double *a, int * lda, double *b, int *ldb);
+		      const int *m, const int *n, const double *alpha, const double *a, const int * lda, double *b, const int *ldb);
 void PREFIX DTRSM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
-		      int *m, int *n, double *alpha, double *a, int *
-		      lda, double *b, int *ldb);
+		      const int *m, const int *n, const double *alpha, const double *a, const int *
+		      lda, double *b, const int *ldb);
 void PREFIX EPETRA_DCRSMV_F77(const int *, const int *, const int *, const double *, const int *, 
 			      const int *, double *, double *);
 void PREFIX EPETRA_DCRSMM_F77(const int *, const int *, const int *, const double *, const int *, 
@@ -265,17 +265,17 @@ void PREFIX EPETRA_DCRSSM_F77(const int *, const int *, const int *, const int *
 			      const int *, double *, const int *, const int *, const int *);
 
 /* Single precision BLAS 3 */
-void PREFIX SGEMM_F77(Epetra_fcd, Epetra_fcd, int *m, int *
-		      n, int *k, float *alpha, float *a, int *lda, 
-		      float *b, int *ldb, float *beta, float *c, int *ldc);
-void PREFIX SSYMM_F77(Epetra_fcd, Epetra_fcd, int *m, int * n,
-		      float *alpha, float *a, int *lda, 
-		      float *b, int *ldb, float *beta, float *c, int *ldc);
+void PREFIX SGEMM_F77(Epetra_fcd, Epetra_fcd, const int *m, const int *
+		      n, const int *k, const float *alpha, const float *a, const int *lda, 
+		      const float *b, const int *ldb, const float *beta, float *c, const int *ldc);
+void PREFIX SSYMM_F77(Epetra_fcd, Epetra_fcd, const int *m, const int * n,
+		      const float *alpha, const float *a, const int *lda, 
+		      const float *b, const int *ldb, const float *beta, float *c, const int *ldc);
 void PREFIX STRMM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
-		      int *m, int *n, float *alpha, float *a, int * lda, float *b, int *ldb);
+		      const int *m, const int *n, const float *alpha, const float *a, const int * lda, float *b, const int *ldb);
 void PREFIX STRSM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
-		      int *m, int *n, float *alpha, float *a, int *
-		      lda, float *b, int *ldb);
+		      const int *m, const int *n, const float *alpha, const float *a, const int *
+		      lda, float *b, const int *ldb);
 
 void PREFIX XERBLA_F77(Epetra_fcd, int *info);
 

@@ -33,6 +33,7 @@
 //=============================================================================
 Epetra_IntVector::Epetra_IntVector(const Epetra_BlockMap& Map, bool zeroOut)
   : Epetra_DistObject(Map, "Epetra::IntVector"),
+    Values_(0),
     UserAllocated_(false),
     Allocated_(false)
 {
@@ -42,6 +43,7 @@ Epetra_IntVector::Epetra_IntVector(const Epetra_BlockMap& Map, bool zeroOut)
 //=============================================================================
 Epetra_IntVector::Epetra_IntVector(const Epetra_IntVector& Source)
   : Epetra_DistObject(Source),
+    Values_(0),
     UserAllocated_(false),
     Allocated_(false)
 {
@@ -51,6 +53,7 @@ Epetra_IntVector::Epetra_IntVector(const Epetra_IntVector& Source)
 //=============================================================================
 Epetra_IntVector::Epetra_IntVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, int *V)
   : Epetra_DistObject(Map, "Epetra::IntVector"),
+    Values_(0),
     UserAllocated_(false),
     Allocated_(false)
 {

@@ -83,13 +83,8 @@ if(argc > 1) {
 #ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
 	Epetra_SerialComm Comm;
 #endif
 
@@ -222,10 +217,10 @@ int matrixCtr(bool verbose, bool debug) {
 	int* m1rand = getRandArray(m1rows * m1cols);
 	for(int i = 0; i < m1rows; i++)
 		for(int j = 0; j < m1cols; j++)
-			m1(i,j) = m1rand[i*m1rows + j];
+			m1(i,j) = m1rand[i*m1cols + j];
 	for(int i = 0; i < m1rows; i++)
 		for(int j = 0; j < m1cols; j++)
-		EPETRA_TEST_ERR(!(m1[j][i] == m1rand[i*m1rows + j]), ierr);
+		EPETRA_TEST_ERR(!(m1[j][i] == m1rand[i*m1cols + j]), ierr);
 	if(debug) {
 		printArray(m1rand, m1rows * m1cols);
 		printMat("m1",m1);

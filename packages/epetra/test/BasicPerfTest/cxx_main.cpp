@@ -102,7 +102,7 @@ void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_Mul
 		      bool StaticProfile, bool verbose, bool summary);
 int main(int argc, char *argv[])
 {
-  int ierr = 0, j;
+  int ierr = 0;
   double elapsed_time;
   double total_flops;
   double MFLOPs;
@@ -701,7 +701,6 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
     A = new Epetra_VbrMatrix(Copy, *map, profile); // Construct matrix
 
   int * indices = new int[numPoints];
-  double * values = new double[numPoints];
 
   // This section of code creates a vector of random values that will be used to create
   // light-weight dense matrices to pass into the VbrMatrix construction process.

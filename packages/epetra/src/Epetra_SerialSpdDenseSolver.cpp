@@ -34,7 +34,9 @@
 //=============================================================================
 Epetra_SerialSpdDenseSolver::Epetra_SerialSpdDenseSolver(void)
   : Epetra_SerialDenseSolver(),
-    SCOND_(-1.0)
+    SCOND_(-1.0),
+    SymMatrix_(0),
+    SymFactor_(0)
 {
 }
 //=============================================================================
@@ -125,7 +127,10 @@ int Epetra_SerialSpdDenseSolver::Solve(void) {
   else {
 
     if (!Factored()) Factor(); // Matrix must be factored
-    if (B_!=X_) *LHS_ = *RHS_; // Copy B to X if needed 
+    if (B_!=X_) {
+       *LHS_ = *RHS_; // Copy B to X if needed 
+       X_ = LHS_->A(); LDX_ = LHS_->LDA();
+    }
     
     POTRS(SymMatrix_->UPLO(), N_, NRHS_, AF_, LDAF_, X_, LDX_, &INFO_);
     if (INFO_!=0) EPETRA_CHK_ERR(INFO_);

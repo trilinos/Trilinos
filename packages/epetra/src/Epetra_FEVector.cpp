@@ -76,6 +76,22 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& Map,
 }
 
 //----------------------------------------------------------------------------
+Epetra_FEVector::Epetra_FEVector(const Epetra_FEVector& source)
+  : Epetra_MultiVector(source.Map(), 1),
+    myFirstID_(0),
+    myNumIDs_(0),
+    myCoefs_(NULL),
+    nonlocalIDs_(NULL),
+    nonlocalElementSize_(NULL),
+    numNonlocalIDs_(0),
+    allocatedNonlocalLength_(0),
+    nonlocalCoefs_(NULL),
+    ignoreNonLocalEntries_(source.ignoreNonLocalEntries_)
+{
+  *this = source;
+}
+
+//----------------------------------------------------------------------------
 Epetra_FEVector::~Epetra_FEVector()
 {
   destroyNonlocalData();

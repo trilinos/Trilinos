@@ -87,6 +87,9 @@ class Epetra_FECrsGraph : public Epetra_CrsGraph {
   int* nonlocalRowAllocLengths_;
   int** nonlocalCols_;
 
+  Epetra_FECrsGraph & operator=(const Epetra_FECrsGraph& Graph);
+
+
 };//class Epetra_FECrsGraph
 
 #endif

@@ -68,20 +68,10 @@ int main(int argc, char *argv[])
   bool debug = false;
 
 #ifdef EPETRA_MPI
-
-  // Initialize MPI
-
   MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
-
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
-
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
-
+  Epetra_SerialComm Comm;
 #endif
 
   bool verbose = false;
@@ -89,23 +79,16 @@ int main(int argc, char *argv[])
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
-#ifdef EPETRA_MPI
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
-#else
-  Epetra_SerialComm Comm;
-#endif
-
   if (verbose && Comm.MyPID()==0)
     cout << Epetra_Version() << endl << endl;
 
+  int rank = Comm.MyPID();
   //  char tmp;
   //  if (rank==0) cout << "Press any key to continue..."<< endl;
   //  if (rank==0) cin >> tmp;
   //  Comm.Barrier();
 
   Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
   if (verbose) cout << Comm <<endl;
 
   //  bool verbose1 = verbose;

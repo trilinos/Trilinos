@@ -45,10 +45,17 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     Graph_(CV, RowMap, NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
+    UseTranspose_(false),
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
     StorageOptimized_(false),
+    Values_(0),
+    All_Values_(0),
+    NormInf_(0.0),
+    NormOne_(0.0),
     NumMyRows_(RowMap.NumMyPoints()),
+    ImportVector_(0),
+    ExportVector_(0),
     CV_(CV)
 {
   InitializeDefaults();
@@ -63,10 +70,17 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     Graph_(CV, RowMap, NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
+    UseTranspose_(false),
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
     StorageOptimized_(false),
+    Values_(0),
+    All_Values_(0),
+    NormInf_(0.0),
+    NormOne_(0.0),
     NumMyRows_(RowMap.NumMyPoints()),
+    ImportVector_(0),
+    ExportVector_(0),
     CV_(CV)
 {
   InitializeDefaults();
@@ -81,10 +95,17 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     Graph_(CV, RowMap, ColMap, NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
+    UseTranspose_(false),
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
     StorageOptimized_(false),
+    Values_(0),
+    All_Values_(0),
+    NormInf_(0.0),
+    NormOne_(0.0),
     NumMyRows_(RowMap.NumMyPoints()),
+    ImportVector_(0),
+    ExportVector_(0),
     CV_(CV)
 {
   InitializeDefaults();
@@ -100,10 +121,17 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     Graph_(CV, RowMap, ColMap,  NumEntriesPerRow, StaticProfile),
     Allocated_(false),
     StaticGraph_(false),
+    UseTranspose_(false),
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
     StorageOptimized_(false),
+    Values_(0),
+    All_Values_(0),
+    NormInf_(0.0),
+    NormOne_(0.0),
     NumMyRows_(RowMap.NumMyPoints()),
+    ImportVector_(0),
+    ExportVector_(0),
     CV_(CV)
 {
   InitializeDefaults();
@@ -117,10 +145,17 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& 
     Graph_(Graph),
     Allocated_(false),
     StaticGraph_(true),
+    UseTranspose_(false),
     constructedWithFilledGraph_(false),
     matrixFillCompleteCalled_(false),
     StorageOptimized_(false),
+    Values_(0),
+    All_Values_(0),
+    NormInf_(0.0),
+    NormOne_(0.0),
     NumMyRows_(Graph.NumMyRows()),
+    ImportVector_(0),
+    ExportVector_(0),
     CV_(CV)
 {
   constructedWithFilledGraph_ = Graph.Filled();
@@ -134,6 +169,19 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix)
     Epetra_CompObject(Matrix),
     Epetra_BLAS(),
     Graph_(Matrix.Graph()),
+    Allocated_(false),
+    StaticGraph_(true),
+    UseTranspose_(Matrix.UseTranspose_),
+    constructedWithFilledGraph_(false),
+    matrixFillCompleteCalled_(false),
+    StorageOptimized_(false),
+    Values_(0),
+    All_Values_(0),
+    NormInf_(0.0),
+    NormOne_(0.0),
+    NumMyRows_(Matrix.NumMyRows()),
+    ImportVector_(0),
+    ExportVector_(0),
     CV_(Copy)
 {
   InitializeDefaults();
@@ -794,7 +842,6 @@ int Epetra_CrsMatrix::OptimizeStorage() {
   bool Contiguous = true; // Assume contiguous is true
   for (i=1; i<NumMyRows_; i++){
     int NumEntries = Graph().NumMyIndices(i);
-    int NumAllocatedEntries = Graph().NumAllocatedMyIndices(i);
 		
     // check if end of beginning of current row starts immediately after end of previous row.
     if (Values_[i]!=Values_[i-1]+NumEntries) {
@@ -2114,6 +2161,11 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
   double* xp = (double*) x.Values();
   double* yp = (double*) y.Values();
 
+  Epetra_Vector * xcopy = 0;
+  if (xp==yp && Importer()==0 && Exporter()==0) {
+    xcopy = new Epetra_Vector(x);
+    xp = (double *) xcopy->Values();
+  }
   UpdateImportVector(1); // Refresh import and output vectors if needed
   UpdateExportVector(1);
 
@@ -2161,7 +2213,13 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
     if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
   }
 
+
   UpdateFlops(2 * NumGlobalNonzeros());
+  if (xcopy!=0) {
+    delete xcopy;
+    EPETRA_CHK_ERR(1); // Return positive code to alert the user about needing extra copy of x
+    return(1);
+  }
   return(0);
 }
 
@@ -2181,8 +2239,16 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 
   double** Xp = (double**) X.Pointers();
   double** Yp = (double**) Y.Pointers();
+
   int LDX = X.ConstantStride() ? X.Stride() : 0;
   int LDY = Y.ConstantStride() ? Y.Stride() : 0;
+
+  Epetra_MultiVector * Xcopy = 0;
+  if (Xp==Yp && Importer()==0 && Exporter()==0) {
+    Xcopy = new Epetra_MultiVector(X);
+    Xp = (double **) Xcopy->Pointers();
+    LDX = Xcopy->ConstantStride() ? Xcopy->Stride() : 0;
+  }
   UpdateImportVector(NumVectors); // Make sure Import and Export Vectors are compatible
   UpdateExportVector(NumVectors);
 
@@ -2244,6 +2310,11 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
   }
 
   UpdateFlops(2*NumVectors*NumGlobalNonzeros());
+  if (Xcopy!=0) {
+    delete Xcopy;
+    EPETRA_CHK_ERR(1); // Return positive code to alert the user about needing extra copy of X
+    return(1);
+  }
   return(0);
 }
 //=======================================================================================================
@@ -2537,7 +2608,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
     int xysame = (xp==yp) ? 1:0;
     EPETRA_DCRSSV_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, xp, yp, &xysame);
     return;
-
+    /*
     if (!Trans) {
       
       if (Upper) {
@@ -2629,6 +2700,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
       }
       
     }
+    */
   }
   //=================================================================
   else { // !StorageOptimized()

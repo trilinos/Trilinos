@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
   // equations on each processor.
   Epetra_Map Map(NumGlobalElements, 0, Comm);
   // Get update list and number of local equations from newly created Map.
-  int NumMyElements = Map.NumMyElements();
   cout << Map << endl;
 #ifdef UG_EX1_MPI
   MPI_Finalize() ;

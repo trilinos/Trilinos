@@ -64,15 +64,13 @@ int main(int argc, char *argv[])
   // Initialize MPI
 
   MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
+  int rank; // My process ID
 
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 
 #else
 
-  int size = 1; // Serial case (not using MPI)
   int rank = 0;
   Epetra_SerialComm Comm;
 
@@ -1024,7 +1022,6 @@ int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonz
 int check_graph_sharing(Epetra_Comm& Comm)
 {
   int numLocalElems = 5;
-  int numProcs = Comm.NumProc();
   int localProc = Comm.MyPID();
   int firstElem = localProc*numLocalElems;
   int i, err;

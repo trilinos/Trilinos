@@ -245,7 +245,8 @@ class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
 
   // Epetra_SerialSpdDenseSolver copy constructor (put here because we don't want user access)
   
-  Epetra_SerialSpdDenseSolver(const Epetra_SerialSpdDenseSolver& Source){};
+  Epetra_SerialSpdDenseSolver(const Epetra_SerialSpdDenseSolver& Source);
+  Epetra_SerialSpdDenseSolver & operator=(const Epetra_SerialSpdDenseSolver& Source);
 };
 
 #endif /* EPETRA_SERIALSPDDENSESOLVER_H */

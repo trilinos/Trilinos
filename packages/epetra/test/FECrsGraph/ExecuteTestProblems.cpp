@@ -220,7 +220,6 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   //specific matrix positions (in terms of which processor owns them) will vary.
   //
 
-  int myPID = Comm.MyPID();
   int numProcs = Comm.NumProc();
 
   int numNodes = 9;
@@ -235,7 +234,7 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   Epetra_FECrsGraph* graph = NULL;
 
   int* nodes = new int[numNodesPerElem];
-  int i, j, err = 0;
+  int i, err = 0;
 
   if (preconstruct_graph) {
     graph = new Epetra_FECrsGraph(Copy, map, 1);

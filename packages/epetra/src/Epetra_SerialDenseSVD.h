@@ -466,7 +466,8 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
  private:
   // Epetra_SerialDenseSolver copy constructor (put here because we don't want user access)
   
-  Epetra_SerialDenseSVD(const Epetra_SerialDenseSVD& Source){};
+  Epetra_SerialDenseSVD(const Epetra_SerialDenseSVD& Source);
+  Epetra_SerialDenseSVD & operator=(const Epetra_SerialDenseSVD& Source);
 };
 
 #endif /* _EPETRA_SERIALDENSESVD_H_ */

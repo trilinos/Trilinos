@@ -34,14 +34,15 @@
 
 //=============================================================================
 Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(bool set_object_label)
-  : Epetra_Object(-1, false),
-    Epetra_CompObject(),
-    CV_(Copy),
+  : Epetra_CompObject(),
+    Epetra_Object(-1, false),
     M_(0),
     N_(0),
-    LDA_(0),
     A_Copied_(false),
-    A_(0)
+    CV_(Copy),
+    LDA_(0),
+    A_(0),
+    UseTranspose_(false)
 {
   if (set_object_label) {
     SetLabel("Epetra::SerialDenseMatrix");
@@ -51,14 +52,15 @@ Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(bool set_object_label)
 //=============================================================================
 Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(int NumRows, int NumCols,
                                                    bool set_object_label)
-  : Epetra_Object(-1, false),
-    Epetra_CompObject(),
-    CV_(Copy),
+  : Epetra_CompObject(),
+    Epetra_Object(-1, false),
     M_(0),
     N_(0),
-    LDA_(0),
     A_Copied_(false),
-    A_(0)
+    CV_(Copy),
+    LDA_(0),
+    A_(0),
+    UseTranspose_(false)
 {
   if (set_object_label) {
     SetLabel("Epetra::SerialDenseMatrix");
@@ -77,15 +79,15 @@ Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(int NumRows, int NumCols,
 Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(Epetra_DataAccess CV, double* A, int LDA,
                                                    int NumRows, int NumCols,
                                                    bool set_object_label)
-  : Epetra_Object(-1, false),
-    Epetra_CompObject(),
-    CV_(CV),
+  : Epetra_CompObject(),
+    Epetra_Object(-1, false),
     M_(NumRows),
     N_(NumCols),
-    LDA_(LDA),
     A_Copied_(false),    
-    A_(A)
-
+    CV_(CV),
+    LDA_(LDA),
+    A_(A),
+    UseTranspose_(false)
 {
   if (set_object_label) {
     SetLabel("Epetra::SerialDenseMatrix");
@@ -115,13 +117,13 @@ Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(Epetra_DataAccess CV, double*
 //=============================================================================
 Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(const Epetra_SerialDenseMatrix& Source)
   : Epetra_CompObject(Source),  
-		CV_(Source.CV_),
     M_(Source.M_),
     N_(Source.N_),
-    LDA_(Source.LDA_),
     A_Copied_(false),
-    A_(Source.A_)
-
+    CV_(Source.CV_),
+    LDA_(Source.LDA_),
+    A_(Source.A_),
+    UseTranspose_(false)
 {
 	SetLabel(Source.Label());
 	if(CV_ == Copy) {

@@ -84,6 +84,10 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
     MaxNumIndices_(0),
     GlobalMaxNumIndices_(0),
     Indices_(new int *[NumMyBlockRows_]),
+    NumAllocatedIndicesPerRow_(0),
+    NumIndicesPerRow_(0),
+    IndexOffset_(0),
+    All_Indices_(0),
     CV_(CV)
 {
   //cout << "--CRSGD created(rowmap ctr), addr: " << this << endl; //DATA_DEBUG
@@ -143,6 +147,10 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
     MaxNumIndices_(0),
     GlobalMaxNumIndices_(0),
     Indices_(new int *[NumMyBlockRows_]),
+    NumAllocatedIndicesPerRow_(0),
+    NumIndicesPerRow_(0),
+    IndexOffset_(0),
+    All_Indices_(0),
     CV_(CV)
 {
   //cout << "--CRSGD created(rowmap&colmap ctr), addr: " << this << endl; //DATA_DEBUG

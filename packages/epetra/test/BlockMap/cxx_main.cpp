@@ -53,25 +53,12 @@ int main(int argc, char *argv[]) {
 #ifdef EPETRA_MPI
 
   // Initialize MPI
-
   MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
-
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-#else
-
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
-
-#endif
-
-#ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
+
   if (!verbose) {
     Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   }

@@ -165,7 +165,13 @@ int checkmultiply( bool transpose, Epetra_VbrMatrix& A, Epetra_MultiVector& X, E
     Error.Update( 1.0, Y, -1.0, *vecY, 0.0 ) ; 
       
     Error.NormInf( &NormError ) ; 
-    if ( NormError / normY > 1e-13 ) numerrors++; 
+    if ( NormError / normY > 1e-13 ) {
+       numerrors++; 
+       //cout << "Y = " << Y << endl;
+       //cout << "vecY " << *vecY << endl;
+       //cout << "Error " << Error << endl;
+       //abort();
+    }
     //
     //  Check x = Ax
     //
@@ -247,9 +253,8 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 		bool symmetric,
 		Epetra_VbrMatrix** PreviousA ) {
 
-  int ierr = 0, i, j, forierr = 0, forierrM;
+  int ierr = 0, i, j, forierr = 0;
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
   if (MyPID < 3) NumMyElements++;
   if (NumMyElements<2) NumMyElements = 2; // This value must be greater than one on each processor
 
@@ -295,8 +300,6 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   // Get update list and number of local elements from newly created Map
   int NumGlobalElements = Map.NumGlobalElements();
   int * MyGlobalElements = Map.MyGlobalElements();
-  int * MyLocalElements = Map.PointToElementList();
-  bool DistributedGlobal = Map.DistributedGlobal();
 
   // Create an integer vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation on this processor
@@ -407,7 +410,6 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 
 
   for (i=0; i<NumMyElements; i++) {
-    int MyCurRow = MyLocalElements[i];
     int CurRow = MyGlobalElements[i];
     if ( HaveColMap ) { 
       assert ( i == rowmap->LID( CurRow ) ) ; 
@@ -1111,26 +1113,14 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i, j, forierr = 0;
+  int ierr = 0;
   bool debug = false;
 
 #ifdef EPETRA_MPI
-
-  // Initialize MPI
-
   MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
-
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
-
 #else
-
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
   Epetra_SerialComm Comm;
-
 #endif
 
   int MyPID = Comm.MyPID();
@@ -1141,6 +1131,7 @@ int main(int argc, char *argv[])
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
   //  char tmp;
+  //  int rank = Comm.MyPID();
   //  if (rank==0) cout << "Press any key to continue..."<< endl;
   //  if (rank==0) cin >> tmp;
   //  Comm.Barrier();
@@ -1162,9 +1153,7 @@ int main(int argc, char *argv[])
   int NumMyElements = 3; 
   int MinSize = 2;
   int MaxSize = 8;
-  bool ConstructWithNumNz = true; 
   bool NoExtraBlocks = false; 
-  bool ExtraBlocks = true; 
   bool symmetric = true; 
   bool NonSymmetric = false;
   bool NoInsertLocal = false ; 
@@ -1923,7 +1912,6 @@ int checkMatvecSameVectors(Epetra_Comm& comm, bool verbose)
 
   Epetra_VbrMatrix A(Copy, map, num_off_diagonals*2+1);
 
-  int* rows = matdata.rows();
   int* rowlengths = matdata.rowlengths();
   int** colindices = matdata.colindices();
 
@@ -1981,7 +1969,6 @@ int checkEarlyDelete(Epetra_Comm& comm, bool verbose)
 
   Epetra_VbrMatrix* A = new Epetra_VbrMatrix(Copy, map, num_off_diagonals*2+1);
 
-  int* rows = matdata.rows();
   int* rowlengths = matdata.rowlengths();
   int** colindices = matdata.colindices();
 

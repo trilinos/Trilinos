@@ -40,6 +40,10 @@ Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& Map, int * Element
     ColorIDs_(0),
     FirstColor_(0),
     NumColors_(0),
+    ListOfColors_(0),
+    ColorCount_(0),
+    ElementColors_(0),
+    ColorLists_(0),
     Allocated_(false),
     ListsAreGenerated_(false),
     ListsAreValid_(false)
@@ -54,6 +58,10 @@ Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& Map,
     ColorIDs_(0),
     FirstColor_(0),
     NumColors_(0),
+    ListOfColors_(0),
+    ColorCount_(0),
+    ElementColors_(0),
+    ColorLists_(0),
     Allocated_(false),
     ListsAreGenerated_(false),
     ListsAreValid_(false)
@@ -67,6 +75,10 @@ Epetra_MapColoring::Epetra_MapColoring(const Epetra_MapColoring& Source)
     ColorIDs_(0),
     FirstColor_(0),
     NumColors_(0),
+    ListOfColors_(0),
+    ColorCount_(0),
+    ElementColors_(0),
+    ColorLists_(0),
     Allocated_(false),
     ListsAreGenerated_(false),
     ListsAreValid_(false)
@@ -385,7 +397,6 @@ int Epetra_MapColoring::PackAndPrepare(const Epetra_SrcDistObject & Source,
 
   int  * From = A.ElementColors();
   int * IntExports = 0;
-  int * IntImports = 0;
 
   SizeOfPacket = sizeof(int); 
 

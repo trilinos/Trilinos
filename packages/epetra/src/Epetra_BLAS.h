@@ -75,80 +75,80 @@ class Epetra_BLAS {
   
   //@{ \name Level 1 BLAS
   //! Epetra_BLAS one norm function (SASUM).
-  float ASUM(int N, float * X, int INCX = 1) const;
+  float ASUM(const int N, const float * X, const int INCX = 1) const;
   //! Epetra_BLAS one norm function (DASUM).
-  double ASUM(int N, double * X, int INCX = 1) const;
+  double ASUM(const int N, const double * X, const int INCX = 1) const;
 
   //! Epetra_BLAS dot product function (SDOT).
-  float DOT(int N, float * X, float * Y, int INCX = 1, int INCY = 1) const;
+  float DOT(const int N, const float * X, const float * Y, const int INCX = 1, const int INCY = 1) const;
   //! Epetra_BLAS dot product function (DDOT).
-  double DOT(int N, double * X, double * Y, int INCX = 1, int INCY = 1) const;
+  double DOT(const int N, const double * X, const double * Y, const int INCX = 1, const int INCY = 1) const;
 
   //! Epetra_BLAS norm function (SNRM2).
-  float NRM2(int N, float * X, int INCX = 1) const;
+  float NRM2(const int N, const float * X, const int INCX = 1) const;
   //! Epetra_BLAS norm function (DNRM2).
-  double NRM2(int N, double * X, int INCX = 1) const;
+  double NRM2(const int N, const double * X, const int INCX = 1) const;
 
   //! Epetra_BLAS vector scale function (SSCAL)
-  void SCAL( int N, float ALPHA, float * X, int INCX = 1) const;
+  void SCAL( const int N, const float ALPHA, float * X, const int INCX = 1) const;
   //! Epetra_BLAS vector scale function (DSCAL)
-  void SCAL( int N, double ALPHA, double * X, int INCX = 1) const;
+  void SCAL( const int N, const double ALPHA, double * X, const int INCX = 1) const;
 
   //! Epetra_BLAS vector copy function (SCOPY)
-  void COPY( int N, float * X, float * Y, int INCX = 1, int INCY = 1) const;
+  void COPY( const int N, const float * X, float * Y, const int INCX = 1, const int INCY = 1) const;
   //! Epetra_BLAS vector scale function (DCOPY)
-  void COPY( int N, double * X, double * Y, int INCX = 1, int INCY = 1) const;
+  void COPY( const int N, const double * X, double * Y, const int INCX = 1, const int INCY = 1) const;
 
   //! Epetra_BLAS arg maximum of absolute value function (ISAMAX)
-  int IAMAX( int N, float * X, int INCX = 1) const;
+  int IAMAX( const int N, const float * X, const int INCX = 1) const;
   //! Epetra_BLAS arg maximum of absolute value function (IDAMAX)
-  int IAMAX( int N, double * X, int INCX = 1) const;
+  int IAMAX( const int N, const double * X, const int INCX = 1) const;
 
   //! Epetra_BLAS vector update function (SAXPY)
-  void AXPY( int N, float ALPHA, float * X, float * Y, int INCX = 1, int INCY = 1) const;
+  void AXPY( const int N, const float ALPHA, const float * X, float * Y, const int INCX = 1, const int INCY = 1) const;
   //! Epetra_BLAS vector update function (DAXPY)
-  void AXPY( int N, double ALPHA, double * X, double * Y, int INCX = 1, int INCY = 1) const;
+  void AXPY( const int N, const double ALPHA, const double * X, double * Y, const int INCX = 1, const int INCY = 1) const;
   //@}
 
   //@{ \name Level 2 BLAS
   //! Epetra_BLAS matrix-vector multiply function (SGEMV)
-  void GEMV(char TRANS, int M, int N,
-         float ALPHA, float * A, int LDA, float * X,
-         float BETA, float * Y, int INCX = 1, int INCY = 1) const;
+  void GEMV(const char TRANS, const int M, const int N,
+         const float ALPHA, const float * A, const int LDA, const float * X,
+         const float BETA, float * Y, const int INCX = 1, const int INCY = 1) const;
   //! Epetra_BLAS matrix-vector multiply function (DGEMV)
-  void GEMV(char TRANS, int M, int N,
-         double ALPHA, double * A, int LDA, double * X,
-         double BETA, double * Y, int INCX = 1, int INCY = 1) const;
+  void GEMV(const char TRANS, const int M, const int N,
+         const double ALPHA, const double * A, const int LDA, const double * X,
+         const double BETA, double * Y, const int INCX = 1, const int INCY = 1) const;
   //@}
 
 
   //@{ \name Level 3 BLAS
   //! Epetra_BLAS matrix-matrix multiply function (SGEMM)
-  void GEMM(char TRANSA, char TRANSB, int M, int N, int K,
-	    float ALPHA, float * A, int LDA, float * B,
-	    int LDB, float BETA, float * C, int LDC) const;
+  void GEMM(const char TRANSA, const char TRANSB, const int M, const int N, const int K,
+	    const float ALPHA, const float * A, const int LDA, const float * B,
+	    const int LDB, const float BETA, float * C, const int LDC) const;
   //! Epetra_BLAS matrix-matrix multiply function (DGEMM)
-  void GEMM(char TRANSA, char TRANSB, int M, int N, int K,
-	    double ALPHA, double * A, int LDA, double * B,
-	    int LDB, double BETA, double * C, int LDC) const;
+  void GEMM(const char TRANSA, const char TRANSB, const int M, const int N, const int K,
+	    const double ALPHA, const double * A, const int LDA, const double * B,
+	    const int LDB, const double BETA, double * C, const int LDC) const;
 
   //! Epetra_BLAS symmetric matrix-matrix multiply function (SSYMM)
-  void SYMM(char SIDE, char UPLO, int M, int N,
-	    float ALPHA, float * A, int LDA, float * B,
-	    int LDB, float BETA, float * C, int LDC) const;
+  void SYMM(const char SIDE, const char UPLO, const int M, const int N,
+	    const float ALPHA, const float * A, const int LDA, const float * B,
+	    const int LDB, const float BETA, float * C, const int LDC) const;
   //! Epetra_BLAS matrix-matrix multiply function (DSYMM)
-  void SYMM(char SIDE, char UPLO, int M, int N,
-	    double ALPHA, double * A, int LDA, double * B,
-	    int LDB, double BETA, double * C, int LDC) const;
+  void SYMM(const char SIDE, const char UPLO, const int M, const int N,
+	    const double ALPHA, const double * A, const int LDA, const double * B,
+	    const int LDB, const double BETA, double * C, const int LDC) const;
 
   //! Epetra_BLAS triangular matrix-matrix multiply function (STRMM)
-  void TRMM(char SIDE, char UPLO, char TRANSA, char DIAG, int M, int N,
-	    float ALPHA, float * A, int LDA, float * B,
-	    int LDB) const;
+  void TRMM(const char SIDE, const char UPLO, const char TRANSA, const char DIAG, const int M, const int N,
+	    const float ALPHA, const float * A, const int LDA, float * B,
+	    const int LDB) const;
   //! Epetra_BLAS triangular matrix-matrix multiply function (DTRMM)
-  void TRMM(char SIDE, char UPLO, char TRANSA, char DIAG, int M, int N,
-	    double ALPHA, double * A, int LDA, double * B,
-	    int LDB) const;
+  void TRMM(const char SIDE, const char UPLO, const char TRANSA, const char DIAG, const int M, const int N,
+	    const double ALPHA, const double * A, const int LDA, double * B,
+	    const int LDB) const;
   //@}
 };
 

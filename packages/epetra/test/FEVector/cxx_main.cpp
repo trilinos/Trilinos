@@ -45,7 +45,6 @@ int main(int argc, char *argv[]) {
   Epetra_Comm* epetra_comm = epetra_test::create_comm(argc, argv);
   Epetra_Comm& Comm = *epetra_comm;
 
-  int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc(); 
 
   bool verbose =

@@ -349,7 +349,6 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
   
   /* get number of processors and the name of this processor */
   
-  int numprocs = Comm.NumProc();
   int MyPID   = Comm.MyPID();
   
   // Construct FEVbrMatrix
@@ -361,7 +360,6 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
   //
 
   int numGlobalRows = Map.NumGlobalElements();
-  int numLocalRows = Map.NumMyElements();
   int minLocalRow = Map.MinMyGID();
   int rowLengths = 3;
 
@@ -483,7 +481,6 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   //specific matrix positions (in terms of which processor owns them) will vary.
   //
   
-  int myPID = Comm.MyPID();
   int numProcs = Comm.NumProc();
   
   int numNodes = 9;

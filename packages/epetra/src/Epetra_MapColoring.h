@@ -272,6 +272,8 @@ class Epetra_MapColoring: public Epetra_DistObject {
     
     ListItem( const int itemValue = 0, ListItem * nextItem = 0)
       : ItemValue(itemValue), NextItem(nextItem){}
+    ListItem(const Epetra_MapColoring::ListItem & Item); // Make these inaccessible
+    ListItem & operator=(const Epetra_MapColoring::ListItem & Item);
   };
   
   int DefaultColor_;
@@ -285,6 +287,9 @@ class Epetra_MapColoring: public Epetra_DistObject {
   bool Allocated_;
   mutable bool ListsAreGenerated_;
   mutable bool ListsAreValid_;
+  
+  Epetra_MapColoring & operator=(const Epetra_MapColoring & Coloring); // Make these inaccessible
+
   
   
 };

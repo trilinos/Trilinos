@@ -433,7 +433,7 @@ This function performs a variety of matrix-matrix multiply operations.
   int M_;
   int N_;
   bool A_Copied_;
-	Epetra_DataAccess CV_;
+  Epetra_DataAccess CV_;
 
   //For performance reasons, it's better if Epetra_VbrMatrix can access the
   //LDA_ and A_ members of this class directly without going through an

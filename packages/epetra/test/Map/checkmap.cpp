@@ -131,7 +131,7 @@ int checkmap(Epetra_Map & Map, int NumGlobalElements, int NumMyElements,
   // Get some GIDs off of each processor to test
   int TotalNumEle, NumElePerProc, NumProc = Comm.NumProc();
   int MinNumEleOnProc;
-  int NumMyEle;
+  int NumMyEle=Map.NumMyElements();
   Comm.MinAll(&NumMyEle,&MinNumEleOnProc,1);
   if (MinNumEleOnProc > 5) NumElePerProc = 6;
   else NumElePerProc = MinNumEleOnProc;

@@ -769,7 +769,6 @@ int checkDistributor(Epetra_Distributor* distr,
                      Epetra_Comm& Comm)
 {
   int numprocs = Comm.NumProc();
-  int myproc = Comm.MyPID();
 
   int numExportIDs = numprocs;
   int* exportPIDs = new int[numExportIDs];

@@ -66,8 +66,6 @@
     int B_ncols = B.NumVectors();
     int C_nrows = C.MyLength();
     int C_ncols = C.NumVectors();
-    int C_GEMM_nrows = C_GEMM.MyLength();
-    int C_GEMM_ncols = C_GEMM.NumVectors();
     int A_Stride         = 0;
     int B_Stride         = 0;
     int C_Stride         = 0;

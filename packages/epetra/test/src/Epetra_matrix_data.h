@@ -66,6 +66,10 @@ class matrix_data {
 
   int** colindices_;
   double** coefs_;
+
+  matrix_data(const matrix_data & data);
+  matrix_data & operator=(const matrix_data & data);
+
 };//class matrix_data
 
 }//namespace epetra_test

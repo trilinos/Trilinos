@@ -144,8 +144,9 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix & Source)
     constructedWithFilledGraph_(Source.constructedWithFilledGraph_),
     matrixFillCompleteCalled_(Source.matrixFillCompleteCalled_),
     NumMyBlockRows_(0),
-    HavePointObjects_(false),
-    CV_(Copy) {
+    CV_(Copy),
+    HavePointObjects_(false)
+ {
 
   InitializeDefaults();
   operator=(Source);
@@ -236,7 +237,6 @@ Epetra_VbrMatrix& Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix& src)
 #endif
   }
 
-  int NewNumMyNonzeros = this->Graph_->NumMyNonzeros();
   if ( src.StorageOptimized() ) this->OptimizeStorage() ;
   
   return( *this );
@@ -2032,13 +2032,13 @@ void Epetra_VbrMatrix::FastBlockRowMultiply(bool TransA,
  
       assert( RowDim == ColDim ) ; 
       assert( RowDim == LDA ) ; 
-      double y0 = y[0];
-      double y1 = y[0];
-      double *A = OrigA ;
       
       switch(RowDim) {
 #if 0
       case 1:
+	double y0 = y[0];
+	double y1 = y[0];
+	double *A = OrigA ;
 	for (j=0; j < NumEntries; ++j) {
 	  
 	  int BlockIndex = BlockRowIndices[j];
@@ -2051,6 +2051,9 @@ void Epetra_VbrMatrix::FastBlockRowMultiply(bool TransA,
 	break;
 	
       case 2:
+	double y0 = y[0];
+	double y1 = y[0];
+	double *A = OrigA ;
 	for (j=0; j < NumEntries; ++j) {
 	  
 	  int BlockIndex = BlockRowIndices[j];

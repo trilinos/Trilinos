@@ -53,7 +53,6 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   //global ids.
 
   int minGID = Map.MinAllGID();
-  int maxGID = Map.MaxAllGID();
   int numGlobalIDs = Map.NumGlobalElements();
 
   //For now we're going to have just one point associated with
@@ -93,6 +92,19 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   A.Print(cout);
   }
 
+  //now do a quick test of the copy constructor
+  Epetra_FEVector B(A);
+
+  double nrm2a, nrm2b;
+  A.Norm2(&nrm2a);
+  B.Norm2(&nrm2b);
+
+  if (nrm2a != nrm2b) {
+    cerr << "copy-constructor test failed, norm of copy doesn't equal"
+         << " norm of original."<<endl;
+    return(-1);
+  }
+
   delete [] ptIndices;
   delete [] ptCoefs;
 
@@ -111,8 +123,6 @@ int fevec1(Epetra_Comm& Comm, bool verbose)
 
   if (Numprocs != 2) return(0);
 
-  int NumLocalRows = Map.NumMyElements();
-  int MinLocalRow = Map.MinMyGID();
 
   int NumCols = 3;
   int* Indices = new int[NumCols];
@@ -186,9 +196,6 @@ int fevec2(Epetra_Comm& Comm, bool verbose)
   int MyPID   = Comm.MyPID();
 
   if (Numprocs != 2) return(0);
-
-  int NumLocalRows = Map.NumMyElements();
-  int MinLocalRow = Map.MinMyGID();
 
   int NumCols = 3;
   int* Indices = new int[NumCols];

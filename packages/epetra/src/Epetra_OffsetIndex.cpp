@@ -109,6 +109,7 @@ Epetra_OffsetIndex::Epetra_OffsetIndex(const Epetra_OffsetIndex& Indexor)
     SameOffsets_(Indexor.SameOffsets_),
     NumPermute_(Indexor.NumPermute_),
     PermuteOffsets_(Indexor.PermuteOffsets_),
+    NumExport_(0),
     NumRemote_(Indexor.NumRemote_),
     RemoteOffsets_(Indexor.RemoteOffsets_),
     DataOwned_(false)
@@ -139,7 +140,6 @@ void Epetra_OffsetIndex::GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGr
                                                 const int * PermuteLIDs )
 {
   const int GlobalMaxNumSourceIndices = SourceGraph.GlobalMaxNumIndices();
-  const int GlobalMaxNumTargetIndices = TargetGraph.GlobalMaxNumIndices();
 
   int NumSourceIndices;
   int * SourceIndices = 0;
@@ -255,7 +255,6 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
     NumIndices = RecvArray[Loc];
     RemoteOffsets_[i] = new int[NumIndices];
     ++Loc;
-    int GID = TargetGraph.GRID(RemoteLIDs[i]);
     int FLoc = 0;
     int Start = 0;
     for( int j = 0; j < NumIndices; ++j ) {
