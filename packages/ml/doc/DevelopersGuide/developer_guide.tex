@@ -525,6 +525,48 @@ external reviews.
 %%%
 %%%
 
+\section{Exporting \ML's dependencies to other packages}
+\label{exporting dependencies}
+
+\ML's dependencies are exported to other packages via the file
+{\tt ml/Makefile.export.in}.
+When \ML is configured, autoconf produces the file {\tt Makefile.export},
+which defines the variable {\tt ML\_EXPORT\_LIBS}. 
+Packages that depend on \ML should use {\tt ML\_EXPORT\_LIBS} in their
+configure and build process to ensure their link lines are correct.
+
+If a dependency on package {\tt XX} is introduced during \ML development,
+this dependency should be added to {\tt ml/Makefile.export.in} as follows.
+\begin{enumerate}
+    \item Modify the definition of {\tt ML\_EXPORT\_LIBS} by appending
+\begin{verbatim}
+ -L$(XX_BUILD_DIRECTORY)/src  $(XX_LIBS)
+\end{verbatim}
+ 
+
+    \item Give the location of {\tt XX}'s build directory:
+\begin{verbatim}
+XX_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../XX
+\end{verbatim}
+
+    \item Give the name of the XX library:
+\begin{verbatim}
+HAVE_ML_XX = @HAVE_ML_XX@
+ifeq ($(HAVE_ML_XX),true)
+XX_LIBS = libXX.a
+else
+XX_LIBS =
+endif
+\end{verbatim}
+Note that {\tt XX\_LIBS} is defined only if \ML has been configured with
+{\tt XX} enabled.
+\end{enumerate}
+
+
+%%%
+%%%
+%%%
+
 \section{FAQ}
 \label{sec:faq}
 
