@@ -45,7 +45,7 @@
 #  More detailed logging information can be found in SST.log
 #
 #  A typical call to amesos_test.exe is:
-#COMMENT       mpirun -np 1 amesos_test.exe SCALAPACK SuperLU.rua 0 1 1 0 1e-14 1e-14
+#COMMENT       $mpigo 1 amesos_test.exe SCALAPACK SuperLU.rua 0 1 1 0 1e-14 1e-14
 #  where:
 #     SCALAPACK SuperLU.rua - The solver to use and the matrix to solve
 #     0 1 1 0                 - MatrixType, Special, NumSolves, Transpose
@@ -58,6 +58,12 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
+
 touch SST.summary
 cat >>AME.summary <SST.summary 
 echo "COMMENT Start AmesosScalapack.exe, the Direct Sparse Solver Regresion Test" > SST.summary 
@@ -85,97 +91,97 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 #  Test one process, three processes and three processes transpose, tiny serial matrix, on SCALAPACK
 #
-mpirun -np 1 amesos_test.exe SCALAPACK SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
-#  COMMENT fails on atlantis, sometimes janus    mpirun -np 3 amesos_test.exe SCALAPACK SuperLU.rua 0 1 1 0 1e-14 1e-14  >>SST.stdout
-#  COMMENT fails on atlantis, sometimes janus    mpirun -np 3 amesos_test.exe SCALAPACK SuperLU.rua 0 1 1 1 1e-14 1e-14  >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK SuperLU.rua 0 1 1 0 1e-14 1e-14 >>SST.stdout
+#  COMMENT fails on atlantis, sometimes janus    $mpigo 3 amesos_test.exe SCALAPACK SuperLU.rua 0 1 1 0 1e-14 1e-14  >>SST.stdout
+#  COMMENT fails on atlantis, sometimes janus    $mpigo 3 amesos_test.exe SCALAPACK SuperLU.rua 0 1 1 1 1e-14 1e-14  >>SST.stdout
 #
 #  Test one process, three processes and three processes transposes, tiny distributed matrix, on SCALAPACK
 #
-mpirun -np 1 amesos_test.exe SCALAPACK   fidapm05.rua 0 1 1 0  10000 1e-13 >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 1 0  10000 1e-13   >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
-mpirun -np 2 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 4 1   10000 1e-13  >>SST.stdout
-mpirun -np 4 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 -3 1   10000 1e-13   >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK   fidapm05.rua 0 1 1 0  10000 1e-13 >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 1 0  10000 1e-13   >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
+$mpigo 2 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 4 1   10000 1e-13  >>SST.stdout
+$mpigo 4 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 -3 1   10000 1e-13   >>SST.stdout
 #
 #  Test some more small matrices
 #
-mpirun -np 1 amesos_test.exe SCALAPACK   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   ImpcolA.rua 0 0 1 0 1e-9  1e-11  >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   ImpcolA.rua 0 1 1 1 1e-9  1e-11  >>SST.stdout
-mpirun -np 1 amesos_test.exe SCALAPACK   ImpcolB.rua 0 1 1 0 1e-10 1e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   ImpcolB.rua 0 1 1 0 1e-10 1e-14  >>SST.stdout
-mpirun -np 1 amesos_test.exe SCALAPACK   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   ImpcolC.rua 0 0 1 0 1e-12 1e-13  >>SST.stdout
-mpirun -np 1 amesos_test.exe SCALAPACK   ImpcolD.rua 0 1 1 0 1e-12 5e-13 >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   ImpcolD.rua 0 1 1 0 1e-12 5e-13  >>SST.stdout
-mpirun -np 1 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 1 0 1e-9  1e-11  >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 3 1 1e-9  1e-11  >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 -3 1 1e-9  1e-11  >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK   ImpcolA.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   ImpcolA.rua 0 0 1 0 1e-9  1e-11  >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   ImpcolA.rua 0 1 1 1 1e-9  1e-11  >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK   ImpcolB.rua 0 1 1 0 1e-10 1e-14 >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   ImpcolB.rua 0 1 1 0 1e-10 1e-14  >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK   ImpcolC.rua 0 1 1 0 1e-12 1e-13 >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   ImpcolC.rua 0 0 1 0 1e-12 1e-13  >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK   ImpcolD.rua 0 1 1 0 1e-12 5e-13 >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   ImpcolD.rua 0 1 1 0 1e-12 5e-13  >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 1 0 1e-9  1e-11 >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 1 0 1e-9  1e-11  >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 3 1 1e-9  1e-11  >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 -3 1 1e-9  1e-11  >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK   fidapm05.rua 1 1 1 1   10000 1e-13  >>SST.stdout
 #
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (On the single process runs, distributed has no meaning.) 
 #
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SCALAPACK   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SCALAPACK   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 0 1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe SCALAPACK   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe SCALAPACK   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 0 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test some tranpose solves
 #
-mpirun -np 4 amesos_test.exe SCALAPACK   ImpcolB.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
-mpirun -np 4 amesos_test.exe SCALAPACK   ImpcolA.rua 1 1 1 1 1e-9  1e-11  >>SST.stdout
-mpirun -np 4 amesos_test.exe SCALAPACK   ImpcolA.rua 1 1 3 1 1e-9  1e-11  >>SST.stdout
-mpirun -np 4 amesos_test.exe SCALAPACK   ImpcolA.rua 1 1 -2 1 1e-9  1e-11  >>SST.stdout
+$mpigo 4 amesos_test.exe SCALAPACK   ImpcolB.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
+$mpigo 4 amesos_test.exe SCALAPACK   ImpcolA.rua 1 1 1 1 1e-9  1e-11  >>SST.stdout
+$mpigo 4 amesos_test.exe SCALAPACK   ImpcolA.rua 1 1 3 1 1e-9  1e-11  >>SST.stdout
+$mpigo 4 amesos_test.exe SCALAPACK   ImpcolA.rua 1 1 -2 1 1e-9  1e-11  >>SST.stdout
 
 
 #
 #  Test blocked right hand sides
 #
-mpirun -np 1 amesos_test.exe SCALAPACK   ImpcolA.rua 0 1 2 0 1e-9  1e-11 >>SST.stdout
-mpirun -np 5 amesos_test.exe SCALAPACK   ImpcolB.rua 0 1 4 0 1e-10 1e-12  >>SST.stdout
-mpirun -np 2 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 6 0 1e-9  1e-11  >>SST.stdout
-mpirun -np 2 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 6 1 1e-9  1e-11  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SCALAPACK   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 1 12 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK   ImpcolA.rua 0 1 2 0 1e-9  1e-11 >>SST.stdout
+$mpigo 5 amesos_test.exe SCALAPACK   ImpcolB.rua 0 1 4 0 1e-10 1e-12  >>SST.stdout
+$mpigo 2 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 6 0 1e-9  1e-11  >>SST.stdout
+$mpigo 2 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 6 1 1e-9  1e-11  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe SCALAPACK   bcsstk24.rsa 0 1 3 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 1 12 0 1e-9 1e-4  >>SST.stdout
 #
 #  Test multiple right hand sides
 #
-mpirun -np 1 amesos_test.exe SCALAPACK   ImpcolC.rua 0 1 -1 0 1e-12 1e-13 >>SST.stdout
-mpirun -np 5 amesos_test.exe SCALAPACK   ImpcolD.rua 0 1 -2 0 1e-12 5e-13  >>SST.stdout
-mpirun -np 5 amesos_test.exe SCALAPACK   ImpcolD.rua 0 1 -2 1 1e-12 5e-13  >>SST.stdout
-mpirun -np 2 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 -3 0 1e-9  1e-11  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SCALAPACK   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK   ImpcolC.rua 0 1 -1 0 1e-12 1e-13 >>SST.stdout
+$mpigo 5 amesos_test.exe SCALAPACK   ImpcolD.rua 0 1 -2 0 1e-12 5e-13  >>SST.stdout
+$mpigo 5 amesos_test.exe SCALAPACK   ImpcolD.rua 0 1 -2 1 1e-12 5e-13  >>SST.stdout
+$mpigo 2 amesos_test.exe SCALAPACK   ImpcolE.rua 0 1 -3 0 1e-9  1e-11  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe SCALAPACK   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test blocked right hand sides with distributed matrix input
 #
-mpirun -np 1 amesos_test.exe SCALAPACK   ImpcolA.rua 1 1 2 0 1e-9  1e-11 >>SST.stdout
-mpirun -np 1 amesos_test.exe SCALAPACK   ImpcolA.rua 1 1 2 1 1e-9  1e-11 >>SST.stdout
-mpirun -np 5 amesos_test.exe SCALAPACK   ImpcolB.rua 1 1 4 0 1e-10 1e-12  >>SST.stdout
-mpirun -np 2 amesos_test.exe SCALAPACK   ImpcolE.rua 1 1 6 0 1e-9  1e-11  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SCALAPACK   bcsstk24.rsa 1 1 3 0 1e-6  1e-1 >>SST.stdout
-# COMMENT # COMMENT mpirun -np 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 1 5 0 1e-9 1e-4  >>SST.stdout
-# COMMENT # COMMENT mpirun -np 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 1 3 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK   ImpcolA.rua 1 1 2 0 1e-9  1e-11 >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK   ImpcolA.rua 1 1 2 1 1e-9  1e-11 >>SST.stdout
+$mpigo 5 amesos_test.exe SCALAPACK   ImpcolB.rua 1 1 4 0 1e-10 1e-12  >>SST.stdout
+$mpigo 2 amesos_test.exe SCALAPACK   ImpcolE.rua 1 1 6 0 1e-9  1e-11  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe SCALAPACK   bcsstk24.rsa 1 1 3 0 1e-6  1e-1 >>SST.stdout
+# COMMENT # COMMENT $mpigo 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 1 5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT # COMMENT $mpigo 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 1 3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test multiple right hand sides with distributed matrix input
 #
-mpirun -np 1 amesos_test.exe SCALAPACK   ImpcolC.rua 1 1 -2 0 1e-12 1e-13 >>SST.stdout
-mpirun -np 5 amesos_test.exe SCALAPACK   ImpcolD.rua 1 1 -3 1 1e-12 5e-13  >>SST.stdout
-mpirun -np 5 amesos_test.exe SCALAPACK   ImpcolD.rua 1 1 -3 0 1e-12 5e-13  >>SST.stdout
-mpirun -np 2 amesos_test.exe SCALAPACK   ImpcolE.rua 1 1 -1 0 1e-9  1e-11  >>SST.stdout
-# COMMENT mpirun -np 4 amesos_test.exe SCALAPACK   bcsstk24.rsa 1 1 -2 0 1e-6  1e-1 >>SST.stdout
-# COMMENT fails on linux box # COMMENT mpirun -np 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 1 -1 0 1e-9 1e-4  >>SST.stdout
-# COMMENT fails on linux box # COMMENT mpirun -np 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 1 -4 0 1e-9 1e-4  >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK   ImpcolC.rua 1 1 -2 0 1e-12 1e-13 >>SST.stdout
+$mpigo 5 amesos_test.exe SCALAPACK   ImpcolD.rua 1 1 -3 1 1e-12 5e-13  >>SST.stdout
+$mpigo 5 amesos_test.exe SCALAPACK   ImpcolD.rua 1 1 -3 0 1e-12 5e-13  >>SST.stdout
+$mpigo 2 amesos_test.exe SCALAPACK   ImpcolE.rua 1 1 -1 0 1e-9  1e-11  >>SST.stdout
+# COMMENT $mpigo 4 amesos_test.exe SCALAPACK   bcsstk24.rsa 1 1 -2 0 1e-6  1e-1 >>SST.stdout
+# COMMENT fails on linux box # COMMENT $mpigo 1 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 1 -1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT fails on linux box # COMMENT $mpigo 4 amesos_test.exe SCALAPACK   bcsstk18.rsa 1 1 -4 0 1e-9 1e-4  >>SST.stdout
 
 
 #
@@ -183,32 +189,32 @@ mpirun -np 2 amesos_test.exe SCALAPACK   ImpcolE.rua 1 1 -1 0 1e-9  1e-11  >>SST
 #  The .triU files are unsymmatric, the .triS files are symmetric, providing 
 #  either the upper or lower triangular part.
 #
-mpirun -np 1 amesos_test.exe SCALAPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe SCALAPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+$mpigo 3 amesos_test.exe SCALAPACK SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-# COMMENT fails on linux box mpirun -np 1 amesos_test.exe SCALAPACK K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
-# COMMENT fails on linux box mpirun -np 2 amesos_test.exe SCALAPACK K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
+# COMMENT fails on linux box $mpigo 1 amesos_test.exe SCALAPACK K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
+# COMMENT fails on linux box $mpigo 2 amesos_test.exe SCALAPACK K4989.triS 0 1 1 0 1e-7 1.1e-7 >>SST.stdout
 
-# COMMENT fails on linux box mpirun -np 1 amesos_test.exe SCALAPACK K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
-# COMMENT fails on linux box mpirun -np 6 amesos_test.exe SCALAPACK K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
+# COMMENT fails on linux box $mpigo 1 amesos_test.exe SCALAPACK K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
+# COMMENT fails on linux box $mpigo 6 amesos_test.exe SCALAPACK K5000.triS 0 1 1 0 1e-7 1e-8 >>SST.stdout
 
-# COMMENT fails on linux box mpirun -np 6 amesos_test.exe SCALAPACK K5000.triS 0 1 1 1 1e-7 1e-8 >>SST.stdout
-# COMMENT fails on linux box mpirun -np 6 amesos_test.exe SCALAPACK K5000.triS 1 1 1 1 1e-7 1e-8 >>SST.stdout
+# COMMENT fails on linux box $mpigo 6 amesos_test.exe SCALAPACK K5000.triS 0 1 1 1 1e-7 1e-8 >>SST.stdout
+# COMMENT fails on linux box $mpigo 6 amesos_test.exe SCALAPACK K5000.triS 1 1 1 1 1e-7 1e-8 >>SST.stdout
 
-mpirun -np 1 amesos_test.exe SCALAPACK Khead.triS 0 1 1 0 2e-13 1e-13 >>SST.stdout
+$mpigo 1 amesos_test.exe SCALAPACK Khead.triS 0 1 1 0 2e-13 1e-13 >>SST.stdout
 
 #
 #  A couple more matrices
 #
-mpirun -np 1 amesos_test.exe SCALAPACK 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
-# COMMENT mpirun -np 1 amesos_test.exe SCALAPACK meg1_out.rua 0 1 3 0 1e-08 1e-08 >>SST.stdout 
+$mpigo 1 amesos_test.exe SCALAPACK 662_bus_out.rsa 0 1 3 0 1e-11 1e-12 >>SST.stdout 
+# COMMENT $mpigo 1 amesos_test.exe SCALAPACK meg1_out.rua 0 1 3 0 1e-08 1e-08 >>SST.stdout 
 echo "" >> SST.summary 
 echo "COMMENT End AmesosScalapack.exe" >> SST.summary 
 
 #
 #  Make sure that the tests ran 
 #
-set expected_lines = `grep mpirun AmesosScalapack.csh | grep -v COMMENT | wc`
+set expected_lines = `grep mpigo AmesosScalapack.csh | grep -v COMMENT | wc`
 set results = `grep OK SST.summary | wc`
 if ($results[1] != $expected_lines[1] ) then
     echo 'I expected ' $expected_lines[1] ' correct test results, but only saw: ' $results[1] 

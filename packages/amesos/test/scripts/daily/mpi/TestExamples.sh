@@ -80,6 +80,12 @@ echo `uname -a` >>& $file
 ## the current directory because scripts live in the source directory,
 ## but are invoked from various build directories
 
+set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+
+if ("$mpigo" == "") then
+    set mpigo = "mpirun -np "
+endif
+
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
 cd ../example
@@ -98,13 +104,13 @@ if ( ${exefiles} != 'fakefile.exe' ) then
                     # ================== #
                     # run with 1 process #		    
                     # ================== #
-		    mpirun -np 1 ./$g >>& /dev/null
+		    $mpigo 1 ./$g >>& /dev/null
 		     if( $status != 0 ) then
 		        # A test failed.
 			    set AnError = True
 			    echo "[TEST] ******** Test w/ 1 proc failed ********" >>& $file
                             echo "[TEST] ******** now re-running with output" >>& $file
-                            mpirun -np 2 ./$g >>& $file
+                            $mpigo 2 ./$g >>& $file
 			    echo "[TEST] Errors for script " $g " are listed above." >>& $file2
 		      else
 		        # Tests passed
@@ -113,14 +119,14 @@ if ( ${exefiles} != 'fakefile.exe' ) then
                     # ==================== #
                     # run with 4 processes #		    
                     # ==================== #
-		    mpirun -np 4 ./$g >>& /dev/null
+		    $mpigo 4 ./$g >>& /dev/null
                     # run with 1 process		    
 		     if( $status != 0 ) then
 		        # A test failed.
 			    set AnError = True
 			    echo "[TEST] ******** Test w/ 4 proc failed ********" >>& $file
                             echo "[TEST] ******** now re-running with output" >>& $file
-                            mpirun -np 2 ./$g >>& $file
+                            $mpigo 2 ./$g >>& $file
 			    echo "[TEST] Errors for script " $g " are listed above." >>& $file2
 		      else
 		        # Tests passed
@@ -128,8 +134,8 @@ if ( ${exefiles} != 'fakefile.exe' ) then
 		      endif
 		  else
 		    # This is not an automated test.
-		    mpirun -np 1 ./$g >>& $file
-		    mpirun -np 4 ./$g >>& $file
+		    $mpigo 1 ./$g >>& $file
+		    $mpigo 4 ./$g >>& $file
 		  endif
 	  end
 else
