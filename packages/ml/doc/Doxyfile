@@ -251,7 +251,7 @@ INPUT                  = mainpage.doxygen ../src/Operator ../src/Utils ../src/Co
 # and *.h) to filter out the source-files in the directories. If left 
 # blank all files are included. 
 
-FILE_PATTERNS          = ml_MultiLevelPreconditioner* ml_epetra_utils.h ml_epetra_preconditioner.h ml_epetra_operator.h ml_amesos_wrap.h ml_anasazi.h ml_ifpack_wrap.h ml_operator.h ml_struct.h ml_aggregate.h
+FILE_PATTERNS          = ml_MultiLevelPreconditioner*.cpp ml_epetra_utils.h ml_epetra_preconditioner.h ml_epetra_operator.h ml_amesos_wrap.h ml_anasazi.h ml_ifpack_wrap.h ml_operator.h ml_struct.h ml_aggregate.h
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 
@@ -551,7 +551,7 @@ INCLUDE_FILE_PATTERNS  =
 # or name=definition (no spaces). If the definition and the = are 
 # omitted =1 is assumed. 
 
-PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_TEUCHOS HAVE_ML_IFAPCK HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X HAVE_ML_AMESOS HAVE_ML_AZTECOO ML_WITH_EPETRA
+PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_TEUCHOS HAVE_ML_IFPACK HAVE_ML_TEUCHOS HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X HAVE_ML_AMESOS HAVE_ML_AZTECOO ML_WITH_EPETRA
 
 # If the MACRO_EXPANSION and EXPAND_PREDEF_ONLY tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 

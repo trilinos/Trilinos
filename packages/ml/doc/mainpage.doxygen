@@ -10,8 +10,12 @@
 - \ref dev
 - \ref doc
 - \ref minitutorial
+- \ref MLP
 - \ref mainstruct
 - \ref conversion
+- \ref amesos
+- \ref ifpack
+- \ref anasazi
 - \ref debug 
 - \ref changes
 - \ref copyright
@@ -221,9 +225,9 @@ The following methods of CrsMatrixGallery are used to get
 \endcode
 
 This is the beginning of the ML part. We proceed as follows:
-1- we create a parameter list for ML options;
-2- set default values for classical smoothed aggregation;
-3- overwrite some parameters.  Please refer to the user's guide for more
+- we create a parameter list for ML options;
+- set default values for classical smoothed aggregation;
+- overwrite some parameters.  Please refer to the user's guide for more
   information some of the parameters do not differ from their default value,
   Here the smoother is symmetric Gauss-Seidel.  Example file ml_example_epetra_preconditioner_2level.cpp
   shows how to use AZTEC's preconditioners as smoothers
@@ -290,6 +294,17 @@ At this point, we can compute the true residual, and quit.
 \endcode
 
 
+\section MLP The ML_Epetra::MultiLevelPreconditioner class
+
+This documentation is targeted to the ML_Epetra::MultiLevelPreconditioner 
+class. It is very useful to have a list of the available parameters for a
+given option. This can be in obtained from the comments of:
+- for smoothers: ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
+- for Maxwell smoothers: ML_Epetra::MultiLevelPreconditioner::SetSmoothersMaxwell();
+- for the coarse solver: ML_Epetra::MultiLevelPreconditioner::SetCoarse();
+- for default values: ML_Epetra::SetDefaults().
+
+
 \section mainstruct Main Structures of ML
 
 The following structure are used by ML:
@@ -314,6 +329,50 @@ ML_Operator struct. A set of conversion utilities exists to:
   exchange and matrix-vector product.
 
 All the conversion functions are declared in file ml_epetra_utils.h.
+
+
+\section amesos ML interface to Amesos 
+
+If configured with options \c --enable-amesos \c --enable-epetra 
+\c --enable-teuchos,
+ML can take advantage of Amesos to solve the coarse problem. 
+
+Details about the ML/Amesos interface are reported in file ml_amesos_wrap.h.
+
+\note ML supports directly SuperLU (serial version) and SuperLU_DIST
+(distributed version). These interfaces are deprecated in favor of the Amesos
+interface (although still working).
+
+
+
+\section ifpack ML interface to IFPACK
+
+If configured with options \c --enable-ifpack \c --enable-epetra 
+\c --enable-teuchos,
+ML can use IFPACK to define ILU-type smoothers.
+
+Details about the ML/IFPACK interface are reported in file ml_ifpack_wrap.h.
+
+
+
+\section anasazi ML interface to Anasazi
+
+If configured with options \c --enable-anasazi \c --enable-epetra 
+\c --enable-teuchos,
+ML can use Anasazi for eigenvalue computations.
+
+The user can:
+- use Anasazi to estimate the maximum eigenvalue of a given level matrix
+ (for smoothed aggregation);
+- use Anasazi  to compute the low-convergence modes, and filter them;
+- use Anasazi to compute the field-of-values of a non-symmetric operator,
+  and use this information to improve smoothed aggregation for highly
+  non-symmetric systems.
+
+Details about the ML/Anasazi interface are reported in file ml_anasazi.h,
+and in the ML_Anasazi namespace.
+
+\note ML also have an interface to ARPACK and PARPACK. 
 
 
 
