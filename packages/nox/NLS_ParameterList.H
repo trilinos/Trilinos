@@ -11,17 +11,16 @@
 #ifndef _NLS_PARAMETERLIST_H
 #define _NLS_PARAMETERLIST_H
 
-#include<string>
-#include<vector>
-#include<map>
+#include<vector>		// for tmpstring
+#include<map>			// for map of strings to parameters
+#include "NLS_Parameter.H"	// individual parameters
 
-#include "NLS_Parameter.H"
-
-//! Manipulating lists of parameters
+//! Manipulating lists of parameters.
 class NLS_ParameterList {
 
   //! Parameter container typedef
   typedef map<string, NLS_Parameter> ParamContainer;
+
   //! Parameter container iterator typedefs
   typedef ParamContainer::const_iterator PCConstIterator;
   typedef ParamContainer::iterator PCIterator;

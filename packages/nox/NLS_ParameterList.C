@@ -8,7 +8,7 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
-#include "NLS_ParameterList.H"
+#include "NLS_ParameterList.H"	// class definition
 
 //----------------------------------------------------------------------
 // NLS_ParameterList
@@ -23,6 +23,8 @@ NLS_ParameterList::~NLS_ParameterList()
 void NLS_ParameterList::unused() const
 {
   // Warn about any unused parameters
+  /* NOTE FROM TAMMY: Note that this does not check sublists. May want
+     to add that functionality later. */
   for (PCConstIterator i = params.begin(); i != params.end(); ++i) {
     if (!(i->second.isUsed())) {
       cout << "WARNING: Parameter \"" << i->first << "\" " << i->second
@@ -154,8 +156,8 @@ NLS_ParameterList& NLS_ParameterList::sublist(const string& name)
   // If it does exist and is a list, return the list value.
   // Otherwise, throw an error.
   if (i != params.end()) {
-    if (i->second.isList())
-      return i->second.getListValue();
+    if (i->second.isList()) 
+      return (i->second.getListValue());
     else
       cerr << "ERROR: Parameter " << name << " is not a list." << endl;
       throw;
@@ -167,6 +169,9 @@ NLS_ParameterList& NLS_ParameterList::sublist(const string& name)
   
 ostream& NLS_ParameterList::print(ostream& stream, int indent = 0) const
 {
+  for (int j = 0; j < indent; j ++)
+    stream << ' ';
+  stream << "-- List Entries --\n";
   for (PCConstIterator i = params.begin(); i != params.end(); ++i) {
     for (int j = 0; j < indent; j ++)
       stream << ' ';
@@ -174,5 +179,8 @@ ostream& NLS_ParameterList::print(ostream& stream, int indent = 0) const
     if (i->second.isList()) 
       i->second.getListValue().print(stream, indent + 2);
   }
+  for (int j = 0; j < indent; j ++)
+    stream << ' ';
+  stream << "-- End Of List --\n";
   return stream;
 }

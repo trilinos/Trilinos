@@ -11,14 +11,10 @@
 #ifndef _NLS_PARAMETER_H
 #define _NLS_PARAMETER_H
 
-#include<string>
-#include<vector>
-#include<map>
+#include<string>	 // one parameter type
+class NLS_ParameterList; // anonther parameter type (forward declaration)
 
-//forward declaration
-class NLS_ParameterList;
-
-//! Manipulating single parameters
+//! Manipulating single parameters, including sublists.
 class NLS_Parameter {
 
 public:
@@ -41,6 +37,15 @@ public:
   //! Destructor
   ~NLS_Parameter();
 
+  /** @name ParameterList parameters
+   *
+   * Functions for handling parameters that are themselves lists.  */
+  //@{
+  NLS_ParameterList& setList();
+  NLS_ParameterList& getListValue();
+  const NLS_ParameterList& getListValue() const;
+  //@}
+
   /** @name Set functions. 
    *
    * The input value type determines the type of parameter
@@ -53,15 +58,6 @@ public:
   void setValue(double value);
   void setValue(const char* value);
   void setValue(const string& value);
-  //@}
-
-  /** @name ParameterList parameters
-   *
-   * Functions for handling parameters that are themselves lists.  */
-  //@{
-  NLS_ParameterList& setList();
-  NLS_ParameterList& getListValue();
-  const NLS_ParameterList& getListValue() const;
   //@}
 
   /** @name Is functions. 
@@ -89,8 +85,6 @@ public:
   double getDoubleValue() const;
   const string& getStringValue() const;
   //@}
-
-
 
   //! Return whether or not the value is used; i.e., whether or not
   //! the value has been retrieved via a get function.

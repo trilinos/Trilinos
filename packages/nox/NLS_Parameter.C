@@ -8,8 +8,8 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
-#include "NLS_Parameter.H"
-#include "NLS_ParameterList.H"
+#include "NLS_Parameter.H"	// class definition
+#include "NLS_ParameterList.H"	// for sublists
 
 NLS_Parameter::NLS_Parameter() : 
   type(NONE),
