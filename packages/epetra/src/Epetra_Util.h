@@ -83,7 +83,7 @@ class Epetra_Util {
     return Value;
   };
 
-  static const double chopVal_ = 1.0e-15;
+  static const double chopVal_;
 };
 
 // Epetra_Util constructor

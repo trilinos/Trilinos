@@ -26,6 +26,7 @@
 #include "Epetra_Util.h"
 #include "Epetra_Object.h"
 
+const double Epetra_Util::chopVal_ = 1.0e-15;
 
 //=============================================================================
   void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys, 
