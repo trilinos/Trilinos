@@ -192,6 +192,8 @@ int EpetraExt_MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix&
 
 	  mxDestroyArray(matlabA);
 	}
+	
+	return(0);
   }
   else {
 	Epetra_MultiVector* tempMultiVector = 0;

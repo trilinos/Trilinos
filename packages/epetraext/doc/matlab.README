@@ -1,12 +1,13 @@
 epetraext/src/matlab build instructions
 see the normal Trilinos doxygen documentation for usage instructions and references
-for questions/problems/comments contact Jason Cross at jcross@software.sandia.goc
+for an example program see epetraext/example/matlab
+for questions/problems/comments contact Jason Cross at jcross@software.sandia.gov
 
 NOTES:
-MATLAB will refer to the root directory of a Matlab installation.  These instructions assume you are framiliar with building Trilinos with epetraext and only need instructions on how to enable building epetraext with Matlab support.
+MATLAB will refer to the root directory of a Matlab installation.  These instructions assume you are familiar with building Trilinos with epetraext and only need instructions on how to enable building epetraext with Matlab support.
 
 1. UNIX-like systems (Solaris, Linux, etc. -- NOT CYGWIN)
-1.a. Add the library path of the Matlab libraries using --with-libdirs="-LMATLAB/LIBLOCATIONS/ARCH".  For Matlab version 7 (release 14) the location of the libraries is MATLAB/bin/ARCH where ARCH is your system archecture (sol2 for Solaris, etc).  For Matlab versions below 7 the location of the libraries is MATLAB/extern/lib/ARCH.
+1.a. Add the library path of the Matlab libraries using --with-libdirs="-LMATLAB/LIBLOCATIONS/ARCH".  For Matlab version 7 (release 14) the location of the libraries is MATLAB/bin/ARCH where ARCH is your system architecture (sol2 for Solaris, etc).  For Matlab versions below 7 the location of the libraries is MATLAB/extern/lib/ARCH.
 1.b. Now add the Matlab headers path using --with-incdirs="-I/MATLAB/extern/include"
 If you've done the previous steps properly you are now ready to build epetraext with src/matlab.
 To do so do a normal Trilinos build process but add the necessary --with-incdirs and --with-inclibs described in the previous steps.  You will also need to specify --enable-epetraext-matlab.  The configure script in epetraext will make sure that all necessary header files and libraries can be found by the compiler and linker.

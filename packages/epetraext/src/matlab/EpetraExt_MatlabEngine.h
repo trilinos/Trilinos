@@ -55,7 +55,9 @@ namespace EpetraExt {
 /*! The EpetraExt_MatlabEngine class allows Epetra data objects to be
 exported to Matlab and then operated on within Matlab using Matlab commands. 
 
-When a EpetraExt_MatlabEngine object is constructed a new instance of the application Matlab
+For build instructions see Trilinos/packages/epetraext/doc/matlab.README.
+
+When an EpetraExt_MatlabEngine object is constructed a new instance of the application Matlab
 is started for EpetraExt_MatlabEngine to communicate with.  All communicatin between EpetraExt_MatlabEngine
 and Matlab occurs on the root node (0) only.  For parallel environments all objects are
 collected onto the root node before being put into Matlab.  Object data is put into a mxArray
@@ -188,7 +190,22 @@ class EpetraExt_MatlabEngine {
   */
   int PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName, int proc=0);
 
-  //! not implemented yet
+  //! Put a copy of the BlockMap or Map into the Matlab workspace.
+  /*!
+	\param A
+	       the Epetra_BlockMap to put into Matlab
+		  
+	\param variableName
+	       the variable name in the Matlab workspace of the Matlab sparse double array (matrix)
+		   that will contain the values of the BlockMap
+
+	\param transA
+	       if true then the transpose of A is put into Matlab
+		   NOTE: It is faster to put the transpose of A into Matlab since Matlab stores matrices
+		         in column-major form whereas Epetra stores them in row-major form.
+
+	\return Error Codes, see Detailed Description for more information
+  */
   int PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName, bool transA);
   
   //! Put a mxArray into Matlab.
@@ -209,7 +226,7 @@ class EpetraExt_MatlabEngine {
 	  \param matlabA
 	      the mxArray to put into the Matlab workspace
 
-	  \return Matlab error code from engPutVariable for Matlab versions >= 6.5 or fromm engPutArray for all other versions
+	  \return Matlab error code from engPutVariable for Matlab versions >= 6.5 or from engPutArray for all other versions
   */
   int PutIntoMatlab(const char* variableName, mxArray* matlabA);
   //@}

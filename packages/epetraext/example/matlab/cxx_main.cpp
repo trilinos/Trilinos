@@ -1,3 +1,32 @@
+/*@HEADER
+// ***********************************************************************
+// 
+//     EpetraExt: Epetra Extended - Linear Algebra Services Package
+//                 Copyright (2001) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ***********************************************************************
+//@HEADER
+*/
+
 #include "Epetra_ConfigDefs.h"
 
 #ifdef EPETRA_MPI
@@ -33,11 +62,12 @@ int main(int argc, char *argv[]) {
   
   int MyPID = comm.MyPID();
   int ierr = 0;
-  
+  bool verbose = (0 == MyPID);
+  bool reportErrors = (0 == MyPID);
   // setup MatlabEngine
-  cout << "going to startup a matlab process...\n";
+  if (verbose) cout << "going to startup a matlab process...\n";
   EpetraExt::EpetraExt_MatlabEngine engine (comm);
-  cout << "matlab started\n";
+  if (verbose) cout << "matlab started\n";
   
   // setup an array of doubles to be used for the examples
   int M = 20;
@@ -67,7 +97,7 @@ int main(int argc, char *argv[]) {
   
   // CrsMatrix example
   // constructs a globally distributed CrsMatrix and then puts it into Matlab
-  cout << MyPID << " constructing CrsMatrix...\n";
+  if (verbose) cout << " constructing CrsMatrix...\n";
   Epetra_CrsMatrix crsMatrix (Copy, map, N);
   int* indices = new int[N];
   for (int col=0; col < N; col++) {
@@ -75,7 +105,8 @@ int main(int argc, char *argv[]) {
   }
   
   double value = startValue;
-  int minMyGID = map.minGID();
+  double* values = new double[numMyEntries];
+  int minMyGID = map.MinMyGID();
   for (int row=0; row < M; row++) {
     for (int col=0; col < N; col++) {
       values[col] = value++;
@@ -85,148 +116,161 @@ int main(int argc, char *argv[]) {
   }
   
   crsMatrix.FillComplete();
-  cout << MyPID << " CrsMatrix constructed\n";
-  cout << MyPID << " putting CrsMatrix into Matlab as CRSM\n";
+  if (verbose) cout << " CrsMatrix constructed\n";
+  if (verbose) cout << " putting CrsMatrix into Matlab as CRSM\n";
   ierr = engine.PutRowMatrix(crsMatrix, "CRSM", false);
   if (ierr) {
-    cout << "There was an error in engine.PutRowMatrix(crsMatrix, "CRSM", false): " << ierr << endl;
+    if (reportErrors) cout << "There was an error in engine.PutRowMatrix(crsMatrix, \"CRSM\", false): " << ierr << endl;
+  }
+  
+  // BlockMap example
+  // puts a map into Matlab
+  if (verbose) cout << " putting Map into Matlab as MAP\n";
+  ierr = engine.PutBlockMap(map, "MAP", false);
+  if (ierr) {
+    if (reportErrors) cout << "There was an error in engine.PutBlockMap(map, \"MAP\", false);: " << ierr << endl;
   }
   
   // MultiVector example
   // constructs a globally distributed MultiVector and then puts it into Matlab
-  cout << MyPID << " constructing MultiVector...\n";
+  if (verbose) cout << " constructing MultiVector...\n";
   Epetra_MultiVector multiVector (Copy, map, A, M, N);
-  cout << MyPID << " MultiVector constructed\n";
-  cout << MyPID << " putting MultiVector into Matlab as MV\n";
+  if (verbose) cout << " MultiVector constructed\n";
+  if (verbose) cout << " putting MultiVector into Matlab as MV\n";
   ierr = engine.PutMultiVector(multiVector, "MV");
   if (ierr) {
-    cout << "There was an error in engine.PutMultiVector(multiVector, "MV"): " << ierr << endl;
+    if (reportErrors) cout << "There was an error in engine.PutMultiVector(multiVector, \"MV\"): " << ierr << endl;
   }
   
   // SerialDenseMatrix example
   // constructs a SerialDenseMatrix on every PE
-  cout << MyPID << " constructing a SerialDenseMatrix...\n";
+  if (verbose) cout << " constructing a SerialDenseMatrix...\n";
   Epetra_SerialDenseMatrix sdMatrix (Copy, A, M, M, N);
-  cout << MyPID << " SerialDenseMatrix constructed\n";
-  cout << MyPID << " putting SerialDenseMatrix from PE0 into Matlab as SDM_PE0\n";
+  if (verbose) cout << " SerialDenseMatrix constructed\n";
+  if (verbose) cout << " putting SerialDenseMatrix from PE0 into Matlab as SDM_PE0\n";
   // since the third parameter is left out, the SerialDenseMatrix from PE0 is used by default
   ierr = engine.PutSerialDenseMatrix(sdMatrix, "SDM_PE0");
   if (ierr) {
-    cout << "There was an error in engine.PutSerialDenseMatrix(sdMatrix, "SDM_PE0"): " << ierr << endl;
+    if (reportErrors) cout << "There was an error in engine.PutSerialDenseMatrix(sdMatrix, \"SDM_PE0\"): " << ierr << endl;
   }
   if (comm.NumProc() > 1) {
-    cout << MyPID << " putting SerialDenseMatrix from PE1 into Matlab as SDM_PE1\n";
+    if (verbose) cout << " putting SerialDenseMatrix from PE1 into Matlab as SDM_PE1\n";
     // specifying 1 as the third parameter will put the SerialDenseMatrix from PE1 into Matlab
     ierr = engine.PutSerialDenseMatrix(sdMatrix, "SDM_PE1", 1);
     if (ierr) {
-      cout << "There was an error in engine.PutSerialDenseMatrix(sdMatrix, "SDM_PE1", 1): " << ierr << endl;
+      if (reportErrors) cout << "There was an error in engine.PutSerialDenseMatrix(sdMatrix, \"SDM_PE1\", 1): " << ierr << endl;
     }
   }
   
 
   // SerialDenseVector example
   // constructs a SerialDenseVector on every PE
-  cout << MyPID << " constructing a SerialDenseVector...\n";
+  if (verbose) cout << " constructing a SerialDenseVector...\n";
   Epetra_SerialDenseVector sdVector (Copy, A, M);
-  cout << MyPID << " SerialDenseVector constructed\n";
+  if (verbose) cout << " SerialDenseVector constructed\n";
   // since the third parameter is left out, the SerialDenseMatrix from PE0 is used by default
-  cout << MyPID << " putting SerialDenseVector from PE0 into Matlab as SDV_PE0\n";
+  if (verbose) cout << " putting SerialDenseVector from PE0 into Matlab as SDV_PE0\n";
   ierr = engine.PutSerialDenseMatrix(sdVector, "SDV_PE0");
   if (ierr) {
-    cout << "There was an error in engine.PutSerialDenseMatrix(sdVector, "SDV_PE0"): " << ierr << endl;
+    if (reportErrors) cout << "There was an error in engine.PutSerialDenseMatrix(sdVector, \"SDV_PE0\"): " << ierr << endl;
   }
   if (comm.NumProc() > 1) {
-    cout << MyPID << " putting SerialDenseVector from PE1 into Matlab as SDV_PE1\n";
+    if (verbose) cout << " putting SerialDenseVector from PE1 into Matlab as SDV_PE1\n";
     // specifying 1 as the third parameter will put the SerialDenseVector from PE1 into Matlab
-    ierr = engine.PutSerialDenseMatrix(sdMatrix, "SDV_PE1", 1);
+    ierr = engine.PutSerialDenseMatrix(sdVector, "SDV_PE1", 1);
     if (ierr) {
-      cout << "There was an error in engine.PutSerialDenseMatrix(sdMatrix, "SDV_PE1", 1): " << ierr << endl;
+      if (reportErrors) cout << "There was an error in engine.PutSerialDenseMatrix(sdMatrix, \"SDV_PE1\", 1): " << ierr << endl;
     }
   }
 
   // IntSerialDenseMatrix example
   // constructs a IntSerialDenseMatrix on every PE
-  cout << MyPID << " constructing a IntSerialDenseMatrix...\n";
+  if (verbose) cout << " constructing a IntSerialDenseMatrix...\n";
   Epetra_IntSerialDenseMatrix isdMatrix (Copy, intA, M, M, N);
-  cout << MyPID << " IntSerialDenseMatrix constructed\n";
+  if (verbose) cout << " IntSerialDenseMatrix constructed\n";
   // since the third parameter is left out, the IntSerialDenseMatrix from PE0 is used by default
-  cout << MyPID << " putting IntSerialDenseMatrix from PE0 into Matlab as ISDM_PE0\n";
+  if (verbose) cout << " putting IntSerialDenseMatrix from PE0 into Matlab as ISDM_PE0\n";
   ierr = engine.PutIntSerialDenseMatrix(isdMatrix, "ISMD_PE0");
   if (ierr) {
-    cout << "There was an error in engine.PutIntSerialDenseMatrix(isdMatrix, "ISMD_PE0"): " << ierr << endl;
+    if (reportErrors) cout << "There was an error in engine.PutIntSerialDenseMatrix(isdMatrix, \"ISMD_PE0\"): " << ierr << endl;
   }
   if (comm.NumProc() > 1) {
-    cout << MyPID << " putting IntSerialDenseMatrix from PE1 into Matlab as ISDM_PE1\n";
+    if (verbose) cout << " putting IntSerialDenseMatrix from PE1 into Matlab as ISDM_PE1\n";
     // specifying 1 as the third parameter will put the IntSerialDenseMatrix from PE1 into Matlab
-    ierr = engine.PutSerialDenseMatrix(sdMatrix, "ISDM_PE1", 1);
+    ierr = engine.PutIntSerialDenseMatrix(isdMatrix, "ISDM_PE1", 1);
     if (ierr) {
-      cout << "There was an error in engine.PutSerialDenseMatrix(sdMatrix, "ISDM_PE1", 1): " << ierr << endl;
+      if (reportErrors) cout << "There was an error in engine.PutSerialDenseMatrix(isdMatrix, \"ISDM_PE1\", 1): " << ierr << endl;
     }
   }
 
 
   // IntSerialDenseVector example
   // constructs a IntSerialDenseVector on every PE
-  cout << MyPID << " constructing a IntSerialDenseVector...\n";
+  if (verbose) cout << " constructing a IntSerialDenseVector...\n";
   Epetra_IntSerialDenseVector isdVector (Copy, intA, M);
-  cout << MyPID << " IntSerialDenseVector constructed\n";
+  if (verbose) cout << " IntSerialDenseVector constructed\n";
   // since the third parameter is left out, the IntSerialDenseVector from PE0 is used by default
-  cout << MyPID << " putting IntSerialDenseVector from PE0 into Matlab as ISDV_PE0\n";
+  if (verbose) cout << " putting IntSerialDenseVector from PE0 into Matlab as ISDV_PE0\n";
   ierr = engine.PutIntSerialDenseMatrix(isdVector, "ISDV_PE0");
   if (ierr) {
-    cout << "There was an error in engine.PutIntSerialDenseMatrix(isdVector, "ISDV_PE0"): " << ierr << endl;
+    if (reportErrors) cout << "There was an error in engine.PutIntSerialDenseMatrix(isdVector, \"ISDV_PE0\"): " << ierr << endl;
   }
   if (comm.NumProc() > 1) {
-    cout << MyPID << " putting IntSerialDenseVector from PE1 into Matlab as ISDV_PE1\n";
+    if (verbose) cout << " putting IntSerialDenseVector from PE1 into Matlab as ISDV_PE1\n";
     // specifying 1 as the third parameter will put the IntSerialDenseVector from PE1 into Matlab
-    ierr = engine.PutSerialDenseMatrix(sdMatrix, "ISDV_PE1", 1);
+    ierr = engine.PutIntSerialDenseMatrix(isdVector, "ISDV_PE1", 1);
     if (ierr) {
-      cout << "There was an error in engine.PutSerialDenseMatrix(sdMatrix, "ISDV_PE1", 1): " << ierr << endl;
+      if (reportErrors) cout << "There was an error in engine.PutSerialDenseMatrix(isdVector, \"ISDV_PE1\", 1): " << ierr << endl;
     }
   }
   
-  /*while(1) {
+  // entering a while loop on PE0 will keep the Matlab workspace alive
+  /*
+  if (MyPID == 0)
+  while(1) {
+    // do nothing
+  }
+  */
 
-	// do nothing
-	}*/
-
+  const int bufSize = 200;
+  char s [bufSize];
+  const int matlabBufferSize = 1024 * 16;
+  char matlabBuffer [matlabBufferSize];
   
-  char s [200] ;
-  char matlabBuffer [1024 * 16];
-  /*if (comm.NumProc() == 1) {
-  int err;
+  // send some commands to Matlab and output the result to stdout
+  engine.EvalString("whos", matlabBuffer, matlabBufferSize);
+  if (verbose) cout << matlabBuffer << endl;
+  engine.EvalString("SDV_PE0", matlabBuffer, matlabBufferSize);
+  if (verbose) cout << matlabBuffer << endl;
+  if (comm.NumProc() > 1) {
+    engine.EvalString("SDV_PE1", matlabBuffer, matlabBufferSize);
+    if (verbose) cout << matlabBuffer << endl;
+  }
+  
+  // the following allows user interaction with Matlab
+  if (MyPID == 0)
   while(1) {
       // Prompt the user and get a string
       printf(">> ");
-      if (fgets(s, BUFSIZE, stdin) == NULL) {
+      if (fgets(s, bufSize, stdin) == NULL) {
           printf("Bye\n");
           break ;
       }
       printf ("command :%s:\n", s) ;
       
-      // Send the command to MATLAB
+      // send the command to MATLAB
       // output goes to stdout
-      err = engine.EvalString(s, matlabBuffer, MATLABBUF);
-      if (err != 0) {
-          printf("there was an error: %d", err);
-		  err = 0;
+      ierr = engine.EvalString(s, matlabBuffer, matlabBufferSize);
+      if (ierr != 0) {
+          printf("there was an error: %d", ierr);
+		  ierr = 0;
       }
       else {
       	  printf("Matlab Output:\n%s", matlabBuffer);
       }
   }
-  }*/
-
   
-  //engine.EvalString("size(TEST)", matlabBuffer, MATLABBUF);
-  //cout << matlabBuffer << "\n";
-  //engine.EvalString("TEST", matlabBuffer, MATLABBUF);
-  //cout << matlabBuffer << "\n";
-
-  engine.EvalString("whos", matlabBuffer, MATLABBUF);
-  cout << matlabBuffer << "\n";
-  
-  cout << "\n" << comm.MyPID() << " all done\n";
+  if (verbose) cout << endl << " all done\n";
 
 // standard finalizer for Epetra MPI Comms
 #ifdef EPETRA_MPI
