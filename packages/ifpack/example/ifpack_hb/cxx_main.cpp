@@ -17,6 +17,8 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
+#include "Epetra_Export.h"
+
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Ifpack_IlukGraph.h"
