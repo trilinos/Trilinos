@@ -33,6 +33,7 @@
 #include <Teuchos_CompObject.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_CombineMode.hpp"
+#include "Tpetra_VectorSpace.hpp"
 
 namespace Tpetra {
 
@@ -70,7 +71,7 @@ public:
   //! Constructor with variable number of indices per row/column.
 	SparseMatrix(VectorSpace<OrdinalType, ScalarType> const& rowMap, 
                VectorSpace<OrdinalType, ScalarType> const& colMap, 
-               OrdinalType numEntriesPerIndex)
+               OrdinalType* numEntriesPerIndex)
 		: Object("Tpetra::SparseMatrix")
 		, SparseMatrixData_()
   {
@@ -110,20 +111,20 @@ public:
   void submitGlobalValues(CombineMode CM, OrdinalType numEntries, ScalarType* values, OrdinalType* indices);
   
   //! Submit entries using local IDs. Behavoir is defined by the CombineMode passed in.
-  void submitLocalValues(CombineMode CM, OrdinalTYpe numEntries, ScalarType* values, OrdinalType* indices);
+  void submitLocalValues(CombineMode CM, OrdinalType numEntries, ScalarType* values, OrdinalType* indices);
   
   //! Signal that data entry is complete. Matrix data is converted into a more optimized form.
   void fillComplete();
   
   //! Signal that data entry is complete. Matrix data is converted into a more optimized form.
-  void fillComplete(VectorSpace const& domainMap, VectorSpace const& rangeMap);
+  void fillComplete(VectorSpace<OrdinalType, ScalarType> const& domainMap, VectorSpace<OrdinalType, ScalarType> const& rangeMap);
   
   //@}
   
   //@{ \name Computational Methods
   
   //! Computes the matrix-vector multiplication y = Ax
-  void apply(Vector const& x, Vector& y) const;
+  void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y) const;
   
   //! Returns the global one-norm of the matrix
   ScalarType normOne() const;
@@ -203,7 +204,9 @@ public:
   //@{ \name I/O Methods
   
   // Print method, used by the overloaded << operator
-  void print(ostream& os) const;
+  void print(ostream& os) const {
+    os << "SparseMatrix print function not implemented yet.";
+  }
   
   //@}
   

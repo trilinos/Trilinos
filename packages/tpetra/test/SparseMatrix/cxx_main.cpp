@@ -29,9 +29,12 @@
 // Tpetra SparseMatrix tester
 
 #include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
-#include "Tpetra_SparseMatrix.hpp"
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include "Tpetra_SparseMatrix.hpp"
+#include "Tpetra_SerialPlatform.hpp"
+#include "Tpetra_ElementSpace.hpp"
+#include "Tpetra_VectorSpace.hpp"
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>
@@ -82,7 +85,14 @@ int unitTests(bool verbose, bool debug) {
 
 	if(verbose) cout << "Constructors..." << endl;
 	// default constructor
-	Tpetra::SparseMatrix<OrdinalType, ScalarType> sm;
+  
+  // need to create VectorSpace first
+  const Tpetra::SerialPlatform<OrdinalType, OrdinalType> platformE;
+	const Tpetra::SerialPlatform<OrdinalType, ScalarType> platformV;
+  Tpetra::ElementSpace<OrdinalType> elementspace(10, 2, platformE);
+	Tpetra::VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformV);
+  
+	Tpetra::SparseMatrix<OrdinalType, ScalarType> sm(vectorspace, 2);
 	// copy constructor
 	Tpetra::SparseMatrix<OrdinalType, ScalarType> smClone(sm);
 
