@@ -194,7 +194,8 @@ SMOS_ARCHD	= $(ROOT_ARCHD)/smos
 SMOS_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
 SMOS_DR_OBJ	= $(SMOS_DR_CSRC:.c=.o)
 SMOS_DR_IPATH	= -I$(SMOS_ARCHD)/include
-SMOS_MPI_LIB	= -L/Net/local/mpi/lib/paragon/sunmos -lmpi
+#SMOS_MPI_LIB	= -L/Net/local/mpi/lib/paragon/sunmos -lmpi
+SMOS_MPI_LIB	= -L/Net/mp/mpi/lib/paragon/ch_nx -lmpi
 SMOS_PAR_LPATH  = -L$(PARMETISLIB_PATH)
 SMOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SMOS_ARCHD)/lib $(NEM_LIBS) \
 		   $(SMOS_PAR_LPATH) $(PARMETIS_LIBS) $(SMOS_MPI_LIB)
