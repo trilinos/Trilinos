@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  ParMETIS Interface</title>
@@ -19,7 +19,6 @@
      $Date$
      $Revision$
 -->
-
 </head>
 <body bgcolor="#FFFFFF">
 
@@ -55,8 +54,8 @@ it is assumed that a partitioning already exists. The problem is to find
 a good partitioning that is also "similar" in some sense to the existing
 partitioning. This keeps the migration cost low. All the problems described
 above are NP-hard so no efficient exact algorithm is known. We remark that
-in Zoltan 1.*, the number of partitions is always the same as the number of
-MPI processes (which is normally equal to the number of processors).
+in Zoltan 1.*, the number of partitions is always the same as the number
+of MPI processes (which is normally equal to the number of processors).
 <p>We give only a brief summary of the various ParMETIS methods here; for
 more details see the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
 documentation. The methods fall into three categories:
@@ -66,7 +65,8 @@ Part* - Perform graph partitioning without consideration of the initial
 distribution.</li>
 
 <li>
-Repart* - Incremental algorithms with small migration cost.</li>
+AdaptiveRepart (ParMETIS 3) and Repart* (ParMETIS 2)&nbsp; - Incremental
+algorithms with small migration cost.</li>
 
 <li>
 Refine* - Refines a given partitioning (balance).&nbsp; Can be applied
@@ -75,35 +75,32 @@ multiple times to reduce the communication cost (cut weight) if desired.</li>
 As a rule of thumb, use one of the Part* methods if you have a poor initial
 balance and you are willing to spend some time doing migration. One such
 case is static load balancing; that is, you need to balance only once.
-Use the Repart* methods when you have a reasonably good load balance that
-you wish to update incrementally. These methods are well suited&nbsp; for
-dynamic load balancing (for example,&nbsp; adaptive mesh refinement). A
-reasonable strategy is to call PartKway once to obtain a good initial balance
-and&nbsp; later update this balance using one of the Repart* methods.
-
-<p>The graph given to Zoltan/ParMETIS must be symmetric.
-Any self edges (loops) will be ignored. Multiple edges between
-a pair of vertices is not allowed. All weights must
-be non-negative. The graph does not have to be connected.
-
-<p>Zoltan is currently compatible with ParMETIS version 2.0 or 3.0_beta.&nbsp;
+Use AdaptiveRepart or the Repart* methods when you have a reasonably good
+load balance that you wish to update incrementally. These methods are well
+suited&nbsp; for dynamic load balancing (for example,&nbsp; adaptive mesh
+refinement). A reasonable strategy is to call PartKway once to obtain a
+good initial balance and&nbsp; later update this balance using AdaptiveRepart
+(Repart* in ParMetis 2.0).
+<p>The graph given to Zoltan/ParMETIS must be symmetric. Any self edges
+(loops) will be ignored. Multiple edges between a pair of vertices is not
+allowed. All weights must be non-negative. The graph does not have to be
+connected.
+<p>Zoltan is currently compatible with ParMETIS version 2.0 and 3.0.&nbsp;
 There is no guarantee that Zoltan will work correctly if you have a different
 version of ParMETIS on your computer. Source and documentation for ParMETIS
 can be obtained from the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS
 home page</a>. As a courtesy service,&nbsp; a compatible version of the
-ParMETIS 2.0 source code is distributed with Zoltan. However, ParMETIS
-is a completely separate library. If you do not wish to install ParMETIS,
-it is possible to compile Zoltan without any references to ParMETIS&nbsp;
+ParMETIS source code is distributed with Zoltan. However, ParMETIS is a
+completely separate library. If you do not wish to install ParMETIS, it
+is possible to compile Zoltan without any references to ParMETIS&nbsp;
 (when you 'make' Zoltan, comment out the PARMETIS_LIBPATH variable in the
 configuration file <i><a href="ug_usage.html#Building the Library">Utilities/Config/Config.&lt;platform></a></i>).
-
-<p>The current version of Zoltan ignores the imbalance tolerance parameter
-IMBALANCE_TOL when ParMETIS is used, as ParMETIS 2.0 fixes the corresponding
-imbalance parameter at 1.05. We expect that future versions of ParMETIS
-will allow the user to select the tolerance for load imbalance. When this
-feature becomes available in ParMETIS, it will also be supported through
-IMBALANCE_TOL in Zoltan.
-
+<p>Note that Zoltan ignores the imbalance tolerance parameter IMBALANCE_TOL
+when ParMETIS 2.0 is used (the default value 1.05 is used), while IMBALANCE_TOL
+works correctly with ParMETIS 3.0.&nbsp; Zoltan supports the multiconstraint
+feature of ParMETIS 3 through multiple object weights (see OBJ_WEIGHT_DIM).
+Some features in ParMETIS 3, like non-uniform partition sizes, are currently
+not supported in Zoltan but will be in future releases.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -121,11 +118,13 @@ IMBALANCE_TOL in Zoltan.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; PARMETIS_METHOD</i></td>
 
-<td>The ParMETIS method to be used; currently eight are available.&nbsp;
+<td>The ParMETIS method to be used; currently nine are available.&nbsp;
 <br><i>PartKway</i> - multilevel Kernighan-Lin partitioning&nbsp;
 <br><i>PartGeom</i> - space filling curves (coordinate based)&nbsp;
 <br><i>PartGeomKway</i> - hybrid method based on PartKway and PartGeom
 (needs both&nbsp; graph data and coordinates)&nbsp;
+<br><i>AdaptiveRepart - </i>adaptive repartitioning (only in ParMETIS 3.0
+and higher)
 <br><i>RepartLDiffusion</i> - diffusion algorithm (local)&nbsp;
 <br><i>RepartGDiffusion</i> - diffusion algorithm (global)&nbsp;
 <br><i>RepartRemap</i> - multilevel partioning with remap seeking to minimize
@@ -152,31 +151,50 @@ more information (for example, 3=1+2, 5=1+4, 7=1+2+4).</td>
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>PARMETIS_COARSE_ALG</i></td>
 
-<td>Coarse algorithm for PartKway. 1 = serial, 2 = parallel.</td>
+<td>Coarse algorithm for PartKway. 1 = serial, 2 = parallel. (ParMETIS
+2 only)</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>PARMETIS_FOLD</i></td>
+<td>&nbsp;&nbsp;&nbsp; <i>PARMETIS_SEED</i></td>
 
-<td>Folding parameter for PartKway (for expert ParMETIS users only).</td>
+<td>Random seed for ParMETIS.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp; <i>PARMETIS_ITR</i></td>
+
+<td NOSAVE>Ratio of interprocessor communication time to redistribution
+time. A high value will emphasize reducing the edge cut, while a small
+value will try to keep the change in the new partition (distribution) small.
+This parameter is only used by AdaptiveRepart. A value of between 100 and
+1000 is good for most problems.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp; <i>USE_OBJ_SIZE</i></td>
+
+<td NOSAVE>Use (or not use) the available information about object sizes
+to estimate migration cost. This parameter is currently only relevant for
+AdaptiveRepart.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <i>CHECK_GRAPH</i></td>
 
 <td NOSAVE>Level of error checking for graph input: 0 = no checking, 1
-= on-processor checking, 2 = full checking.  (CHECK_GRAPH==2 is very slow and should
-be used only during debugging).</td>
+= on-processor checking, 2 = full checking. (CHECK_GRAPH==2 is very slow
+and should be used only during debugging).</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <i>SCATTER_GRAPH</i></td>
 
 <td NOSAVE>Scatter graph data by distributing contiguous chunks of objects
-(vertices) of roughly equal size to each processor before calling
-the partitioner. 0 = don't scatter; 1 = scatter only if all objects are
-on a single processor; 2 = scatter if at least one processor owns no objects
-(recommended to avoid a bug in ParMETIS 2.0.0); 3 = always scatter.&nbsp;</td>
+(vertices) of roughly equal size to each processor before calling the partitioner.
+0 = don't scatter; 1 = scatter only if all objects are on a single processor;
+2 = scatter if at least one processor owns no objects (recommended to avoid
+a bug in ParMETIS 2.0); 3 = always scatter.&nbsp;</td>
 </tr>
 
 <tr>
@@ -206,7 +224,19 @@ on a single processor; 2 = scatter if at least one processor owns no objects
 <tr>
 <td></td>
 
-<td><i>PARMETIS_FOLD </i>= 0</td>
+<td><i>PARMETIS_SEED </i>= 15</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>PARMETIS_ITR </i>= 100</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>USE_OBJ_SIZE </i>= 1</td>
 </tr>
 
 <tr>
@@ -263,7 +293,7 @@ pair</td>
 
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_alg_jostle.html">Next:&nbsp;
-Jostle</a>&nbsp; |&nbsp; <a href="ug_alg_reftree.html">Previous:&nbsp; 
+Jostle</a>&nbsp; |&nbsp; <a href="ug_alg_reftree.html">Previous:&nbsp;
 Refinement Tree Partitioning</a>]
 </body>
 </html>
