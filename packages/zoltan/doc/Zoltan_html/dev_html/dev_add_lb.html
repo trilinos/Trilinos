@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <TITLE> Zoltan Developer's Guide:  Adding Algorithms</TITLE>
 <!
   ------------------------
@@ -12,14 +12,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="new_implementation"></A>Load-Balancing Function Implementation</H2>
@@ -35,15 +33,21 @@ balancing in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance<
 <HR>typedef int <B>LB_FN</B>(struct <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
 *<I>lb</I>, int *<I>num_import</I>, <B><A HREF="dev_lb_types.html#Macros">LB_GID</A></B>
 **<I>import_global_ids</I>, <B><A HREF="dev_lb_types.html#Macros">LB_LID</A></B>
-**<I>import_local_ids</I>, int **<I>import_procs</I>);&nbsp;
+**<I>import_local_ids</I>, int **<I>import_procs, </I>int *<I>num_export</I>,
+<B><A HREF="dev_lb_types.html#Macros">LB_GID</A></B> **<I>export_global_ids</I>,
+<B><A HREF="dev_lb_types.html#Macros">LB_LID</A></B> **<I>export_local_ids</I>,
+int **<I>export_procs</I>);&nbsp;
 <HR>
 <BR>The <B>LB_FN</B> function type describes the arguments passed to a
 load-balancing function. The input to the function is an <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
 containing pointers to application-registered functions to be used in the
 load-balancing algorithm. The remaining arguments are output parameters
-listing the objects to be imported to the processor in the new decomposition.
-The arrays for global and local IDs and source processors must be allocated
-by the load-balancing function.
+listing the objects to be imported or exported to the processor in the
+new decomposition. The arrays for global and local IDs and source processors
+must be allocated by the load-balancing function. The load-balancing function
+may return either the import arrays, the export arrays, or both. If no
+import data is returned, *<I>num_import </I>must be set to a negative number,
+and similarly with *<I>num_export.</I>
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR VALIGN=TOP>
@@ -63,7 +67,8 @@ to be used in the load-balancing algorithm.</TD>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
 
 <TD>Upon return, the number of objects to be imported to the processor
-for the new decomposition.</TD>
+for the new decomposition. A negative number indicates that no import data
+has been computed and the import arrays should be ignored.</TD>
 </TR>
 
 <TR>
@@ -81,11 +86,47 @@ of the objects to be imported to the processor for the new decomposition.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; <I>import_procs</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>import_procs</I></TD>
 
 <TD>Upon return, an array of size <I>num_import</I> containing the processor
 IDs of processors owning (in the old decomposition) the objects to be imported
 for the new decomposition.&nbsp;</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>num_export</I></TD>
+
+<TD>Upon return, the number of objects to be exported from the processor
+for the new decomposition. A negative number indicates that no export data
+has been computed and the export arrays should be ignored.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>export_global_ids</I></TD>
+
+<TD>Upon return, an array of size <I>num_export</I> containing global IDs
+of the objects to be exported from the processor for the new decomposition.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>export_local_ids</I></TD>
+
+<TD>Upon return, an array of size <I>num_export</I> containing local IDs
+of the objects to be exported from the processor for the new decomposition.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>export_procs</I></TD>
+
+<TD>Upon return, an array of size <I>num_export</I> containing&nbsp; the
+processor IDs of processors owning (in the old decomposition) the objects
+to be exported for the new decomposition.&nbsp;</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD></TD>
 </TR>
 
 <TR>
