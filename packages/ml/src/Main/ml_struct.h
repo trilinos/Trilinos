@@ -76,6 +76,8 @@ struct ML_Struct {
    int            symmetrize_matrix;
    int            output_level;
    int            res_output_freq;
+   int            MinPerProc_repartition;
+   double LargestMinMaxRatio_repartition; 
    double         tolerance;
    int            max_iterations;
    double         *spectral_radius;
