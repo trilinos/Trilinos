@@ -465,7 +465,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB HAVE_DOXYGEN_DOT USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR HAVE_MPI_TRUE HAVE_MPI_FALSE EGREP BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBNOXTSF_TRUE BUILD_LIBNOXTSF_FALSE BUILD_TSF_EXAMPLES_TRUE BUILD_TSF_EXAMPLES_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE SWIG SWIG_LIB PYTHON PYTHON_VERSION PYTHON_PREFIX PYTHON_EXEC_PREFIX PYTHON_PLATFORM pythondir pkgpythondir pyexecdir pkgpyexecdir PYTHON_CPPFLAGS PYTHON_LDFLAGS PYTHON_SITE_PKG PYTHON_EXTRA_LIBS SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS IMPORT_LAPACK IMPORT_EPETRA LN_S ECHO AR ac_ct_AR CPP LIBTOOL BUILD_NOX_MULTIVECS_TRUE BUILD_NOX_MULTIVECS_FALSE HAVE_NOX_MULTIVECS_SUBST BUILD_NOX_ANY_TRUE BUILD_NOX_ANY_FALSE HAVE_NOX_ANY_SUBST BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE FLIBS BLAS_LIBS LAPACK_LIBS MF_INCDIR TRILINOS_CXXFLAGS MF_LIBDIR PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 AR ac_ct_AR RANLIB ac_ct_RANLIB HAVE_DOXYGEN_DOT USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR HAVE_MPI_TRUE HAVE_MPI_FALSE EGREP BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBNOXTSF_TRUE BUILD_LIBNOXTSF_FALSE BUILD_TSF_EXAMPLES_TRUE BUILD_TSF_EXAMPLES_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE SWIG SWIG_LIB PYTHON PYTHON_VERSION PYTHON_PREFIX PYTHON_EXEC_PREFIX PYTHON_PLATFORM pythondir pkgpythondir pyexecdir pkgpyexecdir PYTHON_CPPFLAGS PYTHON_LDFLAGS PYTHON_SITE_PKG PYTHON_EXTRA_LIBS SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS IMPORT_LAPACK IMPORT_EPETRA LN_S ECHO CPP LIBTOOL BUILD_NOX_MULTIVECS_TRUE BUILD_NOX_MULTIVECS_FALSE HAVE_NOX_MULTIVECS_SUBST BUILD_NOX_ANY_TRUE BUILD_NOX_ANY_FALSE HAVE_NOX_ANY_SUBST BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE FLIBS BLAS_LIBS LAPACK_LIBS MF_INCDIR TRILINOS_CXXFLAGS MF_LIBDIR PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -4444,6 +4444,86 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}ar", so it can be a program name with args.
+set dummy ${ac_tool_prefix}ar; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_AR+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$AR"; then
+  ac_cv_prog_AR="$AR" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_AR="${ac_tool_prefix}ar"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+fi
+fi
+AR=$ac_cv_prog_AR
+if test -n "$AR"; then
+  echo "$as_me:$LINENO: result: $AR" >&5
+echo "${ECHO_T}$AR" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+fi
+if test -z "$ac_cv_prog_AR"; then
+  ac_ct_AR=$AR
+  # Extract the first word of "ar", so it can be a program name with args.
+set dummy ar; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_ac_ct_AR+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$ac_ct_AR"; then
+  ac_cv_prog_ac_ct_AR="$ac_ct_AR" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_AR="ar"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_prog_ac_ct_AR" && ac_cv_prog_ac_ct_AR="ar"
+fi
+fi
+ac_ct_AR=$ac_cv_prog_ac_ct_AR
+if test -n "$ac_ct_AR"; then
+  echo "$as_me:$LINENO: result: $ac_ct_AR" >&5
+echo "${ECHO_T}$ac_ct_AR" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  AR=$ac_ct_AR
+else
+  AR="$ac_cv_prog_AR"
+fi
+
+if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
 set dummy ${ac_tool_prefix}ranlib; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
@@ -7474,7 +7554,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 7477 "configure"' > conftest.$ac_ext
+  echo '#line 7557 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8927,11 +9007,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8930: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9010: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8934: \$? = $ac_status" >&5
+   echo "$as_me:9014: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -9170,11 +9250,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9173: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9253: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9177: \$? = $ac_status" >&5
+   echo "$as_me:9257: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -9230,11 +9310,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9233: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9313: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9237: \$? = $ac_status" >&5
+   echo "$as_me:9317: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11415,7 +11495,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 11418 "configure"
+#line 11498 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11513,7 +11593,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 11516 "configure"
+#line 11596 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13702,11 +13782,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13705: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13785: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13709: \$? = $ac_status" >&5
+   echo "$as_me:13789: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -13762,11 +13842,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13765: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13845: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13769: \$? = $ac_status" >&5
+   echo "$as_me:13849: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15123,7 +15203,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 15126 "configure"
+#line 15206 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -15221,7 +15301,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 15224 "configure"
+#line 15304 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -16058,11 +16138,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16061: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16141: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16065: \$? = $ac_status" >&5
+   echo "$as_me:16145: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -16118,11 +16198,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16121: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16201: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16125: \$? = $ac_status" >&5
+   echo "$as_me:16205: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18153,11 +18233,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18156: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18236: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18160: \$? = $ac_status" >&5
+   echo "$as_me:18240: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -18396,11 +18476,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18399: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18479: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18403: \$? = $ac_status" >&5
+   echo "$as_me:18483: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -18456,11 +18536,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18459: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18539: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:18463: \$? = $ac_status" >&5
+   echo "$as_me:18543: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -20641,7 +20721,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 20644 "configure"
+#line 20724 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -20739,7 +20819,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 20742 "configure"
+#line 20822 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -22421,7 +22501,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:22424: \"$ac_link\") >&5
+(eval echo $as_me:22504: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -22499,7 +22579,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:22502: \"$ac_link\") >&5
+(eval echo $as_me:22582: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -23498,7 +23578,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:23501: \"$ac_link\") >&5
+(eval echo $as_me:23581: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -23576,7 +23656,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:23579: \"$ac_link\") >&5
+(eval echo $as_me:23659: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -35931,6 +36011,8 @@ s,@CXXCPP@,$CXXCPP,;t t
 s,@F77@,$F77,;t t
 s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t
+s,@AR@,$AR,;t t
+s,@ac_ct_AR@,$ac_ct_AR,;t t
 s,@RANLIB@,$RANLIB,;t t
 s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
 s,@HAVE_DOXYGEN_DOT@,$HAVE_DOXYGEN_DOT,;t t
@@ -35985,8 +36067,6 @@ s,@IMPORT_LAPACK@,$IMPORT_LAPACK,;t t
 s,@IMPORT_EPETRA@,$IMPORT_EPETRA,;t t
 s,@LN_S@,$LN_S,;t t
 s,@ECHO@,$ECHO,;t t
-s,@AR@,$AR,;t t
-s,@ac_ct_AR@,$ac_ct_AR,;t t
 s,@CPP@,$CPP,;t t
 s,@LIBTOOL@,$LIBTOOL,;t t
 s,@BUILD_NOX_MULTIVECS_TRUE@,$BUILD_NOX_MULTIVECS_TRUE,;t t

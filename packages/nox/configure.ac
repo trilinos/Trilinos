@@ -329,6 +329,7 @@ AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ gcc c++ cxx)
 AC_PROG_CXXCPP
 AC_PROG_F77(f77 g77 f90 xlf90)
+AC_CHECK_TOOL(AR, ar, ar)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
