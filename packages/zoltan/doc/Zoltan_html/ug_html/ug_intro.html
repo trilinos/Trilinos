@@ -29,6 +29,7 @@
 
 <blockquote>
 <a href="#Motivation">Project Motivation</a>
+<br><a href="#Terms">Terminology Example</a>
 <br><a href="#Load-Balancing Tools">Load-Balancing Tools</a>
 <br><a href="#Migration Tools">Migration Tools</a>
 <br><a href="#Component Libraries">Component Libraries</a>
@@ -120,6 +121,128 @@ For information
 on how to build and use <i>zdrive</i>, see the <a href="../dev_html/dev_driver.html">Test
 Driver</a> section of the <a href="../dev_html/dev.html">Zoltan Developer's
 Guide</a>.
+
+<h2>
+<a NAME="Terms"></a>Terminology Example</h2>
+We use a simple example to illustrate the terminology that will be used in this
+documentation.  In the figure 
+<a href="#Terms Figure">below</a>, a simple finite element mesh is presented.
+<p>
+<center><a NAME="Terms Figure"></a><img SRC="figures/Z.gif"></center>
+<p>
+The blue and yellow shading indicates the mesh is partitioned for two
+processors.  To repartition this mesh using Zoltan, an application must
+provide information about the current partition to Zoltan.  In this example,
+the application wants to distribute the elements equally over two processors,
+so when Zoltan asks for <i>object</i> information, the application must 
+provide information about the elements.  
+<p>
+Zoltan requires that each object have a unique identifier (ID).
+In this example, the elements have unique numbers
+assigned to them, as shown by the numbers in the elements.  These unique
+numbers can be used as <i>global IDs</i> in Zoltan.  In addition, on each
+processor, local numbering information about the elements may be available.
+For instance, the elements owned by a processor may be stored in arrays
+in the processor's memory.  The local array index may be provided to Zoltan
+as a <i>local ID</i> to improve the efficiency of functions that provide
+information about specific elements to Zoltan.
+<p>
+For geometric partitioning methods, the application must provide coordinate
+information to Zoltan.  In this example, the coordinate information provided
+is the coordinates of the mid-point of the elements.
+<p>
+For graph-based partitioning methods, information about the connectivity of
+the objects must be provided to Zoltan.  In this example, the application may
+consider elements connected if they share a face.  The connections between
+elements, or <i>edges</i> of the connectivity graph, are shown in red.
+Connectivity information is passed to Zoltan by specifying a neighbor list for
+an object.  The neighbor list consists of the global ID of neighboring objects
+and the processor currently owning those objects.
+<p>
+The table below summarizes the information provided to Zoltan by an
+application for this finite element mesh.  Information about the objects
+includes their global and local IDs, geometry data, and graph data.
+<table Border="2" Width="100%">
+<tr>
+<td></td> 
+<td COLSPAN="2"><center>Object IDs</center></td>
+<td><center>Geometry Data</center></td> 
+<td COLSPAN="2"><center>Graph Data</center></td>
+</tr>
+<tr>
+<td><center>Processor</center></td> 
+<td><center>Global</center></td> 
+<td><center>Local</center></td> 
+<td><center>(coordinates)</center></td>
+<td><center>Neighbor Global ID List</center></td> 
+<td><center>Neighbor Processor List</center></td>
+</tr>
+<tr>
+<td><center>Blue</center></td> 
+<td><center>1</center></td>
+<td><center>0</center></td>
+<td><center>(0.8,2.9)</center></td>
+<td><center>2</center></td>
+<td><center>Blue</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>2</center></td>
+<td><center>1</center></td>
+<td><center>(1.7,2.9)</center></td>
+<td><center>1,3</center></td>
+<td><center>Blue,Blue</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>3</center></td>
+<td><center>2</center></td>
+<td><center>(2.5,2.9)</center></td>
+<td><center>2,4</center></td>
+<td><center>Blue,Yellow</center></td>
+</tr>
+<tr>
+<td><center>Yellow</center></td> 
+<td><center>4</center></td>
+<td><center>0</center></td>
+<td><center>(2.0,2.1)</center></td>
+<td><center>3,5</center></td>
+<td><center>Blue,Yellow</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>5</center></td>
+<td><center>1</center></td>
+<td><center>(1.1,1.0)</center></td>
+<td><center>4,6</center></td>
+<td><center>Yellow,Yellow</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>6</center></td>
+<td><center>2</center></td>
+<td><center>(0.5,0.2)</center></td>
+<td><center>5,7</center></td>
+<td><center>Yellow,Yellow</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>7</center></td>
+<td><center>3</center></td>
+<td><center>(1.3,0.2)</center></td>
+<td><center>6,8</center></td>
+<td><center>Yellow,Yellow</center></td>
+</tr>
+<tr>
+<td><center></center></td> 
+<td><center>8</center></td>
+<td><center>4</center></td>
+<td><center>(2.1,0.2)</center></td>
+<td><center>7</center></td>
+<td><center>Yellow</center></td>
+</tr>
+</table>
+
 
 <h2>
 <a NAME="Load-Balancing Tools"></a>Load-Balancing Tools</h2>
