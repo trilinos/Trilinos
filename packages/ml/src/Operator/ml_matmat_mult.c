@@ -260,6 +260,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 
    end = N;
    start = 0;
+
    while (start < N) {
 
    itemp = 0;
@@ -312,7 +313,6 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    /* Perform the matrix-matrix multiply operation by computing one new row  */
    /* at a time.                                                             */
    /*------------------------------------------------------------------------*/
-
    for (i = start; i < end ; i++) {
       Ncols = 0;
       Agetrow(Amatrix,1, &i, &A_i_allocated, &A_i_cols, &A_i_vals, &rowi_N, 0);
@@ -558,7 +558,8 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    rowi_val  = (double *) ML_allocate(allocated * sizeof(double));
    accum_col = (int    *) ML_allocate( accum_size * sizeof(int) );
    accum_val = (double *) ML_allocate( accum_size * sizeof(double) );
-   if ( (rowi_val == NULL) || (accum_val == NULL)) {
+   if ( (rowi_val == NULL) || (accum_val == NULL) || (rowi_col==NULL) ||
+        (accum_col == NULL) ) {
       printf("Not enough space in ML_matmatmult().\n");
       printf("trying to allocate %d %d elements \n",allocated,accum_size);
       printf("Left  matrix has %d rows \n", Amatrix->getrow->Nrows);
@@ -610,6 +611,7 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    /* we are unsuccessful allocating space.                   */
 
    C_ptr     = (int    *) ML_allocate((N+1)* sizeof(int) );
+   if (C_ptr == NULL) pr_error("ML_matmat_mult: No space for C_ptr\n");
    Cval = NULL; Ccol = NULL;
    while ( (Cval == NULL) && (total > Bmatrix->max_nz_per_row) ) {
       if (Ccol != NULL) ML_free(Ccol);
@@ -680,6 +682,7 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
          temp = (struct ML_CSR_MSRdata *) 
                 ML_allocate(sizeof(struct ML_CSR_MSRdata));
+	 if (temp == NULL) pr_error("ML_matmat_mult: no space for temp\n");
          temp->columns         = Ccol;
          temp->values          = Cval;
          temp->rowptr          = C_ptr;
@@ -712,7 +715,7 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
          C_ptr = (int    *) ML_allocate( (N-i+1)* sizeof(int) );
          Ccol  = (int    *) ML_allocate( total* sizeof(int) );
          Cval  = (double *) ML_allocate( total* sizeof(double));
-         if (Cval == NULL) {
+         if ((Cval == NULL) || (Ccol == NULL))  {
             printf("Not enough space for matrix\n");
             exit(1);
          }
@@ -742,6 +745,7 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
    total_nz += next_nz;
    temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+   if (temp == NULL) pr_error("ML_matmat_mult: no space for temp2\n");
    temp->columns          = Ccol;
    temp->values           = Cval;
    temp->rowptr           = C_ptr;
@@ -807,9 +811,12 @@ int ML_hash_it( int new_val, int hash_list[], int hash_length) {
 
   int index;
 
+  /* this has an overflow/negative problem
      index = (new_val*1013)%hash_length;
      index = (index*1013)%hash_length;
      index = (index*1013)%hash_length;
+  */
+  index = new_val%hash_length;
 
      while (( hash_list[index] != new_val) && (hash_list[index] != -1)) {
        index = (++index)%hash_length;
@@ -837,7 +844,7 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
                 void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
                        double **,int *,int))
 {
-  int i, j, rowi_N, hash_val, N, *rows, rows_length,kk;
+  int i, j, rowi_N, hash_val = 0, N, *rows, rows_length,kk;
   int A_i_allocated = 0, *A_i_cols = NULL;
   double *A_i_vals = NULL;
 
@@ -848,11 +855,9 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
    i = start;
    j = 0;
    rowi_N = 0;
-   /*   printf("these guys are %d %d\n",*NBrows, *rows_that_fit); */ hash_val = 0;
+
    while ( *NBrows < *rows_that_fit ) {
-     /*     printf("some nums %d     %d %d | %d %d\n",i, j, rowi_N, hash_val, rows[hash_val]); */
       if (j < rowi_N) {
-	/*	printf("A(%d,%d) \n",i,A_i_cols[j]); */
          hash_val = ML_hash_it(A_i_cols[j], rows, rows_length);
          if (rows[hash_val] == -1) {
             (*NBrows)++;
@@ -860,7 +865,6 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
 	      if ( (j+1 < rowi_N) && (i-1 == start)) {
                  (*rows_that_fit)++;
                  if ( *rows_that_fit > rows_length) {
-		   printf("in this thing\n");
 		   (*irows_length) += 5;
 		   *irows = (int *) ML_allocate((*irows_length)*sizeof(int));
 		   if (*irows == NULL) pr_error("matmat: out of space\n");
@@ -878,7 +882,6 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
       else {
         if (i == N) *rows_that_fit = -(*rows_that_fit);
         else {
-	  /*	  printf("did Agetrow(%d)\n",i); */
            Agetrow(Amatrix,1, &i, &A_i_allocated, &A_i_cols, &A_i_vals, 
                    &rowi_N, 0);
            i++;
@@ -888,8 +891,6 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
    }
    if (*rows_that_fit < 0) { *rows_that_fit = -(*rows_that_fit);}
    if (j != rowi_N) i--;
-   if (i <= start) printf("num grabbed %d (%d) rows that fit = %d i = %d, N = %d, total = %d\n",
-			  j,rowi_N,*rows_that_fit,i,N,*NBrows);
    *end = i;
    j = 0;
    for (i = 0; i < rows_length; i++) {
