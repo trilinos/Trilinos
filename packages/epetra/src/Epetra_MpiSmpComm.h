@@ -24,10 +24,10 @@
 
 #ifndef _EPETRA_MPISMPCOMM_H_
 #define _EPETRA_MPISMPCOMM_H_
-#include <mpi.h>
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_MpiDistributor.h"
+#include <mpi.h>
 class Epetra_Distributor;
 
 //! Epetra_MpiSmpComm:  The Epetra MPI Shared Memory Parallel Communication Class.

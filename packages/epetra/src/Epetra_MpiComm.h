@@ -24,11 +24,11 @@
 
 #ifndef _EPETRA_MPICOMM_H_
 #define _EPETRA_MPICOMM_H_
-#include <mpi.h>
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_MpiDistributor.h"
 class Epetra_Distributor;
+#include <mpi.h>
 
 //! Epetra_MpiComm:  The Epetra MPI Communication Class.
 /*! The Epetra_MpiComm class is an implementation of Epetra_Comm that encapsulates the general

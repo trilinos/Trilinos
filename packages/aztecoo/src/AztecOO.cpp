@@ -22,13 +22,11 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#include <stdlib.h>
 #include "AztecOO.h"
-#include "Epetra_Comm.h"
 #ifdef AZTEC_MPI
 #include "Epetra_MpiComm.h"
 #endif
-#include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_RowMatrix.h"
 

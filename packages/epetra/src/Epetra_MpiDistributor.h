@@ -24,10 +24,10 @@
 
 #ifndef _EPETRA_MPIDISTRIBUTOR_H_
 #define _EPETRA_MPIDISTRIBUTOR_H_
-#include <mpi.h>
 #include "Epetra_Object.h"
 #include "Epetra_Distributor.h"
 class Epetra_MpiComm;
+#include <mpi.h>
 
 //! Epetra_MpiDistributor:  The Epetra MPI implementation of the Epetra_Distributor Gather/Scatter Setup Class.
 /*! The Epetra_MpiDistributor class is an MPI implement of Epetra_Distributor that encapsulates the general

@@ -41,7 +41,6 @@
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #else
-#include <stdlib.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif

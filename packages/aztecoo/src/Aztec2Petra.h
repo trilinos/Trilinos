@@ -25,28 +25,21 @@
 #ifndef _AZTEC2PETRA_H_
 #define _AZTEC2PETRA_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <assert.h>
-#include <string.h>
-#include <math.h>
-#include "az_aztec.h"
 #ifndef __cplusplus
 #define __cplusplus
 #endif
-#include "Epetra_Comm.h"
+
 #ifdef AZTEC_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
-#include "Epetra_BlockMap.h"
 #include "Epetra_Vector.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_RowMatrix.h"
+
+#include "az_aztec.h"
 
 
 /*! \file 

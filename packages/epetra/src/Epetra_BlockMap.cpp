@@ -765,7 +765,7 @@ bool Epetra_BlockMap::IsDistributedGlobal(int NumGlobalElements, int NumMyElemen
   if (Comm_->NumProc()>1) {
     int LocalReplicated = 0;
     int AllLocalReplicated;
-    if (NumGlobalElements==NumMyElements) LocalReplicated==1;
+    if (NumGlobalElements==NumMyElements) LocalReplicated=1;
     Comm_->MinAll(&LocalReplicated, &AllLocalReplicated, 1);
 
     // If any PE has LocalReplicated=0, then map is distributed global

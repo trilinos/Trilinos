@@ -31,9 +31,6 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_RowMatrix.h"
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-#ifdef EPETRA_MPI
-#include "mpi.h"
-#endif
 enum ProblemDifficultyLevel {easy, moderate, hard, unsure};
 #endif
 

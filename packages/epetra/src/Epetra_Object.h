@@ -31,16 +31,15 @@
 #endif
 
 #if defined(SGI) || defined(SGI64) || defined(SGI32)
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-#include <iostream.h>
-#include <strstream.h>
-#include <string> // Need SGI's special string class
+#include <iostream>
 #include <math.h>
-#include <iomanip.h>
 #include <string>
-using std::string;
+using namespace std;
+#define MPI_NO_CPPBIND
 
 #elif defined(TFLOP)
 
@@ -63,11 +62,8 @@ using std::endl;
 #include <cstdio>
 #include <cassert>
 #include <iostream>
-#include <strstream>
-#include <cstring>
-#include <string>
 #include <cmath>
-#include <iomanip>
+#include <string>
 using namespace std;
 
 #endif
@@ -214,6 +210,7 @@ class Epetra_Object {
   char * Label_;
   
 };
+
 inline ostream& operator<<(ostream& os, const Epetra_Object& obj)
 {
   os << obj.Label();
