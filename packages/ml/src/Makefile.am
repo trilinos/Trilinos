@@ -144,13 +144,14 @@ $(srcdir)/Utils/ml_amesos.h       \
 $(srcdir)/Utils/ml_amesos_wrap.h  \
 $(srcdir)/Utils/ml_ifpack.h       \
 $(srcdir)/Utils/ml_ifpack_wrap.h  \
-$(srcdir)/Utils/ml_epetra_preconditioner.h \
+$(srcdir)/Utils/ml_epetra_preconditioner.h             \
 $(srcdir)/Utils/ml_anasazi.h                           \
 $(srcdir)/Utils/ml_epetra.h                            \
 $(srcdir)/Utils/ml_MultiLevelOperator.h                \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner.h          \
 $(srcdir)/Utils/ml_RowMatrix.h                         \
 $(srcdir)/Utils/ml_DD_prec.h                           \
+$(srcdir)/Utils/ml_Ifpack_ML.h                         \
 $(srcdir)/Utils/ml_Epetra_wrap_CrsGraph_as_RowMatrix.H \
 $(srcdir)/NonlinML/ml_nox_fineinterface.H    \
 $(srcdir)/NonlinML/ml_nox_coarseinterface.H  \
@@ -184,7 +185,8 @@ $(srcdir)/MLAPI/MLAPI_Operator_Utils.h       \
 $(srcdir)/MLAPI/MLAPI_Space.h                \
 $(srcdir)/MLAPI/MLAPI_TimeObject.h           \
 $(srcdir)/MLAPI/MLAPI_Workspace.h            \
-$(srcdir)/MLAPI/MLAPI_Error.h
+$(srcdir)/MLAPI/MLAPI_Error.h                \
+$(srcdir)/MLAPI/MLAPI_SAMIS.h
 
 UTIL = \
 $(srcdir)/Utils/ml_rbm.c                                    \
@@ -230,6 +232,7 @@ $(srcdir)/MLAPI/MLAPI_MultiVector_Utils.cpp                 \
 $(srcdir)/MLAPI/MLAPI_BaseObject.cpp                        \
 $(srcdir)/MLAPI/MLAPI_Aggregation.cpp                       \
 $(srcdir)/MLAPI/MLAPI_Error.cpp                             \
+$(srcdir)/MLAPI/MLAPI_SAMIS.cpp                             \
 $(srcdir)/NonlinML/ml_nox_coarseinterface.cpp               \
 $(srcdir)/NonlinML/ml_nox_linearsystem.cpp                  \
 $(srcdir)/NonlinML/ml_nox_matrixfreelevel.cpp               \
