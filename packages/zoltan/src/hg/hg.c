@@ -188,10 +188,17 @@ hgp.kway = ((strstr(hgp.local_str,"kway")) ? 1 : 0);
 
 if (zz->Proc == 0)
 {
-double subtotal[30];
+double *subtotal=NULL;
 double total, top;
 int cuts, tcuts, temp;
 
+
+
+ if (!(subtotal = (double *) ZOLTAN_MALLOC(sizeof(double)* zz->LB.Num_Global_Parts))) {
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+     goto End;
+ }
+     
 for (i = 0; i < zz->LB.Num_Global_Parts; i++)
    subtotal[i] = 0.0;
 total = 0.0;
@@ -216,6 +223,7 @@ temp = ((zz->LB.Num_Global_Parts > 8) ? 8 : zz->LB.Num_Global_Parts);
 for (i = 0; i < temp; i++)
    printf ("%4.2f  ", subtotal[i]);
 printf ("\n");
+ ZOLTAN_FREE( &subtotal); 
 }
 
   /* Build Zoltan's return arguments. */
