@@ -29,22 +29,23 @@
 #ifndef KOKKOS_PACKEDSPARSEMULTIPLY_H
 #define KOKKOS_PACKEDSPARSEMULTIPLY_H
 
-#include "Kokkos_BaseSparseMultiply.hpp" 
+#include "Kokkos_CisMatrix.hpp" 
+#include "Kokkos_SparseOperation.hpp" 
 
 
 namespace Kokkos {
 
-//! Kokkos::BaseSparseMultiply: A reference class for computing sparse matrix multiplication operations.
+//! Kokkos::PackedSparseMultiply: A reference class for computing sparse matrix multiplication operations.
 
-/*! The Kokkos::BaseSparseMultiply provide basic functionality for computing sparse matrix times vector, or
+/*! The Kokkos::PackedSparseMultiply provide basic functionality for computing sparse matrix times vector, or
     sparse matrix times multivector operations.  This class is templated on the ordinal (integer) and scalar (floating
     point) types, so it can compute using any reasonable data type.
 
-  <b>Constructing Kokkos::BaseSparseMultiply objects</b>
+  <b>Constructing Kokkos::PackedSparseMultiply objects</b>
 
-  Constructing Kokkos::BaseSparseMultiply objects is a multi-step process.  The basic steps are as follows:
+  Constructing Kokkos::PackedSparseMultiply objects is a multi-step process.  The basic steps are as follows:
   <ol>
-  <li> Create Kokkos::BaseSparseMultiply instance:  The constructor takes no arguments.
+  <li> Create Kokkos::PackedSparseMultiply instance:  The constructor takes no arguments.
   <li> Register the structure of a Kokkos::CisMatrix object using initializeStructure(): 
        We provide this method so that derived implementations can
        take advantage of multiple problems that have the same structure.  In this situation, initializeStructure() would
@@ -56,7 +57,7 @@ namespace Kokkos {
 
   <b> Counting Floating Point Operations </b>
 
-  Each Kokkos::BaseSparseMultiply object keeps track of the number
+  Each Kokkos::PackedSparseMultiply object keeps track of the number
   of floating point operations performed using the specified object as the \e this argument
   to the function.  The getFlops() function returns this number as a double precision number.  Using this 
   information, in conjunction with the Kokkos::Time class, one can get accurate  performance
@@ -65,7 +66,7 @@ namespace Kokkos {
 */    
 
   template<typename OrdinalType, typename ScalarType>
-  class PackedSparseMultiply: public virtual BaseSparseMultiply<OrdinalType, ScalarType> {
+  class PackedSparseMultiply: public virtual SparseOperation<OrdinalType, ScalarType> {
   public:
 
     //@{ \name Constructors/Destructor.
@@ -146,7 +147,13 @@ namespace Kokkos {
     /*! This implementation will not use the user's copy of the matrix values.
     */
     virtual bool getCanUseValues() const {return(false);};
-	
+
+    //! Returns a reference to the most recent Kokkos::CisMatrix that was passed into the \e this object.
+    virtual const CisMatrix<OrdinalType, ScalarType> & getMatrix() const {
+      if (matrixForValues_==0) return(*matrixForStructure_);
+      else return(*matrixForValues_);
+    };
+		
     //@}
   
   protected:
@@ -160,20 +167,57 @@ namespace Kokkos {
     }; 
     typedef struct EntryStruct Entry;
     
+    CisMatrix<OrdinalType, ScalarType> * matrixForStructure_;
+    CisMatrix<OrdinalType, ScalarType> * matrixForValues_;
+
+    bool isRowOriented_;
+    bool haveStructure_;
+    bool haveValues_;
+    bool hasUnitDiagonal_;
+  
+    OrdinalType numRows_;
+    OrdinalType numCols_;
+    OrdinalType numRC_;
+    OrdinalType numEntries_;
+
+    OrdinalType * profile_;
+    double costOfMatVec_;
     Entry * allEntries_;
   };
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   PackedSparseMultiply<OrdinalType, ScalarType>::PackedSparseMultiply() 
-    : BaseSparseMultiply<OrdinalType, ScalarType>(),
+    : matrixForStructure_(0),
+      matrixForValues_(0),
+      isRowOriented_(true),
+      haveStructure_(false),
+      haveValues_(false),
+      hasUnitDiagonal_(false),
+      numRows_(0),
+      numCols_(0),
+      numRC_(0),
+      numEntries_(0),
+      profile_(0),
+      costOfMatVec_(0.0),
       allEntries_(0) {
   }
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   PackedSparseMultiply<OrdinalType, ScalarType>::PackedSparseMultiply(const PackedSparseMultiply<OrdinalType, ScalarType> &source) 
-    : BaseSparseMultiply<OrdinalType, ScalarType>(source),
+    : matrixForStructure_(source.matrixForStructure_),
+      matrixForValues_(source.matrixForValues_),
+      isRowOriented_(source.isRowOriented_),
+      haveStructure_(source.haveStructure_),
+      haveValues_(source.haveValues_),
+      hasUnitDiagonal_(source.hasUnitDiagonal_),
+      numRows_(source.numRows_),
+      numCols_(source.numCols_),
+      numRC_(source.numRC_),
+      numEntries_(source.numEntries_),
+      profile_(source.profile_),
+      costOfMatVec_(source.costOfMatVec_),
       allEntries_(source.allEntries_) {
 
     copyEntries();
@@ -182,13 +226,6 @@ namespace Kokkos {
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   void PackedSparseMultiply<OrdinalType, ScalarType>::copyEntries() {
-
-    // Note:  In order to call this function, the following attributes must be set, and pointers
-    //        must be set to the data that is being copied:
-    // numCols_, numRows_, isRowOriented_ must be set
-    // pntr_, profile_, allIndices_, indices_ must be set to data that will be copied.
-    // These pointers will be set to new memory that is a copy of these arrays (except 
-    // for pointers that are null.
 
     OrdinalType i;
 
@@ -206,12 +243,6 @@ namespace Kokkos {
   template<typename OrdinalType, typename ScalarType>
   void PackedSparseMultiply<OrdinalType, ScalarType>::deleteStructureAndValues() {
 
-    // Note:  In order to call this function, the following attributes must be set, and pointers
-    //        must be set to the data that is being copied:
-    // numCols_, numRows_, isRowOriented_ must be set
-    // pntr_, profile_, allIndices_, indices_ must be set to data that will be copied.
-    // These pointers will be set to new memory that is a copy of these arrays (except 
-    // for pointers that are null.
 
     OrdinalType i;
 
@@ -244,8 +275,8 @@ namespace Kokkos {
 
     matrixForStructure_ = const_cast<CisMatrix<OrdinalType, ScalarType> *> (&A);
     OrdinalType i, j;
-    willKeepStructure_ = willKeepStructure;
     isRowOriented_ = A.getIsRowOriented();
+    hasUnitDiagonal_ = A.getHasImplicitUnitDiagonal();
     numRows_ = A.getNumRows();
     numCols_ = A.getNumCols();
     numEntries_ = A.getNumEntries();
@@ -263,7 +294,7 @@ namespace Kokkos {
     OrdinalType offset = 0;
     for (i=0; i< numRC_; i++) {
       int ierr = A.getIndices(i, numRCEntries, indicesRC);
-      if (ierr!=0) return(ierr);
+      if (ierr<0) return(ierr);
       profile_[i] = numRCEntries;
       Entry * curRC = allEntries_+offset;
       for (j=0; j<numRCEntries; j++) curRC[j].index = indicesRC[j];
@@ -271,6 +302,7 @@ namespace Kokkos {
     }
 
     costOfMatVec_ = 2.0 * ((double) numEntries_);
+    if (hasUnitDiagonal_) costOfMatVec_ += 2.0 * ((double) numRC_);
     haveStructure_ = true;
     return(0);
   }
@@ -284,14 +316,13 @@ namespace Kokkos {
 
     matrixForValues_ = const_cast<CisMatrix<OrdinalType, ScalarType> *> (&A);
     OrdinalType i, j;
-    willKeepValues_ = willKeepValues;
 
     ScalarType * valuesRC;
 
     OrdinalType offset = 0;
     for (i=0; i<numRC_; i++) {
       int ierr = A.getValues(i, valuesRC);
-      if (ierr!=0) return(ierr);
+      if (ierr<0) return(ierr);
       Entry * curRC = allEntries_+offset;
       OrdinalType numRCEntries = profile_[i];
       for (j=0; j<numRCEntries; j++) curRC[j].value = valuesRC[j];
@@ -324,9 +355,13 @@ namespace Kokkos {
 	(!isRowOriented_ && transA)) {
 
       
+      ScalarType sum = 0;
       for(i = 0; i < numRC_; i++) {
 	curNumEntries = *profile++;
-	ScalarType sum = 0.0;
+	if (hasUnitDiagonal_)
+	  sum = xp[i];
+	else
+	  sum = 0.0;
 	for(j = 0; j < curNumEntries; j++)
 	  sum += curEntries[j].value * xp[curEntries[j].index];
 	yp[i] = sum;
@@ -335,9 +370,13 @@ namespace Kokkos {
     }
     else {
       
-      for(i = 0; i < numRC_; i++)
-	yp[i] = 0.0; // Initialize y for transpose multiply
-
+      if (hasUnitDiagonal_)
+	for(i = 0; i < numRC_; i++)
+	  yp[i] = xp[i]; // Initialize y
+      else
+	for(i = 0; i < numRC_; i++)
+	  yp[i] = 0.0; // Initialize y for transpose multiply
+      
       for(i = 0; i < numRC_; i++) {
 	curNumEntries = *profile++;
 	for(j = 0; j < curNumEntries; j++)
@@ -371,13 +410,16 @@ namespace Kokkos {
 
     if ((isRowOriented_ && !transA) ||
 	(!isRowOriented_ && transA)) {
-
+      ScalarType sum = 0;
       for(i = 0; i < numRC_; i++) {
 	curNumEntries = *profile++;
 	for (k=0; k<numVectors; k++) {
 	  ScalarType * xp = xpp[k];
 	  ScalarType * yp = ypp[k];
-	  ScalarType sum = 0.0;
+	  if (hasUnitDiagonal_)
+	    sum = xp[i];
+	  else
+	    sum = 0.0;
 	  for(j = 0; j < curNumEntries; j++)
 	    sum += curEntries[j].value * xp[curEntries[j].index];
 	  yp[i] = sum;
@@ -389,8 +431,14 @@ namespace Kokkos {
       
       for (k=0; k<numVectors; k++) {
 	ScalarType * yp = ypp[k];
-	for(i = 0; i < numRC_; i++)
-	  yp[i] = 0.0; // Initialize y
+	if (hasUnitDiagonal_) {
+	  ScalarType * xp = xpp[k];
+	  for(i = 0; i < numRC_; i++)
+	    yp[i] = xp[i]; // Initialize y
+	}
+	else
+	  for(i = 0; i < numRC_; i++)
+	    yp[i] = 0.0; // Initialize y
       }
       for(i = 0; i < numRC_; i++) {
 	curNumEntries = *profile++;

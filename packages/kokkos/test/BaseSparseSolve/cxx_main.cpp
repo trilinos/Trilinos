@@ -5,6 +5,7 @@
 #include "Kokkos_DenseVector.hpp"
 #include "Kokkos_HbMatrix.hpp"
 #include "Kokkos_BaseSparseMultiply.hpp"
+#include "Kokkos_PackedSparseMultiply.hpp"
 #include "Kokkos_BaseSparseSolve.hpp"
 #include "Kokkos_Time.hpp"
 #include "Kokkos_Flops.hpp"
@@ -13,7 +14,7 @@
 using namespace std;
 using namespace Kokkos;
 
-#define OTYPE long long
+#define OTYPE int
 #define STYPE double
 #define MULTCLASS BaseSparseMultiply
 #define SOLVECLASS BaseSparseSolve
@@ -71,8 +72,8 @@ int main(int argc, char* argv[])
   DMultiVector * xm;
   DMultiVector * bm;
   DMultiVector * xexactm;
-  OTYPE nrhs = 20;
-  OTYPE nx = 150;
+  OTYPE nrhs = 5;
+  OTYPE nx = 250;
   OTYPE ny = nx;
   OTYPE npointsU = 4;
   OTYPE npointsL = 6;
@@ -223,20 +224,21 @@ void runChecks (bool verbose, bool generateClassicHbMatrix, bool isRowOriented,
   multA.setFlopCounter(multCounter);
   solveA.setFlopCounter(solveCounter);
   Kokkos::Time timer;
+  int ntrials = 20;
 
   // First solve for Multiple RHS, then multiply
   
   double start = timer.elapsedTime();
-  solveA.apply(*b, *x);
-  double solveAtime = timer.elapsedTime();
+  for (int iii=0; iii<ntrials; iii++) solveA.apply(*b, *x);
+  double solveAtime = timer.elapsedTime() - start;
   double solveAflops = solveA.getFlops();
   double mflops = solveAflops/solveAtime/1000000.0;
   if (verbose) cout << "Solve MFLOPS = " << mflops << endl; 
   numberFailedTests += compareMultiVecs(*x, *xx, verbose);
 
   start = timer.elapsedTime();
-  multA.apply(*xx, *x);
-  double multAtime = timer.elapsedTime();
+  for (int iii=0; iii<ntrials; iii++) multA.apply(*xx, *x);
+  double multAtime = timer.elapsedTime() - start;
   double multAflops = multA.getFlops();
   mflops = multAflops/multAtime/1000000.0;
   if (verbose) cout << "Multiply MFLOPS = " << mflops << endl; 
@@ -252,16 +254,16 @@ void runChecks (bool verbose, bool generateClassicHbMatrix, bool isRowOriented,
   xx1.initializeValues(xx->getNumRows(), xx->getValues(0)); 
   
   start = timer.elapsedTime();
-  solveA.apply(b1, x1);
-  solveAtime = timer.elapsedTime();
+  for (int iii=0; iii<ntrials; iii++) solveA.apply(b1, x1);
+  solveAtime = timer.elapsedTime() - start;
   solveAflops = solveA.getFlops(); 
   mflops = solveAflops/solveAtime/1000000.0;
   if (verbose) cout << "Solve MFLOPS = " << mflops << endl; 
   numberFailedTests += compareVecs(x1, xx1, verbose);
   
   start = timer.elapsedTime();
-  multA.apply(xx1, x1);
-  multAtime = timer.elapsedTime();
+  for (int iii=0; iii<ntrials; iii++) multA.apply(xx1, x1);
+  multAtime = timer.elapsedTime() - start;
   multAflops = multA.getFlops();
   mflops = multAflops/multAtime/1000000.0;
   if (verbose) cout << "Multiply MFLOPS = " << mflops << endl; 

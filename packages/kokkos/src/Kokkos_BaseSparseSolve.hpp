@@ -29,7 +29,7 @@
 #ifndef KOKKOS_BASESPARSESOLVE_H
 #define KOKKOS_BASESPARSESOLVE_H
 
-#include "Kokkos_CompObject.hpp" 
+#include "Kokkos_SparseOperation.hpp" 
 
 
 namespace Kokkos {
@@ -38,7 +38,8 @@ namespace Kokkos {
 
 /*! The Kokkos::BaseSparseSolve provide basic functionality for computing sparse triangular solves with one or more
     right-hand-side vectors.  This class is templated on the ordinal (integer) and 
-    scalar (floating point) types, so it can compute using any reasonable data type.
+    scalar (floating point) types, so it can compute using any reasonable data type.  It 
+    implements the Kokkos::SparseOperation base class.
 
   <b>Constructing Kokkos::BaseSparseSolve objects</b>
 
@@ -69,7 +70,7 @@ namespace Kokkos {
 */    
 
   template<typename OrdinalType, typename ScalarType>
-  class BaseSparseSolve: public CompObject {
+  class BaseSparseSolve: public virtual SparseOperation<OrdinalType, ScalarType> {
   public:
 
     //@{ \name Constructors/Destructor.
@@ -220,7 +221,7 @@ namespace Kokkos {
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   BaseSparseSolve<OrdinalType, ScalarType>::BaseSparseSolve() 
-    : CompObject(),
+    : SparseOperation<OrdinalType, ScalarType>(),
       matrixForStructure_(0),
       matrixForValues_(0),
       willKeepStructure_(false),
@@ -245,8 +246,8 @@ namespace Kokkos {
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   BaseSparseSolve<OrdinalType, ScalarType>::BaseSparseSolve(const BaseSparseSolve<OrdinalType,
-								  ScalarType> &source) 
-    : CompObject(source),
+							    ScalarType> &source) 
+    : SparseOperation<OrdinalType, ScalarType>(source),
       matrixForStructure_(source.matrixForStructure_),
       matrixForValues_(source.matrixForValues_),
       willKeepStructure_(source.willKeepStructure_),
@@ -402,7 +403,7 @@ namespace Kokkos {
     numRC_ = numCols_;
 
     isUpper_ = A.getIsUpperTriangular();
-    isUnitDiagonal_ = A.getHasImplicitUnitDiagonal();
+    hasUnitDiagonal_ = A.getHasImplicitUnitDiagonal();
     if (isRowOriented_) numRC_ = numRows_;
 
     profile_ = new OrdinalType[numRC_];
@@ -413,7 +414,7 @@ namespace Kokkos {
     if (willKeepStructure) {
       for (i=0; i<numRC_; i++) {
 	int ierr = A.getIndices(i, numRCEntries, indicesRC);
-	if (ierr!=0) return(ierr);
+	if (ierr<0) return(ierr);
 	profile_[i] = numRCEntries;
 	indices_[i] = indicesRC;
       }
@@ -425,7 +426,7 @@ namespace Kokkos {
       OrdinalType offset = 0;
       for (i=0; i< numRC_; i++) {
 	int ierr = A.getIndices(i, numRCEntries, indicesRC);
-	if (ierr!=0) return(ierr);
+	if (ierr<0) return(ierr);
 	profile_[i] = numRCEntries;
 	indices_[i] = allIndices_+offset;
 	copyOrdinals(numRCEntries, indicesRC, indices_[i]);
@@ -434,6 +435,7 @@ namespace Kokkos {
     }
 
     costOfSolve_ = 2.0 * ((double) numEntries_);
+    if (hasUnitDiagonal_) costOfSolve_ += 2.0 * ((double) numRC_);
     haveStructure_ = true;
     return(0);
   }
@@ -457,7 +459,7 @@ namespace Kokkos {
     if (willKeepValues_) {
       for (i=0; i<numRC_; i++) {
 	int ierr = A.getValues(i, valuesRC);
-	if (ierr!=0) return(ierr);
+	if (ierr<0) return(ierr);
 	values_[i] = valuesRC;
       }
     }
@@ -466,7 +468,7 @@ namespace Kokkos {
       OrdinalType offset = 0;
       for (i=0; i< numRC_; i++) {
 	int ierr = A.getValues(i, valuesRC);
-	if (ierr!=0) return(ierr);
+	if (ierr<0) return(ierr);
 	values_[i] = allValues_+offset;
 	copyScalars(profile_[i], valuesRC, values_[i]);
 	offset += profile_[i];
@@ -482,7 +484,7 @@ namespace Kokkos {
 
       for (i=0; i<numRC_; i++) {
 	int ierr = matrixForValues_->getIndices(i, numRCEntries, indicesRC);
-	if (ierr!=0) return(-1);
+	if (ierr<0) return(-1);
 	if (numRCEntries!=profile_[i]) return(-1);
 	indicesRC_ref = indices_[i];
 	for (j=0; j<numRCEntries; j++) if (indicesRC[j]!=indicesRC_ref[j]) return(-1);
@@ -517,7 +519,7 @@ namespace Kokkos {
     if ((isRowOriented_ && !transA) ||
 	(!isRowOriented_ && transA)) {
 
-      if (isUpper_) {
+      if ((!transA && isUpper_) || transA && !isUpper_) {
 	profile += numRC_-1; // Point to end of structures
 	indices += numRC_-1;
 	values += numRC_-1;
@@ -527,49 +529,49 @@ namespace Kokkos {
  	for(i = numRC_-1; i >=0; i--) {
 	  curNumEntries = *profile--;
 	  curIndices = *indices--;
-	  curValues  = *values-;
+	  curValues  = *values--;
 	  ScalarType sum = 0.0;
 	  for(j = j0; j < curNumEntries; j++)
-	    sum += curValues[j] * xp[k][curIndices[j]];
+	    sum += curValues[j] * yp[curIndices[j]];
 	  if (hasUnitDiagonal_)
-	    yp[i] = yp[i] - sum;
+	    yp[i] = xp[i] - sum;
 	  else
-	    yp[i] = (yp[i] - sum)/curValues[0];
+	    yp[i] = (xp[i] - sum)/curValues[0];
 	}
       }
       else { // Lower triangular
 	OrdinalType j0 = 1;
 	if (hasUnitDiagonal_) j0--;
 	for(i = 0; i < numRC_; i++) {
-	  curNumEntries = *profile++;
+	  curNumEntries = *profile++ - j0;
 	  curIndices = *indices++;
 	  curValues  = *values++;
 	  ScalarType sum = 0.0;
 	  for(j = 0; j < curNumEntries; j++)
-	    sum += curValues[j] * xp[curIndices[j]];
+	    sum += curValues[j] * yp[curIndices[j]];
 	  if (hasUnitDiagonal_)
-	    yp[i] = yp[i] - sum;
+	    yp[i] = xp[i] - sum;
 	  else
-	    yp[i] = (yp[i] - sum)/curValues[curNumEntries];
+	    yp[i] = (xp[i] - sum)/curValues[curNumEntries];
 	}
       }
     }
-    else {
+    else { // ColOriented and no tranpose or RowOriented and transpose
       
       for(i = 0; i < numRC_; i++)
 	yp[i] = xp[i]; // Initialize y for transpose multiply
 
-      if (isUpper_) {
+      if ((!transA && !isUpper_) || transA && isUpper_) {
 	OrdinalType j0 = 1;
 	if (hasUnitDiagonal_) j0--;
 	for(i = 0; i < numRC_; i++) {
 	  curNumEntries = *profile++;
 	  curIndices = *indices++;
 	  curValues  = *values++;
-	  if (!hasUnitDiagonal) 
-	    yp[k][i] = yp[k][i]/curValues[0];
-	  for(j = 0; j < curNumEntries; j++)
-	    yp[curIndices[j]] -= curValues[j] * xp[i];
+	  if (!hasUnitDiagonal_) 
+	    yp[i] = yp[i]/curValues[0];
+	  for(j = j0; j < curNumEntries; j++)
+	    yp[curIndices[j]] -= curValues[j] * yp[i];
 	}
       }
       else { // Lower triangular
@@ -578,14 +580,14 @@ namespace Kokkos {
 	indices += numRC_-1;
 	values += numRC_-1;
 
-	j0 = 1;
+	OrdinalType j0 = 1;
 	if (hasUnitDiagonal_) j0--; // Include first term if no diagonal
 
-	for(i = 0; i < numRC_; i++) {
+	for(i = numRC_-1; i>=0; i--) {
 	  curNumEntries = *profile-- - j0;
 	  curIndices = *indices--;
 	  curValues  = *values--;
-	    if (!hasUnitDiagonal) 
+	    if (!hasUnitDiagonal_) 
 	      yp[i] = yp[i]/curValues[curNumEntries];
 	    for(j = 0; j < curNumEntries; j++)
 	      yp[curIndices[j]] -= curValues[j] * yp[i];
@@ -622,7 +624,7 @@ namespace Kokkos {
     if ((isRowOriented_ && !transA) ||
 	(!isRowOriented_ && transA)) {
 
-      if (isUpper_) {
+      if ((!transA && isUpper_) || transA && !isUpper_) {
 	profile += numRC_-1; // Point to end of structures
 	indices += numRC_-1;
 	values += numRC_-1;
@@ -632,15 +634,15 @@ namespace Kokkos {
 	for(i = numRC_-1; i >=0; i--) {
 	  curNumEntries = *profile--;
 	  curIndices = *indices--;
-	  curValues  = *values-;
+	  curValues  = *values--;
 	  for (k=0; k<numVectors; k++) {
 	    ScalarType sum = 0.0;
 	    for(j = j0; j < curNumEntries; j++)
-	      sum += curValues[j] * xp[k][curIndices[j]];
+	      sum += curValues[j] * yp[k][curIndices[j]];
 	    if (hasUnitDiagonal_)
-	      yp[k][i] = yp[k][i] - sum;
+	      yp[k][i] = xp[k][i] - sum;
 	    else
-	      yp[k][i] = (yp[k][i] - sum)/curValues[0];
+	      yp[k][i] = (xp[k][i] - sum)/curValues[0];
 	  }
 	}
       }
@@ -654,11 +656,11 @@ namespace Kokkos {
 	  for (k=0; k<numVectors; k++) {
 	    ScalarType sum = 0.0;
 	    for(j = 0; j < curNumEntries; j++)
-	      sum += curValues[j] * xp[k][curIndices[j]];
+	      sum += curValues[j] * yp[k][curIndices[j]];
 	    if (hasUnitDiagonal_)
-	      yp[k][i] = yp[k][i] - sum;
+	      yp[k][i] = xp[k][i] - sum;
 	    else
-	      yp[k][i] = (yp[k][i] - sum)/curValues[curNumEntries];
+	      yp[k][i] = (xp[k][i] - sum)/curValues[curNumEntries];
 	  }
 	}
       }
@@ -669,7 +671,7 @@ namespace Kokkos {
 	for(i = 0; i < numRC_; i++)
 	  yp[k][i] = xp[k][i]; // Initialize y
       
-      if (isUpper_) {
+      if ((!transA && !isUpper_) || transA && isUpper_) {
 	OrdinalType j0 = 1;
 	if (hasUnitDiagonal_) j0--;
 	for(i = 0; i < numRC_; i++) {
@@ -677,7 +679,7 @@ namespace Kokkos {
 	  curIndices = *indices++;
 	  curValues  = *values++;
 	  for (k=0; k<numVectors; k++) {
-	    if (!hasUnitDiagonal) 
+	    if (!hasUnitDiagonal_) 
 	      yp[k][i] = yp[k][i]/curValues[0];
 	    for(j = j0; j < curNumEntries; j++)
 	      yp[k][curIndices[j]] -= curValues[j] * yp[k][i];
@@ -690,15 +692,15 @@ namespace Kokkos {
 	indices += numRC_-1;
 	values += numRC_-1;
 
-	j0 = 1;
+	OrdinalType j0 = 1;
 	if (hasUnitDiagonal_) j0--; // Include first term if no diagonal
 
-	for(i = 0; i < numRC_; i++) {
+	for(i = numRC_-1; i>=0; i--) {
 	  curNumEntries = *profile-- - j0;
 	  curIndices = *indices--;
 	  curValues  = *values--;
 	  for (k=0; k<numVectors; k++) {
-	    if (!hasUnitDiagonal) 
+	    if (!hasUnitDiagonal_) 
 	      yp[k][i] = yp[k][i]/curValues[curNumEntries];
 	    for(j = 0; j < curNumEntries; j++)
 	      yp[k][curIndices[j]] -= curValues[j] * yp[k][i];

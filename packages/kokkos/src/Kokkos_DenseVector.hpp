@@ -72,11 +72,11 @@ namespace Kokkos {
       \param length (In)  Length of vector.
       \param values (In)  Pointer to values.
       \param inc (In) The increment between two elements in the vector.  
-                         Typically this value should be set to 1.
+                         Typically this value should be set to 1, which is the default value.
 
       \return Integer error code, set to 0 if successful.
     */
-    int initializeValues(OrdinalType length, ScalarType * values, OrdinalType inc) {
+    int initializeValues(OrdinalType length, ScalarType * values, OrdinalType inc = 1) {
       length_ = length;
       inc_ = inc;
       values_ = values;

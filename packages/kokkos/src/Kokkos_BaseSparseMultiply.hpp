@@ -29,8 +29,14 @@
 #ifndef KOKKOS_BASESPARSEMULTIPLY_H
 #define KOKKOS_BASESPARSEMULTIPLY_H
 
-#include "Kokkos_CompObject.hpp" 
+#include "Kokkos_CisMatrix.hpp" 
+#include "Kokkos_SparseOperation.hpp" 
+extern "C" {
+void scsrmm2_(const int *, const int *, const double *,const int *, const int *, 
+	      const double *, const double *, const int *);
+void daxpy_(const int *, const double *, const double *, const int *, const double *, const int *);
 
+}
 
 namespace Kokkos {
 
@@ -38,7 +44,8 @@ namespace Kokkos {
 
 /*! The Kokkos::BaseSparseMultiply provide basic functionality for computing sparse matrix times vector, or
     sparse matrix times multivector operations.  This class is templated on the ordinal (integer) and 
-    scalar (floating point) types, so it can compute using any reasonable data type.
+    scalar (floating point) types, so it can compute using any reasonable data type.  It 
+    implements the Kokkos::SparseOperation base class.
 
   <b>Constructing Kokkos::BaseSparseMultiply objects</b>
 
@@ -69,7 +76,7 @@ namespace Kokkos {
 */    
 
   template<typename OrdinalType, typename ScalarType>
-  class BaseSparseMultiply: public CompObject {
+  class BaseSparseMultiply: public virtual SparseOperation<OrdinalType, ScalarType> {
   public:
 
     //@{ \name Constructors/Destructor.
@@ -213,7 +220,7 @@ namespace Kokkos {
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   BaseSparseMultiply<OrdinalType, ScalarType>::BaseSparseMultiply() 
-    : CompObject(),
+    : SparseOperation<OrdinalType, ScalarType>(),
       matrixForStructure_(0),
       matrixForValues_(0),
       willKeepStructure_(false),
@@ -238,7 +245,7 @@ namespace Kokkos {
   template<typename OrdinalType, typename ScalarType>
   BaseSparseMultiply<OrdinalType, ScalarType>::BaseSparseMultiply(const BaseSparseMultiply<OrdinalType,
 								  ScalarType> &source) 
-    : CompObject(source),
+    : SparseOperation<OrdinalType, ScalarType>(source),
       matrixForStructure_(source.matrixForStructure_),
       matrixForValues_(source.matrixForValues_),
       willKeepStructure_(source.willKeepStructure_),
@@ -402,7 +409,7 @@ namespace Kokkos {
     if (willKeepStructure) {
       for (i=0; i<numRC_; i++) {
 	int ierr = A.getIndices(i, numRCEntries, indicesRC);
-	if (ierr!=0) return(ierr);
+	if (ierr<0) return(ierr);
 	profile_[i] = numRCEntries;
 	indices_[i] = indicesRC;
       }
@@ -414,7 +421,7 @@ namespace Kokkos {
       OrdinalType offset = 0;
       for (i=0; i< numRC_; i++) {
 	int ierr = A.getIndices(i, numRCEntries, indicesRC);
-	if (ierr!=0) return(ierr);
+	if (ierr<0) return(ierr);
 	profile_[i] = numRCEntries;
 	indices_[i] = allIndices_+offset;
 	copyOrdinals(numRCEntries, indicesRC, indices_[i]);
@@ -423,6 +430,7 @@ namespace Kokkos {
     }
 
     costOfMatVec_ = 2.0 * ((double) numEntries_);
+    if (hasUnitDiagonal_) costOfMatVec_ += 2.0 * ((double) numRC_);
     haveStructure_ = true;
     return(0);
   }
@@ -446,7 +454,7 @@ namespace Kokkos {
     if (willKeepValues_) {
       for (i=0; i<numRC_; i++) {
 	int ierr = A.getValues(i, valuesRC);
-	if (ierr!=0) return(ierr);
+	if (ierr<0) return(ierr);
 	values_[i] = valuesRC;
       }
     }
@@ -455,7 +463,7 @@ namespace Kokkos {
       OrdinalType offset = 0;
       for (i=0; i< numRC_; i++) {
 	int ierr = A.getValues(i, valuesRC);
-	if (ierr!=0) return(ierr);
+	if (ierr<0) return(ierr);
 	values_[i] = allValues_+offset;
 	copyScalars(profile_[i], valuesRC, values_[i]);
 	offset += profile_[i];
@@ -471,7 +479,7 @@ namespace Kokkos {
 
       for (i=0; i<numRC_; i++) {
 	int ierr = matrixForValues_->getIndices(i, numRCEntries, indicesRC);
-	if (ierr!=0) return(-1);
+	if (ierr<0) return(-1);
 	if (numRCEntries!=profile_[i]) return(-1);
 	indicesRC_ref = indices_[i];
 	for (j=0; j<numRCEntries; j++) if (indicesRC[j]!=indicesRC_ref[j]) return(-1);
@@ -603,6 +611,85 @@ namespace Kokkos {
     updateFlops(costOfMatVec_ * ((double) numVectors));
     return(0);
   }
+
+  //==============================================================================
+  template<>
+  int BaseSparseMultiply<int, double>::apply(const MultiVector<int, double>& x, 
+						    MultiVector<int, double> & y,
+						    bool transA, bool conjA) const {
+    if (!haveValues_) return(-1); // Can't compute without values!
+    if (conjA) return(-2); // Unsupported at this time
+    if (x.getNumRows()!=numCols_) return(-3); // Number of cols in A not same as number of rows in x
+    if (y.getNumRows()!=numRows_) return(-4); // Number of rows in A not same as number of rows in x
+    int numVectors = x.getNumCols();
+    if (numVectors!=y.getNumCols()) return(-5); // Not the same number of vectors in x and y
+
+    int i, j, k, curNumEntries;
+    int * curIndices;
+    double * curValues;
+
+    int * profile = profile_;
+    int ** indices = indices_;
+    double ** values = values_;
+
+    double ** xp = x.getValues();
+    double ** yp = y.getValues();
+
+    if ((isRowOriented_ && !transA) ||
+	(!isRowOriented_ && transA)) {
+
+      if ((indices[1]-indices[0]==profile[0]) && // indicates classic packed HB storage (can fail)
+	  x.getIsStrided() && (numVectors<6)) {
+	scsrmm2_(&numRows_, &numCols_, *values, *indices, profile, *xp, *yp, &numVectors);
+	if (hasUnitDiagonal_) {
+	  double one = 1.0;
+	  int ione = 1;
+	  int length = numCols_*numVectors;
+	  daxpy_(&length, &one, *xp, &ione, *yp, &ione);
+	}
+	updateFlops(costOfMatVec_ * ((double) numVectors));
+	return(0);
+      }
+
+      for(i = 0; i < numRC_; i++) {
+	curNumEntries = *profile++;
+	curIndices = *indices++;
+	curValues  = *values++;
+	for (k=0; k<numVectors; k++) {
+	  double sum = 0.0;
+	  if (hasUnitDiagonal_) 
+	    sum = xp[k][i];
+	  for(j = 0; j < curNumEntries; j++)
+	    sum += curValues[j] * xp[k][curIndices[j]];
+	  yp[k][i] = sum;
+	}
+      }
+    }
+    else {
+      
+      if (hasUnitDiagonal_) 
+	for (k=0; k<numVectors; k++)
+	  for(i = 0; i < numRC_; i++)
+	    yp[k][i] = xp[k][i]; // Initialize y for transpose multiply
+      else
+	for (k=0; k<numVectors; k++)
+	  for(i = 0; i < numRC_; i++)
+	    yp[k][i] = 0.0; // Initialize y
+      
+      for(i = 0; i < numRC_; i++) {
+	curNumEntries = *profile++;
+	curIndices = *indices++;
+	curValues  = *values++;
+	for (k=0; k<numVectors; k++) {
+	  for(j = 0; j < curNumEntries; j++)
+	    yp[k][curIndices[j]] += curValues[j] * xp[k][i];
+	}
+      }
+    }
+    updateFlops(costOfMatVec_ * ((double) numVectors));
+    return(0);
+  }
+
 
 } // namespace Kokkos
 #endif /* KOKKOS_BASESPARSEMULTIPLY_H */

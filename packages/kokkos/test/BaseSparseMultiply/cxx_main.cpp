@@ -15,7 +15,7 @@ using namespace Kokkos;
 
 #define OTYPE long long
 #define STYPE double
-#define MULTCLASS PackedSparseMultiply
+#define MULTCLASS BaseSparseMultiply
 
 template<typename TYPE>
 int PrintTestResults(string, TYPE, TYPE, bool);
