@@ -13,10 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_all_allo_c =
-  "$Id$";
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>

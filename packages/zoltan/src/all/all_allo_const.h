@@ -19,11 +19,6 @@
 
 #include "lb_const.h"
 
-#ifndef lint
-static char *cvs_all_allo_h =
-  "$Id$";
-#endif
-
 #ifndef HAVE_PROTOTYPES
 #   if defined(__STDC__) || defined(__GNUC__) || defined(__cplusplus) || defined(c_plusplus)
 #       define	HAVE_PROTOTYPES
