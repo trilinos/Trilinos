@@ -173,7 +173,8 @@ unsigned char *p;          /* for setting IDs to NULL */
 
   LB_Bind_Param(REFTREE_params, "REFTREE_HASH_SIZE", (void *) &hashsize);
   hashsize = DEFAULT_HASH_TABLE_SIZE;
-  LB_Assign_Param_Vals(lb->Params, REFTREE_params, lb->Debug_Level, lb->Proc);
+  LB_Assign_Param_Vals(lb->Params, REFTREE_params, lb->Debug_Level, lb->Proc,
+                       lb->Debug_Proc);
 
   hashtab = (struct LB_reftree_hash_node **)
             LB_MALLOC(sizeof(struct LB_reftree_hash_node *)*hashsize);
