@@ -11,7 +11,7 @@
 #ifndef _NLS_GROUP_H
 #define _NLS_GROUP_H
 
-#include "NLS_Parameter.H"
+#include "NLS_ParameterList.H"
 #include "NLS_Vector.H"
 
 //! NLSPACK pure abstract interface to a "group"; i.e., a solution
@@ -28,63 +28,50 @@
 
 class NLS_Group {
 
-protected:
+private: 
+
+  //! Disallow copy operator
+  virtual NLS_Group& operator=(const NLS_Group& copyFrom) {};
+
+public:
 
   //! NLS_Group constructor
   NLS_Group();
   
-  /** @name Recommended constructors formats */
-  //@{
-
-  //! Copy constructor (via deep copy)
-  NLS_Group(const NLS_Group& copyFrom);
-
-  //! Create a new group where the new solution vector is grp.x() + step * d
-  /*! Const-ness of the grp object may not always be possible, but it
-    is recommended. */
-  NLS_Group(const NLS_Group& grp, const NLS_Vector& d, double step);
-
-  //@}
-
-public:
-  
   //! NLS_Group deconstructor
   virtual ~NLS_Group() = 0;
+  
+  //@{ \name "Compute" functions
 
-  //! Copy
-  virtual NLS_Group& operator=(const NLS_Group& copyFrom) = 0;
-
-  /** @name "Compute" functions */
-  //@{
-
-  //! Compute and return solution vector
+  //! Compute and return solution vector, x, where x = grp.x() + step * d
   virtual NLS_Vector& computeX(const NLS_Group& grp, const NLS_Vector& d, double step) = 0;
 
   //! Compute and return RHS
   virtual NLS_Vector& computeRHS() = 0;
 
-  //! Compute RHS
+  //! Compute Jacobian
   virtual void computeJacobian() = 0;
 
   //! Compute and return gradient 
-  /*! Throws an error if RHS and Jacobian have not been computed */
+  //! Throws an error if RHS and Jacobian have not been computed 
   virtual NLS_Vector& computeGrad() = 0;
 
   //! Compute and return Newton direction 
-  /*! Throws an error if RHS and Jacobian have not been computed */
+  //! Throws an error if RHS and Jacobian have not been computed 
   virtual NLS_Vector& computeNewton() = 0;
 
-  //! Compute and return Newton direction, using desired accuracy for nonlinear solve
-  /*! Throws an error if RHS and Jacobian have not been computed */
-  virtual NLS_Vector& computeNewton(const string& name, NLS_Parameter& parameter) = 0;
+  //! Compute and return Newton direction, using specified parameters for nonlinear solve
+  //! Throws an error if RHS and Jacobian have not been computed 
+  virtual NLS_Vector& computeNewton(NLS_ParameterList& params) = 0;
 
   //@}
 
-  /** @name Checks to see if various objects have been computed. 
+  /** @name "Is" functions
    *
-   * Returns true if the corresponding "compute" function has been
-   * called since the last update to the solution vector (via
-   * instantiation or computeX). */
+   * Checks to see if various objects have been computed. Returns true
+   * if the corresponding "compute" function has been called since the
+   * last update to the solution vector (via instantiation or
+   * computeX). */
   //@{
 
   virtual bool isRHS() const = 0;
@@ -94,8 +81,7 @@ public:
 
   //@}
 
-  /** @name "Get" function */
-  //@{
+  //@{ \name "Get" functions 
 
   //! Return solution vector.  This should be protected!  
   //! Getting a pointer to the solution vector could allow users to change
@@ -114,6 +100,14 @@ public:
 
   //@}
 
+
+  //@{ \name Creating new NLS_Groups
+
+  //! Create a \b new NLS_Group by copying this one. 
+  //! Returns a pointer to the new group.
+  virtual NLS_Group* newcopy() = 0;
+
+  //@}
   
 
 };
