@@ -774,12 +774,16 @@ cout << A2;
   EPETRA_TEST_ERR(A4.LeftScale(xRow3),ierr);
   float A4infNormFloat = A4.NormInf();
   if (verbose1) cout << A4;
-  if (2.0!=A4infNormFloat) {
+  if (2.0!=A4infNormFloat && NumProc != 1) {
     if (verbose1) cout << "InfNorm should be = 2 (because one column is replicated on two processors and NormOne() does not handle replication), but InfNorm = " << A4infNormFloat <<endl;
     EPETRA_TEST_ERR(-63,ierr);
     InvSumsBroke = true;
   }
-  
+  else if (1.0!=A4infNormFloat && NumProc == 1) {
+    if (verbose1) cout << "InfNorm should be = 1, but InfNorm = " << A4infNormFloat <<endl;
+    EPETRA_TEST_ERR(-63,ierr);
+    InvSumsBroke = true;
+  }
   
   Epetra_Vector xCol3cm(ColMap3cm,false);
   Epetra_CrsMatrix A4cm(Copy, RowMap3cm, ColMap3cm, NumProc+1);
@@ -800,8 +804,13 @@ cout << A2;
   EPETRA_TEST_ERR(A4cm.RightScale(xCol3cm),ierr);
   float A4cmOneNormFloat = A4cm.NormOne();
   if (verbose1) cout << A4cm << endl;
-  if (2.0!=A4cmOneNormFloat) {
+  if (2.0!=A4cmOneNormFloat && NumProc != 1) {
     if (verbose1) cout << "OneNorm should be = 2 (because one column is replicated on two processors and NormOne() does not handle replication), but OneNorm = " << A4cmOneNormFloat << endl;
+    EPETRA_TEST_ERR(-64,ierr);
+    InvSumsBroke = true;
+  }
+  else if (1.0!=A4cmOneNormFloat && NumProc == 1) {
+    if (verbose1) cout << "OneNorm should be = 1, but OneNorm = " << A4infNormFloat <<endl;
     EPETRA_TEST_ERR(-64,ierr);
     InvSumsBroke = true;
   }
