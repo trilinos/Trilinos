@@ -3,7 +3,6 @@
 # subdirectory of 'Trilinos/'.  One subdirectory per line.  Each directory 
 # listed must contain an "invoke-configure" file that contains the options
 # that should be passed to configure.
-SERIAL
 MPI
-
+SERIAL
 

@@ -195,6 +195,8 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	      chomp(@potentialscripts=<FILELIST>);
 	      close FILELIST;
 	      foreach $potentialscript (@potentialscripts) {
+#  Ken Stanley added the following line to allow two scripts in the same directory to work
+	        chdir "$homedir/$subdirs[$i]/$testdirectory";
 		if (-x $potentialscript ) {
 		  $compileFail+=system "$potentialscript $subdirs[$i] True >> $homedir/testCompileLog.txt";
 		  if ($compileFail) {
