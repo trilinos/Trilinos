@@ -189,7 +189,6 @@ int main(int argc, char *argv[])
   ML_Comm *comm;
   ML_Krylov *kdata;
 #endif
-int i;
 
 
   /* get processor information (id & # of procs) and set ML's printlevel. */
