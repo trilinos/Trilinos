@@ -571,7 +571,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /* Organize a new Tfine_Pn_vec which will contain the locally */
      /* needed components as well as those received from other processors */
 
-     Nlocal = 0;
+     Nlocal = Tfine->outvec_leng;
      for (i = 0; i <  Tfine->outvec_leng; i++) {
        if ( pid_fine_edge[i] != -1) break;
      }
