@@ -128,11 +128,11 @@ extern int ML_MSR2CSR(struct ML_CSR_MSRdata *csr_data, int Nrows,
                           int *Ncolumns);  
 
 extern int  ML_Matrix_DCSR_Create( ML_Matrix_DCSR ** );
-extern void ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR ** );
+extern void ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR * );
 extern int  ML_Matrix_DCSR_Set( ML_Matrix_DCSR *,int,int*,int*,double*);
 extern int  ML_Matrix_DCSR_Set_Comm(ML_Matrix_DCSR*,ML_CommInfoOP*,ML_Comm*);
 extern int  ML_Matrix_DCSR_Getrow(void*,int,int*,int,int*,double*,int*);
-extern int  ML_Matrix_DCSR_Matvec(void*,int,double*,int,double*);
+extern int  ML_Matrix_DCSR_Matvec(void *,int,double*,int,double*);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

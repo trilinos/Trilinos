@@ -1135,13 +1135,13 @@ int ML_Matrix_DCSR_Create( ML_Matrix_DCSR **mat)
 /* destructor for DCSR matrix                                           */
 /* -------------------------------------------------------------------- */
 
-void ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR **mat )
+void ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR *mat )
 {
-   if ( (*mat)->mat_ia != NULL ) ML_free((*mat)->mat_ia);
-   if ( (*mat)->mat_ja != NULL ) ML_free((*mat)->mat_ja);
-   if ( (*mat)->mat_a  != NULL ) ML_free((*mat)->mat_a);
-   if ( (*mat)->comminfo != NULL )
-      ML_CommInfoOP_Destroy( &((*mat)->comminfo) );
+   if ( (mat)->mat_ia != NULL ) ML_free((mat)->mat_ia);
+   if ( (mat)->mat_ja != NULL ) ML_free((mat)->mat_ja);
+   if ( (mat)->mat_a  != NULL ) ML_free((mat)->mat_a);
+   if ( (mat)->comminfo != NULL )
+      ML_CommInfoOP_Destroy( &((mat)->comminfo) );
 }
 
 /* ******************************************************************** */
@@ -1204,7 +1204,7 @@ int ML_Matrix_DCSR_Getrow(void *data, int N_req_rows, int req_rows[],
 /* matvec in CSR format                                                   */
 /* ---------------------------------------------------------------------- */
 
-int ML_Matrix_DCSR_Matvec(void *data,int ilen,double *x,int olen,double y[])
+int ML_Matrix_DCSR_Matvec(void *mat_in,int ilen,double *x,int olen,double y[])
 {
    int             i, k, Nrows, *bindx, nbytes;
    double          *y2, *val, sum;
@@ -1212,8 +1212,11 @@ int ML_Matrix_DCSR_Matvec(void *data,int ilen,double *x,int olen,double y[])
    int             *row_ptr;
    ML_Comm         *comm;
    ML_Matrix_DCSR  *Amat;
+   ML_Operator     *mat;
 
-   Amat        = (ML_Matrix_DCSR *) data;
+   mat         = (ML_Operator *) mat_in;
+   Amat        = (ML_Matrix_DCSR *) ML_Get_MyMatvecData(mat);
+
    comm        = Amat->comm;
    Nrows       = Amat->mat_n;
    val         = Amat->mat_a;

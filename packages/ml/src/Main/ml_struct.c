@@ -5571,11 +5571,7 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
       if ( reuse == 1 ) ML_Destroy( &local_ml );
       if (solver->Mat1 != NULL )
       {
-#ifdef ML_CPP
-         ML_Matrix_DCSR_Destroy((ML_Matrix_DCSR **)solver->Mat1);
-#else
-         ML_Matrix_DCSR_Destroy(solver->Mat1);
-#endif
+         ML_Matrix_DCSR_Destroy((ML_Matrix_DCSR *) (solver->Mat1));
          ML_memory_free(  (void**) &(solver->Mat1) );
          solver->Mat1 = NULL;
       }
@@ -5612,7 +5608,9 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
    vals    = csr2_mat->mat_a;
    row_ptr = csr2_mat->mat_ia;
    ML_Init_Amatrix(local_ml,local_nlevels-1,N_local,N_local,(void*) csr2_mat);
-   ML_Set_Amatrix_Matvec(local_ml, local_nlevels-1, ML_Matrix_DCSR_Matvec);
+   ML_Operator_Set_ApplyFunc(&(local_ml->Amat[local_nlevels-1]),
+			     ML_INTERNAL,ML_Matrix_DCSR_Matvec);
+
    local_ml->Amat[local_nlevels-1].data_destroy = ( void (*)(void *)) ML_Matrix_DCSR_Destroy;
    local_ml->Amat[local_nlevels-1].N_nonzeros = csr2_mat->mat_ia[N_local];
    ML_Set_Amatrix_Getrow(local_ml,local_nlevels-1,ML_Matrix_DCSR_Getrow,NULL,

@@ -278,11 +278,7 @@ int ML_CSolve_Clean_Aggr( void *vsolver, ML_CSolveFunc *func)
       solver->dble_params1 = NULL;
       if ( solver->Mat1 != NULL )
       {
-#ifdef ML_CPP
-         ML_Matrix_DCSR_Destroy( (ML_Matrix_DCSR **)solver->Mat1 );
-#else
-         ML_Matrix_DCSR_Destroy( solver->Mat1 );
-#endif
+         ML_Matrix_DCSR_Destroy( (ML_Matrix_DCSR *) (solver->Mat1) );
          ML_memory_free( &(solver->Mat1) );
       }
       solver->Mat1 = NULL;
