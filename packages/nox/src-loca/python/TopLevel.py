@@ -89,6 +89,7 @@ class Stepper(Iterator):
 
     def reset(*args): return _TopLevel.Stepper_reset(*args)
     def getSolutionGroup(*args): return _TopLevel.Stepper_getSolutionGroup(*args)
+    def getBifurcationGroup(*args): return _TopLevel.Stepper_getBifurcationGroup(*args)
     def getParameterList(*args): return _TopLevel.Stepper_getParameterList(*args)
     def getSolver(*args): return _TopLevel.Stepper_getSolver(*args)
 

@@ -1635,6 +1635,27 @@ static PyObject *_wrap_Stepper_getSolutionGroup(PyObject *, PyObject *args) {
 }
 
 
+static PyObject *_wrap_Stepper_getBifurcationGroup(PyObject *, PyObject *args) {
+    PyObject *resultobj;
+    LOCA::Stepper *arg1 = (LOCA::Stepper *) 0 ;
+    LOCA::Continuation::AbstractGroup *result;
+    PyObject * obj0 = 0 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"O:Stepper_getBifurcationGroup",&obj0)) goto fail;
+    SWIG_Python_ConvertPtr(obj0, (void **)&arg1, SWIGTYPE_p_LOCA__Stepper, SWIG_POINTER_EXCEPTION | 0);
+    if (SWIG_arg_fail(1)) SWIG_fail;
+    {
+        LOCA::Continuation::AbstractGroup &_result_ref = (arg1)->getBifurcationGroup();
+        result = (LOCA::Continuation::AbstractGroup *) &_result_ref;
+    }
+    
+    resultobj = SWIG_NewPointerObj((void*)(result), SWIGTYPE_p_LOCA__Continuation__AbstractGroup, 0);
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
 static PyObject *_wrap_Stepper_getParameterList(PyObject *, PyObject *args) {
     PyObject *resultobj;
     LOCA::Stepper *arg1 = (LOCA::Stepper *) 0 ;
@@ -2600,6 +2621,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"delete_Stepper", _wrap_delete_Stepper, METH_VARARGS, NULL},
 	 { (char *)"Stepper_reset", _wrap_Stepper_reset, METH_VARARGS, NULL},
 	 { (char *)"Stepper_getSolutionGroup", _wrap_Stepper_getSolutionGroup, METH_VARARGS, NULL},
+	 { (char *)"Stepper_getBifurcationGroup", _wrap_Stepper_getBifurcationGroup, METH_VARARGS, NULL},
 	 { (char *)"Stepper_getParameterList", _wrap_Stepper_getParameterList, METH_VARARGS, NULL},
 	 { (char *)"Stepper_getSolver", _wrap_Stepper_getSolver, METH_VARARGS, NULL},
 	 { (char *)"Stepper_swigregister", Stepper_swigregister, METH_VARARGS, NULL},
