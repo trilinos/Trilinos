@@ -37,6 +37,7 @@ static PARAM_VARS Jostle_params[] = {
         { "JOSTLE_GATHER_THRESHOLD", NULL, "INT" },
         { "JOSTLE_MATCHING", NULL, "STRING" },
         { "JOSTLE_REDUCTION", NULL, "STRING" },
+        { "JOSTLE_CONNECT", NULL, "INT" },
         { NULL, NULL, NULL } };
 
 /**********  parameters structure used by both ParMetis and Jostle **********/
@@ -147,13 +148,13 @@ int LB_Jostle(
   return LB_FATAL;
 
 #else /* LB_JOSTLE */
-  static LB *lb_str = NULL; /* Last lb structure used */
+  static LB *lb_prev = NULL; /* Last lb structure used */
   static char *alg = "JOSTLE";
   char str[MAX_PARAM_STRING_LEN+1]; 
   char blank[MAX_PARAM_STRING_LEN+1]; 
   char matching[MAX_PARAM_STRING_LEN+1];
   char reduction[MAX_PARAM_STRING_LEN+1];
-  int  i, option, threshold, gather_threshold; 
+  int  i, option, threshold, gather_threshold, connect; 
   int num_proc = lb->Num_Proc;     /* Temporary variables whose addresses are */
   int proc = lb->Proc;             /* passed to Jostle. We don't              */
   MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
@@ -162,8 +163,8 @@ int LB_Jostle(
   /* Initialize Jostle if this is the first call with 
    * this load balancing structure.
    */
-  if (lb != lb_str){
-     lb_str = lb;
+  if (lb != lb_prev){
+     lb_prev = lb;
      pjostle_init(&num_proc, &proc);
      pjostle_comm(&comm);
   }
@@ -176,18 +177,21 @@ int LB_Jostle(
   /* Set parameters */
   threshold = 0;
   gather_threshold = 0;
+  connect = 0;
   matching[0] = '\0';
   reduction[0] = '\0';
   LB_Bind_Param(Jostle_params, "JOSTLE_OUTPUT_LEVEL", 
-                (void *) &option;
+                (void *) &option);
   LB_Bind_Param(Jostle_params, "JOSTLE_THRESHOLD",    
-                (void *) threshold;
+                (void *) &threshold);
   LB_Bind_Param(Jostle_params, "JOSTLE_GATHER_THRESHOLD", 
-                (void *) gather_threshold;
+                (void *) &gather_threshold);
   LB_Bind_Param(Jostle_params, "JOSTLE_MATCHING",     
-                (void *) matching;
+                (void *) matching);
   LB_Bind_Param(Jostle_params, "JOSTLE_REDUCTION",    
-                (void *) reduction;
+                (void *) reduction);
+  LB_Bind_Param(Jostle_params, "JOSTLE_CONNECT",    
+                (void *) &connect);
 
   LB_Assign_Param_Vals(lb->Params, Jostle_params, lb->Debug_Level, lb->Proc,
                        lb->Debug_Proc); 
@@ -203,6 +207,11 @@ int LB_Jostle(
     sprintf(str, "gather threshold = %d", gather_threshold);
     jostle_env(str);
   }
+  if (connect){
+    sprintf(str, "%s", blank);
+    sprintf(str, "connect = %d", connect);
+    jostle_env(str);
+  }
   if (matching[0]){
     sprintf(str, "%s", blank);
     sprintf(str, "matching = %s", matching);
@@ -214,9 +223,15 @@ int LB_Jostle(
     jostle_env(str);
   }
 
-  /* Always set imbalance tolerance */
+  /* Set imbalance tolerance */
   sprintf(str, "imbalance = %3d ", 100*(lb->Imbalance_Tol - 1));
   jostle_env(str);
+
+  /* Multidimensional vertex weights */
+  if (lb->Obj_Weight_Dim > 1){
+    sprintf(str, "ntypes = %3d ", lb->Obj_Weight_Dim);
+    jostle_env(str);
+  }
 
   /* Call the real Jostle/ParMetis interface */
   return LB_ParMetis_Jostle( lb, num_imp, imp_gids, imp_lids,
