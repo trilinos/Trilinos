@@ -40,6 +40,15 @@
 # Written by Joe Outzen, for the Trilinos project.
 #
 #==========================================================================
+sub round{
+    $int = $_[0];
+    $int =~ s/(\d*)(\.\d*)?/$1/;
+    if($_[0] - $int >= 0.5){
+	$int = $int + 1;
+    }else{
+	$int = $int;
+    }
+}
 use Cwd;
 chomp($base = cwd);
 $last = "!";
@@ -85,6 +94,7 @@ foreach (`find $sdir -name "*.bbg"`){
     unless($fc) {print "\tNow in $_.\n";}
     $fexec = 0;
     $fcomp = 0;
+    %filelist = ();
     foreach (<*.bbg>){
 	$file = $_;
 	$skip = 0;
@@ -95,17 +105,19 @@ foreach (`find $sdir -name "*.bbg"`){
 	    }
 	}
 	if($skip){next;}
-	s/.bbg$/.cpp/;
 	chomp;
 	foreach $line (`gcov -n $_ 2> /dev/null`){
-	    if($line =~ /\s*(\d+\.\d+)% of (\d+) source lines executed in file $_/){
+	    if($line =~ /\s*(\d+\.\d+)% of (\d+) source lines executed in file ([^\/][\w\.]+)/ && !defined($filelist{$3})){
 		$fcomp += $2;
-		$fexec += ($1 * $2 / 100);
-		$s = " " x (55 - length);
-		print "\t$_$s$1%\n";
+		$fexec += &round($1 * $2 / 100);
+		$filelist{$3} = $1;
 	    }
 	}
     }
+    foreach(sort(keys(%filelist))){
+	$s = " " x (55 - length);
+	print "\t$_$s$filelist{$_}%\n";
+    }   
     if($fc){
 	if($fcomp > 0){
 	    $fper = 100 * $fexec / $fcomp;
