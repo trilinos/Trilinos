@@ -751,6 +751,11 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    for (i = 0; i < exp_Nrows; i++) aggr_index[i] = -1;
    sprintf(fname,"agg_%d",level_count); level_count++;
    fp = fopen(fname,"r");
+   if (fp == NULL)
+   {
+      printf("Cannot open file %s for reading.\n",fname);
+      exit(1);
+   }
    aggr_count = 0;
    for (i = 0; i <nvertices; i++) {
       fscanf(fp,"%d%d",&j,&k);
