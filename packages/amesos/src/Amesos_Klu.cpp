@@ -22,9 +22,11 @@
    * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
 #include "Amesos_Klu.h"
+#if 0
 extern "C" {
 #include "klu_dump.h"
 }
+#endif
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
