@@ -284,8 +284,11 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     //! Add entries that have the same column index. Remove redundant entries from list.
     int MergeRedundantEntries();
 
-    //! Eliminates memory that is used for construction.  Make consecutive row index sections contiguous.
+    //! Analyzes matrix and attempts to optimize storage for matrix operations.
     int OptimizeStorage();
+
+    //! Eliminates memory that is used for construction.  Make consecutive row index sections contiguous.
+    int MakeDataContiguous() {EPETRA_CHK_ERR(OptimizeStorage()); return(0);};
     //@}
 
   //@{ \name Extraction methods.

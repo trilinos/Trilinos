@@ -35,6 +35,7 @@ Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(Epetra_RowMatrix * OrigMa
     TransposeMatrix_(0),
 		TransposeExporter_(0),
 		TransposeRowMap_(0),
+		TransposeCreated_(false),
     MakeDataContiguous_(false)
 {
 }
@@ -44,6 +45,7 @@ Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(const Epetra_RowMatrixTra
     TransposeMatrix_(0),
 		TransposeExporter_(0),
 		TransposeRowMap_(0),
+		TransposeCreated_(Source.TransposeCreated_),
     MakeDataContiguous_(Source.MakeDataContiguous_) 
 {
 	TransposeMatrix_ = new Epetra_CrsMatrix(*Source.TransposeMatrix_);
@@ -138,14 +140,14 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
 		int NumEntries;
 		for (i=0; i<NumMyRows_; i++) {
 			OrigMatrix_->NumMyRowEntries(i, NumEntries);
-			EPETRA_MAX(MaxNumEntries_, NumEntries);
+			MaxNumEntries_ = EPETRA_MAX(MaxNumEntries_, NumEntries);
 		}
 		Indices_ = new int[MaxNumEntries_];
 		Values_ = new double[MaxNumEntries_];
 
 		for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0;
 		for (i=0; i<NumMyRows_; i++) {
-			// Get view of ith row
+			// Get ith row
 			EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_)); 
 			for (j=0; j<NumIndices; j++) ++TransNumNz_[Indices_[j]];
 		}
@@ -221,6 +223,7 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
 		EPETRA_CHK_ERR(TransposeMatrix_->MakeDataContiguous());
 	}
 
+	TransposeMatrix = TransposeMatrix_;
 	TransposeCreated_ = true;
 
   return(0);

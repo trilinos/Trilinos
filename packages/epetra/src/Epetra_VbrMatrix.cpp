@@ -1874,7 +1874,7 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_DistObject & Source,
 	assert(A.ExtractGlobalBlockRowPointers(BlockRow, MaxNumBlockEntries, RowDim, NumBlockEntries, 
 					        BlockIndices, ColDims, LDAs, Values)==0); // Set pointers
 	// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
-	if (StaticGraph())
+	if (StaticGraph() || IndicesAreLocal())
 	  assert(BeginReplaceGlobalValues(BlockRow, NumBlockEntries, BlockIndices)==0);
 	else
 	  assert(BeginInsertGlobalValues(BlockRow, NumBlockEntries, BlockIndices)==0); 
@@ -1896,7 +1896,7 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_DistObject & Source,
 	assert(A.ExtractGlobalBlockRowPointers(FromBlockRow, MaxNumBlockEntries, RowDim, NumBlockEntries, 
 					        BlockIndices, ColDims, LDAs, Values)==0); // Set pointers
 	// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
-	if (StaticGraph())
+	if (StaticGraph() || IndicesAreLocal())
 	  assert(BeginReplaceGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices)==0);
 	else
 	  assert(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices)==0); 
@@ -2050,7 +2050,7 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
     BlockIndices = intptr + 3; 
     ColDims = BlockIndices + GlobalMaxNumBlockEntries;
     if (CombineMode==Add) {
-      if (StaticGraph())
+      if (StaticGraph() || IndicesAreLocal())
 	// Replace any current values
 	assert(BeginSumIntoGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices)==0);
       else
@@ -2058,7 +2058,7 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
 	assert(BeginInsertGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices)==0);
     }
     else if (CombineMode==Insert) {
-      if (StaticGraph())
+      if (StaticGraph() || IndicesAreLocal())
 	// Replace any current values
 	assert(BeginReplaceGlobalValues(ToBlockRow, NumBlockEntries, BlockIndices)==0);
       else

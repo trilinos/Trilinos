@@ -1351,30 +1351,30 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_DistObject & Source, int NumSa
       Values = new double[MaxNumEntries];  // Need some temporary space
       
       for (i=0; i<NumSameIDs; i++) {
-	Row = GRID(i);
-	assert(A.ExtractGlobalRowCopy(Row, MaxNumEntries, NumEntries, Values, Indices)==0); // Set pointers
-	// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
-	if (StaticGraph())
-	  assert(ReplaceGlobalValues(Row, NumEntries, Values, Indices)==0);
-	else
-	  assert(InsertGlobalValues(Row, NumEntries, Values, Indices)==0); 
+				Row = GRID(i);
+				assert(A.ExtractGlobalRowCopy(Row, MaxNumEntries, NumEntries, Values, Indices)==0); // Set pointers
+				// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
+				if (StaticGraph() || IndicesAreLocal())
+					assert(ReplaceGlobalValues(Row, NumEntries, Values, Indices)==0);
+				else
+					assert(InsertGlobalValues(Row, NumEntries, Values, Indices)==0); 
       }
       delete [] Values;
       delete [] Indices;
     }
     else { // A.IndiceAreGlobal()
       for (i=0; i<NumSameIDs; i++) {
-	Row = GRID(i);
-	assert(A.ExtractGlobalRowView(Row, NumEntries, Values, Indices)==0); // Set pointers
-	// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
-	if (StaticGraph())
-	  assert(ReplaceGlobalValues(Row, NumEntries, Values, Indices)==0); 
-	else
-	  assert(InsertGlobalValues(Row, NumEntries, Values, Indices)==0); 
+				Row = GRID(i);
+				assert(A.ExtractGlobalRowView(Row, NumEntries, Values, Indices)==0); // Set pointers
+				// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
+				if (StaticGraph() || IndicesAreLocal())
+					assert(ReplaceGlobalValues(Row, NumEntries, Values, Indices)==0); 
+				else
+					assert(InsertGlobalValues(Row, NumEntries, Values, Indices)==0); 
       }
     }	
   }
-
+	
   // Do local permutation next
   if (NumPermuteIDs>0) {
     if (A.IndicesAreLocal()) {
@@ -1383,32 +1383,32 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_DistObject & Source, int NumSa
       Values = new double[MaxNumEntries];  // Need some temporary space
       
       for (i=0; i<NumPermuteIDs; i++) {
-	FromRow = A.GRID(PermuteFromLIDs[i]);
-	ToRow = GRID(PermuteToLIDs[i]);
-	assert(A.ExtractGlobalRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices)==0); // Set pointers
-	// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
-	if (StaticGraph())
-	  assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)==0);
-	else
-	  assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)==0); 
+				FromRow = A.GRID(PermuteFromLIDs[i]);
+				ToRow = GRID(PermuteToLIDs[i]);
+				assert(A.ExtractGlobalRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices)==0); // Set pointers
+				// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
+				if (StaticGraph() || IndicesAreLocal())
+					assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)==0);
+				else
+					assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)==0); 
       }
       delete [] Values;
       delete [] Indices;
     }
     else { // A.IndiceAreGlobal()
       for (i=0; i<NumPermuteIDs; i++) {
-	FromRow = A.GRID(PermuteFromLIDs[i]);
-	ToRow = GRID(PermuteToLIDs[i]);
-	assert(A.ExtractGlobalRowView(FromRow, NumEntries, Values, Indices)==0); // Set pointers
-	// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
-	if (StaticGraph())
-	  assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)==0); 
-	else
-	  assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)==0); 
+				FromRow = A.GRID(PermuteFromLIDs[i]);
+				ToRow = GRID(PermuteToLIDs[i]);
+				assert(A.ExtractGlobalRowView(FromRow, NumEntries, Values, Indices)==0); // Set pointers
+				// Place into target matrix.  Depends on Epetra_DataAccess copy/view and static/dynamic graph.
+				if (StaticGraph() || IndicesAreLocal())
+					assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)==0); 
+				else
+					assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)==0); 
       }
     }
   }	
-    
+	
   return(0);
 }
 
@@ -1532,22 +1532,22 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
     Values = valptr; 
     Indices = intptr + 2; 
     if (CombineMode==Add) {
-      if (StaticGraph())
-	// Add to any current values
-	assert(SumIntoGlobalValues(ToRow, NumEntries, Values, Indices)==0);
+      if (StaticGraph() || IndicesAreLocal())
+				// Add to any current values
+				assert(SumIntoGlobalValues(ToRow, NumEntries, Values, Indices)==0);
       else
-	// Insert values
-	assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)>=0);
+				// Insert values
+				assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)>=0);
     }
     else if (CombineMode==Insert) {
-      if (StaticGraph())
-	// Replace any current values
-	assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)==0);
+      if (StaticGraph() || IndicesAreLocal())
+				// Replace any current values
+				assert(ReplaceGlobalValues(ToRow, NumEntries, Values, Indices)==0);
       else
-	// Insert values
-	assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)>=0);
+				// Insert values
+				assert(InsertGlobalValues(ToRow, NumEntries, Values, Indices)>=0);
     }
-
+		
     valptr += DoublePacketSize; // Point to next segment
     dintptr = valptr + GlobalMaxNumEntries;
     intptr = (int *) dintptr;

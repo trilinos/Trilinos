@@ -20,43 +20,6 @@ CCFLAGS=$(CXXFLAGS)
 #=======================================================================
 
 
-ALL_EPETRA_CC = \
-            Epetra_BLAS.cpp \
-            Epetra_BlockMap.cpp \
-            Epetra_CrsGraph.cpp \
-            Epetra_CrsMatrix.cpp \
-            Epetra_DenseMatrix.cpp \
-            Epetra_BasicDirectory.cpp \
-            Epetra_EasySerialDenseProblem.cpp \
-            Epetra_EasySerialSpdDenseProblem.cpp \
-            Epetra_Export.cpp \
-            Epetra_FECrsMatrix.cpp \
-            Epetra_FEVector.cpp \
-            Epetra_Flops.cpp \
-            Epetra_HardSerialDenseProblem.cpp \
-            Epetra_HardSerialSpdDenseProblem.cpp \
-            Epetra_Import.cpp \
-            Epetra_LAPACK.cpp \
-            Epetra_LinearProblem.cpp \
-            Epetra_LocalMap.cpp \
-            Epetra_Map.cpp \
-            Epetra_MpiComm.cpp \
-            Epetra_MultiVector.cpp \
-            Epetra_Object.cpp \
-            Epetra_SerialComm.cpp \
-            Epetra_SerialDenseMatrix.cpp \
-            Epetra_SerialDenseVector.cpp \
-            Epetra_SerialSpdDenseMatrix.cpp \
-            Epetra_Time.cpp \
-            Epetra_Util.cpp \
-            Epetra_VbrMatrix.cpp \
-            Epetra_Vector.cpp \
-            Epetra_MpiDistributor.cpp \
-            Epetra_SerialDistributor.cpp \
-            Epetra_CrsSingletonFilter.cpp \
-            Epetra_MapColoring.cpp
-#           Epetra_C_wrappers.cpp Epetra_Fortran_wrappers.cpp
-
 EPETRA_CC = Epetra_SerialComm.cpp \
             Epetra_SerialDistributor.cpp \
             Epetra_BlockMap.cpp \
@@ -86,6 +49,7 @@ EPETRA_CC = Epetra_SerialComm.cpp \
             Epetra_CrsSingletonFilter.cpp \
             Epetra_IntVector.cpp \
             Epetra_MapColoring.cpp \
+            Epetra_RowMatrixTransposer.cpp \
             $(EPETRA_EXTRACOMM_CLASS)
 
 EPETRA_F =
