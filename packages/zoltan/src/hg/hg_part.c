@@ -25,7 +25,7 @@ static float hcut_size_links (ZZ *, HGraph *, int, Partition);
 /* Routine to set function pointers corresponding to input-string options. */
 int Zoltan_HG_Set_Part_Options(ZZ *zz, HGPartParams *hgp)
 {
-  char *yo = "Zoltan_HG_Set_Options";
+  char *yo = "Zoltan_HG_Set_Part_Options";
 
   if (hgp->bal_tol < 0.0)
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid HG_BALANCE_TOLERANCE.");

@@ -183,7 +183,7 @@ int ierr = ZOLTAN_OK;
 
   /* Convert strings to function pointers. */
 
-  ierr = Zoltan_HG_Set_Options(zz, hgp);
+  ierr = Zoltan_HG_Set_Part_Options(zz, hgp);
 
   return ierr;
 }
