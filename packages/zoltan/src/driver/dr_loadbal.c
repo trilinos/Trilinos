@@ -52,8 +52,6 @@ LB_OBJ_LIST_FN get_elements;
 LB_FIRST_OBJ_FN get_first_element;
 LB_NEXT_OBJ_FN get_next_element;
 
-LB_OBJ_WEIGHT_FN get_elem_weight;
-
 LB_NUM_GEOM_FN get_num_geom;
 LB_GEOM_FN get_geom;
 
@@ -117,12 +115,6 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   }
 
   if (LB_Set_Fn(lb_obj, LB_NEXT_OBJ_FN_TYPE, (void *) get_next_element,
-                (void *) *elements) == DLB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
-    return 0;
-  }
-
-  if (LB_Set_Fn(lb_obj, LB_OBJ_WEIGHT_FN_TYPE, (void *) get_elem_weight,
                 (void *) *elements) == DLB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
@@ -202,7 +194,7 @@ int get_num_elements(void *data, int *ierr)
 /*****************************************************************************/
 /*****************************************************************************/
 int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
-                      int *ierr)
+                      int wdim, float *wgt, int *ierr)
 {
   ELEM_INFO *elem;
 
@@ -216,7 +208,13 @@ int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
   *local_id = 0;
   *global_id = elem[*local_id].globalID;
 
-  *ierr = DLB_OK; /* set error code */
+  if (wdim>0)
+    *wgt = elem[*local_id].cpu_wgt;
+
+  if (wdim>1)
+    *ierr = DLB_WARN; /* we didn't expect multidimensional weights */
+  else
+    *ierr = DLB_OK; 
 
   return 1;
 }
@@ -225,7 +223,8 @@ int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
 /*****************************************************************************/
 /*****************************************************************************/
 int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
-                     LB_GID *next_global_id, LB_LID *next_local_id, int *ierr)
+                     LB_GID *next_global_id, LB_LID *next_local_id, 
+                     int wdim, float *next_wgt, int *ierr)
 {
   int found = 0;
   ELEM_INFO *elem;
@@ -243,28 +242,15 @@ int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
     *next_global_id = elem[*next_local_id].globalID;
   }
 
-  *ierr = DLB_OK; /* set error code */
+  if (wdim>0)
+    *next_wgt = elem[*next_local_id].cpu_wgt;
+
+  if (wdim>1)
+    *ierr = DLB_WARN; /* we didn't expect multidimensional weights */
+  else
+    *ierr = DLB_OK; 
 
   return(found);
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-float get_elem_weight(void *data, LB_GID global_id, LB_LID local_id, int *ierr)
-{
-  ELEM_INFO *elem;
-
-  if (data == NULL) {
-    *ierr = DLB_FATAL;
-    return 0.0;
-  }
-  
-  elem = (ELEM_INFO *) data;
-
-  *ierr = DLB_OK;
-
-  return(elem[local_id].cpu_wgt);
 }
 
 /*****************************************************************************/
