@@ -812,7 +812,8 @@ namespace Anasazi {
       QRFactorization( *F_vec, sub_block_hess );
     }
     //
-    delete F_vec, V_prev;
+    delete F_vec;
+    delete V_prev;
     delete [] index;
     delete [] norm1;
     delete [] norm2;
@@ -1340,8 +1341,9 @@ namespace Anasazi {
       //	
       SortSchurForm( Hj, Q );
       basistemp = _basisvecs->Clone( n );
-      MultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
+      MultiVec<TYPE>* basistemp2 = _basisvecs->CloneView( index, n );
       basistemp->MvTimesMatAddMv ( one, *basistemp2, Q, zero );
+      delete basistemp2;
     } else {
       //
       // We can aquire the Ritz vectors from the current decomposition.
@@ -1910,5 +1912,6 @@ namespace Anasazi {
 } // End of namespace Anasazi
 #endif
 // End of file BlockArnoldi.hpp
+
 
 
