@@ -2483,7 +2483,10 @@ int ML_fixCoarseMtx(
     ML_QR_FIX_TYPE dead;
     struct ML_CSR_MSRdata* data = (struct ML_CSR_MSRdata*) Cmat->data;
 
-    if (ML_qr_fix_NumDeadNodDof() < 1) return 0;
+    if (ML_qr_fix_NumDeadNodDof() < 1) {
+        ML_qr_fix_Destroy();
+        return 0;
+    }
 
     if (CoarseMtxType != ML_MSR_MATRIX) {
         fprintf(stderr,
@@ -2531,6 +2534,8 @@ int ML_fixCoarseMtx(
              }
          }
     }
+/* the dead-nod indicator array no longer needed on this level */
+   ML_qr_fix_Destroy();
 
     return 0;
 }
@@ -2639,8 +2644,6 @@ fflush(stdout);
           &(ml->Amat[child_level]),/* -up- coarse mtx                        */
           CoarseMtxType            /* -in- storage type for coarse-lev mtx   */
    );
-/* the dead-nod indicator array no longer needed on this level */
-   ML_qr_fix_Destroy();
 }
 #else /*MB_MODIF_QR*/
    ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]),
