@@ -61,25 +61,25 @@ ml_krylov.o : ml_krylov.c ../Comm/ml_comm.h ml_krylov.h \
               ../Operator/ml_operator.h ../Utils/ml_memory.h \
               ../FEGrid/ml_bdrypts.h ../Main/ml_1level.h \
               ../Utils/ml_vec.h ../Include/ml_defs.h
-	@$(CC) -c $(CFLAGS) ml_krylov.c -o $@
+	$(CC) -c $(CFLAGS) ml_krylov.c -o $@
 
 ml_cg.o : ml_cg.c ../Comm/ml_comm.h ml_cg.h ml_krylov.h \
           ../Operator/ml_operator.h ../Utils/ml_memory.h \
           ../FEGrid/ml_bdrypts.h ../Main/ml_1level.h ../Utils/ml_vec.h\
           ../Include/ml_defs.h
-	@$(CC) -c $(CFLAGS) ml_cg.c -o $@
+	$(CC) -c $(CFLAGS) ml_cg.c -o $@
 
 ml_gmres.o : ml_gmres.c ml_gmres.h ml_krylov.h ../Comm/ml_comm.h \
              ../Operator/ml_operator.h ../Utils/ml_memory.h \
              ../FEGrid/ml_bdrypts.h ../Main/ml_1level.h ../Utils/ml_vec.h\
              ../Include/ml_defs.h
-	@$(CC) -c $(CFLAGS) ml_gmres.c -o $@
+	$(CC) -c $(CFLAGS) ml_gmres.c -o $@
 
 ml_bicgstabl.o : ml_bicgstabl.c ml_bicgstabl.h ml_krylov.h \
                  ../Comm/ml_comm.h ../Operator/ml_operator.h \
                  ../Utils/ml_memory.h ../FEGrid/ml_bdrypts.h \
                  ../Main/ml_1level.h ../Utils/ml_vec.h ../Include/ml_defs.h
-	@$(CC) -c $(CFLAGS) ml_bicgstabl.c -o $@
+	$(CC) -c $(CFLAGS) ml_bicgstabl.c -o $@
 
 #=======================================================================
 

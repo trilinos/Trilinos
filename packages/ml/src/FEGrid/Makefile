@@ -63,35 +63,34 @@ tolib: $(ML_OBJ)
 
 ml_bdrypts.o : ml_bdrypts.c ml_bdrypts.h ../Include/ml_defs.h \
                ../Utils/ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_bdrypts.c -o $@
+	$(CC) -c $(CFLAGS) ml_bdrypts.c -o $@
 
 ml_elementagx.o : ml_elementagx.c ml_elementagx.h ../Utils/ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_elementagx.c -o $@
+	$(CC) -c $(CFLAGS) ml_elementagx.c -o $@
 
 ml_get_basis.o : ml_get_basis.c ../Include/ml_defs.h ../Utils/ml_memory.h\
                  ml_gridfunc.h
-	@$(CC) -c $(CFLAGS) ml_get_basis.c -o $@
+	$(CC) -c $(CFLAGS) ml_get_basis.c -o $@
 
 ml_grid.o : ml_grid.c ../Include/ml_defs.h ml_grid.h ml_gridfunc.h \
             ../Utils/ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_grid.c -o $@
+	$(CC) -c $(CFLAGS) ml_grid.c -o $@
 
 ml_gridagx.o : ml_gridagx.c ../Include/ml_defs.h ml_elementagx.h \
                ml_gridagx.h ../Utils/ml_intlist.h ../Utils/ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_gridagx.c -o $@
+	$(CC) -c $(CFLAGS) ml_gridagx.c -o $@
 
 ml_gridfunc.o : ml_gridfunc.c ../Include/ml_defs.h ml_gridfunc.h \
                 ../Utils/ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_gridfunc.c -o $@
+	$(CC) -c $(CFLAGS) ml_gridfunc.c -o $@
 
 ml_pde.o : ml_pde.c ../Comm/ml_comm.h ../Include/ml_defs.h \
-           ../Include/ml_include.h ../Utils/ml_memory.h ml_pde.h \
-           ../Main/mli_solver.h
-	@$(CC) -c $(CFLAGS) ml_pde.c -o $@
+           ../Utils/ml_memory.h ml_pde.h ../Main/mli_solver.h
+	$(CC) -c $(CFLAGS) ml_pde.c -o $@
 
 ml_mapper.o : ml_mapper.c ../Include/ml_defs.h ml_mapper.h \
               ../Utils/ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_mapper.c -o $@
+	$(CC) -c $(CFLAGS) ml_mapper.c -o $@
 
 ml_setup.o : ml_setup.c ../Main/ml_1level.h ../FEGrid/ml_bdrypts.h \
              ../Comm/ml_comm.h ../Comm/ml_comminfoagx.h \
@@ -101,7 +100,7 @@ ml_setup.o : ml_setup.c ../Main/ml_1level.h ../FEGrid/ml_bdrypts.h \
              ../Utils/ml_memory.h ../Operator/ml_operator.h \
              ../Operator/ml_operatoragx.h ../Main/ml_struct.h \
              ../Utils/ml_utils.h ../FEGrid/ml_elementagx.h
-	@$(CC) -c $(CFLAGS) ml_setup.c -o $@
+	$(CC) -c $(CFLAGS) ml_setup.c -o $@
 
 #=======================================================================
 

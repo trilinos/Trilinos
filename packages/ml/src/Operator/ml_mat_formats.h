@@ -13,6 +13,8 @@
 #ifndef _MLMATFORMATS_
 #define _MLMATFORMATS_
 
+#include "ml_operator.h"
+
 /* ******************************************************************** */
 /* Structure used for ML_MSR_getrows and ML_CSR_getrows                 */
 /*                                                                      */

@@ -16,9 +16,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "ml_struct.h"
-#include "mli_solver.h"
 #include "ml_pde.h"
-#include "ml_comm.h"
 #ifdef ML_MPI
 #include <mpi.h>
 

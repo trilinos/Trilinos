@@ -21,7 +21,7 @@
 
 #include <math.h>
 #include "ml_amg_genP.h"
-#include "ml_op_utils.h"
+/*#include "ml_op_utils.h"*/
 
 /* ******************************************************************** */
 /* Top level call to RS AMG coarsener - create AMG context and then     */

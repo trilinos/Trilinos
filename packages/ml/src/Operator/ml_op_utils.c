@@ -3,7 +3,7 @@
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
 
-#include "ml_include.h"
+#include "ml_struct.h"
 
 /* ******************************************************************** */
 /* Blow away any inter-mixing between boundary and interior points in   */

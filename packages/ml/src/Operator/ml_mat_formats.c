@@ -8,7 +8,8 @@
 /* Matrix-Format dependent Functions                                    */
 /* ******************************************************************** */
 /* ******************************************************************** */
-#include "ml_include.h"
+
+#include "ml_mat_formats.h"
 
 /*********************************************************************/
 /* Perform a matrix vector product with an MSR matrix: c = matrix * b*/

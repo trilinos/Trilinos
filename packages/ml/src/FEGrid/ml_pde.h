@@ -13,7 +13,6 @@
 #ifndef _MLPDE__
 #define _MLPDE__
 
-#include "ml_include.h"
 #include "mli_solver.h"
 
 #ifdef __cplusplus

@@ -64,54 +64,54 @@ ml_mat_formats.o : ml_mat_formats.c ../Utils/ml_aztec_utils.h \
                    ../Main/ml_1level.h ../Comm/ml_comm.h\
                    ../Utils/ml_aztec_utils.h ../Comm/ml_comminfoagx.h \
                    ../Comm/ml_comminfoop.h ../FEGrid/ml_mapper.h\
-                   ../Include/ml_defs.h ../Include/ml_include.h \
+                   ../Include/ml_defs.h \
                    ml_mat_formats.h ../Utils/ml_memory.h ml_op_utils.h\
                    ml_operatoragx.h ml_rap.h ../Main/ml_struct.h \
                    ../Utils/ml_utils.h ../Utils/ml_vec.h ../FEGrid/ml_bdrypts.h
-	@$(CC) -c $(CFLAGS) ml_mat_formats.c -o $@
+	$(CC) -c $(CFLAGS) ml_mat_formats.c -o $@
 
 ml_matmat_mult.o : ml_matmat_mult.c ../Main/ml_1level.h ../Comm/ml_comm.h\
                    ../Utils/ml_aztec_utils.h ../Comm/ml_comminfoagx.h \
                    ../Comm/ml_comminfoop.h ../FEGrid/ml_mapper.h\
-                   ../Include/ml_defs.h ../Include/ml_include.h \
+                   ../Include/ml_defs.h \
                    ml_mat_formats.h ../Utils/ml_memory.h ml_op_utils.h\
                    ml_operatoragx.h ml_rap.h ../Main/ml_struct.h \
                    ../Utils/ml_utils.h ../Utils/ml_vec.h ../FEGrid/ml_bdrypts.h
-	@$(CC) -c $(CFLAGS) ml_matmat_mult.c -o $@
+	$(CC) -c $(CFLAGS) ml_matmat_mult.c -o $@
 
 ml_op_utils.o : ml_op_utils.c ../Utils/ml_aztec_utils.h ../Comm/ml_comm.h\
                 ../Comm/ml_comminfoagx.h ../Include/ml_defs.h \
-                ../Include/ml_include.h ml_mat_formats.h ../Utils/ml_memory.h\
+                ml_mat_formats.h ../Utils/ml_memory.h\
                 ml_op_utils.h ml_operatoragx.h ml_rap.h \
                 ../Main/ml_struct.h ../Utils/ml_utils.h ../Utils/ml_vec.h 
-	@$(CC) -c $(CFLAGS) ml_op_utils.c -o $@
+	$(CC) -c $(CFLAGS) ml_op_utils.c -o $@
 
 ml_operator.o : ml_operator.c ../Utils/ml_aztec_utils.h ../Comm/ml_comm.h\
                 ../Comm/ml_comminfoagx.h ../Include/ml_defs.h \
-                ../Main/ml_1level.h ../Include/ml_include.h ml_mat_formats.h \
+                ../Main/ml_1level.h ml_mat_formats.h \
                 ../Utils/ml_memory.h ml_op_utils.h ml_operatoragx.h ml_rap.h \
                 ../Main/ml_struct.h ../Utils/ml_utils.h ../Utils/ml_vec.h  \
                 ../FEGrid/ml_bdrypts.h 
-	@$(CC) -c $(CFLAGS) ml_operator.c -o $@
+	$(CC) -c $(CFLAGS) ml_operator.c -o $@
 
 ml_operatoragx.o : ml_operatoragx.c ../Comm/ml_comm.h ml_operatoragx.h \
                    ../Comm/ml_comminfoagx.h ../Utils/ml_memory.h \
                    ../Main/ml_struct.h
-	@$(CC) -c $(CFLAGS) ml_operatoragx.c -o $@
+	$(CC) -c $(CFLAGS) ml_operatoragx.c -o $@
 
 ml_rap.o : ml_rap.c ../Main/ml_1level.h ../FEGrid/ml_bdrypts.h \
            ../Comm/ml_comm.h ../Comm/ml_comminfoagx.h ../Comm/ml_comminfoop.h\
            ../Include/ml_defs.h ../FEGrid/ml_mapper.h ml_mat_formats.h \
            ml_operator.h ml_operatoragx.h ml_rap.h ../Main/ml_struct.h \
            ../Utils/ml_utils.h ../Utils/ml_vec.h
-	@$(CC) -c $(CFLAGS) ml_rap.c -o $@
+	$(CC) -c $(CFLAGS) ml_rap.c -o $@
 
 ml_rap_utils.o : ml_rap_utils.c ../Main/ml_1level.h ../FEGrid/ml_bdrypts.h \
                  ../Comm/ml_comm.h ../Comm/ml_comminfoop.h ../Include/ml_defs.h\
                  ../FEGrid/ml_mapper.h ml_mat_formats.h ml_operator.h \
                  ml_operatoragx.h ml_rap.h ../Main/ml_struct.h \
                  ../Utils/ml_utils.h ../Utils/ml_vec.h
-	@$(CC) -c $(CFLAGS) ml_rap_utils.c -o $@
+	$(CC) -c $(CFLAGS) ml_rap_utils.c -o $@
 
 #=======================================================================
 
