@@ -173,6 +173,12 @@ type(PROB_INFO) :: prob
     return
   endif
 
+  if (Zoltan_Set_Partition_Fn(zz_obj, get_partition, mesh_wrapper) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_Set_Fn()"
+    run_zoltan = .false.
+    return
+  endif
+
 !  /* Evaluate the old balance */
 !  if (Debug_Driver > 0) {
     if (Proc == 0) then
@@ -378,6 +384,51 @@ end function get_num_geom
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
+function get_partition(data, num_gid_entries, num_lid_entries, &
+                    global_id, local_id, ierr)
+integer(Zoltan_INT) :: get_partition
+type (Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(Zoltan_INT), intent(in) :: global_id(*)
+integer(Zoltan_INT), intent(in) :: local_id(*)
+integer(Zoltan_INT), intent(out) :: ierr
+
+  type(ELEM_INFO), pointer :: elem(:)
+  type(ELEM_INFO), pointer :: current_elem
+  type(MESH_INFO), pointer :: mesh_data
+  integer(Zoltan_INT) :: i, j
+  real(Zoltan_DOUBLE) :: tmp
+  integer(Zoltan_INT) :: idx
+  integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
+  integer(Zoltan_INT) :: lid
+
+  gid = num_gid_entries;
+  lid = num_lid_entries;
+
+  mesh_data => data%ptr
+  elem => mesh_data%elements
+
+  if (.not. associated(elem)) then
+    ierr = ZOLTAN_FATAL
+    return
+  endif
+
+  if (num_lid_entries.gt.0) then
+    current_elem => elem(local_id(lid))
+  else
+    current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
+  endif
+
+  get_partition = current_elem%my_part;
+
+  ierr = ZOLTAN_OK
+
+end function get_partition
+
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*****************************************************************************/
+
 subroutine get_geom(data, num_gid_entries, num_lid_entries, &
                     global_id, local_id, coor, ierr)
 type (Zoltan_User_Data_2), intent(in) :: data
