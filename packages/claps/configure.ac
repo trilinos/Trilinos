@@ -305,7 +305,9 @@ AC_F77_WRAPPERS
 
 # If tests, examples, and libcheck are disabled, we don't have to check 
 # for these libraries.
-if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+#if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+                                                                                
+if test "X$ac_cv_use_libcheck" != "Xno"; then
 
 dnl Replace `main' with a function in -lm:
 #  #np# These lines can be removed if the math lib is not needed.

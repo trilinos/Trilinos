@@ -7818,7 +7818,9 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 # If tests, examples, and libcheck are disabled, we don't have to check
 # for these libraries.
-if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+#if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
+if test "X$ac_cv_use_libcheck" != "Xno"; then
 
 #  #np# These lines can be removed if the math lib is not needed.
 #AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -9853,7 +9855,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9856: \"$ac_link\") >&5
+(eval echo $as_me:9858: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9931,7 +9933,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9934: \"$ac_link\") >&5
+(eval echo $as_me:9936: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
