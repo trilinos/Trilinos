@@ -221,6 +221,9 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_Krylov   *kdata;
    void        (*Pmatrix_data_destroy)(void *) = NULL;
    void        *Pmatrix_data = NULL;
+   char        matname[80];
+   double      *smdiag;
+   int         i;
 
 #ifdef SYMMETRIZE
    ML_Operator *t2, *t3;
@@ -244,8 +247,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
    ML_Aggregate_Set_CurrentLevel( ag, level );
 
-   if (ag->smoothP_damping_factor != 0.0) {
-
+   if (ag->smoothP_damping_factor != 0.0)
+   {
      if ((ag->keep_P_tentative == ML_YES) && (prev_P_tentatives != NULL) &&
 	     (prev_P_tentatives[clevel] != NULL))
      {
@@ -298,6 +301,13 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
         {
            ml->Pmat[clevel].data_destroy = Pmatrix->data_destroy;
            Pmatrix->data_destroy = NULL;
+
+           ML_memory_free( (void**)&(ml->Pmat[clevel].getrow) );
+           ml->Pmat[clevel].getrow = Pmatrix->getrow;
+           Pmatrix->getrow = NULL;
+           
+           ml->Pmat[clevel].data = Pmatrix->data;
+           Pmatrix->data = NULL;
         }
         ML_Operator_Destroy(Pmatrix);
      }
@@ -376,6 +386,31 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
      ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
                           widget.Amat->getrow->pre_comm);
 
+/*
+     if (level == -1)
+     {
+        ML_Operator_Get_Diag(AGGsmoother,AGGsmoother->invec_leng,&smdiag);
+        sprintf(matname,"Aggsm_%d",level);
+        printf("%s\n\n---------------------------------\n\n",matname);
+        fflush(stdout);
+        for (i=0; i<AGGsmoother->invec_leng; i++)
+           printf("%s[%d] = %e\n",matname,i,smdiag[i]);
+        ML_Operator_Get_Diag(Amat,Amat->invec_leng,&smdiag);
+        sprintf(matname,"Amat_%d",level); fflush(stdout);
+        printf("%s\n\n---------------------------------\n\n",matname);
+        fflush(stdout);
+        for (i=0; i<AGGsmoother->invec_leng; i++)
+           printf("%s[%d] = %e\n",matname,i,smdiag[i]);
+        printf("\n\n---------------------------------\n\n");
+     }
+*/
+/*
+     printf("\n\n---------------------------------\n\n");
+     sprintf(matname,"Aggsm_%d",level);
+     ML_Operator_Print(AGGsmoother,matname);
+     printf("\n\n---------------------------------\n\n");
+*/
+
      ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]) );
 
 #ifdef SYMMETRIZE
@@ -398,6 +433,13 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
               &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));
 
    if (widget.near_bdry != NULL) ML_free(widget.near_bdry);
+   /*
+   if (Amat->comm->ML_mypid==0 && ag->print_flag)
+   {
+      printf("Pe: Total nonzeros = %d (Nrows = %d)\n",
+             ml->Pmat[clevel].N_nonzeros, ml->Pmat[clevel].outvec_leng);
+   }
+   */
 #ifdef ML_TIMING
    ml->Pmat[clevel].build_time =  GetClock() - t0;
    ml->timing->total_build_time += ml->Pmat[clevel].build_time;
@@ -621,9 +663,12 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
    /* compute I - omega D^{-1} A                                        */
    /* ----------------------------------------------------------------- */
 #ifndef MB_MODIF
-   for (i = 0; i < row_lengths[0]; i++) 
-      values[i] *= (-widget->omega)/diag_val;
-   values[diag] += 1.;
+   if (ML_dabs(diag_val) > 0.0)
+   {
+      for (i = 0; i < row_lengths[0]; i++) 
+         values[i] *= (-widget->omega)/diag_val;
+      values[diag] += 1.;
+   }
 #else
    for (i = 0; i < row_lengths[0]; i++) 
       values[i] *= -widget->omega;
@@ -712,8 +757,8 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
    if (getrow_obj->ML_id == ML_EXTERNAL) getrowfunc = getrow_obj->external;
    else                                  getrowfunc = getrow_obj->internal;
    max_nz_per_row = 100;
-   col_ind = (int *)    malloc( max_nz_per_row * sizeof(int) );
-   col_val = (double *) malloc( max_nz_per_row * sizeof(double) );
+   col_ind = (int *)    ML_allocate( max_nz_per_row * sizeof(int) );
+   col_val = (double *) ML_allocate( max_nz_per_row * sizeof(double) );
    nnz = 0;
    for ( i = 0; i < Nfine; i++ )
    {
@@ -722,8 +767,8 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
          free( col_ind );
          free( col_val );
          max_nz_per_row = max_nz_per_row * 2 + 1;
-         col_ind = (int *)    malloc( max_nz_per_row * sizeof(int) );
-         col_val = (double *) malloc( max_nz_per_row * sizeof(double) );
+         col_ind = (int *)    ML_allocate( max_nz_per_row * sizeof(int) );
+         col_val = (double *) ML_allocate( max_nz_per_row * sizeof(double) );
       }
       nnz += k;
    }
@@ -751,7 +796,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
    ML_Set_Comm_MyRank(newml, 0);
    ML_Set_Comm_Nprocs(newml, 1);
    nbytes = sizeof(struct ML_AGG_Matrix_Context);
-   context = (struct ML_AGG_Matrix_Context *) malloc( nbytes );
+   context = (struct ML_AGG_Matrix_Context *) ML_allocate( nbytes );
    context->Amat = Amat;
    context->near_bdry = NULL;
    ML_Init_Amatrix(newml, newNlevels-1, Nfine,  Nfine, (void *) context);
@@ -759,7 +804,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
    newml->Amat[newNlevels-1].data_destroy = ML_AGG_Matrix_Context_Clean;
    newml->Amat[newNlevels-1].N_nonzeros = 5 * Nfine;
    ML_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);
-   diagonal = (double *) malloc(Nfine * sizeof(double));
+   diagonal = (double *) ML_allocate(Nfine * sizeof(double));
    ML_AGG_Extract_Diag(Amat, diagonal);
    ML_Set_Amatrix_Diag( newml, newNlevels-1, Nfine, diagonal);
    free( diagonal );
@@ -837,8 +882,8 @@ ML_Aggregate_Set_DampingFactor( newag, 0.0/3.0 );
    /* 1. compute tentP (local ml P applied to 1)                        */
    /* ----------------------------------------------------------------- */
 
-   darray  = (double *) malloc( Nfine * sizeof(double) );
-   darray2 = (double *) malloc( Nfine * sizeof(double) );
+   darray  = (double *) ML_allocate( Nfine * sizeof(double) );
+   darray2 = (double *) ML_allocate( Nfine * sizeof(double) );
 
    for ( i = 0; i < newml->Amat[newClevel].outvec_leng; i++ )  
       darray[i] = 1.0;
@@ -873,9 +918,9 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
    for (i = 0; i < Nfine; i++) new_val[i] = darray[i];
 
    p_ncols = 1;
-   p_cols = (int *) malloc(sizeof(int));
+   p_cols = (int *) ML_allocate(sizeof(int));
    p_cols[0] = 0;
-   p_aa = (double **) malloc(sizeof(double*));
+   p_aa = (double **) ML_allocate(sizeof(double*));
    p_aa[0] = darray;
  
    ML_memory_alloc((void**) &csr_data,sizeof(struct ML_CSR_MSRdata),"AVP");
@@ -927,7 +972,7 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
          printf("Aggregation : computing prolongators at level %d\n",level);
 
       ML_Set_MaxIterations(newml, 10);
-      darray  = (double *) malloc( Nfine * sizeof(double) );
+      darray  = (double *) ML_allocate( Nfine * sizeof(double) );
       for ( i = 0; i < ap_ncols; i++ )
       {
          for ( j = 0; j < Nfine; j++ ) darray[j] = 0.0;
@@ -1060,8 +1105,8 @@ int ML_AGG_DD_Matvec(void *obj,int leng1,double p[],int leng2,double ap[])
       printf("ML_AGG_DD_Matvec ERROR : null getrowfunc.\n");
       exit(-1);
    }
-   col_ind = (int *)    malloc( max_row_nnz * sizeof(int) );
-   col_val = (double *) malloc( max_row_nnz * sizeof(double) );
+   col_ind = (int *)    ML_allocate( max_row_nnz * sizeof(int) );
+   col_val = (double *) ML_allocate( max_row_nnz * sizeof(double) );
 
    for ( i = 0; i < nRows; i++ )
    {
@@ -1070,8 +1115,8 @@ int ML_AGG_DD_Matvec(void *obj,int leng1,double p[],int leng2,double ap[])
          free( col_ind );
          free( col_val );
          max_row_nnz = max_row_nnz * 2 + 1;
-         col_ind = (int *)    malloc( max_row_nnz * sizeof(int) );
-         col_val = (double *) malloc( max_row_nnz * sizeof(double) );
+         col_ind = (int *)    ML_allocate( max_row_nnz * sizeof(int) );
+         col_val = (double *) ML_allocate( max_row_nnz * sizeof(double) );
       }
       dtmp = 0.0;
       
@@ -1121,8 +1166,8 @@ int ML_AGG_DD_Getrow(void *obj,int inNrows, int *rowlist,int alloc_space,
 
    if ( alloc_space > 0 )
    {
-      local_ind = (int *)    malloc( alloc_space * sizeof(int));
-      local_val = (double *) malloc( alloc_space * sizeof(double));
+      local_ind = (int *)    ML_allocate( alloc_space * sizeof(int));
+      local_val = (double *) ML_allocate( alloc_space * sizeof(double));
    }
    status = getrowfunc(Amat->data, 1, rowlist, alloc_space, local_ind,
                        local_val, rowcnt);
@@ -1167,8 +1212,8 @@ int ML_AGG_Extract_Diag(ML_Operator *Amat, double *diagonal)
       printf("ML_AGG_Extract_Diag ERROR : null getrowfunc.\n");
       exit(-1);
    }
-   col_ind = (int *)    malloc( max_row_nnz * sizeof(int) );
-   col_val = (double *) malloc( max_row_nnz * sizeof(double) );
+   col_ind = (int *)    ML_allocate( max_row_nnz * sizeof(int) );
+   col_val = (double *) ML_allocate( max_row_nnz * sizeof(double) );
 
    for ( i = 0; i < nRows; i++ )
    {
@@ -1177,8 +1222,8 @@ int ML_AGG_Extract_Diag(ML_Operator *Amat, double *diagonal)
          free( col_ind );
          free( col_val );
          max_row_nnz = max_row_nnz * 2 + 1;
-         col_ind = (int *)    malloc( max_row_nnz * sizeof(int) );
-         col_val = (double *) malloc( max_row_nnz * sizeof(double) );
+         col_ind = (int *)    ML_allocate( max_row_nnz * sizeof(int) );
+         col_val = (double *) ML_allocate( max_row_nnz * sizeof(double) );
       }
       for (j = 0; j < m; j++) if (col_ind[j] == i) diagonal[i] = col_val[j];
    }
@@ -1235,8 +1280,8 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
    /* ----------------------------------------------------------------- */
 
    max_size = 3;
-   col_ind = (int *)    malloc( max_size * sizeof(int) );
-   col_val = (double *) malloc( max_size * sizeof(double) );
+   col_ind = (int *)    ML_allocate( max_size * sizeof(int) );
+   col_val = (double *) ML_allocate( max_size * sizeof(double) );
    nnz = 0;
    for ( i = 0; i < local_nrows; i++ )
    {
@@ -1245,8 +1290,8 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
          free( col_ind );
          free( col_val );
          max_size = max_size *2 + 1;
-         col_ind = (int *)    malloc( max_size * sizeof(int) );
-         col_val = (double *) malloc( max_size * sizeof(double) );
+         col_ind = (int *)    ML_allocate( max_size * sizeof(int) );
+         col_val = (double *) ML_allocate( max_size * sizeof(double) );
       }
       nnz += row_size;
       if ( row_size > max_size ) max_size = row_size;
@@ -1258,8 +1303,8 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
    /* extract matrix                                                    */
    /* ----------------------------------------------------------------- */
 
-   col_ind = (int *) malloc( nnz * sizeof(int));
-   col_val = (double *) malloc( nnz * sizeof(double));
+   col_ind = (int *) ML_allocate( nnz * sizeof(int));
+   col_val = (double *) ML_allocate( nnz * sizeof(double));
    nnz = 0;
    for ( i = 0; i < local_nrows; i++ )
    {
@@ -1279,7 +1324,7 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
          col_ind[++local_ncols] = col_ind[i];
    }
    local_ncols++;
-   local_cols = (int *) malloc(local_ncols * sizeof(int));
+   local_cols = (int *) ML_allocate(local_ncols * sizeof(int));
    for ( i = 0; i < local_ncols; i++ ) local_cols[i] = col_ind[i];
    free( col_ind );
    free( col_val );
@@ -1288,15 +1333,15 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
    /* fill in the matrix                                                */
    /* ----------------------------------------------------------------- */
 
-   local_vals = (double **) malloc(local_ncols * sizeof(double*));
+   local_vals = (double **) ML_allocate(local_ncols * sizeof(double*));
    for ( i = 0; i < local_ncols; i++ )
    { 
-      local_vals[i] = (double *) malloc(local_nrows * sizeof(double));
+      local_vals[i] = (double *) ML_allocate(local_nrows * sizeof(double));
       for ( j = 0; j < local_nrows; j++ ) local_vals[i][j] = 0.0;
    }
 
-   col_ind = (int *)    malloc( max_size * sizeof(int));
-   col_val = (double *) malloc( max_size * sizeof(double));
+   col_ind = (int *)    ML_allocate( max_size * sizeof(int));
+   col_val = (double *) ML_allocate( max_size * sizeof(double));
    for ( i = 0; i < local_nrows; i++ )
    {
       getrowfunc(mat->data,1,&i,max_size,col_ind,col_val,&row_size);
@@ -1358,7 +1403,7 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
       ML_Set_Comm_MyRank(newml, 0);
       ML_Set_Comm_Nprocs(newml, 1);
       nbytes = sizeof(struct ML_AGG_Matrix_Context);
-      context = (struct ML_AGG_Matrix_Context *) malloc( nbytes );
+      context = (struct ML_AGG_Matrix_Context *) ML_allocate( nbytes );
       context->Amat = Amat;
       context->near_bdry = NULL;
       ML_Init_Amatrix(newml, newNlevels-1, Nfine,  Nfine, (void *) context);
@@ -1366,7 +1411,7 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
       newml->Amat[newNlevels-1].data_destroy = ML_AGG_Matrix_Context_Clean;
       newml->Amat[newNlevels-1].N_nonzeros = 5 * Nfine;
       ML_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);
-      diagonal = (double *) malloc(Nfine * sizeof(double));
+      diagonal = (double *) ML_allocate(Nfine * sizeof(double));
       ML_AGG_Extract_Diag(Amat, diagonal);
       ML_Set_Amatrix_Diag( newml, newNlevels-1, Nfine, diagonal);
       free( diagonal );
