@@ -197,7 +197,7 @@ protected:
   double maxBoundFactor;
 
   //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters.  
-  NOX::Parameter::List* inputList;
+  NOX::Parameter::List* paramsPtr;
 
   //! Counter for the total number of times the compute() method was called on this object. 
   int totalNumLineSearchCalls;

@@ -43,7 +43,7 @@ using namespace NOX;
 using namespace NOX::LineSearch;
 
 Quadratic::Quadratic(Parameter::List& params) :
-  inputList(0)
+  paramsPtr(NULL)
 {
   reset(params);
 }
@@ -55,24 +55,17 @@ Quadratic::~Quadratic()
 
 bool Quadratic::reset(Parameter::List& params)
 { 
-  if (params.isParameterString("Convergence Criteria")) {
-    string choice = params.getParameter("Convergence Criteria", "Ared/Pred");
-    if (choice == "Ared/Pred") {
-      convCriteria = AredPred;
-    }
-    else if (choice == "Armijo-Goldstein") {
-      convCriteria = ArmijoGoldstein;
-    }
-    else {
-      cout << "ERROR: NOX::LineSearch::Quadratic::reset() - the choice of "
-	   << "\"Convergence Criteria\" parameter is invalid." << endl;
-      throw "NOX Error";
-    }
-  }
-  else {
-    // default to "Armijo-Goldstein" if "Convergence Criteria" is not set
+  string choice = params.getParameter("Convergence Criteria", "Armijo-Goldstein");
+
+  if (choice == "Ared/Pred") 
+    convCriteria = AredPred;
+  else if (choice == "Armijo-Goldstein") 
     convCriteria = ArmijoGoldstein;
-  } 
+  else {
+    cout << "ERROR: NOX::LineSearch::Quadratic::reset() - the choice of "
+	 << "\"Convergence Criteria\" parameter is invalid." << endl;
+    throw "NOX Error";
+  }
 
   minStep = params.getParameter("Minimum Step", 1.0e-12);
   defaultStep = params.getParameter("Default Step", 1.0);
@@ -81,7 +74,7 @@ bool Quadratic::reset(Parameter::List& params)
   alpha = params.getParameter("Alpha Factor", 1.0e-4);
   minBoundFactor = params.getParameter("Min Bounds Factor", 0.1);
   maxBoundFactor = params.getParameter("Max Bounds Factor", 0.9);
-  inputList = &params;
+  paramsPtr = &params;
   totalNumLineSearchCalls = 0;
   totalNumNonTrivialLineSearches = 0;
   totalNumFailedLineSearches = 0;
@@ -96,12 +89,12 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   totalNumLineSearchCalls += 1;
 
   const Abstract::Group& oldgrp = s.getPreviousSolutionGroup();
-  double oldf = 0.5*oldgrp.getNormF()*oldgrp.getNormF(); 
+  double oldf = 0.5 * oldgrp.getNormF() * oldgrp.getNormF(); 
 
   // General computation of directional derivative used in curvature condition
-  // Note that for Newton direction, oldfprime = -2.0*oldf
+  // Note that for Newton direction, oldfprime = -2.0 * oldf
   Abstract::Vector* tmpvecptr = oldgrp.getX().clone(ShapeCopy);
-  oldgrp.applyJacobian(dir,*tmpvecptr);
+  oldgrp.applyJacobian(dir, *tmpvecptr);
   double oldfprime = tmpvecptr->dot(oldgrp.getF());
   delete tmpvecptr;
 
@@ -114,7 +107,7 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   newgrp.computeF();    
 
   // f = 0.5 * 2-Norm(F) * 2-Norm(F)
-  newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
+  newf = 0.5 * newgrp.getNormF() * newgrp.getNormF();  
 
   int niters = 1;
 
@@ -134,10 +127,10 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   // Compute the convergence criteria for the line search 
   double convergence = 0.0;
   if (convCriteria == ArmijoGoldstein) {
-    convergence = oldf + alpha*step*oldfprime;
+    convergence = oldf + alpha * step * oldfprime;
   }
   else if (convCriteria == AredPred) {
-    convergence = oldf*(1.0-alpha*(1.0-eta));
+    convergence = oldf * (1.0 - alpha * (1.0 - eta));
   }
   
   // Increment the number of newton steps requiring a line search
@@ -151,8 +144,8 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
     if (Utils::doPrint(Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
       cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
-      cout << " newf = " << Utils::sci(sqrt(2.*newf));
+      cout << " oldf = " << Utils::sci(sqrt(2. * oldf));
+      cout << " newf = " << Utils::sci(sqrt(2. * newf));
       cout << endl;
     }
 
@@ -160,7 +153,7 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
     totalNumIterations += 1;
     
     // Compute a new step length
-    tempStep = -oldfprime/(2.0*(newf - oldf - oldfprime));
+    tempStep = -oldfprime/(2.0 * (newf - oldf - oldfprime));
 
     //   Enforce bounds on minimum step size
     if (tempStep < minBoundFactor) 
@@ -178,7 +171,7 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
     // Safeguard while loop termination for by adjusting eta during "Ared/Pred".
     // The "Direction" also needs to use this eta in the next computation
     // if using inexact Newton with "Type 1" or Type 2" eta computation.
-    eta = 1.0-tempStep*(1.0-eta);
+    eta = 1.0 - tempStep * (1.0 - eta);
     
     previousStep = step;
     prevf = newf; 
@@ -196,17 +189,17 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
       // then we must adjust the old tolerance to be used in the next 
       // computation of eta in the direction object based on these 
       // linesearch results
-      eta = 1.0-step*(1.0-eta_original);
-      inputList->setParameter("Adjusted Tolerance", eta);
+      eta = 1.0 - step * (1.0 - eta_original);
+      paramsPtr->setParameter("Adjusted Tolerance", eta);
       
       // Update the group, and exit compute()
       newgrp.computeX(oldgrp, dir, step);
       newgrp.computeF();    
-      newf = 0.5*newgrp.getNormF()*newgrp.getNormF();
+      newf = 0.5 * newgrp.getNormF() * newgrp.getNormF();
       if (Utils::doPrint(Utils::InnerIteration)) {
 	cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-	cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
-	cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
+	cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2. * oldf));
+	cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2. * newf));
 	cout << " (USING RECOVERY STEP!)" << endl;
 	cout << Utils::fill(72) << "\n" << endl;
       }
@@ -218,15 +211,15 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
     niters ++;
     newgrp.computeX(oldgrp, dir, step);
     newgrp.computeF();    
-    newf = 0.5*newgrp.getNormF()*newgrp.getNormF();
+    newf = 0.5 * newgrp.getNormF() * newgrp.getNormF();
 
     // Compute the convergence criteria for the line search 
     if (convCriteria == AredPred) {
-      convergence = oldf*(1.0-alpha*(1.0-eta));
+      convergence = oldf * (1.0 - alpha * (1.0 - eta));
     } 
     else {
       // defaults to Armijo-Goldstein
-      convergence = oldf + alpha*step*oldfprime;
+      convergence = oldf + alpha * step * oldfprime;
     }
 
   } // end while loop
@@ -237,13 +230,13 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   // then we must adjust the old tolerance to be used in the next 
   // computation of eta in the direction object based on these 
   // linesearch results
-  inputList->setParameter("Adjusted Tolerance", eta);
+  paramsPtr->setParameter("Adjusted Tolerance", eta);
   
   if (Utils::doPrint(Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
       cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
-      cout << " newf = " << Utils::sci(sqrt(2.*newf));
+      cout << " oldf = " << Utils::sci(sqrt(2. * oldf));
+      cout << " newf = " << Utils::sci(sqrt(2. * newf));
       cout << " (STEP ACCEPTED!)" << endl;
       cout << Utils::fill(72) << "\n" << endl;
   }
@@ -253,7 +246,7 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
 }
 
 bool Quadratic::setOutputParameters() {
-  NOX::Parameter::List& outputList = inputList->sublist("Output");
+  NOX::Parameter::List& outputList = paramsPtr->sublist("Output");
   outputList.setParameter("Total Number of Line Search Calls", totalNumLineSearchCalls);
   outputList.setParameter("Total Number of Non-trivial Line Searches", totalNumNonTrivialLineSearches);
   outputList.setParameter("Total Number of Failed Line Searches", totalNumFailedLineSearches);

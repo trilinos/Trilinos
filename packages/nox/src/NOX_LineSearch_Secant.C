@@ -69,13 +69,13 @@ bool Secant::compute(Abstract::Group& newgrp,
 
   const Abstract::Group& oldgrp = s.getPreviousSolutionGroup();
 
-  double oldf = 0.5*oldgrp.getNormF()*oldgrp.getNormF();  
+  double oldf = 0.5 * oldgrp.getNormF() * oldgrp.getNormF();  
   double oldfprime = dir.dot(oldgrp.getF()); 
 
   step = 1.0; // Could use different, user specified initial step
   newgrp.computeX(oldgrp, dir, step);
   newgrp.computeF(); // Assumed gradient direction for this linesearch
-  double newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
+  double newf = 0.5 * newgrp.getNormF() * newgrp.getNormF();  
 
   int niters = 0;
 
@@ -83,30 +83,30 @@ bool Secant::compute(Abstract::Group& newgrp,
     cout << "\n" << Utils::fill(72) << "\n" << "-- Secant Line Search -- \n";
     cout << setw(3) << niters << ":";
     cout << " step = " << Utils::sci(step);
-    cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
-    cout << " newf = " << Utils::sci(sqrt(2.*newf));
+    cout << " oldf = " << Utils::sci(sqrt(2. * oldf));
+    cout << " newf = " << Utils::sci(sqrt(2. * newf));
     //cout << endl;
   }
 
   relStepChange = step; // tolerance is hard-coded for now, RH
   double oldstep = 0.;
 
-  while ( niters<maxiters && relStepChange>1.e-6 ) { 
+  while ((niters < maxiters) && (relStepChange > 1.e-6)) { 
 
-    niters++;
+    niters ++;
 
     oldstep = step;
-    step = - step * oldfprime/(dir.dot(newgrp.getF())-oldfprime);
+    step = -step  *  oldfprime / (dir.dot(newgrp.getF()) - oldfprime);
     newgrp.computeX(oldgrp, dir, step);
     newgrp.computeF();
-    newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
+    newf = 0.5 * newgrp.getNormF() * newgrp.getNormF();  
 
     if (Utils::doPrint(Utils::InnerIteration)) {
       cout << endl;
       cout << setw(3) << niters << ":";
       cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
-      cout << " newf = " << Utils::sci(sqrt(2.*newf));
+      cout << " oldf = " << Utils::sci(sqrt(2. * oldf));
+      cout << " newf = " << Utils::sci(sqrt(2. * newf));
       //cout << endl;
     }
 
@@ -125,14 +125,14 @@ bool Secant::compute(Abstract::Group& newgrp,
     step = recoverystep;
     newgrp.computeX(oldgrp, dir, step);
     newgrp.computeF(); 
-    newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
+    newf = 0.5 * newgrp.getNormF() * newgrp.getNormF();  
     niters++;
     if (Utils::doPrint(Utils::InnerIteration)) {
       cout << endl;
       cout << setw(3) << niters << ":";
       cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
-      cout << " newf = " << Utils::sci(sqrt(2.*newf));
+      cout << " oldf = " << Utils::sci(sqrt(2. * oldf));
+      cout << " newf = " << Utils::sci(sqrt(2. * newf));
       cout << " (USING RECOVERY STEP!)" << endl;
       cout << endl;
     }
