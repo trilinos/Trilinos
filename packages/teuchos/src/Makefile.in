@@ -1503,8 +1503,8 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 # Create the makeoptions file
 # ------------------------------------------------------------------------
 
-install-exec-hook:
-	perl $(srcdir)/../.generate-makeoptions.pl ../../../ > $(exec_prefix)/include/trilinos_make_macros.mak
+install-exec-hook:	
+	perl $(srcdir)/../.generate-makeoptions.pl $(top_builddir)/src/Makefile > $(exec_prefix)/include/trilinos_make_macros.mak
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

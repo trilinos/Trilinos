@@ -11,13 +11,11 @@
 use strict;
 
 if( !(defined(@ARGV) && scalar(@ARGV)==1) ) {
-  die "Error, this script takes one and only one argument for the base directory of a trilinos build.!\n";
+  die "Error, this script takes one and only one argument for the build makefile.!\n";
 }
 
 # Takes just one options and that is the directory where Trilinos is built
-my $TrilinosBuild = shift;
-
-my $teuchos_makefile = "${TrilinosBuild}/packages/teuchos/src/Makefile";
+my $teuchos_makefile = shift;
 
 my $cmnd =
 "grep '^CC =' ${teuchos_makefile} ; "
