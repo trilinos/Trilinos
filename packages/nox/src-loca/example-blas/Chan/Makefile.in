@@ -111,12 +111,18 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 @BUILD_LOCA_BLAS_EXAMPLES_TRUE@CHANCONT = chanContinuation
+@BUILD_LOCA_BLAS_EXAMPLES_TRUE@CHANALCONT = chanAlContinuation
 @BUILD_LOCA_BLAS_EXAMPLES_TRUE@CHANTP = chanTP
 @BUILD_LOCA_BLAS_EXAMPLES_TRUE@CHANTPCONT = chanTPContinuation
 
-noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT)
+noinst_PROGRAMS = $(CHANCONT) $(CHANALCONT) $(CHANTP) $(CHANTPCONT)
 
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+
+chanAlContinuation_SOURCES = $(srcdir)/ChanAlContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
 
@@ -138,6 +144,8 @@ chanContinuation_DEPENDENCIES = \
         $(top_builddir)/src-loca/src-blas/liblocablas.a
 
 
+chanAlContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+
 chanTP_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
 chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
@@ -147,6 +155,8 @@ chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src-loca/src \
                    -I$(top_srcdir)/src-loca/src-blas
 
+
+chanAlContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
 chanTP_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
@@ -159,6 +169,8 @@ chanContinuation_LDADD = \
                 -llocablas -lloca -lnoxblas -lnox
 
 
+chanAlContinuation_LDADD = $(chanContinuation_LDADD)
+
 chanTP_LDADD = $(chanContinuation_LDADD)
 
 chanTPContinuation_LDADD = $(chanContinuation_LDADD)
@@ -168,11 +180,17 @@ CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 @BUILD_LOCA_BLAS_EXAMPLES_TRUE@noinst_PROGRAMS = \
 @BUILD_LOCA_BLAS_EXAMPLES_TRUE@	chanContinuation$(EXEEXT) \
+@BUILD_LOCA_BLAS_EXAMPLES_TRUE@	chanAlContinuation$(EXEEXT) \
 @BUILD_LOCA_BLAS_EXAMPLES_TRUE@	chanTP$(EXEEXT) \
 @BUILD_LOCA_BLAS_EXAMPLES_TRUE@	chanTPContinuation$(EXEEXT)
 @BUILD_LOCA_BLAS_EXAMPLES_FALSE@noinst_PROGRAMS =
 PROGRAMS = $(noinst_PROGRAMS)
 
+am_chanAlContinuation_OBJECTS = \
+	chanAlContinuation-ChanAlContinuation.$(OBJEXT) \
+	chanAlContinuation-ChanProblemInterface.$(OBJEXT)
+chanAlContinuation_OBJECTS = $(am_chanAlContinuation_OBJECTS)
+chanAlContinuation_LDFLAGS =
 am_chanContinuation_OBJECTS = \
 	chanContinuation-ChanContinuation.$(OBJEXT) \
 	chanContinuation-ChanProblemInterface.$(OBJEXT)
@@ -194,7 +212,10 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/chanContinuation-ChanContinuation.Po \
+@AMDEP_TRUE@DEP_FILES = \
+@AMDEP_TRUE@	$(DEPDIR)/chanAlContinuation-ChanAlContinuation.Po \
+@AMDEP_TRUE@	$(DEPDIR)/chanAlContinuation-ChanProblemInterface.Po \
+@AMDEP_TRUE@	$(DEPDIR)/chanContinuation-ChanContinuation.Po \
 @AMDEP_TRUE@	$(DEPDIR)/chanContinuation-ChanProblemInterface.Po \
 @AMDEP_TRUE@	$(DEPDIR)/chanTP-ChanProblemInterface.Po \
 @AMDEP_TRUE@	$(DEPDIR)/chanTP-ChanTP.Po \
@@ -211,10 +232,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(chanContinuation_SOURCES) $(chanTP_SOURCES) \
-	$(chanTPContinuation_SOURCES)
+DIST_SOURCES = $(chanAlContinuation_SOURCES) $(chanContinuation_SOURCES) \
+	$(chanTP_SOURCES) $(chanTPContinuation_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(chanContinuation_SOURCES) $(chanTP_SOURCES) $(chanTPContinuation_SOURCES)
+SOURCES = $(chanAlContinuation_SOURCES) $(chanContinuation_SOURCES) $(chanTP_SOURCES) $(chanTPContinuation_SOURCES)
 
 all: all-am
 
@@ -230,6 +251,13 @@ Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.s
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+chanAlContinuation-ChanAlContinuation.$(OBJEXT): \
+	$(srcdir)/ChanAlContinuation.C
+chanAlContinuation-ChanProblemInterface.$(OBJEXT): \
+	$(srcdir)/ChanProblemInterface.C
+chanAlContinuation$(EXEEXT): $(chanAlContinuation_OBJECTS) $(chanAlContinuation_DEPENDENCIES) 
+	@rm -f chanAlContinuation$(EXEEXT)
+	$(CXXLINK) $(chanAlContinuation_LDFLAGS) $(chanAlContinuation_OBJECTS) $(chanAlContinuation_LDADD) $(LIBS)
 chanContinuation-ChanContinuation.$(OBJEXT): \
 	$(srcdir)/ChanContinuation.C
 chanContinuation-ChanProblemInterface.$(OBJEXT): \
@@ -256,6 +284,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanAlContinuation-ChanAlContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanAlContinuation-ChanProblemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanContinuation-ChanContinuation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanContinuation-ChanProblemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanTP-ChanProblemInterface.Po@am__quote@
@@ -277,6 +307,30 @@ distclean-depend:
 @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+chanAlContinuation-ChanAlContinuation.o: $(srcdir)/ChanAlContinuation.C
+@AMDEP_TRUE@	source='$(srcdir)/ChanAlContinuation.C' object='chanAlContinuation-ChanAlContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/chanAlContinuation-ChanAlContinuation.Po' tmpdepfile='$(DEPDIR)/chanAlContinuation-ChanAlContinuation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanAlContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanAlContinuation-ChanAlContinuation.o `test -f $(srcdir)/ChanAlContinuation.C || echo '$(srcdir)/'`$(srcdir)/ChanAlContinuation.C
+
+chanAlContinuation-ChanAlContinuation.obj: $(srcdir)/ChanAlContinuation.C
+@AMDEP_TRUE@	source='$(srcdir)/ChanAlContinuation.C' object='chanAlContinuation-ChanAlContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/chanAlContinuation-ChanAlContinuation.Po' tmpdepfile='$(DEPDIR)/chanAlContinuation-ChanAlContinuation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanAlContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanAlContinuation-ChanAlContinuation.obj `cygpath -w $(srcdir)/ChanAlContinuation.C`
+
+chanAlContinuation-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@AMDEP_TRUE@	source='$(srcdir)/ChanProblemInterface.C' object='chanAlContinuation-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/chanAlContinuation-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanAlContinuation-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanAlContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanAlContinuation-ChanProblemInterface.o `test -f $(srcdir)/ChanProblemInterface.C || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+
+chanAlContinuation-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@AMDEP_TRUE@	source='$(srcdir)/ChanProblemInterface.C' object='chanAlContinuation-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/chanAlContinuation-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanAlContinuation-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanAlContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanAlContinuation-ChanProblemInterface.obj `cygpath -w $(srcdir)/ChanProblemInterface.C`
 
 chanContinuation-ChanContinuation.o: $(srcdir)/ChanContinuation.C
 @AMDEP_TRUE@	source='$(srcdir)/ChanContinuation.C' object='chanContinuation-ChanContinuation.o' libtool=no @AMDEPBACKSLASH@

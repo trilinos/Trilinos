@@ -32,14 +32,19 @@
 if BUILD_LOCA_BLAS_EXAMPLES
 
 CHANCONT = chanContinuation
+CHANALCONT = chanAlContinuation
 CHANTP = chanTP
 CHANTPCONT = chanTPContinuation
 
 endif
 
-noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT)
+noinst_PROGRAMS = $(CHANCONT) $(CHANALCONT) $(CHANTP) $(CHANTPCONT)
 
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanAlContinuation_SOURCES = $(srcdir)/ChanAlContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
 
@@ -57,6 +62,8 @@ chanContinuation_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src-blas/libnoxblas.a \
         $(top_builddir)/src-loca/src-blas/liblocablas.a
 
+chanAlContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+
 chanTP_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
 chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
@@ -65,6 +72,8 @@ chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src \
 		   -I$(top_srcdir)/src-loca/src \
                    -I$(top_srcdir)/src-loca/src-blas
+
+chanAlContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
 chanTP_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
@@ -75,6 +84,8 @@ chanContinuation_LDADD = \
                 -L$(top_builddir)/src-loca/src \
                 -L$(top_builddir)/src-loca/src-blas \
                 -llocablas -lloca -lnoxblas -lnox
+
+chanAlContinuation_LDADD = $(chanContinuation_LDADD)
 
 chanTP_LDADD = $(chanContinuation_LDADD)
 

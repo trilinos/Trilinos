@@ -38,7 +38,7 @@
 int main()
 {
   int n = 100;
-  double alpha = 0.0;
+  double alpha = 0.1;
   double beta = 1.0;
 
   // Set up the problem interface
@@ -71,10 +71,11 @@ int main()
   locaStepperList.setParameter("Initial Step Size", 0.1);
   locaStepperList.setParameter("Min Step Size", 1.0e-3);
   locaStepperList.setParameter("Max Step Size", 1.0);
-  locaStepperList.setParameter("Step Size Aggressiveness", 0.0);
-  locaStepperList.setParameter("Max Continuation Steps", 100);
-  locaStepperList.setParameter("Max Nonlinear Iterations", 15);
- // locaStepperList.setParameter("First Order Predictor", true);
+  locaStepperList.setParameter("Step Size Aggressiveness", 0.1);
+  locaStepperList.setParameter("Max Continuation Steps", 3);
+  locaStepperList.setParameter("Max Nonlinear Iterations", 6);
+  locaStepperList.setParameter("First Order Predictor", true);
+  locaStepperList.setParameter("Arclength Continuation", true);
 
   // Set the LOCA Utilities
   NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
@@ -100,7 +101,7 @@ int main()
 
   // Set up the status tests
   NOX::StatusTest::NormF statusTestA(grp, 1.0e-8);
-  NOX::StatusTest::MaxIters statusTestB(2);
+  NOX::StatusTest::MaxIters statusTestB(6);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
   // Create the stepper  
