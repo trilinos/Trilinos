@@ -57,12 +57,12 @@ class Newp_Hello {
   //! Basic Newp_Hello constuctor.
   /*! Creates a Newp_Hello object and fills with default values.  
 
-    \param In
-           Comm - An Epetra Communicator 
+    \warning Newp_Hello is English language only.  In Africa use Newp_Jambo.
 
-	   \warning This is a typical warning.
+    \param Comm In
+           An Epetra Communicator 
 
-    \return Pointer to a Newp_Hello.
+    \return  Newp_Hello object
 
   */
   Newp_Hello(const Epetra_Comm& Comm);

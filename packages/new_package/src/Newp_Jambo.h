@@ -58,12 +58,12 @@ class Newp_Jambo {
   //! Basic Newp_Jambo constuctor.
   /*! Creates a Newp_Jambo object and fills with default values.  
 
-    \param In 
-           Comm - A Epetra Communicator 
+    \warning Newp_Hello is not fully translated into Swahili.
 
-	   \warning This is a typical warning.
+    \param Comm In 
+           An Epetra Communicator 
 
-    \return Pointer to a Newp_Jambo.
+    \return  Newp_Jambo object
 
   */
   Newp_Jambo(const Epetra_Comm& Comm);
