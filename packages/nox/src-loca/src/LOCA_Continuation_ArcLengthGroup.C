@@ -758,7 +758,7 @@ LOCA::Continuation::ArcLengthGroup::recalculateScaleFactor(double dpds) {
   if (g > gMax) {
     double thetaNew;
     
-    thetaNew = gGoal/dpds * sqrt( (1.0 - g*g) / (1.0 - gGoal*gGoal) ); 
+    thetaNew = gGoal/dpds * sqrt( fabs(1.0 - g*g) / fabs(1.0 - gGoal*gGoal) ); 
 
     if (thetaNew < thetaMin)
       thetaNew = thetaMin;
