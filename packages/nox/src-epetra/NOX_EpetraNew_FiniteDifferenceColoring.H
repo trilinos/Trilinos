@@ -36,6 +36,8 @@
 #include "NOX_Common.H"          // for <string>
 
 #include "vector"                // for column indices from coloring
+#include "list"                  //
+#include "map"
 
 // Forward Declarations
 class Epetra_Comm;
@@ -120,11 +122,14 @@ class FiniteDifferenceColoring : public FiniteDifference {
       
  public:
 
+  enum ColoringType { SERIAL, PARALLEL };
+
   //! Constructor
   FiniteDifferenceColoring(Interface::Required& i, 
 			   const Epetra_Vector& initialGuess, 
                            Epetra_MapColoring& colorMap,
                            vector<Epetra_IntVector>& columns,
+                           bool parallelColoring = false, 
                            double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Constructor
@@ -133,6 +138,7 @@ class FiniteDifferenceColoring : public FiniteDifference {
                            Epetra_CrsGraph& rawGraph,
                            Epetra_MapColoring& colorMap,
                            vector<Epetra_IntVector>& columns,
+                           bool parallelColoring = false,
                            double beta = 1.0e-6, double alpha = 1.0e-4);
 
   //! Pure virtual destructor
@@ -144,7 +150,16 @@ class FiniteDifferenceColoring : public FiniteDifference {
   //! Compute Jacobian given the specified input vector, x. Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x);
 
+  //! Output the coloring map, index map and underlying matrix
+  //virtual void Print(ostream&);
+
+  //! Create containers for using color and index maps in parallel coloring
+  virtual void createColorContainers();
+
 protected:
+
+  //! Enum flag for type of coloring being used
+  ColoringType coloringType;
 
   //! Color Map created by external algorithm 
   const Epetra_MapColoring* colorMap;
@@ -155,8 +170,17 @@ protected:
   //! Number of colors in Color Map 
   int numColors;
 
+  //! Max Number of colors on all procs in Color Map
+  int maxNumColors;
+
   //! List of colors in Color Map 
   int* colorList;
+
+  //! List of colors in Color Map
+  list<int> listOfAllColors;
+  
+  //! Inverse mapping from color id to its position in colorList
+  std::map<int, int> colorToNumMap;
 
   //! Coloring Map created by external algorithm
   Epetra_Map* cMap;
@@ -171,7 +195,7 @@ protected:
   Epetra_Vector* betaColorVect;
 
   //! Color vector based on unColorred Map containing perturbations
-  Epetra_Vector mappedColorVect;
+  Epetra_Vector* mappedColorVect;
 
   //! Perturbed solution vector based on column map
   Epetra_Vector* xCol_perturb;
