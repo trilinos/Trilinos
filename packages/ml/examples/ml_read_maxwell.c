@@ -118,7 +118,7 @@ extern int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
 
 extern int eye_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[]);
 struct reader_context *context;
-extern int ML_storebyrow_2_storebycolumn(ML_Operator *A, ML_Operator *Atrans);
+extern int  ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans);
 extern int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans);
 
 int main(int argc, char *argv[])
@@ -419,6 +419,9 @@ int main(int argc, char *argv[])
   /*------------------------------------------------------------------*/
 
   Tmat_trans = ML_Operator_Create(ml_edges->comm);
+  /*
+  ML_Operator_Transpose(Tmat, Tmat_trans);
+  */
   ML_Operator_Transpose_byrow(Tmat, Tmat_trans);
 
 #ifdef ML_partition
@@ -659,9 +662,11 @@ int main(int argc, char *argv[])
   coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, N_levels-1, 
                                             ML_DECREASING, ag);
 
-
+#ifdef out
+  /*
   printf("ready to built T on the coarse grids\n");
   exit(1);
+  */
 
 
   /********************************************************************/
@@ -784,7 +789,7 @@ int main(int argc, char *argv[])
   /*------------------------------------------------------------------*/
 
   ML_rap(Tmat, &(ml_nodes->Pmat[N_levels-2]), Tcoarse_trans, 
-	 &(ml_edges->Pmat[N_levels-2]));
+	 &(ml_edges->Pmat[N_levels-2]),ML_CSR_MATRIX);
 
   Pe = &(ml_edges->Pmat[N_levels-2]);
   csr_data = (struct ML_CSR_MSRdata *) Pe->data;
@@ -799,23 +804,36 @@ int main(int argc, char *argv[])
   /* MG grid hierarchy.                                               */
   /*------------------------------------------------------------------*/
 
-  for (j = 0; j < Pe->outvec_leng; j++) {
-    i = j;    
-    if (csr_data->values[i] == 2) csr_data->values[i] = -1;
-    else if (csr_data->values[i] == -2) csr_data->values[i] = 1;
-    else if (csr_data->values[i] == -1) csr_data->values[i] = 0;
-    else if (csr_data->values[i] ==  1) csr_data->values[i] = 0;
-    else if (csr_data->values[i] != 0.0) printf("huh\n");
+  for (j = 0; j < csr_data->rowptr[Pe->outvec_leng] ; j++) {
+    if (csr_data->values[j] == 2) csr_data->values[j] = -1;
+    else if (csr_data->values[j] == -2) csr_data->values[j] = 1;
+    else if (csr_data->values[j] == -1) csr_data->values[j] = 0;
+    else if (csr_data->values[j] ==  1) csr_data->values[j] = 0;
+    else if (csr_data->values[j] != 0.0) printf("huh\n");
+  }
 
-    for (i = csr_data->columns[j]; i < csr_data->columns[j+1]; i++) {
-    if (csr_data->values[i] == 2) csr_data->values[i] = -1;
-    else if (csr_data->values[i] == -2) csr_data->values[i] = 1;
-    else if (csr_data->values[i] == -1) csr_data->values[i] = 0;
-    else if (csr_data->values[i] ==  1) csr_data->values[i] = 0;
-    else if (csr_data->values[i] != 0.0) printf("huh\n");
+  /*******************************************************************/
+  /* weed out zeros in Pe.                                           */
+  /*-----------------------------------------------------------------*/
+
+  lower = csr_data->rowptr[0];
+  nz_ptr = 0;
+  for (i = 0; i < Pe->outvec_leng; i++) {
+    for (j = lower; j < csr_data->rowptr[i+1]; j++) {
+      if (csr_data->values[j] != 0.0) nz_ptr++;
     }
-  } 
-  ML_MSR2CSR(csr_data, Pe->outvec_leng, &Ncols);
+    lower = csr_data->rowptr[i+1];
+    csr_data->rowptr[i+1] = nz_ptr;
+  }
+  nz_ptr = 0;
+  for (i = 0; i < lower; i++) {
+    if (csr_data->values[i] != 0.) {
+      csr_data->values[nz_ptr] = csr_data->values[i];
+      csr_data->columns[nz_ptr] = csr_data->columns[i];
+      nz_ptr++;
+    }
+  }
+
   Pe->getrow->external = CSR_getrows;
   Pe->getrow->internal = NULL;
   Pe->getrow->ML_id    = ML_EXTERNAL;
@@ -958,7 +976,7 @@ int main(int argc, char *argv[])
          printf("unknown coarse grid solver %s\n",context->coarse_solve);
          exit(1);
    }
-		
+#endif		
    ML_Gen_Solver(ml_edges, ML_MGV, N_levels-1, coarsest_level); 
    AZ_defaults(options, params);
 	
@@ -1015,7 +1033,7 @@ int main(int argc, char *argv[])
    if (fp != NULL) {
       fclose(fp);
       if (proc_config[AZ_node]== 0) printf("reading initial guess from file\n");
-      AZ_input_msr_matrix("initguessfile", global_node_inds, &xxx, &garbage, Nlocal_nodes, 
+      AZ_input_msr_matrix("initguessfile", global_edge_inds, &xxx, &garbage, Nlocal_edges, 
                           proc_config);
       options[AZ_conv] = AZ_expected_values;
    }
@@ -1055,9 +1073,12 @@ int main(int argc, char *argv[])
       options[AZ_output] = 1;
       dtemp = sqrt(ML_gdot(Nlocal_nodes, xxx, xxx, ml_edges->comm));
       printf("norm of x_0 = %e\n",dtemp);
+
+      /*
       ML_Operator_Apply(Tmat, Tmat->invec_leng, xxx, Tmat->outvec_leng,rhs);
       dtemp = sqrt(ML_gdot(Nlocal_edges, rhs, rhs, ml_edges->comm));
       printf("norm of T x_0 = %e\n",dtemp);
+      */
       /*
       for (i = 0; i < Nlocal_edges; i++) 
 	printf("x(%d)=%10.5e;\n",global_node_inds[i]+1,xxx[reordered_glob_nodes[i]]);
@@ -1068,12 +1089,11 @@ int main(int argc, char *argv[])
 			ml_edges->Amat[N_levels-1].outvec_leng,rhs);
       */
 
-      ML_Operator_Apply(Tmat_trans, Tmat_trans->invec_leng, rhs,
-			Tmat_trans->outvec_leng,xxx);
-      dtemp = sqrt(ML_gdot(Tmat_trans->outvec_leng, xxx, xxx, ml_edges->comm));
+      ML_Operator_Apply(Tmat_trans, Tmat_trans->invec_leng, xxx,
+			Tmat_trans->outvec_leng,rhs);
+      dtemp = sqrt(ML_gdot(Tmat_trans->outvec_leng, rhs, rhs, ml_edges->comm));
       printf("norm of T^t x_0 = %e\n",dtemp);
 
-      sleep(proc_config[AZ_node]*10);
       /*
       for (i = 0; i < Tmat_trans->invec_leng; i++) 
 	printf("x(%d)=%10.5e; local ind = %d, %d\n",global_edge_inds[i]+1,rhs[reordered_glob_edges[i]],i,proc_config[AZ_node]);
@@ -1095,6 +1115,7 @@ int main(int argc, char *argv[])
      
       printf("the norm is %e\n",sqrt(AZ_gdot(Nlocal_edges, xxx, xxx, proc_config)));
       */
+
 
       AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat, Pmat, scaling); 
       options[AZ_pre_calc] = AZ_reuse;
@@ -1957,7 +1978,8 @@ void ML_find_local_indices(int N_update, int bindx[], int update[],
 /* by row.                                                              */
 /*----------------------------------------------------------------------*/
 
-int ML_storebyrow_2_storebycolumn(ML_Operator *A, ML_Operator *Atrans) {
+
+int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans) {
 
 
   ML_Operator *eye1, *eye2;
@@ -1973,6 +1995,35 @@ int ML_storebyrow_2_storebycolumn(ML_Operator *A, ML_Operator *Atrans) {
 			ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
   ML_Operator_Set_Getrow(eye2, ML_EXTERNAL, A->invec_leng, eye_getrows);
   ML_2matmult(A, eye1, Atrans);
+
+  /*
+  if (A->getrow->use_loc_glob_map == ML_YES) 
+     pr_error("ML_Operator_ColPartition2RowPartition: Matrix already has local column indices mapped to global indices\n");
+  if (A->getrow->pre_comm != NULL) 
+     pr_error("ML_Operator_ColPartition2RowPartiion: Matrix has a pre-communication structure?\n");
+
+  ML_create_unique_col_id(A->invec_leng, &(A->getrow->loc_glob_map),
+                           NULL, &max_per_proc, A->comm);
+
+  if (A->getrow->post_comm != NULL)
+      ML_exchange_rows( A, &Acomm, A->getrow->post_comm);
+  else Acomm = A;
+
+  ML_back_to_csrlocal(Acomm, Atrans, max_per_proc);
+
+  ML_free(A->getrow->loc_glob_map); A->getrow->loc_glob_map = NULL;
+
+  A->getrow->use_loc_glob_map = ML_NO;
+
+  if (A->getrow->post_comm != NULL) {
+      tptr = Acomm;
+      while ( (tptr!= NULL) && (tptr->sub_matrix != A))
+         tptr = tptr->sub_matrix;
+      if (tptr != NULL) tptr->sub_matrix = NULL;
+      ML_RECUR_CSR_MSRdata_Destroy(Acomm);
+      ML_Operator_Destroy(Acomm);
+   }
+  */
 
   return 1;
 }
@@ -2022,6 +2073,6 @@ int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans) {
 
   temp = ML_Operator_Create(A->comm);
   ML_Operator_Transpose(A, temp);
-  ML_storebyrow_2_storebycolumn(temp, Atrans);
+  ML_Operator_ColPartition2RowPartition(temp, Atrans);
   return 1;
 }
