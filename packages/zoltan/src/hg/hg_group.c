@@ -297,7 +297,7 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int limit)
      size[i] = -(hg->hindex[i+1]-hg->hindex[i]);
   for (i=0; i<hg->nEdge; i++)
      sorted[i] = i;
-  quicksort_dec_float_int(sorted,hg->ewgt,size,0,hg->nEdge-1);
+  quicksort_pointer_dec_float_int(sorted,hg->ewgt,size,0,hg->nEdge-1);
   ZOLTAN_FREE ((void **) &size);
 
   /* Match hyperedges along decreasing weight */

@@ -152,7 +152,7 @@ int Zoltan_HG_HPart_Lib (
     }
     for (i=0; i<hg->nVtx; i++)
       LevelMap[i]=0 ;
-  
+
     /* Construct coarse hypergraph and LevelMap */
     ierr = Zoltan_HG_Coarsening(zz, hg,pack,&c_hg,LevelMap);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)

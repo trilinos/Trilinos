@@ -217,8 +217,11 @@ int Zoltan_HG_Local (ZZ *, HGraph *, int, Partition, HGPartParams *);
 ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *);
 
 /* Sorting */
-void quicksort_dec_float_int (int *, float*, int *, int, int);
-void quicksort_dec_float     (int *, float*, int, int);
+void quicksort_pointer_dec_float_int (int*, float*, int*, int, int);
+void quicksort_pointer_dec_float     (int*, float*, int, int);
+void quicksort_pointer_inc_int_int   (int*, int*, int*, int, int);
+void quicksort_list_inc_int          (int*, int, int);
+void quicksort_pointer_inc_int_mult  (int *, int, int, int*, int*);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -284,7 +284,7 @@ static int matching_grm (ZZ *zz, Graph *g, Matching match, int limit)
     for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
       vertex[j] = i;
 
-  quicksort_dec_float (sorted,g->ewgt,0,g->nindex[g->nVtx]-1);
+  quicksort_pointer_dec_float (sorted,g->ewgt,0,g->nindex[g->nVtx]-1);
 
   for (i=0; i<g->nindex[g->nVtx] && size<limit; i++)
   { vertex1 = vertex[sorted[i]];
