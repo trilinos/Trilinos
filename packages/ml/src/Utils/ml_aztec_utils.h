@@ -10,14 +10,16 @@
 #ifndef __MLAZUTILS__
 #define __MLAZUTILS__
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifdef AZTEC
-#ifdef ML_MPI
+#if defined(ML_MPI) && !defined(AZ_MPI)
 #define AZ_MPI
 #endif
+
 #define AZ_ONLY_PRECONDITIONER  -7778
 
 #include "az_aztec.h"
