@@ -20,7 +20,7 @@ class Fill {
 		  Epetra_Import & Importer,
 		  Epetra_Comm &Comm);
 
-  void fillMatrix(Epetra_Vector *solnVector, Epetra_Vector *rhsVector, 
+  void fillMatrix(const Epetra_Vector *solnVector, Epetra_Vector *rhsVector, 
 		  Epetra_RowMatrix *matrix);
 
  public:
