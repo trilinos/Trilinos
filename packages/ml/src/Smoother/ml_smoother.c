@@ -7030,6 +7030,7 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
                   exit(1);
                }
             }
+	    tdiag[i] = 0.;
             for (j = 0; j < nn; j++) 
                if (cols[j] == i) tdiag[i] = vals[j];
 	    if (tdiag[i] == 0.) tdiag[i] = 1.;
