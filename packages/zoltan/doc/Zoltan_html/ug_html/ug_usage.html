@@ -99,6 +99,23 @@ an example application <i><a href="../dev_html/dev_driver.html">zdrive</a></i>
 in which global IDs are integers and local IDs are local array indices.
 One may choose not to use local ids at all, in which case <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>
 may be set to zero.
+<p>Some Zoltan routines (e.g., 
+<a href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>
+and 
+<a href="ug_interface_mig.html#Zoltan_Compute_Destinations"><b>Zoltan_Compute_Destinations</b></a>)
+allocate arrays of type <b>ZOLTAN_ID_PTR</b> and return them to the application.
+Others (e.g., <b>Zoltan_Order</b> and 
+<a href="ug_util_dd.html#DD_Find"><b>Zoltan_DD_Find</b></a>) require
+the application to allocate memory for IDs.  Memory for IDs can be allocated
+as follows:
+<blockquote><tt>
+  ZOLTAN_ID_PTR gids;<br>
+  int num_gids, int num_gid_entries;<br>
+  gids = (ZOLTAN_ID_PTR) <a href="ug_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>(num_gids * num_gid_entries * sizeof(ZOLTAN_ID_TYPE);<br>
+</tt></blockquote>
+The system call <i>malloc</i> may be used instead of 
+<a href="ug_util_mem.html#Zoltan_Malloc"><b>ZOLTAN_MALLOC</b></a>.
+
 <h3>
 <a NAME="Building the Library"></a>Building the Zoltan Library</h3>
 The Zoltan library is implemented in ANSI C and can be compiled with any
