@@ -48,6 +48,9 @@ static char *cvs_rcbc_id = "$Id$";
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
 
+#define RCB_DEFAULT_OVERALLOC 1.0
+#define RCB_DEFAULT_REUSE FALSE
+
 /*  RCB_CHECK = 0  No consistency check on input or results */
 /*  RCB_CHECK = 1  Check input weights and final results for consistency */
 int RCB_CHECK = 1;
@@ -179,12 +182,19 @@ void lb_rcb(
     /* 
      *  No application-specified parameters; use defaults.
      */
-    overalloc = 1.0;
-    reuse = FALSE;
+    overalloc = RCB_DEFAULT_OVERALLOC;
+    reuse = RCB_DEFAULT_REUSE;
   }
   else {
-    overalloc = lb->Params[0];
-    reuse = lb->Params[1];
+    if (lb->Params[0] == LB_PARAMS_INIT_VALUE)
+      overalloc = RCB_DEFAULT_OVERALLOC;
+    else 
+      overalloc = lb->Params[0];
+
+    if (lb->Params[1] == LB_PARAMS_INIT_VALUE)
+      reuse = RCB_DEFAULT_REUSE;
+    else
+      reuse = lb->Params[1];
   }
   
   /* local copies of calling parameters */
