@@ -17,7 +17,7 @@ void exShowPoints(float *pts, int n, int *ids);
 
 void exShowError(int val, char *s, int me);
 int exGlobalSuccess(int rc, int nprocs, int me, int verbose);
-int exPrintGlobalResult(char *s, int nprocs, int me,
+void exPrintGlobalResult(char *s, int nprocs, int me,
   int begin, int import, int ex, int change);
 
 int exGetNumberOfAssignedObjects(void *userDefinedData, int *err);

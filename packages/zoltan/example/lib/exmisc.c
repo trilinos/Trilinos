@@ -62,7 +62,7 @@ int exGlobalSuccess(int rc, int nprocs, int me, int verbose)
   free(vals);
   return fail;
 }
-int exPrintGlobalResult(char *s, int nprocs, int me,
+void exPrintGlobalResult(char *s, int nprocs, int me,
               int begin, int import, int export, int change)
 {
   int i;
