@@ -711,7 +711,7 @@ static int LB_ParMetis_Jostle(
       }
       /* Convert weights to integers between 1 and 100 */
       for (i=0; i<(lb->Obj_Weight_Dim)*num_obj; i++){
-        vwgt[i] = ceil(float_vwgt[i]*100/max_wgt);
+        vwgt[i] = (int) ceil(float_vwgt[i]*100/max_wgt);
       }
       LB_FREE(&float_vwgt);
     }

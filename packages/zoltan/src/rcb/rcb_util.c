@@ -97,7 +97,7 @@ int i, ierr = 0;
     LB_RCB_Free_Structure(lb);
     return(ierr);
   }
-  *max_obj = 1.5 * *num_obj + 1;
+  *max_obj = (int)(1.5 * *num_obj) + 1;
   rcb->Dots = (struct rcb_dot *) LB_MALLOC((*max_obj)*sizeof(struct rcb_dot));
   if (rcb->Dots == NULL) {
     fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",

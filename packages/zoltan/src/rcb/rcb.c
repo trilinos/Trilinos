@@ -515,7 +515,7 @@ static int rcb(
 
     if (dotnew > dotmax) {
       allocflag = 1;
-      dotmax = overalloc * dotnew;
+      dotmax = (int) (overalloc * dotnew);
       if (dotmax < dotnew) dotmax = dotnew;
       dotpt = (struct rcb_dot *) 
 	LB_REALLOC(dotpt,(unsigned) dotmax * sizeof(struct rcb_dot));

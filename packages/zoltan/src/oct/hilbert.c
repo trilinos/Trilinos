@@ -275,8 +275,8 @@ void LB_fhsfc2d(
   const double c0 = ( coord[0] <= 0 ) ? 0 : imax * coord[0] ;
   const double c1 = ( coord[1] <= 0 ) ? 0 : imax * coord[1] ;
   unsigned c[2] ;
-  c[0] = ( imax < c0 ) ? imax : c0 ;
-  c[1] = ( imax < c1 ) ? imax : c1 ;
+  c[0] = (unsigned) (( imax < c0 ) ? imax : c0 );
+  c[1] = (unsigned) (( imax < c1 ) ? imax : c1 );
   LB_hsfc2d( c , nkey , key );
 }
 
@@ -290,8 +290,8 @@ void LB_fhsfc3d(
   const double c1 = ( coord[1] <= 0 ) ? 0 : imax * coord[1] ;
   const double c2 = ( coord[2] <= 0 ) ? 0 : imax * coord[2] ;
   unsigned c[3] ;
-  c[0] = ( imax < c0 ) ? imax : c0 ;
-  c[1] = ( imax < c1 ) ? imax : c1 ;
-  c[2] = ( imax < c2 ) ? imax : c2 ;
+  c[0] = (unsigned) (( imax < c0 ) ? imax : c0 );
+  c[1] = (unsigned) (( imax < c1 ) ? imax : c1 );
+  c[2] = (unsigned) (( imax < c2 ) ? imax : c2 );
   LB_hsfc3d( c , nkey , key );
 }

@@ -90,7 +90,7 @@ void LB_dfs_partition(LB *lb, int *counter, float *c1) {
   
   /* Initialize static vars */
   optcost=globalcost/lb->Num_Proc;               /* Optimal partition size */
-  partition=prefcost/optcost;                /* Start work on this partition */
+  partition=(int)(prefcost/optcost);         /* Start work on this partition */
   if (partition==lb->Num_Proc)
     partition=lb->Num_Proc-1;
 
