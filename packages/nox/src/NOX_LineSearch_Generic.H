@@ -70,21 +70,21 @@ public:
   //! Reset parameters
   virtual bool reset(NOX::Parameter::List& params) = 0;
   
-  //! Perform a line search from the old solution along dirction dir. 
+  //! Perform a line search
   /*!
-
-    Our variables denote the following:
+    Let
     
-    - \f$x\f$ results from applying Abstract::Group::getX() to \c grp
-    - \f$\alpha\f$ is \c step,
-    - \f$\hat x\f$ results from applying (Solver::Generic::getPreviousSolutionGroup()).getX() to s
-    - \f$d\f$ denotes \c dir.
+    - \f$x_{\rm new}\f$ denotes the new solution to be calculated (corresponding to \c grp)
+    - \f$\lambda\f$ denotes the step to be calculated (\c step), 
+    - \f$d\f$ denotes the search direction (\c dir).
+    - \f$x_{\rm old}\f$ denotes the previous solution (i.e., the result of s.getPreviousSolutionGroup().getX())
 
-    The goal is to compute a step, \f$\alpha\f$ such that
+    In the end, we should have computed \f$ \lambda  \f$ and updated \c grp so that
     \f[
-    x = \hat x + \alpha d
+    x_{\rm new} = x_{\rm old} + \lambda d.
     \f]
-    satisfies the conditions of the line search.
+
+    Ideally, \f$ \|F(x_{\rm new})\| < \|F(x_{\rm old})\| \f$.
    */
   virtual bool compute(NOX::Abstract::Group& grp, 
 		       double& step,
