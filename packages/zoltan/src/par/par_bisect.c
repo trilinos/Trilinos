@@ -170,6 +170,8 @@ int Zoltan_RB_find_bisector(
 
 #ifdef DEBUG_BISECT
   printf("[%2d] Debug: Entering Zoltan_find_bisection, nwgts=%2d, fraclo[0] = %lf \n", proc, nwgts, fraclo[0]);
+  printf("[%2d] Debug: Tflops_Special=%1d, num_procs=%1d, num_parts=%1d\n",
+    proc, Tflops_Special, num_procs, num_parts);
   printf("[%2d] Debug: %d dots on this proc\n", proc, dotnum);
   printf("[%2d] Debug: Coordinates = (", proc);
   for (i=0; i<dotnum; i++)
@@ -180,6 +182,28 @@ int Zoltan_RB_find_bisector(
   printf("[%2d] Debug: total weight = (%lf %lf)\n", proc, 
     weight[0], weight[1]);
 #endif
+
+
+  /* Initialize scale vectors. */
+  scale = (double *) ZOLTAN_MALLOC(3*nwgts*sizeof(double));
+  if (!scale){
+    ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
+    ierr = ZOLTAN_MEMERR;
+    goto End;
+  }
+  scalelo = &scale[nwgts];
+  scalehi = &scale[2*nwgts];
+  for (j=0; j<nwgts; j++){
+    /* Make sure we avoid divide by zero. */
+    temp = fraclo[j];
+    if (temp < FRACTION_SMALL)           temp = FRACTION_SMALL;
+    else if (temp > 1. - FRACTION_SMALL) temp = 1. - FRACTION_SMALL;
+    /* Scale to make weight-norm larger where the tolerance is low. */
+    /* Scale so weights are unchanged when Tol=1.1 (arbitrary choice) */
+    scale[j] = 0.1/(zz->LB.Imbalance_Tol[j]-ALMOST_ONE);
+    scalelo[j] = scale[j]/temp;
+    scalehi[j] = scale[j]/(1.0-temp);
+  }
 
   /* Check fraclo for incorrect and  trivial cases. */
   k = 0;
@@ -197,7 +221,7 @@ int Zoltan_RB_find_bisector(
     }
   }
 
-  /* No early exit if Tflops_Special is set */
+  /* Check for early exit (unless Tflops_Special is set) */
   if (!Tflops_Special){
     if (k == -nwgts){
       /* Put all dots in upper half */
@@ -224,28 +248,6 @@ int Zoltan_RB_find_bisector(
       goto End;
     }
   }
-
-  /* Normal case: Initialize scale vectors and go to main section. */
-  scale = (double *) ZOLTAN_MALLOC(3*nwgts*sizeof(double));
-  if (!scale){
-    ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-    ierr = ZOLTAN_MEMERR;
-    goto End;
-  }
-  scalelo = &scale[nwgts];
-  scalehi = &scale[2*nwgts];
-  for (j=0; j<nwgts; j++){
-    /* Make sure we avoid divide by zero. */
-    temp = fraclo[j];
-    if (temp < FRACTION_SMALL)           temp = FRACTION_SMALL;
-    else if (temp > 1. - FRACTION_SMALL) temp = 1. - FRACTION_SMALL;
-    /* Scale to make weight-norm larger where the tolerance is low. */
-    /* Scale so weights are unchanged when Tol=1.1 (arbitrary choice) */
-    scale[j] = 0.1/(zz->LB.Imbalance_Tol[j]-ALMOST_ONE);
-    scalelo[j] = scale[j]/temp;
-    scalehi[j] = scale[j]/(1.0-temp);
-  }
-
   if (dotnum > 0) {
     /* check for illegal NULL pointers */
     if ((!dots) || (!dotmark) || (!dotlist)){
@@ -425,17 +427,6 @@ int Zoltan_RB_find_bisector(
   for (j=0; j<nwgts; j++)
     weighthi[j] = weightlo[j] = 0.0;
 
-  /* Set tolerance for each cut to min(imbal_tol)/log(p) */
-  /* The imbalance tol vector is used implicitly through scaling. */
-  /* EBEB Later we should implement dynamic balance tolerances. */
-  temp = zz->LB.Imbalance_Tol[0];
-  for (j=1; j<nwgts; j++)
-    if (zz->LB.Imbalance_Tol[j]<temp)
-      temp = zz->LB.Imbalance_Tol[j];
-  eps = (temp-1.) / (log(num_parts)/log(2.0))
-        * 0.5*Zoltan_norm(mcnorm, nwgts, wtsum, scale);
-
-  /* bisector iteration */
   /* zoom in on bisector until correct # of dots in each half of partition */
   /* as each iteration of bisector-loop begins, require:
           all non-active dots are marked with 0/1 in dotmark
@@ -452,6 +443,22 @@ int Zoltan_RB_find_bisector(
                                              should be 0 for
                                              serial partitioning. */
 
+#ifdef DEBUG_BISECT
+  printf("[%2d] Debug: Tflops_Special=%1d, num_procs=%1d, num_parts=%1d\n",
+    proc, Tflops_Special, num_procs, num_parts);
+#endif
+
+  /* Set tolerance for each cut to min(imbal_tol)/log(p) */
+  /* The imbalance tol vector is used implicitly through scaling. */
+  /* EBEB Later we should implement dynamic balance tolerances. */
+    temp = zz->LB.Imbalance_Tol[0];
+    for (j=1; j<nwgts; j++)
+      if (zz->LB.Imbalance_Tol[j]<temp)
+        temp = zz->LB.Imbalance_Tol[j];
+    eps = (temp-1.) / (log(num_parts)/log(2.0))
+          * 0.5*Zoltan_norm(mcnorm, nwgts, wtsum, scale);
+
+    /* bisector iteration */
     iteration = 0;
     while (iteration++ < MAX_BISECT_ITER){
 
@@ -1020,8 +1027,14 @@ static double eval_cut_quality(
   double *weighthi,   /* Sum of weights in upper part. */
   int norm)           /* Type of norm (1,2,3) */
 {
-  double tmp, temp[MAX_BISECT_WGTS];
+  double temp[MAX_BISECT_WGTS];
   int i;
+  static char *yo = "eval_cut_quality";
+
+  if ((!scalelo) || (!scalehi))
+    ZOLTAN_PRINT_ERROR(-1, yo, "Input scalelo/hi is NULL");
+  if ((!weightlo) || (!weighthi))
+    ZOLTAN_PRINT_ERROR(-1, yo, "Input weightlo/hi is NULL");
 
   for (i=0; i<nwgts; i++)
      temp[i] = MAX(scalelo[i]*weightlo[i], scalehi[i]*weighthi[i]);
