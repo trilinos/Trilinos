@@ -93,6 +93,7 @@ int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
     }
   }
 
+  return 0;
 }
 
 #endif //ifdef ML_WITH_EPETRA
