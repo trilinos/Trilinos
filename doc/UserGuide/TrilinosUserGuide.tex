@@ -146,7 +146,8 @@ Optional parameters. \\ \hline
 
 This chapter covers some of the basics that a user will need to know when 
 beginning to use Trilinos.  Specifically, we address how to obtain, 
-configure, build and test Trilinos.
+configure, build, install and test Trilinos.  We will also discuss how to
+link to Trilinos libraries.
 Although this user guide is current at the time of printing, the 
 Trilinos Project is under active development.  For the most up-to-date information, 
 please visit the online Trilinos Home Page.  The most accurate and complete information
@@ -169,7 +170,8 @@ At the website a user can:
 
 \subsection{Obtaining a Copy of Trilinos}
 
-Trilinos can be obtained in two different ways.  Users most commonly 
+Trilinos can be obtained in two different ways.  Users outside of Sandia
+most commonly 
 download Trilinos in the form of a tarball from the Trilinos website at 
 \newline \InlineDirectory{http://software.sandia.gov/trilinos/downloads.html}.
 
@@ -225,12 +227,46 @@ complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
 \label{subsect:TestHarness}
 
 Trilinos contains a script that can be used for the purpose of 
-verification testing.  This script is located 
-in \InlineDirectory{Trilinos/testharness/checkin-test-harness}.  The script 
-provides an easy way to run a set of tests for the packages that have been 
-included in a build (not all packages support testing).  
-Instructions for running the script can be found within the script itself.
+verification testing. Unfortunately, the process is currently tailored to 
+fit the needs of developers.  The Trilinos team is in the process of
+creating a verification process that is more suitable for users.  For 
+instructions on how to use the current process, go to 
 
+\InlineDirectory{http://software.sandia.gov/trilinos/developer/test\_harness.html} 
+
+and look at the section entitled ``Running the Test Harness Locally''.
+
+A simple alternative that provides a quick santity check is to execute one
+or more Trilinos tests manually.  For example, if Epetra was one of the 
+packages that was configured and built in the LINUX\_MPI build tree, the 
+Epetra tests were not disabled through the use of configure options, and
+lam mpi is installed, perform 
+the following series of steps to run the CrsMatrix tests:
+
+\begin{verbatim}
+	cd Trilinos/LINUX_MPI/packages/epetra/test/CrsMatrix
+	lamboot
+	mpirun -np 3 ./CrsMatrix_test.exe
+	echo $status
+	lamhalt
+\end{verbatim}
+
+For a serial build, the process is shorter:
+
+\begin{verbatim}
+	cd Trilinos/LINUX_SERIAL/packages/epetra/test/CrsMatrix
+	./CrsMatrix_test.exe
+	echo $status
+\end{verbatim}
+
+In either case, the status returned will be zero if the tests passed, nonzero
+if the tests failed.  Epetra has many other tests in subdirectories that are 
+peers to the CrsMatrix directory listed above.  There are also examples that
+are located in the example 
+directory that is a peer to the test directory.  Most other packages have a 
+number of tests and or examples that can be run using the same basic process. 
+
+ 
 \section{Ongoing Use and Support}
 \label{Section:UseSupport}
 In this section we discuss how to report issues (bugs) and how to sign up
