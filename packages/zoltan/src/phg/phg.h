@@ -90,7 +90,7 @@ typedef struct Zoltan_PHGraph ZPHG;
 struct PHGPartParamsStruct;  /* Forward declaration */
 
 typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, HGraph*, Matching);
-typedef int ZOLTAN_PHG_COARSEPARTITION_FN(ZZ*, HGraph*, int, Partition,
+typedef int ZOLTAN_PHG_COARSEPARTITION_FN(ZZ*, HGraph*, int, float *, Partition,
                                           struct PHGPartParamsStruct*);
 typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, HGraph*, int, Partition,
                                      struct PHGPartParamsStruct*, float);
@@ -102,6 +102,9 @@ typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, HGraph*, int, Partition,
 /******************************************/
 struct PHGPartParamsStruct {
   float bal_tol;                 /* Balance tolerance in % of average */
+  float *part_sizes;             /* Pointer to part_sizes array passed to
+                                    Zoltan_PHG; lists part_sizes (%ages) 
+                                    for all requested partitions. */
   int kway;                      /* 1 -> direct kway, 0->recursive bisection */
   int redl;                      /* Reduction limit (constant). */
   char redm_str[MAX_PARAM_STRING_LEN]; /* Reduction method string. */
@@ -163,7 +166,7 @@ int Zoltan_PHG_Coarsening(ZZ*, HGraph*, Matching, HGraph*, int*, int*, int**);
 /* Coarse Partitioning functions */
 /*********************************/
 extern int Zoltan_PHG_Gather_To_All_Procs(ZZ*, HGraph*, PHGComm*, HGraph**);
-extern int Zoltan_PHG_CoarsePartition(ZZ*, HGraph*, int, Partition, 
+extern int Zoltan_PHG_CoarsePartition(ZZ*, HGraph*, int, float *, Partition, 
                                       PHGPartParams*);
 ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(PHGPartParams*,
                                                                  int*);
@@ -190,8 +193,8 @@ extern int Zoltan_PHG_rdivide (int,  int, Partition, ZZ *, HGraph *,
                                PHGPartParams *, int);
     
 extern int Zoltan_PHG_Set_Part_Options(ZZ*, PHGPartParams*);
-extern int Zoltan_PHG_Partition(ZZ*, HGraph*, int, Partition, PHGPartParams*, 
-                                int);
+extern int Zoltan_PHG_Partition(ZZ*, HGraph*, int, float *, Partition, 
+                                PHGPartParams*, int);
 extern double Zoltan_PHG_hcut_size_total(PHGComm*, HGraph*, Partition, int);
 extern double Zoltan_PHG_hcut_size_links(PHGComm*, HGraph*, Partition, int);    
 extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, int, Partition);

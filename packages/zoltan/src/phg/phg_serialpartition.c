@@ -52,7 +52,7 @@ static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] =
                                        &coarse_part_rbfs,
                                        &coarse_part_rbfsh};
 
-static int local_coarse_partitioner(ZZ *, HGraph *, int, Partition,
+static int local_coarse_partitioner(ZZ *, HGraph *, int, float *, Partition,
   PHGPartParams *, ZOLTAN_PHG_COARSEPARTITION_FN *);
 
 static void pick_best(ZZ *, PHGComm *, HGraph *, int, int *);
@@ -101,6 +101,8 @@ int Zoltan_PHG_CoarsePartition(
   ZZ *zz, 
   HGraph *phg,        /* Input:  coarse hypergraph -- distributed! */
   int numPart,         /* Input:  number of partitions to generate. */
+  float *part_sizes,   /* Input:  array of size numPart listing target sizes
+                                  (% of work) for the partitions */
   Partition part,      /* Output: array of partition assignments.   */
   PHGPartParams *hgp   /* Input:  parameters to use.  */
 )
@@ -136,7 +138,7 @@ int i, si;
   }
   else if (hgp->LocalCoarsePartition) {
     /* Apply local partitioner to each column */
-    ierr = local_coarse_partitioner(zz, phg, numPart, part, hgp,
+    ierr = local_coarse_partitioner(zz, phg, numPart, part_sizes, part, hgp,
                                     hgp->CoarsePartition);
   }
   else {
@@ -164,7 +166,7 @@ int i, si;
 
       /* Only one processor; no gather needed. */
 
-      ierr = CoarsePartition(zz, phg, numPart, part, hgp);
+      ierr = CoarsePartition(zz, phg, numPart, part_sizes, part, hgp);
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                            "Error returned from CoarsePartition.");
@@ -216,7 +218,7 @@ int i, si;
         /* KDDKDD For now, want all processors to give same partition, so
          * KDDKDD initialize the seed identically on all.
          */
-        ierr = CoarsePartition(zz, shg, numPart, spart, hgp);
+        ierr = CoarsePartition(zz, shg, numPart, part_sizes, spart, hgp);
         if (ierr < 0) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                              "Error returned from CoarsePartition.");
@@ -250,7 +252,8 @@ End:
 static int local_coarse_partitioner(
   ZZ *zz,
   HGraph *hg,
-  int p,
+  int numPart,
+  float *part_sizes,
   Partition part,
   PHGPartParams *hgp,
   ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition
@@ -272,7 +275,7 @@ int rootnpins, rootrank;
                        &rootnpins, &rootrank);
 
   if (hgc->myProc_y==rootrank)   /* only root of each column does this */
-    err = CoarsePartition(zz, hg, p, part, hgp); 
+    err = CoarsePartition(zz, hg, numPart, part_sizes, part, hgp); 
 
   MPI_Bcast(&err, 1, MPI_INT, rootrank, hgc->col_comm);
   if (!err)
@@ -304,6 +307,7 @@ static int seq_part (
   HGraph *hg,         /* the hypergraph, containing vertex weights */
   int *order,         /* the ordering of the vertices */
   int p,              /* desired number of partitions */
+  float *tpweights,   /* Target partition sizes */
   Partition part,     /* Output: partition numbers */
   PHGPartParams *hgp  /* misc hypergraph parameters */
 )
@@ -311,7 +315,6 @@ static int seq_part (
   int i, j, pnumber;
   int vwgtdim = hg->VtxWeightDim;
   double weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
-  float *tpweights=NULL; /* EBEB Get target partition weights */
   float tpsum = 0.0;
 
   /* Sum up all the vertex weights. */
@@ -373,12 +376,13 @@ static int coarse_part_lin (
   ZZ *zz, 
   HGraph *hg, 
   int p, 
+  float *part_sizes,
   Partition part, 
   PHGPartParams *hgp
 )
 {
-    return seq_part(zz, hg, NULL, p, part, hgp);  /* Call sequence partitioning 
-                                                     with no order array. */
+  /* Call sequence partitioning with no order array. */
+  return seq_part(zz, hg, NULL, p, part_sizes, part, hgp);  
 }
 
 
@@ -389,6 +393,7 @@ static int coarse_part_ran (
   ZZ *zz,
   HGraph *hg,
   int p,
+  float *part_sizes,
   Partition part,
   PHGPartParams *hgp
 )
@@ -408,7 +413,7 @@ static int coarse_part_ran (
     Zoltan_HG_Rand_Perm_Int (order, hg->nVtx);
         
     /* Call sequence partitioning with random order array. */
-    err = seq_part (zz, hg, order, p, part, hgp);
+    err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
 
     ZOLTAN_FREE ((void**) &order);
     return err;
@@ -426,6 +431,7 @@ static int coarse_part_rip (
   ZZ *zz,
   HGraph *hg,
   int p,
+  float *part_sizes,
   Partition part,
   PHGPartParams *hgp
 )
@@ -466,7 +472,7 @@ static int coarse_part_rip (
     Zoltan_quicksort_pointer_dec_float(order, iprod, 0, hg->nVtx-1);
 
     /* Call sequence partitioning. */
-    err = seq_part (zz, hg, order, p, part, hgp);
+    err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
 
     ZOLTAN_FREE ((void**) &order);
     ZOLTAN_FREE ((void**) &ran);
@@ -486,6 +492,8 @@ static int bfs_order (
   int visit_mode,    /* Visit random (0), heavy (1), or smaller (2)
                          hyperedges first? */
   int p,	     /* Optional (input):  Number of partitions. */
+  float *part_sizes, /* Array of size p containing percentage of work to be 
+                        assigned  to each partition. */
   Partition part,    /* Optional (output): Partition array. */
   PHGPartParams *hgp /* Partitioning parameters. */
 )
@@ -697,6 +705,7 @@ static int coarse_part_bfs (
   ZZ *zz, 
   HGraph *hg, 
   int p, 
+  float *part_sizes,
   Partition part,
   PHGPartParams *hgp
 )
@@ -715,19 +724,19 @@ static int coarse_part_bfs (
      each time we begin a new connected component. */
   start = Zoltan_HG_Rand() % (hg->nVtx);
   for (i=0; i<2; i++) {
-    err = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
+    err = bfs_order(zz, hg, order, start, 0, 0, part_sizes, NULL, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
       goto End;
     start = order[hg->nVtx -1];
   }
 
   /* Compute BFS order */
-  err = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
+  err = bfs_order(zz, hg, order, start, 0, 0, part_sizes, NULL, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
 
   /* Call sequence partitioning with BFS order array. */
-  err = seq_part (zz, hg, order, p, part, hgp);
+  err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
 
 End:
   ZOLTAN_FREE ((void**) &order);
@@ -743,6 +752,7 @@ static int coarse_part_bfsh (
   ZZ *zz, 
   HGraph *hg, 
   int p, 
+  float *part_sizes,
   Partition part,
   PHGPartParams *hgp
 )
@@ -759,19 +769,19 @@ static int coarse_part_bfsh (
   /* Find pseudo-peripheral start vertex */
   start = Zoltan_HG_Rand() % (hg->nVtx);
   for (i=0; i<2; i++) {
-    err = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
+    err = bfs_order(zz, hg, order, start, 0, 0, part_sizes, NULL, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
       goto End;
     start = order[hg->nVtx -1];
   }
 
   /* Compute BFS order */
-  err = bfs_order(zz, hg, order, start, 1, 0, NULL, hgp);
+  err = bfs_order(zz, hg, order, start, 1, 0, part_sizes, NULL, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
 
   /* Call sequence partitioning with BFS order array. */
-  err = seq_part( zz, hg, order, p, part, hgp);
+  err = seq_part( zz, hg, order, p, part_sizes, part, hgp);
 
 End:
   ZOLTAN_FREE ((void**) &order);
@@ -788,6 +798,7 @@ static int coarse_part_rbfs (
   ZZ *zz,
   HGraph *hg,
   int p,
+  float *part_sizes,
   Partition part,
   PHGPartParams *hgp
 )
@@ -805,14 +816,14 @@ static int coarse_part_rbfs (
   /* Find pseudo-peripheral start vertex */
   start = Zoltan_HG_Rand() % (hg->nVtx);
   for (i=0; i<2; i++){
-    err = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
+    err = bfs_order(zz, hg, order, start, 0, 0, part_sizes, NULL, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
       goto End;
     start = order[hg->nVtx -1];
   }
 
   /* Call BFS and partition with restart. */
-  err = bfs_order(zz, hg, order, start, 0, p, part, hgp);
+  err = bfs_order(zz, hg, order, start, 0, p, part_sizes, part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
 
@@ -832,6 +843,7 @@ static int coarse_part_rbfsh (
   ZZ *zz,
   HGraph *hg,
   int p,
+  float *part_sizes,
   Partition part,
   PHGPartParams *hgp
 )
@@ -849,14 +861,14 @@ static int coarse_part_rbfsh (
   /* Find pseudo-peripheral start vertex */
   start = Zoltan_HG_Rand() % (hg->nVtx);
   for (i=0; i<2; i++) {
-    err = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
+    err = bfs_order(zz, hg, order, start, 0, 0, part_sizes, NULL, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
       goto End;
     start = order[hg->nVtx -1];
   }
 
   /* Call BFS and partition with restart. */
-  err = bfs_order(zz, hg, order, start, 1, p, part, hgp);
+  err = bfs_order(zz, hg, order, start, 1, p, part_sizes, part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
 
@@ -934,6 +946,8 @@ static int greedy_order (
   int start_vtx,	/* Start the ordering from this vertex. */
   int priority_mode,	/* Priority mode for selecting vertices */
   int p,		/* Optional (input):  Number of partitions. */
+  float *part_sizes,    /* Array of length p containing the percentages of
+                           work to be assigned to each partition. */
   Partition part,	/* Optional (output): Partition array. */
   PHGPartParams *hgp     /* Partitioning parameters. */
 )
@@ -1179,6 +1193,7 @@ static int coarse_part_greedy (
   ZZ *zz,
   HGraph *hg,
   int p,
+  float *part_sizes,
   Partition part,
   int pri_mode,
   PHGPartParams *hgp
@@ -1197,14 +1212,14 @@ static int coarse_part_greedy (
   /* Find pseudo-peripheral start vertex */
   start = Zoltan_HG_Rand() % (hg->nVtx);
   for (i=0; i<2; i++) {
-    err = bfs_order (zz, hg, order, start, 0, 0, NULL, hgp);
+    err = bfs_order (zz, hg, order, start, 0, 0, part_sizes, NULL, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
       goto End;
     start = order[hg->nVtx -1];
   }
 
   /* Call greedy_order. */
-  err = greedy_order(zz, hg, order, start, pri_mode, p, part, hgp);
+  err = greedy_order(zz, hg, order, start, pri_mode, p, part_sizes, part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
 
@@ -1218,34 +1233,34 @@ End:
 
 /*****************************************************************/
 /* Entry points for all the greedy methods. */
-static int coarse_part_gr0 (ZZ *zz, HGraph *hg, int p, Partition part,
-  PHGPartParams *hgp)
+static int coarse_part_gr0 (ZZ *zz, HGraph *hg, int p, float *part_sizes, 
+  Partition part, PHGPartParams *hgp)
 {
-  return coarse_part_greedy(zz, hg, p, part, 0, hgp);
+  return coarse_part_greedy(zz, hg, p, part_sizes, part, 0, hgp);
 }
 
-static int coarse_part_gr1 (ZZ *zz, HGraph *hg, int p, Partition part,
-  PHGPartParams *hgp)
+static int coarse_part_gr1 (ZZ *zz, HGraph *hg, int p, float *part_sizes, 
+  Partition part, PHGPartParams *hgp)
 {
-  return coarse_part_greedy(zz, hg, p, part, 1, hgp);
+  return coarse_part_greedy(zz, hg, p, part_sizes, part, 1, hgp);
 }
 
-static int coarse_part_gr2 (ZZ *zz, HGraph *hg, int p, Partition part,
-  PHGPartParams *hgp)
+static int coarse_part_gr2 (ZZ *zz, HGraph *hg, int p, float *part_sizes, 
+  Partition part, PHGPartParams *hgp)
 {
-  return coarse_part_greedy(zz, hg, p, part, 2, hgp);
+  return coarse_part_greedy(zz, hg, p, part_sizes, part, 2, hgp);
 }
 
-static int coarse_part_gr3 (ZZ *zz, HGraph *hg, int p, Partition part,
-  PHGPartParams *hgp)
+static int coarse_part_gr3 (ZZ *zz, HGraph *hg, int p, float *part_sizes, 
+  Partition part, PHGPartParams *hgp)
 {
-  return coarse_part_greedy(zz, hg, p, part, 3, hgp);
+  return coarse_part_greedy(zz, hg, p, part_sizes, part, 3, hgp);
 }
 
-static int coarse_part_gr4 (ZZ *zz, HGraph *hg, int p, Partition part,
-  PHGPartParams *hgp)
+static int coarse_part_gr4 (ZZ *zz, HGraph *hg, int p, float *part_sizes, 
+  Partition part, PHGPartParams *hgp)
 {
-  return coarse_part_greedy(zz, hg, p, part, 4, hgp);
+  return coarse_part_greedy(zz, hg, p, part_sizes, part, 4, hgp);
 }
 
 /*****************************************************************************/

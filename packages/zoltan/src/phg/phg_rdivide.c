@@ -25,6 +25,8 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
     Partition part;
     HGraph *new;
     PHGComm *hgc=hg->comm;
+    float tgpartsize[2];       /* Target partition sizes; dimension is 2 
+                                  because we are doing bisection */
     char *yo = "Zoltan_PHG_rdivide";
     
     pins[0] = lpins[0] = NULL; /* just precaution */
@@ -45,9 +47,14 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
 
     /* bipartition current hypergraph with appropriate split ratio */
     mid = (lo+hi)/2;
-    hg->ratio = (double) (mid-lo+1) / (double) (hi-lo+1);
+    tgpartsize[0] = tgpartsize[1] = 0.;
+    for (i = lo; i <= mid; i++) tgpartsize[0] += hgp->part_sizes[i-1];
+    for (i = lo; i <= hi; i++) tgpartsize[1] += hgp->part_sizes[i-1];
+    hg->ratio = (double) tgpartsize[0] / (double) tgpartsize[1];
+    tgpartsize[0] = hg->ratio;
+    tgpartsize[1] = 1. - tgpartsize[0];
     /*   hg->redl = 0;  */
-    err = Zoltan_PHG_Partition (zz, hg, 2, part, hgp, level);
+    err = Zoltan_PHG_Partition (zz, hg, 2, tgpartsize, part, hgp, level);
     if (err != ZOLTAN_OK) {
         ZOLTAN_FREE (&part);
         return err;

@@ -50,7 +50,7 @@ static PARAM_VARS PHG_params[] = {
 
 /* prototypes for static functions: */
 static int set_proc_distrib (MPI_Comm, int, int, PHGComm*);
-static int Zoltan_PHG_Initialize_Params (ZZ*, PHGPartParams*);
+static int Zoltan_PHG_Initialize_Params (ZZ*, float *, PHGPartParams*);
 static int Zoltan_PHG_Return_Lists (ZZ*, ZPHG*, Partition, int*,
  ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
 
@@ -95,7 +95,7 @@ int Zoltan_PHG(
     *imp_procs = *exp_procs = NULL;
     
     /* Initialize HG parameters. */
-    err = Zoltan_PHG_Initialize_Params (zz, &hgp);
+    err = Zoltan_PHG_Initialize_Params (zz, part_sizes, &hgp);
     if (err != ZOLTAN_OK)
         goto End;
     
@@ -129,7 +129,7 @@ int Zoltan_PHG(
     if (hgp.kway || zz->LB.Num_Global_Parts==2) { 
         /* call main V cycle routine */
         err = Zoltan_PHG_Partition(zz, &zoltan_hg->PHG, zz->LB.Num_Global_Parts,
-                                   output_parts, &hgp, 0);
+                                   hgp.part_sizes, output_parts, &hgp, 0);
         if (err != ZOLTAN_OK) {
             ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
             goto End;
@@ -206,6 +206,7 @@ void Zoltan_PHG_Free_Structure(ZZ *zz)
 
 static int Zoltan_PHG_Initialize_Params(
   ZZ *zz,   /* the Zoltan data structure */
+  float *part_sizes,
   PHGPartParams *hgp
 )
 {
@@ -254,6 +255,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->kway = 0;
   hgp->fm_loop_limit = 99;
   hgp->fm_max_neg_move = 250;  
+  hgp->part_sizes = part_sizes;
 
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,

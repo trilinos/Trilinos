@@ -121,10 +121,12 @@ int Zoltan_PHG_Partition (
     ZZ *zz,               /* Zoltan data structure */
     HGraph *hg,           /* Input hypergraph to be partitioned */
     int p,                /* Input:  number partitions to be generated */
+    float *part_sizes,    /* Input:  array of length p containing percentages
+                             of work to be assigned to each partition */
     Partition Parts,      /* Output:  partition #s; aligned with vtx arrays. */
     PHGPartParams *hgp,   /* Input:  parameters for hgraph partitioning. */
     int level
-    )
+)
 {
     VCycle  *vcycle=NULL, *del=NULL;
     int  i, err = ZOLTAN_OK, prevVcnt=2*hg->dist_x[hg->comm->nProc_x];
@@ -162,7 +164,7 @@ int Zoltan_PHG_Partition (
         
         
         /* Allocate and initialize Matching Array */
-        if (!(match = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
+        if (hg->nVtx && !(match = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
             ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory for Matching array");
             return ZOLTAN_MEMERR;
         }
@@ -213,7 +215,7 @@ int Zoltan_PHG_Partition (
 
     
     /****** Coarse Partitioning ******/
-    err = Zoltan_PHG_CoarsePartition (zz, hg, p, vcycle->part, hgp);
+    err = Zoltan_PHG_CoarsePartition (zz, hg, p, part_sizes, vcycle->part, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
         goto End;
 
