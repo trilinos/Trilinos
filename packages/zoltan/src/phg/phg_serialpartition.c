@@ -124,6 +124,13 @@ int *new_part = NULL;          /* Ptr to new partition vector. */
 float *bestvals = NULL;        /* Best cut values found so far */
 int worst, new_cand;
 float bal, worst_cut;
+static int timer_cpart=-1, timer_gather=-1;
+
+  if (hgp->use_timers > 1) {
+    if (timer_cpart < 0)
+      timer_cpart = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Partitioning");
+    ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
+  }
 
   /* take care of all special cases first */
 
@@ -199,10 +206,22 @@ float bal, worst_cut;
        * Gather parallel hypergraph phg to each processor, creating
        * serial hypergraph shg.
        */
+      if (hgp->use_timers > 1) {
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, phg->comm->Communicator);
+        if (timer_gather < 0)
+          timer_gather = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Gather");
+        ZOLTAN_TIMER_START(zz->ZTime, timer_gather, phg->comm->Communicator);
+      }
+
       ierr = Zoltan_PHG_Gather_To_All_Procs(zz, phg, &scomm, &shg);
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from gather.");
         goto End;
+      }
+
+      if (hgp->use_timers > 1) {
+        ZOLTAN_TIMER_STOP(zz->ZTime, timer_gather, phg->comm->Communicator);
+        ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
       }
 
     }
@@ -298,6 +317,8 @@ float bal, worst_cut;
   }
   
 End:
+  if (hgp->use_timers > 1) 
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, phg->comm->Communicator);
 
   return ierr;
 }

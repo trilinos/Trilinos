@@ -110,7 +110,9 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
         ++(lpins[part[hg->hvertex[j]]][i]);
         
   /* now compute global pin distribution */
-  MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
+  if (hg->nEdge)
+      MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, 
+                    hgc->row_comm);
   ZOLTAN_FREE (&lpins[0]);   /* we don't need lpins anymore */
     
   /* recursively divide in two parts and repartition hypergraph */
@@ -380,7 +382,9 @@ int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGra
         ++(lpins[part[hg->hvertex[j]]][i]);
         
   /* now compute global pin distribution */
-  MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
+  if (hg->nEdge)
+      MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, 
+                    hgc->row_comm);
   ZOLTAN_FREE (&lpins[0]);                        /* we don't need lpins */
     
   /* recursively divide in two parts and repartition hypergraph */

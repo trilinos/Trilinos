@@ -171,8 +171,7 @@ int Zoltan_PHG_Partition (
   char *yo = "Zoltan_PHG_Partition";
   static int timer_match = -1,    /* Timers for various stages */
              timer_coarse = -1,   /* Declared static so we can accumulate */
-             timer_cpart = -1,    /* times over calls to Zoltan_PHG_Partition */
-             timer_refine = -1,
+             timer_refine = -1,   /* times over calls to Zoltan_PHG_Partition */
              timer_project = -1;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -273,18 +272,9 @@ int Zoltan_PHG_Partition (
      "coarsening plot");
 
   /****** Coarse Partitioning ******/
-  if (hgp->use_timers > 1) {
-    if (timer_cpart < 0) 
-      timer_cpart = Zoltan_Timer_Init(zz->ZTime, 1, "Coarse Partitioning");
-    ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, hg->comm->Communicator);
-  }
-
   err = Zoltan_PHG_CoarsePartition (zz, hg, p, part_sizes, vcycle->Part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
-
-  if (hgp->use_timers > 1)
-    ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, hg->comm->Communicator);
 
   del = vcycle;
   /****** Uncoarsening/Refinement ******/
@@ -376,7 +366,8 @@ End:
                         &vcycle->LevelData, &vcycle->hg);
     }
     else                   /* cleanup top level */
-      Zoltan_Multifree (__FILE__, __LINE__, 2, &vcycle->LevelMap, &vcycle->LevelData);
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &vcycle->LevelMap,
+                        &vcycle->LevelData);
     del = vcycle;
     vcycle = vcycle->finer;
     ZOLTAN_FREE(&del);
