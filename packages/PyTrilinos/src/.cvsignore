@@ -2,6 +2,6 @@
 *~
 *.o
 *_wrap.cxx
-Epetra.py
+RawEpetra.py
 EpetraExt.py
 NOX_Epetra.py
