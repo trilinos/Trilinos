@@ -56,7 +56,7 @@
 #include "ml_config.h"
 
 /* aztecoo depends on epetra ...*/
-#if defined(HAVE_ML_AZTEC) || defined(HAVE_ML_EPETRA)
+#if defined(HAVE_ML_AZTEC) || defined(HAVE_ML_AZTECOO)
 #ifndef AZTEC
 #define AZTEC
 #endif
