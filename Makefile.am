@@ -68,6 +68,7 @@ EXTRA_DIST = \
 	sampleScripts/sgi64_serial_atlantis \
 	sampleScripts/solaris_mpi_conejo sampleScripts/solaris_serial_paul \
 	sampleScripts/README config/AutotoolsVersionInfo \
+	sampleScripts/cygwin_icl.pl sampleScripts/stratus_ar.pl \
 	doc/Tutorial/README RELEASE_NOTES
 
 ## #######################################################################
