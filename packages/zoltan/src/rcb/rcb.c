@@ -141,9 +141,9 @@ void lb_rcb(
 
   /* function prototypes */
 
-  void rcb_error(int);
-  void rcb_check(struct rcb_dot *, int, int, struct rcb_box *);
-  void rcb_stats(double, struct rcb_dot *,int, double *, 
+  void rcb_error(LB *, int);
+  void rcb_check(LB *, struct rcb_dot *, int, int, struct rcb_box *);
+  void rcb_stats(LB *, double, struct rcb_dot *,int, double *, 
 		 int *, struct rcb_box *, int);
 
   /* MPI data types and user functions */
@@ -156,14 +156,14 @@ void lb_rcb(
   MPI_User_function rcb_box_merge, rcb_median_merge;
 
   if (RCB_STATS) {
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(lb->Communicator);
     timestart = time1 = MPI_Wtime();
   }
 
   /* setup for parallel */
 
-  proc = LB_Proc;
-  nprocs = LB_Num_Proc;
+  proc = lb->Proc;
+  nprocs = lb->Num_Proc;
 
   /*
    *  Build the RCB Data structure and 
@@ -228,7 +228,7 @@ void lb_rcb(
   if (dotmax > 0) {
     dotmark = (int *) malloc((unsigned) dotmax * sizeof(int));
     dotlist = (int *) malloc((unsigned) dotmax * sizeof(int));
-    if (dotmark == NULL || dotlist == NULL) rcb_error(dotmax*sizeof(int));
+    if (dotmark == NULL || dotlist == NULL) rcb_error(lb, dotmax*sizeof(int));
   }
   else {
     dotmark = NULL;
@@ -255,7 +255,7 @@ void lb_rcb(
   if (RCB_CHECK) {
     j = 0;
     for (i = 0; i < dotnum; i++) if (dotpt[i].Weight <= 0.0) j++;
-    MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+    MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
     if (k > 0) {
       if (proc == 0) printf("RCB ERROR: %d dot weights are <= 0\n",k);
       return;
@@ -276,11 +276,11 @@ void lb_rcb(
     }
   }
 
-  MPI_Allreduce(&boxtmp,rcbbox,1,box_type,box_op,MPI_COMM_WORLD);
+  MPI_Allreduce(&boxtmp,rcbbox,1,box_type,box_op,lb->Communicator);
 
   /* create local communicator for use in recursion */
 
-  MPI_Comm_dup(MPI_COMM_WORLD,&local_comm);
+  MPI_Comm_dup(lb->Communicator,&local_comm);
 
   if (RCB_STATS) {
     time2 = MPI_Wtime();
@@ -358,7 +358,7 @@ void lb_rcb(
       free(dotmark);
       dotmark = (int *) malloc((unsigned) dotmax * sizeof(int));
       dotlist = (int *) malloc((unsigned) dotmax * sizeof(int));
-      if (dotmark == NULL || dotlist == NULL) rcb_error(dotmax*sizeof(int));
+      if (dotmark == NULL || dotlist == NULL) rcb_error(lb, dotmax*sizeof(int));
     }
 
     /* initialize active list to all dots */
@@ -591,12 +591,12 @@ void lb_rcb(
     
     /* alert partner how many dots I'll send, read how many I'll recv */
 
-    MPI_Send(&outgoing,1,MPI_INT,procpartner,0,MPI_COMM_WORLD);
+    MPI_Send(&outgoing,1,MPI_INT,procpartner,0,lb->Communicator);
     incoming = 0;
     if (readnumber) {
-      MPI_Recv(&incoming,1,MPI_INT,procpartner,0,MPI_COMM_WORLD,&status);
+      MPI_Recv(&incoming,1,MPI_INT,procpartner,0,lb->Communicator,&status);
       if (readnumber == 2) {
-	MPI_Recv(&incoming2,1,MPI_INT,procpartner2,0,MPI_COMM_WORLD,&status);
+	MPI_Recv(&incoming2,1,MPI_INT,procpartner2,0,lb->Communicator,&status);
 	incoming += incoming2;
       }
     }
@@ -611,7 +611,7 @@ void lb_rcb(
       if (dotmax < dotnew) dotmax = dotnew;
       dotpt = (struct rcb_dot *) 
 	realloc(dotpt,(unsigned) dotmax * sizeof(struct rcb_dot));
-      if (dotpt == NULL) rcb_error(dotmax*sizeof(struct rcb_dot));
+      if (dotpt == NULL) rcb_error(lb, dotmax*sizeof(struct rcb_dot));
       rcb->Dots = dotpt;
       if (RCB_STATS) counters[6]++;
     }
@@ -628,7 +628,7 @@ void lb_rcb(
     if (outgoing > 0) {
       dotbuf = (struct rcb_dot *)
         malloc((unsigned) outgoing * sizeof(struct rcb_dot));
-      if (dotbuf == NULL) rcb_error(outgoing*sizeof(struct rcb_dot));
+      if (dotbuf == NULL) rcb_error(lb, outgoing*sizeof(struct rcb_dot));
     }
     else 
       dotbuf = NULL;
@@ -651,28 +651,28 @@ void lb_rcb(
     if (readnumber > 0) {
       length = incoming * sizeof(struct rcb_dot);
       MPI_Irecv(&dotpt[keep],length,MPI_CHAR,
-			   procpartner,1,MPI_COMM_WORLD,&request);
+			   procpartner,1,lb->Communicator,&request);
       if (readnumber == 2) {
 	keep += incoming - incoming2;
 	length = incoming2 * sizeof(struct rcb_dot);
 	MPI_Irecv(&dotpt[keep],length,MPI_CHAR,
-			      procpartner2,1,MPI_COMM_WORLD,&request2);
+			      procpartner2,1,lb->Communicator,&request2);
       }
     }
     
     /* handshake before sending data to insure recvs have been posted */
     
     if (readnumber > 0) {
-      MPI_Send(NULL,0,MPI_INT,procpartner,0,MPI_COMM_WORLD);
+      MPI_Send(NULL,0,MPI_INT,procpartner,0,lb->Communicator);
       if (readnumber == 2)
-	MPI_Send(NULL,0,MPI_INT,procpartner2,0,MPI_COMM_WORLD);
+	MPI_Send(NULL,0,MPI_INT,procpartner2,0,lb->Communicator);
     }
-    MPI_Recv(NULL,0,MPI_INT,procpartner,0,MPI_COMM_WORLD,&status);
+    MPI_Recv(NULL,0,MPI_INT,procpartner,0,lb->Communicator,&status);
 
     /* send dot data to partner */
 
     length = outgoing * sizeof(struct rcb_dot);
-    MPI_Rsend(dotbuf,length,MPI_CHAR,procpartner,1,MPI_COMM_WORLD);
+    MPI_Rsend(dotbuf,length,MPI_CHAR,procpartner,1,lb->Communicator);
     free(dotbuf);
     
     dotnum = dotnew;
@@ -725,14 +725,14 @@ void lb_rcb(
   LB_time[1] = LB_end_time - LB_start_time;
 
   if (RCB_STATS) {
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(lb->Communicator);
     timestop = time1 = MPI_Wtime();
   }
 
   /* error checking and statistics */
 
-  if (RCB_CHECK) rcb_check(dotpt,dotnum,pdotnum,rcbbox);
-  if (RCB_STATS) rcb_stats(timestop-timestart,dotpt,dotnum,
+  if (RCB_CHECK) rcb_check(lb, dotpt,dotnum,pdotnum,rcbbox);
+  if (RCB_STATS) rcb_stats(lb, timestop-timestart,dotpt,dotnum,
 			   timers,counters,rcbbox,reuse);
 
   /* update calling routine parameters */
@@ -763,18 +763,19 @@ void lb_rcb(
   LB_end_time = MPI_Wtime();
   LB_time[0] += (LB_end_time - LB_start_time);
 
-  MPI_Allreduce(LB_time, LB_max_time, 2, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  if (LB_Proc == 0) {
+  MPI_Allreduce(LB_time, LB_max_time, 2, MPI_DOUBLE, MPI_MAX,
+                lb->Communicator);
+  if (lb->Proc == 0) {
     printf("DLBLIB RCB Times:  \n");
     printf("DLBLIB     Build:  %f\n", LB_max_time[0]);
     printf("DLBLIB     RCB:    %f\n", LB_max_time[1]);
   }
 
-  if (LB_Debug > 6) {
+  if (lb->Debug > 6) {
     int i;
     LB_print_sync_start(lb, TRUE);
     printf("DLBLIB RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
-           LB_Proc, pdotnum, pdottop, *num_import);
+           lb->Proc, pdotnum, pdottop, *num_import);
     printf("  Assigned objects:\n");
     for (i = 0; i < pdotnum; i++) {
       printf("    Obj:  %10d      Orig: %4d\n", rcb->Dots[i].Tag.Global_ID,
@@ -795,12 +796,12 @@ void lb_rcb(
 
 /* error message for malloc/realloc overflow */
 
-void rcb_error(int size)
+void rcb_error(LB *lb, int size)
 
 {
   int proc;
 
-  MPI_Comm_rank(MPI_COMM_WORLD,&proc);
+  MPI_Comm_rank(lb->Communicator,&proc);
   printf("RCB ERROR: proc = %d could not malloc/realloc %d bytes",proc,size);
   exit(1);
 }
@@ -882,20 +883,20 @@ void rcb_median_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
 
 /* consistency checks on RCB results */
 
-void rcb_check(struct rcb_dot *dotpt, int dotnum, int dotorig,
+void rcb_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
 	       struct rcb_box *rcbbox)
 
 {
   int i,iflag,proc,nprocs,total1,total2;
   double weight,wtmax,wtmin,wtone,tolerance;
 
-  MPI_Comm_rank(MPI_COMM_WORLD,&proc);
-  MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+  MPI_Comm_rank(lb->Communicator,&proc);
+  MPI_Comm_size(lb->Communicator,&nprocs);
 
   /* check that total # of dots remained the same */
 
-  MPI_Allreduce(&dotorig,&total1,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&dotnum,&total2,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+  MPI_Allreduce(&dotorig,&total1,1,MPI_INT,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&dotnum,&total2,1,MPI_INT,MPI_SUM,lb->Communicator);
   if (total1 != total2) {
     if (proc == 0) 
       printf("ERROR: Points before RCB = %d, Points after RCB = %d\n",
@@ -910,9 +911,9 @@ void rcb_check(struct rcb_dot *dotpt, int dotnum, int dotorig,
     if (dotpt[i].Weight > wtone) wtone = dotpt[i].Weight;
   }
 
-  MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
-  MPI_Allreduce(&wtone,&tolerance,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
+  MPI_Allreduce(&wtone,&tolerance,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
 
   /* i = smallest power-of-2 >= nprocs */
   /* tolerance = largest-single-weight*log2(nprocs) */
@@ -923,12 +924,12 @@ void rcb_check(struct rcb_dot *dotpt, int dotnum, int dotorig,
   if (wtmax - wtmin > tolerance) {
     if (proc == 0) 
       printf("ERROR: Load-imbalance > tolerance of %g\n",tolerance);
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(lb->Communicator);
     if (weight == wtmin) printf("  Proc %d has weight = %g\n",proc,weight);
     if (weight == wtmax) printf("  Proc %d has weight = %g\n",proc,weight);
   }
   
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   
   /* check that final set of points is inside RCB box of each proc */
   
@@ -942,14 +943,14 @@ void rcb_check(struct rcb_dot *dotpt, int dotnum, int dotorig,
   if (iflag > 0) 
     printf("ERROR: %d points are out-of-box on proc %d\n",iflag,proc);
   
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
     
 }
 
 
 /* RCB statistics */
 
-void rcb_stats(double timetotal, struct rcb_dot *dotpt,
+void rcb_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
 	       int dotnum, double *timers, int *counters,
 	       struct rcb_box *rcbbox, int reuse)
 
@@ -958,21 +959,21 @@ void rcb_stats(double timetotal, struct rcb_dot *dotpt,
   double ave,rsum,rmin,rmax;
   double weight,wttot,wtmin,wtmax;
 
-  MPI_Comm_rank(MPI_COMM_WORLD,&proc);
-  MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+  MPI_Comm_rank(lb->Communicator,&proc);
+  MPI_Comm_size(lb->Communicator,&nprocs);
   
   if (proc == 0) printf("RCB total time: %g (secs)\n",timetotal);
 
   if (proc == 0) printf("RCB Statistics:\n");
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
 
   /* distribution info */
   
   for (i = 0, weight = 0.0; i < dotnum; i++) weight += dotpt[i].Weight;
-  MPI_Allreduce(&weight,&wttot,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&weight,&wttot,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&weight,&wtmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
 
   if (proc == 0) {
     printf(" Total weight of dots = %g\n",wttot);
@@ -980,135 +981,135 @@ void rcb_stats(double timetotal, struct rcb_dot *dotpt,
 	   wttot/nprocs,wtmax,wtmin);
   }
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2) printf("    Proc %d has weight = %g\n",proc,weight);
 
   for (i = 0, weight = 0.0; i < dotnum; i++) 
     if (dotpt[i].Weight > weight) weight = dotpt[i].Weight;
-  MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&weight,&wtmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   
   if (proc == 0) printf(" Maximum weight of single dot = %g\n",wtmax);
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2) printf("    Proc %d max weight = %g\n",proc,weight);
 
   /* counter info */
 
-  MPI_Allreduce(&counters[0],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[0],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[0],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&counters[0],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&counters[0],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&counters[0],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
   if (proc == 0) 
     printf(" Median iter: ave = %g, min = %d, max = %d\n",ave,min,max);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2) 
     printf("    Proc %d median count = %d\n",proc,counters[0]);
 
-  MPI_Allreduce(&counters[1],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[1],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[1],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&counters[1],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&counters[1],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&counters[1],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
   if (proc == 0) 
     printf(" Send count: ave = %g, min = %d, max = %d\n",ave,min,max);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2)
     printf("    Proc %d send count = %d\n",proc,counters[1]);
   
-  MPI_Allreduce(&counters[2],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[2],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[2],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&counters[2],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&counters[2],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&counters[2],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
   if (proc == 0) 
     printf(" Recv count: ave = %g, min = %d, max = %d\n",ave,min,max);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2)
     printf("    Proc %d recv count = %d\n",proc,counters[2]);
   
-  MPI_Allreduce(&counters[3],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[3],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[3],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&counters[3],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&counters[3],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&counters[3],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
   if (proc == 0) 
     printf(" Max dots: ave = %g, min = %d, max = %d\n",ave,min,max);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2)
     printf("    Proc %d max dots = %d\n",proc,counters[3]);
   
-  MPI_Allreduce(&counters[4],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[4],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[4],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&counters[4],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&counters[4],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&counters[4],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
   if (proc == 0) 
     printf(" Max memory: ave = %g, min = %d, max = %d\n",ave,min,max);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2)
     printf("    Proc %d max memory = %d\n",proc,counters[4]);
   
   if (reuse) {
-    MPI_Allreduce(&counters[5],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-    MPI_Allreduce(&counters[5],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-    MPI_Allreduce(&counters[5],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+    MPI_Allreduce(&counters[5],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+    MPI_Allreduce(&counters[5],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+    MPI_Allreduce(&counters[5],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == 0) 
       printf(" # of Reuse: ave = %g, min = %d, max = %d\n",ave,min,max);
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(lb->Communicator);
     if (RCB_STATS == 2)
       printf("    Proc %d # of Reuse = %d\n",proc,counters[5]);
   }
   
-  MPI_Allreduce(&counters[6],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[6],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&counters[6],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&counters[6],&sum,1,MPI_INT,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&counters[6],&min,1,MPI_INT,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&counters[6],&max,1,MPI_INT,MPI_MAX,lb->Communicator);
   ave = ((double) sum)/nprocs;
   if (proc == 0) 
     printf(" # of OverAlloc: ave = %g, min = %d, max = %d\n",ave,min,max);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2)
     printf("    Proc %d # of OverAlloc = %d\n",proc,counters[6]);
 
   /* timer info */
   
-  MPI_Allreduce(&timers[0],&rsum,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&timers[0],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
   if (proc == 0) 
     printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2)
     printf("    Proc %d start-up time = %g\n",proc,timers[0]);
   
-  MPI_Allreduce(&timers[1],&rsum,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&timers[1],&rmin,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&timers[1],&rmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&timers[1],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&timers[1],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&timers[1],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
   if (proc == 0) 
     printf(" Pre-median time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2)
     printf("    Proc %d pre-median time = %g\n",proc,timers[1]);
   
-  MPI_Allreduce(&timers[2],&rsum,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&timers[2],&rmin,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&timers[2],&rmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&timers[2],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&timers[2],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&timers[2],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
   if (proc == 0) 
     printf(" Median time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2)
     printf("    Proc %d median time = %g\n",proc,timers[2]);
   
-  MPI_Allreduce(&timers[3],&rsum,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
-  MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
-  MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+  MPI_Allreduce(&timers[3],&rsum,1,MPI_DOUBLE,MPI_SUM,lb->Communicator);
+  MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,lb->Communicator);
+  MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,lb->Communicator);
   ave = rsum/nprocs;
   if (proc == 0) 
     printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
 	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   if (RCB_STATS == 2)
     printf("    Proc %d comm time = %g\n",proc,timers[3]);
   
@@ -1117,14 +1118,14 @@ void rcb_stats(double timetotal, struct rcb_dot *dotpt,
   if (RCB_STATS == 2) {
     if (proc == 0) printf(" RCB sub-domain boxes:\n");
     for (i = 0; i < 3; i++) {
-      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(lb->Communicator);
       if (proc == 0) printf("    Dimension %d\n",i+1);
-      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(lb->Communicator);
       printf("      Proc = %d: Box = %g %g\n",
 	     proc,rcbbox->lo[i],rcbbox->hi[i]);
     }
   }
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
 
 }

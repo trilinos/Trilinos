@@ -21,7 +21,6 @@ static char *cvs_lbc_id = "$Id$";
 #include "lb_util_const.h"
 #include "comm_const.h"
 #include "all_allo_const.h"
-#include "par.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -55,14 +54,6 @@ int mpi_flag;
   if (!mpi_flag) {
     MPI_Init(&argc, &argv);
   }
-
-  /*
-   *  Set global processor values for the load balacing tools.
-   */
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &LB_Proc);
-  MPI_Comm_size(MPI_COMM_WORLD, &LB_Num_Proc);
-
 }
 
 
@@ -83,6 +74,7 @@ LB *LB_Create_Object(MPI_Comm communicator)
 
 char *yo = "LB_Create_Object";
 LB *lb;
+int flag;
 
   /*
    * Allocate storage for the load-balancing object.
@@ -94,26 +86,24 @@ LB *lb;
    *  Set MPI values for of lb:
    */
 
-  if (communicator == NULL) {
+  MPI_Comm_compare(communicator, MPI_COMM_NULL, &flag);
+  if (flag == MPI_IDENT) {
     /*
-     *  If no communicator is passed into the function, use MPI_COMM_WORLD
-     *  as the default communicator.
+     *  The processor is not in the communicator for the load-balancing
+     *  object.  Set lb->Communicator to NULL and give dummy values to
+     *  lb->Proc and lb->Num_Proc.
      */
-
-    MPI_Comm_dup(MPI_COMM_WORLD, &(lb->Communicator));
-    lb->Proc = LB_Proc;
-    lb->Num_Proc = LB_Num_Proc;
+    lb->Communicator = NULL;
+    lb->Proc = -1;
+    lb->Num_Proc = 0;
   }
   else {
     /*
-     *  Set values based upon the communicator passed in.
-     *  KDD_DLB  --  The communicator is not yet used in the algorithms!
-     *  KDD_DLB  --  It will have to be incorporated appropriately.
-     *  KDD_DLB  --  But I wanted to get the interface ready!
+     *  Set Communicator to the communicator passed in.
      */
     MPI_Comm_dup(communicator, &(lb->Communicator));
-    MPI_Comm_rank(communicator, &(lb->Proc));
-    MPI_Comm_size(communicator, &(lb->Num_Proc));
+    MPI_Comm_size(lb->Communicator, &(lb->Num_Proc));
+    MPI_Comm_rank(lb->Communicator, &(lb->Proc));
   }
 
   /*
@@ -122,6 +112,7 @@ LB *lb;
 
   lb->Method = RCB;    
   lb->LB_Fn = lb_rcb;
+  lb->Debug = 0;
   lb->Params = NULL;
   lb->Tolerance = 0.9;
   lb->Data_Structure = NULL;
@@ -280,7 +271,7 @@ int i;
     exit(-1);
   }
 
-  if (LB_Proc == 0) {
+  if (lb->Proc == 0) {
     printf("LB:  Load balancing method = %d (%s)\n", lb->Method, method_name);
   }
 
@@ -334,7 +325,7 @@ char *yo = "LB_Set_Tolerance";
 
   lb->Tolerance = tolerance;
 
-  if (LB_Proc == 0) {
+  if (lb->Proc == 0) {
     printf("LB:  Load balancing tolerance = %f\n", tolerance);
   }
 }
@@ -369,7 +360,7 @@ char *yo = "LB_Set_Migration";
   }
 
   lb->Migrate.Help_Migrate = help;
-  if (LB_Proc == 0) {
+  if (lb->Proc == 0) {
     printf("LB:  Load balancing Migration flag = %d\n", help);
   }
 }
@@ -467,8 +458,16 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
   *export_local_ids = NULL;
   *export_procs = NULL;
 
+  /*
+   *  Return if this processor is not in the load-balancing object's
+   *  communicator.
+   */
+
+  if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
+    return 0;
+
   if (lb->Method == NONE) {
-    if (LB_Proc == 0)
+    if (lb->Proc == 0)
       printf("%s Balancing method selected == NONE; no balancing performed\n",
               yo);
 
@@ -485,7 +484,7 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
             import_procs);
 
   MPI_Allreduce(num_import_objs, &gmax_imports, 1, MPI_INT, MPI_MAX, 
-                MPI_COMM_WORLD);
+                lb->Communicator);
 
   if (gmax_imports == 0) {
 
@@ -494,7 +493,7 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
      *  is needed.
      */
 
-    if (LB_Proc == 0)
+    if (lb->Proc == 0)
       printf("%s No changes to the decomposition due to load-balancing; "
              "no migration is needed.\n", yo);
 
@@ -516,10 +515,10 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
   LB_end_time = MPI_Wtime();
   LB_time[0] = LB_end_time - LB_start_time;
 
-  if (LB_Debug > 6) {
+  if (lb->Debug > 6) {
     int i;
     LB_print_sync_start(lb, TRUE);
-    printf("LBLB: Objects to be exported from Proc %d\n", LB_Proc);
+    printf("LBLB: Objects to be exported from Proc %d\n", lb->Proc);
     for (i = 0; i < *num_export_objs; i++) {
       printf("    Obj: %10d  Destination: %4d\n", 
              (*export_global_ids)[i], (*export_procs)[i]);
@@ -541,8 +540,8 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
     LB_time[1] = LB_end_time - LB_start_time;
   }
   
-  MPI_Allreduce(LB_time, LB_max_time, 2, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  if (LB_Proc == 0) {
+  MPI_Allreduce(LB_time, LB_max_time, 2, MPI_DOUBLE, MPI_MAX, lb->Communicator);
+  if (lb->Proc == 0) {
     printf("DLBLIB LB  Times:  \n");
     printf("DLBLIB     Balance:        %f\n", LB_max_time[0]);
     printf("DLBLIB     HelpMigrate:    %f\n", LB_max_time[1]);
@@ -601,6 +600,14 @@ LB_TAG *export_objs = NULL; /* Array of export objects describing which objs
 int i;
 
   /*
+   *  Return if this processor is not in the load-balancing object's
+   *  communicator.
+   */
+
+  if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
+    return;
+
+  /*
    *  Build processor's list of requests for non-local objs.
    */
 
@@ -615,7 +622,7 @@ int i;
 
       LB_SET_GID(import_objs[i].Global_ID, import_global_ids[i]);
       LB_SET_LID(import_objs[i].Local_ID, import_local_ids[i]);
-      import_objs[i].Proc      = LB_Proc;
+      import_objs[i].Proc = lb->Proc;
     }
   }
 
@@ -624,7 +631,7 @@ int i;
    *  processor has to export to establish the new decomposition.
    */
 
-  comm_plan = comm_create(num_import, proc_list, MPI_COMM_WORLD, num_export);
+  comm_plan = comm_create(num_import, proc_list, lb->Communicator, num_export);
 
   /*
    *  Allocate space for the object tags that need to be exported.  Communicate
@@ -727,28 +734,36 @@ LB_GID global_id;        /* tmp global ID for unpacking objects.            */
 COMM_OBJ *comm_plan;     /* Communication object returned
                             by Bruce and Steve's communication routines     */
 
-  if (LB_Debug > 4)
+  /*
+   *  Return if this processor is not in the load-balancing object's
+   *  communicator.
+   */
+
+  if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
+    return;
+
+  if (lb->Debug > 4)
     printf("DLBLIB %d %s Entering HELP_MIGRATE %d %d\n",
-            LB_Proc, yo, num_import, num_export);
+            lb->Proc, yo, num_import, num_export);
 
   if (lb->Migrate.Get_Obj_Size == NULL) {
     fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
            "LB_OBJ_SIZE_FN_TYPE function to use the migration-help tools.\n",
-           LB_Proc, yo);
+           lb->Proc, yo);
     exit(-1);
   }
 
   if (lb->Migrate.Pack_Obj == NULL) {
     fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
            "LB_PACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
-           LB_Proc, yo);
+           lb->Proc, yo);
     exit(-1);
   }
 
   if (lb->Migrate.Unpack_Obj == NULL) {
     fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
          "LB_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
-         LB_Proc, yo);
+         lb->Proc, yo);
     exit(-1);
   }
 
@@ -757,8 +772,8 @@ COMM_OBJ *comm_plan;     /* Communication object returned
                             import_local_ids, import_procs,
                             num_export, export_global_ids,
                             export_local_ids, export_procs);
-    if (LB_Debug > 5)
-      printf("DLBLIB %d %s Done Pre-Process\n", LB_Proc, yo);
+    if (lb->Debug > 5)
+      printf("DLBLIB %d %s Done Pre-Process\n", lb->Proc, yo);
   }
 
   size = lb->Migrate.Get_Obj_Size();
@@ -788,10 +803,10 @@ COMM_OBJ *comm_plan;     /* Communication object returned
    *  processor has to import to establish the new decomposition.
    */
 
-  comm_plan = comm_create(num_export, proc_list, MPI_COMM_WORLD, &tmp_import);
+  comm_plan = comm_create(num_export, proc_list, lb->Communicator, &tmp_import);
   if (tmp_import != num_import) {
     fprintf(stderr, "%d  Error in %s:  tmp_import %d != num_import %d\n", 
-            LB_Proc, yo, tmp_import, num_import);
+            lb->Proc, yo, tmp_import, num_import);
   }
 
   if (num_import > 0)
@@ -825,9 +840,9 @@ COMM_OBJ *comm_plan;     /* Communication object returned
   }
 
   LB_safe_free((void **) &import_buf);
-  if (LB_Debug > 4)
+  if (lb->Debug > 4)
     printf("DLBLIB %d %s Leaving HELP_MIGRATE %d %d\n",
-            LB_Proc, yo, num_import, num_export);
+            lb->Proc, yo, num_import, num_export);
 }
 
 /****************************************************************************/

@@ -61,8 +61,8 @@ int i;
     rcb = (RCB_STRUCT *) LB_SMALLOC(sizeof(RCB_STRUCT));
     lb->Data_Structure = (void *) rcb;
     rcb->Tree_Ptr = (struct rcb_tree *) LB_array_alloc(__FILE__, __LINE__,
-                                                       1, LB_Num_Proc, 
-                                                       sizeof(struct rcb_tree));
+                                                     1, lb->Num_Proc, 
+                                                     sizeof(struct rcb_tree));
     rcb->Box = (struct rcb_box *) LB_SMALLOC(sizeof(struct rcb_box));
   }
   else {
@@ -162,7 +162,7 @@ static void initialize_dot(LB *lb, struct rcb_dot *dot, LB_GID global_id,
 
   LB_SET_GID(dot->Tag.Global_ID, global_id);
   LB_SET_LID(dot->Tag.Local_ID, local_id);
-  dot->Tag.Proc = LB_Proc;
+  dot->Tag.Proc = lb->Proc;
   dot->X[0] = dot->X[1] = dot->X[2] = 0.0;
   lb->Get_Geom(global_id, local_id, dot->X);
   if (lb->Get_Obj_Weight != NULL) {

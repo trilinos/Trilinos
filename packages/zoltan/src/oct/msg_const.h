@@ -21,7 +21,7 @@ static char *cvs_msgconsth_id = "$Id$";
 #endif
 
 
-extern int    msg_int_scan(int value);
-extern float  msg_float_scan(float value);
+extern int    msg_int_scan(MPI_Comm, int, int value);
+extern float  msg_float_scan(MPI_Comm, int, float value);
 
 #endif

@@ -141,6 +141,8 @@ struct LB_Struct {
                                       Communicator.                          */
   int Num_Proc;                   /*  The number of processors in the MPI
                                       Communicator.                          */
+  int Debug;                      /*  Debug level for this instance of
+                                      load balancing.                        */
   /*
    *  KDD_DLB  --  The Communicator and Proc/Num_Proc are not yet used 
    *  KDD_DLB  --  in the algorithms!
@@ -193,6 +195,19 @@ struct LB_Struct {
   LB_MIGRATE Migrate;                          /* Struct with info for helping
                                                   with migration.            */
 };
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/* MACROS  */
+
+/*
+ *  Test whether the processor is in the given load-balancing object's
+ *  communicator.  Used to exit from balancing routines for processors
+ *  that are not included in the load-balancing communicator.
+ */
+
+#define LB_PROC_NOT_IN_COMMUNICATOR(lb) ((lb)->Proc == -1) 
 
 /*****************************************************************************/
 /*****************************************************************************/

@@ -29,14 +29,15 @@ static char *cvs_migoctc_id = "$Id$";
  */
 
 /* 
- * void Migrate_Objects(pOctant *octants, int *newpids, int number_of_octants,
+ * void Migrate_Objects(LB *lb, pOctant *octants, int *newpids, 
+ *                      int number_of_octants,
  *                      LB_TAG **export_tags, int *number_of_sent_tags,
  *                      LB_TAG **import_tags, int *number_of_received_tags)
  *
  * sets up the export_tags, and import_tags for the application that called
  * this load balancing routine 
  */
-void Migrate_Objects(pOctant *octs, int *newpids, int nocts,
+void Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
 		     pRegion *export_regions, int *nsenregs, 
 		     pRegion *import_regions, int *nrecregs,
 		     float *c2, float *c3, int *counter3, int *counter4)
@@ -50,11 +51,11 @@ void Migrate_Objects(pOctant *octs, int *newpids, int nocts,
   *import_regions = *export_regions = NULL;
 
   /* tag all the regions to be exported */
-  tag_regions(octs, newpids, nocts, export_regions, nsenregs, &tag_pids, 
+  tag_regions(lb, octs, newpids, nocts, export_regions, nsenregs, &tag_pids, 
 	      &pimreg, &npimregs, c2, &max_objs);
 
   /* get all the region tags that are being imported */
-  malloc_new_objects(*nsenregs, *export_regions, tag_pids, nrecregs, 
+  malloc_new_objects(lb, *nsenregs, *export_regions, tag_pids, nrecregs, 
 		     import_regions, pimreg, npimregs, c3);
 
   if(npimregs > 0)
@@ -67,7 +68,7 @@ void Migrate_Objects(pOctant *octs, int *newpids, int nocts,
      (*counter3) = i;
    (*counter4) = (*nrecregs) - npimregs;
 
-  /*  fprintf(stderr,"(%d) nrectags = %d\n", LB_Proc, (*nrecregs));
+  /*  fprintf(stderr,"(%d) nrectags = %d\n", lb->Proc, (*nrecregs));
    *  for(i=0; i<(*nrecregs); i++)
    *    fprintf(stderr,"%d\n", (*import_regions)[i].Tag.Proc);
    */
@@ -79,7 +80,7 @@ void Migrate_Objects(pOctant *octs, int *newpids, int nocts,
  * are to be migrated. It then looks at the region list for those octants 
  * and stores the migrating regions into the export_tags array.
  */
-static void tag_regions(pOctant *octs, int *newpids, int nocts, 
+static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts, 
 			Region **export_tags, int *nsentags, int **tag_pids,
 			Region **prev_tags, int *npimtags, float *c2,
 			int *max_objs)
@@ -113,10 +114,10 @@ static void tag_regions(pOctant *octs, int *newpids, int nocts,
   count2 = 0;
   
   for (i=0; i<nocts; i++) {
-    /* if newpids != LB_Proc, the it is being migrated */
+    /* if newpids != lb->Proc, the it is being migrated */
     if(POC_isTerminal(octs[i])) {
       (*max_objs) += POC_nRegions(octs[i]);
-      if (newpids[i]!=LB_Proc) {
+      if (newpids[i]!=lb->Proc) {
 	count+=POC_nRegions(octs[i]);
       }
       else {
@@ -124,7 +125,7 @@ static void tag_regions(pOctant *octs, int *newpids, int nocts,
 
 	regions = POC_regionlist(octs[i]);
 	while(regions != NULL) {
-	  if(regions->Tag.Proc != LB_Proc)
+	  if(regions->Tag.Proc != lb->Proc)
 	    count2++;
 	  regions = regions->next;
 	}
@@ -167,7 +168,7 @@ static void tag_regions(pOctant *octs, int *newpids, int nocts,
     ptags = (pRegion)malloc((unsigned)count2 * sizeof(Region));
     if(ptags == NULL) {
       fprintf(stderr, "(%d)ERROR: unable to malloc %d ptags in tag_regions\n",
-	      LB_Proc, count2);
+	      lb->Proc, count2);
       abort();
     }
   }
@@ -180,7 +181,7 @@ static void tag_regions(pOctant *octs, int *newpids, int nocts,
   index = index2 = 0;
   for (i=0; i<nocts; i++) {
     if(POC_isTerminal(octs[i])) {
-      if(newpids[i] != LB_Proc) {       /* octant being sent off processor */
+      if(newpids[i] != lb->Proc) {       /* octant being sent off processor */
 	/* get regions associated with the octant */
 	regionlist = POC_regionlist(octs[i]);
 	while(regionlist != NULL) {
@@ -196,7 +197,7 @@ static void tag_regions(pOctant *octs, int *newpids, int nocts,
 	/* get regions associated with the octant */
 	regionlist=POC_regionlist(octs[i]);
 	while(regionlist != NULL) {
-	  if(regionlist->Tag.Proc != LB_Proc) {
+	  if(regionlist->Tag.Proc != lb->Proc) {
 	    ptags[index2] = *regionlist;	   /* get region information */
 	    index2++;                                   /* increment counter */
 	  }
@@ -215,14 +216,14 @@ static void tag_regions(pOctant *octs, int *newpids, int nocts,
 }
 
 /*
- * void malloc_new_objects(int number_of_sent_tags, LB_TAG *export_tags,
+ * void malloc_new_objects(LB *lb, int number_of_sent_tags, LB_TAG *export_tags,
  *                         int *tag_pids, int *number_of_received_tags,
  *                         LB_TAG **import_tags)
  *
  * gets the tags being imported into this processor, and sets up the
  * import_tags array, and the nrectags array.
  */
-static void malloc_new_objects(int nsentags, pRegion export_tags, 
+static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags, 
 			       int *tag_pids, int *nrectags,
 			       pRegion *import_tags, pRegion prev_tags,
 			       int npimtags, float *c3)
@@ -238,7 +239,7 @@ static void malloc_new_objects(int nsentags, pRegion export_tags,
 				    Bruce and Steve's communication routines */
 
   im_load = 0;
-  comm_plan = comm_create(nsentags, tag_pids, MPI_COMM_WORLD, &nreceives);
+  comm_plan = comm_create(nsentags, tag_pids, lb->Communicator, &nreceives);
   tmp = (pRegion)malloc(nreceives * sizeof(Region));
   
   if((nreceives != 0) && (tmp == NULL)) {
@@ -254,7 +255,7 @@ static void malloc_new_objects(int nsentags, pRegion export_tags,
   j=0;
   for (i=0; i<nreceives; i++) {
     im_load += tmp[i].Weight;
-    if(tmp[i].Tag.Proc != LB_Proc) {
+    if(tmp[i].Tag.Proc != lb->Proc) {
       j++;
     }
   }
@@ -275,7 +276,7 @@ static void malloc_new_objects(int nsentags, pRegion export_tags,
 
   j=0;
   for (i=0; i<nreceives; i++) {
-    if(tmp[i].Tag.Proc != LB_Proc) {
+    if(tmp[i].Tag.Proc != lb->Proc) {
       imp[j++] = tmp[i];
     }
   }
@@ -291,17 +292,17 @@ static void malloc_new_objects(int nsentags, pRegion export_tags,
   /*
    * fprintf(stderr,
    *     "(%d) nrectags = %d, nreceives = %d, nsentags = %d, nkeptags = %d\n", 
-   *     LB_Proc, (*nrectags), nreceives, nsentags, nkeptags);
+   *     lb->Proc, (*nrectags), nreceives, nsentags, nkeptags);
    */
 
   if((*nrectags == 0) && (*import_tags != NULL)) {
     printf("(%d) ERROR: import tags not empty but no tags received\n",
-	    LB_Proc);
+	    lb->Proc);
     exit(1);
   }
 
   /*  for(i=0; i<(*nrectags); i++) {
-   *    fprintf(stderr,"%d -> %d\n", (*import_tags)[i].Proc, LB_Proc);
+   *    fprintf(stderr,"%d -> %d\n", (*import_tags)[i].Proc, lb->Proc);
    *  }
    */  
   *c3 = im_load;

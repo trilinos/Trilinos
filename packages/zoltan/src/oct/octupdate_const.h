@@ -29,9 +29,12 @@ extern void    oct_roots_in_order(pOctant **roots_ret,int *nroots_ret);
 extern void    oct_resetIdCount(int start_count);
 extern int     oct_nextId(void);
 #endif /* LGG_MIGOCT */
-extern void    oct_terminal_refine(pOctant oct,int count);
+extern void    oct_terminal_refine(LB *, pOctant oct,int count);
 extern pOctant oct_findId(int i);
-extern pOctant oct_global_insert(pRegion region);
-extern int     oct_subtree_insert(pOctant oct, pRegion region);
+extern pOctant oct_global_insert(LB *, pRegion region);
+extern int     oct_subtree_insert(LB *, pOctant oct, pRegion region);
+
+extern void print_stats(LB *lb, double timetotal, double *timers, int *counters,
+                 float *c, int STATS_TYPE);
 
 #endif

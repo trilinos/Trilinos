@@ -22,14 +22,12 @@ static char *cvs_octupdatec_id = "$Id$";
 #include "util_const.h"
 #include "dfs_const.h"
 #include "octupdate.h"
+#include "octupdate_const.h"
 #include "migreg_const.h"
 #include "all_allo_const.h"
 
 /***************************  PROTOTYPES *************************************/
 static void initialize_region(LB *, pRegion *, LB_GID, LB_LID);
-
-extern void print_stats(double timetotal, double *timers, int *counters, 
-			float *c, int STAT_TYPE);
 
 /*****************************************************************************/
 /* NOTE: be careful later about region lists for nonterminal octants */
@@ -89,7 +87,7 @@ void lb_oct_init(
 				      */
   float  c[4];
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   timestart = MPI_Wtime();
 
   /* initialize timers and counters */
@@ -113,9 +111,9 @@ void lb_oct_init(
 
   if(lb->Params != NULL) {
     if(lb->Params[0] == LB_PARAMS_INIT_VALUE)
-      POC_init(LB_Proc, 3);
+      POC_init(lb->Proc, 3);
     else
-      POC_init(LB_Proc, lb->Params[0]);
+      POC_init(lb->Proc, lb->Params[0]);
 
     if(lb->Params[1] == LB_PARAMS_INIT_VALUE)
       set_method(0);
@@ -128,7 +126,7 @@ void lb_oct_init(
       oct_set_maxregions(lb->Params[2]);
   }
   else {
-    POC_init(LB_Proc, 3);
+    POC_init(lb->Proc, 3);
     set_method(0);
     oct_set_maxregions(1);
   }
@@ -143,23 +141,23 @@ void lb_oct_init(
   
   /* partition the octree structure */
   time1 = MPI_Wtime();
-  dfs_partition(&counters[0], &c[1]);
+  dfs_partition(lb, &counters[0], &c[1]);
   time2 = MPI_Wtime();
   timers[1] = time2 - time1;              /* time took to partition octree */
 
   /* intermediate result print out */
   if(lb->Params[4] != LB_PARAMS_INIT_VALUE)          /* WARNING BIG OUTPUT!! */
-    for(i=0; i<LB_Num_Proc; i++) {
-      if(LB_Proc == i) {
+    for(i=0; i<lb->Num_Proc; i++) {
+      if(lb->Proc == i) {
 	POC_printResults();
 	printf("\n\n");
       }
-      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(lb->Communicator);
     }
 
   /* set up tags for migrations */
   time1 = MPI_Wtime();
-  dfs_migrate(&export_regs, &nsentags, &import_regs, &nrectags, 
+  dfs_migrate(lb, &export_regs, &nsentags, &import_regs, &nrectags, 
 	      &c[2], &c[3], &counters[3], &counters[5]);
 
   *num_import = nrectags;
@@ -183,18 +181,18 @@ void lb_oct_init(
   }
 
   counters[4] = nsentags;
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
   timestop = MPI_Wtime();
 
   if(lb->Params != NULL) {
     if(lb->Params[3] == LB_PARAMS_INIT_VALUE)
-      print_stats(timestop - timestart, timers, counters, c, 1);
+      print_stats(lb, timestop - timestart, timers, counters, c, 1);
     else
       if(lb->Params[3] != 0)
-	print_stats(timestop - timestart, timers, counters, c, lb->Params[3]);
+	print_stats(lb, timestop-timestart, timers, counters, c, lb->Params[3]);
   }
   else
-    print_stats(timestop - timestart, timers, counters, c, 1);
+    print_stats(lb, timestop - timestart, timers, counters, c, 1);
 
   free(export_regs);
   free(import_regs);
@@ -276,8 +274,8 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
      * if more than 1 processor, need to find what level of refinement needed
      * to initially partition bounding box among the processors 
      */
-    if(LB_Num_Proc > 1) {
-      n = LB_Num_Proc;
+    if(lb->Num_Proc > 1) {
+      n = lb->Num_Proc;
       if(OCT_dimension == 2)
 	hold = 4;
       else
@@ -308,7 +306,7 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
       while(cursor != NULL) {
 	if(POC_isTerminal(cursor)) {
 	  cursor2 = POC_nextDfs(cursor);
-	  oct_terminal_refine(cursor, 0);
+	  oct_terminal_refine(lb, cursor, 0);
 	  cursor = cursor2;
 	}
 	else 
@@ -317,7 +315,7 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
     }
     
 #if 0
-    if(LB_Proc == 0)
+    if(lb->Proc == 0)
       for(i=0; i<8; i++)
 	if(POC_child(root, i) == NULL)
 	  fprintf(stderr,"NULL child pointer\n");
@@ -334,13 +332,13 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
     else
       hold = (int)pow(8, level);
 
-    part = hold / LB_Num_Proc;             /* how many octants per partition */
-    remainder = hold % LB_Num_Proc;   /* extra octants, not evenly divisible */
-    extra = LB_Num_Proc - remainder;  /* where to start adding extra octants */
+    part = hold / lb->Num_Proc;          /* how many octants per partition */
+    remainder = hold % lb->Num_Proc; /* extra octants, not evenly divisible */
+    extra = lb->Num_Proc - remainder;/* where to start adding extra octants */
     array = (Map *)malloc(hold * sizeof(Map));         /* allocate map array */
     if(array == NULL) {
       fprintf(stderr, "ERROR on proc %d, could not allocate array map\n",
-	      LB_Proc);
+	      lb->Proc);
       abort();
     }
     /* initialize variables */
@@ -370,7 +368,7 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
 	  vector_set(array[i].min, min);
 	  vector_set(array[i].max, max);
 	}
-	if(proc == LB_Proc) {
+	if(proc == lb->Proc) {
 	  array[i].npid = -1;
 	  parent = POC_parent(cursor);
 	  if(parent != NULL)
@@ -387,7 +385,7 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
   }
 
   /*
-   *  if(LB_Proc == 0)
+   *  if(lb->Proc == 0)
    *    for(i=0; i<hold; i++)
    *      fprintf(stderr,"(%d) %lf %lf %lf, %lf %lf %lf\n", array[i].npid,
    *	      array[i].min[0], array[i].min[1], array[i].min[2],
@@ -402,9 +400,9 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
   num_extra = oct_fix(lb, ptr1, num_objs);
 
 /* 
- * fprintf(stderr,"(%d) number of extra regions %d\n", LB_Proc, num_extra);
+ * fprintf(stderr,"(%d) number of extra regions %d\n", lb->Proc, num_extra);
  */
-  migreg_migrate_orphans(ptr1, num_extra, level, array, c1, c2);
+  migreg_migrate_orphans(lb, ptr1, num_extra, level, array, c1, c2);
   
   free(array);
   while(ptr1 != NULL) {
@@ -496,9 +494,9 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   LB_safe_free((void **) &obj_local_ids);
   
   MPI_Allreduce(&(min[0]), &(global_min[0]), 3, 
-		MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+		MPI_DOUBLE, MPI_MIN, lb->Communicator);
   MPI_Allreduce(&(max[0]), &(global_max[0]), 3,
-		MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+		MPI_DOUBLE, MPI_MAX, lb->Communicator);
 
   max[0] = global_max[0];
   max[1] = global_max[1];
@@ -534,14 +532,14 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
   *ret = reg;
   LB_SET_GID(reg->Tag.Global_ID, global_id);
   LB_SET_LID(reg->Tag.Local_ID, local_id);
-  reg->Tag.Proc = LB_Proc;
+  reg->Tag.Proc = lb->Proc;
   /* reg->Proc = 0; */
   reg->Coord[0] = reg->Coord[1] = reg->Coord[2] = 0.0;
   lb->Get_Geom(global_id, local_id, reg->Coord);
 
 #if 0
   LB_print_sync_start(lb, TRUE);
-    fprintf(stderr, "Result info on %d: %d %d %d  %lf  %lf  %lf\n", LB_Proc, 
+    fprintf(stderr, "Result info on %d: %d %d %d  %lf  %lf  %lf\n", lb->Proc, 
 	    reg->Tag.Local_ID, reg->Tag.Global_ID, reg->Tag.Proc,
 	    reg->Coord[0], reg->Coord[1], reg->Coord[2]); 
   LB_print_sync_end(lb, TRUE);
@@ -579,7 +577,7 @@ int oct_fix(LB *lb, pRegion Region_list, int num_objs)
   oct_ncoarse=0;
   
   /* associate the objects to the octants */
-  nreg=oct_global_insert_object(Region_list, num_objs);
+  nreg=oct_global_insert_object(lb, Region_list, num_objs);
   oct_global_dref(); 
 
   if (num_objs)
@@ -604,7 +602,7 @@ int oct_fix(LB *lb, pRegion Region_list, int num_objs)
  * local octree.  Return the number of insertion failures.
  *
  */
-int oct_global_insert_object(pRegion Region_list, int num_objs) 
+int oct_global_insert_object(LB *lb, pRegion Region_list, int num_objs) 
 {
   pRegion region;                             /* region to be attached */
   int count;                                  /* count of failed insertions */
@@ -623,7 +621,7 @@ int oct_global_insert_object(pRegion Region_list, int num_objs)
 	     region->Coord[0], region->Coord[1], region->Coord[2]); 
 #endif
 
-    if (!oct_global_insert(region)) {
+    if (!oct_global_insert(lb, region)) {
       /* obj has no octant association increment "orphan" counter */
       count++;
       region->attached = 0;
@@ -652,7 +650,7 @@ int oct_global_insert_object(pRegion Region_list, int num_objs)
  * of the octant to which the region is attached.
  *
  */
-pOctant oct_global_insert(pRegion region) 
+pOctant oct_global_insert(LB *lb, pRegion region) 
 {
   pOctant oct;                            /* octree octant */
 
@@ -662,7 +660,7 @@ pOctant oct_global_insert(pRegion region)
 
   /* if octant is found, try to insert the region */
   if (oct)
-    if (!oct_subtree_insert(oct, region))                /* inserting region */
+    if (!oct_subtree_insert(lb, oct, region))            /* inserting region */
       {
 	fprintf(stderr,"oct_global_insert: insertion failed\n");
 	abort();
@@ -677,7 +675,7 @@ pOctant oct_global_insert(pRegion region)
  *
  * Insert region in oct, carrying out multiple refinement if necessary
  */
-int oct_subtree_insert(pOctant oct, pRegion region) 
+int oct_subtree_insert(LB *lb, pOctant oct, pRegion region) 
 {
   COORD centroid;                              /* coordintes of centroid */
   pRegion entry;
@@ -695,7 +693,7 @@ int oct_subtree_insert(pOctant oct, pRegion region)
 
   /* check if octant has too many regions and needs to be refined */
   if(POC_nRegions(oct) > MAXOCTREGIONS)
-    oct_terminal_refine(oct,0);          /* After this, dest may be nonterm */
+    oct_terminal_refine(lb, oct,0);      /* After this, dest may be nonterm */
 
   return(1);
 }
@@ -772,7 +770,7 @@ pOctant oct_findOctant(pOctant oct, COORD coord)
  * necessary to satisfy MAXOCTREGIONS
  *
  */
-void oct_terminal_refine(pOctant oct,int count) 
+void oct_terminal_refine(LB *lb, pOctant oct,int count) 
 {
   COORD min,                      /* coordinates of minimum bounds of region */
         max,                      /* coordinates of maximum bounds of region */
@@ -829,14 +827,14 @@ void oct_terminal_refine(pOctant oct,int count)
      */
 
     child[i]=POC_new();                               /* create a new octant */
-    POC_setparent(child[i], oct, LB_Proc);   /* set the child->parent link */
+    POC_setparent(child[i], oct, lb->Proc);   /* set the child->parent link */
     POC_setchildnum(child[i], i);               /* which child of the parent */
     POC_setchild(oct, i, child[i]);            /* set the parent->child link */
 #ifdef LGG_MIGOCT
     POC_setID(child[i], oct_nextId());                /* set child id number */
 #endif /* LGG_MIGOCT */
     POC_setbounds(child[i], cmin[i], cmax[i]);           /* set child bounds */
-    POC_setCpid(oct, i, LB_Proc);      /* set child to be a local octant */
+    POC_setCpid(oct, i, lb->Proc);      /* set child to be a local octant */
     /*    POC_setOrientation(child[i], 
 		       child_orientation(oct->orientation, oct->which));
 		       */
@@ -878,7 +876,7 @@ void oct_terminal_refine(pOctant oct,int count)
   for (i=0; i<8; i++)                                           /* Recursion */
     if(child[i] != NULL)
       if (POC_nRegions(child[i]) > MAXOCTREGIONS)
-	oct_terminal_refine(child[i],count+1);
+	oct_terminal_refine(lb, child[i],count+1);
 }
 
 /*****************************************************************************/

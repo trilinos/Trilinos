@@ -23,7 +23,7 @@ static char *cvs_msgc_id = "$Id$";
 /*
  * interface to message-passing mechanism
  */
-static void msg_abort(int errcode);
+static void msg_abort(MPI_Comm, int, int errcode);
 
 /*****************************************************************************/
 /*
@@ -35,16 +35,16 @@ static void msg_abort(int errcode);
  * out    0   v0   v0+v1  v0+v1+v2 ...
  *
  */
-int msg_int_scan(int value)
+int msg_int_scan(MPI_Comm communicator, int proc, int value)
 {
   int recvbuf;
   int ret;
 
-  ret=MPI_Scan(&value,&recvbuf,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
+  ret=MPI_Scan(&value,&recvbuf,1,MPI_INT,MPI_SUM,communicator);
 
   if (ret!= MPI_SUCCESS) {
-    fprintf(stderr,"%d msg_int_scan: Scan ret=%d\n",LB_Proc,ret);
-    msg_abort(ret);
+    fprintf(stderr,"%d(%d) msg_int_scan: Scan ret=%d\n",proc, proc,ret);
+    msg_abort(communicator, proc, ret);
   }
   
   return(recvbuf-value);
@@ -60,16 +60,16 @@ int msg_int_scan(int value)
  * out    0   v0   v0+v1  v0+v1+v2 ...
  *
  */
-float msg_float_scan(float value)
+float msg_float_scan(MPI_Comm communicator, int proc, float value)
 {
   float recvbuf;
   int ret;
 
-  ret=MPI_Scan(&value,&recvbuf,1,MPI_FLOAT,MPI_SUM,MPI_COMM_WORLD);
+  ret=MPI_Scan(&value,&recvbuf,1,MPI_FLOAT,MPI_SUM,communicator);
 
   if (ret!= MPI_SUCCESS) {
-    fprintf(stderr,"%d msg_float_scan: Scan ret=%d\n",LB_Proc,ret);
-    msg_abort(ret);
+    fprintf(stderr,"%d(%d) msg_float_scan: Scan ret=%d\n",proc,proc,ret);
+    msg_abort(communicator, proc, ret);
   }
 
   return(recvbuf-value);
@@ -82,13 +82,13 @@ float msg_float_scan(float value)
  * Try to abort all tasks
  *
  */
-static void msg_abort(int errcode)
+static void msg_abort(MPI_Comm communicator, int proc, int errcode)
 {
   char errmsg[MPI_MAX_ERROR_STRING];
   int errsize;
 
   MPI_Error_string(errcode,errmsg,&errsize);
-  fprintf(stderr,"%d  error string: %s\n",LB_Proc,errmsg);
-  MPI_Abort(MPI_COMM_WORLD,errcode);
+  fprintf(stderr,"%d  error string: %s\n",proc,errmsg);
+  MPI_Abort(communicator,errcode);
   abort();
 }

@@ -52,7 +52,7 @@ void dfs_set_visit_criterion(int visit) {
  * 
  * This function calls the different subfunctions to partition the octree 
  */
-void dfs_partition(int *counter, float *c1) {
+void dfs_partition(LB *lb, int *counter, float *c1) {
   float mycost,                     /* cost of the octant */
         globalcost,                 /* costs of all the octants */
         prefcost;                   /* sum of costs from previous processors */
@@ -68,7 +68,7 @@ void dfs_partition(int *counter, float *c1) {
  
 #ifdef LGG_MIGOCT
   /* gets the number of octants from the previous processors */
-  nprevoct=msg_int_scan(POC_nOctants());
+  nprevoct=msg_int_scan(lb->Communicator, lb->Proc, POC_nOctants());
 
   /* add nprevoct to the id counter */
   localroots = POC_localroots();                  /* get the local root list */
@@ -81,14 +81,14 @@ void dfs_partition(int *counter, float *c1) {
 #endif /* LGG_MIGOCT */
 
   /* Sum a value from each processor, and return sum to all processors */
-  MPI_Allreduce(&mycost,&globalcost,1,MPI_FLOAT,MPI_SUM,MPI_COMM_WORLD);
-  prefcost=msg_float_scan(mycost);
+  MPI_Allreduce(&mycost,&globalcost,1,MPI_FLOAT,MPI_SUM,lb->Communicator);
+  prefcost=msg_float_scan(lb->Communicator, lb->Proc, mycost);
   
   /* Initialize static vars */
-  optcost=globalcost/LB_Num_Proc;                   /* Optimal partition size */
+  optcost=globalcost/lb->Num_Proc;               /* Optimal partition size */
   partition=prefcost/optcost;                /* Start work on this partition */
-  if (partition==LB_Num_Proc)
-    partition=LB_Num_Proc-1;
+  if (partition==lb->Num_Proc)
+    partition=lb->Num_Proc-1;
 
   total=partition*optcost;               /* Total cost of all previous parts */
   pcost=prefcost-partition*optcost;                /* Current partition cost */
@@ -283,7 +283,7 @@ void tag_subtree(pOctant octant, int partition) {
  * sets up information so the migrate octant routines can create the
  * proper export_tags and import_tags arrays
  */
-void dfs_migrate(pRegion *export_regs, int *nsentags,
+void dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
 		 pRegion *import_regs, int *nrectags, 
 		 float *c2, float *c3, int *counter3, int *counter4) 
 {
@@ -313,9 +313,8 @@ void dfs_migrate(pRegion *export_regs, int *nsentags,
   while(lroots != NULL) { 
     for (oct=lroots->oct; oct; oct=POC_nextDfs(oct)) {
       pid = POC_data_newpid(oct);
-      if (pid<0 || pid>=LB_Num_Proc) {
-	fprintf(stderr,"%d dfs_migrate: bad dest pid %d\n",
-		LB_Proc,pid);
+      if (pid<0 || pid>=lb->Num_Proc) {
+	fprintf(stderr,"%d dfs_migrate: bad dest pid %d\n", lb->Proc, pid);
 	abort();
       }
       docts[dcount]=oct;
@@ -330,7 +329,7 @@ void dfs_migrate(pRegion *export_regs, int *nsentags,
   }
 
   /* setup the import_regs and export_regs */
-  Migrate_Objects(docts, dpids, dcount, export_regs, nsentags, 
+  Migrate_Objects(lb, docts, dpids, dcount, export_regs, nsentags, 
 		  import_regs, nrectags, c2, c3, counter3, counter4);
 
   free(docts);
@@ -351,14 +350,14 @@ void dfs_migrate(pRegion *export_regs, int *nsentags,
 
     global_migrate=msg_int_sum(nregions);
     
-    if(LB_Proc == 0) { 
+    if(lb->Proc == 0) { 
       printf("OCTPART volume: %8d of %8d = %.3f\n",
 	     global_migrate,global_meshregions,
 	     (double)global_migrate/global_meshregions);
     }
   }
   
-  migreg_migrate_regions(pmeshpb,migregions,nregions,TRUE);
+  migreg_migrate_regions(lb, pmeshpb,migregions,nregions,TRUE);
   free(migregions);
 #endif
 }

@@ -47,6 +47,7 @@ void LB_print_sync_start(LB *lb, int do_print_line)
 int        flag = 1, from, type;
 static int offset = 0;
 MPI_Status st;
+char *yo = "LB_print_sync_start";
 
   offset = (offset + 1)%100;
   type   = PRINT_SYNC + offset;
@@ -55,8 +56,7 @@ MPI_Status st;
     from = lb->Proc -1;
     if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, lb->Communicator, &st)
         != 0) {
-      fprintf(stderr, "LB_print_sync_start: ERROR on processor %d (%d)\n",
-              lb->Proc, LB_Proc);
+      fprintf(stderr, "%s: ERROR on processor %d\n", yo, lb->Proc);
       fprintf(stderr, "MPI_Recv failed, message type %d\n", type);
       exit (-1);
     }
@@ -95,6 +95,7 @@ void LB_print_sync_end(LB *lb, int do_print_line)
 int         flag = 1, from, type, to;
 static int  offset = 0;
 MPI_Status  st;
+char *yo = "LB_print_sync_end";
 
   fflush(stdout);
 
@@ -115,8 +116,7 @@ MPI_Status  st;
   }
 
   if (MPI_Send((void *) &flag, 1, MPI_INT, to, type, lb->Communicator) != 0 ) {
-    fprintf(stderr, "LB_print_sync_end: ERROR on node %d (%d)\n",
-            lb->Proc, LB_Proc);
+    fprintf(stderr, "%s: ERROR on node %d\n", yo, lb->Proc);
     fprintf(stderr, "MPI_Send failed, message type %d\n", type);
     exit (-1);
   }
@@ -124,8 +124,7 @@ MPI_Status  st;
     from = lb->Num_Proc -1;
     if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, lb->Communicator, &st)
         != 0) {
-      fprintf(stderr, "LB_print_sync_end: ERROR on node %d (%d)\n",
-             lb->Proc, LB_Proc);
+      fprintf(stderr, "%s: ERROR on node %d\n", yo, lb->Proc);
       fprintf(stderr, "MPI_Recv failed, message type %d/n", type);
       exit (-1);
     }
