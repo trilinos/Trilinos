@@ -238,6 +238,7 @@ extern void Zoltan_LB_Free_Struct(struct Zoltan_LB_Struct *);
 extern int Zoltan_LB_Part_To_Proc(struct Zoltan_Struct *, int, ZOLTAN_ID_PTR);
 extern int Zoltan_LB_Proc_To_Part(struct Zoltan_Struct *, int, int *, int *);
 extern int Zoltan_LB_Get_Part_Sizes(struct Zoltan_Struct *, int, int, float *);
+extern int Zoltan_LB_Build_PartDist(struct Zoltan_Struct *);
 
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_RCB;

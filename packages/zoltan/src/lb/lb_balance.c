@@ -38,7 +38,6 @@ extern "C" {
 static int Zoltan_LB(ZZ *, int, int *, int *, int *,
   int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **,
   int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **);
-static int Zoltan_LB_Build_PartDist(ZZ *);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -564,7 +563,7 @@ int part_dim;
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int Zoltan_LB_Build_PartDist(ZZ *zz)
+int Zoltan_LB_Build_PartDist(ZZ *zz)
 {
 char *yo = "Zoltan_LB_Build_PartDist";
 int ierr = ZOLTAN_OK;

@@ -78,7 +78,6 @@ int msgtag, msgtag2;               /* Message tags for communication routines */
 int num_gid_entries, num_lid_entries;  /* Length of global and local ids */
 int include_parts;                 /* Flag indicating whether to compute
                                       inverse list for partitions. */
-int i;
 int ierr, ret_ierr = ZOLTAN_OK;
 
   ZOLTAN_TRACE_ENTER(zz, yo);

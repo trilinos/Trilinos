@@ -70,11 +70,12 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   char *yo = "Zoltan_LB_Eval";
   int i, j, k, p, max_edges, nedges, cuts, proc_flag, part_flag, found;
   int num_obj = 0, num_adj, num_boundary, ierr, compute_part;
-  int nproc = zz->Num_Proc, nparts = zz->LB.Num_Global_Parts;
+  int nproc = zz->Num_Proc, nparts, maxpart, obj_wgt_dim;
   int stats[4*NUM_STATS];
-  int imin, imax, isum;
+  int imin, imax, isum, iimbal;
   int *proc_count, *nbors_proc;
-  float *tmp_vwgt, *vwgts, *ewgts, *tmp_cutwgt;
+  float imbal[NUM_STATS];
+  float *tmp_vwgt, *vwgts, *ewgts, *tmp_cutwgt, *part_sizes, temp;
   ZOLTAN_ID_PTR local_ids; 
   ZOLTAN_ID_PTR global_ids, nbors_global;
   int *part;
@@ -116,6 +117,33 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   compute_part = (zz->Get_Partition != NULL || zz->Get_Partition_Multi != NULL);
 
   if (compute_part){
+    /* Get partition information. We need LB.Num_Global_Parts */
+    /* We don't know if the application uses a Zoltan-style
+       mapping of partitions to processsors, so avoid Part2Proc! */
+    ierr = Zoltan_LB_Build_PartDist(zz);
+    if (ierr == ZOLTAN_FATAL){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_LB_Build_PartDist returned error");
+      goto End;
+    }
+    /* Requested number of partitions. */
+    nparts = zz->LB.Num_Global_Parts;
+
+    /* Compute actual number of partitions. */
+    maxpart = 0;
+    for (i=0; i<num_obj; i++)
+      if (part[i]>maxpart) 
+        maxpart = part[i];
+    /* Find max over all procs. */
+    i = maxpart;
+    MPI_Allreduce(&i, &maxpart, 1, MPI_INT, MPI_MAX,
+                  zz->Communicator);
+
+    if (maxpart+1 > nparts){
+      ierr = ZOLTAN_WARN;
+      sprintf(msg, "Actual number of partitions (%1d) is greater than requested # partitions (%1d)", maxpart+1, nparts);
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+    }
+
     /* Allocate space. */
     all_arr = (int *)  ZOLTAN_CALLOC(2*NUM_STATS*nparts, sizeof(int));
     vwgt_arr = (float *) ZOLTAN_CALLOC(2*nparts*(zz->Obj_Weight_Dim +
@@ -310,7 +338,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[isum*(zz->Edge_Weight_Dim)], 
                     zz->Edge_Weight_Dim, MPI_FLOAT, MPI_SUM, zz->Communicator);
     }
-    /* fflush(stdout); */
      
     stats[0] = num_obj;
     stats[1] = cuts;
@@ -403,6 +430,16 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     imin = 0;
     imax = 1;
     isum = 2;
+    iimbal = 3;
+
+    /* Get partition sizes. */
+    obj_wgt_dim = (zz->Obj_Weight_Dim > 0 ? zz->Obj_Weight_Dim : 1);
+    part_sizes = (float *) ZOLTAN_MALLOC(nparts * obj_wgt_dim * sizeof(float));
+    if (!part_sizes){
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+    Zoltan_LB_Get_Part_Sizes(zz, nparts, obj_wgt_dim, part_sizes);
 
     /* Allreduce data w.r.t. partitions onto all procs. */
     MPI_Allreduce(all_arr, all_arr_glob, NUM_STATS*nparts, 
@@ -430,12 +467,28 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       }
     }
 
+    /* Compute scaled imbalance. */
+    for (j=0; j<NUM_STATS; j++)
+      imbal[j] = 0.0;
+    k = (zz->Obj_Weight_Dim>0 ? zz->Obj_Weight_Dim : 1); 
+    for (i=0; i<nparts; i++){
+      for (j=0; j<NUM_STATS; j++){
+        if (all_arr_glob[j*nparts+i]*part_sizes[i*k] != 0.0)
+          temp = all_arr_glob[j*nparts+i] / (stats[isum*NUM_STATS+j]
+                 * part_sizes[i*k]);
+        else
+          temp = 1.0;
+        if (temp > imbal[j])
+          imbal[j] = temp;
+      }
+    }
+
     /* Min, max, sum for object weights. */
     if (zz->Obj_Weight_Dim>0){
       for (i=0; i<zz->Obj_Weight_Dim; i++)
         tmp_vwgt[i] = FLT_MAX; /*min */
-      for (i=zz->Obj_Weight_Dim; i<3*zz->Obj_Weight_Dim; i++)
-        tmp_vwgt[i] = 0; /* max and sum */
+      for (i=zz->Obj_Weight_Dim; i<4*zz->Obj_Weight_Dim; i++)
+        tmp_vwgt[i] = 0.0; /* max and sum and imbalance */
 
       for (j=0; j<nparts; j++){
         for (i=0; i<zz->Obj_Weight_Dim; i++){
@@ -447,6 +500,17 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         }
       }
 
+      /* Compute scaled imbalance. */
+      for (j=0; j<nparts; j++){
+        for (i=0; i<zz->Obj_Weight_Dim; i++){
+          if (tmp_vwgt[isum*zz->Obj_Weight_Dim+i]*part_sizes[j*zz->Obj_Weight_Dim+i] != 0.0)
+            temp = vwgt_arr_glob[j*zz->Obj_Weight_Dim+i]/(tmp_vwgt[isum*zz->Obj_Weight_Dim+i]*part_sizes[j*zz->Obj_Weight_Dim+i]);
+          else
+            temp = 1.0;
+          if (temp > tmp_vwgt[iimbal*zz->Obj_Weight_Dim+i])
+            tmp_vwgt[iimbal*zz->Obj_Weight_Dim+i] = temp;
+        }
+      }
     }
 
     /* Min, max, sum for cut weights. */
@@ -470,25 +534,21 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
     /* Print min-max-sum of results */
     if (zz->Proc == zz->Debug_Proc){
-      printf("\n%s  Statistics with respect to %1d partitions: \n", yo, nparts);
+      printf("\n%s  Requested # partitions = %1d, actual # partitions = %1d\n", yo, nparts, maxpart+1);
+      printf("%s  Statistics with respect to %1d partitions: \n", yo, nparts);
       printf("%s                         Min.     Max.      Sum  Imbalance\n", yo);
       printf("%s  No. of objects   :  %8d %8d %8d   %5.3f\n",
         yo, stats[imin*NUM_STATS], 
         stats[imax*NUM_STATS],
         stats[isum*NUM_STATS], 
-        (stats[isum*NUM_STATS] > 0
-              ? stats[imax*NUM_STATS]*nparts/ (float) stats[isum*NUM_STATS]
-              : 1.));
+        imbal[0]);
  
       for (i=0; i<zz->Obj_Weight_Dim; i++){
         printf("%s  Object weight #%1d :  %8.3g %8.3g %8.3g   %5.3f\n",
           yo, i, tmp_vwgt[imin*zz->Obj_Weight_Dim+i], 
         tmp_vwgt[imax*zz->Obj_Weight_Dim+i], 
         tmp_vwgt[isum*zz->Obj_Weight_Dim+i], 
-        (tmp_vwgt[isum*zz->Obj_Weight_Dim+i] > 0 
-           ? tmp_vwgt[imax*zz->Obj_Weight_Dim+i]*nparts/
-             tmp_vwgt[isum*zz->Obj_Weight_Dim+i]
-           : 1.));
+        tmp_vwgt[iimbal*zz->Obj_Weight_Dim+i]);
       }
 
       if (zz->Get_Num_Edges && zz->Get_Edge_List){
@@ -519,9 +579,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           yo, msg, stats[imin*NUM_STATS+i], 
           stats[imax*NUM_STATS+i],
           stats[isum*NUM_STATS+i], 
-          (stats[isum*NUM_STATS+i] > 0 
-                ? stats[imax*NUM_STATS+i]*nparts/ (float) stats[isum*NUM_STATS+i]
-                : 1.));
+          imbal[i]);
       }
       printf("\n");
     }
@@ -543,6 +601,7 @@ End:
   if (compute_part){
     ZOLTAN_FREE(&all_arr);
     ZOLTAN_FREE(&vwgt_arr);
+    ZOLTAN_FREE(&part_sizes);
   }
   ZOLTAN_TRACE_EXIT(zz, yo);
 
