@@ -4,7 +4,8 @@
 //  usage: 
 //     Amesos_TestDriver.exe Solver InputMatrix MatrixType Special Numsolves Transpose MaxError MaxResid 
 //     Where solver is:  SuperLU, SuperLUdist, SuperLUdist2, 
-//       UMFPACK, KUNDERT, SPOOLES, DSCPACK, DSCPACKOLD, UMFPACK, SPOOLESERIAL or AZTEC 
+//       UMFPACK, KUNDERT, SPOOLES, DSCPACK, DSCPACKOLD, UMFPACK, 
+//       SPOOLESERIAL, MUMPS or AZTEC 
 //     special is, at present, only used in SuperLU, where 0 means dgssv
 //     and 1 means dgssvx 
 //  examples:
@@ -130,7 +131,7 @@ main(int argc, char **argv)
       cerr << " argc = " << argc << " Sprogam= " << Sprogram << 
 	" SPOOLES? " << (int) (Sprogram=="SPOOLES") << endl ; 
       cerr << "Usage: " << argv[0] <<" SolverName InputMatrix special numsolves transpose maxerror maxresid" << endl ; 
-      cerr << "    Solvername = UMFPACK, SuperLUdist, SuperLUdist2, AZTEC. SPOOLES, SPOOLESSERIAL, KUNDER or SuperLU " << endl;
+      cerr << "    Solvername = UMFPACK, SuperLUdist, SuperLUdist2, AZTEC. SPOOLES, SPOOLESSERIAL, KUNDERT, MUMPS or SuperLU " << endl;
       cerr << "    InputMatrix must be a file in Harwell Boeing format"<< endl;
       cerr << "    special = number of repeats (0 means run just once) " << endl ; 
       cerr << "    numsolves = number of right hand sidess (<0 means MRHS, >1 means BRHS) " << endl ; 
@@ -241,6 +242,8 @@ main(int argc, char **argv)
     SparseSolver = SPOOLESSERIAL ; 
   else if  ( Sprogram == "SuperLU" ) 
     SparseSolver = SuperLU ; 
+  else if  ( Sprogram == "MUMPS" ) 
+    SparseSolver = MUMPS ; 
   else {
     if (( MyPID == 0 ) ) cerr << "Unknown program: " << Sprogram << endl ; 
     exit_value = -1 ; 
@@ -345,9 +348,9 @@ main(int argc, char **argv)
     exit_value = -1 ; 
   }
   if ( numsolves != 1 &&  SparseSolver != SuperLU && 
-       SparseSolver != SuperLUdist  && SparseSolver != SuperLUdist2  && SparseSolver != DSCPACK && SparseSolver != UMFPACK ) {
+       SparseSolver != SuperLUdist  && SparseSolver != SuperLUdist2  && SparseSolver != DSCPACK && SparseSolver != UMFPACK && SparseSolver != MUMPS ) {
     if ( ( MyPID == 0 )  ) 
-      cerr << "Only SuperLU, SuperLUdist, UMFPACK and DSCPACK support MRHS and BRHS" << endl ;
+      cerr << "Only SuperLU, SuperLUdist, UMFPACK, MUMPS and DSCPACK support MRHS and BRHS" << endl ;
     exit_value = -1 ; 
   }
     

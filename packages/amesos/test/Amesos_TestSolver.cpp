@@ -36,11 +36,8 @@
 #ifdef HAVE_AMESOS_UMFPACK
 #include "Amesos_Umfpack.h"
 #endif
-#if 0 
-#include "UmfpackOO.h"
-#include "SpoolesserialOO.h"
-#include "TimeMemory.h"
-#include "SparseSolverResult.h"
+#ifdef HAVE_AMESOS_MUMPS
+#include "Amesos_Mumps.h"
 #endif
 
 #include "Amesos_TestSolver.h"
@@ -191,8 +188,9 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   Epetra_Time TotalTime( Comm ) ; 
   for ( int i = 0; i < 1+special ; i++ ) { 
     if ( false ) { 
+      //  TEST_UMFPACK is never set by configure
 #ifdef TEST_UMFPACK
-    } else if ( SparseSolver == UMFPACK ) { 
+    } else if ( SparseSolver == UMFPACKOLD ) { 
       UmfpackOO umfpack( (Epetra_RowMatrix *) passA, 
 			 (Epetra_MultiVector *) passx, 
 			 (Epetra_MultiVector *) passb ) ; 
@@ -233,6 +231,14 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       //      (void) ParamList.sublist("Bogus");   // At one point, I thought that this kept parameter list from crashing when run on paunchy with Purify
       Amesos_Dscpack A_dscpack( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( A_dscpack.Solve(  ) ); 
+#endif
+#ifdef HAVE_AMESOS_MUMPS
+    } else if ( SparseSolver == MUMPS ) {
+
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Mumps A_mumps( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( A_mumps.SetUseTranspose( transpose ) ); 
+      EPETRA_CHK_ERR( A_mumps.Solve(  ) ); 
 #endif
 #ifdef HAVE_AMESOS_UMFPACK
     } else if ( SparseSolver == UMFPACK ) {

@@ -17,6 +17,9 @@
 #ifdef HAVE_AMESOS_UMFPACK
 #include "Amesos_Umfpack.h"
 #endif
+#ifdef HAVE_AMESOS_MUMPS
+#include "Amesos_Mumps.h"
+#endif
 #ifdef HAVE_AMESOS_KUNDERT
 #include "KundertOO.h"
 #endif
@@ -189,6 +192,9 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     Epetra_Time TotalTime( Comm ) ; 
     if ( false ) { 
 #ifdef TEST_UMFPACK
+
+      unused code
+
     } else if ( SparseSolver == UMFPACK ) { 
       UmfpackOO umfpack( (Epetra_RowMatrix *) passA, 
 			 (Epetra_MultiVector *) passx, 
@@ -306,6 +312,30 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
 	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
 	EPETRA_CHK_ERR( umfpack.Solve( ) ); 
+	factor = false; 
+	if ( i == 0 ) 
+	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+	if ( i < numsolves-1 ) 
+	  SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+	else
+	  SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+
+      }
+#endif
+#ifdef HAVE_AMESOS_MUMPS
+    } else if ( SparseSolver == MUMPS ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Mumps mumps( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( mumps.SetUseTranspose( transpose ) ); 
+
+      bool factor = true; 
+      for ( int i= 0 ; i < numsolves ; i++ ) { 
+	//    set up to sovle A X[:,i] = B[:,i]
+	Epetra_Vector *passb_i = (*passb)(i) ;
+	Epetra_Vector *passx_i = (*passx)(i) ;
+	Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+	Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+	EPETRA_CHK_ERR( mumps.Solve( ) ); 
 	factor = false; 
 	if ( i == 0 ) 
 	  SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 

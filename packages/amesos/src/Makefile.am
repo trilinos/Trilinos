@@ -62,6 +62,16 @@ UMFPACK_H =
 UMFPACK =
 endif
 
+if HAVE_AMESOS_MUMPS
+MUMPS_H = \
+	$(srcdir)/Amesos_Mumps.h
+MUMPS = \
+	$(srcdir)/Amesos_Mumps.cpp
+else
+MUMPS_H =
+MUMPS =
+endif
+
 
 
 if HAVE_AMESOS_SLUD2
@@ -143,6 +153,7 @@ AMESOS_H = \
 	$(PARAM_H) \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
+	$(MUMPS_H) \
 	$(SLUDIST_H) \
 	$(SLUDIST2_H) \
 	$(SLUSERIAL_H) \
@@ -153,6 +164,7 @@ libamesos_a_SOURCES = \
 	$(PARAM) \
 	$(DSCPACK) \
 	$(UMFPACK) \
+	$(MUMPS) \
 	$(SLUDIST) \
 	$(SLUDIST2) \
 	$(SLUSERIAL) \

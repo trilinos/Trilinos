@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_UMFPACK_H_
-#define _EPETRA_UMFPACK_H_
+#ifndef _EPETRA_MUMPS_H_
+#define _EPETRA_MUMPS_H_
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
@@ -35,18 +35,20 @@
 #endif
 #include "Epetra_CrsGraph.h"
 
+#if 0
 extern "C" {
-#include "umfpack.h"
 }
+#endif
+#include "dmumps_c.h"
 
-//! Amesos_Umfpack:  An object-oriented wrapper for Umfpack.
-/*!  Amesos_Umfpack will solve a linear systems of equations: <TT>A X = B</TT>
-   using Epetra objects and the Umfpack solver library, where
+//! Amesos_Mumps:  An object-oriented wrapper for Mumps.
+/*!  Amesos_Mumps will solve a linear systems of equations: <TT>A X = B</TT>
+   using Epetra objects and the Mumps solver library, where
   <TT>A</TT> is an Epetra_RowMatrix and <TT>X</TT> and <TT>B</TT> are 
   Epetra_MultiVector objects.
 
-  Umfpack execution can be tuned through a variety of parameters.
-  Amesos_Umfpack.h allows control of these parameters through the
+  Mumps execution can be tuned through a variety of parameters.
+  Amesos_Mumps.h allows control of these parameters through the
   following named parameters, ignoring parameters with names that it
   does not recognize.  Where possible, the parameters are common to
   all direct solvers (although some may ignore them).  However, some
@@ -54,25 +56,25 @@ extern "C" {
   solver.
     
 */
-class Amesos_Umfpack: public Amesos_BaseSolver { 
+class Amesos_Mumps: public Amesos_BaseSolver { 
 
 public: 
 
   //@{ \name Constructor methods
-  //! Amesos_Umfpack Constructor.
-  /*! Creates an Amesos_Umfpack instance, using an Epetra_LinearProblem,
+  //! Amesos_Mumps Constructor.
+  /*! Creates an Amesos_Mumps instance, using an Epetra_LinearProblem,
       passing in an already-defined Epetra_LinearProblem object. 
 
       Note: The operator in LinearProblem must be an
       Epetra_RowMatrix.
 
   */
-  Amesos_Umfpack(const Epetra_LinearProblem& LinearProblem, const AMESOS::Parameter::List &ParameterList );
+  Amesos_Mumps(const Epetra_LinearProblem& LinearProblem, const AMESOS::Parameter::List &ParameterList );
 
-  //! Amesos_Umfpack Destructor.
-  /*! Completely deletes an Amesos_Umfpack object.  
+  //! Amesos_Mumps Destructor.
+  /*! Completely deletes an Amesos_Mumps object.  
   */
-  ~Amesos_Umfpack(void);
+  ~Amesos_Mumps(void);
   //@}
 
   //@{ \name Mathematical functions.
@@ -92,6 +94,8 @@ public:
       postconditions:<ul>
       <li>Symbolic Factorization will be performed (or marked to be performed) 
       allowing NumericFactorization() and Solve() to be called.
+      <li>MDS will be modified to reflect the symbolic factorization 
+      which has been performed.
       </ul>
 
     \return Integer error code, set to 0 if successful.
@@ -118,6 +122,8 @@ public:
       <li>Numeric Factorization will be performed (or marked to be performed) 
       allowing Solve() to be performed correctly despite a potential change in 
       in the matrix values (though not in the non-zero structure).
+      <li>MDS will be modified to reflect the numeric factorization 
+      which has been performed.
       </ul>
 
      \return Integer error code, set to 0 if successful.
@@ -164,9 +170,9 @@ public:
   //! Get a pointer to the ParameterList.
   const AMESOS::Parameter::List *GetParameterList() const { return(ParameterList_); };
 
-  //! Returns true if UMFPACK can handle this matrix shape 
-  /*! Returns true if the matrix shape is one that UMFPACK can
-    handle. UMFPACK only works with square matrices.  
+  //! Returns true if MUMPS can handle this matrix shape 
+  /*! Returns true if the matrix shape is one that MUMPS can
+    handle. MUMPS only works with square matrices.  
   */
   bool MatrixShapeOK() const ;
 
@@ -196,26 +202,26 @@ public:
       NumGlobalElements_   is set to the number of rows in the matrix
       numentries_ is set to the number of non-zeroes in the matrix 
    */
-  int ConvertToSerial();
-
+  int ConvertToSerial(); 
   /*
-    ConvertToUmfpackCRS - Convert matirx to form expected by Umfpack: Ai, Ap, Aval
+    ConvertToTriplet - Convert matirx to form expected by Mumps: Row, Col, Val
     Preconditions:
       numentries_, NumGloalElements_ and SerialMatrix_ must be set.
     Postconditions:
-      Ai, Ap, and Aval are resized and populated with a compresses row storage 
-      version of the input matrix A.
+      Row, Col, Val are resized and populated with values that reflect
+      the input matrix A.
+
   */
-  int ConvertToUmfpackCRS();     
+  int ConvertToTriplet();     
 
   /*
-    PerformSymbolicFactorization - Call Umfpack to perform symbolic factorization
+    PerformSymbolicFactorization - Call Mumps to perform symbolic factorization
     Preconditions:
-      IsLocal must be set to 1 if the input matrix is entirely stored on process 0
-      Ap, Ai and Aval are a compressed row storage version of the input matrix A.
+      Row, Col and Val must be set
+
     Postconditions:
-      Symbolic points to an UMFPACK internal opaque object containing the
-        symbolic factorization and accompanying information.  
+      MDS will be modified to reflect the symbolic factorization 
+      which has been performed.
       SymbolicFactorizationOK_ = true; 
     Note:  All action is performed on process 0
   */
@@ -223,14 +229,13 @@ public:
   int PerformSymbolicFactorization(); 
 
   /*
-    PerformNumericFactorization - Call Umfpack to perform numeric factorization
+    PerformNumericFactorization - Call Mumps to perform numeric factorization
     Preconditions:
-      IsLocal must be set 
-      Ap, Ai and Aval are a compressed row storage version of the input matrix A.
-      Symbolic must be set
+      IsLocal must be set to 1 if the input matrix is entirely stored on process 0
+      Row, Col and Val must be set
     Postconditions:
-      Numeric points to an UMFPACK internal opaque object containing the
-        numeric factorization and accompanying information.  
+      MDS will be modified to reflect the numeric factorization 
+      which has been performed.
       NumericFactorizationOK_ = true; 
     Note:  All action is performed on process 0
   */
@@ -240,16 +245,14 @@ public:
 
   bool SymbolicFactorizationOK_;   // True if SymbolicFactorization has been done
   bool NumericFactorizationOK_;    // True if NumericFactorization has been done
-
-  void *Symbolic;                  // Umfpack internal opaque object
-  void *Numeric;                   // Umfpack internal opaque object
+  DMUMPS_STRUC_C MDS ;             // Mumps data structure 
 
   //
-  //  Ap, Ai, Aval form the compressed row storage used by Umfpack
+  //  Row, Col, Val form the triplet representation used by Mumps
   //
-  vector <int> Ap;
-  vector <int> Ai;
-  vector <double> Aval;
+  vector <int> Row;
+  vector <int> Col;
+  vector <double> Val;
 
   int iam;                 //  Process number (i.e. Comm().MyPID() 
   
@@ -270,5 +273,5 @@ public:
   const Epetra_LinearProblem * Problem_;
   const AMESOS::Parameter::List * ParameterList_ ; 
 
-};  // End of  class Amesos_Umfpack  
-#endif /* _EPETRA_UMFPACK_H_ */
+};  // End of  class Amesos_Mumps  
+#endif /* _EPETRA_MUMPS_H_ */

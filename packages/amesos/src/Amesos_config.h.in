@@ -17,6 +17,9 @@
 /* Define if want to build amesos-kundert */
 #undef HAVE_AMESOS_KUNDERT
 
+/* Define if want to build amesos-mumps */
+#undef HAVE_AMESOS_MUMPS
+
 /* Define if want to build amesos-slud */
 #undef HAVE_AMESOS_SLUD
 

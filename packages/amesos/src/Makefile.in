@@ -146,6 +146,15 @@ install_sh = @install_sh@
 
 @HAVE_AMESOS_UMFPACK_FALSE@UMFPACK = 
 
+@HAVE_AMESOS_MUMPS_TRUE@MUMPS_H = \
+@HAVE_AMESOS_MUMPS_TRUE@	$(srcdir)/Amesos_Mumps.h
+
+@HAVE_AMESOS_MUMPS_FALSE@MUMPS_H = 
+@HAVE_AMESOS_MUMPS_TRUE@MUMPS = \
+@HAVE_AMESOS_MUMPS_TRUE@	$(srcdir)/Amesos_Mumps.cpp
+
+@HAVE_AMESOS_MUMPS_FALSE@MUMPS = 
+
 @HAVE_AMESOS_SLUD2_TRUE@SLUDIST2_H = \
 @HAVE_AMESOS_SLUD2_TRUE@	$(srcdir)/Superludist2_OO.h
 
@@ -221,6 +230,7 @@ AMESOS_H = \
 	$(PARAM_H) \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
+	$(MUMPS_H) \
 	$(SLUDIST_H) \
 	$(SLUDIST2_H) \
 	$(SLUSERIAL_H) \
@@ -232,6 +242,7 @@ libamesos_a_SOURCES = \
 	$(PARAM) \
 	$(DSCPACK) \
 	$(UMFPACK) \
+	$(MUMPS) \
 	$(SLUDIST) \
 	$(SLUDIST2) \
 	$(SLUSERIAL) \
@@ -311,24 +322,27 @@ libamesos_a_DEPENDENCIES =
 @HAVE_AMESOS_DSCPACK_FALSE@am__objects_2 =
 @HAVE_AMESOS_UMFPACK_TRUE@am__objects_3 = Amesos_Umfpack.$(OBJEXT)
 @HAVE_AMESOS_UMFPACK_FALSE@am__objects_3 =
-@HAVE_AMESOS_SLUD_TRUE@am__objects_4 = SuperludistOO.$(OBJEXT)
-@HAVE_AMESOS_SLUD_FALSE@am__objects_4 =
-@HAVE_AMESOS_SLUD2_TRUE@am__objects_5 = Superludist2_OO.$(OBJEXT)
-@HAVE_AMESOS_SLUD2_FALSE@am__objects_5 =
-@HAVE_AMESOS_SLUS_TRUE@am__objects_6 = Epetra_SLU.$(OBJEXT)
-@HAVE_AMESOS_SLUS_FALSE@am__objects_6 =
-@HAVE_AMESOS_KUNDERT_TRUE@am__objects_7 = \
+@HAVE_AMESOS_MUMPS_TRUE@am__objects_4 = Amesos_Mumps.$(OBJEXT)
+@HAVE_AMESOS_MUMPS_FALSE@am__objects_4 =
+@HAVE_AMESOS_SLUD_TRUE@am__objects_5 = SuperludistOO.$(OBJEXT)
+@HAVE_AMESOS_SLUD_FALSE@am__objects_5 =
+@HAVE_AMESOS_SLUD2_TRUE@am__objects_6 = Superludist2_OO.$(OBJEXT)
+@HAVE_AMESOS_SLUD2_FALSE@am__objects_6 =
+@HAVE_AMESOS_SLUS_TRUE@am__objects_7 = Epetra_SLU.$(OBJEXT)
+@HAVE_AMESOS_SLUS_FALSE@am__objects_7 =
+@HAVE_AMESOS_KUNDERT_TRUE@am__objects_8 = \
 @HAVE_AMESOS_KUNDERT_TRUE@	Epetra_CrsKundertSparse.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	alloc.$(OBJEXT) smplinkrows.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spbuild.$(OBJEXT) spoutput.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spsolve.$(OBJEXT) driver.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spalloc.$(OBJEXT) spfactor.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spsmp.$(OBJEXT) sputils.$(OBJEXT)
-@HAVE_AMESOS_KUNDERT_FALSE@am__objects_7 =
-am__objects_8 = CrsMatrixTranspose.$(OBJEXT)
+@HAVE_AMESOS_KUNDERT_FALSE@am__objects_8 =
+am__objects_9 = CrsMatrixTranspose.$(OBJEXT)
 am_libamesos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
-	$(am__objects_6) $(am__objects_7) $(am__objects_8)
+	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
+	$(am__objects_9)
 libamesos_a_OBJECTS = $(am_libamesos_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -339,6 +353,7 @@ LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Amesos_Dscpack.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Amesos_Mumps.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Parameter_Entry.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Parameter_List.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Umfpack.Po \
@@ -435,6 +450,7 @@ Amesos_Parameter_Entry.$(OBJEXT): $(srcdir)/Amesos_Parameter_Entry.cpp
 DscpackOO.$(OBJEXT): $(srcdir)/DscpackOO.cpp
 Amesos_Dscpack.$(OBJEXT): $(srcdir)/Amesos_Dscpack.cpp
 Amesos_Umfpack.$(OBJEXT): $(srcdir)/Amesos_Umfpack.cpp
+Amesos_Mumps.$(OBJEXT): $(srcdir)/Amesos_Mumps.cpp
 SuperludistOO.$(OBJEXT): $(srcdir)/SuperludistOO.cpp
 Superludist2_OO.$(OBJEXT): $(srcdir)/Superludist2_OO.cpp
 Epetra_SLU.$(OBJEXT): $(srcdir)/Epetra_SLU.cpp
@@ -462,6 +478,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Dscpack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Mumps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Parameter_Entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Parameter_List.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Umfpack.Po@am__quote@
@@ -689,6 +706,18 @@ Amesos_Umfpack.obj: $(srcdir)/Amesos_Umfpack.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Umfpack.Po' tmpdepfile='$(DEPDIR)/Amesos_Umfpack.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Umfpack.obj `cygpath -w $(srcdir)/Amesos_Umfpack.cpp`
+
+Amesos_Mumps.o: $(srcdir)/Amesos_Mumps.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_Mumps.cpp' object='Amesos_Mumps.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Mumps.Po' tmpdepfile='$(DEPDIR)/Amesos_Mumps.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Mumps.o `test -f '$(srcdir)/Amesos_Mumps.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Mumps.cpp
+
+Amesos_Mumps.obj: $(srcdir)/Amesos_Mumps.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_Mumps.cpp' object='Amesos_Mumps.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Mumps.Po' tmpdepfile='$(DEPDIR)/Amesos_Mumps.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Mumps.obj `cygpath -w $(srcdir)/Amesos_Mumps.cpp`
 
 SuperludistOO.o: $(srcdir)/SuperludistOO.cpp
 @AMDEP_TRUE@	source='$(srcdir)/SuperludistOO.cpp' object='SuperludistOO.o' libtool=no @AMDEPBACKSLASH@

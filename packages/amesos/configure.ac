@@ -263,6 +263,9 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, dscpack, [Enable Amesos interface support fo
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, umfpack, [Enable Amesos interface support for UMFPACK], 
 		AMESOS_UMFPACK, no)
 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, mumps, [Enable Amesos interface support for MUMPS], 
+		AMESOS_MUMPS, no)
+
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, slus, [Enable Amesos interface support for SuperLU Dist], 
 		AMESOS_SLUS, no)
 
@@ -276,8 +279,10 @@ if test "X$ac_cv_use_amesos_slud" = "Xno"; then
    if test "X$ac_cv_use_amesos_slus" = "Xno"; then
       if test "X$ac_cv_use_amesos_dscpack" = "Xno"; then
          if test "X$ac_cv_use_amesos_umfpack" = "Xno"; then
-            if test "X$ac_cv_use_amesos_kundert" = "Xno"; then
-               AC_MSG_ERROR([Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details])
+            if test "X$ac_cv_use_amesos_mumps" = "Xno"; then
+	       if test "X$ac_cv_use_amesos_kundert" = "Xno"; then
+                 AC_MSG_ERROR([Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details])
+               fi
             fi
          fi				 
       fi				 
@@ -496,6 +501,76 @@ if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
   amesos_libs="${amesos_libs} ${tac_with_amesos_umfpacklib} ${tac_with_amesos_umfpackamdlib}"
 else
   AM_CONDITIONAL(HAVE_AMESOS_UMFPACK, false ) 
+fi
+
+
+
+#
+#  --enable-amesos-mumps, --with-amesos-mumpsdir, --with-amesos-mumpslib, 
+#    --with-amesos-umfpackamdlib, 
+#    --with-amesos-mumpsincdir
+#
+#
+#  Test to see if everything is where it ought to be:
+#    Make sure that umfmain.h is in the directory pointed to by amesos-mumpsincdic
+#    Make sure that umfpack_di_default is in the library pointed to by amesos-mumpslib
+#    Make sure that amd_default is in the library pointed to by amesos-umfpackamdlib
+#
+if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+
+  TAC_ARG_WITH_SUB( amesos, mumpsdir, [Set MUMPS directory],  ${tac_with_trilinos3pldir}/MUMPS_4.2_beta/ )
+  AC_CHECK_FILE(${tac_with_amesos_mumpsdir})
+
+#
+#  The following hack allows me to compile locally even though I cannot compile mumps
+#  on my laptop without an f90 compiler.  
+#
+if test "X$target" == "Xsgi"; then
+    TAC_ARG_WITH_SUB( amesos, mumpslib, [Set MUMPS library],  ${tac_with_amesos_mumpsdir}UMFPACK/Lib/libumfpack.a )
+    AC_CHECK_FILE(${tac_with_amesos_mumpslib})
+
+    TAC_ARG_WITH_SUB( amesos, scalapacklib, [Set ScaLAPACK library],  ${tac_with_trilinos3pldir}/ScaLAPACK/libscalpack.a )
+    AC_CHECK_FILE(${tac_with_amesos_scalapacklib})
+
+    TAC_ARG_WITH_SUB( amesos, blacslib, [Set BLACS library],  ${tac_with_trilinos3pldir}/BLACS/libblacs.a )
+    AC_CHECK_FILE(${tac_with_amesos_scalapacklib})
+fi  
+
+  TAC_ARG_WITH_SUB( amesos, mumpsincdir, [Set MUMPS include directory],  ${tac_with_amesos_mumpsdir}include )
+  AC_CHECK_FILE(${tac_with_amesos_mumpsincdir})
+
+#
+# This is a bad way to check for dmumps_c.h, it won't pick dmumps_c.h up if
+# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
+#
+
+  AC_CHECK_FILE(${tac_with_amesos_mumpsincdir}/dmumps_c.h,,
+    AC_MSG_ERROR([[Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]] ))
+
+
+##  LDFLAGS="${tac_with_amesos_mumpslib} ${LDFLAGS}"
+
+  CXXFLAGS="-I${tac_with_amesos_mumpsincdir} ${CXXFLAGS}"
+
+
+    SAVE_LIBS="${LIBS}"
+#
+#   This has not yet been switched to MUMPS
+#
+    if test "X$target" == "Xsgi"; then
+      LIBS="${tac_with_amesos_mumpslib} ${MPI_LIBS} ${LIBS}"
+      AC_TRY_LINK_FUNC(umfpack_di_defaults,,
+      AC_MSG_ERROR([[Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))  
+    LIBS="${tac_with_amesos_umfpackamdlib} ${MPI_LIBS} ${LIBS}"
+      AC_TRY_LINK_FUNC(amd_defaults,,
+      AC_MSG_ERROR([[Cannot find the AMD library needed by Umfpack, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))  
+    LIBS="${SAVE_LIBS}"
+  fi
+  AM_CONDITIONAL(HAVE_AMESOS_MUMPS, true ) 
+  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+  amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_umfpackamdlib}"
+else
+  AM_CONDITIONAL(HAVE_AMESOS_MUMPS, false ) 
 fi
 
 

@@ -109,12 +109,13 @@ install_sh = @install_sh@
 noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort \
 	AmesosShortSuperLU AmesosShortKundert AmesosDistScript AmesosShortScript \
 	AmesosJanusScript SpoolesJanusScript SpoolesScript AmesosSuperLUserial \
-	AmesosUmfpack AmesosUmfpackShort AmesosUmfpackSerial
+	AmesosUmfpack AmesosUmfpackShort AmesosUmfpackSerial AmesosMumps
 
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
 AmesosDscpack_SOURCES = $(srcdir)/AmesosDscpack
 AmesosDscpackShort_SOURCES = $(srcdir)/AmesosDscpackShort
+AmesosMumps_SOURCES = $(srcdir)/AmesosMumps
 AmesosUmfpack_SOURCES = $(srcdir)/AmesosUmfpack
 AmesosUmfpackShort_SOURCES = $(srcdir)/AmesosUmfpackShort
 AmesosUmfpackSerial_SOURCES = $(srcdir)/AmesosUmfpackSerial
@@ -178,7 +179,7 @@ noinst_PROGRAMS = amesos_test$(EXEEXT) AmesosShellScript$(EXEEXT) \
 	AmesosJanusScript$(EXEEXT) SpoolesJanusScript$(EXEEXT) \
 	SpoolesScript$(EXEEXT) AmesosSuperLUserial$(EXEEXT) \
 	AmesosUmfpack$(EXEEXT) AmesosUmfpackShort$(EXEEXT) \
-	AmesosUmfpackSerial$(EXEEXT)
+	AmesosUmfpackSerial$(EXEEXT) AmesosMumps$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_AmesosDistScript_OBJECTS =
@@ -201,6 +202,11 @@ AmesosJanusScript_OBJECTS = $(am_AmesosJanusScript_OBJECTS)
 AmesosJanusScript_LDADD = $(LDADD)
 AmesosJanusScript_DEPENDENCIES =
 AmesosJanusScript_LDFLAGS =
+am_AmesosMumps_OBJECTS =
+AmesosMumps_OBJECTS = $(am_AmesosMumps_OBJECTS)
+AmesosMumps_LDADD = $(LDADD)
+AmesosMumps_DEPENDENCIES =
+AmesosMumps_LDFLAGS =
 am_AmesosShellScript_OBJECTS =
 AmesosShellScript_OBJECTS = $(am_AmesosShellScript_OBJECTS)
 AmesosShellScript_LDADD = $(LDADD)
@@ -296,12 +302,12 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) \
 	$(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) \
-	$(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) \
-	$(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) \
-	$(AmesosSuperLUserial_SOURCES) $(AmesosUmfpack_SOURCES) \
-	$(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) \
-	$(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) \
-	$(amesos_test_SOURCES)
+	$(AmesosMumps_SOURCES) $(AmesosShellScript_SOURCES) \
+	$(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) \
+	$(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) \
+	$(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) \
+	$(AmesosUmfpackShort_SOURCES) $(SpoolesJanusScript_SOURCES) \
+	$(SpoolesScript_SOURCES) $(amesos_test_SOURCES)
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
@@ -309,7 +315,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = README Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
-SOURCES = $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(amesos_test_SOURCES)
+SOURCES = $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) $(AmesosMumps_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(amesos_test_SOURCES)
 
 all: all-recursive
 
@@ -741,6 +747,9 @@ AmesosDscpack$(EXEEXT): $(srcdir)/AmesosDscpack
 
 AmesosDscpackShort$(EXEEXT): $(srcdir)/AmesosDscpackShort
 	cp  $(srcdir)/AmesosDscpackShort  AmesosDscpackShort$(EXEEXT)
+
+AmesosMumps$(EXEEXT): $(srcdir)/AmesosMumps
+	cp  $(srcdir)/AmesosMumps  AmesosMumps$(EXEEXT)
 
 AmesosUmfpack$(EXEEXT): $(srcdir)/AmesosUmfpack
 	cp  $(srcdir)/AmesosUmfpack  AmesosUmfpack$(EXEEXT)

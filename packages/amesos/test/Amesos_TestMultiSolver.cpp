@@ -26,19 +26,14 @@
 #ifdef HAVE_AMESOS_UMFPACK
 #include "Amesos_Umfpack.h"
 #endif
+#ifdef HAVE_AMESOS_MUMPS
+#include "Amesos_Mumps.h"
+#endif
 #ifdef TEST_SPOOLES
 #include "SpoolesOO.h"
 #endif
 #ifdef TEST_AZTEC
 #include "AztecOO.h"
-#endif
-
-#if 0 
-#include "UmfpackOO.h"
-#include "SpoolesserialOO.h"
-#include "SuperluserialOO.h"
-#include "TimeMemory.h"
-#include "SparseSolverResult.h"
 #endif
 
 #include "Amesos_TestSolver.h"
@@ -194,6 +189,9 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     Epetra_Time TotalTime( Comm ) ; 
     if ( false ) { 
 #ifdef TEST_UMFPACK
+
+      unused code
+
     } else if ( SparseSolver == UMFPACK ) { 
       UmfpackOO umfpack( (Epetra_RowMatrix *) passA, 
 			 (Epetra_MultiVector *) passx, 
@@ -257,6 +255,14 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       EPETRA_CHK_ERR( umfpack.SetUseTranspose( transpose ) ); 
     
       EPETRA_CHK_ERR( umfpack.Solve( ) ); 
+#endif
+#ifdef HAVE_AMESOS_MUMPS
+    } else if ( SparseSolver == MUMPS ) { 
+      AMESOS::Parameter::List ParamList ;
+      Amesos_Mumps mumps( Problem, ParamList ) ; 
+      EPETRA_CHK_ERR( mumps.SetUseTranspose( transpose ) ); 
+    
+      EPETRA_CHK_ERR( mumps.Solve( ) ); 
 #endif
 #ifdef TEST_SPOOLESSERIAL 
     } else if ( SparseSolver == SPOOLESSERIAL ) { 
