@@ -1296,7 +1296,7 @@ int Epetra_CrsGraph::PackAndPrepareCrsGraph(const Epetra_CrsGraph& A,
   // Any remaining space (of length GlobalMaxNumIndices - NumIndices ints) will be wasted but we need fixed
   //   sized segments for current communication routines.
   int MaxNumIndices = A.MaxNumIndices();
-  if( MaxNumIndices ) Indices = new int[MaxNumIndices];
+  //if( MaxNumIndices ) Indices = new int[MaxNumIndices];
 
   intptr = (int*) Exports;
   for(i = 0; i < NumExportIDs; i++) {
@@ -1308,7 +1308,7 @@ int Epetra_CrsGraph::PackAndPrepareCrsGraph(const Epetra_CrsGraph& A,
     intptr += (NumIndices+2); // Point to next segment
   }
 
-  if( Indices ) delete [] Indices;
+  //if( Indices ) delete [] Indices;
     
   return(0);
 }
