@@ -283,11 +283,14 @@ void Epetra_VbrMatrix::DeleteMemory()
   }
 
   if (All_Values_!=0)   delete [] All_Values_;
+  All_Values_ = NULL;
 
   if (Entries_!=0)       delete [] Entries_;
+  Entries_ = NULL;
 
 
   if (ImportVector_!=0) delete ImportVector_;
+  ImportVector_ = NULL;
 
 
   NumMyBlockRows_ = 0;

@@ -247,8 +247,12 @@ void Epetra_CrsMatrix::DeleteMemory()
     
     
   delete [] Values_;
-  if (!StaticGraph()) 
+  Values_ = NULL;
+
+  if (!StaticGraph()) {
     delete Graph_; // We created the graph, so must delete it.
+    Graph_ = NULL;
+  }
 
   NumMyRows_ = 0;
   
@@ -524,12 +528,18 @@ int Epetra_CrsMatrix::FillComplete() {
 
 //==========================================================================
 int Epetra_CrsMatrix::FillComplete(const Epetra_Map& DomainMap, const Epetra_Map& RangeMap) {
-  if (!StaticGraph()) 
-    EPETRA_CHK_ERR(Graph_->MakeIndicesLocal(DomainMap, RangeMap));
+  if (!StaticGraph()) {
+    if (Graph_->MakeIndicesLocal(DomainMap, RangeMap) < 0) {
+      return(-1);
+    }
+  }
   SortEntries();  // Sort column entries from smallest to largest
   MergeRedundantEntries(); // Get rid of any redundant index values
-  if (!StaticGraph()) 
-    EPETRA_CHK_ERR(Graph_->FillComplete(DomainMap, RangeMap));
+  if (!StaticGraph()) {
+    if (Graph_->FillComplete(DomainMap, RangeMap) < 0) {
+      return(-2);
+    }
+  }
 
   return(0);
 }

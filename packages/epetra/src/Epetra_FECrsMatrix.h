@@ -121,8 +121,14 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 		      const Epetra_CrsGraph& Graph,
 		      bool ignoreNonLocalEntries=false);
 
+   /** Copy Constructor. */
+   Epetra_FECrsMatrix(const Epetra_FECrsMatrix& src);
+
    /** Destructor. */
    virtual ~Epetra_FECrsMatrix();
+
+   /** Assignment operator */
+   Epetra_FECrsMatrix& operator=(const Epetra_FECrsMatrix& src);
 
    enum { ROW_MAJOR = 0, COLUMN_MAJOR = 3 };
 
@@ -481,6 +487,8 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    }
 
   private:
+   void DeleteMemory();
+
    enum {SUMINTO = 0, REPLACE = 1, INSERT = 2};
 
    int InputGlobalValues(int numRows, const int* rows,

@@ -584,10 +584,21 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
     }
   }
 
-  EPETRA_CHK_ERR( A->GlobalAssemble() );
+  err = A->GlobalAssemble();
+  if (err < 0) {
+    return(err);
+  }
+
+  Epetra_FECrsMatrix Acopy(*A);
+
+  err = Acopy.GlobalAssemble();
+  if (err < 0) {
+    return(err);
+  }
 
   if (verbose) {
-    cout << *A << endl;
+    cout << "A:"<<endl<<*A << endl;
+    cout << "Acopy:"<<endl<<Acopy << endl;
   }
 
   int len = 20;
@@ -625,6 +636,80 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
     if (values[lcid] != 4.0*numProcs) {
       cout << "ERROR: values["<<lcid<<"] ("<<values[lcid]<<") should be "
 	   <<4*numProcs<<endl;
+      return(-6);
+    }
+  }
+
+  Epetra_FECrsMatrix Acopy2(*A);
+
+// now let's do the checks for Acopy...
+
+  if (map.MyGID(0)) {
+    EPETRA_CHK_ERR( Acopy.ExtractGlobalRowCopy(0, len, numIndices,
+                                            values, indices) );
+    if (numIndices != 4) {
+      return(-1);
+    }
+    if (indices[0] != 0) {
+      return(-2);
+    }
+
+    if (values[0] != 1.0*numProcs) {
+      cout << "ERROR: Acopy.values[0] ("<<values[0]<<") should be "<<numProcs<<endl;
+      return(-3);
+    }
+  }
+
+  if (map.MyGID(4)) {
+    EPETRA_CHK_ERR( Acopy.ExtractGlobalRowCopy(4, len, numIndices,
+                                            values, indices) );
+
+    if (numIndices != 9) {
+      return(-4);
+    }
+    int lcid = A->LCID(4);
+    if (lcid<0) {
+      return(-5);
+    }
+    if (values[lcid] != 4.0*numProcs) {
+      cout << "ERROR: Acopy.values["<<lcid<<"] ("<<values[lcid]<<") should be "
+           <<4*numProcs<<endl;
+      return(-6);
+    }
+  }
+
+// now let's do the checks for Acopy2...
+
+  if (map.MyGID(0)) {
+    EPETRA_CHK_ERR( Acopy2.ExtractGlobalRowCopy(0, len, numIndices,
+                                            values, indices) );
+    if (numIndices != 4) {
+      return(-1);
+    }
+    if (indices[0] != 0) {
+      return(-2);
+    }
+
+    if (values[0] != 1.0*numProcs) {
+      cout << "ERROR: Acopy2.values[0] ("<<values[0]<<") should be "<<numProcs<<endl;
+      return(-3);
+    }
+  }
+
+  if (map.MyGID(4)) {
+    EPETRA_CHK_ERR( Acopy2.ExtractGlobalRowCopy(4, len, numIndices,
+                                            values, indices) );
+
+    if (numIndices != 9) {
+      return(-4);
+    }
+    int lcid = A->LCID(4);
+    if (lcid<0) {
+      return(-5);
+    }
+    if (values[lcid] != 4.0*numProcs) {
+      cout << "ERROR: Acopy2.values["<<lcid<<"] ("<<values[lcid]<<") should be "
+           <<4*numProcs<<endl;
       return(-6);
     }
   }

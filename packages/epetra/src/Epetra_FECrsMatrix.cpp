@@ -162,7 +162,66 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
 }
    
 //----------------------------------------------------------------------------
+Epetra_FECrsMatrix::Epetra_FECrsMatrix(const Epetra_FECrsMatrix& src)
+ : Epetra_CrsMatrix(src),
+   numNonlocalRows_(0),
+   workData_(NULL),
+   workDataLength_(0)
+{
+  operator=(src);
+}
+
+//----------------------------------------------------------------------------
+Epetra_FECrsMatrix& Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix& src)
+{
+  if (this == &src) {
+    return( *this );
+  }
+
+  DeleteMemory();
+  Epetra_CrsMatrix::DeleteMemory();
+
+  Epetra_CrsMatrix::operator=(src);
+
+  myFirstRow_ = src.myFirstRow_;
+  myNumRows_ = src.myNumRows_;
+  ignoreNonLocalEntries_ = src.ignoreNonLocalEntries_;
+  numNonlocalRows_ = src.numNonlocalRows_;
+
+  nonlocalRows_ = new int[numNonlocalRows_];
+  nonlocalRowLengths_ = new int[numNonlocalRows_];
+  nonlocalRowAllocLengths_ = new int[numNonlocalRows_];
+  nonlocalCols_ = new int*[numNonlocalRows_];
+  nonlocalCoefs_= new double*[numNonlocalRows_];
+
+  workDataLength_ = 128;
+  workData_ = new double[workDataLength_];
+
+  for(int i=0; i<numNonlocalRows_; ++i) {
+    nonlocalRows_[i] = src.nonlocalRows_[i];
+    nonlocalRowLengths_[i] = src.nonlocalRowLengths_[i];
+    nonlocalRowAllocLengths_[i] = src.nonlocalRowAllocLengths_[i];
+
+    nonlocalCols_[i] = new int[nonlocalRowAllocLengths_[i]];
+    nonlocalCoefs_[i] = new double[nonlocalRowAllocLengths_[i]];
+
+    for(int j=0; j<nonlocalRowLengths_[i]; ++j) {
+      nonlocalCols_[i][j] = src.nonlocalCols_[i][j];
+      nonlocalCoefs_[i][j] = src.nonlocalCoefs_[i][j];
+    }
+  }
+
+  return( *this );
+}
+
+//----------------------------------------------------------------------------
 Epetra_FECrsMatrix::~Epetra_FECrsMatrix()
+{
+  DeleteMemory();
+}
+
+//----------------------------------------------------------------------------
+void Epetra_FECrsMatrix::DeleteMemory()
 {
   if (numNonlocalRows_ > 0) {
     for(int i=0; i<numNonlocalRows_; ++i) {
