@@ -919,7 +919,7 @@ Optional Packages:
   --with-ifpack-incdir    specify location of all ifpack header files
   --with-anasazi-incdir   specify location of all anasazi header files
   --with-anasaziutils-incdir
-                          specify location of all anasazi header files
+                          specify location of all anasaziutils header files
   --with-epetra-libdir    specify location of epetra library
   --with-epetraext-libdir specify location of epetraext library
   --with-aztecoo-libdir   specify location of aztecoo library

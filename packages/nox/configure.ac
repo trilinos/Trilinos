@@ -808,7 +808,7 @@ AC_ARG_WITH(anasazi-incdir,
 [anasazi_INCDIR=$withval])
 
 AC_ARG_WITH(anasaziutils-incdir,
-[AC_HELP_STRING([--with-anasaziutils-incdir],[specify location of all anasazi header files])],
+[AC_HELP_STRING([--with-anasaziutils-incdir],[specify location of all anasaziutils header files])],
 [anasaziutils_INCDIR=$withval])
 
 AC_ARG_WITH(epetra-libdir,
