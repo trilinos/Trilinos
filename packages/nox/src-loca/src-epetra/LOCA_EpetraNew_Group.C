@@ -90,7 +90,7 @@ LOCA::EpetraNew::Group::~Group()
 NOX::Abstract::Group* 
 LOCA::EpetraNew::Group::clone(NOX::CopyType type) const 
 {
-  return new Group(*this, type);
+  return new LOCA::EpetraNew::Group(*this, type);
 }
 
 NOX::Abstract::Group& 

@@ -148,7 +148,7 @@ LOCA::ErrorCheck::combineAndCheckReturnTypes(
 {
   NOX::Abstract::Group::ReturnType status3 = 
     combineReturnTypes(status1, status2);
-  checkReturnType(status1, callingFunction);
+  checkReturnType(status3, callingFunction);
   return status3;
 }
 
