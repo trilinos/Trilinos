@@ -40,11 +40,17 @@
 NOX_TSF_H = \
 	$(srcdir)/NOX_TSF.H \
 	$(srcdir)/NOX_TSF_Vector.H \
-	$(srcdir)/NOX_TSF_Group.H 
+	$(srcdir)/NOX_TSF_Group.H \
+	$(srcdir)/NOX_TSF_StatusTestBuilder.H \
+	$(srcdir)/NOX_StatusTest_SafeCombo.H \
+	$(srcdir)/TSFNOXSolver.H
 
 NOX_TSF = \
 	$(srcdir)/NOX_TSF_Vector.C \
-	$(srcdir)/NOX_TSF_Group.C 
+	$(srcdir)/NOX_TSF_Group.C \
+	$(srcdir)/NOX_TSF_StatusTestBuilder.C \
+	$(srcdir)/NOX_StatusTest_SafeCombo.C \
+	$(srcdir)/TSFNOXSolver.C
 
 # ------------------------------------------------------------------------
 # Noxblas library specifications
