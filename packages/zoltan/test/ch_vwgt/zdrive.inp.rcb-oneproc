@@ -1,5 +1,5 @@
 Decomposition Info	= method=rcb
 Zoltan Parameters	= obj_weight_dim=1
-File Type		= Chaco
+File Type		= Chaco, initial procs = 1
 File Name		= vwgt
 Parallel Disk Info	= number=0

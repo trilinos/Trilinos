@@ -1,0 +1,5 @@
+Decomposition Info	= method=parmetis
+Zoltan Parameters	= obj_weight_dim=1, parmetis_method=partkway
+File Type		= Chaco, initial distribution = cyclic
+File Name		= vwgt
+Parallel Disk Info	= number=0
