@@ -2534,6 +2534,26 @@ extern int Zoltan_LB_Eval(
   int *nadj
 );
 
+/*
+ *  Function to set the desired partition sizes. 
+ *
+ *  Input:
+ *    zz            --  The Zoltan structure to which this method
+ *                      applies.
+ *    global_num    --  Global partition numbers? (0 for local numbers)
+ *    len           --  Length of arrays wgt_idx, part_idx, part_sizes
+ *    part_ids      --  Array of partition ids (local or global)
+ *    wgt_idx       --  Array of indices between 0 and Obj_Wgt_Dim-1
+ *    part_sizes    --  Array of floats that gives the desired partition 
+ *                      size for each weight and each partition, i.e., 
+ *                      part_sizes[i] corresponds to wgt_idx[i] and part_id[i]
+ *
+ *  Output:
+ *    Return value  --  Error code.
+ */
+extern int Zoltan_LB_Set_Part_Sizes(struct Zoltan_Struct *zz, int global_num,
+  int len, int *part_ids, int *wgt_idx, float *part_sizes);
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
