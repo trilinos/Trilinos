@@ -756,6 +756,9 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     OverlappingY->PutScalar(0.0);
     OverlappingX->PutScalar(0.0);
     IFPACK_CHK_ERR(OverlappingMatrix_->ImportMultiVector(X,*OverlappingX,Insert));
+    // FIXME: this will not work with overlapping and non-zero starting
+    // solutions. The same for other cases below.
+    // IFPACK_CHK_ERR(OverlappingMatrix_->ImportMultiVector(Y,*OverlappingY,Insert));
   }
   else {
     Xtmp = new Epetra_MultiVector(X);
