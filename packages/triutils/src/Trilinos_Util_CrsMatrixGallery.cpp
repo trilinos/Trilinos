@@ -524,9 +524,9 @@ void Trilinos_Util::CrsMatrixGallery::ComputeResidual(double* residual)
 
   Epetra_MultiVector Ax(*map_, NumVectors_);
 
-  assert(matrix_->Multiply(false, *StartingSolution_, Ax)==0);
-  assert(Ax.Update(1.0, *rhs_, -1.0)==0);
-  assert(Ax.Norm2(residual)==0);
+  matrix_->Multiply(false, *StartingSolution_, Ax);
+  Ax.Update(1.0, *rhs_, -1.0);
+  Ax.Norm2(residual);
   
   return;
 }
@@ -541,9 +541,8 @@ void Trilinos_Util::CrsMatrixGallery::ComputeDiffBetweenStartingAndExactSolution
 
   Epetra_MultiVector temp(*map_, NumVectors_);
 
-  assert(temp.Update(1.0, *ExactSolution_, -1.0, *StartingSolution_, 0.0)==0);
-
-  assert(temp.Norm2(residual)==0);
+  temp.Update(1.0, *ExactSolution_, -1.0, *StartingSolution_, 0.0);
+  temp.Norm2(residual);
 
   return;
 }
@@ -1266,11 +1265,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixDiag(void)
     int Indices = MyGlobalElements_[i];
     Value = a_;
       
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, &Value, &Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, &Value, &Indices);
       
   }
     
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
 
   return;
     
@@ -1315,15 +1314,15 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixTriDiag(void)
       Values[0] = c_;
       NumEntries = 2;
     }
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
     // Put in the diagonal entry
     Values[0] = a_;
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, Values, MyGlobalElements_+i)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, Values, MyGlobalElements_+i);
   }
   
   // Finish up, trasforming the matrix entries into local numbering,
   // to optimize data transfert during matrix-vector products
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
 
   delete [] Values;
   delete [] Indices;
@@ -1379,19 +1378,19 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace1dNeumann(void)
       Values[0] = -1.0;
       NumEntries = 2;
     }
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
     // Put in the diagonal entry
     if (MyGlobalElements_[i]==0 || (MyGlobalElements_[i] == NumGlobalElements_-1) )
       Values[0] = 1.0;
     else
       Values[0] = 2.0;
     
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, Values, MyGlobalElements_+i)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, Values, MyGlobalElements_+i);
   }
   
   // Finish up, trasforming the matrix entries into local numbering,
   // to optimize data transfert during matrix-vector products
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
 
   delete [] Values;
   delete [] Indices;
@@ -1457,13 +1456,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2d(void)
       ++NumEntries;
     }
     // put the off-diagonal entries
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
-				       Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+				       Values, Indices);
     // Put in the diagonal entry
     diag = a_;
 	
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
+				       &diag, MyGlobalElements_+i);
   }
   matrix_->FillComplete();
 
@@ -1519,13 +1518,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2dVector(void)
       ++NumEntries;
     }
     // put the off-diagonal entries
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
-				       Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+				       Values, Indices);
     // Put in the diagonal entry
     diag = (*VectorA_)[i];
 	
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
+				       &diag, MyGlobalElements_+i);
   }
   matrix_->FillComplete();
 
@@ -1582,15 +1581,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_BC(void)
       Values[3] = -1.0;
     
       // put the off-diagonal entries
-      assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 4, 
-					 Values, Indices)==0);
+      matrix_->InsertGlobalValues(MyGlobalElements_[i], 4, Values, Indices);
 
       diag = 4.0;
     }
 	
     // new diagonal guy
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, &diag, MyGlobalElements_+i);
   }
   matrix_->FillComplete();
 
@@ -1652,14 +1649,12 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2dNeumann(void)
     } else isBorder = true;
     
     // put the off-diagonal entries
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
-				       Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
     // Put in the diagonal entry
     if( isBorder ) diag = 2;
     else           diag = 4;
 	
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, &diag, MyGlobalElements_+i);
   }
   matrix_->FillComplete();
 
@@ -1730,11 +1725,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_9pt(void)
     }
     
     // put the off-diagonal entries
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
-				       Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+				       Values, Indices);
     // Put in the diagonal entry
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
+				       &diag, MyGlobalElements_+i);
   }
   matrix_->FillComplete();
 
@@ -2119,11 +2114,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixStretched2d(void)
     }
     
     // put the off-diagonal entries
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
-				       Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+				       Values, Indices);
     // Put in the diagonal entry
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
+				       &diag, MyGlobalElements_+i);
   }
   matrix_->FillComplete();
 
@@ -2204,13 +2199,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
       ++NumEntries;
     }
     // put the off-diagonal entries
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
-				       Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+				       Values, Indices);
     // Put in the diagonal entry
     diag = a_;
 	
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
+				       &diag, MyGlobalElements_+i);
   }
 
   matrix_->FillComplete();
@@ -2289,13 +2284,13 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil3dVector(void)
       ++NumEntries;
     }
     // put the off-diagonal entries
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
-				       Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, 
+				       Values, Indices);
     // Put in the diagonal entry
     diag = (*VectorA_)[i];
 	
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
-				       &diag, MyGlobalElements_+i)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
+				       &diag, MyGlobalElements_+i);
   }
 
   matrix_->FillComplete();
@@ -2324,15 +2319,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLehmer(void)
       if( iGlobal>=jGlobal) Values[jGlobal] = 1.0*(jGlobal+1)/(iGlobal+1);
       else                  Values[jGlobal] = 1.0*(iGlobal+1)/(jGlobal+1);
     }
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumGlobalElements_, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumGlobalElements_, Values, Indices);
       
   }
     
   delete [] Indices;
   delete [] Values;
 
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2359,15 +2353,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixMinij(void)
       if( iGlobal>=jGlobal ) Values[jGlobal] = 1.0*(jGlobal+1);
       else                   Values[jGlobal] = 1.0*(iGlobal+1);
     }
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumGlobalElements_, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumGlobalElements_, Values, Indices);
       
   }
     
   delete [] Indices;
   delete [] Values;
 
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2394,15 +2387,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRis(void)
       Values[jGlobal] = 0.5/(NumGlobalElements_ -(iGlobal+1)-(jGlobal+1)+1.5);
       
     }
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumGlobalElements_, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumGlobalElements_, Values, Indices);
       
   }
     
   delete [] Indices;
   delete [] Values;
 
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2428,15 +2420,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixHilbert(void)
     for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
       Values[j] = 1.0/((iGlobal+1)+(j+1)-1);
     }
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumGlobalElements_, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumGlobalElements_, Values, Indices);
       
   }
     
   delete [] Indices;
   delete [] Values;
 
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2473,12 +2464,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixJordblock(void)
     else                   Values[NumEntries] = a_;
     NumEntries++;
 
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumEntries, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
       
   }
     
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2506,15 +2496,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCauchy(void)
       Values[jGlobal] = 1.0/(iGlobal+1+jGlobal+1);
     }
 
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumEntries, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
       
   }
     
   delete [] Indices;
   delete [] Values;
     
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2541,15 +2530,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixFiedler(void)
       Values[j] = (double)abs(iGlobal-j);
     }
 
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumEntries, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
       
   }
     
   delete [] Indices;
   delete [] Values;
       
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2592,12 +2580,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixHanowa(void)
     if( Global < half ) Values[1] = (double) -Global - 1;
     else                Values[1] = (double)  (Global - half) + 1;
 
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumEntries, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
     
   }
     
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2628,15 +2615,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixKMS(void)
       Values[j] = pow(a_,abs(iGlobal-j));
     }
 
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumEntries, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
     
   }
 
   delete [] Indices;
   delete [] Values;
       
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2664,8 +2650,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixParter(void)
       Values[j] = 1.0/(iGlobal-j+0.5);
     }
 
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumEntries, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
     
   }
 
@@ -2673,7 +2658,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixParter(void)
   delete [] Indices;
   delete [] Values;
       
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2706,15 +2691,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixPei(void)
       if( j == MyGlobalElements_[i] ) Values[j] += a_;
     }
 
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumEntries, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
     
   }
 
   delete [] Indices;
   delete [] Values;
       
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2746,15 +2730,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixOnes(void)
       Values[j] = a_;
     }
 
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumEntries, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
     
   }
 
   delete [] Indices;
   delete [] Values;
       
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2784,15 +2767,14 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixVander(void)
       Values[j] = pow((*VectorA_)[i],NumGlobalElements_-j-1);
     }
 
-    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i],
-				       NumEntries, Values, Indices)==0);
+    matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
     
   }
 
   delete [] Indices;
   delete [] Values;
       
-  assert(matrix_->FillComplete()==0);
+  matrix_->FillComplete();
   
   return;
 }
@@ -2973,7 +2955,7 @@ void Trilinos_Util::CrsMatrixGallery::ReadMatrix(void)
   ExactSolution_->Export(*readxexact, exporter, Add);
   matrix_->Export(*readA, exporter, Add);
   
-  assert(matrix_->FillComplete()==0);    
+  matrix_->FillComplete();
 
   delete readA;
   delete readx;
@@ -3708,11 +3690,9 @@ void Trilinos_Util::VbrMatrixGallery::ComputeResidualVbr(double* residual)
   if( VbrRhs_ == NULL ) CreateVbrRHS();
 
   Epetra_MultiVector Ax(*BlockMap_,NumVectors_);
-  assert(VbrMatrix_->Multiply(false, *VbrStartingSolution_, Ax)==0);
-
-  assert(Ax.Update(1.0, *VbrRhs_, -1.0)==0);
-
-  assert(Ax.Norm2(residual)==0);
+  VbrMatrix_->Multiply(false, *VbrStartingSolution_, Ax);
+  Ax.Update(1.0, *VbrRhs_, -1.0);
+  Ax.Norm2(residual);
 
   return;
 }
@@ -3728,9 +3708,8 @@ void Trilinos_Util::VbrMatrixGallery::ComputeDiffBetweenStartingAndExactSolution
 
   Epetra_MultiVector temp(*BlockMap_,NumVectors_);
 
-  assert(temp.Update(1.0, *VbrExactSolution_, -1.0, *VbrStartingSolution_, 0.0)==0);
-
-  assert(temp.Norm2(residual)==0);
+  temp.Update(1.0, *VbrExactSolution_, -1.0, *VbrStartingSolution_, 0.0);
+  temp.Norm2(residual);
 
   return;
 }
