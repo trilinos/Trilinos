@@ -1137,7 +1137,7 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
 {
    int          i, k, Nfine, nbytes, newNlevels, newClevel;
    int          *new_ia, *new_ja;
-   double       *new_val, norm, omega, *diagonal;
+   double       *new_val, omega, *diagonal;
    ML           *newml;
    ML_Operator  *Amat, *tentP, *AGGsmoother;
    ML_Aggregate *newag;
@@ -1213,8 +1213,8 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
    ML_memory_alloc((void**)&(new_val), nbytes, "AD3");
    for (i = 0; i <= Nfine; i++) new_ia[i] = i;
    for (i = 0; i < Nfine; i++) new_ja[i] = 0;
-   norm = sqrt((double) Nfine);
 /*
+   norm = sqrt((double) Nfine);
 norm = 1.0;
    for (i = 0; i < Nfine; i++) new_val[i] = 1.0 / norm;
 */
