@@ -4,12 +4,12 @@
 
 #include "Epetra_config.h"
 
-const bool TestKLU         = true;
-const bool TestUMFPACK     = true;
-const bool TestSuperLU     = true;
-const bool TestSuperLUdist = true;
-const bool TestMUMPS       = true;
-const bool TestScaLAPACK   = true;
+bool TestKLU         = true;
+bool TestUMFPACK     = true;
+bool TestSuperLU     = true;
+bool TestSuperLUdist = true;
+bool TestMUMPS       = true;
+bool TestScaLAPACK   = true;
 const bool verbose         = true;
 const int OutputLevel      = 2;
 
@@ -174,6 +174,13 @@ int main(int argc, char *argv[]) {
   if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "recirc_2d" ); 
   if( CLP.Has("-problem_size") == false ) CLP.Add("-problem_size", "900" ); 
 
+  // disable tests from CLP
+  if( CLP.Has("-disable_klu")         == true ) TestKLU       = false;
+  if( CLP.Has("-disable_superlu")     == true ) TestUMFPACK   = false;
+  if( CLP.Has("-disable_superludist") == true ) TestSuperLU   = false;
+  if( CLP.Has("-disable_mumps" )      == true ) TestMUMPS     = false;
+  if( CLP.Has("-disable_scalapack" )  == true ) TestScaLAPACK = false;
+
   Gallery.Set(CLP);
   Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
 
@@ -294,7 +301,7 @@ int main(int argc, char *argv[]) {
   // ============================================== //
   // Superludist -- default options -- use tranpose //
   // ============================================== //
-
+  /* this is not supported now
   if( Comm.MyPID() == 0 ) PrintLine();
 
   if( TestSuperLUdist ) {
@@ -302,6 +309,7 @@ int main(int argc, char *argv[]) {
      Teuchos::ParameterList AmesosList;
      TestAmesos("Amesos_Superludist", AmesosList, true, *Problem, TotalErrorResidual, TotalErrorExactSol );
   }
+  */
 
   // ======================== //
   // Superludist -- options 1 //
