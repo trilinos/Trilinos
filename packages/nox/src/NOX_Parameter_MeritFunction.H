@@ -49,9 +49,34 @@ namespace NOX {
 
 namespace Parameter {
 
-//! Derived from NOX::Parameter::Arbitrary class to support a user defined merit function that can be passed in throught the parameter list.
+//! Derived from NOX::Parameter::Arbitrary class to support a user defined merit function that can be passed to line searches through the parameter list.
 /*!
   This class allows the user to define their own merit function for use in a line search.  Each line search type will specify in it's input parameter list if it supports this functionality.
+
+
+To create and use a user defined merit function:
+
+<ol>
+
+<li> Create a merit function that derives from
+NOX::Parameter::MeritFunction. For example, the merit function \c Foo might be
+defined as shown below.
+
+\code
+class Foo : public NOX::Parameter::MeritFunction {
+// Insert class definition here
+}
+\endcode
+
+<li> Create the appropriate entries in the parameter list, as follows.
+
+\code
+Foo foo();
+params.sublist("Line Search").sublist("Polynomial").setParameter("User Defined Merit Function", foo);
+\endcode
+
+</ol>
+
 */
 class MeritFunction : public virtual NOX::Parameter::Arbitrary {
 

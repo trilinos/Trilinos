@@ -49,8 +49,39 @@ namespace NOX {
 namespace Parameter {
 
 //! Derived from NOX::Parameter::Arbitrary class to support a user defined norm that can be passed in throught the parameter list.
-/*!
-This class allows the user to write their own norm and pass it into the solver.  Check the documentation for each class to see whether it supports a UserNorm.  Currently it is used by NOX::Direction::Newton for computing spcialized norms for the adjustable forcing term and in the NOX::LineSearch::PolynomialWalker line search.
+/*!  
+
+  This class allows the user to write their own norm and pass it into
+  the NOX solvers.  Check the documentation for each class (line
+  searches and Directions) to see whether it supports a UserNorm.
+  Currently it is used by NOX::Direction::Newton for computing
+  spcialized norms for the adjustable forcing term and in the
+  NOX::LineSearch::Polynomial and NOX::LineSearch::MoreThuente2 line
+  searches.
+  
+To create and use a user defined norm:
+
+<ol>
+
+<li> Create a norm that derives from
+NOX::Parameter::UserNorm. For example, the norm \c Foo might be
+defined as shown below.
+
+\code
+class Foo : public NOX::Parameter::UserNorm {
+// Insert class definition here
+}
+\endcode
+
+<li> Create the appropriate entries in the parameter list, as follows.
+
+\code
+Foo foo();
+params.sublist("Line Search").sublist("Polynomial").setParameter("User Defined Norm", foo);
+\endcode
+
+</ol>
+
 */
 class UserNorm : public virtual NOX::Parameter::Arbitrary {
 
