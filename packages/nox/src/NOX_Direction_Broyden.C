@@ -319,7 +319,11 @@ bool NOX::Direction::Broyden::doRestart(NOX::Abstract::Group& soln,
   if (cnt >= cntMax)
     return true;
 
-  // Test 3 - Check for decrease in the norm of F in the last two iterations
+  // Test 3 - Last step was zero!
+  if (solver.getStepSize() == 0.0)
+    return true;
+
+  // Test 4 - Check for decrease in the norm of F in the last two iterations
   if (soln.getNormF() >= solver.getPreviousSolutionGroup().getNormF())
     return true;
 
