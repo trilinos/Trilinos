@@ -18,12 +18,12 @@
 
 namespace Teuchos {
 
-void PrivateUtilityPack::assert_not_null(const void *ptr)
+void PrivateUtilityPack::throw_null( const std::string &type_name )
 {
 	TEST_FOR_EXCEPTION(
-		!ptr, std::logic_error
-		,"RefCountPtr<...>::assert_not_null() : You can not "
-		" call operator->() or operator*() if get() == 0" );
+		true, std::logic_error
+		,"RefCountPtr<"<<type_name<<">::assert_not_null() : You can not "
+		" call operator->() or operator*() if get()==NULL!" );
 }
 
 namespace PrivateUtilityPack {

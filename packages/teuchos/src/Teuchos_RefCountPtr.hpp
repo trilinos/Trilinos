@@ -27,7 +27,7 @@ namespace Teuchos {
 namespace PrivateUtilityPack {
 
 // Assert that the pointer is not null
-void assert_not_null(const void *);
+void throw_null( const std::string &type_name );
 
 // Node class to keep track of the delete address and
 // the reference count for RefCountPtr<...>
@@ -217,7 +217,7 @@ bool RefCountPtr<T>::shares_resource(const RefCountPtr<T>& r_ptr) const {
 template<class T>
 inline
 void RefCountPtr<T>::assert_not_null() const {
-	PrivateUtilityPack::assert_not_null(ptr_);
+	if(!ptr_) PrivateUtilityPack::throw_null(typeid(T).name());
 }
 
 // very bad public functions
