@@ -1,0 +1,61 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Examples</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Load-Balancing Example"></A>Load-Balancing Example</H2>
+An example of the typical calling sequence for load balancing using Zoltan
+in a finite element application is shown in the <A HREF="#LB Example Fig">figure</A>
+below. An application first selects a load-balancing algorithm; in the
+example, the choice of algorithm and its parameters are read from an application
+input file and sent to the load-balancing library through a call to <B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
+Appropriate query functions are then registered with the load-balancing
+library through a series of calls to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.
+In the example, a geometric algorithm, such as RCB, is assumed. Application
+query functions returning lists and coordinates of nodes of the finite
+element mesh are registered. After some computation, load balancing is
+invoked by calling <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
+The results of the load balancing include the number of nodes to be imported
+and exported to the processor, lists of global and local IDs of the imported
+and exported nodes, and source and destination processors of the imported
+and exported nodes. The return value of <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
+is tested to see whether the new decomposition differs from the old one.
+If the decompositions differ, some sort of data migration is needed to
+establish the new decomposition; the details of migration are not shown
+in this <A HREF="#LB Example Fig">figure</A> but will be addressed in the
+<A HREF="ug_examples_mig.html">migration examples</A>. After the data migration
+is completed, the arrays of information about imported and exported nodes
+returned by <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
+are freed by a call to <B><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A></B>.
+
+<P><A NAME="LB Example Fig"></A><IMG SRC="figures/call_lb.gif" USEMAP="#ug-9" HEIGHT=388 WIDTH=469>
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_examples_mig.html">Next:&nbsp; Migration Examples</A>&nbsp;
+|&nbsp; <A HREF="ug_examples_init.html">Previous:&nbsp; Initialization
+Example</A>]
+</BODY>
+</HTML>

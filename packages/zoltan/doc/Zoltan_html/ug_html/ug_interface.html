@@ -1,0 +1,87 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Interface</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Zoltan Interface Functions"></A>Zoltan Interface Functions</H2>
+An application calls a series of dynamic load-balancing library functions
+to initialize the load balancer, perform load balancing and migrate data.
+This section details the syntax of each type of interface function:
+<BLOCKQUOTE><A HREF="ug_interface_init.html">Initialization Interface Functions</A>
+<BR><A HREF="ug_interface_lb.html">Load-Balancing Interface Functions</A>
+<BR><A HREF="ug_interface_mig.html">Migration-Help Interface Functions</A></BLOCKQUOTE>
+
+
+<P>Examples of the calling sequences for initialization, load-balancing,
+and data migration are included in the <A HREF="ug_examples_init.html#Initialization Example">Initialization</A>,
+<A HREF="ug_examples_lb.html#Load-Balancing Example">Load-Balancing</A>,
+and <A HREF="ug_examples_mig.html#Migration Example">Migration</A> sections,
+respectively, of the <A HREF="ug_examples.html#Examples of Library Usage">Examples
+of Library Usage</A>.
+<H2>
+<A NAME="Error Codes"></A>Error Codes</H2>
+All interface functions, with the exception of <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>,
+return an error code to the application. The possible return codes are
+defined in lbi_const.h, and are listed in the <A HREF="#error codes table">table</A>
+below.
+<CENTER><TABLE BORDER WIDTH="90%" >
+<TR>
+<TD VALIGN=TOP><I>DLB_OK</I></TD>
+
+<TD ALIGN=LEFT>Function returned without warnings or errors.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>DLB_WARN&nbsp;</I></TD>
+
+<TD>Function returned with warnings. The application will probably be able
+to continue to run.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>DLB_FATAL&nbsp;</I></TD>
+
+<TD>A fatal error occured within the DLB library.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>DLB_MEMERR</I></TD>
+
+<TD>An error occurred while allocating memory. When this error occurs,
+the library frees any allocated memory and returns control to the application.
+If the application then wants to try to use another, less memory-intensive,
+algorithm, it can do so.</TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><A NAME="error codes table"></A><I>Return codes defined
+in lb/lbi_const.h.</I></CAPTION>
+</TABLE></CENTER>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A> |&nbsp; <A HREF="ug_interface_init.html">Next:&nbsp;
+Initialization Functions</A>&nbsp; |&nbsp; <A HREF="ug_usage.html">Previous:&nbsp;
+Using the Library</A>]
+</BODY>
+</HTML>

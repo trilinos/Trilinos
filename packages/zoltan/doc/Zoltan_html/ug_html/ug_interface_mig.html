@@ -1,0 +1,306 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Interface</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Migration-Help Functions"></A>Migration-Help Functions</H2>
+The following functions are migration-help interface functions; their descriptions
+are included below.
+<BLOCKQUOTE><B><A HREF="#LB_Set_Migration">LB_Set_Migration</A></B>
+<BR><B><A HREF="#LB_Computer_Destinations">LB_Compute_Destinations</A></B>
+<BR><B><A HREF="#LB_Help_Migrate">LB_Help_Migrate</A></B></BLOCKQUOTE>
+
+<HR WIDTH="100%"><A NAME="LB_Set_Migration"></A>int <B>LB_Set_Migration</B>(struct
+<B>LB_Struct</B> * <I>lb</I>, int <I>auto_migrate_flag</I>);&nbsp;
+<HR WIDTH="100%"><B>LB_Set_Migration</B> allows the application to tell
+the load-balancing library to automatically perform data migration for
+it during calls to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
+If automatic migration is desired, routines to pack and unpack object data
+must be provided by the application (see <A HREF="ug_query_mig.html#Migration-Help Query Functions">Migration-Help
+Query Functions</A>). See <A HREF="ug_examples_mig.html#Migration Example">Migration
+Example</A> for an example using auto-migration.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp; lb</I></TD>
+
+<TD>The load-balancing object, created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp; auto_migrate_flag</I></TD>
+
+<TD>&nbsp;If auto_migrate_flag is TRUE, the load-balancing library performs
+migration as part of the call to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>;
+otherwise, no migration is performed in <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+
+<TR>
+<TD><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>auto_migrate_flag </I>= FALSE; the application must explicitly call
+<B><A HREF="#LB_Help_Migrate">LB_Help_Migrate</A></B> to use the migration
+help tools.</TD>
+</TR>
+</TABLE>
+&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_Computer_Destinations"></A>int <B>LB_Compute_Destinations</B>(struct
+<B>LB_Struct</B> * <I>lb</I>, int <I>num_import</I>,<B> LB_GID </B>* <I>import_global_ids</I>,
+<B>LB_LID</B> * <I>import_local_ids</I>,&nbsp; int * <I>import_procs</I>,
+int * <I>num_export</I>, <B>LB_GID</B> ** <I>export_global_ids</I>, <B>LB_LID</B>
+** <I>export_local_ids</I>, int ** <I>export_procs</I>);&nbsp;
+<HR WIDTH="100%"><B>LB_Compute_Destinations</B> computes the inverse communication
+map needed to export data. That is, given, for each processor, a list of
+non-local objects assigned to the processor, <B>LB_Compute_Destinations</B>
+computes the list of objects each processor needs to export to other processors
+to satisfy their assignments of non-local objects.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+
+<TD>The load-balancing object, created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>,
+to be used in this invocation of the migration-help routine.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import&nbsp;</I></TD>
+
+<TD>The number of objects that are needed by this processor that are stored
+on other processors in the old decomposition (i.e., the number of objects
+to be imported to this processor).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the global IDs of objects
+needed by this processor that are stored on other processors in the old
+decomposition.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the local IDs of objects
+needed by this processor that are stored on other processors in the old
+decomposition.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+
+<TD>An array of size <I>num_import </I>listing the processor IDs of the
+processors that own objects needed by this processor (i.e., the source
+processors).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_export</I></TD>
+
+<TD>Upon return, the number of objects that were stored on this processor
+in the previous decomposition that are needed by other processors (i.e.,
+the number of objects that must be sent from this processor to other processors).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
+
+<TD>Upon return, an array of size <I>num_export </I>listing the global
+IDs of objects to be sent from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+
+<TD>&nbsp;Upon return, an array of size <I>num_export </I>listing the local
+IDs of objects to be sent from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+
+<TD>Upon return, an array of size <I>num_export</I> listing the processor
+IDs of processors that need the sent objects (i.e., the destination processors).</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+</TABLE>
+&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_Help_Migrate"></A>int <B>LB_Help_Migrate</B>(struct
+<B>LB_Struct</B> * <I>lb</I>, int <I>num_import</I>, <B>LB_GID</B> * <I>import_global_ids</I>,
+<B>LB_LID</B> * <I>import_local_ids</I>, int * <I>import_procs</I>, int
+<I>num_export</I>, <B>LB_GID</B> * <I>export_global_ids</I>, <B>LB_LID</B>
+* <I>export_local_ids</I>,&nbsp; int * <I>export_procs</I>);&nbsp;
+<HR WIDTH="100%"><B>LB_Help_Migrate</B> takes lists of objects to be sent
+to other processors, along with the destinations of those objects, and
+performs the operations necessary to send the data associated with those
+objects to their destinations. If a migration pre-processing routine (<B><A HREF="ug_query_mig.html#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN_TYPE</A></B>)
+is specified, <B>LB_Help_Migrate</B> first calls that function. It then
+calls an application-registered function (<B><A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A></B>)
+to obtain the size of a migrating object's data. For each object, it calls
+an application-registered packing routine (<B><A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A></B>)
+to load communication buffers. It communicates the buffers to the destination
+processors. Finally, for each object received, it calls an application-registered
+unpacking routine (<B><A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A></B>)
+to move the data from the received communication buffer into the new processor's
+data structures.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+
+<TD>The load-balancing object, created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>,
+to be used in this invocation of the migration-help routine.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import&nbsp;</I></TD>
+
+<TD>The number of objects that are needed by this processor that are stored
+on other processors in the old decomposition (i.e., the number of objects
+to be imported to this processor).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the global IDs of objects
+needed by this processor that are stored on other processors in the old
+decomposition.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the local IDs of objects
+needed by this processor that are stored on other processors in the old
+decomposition.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+
+<TD>An array of size <I>num_import </I>listing the processor IDs of the
+processors that own objects needed by this processor (i.e., the source
+processors).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_export</I></TD>
+
+<TD>Upon return, the number of objects that were stored on this processor
+in the previous decomposition that are needed by other processors (i.e.,
+the number of objects that must be sent from this processor to other processors).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
+
+<TD>Upon return, an array of size <I>num_export </I>listing the global
+IDs of objects to be sent from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+
+<TD>&nbsp;Upon return, an array of size <I>num_export </I>listing the local
+IDs of objects to be sent from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+
+<TD>Upon return, an array of size <I>num_export</I> listing the processor
+IDs of processors that need the sent objects (i.e., the destination processors).</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+</TABLE>
+&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_query.html">Next:&nbsp; Application-Registered Query Functions</A>&nbsp;
+|&nbsp; <A HREF="ug_interface_lb.html">Previous:&nbsp; Load-Balancing Functions</A>]
+</BODY>
+</HTML>

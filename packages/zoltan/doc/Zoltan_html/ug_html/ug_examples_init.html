@@ -1,0 +1,51 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Examples</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Initialization Example"></A>Initialization Example</H2>
+Before computing new decompositions using Zoltan, an application must initialize
+the load-balancing library. This initialization is accomplished through
+calls to <B><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A></B>,
+<B><A HREF="ug_interface_init.html#LB_Initialize_Params_Array">LB_Initialize_Params_Array</A></B>
+and<B> <A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.
+In the <A HREF="#Init Example Fig">figure</A> below, an example of the
+initialization calling sequence is shown. In this example, <B><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A></B>
+is called using the <I>argc</I> and <I>argv</I> arguments to the main program.
+The parameters array is set to default values through a call to <B><A HREF="ug_interface_init.html#LB_Initialize_Params_Array">LB_Initialize_Params_Array</A></B>.
+Then a load-balancing object is returned by the call to <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.
+In this example, all processors will be involved in load balancing, as
+<B>MPI_COMM_WORLD</B> is passed as the communicator to be used by the load-balancing
+routines.
+
+<P><A NAME="Init Example Fig"></A><IMG SRC="figures/call_init.gif" USEMAP="#ug-8" HEIGHT=154 WIDTH=469>
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_examples_lb.html">Next:&nbsp; Load-Balancing Example</A>&nbsp;
+|&nbsp; <A HREF="ug_examples.html">Previous:&nbsp; Examples of Library
+Usage</A>]
+</BODY>
+</HTML>

@@ -1,0 +1,958 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Query Functions</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Load-Balancing Query Functions"></A>Load-Balancing Query Functions</H2>
+The following registered functions are provided for use by various load-balancing
+algorithms in the Zoltan library:
+<BLOCKQUOTE><A HREF="#General Functions">General Functions</A>
+<BLOCKQUOTE><B><A HREF="#LB_OBJ_WEIGHT_FN">LB_OBJ_WEIGHT_FN</A></B>
+<BR><B><A HREF="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B>
+<BR><B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
+<BR><B><A HREF="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>
+<BR><B><A HREF="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
+<BR><B><A HREF="#LB_NUM_BORDER_OBJ_FN">LB_NUM_BORDER_OBJ_FN</A></B>
+<BR><B><A HREF="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</A></B>
+<BR><B><A HREF="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</A></B>
+<BR><B><A HREF="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</A></B></BLOCKQUOTE>
+<A HREF="#Geometry-based Functions">Geometry-Based Functions</A>
+<BLOCKQUOTE><B><A HREF="#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</A></B>
+<BR><B><A HREF="#LB_GEOM_FN">LB_GEOM_FN</A></B></BLOCKQUOTE>
+<A HREF="#Graph-based Functions">Graph-Based Functions</A>
+<BLOCKQUOTE><B><A HREF="#LB_NUM_EDGES">LB_NUM_EDGES_FN</A></B>
+<BR><B><A HREF="#LB_EDGE_LIST_FN">LB_EDGE_LIST_FN</A></B></BLOCKQUOTE>
+</BLOCKQUOTE>
+
+
+<P>&nbsp;
+<H2>
+<A NAME="General Functions"></A>General Functions</H2>
+
+<HR WIDTH="100%"><A NAME="LB_OBJ_WEIGHT_FN"></A>typedef double <B>LB_OBJ_WEIGHT_FN</B>(void
+*<I> data, </I><B>LB_GID</B><I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
+int <I>*ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_OBJ_WEIGHT_FN</B> query function returns the
+weight of a given object. The weight values are used by the load-balancing
+routines to assign loads of equal total weight to processors.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_OBJ_WEIGHT_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+
+<TD>The global ID of the object whose weight is requested.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
+
+<TD>The local ID of the object whose weight is requested.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; double</TD>
+
+<TD>The weight of the object</TD>
+</TR>
+
+<TR>
+<TD><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD>If an <B>LB_OBJ_WEIGHT_FN</B> is not registered, all objects' weights
+are 1.0.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_NUM_OBJ_FN"></A>typedef int <B>LB_NUM_OBJ_FN</B>(void
+*<I> data</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_NUM_OBJ_FN</B> query function returns the number
+of objects to be balanced that are currently assigned to the processor.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_NUM_OBJ_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD>The number of objects to be balanced that are assigned to the processor.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_OBJ_LIST_FN"></A>typedef void<B> LB_OBJ_LIST_FN</B>(void
+*<I> data</I>, <B>LB_GID</B> *<I> global_ids</I>, <B>LB_LID</B> *<I> local_ids</I>,
+int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_OBJ_LIST_FN</B> query function fills two arrays
+with information about the objects currently assigned to the processor.
+Both arrays are allocated (and subsequently freed) by the load-balancing
+library using a query to an <B><A HREF="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B>
+query function to get the array size. For many algorithms, either an <B>LB_OBJ_LIST_FN</B>
+query function or an <B><A HREF="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>/<B><A HREF="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
+query-function pair must be registered to allow the load-balancing library
+to obtain needed object information; however, both query options need not
+be provided.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_OBJ_LIST_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_ids</I></TD>
+
+<TD>An array of unique global IDs for all objects assigned to the processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_ids</I></TD>
+
+<TD>An array of local IDs, the meaning of which can be determined by the
+application, for all objects assigned to the processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_FIRST_OBJ_FN"></A>typedef int <B>LB_FIRST_OBJ_FN</B>(void
+*<I> data, </I><B>LB_GID </B>*<I> first_global_id</I>, <B>LB_LID</B> *<I>
+first_local_id</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_FIRST_OBJ_FN</B> query function initializes an
+iteration over objects assigned to the processor. It returns the global
+and local IDs of the first object on the processor. Subsequent calls to
+an <B><A HREF="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B> query function iterate
+over and return other objects assigned to the processor. This query-function
+pair frees the application from having to build an array of objects (as
+in <B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>) and allows the
+load-balancing routines to obtain only as much information about objects
+as they need. For many algorithms, either an <B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
+query function or an <B>LB_FIRST_OBJ_FN</B><I>/</I><B><A HREF="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
+query-function pair must be registered to allow the load-balancing library
+to obtain needed object information; however, both query options need not
+be provided.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_FIRST_OBJ_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; first_global_id</I></TD>
+
+<TD>The returned value of the global ID for the first object; the value
+is ignored if there are no objects.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; first_local_id</I></TD>
+
+<TD>The returned value of the local ID for the first object; the value
+is ignored if there are no objects.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</TD>
+
+<TD>If <I>first_global_id</I> and <I>first_local_id</I> contain valid IDs
+of the first object.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</TD>
+
+<TD>If no objects are available.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_NEXT_OBJ_FN"></A>typedef int <B>LB_NEXT_OBJ_FN</B>(void
+*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B><I>local_id</I>,
+<B>LB_GID </B>*<I> next_global_id</I>, <B>LB_LID</B> *<I> next_local_id</I>,
+int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_NEXT_OBJ_FN</B> query function is an iterator
+function which, when given an object assigned to the processor, returns
+the next object assigned to the processor. The first object of the iteration
+is provided by an <B><A HREF="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>
+query function. This query-function pair frees the application from having
+to build an array of objects (as in <B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>)
+and allows the load-balancing routines to obtain only as much information
+about objects as they need. For many algorithms, either an <B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
+query function or an <B><A HREF="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>/<B>LB_NEXT_OBJ_FN</B>
+query-function pair must be registered to allow the load-balancing library
+to obtain needed object information; however, both query options need not
+be provided.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_NEXT_OBJ_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+
+<TD>The global ID of the previous object.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
+
+<TD>The local ID of the previous object.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; next_global_id</I></TD>
+
+<TD>The returned value of the global ID for the next object; the value
+is ignored if there are no more objects.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; next_local_id</I></TD>
+
+<TD>The returned value of the local ID for the next object; the value is
+ignored if there are no more objects.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</TD>
+
+<TD>If <I>next_global_id</I> and <I>next_local_id</I> contain valid IDs
+of the next object.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</TD>
+
+<TD>If no more objects are available.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_NUM_BORDER_OBJ_FN"></A>typedef int <B>LB_NUM_BORDER_OBJ_FN</B>(void
+*<I> data</I>, int <I>nbor_proc</I>, int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_NUM_BORDER_OBJ_FN</B> query function returns
+the number of objects sharing a processor subdomain border (in the communication
+graph of the application) with a given processor.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_NUM_BORDER_OBJ_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; nbor_proc</I></TD>
+
+<TD>The processor ID of the processor for which the number of border objects
+should be returned.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD>The number of objects sharing a processor subdomain border with processor
+<I>nbor_proc</I>.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_BORDER_OBJ_LIST_FN"></A>typedef void <B>LB_BORDER_OBJ_LIST_FN</B>(void
+*<I> data</I>, int <I>nbor_proc</I>, <B>LB_GID </B>*<I> global_ids</I>,
+<B>LB_LID</B> *<I> local_ids</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_BORDER_OBJ_LIST_FN</B> query function fills two
+arrays with information about the objects currently assigned to the processor
+that share a processor subdomain border (in the communication graph of
+the application) with a given processor. Both arrays are allocated (and
+subsequently freed) by the load-balancing library using a query to an <B><A HREF="#LB_NUM_BORDER_OBJ_FN">LB_NUM_BORDER_OBJ_FN</A></B>
+query function to get the array size. For certain load-balancing algorithms,
+either an <B>LB_BORDER_OBJ_LIST_FN</B> query function or an <B><A HREF="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</A></B>/<B><A HREF="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</A></B>
+query-function pair must be registered to allow the load-balancing library
+to obtain needed object information; however, both query options need not
+be provided.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_BORDER_OBJ_LIST_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_proc</I></TD>
+
+<TD>The processor ID of the processor for which border objects should be
+returned.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_ids</I></TD>
+
+<TD>An array of unique global IDs for all objects assigned to the processor
+that share a subdomain border with <I>nbor_proc</I>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_ids</I></TD>
+
+<TD>An array of local IDs, the meaning of which can be determined by the
+application, for all objects assigned to the processor that share a subdomain
+border with <I>nbor_proc</I>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_FIRST_BORDER_OBJ_FN"></A>typedef int <B>LB_FIRST_BORDER_OBJ_FN</B>(void
+*<I> data</I>, int <I>nbor_proc</I>, <B>LB_GID</B> *<I> first_global_id</I>,
+<B>LB_LID </B>*<I> first_local_id</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_FIRST_BORDER_OBJ_FN</B> query function initializes
+an iteration over objects assigned to the processor that share a processor
+subdomain border with a given processor. It returns the global and local
+IDs of the first object on the processor along the specified subdomain
+border. Subsequent calls to an <B><A HREF="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</A></B>
+query function iterate over and return other objects along the requested
+subdomain border. This query-function pair frees the application from having
+to build an array of objects (as in <B><A HREF="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</A></B>)
+and allows the load-balancing routines to obtain only as much information
+about objects as they need. For some load-balancing algorithms, either
+an <B><A HREF="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</A></B> query
+function or an <B>LB_FIRST_BORDER_OBJ_FN</B>/<B><A HREF="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</A></B>
+query-function pair must be registered to allow the load-balancing library
+to obtain needed object information; however, both query options need not
+be provided.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_FIRST_BORDER_OBJ_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_proc</I></TD>
+
+<TD>The processor ID of the processor for which border objects should be
+returned.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; first_global_id</I></TD>
+
+<TD>The returned value of the global ID for the first object; the value
+is ignored if there are no objects along the border.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; first_local_id</I></TD>
+
+<TD>The returned value of the local ID for the first object; the value
+is ignored if there are no objects along the border.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</TD>
+
+<TD>If <I>first_global_id</I> and <I>first_local_id</I> contain valid IDs
+of the first object along the processor border.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</TD>
+
+<TD>If no objects are available along this processor border.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_NEXT_BORDER_OBJ_FN"></A>typedef int <B>LB_NEXT_BORDER_OBJ_FN</B>(void
+*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
+int <I>nbor_proc</I>, <B>LB_GID</B> *<I> next_global_id</I>, <B>LB_LID</B>
+*<I> next_local_id</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_NEXT_BORDER_OBJ_FN</B> query function is an iterator
+function which, when given an object assigned to the processor and a neighboring
+processor ID, returns the next object assigned to the processor that shares
+a subdomain border with the neighboring processor. The first object of
+the iteration is provided by an <B><A HREF="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</A></B>
+query function. This query-function pair frees the application from having
+to build an array of objects (as in <B><A HREF="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</A></B>)
+and allows the load-balancing routines to obtain only as much information
+about objects as they need. For some load-balancing algorithms, either
+an <B><A HREF="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</A></B> query
+function or an <B><A HREF="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</A></B>/<B>LB_NEXT_BORDER_OBJ_FN</B>
+query-function pair must be registered to allow the load-balancing library
+to obtain needed object information; however, both query options need not
+be provided.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_NEXT_BORDER_OBJ_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+
+<TD>The global ID of the previous object.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
+
+<TD>The local ID of the previous object.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_proc</I></TD>
+
+<TD>The processor ID of the processor for which border objects should be
+returned.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; next_global_id</I></TD>
+
+<TD>The returned value of the global ID for the next object; the value
+is ignored if there are no more objects along the border.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; next_local_id</I></TD>
+
+<TD>The returned value of the local ID for the next object; the value is
+ignored if there are no more objects along the border.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</TD>
+
+<TD>If <I>next_global_id</I> and <I>next_local_id</I> contain valid IDs
+of the next object along the processor border.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</TD>
+
+<TD>If no more objects are available along this processor border.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+<H2>
+<A NAME="Geometry-based Functions"></A>Geometry-based Functions</H2>
+
+<HR WIDTH="100%"><A NAME="LB_NUM_GEOM_FN"></A>typedef int <B>LB_NUM_GEOM_FN</B>(void
+*<I> data</I>, int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_NUM_GEOM_FN</B> query function returns the number
+of values needed to express the geometry of an object. For example, for
+a two-dimensional mesh-based application, (<I>x</I>,<I>y</I>) coordinates
+are needed to describe an object's geometry; thus the <B>LB_NUM_GEOM_FN</B>
+query function should return the value of two. For a similar three-dimensional
+application, the return value should be three.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_NUM_GEOM_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD>The number of values needed to express the geometry of an object.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_GEOM_FN"></A>typedef void <B>LB_GEOM_FN</B>(void
+*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
+double *<I> geom_vec</I>, int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_GEOM_FN</B> query function returns a vector of
+geometry values for a given object. The geometry vector is allocated by
+the load-balancing library to be of the size returned by an <B><A HREF="#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</A></B>
+query function.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_GEOM_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+
+<TD>The global ID of the object whose geometry values should be returned.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
+
+<TD>The local ID of the object whose geometry values should be returned.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>geom_vec</I></TD>
+
+<TD>An array in which the geometry values should be stored.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+<BR>&nbsp;
+<H2>
+<A NAME="Graph-based Functions"></A>Graph-based Functions</H2>
+
+<HR WIDTH="100%"><A NAME="LB_NUM_EDGES"></A>typedef int <B>LB_NUM_EDGES_FN</B>(void
+*<I> data</I>, <B>LB_GID</B><I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
+int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_NUM_EDGES_FN</B> query function returns the number
+of edges for a given object in the communication graph of the application
+(i.e., the number of objects with which the given object must share information).
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_NUM_EDGES_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>global_id</I></TD>
+
+<TD>The global ID of the object for which the number of edges should be
+returned.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>local_id</I></TD>
+
+<TD>The local ID of the object for which the number of edges should be
+returned.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD>The number of edges for the object identified by <I>global_id</I> and
+<I>local_id</I>.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_EDGE_LIST_FN"></A>typedef void <B>LB_EDGE_LIST_FN</B>(void
+*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID </B><I>local_id</I>,
+<B>LB_GID</B> *<I> nbor_global_id</I>, <B>LB_LID</B> *<I> nbor_local_id</I>,
+int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_EDGE_LIST_FN</B> query function returns lists
+of global IDs and local IDs for objects sharing an edge with a given object
+(i.e., objects that must share information with the given object). The
+arrays for the returned neighbor lists are allocated by the load-balancing
+library; their size is determined by a call to an <B><A HREF="#LB_NUM_EDGES">LB_NUM_EDGES_FN</A></B>
+query function.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_EDGE_LIST_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+
+<TD>The global ID of the object for which edge lists should be returned.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
+
+<TD>The local ID of the object for which edge lists should be returned.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_global_id</I></TD>
+
+<TD>Upon return, an array of global IDs of objects sharing edges with the
+given object.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_local_id</I></TD>
+
+<TD>Upon return, an array of local IDs of objects sharing edges with the
+given object.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_query_mig.html">Next:&nbsp; Migration-Help Query Functions</A>&nbsp;
+|&nbsp; <A HREF="ug_query.html">Previous:&nbsp; Application-Registered
+Query Functions</A>]
+</BODY>
+</HTML>

@@ -1,0 +1,345 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Query Functions</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Migration-Help Query Functions"></A>Migration-Help Query Functions</H2>
+The following query functions must be registered to use any of the migration-help
+tools described in <A HREF="ug_interface_mig.html">Migration-Help Functions</A>:
+<BLOCKQUOTE><B><A HREF="#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</A></B>
+<BR><B><A HREF="#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</A></B>
+<BR><B><A HREF="#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</A></B></BLOCKQUOTE>
+Optional, additional query functions for migration-help may also be registered:
+<BLOCKQUOTE><B><A HREF="#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN</A></B></BLOCKQUOTE>
+
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_OBJ_SIZE_FN"></A>typedef int <B>LB_OBJ_SIZE_FN</B>(void
+*<I> data</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_OBJ_SIZE_FN</B> query function returns the size
+(in bytes) of the data buffer that is needed to pack all of a single object's
+data. It is assumed that all objects to be packed in a single <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+call are of the same size. When this assumption is not true, the maximum
+size of the objects to be packed should be returned by <B>LB_OBJ_SIZE_FN</B>.
+This assumption may be relaxed in future releases of the library.
+<BR>&nbsp;
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_OBJ_SIZE_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD>The size (in bytes) of the required data buffer.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_PRE_MIGRATE_FN"></A>typedef void <B>LB_PRE_MIGRATE_FN</B>(void
+*<I> data</I>, int <I>num_import</I>, <B>LB_GID </B>*<I> import_global_ids</I>,
+<B>LB_LID</B> *<I> import_local_ids</I>, int *<I> import_procs</I>, int
+<I>num_export</I>, <B>LB_GID </B>*<I> export_global_ids</I>, <B>LB_LID
+</B>*<I> export_local_ids</I>, int *<I> export_procs</I>,<I> </I>int<I>
+*ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_PRE_MIGRATE_FN</B> query function performs any
+pre-processing desired by the application. If it is registered, it is called
+at the beginning of the <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+routine. The arguments passed to <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+are made available for use in the pre-processing routine.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_PRE_MIGRATE_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
+
+<TD>The number of objects that will be received by this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the global IDs of objects
+to be received by this processor. This array may be NULL, as the processor
+does not necessarily need to know which objects it will receive.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the local IDs of objects
+to be received by this processor. This array may be NULL, as the processor
+does not necessarily need to know which objects it will receive.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the processor IDs of the
+source processors. This array may be NULL, as the processor does not necessarily
+need to know from which processors it will be receiving objects.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_export</I></TD>
+
+<TD>The number of objects that will be sent from this processor to other
+processors.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
+
+<TD>An array of size <I>num_export</I> listing the global IDs of objects
+to be sent from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+
+<TD>An array of size <I>num_export</I> listing the local IDs of objects
+to be sent from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+
+<TD>An array of size <I>num_export</I> listing the processor IDs of the
+destination processors.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP></TD>
+
+<TD>No pre-processing is done if an <B>LB_PRE_MIGRATE_FN</B> is not registered.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_PACK_OBJ_FN"></A>typedef void <B>LB_PACK_OBJ_FN</B>(void
+*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B><I>local_id</I>,
+int <I>dest_proc</I>, int <I>size</I>, char *<I> buf</I>,<I> </I>int<I>
+*ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_PACK_OBJ_FN</B> query function allows the application
+to tell the load-balancing library how to copy all needed data for a given
+object into a communication buffer. The object's data can then be sent
+to another processor as part of data migration. It may also perform other
+computation, such as removing the object from the processor's data structure.
+This routine is called by <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+for each object to be sent to another processor.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_PACK_OBJ_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+
+<TD>The global ID of the object for which data should be copied into the
+communication buffer.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
+
+<TD>The local ID of the object for which data should be copied into the
+communication buffer.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; dest_proc</I></TD>
+
+<TD>The destination processor ID (i.e., the processor to which the object
+is being sent)</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; size</I></TD>
+
+<TD>The size (in bytes) of the communication buffer for the specified object
+(as returned by the <B><A HREF="#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</A></B>
+query function).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; buf</I></TD>
+
+<TD>The starting address of the communication buffer into which the object's
+data should be packed.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_UNPACK_OBJ_FN"></A>typedef void <B>LB_UNPACK_OBJ_FN</B>(void
+*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, int <I>size</I>, char *<I>
+buf</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_UNPACK_OBJ_FN</B> query function allows the application
+to tell the load-balancing library how to copy all needed data for a given
+object from a communication buffer into the application's data structure.
+This operation is needed as the final step of importing objects during
+data migration. The query function may also perform other computation,
+such as building request lists for related data. This routine is called
+by <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+for each object to be received by the processor. (Note: a local ID for
+the object is not included in this function, as the local ID is local to
+the exporting, not the importing, processor.)
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_UNPACK_OBJ_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+
+<TD>The global ID of the object whose data has been received in the communication
+buffer.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; size</I></TD>
+
+<TD>The size (in bytes) of the object's data in the communication buffer.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; buf</I></TD>
+
+<TD>The starting address of the communication buffer for this object.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_alg.html">Next:&nbsp; Algorithms</A>&nbsp; |&nbsp; <A HREF="ug_query_lb.html">Previous:&nbsp;
+Load-Balancing Query Functions</A>]
+</BODY>
+</HTML>

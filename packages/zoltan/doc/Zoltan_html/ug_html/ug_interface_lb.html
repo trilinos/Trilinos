@@ -1,0 +1,345 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Interface</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Load-Balancing Functions"></A>Load-Balancing Functions</H2>
+The following functions are the load-balancing interface functions in the
+Zoltan library; their descriptions are included below.
+<BLOCKQUOTE><B><A HREF="#LB_Set_Method">LB_Set_Method</A></B>
+<BR><B><A HREF="#LB_Set_Tolerance">LB_Set_Tolerance</A></B>
+<BR><B><A HREF="#LB_Balance">LB_Balance</A></B>
+<BR><B><A HREF="#LB_Free_Data">LB_Free_Data</A></B></BLOCKQUOTE>
+
+<HR WIDTH="100%"><A NAME="LB_Set_Method"></A>int <B>LB_Set_Method</B>(struct
+<B>LB_Struct</B> *<I> lb</I>, char * <I>string</I>, double <I>params</I>[<B>LB_PARAMS_MAX_SIZE</B>]);&nbsp;
+<HR WIDTH="100%"><B>LB_Set_Method</B> is used to specify which load-balancing
+technique should be used by the application.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+
+<TD>The load-balancing object created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; string</I></TD>
+
+<TD>A string containing the name of the desired load-balancing technique.
+Valid values of string are&nbsp;
+<BLOCKQUOTE>"RCB" (for <A HREF="ug_alg_rcb.html#RCB">recursive-coordinate
+bisection</A>),&nbsp;
+<BR>"OCTPART" (for <A HREF="ug_alg_oct.html#Octree">octree partitioning</A>),
+and&nbsp;
+<BR>"NONE" (for no load-balancing).</BLOCKQUOTE>
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; params []&nbsp;</I></TD>
+
+<TD>Array used to set parameters for the load-balancing method. Default
+values are set by a call to <B><A HREF="ug_interface_init.html#LB_Initialize_Params_Array">LB_Initialize_Params_Array</A></B>.
+The application specifies desired parameters by overwriting the appropriate
+values of this array. See the individual algorithm descriptions in <A HREF="ug_alg.html#Algorithms">Algorithms</A>
+for descriptions of the parameters for each algorithm.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+
+<TR>
+<TD><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD>If <B>LB_Set_Method</B> is not called, <A HREF="ug_alg_rcb.html#RCB">RCB</A>
+with default parameters is used.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_Set_Tolerance"></A>int <B>LB_Set_Tolerance</B>(struct
+LB_Struct * <I>lb</I>, double <I>tolerance</I>);&nbsp;
+<HR WIDTH="100%"><B>LB_Set_Tolerance</B> sets the tolerance to which the
+load-balancing algorithm should attempt to balance. For example, if the
+tolerance is set to 0.9, 10% load imbalance between the most heavily loaded
+processor and the average load will be accepted as balanced.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+
+<TD>The load-balancing object created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; tolerance</I></TD>
+
+<TD>The allowable ratio of the average load per processor to the maximum
+load per processor.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+
+<TR>
+<TD><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>tolerance </I>= 1.0; a perfect balance is attempted.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_Balance"></A>int <B>LB_Balance</B>(struct
+<B>LB_Struct</B> * <I>lb</I>, int * <I>changes</I>, int * <I>num_import</I>,
+<B>LB_GID</B> ** <I>import_global_ids</I>, <B>LB_LID</B> ** <I>import_local_ids</I>,
+int ** <I>import_procs</I>, int * <I>num_export</I>, <B>LB_GID </B>**<I>
+export_global_ids</I>, <B>LB_LID</B> ** <I>export_local_ids</I>, int **
+<I>export_procs</I>);&nbsp;
+<HR WIDTH="100%"><B>LB_Balance</B> invokes the load-balancing routine specified
+by <B><A HREF="#LB_Set_Method">LB_Set_Method</A></B>.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+
+<TD>The load-balancing object, created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>,
+to be used in this invocation of the load-balancing routine.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; changes</I></TD>
+
+<TD>Set to 1 if the decomposition was changed by the load-balancing method;
+0 otherwise.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import&nbsp;</I></TD>
+
+<TD>Upon return, the number of objects that are now assigned to this processor
+that were assigned to other processors in the old decomposition (i.e.,
+the number of objects to be imported to this processor).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+
+<TD>Upon return, an array of size <I>num_import</I> listing the global
+IDs of objects to be imported to this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+
+<TD>Upon return, an array of size <I>num_import</I> listing the local IDs
+of objects to be imported to this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+
+<TD>Upon return, an array of size <I>num_import</I> listing the processor
+IDs of the processors that owned the imported objects in the previous decomposition
+(i.e., the source processors).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_export</I></TD>
+
+<TD>Upon return, the number of objects that were assigned to this processor
+in the previous decomposition that are now assigned to other processors
+(i.e., the number of objects that must be exported from this processor
+to other processors).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
+
+<TD>Upon return, an array of size <I>num_export</I> listing the global
+IDs of objects to be exported from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+
+<TD>Upon return, an array of size <I>num_export</I> listing the local IDs
+of objects to be exported from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+
+<TD>Upon return, an array of size <I>num_export </I>listing the processor
+IDs of processors that will own the exported objects in the new decomposition
+(i.e., the destination processors).</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_Free_Data"></A>int <B>LB_Free_Data</B>(<B>LB_GID</B>
+** <I>import_global_ids</I>, <B>LB_LID</B> ** <I>import_local_ids</I>,
+int ** <I>import_procs</I>, <B>LB_GID </B>** <I>export_global_ids</I>,
+<B>LB_LID</B> ** <I>export_local_ids</I>, int ** <I>export_procs</I>);&nbsp;
+<HR WIDTH="100%"><B>LB_Free_Data</B> frees the memory allocated by the
+load-balancing routines to return the results of <B><A HREF="#LB_Balance">LB_Balance</A></B>.
+Memory pointed to by the arguments is freed and the arguments are set to
+NULL.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+
+<TD>The array containing the global IDs of objects imported to this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+
+<TD>The array containing the local IDs of objects imported to this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+
+<TD>The array containing the processor IDs of the processors that owned
+the imported objects in the previous decomposition (i.e., the source processors).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids&nbsp;</I></TD>
+
+<TD>The array containing the global IDs of objects exported from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+
+<TD>&nbsp;The array containing the local IDs of objects exported from this
+processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+
+<TD>The array containing the processor IDs of processors that own the exported
+objects in the new decomposition (i.e., the destination processors).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_interface_mig.html">Next:&nbsp; Migration-Help Functions</A>&nbsp;
+|&nbsp; <A HREF="ug_interface_init.html">Previous:&nbsp; Initialization
+Functions</A>]
+</BODY>
+</HTML>

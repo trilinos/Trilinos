@@ -1,0 +1,106 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Examples</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Migration Example"></A>Migration Examples</H2>
+Data migration using Zoltan's migration-help tools can be accomplished
+in two different ways:
+<BLOCKQUOTE><A HREF="#Auto-migration example">auto-migration</A>, or
+<BR><A HREF="#User-guided Migration Example">user-guided migration</A>.</BLOCKQUOTE>
+The choice of migration method depends upon the complexity of the application's
+data. For some applications, only the objects used in balancing must be
+migrated; no auxiliary data structures must be moved. Particle simulations
+are examples of such applications; load balancing is based on the number
+of particles per processor, and only the particles and their data must
+be moved to establish the new decomposition. For such applications, Zoltan's
+auto-migration tools can be used. Other applications, such as finite element
+methods, perform load balancing on, say, the nodes of the finite element
+mesh, but nodes that are moved to new processors also need to have their
+connected elements moved to the new processors, and migrated elements may
+also need "ghost" nodes (i.e., copies of nodes assigned to other processors)
+to satisfy their connectivity requirements on the new processor. This complex
+data migration requires a more user-controlled approach to data migration
+than the auto-migration capabilities of Zoltan can provide.
+<BR>&nbsp;
+<H2>
+<A NAME="Auto-migration example"></A>Auto-Migration Example</H2>
+In the <A HREF="#Auto-Migration Example Fig">figure</A> below, an example
+of the load-balancing calling sequence for a particle simulation using
+Zoltan's auto-migration tools is shown. The application registers the geometric
+query functions that will be used by the load-balancing algorithm. It also
+requests auto-migration through a call to <B><A HREF="ug_interface_mig.html#LB_Set_Migration">LB_Set_Migration</A></B>
+and registers functions to pack and unpack a particle's data. During the
+call to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>,
+the load-balancing library computes the new decomposition and, using calls
+to the packing and unpacking query functions, automatically migrates particles
+to their new processors. The application then frees the arrays returned
+by <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B> and
+can continue computation without having to perform any additional operations
+for data migration.
+<BR><A NAME="Auto-Migration Example Fig"></A><IMG SRC="figures/call_automig.gif" USEMAP="#ug-10" HEIGHT=370 WIDTH=469>
+<H2>
+<A NAME="User-guided Migration Example"></A>User-Guided Migration Example</H2>
+In the following <A HREF="#User-guided Migration Example Fig">figure</A>,
+an example of user-guided migration using Zoltan's migration-help tools
+for a finite element application is shown. Several migration steps are
+needed to completely rebuild the application's data structures for the
+new decomposition. On each processor, newly imported nodes need copies
+of elements containing those nodes. Newly imported elements, then, need
+copies of "ghost" nodes, nodes that are in the element but are assigned
+to other processors. Each of these entities (nodes, elements, and ghost
+nodes) can be migrated in separate migration steps using the functions
+provided in the migration-help tools.First, the assignment of nodes to
+processors returned by <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
+is established. Query functions that pack and unpack nodes are registered
+and <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+is called using the nodal decomposition returned from <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
+<B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+packs the nodes to be exported, sends them to other processors, and unpacks
+nodes received by a processor. The packing routine <I>migrate_node_pack</I>
+includes with each node a list of the element IDs for elements containing
+that node. The unpacking routine <I>migrate_node_unpack</I> examines the
+list of element IDs and builds a list of requests for elements the processor
+needs but does not already store. At the end of the nodal migration, each
+processor has a list of element IDs for elements that it needs to support
+imported nodes but does not already store. Through a call to <B><A HREF="ug_interface_mig.html#LB_Computer_Destinations">LB_Compute_Destinations</A></B>,
+each processor computes the list of elements it has to send to other processors
+to satisfy their element requests. Packing and unpacking routines for elements
+are registered, and <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+is again used to move element data to new processors. Requests for ghost
+nodes can be built within the element packing and unpacking routines, and
+calls to <B><A HREF="ug_interface_mig.html#LB_Computer_Destinations">LB_Compute_Destinations</A></B>
+and <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
+with node packing and unpacking, satisfy requests for ghost nodes. In all
+three phases of migration, the migration-help tools handle communication;
+the application is responsible only for packing and unpacking data and
+for building the appropriate request lists.
+<BR><A NAME="User-guided Migration Example Fig"></A><IMG SRC="figures/call_mig.gif" USEMAP="#ug-11" HEIGHT=506 WIDTH=469>
+<BR>&nbsp;
+<BR>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_future.html">Next:&nbsp; Future Work</A>&nbsp; |&nbsp; <A HREF="ug_examples_lb.html">Previous:&nbsp;
+Load-Balancing Example</A>]
+</BODY>
+</HTML>

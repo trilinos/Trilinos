@@ -1,0 +1,133 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  RCB</TITLE>
+</HEAD>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="RCB"></A>Recursive Coordinate Bisection (RCB)</H2>
+An implementation of Recursive Coordinate Bisection (RCB) due to Steve
+Plimpton of Sandia National Laboratories is included in the dynamic load-balancing
+library. RCB was first proposed as a static load-balancing algorithm by
+<A HREF="ug_refs.html#berger">Berger and Bokhari</A>, but is attractive
+as a dynamic load-balancing algorithm because it implicitly produces incremental
+partitions. In RCB, the computational domain is first divided into two
+regions by a cutting plane orthogonal to one of the coordinate axes so
+that half the work load is in each of the sub-regions. The splitting direction
+is determined by computing in which coordinate direction the set of objects
+is most elongated, based upon the geometric locations of the objects. The
+sub-regions are then further divided by recursive application of the same
+splitting algorithm until the number of sub-regions equals the number of
+processors. Although this algorithm was first devised to cut into a number
+of sets which is a power of two, the set sizes in a particular cut needn't
+be equal. By adjusting the partition sizes appropriately, any number of
+equally-sized sets can be created.
+<BR>&nbsp;
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Method String:</B></TD>
+
+<TD><B>RCB</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>parameters</I>[0]</TD>
+
+<TD>The amount by which to over-allocate temporary storage arrays for objects
+within the RCB algorithm when additional storage is due to changes in processor
+assignments.&nbsp;
+<BR>1.0 = no extra storage allocated; 1.5 = 50% extra storage; etc.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; parameters</I>[1]</TD>
+
+<TD>Flag to indicate whether to use previous cuts as initial guesses for
+the current RCB invocation.&nbsp;
+<BR>0 = don't use previous cuts; 1 = use previous cuts.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>parameters</I>[0] = 1.0</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>parameters</I>[1] = 0</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Required Query Functions:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
+or <B><A HREF="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>/<B><A HREF="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
+pair</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A></B></TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_alg_oct.html">Next:&nbsp; Octree/Space-Filling Curve (SFC)
+Partitioning</A>&nbsp; |&nbsp; <A HREF="ug_alg.html">Previous:&nbsp; Algorithms</A>]
+</BODY>
+</HTML>

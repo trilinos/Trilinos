@@ -1,0 +1,159 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Library Usage</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Using the Library"></A>Using the Library</H2>
+
+<H3>
+<A NAME="Application Data Types"></A>Application Data Types</H3>
+Application query functions and application callable library functions
+use global and local identifiers (IDs) for objects. All objects to be used
+in load balancing must have unique global IDs. Different applications may
+use different data types to represent these IDs. One finite element application,
+for example, may use integers as global identifiers (e.g., see [<A HREF="ug_refs.html#mpsalsa">MPSalsa</A>]);
+another may use a structure of information including local element counts
+and processor numbers (e.g., see [<A HREF="ug_refs.html#alegra">ALEGRA</A>]).
+Since the Zoltan library is designed to work with a number of applications,
+it must allow applications to specify data types for global and local IDs.The
+local IDs passed to the load-balancing library are not used by the library;
+they are provided for the convenience of the application and can contain
+any information desired by the application. For instance, pointers to objects
+may be passed as local IDs, enabling direct access to object data in the
+query function routines. See the <A HREF="ug_query.html">application-registered
+query functions</A> for more details.To provide data type information to
+the load- balancing library, application developers must define their global
+and local ID data types in the file "lb/lb_user_const.h" in the Zoltan
+library source code distribution. In addition, they must define macros
+to copy global and local IDs and to compare global IDs. The data and macro
+definitions that must be included are described in the <A HREF="#Macro defs">table</A>
+below.&nbsp; The source code distribution contains an example in which
+global IDs are integers and local IDs are pointers to objects.
+<BR>&nbsp;
+<TABLE BORDER >
+<TR>
+<TH>Definition</TH>
+
+<TH>Description</TH>
+</TR>
+
+<TR>
+<TD>LB_GID</TD>
+
+<TD>The data type of the unique global IDs used by the application.</TD>
+</TR>
+
+<TR>
+<TD>LB_LID</TD>
+
+<TD>The data type of the local IDs used by the application query functions.</TD>
+</TR>
+
+<TR>
+<TD>LB_SET_GID(<I> a, b</I> )</TD>
+
+<TD>Assigns the global ID value in <I>b</I> to <I>a</I> (i.e., <I>a = b</I>
+).</TD>
+</TR>
+
+<TR>
+<TD>LB_SET_LID(<I> a, b</I> )</TD>
+
+<TD>Assigns the local ID value in <I>b</I> to <I>a</I> (i.e., <I>a = b</I>
+).</TD>
+</TR>
+
+<TR>
+<TD>LB_EQ_GID(<I> a, b</I> )</TD>
+
+<TD>Returns TRUE if global IDs <I>a</I> and <I>b</I> are equal; returns
+FALSE otherwise.</TD>
+</TR>
+
+<TR>
+<TD>LB_NE_GID(<I> a, b)</I></TD>
+
+<TD>Returns TRUE if global IDs <I>a</I> and <I>b</I> are not equal; returns
+FALSE otherwise.</TD>
+</TR>
+
+<TR>
+<TD>LB_LT_GID(<I> a, b</I> )</TD>
+
+<TD>Returns TRUE if global ID <I>a</I> is less than global ID <I>b</I>
+; returns FALSE otherwise.</TD>
+</TR>
+
+<TR>
+<TD>LB_LE_GID(<I> a, b</I> )</TD>
+
+<TD>Returns TRUE if global ID <I>a</I> is less than or equal to global
+ID <I>b</I> ; returns FALSE otherise.</TD>
+</TR>
+
+<TR>
+<TD>LB_GT_GID(<I> a, b</I> )</TD>
+
+<TD>Returns TRUE if global ID <I>a</I> is greater than global ID <I>b</I>
+; returns FALSE otherwise.</TD>
+</TR>
+
+<TR>
+<TD>LB_GE_GID(<I> a, b</I> )</TD>
+
+<TD>Returns TRUE if global ID <I>a</I> is greater than or equal to global
+ID <I>b</I> ; returns FALSE otherwise.</TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><A NAME="Macro defs"></A><I>Data type and macro definitions
+that must be provided to the load-balancing library by the application
+in lb/lb_user_const.h.</I></CAPTION>
+</TABLE>
+
+<H3>
+<A NAME="Building the Library"></A>Building the Library</H3>
+The Zoltan library is implemented in ANSI C and can be compiled with any
+ANSI C compiler. Communication within the library is performed through
+MPI, so appropriate MPI libraries must be linked with the library. Example
+Makefiles are included with the source code. The top-level Makefile includes
+targets for several architectures, including Sandia's ASCI Red computer
+and Intel Paragon. Dependency and object files and the resulting load-balancing
+library file are placed in subdirectories for each architecture. Thus,
+to build the library for Sandia's ASCI Red computer, a user would type
+<BLOCKQUOTE>gmake tflop</BLOCKQUOTE>
+and the resulting library would be stored in Obj_tflop/libdlb.a. Paths
+within the top-level Makefile and the Makefiles in the Obj_* subdirectories
+may have to be changed for the user's computing environment.
+<H3>
+<A NAME="Building Applications"></A>Building Applications</H3>
+The library interface is described in the C include file "lbi_const.h";
+this file should be included in all application source files that call
+Zoltan library routines. The application should then be linked with the
+Zoltan library by including -ldlb in the linking command for the application.
+<BR>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_interface.html">Next:&nbsp; Zoltan Interface Functions</A>&nbsp;
+|&nbsp; <A HREF="ug_intro.html">Previous: Introduction</A>]
+</BODY>
+</HTML>

@@ -1,0 +1,226 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Interface</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Initialization Functions"></A>Initialization Functions</H2>
+
+<HR WIDTH="100%"><A NAME="LB_Initialize"></A>int <B>LB_Initialize</B>(int
+<I>argc</I>, char **<I> argv</I>, float *<I> ver</I>);&nbsp;
+<HR WIDTH="100%">The <B>LB_Initialize</B> function initializes values needed
+in the load-balancing tools. This function must be called with the <I>argc</I>
+and <I>argv</I> command-line arguments from the main program. If the application
+uses MPI, this function should be called after calling <B>MPI_Init</B>.
+If the application does not use MPI, this function calls <B>MPI_Init</B>
+for use by the load balancer. It also returns the version of the dynamic
+load-balancing library so that users can verify which version of the library
+their application is linked to.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD>&nbsp;</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; argc</I></TD>
+
+<TD>The number of command-line arguments to the application.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; argv</I></TD>
+
+<TD>An array of strings containing the command-line arguments to the application.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ver</I></TD>
+
+<TD>The version number of the library.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD VALIGN=TOP><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_Create_Object"></A>struct <B>LB_Struct</B>
+*<B>LB_Create_Object</B>(MPI_Comm <I>communicator</I>);&nbsp;
+<HR WIDTH="100%">The <B>LB_Create_Object</B> function allocates memory
+for storage of load-balancing information to be used by the load-balancing
+library and sets the default values for the load- balancing information.
+The pointer returned by this function is passed to many subsequent load-balancing
+functions. An application may allocate more than one <B>LB_Struct</B> object
+if, say, it uses different decompositions with different load-balancing
+techniques.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; communicator</I></TD>
+
+<TD>The MPI communicator to be used for this load-balancing object. Only
+those processors included in the communicator participate in load balancing.
+If all processors currently used by the application are to participate
+in load balancing, communicator should be <B>MPI_COMM_WORLD</B> .</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:&nbsp;</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; struct <B>LB_Struct</B> *</TD>
+
+<TD>Pointer to memory for storage of load-balancing information. If an
+error occurs, NULL will be returned. Any error that occurs in this function
+is assumed to be fatal.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_Initialize_Params_Array"></A>int <B>LB_Initialize_Params_Array</B>(double
+<I>params</I>[<B>LB_PARAMS_MAX_SIZE</B>]);&nbsp;
+<HR WIDTH="100%"><B>LB_Initialize_Params_Array</B> initializes an array
+of double-precision values used to pass parameters to the load-balancing
+methods (in <B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>).
+Dummy values are placed in the array; the application can then overwrite
+array values for those parameters it wishes to explicitly set. Default
+parameter values will be used for all entries not overwritten by the application.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; params []&nbsp;</I></TD>
+
+<TD>Array used to pass parameters to load-balancing methods in <B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
+Upon return, all array values are set to a default value.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int&nbsp;</TD>
+
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%"><A NAME="LB_Set_Fn"></A>int <B>LB_Set_Fn</B>(struct <B>LB_Struct
+</B>* <I>lb,</I><B>LB_FN_TYPE</B><I>fn_type</I>, void * <I>fn_ptr</I>(),
+void *<I>data</I>);&nbsp;
+<HR WIDTH="100%"><B>LB_Set_Fn</B> registers an application-supplied query
+function in the load-balancing library. Both load-balancing and migration-help
+functions are registered through calls to <B>LB_Set_Fn</B> .
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+
+<TD>The load-balancing object created by<B><A HREF="#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; fn_type</I></TD>
+
+<TD>The type of function being registered; see <A HREF="ug_query.html#Application-Registered Query Functions">Application-Registered
+Query Functions</A> for possible function types.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; fn_ptr</I></TD>
+
+<TD>A pointer to the application-supplied query function being registered.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>A pointer to user defined data that will be passed, as an argument,
+to the function pointed to by fn_ptr . May be NULL.</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_interface_lb.html">Next:&nbsp; Load-Balancing Functions</A>&nbsp;
+|&nbsp; <A HREF="ug_interface.html">Previous:&nbsp; Zoltan Interface Functions</A>]
+</BODY>
+</HTML>

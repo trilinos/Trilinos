@@ -1,0 +1,87 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Query Functions</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Application-Registered Query Functions"></A>Application-Registered
+Query Functions</H2>
+The load-balancing library gets information about a processor's objects
+and work load through calls to load-balancing query functions. These functions
+must be provided by the application. They are "registered" with the load-balancing
+library; that is, a pointer to the function is passed to the load-balancing
+library, which can then call that function when its information is needed.&nbsp;
+Two categories of query functions are used by the library:
+<BLOCKQUOTE><A HREF="ug_query_lb.html">Load-Balancing Query Functions</A>
+<BR><A HREF="ug_query_mig.html">Migration-Help Query Functions</A></BLOCKQUOTE>
+A variety of query functions can be registered by the user. The query functions
+have a function type, describing their purpose to the load-balancing library.
+When a function is registered with the load-balancing library through a
+call to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>,
+its function type is passed to the load-balancing library in the <I>fn_type</I>
+argument. Each function description below will include both its function
+type and function prototype.
+
+<P>Some algorithms in the load-balancing library require that certain query
+functions be registered by the application; for example, geometric partitioning
+algorithms such as Recursive Coordinate Bisection (RCB) require that an
+<B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A></B> be registered.
+When a default value is specified below, the query function type is optional;
+if a function of that type is not registered, the default values are used.
+Details of which query functions are required by particular algorithms
+are included in the <A HREF="ug_alg.html">Algorithms</A> section.
+
+<P>Many of the functions have both global and local object identifiers
+(IDs) in their argument lists. The global IDs provided by the application
+must be unique across all processors; they are used for identification
+within the load-balancing library. The local IDs are not used by the load-balancing
+library; they are provided for the convenience of the application and can
+be anything the application desires. The local IDs can be used by application
+query routines to enable direct access to application data. For example,
+the object with global ID "3295" may be stored by the application in location
+"15" of an array in the processor's local memory. Both global ID "3295"
+and local ID "15" can be used by the application to describe the object.
+Then, rather than searching the array for global ID "3295," the application
+query routines can subsequently use the local ID to index directly into
+the local storage array. See <A HREF="ug_usage.html#Application Data Types">Application
+Data Types</A> for a description of global and local IDs.All of the functions
+have, as their first argument, a pointer to data that is passed to the
+load-balancing library through <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.
+This data is not used by the load-balancing library. A different set of
+data can be supplied for each registered function. For example, if the
+local ID is an index into an array of data structures, then the data pointer
+might point to the head of the data structure array.
+
+<P>As their last argument, all functions have an error code that should
+be set and returned by the registered function. Currently, only two error
+codes are recognized. If the function exits without an error, the error
+code should be set to 0. If there is a problem, the error code should be
+set to some non-zero value.
+<BR>&nbsp;
+<BR>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_query_lb.html">Next:&nbsp; Load-Balancing Query Functions</A>&nbsp;
+|&nbsp; <A HREF="ug_interface_mig.html">Previous:&nbsp; Migration-Help
+Functions</A>]
+</BODY>
+</HTML>

@@ -1,0 +1,57 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  Future Work</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="Future Work"></A>Future Work</H2>
+Future efforts will focus on testing the interface in a variety of applications
+and developing new algorithms for the load- balancing library. Preliminary
+tests of the interface in an unstructured finite element method have been
+successful. The load-balancing query functions can be implemented with
+a small amount of C code (less than 200 lines), and data migration can
+be accomplished without additional communication code in the application
+using a calling sequence similar to that in the <A HREF="ug_examples_mig.html#User-guided Migration Example">user-guided
+migration example</A>.
+
+<P>Algorithmic development will focus first on the development of a model
+for heterogeneous computing systems. Processor speeds, processor memory
+sizes, and interconnection network speeds will be included in the model.
+The model will be tested first in the simple <A HREF="ug_alg.html">algorithms</A>
+already implemented. New algorithmic development will be required to use
+the heterogeneous system model.
+
+<P>After heterogeneous computing model is developed, new algorithms will
+be implemented. These algorithms will include local diffusion algorithms
+that test the graph-based interface to the load-balancing library and tree-based
+algorithms that can take advantage of information available in tree-based
+applications such as finite element methods with adaptive mesh refinement.
+The tree-based algorithms will require additions to the load-balancing
+interface, but the existing interface routines should remain unchanged.
+<BR>&nbsp;
+<BR>&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_refs.html">Next:&nbsp; References</A>&nbsp; |&nbsp; <A HREF="ug_examples_mig.html">Previous:&nbsp;
+Migration Examples</A>]
+</BODY>
+</HTML>
