@@ -176,7 +176,6 @@ bool Amesos::Query(const string CT)
     return false;
 #endif
   }
-  return false;
 
   if ((CT == "Amesos_Superludist") || (CT == "Superludist")) { 
 #ifdef HAVE_AMESOS_SUPERLUDIST
