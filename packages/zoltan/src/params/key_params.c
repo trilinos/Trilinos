@@ -206,4 +206,8 @@ void LB_Print_Key_Params(LB *lb)
   else if (lb->Timer == LB_TIME_CPU)
      printf("(cpu)");
   printf("\n");
+  printf("ZOLTAN Parameter %s = %d\n", Key_params[8].name, 
+         lb->Num_GID);
+  printf("ZOLTAN Parameter %s = %d\n", Key_params[9].name, 
+         lb->Num_LID);
 }
