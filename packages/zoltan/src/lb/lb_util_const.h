@@ -24,6 +24,8 @@ static char *cvs_lbutilconsth_id = "$Id$";
 /*****************************************************************************/
 
 extern void LB_perform_error_checking(LB *);
+extern void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids, 
+              int wdim, float *objwgts, int *ierr);
 
 /*****************************************************************************/
 /*****************************************************************************/
