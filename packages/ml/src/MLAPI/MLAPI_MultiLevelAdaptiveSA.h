@@ -175,7 +175,7 @@ public:
    * \param UseDefault - (In) if \c true, the first call to Compute()
    *                     uses the default null space. Otherwise,
    *                     one null space component is computed using
-   *                     SetupNullSpace().
+   *                     SetupInitialNullSpace().
    *
    * \param AdditionalCandidates - (In) Number of candidates, that is the
    *                     number of null space components that will be
@@ -188,7 +188,7 @@ public:
       Compute();
     else {
       // compute the first guy, supposing that no null space
-      SetupNullSpace();
+      SetupInitialNullSpace();
       Compute();
     }
 
@@ -200,7 +200,7 @@ public:
   }
 
   //! Computes the first component of the null space.
-  void SetupNullSpace() 
+  void SetupInitialNullSpace() 
   {
 
     int    MaxLevels     = List_.get("max levels", 10);
@@ -321,7 +321,8 @@ public:
   }
 
   // Increments the null space dimension by one.
-  void IncrementNullSpace()
+  int IncrementNullSpace(const int Nits_fine = 15,
+                         const int Nits_coarse = 5)
   {
     ResetTimer();
     StackPush();
@@ -350,6 +351,7 @@ public:
 
     // Extract a light-weight copy of the additional component
     MultiVector AdditionalNS = Extract(ExpandedNS, NCand);
+    AdditionalNS.Random();
     AdditionalNS = (AdditionalNS + 1.) / 2.0;
 
     //  zero out in the new candidate everybody but the (Ncand+1)'th guy
@@ -363,8 +365,7 @@ public:
    // run the current V-cycle on the candidate
    MultiVector b0(AdditionalNS.GetVectorSpace());
 
-   int Nits = 15;
-   for (int i=0; i<Nits; i++)
+   for (int i=0; i<Nits_fine; i++)
      SolveMultiLevelSA(b0,AdditionalNS,0);
 
    double NormFirst = ExpandedNS.NormInf(0);
@@ -422,7 +423,7 @@ public:
       P_[level+1] = Pbridge;
       R_[level+1] = GetTranspose(Pbridge);
 
-      AdditionalNS = Extract(ExpandedNS, NCand);
+      AdditionalNS = Duplicate(Extract(ExpandedNS, NCand));
 
       double MyEnergyBefore = sqrt((C * AdditionalNS) * AdditionalNS);
 
@@ -435,10 +436,7 @@ public:
       b0.Reshape(AdditionalNS.GetVectorSpace());
       b0 = 0.;
       
-      if (level)
-        Nits = 5;
-
-      for (int i=0; i<Nits; i++)
+      for (int i=0; i<Nits_coarse; i++)
         SolveMultiLevelSA(b0,AdditionalNS,level+1);
 
       // get norm of the first NS component
@@ -449,13 +447,22 @@ public:
 
       double MyEnergyAfter = sqrt((C * AdditionalNS) * AdditionalNS);
 
-      // scale the new candidate
-      double max = AdditionalNS.NormInf();
-      AdditionalNS.Scale((maxabs/max));
+      if (MyEnergyAfter == 0.0) {
+        if (AdditionalNS.NormInf() != 0.0) {
+		for (int i=0; i<AdditionalNS.GetMyLength(); i++)
+		  ExpandedNS(i,NCand) = AdditionalNS(i);
+        }
+      }
+      else {
+        for (int i=0; i<AdditionalNS.GetMyLength(); i++) {
+          ExpandedNS(i,NCand) = AdditionalNS(i);
+        }
+      }
 
-      for (int i=0; i<AdditionalNS.GetMyLength(); i++)
-        ExpandedNS(i,NCand) = AdditionalNS(i);
-      
+      // scale the new candidate
+      double max = ExpandedNS.NormInf(NCand);
+      // FIXME.... ExpandedNS.Scale((maxabs/max, NCand));
+
       //TODO coarse level
       cout << "adaptedCompute: EnergyBefore=" << MyEnergyBefore << endl;
       cout << "adaptedCompute: EnergyAfter =" << MyEnergyAfter << endl;
@@ -464,7 +471,7 @@ public:
       // - scaling of the new computed component
       // - if MyEnergyAfter is zero, take the previous guy
 
-      if (pow(MyEnergyAfter/MyEnergyBefore,1.0/Nits) < 0.1) {
+      if (pow(MyEnergyAfter/MyEnergyBefore,1.0/Nits_coarse) < 0.1) {
         ++level;
         break;
       }
