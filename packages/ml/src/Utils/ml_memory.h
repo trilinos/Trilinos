@@ -74,7 +74,8 @@ extern void  ML_myfree(void *vptr);
 extern char *ML_realloc(void *vptr, unsigned int new_size);
 extern void ML_spit_it_out();
 #endif
-
+extern int ML_MaxAllocatableSize();
+extern int ML_MaxMemorySize();
 
 #ifndef ML_CPP
 #ifdef __cplusplus
