@@ -2235,3 +2235,50 @@ void ML_serial_end(ML_Comm *comm)
                           comm->USR_comm);
    }
 }
+
+/* ******************************************************************** */
+/* Routine that pauses execution, prints out process id's, and allows   */
+/* the developer to attach a debugger if desired.                       */
+/* (Based on code from ALEGRA).                                         */
+/* ******************************************************************** */
+
+void ML_PauseForDebugger(ML_Comm *comm)
+{
+  int i,j;
+  int mypid = comm->ML_mypid;
+  int nproc = comm->ML_nprocs;
+  char buf[80];
+  char hostname[80];
+  char go = ' ';
+
+  i = (int) getenv("ML_BREAK_FOR_DEBUGGER");
+  ML_gsum_vec_int(&i, &j, 1, comm);
+  if (i != 0)
+  {
+    if (mypid == 0) printf("Host and Process Ids for tasks\n");
+    for (i = 0; i < nproc; i++) {
+      if (i == mypid) {
+#ifdef COUGAR
+        sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
+#else
+        gethostname(hostname, sizeof(hostname));
+        sprintf(buf, "Host: %s   PID: %d", hostname, getpid());
+#endif
+        printf("%s\n",buf);
+        fflush(stdout);
+        sleep(1);
+      }
+      //global_sync();
+    }
+    if(mypid == 0) {
+      printf("\n");
+      printf("** Pausing because environment variable ML_BREAK_FOR_DEBUGGER has been set.\n");
+      printf("**\n");
+      printf("** You may now attach debugger to the processes listed above.\n");
+      printf( "**\n");
+      printf( "** Enter a character to continue > "); fflush(stdout);
+	  scanf("%c",&go);
+    }
+  }
+  //global_sync();
+}

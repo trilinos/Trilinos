@@ -95,6 +95,8 @@
    int    ML_gmax_int(int val, ML_Comm *comm);
    int    ML_find_index(int key, int list[], int length);
 
+   void  ML_PauseForDebugger(ML_Comm *comm);
+
 #ifdef __cplusplus
 }
 #endif
