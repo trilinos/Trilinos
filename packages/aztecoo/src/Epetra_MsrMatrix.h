@@ -326,6 +326,9 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
     \return Integer error code, set to 0 if successful.
   */
     int NumMyRowEntries(int MyRow, int & NumEntries) const;
+
+    //! Returns the maximum of NumMyRowEntries() over all rows.
+    int MaxNumEntries() const;
   //@}
 
  private:

@@ -147,8 +147,7 @@ int Epetra_MsrMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal,
 
 //=============================================================================
 // Utility routine to get the specified row and put it into Values_ and Indices_ arrays
-int Epetra_MsrMatrix::GetRow(int Row) const {
-
+int Epetra_MsrMatrix::MaxNumEntries() const {
   int NumEntries;
 
   if (MaxNumEntries_==-1) {
@@ -156,15 +155,24 @@ int Epetra_MsrMatrix::GetRow(int Row) const {
       NumMyRowEntries(i, NumEntries);
       if (NumEntries>MaxNumEntries_) MaxNumEntries_ = NumEntries;
     }
-    
-    if (MaxNumEntries_>0) {
-      Values_ = new double[MaxNumEntries_];
-      Indices_ = new int[MaxNumEntries_];
-    }
   }
-  Epetra_MsrMatrix::ExtractMyRowCopy(Row, MaxNumEntries_, NumEntries, Values_, Indices_);
+  return(MaxNumEntries_);
+}
+
+//=============================================================================
+// Utility routine to get the specified row and put it into Values_ and Indices_ arrays
+int Epetra_MsrMatrix::GetRow(int Row) const {
+
+  int NumEntries;
+  int MaxNumEntries = Epetra_MsrMatrix::MaxNumEntries();
+
+  if (MaxNumEntries>0) {
+    if (Values_==0) Values_ = new double[MaxNumEntries];
+    if (Indices_==0) Indices_ = new int[MaxNumEntries];
+  }
+  Epetra_MsrMatrix::ExtractMyRowCopy(Row, MaxNumEntries, NumEntries, Values_, Indices_);
   
-  return(NumEntries); // Not implemented
+  return(NumEntries);
 }
 
 //=============================================================================
