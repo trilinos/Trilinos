@@ -694,7 +694,7 @@ AC_ARG_ENABLE(loca,
 [BUILD_LIBLOCA=${enableval}],
 [BUILD_LIBLOCA=yes]
 )
-AC_MSG_CHECKING(whether we should build the loca libraries)
+AC_MSG_CHECKING(whether we should build the loca library)
 AC_MSG_RESULT([${BUILD_LIBLOCA}])
 AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
 
@@ -703,7 +703,7 @@ AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
 # LOCA-LAPACK Library Check
 # ------------------------------------------------------------------------
 
-AC_MSG_CHECKING(whether we should build the localapack library)
+AC_MSG_CHECKING(whether we should build the loca-lapack interface library)
 if test X${BUILD_LIBLOCA} = Xyes && test X${ADDON_lapack} = Xyes; then
   AC_MSG_RESULT(yes)
   AM_CONDITIONAL(BUILD_LIBLOCALAPACK, true)
@@ -729,7 +729,7 @@ fi
 # LOCA-Epetra Library Check
 # ------------------------------------------------------------------------
 
-AC_MSG_CHECKING(whether we should build the locaepetra library)
+AC_MSG_CHECKING(whether we should build the loca-epetra interface library)
 if test X${BUILD_LIBLOCA} = Xyes && test X${ADDON_epetra} = Xyes; then
   AC_MSG_RESULT(yes)
   AM_CONDITIONAL(BUILD_LIBLOCAEPETRA, true)
@@ -750,6 +750,71 @@ else
   AC_MSG_RESULT(no)
   AM_CONDITIONAL(BUILD_LOCA_EPETRA_EXAMPLES, false)
 fi
+
+# ------------------------------------------------------------------------
+# Checks for Regression Testing
+# ------------------------------------------------------------------------
+
+  AC_DEFUN(NOX_TESTING,
+  [
+    AC_MSG_CHECKING(whether we should build the nox $1 regression tests)
+    if test X${ADDON_TESTS} = Xyes && test X${ADDON_$1} = Xyes; then
+      AC_MSG_RESULT(yes)
+      ADDON_$1_TESTS=yes
+
+      AC_MSG_CHECKING(whether we should build the loca $1 regression tests)
+      if test X${BUILD_LIBLOCA} = Xyes; then
+	ADDON_loca_$1_TESTS=yes	
+        AC_MSG_RESULT(yes)
+      else 
+	ADDON_loca_$1_TESTS=no
+        AC_MSG_RESULT(no)
+      fi
+
+    else
+      AC_MSG_RESULT(no)
+      ADDON_$1_TESTS=no
+      AC_MSG_CHECKING(whether we should build the loca $1 regression tests)
+      AC_MSG_RESULT(no)
+      ADDON_loca_$1_TESTS=no
+    fi  
+
+    if test X${ADDON_$1_TESTS} = Xyes; then
+      BUILD_ANY_EXAMPLES=yes
+    fi
+
+  ])
+
+  # See if testing is enabled
+  # We 
+  AC_MSG_CHECKING(whether we should build the regression tests)
+  AC_ARG_ENABLE(nox-tests,
+  [AC_HELP_STRING([--enable-nox-tests],[compile regression tests, over-rides the trilinos flag "--enable-tests" so that nox tests can be built separately from other trilinos package tests])],
+  [ADDON_TESTS=$enableval],
+  [  
+     AC_ARG_ENABLE(tests,
+     [AC_HELP_STRING([--enable-tests],[compile regression tests, will be ignored if "--enable-nox-tests" is specified])],
+     [ADDON_TESTS=$enableval],
+     [ADDON_TESTS=no]
+     )
+  ]
+  )
+  AC_MSG_RESULT([${ADDON_TESTS}])
+
+  # lapack testing
+  NOX_TESTING(lapack)
+  AM_CONDITIONAL(BUILD_LAPACK_TESTS, test X${ADDON_lapack_TESTS} = Xyes)
+  AM_CONDITIONAL(BUILD_LOCA_LAPACK_TESTS, test X${ADDON_loca_lapack_TESTS} = Xyes)
+ 
+  # epetra testing
+  NOX_TESTING(epetra)
+  AM_CONDITIONAL(BUILD_EPETRA_TESTS, test X${ADDON_epetra_TESTS} = Xyes)
+  AM_CONDITIONAL(BUILD_LOCA_EPETRA_TESTS, test X${ADDON_loca_epetra_TESTS} = Xyes)
+
+  # petsc testing
+  NOX_TESTING(petsc)
+  AM_CONDITIONAL(BUILD_PETSC_TESTS, test X${ADDON_petsc_TESTS} = Xyes)
+  AM_CONDITIONAL(BUILD_LOCA_PETSC_TESTS, test X${ADDON_loca_petsc_TESTS} = Xyes)
 
 # ------------------------------------------------------------------------
 # LOCA-Epetra-Anasazi support
@@ -1089,7 +1154,8 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 
 ])
 
-if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes; then
+if test X${ADDON_epetra_EXAMPLES} = Xyes ||
+   test X${ADDON_epetra_TESTS} = Xyes; then
 
   TRILINOS_LIB_CHECK(epetra,epetra,src)
   TRILINOS_LIB_CHECK(ifpack,ifpack,src)
@@ -1190,7 +1256,8 @@ AC_DEFUN(PETSC_LIB_CHECK,
     
 ])
     
-if test X${ADDON_petsc_EXAMPLES} = Xyes; then
+if test X${ADDON_petsc_EXAMPLES} = Xyes ||
+   test X${ADDON_petsc_TESTS} = Xyes; then
   
   # Check for petsc
   PETSC_LIB_CHECK(petsc)
@@ -1325,6 +1392,25 @@ AC_CONFIG_FILES([
 		src-loca/example-lapack/Chan/Makefile
 		src-loca/example-lapack/1Dfd_pitchfork/Makefile
 		src-loca/example-lapack/Brusselator/Makefile
+                test/Makefile
+                test/scripts/Makefile
+                test/scripts/daily/Makefile
+                test/scripts/daily/serial/Makefile
+                test/scripts/daily/mpi/Makefile
+                test/lapack/Makefile
+                test/lapack/NOX_NewTest/Makefile
+                test/lapack/NOX_Group/Makefile
+                test/lapack/LOCA_NewTest/Makefile
+                test/lapack/LOCA_Group/Makefile
+                test/lapack/LOCA_ChanProblem/Makefile
+                test/epetra/Makefile
+                test/epetra/NOX_NewTest/Makefile
+                test/epetra/NOX_Vector/Makefile
+                test/epetra/NOX_Group/Makefile
+                test/epetra/LOCA_NewTest/Makefile
+                test/epetra/LOCA_Group/Makefile
+                test/epetra/1Dfem/Makefile
+                test/petsc/Makefile
 		])
 
 AC_OUTPUT
