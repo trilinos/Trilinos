@@ -71,6 +71,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->num_PDE_eqns               = 1;
    (*ag)->nullspace_dim              = 1;
    (*ag)->nullspace_vect             = NULL;
+   (*ag)->nullspace_corrupted        = ML_EMPTY;
    (*ag)->max_levels                 = 0;
    (*ag)->max_coarse_size            = 32;
    (*ag)->begin_level                = 0;
@@ -170,11 +171,6 @@ int ML_Aggregate_Set_Reuse(ML_Aggregate *ag)
       exit(-1);
    }
    ag->keep_P_tentative = ML_YES;
-   if (ag->nullspace_vect != NULL) {
-      printf("ML_Aggregate_Set_Reuse : Can not reuse aggregates with\n");
-      printf("                         nontrivial nullspace.\n");
-      exit(-1);
-   }
    return 0;
 }
 
@@ -542,16 +538,15 @@ int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
    ag->nullspace_dim = null_dim;
 
    /* if there was a nullspace vector specified before, free it */
-   if (ag->nullspace_vect != NULL)
-   /*
-     if (ag->keep_P_tentative == ML_YES) {
-       printf("ML_Aggregate_Set_NullSpace: Can not reuse aggregates with\n");
-       printf("                            nontrivial nullspace.\n");
-       exit(-1);
-     }
-   */
+   if (ag->nullspace_vect != NULL) {
+
+     /* if this is the fine grid, indicate that we have overwritten */
+     /* the user's nullspace.                                       */
+     if (ag->nullspace_corrupted == ML_EMPTY)
+       ag->nullspace_corrupted = ML_YES;
 
       ML_memory_free((void **)&(ag->nullspace_vect));
+   }
 
    /* if the user-supplied nullspace vector isn't null, allocate space */
    /* and load it */
@@ -563,6 +558,12 @@ int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
 
    if (null_vect != NULL) 
    {
+     /* If the fine grid operator has no null space, indicate */
+     /* that the fine grid nullspace has not been corrupted.  */
+
+     if (ag->nullspace_corrupted == ML_EMPTY)
+       ag->nullspace_corrupted = ML_NO;
+
       nbytes = leng * null_dim * sizeof(double);
 	
       ML_memory_alloc((void **)&(ag->nullspace_vect), nbytes, "ns");

@@ -39,6 +39,8 @@ typedef struct ML_Aggregate_Struct
    int    num_PDE_eqns;                /* block size                    */
    int    nullspace_dim;               /* self-explanatory              */
    double *nullspace_vect;             /* for null space vectors        */
+   int    nullspace_corrupted;         /* indicates whether fine grid   */
+                                       /* nullspace has been overwritten*/
    int    *aggr_count;                 /* no. aggregates at each level  */
    int    **aggr_info;                 /* node to aggregate map         */
    int    max_levels;                  /* maximum number of levels      */

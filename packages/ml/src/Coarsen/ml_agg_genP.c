@@ -149,6 +149,18 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    double t0;
 #endif
 
+   if (ag->nullspace_corrupted == ML_YES) {
+     printf("Can not reuse aggregate object when the fine grid operator\n");
+     printf("has a nontrivial null space. It is possible to keep \n");
+     printf("tentative prolongator within smoothed aggregation by\n");
+     printf("invoking ML_Aggregate_Set_Reuse(...) before hierarchy\n");
+     printf("generation and then on subsequent hierarchy generations use\n");
+     printf("ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg().\n");
+
+     exit(-1);
+   }
+
+   ml->ML_finest_level = fine_level;
    level = fine_level;
    next  = next_level(ml, level, &(ml->Amat[fine_level]), ag);
 
@@ -228,6 +240,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    Nfine    = Amat->outvec_leng;
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
    ML_Aggregate_Set_CurrentLevel( ag, level );
+
    if (ag->smoothP_damping_factor != 0.0) {
      if ((ag->keep_P_tentative == ML_NO) || (prev_P_tentatives == NULL) ||
 	 (prev_P_tentatives[clevel] == NULL)) {
@@ -1533,19 +1546,26 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
    int nblocks, *block_list;
    ML_Operator *mat;
 
-   /* must clear away old nullspace information */
 
-   if (ag->nullspace_vect != NULL) {
-     ML_memory_free((void **)&(ag->nullspace_vect));
+   printf("here weeeeeeeeeee\n");
+   if (ag->keep_P_tentative != ML_YES) {
+     printf("ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg: must save\n");
+     printf("   aggregation information by setting ML_Aggregate_Set_Reuse(...)\n");
+     exit(-1);
    }
-
-   mesh_level = ml->ML_finest_level;
+   printf("Here weeeeeeeeeee\n");
+   printf("ml %u\n",ml);
+   printf("%u \n",ml->SingleLevel);
+   printf("%u \n",&(ml->SingleLevel[mesh_level]));
+   printf("%u \n",ml->SingleLevel[mesh_level].Rmat);
+   printf("%u \n",ml->SingleLevel[mesh_level].Rmat->to);
 
    while( ml->SingleLevel[mesh_level].Rmat->to != NULL) {
      old_mesh_level = mesh_level;
      mesh_level = ml->SingleLevel[mesh_level].Rmat->to->levelnum;
      /* clean and regenerate P */
 
+     printf("inside\n");
      mat = &(ml->Pmat[mesh_level]);
      if (ag->smoothP_damping_factor != 0.0) {
        ML_Operator_Clean(mat);
@@ -1553,6 +1573,7 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
        ML_AGG_Gen_Prolongator(ml, old_mesh_level, mesh_level, 
 			      &(ml->Amat[old_mesh_level]), ag);
      }
+   printf("Hare weeeeeeeeeee\n");
 
      /* clean and regenerate R */
 
@@ -1562,6 +1583,7 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
        ML_Operator_Init(mat,ml->comm);
        ML_Gen_Restrictor_TransP(ml, old_mesh_level, mesh_level);
      }
+   printf("H2re weeeeeeeeeee\n");
 
      /* clean and regenerate A */
 
@@ -1570,6 +1592,7 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
      ML_Operator_Init(mat,ml->comm);
      ML_Gen_AmatrixRAP(ml, old_mesh_level, mesh_level);
    }
+   printf("H3re weeeeeeeeeee\n");
 
    return 0;
 }
