@@ -17,8 +17,18 @@ extern "C" {
 #endif
 
 #include "phg.h"
+#include <limits.h>
 
 
+
+#define SHOW_DISTMATRIX
+/*
+  #define SHOW_MINMAXV
+  #define SHOW_MINMAXN
+*/
+#define SHOW_MINMAXP
+    
+    
 char *Zoltan_PHG_uMe(PHGComm *hgc)
 {
     static char msg[1024];
@@ -89,6 +99,93 @@ struct {
 }
 
 
+int Zoltan_PHG_LoadBalStat(ZZ *zz, HGraph *hg)
+{
+    char    *yo = "Zoltan_PHG_LoadBalStat";
+    int     ierr=ZOLTAN_OK;
+    PHGComm *comm = hg->comm;
+    int     *v=NULL, *n=NULL, *p=NULL, x, y, i;
+    int     minv=INT_MAX, maxv=-1, minn=INT_MAX, maxn=-1, minp=INT_MAX, maxp=-1;
+    double  av=0.0, an=0.0, ap=0.0;
+
+    if ((v = (int*) ZOLTAN_MALLOC(3 * comm->nProc * sizeof(int)))==NULL)
+        MEMORY_ERROR;
+    n = v + comm->nProc;
+    p = n + comm->nProc;
+
+    MPI_Gather(&hg->nVtx, 1, MPI_INT, v, 1, MPI_INT, 0, comm->Communicator);
+    MPI_Gather(&hg->nEdge, 1, MPI_INT, n, 1, MPI_INT, 0, comm->Communicator);
+    MPI_Gather(&hg->nPins, 1, MPI_INT, p, 1, MPI_INT, 0, comm->Communicator);
+
+    for (i=0; i<comm->nProc; ++i) {
+        minv = MIN(minv, v[i]);
+        maxv = MAX(maxv, v[i]);
+        av += v[i];
+        minn = MIN(minn, n[i]);
+        maxn = MAX(maxn, n[i]);
+        an += n[i];
+        minp = MIN(minp, p[i]);
+        maxp = MAX(maxp, p[i]);
+        ap += p[i];
+    }
+
+    av /= (double) comm->nProc;
+    an /= (double) comm->nProc;
+    ap /= (double) comm->nProc;
+    
+    if (!comm->myProc) {
+#ifdef SHOW_DISTMATRIX        
+        printf("Hypergraph distribution:\n     ");
+        for (x=0; x<comm->nProc_x; ++x)
+            printf("%-33d", x);
+        printf("\n");
+        for (y=0; y<comm->nProc_y; ++y) {
+            printf("%3d: ", y);
+            for (x=0; x<comm->nProc_x; ++x) {
+                i = y* comm->nProc_x + x;
+                printf("H(%7d, %7d, %9d)   ", v[i], n[i], p[i]);  
+            }
+            printf("\n");
+            printf("     ");
+            for (x=0; x<comm->nProc_x; ++x) {
+                i = y* comm->nProc_x + x;
+                printf("  ");
+#ifdef SHOW_MINMAXV
+                if (v[i]==minv)
+                    printf("vvvvvvv  ");                
+                else if (v[i]==maxv)
+                    printf("^^^^^^^  ");                
+                else
+#endif
+                    printf("         ");
+#ifdef SHOW_MINMAXN                
+                if (n[i]==minn)
+                    printf("<<<<<<<  ");                
+                else if (n[i]==maxn)
+                    printf(">>>>>>>  ");                
+                else
+#endif
+                    printf("         ");
+#ifdef SHOW_MINMAXP                
+                if (p[i]==minp)
+                    printf("---------    ");                
+                else if (p[i]==maxp)
+                    printf("+++++++++    ");                
+                else
+#endif
+                    printf("             ");
+            }
+            printf("\n");             
+        }
+#endif
+        printf("Min:   (%7d, %7d, %9d)    Max: (%7d, %7d, %9d)\n", minv, minn, minp, maxv, maxn, maxp);
+        printf("Imbal: (%7.2lf, %7.2lf, %9.2lf)         (%7.2lf, %7.2lf, %9.2lf)\n", 100.0*(av-minv)/av, 100.0*(an-minn)/an, 100.0*(ap-minp)/ap, 100.0*(maxv-av)/av, 100.0*(maxn-an)/an, 100.0*(maxp-ap)/ap);        
+    }
+ End:
+    Zoltan_Multifree(__FILE__, __LINE__, 1, &v);
+                         
+    return ierr;
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

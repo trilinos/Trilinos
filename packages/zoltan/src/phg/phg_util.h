@@ -16,6 +16,7 @@
 
 #include <stdarg.h>
 #include "phg_comm.h"
+#include "hg_hypergraph.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -36,6 +37,7 @@ extern void Zoltan_PHG_errexit(char *,...);
 
 extern void Zoltan_PHG_Find_Root(int, int, MPI_Comm, int *, int *);
 
+extern int Zoltan_PHG_LoadBalStat(ZZ *zz, HGraph *);
 
 /****************************************************************************/
 #define MEMORY_ERROR { \
