@@ -51,12 +51,12 @@ developed to solve a specific task, by a (relatively) small group of
 expert of the field.  Packages exist underneath the Trilinos top level,
 which provides a common look-and-feel. Each package has its own
 structure, documentation and set of examples. In principle, Trilinos
-packages can independent life. However, each package is even more
+packages can live independently. However, each package is even more
 valuable when combined with other Trilinos packages.
 
 \smallskip
 
-Trilinos is a large software project, an currently mode about twenty
+Trilinos is a large software project, and currently about twenty
 packages are included. Fully understanding all the functionalities of
 the Trilinos packages requires time. The entire set of packages covers a
 wide range of numerical methods for large scale computing. Some packages
@@ -67,25 +67,25 @@ Other packages are more focused on implementation issues (like
 definition of matrices and vectors, abstract classes for linear
 operators). The first Chapters of this tutorial will be focused on
 implementation issues, while the last Chapters will have a more
-``mathematical'' taste. 
+``mathematical'' taste.
 
 Each package offers sophisticated features, that cannot be ``unleashed''
 at a very first usage. For each package, wew will outline only the basic
 features, and we refer to the documentation of each package for a more
 involved usage. Our goal is to present enough material so that the
 reader can successfully use the described packages.  In fact, for new
-users, it is not easy, nor necessary, to manage all the Trilinos
+users, it is neither easy, nor necessary, to manage all the Trilinos
 functionalities. At the beginning, it is more important for them to
-understand how to manage the basic classes, as vector, matrices and
-linear systems classes. However, it is clear that for a fine-tuning, the
+understand how to manage the basic classes, such as vector, matrix and
+linear system classes. However, it is clear that for a fine-tuning, the
 reader will have to look through each package's documentation and
 examples.
 
 \medskip
 
-Although all packages have the same importance
-in the Trilinos structure, a ``normal'' user will probably --- at least
-at the beginning --- make use of the following packages:
+Although all packages have the same importance in the Trilinos
+structure, a typical user will probably --- at least at the beginning
+--- make use of the following packages:
 \begin{itemize} 
 \item {\bf Epetra}. This package defines the basic classes for
   distributed matrices and vectors, linear operators and linear
@@ -94,9 +94,9 @@ at the beginning --- make use of the following packages:
   languages). Each Trilinos package is able to accept in input Epetra
   objects. This allows powerful combinations among the various Trilinos
   functionalities.
-\item {\bf AztecOO}. This is a linear solve package based on preconditioned
-  Krylov methods. It supports all the  Aztec interfaces and
-  functionality, but also provided significant new functionality.
+\item {\bf AztecOO}. This is a linear solve package based on
+  preconditioned Krylov methods. It supports all the Aztec interfaces
+  and functionality, but also provides significant new functionality.
 \item {\bf IFPACK}. This is a package to perform various incomplete
   factorizations, and it is here used in conjunction with AztecOO.
 \item {\bf ML}. This is an algebraic multilevel preconditioned package, which
@@ -187,21 +187,20 @@ distributed memory computing and, to a minor extent, with MPI.
 
 \smallskip
 
-Note that this tutorial is not a substitute of other packages'
-documentation. In particular, for an overview of all the Trilinos
-packages, the Trilinos philosophy, and a description of the packages
-provided by Trilinos, the reader is referred to
-\cite{Trilinos-Overview}.  Developers should also consider the Trilinos
-Developers' Guide, which contains, among others, some insight of the
-development tools used by Trilinos' developers, and how to include a new
-package\footnote{ Trilinos provides a variety of services to a developer
-  wanting to integrate a package into Trilinos.  They include
-  Autoconf~\cite{Autoconf}, Automake~\cite{Automake} and
-  Libtool~\cite{Libtool} provide a robust, full-featured set of tools
-  for building software across a broad set of platforms.  Although these
-  tools are not official standards, they are widely used.  All existing
-  Trilinos packages use Autoconf and Automake.  Libtool support will be
-  added in future releases.}.
+Note that this tutorial is not a substitute ofr individual packages
+documentation. Also, for an overview of all the Trilinos packages, the
+Trilinos philosophy, and a description of the packages provided by
+Trilinos, the reader is referred to \cite{Trilinos-Overview}.
+Developers should also consider the Trilinos Developers' Guide, which
+addresses many topics, including the development tools used by Trilinos'
+developers, and how to include a new package\footnote{ Trilinos provides
+  a variety of services to a developer wanting to integrate a package
+  into Trilinos.  They include Autoconf~\cite{Autoconf},
+  Automake~\cite{Automake} and Libtool~\cite{Libtool} provide a robust,
+  full-featured set of tools for building software across a broad set of
+  platforms.  Although these tools are not official standards, they are
+  widely used.  All existing Trilinos packages use Autoconf and
+  Automake.  Libtool support will be added in future releases.}.
 
 %%%
 %%%
@@ -213,7 +212,7 @@ package\footnote{ Trilinos provides a variety of services to a developer
 To obtain Trilinos, please refers to the instructions reported at the
 following web site:
 \begin{verbatim}
-http://software.sandia.gov/
+http://software.sandia.gov/Trilinos
 \end{verbatim}
 
 Trilinos has been compiled on a variety of architectures, including
@@ -249,10 +248,9 @@ chapters \ref{chap:epetra_vec}-\ref{chap:triutils}\footnote{Amesos can
   required some information about the packages to interface. Suggestions
   about the configuration of Amesos are reported in
   Chapter~\ref{chap:amesos}. More details about the installation of
-  Trilinos can be found in \cite{Trilinos-Users-Guide}.}.
-
-We suppose to compile under LINUX with MPI. The installation procedure
-can be are reported below. (\verb!$! indicates the shell prompt.)
+  Trilinos can be found in \cite{Trilinos-Users-Guide}.}.  Suppose we
+want to compile under LINUX with MPI. The installation procedure can be
+are reported below. (\verb!$! indicates the shell prompt.)
 \begin{verbatim}
 $ cd ${TRILINOS_HOME}
 $ mkdir ${TRILINOS_ARCH}
@@ -270,7 +268,7 @@ $ make install | tee make_install_${TRILINOS_ARCH}.log
   All Trilinos packages can be build to run with or without MPI. If MPI
   is enabled (using \verb!--enable-mpi!), the users must know the
   procedure for beginning MPI jobs on their computer system(s). In some
-  cases, options must be set in the configure line to specify the
+  cases, options must be set on the configure line to specify the
   location of MPI include files and libraries.
 \end{remark}
 
@@ -332,6 +330,8 @@ Please check the local MPI documentation for more details.
 \section{Copyright and Licensing of Trilinos}
 \label{sec:copyright}
 
+Trilinos is released under the Lesser GPL GNU Licence.
+
 Trilinos is copyrighted by Sandia Corporation. Under the terms of
 Contract DE-AC04-94AL85000, there is a non-exclusive license for use of
 this work by or on behalf of the U.S. Government.  Export of this
@@ -356,11 +356,9 @@ THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 
 \medskip
 
-Some part of the Trilinos code can be based on a third party code. Each
-third party code comes with its own copyright and/or licensing
-requirements. It is responsibility of the user to check with the
-author(s) of those codes to make sure that you understand the terms of
-the copyright and/or licensing.
+Some parts of Trilinos are dependent on a third party code. Each third
+party code comes with its own copyright and/or licensing requirements.
+It is responsibility of the user to understand these requirements.
 
 %%%
 %%%

@@ -156,7 +156,7 @@ when the user is looking for a convenient wrapper around the FORTRAN
 LAPACK routines, and the problem at hand is well-conditioned. Instead,
 when the user wants (or potentially wants to) solve ill-conditioned
 problems or want to work with a more object-oriented interface, he/she
-will probably use Epetra\_SerialDenseVector.
+will probably use Epetra\_SerialDenseMatrix.
 
 %%%
 %%%
@@ -175,6 +175,23 @@ matrix-multivector multiplication\footnote{At the present stage of
   can convert the Epetra matrix into an ML matrix (called ML\_Operator),
   perform the matrix-matrix multiplication with ML functions, and
   convert back the resulting ML\_Operator into an Epetra matrix.}.
+
+Application do not need to know about the particular storage format, and
+other implementation details such as data layout, number and location of
+ghost nodes. Epetra furnishes two basic formats, one suited for point
+matrices, the other for block matrices. The former is presented in this
+Section; the latter, generally much more efficient for problems with
+multiple degree of freedom per node, is introduced in
+Section~\ref{sec:sparse_vbr}. If required, other matrix formats can be
+supported via the Epetra\_Operator, described in
+Section~\ref{sec:operator}.
+
+\begin{remark}
+Some numerical algorithms require  the application of the linear
+operator only. For this reason, some applications find convenient to not
+store a given matrix. Epetra can handle this situation using with the
+Epetra\_Operator class; see Section~\ref{sec:operator}.
+\end{remark}
 
 The process of creating a sparse matrix is more involved with respect to
 that of dense matrices. This is because, in order to obtain excellent
@@ -219,8 +236,7 @@ global numbering for each local row:
 \begin{verbatim}
 Epetra_Map Map(NumGlobalElements,0,Comm);
 int NumMyElements = Map.NumMyElements();
-int * MyGlobalElements = new int [NumMyElements];
-Map.MyGlobalElements( MyGlobalElements );
+int * MyGlobalElements = Map.MyGlobalElements( );
 \end{verbatim}
 In particular, we have that \verb!j=MyGlobalElements[i]! is the global
 numbering for local node \verb!i!.  Then, we have to specify the number
@@ -461,7 +477,7 @@ the dimension of diagonal block row $i$ is $i+1$.  The integer vector
 \verb!ElementSizeList! will contain the block size of local element
 \verb!i!.
 \begin{verbatim}
-int * ElementSizeList = new int[NumMyElements];
+Epetra_IntSerialDenseVector ElementSizeList(NumMyElements);
  for( int i=0 ; i<NumMyElements ; ++i ) 
    ElementSizeList[i] = 1+MyGlobalElements[i];
 \end{verbatim}
@@ -472,7 +488,7 @@ Now we can create a map for the block distribution:
 \begin{verbatim}
 Epetra_BlockMap BlockMap(NumGlobalElements,NumMyElements,
                          MyGlobalElements, 
-                         ElementSizeList,0,Comm);
+                         ElementSizeList.Values(),0,Comm);
 \end{verbatim}
 and finally we can create the VBR matrix based on \verb!BlockMap!. In
 this case, nonzero elements are located in the diagonal and the

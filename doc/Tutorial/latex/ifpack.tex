@@ -41,6 +41,17 @@ respect to other factorization packages.
 In this Chapter we present how to use IFPACK objects as a preconditioner
 for an AztecOO solver. 
 
+In this Chapter, we will
+\begin{itemize}
+\item Set the notation (in Section~\ref{sec:ifpack_theoretical});
+\item Show how to compute incomplete Cholesky factorizations (in
+  Section~\ref{sec:ifpack_chol});
+\item Present IFPACK's ILUT-type factorizations (in
+  Section~\ref{sec:ifpack_ilut});
+\item Present IFPACK's RILU-type factorizations (in
+  Section~\ref{sec:ifpack_rilu}).
+\end{itemize}
+
 %%%
 %%%
 %%%
@@ -136,51 +147,130 @@ variant which performs pivoting is called ILUTP.
 %%%
 %%%
 
-\section{Using IFPACK with CRS Matrices}
-\label{sec:ifpack_crs}
+\section{Incomplete Cholesky Factorizations}
+\label{sec:ifpack_chol}
 
-The complete code is reported in \TriExe{ifpack/ex1.cpp}, and it has
-been largely inspired from one of the examples contained in the AztecOO
-package.
+Ifpack\_CrsIct is a class for constructing and using incomplete Cholecky
+factorizations of an Epetra\_CrsMatrix. The factorization is produced
+based on several parameters:
+\begin{itemize}
+\item Maximum number of entries per row/column. The factorization
+  will contain at most this number of nonzero elements in each
+  row/column;
+\item Diagonal perturbation.  By default, the factorization will be
+  computed on the input matrix. However, it is possible to modify the
+  diagonal entries of the matrix to be factorized, via functions
+  \verb!SetAbsoluteThreshold()! and \verb!SetRelativeThreshold()!. Refer
+  to the IFPACK's documentation for more details.
+\end{itemize}
 
-We suppose that the linear system matrix is an Epetra\_Crs matrix. 
-First, we have to create two objects: 
+It is very easy to compute the incomplete factorization. First, define
+an Ifpack\_CrsIct object,
 \begin{verbatim}
-Ifpack_IlukGraph * IlukGraph = 0;
-IlukGraph = new Ifpack_IlukGraph(A.Graph(), LevelFill, Overlap);
-Ifpack_CrsRiluk * ILUK = 0;
-ILUK = new Ifpack_CrsRiluk(*IlukGraph);
-ILUK->SetAbsoluteThreshold(Athresh);
-ILUK->SetRelativeThreshold(Rthresh);
+Ifpack_CrsIct * ICT = NULL;
+ICT = Ifpack_CrsIct(A,DropTol,LevelFill);
 \end{verbatim}
-where \verb!LevelFill! and \verb!Overlap! are two integer constant
-previously defined. This phase defined the graph for the incomplete
-factorization, without computing the actual values of the $L_i$ and
-$U_i$ factors. Instead, this operation is accomplished with
+where \verb!A! is an Epetra\_CrsMatrix (already TransformToLocal'd), and
+\verb!DropTop! and \verb!LevelFill! are the drop tolerance and the
+level-of-fill, respectively. Then, we can set the values and compute the
+factors,
 \begin{verbatim}
-int initerr = ILUK->InitValues(A);
+ICT->InitValues(A);
+ICT->Factor();
 \end{verbatim}
-An estimation of the condition number of the preconditioned system can
-be obtained via
+
+IFPACK can compute the estimation of the condition number
+\[
+cond(L_i U_i) \approx \|(LU)^{-1} e \|_\infty ,
+\]
+where $e = (1,1,\dots,1)^T$. (More details can be found in the IFPACK's
+documentation.) This estimation can be computed as follows:
 \begin{verbatim}
 double Condest;
-ILUK->Condest(transA, Condest);
+ICT->Condest(false,Condest);
 \end{verbatim}
-Here we create an AztecOO object:
+Please refer to file \TriExe{ifpack/ex1.cpp} for a complete example of
+incomplete Cholesky factorization.
+
+%%%
+%%%
+%%%
+
+\section{ILU  Factorizations}
+\label{sec:ifpack_ilut}
+
+IFPACK implements various incomplete factorization for non-symmetric
+matrices. In this Section, we will consider the Epetra\_CrsIlut clas,
+that can be used to produce ILUT factorization of a
+Epetra\_CrsMatrix. The class required an Ifpack\_OverlapGraph in the
+construction phase. This means that the factorization is split into two
+parts:
+\begin{enumerate}
+\item Definition of the level filled graph;
+\item Computation of the factors.
+\end{enumerate}
+This approach can significantly improve the performances of code, when
+an ILU preconditioner has to be computed for several matrices, with
+different entries but with the same sparsity pattern. An
+Ifpack\_IlukGraph object of an Epetra matrix \verb!A! can be constructed
+as
 \begin{verbatim}
-AztecOO solver;
-solver.SetUserMatrix(&A);
-solver.SetLHS(&x);
-solver.SetRHS(&b);
+Ifpack_IlukGraph * Graph = NULL;
+Graph = Ifpack_IlukGraph(A.Graph(),LevelFill,LevelOverlap);
 \end{verbatim}
-and finally, here we set the IFPACK preconditioner and specify few
-parameters, and we solve the linear problem:
+Here, \verb!LevelOverlap! is the required overlap among the subdomains.
+A call to \verb!ConstructFilledGraph()! completes the process.
+
+\begin{remark}
+  An Ifpack\_IlukGraph object has two Epetra\_CrsGraph objects,
+  containing the $L_i$ and $U_i$ graphs. Thus, it is possible to
+  manually insert and delete graph entries in $L_i$ and $U_i$ via the
+  Epetra\_CrsGraphInsertIndices and RemoveIndices functions. However, in
+  this cas FillComplete must be called before the graph is used for
+  subsequent operations.
+\end{remark}
+
+At this point, we can create an Ifpack\_CrsIlut object,
+\begin{verbatim}
+ILUT = Ifpack_CrsIlut(*Graph);
+\end{verbatim}
+This phase defined the graph for the incomplete factorization, without
+computing the actual values of the $L_i$ and $U_i$ factors. Instead,
+this operation is accomplished with
+\begin{verbatim}
+int initerr = ILUT->InitValues(A);
+\end{verbatim}
+The ILUT object can be used with AztecOO simply setting
 \begin{verbatim}
 solver.SetPrecOperator(ILUK);
-int Niters = 1200;
-solver.SetAztecOption(AZ_kspace, Niters); 
-solver.Iterate(Niters, 5.0e-10);
 \end{verbatim}
+where \verb!solver! is an AztecOO pbject.
+\smallskip
+Example \TriExe{ifpack/ex2.cpp} shows the use of Ifpack\_CrsIlut class.
+
+%%%
+%%%
+%%%
+
+\section{RILU  Factorizations}
+\label{sec:ifpack_rilu}
+
+The application of the incomplete factors to a global vector, $z =
+(L_iU_i^{-1} r$, results in redundant approximation for any element of
+$z$ that correspond to rows that are part of more than one local ILU
+factor. The OverlapMode defines how those redundant values are
+managed. OverlapMode is an Epetra\_CombinedMode enum, that can assume
+the following values: {\tt Add, Zero, Insert, Average, AbxMax}. The
+default is to zero out all the values of $z$ for rows that were not part
+of the original matrix row distribution.
+
+A technique, sometimes called relaxation, can be used to obtain RILU
+factorization. If RelaxValue (set by \verb!SetRelaxValue()!) is
+different from zero, the extra-term, dropped during the factorization,
+are not dropped. This can be of help for operators that should have zero
+row-sum. 
+
+RILU factorizations are defined by the Ifpack\_CrsRiluk class.
 
 %%%
 %%%

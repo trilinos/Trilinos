@@ -44,7 +44,7 @@ form
 \end{equation}
 when $A \in \mathbb{R}^{n \times n}$ is the linear system matrix, $X$
 the solution, and $B$ the right-hand side. Both $X$ and $B$ are
-Epetra\_MultiVector objects.
+Epetra\_Vector objects.
 
 In this Chapter, we  will:
 \begin{itemize}
@@ -331,7 +331,7 @@ the preconditioning phase.)
 \begin{verbatim}
 int Niters=100;
 A_Solver.SetAztecOption(AZ_kspace, Niters);
-A_Solver.SetAztecOption(AZ_solver, AZ_GMRESR);
+A_Solver.SetAztecOption(AZ_solver, AZ_gmres);
 A_Solver.Iterate(Niters, 1.0E-12);  
 \end{verbatim}
 \end{enumerate}

@@ -82,13 +82,14 @@ elapsed time and wall-clock time, respectively.
 
 The Epetra\_Flops class provides basic support and consistent interfaces
 for counting and reporting floating point operations performed in the
-Epetra computational classes. All classes based on the Epetra\_Object can
-count flops by the user creating an Epetra\_Flops object and calling the
-SetFlopCounter() method for an Epetra\_CompObject.
+Epetra computational classes. All classes based on the
+Epetra\_CompObject can count flops by the user creating an Epetra\_Flops
+object and calling the SetFlopCounter() method for an
+Epetra\_CompObject.
 
-As an example, suppose to be interested in counting the flops required
-by a vector-vector product (between, say, \verb!x! and \verb!y!).
-The first step is to create an instance of the class:
+As an example, suppose you are interested in counting the flops required
+by a vector-vector product (between, say, \verb!x! and \verb!y!).  The
+first step is to create an instance of the class:
 \begin{verbatim}
 Epetra_Flops counter();
 \end{verbatim}
@@ -96,6 +97,7 @@ Then, it is necessary to ``hook'' the counter object to the desired
 computational object, in the following way:
 \begin{verbatim}
 x.SetFlopCounter(counter);
+y.SetFlopCounter(counter);
 \end{verbatim}
 Then, we perform the desired computations on Epetra objects (in this
 case, the vector-vector problem):
@@ -107,7 +109,8 @@ in the double variable \verb!total_flops! as
 \begin{verbatim}
 total_flops = counter.Flops();
 \end{verbatim}
-This will also reset the flop counter. 
+which are the toal number of {\sl serial} flops. This will also reset
+the flop counter.
 
 
 Epetra\_Time objects can be used in conjunction with Epetra\_Flops
@@ -171,8 +174,9 @@ Technically, both classes are pure virtual classes (that is, they
 specify interfaces only), that enable the use of real-valued
 double-precision sparse matrices. Epetra\_RowMatrix, derived from
 Epetra\_Operator, is meant for matrices where the matrix entries are
-intended for row access, and it is currently implemented by both
-Epetra\_CrsMatrix and Epetra\_VbrMatrix.
+intended for row access, and it is currently implemented by
+Epetra\_CrsMatrix, Epetra\_VbrMatrix, Epetra\_FECrsMatrix, and
+Epetra\_FEVbrMatrix.
 
 In the following, we consider for instance how to apply a matrix to a
 vector without explicitly constructing the matrix. The matrix is the
@@ -248,6 +252,63 @@ The entire source can be found in
   shows how to extend \verb!ex21.cpp! to the multi-process case. This
   example makes use of the Epetra\_Import class to exchange data.
 \end{remark}
+
+%%%
+%%%
+%%%
+
+Another use of  Epetra\_Operator and Epetra\_RowMatrix is to allow
+support for user's defined matrix format. For instance, suppose that
+your code generates matrices in MSR format (detailed in the Aztec
+documentation). You can easily create an Epetra\_Operator, that applies
+the MSR format to Epetra\_MultiVectors. For the sake of simplicity, we
+will limit ourselves to the monoprocess case. Extentions to
+multi-processes case requires to handle ghost-nodes updates.
+
+As a first step, we create a class, derived from the Epetra\_Operator
+class,
+\begin{verbatim}
+class MSRMatrix : public Epetra_Operator 
+{
+
+public:
+  // constructor
+  MSRMatrix(Epetra_Map Map, int * bindx, double * val) :
+    Map_(Map), bindx_(bindx), val_(val) 
+  {}
+
+  ~MSRMatrix() // destructor
+  {}
+
+  // Apply the RowMatrix to a MultiVector
+  int Apply(const Epetra_MultiVector & X, Epetra_MultiVector & Y ) const 
+  {
+
+    int Nrows = bindx_[0]-1;
+    
+    for( int i=0 ; i<Nrows ; i++ ) {
+      // diagonal element
+      for( int vec=0 ; vec<X.NumVectors() ; ++vec ) {
+        Y[vec][i] = val_[i]*X[vec][i];
+      }
+      // off-diagonal elements
+      for( int j=bindx_[i] ; j<bindx_[i+1] ; j++ ) {
+        for( int vec=0 ; vec<X.NumVectors() ; ++vec ) {
+          Y[vec][bindx_[j]] += val_[j]*X[vec][bindx_[j]];
+        }
+      }
+    }
+    return 0;
+  } /* Apply */
+  ... other functions ...
+
+private:
+  int * bindx_; double * val_;
+}
+\end{verbatim}
+As stated by the fragment of code above, the constructor take the two
+MSR vectors, and an Epetra\_Map. The complete code is reported in
+\TriExe{epetra/ex25.cpp}.
 
 %%%
 %%%
