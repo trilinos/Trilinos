@@ -532,6 +532,9 @@ public:
   int PrintStencil2D(const int nx, const int ny, 
 		     int NodeID = -1,
 		     const int EquationID = 0);
+  //! Analyze the linear system matrix by testing several ML parameters
+  int AnalyzeMatrix(char * Defaults, bool IsSymmetric = false);
+  
   //@}
 
 private:
@@ -608,6 +611,12 @@ private:
   /*! Used only when \c "adaptive: enable" is \c true, and
    * ComputePreconditioner(true) is called. */
   bool CheckPreconditionerKrylov();
+
+  void AnalyzeMatrixProperties(char * Defaults, bool IsSymmetric = false);
+  void AnalyzeMatrixEigenvalues(char * Defaults, bool IsSymmetric = false);
+  void AnalyzeMatrixSmoothers(char * Defaults, bool IsSymmetric = false);
+  void AnalyzeMatrixCoarsening(char * Defaults, bool IsSymmetric = false);
+
   //@}
 
   //@{ \name Internal data
