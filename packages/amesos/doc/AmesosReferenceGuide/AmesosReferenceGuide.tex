@@ -148,7 +148,7 @@ The classes covered in this guide are:
 \item \verb!Amesos_Superludist!: Interface to Xiaoye S.~Li's distributed
   SuperLU~\cite{superlu-home-page} (in Section~\ref{sec:superludist});
 \item \verb!Amesos_Mumps!: Interface to MUMPS
-  4.3.2~\cite{mumps-home-page} (in Section~\ref{sec:mumps}).
+  4.3.1~\cite{mumps-home-page} (in Section~\ref{sec:mumps}).
 \item \verb!Amesos_Dscpack!: Interface to DSCPACK~\cite{dscpack-manual} 
 (in Section~\ref{sec:dscpack}).
 \end{itemize}
@@ -299,7 +299,7 @@ are still defined with the same \verb!Epetra_Map!.
     \tt Amesos\_Lapack       & serial   & general & LAPACK \\
     \tt Amesos\_Superlu      & serial   & general & SuperLU 3.0 \\
     \tt  Amesos\_Superludist & parallel & general & SuperLU\_DIST 2.0 \\
-    \tt Amesos\_Mumps        & parallel & SPD, sym, general & MUMPS 4.3.2 \\
+    \tt Amesos\_Mumps        & parallel & SPD, sym, general & MUMPS 4.3.1 \\
     \tt Amesos\_Dscpack      & parallel & symmetric & DSCPACK 1.0 \\
     \hline
   \end{tabular}
@@ -374,7 +374,7 @@ Other flags may be required depending on the location of
   \begin{tabular}{| l  l | c | c | c | c | c | c| c|}
     \hline
     Architecture & Communicator & LAPACK  & KLU       & UMFPACK   & SuperLU &  SuperLU\_DIST 2.0
-                                                                                          & MUMPS 4.3.2 & DSCPACK\\
+                                                                                          & MUMPS 4.3.1 & DSCPACK\\
     \hline
     LINUX           & SERIAL  & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & --        & --        & --        \\
     % --------------------------------------------------------
@@ -483,10 +483,6 @@ refer to table~\ref{tab:options}.
   of a C++ MPI communicator to a FORTRAN MPI communicator. If this is
   not supported, the specified value of {\tt MaxProcs} will be ignored,
   and all the processes in {\tt MPI\_COMM\_WORLD} will be used.}
-
-\choicebox{\tt MaxProcsMatrix}{The linear system matrix will be
-  distributed over the specified number of processes. This number must
-  be less or equal to {\tt MaxProcs}. See {\tt Maxprocs}. If {\tt MaxProcsMatrix=-4}, then the value of {\tt MaxProcsMatrix} equals that of {\tt MaxProcs}.}
 
 \choicebox{\tt OutpuLevel}{If {\tt 0}, no output is printed on the
   standard output. If {\tt 1}, output is reported as specified by other
@@ -780,7 +776,7 @@ values are as reported in the SuperLU\_DIST manual.
     DOUBLE}.}
 
 %-----------------------------------------------------------------------------
-\section{Amesos Interface to MUMPS 4.3.2}
+\section{Amesos Interface to MUMPS 4.3.1}
 \label{sec:mumps}
 %-----------------------------------------------------------------------------
 
@@ -812,7 +808,7 @@ and ScaLAPACK~\cite{scalapack}).
 
 \medskip
 
-In order to interface with MUMPS 4.3.2, Amesos must be configured with
+In order to interface with MUMPS 4.3.1, Amesos must be configured with
 the options\footnote{The MUMPS interface can take be used on a subset of
   the processes. To that aim, it must be possible to convert from a C++
   MPI communicator to a FORTRAN MPI communicator. Such a conversion is

@@ -13,7 +13,8 @@ The main page of the Doxygen documentation is organized as follows:
 - \ref comparison
 - \ref matrix
 - \ref install
-- \ref install
+- \ref configure
+- \ref example
 - \ref final
 
 \section developers Developers
