@@ -38,6 +38,20 @@
 #include "NOX_Utils.H"
 #include "NOX_Parameter_UserNorm.H"
 
+/* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
+ * fail to find the max and min function.  Therfore we redefine them 
+ * here. 
+ */ 
+#ifdef max
+#undef max
+#endif
+#define max(a,b) ((a)>(b)) ? (a) : (b);
+
+#ifdef min
+#undef min
+#endif
+#define min(a,b) ((a)<(b)) ? (a) : (b);
+
 NOX::Direction::Newton::Newton(const NOX::Utils& u, NOX::Parameter::List& p) :
   utils(u),
   predRhs(NULL),
