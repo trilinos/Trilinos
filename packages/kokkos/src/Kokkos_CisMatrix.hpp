@@ -48,7 +48,7 @@ namespace Kokkos {
     //@{ \name Constructors/Destructor.
 
     //! CisMatrix Destructor
-    virtual ~CisMatrix();
+    virtual ~CisMatrix(){};
     //@}
 
     //@{ \name Matrix entry access methods.

@@ -28,7 +28,7 @@
 
 #ifndef KOKKOS_DENSEMULTIVECTOR_H
 #define KOKKOS_DENSEMULTIVECTOR_H
-
+#include "Kokkos_MultiVector.hpp"
 
 namespace Kokkos {
 
@@ -67,13 +67,21 @@ namespace Kokkos {
 */    
 
   template<typename OrdinalType, typename ScalarType>
-  class DenseMultiVector: public virtual MultiVector {
+  class DenseMultiVector: public virtual MultiVector<OrdinalType,ScalarType> {
   public:
 
     //@{ \name Constructors/Destructor.
 
     //! Default constructor
-    DenseMultiVector(void){dataInitialized_ = false;};
+    DenseMultiVector(void):
+      dataInitialized_(false),
+      numRows_(0),
+      numCols_(0),
+      rowInc_(0),
+      colInc_(0),
+      values_(0),
+      allValues_(0),
+      isStrided_(false) {};
   
     //! Copy constructor.
     DenseMultiVector(const DenseMultiVector& source):
@@ -87,7 +95,7 @@ namespace Kokkos {
       isStrided_(source.isStrided_) {};
 
     //! DenseMultiVector Destructor
-    virtual ~DenseMultiVector();
+    virtual ~DenseMultiVector(){};
     //@}
 
     //@{ \name Initialization methods
@@ -106,10 +114,11 @@ namespace Kokkos {
       numCols_ = numCols;
       rowInc_ = 0;
       colInc_ = 1;
-      values_ = 0;
-      allValues_ = values;
+      values_ = values;
+      allValues_ = 0;
       isStrided_ = false;
       dataInitialized_ = true;
+      return(0);
       };
 	
     //! Initialize using a two-dimensional array
@@ -133,10 +142,11 @@ namespace Kokkos {
       numCols_ = numCols;
       rowInc_ = rowInc;
       colInc_ = colInc;
-      values_ = values;
-      allValues_ = 0;
+      values_ = 0;
+      allValues_ = values;
       isStrided_ = true;
       dataInitialized_ = true;
+      return(0);
       };
 	
     //@}
@@ -155,7 +165,7 @@ namespace Kokkos {
     virtual ScalarType * getValues(OrdinalType i) const {
       if (!dataInitialized_ || // No data to return
 	  i<0 || // Out of range
-	  i>=numRows // Out of range
+	  i>=numRows_ // Out of range
 	  ) return(0);
       
       if (isStrided_) 

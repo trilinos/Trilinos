@@ -28,6 +28,7 @@
 
 #ifndef KOKKOS_HBMATRIX_H
 #define KOKKOS_HBMATRIX_H
+#include "Kokkos_CisMatrix.hpp"
 
 namespace Kokkos {
 
@@ -42,7 +43,7 @@ namespace Kokkos {
 */    
 
   template<typename OrdinalType, typename ScalarType>
-  class HbMatrix: public virtual CisMatrix {
+  class HbMatrix: public virtual CisMatrix<OrdinalType,ScalarType> {
   public:
 
     //@{ \name Constructors/Destructor.

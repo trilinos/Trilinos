@@ -72,7 +72,7 @@ namespace Kokkos {
     //@{ \name Constructors/Destructor.
 
     //! MultiVector Destructor
-    virtual ~MultiVector();
+    virtual ~MultiVector(){};
     //@}
 
     //@{ \name Multivector entry access methods.

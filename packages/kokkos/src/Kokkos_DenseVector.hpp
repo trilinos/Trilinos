@@ -28,6 +28,7 @@
 
 #ifndef KOKKOS_DENSEVECTOR_H
 #define KOKKOS_DENSEVECTOR_H
+#include "Kokkos_Vector.hpp"
 
 
 namespace Kokkos {
@@ -42,13 +43,16 @@ namespace Kokkos {
 */    
 
   template<typename OrdinalType, typename ScalarType>
-  class DenseVector: public virtual Vector {
+  class DenseVector: public virtual Vector<OrdinalType,ScalarType> {
   public:
 
     //@{ \name Constructors/Destructor.
 
     //! Default constructor
-    DenseVector(void){dataInitialized_ = false;};
+    DenseVector(void):
+      dataInitialized_(false),
+      length_(0),
+      values_(0) {};
   
     //! Copy constructor.
     DenseVector(const DenseVector& source):
@@ -57,7 +61,27 @@ namespace Kokkos {
       values_(source.values_) {};
 
     //! DenseVector Destructor
-    virtual ~DenseVector();
+    virtual ~DenseVector(){};
+    //@}
+
+    //! Initialize using a pointer
+    /*!
+      This is the only way to initialize a Kokkos::DenseVector object.
+      \param length (In)  Length of vector.
+      \param values (In)  Pointer to values.
+      \param inc (In) The increment between two elements in the vector.  
+                         Typically this value should be set to 1.
+
+      \return Integer error code, set to 0 if successful.
+    */
+    int initializeValues(OrdinalType length, ScalarType * values, OrdinalType inc) {
+      length_ = length;
+      inc_ = inc;
+      values_ = values;
+      dataInitialized_ = true;
+      return(0);
+      };
+	
     //@}
 
     //@{ \name DenseVector access methods.

@@ -48,7 +48,7 @@ namespace Kokkos {
     //@{ \name Constructors/Destructor.
 
     //! Vector Destructor
-    virtual ~Vector();
+    virtual ~Vector(){};
     //@}
 
     //@{ \name Vector access methods.
