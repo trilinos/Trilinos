@@ -107,6 +107,20 @@ typedef enum LB_Method {
 #define LB_DEBUG_LIST 8
 #define LB_DEBUG_ALL 10
 
+/*
+ ******************************************************
+ * Define default values for key parameters.
+ * These are used in both lb.c and key_params.c.
+ ******************************************************
+ */
+#define LB_IMBALANCE_TOL_DEF 1.1
+#define LB_DEBUG_LEVEL_DEF   LB_DEBUG_PARAMS
+#define LB_DEBUG_PROC_DEF    0
+#define LB_OBJ_WEIGHT_DEF    0
+#define LB_COMM_WEIGHT_DEF   0
+#define LB_AUTO_MIGRATE_DEF  FALSE
+#define LB_DETERMINISTIC_DEF TRUE
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

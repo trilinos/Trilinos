@@ -123,15 +123,15 @@ LB *lb;
 
   lb->Method = RCB;    
   lb->LB_Fn = LB_rcb;
-  lb->Debug_Level = LB_DEBUG_PARAMS;
-  lb->Debug_Proc = 0;
+  lb->Debug_Level = LB_DEBUG_LEVEL_DEF;
+  lb->Debug_Proc = LB_DEBUG_PROC_DEF;
   lb->Fortran = 0;
   lb->Machine_Desc = NULL;
   lb->Params = NULL;
-  lb->Imbalance_Tol = 1.1;
-  lb->Deterministic = TRUE;
-  lb->Obj_Weight_Dim = 0;
-  lb->Comm_Weight_Dim = 0;
+  lb->Imbalance_Tol = LB_IMBALANCE_TOL_DEF;
+  lb->Deterministic = LB_DETERMINISTIC_DEF;
+  lb->Obj_Weight_Dim = LB_OBJ_WEIGHT_DEF;
+  lb->Comm_Weight_Dim = LB_COMM_WEIGHT_DEF;
   lb->Data_Structure = NULL;
 
   lb->Get_Num_Edges = NULL;
@@ -174,7 +174,7 @@ LB *lb;
   lb->Get_Child_List_Fort = NULL;
   lb->Get_Child_Weight_Fort = NULL;
 
-  lb->Migrate.Auto_Migrate = FALSE;
+  lb->Migrate.Auto_Migrate = LB_AUTO_MIGRATE_DEF;
   lb->Migrate.Pre_Process = NULL;
   lb->Migrate.Post_Process = NULL;
   lb->Migrate.Pack_Obj = NULL;
