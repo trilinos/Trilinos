@@ -65,7 +65,6 @@ int main(int argc, char *argv[])
   //VbrMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", Comm.NumProc() * 900);
   Gallery.Set("map_type", "box");
-  
   int NumPDEs = 5;
   Epetra_RowMatrix* A = Gallery.GetVbrMatrix(NumPDEs);
   Epetra_LinearProblem* Problem = Gallery.GetVbrLinearProblem();
@@ -92,9 +91,9 @@ int main(int argc, char *argv[])
   if (0)
   {
     // this is the old stuff
-    MLList.set("aggregation: x-coordinates", x_coord);
-    MLList.set("aggregation: y-coordinates", y_coord);
-    MLList.set("aggregation: z-coordinates", z_coord);
+    MLList.set("x-coordinates", x_coord);
+    MLList.set("y-coordinates", y_coord);
+    MLList.set("z-coordinates", z_coord);
     MLList.set("aggregation: use auxiliary matrix", true);
     MLList.set("aggregation: threshold", 0.05);
   }
@@ -105,9 +104,9 @@ int main(int argc, char *argv[])
     MLList.set("aggregation: threshold", 0.05);
     MLList.set("aggregation: aux: enable", true);
     MLList.set("aggregation: aux: threshold", 0.05);
-    MLList.set("aggregation: aux: x-coordinates", x_coord);
-    MLList.set("aggregation: aux: y-coordinates", y_coord);
-    MLList.set("aggregation: aux: z-coordinates", z_coord);
+    MLList.set("x-coordinates", x_coord);
+    MLList.set("y-coordinates", y_coord);
+    MLList.set("z-coordinates", z_coord);
     MLList.set("aggregation: aux: max levels", MaxLevels);
   }
 
@@ -119,6 +118,7 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("smoother: type","symmetric Gauss-Seidel");
   MLList.set("smoother: pre or post", "both");
+  //MLList.set("low memory usage", true);
 
 #ifdef HAVE_ML_AMESOS
   MLList.set("coarse: type","Amesos-KLU");
@@ -154,13 +154,14 @@ int main(int argc, char *argv[])
   ML_Epetra::MultiLevelPreconditioner * MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
+  // be sure that this is still ok
+  MLPrec->ReComputePreconditioner();
+
 #ifdef VIZ_ME
   for (int i = 0 ; i < A->NumMyRows() / NumPDEs ; ++i) {
     x_coord[i] /= 100;
   }
-
-  MLPrec->AnalyzeHierarchy(true, 1, 5, 5);
-  MLPrec->Visualize(true, true, true, true, 1, 5, 5);
+  MLPrec->VisualizeAggregates();
 #endif
 
   solver.GetRHS()->PutScalar(0.0);
