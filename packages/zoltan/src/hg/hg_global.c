@@ -26,6 +26,7 @@ static ZOLTAN_HG_GLOBAL_PART_FN global_bfsh;
 static ZOLTAN_HG_GLOBAL_PART_FN global_rbfs;
 static ZOLTAN_HG_GLOBAL_PART_FN global_rbfsh;
 static ZOLTAN_HG_GLOBAL_PART_FN global_gr1;
+static ZOLTAN_HG_GLOBAL_PART_FN global_gr2;
 
 /****************************************************************************/
 
@@ -38,6 +39,7 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
   else if (!strcasecmp(str, "bfsh")) return global_bfsh;
   else if (!strcasecmp(str, "rbfsh")) return global_rbfsh;
   else if (!strcasecmp(str, "gr1")) return global_gr1;
+  else if (!strcasecmp(str, "gr2")) return global_gr2;
   else                              return NULL;
 }
 
@@ -542,10 +544,10 @@ static int greedy_order (
 )
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, *rank; 
-  int size;
+  int esize;
   int ierr=ZOLTAN_OK;
   float weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
-  float *gain;
+  float *gain = NULL, *edge_sum = NULL;
   char msg[128];
   HEAP h;
   static char *yo = "greedy_order";
@@ -562,6 +564,20 @@ static int greedy_order (
   }
   for (i=0; i<hg->nVtx; i++)
     rank[i] = -1;  /* -1 means this vtx has not yet been numbered */
+
+  if (priority_mode==2){
+    if (!(edge_sum = (float *)  ZOLTAN_CALLOC (sizeof (float), hg->nVtx))){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ierr =  ZOLTAN_MEMERR;
+      goto error;
+    }
+    /* Sum up edge weights incident to each vertex. */
+    for (edge=0; edge<hg->nEdge; edge++){
+      for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
+        edge_sum[hg->hvertex[i]] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+      }
+    }
+  }
 
   if (p){
     /* If partitioning is chosen, sum up all the weights. */
@@ -638,18 +654,20 @@ rank[vtx]);
         if (i !=j) gain[i] = 0.0;
         if (rank[i] <0) heap_change_value(&h, i, gain[i]);
       }
-  
     }
      
     /* Update gain values for nbors. */
 
     for (j=hg->vindex[vtx]; j<hg->vindex[vtx+1]; j++){
       edge = hg->vedge[j];
-      size = hg->hindex[edge+1] - hg->hindex[edge];
+      esize = hg->hindex[edge+1] - hg->hindex[edge];
       for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
         nbor = hg->hvertex[i];
         if (rank[nbor] <0){
-           gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)/size;
+           if (priority_mode==1)
+             gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)/esize;
+           else if (priority_mode==2)
+             gain[nbor] += (hg->ewgt ? hg->ewgt[edge] : 1.0)/(edge_sum[nbor]*esize);
            heap_change_value(&h, nbor, gain[nbor]);
         }
       }
@@ -666,13 +684,18 @@ rank[vtx]);
 error:
   ZOLTAN_FREE ((void **) &rank);
   ZOLTAN_FREE ((void **) &gain);
+  if (edge_sum) ZOLTAN_FREE ((void **) &edge_sum);
   heap_free(&h);
   return ierr;
 }
 
 /*****************************************************************/
 
-/* Greedy ordering 1. */
+/* Greedy ordering, variation 1. 
+ * Priority function: 
+ *    gain(v,S) = \sum_e wgt(e) * |V(e) \in S| / |V(e)|,
+ * where V(e) is the set of vertices connected by e.
+ */
 
 static int global_gr1 (
   ZZ *zz, 
@@ -701,7 +724,52 @@ static int global_gr1 (
   }
 
   /* Call greedy_order. */
-  ierr = greedy_order(zz, hg, order, start, 0, p, part);
+  ierr = greedy_order(zz, hg, order, start, 1, p, part);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+    goto error;
+
+error:
+  /* Free data and return. */
+  ZOLTAN_FREE ((void **) &order) ;
+  return ierr;
+}
+
+/*****************************************************************/
+
+/* Greedy ordering, variation 2. 
+ * Priority function: 
+ *    gain(v,S) = \sum_e wgt(e)/edge_sum(v) * |V(e) \in S| / |V(e)|,
+ * where V(e) is the set of vertices connected by e.
+ */
+
+static int global_gr2 (
+  ZZ *zz, 
+  HGraph *hg,
+  int p,
+  Partition part
+)
+{ 
+  int i, start, *order;
+  int ierr = ZOLTAN_OK;
+  char *yo = "global_gr2" ;
+
+  if (!(order  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ierr = ZOLTAN_MEMERR;
+    goto error;
+  }
+
+  /* Find pseudo-peripheral start vertex */
+  start = Zoltan_HG_Rand()%(hg->nVtx);
+  for (i=0; i<2; i++){
+    ierr = bfs_order(zz, hg, order, start, 0, 0, NULL);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+      goto error;
+    start = order[hg->nVtx -1];
+  }
+
+  /* Call greedy_order. */
+  ierr = greedy_order(zz, hg, order, start, 2, p, part);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     goto error;
 

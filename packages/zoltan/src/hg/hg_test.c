@@ -56,7 +56,7 @@ int main (int argc, char **argv)
   strcpy(hgp.redm_str, "grg");
   strcpy(hgp.redmo_str, "aug3");
   hgp.ews = 1;
-  strcpy(hgp.global_str, "rbfsh");
+  strcpy(hgp.global_str, "gr2");
   strcpy(hgp.local_str, "fm");
   hgp.check_graph = 1;
 
@@ -79,7 +79,7 @@ int main (int argc, char **argv)
     puts("                           mxg,reg,rrg,rhg,(grg)}");
     puts("-redmo  reduction augment:{no,aug1,aug2,(aug3)}");
     puts("-reds   reduction scaling:(1)");
-    puts("-g      global method:    {ran,lin,bfs,rbfs,bfsh,(rbfsh)}");
+    puts("-g      global method:    {ran,lin,bfs,rbfs,bfsh,rbfsh,gr1,(gr2)}");
     puts("-l      local method:     no,(fm)");
     puts("-d      debug level:      (1)");
     puts("default values are in brackets ():");

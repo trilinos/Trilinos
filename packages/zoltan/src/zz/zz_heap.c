@@ -61,6 +61,10 @@ int heap_check (HEAP *h)
   return ZOLTAN_OK;
 }
 
+/* heap_input adds one item to the heap but does NOT
+ * rearrange the heap! We need a function heap_insert
+ * to add an item and preserve the heap property. 
+ */
 int heap_input (HEAP *h, int element, float value)
 {
   static char *yo = "heap_input";
