@@ -29,7 +29,9 @@
 # ************************************************************************
 #@HEADER
 
+if BUILD_PETSC_EXAMPLES
 include ${PETSC_DIR}/bmake/common/base
+endif
 
 EXAMPLE = example
 
