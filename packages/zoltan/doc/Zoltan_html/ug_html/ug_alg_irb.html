@@ -19,34 +19,31 @@
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title>Zoltan User's Guide:  RCB</title>
+   <title>Zoltan User's Guide:  IRB</title>
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_irb.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg.html">Previous</a></i></b></div>
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_parmetis.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_rcb.html">Previous</a></i></b></div>
 
 
 <h2>
-<a NAME="RCB"></a>Recursive Coordinate Bisection (RCB)</h2>
-An implementation of Recursive Coordinate Bisection (RCB) due to Steve
-Plimpton of Sandia National Laboratories is included in the dynamic load-balancing
-library. RCB was first proposed as a static load-balancing algorithm by
-<a href="ug_refs.html#berger">Berger
-and Bokhari</a>, but is attractive as a dynamic load-balancing algorithm
-because it implicitly produces incremental partitions. In RCB, the computational
-domain is first divided into two regions by a cutting plane orthogonal
-to one of the coordinate axes so that half the work load is in each of
-the sub-regions. The splitting direction is determined by computing in
-which coordinate direction the set of objects is most elongated, based
-upon the geometric locations of the objects. The sub-regions are then further
+<a NAME="IRB"></a>Inertial Recursive Bisection (IRB)</h2>
+An implementation of Inertial Recursive Bisection (IRB) included in the
+dynamic load-balancing library. IRB was first proposed as a static
+load-balancing algorithm by <a href="ug_refs.html#taylor">Taylor and
+Nour-Omid</a>.  IRB is similar to RCB in that it divides the domain based on
+the location of the obects being partitioned by use of cutting planes.
+In IRB, the computational domain is first divided into two regions by a
+cutting plane orthogonal to the longest direction of the domain so that half
+the work load is in each of the sub-regions.  The sub-regions are then further
 divided by recursive application of the same splitting algorithm until
-the number of sub-regions equals the number of processors. Although this
+the number of sub-regions equals the number of processors.  Although this
 algorithm was first devised to cut into a number of sets which is a power
-of two, the set sizes in a particular cut needn't be equal. By adjusting
+of two, the set sizes in a particular cut needn't be equal.  By adjusting
 the partition sizes appropriately, any number of equally-sized sets can
-be created. If the parallel machine has processors with different speeds,
-unequally-sized sets can also be easily generated. The Zoltan implementation
-of RCB has several parameters which can be modified by the <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>
+be created.  If the parallel machine has processors with different speeds,
+unequally-sized sets can also be easily generated.  The Zoltan implementation
+of IRB has several parameters which can be modified by the <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>
 function.
 <br>&nbsp;
 <br>&nbsp;
@@ -54,7 +51,7 @@ function.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Method String:</b></td>
 
-<td><b>RCB</b></td>
+<td><b>IRB</b></td>
 </tr>
 
 <tr>
@@ -64,31 +61,23 @@ function.
 </tr>
 
 <tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>RCB_OVERALLOC</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>IRB_OVERALLOC</i></td>
 
 <td>The amount by which to over-allocate temporary storage arrays for objects
-within the RCB algorithm when additional storage is due to changes in processor
+within the IRB algorithm when additional storage is due to changes in processor
 assignments.&nbsp;
 <br>1.0 = no extra storage allocated; 1.5 = 50% extra storage; etc.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; RCB_REUSE</i></td>
-
-<td>Flag to indicate whether to use previous cuts as initial guesses for
-the current RCB invocation.&nbsp;
-<br>0 = don't use previous cuts; 1 = use previous cuts.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_CHECK</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> IRB_CHECK</i></td>
 
 <td>Flag controlling the invocation of input and output error checking.&nbsp;
 <br>0 = don't do checking; 1 = do checking.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_OUTPUT_LEVEL</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> IRB_OUTPUT_LEVEL</i></td>
 
 <td>Flag controlling the amount of timing and diagnostic output the routine
 produces.&nbsp;
@@ -96,9 +85,9 @@ produces.&nbsp;
 </tr>
 
 <tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> KEEP_CUTS</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> IRB_KEEP_CUTS</i></td>
 
-<td>Should information about the cuts determining the RCB decomposition
+<td>Should information about the cuts determining the IRB decomposition
 be retained? It costs a bit of time to do so, but this information is necessary
 if application wants to add more objects to the decomposition via calls
 to <b><a href="ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</a></b>
@@ -115,31 +104,25 @@ or to <b><a href="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</a></b>
 <tr>
 <td></td>
 
-<td><i>RCB_OVERALLOC</i> = 1.0</td>
+<td><i>IRB_OVERALLOC</i> = 1.0</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><i>RCB_REUSE</i> = 0</td>
+<td><i>IRB_CHECK</i> = 1</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><i>RCB_CHECK</i> = 1</td>
+<td><i>IRB_OUTPUT_LEVEL</i> = 0</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><i>RCB_OUTPUT_LEVEL</i> = 0</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><i>KEEP_CUTS</i> = 0</td>
+<td><i>IRB_KEEP_CUTS</i> = 0</td>
 </tr>
 
 <tr>
@@ -177,7 +160,8 @@ pair</td>
 
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
-<a href="ug_alg_irb.html">Next:&nbsp; Inertial Recursive Bisection (IRB)</a>
-|&nbsp; <a href="ug_alg.html">Previous:&nbsp; Algorithms</a>]
+<a href="ug_alg_parmetis.html">Next:&nbsp;
+ParMETIS</a> |&nbsp; <a href="ug_alg_rcb.html">Previous:&nbsp;
+Recursive Coordinate Bisection (RCB)</a>]
 </body>
 </html>
