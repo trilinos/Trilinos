@@ -34,3 +34,14 @@ mystring = ml2_0_0_3
      Least squares and smoothed l.s. prolongators in serial for R/S AMG.
      Enhanced detection of degenerate coarse grid matrices in building
      R/S AMG hierarchy.
+
+mystring = ml2_0_0_4
+
+mystring = ml2_0_0_5
+
+     Changes in aggregation post-processing to improve aggregate quality.
+     Added wrappers so that ML can use Epetra objects & so that AztecOO can use
+       ML as a preconditioner.
+     Added block Maxwell capabilities for real block systems that are
+       equivalent to the complex systems arising from Maxwell in the frequency
+       domain.
