@@ -286,7 +286,7 @@ LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
   AnasaziLOCAVec<double> ivec( xVector, blksz );
   ivec.MvRandom();
 
-  // Create and instance of the eigenproblem
+  // Create an instance of the eigenproblem
   AnasaziEigenproblem<double> LOCAProblem( &Amat, &ivec );
 
   // Initialize the solver
@@ -304,24 +304,52 @@ LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
     if (debug == 0) LOCABlockArnoldi.currentStatus();
 
   // Obtain the eigenvalues / eigenvectors
-  double * evalr = LOCABlockArnoldi.getEvals();
-  double * evali = LOCABlockArnoldi.getiEvals();
+  int narn =  length; 
+  double * evalr = LOCABlockArnoldi.getEvals(narn);  // narn modified
+  double * evali = LOCABlockArnoldi.getiEvals(narn); // to within [nev,length]
 
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout<<"Untransformed eigenvalues (since the operator was the Jacobian inverse)"<<endl;
-    cout.precision(7);
-    for (int i=0; i<nev; i++) {
-      double mag=evalr[i]*evalr[i]+evali[i]*evali[i];
-      cout<<"Eigenvalue "<<i<<" : "<<evalr[i]/mag<<"  "<<-evali[i]/mag<<" i"<<endl;
-    }
   }
-
-  /* Comment out Eigenvector extraction for now
+  
+  // Obtain the eigenvectors
   AnasaziLOCAVec<double> evecR( xVector, nev );
   LOCABlockArnoldi.getEvecs( evecR );
   AnasaziLOCAVec<double> evecI( xVector, nev );
   LOCABlockArnoldi.getiEvecs( evecI );
-  */
+
+  // Create some temporary vectors
+  NOX::Epetra::Vector r_evec(xVector.getEpetraVector());
+  NOX::Epetra::Vector i_evec(xVector.getEpetraVector());
+  NOX::Epetra::Vector tempvecr(xVector.getEpetraVector());
+  NOX::Epetra::Vector tempveci(xVector.getEpetraVector());
+  NOX::Abstract::Group::ReturnType res;
+  double realpart, imagpart; 
+  for (int i=0; i<nev; i++) {
+    evecR.GetNOXVector( r_evec, i );
+    evecI.GetNOXVector( i_evec, i );
+    res = applyJacobian(r_evec, tempvecr);
+    res = applyJacobian(i_evec, tempveci);
+    realpart = r_evec.dot(tempvecr)+i_evec.dot(tempveci);
+    imagpart = r_evec.dot(tempveci)-i_evec.dot(tempvecr);
+
+    if (Utils::doPrint(Utils::StepperIteration)) {
+      cout.precision(7);
+      double mag=evalr[i]*evalr[i]+evali[i]*evali[i];
+      cout<<"Eigenvalue "<<i<<" : "<<evalr[i]/mag<<"  "<<-evali[i]/mag<<" i    :  RQresid "
+          << fabs(evalr[i]/mag - realpart) <<"  "<< fabs(-evali[i]/mag - imagpart)<<" i"<<endl;
+    }  
+  }
+
+  // Print out remaining eigenvalue approximations from nev to final arnoldi size
+  if (Utils::doPrint(Utils::StepperIteration) && narn>nev) {
+    cout.precision(7);
+    cout << "~~~~~~~ remaining eigenvalue approximations ~~~~~~~~~~~~" << endl;
+    for (int i=nev; i<narn; i++) {
+        double mag=evalr[i]*evalr[i]+evali[i]*evali[i];
+        cout<<"Eigenvalue "<<i<<" : "<<evalr[i]/mag<<"  "<<-evali[i]/mag<<" i"<<endl;
+    }
+  }
 
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout << "\nAnasazi Eigensolver finished.\n" 
