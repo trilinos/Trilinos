@@ -6278,7 +6278,6 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
        printf("ML_Smoother_Gen_Hiptmair_Data: Need 4 nodal arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
-     //int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);    /* its           */
      dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1); /* eig ratio     */
      int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 3);    /* poly degree   */
      if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
