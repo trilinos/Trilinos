@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     if (verbose) cout<<endl<<"********** CHECKING KOKKOS  Classic HbMatrix **********" << " Dim = " << numEquations <<endl<<endl;
     
     // Check output objects
-    if (verbose) cout <<"Checking Attribute accessors ";
+    if (verbose) cout <<"Checking Attribute accessors .......";
     if ( A->getNumRows()!=numEquations || A->getNumCols()!=numEquations || 
 	 A->getIsRowOriented()!=isRowOriented ||A->getNumEntries()!=numEntries) {
       if (verbose) cout << "unsuccessful."<<endl;
@@ -93,6 +93,18 @@ int main(int argc, char* argv[])
     } else {
       if (verbose) cout << "successful."<<endl;
     }
+    if (verbose) cout <<"Checking if attribute set/check is working.......";
+
+    Kokkos::HbMatrix<OTYPE, STYPE> * HbA = dynamic_cast<Kokkos::HbMatrix<OTYPE, STYPE> *>(A);
+    HbA->setHasDiagonalEntries(false); // Invalid, but testing it
+    assert(HbA->checkStructure()==-3);
+    HbA->setIsLowerTriangular(true); // Invalid, but testing it
+    assert(HbA->checkStructure()==-2);
+    HbA->setIsUpperTriangular(true); // Invalid, but testing it
+    assert(HbA->checkStructure()==-1);
+    assert(HbA->checkStructure()==0);
+    if (verbose) cout << "successful."<<endl;
+    
     Kokkos::MULTCLASS<OTYPE, STYPE> opA;
     opA.initializeStructure(*A, true);
     opA.initializeValues(*A, true);

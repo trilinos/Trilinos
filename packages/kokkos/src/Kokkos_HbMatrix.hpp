@@ -144,6 +144,43 @@ namespace Kokkos {
 	
     //@}
 
+    //@{ \name Matrix Attribute set methods.
+
+    //! Set whether or not the compressed index matrix has no entries below the diagonal, assumed false.
+    virtual int setIsUpperTriangular(bool tf) {isUpperTriangular_=tf; return(0);};
+	
+    //! Set whether or not the compressed index matrix has no entries above the diagonal, assumed false.
+    virtual int setIsLowerTriangular(bool tf) {isLowerTriangular_=tf; return(0);};
+	
+    //! Set whether or not the compressed index matrix has explicit diagonal entries.
+    virtual int setHasDiagonalEntries(bool tf) {hasDiagonalEntries_=tf; return(0);};
+	
+    //! Set whether or not the compressed index matrix should be treated as unit diagonal, assumed false
+    /*! \warning This method will not accept a "true" argument unless setHasDiagonalEntries() has be called with a "false" argument first.
+    virtual int setHasImplicitUnitDiagonal(bool tf) {
+      if (tf && hasDiagonalEntries_) return(-1); // Cannot set unit diagonal unless there are no explicit diagonal entries
+      hasImplicitUnitDiagonal_=tf; 
+      return(0);};
+
+    //@}
+
+    //@{ \name Validity tests.
+
+    //! Check if the matrix structure is valid for user-assertion of Upper/Lower Triangular and implicit unit diagonal.
+    /*!
+      \return Integer error code, equals zero if structure is valid, negative value means potential fatal assertion.
+      Error codes: <ul>
+      <li> -1 - User asserts upper triangular, but it's not.
+      <li> 1 - User does not assert upper triangular, but it is.
+      <li> -2 - User asserts lower triangular, but it's not.
+      <li> 2 - User does not assert lower triangular, but it is.
+      <li> -3 - User asserts implicit unit diagonal, but values are given.
+      </ul>
+    */
+    virtual int checkStructure() const;
+
+    //@}
+
     //@{ \name Matrix Attribute access methods.
 	
     //! Returns true if the compressed index matrix was formed using a classic HB matrix.
@@ -151,6 +188,15 @@ namespace Kokkos {
 	
     //! Returns true if the compressed index matrix should be interpreted as a row matrix.
     bool getIsRowOriented() const {return(isRowOriented_);};
+	
+    //! Returns true if the compressed index matrix has no entries below the diagonal.
+    virtual bool getIsUpperTriangular() const {return(isUpperTriangular_);};
+	
+    //! Returns true if the compressed index matrix has no entries above the diagonal.
+    virtual bool getIsLowerTriangular() const {return(isLowerTriangular_);};
+	
+    //! Returns true if the compressed index matrix has no diagonal entries, but should be treated as unit diagonal.
+    virtual bool getHasImplicitUnitDiagonal() const {return(hasImplicitUnitDiagonal_);};
 	
     //! Number of rows
     OrdinalType getNumRows() const {return(numRows_);};
@@ -164,6 +210,7 @@ namespace Kokkos {
     //@}
 
   protected:
+
     OrdinalType numRows_;
     OrdinalType numCols_;
     OrdinalType numEntries_;
@@ -177,6 +224,10 @@ namespace Kokkos {
     OrdinalType * pntr_;
     OrdinalType * profile_;
     bool isRowOriented_;
+    mutable bool isUpperTriangular_;
+    mutable bool isLowerTriangular_;
+    bool hasImplicitUnitDiagonal_;
+    mutable bool hasDiagonalEntries_;
 
     bool isClassicHbMatrix_;
   };
@@ -197,6 +248,10 @@ template<typename OrdinalType, typename ScalarType>
     pntr_(0),
     profile_(0),
     isRowOriented_(true),
+    isUpperTriangular_(false),
+    isLowerTriangular_(false),
+    hasImplicitUnitDiagonal_(false),
+    hasDiagonalEntries_(true),
     isClassicHbMatrix_(true)
 {
 }
@@ -214,6 +269,10 @@ HbMatrix<OrdinalType, ScalarType>::HbMatrix(const HbMatrix<OrdinalType, ScalarTy
     pntr_(matrix.pntr_),
     profile_(matrix.profile_),
     isRowOriented_(matrix.isRowOriented_),
+    isUpperTriangular_(matrix.isUpperTriangular_),
+    isLowerTriangular_(matrix.isLowerTriangular_),
+    hasImplicitUnitDiagonal_(matrix.hasImplicitUnitDiagonal_),
+    hasDiagonalEntries_(matrix.hasDiagonalEntries_),
     isClassicHbMatrix_(matrix.isClassicHbMatrix_)
 
 {
@@ -334,6 +393,67 @@ int HbMatrix<OrdinalType, ScalarType>::getValues(OrdinalType i, ScalarType *& va
   if (values==0) return(-1); // Fatal, null pointer, but numRowEntries is positive
   
   return(0);
+}
+
+
+//==============================================================================
+template<typename OrdinalType, typename ScalarType>
+int HbMatrix<OrdinalType, ScalarType>::checkStructure() const { 
+
+  bool isUpper = true;
+  bool isLower = true;
+  bool noDiag = true;
+  int numOuter = numCols_;
+  if (isRowOriented_) numOuter = numRows_;
+
+  if (isClassicHbMatrix_) {
+    for (OrdinalType i=0; i< numOuter; i++) {
+      OrdinalType j0 = pntr_[i];
+      OrdinalType j1 = pntr_[i+1];
+      for (OrdinalType jj=j0; jj<j1; jj++) {
+	OrdinalType j = allIndices_[jj];
+	if (i<j) isUpper = false;
+	if (i>j) isLower = false;
+	if (i==j) noDiag = false;
+      }
+    } 
+  }
+  else {
+    for (OrdinalType i=0; i< numOuter; i++) {
+      OrdinalType * curIndices = indices_[i];
+      OrdinalType j1 = pntr_[i+1];
+      for (OrdinalType jj=0; jj<j1; jj++) {
+	OrdinalType j = curIndices[jj];
+	if (i<j) isUpper = false;
+	if (i>j) isLower = false;
+	if (i==j) noDiag = false;
+      }
+    } 
+  }
+  int ierr = 0;
+  // Test the values of upper, lower, and noDiag and make sure they are compatible with user-asserted values
+
+  if (isUpperTriangular_ && !isUpper) { // User asserts upper triangular, but it's not
+    ierr = -1;
+    isUpperTriangular_ = isUpper;
+  }
+  else if (!isUpperTriangular_ && isUpper) { // User does not assert upper triangular, but it is
+    ierr = 1;
+    isUpperTriangular_ = isUpper;
+  }
+  if (isLowerTriangular_ && !isLower) { // User asserts lower triangular, but it's not
+    ierr = -2;
+    isLowerTriangular_ = isLower;
+  }
+  else if (!isLowerTriangular_ && isLower) { // User does not assert lower triangular, but it is
+    ierr = 2;
+    isLowerTriangular_ = isLower;
+  }
+  if (!hasDiagonalEntries_ && !noDiag) { // User asserts no diagonal, but values are given
+    ierr = -3;
+    hasDiagonalEntries_ = true;
+  }
+  return(ierr);
 }
 
 #endif /* KOKKOS_HBMATRIX_H */

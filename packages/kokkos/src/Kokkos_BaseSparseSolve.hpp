@@ -34,17 +34,17 @@
 
 namespace Kokkos {
 
-//! Kokkos::BaseSparseMultiply: A reference class for computing sparse matrix multiplication operations.
+//! Kokkos::BaseSparseSolve: A reference class for computing sparse matrix triangular solve operations.
 
-/*! The Kokkos::BaseSparseMultiply provide basic functionality for computing sparse matrix times vector, or
+/*! The Kokkos::BaseSparseSolve provide basic functionality for computing sparse matrix times vector, or
     sparse matrix times multivector operations.  This class is templated on the ordinal (integer) and 
     scalar (floating point) types, so it can compute using any reasonable data type.
 
-  <b>Constructing Kokkos::BaseSparseMultiply objects</b>
+  <b>Constructing Kokkos::BaseSparseSolve objects</b>
 
-  Constructing Kokkos::BaseSparseMultiply objects is a multi-step process.  The basic steps are as follows:
+  Constructing Kokkos::BaseSparseSolve objects is a multi-step process.  The basic steps are as follows:
   <ol>
-  <li> Create Kokkos::BaseSparseMultiply instance:  The constructor takes no arguments.
+  <li> Create Kokkos::BaseSparseSolve instance:  The constructor takes no arguments.
   <li> Register the structure of a Kokkos::CisMatrix object using initializeStructure(): 
        We provide this method so that derived implementations can
        take advantage of multiple problems that have the same structure.  In this situation, 
@@ -59,7 +59,7 @@ namespace Kokkos {
 
   <b> Counting Floating Point Operations </b>
 
-  Each Kokkos::BaseSparseMultiply object keeps track of the number
+  Each Kokkos::BaseSparseSolve object keeps track of the number
   of floating point operations performed using the specified object as the \e this argument
   to the function.  The getFlops() function returns this number as a double precision number.  Using this 
   information, in conjunction with the Kokkos::Time class, one can get accurate  performance
@@ -69,18 +69,18 @@ namespace Kokkos {
 */    
 
   template<typename OrdinalType, typename ScalarType>
-  class BaseSparseMultiply: public CompObject {
+  class BaseSparseSolve: public CompObject {
   public:
 
     //@{ \name Constructors/Destructor.
-    //! BaseSparseMultiply constuctor with variable number of indices per row.
-    BaseSparseMultiply();
+    //! BaseSparseSolve constuctor with variable number of indices per row.
+    BaseSparseSolve();
   
     //! Copy constructor.
-    BaseSparseMultiply(const BaseSparseMultiply& source);
+    BaseSparseSolve(const BaseSparseSolve& source);
 	
-    //! BaseSparseMultiply Destructor
-    virtual ~BaseSparseMultiply();
+    //! BaseSparseSolve Destructor
+    virtual ~BaseSparseSolve();
     //@}
     //@{ \name Abstract Kokkos::CisMatrix Interface Initialization Methods
  
@@ -88,14 +88,16 @@ namespace Kokkos {
     /*!
       This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
       \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
-             about the matrix can be obtained via this interface.
+             about the matrix can be obtained via this interface, including whether or not the matrix is upper or lower
+	     triangular, and whether or not the diagonal is part of the structure, or should be implicitly assume to be
+	     unit diagonal.
       \param willKeepStructure (In) If set to true, the user is asserting that the strucuture of the matrix, as
              defined in the getIndices() method of the CisMatrix object A will be kept.  Specifically, the pointer to an 
 	     array of indices returned for each i in that method will continue to point to valid index data.  By default,
 	     this argument is set to false, implying that the calling routine is \e not required to maintain the validity 
 	     of this data.  If the calling routine is planning to keep this data anyway, setting this argument to true can
 	     reduce the overall memory requirements.
-      \return Integer error code, set to 0 if successful.
+     \return Integer error code, set to 0 if successful.
     */
     virtual int initializeStructure(const CisMatrix<OrdinalType, ScalarType>& A, bool willKeepStructure = false);
  
@@ -123,7 +125,7 @@ namespace Kokkos {
 
     //@{ \name Computational methods.
 	
-    //! Returns the result of a Kokkos_BaseSparseMultiply multiplied by a vector x in y.
+    //! Returns the result of a Kokkos_BaseSparseSolve multiplied by a vector x in y.
     /*! 
       \param x (In) A Kokkos::Vector to multiply by.
       \param y (Out) A Kokkos::Vector containing results.
@@ -135,7 +137,7 @@ namespace Kokkos {
     virtual int apply(const Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y, 
 		      bool transA = false, bool conjA = false) const;
 
-    //! Returns the result of a Kokkos_BaseSparseMultiply multiplied by multiple vectors in x, results in y.
+    //! Returns the result of a Kokkos_BaseSparseSolve multiplied by multiple vectors in x, results in y.
     /*! 
       \param x (In) A Kokkos::MultiVector to multiply by.
       \param y (Out) A Kokkos::MultiVector containing results.
@@ -150,7 +152,7 @@ namespace Kokkos {
 	
     //@{ \name Operator attribute access methods.
 
-    //! Returns true if this implementation of Kokkos::BaseSparseMultiply can benefit from the user keeping the passed in structure.
+    //! Returns true if this implementation of Kokkos::BaseSparseSolve can benefit from the user keeping the passed in structure.
     /*! Some implementations of optimized kernels do not rely on the user's data except for the initial 
         analysis of structure.  Other implementations, in order to reduce memory requirements, may find it
 	beneficial to rely on the user's data.  Since it is very possible that the user would retain this
@@ -159,7 +161,7 @@ namespace Kokkos {
     */
     virtual bool getCanUseStructure() const {return(true);};
 
-    //! Returns true if this implementation of Kokkos::BaseSparseMultiply can benefit from the user keeping the passed in values.
+    //! Returns true if this implementation of Kokkos::BaseSparseSolve can benefit from the user keeping the passed in values.
     /*! Some implementations of optimized kernels do not rely on the user's data except for the initial 
         copying of values.  Other implementations, in order to reduce memory requirements, may find it
 	beneficial to rely on the user's data.  Since it is very possible that the user would retain this
@@ -193,6 +195,8 @@ namespace Kokkos {
     bool isRowOriented_;
     bool haveStructure_;
     bool haveValues_;
+    bool isUpper_;
+    bool hasUnitDiagonal_;
   
     OrdinalType numRows_;
     OrdinalType numCols_;
@@ -205,13 +209,13 @@ namespace Kokkos {
     OrdinalType * profile_;
     ScalarType * allValues_;
     OrdinalType * allIndices_;
-    double costOfMatVec_;
+    double costOfSolve_;
 
   };
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  BaseSparseMultiply<OrdinalType, ScalarType>::BaseSparseMultiply() 
+  BaseSparseSolve<OrdinalType, ScalarType>::BaseSparseSolve() 
     : CompObject(),
       matrixForStructure_(0),
       matrixForValues_(0),
@@ -220,6 +224,8 @@ namespace Kokkos {
       isRowOriented_(true),
       haveStructure_(false),
       haveValues_(false),
+      isUpper_(false),
+      hasUnitDiagonal_(false),
       numRows_(0),
       numCols_(0),
       numRC_(0),
@@ -229,12 +235,12 @@ namespace Kokkos {
       profile_(0),
       allValues_(0),
       allIndices_(0),
-      costOfMatVec_(0.0) {
+      costOfSolve_(0.0) {
   }
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  BaseSparseMultiply<OrdinalType, ScalarType>::BaseSparseMultiply(const BaseSparseMultiply<OrdinalType,
+  BaseSparseSolve<OrdinalType, ScalarType>::BaseSparseSolve(const BaseSparseSolve<OrdinalType,
 								  ScalarType> &source) 
     : CompObject(source),
       matrixForStructure_(source.matrixForStructure_),
@@ -244,6 +250,8 @@ namespace Kokkos {
       isRowOriented_(source.isRowOriented_),
       haveStructure_(source.haveStructure_),
       haveValues_(source.haveValues_),
+      isUpper_(source.isUpper_),
+      hasUnitDiagonal_(source.hasUnitDiagonal_),
       numRows_(source.numRows_),
       numCols_(source.numCols_),
       numRC_(source.numRC_),
@@ -253,7 +261,7 @@ namespace Kokkos {
       profile_(source.profile_),
       allValues_(source.allValues_),
       allIndices_(source.allIndices_),
-      costOfMatVec_(source.costOfMatVec_) {
+      costOfSolve_(source.costOfSolve_) {
 
     copyProfile();
     copyStructure();
@@ -262,7 +270,7 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  void BaseSparseMultiply<OrdinalType, ScalarType>::copyProfile() {
+  void BaseSparseSolve<OrdinalType, ScalarType>::copyProfile() {
 
     if (profile_!=0) {
       OrdinalType * old_profiles = profiles_;
@@ -273,7 +281,7 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  void BaseSparseMultiply<OrdinalType, ScalarType>::copyStructure() {
+  void BaseSparseSolve<OrdinalType, ScalarType>::copyStructure() {
 
     if (indices_!=0) {
       OrdinalType ** tmp_indices =indices_;
@@ -296,7 +304,7 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  void BaseSparseMultiply<OrdinalType, ScalarType>::copyValues() {
+  void BaseSparseSolve<OrdinalType, ScalarType>::copyValues() {
 
     if (values_!=0) {
       ScalarType ** tmp_values =values_;
@@ -319,7 +327,7 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  void BaseSparseMultiply<OrdinalType, ScalarType>::deleteStructureAndProfile() {
+  void BaseSparseSolve<OrdinalType, ScalarType>::deleteStructureAndProfile() {
 
 
     // If profile is present, then delete it
@@ -335,7 +343,7 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  void BaseSparseMultiply<OrdinalType, ScalarType>::deleteValues() {
+  void BaseSparseSolve<OrdinalType, ScalarType>::deleteValues() {
 
     // If values are present and we allocated the storage, then delete it
 
@@ -347,7 +355,7 @@ namespace Kokkos {
   }
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  void BaseSparseMultiply<OrdinalType, ScalarType>::copyOrdinals(OrdinalType len, 
+  void BaseSparseSolve<OrdinalType, ScalarType>::copyOrdinals(OrdinalType len, 
 								 OrdinalType * vecIn, 
 								 OrdinalType * vecOut) {
     for (OrdinalType i=0; i<len; i++) vecOut[i] = vecIn[i];
@@ -356,7 +364,7 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  void BaseSparseMultiply<OrdinalType, ScalarType>::copyScalars(OrdinalType len, 
+  void BaseSparseSolve<OrdinalType, ScalarType>::copyScalars(OrdinalType len, 
 								ScalarType * vecIn,
 								ScalarType * vecOut) {
     for (OrdinalType i=0; i<len; i++) vecOut[i] = vecIn[i];
@@ -365,7 +373,7 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  BaseSparseMultiply<OrdinalType, ScalarType>::~BaseSparseMultiply(){
+  BaseSparseSolve<OrdinalType, ScalarType>::~BaseSparseSolve(){
 
     deleteValues();
     deleteStructureAndProfile();
@@ -374,8 +382,8 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  int BaseSparseMultiply<OrdinalType, ScalarType>::initializeStructure(const CisMatrix<OrdinalType, ScalarType>& A,
-								       bool willKeepStructure) {
+  int BaseSparseSolve<OrdinalType, ScalarType>::initializeStructure(const CisMatrix<OrdinalType, ScalarType>& A,
+								    bool willKeepStructure) {
 
 
     if (haveStructure_) return(-1); // Can only call this one time!
@@ -388,6 +396,9 @@ namespace Kokkos {
     numCols_ = A.getNumCols();
     numEntries_ = A.getNumEntries();
     numRC_ = numCols_;
+
+    isUpper_ = A.getIsUpperTriangular();
+    isUnitDiagonal_ = A.getHasImplicitUnitDiagonal();
     if (isRowOriented_) numRC_ = numRows_;
 
     profile_ = new OrdinalType[numRC_];
@@ -418,14 +429,14 @@ namespace Kokkos {
       }
     }
 
-    costOfMatVec_ = 2.0 * ((double) numEntries_);
+    costOfSolve_ = 2.0 * ((double) numEntries_);
     haveStructure_ = true;
     return(0);
   }
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  int BaseSparseMultiply<OrdinalType, ScalarType>::initializeValues(const CisMatrix<OrdinalType, ScalarType>& A, 
+  int BaseSparseSolve<OrdinalType, ScalarType>::initializeValues(const CisMatrix<OrdinalType, ScalarType>& A, 
 							       bool willKeepValues, bool checkStructure) {
 
     if (!haveStructure_) return(-1); // Must have structure first!
@@ -479,7 +490,7 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  int BaseSparseMultiply<OrdinalType, ScalarType>::apply(const Vector<OrdinalType, ScalarType>& x, 
+  int BaseSparseSolve<OrdinalType, ScalarType>::apply(const Vector<OrdinalType, ScalarType>& x, 
 						    Vector<OrdinalType, ScalarType> & y,
 						    bool transA, bool conjA) const {
 
@@ -525,13 +536,13 @@ namespace Kokkos {
 	  yp[curIndices[j]] += curValues[j] * xp[i];
       }
     }
-    updateFlops(costOfMatVec_);
+    updateFlops(costOfSolve_);
     return(0);
   }
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  int BaseSparseMultiply<OrdinalType, ScalarType>::apply(const MultiVector<OrdinalType, ScalarType>& x, 
+  int BaseSparseSolve<OrdinalType, ScalarType>::apply(const MultiVector<OrdinalType, ScalarType>& x, 
 						    MultiVector<OrdinalType, ScalarType> & y,
 						    bool transA, bool conjA) const {
     if (!haveValues_) return(-1); // Can't compute without values!
@@ -583,7 +594,7 @@ namespace Kokkos {
 	}
       }
     }
-    updateFlops(costOfMatVec_ * ((double) numVectors));
+    updateFlops(costOfSolve_ * ((double) numVectors));
     return(0);
   }
 

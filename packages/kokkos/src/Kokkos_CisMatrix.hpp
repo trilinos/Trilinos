@@ -85,6 +85,15 @@ namespace Kokkos {
     //! Returns true if the compressed index matrix should be interpreted as a row matrix.
     virtual bool getIsRowOriented() const = 0;
 	
+    //! Returns true if the compressed index matrix has no entries below the diagonal.
+    virtual bool getIsUpperTriangular() const = 0;
+	
+    //! Returns true if the compressed index matrix has no entries above the diagonal.
+    virtual bool getIsLowerTriangular() const = 0;
+	
+    //! Returns true if the compressed index matrix has no diagonal entries, but should be treated as unit diagonal.
+    virtual bool getHasImplicitUnitDiagonal() const = 0;
+	
     //! Number of rows
     virtual OrdinalType getNumRows() const = 0;
 	
