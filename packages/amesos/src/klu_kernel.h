@@ -78,6 +78,7 @@ int klu_kernel
 #endif
 
 #include <stdlib.h>
+#include <limits.h>
 
 #define REALLOCATE(p,type,size,ok) \
     { \
@@ -104,9 +105,6 @@ int klu_kernel
 #define SCALAR_IS_NAN(x) ((x) != (x))
 
 
-#ifndef INT_MAX
-#define INT_MAX 0x7fffffff
-#endif
 /* true if an integer (stored in double x) would overflow (or if x is NaN) */
 #define INT_OVERFLOW(x) ((!((x) * (1.0+1e-8) <= (double) INT_MAX)) \
 			|| SCALAR_IS_NAN (x))
