@@ -39,6 +39,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "../epetra_test_err.h"
+#include "../src/Epetra_matrix_data.h"
 #include "Epetra_Version.h"
 
 // prototypes
@@ -61,6 +62,8 @@ int power_method(bool TransA, Epetra_VbrMatrix& A,
 int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose);
 
 int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose);
+
+int checkMatvecSameVectors(Epetra_Comm& comm, bool verbose);
 
 int main(int argc, char *argv[])
 {
@@ -522,6 +525,8 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR( checkMergeRedundantEntries(Comm, verbose1), ierr);
 
   EPETRA_TEST_ERR( checkExtractMyRowCopy(Comm, verbose1), ierr);
+
+  EPETRA_TEST_ERR( checkMatvecSameVectors(Comm, verbose1), ierr);
 
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
@@ -1080,3 +1085,63 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
 
   return(0);
 }
+
+int checkMatvecSameVectors(Epetra_Comm& comm, bool verbose)
+{
+  int numProcs = comm.NumProc();
+  int localProc = comm.MyPID();
+
+  int myFirstRow = localProc*3;
+  int myLastRow = myFirstRow+2;
+  int numMyRows = myLastRow - myFirstRow + 1;
+  int numGlobalRows = numProcs*numMyRows;
+  int i,ierr;
+
+  int elemSize = 2;
+  int num_off_diagonals = 1;
+
+  epetra_test::matrix_data matdata(numGlobalRows, numGlobalRows,
+				   num_off_diagonals, elemSize);
+
+  Epetra_BlockMap map(numGlobalRows, numMyRows, elemSize, 0, comm);
+
+  Epetra_VbrMatrix A(Copy, map, num_off_diagonals*2+1);
+
+  int* rows = matdata.rows();
+  int* rowlengths = matdata.rowlengths();
+  int** colindices = matdata.colindices();
+
+  for(i=myFirstRow; i<=myLastRow; ++i) {
+
+    EPETRA_TEST_ERR( A.BeginInsertGlobalValues(i, rowlengths[i],
+                                               colindices[i]), ierr);
+
+    for(int j=0; j<rowlengths[i]; ++j) {
+      EPETRA_TEST_ERR( A.SubmitBlockEntry(matdata.coefs(i,colindices[i][j]), elemSize,
+                                          elemSize, elemSize), ierr);
+    }
+
+    EPETRA_TEST_ERR( A.EndSubmitEntries(), ierr);
+  }
+
+  EPETRA_TEST_ERR( A.FillComplete(), ierr);
+
+  Epetra_Vector x(map), y(map);
+
+  x.PutScalar(1.0);
+
+  A.Multiply(false, x, y);
+  A.Multiply(false, x, x);
+
+  double* xptr = x.Values();
+  double* yptr = y.Values();
+
+  for(i=0; i<numMyRows; ++i) {
+    if (xptr[i] != yptr[i]) {
+      return(-1);
+    }
+  }
+
+  return(0);
+}
+

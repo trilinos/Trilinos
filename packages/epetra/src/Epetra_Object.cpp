@@ -31,10 +31,12 @@
 
 
 //=============================================================================
-Epetra_Object::Epetra_Object(int TracebackModeIn) 
+Epetra_Object::Epetra_Object(int TracebackModeIn, bool set_label) 
   : Label_(0)
 {
-  SetLabel("Epetra::Object");
+  if (set_label) {
+    SetLabel("Epetra::Object");
+  }
   TracebackMode = (TracebackModeIn != -1) ? TracebackModeIn : TracebackMode;
 }
 
@@ -90,15 +92,23 @@ int Epetra_Object::ReportError(const string Message, int ErrorCode) const {
 //=============================================================================
 Epetra_Object::~Epetra_Object()  
 {
-  if (Label_!=0) delete [] Label_;
+  if (Label_!=0) {
+    delete [] Label_;
+    Label_ = 0;
+  }
 }
 //=============================================================================
 const char * Epetra_Object::Label() const {
   return(Label_);
 }
 //=============================================================================
-void Epetra_Object::SetLabel(const char * const Label) { 
-  if (Label_!=0) delete [] Label_;
+void Epetra_Object::SetLabel(const char * const Label)
+{ 
+  if (Label_!=0) {
+    delete [] Label_;
+    Label_ = 0;
+  }
+  if (Label==0) return;
   Label_ = new char[strlen(Label)+1];
   strcpy(Label_,Label);
   return;

@@ -102,7 +102,7 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
     Shape() or Reshape functions.  
     Values should be defined by using the [] or () operators.
    */
-  Epetra_SerialDenseMatrix();
+  Epetra_SerialDenseMatrix(bool set_object_label=true);
 
   //! Shaped constructor; defines a variable-sized object
   /*!
@@ -116,7 +116,7 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
 		is equivalent to using the default constructor, and then calling the Shape function on it.
     Values should be defined by using the [] or () operators.
    */
-  Epetra_SerialDenseMatrix(int NumRows, int NumCols);
+  Epetra_SerialDenseMatrix(int NumRows, int NumCols, bool set_object_label=true);
   
   //! Set object values from two-dimensional array.
   /*!
@@ -134,7 +134,8 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
 
 	   See Detailed Description section for further discussion.
   */
-  Epetra_SerialDenseMatrix(Epetra_DataAccess CV, double* A, int LDA, int NumRows, int NumCols);
+  Epetra_SerialDenseMatrix(Epetra_DataAccess CV, double* A, int LDA, int NumRows, int NumCols,
+                           bool set_object_label=true);
   
   //! Epetra_SerialDenseMatrix copy constructor.
   
@@ -426,7 +427,7 @@ This function performs a variety of matrix-matrix multiply operations.
  protected:
 
   void CopyMat(double* Source, int Source_LDA, int NumRows, int NumCols,
-							 double* Target, int Target_LDA, bool add=false);
+               double* Target, int Target_LDA, bool add=false);
   void CleanupData();
 
   int M_;

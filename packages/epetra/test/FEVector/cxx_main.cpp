@@ -32,12 +32,8 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_FEVector.h"
 #include "ExecuteTestProblems.h"
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
-#endif
+#include "../src/Epetra_test_functions.h"
+#include "Epetra_Comm.h"
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
 
@@ -45,54 +41,17 @@ int main(int argc, char *argv[]) {
 
   int ierr = 0;
 
-#ifdef EPETRA_MPI
-
-  // Initialize MPI
-
-  MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
-
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-
-#else
-
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
-  Epetra_SerialComm Comm;
-
-#endif
-
-  Comm.SetTracebackMode(0); // This should shut down any error tracing
-  bool verbose = false;
-
-  // Check if we should print results to standard out
-  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
-
-#ifdef EPETRA_MPI
-  int localverbose = verbose ? 1 : 0;
-  int globalverbose=0;
-  MPI_Allreduce(&localverbose, &globalverbose, 1, MPI_INT, MPI_SUM,
-		MPI_COMM_WORLD);
-  verbose = (globalverbose>0);
-#endif
-
-  //  char tmp;
-  //  if (rank==0) cout << "Press any key to continue..."<< endl;
-  //  if (rank==0) cin >> tmp;
-  //  Comm.Barrier();
+  //epetra_test::create_comm initializes mpi if EPETRA_MPI is defined
+  Epetra_Comm* epetra_comm = epetra_test::create_comm(argc, argv);
+  Epetra_Comm& Comm = *epetra_comm;
 
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc(); 
 
-  if (verbose && MyPID==0)
-    cout << Epetra_Version() << endl << endl;
+  bool verbose =
+    epetra_test::global_check_for_flag_on_proc_0("-v",argc,argv, Comm);
 
-  if (verbose) cout << Comm <<endl;
-
-  // Redefine verbose to only print on PE 0
-  //if (verbose && rank!=0) verbose = false;
+  if (verbose) cout << Epetra_Version() << endl << endl;
 
   int NumVectors = 1;
   int NumMyElements = 4;
@@ -102,6 +61,8 @@ int main(int argc, char *argv[]) {
 
   Epetra_BlockMap BlockMap(NumGlobalElements, NumMyElements,
                            ElementSize, IndexBase, Comm);
+  BlockMap.SetTracebackMode(0); // This should shut down any error tracing
+
   EPETRA_TEST_ERR(MultiVectorTests(BlockMap, NumVectors, verbose),ierr);
 
   Comm.Barrier();

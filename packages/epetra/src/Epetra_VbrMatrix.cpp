@@ -517,7 +517,7 @@ int Epetra_VbrMatrix::SubmitBlockEntry(double *Values, int LDA,
 
   TempRowDims_[CurEntry_] = NumRows;
   TempEntries_[CurEntry_] = new Epetra_SerialDenseMatrix(CV_, Values, LDA,
-							 NumRows, NumCols);
+							 NumRows, NumCols, false);
   CurEntry_++;
 
   return(0);
@@ -565,24 +565,32 @@ int Epetra_VbrMatrix::EndReplaceSumIntoValues()
       code =Graph_->FindGlobalIndexLoc(CurBlockRow_,BlockIndex,j,Loc);
     }
 
-    if (code) {
-      if (Entries_[CurBlockRow_][Loc]==0) {
-	Entries_[CurBlockRow_][Loc] =
-	  new Epetra_SerialDenseMatrix(RowDim, TempEntries_[j]->N());
-      }
+    bool need_to_delete_temp_entry = true;
 
-      if (SumInto) {
-	*(Entries_[CurBlockRow_][Loc]) += *(TempEntries_[j]);
+    if (code) {
+      Epetra_SerialDenseMatrix* src = TempEntries_[j];
+
+      int ColDim = src->N();
+
+      if (Entries_[CurBlockRow_][Loc]==0) {
+	Entries_[CurBlockRow_][Loc] = src;
+        need_to_delete_temp_entry = false;
+//	  new Epetra_SerialDenseMatrix(RowDim, ColDim, false);
       }
       else {
-	*(Entries_[CurBlockRow_][Loc]) = *(TempEntries_[j]);
+        Epetra_SerialDenseMatrix* target = Entries_[CurBlockRow_][Loc];
+
+        target->CopyMat(src->A_, src->LDA_, RowDim, ColDim,
+                        target->A_, target->LDA_, SumInto);
       }
     }
     else {
       ierr=2; // Block Discarded, Not Found
     }
 
-    delete TempEntries_[j];
+    if (need_to_delete_temp_entry) {
+      delete TempEntries_[j];
+    }
   }
 
   EPETRA_CHK_ERR(ierr);

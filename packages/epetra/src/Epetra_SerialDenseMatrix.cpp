@@ -33,33 +33,40 @@
 #include "Epetra_Util.h"
 
 //=============================================================================
-Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix()
-  : Epetra_CompObject(),
-		CV_(Copy),
+Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(bool set_object_label)
+  : Epetra_Object(-1, false),
+    Epetra_CompObject(),
+    CV_(Copy),
     M_(0),
     N_(0),
     LDA_(0),
     A_Copied_(false),
     A_(0)
 {
-	SetLabel("Epetra::SerialDenseMatrix");
+  if (set_object_label) {
+    SetLabel("Epetra::SerialDenseMatrix");
+  }
 }
 
 //=============================================================================
-Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(int NumRows, int NumCols)
-  : Epetra_CompObject(),
-		CV_(Copy),
+Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(int NumRows, int NumCols,
+                                                   bool set_object_label)
+  : Epetra_Object(-1, false),
+    Epetra_CompObject(),
+    CV_(Copy),
     M_(0),
     N_(0),
     LDA_(0),
     A_Copied_(false),
     A_(0)
 {
-	SetLabel("Epetra::SerialDenseMatrix");
-	if(NumRows < 0)
-		throw ReportError("NumRows = " + toString(NumRows) + ". Should be >= 0", -1);
-	if(NumCols < 0)
-		throw ReportError("NumCols = " + toString(NumCols) + ". Should be >= 0", -1);
+  if (set_object_label) {
+    SetLabel("Epetra::SerialDenseMatrix");
+  }
+  if(NumRows < 0)
+	throw ReportError("NumRows = " + toString(NumRows) + ". Should be >= 0", -1);
+  if(NumCols < 0)
+	throw ReportError("NumCols = " + toString(NumCols) + ". Should be >= 0", -1);
 
   int errorcode = Shape(NumRows, NumCols);
   if(errorcode != 0)
@@ -67,10 +74,12 @@ Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(int NumRows, int NumCols)
 }
 
 //=============================================================================
-Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(Epetra_DataAccess CV, double* A, int LDA, 
-																									 int NumRows, int NumCols)
-  : Epetra_CompObject(),
-		CV_(CV),
+Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(Epetra_DataAccess CV, double* A, int LDA,
+                                                   int NumRows, int NumCols,
+                                                   bool set_object_label)
+  : Epetra_Object(-1, false),
+    Epetra_CompObject(),
+    CV_(CV),
     M_(NumRows),
     N_(NumCols),
     LDA_(LDA),
@@ -78,28 +87,30 @@ Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(Epetra_DataAccess CV, double*
     A_(A)
 
 {
-	SetLabel("Epetra::SerialDenseMatrix");
-	if(A == 0)
-		throw ReportError("Null pointer passed as A parameter.", -3);
-	if(NumRows < 0)
-		throw ReportError("NumRows = " + toString(NumRows) + ". Should be >= 0", -1);
-	if(NumCols < 0)
-		throw ReportError("NumCols = " + toString(NumCols) + ". Should be >= 0", -1);
-	if(LDA < 0)
-		throw ReportError("LDA = " + toString(LDA) + ". Should be >= 0", -1);
+  if (set_object_label) {
+    SetLabel("Epetra::SerialDenseMatrix");
+  }
+  if(A == 0)
+	throw ReportError("Null pointer passed as A parameter.", -3);
+  if(NumRows < 0)
+    throw ReportError("NumRows = " + toString(NumRows) + ". Should be >= 0", -1);
+  if(NumCols < 0)
+	throw ReportError("NumCols = " + toString(NumCols) + ". Should be >= 0", -1);
+  if(LDA < 0)
+	throw ReportError("LDA = " + toString(LDA) + ". Should be >= 0", -1);
 
   if (CV == Copy) {
     LDA_ = M_;
-		const int newsize = LDA_ * N_;
-		if (newsize > 0) {
-			A_ = new double[newsize];
-			CopyMat(A, LDA, M_, N_, A_, LDA_);
-			A_Copied_ = true;
-		}
-		else {
-			A_ = 0;
-		}
-	}
+    const int newsize = LDA_ * N_;
+    if (newsize > 0) {
+      A_ = new double[newsize];
+      CopyMat(A, LDA, M_, N_, A_, LDA_);
+      A_Copied_ = true;
+    }
+    else {
+      A_ = 0;
+    }
+  }
 }
 //=============================================================================
 Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(const Epetra_SerialDenseMatrix& Source)
@@ -265,28 +276,55 @@ Epetra_SerialDenseMatrix& Epetra_SerialDenseMatrix::operator+= ( const Epetra_Se
 }
 //=============================================================================
 void Epetra_SerialDenseMatrix::CopyMat(double* Source,
-																			 int Source_LDA,
-																			 int NumRows,
-																			 int NumCols, 
-																			 double* Target,
-																			 int Target_LDA,
-																			 bool add)
+                                       int Source_LDA,
+                                       int NumRows,
+                                       int NumCols, 
+                                       double* Target,
+                                       int Target_LDA,
+                                       bool add)
 {
-  int i, j;
-  double* targetPtr = Target;
-  double* sourcePtr = 0;
-  for (j = 0; j < NumCols; j++) {
-    targetPtr = Target + j * Target_LDA;
-    sourcePtr = Source + j * Source_LDA;
-    if (add) {
-      for (i = 0; i<NumRows; i++) 
-				*targetPtr++ += *sourcePtr++;
-    }
-    else {
-      for (i = 0; i < NumRows; i++) 
-				*targetPtr++ = *sourcePtr++;
+  int i;
+  double* tptr = Target;
+  double* sptr = Source;
+  if (add) {
+    for(int j=0; j<NumCols; ++j) {
+      for(i=0; i<NumRows; ++i) {
+        tptr[i] += sptr[i];
+      }
+
+      tptr += Target_LDA;
+      sptr += Source_LDA;
     }
   }
+  else {
+    for(int j=0; j<NumCols; ++j) {
+      for(i=0; i<NumRows; ++i) {
+        tptr[i] = sptr[i];
+      }
+
+      tptr += Target_LDA;
+      sptr += Source_LDA;
+    }
+  }
+/*
+  double* targetPtr = Target;
+  double* sourcePtr = Source;
+  double* targetEnd = 0;
+ 
+  for (j = 0; j < NumCols; j++) {
+    targetPtr = Target + j * Target_LDA;
+    targetEnd = targetPtr+NumRows;
+    sourcePtr = Source + j * Source_LDA;
+    if (add) {
+      while(targetPtr != targetEnd) 
+		*targetPtr++ += *sourcePtr++;
+    }
+    else {
+      while(targetPtr != targetEnd) 
+		*targetPtr++ = *sourcePtr++;
+    }
+  }
+*/
   return;
 }
 //=============================================================================

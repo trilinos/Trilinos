@@ -51,7 +51,7 @@ class Epetra_Object {
       are derived from it, directly or indirectly.  This class is seldom
       used explictly.
   */
-  Epetra_Object(int TracebackModeIn = -1);
+  Epetra_Object(int TracebackModeIn = -1, bool set_label = true);
 
   //! Epetra_Object Constructor.
   /*! Creates a Epetra_Object with the given label.

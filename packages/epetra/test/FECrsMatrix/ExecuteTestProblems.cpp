@@ -33,6 +33,8 @@
 #include "Epetra_FEVector.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialDenseMatrix.h"
+#include <../src/Epetra_matrix_data.h>
+#include <../src/Epetra_test_functions.h>
 
 
 int Drumm1(const Epetra_Map& map, bool verbose)
@@ -66,91 +68,96 @@ int Drumm1(const Epetra_Map& map, bool verbose)
 
   if (numProcs != 2) return(0);
 
+  //so first we'll set up a epetra_test::matrix_data object with
+  //contents that match the above-described matrix. (but the
+  //matrix_data object will have all 4 rows on each processor)
+
+  int i;
+  int* rowlengths = new int[4];
+  rowlengths[0] = 3;
+  rowlengths[1] = 4;
+  rowlengths[2] = 3;
+  rowlengths[3] = 4;
+
+  epetra_test::matrix_data matdata(4, rowlengths);
+  for(i=0; i<4; ++i) {
+    for(int j=0; j<matdata.rowlengths()[i]; ++j) {
+      matdata.colindices()[i][j] = j;
+    }
+  }
+
+  matdata.colindices()[0][2] = 3;
+
+  matdata.colindices()[2][0] = 1;
+  matdata.colindices()[2][1] = 2;
+  matdata.colindices()[2][2] = 3;
+
+  double** coefs = matdata.coefs();
+  coefs[0][0] = 2.0; coefs[0][1] = 1.0;                    coefs[0][2] = 1.0;
+  coefs[1][0] = 1.0; coefs[1][1] = 4.0; coefs[1][2] = 1.0; coefs[1][3] = 2.0;
+                     coefs[2][0] = 1.0; coefs[2][1] = 2.0; coefs[2][2] = 1.0;
+  coefs[3][0] = 1.0; coefs[3][1] = 2.0; coefs[3][2] = 1.0; coefs[3][3] = 4.0;
+
+  //now we'll load a Epetra_FECrsMatrix with data that matches the
+  //above-described finite-element problem.
+
   int indexBase = 0, ierr = 0;
+  int* myNodes = new int[4];
+  double* values = new double[9];
+  values[0] = 2.0;
+  values[1] = 1.0;
+  values[2] = 1.0;
+  values[3] = 1.0;
+  values[4] = 2.0;
+  values[5] = 1.0;
+  values[6] = 1.0;
+  values[7] = 1.0;
+  values[8] = 2.0;
+
+  int numMyNodes = 2;
 
   if (localProc == 0) {
-    int numMyNodes = 2;
-    int* myNodes = new int[numMyNodes];
     myNodes[0] = 0;
     myNodes[1] = 1;
+  }
+  else {
+    myNodes[0] = 2;
+    myNodes[1] = 3;
+  }
 
-    double* values = new double[9];
-    values[0] = 2.0;
-    values[1] = 1.0;
-    values[2] = 1.0;
-    values[3] = 1.0;
-    values[4] = 2.0;
-    values[5] = 1.0;
-    values[6] = 1.0;
-    values[7] = 1.0;
-    values[8] = 2.0;
+  Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
 
-    Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
+  numMyNodes = 3;
 
-    delete [] myNodes;
-    numMyNodes = 3;
-    myNodes = new int[numMyNodes];
+  if (localProc == 0) {
     myNodes[0] = 0;
     myNodes[1] = 1;
     myNodes[2] = 3;
-
-    int rowLengths = 3;
-    Epetra_FECrsMatrix A(Copy, Map, rowLengths);
-
-    EPETRA_TEST_ERR( A.InsertGlobalValues(numMyNodes, myNodes,
-			  numMyNodes, myNodes,
-			  values, Epetra_FECrsMatrix::ROW_MAJOR),ierr);
-
-    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
-
-    if (verbose) {
-    A.Print(cout);
-    }
-
-    delete [] myNodes;
-    delete [] values;
   }
   else {
-    int numMyNodes = 2;
-    int* myNodes = new int[numMyNodes];
-    myNodes[0] = 2;
-    myNodes[1] = 3;
-
-    double* values = new double[9];
-    values[0] = 2.0;
-    values[1] = 1.0;
-    values[2] = 1.0;
-    values[3] = 1.0;
-    values[4] = 2.0;
-    values[5] = 1.0;
-    values[6] = 1.0;
-    values[7] = 1.0;
-    values[8] = 2.0;
-
-    Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
-
-    int rowLengths = 3;
-    Epetra_FECrsMatrix A(Copy, Map, rowLengths);
-
-    delete [] myNodes;
-    numMyNodes = 3;
-    myNodes = new int[numMyNodes];
     myNodes[0] = 1;
     myNodes[1] = 2;
     myNodes[2] = 3;
+  }
 
-    EPETRA_TEST_ERR( A.InsertGlobalValues(numMyNodes, myNodes,
-			  numMyNodes, myNodes,
-			  values, Epetra_FECrsMatrix::ROW_MAJOR),ierr);
+  int rowLengths = 3;
+  Epetra_FECrsMatrix A(Copy, Map, rowLengths);
 
-    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
+  EPETRA_TEST_ERR( A.InsertGlobalValues(numMyNodes, myNodes,
+                                        numMyNodes, myNodes, values,
+                                        Epetra_FECrsMatrix::ROW_MAJOR),ierr);
+  delete [] myNodes;
+  delete [] values;
 
-    if (verbose) {
-    A.Print(cout);
-    }
+  EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
-    delete [] myNodes;
-    delete [] values;
+  //now the test is to check whether the FECrsMatrix data matches the
+  //epetra_test::matrix_data object...
+
+  bool the_same = matdata.compare_local_data(A);
+
+  if (!the_same) {
+    return(-1);
   }
 
   return(0);
@@ -189,23 +196,23 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 
   int indexBase = 0, ierr = 0;
 
+  double* values = new double[9];
+  values[0] = 2.0;
+  values[1] = 1.0;
+  values[2] = 1.0;
+  values[3] = 1.0;
+  values[4] = 2.0;
+  values[5] = 1.0;
+  values[6] = 1.0;
+  values[7] = 1.0;
+  values[8] = 2.0;
+
   if (localProc == 0) {
     int numMyNodes = 3;
     int* myNodes = new int[numMyNodes];
     myNodes[0] = 0;
     myNodes[1] = 1;
     myNodes[2] = 3;
-
-    double* values = new double[9];
-    values[0] = 2.0;
-    values[1] = 1.0;
-    values[2] = 1.0;
-    values[3] = 1.0;
-    values[4] = 2.0;
-    values[5] = 1.0;
-    values[6] = 1.0;
-    values[7] = 1.0;
-    values[8] = 2.0;
 
     Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
 
@@ -242,17 +249,6 @@ int Drumm2(const Epetra_Map& map, bool verbose)
     int numMyNodes = 1;
     int* myNodes = new int[numMyNodes];
     myNodes[0] = 2;
-
-    double* values = new double[9];
-    values[0] = 2.0;
-    values[1] = 1.0;
-    values[2] = 1.0;
-    values[3] = 1.0;
-    values[4] = 2.0;
-    values[5] = 1.0;
-    values[6] = 1.0;
-    values[7] = 1.0;
-    values[8] = 2.0;
 
     Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
 
@@ -595,49 +591,23 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
 
   Epetra_FECrsMatrix Acopy(*A);
 
-  Epetra_Vector x2(Acopy.RowMap()), y2(Acopy.RowMap());
-
-  x2.PutScalar(1.0); y2.PutScalar(0.0);
-
-  A->Multiply(false, x, y);
-
-  Acopy.Multiply(false, x2, y2);
-
-  double ynorm2, y2norm2;
-
-  y.Norm2(&ynorm2);
-  y2.Norm2(&y2norm2);
-  if (ynorm2 != y2norm2) {
-    cerr << "norm2(A*ones) != norm2(Acopy*ones)"<<endl;
-    return(-99);
-  }
-
   err = Acopy.GlobalAssemble();
   if (err < 0) {
     return(err);
   }
 
-  if (verbose) {
-    cout << "A:"<<endl<<*A << endl;
-    cout << "Acopy:"<<endl<<Acopy << endl;
+  bool the_same = epetra_test::compare_matrices(*A, Acopy);
+  if (!the_same) {
+    return(-1);
   }
 
   Epetra_FECrsMatrix Acopy2(Copy, A->RowMap(), A->ColMap(), 1);
 
   Acopy2 = Acopy;
 
-  Epetra_Vector x3(Acopy.RowMap()), y3(Acopy.RowMap());
-
-  x3.PutScalar(1.0); y3.PutScalar(0.0);
-
-  Acopy2.Multiply(false, x3, y3);
-
-  double y3norm2;
-  y3.Norm2(&y3norm2);
-
-  if (y3norm2 != y2norm2) {
-    cerr << "norm2(Acopy*ones) != norm2(Acopy2*ones)"<<endl;
-    return(-999);
+  the_same = epetra_test::compare_matrices(*A, Acopy);
+  if (!the_same) {
+    return(-1);
   }
 
   int len = 20;
@@ -675,78 +645,6 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
     if (values[lcid] != 4.0*numProcs) {
       cout << "ERROR: values["<<lcid<<"] ("<<values[lcid]<<") should be "
 	   <<4*numProcs<<endl;
-      return(-6);
-    }
-  }
-
-// now let's do the checks for Acopy...
-
-  if (map.MyGID(0)) {
-    EPETRA_CHK_ERR( Acopy.ExtractGlobalRowCopy(0, len, numIndices,
-                                            values, indices) );
-    if (numIndices != 4) {
-      return(-1);
-    }
-    if (indices[0] != 0) {
-      return(-2);
-    }
-
-    if (values[0] != 1.0*numProcs) {
-      cout << "ERROR: Acopy.values[0] ("<<values[0]<<") should be "<<numProcs<<endl;
-      return(-3);
-    }
-  }
-
-  if (map.MyGID(4)) {
-    EPETRA_CHK_ERR( Acopy.ExtractGlobalRowCopy(4, len, numIndices,
-                                            values, indices) );
-
-    if (numIndices != 9) {
-      return(-4);
-    }
-    int lcid = A->LCID(4);
-    if (lcid<0) {
-      return(-5);
-    }
-    if (values[lcid] != 4.0*numProcs) {
-      cout << "ERROR: Acopy.values["<<lcid<<"] ("<<values[lcid]<<") should be "
-           <<4*numProcs<<endl;
-      return(-6);
-    }
-  }
-
-// now let's do the checks for Acopy2...
-
-  if (map.MyGID(0)) {
-    EPETRA_CHK_ERR( Acopy2.ExtractGlobalRowCopy(0, len, numIndices,
-                                            values, indices) );
-    if (numIndices != 4) {
-      return(-1);
-    }
-    if (indices[0] != 0) {
-      return(-2);
-    }
-
-    if (values[0] != 1.0*numProcs) {
-      cout << "ERROR: Acopy2.values[0] ("<<values[0]<<") should be "<<numProcs<<endl;
-      return(-3);
-    }
-  }
-
-  if (map.MyGID(4)) {
-    EPETRA_CHK_ERR( Acopy2.ExtractGlobalRowCopy(4, len, numIndices,
-                                            values, indices) );
-
-    if (numIndices != 9) {
-      return(-4);
-    }
-    int lcid = A->LCID(4);
-    if (lcid<0) {
-      return(-5);
-    }
-    if (values[lcid] != 4.0*numProcs) {
-      cout << "ERROR: Acopy2.values["<<lcid<<"] ("<<values[lcid]<<") should be "
-           <<4*numProcs<<endl;
       return(-6);
     }
   }
