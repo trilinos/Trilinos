@@ -210,28 +210,33 @@ extern void new_norm(AZ_PRECOND *prec, double res[], double *result);
 #define MLAZ_no 0
 
 /* options */
-#define MLAZ_smoother          1
-#define MLAZ_max_levels         2
-#define MLAZ_num_smoother_steps     3
-#define MLAZ_output                 7
-#define MLAZ_coarsen_scheme         8
+#define MLAZ_smoother                       1
+#define MLAZ_max_levels                     2
+#define MLAZ_num_smoother_steps             3
+#define MLAZ_output                         7
+#define MLAZ_coarsen_scheme                 8
 #define MLAZ_metis_aggregation_property     9
 #define MLAZ_metis_aggregation_value       10
-#define MLAZ_max_coarse_size       11
-#define MLAZ_is_problem_symmetric  12
-#define MLAZ_pre_or_post_smoother  13
-#define MLAZ_num_pde_eqns          14
-#define MLAZ_smoother_damping      15
-#define MLAZ_amesos_solver         16
-#define MLAZ_max_procs             17
+#define MLAZ_max_coarse_size               11
+#define MLAZ_is_problem_symmetric          12
+#define MLAZ_pre_or_post_smoother          13
+#define MLAZ_num_pde_eqns                  14
+#define MLAZ_smoother_damping              15
+#define MLAZ_amesos_solver                 16
+#define MLAZ_max_procs                     17
+#define MLAZ_req_aggre_per_proc            18
+#define MLAZ_MLS_poly_order                19
+#define MLAZ_MLS_alpha                     20
+#define MLAZ_timing_detailed               21
   
 /*  MLAZ_smoother */
 #define MLAZ_Jacobi                 0 /* ML's Jacobi smoother */
 #define MLAZ_GaussSeidel            1 /* ML's GS smoother */
-#define MLAZ_Aztec                  2
-#define MLAZ_BlockGaussSeidel       3
-#define MLAZ_MLS                    4
-#define MLAZ_IFPACK                 5
+#define MLAZ_SymGaussSeidel         2
+#define MLAZ_MLS                    3
+#define MLAZ_Aztec                  4
+#define MLAZ_BlockGaussSeidel       5
+#define MLAZ_IFPACK                 7
 #define MLAZ_SuperLU                -1
 #define MLAZ_Amesos                 -2
   

@@ -2829,9 +2829,12 @@ typedef struct MLAZ_Settings
   int print_statistics;
   int output;
   double smoothP_damping_factor;
-  double damping_factor;
   double threshold;
+  int req_aggre_per_proc;
   int max_coarse_size;
+  int MLS_poly_order;
+  double MLS_alpha;
+  int timing_detailed;
   
 } MLAZ_Settings;
 
@@ -2919,6 +2922,9 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
 
   int          solver_options[AZ_OPTIONS_SIZE];
   double       solver_params[AZ_PARAMS_SIZE];
+
+  int          N_tot;
+  double     * fake_rez = NULL, tS;
   
   /* ------------------------ execution begins ---------------------------- */
 
@@ -2953,6 +2959,38 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
   MLAZ_Setup_MLandAggregate( N_update, num_PDE_eqns, proc_config, ml, ag);
 
   AZ_set_ML_preconditioner(&ML_Prec, Amat, ml, solver_options);
+
+  if( Settings.timing_detailed == 1 ) {
+    
+    tS = GetClock();
+
+    N_tot = N_update + Amat->data_org[AZ_N_external];
+    fake_rez = (double *) malloc( sizeof(double) * N_tot );
+    for( i=0 ; i<N_tot ; ++i ) fake_rez[i] = sin(1.0*i);
+    ML_precondition(fake_rez, options, proc_config, params, Amat, ML_Prec);
+    
+    tS = GetClock() -tS;
+    
+    if(  proc_config[AZ_node] == 0 ) {
+      printf("Timing : First application of ML_preconditioner  = %e (s)\n",
+	     tS);
+    }
+    
+    tS = GetClock();
+    
+    N_tot = N_update + Amat->data_org[AZ_N_external];
+    for( i=0 ; i<N_tot ; ++i ) fake_rez[i] = sin(1.0*i);
+    ML_precondition(fake_rez, options, proc_config, params, Amat, ML_Prec);
+    
+    tS = GetClock() -tS;
+    
+    if( proc_config[AZ_node] == 0 ) {
+      printf("Timing : Second application of ML_preconditioner = %e (s)\n",
+	     tS);
+    }
+    
+    free( (void *) fake_rez);
+  }
   
   /* solve with Aztec-2.1 */
   
@@ -2978,9 +3016,11 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   int          num_smoother_steps;
   
   double       omega;
-  double       t0, t1, t2, t3, t4, t5;
+  double       t0, t1, t2, t3, t4, t5, tS;
   int          amesos_solver, max_procs;
 
+  char label[80];
+  
   /* ------------------- execution begins --------------------------------- */
 
   /* check out whether Settings has been initialized or not.
@@ -3075,11 +3115,19 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   /* minor settings                                                         */
   /* ********************************************************************** */
 
-  /* some problems with this
-  ML_Aggregate_Set_DampingFactor( ag, Settings.damping_factor );
-  */
+  ML_Aggregate_Set_DampingFactor( ag, Settings.smoothP_damping_factor ); 
   ML_Aggregate_Set_MaxCoarseSize(ag, Settings.max_coarse_size );
   ML_Aggregate_Set_Threshold( ag, Settings.threshold );
+  ML_Aggregate_Set_ReqLocalCoarseSize( ml, ag, -1,
+  				       Settings.req_aggre_per_proc);
+
+  if( 5 < ML_Get_PrintLevel() && proc_config[AZ_node] == 0 ) {
+    printf("Damping Factor = %e\n", Settings.smoothP_damping_factor);
+    printf("Threshold for aggregation = %e\n", Settings.threshold);
+    printf("Max coarse size = %d\n", Settings.max_coarse_size);
+    printf("Req local coarse size (for ParMETIS) = %d\n",
+	   Settings.req_aggre_per_proc);
+  }
 
   /************************************************************************/
   /* Build hierarchy using smoothed aggregation.                          */
@@ -3104,30 +3152,42 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
     omega = Settings.Level[i].omega;
     pre_or_post_smoother = Settings.Level[i].pre_or_post_smoother;
-    
+
     switch( Settings.Level[i].smoother ) {
 
     case MLAZ_Jacobi:
+      sprintf( label, "Jacobi");
       ML_Gen_Smoother_Jacobi(ml, i, pre_or_post_smoother,
 			     num_smoother_steps, omega);
       break;
 
     case MLAZ_GaussSeidel:
+      sprintf( label, "Gauss-Seidel ");
       ML_Gen_Smoother_GaussSeidel(ml, i, pre_or_post_smoother,
 				  num_smoother_steps, omega);
       break;
       
+    case MLAZ_SymGaussSeidel:
+      sprintf( label, "Symmetric Gauss-Seidel");
+      ML_Gen_Smoother_SymGaussSeidel(ml, i, pre_or_post_smoother,
+				  num_smoother_steps, omega);
+      break;
+
+    case MLAZ_MLS:
+      sprintf( label, "MLS"); 
+      ML_Gen_Smoother_MLS(ml, i, pre_or_post_smoother,
+			  Settings.MLS_alpha,
+			  Settings.MLS_poly_order);
+      break;
+      
     case MLAZ_BlockGaussSeidel:
+      sprintf( label, "Block Gauss-Seidel");
       ML_Gen_Smoother_BlockGaussSeidel(ml, i, pre_or_post_smoother,
 				       num_smoother_steps, omega, num_PDE_eqns);
       break;
 
-    case MLAZ_MLS:
-      ML_Gen_Smoother_MLS(ml, i, pre_or_post_smoother, 30.,
-			  num_smoother_steps);
-      break;
-    
     case MLAZ_Aztec:
+      sprintf( label, "Aztec");
       ML_Gen_SmootherAztec(ml, i, Settings.Level[i].options,
 			   Settings.Level[i].params,
 			   proc_config, Settings.Level[i].status,
@@ -3135,6 +3195,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
       break;
 
     case MLAZ_IFPACK:
+      sprintf( label, "IFPACK");
       ML_Gen_Smoother_Ifpack(ml, i, pre_or_post_smoother, NULL, NULL);
       break;
 
@@ -3148,6 +3209,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
       exit( EXIT_FAILURE );
       
     } /* switch */
+
   } /* for */
   
   /* ********************************************************************** */
@@ -3203,13 +3265,13 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   t3 = AZ_second();
   
   ML_Gen_Solver(ml, ML_MGV, 0, Nlevels-1);
-
+  
   t4 = AZ_second();
 
   if( Settings.output > 0 && proc_config[AZ_node] == 0 ) {
-    printf("*ML* time for settings           : %e (s)\n", t1-t0  + t3-t2 );
-    printf("*ML* time to build AMG levels    : %e (s)\n", t2-t1);
-    printf("*ML* time to build AMG hierarchy : %e (s)\n", t4-t3 );
+    printf("Timing : Settings                = %e (s)\n", t1-t0  + t3-t2 );
+    printf("Timing : Building AMG levels     = %e (s)\n", t2-t1);
+    printf("Timing : Building AMG hierarchy  = %e (s)\n", t4-t3 );
   }
   
   return 0;
@@ -3234,9 +3296,13 @@ void MLAZ_Defaults( void )
   MLAZ_Set_Option(MLAZ_max_coarse_size, 30);
   MLAZ_Set_Option(MLAZ_is_problem_symmetric, MLAZ_no);
   MLAZ_Set_Option(MLAZ_output, 10);
-
+  MLAZ_Set_Option(MLAZ_req_aggre_per_proc, 128);
+  MLAZ_Set_Option(MLAZ_MLS_poly_order, 3);
+  MLAZ_Set_Option(MLAZ_timing_detailed, 0);
+  
   MLAZ_Set_Param(MLAZ_smoothP_damping_factor, 0.0);
   MLAZ_Set_Param(MLAZ_threshold, 0.0);
+  MLAZ_Set_Param(MLAZ_MLS_alpha, 27.0);
 
   /* set all levels with the same values */
   MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_smoother, MLAZ_Aztec);
@@ -3276,11 +3342,22 @@ void MLAZ_Set_Option(int option, int value)
     Settings.is_problem_symmetric = value;
     break;
 
-
   case MLAZ_max_coarse_size:
     Settings.max_coarse_size = value;
     break;
 
+  case MLAZ_req_aggre_per_proc:
+    Settings.req_aggre_per_proc = value;
+    break;
+
+  case MLAZ_MLS_poly_order:
+    Settings.MLS_poly_order = value;
+    break;
+
+  case MLAZ_timing_detailed:
+    Settings.timing_detailed = value;
+    break;
+    
   default:
     fprintf( stderr,
 	     "*ERR*ML* input option not valid\n" );
@@ -3302,7 +3379,11 @@ void MLAZ_Set_Param(int option ,double value)
     Settings.threshold = value;
     break;
     
- default:
+  case MLAZ_MLS_alpha:
+    Settings.MLS_alpha = value;
+    break;
+
+  default:
     fprintf( stderr,
 	     "*ERR*ML* input param not valid\n" );
   }
