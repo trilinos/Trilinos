@@ -294,7 +294,7 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
   CXXFLAGS="-I${tac_with_amesos_sludincdir} ${CXXFLAGS}"
 
     SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_sludlib} ${LIBS}"
+    LIBS="${tac_with_amesos_sludlib} ${MPI_LIBS} ${LIBS}"
      AC_TRY_LINK_FUNC(SuperLU_timer_,,
       AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"

@@ -6449,7 +6449,7 @@ fi
   CXXFLAGS="-I${tac_with_amesos_sludincdir} ${CXXFLAGS}"
 
     SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_sludlib} ${LIBS}"
+    LIBS="${tac_with_amesos_sludlib} ${MPI_LIBS} ${LIBS}"
      cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
