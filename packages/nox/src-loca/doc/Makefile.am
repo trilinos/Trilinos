@@ -42,11 +42,8 @@ MAINTAINERCLEANFILES = Makefile.in
 
 if BUILD_LIBLOCA
 
-dox: doxy
+dox: 
 	cd $(srcdir)/loca_v1.0_manual/src_latex; $(MAKE) -f classicMakefile
-
-doxy: Doxyfile
-	cp Doxyfile $(srcdir); cd $(srcdir); doxygen
 
 else
 

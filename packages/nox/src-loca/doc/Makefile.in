@@ -133,9 +133,9 @@ MAINTAINERCLEANFILES = Makefile.in
 subdir = src-loca/doc
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
-CONFIG_CLEAN_FILES = Doxyfile
+CONFIG_CLEAN_FILES =
 DIST_SOURCES =
-DIST_COMMON = Doxyfile.in Makefile.am Makefile.in
+DIST_COMMON = Makefile.am Makefile.in
 all: all-am
 
 .SUFFIXES:
@@ -144,8 +144,6 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configu
 	  $(AUTOMAKE) --foreign  src-loca/doc/Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
-Doxyfile: $(top_builddir)/config.status Doxyfile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:
 tags: TAGS
 TAGS:
@@ -252,11 +250,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic uninstall uninstall-am uninstall-info-am
 
 
-@BUILD_LIBLOCA_TRUE@dox: doxy
+@BUILD_LIBLOCA_TRUE@dox: 
 @BUILD_LIBLOCA_TRUE@	cd $(srcdir)/loca_v1.0_manual/src_latex; $(MAKE) -f classicMakefile
-
-@BUILD_LIBLOCA_TRUE@doxy: Doxyfile
-@BUILD_LIBLOCA_TRUE@	cp Doxyfile $(srcdir); cd $(srcdir); doxygen
 
 @BUILD_LIBLOCA_FALSE@dox:
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
