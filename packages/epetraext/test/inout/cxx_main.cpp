@@ -57,14 +57,14 @@ int main(int argc, char *argv[]) {
 
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm (MPI_COMM_WORLD);
+  Epetra_MpiComm comm (MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm Comm;
+  Epetra_SerialComm comm;
 #endif
 
-  cout << Comm << endl;
+  cout << comm << endl;
 
-  int MyPID = Comm.MyPID();
+  int MyPID = comm.MyPID();
 
   bool verbose = true; 
   if (MyPID==0) verbose = true;
@@ -81,69 +81,38 @@ int main(int argc, char *argv[]) {
   //if (MyPID==0) cin >> tmp;
   //Comm.Barrier();
 
-  Epetra_Map * readMap;
-  Epetra_CrsMatrix * readA; 
-  Epetra_Vector * readx; 
-  Epetra_Vector * readb;
-  Epetra_Vector * readxexact;
+  Epetra_Map * map;
+  Epetra_CrsMatrix * A; 
+  Epetra_Vector * x; 
+  Epetra_Vector * b;
+  Epetra_Vector * xexact;
+
+  int nx = 20*comm.NumProc();
+  int ny = 30;
+  int npoints = 7;
+  int xoff[] = {-1,  0,  1, -1,  0,  1,  0};
+  int yoff[] = {-1, -1, -1,  0,  0,  0,  1};
+
    
   // Call routine to read in HB problem
-  Trilinos_Util_ReadHb2Epetra(argv[1], Comm, readMap, readA, readx, readb, readxexact);
+  Trilinos_Util_GenerateCrsProblem(nx, ny, npoints, xoff, yoff, comm, map, A, x, b, xexact);
 
-  // Create uniform distributed map
-  Epetra_Map map(readMap->NumGlobalElements(), 0, Comm);
-
-  // Create Exporter to distribute read-in matrix and vectors
-
-  Epetra_Export exporter(*readMap, map);
-  Epetra_CrsMatrix A(Copy, map, 0);
-  Epetra_Vector x(map);
-  Epetra_Vector b(map);
-  Epetra_Vector xexact(map);
-
-  Epetra_Time FillTimer(Comm);
-  x.Export(*readx, exporter, Add);
-  b.Export(*readb, exporter, Add);
-  xexact.Export(*readxexact, exporter, Add);
-  Comm.Barrier();
-  double vectorRedistributeTime = FillTimer.ElapsedTime();
-  A.Export(*readA, exporter, Add);
-  Comm.Barrier();
-  double matrixRedistributeTime = FillTimer.ElapsedTime() - vectorRedistributeTime;
-  assert(A.TransformToLocal()==0);    
-  Comm.Barrier();
-  double fillCompleteTime = FillTimer.ElapsedTime() - matrixRedistributeTime;
-  if (Comm.MyPID()==0)	{
-    cout << "\n\n****************************************************" << endl;
-    cout << "\n Vector redistribute  time (sec) = " << vectorRedistributeTime<< endl;
-    cout << "    Matrix redistribute time (sec) = " << matrixRedistributeTime << endl;
-    cout << "    Transform to Local  time (sec) = " << fillCompleteTime << endl<< endl;
-  }
-  Epetra_Vector tmp1(*readMap);
-  Epetra_Vector tmp2(map);
-  readA->Multiply(false, *readxexact, tmp1);
-
-  A.Multiply(false, xexact, tmp2);
+  Epetra_Vector tmp1(*map);
+  A->Multiply(false, *xexact, tmp1);
+  tmp1.Update(1.0, *b, -1.0);
   double residual;
   tmp1.Norm2(&residual);
-  if (verbose) cout << "Norm of Ax from file            = " << residual << endl;
-  tmp2.Norm2(&residual);
-  if (verbose) cout << "Norm of Ax after redistribution = " << residual << endl << endl << endl;
+  if (verbose) cout << "Norm of difference between compute Ax and Ax from file            = " << residual << endl;
+  comm.Barrier();
 
-  //cout << "A from file = " << *readA << endl << endl << endl;
-
-  //cout << "A after dist = " << A << endl << endl << endl;
-
-  delete readA;
-  delete readx;
-  delete readb;
-  delete readxexact;
-  delete readMap;
-
-  Comm.Barrier();
-
-  EpetraExt::RowMatrixToMatrixMarketFile("test.mm", "test matrix", "This is a test matrix", A);
+  EpetraExt::RowMatrixToMatrixMarketFile("test.mm", *A, "test matrix", "This is a test matrix");
 				       
+  delete A;
+  delete x;
+  delete b;
+  delete xexact;
+  delete map;
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif

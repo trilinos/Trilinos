@@ -49,7 +49,7 @@ int VectorToMatrixMarketFile( const char *filename, const Epetra_Vector & A,
 				 const char * matrixName,
 				 const char *matrixDescription, 
 				 bool writeHeader) {
-  return(MultiVectorToMatrixMarketFiles( filename, A, matrixName, MatrixDescription, writeHeader));
+  return(MultiVectorToMatrixMarketFile( filename, A, matrixName, matrixDescription, writeHeader));
 }
 
 int VectorToHandle(FILE * handle, const Epetra_Vector & A) {

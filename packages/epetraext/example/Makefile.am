@@ -1,4 +1,4 @@
-# @HEADER
+#@HEADER
 # ************************************************************************
 # 
 #            Trilinos: An Object-Oriented Solver Framework
@@ -24,11 +24,10 @@
 # Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 # 
 # ************************************************************************
-# @HEADER
+#@HEADER
 
-## #######################################################################
-## Subdirectories to be make'd recursively
-## #######################################################################
-SUBDIRS = transform inout
+if BUILD_TRANSFORM_EXAMPLES
 
+SUBDIRS = inout
 
+endif

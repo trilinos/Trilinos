@@ -1,4 +1,4 @@
-# @HEADER
+#@HEADER
 # ************************************************************************
 # 
 #            Trilinos: An Object-Oriented Solver Framework
@@ -24,11 +24,30 @@
 # Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 # 
 # ************************************************************************
-# @HEADER
+#@HEADER
 
-## #######################################################################
-## Subdirectories to be make'd recursively
-## #######################################################################
-SUBDIRS = transform inout
+EXEEXT = .exe
 
+noinst_PROGRAMS = inout_test
+
+inout_test_SOURCES = \
+  $(srcdir)/cxx_main.cpp \
+  $(top_srcdir)/test/epetra_test_err.h
+
+inout_test_DEPENDENCIES = \
+  $(top_builddir)/src/transform/libepetraext_inout.a \
+  $(top_builddir)/../epetra/src/libepetra.a
+
+inout_test_CXXFLAGS = -I$(top_srcdir)/src/inout \
+                            -I$(top_builddir)/src \
+                            -I$(top_srcdir)/../epetra/src \
+                            -I$(top_builddir)/../epetra/src
+
+inout_test_LDADD = \
+  $(top_builddir)/src/transform/libepetraext_inout.a \
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../epetra/src/libtriutils.a \
+  $(BLAS_LIBS) \
+  $(LIBS) \
+  $(FLIBS)
 

@@ -62,6 +62,8 @@ CORE = \
 	$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp \
 	$(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp \
 	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp \
+	$(srcdir)/Trilinos_Util_GenerateCrsProblem.cpp \
+	$(srcdir)/Trilinos_Util_GenerateVbrProblem.cpp \
 	$(srcdir)/Trilinos_Util_ShellOptions.cpp
 
 

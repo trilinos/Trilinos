@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
 
   Comm.Barrier();
 
-  EpetraExt::RowMatrixToMatrixMarketFile("test.mm", "test matrix", "This is a test matrix", A);
+  EpetraExt::RowMatrixToMatrixMarketFile("test.mm", A, "test matrix", "This is a test matrix");
 				       
 #ifdef EPETRA_MPI
   MPI_Finalize() ;

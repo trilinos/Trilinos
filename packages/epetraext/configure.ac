@@ -151,8 +151,19 @@ AC_DEFUN(EPETRAEXT_SUBPKG,
   [SUBPKG_$1_TESTS=no]
   )
 
+  AC_ARG_ENABLE(epetraext-$1-examples,
+  [AC_HELP_STRING([--enable-epetraext-$1-examples],[compile $1 examples])],
+  [SUBPKG_$1_EXAMPLES=$enableval],
+  [SUBPKG_$1_EXAMPLES=no]
+  )
+
   #Cannot build tests if associated sub-package not built
   if test ${SUBPKG_$1_TESTS} = yes; then
+    SUBPKG_$1=yes;
+  fi
+
+  #Cannot build examples if associated sub-package not built
+  if test ${SUBPKG_$1_EXAMPLES} = yes; then
     SUBPKG_$1=yes;
   fi
 
@@ -161,11 +172,20 @@ AC_DEFUN(EPETRAEXT_SUBPKG,
 
   AC_MSG_CHECKING(whether the $1 tests should be built)
   AC_MSG_RESULT(${SUBPKG_$1_TESTS})
+
+  AC_MSG_CHECKING(whether the $1 examples should be built)
+  AC_MSG_RESULT(${SUBPKG_$1_EXAMPLES})
 ])
 
 EPETRAEXT_SUBPKG(transform,yes)
 AM_CONDITIONAL(BUILD_TRANSFORM, test X${SUBPKG_transform} = Xyes)
 AM_CONDITIONAL(BUILD_TRANSFORM_TESTS, test X${SUBPKG_transform_TESTS} = Xyes)
+AM_CONDITIONAL(BUILD_TRANSFORM_EXAMPLES, test X${SUBPKG_transform_EXAMPLES} = Xyes)
+
+EPETRAEXT_SUBPKG(inout,yes)
+AM_CONDITIONAL(BUILD_INOUT, test X${SUBPKG_inout} = Xyes)
+AM_CONDITIONAL(BUILD_INOUT, test X${SUBPKG_inout_TESTS} = Xyes)
+AM_CONDITIONAL(BUILD_INOUT_EXAMPLES, test X${SUBPKG_inout_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
 # Special check for case of running on TFLOP
@@ -345,6 +365,7 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		src/transform/Makefile
+		src/inout/Makefile
                 test/Makefile
                 test/BTF/Makefile
                 test/Composite/Makefile
@@ -356,6 +377,7 @@ AC_CONFIG_FILES([
                 test/SymmRCM/Makefile
                 test/View/Makefile
                 test/Zoltan/Makefile
+                test/inout/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
                 test/scripts/daily/serial/Makefile

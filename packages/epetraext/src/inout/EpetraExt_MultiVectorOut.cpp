@@ -28,6 +28,7 @@
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_mmio.h"
 #include "Epetra_Comm.h"
+#include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
@@ -84,13 +85,16 @@ int MultiVectorToMatrixMarketFile( const char *filename, const Epetra_MultiVecto
 
 int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A) {
 
-  Epetra_Map map = A.Map();
-  const Epetra_Comm & comm = map.Comm();
+  Epetra_BlockMap bmap = A.Map();
+  const Epetra_Comm & comm = bmap.Comm();
   int numProc = comm.NumProc();
 
   if (numProc==1)
     writeMultiVector(handle, A);
   else {
+
+    Epetra_Map map(-1, bmap.NumMyPoints(), 0, comm);
+    Epetra_MultiVector A1(View, map, A.Pointers(), A.NumVectors()); // Create a veiw of this multivector using a map (instead of block map)
     int numRows = map.NumMyElements();
     
     Epetra_Map allGidsMap(-1, numRows, 0,comm);
@@ -127,8 +131,8 @@ int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A) {
       // The following import map will be non-trivial only on PE 0.
       Epetra_Map importMap(-1, importGids.MyLength(), importGids.Values(), 0, comm);
       Epetra_Import importer(importMap, map);
-      Epetra_MultiVector importA(importMap, A.NumVectors());
-      if (importA.Import(A, importer, Insert)) return(-1); 
+      Epetra_MultiVector importA(importMap, A1.NumVectors());
+      if (importA.Import(A1, importer, Insert)) return(-1); 
 
       // Finally we are ready to write this strip of the matrix to ostream
       if (writeMultiVector(handle, importA)) return(-1);
@@ -143,7 +147,7 @@ int writeMultiVector(FILE * handle, const Epetra_MultiVector & A) {
   int ierr = 0;
   int length = A.GlobalLength();
   int numVectors = A.NumVectors();
-  const Epetra_Comm & comm = A.rowMap.Comm();
+  const Epetra_Comm & comm = A.Map().Comm();
   if (comm.MyPID()!=0) {
     if (A.MyLength()!=0) ierr = -1;
   }
