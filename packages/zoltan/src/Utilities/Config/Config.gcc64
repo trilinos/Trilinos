@@ -29,7 +29,7 @@ INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/proj/zoltan/arch/solaris-m64/include \
 			  -I/Net/proj/zoltan/mpich/mpich-1.2.4/include
 DBG_FLAGS		= -g 
-OPT_FLAGS		= -O3
+OPT_FLAGS		= -O
 CFLAGS 			= $(OPT_FLAGS)
 
 F90			= f90
@@ -44,8 +44,8 @@ MPI_LIB			= -lmpich -lpmpich -lsocket -lnsl -laio -lgcc -lrt
 MPI_LIBPATH		= -L/Net/proj/zoltan/arch/solaris-m64/lib
 #                  -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.6/2.8.1
 
-PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris-m64/lib/ParMETIS3
-PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
+PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris-m64/lib/ParMETIS2
+PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS2
 
 # 64-bit versions of jostle not available.
 #JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
