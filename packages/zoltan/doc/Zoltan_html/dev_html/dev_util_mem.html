@@ -5,7 +5,7 @@
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1376">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title> Zoltan Developer's Guide:  Memory Management Package</title>
+   <title> Zoltan Developer's Guide:  Memory Management Utilities</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -22,20 +22,50 @@
 <body bgcolor="#FFFFFF">
 
 <div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
-|&nbsp; <a href="dev_util_params.html">Next</a>&nbsp; |&nbsp; <a href="dev_util.html">Previous</a></i></b></div>
+|&nbsp; <a href="dev_util_comm.html">Next</a>&nbsp; |&nbsp; <a href="dev_util.html">Previous</a></i></b></div>
 
 <h2>
-<a NAME="Memory"></a>Memory Management Package</h2>
-Several memory allocation and deallocation routines are provided in the
-load-balancing library. They are defined in the files <i>Utilities/Memory</i>;
-their prototypes for inclusion in other files are in <i>Utilities/Memory/mem_const.h</i>.
-The use of these routines is not mandatory in algorithm development, but
-the routines provide helpful error-checking and <a href="#Debug_Memory">debugging
-capabilities</a>, and the use of them is strongly suggested.&nbsp; For
-allocation and deallocation of memory that is returned by an algorithm
-to the application, see <b><a href="dev_add_memory.html#LB_Special_Malloc">LB_Special_Malloc</a></b>
-and <b><a href="dev_add_memory.html#LB_Special_Free">LB_Special_Free</a></b>.
-<p>The routines included in the utility are listed below.
+<a NAME="Memory"></a>Memory Management Utilities</h2>
+Several memory allocation and deallocation routines are provided in this package.
+The routines provide helpful error-checking and <a href="#Debug_Memory">debugging
+capabilities</a>.
+<p>
+<table>
+<tr VALIGN=TOP>
+<td>
+<b>Source code location:</b>
+</td>
+<td>
+<i>Utilities/Memory</i>
+</td>
+</tr>
+<tr VALIGN=TOP>
+<td>
+<b>Function prototypes file:</b>
+</td>
+<td>
+<i>Utilities/Memory/mem_const.h</i>
+</td>
+</tr>
+<tr VALIGN=TOP>
+<td>
+<b>Library name:</b>
+</td>
+<td>
+libzoltan_mem.a
+</td>
+</tr>
+<tr VALIGN=TOP>
+<td>
+<b>Other libraries used by this library:</b>
+</td>
+<td>
+libmpi.a.
+</td>
+</tr>
+<tr VALIGN=TOP>
+<td COLSPAN="2">
+<b>Routines:</b>
 <blockquote><b><a href="#LB_Array_Alloc">LB_Array_Alloc</a></b>:&nbsp;
 Allocates arrays of dimension <i>n</i>, <i>n</i>=0,1,...,4
 <br><b><a href="#LB_Malloc">LB_Malloc</a></b>:&nbsp; Wrapper for system
@@ -43,13 +73,45 @@ malloc.
 <br><b><a href="#LB_Realloc">LB_Realloc</a></b>:&nbsp; Wrapper for system
 realloc.
 <br><b><a href="#LB_Free">LB_Free</a></b>:&nbsp; Frees memory and sets
-the pointer to NULL.</blockquote>
+the pointer to NULL.
+<br><b><a href="#LB_Set_Memory_Debug">LB_Set_Memory_Debug</a></b>:&nbsp; Sets
+the debug level used by the memory utilities; see 
+the <a href="#Debug_Memory">description</a> below.
+<br><b><a href="#LB_Memory_Stats">LB_Memory_Stats</a></b>:&nbsp; Prints 
+<a href="#Debug_Memory">memory debugging</a> statistics, such as memory
+leak information.
+</blockquote>
+</td>
+</tr>
+<tr VALIGN=TOP>
+<td COLSPAN="2">
+<b>Use in Zoltan:</b>
+<blockquote>
+The memory management utility routines are used extensively in Zoltan and
+in some individual algorithms.  Algorithm developers can use these routines
+directly for most memory management, taking advantage of the error checking
+and <a href="#Debug_Memory">debugging capabilities</a> of the library.  
+Memory that is returned by Zoltan to
+the application, however, must be allocated and deallocated through calls to 
+<b><a href="dev_add_memory.html#LB_Special_Malloc">LB_Special_Malloc</a></b>
+and <b><a href="dev_add_memory.html#LB_Special_Free">LB_Special_Free</a></b>.
+<p>
+Rather than call <a href="#LB_Set_Memory_Debug"><b>LB_Set_Memory_Debug</b></a>
+directly, applications using Zoltan can set the 
+<a href="#Debug_Memory"><b>DEBUG_MEMORY</b></a> parameter 
+used by this utility through calls to 
+<a href="../ug_html/ug_interface_lb.html#LB_Set_Param"><b>LB_Set_Param</b></a>.
+</blockquote>
+</td>
+</tr>
+</table>
 
+<hr>
 <hr><a NAME="LB_Array_Alloc"></a>double *<b>LB_Array_Alloc</b>(char *<i>
 file</i>, int <i>line</i>, int <i>n</i>, int <i>d1</i>, int <i>d2</i>,
 ..., int <i>dn</i>, int <i>size</i>);&nbsp;
 <hr>
-<p>The <b>LB_Array_Alloc</b> routine dynamically allocates an array of
+The <b>LB_Array_Alloc</b> routine dynamically allocates an array of
 dimension <i>n</i>, <i>n </i>= 0, 1, ..., 4 with size (<i>d1</i> x <i>d2</i>
 x ... x <i>dn</i>). It is intended to be used for 2, 3 and 4 dimensional
 arrays - <b>LB_Malloc</b> should be used for the simpler cases. The memory
@@ -138,7 +200,7 @@ or NULL if the allocation fails.</td>
 <hr><a NAME="LB_Malloc"></a>double *<b>LB_Malloc</b>(int <i>n</i>, char
 *<i> file</i> , int <i>line</i>);&nbsp;
 <hr>
-<p>The <b>LB_Malloc</b> function is a wrapper around the standard C malloc
+The <b>LB_Malloc</b> function is a wrapper around the standard C malloc
 routine. It allocates a block of memory of size <i>n</i> bytes. The principle
 advantage of using the wrapper is that it allows you to track memory leaks
 via the DEBUG_MEMORY parameter.
@@ -220,7 +282,7 @@ returned if <i>n</i> = 0 or the routine is unsuccessful.</td>
 <hr><a NAME="LB_Realloc"></a>double *<b>LB_Realloc</b>(void *<i>ptr</i>,
 int <i>n</i>, char *<i>file</i>, int <i>line</i>);&nbsp;
 <hr>
-<p>The <b>LB_Realloc</b> function is a "safe" version of realloc. It changes
+The <b>LB_Realloc</b> function is a "safe" version of realloc. It changes
 the size of the object pointed to by <i>ptr</i> to <i>n</i> bytes. The
 contents of <i>ptr</i> are unchanged up to a minimum of the old and new
 sizes. Error tests ensuring that <i>n</i> is a positive number and that
@@ -312,7 +374,7 @@ routine is unsuccessful, NULL is returned and *<i>ptr</i> is unchanged.</td>
 <hr><a NAME="LB_Free"></a>void <b>LB_Free</b>(void **<i>ptr</i>, char *<i>
 file</i> , int <i>line</i>);&nbsp;
 <hr>
-<p>The <b>LB_Free</b> function calls the system's "free" function for the
+The <b>LB_Free</b> function calls the system's "free" function for the
 memory pointed to by <i>*ptr</i>. Note that the argument to this routine
 has an extra level of indirection when compared to the standard C "free"
 call. This allows the pointer being freed to be set to NULL, which can
@@ -367,27 +429,90 @@ is NULL.</td>
 <hr><a NAME="Debug_Memory"></a>
 <h3>
 <b>Debugging Memory Errors</b></h3>
-The principle reason that Zoltan has wrappers around the system memory
-routines is to facilitate debugging of memory problems. These capabilities
-are supported by the <b>DEBUG_MEMORY</b> parameter whose value can be altered
-via the <a href="../ug_html/ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>
-routine. Valid values for this integer parameter range from 0 through 3.
-A value of 0 turns off all debugging. With a value of 1 (the default),
-the number of calls to <b>LB_Malloc</b> and the number of calls to <b>LB_Free</b>
-are tallied, and can be printed by a call to <b>LB_Memory_Stats</b> (type
-void, no arguments). If <b>DEBUG_MEMORY</b> is 2, Zoltan keeps a list of
-all calls to <b>LB_Malloc</b> which have not yet been freed. This list
-is printed by a call to <b>LB_Memory_Stats</b>. This is a useful tool for
-detecting memory leaks. Also, any calls to <b>LB_Free</b> with addresses
-not in this list trigger warning messages. (Note that allocations which
-occurred prior to setting <b>DEBUG_MEMORY</b> to 2 will not be in this
-list and so can generate spurious warnings.) If additional information
-is needed, a value for <b>DEBUG_MEMORY</b> of 3 also prints information
-about each allocation as it happens. We have found values of 1 and 2 to
+One important reason to use the memory-management utilities' wrappers around the system memory
+routines is to facilitate debugging of memory problems.&nbsp  Various amounts of information can
+about memory allocation and deallocation is stored, depending on the debug level set 
+through a call to <a href="#LB_Set_Memory_Debug"><b>LB_Set_Memory_Debug</b></a>.&nbsp This information is printed either when an error or
+warning occurs, or when <a href="#LB_Memory_Stats"><b>LB_Memory_Stats</b></a> is called.&nbsp
+We have found values of one and two to
 be very helpful in our development efforts.&nbsp;
+<p>
+
+<hr><a NAME="LB_Set_Memory_Debug"></a>void <b>LB_Set_Memory_Debug</b>(int <i>new_level</i>);
+<hr>
+The <b>LB_Set_Memory_Debug</b> function sets the level of memory debugging to
+be used.  
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>new_level</i></td>
+
+<td>Integer indicating the amount of debugging to use.&nbsp Valid options include:
+<blockquote>
+0 -- No debugging.
+<br>
+1 -- The number of calls to <a href="#LB_Malloc"><b>LB_Malloc</b></a> and 
+<a href="#LB_Free"><b>LB_Free</b></a>
+are tallied, and can be printed by a call to <a href="#LB_Memory_Stats"><b>LB_Memory_Stats</b></a>.&nbsp
+<br>
+2 -- A list of
+all calls to <a href="#LB_Malloc"><b>LB_Malloc</b></a> which have 
+not yet been freed is kept.&nbspThis list
+is printed by <a href="#LB_Memory_Stats"><b>LB_Memory_Stats</b></a> 
+(useful for detecting memory leaks).&nbsp
+Any calls to <a href="#LB_Free"><b>LB_Free</b></a> with addresses
+not in this list trigger warning messages.&nbsp(Note that allocations which
+occurred prior to setting the debug level to 2 will not be in this
+list and thus can generate spurious warnings.)
+<br>
+3 -- Information about each allocation is printed as it happens.&nbsp
+</blockquote>
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>Memory debug level is 1.</td>
+</tr>
+</table>
+<p>
+
+<hr><a NAME="LB_Memory_Stats"></a>void <b>LB_Memory_Stats</b>();
+<hr>
+The <b>LB_Memory_Stats</b> function prints information about memory allocation
+and deallocation.&nbsp; The amount of information printed is determined by the
+debug level set through a call to <a href="#LB_Set_Memory_Debug"><b>LB_Set_Memory_Debug</b></a>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>None.</td>
+</tr>
+</table>
+
 <hr WIDTH="100%">
-<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_util_params.html">Next:&nbsp;
-Parameter Setting Routines</a>&nbsp; |&nbsp; <a href="dev_util.html">Previous:&nbsp;
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_util_comm.html">Next:&nbsp;
+Unstructured Communication Utilities</a>&nbsp; |&nbsp; <a href="dev_util.html">Previous:&nbsp;
 Utilities</a>]
 </body>
 </html>

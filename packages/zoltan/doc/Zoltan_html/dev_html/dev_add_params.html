@@ -27,8 +27,8 @@
 
 <h2>
 <a NAME="new_parameters"></a>Adding new parameters</h2>
-All parameters in Zoltan should be set and accessed through the <a href="dev_util_params.html">parameter
-setting utilities</a>. To add a new parameter to an existing method, you
+All parameters in Zoltan should be set and accessed through the <a href="dev_services_params.html">parameter
+setting routines</a>. To add a new parameter to an existing method, you
 need to do the following:
 <ul>
 <li>
@@ -41,8 +41,8 @@ NULL), and its type.</li>
 
 <li>
 In the method source code, bind the parameter to a local variable through
-<b><a href="dev_util_params.html#LB_Bind_Param">LB_Bind_Param</a></b>.
-Make sure you do this before <b><a href="dev_util_params.html#LB_Assign_Param_Vals">LB_Assign_Param_Vals
+<b><a href="dev_services_params.html#LB_Bind_Param">LB_Bind_Param</a></b>.
+Make sure you do this before <b><a href="dev_services_params.html#LB_Assign_Param_Vals">LB_Assign_Param_Vals
 </a></b>is
 invoked.</li>
 
@@ -60,9 +60,9 @@ string and value is a valid parameter pair for your method. See <b>LB_Set_RCB_Pa
 in <i>rcb/rcb.c</i> for an example.</li>
 
 <li>
-Let you method access the parameters via <b><a href="dev_util_params.html#LB_Bind_Param">LB_Bind_Param
+Let you method access the parameters via <b><a href="dev_services_params.html#LB_Bind_Param">LB_Bind_Param
 </a></b>and
-<b><a href="dev_util_params.html#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>.</li>
+<b><a href="dev_services_params.html#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>.</li>
 
 <li>
 Change the parameter function array in <i>params/set_params.c</i> to include

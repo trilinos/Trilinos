@@ -18,15 +18,15 @@
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1376">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title> Zoltan Developer's Guide:  Timing Utilities</title>
+   <title> Zoltan Developer's Guide:  Timing Routines</title>
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_util_debug.html">Next</a>&nbsp; |&nbsp; <a href="dev_util_hash.html">Previous</a></i></b></div>
+<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_services_debug.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_hash.html">Previous</a></i></b></div>
 
 
 <h2>
-<a NAME="Timing"></a>Timing Utilities</h2>
+<a NAME="Timing"></a>Timing Routines</h2>
 To assist in performance measurements and profiling, several timing routines
 are included in the Zoltan library. The main timer function, <b>LB_Time,</b>
 provides access to at least two portable timers: one CPU clock and one
@@ -36,7 +36,7 @@ wall clock.
 seconds) after some fixed point in time.
 <br><b><a href="#LB_Time_Resolution">LB_Time_Resolution</a></b>:&nbsp;
 The resolution of the current clock (timer).</blockquote>
-One can select which timer to use via <b><a href="dev_util_params.html#LB_Set_Param">LB_Set_Param</a></b>.
+One can select which timer to use via <b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.
 Currently, the following values for <i>TIMER</i> are supported:
 <blockquote><i>wall </i>: wall-clock time. On most systems, this timer
 calls MPI_Wtime.
@@ -133,8 +133,8 @@ zero is returned.</td>
 <br>LB_Print_Stats(lb, t2-t0, "Total time :");</ul>
 
 <hr WIDTH="100%">
-<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_util_debug.html">Next:&nbsp;
-Debugging Utilities</a> |&nbsp; <a href="dev_util_hash.html">Previous:&nbsp;
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_services_debug.html">Next:&nbsp;
+Debugging Services</a> |&nbsp; <a href="dev_services_hash.html">Previous:&nbsp;
 Hash Function</a>]
 </body>
 </html>

@@ -115,7 +115,7 @@ for different LB structures to have different parameter settings.</td>
 <td>The degree of load balance which is considered acceptable. A value
 of 1.1 implies a 10% imbalance is acceptable, i.e. that the maximum load
 over the average should be no more than 1.1. Set via a call to
-<b><a href="dev_util_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -123,7 +123,7 @@ over the average should be no more than 1.1. Set via a call to
 
 <td>Flag indicating whether algorithms used should be forced to be deterministic;
 used to obtain completely reproducible results.&nbsp; Set via a call to
-<b><a href="dev_util_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
 </tr>
 
 <tr>
@@ -131,7 +131,7 @@ used to obtain completely reproducible results.&nbsp; Set via a call to
 
 <td>Number of weights per object to be used in load balancing, usually
 0 (no weights) or 1.&nbsp; Set via a call to
-<b><a href="dev_util_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
 </tr>
 
 <tr>
@@ -139,7 +139,7 @@ used to obtain completely reproducible results.&nbsp; Set via a call to
 
 <td>For graph algorithms, number of weights per edge to be used in load
 balancing, usually 0 (no weights) or 1.&nbsp; Set via a call to
-<b><a href="dev_util_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
 </tr>
 
 <tr>
@@ -515,7 +515,7 @@ in in the following <a href="#Migrate_Fields">table</a>.
 auto-migration for the application. If true, the load-balancing library
 calls <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
 to move objects to their new processors; if false, data migration is left
-to the user. Set in <b><a href="dev_util_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
+to the user. Set in <b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
 </tr>
 
 <tr>

@@ -24,22 +24,74 @@
 <div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_util_mem.html">Next</a>&nbsp; |&nbsp; <a href="dev_lb_structs.html">Previous</a></i></b></div>
 
 <h2>
-<a NAME="utilities"></a>Utilities</h2>
-Within Zoltan, utilities are provided to simplify development of new algorithms
-in the library.&nbsp; Use of these utilities will make debugging easier
-and provide a uniform look to the algorithms in the library.&nbsp; The
-utilities available are listed below.
-<blockquote><a href="dev_util_mem.html">Memory Management Package</a>
-<br><a href="dev_util_params.html">Parameter Setting Utilities</a>
-<br><a href="dev_util_comm.html">Unstructured Communication Package</a>
-<br><a href="dev_util_parallel.html">Parallel Computing Utilities</a>
-<br><a href="dev_util_hash.html">Hash Function</a>
-<br><a href="dev_util_time.html">Timing Utilities</a>
-<br><a href="dev_util_debug.html">Debugging Utilities</a></blockquote>
+<a NAME="Utilities"></a>Utilities</h2>
+Within Zoltan, several utilities are provided to simplify development of new algorithms
+in the library.&nbsp; These packages provide functionality that is useful within both
+Zoltan and applications in general.&nbsp; They are separate from the Zoltan library so
+that applications can use them independently of Zoltan.&nbsp; They are compiled separately 
+from Zoltan and are archived in separate libraries.&nbsp; Instructions for
+<a href="#Building Utilities">building the utilities</a>
+and <a href="#Building Applications">applications</a> using them
+are included below; individual library names are listed in the following documentation for each 
+package.&nbsp; Use of these utilities makes debugging in Zoltan easier
+and provides a uniform look to the algorithms in the library.&nbsp; The
+packages available are listed below.
+<blockquote><a href="dev_util_mem.html">Memory Management Utilities</a>
+<br><a href="dev_util_comm.html">Unstructured Communication Utilities</a>
+</blockquote>
+
+<h2>
+<a NAME="Building Utilities"></a>Building Utilities</h2>
+The utilities provided with Zoltan have their own Makefiles and can
+be built separately from Zoltan.&nbsp; If the user 
+<a href="dev_dist_compile.html">builds the Zoltan library</a>, 
+the utility libraries will be 
+built automatically and copied to the appropriate Zoltan/Obj_<<i>platform</i>>
+directory, where <<i>platform</i>> is specified through the 
+<a href="dev_dist_compile.html"><i>ZOLTAN_ARCH</i> environment variable</a>.&nbsp; 
+Zoltan and the utilities share the Config/Config.<<i>platform</i>>
+files specifying compilation paths for 
+<a href="dev_dist_compile.html#Architectures table">various architectures</a>.&nbsp;
+If, however, a user wishes to use these
+utilities without using Zoltan, he must build the libraries 
+separately.&nbsp;
+<p>
+
+The structure and use of Makefiles for the utilities are similar
+to <a href="dev_dist_compile.html">Zoltan's makefiles</a>; 
+A top-level makefile includes rules for building each utility's 
+library.&nbsp; Object files and the utility libraries are stored in
+a subdirectory Obj_<<i>platform</i>>, where <<i>platform</i>> is 
+a target architecture  supported with a 
+<a href="dev_dist_compile.html#Architectures table">Config/Config.<<i>platform</i>></a>
+file.&nbsp; The command for compiling a particular utility follows:
+<blockquote>
+gmake ZOLTAN_ARCH=<<i>platform</i>> <<i>library_name</i>>
+</blockquote>
+where <<i>library_name</i>> is the name of the utility library, and
+<<i>platform</i>> is the target architecture (corresponding to 
+<a href="dev_dist_compile.html#Architectures table">Config/Config.<<i>platform</i>></a>).&nbsp;
+The <<i>library_name</i>> for each utility is included in the following documentation
+for the utilities.&nbsp;
+<p>
+
+<h2>
+<a NAME="Building Applications"></a>Building Applications</h2>
+The utilities are designed so that they can easily be used separately 
+from Zoltan in applications.&nbsp;  
+To enable type-checking of arguments, the 
+function-prototypes file for a utility should be included
+in all application source code files that access the utility.&nbsp; 
+The application must also link with the
+appropriate utility library (and any other libraries on which
+the utility depends).&nbsp; Library and function-prototype file names
+for each utility are listed in the following documentation for the
+utilities.&nbsp;
+<p>
 
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_util_mem.html">Next:&nbsp;
-Memory Management Package</a>&nbsp; |&nbsp; <a href="dev_lb_structs.html">Previous:&nbsp;
+Memory Management Utilities</a>&nbsp; |&nbsp; <a href="dev_lb_structs.html">Previous:&nbsp;
 Load-Balancing Data Structures</a>]
 </body>
 </html>
