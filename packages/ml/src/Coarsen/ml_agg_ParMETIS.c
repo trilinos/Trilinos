@@ -59,9 +59,6 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 					    int graph_decomposition[],
 					    double bdry_nodes[],
 					    int, int);
-int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
-					int Naggre, int * NnodesPerAggre,
-					USR_COMM Comm);
 extern ML_Operator * ML_BuildQ( int StartingNumElements,
 				int ReorderedNumElements,
 				int num_PDE_eqns, int,

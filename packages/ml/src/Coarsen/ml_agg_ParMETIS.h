@@ -36,6 +36,15 @@ extern "C" {
   extern int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value );
   extern int ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate( );
 
+  extern int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
+					int Naggre, int * NnodesPerAggre,
+					USR_COMM Comm);
+
+  extern int ML_BuildReorderedOffset( int starting_offset[],
+				    int desired_aggre_per_proc, int Nprocs,
+				    int nodes_per_aggre[], int Naggregates,
+				    int reordered_offset[], int mypid );
+
   /* those are coded in ml_agg_METIS.c */
   extern int ML_Aggregate_Set_UseDropping(int i);
 

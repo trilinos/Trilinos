@@ -22,6 +22,8 @@ extern "C" {
 					   ML_Operator *Amatrix, 
 					   ML_Operator **Pmatrix,
 					   ML_Comm *comm);  
+  extern int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag,
+                   ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm);
   /* those are coded in ml_agg_METIS.c */
   extern int ML_Aggregate_Set_UseDropping(int i);
 

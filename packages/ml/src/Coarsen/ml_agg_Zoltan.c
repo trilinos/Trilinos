@@ -13,7 +13,9 @@
 #include "ml_utils.h"
 #include "ml_agg_Zoltan.h"
 #include "ml_agg_METIS.h"
+#include "ml_agg_ParMETIS.h"
 #include "ml_viz_stats.h"
+#include "ml_op_utils.h"
 
 #ifndef ML_CPP
 #ifdef __cplusplus
