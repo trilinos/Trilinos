@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 
     int NumGlobalElements = 10000;
     // define the space for fine level vectors and operators.
-    Space FineSpace(-1, NumGlobalElements);
+    Space FineSpace(NumGlobalElements);
 
     // define the linear system matrix, solution and RHS
     Operator FineMatrix = Gallery("laplace_2d", FineSpace);
