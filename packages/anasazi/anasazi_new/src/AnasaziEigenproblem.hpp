@@ -160,7 +160,7 @@ namespace Anasazi {
     NOTE:  This can be different than the MvNorm method for the multivector class, which is 
     assumed to be the euclidean norm of each column.
      */
-    virtual ReturnType MvNorm( const MV& X, ScalarType* normvec ) const = 0;
+    virtual ReturnType MvNorm( const MV& X, std::vector<ScalarType>* normvec ) const = 0;
     
     //@}	
   };

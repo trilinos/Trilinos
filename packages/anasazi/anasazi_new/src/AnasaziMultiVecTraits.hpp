@@ -52,13 +52,13 @@ namespace Anasazi {
     static Teuchos::RefCountPtr<MV> CloneCopy( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
-    static Teuchos::RefCountPtr<MV> CloneCopy( const MV& mv, int index[], int numvecs )
+    static Teuchos::RefCountPtr<MV> CloneCopy( const MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
-    static Teuchos::RefCountPtr<MV> CloneView( MV& mv, int index[], int numvecs )
+    static Teuchos::RefCountPtr<MV> CloneView( MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
-    static Teuchos::RefCountPtr<const MV> CloneView( const MV& mv, int index[], int numvecs )
+    static Teuchos::RefCountPtr<const MV> CloneView( const MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
     ///
     static int GetVecLength( const MV& mv )
@@ -77,13 +77,13 @@ namespace Anasazi {
     static void MvTransMv( ScalarType alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvDot ( const MV& mv, const MV& A, ScalarType b[] ) 
+    static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType>* b ) 
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void MvNorm( const MV& mv, ScalarType *normvec )
+    static void MvNorm( const MV& mv, std::vector<ScalarType>* normvec )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
-    static void SetBlock( const MV& A, int index[], int numvecs, MV& mv )
+    static void SetBlock( const MV& A, const std::vector<int>& index, MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
     ///
     static void MvRandom( MV& mv )

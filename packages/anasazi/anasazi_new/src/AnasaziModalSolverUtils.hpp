@@ -215,10 +215,10 @@ namespace Anasazi {
 
 	      // Swap corresponding vectors
 	      index[0] = j;
-	      Teuchos::RefCountPtr<MV> tmpQ = MVT::CloneCopy( *Q, &index[0], 1 );
-	      Teuchos::RefCountPtr<MV> tmpQj = MVT::CloneView( *Q, &index[0], 1 );
+	      Teuchos::RefCountPtr<MV> tmpQ = MVT::CloneCopy( *Q, index );
+	      Teuchos::RefCountPtr<MV> tmpQj = MVT::CloneView( *Q, index );
 	      index[0] = j + igap;
-	      Teuchos::RefCountPtr<MV> tmpQgap = MVT::CloneView( *Q, &index[0], 1 );
+	      Teuchos::RefCountPtr<MV> tmpQgap = MVT::CloneView( *Q, index );
 	      MVT::MvAddMv( one, *tmpQgap, zero, *tmpQgap, *tmpQj );
 	      MVT::MvAddMv( one, *tmpQ, zero, *tmpQ, *tmpQgap );
 	    } 
@@ -325,7 +325,7 @@ namespace Anasazi {
       for (i=0; i<howMany; i++)
 	index[i] = xr - howMany + i;
 
-      Teuchos::RefCountPtr<MV> XX = MVT::CloneView( X, &index[0], howMany );
+      Teuchos::RefCountPtr<MV> XX = MVT::CloneView( X, index );
       
       Teuchos::RefCountPtr<MV> MXX;
 
@@ -333,17 +333,17 @@ namespace Anasazi {
 	int mxr = MVT::GetNumberVecs( MX );
 	for (i=0; i<howMany; i++)
 	  index[i] = mxr - howMany + i;
-	MXX = MVT::CloneView( MX, &index[0], howMany );
+	MXX = MVT::CloneView( MX, index );
       } 
       else {
-	MXX = MVT::CloneView( X, &index[0], howMany );
+	MXX = MVT::CloneView( X, index );
       }
 
       // Perform the Gram-Schmidt transformation for a block of vectors
       
       // Compute the initial M-norms
       std::vector<ScalarType> oldDot( xc );
-      MVT::MvDot( *XX, *MXX, &oldDot[0] );
+      MVT::MvDot( *XX, *MXX, &oldDot );
       
       // Define the product Q^T * (M*X)
       // Multiply Q' with MX
@@ -373,7 +373,7 @@ namespace Anasazi {
       
       // Compute new M-norms
       std::vector<ScalarType> newDot(xc);
-      MVT::MvDot( *XX, *MXX, &newDot[0] );
+      MVT::MvDot( *XX, *MXX, &newDot );
       
       int j;
       for (j = 0; j < xc; ++j) {
@@ -436,11 +436,11 @@ namespace Anasazi {
 	// Put zero vectors in X when we are exceeding the space dimension
 	if (numX + shift >= xr) {
 	  index[0] = numX;
-	  Teuchos::RefCountPtr<MV> XXj = MVT::CloneView( X, &index[0], 1 );
+	  Teuchos::RefCountPtr<MV> XXj = MVT::CloneView( X, index );
 	  MVT::MvInit( *XXj, zero );
 	  if (M) {
 	    index[0] = numMX;
-	    Teuchos::RefCountPtr<MV> MXXj = MVT::CloneView( MX, &index[0], 1 );
+	    Teuchos::RefCountPtr<MV> MXXj = MVT::CloneView( MX, index );
 	    MVT::MvInit( *MXXj, zero );
 	  }
 	  info = -1;
@@ -448,13 +448,13 @@ namespace Anasazi {
 	
 	// Get a view of the vectors currently being worked on.
 	index[0] = numX;
-	Teuchos::RefCountPtr<MV> Xj = MVT::CloneView( X, &index[0], 1 );
+	Teuchos::RefCountPtr<MV> Xj = MVT::CloneView( X, index );
 	index[0] = numMX;
 	Teuchos::RefCountPtr<MV> MXj;
 	if (M)
-	  MXj = MVT::CloneView( MX, &index[0], 1 );
+	  MXj = MVT::CloneView( MX, index );
 	else
-	  MXj = MVT::CloneView( X, &index[0], 1 );
+	  MXj = MVT::CloneView( X, index );
 
 	// Get a view of the previous vectors.
 	std::vector<int> prev_idx( numX );
@@ -463,7 +463,7 @@ namespace Anasazi {
 	if (numX > 0) {
 	  for (i=0; i<numX; i++)
 	    prev_idx[i] = i;
-	  prevXj = MVT::CloneView( X, &prev_idx[0], numX );
+	  prevXj = MVT::CloneView( X, prev_idx );
 	} 
 
 	// Make storage for these Gram-Schmidt iterations.
@@ -476,7 +476,7 @@ namespace Anasazi {
 	  //
 	  // Compute M-norm
 	  //
-	  MVT::MvDot( *Xj, *MXj, &oldDot[0] );
+	  MVT::MvDot( *Xj, *MXj, &oldDot );
 	  //
 	  // Save old MXj vector.
 	  //
@@ -492,7 +492,7 @@ namespace Anasazi {
 	    //
 	    if (M) {
 	      if (xc == mxc) {
-		Teuchos::RefCountPtr<MV> prevMXj = MVT::CloneView( MX, &prev_idx[0], numX );
+		Teuchos::RefCountPtr<MV> prevMXj = MVT::CloneView( MX, prev_idx );
 		MVT::MvTimesMatAddMv( -one, *prevMXj, product, one, *MXj );
 	      }
 	      else {
@@ -505,7 +505,7 @@ namespace Anasazi {
 	    //
 	    // Compute new M-norm
 	    //
-	    MVT::MvDot( *Xj, *MXj, &newDot[0] );
+	    MVT::MvDot( *Xj, *MXj, &newDot );
 	    //
 	    // Check if a correction is needed.
 	    //
@@ -519,7 +519,7 @@ namespace Anasazi {
 	      //
 	      if (M) {
 		if (xc == mxc) {
-		  Teuchos::RefCountPtr<MV> prevMXj = MVT::CloneView( MX, &prev_idx[0], numX );
+		  Teuchos::RefCountPtr<MV> prevMXj = MVT::CloneView( MX, prev_idx );
 		  MVT::MvTimesMatAddMv( -one, *prevMXj, product, one, *MXj );
 		}
 		else {
@@ -537,7 +537,7 @@ namespace Anasazi {
 	  // Compute M-norm with old MXj
 	  // NOTE:  Re-using newDot vector
 	  //
-	  MVT::MvDot( *Xj, *oldMXj, &newDot[0] );
+	  MVT::MvDot( *Xj, *oldMXj, &newDot );
 	  
 	  if (newDot[0] > oldDot[0]*eps*eps) {
 	    MVT::MvAddMv( one/Teuchos::ScalarTraits<ScalarType>::squareroot(newDot[0]), *Xj, zero, *Xj, *Xj );
@@ -853,8 +853,8 @@ namespace Anasazi {
     else {
       MR = MVT::CloneCopy( *R );
     }
-    MVT::MvNorm( *MR, &normMR[0] );
-    MVT::MvNorm( *X, &normX[0] );
+    MVT::MvNorm( *MR, &normMR );
+    MVT::MvNorm( *X, &normX );
 
     ScalarType dot = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::SerialDenseMatrix<int, ScalarType> xTMr( xc, rc );
@@ -895,16 +895,16 @@ namespace Anasazi {
     for (i = 0; i < xc; ++i) {
       index[0] = i;
       if (M) {
-	Xi = MVT::CloneView( *X, &index[0], 1 );
+	Xi = MVT::CloneView( *X, index );
 	OPT::Apply( *M, *Xi, *MXi );
       }
       else {
-	MXi = MVT::CloneView( *(const_cast<MV *>(X)), &index[0], 1 );
+	MXi = MVT::CloneView( *(const_cast<MV *>(X)), index );
       }
       for (j = 0; j < xc; ++j) {
 	index[0] = j;
-	Xi = MVT::CloneView( *X, &index[0], 1 );
-	MVT::MvDot( *Xi, *MXi, &dot[0] );
+	Xi = MVT::CloneView( *X, index );
+	MVT::MvDot( *Xi, *MXi, &dot );
 	dot[0] = (i == j) ? fabs(dot[0] - one) : fabs(dot[0]);
 	maxDot = (dot[0] > maxDot) ? dot[0] : maxDot;
       }
@@ -932,7 +932,7 @@ namespace Anasazi {
     int i;
     ScalarType maxCoeffX = Teuchos::ScalarTraits<ScalarType>::zero();
     std::vector<ScalarType> tmp( xc );
-    MVT::MvNorm( *MX, &tmp[0] );
+    MVT::MvNorm( *MX, &tmp );
 
     for (i = 0; i < xc; ++i) {
       maxCoeffX = (tmp[i] > maxCoeffX) ? tmp[i] : maxCoeffX;
@@ -948,7 +948,7 @@ namespace Anasazi {
       MtimesX = MVT::CloneCopy( *(const_cast<MV *>(X)) );
     }
     MVT::MvAddMv( -1.0, *MX, 1.0, *MtimesX, *MtimesX );
-    MVT::MvNorm( *MtimesX, &tmp[0] );
+    MVT::MvNorm( *MtimesX, &tmp );
    
     for (i = 0; i < xc; ++i) {
       maxDiff = (tmp[i] > maxDiff) ? tmp[i] : maxDiff;

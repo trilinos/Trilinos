@@ -175,8 +175,6 @@ namespace Anasazi {
   //
   // Implementation
   //
-  // Note: I should define a copy constructor and overload = because of the use of new
-  //
   template <class ScalarType, class MV, class OP>
   BlockDavidson<ScalarType,MV,OP>::BlockDavidson(const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
 					    const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
@@ -231,7 +229,7 @@ namespace Anasazi {
       std::vector<int> index( _blockSize );
       for (int i=0; i<_blockSize; i++)
 	index[i] = i;
-      _MXvec = MVT::CloneView( *_Xvec, &index[0], _blockSize );
+      _MXvec = MVT::CloneView( *_Xvec, index );
     }
     //
     // Initialize the workspace.
@@ -332,14 +330,14 @@ namespace Anasazi {
 	for (i=0; i < _blockSize; i++)
 	  index[i] = localSize + _knownEV + i;
 	//
-	Xcurrent = MVT::CloneView( *_Xvec, &index[0], _blockSize );
+	Xcurrent = MVT::CloneView( *_Xvec, index );
 	//
 	if (_knownEV + localSize > 0) {
 	  index.resize( _knownEV + localSize );
 	  for (i=0; i < _knownEV + localSize; i++)
 	    index[i] = i;
 	  
-	  Xprev = MVT::CloneView( *_Xvec, &index[0], _knownEV + localSize );
+	  Xprev = MVT::CloneView( *_Xvec, index );
 	}
 	//
 	// Apply the mass matrix.
@@ -388,7 +386,7 @@ namespace Anasazi {
 	index.resize( localSize + _blockSize );
 	for (i=0; i < localSize + _blockSize; i++)
 	  index[i] = _knownEV + i;
-	Xtotal = MVT::CloneView( *_Xvec, &index[0], localSize + _blockSize );
+	Xtotal = MVT::CloneView( *_Xvec, index );
 	Teuchos::SerialDenseMatrix<int,ScalarType> subKK( Teuchos::View, _KKsdm, localSize+_blockSize, _blockSize, 0, localSize );
 	MVT::MvTransMv( one, *Xtotal, *_KXvec, subKK );
 	//
@@ -415,7 +413,7 @@ namespace Anasazi {
 	  index.resize( _blockSize );
 	  for (i=0; i<_blockSize; i++)
 	    index[i] = _knownEV + i;
-	  Teuchos::RefCountPtr<MV> Xinit = MVT::CloneView( *_Xvec, &index[0], _blockSize );
+	  Teuchos::RefCountPtr<MV> Xinit = MVT::CloneView( *_Xvec, index );
 	  MVT::MvRandom( *Xinit );
 	  nFound = _blockSize;
 	  bStart = 0;
@@ -450,7 +448,7 @@ namespace Anasazi {
 	else {
 	  MVT::MvTimesMatAddMv( one, *_KXvec, D, one, *_Rvec );
 	}
-	_problem->MvNorm( *_Rvec, &_normR[0] );
+	_problem->MvNorm( *_Rvec, &_normR );
 	//
 	// Scale the norms of residuals with the eigenvalues and check for converged eigenvectors.
 	//
@@ -520,7 +518,7 @@ namespace Anasazi {
 	index.resize( _blockSize );
 	for( i=0; i<_blockSize; i++) 
 	  index[i] = _knownEV + localSize + _blockSize + i;
-	Xnext = MVT::CloneView( *_Xvec, &index[0], _blockSize );
+	Xnext = MVT::CloneView( *_Xvec, index );
 	if (_Prec.get()) {
 	  OPT::Apply( *_Prec, *_Rvec, *Xnext );
 	}
@@ -551,9 +549,9 @@ namespace Anasazi {
 	for (j=0; j<_blockSize; j++) {
 	    if (_normR[j] < _residual_tolerance) {
 	      index[0] = j;
-	      Teuchos::RefCountPtr<MV> tmp_KXvec = MVT::CloneView( *_KXvec, &index[0], 1 );
+	      Teuchos::RefCountPtr<MV> tmp_KXvec = MVT::CloneView( *_KXvec, index );
 	      index[0] = _knownEV;
-	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_evecs );
+	      MVT::SetBlock( *tmp_KXvec, index, *_evecs );
 	      (*_evals)[_knownEV] = _theta[j];
 	      _resids[_knownEV] = _normR[j];
 	      _knownEV++;
@@ -577,11 +575,11 @@ namespace Anasazi {
 	    // Get a view of the current prospective eigenvector.
 	    //
 	    index[0] = j;
-	    Teuchos::RefCountPtr<MV> tmp_KXvec = MVT::CloneView( *_KXvec, &index[0], 1 );
+	    Teuchos::RefCountPtr<MV> tmp_KXvec = MVT::CloneView( *_KXvec, index );
 	    if (_normR[j] < _residual_tolerance) {
 	      index[0] = _knownEV;
-	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_Xvec );	      
-	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_evecs );	      
+	      MVT::SetBlock( *tmp_KXvec, index, *_Xvec );	      
+	      MVT::SetBlock( *tmp_KXvec, index, *_evecs );	      
 	      (*_evals)[_knownEV] = _theta[j];
 	      _resids[_knownEV] = _normR[j];
 	      _knownEV++;
@@ -589,14 +587,14 @@ namespace Anasazi {
 	    }
 	    else {
 	      index[0] = tmp_ptr + (j-nFound);
-	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_Xvec );
+	      MVT::SetBlock( *tmp_KXvec, index, *_Xvec );
 	    }
 	  } // for (j=0; j<_blockSize; j++)
 	  //
 	  index.resize( nFound );
 	  for (i=0; i<nFound; i++) 
 	    index[i] = _knownEV + _blockSize - nFound + i;
-	  Xnext = MVT::CloneView( *_Xvec, &index[0], nFound );
+	  Xnext = MVT::CloneView( *_Xvec, index );
 	  MVT::MvRandom( *Xnext );
 	}
 	else {
@@ -679,11 +677,11 @@ namespace Anasazi {
       lapack.ORGQR(oldCol, newCol, newCol, _Ssdm.values(), _Ssdm.stride(), &_theta[0], &_work[0], _lwork, &info);      
       for (i=0; i<oldCol; i++)
 	index[i] = _knownEV + i;
-      Teuchos::RefCountPtr<MV> oldX = MVT::CloneView( *_Xvec, &index[0], oldCol );
+      Teuchos::RefCountPtr<MV> oldX = MVT::CloneView( *_Xvec, index );
       index.resize( newCol );
       for (i=0; i<newCol; i++)
 	index[i] = _knownEV + i; 
-      Teuchos::RefCountPtr<MV> newX = MVT::CloneView( *_Xvec, &index[0], newCol );
+      Teuchos::RefCountPtr<MV> newX = MVT::CloneView( *_Xvec, index );
       Teuchos::RefCountPtr<MV> temp_newX = MVT::Clone( *_Xvec, newCol );
       Teuchos::SerialDenseMatrix<int,ScalarType> _Sview( Teuchos::View, _Ssdm, oldCol, newCol );
       MVT::MvTimesMatAddMv( one, *oldX, _Sview, zero, *temp_newX );
@@ -702,7 +700,7 @@ namespace Anasazi {
 	index.resize( nFound );
 	for (i=0; i<nFound; i++)
 	  index[i] = _knownEV + _blockSize - nFound + i;
-	Xnext = MVT::CloneView( *_Xvec, &index[0], nFound );
+	Xnext = MVT::CloneView( *_Xvec, index );
 	MVT::MvRandom( *Xnext );
 	continue;
       }

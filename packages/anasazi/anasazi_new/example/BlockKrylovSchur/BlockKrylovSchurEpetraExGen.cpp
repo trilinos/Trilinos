@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
 	// Create the Belos::OutputManager
 	//
 	Belos::OutputManager<double> My_OM( MyPID );
-	My_OM.SetVerbosity( Anasazi::FinalSummary );
+	//My_OM.SetVerbosity( 2 );
 	//
 	// Create the ParameterList for the Belos Operator
 	// 
@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
         // Create an output manager to handle the I/O from the solver
         Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-        //MyOM->SetVerbosity( 2 );
+        MyOM->SetVerbosity( Anasazi::FinalSummary );
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double,MV,OP> MySolver(MyProblem, MySort, MyOM, tol, 

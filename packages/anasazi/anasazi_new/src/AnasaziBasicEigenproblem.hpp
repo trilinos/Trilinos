@@ -171,7 +171,7 @@ namespace Anasazi {
     NOTE:  This can be different than the MvNorm method for the multivector class, which is 
     assumed to be the euclidean norm of each column.
     */
-    ReturnType MvNorm( const MV& X, ScalarType* normvec ) const;
+    ReturnType MvNorm( const MV& X, std::vector<ScalarType>* normvec ) const;
     
     //@}	
     
@@ -195,18 +195,18 @@ namespace Anasazi {
   
   template <class ScalarType, class MV, class OP>
   BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem(void) : 
-    _nev(1), 
+    _nev(0), 
     _isSym(false)
   {
   }
   
   //=============================================================================
-    
+  
   template <class ScalarType, class MV, class OP>
   BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<MV>& InitVec ) :    
     _Op(Op), 
     _InitVec(InitVec), 
-    _nev(1), 
+    _nev(0), 
     _isSym(false)
   {
   }
@@ -215,17 +215,17 @@ namespace Anasazi {
   
   template <class ScalarType, class MV, class OP>
   BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<OP>& B,
-						      const Teuchos::RefCountPtr<MV>& InitVec ) :
+							    const Teuchos::RefCountPtr<MV>& InitVec ) :
     _BOp(B), 
     _Op(Op), 
     _InitVec(InitVec), 
-    _nev(1), 
+    _nev(0), 
     _isSym(false)
   {
   }
-
+  
   //=============================================================================
-    
+  
   template <class ScalarType, class MV, class OP>
   BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const BasicEigenproblem<ScalarType,MV,OP>& Problem ) :
     _AOp(Problem._AOp), 
@@ -243,7 +243,7 @@ namespace Anasazi {
   //=============================================================================
   //	SetProblem (sanity check method)
   //=============================================================================
-
+  
   template <class ScalarType, class MV, class OP>
   ReturnType BasicEigenproblem<ScalarType, MV, OP>::SetProblem() 
   {
@@ -252,10 +252,10 @@ namespace Anasazi {
     //----------------------------------------------------------------
     // If there is no operator, then we can't proceed.
     if ( !_AOp.get() && !_Op.get() ) { return Failed; }
-
+    
     // If there is no initial vector, then we don't have anything to clone workspace from.
     if ( !_InitVec.get() ) { return Failed; }
-
+    
     // If we don't need any eigenvalues, we don't need to continue.
     if (_nev == 0) { return Failed; }
 
@@ -326,24 +326,22 @@ namespace Anasazi {
   //=============================================================================
   
   template <class ScalarType, class MV, class OP>
-  ReturnType BasicEigenproblem<ScalarType, MV, OP>::MvNorm( const MV& X, ScalarType* normvec ) const
+  ReturnType BasicEigenproblem<ScalarType, MV, OP>::MvNorm( const MV& X, std::vector<ScalarType>* normvec ) const
   {
     int IntOne = 1;
     int numvecs = MVT::GetNumberVecs( X );
     Teuchos::SerialDenseVector<int,ScalarType> DenseOne(IntOne);
     Teuchos::RefCountPtr<const MV> Xj;
-    int *index = new int[IntOne];	
+    std::vector<int> index( IntOne );
     ReturnType ret;
     
     for (int i=0; i<numvecs; i++) {
       index[0] = i;
-      Xj = MVT::CloneView( X, index, IntOne );
+      Xj = MVT::CloneView( X, index );
       ret = InnerProd( *Xj, *Xj, DenseOne );
       if ( ret != Ok ) { return ret; }
-      normvec[i] = sqrt(DenseOne(0));
+      (*normvec)[i] = sqrt(DenseOne(0));
     }
-    
-    delete [] index;
     
     return Ok;
   }

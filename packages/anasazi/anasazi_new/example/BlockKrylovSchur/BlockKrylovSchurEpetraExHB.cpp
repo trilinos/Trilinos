@@ -195,10 +195,10 @@ int main(int argc, char *argv[]) {
 	std::vector<int> index(nev);
 	for (i=0; i<nev; i++) 
 	  index[i] = i;
-        Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
+        Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneView( index ));
 	for (i=0; i<nev; i++)
 	  index[i] = nev + i;
-        Anasazi::EpetraMultiVec* eveci = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
+        Anasazi::EpetraMultiVec* eveci = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneView( index ));
 
 	// Compute residuals.
 	Teuchos::LAPACK<int,double> lapack;
@@ -222,12 +222,12 @@ int main(int argc, char *argv[]) {
 	tempAevec.MvTimesMatAddMv( -1.0, *evecr , Breal, 1.0 );
 	if (!MyProblem->IsSymmetric()) {
 	  tempAevec.MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0 );
-	  tempAevec.MvNorm( &normA[0] );
+	  tempAevec.MvNorm( &normA );
 	  Amat->Apply( *eveci, tempAevec );
 	  tempAevec.MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0 );
 	  tempAevec.MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0 );
 	}
-	tempAevec.MvNorm( &tempnrm[0] );
+	tempAevec.MvNorm( &tempnrm );
 	i = 0;
 	while (i < nev) {
 	  normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );

@@ -209,10 +209,10 @@ int main(int argc, char *argv[]) {
 	std::vector<int> index(nev);
 	for (i=0; i<nev; i++) { index[i] = i; }
 	Anasazi::EpetraMultiVec Av(RowMap,nev), u(RowMap,nev);
-	Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec* >(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
+	Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec* >(MyProblem->GetEvecs()->CloneView( index ));
 	Teuchos::SerialDenseMatrix<int,double> S(nev,nev);
         A.Apply( *evecs, Av );
-	Av.MvNorm( &tempnrm[0] );
+	Av.MvNorm( &tempnrm );
 	for (i=0; i<nev; i++) { S(i,i) = one/tempnrm[i]; };
 	u.MvTimesMatAddMv( one, Av, S, zero );
 	//
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
 	//
 	for (i=0; i<nev; i++) { S(i,i) = (*evals)[i]; }
 	Av.MvTimesMatAddMv( -one, u, S, one );
-	Av.MvNorm( &directnrm[0] );
+	Av.MvNorm( &directnrm );
 	if (MyOM->doPrint()) {
 	  cout<<"Singular Value"<<"\t\t"<<"Direct Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;

@@ -74,13 +74,13 @@ public:
 	virtual MultiVec<ScalarType> * CloneCopy () const = 0;
 	
 	/*! \brief Creates a new %Anasazi::MultiVec and copies the selected contents of \c *this 
-	    into the new vector (deep copy).  The number (\c numvecs) of copied 
-	    vectors from \c *this are indicated by the indices in \c index.
+	    into the new vector (deep copy).  The copied 
+	    vectors from \c *this are indicated by the \c index.size() indices in \c index.
 
 	    \return Pointer to the new multivector	
 	*/
 
-	virtual MultiVec<ScalarType> * CloneCopy ( int index[], int numvecs ) const = 0;
+	virtual MultiVec<ScalarType> * CloneCopy ( const std::vector<int>& index ) const = 0;
 	
 	/*! \brief Creates a new %Anasazi::MultiVec that shares the selected contents of \c *this.
 	    The index of the \c numvecs vectors copied from \c *this are indicated by the
@@ -89,7 +89,7 @@ public:
 	    \return Pointer to the new multivector	
 	*/
 
-	virtual MultiVec<ScalarType> * CloneView ( int index[], int numvecs ) = 0;
+	virtual MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) = 0;
 	//@}
 
 	//@{ \name Dimension information methods.	
@@ -123,7 +123,7 @@ public:
 	/*! \brief Compute a vector \c b where the components are the individual dot-products, i.e.\c b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
 	*/
 
-	virtual void MvDot ( const MultiVec<ScalarType>& A, ScalarType b[] ) const = 0;
+	virtual void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>* b ) const = 0;
 
 	//@}
 	//@{ \name Norm method.
@@ -132,7 +132,7 @@ public:
 	   Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
 	*/
 
-	virtual void MvNorm ( ScalarType* normvec ) const = 0;
+	virtual void MvNorm ( std::vector<ScalarType>* normvec ) const = 0;
 
 	//@}
 	//@{ \name Initialization methods.
@@ -141,7 +141,7 @@ public:
 	    indicated by the indices given in \c index.
 	*/
 
-	virtual void SetBlock ( const MultiVec<ScalarType>& A, int index[], int numvecs ) = 0;
+	virtual void SetBlock ( const MultiVec<ScalarType>& A, const std::vector<int>& index ) = 0;
 	
 	/*! \brief Replace the vectors in \c *this with random vectors.
 	*/
@@ -180,14 +180,14 @@ public:
     static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy() ); }
     ///
-    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv, int index[], int numvecs )
-    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy(index,numvecs) ); }
+    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy(index) ); }
     ///
-    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneView( MultiVec<ScalarType>& mv, int index[], int numvecs )
-    { return Teuchos::rcp( mv.CloneView(index,numvecs) ); }
+    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneView( MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    { return Teuchos::rcp( mv.CloneView(index) ); }
     ///
-    static Teuchos::RefCountPtr<const MultiVec<ScalarType> > CloneView( const MultiVec<ScalarType>& mv, int index[], int numvecs )
-    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneView(index,numvecs) ); }
+    static Teuchos::RefCountPtr<const MultiVec<ScalarType> > CloneView( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneView(index) ); }
     ///
     static int GetVecLength( const MultiVec<ScalarType>& mv )
     { return mv.GetVecLength(); }
@@ -206,14 +206,14 @@ public:
     static void MvTransMv( ScalarType alpha, const MultiVec<ScalarType>& A, const MultiVec<ScalarType>& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
     { mv.MvTransMv(alpha, A, B); }
     ///
-    static void MvDot( const MultiVec<ScalarType>& mv, const MultiVec<ScalarType>& A, ScalarType b[] )
+    static void MvDot( const MultiVec<ScalarType>& mv, const MultiVec<ScalarType>& A, std::vector<ScalarType>* b )
     { mv.MvDot( A, b ); }
     ///
-    static void MvNorm( const MultiVec<ScalarType>& mv, ScalarType *normvec )
+    static void MvNorm( const MultiVec<ScalarType>& mv, std::vector<ScalarType>* normvec )
     { mv.MvNorm(normvec); }
     ///
-    static void SetBlock( const MultiVec<ScalarType>& A, int index[], int numvecs, MultiVec<ScalarType>& mv )
-    { mv.SetBlock(A, index, numvecs); }
+    static void SetBlock( const MultiVec<ScalarType>& A, const std::vector<int>& index, MultiVec<ScalarType>& mv )
+    { mv.SetBlock(A, index); }
     ///
     static void MvRandom( MultiVec<ScalarType>& mv )
     { mv.MvRandom(); }

@@ -48,7 +48,7 @@ namespace Anasazi {
     // constructors
     EpetraMultiVec(const Epetra_BlockMap& Map, double * array, const int numvecs, const int stride=0);
     EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs);
-    EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, int index[], int numvecs );
+    EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, const std::vector<int>& index);
     EpetraMultiVec(const Epetra_MultiVector & P_vec);
     ~EpetraMultiVec();
     //
@@ -73,18 +73,18 @@ namespace Anasazi {
     //  copied and a new stand-alone MultiVector is created
     //  where only selected columns are chosen.  (deep copy).
     //
-    MultiVec<double> * CloneCopy ( int index[], int numvecs ) const;
+    MultiVec<double> * CloneCopy ( const std::vector<int>& index ) const;
     //
     //  the following is a virtual view constructor returning
     //  a pointer to the pure virtual class. vector values are 
     //  shared and hence no memory is allocated for the columns.
     //
-    MultiVec<double> * CloneView ( int index[], int numvecs);
+    MultiVec<double> * CloneView ( const std::vector<int>& index );
     //
     //  this routine sets a subblock of the multivector, which
     //  need not be contiguous, and is given by the indices.
     //
-    void SetBlock ( const MultiVec<double>& A, int index[], int numvecs );
+    void SetBlock ( const MultiVec<double>& A, const std::vector<int>& index );
     //
     int GetNumberVecs () const { return NumVectors(); }
     int GetVecLength () const { return GlobalLength(); }
@@ -96,7 +96,7 @@ namespace Anasazi {
     //
     // *this <- alpha * A + beta * B
     //
-    void MvAddMv ( double alpha , const MultiVec<double>& A, double beta,
+    void MvAddMv ( double alpha, const MultiVec<double>& A, double beta,
 		   const MultiVec<double>& B);
     //
     // B <- alpha * A^T * (*this)
@@ -105,13 +105,13 @@ namespace Anasazi {
     //
     // b[i] = A[i]^T * this[i]
     // 
-    void MvDot ( const MultiVec<double>& A, double b[] ) const;
+    void MvDot ( const MultiVec<double>& A, std::vector<double>* b ) const;
     //
     // alpha[i] = norm of i-th column of (*this)
     //	
-    void MvNorm ( double * normvec ) const {
-      if (normvec)
-	assert( Norm2(normvec) == 0 );
+    void MvNorm ( std::vector<double>* normvec ) const {
+      if (normvec && (normvec->size() >= GetNumberVecs()) )
+	assert( Norm2(&(*normvec)[0]) == 0 );
     };
     //
     // random vectors in i-th column of (*this)
@@ -147,9 +147,9 @@ namespace Anasazi {
   }
   
   
-  EpetraMultiVec::EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, 
-				 int index[], int numvecs )
-    : Epetra_MultiVector(CV, P_vec, index, numvecs) 
+  EpetraMultiVec::EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, 				
+				 const std::vector<int>& index )
+    : Epetra_MultiVector(CV, P_vec, &(const_cast<std::vector<int> &>(index))[0], index.size())
   {
   }
   
@@ -190,30 +190,33 @@ namespace Anasazi {
   }
   
   
-  MultiVec<double>* EpetraMultiVec::CloneCopy ( int index[], int numvecs ) const
+  MultiVec<double>* EpetraMultiVec::CloneCopy ( const std::vector<int>& index ) const
   {
-    EpetraMultiVec * ptr_apv = new EpetraMultiVec(Copy, *this, index, numvecs );
+    EpetraMultiVec * ptr_apv = new EpetraMultiVec(Copy, *this, index);
     return ptr_apv; // safe upcast.
   }
   
   
-  MultiVec<double>* EpetraMultiVec::CloneView ( int index[], int numvecs ) 
+  MultiVec<double>* EpetraMultiVec::CloneView ( const std::vector<int>& index ) 
   {
-    EpetraMultiVec * ptr_apv = new EpetraMultiVec(View, *this, index, numvecs );
+    std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
+    EpetraMultiVec * ptr_apv = new EpetraMultiVec(View, *this, index);
     return ptr_apv; // safe upcast.
   }
   
   
-  void EpetraMultiVec::SetBlock(const MultiVec<double>& A, int index[], int numvecs ) 
+  void EpetraMultiVec::SetBlock( const MultiVec<double>& A, const std::vector<int>& index ) 
   {	
-    EpetraMultiVec temp_vec(View, *this, index, numvecs);
+    std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
+    EpetraMultiVec temp_vec(View, *this, index);
 
+    int numvecs = index.size();
     if ( A.GetNumberVecs() != numvecs ) {
       std::vector<int> index2( numvecs );
       for(int i=0; i<numvecs; i++)
 	index2[i] = i;
       EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(tmp_vec!=NULL);
-      EpetraMultiVec A_vec(View, *tmp_vec, &index2[0], numvecs );
+      EpetraMultiVec A_vec(View, *tmp_vec, index2);
       temp_vec.MvAddMv( 1.0, A_vec, 0.0, A_vec );
     }
     else {
@@ -228,7 +231,7 @@ namespace Anasazi {
   //-------------------------------------------------------------
   
   void EpetraMultiVec::MvTimesMatAddMv ( double alpha, const MultiVec<double>& A, 
-				    const Teuchos::SerialDenseMatrix<int,double>& B, double beta ) 
+					 const Teuchos::SerialDenseMatrix<int,double>& B, double beta ) 
   {
     Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
     Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
@@ -245,7 +248,7 @@ namespace Anasazi {
   //-------------------------------------------------------------
   
   void EpetraMultiVec::MvAddMv ( double alpha , const MultiVec<double>& A, 
-			    double beta, const MultiVec<double>& B) 
+				 double beta, const MultiVec<double>& B) 
   {
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
     EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B)); assert(B_vec!=NULL);
@@ -260,7 +263,7 @@ namespace Anasazi {
   //-------------------------------------------------------------
   
   void EpetraMultiVec::MvTransMv ( double alpha, const MultiVec<double>& A,
-			      Teuchos::SerialDenseMatrix<int,double>& B) const
+				   Teuchos::SerialDenseMatrix<int,double>& B) const
   {    
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A));
     
@@ -278,11 +281,11 @@ namespace Anasazi {
   // 
   //-------------------------------------------------------------
   
-  void EpetraMultiVec::MvDot ( const MultiVec<double>& A, double b[] ) const
+  void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>* b ) const
   {
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
-    if (A_vec && b) {
-      assert( this->Dot( *A_vec, b ) == 0 );
+    if (A_vec && b && ( b->size() >= A_vec->NumVectors() ) ) {
+      assert( this->Dot( *A_vec, &(*b)[0] ) == 0 );
     }
   }
   
@@ -485,14 +488,23 @@ namespace Anasazi {
     static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv )
     { return Teuchos::rcp( new Epetra_MultiVector( mv ) ); }
     ///
-    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, int index[], int numvecs )
-    { return Teuchos::rcp( new Epetra_MultiVector(Copy, mv, index, numvecs) ); }
+    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, const std::vector<int>& index )
+    { 
+      std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
+      return Teuchos::rcp( new Epetra_MultiVector(Copy, mv, &tmp_index[0], index.size()) ); 
+    }
     ///
-    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, int index[], int numvecs )
-    { return Teuchos::rcp( new Epetra_MultiVector(View, mv, index, numvecs) ); }
+    static Teuchos::RefCountPtr<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, const std::vector<int>& index )
+    { 
+      std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
+      return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 
+    }
     ///
-    static Teuchos::RefCountPtr<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, int index[], int numvecs )
-    { return Teuchos::rcp( new Epetra_MultiVector(View, mv, index, numvecs) ); }
+    static Teuchos::RefCountPtr<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, const std::vector<int>& index )
+    { 
+      std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
+      return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 
+    }
     ///
     static int GetVecLength( const Epetra_MultiVector& mv )
     { return mv.GlobalLength(); }
@@ -523,22 +535,22 @@ namespace Anasazi {
       assert( B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 ) == 0 );
     }
     ///
-    static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, double b[] )
+    static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, std::vector<double>* b )
     {
-      if (b) 
-	assert( mv.Dot( A, b ) == 0 );
+      assert( mv.Dot( A, &(*b)[0] ) == 0 );
     }
     ///
-    static void MvNorm( const Epetra_MultiVector& mv, double *normvec )
+    static void MvNorm( const Epetra_MultiVector& mv, std::vector<double>* normvec )
     { 
-      if (normvec)
-	assert( mv.Norm2(normvec) == 0 );
+      assert( mv.Norm2(&(*normvec)[0]) == 0 );
     }
     ///
-    static void SetBlock( const Epetra_MultiVector& A, int index[], int numvecs, Epetra_MultiVector& mv )
+    static void SetBlock( const Epetra_MultiVector& A, const std::vector<int>& index, Epetra_MultiVector& mv )
     { 
       // Extract the "numvecs" columns of mv indicated by the index vector.
-      Epetra_MultiVector temp_vec(View, mv, index, numvecs);
+      int numvecs = index.size();
+      std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
+      Epetra_MultiVector temp_vec(View, mv, &tmp_index[0], numvecs);
 
       if ( A.NumVectors() != numvecs ) {
         std::vector<int> index2( numvecs );
