@@ -5,9 +5,8 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
          -DIFPACK 
 
-INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src \
-           -I$(TRILINOS_HOME)/packages/aztecoo/src \
-           -I$(TRILINOS_HOME)/packages/triutils/src
+INCLUDES = $(ARCH_INCLUDES) $(EPETRA_INCLUDES) $(AZTECOO_INCLUDES) \
+           $(TRIUTILS_INCLUDES)
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
@@ -34,7 +33,7 @@ TEST_F =
 
 TEST_INC =
 
-TEST_OBJ          =  $(TEST_CC:.cpp=.o) $(TEST_C:.c=.o)  $(TEST_F:.f=.o)
+TEST_OBJ          =  $(TEST_CC:.cpp=.$(OBJ_EXT)) $(TEST_C:.c=.$(OBJ_EXT))  $(TEST_F:.f=.$(OBJ_EXT)
 
 TARGET_MPI = recursiveAztecOO_mpi.exe
 TARGET_SERIAL = recursiveAztecOO_serial.exe
@@ -46,5 +45,5 @@ $(TARGET): $(TEST_OBJ)
 	$(LIBMPI) -o $(TARGET)
 
 clean:
-	@echo "junk" > dummy.o
-	@rm -f *.o  *~ $(TARGET_MPI) $(TARGET_SERIAL)
+	@echo "junk" > dummy.$(OBJ_EXT)
+	@rm -f *.$(OBJ_EXT)  *~ $(TARGET_MPI) $(TARGET_SERIAL)
