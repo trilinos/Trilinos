@@ -187,7 +187,9 @@ libanasaziutils_a_SOURCES = \
 #We need the following to support separate build directories
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_builddir)/src \
 		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src
+		-I$(top_builddir)/../epetra/src \
+  	        -I$(top_srcdir)/../triutils/src \
+                -I$(top_builddir)/../triutils/src
 
 
 
@@ -502,6 +504,7 @@ uninstall-am: uninstall-info-am uninstall-libLIBRARIES
 	mostlyclean-generic tags uninstall uninstall-am \
 	uninstall-info-am uninstall-libLIBRARIES
 
+	$(srcdir)/../src/Anasazi_config.h
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

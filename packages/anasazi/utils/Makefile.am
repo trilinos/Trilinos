@@ -19,6 +19,7 @@ UTIL_H = \
 	$(srcdir)/AnasaziBLASwrappers.hpp \
 	$(srcdir)/AnasaziLAPACK.hpp \
 	$(srcdir)/AnasaziLAPACKwrappers.hpp	
+	$(srcdir)/../src/Anasazi_config.h
 
 UTIL = \
 	$(srcdir)/read_hb_matrix.cpp \
@@ -102,7 +103,9 @@ libanasaziutils_a_SOURCES = \
 #We need the following to support separate build directories
 AM_CPPFLAGS=-I$(top_srcdir)/src -I$(top_builddir)/src \
 		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src
+		-I$(top_builddir)/../epetra/src \
+  	        -I$(top_srcdir)/../triutils/src \
+                -I$(top_builddir)/../triutils/src
 
 # ------------------------------------------------------------------------
 # For using a special archiver

@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "Anasazi_config.h"
 
 #if defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL)
 

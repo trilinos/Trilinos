@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 #include <string.h>
-
+#include "Anasazi_config.h"
 
 /* Define fcd (Fortran Anasazi_fcd descriptor) for non-standard situations */
 
