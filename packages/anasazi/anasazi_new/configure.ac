@@ -57,7 +57,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 
 # #np# - file name below
-AC_CONFIG_SRCDIR(/src/AnasaziBlockArnoldi.hpp)
+AC_CONFIG_SRCDIR(/src/AnasaziMultiVec.hpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.

@@ -36,6 +36,7 @@
 
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziMultiVec.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 /*! \class Anasazi::Eigensolver
   \brief The Anasazi::Eigensolver is a templated virtual base class that defines the
@@ -85,7 +86,7 @@ class Eigensolver {
       by the calling routine.
     </ol>
   */
-  virtual MultiVec<TYPE>* GetNativeResiduals( TYPE* normvec ) const = 0;
+  virtual Teuchos::RefCountPtr<const MultiVec<TYPE> > GetNativeResiduals( TYPE* normvec ) const = 0;
 
   /*! \brief Get a constant reference to the current linear problem, 
     	which may include a current solution.

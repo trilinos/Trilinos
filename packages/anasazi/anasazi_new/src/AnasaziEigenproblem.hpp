@@ -34,6 +34,7 @@
 #include "AnasaziReturnType.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 /*! \class Anasazi::Eigenproblem
     \brief This class defines the interface required by an eigensolver and status

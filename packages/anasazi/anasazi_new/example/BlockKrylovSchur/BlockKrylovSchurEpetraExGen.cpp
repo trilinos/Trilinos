@@ -68,9 +68,9 @@ int main(int argc, char *argv[]) {
 #endif
 
 #ifdef EPETRA_MPI
-	Epetra_MpiComm & Comm = *new Epetra_MpiComm(MPI_COMM_WORLD);
+	Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
-	Epetra_SerialComm & Comm = *new Epetra_SerialComm();
+	Epetra_SerialComm Comm;
 #endif
 
 	int MyPID = Comm.MyPID();
@@ -85,19 +85,19 @@ int main(int argc, char *argv[]) {
         // Construct a Map that puts approximately the same number of
         // equations on each processor.
 
-        Epetra_Map& Map = *new Epetra_Map(NumGlobalElements, 0, Comm);
+        Epetra_Map Map(NumGlobalElements, 0, Comm);
 
         // Get update list and number of local equations from newly created Map.
         
         int NumMyElements = Map.NumMyElements();
 
-        int * MyGlobalElements = new int[NumMyElements];
-        Map.MyGlobalElements(MyGlobalElements);
+	std::vector<int> MyGlobalElements(NumMyElements);
+        Map.MyGlobalElements(&MyGlobalElements[0]);
 
         // Create an integer vector NumNz that is used to build the Petra Matrix.
         // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
         // on this processor
-        int * NumNz = new int[NumMyElements];
+	std::vector<int> NumNz(NumMyElements);
 
         // We are building two tridiagonal matrices
         // So we need 2 off-diagonal terms (except for the first and last equation)
@@ -110,12 +110,13 @@ int main(int argc, char *argv[]) {
         }
 
         // Create both the stiffness and mass Epetra_Matrix        
-        Epetra_CrsMatrix& A = *new Epetra_CrsMatrix(Copy, Map, NumNz);
-        Epetra_CrsMatrix& B = *new Epetra_CrsMatrix(Copy, Map, NumNz);
+        Epetra_CrsMatrix A(Copy, Map, &NumNz[0]);
+        Epetra_CrsMatrix B(Copy, Map, &NumNz[0]);
 
         const double one = 1.0;
-        double *ValuesA = new double[2];
-        double *ValuesB = new double[2];
+        std::vector<double> ValuesA(2);
+        std::vector<double> ValuesB(2);
+	std::vector<int> Indices(2);
 
 	// Set values of stiffness matrix.
         double h = one /(NumGlobalElements + one);
@@ -126,8 +127,7 @@ int main(int argc, char *argv[]) {
         h = one /(6.0*(NumGlobalElements + one));
         ValuesB[0] = one/h; ValuesB[1] = one/h;
         double diagB = 4.0/h;
-        int *Indices = new int[2];
-        int NumEntries;
+	int NumEntries;
 
         for (i=0; i<NumMyElements; i++)
         {
@@ -135,27 +135,27 @@ int main(int argc, char *argv[]) {
                 {
                         Indices[0] = 1;
                         NumEntries = 1;
-                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, ValuesA+1, Indices)==0);
-                        assert(B.InsertGlobalValues(MyGlobalElements[i], NumEntries, ValuesB+1, Indices)==0);
+                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[1], &Indices[0])==0);
+                        assert(B.InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[1], &Indices[0])==0);
                 }
                 else if (MyGlobalElements[i] == NumGlobalElements-1)
                 {
                         Indices[0] = NumGlobalElements-2;
                         NumEntries = 1;
-                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, ValuesA, Indices)==0);
-                        assert(B.InsertGlobalValues(MyGlobalElements[i], NumEntries, ValuesB, Indices)==0);
+                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[0], &Indices[0])==0);
+                        assert(B.InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[0], &Indices[0])==0);
                 }
                 else
                 {
                         Indices[0] = MyGlobalElements[i]-1;
                         Indices[1] = MyGlobalElements[i]+1;
                         NumEntries = 2;
-                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, ValuesA, Indices)==0);
-                        assert(B.InsertGlobalValues(MyGlobalElements[i], NumEntries, ValuesB, Indices)==0);
+                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[0], &Indices[0])==0);
+                        assert(B.InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[0], &Indices[0])==0);
                 }
                 // Put in the diagonal entry
-                assert(A.InsertGlobalValues(MyGlobalElements[i], 1, &diagA, MyGlobalElements+i)==0);
-                assert(B.InsertGlobalValues(MyGlobalElements[i], 1, &diagB, MyGlobalElements+i)==0);
+                assert(A.InsertGlobalValues(MyGlobalElements[i], 1, &diagA, &MyGlobalElements[i])==0);
+                assert(B.InsertGlobalValues(MyGlobalElements[i], 1, &diagB, &MyGlobalElements[i])==0);
         }
          
         // Finish up
@@ -186,10 +186,10 @@ int main(int argc, char *argv[]) {
         if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
         double dropTol = 1.0e-6;
         //
-        Ifpack_CrsIct* ICT = 0;
+        Teuchos::RefCountPtr<Ifpack_CrsIct> ICT;
         //
         if (Lfill > -1) {
-                ICT = new Ifpack_CrsIct(A, dropTol, Lfill);
+                ICT = Teuchos::rcp( new Ifpack_CrsIct(A, dropTol, Lfill) );
                 ICT->SetAbsoluteThreshold(Athresh);
                 ICT->SetRelativeThreshold(Rthresh);
                 int initerr = ICT->InitValues(A);
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
         // Create the Belos::LinearProblemManager
         //
 	Belos::PetraMat<double> BelosMat(&A);
-        Belos::PetraPrec<double> BelosPrec(ICT);
+        Belos::PetraPrec<double> BelosPrec(ICT.get());
 	Belos::LinearProblemManager<double> My_LP;
 	My_LP.SetOperator( &BelosMat );
 	My_LP.SetLeftPrec( &BelosPrec );
@@ -256,69 +256,58 @@ int main(int argc, char *argv[]) {
 	int step = 5;
 	int restarts = 5;
 
-	// Create a PetraAnasaziVec. Note that the decision to make a view or
-	// or copy is determined by the petra constructor called by AnasaziEpetraVec.
-	// This is possible because I pass in arguements needed by petra.
-
+	// Create a AnasaziEpetraVec for an initial vector to start the solver.
+	// Note:  This needs to have the same number of columns as the blocksize.
 	Anasazi::EpetraVec ivec(Map, block);
 	ivec.MvRandom();
     
 	// Call the ctor that calls the petra ctor for a matrix
-
 	Anasazi::EpetraOp Amat(A);
 	Anasazi::EpetraOp Bmat(B);
 	Anasazi::EpetraGenOp Aop(BelosOp, B);	
-	Anasazi::BasicEigenproblem<double> MyProblem(&Aop, &Bmat, &ivec);
+	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double> > MyProblem = 
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double>(&Aop, &Bmat, &ivec) );
 
 	// Inform the eigenproblem that the matrix pencil (A,B) is symmetric
-	MyProblem.SetSymmetric(true);
+	MyProblem->SetSymmetric(true);
 
 	// Set the number of eigenvalues requested and the blocksize the solver should use
-	MyProblem.SetNEV( nev );
-	MyProblem.SetBlockSize( block );
+	MyProblem->SetNEV( nev );
+	MyProblem->SetBlockSize( block );
 
         // Inform the eigenproblem that you are finishing passing it information
-        assert( MyProblem.SetProblem()==0 );
+        assert( MyProblem->SetProblem()==0 );
 
         // Create a sorting manager to handle the sorting of eigenvalues in the solver
-        Anasazi::BasicSort<double> MySort( which );
-
+	Teuchos::RefCountPtr<Anasazi::BasicSort<double> > MySort = 
+	  Teuchos::rcp( new Anasazi::BasicSort<double>(which) );
+	
         // Create an output manager to handle the I/O from the solver
-        Anasazi::OutputManager<double> MyOM( MyPID );
-        //MyOM.SetVerbosity( 2 );
+        Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
+	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+        //MyOM->SetVerbosity( 2 );
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double> MySolver(MyProblem, MySort, MyOM, tol, length, 
 						step, restarts);
 	
-#ifdef UNIX
-	Epetra_Time & timer = *new Epetra_Time(Comm);
-#endif
-
 	// iterate a few steps (if you wish)
 	//MySolver.iterate(5);
 
 	// solve the problem to the specified tolerances or length
 	MySolver.solve();
 
-#ifdef UNIX
-	double elapsed_time = timer.ElapsedTime();
-	double total_flops = A.Flops();
-	double MFLOPs = total_flops/elapsed_time/1000000.0;
-#endif
 	// output results to screen
 	MySolver.currentStatus();
 
 	// obtain eigenvectors directly
-	double* evalr = MyProblem.GetEvals(); 
+	double* evals = MyProblem->GetEvals(); 
 
 	// retrieve real and imaginary parts of the eigenvectors
 	// The size of the eigenvector storage is nev.
 	// The real part of the eigenvectors is stored in the first nev vectors.
 	// The imaginary part of the eigenvectors is stored in the second nev vectors.
-	int* index = new int[ nev ];
-	for (i=0; i<nev; i++) { index[i] = i; }
-	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem.GetEvecs());
+	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs());
 
 	Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
 	Anasazi::EpetraVec tempvec(Map, evecr->GetNumberVecs());	
@@ -330,29 +319,8 @@ int main(int argc, char *argv[]) {
 	cout<<"Real Part \t Rayleigh Error"<<endl;
 	for (i=0; i<nev; i++) {
 		compeval = dmatr(i,i);
-		cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/evalr[i])<<endl;
+		cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/evals[i])<<endl;
 	}
-
-#ifdef UNIX
-	if (verbose)
-		cout << "\n\nTotal MFLOPs for Arnoldi = " << MFLOPs << " Elapsed Time = "<<  elapsed_time << endl;
-#endif
-
-
-	// Release all objects
-	if (ICT) delete ICT;
-
-	delete [] MyGlobalElements;
-	delete [] NumNz;
-	delete [] index;
-	delete [] Indices;
-	delete [] ValuesA;
-	delete [] ValuesB;
-
-	delete &A;
-	delete &B;
-	delete &Map;
-	delete &Comm;
 
 	return 0;
 }

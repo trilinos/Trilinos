@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 	// NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
 	// on this processor
 	//
-	int * NumNz = new int[NumMyElements];
+	std::vector<int> NumNz(NumMyElements);
 	for (i=0; i<NumMyElements; i++) {
 		NumNz[i] = bindx[i+1] - bindx[i] + 1;
 	}
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 	//
 	// Create a Epetra_Matrix
 	//
-	Epetra_CrsMatrix A(Copy, Map, NumNz);
+	Epetra_CrsMatrix A(Copy, Map, &NumNz[0]);
 	//
 	// Add rows one-at-a-time
 	//
@@ -155,57 +155,51 @@ int main(int argc, char *argv[]) {
         // call the ctor that calls the petra ctor for a matrix
 
         Anasazi::EpetraOp Amat(A);
-        Anasazi::BasicEigenproblem<double> MyProblem(&Amat, &ivec);
+	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double> > MyProblem =
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double>(&Amat, &ivec) );
 
 	// Inform the eigenproblem that the matrix A is symmetric
-	//MyProblem.SetSymmetric(true);
+	//MyProblem->SetSymmetric(true);
 
 	// Set the number of eigenvalues requested and the blocksize the solver should use
-	MyProblem.SetNEV( nev );
-	MyProblem.SetBlockSize( block );
+	MyProblem->SetNEV( nev );
+	MyProblem->SetBlockSize( block );
 
        // Inform the eigenproblem that you are finishing passing it information
-        assert( MyProblem.SetProblem()==0 );
+        assert( MyProblem->SetProblem()==0 );
 
         // Create a sorting manager to handle the sorting of eigenvalues in the solver
-        Anasazi::BasicSort<double> MySort( which );
+	Teuchos::RefCountPtr<Anasazi::BasicSort<double> > MySort = 
+	  Teuchos::rcp( new Anasazi::BasicSort<double>(which) );
 
         // Create an output manager to handle the I/O from the solver
-        Anasazi::OutputManager<double> MyOM( MyPID );
-        //MyOM.SetVerbosity( 2 );
+	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
+	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+        //MyOM->SetVerbosity( 2 );
 	//
 	//  Initialize the Block Arnoldi solver
 	//
-        Anasazi::BlockKrylovSchur<double> MySolver(MyProblem, MySort, MyOM, tol, length,
-                                         step, restarts);
-
-#ifdef UNIX
-        Epetra_Time & timer = *new Epetra_Time(Comm);
-#endif
+        Anasazi::BlockKrylovSchur<double> MySolver(MyProblem, MySort, MyOM, tol, 
+						   length, step, restarts);
 
         // iterate a few steps (if you wish)
         //MySolver.iterate(5);
 
         // solve the problem to the specified tolerances or length
         MySolver.solve();
-#ifdef UNIX
-        double elapsed_time = timer.ElapsedTime();
-        double total_flops = A.Flops(); 
-        double MFLOPs = total_flops/elapsed_time/1000000.0;
-#endif
 
         // obtain results directly
-        double* evals = MyProblem.GetEvals();
+        double* evals = MyProblem->GetEvals();
 
 	// retrieve eigenvectors
 	// The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
-	int* index = new int[ nev ];
+	std::vector<int> index(nev);
 	for (i=0; i<nev; i++) 
 	  index[i] = i;
-        Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
+        Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
 	for (i=0; i<nev; i++)
 	  index[i] = nev + i;
-        Anasazi::EpetraVec* eveci = dynamic_cast<Anasazi::EpetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
+        Anasazi::EpetraVec* eveci = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
 
         // output results to screen
         MySolver.currentStatus();
@@ -216,33 +210,32 @@ int main(int argc, char *argv[]) {
 	Anasazi::EpetraVec tempeveci(Map,nev);
 	Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Breal2(nev,nev);
 	Teuchos::SerialDenseMatrix<int,double> Bimag(nev,nev), Bimag2(nev,nev);
-	double* normA = new double[nev];
-	double* tempnrm = new double[nev];
+	std::vector<double> normA(nev), tempnrm(nev);
 	cout<<endl<< "Actual Residuals"<<endl;
 	cout<<"------------------------------------------------------"<<endl;
 	Breal.putScalar(0.0); 
-	if (!MyProblem.IsSymmetric())
+	if (!MyProblem->IsSymmetric())
 	  Bimag.putScalar(0.0);
 	for (i=0; i<nev; i++) { 
 	  normA[i] = 0.0;
 	  Breal(i,i) = evals[i]; 
-	  if (!MyProblem.IsSymmetric())
+	  if (!MyProblem->IsSymmetric())
 	    Bimag(i,i) = evals[nev + i]; 
 	}
 	Amat.Apply( *evecr, tempAevec );
 	tempAevec.MvTimesMatAddMv( -1.0, *evecr , Breal, 1.0 );
-	if (!MyProblem.IsSymmetric()) {
+	if (!MyProblem->IsSymmetric()) {
 	  tempAevec.MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0 );
-	  tempAevec.MvNorm( normA );
-	  Amat.Apply( *(eveci->CloneView( index, nev )), tempAevec );
+	  tempAevec.MvNorm( &normA[0] );
+	  Amat.Apply( *eveci, tempAevec );
 	  tempAevec.MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0 );
 	  tempAevec.MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0 );
 	}
-	tempAevec.MvNorm( tempnrm );
+	tempAevec.MvNorm( &tempnrm[0] );
 	i = 0;
 	while (i < nev) {
 	  normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
-	  if (MyProblem.IsSymmetric()) {
+	  if (MyProblem->IsSymmetric()) {
 	    normA[i] /= Teuchos::ScalarTraits<double>::magnitude(evals[i]);
 	    i++;
 	  } else {
@@ -255,7 +248,7 @@ int main(int argc, char *argv[]) {
 	    }
 	  }
 	}
-	if (MyProblem.IsSymmetric()) {
+	if (MyProblem->IsSymmetric()) {
 	  cout<<"Real Part"<<"\t"<<"Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
@@ -271,13 +264,15 @@ int main(int argc, char *argv[]) {
 	  cout<<"------------------------------------------------------"<<endl;
 	}	
 
-#ifdef UNIX
-        if (verbose)
-                cout << "\n\nTotal MFLOPs for Arnoldi = " << MFLOPs << " Elapsed Time = "<<  elapsed_time <<endl;
-#endif
-
-        // Release all objects
-        delete [] NumNz;
+	// Clean up
+	if (evecr) delete evecr;
+	if (eveci) delete eveci;
+	
+	if (bindx) delete [] bindx;
+	if (update) delete [] update;
+	if (col_inds) delete [] col_inds;
+	if (val) delete [] val;
+	if (row_vals) delete [] row_vals;
 
   	return 0;
 

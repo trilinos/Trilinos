@@ -57,14 +57,14 @@ namespace Anasazi {
     //@{ \name Constructor/Destructor.
     
     //! %Anasazi::BlockKrylovSchur constructor.
-    BlockKrylovSchur( Eigenproblem<TYPE>& problem, 
-		  SortManager<TYPE>& sm,
-		  OutputManager<TYPE>& om,
-		  const TYPE tol=1.0e-6,
-		  const int length=25, 
-		  const int step=25, 
-		  const int restarts=0 
-		  );
+    BlockKrylovSchur( Teuchos::RefCountPtr<Eigenproblem<TYPE> > problem, 
+		      Teuchos::RefCountPtr<SortManager<TYPE> > sm,
+		      Teuchos::RefCountPtr<OutputManager<TYPE> > om,
+		      const TYPE tol=1.0e-6,
+		      const int length=25, 
+		      const int step=25, 
+		      const int restarts=0 
+		      );
     
     //! %Anasazi::BlockKrylovSchur destructor.
     virtual ~BlockKrylovSchur();
@@ -84,13 +84,13 @@ namespace Anasazi {
     void solve();
     //@}
     
-    //@{ \name Solution return methods.
+    //@{ \name Solver status methods.
     
     //! This method returns the computed Ritz values.
-    const TYPE * GetRitzValues() { return(_ritzvalues); };
+    Teuchos::RefCountPtr<const std::vector<TYPE> > GetRitzValues() const { return(_ritzvalues); };
     
     //! This method returns the Ritz residuals for the computed eigenpairs.
-    const TYPE * GetRitzResiduals() { return(_ritzresiduals); };
+    Teuchos::RefCountPtr<const std::vector<TYPE> > GetRitzResiduals() const { return(_ritzresiduals); };
 
     //! Get the current iteration count.
     int GetNumIters() const { return(_iter); };
@@ -101,6 +101,11 @@ namespace Anasazi {
       perform restarts (i.e. LOBPCG), this is not a valid stopping criteria.
     */
     int GetNumRestarts() const { return(_restarts); };
+    
+    //! Get the total length of the Krylov-Schur factorization.
+    /*! This number will be the product of the length and the blocksize given by the user.
+     */
+    int GetKSFactLength() const { return(_totallength); };
     
     //! Get the solvers native residuals for the current eigenpairs. 
     /*! This is not be the same as the true residuals for most solvers. Sometimes the native
@@ -114,12 +119,12 @@ namespace Anasazi {
       by the calling routine.
       </ol>
     */
-    MultiVec<TYPE>* GetNativeResiduals( TYPE* normvec ) const {};
+    Teuchos::RefCountPtr<const MultiVec<TYPE> > GetNativeResiduals( TYPE* normvec ) const {};
     
     /*! \brief Get a constant reference to the current linear problem, 
       which may include a current solution.
     */
-    Eigenproblem<TYPE>& GetEigenproblem() const { return(_problem); };
+    Eigenproblem<TYPE>& GetEigenproblem() const { return(*_problem); };
     
     //@}
     
@@ -141,17 +146,17 @@ namespace Anasazi {
     void CheckBlkArnRed( const int j );
     void CheckSchurVecs( const int j ); 
 
-    Eigenproblem<TYPE> &_problem; // must be passed in by the user
-    SortManager<TYPE> &_sm; // must be passed in by the user
-    OutputManager<TYPE> &_om; // must be passed in by the user
+    Teuchos::RefCountPtr<Eigenproblem<TYPE> > _problem; 
+    Teuchos::RefCountPtr<SortManager<TYPE> > _sm; 
+    Teuchos::RefCountPtr<OutputManager<TYPE> > _om; 
 
     MultiVec<TYPE> *_basisvecs;
     Teuchos::SerialDenseMatrix<int,TYPE> _hessmatrix;
     const int _length, _restarts, _step;
     const TYPE _residual_tolerance;
-    TYPE *_ritzresiduals, *_ritzvalues, *_ritzvaluesi;
+    Teuchos::RefCountPtr<std::vector<TYPE> > _ritzresiduals, _ritzvalues;
     int *_order;
-    int _restartiter, _iter, _jstart, _jend, _nevblock;
+    int _restartiter, _iter, _jstart, _jend, _nevblock, _totallength;
     int _offset, _maxoffset;
     bool _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
     TYPE _schurerror, _dep_tol, _blk_tol, _sing_tol, _def_tol;
@@ -169,14 +174,14 @@ namespace Anasazi {
   // Note: I should define a copy constructor and overload = because of the use of new
   //
   template <class TYPE>
-  BlockKrylovSchur<TYPE>::BlockKrylovSchur(Eigenproblem<TYPE> & problem, 
-				   SortManager<TYPE> & sm,
-				   OutputManager<TYPE> & om,
-				   const TYPE tol, 
-				   const int length, 
-				   const int step, 
-				   const int restarts
-				   ): 
+  BlockKrylovSchur<TYPE>::BlockKrylovSchur(Teuchos::RefCountPtr<Eigenproblem<TYPE> > problem, 
+					   Teuchos::RefCountPtr<SortManager<TYPE> > sm,
+					   Teuchos::RefCountPtr<OutputManager<TYPE> > om,
+					   const TYPE tol, 
+					   const int length, 
+					   const int step, 
+					   const int restarts
+					   ): 
     _problem(problem), 
     _sm(sm),
     _om(om),
@@ -186,15 +191,13 @@ namespace Anasazi {
     _restarts(restarts),
     _step(step),
     _residual_tolerance(tol),
-    _ritzresiduals(0), 
-    _ritzvalues(0), 
-    _ritzvaluesi(0),
     _order(0),
     _restartiter(0), 
     _iter(0), 
     _jstart(0), 
     _jend(0), 
     _nevblock(0),
+    _totallength(0),
     _offset(0),
     _maxoffset(0),
     _isdecompcurrent(false),
@@ -206,12 +209,12 @@ namespace Anasazi {
     _blk_tol(1.0),
     _sing_tol(1.0),
     _def_tol(1.0),
-    _Op(problem.GetOperator()),
-    _B(problem.GetB()),
-    _evecs(problem.GetEvecs()), 
-    _nev(problem.GetNEV()), 
-    _block(problem.GetBlockSize()), 
-    _evals(problem.GetEvals()) 
+    _Op(problem->GetOperator()),
+    _B(problem->GetB()),
+    _evecs(problem->GetEvecs()), 
+    _nev(problem->GetNEV()), 
+    _block(problem->GetBlockSize()), 
+    _evals(problem->GetEvals()) 
     {     
     //
     // Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
@@ -225,10 +228,11 @@ namespace Anasazi {
     //if (_nev%_block) 
     //_nevblock++;    
     _maxoffset = (_length-_nevblock)/2;
+    _totallength = _block*_length;
     //
     // Retrieve the initial vector from the Anasazi::Eigenproblem.
     //
-    MultiVec<TYPE>* ivec = _problem.GetInitVec();
+    MultiVec<TYPE>* ivec = _problem->GetInitVec();
     assert(ivec!=NULL);
     //
     assert(_length>0); assert(_step>0);
@@ -244,14 +248,13 @@ namespace Anasazi {
     // Create the vectors for eigenvalues and their residual errors and
     // initialize them.
     //
-    _ritzvalues = new TYPE[ 2* (_block*_length) ]; assert(_ritzvalues!=NULL);  
-    _ritzvaluesi = _ritzvalues + _block*_length;
-    _ritzresiduals = new TYPE[ _block*_length ]; assert(_ritzresiduals!=NULL);
-    _order = new int[ _block*_length ]; assert(_order!=NULL);
+    _ritzvalues = Teuchos::rcp(new std::vector<TYPE>(2*_totallength));
+    _ritzresiduals = Teuchos::rcp(new std::vector<TYPE>(_totallength)); 
+    _order = new int[ _totallength ]; assert(_order!=NULL);
     const TYPE one = 1.0, zero = 0.0;
-    for (int i=0; i< _block*_length; i++) {
-      _ritzvalues[i] = zero; _ritzvaluesi[i] = zero;
-      _ritzresiduals[i] = one;
+    for (int i=0; i< _totallength; i++) {
+      (*_ritzvalues)[i] = zero; (*_ritzvalues)[_totallength+i] = zero;
+      (*_ritzresiduals)[i] = one;
     }			
     //
     //  Set the tolerances for block orthogonality
@@ -276,15 +279,13 @@ namespace Anasazi {
   BlockKrylovSchur<TYPE>::~BlockKrylovSchur() 
   {
     if (_basisvecs) delete _basisvecs;
-    if (_ritzresiduals) delete [] _ritzresiduals;
-    if (_ritzvalues) delete [] _ritzvalues;
     if (_order) delete [] _order;
   }
   
   template <class TYPE>
   void BlockKrylovSchur<TYPE>::currentStatus() {
     int i;
-    if (_om.doOutput(-1)) {
+    if (_om->doOutput(-1)) {
       cout<<" "<<endl;
       cout<<"********************CURRENT STATUS********************"<<endl;
       cout<<"Iterations :\t"<<_iter<<endl;
@@ -318,7 +319,7 @@ namespace Anasazi {
       int _nevtemp = _nev;
       if (_jstart < _nevblock) { _nevtemp = _jstart*_block; }
       //
-      if (_problem.IsSymmetric()) {
+      if (_problem->IsSymmetric()) {
 	cout<<"Eigenvalue\tRitz Residual"<<endl;
 	cout<<"------------------------------------------------------"<<endl;
 	if ( _nevtemp == 0 ) {
@@ -326,7 +327,7 @@ namespace Anasazi {
 	} else {
 	  for (i=0; i<_nevtemp; i++) {
 	    cout.width(10);
-	    cout<<_evals[i]<<"\t"<<_ritzresiduals[i]<<endl;
+	    cout<<_evals[i]<<"\t"<<(*_ritzresiduals)[i]<<endl;
 	  }
 	}
 	cout<<"------------------------------------------------------"<<endl;
@@ -338,7 +339,7 @@ namespace Anasazi {
 	} else {
 	  for (i=0; i<_nevtemp; i++) {
 	    cout.width(10);
-	    cout<<_evals[i]<<"\t"<<_evals[_nev+i]<<"\t\t"<<_ritzresiduals[i]<<endl;
+	    cout<<_evals[i]<<"\t"<<_evals[_totallength+i]<<"\t\t"<<(*_ritzresiduals)[i]<<endl;
 	  }
 	}
 	cout<<"------------------------------------------------------"<<endl;
@@ -381,7 +382,7 @@ namespace Anasazi {
       // Copy the first _block of the initial vectors into the first _block
       // of _basisvecs, any additional vectors will be ignored.
       //
-      _basisvecs->SetBlock( *(_problem.GetInitVec()), index, _block );
+      _basisvecs->SetBlock( *(_problem->GetInitVec()), index, _block );
       //
       // Orthogonalize the first block of vectors.
       //      
@@ -418,7 +419,7 @@ namespace Anasazi {
 	ComputeSchurForm( false );		
 	_isdecompcurrent = false;
 	// Output current information if necessary
-	if (_om.doOutput(0)) {
+	if (_om->doOutput(0)) {
 	  currentStatus();
 	}
       }
@@ -451,7 +452,7 @@ namespace Anasazi {
 	  _isdecompcurrent = false;
 	}
 	// Output current information if necessary
-	if (_om.doOutput(0)) {
+	if (_om->doOutput(0)) {
 	  currentStatus();
 	}
       }
@@ -579,7 +580,7 @@ namespace Anasazi {
     for (i=0; i<_block; i++) {
       if (norm1[i] == zero) {
 	_dep_flg = true;
-	if (_om.doOutput(2)){
+	if (_om->doOutput(2)){
 	  cout << "Col " << num_prev+i << " is the zero vector" << endl;
 	  cout << endl;
 	}
@@ -594,7 +595,7 @@ namespace Anasazi {
       // Compute trans(V_prev)*B*F_vec and store in the j'th diagonal
       // block of the Hessenberg matrix
       //
-      ret = _problem.InnerProd( *V_prev, *F_vec, dense_mat );
+      ret = _problem->InnerProd( *V_prev, *F_vec, dense_mat );
       //
       // Update the orthogonalization coefficients for the j-th block
       // column of the Hessenberg matrix.
@@ -619,7 +620,7 @@ namespace Anasazi {
     for (i=0; i<_block; i++){
       if (norm2[i] < norm1[i] * _blk_tol) {
 	_dep_flg = true;
-	if (_om.doOutput(2)){
+	if (_om->doOutput(2)){
 	  cout << "Col " << num_prev+i << " is dependent on previous "
 	       << "Arnoldi vectors in V_prev" << endl;
 	  cout << endl;
@@ -627,7 +628,7 @@ namespace Anasazi {
       }
     } // end for (i=0;...)
     //
-    if (_om.doOutput(2)) {
+    if (_om->doOutput(2)) {
       CheckBlkArnRed(j);
     }
     //
@@ -725,7 +726,7 @@ namespace Anasazi {
       // Leave if this is the zero vector, there is no more we can do here.
       //
       if (norm1[0] == zero) { 
-	if (_om.doOutput(2)) {
+	if (_om->doOutput(2)) {
 	  cout << "Column " << num_prev << " of _basisvecs is the zero vector" 
 	       << endl<<endl;
 	}
@@ -735,7 +736,7 @@ namespace Anasazi {
       //
       // Compute trans(Q_vec)*B*q_vec
       //
-      ret = _problem.InnerProd( *Q_vec, *q_vec, dense_vec );
+      ret = _problem->InnerProd( *Q_vec, *q_vec, dense_vec );
       //
       // Sum results [0:num_prev-1] into column (num_prev-_block)
       // of the Hessenberg matrix
@@ -756,7 +757,7 @@ namespace Anasazi {
 	//
 	// Compute trans(Q_vec)*q_vec
 	//
-	ret = _problem.InnerProd( *Q_vec, *q_vec, dense_vec );
+	ret = _problem->InnerProd( *Q_vec, *q_vec, dense_vec );
 	//
 	// Sum results [0:num_prev-1] into column (num_prev-_block)
 	// of the Hessenberg matrix
@@ -775,7 +776,7 @@ namespace Anasazi {
       // Check for linear dependence
       //
       if (norm2[0] < norm1[0] * _sing_tol) {
-	if (_om.doOutput(2)) {
+	if (_om->doOutput(2)) {
 	  cout << "Column " << num_prev << " of _basisvecs is dependent" 
 	       << endl<<endl;
 	}
@@ -793,7 +794,7 @@ namespace Anasazi {
 	// orthogonalization with a correction step if needed.
 	//
 	for (int num_orth=0; num_orth<2; num_orth++){
-	  ret = _problem.InnerProd( *Q_vec, *tptr, dense_vec );
+	  ret = _problem->InnerProd( *Q_vec, *tptr, dense_vec );
 	  // Note that we don't change the entries of the
 	  // Hessenberg matrix when we orthogonalize a
 	  // random vector
@@ -842,7 +843,7 @@ namespace Anasazi {
       } // end else ...
     } // end for (i=0;...)
     //
-    if (_om.doOutput(2)){
+    if (_om->doOutput(2)){
       cout << "Checking Orthogonality after BlkOrthSing()"
 	   << " Iteration: " << j << endl<<endl;
       CheckBlkArnRed(j);
@@ -907,7 +908,7 @@ namespace Anasazi {
 	//
 	Qj = VecIn.CloneView(index, j);
 	Teuchos::SerialDenseVector<int,TYPE> rj(j);
-	_problem.MvNorm( *qj, norm1 );
+	_problem->MvNorm( *qj, norm1 );
 	//
 	// Do one step of classical Gram-Schmidt orthogonalization
 	// with a second correction step if needed
@@ -916,7 +917,7 @@ namespace Anasazi {
 	// j of VecIn against columns 0:j-1 of VecIn. In other words,
 	// result = trans(Qj)*B*qj.
 	//
-	ret = _problem.InnerProd( *Qj, *qj, rj );
+	ret = _problem->InnerProd( *Qj, *qj, rj );
 	//
 	// Sum results[0:j-1] into column j of R.
 	//
@@ -928,13 +929,13 @@ namespace Anasazi {
 	//
 	qj->MvTimesMatAddMv(-one, *Qj, rj, one);
 	//
-	_problem.MvNorm( *qj, norm2 );			
+	_problem->MvNorm( *qj, norm2 );			
 	//
 	if (norm2[0] < norm1[0] * _dep_tol){
 	  //
 	  // Repeat process with newly computed qj
 	  //
-	  ret = _problem.InnerProd( *Qj, *qj, rj );
+	  ret = _problem->InnerProd( *Qj, *qj, rj );
 	  //    				
 	  // Sum results[0:j-1] into column j of R.
 	  //
@@ -946,7 +947,7 @@ namespace Anasazi {
 	  //
 	  qj->MvTimesMatAddMv(-one, *Qj, rj, one);
 	  //
-	  _problem.MvNorm( *qj, norm2 );
+	  _problem->MvNorm( *qj, norm2 );
 	}
 	//
 	// Check for dependencies
@@ -961,7 +962,7 @@ namespace Anasazi {
 	  // and orthogonalized against all previous basis vectors.
 	  //
 	  if (norm2[0] < norm1[0] * _blk_tol) {
-	    if (_om.doOutput(2)) {
+	    if (_om->doOutput(2)) {
 	      cout << "Column " << j << " of current block is dependent"<<endl;
 	    }
 	    _dep_flg = true;
@@ -986,13 +987,13 @@ namespace Anasazi {
 	    Teuchos::SerialDenseVector<int,TYPE> tj(j);
 	    //
 	    tptr->MvRandom();
-	    _problem.MvNorm( *tptr, norm1 );
+	    _problem->MvNorm( *tptr, norm1 );
 	    //
 	    for (int num_orth=0; num_orth<2; num_orth++){
-	      ret = _problem.InnerProd( *Qj, *tptr, tj );
+	      ret = _problem->InnerProd( *Qj, *tptr, tj );
 	      tptr->MvTimesMatAddMv(-one, *Qj, tj, one);
 	    }
-	    _problem.MvNorm( *tptr, norm2 );
+	    _problem->MvNorm( *tptr, norm2 );
 	    //
 	    if (norm2[0] > norm1[0] * _sing_tol){
 	      // Copy vector into current column of _basisvecs
@@ -1012,7 +1013,7 @@ namespace Anasazi {
       // VecIn (qj), then normalize qj to make it into a unit vector
       //
       TYPE normq[IntOne];
-      _problem.MvNorm( *qj, normq );
+      _problem->MvNorm( *qj, normq );
       //
       TYPE rjj = one / normq[0];
       qj->MvAddMv ( rjj, *qj, zero, *qj );
@@ -1086,14 +1087,14 @@ namespace Anasazi {
     //
     // Check the Schur form.
     //
-    if (_om.doOutput(2))
+    if (_om->doOutput(2))
       CheckSchurVecs( _jstart );
     //
     //  If the operator is symmetric, then the Ritz vectors are the eigenvectors.
     //  So, copy the Ritz vectors.  Else, we need to compute the eigenvectors of the
     //  Schur form to compute the eigenvectors of the non-symmetric operator.
     //
-    if (_problem.IsSymmetric()) {
+    if (_problem->IsSymmetric()) {
       _evecs->SetBlock( *basistemp, index, curr_nev );
     } else {  
       //
@@ -1129,7 +1130,7 @@ namespace Anasazi {
       TYPE t_evecnrm;
       i = 0;
       while ( i < curr_nev ) {	
-	if (_ritzvaluesi[i] != zero) {
+	if ((*_ritzvalues)[_totallength+i] != zero) {
 	  t_evecnrm = one/lapack.LAPY2(evecnrm[i],evecnrm[i+1]);
 	  // Copy the real part of the eigenvector.  Scale by square-root of 2 to normalize the vector.
 	  evecstempr = evecstemp->CloneView( index+i, 1 );
@@ -1172,14 +1173,14 @@ namespace Anasazi {
 	  t_evecnrm = one/lapack.LAPY2(evecnrm[indexi[i]],evecnrm[indexi[i]-1]);
 	  evecstempi = evecstemp->CloneView( indexi+i, 1 ); 
 	  eveci1 = _evecs->CloneView( indexi_pnev+i, 1 );
-	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_ritzvaluesi[indexi[i]])/_ritzvaluesi[indexi[i]],
+	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude((*_ritzvalues)[_totallength+indexi[i]])/(*_ritzvalues)[_totallength+indexi[i]],
 			   *evecstempi, zero, *evecstempi );
 	  delete eveci1; eveci1=0;
 	  // Change index and set non-conjugate part of imag eigenvector.
 	  indexi[i]--;
 	  indexi_pnev[i]--;
 	  eveci1 = _evecs->CloneView( indexi_pnev+i, 1 );
-	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_ritzvaluesi[indexi[i]])/_ritzvaluesi[indexi[i]],
+	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude((*_ritzvalues)[_totallength+indexi[i]])/(*_ritzvalues)[_totallength+indexi[i]],
 			   *evecstempi, zero, *evecstempi );
 	  delete eveci1; eveci1=0;
 	  delete evecstempi; evecstempi=0;
@@ -1231,7 +1232,7 @@ namespace Anasazi {
 	for (i=0; i<_maxoffset; i++) {
 	  numimag = 0;
 	  for (j=0; j<(_nevblock+i)*_block; j++) { 
-	    if (_ritzvaluesi[j]!=zero) { numimag++; }; 
+	    if ((*_ritzvalues)[_totallength+j]!=zero) { numimag++; }; 
 	  }
 	  if (!(numimag % 2)) { _offset = i; break; }
 	}
@@ -1323,7 +1324,7 @@ namespace Anasazi {
     //  If the operator is symmetric, analyze the block tridiagonal matrix
     //  and enforce symmetry.
     //
-    if (_problem.IsSymmetric()) {
+    if (_problem->IsSymmetric()) {
       if (_restartiter > 0 && _restarts!=0) {
 	//
 	// The method has been restarted, so more caution must be used in
@@ -1359,8 +1360,8 @@ namespace Anasazi {
     int *bwork = new int[ n ];
     char jobvs = 'V';
     char sort = 'N';
-    lapack.GEES( jobvs, sort, select, n, ptr_h, ldh, &sdim,_ritzvalues,
-		 _ritzvaluesi, ptr_q, ldq, work, lwork, bwork, &info );
+    lapack.GEES( jobvs, sort, select, n, ptr_h, ldh, &sdim, &(*_ritzvalues)[0],
+		 &(*_ritzvalues)[_totallength], ptr_q, ldq, work, lwork, bwork, &info );
     assert(info==0);
     //
     //---------------------------------------------------
@@ -1391,13 +1392,13 @@ namespace Anasazi {
     // Determine what 's' is and compute Ritz residuals.
     //
     TYPE* b_ptr = sub_block_b.values();
-    if (_problem.IsSymmetric()) {
+    if (_problem->IsSymmetric()) {
       //
       // 's' is the i-th canonical basis vector.
       //
       for (i=0; i<n ; i++) {
 	//_ritzresiduals[i] = blas.NRM2(_block, b_ptr + i*_block, 1);
-	_ritzresiduals[i] = blas.NRM2(_block, b_ptr + i*_block, 1);
+	(*_ritzresiduals)[i] = blas.NRM2(_block, b_ptr + i*_block, 1);
       }   
     } else {
       //
@@ -1421,7 +1422,7 @@ namespace Anasazi {
       TYPE* qt_ptr = Q_temp.values();
       i = 0;
       while( i < n ) {
-	if ( _ritzvaluesi[i] != zero ) {
+	if ( (*_ritzvalues)[_totallength+i] != zero ) {
 	  temp = lapack.LAPY2( blas.NRM2( n, qt_ptr+i*n, 1 ), blas.NRM2( n, qt_ptr+(i+1)*n, 1 ) );
 	  blas.SCAL( n, one/temp, qt_ptr+i*n, 1 );
 	  blas.SCAL( n, one/temp, qt_ptr+(i+1)*n, 1 );	      
@@ -1441,13 +1442,13 @@ namespace Anasazi {
       TYPE* s_ptr = S.values();
       i = 0;
       while( i < n ) {
-	if ( _ritzvaluesi[i] != zero ) {
-	  _ritzresiduals[i] = lapack.LAPY2( blas.NRM2(_block, s_ptr + i*_block, 1),
+	if ( (*_ritzvalues)[_totallength+i] != zero ) {
+	  (*_ritzresiduals)[i] = lapack.LAPY2( blas.NRM2(_block, s_ptr + i*_block, 1),
 					    blas.NRM2(_block, s_ptr + (i+1)*_block, 1) );
-	  _ritzresiduals[i+1] = _ritzresiduals[i];
+	  (*_ritzresiduals)[i+1] = (*_ritzresiduals)[i];
 	  i = i+2;
 	} else {
-	  _ritzresiduals[i] = blas.NRM2(_block, s_ptr + i*_block, 1);
+	  (*_ritzresiduals)[i] = blas.NRM2(_block, s_ptr + i*_block, 1);
 	  i++;
 	}
       }
@@ -1457,24 +1458,24 @@ namespace Anasazi {
     // Sort the eigenvalues
     //---------------------------------------------------
     //
-    if (_problem.IsSymmetric())
-      _sm.sort( this, n, _ritzvalues, _order );
+    if (_problem->IsSymmetric())
+      _sm->sort( this, n, &(*_ritzvalues)[0], _order );
     else
-      _sm.sort( this, n, _ritzvalues, _ritzvaluesi, _order );
+      _sm->sort( this, n, &(*_ritzvalues)[0], &(*_ritzvalues)[_totallength], _order );
     //
     // Re-sort _ritzresiduals based on _order
     //
     TYPE* ritz2 = new TYPE[ n ];
-    for (i=0; i<n; i++) { ritz2[i] = _ritzresiduals[ _order[i] ]; }
-    blas.COPY( n, ritz2, 1, _ritzresiduals, 1 );
+    for (i=0; i<n; i++) { ritz2[i] = (*_ritzresiduals)[ _order[i] ]; }
+    blas.COPY( n, ritz2, 1, &(*_ritzresiduals)[0], 1 );
     delete [] ritz2;
     //
     // Copy the nev eigenvalues into the proper vectors
     // NOTE:  If we don't have nev Ritz values, then only n are copied
     //
-    ( n > _nev ? blas.COPY( _nev, _ritzvalues, 1, _evals, 1 ) : blas.COPY( n, _ritzvalues, 1, _evals, 1 ) );
-    if (!_problem.IsSymmetric() )
-      ( n > _nev ? blas.COPY( _nev, _ritzvaluesi, 1, _evals+_nev, 1 ) : blas.COPY( n, _ritzvaluesi, 1, _evals+_nev, 1 ) );
+    ( n > _nev ? blas.COPY( _nev, &(*_ritzvalues)[0], 1, _evals, 1 ) : blas.COPY( n, &(*_ritzvalues)[0], 1, _evals, 1 ) );
+    if (!_problem->IsSymmetric() )
+      ( n > _nev ? blas.COPY( _nev, &(*_ritzvalues)[_totallength], 1, _evals+_nev, 1 ) : blas.COPY( n, &(*_ritzvalues)[_totallength], 1, _evals+_nev, 1 ) );
     //
     //---------------------------------------------------
     // Reorder real Schur factorization, remember to add one to the indices for the
@@ -1493,7 +1494,7 @@ namespace Anasazi {
     int *_order2 = new int[ n ]; assert(_order2!=NULL);
     i = 0; 
     while (i < n) {
-      if (_ritzvaluesi[i] != zero) {
+      if ((*_ritzvalues)[_totallength+i] != zero) {
 	offset2[_nevtemp] = 0;
 	for (j=i; j<n; j++) {
 	  if (_order[j] > _order[i]) { offset2[_nevtemp]++; }
@@ -1521,7 +1522,7 @@ namespace Anasazi {
     // Determine largest off diagonal element of Schur matrix for symmetric case.
     //
     TYPE _maxsymmelem = zero;
-    if (_problem.IsSymmetric()) {
+    if (_problem->IsSymmetric()) {
       for(j=0; j<n; j++){
 	for(i=0; i<j; i++) {
 	  if(Teuchos::ScalarTraits<TYPE>::magnitude(H(i, j))>_maxsymmelem) { _maxsymmelem = H(i, j); }
@@ -1619,7 +1620,7 @@ namespace Anasazi {
     const TYPE one=1.0;
     const TYPE zero=0.0;
     Teuchos::SerialDenseMatrix<int,TYPE> VTV(m,m);
-    ret = _problem.InnerProd( *Vj, *Vj, VTV );
+    ret = _problem->InnerProd( *Vj, *Vj, VTV );
     if (ret != Ok) { }
     TYPE* ptr=VTV.values();
     TYPE column_sum;
@@ -1639,7 +1640,7 @@ namespace Anasazi {
     
     Teuchos::SerialDenseMatrix<int,TYPE> E(m,_block);
     
-    ret = _problem.InnerProd( *Vj, *F_vec, E );
+    ret = _problem->InnerProd( *Vj, *F_vec, E );
     if (ret != Ok) { }
     TYPE* ptr_Ej=E.values();
     

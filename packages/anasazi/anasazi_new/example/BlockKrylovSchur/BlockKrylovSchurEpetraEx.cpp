@@ -27,9 +27,9 @@
 // @HEADER
 //
 //  This example computes the specified eigenvalues of the discretized 2D Convection-Diffusion
-//  equation using the block Arnoldi method.  This discretized operator is constructed as an
-//  Epetra matrix, then passed into the AnasaziPetraMat to be used in the construction of the
-//  Krylov decomposition.  The specifics of the block Arnoldi method can be set by the user.
+//  equation using the block Krylov-Schur method.  This discretized operator is constructed as an
+//  Epetra matrix, then passed into the Anasazi::EpetraOp to be used in the construction of the
+//  Krylov decomposition.  The specifics of the block Krylov-Schur method can be set by the user.
 
 #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
@@ -58,11 +58,10 @@ int main(int argc, char *argv[]) {
 
 #endif
 
-
 #ifdef EPETRA_MPI
-	Epetra_MpiComm & Comm = *new Epetra_MpiComm(MPI_COMM_WORLD);
+	Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
-	Epetra_SerialComm & Comm = *new Epetra_SerialComm();
+	Epetra_SerialComm Comm;
 #endif
 
 	int MyPID = Comm.MyPID();
@@ -78,19 +77,19 @@ int main(int argc, char *argv[]) {
 	// Construct a Map that puts approximately the same number of
 	// equations on each processor.
 
-	Epetra_Map& Map = *new Epetra_Map(NumGlobalElements, 0, Comm);
+	Epetra_Map Map(NumGlobalElements, 0, Comm);
 
 	// Get update list and number of local equations from newly created Map.
 
 	int NumMyElements = Map.NumMyElements();
 
-	int * MyGlobalElements = new int[NumMyElements];
-    	Map.MyGlobalElements(MyGlobalElements);
+	std::vector<int> MyGlobalElements(NumMyElements);
+    	Map.MyGlobalElements(&MyGlobalElements[0]);
 
 	// Create an integer vector NumNz that is used to build the Petra Matrix.
 	// NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
 	// on this processor
-	int * NumNz = new int[NumMyElements];
+	std::vector<int> NumNz(NumMyElements);
 
 	/* We are building a matrix of block structure:
 	
@@ -117,7 +116,7 @@ int main(int argc, char *argv[]) {
 
 	// Create an Epetra_Matrix
 
-	Epetra_CrsMatrix& A = *new Epetra_CrsMatrix(Copy, Map, NumNz);
+	Epetra_CrsMatrix A(Copy, Map, &NumNz[0]);
 
 	// Diffusion coefficient, can be set by user.
 	// When rho*h/2 <= 1, the discrete convection-diffusion operator has real eigenvalues.
@@ -126,12 +125,12 @@ int main(int argc, char *argv[]) {
 
 	// Compute coefficients for discrete convection-diffution operator
 	const double one = 1.0;
-	double *Values = new double[4];
+	std::vector<double> Values(4);
+	std::vector<int> Indices(4);
 	double h = one /(nx+1);
 	double h2 = h*h;
 	double c = 5.0e-01*rho/ h;
 	Values[0] = -one/h2 - c; Values[1] = -one/h2 + c; Values[2] = -one/h2; Values[3]= -one/h2;
-	int *Indices = new int[4];
 	double diag = 4.0 / h2;
 	int NumEntries;
 	
@@ -142,30 +141,30 @@ int main(int argc, char *argv[]) {
 			Indices[0] = 1;
 			Indices[1] = nx;
 			NumEntries = 2;
-			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+1, Indices)==0);
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0])==0);
 		}
 		else if (MyGlobalElements[i] == nx*(nx-1))
 		{
 			Indices[0] = nx*(nx-1)+1;
 			Indices[1] = nx*(nx-2);
 			NumEntries = 2;
-			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+1, Indices)==0);
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0])==0);
 		}
 		else if (MyGlobalElements[i] == nx-1)
 		{
 			Indices[0] = nx-2;
 			NumEntries = 1;
-			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
 			Indices[0] = 2*nx-1;
-			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+2, Indices)==0);
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0])==0);
 		}
 		else if (MyGlobalElements[i] == NumGlobalElements-1)
 		{
 			Indices[0] = NumGlobalElements-2;
 			NumEntries = 1;
-			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
 			Indices[0] = nx*(nx-1)-1;
-			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+2, Indices)==0);
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0])==0);
 		}
 		else if (MyGlobalElements[i] < nx)
 		{
@@ -173,7 +172,7 @@ int main(int argc, char *argv[]) {
                         Indices[1] = MyGlobalElements[i]+1;
 			Indices[2] = MyGlobalElements[i]+nx;
                         NumEntries = 3;
-                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
 		}
 		else if (MyGlobalElements[i] > nx*(nx-1))
 		{
@@ -181,7 +180,7 @@ int main(int argc, char *argv[]) {
                         Indices[1] = MyGlobalElements[i]+1;
 			Indices[2] = MyGlobalElements[i]-nx;
                         NumEntries = 3;
-                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
 		}
                 else if (MyGlobalElements[i]%nx == 0)
 		{
@@ -189,17 +188,17 @@ int main(int argc, char *argv[]) {
 			Indices[1] = MyGlobalElements[i]-nx;
 			Indices[2] = MyGlobalElements[i]+nx;
 			NumEntries = 3;
-			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+1, Indices)==0);
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0])==0);
 		}
 		else if ((MyGlobalElements[i]+1)%nx == 0)
 		{
 			Indices[0] = MyGlobalElements[i]-nx;
                         Indices[1] = MyGlobalElements[i]+nx;
                         NumEntries = 2;
-                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+2, Indices)==0);
+                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0])==0);
                         Indices[0] = MyGlobalElements[i]-1;
                         NumEntries = 1;
-                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+                        assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
 		}
 		else
 		{
@@ -208,10 +207,10 @@ int main(int argc, char *argv[]) {
 			Indices[2] = MyGlobalElements[i]-nx;
 			Indices[3] = MyGlobalElements[i]+nx;
 			NumEntries = 4;
-			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
 		}
 		// Put in the diagonal entry
-		assert(A.InsertGlobalValues(MyGlobalElements[i], 1, &diag, MyGlobalElements+i)==0);
+		assert(A.InsertGlobalValues(MyGlobalElements[i], 1, &diag, &MyGlobalElements[i])==0);
 	}
 
 	// Finish up
@@ -233,40 +232,38 @@ int main(int argc, char *argv[]) {
 	//int step = 1;
 	int step = restarts*length*block;
 
-	// Create a PetraAnasaziVec. Note that the decision to make a view or
-	// or copy is determined by the petra constructor called by Anasazi::EpetraVec.
-	// This is possible because I pass in arguements needed by petra.
+	// Create an Anasazi::EpetraVec for an initial vector to start the solver.
+	// Note:  This needs to have the same number of columns as the blocksize.
 	Anasazi::EpetraVec ivec(Map, block);
 	ivec.MvRandom();
 
-	// Call the ctor that calls the petra ctor for a matrix
+	// Create an Anasazi::EpetraOp for the operator A.
 	Anasazi::EpetraOp Amat(A);	
-	Anasazi::BasicEigenproblem<double> MyProblem(&Amat, &ivec);
-
-	// Inform the eigenproblem that the matrix A is symmetric
-	MyProblem.SetSymmetric(rho==0.0); 
-
+	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double> > MyProblem =
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double>(&Amat, &ivec) );
+	
+	// Inform the eigenproblem that the operator A is symmetric
+	MyProblem->SetSymmetric(rho==0.0); 
+	
 	// Set the number of eigenvalues requested and the blocksize the solver should use
-	MyProblem.SetNEV( nev );
-	MyProblem.SetBlockSize( block );
-
+	MyProblem->SetNEV( nev );
+	MyProblem->SetBlockSize( block );
+	
 	// Inform the eigenproblem that you are finishing passing it information
-	assert( MyProblem.SetProblem()==0 );
-
+	assert( MyProblem->SetProblem()==0 );
+	
 	// Create a sorting manager to handle the sorting of eigenvalues in the solver
-	Anasazi::BasicSort<double> MySort( which );
+	Teuchos::RefCountPtr<Anasazi::BasicSort<double> > MySort = 
+	  Teuchos::rcp( new Anasazi::BasicSort<double>(which) );
 
 	// Create an output manager to handle the I/O from the solver
-	Anasazi::OutputManager<double> MyOM( MyPID );
-	//MyOM.SetVerbosity( 2 );	
+	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
+	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+	//MyOM->SetVerbosity( 2 );	
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double> MySolver(MyProblem, MySort, MyOM, tol, 
 							     length, step, restarts);	
-
-#ifdef UNIX
-	Epetra_Time & timer = *new Epetra_Time(Comm);
-#endif
 
 	// Iterate a few steps (if you wish)
 	//MySolver.iterate(5);
@@ -274,32 +271,27 @@ int main(int argc, char *argv[]) {
 	// Solve the problem to the specified tolerances or length
 	MySolver.solve();
 
-#ifdef UNIX
-	double elapsed_time = timer.ElapsedTime();
-	double total_flops = A.Flops();
-	double MFLOPs = total_flops/elapsed_time/1000000.0;
-#endif
-
 	// Retrieve eigenvalues
-	double* evals = MyProblem.GetEvals();
+	double* evals = MyProblem->GetEvals();
+	//Teuchos::RefCountPtr< const std::vector<double> > evals = MyProblem->GetEvals();
 
 	// Retrieve eigenvectors
 	// The size of the eigenvector storage is 2 x nev.  
 	// The real part of the eigenvectors is stored in the first nev vectors.
 	// The imaginary part of the eigenvectors is stored in the second nev vectors.
 	Anasazi::EpetraVec *evecr = 0, *eveci = 0;
-	int* index = new int[ nev ];
+	std::vector<int> index(nev);
 	
 	// Get real part.
 	for( i=0; i<nev; i++ )
 	  index[i] = i;
-	evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
+	evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
 
 	// Get imaginary part, if needed.
-	if (!MyProblem.IsSymmetric()) {
+	if (!MyProblem->IsSymmetric()) {
 	  for( i=0; i<nev; i++ )
 	    index[i] = nev + i;
-	  eveci = dynamic_cast<Anasazi::EpetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
+	  eveci = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
 	}	  
 	
 	// Output results to screen
@@ -310,33 +302,33 @@ int main(int argc, char *argv[]) {
 	Anasazi::EpetraVec tempAevec(Map,nev);
 	Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Breal2(nev,nev);
 	Teuchos::SerialDenseMatrix<int,double> Bimag(nev,nev), Bimag2(nev,nev);
-	double* normA = new double[nev];
-	double* tempnrm = new double[nev];
+	std::vector<double> normA(nev);
+	std::vector<double> tempnrm(nev);
 	cout<<endl<< "Actual Residuals"<<endl;
 	cout<<"------------------------------------------------------"<<endl;
 	Breal.putScalar(0.0); 
-	if (!MyProblem.IsSymmetric())
+	if (!MyProblem->IsSymmetric())
 	  Bimag.putScalar(0.0);
 	for (i=0; i<nev; i++) { 
 	  normA[i] = 0.0;
 	  Breal(i,i) = evals[i]; 
-	  if (!MyProblem.IsSymmetric())
+	  if (!MyProblem->IsSymmetric())
 	    Bimag(i,i) = evals[nev+i]; 
 	}
 	Amat.Apply( *evecr, tempAevec );
 	tempAevec.MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0 );
-	if (!MyProblem.IsSymmetric()) {
+	if (!MyProblem->IsSymmetric()) {
 	  tempAevec.MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0 );
-	  tempAevec.MvNorm( normA );
+	  tempAevec.MvNorm( &normA[0] );
 	  Amat.Apply( *eveci, tempAevec );
 	  tempAevec.MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0 );
 	  tempAevec.MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0 );
 	}
-	tempAevec.MvNorm( tempnrm );
+	tempAevec.MvNorm( &tempnrm[0] );
 	i = 0;
 	while (i < nev) {
 	  normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
-	  if (MyProblem.IsSymmetric()) {
+	  if (MyProblem->IsSymmetric()) {
 	    normA[i] /= Teuchos::ScalarTraits<double>::magnitude(evals[i]);
 	    i++;
 	  } else {
@@ -349,7 +341,7 @@ int main(int argc, char *argv[]) {
 	    }
 	  }
 	}
-	if (MyProblem.IsSymmetric()) {
+	if (MyProblem->IsSymmetric()) {
 	  cout<<"Real Part"<<"\t"<<"Direct Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
@@ -364,26 +356,10 @@ int main(int argc, char *argv[]) {
 	  }  
 	  cout<<"------------------------------------------------------"<<endl;
 	}	
-#ifdef UNIX
-	if (verbose)
-		cout << "\n\nTotal MFLOPs for Arnoldi = " << MFLOPs << " Elapsed Time = "<<  elapsed_time << endl;
-#endif
 
-
-	// Release all objects
-	if (index) delete [] index;
-
-	delete [] NumNz;
-	delete [] Values;
-	delete [] Indices;
-	delete [] MyGlobalElements;
-	delete [] index;
-	delete [] normA;
-	delete [] tempnrm;
-
-	delete &A;
-	delete &Map;
-	delete &Comm;
+	// Clean up.
+	if (evecr) delete evecr;
+	if (eveci) delete eveci;
 
 	return 0;
 }

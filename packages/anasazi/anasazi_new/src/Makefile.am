@@ -20,7 +20,7 @@
 CORE_H = \
 	$(srcdir)/AnasaziBasicEigenproblem.hpp \
 	$(srcdir)/AnasaziBasicSort.hpp \
-	$(srcdir)/AnasaziBlockArnoldi.hpp \
+	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
 	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
 	$(srcdir)/AnasaziEigensolver.hpp \
@@ -87,7 +87,7 @@ DIST_H =
 DIST = 
 
 COMP_H = \
-	$(srcdir)/AnasaziBlockArnoldi.hpp
+	$(srcdir)/AnasaziBlockKrylovSchur.hpp
 
 COMP = 
 

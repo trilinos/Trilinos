@@ -45,57 +45,58 @@ namespace Anasazi {
   {
   public:
     ///
-    static const MultiVec<TYPE>& c(MultiVec<TYPE>& mv) 
+    static const MV& c(MV& mv) 
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static RefCountPtr<MultiVec<TYPE> > Clone( const MultiVec<TYPE>& mv, const int numvecs )
+    static RefCountPtr<MV > Clone( const MV& mv, const int numvecs )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static RefCountPtr<MultiVec<TYPE> > CloneCopy( const MultiVec<TYPE>& mv )
+    static RefCountPtr<MV > CloneCopy( const MV& mv )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static RefCountPtr<MultiVec<TYPE> > CloneCopy( const MultiVec<TYPE>& mv, int index[], int numvecs )
+    static RefCountPtr<MV > CloneCopy( const MV& mv, int index[], int numvecs )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static RefCountPtr<MultiVec<TYPE> > CloneView( MultiVec<TYPE>& mv, int index[], int numvecs )
+    static RefCountPtr<MV > CloneView( MV& mv, int index[], int numvecs )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static RefCountPtr<const MultiVec<TYPE> > CloneView( const MultiVec<TYPE>& mv, int index[], int numvecs )
+    static RefCountPtr<const MV > CloneView( const MV& mv, int index[], int numvecs )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static int GetVecLength( const MultiVec<TYPE>& mv )
+    static int GetVecLength( const MV& mv )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static int GetNumberVecs( const MultiVec<TYPE>& mv )
+    static int GetNumberVecs( const MV& mv )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
-    static void MvTimesMatAddMv( TYPE alpha, const MultiVec<TYPE>& A, 
-				 const Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta, MultiVec<TYPE>& mv )
+    static void MvTimesMatAddMv( TYPE alpha, const MV& A, 
+				 const Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta, MV& mv )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static void MvAddMv( TYPE alpha, const MultiVec<TYPE>& A, TYPE beta, const MultiVec<TYPE>& B, MultiVec<TYPE>& mv )
+    static void MvAddMv( TYPE alpha, const MV& A, TYPE beta, const MV& B, MV& mv )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static void MvTransMv( const MultiVec<TYPE>& mv, TYPE alpha, const MultiVec<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B )
+    static void MvTransMv( const MV& mv, TYPE alpha, const MV& A, Teuchos::SerialDenseMatrix<int,TYPE>& B )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static ReturnType MvNorm( const MultiVec<TYPE>& mv, TYPE *normvec, NormType norm_type = TwoNorm )
+    static ReturnType MvNorm( const MV& mv, TYPE *normvec, NormType norm_type = TwoNorm )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static void SetBlock( const MultiVec<TYPE>& A, int index[], int numvecs, MultiVec<TYPE>& mv )
+    static void SetBlock( const MV& A, int index[], int numvecs, MV& mv )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static void MvRandom( MultiVec<TYPE>& mv )
+    static void MvRandom( MV& mv )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static void MvInit( MultiVec<TYPE>& mv, TYPE alpha = Teuchos::ScalarTraits<TYPE>::zero() )
+    static void MvInit( MV& mv, TYPE alpha = Teuchos::ScalarTraits<TYPE>::zero() )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
     ///
-    static void MvPrint( const MultiVec<TYPE>& mv, ostream& os )
+    static void MvPrint( const MV& mv, ostream& os )
     { return UndefinedScalarTraits<TYPE, MV>::notDefined(); }     
   };
-  
+
+
   template<class TYPE>
   class MultiVecTraits<TYPE,MultiVec<TYPE> >
   {
@@ -126,7 +127,8 @@ namespace Anasazi {
     { return mv.GetNumberVecs(); }
     ///
     static void MvTimesMatAddMv( TYPE alpha, const MultiVec<TYPE>& A, 
-				 const Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta, MultiVec<TYPE>& mv )
+				 const Teuchos::SerialDenseMatrix<int,TYPE>& B, 
+				 TYPE beta, MultiVec<TYPE>& mv )
     { mv.MvTimesMatAddMv(alpha,const_cast<MultiVec<TYPE>&>(A),const_cast<Teuchos::SerialDenseMatrix<int,TYPE>&>(B),beta); }
     ///
     static void MvAddMv( TYPE alpha, const MultiVec<TYPE>& A, TYPE beta, const MultiVec<TYPE>& B, MultiVec<TYPE>& mv )

@@ -273,7 +273,7 @@ PACKAGE_VERSION='1.0'
 PACKAGE_STRING='anasazi 1.0'
 PACKAGE_BUGREPORT='hkthorn@sandia.gov'
 
-ac_unique_file="/src/AnasaziBlockArnoldi.hpp"
+ac_unique_file="/src/AnasaziMultiVec.hpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>

@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 //
-//  This example shows how to use the block Arnoldi method to compute a few
+//  This example shows how to use the block Krylov-Schur method to compute a few
 //  of the largest singular values (sigma) and corresponding right singular 
 //  vectors (v) for the matrix A by solving the symmetric problem:
 //
@@ -72,9 +72,9 @@ int main(int argc, char *argv[]) {
 
 
 #ifdef EPETRA_MPI
-	Epetra_MpiComm & Comm = *new Epetra_MpiComm(MPI_COMM_WORLD);
+	Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
-	Epetra_SerialComm & Comm = *new Epetra_SerialComm();
+	Epetra_SerialComm Comm;
 #endif
 
 	int MyPID = Comm.MyPID();
@@ -90,15 +90,15 @@ int main(int argc, char *argv[]) {
 	// Construct a Map that puts approximately the same number of
 	// equations on each processor.
 
-	Epetra_Map& RowMap = *new Epetra_Map(m, 0, Comm);
-	Epetra_Map& ColMap = *new Epetra_Map(n, 0, Comm);
+	Epetra_Map RowMap(m, 0, Comm);
+	Epetra_Map ColMap(n, 0, Comm);
 
 	// Get update list and number of local equations from newly created Map.
 
 	int NumMyRowElements = RowMap.NumMyElements();
 	
-	int * MyGlobalRowElements = new int[NumMyRowElements];
-    	RowMap.MyGlobalElements(MyGlobalRowElements);
+	std::vector<int> MyGlobalRowElements(NumMyRowElements);
+    	RowMap.MyGlobalElements(&MyGlobalRowElements[0]);
 
 	/* We are building an m by n matrix with entries
 	  
@@ -109,13 +109,13 @@ int main(int argc, char *argv[]) {
 	*/
 
 	// Create an Epetra_Matrix
-	Epetra_CrsMatrix& A = *new Epetra_CrsMatrix(Copy, RowMap, n);
+	Epetra_CrsMatrix A(Copy, RowMap, n);
 
 	// Compute coefficients for discrete integral operator
-	double *Values = new double[n];
+	std::vector<double> Values(n);
+	std::vector<int> Indices(n);
 	double inv_mp1 = one/(m+1);
 	double inv_np1 = one/(n+1);
-	int *Indices = new int[n];
 	for (i=0; i<n; i++) { Indices[i] = i; }
 	
 	for (i=0; i<NumMyRowElements; i++)	{
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 	    else
 	      Values[j] = inv_np1 * ( (j+one)*inv_np1 ) * ( (MyGlobalRowElements[i]+one)*inv_mp1 - one );  // k*(tj)*(si-1)
 	  }
-	  assert(A.InsertGlobalValues(MyGlobalRowElements[i], n, Values, Indices)==0);
+	  assert(A.InsertGlobalValues(MyGlobalRowElements[i], n, &Values[0], &Indices[0])==0);
 	}
 
 	// Finish up
@@ -149,58 +149,50 @@ int main(int argc, char *argv[]) {
 	int restarts = 300;
 	int step = restarts*length*block;
 
-	// Create a EpetraAnasaziVec. Note that the decision to make a view or
-	// or copy is determined by the petra constructor called by Anasazi::EpetraVec.
-	// This is possible because I pass in arguements needed by petra.
+	// Create an Anasazi::EpetraVec for an initial vector to start the solver. 
+	// Note:  This needs to have the same number of columns as the blocksize.
 	Anasazi::EpetraVec ivec(ColMap, block);
 	ivec.MvRandom();
 
 	// Call the constructor for the (A^T*A) operator
 	Anasazi::EpetraSymOp Amat(A);	
-	Anasazi::BasicEigenproblem<double> MyProblem(&Amat, &ivec);
+	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double> > MyProblem =
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double>(&Amat, &ivec) );
 
 	// Inform the eigenproblem that the matrix A is symmetric
-	MyProblem.SetSymmetric(true);
+	MyProblem->SetSymmetric(true);
 
 	// Set the number of eigenvalues requested and the blocksize the solver should use
-	MyProblem.SetNEV( nev );
-	MyProblem.SetBlockSize( block );
+	MyProblem->SetNEV( nev );
+	MyProblem->SetBlockSize( block );
 
 	// Inform the eigenproblem that you are finishing passing it information
-	assert( MyProblem.SetProblem()==0 );
+	assert( MyProblem->SetProblem()==0 );
 
 	// Create a sorting manager to handle the sorting of eigenvalues in the solver
-	Anasazi::BasicSort<double> MySort( which );
+	Teuchos::RefCountPtr<Anasazi::BasicSort<double> > MySort = 
+	  Teuchos::rcp( new Anasazi::BasicSort<double>(which) );
 
 	// Create an output manager to handle the I/O from the solver
-	Anasazi::OutputManager<double> MyOM( MyPID );
-	//MyOM.SetVerbosity( 2 );	
+	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
+	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+	//MyOM->SetVerbosity( 2 );	
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double> MySolver(MyProblem, MySort, MyOM, tol, length, 
 						step, restarts);	
 	
-#ifdef UNIX
-	Epetra_Time & timer = *new Epetra_Time(Comm);
-#endif
-
 	// Iterate a few steps (if you wish)
 	//MySolver.iterate(5);
 
 	// Solve the problem to the specified tolerances or length
 	MySolver.solve();
 
-#ifdef UNIX
-	double elapsed_time = timer.ElapsedTime();
-	double total_flops = A.Flops();
-	double MFLOPs = total_flops/elapsed_time/1000000.0;
-#endif
-
 	// Obtain results directly
-	double* evalr = MyProblem.GetEvals();
+	double* evals = MyProblem->GetEvals();
 
 	// Retrieve eigenvectors
-	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem.GetEvecs());
+	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs());
 
 	// Output results to screen
 	MySolver.currentStatus();
@@ -208,59 +200,42 @@ int main(int argc, char *argv[]) {
 	// Compute singular values/vectors and direct residuals.
 	//
 	// Compute singular values which are the square root of the eigenvalues
-	if (MyOM.doOutput(-1)) {
+	if (MyOM->doOutput(-1)) {
 	  cout<<"------------------------------------------------------"<<endl;
 	  cout<<"Computed Singular Values: "<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	}
-	for (i=0; i<nev; i++) { evalr[i] = Teuchos::ScalarTraits<double>::squareroot( evalr[i] ); }
+	for (i=0; i<nev; i++) { evals[i] = Teuchos::ScalarTraits<double>::squareroot( evals[i] ); }
 	//
 	// Compute left singular vectors :  u = Av/sigma
 	//
-	Anasazi::EpetraVec Av(RowMap,nev), u(RowMap,nev);
-	Teuchos::SerialDenseMatrix<int,double> S(nev,nev);
-	double* tempnrm = new double[nev];
-	int* index = new int[ nev ];
+	std::vector<double> tempnrm(nev), directnrm(nev);
+	std::vector<int> index(nev);
 	for (i=0; i<nev; i++) { index[i] = i; }
-        A.Apply( *dynamic_cast<Anasazi::EpetraVec* >(evecr->CloneView( index, nev )), Av );
-	Av.MvNorm( tempnrm );
+	Anasazi::EpetraVec Av(RowMap,nev), u(RowMap,nev);
+	Anasazi::EpetraVec* evecs = dynamic_cast<Anasazi::EpetraVec* >(evecr->CloneView( &index[0], nev ));
+	Teuchos::SerialDenseMatrix<int,double> S(nev,nev);
+        A.Apply( *evecs, Av );
+	Av.MvNorm( &tempnrm[0] );
 	for (i=0; i<nev; i++) { S(i,i) = one/tempnrm[i]; };
 	u.MvTimesMatAddMv( one, Av, S, zero );
 	//
 	// Compute direct residuals : || Av - sigma*u ||
 	//
-	double* directnrm = new double[nev];
-	for (i=0; i<nev; i++) { S(i,i) = evalr[i]; }
+	for (i=0; i<nev; i++) { S(i,i) = evals[i]; }
 	Av.MvTimesMatAddMv( -one, u, S, one );
-	Av.MvNorm( directnrm );
-	if (MyOM.doOutput(-1)) {
+	Av.MvNorm( &directnrm[0] );
+	if (MyOM->doOutput(-1)) {
 	  cout<<"Singular Value"<<"\t\t"<<"Direct Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
-	    cout<< evalr[i] << "\t\t" << directnrm[i] << endl;
+	    cout<< evals[i] << "\t\t" << directnrm[i] << endl;
 	  }  
 	  cout<<"------------------------------------------------------"<<endl;
 	}
 	
-#ifdef UNIX
-	if (verbose)
-		cout << "\n\nTotal MFLOPs for Arnoldi = " << MFLOPs << " Elapsed Time = "<<  elapsed_time << endl;
-#endif
-
-
-	// Release all objects
-	delete [] Values;
-	delete [] Indices;
-	delete [] MyGlobalRowElements;
-	delete [] evalr;
-	delete [] tempnrm;
-	delete [] directnrm;
-	delete [] index;
+	// Clean up.
+	if (evecs) delete evecs;
 	
-	delete &A;
-	delete &RowMap;
-	delete &ColMap;
-	delete &Comm;
-
 	return 0;
 }
