@@ -27,6 +27,7 @@ struct ML_Operator_blockmat_data {
   void *M_matvec_data, *M_getrow_data;
   double *M_diag;
   ML_Operator *M_mat;
+  ML_Operator *Ke_mat;
   int    destroy_M_mat;
 
   int N_Ke, Nghost;
