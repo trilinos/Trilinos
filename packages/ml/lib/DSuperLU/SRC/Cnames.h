@@ -152,6 +152,7 @@
 #define dcopy_    dcopy
 #define dscal_    dscal
 #define dger_     dger
+#define dlamch_   dlamch                /*JJH  8/24/01 */
 #define dnrm2_    dnrm2
 #define dsymv_    dsymv
 #define ddot_     ddot
