@@ -451,7 +451,7 @@ int comm[3],gcomm[3];
       ZOLTAN_PRINT_GID(zz, &((*import_global_ids)[i*zz->Num_GID]));
       printf("  To partition: %4d", 
              (*import_to_part != NULL ? (*import_to_part)[i] 
-                                      : (*import_procs)[i]));
+                                      : zz->Proc));
       printf("  From processor: %4d\n", (*import_procs)[i]);
     }
     printf("\n");
