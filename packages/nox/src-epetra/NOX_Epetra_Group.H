@@ -107,6 +107,8 @@ A NOX::ParameterList is supplied in the constructor and during calls to the NOX:
  
 <li> "Tolerance" - tolerance used by AztecOO to determine if a linear solve has converged.
 
+<li> "Ill-Conditioning Threshold" - If the upper hessenberg matrix during GMRES generates a condition number greater than this parameter value, aztec will exit the linear solve returning the it's current solution.  The default is 1.0e11.  
+
 <li> "Max Iterations" - maximum number of linear iterations in the linear solve.  Defaults to 
 
 <li> "Output Frequency" - number of linear solve iterations between output of the linear solve residual. Takes an integer, or one of the AztecOO flags: AZ_none, AZ_last, or AZ_all as a value. Defaults to AZ_last.

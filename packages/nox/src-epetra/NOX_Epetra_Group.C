@@ -366,6 +366,12 @@ void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
     throw "NOX Error";
   }
 
+  // Set the ill-conditioning threshold for the upper hessenberg matrix
+  if (p.isParameter("Ill-Conditioning Threshold")) {
+    aztec.SetAztecOption(AZ_ill_cond_thresh, 
+			 p.getParameter("Ill-Conditioning Threshold", 1.0e+11)); 
+  }
+
   // Frequency of linear solve residual output
   aztec.SetAztecOption(AZ_output, 
 		       p.getParameter("Output Frequency", AZ_last));
