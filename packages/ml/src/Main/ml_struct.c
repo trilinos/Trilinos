@@ -1770,10 +1770,10 @@ for (j = 0; j < row_length; j++)
          widget->ps                   = ps;
          
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-			      (void *) widget, fun1, NULL, ntimes, 0.0);
+			      (void *) widget, fun1, NULL, ntimes, 0.0,NULL);
 
 	 status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
-			      (void *) widget, fun2, NULL, ntimes, 0.0);
+			      (void *) widget, fun2, NULL, ntimes, 0.0,NULL);
 
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
