@@ -1,6 +1,7 @@
 /*Paul
 27-July-2002 Templated for OrdinalType.
 06-August-2002 Changed to images. Documentation added.
+21-Sept-2002 Comm/Platform split
 */
 
 #ifndef _TPETRA_SERIALDIRECTORY_H_

@@ -1,12 +1,14 @@
 /*Paul
 04-Aug-2002 Status: Templated for class T. All Epetra methods except Distributor. Fully documented. Switched to images.
 03-Sept-2002 Took out Directory and ImageID methods. Templated for PacketType, OrdinalType.
+12-Oct-2002 Added some consts (still some left). Updated for Common->Compiler_Directives renaming.
+30-Oct-2002 Updated for Compiler_Directives -> ConfigDefs renaming.
 */
 
 #ifndef _TPETRA_COMM_H_
 #define _TPETRA_COMM_H_
 
-#include "Tpetra_Common.h"
+#include "Tpetra_ConfigDefs.h"
 
 namespace Tpetra {
 
@@ -49,7 +51,7 @@ class Comm {
     \param root In
            On entry, contains the imageID from which all images will receive a copy of myVals.
   */
-  virtual void broadcast(PacketType* myVals, OrdinalType count, int root) const = 0;
+  virtual void broadcast(PacketType* myVals, const OrdinalType count, const int root) const = 0;
   //@}
 
   //@{ \name Gather Methods
@@ -63,7 +65,7 @@ class Comm {
     \param count In
            On entry, contains the length of the list of values.
   */
-  virtual void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType count) const = 0;
+  virtual void gatherAll(PacketType* myVals, PacketType* allVals, const OrdinalType count) const = 0;
   //@}
 
   //@{ \name Sum Methods
@@ -78,7 +80,7 @@ class Comm {
     \param count In
            On entry, contains the length of the list of values.
   */
-  virtual void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType count) const = 0;
+  virtual void sumAll(PacketType* partialSums, PacketType* globalSums, const OrdinalType count) const = 0;
   //@}
 	
   //@{ \name Max/Min Methods
@@ -93,7 +95,7 @@ class Comm {
     \param count In
            On entry, contains the length of the list of values.
   */
-  virtual void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType count) const = 0;
+  virtual void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, const OrdinalType count) const = 0;
   //! Global Min function.
   /*! Take list of input values from all images in the communicator, computes the min and returns the
     min to all images.
@@ -105,7 +107,7 @@ class Comm {
     \param count In
            On entry, contains the length of the list of values.
   */
-  virtual void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType count) const = 0;
+  virtual void minAll(PacketType* partialMins, PacketType* globalMins, const OrdinalType count) const = 0;
   //@}
 
   //@{ \name Parallel Prefix Methods
@@ -120,8 +122,13 @@ class Comm {
     \param count In
            On entry, contains the length of the list of values.
   */
-  virtual void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType count) const = 0;
+  virtual void scanSum(PacketType* myVals, PacketType* scanSums, const OrdinalType count) const = 0;
   //@}
+
+	//@{ \name I/O Methods
+	//! printInfo
+	virtual void printInfo(ostream& os) const = 0;
+	//@}
 	
 }; // class Comm
 

@@ -1,6 +1,7 @@
 /*Paul
 04-Aug-2002 Status: Templated for class T. All Epetra methods except Distributor. Fully documented. Switched to images.
 03-Sept-2002 Took out Directory and ImageID methods. Templated for PacketType, OrdinalType.
+12-Oct-2002 Added some consts (still some left).
 */
 
 #ifndef _TPETRA_SERIALCOMM_H_
@@ -60,7 +61,7 @@ public:
     \param root In
            On entry, contains the imageID from which all images will receive a copy of myVals.
   */
-  void broadcast(PacketType* myVals, OrdinalType count, int root) const {};
+  void broadcast(PacketType* myVals, const OrdinalType count, const int root) const {};
   //@}
 
   //@{ \name Gather Methods
@@ -73,7 +74,7 @@ public:
     \param count In
            On entry, contains the length of the list of myVals.
   */
-  void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType count) const;
+  void gatherAll(PacketType* myVals, PacketType* allVals, const OrdinalType count) const;
   //@}
 
   //@{ \name Sum Methods
@@ -87,7 +88,7 @@ public:
     \param count In
            On entry, contains the length of the list of values.
   */
-  void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType count) const;
+  void sumAll(PacketType* partialSums, PacketType* globalSums, const OrdinalType count) const;
   //@}
 	
   //@{ \name Max/Min Methods
@@ -101,7 +102,7 @@ public:
     \param count In
            On entry, contains the length of the list of values.
   */
-  void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType count) const;
+  void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, const OrdinalType count) const;
   //! SerialComm Global Min function.
   /*! A copy for a serial communicator.
     \param partialMins In
@@ -112,7 +113,7 @@ public:
     \param count In
            On entry, contains the length of the list of values.
   */
-  void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType count) const;
+  void minAll(PacketType* partialMins, PacketType* globalMins, const OrdinalType count) const;
   //@}
 
   //@{ \name Parallel Prefix Methods
@@ -125,8 +126,14 @@ public:
     \param count In
            On entry, contains the length of the list of values.
   */
-  void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType count) const;
+  void scanSum(PacketType* myVals, PacketType* scanSums, const OrdinalType count) const;
   //@}
+
+	//@{ \name I/O Methods
+	//! Print methods
+	void print(ostream& os) const { os << label();};
+	void printInfo(ostream& os) const {print(os);};
+	//@}
 
 }; // class SerialComm
 

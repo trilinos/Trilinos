@@ -12,6 +12,8 @@
 27-July-2002 gMGE & print const, templated for OrdinalType.
 06-Aug-2002 Switched to images.
 03-Sept-2002 Added == and != operators.
+21-Sept-2002 Comm/Platform split.
+07-Oct-2002 ElementSpaceData move started
 */
 
 #ifndef _TPETRA_ELEMENTSPACE_H_
@@ -20,11 +22,14 @@
 #include "Tpetra_Object.h"
 #include "Tpetra_Directory.h"
 #include <map>
+#include <boost/shared_ptr.hpp>
+#include "Tpetra_ElementSpaceData.h"
 
 namespace Tpetra {
 
 // forward declarations
-template<class PacketType, class OrdinalType> class Comm;
+template<typename PacketType, typename OrdinalType> class Comm;
+template<typename PacketType, typename OrdinalType> class Platform;
 
 //! Tpetra::ElementSpace: A class for constructing and using template<ordinalType> ElementSpaces.
 /*! ElementSpace objects are defined to have an element size of 1. Variable element sizes are implemented in Tpetra::BlockElementSpace. Some ElementSpace methods throw exceptions, and should be enclosed in a try/catch block. All Tpetra_ElementSpace objects require a Tpetra_Comm object. Local IDs (LIDs) are always in the range indexBase to numMyElements - indexBase.
@@ -43,20 +48,22 @@ ElementSpace error codes (positive for non-fatal, negative for fatal):
 
 
 template<typename OrdinalType>
-class ElementSpace : public Tpetra::Object {
+class ElementSpace : public Object {
 
 public:
   
 //@{ \name Constructor/Destructor Methods
   
 //! Tpetra::ElementSpace constructor with Tpetra-defined contiguous uniform distribution.
-ElementSpace(OrdinalType numGlobalElements, OrdinalType indexBase, const Comm<OrdinalType, OrdinalType>& Comm);
+ElementSpace(OrdinalType numGlobalElements, OrdinalType indexBase, const Platform<OrdinalType, OrdinalType>& Platform);
 
 //! Tpetra::ElementSpace constructor with user-defined contiguous distribution.
-ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType indexBase, const Comm<OrdinalType, OrdinalType>& Comm);
+ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType indexBase, 
+						 const Platform<OrdinalType, OrdinalType>& Platform);
 
 //! Tpetra::ElementSpace constructor with user-defined non-contiguous (arbitrary) distribution.
-ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType* elementList, OrdinalType indexBase, const Comm<OrdinalType, OrdinalType>& Comm);
+ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType* elementList, 
+						 OrdinalType indexBase, const Platform<OrdinalType, OrdinalType>& Platform);
 
 //! Tpetra::ElementSpace copy constructor.
 ElementSpace(const ElementSpace<OrdinalType>& ElementSpace);
@@ -70,7 +77,8 @@ ElementSpace(const ElementSpace<OrdinalType>& ElementSpace);
 //@{ \name Local/Global ID Accessor Methods
 
 //! Returns the image IDs and corresponding local index values for a given list of global indices.
-void getRemoteIDList(OrdinalType numIDs, const OrdinalType* GIDList, OrdinalType* imageIDList, OrdinalType* LIDList) const {Directory_->getDirectoryEntries(numIDs, GIDList, imageIDList, LIDList);};
+void getRemoteIDList(OrdinalType numIDs, const OrdinalType* GIDList, OrdinalType* imageIDList, OrdinalType* LIDList) const 
+	{ElementSpaceData_->Directory_->getDirectoryEntries(numIDs, GIDList, imageIDList, LIDList);};
 
 //! Returns local ID of global ID passed in, throws exception -1 if not found on this image.
 OrdinalType getLID(OrdinalType GID) const;
@@ -85,22 +93,22 @@ bool isMyGID(OrdinalType GID) const;
 bool isMyLID(OrdinalType LID) const;
 
 //! Returns the minimum global ID in this ElementSpace.
-OrdinalType getMinAllGID() const {return(minAllGID_);};
+OrdinalType getMinAllGID() const {return(ElementSpaceData_->minAllGID_);};
 
 //! Returns the maximum global ID in this ElementSpace.
-OrdinalType getMaxAllGID() const {return(maxAllGID_);};
+OrdinalType getMaxAllGID() const {return(ElementSpaceData_->maxAllGID_);};
 
 //! Returns the minimum global ID owned by this image.
-OrdinalType getMinMyGID() const {return(minMyGID_);};
+OrdinalType getMinMyGID() const {return(ElementSpaceData_->minMyGID_);};
 
 //! Returns the maximum global ID owned by this image.
-OrdinalType getMaxMyGID() const {return(maxMyGID_);};
+OrdinalType getMaxMyGID() const {return(ElementSpaceData_->maxMyGID_);};
 
 //! Returns the minimum local ID on the calling image.
-OrdinalType getMinLID() const {return(minLID_);};
+OrdinalType getMinLID() const {return(ElementSpaceData_->minLID_);};
 
 //! Returns the maximum local ID on the calling image.
-OrdinalType getMaxLID() const {return(maxLID_);};
+OrdinalType getMaxLID() const {return(ElementSpaceData_->maxLID_);};
 
 //@}
 
@@ -108,16 +116,16 @@ OrdinalType getMaxLID() const {return(maxLID_);};
 //@{ \name Size & Dimension Accessor Methods
 
 //! Returns the number of elements in this ElementSpace.
-OrdinalType getNumGlobalElements() const {return(numGlobalElements_);};
+OrdinalType getNumGlobalElements() const {return(ElementSpaceData_->numGlobalElements_);};
 
 //! Returns the number of elements belonging to the calling image.
-OrdinalType getNumMyElements() const {return(numMyElements_);};
+OrdinalType getNumMyElements() const {return(ElementSpaceData_->numMyElements_);};
 
 //! Puts list of global elements on this processor into the user-provided array.
 void getMyGlobalElements(OrdinalType* elementList) const;
 
 //! Returns the Index base for this ElementSpace. Normally 0 for C/C++ or 1 for Fortran, but can be anything.
-OrdinalType getIndexBase() const {return(indexBase_);};
+OrdinalType getIndexBase() const {return(ElementSpaceData_->indexBase_);};
 
 //@}
 
@@ -125,10 +133,10 @@ OrdinalType getIndexBase() const {return(indexBase_);};
 //@{ \name Misc. Boolean Tests
 
 //! Returns true if this ElementSpace is distributed contiguously, returns false otherwise.
-bool isContiguous() const {return(contiguous_);};
+bool isContiguous() const {return(ElementSpaceData_->contiguous_);};
 
 //! Returns true if this ElementSpace is distributed across more than one image, returns false otherwise.
-bool isGlobal() const {return(global_);};
+bool isGlobal() const {return(ElementSpaceData_->global_);};
 
 //! Returns true if the ElementSpace passed in is identical to this ElementSpace. Also implemented through the == and != operators.
 bool isSameAs(const ElementSpace<OrdinalType>& ElementSpace) const;
@@ -152,35 +160,36 @@ OrdinalType* getMyGlobalElements() const;
 /*! An << operator is inherited from Tpetra::Object, which uses the print method.*/
 void print(ostream& os) const;
 
-//! Access function for the Tpetra::Comm communicator.
-const Comm<OrdinalType, OrdinalType>& comm() const {return(*Comm_);};
+//! Access function for the Tpetra::Comm and Tpetra::Platform communicators.
+const Comm<OrdinalType, OrdinalType>& comm() const {return(*ElementSpaceData_->Comm_);};
+const Platform<OrdinalType, OrdinalType>& platform() const {return(*ElementSpaceData_->Platform_);};
 
 //@}
 
 private:
 // private data members
-mutable map<OrdinalType, OrdinalType> lgMap_; // mutable because STL is finicky about iterators
-map<OrdinalType, OrdinalType> glMap_;         // and gMGE(OT*) is only logically const, not truely const
-OrdinalType numGlobalElements_;
-OrdinalType numMyElements_;
-OrdinalType indexBase_;
-OrdinalType minLID_;
-OrdinalType maxLID_;
-OrdinalType minMyGID_;
-OrdinalType maxMyGID_;
-OrdinalType minAllGID_;
-OrdinalType maxAllGID_;
-bool contiguous_;
-bool global_;
-mutable OrdinalType* myGlobalElements_; // mutable so that gMGE() can modify it
+boost::shared_ptr< ElementSpaceData<OrdinalType> > ElementSpaceData_; // Boost shared pointer
+// contained in ElementSpaceData class
+//   OrdinalType numGlobalElements_;
+//   OrdinalType numMyElements_;
+//   OrdinalType indexBase_;
+//   OrdinalType minLID_;
+//   OrdinalType maxLID_;
+//   OrdinalType minMyGID_;
+//   OrdinalType maxMyGID_;
+//   OrdinalType minAllGID_;
+//   OrdinalType maxAllGID_;
+//   bool contiguous_;
+//   bool global_;
+//   map<OrdinalType, OrdinalType> lgMap_;
+//   map<OrdinalType, OrdinalType> glMap_;
+//   Comm<OrdinalType, OrdinalType>* Comm_;
+//   OrdinalType* myGlobalElements_;
+//   Directory<OrdinalType>* Directory_;
+//   Platform<OrdinalType, OrdinalType>* Platform_;
 
 // private functions
-bool checkGlobalness (OrdinalType numGlobalElements, OrdinalType numMyElements);
 void directorySetup();
-
-// private instances of other classes
-const Comm<OrdinalType, OrdinalType>* Comm_;
-Directory<OrdinalType>* Directory_;
 
 }; // ElementSpace class
 } // Tpetra namespace

@@ -1,12 +1,14 @@
 /*Paul
 27-May-2002 General cleanup. Changed method names to fit namingConvention. Commented out reportError method (see Tpetra_Object.cpp for details).
 06-August-2002 Changed to images (nothing changed). Also touched up the documentation a bit, and updated some naming conventions.
+12-Oct-2002 Updated for Common->Compiler_Directives renaming.
+30-Oct-2002 Updated for Compiler_Directives -> ConfigDefs renaming.
 */
 
 #ifndef _TPETRA_OBJECT_H_
 #define _TPETRA_OBJECT_H_
 
-#include "Tpetra_Common.h"
+#include "Tpetra_ConfigDefs.h"
 #include "Tpetra_CombineMode.h"
 #include "Tpetra_DataAccess.h"
 

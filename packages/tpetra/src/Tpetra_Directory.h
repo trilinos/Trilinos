@@ -1,6 +1,7 @@
 /*Paul
 27-July-2002 Status: Templated for OrdinalType. Almost trivial SerialDirectory only implementation.
 06-August-2002 Changed to images.
+21-Sept-2002 Comm/Platform split
 */
 
 #ifndef _TPETRA_DIRECTORY_H_

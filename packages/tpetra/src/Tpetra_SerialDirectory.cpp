@@ -1,6 +1,7 @@
 /*Paul
 27-July-2002 Templated for OrdinalType.
 06-August-2002 Changed to images.
+21-Sept-2002 Comm/Platform split
 */
 
 #include "Tpetra_ElementSpace.h"
@@ -26,7 +27,7 @@ SerialDirectory<OrdinalType>::~SerialDirectory() {}
 // query method
 template<class OrdinalType>
 void SerialDirectory<OrdinalType>::getDirectoryEntries(OrdinalType numEntries, const OrdinalType* globalEntries, OrdinalType* images, OrdinalType* localEntries) const {
-	int imageID = ElementSpace_->comm().getMyImageID();
+	int imageID = ElementSpace_->platform().getMyImageID();
 	for(OrdinalType i = 0; i < numEntries; i++) {
 		if(!ElementSpace_->isMyGID(globalEntries[i]))
 			throw reportError("Global ID " + toString(globalEntries[i]) + " was not found in this ElementSpace.", 1);

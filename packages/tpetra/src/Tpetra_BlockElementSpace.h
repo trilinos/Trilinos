@@ -5,6 +5,7 @@
 01-August-2002 Real writeup starts. Minor changes.
 06-August-2002 Switched to images.
 03-Sept-2002 Added == and != operators
+16-Oct-2002 Updated for BESData
 */
 
 #ifndef _TPETRA_BLOCKELEMENTSPACE_H_
@@ -12,8 +13,11 @@
 
 #include "Tpetra_Object.h"
 #include "Tpetra_ElementSpace.h"
+#include <boost/shared_ptr.hpp>
 
 namespace Tpetra {
+
+	template<typename OrdinalType> class BlockElementSpaceData;
 
 //! Tpetra::BlockElementSpace: A class for constructing and using template<OrdinalType> BlockElementSpaces.
 /*! BlockElementSpace objects can have variable element sizes. (If variable element sizes are not needed, an ElementSpace object should probably be used instead.) Some BlockElementSpace methods throw exceptions, and should be enclosed in a try/catch block. All BlockElementSpace objects require an ElementSpace object, which requires a Comm object.  
@@ -27,7 +31,7 @@ BlockElementSpace error codes (positive for non-fatal, negative for fatal):
   <li> -99 Internal BlockElementSpace error.  Contact developer.
   </ol>*/
 
-template<class OrdinalType> 
+template<typename OrdinalType> 
 class BlockElementSpace : public Object {
 
 public:
@@ -44,7 +48,7 @@ BlockElementSpace(ElementSpace<OrdinalType>& ElementSpace, OrdinalType* elementS
 BlockElementSpace(BlockElementSpace<OrdinalType>& BlockElementSpace);
 
 //! Tpetra::BlockElementSpace destructor.
-~BlockElementSpace();
+~BlockElementSpace() {};
 
 //@}
 
@@ -53,7 +57,7 @@ BlockElementSpace(BlockElementSpace<OrdinalType>& BlockElementSpace);
 
 //! Returns the image IDs, corresponding local index values, and element sizes for a given list of global indices.
 /*! Theimage IDs, local index values, and element sizes are placed into arrays passed in by the user. The list of global indices used to create these is also passed in by the user. Exceptions might be thrown. */ 
-void getRemoteIDList(OrdinalType numIDs, const OrdinalType* GIDList, OrdinalType* imageIDList, OrdinalType* LIDList, OrdinalType* elementSizeList) const;
+void getRemoteIDList(const OrdinalType numIDs, const OrdinalType* GIDList, OrdinalType* imageIDList, OrdinalType* LIDList, OrdinalType* elementSizeList) const;
 
 //! Returns the local ID of the element that contains the given local Point ID, and the offset of the point in that element.
 /*! The local ID and offset are placed in OrdinalType variables passed in by reference by the user. */
@@ -71,22 +75,22 @@ OrdinalType getElementSize() const;
 OrdinalType getElementSize(OrdinalType LID) const;
 
 //! Returns the number of global points in the BlockElementSpace; equals the sum of all element sizes across all images.
-OrdinalType getNumGlobalPoints() const {return(numGlobalPoints_);};
+OrdinalType getNumGlobalPoints() const {return(BlockElementSpaceData_->numGlobalPoints_);};
 
 //! Returns the number of global points on this image; equals the sum of all element sizes on the calling image.
-OrdinalType getNumMyPoints() const {return(numMyPoints_);};
+OrdinalType getNumMyPoints() const {return(BlockElementSpaceData_->numMyPoints_);};
 
 //! Returns the minimum element size on the calling image.
-OrdinalType getMinMyElementSize() const {return(minMySize_);};
+OrdinalType getMinMyElementSize() const {return(BlockElementSpaceData_->minMySize_);};
 
 //! Returns the maximum element size on the calling image.
-OrdinalType getMaxMyElementSize() const {return(maxMySize_);};
+OrdinalType getMaxMyElementSize() const {return(BlockElementSpaceData_->maxMySize_);};
 
 //! Returns the minimum element size in the BlockElementSpace.
-OrdinalType getMinElementSize() const {return(minGlobalSize_);};
+OrdinalType getMinElementSize() const {return(BlockElementSpaceData_->minGlobalSize_);};
 
 //! Returns the maximum element size in the BlockElementSpace.
-OrdinalType getMaxElementSize() const {return(maxGlobalSize_);};
+OrdinalType getMaxElementSize() const {return(BlockElementSpaceData_->maxGlobalSize_);};
 
 //@}
 
@@ -94,7 +98,7 @@ OrdinalType getMaxElementSize() const {return(maxGlobalSize_);};
 //@{ \name Misc. Boolean Tests
 
 //! Returns true if all elements have a constant size, returns false otherwise.
-bool isConstantElementSize() const {return(constantSize_);};
+bool isConstantElementSize() const {return(BlockElementSpaceData_->constantSize_);};
 
 //! Returns true if this BlockElementSpace is identical to the one passed in, returns false otherwise. Also implemented through the == and != operators.
 bool isSameAs(const BlockElementSpace<OrdinalType>& BlockElementSpace) const;
@@ -111,7 +115,7 @@ OrdinalType* getFirstPointInElementList() const;
 void getFirstPointInElementList(OrdinalType* firstPointInElementList) const;
 
 //! Returns a pointer to array of the sizes of all the elements that belong to the calling image.
-OrdinalType* getElementSizeList() const {return(elementSizeList_);};
+OrdinalType* getElementSizeList() const {return(BlockElementSpaceData_->elementSizeList_);};
 void getElementSizeList(OrdinalType* elementSizeList) const;
 
 //! Returns a pointer to an array that lists the LID of the element that each point belongs to.
@@ -127,29 +131,17 @@ void getPointToElementList(OrdinalType* pointToElementList) const;
 void print(ostream& os) const;
 
 //! Access function for ElementSpace object.
-const ElementSpace<OrdinalType>& elementSpace() const {return(*ElementSpace_);};
+const ElementSpace<OrdinalType>& elementSpace() const {return(*BlockElementSpaceData_->ElementSpace_);};
 
 //@}
 
 private:
-
-bool constantSize_;
-OrdinalType elementSize_;
-OrdinalType numMyPoints_;
-OrdinalType numGlobalPoints_;
-OrdinalType minMySize_;
-OrdinalType maxMySize_;
-OrdinalType minGlobalSize_;
-OrdinalType maxGlobalSize_;
-OrdinalType* elementSizeList_;
-mutable OrdinalType* pointToElementList_;
-mutable OrdinalType* firstPointList_;
-ElementSpace<OrdinalType>* ElementSpace_;
+boost::shared_ptr<BlockElementSpaceData<OrdinalType> > BlockElementSpaceData_; // Boost shared pointer
 
 }; // BlockElementSpace class
 
 } // Tpetra namespace
 
 #include "Tpetra_BlockElementSpace.cpp"
-
+#include "Tpetra_BlockElementSpaceData.h"
 #endif // _TPETRA_BLOCKELEMENTSPACE_H_

@@ -1,50 +1,52 @@
+/*Paul
+12-Oct-2002 Updated for Common->Compiler_Directives renaming.
+30-Oct-2002 Updated for Compiler_Directives -> ConfigDefs renaming.
+*/
+
 #ifndef _TPETRA_PLATFORM_H_
 #define _TPETRA_PLATFORM_H_
 
-#include "Tpetra_Common.h"
+#include "Tpetra_ConfigDefs.h"
 #include "Tpetra_Comm.h"
+#include "Tpetra_Directory.h"
 
 namespace Tpetra {
 
-	template<typename OrdinalType> class ElementSpace;
-	template<typename OrdinalType> class Directory;
+template<typename OrdinalType> class ElementSpace;
 
-	//! Tpetra::Platform: The Tpetra Platform Abstract Base Class
-	/*! Platform is an abstract base class. It should never be called directly.
+//! Tpetra::Platform: The Tpetra Platform Abstract Base Class
+/*! Platform is an abstract base class. It should never be called directly.
 		Rather, an implementation of Platform, such as SerialPlatform, should be used instead.
 		Logically, Platform is a pure virtual class, but due to the ways in which templates and 
 		virtual functions work together in C++, it is not actually implemented that way.
-	*/
+*/
 
-	class Platform {
-	public:
+template<typename PacketType, typename OrdinalType>
+class Platform {
+public:
+
 		//@{ \name Constructor/Destructor Methods
-		//! Constructor
 		//! Destructor
-		virtual ~Platform();
+		virtual ~Platform() {};
 		//@}
-
-
-		//@{ \name Class Creation and Accessor Methods
-		//! Comm Instance
-				template<typename PacketType, typename OrdinalType>
-				Comm<PacketType, OrdinalType>* createComm(PacketType dummyP, OrdinalType dummyO) const;
-		//! Directory Instance
-				template<typename OrdinalType>
-				Directory<OrdinalType>* createDirectory(const ElementSpace<OrdinalType>& ElementSpace) const;
-		//@}
-
 
 		//@{ \name Platform Info Methods
 		//! getMyImageID
-		virtual int getMyImageID() const;
+		virtual int getMyImageID() const = 0;
 		//! getNumImages
-		virtual int getNumImages() const;
+		virtual int getNumImages() const = 0;
+		//@}
+
+		//@{ \name Class Creation and Accessor Methods
+		//! Comm Instance
+		virtual Comm<PacketType, OrdinalType>* createComm() const = 0;
+		//! Directory Instance
+		virtual Directory<OrdinalType>* createDirectory(const ElementSpace<OrdinalType>& ElementSpace) const = 0;
 		//@}
 
 		//@{ \name I/O Methods
 		//! printInfo
-		virtual void printInfo(ostream& os) const;
+		void printInfo(ostream& os) const {cout << "ERR: Platform method called.\n";};
 		//@}
 
 	}; // Platform class

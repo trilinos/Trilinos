@@ -8,38 +8,22 @@
 
 namespace Tpetra {
 
-	template<typename OrdinalType> class ElementSpace;
+// forward definition
+template<typename OrdinalType> class ElementSpace;
 
 	//! Tpetra::SerialPlatform: Serial Implementation of the Platform class.
 
-	class SerialPlatform : public Object, public virtual Platform {
+ template<typename PacketType, typename OrdinalType>
+	class SerialPlatform : public Object, public virtual Platform<PacketType, OrdinalType> {
 	public:
 
 		//@{ \name Constructor/Destructor Methods
 		//! Constructor
 		SerialPlatform() : Object("Tpetra::Platform[Serial]") {};
+		//! Copy constructor
+		SerialPlatform(const SerialPlatform<PacketType, OrdinalType>& Platform) : Object(Platform.label()) {};
 		//! Destructor
 		~SerialPlatform() {};
-		//@}
-
-		//@{ \name Class Creation and Accessor Methods
-
-		//! Comm Instance
-		template<typename PacketType, typename OrdinalType>
-		Comm<PacketType, OrdinalType>* createComm(PacketType dummyP, OrdinalType dummyO) const {
-			// static_cast casts SerialComm* to Comm*
-			Comm<PacketType, OrdinalType>* comm = static_cast<Comm<PacketType, OrdinalType>*>(new SerialComm<PacketType, OrdinalType>());
-			return(comm);
-		};
-
-		//! Directory Instance
-		template<typename OrdinalType>
-		Directory<OrdinalType>* createDirectory(const ElementSpace<OrdinalType>& ElementSpace) const {
-		  // static_cast casts SerialDirectory* to Directory*
-		  Directory<OrdinalType>* dir = static_cast<Directory<OrdinalType>*>(new SerialDirectory<OrdinalType>(ElementSpace)); 
-		  return(dir);
-		};
-
 		//@}
 
 		//@{ \name Platform Info Methods
@@ -47,6 +31,24 @@ namespace Tpetra {
 		int getMyImageID() const {return(0);};
 		//! getNumImages
 		int getNumImages() const {return(1);};
+		//@}
+
+		//@{ \name Class Creation and Accessor Methods
+
+		//! Comm Instance
+		Comm<PacketType, OrdinalType>* createComm() const {
+			// static_cast casts SerialComm* to Comm*
+			Comm<PacketType, OrdinalType>* comm = static_cast<Comm<PacketType, OrdinalType>*>(new SerialComm<PacketType, OrdinalType>());
+			return(comm);
+		};
+
+		//! Directory Instance
+		Directory<OrdinalType>* createDirectory(const ElementSpace<OrdinalType>& ElementSpace) const {
+		  // static_cast casts SerialDirectory* to Directory*
+		  Directory<OrdinalType>* dir = static_cast<Directory<OrdinalType>*>(new SerialDirectory<OrdinalType>(ElementSpace)); 
+		  return(dir);
+		};
+
 		//@}
 
 		//@{ \name I/O Methods
