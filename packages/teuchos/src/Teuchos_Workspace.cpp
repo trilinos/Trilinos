@@ -108,30 +108,29 @@ void WorkspaceStore::protected_initialize(size_t num_bytes)
 
 RawWorkspace::RawWorkspace(WorkspaceStore* workspace_store, size_t num_bytes)
 {
-	TEST_FOR_EXCEPTION(!(num_bytes >= 0),std::invalid_argument,"RawWorkspace::RawWorkspace(...): Error!");
-	if(num_bytes) {
-		workspace_store_ = workspace_store;
-		if( !workspace_store_ || workspace_store_->num_bytes_remaining() < num_bytes ) {
-			workspace_begin_ = ::new char[num_bytes];
-			workspace_end_   = workspace_begin_ + num_bytes;
-			owns_memory_     = true;
-			if(workspace_store_)
-				workspace_store_->num_dyn_allocations_++;
-		}
-		else {
-			workspace_begin_ = workspace_store_->curr_ws_ptr_;
-			workspace_end_   = workspace_begin_ + num_bytes;
-			owns_memory_     = false;
-			workspace_store_->curr_ws_ptr_ += num_bytes;
-			workspace_store_->num_static_allocations_++;
-		}
-	}
-	else {
-		workspace_store_ = NULL;
-		workspace_begin_ = NULL;
-		workspace_end_   = NULL;
-		owns_memory_     = false;
-	}
+  if(num_bytes) {
+    workspace_store_ = workspace_store;
+    if( !workspace_store_ || workspace_store_->num_bytes_remaining() < num_bytes ) {
+      workspace_begin_ = ::new char[num_bytes];
+      workspace_end_   = workspace_begin_ + num_bytes;
+      owns_memory_     = true;
+      if(workspace_store_)
+	workspace_store_->num_dyn_allocations_++;
+    }
+    else {
+      workspace_begin_ = workspace_store_->curr_ws_ptr_;
+      workspace_end_   = workspace_begin_ + num_bytes;
+      owns_memory_     = false;
+      workspace_store_->curr_ws_ptr_ += num_bytes;
+      workspace_store_->num_static_allocations_++;
+    }
+  }
+  else {
+    workspace_store_ = NULL;
+    workspace_begin_ = NULL;
+    workspace_end_   = NULL;
+    owns_memory_     = false;
+  }
   if(workspace_store_) {
     workspace_store_->num_current_bytes_total_ += num_bytes;
     if( workspace_store_->num_current_bytes_total_ > workspace_store_->num_max_bytes_needed_ )
@@ -143,25 +142,25 @@ RawWorkspace::~RawWorkspace()
 {
   if(workspace_store_)
     workspace_store_->num_current_bytes_total_ -= this->num_bytes();
-	if(owns_memory_) {
-		if(workspace_begin_) delete [] workspace_begin_;
-	}
-	else {
-		if(workspace_store_) {
-			TEST_FOR_EXCEPTION(
-				workspace_store_->curr_ws_ptr_ != workspace_end_, std::logic_error
-				,"RawWorkspace::~RawWorkspace(...): Error, "
-				"Invalid usage of RawWorkspace class, corrupted WorspaceStore object!" );
-			workspace_store_->curr_ws_ptr_ = workspace_begin_;
-		}
-	}
+  if(owns_memory_) {
+    if(workspace_begin_) delete [] workspace_begin_;
+  }
+  else {
+    if(workspace_store_) {
+      TEST_FOR_EXCEPTION(
+			 workspace_store_->curr_ws_ptr_ != workspace_end_, std::logic_error
+			 ,"RawWorkspace::~RawWorkspace(...): Error, "
+			 "Invalid usage of RawWorkspace class, corrupted WorspaceStore object!" );
+      workspace_store_->curr_ws_ptr_ = workspace_begin_;
+    }
+  }
 }
 
 #ifdef __PGI // Should not have to define this since it should not be called!
 void* RawWorkspace::operator new(size_t)
 {
-	assert(0);
-	return NULL;
+  assert(0);
+  return NULL;
 }
 #endif
 

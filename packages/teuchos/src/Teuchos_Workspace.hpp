@@ -377,7 +377,7 @@ inline
 T& Workspace<T>::operator[](size_t i)
 {
 #ifdef _DEBUG
-	TEST_FOR_EXCEPTION( !( 0 <= i && i < this->size() ), std::invalid_argument, "Workspace<T>::operator[](i): Error!" );
+	TEST_FOR_EXCEPTION( !( i < this->size() ), std::invalid_argument, "Workspace<T>::operator[](i): Error!" );
 #endif	
 	return reinterpret_cast<T*>(raw_workspace_.workspace_ptr())[i];
 }
