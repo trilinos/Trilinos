@@ -574,7 +574,7 @@
 
   \gdef\thesection{\@Alph\c@section}
   \addtocontents{toc}{\protect\subsubsection*{\appendixname}}
-  \setcounter{secnumdepth}{1}
+  \setcounter{secnumdepth}{2}
 
   % We want each appendix starting on a new page
   % Add \cleardoublepage to the standard definition
