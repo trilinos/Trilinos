@@ -52,7 +52,6 @@ extern void    LB_Oct_setID(pOctant oct, int id);
 extern void    LB_Oct_initCounters();
 extern pOctant LB_Oct_newremote();
 extern pOctant LB_Oct_new();
-extern void    LB_Oct_free(pOctant oct);
 extern int     LB_Oct_id(pOctant oct);
 extern int     LB_Oct_dir(pOctant oct);
 extern int     LB_Oct_mapidx(pOctant oct);

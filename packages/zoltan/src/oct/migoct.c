@@ -309,8 +309,10 @@ int nocts;          /* number of octants leaving this processor */
 
   for (i=0; i<nocts; i++)                       /* Send connection updates */
     if (newpids[i]!=lb->Proc) {
-	parent = LB_Oct_parent(octs[i]); ppid   = LB_Oct_Ppid(octs[i]); childnum = LB_Oct_childnum(octs[i]);
-	if (parent) {                            /* Let parent of oct[i] know that it's moving   */
+	parent = LB_Oct_parent(octs[i]); 
+        ppid   = LB_Oct_Ppid(octs[i]); 
+        childnum = LB_Oct_childnum(octs[i]);
+	if (parent) {      /* Let parent of oct[i] know that it's moving   */
 	  if (ppid==lb->Proc) {
 	    FILLUPDATEMSG(localumsg[localcount], parent, childnum, newocts[i], newpids[i]);
 	    localcount++;
@@ -464,7 +466,9 @@ int nrecocts;       /* number of octants received in this processor */
 	FILLMIGRATEMSG(octs[i], newocts[i], msnd[remotecount], lb->Proc); /* bug */
 	despid[remotecount++] = newpids[i];
 	LB_Oct_clearRegions(octs[i]);
-	LB_POct_free(OCT_info, octs[i]);
+        /* KDDKDDFREE Change oct to &oct to allow NULL from LB_FREE 
+         * KDDKDDFREE to propagate back. */
+	LB_POct_free(OCT_info, &(octs[i]));
       }
 
   ierr = LB_Comm_Create(&comm_plan, remotecount, despid, lb->Communicator,
@@ -627,9 +631,12 @@ static int LB_Update_Map(LB *lb) {
 
   for(i = 0; i < mapsize; i++) {
     RootList = array[i].list;
-    while((RootOct = RL_nextRootOctant(&RootList))) 
-      LB_Oct_free(RootOct);
-    RL_clearRootOctants(array[i].list);
+    while((RootOct = RL_nextRootOctant(&RootList)))  {
+      LB_Oct_free(OCT_info, &RootOct);
+      /* KDDKDDFREE set oct pointer of RootList to NULL. */
+      RootList->oct = NULL;
+    }
+    RL_clearRootOctants(&(array[i].list));
   }
   
   for(i = 0; i < rlsize; i++) {

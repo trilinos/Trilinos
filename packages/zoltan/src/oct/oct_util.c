@@ -262,19 +262,32 @@ void LB_OCT_Free_Structure(LB *lb)
      * KDDKDD reports lots of memory leaks.
      * KDDKDD I have un-commented them.  12/2000
      */
-    RootList = LB_POct_localroots(OCT_info); 
-    while ((RootOct = RL_nextRootOctant(&RootList)))
-      LB_POct_delTree(OCT_info, RootOct);
-    RL_freeList(LB_POct_localroots(OCT_info));
+    /* KDDKDDFREE Rearranged the frees because the global octants were trying to
+     * KDDKDDFREE access children that were already deleted in LB_POct_delTree.
+     * KDDKDDFREE Now delete global octants first, then the tree.  1/2001
+     */
     /* free global octants */
     for(i = 0; i < OCT_info->mapsize; i++) {
       RootList = OCT_info->map[i].list;
-      while((RootOct = RL_nextRootOctant(&RootList)))
-        LB_Oct_free(RootOct);
-      RL_freeList(OCT_info->map[i].list);
+      while((RootOct = RL_nextRootOctant(&RootList))) {
+        LB_Oct_free(OCT_info, &RootOct);
+        /* KDDKDDFREE Set RootList's oct ptr to NULL as the octant is deleted.*/
+        RootList->oct = NULL;
+      }
+      RL_freeList(&(OCT_info->map[i].list));
     }
     /* free map array */
     LB_FREE(&(OCT_info->map));
+    /* Free the octree */
+    RootList = LB_POct_localroots(OCT_info); 
+    while ((RootOct = RL_nextRootOctant(&RootList))){
+      /* KDDKDDFREE  The LB_POct_delTree also frees RootList, since
+       * KDDKDDFREE  LB_POct_free frees the root list entry for root octants. 
+       * KDDKDDFREE  Need to reset RootList in each iteration. */
+      LB_POct_delTree(OCT_info, &RootOct);
+      RootList = LB_POct_localroots(OCT_info);
+    }
+    RL_freeList(&(OCT_info->OCT_rootlist));
     /* KDDKDD End of previously commented-out section. 12/2000 */
 
     LB_FREE(&(lb->Data_Structure));

@@ -18,6 +18,7 @@
 #include "migtags_const.h"
 #include "params_const.h"
 #include <values.h>
+#define POW(a,b) pow((double)(a),(double)(b))
 
 /*test*/
 /*extern void getMaxBounds(void *, double *, double *); */
@@ -443,7 +444,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
 	hold = 8;
       remainder = hold;
       for(; remainder > 0; level++) {
-	int pr = (int)pow((double)hold, (double)level);
+	int pr = (int)POW(hold, level);
 	remainder = n - pr;
       }
       level--;
@@ -480,12 +481,12 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
 
     /* this part creates the map array */
     if(OCT_info->OCT_dimension == 2) {
-      hold = (int)pow((double)4, (double)level);                  /* ignoring the z+ octants */
+      hold = (int)POW(4, level);                  /* ignoring the z+ octants */
       if(hold == 0)
 	hold = 1;
     }
     else
-      hold = (int)pow((double)8, (double)level);
+      hold = (int)POW(8, level);
 
     part = hold / lb->Num_Proc;          /* how many octants per partition */
     remainder = hold % lb->Num_Proc; /* extra octants, not evenly divisible */
@@ -527,13 +528,13 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
 	}
 	if(proc == lb->Proc) {
 	  array[i].npid = -1;
-          /* KDDKDD Added RL_freeRootList below.  The 
+          /* KDDKDD Added RL_freeList below.  The 
            * KDDKDD implementation from RPI leaked memory because the 
            * KDDKDD test cases for setting array[i].list were not mutually 
            * KDDKDD exclusive.  Freeing the list produces the result we got
            * KDDKDD before, without the memory leak.
            */
-          RL_freeList(array[i].list);
+          RL_freeList(&(array[i].list));
           /* KDDKDD End addition */
 	  array[i].list = RL_initRootList();
 	  parent = LB_Oct_parent(cursor);
@@ -550,8 +551,10 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
     } 
     RootList = LB_POct_localroots(OCT_info); 
     RootOct = RL_nextRootOctant(&RootList);
-    if(RootOct != root)
-      LB_POct_delTree(OCT_info,root);
+    if(RootOct != root) {
+      /* KDDKDDFREE changed root to &root to allow root to be reset to NULL. */
+      LB_POct_delTree(OCT_info,&root);
+    }
     
     OCT_info->map = array;
     OCT_info->mapsize = hold;
@@ -1220,7 +1223,8 @@ static void LB_oct_terminal_coarsen(LB *lb, OCT_Global_Info *OCT_info,pOctant oc
     regionlist[i] = LB_Oct_regionlist(child);
     
     /* delete each child */
-    LB_POct_free(OCT_info, child);
+    /* KDDKDDFREE Change child to &child. */
+    LB_POct_free(OCT_info, &child);
     oct->child[i] = NULL;
   }
   oct->numChild = 0;

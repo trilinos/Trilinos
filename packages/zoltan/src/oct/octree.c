@@ -59,17 +59,20 @@ extern pOctant LB_POct_new(OCT_Global_Info *OCT_info) {
  * this does not delete the attached regions, must specifically call
  * LB_Oct_clearRegions 
  */
-void LB_POct_free(OCT_Global_Info *OCT_info, pOctant oct) {
+
+/* KDDKDDFREE Changed oct to *oct to allow NULL from LB_FREE to propagate back 
+ * KDDKDDFREE to the calling routine. */
+void LB_POct_free(OCT_Global_Info *OCT_info, pOctant *oct) {
 
   pRList RootList = LB_POct_localroots(OCT_info);
 
   /* traverse through local root list, if octant a local root */
 
-  if(LB_Oct_Ppid(oct) != OCT_info->OCT_localpid) 
-    RL_delRootOctant(RootList, oct);
-  
+  if(LB_Oct_Ppid(*oct) != OCT_info->OCT_localpid) 
+    RL_delRootOctant(OCT_info, RootList, *oct);
+
   /* free up space in memory */
-  LB_Oct_free(oct);
+  LB_Oct_free(OCT_info, oct);
 
 }
 
@@ -91,7 +94,7 @@ void LB_POct_setparent(OCT_Global_Info *OCT_info, pOctant oct, pOctant parent, i
   }
   else {
     if(ppid == OCT_info->OCT_localpid) {
-      RL_delRootOctant(RootList, oct);     /* was foreign -- now local  */
+      RL_delRootOctant(OCT_info, RootList, oct);     /* was foreign -- now local  */
     }
   }
 
@@ -268,23 +271,36 @@ int LB_POct_local(OCT_Global_Info *OCT_info, pOctant octant, int i) {
  *
  * recursivly traverses down root's subtree deleting all the octants
  */
-int LB_POct_delTree(OCT_Global_Info *OCT_info, pOctant root) {
+/* KDDKDDFREE Changed root to *root to allow NULL from LB_FREE to propagate 
+ * KDDKDDFREE back to calling routine. */
+int LB_POct_delTree(OCT_Global_Info *OCT_info, pOctant *root) {
   int i;                                               /* index counter */
   pOctant child;                                       /* child of an octant */
   
-  if(root == NULL)
+  if(*root == NULL)
     return 1;
 
-  if(LB_Oct_isTerminal(root)) {
-    if(LB_Oct_nRegions(root))
-      LB_Oct_clearRegions(root);
+  if(LB_Oct_isTerminal(*root)) {
+    if(LB_Oct_nRegions(*root))
+      LB_Oct_clearRegions(*root);
     LB_POct_free(OCT_info, root);
   }
   else {
     for(i=0; i<8; i++) {
-      child = LB_Oct_child(root, i);
-      if(child != NULL && LB_POct_local(OCT_info,root, i))
-	LB_POct_delTree(OCT_info,child);
+      child = LB_Oct_child(*root, i);
+      if(child != NULL && LB_POct_local(OCT_info,*root, i)) {
+	LB_POct_delTree(OCT_info,&child);
+        /* KDDKDDFREE propagate NULL from LB_POct_delTree to root->child */
+        (*root)->child[i] = NULL;  
+        (*root)->cpid[i]  = -1;
+      }
+      /* KDDKDDFREE Added this condition so that tests (in other parts of the
+       * KDDKDDFREE code) for NULL children work */
+      else if (child != NULL) {
+        (*root)->child[i] = NULL;
+        (*root)->cpid[i]  = -1;
+      }
+      /* END KDDKDDFREE */
     }
     LB_POct_free(OCT_info, root);
   }

@@ -128,11 +128,37 @@ pOctant LB_Oct_new() {
   return(new_ptr);
 }
 
-void LB_Oct_free(pOctant oct) {
-  oct->list = NULL;
-  if(oct->type == LOCALOCT)
+/* KDDKDDFREE changed oct to *oct to allow NULL ptr from LB_FREE to 
+ * KDDKDDFREE propagate back to the calling routine. */
+void LB_Oct_free(OCT_Global_Info *OCT_info, pOctant *oct) {
+/* KDDKDDFREE Bookkeeping -- set parent's child pointers and children's
+ * KDDKDDFREE parent pointers to NULL when delete an octant.  Following
+ * KDDKDDFREE pointers that are no longer valid but were not set to NULL
+ * KDDKDDFREE caused many problems on the DEC cluster.  1/2001. */
+int i;
+pOctant parent;
+
+
+  /* Set parent's child pointer to NULL */
+  parent = (*oct)->parent;
+  if (parent != NULL && (*oct)->ppid == OCT_info->OCT_localpid) {
+    i = LB_Oct_childnum(*oct);
+    parent->child[i] = NULL;
+    parent->cpid[i] = -1;
+  }
+
+  /* Set children't parent pointer to NULL. */
+  for (i = 0; i < 8; i++) 
+    if ((*oct)->child[i] != NULL && (*oct)->cpid[i] == OCT_info->OCT_localpid) {
+      (*oct)->child[i]->parent = NULL;
+      (*oct)->child[i]->ppid = -1;
+    }
+/* END KDDKDDFREE */
+
+  (*oct)->list = NULL;
+  if((*oct)->type == LOCALOCT)
     OCT_count--;
-  LB_FREE(&oct);
+  LB_FREE(oct);
 }
 
 /*****************************************************************************/

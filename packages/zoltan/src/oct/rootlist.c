@@ -1,6 +1,7 @@
 #include "lb_const.h"
 #include "all_allo_const.h"
 #include "rootlist_const.h"
+#include "octree_const.h"
 
 static int RL_OctGreaterThan(pOctant oct1, pOctant oct2) {
   if(oct2->type == LOCALOCT)
@@ -53,7 +54,7 @@ int RL_addRootOctant(pRList rlist, pOctant oct) {
   return 0;
 }
 
-int RL_delRootOctant(pRList rlist, pOctant oct) {
+int RL_delRootOctant(OCT_Global_Info *OCT_info, pRList rlist, pOctant oct) {
   pRList  temp;
   pRList  prev;
   pOctant rootoct;
@@ -79,32 +80,36 @@ int RL_delRootOctant(pRList rlist, pOctant oct) {
   return result;
 }
 
-int RL_clearRootOctants(pRList rlist) {
+/* KDDKDDFREE changed rlist to *rlist to allow NULL from LB_FREE to propagate 
+ * KDDKDDFREE back to the calling routine.  */
+int RL_clearRootOctants(pRList *rlist) {
   pRList  head;
-  if((rlist == NULL) || (rlist->oct != NULL))
+  if((*rlist == NULL) || ((*rlist)->oct != NULL))
     return -1;
-  head = rlist;
-  rlist = rlist->next;
-  while(rlist->next != head) {  
-    head->next = rlist->next;
-    LB_FREE(&rlist);
-    rlist = head->next;
+  head = *rlist;
+  *rlist = (*rlist)->next;
+  while((*rlist)->next != head) {  
+    head->next = (*rlist)->next;
+    LB_FREE(rlist);
+    *rlist = head->next;
   }
   return LB_OK;
 }
 
-int RL_freeList(pRList rlist) {
+/* KDDKDDFREE changed rlist to *rlist to allow NULL from LB_FREE to propagate 
+ * KDDKDDFREE back to the calling routine.  */
+int RL_freeList(pRList *rlist) {
   pRList  head;
-  if((rlist == NULL) || (rlist->oct != NULL))
+  if((*rlist == NULL) || ((*rlist)->oct != NULL))
     return -1;
-  head = rlist;
-  rlist = rlist->next;
-  while(rlist != head) {  
-    head->next = rlist->next;
-    LB_FREE(&rlist);
-    rlist = head->next;
+  head = *rlist;
+  *rlist = (*rlist)->next;
+  while(*rlist != head) {  
+    head->next = (*rlist)->next;
+    LB_FREE(rlist);
+    *rlist = head->next;
   }
-  LB_FREE(&rlist);
+  LB_FREE(rlist);
   return LB_OK;
 }
 

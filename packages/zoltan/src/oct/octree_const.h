@@ -57,13 +57,16 @@ typedef struct {
 
 extern OCT_Global_Info *LB_POct_init(struct LB_Struct *, int pid, int dim);
 extern pOctant LB_POct_new(OCT_Global_Info *);
-extern void    LB_POct_free(OCT_Global_Info *OCT_info, pOctant oct);
+extern void    LB_POct_free(OCT_Global_Info *OCT_info, pOctant *oct);
 extern void    LB_POct_setparent(OCT_Global_Info *OCT_info,pOctant oct, pOctant parent, int ppid);
 extern pRList  LB_POct_localroots(OCT_Global_Info *);
 extern void    LB_POct_printResults(LB *lb, OCT_Global_Info *OCT_info);
 extern pOctant LB_POct_nextDfs(OCT_Global_Info *OCT_info, pOctant octant);
 extern int     LB_POct_local(OCT_Global_Info *OCT_info, pOctant octant, int i);
-extern int     LB_POct_delTree(OCT_Global_Info *OCT_info,pOctant root);
+extern int     LB_POct_delTree(OCT_Global_Info *OCT_info,pOctant *root);
 
+/* KDDKDDFREE moved to octree_const.h to allow OCT_Global_Info arg. */
+extern void    LB_Oct_free(OCT_Global_Info *OCT_info, pOctant *oct);
+extern int     RL_delRootOctant(OCT_Global_Info *OCT_info, pRList rlist, pOctant oct);
 
 #endif /*__OCT_OCTREE_CONST_H*/
