@@ -66,7 +66,7 @@ static void initialize_mesh(MESH_INFO_PTR);
 int main(int argc, char *argv[])
 {
 /* Local declarations. */
-  struct Zoltan_Struct *zz;
+  struct Zoltan_Struct *zz = NULL;
 
   char  *cmd_file;
   char   cmesg[256]; /* for error messages */
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 
   int    Proc, Num_Proc;
   int    iteration;
-  int    error;
+  int    error, gerror;
   int    print_output = 1;
 
   MESH_INFO  mesh;             /* mesh information struct */
@@ -156,27 +156,30 @@ int main(int argc, char *argv[])
   prob.params			= NULL;
 
   /* Read in the ascii input file */
-  if(Proc == 0) {
+  error = 0;
+  if (Proc == 0) {
     printf("\n\nReading the command file, %s\n", cmd_file);
-    if(!read_cmd_file(cmd_file, &prob, &pio_info))
-    {
+    if (!read_cmd_file(cmd_file, &prob, &pio_info)) {
       sprintf(cmesg,"fatal: Could not read in the command file"
               " \"%s\"!\n", cmd_file);
       Gen_Error(0, cmesg);
       error_report(Proc);
       print_output = 0;
-      goto End;
+      error = 1;
     }
 
     if (!check_inp(&prob, &pio_info)) {
       Gen_Error(0, "fatal: Error in user specified parameters.\n");
       error_report(Proc);
       print_output = 0;
-      goto End;
+      error = 1;
     }
 
     print_input_info(stdout, Num_Proc, &prob);
   }
+
+  MPI_Allreduce(&error, &gerror, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  if (gerror) goto End;
 
   /* broadcast the command info to all of the processor */
   brdcst_cmd_info(Proc, &prob, &pio_info, &mesh);
