@@ -70,7 +70,8 @@ bool DerivUtils::computeDfDp(LOCA::Abstract::Group& grp,
   grp.computeF();
 
   // Allocate new group that we can perturb
-  LOCA::Abstract::Group* grpPerturbedPtr = grp.clone();
+  LOCA::Abstract::Group* grpPerturbedPtr = 
+    dynamic_cast<Abstract::Group*>(grp.clone());
   
   // Perturb single parameter in this group, and return perturbation, eps
   double eps = perturbParam(*grpPerturbedPtr, param_id);
@@ -111,7 +112,8 @@ bool DerivUtils::computeDJnDp(LOCA::Abstract::Group& grp,
        NOX::Abstract::Vector& result) const
 {
   // Form new group that we can perturb
-  LOCA::Abstract::Group* grpPerturbedPtr = grp.clone();
+  LOCA::Abstract::Group* grpPerturbedPtr = 
+    dynamic_cast<Abstract::Group*>(grp.clone());
 
   // Perturb single parameter in this group, and return perturbation
   double eps = perturbParam(*grpPerturbedPtr, param_id);
@@ -155,7 +157,8 @@ bool DerivUtils::computeDJnDxa(LOCA::Abstract::Group& grp,
                  NOX::Abstract::Vector& result) const
 {
   // Form new group that we can perturb
-  LOCA::Abstract::Group* grpPerturbedPtr = grp.clone();
+  LOCA::Abstract::Group* grpPerturbedPtr = 
+    dynamic_cast<Abstract::Group*>(grp.clone());
 
   // Perturb solution vector in direction of aVector, return perturbation
   double eps = perturbXVec(*grpPerturbedPtr, aVector);
