@@ -894,9 +894,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      if (ag->print_flag < ML_Get_PrintLevel()) {
         Pe = &(ml_edges->Amat[grid_level]);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
+        i = Pe->outvec_leng;
+        ML_gsum_vec_int(&i,&j,1,ml_nodes->comm);
         if (Tfine->comm->ML_mypid==0)
-           printf("Ke: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,
-                  Pe->outvec_leng);
+           printf("Ke: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,i);
      }
 
      Tfine = Tcoarse;
