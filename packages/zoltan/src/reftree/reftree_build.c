@@ -932,25 +932,29 @@ int existing;              /* existing child that agrees with GET_CHILD data */
             existing = j;
           }
         }
-        for (j=0; j<num_lid_entries; j++) {
-          if (subroot->children[existing].local_id[j] !=
-              slocal_lids[i*num_lid_entries+j]) {
-            children_agree = 0;
-          }
-        }
-        if (subroot->children[existing].num_vertex != snum_vert[i]) {
+        if (existing == -1) {
           children_agree = 0;
         } else {
-          if (snum_vert[i] != 0) {
-            for (j=0; j<snum_vert[i] && children_agree; j++) {
-              if (subroot->children[existing].vertices[j] != svertices[svert1[i]+j]) {
-                children_agree = 0;
+          for (j=0; j<num_lid_entries; j++) {
+            if (subroot->children[existing].local_id[j] !=
+                slocal_lids[i*num_lid_entries+j]) {
+              children_agree = 0;
+            }
+          }
+          if (subroot->children[existing].num_vertex != snum_vert[i]) {
+            children_agree = 0;
+          } else {
+            if (snum_vert[i] != 0) {
+              for (j=0; j<snum_vert[i] && children_agree; j++) {
+                if (subroot->children[existing].vertices[j] != svertices[svert1[i]+j]) {
+                  children_agree = 0;
+                }
               }
             }
           }
-        }
 /* set new value of assigned just in case we keep the children */
-        subroot->children[existing].assigned_to_me = sassigned[i];
+          subroot->children[existing].assigned_to_me = sassigned[i];
+        }
       }
     }
   }
@@ -1858,9 +1862,9 @@ char *yo = "alloc_reftree_nodes";
 
   for (i=0; i<num_node; i++) {
     (*node)[i].global_id = gids;
-    gids++;
+    gids += lb->Num_GID;
     (*node)[i].local_id = lids;
-    lids++;
+    lids += lb->Num_LID;
     (*node)[i].weight = float_mem;
     (*node)[i].summed_weight = float_mem+wdim;
     (*node)[i].my_sum_weight = float_mem+2*wdim;
