@@ -17,7 +17,6 @@ extern "C" {
 
 
 #include "zz_const.h"
-#include "hg.h"
 #include "parmetis_jostle.h"
 
 #define ZOLTAN_PRINT_VTX_NUM  0  /* print vertex number at beginning of line? */
