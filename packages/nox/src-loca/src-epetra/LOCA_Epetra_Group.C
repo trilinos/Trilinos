@@ -38,6 +38,7 @@
 #include "Epetra_VbrMatrix.h"
 #include "NOX_Epetra_SharedOperator.H"
 #include "Epetra_Vector.h"
+#include "LOCA_Utils.H"
 
 LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
 			   NOX::Parameter::List& par, 
@@ -267,47 +268,65 @@ LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
 
   // Check if eigenvalues are requested this continuation step
   if (eigenvalCounter++%freq != 0) {
-    cout <<"\tAnasazi Eigensolver not requested this continuation step." << endl;
+    if (Utils::doPrint(Utils::StepperIteration)) 
+      cout <<"\tAnasazi Eigensolver not requested this continuation step." << endl;
     return LOCA::Abstract::Group::Ok;
   }
-  cout <<"\n\tAnasazi Eigensolver starting with block size " << blksz << endl;
-                                                                                                                              
+  if (Utils::doPrint(Utils::StepperIteration)) {
+    cout << "\n" << Utils::fill(64,'=')
+         << "\nAnasazi Eigensolver starting with block size " << blksz
+	 << "\n" << endl;
+  }
+
   // Create the operator and initial vector
   AnasaziLOCAMat<double> Amat( params, *this );
   AnasaziLOCAVec<double> ivec( xVector, blksz );
   ivec.MvRandom();
-                                                                                                                              
+
   // Initialize the solver
   Anasazi::BlockArnoldi<double> LOCABlockArnoldi( Amat, ivec, tol, nev, length,
                                       blksz, which, step, restart );
-                                                                                                                              
-  // Print out debugging information
+
+  // Print out debugging information on single proc
   LOCABlockArnoldi.setDebugLevel(debug);
+
   // Solve the problem to the specified tolerance
   LOCABlockArnoldi.solve();
-                                                                                                                              
-  // Look at the solutions if not debugging
-  if (debug == 0) LOCABlockArnoldi.currentStatus();
-                                                                                                                              
+
+  // Look at the solutions once if debug=0
+  if (Utils::doPrint(Utils::StepperIteration)) 
+    if (debug == 0) LOCABlockArnoldi.currentStatus();
+
   // Obtain the eigenvalues / eigenvectors
   double * evalr = LOCABlockArnoldi.getEvals();
   double * evali = LOCABlockArnoldi.getiEvals();
-                                                                                                                              
-  cout<<"Actual eigenvalues (since the operator was the Jacobian inverse)"<<std::endl;
-  cout.precision(7);
-  for (int i=0; i<nev; i++) {
-    double mag=evalr[i]*evalr[i]+evali[i]*evali[i];
-    cout<<"Eigenvalue "<<i<<" : "<<evalr[i]/mag<<"  "<<-evali[i]/mag<<" i"<<endl;
+
+  if (Utils::doPrint(Utils::StepperIteration)) {
+    cout<<"Untransformed eigenvalues (since the operator was the Jacobian inverse)"<<endl;
+    cout.precision(7);
+    for (int i=0; i<nev; i++) {
+      double mag=evalr[i]*evalr[i]+evali[i]*evali[i];
+      cout<<"Eigenvalue "<<i<<" : "<<evalr[i]/mag<<"  "<<-evali[i]/mag<<" i"<<endl;
+    }
   }
+
+  /* Comment out Eigenvector extraction for now
   AnasaziLOCAVec<double> solutions( xVector, blksz );
   LOCABlockArnoldi.getEvecs( solutions );
-                                                                                                                                
-  cout <<"\tAnasazi Eigensolver finished.\n" << endl;
+  */
 
-    return LOCA::Abstract::Group::Ok;
+  if (Utils::doPrint(Utils::StepperIteration)) {
+    cout << "\nAnasazi Eigensolver finished.\n" 
+         << Utils::fill(64,'=') << "\n" << endl;
+  }
+
+  return LOCA::Abstract::Group::Ok;
 #else
-  cout << "\nWarning: LOCA::Epetra::Group::computeEigenvalues:\n\t"
-       <<  "Anasazi Eigensolver requested but not compiled in!" << endl;
+  if (Utils::doPrint(Utils::StepperIteration)) {
+    cout << "\nWarning: LOCA::Epetra::Group::computeEigenvalues:\n\t"
+         <<  "Anasazi Eigensolver requested but not compiled in!" << endl;
+  }
   return LOCA::Abstract::Group::Ok;
 #endif
 }
+

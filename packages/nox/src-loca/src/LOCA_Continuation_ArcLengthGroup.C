@@ -31,6 +31,7 @@
 //@HEADER
 
 #include "LOCA_Continuation_ArcLengthGroup.H"
+#include "LOCA_Utils.H"
 
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
 				 LOCA::Continuation::AbstractGroup& g,
@@ -541,12 +542,14 @@ LOCA::Continuation::ArcLengthGroup::scalePredictor() {
   // Estimate dpds
   double dpdsOld = 1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
 
-  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-       << "dpdsOld = " << dpdsOld << endl;
-  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-       << "thetaOld = " << theta << endl;
-  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-       << "gOld = " << theta*dpdsOld << endl;
+  if (Utils::doPrint(Utils::StepperDetails)) {
+    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+         << "dpdsOld = " << dpdsOld << endl;
+    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+         << "thetaOld = " << theta << endl;
+    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+         << "gOld = " << theta*dpdsOld << endl;
+  }
 
   // Recompute scale factor
   recalculateScaleFactor(dpdsOld);
@@ -554,12 +557,14 @@ LOCA::Continuation::ArcLengthGroup::scalePredictor() {
   // Calculate new dpds using new scale factor
   double dpdsNew = 1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
 
-  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-       << "dpdsNew = " << dpdsNew << endl;
-  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-       << "thetaNew = " << theta << endl;
-  cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
-       << "gNew = " << theta*dpdsNew << endl;
+  if (Utils::doPrint(Utils::StepperDetails)) {
+    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+         << "dpdsNew = " << dpdsNew << endl;
+    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+         << "thetaNew = " << theta << endl;
+    cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
+         << "gNew = " << theta*dpdsNew << endl;
+  }
 
   // Rescale predictor vector
   predictorVec.scale(dpdsNew);

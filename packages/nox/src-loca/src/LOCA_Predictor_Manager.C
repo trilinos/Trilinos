@@ -36,6 +36,7 @@
 #include "LOCA_Predictor_Tangent.H"
 #include "LOCA_Predictor_Secant.H"
 #include "LOCA_Predictor_Random.H"
+#include "LOCA_Utils.H"
 
 LOCA::Predictor::Manager::Manager(NOX::Parameter::List& params) :
   method(),
@@ -87,7 +88,8 @@ LOCA::Predictor::Manager::compute(LOCA::Continuation::ExtendedGroup& prevGroup,
     return NOX::Abstract::Group::Failed;
   }
 
-  cout << "\n\tCalling Predictor with method: " << method << endl;
+  if (Utils::doPrint(Utils::StepperDetails))
+    cout << "\n\tCalling Predictor with method: " << method << endl;
 
   return predictorPtr->compute(prevGroup, curGroup, result);
 }

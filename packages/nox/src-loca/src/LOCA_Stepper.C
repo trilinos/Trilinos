@@ -294,8 +294,8 @@ LOCA::Stepper::resetCommon(LOCA::Continuation::AbstractGroup& initialGuess,
 
   printInitializationInfo();
 
-  //  if (Utils::doPrint(Utils::Parameters))
-  paramListPtr->print(cout);
+  if (Utils::doPrint(Utils::Parameters))
+    paramListPtr->print(cout);
   
   return true;
 }
@@ -529,8 +529,9 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 	   curGroupPtr->computeScaledDotProduct(*prevPredictorPtr, 
 						 *prevPredictorPtr));
 
-    cout << "LOCA::Stepper::postprocess():  tangentFactor = "
-	 << tangentFactor << endl;
+    if (Utils::doPrint(Utils::StepperDetails))
+      cout << "LOCA::Stepper::postprocess():  tangentFactor = "
+  	   << tangentFactor << endl;
 
     if (tangentFactor < minTangentFactor)
       return LOCA::Abstract::Iterator::Unsuccessful;

@@ -140,7 +140,8 @@ int main(int argc, char *argv[])
 			     LOCA::Utils::StepperIteration +
 			     LOCA::Utils::StepperDetails +
 			     LOCA::Utils::Solver +
-			     LOCA::Utils::SolverDetails);
+			     LOCA::Utils::SolverDetails +
+			     LOCA::Utils::Parameters);
 
   // Create the "Solver" parameters sublist to be used with NOX Solvers
   NOX::Parameter::List& nlParams = paramList.sublist("NOX");
@@ -251,7 +252,7 @@ int main(int argc, char *argv[])
   // End Nonlinear Solver **************************************
 
   // Output the parameter list
-  if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
+  if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
     stepper.getParameterList().print(cout);
