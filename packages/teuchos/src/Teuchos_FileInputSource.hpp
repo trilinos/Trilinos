@@ -29,27 +29,29 @@
 #ifndef Teuchos_FILEINPUTSOURCE_H
 #define Teuchos_FILEINPUTSOURCE_H
 
+/*! \file Teuchos_FileInputSource.hpp
+    \brief Definition of XMLInputSource derived class for reading XML from a file
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_XMLInputSource.hpp"
 
 
 namespace Teuchos
 {
-
   /** \ingroup XML
-   * Input source that reads XML from a file.
+   * \brief Instantiation of XMLInputSource class for reading XML from a file.
    */
-
   class FileInputSource : public XMLInputSource
     {
     public:
-      /** ctor */
+      /** \brief Constructor */
       FileInputSource(const string& filename);
 
-      /** virtual dtor */
+      /** \brief Destructor */
       virtual ~FileInputSource(){;}
 
-      /** create a FileInputStream */
+      /** \brief Create a FileInputStream */
       virtual RefCountPtr<XMLInputStream> stream() const;
 
     private:

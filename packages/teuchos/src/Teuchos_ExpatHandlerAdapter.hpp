@@ -29,6 +29,10 @@
 #ifndef TEUCHOS_EXPATHANDLERADAPTER_H
 #define TEUCHOS_EXPATHANDLERADAPTER_H
 
+/*! \file Teuchos_ExpatHandlerAdapter.hpp
+    \brief Expat adapter for the TreeBuildingXMLHandler
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 
 #ifdef HAVE_EXPAT

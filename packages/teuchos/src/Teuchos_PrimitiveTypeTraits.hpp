@@ -35,12 +35,14 @@
 #include "Teuchos_TestForException.hpp"
 
 /** \file Teuchos_PrimitiveTypeTraits.hpp
+	\brief Declaration of a templated traits class for decomposing an
+		object into an array of primitive objects
  */
 
 namespace Teuchos {
 
 ///
-/** Declaration of a traits class for an decomposing object into an
+/** \brief A templated traits class for decomposing object into an
  * array of primitive objects.
  *
  * The idea behind this traits class it that it allows an object of

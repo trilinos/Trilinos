@@ -29,6 +29,10 @@
 #ifndef Teuchos_TREEBUILDINGXMLHANDLER_H
 #define Teuchos_TREEBUILDINGXMLHANDLER_H
 
+/*! \file Teuchos_TreeBuildingXMLHandler.hpp
+    \brief Defines a class for assembling an XMLObject from XML input
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include <list>
@@ -39,26 +43,24 @@ namespace Teuchos
 {
 
   /** \ingroup XML
-   * Use TreeBuildingXMLHandler assembles
-   * a XMLObject from your XML input.
+   * \brief TreeBuildingXMLHandler assembles a XMLObject from your XML input.
    */
-
   class TreeBuildingXMLHandler
     {
     public:
-      /** empty ctor only */
+      /** \brief Empty constructor */
       TreeBuildingXMLHandler();
 
-      /** retrieve the entire XML tree */
+      /** \brief Retrieve the entire XML tree */
       const XMLObject& getObject() const {return root_.getChild(0);}
 
-      /** Process character data */
+      /** \brief Process character data */
       void characters(const string& chars, const unsigned int length);
 
-      /** Receive notification of the end of an element */
+      /** \brief Receive notification of the end of an element */
       void endElement(const string& tag);
 
-      /** Receive notification of the start of an element */
+      /** \brief Receive notification of the start of an element */
       void startElement(const string& tag,
                         const Hashtable<string,string>& attributes);
 

@@ -29,14 +29,19 @@
 #ifndef TEUCHOS_TEST_FOR_EXCEPTION_H
 #define TEUCHOS_TEST_FOR_EXCEPTION_H
 
+/*! \file Teuchos_TestForException.hpp
+    \brief Macro for throwing an exception with breakpointing to ease debugging.
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 
 /// The only purpose for this function is to set a breakpoint in.
 void TestForException_break();
 
-///
-/** This macro is designed to allow greater ease in debuging
- * when throwing an exception.
+/// \defgroup TestForException_grp  Macro for throwing an exception with breakpointing 
+///@{
+/** 
+ * \brief Macro for throwing an exception with breakpointing to ease debugging
  *
  * @param  throw_exception_test
  *               [in] Test for when to throw the exception.  This can and
@@ -111,13 +116,21 @@ void TestForException_break();
     } \
 }
 
-
 ///
-/** This macro is designed to be a short version of
+/** \ingroup TestForException_grp
+ * \brief This macro is designed to be a short version of
  * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
  *
- * The exception thrown is <tt>std::logic_error</tt>.
+ * @param  throw_exception_test
+ *               [in] Test for when to throw the exception.  This can and
+ *               should be an expression that may mean something to the user.
+ *               The text verbatim of this expression is included in the
+ *               formed error string.
+ *
+ * \note The exception thrown is <tt>std::logic_error</tt>.
  */
 #define TEST_FOR_EXCEPT(throw_exception_test) TEST_FOR_EXCEPTION(throw_exception_test,std::logic_error,"Error!")
 
-#endif // TEST_FOR_EXCEPTION_H
+///@}
+
+#endif // TEUCHOS_TEST_FOR_EXCEPTION_H

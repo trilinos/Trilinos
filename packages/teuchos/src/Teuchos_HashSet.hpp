@@ -26,8 +26,12 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef HASHSET_H
-#define HASHSET_H
+#ifndef TEUCHOS_HASHSET_H
+#define TEUCHOS_HASHSET_H
+
+/*! \file Teuchos_HashSet.hpp
+    \brief Templated hashtable-based set
+*/
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
@@ -39,48 +43,36 @@ namespace Teuchos
 
 
   /** \ingroup Containers
-   * HashSet is a hashtable-based set, similar to the STL set class
+   * \brief Templated hashtable-based set.
+
+    HashSet is a hashtable-based set, similar to the STL set class
    * or the Java HashSet class.
    */
-
-
   template<class Key> class HashSet
     {
     public:
-      /**
-       * Create an empty HashSet
-       */
+
+      //! Create an empty HashSet
       inline HashSet(int capacity=101);
 
-      /**
-       * Check for the presence of a key
-       */
+      //! Check for the presence of a key
       inline bool containsKey(const Key& key) const ;
 
-      /**
-       * Put a new object into the table.
-       */
+      //! Put a new object into the table.
       inline void put(const Key& key);
 
-      /**
-       * Remove from the table the element given by key.
-       */
+      //! Remove from the table the element given by key.
       inline void remove(const Key& key);
 
-      /**
-       * Get the number of elements in the table
-       */
+      //! Get the number of elements in the table
       inline int size() const {return count_;}
 
-      /**
-       * Get list of keys in Array form
-       */
+      //! Get list of keys in Array form
       inline Array<Key> arrayify() const ;
 
-      /**
-       * render as a string
-       */
-      string toString() const ;
+      //! Write to a string
+      inline string toString() const ;
+
     private:
       /** rebuild the hashtable when the size has changed */
       inline void rehash();
@@ -94,7 +86,9 @@ namespace Teuchos
     };
 
 
-  /** \relates HashSet write to a stream */
+  /** \relates HashSet 
+      \brief Write HashSet to a stream 
+  */
   template<class Key>
     ostream& operator<<(ostream& os, const HashSet<Key>& h);
 
@@ -249,4 +243,4 @@ namespace Teuchos
 
 }
 
-#endif
+#endif // TEUCHOS_HASHSET_H

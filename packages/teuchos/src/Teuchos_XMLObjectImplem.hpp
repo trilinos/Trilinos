@@ -29,6 +29,10 @@
 #ifndef TEUCHOS_XMLOBJECTIMPLEM_H
 #define TEUCHOS_XMLOBJECTIMPLEM_H
 
+/*! \file Teuchos_XMLObjectImplem.hpp
+    \brief Low level implementation of XMLObject
+*/
+
 #include "Teuchos_Hashtable.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
@@ -38,56 +42,57 @@ namespace Teuchos
 	class XMLObject;
 
 	/** 
-	 * XMLObjectImplem is the low-level implementation of XMLObject
+	 * \brief The XMLObjectImplem class takes care of the low-level implementation 
+		details of XMLObject
 	 */
 	class XMLObjectImplem
 		{
 		public:
-			/** construct with a tag string */
+			//! Construct with a tag string 
 			XMLObjectImplem(const string& string);
 
-			/** deep copy */
+			//! Deep copy
 			XMLObjectImplem* deepCopy() const ;
 
-			/** add a [name, value] attribute */
-			void addAttribute(const string& name, const string& value);
+			//! Add a [name, value] attribute
+         		void addAttribute(const string& name, const string& value);
 
-			/** add a child XMLObject */
+			//! Add a child XMLObject
 			void addChild(const XMLObject& child);
 
-			/** add a content line */
+			//! Add a content line
 			void addContent(const string& contentLine);
 
-			/** write as a string */
+			//! Write as a string
 			string toString() const ;
 
-			/** return the tag string */
+			//! Return the tag string
 			const string& getTag() const {return tag_;}
 
-			/** Write the header */
+			//! Write the header
 			string header() const ;
 
-			/** Write the footer */
+			//! Write the footer
 			string footer() const {return "</" + getTag() + ">";}
 
-			/** determine whether an attribute exists */
+			//! Determine whether an attribute exists
 			bool hasAttribute(const string& name) const 
 				{return attributes_.containsKey(name);}
 
-			/** look up an attribute by name */
+			//! Look up an attribute by name
 			const string& getAttribute(const string& name) const 
 				{return attributes_.get(name);}
 
-			/** return the number of children */
+			//! Return the number of children
 			int numChildren() const ;
 
-			/** look up a child by its index */
+			//! Look up a child by its index
 			const XMLObject& getChild(int i) const ;
 
-			/** get the number of content lines */
+			//! Get the number of content lines
 			int numContentLines() const {return content_.length();}
 
-			/** look up a content line by index */
+			//! Look up a content line by index
 			const string& getContentLine(int i) const {return content_[i];}
 
 		private:

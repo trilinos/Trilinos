@@ -29,6 +29,10 @@
 #ifndef TEUCHOS_MPICONTAINERCOMM_H
 #define TEUCHOS_MPICONTAINERCOMM_H
 
+/*! \file Teuchos_MPIContainerComm.hpp
+    \brief Object representation of an MPI communicator for templated containers
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_MPIComm.hpp"
@@ -37,50 +41,51 @@
 namespace Teuchos
 {
   /** \ingroup MPI
-   * MPI communication of templated containers
-   *
+   * \brief Object representation of an MPI communicator for templated containers
+   * \note Template specialization exists for <tt>string</tt>.
    * @author Kevin Long
    */
 
   template <class T> class MPIContainerComm
   {
   public:
-    /** broadcast a single object */
+
+    //! Broadcast a single object 
     static void bcast(T& x, int src, const MPIComm& comm);
 
-    /** bcast an array of objects */
+    //! Broadcast an array of objects
     static void bcast(Array<T>& x, int src, const MPIComm& comm);
 
-    /** bcast an array of arrays  */
+    //! Broadcast an array of arrays 
     static void bcast(Array<Array<T> >& x,
                       int src, const MPIComm& comm);
 
-    /** AllGather: each process sends a single object to all other procs */
+    //! Gather to all processors
     static void allGather(const T& outgoing,
                           Array<T>& incoming,
                           const MPIComm& comm);
 
-    /** All-to-all scatter/gather, each proc sends an object to every proc */
+    //! All-to-all scatter/gather for an array of objects
     static void allToAll(const Array<T>& outgoing,
                          Array<Array<T> >& incoming,
                          const MPIComm& comm);
 
-    /** All-to-all scatter/gather, each proc sends an array to every proc */
+    //! All-to-all scatter/gather for an array of arrays
     static void allToAll(const Array<Array<T> >& outgoing,
                          Array<Array<T> >& incoming,
                          const MPIComm& comm);
 
-    /** sum local values from all processors with rank < myRank */
+    //! Sum local values from all processors with rank < myRank
     static void accumulate(const T& localValue, Array<T>& sums,
                            const MPIComm& comm);
 
   private:
-    /** build a 1D array and an offset list from a 2D array */
+    //! Build a 1D array and an offset list from a 2D array
     static void getBigArray(const Array<Array<T> >& x,
                             Array<T>& bigArray,
                             Array<int>& offsets);
 
-    /** reassemble a 2D array from a 1D array and an offset table */
+    //! Reassemble a 2D array from a 1D array and an offset table
     static void getSmallArrays(const Array<T>& bigArray,
                                const Array<int>& offsets,
                                Array<Array<T> >& x);
@@ -88,6 +93,8 @@ namespace Teuchos
 
   };
 
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
   /** \ingroup MPI
    * Specialiaztion of MPIContainerComm<T> to string
    */
@@ -121,6 +128,7 @@ namespace Teuchos
                            Array<string>& x);
   };
 
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   /* --------- generic functions for primitives ------------------- */
 
@@ -397,6 +405,8 @@ namespace Teuchos
   }
 
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
   /* --------------- string specializations --------------------- */
 
   inline void MPIContainerComm<string>::bcast(string& x,
@@ -536,6 +546,8 @@ namespace Teuchos
           }
       }
   }
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
 }
 
 

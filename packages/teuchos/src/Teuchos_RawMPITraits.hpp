@@ -35,25 +35,29 @@
 #include "Teuchos_ConfigDefs.hpp"
 
 /** \file Teuchos_RawMPITraits.hpp
- *
- * Note, this file should only be included if MPI is available and the
- * MPI header must be included before this header file.
+ *  \brief Declaration of a templated traits class that returns raw MPI data types.
  */
 
 namespace Teuchos {
 
 ///
-/** Declaration of a traits class that returns raw data types.
+/** \brief Templated class that returns raw MPI data types.
  *
- * Note that this class should not compile if it is instantiated by
- * accident.
+ * \note 
+ * <ul> <li> This class should not compile if it is instantiated by accident.  
+ * 	<li> It should only be included if MPI is available and the MPI header 
+ *		<b>must</b> be included before this header file.
+ *	<li> Template specializations exist for datatypes: <tt>char</tt>, <tt>int</tt>,
+ *		<tt>float</tt>, and <tt>double</tt>.
+ * </ul>
  */
 template <class T> class RawMPITraits {
 public:
-	///
+	/** \brief Return the raw MPI data type of the template argument */
 	static MPI_Datatype type() { bool *junk1; T *junk2 = &junk1; return MPI_DATATYPE_NULL; }
 };
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 ///
 /** Specialization of <tt>RawMPITraits</tt> for <tt>char</tt>
  */
@@ -89,6 +93,8 @@ public:
 	///
 	static MPI_Datatype type() { return MPI_DOUBLE; }
 };
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 } // namespace Teuchos
 

@@ -29,17 +29,20 @@
 #ifndef TEUCHOS_MPICOMM_H
 #define TEUCHOS_MPICOMM_H
 
+/*! \file Teuchos_MPIComm.hpp
+    \brief Object representation of a MPI communicator
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_MPISession.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
 
-
 namespace Teuchos
 {
   /**
-   * Object representation of an MPI communicator.
+   * \brief Object representation of an MPI communicator.
    *
    * At present, groups are not implemented so the only communicator
    * is MPI_COMM_WORLD.
@@ -47,89 +50,88 @@ namespace Teuchos
   class MPIComm
     {
     public:
-      /** empty ctor builds an object for MPI_COMM_WORLD */
+
+      //! Empty constructor builds an object for MPI_COMM_WORLD
       MPIComm();
 
 #ifdef HAVE_MPI
-      /** construct a MPIComm for a given MPI communicator */
+      //! Construct a MPIComm for a given MPI communicator
       MPIComm(MPI_Comm comm);
 #endif
 
-      /** get an object representing MPI_COMM_WORLD */
+      //! Get an object representing MPI_COMM_WORLD 
       static MPIComm& world();
 
-
-      /** return process rank */
+      //! Return process rank
       int getRank() const {return myRank_;}
 
-      /** return number of processors in the communicator */
+      //! Return number of processors in the communicator
       int getNProc() const {return nProc_;}
 
-      /** synchronize all the processors in the communicator */
+      //! Synchronize all the processors in the communicator
       void synchronize() const ;
 
-      /** {\bf Collective communications} */
+      /** \name Collective communications */
       //@{
-      /** all-to-all gather-scatter */
+
+      //! All-to-all gather-scatter
       void allToAll(void* sendBuf, int sendCount, int sendType,
                     void* recvBuf, int recvCount, int recvType) const ;
-      /** variable-length gather-scatter */
+
+      //! Variable-length gather-scatter
       void allToAllv(void* sendBuf, int* sendCount, int* sendDisplacements,
                      int sendType,
                      void* recvBuf, int* recvCount,
                      int* recvDisplacements,
                      int recvType) const ;
 
-      /** do a collective operation, scattering the results to all procs */
+      //! Do a collective operation, scattering the results to all processors
       void allReduce(void* input, void* result, int inputCount, int type,
                      int op) const ;
 
-      /** gather to root */
+      //! Gather to root 
       void gather(void* sendBuf, int sendCount, int sendType,
                   void* recvBuf, int recvCount, int recvType,
                   int root) const ;
 
-      /** gather to all procs */
+      //! Gather to all processors
       void allGather(void* sendBuf, int sendCount, int sendType,
                      void* recvBuf, int recvCount, int recvType) const ;
 
-      /** gather to all procs */
+      //! Variable-length gather to all processors
       void allGatherv(void* sendBuf, int sendCount, int sendType,
                       void* recvBuf, int* recvCount, int* recvDisplacements,
                       int recvType) const ;
 
-      /** broadcast */
+      //! Broadcast 
       void bcast(void* msg, int length, int type, int src) const ;
+
       //@}
 
 #ifdef HAVE_MPI
-      /** get the MPI_Comm communicator handle */
+      //! Get the MPI_Comm communicator handle */
       MPI_Comm getComm() const {return comm_;}
 #endif
 
-      /** \name Constants */
-      //@{
-      /** \name Data types  */
-      //@{
-      /** */
+      //@{ \name Data types
+      //! Integer data type
       const static int INT;
-      /** */
+      //! Float data type
       const static int FLOAT;
-      /** */
+      //! Double data type
       const static int DOUBLE;
-      /** */
+      //! Character data type
       const static int CHAR;
       //@}
 
-      /** \name Operations */
-      //@{
-      /** */
+      //@{ \name Operations
+      //! Summation operation
       const static int SUM;
-      /** */
+      //! Minimize operation
       const static int MIN;
-      /** */
+      //! Maximize operation
       const static int MAX;
-      /** */
+      //! Dot-product (Multiplication) operation
       const static int PROD;
       //@}
 
@@ -138,10 +140,10 @@ namespace Teuchos
       static void errCheck(int errCode, const string& methodName);
 
 #ifdef HAVE_MPI
-      // getDataType converts a PMachine data type code to a MPI_Datatype
+      //! Converts a PMachine data type code to a MPI_Datatype
       static MPI_Datatype getDataType(int type);
 
-      // getOp converts a PMachine operator code to a MPI_Op operator code.
+      //! Converts a PMachine operator code to a MPI_Op operator code.
       static MPI_Op getOp(int op);
 #endif
     private:

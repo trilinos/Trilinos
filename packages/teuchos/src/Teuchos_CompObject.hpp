@@ -33,7 +33,7 @@
 #define TEUCHOS_COMPOBJECT_HPP
 
 /*! \file Teuchos_CompObject.hpp
-    \brief Object for storing data and providing funtionality that is common to all 
+    \brief Object for storing data and providing functionality that is common to all 
 	computational classes.
 */
 

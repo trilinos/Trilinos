@@ -32,19 +32,26 @@
 #ifndef _TEUCHOS_TIME_HPP_
 #define _TEUCHOS_TIME_HPP_
 
+/*! \file Teuchos_Time.hpp
+    \brief Basic wall-clock timer class
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 
 namespace Teuchos 
 {
 
-  /** Teuchos::Time class is a wall-clock timer. For exception safety and correct
-   * behavior in reentrant code, this class should
+  /** \brief Basic wall-clock timer class. 
+   *
+   *  To time a section of code, place it in between calls to start() and stop(). 
+   *
+   *  \note For exception safety and correct behavior in reentrant code, this class should
    * generally be used only through the Teuchos::TimeMonitor mechanism. 
    *
-   * To time a section of code, place it in between calls to start() 
-   * and stop(). 
-   *
-   * Initial version by Mike Heroux and Kris Campshaw. 
+   */
+
+  /* ADDITIONAL COMMENTS:
+   * Initial version by Mike Heroux and Kris Kampshoff. 
    * Modified as follows by Kevin Long, 9/29/03:
    * <ul>
    * <li> There is no need to define explicit copy ctor and dtor for this class.
@@ -55,33 +62,34 @@ namespace Teuchos
    * </ul>
    */ 
 
-
   class Time
   {
 
   public:
-    /** Construct with a descriptive name */
+    /** \brief Construct with a descriptive name */
     Time(const string& name, bool start = false);
   
-    /** returns current wall-clock time in seconds.*/
+    /** \brief Returns current wall-clock time in seconds.*/
     static double wallTime();
   
-    /** starts the timer */
+    /** \brief Starts the timer */
     void start(bool reset = false);
 
-    /** stop the timer */
+    /** \brief Stops the timer */
     double stop();
 
-    /** returns the total time accumulated by this timer. Note that this should be called
-     * only when the clock is stopped. */
+    /** \brief Returns the total time accumulated by this timer. <b>This should be called
+     * only when the clock is stopped.</b> */
     double totalElapsedTime() const {return totalTime_;}
 
-    /** indicates if this timer is currently running, i.e., if it has been started but
-     * not yet stopped. It is necessary to know if a timer is running to avoid 
-     * incorrectly starting or stopping in reentrant code. */
+    /** \brief Indicates if this timer is currently running, i.e., if it has been started but
+     * not yet stopped. 
+     *
+     *	It is necessary to know if a timer is running to avoid incorrectly starting or 
+     *  stopping in reentrant code. */
     bool isRunning() const {return isRunning_;}
 
-    /** return the name of this timer */
+    /** \brief Return the name of this timer */
     const string& name() const {return name_;}
     
   private:

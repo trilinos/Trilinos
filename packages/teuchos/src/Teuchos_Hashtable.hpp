@@ -29,6 +29,10 @@
 #ifndef TEUCHOS_HASHTABLE_H
 #define TEUCHOS_HASHTABLE_H
 
+/*! \file Teuchos_Hashtable.hpp
+    \brief Templated hashtable class
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_HashUtils.hpp"
@@ -38,83 +42,63 @@ namespace Teuchos
   using std::string;
 
   /** \ingroup Containers
-   * helper class for hashtable, representing a single key, value pair.
+   * \brief Helper class for Teuchos::Hashtable, representing a single <key, value> pair.
    */
   template<class Key, class Value> class HashPair
     {
     public:
-      /** empty ctor */
+      //! Empty constructor 
       inline HashPair() : key_(), value_() {;}
-      /** construct with a key and value */
+      //! Basic <key, value> constructor
       inline HashPair(const Key& key, const Value& value)
         : key_(key), value_(value) {;}
 
+      //! Templated key variable
       Key key_;
+      //! Templated value variable
       Value value_;
     };
 
   /**
      \ingroup Containers
-     Templated hashtable class.
+     \brief Templated hashtable class.
      @author Kevin Long
   */
-
-
   template<class Key, class Value> class Hashtable
     {
     public:
-      /**
-       * Create an empty Hashtable
-       */
+
+      //! Create an empty Hashtable
       inline Hashtable(int capacity=101, double rehashDensity = 0.8);
 
-      /**
-       * Check for the presence of a key
-       */
+      //! Check for the presence of a key
       inline bool containsKey(const Key& key) const ;
-      /**
-       * Get the value indexed by key
-       */
+
+      //! Get the value indexed by key
       inline const Value& get(const Key& key) const ;
-      /**
-       * Put a new (key, value) pair in the table.
-       */
+
+      //! Put a new (key, value) pair in the table.
       inline void put(const Key& key, const Value& value);
 
-      /**
-       * Remove from the table the element given by key.
-       */
+      //! Remove from the table the element given by key.
       inline void remove(const Key& key);
 
-      /**
-       * Get the number of elements in the table
-       */
+      //! Get the number of elements in the table
       inline int size() const {return count_;}
 
-      /**
-       * Get lists of keys and values in Array form
-       */
+      //! Get lists of keys and values in Array form
       inline void arrayify(Array<Key>& keys, Array<Value>& values) const ;
 
-      /**
-       * Return the average degeneracy (average number of entries per hash code).
-       */
+      //! Return the average degeneracy (average number of entries per hash code).
       inline double avgDegeneracy() const {return avgDegeneracy_;}
 
-      /**
-       * Return the density of the hashtable (num entries / capacity)
-       */
+      //! Return the density of the hashtable (num entries / capacity)
       inline double density() const {return ((double)count_)/((double) capacity_);}
 
-
-      /**
-       * Set the density at which to do a rehash
-       */
+      //! Set the density at which to do a rehash
       inline void setRehashDensity(double rehashDensity);
 
-      /** 
-       * Write to a string
-       */
+      //! Write to a string
       inline string toString() const ;
 
     private:
@@ -138,10 +122,11 @@ namespace Teuchos
   template<class Key, class Value>
   string toString(const Hashtable<Key, Value>& h);
 
+  /** \relates Hashtable 
+      \brief Write Hashtable to a stream
+  */
   template<class Key, class Value>
   ostream& operator<<(ostream& os, const Hashtable<Key, Value>& h);
-
-
 
   template<class Key, class Value> inline
     Hashtable<Key, Value>::Hashtable(int capacity, double rehashDensity)
@@ -344,4 +329,4 @@ namespace Teuchos
 
 }
 
-#endif
+#endif // TEUCHOS_HASHTABLE_H

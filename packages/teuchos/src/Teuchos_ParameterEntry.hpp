@@ -30,24 +30,26 @@
 #ifndef TEUCHOS_PARAMETER_ENTRY_H
 #define TEUCHOS_PARAMETER_ENTRY_H
 
-#include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_any.hpp"
-
 /*! \file Teuchos_ParameterEntry.hpp
     \brief Object held as the "value" in the Teuchos::ParameterList map.
 */
 
-namespace Teuchos {
+#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_any.hpp"
 
-class ParameterList; // another parameter type (forward declaration)
-
-/*! \class ParameterEntry
+/*! \class Teuchos::ParameterEntry
     \brief This object is held as the "value" in the Teuchos::ParameterList map.
 
     This structure holds a \c Teuchos::any value and information on the status of this
     parameter (isUsed, isDefault, etc.).  The type of parameter is chosen through the
     templated Set/Get methods.
 */
+
+namespace Teuchos {
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+class ParameterList; // another parameter type (forward declaration)
+#endif
 
 class ParameterEntry {
 

@@ -26,11 +26,14 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef HASHUTILS_H
-#define HASHUTILS_H
+#ifndef TEUCHOS_HASHUTILS_H
+#define TEUCHOS_HASHUTILS_H
+
+/*! \file Teuchos_HashUtils.hpp
+    \brief Utilities for generating hashcodes
+*/
 
 #include "Teuchos_ConfigDefs.hpp"
-#include <string>
 
 namespace Teuchos
 {
@@ -38,13 +41,13 @@ namespace Teuchos
 
   /**
    * \ingroup Containers
-   * Utilities for generating hashcodes.
+   * \brief Utilities for generating hashcodes.
    */
 
   class HashUtils
     {
     public:
-      /* get the next prime in a sequence of hashtable sizes */
+      /* Get the next prime in a sequence of hashtable sizes */
       static int nextPrime(int newCapacity);
 
     private:
@@ -60,31 +63,39 @@ namespace Teuchos
         15000607, 23133937, 35650091};*/
     };
 
-  /** \relates HashUtils standard interface for getting the hash code of
-   * an object */
-
+  /** \relates HashUtils 
+      \brief Standard interface for getting the hash code of an object 
+  */
   template <class T> int hashCode(const T& x);
 
-  /** \relates HashUtils get the hash code of an int */
-  template <> inline int hashCode(const int& x)
+  /** \relates HashUtils 
+      \brief Get the hash code of an int 
+  */
+  template <> inline int hashCode(const int& x) 
     {
       return x;
     }
 
-  /** \relates HashUtils  get the hash code of a double */
+  /** \relates HashUtils  
+      \brief Get the hash code of a double 
+  */
   template <> inline int hashCode(const double& x)
     {
       return (int) x;
     }
 
-  /**\relates HashUtils  get the hash code of a bool */
+  /** \relates HashUtils  
+      \brief Get the hash code of a bool 
+  */
   template <> inline int hashCode(const bool& x)
     {
       return (int) x;
     }
 
 
-  /** \relates HashUtils get the hash code od a string */
+  /** \relates HashUtils 
+      \brief Get the hash code of a string 
+  */
   template <> inline int hashCode(const string& x)
     {
       const char* str = x.c_str();
@@ -107,4 +118,4 @@ namespace Teuchos
 
 
 }
-#endif
+#endif // TEUCHOS_HASHUTILS_H

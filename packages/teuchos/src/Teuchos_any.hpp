@@ -4,6 +4,10 @@
 #ifndef TEUCHOS_ANY_HPP
 #define TEUCHOS_ANY_HPP
 
+/*! \file Teuchos_any.hpp
+   \brief Modified boost::any class for holding a templated value
+*/
+
 #include "Teuchos_TestForException.hpp"
 
 //
@@ -36,38 +40,43 @@
 namespace Teuchos {
 
 ///
-/** The "any" class.
- *
- * ToDo: Finish documentatioin!
+/**  \brief Modified boost::any class, which is a container for a templated value.
  */
+// ToDo: Finish documentation!
+
 class any
 {
 public:
-
+	//! Empty constructor
 	any()
 		: content(0)
 		{}
 
+	//! Templated constructor
 	template<typename ValueType>
 	any(const ValueType & value)
 		: content(new holder<ValueType>(value))
 		{}
-
+	
+	//! Copy constructor
 	any(const any & other)
 		: content(other.content ? other.content->clone() : 0)
 		{}
 
+	//! Destructor
 	~any()
 		{
 			delete content;
 		}
 
+	//! Method for swapping the contents of two any classes
 	any & swap(any & rhs)
 		{
 			std::swap(content, rhs.content);
 			return *this;
 		}
 	
+	//! Copy the value <tt>rhs</tt>
 	template<typename ValueType>
 	any & operator=(const ValueType & rhs)
 		{
@@ -75,27 +84,32 @@ public:
 			return *this;
 		}
 	
+	//! Copy the value held in <tt>rhs</tt>
 	any & operator=(const any & rhs)
 		{
 			any(rhs).swap(*this);
 			return *this;
 		}
 	
+	//! Return true if nothing is being stored
 	bool empty() const
 		{
 			return !content;
 		}
 	
+	//! Return the type of value being stored
 	const std::type_info & type() const
 		{
 			return content ? content->type() : typeid(void);
 		}
 
+	//! Print this value to the output stream <tt>os</tt>
 	void print(std::ostream& os) const
 		{
 			if (content) content->print(os);
 		}
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 	/** @name Private??? types */
 	//@{
 
@@ -137,6 +151,14 @@ public:
 
 	//@}
 
+public:
+	// Danger: This is made public to allow any_cast to be non-friend
+	placeholder* access_content()
+		{ return content; }
+	const placeholder* access_content() const
+		{ return content; }
+#endif
+
 private:
 
 	// /////////////////////////
@@ -144,23 +166,25 @@ private:
 	
 	placeholder * content;
 
-public:
-	// Danger: This is made public to allow any_cast to be non-friend
-	placeholder* access_content()
-		{ return content; }
-	const placeholder* access_content() const
-		{ return content; }
-
 };
 
-///
+/*! \relates any
+    \brief Thrown if any_cast is attempted between two incompatable types.
+*/
 class bad_any_cast : public std::runtime_error
 {
 public:
 	bad_any_cast( const std::string msg ) : std::runtime_error(msg) {}
 };
 
-///
+/*! \relates any
+    \brief Used to extract the templated value held in Teuchos::any to a given value type.
+
+    \note <ul> 	<li> If the templated value type and templated type are not the same then a 
+		bad_any_cast is thrown.
+		<li> If the dynamic cast fails, then a logic_error is thrown.
+	  </ul>
+*/
 template<typename ValueType>
 ValueType& any_cast(any &operand)
 {
@@ -181,7 +205,15 @@ ValueType& any_cast(any &operand)
 	return dyn_cast_content->held;
 }
 
-///
+/*! \relates any
+    \brief Used to extract the const templated value held in Teuchos::any to a given 
+	const value type.
+
+    \note <ul> 	<li> If the templated value type and templated type are not the same then a 
+		bad_any_cast is thrown.
+		<li> If the dynamic cast fails, then a logic_error is thrown.
+	  </ul>
+*/
 template<typename ValueType>
 const ValueType& any_cast(const any &operand)
 {
@@ -189,6 +221,9 @@ const ValueType& any_cast(const any &operand)
 }
 
 
+/*! \relates any
+    \brief Writes "any" input <tt>rhs</tt> to the output stream <tt>os</tt>.
+*/
 inline std::ostream & operator<<(std::ostream & os, const any &rhs)
 {
        	rhs.print(os);

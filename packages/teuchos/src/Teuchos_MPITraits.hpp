@@ -29,6 +29,11 @@
 #ifndef TEUCHOS_MPITRAITS_H
 #define TEUCHOS_MPITRAITS_H
 
+/*! \file Teuchos_MPITraits.hpp
+    \brief Declaration of a templated traits class for binding MPI types to
+	C++ types
+*/
+
 #include "Teuchos_MPIComm.hpp"
 
 namespace Teuchos
@@ -36,15 +41,18 @@ namespace Teuchos
 	using std::string;
 
 	/** \ingroup MPI 
-	 * MPITraits let us bind MPI types to C++ types.
+	 * \brief Templated traits class that binds MPI types to C++ types
+	 * \note Template specializations exist for datatypes: <tt>char</tt>,
+		<tt>int</tt>, <tt>float</tt>, and <tt>double</tt>.
 	 */
 	template <class T> class MPITraits
 		{
 		public:
-			/** return the MPI data type of the template argument */
+			/** \brief Return the MPI data type of the template argument */
 			static int type();
 		};
-	
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS	
 	/** \ingroup MPI 
 	 * Binds MPI_INT to int
 	 */
@@ -84,7 +92,9 @@ namespace Teuchos
 			/** return the MPI data type of the template argument */
 			static int type() {return MPIComm::CHAR;}
 		};
+
+#endif //DOXYGEN_SHOULD_SKIP_THIS
 	
-}
+} // namespace Teuchos
 
 #endif

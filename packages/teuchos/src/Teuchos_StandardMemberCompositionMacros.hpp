@@ -32,32 +32,47 @@
 #ifndef TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H
 #define TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H
 
+/*! \file Teuchos_StandardMemberCompositionMacros.hpp
+    \brief Macro that adds <<std member comp>> members as attribute members 
+	for any class
+*/
 #include "Teuchos_ConfigDefs.hpp"
 
 ///
-/** Macro that addes << std member comp >> members for attribute member.
-  * \ingroup StandardContainmentMacros_grp
-  *
+/** \defgroup StandardCompositionMacros_grp  Macro that adds <<std member comp>> attributes to any class
+  * 
   * For example, if you want to include a <<std member comp>> attribute
   * as a member object of type MyClass with the name my_attribute you
   * would include the macro in the public section of YourClass
   * declaration as follows:
   \verbatim
+
 	class YourClass {
 	public:
 		STANDARD_MEMBER_COMPOSITION_MEMBERS( MyClass, my_attribute )
 	};
   \endverbatim
-  * Note that the macro adds the following data member
-  * to the class declaration:
+  * This macro adds the following data member to the class declaration:
   \verbatim
+
 	private:
-		TYPE NAME_;
+		My_Class my_attribute_;
+  \endverbatim
+  * and the following methods to your class declaration:
+  \verbatim
+
+	public:
+
+        void my_attribute( const My_Class & my_attribute )
+	{ my_attribute_ = my_attribute; }
+	const My_Class& my_attribute() const
+	{ return my_attribute_; }
   \endverbatim
   * The advantage of using this type of declaration is that it saves
   * you a lot of typing and space.  Later if you need to override these
   * operations you can just implement the member functions by hand.
   */
+//@{
 #define STANDARD_MEMBER_COMPOSITION_MEMBERS( TYPE, NAME )			\
 public:																\
 	void NAME (const TYPE & NAME )									\
@@ -67,5 +82,7 @@ public:																\
 private:															\
 	TYPE NAME ## _;													\
 public:
+
+//@} // end defgroup
 
 #endif	// TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H

@@ -29,6 +29,11 @@
 #ifndef Teuchos_STRINGINPUTSOURCE_H
 #define Teuchos_STRINGINPUTSOURCE_H
 
+/*! \file Teuchos_StringInputSource.hpp
+    \brief Definition of XMLInputSource derived class for reading XML from 
+	a string
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_XMLInputSource.hpp"
 
@@ -39,18 +44,18 @@ namespace Teuchos
   using std::string;
 
   /** \ingroup XML
-   * StringInputSource reads XML from a String
+   * \brief Instantiation of XMLInputSource class for reading XML from a string
    */
-
   class StringInputSource : public XMLInputSource
     {
     public:
-      /** ctor */
+      /** \brief Constructor */
       StringInputSource(const string& text);
-      /** virtual dtor */
+
+      /** \brief Destructor */
       virtual ~StringInputSource(){;}
 
-      /** create a StringInputStream */
+      /** \brief Create a StringInputStream */
       virtual RefCountPtr<XMLInputStream> stream() const;
 
     private:
