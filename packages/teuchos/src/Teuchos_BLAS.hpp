@@ -50,6 +50,7 @@
     \brief Templated interface class to BLAS routines.
 */
 
+#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_BLAS_wrappers.hpp"
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_ScalarTraits.hpp"

@@ -62,6 +62,7 @@ functions that include the macro:
 #define CHAR_MACRO(char_var) &char_var
 #endif
 
+#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_LAPACK_wrappers.hpp"
 
 /*! \class Teuchos::LAPACK
@@ -106,7 +107,7 @@ namespace Teuchos
     inline LAPACK(void) {};
 
     //! Copy Constructor.
-    inline LAPACK(const LAPACK& LAPACK) {};
+    inline LAPACK(const LAPACK<OrdinalType, ScalarType>& LAPACK) {};
 
     //! Destructor.
     inline virtual ~LAPACK(void) {};
@@ -127,7 +128,7 @@ namespace Teuchos
 
     void POCON(const char UPLO, const OrdinalType n, const ScalarType* A, const OrdinalType lda, const ScalarType anorm, ScalarType* rcond, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
 
-    //! Computes the solution to a real system of linear equations \c A*X=B, where \c A is a symmetric positive definite matrix factored by POTRF and the \c nrhs solutions are computed by POTRS and returned in \c B. 
+    //! Computes the solution to a real system of linear equations \c A*X=B, where \c A is a symmetric positive definite matrix and the \c nrhs solutions are returned in \c B. 
     void POSV(const char UPLO, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, OrdinalType* info) const;
 
     //! Computes row and column scalings intended to equilibrate a symmetric positive definite matrix \c A and reduce its condition number (w.r.t. 2-norm).
@@ -174,7 +175,7 @@ namespace Teuchos
     //@}
 
     //@{ \name Hessenberg Eigenproblem Routines
-    //! Computes the eigenvalues of a real upper Hessenber matrix \c H and, optionally, the matrices \c T and \c Z from the Schur decomposition, where T is an upper quasi-triangular matrix and Z contains the Schur vectors. 
+    //! Computes the eigenvalues of a real upper Hessenberg matrix \c H and, optionally, the matrices \c T and \c Z from the Schur decomposition, where T is an upper quasi-triangular matrix and Z contains the Schur vectors. 
     void HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, ScalarType* H, const OrdinalType ldh, ScalarType* WR, ScalarType* WI, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
     
     //! Computes for an \c n by \c n real nonsymmetric matrix \c A, the eigenvalues, the real Schur form \c T, and, optionally, the matrix of Schur vectors \c Z.
@@ -193,7 +194,7 @@ namespace Teuchos
     //@}
 
     //@{ \name Triangular Matrix Routines
-    //! Computes some of all of the right and/or left eigenvectors of a real upper quasi-triangular matrix \c T.
+    //! Computes some or all of the right and/or left eigenvectors of a real upper quasi-triangular matrix \c T.
     void TREVC(const char SIDE, const char HOWMNY, OrdinalType* SELECT, const OrdinalType n, const ScalarType* T, const OrdinalType ldt, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, ScalarType* WORK, OrdinalType* info) const;
 
     //! Reorders the real Schur factorization of a real matrix via orthogonal similarity transformations so that the diagonal block of \c T with row index \c ifst is moved to row \c ilst.
@@ -421,7 +422,7 @@ namespace Teuchos
   {    
   public:
     inline LAPACK(void) {};
-    inline LAPACK(const LAPACK& LAPACK) {};
+    inline LAPACK(const LAPACK<OrdinalType, float>& LAPACK) {};
     inline virtual ~LAPACK(void) {};
 
     // Symmetric positive definite linear system routines
@@ -664,7 +665,7 @@ namespace Teuchos
   {    
   public:
     inline LAPACK(void) {};
-    inline LAPACK(const LAPACK& LAPACK) {};
+    inline LAPACK(const LAPACK<OrdinalType, double>& LAPACK) {};
     inline virtual ~LAPACK(void) {};
 
     // Symmetric positive definite linear system routines
