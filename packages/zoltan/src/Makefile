@@ -136,14 +136,14 @@ UTIL_SUBDIRS	= Utilities/Communication Utilities/Memory
 ALL_CSRC	= all_allo.c free_structure.c
 ALL_INC		= all_const.h all_allo_const.h
 
-LB_CSRC		= lb_balance.c lb_eval.c lb_init.c lb_migrate.c lb_set_fn.c \
-		  lb_set_method.c lb_struct.c lb_util.c 
-LB_INC		= lb_const.h lb.h lbi_const.h lb_util_const.h
+LB_CSRC		= lb_balance.c lb_eval.c lb_id.c lb_init.c lb_migrate.c \
+		  lb_set_fn.c lb_set_method.c lb_struct.c lb_util.c 
+LB_INC		= lb_const.h lb.h lbi_const.h lb_id_const.h lb_util_const.h
 
 RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \
                   create_proc_list.c irb.c irb_util.c \
-                  inertial1d.c inertial2d.c inertial3d.c
-RCB_INC		= rcb_const.h create_proc_list.h irb_const.h
+                  inertial1d.c inertial2d.c inertial3d.c shared.c
+RCB_INC		= rcb_const.h create_proc_list.h irb_const.h shared_const.h
 
 OCT_CSRC	= msg.c octant.c oct_util.c octupdate.c dfs.c costs.c migoct.c \
 		  output.c migreg.c hilbert.c
@@ -250,7 +250,7 @@ help:
 	@echo '   gmake ZOLTAN_ARCH=desired_arch zdrive'
 	@echo 'where desired_arch is defined as above.'
 	@echo ' '
-	@echo 'To include the F90 interface in Zoltan, use the gmake
+	@echo 'To include the F90 interface in Zoltan, use the gmake'
 	@echo 'command line argument'
 	@echo '      YES_FORTRAN=1  (to compile fortran interface)'
 	@echo ' '
