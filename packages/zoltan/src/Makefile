@@ -16,7 +16,7 @@
 # Top-level Makefile for Zoltan library and Zoltan driver zdrive.
 #
 # To compile the library, type
-#    gmake TARGET_ARCH=<targetmachine> zoltan
+#    gmake ZOLTAN_ARCH=<targetmachine> zoltan
 # where
 #    targetmachine = sun, sunos, smos, or tflop.
 #
