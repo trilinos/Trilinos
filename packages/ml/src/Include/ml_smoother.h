@@ -136,6 +136,11 @@ extern  int ML_Smoother_Jacobi(void *, int, double *x, int, double *);
 extern  int ML_Smoother_GaussSeidel(void *, int, double *, int, double *);
 extern  int ML_Smoother_SGS(void *, int, double *, int, double *);
 extern  int ML_Smoother_BlockGS(void *, int, double *, int, double *);
+extern  int ML_Smoother_ParaSails(void *, int, double *, int, double *);
+extern  int ML_Smoother_ParaSails(void *, int, double *, int, double *);
+extern  int ML_Smoother_ParaSailsSym(void *, int, double *, int, double *);
+extern  int ML_Smoother_ParaSailsTrans(void *, int, double *, int, double *);
+extern void ML_Smoother_Clean_ParaSails(void *data);
 extern  int ML_Smoother_VBlockJacobi(void *,int,double *x,int, double *);
 extern  int ML_Smoother_VBlockKrylovJacobi(void *,int,double*,int,double*);
 extern  int ML_Smoother_VBlockSGS(void *, int, double *x, int, double *);
@@ -143,6 +148,7 @@ extern  int ML_Smoother_VBlockSGSSequential(void*,int,double*,int,double*);
 extern  int ML_Smoother_OverlappedILUT(void *,int,double *x,int,double *);
 extern  int ML_Smoother_VBlockAdditiveSchwarz(void *,int,double*,int,double*);
 extern  int ML_Smoother_VBlockMultiplicativeSchwarz(void *,int,double*,int,double*);
+extern  int ML_Smoother_ParaSails(void *, int, double *, int, double *);
 
 /* ******************************************************************** */
 /* ******************************************************************** */

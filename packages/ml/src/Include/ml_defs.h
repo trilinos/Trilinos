@@ -60,6 +60,7 @@
 #define ML_POSTSMOOTHER     202
 #define ML_PRESMOOTH        201
 #define ML_POSTSMOOTH       202
+#define ML_BOTH             203
 
 #define ML_BDRY_DIRICHLET   1
 #define ML_BDRY_NEUMANN     2
