@@ -20,10 +20,10 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
  PHGPartParams *hgp, int level)
 {
   int i, j, mid, err, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
-  Partition part;
-  HGraph *new;
+  Partition part=NULL;
+  HGraph *new=NULL;
   PHGComm *hgc = hg->comm;
-  float tgpartsize[2];             /* Target partition sizes; dimension is 2 
+  float tgpartsize[2]={0.0,0.0};    /* Target partition sizes; dimension is 2 
                                      because we are doing bisection */
   char *yo = "Zoltan_PHG_rdivide";
     
@@ -72,9 +72,11 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
   }
-  pins[1]  = &( pins[0][hg->nEdge]);
-  lpins[1] = &(lpins[0][hg->nEdge]);
-
+  if (pins && lpins) {
+     pins[1]  = &( pins[0][hg->nEdge]);
+     lpins[1] = &(lpins[0][hg->nEdge]);
+     }
+     
   /* Initial calculation of the local pin distribution  (sigma in UVC's papers)  */
     for (i = 0; i < hg->nEdge; ++i)
       for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
