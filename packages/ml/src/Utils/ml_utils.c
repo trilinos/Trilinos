@@ -2579,6 +2579,8 @@ void ML_PauseForDebugger(ML_Comm *comm)
   str = (char *) getenv("ML_BREAK_FOR_DEBUGGER");
   i = 0;
   if (str != NULL) i++;
+  str = (char *) getenv("ML_PAUSE_FOR_DEBUGGER");
+  if (str != NULL) i++;
   ML_gsum_scalar_int(&i, &j, comm);
   if (i != 0)
   {
@@ -2839,7 +2841,12 @@ int ML_build_global_numbering( ML_Operator *Amat,
   int * global_numbering;
   
   Nrows = Amat->getrow->Nrows;
-  Nghosts = Amat->getrow->pre_comm->total_rcv_length;
+  if (Amat->getrow->pre_comm == NULL) Nghosts = 0;
+  else {
+    if (Amat->getrow->pre_comm->total_rcv_length <= 0)
+      ML_CommInfoOP_Compute_TotalRcvLength(Amat->getrow->pre_comm);
+    Nghosts = Amat->getrow->pre_comm->total_rcv_length;
+  }
   
   /* allocate +1 because it is possible that some procs will have
      no rows at all (with ParMETIS) */
@@ -2872,6 +2879,7 @@ int ML_build_global_numbering( ML_Operator *Amat,
      is no longer tridiagonal, for instance... */
     
   for( i=0 ; i<Nrows ; i++ ) dtemp[i] = 1.0*(i+offset);
+  for (i=0 ; i<Nghosts; i++) dtemp[i+Nrows] = -1;
 
   /* I exchange this information using ML_exchange_bdry,
      which is coded for double vectors. */
@@ -2952,4 +2960,44 @@ int ML_Operator_Lump(ML_Operator *A, ML_Operator **B)
 
   ML_free(vin);
   return 0;
+}
+
+/*******************************************************************************
+ Calculate standard deviation based on the formula
+
+        sigma = ( 1 / (n-1) * sum( (a_i - a)^2 ) )^(0.5)
+
+ where a_i are the samples & a is the average of the a_i's.
+
+     sample     -- value to be analyzed
+     n          -- number of samples
+     activeflag -- nonzero if this processor is participating
+     comm       -- ML communicator
+
+ Note: there are more efficient formulas to calculate this.
+*******************************************************************************/
+
+
+double ML_Global_Standard_Deviation(double sample, int n,
+                                    int activeflag, ML_Comm *comm)
+{
+  double avg = 0.0;
+  double sum = 0.0;;
+
+  if (n <= 0) return -999.0;
+  if (n == 1) return 0.0;
+
+/*  printf("(%d) sample = %e, n = %d active = %d\n",comm->ML_mypid, sample, n,
+   activeflag);*/
+  if (activeflag == 0)
+     sample = 0.0;
+  avg = ML_gsum_double(sample, comm) / n;
+  /* printf("(%d) avg = %e\n",comm->ML_mypid, avg); */
+  if (activeflag)
+    sample -= avg;
+
+  sample = sample*sample;
+  sum = ML_gsum_double(sample, comm);
+ 
+  return sqrt(sum / (n-1));
 }
