@@ -81,7 +81,7 @@ for lib in libs:
         extraArgs.append(lib)
 
 # Define the strings that refer to the required source files.
-wrapEpetra         = "wrap_Epetra.cpp"
+wrapEpetra         = "Epetra_wrap.cpp"
 epetraNumPyVector  = os.path.join(srcDir,"Epetra_NumPyVector.cpp" )
 epetraVectorHelper = os.path.join(srcDir,"Epetra_VectorHelper.cpp")
 numPyArray         = os.path.join(srcDir,"NumPyArray.cpp"         )

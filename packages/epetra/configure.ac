@@ -262,21 +262,24 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_epetra_examples" != "Xno")
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
-# Check if python interface should be created
+# Check if python wrappers should be created
 # ------------------------------------------------------------------------
 AZ_PYTHON_DEFAULT( )  # Default to no python support
 AZ_PYTHON_ENABLE( )   # Check for --enable-python, --disable-python
 AZ_PYTHON_WITH( )     # Check for --with-python, --without-python
-# if $PYTHON is not defined, then the following do nothing.
-AZ_PYTHON_VERSION_ENSURE( [2.2] )
-AZ_PYTHON_CSPEC
-AZ_PYTHON_LSPEC
 
-AC_MSG_CHECKING(whether we should build the python support)
+AC_MSG_CHECKING(whether we should build the python wrappers)
 if test -n "$PYTHON"; then
   BUILD_PYTHON=yes
   AC_MSG_RESULT(yes)
   AM_CONDITIONAL(BUILD_PYTHON, true)
+
+  # Ensure that we have python version 2.2 or greater (for distutils)
+  AZ_PYTHON_VERSION_ENSURE( [2.2] )
+
+  # Python compiler and linker flags
+  AZ_PYTHON_CSPEC
+  AZ_PYTHON_LSPEC
 
   # Check that Python.h is available
   save_CPPFLAGS=$CPPFLAGS
@@ -306,28 +309,35 @@ else
 fi
 
 # ------------------------------------------------------------------------
-# Configure swig
+# If the python wrappers are to be built, then SWIG (Simple Wrapper
+# Interface Generator) is required
 # ------------------------------------------------------------------------
 
-# Check for --with-swig[=path]
-AC_ARG_WITH(swig,
-	    [AC_HELP_STRING([--with-swig@<:@=SWIG@:>@],[enable swig and set swig binary])],
-	    [WITH_SWIG=yes
-	     if test X${withval} != Xyes ; then
-	     	SWIG=$withval
-	     fi])
+if test -n "$PYTHON"; then
 
-# If --with-swig not present, check for swig in standard path
-if test X${WITH_SWIG} != Xyes; then
-  AC_CHECK_PROG(WITH_SWIG,swig,yes,no)
-fi
+  # Check for --with-swig[=path]
+  AC_MSG_CHECKING(for --with-swig)
+  AC_ARG_WITH(swig,
+	      [AC_HELP_STRING([--with-swig@<:@=SWIG@:>@],
+	                      [enable swig and set swig binary])],
+	      [AC_MSG_RESULT(yes)
+	       WITH_SWIG=yes
+	       if test X${withval} != Xyes ; then
+	     	 SWIG=$withval
+	       fi],
+	      [AC_MSG_RESULT(no)
+	       AC_CHECK_PROG(WITH_SWIG,swig,yes,no)])
 
-AC_MSG_CHECKING(whether we should enable swig support)
-AC_MSG_RESULT([${WITH_SWIG}])
-AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
-AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
+  # Report error if no swig found
+  if test ${WITH_SWIG} = no; then
+     AC_MSG_ERROR(
+     [Python wrappers require swig (Simple Wrapper Interface Generator).
+      See http://www.swig.org])
+  fi
+  AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
+  AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
 
-if test -n "$PYTHON" && test X${WITH_SWIG} = Xyes; then
+  # SWIG configuration
   AC_PROG_SWIG(1.3.23)
   SWIG_ENABLE_CXX
   SWIG_MULTI_MODULE_SUPPORT
