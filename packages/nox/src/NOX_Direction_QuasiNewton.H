@@ -98,7 +98,7 @@ private:
   //! Print an error message and throw and error
   void throwError(const string& functionName, const string& errorMsg);
 
-protected:
+public:
 
   //! Private auxillary class for NOX::Direction::QuasiNewton method
   /*! Stores an (s,y)-pair for the BFGS update */
@@ -211,6 +211,8 @@ protected:
     deque<NOX::Direction::QuasiNewton::Update*> recycleDeque;
   
   };
+
+private:
 
   //! "Direction" sublist with parameters for the direction vector
   /*! 
