@@ -73,6 +73,15 @@ namespace Teuchos
     Teuchos::BLAS is a single memory image interface only.  This is appropriate 
     since the standard BLAS are only specified for serial execution 
     (or shared memory parallel).
+
+    \note
+    <ol>
+            <li>These templates are specialized to use the Fortran BLAS routines for
+            scalar types \c float and \c double.
+
+            <li>If Teuchos is configured with \c --enable-teuchos-complex then these templates
+            are specialized for scalar types \c complex<float> and \c complex<double> also.
+    </ol>
 */
 
   extern const char ESideChar[];
@@ -1403,6 +1412,8 @@ namespace Teuchos
     }
   }
   
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
   template<typename OrdinalType>
   class BLAS<OrdinalType, float>
   {    
@@ -1743,7 +1754,9 @@ namespace Teuchos
   void BLAS<OrdinalType, complex<double> >::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const complex<double> alpha, const complex<double>* A, const OrdinalType lda, complex<double>* B, const OrdinalType ldb)
   { DTRSM_F77(&ESideChar[side], &EUploChar[uplo], &ETranspChar[transa], &EDiagChar[diag], &m, &n, &alpha, A, &lda, B, &ldb); }
   
-#endif
+#endif // HAVE_TEUCHOS_COMPLEX
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 } // namespace Teuchos
 
