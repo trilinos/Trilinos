@@ -26,6 +26,7 @@ typedef struct {
    int nDim;    /* Number of dimensions for a vertex's coordinate */
    int VertexWeightDim;  /* number of weight dimensions for a vertex */
    int EdgeWeightDim;    /* number of weight dimensions for an edge */
+   int redl;             /* Working Reduction limit. */
 
    int *vtxdist;  /* distributions of vertices to processors, as in ParMETIS.
                      Vertices vtxdist[n] to vtxdist[n+1]-1 are stored on
@@ -52,6 +53,7 @@ typedef struct {
    int nDim;    /* Number of dimensions of a vertex's coordinate */
    int VertexWeightDim;  /* number of weight dimensions for a vertex */
    int EdgeWeightDim;    /* number of weight dimensions for an edge */
+   int redl;             /* Working Reduction limit. */
 
    /* physical coordinates of each vertex, optional */
    double *coor; /*  |V| long by CoordinateDim */

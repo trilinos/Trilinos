@@ -109,8 +109,8 @@ typedef int ZOLTAN_HG_GROUPING_EWS_FN (ZZ*, HGraph*);
 /* Parameters to the hypergraph functions */
 struct HGPartParamsStruct {
   float bal_tol;                        /* Balance tolerance in % of average */
-  int redl;                             /* Reduction limit. */
   int kway;                             /* 1 -> kway, 0->recursive bisection */
+  int redl;                             /* Reduction limit (constant). */
 
   char redm_str[MAX_PARAM_STRING_LEN];  /* Reduction method string. */
   ZOLTAN_HG_MATCHING_FN *matching;      /* Pointers to Matching, Packing and */

@@ -139,6 +139,7 @@ hgp.orphan_flag = 0;
   if (Zoltan_HG_Set_Part_Options(&zz, &hgp))
      return 1;
   ADD_NEW_TIME(t_rest);
+  hg.redl = hgp.redl;
 
   /* load hypergraph and print its info */
   if (hg_readfile(&zz,&hg,hgraphfile,&base))
@@ -149,7 +150,7 @@ hgp.orphan_flag = 0;
   printf("Initial Memory: %d %d\n", memory_graph,
    Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
   printf ("local %s, global %s, redl %d\n", hgp.local_str, hgp.global_str,
-   hgp.redl);
+   hg.redl);
 
   if (hgp.output_level >= HG_DEBUG_LIST)
      if (Zoltan_HG_Info  (&zz, &hg))

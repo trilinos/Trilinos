@@ -92,7 +92,7 @@ char *yo = "Zoltan_HG_HPart_Lib";
 
   if (hgp->output_level >= HG_DEBUG_LIST) {
      printf("START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s-%s/%s-%s p=%d...\n",
-      hg->info, hg->nVtx, hg->nEdge, hg->nInput, hgp->redl, hgp->redm_str,
+      hg->info, hg->nVtx, hg->nEdge, hg->nInput, hg->redl, hgp->redm_str,
       hgp->redmo_str, hgp->global_str, hgp->local_str, p);
      if (hgp->output_level > HG_DEBUG_LIST) {
         err = Zoltan_HG_Info(zz, hg);
@@ -102,8 +102,8 @@ char *yo = "Zoltan_HG_HPart_Lib";
      }
 
   /* the graph will only be reduced to a size equal to the number of parts */
-  if (hgp->redl < p)
-      hgp->redl = p;
+  if (hg->redl < p)
+      hg->redl = p;
 
   /* Something wrong with the part number? */
   if (p <= 0) {
@@ -121,7 +121,7 @@ char *yo = "Zoltan_HG_HPart_Lib";
      for (i = 0; i < hg->nVtx; i++)
         part[i] = i;
      }
-  else if (hg->nVtx <= hgp->redl || hg->nEdge == 0
+  else if (hg->nVtx <= hg->redl || hg->nEdge == 0
    || (hgp->matching == NULL && hgp->packing == NULL && hgp->grouping == NULL)){
      /* fewer vertices than desired or no edges or no coarsening requested */
      err = Zoltan_HG_Global (zz, hg, p, part, hgp);
@@ -141,7 +141,7 @@ char *yo = "Zoltan_HG_HPart_Lib";
         pack[i] = i;
 
      /* Calculate one of Packing, Grouping or Matching */
-     limit = hg->nVtx - hgp->redl;
+     limit = hg->nVtx - hg->redl;
      if      (hgp->packing)  err= Zoltan_HG_Packing (zz, hg, pack, hgp, &limit);
      else if (hgp->grouping) err= Zoltan_HG_Grouping(zz, hg, pack, hgp, &limit);
      else if (hgp->matching) err= Zoltan_HG_Matching(zz, hg, pack, hgp, &limit);
@@ -166,16 +166,16 @@ char *yo = "Zoltan_HG_HPart_Lib";
         }
 
      /* Check the consistency of the coarsening */
-     if (limit != c_hg.nVtx - hgp->redl) {
-        sprintf(msg, "limit %d is not %d-%d!\n", limit, c_hg.nVtx, hgp->redl);
+     if (limit != c_hg.nVtx - hg->redl) {
+        sprintf(msg, "limit %d is not %d-%d!\n", limit, c_hg.nVtx, hg->redl);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
         Zoltan_Multifree (__FILE__, __LINE__, 2, &pack, &LevelMap);
         err = ZOLTAN_FATAL;
         goto End;
         }
-     else if (c_hg.nVtx < hgp->redl) {
+     else if (c_hg.nVtx < hg->redl) {
         sprintf(msg, "wanted coarsen to %d vertices, but reached %d vertices\n",
-         hgp->redl, c_hg.nVtx);
+         hg->redl, c_hg.nVtx);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
         Zoltan_Multifree (__FILE__, __LINE__, 2, &pack, &LevelMap);
         err = ZOLTAN_FATAL;
@@ -184,7 +184,7 @@ char *yo = "Zoltan_HG_HPart_Lib";
 
      /* heuristic: stop on diminishing returns */
      if (c_hg.nVtx > 0.9 * hg->nVtx)
-        hgp->redl = c_hg.nVtx;
+        hg->redl = c_hg.nVtx;
 
      ZOLTAN_FREE ((void**) &pack);
 
@@ -296,7 +296,7 @@ ZOLTAN_FREE (&t);
      }
   if (hgp->output_level >= HG_DEBUG_LIST)
     printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d cutl=%.2f\n",
-     hg->info, hg->nVtx, hg->nEdge, hg->nInput, hgp->redl, hgp->redm_str,
+     hg->info, hg->nVtx, hg->nEdge, hg->nInput, hg->redl, hgp->redm_str,
      hgp->global_str, hgp->local_str, p, hcut_size_links(zz, hg, p, part));
 
   if (hgp->output_level >= HG_DEBUG_PLOT)

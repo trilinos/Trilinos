@@ -99,6 +99,8 @@ printf ("RTHRTH: starting\n");
   if (ierr != ZOLTAN_OK)
     goto End;
 
+  zoltan_hg->HG.redl = hgp.redl;
+    
   /* build initial Zoltan hypergraph. */
   ierr = Zoltan_HG_Build_Hypergraph(zz, &zoltan_hg, &hgp);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {

@@ -48,7 +48,7 @@ int Zoltan_HG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
    /* bipartition current hypergraph with appropriate split ratio */
    mid = (lo+hi)/2;
    hg->ratio = (double) (mid-lo+1) / (double) (hi-lo+1);
-   hgp->redl = 0;
+   hg->redl = 0;
    err = Zoltan_HG_HPart_Lib (zz, hg, 2, part, hgp, level);
    if (err != ZOLTAN_OK)
       return err;

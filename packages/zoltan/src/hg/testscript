@@ -28,7 +28,7 @@ foreach test($testname)
       foreach global ($greedy)
          echo "Running test case $test.$ext using method $method global $global"
 #         ./hg_exec -f HBstuff/data/$test.$ext -redm $method -p 12 -redmo no -bal 1.016 > answers/$test-$global.$method
-          ./hg_exec -f ../test/hg_test/$test.$ext -redm $method -p 4 -redl 100 -l fmkway > answers/$test-$global.$method
+          ./hg_exec -f ../test/hg_test/$test.$ext -redm $method -p 4 -redl 100 -l fm2 > answers/$test-$global.$method
 #         hg_exec -f ../test/hg_test/umit/chip/$test.$ext -redm $method  >> answers/$test-$global.$method
          end
       end
