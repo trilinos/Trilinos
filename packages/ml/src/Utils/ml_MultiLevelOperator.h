@@ -202,12 +202,25 @@ class MultiLevelOperator: public virtual Epetra_Operator {
   char * Label_;
 
  private:
+  //! Copy constructor (NOT DEFINED)
+  MultiLevelOperator(const MultiLevelOperator& RHS) :
+    Comm_(RHS.Comm()),
+    DomainMap_(RHS.OperatorDomainMap()),
+    RangeMap_(RHS.OperatorRangeMap())
+  { }
+
+  //! Operator= (NOT DEFINED)
+  MultiLevelOperator& operator=(const MultiLevelOperator& RHS)
+  {
+    return(*this);
+  }
+
   //! Reference to Epetra communicator.
-  const Epetra_Comm & Comm_;
+  const Epetra_Comm& Comm_;
   //! Reference to Domain Map.
-  const Epetra_Map & DomainMap_;
+  const Epetra_Map& DomainMap_;
   //! Reference to Range Map.
-  const Epetra_Map & RangeMap_;
+  const Epetra_Map& RangeMap_;
   bool  ownership_;
 };
  
