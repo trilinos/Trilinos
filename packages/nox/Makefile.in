@@ -92,6 +92,7 @@ CXXREPOS = @CXXREPOS@
 DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
 FLIBS = @FLIBS@
+HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
 MAINT = @MAINT@
@@ -268,7 +269,7 @@ GZIP_ENV = --best
 distdir: $(DISTFILES)
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 	mkdir $(distdir)
-	$(mkinstalldirs) $(distdir)/config $(distdir)/doc $(distdir)/src-loca/doc
+	$(mkinstalldirs) $(distdir)/config $(distdir)/doc $(distdir)/src-loca/doc $(distdir)/src-loca/example-lapack/ThermoSyphon/therm
 	@for file in $(DISTFILES); do \
 	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
