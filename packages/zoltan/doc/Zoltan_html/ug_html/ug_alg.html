@@ -165,18 +165,6 @@ A full discussion of automatic migration can be found in the description
 of the <a href="ug_interface_mig.html">migration interface functions</a>.&nbsp;</td>
 </tr>
 
-<tr VALIGN=TOP NOSAVE>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>KEEP_CUTS</i></td>
-
-<td NOSAVE>The recursive geometric partitioning algorithms have the nice
-property that each processor owns a portion of the global geometric space.
-With this geometric decomposition, it is possible to determine which processor
-a new object should be assigned to via the <b><a href="ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</a></b>
-or <b><a href="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</a></b>
-functions. If you intend to use these functions, information about the
-geometric partitioning must be retained by setting <i>KEEP_CUTS</i> to
-1.&nbsp;</td>
-</tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>USE_MACHINE_DESC</i></td>
