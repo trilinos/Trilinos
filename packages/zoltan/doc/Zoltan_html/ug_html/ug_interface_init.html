@@ -35,6 +35,7 @@ described below:
 <br><b><a href="#Zoltan_Set_Param_Vec">Zoltan_Set_Param_Vec</a></b>
 <br><b><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 <br><b><a href="#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>
+<br><b><a href="#Zoltan_Set_Part_Sizes">Zoltan_Set_Part_Sizes</a></b>
 <br><b><a href="#Zoltan_Destroy">Zoltan_Destroy</a></b></ul>
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%"><a NAME="Zoltan_Initialize"></a>
@@ -471,8 +472,7 @@ or <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.
 <br><b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn </b>provides strict type
 checking of the <i>fn_ptr</i> argument; the argument's type is specified
 for each
-<b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>. 
-<b><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+<b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>. <b><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 does not provide this strict type checking, as the pointer to the registered
 function is cast to a void pointer.
 <table WIDTH="100%" NOSAVE >
@@ -534,6 +534,106 @@ it may be omitted.</td>
 void *data);
 <br>registers an <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
 query function.</td>
+</tr>
+</table>
+
+<p><!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Set_Part_Sizes"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Set_Part_Sizes</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int <i>global_num,</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int <i>len</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>part_ids,</i>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int *<i>wgt_idx</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float *<i>part_sizes</i>);</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>Not yet implemented.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Set_Part_Sizes</b> is used to specify the desired
+partition sizes in Zoltan. By default, Zoltan assumes that all partitions
+should be of equal size.&nbsp; With Zoltan_Set_Part_Sizes, one can specify
+the relative (not absolute) sizes of the partitions. Note that if there
+are multiple weights per object, one can specify the partition size for
+each weight dimension independently.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure created by <b><a href="#Zoltan_Create">Zoltan_Create</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp; global_num</i></td>
+
+<td>Set to 1 if global partition numbers are given, 0 otherwise.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp; len</i></td>
+
+<td>Length of the next three input arrays.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp; <i>part_ids</i></td>
+
+<td>Array of partition numbers, either global or local. (Partition numbers
+are integers starting from 0.)</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp; <i>vwgt_idx</i></td>
+
+<td NOSAVE>Array of weight indices (between 0 and OBJ_WEIGHT_DIM-1). This
+array should contain all zeros when there is only one weight per object.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp; <i>part_sizes</i></td>
+
+<td>Relative values for partition sizes.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td></td>
 </tr>
 </table>
 <!------------------------------------------------------------------------->
