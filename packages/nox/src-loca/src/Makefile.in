@@ -123,6 +123,10 @@ LOCA_ABSTRACT_H = \
 	$(srcdir)/LOCA_Abstract_DataOutput.H
 
 
+LOCA_ABSTRACT = \
+        $(srcdir)/LOCA_Abstract_Group.C
+
+
 LOCA_UTILS_H = \
         $(srcdir)/LOCA_Utils.H
 
@@ -149,12 +153,16 @@ LOCA_STEPPER = \
 
 LOCA_BIFURCATION_H = \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.H \
-        $(srcdir)/LOCA_Bifurcation_TPBordGroup.H
+        $(srcdir)/LOCA_Bifurcation_TPBordGroup.H \
+        $(srcdir)/LOCA_Bifurcation_ArcLengthVector.H \
+        $(srcdir)/LOCA_Bifurcation_ArcLengthGroup.H
 
 
 LOCA_BIFURCATION = \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.C \
-        $(srcdir)/LOCA_Bifurcation_TPBordGroup.C
+        $(srcdir)/LOCA_Bifurcation_TPBordGroup.C \
+        $(srcdir)/LOCA_Bifurcation_ArcLengthVector.C \
+        $(srcdir)/LOCA_Bifurcation_ArcLengthGroup.C
 
 
 LOCA_DERIVUTILS_H = \
@@ -176,6 +184,7 @@ LOCA_H = \
 
 
 LOCA = \
+	$(LOCA_ABSTRACT) \
 	$(LOCA_UTILS) \
 	$(LOCA_PARAMETER_VECTOR) \
 	$(LOCA_STEPPER) \
@@ -234,11 +243,14 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 libloca_a_DEPENDENCIES =
-am_libloca_a_OBJECTS = libloca_a-LOCA_Utils.$(OBJEXT) \
+am_libloca_a_OBJECTS = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
+	libloca_a-LOCA_Utils.$(OBJEXT) \
 	libloca_a-LOCA_Parameter_Vector.$(OBJEXT) \
 	libloca_a-LOCA_Stepper.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBordVector.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBordGroup.$(OBJEXT) \
+	libloca_a-LOCA_Bifurcation_ArcLengthVector.$(OBJEXT) \
+	libloca_a-LOCA_Bifurcation_ArcLengthGroup.$(OBJEXT) \
 	libloca_a-LOCA_DerivUtils.$(OBJEXT)
 libloca_a_OBJECTS = $(am_libloca_a_OBJECTS)
 
@@ -248,7 +260,9 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = \
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/libloca_a-LOCA_Abstract_Group.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthGroup.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po \
@@ -311,6 +325,7 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+libloca_a-LOCA_Abstract_Group.$(OBJEXT): $(srcdir)/LOCA_Abstract_Group.C
 libloca_a-LOCA_Utils.$(OBJEXT): $(srcdir)/LOCA_Utils.C
 libloca_a-LOCA_Parameter_Vector.$(OBJEXT): \
 	$(srcdir)/LOCA_Parameter_Vector.C
@@ -319,6 +334,10 @@ libloca_a-LOCA_Bifurcation_TPBordVector.$(OBJEXT): \
 	$(srcdir)/LOCA_Bifurcation_TPBordVector.C
 libloca_a-LOCA_Bifurcation_TPBordGroup.$(OBJEXT): \
 	$(srcdir)/LOCA_Bifurcation_TPBordGroup.C
+libloca_a-LOCA_Bifurcation_ArcLengthVector.$(OBJEXT): \
+	$(srcdir)/LOCA_Bifurcation_ArcLengthVector.C
+libloca_a-LOCA_Bifurcation_ArcLengthGroup.$(OBJEXT): \
+	$(srcdir)/LOCA_Bifurcation_ArcLengthGroup.C
 libloca_a-LOCA_DerivUtils.$(OBJEXT): $(srcdir)/LOCA_DerivUtils.C
 libloca.a: $(libloca_a_OBJECTS) $(libloca_a_DEPENDENCIES) 
 	-rm -f libloca.a
@@ -331,6 +350,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Abstract_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthGroup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po@am__quote@
@@ -352,6 +374,18 @@ distclean-depend:
 @AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+libloca_a-LOCA_Abstract_Group.o: $(srcdir)/LOCA_Abstract_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Abstract_Group.C' object='libloca_a-LOCA_Abstract_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Group.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Group.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Abstract_Group.o `test -f $(srcdir)/LOCA_Abstract_Group.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Abstract_Group.C
+
+libloca_a-LOCA_Abstract_Group.obj: $(srcdir)/LOCA_Abstract_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Abstract_Group.C' object='libloca_a-LOCA_Abstract_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Group.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Group.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Abstract_Group.obj `cygpath -w $(srcdir)/LOCA_Abstract_Group.C`
 
 libloca_a-LOCA_Utils.o: $(srcdir)/LOCA_Utils.C
 @AMDEP_TRUE@	source='$(srcdir)/LOCA_Utils.C' object='libloca_a-LOCA_Utils.o' libtool=no @AMDEPBACKSLASH@
@@ -412,6 +446,30 @@ libloca_a-LOCA_Bifurcation_TPBordGroup.obj: $(srcdir)/LOCA_Bifurcation_TPBordGro
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_TPBordGroup.obj `cygpath -w $(srcdir)/LOCA_Bifurcation_TPBordGroup.C`
+
+libloca_a-LOCA_Bifurcation_ArcLengthVector.o: $(srcdir)/LOCA_Bifurcation_ArcLengthVector.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_ArcLengthVector.C' object='libloca_a-LOCA_Bifurcation_ArcLengthVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_ArcLengthVector.o `test -f $(srcdir)/LOCA_Bifurcation_ArcLengthVector.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_ArcLengthVector.C
+
+libloca_a-LOCA_Bifurcation_ArcLengthVector.obj: $(srcdir)/LOCA_Bifurcation_ArcLengthVector.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_ArcLengthVector.C' object='libloca_a-LOCA_Bifurcation_ArcLengthVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_ArcLengthVector.obj `cygpath -w $(srcdir)/LOCA_Bifurcation_ArcLengthVector.C`
+
+libloca_a-LOCA_Bifurcation_ArcLengthGroup.o: $(srcdir)/LOCA_Bifurcation_ArcLengthGroup.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_ArcLengthGroup.C' object='libloca_a-LOCA_Bifurcation_ArcLengthGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_ArcLengthGroup.o `test -f $(srcdir)/LOCA_Bifurcation_ArcLengthGroup.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_ArcLengthGroup.C
+
+libloca_a-LOCA_Bifurcation_ArcLengthGroup.obj: $(srcdir)/LOCA_Bifurcation_ArcLengthGroup.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_ArcLengthGroup.C' object='libloca_a-LOCA_Bifurcation_ArcLengthGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_ArcLengthGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_ArcLengthGroup.obj `cygpath -w $(srcdir)/LOCA_Bifurcation_ArcLengthGroup.C`
 
 libloca_a-LOCA_DerivUtils.o: $(srcdir)/LOCA_DerivUtils.C
 @AMDEP_TRUE@	source='$(srcdir)/LOCA_DerivUtils.C' object='libloca_a-LOCA_DerivUtils.o' libtool=no @AMDEPBACKSLASH@

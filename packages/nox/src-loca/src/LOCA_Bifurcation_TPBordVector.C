@@ -153,7 +153,7 @@ NOX::Abstract::Vector& TPBordVector::update(double alpha,
   nullVectorPtr->update(alpha, *(tpY->nullVectorPtr), beta, 
 			*(tpB->nullVectorPtr), gamma);
 
-  bifParam = alpha * tpY->bifParam + beta * tpB->bifParam + gamma*bifParam;
+  bifParam = alpha * tpY->bifParam + beta * tpB->bifParam + gamma * bifParam;
   return *this;
 }
 

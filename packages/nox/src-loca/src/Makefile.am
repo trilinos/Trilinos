@@ -42,6 +42,9 @@ LOCA_ABSTRACT_H = \
         $(srcdir)/LOCA_Abstract_Group.H \
 	$(srcdir)/LOCA_Abstract_DataOutput.H
 
+LOCA_ABSTRACT = \
+        $(srcdir)/LOCA_Abstract_Group.C
+
 LOCA_UTILS_H = \
         $(srcdir)/LOCA_Utils.H
 
@@ -62,11 +65,15 @@ LOCA_STEPPER = \
 
 LOCA_BIFURCATION_H = \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.H \
-        $(srcdir)/LOCA_Bifurcation_TPBordGroup.H
+        $(srcdir)/LOCA_Bifurcation_TPBordGroup.H \
+        $(srcdir)/LOCA_Bifurcation_ArcLengthVector.H \
+        $(srcdir)/LOCA_Bifurcation_ArcLengthGroup.H
 
 LOCA_BIFURCATION = \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.C \
-        $(srcdir)/LOCA_Bifurcation_TPBordGroup.C
+        $(srcdir)/LOCA_Bifurcation_TPBordGroup.C \
+        $(srcdir)/LOCA_Bifurcation_ArcLengthVector.C \
+        $(srcdir)/LOCA_Bifurcation_ArcLengthGroup.C
 
 LOCA_DERIVUTILS_H = \
         $(srcdir)/LOCA_DerivUtils.H
@@ -84,6 +91,7 @@ LOCA_H = \
 	$(LOCA_DERIVUTILS_H)
 
 LOCA = \
+	$(LOCA_ABSTRACT) \
 	$(LOCA_UTILS) \
 	$(LOCA_PARAMETER_VECTOR) \
 	$(LOCA_STEPPER) \
@@ -145,7 +153,4 @@ libloca_a_LIBADD = $(CXXREPOS)
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-
-
 

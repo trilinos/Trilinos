@@ -37,6 +37,7 @@
 
 #include "LOCA_Abstract_Vector.H"  // for NOX::CopyType
 #include "NOX_Common.H"            // for string 
+#include "LOCA_DerivUtils.H"
 
 namespace NOX {
   namespace Parameter {
@@ -88,17 +89,19 @@ class Group : public virtual NOX::Abstract::Group {
 public:
   
   //! Constructor.
-  Group() {};
+  Group(const DerivUtils& deriv = DerivUtils());
+ 
+  Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
 
   //! Destructor.
-  virtual ~Group() {};
+  virtual ~Group();
   
   /*! 
     \brief Copies the values of all vectors and any other data in
     the source group to this group.  (May invalidate shared data for
     source group.)
   */
-  virtual Group& operator=(const Group& source) = 0;
+  virtual Group& operator=(const Group& source);
      
   /*! 
     \brief Create a new %Group of the same derived type as this one by
@@ -108,7 +111,7 @@ public:
     "this". Otherwise, if type is \c ShapeCopy, we need only replicate
     the shape of "this". Returns \c NULL if clone is not supported.
   */
-  virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
+//  virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //! Set the parameter list in the group to p (pVector = p).  
   virtual bool setParams(const ParameterVector& p) = 0;
@@ -121,8 +124,16 @@ public:
   //! Return a const reference to the ParameterVector owned by the group. 
   virtual const ParameterVector& getParams() const = 0;
 
-  virtual bool print() const = 0;
+  //! Compute tangent direction
+  virtual bool computeTangent(NOX::Parameter::List& params,
+                              int paramID,
+			      NOX::Abstract::Vector& result);
 
+  virtual bool computeDfDp(int paramID, NOX::Abstract::Vector& result);
+
+  virtual bool print() const = 0;
+protected:
+  DerivUtils* derivPtr;
 };
 } // namespace Abstract
 } // namespace LOCA
