@@ -31,14 +31,14 @@ extern "C" {
 static unsigned int idum = 123456789U;
 
 unsigned Zoltan_HG_Rand (void) {
-   return idum = (1664525U * idum) + 1013904223U;
-   }
+  return idum = (1664525U * idum) + 1013904223U;
+}
 
 
 
 void Zoltan_HG_Srand (unsigned int seed) {
-   idum = seed;
-   }
+  idum = seed;
+}
 
 
 /* Randomly permute an array of ints. */
@@ -47,11 +47,11 @@ void Zoltan_HG_Rand_Perm_Int (int *data, int n)
 int i, number, temp;
 
   for (i = n; i > 0; i--) {
-     number       = Zoltan_HG_Rand() % i;
-     temp         = data[number];
-     data[number] = data[i-1];
-     data[i-1]    = temp;
-     }
+    number       = Zoltan_HG_Rand() % i;
+    temp         = data[number];
+    data[number] = data[i-1];
+    data[i-1]    = temp;
+  }
 }
 
 

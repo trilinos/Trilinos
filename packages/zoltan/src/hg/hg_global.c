@@ -59,7 +59,6 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
 
 int Zoltan_HG_Global(ZZ *zz,HGraph *hg,int p,Partition part,HGPartParams *hgp)
 {
-  Zoltan_HG_Srand(hg->nVtx);  /* KDDKDD  DO NOT COMMIT!  JUST FOR A TEST */
   return hgp->global_part(zz,hg,p,part,hgp);
 }
 
