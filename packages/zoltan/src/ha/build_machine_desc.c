@@ -58,13 +58,13 @@ int LB_Build_Machine_Desc(
 {
   int ierr = LB_OK;
   int use_mach_desc;
-  char *filename;
+  char filename[256];
 
   LB_Bind_Param(Mach_params, "USE_MACHINE_DESC", (void *) &use_mach_desc);
   LB_Bind_Param(Mach_params, "MACHINE_DESC_FILE", (void *) &filename);
 
   use_mach_desc = 0;
-  filename = MACHINE_DESC_FILE_DEFAULT;
+  strcpy(filename, MACHINE_DESC_FILE_DEFAULT);
 
   LB_Assign_Param_Vals(lb->Params, Mach_params, lb->Debug_Level, lb->Proc,
                        lb->Debug_Proc);
