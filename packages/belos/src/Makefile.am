@@ -1,0 +1,152 @@
+# @HEADER
+# @HEADER
+
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside Ifpack. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
+
+CORE_H = \
+	$(srcdir)/AnasaziDenseMatrix.hpp \
+	$(srcdir)/AnasaziMatrix.hpp \
+	$(srcdir)/AnasaziMultiVec.hpp \
+	$(srcdir)/AnasaziPetra.hpp \
+	$(srcdir)/AnasaziPrecondition.hpp \
+	$(srcdir)/Epetra_Operator_Anasazi_Prec.hpp
+
+CORE = 
+
+### add in paths as needed
+
+AM_CPPFLAGS =-I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src 
+#	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
+
+SERIAL_H = 
+
+SERIAL = 
+
+if HAVE_MPI
+
+MPI_H = 
+
+MPI = 
+
+else
+
+MPI_H =
+MPI =
+
+endif
+
+#if HAVE_THREADS
+
+MPISMP_H = 
+
+MPISMP = 
+
+#else
+
+#MPISMP_H =
+#MPISMP =
+
+#endif
+
+LANG_WRAPS_H = 
+
+LANG_WRAPS = 
+
+DIST_H = 
+
+DIST = 
+
+COMP_H = \
+	$(srcdir)/BelosBlockCG.hpp 
+
+COMP = 
+
+
+
+# ------------------------------------------------------------------------
+# Belos library specifications
+# ------------------------------------------------------------------------
+
+BELOS_LIB = libbelos.a
+
+
+BELOS_H = \
+	$(CORE_H) \
+	$(SERIAL_H) \
+	$(LANG_WRAPS_H) \
+	$(DIST_H) \
+	$(COMP_H) \
+	$(MPI_H) \
+	$(MPISMP_H)
+
+libbelos_a_SOURCES = \
+	$(CORE) \
+	$(SERIAL) \
+	$(LANG_WRAPS) \
+	$(DIST) \
+	$(COMP) \
+	$(MPI) \
+	$(MPISMP)
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+
+if USE_ALTERNATE_AR
+
+libbelos_a_AR = $(ALTERNATE_AR)
+else
+
+libbelos_a_AR = $(AR) cru
+
+endif
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+
+libbelos_a_LIBADD = $(XTRALDADD)
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+
+lib_LIBRARIES = $(BELOS_LIB)
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(pkgincludedir)
+# ------------------------------------------------------------------------
+
+pkginclude_HEADERS = $(BELOS_H)
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(pkgexecincludedir)
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Belos_config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
+
+pkgexecincludedir = $(exec_prefix)/include/belos
+nodist_pkgexecinclude_HEADERS = Belos_config.h
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+MAINTAINERCLEANFILES = Makefile.in 
+
+
+
