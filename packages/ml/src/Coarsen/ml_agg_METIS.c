@@ -1757,6 +1757,7 @@ int agg_offset, vertex_offset;
      fprintf( stderr,
 	      "*ML*ERR* on process %d, not enough memory for %d bytes\n"
 	      "*ML*ERR* (file %s, line %d)\n",
+	      mypid,
 	      nbytes,
 	      __FILE__,
 	      __LINE__ );
