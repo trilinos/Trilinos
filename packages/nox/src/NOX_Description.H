@@ -1576,6 +1576,167 @@ immediately before the word that is causing the link. For example,
 
 /*! \page epetra_interface The Epetra interface
 
+ \section epetra_interface_derived Step 2a: Implementing the interface
+
+ To link your code to NOX using the epetra interface, you must
+ write a concrete class derived from the NOX::Epetra::Interface
+ object.  This object defines four methods:
+
+ <ul>
+ <li> computeF(const Epetra_Vector& x, Epetra_Vector& RHS, FillType flag) - 
+      Computes the set of nonlinear equations, \f$ F \f$, to be solved 
+      by NOX. This method must be supplied by the user.  
+      - x - solution vector specified from NOX.
+      - RHS - the Epetra_Vector to be filled with the \f$ F \f$ values that 
+        correspond to the input solution vector x.
+      - flag - enumerated type (see NOX::Epetra::FillType) that 
+        tells a users interface why computeF() was called.  NOX 
+        has the ability to generate Jacobians based on numerical 
+        differencing using calls to computeF().  In this case, the 
+	user may want to compute an inexact (and hopefully cheaper) 
+        \f$ F \f$ since it is only used in the Jacobian (or preconditioner).  
+      
+ <li> computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac) - this
+      is an optional method that the user can implement if they wish to 
+      supply their own evaluation of the Jacobian. If the user does not 
+      wish to supply their own Jacobian, they should implement this method 
+      so that it throws an error if it is called.  This method should update 
+      the Jac operator so that subsequent Epetra_Operator::Apply() calls 
+      on that operator correspond to the Jacobian at the current solution 
+      vector x.
+      - x - solution vector specified from NOX.
+      - Jac - a reference to the Jacobian operator that the user supplied 
+        in the NOX::Epetra::Group constructor.  
+
+ <li> computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M) - This 
+      method fills a Preconditioner matrix (Epetra_RowMatrix) object that the 
+      user supplied in the NOX::Epetra::Group constructor.  The Matrix 
+      should NOT be inverted, It should only contain an estiamte of the 
+      Jacobian.  After the user fills the Row Matrix epetra/aztecOO 
+      preconditioners will compute the inverse.  
+      If the user does not wish to supply their own Preconditioning matrix, 
+      they should implement this method such that if called, it will 
+      throw an error.
+      - x - solution vector specified from NOX.
+      - M - a reference to the preconditioner operator that is to be 
+        filled.  This operator should be updated to correspond to the 
+	current solution vector x.
+
+ <li> computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M) - This
+      method allows a user to supply their own preconditioner.  The method 
+      should compute a preconditioner based upon the solution vector 
+      x and store it in the Epetra_Operator M.  Subsequent calls to the 
+      Epetra_Operator::Apply method will apply this user supplied 
+      preconditioner to epetra vectors. 
+      - x - solution vector specified from NOX.
+      - M - a reference to the operator that is to be filled.  This operator 
+	should be updated to correspond to the current solution vector x.
+
+ </ul>
+
+ \section epetra_interface_construction Step 2b: Construct an Epetra Group
+
+  Once the interface is written, the user can construct a
+  NOX::Epetra::Group for use with the NOX solvers.  All constructors
+  require (1) a parameter list for the printing output, (2) a
+  parameter list for the linear solver options, (3) an initial guess
+  for the solution, and (4) an operator for the Jacobian, J.
+  Optionally (5), the user may supply a second operator, M for the
+  preconditioner.
+
+  (1) The printing parameter list is a NOX::Parameter::List that
+  descibes the type of output requested from NOX.  See \ref parameters
+  for more details.  A simple example is:
+  \verbatim
+  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
+  printParams.setParameter("MyPID", MyPID); 
+  printParams.setParameter("Output Precision", 3);
+  printParams.setParameter("Output Processor", 0);
+  printParams.setParameter("Output Information", 
+			NOX::Utils::OuterIteration + 
+			NOX::Utils::OuterIterationStatusTest + 
+			NOX::Utils::InnerIteration +
+			NOX::Utils::Parameters + 
+			NOX::Utils::Details + 
+			NOX::Utils::Warning);
+  \endverbatim
+
+  (2) The linear solver parameter list is a NOX::Parameter::List
+  object.  A list of all parameters available can be found in
+  NOX::Epetra::Group.  Below is a simple example of how to use the
+  aztecOO iterative solver in epetra to use GMRES with ilut
+  preconditioning (WARNING - not all preconditioning options are
+  compatible with every Jacobian and preconditioner operator - see
+  NOX::Epetra::Group for more details):
+  \verbatim
+  NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
+  lsParams.setParameter("Aztec Solver", "GMRES");  
+  lsParams.setParameter("Max Iterations", 800);  
+  lsParams.setParameter("Tolerance", 1e-4);
+  lsParams.setParameter("Output Frequency", 50); 
+  lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");
+  lsParams.setParameter("Aztec Preconditioner", "ilut"); 
+  lsParams.setParameter("Overlap", 2);   
+  lsParams.setParameter("Fill Factor", 2);   
+  lsParams.setParameter("Drop Tolerance", 1.0e-12);   
+  \endverbatim
+
+  (3) The initial guess is stored in an Epetra_Vector.  Below is an
+  example of creating an Epetra_Vector and setting the initial guess
+  to one.  The epetra block map is an epetra object that sets the size
+  of the problem and has information on how the unknowns are
+  distributed across processors.  For examples on how to construct this
+  see the examples-epetra directory in the nox source code.
+  \verbatim 
+  Epetra_Vector initialGuess(EpetraBlockMap); 
+  initialGuess.PutScalar(1.0);
+  \endverbatim
+
+  (4) and (5)The user can write their own operators for the Jacobian or
+  preconditioner or use one of the NOX supplied operators.  For
+  example, here are three ways to create a Jacobian operator:
+  - User defined (user returns their own operator from an object they created):
+    \verbatim
+    Epetra_Operator& J = UserProblem.getJacobian();
+    \endverbatim
+  - Create a NOX matrix-free operator (see NOX::Epetra::MatrixFree):
+    \verbatim
+    NOX::Epetra::MatrixFree J(userDerivedInterface, solutionVector);
+    \endverbatim
+  - Create a NOX finite difference operator 
+    (see NOX::Epetra::FiniteDifference):
+    \verbatim
+    NOX::Epetra::FiniteDifference J(interface, soln);
+    \endverbatim
+
+  Create the NOX::Epetra::Interface derived object described in 
+  \ref epetra_interface_derived:
+  \verbatim
+  UserInterface interface(.......);
+  \endverbatim
+
+  Finally, construct the group:
+  \verbatim
+  NOX::Epetra::Group group(printParams, lsParams, interface, initialGuess, J);
+  \endverbatim
+
+  You are ready to move on to \ref step3
+
+ \section epetra_interface_notes Notes on NOX/Epetra:
+
+  - The concrete Epetra implementations for the NOX Group and Vector
+    are in a separate library from the nox solver algorithms.  To build
+    the library for nox epetra support use the flag --enable-nox-epetra
+    in NOX's configure script.  This will generate a separate library called
+    libnoxepetra.a
+
+  - In addition to the NOX headers, be sure to include the NOX Epetra 
+    support specific headers in your interface:
+    \verbatim
+    // NOX headers for an epetra interface
+    #include "NOX.H"
+    #include "NOX_Epetra.H"
+    \endverbatim
 
 */
 
