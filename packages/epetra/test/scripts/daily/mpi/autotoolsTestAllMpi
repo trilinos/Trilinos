@@ -1,4 +1,7 @@
 #!/bin/csh
+## NOTE: Those wishing to cusomize this script to run test exe's
+## that have already been autotool'ed should read lines beginning with '##'
+
 # $1 - Used only for automated testing.  No action required by script owner.
 #      This parameter names the subdirectory from which the script is being
 #      run.  This assists a developer in figuring out which tests failed.
@@ -16,6 +19,7 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
     rm -f $file2
     # Echo some important information into the log file to help developers
     # figure out which tests failed.
+## List the Trilinos package being tested on the following line
     echo "Package being tested: Epetra  " >>& $file2
     echo "Name of subdirectory: " $1 >>& $file2
     echo "Date: " `eval date` >>& $file2
@@ -23,11 +27,12 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
     #'file' is a shorter log that is retained even if all tests pass.
     set file = ../../../../log`eval uname`.txt
     rm -f $file
-    # IMPORTANT: Specify the script owner(s) on the following line
-    # For one owner type "owner@abc.com", for multiple owners
-    # "owner1@abc.com; owner2@def.com"
+## IMPORTANT: Specify the script owner(s) on the following line
+## For one owner type "owner@abc.com", for multiple owners
+## "owner1@abc.com; owner2@def.com"
     echo "jmwille@sandia.gov" >>& $file
     echo "Script owner(s) is listed on the previous line." >>& $file
+## List the Trilinos package being tested on the following line
     echo "Package being tested: Epetra  " >>& $file
     echo "Name of subdirectory: " $1 >>& $file
     # tempfile and tempfile2 (file3 and file4) are used only in the creation 
@@ -44,7 +49,18 @@ endif
 echo $file
 echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
-# List of subdirectories containing test exe's.
+## Different directory structures will require different setups.
+## This file assumes a structure like that of epetra - exe's live in 
+## a direct subdirectory of 'epetra/test' 
+
+## Keep in mind that file and file2-4 live in 'package_name/test'
+## Also, 'package_name/test' is the current directory
+## It is recommended that all directory changing be done relative to
+## the current directory because scripts live in the source directory,
+## but are invoked from various build directories
+
+## List the subdirectories of 'test' containing test exe's in the foreach loop
+## if directory structure is like that of epetra.
 #foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsMatrix FEVector ImportExport Map MapColoring MultiVector Object VbrMatrix Vector)
 foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix ImportExport Map MultiVector Object VbrMatrix Vector)
 	cd $f
@@ -67,6 +83,9 @@ foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix ImportExport Map Multi
 	end
 	cd ..
 end
+
+## At this point, it is assumed that the current directory is
+## 'package_name/test'
 if ( "$2" == "True" ) then
     rm $file3
     if( "$AnError" != "True" ) then
