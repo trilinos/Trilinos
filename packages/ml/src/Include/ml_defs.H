@@ -89,6 +89,7 @@
 
 #define ML_EMPTY             -1
 #define ML_DEFAULT           -2
+#define ML_DDEFAULT          -2.0
 #define ML_ONE_STEP_CG       -100
 #define ML_ZERO               3
 #define ML_NONZERO            4
