@@ -126,12 +126,14 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   timers[1] = time2 - time1;              /* time took to partition octree */
 
   /* intermediate result print out */
-  /*  for(i=0; i<msg_nprocs; i++) {
-   *    if(msg_mypid == i)
-   *      POC_printResults();
-   *    msg_sync();
-   *  }
-   */
+  if(LB_Debug > 6)                                   /* WARNING BIG OUTPUT!! */
+    for(i=0; i<msg_nprocs; i++) {
+      if(msg_mypid == i) {
+	POC_printResults();
+	printf("\n\n");
+      }
+      msg_sync();
+    }
 
   /* set up tags for migrations */
   time1 = MPI_Wtime();
@@ -182,6 +184,7 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
 
   free(export_regs);
   free(import_regs);
+  free(export_tags);
   root = POC_localroots();
   while(root != NULL) {
     root2 = root->next;

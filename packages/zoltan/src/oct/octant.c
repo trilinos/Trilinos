@@ -535,9 +535,11 @@ void POC_DfsTraversal(pOctant oct) {
     return;
   if(POC_isTerminal(oct))
     POC_printRegionInfo(oct);
-  else
+  else {
     for(i=0; i<8; i++)
       POC_DfsTraversal(oct->child[i]);
+    POC_printRegionInfo(oct);
+  }
 }
 
 /*
@@ -547,35 +549,46 @@ void POC_DfsTraversal(pOctant oct) {
  */
 void POC_printRegionInfo(pOctant oct) {
   pRegion ptr;            /* pointer to iterate through octant's region list */
-  
+  pOctant parent;
+
+#if 0
   if(!POC_isTerminal(oct)) {
     fprintf(stderr, "WARNING: printing regions in a non-terminal octant.\n");
     return;
   }
-  /*
-  printf("(%d) ocant %d with bounds min=%lf, %lf, %lf, & max %lf, %lf, %lf\n",
-	 OCT_localpid, oct->id,
+#endif
+
+  parent = POC_parent(oct);
+  printf("(Proc %d) ocant %d:\n",
+	 OCT_localpid, oct->id);
+  printf("\tbounds\tmin=%lf, %lf, %lf\n\t\t max %lf, %lf, %lf\n",
 	 oct->min[0], oct->min[1], oct->min[2],
 	 oct->max[0], oct->max[1], oct->max[2]);
-  printf("from %d to %d\n", OCT_localpid, oct->npid);
-  */
+  if(parent != NULL)
+    printf("\tparent octant: %d", parent->id);
+  else
+    printf("\tparent octant: NULL");
+  printf(" \tmigrate: from %d to %d\n", OCT_localpid, oct->npid);
+
+  if(!POC_isTerminal(oct)) {
+    return;
+  }
   ptr = oct->list;
-  /*
-    if(ptr==NULL)
-    printf("\tEMPTY\n");
-    */
+
+  if(ptr==NULL)
+    printf("\tOctant is EMPTY\n");
+
   while(ptr != NULL) {
-    /*
-    printf("%d\t%d %d %d %d coord:(%lf, %lf, %lf)\n", ptr->attached,
-	   ptr->Tag.Global_ID, ptr->Tag.Local_ID, ptr->Tag.Proc, oct->npid,
+    printf("\tGlobal_ID:%ld Local_ID:%ld Proc:%ld coord:(%lf, %lf, %lf)\n", 
+	   ptr->Tag.Global_ID, ptr->Tag.Local_ID, ptr->Tag.Proc,
 	   ptr->Coord[0], ptr->Coord[1], ptr->Coord[2]);
-     */
-    printf("%lf %lf %lf,  %d -> %d\n", 
-	   ptr->Coord[0], ptr->Coord[1], ptr->Coord[2],
-	   OCT_localpid,oct->npid);
+    /*
+      printf("%lf %lf %lf,  %d -> %d\n", 
+      ptr->Coord[0], ptr->Coord[1], ptr->Coord[2],
+      OCT_localpid,oct->npid);
+    */
     ptr = ptr->next;
   }
-  /*  printf("\n\n"); */
 }
 
 /*
