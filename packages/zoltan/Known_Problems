@@ -47,7 +47,7 @@ Symptom: incorrect output (partitioning)
 Description:
    When using ParMETIS_V3_PartKway to partition into partitions
    of unequal sizes, the input array tpwgts is ignored and
-   uniform-sized patrtitions are computed. This bug shows up when
+   uniform-sized partitions are computed. This bug shows up when
    (a) the number of vertices is < 10000 and (b) only one weight
    per vertex is given (ncon=1).
 Reported: Reported to George Karypis and metis@cs.umn.edu on 2002/10/30.
@@ -66,13 +66,15 @@ Reported: Reported to George Karypis and metis@cs.umn.edu on 2002/12/02.
 Status: No reply.
 
 
-Name: ParMETIS dies on adaptive-partlocal3 on DEC alpha.
+Name: ParMETIS_V3_AdaptiveRepart dies for zero-sized partitions.
 Version: ParMETIS 3.0
-Symptom: run-time error "killed by signal 8"
+Symptom: run-time error "killed by signal 8" on DEC.  Floating-point exception.
 Description:
-   ParMETIS_V3_AdaptiveRepart crashes on the adaptive-partlocal3
-   test files. This problem has only been observed on DEC (Compaq) 
-   machines. There is no problem on Sun or Linux. 
+   ParMETIS_V3_AdaptiveRepart divides by partition size; thus, zero-sized 
+   partitions cause a floating-point exception.  This problem is exhibited in 
+   adaptive-partlocal3 tests.  The tests actually run on Sun and Linux machines 
+   (which don't seem to care about the divide-by-zero), but cause an FPE 
+   signal on DEC (Compaq) machines.
 Reported: Not yet.
 Status:
 
