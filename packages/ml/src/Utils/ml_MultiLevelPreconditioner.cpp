@@ -1001,10 +1001,10 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
     
     ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) RowMatrix_);
-    ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
+    MLnew_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
 			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
     
-    ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
+    MLnew_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
 
   } else {
 
@@ -1030,10 +1030,10 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     
     ML_Init_Amatrix(ml_edges_,LevelID_[0],NumMyRows,
 		    NumMyRows, (void *) EdgeMatrix_);
-    ML_Set_Amatrix_Getrow(ml_edges_, LevelID_[0], Epetra_ML_getrow,
+    MLnew_Set_Amatrix_Getrow(ml_edges_, LevelID_[0], Epetra_ML_getrow,
 			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
 
-    ML_Set_Amatrix_Matvec(ml_edges_, LevelID_[0], Epetra_ML_matvec);
+    MLnew_Set_Amatrix_Matvec(ml_edges_, LevelID_[0], Epetra_ML_matvec);
 
     // create hierarchy for nodes
     
@@ -1046,10 +1046,10 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     
     ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows, NumMyRows,
 		    (void *) NodeMatrix_);
-    ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], Epetra_ML_getrow,
+    MLnew_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], Epetra_ML_getrow,
 			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
     
-    ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], Epetra_ML_matvec);
+    MLnew_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], Epetra_ML_matvec);
     
   }
   
@@ -2687,10 +2687,10 @@ else if( PrecType == "in ML I trust" ) {
       if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
       
       ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) RowMatrix_);
-      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
+      MLnew_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
 			    Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
       
-      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
+      MLnew_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
       
       NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
       SetSmoothers();
