@@ -324,13 +324,13 @@ float   **eweights;		/* edge weight list data */
 
     else {
 	/* Graph was empty => must be using inertial method. */
-	LB_Free((void **) start);
+	LB_FREE(start);
 	if (*adjacency != NULL)
-	    LB_Free((void **) *adjacency);
+	    LB_FREE(*adjacency);
 	if (*vweights != NULL)
-	    LB_Free((void **) *vweights);
+	    LB_FREE(*vweights);
 	if (*eweights != NULL)
-	    LB_Free((void **) *eweights);
+	    LB_FREE(*eweights);
 	*start = NULL;
 	*adjacency = NULL;
     }
