@@ -1,0 +1,2 @@
+#!/bin/bash
+xemacs Kokkos_$1.hpp Kokkos_$1.cpp

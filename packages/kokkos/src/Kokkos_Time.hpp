@@ -41,12 +41,7 @@
   the specifics of timing across a variety of platforms.
 */
 
-#include "Kokkos_Object.hpp"
-#include "Kokkos_Comm.hpp"
-
-#ifdef KOKKOS_MPI
-#include "mpi.hpp"
-#elif ICL
+#ifdef ICL
 #include <time.hpp>
 #else
 #include <sys/time.hpp>
@@ -55,54 +50,87 @@
 #endif
 #endif
 
-class Kokkos_Time: public Kokkos_Object {
+namespace Kokkos {
+  class Time {
     
   public:
-  //! Kokkos_Time Constructor.
-  /*! Creates a Kokkos_Time instance. This instance can be queried for
+    //! Time Constructor.
+    /*! Creates a Time instance. This instance can be queried for
       elapsed time on the calling processor.  StartTime is also set
       for use with the ElapsedTime function.
-  */
-  Kokkos_Time(const Kokkos_Comm & Comm);
+    */
+    Time(void) {startTime_ = wallTime();};
 
-  //! Kokkos_Time Copy Constructor.
-  /*! Makes an exact copy of an existing Kokkos_Time instance.
-  */
-  Kokkos_Time(const Kokkos_Time& Time);
+    //! Time Copy Constructor.
+    /*! Makes an exact copy of an existing Time instance.
+     */
+    Time(const Time& time)
+      : startTime_(time.startTime_) {};
 
-  //! Kokkos_Time wall-clock time function.
-  /*! Returns the wall-clock time in seconds.  A code section can be 
-      timed by putting it between two calls to WallTime and taking the
+    //! Time wall-clock time function.
+    /*! Returns the wall-clock time in seconds.  A code section can be 
+      timed by putting it between two calls to wallTime and taking the
       difference of the times.
-  */
-  double WallTime(void) const;
+    */
+    double wallTime(void) {
+#ifdef ICL
 
-  //! Kokkos_Time function to reset the start time for a timer object.
-  /*! Resets the start time for the timer object to the current time
+      clock_t start;
+      //double duration;
+
+      start = clock();
+      return (double)( start ) / CLOCKS_PER_SEC;
+
+#else
+
+#ifndef MINGW
+      struct timeval tp;
+      static long start=0, startu;
+      if (!start) {
+	gettimeofday(&tp, NULL);
+	start = tp.tv_sec;
+	startu = tp.tv_usec;
+	return(0.0);
+      }
+      gettimeofday(&tp, NULL);
+      return( ((double) (tp.tv_sec - start)) + (tp.tv_usec-startu)/1000000.0 );
+#else
+      return( (double) clock() / CLOCKS_PER_SEC );
+#endif
+
+#endif
+
+    } const;
+
+    //! Kokkos_Time function to reset the start time for a timer object.
+    /*! Resets the start time for the timer object to the current time
       A code section can be 
       timed by putting it between a call to ResetStartTime and ElapsedTime.
-  */
-  void ResetStartTime(void);
+    */
+    void resetStartTime(void){
+      startTime_ = wallTime();
+      return;
+    };
 
-  //! Kokkos_Time elapsed time function.
-  /*! Returns the elapsed time in seconds since the timer object was
+    //! Kokkos_Time elapsed time function.
+    /*! Returns the elapsed time in seconds since the timer object was
       constructed, or since the ResetStartTime function was called. 
       A code section can be 
       timed by putting it between the Kokkos_Time constructor and a call to 
       ElapsedTime, or between a call to ResetStartTime and ElapsedTime.
-  */
-  double ElapsedTime(void) const;
+    */
+    double elapsedTime(void) {
+      return(wallTime()-startTime_);
+    } const;
 
-  //! Kokkos_Time Destructor.
-  /*! Completely deletes a Kokkos_Time object.  
-  */
-  virtual ~Kokkos_Time(void);
+    //! Kokkos_Time Destructor.
+    /*! Completely deletes a Kokkos_Time object.  
+     */
+    virtual ~Time(void){};
 
- private:
+  private:
 
-  double StartTime_;
-  const Kokkos_Comm * Comm_;
-  
-};
-
+    double startTime_;  
+  };
+} // namespace Kokkos
 #endif /* KOKKOS_TIME_H */
