@@ -265,6 +265,15 @@ case $target in
 
   ;;
 
+  # SGI/IRIX test
+  sparc-sun-solaris* ) 
+
+    if test "${CXX}" = "CC"; then
+     SPECIAL_AR="CC -xar -o"    
+    fi
+
+  ;;
+
 esac
 
 AC_MSG_CHECKING([for C++ flags])
