@@ -1129,15 +1129,7 @@ int main(int argc, char *argv[])
   }
 
 #ifdef ReuseOps
-  /* Extract data from the smoother that we want to reuse. */ 
-  /*ML_Smoother_GetReuseData(ml_edges);*/
 
-  for (i = 0; i < N_levels; i++)
-  {
-     ML_Smoother_Clean(&(ml_edges->pre_smoother[i]));
-     ML_Smoother_Clean(&(ml_edges->post_smoother[i]));
-     ML_CSolve_Clean(&(ml_edges->csolve[i]));
-  }  
   ML_Smoother_Reinit(ml_edges);
 
   /***************************************************************
