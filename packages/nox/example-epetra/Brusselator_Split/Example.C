@@ -206,6 +206,7 @@ int main(int argc, char *argv[])
   NOX::StatusTest::MaxIters maxiters(100);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(converged);
+  combo.addStatusTest(maxiters);
 
   // Note that each problem could contain its own nlParams list as well as
   // its own convergence test(s). 
