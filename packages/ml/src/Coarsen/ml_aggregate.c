@@ -921,11 +921,21 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    ML_Operator *newP = NULL, *oldP = NULL;
 #endif
    int mypid, nprocs;
+   char *label;
 
 #ifdef ML_TIMING
    double t0;
    t0 = GetClock();
 #endif
+   
+   label = ML_memory_check(NULL);
+   if (label != NULL) 
+     if ( label[0] == 'L')
+       if ( ( label[2] == ':') || ( label[3] == ':') ) 
+	 sscanf(&(label[1]),"%d",&i);
+
+   if (i != 1) ML_memory_check("L%d: agg start",i);
+   else ML_memory_check("agg start");
 
    mypid = comm->ML_mypid;
 
@@ -1106,6 +1116,15 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    if (comm->ML_mypid == 0)
       printf("Aggregation time \t= %e\n",t0);
 #endif
+   i = -1;
+   label = ML_memory_check(NULL);
+   if (label != NULL) 
+     if ( label[0] == 'L')
+       if ( ( label[2] == ':') || ( label[3] == ':') ) 
+	 sscanf(&(label[1]),"%d",&i);
+
+   if (i != 1) ML_memory_check("L%d: agg end",i);
+   else ML_memory_check("agg end");
 
    return Ncoarse;
 }
