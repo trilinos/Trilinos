@@ -113,6 +113,10 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    Next_est = 0;
    while(current != NULL) {
       if (current->getrow->pre_comm != NULL) {
+	if (current->getrow->pre_comm->total_rcv_length <= 0) {
+	  ML_CommInfoOP_Compute_TotalRcvLength(current->getrow->pre_comm);
+	}
+
          Next_est += current->getrow->pre_comm->total_rcv_length;
       }
       current = current->sub_matrix;
@@ -490,10 +494,11 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    (*Cmatrix)->sub_matrix     = previous_matrix;
    if (A_i_allocated-1 > Amatrix->max_nz_per_row) 
       Amatrix->max_nz_per_row = A_i_allocated;
-   (*Cmatrix)->getrow->pre_comm = ML_CommInfoOP_Create();
-   (*Cmatrix)->getrow->pre_comm->total_rcv_length = total_cols - 
-                                                    Bmatrix->invec_leng;
 
+   if (Bmatrix->getrow->pre_comm != NULL) {
+     ML_CommInfoOP_Clone(&((*Cmatrix)->getrow->pre_comm),
+			 Bmatrix->getrow->pre_comm);
+   }
 }
 
 /************************************************************************/
@@ -872,7 +877,7 @@ int ML_hash_it( int new_val, int hash_list[], int hash_length) {
   while (( hash_list[index] != new_val) && (hash_list[index] != -1)) {
      index = (++index)%hash_length;
   }
-     return(index);
+  return(index);
 }
 
 
