@@ -1308,7 +1308,7 @@ report($SUMMARY);
             $body .= "Host Name:        $hostName\n";}
         if (defined $tag) {
             $body .= "\n";
-            $body .= "Tag:              $tag\n";}
+            $body .= "Branch Tag:       $tag\n";}
         if (defined $options{'TRILINOS_DIR'}[0]) {
             $body .= "\n";
             $body .= "Directory:        $options{'TRILINOS_DIR'}[0]\n";}
