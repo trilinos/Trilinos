@@ -84,7 +84,8 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
   doForceInterpolation = p.getParameter("Force Interpolation", false);
   paramsPtr = &params;
 
-  allowIncrease = p.isParameter("Allowed Relative Increase");
+  allowIncrease = ( p.isParameter("Allowed Relative Increase") ||
+                    p.isParameter("Maximum Increase Steps") );
   if(allowIncrease) 
   {
     relIncrease = p.getParameter("Allowed Relative Increase", 1.e2);
@@ -149,7 +150,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     if(allowIncrease) 
     {
       isConverged = ( isConverged || 
-		      isIncreaseAllowed(newf, oldf, counter.getNumLineSearches()) );
+		      isIncreaseAllowed(newf, oldf, s.getNumIterations()) );
     }
   }
 
@@ -245,7 +246,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     isConverged = isSufficientDecrease(newf, oldf, step, slope, eta, oldGrp, newGrp);
     if(allowIncrease)
       isConverged = (isConverged || 
-                     isIncreaseAllowed(newf, oldf, counter.getNumLineSearches()) );
+                     isIncreaseAllowed(newf, oldf, s.getNumIterations()) );
     
   } // End while loop 
 
