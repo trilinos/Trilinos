@@ -75,6 +75,17 @@ global identifier (ID). Values greater than zero are accepted.&nbsp;</td>
 local identifier (ID). Values greater than or equal to zero are accepted.&nbsp;</td>
 </tr>
 
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="Return_Lists"></a>&nbsp;&nbsp;&nbsp; <i>RETURN_LISTS</i></td>
+
+<td>The lists returned by calls to 
+<a href="ug_interface_lb.html#LB_Balance"><b>LB_Balance</b></a>.
+Valid values are "IMPORT" (to return only information about objects to be 
+imported to a processor), "EXPORT" (to return only information about objects
+to be exported from a processor), "ALL" (to return both import and export 
+information) and "NONE" (to return neither import nor export information).
+</td>
+</tr>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp;<i> <a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i></td>
 
@@ -186,6 +197,24 @@ computers is available.</td>
 
 <td></td>
 </tr>
+<tr>
+<td></td>
+
+<td><i>NUM_GID_ENTRIES</i> = 1</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>NUM_LID_ENTRIES</i> = 1</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>RETURN_LISTS</i> = ALL</td>
+</tr>
+
 
 <tr>
 <td></td>

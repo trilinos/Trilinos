@@ -274,11 +274,16 @@ the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 
 <td>Upon return, the number of objects that are now assigned to this processor
 that were assigned to other processors in the old decomposition (i.e.,
-the number of objects to be imported to this processor).</td>
+the number of objects to be imported to this processor).
+If the value returned is -1, no import information has been returned and all 
+import arrays below are NULL (see the
+<a href="ug_alg.html#Return_Lists">RETURN_LISTS</a> parameter for more
+information).
+</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
+<td VALIGN=TOp><I>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
 <td>Upon return, an array of <i>num_import</i> global IDs of objects to
 be imported to this processor.
@@ -307,7 +312,12 @@ IDs of the processors that owned the imported objects in the previous decomposit
 <td>Upon return, the number of objects that were assigned to this processor
 in the previous decomposition that are now assigned to other processors
 (i.e., the number of objects that must be exported from this processor
-to other processors).</td>
+to other processors).
+If the value returned is -1, no export information has been returned and all
+export arrays below are NULL (see the
+<a href="ug_alg.html#Return_Lists">RETURN_LISTS</a> parameter for more
+information).
+</td>
 </tr>
 
 <tr>
