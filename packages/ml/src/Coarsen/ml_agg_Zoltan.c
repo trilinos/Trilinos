@@ -164,9 +164,6 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
    * here call to Zoltan or whatever you may want to create
    * graph_decomposition. At this point, I simply decompose it. */
   
-  if (N_parts > Nrows)
-    N_parts = Nrows;
-
   for (i = 0 ; i < Nrows ; i++) {
     graph_decomposition[i] = i % N_parts;
   }
@@ -242,6 +239,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int * starting_decomposition = NULL;
    int * reordered_decomposition = NULL;
    ML_Operator * QQ = NULL;
+   ML_Operator * QQT = NULL;
    ML_Operator *Pstart = NULL;
    int starting_aggr_count;
    char str[80], * str2;
@@ -261,6 +259,8 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    double* old_nodal_coord = NULL;
    double* new_nodal_coord = NULL;
    double* next_level_nodal_coord = NULL;
+   double* old_vector = NULL;
+   double* new_vector = NULL;
    int iaggre;
    
    /* ------------------- execution begins --------------------------------- */
@@ -518,17 +518,17 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    desired_aggre_per_proc );
    } 
    
-#ifdef FIXME
    N_dimensions = ml_ag->N_dimensions;
    old_nodal_coord = ml_ag->nodal_coord[abs(diff_level)];
 
    /* RAY: this is the place for Zoltan... 
     * Vectors old_x, old_y and old_z contains the coordinates
     * for each (block) node. They still refer to the current
-    * distribution of rows. Later, these vectors have to be redifined
-    * following the shipping of information.
+    * distribution of rows. Later, these vectors are redefined
+    * for the new layout of local rows.
     */
    old_x = old_nodal_coord;
+
    if (N_dimensions > 1 && old_x)
      old_y = old_nodal_coord + Nrows;
    else
@@ -537,7 +537,6 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      old_z = old_nodal_coord + 2 * Nrows;
    else
      old_z = 0;
-#endif
 
    /* Amatrix is the *amalgamated* matrix.
     *
@@ -865,7 +864,6 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
     * Variables with `next_level' are self-explicatory. ;)              */
    /* ================================================================= */
    
-#ifdef FIXME
    i = N_dimensions * sizeof(double) * (new_Nrows);
    if (i)
      new_nodal_coord = (double*) ML_allocate(i);
@@ -874,26 +872,6 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    ml_ag->nodal_coord[abs(diff_level)] = new_nodal_coord;
    
-#ifdef HAVE_ML_EPETRA
-   ML_ApplyQ(Nrows, new_Nrows, N_dimensions,
-	     old_nodal_coord, new_nodal_coord);
-#else
-   puts("I must die now. Sorry.");
-   exit(0);
-#endif
-
-   i = sizeof(double) * N_dimensions * (aggr_count);
-   if (i)
-     next_level_nodal_coord = (double*)ML_allocate(i);
-   else
-     next_level_nodal_coord = 0;
-   /* set up the nodal coordinates for the next level. 
-    * NOTE: this would create a small over(ab)use of memory
-    * as the last level will still create the nodal coordinates
-    * for the next level (that will never exist). However,
-    * the coarse grid should be small enough at that point. */
-   ml_ag->nodal_coord[abs(diff_level) + 1] = next_level_nodal_coord;
-
    new_x = new_nodal_coord;
    if (N_dimensions > 1 && new_nodal_coord)
      new_y = new_nodal_coord + new_Nrows;
@@ -903,6 +881,65 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      new_z = new_nodal_coord + 2 * new_Nrows;
    else
      new_z = 0;
+
+   /* It appears that there is something strange about 
+    * the Epetra counterpart of QQ, store as a global
+    * variable Q in ml_epetra_utils.c. On the other side,
+    * QQ behaves correctly. Hence, I use the transpose of QQ.
+    * The only negative point is that I need to allocate
+    * space for the tranpose.
+    *
+    * Also, old_vector and new_vector may be coded in a
+    * slightly more efficient way.
+    */
+   old_vector = (double*)ML_allocate(sizeof(double) * (1 + Nrows) * num_PDE_eqns);
+   new_vector = (double*)ML_allocate(sizeof(double) * (1 + new_Nrows) * num_PDE_eqns);
+
+   QQT = ML_Operator_Create(Amatrix->comm);
+   ML_Operator_Transpose_byrow(QQ,QQT);
+
+   for (j = 0 ; j < Nrows ; ++j)
+     old_vector[j] = old_x[j];
+   ML_Operator_Apply(QQT, Nrows * num_PDE_eqns, old_vector,
+		     new_Nrows * num_PDE_eqns, new_vector );
+   for (j = 0 ; j < new_Nrows ; ++j)
+     new_x[j] = new_vector[j];
+   
+   if (N_dimensions > 1) {
+     for (j = 0 ; j < Nrows ; ++j)
+       old_vector[j] = old_y[j];
+     ML_Operator_Apply(QQT, Nrows * num_PDE_eqns, old_vector,
+		       new_Nrows * num_PDE_eqns, new_vector );
+     for (j = 0 ; j < new_Nrows ; ++j)
+       new_y[j] = new_vector[j];
+   }
+
+   if (N_dimensions > 2) {
+     for (j = 0 ; j < Nrows ; ++j)
+       old_vector[j] = old_z[j];
+     ML_Operator_Apply(QQT, Nrows * num_PDE_eqns, old_vector,
+		       new_Nrows * num_PDE_eqns, new_vector );
+     for (j = 0 ; j < new_Nrows ; ++j)
+       new_z[j] = new_vector[j];
+   }
+
+   ML_free(old_vector);
+   ML_free(new_vector);
+   ML_Operator_Destroy(&QQT);
+
+   /* set up the nodal coordinates for the next level. 
+    * NOTE: this would create a small over(ab)use of memory
+    * as the last level will still create the nodal coordinates
+    * for the next level (that will never exist). However,
+    * the coarse grid should be small enough at that point. */
+
+   i = sizeof(double) * N_dimensions * (aggr_count);
+   if (i)
+     next_level_nodal_coord = (double*)ML_allocate(i);
+   else
+     next_level_nodal_coord = 0;
+
+   ml_ag->nodal_coord[abs(diff_level) + 1] = next_level_nodal_coord;
 
    next_level_x = next_level_nodal_coord;
    if (N_dimensions > 1 && next_level_nodal_coord)
@@ -946,7 +983,6 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* free memory */
    if (old_nodal_coord) 
      ML_free(old_nodal_coord);
-#endif
 
    if( nodes_per_aggre != NULL ) {
      ML_free( nodes_per_aggre );
