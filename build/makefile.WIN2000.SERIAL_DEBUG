@@ -136,7 +136,7 @@ LN=ln -v
 # LIBLAPACK = mkl_lapack.lib
 LIBBLAS = cxml.lib
 LIBLAPACK = cxml.lib
-LIBSPBLAS = "$(TRILINOS_HOME_WIN)\external\spblas\lib\$(TRILINOS_TARGET)\libspblas.lib"
+#LIBSPBLAS = "$(TRILINOS_HOME_WIN)\external\spblas\lib\$(TRILINOS_TARGET)\libspblas.lib"
 LIBSUPERLU   = "d:\software\SuperLU\superlu_win2000.lib"
 LIBY12M   = "$(TRILINOS_HOME_WIN)\external\y12m\lib\$(TRILINOS_TARGET)\y12m.lib"
 
@@ -187,7 +187,6 @@ PETRA_ARCH_DEFINES = -D$(WINCOMP)
 #### AztecOO ####
 
 # ML - Use ML with AztecOO (Not defined by default).
-# SPARSEBLAS - Use Sparse BLAS with AztecOO (Defined by default).
 # IFPACK - Use old IFPACK with AztecOO (Defined by default).
 # AZ_COL_REORDER - Use experimental column reordering with AztecOO
 #                  (Not defined by default).
@@ -235,10 +234,9 @@ LIBEPETRA_ESI = "$(TRILINOS_LIB_PATH)\libepetra_esi.$(LIB_EXT)"
 # Trilinos depends on the following external libraries:
 
 # 1) BLAS
-# 2) Sparse BLAS
-# 3) LAPACK
-# 4) Y12M
-# 5) SuperLU
+# 2) LAPACK
+# 3) Y12M
+# 4) SuperLU
 
 # NOTE: WE ASSUME THAT THESE LIBRARIES ARE ALREADY BUILT.
 #       TO USE THE VERSIONS OF THESE LIBRARIES IN THE Trilinos/external 
@@ -278,11 +276,10 @@ endif
 ## AztecOO
 
 # ML - Use ML with AztecOO.
-# SPARSEBLAS - Use Sparse BLAS with AztecOO
 # IFPACK - Use old IFPACK with AztecOO
 # AZ_COL_REORDER - Use experimental column reordering with AztecOO.
 
-AZTECOO_DEFAULT_DEFINES = -DSPARSEBLAS -DIFPACK -Dcaps
+AZTECOO_DEFAULT_DEFINES = -DIFPACK -Dcaps
 
 
 ##################### Derived Variables ###########################

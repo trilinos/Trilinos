@@ -59,7 +59,7 @@ LN      := ln -s
 
 LIBBLAS   := /usr/local/lib/libblas.a
 LIBLAPACK := /usr/local/lib/liblapack.a
-LIBSPBLAS := /usr/local/lib/libspblas.a
+#LIBSPBLAS := /usr/local/lib/libspblas.a
 LIBY12M   := /usr/local/lib/liby12m.a
 
 
@@ -98,7 +98,6 @@ EPETRA_ARCH_DEFINES :=
 #### AztecOO ####
 
 # ML - Use ML with AztecOO (Not defined by default).
-# SPARSEBLAS - Use Sparse BLAS with AztecOO (Defined by default).
 # IFPACK - Use old IFPACK with AztecOO (Defined by default).
 # AZ_COL_REORDER - Use experimental column reordering with AztecOO
 #                  (Not defined by default).

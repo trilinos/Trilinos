@@ -28,5 +28,5 @@ ARCH_LIBS = -lm -lg2c $(MPI_LIBS)
 LIBBLAS = -L/usr/ATLAS/lib/WinNT_PIIISSE1/ -llapack  /usr/lib/liblapack.a -lcblas -lf77blas -latlas
 
 LIBLAPACK =
-LIBSPBLAS = /usr/lib/libspblas.a
+#LIBSPBLAS = /usr/lib/libspblas.a
 LIBY12M   = /usr/lib/liby12m.a

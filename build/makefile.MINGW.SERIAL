@@ -29,6 +29,6 @@ ARCH_LIBS = -lm -lg2c $(MPI_LIBS)
 #LIBBLAS = /usr/lib/libblas_fast.a
 
 LIBLAPACK = /Net/Proj/Xyce/arch/mingw/lib/epetra/liblapack.a
-LIBSPBLAS = /Net/Proj/Xyce/arch/mingw/lib/epetra/libspblas.a
+#LIBSPBLAS = /Net/Proj/Xyce/arch/mingw/lib/epetra/libspblas.a
 LIBBLAS = /Net/Proj/Xyce/arch/mingw/lib/epetra/libblas.a
 LIBY12M   = /Net/Proj/Xyce/arch/mingw/lib/epetra/liby12m.a

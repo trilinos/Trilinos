@@ -97,7 +97,6 @@ EPETRA_ARCH_DEFINES =
 #### AztecOO ####
 
 # ML - Use ML with AztecOO (Not defined by default).
-# SPARSEBLAS - Use Sparse BLAS with AztecOO (Defined by default).
 # IFPACK - Use old IFPACK with AztecOO (Defined by default).
 # AZ_COL_REORDER - Use experimental column reordering with AztecOO
 #                  (Not defined by default).
