@@ -16,10 +16,6 @@
 #ifndef __PAR_CONST_H
 #define __PAR_CONST_H
 
-#ifndef lint
-static char *cvs_par_const_h = "$Id$";
-#endif
-
 #include <mpi.h>
 
 /*

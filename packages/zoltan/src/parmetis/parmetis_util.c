@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_parmetis_util = "$Id$";
-#endif
 
 #include "lb_const.h"
 #include "parmetis_const.h"
@@ -39,16 +36,20 @@ int LB_hashf(LB_GID key, int n)
 {
   unsigned int h, *p;
   int bytes;
+  int retval;
 
   if (sizeof(LB_GID) <= sizeof(int))
-    return (((unsigned int) key)%n);
+    retval = ((unsigned int) key)%n;
 
-  h = 0;
-  for (p = (unsigned int *)&key, bytes=sizeof(LB_GID); bytes >= sizeof(int); 
-       bytes-=sizeof(int), p ++){
-    h ^= *p;
+  else {
+    h = 0;
+    for (p = (unsigned int *)&key, bytes=sizeof(LB_GID); bytes >= sizeof(int); 
+         bytes-=sizeof(int), p ++){
+      h ^= *p;
+    }
+    retval = h%n;
   }
-  return (h%n);
+  return(retval);
 }
 
 /* LB_hash_lookup uses LB_hashf to lookup a key 
