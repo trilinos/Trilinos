@@ -6,9 +6,7 @@ FFLAGS=-O3
 --with-ar="/projects/trilinos/Trilinos/sampleScripts/stratus_ar.pl ar cru"
 --with-libs="/projects/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
 /projects/trilinos/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib/libumfpack.a
-/projects/trilinos/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a
-/projects/trilinos/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a"
+/projects/trilinos/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a"
 --with-incdirs="-I/projects/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB
 -I/projects/trilinos/Trilinos3PL/UMFPACKv4.1/UMFPACK/Include
--I/projects/trilinos/Trilinos3PL/UMFPACKv4.1/AMD/Include
--I/projects/trilinos/Trilinos3PL/SuperLU_DIST_2.0/SRC"
+-I/projects/trilinos/Trilinos3PL/UMFPACKv4.1/AMD/Include"
