@@ -1,0 +1,4 @@
+import sys
+
+sys.path.append("@abs_builddir@/install@prefix@/python")
+sys.path.append("@srcdir@")
