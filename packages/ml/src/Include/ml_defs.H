@@ -10,8 +10,9 @@
 #define ML_NONE           10
 #define ML_MGV            11
 #define ML_MG2CGC         12
-#define ML_RSAMG             13
-#define ML_SAAMG             14
+#define ML_MGFULLV        13
+#define ML_RSAMG             14
+#define ML_SAAMG             15
 
 #define ML_GRID_DIMENSION   21
 #define ML_GRID_NVERTICES   22
@@ -73,8 +74,12 @@
 #define ML_FALSE              0
 #define ML_TRUE               1
 
+#ifndef ML_MAX_NEIGHBORS
 #define ML_MAX_NEIGHBORS   1024
+#endif
+#ifndef ML_MAX_MSG_BUFF_SIZE
 #define ML_MAX_MSG_BUFF_SIZE 100000  /* max usable message buffer size */
+#endif
 
 #define ML_OVERWRITE          0
 #define ML_ADD                1
@@ -96,6 +101,9 @@
 #define ML_DOUBLE             3
 
 #define ML_ALL_LEVELS     -1237
+#define ML_MSR_MATRIX      -201
+#define ML_CSR_MATRIX      -203
+
 
 #endif
 
