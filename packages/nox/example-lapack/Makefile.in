@@ -43,7 +43,7 @@
 # ************************************************************************
 # @HEADER
 
-SOURCES = $(nodist_broyden_SOURCES) $(nodist_linear_SOURCES) $(rosenbrock_SOURCES)
+SOURCES = $(broyden_SOURCES) $(nodist_linear_SOURCES) $(rosenbrock_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -80,12 +80,12 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-@BUILD_PRERELEASE_TRUE@am__EXEEXT_1 = broyden$(EXEEXT) linear$(EXEEXT)
+@BUILD_PRERELEASE_TRUE@am__EXEEXT_1 = linear$(EXEEXT)
 @BUILD_LAPACK_EXAMPLES_TRUE@am__EXEEXT_2 = rosenbrock$(EXEEXT) \
-@BUILD_LAPACK_EXAMPLES_TRUE@	$(am__EXEEXT_1)
+@BUILD_LAPACK_EXAMPLES_TRUE@	broyden$(EXEEXT) $(am__EXEEXT_1)
 PROGRAMS = $(noinst_PROGRAMS)
-nodist_broyden_OBJECTS = broyden-Broyden.$(OBJEXT)
-broyden_OBJECTS = $(nodist_broyden_OBJECTS)
+am_broyden_OBJECTS = broyden-Broyden.$(OBJEXT)
+broyden_OBJECTS = $(am_broyden_OBJECTS)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(top_builddir)/src-lapack/libnoxlapack.a \
 	$(top_builddir)/src/libnox.a $(am__DEPENDENCIES_1)
@@ -104,9 +104,9 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(nodist_broyden_SOURCES) $(nodist_linear_SOURCES) \
+SOURCES = $(broyden_SOURCES) $(nodist_linear_SOURCES) \
 	$(rosenbrock_SOURCES)
-DIST_SOURCES = $(rosenbrock_SOURCES)
+DIST_SOURCES = $(broyden_SOURCES) $(rosenbrock_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -263,7 +263,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_LAPACK_EXAMPLES_TRUE@EXAMPLES = rosenbrock $(PRERELEASE_EXAMPLES)
+@BUILD_LAPACK_EXAMPLES_TRUE@EXAMPLES = rosenbrock broyden $(PRERELEASE_EXAMPLES)
 rosenbrock_SOURCES = $(srcdir)/Rosenbrock.C
 rosenbrock_DEPENDENCIES = $(top_builddir)/src-lapack/libnoxlapack.a \
                           $(top_builddir)/src/libnox.a 
@@ -276,15 +276,15 @@ rosenbrock_LDADD = $(top_builddir)/src-lapack/libnoxlapack.a \
                    $(top_builddir)/src/libnox.a \
 		   $(LIBS)
 
-@BUILD_PRERELEASE_TRUE@PRERELEASE_EXAMPLES = broyden linear
+broyden_SOURCES = $(srcdir)/Broyden.C
+broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
+broyden_CXXFLAGS = $(rosenbrock_CXXFLAGS)
+broyden_LDADD = $(rosenbrock_LDADD)
+@BUILD_PRERELEASE_TRUE@PRERELEASE_EXAMPLES = linear
 nodist_linear_SOURCES = $(srcdir)/Linear.C
 linear_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
 linear_CXXFLAGS = $(rosenbrock_CXXFLAGS)
 linear_LDADD = $(rosenbrock_LDADD)
-nodist_broyden_SOURCES = $(srcdir)/Broyden.C
-broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
-broyden_CXXFLAGS = $(rosenbrock_CXXFLAGS)
-broyden_LDADD = $(rosenbrock_LDADD)
 @USE_ALTERNATE_AR_FALSE@libnoxexample_a_AR = $(AR) cru
 
 # ------------------------------------------------------------------------

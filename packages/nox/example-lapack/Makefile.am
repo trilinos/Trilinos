@@ -31,7 +31,7 @@
 
 if BUILD_LAPACK_EXAMPLES
 
-EXAMPLES = rosenbrock $(PRERELEASE_EXAMPLES)
+EXAMPLES = rosenbrock broyden $(PRERELEASE_EXAMPLES)
 
 endif
 
@@ -50,9 +50,17 @@ rosenbrock_LDADD = $(top_builddir)/src-lapack/libnoxlapack.a \
                    $(top_builddir)/src/libnox.a \
 		   $(LIBS)
 
+broyden_SOURCES = $(srcdir)/Broyden.C
+
+broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
+
+broyden_CXXFLAGS = $(rosenbrock_CXXFLAGS)
+
+broyden_LDADD = $(rosenbrock_LDADD)
+
 if BUILD_PRERELEASE
 
-PRERELEASE_EXAMPLES = broyden linear
+PRERELEASE_EXAMPLES = linear
 
 endif
 
@@ -63,14 +71,6 @@ linear_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
 linear_CXXFLAGS = $(rosenbrock_CXXFLAGS)
 
 linear_LDADD = $(rosenbrock_LDADD)
-
-nodist_broyden_SOURCES = $(srcdir)/Broyden.C
-
-broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
-
-broyden_CXXFLAGS = $(rosenbrock_CXXFLAGS)
-
-broyden_LDADD = $(rosenbrock_LDADD)
 
 # ------------------------------------------------------------------------
 # For using a special archiver

@@ -1,7 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -54,7 +53,7 @@
    The standard starting point is x(i) = -1, but setting x(i) = 0 tests
    the selected global strategy.
 
-   \author Brett Bader, UC Boulder, 2002
+   \author Brett Bader, CU Boulder, 2002
 */
 
 
@@ -217,8 +216,7 @@ int main()
 
   // Create the convergence tests
   //NOX::StatusTest::NormF statusTestA(grp, 1.0e-12);
-  NOX::StatusTest::NormF statusTestA(1.0e-12, 
-				     NOX::StatusTest::NormF::Unscaled);
+  NOX::StatusTest::NormF statusTestA(1.0e-12, NOX::StatusTest::NormF::Unscaled);
   NOX::StatusTest::MaxIters statusTestB(50);
   NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR,
 					  statusTestA, statusTestB);
@@ -252,4 +250,3 @@ int main()
   }
   
 }
-#endif
