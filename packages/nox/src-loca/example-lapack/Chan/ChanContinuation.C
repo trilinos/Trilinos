@@ -82,7 +82,7 @@ int main()
     stepperList.setParameter("Initial Value", alpha);
     stepperList.setParameter("Max Value", 5.0/scale);
     stepperList.setParameter("Min Value", 0.0/scale);
-    stepperList.setParameter("Max Steps", 100);
+    stepperList.setParameter("Max Steps", 50);
     stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
     stepperList.setParameter("Goal g", 0.5);
     stepperList.setParameter("Max g", 0.7);
@@ -123,21 +123,30 @@ int main()
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.setParameter("Output Information", 
-			 //  NOX::Utils::Details +
-// 			  NOX::Utils::OuterIteration + 
-// 			  NOX::Utils::InnerIteration + 
+			  NOX::Utils::Details +
+			  NOX::Utils::OuterIteration + 
+			  NOX::Utils::InnerIteration + 
 			  NOX::Utils::Warning);
 
     //NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
     //NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
 
     // Set up the status tests
-    NOX::StatusTest::NormF statusTestA(1.0e-8);
-    NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
-    NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
+    NOX::StatusTest::NormF normF(1.0e-8);
+    LOCA::StatusTest::Wrapper wrappedNormF(normF);
+    LOCA::Continuation::StatusTest::ParameterResidualNorm paramResid(1.0e-8,
+								     1.0e-8,
+								     1.0);
+    NOX::StatusTest::MaxIters maxIters(maxNewtonIters);
+    NOX::StatusTest::Combo comboAND(NOX::StatusTest::Combo::AND, 
+				    wrappedNormF, 
+				    paramResid);
+    NOX::StatusTest::Combo comboOR(NOX::StatusTest::Combo::OR, 
+				    comboAND, 
+				    maxIters);
 
     // Create the stepper  
-    LOCA::Stepper stepper(grp, combo, paramList);
+    LOCA::Stepper stepper(grp, comboOR, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
