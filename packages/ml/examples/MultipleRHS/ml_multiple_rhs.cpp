@@ -2,10 +2,9 @@
 // The goal of this code is to test the multiple right hand sides
 // capabilities of ML
 /////////////////////////////////////////////////////////////
+#include "ml_include.h"
 
 #if defined(HAVE_ML_EPETRA)
-
-#include "ml_include.h"
 #include "Epetra_ConfigDefs.h"
 
 #include "Epetra_CrsMatrix.h"
@@ -203,6 +202,8 @@ int main(int argc, char *argv[]) {
   if (Comm.MyPID() == 0)
     cout << "Please configure ML with the option --with-ml_multiple_rhs=NN,\nwhere NN is the blocking factor.";
 #endif //ifdef ML_MULTIPLE_RHS_BLOCK_FACTOR
+  ML_Aggregate_Destroy(&agg_object);
+  ML_Destroy(&ml_handle);
 
 #ifdef ML_MPI
   MPI_Finalize();
