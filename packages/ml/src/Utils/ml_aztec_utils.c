@@ -529,7 +529,7 @@ int AZ_block_MSR(int **param_bindx, double **param_val,
    *param_bindx = newbindx;
    *param_val   = newval;
 
-   if (newval == NULL) {printf("out of space\n"); exit(1); }
+   if (newval == NULL) {printf("AZ_block_MSR: out of space\n"); exit(1); }
 
    /* Get the diagonal */
 
