@@ -24,7 +24,7 @@ double MaxEigPowerMethod(const Operator& Op, const bool DiagonalScaling = false)
 double MaxEigAnasazi(const Operator& Op, const bool DiagonalScaling = false);
 
 //! Computes eigenvalues and eigenvectors using LAPACK (w/ one process only).
-void Eig(const Operator& Op, MultiVector& ER, MultiVector& EI, MultiVector& V);
+void Eig(const Operator& Op, MultiVector& ER, MultiVector& EI);
 
 void Eigs(const Operator& A, int NumEigenvalues, 
           MultiVector& ER, MultiVector& EI);

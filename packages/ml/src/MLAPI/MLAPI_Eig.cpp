@@ -86,7 +86,7 @@ double MaxEigAnasazi(const Operator& Op, const bool DiagonalScaling)
 }
 
 // ====================================================================== 
-void Eig(const Operator& Op, MultiVector& ER, MultiVector& EI, MultiVector& V)
+void Eig(const Operator& Op, MultiVector& ER, MultiVector& EI)
 {
   if (GetNumProcs() != 1)
     ML_THROW("Function Eig() works only w/ one process, use Eigs() instead.", -1);
@@ -95,17 +95,14 @@ void Eig(const Operator& Op, MultiVector& ER, MultiVector& EI, MultiVector& V)
   if (Op.GetDomainSpace() != Op.GetRangeSpace())
     ML_THROW("Matrix is not square", -1);
 
-  V.Reshape(Op.GetDomainSpace(), Op.GetDomainSpace().GetNumGlobalElements());
   ER.Reshape(Op.GetDomainSpace());
   EI.Reshape(Op.GetDomainSpace());
 
-  ML_THROW("fixme.....", -1);
-  /* FIXME
-  ierr = ML_Operator_Eigensolver_Dense(Op.GetML_Operator(), ER.GetValues(), 
-                                       EI.GetValues(), V.GetValues());
-  */
+  ierr = ML_Operator_Eigensolver_Dense(Op.GetML_Operator(), ER.GetValues(0), 
+                                       EI.GetValues(0), NULL);
+
   if (ierr)
-    ML_THROW("Error occurred", -1);
+    ML_THROW("Error occurred, code = " + GetString(ierr), -1);
   
 }
 
@@ -151,7 +148,7 @@ void Eigs(const Operator& A, int NumEigenvalues,
                                   NumEigenvalues);
   EigenVectors.Random();
 #ifdef HAVE_ML_ANASAZI
-  int NumRealEigenvectors, NumImagEigenvectors;
+  //int NumRealEigenvectors, NumImagEigenvectors;
 #endif
 
   AnasaziList.set("eigen-analysis: action", "LM");
