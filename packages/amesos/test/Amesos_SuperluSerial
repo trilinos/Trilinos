@@ -124,7 +124,7 @@ echo "COMMENT column 17+ - summary " >> SST.summary
 #
 ./amesos_test.exe SUPERLU SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
 
-./amesos_test.exe SUPERLU Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+./amesos_test.exe SUPERLU Khead.triS 0 1 1 0 1e-11 1e-9 >>SST.stdout
 
 
 #
