@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor that calls the petra ctor for a matrix
 	//
-	BelosPetraMat<double> Amat(A);
+	Belos::PetraMat<double> Amat(A);
 	//
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the default ctor for the preconditioning object
 	//
-	AnasaziPrecondition<double> Prec;
+	Anasazi::Precondition<double> Prec;
 	//
     	// ********Other information used by block solver***********
 	//*****************(can be user specified)******************
@@ -144,12 +144,12 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	//
-	// create a BelosPetraVec. Note that the decision to make a view or
-	// or copy is determined by the Petra constructor called by BelosPetraVec.
+	// create a Belos::PetraVec. Note that the decision to make a view or
+	// or copy is determined by the Petra constructor called by Belos::PetraVec.
 	// This is possible because I pass in arguements needed by petra.
 	//
     	int stride=NumMyElements;
-	BelosPetraVec<double> rhs(Map, array, numrhs, stride);
+	Belos::PetraVec<double> rhs(Map, array, numrhs, stride);
 	rhs.MvRandom();
 	//
 	//*******************************************************************
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	BelosPetraVec<double> iguess(Map, array, numrhs, stride);
+	Belos::PetraVec<double> iguess(Map, array, numrhs, stride);
 	MyBlockGmres.SetInitGuess( iguess );
 
 	MyBlockGmres.SetRestart(numrestarts);
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
 	}
 	MyBlockGmres.TrueResiduals(verbose);
 
-	BelosPetraVec<double> solutions(Map, numrhs);
+	Belos::PetraVec<double> solutions(Map, numrhs);
 	MyBlockGmres.GetSolutions( solutions );
 
 	

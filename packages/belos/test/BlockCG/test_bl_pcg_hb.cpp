@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor that calls the petra ctor for a matrix
 	//
-	BelosPetraMat<double> Amat(A);
+	Belos::PetraMat<double> Amat(A);
 	//
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor for the preconditioning object
 	//
-	BelosPetraPrec<double> EpetraOpPrec(prec);
+	Belos::PetraPrec<double> EpetraOpPrec(prec);
 
 	//
 	//*****Construct random right-hand-sides *****
@@ -189,12 +189,12 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	//
-	// create a BelosPetraVec. Note that the decision to make a view or
+	// create a Belos::PetraVec. Note that the decision to make a view or
 	// or copy is determined by the Petra constructor called by AnasaziPetraVec.
 	// This is possible because I pass in arguements needed by petra.
 	//
     	int stride=NumMyElements;
-	BelosPetraVec<double> rhs(Map, array, numrhs, stride);
+	Belos::PetraVec<double> rhs(Map, array, numrhs, stride);
 	rhs.MvRandom();
 	//
 	// **********Print out information about problem*******************
@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	
-	BelosPetraVec<double> iguess(Map, array, numrhs, stride);
+	Belos::PetraVec<double> iguess(Map, array, numrhs, stride);
 	MyBlockCG.SetInitGuess( iguess );
 
 	MyBlockCG.SetDebugLevel(0);
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
 	}
 	MyBlockCG.TrueResiduals(verbose);
 
-	BelosPetraVec<double> solutions(Map, numrhs);
+	Belos::PetraVec<double> solutions(Map, numrhs);
 	MyBlockCG.GetSolutions( solutions );
 
 	
