@@ -130,8 +130,8 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
   
   EPETRA_CHK_ERR(ConstructOverlapGraph());
 
-  L_Graph_ = new Epetra_CrsGraph(Copy, OverlapGraph_->RowMap(), 0);
-  U_Graph_ = new Epetra_CrsGraph(Copy, OverlapGraph_->RowMap(), 0);
+  L_Graph_ = new Epetra_CrsGraph(Copy, OverlapGraph_->RowMap(),OverlapGraph_->RowMap(),  0);
+  U_Graph_ = new Epetra_CrsGraph(Copy, OverlapGraph_->RowMap(),OverlapGraph_->RowMap(),  0);
 
 
   // Get Maximun Row length

@@ -36,7 +36,7 @@ ifp_BJacobi::~ifp_BJacobi()
 
 void ifp_BJacobi::setup(const ifp_BlockMat& A)
 {
-    int i, j, nrow;
+    int i, j;
     int got_diag;
 
     Ap = &A;

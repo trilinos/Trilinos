@@ -23,9 +23,9 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph)
     ValuesInitialized_(false),
     Factored_(false),
     RelaxValue_(0.0),
-    Condest_(-1.0),
     Athresh_(0.0),
     Rthresh_(1.0),
+    Condest_(-1.0),
     OverlapX_(0),
     OverlapY_(0),
     OverlapMode_(Zero)
@@ -50,9 +50,9 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix)
     ValuesInitialized_(FactoredMatrix.ValuesInitialized_),
     Factored_(FactoredMatrix.Factored_),
     RelaxValue_(FactoredMatrix.RelaxValue_),
-    Condest_(FactoredMatrix.Condest_),
     Athresh_(FactoredMatrix.Athresh_),
     Rthresh_(FactoredMatrix.Rthresh_),
+    Condest_(FactoredMatrix.Condest_),
     OverlapX_(0),
     OverlapY_(0),
     OverlapMode_(FactoredMatrix.OverlapMode_)
@@ -88,8 +88,8 @@ int Ifpack_CrsRiluk::AllocateVbr() {
   IlukRowMap_ = new Epetra_Map(-1, NumMyPoints, 0, Comm());
 
   if (Graph().LevelFill()) { // If there is fill, then pre-build the L and U structures from the Block version of L and U.
-    L_Graph_ = new Epetra_CrsGraph(Copy, *IlukRowMap_, 0);
-    U_Graph_ = new Epetra_CrsGraph(Copy, *IlukRowMap_, 0);
+    L_Graph_ = new Epetra_CrsGraph(Copy, *IlukRowMap_, *IlukRowMap_, 0);
+    U_Graph_ = new Epetra_CrsGraph(Copy, *IlukRowMap_, *IlukRowMap_, 0);
     EPETRA_CHK_ERR(BlockGraph2PointGraph(Graph_.L_Graph(), *L_Graph_, false));
     EPETRA_CHK_ERR(BlockGraph2PointGraph(Graph_.U_Graph(), *U_Graph_, true));
     L_Graph_->TransformToLocal();
@@ -101,8 +101,8 @@ int Ifpack_CrsRiluk::AllocateVbr() {
   }
   else {
     // Allocate Epetra_CrsMatrix using ILUK graphs
-    L_ = new Epetra_CrsMatrix(Copy, *IlukRowMap_, 0);
-    U_ = new Epetra_CrsMatrix(Copy, *IlukRowMap_, 0);
+    L_ = new Epetra_CrsMatrix(Copy, *IlukRowMap_, *IlukRowMap_, 0);
+    U_ = new Epetra_CrsMatrix(Copy, *IlukRowMap_, *IlukRowMap_, 0);
     D_ = new Epetra_Vector(*IlukRowMap_);
     L_Graph_ = 0;
     U_Graph_ = 0;
@@ -692,9 +692,6 @@ int Ifpack_CrsRiluk::Multiply(bool Trans, const Epetra_MultiVector& X,
 
   if (X.NumVectors()!=Y.NumVectors()) EPETRA_CHK_ERR(-1); // Return error: X and Y not the same size
 
-  bool Upper = true;
-  bool Lower = false;
-  bool UnitDiagonal = true;
 
   Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;
   Epetra_MultiVector * Y1 = (Epetra_MultiVector *) &Y;

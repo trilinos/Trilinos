@@ -31,3 +31,5 @@ void AZ_ifpack_precon(double x[], int *, int *,
 
 void AZ_ifpack_prec_destroy(int *options, double *params,
                  int *proc_config, AZ_MATRIX *Amat, AZ_PRECOND *Prec);
+
+void az2ifp_blockmatrix (void **bmat, AZ_MATRIX *Amat);

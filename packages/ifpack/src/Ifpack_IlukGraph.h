@@ -150,8 +150,8 @@ class Ifpack_IlukGraph {
   const Epetra_BlockMap & RangeMap_;
   const Epetra_Comm & Comm_;
   Epetra_CrsGraph * OverlapGraph_;
-  Epetra_Import * OverlapImporter_;
   Epetra_BlockMap * OverlapRowMap_;
+  Epetra_Import * OverlapImporter_;
   int LevelFill_;
   int LevelOverlap_;
   Epetra_CrsGraph * L_Graph_;

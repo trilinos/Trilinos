@@ -16,11 +16,11 @@ static void set_localprecon(ifp_GlobalPrecon *M, int local,
   double lparam1, double lparam2);
 
 // catch memory errors
-static void freeStoreException()
-{
-    cout << endl; // flush standard output
-    ifp_error("ifp_Fortran: free store exhausted", 0);
-}
+//static void freeStoreException()
+//{
+//    cout << endl; // flush standard output
+//    ifp_error("ifp_Fortran: free store exhausted", 0);
+//}
 
 // void ifp_initialize()
 // {
@@ -63,7 +63,6 @@ void ifp_preconditioner(
   const double  lparam1,
   const double  lparam2)
 {
-  double cond_number;
   ifp_GlobalPrecon *M;
   ifp_BlockMat *B = (ifp_BlockMat *) bmat;
 

@@ -452,9 +452,6 @@ inline ifp_DenseMat_SVD::ifp_DenseMat_SVD(const ifp_DenseMat& A, double rthresh,
 
     delete [] work;
 
-    double s0 = s[0];
-    double sn = s[nrow-1];
-
     // apply threshold
     thresh = s[0]*rthresh + athresh;
     int n_replaced = 0;

@@ -58,7 +58,7 @@ void ifp_BlockMat::trans_mult(int nr, int nc, const double *B, int ldu,
 ifp_BlockMat::ifp_BlockMat(double *val, int *indx, int * bindx, int *rpntr, int *cpntr,
 		   int *bpntr, int nrow_, int ncol_, int nnz_, int nnzs_)
 {
-    int i, j, k, ii, jj;
+    int i, j, k;
     double *pp;
 
     a = (ifp_LocalMat **) NULL;
