@@ -221,9 +221,6 @@ class Epetra_RowMatrix: public virtual Epetra_Operator {
     //! If matrix is upper triangular, this query returns true, otherwise it returns false.
     virtual bool UpperTriangular() const = 0;
 
-    //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
-    virtual const Epetra_Comm & Comm() const = 0;
-
     //! Returns the Epetra_BlockMap object associated with the rows of this matrix.
     virtual const Epetra_BlockMap & BlockRowMap() const = 0;
 

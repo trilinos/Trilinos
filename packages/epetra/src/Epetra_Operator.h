@@ -107,6 +107,9 @@ class Epetra_Operator {
     //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
     virtual bool HasNormInf() const = 0;
 
+    //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
+    virtual const Epetra_Comm & Comm() const = 0;
+
     //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
     virtual const Epetra_BlockMap & DomainMap() const = 0;
 
