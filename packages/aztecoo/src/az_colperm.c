@@ -144,7 +144,7 @@ void AZ_mat_colperm(int n, int bindx[], double val[], int **invp,
   for (i=0; i<3; i++) mcontrol[i] = -1;
   for (i=3; i<10; i++) mcontrol[i] = 0;
   for (i=0; i<10; i++) info[i] = 0;
-  mc64ad_(&job,&n,&nnz,bindx,&(bindx[n+1]),val,&nzdiag,*invp,&liw,rowptr,&ldw,diag,mcontrol,info);
+  MC64AD_F77(&job,&n,&nnz,bindx,&(bindx[n+1]),val,&nzdiag,*invp,&liw,rowptr,&ldw,diag,mcontrol,info);
   /* nzdiag  is the number of zero diagonals in the permuted matrix */
   /*
     +1 structurally singular matrix (iffi nzdiag < n)
