@@ -128,7 +128,7 @@ extern "C" {
 #endif
 
 extern int ML_Create(ML **ml, int Nlevels);
-extern int ML_build_ggb(ML *ml, void *data);
+extern int ML_build_ggb( ML *ml, void *data);
 extern int ML_Set_Symmetrize(ML *ml, int true_or_false);
 extern int ML_Set_OutputLevel(ML *ml, int output_level);
 extern int ML_Set_PrintLevel(int);
@@ -300,6 +300,9 @@ extern int ML_Solve(ML *ml, int inlen, double *sol, int outlen, double *rhs);
 
 int ML_Solve_MGV( ML *ml , double *din, double *dout);
 
+
+
+
 #ifdef WKC
 /* WKC -- new prototype for V-cycle solve */
 int ML_Solve_MGV( ML *ml , const Epetra_MultiVector &in ,
@@ -312,6 +315,9 @@ extern int ML_Solve_Smoother(void *data, int isize, double *x, int osize,
 
 extern double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
                      int approx_all_zeros, ML_Comm *comm, int, ML *ml);
+
+extern int ML_Cycle_GGB(ML *ml_ggb, double *sol, double *rhs);
+
 
 #ifdef WKC
 /* WKC -- new prototype for V-cycle solve */
