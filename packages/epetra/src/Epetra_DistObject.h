@@ -26,8 +26,8 @@
 #define EPETRA_DISTOBJECT_H
 #include "Epetra_Object.h"
 #include "Epetra_SrcDistObject.h"
+#include "Epetra_BlockMap.h"
 class Epetra_Comm;
-class Epetra_BlockMap;
 class Epetra_Import;
 class Epetra_Export;
 class Epetra_Distributor;
@@ -90,7 +90,7 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
     \return Pointer to a Epetra_DistObject.
 
   */
-  Epetra_DistObject(const Epetra_BlockMap& Map, const char * const Label);
+  Epetra_DistObject(const Epetra_BlockMap& Map, const char* const Label);
 
   //! Epetra_DistObject copy constructor.
   
@@ -116,7 +116,7 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 
     \return Integer error code, set to 0 if successful.
   */
-  int Import(const Epetra_SrcDistObject& A, const Epetra_Import & Importer, Epetra_CombineMode CombineMode);
+  int Import(const Epetra_SrcDistObject& A, const Epetra_Import& Importer, Epetra_CombineMode CombineMode);
 
   //! Imports an Epetra_DistObject using the Epetra_Export object.
   /*!
@@ -131,7 +131,7 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 
     \return Integer error code, set to 0 if successful.
   */
-  int Import(const Epetra_SrcDistObject& A, const Epetra_Export & Exporter, Epetra_CombineMode CombineMode);
+  int Import(const Epetra_SrcDistObject& A, const Epetra_Export& Exporter, Epetra_CombineMode CombineMode);
 
   //! Exports an Epetra_DistObject using the Epetra_Import object.
   /*!
@@ -161,15 +161,15 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 
     \return Integer error code, set to 0 if successful.
   */
-  int Export(const Epetra_SrcDistObject& A, const Epetra_Export & Exporter, Epetra_CombineMode CombineMode);
+  int Export(const Epetra_SrcDistObject& A, const Epetra_Export& Exporter, Epetra_CombineMode CombineMode);
   //@}
   
   //@{ \name Attribute accessor methods.
   //! Returns the address of the Epetra_BlockMap for this multi-vector.
-  const Epetra_BlockMap & Map() const {return(*Map_);};
+  const Epetra_BlockMap& Map() const {return(Map_);};
 
-  //! Returns the address of the Epetra_BlockMap for this multi-vector.
-  const Epetra_Comm & Comm() const {return(*Comm_);};
+  //! Returns the address of the Epetra_Comm for this multi-vector.
+  const Epetra_Comm& Comm() const {return(*Comm_);};
 
   //! Returns true if this multi-vector is distributed global, i.e., not local replicated.
   bool DistributedGlobal() const {return(DistributedGlobal_);};
@@ -177,7 +177,7 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 
   //@{ \name Miscellaneous
   //! Print method
-  virtual void Print(ostream & os) const;
+  virtual void Print(ostream& os) const;
   //@}
 
  protected:
@@ -186,13 +186,10 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
   //@{ \name Internal utilities  
   //! Perform actual transfer (redistribution) of data across memory images, using Epetra_Distributor object.
   virtual int DoTransfer(const Epetra_SrcDistObject& A, Epetra_CombineMode CombineMode,
-			 int NumSameIDs, int NumPermuteIDs, int NumRemoteIDs, int NumExportIDs, 
-			 int *PermuteToLIDs, int *PermuteFromLIDs, int *RemoteLIDs, int * ExportLIDs,
-			 int Nsend, int Nrecv,
-			 int & LenExports, char * & Exports,
-			 int & LenImports, char * & Imports,
-			 Epetra_Distributor & Distor, 
-			 bool DoReverse);
+												 int NumSameIDs, int NumPermuteIDs, int NumRemoteIDs, int NumExportIDs, 
+												 int* PermuteToLIDs, int* PermuteFromLIDs, int* RemoteLIDs, int* ExportLIDs,
+												 int Nsend, int Nrecv, int& LenExports, char*& Exports, int& LenImports, 
+												 char*& Imports, Epetra_Distributor& Distor, bool DoReverse);
   //@}
 
   // These methods must be implemented by derived class
@@ -202,29 +199,29 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
   virtual int CheckSizes(const Epetra_SrcDistObject& Source) = 0;
   //! Perform ID copies and permutations that are on processor.
   virtual int CopyAndPermute(const Epetra_SrcDistObject& Source, int NumSameIDs, 
-			     int NumPermuteIDs, int * PermuteToLIDs, int * PermuteFromLIDs) = 0;
+														 int NumPermuteIDs, int * PermuteToLIDs, int * PermuteFromLIDs) = 0;
 
   //! Perform any packing or preparation required for call to DoTransfer().
-  virtual int PackAndPrepare(const Epetra_SrcDistObject& Source, int NumExportIDs, int * ExportLIDs,
-			     int Nsend, int Nrecv,
-			     int & LenExports, char * & Exports, int & LenImports, 
-			     char * & Imports, 
-			     int & SizeOfPacket, Epetra_Distributor & Distor) = 0;
+  virtual int PackAndPrepare(const Epetra_SrcDistObject& Source, int NumExportIDs, int* ExportLIDs,
+														 int Nsend, int Nrecv,
+														 int& LenExports, char*& Exports, int& LenImports, 
+														 char*& Imports, 
+														 int& SizeOfPacket, Epetra_Distributor& Distor) = 0;
   
   //! Perform any unpacking and combining after call to DoTransfer().
-  virtual int UnpackAndCombine(const Epetra_SrcDistObject & Source, 
-			       int NumImportIDs, int * ImportLIDs, 
-			       char * Imports, int & SizeOfPacket, 
-			       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode ) = 0;
+  virtual int UnpackAndCombine(const Epetra_SrcDistObject& Source, 
+															 int NumImportIDs, int* ImportLIDs, 
+															 char* Imports, int& SizeOfPacket, 
+															 Epetra_Distributor& Distor, Epetra_CombineMode CombineMode ) = 0;
 
   //@}
-  const Epetra_BlockMap* Map_;
+  const Epetra_BlockMap Map_;
+	const Epetra_Comm* Comm_;
   bool DistributedGlobal_;
-  char * Exports_;
-  char * Imports_;
+  char* Exports_;
+  char* Imports_;
   int LenExports_;
   int LenImports_;
-  const Epetra_Comm * Comm_;
 
 };
 

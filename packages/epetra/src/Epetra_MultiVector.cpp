@@ -236,7 +236,7 @@ int Epetra_MultiVector::AllocateForCopy(void)
   if (NumVectors_<=0) 
     throw ReportError("Number of Vectors = " + toString(NumVectors_) + ", but must be greater than zero", -1);
 
-  Stride_ = Map_->NumMyPoints();
+  Stride_ = Map_.NumMyPoints();
   if (Stride_>0) Values_ = new double[Stride_ * NumVectors_];
   Pointers_ = new double *[NumVectors_];
 
@@ -317,7 +317,7 @@ int Epetra_MultiVector::DoView(void)
   Values_ = Pointers_[0];
 
   if (NumVectors_==1) {
-    Stride_ = Map_->NumMyPoints();
+    Stride_ = Map_.NumMyPoints();
     ConstantStride_ = true;
     return(0);
   }
