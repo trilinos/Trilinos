@@ -25,11 +25,6 @@ lbi_const.h      -- Application-visible file with typedefs for query functions
                     This file should be #included in application files that
                     call the load-balancing library.
 
-lb_user_const.h  -- Application-defined data types and manipulation macros
-                    for LB_GID and LB_LID.  This file is meant to be editted
-                    by the application developer to define data types for
-                    global and local object IDs.
-
 lb_balance.c     -- Routines for computing new partitions and 
                     managing memory for allocated by Zoltan but returned
                     to the application. (LB_Balance, LB_Free_Data)
@@ -78,3 +73,6 @@ lb_util.c        -- Contains code for non-algorithmic routines that are
                     routines to the general library framework.
                     Currently, the only routine here is perform_error_checking.
 
+lb_id_const.h    -- Prototypes for routines in lb_id.c.
+
+lb_id.c          -- Routines to malloc and manipulate Global and Local IDs.

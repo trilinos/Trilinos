@@ -16,7 +16,7 @@ DRIVER DIRECTORY -- Zoltan test driver application source code.
 ------------------------------------------------------------------------
 
 NOTE: a well documented example input driver is included with the documentation
-in the file Zoltan/docs/Zoltan_html/ug_html/zdrive.inp.
+in the file Zoltan/docs/Zoltan_html/dev_html/zdrive.inp.
 
 dr_const.h          -- Main data structures and defines for driver.
 
@@ -53,6 +53,8 @@ dr_loadbal.c        -- Main interface with the Zoltan load balance functions.
                        file. This file also contains run_zoltan(), which is
                        where the LB_Balance function is actually called.
 
+dr_loadbal_const.h  -- Prototypes for functions in dr_loadbal.c.
+
 dr_main.c           -- The main function for the driver, and a small function
                        that will print the command parameters to the screen.
 
@@ -77,3 +79,21 @@ dr_util.c           -- Utility functions, such as sort and search routines.
                        files.
 
 dr_util_const.h     -- Prototypes for functions in dr_util.c.
+
+dr_maps.c           -- Routines to build element communication maps after
+                       data migration.
+
+dr_maps_const.h     -- Prototypes for functions in dr_maps.c.
+
+dr_eval.c           -- Code for evaluating partitions using the driver's
+                       data structures.
+
+dr_eval_const.h     -- Prototypes for functions in dr_eval.c.
+
+dr_elem_util.c      -- Routines for allocating and freeing elements.
+
+dr_elem_util_const.h-- Prototypes for functions in dr_elem_util.c.
+
+dr_chaco_io.c       -- Interface between Chaco input functions and driver
+                       data structures.
+

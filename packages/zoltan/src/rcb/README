@@ -18,14 +18,13 @@ RCB DIRECTORY -- Implementation of Recursive Coordinate Bisection.  Also
 -----------------------------------------------------------------------------
 
 rcb_const.h   -- Data structure definitions needed for RCB (RCB_Struct,
-                 rcb_box, rcb_median, rcb_tree, rcb_dot).  Prototypes for
+                 rcb_box, rcb_median, rcb_tree).  Prototypes for
                  external functions in rcb_util.c.
 
 rcb.c         -- Implementation of RCB.
 
 rcb_util.c    -- Functions that call the load-balancing query routines to
                  build the data structures needed for RCB algorithm.
-                 (initialize_dot, rcb_build_data_structure)
 
 point_assign.c -- Given a geometric decomposition constructed via RCB or RIB,
 		 this routine determines which processor a particular
@@ -42,14 +41,13 @@ create_proc_list.c -- Create the communication list to communicate dots
 create_proc_list_const.h -- Prototype for create_proc_list.c.
 
 rib_const.h   -- Data structure definitions needed for RIB (RIB_Struct,
-                 rib_dot, rib_tree).  Prototypes for external functions
+                 rib_tree).  Prototypes for external functions
                  in rib_util.c
 
 rib.c         -- Implementation of RIB.
 
 rib_util.c    -- Functions that call the load-balancing query routines to
                  build the data structures needed for RIB algorithm.
-                 (initialize_dot, LB_RIB_Build_Structure, LB_RIB_Free_Structure)
 
 inertial1d.c  -- Determine center of mass and direction of perpendicular to
                  cutting plane for 1d inertial.
@@ -59,3 +57,8 @@ inertial2d.c  -- Determine center of mass and direction of perpendicular to
 
 inertial3d.c  -- Determine center of mass and direction of perpendicular to
                  cutting plane for 3d inertial.
+
+shared.c      -- Functions shared by RCB and RIB.
+
+shared_const.h-- Data structures and function prototypes shared by RCB and
+                 RIB.

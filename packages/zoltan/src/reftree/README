@@ -18,6 +18,6 @@ REFTREE DIRECTORY -- Routines for refinement-tree partitioning.
 Files compiled into Zoltan:
 
 reftree_const.h   -- prototypes and definitions.
-reftree_part.c
-reftree_build.c   
-reftree_hash.c
+reftree_part.c    -- reftree partitioning algorithms.
+reftree_build.c   -- functions to build reftree data structures.
+reftree_hash.c    -- functions to manipulate hash tables.

@@ -14,12 +14,12 @@
 
 PAR DIRECTORY -- Parallel computing utilities
 ---------------------------------------------
-par.h         -- Internal data structures and defines for par_util.c.
 
-par_const.h   -- Prototypes for external functions in par_util.c.
+par_median.c        -- Code for LB_find_median.
+par_median_const.h  -- Prototypes for functions in par_median.c.
 
-par_util.c    -- Code for parallel utility functions.
-                 Currently contains:
-                   LB_find_median
-                   LB_print_sync_start
-                   LB_print_sync_end
+par_sync.c          -- Code for LB_Print_Sync_Start, LB_Print_Sync_End
+par_stats.c         -- Code for LB_Print_Stats.
+par_const.h         -- Prototypes for functions in par_sync.c and par_stats.c.
+                        
+

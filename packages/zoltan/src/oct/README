@@ -244,5 +244,5 @@ util.c:
 	returns the correspoding number in the 3D Hilbert ordering.
 
 util_const.h:
-   Headder files that containts function declarations to be used by any
+   Header files that containts function declarations to be used by any
    routine.

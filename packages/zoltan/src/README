@@ -150,8 +150,8 @@ OTHER DIRECTORIES
 -----------------
 
 test		-- Test problems in both Nemesis/Exodus and Chaco formats.
-                   Also contains the script test_zoltan that runs the test driver
-                   with all the test problems.
+                   Also contains the script test_zoltan that runs the test 
+                   driver with all the test problems.
 
 util		-- Utility scripts.
 
