@@ -37,6 +37,7 @@
 #define AMESOS_PARAMETER_ARBITRARY_H
 
 #include <string>
+#include "Epetra_ConfigDefs.h"
 //#include <vector>
 //#include "NOX_Common.H"		// class data element (string)
 
