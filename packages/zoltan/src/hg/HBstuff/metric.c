@@ -10,6 +10,9 @@
  * a file that is developed from the partition output files of
  * Zoltan's zdrive file.  Details for generating the partition
  * information file are listed below (near the file read). */
+
+/* to compile:  gcc metric.c iohb.c */
+
 /* usage:  a.out matrix.hb partition_file */
 
 main (int argc, char *argv[]) {
