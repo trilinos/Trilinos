@@ -273,7 +273,7 @@ PACKAGE_STRING='nox 1.0a-dev'
 PACKAGE_BUGREPORT='nox-developers@software.sandia.gov'
 
 ac_unique_file="src/NOX_Solver_LineSearchBased.C"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION EXEEXT OBJEXT ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh INSTALL_STRIP_PROGRAM AWK SET_MAKE AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH DEPDIR MPI_CXX_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX am__include am__quote CXXDEPMODE CXXCPP RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE F77 FFLAGS ac_ct_F77 FLIBS CC CFLAGS ac_ct_CC CCDEPMODE BLAS_LIBS LAPACK_LIBS TRILINOS_CXXFLAGS PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA PACKAGE VERSION EXEEXT OBJEXT ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh INSTALL_STRIP_PROGRAM AWK SET_MAKE AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH DEPDIR MPI_CXX_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX am__include am__quote CXXDEPMODE CXXCPP RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR HAVE_MPI_TRUE HAVE_MPI_FALSE BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE F77 FFLAGS ac_ct_F77 FLIBS CC CFLAGS ac_ct_CC CCDEPMODE BLAS_LIBS LAPACK_LIBS TRILINOS_CXXFLAGS HAVE_Y12M_TRUE HAVE_Y12M_FALSE PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -849,6 +849,10 @@ Optional Features:
   --enable-nox-petsc-examples
                           compile petsc interface examples
   --enable-loca           compile the loca library
+  --enable-nox-epetra-azlu
+                          includes az_lu preconditioner in the epetra
+                          interface - requires y12m library
+
   --enable-prerelease     Enable compilation and documentation of prerelease
                           code.
 
@@ -3273,6 +3277,17 @@ echo "$as_me: error: cannot find mpi.h" >&2;}
 fi
 rm -f conftest.err conftest.$ac_ext
 
+  #Define Automake conditional for mpi builds: HAVE_MPI
+
+
+if true; then
+  HAVE_MPI_TRUE=
+  HAVE_MPI_FALSE='#'
+else
+  HAVE_MPI_TRUE='#'
+  HAVE_MPI_FALSE=
+fi
+
 fi
 
 # ------------------------------------------------------------------------
@@ -3987,7 +4002,7 @@ else
 fi
 
 # ------------------------------------------------------------------------
-# NOX-PETSC
+# NOX-PETSC library?
 # ------------------------------------------------------------------------
 
 
@@ -4520,7 +4535,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4523:" \
+echo "$as_me:4538:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4689,7 +4704,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:4692: \"$ac_link\") >&5
+(eval echo $as_me:4707: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -4769,7 +4784,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:4772: \"$ac_link\") >&5
+(eval echo $as_me:4787: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8796,19 +8811,52 @@ fi
 
 if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes; then
 
-  # Find the dreaded y12 library
-  LIBS="-ly12m ${LIBS}"
-  save_LDFLAGS=$LDFLAGS
-  done=no
 
-  # First, see if we can link without doing anything
-  ac_ext=cc
+  # Find the dreaded y12 library if required
+  # NOTE: The y12m library is only needed if aztecoo is built
+  # with the flag --enable-aztecoo-azlu.
+  # Leaving this out means the az_lu preconditioner is disabled
+  # Check whether --enable-nox-epetra-azlu or --disable-nox-epetra-azlu was given.
+if test "${enable_nox_epetra_azlu+set}" = set; then
+  enableval="$enable_nox_epetra_azlu"
+  REQUIRE_Y12M=$enableval
+else
+  REQUIRE_Y12M=no
+
+fi;
+
+  # If we are in trilinos and the user builds aztecoo with the flag
+  # --enable-aztecoo-azlu they should build nox with the equivalent flag
+  # --enable-nox-epetra-azlu, but if they forget, we will automatically
+  # check and set the y12m requirement.  This overrides the
+  # --enable-nox-epetra-azlu argument above, but without this check, the
+  # epetra/aztecoo and nox libraries will be incompatible and
+  # the example/test problems in the nox epetra support will not link.
+  if test X$INSIDE_TRILINOS = Xyes; then
+    # Check whether --enable-aztecoo-azlu or --disable-aztecoo-azlu was given.
+if test "${enable_aztecoo_azlu+set}" = set; then
+  enableval="$enable_aztecoo_azlu"
+  REQUIRE_Y12M=$enableval
+else
+  REQUIRE_Y12M=no
+
+fi;
+  fi
+
+  if test X${REQUIRE_Y12M} = Xyes; then
+
+    LIBS="-ly12m ${LIBS}"
+    save_LDFLAGS=$LDFLAGS
+    done=no
+
+    # First, see if we can link without doing anything
+    ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  cat >conftest.$ac_ext <<_ACEOF
+    cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
 _ACEOF
@@ -8849,11 +8897,60 @@ sed 's/^/| /' conftest.$ac_ext >&5
 
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-  LDFLAGS=$save_LDFLAGS
+    LDFLAGS=$save_LDFLAGS
 
-  # Next try the specified libdir (if any)
-   if test $done = no && test -n "${y12m_LIBDIR}"; then
-     LDFLAGS="-L${y12m_LIBDIR} $save_LDFLAGS"
+    # Next try the specified libdir (if any)
+     if test $done = no && test -n "${y12m_LIBDIR}"; then
+       LDFLAGS="-L${y12m_LIBDIR} $save_LDFLAGS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+LDFLAGS=$save_LDFLAGS
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+     fi
+
+    # Next try the Trilinos build dir for reference y12m
+    # this works only if y12m is already built.
+    if test $done = no; then
+     PWD=`pwd`
+     LDFLAGS="-L$PWD/../../external/y12m $save_LDFLAGS"
      cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
@@ -8896,74 +8993,65 @@ sed 's/^/| /' conftest.$ac_ext >&5
 LDFLAGS=$save_LDFLAGS
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-   fi
+    fi
 
-  # Next try the Trilinos build dir for reference y12m
-   if test $done = no; then
-    PWD=`pwd`
-    LDFLAGS="-L$PWD/../../external/y12m/src $save_LDFLAGS"
-    cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#ifdef F77_DUMMY_MAIN
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-#endif
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  done=yes
+    # See if Trilinos will build y12m at the same time it builds nox.
+    # This happens if --enable-referencey12m is enabled and we are in
+    # the trilinos configure script.
+    if test $done = no && test X$INSIDE_TRILINOS = Xyes; then
+      # Check whether --enable-referencey12m or --disable-referencey12m was given.
+if test "${enable_referencey12m+set}" = set; then
+  enableval="$enable_referencey12m"
+  TRILINOS_BUILDS_Y12M=$enableval
 else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
+  TRILINOS_BUILDS_Y12M=no
 
-LDFLAGS=$save_LDFLAGS
-fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-   fi
+fi;
+      if test TRILINOS_BUILDS_Y12M=yes; then
+        PWD=`pwd`
+        LDFLAGS="-L$PWD/../../external/y12m $save_LDFLAGS"
+        done=auto
+      fi
+    fi
 
-  echo "$as_me:$LINENO: checking for y12m library" >&5
+    echo "$as_me:$LINENO: checking for y12m library" >&5
 echo $ECHO_N "checking for y12m library... $ECHO_C" >&6
 
-  if test $done = yes; then
-    echo "$as_me:$LINENO: result: yes" >&5
+    if test $done = auto; then
+      echo "$as_me:$LINENO: result: no check - assuming library will be built by Trilinos" >&5
+echo "${ECHO_T}no check - assuming library will be built by Trilinos" >&6
+
+
+if true; then
+  HAVE_Y12M_TRUE=
+  HAVE_Y12M_FALSE='#'
+else
+  HAVE_Y12M_TRUE='#'
+  HAVE_Y12M_FALSE=
+fi
+    elif test $done = yes; then
+      echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
-  else
-    echo "$as_me:$LINENO: result: no" >&5
+
+
+if true; then
+  HAVE_Y12M_TRUE=
+  HAVE_Y12M_FALSE='#'
+else
+  HAVE_Y12M_TRUE='#'
+  HAVE_Y12M_FALSE=
+fi
+    else
+      echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
-    echo "---"
-    echo "Cannot find y12m library."
-    echo "Try --with-y12m-libdir=<dir> to specify the library location."
-    echo "If requiring the y12m library annoys you, vote for Bug 106 by visiting"
-    echo "http://software.sandia.gov/bugzilla/show_bug.cgi?id=106."
-    echo "---"
-    { { echo "$as_me:$LINENO: error: Cannot find y12m library" >&5
+      echo "---"
+      echo "Cannot find y12m library."
+      echo "Try --with-y12m-libdir=<dir> to specify the library location."
+      echo "---"
+      { { echo "$as_me:$LINENO: error: Cannot find y12m library" >&5
 echo "$as_me: error: Cannot find y12m library" >&2;}
    { (exit 1); exit 1; }; }
+    fi
   fi
 
 
@@ -10482,6 +10570,8 @@ s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
 s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
 s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
+s,@HAVE_MPI_TRUE@,$HAVE_MPI_TRUE,;t t
+s,@HAVE_MPI_FALSE@,$HAVE_MPI_FALSE,;t t
 s,@BUILD_LIBNOXLAPACK_TRUE@,$BUILD_LIBNOXLAPACK_TRUE,;t t
 s,@BUILD_LIBNOXLAPACK_FALSE@,$BUILD_LIBNOXLAPACK_FALSE,;t t
 s,@BUILD_LAPACK_EXAMPLES_TRUE@,$BUILD_LAPACK_EXAMPLES_TRUE,;t t
@@ -10515,6 +10605,8 @@ s,@CCDEPMODE@,$CCDEPMODE,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
 s,@TRILINOS_CXXFLAGS@,$TRILINOS_CXXFLAGS,;t t
+s,@HAVE_Y12M_TRUE@,$HAVE_Y12M_TRUE,;t t
+s,@HAVE_Y12M_FALSE@,$HAVE_Y12M_FALSE,;t t
 s,@PETSC_CXXFLAGS@,$PETSC_CXXFLAGS,;t t
 s,@CXXREPOS@,$CXXREPOS,;t t
 s,@BUILD_PRERELEASE_TRUE@,$BUILD_PRERELEASE_TRUE,;t t
