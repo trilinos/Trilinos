@@ -31,6 +31,9 @@ extern double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 			     int res_norm_or_not, ML *ml);
 extern int ML_MaxAllocatableSize();
 extern int ML_MaxMemorySize();
+extern int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag);
+extern int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
+						 double *x, double *y, double *z);
 
 }
 
@@ -278,42 +281,62 @@ void ML_Epetra::MultiLevelPreconditioner::Destroy_ML_Preconditioner()
     OutputList_.set("number of destruction phases", ++NumDestroy);
   }
   
-  if( agg_ != 0 ) { ML_Aggregate_Destroy(&agg_); agg_ = 0; }
-  if( ml_ != 0 ) { ML_Destroy(&ml_); ml_ = 0; }
-  if( ml_nodes_ != 0 ) { ML_Destroy(&ml_nodes_); ml_nodes_ = 0; }
-  if( ml_edges_ != 0 ) { ML_Destroy(&ml_edges_); ml_edges_ = 0; }
+  // may need to clean up after visualization and statistics
+  ML_Aggregate_Stats_CleanUp_Info(ml_, agg_);
+  ML_Aggregate_VizAndStats_Clean( agg_, NumLevels_);
 
-  if( TMatrixML_ != 0 ) {
+  // destroy main objects
+  if (agg_ != 0) { ML_Aggregate_Destroy(&agg_); agg_ = 0; }
+  if (ml_ != 0) { ML_Destroy(&ml_); ml_ = 0; }
+  if (ml_nodes_ != 0) { ML_Destroy(&ml_nodes_); ml_nodes_ = 0; }
+  if (ml_edges_ != 0) { ML_Destroy(&ml_edges_); ml_edges_ = 0; }
+
+  if (TMatrixML_ != 0) {
     ML_Operator_Destroy(&TMatrixML_);
     TMatrixML_ = 0;
   }
 
-  if( TMatrixTransposeML_ != 0 ) {
+  if (TMatrixTransposeML_ != 0) {
     ML_Operator_Destroy(&TMatrixTransposeML_);
     TMatrixTransposeML_ = 0;
   }
 
-  if( Tmat_array != 0 ) {
+  if (Tmat_array != 0) {
     ML_MGHierarchy_ReitzingerDestroy(LevelID_[0]-1, &Tmat_array,
 				     &Tmat_trans_array);
     Tmat_array = 0;
     Tmat_trans_array = 0;
   }
 
-  if( nodal_args_ != 0 ) {
+  if (nodal_args_ != 0) {
     ML_Smoother_Arglist_Delete(&nodal_args_);
     nodal_args_ = 0;
   }
   
-  if( edge_args_  != 0 ) {
+  if (edge_args_  != 0) {
     ML_Smoother_Arglist_Delete(&edge_args_);
     edge_args_ = 0;
   }
 
-  if( Label_ ) { delete [] Label_; Label_ = 0; }
+  if (Label_) { 
+    delete [] Label_; 
+    Label_ = 0; 
+  }
   
-  if( LevelID_ ) { delete [] LevelID_; LevelID_ = 0; }
+  if (LevelID_) { 
+    delete [] LevelID_; 
+    LevelID_ = 0; 
+  }
   
+  if (Scaling_) {
+    delete Scaling_;
+    Scaling_ = 0;
+  }
+
+  if (InvScaling_) {
+    delete InvScaling_;
+    InvScaling_ = 0;
+  }
   // stick data in OutputList
 
   sprintf(parameter,"%stime: total", Prefix_);
@@ -402,22 +425,51 @@ void ML_Epetra::MultiLevelPreconditioner::Destroy_ML_Preconditioner()
 #endif
   }
 
-  if( verbose_ && NumApplications_ ) PrintLine();
+  if (verbose_ && NumApplications_) 
+    PrintLine();
     
-  if( NullSpaceToFree_ != 0 ) { delete [] NullSpaceToFree_;  NullSpaceToFree_ = 0; }
-  if( RowMatrixAllocated_ ) { delete RowMatrixAllocated_; RowMatrixAllocated_ = 0; }
+  if (NullSpaceToFree_ != 0) { 
+    delete [] NullSpaceToFree_;  
+    NullSpaceToFree_ = 0; 
+  }
+  
+  if (RowMatrixAllocated_) { 
+    delete RowMatrixAllocated_; 
+    RowMatrixAllocated_ = 0; 
+  }
 
   // filtering stuff
 
-  if( flt_R_ ) { delete flt_R_; flt_R_ = 0; }
-  if( flt_NullSpace_ ) { delete [] flt_NullSpace_; flt_NullSpace_ = 0; }
+  if (flt_R_) { 
+    delete flt_R_; 
+    flt_R_ = 0; 
+  }
   
-  if( flt_MatrixData_ ) { delete flt_MatrixData_; flt_MatrixData_ = 0; }
-  if( flt_ml_ ) { ML_Destroy(&flt_ml_); flt_ml_ = 0; }
-  if( flt_agg_ ) { ML_Aggregate_Destroy(&flt_agg_); flt_agg_ = 0; }
+  if (flt_NullSpace_) { 
+    delete [] flt_NullSpace_; 
+    flt_NullSpace_ = 0; 
+  }
+  
+  if (flt_MatrixData_) { 
+    delete flt_MatrixData_; 
+    flt_MatrixData_ = 0; 
+  }
+  
+  if (flt_ml_) { 
+    ML_Destroy(&flt_ml_); 
+    flt_ml_ = 0; 
+  }
+  
+  if (flt_agg_) { 
+    ML_Aggregate_Destroy(&flt_agg_); 
+    flt_agg_ = 0; 
+  }
   
   // CheckPreconditioner stuff
-  if( SchurDecomposition_ ) { delete SchurDecomposition_; SchurDecomposition_ = 0; }
+  if( SchurDecomposition_ ) { 
+    delete SchurDecomposition_; 
+    SchurDecomposition_ = 0; 
+  }
 
   IsComputePreconditionerOK_ = false;
 
@@ -630,6 +682,10 @@ void ML_Epetra::MultiLevelPreconditioner::Initialize()
   // CheckPreconditioner stuff
   SchurDecomposition_ = 0;
   RateOfConvergence_ = -1.0;
+
+  // scaling stuff
+  Scaling_ = 0;
+  InvScaling_ = 0;
 }
 
 
@@ -905,9 +961,7 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   ML_Aggregate_Create(&agg_);
   
   /* **********************************************************************
-   * visualize aggregate shape and other statistics. This is not an
-   * expensive check. However, the file it produces can be fairly large.
-   * Besides, it is usually difficult to visualize 3D aggregates. 
+   * visualize aggregate shape and other statistics. 
    * ********************************************************************** */
   
   sprintf(parameter,"%sviz: enable", Prefix_);
@@ -937,6 +991,7 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   ML_Aggregate_Set_MaxCoarseSize(agg_, MaxCoarseSize );
 
   int ReqAggrePerProc = 128;
+  // FIXME: delete me???
   // compatibility with an older version
   sprintf(parameter,"%saggregation: req aggregates per process", Prefix_);
   if( List_.isParameter(parameter) ) 
@@ -994,6 +1049,13 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   else ML_Aggregate_Set_DampingFactor( agg_, 0.0);
 
   /* ********************************************************************** */
+  /* set scaling                                                            */
+  /* ********************************************************************** */
+
+  if (SolvingMaxwell_ == false) 
+    SetScaling();
+
+  /* ********************************************************************** */
   /* set null space                                                         */
   /* ********************************************************************** */
 
@@ -1030,6 +1092,26 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
       delete FakeMatrix;
       
       ml_->Amat[LevelID_[0]].data = (void *)RowMatrix_;
+
+#ifdef NEIN
+      // FIXME pleaze...
+      // THIS IS PURE CRAP
+      ML_Operator* Amat = &(ml_->Amat[LevelID_[0]]);
+      ML_Operator* t2 = ML_Operator_Create(Amat->comm);
+      ML_Operator_Transpose_byrow(Amat,t2);
+      ML_Operator* t3 = ML_Operator_Create(Amat->comm);
+      ML_Operator_Add(Amat,t2,t3,ML_CSR_MATRIX,1.);
+
+      Epetra_CrsMatrix * Epetra_Kn, * Epetra_Ke, * Epetra_T;
+
+      int MaxNumNonzeros;
+      double CPUTime;
+
+      ML_Operator2EpetraCrsMatrix(t3,Epetra_Ke,
+				  MaxNumNonzeros,
+				  true,CPUTime);
+      ml_->Amat[LevelID_[0]].data = (void *)Epetra_Ke;
+#endif
 
       // generate new hierarchy with "good" matrix
       if( verbose_ ) {
@@ -1195,6 +1277,17 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   }
 
   /* ********************************************************************** */
+  /* Scaling was used on the matrix, need to scale back                     */
+  /* ********************************************************************** */
+
+  if (Scaling_) {
+    // need to do the worst to get the best?
+    // is C++ ethically correct?
+    Epetra_RowMatrix* RM = const_cast<Epetra_RowMatrix*>(RowMatrix_);
+    RM->RightScale(*InvScaling_);
+  }
+
+  /* ********************************************************************** */
   /* Other minor settings                                                   */
   /* ********************************************************************** */
   
@@ -1218,16 +1311,27 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
     memory_[ML_MEM_TOT1_USED] = memory_[ML_MEM_FINAL_USED] - memory_[ML_MEM_INITIAL_USED];
   }
   
-  /*
-   * still need to print out visualization and some other stuff
-   */
-  if( viz == true ) VizMePleaze();
-
   // print unused parameters
   sprintf(parameter,"%sprint unused", Prefix_);
   if( List_.isParameter(parameter) ) {
     int ProcID = List_.get(parameter,-2);
     if( Comm().MyPID() == ProcID || ProcID == -1 ) PrintUnused();
+  }
+
+  // ===================================================================== //
+  // compute the coordinates for each level (that is, the center of        //
+  // gravity, as no mesh is really available for coarser levels)           //
+  // ===================================================================== //
+ 
+  if (viz == true) {
+    sprintf(parameter,"%sviz: x-coordinates", Prefix_);
+    double * x_coord = List_.get(parameter, (double *)0);
+    sprintf(parameter,"%sviz: y-coordinates", Prefix_);
+    double * y_coord = List_.get(parameter, (double *)0);
+    sprintf(parameter,"%sviz: z-coordinates", Prefix_);
+    double * z_coord = List_.get(parameter, (double *)0);
+    ML_Aggregate_Stats_ComputeCoordinates(ml_, agg_,
+					  x_coord, y_coord, z_coord);
   }
 
   /* ------------------- that's all folks --------------------------------- */
@@ -1337,6 +1441,14 @@ int ML_Epetra::MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& 
 					   Epetra_MultiVector& Y) const
 {
 
+  // FIXME: What the hell am I doing here?
+  if (Scaling_) {
+    // need to do the worst to get the best?
+    // is C++ ethically correct?
+    Epetra_RowMatrix* RM = const_cast<Epetra_RowMatrix*>(RowMatrix_);
+    RM->RightScale(*Scaling_);
+  }
+
   int before = 0, after = 0, before_used = 0, after_used = 0;
   if( AnalyzeMemory_ ) {
     before = ML_MaxAllocatableSize();
@@ -1350,8 +1462,12 @@ int ML_Epetra::MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& 
   if (Y.NumVectors()!=X.NumVectors()) EPETRA_CHK_ERR(-3);
   if( !IsPreconditionerComputed() ) EPETRA_CHK_ERR(-10);
 
+  // FIXME: allocate me before, just once???
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
                               // in solver or if X = Y
+
+  if (Scaling_ && false)
+    xtmp.Multiply(1.0,xtmp,*Scaling_,0.0);
 
   Y.PutScalar(0.0); // Always start with Y = 0
 
@@ -1406,11 +1522,21 @@ int ML_Epetra::MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& 
     }
   }
 
+  if (Scaling_)
+    Y.Multiply(1.0,*Scaling_,Y,0.0);
+
+  if (Scaling_) {
+    // need to do the worst to get the best?
+    // is C++ ethically correct?
+    Epetra_RowMatrix* RM = const_cast<Epetra_RowMatrix*>(RowMatrix_);
+    RM->RightScale(*InvScaling_);
+  }
+
   /* ********************************************************************** */
   /* filtering stuff if required                                            */
   /* ********************************************************************** */
 
-  if( flt_R_ ) {
+  if (flt_R_) {
     
     // apply matvec
     if( Y.NumVectors() != 1 ) {
@@ -2084,7 +2210,7 @@ int ML_Epetra::MultiLevelPreconditioner::PrintStencil2D(const int nx, const int 
 							const int EquationID)
 {
 
-  // FIXME: I don't work with parallel, but I can be fixed
+  // FIXME: I don't work in parallel, but I can be fixed
   if( nx <= 0 ) EPETRA_CHK_ERR(-1);
   if( ny <= 0 ) EPETRA_CHK_ERR(-1);
 
@@ -2097,9 +2223,11 @@ int ML_Epetra::MultiLevelPreconditioner::PrintStencil2D(const int nx, const int 
   vector<int>    Indices; Indices.resize(MaxPerRow);
   
   // automatically compute NodeID, somewhere in the middle of the grid
-  if( NodeID == -1 ) {
-    if( ny == 1 ) NodeID = nx/2;
-    else NodeID = ny*nx/2 + nx/2;
+  if (NodeID == -1) {
+    if (ny == 1) 
+      NodeID = (int)(nx/2);
+    else 
+      NodeID = (int)(ny*(nx/2) + nx/2);
   }
   
   // need to convert from NodeID (BlockRowID) to PointRowID
@@ -2114,7 +2242,7 @@ int ML_Epetra::MultiLevelPreconditioner::PrintStencil2D(const int nx, const int 
     if( ierr ) EPETRA_CHK_ERR(-4);
     if( NumEntriesRow == 1 ) ++NodeID;
     else                     DoAgain = false;
-  } while( DoAgain );
+  } while(DoAgain);
   
   // cycle over nonzero elements, look for elements in positions that we
   // can understand
@@ -2239,8 +2367,11 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
   // to save memory with respect to the creation of "pure" VBR
   // matrices.
 
-  FakeMatrix = new Epetra_FECrsMatrix(Copy,RowMatrix_->RowMatrixRowMap(),RowMatrix_->MaxNumEntries());
-  assert( FakeMatrix != 0 ); 
+  // FIXME
+  Epetra_Map Map(-1,NumMyRows,0,Comm());
+  FakeMatrix = new Epetra_FECrsMatrix(Copy,Map,
+				      2*RowMatrix_->MaxNumEntries());
+  assert(FakeMatrix != 0); 
 
   int NumDimensions = 0;
 
@@ -2292,9 +2423,9 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
 
   // create the auxiliary matrix
 
-  int allocated = 1;
-  int * colInd = new int[allocated];
-  double * colVal = new double[allocated];
+  int allocated = 128;
+  int* colInd = new int[allocated];
+  double* colVal = new double[allocated];
   int NnzRow;
 
   double coord_i[3], coord_j[3];
@@ -2302,34 +2433,30 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
     coord_i[i] = 0.0; coord_j[i] = 0.0;
   }
 
-  // this is a piece of crap.
-  // 'ste zoccole di colonne mi stanno facendo diventare matto!
-  // Il problema e` in parallelo. Non riesco a prendere l'ID globale
-  // delle colonne (per lo meno con Epetra_Vbr, con Epetra_Crs tutto va
-  // come deve). Quindi sono costretto a gettarmi in questo
-  // pantano!
-
+  // get global column number
   int isize  = RowMatrix_->OperatorDomainMap().NumMyElements();
   int Nghost = RowMatrix_->RowMatrixColMap().NumMyElements() - isize;
   if (Nghost < 0) Nghost = 0; 
+  assert(isize == NumMyRows);
 
   vector<double> global_isize;        global_isize.resize(isize+Nghost+1);
   vector<int>    global_isize_as_int; global_isize_as_int.resize(isize+Nghost+1);
 
   int isize_offset;
-  Comm().ScanSum(&isize,&isize_offset,1); isize_offset-=isize;
+  Comm().ScanSum(&isize,&isize_offset,1); 
+  isize_offset -= isize;
 
-  for (int i = 0 ; i < isize; i++) {
-          global_isize[i] = (double) (isize_offset + i);
-          global_isize_as_int[i] = isize_offset + i;
+  for (int i = 0 ; i < isize ; ++i) {
+    global_isize[i] = (double) (isize_offset + i);
   }
 
-  for (int i = 0 ; i < Nghost; i++) global_isize[i+isize] = -1;
+  for (int i = 0 ; i < Nghost; ++i) 
+    global_isize[i+isize] = -1;
 
   ML_exchange_bdry(&global_isize[0],(&(ml_->Amat[LevelID_[0]]))->getrow->pre_comm,
                   (&(ml_->Amat[LevelID_[0]]))->invec_leng,ml_->comm,ML_OVERWRITE,NULL);
 
-  for ( int j = 0; j < isize+Nghost; j++ ) {
+  for ( int j = 0; j < isize+Nghost; ++j) {
     global_isize_as_int[j] = (int) global_isize[j];
   }
   
@@ -2337,12 +2464,11 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
   // cycle over all rows //
   // =================== //
 
-  for (int i = 0; i < NumMyRows ; i+=NumPDEEqns_ ) {
+  for (int i = 0; i < NumMyRows ; i += NumPDEEqns_) {
 
-    //int GlobalRow = (RowMatrix_->RowMatrixRowMap().MyGlobalElements())[i];
     int GlobalRow = global_isize_as_int[i];
 
-    assert( GlobalRow != -1 );
+    assert(GlobalRow != -1);
 
     if( i%NumPDEEqns_ == 0 ) { // do it just once for each block row
       switch( NumDimensions ) {
@@ -2352,148 +2478,142 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
 	coord_i[1] = y_coord[i/NumPDEEqns_];
       case 1:
 	coord_i[0] = x_coord[i/NumPDEEqns_];
+
       }
-    }
 
-    int ierr = ML_Operator_Getrow(&(ml_->Amat[LevelID_[0]]),1,&i,allocated,colInd,colVal,&NnzRow);
+      int ierr = ML_Operator_Getrow(&(ml_->Amat[LevelID_[0]]),1,&i,
+				    allocated,colInd,colVal,&NnzRow);
 
-    if( ierr == 0 ) {
-      do {
-	delete [] colInd;
-	delete [] colVal;
-	allocated *= 2;
-	colInd = new int[allocated];
-	colVal = new double[allocated];
-	ierr = ML_Operator_Getrow(&(ml_->Amat[LevelID_[0]]),1,&i,allocated,colInd,colVal,&NnzRow);
-      } while( ierr == 0 );
-    }
-
-    // NOTE: for VBR matrices, the "real" value that will be used in
-    // the subsequent part of the code is only the one for the first
-    // equations. For each block, I replace values with the sum of
-    // the abs of each block entry.
-
-    for( int j=0 ; j<NnzRow ; j+=NumPDEEqns_ ) {
-      colVal[j] = abs(colVal[j]);
-      for( int k=1 ; k<NumPDEEqns_ ; ++k ) {
-	colVal[j] += abs(colVal[j+k]);
+      if (ierr == 0) {
+	do {
+	  delete [] colInd;
+	  delete [] colVal;
+	  allocated *= 2;
+	  colInd = new int[allocated];
+	  colVal = new double[allocated];
+	  ierr = ML_Operator_Getrow(&(ml_->Amat[LevelID_[0]]),1,&i,
+				    allocated,colInd,colVal,&NnzRow);
+	} while (ierr == 0);
       }
-    }
 
-    // work only on the first equations. Theta will blend the
-    // coordinate part with the sub of abs of row elements.
+      // NOTE: for VBR matrices, the "real" value that will be used in
+      // the subsequent part of the code is only the one for the first
+      // equations. For each block, I replace values with the sum of
+      // the abs of each block entry.
 
-    int GlobalCol;
-    double total = 0.0;
-
-    for( int j=0 ; j<NnzRow ; j+=NumPDEEqns_ ) {
-
-     if( colInd[j]%NumPDEEqns_ == 0 ) { 
-
-      // insert diagonal later
-      if( colInd[j] != i ) {
-	if( colInd[j]%NumPDEEqns_ == 0 ) { // do it only once
-	  switch( NumDimensions ) {
-	  case 3:
-	    coord_j[2] = z_coord[colInd[j]/NumPDEEqns_];
-	  case 2:
-	    coord_j[1] = y_coord[colInd[j]/NumPDEEqns_];
-	  case 1:
-	    coord_j[0] = x_coord[colInd[j]/NumPDEEqns_];
-	  }
+      for (int j = 0 ; j < NnzRow ; j += NumPDEEqns_) {
+	colVal[j] = abs(colVal[j]);
+	for (int k = 1 ; k < NumPDEEqns_ ; ++k) {
+	  colVal[j] += abs(colVal[j+k]);
 	}
+      }
 
-	double d2 = pow(coord_i[0]-coord_j[0],2) + pow(coord_i[1]-coord_j[1],2) + pow(coord_i[2]-coord_j[2],2);
-	if( d2 == 0.0 ) {
-	  cerr << endl;
-	  cerr << ErrorMsg_ << "distance between node " << i/NumPDEEqns_ << " and node " 
-	    << colInd[j]/NumPDEEqns_ << endl
-	    << ErrorMsg_ << "is zero. Coordinates of these nodes are" << endl
-	    << ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << endl  
-	    << ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << endl  
-	    << ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << endl  
-	    << ErrorMsg_ << "Now proceeding with distance = 1.0" << endl;
-	  cerr << endl;
-	  d2 = 1.0;
-	}
+      // work only on the first equations. Theta will blend the
+      // coordinate part with the sub of abs of row elements.
 
-	double val = -(1.0-theta)*(1.0/d2) + theta*(colVal[j]);
+      int GlobalCol;
+      double total = 0.0;
 
-	GlobalCol = global_isize_as_int[colInd[j]];
-	assert( GlobalCol != -1 );
-	
-	// insert this value on all rows
-	for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
-	  int row = GlobalRow+k;
-	  int col = GlobalCol+k;
-	  if( row >= NumGlobalRows() || col >= NumGlobalRows() ) {
-	    cerr << ErrorMsg_ << "trying to insert element (" << row 
-	         << "," << col << "), " << endl
-		 << ErrorMsg_ << "while NumGlobalRows() = " << NumGlobalRows() << endl
-		 << ErrorMsg_ << "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << endl
-		 << ErrorMsg_ << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
-	  }
-	    
-	  // FakeMatrix->InsertGlobalValues(row,1,&val,&col);
-	  if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
-	    int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val);
-	    if( ierr ) {
-	      cerr << ErrorMsg_ << "InsertGlobalValues return value = " << ierr << endl
-		<< ErrorMsg_ << "for element (" << row << "," << col << ")" << endl
-		<< ErrorMsg_ << "(file " << __FILE__ << ", line " << __LINE__
-		<< ")" << endl;
+      for (int j = 0 ; j < NnzRow ; j += NumPDEEqns_) {
+
+	if (colInd[j]%NumPDEEqns_ == 0) { 
+
+	  // insert diagonal later
+	  if( colInd[j] != i ) {
+
+	    // get coorinates of this node
+	    switch( NumDimensions ) {
+	    case 3:
+	      coord_j[2] = z_coord[colInd[j]/NumPDEEqns_];
+	    case 2:
+	      coord_j[1] = y_coord[colInd[j]/NumPDEEqns_];
+	    case 1:
+	      coord_j[0] = x_coord[colInd[j]/NumPDEEqns_];
 	    }
-	  }
-	}
 
-	total -= val;
+	    // d2 is the square of the distance between node `i' and
+	    // node `j'
+	    double d2 = (coord_i[0] - coord_j[0]) * (coord_i[0] - coord_j[0]) +
+	      (coord_i[1] - coord_j[1]) * (coord_i[1] - coord_j[1]) +		     
+	      (coord_i[2] - coord_j[2]) * (coord_i[2] - coord_j[2]);
 
-	// put (j,i) element as well. this works also for
-	// off-process elements. 
-	if( SymmetricPattern == true ) {
-	  for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
-	    int row = GlobalCol+k;
-	    int col = GlobalRow+k;
-	    if( row >= NumGlobalRows() || col >= NumGlobalRows() ) {
-	      cerr << ErrorMsg_ << "trying to insert element (" << row 
-		<< "," << col << "), " << endl
-		<< ErrorMsg_ << "while NumGlobalRows() = " << NumGlobalRows() << endl
-		<< ErrorMsg_ << "(GlobalRow = " << GlobalRow << ", GlobalCol = " << GlobalCol << ")" << endl
-		<< ErrorMsg_ << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
+	    if (d2 == 0.0) {
+	      cerr << endl;
+	      cerr << ErrorMsg_ << "distance between node " << i/NumPDEEqns_ << " and node " 
+		<< colInd[j]/NumPDEEqns_ << endl
+		<< ErrorMsg_ << "is zero. Coordinates of these nodes are" << endl
+		<< ErrorMsg_ << "x_i = " << coord_i[0] << ", x_j = " << coord_j[0] << endl  
+		<< ErrorMsg_ << "y_i = " << coord_i[1] << ", y_j = " << coord_j[1] << endl  
+		<< ErrorMsg_ << "z_i = " << coord_i[2] << ", z_j = " << coord_j[2] << endl  
+		<< ErrorMsg_ << "Now proceeding with distance = 1.0" << endl;
+	      cerr << endl;
+	      d2 = 1.0;
 	    }
-	    if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) { 
-	      int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val);
-	      if( ierr ) {
-		cerr << ErrorMsg_ << "InsertGlobalValues return value = " << ierr << endl
-		  << ErrorMsg_ << "for element (" << row << "," << col << ")" << endl
-		  << ErrorMsg_ << "(file " << __FILE__ << ", line " << __LINE__
-		  << ")" << endl;
+
+	    // blend d2 with the actual values of the matrix
+	    // FIXME: am I useful?
+	    double val = -(1.0-theta)*(1.0/d2) + theta*(colVal[j]);
+
+	    GlobalCol = global_isize_as_int[colInd[j]];
+	    assert(GlobalCol != -1);
+
+	    // insert this value on all rows
+	    for (int k = 0 ; k < NumPDEEqns_ ; ++k) {
+	      int row = GlobalRow+k;
+	      int col = GlobalCol+k;
+	      assert(row < NumGlobalRows());
+	      assert(col < NumGlobalCols());
+/*
+	      assert(FakeMatrix->InsertGlobalValues(row,1,&val,&col) == 0);
+*/
+	      if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
+		assert(FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val) == 0);
 	      }
-	    }
-	  }
-	  total -= val;
-	}
-      } 
-    }
 
-    // create lines with zero-row sum
-    for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
-      int row = GlobalRow+k;
-      assert( row < NumGlobalRows() );
-      if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&row,&total) != 0) {
-	int ierr = FakeMatrix->InsertGlobalValues(1,&row,1,&row,&total);
-	if( ierr ) {
-	  cerr << ErrorMsg_ << "InsertGlobalValues return value = " << ierr << endl
-	    << ErrorMsg_ << "for element (" << row << "," << row << ")" << endl
-	    << ErrorMsg_ << "(file " << __FILE__ << ", line " << __LINE__
-	    << ")" << endl;
+	    }
+
+	    total -= val;
+
+	    // put (j,i) element as well, only for in-process stuff.
+	    // I have some problems with off-processor elements
+	    // FIXME: leave the FECrsMatrix???
+	    if (SymmetricPattern == true && colInd[j] < NumMyRows ) {
+
+	      for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
+		int row = GlobalCol+k;
+		int col = GlobalRow+k;
+		assert(row < NumGlobalRows());
+		assert(col < NumGlobalCols());
+/*
+		assert(FakeMatrix->InsertGlobalValues(row,1,&val,&col) == 0);
+*/
+		if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) { 
+		  assert(FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val) == 0);
+		}
+
+	      }
+	      total -= val;
+	    }
+	  } 
 	}
       }
+
+      // create lines with zero-row sum
+      for (int k = 0 ; k < NumPDEEqns_ ; ++k) {
+	int row = GlobalRow + k;
+	assert(row < NumGlobalRows());
+	/*
+	assert(FakeMatrix->InsertGlobalValues(row,1,&total,&row) == 0);
+	*/
+	if (FakeMatrix->SumIntoGlobalValues(1,&row,1,&row,&total) != 0) {
+	  assert(FakeMatrix->InsertGlobalValues(1,&row,1,&row,&total) == 0);
+	}
+
+      }
     }
-   }
   }
 
-  FakeMatrix->GlobalAssemble();
+  FakeMatrix->FillComplete();
 
   delete [] colInd;
   delete [] colVal;
