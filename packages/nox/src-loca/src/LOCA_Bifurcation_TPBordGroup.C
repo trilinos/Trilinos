@@ -53,7 +53,8 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const Abstract::Group& g,
     derivPtr(d.clone(NOX::DeepCopy)), 
     isValidF(false),
     isValidJacobian(false),
-    isValidNewton(false) 
+    isValidNewton(false),
+    isValidTangent(false)
 {
   tpXVec.getBifParam() = getBifParam();
 }
@@ -72,7 +73,8 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const TPBordGroup& source,
     derivPtr(source.derivPtr->clone(type)),
     isValidF(source.isValidF),
     isValidJacobian(source.isValidJacobian),
-    isValidNewton(source.isValidNewton) {}
+    isValidNewton(source.isValidNewton),
+    isValidTangent(source.isValidTangent) {}
 
 
 LOCA::Bifurcation::TPBordGroup::~TPBordGroup() 
@@ -126,6 +128,7 @@ LOCA::Bifurcation::TPBordGroup::operator=(const TPBordGroup& source)
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
     isValidNewton = source.isValidNewton;
+    isValidTangent = source.isValidTangent;
   }
 
   return *this;
@@ -143,6 +146,7 @@ LOCA::Bifurcation::TPBordGroup::setParams(const ParameterVector& p)
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+  isValidTangent = false;
 
   grpPtr->setParams(p);
 }
@@ -155,6 +159,7 @@ LOCA::Bifurcation::TPBordGroup::computeParams(const ParameterVector& oldParams,
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+  isValidTangent = false;
 
   grpPtr->computeParams(oldParams, direction, step);
 }
@@ -181,6 +186,7 @@ LOCA::Bifurcation::TPBordGroup::setBifParam(double param)
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+  isValidTangent = false;
 
   grpPtr->setParams(params);
 }
@@ -200,6 +206,7 @@ LOCA::Bifurcation::TPBordGroup::setX(const TPBordVector& y)
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+  isValidTangent = false;
 }
 
 void
@@ -220,6 +227,7 @@ LOCA::Bifurcation::TPBordGroup::computeX(const TPBordGroup& g,
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+  isValidTangent = false;
 
   grpPtr->computeX(*(g.grpPtr), d.getXVec(), step);
   tpXVec.update(1.0, g.getX(), step, d, 0.0);
@@ -321,6 +329,9 @@ NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBordGroup::computeTangent(NOX::Parameter::List& params,
                                       int paramID)
 {
+  if (isValidTangent)
+    return NOX::Abstract::Group::Ok;
+
   NOX::Abstract::Group::ReturnType res = computeJacobian();
   if (res != NOX::Abstract::Group::Ok)
     return res;
@@ -340,6 +351,8 @@ LOCA::Bifurcation::TPBordGroup::computeTangent(NOX::Parameter::List& params,
     return res;
 
   tpTangentVec.scale(-1.0);
+
+  isValidTangent = true;
 
   delete dfdpVec;
 

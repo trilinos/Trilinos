@@ -53,7 +53,8 @@ LOCA::Bifurcation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
     arclengthStep(0.0),
     isValidF(false),
     isValidJacobian(false),
-    isValidNewton(false) {}
+    isValidNewton(false),
+    isValidTangent(false) {}
 
 LOCA::Bifurcation::ArcLengthGroup::ArcLengthGroup(const ArcLengthGroup& source)
   : grpPtr(dynamic_cast<LOCA::Abstract::Group *>
@@ -69,7 +70,8 @@ LOCA::Bifurcation::ArcLengthGroup::ArcLengthGroup(const ArcLengthGroup& source)
     arclengthStep(source.arclengthStep),
     isValidF(source.isValidF),
     isValidJacobian(source.isValidJacobian),
-    isValidNewton(source.isValidNewton) {}
+    isValidNewton(source.isValidNewton),
+    isValidTangent(source.isValidTangent) {}
 
 
 LOCA::Bifurcation::ArcLengthGroup::~ArcLengthGroup() 
@@ -116,6 +118,7 @@ LOCA::Bifurcation::ArcLengthGroup::operator=(const ArcLengthGroup& source)
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
     isValidNewton = source.isValidNewton;
+    isValidTangent = source.isValidTangent;
   }
 
   return *this;
@@ -133,6 +136,7 @@ LOCA::Bifurcation::ArcLengthGroup::setParams(const ParameterVector& p)
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+  isValidTangent = false;
 
   grpPtr->setParams(p);
 }
@@ -145,6 +149,7 @@ LOCA::Bifurcation::ArcLengthGroup::computeParams(const ParameterVector& oldParam
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+  isValidTangent = false;
 
   grpPtr->computeParams(oldParams, direction, step);
 }
@@ -181,6 +186,7 @@ LOCA::Bifurcation::ArcLengthGroup::setArcParam(double param)
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+  isValidTangent = false;
 
   grpPtr->setParams(params);
 }
@@ -200,6 +206,7 @@ LOCA::Bifurcation::ArcLengthGroup::setX(const ArcLengthVector& y)
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+  isValidTangent = false;
 }
 
 void
@@ -235,6 +242,7 @@ LOCA::Bifurcation::ArcLengthGroup::computeX(const ArcLengthGroup& g,
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
+  isValidTangent = false;
 
   grpPtr->computeX(*(g.grpPtr), d.getXVec(), step);
   alXVec.update(1.0, g.getX(), step, d, 0.0);
@@ -326,6 +334,9 @@ NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params,
                                                   int paramId) 
 {
+  if (isValidTangent)
+    return NOX::Abstract::Group::Ok;
+
   Vector& tangent_x = alTangentVec.getXVec();
   double& tangent_param =  alTangentVec.getArcParam();
 
@@ -361,6 +372,8 @@ LOCA::Bifurcation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params,
   isValidNewton = false;
 
   alTangentVec.setVec(tangent_x, tangent_param);
+
+  isValidTangent = true;
 
   delete dfdpVec;
   return res;
