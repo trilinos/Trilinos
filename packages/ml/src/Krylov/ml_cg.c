@@ -255,6 +255,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    fp = fopen(fname, "w");
 #endif
    Nbc = 0;  /* rst to handle nonsymmetric (due to BCs) matrices */
+   if (scale_by_diag) {
    for ( i = 0; i < length; i++ )
    {
       while(ML_Operator_Getrow(matrix,1,&i,allocated,colInd,colVal,&ncnt)==0)
@@ -294,7 +295,8 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
 	 }
       }
    }
-   if (scale_by_diag == ML_FALSE) {
+   }
+   else {
      for (i = 0; i < length; i++) diag[i] = 1.;
    }
 #ifdef PRINTMAT
@@ -496,6 +498,123 @@ if (maxiter == 0) {
    ML_free(index_array);
    for ( i = 0; i <= original_maxiter; i++ ) ML_free(Tmat[i]);
    ML_free(Tmat);
+   return 1;
+}
+
+
+/* ******************************************************************** */
+/* ML_Power_ComputeEigenvalues                                             */
+/*                                                                      */
+/* NOTE: if scale_by_diag == ML_TRUE compute lambda (D^{1/2} A D^{1/2}) */
+/*       if scale_by_diag == ML_FALSE compute  lambda ( A )             */
+/* ******************************************************************** */
+
+int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
+{
+   int         totallength, print_freq, nprocs, mypid, maxiter;
+   int         i, j, ncnt, Nbc, *colInd = NULL, allocated;
+   double      *p = NULL, *ap = NULL, *colVal = NULL, norm, *diag = NULL, sum;
+   ML_Operator *matrix;
+   ML_Comm     *comm;
+   /* ----------------------------------------------------------------*/
+   /* get all parameters from parent object*/
+   /* ----------------------------------------------------------------*/
+
+   matrix      = ML_Krylov_Get_Amatrix(data);
+   comm        = ML_Krylov_Get_Comm(data);
+   totallength = ML_Comm_GsumInt(comm, length);
+   print_freq  = ML_Krylov_Get_PrintFreq(data);
+   nprocs      = comm->ML_nprocs;
+   mypid       = comm->ML_mypid;
+   maxiter     = 10;
+   if ( totallength < maxiter ) maxiter = totallength;
+
+
+   /* ----------------------------------------------------------------*/
+   /* allocate temporary memory  */
+   /* ----------------------------------------------------------------*/
+
+   if ( length > 0 )
+   {
+     ap   = (double *) ML_allocate(length * sizeof(double));
+     p    = (double *) ML_allocate(length * sizeof(double));
+     diag = (double *) ML_allocate(length * sizeof(double));
+      if ( diag == NULL )
+      {
+         printf("ML : ERROR in allocating memory.\n");
+         exit(1);
+      }
+   }
+   ML_random_vec(p, length, comm); 
+
+   /* ----------------------------------------------------------------*/
+   /* retrieve the diagonals */
+   /* ----------------------------------------------------------------*/
+
+   allocated = 100;
+   colInd = (int    *) ML_allocate( allocated * sizeof(int) );
+   colVal = (double *) ML_allocate( allocated * sizeof(double) );
+   Nbc = 0;  /* rst to handle nonsymmetric (due to BCs) matrices */
+   if (scale_by_diag) {
+   for ( i = 0; i < length; i++ )
+   {
+      while(ML_Operator_Getrow(matrix,1,&i,allocated,colInd,colVal,&ncnt)==0)
+      {
+         allocated *= 2;
+         ML_free(colInd); ML_free(colVal);
+         colInd = (int    *) ML_allocate( allocated * sizeof(int) );
+         colVal = (double *) ML_allocate( allocated * sizeof(double) );
+      }
+
+      sum = 0.0;
+      for ( j = 0; j < ncnt; j++ )
+      {
+         if ( colInd[j] == i ) diag[i] = colVal[j];
+         else sum += ML_dabs(colVal[j]);
+      }
+      /* kludging this in to handle Dirichlet BC's */
+      if ( sum == 0.0) { p[i] = 0.; Nbc++; diag[i] = 1.;}
+
+      else {
+         if ( diag[i] == 0.0 ) 
+         {
+            printf("%d : diagonal[%d] == 0.0.\n", comm->ML_mypid, i);
+	    /*            exit(1); */
+	    diag[i] = 1.;
+         }
+         else if ( diag[i] < 0.0 )
+         {
+            printf("%d : diagonal[%d] = %e < 0.0.\n", comm->ML_mypid, i, diag[i]);
+         }
+	 else {
+	   diag[i] = 1.0 / sqrt(ML_dabs(diag[i]));
+	 }
+      }
+   }
+   }
+   else {
+     for (i = 0; i < length; i++) diag[i] = 1.;
+   }
+
+   norm = 1./sqrt(ML_gdot(length, p, p, comm));
+
+   for (j = 0; j < length; j++) p[j] *= norm;
+   for (i = 0; i < maxiter; i++) {
+     ML_Operator_Apply(matrix, length, p, length, ap);
+     for (j = 0; j < length; j++) ap[j] = ap[j]/diag[j];
+     norm = 1./sqrt(ML_gdot(length, ap, ap, comm));
+     for (j = 0; j < length; j++) p[j] = norm*ap[j];
+   }
+   data->ML_eigen_max = 1/norm;
+   data->ML_eigen_min = 0.; /* no estimate for smallest eigenvalue */
+
+   if ( length > 0 )
+   {
+      ML_free(ap); 
+      ML_free(p);
+      ML_free(diag);
+   }
+
    return 1;
 }
 
