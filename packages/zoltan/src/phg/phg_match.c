@@ -22,6 +22,7 @@ extern "C" {
 
 static ZOLTAN_PHG_MATCHING_FN pmatching_local; /* function for local matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;   /* inner product matching */
+static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;   /* alternating ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_col_ipm;   /* OLD column ipm, will be phased out */
 
 
@@ -51,6 +52,10 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
         hgp->matching = pmatching_col_ipm;          /* will be removed later */
     else if (!strcasecmp(hgp->redm_str, "ipm"))
         hgp->matching = pmatching_ipm;
+#ifdef ALT_IPM
+    else if (!strcasecmp(hgp->redm_str, "alt-ipm"))
+        hgp->matching = pmatching_alt_ipm;
+#endif
     else {
         exist = 0;
         hgp->matching = NULL;
@@ -455,6 +460,41 @@ static int pmatching_col_ipm(
     return ZOLTAN_OK;
 }
 
+#ifdef ALT_IPM
+/**************************************************************************
+  Alternating ipm method. Alternate between full ipm and c-ipm. 
+ *************************************************************************/
+#define DO_FULL_IPM 2         /* Do full ipm every 2 levels */
+                              /* This could be a parameter. */
+static int pmatching_alt_ipm(
+  ZZ *zz,
+  HGraph* hg,
+  Matching match,
+  PHGPartParams *hgp
+)
+{
+  int i;
+  char *str;
+  static int level=0;
+
+  ++level;  /* we don't have access to level data, so keep track this way */
+
+  str = hgp->redm_str; /* save original parameter string */
+
+  if (level%DO_FULL_IPM == 0) 
+    hgp->redm_str = "ipm";  // Need strcpy!
+  else
+    hgp->redm_str = "c-ipm";
+
+  i = pmatching_ipm(zz, hg, match, hgp);
+
+  /* set redm parameter back to original (alt-ipm) */
+  hgp->redm_str = str;
+  
+  return i;
+}
+#endif
+
 /****************************************************************************
  * inner product matching
  * Parallelized version of the serial algorithm (see hg_match.c)
@@ -675,13 +715,13 @@ static int pmatching_ipm(
     }
 
 skip_phase1:
-#ifdef RTHRTH
     /* Communication grouped candidates by processor, scramble them! */
     if (hgc->nProc_x > 1 || cFLAG)  {
+      /* EBEB Instead of Zoltan_Rand_Perm_Int, we should use 
+         Zoltan_PHG_Vertex_Visit_Order() but it must be modified a bit */
       Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
       Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
     }
-#endif
 
     /* for each candidate vertex, compute all local partial inner products */
     kstart = old_kstart = 0;         /* next candidate (of nTotal) to process */
