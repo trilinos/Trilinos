@@ -408,7 +408,6 @@ int Epetra_VbrMatrix::BeginReplaceMyValues(int BlockRow, int NumBlockEntries, in
 int Epetra_VbrMatrix::BeginReplaceValues(int BlockRow, int NumBlockEntries, 
 					     int *BlockIndices, bool IndicesAreLocal) {
 
-  if (CV_==View) EPETRA_CHK_ERR(-3); // This is a view only.  Cannot remove entries.
   if (BlockRow < 0 || BlockRow >= NumMyBlockRows_) EPETRA_CHK_ERR(-1); // Not in BlockRow range
 
   Epetra_CombineMode SubmitMode = Zero; // This is a misuse of Zero mode, fix it later
@@ -437,7 +436,6 @@ int Epetra_VbrMatrix::BeginSumIntoMyValues(int BlockRow, int NumBlockEntries, in
 int Epetra_VbrMatrix::BeginSumIntoValues(int BlockRow, int NumBlockEntries, 
 					     int *BlockIndices, bool IndicesAreLocal) {
 
-  if (CV_==View) EPETRA_CHK_ERR(-3); // This is a view only.  Cannot remove entries.
   if (BlockRow < 0 || BlockRow >= NumMyBlockRows_) EPETRA_CHK_ERR(-1); // Not in BlockRow range
 
   Epetra_CombineMode SubmitMode = Add;

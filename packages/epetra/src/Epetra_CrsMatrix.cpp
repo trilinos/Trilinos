@@ -340,8 +340,6 @@ int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, double * Valu
   int ierr = 0;
   int Loc;
 
-  if (CV_==View) EPETRA_CHK_ERR(-3); // This is a view only.  Cannot remove entries.
-
   Row = Graph_->LRID(Row); // Normalize row range
     
   if (Row < 0 || Row >= NumMyRows_) EPETRA_CHK_ERR(-1); // Not in Row range
@@ -367,8 +365,6 @@ int Epetra_CrsMatrix::ReplaceMyValues(int Row, int NumEntries, double * Values, 
   int j;
   int ierr = 0;
   int Loc;
-
-  if (CV_==View) EPETRA_CHK_ERR(-3); // This is a view only.  Cannot remove entries.
 
   if (Row < 0 || Row >= NumMyRows_) EPETRA_CHK_ERR(-1); // Not in Row range
     
@@ -399,7 +395,7 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row, int NumEntries, double * Valu
   for (j=0; j<NumEntries; j++) {
     int Index = Indices[j];
     if (Graph_->FindGlobalIndexLoc(Row,Index,j,Loc)) Values_[Row][Loc] += Values[j];
-    else EPETRA_CHK_ERR(-2); // Value not found
+    else ierr = 2; // Value Excluded
   }
 
   EPETRA_CHK_ERR(ierr);
@@ -422,7 +418,7 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, double * Values, 
   for (j=0; j<NumEntries; j++) {
     int Index = Indices[j];
     if (Graph_->FindMyIndexLoc(Row,Index,j,Loc)) Values_[Row][Loc] += Values[j];
-    else EPETRA_CHK_ERR(-2); // Value not found
+    else ierr = 2; // Value Excluded
   }
 
   EPETRA_CHK_ERR(ierr);
@@ -444,7 +440,6 @@ int Epetra_CrsMatrix::TransformToLocal(const Epetra_Map *DomainMap, const Epetra
   SortEntries();  // Sort column entries from smallest to largest
   MergeRedundantEntries(); // Get rid of any redundant index values
   if (!StaticGraph()) EPETRA_CHK_ERR(Graph_->TransformToLocal(DomainMap, RangeMap));
-
 
   return(0);
 }
