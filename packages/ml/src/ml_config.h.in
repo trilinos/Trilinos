@@ -144,6 +144,9 @@
 /* Define if want to build with triutils enabled */
 #undef HAVE_ML_TRIUTILS
 
+/* Define if want to build with ml_zoltan enabled */
+#undef HAVE_ML_ZOLTAN
+
 /* define if we want to use MPI */
 #undef HAVE_MPI
 
