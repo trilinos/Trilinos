@@ -1500,6 +1500,7 @@ AC_CONFIG_FILES([
                 test/epetra/LOCA_NewTest/Makefile
                 test/epetra/LOCA_Group/Makefile
                 test/epetra/1Dfem/Makefile
+                test/epetra/MultiPhysics/Makefile
                 test/petsc/Makefile
 		])
 
