@@ -440,3 +440,13 @@ clean:
 	 done;
 	 cd Utilities; $(MAKE) clean; cd ..
 	 exit 0
+
+cleantest:
+	 @if [ -d test ];         \
+	 then cd test; \
+	 touch ch_simple/zdrive.inp; \
+	 touch ch_simple/output/junk; \
+	 /bin/rm -f */zdrive.inp; \
+	 /bin/rm -f */output/*; \
+	 fi;
+	 exit 0
