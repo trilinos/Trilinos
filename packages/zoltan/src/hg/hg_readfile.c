@@ -27,7 +27,7 @@ int hg_readfile (ZZ *zz, HGraph *hg, char *hgraphfile, int *base)
    {
    int ierr;
    FILE *f;
-   char line1[81], errstr[200] ;
+   char errstr[200] ;
    char *yo = "hg_readfile" ;
 
    Zoltan_HG_HGraph_Init(hg);
