@@ -2000,3 +2000,344 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
 
    return 0;
 }
+
+/* ************************************************************************* */
+/* new version of ML_Gen_MGHierarchy_UsingAggregation                        */
+/* I dropped out the domain_decomposition lines                              */
+/* ------------------------------------------------------------------------- */
+
+int ML_Gen_MultiLevelHierarchy_UsingAggregation(ML *ml, int start, 
+						int increment_or_decrement,
+						ML_Aggregate *ag)
+{
+   int    level, idata;
+   double dnnz = 0;
+   ML_Aggregate *ml_ag;
+#ifdef ML_TIMING
+   double t0;
+#endif
+
+   /* ----------------------------------------------------------------- */
+   /* if user does not provide a ML_Aggregate object, create a default  */
+   /* ----------------------------------------------------------------- */
+
+   if ( ag == NULL ) ML_Aggregate_Create( &ml_ag );
+   else ml_ag=ag;
+   ML_Aggregate_Set_MaxLevels( ml_ag, ml->ML_num_levels);
+   ML_Aggregate_Set_StartLevel( ml_ag, start );
+
+   /* ----------------------------------------------------------------- */
+   /* create multilevel hierarchy                                       */
+   /* ----------------------------------------------------------------- */
+
+   /* FIXME: I don't know when P_tentative is freed !!!!! */
+   if( ag->smoothP_damping_factor == 0.0 ) ag->Restriction_smoothagg_transpose == ML_FALSE;
+   if( ag->Restriction_smoothagg_transpose == ML_TRUE ) ag->keep_P_tentative = ML_TRUE;
+   
+   idata = 0;
+   idata = ML_gmax_int(idata, ml->comm);
+   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
+      ML_Aggregate_Print( ml_ag );
+#ifdef ML_TIMING
+   t0 = GetClock();
+#endif
+   idata = ML_gmax_int(idata, ml->comm);
+
+   if (increment_or_decrement == ML_INCREASING)
+   {
+     level = ML_Gen_MultiLevelHierarchy(ml, start,
+					ML_AGG_Increment_Level,
+					ML_MultiLevel_Gen_Restriction,
+					ML_MultiLevel_Gen_Prolongator,
+					(void *)ml_ag);
+   }
+   else if (increment_or_decrement == ML_DECREASING)
+   {
+     level = ML_Gen_MultiLevelHierarchy(ml, start,
+					ML_AGG_Decrement_Level,
+					ML_MultiLevel_Gen_Restriction,
+					ML_MultiLevel_Gen_Prolongator,
+					(void *)ml_ag);
+   }
+   else {
+     if ( ml->comm->ML_mypid == 0 ) 
+       {
+	 printf("ML_Gen_MultiLevelHierarchy_UsingAggregation : Unknown ");
+         printf("increment_or_decrement choice\n");
+       }
+     exit(1);
+   }
+#ifdef ML_TIMING
+   t0 = GetClock() - t0;
+   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
+     printf("Aggregation total setup time = %e seconds\n", t0);
+#endif
+   
+   /* ----------------------------------------------------------------- */
+   /* compute operator complexity                                       */
+   /* ----------------------------------------------------------------- */
+
+   if (increment_or_decrement == ML_INCREASING)
+      dnnz = ml->Amat[level-start-1].N_nonzeros;
+   else if (increment_or_decrement == ML_DECREASING)
+      dnnz = ml->Amat[start+1-level].N_nonzeros;
+   dnnz = ML_gsum_double( dnnz, ml->comm );
+   ml_ag->operator_complexity += dnnz;
+
+   idata = ML_gmax_int(idata, ml->comm);
+   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
+      ML_Aggregate_Print_Complexity( ml_ag );
+   idata = ML_gmax_int(idata, ml->comm);
+
+   if ( ag == NULL ) ML_Aggregate_Destroy( &ml_ag );
+   return(level);
+}
+
+/* ************************************************************************* */
+/* generate multilevel hierarchy given a subroutine for generating           */
+/* prolongation operators. New version of ML_Gen_MGHierarchy.                */
+/* ------------------------------------------------------------------------- */
+
+int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
+        int (*user_next_level)(ML *, int, void *),
+        int (*user_gen_restriction)(ML *, int, int, void *),
+        int (*user_gen_prolongator)(ML *, int, int, void *),
+        void *user_data)
+{
+   int level, next, flag, count=1;
+   int i, j, bail_flag, N_input_vector;
+   ML_Operator *Pmat;
+   ML_CommInfoOP *getrow_comm;
+   
+#ifdef ML_TIMING
+   double t0;
+#endif
+
+   ml->ML_finest_level = fine_level;
+   level = fine_level;
+   next  = user_next_level(ml, level, user_data);
+
+   while (next >= 0) 
+   {
+      if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel()) 
+         printf("ML_Gen_MultiLevelHierarchy (level %d) : Gen Restriction and Prolongator \n",
+		level );
+
+      flag = (*user_gen_prolongator)(ml, level, next, user_data);
+      if (flag < 0) break;
+
+      /* Now check to make sure prolongator has zero columns. */
+      Pmat = ml->Pmat+next;
+      bail_flag = 0;
+      N_input_vector = Pmat->invec_leng;
+      getrow_comm = Pmat->getrow->pre_comm;
+      if ( getrow_comm != NULL)
+      {
+         for (i = 0; i < getrow_comm->N_neighbors; i++) {
+            for (j = 0; j < getrow_comm->neighbors[i].N_send; j++) {
+               if (getrow_comm->neighbors[i].send_list[j] >= N_input_vector) {
+                  bail_flag = 1;
+               }
+            }
+         }
+      }
+      /* If check has failed on any processor, clean up current level & break
+         from main loop. */
+      ML_gsum_scalar_int(&bail_flag,&j,ml->comm);
+      if (bail_flag)
+      {
+         if (Pmat->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+            printf("(%d) In ML_Gen_MultiLevelHierarchy: Bailing from AMG hierarchy build on level %d, where fine level = %d ........\n",
+                   Pmat->comm->ML_mypid,level,fine_level);
+            fflush(stdout);
+         }
+         if (ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel()) {
+            printf("(%d) In ML_Gen_MultiLevelHierarchy: Nlevels = %d fine_level = %d  coarsest_level = %d\n",
+               ml->comm->ML_mypid,fine_level-count+1,fine_level,count);
+            fflush(stdout);
+         }
+         break; /* from main loop */
+ 
+      }
+      /* end of check */
+
+      (*user_gen_restriction)(ml, level, next,user_data);
+
+#ifdef ML_TIMING
+      t0 = GetClock();
+#endif
+
+      if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel())
+	printf("ML_Gen_MultiLevelHierarchy (level %d) : Gen RAP\n", level);
+      ML_Gen_AmatrixRAP(ml, level, next);
+
+#ifdef ML_TIMING
+      t0 = GetClock() - t0;
+      if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel()) 
+         printf("ML_Gen_MultiLevelHierarchy (level %d) : RAP time = %e\n", level, t0);
+#endif
+
+      level = next;
+      next  = user_next_level(ml, next, user_data);
+
+      count++;
+   }
+   return(count);
+}
+
+/* ************************************************************************* */
+/* generate smooth prolongator                                               */
+/* This is supposed to create a `real' prolongator (that is, not to define R */
+/* in the case of R = (I - w A ) Pt^T)                                       */
+/* NOTE: data is suppposed to be a pointer to the ML_Aggregate structure.    */
+/*                                                                           */
+/* If ag->smoothP_damping_factor != 0.0, the function estimate lambda max.   */
+/* ------------------------------------------------------------------------- */
+
+int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
+{
+   int         Ncoarse, Nfine, gNfine, gNcoarse, jj;
+   double      max_eigen = -1.;
+   ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
+   ML_Operator **prev_P_tentatives;
+   struct      ML_AGG_Matrix_Context widget;
+   ML_Krylov   *kdata;
+   ML_Operator *t2 = NULL, *t3 = NULL;
+   ML_Aggregate *ag = (ML_Aggregate *) data;
+   struct ML_Field_Of_Values * fov;
+   double dtemp, eta;
+#ifdef ML_TIMING
+   double t0;
+   t0 =  GetClock();
+#endif
+
+   puts("ML_MultiLevel_Gen_Prolongator");
+   
+   widget.near_bdry = NULL;
+   Amat     = &(ml->Amat[level]);
+   Amat->num_PDEs = ag->num_PDE_eqns;
+   prev_P_tentatives = (ML_Operator **) ag->P_tentative;
+
+   Nfine    = Amat->outvec_leng;
+   gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
+   ML_Aggregate_Set_CurrentLevel( ag, level );
+
+   /* ********************************************************************** */
+   /* Methods based on field-of-values requires to stick some parameres now  */
+   /* This is not an error! Here use R (this P will become R later)          */
+   /* ********************************************************************** */
+
+   if( ag->smoothP_damping_factor != 0.0 && ag->Restriction_smoothagg_transpose == ML_TRUE ) {
+     
+     fov = (struct ML_Field_Of_Values * )(ag->field_of_values);
+     eta = fov->eta;
+     dtemp = fov->R_coeff[0] + eta * fov->R_coeff[1] + pow(eta,2) * fov->R_coeff[2];
+     ag->smoothP_damping_factor = dtemp;
+     Amat->lambda_max = fov->real_max;
+
+     if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+       printf("Restriction smoother (level %d) : damping factor = %e\n",
+	      level,
+	      ag->smoothP_damping_factor );
+     }
+
+     ml->symmetrize_matrix = ML_FALSE;
+     ag->keep_P_tentative = ML_YES;
+     ag->use_transpose = ML_TRUE;
+
+     t3 = ML_Operator_Create(Amat->comm);
+     ML_Operator_Transpose_byrow(Amat,t3);
+
+     ML_Operator_Destroy( &t3 );
+     
+   }
+
+   max_eigen = Amat->lambda_max;
+
+   ML_AGG_Gen_Prolongator(ml,level,clevel,data);   
+   
+   return 0;
+   
+}
+
+/* ************************************************************************* */
+/* function for advancing to the next coarser level with coarse level        */
+/* number larger than the fine levels                                        */
+/* ------------------------------------------------------------------------- */
+
+int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
+{
+
+  ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
+  ML_Operator **prev_P_tentatives;
+  struct      ML_AGG_Matrix_Context widget;
+  ML_Krylov   *kdata;
+  ML_Operator *t3 = NULL;
+  ML_Aggregate *ag = (ML_Aggregate *) data;
+
+  prev_P_tentatives = (ML_Operator **) ag->P_tentative;
+  
+  struct ML_Field_Of_Values * fov;
+  double dtemp, eta;
+  char str[80];
+  
+  Amat = &(ml->Amat[level]);
+
+  if( ag->smoothP_damping_factor != 0.0 && ag->Restriction_smoothagg_transpose == ML_TRUE ) {
+
+    if( ag->use_transpose != ML_TRUE ) {
+      fprintf( stderr,
+	       "ERROR: Something went **very** wrong in `ML_MultiLevel_Gen_ProlongatorForRestriction'\n"
+	       "ERROR: (file %s, line %d)\n",
+	       __FILE__,
+	       __LINE__ );
+    
+      //      exit( EXIT_FAILURE );
+    }  
+    
+    /* ********************************************************************** */
+    /* Previous P has been built based on A^T and not on A. Now, first we     */
+    /* transpose P into R (formed with A^T, so that now R is based on A).     */
+    /* NOTE: the damping parameter previously used in P is the one for R.     */
+    /* Then, we will have to build a new P based on A.                        */
+    /* ********************************************************************** */
+
+    ML_Gen_Restrictor_TransP(ml, level, next);
+
+    /* ********************************************************************** */
+    /* Now rebuilt P using the saved tentative guy. We need to compute the    */
+    /* good parameter for damping.                                            */
+    /* We erase the old Pmat too.                                             */
+    /* ********************************************************************** */
+
+    ag->use_transpose = ML_FALSE;
+    ML_Operator_Clean( &(ml->Pmat[next]) );
+    ML_Operator_Init( &(ml->Pmat[next]), ml->comm );
+    ML_Operator_Set_1Levels(&(ml->Pmat[next]), &(ml->SingleLevel[next]), NULL);
+    ML_Operator_Set_BdryPts(&(ml->Pmat[next]), NULL);
+    sprintf(str,"Pmat_%d",next); ML_Operator_Set_Label( &(ml->Pmat[next]),str);
+
+    fov = (struct ML_Field_Of_Values *)(ag->field_of_values);
+    eta = fov->eta;
+    dtemp = fov->P_coeff[0] + eta * fov->P_coeff[1] + pow(eta,2) * fov->P_coeff[2];
+    
+    if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+      printf("Prolongator smoother (level %d) : damping factor = %e\n",
+	     level,
+	     ag->smoothP_damping_factor );
+    }    
+    
+    ag->smoothP_damping_factor = dtemp;
+    Amat->lambda_max = fov->real_max;
+
+    /* use old-fashioned functions to create the actual prolongator based on A */
+    
+    ML_AGG_Gen_Prolongator(ml,level,next,data);
+
+  }  else {
+    
+    ML_Gen_Restrictor_TransP(ml, level, next);
+    
+  }
+  
+}
