@@ -250,7 +250,7 @@ int read_cmd_file (
                     &Output.Plot_Partitions, &n) == 1)
       continue;                    /* Plot processor numbers or partitions? */
       
-    else if (sscanf(line, " print mesh info file" SKIPEQ "%d&n",
+    else if (sscanf(line, " print mesh info file" SKIPEQ "%d%n",
                     &Output.Mesh_Info_File, &n) == 1)
       continue;                                /* Generate ASCII mesh file? */
 
