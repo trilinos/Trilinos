@@ -160,6 +160,7 @@ pkginclude_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_PolynomialWalker.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_MoreThuente2.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_Secant.H \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Picard.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_NonlinearCG.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.H \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Broyden.H \
@@ -173,6 +174,7 @@ pkginclude_HEADERS = \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_PolynomialWalker.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_MoreThuente2.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_LineSearch_Secant.C \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Picard.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_NonlinearCG.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.C \
 @BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Broyden.C \
@@ -380,6 +382,7 @@ am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_LineSearch_PolynomialWalker.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_LineSearch_MoreThuente2.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_LineSearch_Secant.$(OBJEXT) \
+@BUILD_PRERELEASE_TRUE@	NOX_Direction_Picard.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_NonlinearCG.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_QuasiNewton.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	NOX_Direction_Broyden.$(OBJEXT) \
@@ -401,6 +404,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_ModifiedNewton.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Newton.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_NonlinearCG.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Picard.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_QuasiNewton.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_SteepestDescent.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Tensor.Po \
@@ -556,6 +560,7 @@ NOX_LineSearch_PolynomialWalker.$(OBJEXT): \
 NOX_LineSearch_MoreThuente2.$(OBJEXT): \
 	$(srcdir)/NOX_LineSearch_MoreThuente2.C
 NOX_LineSearch_Secant.$(OBJEXT): $(srcdir)/NOX_LineSearch_Secant.C
+NOX_Direction_Picard.$(OBJEXT): $(srcdir)/NOX_Direction_Picard.C
 NOX_Direction_NonlinearCG.$(OBJEXT): \
 	$(srcdir)/NOX_Direction_NonlinearCG.C
 NOX_Direction_QuasiNewton.$(OBJEXT): \
@@ -582,6 +587,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_ModifiedNewton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Newton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_NonlinearCG.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Picard.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_QuasiNewton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_SteepestDescent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Tensor.Po@am__quote@
@@ -1035,6 +1041,18 @@ NOX_LineSearch_Secant.obj: $(srcdir)/NOX_LineSearch_Secant.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Secant.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Secant.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Secant.obj `cygpath -w $(srcdir)/NOX_LineSearch_Secant.C`
+
+NOX_Direction_Picard.o: $(srcdir)/NOX_Direction_Picard.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Picard.C' object='NOX_Direction_Picard.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Picard.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Picard.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Picard.o `test -f $(srcdir)/NOX_Direction_Picard.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Picard.C
+
+NOX_Direction_Picard.obj: $(srcdir)/NOX_Direction_Picard.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Picard.C' object='NOX_Direction_Picard.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Picard.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Picard.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Picard.obj `cygpath -w $(srcdir)/NOX_Direction_Picard.C`
 
 NOX_Direction_NonlinearCG.o: $(srcdir)/NOX_Direction_NonlinearCG.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_NonlinearCG.C' object='NOX_Direction_NonlinearCG.o' libtool=no @AMDEPBACKSLASH@
