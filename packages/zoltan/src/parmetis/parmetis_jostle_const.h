@@ -41,7 +41,6 @@ struct LB_hash_node {
 /* Function prototypes */
 
 extern int LB_Set_ParMetis_Param(char *, char *);
-extern unsigned int LB_hashf(LB_GID, int);
 extern int LB_hash_lookup (struct LB_hash_node **, LB_GID, int);
 
 
