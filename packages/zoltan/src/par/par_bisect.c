@@ -26,7 +26,7 @@ extern "C" {
 /* EBEB: The following constants, structs, and function prototypes should 
    probably be moved to a header file. */
 
-#define NODEBUG 
+#define NO_DEBUG 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
 #define FRACTION_SMALL 0.001  /* Smallest fraction of load allowed on 
@@ -199,6 +199,7 @@ int Zoltan_RB_find_bisector(
   if (!Tflops_Special){
     if (k == -nwgts){
       /* Put all dots in upper half */
+      *valuehalf = valuemin;
       for (i = 0; i < dotnum; i++)
          dotmark[i] = 1;
       for (j=0; j<nwgts; j++){
@@ -211,6 +212,7 @@ int Zoltan_RB_find_bisector(
     }
     else if (k == nwgts){
       /* Put all dots in lower half */
+      *valuehalf = valuemax;
       for (i = 0; i < dotnum; i++)
          dotmark[i] = 0;
       for (j=0; j<nwgts; j++){
@@ -456,8 +458,11 @@ int Zoltan_RB_find_bisector(
           all dots <= valuehalf are marked with 0 in dotmark
           all dots >= valuehalf are marked with 1 in dotmark */
 
-  if (num_procs > 1) { /* don't need to go through if only one proc.  This
-                          added for Tflops_Special */
+  if (!Tflops_Special || num_procs > 1) { /* don't need to go thru if only
+                                             one proc with Tflops_Special.
+                                             Input argument Tflops_Special
+                                             should be 0 for
+                                             serial partitioning. */
 
     iteration = 0;
     while (iteration++ < MAX_BISECT_ITER){
@@ -930,6 +935,9 @@ int Zoltan_RB_find_bisector(
 
   /* found bisector */
   *valuehalf = tmp_half;
+#ifdef DEBUG
+  printf("[%2d] Final bisector valuehalf = %lf\n", proc, *valuehalf);
+#endif
 
   /* return norm of largest half */
   *norm_max = (normlo>=normhi ? normlo : normhi);
