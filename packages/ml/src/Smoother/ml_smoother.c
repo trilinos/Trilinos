@@ -247,7 +247,7 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    }
 
    ML_memory_free((void**)&(ml_sm->smoother));
-   if (ml_sm->label != NULL) { free(ml_sm->label); ml_sm->label = NULL; }
+   if (ml_sm->label != NULL) { ML_free(ml_sm->label); ml_sm->label = NULL; }
 
    return 0;
 }
@@ -260,7 +260,7 @@ int ML_Smoother_Set_Label( ML_Smoother *smoo, char *label)
 {
   int size;
 
-   if (smoo->label != NULL) { free(smoo->label); smoo->label = NULL; }
+   if (smoo->label != NULL) { ML_free(smoo->label); smoo->label = NULL; }
    size = strlen(label) + 1;
    smoo->label = (char *) ML_allocate(size*sizeof(char));
    if (smoo->label == NULL) 
@@ -308,7 +308,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, double sol[],
             temp = sqrt(ML_gdot(n, res, res, pre->my_level->comm));
          }
          pre->ntimes = ML_CONVERGE;
-         free(res);
+         ML_free(res);
       }
       else pre->smoother->internal(pre,inlen,sol,outlen,rhs);
    }
@@ -397,7 +397,7 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
                                      cols,vals,&n) == 0) 
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols); 
+               ML_free(vals); ML_free(cols); 
                cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
                vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL)
@@ -410,9 +410,9 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
             for (j = 0; j < n; j++) 
                if (cols[j] == i) tdiag[i] = vals[j];
          }
-         free(cols); free(vals);
+         ML_free(cols); ML_free(vals);
          ML_Operator_Set_Diag(Amat, Amat->matvec->Nrows, tdiag);
-         free(tdiag);
+         ML_free(tdiag);
       } 
    }
    ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
@@ -466,8 +466,8 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
         printf("              %d: rnorm = %e\n", j, res_norm);
 #endif
    }
-   if (res2 != NULL) free(res2);
-   free(res);
+   if (res2 != NULL) ML_free(res2);
+   ML_free(res);
    return 0;
 }
 
@@ -569,9 +569,9 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
       Amat->max_nz_per_row = allocated_space;
 
 #ifdef ML_DEBUG_SMOOTHER
-   free(res2);
+   ML_free(res2);
 #endif
-   free(vals); free(cols);
+   ML_free(vals); ML_free(cols);
 
    return 0;
 }
@@ -794,7 +794,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    /* ----------------------------------------------------------------- */
 
 #ifdef ML_DEBUG_SMOOTHER
-   free(res2);
+   ML_free(res2);
 #endif
 
    if (getrow_comm != NULL) {
@@ -805,7 +805,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    if (allocated_space != Amat->max_nz_per_row+2) {
       Amat->max_nz_per_row = allocated_space;
    }
-   free(vals); free(cols);
+   ML_free(vals); ML_free(cols);
 #endif
 
    return 0;
@@ -1784,7 +1784,7 @@ int ML_Smoother_SGSSequential(void *sm,int inlen,double x[],int outlen,
    if (allocated_space != Amat->max_nz_per_row+2)
       Amat->max_nz_per_row = allocated_space;
 
-   free(vals); free(cols);
+   ML_free(vals); ML_free(cols);
 
    return 0;
 }
@@ -1914,7 +1914,7 @@ int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
       Amat->max_nz_per_row = allocated_space;
    }
 	 
-   free(vals); free(cols); free(Atimesx); free(correc);
+   ML_free(vals); ML_free(cols); ML_free(Atimesx); ML_free(correc);
 	 
    return 0;
 }
@@ -2096,17 +2096,17 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    if (getrow_comm != NULL) 
    {
       for (i = 0; i < inlen; i++) x[i] = x_ext[i];
-      free(x_ext);
+      ML_free(x_ext);
    }
 
-   free( vals ); 
-   free( cols ); 
-   free( aggr_offset );
-   free( aggr_group );
-   if ( unprec_r != NULL) free(unprec_r);
-   if ((smooth_ptr->omega == ML_ONE_STEP_CG) && (Mr != NULL)) free(Mr);
-   if ( dtemp    != NULL) free(dtemp);
-   if ( Nblocks > 0 ) free( do_update );
+   ML_free( vals ); 
+   ML_free( cols ); 
+   ML_free( aggr_offset );
+   ML_free( aggr_group );
+   if ( unprec_r != NULL) ML_free(unprec_r);
+   if ((smooth_ptr->omega == ML_ONE_STEP_CG) && (Mr != NULL)) ML_free(Mr);
+   if ( dtemp    != NULL) ML_free(dtemp);
+   if ( Nblocks > 0 ) ML_free( do_update );
 	 
    return 0;
 }
@@ -2300,17 +2300,17 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
    if (getrow_comm != NULL) 
    {
       for (i = 0; i < inlen; i++) x[i] = x_ext[i];
-      free(x_ext);
+      ML_free(x_ext);
    }
    if ( maxBlocksize > 0 )
    {
-      free( Ax );
-      free( res );
+      ML_free( Ax );
+      ML_free( res );
    }
-   free( vals ); 
-   free( cols ); 
-   if ( Nblocks > 0 ) free( aggr_offset );
-   if ( Nrows > 0 ) free( aggr_group );
+   ML_free( vals ); 
+   ML_free( cols ); 
+   if ( Nblocks > 0 ) ML_free( aggr_offset );
+   if ( Nrows > 0 ) ML_free( aggr_group );
 	 
    return 0;
 }
@@ -2528,18 +2528,18 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
 
    if (getrow_comm != NULL) {
       for (i = 0; i < inlen; i++) x[i] = x_ext[i];
-      free(x_ext);
+      ML_free(x_ext);
    }
 
    if ( maxBlocksize > 0 )
    {
-      free( Ax );
-      free( res );
+      ML_free( Ax );
+      ML_free( res );
    }
-   free( vals ); 
-   free( cols ); 
-   if ( Nblocks > 0 ) free( aggr_offset );
-   if ( Nrows > 0 ) free( aggr_group );
+   ML_free( vals ); 
+   ML_free( cols ); 
+   if ( Nblocks > 0 ) ML_free( aggr_offset );
+   if ( Nrows > 0 ) ML_free( aggr_group );
 	 
    return 0;
 }
@@ -2645,8 +2645,8 @@ int ML_Smoother_OverlappedILUT(void *sm,int inlen,double x[],int outlen,
       dbuffer[i] /= mat_aa[idiag[i]];
    }
    for ( i = 0; i < inlen; i++ ) x[i] = dbuffer[i];
-   free(dbuffer);
-   free(idiag);
+   ML_free(dbuffer);
+   ML_free(idiag);
       
    return 0;
 }
@@ -2806,11 +2806,11 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
    /* clean up                                                  */
    /* --------------------------------------------------------- */
 
-   if (ntimes > 1) free(xbuffer);
-   free( rhsbuf );
-   free( solbuf );
-   free( dbuffer );
-   free( etree );
+   if (ntimes > 1) ML_free(xbuffer);
+   ML_free( rhsbuf );
+   ML_free( solbuf );
+   ML_free( dbuffer );
+   ML_free( etree );
    SUPERLU_FREE (R);
    SUPERLU_FREE (C);
    SUPERLU_FREE (ferr);
@@ -2982,11 +2982,11 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
    /* clean up                                                  */
    /* --------------------------------------------------------- */
 
-   if (ntimes > 1) free(xbuffer);
-   free( rhsbuf );
-   free( solbuf );
-   free( dbuffer );
-   free( etree );
+   if (ntimes > 1) ML_free(xbuffer);
+   ML_free( rhsbuf );
+   ML_free( solbuf );
+   ML_free( dbuffer );
+   ML_free( etree );
    SUPERLU_FREE (R);
    SUPERLU_FREE (C);
    SUPERLU_FREE (ferr);
@@ -3211,18 +3211,18 @@ void ML_Smoother_Destroy_BGS_Data(void *data)
    if ( ml_data->blockfacts != NULL )
    {
       for ( i = 0; i < ml_data->Nblocks; i++ )
-         if ( ml_data->blockfacts[i] != NULL ) free(ml_data->blockfacts[i]);
-      free( ml_data->blockfacts );
+         if ( ml_data->blockfacts[i] != NULL ) ML_free(ml_data->blockfacts[i]);
+      ML_free( ml_data->blockfacts );
    }
    if ( ml_data->perms != NULL )
    {
       for ( i = 0; i < ml_data->Nblocks; i++ )
-         if ( ml_data->perms[i] != NULL ) free(ml_data->perms[i]);
-      free( ml_data->perms );
+         if ( ml_data->perms[i] != NULL ) ML_free(ml_data->perms[i]);
+      ML_free( ml_data->perms );
    }
    if ( ml_data->blocklengths != NULL )
-      free( ml_data->blocklengths );
-   free(ml_data->blockmap);
+      ML_free( ml_data->blocklengths );
+   ML_free(ml_data->blockmap);
    ML_memory_free((void**) &ml_data);
 }
 
@@ -3243,12 +3243,12 @@ void ML_Smoother_Clean_BGS_Data(void *data)
    blockfacts = dataptr->blockfacts;
 
    for (i=0; i < Nblocks; i++) {
-      free(perms[i]);
-      free(blockfacts[i]);
+      ML_free(perms[i]);
+      ML_free(blockfacts[i]);
    }
 
-   free(perms);
-   free(blockfacts);
+   ML_free(perms);
+   ML_free(blockfacts);
    ML_memory_free((void **) &dataptr);
 }
 
@@ -3281,9 +3281,9 @@ void ML_Smoother_Destroy_ILUT_Data(void *data)
    ML_Sm_ILUT_Data *ml_data;
 
    ml_data = (ML_Sm_ILUT_Data *) data;
-   if ( ml_data->mat_ia != NULL ) free(ml_data->mat_ia);
-   if ( ml_data->mat_ja != NULL ) free(ml_data->mat_ja);
-   if ( ml_data->mat_aa != NULL ) free(ml_data->mat_aa);
+   if ( ml_data->mat_ia != NULL ) ML_free(ml_data->mat_ia);
+   if ( ml_data->mat_ja != NULL ) ML_free(ml_data->mat_ja);
+   if ( ml_data->mat_aa != NULL ) ML_free(ml_data->mat_aa);
    ML_memory_free( (void **) &ml_data);
 }
 
@@ -3334,41 +3334,41 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
    ml_data = (ML_Sm_Schwarz_Data *) data;
    if ( ml_data->bmat_ia  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->bmat_ia[i]);
-      free(ml_data->bmat_ia);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->bmat_ia[i]);
+      ML_free(ml_data->bmat_ia);
    }
    if ( ml_data->bmat_ja  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->bmat_ja[i]);
-      free(ml_data->bmat_ja);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->bmat_ja[i]);
+      ML_free(ml_data->bmat_ja);
    }
    if ( ml_data->bmat_aa  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->bmat_aa[i]);
-      free(ml_data->bmat_aa);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->bmat_aa[i]);
+      ML_free(ml_data->bmat_aa);
    }
    if ( ml_data->aux_bmat_ia  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->aux_bmat_ia[i]);
-      free(ml_data->aux_bmat_ia);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->aux_bmat_ia[i]);
+      ML_free(ml_data->aux_bmat_ia);
    }
    if ( ml_data->aux_bmat_ja  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->aux_bmat_ja[i]);
-      free(ml_data->aux_bmat_ja);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->aux_bmat_ja[i]);
+      ML_free(ml_data->aux_bmat_ja);
    }
    if ( ml_data->aux_bmat_aa  != NULL ) 
    {
-      for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->aux_bmat_aa[i]);
-      free(ml_data->aux_bmat_aa);
+      for ( i = 0; i < ml_data->nblocks; i++ ) ML_free(ml_data->aux_bmat_aa[i]);
+      ML_free(ml_data->aux_bmat_aa);
    }
-   if ( ml_data->blk_size != NULL ) free(ml_data->blk_size);
-   if ( ml_data->blk_info != NULL ) free(ml_data->blk_info);
+   if ( ml_data->blk_size != NULL ) ML_free(ml_data->blk_size);
+   if ( ml_data->blk_info != NULL ) ML_free(ml_data->blk_info);
    if ( ml_data->blk_indices != NULL ) 
    {
       for ( i = 0; i < ml_data->nblocks; i++ )
          if ( ml_data->blk_indices[i] != NULL ) 
-            free( ml_data->blk_indices[i] );
+            ML_free( ml_data->blk_indices[i] );
    }
 #ifdef SUPERLU
    if ( ml_data->slu_Amat != NULL )
@@ -3379,10 +3379,10 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
          if ( A != NULL )
          {
             SUPERLU_FREE( A->Store );
-            free(A);
+            ML_free(A);
          }
       }
-      free( ml_data->slu_Amat );
+      ML_free( ml_data->slu_Amat );
    }
    if ( ml_data->slu_Lmat != NULL )
    {
@@ -3392,10 +3392,10 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
          if ( L != NULL )
          {
             Destroy_SuperNode_Matrix(L);
-            free(L);
+            ML_free(L);
          }
       }
-      free( ml_data->slu_Lmat );
+      ML_free( ml_data->slu_Lmat );
    }
    if ( ml_data->slu_Umat != NULL )
    {
@@ -3408,22 +3408,22 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
             SUPERLU_FREE( ((NRformat *) U->Store)->rowptr);
             SUPERLU_FREE( ((NRformat *) U->Store)->nzval);
             SUPERLU_FREE( U->Store );
-            free(U);
+            ML_free(U);
          }
       }
-      free( ml_data->slu_Umat );
+      ML_free( ml_data->slu_Umat );
    }
    if ( ml_data->perm_c != NULL )
    {
       for ( i = 0; i < ml_data->nblocks; i++ )
          if ( ml_data->perm_c[i] ) free (ml_data->perm_c[i]);
-      free( ml_data->perm_c );
+      ML_free( ml_data->perm_c );
    }
    if ( ml_data->perm_r != NULL )
    {
       for ( i = 0; i < ml_data->nblocks; i++ )
          if ( ml_data->perm_r[i] ) free (ml_data->perm_r[i]);
-      free( ml_data->perm_r );
+      ML_free( ml_data->perm_r );
    }
 #endif
    ML_memory_free( (void **) &ml_data);
@@ -3996,7 +3996,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat, 
                              int blocksize) 
 {
-   int            i, j, *cols, allocated_space, length, Nrows, Nblocks;
+   int            i, j, *cols, allocated_space, length, Nrows, Nblocks, kkk;
    int            row_in_block, col_in_block, **perms, info, col;
    double         *vals, **blockfacts;
    ML_Sm_BGS_Data *dataptr;
@@ -4021,7 +4021,8 @@ int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    perms = dataptr->perms;
    for (j=0; j<Nblocks; j++) 
    {
-      blockfacts[j]=(double *)calloc(blocksize*blocksize,sizeof(double));
+      blockfacts[j]=(double *) ML_allocate(blocksize*blocksize*sizeof(double));
+      for (kkk = 0; kkk < blocksize*blocksize; kkk++) blockfacts[kkk][j] = 0.;
       perms[j]=(int *)ML_allocate(blocksize*blocksize*sizeof(int));
    }
    cols = (int    *) ML_allocate(allocated_space*sizeof(int    ));
@@ -4049,8 +4050,8 @@ int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
       if (info != 0)
          pr_error("Error in ML_Gen_BGSFacts:dgetrf returned a non-zero value\n");
    }
-   free(cols);
-   free(vals);
+   ML_free(cols);
+   ML_free(vals);
 	
    return 0;
 }
@@ -4206,9 +4207,9 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    /* clean up                                                    */
    /* ----------------------------------------------------------- */
 
-   free(cols);
-   free(vals);
-   free(block_offset);
+   ML_free(cols);
+   ML_free(vals);
+   ML_free(block_offset);
 	
    return 0;
 }
@@ -4258,7 +4259,7 @@ int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *Amat, ML_Comm *comm,
    NrowsOffset = 0;
    for (i = 0; i < mypid; i++) NrowsOffset += proc_array[i];
    for (i = 1; i < nprocs; i++) proc_array[i] += proc_array[i-1];
-   free(proc_array2);
+   ML_free(proc_array2);
 
    /* ----------------------------------------------------------- */
    /* compose the column index map (index_array,index_array2)     */
@@ -4273,7 +4274,7 @@ int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *Amat, ML_Comm *comm,
    for (i = Nrows; i < extNrows; i++) index_array[i-Nrows] = dble_array[i];
    index_array2  = (int *) ML_allocate((extNrows-Nrows) *sizeof(int));
    for (i = 0; i < extNrows-Nrows; i++) index_array2[i] = i;
-   free( dble_array );
+   ML_free( dble_array );
 
    /* ----------------------------------------------------------- */
    /* send the lengths of each row to remote processor            */
@@ -4287,7 +4288,7 @@ int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *Amat, ML_Comm *comm,
                               *recv_lengths, NrowsOffset, index_array,
                               index_array2, int_buf, dble_buf); 
 
-   free(proc_array);
+   ML_free(proc_array);
    ML_az_sort(index_array, extNrows-Nrows, index_array2, NULL);
    (*sindex_array) = index_array;
    (*sindex_array2) = index_array2;
@@ -4371,10 +4372,10 @@ int ML_Smoother_GetRowLengths(ML_CommInfoOP *comm_info, ML_Comm *comm,
       nbytes  = sizeof(int) * length;
       comm->USR_sendbytes((void*) temp_list, nbytes, proc_id, msgtype, 
                           comm->USR_comm);
-      free( temp_list );
+      ML_free( temp_list );
    }
-   free(cols);
-   free(vals);
+   ML_free(cols);
+   ML_free(vals);
 
    /* ----------------------------------------------------------- */
    /* wait for all messages                                       */
@@ -4391,8 +4392,8 @@ int ML_Smoother_GetRowLengths(ML_CommInfoOP *comm_info, ML_Comm *comm,
                           &msgtype, comm->USR_comm, request+i);
       offset += length;
    }
-   free(request);
-   free(neighbors);
+   ML_free(request);
+   ML_free(neighbors);
    return 0;
 }
 
@@ -4487,11 +4488,11 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
       nbytes  = sizeof(double) * nnz;
       comm->USR_sendbytes((void*) send_buf, nbytes, proc_id, msgtype, 
                           comm->USR_comm);
-      free( temp_list );
-      free( send_buf );
+      ML_free( temp_list );
+      ML_free( send_buf );
    }
-   free(cols);
-   free(vals);
+   ML_free(cols);
+   ML_free(vals);
 
    /* ----------------------------------------------------------- */
    /* wait for all messages                                       */
@@ -4571,11 +4572,11 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
       nbytes  = sizeof(int) * nnz;
       comm->USR_sendbytes((void*) isend_buf, nbytes, proc_id, msgtype, 
                           comm->USR_comm);
-      free( temp_list );
-      free( isend_buf );
+      ML_free( temp_list );
+      ML_free( isend_buf );
    }
-   free(cols);
-   free(vals);
+   ML_free(cols);
+   ML_free(vals);
 
    /* ----------------------------------------------------------- */
    /* wait for all messages                                       */
@@ -4597,8 +4598,8 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
       nnz_offset += nnz;
    }
 
-   free(request);
-   free(neighbors);
+   ML_free(request);
+   ML_free(neighbors);
    return 0;
 }
 
@@ -5017,14 +5018,14 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
    /* deallocate temporary storage space                         */
    /* ---------------------------------------------------------- */
 
-   free(cols);
-   free(vals);
-   free(dble_buf);
-   free(diagonal);
-   free(rowNorms);
-   free(sortcols);
-   free(sortvals);
-   free(track_array);
+   ML_free(cols);
+   ML_free(vals);
+   ML_free(dble_buf);
+   ML_free(diagonal);
+   ML_free(rowNorms);
+   ML_free(sortcols);
+   ML_free(sortvals);
+   ML_free(track_array);
    return 0;
 }
 
@@ -5144,7 +5145,7 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
             tmp_blk_leng[i] = 2 * ( blk_size[i] + rowleng ) + 2;
             blk_indices[i] = (int *) ML_allocate(tmp_blk_leng[i] * sizeof(int));
             for (k = 0; k < blk_size[i]; k++) blk_indices[i][k] = tmp_indices[k]; 
-            free( tmp_indices );
+            ML_free( tmp_indices );
          }   
          for ( k = 0; k < rowleng; k++ ) 
          {
@@ -5344,12 +5345,12 @@ if ( info != 0 && info != (nrows+1) )
    SUPERLU_FREE (C);
    SUPERLU_FREE (ferr);
    SUPERLU_FREE (berr);
-   free(etree);
-   free(trhs);
-   free(tsol);
-   free(vals);
-   free(cols);
-   free(tmp_blk_leng);
+   ML_free(etree);
+   ML_free(trhs);
+   ML_free(tsol);
+   ML_free(vals);
+   ML_free(cols);
+   ML_free(tmp_blk_leng);
    return 0;
 #else
    printf("ML_Smoother_VBlockSchwarzDecomposition : not available.\n");
@@ -5971,7 +5972,7 @@ int ML_Smoother_BackGS(void *sm,int inlen,double x[],int outlen,double rhs[])
    if (allocated_space != Amat->max_nz_per_row+2) 
       Amat->max_nz_per_row = allocated_space;
 
-   free(vals); free(cols);
+   ML_free(vals); ML_free(cols);
 
    return 0;
 }
@@ -6130,7 +6131,7 @@ int ML_Smoother_OrderedSGS(void *sm,int inlen,double x[],int outlen,
    if (allocated_space != Amat->max_nz_per_row+2) 
       Amat->max_nz_per_row = allocated_space;
 
-   free(vals); free(cols);
+   ML_free(vals); ML_free(cols);
 
    return 0;
 }
@@ -6192,7 +6193,7 @@ int ML_Smoother_Gen_Ordering(ML_Operator *Amat, int **data_ptr)
 
 void ML_Smoother_Clean_OrderedSGS(void *data)
 {
-   free(data);
+   ML_free(data);
 }
 
 #ifdef	MB_MODIF
@@ -6421,18 +6422,18 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
       else 
       {
          allocated_space = 30;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
-         tdiag = (double *) malloc(Amat->outvec_leng*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
+         tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
          for (i = 0; i < Amat->outvec_leng; i++) 
          {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,
                                      cols,vals,&nn) == 0) 
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols); 
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               ML_free(vals); ML_free(cols); 
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL)
                {
                   printf("Not enough space to get matrix row. Row length of\n");
@@ -6444,9 +6445,9 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
                if (cols[j] == i) tdiag[i] = vals[j];
 	    if (tdiag[i] == 0.) tdiag[i] = 1.;
          }
-         free(cols); free(vals);
+         ML_free(cols); ML_free(vals);
          ML_Operator_Set_Diag(Amat, Amat->matvec->Nrows, tdiag);
-         free(tdiag);
+         ML_free(tdiag);
       } 
    }
    ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
@@ -7063,18 +7064,18 @@ fflush(stdout);
       else 
       {
          allocated_space = 30;
-         cols = (int    *) malloc(allocated_space*sizeof(int   ));
-         vals = (double *) malloc(allocated_space*sizeof(double));
-         tdiag = (double *) malloc(Amat->outvec_leng*sizeof(double));
+         cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+         vals = (double *) ML_allocate(allocated_space*sizeof(double));
+         tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
          for (i = 0; i < Amat->outvec_leng; i++) 
          {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,
                                      cols,vals,&nn) == 0) 
             {
                allocated_space = 2*allocated_space + 1;
-               free(vals); free(cols); 
-               cols = (int    *) malloc(allocated_space*sizeof(int   ));
-               vals = (double *) malloc(allocated_space*sizeof(double));
+               ML_free(vals); ML_free(cols); 
+               cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+               vals = (double *) ML_allocate(allocated_space*sizeof(double));
                if (vals == NULL)
                {
                   printf("Not enough space to get matrix row. Row length of\n");
@@ -7087,9 +7088,9 @@ fflush(stdout);
                if (cols[j] == i) tdiag[i] = vals[j];
 	    if (tdiag[i] == 0.) tdiag[i] = 1.;
          }
-         free(cols); free(vals);
+         ML_free(cols); ML_free(vals);
          ML_Operator_Set_Diag(Amat, Amat->matvec->Nrows, tdiag);
-         free(tdiag);
+         ML_free(tdiag);
       } 
    }
    ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
@@ -7433,9 +7434,9 @@ if (Amat->comm->ML_mypid == 0) {
 
   if (blockmat->Ke_diag == NULL) {
     allocated_space = blockmat->N_Ke + blockmat->Nghost + 1;
-    cols = (int    *) malloc(allocated_space*sizeof(int   ));
-    vals = (double *) malloc(allocated_space*sizeof(double));
-    tdiag = (double *) malloc(Amat->outvec_leng*sizeof(double));
+    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+    vals = (double *) ML_allocate(allocated_space*sizeof(double));
+    tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
     for (i = 0; i < n; i++) {
       status = blockmat->Ke_getrow(blockmat->Ke_getrow_data,1,&i,
 				   allocated_space, cols, vals, &nn);
@@ -7448,15 +7449,15 @@ if (Amat->comm->ML_mypid == 0) {
 	if (cols[j] == i) tdiag[i] = vals[j];
       if (tdiag[i] == 0.) tdiag[i] = 1.;
     }
-    free(cols); free(vals);
+    ML_free(cols); ML_free(vals);
     blockmat->Ke_diag = tdiag;  tdiag = NULL;
   }
   d1 = blockmat->Ke_diag;
   if (blockmat->M_diag == NULL) {
     allocated_space = blockmat->N_Ke + blockmat->Nghost + 1;
-    cols = (int    *) malloc(allocated_space*sizeof(int   ));
-    vals = (double *) malloc(allocated_space*sizeof(double));
-    tdiag = (double *) malloc(Amat->outvec_leng*sizeof(double));
+    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+    vals = (double *) ML_allocate(allocated_space*sizeof(double));
+    tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
     for (i = 0; i < n; i++) {
       status = blockmat->M_getrow(blockmat->M_getrow_data,1,&i,
 				   allocated_space, cols, vals, &nn);
@@ -7468,7 +7469,7 @@ if (Amat->comm->ML_mypid == 0) {
       for (j = 0; j < nn; j++) 
 	if (cols[j] == i) tdiag[i] = vals[j];
     }
-    free(cols); free(vals);
+    ML_free(cols); ML_free(vals);
     blockmat->M_diag = tdiag;  tdiag = NULL;
   }
   d2 = blockmat->M_diag;
