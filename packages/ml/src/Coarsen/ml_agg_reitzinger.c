@@ -57,6 +57,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
   int nzctr;
 
+  double t0 = GetClock();
+
   if (incr_or_decrease != ML_DECREASING)
     pr_error("Hiptmair: Only ML_DECREASING is supported\n");
 
@@ -1249,7 +1251,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 #ifdef ML_VAMPIR
   VT_begin(ml_vt_reitzinger_cleanup_state);
 #endif
-  if (ag->print_flag < ML_Get_PrintLevel())
+
+  if (ML_Get_PrintLevel() > 0)
   {
     ML_gsum_scalar_int(&Nnz_allgrids,&j,ml_nodes->comm);
     ML_gsum_scalar_int(&Nnz_finegrid,&j,ml_nodes->comm);
@@ -1268,6 +1271,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 #ifdef ML_VAMPIR
   VT_end(ml_vt_reitzinger_cleanup_state);
 #endif
+
+  t0 = GetClock() - t0;
+  t0 = ML_gsum_double(t0, ml_nodes->comm);
+  t0 = t0/((double) ml_nodes->comm->ML_nprocs);
+  if (ML_Get_PrintLevel() > 0)
+    if (Tfine->comm->ML_mypid==0)
+      printf("AMG setup time \t= %e seconds\n",t0);
+
   return(Nlevels_nodal);
 }
 
