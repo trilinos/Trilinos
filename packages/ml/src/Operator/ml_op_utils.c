@@ -433,7 +433,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
 
   idxtype *vtxdist = NULL, *tpwts = NULL, *adjncy = NULL, *xadj = NULL; 
   int *map = NULL, *bindx = NULL, *blks = NULL, nprocs, myid, j, ii, jj;
-  int allocated = 0, row_length, itemp1, itemp2;
+  int allocated = 0, row_length, itemp1, itemp2, Nrows;
   double *val = NULL; 
 
 #if defined(HAVE_ML_METIS) || defined(HAVE_ML_JOSTLE) 
@@ -444,11 +444,12 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   float  itr = 1000., ubvec = 1.05;
 #endif
 #ifdef HAVE_ML_JOSTLE
-  static int dumbo = 0;
   static int jostle_called = 0;
-  int    output_level, nnodes, *itmp, *proc_ids;
+  int    output_level, nnodes, *itmp = NULL, *proc_ids;
+  int    *total_nz = NULL, *total_rows = NULL, *temp_part, zz;
+  int    msgtype, offset = -1;
+  USR_REQ *request = NULL; 
   char str[80];
-  FILE *fp;
 #endif
 #ifdef HAVE_ML_METIS
   int     options[5]={0,3,1,1,0};
@@ -497,19 +498,57 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   /* is my part of the global matrix. Zoltan does not need this structure.*/
   /* Note: matrix does not include self connections (diag entries)        */
  
+  Nrows = n;
   if (which_partitioner != ML_USEZOLTAN) {
-    xadj = (idxtype *) ML_allocate( (n+1) * sizeof(idxtype) );
-    if (xadj == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
-
     /* count number of nonzeros */
 
     ii = 0;
     for( jj = 0 ; jj < n ; jj++ ) {
       ML_get_matrix_row(matrix,1,&jj,&allocated,&bindx,&val,&row_length,0);
-      ii += row_length - 1;
+      ii += row_length;
     }
+
+    /* Allow additional space for matrix if we use Jostle and some */
+    /* processors are idle on the next level. This space will hold */
+    /* the fine grid graph from "idle" processors that will be     */
+    /*  shipped to the active processors.                          */
+    
+#ifdef HAVE_ML_JOSTLE
+    if ( (which_partitioner == ML_USEPARMETIS) && (*nblks != nprocs)) {
+      total_nz  = (int *) ML_allocate(sizeof(int)*nprocs);
+      total_rows= (int *) ML_allocate(sizeof(int)*nprocs);
+      itmp      = (int *) ML_allocate(sizeof(int)*nprocs);
+      for (jj = 0; jj < nprocs; jj++) total_nz[jj]   = 0;
+      for (jj = 0; jj < nprocs; jj++) total_rows[jj] = 0;
+      total_nz[myid]   = ii;
+      total_rows[myid] = n;
+      ML_gsum_vec_int(&total_nz,   &itmp, nprocs, matrix->comm);
+      ML_gsum_vec_int(&total_rows, &itmp, nprocs, matrix->comm);
+      /* in order to use Jostle contiguous storage, we must assign    */
+      /* global column id's so that after moving data proc 0 has the  */
+      /* lowest numbered rows followed by proc 1, etc.                */
+      offset = 0; zz = 1;
+      for (jj = 0 ; jj < *nblks; jj++) {
+	for (j = jj; j < nprocs; j += (*nblks) ) {
+	  if (j == myid) zz = 0;
+	  if (zz == 1   ) offset += total_rows[j];
+	}
+      }
+
+      if ( myid < *nblks ) {
+	for (jj = *nblks ; jj < nprocs; jj++) 
+	  if (  (jj%(*nblks)) == myid ) {
+	    ii    += total_nz[jj]; 
+	    Nrows += total_rows[jj];
+	  }
+      }
+    }
+#endif
+
     adjncy = (idxtype *) ML_allocate( (ii+1) * sizeof(idxtype) );
     if (adjncy == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
+    xadj = (idxtype *) ML_allocate( (Nrows+1) * sizeof(idxtype) );
+    if (xadj == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
 
     /* fill graph */
 
@@ -527,7 +566,8 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
       xadj[n] = ii;
     }
     else {
-      ML_create_unique_id(n, &map, matrix->getrow->pre_comm, matrix->comm);
+      ML_create_unique_id(n, &map, matrix->getrow->pre_comm, matrix->comm,
+			  offset);
       ii = 0;
       for( jj = 0 ; jj < n ; jj++ )   {
 	xadj[jj] = ii;
@@ -541,6 +581,75 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
       xadj[n] = ii;
     }
   }
+
+#ifdef HAVE_ML_JOSTLE
+
+  /* Ship rows from "idle" processors to "active" processors. */
+
+  if ( (which_partitioner == ML_USEPARMETIS) && (*nblks != nprocs)) {
+    if ( myid < *nblks ) {
+      ii = n;
+      zz = 0;
+      
+      request = (USR_REQ *) ML_allocate((2+(nprocs - *nblks)/(*nblks))*
+					sizeof(USR_REQ)); /* estimated number*/
+                                                          /* of rcv neighbors*/
+      for (jj = *nblks ; jj < nprocs; jj++) {
+	if (  (jj%(*nblks)) == myid ) {
+	  /* receive xadj and adjncy */
+	  if (total_rows[jj] != 0) {
+	    msgtype = 95539;
+	    matrix->comm->USR_irecvbytes((void *) &(xadj[ii+1]), 
+					 total_rows[jj]*sizeof(int), &jj,
+					 &msgtype, matrix->comm->USR_comm, 
+					 request+zz);
+	    matrix->comm->USR_cheapwaitbytes((void *) &(xadj[ii+1]), 
+					 total_rows[jj]*sizeof(int), &jj,
+					 &msgtype, matrix->comm->USR_comm, 
+					 request+zz);
+	    
+	    /* fix xadj so that it is correct */
+	    for (j = ii+1; j <= ii+total_rows[jj]; j++) {
+	      xadj[j] += xadj[ii];
+	    }
+	    msgtype = 94539;
+	    matrix->comm->USR_irecvbytes((void *) &(adjncy[xadj[ii]]), 
+					 total_nz[jj]*sizeof(int), &jj,
+					 &msgtype, matrix->comm->USR_comm, 
+					 request+zz);
+	    matrix->comm->USR_cheapwaitbytes((void *) &(adjncy[xadj[ii]]), 
+					 total_nz[jj]*sizeof(int), &jj,
+					 &msgtype, matrix->comm->USR_comm, 
+					 request+zz);
+	    zz++;
+	    ii += total_rows[jj];
+	  } /* total_rows[jj] != 0) */
+	} /* (jj%nblks)) == myid */
+      } /* for (jj = *nblks; jj < nprocs; jj++) */
+    } /* if ( myid < *nblks ) */
+    else {
+      request = (USR_REQ *) ML_allocate(sizeof(USR_REQ));
+                                                         
+      /* send xadj and adjncy */
+      if (n != 0) {
+	msgtype = 95539;
+	matrix->comm->USR_sendbytes((void *) &(xadj[1]), n*sizeof(int), 
+				    myid%(*nblks), msgtype, 
+				    matrix->comm->USR_comm);
+	msgtype = 94539;
+	matrix->comm->USR_sendbytes((void *) adjncy,
+				    total_nz[myid]*sizeof(int), 
+				    myid%(*nblks), msgtype, 
+				    matrix->comm->USR_comm);
+      } /* if (n != 0) */
+      Nrows = 0;
+    } /* if ( myid < *nblks ) */
+    ML_free(total_nz);
+    temp_part = (int *) ML_allocate( (Nrows+1)*sizeof(int));
+  } /* (which_partitioner == ML_USEPARMETIS) && (*nblks != nprocs) */
+  else temp_part = pnode_part;
+#endif
+
 
   switch(which_partitioner) {
   case ML_USEZOLTAN:
@@ -582,22 +691,69 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
       pjostle_init(&nprocs, &myid);
       jostle_called = 1;
     }
-    dumbo++;
     output_level = 2;
     nnodes = ML_Comm_GsumInt(matrix->comm,n);
     jostle_env("format = contiguous");
     proc_ids = (int *) ML_allocate( nprocs*sizeof(int));
-    itmp  = (int *) ML_allocate( nprocs*sizeof(int));
+    if (itmp == NULL) 
+      itmp  = (int *) ML_allocate( nprocs*sizeof(int));
     for (j = 0; j < nprocs; j++) proc_ids[j] = 0;
-    proc_ids[myid] = n;
+    proc_ids[myid] = Nrows;
     ML_gsum_vec_int(&proc_ids, &itmp, nprocs, matrix->comm);
-    for (j = 0; j < n; j++) 
+    for (j = 0; j < Nrows; j++) 
       xadj[j] = xadj[j+1] - xadj[j];
+    ML_free(itmp);
 
     dummy = 0;
-    pjostle(&nnodes,&Cstyle,&n,&dummy,proc_ids,xadj,(int *) NULL,pnode_part,
-	    &(xadj[n]),adjncy,(int *) NULL, nblks,(int *) NULL, 
+
+    /* check if some processors are idle */
+
+    if ( *nblks < nprocs) {
+      sprintf(str,"idle = %d",nprocs - *nblks);
+      jostle_env(str); 
+    }
+    pjostle(&nnodes,&Cstyle,&Nrows,&dummy,proc_ids,xadj,(int *) NULL,temp_part,
+	    &(xadj[Nrows]),adjncy,(int *) NULL, &nprocs, (int *) NULL,
 	    &output_level, &dummy, (double *) NULL);
+
+    /* ship over temp pnode part */
+    if ( (which_partitioner == ML_USEPARMETIS) && (*nblks != nprocs)) {
+      msgtype = 93539;
+      if ( myid < *nblks) {
+	for (jj = 0; jj < n; jj++) pnode_part[jj] = temp_part[jj];
+	ii = n;
+	for (jj = *nblks ; jj < nprocs; jj++) {
+	  if (  (jj%(*nblks)) == myid ) {
+	    /* send pnode part */
+	    if (total_rows[jj] != 0) {
+	      matrix->comm->USR_sendbytes((void *) &(temp_part[ii]),
+				    total_rows[jj]*sizeof(int), 
+				    jj, msgtype, 
+				    matrix->comm->USR_comm);
+	      ii += total_rows[jj];
+	    }
+	  }
+	}
+      }
+      else {
+	/*receive pnode part stuff */
+	zz = myid%(*nblks);
+	if (n != 0) {
+	  matrix->comm->USR_irecvbytes((void *) pnode_part,
+				     n*sizeof(int), &zz,
+				     &msgtype, matrix->comm->USR_comm, 
+				     request);
+	  matrix->comm->USR_cheapwaitbytes((void *) pnode_part,
+					 n*sizeof(int), &zz,
+					 &msgtype, matrix->comm->USR_comm, 
+					 request);
+	}
+      } /* end else */
+      ML_free(temp_part);
+      ML_free(total_rows);
+    }
+    if (request != NULL) ML_free(request);
+
 #else
     tpwts   = (idxtype *) ML_allocate(sizeof(idxtype)*ML_max(*nblks,nprocs));
     vtxdist = (idxtype *) ML_allocate(sizeof(idxtype)*(nprocs+1));
