@@ -55,7 +55,6 @@ PARAM_VARS oct_params[] = {
   { "OCT_METHOD",       NULL, "INT" },
   { "OCT_GRANULARITY",  NULL, "INT" },
   { "OCT_OUTPUT_LEVEL", NULL, "INT" },
-  { "OCT_WGTFLAG",      NULL, "INT" },
   {  NULL,              NULL,  NULL }};
 
   status = LB_Check_Param(name, val, oct_params, &result, &index);
@@ -95,16 +94,17 @@ PARAM_VARS oct_params[] = {
     { "OCT_METHOD",       NULL, "INT" },
     { "OCT_GRANULARITY ", NULL, "INT" },
     { "OCT_OUTPUT_LEVEL", NULL, "INT" },
-    { "OCT_WGTFLAG",      NULL, "INT" },
     {  NULL,              NULL,  NULL }};
 
   oct_params[0].ptr = (void *) &oct_dim;
   oct_params[1].ptr = (void *) &oct_method;
   oct_params[2].ptr = (void *) &oct_granularity;
   oct_params[3].ptr = (void *) &oct_output_level;
-  oct_params[4].ptr = (void *) &oct_wgtflag;
 
   LB_Assign_Param_Vals(lb->Params, oct_params);
+
+  /* Set oct_wgtflag based on the "key" parameter Obj_Weight_Dim */
+  oct_wgtflag = (lb->Obj_Weight_Dim > 0);
 
   *num_export = -1;  /* We don't compute any export data */
 
@@ -124,10 +124,6 @@ PARAM_VARS oct_params[] = {
   }
   if (oct_output_level < 1 || oct_output_level > 3) {
     fprintf(stderr, "Error in OCTPART: OCT_OUTPUT_LEVEL must be 1, 2, or 3\n");
-    error = TRUE;
-  }
-  if (oct_wgtflag < 0 || oct_wgtflag > 1) {
-    fprintf(stderr, "Error in OCTPART: OCT_WGTFLAG must be 0 or 1\n");
     error = TRUE;
   }
 
