@@ -244,7 +244,7 @@ tflop-dr:
 	@if [ ! -d Obj_tflop ]; \
 	then mkdir Obj_tflop; \
 	fi
-	@rm -f Obj_smos/Makefile
+	@rm -f Obj_tflop/Makefile
 	@cp Makefile_sub Obj_tflop/Makefile
 	@cd Obj_tflop; \
 	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
