@@ -42,6 +42,7 @@ double parasails_loadbal    = 0.;
   int    *cpntr = NULL, *bindx = NULL, N_update, iii;
 
 double *scaling_vect = NULL;
+#define SCALE_ME
 
 int main(int argc, char *argv[])
 {
@@ -153,7 +154,9 @@ double max_diag, min_diag, max_sum, sum;
 	
   data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
+#ifdef SCALE_ME
   ML_MSR_sym_diagonal_scaling(Amat, proc_config, &scaling_vect);  
+#endif
 			
   start_time = AZ_second();
 
@@ -335,7 +338,9 @@ double max_diag, min_diag, max_sum, sum;
        ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, Nrigid, rigid, N_update);
        free(rigid);
     }
+#ifdef SCALE_ME
     ML_Aggregate_Scale_NullSpace(ag, scaling_vect, N_update);
+#endif
 
     coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, 
 				ML_DECREASING, ag);
@@ -430,6 +435,9 @@ double max_diag, min_diag, max_sum, sum;
       */
       num_PDE_eqns = 6;
    }
+   /*
+   ML_Gen_Smoother_MLS(ml, coarsest_level, ML_BOTH, nsmooth); 	   
+   */
    ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
 /*
    ML_Gen_Smoother_SymGaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);
@@ -450,11 +458,15 @@ double max_diag, min_diag, max_sum, sum;
    options[AZ_solver] = old_sol;
    params[AZ_tol] = old_tol;
    */
-		
+
+#ifdef RST_MODIF
+   ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
+#else
 #ifdef	MB_MODIF
    ML_Gen_Solver(ml, ML_SAAMG,   N_levels-1, coarsest_level); 
 #else
    ML_Gen_Solver(ml, ML_MGFULLV, N_levels-1, coarsest_level); 
+#endif
 #endif
 	
    options[AZ_solver]   = AZ_cg;
@@ -542,10 +554,12 @@ alpha = AZ_gdot(N_update, xxx, xxx, proc_config);
 printf("init guess = %e\n",alpha);
 alpha = AZ_gdot(N_update, rhs, rhs, proc_config);
 printf("rhs = %e\n",alpha);
+#ifdef SCALE_ME
 	ML_MSR_scalerhs(rhs, scaling_vect, data_org[AZ_N_internal] +
                     data_org[AZ_N_border]);
 	ML_MSR_scalesol(xxx, scaling_vect, data_org[AZ_N_internal] +
 			data_org[AZ_N_border]);
+#endif
 
 max_diag = 0.;
 min_diag = 1.e30;
