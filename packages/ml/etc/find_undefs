@@ -31,7 +31,7 @@ echo "}" >> temprog.c
 ${COMPILE} ${COMP_FLAGS} -I ../Obj -c temprog.c
 ${LINKER} ${COMP_FLAGS} temprog.o ${THELIBRARIES} ${THEARCHS} 2> .undefs
 bb=`cat .undefs | sed "s/$i.o//g"| sed "s/$i.f//g" | sed "s/In function.*://" | grep -i $i | wc | sed "s/^ *//" | sed "s/ .*//"`
-echo $i $bb
+echo $i
 grep -i $i .undefs
 if test $bb -eq 0
 then
