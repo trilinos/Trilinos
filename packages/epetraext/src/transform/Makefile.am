@@ -90,6 +90,12 @@ libepetraext_trans_a_SOURCES = \
         $(BTF) \
 	$(MPI)
 
+#If these are not listed, the files will not be included in
+#the distribution tarball.
+EXTRA_libepetraext_trans_a_SOURCES = \
+	$(EXTRA_MPI) \
+	$(EXTRA_MPI_H)
+
 if BUILD_TRANSFORM
 
 # libraries to be installed in $(libexecdir)
