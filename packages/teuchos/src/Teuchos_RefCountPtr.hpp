@@ -18,6 +18,7 @@
 
 #include "Teuchos_RefCountPtrDecl.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_map.hpp"
 
 // /////////////////////////////////////////////////////////////////////////
 // Inline implementations below, not for the client to look at.
@@ -61,7 +62,7 @@ public:
 		return const_cast<RefCountPtr_node*>(this)->get_extra_data(type_name,name);
 	}
 private:
-	typedef map<std::string,any>  extra_data_map_t;
+	typedef Teuchos::map<std::string,any>  extra_data_map_t;
 	int                 count_;
 	bool                has_ownership_;
 	extra_data_map_t    *extra_data_map_;
@@ -356,7 +357,7 @@ REFCOUNTPTR_INLINE
 void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teuchos::RefCountPtr<T2> *p, bool force_unique )
 {
 	*(*p); // Assert not NULL
-	return p->access_node()->set_extra_data( extra_data, name, force_unique );
+	p->access_node()->set_extra_data( extra_data, name, force_unique );
 }
 
 template<class T1, class T2>
