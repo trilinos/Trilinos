@@ -319,7 +319,7 @@ for (i = 0; i < Edge_Partition.Nlocal ; i++)
   ML_Operator_Transpose_byrow(Tmat, Tmat_trans);
 
 
-  Nlevels=ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,MaxMgLevels-1,
+  Nlevels=ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, &ml_nodes,MaxMgLevels-1,
 					     ML_DECREASING,ag,Tmat,Tmat_trans, 
 					     &Tmat_array,&Tmat_trans_array, 
 					     smoothPe_flag, 1.5);
