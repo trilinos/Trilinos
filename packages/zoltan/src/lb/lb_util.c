@@ -70,7 +70,7 @@ void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids,
 /*****************************************************************************/
 /*****************************************************************************/
 
-/* LB_hashf is a hash function for global ids. 
+/* LB_Hash is a hash function for global ids. 
  *
  * Input:
  *   key: a key to hash of type LB_GID (any data type)
@@ -93,7 +93,7 @@ void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids,
  */
 
 
-unsigned int LB_hashf(LB_GID key, int n)
+unsigned int LB_Hash(LB_GID key, int n)
 {
   unsigned int h, rest, *p;
   char *byteptr;

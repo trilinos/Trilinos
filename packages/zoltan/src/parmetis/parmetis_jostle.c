@@ -504,7 +504,7 @@ static int LB_ParMetis_Jostle(
   
     for (i=0; i< num_obj; i++){
       /* insert hashed elements into hash table */
-      j = LB_hashf(global_ids[i], num_obj);
+      j = LB_Hash(global_ids[i], num_obj);
       hash_nodes[i].next = hashtab[j];
       hashtab[j] = &hash_nodes[i];
     }
@@ -751,7 +751,7 @@ static int LB_ParMetis_Jostle(
   
     /* Insert nodes into hash table */
     for (i=0; i< nrecv; i++){
-      j = LB_hashf(hash_nodes[i].gid, nrecv);
+      j = LB_Hash(hash_nodes[i].gid, nrecv);
       hash_nodes[i].next = hashtab[j];
       hashtab[j] = &hash_nodes[i];
       if (lb->Debug_Level >= LB_DEBUG_ALL)
@@ -1115,7 +1115,7 @@ char *val)                      /* value of variable */
 }
 
 /*******************************************************************
- * hash_lookup uses LB_hashf to lookup a key 
+ * hash_lookup uses LB_Hash to lookup a key 
  *
  * Input:
  *   hashtab, pointer to the hash table
@@ -1133,7 +1133,7 @@ static int hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n)
   int i;
   struct LB_hash_node *ptr;
 
-  i = LB_hashf(key, n);
+  i = LB_Hash(key, n);
   for (ptr=hashtab[i]; ptr != NULL; ptr = ptr->next){
     if (LB_EQ_GID(ptr->gid, key))
       return (ptr->gno);

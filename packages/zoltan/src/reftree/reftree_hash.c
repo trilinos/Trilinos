@@ -11,7 +11,7 @@
 #include "reftree_const.h"
 #include "all_allo_const.h"
 
-/* LB_Reftree_hash_lookup uses LB_hashf to lookup a key 
+/* LB_Reftree_hash_lookup uses LB_Hash to lookup a key 
  *
  * Input:
  *   hashtab, pointer to the hash table
@@ -32,7 +32,7 @@ LB_REFTREE* LB_Reftree_hash_lookup (struct LB_reftree_hash_node **hashtab,
   int i;
   struct LB_reftree_hash_node *ptr;
 
-  i = LB_hashf(key, n);
+  i = LB_Hash(key, n);
   for (ptr=hashtab[i]; ptr != NULL; ptr = ptr->next){
     if (LB_EQ_GID(ptr->gid, key))
       return (ptr->reftree_node);
@@ -57,7 +57,7 @@ void LB_Reftree_Hash_Insert(LB_REFTREE *reftree_node,
 int i;
 struct LB_reftree_hash_node *new_entry;
 
-  i = LB_hashf(reftree_node->global_id, size);
+  i = LB_Hash(reftree_node->global_id, size);
 
   new_entry = (struct LB_reftree_hash_node *)
               LB_MALLOC(sizeof(struct LB_reftree_hash_node));
