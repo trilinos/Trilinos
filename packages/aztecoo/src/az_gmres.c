@@ -95,7 +95,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
   register int k;
   int          i, i1, k1, mm, ii;
-  int          N, converged, one = 1, iter = 1, r_avail = AZ_FALSE;
+  int          N, one = 1, iter = 1, r_avail = AZ_FALSE;
   int          precond_flag, print_freq, proc, kspace, first_time = AZ_TRUE;
   double     **v, **hh, *c, *s, *rs, *dots, *tmp, *temp;
   double       *res, init_time = 0.0;
@@ -105,7 +105,6 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
   double       doubleone = 1.0, minusone = -1.0, *dummy = (double *) 0;
   int          *data_org, str_leng;
   char         label[64],suffix[32], prefix[64];
-  int          isnan;
 
 
   /* condition number estimation variables */
@@ -222,8 +221,6 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
   true_scaled_r = scaled_r_norm;
 
   r_2norm   = sqrt(r_2norm);
-  converged = convergence_info->converged;
-  isnan = convergence_info->isnan;
 
   if (r_avail) {
     sprintf(label,"res%s",suffix);
@@ -238,7 +235,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
     (void) fprintf(stdout, "%siter:    0           residual = %e\n",prefix,scaled_r_norm);
 
   iter = 0;
-  while (!converged && iter < options[AZ_max_iter] && !isnan) {
+  while (!(convergence_info->converged) && iter < options[AZ_max_iter] && !(convergence_info->isnan)) {
     convergence_info->iteration = iter;
     if (r_avail) DCOPY_F77(&N, v[0], &one, res, &one);
 
@@ -251,7 +248,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
     rs[0] = r_2norm;  /* initialize 1st rhs term of H system */
     i     = 0;
 
-    while (i < kspace && !converged && iter < options[AZ_max_iter]) {
+    while (i < kspace && !(convergence_info->converged) && iter < options[AZ_max_iter]) {
       iter++;
     convergence_info->iteration = iter;
       i1 = i + 1;
@@ -352,7 +349,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
         for (k = 0; k < i1; k++) tmp[k] = rs[k];
         AZ_get_x_incr(options, data_org, proc_config, params, i, hh, tmp,
-                      temp, v, Amat, precond, x, &first_time, &converged, kspace);
+                      temp, v, Amat, precond, x, &first_time, &(convergence_info->converged), kspace);
 
         AZ_scale_true_residual(x, b,
                                v[kspace], weight, &actual_residual,
@@ -401,10 +398,6 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
                                 options, data_org, proc_config, &r_avail, dummy,
                                 dummy, dummy, convergence_info);
 
-      converged = convergence_info->converged;
-      isnan = convergence_info->isnan;
-
-
       if ( (iter%print_freq == 0) &&
            (options[AZ_conv]!=AZTECOO_conv_test) && proc == 0)
         (void) fprintf(stdout, "%siter: %4d           residual = %e\n",prefix,iter,
@@ -412,24 +405,24 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
       i++;      /* subspace dim. counter dim(K) = i - 1 */
 
-      if (isnan) {
+      if (convergence_info->isnan) {
         AZ_terminate_status_print(AZ_breakdown, iter, status, rec_residual, params,
                                   true_scaled_r, actual_residual, options,
                                   proc_config);
         return;
       }
-      if ( (i == kspace) || converged || iter == options[AZ_max_iter]) {
+      if ( (i == kspace) || convergence_info->converged || iter == options[AZ_max_iter]) {
 
         /* update x and set temp to delta x */
 
         for (k = 0; k <= i1; k++) tmp[k] = rs[k];
 
         AZ_get_x_incr(options, data_org, proc_config, params, i, hh, tmp,
-                      temp, v, Amat, precond,  x, &first_time, &converged, kspace);
+                      temp, v, Amat, precond,  x, &first_time, &(convergence_info->converged), kspace);
 
       }
 
-      if (converged) {
+      if (convergence_info->converged) {
 
         /* compute true residual using 'v[kspace]' as a temporary vector */
 
@@ -438,9 +431,8 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
                                &true_scaled_r, options, data_org, proc_config,
                                Amat, convergence_info);
 
-        converged = convergence_info->converged;
 
-        if (!converged && options[AZ_conv]!=AZTECOO_conv_test) {
+        if (!(convergence_info->converged) && options[AZ_conv]!=AZTECOO_conv_test) {
 
 	  if (AZ_get_new_eps(&(convergence_info->epsilon), scaled_r_norm,
                                           true_scaled_r,
@@ -460,11 +452,11 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
         /* restore previous solution */
 
-        if ( (!converged) && (i != kspace) )
+        if ( (!(convergence_info->converged)) && (i != kspace) )
           for (k = 0; k < N; k++) x[k] = x[k] - temp[k];
       }
 
-      if ( (i == kspace) && !converged) {
+      if ( (i == kspace) && !(convergence_info->converged)) {
         if (r_avail)
           for (k = 0; k < N; k++) v[0][k] = res[k];
         else {
@@ -485,11 +477,12 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
   /* check if we exceeded maximum number of iterations */
 
-  if (converged) {
+  if (convergence_info->converged) {
     i = AZ_normal;
     scaled_r_norm = true_scaled_r;
   }
-  else if(!isnan) i = AZ_maxits;
+  else if (convergence_info->isnan) i = AZ_breakdown;
+  else i = AZ_maxits;
 
   AZ_terminate_status_print(i, iter, status, rec_residual, params,
                             scaled_r_norm, actual_residual, options,

@@ -92,13 +92,13 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
   /* local variables */
 
   register int    i;
-  int             N, NN, converged, one = 1, iter= 1,r_avail = AZ_FALSE, j;
+  int             N, NN, one = 1, iter= 1,r_avail = AZ_FALSE, j;
   int             precond_flag, print_freq, proc;
   int             brkdown_will_occur = AZ_FALSE;
   double          alpha, beta = 0.0, true_scaled_r=0.0;
   double          *ubar, *v, *r_cgs, *rtilda, *Aubar, *qbar, *Aqbar, *d, *Ad = NULL;
   double          rhonm1, rhon, est_residual, actual_residual = -1.0;
-  double          scaled_r_norm, sigma, epsilon, brkdown_tol = DBL_EPSILON;
+  double          scaled_r_norm, sigma, brkdown_tol = DBL_EPSILON;
   double          omega, c, norm_r_n_cgs, norm_r_nm1_cgs;
   double          tau_m, nu_m, eta_m, init_time = 0.0;
   double          tau_mm1, nu_mm1 = 0.0, eta_mm1 = 0.0, doubleone = 1.0;
@@ -129,9 +129,15 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
   N            = data_org[AZ_N_internal] + data_org[AZ_N_border];
   precond_flag = options[AZ_precond];
-  epsilon      = params[AZ_tol];
   proc         = proc_config[AZ_node];
   print_freq   = options[AZ_print_freq];
+
+
+  /* Initialize some values in convergence info struct */
+  convergence_info->print_info = print_freq;
+  convergence_info->iteration = 0;
+  convergence_info->sol_updated = 1; /* QMRCGS always updates solution */
+  convergence_info->epsilon = params[AZ_tol]; /* Test against this */
 
   /* allocate memory for required vectors */
 
@@ -181,7 +187,8 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
   true_scaled_r = scaled_r_norm;
 
   if ((options[AZ_output] != AZ_none) && (options[AZ_output] != AZ_last) &&
-      (options[AZ_output] != AZ_warnings) && (proc == 0))
+      (options[AZ_output] != AZ_warnings) &&
+      (options[AZ_conv]!=AZTECOO_conv_test) && (proc == 0))
     (void) fprintf(stdout, "%siter:    0           residual = %e\n",prefix,scaled_r_norm);
 
   norm_r_nm1_cgs = est_residual;
@@ -197,10 +204,11 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
     for (i = 0; i < N; i++) Ad[i] = 0.0;
   }
 
-  converged = scaled_r_norm < epsilon;
 
-  for (iter = 1; iter <= options[AZ_max_iter] && !converged; iter++) {
-
+  for (iter = 1; iter <= options[AZ_max_iter] && !(convergence_info->converged) && 
+	 !(convergence_info->isnan); iter++) {
+    convergence_info->iteration = iter;
+    
     if (fabs(rhon) < brkdown_tol) { /* possible breakdown problem */
 
       if (AZ_breakdown_f(N, r_cgs, rtilda, rhon, proc_config))
@@ -350,7 +358,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
       dtemp = sqrt((double) (2 * iter + 1));
 
-      if ((scaled_r_norm < epsilon * dtemp) && !offset) {
+      if ((scaled_r_norm < convergence_info->epsilon * dtemp) && !offset) {
         AZ_scale_true_residual(x, b,
                                Aubar, weight, &actual_residual, &true_scaled_r,
                                options, data_org, proc_config, Amat,
@@ -380,64 +388,66 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
                               options, data_org, proc_config, &r_avail, rtilda,
                               r_cgs, &rhon, convergence_info);
 
-    if ( (iter%print_freq == 0) && proc == 0 )
+    if ( (iter%print_freq == 0)  &&
+	 (options[AZ_conv]!=AZTECOO_conv_test) && proc == 0 )
       (void) fprintf(stdout, "%siter: %4d           residual = %e\n",prefix,iter,
                      scaled_r_norm);
 
     /* convergence tests */
 
-    converged = scaled_r_norm < epsilon;
-    if (options[AZ_check_update_size] & converged) {
+    if (options[AZ_check_update_size] & convergence_info->converged) {
       DAXPY_F77(&N, &doubleone , d, &one, ubar, &one); 
-      converged = AZ_compare_update_vs_soln(N, -1.,eta_m, ubar, x,
+      convergence_info->converged = AZ_compare_update_vs_soln(N, -1.,eta_m, ubar, x,
                                            params[AZ_update_reduction],
                                            options[AZ_output], proc_config, &first_time);
     }
 
-    if (converged) {
+    if (convergence_info->converged) {
       AZ_scale_true_residual(x, b, Aubar,
                              weight, &actual_residual, &true_scaled_r, options,
                              data_org, proc_config, Amat,convergence_info);
 
-      converged = true_scaled_r < params[AZ_tol];
 
       /*
        * Note: epsilon and params[AZ_tol] may not be equal due to a previous
        * call to AZ_get_new_eps().
        */
 
-      if (!converged  &&
-          (AZ_get_new_eps(&epsilon, scaled_r_norm, true_scaled_r,
-                          proc_config) == AZ_QUIT)) {
-
-        /*
-         * Computed residual has converged, actual residual has not converged,
-         * AZ_get_new_eps() has decided that it is time to quit.
-         */
-
-        AZ_terminate_status_print(AZ_loss, iter, status, est_residual, params,
-                                  true_scaled_r, actual_residual, options,
-                                  proc_config);
-        return;
+      if (!(convergence_info->converged)  && options[AZ_conv]!=AZTECOO_conv_test) {
+	
+	if (AZ_get_new_eps(&convergence_info->epsilon, scaled_r_norm, true_scaled_r,
+			   proc_config) == AZ_QUIT) {
+	  
+	  /*
+	   * Computed residual has converged, actual residual has not converged,
+	   * AZ_get_new_eps() has decided that it is time to quit.
+	   */
+	  
+	  AZ_terminate_status_print(AZ_loss, iter, status, est_residual, params,
+				    true_scaled_r, actual_residual, options,
+				    proc_config);
+	  return;
+	}
       }
     }
-
     beta = rhon / rhonm1;
   }
 
   iter--;
 
-  if ( (iter%print_freq != 0) && (proc == 0) && (options[AZ_output] != AZ_none)
+  if ( (iter%print_freq != 0) &&
+       (options[AZ_conv]!=AZTECOO_conv_test)  && (proc == 0) && (options[AZ_output] != AZ_none)
        && (options[AZ_output] != AZ_warnings))
     (void) fprintf(stdout, "%siter: %4d           residual = %e\n",prefix,iter,
                    scaled_r_norm);
 
   /* check if we exceeded maximum number of iterations */
 
-  if (converged) {
+  if (convergence_info->converged) {
     i = AZ_normal;
     scaled_r_norm = true_scaled_r;
   }
+  else if (convergence_info->isnan) i = AZ_breakdown;
   else
     i = AZ_maxits;
 

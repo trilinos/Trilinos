@@ -84,7 +84,7 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
   /* local variables */
 
   register int i;
-  int          N, NN, converged, one = 1, iter = 1, r_avail = AZ_TRUE, j;
+  int          N, NN, one = 1, iter = 1, r_avail = AZ_TRUE, j;
   int          precond_flag, print_freq, proc, brkdown_will_occur = AZ_FALSE;
   double       alpha, beta = 0.0, nalpha, true_scaled_r=0.0;
   double      *r, *z, *p, *ap, actual_residual = -1.0;
@@ -217,9 +217,9 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
       fflush(stdout);
     }
 
-  converged = convergence_info->converged;
 
-  for (iter = 1; iter <= options[AZ_max_iter] && !converged && !(convergence_info->isnan); iter++ ) {
+  for (iter = 1; iter <= options[AZ_max_iter] && !(convergence_info->converged) && 
+	 !(convergence_info->isnan); iter++ ) {
     convergence_info->iteration = iter;
 
     /* p  = z + beta * p */
@@ -327,43 +327,42 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
 
     /* convergence tests */
 
-    converged = convergence_info->converged;
-    if (options[AZ_check_update_size] & converged)
-      converged = AZ_compare_update_vs_soln(N, -1.,alpha, p, x,
-                                            params[AZ_update_reduction],
-                                            options[AZ_output], proc_config, &first_time);
+    if (options[AZ_check_update_size] & convergence_info->converged)
+      convergence_info->converged = AZ_compare_update_vs_soln(N, -1.,alpha, p, x,
+							      params[AZ_update_reduction],
+							      options[AZ_output], proc_config, &first_time);
 
 
-    if (converged) {
+    if (convergence_info->converged) {
       AZ_scale_true_residual(x, b, ap,
                              weight, &actual_residual, &true_scaled_r, options,
                              data_org, proc_config, Amat, convergence_info);
-
-      converged = convergence_info->converged;
-
-
+      
+      
+      
       /*
        * Note: epsilon and params[AZ_tol] may not be equal due to a previous
        * call to AZ_get_new_eps().
        */
+      
+      if (!(convergence_info->converged) && options[AZ_conv]!=AZTECOO_conv_test) {
 
-      if (!converged &&
-          (AZ_get_new_eps(&(convergence_info->epsilon), scaled_r_norm, true_scaled_r,
-                          proc_config) == AZ_QUIT)) {
+	if (AZ_get_new_eps(&(convergence_info->epsilon), scaled_r_norm, true_scaled_r,
+			   proc_config) == AZ_QUIT) {
 
-        /*
-         * Computed residual has converged, actual residual has not converged,
-         * AZ_get_new_eps() has decided that it is time to quit.
-         */
-
-        AZ_terminate_status_print(AZ_loss, iter, status, rec_residual, params,
-                                  true_scaled_r, actual_residual, options,
-                                  proc_config);
-        return;
+	  /*
+	   * Computed residual has converged, actual residual has not converged,
+	   * AZ_get_new_eps() has decided that it is time to quit.
+	   */
+	  
+	  AZ_terminate_status_print(AZ_loss, iter, status, rec_residual, params,
+				    true_scaled_r, actual_residual, options,
+				    proc_config);
+	  return;
+	}
       }
     }
   }
-
   iter--;
   if ( (iter%print_freq != 0) && (proc == 0) && (options[AZ_output] != AZ_none)
        && (options[AZ_output] != AZ_warnings) &&
@@ -376,8 +375,9 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
 
   /* check if we exceeded maximum number of iterations */
 
-  if (converged) {
+  if (convergence_info->converged) {
     i = AZ_normal; scaled_r_norm = true_scaled_r; }
+  else if (convergence_info->isnan) i = AZ_breakdown;
   else
     i = AZ_maxits;
 
