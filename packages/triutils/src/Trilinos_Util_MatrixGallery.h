@@ -38,9 +38,9 @@ class Epetra_VbrMatrix;
 class Epetra_Export;
 class Epetra_LinearProblem;
 #include <string>
-class Trilinos_Util_ShellOptions;
+#include "Trilinos_Util_ShellOptions.h"
 
-class Trilinos_Util_MatrixGallery 
+class Trilinos_Util_CrsMatrixGallery 
 {
 public:
 
@@ -127,6 +127,39 @@ public:
 
   - \c jordblock: Creates a Jordan block with eigenvalue set via Set("a",DoubleVal).
 
+  - \c cauchy: Creates a particular instance of a Cauchy matrix with
+  elements A(i,j) = 1/(i+j) (where i and j range from 1 to
+  NumGlobalElements).  Explicit formulas are known for the inverse and
+  determinand of a Cauchy matrix. For this particular Cauchy matrix, the
+  determinant is nonzero and the matrix is totally positive.
+
+  - \c fiedler: Creates a matrix whose element are A(i,j) = | i - j |.
+  The matrix is symmetric, and has a dominant positive eigenvalue, and
+  all the other eigenvalues are negative.
+
+  - \c hanowa: Creates a matrix whoe eigenvalues lie on a vertical line
+  in the complex plane. The matrix has the 2x2 block structure
+  A = [ a * eye(n/2) ; -diag(1:m) ;
+        diag(1:m);     a * eye(n/2) ];
+  The complex eigenvalues are of the form a +- k*i, for 1 <= k <= n/2.
+  The default value for a_ is -1;
+
+  - \c kms: Create the n-by-n Kac-Murdock-Szego Toepliz matrix such that
+  A(i,j) = rho^(abs(i-j)) (for real rho only). Default value for rho is
+  0.5.  The inverse of this matrix is tridiagonal, and it is positive
+  definite if and only if 0 < abs(rho) < 1.
+  
+  - \c parter: Creates a matrix A(i,j) = 1/(i-j+0.5). A is a Cauchy and
+  a Toeplliz matrix. Most of the singular values of A are very close to
+  pi.
+
+  - \c pei: Creates the matrix alpha * eye(n) + ones(n). This matrix is
+  singular for alpha == 0 or -n.
+
+  - \c vander: Create the Vandermonde matrix whose second last column is
+  the vector c. The j-th column is given by A(:,j) = C^(n-j).
+
+  
   An example of program using this class is reported below.
 
   \code
@@ -140,19 +173,19 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  Trilinos_Util_MatrixGallery G("hb", Comm);
+  Trilinos_Util_CrsMatrixGallery Gallery("hb", Comm);
 
-  G.Set("matrix name", "bcsstk14.rsa");
+  Gallery.Set("matrix name", "bcsstk14.rsa");
   
   Epetra_CrsMatrix * A;
   Epetra_Vector * ExactSolution;
   Epetra_Vector * RHS;
   Epetra_Vector * StartingSolution;
   
-  A = G.GetMatrix();
-  ExactSolution = G.GetExactSolution();
-  RHS = G.GetRHS();
-  StartingSolution = G.GetStartingSolution();
+  A = Gallery.GetMatrix();
+  ExactSolution = Gallery.GetExactSolution();
+  RHS = Gallery.GetRHS();
+  StartingSolution = Gallery.GetStartingSolution();
   
   // create linear problem
   Epetra_LinearProblem Problem(A,StartingSolution,RHS);
@@ -165,10 +198,10 @@ int main(int argc, char *argv[])
   // compute residual
   double residual;
   
-  G.ComputeResidual(residual);
+  Gallery.ComputeResidual(residual);
   if( Comm.MyPID()==0 ) cout << "||b-Ax||_2 = " << residual << endl;
   
-  G.ComputeDiffBetweenStartingAndExactSolutions(residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(residual);
   if( Comm.MyPID()==0 ) cout << "||x_exact - x||_2 = " << residual << endl;
 
  #ifdef HAVE_MPI
@@ -179,21 +212,21 @@ return 0 ;
   } 
   \endcode
 
-  Class Trilinos_Util_ShellOptions can be used as well. In this case, one may
+  Class Trilinos_Util_CommandLineParser can be used as well. In this case, one may
   decide to use the following:
   \code
-  Trilinos_Util_ShellOptions ShellOptions(argc,argv);
+  Trilinos_Util_CommandLineParser CLP(argc,argv);
   // set a problem with no matrix name
-  Trilinos_Util_MatrixGallery G("", Comm);
+  Trilinos_Util_CrsMatrixGallery Gallery("", Comm);
   // read parameters and settings from the shell line
-  G.Set(ShellOptions);
+  G.Set(CLP);
   // continue with your code...
   \endcode
   
   \param In
   comm - Epetra communicator
   */
-  Trilinos_Util_MatrixGallery( const string name, const Epetra_Comm & comm );
+  Trilinos_Util_CrsMatrixGallery( const string name, const Epetra_Comm & comm );
 
   //! Creates an Triutils_Gallery object using a given map.
   /*! Create a Triutils_Gallery object using an Epetra_Map.
@@ -205,10 +238,10 @@ return 0 ;
     \param In
     map - Epetra_Map
   */
-  Trilinos_Util_MatrixGallery( const string name, const Epetra_Map & map );
+  Trilinos_Util_CrsMatrixGallery( const string name, const Epetra_Map & map );
   
   //! Triutils_Gallery destructor
-  ~Trilinos_Util_MatrixGallery();
+  ~Trilinos_Util_CrsMatrixGallery();
 
   //@}
 
@@ -262,47 +295,13 @@ return 0 ;
   */
   Epetra_Vector * GetStartingSolution();
   
-  //! Returns a pointer to the starting solution for Vbr problems
-  Epetra_Vector * GetVbrStartingSolution();
-
   //! Returns a pointer to the rhs corresponding to the selected exact solution.
   Epetra_Vector * GetRHS();
 
   //! Returns a pointer the internally stored Map.
   const Epetra_Map * GetMap();
 
-  const Epetra_Map & GetMapRef();
-  
-  // ========= //
-  // VBR STUFF //
-  // ========= //
-  
-  //! Returns a pointer the internally stored BlockMap.
-  const Epetra_BlockMap * GetBlockMap();
-
-  const Epetra_BlockMap & GetBlockMapRef();
-  
-  //! Returns a VbrMatrix, starting from the CsrMatrix.
-  /*! Returns a VbrMatrix, starting from the CsrMatrix. This vbr matrix
-    is formally equivalent to the CrsMatrix returned by
-    GetMatrix(). However, each node of the CrsMatrix is replicated
-    num_PDE_eqns times (this value is passed in input, or set via Set("num pde
-    eqns",IntValue)).
-  */
-  Epetra_VbrMatrix * GetVbrMatrix(const int NumPDEEqns);
-
-  //! Returns a VbrMatrix, starting from the CsrMatrix.
-  Epetra_VbrMatrix * GetVbrMatrix();
-
-  Epetra_VbrMatrix & GetVbrMatrixRef();
-
-  //! Returns a pointer to the RHS for the selected Vbr exact solution
-  /*!  Returns a pointer to the RHS  corresponding to the selected exact solution to the linear systems defined by the Epetra_VbrMatrix.
-   */
-  Epetra_Vector * GetVbrRHS();
-
-  //! Returns a pointer to the selected Vbr exact solution
-  Epetra_Vector * GetVbrExactSolution();
+  const Epetra_Map & GetMapRef();  
 
   // ==================== //
   // LINEAR PROBLEM STUFF //
@@ -311,39 +310,28 @@ return 0 ;
   //! Returns a pointer to Epetra_LinearProblem
   Epetra_LinearProblem * GetLinearProblem();
 
-  //! Returns a pointer to Epetra_LinearProblem for VBR
-  Epetra_LinearProblem * GetVbrLinearProblem();
-
   //! Computes the 2-norm of the residual
   int ComputeResidual(double & residual);
 
   //! Computes the 2-norm of the difference between the starting solution and the exact solution
   int ComputeDiffBetweenStartingAndExactSolutions(double & residual);
 
-  //! Computes the 2-norm of the residual for the VBR problem
-  int ComputeResidualVbr(double & residual);
-
-  //! Computes the 2-norm of the difference between the starting solution and the exact solution for the VBR problem  
-  int ComputeDiffBetweenStartingAndExactSolutionsVbr(double & residual);
-
   //! Print out matrix and vectors
   void PrintMatrixAndVectors(ostream & os);
 
   void PrintMatrixAndVectors();
-
-  //! Print out Vbr matrix and vectors
-  void PrintVbrMatrixAndVectors(ostream & os);
-
-  void PrintVbrMatrixAndVectors();
 
   //! Get pointers to double vectors containing coordinates of points.
   int GetCartesianCoordinates(double * & x, double * & y, double * & z);
   
   //! Print out detailed information about the problem at hand
   friend ostream & operator << (ostream& os,
-				const Trilinos_Util_MatrixGallery & G );
-  //@}
+				const Trilinos_Util_CrsMatrixGallery & G );
+  //! Print matrix on file in MATLAB format
+  int WriteMatrix( const string & FileName, const bool UseSparse=true );
   
+  //@}
+
 private:
 
   //@{ \name Creation methods.
@@ -378,21 +366,12 @@ private:
   //! Creates the exact solution.
   int CreateExactSolution();
 
-  //! Creates the exact solution for a Epetra_VbrMatrix.
-  int CreateVbrExactSolution(void);
-
   //! Creates the starting solution.
   int CreateStartingSolution();
 
-  //! Creates the starting solution for Vbr.
-  int CreateVbrStartingSolution();
-  
   //! Create the RHS corresponding to the desired exact solution.  
   int CreateRHS();
-
-  //!  Create the RHS corresponding to the desired exact solution for the Vbr problem.
-  int CreateVbrRHS();
-
+  
   // Create an identity matrix.
   int CreateEye();
 
@@ -402,10 +381,12 @@ private:
   // Creates a tridiagonal matrix. Elements on the diagonal are called `a',
   // elements on the sub-diagonal 'b', and on the super-diagonal 'c'.
   int CreateMatrixTriDiag();
-
+  
   // Create a matrix for a Laplacian in 1D
   int CreateMatrixLaplace1d();
-
+  
+  int CreateMatrixLaplace1dNeumann();
+  
   int CreateMatrixCrossStencil2d();
 
   int CreateMatrixLaplace2d();
@@ -414,6 +395,10 @@ private:
 
   int CreateMatrixRecirc2d();
 
+  int CreateMatrixLaplace2dNeumann();
+  
+  int CreateMatrixUniFlow2d();
+  
   int CreateMatrixLaplace3d();
 
   int CreateMatrixCrossStencil3d();
@@ -428,15 +413,27 @@ private:
 
   int CreateMatrixJordblock();
 
+  int CreateMatrixCauchy();
+
+  int CreateMatrixFiedler();
+
+  int CreateMatrixHanowa();
+
+  int CreateMatrixKMS();
+  
+  int CreateMatrixParter();
+
+  int CreateMatrixPei();
+
+  int CreateMatrixOnes();
+
+  int CreateMatrixVander();
   
   // read an HB matrix. This function requires other Trilinos util files
   int ReadMatrix();
 
   // Creates a block map, based on map, wich NumPDEEqns equations on each node.
   int CreateBlockMap(void);
-
-  // create the Vbr matrix. 
-  int CreateVbrMatrix(void);  
 
   // returns the neighbors of a given node. The node is supposed to be on
   // a 2D Cartesian grid 
@@ -469,15 +466,6 @@ private:
 
   // linear problem
   Epetra_LinearProblem * LinearProblem_;
-  Epetra_LinearProblem * VbrLinearProblem_;
-
-  // matrix and vectors (vbr)
-  Epetra_VbrMatrix * VbrMatrix_;
-  Epetra_Vector * VbrExactSolution_;
-  Epetra_Vector * VbrStartingSolution_;
-  Epetra_Vector * VbrRhs_;
-  Epetra_BlockMap * BlockMap_;
-  int MaxBlkSize_;
 
   // information about the problem to generate
   string name_;
@@ -508,5 +496,108 @@ private:
   bool verbose_;
   
 };
+
+#ifdef LATER_ON
+
+class Trilinos_Util_VbrMatrixGallery
+{
+
+public:
+
+  Trilinos_Util_VbrMatrixGallery(Trilinos_Util_CrsMatrixGallery & Gallery) :
+    Gallery_(Gallery) {} ;
+
+~Trilinos_Util_VbrMatrixGallery() 
+{
+    // VBR data
+  if( VbrLinearProblem_ != NULL ) delete VbrLinearProblem_;
+  if( VbrMatrix_ != NULL ) delete VbrMatrix_;  
+  if( VbrExactSolution_ != NULL ) delete VbrExactSolution_;
+  if( VbrStartingSolution_ != NULL ) delete VbrStartingSolution_;
+  if( VbrRhs_ != NULL ) delete VbrRhs_;
+  if( BlockMap_ != NULL ) delete BlockMap_;
+  
+}
+  
+  // ========= //
+  // VBR STUFF //
+  // ========= //
+  
+  //! Returns a pointer the internally stored BlockMap.
+  const Epetra_BlockMap * GetBlockMap();
+
+  const Epetra_BlockMap & GetBlockMapRef();
+  
+  //! Returns a VbrMatrix, starting from the CsrMatrix.
+  /*! Returns a VbrMatrix, starting from the CsrMatrix. This vbr matrix
+    is formally equivalent to the CrsMatrix returned by
+    GetMatrix(). However, each node of the CrsMatrix is replicated
+    num_PDE_eqns times (this value is passed in input, or set via Set("num pde
+    eqns",IntValue)).
+  */
+  Epetra_VbrMatrix * GetVbrMatrix(const int NumPDEEqns);
+
+  //! Returns a VbrMatrix, starting from the CsrMatrix.
+  Epetra_VbrMatrix * GetVbrMatrix();
+
+  Epetra_VbrMatrix & GetVbrMatrixRef();
+
+  //! Returns a pointer to the RHS for the selected Vbr exact solution
+  /*!  Returns a pointer to the RHS  corresponding to the selected exact solution to the linear systems defined by the Epetra_VbrMatrix.
+   */
+  Epetra_Vector * GetVbrRHS();
+
+  //! Returns a pointer to the selected Vbr exact solution
+  Epetra_Vector * GetVbrExactSolution();
+
+  //! Returns a pointer to the starting solution for Vbr problems
+  Epetra_Vector * GetVbrStartingSolution();
+
+
+  // create the Vbr matrix. 
+  int CreateVbrMatrix(void);  
+
+  //! Returns a pointer to Epetra_LinearProblem for VBR
+  Epetra_LinearProblem * GetVbrLinearProblem();
+
+  //! Computes the 2-norm of the residual for the VBR problem
+  int ComputeResidualVbr(double & residual);
+
+  //! Computes the 2-norm of the difference between the starting solution and the exact solution for the VBR problem  
+  int ComputeDiffBetweenStartingAndExactSolutionsVbr(double & residual);
+
+  //! Print out Vbr matrix and vectors
+  void PrintVbrMatrixAndVectors(ostream & os);
+
+  void PrintVbrMatrixAndVectors();
+
+private:
+
+  
+  //! Creates the exact solution for a Epetra_VbrMatrix.
+  int CreateVbrExactSolution(void);
+
+  //! Creates the starting solution for Vbr.
+  int CreateVbrStartingSolution();
+  
+  //!  Create the RHS corresponding to the desired exact solution for the Vbr problem.
+  int CreateVbrRHS();
+
+  // linear problem  
+  Epetra_LinearProblem * VbrLinearProblem_;
+
+  // matrix and vectors (vbr)
+  Epetra_VbrMatrix * VbrMatrix_;
+  Epetra_Vector * VbrExactSolution_;
+  Epetra_Vector * VbrStartingSolution_;
+  Epetra_Vector * VbrRhs_;
+  Epetra_BlockMap * BlockMap_;
+  int MaxBlkSize_;
+
+Trilinos_Util_CrsMatrixGallery * Gallery_;
+
+};
+#endif
+
 
 #endif
