@@ -216,23 +216,21 @@ StatusType NormWRMS::getStatus() const
 
 ostream& NormWRMS::print(ostream& stream, int indent) const
 {
-  NOX::Utils utils;
-
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
-  stream << "WRMS-Norm = " << utils.sciformat(value) << " < " << tolerance;
+  stream << "WRMS-Norm = " << Utils::sciformat(value, 3) << " < " << tolerance;
   if (printCriteria2Info) {
     stream << "\n";
-    for (int j = 0; j < indent + 13; j ++)
+    for (int j = 0; j < indent + 13; j ++, 3)
       stream << ' ';
-    stream << "(Min Step Size:  " << utils.sciformat(computedStepSize) << " >= " << alpha << ")";
+    stream << "(Min Step Size:  " << Utils::sciformat(computedStepSize, 3) << " >= " << alpha << ")";
   }
   if (printCriteria3Info) {
     stream << "\n";
     for (int j = 0; j < indent+ 13; j ++)
       stream << ' ';
-    stream << "(Max Lin Solv Tol:  " << utils.sciformat(achievedTol) << " < " << beta << ")";
+    stream << "(Max Lin Solv Tol:  " << Utils::sciformat(achievedTol, 3) << " < " << beta << ")";
   }
   stream << endl;
   return stream;

@@ -155,18 +155,16 @@ StatusType NormUpdate::getStatus() const
 
 ostream& NormUpdate::print(ostream& stream, int indent) const
 {
-  NOX::Utils utils;
-
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
   if (toleranceType == Absolute) {
-    stream << "Absolute Update-Norm = " << utils.sciformat(normUpdate) << " < " 
-	   << utils.sciformat(trueTolerance);
+    stream << "Absolute Update-Norm = " << Utils::sciformat(normUpdate, 3) << " < " 
+	   << Utils::sciformat(trueTolerance, 3);
   }
   else {
-    stream << "Relative Update-Norm = " << utils.sciformat(normUpdate) << " < " 
-	   << utils.sciformat(trueTolerance);
+    stream << "Relative Update-Norm = " << Utils::sciformat(normUpdate, 3) << " < " 
+	   << Utils::sciformat(trueTolerance, 3);
   }
   stream << endl;
   return stream;
