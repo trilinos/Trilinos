@@ -61,6 +61,7 @@ typedef struct ML_Aggregate_Struct
   void *aggr_viz_and_stats;            /* information about the aggregates   */
                                        /* only if the user explicitely       */
                                        /* requires them                      */
+  void * field_of_values;
 /*ms*/
 } ML_Aggregate;
 

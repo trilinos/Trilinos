@@ -94,6 +94,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->coarsen_scheme_level       = NULL;
    (*ag)->aggr_options               = NULL;
    (*ag)->aggr_viz_and_stats         = NULL;
+   (*ag)->field_of_values            = NULL;
 /*MS*/
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
@@ -146,6 +147,8 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
       }
       /* aggr_viz_and_stats is cleaned by calling the function
 	 `ML_Aggregate_Viz_Stats_Clean', in file "Utils/ml_agg_info.c" */
+
+      if( (*ag)->field_of_values != NULL ) ML_free( (*ag)->field_of_values );
 /*MS*/
       ML_memory_free( (void **) ag );
       (*ag) = NULL;

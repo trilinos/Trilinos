@@ -7,13 +7,16 @@
 
 // anasazi interface
 
+class Teuchos::ParameterList;
+
 extern int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVectors,
 				double RealEigenvalues[], double ImagEigenvalues[],
 				Teuchos::ParameterList & List);
 
 
 extern int ML_Anasazi_Get_FiledOfValuesBox(const Epetra_RowMatrix * RowMatrix, 
-					   double & MaxReal, double & MaxImag );
+					   double & MaxReal, double & MaxImag,
+					   Teuchos::ParameterList & AnasaziList);
 
 #endif
 

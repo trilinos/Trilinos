@@ -30,6 +30,20 @@ struct ML_AGG_Matrix_Context
    int         *aggr_info;
 };
 
+#define ML_POLY_ORDER_MAX 10
+
+struct ML_Field_Of_Values
+{
+  double real_max;
+  double imag_max;
+  double eta;
+  int poly_order;
+  double R_coeff[ML_POLY_ORDER_MAX];
+  double P_coeff[ML_POLY_ORDER_MAX];
+};
+
+
+  
 /* ************************************************************************* */
 /* functions defined here                                                    */
 /* ************************************************************************* */

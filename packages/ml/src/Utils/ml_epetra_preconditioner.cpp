@@ -623,28 +623,57 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   if( UseDropping == true ) ML_Aggregate_Set_UseDropping( ML_YES );
   else                      ML_Aggregate_Set_UseDropping( ML_NO );
   
-  bool UseAInRestriction = false;
-  sprintf(parameter,"%saggregation: use A in restriction", Prefix_);
-  UseAInRestriction = List_.get(parameter, UseAInRestriction);
-  if( UseAInRestriction == true ) {
+  sprintf(parameter,"%sR and P smoothing: type", Prefix_);
+  string RandPSmoothing = List_.get(parameter, "symmetric");
+  // symmetric: classical approach, do nothing special
+  // non-symmetric: normal, only use A and not A'
+  // advanced: determine damping parameters
+
+  if( RandPSmoothing == "non-symmetric" ) {
+    if( verbose_ )
+      cout << PrintMsg_ << "Use A to smooth restriction operator" << endl;
+    agg_->Restriction_smoothagg_transpose = ML_TRUE;
+
+  } else if( RandPSmoothing == "advanced" ) {
+
 #ifdef HAVE_ML_ANASAZI
     if( verbose_ )
-      cout << PrintMsg_ << "Use A to smooth restriction" << endl;
+      cout << PrintMsg_ << "Use A to smooth restriction operator" << endl;
     agg_->Restriction_smoothagg_transpose = ML_TRUE;
     // get estimation of a box containing the field of values
     double MaxReal, MaxImag;
-    ML_Anasazi_Get_FiledOfValuesBox(RowMatrix_,MaxReal,MaxImag);
+    // create List for Anasazi (kept separate from List_, I don't want to pollute it)
+    ParameterList AnasaziList;
+    SetAnasaziList(AnasaziList);
+    ML_Anasazi_Get_FiledOfValuesBox(RowMatrix_,MaxReal,MaxImag,AnasaziList);
+    double eta = MaxImag/MaxReal;
     if( verbose_ )
       cout << PrintMsg_ << "Field of Values Box = " << MaxReal << " + "
-	   << MaxImag << endl;
+	   << MaxImag << "(eta = " << eta << ")" << endl;
+    // allocate as is C, memory will be freed by ML's C functions
+    struct ML_Field_Of_Values * field_of_values;
+    
+    field_of_values = (struct ML_Field_Of_Values *) malloc( sizeof(struct ML_Field_Of_Values) );
+    field_of_values->eta     = eta;
+    field_of_values->real_max= MaxReal;
+    field_of_values->imag_max= MaxImag;
+    field_of_values->poly_order = 2;
+    field_of_values->R_coeff[0] =  1.107;
+    field_of_values->R_coeff[1] =  0.285;
+    field_of_values->R_coeff[2] =  0.718;
+    field_of_values->P_coeff[0] =  1.878;
+    field_of_values->P_coeff[1] = -2.515;
+    field_of_values->P_coeff[2] =  0.942;
+
+    agg_->field_of_values = (void*) field_of_values;
+    
 #else
     cout << ErrorMsg_ << "You must compile with --with-ml_anasazi "  << endl
          << ErrorMsg_ << "for eigen-analysis." << endl;
     exit( EXIT_FAILURE );	
 #endif       
-  }
-  else                            agg_->Restriction_smoothagg_transpose = ML_FALSE;  
 
+  } else agg_->Restriction_smoothagg_transpose = ML_FALSE;
 
   sprintf(parameter,"%seigen-analysis: use symmetric algorithms", Prefix_);
   bool IsSymmetric = List_.get(parameter,false);
@@ -698,8 +727,6 @@ int MultiLevelPreconditioner::ComputePreconditioner()
 
   ownership_ = false;
 
-  CreateLabel();
-  
   /* ********************************************************************** */
   /* Specific   preconditioners                                             */
   /* NOTE: the two-level DD preconditioners are kind of experimental!       */
@@ -708,6 +735,10 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   /* be implemented as a post smoother (FIXME)                              */
   /* ********************************************************************** */
 
+  ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
+
+  CreateLabel();
+  
   SetPreconditioner();
   if( verbose_ ) PrintLine();
 
@@ -1623,8 +1654,6 @@ void MultiLevelPreconditioner::SetNullSpace()
 
   char parameter[80];
 
-  Epetra_Time Time(Comm());
-  
   const Epetra_VbrMatrix * VbrMatrix = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
   if( VbrMatrix == 0 ) {
     sprintf(parameter,"%sPDE equations", Prefix_);
@@ -1662,6 +1691,8 @@ void MultiLevelPreconditioner::SetNullSpace()
   } else {
 
 #ifdef HAVE_ML_ANASAZI
+
+    Epetra_Time Time(Comm());
     
     if( NullSpacePtr != NULL && Comm_.MyPID() == 0 ) {
       cerr << ErrorMsg_ << "Null space vectors is not NULL!" << endl
@@ -1704,36 +1735,8 @@ void MultiLevelPreconditioner::SetNullSpace()
     
     // create List for Anasazi (kept separate from List_, I don't want to pollute it)
     ParameterList AnasaziList;
-
-    // parameters from List_
-    sprintf(parameter,"%seigen-analysis: use symmetric algotithms", Prefix_);
-    bool IsSymmetric = List_.get(parameter,false);
+    SetAnasaziList(AnasaziList);
     
-    if( IsSymmetric ) AnasaziList.set("symmetric problem",true);
-    else              AnasaziList.set("symmetric problem",false);
-
-    sprintf(parameter,"%seigen-analysis: tolerance", Prefix_);
-    AnasaziList.set("tolerance", List_.get(parameter, 1e-2));
-
-    sprintf(parameter,"%seigen-analysis: use diagonal scaling", Prefix_);    
-    AnasaziList.set("use scaling", List_.get(parameter,false));
-    
-    sprintf(parameter,"%eigen-analysis: restart", Prefix_);
-    int itemp = List_.get(parameter, 100);
-    AnasaziList.set("restart", itemp);
-
-    sprintf(parameter,"%eigen-analysis: length", Prefix_);
-    itemp =  List_.get(parameter, 20);
-    AnasaziList.set("length", itemp);
-
-    sprintf(parameter,"%eigen-analysis: normalize eigenvectors", Prefix_);
-    bool btemp =  List_.get(parameter, false);
-    AnasaziList.set("normalize eigenvectors",btemp);
-
-    sprintf(parameter,"%soutput", Prefix_);
-    itemp =  List_.get(parameter, 10);
-    AnasaziList.set("output",itemp);
-
     // new parameters specific for this function only (not set by the user)
     AnasaziList.set("matrix operation", "A");    
     AnasaziList.set("action", "SM");
@@ -1746,9 +1749,10 @@ void MultiLevelPreconditioner::SetNullSpace()
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,TotalNullSpaceDim,
 			       NullSpacePtr,
 			       NumMyRows());
-
+    
+    if( verbose_ ) cout << PrintMsg_ << "Total time for eigen-analysis = " << Time.ElapsedTime() << " (s)\n";
+    
 #else
-
      cout << "ML_Anasazi ERROR: you must compile with --with-ml_anasazi "  << endl
        << "ML_Anasazi ERROR: for eigen-analysis." << endl;
      exit( EXIT_FAILURE );
@@ -1756,10 +1760,72 @@ void MultiLevelPreconditioner::SetNullSpace()
   
   }
 
-  if( verbose_ ) cout << PrintMsg_ << "Total time for eigen-analysis = " << Time.ElapsedTime() << " (s)\n";
-
 }
- 
+
+// ================================================ ====== ==== ==== == =
+
+void MultiLevelPreconditioner::SetAnasaziList(Teuchos::ParameterList & AnasaziList) 
+{
+
+  char parameter[80];
+  
+  // eigen-analysis:
+  sprintf(parameter,"%seigen-analysis: use symmetric algotithms", Prefix_);
+  bool IsSymmetric = List_.get(parameter,false);
+    
+  if( IsSymmetric ) AnasaziList.set("eigen-analysis: symmetric problem",true);
+  else              AnasaziList.set("eigen-analysis: symmetric problem",false);
+
+  sprintf(parameter,"%seigen-analysis: tolerance", Prefix_);
+  AnasaziList.set("eigen-analysis: tolerance", List_.get(parameter, 1e-2));
+
+  sprintf(parameter,"%seigen-analysis: use diagonal scaling", Prefix_);    
+  AnasaziList.set("eigen-analysis: use scaling", List_.get(parameter,false));
+    
+  sprintf(parameter,"%seigen-analysis: restart", Prefix_);
+  int itemp = List_.get(parameter, 100);
+  AnasaziList.set("eigen-analysis: restart", itemp);
+
+  sprintf(parameter,"%seigen-analysis: length", Prefix_);
+  itemp =  List_.get(parameter, 20);
+  AnasaziList.set("eigen-analysis: length", itemp);
+
+  sprintf(parameter,"%seigen-analysis: normalize eigenvectors", Prefix_);
+  bool btemp =  List_.get(parameter, false);
+  AnasaziList.set("eigen-analysis: normalize eigenvectors",btemp);
+
+  sprintf(parameter,"%sfield-of-values: print current status", Prefix_);
+  btemp =  List_.get(parameter, true);
+  AnasaziList.set("eigen-analysis: print current status", btemp);
+  
+  // field of values:
+
+  sprintf(parameter,"%sfield-of-values: tolerance", Prefix_);
+  AnasaziList.set("field-of-values: tolerance", List_.get(parameter, 1e-2));
+
+  sprintf(parameter,"%sfield-of-values: use diagonal scaling", Prefix_);    
+  AnasaziList.set("field-of-values: use scaling", List_.get(parameter,false));
+    
+  sprintf(parameter,"%sfield-of-values: restart", Prefix_);
+  itemp = List_.get(parameter, 100);
+  AnasaziList.set("field-of-values: restart", itemp);
+
+  sprintf(parameter,"%sfield-of-values: length", Prefix_);
+  itemp =  List_.get(parameter, 20);
+  AnasaziList.set("field-of-values: ", itemp);
+
+  sprintf(parameter,"%sfield-of-values: print current status", Prefix_);
+  btemp =  List_.get(parameter, true);
+  AnasaziList.set("field-of-values: print current status", btemp);
+
+  // general output
+  
+  sprintf(parameter,"%soutput", Prefix_);
+  itemp =  List_.get(parameter, 10);
+  AnasaziList.set("output",itemp);
+    
+}
+
 }
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/

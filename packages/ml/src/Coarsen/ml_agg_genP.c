@@ -167,9 +167,14 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    int m,i,j,row,k, bsize;
    double s;
 #endif
-#define USE_ATtttt
+
+#ifdef MARZIO
+#define USE_AT
+#endif
 #ifdef USE_AT
    char str[80];
+   double dtemp;
+   struct ML_Field_Of_Values * fov;
 #endif
 
    if (ag->nullspace_corrupted == ML_YES) {
@@ -208,7 +213,9 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 	if (1 == 1) {  
 	  ml->symmetrize_matrix = ML_FALSE;
 	  /*	  printf(" what is this %e\n",ml->Amat[level].lambda_max); */
-	  ml->Amat[level].lambda_max = 2.;
+	  fov = (struct ML_Field_Of_Values * )(ag->field_of_values);
+	  dtemp = fov->R_coeff[0] + fov->eta * fov->R_coeff[1] + pow(fov->eta,2) * fov->R_coeff[2];
+	  ml->Amat[level].lambda_max = dtemp;
 	}
       }
 #endif

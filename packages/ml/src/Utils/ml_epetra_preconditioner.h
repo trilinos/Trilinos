@@ -311,6 +311,8 @@ private:
   void SetPreconditioner();
 
   void SetNullSpace();
+
+  void SetAnasaziList(Teuchos::ParameterList & List);
   
   void PrintLine();
   

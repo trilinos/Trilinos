@@ -100,6 +100,7 @@ template <class TYPE>
 ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x, 
 				      MultiVec<TYPE>& y ) const 
 {
+
   int info = 0;
   MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
@@ -110,9 +111,9 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
   info = const_cast<Epetra_RowMatrix &>(Mat_).Apply( *vec_x, *vec_y );
   vec_y->Scale(Scale_);
 
-    return Ok; 
   if( info ) return Failed;
-  
+
+  // FIXME: put me in constructor....
   Epetra_MultiVector * tmp ;
   if( MatOp_ == A_PLUS_AT_MATRIX || MatOp_ == A_MINUS_AT_MATRIX ) {
     tmp = new Epetra_MultiVector(*vec_x);
@@ -154,24 +155,24 @@ int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector 
 
   MLMatOp MatOp;
   string MatOpStr = "A";
-  MatOpStr = List.get("matrix operation", MatOpStr);
+  MatOpStr = List.get("eigen-analysis: matrix operation", MatOpStr);
   if( MatOpStr == "A" ) MatOp = A_MATRIX;
   else if( MatOpStr == "I-A" ) MatOp = I_MINUS_A_MATRIX;
   else if( MatOpStr == "A+A^T" ) MatOp = A_PLUS_AT_MATRIX;
   else if( MatOpStr == "A-A^T" ) MatOp = A_MINUS_AT_MATRIX;
 
   bool UseScaling = true;
-  UseScaling = List.get("use scaling", UseScaling);
+  UseScaling = List.get("eigen-analysis: use scaling", UseScaling);
 
-  int length = List.get("length", 20);
-  double tol = List.get("tolerance", 1.0e-5);
-  string which = List.get("action", "LM");
-  int restarts = List.get("restart", 100);
-  bool isSymmetric = List.get("symmetric problem", false);
+  int length = List.get("eigen-analysis: length", 20);
+  double tol = List.get("eigen-analysis: tolerance", 1.0e-5);
+  string which = List.get("eigen-analysis: action", "LM");
+  int restarts = List.get("eigen-analysis: restart", 100);
+  bool isSymmetric = List.get("eigen-analysis: symmetric problem", false);
 
-  int output = List.get("output", 5);
+  int output = List.get("eigen-analysis: output", 5);
   
-  double Scaling = List.get("scaling", 1.0);
+  double Scaling = List.get("eigen-analysis: scaling", 1.0);
   
   if( output > 5 && MyPID == 0 ) {
     if( MatOp == A_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A" << endl;
@@ -185,6 +186,8 @@ int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector 
     cout << "ML_Anasazi : Required Action = " << which << endl;
 	
   }
+
+  bool PrintCurrentStatus =  List.get("eigen-analysis: print current status", false);
 
   /* ********************************************************************** */
   /* view mode for PetraVectors                                             */
@@ -233,7 +236,7 @@ int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector 
   }
   
   // Output results to screen
-  if( output > 5 && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
+  if( PrintCurrentStatus > 5 && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
 
   MyBlockArnoldi1.getEvecs(Vectors);
   
@@ -241,7 +244,7 @@ int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector 
   /* Scale vectors (real and imag part) so that max is 1 for each of them   */
   /* ********************************************************************** */
 
-  if( List.get("normalize eigenvectors",false) ) {
+  if( List.get("eigen-analysis: normalize eigenvectors",false) ) {
     
     double MaxVals[NumBlocks];
     double MinVals[NumBlocks];
@@ -266,89 +269,101 @@ int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector 
 // ================================================ ====== ==== ==== == =
 
 int ML_Anasazi_Get_FiledOfValuesBox(const Epetra_RowMatrix * RowMatrix, 
-				    double & MaxReal, double & MaxImag ) 
+				    double & MaxReal, double & MaxImag,
+				    Teuchos::ParameterList & List ) 
 {
+
+  int MyPID = RowMatrix->Comm().MyPID();
+
+  bool UseScaling = true;
+  UseScaling = List.get("field-of-values: use scaling", UseScaling);
   
-#ifdef NEIN
-  int block = 1;
-  int length = 20;
-  int nev = 1;
-  double tol = 1.0e-10;
-  string which="LR";
-  int restarts = 100;
-  //int step = 1;
-  int step = restarts*length*block;
+  int length = List.get("field-of-values: length", 20);
+  double tol = List.get("field-of-values: tolerance", 1.0e-5);
+  int restarts = List.get("field-of-values: restart", 100);
 
-  Anasazi::PetraVec<double> ivec(RowMatrix->RowMatrixRowMap(), block);
-  ivec.MvRandom();
+  int output = List.get("output", 5);
+  
+  if( output > 5 && MyPID == 0 ) {
+    cout << "ML_Anasazi : Estimate box containing the field of values" << endl;
+    cout << "ML_Anasazi : Computing eigenvalues of A + A^T" << endl;
+    if( UseScaling ) cout << "ML_Anasazi : where A is scaled by D^{-1}" << endl;
+    cout << "ML_Anasazi : Tolerance = " << tol << endl;	
+  }
 
+  bool PrintCurrentStatus =  List.get("field-of-values: print current status", false);
+  
+  /* ********************************************************************** */
+  /* First compute A + A^T to get the real bound                            */
+  /* ********************************************************************** */
+  
+  Anasazi::PetraVec<double> Vectors(RowMatrix->RowMatrixRowMap(), 1);
+  Vectors.MvRandom();
+  
+  int step = restarts*length*1;
+  
   // Call the ctor that calls the petra ctor for a matrix
-  MLMat<double> Amat1(*RowMatrix,*RowMatrixDiagonal,true);	
+  MLMat<double> Amat(*RowMatrix,A_PLUS_AT_MATRIX,UseScaling);
+  
+  Anasazi::Eigenproblem<double> MyProblem(&Amat, &Vectors);
+
+  // Initialize the Block Arnoldi solver
+  Anasazi::BlockArnoldi<double> MyBlockArnoldi1(MyProblem, tol, 1, length, 1, 
+						"LM", step, restarts);
+
+  // Inform the solver that the problem is symmetric
+  MyBlockArnoldi1.setSymmetric(true);
+  MyBlockArnoldi1.setDebugLevel(0);
+
+  //  MyBlockArnoldi.iterate(5);
+  
+  // Solve the problem to the specified tolerances or length
+  MyBlockArnoldi1.solve();
+  
+  // Obtain results directly
+
+  double * evalr = MyBlockArnoldi1.getEvals(); 
+
+  MaxReal = evalr[0] / 2;
+
+  if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
 
   /* ********************************************************************** */
-  /* Phase 1: estimate max real lambda                                      */
+  /* First compute A - A^T to get the real bound                            */
   /* ********************************************************************** */
   
-  {
-    
-    Anasazi::Eigenproblem<double> MyProblem1(&Amat1, &ivec);
-    
-    // Initialize the Block Arnoldi solver
-    Anasazi::BlockArnoldi<double> MyBlockArnoldi1(MyProblem1, tol, nev, length, block, 
-						  which, step, restarts);
-    
-    // Inform the solver that the problem is symmetric
-    //MyBlockArnoldi1.setSymmetric(true);
-    MyBlockArnoldi1.setDebugLevel(0);
-    
-    //  MyBlockArnoldi.iterate(5);
-    
-    // Solve the problem to the specified tolerances or length
-    MyBlockArnoldi1.solve();
-    
-    // Obtain results directly
-    double * resids = MyBlockArnoldi1.getResiduals();
-    double * evalr = MyBlockArnoldi1.getEvals(); 
-    double * evali = MyBlockArnoldi1.getiEvals();
-    
-    // Output results to screen
-    MyBlockArnoldi1.currentStatus();
-    
+  if( output > 5 && MyPID == 0 ) {
+    cout << "ML_Anasazi : Computing eigenvalues of A - A^T" << endl;
   }
   
-  /* ********************************************************************** */
-  /* Phase 2: estimate max imag lambda                                      */
-  /* ********************************************************************** */
-
-  which="LI";
+  Vectors.MvRandom();
   
-  {
-    
-    Anasazi::Eigenproblem<double> MyProblem1(&Amat1, &ivec);
+  // Call the ctor that calls the petra ctor for a matrix
+  MLMat<double> Amat2(*RowMatrix,A_MINUS_AT_MATRIX,UseScaling);
+  
+  Anasazi::Eigenproblem<double> MyProblem2(&Amat2, &Vectors);
 
-    // Initialize the Block Arnoldi solver
-    Anasazi::BlockArnoldi<double> MyBlockArnoldi1(MyProblem1, tol, nev, length, block, 
-						  which, step, restarts);
-    
-    // Inform the solver that the problem is symmetric
-    //MyBlockArnoldi1.setSymmetric(true);
-    MyBlockArnoldi1.setDebugLevel(0);
-    
-    //  MyBlockArnoldi.iterate(5);
-    
-    // Solve the problem to the specified tolerances or length
-    MyBlockArnoldi1.solve();
-    
-    // Obtain results directly
-    double * resids = MyBlockArnoldi1.getResiduals();
-    double * evalr = MyBlockArnoldi1.getEvals(); 
-    double * evali = MyBlockArnoldi1.getiEvals();
+  // Initialize the Block Arnoldi solver
+  Anasazi::BlockArnoldi<double> MyBlockArnoldi2(MyProblem2, tol, 1, length, 1, 
+						"LM", step, restarts);
 
-    // Output results to screen
-    MyBlockArnoldi1.currentStatus();
-    
-  }
-#endif  
+  // Inform the solver that the problem is symmetric
+  MyBlockArnoldi2.setSymmetric(false);
+  MyBlockArnoldi2.setDebugLevel(0);
+
+  MyBlockArnoldi2.iterate(5);
+  
+  // Solve the problem to the specified tolerances or length
+  MyBlockArnoldi2.solve();
+  
+  // Obtain results directly
+
+  double * evali = MyBlockArnoldi2.getiEvals();
+
+  MaxImag = evali[0] / 2;
+
+  if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi2.currentStatus();
+  
   return 0;
   
 }
