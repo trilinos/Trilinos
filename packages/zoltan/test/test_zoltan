@@ -251,6 +251,8 @@ if ( $yes_fortran ) then
     set ch_methods = ( $ch_methods rcb-partmore rcb-partmore-ts )
     set ch_methods = ( $ch_methods rcb-partlocal1 rcb-partlocal1-ts )
     set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
+    set ch_methods = ( $ch_methods rcb-partlocal3 rcb-partlocal3-ts )
+    set ch_methods = ( $ch_methods rcb-partlocal4 rcb-partlocal4-ts )
   endif
   if (! $no_rib) then
     set ch_methods = ( $ch_methods rib rib-ts )
@@ -258,10 +260,13 @@ if ( $yes_fortran ) then
     set ch_methods = ( $ch_methods rib-partmore rib-partmore-ts )
     set ch_methods = ( $ch_methods rib-partlocal1 rib-partlocal1-ts )
     set ch_methods = ( $ch_methods rib-partlocal2 rib-partlocal2-ts )
+    set ch_methods = ( $ch_methods rib-partlocal3 rib-partlocal3-ts )
+    set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
   endif
   if (! $no_hsfc) then
     set ch_methods = ( $ch_methods hsfc hsfc-partless hsfc-partmore )
     set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
+    set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
   endif
   if (! $no_bsfc) then
     set ch_methods = ( $ch_methods bsfc )
@@ -298,11 +303,15 @@ else
     set ch_methods = ( $ch_methods rcb-partmore rcb-partmore-ts )
     set ch_methods = ( $ch_methods rcb-partlocal1 rcb-partlocal1-ts )
     set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
+    set ch_methods = ( $ch_methods rcb-partlocal3 rcb-partlocal3-ts )
+    set ch_methods = ( $ch_methods rcb-partlocal4 rcb-partlocal4-ts )
     set nem_methods = ( $nem_methods rcb rcb-ts )
     set nem_methods = ( $nem_methods rcb-partless rcb-partless-ts )
     set nem_methods = ( $nem_methods rcb-partmore rcb-partmore-ts )
     set nem_methods = ( $nem_methods rcb-partlocal1 rcb-partlocal1-ts )
     set nem_methods = ( $nem_methods rcb-partlocal2 rcb-partlocal2-ts )
+    set nem_methods = ( $nem_methods rcb-partlocal3 rcb-partlocal3-ts )
+    set nem_methods = ( $nem_methods rcb-partlocal4 rcb-partlocal4-ts )
   endif
   if (! $no_rib) then
     set ch_methods = ( $ch_methods rib rib-oneproc rib-ts )
@@ -310,19 +319,25 @@ else
     set ch_methods = ( $ch_methods rib-partmore rib-partmore-ts )
     set ch_methods = ( $ch_methods rib-partlocal1 rib-partlocal1-ts )
     set ch_methods = ( $ch_methods rib-partlocal2 rib-partlocal2-ts )
+    set ch_methods = ( $ch_methods rib-partlocal3 rib-partlocal3-ts )
+    set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
     set nem_methods = ( $nem_methods rib rib-ts )
     set nem_methods = ( $nem_methods rib-partless rib-partless-ts )
     set nem_methods = ( $nem_methods rib-partmore rib-partmore-ts )
     set nem_methods = ( $nem_methods rib-partlocal1 rib-partlocal1-ts )
     set nem_methods = ( $nem_methods rib-partlocal2 rib-partlocal2-ts )
+    set nem_methods = ( $nem_methods rib-partlocal3 rib-partlocal3-ts )
+    set nem_methods = ( $nem_methods rib-partlocal4 rib-partlocal4-ts )
   endif
   if (! $no_hsfc) then
     set ch_methods = ( $ch_methods hsfc hsfc-oneproc )
     set ch_methods = ( $ch_methods hsfc-partless hsfc-partmore )
     set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
+    set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
     set nem_methods = ( $nem_methods hsfc )
     set nem_methods = ( $nem_methods hsfc-partless hsfc-partmore )
     set nem_methods = ( $nem_methods hsfc-partlocal1 hsfc-partlocal2 )
+    set nem_methods = ( $nem_methods hsfc-partlocal3 hsfc-partlocal4 )
   endif
   if (! $no_bsfc) then
     set ch_methods = ( $ch_methods bsfc )

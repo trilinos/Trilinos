@@ -1,0 +1,9 @@
+Decomposition Method 	= hsfc
+Zoltan Parameters       = obj_weight_dim=1
+Zoltan Parameters       = comm_weight_dim=1
+Zoltan Parameters	= keep_cuts=1
+File Type		= Chaco
+File Name		= onedbug
+Parallel Disk Info	= number=0
+test local partitions	= 4
+Test Drops		= 1
