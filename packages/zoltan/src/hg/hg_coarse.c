@@ -20,6 +20,7 @@ extern "C" {
 
 /****************************************************************************/
 
+#define UMIT_SPEEDUP_HACK
 
 
 /*Procedure to coarsen a hypergraph based on a packing. All vertices of one pack
@@ -122,6 +123,7 @@ char *yo = "Zoltan_HG_Coarsening";
      return Zoltan_HG_Create_Mirror(zz, c_hg);
      }
 
+#ifndef UMIT_SPEEDUP_HACK
   /* Move weight of identical hyperedges to one of them */
   if (!(sorted = (int*) ZOLTAN_MALLOC (c_hg->nEdge * sizeof(int)))
    || !(hsize  = (int*) ZOLTAN_MALLOC (c_hg->nEdge * sizeof(int)))
@@ -190,11 +192,20 @@ char *yo = "Zoltan_HG_Coarsening";
      }
   c_hg->nEdge -= deleted_he;
   c_hg->nInput = c_hindex[c_hg->nEdge];
+#endif
 
+
+
+#ifndef UMIT_SPEEDUP_HACK
   /* Reallocate the arrays to their exact size */
   c_hg->ewgt    =(float*)ZOLTAN_REALLOC(c_ewgt,    c_hg->nEdge  * sizeof(float));
   c_hg->hindex  =(int*)  ZOLTAN_REALLOC(c_hindex, (c_hg->nEdge+1) * sizeof(int));
   c_hg->hvertex =(int*)  ZOLTAN_REALLOC(c_hvertex, c_hg->nInput   * sizeof(int));
+#else
+  c_hg->ewgt    = c_ewgt;
+  c_hg->hindex  = c_hindex;
+  c_hg->hvertex = c_hvertex;
+#endif
 
   ZOLTAN_TRACE_EXIT (zz, yo);
   return Zoltan_HG_Create_Mirror(zz, c_hg);
