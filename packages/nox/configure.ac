@@ -1894,6 +1894,7 @@ if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
     alpha*)
       if test $CXX = cxx; then
         CXXREPOS="cxx_repository/*.o"
+	TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
       fi
     ;;
   esac

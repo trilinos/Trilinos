@@ -184,7 +184,7 @@ test -z "$STRIP" && STRIP=:
 test -z "$ac_objext" && ac_objext=o
 
 # Determine commands to create old-style static archives.
-old_archive_cmds='$AR $AR_FLAGS $oldlib$oldobjs$old_deplibs'
+old_archive_cmds='$AR $AR_FLAGS $oldlib$oldobjs$old_deplibs $TRILINOS_TEMPLATE_OBJS'
 old_postinstall_cmds='chmod 644 $oldlib'
 old_postuninstall_cmds=
 
@@ -3873,7 +3873,7 @@ if test -f "$ltmain"; then
   # careful not to overquote the AC_SUBSTed values.  We take copies of the
   # variables and quote the copies for generation of the libtool script.
   for var in echo old_CC old_CFLAGS AR AR_FLAGS EGREP RANLIB LN_S LTCC NM \
-    SED SHELL STRIP \
+    SED SHELL STRIP TRILINOS_TEMPLATE_OBJS \
     libname_spec library_names_spec soname_spec extract_expsyms_cmds \
     old_striplib striplib file_magic_cmd finish_cmds finish_eval \
     deplibs_check_method reload_flag reload_cmds need_locks \
@@ -4148,6 +4148,7 @@ soname_spec=$lt_soname_spec
 
 # Commands used to build and install an old-style archive.
 RANLIB=$lt_RANLIB
+TRILINOS_TEMPLATE_OBJS=$lt_TRILINOS_TEMPLATE_OBJS
 old_archive_cmds=$lt_[]_LT_AC_TAGVAR(old_archive_cmds, $1)
 old_postinstall_cmds=$lt_old_postinstall_cmds
 old_postuninstall_cmds=$lt_old_postuninstall_cmds

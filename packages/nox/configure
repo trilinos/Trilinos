@@ -8896,7 +8896,7 @@ test -z "$STRIP" && STRIP=:
 test -z "$ac_objext" && ac_objext=o
 
 # Determine commands to create old-style static archives.
-old_archive_cmds='$AR $AR_FLAGS $oldlib$oldobjs$old_deplibs'
+old_archive_cmds='$AR $AR_FLAGS $oldlib$oldobjs$old_deplibs $TRILINOS_TEMPLATE_OBJS'
 old_postinstall_cmds='chmod 644 $oldlib'
 old_postuninstall_cmds=
 
@@ -11930,7 +11930,7 @@ if test -f "$ltmain"; then
   # careful not to overquote the AC_SUBSTed values.  We take copies of the
   # variables and quote the copies for generation of the libtool script.
   for var in echo old_CC old_CFLAGS AR AR_FLAGS EGREP RANLIB LN_S LTCC NM \
-    SED SHELL STRIP \
+    SED SHELL STRIP TRILINOS_TEMPLATE_OBJS \
     libname_spec library_names_spec soname_spec extract_expsyms_cmds \
     old_striplib striplib file_magic_cmd finish_cmds finish_eval \
     deplibs_check_method reload_flag reload_cmds need_locks \
@@ -12202,6 +12202,7 @@ soname_spec=$lt_soname_spec
 
 # Commands used to build and install an old-style archive.
 RANLIB=$lt_RANLIB
+TRILINOS_TEMPLATE_OBJS=$lt_TRILINOS_TEMPLATE_OBJS
 old_archive_cmds=$lt_old_archive_cmds
 old_postinstall_cmds=$lt_old_postinstall_cmds
 old_postuninstall_cmds=$lt_old_postuninstall_cmds
@@ -13968,11 +13969,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13971: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13972: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13975: \$? = $ac_status" >&5
+   echo "$as_me:13976: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -14028,11 +14029,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14031: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14032: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14035: \$? = $ac_status" >&5
+   echo "$as_me:14036: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15389,7 +15390,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 15392 "configure"
+#line 15393 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -15487,7 +15488,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 15490 "configure"
+#line 15491 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -15605,7 +15606,7 @@ if test -f "$ltmain"; then
   # careful not to overquote the AC_SUBSTed values.  We take copies of the
   # variables and quote the copies for generation of the libtool script.
   for var in echo old_CC old_CFLAGS AR AR_FLAGS EGREP RANLIB LN_S LTCC NM \
-    SED SHELL STRIP \
+    SED SHELL STRIP TRILINOS_TEMPLATE_OBJS \
     libname_spec library_names_spec soname_spec extract_expsyms_cmds \
     old_striplib striplib file_magic_cmd finish_cmds finish_eval \
     deplibs_check_method reload_flag reload_cmds need_locks \
@@ -15829,6 +15830,7 @@ soname_spec=$lt_soname_spec
 
 # Commands used to build and install an old-style archive.
 RANLIB=$lt_RANLIB
+TRILINOS_TEMPLATE_OBJS=$lt_TRILINOS_TEMPLATE_OBJS
 old_archive_cmds=$lt_old_archive_cmds_CXX
 old_postinstall_cmds=$lt_old_postinstall_cmds
 old_postuninstall_cmds=$lt_old_postuninstall_cmds
@@ -16324,11 +16326,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16327: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16329: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16331: \$? = $ac_status" >&5
+   echo "$as_me:16333: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -16384,11 +16386,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16387: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16389: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16391: \$? = $ac_status" >&5
+   echo "$as_me:16393: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -17960,7 +17962,7 @@ if test -f "$ltmain"; then
   # careful not to overquote the AC_SUBSTed values.  We take copies of the
   # variables and quote the copies for generation of the libtool script.
   for var in echo old_CC old_CFLAGS AR AR_FLAGS EGREP RANLIB LN_S LTCC NM \
-    SED SHELL STRIP \
+    SED SHELL STRIP TRILINOS_TEMPLATE_OBJS \
     libname_spec library_names_spec soname_spec extract_expsyms_cmds \
     old_striplib striplib file_magic_cmd finish_cmds finish_eval \
     deplibs_check_method reload_flag reload_cmds need_locks \
@@ -18184,6 +18186,7 @@ soname_spec=$lt_soname_spec
 
 # Commands used to build and install an old-style archive.
 RANLIB=$lt_RANLIB
+TRILINOS_TEMPLATE_OBJS=$lt_TRILINOS_TEMPLATE_OBJS
 old_archive_cmds=$lt_old_archive_cmds_F77
 old_postinstall_cmds=$lt_old_postinstall_cmds
 old_postuninstall_cmds=$lt_old_postuninstall_cmds
@@ -18423,11 +18426,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18426: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18429: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18430: \$? = $ac_status" >&5
+   echo "$as_me:18433: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -18666,11 +18669,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18669: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18672: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18673: \$? = $ac_status" >&5
+   echo "$as_me:18676: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -18726,11 +18729,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18729: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18732: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:18733: \$? = $ac_status" >&5
+   echo "$as_me:18736: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -20911,7 +20914,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 20914 "configure"
+#line 20917 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -21009,7 +21012,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 21012 "configure"
+#line 21015 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -21127,7 +21130,7 @@ if test -f "$ltmain"; then
   # careful not to overquote the AC_SUBSTed values.  We take copies of the
   # variables and quote the copies for generation of the libtool script.
   for var in echo old_CC old_CFLAGS AR AR_FLAGS EGREP RANLIB LN_S LTCC NM \
-    SED SHELL STRIP \
+    SED SHELL STRIP TRILINOS_TEMPLATE_OBJS \
     libname_spec library_names_spec soname_spec extract_expsyms_cmds \
     old_striplib striplib file_magic_cmd finish_cmds finish_eval \
     deplibs_check_method reload_flag reload_cmds need_locks \
@@ -21351,6 +21354,7 @@ soname_spec=$lt_soname_spec
 
 # Commands used to build and install an old-style archive.
 RANLIB=$lt_RANLIB
+TRILINOS_TEMPLATE_OBJS=$lt_TRILINOS_TEMPLATE_OBJS
 old_archive_cmds=$lt_old_archive_cmds_GCJ
 old_postinstall_cmds=$lt_old_postinstall_cmds
 old_postuninstall_cmds=$lt_old_postuninstall_cmds
@@ -21572,7 +21576,7 @@ if test -f "$ltmain"; then
   # careful not to overquote the AC_SUBSTed values.  We take copies of the
   # variables and quote the copies for generation of the libtool script.
   for var in echo old_CC old_CFLAGS AR AR_FLAGS EGREP RANLIB LN_S LTCC NM \
-    SED SHELL STRIP \
+    SED SHELL STRIP TRILINOS_TEMPLATE_OBJS \
     libname_spec library_names_spec soname_spec extract_expsyms_cmds \
     old_striplib striplib file_magic_cmd finish_cmds finish_eval \
     deplibs_check_method reload_flag reload_cmds need_locks \
@@ -21796,6 +21800,7 @@ soname_spec=$lt_soname_spec
 
 # Commands used to build and install an old-style archive.
 RANLIB=$lt_RANLIB
+TRILINOS_TEMPLATE_OBJS=$lt_TRILINOS_TEMPLATE_OBJS
 old_archive_cmds=$lt_old_archive_cmds_RC
 old_postinstall_cmds=$lt_old_postinstall_cmds
 old_postuninstall_cmds=$lt_old_postuninstall_cmds
@@ -22963,7 +22968,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:22966: \"$ac_link\") >&5
+(eval echo $as_me:22971: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -23041,7 +23046,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:23044: \"$ac_link\") >&5
+(eval echo $as_me:23049: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -24040,7 +24045,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:24043: \"$ac_link\") >&5
+(eval echo $as_me:24048: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -24118,7 +24123,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:24121: \"$ac_link\") >&5
+(eval echo $as_me:24126: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -39259,6 +39264,7 @@ if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
     alpha*)
       if test $CXX = cxx; then
         CXXREPOS="cxx_repository/*.o"
+	TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
       fi
     ;;
   esac
