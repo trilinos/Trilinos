@@ -94,13 +94,15 @@ static int old_readfile (int Proc,
     *base = 1;
 
     rewind(f) ;
-    if (!fgets (string, 80, f))
-       {
-       sprintf(errstr, "ERROR...not able to read input file\n");
-       ZOLTAN_PRINT_ERROR (Proc, yo, errstr) ;
-       ierr = ZOLTAN_FATAL;
-       goto End;
-       }
+
+    do {
+       if (!fgets (string, 80, f))
+          {
+          ZOLTAN_PRINT_ERROR(Proc, yo, "ERROR...not able to read input file\n");
+          ierr = ZOLTAN_FATAL;
+          goto End;
+          }
+    } while (string[0] == '%');  /* Skip leading comment lines. */
 
     count = sscanf (string, "%d %d %d %d", nVtx, nEdge, nPin, &code) ;
     if (count <  3)
@@ -202,7 +204,7 @@ static int patoh_readfile (int Proc,
     {
     int i, j ;
     int count, ierr = ZOLTAN_OK;
-    char errstr[200], tmpstr[200] ;
+    char errstr[200];
     int Hedge=0, code=0, dims=1, pin;
     /* KDD -- should dims be initialized to zero (for no vwgts) instead of 1? */
     char string[BUF_LEN], *s;
@@ -213,22 +215,23 @@ static int patoh_readfile (int Proc,
 
     /* Read PaToH file. */
     rewind(f) ;
-    while (fgets (string, 80, f)!=NULL)
-       {
-       sscanf (string, "%s", tmpstr) ;
-       if (tmpstr[0] == '%')
-          continue ;
-
-       count = sscanf (string, "%d %d %d %d %d %d", 
-                       base, nVtx, nEdge, nPin, &code, &dims) ;
-       if (count <  4)  /* code and dims are optional */ 
+    do {
+       if (!fgets (string, 80, f))
           {
-          ZOLTAN_PRINT_ERROR (Proc, yo, 
-            "Control line of file must be: base |V| |E| |P| (code) (dims)\n");
-          ierr = ZOLTAN_FATAL ;
+          ZOLTAN_PRINT_ERROR(Proc, yo, "ERROR...not able to read input file\n");
+          ierr = ZOLTAN_FATAL;
           goto End;
           }
-       break ;
+    } while (string[0] == '%');  /* Skip leading comment lines. */
+
+    count = sscanf (string, "%d %d %d %d %d %d", 
+                    base, nVtx, nEdge, nPin, &code, &dims) ;
+    if (count <  4)  /* code and dims are optional */ 
+       {
+       ZOLTAN_PRINT_ERROR (Proc, yo, 
+         "Control line of file must be: base |V| |E| |P| (code) (dims)\n");
+       ierr = ZOLTAN_FATAL ;
+       goto End;
        }
 
     /* nEdge HYPEREDGE LINES */
