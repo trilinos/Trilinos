@@ -69,7 +69,7 @@ NOX::Solver::TensorBased::TensorBased(NOX::Abstract::Group& xGrp,
   residualVec(*residualVecPtr),	// reference to just-created pointer
   testPtr(&t),			// pointer to t
   paramsPtr(&p),		// copy p
-  utils(paramsPtr->sublist("Printing")),               // initialize utils
+  utils(paramsPtr->sublist("Printing")),   // initialize utils
   print(utils),
   prePostOperatorPtr(0),
   havePrePostOperator(false)
@@ -238,9 +238,22 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
   }
   // Make a reference to the sublist holding the global strategy parameters
   NOX::Parameter::List& gsParams = lsParams.sublist(choice);
-    
+
   //  Copy Method into "Submethod" (temporary hack for data scripts)
   lsParams.setParameter("Submethod", choice);
+
+  // Decide what to step to use in case of linesearch failure
+  choice = p.getParameter("Recovery Step Type", "Constant");
+  if (choice == "Constant")
+    recoveryStepType = Constant;          // Use value in "Recovery Step"
+  else if (choice == "Last Computed Step") 
+    recoveryStepType = LastComputedStep;  // Use last step from linesearch
+  else
+  {
+    cerr << "NOX::Solver::TensorBased::reset() - "
+	 << "Invalid \"Recovery Step Type\"" << endl;
+    throw "NOX Error";
+  }
 
   // Initialize linesearch parameters for this object
   minStep = gsParams.getParameter("Minimum Step", 1.0e-12);
@@ -358,7 +371,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
   ok = implementGlobalStrategy(soln, step, *this);
   if (!ok)
   {
-    if (step == 0)
+    if (step == 0.0)
     {
       if (utils.isPrintProcessAndType(NOX::Utils::Error))
 	cout << "NOX::Solver::TensorBased::iterate - line search failed"
@@ -612,7 +625,8 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 #endif
 
     // Save iteration count for comparison later
-    if (linearParams.sublist("Output").isParameter("Number of Linear Iterations"))
+    if (linearParams.sublist("Output").
+	isParameter("Number of Linear Iterations"))
       tempVal1 = linearParams.sublist("Output").
 	getParameter("Number of Linear Iterations",0);
 
@@ -652,7 +666,8 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
       
   // Update counter
   int tempVal2 = 0;
-  if (linearParams.sublist("Output").isParameter("Number of Linear Iterations"))
+  if (linearParams.sublist("Output").
+      isParameter("Number of Linear Iterations"))
     tempVal2 = linearParams.sublist("Output").
       getParameter("Number of Linear Iterations",0);
   numJ2vMults += (tempVal1 > tempVal2) ? tempVal1 : tempVal2;
@@ -666,8 +681,8 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
   {
     // Form the term inv(J)*a...  (note that a is not multiplied by 2)
     tmpVec.update(1.0, newtonVec, -1.0, sVec, 1.0);
-    if (sDotS != 0)
-      tmpVec.scale(1/(sDotS * sDotS));
+    if (sDotS != 0.0)
+      tmpVec.scale( 1.0 / (sDotS * sDotS));
 
     // Calculate value of beta
     sTinvJF = -sVec.dot(newtonVec);
@@ -756,7 +771,7 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
     {
 #if DEBUG_LEVEL > 0
       if (utils.isPrintProcessAndType(NOX::Utils::Details))
-	cout << "qa is relatively small\n";
+	cout << "  qa is relatively small\n";
 #endif 
       beta = -lambda * qc / qb;
     }
@@ -875,7 +890,7 @@ NOX::Solver::TensorBased::implementGlobalStrategy(NOX::Abstract::Group& newGrp,
 
 
 bool
-NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newsoln,
+NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
 					    double& step,
 					    const NOX::Abstract::Vector& dir,
 					    const NOX::Solver::Generic& s)
@@ -910,9 +925,9 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newsoln,
 
   // Compute first trial point and its function value
   step = defaultStep;
-  newsoln.computeX(oldSoln, dir, step);
-  newsoln.computeF();    
-  double fNew = 0.5 * newsoln.getNormF() * newsoln.getNormF();  
+  newSoln.computeX(oldSoln, dir, step);
+  newSoln.computeF();    
+  double fNew = 0.5 * newSoln.getNormF() * newSoln.getNormF();  
 
   // Stop here if only using the full step
   if (lsType == FullStep)
@@ -933,7 +948,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newsoln,
   double threshold = fOld + alpha*step*fprime;
   isAcceptable = (fNew < threshold);
 
-  // Update counter and allocate memory for dir2 if a linesearch is needed
+  // Update counter and temporarily hold direction if a linesearch is needed
   if (!isAcceptable)
   { 
     counter.incrementNumNonTrivialLineSearches();
@@ -961,7 +976,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newsoln,
       numJvMults++;
 
       if (utils.isPrintProcessAndType(NOX::Utils::Details))
-	cout << "  Switching to Newton.  New fprime = "
+	cout << "  Switching to Newton step.  New fprime = "
 	     << utils.sciformat(fprime, 6) << endl;
     }
     else
@@ -988,14 +1003,14 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newsoln,
     {
       bool ok = computeCurvilinearStep(tmpVec, oldSoln, s, step);
       // Note: oldSoln is needed above to get correct preconditioner 
-      newsoln.computeX(oldSoln, tmpVec, 1.0);
+      newSoln.computeX(oldSoln, tmpVec, 1.0);
     }
     else
     {
-      newsoln.computeX(oldSoln, tmpVec, step);
+      newSoln.computeX(oldSoln, tmpVec, step);
     }
-    newsoln.computeF();    
-    fNew = 0.5 * newsoln.getNormF() * newsoln.getNormF();
+    newSoln.computeF();    
+    fNew = 0.5 * newSoln.getNormF() * newSoln.getNormF();
 
     // Recompute convergence criteria based on new step
     threshold = fOld + alpha*step*fprime;
@@ -1006,17 +1021,28 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newsoln,
   if (isFailed)
   {
     counter.incrementNumFailedLineSearches();
-    step = recoveryStep;
 
-    if (step != 0.0)
+    if (recoveryStepType == Constant)
     {
-      // Update the group using Newton direction and recovery step
-      newsoln.computeX(oldSoln, newtonVec, step);
-      newsoln.computeF();    
-      fNew = 0.5 * newsoln.getNormF() * newsoln.getNormF();
-
-      message = "(USING RECOVERY STEP!)";
+      step = recoveryStep;
+      if (step == 0.0)
+      {
+	newSoln = oldSoln;
+	newSoln.computeF();
+	fNew = fOld;
+      }
+      else
+      {
+	// Update the group using Newton direction and recovery step
+	newSoln.computeX(oldSoln, newtonVec, step);
+	newSoln.computeF();
+	fNew = 0.5 * newSoln.getNormF() * newSoln.getNormF();
+	
+	message = "(USING RECOVERY STEP!)";
+      }
     }
+    else
+      message = "(USING LAST STEP!)";
   }
   
   print.printStep(lsIterations, step, fOld, fNew, message);

@@ -189,6 +189,19 @@ namespace Solver {
        there are many linesearch failures, then lowering this value is
        one thing to try.
 
+       <li> "Recovery Step Type" - Determines the step size to take when the 
+       line search fails.  Choices are:
+
+          <ul>
+       
+	  <li> "Constant" [default] - Uses a constant value set in
+	  "Recovery Step".
+
+	  <li> "Last Computed Step" - Uses the last value computed by the 
+	  line search algorithm. 
+
+	  </ul>
+
        <li> "Recovery Step" - Step parameter to take when the line
        search fails (defaults to value for "Default Step")
 
@@ -466,6 +479,17 @@ protected:
 
   //! Flag for lambda selection (Halving/Quadratic)
   LambdaSelectionType lambdaSelection;
+
+  //! Type of recovery step to use
+  enum RecoveryStepType {
+    //! Use a constant value
+    Constant,
+    //! Use the last value computed in the line search algorithm
+    LastComputedStep
+  };
+
+  //! Choice of the recovery step type; uses "Recovery Step Type" parameter 
+  RecoveryStepType recoveryStepType;
 
   //! Flag for using modifications that force quadratic to have real root
   bool useModifiedMethod;
