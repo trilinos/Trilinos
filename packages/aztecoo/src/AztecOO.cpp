@@ -1026,6 +1026,7 @@ int Epetra_Aztec_comm_wrapper(double vec[], AZ_MATRIX *Amat) {
   AztecOO::MatrixData * Data = (AztecOO::MatrixData *) AZ_get_matvec_data(Amat);
   Epetra_RowMatrix * A = (Epetra_RowMatrix *) Data->A;
   if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode
+  if (A->RowMatrixImporter()==0) return(1); // Nothing to do if no importer.
 
 	Epetra_Vector * SourceVec = (Epetra_Vector *) Data->SourceVec;
 	Epetra_Vector * TargetVec = (Epetra_Vector *) Data->TargetVec;
