@@ -88,6 +88,7 @@ struct ML_Operator_Struct {
    int           num_PDEs, num_rigid;
    double        lambda_max, lambda_min;
    int           N_total_cols_est;
+  int            halfclone;
 };
 
 /* -------------------------------------------------------------------- */
@@ -173,6 +174,8 @@ extern int ML_amalg_drop_getrow(void *data, int N_requested_rows,
 
 extern int ML_Operator_GetDistributedDiagBlocks(ML_Operator *mat, int *blkinfo,
                                                 int **new_ja, double **new_aa);
+
+extern double ML_Operator_GetMaxEig(ML_Operator *Amat);
 
 extern void *ML_Operator_ArrayCreate( int length);
 extern int ML_Operator_ArrayDestroy( void *array, int length);

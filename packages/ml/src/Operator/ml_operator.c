@@ -55,6 +55,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->matvec->external = NULL;
    mat->lambda_max       = -666.666;
    mat->lambda_min       = -666.666;
+   mat->halfclone        = ML_FALSE;
    ML_memory_alloc((void**)&(mat->getrow),sizeof(ML_GetrowFunc),"OF2");
    mat->getrow->ML_id            = ML_EMPTY;
    mat->getrow->Nrows            = 0;
@@ -96,7 +97,13 @@ int ML_Operator_Clean( ML_Operator *mat)
 {
 #ifdef ML_TIMING_DETAILED
    double t1;
+#endif
 
+   if (mat == NULL) return 0;
+   if (mat->halfclone == ML_TRUE) {
+     return ML_Operator_halfClone_Clean(mat);
+   }
+#ifdef ML_TIMING_DETAILED
    if ( (mat->label != NULL) && ( mat->build_time != 0.0)) 
    {
       t1 = ML_gsum_double(mat->build_time, mat->comm);
@@ -156,6 +163,7 @@ int ML_Operator_Clean( ML_Operator *mat)
    if (mat->label != NULL) { free(mat->label); mat->label = NULL; }
    mat->num_PDEs            = 1;
    mat->num_rigid           = 1;
+   mat->halfclone           = ML_FALSE;
 
    return 0;
 }
@@ -181,6 +189,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
 					     ML_Operator *original)
 {
    mat->ML_id = ML_ID_OP;
+   mat->halfclone        = ML_TRUE;
    mat->matvec->ML_id    = original->matvec->ML_id;
    mat->matvec->Nrows    = original->matvec->Nrows;
    mat->matvec->internal = original->matvec->internal;
@@ -231,6 +240,7 @@ int ML_Operator_halfClone_Clean( ML_Operator *mat)
    mat->getrow->pre_comm = NULL;
    mat->getrow->post_comm = NULL;
    mat->label = NULL;
+   mat->halfclone  = ML_FALSE;
    return(ML_Operator_Clean(mat));
 }
 int ML_Operator_halfClone_Destroy( ML_Operator *mat)
@@ -1288,8 +1298,6 @@ Create an array of ML_Operator pointers.
 ****************************************************************************/
 void *ML_Operator_ArrayCreate( int length)
 {
-  ML_Operator **op_array;
-  int i;
 
   return((void *)  ML_allocate(length*sizeof(ML_Operator *)));
 }
@@ -1306,4 +1314,25 @@ int ML_Operator_ArrayDestroy( void *array, int length)
   ML_free(op_array);
 
   return 1;
+}
+
+double ML_Operator_GetMaxEig(ML_Operator *Amat)
+{
+  double lambda_max;
+  ML_Krylov   *kdata;
+
+  if ((Amat->lambda_max) && (Amat->lambda_max > -667)) {
+
+    kdata = ML_Krylov_Create( Amat->comm );
+    /* next line sets method to CG */
+    ML_Krylov_Set_ComputeEigenvalues( kdata );
+    ML_Krylov_Set_PrintFreq( kdata, 0 );
+    ML_Krylov_Set_Amatrix(kdata, Amat);
+    ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
+    lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
+    ML_Krylov_Destroy(&kdata);
+  }
+  else lambda_max = Amat->lambda_max;
+
+  return lambda_max;
 }
