@@ -2,11 +2,12 @@
 //  File : BlockArnoldiPetraExGen.cpp
 //
 //  This example computes the eigenvalues of smallest magnitude of the discretized 1D Laplacian
-//  equation using the block Implicitly-Restarted Arnoldi method.  This problem shows the construction
-//  of an inner-outer iteration using Belos as the linear solver within Anasazi.  An Ifpack preconditioner
-//  is constructed to precondition the linear solver.  This operator is discretized using finite elements
-//  and constructed as an Epetra matrix, then passed into the AnasaziPetraMat to be used in the construction
-//  of the Krylov decomposition.  The specifics of the block Arnoldi method can be set by the user.
+//  equation using the block Implicitly-Restarted Arnoldi method.  This problem shows the 
+//  construction of an inner-outer iteration using Belos as the linear solver within Anasazi.  
+//  An Ifpack preconditioner is constructed to precondition the linear solver.  This operator 
+//  is discretized using finite elements and constructed as an Epetra matrix, then passed into 
+//  the AnasaziPetraMat to be used in the construction of the Krylov decomposition.  The 
+//  specifics of the block Arnoldi method can be set by the user.
 
 #include "AnasaziPetraInterface.hpp"
 #include "BelosPetraInterface.hpp"
@@ -21,6 +22,7 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
+#include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
 	int ierr = 0, i, j;

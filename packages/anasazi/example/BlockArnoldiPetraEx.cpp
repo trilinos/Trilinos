@@ -1,11 +1,23 @@
+//
+//  File: BlockArnoldiPetraEx.cpp
+//
+//  This example computes the specified eigenvalues of the discretized 2D Convection-Diffusion
+//  equation using the block Arnoldi method.  This discretized operator is constructed as an
+//  Epetra matrix, then passed into the AnasaziPetraMat to be used in the construction of the
+//  Krylov decomposition.  The specifics of the block Arnoldi method can be set by the user.
+
 #include "AnasaziPetraInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
 #include "AnasaziCommon.hpp"
+#include "Epetra_CrsMatrix.h"
 
-//  This example computes the specified eigenvalues of the discretized 2D Convection-Diffusion
-//  equation using the block Arnoldi method.  This discretized operator is constructed as an 
-//  Epetra matrix, then passed into the AnasaziPetraMat to be used in the construction of the
-//  Krylov decomposition.  The specifics of the block Arnoldi method can be set by the user.
+#ifdef EPETRA_MPI
+#include "Epetra_MpiComm.h"
+#include <mpi.h>
+#else
+#include "Epetra_SerialComm.h"
+#endif
+#include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
 	int ierr = 0, i, j;
@@ -79,7 +91,7 @@ int main(int argc, char *argv[]) {
 	Epetra_CrsMatrix& A = *new Epetra_CrsMatrix(Copy, Map, NumNz);
 
 	// Diffusion coefficient, can be set by user.
-	double rho = 100.0;  
+	double rho = 0.0;  
 
 	// Add  rows one-at-a-time
 	// Need some vectors to help
@@ -129,20 +141,21 @@ int main(int argc, char *argv[]) {
 	//  Variables used for the Block Arnoldi Method
 	//
 	int block = 5;
-	int length = 10;
+	int length = 30;
 	int nev = 5;
 	double tol = 1.0e-8;
 	string which="LM";
 	int step = 1;
-	int restarts = 5;
+	int restarts = 1;
 
 	// create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by AnasaziPetraVec.
 	// This is possible because I pass in arguements needed by petra.
 	AnasaziPetraVec<double> ivec(Map, block);
 	ivec.MvRandom();
+
 	// call the ctor that calls the petra ctor for a matrix
-	AnasaziPetraMat<double> Amat(A);
+	AnasaziPetraMat<double> Amat(A);	
 	AnasaziEigenproblem<double> MyProblem(&Amat, &ivec);
 
 	// initialize the Block Arnoldi solver
@@ -151,7 +164,7 @@ int main(int argc, char *argv[]) {
 	
 	// inform the solver that the problem is symmetric
 	//MyBlockArnoldi.setSymmetric(true);
-	MyBlockArnoldi.setDebugLevel(1);
+	MyBlockArnoldi.setDebugLevel(3);
 
 #ifdef UNIX
 	Epetra_Time & timer = *new Epetra_Time(Comm);

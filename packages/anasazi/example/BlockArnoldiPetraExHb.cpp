@@ -1,6 +1,7 @@
 #include "AnasaziPetraInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
 #include "AnasaziCommon.hpp"
+#include "Epetra_CrsMatrix.h"
 
 #include "Trilinos_Util.h"
 #include "Util.h"
@@ -100,13 +101,13 @@ int main(int argc, char *argv[]) {
 	//
         //  Variables used for the Block Arnoldi Method
         // 
-        int block = 5;
-        int length = 10;
-        int nev = 3;
+        int block = 3;
+        int length = 8;
+        int nev = 10;
         double tol = 1.0e-8;
         string which="LM";
-        int step = 5;
-        int restarts = 3;
+        int step = 1;
+        int restarts = 10;
 	//
         // create a PetraAnasaziVec. Note that the decision to make a view or
         // or copy is determined by the petra constructor called by AnasaziPetraVec.
@@ -146,7 +147,8 @@ int main(int argc, char *argv[]) {
         
         AnasaziPetraVec<double> evecs(Map, nev);
         MyBlockArnoldi.getEvecs( evecs );
-
+	
+	
         // output results to screen
         //MyBlockArnoldi.currentStatus();
 
