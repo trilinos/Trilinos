@@ -121,7 +121,7 @@ private:
     }
     else {
       for( int j = 0; j < sdm.numCols(); ++j ) {
-				blas.COPY( sdm.numRows(), &sdm(0,j), 1, &mvv(1,j+1), 1 );
+	blas.COPY( sdm.numRows(), &sdm(0,j), 1, &mvv(1,j+1), 1 );
       }
     }
   }
@@ -228,9 +228,9 @@ public:
   ///
   static void MvTransMv( const TSFCore::MultiVector<TYPE>& mv, TYPE alpha, const TSFCore::MultiVector<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B )
     {
-      // B = alpha * mv' * A
-      RefCountPtr<TSFCore::MultiVector<TYPE> > B_mv = mv.domain()->createMembers(A.domain()->dim());
-      mv.apply( TSFCore::TRANS, A, &*B_mv, alpha, ST::zero() );
+      // B = alpha * A' * mv
+      RefCountPtr<TSFCore::MultiVector<TYPE> > B_mv = A.domain()->createMembers(mv.domain()->dim());
+      A.apply( TSFCore::TRANS, mv, &*B_mv, alpha, ST::zero() );
       copy( *B_mv, &B );
     }
   ///
@@ -261,7 +261,7 @@ public:
   static void SetBlock( const TSFCore::MultiVector<TYPE>& A, int index[], int numvecs, TSFCore::MultiVector<TYPE>& mv )
   {
     for( int k = 0; k < numvecs; ++k )
-      assign( &*mv.col(k+1), *A.col(index[k]+1) );
+      assign( &*mv.col(index[k]+1), *A.col(k+1) );
   }
   ///
   static void MvRandom( TSFCore::MultiVector<TYPE>& mv )

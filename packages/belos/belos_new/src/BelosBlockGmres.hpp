@@ -333,6 +333,15 @@ namespace Belos {
       for (i=0; i < (_length+1)*_blocksize; i++) { index[i] = i; }
       //
       for (_restartiter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _restartiter++) {
+        //
+        // Print out solver status
+        // 
+        if (_om->doOutput( 2 )) {
+	  *_os << endl;
+	  _stest->Print(*_os); 
+	  *_os << endl;
+	  *_os << "===================================================" << endl;
+        }
 	//
 	// Associate the initial block of _basisvecs with U_vec.
 	//

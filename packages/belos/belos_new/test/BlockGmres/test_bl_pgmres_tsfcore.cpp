@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     // if (argc > 2) Lfill = atoi(argv[2]);
     if (verbose) cout << "Using Lfill = " << Lfill << endl;
     int Overlap = 0;
-    /// if (argc > 3) Overlap = atoi(argv[3]);
+    // if (argc > 3) Overlap = atoi(argv[3]);
     if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
     double Athresh = 0.0;
     // if (argc > 4) Athresh = atof(argv[4]);
@@ -215,7 +215,8 @@ int main(int argc, char *argv[]) {
     //
     double* actual_resids = new double[numrhs];
     double* rhs_norm = new double[numrhs];
-    TSFCore::EpetraMultiVector& resid = dynamic_cast<TSFCore::EpetraMultiVector&>( *(vs->createMembers( numrhs )) );
+    RefCountPtr<Epetra_MultiVector> R = rcp( new Epetra_MultiVector(*rowMap, numrhs) );
+    TSFCore::EpetraMultiVector resid( R, vs );
     OPT::Apply( Amat, soln, resid );
     MVT::MvAddMv( -1.0, resid, 1.0, rhs, resid ); 
     MVT::MvNorm( resid, actual_resids );
