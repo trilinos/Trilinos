@@ -60,13 +60,21 @@ files for more details.  Instructions for customizing are listed behind
 '#np#' in the following files:
      Trilinos/configure.ac
      Trilinos/packages/Makefile.am
-     Trilinos/packages/np/Makefile.am
-     Trilinos/packages/np/configure.ac  
-     Trilinos/packages/np/src/Makefile.am
-     Trilinos/packages/np/example/Makefile.am
-     Trilinos/packages/np/test/Makfile.am
-     Trilinos/packages/np/test/scripts/Makfile.am
-     Trilinos/packages/np/test/scripts/daily/Makfile.am
+     Trilinos/packages/new_package/Makefile.am
+     Trilinos/packages/new_package/configure.ac  
+     Trilinos/packages/new_package/src/Makefile.am
+     Trilinos/packages/new_package/example/Makefile.am
+     Trilinos/packages/new_package/example/example1/Makefile.am
+     Trilinos/packages/new_package/test/Makfile.am
+     Trilinos/packages/new_package/test/test1/Makefile.am
+     Trilinos/packages/new_package/test/scripts/Makfile.am
+     Trilinos/packages/new_package/test/scripts/daily/Makfile.am
+     Trilinos/packages/new_package/test/scripts/daily/mpi/Makfile.am
+     Trilinos/packages/new_package/test/scripts/daily/serial/Makfile.am
+     Trilinos/packages/new_package/test/scripts/weekly/Makfile.am
+
+Note that not all of these files are used in building new_package, as it is 
+a very simple package.
 
 2. Create generated Autoconf and Automake files.
 
@@ -89,7 +97,7 @@ configure.ac:341: warning: do not use m4_regexp: use regexp or m4_bregexp
 
 These warnings will be fixed in the future.
 
-3.  Test/debug your autoconf/automake files
+3.  Test and debug Autoconf and Automake files
 
 After you have run bootstrap, run configure in a clean BUILD directory.
 Running configure can take a long time.  Here is a tip to save time.   
@@ -107,7 +115,7 @@ configure in a separate build directoy.  If make distclean does not
 work (at present it does not work consistently) you may have to start
 from scratch, with a cvs checkout and adding your new source files. 
 
-4.  CVS all files.  
+4.  Add all Autoconf and Automake files to the Trilinos CVS repository 
 
 The bootstrap command will generate files necessary for the configure
 and build processes.  Each of these files MUST be added to the
