@@ -14,35 +14,49 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_View::operator()( const Epetra_CrsGraph 
   if( original.IndicesAreGlobal() ) return std::auto_ptr<Epetra_CrsGraph>(0);
 
   //test maps, new map must be left subset of old
+  const Epetra_BlockMap & oRowMap = original.RowMap();
+  const Epetra_BlockMap & oColMap = original.ColMap();
+
+  int oNumRows = oRowMap.NumMyElements();
+  int oNumCols = oRowMap.NumMyElements();
+  int nNumRows = NewRowMap_->NumMyElements();
+  int nNumCols = 0;
+  if( NewColMap_ ) nNumCols = NewColMap_->NumMyElements();
+
+  bool matched = true;
+  for( int i = 0; i < nNumRows; ++i )
+    matched = matched && ( oRowMap.GID(i) == NewRowMap_->GID(i) );
+  if( nNumCols )
+    for( int i = 0; i < nNumCols; ++i )
+      matched = matched && ( oColMap.GID(i) == NewColMap_->GID(i) );
+
+  if( !matched ) cout << "EDT_CrsGraph_View: Bad Row or Col Mapping\n";
+  assert( matched );
 
   //intial construction of graph
-  int numMyRows = NewRowMap_.NumMyElements();
-  int numMyCols = -1;
-  if( NewDomainMap_ ) numMyCols = NewDomainMap_->NumMyElements();
-
-  vector<int> numIndices( numMyRows );
-  vector<int*> indices( numMyRows );
-  for( int i = 0; i < numMyRows; ++i )
+  vector<int> numIndices( nNumRows );
+  vector<int*> indices( nNumRows );
+  for( int i = 0; i < nNumRows; ++i )
   {
     original.ExtractMyRowView( i, numIndices[i], indices[i] );
     int j = 0;
-    if( numMyCols != -1 )
+    if( nNumCols )
     {
-      while( j < numIndices[i] && NewDomainMap_->GID(indices[i][j]) != -1 ) ++j;
+      while( j < numIndices[i] && NewColMap_->GID(indices[i][j]) != -1 ) ++j;
       numIndices[i] = j;
     }
   }
+
   std::auto_ptr<Epetra_CrsGraph> newGraph( new Epetra_CrsGraph( View,
-                                                                NewRowMap_,
+                                                                *NewRowMap_,
+                                                                *NewColMap_,
                                                                 &numIndices[0] ) );
 
   //insert views of row indices
-  for( int i = 0; i < numMyRows; ++i )
+  for( int i = 0; i < nNumRows; ++i )
     newGraph->InsertMyIndices( i, numIndices[i], indices[i] );
 
-  if( NewDomainMap_ ) newGraph->TransformToLocal( const_cast<Epetra_BlockMap*>(NewDomainMap_),
-                                                  const_cast<Epetra_BlockMap*>(&NewRowMap_) );
-  else                newGraph->TransformToLocal();
+  newGraph->TransformToLocal();
 
   return newGraph;
 }

@@ -11,23 +11,17 @@ namespace Epetra_Transform {
 
 class CrsGraph_View : public SameTypeDistTransform<Epetra_CrsGraph> {
 
-  const Epetra_BlockMap & OrigRowMap_;
-  const Epetra_BlockMap & NewRowMap_;
-  const Epetra_BlockMap * OrigDomainMap_;
-  const Epetra_BlockMap * NewDomainMap_;
+  const Epetra_BlockMap * NewRowMap_;
+  const Epetra_BlockMap * NewColMap_;
 
  public:
 
   ~CrsGraph_View() {}
 
-  CrsGraph_View( const Epetra_BlockMap & orig_row_map,
-                 const Epetra_BlockMap & new_row_map,
-                 const Epetra_BlockMap * orig_domain_map = 0,
-                 const Epetra_BlockMap * new_domain_map = 0 )
-  : OrigRowMap_(orig_row_map),
-    NewRowMap_(new_row_map),
-    OrigDomainMap_(orig_domain_map),
-    NewDomainMap_(new_domain_map)
+  CrsGraph_View( const Epetra_BlockMap * new_row_map,
+                 const Epetra_BlockMap * new_col_map = 0 )
+  : NewRowMap_(new_row_map),
+    NewColMap_(new_col_map)
   {}
 
   std::auto_ptr<Epetra_CrsGraph> operator()( const Epetra_CrsGraph & original );

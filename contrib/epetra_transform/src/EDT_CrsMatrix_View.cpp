@@ -8,9 +8,8 @@ namespace Epetra_Transform {
 
 std::auto_ptr<Epetra_CrsMatrix> CrsMatrix_View::operator()( const Epetra_CrsMatrix & original )
 {
-  if( original.IndicesAreGlobal() ) 
-    //Error, must be local indices
-    return std::auto_ptr<Epetra_CrsMatrix>(0);
+  if( original.IndicesAreGlobal() ) cout << "EDT_CrsMatrix_View: Indices must be LOCAL!\n";
+  assert( !original.IndicesAreGlobal() );
 
   //test graph, new graph must be left subset of old
 
