@@ -191,7 +191,8 @@ extern int ML_Gen_Smoother_Jacobi( ML *, int nl, int pre_or_post,
                      int ntimes, double omega );
 extern int ML_Gen_Smoother_GaussSeidel(ML*,int nl,int pre_post,int ntimes,double);
 extern int ML_Gen_Smoother_Hiptmair(ML*,int nl,int pre_post,int ntimes,
-                     double, ML_Operator**, ML_Operator**, ML_Operator*); 
+                     double, ML_Operator**, ML_Operator**, ML_Operator*,
+                     int print); 
 extern int ML_Gen_Smoother_SymGaussSeidel(ML*,int nl,int pre_post,int ntimes, 
 		     double omega);
 extern int ML_Gen_Smoother_SymGaussSeidelSequential(ML*,int nl,int pre_post,
@@ -270,6 +271,7 @@ extern int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post,
 extern int ML_MLS_Setup_Coef(void *sm, int deg);
 extern int ML_Seg_Solve( ML *ml , double *din, double *dout);
 extern int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func);
+extern int ML_Solver_SetScheme(ML *ml, int scheme);
 
 #ifdef __cplusplus
 }
