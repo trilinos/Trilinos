@@ -231,7 +231,7 @@ int Zoltan_HSFC(
       }
    ZOLTAN_TRACE_DETAIL (zz, yo, "About to enter main loop\n");
 
-   
+
    /* This loop is the real guts of the partitioning algorithm */
    for (loop = 0; loop < MAX_LOOPS; loop++) {
       /* initialize bins, DEFAULT_BIN_MAX is less than any possible max,... */
@@ -340,17 +340,18 @@ int Zoltan_HSFC(
    if (d->final_partition == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Unable to malloc final_partition");
 
-   /* set new partition on [0,1] by summing grand_weights until targets met */
-   /* k counts partitions and i counts grand partitions */
+   /* initializations required to start loop below */
+   d->final_partition[0].l = 0.0;
    for (k = 0; k < zz->LB.Num_Global_Parts; k++) {
       tsum[k] = 0.0;
       d->final_partition[k].index = k;
-      d->final_partition[k].l = 0.0;
       }
-
    actual = desired = total_weight;
    i = k = 0;
    correction = 1.0;
+
+   /* set new partition on [0,1] by summing grand_weights until targets met */
+   /* k counts partitions and i counts grand partitions */
    while (1)  {
       if (k >= zz->LB.Num_Global_Parts  ||  i >= pcount)
          break;
@@ -395,19 +396,23 @@ int Zoltan_HSFC(
       /* correct target[]s for cumulative partitioning errors (Bruce H.) */
       correction = ((desired == 0) ? 1.0 : actual/desired);
       }
+   /* check if we didn't close out last sum, fix right boundary if needed */   
+   if (i == pcount && k < zz->LB.Num_Global_Parts)
+     {
+     d->final_partition[k].r = 1.0;
+     k++;
+     }
 
    /* if last partition(s) is empty, loop stops w/o setting final_partition(s) */
    for (i = k; i < zz->LB.Num_Global_Parts; i++)  {
       d->final_partition[i].r = 1.0;
-      if (d->final_partition[i].l == 0.0)
-          d->final_partition[i].l = 1.0;
+      d->final_partition[i].l = 1.0;
       }
 
    out_of_tolerance = 0;
    for (k = 0; k < zz->LB.Num_Global_Parts; k++)
       if (tsum[k] > target[k] * zz->LB.Imbalance_Tol[0])
          out_of_tolerance = 1;
-
    ZOLTAN_TRACE_DETAIL (zz, yo, "Determined final partition");
 
    /* Count the number of objects to export from this processor */
@@ -464,6 +469,7 @@ int Zoltan_HSFC(
       /* Fill in export arrays */
       for (j = i = 0; i < ndots; i++) {
         tmp = Zoltan_LB_Part_To_Proc(zz, dots[i].part, gids + i*zz->Num_GID);
+
         if (dots[i].part != parts[i] || zz->Proc != tmp) {
            *((*export_procs)   +j) = tmp;
            *((*export_to_parts)+j) = dots[i].part;
