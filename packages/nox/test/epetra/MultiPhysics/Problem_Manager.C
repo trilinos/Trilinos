@@ -126,6 +126,8 @@ Problem_Manager::~Problem_Manager()
 void Problem_Manager::addProblem(GenericEpetraProblem& problem)
 {
   Problems.insert(pair<int, GenericEpetraProblem*>(++problemCount, &problem));
+  Names.insert( pair<int, string> (problemCount, problem.getName()) );
+  NameLookup.insert( pair<string, int> (problem.getName(), problemCount) );
   problem.setId(problemCount);
   problem.setManager(this);
 
@@ -393,6 +395,19 @@ bool Problem_Manager::setAllGroupX()
   }
 }
 
+void Problem_Manager::resetProblems()
+{ 
+
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  // Loop over each problem and copy its solution into its old solution
+  for( ; problemIter != problemLast; problemIter++) {
+    GenericEpetraProblem& problem = *(*problemIter).second;
+    problem.reset( problem.getSolution() );
+  }
+}
+
 bool Problem_Manager::computeAllF()
 {
   if(Problems.empty()) {
@@ -404,8 +419,8 @@ bool Problem_Manager::computeAllF()
   map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
-  // Loop over each problem being managed and set the corresponding group
-  // solution vector (used by NOX) with the problem's (used by application)
+  // Loop over each problem being managed and invoke the corresponding group's
+  // residual evaluation
   for( ; problemIter != problemLast; problemIter++) {
     int probId = problemIter->first;
     NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
@@ -717,12 +732,6 @@ bool Problem_Manager::solve()
 
   map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
-
-  // These iterators would be needed in general, but we later specialize
-  // for the case of a 2-problem system.
-//  map<int, NOX::EpetraNew::Group*>::iterator     groupIter = Groups.begin();
-//  map<int, Problem_Interface*>::iterator  interfaceIter = Interfaces.begin();
-//  map<int, NOX::Solver::Manager*>::iterator  solverIter = Solvers.begin();
 
   // Sync the two problems and get initial convergence state
   syncAllProblems();

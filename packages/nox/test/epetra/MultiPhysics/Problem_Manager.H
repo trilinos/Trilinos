@@ -89,6 +89,10 @@ public:
   // Set all groups with the current solution contained in each problem
   bool setAllGroupX();
 
+  // Reset all problems by copying the current solution into the old solution
+  // Needed for time-dependent problems
+  void resetProblems();
+
   // Compute residual (F) in solution groups for all registered problems
   bool computeAllF();
 
@@ -151,6 +155,8 @@ private:
   Epetra_Vector* compositeSoln;	// Composite map for all registered problems
 
   map<int, GenericEpetraProblem*> Problems; // Problem container
+  map<int, string> Names;                   // Problem names
+  map<string, int> NameLookup;              // Needed to lookup problems by name
   map<int, NOX::EpetraNew::LinearSystemAztecOO*> LinearSystems;
   					    // Linear Systems container
   map<int, NOX::EpetraNew::Group*> Groups;    // Groups container
