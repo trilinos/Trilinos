@@ -222,13 +222,13 @@ void ML_Aggregate_ComputeBox( ML_Aggregate_Viz_Stats finer_level,
   
   /* ------------------- execution begins --------------------------------- */
 
-  xmin = (double*)malloc(sizeof(double)*Naggregates_global);
-  xmax = (double*)malloc(sizeof(double)*Naggregates_global);
-  ymin = (double*)malloc(sizeof(double)*Naggregates_global);
-  ymax = (double*)malloc(sizeof(double)*Naggregates_global);
-  zmin = (double*)malloc(sizeof(double)*Naggregates_global);
-  zmax = (double*)malloc(sizeof(double)*Naggregates_global);
-  dtemp = (double*)malloc(sizeof(double)*Naggregates_global);
+  xmin = (double*)ML_allocate(sizeof(double)*Naggregates_global);
+  xmax = (double*)ML_allocate(sizeof(double)*Naggregates_global);
+  ymin = (double*)ML_allocate(sizeof(double)*Naggregates_global);
+  ymax = (double*)ML_allocate(sizeof(double)*Naggregates_global);
+  zmin = (double*)ML_allocate(sizeof(double)*Naggregates_global);
+  zmax = (double*)ML_allocate(sizeof(double)*Naggregates_global);
+  dtemp = (double*)ML_allocate(sizeof(double)*Naggregates_global);
   
   for( i=0 ; i<Naggregates_global ; i++ ) R[i] = 0.0;
   
@@ -369,10 +369,10 @@ void ML_Aggregate_ComputeCenterOfGravity( ML_Aggregate_Viz_Stats finer_level,
     break;
   }
 
-  count = (int *) malloc( sizeof(int)*N_coarser_global);
-  xmtemp = (double *) malloc( sizeof(double)*N_coarser_global);
-  if( ym != NULL ) ymtemp = (double *) malloc( sizeof(double)*N_coarser_global);
-  if( zm != NULL ) zmtemp = (double *) malloc( sizeof(double)*N_coarser_global);
+  count = (int *) ML_allocate( sizeof(int)*N_coarser_global);
+  xmtemp = (double *) ML_allocate( sizeof(double)*N_coarser_global);
+  if( ym != NULL ) ymtemp = (double *) ML_allocate( sizeof(double)*N_coarser_global);
+  if( zm != NULL ) zmtemp = (double *) ML_allocate( sizeof(double)*N_coarser_global);
   
   for( i=0 ; i<N_coarser_global ; i++ ) {
     count[i] = 0;
@@ -392,8 +392,8 @@ void ML_Aggregate_ComputeCenterOfGravity( ML_Aggregate_Viz_Stats finer_level,
   }
 
 #ifdef ML_MPI
-  itemp = (int *) malloc( sizeof(int)*N_coarser_global);
-  dtemp = (double *) malloc( sizeof(double)*N_coarser_global);
+  itemp = (int *) ML_allocate( sizeof(int)*N_coarser_global);
+  dtemp = (double *) ML_allocate( sizeof(double)*N_coarser_global);
   MPI_Allreduce(count,itemp,N_coarser_global,MPI_INT,MPI_SUM,comm->USR_comm);
   for( i=0 ; i<N_coarser_global ; i++ ) count[i] = itemp[i];
   
@@ -832,13 +832,13 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
           Naggregates = info[ilevel].Naggregates;
           switch( dim ) {
             case 3:
-              info[ilevel+1].z = (double *)malloc(sizeof(double)*Naggregates);
+              info[ilevel+1].z = (double *)ML_allocate(sizeof(double)*Naggregates);
 	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel+1].z[i] = 0.0;
             case 2:
-              info[ilevel+1].y = (double *)malloc(sizeof(double)*Naggregates);
+              info[ilevel+1].y = (double *)ML_allocate(sizeof(double)*Naggregates);
 	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel+1].y[i] = 0.0;
             case 1:
-              info[ilevel+1].x = (double *)malloc(sizeof(double)*Naggregates);
+              info[ilevel+1].x = (double *)ML_allocate(sizeof(double)*Naggregates);
 	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel+1].x[i] = 0.0;
           }
           ML_Aggregate_ComputeCenterOfGravity( info[ilevel],
@@ -852,13 +852,13 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 
           switch( dim ) {
             case 3:
-              info[ilevel-1].z = (double *)malloc(sizeof(double)*Naggregates);
+              info[ilevel-1].z = (double *)ML_allocate(sizeof(double)*Naggregates);
 	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel-1].z[i] = 0.0;
             case 2:
-              info[ilevel-1].y = (double *)malloc(sizeof(double)*Naggregates);
+              info[ilevel-1].y = (double *)ML_allocate(sizeof(double)*Naggregates);
 	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel-1].y[i] = 0.0;
             case 1:
-              info[ilevel-1].x = (double *)malloc(sizeof(double)*Naggregates);
+              info[ilevel-1].x = (double *)ML_allocate(sizeof(double)*Naggregates);
 	      for( i=0 ; i<Naggregates ; ++i ) info[ilevel-1].x[i] = 0.0;
           }
           ML_Aggregate_ComputeCenterOfGravity( info[ilevel],
@@ -951,7 +951,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 
 	/* computes how many nodes are in each aggregate for this level,
 	   globally */
-	itemp = (int *) malloc( sizeof(int) * Naggregates_global );
+	itemp = (int *) ML_allocate( sizeof(int) * Naggregates_global );
 	for( i=0 ; i<Naggregates_global ; i++ ) itemp[i] = 0;
 	
 	for( i=0 ; i<Nlocal ; i++ ) {
@@ -970,7 +970,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 	}
 	
 #ifdef ML_MPI
-	itemp2 = (int *)malloc( sizeof(int)*Naggregates_global);
+	itemp2 = (int *)ML_allocate( sizeof(int)*Naggregates_global);
 	MPI_Reduce(itemp,itemp2,Naggregates_global,MPI_INT,MPI_SUM,0,
 		   comm->USR_comm);
 #else
@@ -1039,7 +1039,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
       Nlocal = info[ilevel+diff].Nlocal;
       Naggregates = info[ilevel].Naggregates;
 
-      RorH = (double *) malloc( sizeof(double) * Naggregates );
+      RorH = (double *) ML_allocate( sizeof(double) * Naggregates );
     
       if( RorH == NULL ) {
 	fprintf( stderr,
@@ -1093,7 +1093,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 	  break;
 	}
 
-	dtemp = (double *) malloc( sizeof(double)*Naggregates_global);
+	dtemp = (double *) ML_allocate( sizeof(double)*Naggregates_global);
 	ML_Aggregate_ComputeBox( info[ilevel], Naggregates_global,
 				 dtemp, offset,comm);
       
@@ -1371,7 +1371,7 @@ int ML_Compute_AggregateGraphRadius( int Nrows, int ia[], int ja[],
   int i, j, radius, Ncenter;
   int max_dep;
   int * center;
-  int * orig_dep = (int*)malloc(sizeof(int)*Nrows);
+  int * orig_dep = (int*)ML_allocate(sizeof(int)*Nrows);
 
   for( i=0 ; i<Nrows ; i++ )
     orig_dep[i] = dep[i];
@@ -1380,7 +1380,7 @@ int ML_Compute_AggregateGraphRadius( int Nrows, int ia[], int ja[],
   /* define the center nodes */
 
   Ncenter = 0;
-  center = (int *) malloc( sizeof(int) * Nrows );
+  center = (int *) ML_allocate( sizeof(int) * Nrows );
   
   for( i=0 ; i<Nrows ; i++ ) {
     if( dep[i] == max_dep ) {
