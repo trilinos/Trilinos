@@ -31,10 +31,11 @@ extern int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                                       ML_Aggregate *ag, ML_Operator *Tmat,
                                       ML_Operator *Tmat_trans,
                                       ML_Operator ***Tmat_array,
-                                             ML_Operator ***Tmat_trans_array);
+                                      ML_Operator ***Tmat_trans_array,
+                                      int smooth_flag, double smooth_factor);
 extern int ML_MGHierarchy_ReitzingerDestroy(int finest_level, 
-					    int coarsest_level, ML_Operator ***Tmat_array,
-					    ML_Operator ***Tmat_trans_array);
+                        int coarsest_level, ML_Operator ***Tmat_array,
+                        ML_Operator ***Tmat_trans_array);
 #ifdef __cplusplus
 }
 #endif
