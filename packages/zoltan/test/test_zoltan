@@ -12,8 +12,8 @@
 #
 
 # Chaco problems to run, ordered by increasing size/difficulty
-set ch_name = (simple nograph vwgt grid20x19 film hammond)
-set ch_nproc = (4 4 3 5 6 8) # no. of procs
+set ch_name = (simple nograph vwgt ewgt grid20x19 film hammond)
+set ch_nproc = (4 4 3 4 5 6 8) # no. of procs
 
 # Nemesis problems to run  
 set nem_name = (box_064 ti_300 ti_4k)
@@ -122,8 +122,8 @@ else
   set zdrive = zdrive
 endif
 if (! -x $zdrive ) then
-  echo "Warning: Cannot find executable $zdrive;"
-  echo "Will try using ../Obj_"$arch"/zdrive"
+  echo " No executable $zdrive in current directory;"
+  echo " Will try using ../Obj_"$arch"/zdrive"
   set zdrive = ../Obj_$arch/zdrive
 endif
 if (! -x $zdrive ) then
@@ -163,7 +163,7 @@ if (! $no_chaco ) then
       echo "Warning: Answer directory missing in ch_${ch_name[1]}" | tee -a ../$logfile
     endif
 
-    # Save input file 
+    # Save generic input file 
     if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
 
     # Loop over all methods
