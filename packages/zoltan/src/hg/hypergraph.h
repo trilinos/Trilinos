@@ -189,6 +189,8 @@ typedef struct {
 int Zoltan_HG_Set_Part_Options  (ZZ *, HGPartParams *);
 int Zoltan_HG_HPart_Lib    (ZZ *, HGraph *, int, Partition, HGPartParams *);
 int Zoltan_HG_HPart_Info   (ZZ *, HGraph *, int, Partition);
+float hcut_size_total (HGraph *, Partition);
+float hcut_size_links (ZZ *, HGraph *, int, Partition);
 
 /* Scale Edge Weight */
 int Zoltan_HG_Scale_Graph_Weight  (ZZ *, Graph *, float *, int);

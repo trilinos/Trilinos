@@ -18,9 +18,6 @@ extern "C" {
 
 #include "hypergraph.h"
 
-static float hcut_size_total (HGraph *, Partition);
-static float hcut_size_links (ZZ *, HGraph *, int, Partition);
-
 /****************************************************************************/
 /* Routine to set function pointers corresponding to input-string options. */
 int Zoltan_HG_Set_Part_Options(ZZ *zz, HGPartParams *hgp)
@@ -226,7 +223,7 @@ int Zoltan_HG_HPart_Lib (
 
 /****************************************************************************/
 
-static float hcut_size_total (HGraph *hg, Partition part)
+float hcut_size_total (HGraph *hg, Partition part)
 { int   i, j, hpart;
   float cut=0.0;
 
@@ -241,7 +238,7 @@ static float hcut_size_total (HGraph *hg, Partition part)
 
 /****************************************************************************/
 
-static float hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
+float hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
 { int   i, j, *parts, nparts;
   float cut=0.0;
   char *yo = "hcut_size_links" ;

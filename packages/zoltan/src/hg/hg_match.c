@@ -97,7 +97,9 @@ int Zoltan_HG_Matching (
   float *old_ewgt=NULL, *new_ewgt;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-
+/*
+  graph_connected_components (g->nVtx, g->nindex, g->neigh, zz->Debug_Level);
+*/
   if (g->vwgt && hgp->ews>0)
   { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nEdge)))
     { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -574,6 +576,50 @@ static int matching_aug3 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
   ZOLTAN_FREE ((void **) &stack);
   return ZOLTAN_OK;
 }
+
+/*****************************************************************************/
+
+/*
+int graph_connected_components (int n, int *ep, int *edge, int Out)
+{ int   i=0, *locked, *queue, queue_head, queue_tail,
+        components=0, first_unlocked=0;
+
+  if (!(queue  = (int*) ZOLTAN_MALLOC (sizeof(int) * n)) ||
+      !(locked = (int*) ZOLTAN_CALLOC (n, sizeof(int)))   )
+    return ZOLTAN_MEMERR;
+
+  if (Out > 1)
+    printf ("Component Sizes     : ");
+  while (i<n)
+  { int k, size=1, vertex;
+    queue_head=0;
+    queue_tail=1;
+    components++;
+    while (locked[first_unlocked])
+      first_unlocked++;
+    queue[0] = first_unlocked;
+    locked[first_unlocked] = 1;
+    while (queue_head < queue_tail)
+    { vertex = queue[queue_head++];
+      for (k=ep[vertex]; k<ep[vertex+1]; k++)
+        if (!(locked[edge[k]]))
+        { size++;
+          locked[edge[k]] = 1;
+          queue[queue_tail++] = edge[k];
+    }   }
+    if (Out > 1)
+      printf ("%d ", size);
+    i += size;
+  }
+  if (Out > 1)
+    printf ("\n");
+  if (Out > 0)
+    printf("Components          : %d\n",components);
+  ZOLTAN_FREE((void **) &locked);
+  ZOLTAN_FREE((void **) &queue);
+  return components;
+}
+*/
 
 /*****************************************************************************/
 #ifdef __cplusplus
