@@ -170,9 +170,9 @@ decomposition to the application.
 <br><tt>/* <i>Register method and application query functions</i> */</tt>
 <br><tt>lb = LB_Create(MPI_COMM_WORLD);</tt>
 <br><tt>LB_Set_Method(lb, "RCB");</tt>
-<br><tt>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,user_return_coords_fn,NULL);</tt>
-<br><tt>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,user_return_num_elems_fn,NULL);</tt>
-<br><tt>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,user_return_elem_list_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,(void (*)())user_return_coords_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,(void (*)())user_return_num_elems_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,(void (*)())user_return_elem_list_fn,NULL);</tt>
 <br><tt>...</tt>
 <br><tt>/* <i>Call the load balancer</i> */</tt>
 <br><tt>LB_Balance(lb,&amp;new,&amp;num_imp,&amp;imp_glob_ids,&amp;imp_loc_ids,&amp;imp_procs,</tt>
@@ -278,9 +278,9 @@ communication required for data movement.
 <tr>
 <td><tt>...</tt>
 <br><tt>/* <i>Register packing and unpacking functions</i> */</tt>
-<br><tt>LB_Set_Fn(lb,LB_OBJ_SIZE_FN_TYPE,user_elem_size_fn,NULL);</tt>
-<br><tt>LB_Set_Fn(lb,LB_PACK_OBJ_FN_TYPE,user_pack_one_elem_fn,NULL);</tt>
-<br><tt>LB_Set_Fn(lb,LB_UNPACK_OBJ_FN_TYPE,user_unpack_one_elem_fn,</tt>
+<br><tt>LB_Set_Fn(lb,LB_OBJ_SIZE_FN_TYPE,(void (*)())user_elem_size_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_PACK_OBJ_FN_TYPE,(void (*)())user_pack_one_elem_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_UNPACK_OBJ_FN_TYPE,(void (*)())user_unpack_one_elem_fn,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NULL);</tt>
 <br><tt>...</tt></td>
 </tr>

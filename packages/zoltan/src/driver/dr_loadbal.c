@@ -111,45 +111,45 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
    * Set the callback functions
    */
 
-  if (LB_Set_Fn(lb, LB_NUM_OBJ_FN_TYPE, (void *) get_num_elements,
+  if (LB_Set_Fn(lb, LB_NUM_OBJ_FN_TYPE, (void (*)()) get_num_elements,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_FIRST_OBJ_FN_TYPE, (void *) get_first_element,
+  if (LB_Set_Fn(lb, LB_FIRST_OBJ_FN_TYPE, (void (*)()) get_first_element,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_NEXT_OBJ_FN_TYPE, (void *) get_next_element,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
-    return 0;
-  }
-
-  /* Functions for geometry based algorithms */
-  if (LB_Set_Fn(lb, LB_NUM_GEOM_FN_TYPE, (void *) get_num_geom,
-                (void *) mesh) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
-    return 0;
-  }
-
-  if (LB_Set_Fn(lb, LB_GEOM_FN_TYPE, (void *) get_geom,
+  if (LB_Set_Fn(lb, LB_NEXT_OBJ_FN_TYPE, (void (*)()) get_next_element,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
   /* Functions for geometry based algorithms */
-  if (LB_Set_Fn(lb, LB_NUM_EDGES_FN_TYPE, (void *) get_num_edges,
+  if (LB_Set_Fn(lb, LB_NUM_GEOM_FN_TYPE, (void (*)()) get_num_geom,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_EDGE_LIST_FN_TYPE, (void *) get_edge_list,
+  if (LB_Set_Fn(lb, LB_GEOM_FN_TYPE, (void (*)()) get_geom,
+                (void *) mesh) == LB_FATAL) {
+    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+    return 0;
+  }
+
+  /* Functions for geometry based algorithms */
+  if (LB_Set_Fn(lb, LB_NUM_EDGES_FN_TYPE, (void (*)()) get_num_edges,
+                (void *) mesh) == LB_FATAL) {
+    Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+    return 0;
+  }
+
+  if (LB_Set_Fn(lb, LB_EDGE_LIST_FN_TYPE, (void (*)()) get_edge_list,
                 (void *) mesh)== LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;

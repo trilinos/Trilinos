@@ -107,31 +107,31 @@ char *yo = "migrate_elements";
   /*
    * register migration functions
    */
-  if (LB_Set_Fn(lb, LB_PRE_MIGRATE_FN_TYPE, (void *) migrate_pre_process,
+  if (LB_Set_Fn(lb, LB_PRE_MIGRATE_FN_TYPE, (void (*)()) migrate_pre_process,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_POST_MIGRATE_FN_TYPE, (void *) migrate_post_process,
+  if (LB_Set_Fn(lb, LB_POST_MIGRATE_FN_TYPE, (void (*)()) migrate_post_process,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_OBJ_SIZE_FN_TYPE, (void *) migrate_elem_size,
+  if (LB_Set_Fn(lb, LB_OBJ_SIZE_FN_TYPE, (void (*)()) migrate_elem_size,
                (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_PACK_OBJ_FN_TYPE, (void *) migrate_pack_elem,
+  if (LB_Set_Fn(lb, LB_PACK_OBJ_FN_TYPE, (void (*)()) migrate_pack_elem,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;
   }
 
-  if (LB_Set_Fn(lb, LB_UNPACK_OBJ_FN_TYPE, (void *) migrate_unpack_elem,
+  if (LB_Set_Fn(lb, LB_UNPACK_OBJ_FN_TYPE, (void (*)()) migrate_unpack_elem,
                 (void *) mesh) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
     return 0;

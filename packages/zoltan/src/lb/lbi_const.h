@@ -90,9 +90,9 @@ typedef enum LB_Ref_Type LB_REF_TYPE;
 struct LB_Struct;
 
 /*
- * Error codes for LB library
+ * Error codes for Zoltan library
  *   LB_OK     - no errors
- *   LB_WARN   - some warning occurred in LB library; application should be
+ *   LB_WARN   - some warning occurred in Zoltan library; application should be
  *               able to continue running
  *   LB_FATAL  - a fatal error occurred
  *   LB_MEMERR - memory allocation failed; with this error, it could be
@@ -863,7 +863,7 @@ typedef void LB_CHILD_WEIGHT_FORT_FN(void *data, LB_GID *global_id,
 
 /*****************************************************************************/
 /*****************************************************************************/
-/**********************  Functions to set-up LB object ***********************/
+/*******  Functions to set-up Zoltan load-balancing data structure  **********/
 /*****************************************************************************/
 /*****************************************************************************/
 
@@ -873,12 +873,12 @@ typedef void LB_CHILD_WEIGHT_FORT_FN(void *data, LB_GID *global_id,
  *  uses MPI, call this function after calling MPI_Init. If the
  *  application does not use MPI, this function calls MPI_Init for
  *  use by Zoltan. This function returns the version of
- *  the LB library.
+ *  the Zoltan library.
  *  Input:
  *    int argc                   --  Argument count from main()
  *    char **argv                --  Argument list from main()
  *  Output:
- *    float *ver                 --  Version of LB library
+ *    float *ver                 --  Version of Zoltan library
  *  Returned value:
  *    int                        --  Error code
  */
@@ -894,7 +894,7 @@ extern int LB_Initialize(int argc, char **argv, float *ver);
  *    MPI_Comm communicator      --  MPI Communicator to be used for this
  *                                   load-balancing structure.
  *  Returned value:
- *    struct LB_Struct *         --  Pointer to a LB structure.
+ *    struct LB_Struct *         --  Pointer to a Zoltan structure.
  *                                   If there is an error, NULL is returned.
  *                                   Any error in this function should be
  *                                   considered fatal.
@@ -907,21 +907,21 @@ extern struct LB_Struct *LB_Create(MPI_Comm communicator);
  *  Function to free the space associated with a load balancing structure.
  *  The input pointer is set to NULL when the routine returns.
  *  Input:
- *    struct LB_Struct **         --  Pointer to a LB structure.
+ *    struct LB_Struct **         --  Pointer to a Zoltan structure.
  */
 
 extern void LB_Destroy(struct LB_Struct **lb);
 
 /*****************************************************************************/
 /*
- *  Function to initialize a given LB interface function.
+ *  General function to initialize a given Zoltan callback function.
  *  Input:
- *    struct LB_Struct *lb       --  Pointer to a LB structure.
+ *    struct LB_Struct *lb       --  Pointer to a Zoltan structure.
  *    LB_FN_TYPE fn_type         --  Enum type indicating the function to be
  *                                   set.
- *    void *fn_ptr               --  Pointer to the function to be used in the 
+ *    void (*fn_ptr)()           --  Pointer to the function to be used in the 
  *                                   assignment.
- *    void *data_ptr             --  Pointer to data that the LB library will
+ *    void *data_ptr             --  Pointer to data that Zoltan will
  *                                   pass as an argument to fn(). May be NULL.
  *  Output:
  *    struct LB_Struct *lb       --  Appropriate field set to value in fn_ptr.
@@ -929,7 +929,126 @@ extern void LB_Destroy(struct LB_Struct **lb);
  *    int                        --  Error code
  */
 extern int LB_Set_Fn(struct LB_Struct *lb, LB_FN_TYPE fn_type,
-                     void *fn_ptr, void *data_ptr);
+                     void (*fn_ptr)(), void *data_ptr);
+
+/*
+ *  Functions to initialize specific Zoltan callback functions.  One function
+ *  exists for each callback function type, as listed in LB_Fn_Type above.
+ *  Use of these specific functions enables stricter type checking of the
+ *  callback function types.
+ *  Input:
+ *    struct LB_Struct *lb       --  Pointer to a Zoltan structure.
+ *    FN *fn_ptr                 --  Pointer to the function to be used in the 
+ *                                   assignment, where FN is one of the
+ *                                   callback function typedef'ed above.
+ *    void *data_ptr             --  Pointer to data that Zoltan will
+ *                                   pass as an argument to fn(). May be NULL.
+ *  Output:
+ *    struct LB_Struct *lb       --  Appropriate field set to value in fn_ptr.
+ *  Returned value:
+ *    int                        --  Error code
+ */
+
+extern int LB_Set_Num_Edges_Fn(struct LB_Struct *lb, 
+                               LB_NUM_EDGES_FN *fn_ptr, 
+                               void *data_ptr);
+
+extern int LB_Set_Edge_List_Fn(struct LB_Struct *lb, 
+                               LB_EDGE_LIST_FN *fn_ptr, 
+                               void *data_ptr);
+
+extern int LB_Set_Num_Geom_Fn(struct LB_Struct *lb, 
+                              LB_NUM_GEOM_FN *fn_ptr, 
+                              void *data_ptr);
+
+extern int LB_Set_Geom_Fn(struct LB_Struct *lb, 
+                          LB_GEOM_FN *fn_ptr, 
+                          void *data_ptr);
+
+extern int LB_Set_Num_Obj_Fn(struct LB_Struct *lb, 
+                             LB_NUM_OBJ_FN *fn_ptr, 
+                             void *data_ptr);
+
+extern int LB_Set_Obj_List_Fn(struct LB_Struct *lb, 
+                              LB_OBJ_LIST_FN *fn_ptr, 
+                              void *data_ptr);
+
+extern int LB_Set_First_Obj_Fn(struct LB_Struct *lb, 
+                               LB_FIRST_OBJ_FN *fn_ptr, 
+                               void *data_ptr);
+
+extern int LB_Set_Next_Obj_Fn(struct LB_Struct *lb, 
+                              LB_NEXT_OBJ_FN *fn_ptr, 
+                              void *data_ptr);
+
+extern int LB_Set_Num_Border_Obj_Fn(struct LB_Struct *lb, 
+                                    LB_NUM_BORDER_OBJ_FN *fn_ptr,
+                                    void *data_ptr);
+
+extern int LB_Set_Border_Obj_List_Fn(struct LB_Struct *lb, 
+                                     LB_BORDER_OBJ_LIST_FN *fn_ptr, 
+                                     void *data_ptr);
+
+extern int LB_Set_First_Border_Obj_Fn(struct LB_Struct *lb, 
+                                      LB_FIRST_BORDER_OBJ_FN *fn_ptr, 
+                                      void *data_ptr);
+
+extern int LB_Set_Next_Border_Obj_Fn(struct LB_Struct *lb, 
+                                     LB_NEXT_BORDER_OBJ_FN *fn_ptr, 
+                                     void *data_ptr);
+
+extern int LB_Set_Pre_Migrate_Fn(struct LB_Struct *lb, 
+                                 LB_PRE_MIGRATE_FN *fn_ptr, 
+                                 void *data_ptr);
+
+extern int LB_Set_Mid_Migrate_Fn(struct LB_Struct *lb, 
+                                 LB_MID_MIGRATE_FN *fn_ptr, 
+                                 void *data_ptr);
+
+extern int LB_Set_Post_Migrate_Fn(struct LB_Struct *lb, 
+                                  LB_POST_MIGRATE_FN *fn_ptr, 
+                                  void *data_ptr);
+
+extern int LB_Set_Obj_Size_Fn(struct LB_Struct *lb, 
+                              LB_OBJ_SIZE_FN *fn_ptr, 
+                              void *data_ptr);
+
+extern int LB_Set_Pack_Obj_Fn(struct LB_Struct *lb, 
+                              LB_PACK_OBJ_FN *fn_ptr, 
+                              void *data_ptr);
+
+extern int LB_Set_Unpack_Obj_Fn(struct LB_Struct *lb, 
+                                LB_UNPACK_OBJ_FN *fn_ptr, 
+                                void *data_ptr);
+
+extern int LB_Set_Num_Coarse_Obj_Fn(struct LB_Struct *lb, 
+                                    LB_NUM_COARSE_OBJ_FN *fn_ptr, 
+                                    void *data_ptr);
+
+extern int LB_Set_Coarse_Obj_List_Fn(struct LB_Struct *lb, 
+                                     LB_COARSE_OBJ_LIST_FN *fn_ptr, 
+                                     void *data_ptr);
+
+extern int LB_Set_First_Coarse_Obj_Fn(struct LB_Struct *lb, 
+                                      LB_FIRST_COARSE_OBJ_FN *fn_ptr, 
+                                      void *data_ptr);
+
+extern int LB_Set_Next_Coarse_Obj_Fn(struct LB_Struct *lb, 
+                                     LB_NEXT_COARSE_OBJ_FN *fn_ptr, 
+                                     void *data_ptr);
+
+extern int LB_Set_Num_Child_Fn(struct LB_Struct *lb, 
+                               LB_NUM_CHILD_FN *fn_ptr, 
+                               void *data_ptr);
+
+extern int LB_Set_Child_List_Fn(struct LB_Struct *lb, 
+                                LB_CHILD_LIST_FN *fn_ptr, 
+                                void *data_ptr);
+
+extern int LB_Set_Child_Weight_Fn(struct LB_Struct *lb, 
+                                  LB_CHILD_WEIGHT_FN *fn_ptr, 
+                                  void *data_ptr);
+
 
 /*****************************************************************************/
 /*

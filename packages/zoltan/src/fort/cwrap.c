@@ -547,7 +547,7 @@ void LB_fw_Memory_Stats()
    LB_Memory_Stats();
 }
 
-int LB_fw_Set_Fn(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                  void *data)
 {
    struct LB_Struct *lb;
@@ -559,207 +559,207 @@ int LB_fw_Set_Fn(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
    switch(*type) {
    case LB_NUM_EDGES_FN_TYPE:
       lb->Get_Num_Edges_Fort = (LB_NUM_EDGES_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Num_Edges_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Num_Edges_Fort_Wrapper, data);
       break;
    case LB_EDGE_LIST_FN_TYPE:
       lb->Get_Edge_List_Fort = (LB_EDGE_LIST_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Edge_List_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Edge_List_Fort_Wrapper, data);
       break;
    case LB_NUM_GEOM_FN_TYPE:
       lb->Get_Num_Geom_Fort = (LB_NUM_GEOM_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Num_Geom_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Num_Geom_Fort_Wrapper, data);
       break;
    case LB_GEOM_FN_TYPE:
       lb->Get_Geom_Fort = (LB_GEOM_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Geom_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Geom_Fort_Wrapper, data);
       break;
    case LB_NUM_OBJ_FN_TYPE:
       lb->Get_Num_Obj_Fort = (LB_NUM_OBJ_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Num_Obj_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Num_Obj_Fort_Wrapper, data);
       break;
    case LB_OBJ_LIST_FN_TYPE:
       lb->Get_Obj_List_Fort = (LB_OBJ_LIST_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Obj_List_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Obj_List_Fort_Wrapper, data);
       break;
    case LB_FIRST_OBJ_FN_TYPE:
       lb->Get_First_Obj_Fort = (LB_FIRST_OBJ_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_First_Obj_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_First_Obj_Fort_Wrapper, data);
       break;
    case LB_NEXT_OBJ_FN_TYPE:
       lb->Get_Next_Obj_Fort = (LB_NEXT_OBJ_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Next_Obj_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Next_Obj_Fort_Wrapper, data);
       break;
    case LB_NUM_BORDER_OBJ_FN_TYPE:
       lb->Get_Num_Border_Obj_Fort = (LB_NUM_BORDER_OBJ_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Num_Border_Obj_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Num_Border_Obj_Fort_Wrapper, data);
       break;
    case LB_BORDER_OBJ_LIST_FN_TYPE:
       lb->Get_Border_Obj_List_Fort = (LB_BORDER_OBJ_LIST_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Border_Obj_List_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Border_Obj_List_Fort_Wrapper, data);
       break;
    case LB_FIRST_BORDER_OBJ_FN_TYPE:
       lb->Get_First_Border_Obj_Fort = (LB_FIRST_BORDER_OBJ_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_First_Border_Obj_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_First_Border_Obj_Fort_Wrapper, data);
       break;
    case LB_NEXT_BORDER_OBJ_FN_TYPE:
       lb->Get_Next_Border_Obj_Fort = (LB_NEXT_BORDER_OBJ_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Next_Border_Obj_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Next_Border_Obj_Fort_Wrapper, data);
       break;
    case LB_PRE_MIGRATE_FN_TYPE:
       lb->Migrate.Pre_Migrate_Fort = (LB_PRE_MIGRATE_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Pre_Migrate_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Pre_Migrate_Fort_Wrapper, data);
       break;
    case LB_MID_MIGRATE_FN_TYPE:
       lb->Migrate.Mid_Migrate_Fort = (LB_MID_MIGRATE_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Mid_Migrate_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Mid_Migrate_Fort_Wrapper, data);
       break;
    case LB_POST_MIGRATE_FN_TYPE:
       lb->Migrate.Post_Migrate_Fort = (LB_POST_MIGRATE_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Post_Migrate_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Post_Migrate_Fort_Wrapper, data);
       break;
    case LB_OBJ_SIZE_FN_TYPE:
       lb->Migrate.Get_Obj_Size_Fort = (LB_OBJ_SIZE_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Obj_Size_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Obj_Size_Fort_Wrapper, data);
       break;
    case LB_PACK_OBJ_FN_TYPE:
       lb->Migrate.Pack_Obj_Fort = (LB_PACK_OBJ_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Pack_Obj_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Pack_Obj_Fort_Wrapper, data);
       break;
    case LB_UNPACK_OBJ_FN_TYPE:
       lb->Migrate.Unpack_Obj_Fort = (LB_UNPACK_OBJ_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Unpack_Obj_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Unpack_Obj_Fort_Wrapper, data);
       break;
    case LB_NUM_COARSE_OBJ_FN_TYPE:
       lb->Get_Num_Coarse_Obj_Fort = (LB_NUM_COARSE_OBJ_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Num_Coarse_Obj_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Num_Coarse_Obj_Fort_Wrapper, data);
       break;
    case LB_COARSE_OBJ_LIST_FN_TYPE:
       lb->Get_Coarse_Obj_List_Fort = (LB_COARSE_OBJ_LIST_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Coarse_Obj_List_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Coarse_Obj_List_Fort_Wrapper, data);
       break;
    case LB_FIRST_COARSE_OBJ_FN_TYPE:
       lb->Get_First_Coarse_Obj_Fort = (LB_FIRST_COARSE_OBJ_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_First_Coarse_Obj_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_First_Coarse_Obj_Fort_Wrapper, data);
       break;
    case LB_NEXT_COARSE_OBJ_FN_TYPE:
       lb->Get_Next_Coarse_Obj_Fort = (LB_NEXT_COARSE_OBJ_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Next_Coarse_Obj_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Next_Coarse_Obj_Fort_Wrapper, data);
       break;
    case LB_NUM_CHILD_FN_TYPE:
       lb->Get_Num_Child_Fort = (LB_NUM_CHILD_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Num_Child_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Num_Child_Fort_Wrapper, data);
       break;
    case LB_CHILD_LIST_FN_TYPE:
       lb->Get_Child_List_Fort = (LB_CHILD_LIST_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Child_List_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Child_List_Fort_Wrapper, data);
       break;
    case LB_CHILD_WEIGHT_FN_TYPE:
       lb->Get_Child_Weight_Fort = (LB_CHILD_WEIGHT_FORT_FN *) fn;
-      return LB_Set_Fn(lb, *type, (void *)LB_Child_Weight_Fort_Wrapper, data);
+      return LB_Set_Fn(lb, *type, (void (*)())LB_Child_Weight_Fort_Wrapper, data);
       break;
 
    default:
-      return LB_Set_Fn(lb, *type, (void *)NULL, data);
+      return LB_Set_Fn(lb, *type, (void (*)())NULL, data);
       break;
    }
 }
 
-int LB_fw_Set_Fn0f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn())
+int LB_fw_Set_Fn0f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)())
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)NULL);
 }
 
-int LB_fw_Set_Fn1f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn1f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   int *data)
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn2f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn2f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   float *data)
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn3f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn3f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   double *data)
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn4f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn4f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_1) */
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn5f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn5f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_2) */
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn6f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn6f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_3) */
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn7f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn7f(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_4) */
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn0s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn())
+int LB_fw_Set_Fn0s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)())
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)NULL);
 }
 
-int LB_fw_Set_Fn1s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn1s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   int *data)
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn2s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn2s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   float *data)
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn3s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn3s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   double *data)
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn4s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn4s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_1) */
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn5s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn5s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_2) */
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn6s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn6s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_3) */
 {
    return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn7s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
+int LB_fw_Set_Fn7s(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_4) */
 {
