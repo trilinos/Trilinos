@@ -544,11 +544,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ML_Operator_Set_ApplyFuncData(&(ml->Pmat[clevel]), nxcoarse*nxcoarse,
 				 Nfine, ML_EMPTY, csr_data,
 				 Nfine, NULL, 0);
-   ML_Operator_Set_Getrow(&(ml->Pmat[clevel]), ML_INTERNAL, 
+   ML_Operator_Set_Getrow(&(ml->Pmat[clevel]), 
 			  Nfine, CSR_getrow);
    ml->Pmat[clevel].max_nz_per_row = 4;
    ml->Pmat[clevel].N_nonzeros = bindx[Nfine];
-   ML_Operator_Set_ApplyFunc (&(ml->Pmat[clevel]), ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_ApplyFunc (&(ml->Pmat[clevel]), CSR_matvec);
    if (mls_widget != NULL) ML_Smoother_Destroy_MLS(mls_widget);
    return 1;
 #endif
@@ -801,9 +801,9 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      widget.aggr_info = ag->aggr_info[level];
      AGGsmoother = ML_Operator_Create(ml->comm);
      ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
-                        widget.Amat->outvec_leng, ML_INTERNAL,&widget,
+                        widget.Amat->outvec_leng, &widget,
                         widget.Amat->matvec->Nrows, NULL, 0);
-     ML_Operator_Set_Getrow(AGGsmoother, ML_INTERNAL,
+     ML_Operator_Set_Getrow(AGGsmoother, 
                           widget.Amat->getrow->Nrows, 
                           ML_AGG_JacobiSmoother_Getrows);
      ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
@@ -1354,7 +1354,7 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
    csr_data->values  = new_val;
 
    tentP = ML_Operator_Create(ml->comm);
-   ML_Operator_Set_ApplyFuncData(tentP,1,Nfine,ML_EMPTY,csr_data,Nfine,NULL,0);
+   ML_Operator_Set_ApplyFuncData(tentP,1,Nfine,csr_data,Nfine,NULL,0);
    tentP->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
    ML_memory_alloc((void**) &aggr_comm, sizeof(ML_Aggregate_Comm), "AD4");
    aggr_comm->comm = ml->comm;
@@ -1368,8 +1368,8 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
    aggr_comm->local_nrows = 1;
    ML_CommInfoOP_Generate( &(tentP->getrow->pre_comm),
                            ML_Aggregate_ExchangeBdry, aggr_comm, ml->comm, 1, 0);
-   ML_Operator_Set_Getrow(tentP, ML_INTERNAL, Nfine, CSR_getrow);
-   ML_Operator_Set_ApplyFunc(tentP, ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_Getrow(tentP, Nfine, CSR_getrow);
+   ML_Operator_Set_ApplyFunc(tentP, CSR_matvec);
 
    /* ----------------------------------------------------------------- */
    /* 2. compute AP = A * tentP                                         */
@@ -1470,11 +1470,11 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
    csr_data->rowptr  = new_ia;
    csr_data->columns = new_ja;
    csr_data->values  = new_val;
-   ML_Operator_Set_ApplyFuncData(APMat,1,Nfine,ML_EMPTY,csr_data,
+   ML_Operator_Set_ApplyFuncData(APMat,1,Nfine,csr_data,
                                  Nfine,NULL,ap_ncols-1);
    APMat->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
-   ML_Operator_Set_Getrow(APMat, ML_INTERNAL, Nfine, CSR_getrow);
-   ML_Operator_Set_ApplyFunc(APMat, ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_Getrow(APMat, Nfine, CSR_getrow);
+   ML_Operator_Set_ApplyFunc(APMat, CSR_matvec);
    APMat->max_nz_per_row = max_nz_per_row;
 /*
    if ( ag->smoothP_damping_factor == 0.0 )
@@ -1899,7 +1899,7 @@ norm = 1.0;
    tentP = &(ml->Pmat[clevel]);
 */
 tentP = ML_Operator_Create(ml->comm);
-   ML_Operator_Set_ApplyFuncData(tentP,1,Nfine,ML_EMPTY,csr_data,Nfine,NULL,0);
+   ML_Operator_Set_ApplyFuncData(tentP,1,Nfine,csr_data,Nfine,NULL,0);
    tentP->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
    ML_memory_alloc((void**) &aggr_comm, sizeof(ML_Aggregate_Comm), "AD4");
    aggr_comm->comm = ml->comm;
@@ -1913,8 +1913,9 @@ tentP = ML_Operator_Create(ml->comm);
    aggr_comm->local_nrows = 1;
    ML_CommInfoOP_Generate( &(tentP->getrow->pre_comm),
                            ML_Aggregate_ExchangeBdry, aggr_comm, ml->comm, 1, 0);
-   ML_Operator_Set_Getrow(tentP, ML_INTERNAL, Nfine, CSR_getrow);
-   ML_Operator_Set_ApplyFunc(tentP, ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_Getrow(tentP, Nfine, CSR_getrow);
+   ML_Operator_Set_ApplyFunc(tentP, 
+CSR_matvec);
    ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
               &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));
 
@@ -1923,9 +1924,9 @@ tentP = ML_Operator_Create(ml->comm);
    widget.aggr_info = ag->aggr_info[level];
    AGGsmoother = ML_Operator_Create(ml->comm);
    ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
-                        widget.Amat->outvec_leng, ML_INTERNAL,&widget,
+                        widget.Amat->outvec_leng, &widget,
                         widget.Amat->matvec->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(AGGsmoother, ML_INTERNAL,
+   ML_Operator_Set_Getrow(AGGsmoother, 
                           widget.Amat->getrow->Nrows, 
                           ML_AGG_Amat_Getrows);
    ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),

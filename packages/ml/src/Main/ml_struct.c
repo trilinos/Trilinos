@@ -591,7 +591,7 @@ int ML_Init_Amatrix(ML *ml, int level, int ilen, int olen, void *data)
 {
    ML_Operator_Set_1Levels(&(ml->Amat[level]),&(ml->SingleLevel[level]),
 			  &(ml->SingleLevel[level]));
-   ML_Operator_Set_ApplyFuncData(&(ml->Amat[level]), ilen, olen, ML_EMPTY,
+   ML_Operator_Set_ApplyFuncData(&(ml->Amat[level]), ilen, olen, 
                              data, olen, NULL, 0);
    return 0;
 }
@@ -604,7 +604,7 @@ int MLnew_Set_Amatrix_Matvec(ML *ml, int level,
    ML_Operator *matrix;
    matrix = &(ml->Amat[level]);
 
-   return(ML_Operator_Set_ApplyFunc(matrix,ML_INTERNAL,matvec));
+   return(ML_Operator_Set_ApplyFunc(matrix,matvec));
 }
 
 int ML_Get_Amatrix(ML *ml, int level, ML_Operator **matrix)
@@ -631,7 +631,7 @@ int MLnew_Set_Amatrix_Getrow(ML *ml, int nl,
 
    Amat = &(ml->Amat[nl]);
 
-   ML_Operator_Set_Getrow(Amat, ML_INTERNAL, Amat->outvec_leng, getrow);
+   ML_Operator_Set_Getrow(Amat, Amat->outvec_leng, getrow);
    if (comm != NULL) {
       Nghost = comm_vec_leng - Amat->invec_leng;
       if (Nghost < 0) {
@@ -694,7 +694,7 @@ int ML_Init_Restrictor(ML *ml, int level, int level2, int ilen, int olen,
 {
    ML_Operator_Set_1Levels(&(ml->Rmat[level]),&(ml->SingleLevel[level]),
                           &(ml->SingleLevel[level2]));
-   ML_Operator_Set_ApplyFuncData(&(ml->Rmat[level]), ilen, olen, ML_EMPTY,
+   ML_Operator_Set_ApplyFuncData(&(ml->Rmat[level]), ilen, olen, 
                              data, olen, NULL, 0);
    return 0;
 }
@@ -707,7 +707,7 @@ int MLnew_Set_Restrictor_Matvec( ML *ml , int from_level,
    ML_Operator *matrix;
    matrix = &(ml->Rmat[from_level]);
 
-   return(ML_Operator_Set_ApplyFunc(matrix,ML_INTERNAL,func));
+   return(ML_Operator_Set_ApplyFunc(matrix,func));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -738,7 +738,7 @@ int MLnew_Set_Restrictor_Getrow(ML *ml, int nl,
       }
    }
 
-   return(ML_Operator_Set_Getrow(Rmat, ML_INTERNAL, Rmat->outvec_leng, getrow));
+   return(ML_Operator_Set_Getrow(Rmat, Rmat->outvec_leng, getrow));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -771,7 +771,7 @@ int ML_Init_Prolongator(ML *ml, int level, int level2, int ilen, int olen,
 {
    ML_Operator_Set_1Levels(&(ml->Pmat[level]),&(ml->SingleLevel[level]),
                           &(ml->SingleLevel[level2]));
-   ML_Operator_Set_ApplyFuncData(&(ml->Pmat[level]), ilen, olen, ML_EMPTY,
+   ML_Operator_Set_ApplyFuncData(&(ml->Pmat[level]), ilen, olen, 
                              data, olen, NULL, 0);
    return 0;
 }
@@ -784,7 +784,7 @@ int MLnew_Set_Prolongator_Matvec( ML *ml , int to_level,
    ML_Operator *matrix;
    matrix = &(ml->Pmat[to_level]);
 
-   return(ML_Operator_Set_ApplyFunc(matrix,ML_INTERNAL, func));
+   return(ML_Operator_Set_ApplyFunc(matrix, func));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -815,7 +815,7 @@ int MLnew_Set_Prolongator_Getrow(ML *ml, int nl,
       }
    }
 
-   return(ML_Operator_Set_Getrow(Pmat, ML_INTERNAL, Pmat->outvec_leng, getrow));
+   return(ML_Operator_Set_Getrow(Pmat, Pmat->outvec_leng, getrow));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -2036,10 +2036,8 @@ int ML_Gen_BlockScaledMatrix_with_Eigenvalues(ML_Operator *Amat,
 
   *blockMat = ML_Operator_Create(Amat->comm);
   ML_Operator_Set_ApplyFuncData(*blockMat,Amat->invec_leng, Amat->outvec_leng, 
-				ML_EMPTY,
 				widget,Amat->outvec_leng, NULL,0);
-  ML_Operator_Set_ApplyFunc (*blockMat, ML_INTERNAL, 
-			     ML_BlockScaledApply);
+  ML_Operator_Set_ApplyFunc (*blockMat, ML_BlockScaledApply);
 
   widget->scaled_matrix = *blockMat;
 
@@ -5365,11 +5363,11 @@ int ML_Gen_GridXsferUsingFEBasis(ML *ml, int L1, int L2, int stride)
                            &(ml->SingleLevel[L2]));
    leng2 = xsfer_op->Nlocal_rows * stride;
    ML_Operator_Set_ApplyFuncData(&(ml->Rmat[L1]),leng*stride,leng2,
-                          ML_INTERNAL, (void *) xsfer_op,
+                          (void *) xsfer_op,
                           xsfer_op->Nlocal_rows,
                           ML_OperatorAGX_Restrict, 1);
 
-   ML_Operator_Set_Getrow(&(ml->Rmat[L1]), ML_INTERNAL,
+   ML_Operator_Set_Getrow(&(ml->Rmat[L1]), 
 	    (xsfer_op->Nlocal_rows + xsfer_op->Nremote_rows) *stride,
 			  ML_OperatorAGX_Getrows);
    ml->Rmat[L1].data_destroy = ML_Operator2AGX_Destroy;
@@ -5377,9 +5375,9 @@ int ML_Gen_GridXsferUsingFEBasis(ML *ml, int L1, int L2, int stride)
    ML_Operator_Set_1Levels(&(ml->Pmat[L2]), &(ml->SingleLevel[L2]),
                            &(ml->SingleLevel[L1]));
    ML_Operator_Set_ApplyFuncData(&(ml->Pmat[L2]), leng2, leng*stride,
-                      ML_INTERNAL, (void *) xsfer_op, leng,
+                      (void *) xsfer_op, leng,
                       ML_OperatorAGX_Prolongate, 0);
-   ML_Operator_Set_Getrow(&(ml->Pmat[L2]), ML_INTERNAL,
+   ML_Operator_Set_Getrow(&(ml->Pmat[L2]), 
             ml->Pmat[L2].outvec_leng, ML_OperatorAGX_Getcols);
    xsfer_op->AGX_stride = stride;
 
@@ -5591,11 +5589,11 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
    row_ptr = csr2_mat->mat_ia;
    ML_Init_Amatrix(local_ml,local_nlevels-1,N_local,N_local,(void*) csr2_mat);
    ML_Operator_Set_ApplyFunc(&(local_ml->Amat[local_nlevels-1]),
-			     ML_INTERNAL,ML_Matrix_DCSR_Matvec);
+			     ML_Matrix_DCSR_Matvec);
 
    local_ml->Amat[local_nlevels-1].data_destroy = ( void (*)(void *)) ML_Matrix_DCSR_Destroy;
    local_ml->Amat[local_nlevels-1].N_nonzeros = csr2_mat->mat_ia[N_local];
-   ML_Operator_Set_Getrow(&(local_ml->Amat[local_nlevels-1]),ML_INTERNAL, 
+   ML_Operator_Set_Getrow(&(local_ml->Amat[local_nlevels-1]),
 			  local_ml->Amat[local_nlevels-1].outvec_leng,ML_Matrix_DCSR_Getrow);
 
    diagonal = (double *) ML_allocate(N_local * sizeof(double));
@@ -5943,17 +5941,15 @@ int ML_build_ggb(ML *ml, void *data)
   /* Only processor 0 has the coarse vector information */
 
   if (ml_ggb->comm->ML_mypid == 0) 
-    ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
-				  Nrows, NULL, 0);
+    ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, csr_data, Nrows,NULL,0);
    
   else 
-    ML_Operator_Set_ApplyFuncData(Pmat, 0, Nrows, ML_EMPTY, csr_data,
-				  Nrows, NULL, 0);
+    ML_Operator_Set_ApplyFuncData(Pmat, 0, Nrows, csr_data, Nrows, NULL, 0);
   
   
-  ML_Operator_Set_Getrow(Pmat, ML_INTERNAL, Nrows, CSR_getrow);
-  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_densematvec); 
-  /*  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_matvec);  */
+  ML_Operator_Set_Getrow(Pmat, Nrows, CSR_getrow);
+  ML_Operator_Set_ApplyFunc (Pmat, CSR_densematvec); 
+  /*  ML_Operator_Set_ApplyFunc (Pmat, CSR_matvec);  */
 
   nprocs  = ml_ggb->comm->ML_nprocs;           /* Number of processors */  
   Nlocal  =  Pmat->invec_leng;                 /* size of coarse grid vector  */
@@ -6015,7 +6011,7 @@ int ML_build_ggb(ML *ml, void *data)
   /* ML_Operator_Print(Pmat, "Pmat"); */
 
   ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
-  /* ML_Operator_Set_ApplyFunc (&(ml_ggb->Rmat[1]), ML_INTERNAL, CSR_densematvec); */
+  /* ML_Operator_Set_ApplyFunc (&(ml_ggb->Rmat[1]), CSR_densematvec); */
  
 
 
@@ -6073,8 +6069,8 @@ int ML_build_ggb(ML *ml, void *data)
   
   
   
-  ML_Operator_Set_Getrow(Qtilde, ML_INTERNAL, Nrows, CSR_getrow);
-  ML_Operator_Set_ApplyFunc (Qtilde, ML_INTERNAL, CSR_densematvec); 
+  ML_Operator_Set_Getrow(Qtilde, Nrows, CSR_getrow);
+  ML_Operator_Set_ApplyFunc (Qtilde, CSR_densematvec); 
   Qtilde->data_destroy = ML_CSR_MSRdata_Destroy;
 
   
@@ -6135,8 +6131,8 @@ int ML_build_ggb(ML *ml, void *data)
 				   0, NULL, 0);
   
   
-  ML_Operator_Set_Getrow(&(ml_ggb->Amat[0]), ML_INTERNAL, Ncols, CSR_getrow);
-  ML_Operator_Set_ApplyFunc (&(ml_ggb->Amat[0]), ML_INTERNAL, CSR_densematvec); 
+  ML_Operator_Set_Getrow(&(ml_ggb->Amat[0]), Ncols, CSR_getrow);
+  ML_Operator_Set_ApplyFunc (&(ml_ggb->Amat[0]), CSR_densematvec); 
   ml_ggb->Amat[0].getrow->pre_comm = ML_CommInfoOP_Create();
   ml_ggb->Amat[0].data_destroy = ML_CSR_MSRdata_Destroy;
 
@@ -6244,17 +6240,17 @@ void ML_build_ggb_cheap(ML *ml, void *data)
   /* Only processor 0 has the coarse vector information */
 
   if (ml_ggb->comm->ML_mypid == 0) 
-    ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
+    ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, csr_data,
 				  Nrows, NULL, 0);
    
   else 
-    ML_Operator_Set_ApplyFuncData(Pmat, 0, Nrows, ML_EMPTY, csr_data,
+    ML_Operator_Set_ApplyFuncData(Pmat, 0, Nrows, csr_data,
 				  Nrows, NULL, 0);
   
   
-  ML_Operator_Set_Getrow(Pmat, ML_INTERNAL, Nrows, CSR_getrow);
-  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_densematvec); 
-  /*  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_matvec);  */
+  ML_Operator_Set_Getrow(Pmat, Nrows, CSR_getrow);
+  ML_Operator_Set_ApplyFunc (Pmat, CSR_densematvec); 
+  /*  ML_Operator_Set_ApplyFunc (Pmat, CSR_matvec);  */
 
   nprocs  = ml_ggb->comm->ML_nprocs;           /* Number of processors */  
   Nlocal  =  Pmat->invec_leng;                 /* size of coarse grid vector  */
@@ -6325,7 +6321,7 @@ void ML_build_ggb_cheap(ML *ml, void *data)
   ML_2matmult(Qtilde, &(ml_ggb->Pmat[0]), &(ml_ggb->Amat[0]),
 	      ML_MSR_MATRIX );
   
-  ML_Operator_Set_ApplyFunc (Qtilde, ML_INTERNAL,CSR_densematvec);
+  ML_Operator_Set_ApplyFunc (Qtilde, CSR_densematvec);
   
   
   

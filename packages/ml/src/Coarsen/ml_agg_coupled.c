@@ -779,7 +779,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    csr_data->columns = new_ja;
    csr_data->values  = new_val;
    ML_Operator_Set_ApplyFuncData(*Pmatrix, nullspace_dim*Ncoarse, Nrows,
-                                 ML_EMPTY, csr_data, Nrows, NULL, 0);
+                                 csr_data, Nrows, NULL, 0);
    (*Pmatrix)->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
    ML_memory_alloc((void**) &aggr_comm, sizeof(ML_Aggregate_Comm),"ACO");
    aggr_comm->comm = comm;
@@ -796,8 +796,8 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    ML_CommInfoOP_Generate( &((*Pmatrix)->getrow->pre_comm),
                            ML_Aggregate_ExchangeBdry, aggr_comm,
                            comm, Ncoarse*nullspace_dim, m*nullspace_dim);
-   ML_Operator_Set_Getrow((*Pmatrix), ML_INTERNAL, Nrows, CSR_getrow);
-   ML_Operator_Set_ApplyFunc((*Pmatrix), ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_Getrow((*Pmatrix), Nrows, CSR_getrow);
+   ML_Operator_Set_ApplyFunc((*Pmatrix), CSR_matvec);
    (*Pmatrix)->max_nz_per_row = nullspace_dim;
 
    /* ------------------------------------------------------------- */

@@ -1943,9 +1943,9 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   temp->rowptr  = rowptr;
   permt_mat = ML_Operator_Create(comm);
   ML_Operator_Set_ApplyFuncData(permt_mat,Nrows_Permuted,mat->invec_leng,
-				ML_EMPTY,temp,Nrows_Permuted,NULL,0);
-  ML_Operator_Set_Getrow(permt_mat, ML_INTERNAL, mat->invec_leng, CSR_getrow);
-  ML_Operator_Set_ApplyFunc( permt_mat, ML_INTERNAL, CSR_matvec);
+				temp,Nrows_Permuted,NULL,0);
+  ML_Operator_Set_Getrow(permt_mat, mat->invec_leng, CSR_getrow);
+  ML_Operator_Set_ApplyFunc( permt_mat, CSR_matvec);
   permt_mat->data_destroy = ML_CSR_MSRdata_Destroy;
   permt_mat->max_nz_per_row = 1;
   permt_mat->N_nonzeros     = mat->invec_leng;
@@ -2124,8 +2124,8 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 
   ML_Operator_Set_ApplyFuncData(perm_mat,mat->invec_leng,
 				Nrows,ML_EMPTY,temp,mat->invec_leng,NULL,0);
-  ML_Operator_Set_Getrow(perm_mat, ML_INTERNAL, Nrows, CSR_getrow);
-  ML_Operator_Set_ApplyFunc( perm_mat, ML_INTERNAL, CSR_matvec);
+  ML_Operator_Set_Getrow(perm_mat, Nrows, CSR_getrow);
+  ML_Operator_Set_ApplyFunc( perm_mat, CSR_matvec);
   perm_mat->getrow->pre_comm = mat_comm;
   perm_mat->data_destroy = ML_CSR_MSRdata_Destroy;
   permt_mat = ML_Operator_Create(mat->comm);

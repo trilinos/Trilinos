@@ -423,9 +423,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      Tcoarse = ML_Operator_Create(ml_edges->comm);
      Tcoarse->data_destroy = ML_CSR_MSRdata_Destroy;
      ML_Operator_Set_ApplyFuncData( Tcoarse, Kn_coarse->outvec_leng, counter, 
-                                     ML_EMPTY, csr_data, counter, NULL, 0);
-     ML_Operator_Set_Getrow(Tcoarse, ML_INTERNAL, counter, CSR_getrow);
-     ML_Operator_Set_ApplyFunc(Tcoarse, ML_INTERNAL, CSR_matvec);
+                                    csr_data, counter, NULL, 0);
+     ML_Operator_Set_Getrow(Tcoarse, counter, CSR_getrow);
+     ML_Operator_Set_ApplyFunc(Tcoarse, CSR_matvec);
    
      ML_CommInfoOP_Clone(&(Tcoarse->getrow->pre_comm),
                          ml_nodes->Amat[grid_level].getrow->pre_comm);
@@ -1081,9 +1081,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      }
     
      Pe->getrow->internal = CSR_getrow;
-     Pe->getrow->ML_id    = ML_INTERNAL;
+     Pe->getrow->ML_id    = ML_NONEMPTY;
      Pe->matvec->internal = CSR_matvec;
-     Pe->matvec->ML_id = ML_INTERNAL;
+     Pe->matvec->ML_id = ML_NONEMPTY;
 
 /*
      printf("\n\n%%%%%%%%%%%%%%%%%%\n(%d) Tfine->outvec_leng = %d, invec_leng = %d\n",grid_level+1,Tfine->outvec_leng, Tfine->invec_leng);
@@ -1508,9 +1508,9 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
    widget.Amat   = &(ml->Amat[level]);
    AGGsmoother = ML_Operator_Create(ml->comm);
    ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
-				 widget.Amat->outvec_leng, ML_INTERNAL,&widget,
+				 widget.Amat->outvec_leng, &widget,
 				 widget.Amat->matvec->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(AGGsmoother, ML_INTERNAL,
+   ML_Operator_Set_Getrow(AGGsmoother, 
                           widget.Amat->getrow->Nrows, 
                           ML_AGG_JacobiSmoother_Getrows);
    ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
@@ -1868,17 +1868,17 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 
 
    ML_Operator_Set_ApplyFuncData(Pe_mat,Trowcount, Tfine_mat->outvec_leng,
-				 ML_EMPTY,Pe,Tfine_mat->outvec_leng,NULL,0);
-   ML_Operator_Set_ApplyFunc (Pe_mat, ML_INTERNAL, CSR_matvec);
-   ML_Operator_Set_Getrow(Pe_mat, ML_INTERNAL, Tfine_mat->outvec_leng, CSR_getrow);
+				 Pe,Tfine_mat->outvec_leng,NULL,0);
+   ML_Operator_Set_ApplyFunc (Pe_mat, CSR_matvec);
+   ML_Operator_Set_Getrow(Pe_mat, Tfine_mat->outvec_leng, CSR_getrow);
    Pe_mat->getrow->Nrows = Tfine_mat->outvec_leng;
    Pe_mat->max_nz_per_row = max_nz_per_row;
    Pe_mat->N_nonzeros     = Pnzcount;
 
    ML_Operator_Set_ApplyFuncData(Tcoarse_mat,Pn_mat->invec_leng, Trowcount,
-				 ML_EMPTY,Tcoarse,Trowcount,NULL,0);
-   ML_Operator_Set_ApplyFunc (Tcoarse_mat, ML_INTERNAL, CSR_matvec);
-   ML_Operator_Set_Getrow(Tcoarse_mat, ML_INTERNAL, Trowcount, CSR_getrow);
+				 Tcoarse,Trowcount,NULL,0);
+   ML_Operator_Set_ApplyFunc (Tcoarse_mat, CSR_matvec);
+   ML_Operator_Set_Getrow(Tcoarse_mat, Trowcount, CSR_getrow);
    Tcoarse_mat->getrow->Nrows = Trowcount;
    Tcoarse_mat->max_nz_per_row = 2;
    Tcoarse_mat->N_nonzeros     = Tcoarse->rowptr[Trowcount];

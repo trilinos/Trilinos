@@ -39,9 +39,9 @@ void ML_getrow_matvec(ML_Operator *matrix, double *vec, int Nvec,
    }
    temp = ML_Operator_Create(matrix->comm);
    ML_Operator_Set_1Levels(temp, matrix->from, matrix->from);
-   ML_Operator_Set_ApplyFuncData(temp,1,Nvec,ML_EMPTY,vec,Nvec,NULL,0);
+   ML_Operator_Set_ApplyFuncData(temp,1,Nvec,vec,Nvec,NULL,0);
 
-   ML_Operator_Set_Getrow(temp,ML_INTERNAL,Nvec, VECTOR_getrows);
+   ML_Operator_Set_Getrow(temp,Nvec, VECTOR_getrows);
    temp->max_nz_per_row = 1;
    temp->N_nonzeros     = Nvec;
 

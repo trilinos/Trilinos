@@ -238,17 +238,17 @@ int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
   if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 
   ML_Operator_Set_ApplyFuncData(newMatrix, isize, osize,
-                              ML_EMPTY, (void*) A, osize,
+                              (void*) A, osize,
                               NULL, 0);
 
   ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm), 
                         Epetra_ML_comm_wrapper, (void *) A, 
                         newMatrix->comm, isize, N_ghost);
 
-  ML_Operator_Set_Getrow(newMatrix, ML_INTERNAL, newMatrix->outvec_leng,
+  ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,
                        Epetra_ML_getrow);
 
-  ML_Operator_Set_ApplyFunc (newMatrix, ML_INTERNAL, Epetra_ML_matvec);
+  ML_Operator_Set_ApplyFunc (newMatrix, Epetra_ML_matvec);
 
   return 0;
 }

@@ -291,7 +291,7 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
     ML_Operator_blockmat_data->M_matvec_data = M;
   } 
   ML_Operator_Set_ApplyFuncData(blockmat, scale_fact*Ke->invec_leng, 
-				scale_fact*Ke->outvec_leng, ML_INTERNAL,
+				scale_fact*Ke->outvec_leng, 
 				ML_Operator_blockmat_data,
 				scale_fact*Ke->outvec_leng,
 				ML_Operator_blockmat_matvec,0);
@@ -310,7 +310,7 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
     ML_Operator_blockmat_data->M_getrow_data = M;
   }
 
-  ML_Operator_Set_Getrow(blockmat, ML_INTERNAL, scale_fact*
+  ML_Operator_Set_Getrow(blockmat, scale_fact*
 			 Ke->outvec_leng, ML_Operator_blockmat_getrow);
 
   if (Ke->getrow->pre_comm != NULL) {

@@ -528,10 +528,10 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
          current = ML_Operator_Create(Amatrix->comm);
          ML_Operator_Set_1Levels(current, Bmatrix->from, Amatrix->to);
          ML_Operator_Set_ApplyFuncData(current, Bmatrix->invec_leng, 
-				       Amatrix->outvec_leng, ML_EMPTY,temp,
+				       Amatrix->outvec_leng, temp,
 				       i,NULL,0);
 
-         ML_Operator_Set_Getrow(current, ML_INTERNAL, i, CSR_getrow);
+         ML_Operator_Set_Getrow(current, i, CSR_getrow);
 
          current->max_nz_per_row = max_nz_row_new; 
          current->N_nonzeros     = total_nz; 
@@ -615,8 +615,8 @@ for (jj = 0; jj < Ncols; jj++) accum_val[jj] = 0.;
    *Cmatrix = ML_Operator_Create(Amatrix->comm);
    ML_Operator_Set_1Levels(*Cmatrix, Bmatrix->from, Amatrix->to);
    ML_Operator_Set_ApplyFuncData(*Cmatrix,Bmatrix->invec_leng, 
-			        Amatrix->outvec_leng,ML_EMPTY,temp,N,NULL,0);
-   ML_Operator_Set_Getrow(*Cmatrix, ML_INTERNAL, N, CSR_getrow);
+			        Amatrix->outvec_leng,temp,N,NULL,0);
+   ML_Operator_Set_Getrow(*Cmatrix, N, CSR_getrow);
    (*Cmatrix)->getrow->Nrows = N;
    (*Cmatrix)->max_nz_per_row = max_nz_row_new;
    (*Cmatrix)->N_nonzeros     = total_nz;
@@ -876,10 +876,10 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
          current = ML_Operator_Create(Amatrix->comm);
          ML_Operator_Set_1Levels(current, Bmatrix->from, Amatrix->to);
          ML_Operator_Set_ApplyFuncData(current, Bmatrix->invec_leng, 
-				       Amatrix->outvec_leng, ML_EMPTY,temp,
+				       Amatrix->outvec_leng, temp,
 				       i,NULL,0);
 
-         ML_Operator_Set_Getrow(current, ML_INTERNAL, i, CSR_getrow);
+         ML_Operator_Set_Getrow(current, i, CSR_getrow);
 
          current->max_nz_per_row = max_nz_row_new; 
          current->N_nonzeros     = total_nz; 
@@ -939,8 +939,8 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    *Cmatrix = ML_Operator_Create(Amatrix->comm);
    ML_Operator_Set_1Levels(*Cmatrix, Bmatrix->from, Amatrix->to);
    ML_Operator_Set_ApplyFuncData(*Cmatrix,Bmatrix->invec_leng, 
-			        Amatrix->outvec_leng,ML_EMPTY,temp,N,NULL,0);
-   ML_Operator_Set_Getrow(*Cmatrix, ML_INTERNAL, N, CSR_getrow);
+			        Amatrix->outvec_leng,temp,N,NULL,0);
+   ML_Operator_Set_Getrow(*Cmatrix, N, CSR_getrow);
    (*Cmatrix)->getrow->Nrows = N;
    (*Cmatrix)->max_nz_per_row = max_nz_row_new;
    (*Cmatrix)->N_nonzeros     = total_nz;
@@ -1448,10 +1448,10 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
          current = ML_Operator_Create(Amatrix->comm);
          ML_Operator_Set_1Levels(current, Bmatrix->from, Amatrix->to);
          ML_Operator_Set_ApplyFuncData(current, Bmatrix->invec_leng, 
-				       Amatrix->outvec_leng, ML_EMPTY,temp,
+				       Amatrix->outvec_leng, temp,
 				       i,NULL,0);
 
-         ML_Operator_Set_Getrow(current, ML_INTERNAL, i, CSR_getrow);
+         ML_Operator_Set_Getrow(current, i, CSR_getrow);
 
          current->max_nz_per_row = max_nz_row_new; 
          current->N_nonzeros     = total_nz; 
@@ -1510,8 +1510,8 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    *Cmatrix = ML_Operator_Create(Amatrix->comm);
    ML_Operator_Set_1Levels(*Cmatrix, Bmatrix->from, Amatrix->to);
    ML_Operator_Set_ApplyFuncData(*Cmatrix,Bmatrix->invec_leng, 
-			        Amatrix->outvec_leng,ML_EMPTY,temp,N,NULL,0);
-   ML_Operator_Set_Getrow(*Cmatrix, ML_INTERNAL, N, CSR_getrow);
+			        Amatrix->outvec_leng,temp,N,NULL,0);
+   ML_Operator_Set_Getrow(*Cmatrix, N, CSR_getrow);
    (*Cmatrix)->getrow->Nrows = N;
    (*Cmatrix)->max_nz_per_row = max_nz_row_new;
    (*Cmatrix)->N_nonzeros     = total_nz;
@@ -1761,10 +1761,10 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
          current = ML_Operator_Create(Amatrix->comm);
          ML_Operator_Set_1Levels(current, Bmatrix->from, Amatrix->to);
          ML_Operator_Set_ApplyFuncData(current, Bmatrix->invec_leng, 
-				       Amatrix->outvec_leng, ML_EMPTY,temp,
+				       Amatrix->outvec_leng, temp,
 				       i,NULL,0);
 
-         ML_Operator_Set_Getrow(current, ML_INTERNAL, i, CSR_getrow);
+         ML_Operator_Set_Getrow(current, i, CSR_getrow);
 
          current->max_nz_per_row = max_nz_row_new; 
          current->N_nonzeros     = total_nz; 
@@ -1823,8 +1823,8 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    *Cmatrix = ML_Operator_Create(Amatrix->comm);
    ML_Operator_Set_1Levels(*Cmatrix, Bmatrix->from, Amatrix->to);
    ML_Operator_Set_ApplyFuncData(*Cmatrix,Bmatrix->invec_leng, 
-			        Amatrix->outvec_leng,ML_EMPTY,temp,N,NULL,0);
-   ML_Operator_Set_Getrow(*Cmatrix, ML_INTERNAL, N, CSR_getrow);
+			        Amatrix->outvec_leng,temp,N,NULL,0);
+   ML_Operator_Set_Getrow(*Cmatrix, N, CSR_getrow);
    (*Cmatrix)->getrow->Nrows = N;
    (*Cmatrix)->max_nz_per_row = max_nz_row_new;
    (*Cmatrix)->N_nonzeros     = total_nz;

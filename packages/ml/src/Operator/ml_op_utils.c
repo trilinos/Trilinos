@@ -238,7 +238,7 @@ int ML_Gen_Prolongator_Getrow(ML *ml_handle, int level2, int level, int isize,
 
    ml_handle->Pmat[level2].data_destroy = ML_CSR_MSRdata_Destroy;
    ML_Init_Prolongator(ml_handle, level2, level, isize, osize, (void *) temp);
-   ML_Operator_Set_ApplyFunc(&(ml_handle->Pmat[level2]),ML_INTERNAL,CSR_matvec);
+   ML_Operator_Set_ApplyFunc(&(ml_handle->Pmat[level2]),CSR_matvec);
 /*
 printf("we've changed the data pointer ? ....\n");
 */
@@ -249,7 +249,7 @@ printf("we've changed the data pointer ? ....\n");
    }
    else ml_handle->Pmat[level2].getrow->pre_comm = NULL;
 
-   ML_Operator_Set_Getrow(&(ml_handle->Pmat[level2]), ML_INTERNAL, 
+   ML_Operator_Set_Getrow(&(ml_handle->Pmat[level2]), 
 			  ml_handle->Pmat[level2].outvec_leng, CSR_getrow);
 
 /*
@@ -402,8 +402,8 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
  
    ml_handle->Rmat[level].data_destroy = ML_CSR_MSRdata_Destroy;
    ML_Init_Restrictor(ml_handle, level, level2, isize, osize, (void *) temp);
-   ML_Operator_Set_ApplyFunc(Rmat,ML_INTERNAL, CSR_matvec);
-   ML_Operator_Set_Getrow(&(ml_handle->Rmat[level]), ML_INTERNAL,
+   ML_Operator_Set_ApplyFunc(Rmat, CSR_matvec);
+   ML_Operator_Set_Getrow(&(ml_handle->Rmat[level]), 
                                  Nghost+osize, CSR_getrow);
   return(1);
 }
@@ -750,10 +750,9 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
    Amat_trans->data_destroy = ML_CSR_MSRdata_Destroy;
    
    ML_Operator_Set_ApplyFuncData(Amat_trans, isize, osize, 
-                                  ML_EMPTY, temp, osize, NULL, 0);
-   ML_Operator_Set_ApplyFunc(Amat_trans,ML_INTERNAL, CSR_matvec);
-   ML_Operator_Set_Getrow(Amat_trans, ML_INTERNAL,
-                                 Nghost+osize, CSR_getrow);
+                                  temp, osize, NULL, 0);
+   ML_Operator_Set_ApplyFunc(Amat_trans, CSR_matvec);
+   ML_Operator_Set_Getrow(Amat_trans, Nghost+osize, CSR_getrow);
 
   return(1);
 }
@@ -774,12 +773,12 @@ int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans)
   eye2 = ML_Operator_Create(A->comm);
  
   ML_Operator_Set_ApplyFuncData(eye1, A->invec_leng, A->invec_leng,
-            ML_INTERNAL,NULL, A->invec_leng, eye_matvec, 0);
-  ML_Operator_Set_Getrow(eye1, ML_INTERNAL, A->invec_leng, eye_getrows);
+            NULL, A->invec_leng, eye_matvec, 0);
+  ML_Operator_Set_Getrow(eye1, A->invec_leng, eye_getrows);
  
   ML_Operator_Set_ApplyFuncData(eye2, A->invec_leng, A->invec_leng,
-            ML_INTERNAL,NULL, A->invec_leng, eye_matvec, 0);
-  ML_Operator_Set_Getrow(eye2, ML_INTERNAL, A->invec_leng, eye_getrows);
+            NULL, A->invec_leng, eye_matvec, 0);
+  ML_Operator_Set_Getrow(eye2, A->invec_leng, eye_getrows);
   ML_2matmult(A, eye1, Atrans, ML_CSR_MATRIX);
 
   ML_Operator_Destroy(&eye1);
@@ -1088,11 +1087,11 @@ int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
    }
 
    ML_Operator_Set_ApplyFuncData(matrix,matrix->invec_leng, 
-				 matrix->outvec_leng,ML_INTERNAL,temp,
+				 matrix->outvec_leng,temp,
 				 matrix->matvec->Nrows, sCSR_matvec,
 				 matrix->from_an_ml_operator);
 
-   ML_Operator_Set_Getrow(matrix,ML_INTERNAL,matrix->getrow->Nrows,sCSR_getrows);
+   ML_Operator_Set_Getrow(matrix,matrix->getrow->Nrows,sCSR_getrows);
    matrix->data_destroy   = ML_CSR_MSRdata_Destroy;
    if (values  != NULL) ML_free(values);
    if (columns != NULL) ML_free(columns);
@@ -1161,11 +1160,11 @@ int ML_Operator_ChangeToChar(ML_Operator *matrix)
    }
 
    ML_Operator_Set_ApplyFuncData(matrix,matrix->invec_leng, 
-				 matrix->outvec_leng,ML_INTERNAL,temp,
+				 matrix->outvec_leng,temp,
 				 matrix->matvec->Nrows, cCSR_matvec,
 				 matrix->from_an_ml_operator);
 
-   ML_Operator_Set_Getrow(matrix,ML_INTERNAL,matrix->getrow->Nrows,cCSR_getrows);
+   ML_Operator_Set_Getrow(matrix,matrix->getrow->Nrows,cCSR_getrows);
    matrix->data_destroy   = ML_CSR_MSRdata_Destroy;
    if (values  != NULL) ML_free(values);
    if (columns != NULL) ML_free(columns);
@@ -1209,11 +1208,11 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 
   if (Pmat->getrow->internal == sCSR_getrows)
     ML_Operator_Set_ApplyFuncData(Rmat, Pmat->outvec_leng,
-				Pmat->invec_leng, ML_INTERNAL,
+				Pmat->invec_leng, 
 				Pmat->data, -1, sCSR_trans_matvec, 0);
   else
     ML_Operator_Set_ApplyFuncData(Rmat, Pmat->outvec_leng,
-				Pmat->invec_leng, ML_INTERNAL,
+				Pmat->invec_leng, 
 				Pmat->data, -1, cCSR_trans_matvec, 0);
 
   Rmat->getrow->internal = NULL;

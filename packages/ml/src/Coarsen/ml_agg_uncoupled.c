@@ -500,10 +500,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      csr_data->columns = mat_indx;
      ML_Operator_Set_ApplyFuncData(Cmatrix,Amatrix->invec_leng, 
 				   Amatrix->outvec_leng,
-				   ML_EMPTY,csr_data,
+				   csr_data,
 				   Amatrix->outvec_leng,NULL,0);
-     ML_Operator_Set_Getrow(Cmatrix, ML_INTERNAL, 
-			    Cmatrix->outvec_leng, 
+     ML_Operator_Set_Getrow(Cmatrix, Cmatrix->outvec_leng, 
 			    MSR_get_ones_rows);
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,mat_indx,
 				       bdry_array, &aggr_count, &aggr_index, true_bdry);
@@ -511,9 +510,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    else {
      /*JJH same error as above could occur here!*/
      csr_data->columns = amal_mat_indx;
-     ML_Operator_Set_ApplyFuncData(Cmatrix,nvblocks, nvblocks, ML_EMPTY,
+     ML_Operator_Set_ApplyFuncData(Cmatrix,nvblocks, nvblocks, 
 				   csr_data, nvblocks, NULL,0);
-     ML_Operator_Set_Getrow(Cmatrix, ML_INTERNAL, nvblocks, MSR_get_ones_rows);
+     ML_Operator_Set_Getrow(Cmatrix, nvblocks, MSR_get_ones_rows);
 
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,amal_mat_indx,
 				       bdry_array, &aggr_count, &aggr_index, true_bdry);
@@ -910,7 +909,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    csr_data->columns = new_ja;
    csr_data->values  = new_val;
 
-   ML_Operator_Set_ApplyFuncData( *Pmatrix, Ncoarse, Nrows, ML_EMPTY,
+   ML_Operator_Set_ApplyFuncData( *Pmatrix, Ncoarse, Nrows, 
                                   csr_data, Nrows, NULL, 0);
    (*Pmatrix)->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
    ML_memory_alloc((void**) &aggr_comm, sizeof(ML_Aggregate_Comm), "AVQ");
@@ -928,8 +927,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    ML_CommInfoOP_Generate( &((*Pmatrix)->getrow->pre_comm), 
                            ML_Aggregate_ExchangeBdry, aggr_comm, 
                            comm, Ncoarse, m);
-   ML_Operator_Set_Getrow((*Pmatrix), ML_INTERNAL, Nrows, CSR_getrow);
-   ML_Operator_Set_ApplyFunc((*Pmatrix), ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_Getrow((*Pmatrix), Nrows, CSR_getrow);
+   ML_Operator_Set_ApplyFunc((*Pmatrix), CSR_matvec);
 
    /* ============================================================= */
    /* clean up                                                      */

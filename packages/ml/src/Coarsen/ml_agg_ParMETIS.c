@@ -1846,13 +1846,13 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    Pstart = ML_Operator_Create( Amatrix->comm );
 			       
    ML_Operator_Set_ApplyFuncData( Pstart, nullspace_dim*Ncoarse, new_Nrows, 
-                                  ML_EMPTY, csr_data, new_Nrows, NULL, 0);
+                                  csr_data, new_Nrows, NULL, 0);
    Pstart->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
 
    Pstart->getrow->pre_comm = ML_CommInfoOP_Create();
    
-   ML_Operator_Set_Getrow((Pstart), ML_INTERNAL, new_Nrows, CSR_getrow);
-   ML_Operator_Set_ApplyFunc(Pstart, ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_Getrow((Pstart), new_Nrows, CSR_getrow);
+   ML_Operator_Set_ApplyFunc(Pstart, CSR_matvec);
    Pstart->max_nz_per_row = 1;
 
    Pmatrix2 = ML_Operator_Create( Amatrix->comm );

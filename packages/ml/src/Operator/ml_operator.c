@@ -335,7 +335,7 @@ int ML_Operator_Set_BdryPts(ML_Operator *mat, ML_BdryPts *bc)
 /* ******************************************************************** */
 
 int ML_Operator_Set_ApplyFuncData(ML_Operator *mat, int inlen, int outlen,
-            int type, void *data, int nrows, 
+            void *data, int nrows, 
             int (*func)(ML_Operator*,int,double*,int,double*), int flag)
 {
    if ( mat->ML_id != ML_ID_OP ) {
@@ -353,7 +353,7 @@ int ML_Operator_Set_ApplyFuncData(ML_Operator *mat, int inlen, int outlen,
    mat->data = data;
    mat->matvec->internal = func;
 
-   mat->matvec->ML_id = type;
+   mat->matvec->ML_id = ML_NONEMPTY;
    mat->matvec->Nrows = nrows;
    if ( flag != 0 ) mat->from_an_ml_operator = flag;
    return 0;
@@ -363,11 +363,11 @@ int ML_Operator_Set_ApplyFuncData(ML_Operator *mat, int inlen, int outlen,
 /* Set the matvec information                                           */
 /************************************************************************/
 
-int ML_Operator_Set_ApplyFunc(ML_Operator *Op, int internal_or_external,
+int ML_Operator_Set_ApplyFunc(ML_Operator *Op, 
                        int (*func)(ML_Operator *, int, double *, int, double *))
 {
   Op->matvec->internal = func;
-  Op->matvec->ML_id = internal_or_external;
+  Op->matvec->ML_id    = ML_NONEMPTY;
    return 0;
 }
 
@@ -393,12 +393,12 @@ int ML_Operator_Set_Diag(ML_Operator *Op, int size, double diagonal[])
 /* set getrow function                                                  */
 /* ******************************************************************** */
 
-int ML_Operator_Set_Getrow(ML_Operator *Op, int internal_or_external,
+int ML_Operator_Set_Getrow(ML_Operator *Op, 
         int size, int (*func)(ML_Operator *,int,int*,int,int*,double*,int*))
 {
   Op->getrow->internal = func;
   
-  Op->getrow->ML_id = internal_or_external;
+  Op->getrow->ML_id = ML_NONEMPTY;
   Op->getrow->Nrows = size;
 
    return 0;
@@ -971,7 +971,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
      Amat->getrow->use_loc_glob_map = ML_NO;
      Amat->getrow->loc_glob_map     = NULL;
      Amat->getrow->row_map          = NULL;
-     ML_Operator_Set_Getrow(Amat, ML_INTERNAL, 
+     ML_Operator_Set_Getrow(Amat, 
                             new_data->original_getrow->Nrows/block_size,
                             ML_amalg_drop_getrow);
 
@@ -1385,10 +1385,10 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
     temp->values  = values;
     temp->rowptr   = rowptr;
 
-    ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng, ML_EMPTY,
+    ML_Operator_Set_ApplyFuncData(C, B->invec_leng, A->outvec_leng, 
 				  temp,A->outvec_leng, NULL,0);
-    ML_Operator_Set_Getrow(C, ML_INTERNAL, A->outvec_leng, CSR_getrow);
-    ML_Operator_Set_ApplyFunc (C, ML_INTERNAL, CSR_matvec);
+    ML_Operator_Set_Getrow(C, A->outvec_leng, CSR_getrow);
+    ML_Operator_Set_ApplyFunc (C, CSR_matvec);
     ML_globalcsr2localcsr(C, max_per_proc);
     C->data_destroy = ML_CSR_MSRdata_Destroy;
 

@@ -137,7 +137,7 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
    }
 
 
-   ML_Operator_Set_ApplyFunc(&(ml_handle->Amat[level]),ML_INTERNAL,
+   ML_Operator_Set_ApplyFunc(&(ml_handle->Amat[level]),
 			     az_matvec_wrapper);
 
    ml_handle->Amat[level].data_destroy = AZ_ML_Clean;
@@ -2430,9 +2430,9 @@ void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *reordere
 
   *Tmat = ML_Operator_Create(comm);
   ML_Operator_Set_ApplyFuncData( *Tmat, Nlocal_nodes, Nlocal_edges, 
-                                  ML_EMPTY, csr_data, Nlocal_edges, NULL, 0);
-  ML_Operator_Set_Getrow(*Tmat, ML_INTERNAL, Nlocal_edges, CSR_getrow);
-  ML_Operator_Set_ApplyFunc(*Tmat, ML_INTERNAL, CSR_matvec);
+                                  csr_data, Nlocal_edges, NULL, 0);
+  ML_Operator_Set_Getrow(*Tmat, Nlocal_edges, CSR_getrow);
+  ML_Operator_Set_ApplyFunc(*Tmat, CSR_matvec);
 
   if ((*Tmat)->data_destroy == NULL)
      (*Tmat)->data_destroy = ML_CSR_MSRdata_Destroy_StructOnly;

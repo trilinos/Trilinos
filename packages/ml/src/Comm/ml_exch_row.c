@@ -382,10 +382,9 @@ example (with nonutilized ghost variables still works
   ML_Operator_Set_1Levels(*Pappended, Pmatrix->from, Pmatrix->to);
   ML_Operator_Set_ApplyFuncData(*Pappended,Pmatrix->invec_leng, 
                              /* Nrows+Nrows_new, */ Nrows+Nrows_new,
-                             ML_EMPTY,(void*)temp,Nrows+Nrows_new,NULL,0);
+                             (void*)temp,Nrows+Nrows_new,NULL,0);
 
-  ML_Operator_Set_Getrow(*Pappended, ML_INTERNAL, Nrows + Nrows_new,
-                  CSR_getrow);
+  ML_Operator_Set_Getrow(*Pappended, Nrows + Nrows_new, CSR_getrow);
   (*Pappended)->max_nz_per_row = max_per_row;
   if (Pmatrix->N_nonzeros >= 0) 
      (*Pappended)->N_nonzeros     = Pmatrix->N_nonzeros + rowptr_new[Nrows_new];
@@ -689,9 +688,8 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
                current = ML_Operator_Create(matrix->comm);
                ML_Operator_Set_1Levels(current, parent->from, parent->to);
                ML_Operator_Set_ApplyFuncData(current,row_count,row_count,
-                                   ML_EMPTY,(void*)temp,row_count,NULL,0);
-               ML_Operator_Set_Getrow(current, ML_INTERNAL, row_count, 
-				      CSR_getrow);
+                                   (void*)temp,row_count,NULL,0);
+               ML_Operator_Set_Getrow(current, row_count, CSR_getrow);
                current->max_nz_per_row = max_nz_row_new;
                if (matrix->sub_matrix->N_nonzeros >= 0)
                   current->N_nonzeros =total_nz+matrix->sub_matrix->N_nonzeros;
@@ -759,7 +757,7 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
    total_nz += next_nz;
    matrix->getrow->Nrows  = row_count;
    matrix->getrow->internal = CSR_getrow;
-   matrix->getrow->ML_id = ML_INTERNAL;
+   matrix->getrow->ML_id = ML_NONEMPTY;
    matrix->getrow->loc_glob_map   = NULL;
    matrix->getrow->use_loc_glob_map = ML_NO;
    if (matrix->getrow->row_map != NULL) ML_free(matrix->getrow->row_map);
@@ -948,13 +946,13 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    omatrix->data_destroy = ML_CSR_MSRdata_Destroy;
    ML_Operator_Set_1Levels(omatrix, imatrix->from, imatrix->to);
    ML_Operator_Set_ApplyFuncData(omatrix, imatrix->invec_leng,
-                             imatrix->getrow->Nrows, ML_EMPTY, (void*)temp,
+                             imatrix->getrow->Nrows, (void*)temp,
                              imatrix->getrow->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(omatrix, ML_INTERNAL, imatrix->getrow->Nrows,
+   ML_Operator_Set_Getrow(omatrix, imatrix->getrow->Nrows,
                           CSR_getrow);
    omatrix->max_nz_per_row = imatrix->max_nz_per_row;
    omatrix->N_nonzeros     = next_nz;
-   ML_Operator_Set_ApplyFunc (omatrix, ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_ApplyFunc (omatrix, CSR_matvec);
 
    ML_set_message_info(Nexternal, externals, max_per_proc,omatrix);
 
@@ -1101,13 +1099,13 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
    omatrix->data_destroy = ML_CSR_MSRdata_Destroy;
    ML_Operator_Set_1Levels(omatrix, imatrix->from, imatrix->to);
    ML_Operator_Set_ApplyFuncData(omatrix, imatrix->invec_leng, 
-                             imatrix->getrow->Nrows, ML_EMPTY, (void*)temp, 
+                             imatrix->getrow->Nrows, (void*)temp, 
                              imatrix->getrow->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(omatrix, ML_INTERNAL, imatrix->getrow->Nrows, 
+   ML_Operator_Set_Getrow(omatrix, imatrix->getrow->Nrows, 
 		          MSR_getrows);
    omatrix->max_nz_per_row = max_per_row;
    omatrix->N_nonzeros     = N_nonzeros;
-   ML_Operator_Set_ApplyFunc (omatrix, ML_INTERNAL, MSR_matvec);
+   ML_Operator_Set_ApplyFunc (omatrix, MSR_matvec);
    ML_Operator_Set_Diag (omatrix, imatrix->getrow->Nrows, temp->values);
 
    ML_set_message_info(Nexternal, externals, max_per_proc,omatrix);

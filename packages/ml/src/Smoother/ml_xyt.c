@@ -167,14 +167,14 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    omatrix->data_destroy = ML_CSR_MSRdata_Destroy;
    ML_Operator_Set_1Levels(omatrix, Amat->from, Amat->to);
    ML_Operator_Set_ApplyFuncData(omatrix, Amat->invec_leng,
-                             Amat->getrow->Nrows, ML_EMPTY, (void*)temp,
+                             Amat->getrow->Nrows, (void*)temp,
                              Amat->getrow->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(omatrix, ML_INTERNAL, omatrix->getrow->Nrows,
+   ML_Operator_Set_Getrow(omatrix, omatrix->getrow->Nrows,
                           CSR_getrow);
 
    omatrix->max_nz_per_row = max_nz_per_row;
    omatrix->N_nonzeros     = N_nz;
-   ML_Operator_Set_ApplyFunc (omatrix, ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_ApplyFunc (omatrix, CSR_matvec);
 
 
    neighbors = (int *) ML_allocate(sizeof(int)*getrow_comm->N_neighbors);

@@ -170,12 +170,12 @@ extern int ML_hash_it( int new_val, int hash_list[], int hash_length,
 extern int ML_Operator_Set_Label(ML_Operator *, char *str);
 extern int ML_Operator_Set_1Levels(ML_Operator *, ML_1Level*, ML_1Level*);
 extern int ML_Operator_Set_BdryPts(ML_Operator *, ML_BdryPts *);
-extern int ML_Operator_Set_ApplyFuncData(ML_Operator *, int, int, int, void*,
+extern int ML_Operator_Set_ApplyFuncData(ML_Operator *, int, int, void*,
                       int,int (*func)(ML_Operator *,int,double*,int,double*),int);
-extern int ML_Operator_Set_ApplyFunc(ML_Operator *, int, 
+extern int ML_Operator_Set_ApplyFunc(ML_Operator *, 
                        int (*func)(ML_Operator *, int, double *, int, double *));
 extern int ML_Operator_Set_Diag(ML_Operator *, int, double *);
-extern int ML_Operator_Set_Getrow(ML_Operator *, int, int, 
+extern int ML_Operator_Set_Getrow(ML_Operator *, int, 
                        int (*func)(ML_Operator *,int,int*,int,int*,double*,int*));
 
 extern int ML_Operator_Getrow(ML_Operator *, int, int *, int, int *, 
