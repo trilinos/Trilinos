@@ -70,5 +70,10 @@ EpetraExt contains a number of classes.  They can be categorized as follows:
      Sends user specified Matlab commands to the Matlab engine to modify the Matlab workspace which provides user interaction with the Matlab engine.
 
 </ul>
+
+\subsection example Example
+
+\include cxx_main.cpp
+\include matlab.README
      
 */
