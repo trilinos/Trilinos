@@ -36,7 +36,7 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
     return(new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(Matrix));
   }
 #ifdef HAVE_IFPACK_AMESOS
-  else if (PrecType == "block relaxation (Amesos)" && Overlap) {
+  else if (PrecType == "block relaxation (Amesos)") {
     return(new Ifpack_AdditiveSchwarz<
             Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
   }
