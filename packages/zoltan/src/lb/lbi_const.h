@@ -1321,12 +1321,14 @@ extern int LB_Box_Assign(struct LB_Struct *lb, double xmin, double ymin,
  *   cut_wgt   - cut size/weight (for each proc)
  *   nboundary - number of boundary objects (for each proc)
  *   nadj      - the number of adjacent procs (for each proc)
+ *
+ * Returned value:
  *   ierr      - error code
  */
 
-extern void LB_Eval (struct LB_Struct *lb, int print_stats, 
+extern int LB_Eval (struct LB_Struct *lb, int print_stats, 
      int *nobj, float *obj_wgt, int *ncuts, float *cut_wgt, 
-     int *nboundary, int *nadj, int *ierr);
+     int *nboundary, int *nadj);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

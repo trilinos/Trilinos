@@ -28,9 +28,10 @@
 
 #define NUM_STATS 4 /* Number of graph statistics other than vertex/edge weights */
 
-void LB_Eval (LB *lb, int print_stats, 
-     int *nobj, float *obj_wgt, int *ncuts, float *cut_wgt, 
-     int *nboundary, int *nadj, int *ierr)
+int LB_Eval (LB *lb, int print_stats, 
+     int *nobj, float *obj_wgt, 
+     int *ncuts, float *cut_wgt, 
+     int *nboundary, int *nadj)
 /* 
  * Input:
  *   lb          - pointer to lb structure
@@ -46,15 +47,15 @@ void LB_Eval (LB *lb, int print_stats,
  *   nadj      - the number of adjacent procs (for each proc)
  *   ierr      - error code
  *
- * Ouput parameters will only be returned if they are 
- * not NULL on entry (except for the error code ierr).
+ * Output parameters will only be returned if they are 
+ * not NULL on entry.
  */
 
 {
   char *yo = "LB_Eval";
   char *yo2 = "ZOLTAN LB_Eval";
   int i, j, k, num_obj, max_edges, nedges, cuts, flag;
-  int num_adj, num_boundary;
+  int num_adj, num_boundary, ierr;
   int stats[4*NUM_STATS];
   int *proc, *nbors_proc;
   float *tmp_vwgt, *vwgts, *ewgts, *tmp_cutwgt, nproc;
@@ -64,7 +65,7 @@ void LB_Eval (LB *lb, int print_stats,
   
   LB_TRACE_ENTER(lb, yo);
   /* Set default error code */
-  *ierr = LB_OK;
+  ierr = LB_OK;
 
   /* Set all pointers to NULL */
   global_ids = NULL;
@@ -78,7 +79,7 @@ void LB_Eval (LB *lb, int print_stats,
   proc = NULL;
 
   /* First compute number of objs and object weight on each proc */
-  num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, ierr);
+  num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
 
   if (num_obj>0){
 
@@ -87,7 +88,7 @@ void LB_Eval (LB *lb, int print_stats,
     local_ids  = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID));
       
     if ((!global_ids) || (!local_ids)){
-      *ierr = LB_MEMERR;
+      ierr = LB_MEMERR;
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
       LB_TRACE_EXIT(lb, yo);
@@ -101,7 +102,7 @@ void LB_Eval (LB *lb, int print_stats,
     vwgts   = (float  *) LB_MALLOC(lb->Obj_Weight_Dim*num_obj * sizeof(float));
     tmp_vwgt = (float *) LB_MALLOC(4*lb->Obj_Weight_Dim * sizeof(float));
     if ((num_obj && !vwgts) || (!tmp_vwgt)){
-      *ierr = LB_MEMERR;
+      ierr = LB_MEMERR;
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
       LB_FREE(&vwgts);
@@ -111,8 +112,8 @@ void LB_Eval (LB *lb, int print_stats,
     }
   } 
   
-  LB_Get_Obj_List(lb, global_ids, local_ids, lb->Obj_Weight_Dim, vwgts, ierr);
-  if (*ierr == LB_FATAL){
+  LB_Get_Obj_List(lb, global_ids, local_ids, lb->Obj_Weight_Dim, vwgts, &ierr);
+  if (ierr == LB_FATAL){
     LB_FREE(&global_ids);
     LB_FREE(&local_ids);
     LB_TRACE_EXIT(lb, yo);
@@ -147,9 +148,9 @@ void LB_Eval (LB *lb, int print_stats,
     max_edges = 0;
     for (i=0; i< num_obj; i++){
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
-               local_ids[i], ierr);
-      if (*ierr){
-        sprintf(msg, "Get_Num_Edges returned error code %d.", *ierr);
+               local_ids[i], &ierr);
+      if (ierr){
+        sprintf(msg, "Get_Num_Edges returned error code %d.", ierr);
         LB_PRINT_ERROR(lb->Proc, yo, msg);
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);
@@ -174,7 +175,7 @@ void LB_Eval (LB *lb, int print_stats,
 
     if ((max_edges && ((!nbors_global) || (!nbors_proc))) || 
         (lb->Comm_Weight_Dim && ((!ewgts) || (!tmp_cutwgt))) || (!proc)){
-      *ierr = LB_MEMERR;
+      ierr = LB_MEMERR;
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
       LB_FREE(&vwgts);
@@ -196,8 +197,8 @@ void LB_Eval (LB *lb, int print_stats,
     for (k=0; k<num_obj; k++){
       flag = 0;
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[k], 
-               local_ids[k], ierr);
-      if (*ierr == LB_FATAL){
+               local_ids[k], &ierr);
+      if (ierr == LB_FATAL){
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);
         LB_FREE(&vwgts);
@@ -211,8 +212,8 @@ void LB_Eval (LB *lb, int print_stats,
         return;
       }
       lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[k], local_ids[k],
-          nbors_global, nbors_proc, lb->Comm_Weight_Dim, ewgts, ierr);
-      if (*ierr == LB_FATAL){
+          nbors_global, nbors_proc, lb->Comm_Weight_Dim, ewgts, &ierr);
+      if (ierr == LB_FATAL){
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);
         LB_FREE(&vwgts);
@@ -365,4 +366,6 @@ void LB_Eval (LB *lb, int print_stats,
   LB_FREE(&nbors_proc);
   LB_FREE(&proc);
   LB_TRACE_EXIT(lb, yo);
+
+  return ierr;
 }
