@@ -35,16 +35,16 @@
 using namespace NOX;
 using namespace NOX::Solver;
 
-Newton::Newton(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) :
+Newton::Newton(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) :
   solnptr(&xgrp),		// pointer to xgrp
   oldsolnptr(xgrp.clone(DeepCopy)), // create via clone
   oldsoln(*oldsolnptr),		// reference to just-created pointer
   dirptr(xgrp.getX().clone(CopyShape)), // create via clone 
   dir(*dirptr),			// reference to just-created pointer
   testptr(&t),			// pointer to t
-  iparamsptr(&p),		// pointer to p
+  iparams(p),			// copy p
   oparams(),			// empty list
-  linesearch(p.sublist("Line Search")), // initialize line search
+  linesearch(iparams.sublist("Line Search")), // initialize line search
   step(0.0),			// initialize to zero
   niter(0),			// initialize to zero
   status(Status::Unconverged)	// initialize convergence status
@@ -55,28 +55,30 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) :
 // Protected
 void Newton::init()
 {
+  // Compute RHS of initital guess
+  solnptr->computeRHS();
+
   // Print out initialization information
   if (Utils::doPrint(Utils::Parameters)) {
 
     cout << "\n" << Utils::fill(72) << "\n";
     cout << "\n-- Parameters Passed to Nonlinear Solver on Print Processor --\n\n";
-    iparamsptr->print(cout,5);
+    iparams.print(cout,5);
     cout << "\n-- Status Tests Passed to Nonlinear Solver on Print Processor --\n\n";
+    testptr->operator()(*this);
     testptr->print(cout, 5);
     cout <<"\n" << Utils::fill(72) << "\n";
 
   }
 
-  // Compute RHS of initital guess
-  solnptr->computeRHS();
 }
 
-bool Newton::reset(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) 
+bool Newton::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) 
 {
   solnptr = &xgrp;
   testptr = &t;
-  iparamsptr = &p;
-  linesearch.reset(p.sublist("Line Search"));
+  iparams = p;			
+  linesearch.reset(iparams.sublist("Line Search"));
   niter = 0;
   status = Status::Unconverged;
   init();
@@ -110,7 +112,7 @@ Status::StatusType Newton::iterate()
 
   // Compute Newton direction for current solution.
   /* NOTE FROM TAMMY: Need to check the return status! */
-  soln.computeNewton(iparamsptr->sublist("Linear Solver"));
+  soln.computeNewton(iparams.sublist("Linear Solver"));
 
   // Set search direction.
   dir = soln.getNewton();
@@ -214,17 +216,17 @@ void Newton::resetForcingTerm()
   if (niter == 0)
     return;
 
-  if ((!iparamsptr->isParameter("Forcing Term Method")) ||
-      (iparamsptr->isParameterEqual("Forcing Term Method", "None")))
+  if ((!iparams.isParameter("Forcing Term Method")) ||
+      (iparams.isParameterEqual("Forcing Term Method", "None")))
     return;
 
   // Get forcing term parameters.
-  const string method = iparamsptr->getParameter("Forcing Term Method", "");
-  const double eta_min = iparamsptr->getParameter("Forcing Term Minimum Tolerance", 1.0e-6);
-  const double eta_max = iparamsptr->getParameter("Forcing Term Maximum Tolerance", 0.01);
+  const string method = iparams.getParameter("Forcing Term Method", "");
+  const double eta_min = iparams.getParameter("Forcing Term Minimum Tolerance", 1.0e-6);
+  const double eta_max = iparams.getParameter("Forcing Term Maximum Tolerance", 0.01);
 
   // Get linear solver parameter list and current tolerance.
-  Parameter::List& lsparams = iparamsptr->sublist("Linear Solver");
+  Parameter::List& lsparams = iparams.sublist("Linear Solver");
   const double eta_km1 = lsparams.getParameter("Tolerance", 0.0);
 
   // New forcing term.
@@ -284,8 +286,8 @@ void Newton::resetForcingTerm()
     
     const double normrhs = solnptr->getNormRHS();
     const double normoldrhs = oldsoln.getNormRHS();
-    const double alpha = iparamsptr->getParameter("Forcing Term Alpha", 1.5);
-    const double gamma = iparamsptr->getParameter("Forcing Term Gamma", 0.9);
+    const double alpha = iparams.getParameter("Forcing Term Alpha", 1.5);
+    const double gamma = iparams.getParameter("Forcing Term Gamma", 0.9);
     const double residual_ratio = normrhs / normoldrhs;
     
     eta_k = gamma * pow(residual_ratio, alpha);

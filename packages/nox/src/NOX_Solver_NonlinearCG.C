@@ -35,7 +35,7 @@
 using namespace NOX;
 using namespace NOX::Solver;
 
-NonlinearCG::NonlinearCG(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) :
+NonlinearCG::NonlinearCG(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) :
   solnptr(&xgrp),		// reference to xgrp
   oldsolnptr(xgrp.clone(DeepCopy)), // create via clone
   oldsoln(*oldsolnptr),		// reference to just-created pointer
@@ -44,9 +44,9 @@ NonlinearCG::NonlinearCG(Abstract::Group& xgrp, Status::Test& t, Parameter::List
   olddirptr(xgrp.getX().clone(CopyShape)), // create via clone 
   olddir(*olddirptr),		// reference to just-created pointer
   testptr(&t),			// reference to t
-  iparamsptr(&p),		// reference to p
+  iparams(p),			// copy p
   oparams(),			// empty list
-  linesearch(p.sublist("Line Search")), // initialize line search
+  linesearch(iparams.sublist("Line Search")), // initialize line search
   step(0.0),			// initialize to zero
   niter(0),			// initialize to zero
   status(Status::Unconverged),	// initialize convergence status
@@ -62,9 +62,9 @@ void NonlinearCG::init()
   if (Utils::doPrint(Utils::Parameters)) {
 
     cout << "\n" << Utils::fill(72) << "\n";
-    cout << "\n-- Parameters Passed to Nonlinear Solver on Print Processor --\n\n";
-    iparamsptr->print(cout,5);
-    cout << "\n-- Status Tests Passed to Nonlinear Solver on Print Processor --\n\n";
+    cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    iparams.print(cout,5);
+    cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
     testptr->print(cout, 5);
     cout <<"\n" << Utils::fill(72) << "\n";
 
@@ -81,12 +81,12 @@ NonlinearCG::~NonlinearCG()
   delete olddirptr;
 }
 
-bool NonlinearCG::reset(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) 
+bool NonlinearCG::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) 
 {
   solnptr = &xgrp;
   testptr = &t;
-  iparamsptr = &p;
-  linesearch.reset(p.sublist("Line Search"));
+  iparams = p;
+  linesearch.reset(iparams.sublist("Line Search"));
   niter = 0;
   status = Status::Unconverged;
   init();
@@ -117,7 +117,7 @@ Status::StatusType NonlinearCG::iterate()
   /* NOTE FROM TAMMY: Need to check the return status! */
 //  Two choices available for determining initial descent direction before
 //  orthogonalization: 
-  if(iparamsptr->getParameter("Direction", "Steepest Descent")=="Richardson")
+  if(iparams.getParameter("Direction", "Steepest Descent")=="Richardson")
   {
     dir = soln.getRHS();  // Richardson direction
     if(niter!=0) oldDescentdirptr = &oldsoln.getRHS();
@@ -133,7 +133,7 @@ Status::StatusType NonlinearCG::iterate()
   // Diagonally precondition if desired
 
   Abstract::Vector& z = *dir.clone(DeepCopy);
-  if(iparamsptr->getParameter("Diagonal Precondition", "Off") == "On") 
+  if(iparams.getParameter("Diagonal Precondition", "Off") == "On") 
     soln.applyJacobianDiagonalInverse(dir, z);
 
   // Orthogonalize using previous search direction
@@ -141,12 +141,12 @@ Status::StatusType NonlinearCG::iterate()
   if(niter!=0){  
 
     Abstract::Vector& oldz = *oldDescentdirptr->clone(DeepCopy);
-    if(iparamsptr->getParameter("Diagonal Precondition", "Off") == "On") 
+    if(iparams.getParameter("Diagonal Precondition", "Off") == "On") 
       soln.applyJacobianDiagonalInverse(*oldDescentdirptr, oldz);
 
 // Two choices (for now) for orthogonalizing descent direction with previous:
 
-    if(iparamsptr->getParameter("Orthogonalize", "Fletcher-Reeves")=="Polak-Ribiere")
+    if(iparams.getParameter("Orthogonalize", "Fletcher-Reeves")=="Polak-Ribiere")
     {
 //                     Polak-Ribiere beta
 
@@ -176,7 +176,7 @@ Status::StatusType NonlinearCG::iterate()
 
 //  Allow for restart after specified number of nonlinear iterations
 
-    if( (niter % iparamsptr->getParameter("Restart Frequency", 100))==0)
+    if( (niter % iparams.getParameter("Restart Frequency", 100))==0)
     {
        if (Utils::doPrint(Utils::OuterIteration))
          cout << "Resetting beta --> 0" << endl;
@@ -221,7 +221,7 @@ Status::StatusType NonlinearCG::solve()
   // Iterate until converged or failed
   while (status == Status::Unconverged) {
     status = iterate();
-    if((niter % iparamsptr->getParameter("Output Frequency",1))==0)
+    if((niter % iparams.getParameter("Output Frequency",1))==0)
         printUpdate();
     if(niter>=maxIterations) {
       if (Utils::doPrint(Utils::OuterIteration)) {

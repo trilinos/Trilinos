@@ -64,7 +64,7 @@ public:
     the solution.
 
   */
-  virtual bool reset(Abstract::Group& grp, Status::Test& tests, Parameter::List& params) = 0;
+  virtual bool reset(Abstract::Group& grp, Status::Test& tests, const Parameter::List& params) = 0;
 
   //! Check current convergence/failure status. 
   virtual Status::StatusType getStatus() = 0;

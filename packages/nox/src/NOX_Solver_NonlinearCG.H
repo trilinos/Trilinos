@@ -87,12 +87,12 @@ class NonlinearCG : public Generic {
 public:
 
   //! %NonlinearCG-method constructor. 
-  NonlinearCG(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p);
+  NonlinearCG(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
 
   //! Destructor
   virtual ~NonlinearCG();
 
-  virtual bool reset(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p);
+  virtual bool reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
   virtual Status::StatusType getStatus();
   virtual Status::StatusType iterate();
   virtual Status::StatusType solve();
@@ -148,7 +148,7 @@ protected:
   Status::Test* testptr;		
 
   //! Input parameters.
-  Parameter::List* iparamsptr;	
+  Parameter::List iparams;	
 
   //! Output paramters.
   mutable Parameter::List oparams; 

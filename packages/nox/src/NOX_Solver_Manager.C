@@ -19,8 +19,7 @@
 using namespace NOX;
 using namespace NOX::Solver;
 
-Manager::Manager(Abstract::Group& grp, Status::Test &t,
-		 Parameter::List& p) :
+Manager::Manager(Abstract::Group& grp, Status::Test &t, const Parameter::List& p) :
   ptr(NULL),
   method("")
 {
@@ -32,7 +31,7 @@ Manager::~Manager()
   delete ptr;
 }
 
-bool Manager::reset(Abstract::Group& grp, Status::Test& tests, Parameter::List& params)
+bool Manager::reset(Abstract::Group& grp, Status::Test& tests, const Parameter::List& params)
 {
   string newmethod = params.getParameter("Nonlinear Solver", "Newton");
 
