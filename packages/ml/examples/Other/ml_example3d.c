@@ -766,7 +766,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
 #endif
 #ifdef HAVE_ML_AMESOS
       else if (ML_strcmp(context->coarse_solve,"KLU") == 0) {
-	ML_Gen_Smoother_Amesos( ml, coarsest_level, ML_AMESOS_KLU,-1);
+	ML_Gen_Smoother_Amesos( ml, coarsest_level, ML_AMESOS_KLU,-1, 0.0);
       }
 #endif
       else {

@@ -818,7 +818,7 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 #endif
 #ifdef HAVE_ML_AMESOS
       else if (ML_strcmp(context->coarse_solve,"KLU") == 0) {
-	ML_Gen_Smoother_Amesos( ml, coarsest_level, ML_AMESOS_KLU,-1);
+	ML_Gen_Smoother_Amesos( ml, coarsest_level, ML_AMESOS_KLU,-1, 0.0);
       }
 #endif
       else {

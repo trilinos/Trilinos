@@ -197,21 +197,17 @@ int main(int argc, char *argv[])
     cout << x;
     cout << A;
       
-    // Function Eig() can be used to compute the eigenvalues of an Operator
-    // (for serial runs only). This function calls LAPACK, therefore the
-    // Operator should be "small".
+    // Function Eig() can be used to compute the eigenvalues of an Operator.
+    // This function calls LAPACK, therefore the Operator should be "small".
     // ER will contain the real part of the eigenvalues;
     // EI will contain the imaginary part of the eigenvalues;
-    // V will contain the eigenvalues.
     
-    MultiVector ER, EI, V;
-    if (GetNumProcs() == 1)
-      Eig(A, ER, EI);
+    MultiVector ER, EI;
+    Eig(A, ER, EI);
 
     for (int i = 0 ; i < ER.GetMyLength() ; ++i)
-      for (int j = 0 ; j < ER.GetNumVectors() ; ++j)
-        cout << "ER(" << i << ", " << j << ") = " << ER(i,j) << endl;
-    
+      cout << "ER(" << MySpace(i) << ") = " << ER(i) << endl;
+
     // Another nice feature is that objects can be printed in a MATLAB format.
     // To that aim, simply do the following:
     // - set the label of the objects you want to port to MATLAB;
