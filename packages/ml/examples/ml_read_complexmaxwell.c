@@ -158,9 +158,11 @@ double *xxx;
 extern int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original1,
                           ML_Operator *original2);
 
+/*
 extern int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges,ML_Operator **Tmat_array, 
 					   ML_Operator **Tmat_trans_array,
 					   ML **newml, ML_Operator *M);
+*/
 struct ml_operator_wrapper {
   int (*diag_matvec)(void *, int, double *, int, double *);
   int (*diag_getrow)(void *,int,int*,int,int*,double*,int*);
@@ -179,6 +181,7 @@ struct aztec_block_data {
   AZ_MATRIX *Ke;
   AZ_MATRIX *M;
 };
+ML_Operator *globbie;
 
 /***************************************************************************/
 
@@ -249,12 +252,16 @@ int main(int argc, char *argv[])
   int mg_cycle_type;
   double omega, nodal_omega, edge_omega;
   void **edge_args, **nodal_args, *edge_smoother, *nodal_smoother;
-  int  edge_its, nodal_its, temp1[4], temp2[4];
+  int  edge_its, nodal_its, *temp1, *temp2;
   double edge_eig_ratio[25], nodal_eig_ratio[25];
 #ifndef debugSmoother
   double *xxx;
 #endif
   int Ndirichlet, *dirichlet;
+  struct ML_Operator_blockmat_data *block_data;
+   ML_Krylov   *kdata;
+   double *M_diag, *diag_of_M, *diag_of_S, lambda, tdiag, ttdiag;
+
 
 #ifdef ML_partition
   FILE *fp2;
@@ -276,6 +283,8 @@ int main(int argc, char *argv[])
     exit(1);
   }
 #endif /* ifdef ML_partition */
+  temp1 = (int *) malloc(sizeof(int)*4);
+  temp2 = (int *) malloc(sizeof(int)*4);
 
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);
@@ -376,6 +385,7 @@ Nglobal_nodes = (Nglobal_edges+1)*(Nglobal_edges+1)*(Nglobal_edges+1); /* rst di
   /* AZ_find_index() will function properly.                         */
   /*-----------------------------------------------------------------*/
 
+  printf("N procs = %d\n",proc_config[AZ_N_procs]);
   if (proc_config[AZ_N_procs] == 1) i = AZ_linear;
   else i = AZ_file;
   AZ_input_update("edge_partition",&Nlocal_edges, &global_edge_inds, 
@@ -862,6 +872,7 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
     rhs[Nlocal_edges/2+1] = -1.;
     xxx = (double *) ML_allocate(2*(3 + Nlocal_edges + Ke_mat->data_org[AZ_N_external])*sizeof(double));
 
+#ifdef garbage
 for (i = 0; i < -Nlocal_edges; i++) {
   inv3dindex(global_edge_inds[i], &ii, &jj, &kk, nx, &horv);
   rhs[i] =
@@ -878,6 +889,8 @@ for (i = 0; i < -Nlocal_edges; i++) {
       if ((ii==0) || (jj==0)) rhs[i] = 0.;/* rst dirichlet */
     }
 }
+#endif
+printf("should not be doing this\n");
 
      AZ_random_vector(rhs, Ke_data_org, proc_config);
 for (i = 0; i < Nlocal_edges; i++) rhs[i+Nlocal_edges] = rhs[i];
@@ -1412,6 +1425,7 @@ nx = nx--; /* rst dirichlet */
 
   Tmat_trans = ML_Operator_Create(ml_edges->comm);
   ML_Operator_Transpose_byrow(Tmat, Tmat_trans);
+  globbie = Tmat_trans;
 
 #ifdef ML_partition
 
@@ -1727,7 +1741,10 @@ nx = nx--; /* rst dirichlet */
 							 ML_NO, 1.5);
 
   ml_edges->ML_finest_level = N_levels-1;
-  ML_Gen_Hierarchy_ComplexMaxwell(ml_edges, Tmat_array, Tmat_trans_array, &ml_block, Mmat_ml);
+
+  printf("before complex\n");
+  ML_Gen_Hierarchy_ComplexMaxwell(ml_edges, /* Tmat_array, Tmat_trans_array, */ &ml_block, Mmat_ml);
+  printf("after Complex\n");
    // rst: comment this out to use the original multigrid stuff
       ml_edges = ml_block;
 
@@ -1741,6 +1758,64 @@ nx = nx--; /* rst dirichlet */
   ML_Gen_MGHierarchy_ReuseExistingOperators(ml_edges);
   {printf("Ending reuse\n"); fflush(stdout);}
 #endif
+  coarsest_level = N_levels - coarsest_level;
+
+ /* The MLS smoother needs the largest eigenvalue of the matrix. */
+  /* Normally, this happens automatically within ML by checking   */
+  /* if the eigenvalue is not already defined and then calling a  */
+  /* CG routine to compute it. However, CG won't work for the     */
+  /* equivalent real system. Instead, we will manually compute the*/
+  /* largest eigenvalue of the pieces to estimate the largest     */
+  /* eigenvalue of the equivalent real system.                    */
+  printf("here we are %d %d\n",
+	 ml_block->ML_finest_level, ml_block->ML_coarsest_level);
+  for (j = N_levels-1; j >= coarsest_level; j--) {
+    printf("THE LEVEL IS %d\n",j);
+
+
+     block_data = (struct ML_Operator_blockmat_data *) ml_block->Amat[j].data;
+
+    /* compute eigenvalue of 'stiffness' matrix (1,1) block */
+     kdata = ML_Krylov_Create( ml_edges->comm );
+     ML_Krylov_Set_PrintFreq( kdata, 0 );
+     ML_Krylov_Set_ComputeEigenvalues( kdata );
+     ML_Krylov_Set_Amatrix(kdata, block_data->Ke_mat );
+
+     ML_Krylov_Solve(kdata, block_data->Ke_mat->outvec_leng, NULL, NULL);
+     ml_edges->Amat[j].lambda_max = 
+                      ML_Krylov_Get_MaxEigenvalue(kdata);
+     ML_Krylov_Destroy( &kdata );
+
+     /* Get the max eigenvalue of M (a diagonal matrix) */
+     ML_Operator_Get_Diag(block_data->M_mat,
+                          block_data->M_mat->outvec_leng, &M_diag);
+
+     /* diagonal of (curl,curl) matrix */
+     ML_Operator_Get_Diag(block_data->Ke_mat,
+                          block_data->Ke_mat->outvec_leng, &diag_of_S);
+
+     lambda = 0.;
+     tdiag = 0.0;
+     for (i = 0; i < block_data->Ke_mat->outvec_leng; i++) {
+       if ( fabs(M_diag[i]/diag_of_S[i]) > lambda) {
+         lambda = fabs(M_diag[i]/diag_of_S[i]);
+         tdiag = diag_of_S[i];
+         ttdiag = M_diag[i];
+       }
+     }
+     lambda = ML_gmax_double(lambda, ml_edges->comm);
+     block_data->M_mat->lambda_max = lambda;
+
+     /* Put in eigenvalue estimate for equivalent real form */
+     ml_block->Amat[j].lambda_max     = ml_edges->Amat[j].lambda_max;
+     ml_block->Amat[j].lambda_max_img = block_data->M_mat->lambda_max;
+     if (ml_edges->comm->ML_mypid == 0) {
+       printf("\n\nlevel %d:  (lambda_max_real,lambda_max_imag) = %e  %e\n\n",
+              j,ml_edges->Amat[j].lambda_max, block_data->M_mat->lambda_max);
+       printf("(level %d) numer = %e, denom = %e\n",j,ttdiag,tdiag);
+       fflush(stdout);
+     }
+  } /* for j=ml_edges->ML_finest_level... */
 
   /* Here is the stuff to set the subsmoothers within the Hiptmair */
   /* smoother.                                                     */
@@ -1757,43 +1832,56 @@ nx = nx--; /* rst dirichlet */
 /* edge_smoother  = (void *) ML_Gen_Smoother_VBlockSymGaussSeidel; */
 	  nodal_omega    = ML_DDEFAULT;
 	  edge_omega     = ML_DDEFAULT;
-	  nodal_args = ML_Smoother_Arglist_Create(3);
+	  nodal_args = ML_Smoother_Arglist_Create(2);
 	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
 	  ML_Smoother_Arglist_Set(nodal_args, 1, &nodal_omega);
       /*this flag doesn't matter and is just to make the nodal and edge
         arg arrays the same length. */
-	  ML_Smoother_Arglist_Set(nodal_args, 2, &reduced_smoother_flag);
+//	  ML_Smoother_Arglist_Set(nodal_args, 2, &reduced_smoother_flag);
 
 	  if (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel)
 	    edge_args = ML_Smoother_Arglist_Create(5);
 	  else
-	    edge_args = ML_Smoother_Arglist_Create(3);
+	    edge_args = ML_Smoother_Arglist_Create(2);
 	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
 	  ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega);
       /* if flag is nonzero, in Hiptmair do edge/nodal combination on pre-
          smooth and nodal/edge combination on post-smooth.   This maintains
          symmetry of the preconditioner. */
-	  ML_Smoother_Arglist_Set(edge_args, 2, &reduced_smoother_flag);
+//	  ML_Smoother_Arglist_Set(edge_args, 2, &reduced_smoother_flag);
 	}
       else if (ML_strcmp(context->subsmoother,"MLS") == 0)
 	{
+	  printf("mls\n");
+	  //	  edge_smoother  = (void *) ML_Gen_Smoother_MLS;
 	  edge_smoother  = (void *) ML_Gen_Smoother_MLS;
 	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
 	  nodal_omega    = 1.0;
 	  edge_omega     = 1.0;
-	  nodal_args = ML_Smoother_Arglist_Create(4);
+	  nodal_args = ML_Smoother_Arglist_Create(2);
 	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
-	  ML_Smoother_Arglist_Set(nodal_args, 2, &nodal_omega);
-	  edge_args = ML_Smoother_Arglist_Create(4);
+	  //	  ML_Smoother_Arglist_Set(nodal_args, 2, &nodal_omega);
+	  edge_args = ML_Smoother_Arglist_Create(2);
 	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
-	  ML_Smoother_Arglist_Set(edge_args, 2, &edge_omega);
+	  //	  ML_Smoother_Arglist_Set(edge_args, 2, &edge_omega);
+	  printf("bottom of mls\n");
+	}
+      else if (ML_strcmp(context->subsmoother,"ERF_1Step") == 0)
+	{
+	  printf("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII\n");
+	  edge_smoother  = (void *) ML_Gen_Smoother_ERF_1StepKrylov;
+	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
+	  nodal_omega    = 1.0;
+	  edge_omega     = 1.0;
+	  nodal_args = ML_Smoother_Arglist_Create(2);
+	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
+	  edge_args = ML_Smoother_Arglist_Create(0);
 	}
     }
 
   /****************************************************
   * Set up smoothers for all levels but the coarsest. *
   ****************************************************/
-  coarsest_level = N_levels - coarsest_level;
   for (level = N_levels-1; level > coarsest_level; level--)
   {
       num_PDE_eqns = ml_edges->Amat[level].num_PDEs;
@@ -1811,7 +1899,7 @@ nx = nx--; /* rst dirichlet */
 
       else if (ML_strcmp(context->smoother,"Hiptmair") == 0)
 	  {
-
+	    printf("in hip\n");
           /* Setting omega to any other value will override the automatic
              calculation in ML_Smoother_Gen_Hiptmair_Data. */
           omega = (double) ML_DEFAULT;
@@ -1824,10 +1912,33 @@ nx = nx--; /* rst dirichlet */
 	    ML_Smoother_Arglist_Set(edge_args, 3, &nblocks);
 	    ML_Smoother_Arglist_Set(edge_args, 4, blocks);
 	  }
+	  if (edge_smoother == (void *) ML_Gen_Smoother_ERF_1StepKrylov) {
+	  printf("222IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII\n");
+
+	    nodal_eig_ratio[level] = eig_ratio_tol;
+	    temp1[2] = Tmat_array[level]->invec_leng;
+	    if (level != 0) temp1[3] = Tmat_array[level-1]->invec_leng;
+	    else            temp1[3] = 0;
+
+	    ML_gsum_vec_int(&temp1, &temp2, 4, ml_edges->comm);
+	    if (temp1[3] != 0) {
+	      nodal_eig_ratio[level] = 2.*((double) temp1[2])/ ((double) temp1[3]);
+	    }
+	    if (nodal_eig_ratio[level] < eig_ratio_tol) nodal_eig_ratio[level] = eig_ratio_tol;
+	    ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[level]));
+        mls_poly_degree = 1;
+        printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
+                mls_poly_degree);
+	  }
+
 	  if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+
+	    printf("more mls %u %u\n",temp1, temp2);
 	    edge_eig_ratio[level] = eig_ratio_tol;
 	    nodal_eig_ratio[level] = eig_ratio_tol;
+	    printf("before temp1\n");
 	    temp1[0] = Tmat_array[level]->outvec_leng;
+	    printf("after temp1\n");
 	    temp1[2] = Tmat_array[level]->invec_leng;
 	    if (level != 0) {
 	      temp1[1] = Tmat_array[level-1]->outvec_leng;
@@ -1837,7 +1948,9 @@ nx = nx--; /* rst dirichlet */
 	      temp1[1] = 0;
 	      temp1[3] = 0;
 	    }
-	    ML_gsum_vec_int(temp1, temp2, 4, ml_edges->comm);
+	    printf("before gsum\n");
+	    ML_gsum_vec_int(&temp1, &temp2, 4, ml_edges->comm);
+	    printf("in hip\n");
 	    if (temp1[1] != 0) {
 	      edge_eig_ratio[level] = 2.*((double) temp1[0])/ ((double) temp1[1]);
 	      nodal_eig_ratio[level] = 2.*((double) temp1[2])/ ((double) temp1[3]);
@@ -1849,17 +1962,19 @@ nx = nx--; /* rst dirichlet */
         mls_poly_degree = 1;
         printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
                 mls_poly_degree);
-	    ML_Smoother_Arglist_Set(nodal_args, 3, &mls_poly_degree);
-	    ML_Smoother_Arglist_Set(edge_args, 3, &mls_poly_degree);
+	//	    ML_Smoother_Arglist_Set(nodal_args, 3, &mls_poly_degree);
+	//	    ML_Smoother_Arglist_Set(edge_args, 3, &mls_poly_degree);
+	    printf("bottom  hip\n");
 	  }
+
       if (level == N_levels-1)
          ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth,
                       Tmat_array, Tmat_trans_array, Tmatbc, edge_smoother,
-                      edge_args, nodal_smoother,nodal_args);
+                      edge_args, nodal_smoother,nodal_args, HALF_HIPTMAIR);
       else
          ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth,
                       Tmat_array, Tmat_trans_array, NULL, edge_smoother,
-		      edge_args, nodal_smoother,nodal_args);
+		      edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
 	  }
       /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
       /* In parallel, it is not a true Gauss-Seidel in that each processor */
@@ -1931,6 +2046,8 @@ nx = nx--; /* rst dirichlet */
 	  exit(1);
 	  }
   }
+  printf("after fine smoothers\n");
+
   /*******************************************
   * Set up smoothers for the coarsest level. *
   *******************************************/
@@ -1953,25 +2070,29 @@ nx = nx--; /* rst dirichlet */
     edge_eig_ratio[coarsest_level] = eig_ratio_tol;
     nodal_eig_ratio[coarsest_level] = eig_ratio_tol;
     omega = (double) ML_DEFAULT;
+    if (edge_smoother == (void *) ML_Gen_Smoother_ERF_1StepKrylov) {
+	  printf("333IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII\n");
+
+       ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[coarsest_level]));
+       mls_poly_degree = 1;
+       printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
+              mls_poly_degree);
+    }
     if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
        ML_Smoother_Arglist_Set(edge_args, 1, &(edge_eig_ratio[coarsest_level]));
        ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[coarsest_level]));
        mls_poly_degree = 1;
        printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
               mls_poly_degree);
-       ML_Smoother_Arglist_Set(edge_args, 3, &mls_poly_degree);
-       ML_Smoother_Arglist_Set(nodal_args, 3, &mls_poly_degree);
     }
     if (coarsest_level == N_levels-1)
-	    //jes
        ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_PRESMOOTHER, nsmooth,
 				Tmat_array, Tmat_trans_array, Tmatbc, 
-edge_smoother,edge_args, nodal_smoother,nodal_args);
+edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
     else
-	    //jes
        ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_PRESMOOTHER, nsmooth,
 				Tmat_array, Tmat_trans_array, NULL, 
-				edge_smoother,edge_args, nodal_smoother,nodal_args);
+				edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
   }
   else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
     ML_Gen_Smoother_GaussSeidel(ml_edges , coarsest_level, ML_BOTH, nsmooth,1.);
@@ -2062,13 +2183,13 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
         ML_Gen_Smoother_BlockHiptmair(ml_edges , coarsest_level, ML_BOTH,
 				 nsmooth,Tmat_array, Tmat_trans_array, 
 				 Tmat, Tmat_trans, Tmatbc, 
-				edge_smoother,edge_args, nodal_smoother,nodal_args);
+				edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
      else
 	     //jes
         ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth, 
 				 Tmat_array, Tmat_trans_array, Tmat, 
 				 Tmat_trans, NULL, 
-				edge_smoother,edge_args, nodal_smoother,nodal_args);
+				edge_smoother,edge_args, nodal_smoother,nodal_args,HALF_HIPTMAIR);
   }
   else if (ML_strcmp(context->coarse_solve,"SuperLU") == 0)
   {
@@ -2098,6 +2219,9 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   else if (ML_strcmp(context->krylov,"Tfqmr") == 0) {
     options[AZ_solver]   = AZ_tfqmr;
   }
+  else if (ML_strcmp(context->krylov,"Gmresr") == 0) {
+    options[AZ_solver]   = AZ_GMRESR;
+  }
   else if (ML_strcmp(context->krylov,"Gmres") == 0) {
     options[AZ_solver]   = AZ_gmres;
   }
@@ -2115,7 +2239,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   options[AZ_conv]     = AZ_rhs;
 #endif
   options[AZ_output]   = 1;
-  options[AZ_max_iter] = 100; 
+  options[AZ_max_iter] = 500; 
   options[AZ_poly_ord] = 5;
   options[AZ_kspace]   = 30;
   options[AZ_orthog]   = AZ_classic;
@@ -2423,7 +2547,7 @@ blockmat->matvec(xxx, rhs, blockmat, proc_config);
   free(Kn_bindx);
   ML_Operator_Destroy(&Tmat);
   ML_Operator_Destroy(&Tmat_trans);
-  ML_MGHierarchy_ReitzingerDestroy(N_levels-2, coarsest_level, &Tmat_array, &Tmat_trans_array);
+  ML_MGHierarchy_ReitzingerDestroy(N_levels-2, /* coarsest_level,*/ &Tmat_array, &Tmat_trans_array);
 
 
 #ifdef ML_MPI
@@ -2722,7 +2846,7 @@ void compress_matrix(double val[], int bindx[], int N_points)
 /* Generate the new grid hierarchy for 2x2 block matrices from the original */
 /* hierarchy stored in 'ml_edges'.                                          */
 
-int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array, 
+int ML_Gxn_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array, 
 				    ML_Operator **Tmat_trans_array,
 				    ML **new_ml , ML_Operator *originalM)
 {
@@ -2747,7 +2871,8 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
    original = &(ml_edges->Amat[mesh_level]);
    blockmat = &(block_ml->Amat[mesh_level]);
    ML_make_block_matrix(blockmat, original , originalM );
-   blockmat->sub_matrix1 = originalM;
+   printf("should not be here\n"); exit(1);
+   //   blockmat->M_mat = originalM;
    /* ML_Operator_Print(blockmat,"Ablock"); */
 
    /* rst: I'm not sure ... but something like the following */
@@ -2806,7 +2931,8 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
      
      /* comment these two out if you want to do rap */
      ML_make_block_matrix(blockmat, original, newM);
-     blockmat->sub_matrix1 = newM;
+     //     blockmat->M_mat = newM;
+   printf("should not be here\n"); exit(1);
      blockmat->getrow->pre_comm = ML_CommInfoOP_Create(); 
               /* ugh. The superlu interface seems to not work */
               /* with an empty communication object */
@@ -3121,3 +3247,13 @@ void aztec_block_matvec(double *x, double *y, AZ_MATRIX *Amat,
      printf("Block matrix appears to be diagonal!!\n");
   AZ_free(z);
 }
+
+/* bogus fortran functions */
+/*
+int f_iob() { printf("not here f_iob\n"); exit; }
+int f_stop() { printf("not here f_stop\n"); exit; }
+int f_powdi() { printf("not here f_powdi\n"); exit; }
+int f_cpystr() { printf("not here f_cpystr\n"); exit; }
+int f_concat() { printf("not here f_concat\n"); exit; }
+*/
+
