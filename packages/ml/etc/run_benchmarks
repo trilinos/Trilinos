@@ -1,10 +1,13 @@
 #!/bin/sh
 #
+# DESCRIPTION:
+#
 # This script is used for running a series of benchmark tests.
-# It is normally used in conjugation with the benchmarks located
+# It is normally used in conjunction with the benchmarks located
 # in mlbench. 
 # 
-# What to do:
+# HOW TO USE THIS SCRIPT:
+#
 #   1) If you don't have mlbench, try cvs checkout mlbench
 #
 #   2) Do a 'make clean' in the ml/Obj directory.
@@ -21,8 +24,12 @@
 #
 PARALLEL_CMD=`echo /usr/local/mpich/bin/mpirun -machinefile ./machines -np `
 #
-#      You may also need to edit the script etc/mpibench.pbs, which assumes
-#      that mpirun is being used.
+#      Note:
+#      a) Some systems may require that you use a batch queue system to run
+#         parallel jobs.  See (b) and item (4).
+#
+#      b) If a batch queue system is being used, you may need to edit
+#         the script etc/mpibench.pbs, which assumes that mpirun is being used.
 #
 #   4) Run run_benchmarks. If you run it without arguments, it will
 #      tell you what the defaults are. If these are not correct, add
@@ -46,15 +53,24 @@ PARALLEL_CMD=`echo /usr/local/mpich/bin/mpirun -machinefile ./machines -np `
 #           batch                Either TRUE or FALSE to indicate whether
 #                                batch system should be used.
 #
-SCRIPT_DIRECTORY=${PWD}
+#           cvs_update           Either TRUE or FALSE to indicate whether
+#                                the ml & mlbench directories should be
+#                                updated before running the benchmarks.
+#                                (Currently only works if FALSE).
+#
+#           arch                 One of CPLANT DEC HP PCLINUX SGI SMOS SOLARIS
+#                                SP2 SUN XTFLOP or TFLOP.  This is the same
+#                                variable that is used in the ML build.
+#
 BENCH_ROOT_DIRECTORY=${HOME}/mlbench
 EXECUTABLE_DIRECTORY=${PWD}/../Obj
 SCRATCH_ROOT_DIRECTORY=/tmp/mlbench_results
-PARALLEL=TRUE
-# set to true if your system uses the pbs batch queue system
-BATCH=FALSE
+PARALLEL=FALSE
+BATCH=TRUE
+CVS_UPDATE=FALSE                # DON'T CHANGE THIS FOR RIGHT NOW
+ARCH=PCLINUX
 #
-# To create new benchmark problems:
+# CREATING NEW BENCHMARKS
 # 
 #    1) Create a new subdirectory under mlbench for the new problem and
 #       cd into this directory. run_benchmarks automatically descends each 
@@ -123,17 +139,25 @@ BATCH=FALSE
 #
 # DEPENDENCIES:
 #   run_benchmarks depends on the following scripts:
+#
 #       run_one             script for running one benchmark
 #       qbench              script for submitting a job to pbs batch scheduler
 #       mpibench.pbs        script that is submitted to pbs batch scheduler
 #
+# RELATED SCRIPTS:
+#       ml_bench_cronscript     specifies the schedule & script for running
+#                               the benchmarks on a regular basis via the
+#                               cron daemon
 #
+################################################################################
 TEMP=`echo ${PWD} | sed "s,.*/ml/etc,tuvwxyz,"`
 if test `expr ${TEMP}` != 'tuvwxyz'
 then
    echo "Must execute run_benchmarks from 'ml/etc' directory!!!"
    exit
 fi
+SCRIPT_DIRECTORY=${PWD}
+PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:${PATH}
 
 #echo "Usage: run_benchmarks [bench_root_directory executable_directory scratch_root_directory parallel={TRUE,FALSE}batch={TRUE,FALSE}]
 
@@ -141,9 +165,9 @@ fi
 #
 # Take command line arguments and replace defaults
 #
-if test $# -ge 6
+if test $# -ge 8
 then
-  echo "Usage: run_benchmarks [bench_root_directory executable_directory scratch_root_directory parallel={TRUE,FALSE} batch={TRUE,FALSE}]"
+  echo "Usage: run_benchmarks [bench_root_directory executable_directory scratch_root_directory parallel={TRUE,FALSE} batch={TRUE,FALSE} cvs_update={TRUE,FALSE} arch={CPLANT DEC HP PCLINUX SGI SMOS SOLARIS SP2 SUN XTFLOP TFLOP}]"
   exit
 fi
 if test $# -eq 0
@@ -154,10 +178,11 @@ then
   echo "      SCRATCH DIRECTORY    = " $SCRATCH_ROOT_DIRECTORY
   echo "      PARALLEL             = " $PARALLEL
   echo "      BATCH                = " $BATCH
+  echo "      CVS_UPDATE           = " $CVS_UPDATE
+  echo "      ARCH                 = " $ARCH
   echo 
   echo "If defaults not wanted, overwrite using ..."
-  echo "    Usage: run_benchmarks [bench_root_directory executable_directory
-  scratch_root_directory parallel={TRUE,FALSE} batch={TRUE,FALSE}]"
+  echo "    Usage: run_benchmarks [bench_root_directory executable_directory scratch_root_directory parallel={TRUE,FALSE} batch={TRUE,FALSE} cvs_update={TRUE,FALSE} arch={CPLANT DEC HP PCLINUX SGI SMOS SOLARIS SP2 SUN XTFLOP TFLOP}]"
   echo
 fi
 if test $# -ge 1
@@ -180,6 +205,14 @@ if test $# -ge 5
 then
   BATCH=$5
 fi
+if test $# -ge 6
+then
+  CVS_UPDATE=$6
+fi
+if test $# -ge 7
+then
+  ARCH=$7
+fi
 
 export SCRIPT_DIRECTORY
 export BENCH_ROOT_DIRECTORY
@@ -190,7 +223,25 @@ export BATCH
 export PARALLEL_CMD
 export BENCH_SUBDIR
 export SCRATCH_SUBDIR
+export ARCH
 
+#
+# If necessary, update the ml & mlbench directories via cvs.
+#
+if test `expr ${CVS_UPDATE}` = 'TRUE'
+then
+  MYNAME=`whoami`
+  CVSROOT=:ext:${MYNAME}@146.246.245.133:/home/tuminaro/CVS
+  CVS_RSH=/usr/bin/ssh
+  export CVSROOT
+  export CVS_RSH
+ 
+  cd ${SCRIPT_DIRECTORY}/../..
+  cvs update ml
+  cd ${BENCH_ROOT_DIRECTORY}/..
+  cvs update mlbench
+  cd ${SCRIPT_DIRECTORY}
+fi
 #
 #  Check for the benchmark directory containing the 
 #  valid input/output data.
@@ -220,8 +271,7 @@ fi
 #
 #  Check for the work space directory where current run output 
 #  will be stored.
-#
-
+# 
 if test -d ${SCRATCH_ROOT_DIRECTORY}
 then
   touch ${SCRATCH_ROOT_DIRECTORY}
@@ -286,3 +336,4 @@ do
 
    fi
 done
+echo "Done running benchmarks."

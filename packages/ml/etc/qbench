@@ -16,7 +16,7 @@
 #
 ################################################################################
 SCRIPTNAME="mpibench.pbs"
-WALLTIME='1:00:00'
+WALLTIME='0:15:00'
 ################################################################################
 #
 rm -f nproc_file
@@ -33,7 +33,6 @@ else
 fi
 SESSARGS="-l nodes=${NNODES}:ppn=2 -l walltime=${WALLTIME} ${SCRIPT_DIRECTORY}/${SCRIPTNAME}"
 #echo "session args: ${SESSARGS}"
-echo ">>>>> qsub ${SESSARGS}"
 JOBID=`qsub ${SESSARGS}`
 touch ${JOBID}
 #echo "qsub has returned"

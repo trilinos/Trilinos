@@ -8,12 +8,9 @@
       then
 #         check if the executable exists
 #       
-         # poop=`pwd`
-         # echo "pwd is ${poop}"
           temp1=`cat exe.name`
           temp2=${temp1}ttt
           temp=`echo ${temp2} | sed "s/t//"`
-         # echo "temp = ${temp}"
       if test `expr ${temp}` != 'tt'
       then
           temp=${temp1}
@@ -37,7 +34,7 @@
              cd ${BENCH_SUBDIR}
           #fi
           ln -s $EXE $temp
-          EXE=$temp
+          EXE=./$temp
 #
 #     execute any file that starts with ml_inputfile ...
 #
