@@ -23,6 +23,9 @@
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_Time.hpp"
+#include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestCombo.hpp"
 //
 //
 #ifdef EPETRA_MPI
@@ -141,10 +144,14 @@ int main(int argc, char *argv[]) {
 	Belos::LinearProblemManager<double> My_LP( &Amat, &soln, &rhs );
 	//
 	//*******************************************************************
-	// *************Start the block Gmres iteration*************************
+	// *************Start the block CG iteration*************************
 	//*******************************************************************
 	//
-	Belos::BlockCG<double> MyBlockCG(My_LP, numrhs, tol, maxits, block, verbose);
+	Belos::StatusTestMaxIters<double> test1( maxits );
+ 	Belos::StatusTestResNorm<double> test2( tol );
+	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
+	//
+	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, block, verbose);
 	MyBlockCG.SetDebugLevel(0);
 	//
 	// **********Print out information about problem*******************
@@ -171,11 +178,7 @@ int main(int argc, char *argv[]) {
 	timer.start();
 	MyBlockCG.Solve(verbose);
 	timer.stop();
-
-	if (verbose) {
-		cout << "Final Computed CG Residual Norms" << endl;
-	}
-	MyBlockCG.PrintResids(verbose);
+	My_Test.Print(cout);
 
 	if (verbose) {
 		cout << "Solution time : "<< timer.totalElapsedTime()<<endl;

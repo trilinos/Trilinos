@@ -84,7 +84,7 @@ class IterativeSolver {
   */
   virtual int GetNumToSolve() const = 0;
 
-  //! Get the current number of the right-hand side block being solved for.
+  //! Get the index of the first vector in the current right-hand side block being solved for.
   /*! Since the block size is independent of the number of right-hand sides for
     some solvers (GMRES, CG, etc.), it is important to know which right-hand side
     block is being solved for.  That may mean you need to update the information
@@ -92,7 +92,7 @@ class IterativeSolver {
     information can keep you from querying the solver for information that rarely
     changes.
   */
-  virtual int GetRHSBlockNum() const = 0;
+  virtual int GetRHSIndex() const = 0;
 
   //! Get the solvers native residuals for the current block of linear systems. 
   /*! This is not be the same as the true residual for most solvers. Somtimes the native
@@ -110,12 +110,12 @@ class IterativeSolver {
 	<b>Using true residuals to determine convergence should be secondary
 	to using the native residuals of the iterative linear solver.</b>
   */
-  virtual MultiVec<TYPE>* GetTrueResidVecs() = 0;
+  virtual MultiVec<TYPE>* GetCurrentSoln() = 0;
 
   /*! \brief Get a constant reference to the current linear problem, 
     	which may include a current solution.
   */
-  virtual const LinearProblemManager<TYPE>& GetLinearProblem() const = 0;
+  virtual LinearProblemManager<TYPE>& GetLinearProblem() const = 0;
 
   /*! \brief Get information whether the solution contained in the linear problem
     is current.  

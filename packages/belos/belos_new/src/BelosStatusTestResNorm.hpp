@@ -35,6 +35,7 @@
 */
 
 #include "BelosStatusTest.hpp"
+#include "BelosLinearProblemManager.hpp"
 #include "BelosMultiVec.hpp"
 #include <vector>
 
@@ -46,15 +47,15 @@
   one of a family of residual tests for use as a status/convergence test for Belos.  
   The form of the test is
    \f[
-   \frac{\|r\|}{\sigma} \le \tau
+   \frac{\|r_i\|}{\sigma_i} \le \tau
    \f]
    where 
    <ul>
-   <li> \f$r\f$ is the residual vector, implicitly or explicitly computed (determined by enum ResType),
-   <li> \f$\|r\|\f$ is the residual norm determined by the enum NormType  (1-norm, 2-norm or inf-norm), 
-   <li> \f$\sigma\f$ is the scale factor that can be passed in as a precomputed double precision number, 
+   <li> \f$r_i\f$ is the i-th residual vector, implicitly or explicitly computed (determined by enum ResType),
+   <li> \f$\|r_i\|\f$ is the i-th residual norm determined by the enum NormType  (1-norm, 2-norm or inf-norm), 
+   <li> \f$\sigma_i\f$ is the i-th scale factor that can be passed in as a precomputed number of the templated type, 
    or can be selected from by the enum ScaleType (norm of RHS, norm of initial residual).
-   <li> \f$\tau\f$ is the tolerance that is passed in as a double precision number to the constructor.  
+   <li> \f$\tau\f$ is the tolerance that is passed in as a number of the templated type to the constructor.  
    The value of \f$\tau\f$ can be reset using the ResetTolerance() method.
    </ul>
 
@@ -172,7 +173,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     if ResidualVectorRequired() returns true, so this is an extra cost for
     these two iterative methods.
   */
-  bool ResidualVectorRequired() const { return(_resvecrequired); };
+  bool ResidualVectorRequired() const { return(resvecrequired_); };
 
   //@}
 
@@ -188,13 +189,13 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   TYPE GetTolerance() const {return(tolerance_);};
   
   //! Returns the test value, \f$ \frac{\|r\|}{\sigma} \f$, computed in most recent call to CheckStatus.
-  TYPE* GetTestValue() const {return(testvalue_);};
+  TYPE* GetTestValue() const {return(testvector_);};
 
   //! Returns the residual norm value, \f$ \|r\| \f$, computed in most recent call to CheckStatus.
-  TYPE* GetResNormValue() const {return(resvalue_);};
+  TYPE* GetResNormValue() const {return(resvector_);};
 
   //! Returns the scaled norm value, \f$ \sigma \f$.
-  TYPE* GetScaledNormValue() const {return(scalevalue_);};
+  TYPE* GetScaledNormValue() const {return(scalevector_);};
 
   //@}
 
@@ -217,25 +218,31 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   ScaleType scaletype_;
   
   //! Type of norm to use on the scaling (OneNorm, TwoNorm, or InfNorm)
-  NormType scalenormtype_
+  NormType scalenormtype_;
 
-  //! Scale value.
-  TYPE* scalevalue_;
+  //! Scaling value.
+  TYPE scalevalue_;
+
+  //! Scaling vector.
+  TYPE* scalevector_;
   
-  //! Residual norm value.
-  TYPE* resvalue_;
+  //! Residual norm vector.
+  TYPE* resvector_;
 
-  //! Test value = resvalue_ / scalevalue_
-  TYPE* testvalue_;
+  //! Test vector = resvector_ / scalevector_
+  TYPE* testvector_;
   
   //! Status
   StatusType status_;
   
-  //! The current right-hand side block being solved for.
-  int rhs_block_;
+  //! The index of the right-hand side vector at the beginning of the block being solved for.
+  int cur_rhs_num_;
 
   //! The current size of the block being solved for.
   int cur_blksz_;
+
+  //! The total number of right-hand sides being solved for.
+  int numrhs_;
 
   //! Is residual vector required?
   bool resvecrequired_;
@@ -258,25 +265,28 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   StatusTestResNorm<TYPE>::StatusTestResNorm( TYPE Tolerance )
     : tolerance_(Tolerance),
       restype_(Implicit),
-      resnormtype_(TwoNorm),
+      resnormtype_(TwoNorm),	
       scaletype_(NormOfInitRes),
-      resvalue_(0),
-      init_resvalue_(0),
-      testvalue_(0),
+      scalenormtype_(TwoNorm),
+      scalevalue_(1.0),
+      scalevector_(0),
+      resvector_(0),
+      testvector_(0),
       status_(Unchecked),
-      rhs_block_(0),
+      cur_rhs_num_(0),
       cur_blksz_(0),
+      numrhs_(0),
       resvecrequired_(false),
       firstcallCheckStatus_(true),
       firstcallDefineResForm_(true),
       firstcallDefineScaleForm_(true)
   {
-    // This constructor will compute the residual ||r||/||r0|| <= tolerance using the 2-norm of
+    // This constructor will compute the residual ||r_i||/||r0_i|| <= tolerance using the 2-norm of
     // the implicit residual vector.
   }
 
   template <class TYPE>
-  int StatusTestResNorm<TYPE>::DefineResForm( ResType TypeOfResidual, NormType TypeOfNorm)
+  int StatusTestResNorm<TYPE>::DefineResForm( ResType TypeOfResidual, NormType TypeOfNorm )
   {    
     assert( firstcallDefineResNorm_ );
     firstcallDefineResForm_ = false;
@@ -309,75 +319,126 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   template <class TYPE>
   StatusType StatusTestResNorm<TYPE>::CheckStatus( IterativeSolver<TYPE>* iSolver )
   {
-    // This section computes the norm of the residual vector
-    if (restype_==Implicit) {
-      
-    }
-    else if (restype_==Explicit) {
-      curresvecexplicit_ = true;
-      if (localresvector_==0) localresvector_ = new Epetra_Vector(crv->Map());
-      // Compute explicit residual
-      operator_.Apply(lhs_, *localresvector_);
-      localresvector_->Update(1.0, rhs_, -1.0); // localresvector_ = rhs_ - operator_* lhs_
-    }
-    resvalue_ = ComputeNorm(*localresvector_, resnormtype_);
-  }
-  else {
-    curresvecexplicit_ = false;
-    if (resweights_!=0) { // Check if we should scale the vector
-      if (localresvector_==0) localresvector_ = new Epetra_Vector(crv->Map());
-      // localresvector_ = resweights_ * localresvector_
-      localresvector_->Multiply(1.0, *resweights_, *crv, 0.0);
-      resvalue_ = ComputeNorm(*localresvector_, resnormtype_);
-    }
-    else
-      resvalue_ = ComputeNorm(*crv, resnormtype_);
-  }
-  // Compute scaling term (done once)
+  ReturnType ret;
+  // Compute scaling term (done once for each block that's being solved)
   if (firstcallCheckStatus_) {
-    if (scaletype_==NormOfRHS) {
-      if (scaleweights_!=0) { // Check if we should scale the vector
-        if (localresvector_==0) localresvector_ = new Epetra_Vector(rhs_.Map());
-        // localresvector = scaleweights_ * rhs_
-        localresvector_->Multiply(1.0, *scaleweights_, rhs_, 0.0);
-        scalevalue_ = ComputeNorm(*localresvector_, resnormtype_);
-      }
-      else {
-        scalevalue_ = ComputeNorm(rhs_, scalenormtype_);
-      }
+    //
+    // Get some current solver information.
+    //
+    firstcallCheckStatus_ = false;
+    cur_rhs_num_ = iSolver->GetRHSIndex();
+    cur_blksz_ = iSolver->GetNumToSolve();
+    //
+    if (scaletype_== NormOfRHS) {
+      LinearProblemManager<TYPE>& lp = iSolver->GetLinearProblem();
+      MultiVec<TYPE>* rhs = lp.GetRHS();
+      numrhs_ = rhs->GetNumberVecs();
+      scalevector_ = new TYPE[ numrhs_ ];
+      resvector_ = new TYPE[ numrhs_ + cur_blksz_ ];
+      testvector_ = new TYPE[ numrhs_ ];
+      rhs->MvNorm( scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
-      if (restype_==Implicit && scalenormtype_==TwoNorm && CurrentResNormEst!=-1.0)
-        scalevalue_ = CurrentResNormEst;
-      else {
-        if (scaleweights_!=0) { // Check if we should scale the vector
-          if (localresvector_==0) localresvector_ = new Epetra_Vector(crv->Map());
-          // weightedrhs = scaleweights_ * initial residual
-          localresvector_->Multiply(1.0, *scaleweights_, *crv, 0.0);
-          scalevalue_ = ComputeNorm(*localresvector_, resnormtype_);
-        }
-        else {
-          scalevalue_ = ComputeNorm(rhs_, scalenormtype_);
-        }
-      }
+      LinearProblemManager<TYPE>& lp = iSolver->GetLinearProblem();
+      MultiVec<TYPE>* init_res = lp.GetInitResVec();
+      numrhs_ = init_res->GetNumberVecs();
+      scalevector_ = new TYPE[ numrhs_ + cur_blksz_ ];
+      resvector_ = new TYPE[ numrhs_ + cur_blksz_ ];
+      testvector_ = new TYPE[ numrhs_ ];
+      init_res->MvNorm( scalevector_, scalenormtype_ );
     }
     if (scalevalue_==0.0) {
       status_ = Failed;
       return(status_);
     }
   }
-  
-  testvalue_ = resvalue_/scalevalue_;
-  if (testvalue_>tolerance_)
-    status_ = Unconverged;
-  else if (testvalue_<=tolerance_)
-    status_ = Converged;
-  else
-  status_ = NaN;
-  
-  firstcallCheckStatus_ = false;
+  //
+  // This section computes the norm of the residual vector
+  //
+  if ( cur_rhs_num_ != iSolver->GetRHSIndex() || cur_blksz_ != iSolver->GetNumToSolve() ) {
+    //
+    // We have moved on to the next rhs block
+    //
+    cur_rhs_num_ = iSolver->GetRHSIndex();
+    cur_blksz_ = iSolver->GetNumToSolve();
+  }
+  if (restype_==Implicit) {
+    //
+    // Get the native residual norms from the solver for this block of right-hand sides.
+    //
+    ret = iSolver->GetNativeResidNorms( resvector_ + cur_rhs_num_, resnormtype_ );     
+    if ( ret != Ok ) { 
+      status_ = Failed;
+      return(status_);
+    }
+  } 
+  else if (restype_==Explicit) {
+    //
+    // Request the true residual for this block of right-hand sides.
+    // See if the linear problem manager has been updated before
+    // asking for the true residual from the solver.
+    // (NOTE:  This residual may be preconditioned)
+    //
+    MultiVec<TYPE>* cur_res;
+    if ( iSolver->IsSolutionCurrent() ) {
+      LinearProblemManager<TYPE>& lp = iSolver->GetLinearProblem();
+      cur_res = lp.GetCurrResVec();
+      ret = cur_res->MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
+      if ( ret != Ok ) {
+	status_ = Failed;
+	return(status_);
+      }
+    }
+    else {
+      MultiVec<TYPE>* cur_soln = iSolver->GetCurrentSoln();
+      cur_res = cur_soln->Clone( cur_blksz_ );
+      LinearProblemManager<TYPE>& lp = iSolver->GetLinearProblem();
+      ret = lp.ComputeResVec( cur_res, cur_soln, lp.GetRHS() );
+      ret = cur_res->MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
+      if ( ret != Ok ) {
+	status_ = Failed;
+	return(status_);
+      }
+      delete cur_res;
+    }
+  }
+  //
+  // Compute the new linear system residuals for testing.
+  // (if any of them don't meet the tolerance or are NaN, then we exit with that status)
+  //
+  if ( scalevector_ ) {
+    for (int i = cur_rhs_num_; i < (cur_rhs_num_ + cur_blksz_); i++) {
+      testvector_[ i ] = resvector_[ i ] / scalevector_[ i ] / scalevalue_;
+      if (testvector_[ i ] > tolerance_) {
+	status_ = Unconverged;
+	return(status_);
+      }
+      else if (testvector_[ i ] < tolerance_)
+	status_ = Converged;
+      else {
+	status_ = NaN;            
+	return(status_);
+      }
+    } 
+  }
+  else {
+    for (int i = cur_rhs_num_; i < (cur_rhs_num_ + cur_blksz_); i++) {
+      testvector_[ i ] = resvector_[ i ] / scalevalue_;
+      if (testvector_[ i ] > tolerance_) {
+	status_ = Unconverged;
+	return(status_);	
+      }
+      else if (testvector_[ i ] < tolerance_)
+	status_ = Converged;
+      else {
+	status_ = NaN;            
+	return(status_);
+      }
+    } 
+  }	
   return status_;
 }
+
 
 template <class TYPE>
 ostream& StatusTestResNorm<TYPE>::Print(ostream& os, int indent) const
@@ -386,17 +447,15 @@ ostream& StatusTestResNorm<TYPE>::Print(ostream& os, int indent) const
     os << ' ';
   PrintStatus(os, status_);
   os << "(";
-  if (resweights_!=0) os << "Weighted ";
   os << ((resnormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
-  os << ((curresvecexplicit_) ? " Exp" : " Imp");
+  os << ((restype_==Explicit) ? " Exp" : " Imp");
   os << " Res Vec) ";
   if (scaletype_!=None)
-    os << "/";
+    os << "/ ";
   if (scaletype_==UserProvided)
     os << " (User Scale)";
   else {
     os << "(";
-    if (scaleweights_!=0) os << "Weighted ";
     os << ((scalenormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
     if (scaletype_==NormOfInitRes)
       os << " Res0";
@@ -405,13 +464,17 @@ ostream& StatusTestResNorm<TYPE>::Print(ostream& os, int indent) const
     os << ")";
   }
   if (status_==Unchecked)
-    os << " Unchecked << ";
+    os << " Unchecked ( tol = " << tolerance_ << " ) "<<endl;
   else {
-    os << " = " << testvalue_;
-    os << ((testvalue_<tolerance_) ? " < " : (testvalue_==tolerance_) ? " = " : (testvalue_>tolerance_) ? "$  }
-  os << tolerance_;
+    os << endl;
+    for ( int i=0; i<numrhs_; i++ ) {
+      for (int j = 0; j < indent + 13; j ++)
+    	os << ' ';
+      os << "residual [ " << i << " ] = " << testvector_[ i ];
+      os << ((testvector_[i]<tolerance_) ? " < " : (testvector_[i]==tolerance_) ? " = " : (testvector_[i]>tolerance_) ? " > " : " "  ) << tolerance_ << endl;
+    }
+  }
   os << endl;
-
   return os;
 }
 

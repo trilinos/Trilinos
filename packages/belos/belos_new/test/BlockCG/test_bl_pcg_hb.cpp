@@ -47,6 +47,9 @@
 #include "Trilinos_Util.h"
 #include "Ifpack_CrsIct.h"
 #include "Epetra_CrsMatrix.h"
+#include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestCombo.hpp"
 //
 //
 #ifdef EPETRA_MPI
@@ -231,7 +234,11 @@ int main(int argc, char *argv[]) {
 	// *************Start the block CG iteration*************************
 	//*******************************************************************
 	//
-	Belos::BlockCG<double> MyBlockCG(My_LP, numrhs, tol, maxits, block, verbose);
+        Belos::StatusTestMaxIters<double> test1( maxits );
+        Belos::StatusTestResNorm<double> test2( tol );
+        Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
+
+	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, block, verbose);
 	MyBlockCG.SetDebugLevel(0);
 
 	if (verbose) {
@@ -243,12 +250,7 @@ int main(int argc, char *argv[]) {
 			<< endl << endl;
 	}
 	MyBlockCG.Solve(verbose);
-
-	if (verbose) {
-		cout << "Final Computed CG Residual Norms" << endl;
-	}
-	MyBlockCG.PrintResids(verbose);
-
+	My_Test.Print(cout);
 	
 // Release all objects  
 

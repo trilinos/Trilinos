@@ -44,6 +44,7 @@
 #include "BelosLinearProblemManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestMaxRestarts.hpp"
+#include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosPetraInterface.hpp"
 #include "BelosBlockGmres.hpp"
@@ -204,7 +205,7 @@ int main(int argc, char *argv[]) {
 	int numrestarts = 20; // number of restarts allowed 
     	int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
 	//int maxits = 15;
-    	double tol = 5.0e-9;  // relative residual tolerance
+    	double tol = 1.0e-6;  // relative residual tolerance
 	//
 	//*****Construct solution vector and random right-hand-sides *****
 	//
@@ -215,15 +216,15 @@ int main(int argc, char *argv[]) {
 	My_LP.SetLeftPrec( &EpetraOpPrec );
 	Belos::StatusTestMaxIters<double> test1( maxits );
 	Belos::StatusTestMaxRestarts<double> test2( numrestarts );
-	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
-	  
+	Belos::StatusTestCombo<double> test3( Belos::StatusTestCombo<double>::OR, test1, test2 );
+	Belos::StatusTestResNorm<double> test4( tol );
+	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test3, test4 );
 	//
 	//*******************************************************************
 	// *************Start the block Gmres iteration*************************
 	//*******************************************************************
 	//
-	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, numrhs, tol, maxits, block,verbose);
-	MyBlockGmres.SetRestart(numrestarts);
+	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, maxits, block, verbose);
  	MyBlockGmres.SetDebugLevel(0);
 	//
 	// **********Print out information about problem*******************
@@ -249,13 +250,7 @@ int main(int argc, char *argv[]) {
 			<< endl << endl;
 	}
 	MyBlockGmres.Solve(verbose);
-	My_Test.CheckStatus( &MyBlockGmres );
 	My_Test.Print(cout);
-
-	if (verbose) {
-		cout << "Final Computed Gmres Residual Norms" << endl;
-	}
-	MyBlockGmres.PrintResids(verbose);
 
 	// Release all objects  
 	if (ilukGraph) delete ilukGraph;

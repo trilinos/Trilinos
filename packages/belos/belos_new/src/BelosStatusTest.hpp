@@ -111,7 +111,7 @@ class StatusTest {
       os << "**";
       break;
     }
-    os << setiosflags(ios::right) << setfill(' ');
+    os << setiosflags(ios::left) << setfill(' ');
     return;
   };
   //@}

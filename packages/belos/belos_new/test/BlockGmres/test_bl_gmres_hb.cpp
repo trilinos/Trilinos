@@ -50,7 +50,7 @@
 #include "Teuchos_Time.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestMaxRestarts.hpp"
-//#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
 //
 //
@@ -176,12 +176,12 @@ int main(int argc, char *argv[]) {
 	//
 	Belos::StatusTestMaxIters<double> test1( maxits );
 	Belos::StatusTestMaxRestarts<double> test2( numrestarts );
-	//Belos::StatusTestResNorm<double> test3( 1e-6 );
-	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
-	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, numrhs, tol, maxits, block, verbose);
+	Belos::StatusTestCombo<double> test3( Belos::StatusTestCombo<double>::OR, test1, test2 );
+	Belos::StatusTestResNorm<double> test4( tol );
+	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test3, test4 );
+	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, maxits, block, verbose);
 
 	MyBlockGmres.SetDebugLevel(0);
-	//MyBlockGmres.SetRestart(numrestarts);
 	//
 	// **********Print out information about problem*******************
 	//
@@ -209,13 +209,8 @@ int main(int argc, char *argv[]) {
 	timer.start();
 	MyBlockGmres.Solve(verbose);
 	timer.stop();
-	My_Test.CheckStatus(&MyBlockGmres);
 	My_Test.Print(cout);
 
-	if (verbose) {
-		cout << "Final Computed Gmres Residual Norms" << endl;
-	}
-	MyBlockGmres.PrintResids(verbose);
 	if (verbose) {
 		cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
 	}

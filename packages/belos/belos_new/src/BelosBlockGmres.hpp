@@ -83,8 +83,6 @@ namespace Belos {
     //! %Belos::BlockGmres constructor.
     BlockGmres(LinearProblemManager<TYPE>& lp, 
 	       StatusTest<TYPE>& stest,
-	       const int numrhs, 
-	       const TYPE tol=1.0e-6, 
 	       const int length=25, 
 	       const int block=1, 
 	       bool vb = false);
@@ -118,7 +116,7 @@ namespace Belos {
       information can keep you from querying the solver for information that rarely
       changes.
     */
-    int GetRHSBlockNum() const { return( _rhs_iter ); };
+    int GetRHSIndex() const { return( _rhs_iter*_blocksize ); };
     
     //! Get the solvers native residuals for the current block of linear systems.
     /*! For GMRES this is not the same as the actual residual of the linear system.
@@ -133,12 +131,12 @@ namespace Belos {
       so a convergence test using these residuals should be secondary to using the native 
       residuals. </b>
     */
-    MultiVec<TYPE>* GetTrueResidVecs();
+    MultiVec<TYPE>* GetCurrentSoln();
 
     //! Get a constant reference to the current linear problem.  
     /*! This may include a current solution, if the solver has recently restarted or completed.
      */
-    const LinearProblemManager<TYPE>& GetLinearProblem() const { return( _lp ); }
+    LinearProblemManager<TYPE>& GetLinearProblem() const { return( _lp ); }
 
     /*! \brief Get information whether the solution contained in the linear problem
       is current.  In the case of GMRES, this solution is only updated during a restart
@@ -157,12 +155,6 @@ namespace Belos {
     void Solve(bool);
     //@}
     
-    //@{ \name Set methods.
-    
-    //! This method sets the number of allowable restarts.
-    void SetRestart( const int restart ) { _restart = (restart > 0 ? restart : 0 ); } 
-    //@}
-    
     //@{ \name Output methods.
     
     /*! \brief This method allows the user to set the solver's level of visual output
@@ -170,9 +162,6 @@ namespace Belos {
     */
     void SetDebugLevel( const int debuglevel ) { _debuglevel = debuglevel; }
     
-    //! This method requests that the solver print out its current residuals.
-    void PrintResids(bool) const;
-
     //@}
 
   private:
@@ -227,12 +216,10 @@ namespace Belos {
     //! Dense vector for holding the right-hand side of the least squares problem.
     Teuchos::SerialDenseMatrix<int,TYPE> _z;
 
-    const int _length, _blocksize, _numrhs;
-    const TYPE _residual_tolerance;
-    TYPE *_residerrors; 
+    const int _length, _blocksize;
     int _num_to_solve;
     int _rhs_iter, _restartiter, _totaliter, _iter;
-    int _debuglevel, _restart;
+    int _debuglevel;
     TYPE _blkerror, _dep_tol, _blk_tol, _sing_tol;
   };
   //
@@ -243,8 +230,6 @@ namespace Belos {
   template <class TYPE>
   BlockGmres<TYPE>::BlockGmres(LinearProblemManager<TYPE>& lp, 
 			       StatusTest<TYPE>& stest,
-			       const int numrhs, 
-			       const TYPE tol, 
 			       const int length, 
 			       const int block, 
 			       bool vb) : 
@@ -257,22 +242,16 @@ namespace Belos {
     _cur_block_sol(0),
     _length(length), 
     _blocksize(block), 
-    _numrhs(numrhs), 
-    _residual_tolerance(tol), 
-    _residerrors(0), 
     _num_to_solve(block),
     _rhs_iter(0), 
     _restartiter(0), 
     _totaliter(0),
-    _iter(0),
-    _debuglevel(0), 
-    _restart(0),
-    _blkerror(1.0)
+    _iter(0)
   {
     //
     // Initial check that input information is valid.
     //
-    assert(_length > 0); assert(_blocksize > 0); assert(_numrhs > 0);
+    assert(_length > 0); assert(_blocksize > 0);
     //
     // Make room for the Arnoldi vectors and F.
     //
@@ -282,7 +261,6 @@ namespace Belos {
     //
     _hessmatrix.shape((_length+1)*_blocksize, _length*_blocksize);
     _z.shape((_length+1)*_blocksize, _blocksize); 
-    _residerrors = new TYPE[_numrhs + _blocksize]; assert(_residerrors!=NULL);
     //
     // Set up the block orthogonality tolerances
     //
@@ -293,7 +271,6 @@ namespace Belos {
   BlockGmres<TYPE>::~BlockGmres() 
   {
     if (_basisvecs) delete _basisvecs;
-    if (_residerrors) delete [] _residerrors;
   }
   
   template <class TYPE>
@@ -314,11 +291,21 @@ namespace Belos {
   {
     if (normvec) {
       if (norm_type == TwoNorm) {
-	Teuchos::BLAS<int,TYPE> blas;
-	for (int j=0; j<_blocksize; j++) {
-	  normvec[j] = blas.NRM2( _blocksize, &_z(_iter*_blocksize, j ), 1);
+	//
+        // If this is the first iteration for a new right-hand side return the
+ 	// norm of the residual for the current block rhs and solution.
+	//
+ 	if (_totaliter == 0) {
+	  MultiVec<TYPE>* temp_res = _cur_block_rhs->Clone(_blocksize); assert(temp_res!=NULL);
+	  _lp.ComputeResVec( temp_res, _cur_block_sol, _cur_block_rhs);
+	  return ( temp_res->MvNorm( normvec, TwoNorm ) );
 	}
-	return Ok;
+	else {
+	  Teuchos::BLAS<int,TYPE> blas;
+	  for (int j=0; j<_blocksize; j++)
+	    normvec[j] = blas.NRM2( _blocksize, &_z(_iter*_blocksize, j ), 1);
+	  return Ok;
+        }
       } else
 	return Undefined;
     }
@@ -326,7 +313,7 @@ namespace Belos {
   }
   
   template <class TYPE>
-  MultiVec<TYPE>* BlockGmres<TYPE>::GetTrueResidVecs()
+  MultiVec<TYPE>* BlockGmres<TYPE>::GetCurrentSoln()
   {    
     const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
     int i, m = _iter*_blocksize;
@@ -350,13 +337,11 @@ namespace Belos {
 	       _hessmatrix.values(), _hessmatrix.stride(), y.values(), y.stride() );
     
     cur_sol_copy->MvTimesMatAddMv( one, *Vjp1, y, one );
-    _lp.ComputeResVec( RV, cur_sol_copy, _cur_block_rhs );
     
     if (Vjp1) delete Vjp1;
-    if (cur_sol_copy) delete cur_sol_copy;
     if (index) delete [] index;
 
-    return RV;
+    return cur_sol_copy;
   }
   
 
@@ -441,34 +426,18 @@ namespace Belos {
     }
   }    
   
-  template <class TYPE>   
-  void BlockGmres<TYPE>::PrintResids(bool vb) const 
-  {
-    //
-    int i;
-    //
-    if (vb) {
-      cout << "--------------------------------------" << endl;
-      for (i=0; i<_numrhs; i++){
-	cout << "_residerrors[" << i << "] = " << _residerrors[i] << endl;
-      }
-      cout << endl;
-    }
-    //
-  } // end PrintResids
-  
-  
   template <class TYPE>
   void BlockGmres<TYPE>::Solve (bool vb) 
   {
     int i,j, maxidx;
+    int numrhs = _rhs->GetNumberVecs();
     const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
     const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
     TYPE sigma, mu, vscale, maxelem;
     MultiVec<TYPE> *U_vec=0, *F_vec=0;
     TYPE *beta = new TYPE[(_length+1)*_blocksize];
     int *index = new int[ (_length+1)*_blocksize ]; assert(index!=NULL);
-    bool dep_flg = false, exit_flg = false, brkflg = false;
+    bool dep_flg = false, exit_flg = false;
     Teuchos::LAPACK<int, TYPE> lapack;
     Teuchos::BLAS<int, TYPE> blas;
     //	
@@ -476,7 +445,7 @@ namespace Belos {
     // max_rhs_iters is the number of passes through the
     // solver required to solve for all right-hand sides	
     //
-    int max_rhs_iters = (_numrhs+_blocksize-1) / _blocksize;
+    int max_rhs_iters = (numrhs+_blocksize-1) / _blocksize;
     for (i=0; i < (_length+1)*_blocksize; i++) { index[i] = i; }
     //
     //  Start executable statements. 
@@ -487,12 +456,11 @@ namespace Belos {
 	cout << "_rhs_iter: " << _rhs_iter <<  endl
 	     <<  endl;
       }
-      brkflg = false;
       //
       // Compute the the remaining number of right-hand sides to be solved.
       //
-      if ( _numrhs - (_rhs_iter * _blocksize) < _blocksize ) {
-	_num_to_solve = _numrhs - (_rhs_iter * _blocksize);
+      if ( numrhs - (_rhs_iter * _blocksize) < _blocksize ) {
+	_num_to_solve = numrhs - (_rhs_iter * _blocksize);
       }
       //
       // Reset the iteration counter for this block of right-hand sides.
@@ -510,15 +478,8 @@ namespace Belos {
 	_cur_block_rhs = _rhs->CloneView( index+(_rhs_iter*_blocksize), _blocksize);
       }
       //
-      _blkerror = one;
-      TYPE init_norm = one;
-      //
-      for (_restartiter=0; _restartiter < _restart+1 && _blkerror > _residual_tolerance ; _restartiter++) {
+      for (_restartiter=0; _stest.CheckStatus(this) == Unconverged; _restartiter++) {
 	//
-	if (brkflg){
-	  break;
-	}
-	//		
 	// Associate the initial block of _basisvecs with U_vec.
 	//
 	U_vec = _basisvecs->CloneView(index, _blocksize);
@@ -549,32 +510,22 @@ namespace Belos {
 	  break;
 	}
 	//
-	TYPE norm_G10 = G10.normFrobenius();  
-	if (_restartiter == 0) {
-	  init_norm = norm_G10;
-	}
-	//
-	// The block error used here is an average residual error over
-	// the current block. This is set to one to start with since all 
-	// initial residuals have norm one
-	//
-	_blkerror = one; 	
-	//
-	for (_iter=0; _iter<_length && _blkerror > _residual_tolerance; _iter++, ++_totaliter) {
+	for (_iter=0; _iter<_length && _stest.CheckStatus(this) == Unconverged; _iter++, ++_totaliter) {
 	  //
-	  // Compute a length _length block Arnoldi Reduction
-	  //    (one step at a time)
+	  // Print out the status test
+	  //
+	  if (_debuglevel>0 && vb) {
+		_stest.Print(cout);
+	  }
+	  //
+	  // Compute a length _length block Arnoldi Reduction (one step at a time),
+	  // the exit_flg indicates if we cannot extend the Arnoldi Reduction.
+          // If exit_flg is true, then we need to leave this loop and compute the latest solution.
 	  //
 	  //dep_flg = true;
-	  exit_flg = false;
 	  exit_flg = BlockReduction(dep_flg, vb);
-	  //
-	  if (exit_flg){
-	    brkflg = true; // set flag so we can also break out of the restart loop
+	  if (exit_flg){ 
 	    break;
-	  }
-	  if (_stest.CheckStatus(this) != Converged) {
-	    //_stest.Print(cout);
 	  }
 	  //
 	  // QR factorization of Least-Squares system with Householder reflectors
@@ -625,34 +576,6 @@ namespace Belos {
 	    }
 	  }
 	  //
-	  // Compute the residuals and the block error
-	  //
-	  _blkerror = zero;
-	  for (j=0; j<_blocksize; j++ ) {
-	    _residerrors[_rhs_iter*_blocksize+j] = blas.NRM2( _blocksize, &_z((_iter+1)*_blocksize, j ), 1);
-	    //
-	    if (norm_G10) _residerrors[_rhs_iter*_blocksize+j] /= init_norm; 
-	    //
-	    _blkerror += _residerrors[_rhs_iter*_blocksize+j];
-	  }
-	  _blkerror = _blkerror / _blocksize;
-	  //
-	  // Print out residuals
-	  //
-	  if (_debuglevel>0 && vb) {
-	    cout << " " << endl;
-	    cout << "------------------------------------------------------------------------" << endl;
-	    cout << "Computed GMRES Residual norms -- " << endl;
-	    cout << "  RHS pass# " << _rhs_iter+1 
-		 << "  Restart iteration# " << _restartiter 
-		 << "  Iteration# " << _iter << endl;
-	    for (j=0; j<_blocksize; j++) {
-	      cout << "  _residerrors[" << _rhs_iter*_blocksize+j << "] = " << 
-		_residerrors[_rhs_iter*_blocksize+j] << endl;
-	    }
-	    cout << " " << endl;
-	  }
-	  //
 	} // end for (_iter=0;...
 	//
 	// Update the solutions by solving the triangular system to get the Krylov weights.
@@ -675,7 +598,8 @@ namespace Belos {
 	//
 	// Print out solver status
 	// 
-	if (vb) {
+	if (_debuglevel>0 && vb) {
+	  _stest.Print(cout);
 	  cout << "  RHS pass# " << _rhs_iter+1 
 	       << "  Restart iteration# " << _restartiter 
 	       << "  Iteration# " << _iter << endl;
@@ -684,17 +608,12 @@ namespace Belos {
 	    cout << "  Reason: Failed to compute new block of orthonormal basis vectors" << endl;
 	    cout << "  ***Solution from previous step will be returned***"<< endl<< endl;
 	  }
-	  if (_restartiter == _restart && _blkerror > _residual_tolerance) {
-	    cout << " Exiting Block GMRES --- " << endl;
-	    cout << "  Reason: maximum number of iterations has been reached"
-		 << endl << endl;
-	  }
-	  if (_blkerror < _residual_tolerance) {
-	    cout << " Exiting Block GMRES --- " << endl;
-	    cout << "  Reason: Block GMRES has converged" << endl << endl;
-	  }
 	} 
 	if (U_vec) {delete U_vec; U_vec = 0;}
+	//	
+	// Exit out of the restart loop if the factorization failed or the solver doesn't need to continue.
+	//
+	if (exit_flg || _stest.GetStatus() != Unconverged ) break;
 	//
       } // end for (_restartiter=0;...
       //
