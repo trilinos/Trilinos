@@ -9,7 +9,7 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
-if BUILD_SLUDIST
+if HAVE_AMESOS_SLUD
 SLUDIST_H = \
         $(srcdir)/SuperludistOO.h
 SLUDIST = \
@@ -54,9 +54,14 @@ COMP_H = \
 COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 
+#
+#  I turned off the addition of external/slu to the include path 
+#  so that I could get SLU dist to work.  Ken Feb 11, 2003
+#
 #Specify locations of include files within Trilinos, but outside Amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-              -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
+# AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+#               -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
 # ------------------------------------------------------------------------
 # Amesos library specifications
 # ------------------------------------------------------------------------

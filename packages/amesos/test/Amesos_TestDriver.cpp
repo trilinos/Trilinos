@@ -1,13 +1,13 @@
 //
-//  SSTest 
+//  Amesos_TestDriver 
 //
 //  usage: 
-//     Solver InputMatrix MatrixType Special Numsolves Transpose MaxError MaxResid 
+//     Amesos_TestDriver.exe Solver InputMatrix MatrixType Special Numsolves Transpose MaxError MaxResid 
 //     Where solver is:  SuperLU, SuperLUdist, UMFPACK, KUNDERT, SPOOLES, SPOOLESERIAL or AZTEC 
 //     special is, at present, only used in SuperLU, where 0 means dgssv
 //     and 1 means dgssvx 
 //  examples:
-//     SSTest.exe SPOOLES ImpcolA.rua 0 1 1 0 1e-10 1e-10 
+//     Amesos_TestDriver.exe SPOOLES ImpcolA.rua 0 1 1 0 1e-10 1e-10 
 //     source SmallTest.csh
 //
 //  output:  
@@ -17,6 +17,8 @@
 //  exits with 0 if test completed (does not imply that the test passed)
 //  exits with -1 if command line options or file permissions are wrong 
 //
+#include "Amesos_ConfigDefs.h"
+
   int SPOOLESmsglvl ;
   int SPOOLES_front_matrix ;
   int SPOOLES_pivoting ;
@@ -25,42 +27,48 @@
   int SPOOLES_lookahead ; 
   int SuperLU_permc ; 
 
+// #undef HAVE_TIME_H
+// #undef HAVE_SYSUTSNAME_H
 
+#ifdef HAVE_TIME_H
 #include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#if (defined(SOLARIS) || defined(TFLOP) ) 
-struct utsname { 
-char sysname [ 257 ] ; 
-char nodename [ 257 ] ; 
-char release [ 257 ] ; 
-char version [ 257 ] ; 
-char machine [ 257 ] ; 
-} ; 
-extern "C" {
-extern int uname ( struct utsname * ) ; 
-}
-#else
+#endif
+#ifdef HAVE_SYS_UTSNAME_H
 #include <sys/utsname.h>
 #endif
-#include <string.h>
-#include <assert.h>
+
+
+//
+//  There is undoubtedly a cleaner way to do this.  But, I hope that this 
+//  will allow this test code to port.
+//
+#ifdef HAVE_IOMANIP
+#include <iomanip>
+#define USE_IOMANP
+#elif defined HAVE_IOMANIP_H
+#include <iomanip.h>
+#define USE_IOMANIP
+#endif
+#ifndef USE_IOMANIP
+#define setw(a) ("")
+#define setprecision(a) ("")
+#endif
+
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_Comm.h"
-#include "SparseDirectTimingVars.h"
-#include "TestSolver.h"
 
-#ifdef SOLARIS
-#include <unistd.h>
-#endif
+#include "Epetra_Comm.h"
+
+#include "SparseDirectTimingVars.h"
+#include "Amesos_TestSolver.h"
+
+//  #ifdef SOLARIS
+//  #include <unistd.h>
+//  #endif
 
 #if 0
 extern "C" {
@@ -90,8 +98,10 @@ main(int argc, char **argv)
   const int MAX_TOLERANCE_RATIO = 1000 ;
   int exit_value = 0 ; 
   const int MAXNAMELENGTH = 800;
+
   utsname uname_buf; 
   char timebuffer[MAXNAMELENGTH];
+
   string Sprogram ;
   if ( argc >1 ) Sprogram = argv[1] ;
   const int NUM_PARAMS = 9 ; 
@@ -133,11 +143,17 @@ main(int argc, char **argv)
   }
  
   if ( MyPID == 0 ) {
+#ifdef HAVE_SYS_UTSNAME_H 
     int uname_stat = uname( &uname_buf ) ; 
+#endif
     
+#ifdef HAVE_TIME_H
     time_t now = time( NULL ) ; 
     tm *localnow = localtime( &now ) ; 
     (void) strftime( timebuffer, MAXNAMELENGTH, "20%g%b%d@%H:%M", localnow ) ;
+#else
+    strcpy( timebuffer, "unknown date" ) ; 
+#endif
   }
 
   //
@@ -315,12 +331,12 @@ main(int argc, char **argv)
   }
     
 
-#ifdef TFLOP
-	char *hostname = "TFLOP";
-	char *releasenum = "unknown";
-#else
+#ifdef HAVE_SYS_UTSNAME_H
 	char *hostname = uname_buf.nodename ; 
 	char *releasenum = uname_buf.release;
+#else
+	char *hostname = "unknown";
+	char *releasenum = "unknown";
 #endif
 	
 
@@ -340,9 +356,11 @@ main(int argc, char **argv)
       SparseDirectTimingVars::log_file << endl << "TIMESTAMP:" << hostname << " " 
 				       << argv[1] << " " << timebuffer 
 				       << " BEGIN RUN" << endl ; 
+#ifdef HAVE_SYS_UTSNAME_H     
       SparseDirectTimingVars::log_file << uname_buf.sysname << 
 	hostname << releasenum << uname_buf.version << 
 	  uname_buf.machine << endl ;
+#endif
     }
     if (summary ) { 
       summary_file << endl << setw(12) << hostname
@@ -376,12 +394,12 @@ main(int argc, char **argv)
     try { 
 
 	if ( numsolves < 0 ) { 
-	  TestMrhsSolver( Comm, argv[2], - numsolves, SparseSolver, (transpose==1), special ) ; 
+	  Amesos_TestMrhsSolver( Comm, argv[2], - numsolves, SparseSolver, (transpose==1), special ) ; 
 	} else { 
 	  if ( numsolves > 1 ) { 
-	    TestMultiSolver( Comm, argv[2], numsolves, SparseSolver, (transpose==1), special ) ; 
+	    Amesos_TestMultiSolver( Comm, argv[2], numsolves, SparseSolver, (transpose==1), special ) ; 
 	  } else {
-	    TestSolver( Comm, argv[2], SparseSolver, (transpose==1), special, MatrixType ) ; 
+	    Amesos_TestSolver( Comm, argv[2], SparseSolver, (transpose==1), special, MatrixType ) ; 
 	  }
 	} 
       //

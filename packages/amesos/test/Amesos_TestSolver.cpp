@@ -1,3 +1,6 @@
+#include "Amesos_ConfigDefs.h"
+#include <string>
+#include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Trilinos_Util.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Map.h"
@@ -8,16 +11,15 @@
 #ifdef TEST_KUNDERT
 #include "KundertOO.h"
 #endif
-#ifdef TEST_SUPERLUDIST
-#include "SuperludistOO.h"
-#endif
 #ifdef TEST_SPOOLES
 #include "SpoolesOO.h"
+#endif
+#ifdef HAVE_AMESOS_SLUD
+#include "SuperludistOO.h"
 #endif
 #ifdef TEST_AZTEC
 #include "AztecOO.h"
 #endif
-
 #if 0 
 #include "UmfpackOO.h"
 #include "SpoolesserialOO.h"
@@ -26,20 +28,21 @@
 #include "SparseSolverResult.h"
 #endif
 
-#include "TestSolver.h"
+#include "Amesos_TestSolver.h"
 #include "CrsMatrixTranspose.h"
-#include "SparseDirectTimingVars.h"
+#include "SparseDirectTimingVars.h" 
 
 #include <vector>
 //
-//  TestMultiSolver.cpp reads in a matrix in Harwell-Boeing format, 
-//  calls one of the sparse direct solvers, using blocked right hand sides
-//  and computes the error and residual.  
+//  Amesos_TestSolver.cpp reads in a matrix in Harwell-Boeing format, 
+//  calls one of the sparse direct solvers and computes the error 
+//  and residual.  
 //
-//  TestSolver ignores the Harwell-Boeing right hand sides, creating
-//  random right hand sides instead.  
+//  It reads the matrix in on a single processor and can pass that
+//  matrix to the solver or it can convert that matrix to a 
+//  distributed matrix and pass the distributed matrix to the solver.
 //
-//  TestMultiSolver can test either A x = b or A^T x = b.
+//  Amesos_TestSolver can test either A x = b or A^T x = b.
 //  This can be a bit confusing because sparse direct solvers 
 //  use compressed column storage - the transpose of Trilinos'
 //  sparse row storage.
@@ -52,16 +55,15 @@
 //    passA - if ( distributed ) then distributedA else serialA
 //
 //
-int TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves, 
-		      SparseSolverType SparseSolver, bool transpose,
-		      int special ) {
-
+int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file, 
+		       SparseSolverType SparseSolver,
+		       bool transpose, 
+		       int special, AMESOS_MatrixType matrix_type ) {
 
   int iam = Comm.MyPID() ;
 
-  
-  //  int hatever;
-  //  if ( iam == 0 )  cin >> hatever ; 
+  //  int whatever;
+  //  if ( iam == 0 )  cin >> whatever ; 
   Comm.Barrier();
 
 
@@ -71,10 +73,24 @@ int TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
    
-  // Call routine to read in HB problem
-  Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
-			       readb, readxexact);
-
+  string FileName = matrix_file ;
+  int FN_Size = FileName.size() ; 
+  string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
+  if ( LastFiveBytes == ".triU" ) { 
+    // Call routine to read in unsymmetric Triplet matrix
+    Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, readA, readx, 
+				      readb, readxexact);
+  } else {
+    if ( LastFiveBytes == ".triS" ) { 
+      // Call routine to read in symmetric Triplet matrix
+      Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, readA, readx, 
+					readb, readxexact);
+    } else {
+      // Call routine to read in HB problem
+      Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
+				   readb, readxexact);
+    }
+  }
 
   Epetra_CrsMatrix transposeA(Copy, *readMap, 0);
   Epetra_CrsMatrix *serialA ; 
@@ -86,52 +102,70 @@ int TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     serialA = readA ; 
   }
 
-  
-
-
   Epetra_RowMatrix * passA = 0; 
-  Epetra_MultiVector * passx = 0; 
-  Epetra_MultiVector * passb = 0;
-  Epetra_MultiVector * passxexact = 0;
-  Epetra_MultiVector * passtemp = 0;
-  Epetra_MultiVector * passtmp = 0;
+  Epetra_Vector * passx = 0; 
+  Epetra_Vector * passb = 0;
+  Epetra_Vector * passxexact = 0;
+  Epetra_Vector * passresid = 0;
+  Epetra_Vector * passtmp = 0;
 
-  Epetra_MultiVector x(*readMap,numsolves);
-  Epetra_MultiVector b(*readMap,numsolves);
-  Epetra_MultiVector xexact(*readMap,numsolves);
-  Epetra_MultiVector resid(*readMap,numsolves);
-  Epetra_MultiVector readresid(*readMap,numsolves);
-  Epetra_MultiVector tmp(*readMap,numsolves);
-  Epetra_MultiVector readtmp(*readMap,numsolves);
+  // Create uniform distributed map
+  Epetra_Map map(readMap->NumGlobalElements(), 0, Comm);
 
-  passA = serialA; 
-  passx = &x; 
-  passb = &b;
-  passxexact = &xexact;
-  passtemp = &readresid;
-  passtmp = &readtmp;
+  Epetra_Export exporter(*readMap, map);
+  Epetra_CrsMatrix A(Copy, map, 0);
 
-  passxexact->SetSeed(1.31) ; 
-  passxexact->Random();
-  passx->SetSeed(11.231) ; 
-  passx->Random();
+  Epetra_Vector x(map);
+  Epetra_Vector b(map);
+  Epetra_Vector xexact(map);
+  Epetra_Vector resid(map);
+  Epetra_Vector readresid(*readMap);
+  Epetra_Vector tmp(map);
+  Epetra_Vector readtmp(*readMap);
 
-  double *xValues ; int xLda ; 
-  assert( passxexact->ExtractView( &xValues, &xLda ) == 0 ) ; 
+  //  Epetra_Vector xcomp(map);      // X as computed by the solver
+  bool distribute_matrix = ( matrix_type == AMESOS_Distributed ) ; 
+  if ( distribute_matrix ) { 
+    // Create Exporter to distribute read-in matrix and vectors
+    //
+    //  Initialize x, b and xexact to the values read in from the file
+    //
+    x.Export(*readx, exporter, Add);
+    b.Export(*readb, exporter, Add);
+    xexact.Export(*readxexact, exporter, Add);
+    Comm.Barrier();
+    
+    A.Export(*serialA, exporter, Add);
+    Comm.Barrier();
 
-  double *bValues ; int bLda ; 
-  assert( passx->ExtractView( &bValues, &bLda ) == 0 ) ; 
+    assert(A.TransformToLocal()==0);    
+    
+    Comm.Barrier();
 
-  passA->Multiply( transpose, *passxexact, *passb ) ; 
+    passA = &A; 
+    passx = &x; 
+    passb = &b;
+    passxexact = &xexact;
+    passresid = &resid;
+    passtmp = &tmp;
+  } else { 
+    passA = serialA; 
+    passx = readx; 
+    passb = readb;
+    passxexact = readxexact;
+    passresid = &readresid;
+    passtmp = &readtmp;
+  }
+
 
   double Anorm = passA->NormInf() ; 
   SparseDirectTimingVars::SS_Result.Set_Anorm(Anorm) ;
 
-#ifdef ELP_INTERFACE
   Epetra_LinearProblem Problem(  (Epetra_RowMatrix *) passA, 
 				 (Epetra_MultiVector *) passx, 
 				 (Epetra_MultiVector *) passb );
-#endif
+  
+
 
   Epetra_Time TotalTime( Comm ) ; 
   //  switch( SparseSolver ) { 
@@ -146,27 +180,27 @@ int TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     umfpack.SetTrans( transpose ) ; 
     umfpack.Solve() ; 
 #endif
-#ifdef TEST_SUPERLU
+#ifdef TEST_SuperLU
   } else if ( SparseSolver == SuperLU ) { 
     SuperluserialOO superluserial( (Epetra_RowMatrix *) passA, 
 		       (Epetra_MultiVector *) passx, 
 		       (Epetra_MultiVector *) passb ) ; 
-
+    
+    
     superluserial.SetPermc( SuperLU_permc ) ; 
     superluserial.SetTrans( transpose ) ; 
     superluserial.SetUseDGSSV( special == 0 ) ; 
     superluserial.Solve() ; 
 #endif
-  } else if ( SparseSolver == SuperLUdist ) { 
-#ifdef ELP_INTERFACE
-    SuperludistOO superludist( Problem ) ; 
-#else
-    SuperludistOO superludist( passA, 
-			       (Epetra_MultiVector *) passx, 
-			       (Epetra_MultiVector *) passb ) ; 
-#endif    
-    superludist.SetTrans( transpose ) ; 
-    EPETRA_CHK_ERR( superludist.Solve( true ) ) ; 
+#ifdef HAVE_AMESOS_SLUD
+  } else if ( SparseSolver == SuperLUdist ) {
+
+    for ( int i = 0; i < 1+special ; i++ ) { 
+      SuperludistOO superludist( Problem ) ; 
+      superludist.SetTrans( transpose ); 
+      EPETRA_CHK_ERR( superludist.Solve( true ) ); 
+    }
+#endif
 #ifdef TEST_SPOOLES
   } else if ( SparseSolver == SPOOLES ) { 
     SpoolesOO spooles( (Epetra_RowMatrix *) passA, 
@@ -220,60 +254,34 @@ int TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   //
   //  Compute the error = norm(xcomp - xexact )
   //
-  vector <double> error(numsolves) ; 
-  double max_error = 0.0;
-  
-  passtemp->Update(1.0, *passx, -1.0, *passxexact, 0.0);
+  double error;
+  passresid->Update(1.0, *passx, -1.0, *passxexact, 0.0);
 
-  passtemp->Norm2(&error[0]);
-  for ( int i = 0 ; i< numsolves; i++ ) 
-    if ( error[i] > max_error ) max_error = error[i] ; 
-  SparseDirectTimingVars::SS_Result.Set_Error(max_error) ;
+  passresid->Norm2(&error);
+  SparseDirectTimingVars::SS_Result.Set_Error(error) ;
 
-  //  passxexact->Norm2(&error[0] ) ; 
+  //  passxexact->Norm2(&error ) ; 
   //  passx->Norm2(&error ) ; 
 
   //
   //  Compute the residual = norm(Ax - b)
   //
-  vector <double> residual(numsolves) ; 
-  double max_resid = 0.0;
-  
+  double residual ; 
   passA->Multiply( transpose, *passx, *passtmp);
-  passtemp->Update(1.0, *passtmp, -1.0, *passb, 0.0); 
-  passtemp->Norm2(&residual[0]);
+  //  passresid->Norm2(&error);    BOGUS - I claim
+  passresid->Update(1.0, *passtmp, -1.0, *passb, 0.0); 
+  passresid->Norm2(&residual);
 
-  for ( int i = 0 ; i< numsolves; i++ ) 
-    if ( residual[i] > max_resid ) max_resid = residual[i] ; 
-
-
-  SparseDirectTimingVars::SS_Result.Set_Residual(max_resid) ;
+  SparseDirectTimingVars::SS_Result.Set_Residual(residual) ;
     
-  vector <double> bnorm(numsolves); 
-  passb->Norm2( &bnorm[0] ) ; 
-  SparseDirectTimingVars::SS_Result.Set_Bnorm(bnorm[0]) ;
+  double bnorm; 
+  passb->Norm2( &bnorm ) ; 
+  SparseDirectTimingVars::SS_Result.Set_Bnorm(bnorm) ;
 
-  vector <double> xnorm(numsolves); 
-  passx->Norm2( &xnorm[0] ) ; 
-  SparseDirectTimingVars::SS_Result.Set_Xnorm(xnorm[0]) ;
+  double xnorm; 
+  passx->Norm2( &xnorm ) ; 
+  SparseDirectTimingVars::SS_Result.Set_Xnorm(xnorm) ;
 
-  if ( false && iam == 0 ) { 
-    cout << " TestMutliSolver.cpp " << endl ; 
-    for ( int i = 0 ; i< numsolves && i < 10 ; i++ ) {
-      cout << "i=" << i 
-	   << " error = " << error[i] 
-	   << " xnorm = " << xnorm[i] 
-	   << " residual = " << residual[i] 
-	   << " bnorm = " << bnorm[i] 
-	   << endl ; 
-      
-    }
-    
-    cout << endl << " max_resid = " << max_resid ; 
-    cout << " max_error = " << max_error << endl ; 
-    cout << " Get_residual() again = " << SparseDirectTimingVars::SS_Result.Get_Residual() << endl ;
-
-  }
   delete readA;
   delete readx;
   delete readb;
@@ -282,5 +290,5 @@ int TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   
   Comm.Barrier();
 
-return 0 ;
+  return 0;
 }

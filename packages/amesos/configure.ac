@@ -238,12 +238,81 @@ TAC_ARG_WITH_INCDIRS
 # Checks for addons
 # ------------------------------------------------------------------------
 
-AC_ARG_ENABLE(amesos-slud,
-[AC_HELP_STRING([--enable-amesos-slud],[compile SuperLU Dist interface])],
-[ADDON_SLUD=$enableval],
-[ADDON_SLUD=yes]
-)
-AM_CONDITIONAL(BUILD_SLUDIST, test X${ADDON_SLUD} = "Xyes")
+TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], ../../../../Trilinos3PL )
+
+## echo "  tac_with_trilinos3pldir =  ${tac_with_trilinos3pldir} " 
+AC_CHECK_FILE(${tac_with_trilinos3pldir})
+
+#
+#  --enable-amesos-slud, --with-amesos-sluddir, --with-amesos-sludlib, 
+#    --with-amesos-sludincdir
+#
+TAC_ARG_ENABLE_FEATURE(amesos_slud,[Enable Amesos interface support for SuperLU serial], 
+		AMESOS_SLUD, no)
+
+
+TAC_ARG_WITH( amesos_sluddir, [Set SuperLU dist directory],  ${tac_with_trilinos3pldir}/SuperLU_DIST )
+AC_CHECK_FILE(${tac_with_amesos_sluddir})
+
+
+TAC_ARG_WITH( amesos_sludlib, [Set SuperLU dist library],  ${tac_with_amesos_sluddir}/libsuperludist.a )
+AC_CHECK_FILE(${tac_with_amesos_sludlib})
+
+TAC_ARG_WITH( amesos_sludincdir, [Set SuperLU serial include directory],  ${tac_with_amesos_sluddir}/SRC )
+AC_CHECK_FILE(${tac_with_amesos_sludincdir})
+
+#
+#  Test to see if everything is where it ought to be:
+#    Make sure that supermatrix.h is in the SuperLU serial include directory
+#    Make sure that SuperLU_timer is in the SuperLU serial library
+#
+if test "X$ac_cv_use_amesos_slud" != "Xno"; then
+  AC_LANG_SAVE
+  AC_LANG_C
+#
+# This is a bad way to check for supermatrix.h, it won't pick supermatrix.h up if
+# it is in the includ epath, i.e. /usr/include - see tac_arg_check_mpi for a better way
+#
+
+
+  AC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h)
+  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h)
+
+  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h,,
+    AC_MSG_ERROR([[Cannot find supermatrix.h, specify a location using --with-amesos_sluincdir, --with-ameos_sluddir or --with-trilinos3pldir]] ))
+
+
+
+  AC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h,,
+    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos_sluincdir, --with-ameos_sluddir or --with-trilinos3pldir]] ))
+
+
+##  LDFLAGS="${tac_with_amesos_sludlib} ${LDFLAGS}"
+
+  CXXFLAGS="-I${tac_with_amesos_sludincdir} ${CXXFLAGS}"
+
+    SAVE_LIBS="${LIBS}"
+    LIBS="${tac_with_amesos_sludlib} ${LIBS}"
+    AC_TRY_LINK_FUNC(SuperLU_timer_,,
+      AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos_sludlib, (ex. --with-amesos_sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
+    LIBS="${SAVE_LIBS}"
+  AM_CONDITIONAL(HAVE_AMESOS_SLUD, true ) 
+else
+  AM_CONDITIONAL(HAVE_AMESOS_SLUD, false )  
+fi
+
+AC_SUBST(AMESOS_LIBS,${tac_with_amesos_sludlib}) 
+
+
+
+
+
+## AC_ARG_ENABLE(amesos_slud,
+## [AC_HELP_STRING([--enable-amesos_slud],[compile SuperLU Dist interface])],
+## [ADDON_SLUD=$enableval],
+## [ADDON_SLUD=yes]
+## )
+## AM_CONDITIONAL(BUILD_SLUDIST, test X${ADDON_SLUD} = "Xyes")
 
 AC_ARG_ENABLE(amesos-slus,
 [AC_HELP_STRING([--enable-amesos-slus],[compile SuperLU Serial interface])],
@@ -266,35 +335,23 @@ AM_CONDITIONAL(BUILD_KUNDERT, test X${ADDON_KS} = "Xyes")
   # Find valid SuperLU Dist and Kundert libraries
 ### In the future we need to be able to disable dependence on Kundert lib
 
-if test "X$ADDON_SLUD" != "Xno"; then
-  AC_LANG_SAVE
-  AC_LANG_C
-  AC_SEARCH_LIBS(SuperLU_timer_,[superludist],,
-  AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib)]]))  
-fi
+## if test "X$ADDON_SLUD" != "Xno"; then
+##   AC_LANG_SAVE
+##   AC_LANG_C
+##   AC_SEARCH_LIBS(SuperLU_timer_,[superludist],,
+##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib)]]))  
+## fi
 
 dnl Replace `main' with a function in -lm:
 #AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 #AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
 dnl Check for user-specified names for LAPACK and BLAS
-#TAC_ARG_WITH_BLASLIB
-#TAC_ARG_WITH_LAPACKLIB
+TAC_ARG_WITH_BLASLIB
+TAC_ARG_WITH_LAPACKLIB
 
-# find or choose to supply valid blas and lapack libraries
-#TAC_ARG_ENABLE_FEATURE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
-#AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-#if test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-
-#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-ldflags, additional lib names using --with-blas or type --with-referenceblasandlapack on the configure line in the Trilinos level directory to use the blas and lapack libraries included in the distribution]])])
-#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-#fi
-#TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
-#AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-#if test "X$ac_cv_use_referencelapack" = "Xno" && test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-#  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, please specify additional locations using --with-ldflags, additional lib names using --with-lapacklib or type --with-referencelapack on the configure line in the Trilinos level directory to use the lapack library included in the distribution]])])
-#  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
-#fi
+  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -378,6 +435,7 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
+		test/Makefile
 		])
 
 AC_OUTPUT()

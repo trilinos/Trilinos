@@ -1,5 +1,6 @@
 #ifndef SPARSEDIRECTTIMINGVARS_H
 #define SPARSEDIRECTTIMINGVARS_H
+#define SPARSE_DIRECT_TIMINGS
 #ifdef SPARSE_DIRECT_TIMINGS
 #include "SparseSolverResult.h" 
 #include <fstream>

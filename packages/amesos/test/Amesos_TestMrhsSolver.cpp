@@ -1,3 +1,5 @@
+#include "Amesos_ConfigDefs.h"
+
 #include "Trilinos_Util.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Map.h"
@@ -8,7 +10,7 @@
 #ifdef TEST_KUNDERT
 #include "KundertOO.h"
 #endif
-#ifdef TEST_SUPERLUDIST
+#ifdef HAVE_AMESOS_SLUD
 #include "SuperludistOO.h"
 #endif
 #ifdef TEST_SPOOLES
@@ -23,11 +25,9 @@
 #include "SuperluserialOO.h"
 #endif
 #include "SparseSolverResult.h"
-#include "TestSolver.h"
+#include "Amesos_TestSolver.h"
 #include "CrsMatrixTranspose.h"
-#ifdef SPARSE_DIRECT_TIMINGS
 #include "SparseDirectTimingVars.h"
-#endif
 
 #include <vector>
 //
@@ -51,7 +51,7 @@
 //    passA - if ( distributed ) then distributedA else serialA
 //
 //
-int TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves, 
+int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves, 
 		     SparseSolverType SparseSolver, bool transpose, 
 		     int special ) {
 
@@ -119,11 +119,9 @@ int TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   double Anorm = passA->NormInf() ; 
   SparseDirectTimingVars::SS_Result.Set_Anorm(Anorm) ;
 
-#ifdef ELP_INTERFACE
   Epetra_LinearProblem Problem(  (Epetra_RowMatrix *) passA, 
 				 (Epetra_MultiVector *) passx, 
 				 (Epetra_MultiVector *) passb );
-#endif
 
   Epetra_Time TotalTime( Comm ) ; 
   //  switch( SparseSolver ) { 
@@ -165,15 +163,7 @@ int TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     }
 #endif
   } else if ( SparseSolver == SuperLUdist ) { 
-#ifdef ELP_INTERFACE
     SuperludistOO superludist( Problem ) ; 
-#else
-    SuperludistOO superludist( passA, 
-			       (Epetra_MultiVector *) passx, 
-			       (Epetra_MultiVector *) passb ) ; 
-#endif    
-    //    superludist.SetUserMatrix( (Epetra_RowMatrix *) passA) ; 
-
     superludist.SetTrans( transpose ) ; 
 
     bool factor = true; 

@@ -57,8 +57,10 @@ SuperludistOO::SuperludistOO(const Epetra_LinearProblem &prob ) {
   //  AllocAzArrays();
 
   Problem_ = &prob ; 
+  Transpose_ = false; 
   A_and_LU_built = false ; 
   Factored_ = false ; 
+  FirstCallToSolve_ = true ; 
   //
   //  The following are initialized just on general principle
   //

@@ -86,13 +86,17 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 ALTERNATE_AR = @ALTERNATE_AR@
+AMESOS_LIBS = @AMESOS_LIBS@
 AMTAR = @AMTAR@
 AWK = @AWK@
+BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CXX = @CXX@
 DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
+FLIBS = @FLIBS@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LAPACK_LIBS = @LAPACK_LIBS@
 MAINT = @MAINT@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
@@ -125,7 +129,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 
-SUBDIRS = src
+#SUBDIRS = src
+SUBDIRS = src test
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -419,7 +424,6 @@ uninstall-info: uninstall-info-recursive
 	uninstall-am uninstall-info-am uninstall-info-recursive \
 	uninstall-recursive
 
-#SUBDIRS = src test
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
