@@ -578,7 +578,10 @@ int ML_Operator_Print(ML_Operator *matrix, char label[])
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
    val   = (double *)  ML_allocate( allocated*sizeof(double));
 
-   sprintf(filename,"%s.%d",label,matrix->comm->ML_mypid);
+   if (matrix->comm->ML_nprocs == 1)
+      sprintf(filename,"%s.serial",label);
+   else
+      sprintf(filename,"%s.%d",label,matrix->comm->ML_mypid);
    printf("Writing matrix to file %s...\n",filename);
    fid = fopen(filename,"w");
    for (i = 0 ; i < matrix->getrow->Nrows; i++) {
@@ -587,8 +590,9 @@ int ML_Operator_Print(ML_Operator *matrix, char label[])
       for  (j = 0; j < row_length; j++) {
 /*
          printf("%s(%d,%d) = %20.13e;\n",label,i+1,bindx[j]+1, val[j]);
-*/
          fprintf(fid,"(%d,%d) %20.13e\n",i+1,bindx[j]+1, val[j]);
+*/
+         fprintf(fid,"%d   %d     %20.13e\n",i+1,bindx[j]+1, val[j]);
       }
    }
    fclose(fid);
