@@ -30,6 +30,8 @@
 // ************************************************************************
 //@HEADER
 
+/*! \file NOX_LAPACK_Vector.H - Header file for NOX::LAPACK::Vector. */
+
 #ifndef NOX_LAPACK_VECTOR_H
 #define NOX_LAPACK_VECTOR_H
 
@@ -54,7 +56,7 @@ namespace NOX {
   const int i_zero = 0;
   
     //! Implementation of NOX::Abstract::Vector for STL vector<double> (using LAPACK for some computations)
-    class Vector : public Abstract::Vector {
+    class Vector : public NOX::Abstract::Vector {
 
     public:	
 
@@ -194,6 +196,7 @@ namespace NOX {
   } // namespace LAPACK
 } // namespace NOX
 
+//! Function for printing
 ostream& operator<<(ostream& stream, const NOX::LAPACK::Vector& v);
 
 

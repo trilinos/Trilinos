@@ -109,7 +109,7 @@ public:
 		     NOX::Parameter::List& params) = 0;
 
   /*! 
-    \brief A \soft reset of the nonlinear solver for a new problem.
+    \brief A soft reset of the nonlinear solver for a new problem.
   
     This is a light-weight version of reset that takes no
     parameter list.  Therefore, this reset only resets counters,

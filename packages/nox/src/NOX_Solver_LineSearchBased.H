@@ -62,7 +62,7 @@ namespace Solver {
 
   \note To support several line searches and status tests, this
   version of the solver has a getStepSize() function that returns
-  $\lambda$.
+  \f$\lambda\f$.
 
   <B>Input Parameters</B>
 

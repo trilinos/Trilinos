@@ -97,10 +97,16 @@ public:
 
 private:
   
+  //! Scaling type
   vector<ScaleType> scaleType;
+
+  //! Source type
   vector<SourceType> sourceType;
+
+  //! Scaling vector pointer
   vector<Epetra_Vector*> scaleVector;
 
+  //! Temporary vector
   Epetra_Vector* tmpVectorPtr;
 
 };

@@ -428,7 +428,7 @@ public:
   virtual void setX(const NOX::Epetra::Vector& y);
   virtual void setX(const NOX::Abstract::Vector& y);
 
-  virtual void computeX(const Group& grp, 
+  virtual void computeX(const NOX::Epetra::Group& grp, 
 			const NOX::Epetra::Vector& d, 
 			double step);
   virtual void computeX(const NOX::Abstract::Group& grp,

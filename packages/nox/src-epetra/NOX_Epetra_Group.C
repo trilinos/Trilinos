@@ -218,7 +218,7 @@ Group::Group(Parameter::List& printParams,
   checkOperatorConsistency();
 }
 
-Group::Group(const Group& source, CopyType type) :
+NOX::Epetra::Group::Group(const NOX::Epetra::Group& source, NOX::CopyType type) :
   utils(source.utils),
   xVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.xVector.clone(type))),
   xVector(*xVectorPtr),    
@@ -453,7 +453,7 @@ Abstract::Group& Group::operator=(const Abstract::Group& source)
   return operator=(dynamic_cast<const Group&> (source));
 }
 
-Abstract::Group& Group::operator=(const Group& source)
+Abstract::Group& Group::operator=(const NOX::Epetra::Group& source)
 {
   // Copy the xVector
   xVector = source.xVector;
@@ -509,7 +509,7 @@ void Group::setX(const Abstract::Vector& y)
   return;
 }
 
-void Group::setX(const Vector& y) 
+void Group::setX(const NOX::Epetra::Vector& y) 
 {
   resetIsValid();
   destroyAztecSolver();
@@ -528,7 +528,7 @@ void Group::computeX(const Abstract::Group& grp,
   return;
 }
 
-void Group::computeX(const Group& grp, const Vector& d, double step) 
+void Group::computeX(const NOX::Epetra::Group& grp, const NOX::Epetra::Vector& d, double step) 
 {
   resetIsValid();
   destroyAztecSolver();
@@ -681,7 +681,7 @@ Abstract::Group::ReturnType Group::applyJacobian(const Abstract::Vector& input, 
   return applyJacobian(epetrainput, epetraresult);
 }
 
-Abstract::Group::ReturnType Group::applyJacobian(const Vector& input, Vector& result) const
+Abstract::Group::ReturnType Group::applyJacobian(const NOX::Epetra::Vector& input, NOX::Epetra::Vector& result) const
 {
   // Check validity of the Jacobian
   if (!isJacobian()) 
@@ -706,7 +706,7 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, con
   return applyJacobianInverse(p, epetraInput, epetraResult);
 }
 
-Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vector &result) const
+Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, const NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
 {
   // Get the non-const versions of the Jacobian and input vector
   // Epetra_LinearProblem requires non-const versions so we can perform
@@ -790,7 +790,7 @@ Abstract::Group::ReturnType Group::applyJacobianTranspose(const Abstract::Vector
   return applyJacobianTranspose(epetrainput, epetraresult);
 }
 
-Abstract::Group::ReturnType Group::applyJacobianTranspose(const Vector& input, Vector& result) const
+Abstract::Group::ReturnType Group::applyJacobianTranspose(const NOX::Epetra::Vector& input, NOX::Epetra::Vector& result) const
 {
   // Check validity of the Jacobian
   if (!isJacobian()) 
@@ -824,8 +824,8 @@ Abstract::Group::ReturnType Group::applyRightPreconditioning(
 Abstract::Group::ReturnType Group::applyRightPreconditioning(
 				       bool useTranspose, 
 				       Parameter::List& params,
-				       const Vector& input, 
-				       Vector& result) const
+				       const NOX::Epetra::Vector& input, 
+				       NOX::Epetra::Vector& result) const
 {
   int errorCode = 1;
 
