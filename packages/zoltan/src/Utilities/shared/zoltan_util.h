@@ -44,7 +44,7 @@
          ((str) ? (str) : " "));
 
 #define ZOLTAN_PRINT_INFO(proc,yo,str) \
-  printf("ZOLTAN (Processor %d) %s: %s\n", (lb)->Proc, (yo), \
+  printf("ZOLTAN (Processor %d) %s: %s\n", (proc), (yo), \
          ((str) ? (str) : " "));
 
 
