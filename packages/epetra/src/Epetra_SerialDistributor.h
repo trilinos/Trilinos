@@ -124,5 +124,9 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
 
 
   virtual void Print(ostream & os) const;
+
+ private:
+  int nrecvs_;
+  int nsends_;
 };
 #endif /* EPETRA_SERIALDISTRIBUTOR_H */

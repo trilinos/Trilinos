@@ -33,16 +33,23 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_Version.h"
+
 #ifdef EPETRA_MPI
 #include <mpi.h>
 #include "Epetra_MpiComm.h"
 
 int checkMpiDataClass(bool verbose);
 #endif
+
 int checkSerialDataClass(bool verbose);
-int checkCommMethods(Epetra_Comm& petracomm, bool verbose, bool verbose1, int& NumProc, int& rank);
+int checkCommMethods(Epetra_Comm& petracomm,
+                     bool verbose, bool verbose1,
+                     int& NumProc, int& rank);
 int checkRankAndSize(Epetra_Comm& petracomm, bool verbose, int rank, int size);
 void checkBarrier(Epetra_Comm& petracomm, bool verbose, int rank);
+
+int checkDistributor(Epetra_Distributor* distr,
+                     Epetra_Comm& Comm);
 
 int main(int argc, char* argv[]) {
   bool verbose = false;  // used to set verbose false on non-root processors
@@ -81,6 +88,11 @@ int main(int argc, char* argv[]) {
 	ierr = checkSerialDataClass(verbose1);
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose1 && ierr==0) cout << "Checked OK\n\n" <<endl;
+
+  Epetra_Distributor* serialdistr = serialcomm.CreateDistributor();
+  ierr = checkDistributor(serialdistr, serialcomm);
+  delete serialdistr;
+  EPETRA_TEST_ERR(ierr, returnierr);
 
 	// Test Epetra_MpiComm
 #ifdef EPETRA_MPI
@@ -123,6 +135,11 @@ int main(int argc, char* argv[]) {
 	ierr = checkMpiDataClass(verbose1);
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose1 && ierr==0) cout << "Checked OK\n\n" <<endl;
+
+  Epetra_Distributor* plldistr = petracomm.CreateDistributor();
+  ierr = checkDistributor(plldistr, petracomm);
+  delete plldistr;
+  EPETRA_TEST_ERR(ierr, returnierr);
 
   petracomm.Barrier();
   MPI_Finalize();
@@ -747,6 +764,54 @@ int checkMpiDataClass(bool verbose) {
 	return(ierr);
 }
 #endif
+
+int checkDistributor(Epetra_Distributor* distr,
+                     Epetra_Comm& Comm)
+{
+  int numprocs = Comm.NumProc();
+  int myproc = Comm.MyPID();
+
+  int numExportIDs = numprocs;
+  int* exportPIDs = new int[numExportIDs];
+  for(int p=0; p<numExportIDs; ++p) {
+    exportPIDs[p] = p;
+  }
+
+  bool deterministic = true;
+  int numRemoteIDs = 0;
+
+  int err = distr->CreateFromSends(numExportIDs, exportPIDs,
+                                   deterministic, numRemoteIDs);
+
+  //numRemoteIDs should equal numExportIDs.
+
+  int returnValue = numRemoteIDs == numExportIDs ? 0 : -99;
+
+  delete [] exportPIDs;
+
+  if (returnValue + err != 0) {
+    return(returnValue + err);
+  }
+
+  int* exportIDs = new int[numExportIDs];
+  for(int i=0; i<numExportIDs; ++i) {
+    exportIDs[i] = i+1;
+  }
+
+  int len_imports = 0;
+  char* imports = NULL;
+
+  err = distr->Do((char*)exportIDs, sizeof(int),
+                  len_imports, imports);
+
+  delete [] exportIDs;
+
+  if (len_imports > 0) {
+    delete [] imports;
+  }
+
+  return(err);
+}
 
 /*
   end of file cxx_main.cpp

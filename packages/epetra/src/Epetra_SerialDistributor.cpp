@@ -33,12 +33,16 @@
 //==============================================================================
 // Epetra_SerialDistributor constructor
 Epetra_SerialDistributor::Epetra_SerialDistributor(const Epetra_SerialComm & Comm): 
-Epetra_Object("Epetra::SerialDistributor")
+Epetra_Object("Epetra::SerialDistributor"),
+nrecvs_(0),
+nsends_(0)
 {}
 
 //==============================================================================
 Epetra_SerialDistributor::Epetra_SerialDistributor(const Epetra_SerialDistributor & Plan):
-Epetra_Object("Epetra::SerialDistributor")
+Epetra_Object("Epetra::SerialDistributor"),
+nrecvs_(Plan.nrecvs_),
+nsends_(Plan.nsends_)
 {}
 
 //==============================================================================
@@ -55,9 +59,26 @@ Epetra_SerialDistributor::~Epetra_SerialDistributor() {
 int Epetra_SerialDistributor::CreateFromSends( const int & NumExportIDs,
 			           const int * ExportPIDs,
 				   bool Deterministic,
-			           int & NumRemoteIDs ) {
-  EPETRA_CHK_ERR(-1); // This method should never be called 
-  return(-1);
+			           int & NumRemoteIDs )
+{
+  NumRemoteIDs = 0;
+
+  //In a SerialDistributor, myproc == 0 by definition.
+  int myproc = 0;
+
+  //basically just do a sanity check.
+  for(int i=0; i<NumExportIDs; ++i) {
+    if (ExportPIDs[i] != myproc) {
+      cerr << "Epetra_SerialDistributor::CreateFromSends: ExportPIDs["<<i
+          <<"]=="<<ExportPIDs[i]<<", not allowed for serial case."<<endl;
+      return(-1);
+    }
+    ++NumRemoteIDs;
+  }
+
+  nrecvs_ = NumRemoteIDs;
+
+  return(0);
 }
 
 //==============================================================================
@@ -84,8 +105,14 @@ int Epetra_SerialDistributor::Do(char * export_objs,
                                  int & len_import_objs,
                                  char *& import_objs )
 {
-  EPETRA_CHK_ERR(-1); // This method should never be called 
-  return(-1);
+  len_import_objs = obj_size*nrecvs_;
+  if (len_import_objs > 0) {
+    import_objs = new char[len_import_objs];
+  }
+
+  for(int i=0; i<len_import_objs; ++i) import_objs[i] = export_objs[i];
+
+  return(0);
 }
 
 //==============================================================================

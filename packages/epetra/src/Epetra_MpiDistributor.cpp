@@ -216,7 +216,7 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
     }
   }
 
-  self_msg_ = ( starts[my_proc] != 0 );
+  self_msg_ = ( starts[my_proc] != 0 ) ? 1 : 0;
 
   nsends_ = 0;
 
