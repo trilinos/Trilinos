@@ -32,7 +32,7 @@
 
 #include "NOX_Utils.H"
 
-int NOX::Utils::precision = 4;
+int NOX::Utils::precision = 3;
 int NOX::Utils::myPID = 0;
 int NOX::Utils::printProc = 0;
 int NOX::Utils::printTest = 0xf;
