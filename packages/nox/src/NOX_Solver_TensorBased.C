@@ -116,7 +116,7 @@ void NOX::Solver::TensorBased::init()
     }
     else
     {
-      cout << "ERROR: NOX::Solver::TensorBased::init() - the parameter "
+      cerr << "ERROR: NOX::Solver::TensorBased::init() - the parameter "
 	   << "\"User Defined Pre/Post Operator\" must be derived from an"
 	   << "arbitrary parameter!" << endl;
       throw "NOX Error";
@@ -136,7 +136,7 @@ void NOX::Solver::TensorBased::init()
   NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
   if (rtype != NOX::Abstract::Group::Ok)
   {
-    cout << "NOX::Solver::TensorBased::init - Unable to compute F" << endl;
+    cerr << "NOX::Solver::TensorBased::init - Unable to compute F" << endl;
     throw "NOX Error";
   }
 
@@ -190,20 +190,24 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
   }
   else
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Warning))
-      cout << "Warning: NOX::Direction::Tensor::reset() - The choice of "
-	   << "\"Compute Step\" \nparameter \"" << choice
-	   << "\" is invalid.  Using \"Tensor\" instead." << endl;
-    requestedBaseStep = TensorStep;
-    dirParams.setParameter("Compute Step", "Tensor");
+    if (utils.isPrintProcessAndType(NOX::Utils::Error))
+      cerr << "NOX::Direction::Tensor::reset() - The choice of "
+	   << "\"Compute Step\" parameter \"" << choice
+	   << "\" is invalid." << endl;
+    throw "NOX error";
   }
 
-  bool useModifiedMethod =
-    dirParams.getParameter("Use Modified Bouaricha", true);
-  if (useModifiedMethod  &&
-      utils.isPrintProcessAndType(NOX::Utils::Parameters))
-    cout << "Using ALPHA scaling" << endl;
-  
+  // Determine whether we should use the Modified Tensor method
+  useModifiedMethod = false;
+  if (requestedBaseStep == TensorStep)
+  {
+    useModifiedMethod = 
+      dirParams.getParameter("Use Modified Bouaricha", true);
+    if (useModifiedMethod  &&
+	utils.isPrintProcessAndType(NOX::Utils::Parameters))
+      cout << "Using Modifed Bouaricha method" << endl;
+  }
+
   //NOX::Parameter::List& teParams = dirParams.sublist("Tensor");
   //doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
 
@@ -217,7 +221,7 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
   // Initialize linesearch parameters for this object
   minStep = lsparams.getParameter("Minimum Step", 1.0e-12);
   defaultStep = lsparams.getParameter("Default Step", 1.0);
-  recoveryStep = lsparams.getParameter("Recovery Step", 0.0); // force exit on failure
+  recoveryStep = lsparams.getParameter("Recovery Step", 0.0); // exit on fail
   maxIters = lsparams.getParameter("Max Iters", 40);
   alpha = lsparams.getParameter("Alpha Factor", 1.0e-4);
 
@@ -234,12 +238,11 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
     lsType = Newton;
   else
   {
-    if (print.isPrintProcessAndType(NOX::Utils::Warning)) 
-      cout << "Warning: NOX::Direction::Tensor::reset() - the choice of "
-	   << "\"Line Search\" \nparameter " << choice
-	   << " is invalid.  Using \"Curvilinear\" instead." << endl;
-    lsparams.setParameter("Submethod", "Curvilinear");
-    lsType = Curvilinear;
+    if (utils.isPrintProcessAndType(NOX::Utils::Error))
+      cerr << "NOX::Direction::Tensor::reset() - The choice of "
+	   << "\"Line Search\" parameter " << choice
+	   << " is invalid." << endl;
+    throw "NOX Error";
   }
 
   choice = lsparams.getParameter("Lambda Selection", "Halving");
@@ -249,21 +252,29 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
     lambdaSelection = Quadratic;
   else
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Warning))
-      cout << "Warning: NOX::Solver::TensorBased::reset() - the choice of "
-	   << "\"Lambda Selection\" \nparameter " << choice
-	   << " is invalid.  Using halving instead." << endl;
-    lambdaSelection = Halving;
+    if (utils.isPrintProcessAndType(NOX::Utils::Error))
+      cerr << "NOX::Solver::TensorBased::reset() - The choice of "
+	   << "\"Lambda Selection\" parameter " << choice
+	   << " is invalid." << endl;
+    throw "NOX Error";
   }
 
   choice = lsparams.getParameter("Sufficient Decrease Condition",
 				 "Armijo-Goldstein");
-  if (choice == "Ared/Pred") 
+  if (choice == "Armijo-Goldstein") 
+    convCriteria = ArmijoGoldstein;     // This is the only one implemented
+  else if (choice == "Ared/Pred") 
     convCriteria = AredPred;
   else if (choice == "None")
     convCriteria = None;
-  else 
-    convCriteria = ArmijoGoldstein;     // bwb - the others aren't implemented
+  else
+  {
+    if (utils.isPrintProcessAndType(NOX::Utils::Error))
+      cerr << "NOX::Solver::TensorBased::reset() - The choice of "
+	   << "\"Sufficient Decrease Condition\" parameter " << choice
+	   << " is invalid." << endl;
+    throw "NOX Error";
+  }
 
   init();
   return true;
@@ -338,7 +349,6 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
   oldSoln = soln;
 
   // Do line search and compute new soln.
-  //ok = lineSearch.compute(soln, step, dir, *this);
   ok = implementGlobalStrategy(soln, step, *this);
   if (!ok)
   {
@@ -362,7 +372,7 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
   if (rtype != NOX::Abstract::Group::Ok)
   {
     if (utils.isPrintProcessAndType(NOX::Utils::Error))
-      cout << "NOX::Solver::LineSearchBased::iterate - "
+      cout << "NOX::Solver::TensorBased::iterate - "
 	   << "unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
     if (havePrePostOperator)
@@ -497,9 +507,9 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
   int tempVal1 = 0;
   if ((nIter > 0)  &&  (requestedBaseStep == TensorStep))
   {
-    // Save old Newton step as initial guess to second system  (not necessary)
+    // Save old Newton step as initial guess to second system 
     tmpVec = newtonVec;
-    tmpVecPtr->scale(-1.0);   // could probably rewrite to avoid this...
+    tmpVecPtr->scale(-1.0);   // could I rewrite to avoid this?
 
     // Compute the tensor term s = x_{k-1} - x_k
     scVec = soln.getX();
@@ -515,17 +525,6 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     if (sDotS != 0)
       acVec.scale(1 / (sDotS * sDotS));
     
-#undef OLD_WAY
-#ifdef OLD_WAY
-    // Compute inv(J)*a
-    //tmpVec.init(0.0);
-    //printf("\n\n\nNorm of tmpVec = %8e\n\n\n", tmpVec.norm()); 
-    status = soln.applyJacobianInverse(localParams, acVec, tmpVec);
-    if (status != NOX::Abstract::Group::Ok)
-      throwError("computeTensorDirection", "Unable to apply Jacobian inverse");
-    //printf("\n\n\nNorm of tmpVec = %8e\n\n\n", tmpVec.norm()); 
-#endif // OLD_WAY
-
     // Compute residual of linear system using initial guess...
     soln.applyJacobian(tmpVec, *residualVecPtr);
     numJvMults++;
@@ -621,7 +620,6 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
   // Continue processing the tensor step, if necessary
   if ((nIter > 0)  &&  (requestedBaseStep == TensorStep))
   {
-
     // Form the term inv(J)*a...  (note that a is not multiplied by 2)
     tmpVecPtr->update(1.0, newtonVec, -1.0, scVec, 1.0);
     if (sDotS != 0)
@@ -644,16 +642,12 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 	   << "  norm(a) = " << utils.sciformat(acVecNorm, 6) << endl;
     }
     
-    //printf(" sctjf = %e  sctja = %e\n", sctjf, sctja);
-    //printf(" norm(s) = %e  norm(a) = %e\n", scVec.norm(), acVecPtr->norm());
-    
     if (useModifiedMethod)
     {
       double alpha2 = lambdaBar;
       if (utils.isPrintProcessAndType(NOX::Utils::Details))
 	cout << " Beta = " << utils.sciformat(beta, 6)
 	     << "  Alpha2 = " << utils.sciformat(alpha2, 6) << endl;
-      //printf(" Beta = %e   Alpha2 = %e\n", beta, alpha2);
       if (alpha2 != 1.0)
       {
 	if (utils.isPrintProcessAndType(NOX::Utils::Details))
@@ -680,8 +674,6 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 	   << "  std = " << utils.sciformat(sDotT, 6)
 	   << "  qval = " << utils.sciformat(qval, 2)
 	   << "  lambdaBar = " << lambdaBar << endl;
-    //printf("Beta = %e  std = %e  qval = %.2f   lambdaBar = %f\n",
-    //   beta, tensorVec.dot(scVec), qval, lambdaBar);
 #endif
   }
   else
@@ -734,9 +726,9 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
       if (utils.isPrintProcessAndType(NOX::Utils::Details))
 	cout << "  tmp1 = " << utils.sciformat(tmp1, 6)
 	     << "  tmp2 = " << utils.sciformat(tmp2, 6)
+	     << "  dir0xsc = " << utils.sciformat(dir0xsc, 6)
+	     << "  normS = " << utils.sciformat(normS, 6)
 	     << endl;
-      //printf("  tmp1 = %e  tmp2 = %e  dir0xsc = %e  normS = %e\n",
-      //     tmp1, tmp2, dir0xsc, normS);
 #endif
     }
   }
@@ -747,7 +739,6 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
 	 << utils.sciformat(qc, 6)
 	 << "   beta = " << utils.sciformat(beta, 6)
 	 << endl;
-  //printf("  qa,qb,qc = %e  %e  %e   beta = %e\n", qa, qb, qc, beta);
 #endif
 
   return beta;
@@ -774,18 +765,15 @@ NOX::Solver::TensorBased::computeCurvilinearStep(NOX::Abstract::Vector& dir,
   double sDotD = dir.dot(scVec);
   if (utils.isPrintProcessAndType(NOX::Utils::Details))
   {
-    cout << "  beta = " << utils.sciformat(beta, 6)
+    cout << "  Beta = " << utils.sciformat(beta, 6)
 	 << "  std = " << utils.sciformat(sDotD, 6)
 	 << "  qval = " << qval
-	 << "  lambda = " << lambda
+	 << "  lambdaBar = " << lambdaBar
 	 << endl;
-    cout << "betaFactor = " << utils.sciformat(betaFactor,6)
+    cout << "  betaFactor = " << utils.sciformat(betaFactor,6)
 	 << "  beta1 = " << utils.sciformat(beta1, 6)
 	 << endl;
   }
-  //printf("Beta = %e  std = %e  qval = %.2f   lambdaBar = %f\n",
-  // beta, dir.dot(scVec), qval, lambdaBar);
-  //printf("betaFactor = %e  beta1 = %e\n", betaFactor, beta1);
 #endif
   
   return true;
@@ -1011,17 +999,6 @@ NOX::Solver::TensorBased::getNormModelResidual(
     residualPtr->update(beta*beta, *acVecPtr, 1.0);
   }
 
-#ifdef LEAVE_OUT
-  if (precondition == Left)
-  {
-    NOX::Abstract::Vector* tmpPtr = soln.getF().clone(ShapeCopy);
-    *tmpPtr = *residualPtr;
-    applyPreconditioner(false, soln, *localParamsPtr, *tmpPtr, *residualPtr,
-			"compute");
-    delete tmpPtr;
-  }
-#endif
-  
   double modelNorm = residualPtr->norm();
   delete residualPtr;
   return modelNorm;
