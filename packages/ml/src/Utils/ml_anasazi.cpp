@@ -60,7 +60,9 @@ private:
   double Scale_;
   Epetra_MultiVector * tmp_;
   Epetra_Vector * Diagonal_;
-  
+
+  Epetra_Vector * Mask_;
+  int NumMyRows_;
 };
 
 // ================================================ ====== ==== ==== == =
@@ -74,6 +76,8 @@ MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
     Scale_(1.0),
     tmp_(0)
 {
+  NumMyRows_ = Matrix.RowMatrixRowMap().NumMyElements();
+  
   if( UseDiagScaling_ ) {
     
     Diagonal_ = new Epetra_Vector(Matrix.RowMatrixRowMap());
@@ -86,6 +90,16 @@ MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
     }
 
   }
+
+  // define the Dirichlet boundary nodes
+  Mask_ = new Epetra_Vector(Matrix.RowMatrixRowMap());
+
+  for( int i=0 ; i<Matrix.NumMyRows() ; ++i ) {
+    int Nnz;
+    Matrix.NumMyRowEntries(i,Nnz);
+    if( Nnz <= 1 ) (*Mask_)[i] = 0.0;
+    else           (*Mask_)[i] = 1.0;
+  }
   
 }
 
@@ -96,6 +110,7 @@ MLMat<TYPE>::~MLMat()
 {
   if( UseDiagScaling_ ) delete Diagonal_;
   if( tmp_ )  delete tmp_;
+  if( Mask_ ) delete Mask_;
 }
 
 // ================================================ ====== ==== ==== == =
@@ -112,18 +127,40 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
 
   if( vec_x==0 || vec_y==0 ) return Failed;
 
-  info = const_cast<Epetra_RowMatrix &>(Mat_).Apply( *vec_x, *vec_y );
-  vec_y->Scale(Scale_);
-
-  if( info ) return Failed;
-
+  int NumVectors = vec_x->NumVectors();
+  double ** tmp_view, ** x_view, * mask_view;
+  
   if( tmp_ == 0 ) {
     const_cast<MLMat<TYPE> *>(this)->tmp_ = new Epetra_MultiVector(*vec_x);
   }
   
+  // extract views for x and tmp_
+  vec_x->ExtractView(&x_view);
+  tmp_->ExtractView(&tmp_view);
+  Mask_->ExtractView(&mask_view);
+  
+  for( int j=0 ; j<NumVectors ; ++j ) {
+    for( int i=0 ; i<NumMyRows_ ; ++i ) {
+      tmp_view[j][i] = x_view[j][i] * mask_view[i];
+    }    
+  }
+  
+  info = const_cast<Epetra_RowMatrix &>(Mat_).Apply( *tmp_, *vec_y );
+  vec_y->Scale(Scale_);
+
+  if( info ) return Failed;
+
   if( MatOp_ == A_PLUS_AT_MATRIX || MatOp_ == A_MINUS_AT_MATRIX ) {
     const Epetra_RowMatrix & RowMatrix = dynamic_cast<const Epetra_RowMatrix &>(Mat_);
+
     info = RowMatrix.Multiply(true,*vec_x,*tmp_);
+
+    for( int j=0 ; j<NumVectors ; ++j ) {
+      for( int i=0 ; i<NumMyRows_ ; ++i ) {
+	tmp_view[j][i] *= mask_view[i];
+      }    
+    }
+    
     tmp_->Scale(Scale_);
     if( info ) return Failed;
   }
