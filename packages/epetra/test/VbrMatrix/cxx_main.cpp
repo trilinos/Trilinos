@@ -118,8 +118,12 @@ int main(int argc, char *argv[])
   int MinSize = 3;
   int MaxSize = 8;
   int SizeRange = MaxSize - MinSize + 1;
+  double DSizeRange = SizeRange;
   
-  for (i=0; i<NumMyElements; i++) ElementSizeList[i] = 3 + SizeRange * (int) (fabs(randvec[i]) * .99);
+  for (i=0; i<NumMyElements; i++) {
+    int curSize = 3 + (int) (DSizeRange * fabs(randvec[i]) + .99);
+    ElementSizeList[i] = EPETRA_MAX(MinSize, EPETRA_MIN(MaxSize, curSize));
+  }
 
   // Construct a Map
 
@@ -157,17 +161,17 @@ int main(int argc, char *argv[])
   // The array of dense matrices will increase in size from MinSize to MaxSize (defined above)
   for (int kr=0; kr<SizeRange; kr++) {
     BlockEntries[kr] = new Epetra_SerialDenseMatrix[SizeRange];
-    int RowDim = ElementSizeList[kr];
+    int RowDim = MinSize+kr;
     for (int kc = 0; kc<SizeRange; kc++) {
-      int ColDim = ElementSizeList[kc];
+      int ColDim = MinSize+kc;
       Epetra_SerialDenseMatrix * curmat = &(BlockEntries[kr][kc]);
       curmat->Shape(RowDim,ColDim);
-    for (j=0; j < ColDim; j++)
-      for (i=0; i < RowDim; i++) {
-	BlockEntries[kr][kc][j][i] = -1.0;
-	if (i==j && kr==kc) BlockEntries[kr][kc][j][i] = 9.0;
-	else BlockEntries[kr][kc][j][i] = -1.0;
-      }
+      for (j=0; j < ColDim; j++)
+	for (i=0; i < RowDim; i++) {
+	  BlockEntries[kr][kc][j][i] = -1.0;
+	  if (i==j && kr==kc) BlockEntries[kr][kc][j][i] = 9.0;
+	  else BlockEntries[kr][kc][j][i] = -1.0;
+	}
     }
   }
   
@@ -206,8 +210,8 @@ int main(int argc, char *argv[])
 	Indices[2] = CurRow+1;
 	NumEntries = 3;
 	if (i==0) ColDims[0] = EPETRA_MAX(MinSize, EPETRA_MIN(MaxSize, MyPID-1)) - MinSize; // ElementSize on MyPID-1
-	else ColDims[0] = ElementSizeList[i-1];
-	ColDims[1] = ElementSizeList[i];
+	else ColDims[0] = ElementSizeList[i-1] - MinSize;
+	ColDims[1] = ElementSizeList[i] - MinSize;
 	// ElementSize on MyPID+1
 	if (i==NumMyElements-1) ColDims[2] = EPETRA_MAX(MinSize, EPETRA_MIN(MaxSize, MyPID)) - MinSize;
 	else ColDims[2] = ElementSizeList[i+1] - MinSize;
