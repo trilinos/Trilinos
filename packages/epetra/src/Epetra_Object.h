@@ -30,7 +30,7 @@
 #define __cplusplus
 #endif
 
-#if defined(SGI) || defined(SGI64) || defined(SGI32)
+#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT)
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -39,7 +39,6 @@
 #include <math.h>
 #include <string>
 using namespace std;
-#define MPI_NO_CPPBIND
 
 #elif defined(TFLOP)
 
