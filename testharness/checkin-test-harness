@@ -52,9 +52,20 @@
 # THESE OPTIONS CAN BE CONFIGURED AS NEEDED
 #
 
+#
+# RAB: 2003/11/14: You can now define the following environment variables
+# to overide the default behavior whichout requiring changes in the file:
+#
+#    TRILINOS_HOME                     (overrides "$ENV{'HOME'}/Trilinos")
+#    TRILINOS_TEST_BUILD_SUBDIR_LIST   (overrides "subdir-list")
+#
+# The default behavior of this script has not changed
+#
+
 # location of the top-level "Trilinos" directory
 # default location is just below user's home directory
-my $homedir="$ENV{'HOME'}/Trilinos";
+my $trilinos_home_dir = $ENV{TRILINOS_HOME};  # RAB: 2003/11/14 Added for more flexibility
+my $homedir = ( defined($trilinos_home_dir) ? $trilinos_home_dir : "$ENV{'HOME'}/Trilinos" );
 
 #
 # Determine host os
@@ -102,7 +113,8 @@ open (SUMMARY, ">>summary.txt") or die "$! error trying to open file";
 my @subdirs;
 my $numsubdirs=0;
 my $mpi=0;
-my $basesubdirfile='subdir-list'; # no real need to change this
+my $my_basesubdirfile = $ENV{TRILINOS_TEST_BUILD_SUBDIR_LIST}; # RAB: 2003/11/14: Added for more flexibility
+my $basesubdirfile = ( defined($my_basesubdirfile) ? $my_basesubdirfile : "subdir-list" );
 my $subdirfile="$homedir/testharness/$basesubdirfile";
 if (! -f $subdirfile) {
   ++$warningcount;
