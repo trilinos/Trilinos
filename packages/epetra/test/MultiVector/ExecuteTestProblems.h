@@ -11,3 +11,4 @@ int MatrixTests(const Epetra_BlockMap & map, const Epetra_LocalMap & LocalMap, i
 int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose);
 
 int BadResidual(bool verbose, double * Residual, int NumVectors);
+int BadResidual1(bool verbose, double * Residual, int NumVectors);

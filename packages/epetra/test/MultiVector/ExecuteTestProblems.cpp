@@ -366,6 +366,22 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
     EPETRA_TEST_ERR(BadResidual(verbose,residual, NumVectors),ierr);
   }
   
+  err = 0;
+  if (verbose) cout << "XXXXX Testing random_A     ";
+  // Test A.Random()
+  Epetra_MultiVector Rand1_A(A);
+  Epetra_MultiVector Rand2_A(A);
+  EPETRA_TEST_ERR(Rand1_A.Random(),err);
+  EPETRA_TEST_ERR(Rand2_A.Random(),err);
+  // Rand2_A = Rand1_A - Rand2_A (should be nonzero since Random() should give different vectors > 0)
+  EPETRA_TEST_ERR(Rand2_A.Update(1.0, Rand1_A, -1.0),err); 
+  EPETRA_TEST_ERR(Rand2_A.Norm2(residual),err);
+
+  if (err) ierr += err;
+  else {
+    EPETRA_TEST_ERR(BadResidual1(verbose,residual, NumVectors),ierr);
+  }
+  
   // Delete everything
   
   delete [] dotvec_AB;
@@ -689,6 +705,23 @@ int BadResidual(bool verbose, double * Residual, int NumVectors)
     if (Residual[i]>threshold) {
       ierr = 1;// Output will be more useful after returning from this method
       if (verbose) cout << endl << "     Residual[" << i <<"] = " << Residual[i];
+    }
+  }
+  if (verbose)
+    if (ierr==0) cout << "\t Checked OK" << endl;
+  
+  return(ierr);
+}
+
+// This version tests to make sure residuals are large (when we want vectors to be different)
+int BadResidual1(bool verbose, double * Residual, int NumVectors)
+{
+  double threshold = 5.0E-6;
+  int ierr = 0;
+  for (int i=0; i<NumVectors; i++) {
+    if (Residual[i]<threshold) {
+      ierr = 1;// Output will be more useful after returning from this method
+      if (verbose) cout << endl << "     Residual[" << i <<"] = " << Residual[i] << "  Should be larger";
     }
   }
   if (verbose)
