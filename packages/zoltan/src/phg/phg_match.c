@@ -17,7 +17,6 @@
 extern "C" {
 #endif
 
-#include <assert.h>
 #include "phg.h"
 
 
@@ -247,305 +246,254 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
              
 static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
 {
-  int i, j, lno, loop, vertex, maxpsum, *psums, *tsums;
-  int count, size, *ip, bestv, bestsum, edgecount, index, *cmatch;
+  int i, j, lno, loop, vertex, *psums, *tsums;
+  int count, size, *ip, bestv, bestsum, edgecount, pins, *cmatch;
   int NDO, NLOOP;
   int *select, pselect;
   int *m_gno;
   int *m_vindex, *m_vedge;  /* zero-based loopup of edges by vertex */
   int *m_bestsum, *m_bestv; /* column's best results for each matched vertex */
+  int *b_gno, *b_bestsum;
   char *buffer, *rbuffer;    /* send and rec buffers */
   int *displs, *each_size;
   PHGComm *hgc = hg->comm;  
   char  *yo = "matching_ipm";
   
   /* compute NLOOP as 1/2 * total vertices/total columns */
-  NDO   = 100;           /* later, it should be say 10% of vertices on processor */  
+  NDO   = 100;         /* later, it should be % of vertices on processor */  
   NLOOP = 0.98 * hg->dist_x[hgc->nProc_x] / (2 * hgc->nProc_x * NDO);
-
-  
-  for (i = 0; i < hg->nVtx; i++)
-     match[i] = i;
-  pselect = 0;  /* marks position (count) of my processed vertices */
        
   /* local slice of global matching array.  It uses local numbering (zero-based)
-     initially, match[i] = i.  After matching, match[i]=i indicates an unmatched
-     vertex. A matching between vertices i & j is indicated by match[i] = j &
-     match [j] = i.  NOTE: a match to an off processor vertex is indicated my a
-     negative number, -(gno+1), which must use global numbers (gno's).
-  */
-
-  if (!(psums  = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
-   || !(tsums  = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
-   || !(select = (int*) ZOLTAN_MALLOC (NDO      * sizeof(int)))
-   || !(cmatch = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-   || !(displs = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int))))
-     {
-     Zoltan_Multifree (__FILE__, __LINE__, 5, &psums, &tsums, &select, &cmatch,
-      displs);
+   * initially, match[i] = i.  After matching, match[i]=i indicates an unmatched
+   * vertex. A matching between vertices i & j is indicated by match[i] = j &
+   * match [j] = i.  NOTE: a match to an off processor vertex is indicated my a
+   * negative number, -(gno+1), which must use global numbers (gno's).        */
+  for (i = 0; i < hg->nVtx; i++)
+     match[i] = i;
+          
+  psums = tsums = select = cmatch = each_size = displs = NULL;
+  if (!(psums     = (int*) ZOLTAN_CALLOC (hg->nVtx,      sizeof(int)))
+   || !(tsums     = (int*) ZOLTAN_CALLOC (hg->nVtx,      sizeof(int)))
+   || !(select    = (int*) ZOLTAN_MALLOC (NDO          * sizeof(int)))
+   || !(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int)))
+   || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))   
+   || !(displs    = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int))))  {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
-     }
-     
-  if (!(m_vindex  = (int*) ZOLTAN_MALLOC (NDO * hgc->nProc_x * sizeof(int)))
-   || !(m_vedge   = (int*) ZOLTAN_MALLOC (NDO * hgc->nProc_x * sizeof(int)))
-   || !(m_gno     = (int*) ZOLTAN_MALLOC (NDO * hgc->nProc_x * sizeof(int)))
-   || !(m_bestsum = (int*) ZOLTAN_MALLOC (NDO * hgc->nProc_x * sizeof(int)))
-   || !(m_bestv   = (int*) ZOLTAN_MALLOC (NDO * hgc->nProc_x * sizeof(int))))
-     {
-     Zoltan_Multifree (__FILE__, __LINE__, 5, &m_vindex, &m_vedge, &m_gno,
-      &m_bestsum, &m_bestv);
+  }
+
+  m_vedge = m_vindex = m_gno = m_bestsum = m_bestv = b_gno = b_bestsum = 0;
+  if (!(m_vedge   = (int*) ZOLTAN_MALLOC  (hg->nPins * 2         * sizeof(int)))
+   || !(m_vindex  = (int*) ZOLTAN_MALLOC ((NDO * hgc->nProc_x+1) * sizeof(int)))
+   || !(m_gno     = (int*) ZOLTAN_MALLOC  (NDO * hgc->nProc_x    * sizeof(int)))
+   || !(m_bestsum = (int*) ZOLTAN_MALLOC  (NDO * hgc->nProc_x    * sizeof(int)))
+   || !(m_bestv   = (int*) ZOLTAN_MALLOC  (NDO * hgc->nProc_x    * sizeof(int)))
+   || !(b_gno     = (int*) ZOLTAN_MALLOC  (hg->nVtx          * sizeof(int)))
+   || !(b_bestsum = (int*) ZOLTAN_MALLOC  (hg->nVtx          * sizeof(int))))  {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
-     
+              
   /* Loop processing NDO vertices per column each pass. Each loop has 4 phases:
-     Phase 1: send NDO candidates for global matching - horizontal communication
-     Phase 2: sum  inner products, find best         - vertical communication
-     Phase 3: return best sums to owning column      - horizontal communication
-     Phase 4: return actual matches                  - horizontal communication
-  */
-  for (loop = 0; loop < NLOOP; loop++)
-     {
+   * Phase 1: send NDO vertices for global matching - horizontal communication
+   * Phase 2: sum  inner products, find best        - vertical communication
+   * Phase 3: return best sums to owning column     - horizontal communication
+   * Phase 4: return actual match selections        - horizontal communication */
+  pselect = 0;                    /* marks position in vertices to be selected */
+  for (loop = 0; loop < NLOOP; loop++)  {
+     
      /************************ PHASE 1: ***************************************/
      
-     /* Select next NDO unmatched vertices to globally match.  Here many choices
-        can be made for alternative algorithms: sequential, random, weight order,
-        (hypergraph) vertex size, etc.  This version uses seqential: pick the
-        next NDO unmatched vertices in natural lno order.                     */ 
-     for (count = 0; pselect < hg->nVtx && count < NDO; pselect++)
-        if (match[pselect] == pselect)    /* unmatched */
-           select[count++] = pselect;     /* select it */
-     if (count < NDO)                     /* what if we have a short count? */
-        {
-        for (i = 0; i < hg->nVtx; i++)
-            if (match[i] == i)
-              break;       
-        while (count < NDO)             /* find an unmatched vertex */
-           select[count++] = i;         /* fill the rest of the array with it */
-        }                               /* assert(count == NDO); */
-        
+     /* Select next NDO unmatched vertices to globally match.  Alternative
+      * selection algorithms: sequential, random, weight order, vertex size, etc.
+      * This version uses sequential: pick NDO unmatched vertices in lno order */
+      
+     for (i = 0; i < hg->nVtx; i++)
+       cmatch[i] = match[i];                                         
+     for (count = 0; count < NDO && pselect < hg->nVtx; pselect++)
+       if (cmatch[pselect] == pselect)  {  /* unmatched */
+         cmatch[pselect] = -1;            /* pending match */
+         select[count++] = pselect;       /* select it */
+       }
+     if (count < NDO)   {                   /* what if we have a short count? */
+       for (i = 0; i < hg->nVtx; i++)      /* find an unmatched vertex  */
+         if (cmatch[i] == i)
+           break;
+       if (i < hg->nVtx)
+         cmatch[i] = -1;                  
+       while (count < NDO)              /* fill the rest of the array with it */
+         select[count++] = (i == hg->nVtx) ? i-1 : i;
+     }
+                
      /* determine the size of the send buffer & allocate it */   
-     count = 0;
+     size = 0;
      for (i = 0; i < NDO; i++)
-        count += (hg->vindex[select[i]+1] - hg->vindex[select[i]]);                  
-     count = (2 * NDO) + count;         /* append size of vtx and counts */
-     
-     if (!(buffer    = (char*) ZOLTAN_MALLOC (count        * sizeof(int)))
-      || !(each_size = (int *) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int))))
-         {
-         Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &each_size);         
-         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-         return ZOLTAN_MEMERR;
-         }  
-             
-     MPI_Allgather (&count, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);  
+       size += (hg->vindex[select[i]+1] - hg->vindex[select[i]]); 
+     size += (2 * NDO);             /* append size of vtx and counts headers */
+                    
+     MPI_Allgather (&size, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);  
 
-     for (size = 0, i = 0; i < hgc->nProc_x; i++)
-        size += each_size[i];
-        
-     if (!(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int)))) 
-         {
-         ZOLTAN_FREE (&rbuffer);         
-         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-         return ZOLTAN_MEMERR;
-         }  
-
-     displs[0] = 0;
+     displs[0] = size = 0;
+     for (i = 0; i < hgc->nProc_x; i++)
+       size += each_size[i];                 /* compute total size of rbuffer */
      for (i = 1; i < hgc->nProc_x; i++)
-        displs[i] = displs[i-1] + each_size[i-1];
+       displs[i] = displs[i-1] + each_size[i-1];    /* message displacements */
+        
+     if (!(buffer =(char*)ZOLTAN_MALLOC(1+each_size[hgc->myProc_x]*sizeof(int)))
+      || !(rbuffer=(char*)ZOLTAN_MALLOC(1+size * sizeof(int))))    {
+        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+     }          
         
      /* Message is list of <gno, gno's edge count, list of edge gno's> */
      ip = (int*) buffer;
-     for (i = 0; i < NDO; i++)
-        {
-        *ip++ = VTX_LNO_TO_GNO (hg, select[i]);               /* vertex gno */        
-        *ip++ = hg->vindex[select[i]+1] - hg->vindex[select[i]];   /* count */
-        for (j = hg->vindex[select[i]]; j < hg->vindex[select[i]+1]; j++)
-           *ip++ = EDGE_LNO_TO_GNO (hg, hg->vedge[j]);            /* edges */
-        }
+     for (i = 0; i < NDO; i++)   {
+       *ip++ = VTX_LNO_TO_GNO (hg, select[i]);                 /* vertex gno */
+       *ip++ = hg->vindex[select[i]+1] - hg->vindex[select[i]];     /* count */
+       for (j = hg->vindex[select[i]]; j < hg->vindex[select[i]+1]; j++)  
+         *ip++ = hg->vedge[j];                                     /* edges */
+     }        
           
-     /* send/rec NDO vertices/edges to all row neighbors */
-     MPI_Allgatherv (buffer, count, MPI_INT, rbuffer, each_size, displs, MPI_INT,
-      hgc->row_comm);
+     /* send NDO vertices & their edges to all row neighbors */
+     MPI_Allgatherv (buffer, each_size[hgc->myProc_x], MPI_INT, rbuffer,
+      each_size, displs, MPI_INT, hgc->row_comm);
                
      /************************ PHASE 2: ***************************************/    
-
-     if (!(m_gno     = (int*) ZOLTAN_MALLOC (NDO * hgc->nProc_x * sizeof(int)))
-      || !(m_vindex  = (int*) ZOLTAN_MALLOC ((NDO * hgc->nProc_x +1) * sizeof(int)))
-      || !(m_bestsum = (int*) ZOLTAN_MALLOC (NDO * hgc->nProc_x * sizeof(int)))      
-      || !(m_bestv   = (int*) ZOLTAN_MALLOC (NDO * hgc->nProc_x * sizeof(int)))      
-      || !(m_vedge   = (int*) ZOLTAN_MALLOC (size * sizeof(int))))
-         {
-         Zoltan_Multifree (__FILE__, __LINE__, 5, &m_gno, &m_vindex, &m_vedge,
-          &m_bestsum, &m_bestv);
-         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-         return ZOLTAN_MEMERR;
-         }
-     for (i = 0; i < hg->nVtx; i++)
-        cmatch[i] = match[i];
-        
+         
      /* extract data from rbuffer, place in vindex & vedge arrays */ 
-     ip    = (int*) rbuffer;
-     index = 0;
-     for (i = 0; i < hgc->nProc_x * NDO; i++)
-        {
-        m_gno   [i] = *ip++;                      
-        m_vindex[i] = index;
-        edgecount   = *ip++;
-        while (edgecount--)
-           m_vedge[index++] = EDGE_GNO_TO_LNO (hg, *ip++);
-        } 
-     m_vindex[i] = index;
-                     
-     Zoltan_Multifree (__FILE__, __LINE__, 3, &buffer, &rbuffer, &each_size);            
+     ip = (int*) rbuffer;
+     pins = 0;
+     for (i = 0; i < hgc->nProc_x * NDO; i++)  {
+       m_vindex[i] = pins;                
+       m_gno   [i] = *ip++;
+       edgecount   = *ip++;
+       while (edgecount-- > 0)
+         m_vedge[pins++] = *ip++;           
+     } 
+     m_vindex[i] = pins;                    
+     Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);            
                
      /* for each match vertex, compute all local partial inner products */
-     for (vertex = 0; vertex < hgc->nProc_x * NDO; vertex++) 
-        {
-        for (i = 0; i < hg->nVtx; i++)
-           tsums[i] = psums[i] = 0;
-           
-        for (i = m_vindex[vertex]; i < m_vindex[vertex+1]; i++)
-           for (j = hg->hindex[m_vedge[i]]; j < hg->hindex[m_vedge[i]+1]; j++)
-              psums [hg->hvertex[j]]++;          /* unweighted??? */
-                  
-        /* if local vtx, remove self inner product which is a maximum */
-        if (VTX_TO_PROC_X (hg, m_gno[vertex]) == hgc->myProc_x)
-          psums [VTX_GNO_TO_LNO (hg, m_gno[vertex])] = 0;
-       
-        /* Want to use sparse communication with explicit summing later but
-           for now, all procs in my column have same complete inner products */      
-        MPI_Allreduce(psums, tsums, hg->nVtx, MPI_INT, MPI_SUM, hgc->col_comm);              
-                                 
-        /* each proc computes best, all rows in a column compute same answer */ 
-        maxpsum = -1;
-        for (i = 0; i < hg->nVtx; i++)
-           if (tsums[i] > maxpsum  &&  cmatch[i] == i)
-              {
-              m_bestsum [vertex]   = tsums[i];
-              m_bestv   [vertex]   = i;
-              maxpsum              = tsums[i];
-              }
+     for (vertex = 0; vertex < hgc->nProc_x * NDO; vertex++)  {
+       for (i = 0; i < hg->nVtx; i++)
+         tsums[i] = psums[i] = 0;
+
+       for (i = m_vindex[vertex]; i < m_vindex[vertex+1]; i++)
+         for (j = hg->hindex [m_vedge[i]]; j < hg->hindex [m_vedge[i]+1]; j++)
+           ++psums [hg->hvertex[j]];                       /* unweighted??? */
               
-        if (maxpsum >= 0)
-           cmatch [m_bestv[vertex]] = -1;      /* force match[i] != i */  
-        else
-           m_bestsum[vertex] = -1;
-           m_bestv[vertex]   = 0;  /* dummy assignment */   
-           
-           
-        }
+       /* if local vtx, remove self inner product which is a false maximum */
+       if (VTX_TO_PROC_X (hg, m_gno[vertex]) == hgc->myProc_x)
+         psums [VTX_GNO_TO_LNO (hg, m_gno[vertex])] = 0;
+       
+       /* Want to use sparse communication with explicit summing later but
+          for now, all procs in my column have same complete inner products */      
+       MPI_Allreduce(psums, tsums, hg->nVtx, MPI_INT, MPI_SUM, hgc->col_comm);             
+                            
+       /* each proc computes best, all rows in a column compute same answer */        
+       m_bestsum [vertex] = -1;
+       m_bestv   [vertex] =  0;
+       for (i = 0; i < hg->nVtx; i++)
+         if (tsums[i] > m_bestsum[vertex]  &&  cmatch[i] == i)  {
+           m_bestsum [vertex] = tsums[i];
+           m_bestv   [vertex] = i;
+         }    
+       cmatch [m_bestv[vertex]] = -1;      /* pending match */  
+     }
         
-
-
-           
      /************************ PHASE 3: **************************************/
 
      size = 3 * NDO * hgc->nProc_x;     
-     if (!(buffer  = (char*) ZOLTAN_MALLOC (size * sizeof(int)))
-      || !(rbuffer = (char*) ZOLTAN_MALLOC (size * hgc->nProc_x * sizeof(int))))
-         {
-         Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);         
+     if (!(rbuffer = (char*) ZOLTAN_MALLOC (1 + size * sizeof(int)*hgc->nProc_x))
+      || !(buffer  = (char*) ZOLTAN_MALLOC (1 + size * sizeof(int))))    {
          ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
          return ZOLTAN_MEMERR;
-         }  
+     }  
                       
      /* prepare send buffer */       
      ip = (int*) buffer; 
-     for (vertex = 0; vertex < NDO * hgc->nProc_x; vertex++)
-        {
-        *ip++ = m_gno [vertex];
-        *ip++ = VTX_LNO_TO_GNO (hg, m_bestv [vertex]);
-        *ip++ = m_bestsum [vertex];
-        }
+     for (vertex = 0; vertex < NDO * hgc->nProc_x; vertex++)  {
+       *ip++ = m_gno [vertex];
+       *ip++ = VTX_LNO_TO_GNO (hg, m_bestv [vertex]);
+       *ip++ = m_bestsum [vertex];
+     }
         
      /* send/rec to all columns in my row */     
-     MPI_Allgather (buffer, 3 * NDO * hgc->nProc_x, MPI_INT, 
-                   rbuffer, 3 * NDO * hgc->nProc_x, MPI_INT, hgc->row_comm);
-                   
-     Zoltan_Multifree (__FILE__, __LINE__, 5, &m_gno, &m_vindex, &m_bestsum,
-      &m_bestv, &m_vedge);                            
-     if (!(m_gno     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-      || !(m_bestsum = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int))))      
-         {
-         Zoltan_Multifree (__FILE__, __LINE__, 2, &m_gno, &m_bestsum);
-         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-         return ZOLTAN_MEMERR;
-         }                   
+     MPI_Allgather(buffer, size, MPI_INT, rbuffer, size, MPI_INT, hgc->row_comm);
                                                   
      for (i = 0; i < hg->nVtx; i++)
-        m_bestsum[i] = -1;
-                      
+       b_bestsum[i] = -2;   
+                 
      ip = (int*) rbuffer;
-     for (i = 0; i < NDO * hgc->nProc_x; i++)
-        {
-        vertex  = *ip++;
-        bestv   = *ip++;
-        bestsum = *ip++;
-        if (VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x)
-           {
-           lno =  VTX_GNO_TO_LNO (hg, vertex);   
-           if (bestsum > m_bestsum [lno])
-              {        
-              m_gno     [lno] = bestv;
-              m_bestsum [lno] = bestsum;
-              }
-           }
-        }   
-         
+     for (i = 0; i < NDO * hgc->nProc_x * hgc->nProc_x; i++)   {
+       vertex  = *ip++;
+       bestv   = *ip++;
+       bestsum = *ip++;
+                
+       if (VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x)    {
+         lno =  VTX_GNO_TO_LNO (hg, vertex);  
+         if ((bestsum > b_bestsum [lno]) || (bestsum == b_bestsum[lno]
+          && VTX_TO_PROC_X (hg, b_gno[lno]) != hgc->myProc_x
+          && VTX_TO_PROC_X (hg, bestv)      == hgc->myProc_x))    {        
+              b_gno     [lno] = bestv;
+              b_bestsum [lno] = bestsum;
+         }                   
+       }
+     }   
+                               
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);
+     
+     /************************ PHASE 4: ***************************************/
+     
      size = 2 * NDO * sizeof(int);        
-     if (!(buffer  = (char*) ZOLTAN_MALLOC (size))
-      || !(rbuffer = (char*) ZOLTAN_MALLOC (size * hgc->nProc_x)))
-         {
-         Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);         
+     if (!(buffer  = (char*) ZOLTAN_MALLOC (1 + size))
+      || !(rbuffer = (char*) ZOLTAN_MALLOC (1 + size * hgc->nProc_x)))  {
          ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
          return ZOLTAN_MEMERR;
-         }  
+     }  
                              
-     ip = (int*) buffer;                  
-     for (i = 0; i < hg->nVtx; i++)
-        if (m_bestsum [i] >= 0)
-           {
-           if (VTX_TO_PROC_X (hg, m_gno[i]) == hgc->myProc_x)
-              {
-              j = VTX_GNO_TO_LNO (hg, m_gno[i]);
-              match[i] = j;
-              match[j] = i;
-              }
-           else
-              match[i] = -m_gno[i] - 1;
-           *ip++ = VTX_LNO_TO_GNO (hg, i);
-           *ip++ = m_gno[i];
-           }
-     Zoltan_Multifree (__FILE__, __LINE__, 2, &m_gno, &m_bestsum);
-                     
-     /************************ PHASE 4: ***************************************/
-          
-     MPI_Allgather (buffer, 2 * NDO, MPI_INT, 
-                   rbuffer, 2 * NDO, MPI_INT, hgc->row_comm);
+     ip = (int*) buffer; 
+     for (i = 0; i < NDO; i++)   {
+       *ip++ = VTX_LNO_TO_GNO (hg, select[i]);
+       *ip++ = (b_bestsum [select[i]] > 0) 
+         ? b_gno[select[i]] : VTX_LNO_TO_GNO (hg, select[i]);
+     }
+           
+     MPI_Allgather(buffer,2*NDO,MPI_INT,rbuffer,2*NDO,MPI_INT,hgc->row_comm);
      
      ip = (int*) rbuffer;                   
-     for (i = 0; i < NDO * hgc->nProc_x; i++)
-        {
-        vertex  = *ip++;
-        bestv   = *ip++; 
-        if (VTX_TO_PROC_X (hg, bestv)  == hgc->myProc_x
-         && VTX_TO_PROC_X (hg, vertex) != hgc->myProc_x)
-             match [VTX_GNO_TO_LNO (hg, bestv)] = -vertex-1;
-        }
+     for (i = 0; i < NDO * hgc->nProc_x; i++)  {
+       bestv  = *ip++;
+       vertex = *ip++; 
+                
+       if (VTX_TO_PROC_X (hg, bestv)  == hgc->myProc_x
+        && VTX_TO_PROC_X (hg, vertex) != hgc->myProc_x)                       
+           match [VTX_GNO_TO_LNO (hg, bestv)] = -vertex-1;
+             
+       if (VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x
+        && VTX_TO_PROC_X (hg, bestv)  != hgc->myProc_x)                
+           match [VTX_GNO_TO_LNO (hg, vertex)] = -bestv-1;
+             
+       if (VTX_TO_PROC_X (hg, bestv)  == hgc->myProc_x
+        && VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x)   {
+           int v1 = VTX_GNO_TO_LNO (hg, bestv);             
+           int v2 = VTX_GNO_TO_LNO (hg, vertex);                
+           match [v1] = v2;
+           match [v2] = v1;
+       }                   
+     }       
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);                       
-     } /* end of large loop over LOOP */
-          
-  Zoltan_Multifree (__FILE__, __LINE__, 4, &psums, &tsums, &select, &cmatch); 
-  Zoltan_Multifree (__FILE__, __LINE__, 5, &m_vindex, &m_vedge, &m_gno,
-   &m_bestsum, &m_bestv);
+  } /* DONE: end of large loop over LOOP */
+        
+  Zoltan_Multifree (__FILE__, __LINE__, 6, &psums, &tsums, &select, &cmatch,
+   &each_size, &displs); 
+  Zoltan_Multifree (__FILE__, __LINE__, 7, &m_vindex, &m_vedge, &m_gno, &b_gno,
+   &m_bestsum, &m_bestv, &b_bestsum);     
   return ZOLTAN_OK;
 }
 
 
-/*****************************************************************************/
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
