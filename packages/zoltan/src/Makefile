@@ -43,7 +43,7 @@ ZOLTAN_ARCH	= generic
 endif
 
 ifndef ZOLTAN_CONFIG
-ZOLTAN_CONFIG = Makefiles/Makefile.$(ZOLTAN_ARCH)
+ZOLTAN_CONFIG = Utilities/Config/Config.$(ZOLTAN_ARCH)
 endif
 
 include $(ZOLTAN_CONFIG)
@@ -114,21 +114,20 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #
 #   Paths to submodules
 #
-SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct \
+SUB_VPATH	= ../all ../lb ../par ../rcb ../oct \
 		  ../params ../driver ../ch ../parmetis ../timer \
-                  ../ha ../reftree
+                  ../ha ../reftree \
+		  ../Utilities/Communication ../Utilities/Memory
 SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct \
 		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
-                  -I../ha -I../reftree 
+                  -I../ha -I../reftree \
+		  -I../Utilities/Communication -I../Utilities/Memory
 SUBDIRS		= driver ch all lb par rcb comm oct parmetis params timer ha \
-		  reftree
+		  reftree Utilities/Communication Utilities/Memory
 
 
 ALL_CSRC	= all_allo.c free_structure.c
 ALL_INC		= all_const.h all_allo_const.h
-
-MEM_CSRC	= mem.c
-MEM_INC		= mem_const.h
 
 LB_CSRC		= lb_balance.c lb_eval.c lb_init.c lb_migrate.c lb_set_fn.c \
 		  lb_set_method.c lb_struct.c lb_util.c 
@@ -149,11 +148,6 @@ OCT_INC		= msg_const.h octant_const.h oct_util_const.h \
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c 
 PARAMS_INC	= params_const.h
-
-
-COMM_CSRC	= comm_create.c comm_do.c comm_do_reverse.c comm_destroy.c \
-		  invert_map.c
-COMM_INC	= comm.h
 
 PAR_CSRC	= par_util.c
 PAR_INC		= par_const.h par.h
@@ -199,8 +193,8 @@ endif
 ##############################################################################
 
 ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
-ZOLTAN_CSRC    += $(LB_CSRC) $(ALL_CSRC) $(MEM_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
-		  $(COMM_CSRC) $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC) \
+ZOLTAN_CSRC    += $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
+		  $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
 ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o) 
@@ -208,6 +202,7 @@ ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o)
 ZDRIVE_CSRC 	= $(DR_CSRC) $(CH_CSRC)
 ZDRIVE_OBJ	= $(ZDRIVE_CSRC:.c=.o)
 ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
+		  -L../Utilities/$(ZOLTAN_OBJ_DIR) -lzoltan_comm -lzoltan_mem \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
 		  $(MPI_LIBPATH) $(MPI_LIB) -lm
 
@@ -267,6 +262,9 @@ help:
 
 
 zoltan:
+	@cd Utilities; \
+	$(MAKE) libzoltan_mem.a; \
+	$(MAKE) libzoltan_comm.a  
 	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
 	then mkdir $(ZOLTAN_OBJ_DIR); 		\
 	fi
@@ -293,10 +291,13 @@ zoltan:
           if [ ! -d $(ZOLTAN_LIB_DIR) ];		\
 	  then mkdir $(ZOLTAN_LIB_DIR);			\
 	  fi;						\
-	  mv -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR)/$(LIB_NAME); \
+	  mv -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR); \
 	fi
 
 zdrive:
+	@cd Utilities; \
+	$(MAKE) libzoltan_mem.a; \
+	$(MAKE) libzoltan_comm.a  
 	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
 	then mkdir $(ZOLTAN_OBJ_DIR); 		\
 	fi
@@ -364,7 +365,7 @@ zscript:
 	@echo 'rm -f $$ZOLTAN_OBJ_DIR/*' >> zoltan_script
 	@echo 'cd $$ZOLTAN_OBJ_DIR' >> zoltan_script
 	@echo "echo 'Zoltan:  Compiling Zoltan/all'" >> zoltan_script
-	@for iii in $(ALL_CSRC) $(MEM_CSRC) ; do \
+	@for iii in $(ALL_CSRC)  ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../all/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/lb'" >> zoltan_script

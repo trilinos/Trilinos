@@ -67,8 +67,7 @@ docs/octree                        -- Documentation for RPI's
 ZOLTAN LIBRARY FILES
 --------------------
 
-Makefile        -- Top-level Zoltan Makefile.  Contains targets for compilation
-                   on the 980 LAN.
+Makefile        -- Top-level Zoltan Makefile.  
 
 Makefile_sub    -- Lower-level Makefile template.  Copied to Obj_target
                    directories when targets are compiled.
@@ -79,9 +78,6 @@ lb              -- Interface definitions, user data type definitions,
                    interface and migration-help tools.
 
 all             -- Memory allocation functions.
-
-comm            -- Hendrickson and Plimpton's unstructured
-                   communication package.
 
 fort            -- William Mitchell's Fortran interface for Zoltan.
 
@@ -100,6 +96,10 @@ rcb             -- Recursive Coordinate Bisection and Recursive Inertial
                    Bisection algorithms.
 
 reftree         -- Refinement Tree grid partitioning algorithm.
+
+Utils		-- Zoltan utilities, including the memory management and
+		   unstructured communication packages.  Also includes
+		   shared configuration files for Zoltan compilation.
 
 timer		-- Timer routines.
 
