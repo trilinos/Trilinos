@@ -14,11 +14,17 @@
 /* Define if F77 and FC dummy `main' functions are identical. */
 #undef FC_DUMMY_MAIN_EQ_F77
 
+/* Define to 1 if you have the <assert.h> header file. */
+#undef HAVE_ASSERT_H
+
 /* Define if you have a BLAS library. */
 #undef HAVE_BLAS
 
 /* define if bool is a built-in type */
 #undef HAVE_BOOL
+
+/* Define to 1 if you have the <cassert> header file. */
+#undef HAVE_CASSERT
 
 /* Define to 1 if you have the <ctime> header file. */
 #undef HAVE_CTIME
@@ -28,6 +34,12 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <iostream> header file. */
+#undef HAVE_IOSTREAM
+
+/* Define to 1 if you have the <iostream.h> header file. */
+#undef HAVE_IOSTREAM_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H

@@ -2,7 +2,7 @@
 // ************************************************************************
 // 
 //          Kokkos: A Fast Kernel Package
-//              Copyright (2003) Sandia Corporation
+//              Copyright (2004) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -86,6 +86,23 @@ using std::string;
 #endif
 #endif
 
+#ifdef HAVE_CASSERT
+#include <cassert>
+#else
+#include <assert.h>
+#endif
+
+#ifdef HAVE_IOSTREAM
+#include <iostream>
+using std::istream;
+using std::ostream;
+using std::cerr;
+using std::cout;
+using std::endl;
+#else
+#include <iostream.h>
+#endif
+
 #else /*HAVE_CONFIG_H is not defined*/
 
 #include <string>
@@ -99,6 +116,15 @@ using std::string;
 #include <sys/resource.h>
 #endif
 #endif
+
+#include <cassert>
+
+#include <iostream>
+using std::istream;
+using std::ostream;
+using std::cerr;
+using std::cout;
+using std::endl;
 
 #endif /*HAVE_CONFIG_H */
 #endif /* KOKKOS_CONFIGDEFS_H */
