@@ -11,6 +11,7 @@ CrsGraph_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 CrsGraph_test_CXXFLAGS = -I$(top_srcdir)/src
 
-CrsGraph_test_LDADD = -L$(top_builddir)/src -lepetra $(FLIBS)
+CrsGraph_test_LDADD = -L$(top_builddir)/src -lepetra $(BLAS_LIBS) \
+	$(LIBS) $(FLIBS)
 
 
