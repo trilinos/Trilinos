@@ -272,6 +272,10 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
 
   // First do a workspace query
   if (hasMassMatrix) {
+
+    // Make sure mass matrix is fresh
+    computeMassMatrix();
+
     // Copy mass matrix since lapack routines overwrite it
     M = massMatrix;
 
