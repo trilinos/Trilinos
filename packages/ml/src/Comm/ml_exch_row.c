@@ -133,7 +133,7 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
         }
      }
   }
-  if (Nghost == 0) Nghost = Nrows_new;
+  if (Nghost < Nrows_new) Nghost = Nrows_new;
 
   actual_recv_length = (int *) ML_allocate( (Nneighbors+1)*sizeof(int));
   actual_send_length = (int *) ML_allocate( (Nneighbors+1)*sizeof(int));
@@ -152,7 +152,7 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   allocated_space = Pmatrix->max_nz_per_row+2;
   dummy1 = (double *) ML_allocate(allocated_space*sizeof(double));
   dummy2 = (int    *) ML_allocate(allocated_space*sizeof(   int));
-#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
+#if defined(HXVE_ML_PARMETIS_2x) || defined(HXVE_ML_PARMETIS_3x)
   dtemp  = (double *) ML_allocate(2*(Nrows+Nghost + 1)*sizeof(double));
 #else
   dtemp  = (double *) ML_allocate((Nrows+Nghost + 1)*sizeof(double));
@@ -433,7 +433,7 @@ example (with nonutilized ghost variables still works
 
   if ( (nonNULL_rcv_list == 1) && (comm_info->add_rcvd == 0)) 
   {
-#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
+#if defined(HxVE_ML_PARMETIS_2x) || defined(HxVE_ML_PARMETIS_3x)
     j = (*Pappended)->getrow->Nrows;
      newmap = (int *) ML_allocate( j * sizeof(int));
      for (i = Nrows; i < j; i++) newmap[i] = -1;
