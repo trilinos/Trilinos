@@ -2967,21 +2967,21 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel)
     if (mypid == 0)
        printf("Operator %s: apply+comm time (stdev) \t= %e\n",mat->label,t1);
 
-    t1 = ML_gsum_double( (proc_active ? mat->apply_no_comm_time:0.0),mat->comm);
+    t1 = ML_gsum_double( (proc_active ? mat->apply_without_comm_time:0.0),mat->comm);
     t1 = t1/((double) NumActiveProc);
     if (mypid == 0)
        printf("Operator %s: apply only time (avg) \t= %e\n",mat->label,t1);
-    t1 = ML_gmax_double( (proc_active ?mat->apply_no_comm_time:0.0),mat->comm);
-    i =ML_gmax_int((t1 == mat->apply_no_comm_time ? mypid:0),mat->comm);
+    t1 = ML_gmax_double( (proc_active ?mat->apply_without_comm_time:0.0),mat->comm);
+    i =ML_gmax_int((t1 == mat->apply_without_comm_time ? mypid:0),mat->comm);
     if (mypid == 0)
        printf("Operator %s: apply only time (max %d) \t= %e\n",mat->label,i,t1);
-    t1 = - mat->apply_no_comm_time;
+    t1 = - mat->apply_without_comm_time;
     t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), mat->comm);
     t1 = - t1;
-    i =ML_gmax_int((t1 == mat->apply_no_comm_time ? mypid:0),mat->comm);
+    i =ML_gmax_int((t1 == mat->apply_without_comm_time ? mypid:0),mat->comm);
     if (mypid == 0)
        printf("Operator %s: apply only time (min %d) \t= %e\n",mat->label,i,t1);
-    t1 = ML_Global_Standard_Deviation(mat->apply_no_comm_time, NumActiveProc,
+    t1 = ML_Global_Standard_Deviation(mat->apply_without_comm_time, NumActiveProc,
                                           proc_active, mat->comm);
     if (mypid == 0)
        printf("Operator %s: apply only time (stdev) \t= %e\n",mat->label,t1);
@@ -3020,7 +3020,7 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
 #if defined(ML_TIMING)
   int j, ntimes;
   double *xvec,*bvec;
-  double apply_time, apply_no_comm_time, pre_time, post_time;
+  double apply_time, apply_without_comm_time, pre_time, post_time;
   double t0;
 
   xvec = (double *) ML_allocate((A->invec_leng) * sizeof(double));
@@ -3028,7 +3028,7 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
   bvec = (double *) ML_allocate((A->outvec_leng) * sizeof(double));
 
   apply_time = A->apply_time; A->apply_time = 0.0;
-  apply_no_comm_time = A->apply_no_comm_time; A->apply_no_comm_time = 0.0;
+  apply_without_comm_time = A->apply_without_comm_time; A->apply_without_comm_time = 0.0;
   ntimes = A->ntimes; A->ntimes = 0;
   if (A->getrow->pre_comm != NULL) {
     pre_time = A->getrow->pre_comm->time;
@@ -3051,7 +3051,7 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
   ML_Operator_ReportStatistics(A,appendlabel);
 
   A->apply_time = apply_time;
-  A->apply_no_comm_time = apply_no_comm_time;
+  A->apply_without_comm_time = apply_without_comm_time;
   A->ntimes = ntimes;
   if (A->getrow->pre_comm != NULL)
     A->getrow->pre_comm->time = pre_time;
