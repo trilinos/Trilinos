@@ -165,11 +165,11 @@ free((void*)10024);
 and hense the runtime error.
 
 A fully ANSI/ISO C++ standard implementation must therefore perform
-some type of runtime lookup of an object to determine the its base
-address before it calls \texttt{free()}.  Hence we see that a proper
-C++ implementation of \texttt{delete} for an object with a virtual
-functon must always perform a runtime type lookup to execute correctly
-and this is unavoidable extra overhead.
+some type of runtime lookup of an object to determine its base address
+before it calls \texttt{free()}.  Hence we see that a proper C++
+implementation of \texttt{delete} for an object with a virtual functon
+must always perform a runtime type lookup to execute correctly and
+this is unavoidable extra overhead.
 
 The reason that the simplistic (incorrect) implementation (such as
 implemented in MS Visual C++ 6.0) shown above generally works just

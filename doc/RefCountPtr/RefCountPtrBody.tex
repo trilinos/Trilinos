@@ -51,8 +51,8 @@ Note that the classes {}\texttt{A}, {}\texttt{B1}, {}\texttt{B2} and
 base classes) while the classes {}\texttt{D} and {}\texttt{E} are not.
 In the following description, all of the code examples are written as
 though there was a {}\texttt{using namespace Teuchos;} declaration is
-the current scope or all of the code resides in the {}\texttt{Teuchos}
-namespace.
+the current scope or as if all of the code resided in the
+{}\texttt{Teuchos} namespace.
 
 The public C++ declarations for all of the code discussed here are
 shown in Figure {}\ref{rcp:fig:decl}.  A short quick-start and
@@ -116,13 +116,13 @@ A word of caution, note that the design of the reference-counted smart
 pointer class discussed in Item 29 of {}\cite{ref:meyers_1996} in the
 subsection ``Adding Reference Counting to Existing Classes'' has a
 purpose very similary to {}\texttt{RefCountPtr<>} but the design of
-{}\texttt{RefCountPtr<>} is very different (ToDo: Discuss the C++
-design of {}\texttt{RefCountPtr<>} in an appendix).  Therefore, while
-the designs discussed in {}\cite{ref:meyers_1996} are not used in
-their presented form, this reference does discuss in detail many of
-the issues involved in using smart pointers and reference counting and
-hense provides very useful background information and interested
-readers are strongly encurraged to study this reference.
+{}\texttt{RefCountPtr<>} is very different (see Appendix
+{}\ref{rcp:apdx:design}).  Therefore, while the designs discussed in
+{}\cite{ref:meyers_1996} are not used in their presented form,
+{}\cite{ref:meyers_1996} does discuss in detail many of the issues
+involved in using smart pointers and reference counting and hense
+provides very useful background information and interested readers are
+strongly encurraged to study this reference.
 
 %
 \subsection{Initializing {}\texttt{RefCountPtr} objects}
@@ -194,15 +194,15 @@ constructor).
 \end{commandment}
 
 Another situation that commonly occurs is when an object is allocated
-on the stack, but must be passed to a client that only accepts a
-{}\texttt{RefCountPtr<>} object.  For example, suppose that there is a
-class {}\texttt{Foo} that is declared as follows
+on the stack or statically, but must be passed to a client that only
+accepts a {}\texttt{RefCountPtr<>} object.  For example, suppose that
+there is a class {}\texttt{Foo} that is declared as follows
 %
 {\scriptsize\begin{verbatim}
 class Foo {
 public:
-    Foo(
-    void f() { a_->f() };
+    Foo( const RefCountPtr<A>& a ) : a_(a) {}
+    void f() { a_->f(); }
 private:
     RefCountPtr<A>  a_;
 };
@@ -498,9 +498,9 @@ In many respects C++ is a highly expressive programming language where
 the programmer's intent for an interface or a function prototype can
 be decerned just by looking at the C++ declaration and not even
 needing to look at auxiliary documentation in many cases.  For
-example, if a reference or pointer argument into a function has the
-{}\texttt{const} qualifier, then a developer can automatically (and
-rightly) assume that the argument will not be changed within the
+example, if a reference or pointer argument passed into a function has
+the {}\texttt{const} qualifier, then a developer can automatically
+(and rightly) assume that the argument will not be changed within the
 implementation of the function.  The language tries to help enforce
 {}\texttt{const} but, in the end, it is up to the implementer of a
 function to honor the promise inherent in the {}\texttt{const}
@@ -551,11 +551,11 @@ mutable object
 & {}\texttt{S *s}
 & {}\texttt{const RefCountPtr<S> \&s} \\
 \hline
-non-mutable array of objects
+array of non-mutable objects
 & {}\texttt{const S s[]}
 & {}\texttt{RefCountPtr<const S> s[]} \\
 \hline
-mutable array of objects
+array of mutable objects
 & {}\texttt{S s[]}
 & {}\texttt{RefCountPtr<S> s[]} \\
 \hline
@@ -588,14 +588,14 @@ non-mutable object (optional)
 & {}\texttt{const RefCountPtr<const A> \&a} \\
 \hline
 mutable object
-& {}\texttt{S *s}
+& {}\texttt{A *a}
 & {}\texttt{const RefCountPtr<A> \&a} \\
 \hline
-non-mutable array of objects
+array of non-mutable objects
 & {}\texttt{const A* a[]}
 & {}\texttt{RefCountPtr<const A> a[]} \\
 \hline
-mutable array of objects
+array of mutable objects
 & {}\texttt{A* a[]}
 & {}\texttt{RefCountPtr<A> a[]} \\
 \hline
@@ -624,6 +624,16 @@ Specifically, see the sections ???.  Appendix
 Table {}{}\ref{rcp:tbl:fnc-decl} and how {}\texttt{RefCountPtr<>} fits
 in.
 
+In short, {}\texttt{RefCountPtr<>} objects should be passed around as
+through they where raw C++ pointers to the underlying objects that
+they are reference counting.  The main difference between passing
+{}\texttt{RefCountPtr<>} and and raw C++ pointers, however, is that it
+usually a good idea to pass {}\texttt{RefCountPtr<>} objects by
+{}\texttt{const} reference instead of by value since passing
+{}\texttt{RefCountPtr<>} objects be value results in unnecessary calls
+to copy constructors and destructors that if nothing else make
+stepping through code in debugger more difficult.
+
 %
 \section{Advanced features of {}\texttt{RefCountPtr<>}}
 %
@@ -641,8 +651,8 @@ features here.
 
 In most situations, clients do not need to know anything about
 reference counts but there are use cases where it is helpful if
-clients can query as to reference-count information.  For this
-purpose, {}\texttt{RefCountPtr<>} contains the member functions
+clients can query reference-count information.  For this purpose,
+{}\texttt{RefCountPtr<>} contains the member functions
 %
 {\scriptsize\begin{verbatim}
 template<class T> int  RefCountPtr<T>::count() const {...}
@@ -656,7 +666,7 @@ ptr.has\_ownership())==true} then the client that owns {}\texttt{ptr}
 (where {}\texttt{ptr} is perhaps as a private data member) can infer
 that it is the only client that has a reference to the underlying
 reference-counted object and, therefore, this client is free to change
-the object freely without worry that such a change will affect another
+the object without worry that such a change will affect another
 client.
 
 This type of information must be used very carefully but can be very
@@ -672,12 +682,12 @@ the reference-counted object.
 %
 
 There are situations when a single {}\texttt{RefCountPtr<>} object is
-insufficient to completely handle the dynamic memory for an objects.
-This occurs when trying to use classes that where written without
-dynamic memory allocation in mind.  To demonstrate the issues involved
-assume that the following classes are to be reused in a dynamic
-environment and where the memory management is to be handled using
-{}\texttt{RefCountPtr<>} objects.
+insufficient to completely handle the dynamic memory for a
+reference-counted object.  This occurs when trying to use classes that
+were written without dynamic memory allocation in mind.  To
+demonstrate the issues involved assume that the following classes are
+to be reused in a dynamic environment and where the memory management
+is to be handled using {}\texttt{RefCountPtr<>} objects.
 %
 {\scriptsize\begin{verbatim}
 class Base {
@@ -703,14 +713,13 @@ private:
 };
 \end{verbatim}}
 %
-\noindent{}
-Above, every {}\texttt{Derived2} object must have an
-assoicated {}\texttt{Utility} object.  The above class {}\texttt{Derived2}
-assumes that an object of type {}\texttt{Utility} is allocated
-(presumably on the stack or as a global variable) by the client before
-it is used to construct a type {}\texttt{Derived2} object.  For example,
-the designers of these classes may expect that these classes will be
-used in a flat program such as:
+{}\noindent{}Above, every {}\texttt{Derived2} object must have an
+assoicated {}\texttt{Utility} object.  The above class
+{}\texttt{Derived2} assumes that an object of type {}\texttt{Utility}
+is allocated (presumably on the stack or as a global variable) by the
+client before it is used to construct a type {}\texttt{Derived2}
+object.  For example, the designers of these classes may expect that
+these classes will be used in a flat program such as:
 %
 {\scriptsize\begin{verbatim}
 void f(Base* b);
@@ -748,8 +757,8 @@ in the following function.
 RefCountPtr<Base> createBase(bool someFlag);
 \end{verbatim}}
 %
-Now let us consider a (naive and incorrect) first implementation of
-this function
+Now let us consider a naive and incorrect first implementation of this
+function
 %
 {\scriptsize\begin{verbatim}
 RefCountPtr<Base> createBase(bool someFlag)
@@ -768,8 +777,8 @@ RefCountPtr<Base> createBase(bool someFlag)
 Anyone who knows C++ 101 knows the problem with the above function.
 As soon as the block of code where {}\texttt{u} is allocated (on the
 stack) is exited, the created {}\texttt{Derived2(u)} object becomes
-invalid before the function even returns.  Another second (naive and
-incorrect) implementation of this function might be
+invalid before the function even returns.  Another second naive and
+incorrect implementation of this function might be
 %
 {\scriptsize\begin{verbatim}
 RefCountPtr<Base> createBase(bool someFlag)
@@ -794,43 +803,56 @@ memory exhaustion will occur.
 
 The solution to this type of problem is to link a
 {}\texttt{RefCountPtr<Utility>} object to the created
-{}\texttt{RefCountPtr<Derived2>} object so that when all of the 
+{}\texttt{RefCountPtr<Derived2>} object so that when all of the
 {}\texttt{RefCountPtr<Derived2>} objects pointed to this object are
 deleted (along with its underlying {}\texttt{Derived2} object) the
 associated {}\texttt{Utility} object will also be deleted.  The way to
-do this is to using the nonmember function
+do this is to use the nonmember function
 %
 {\scriptsize\begin{verbatim}
 template<class T1, class T2>
-int set_extra_data( const T1 &extra_data, RefCountPtr<T2> *p, int ctx = -1 );
+void set_extra_data(
+  const T1 &extra_data, const std::string& name
+  ,RefCountPtr<T2> *p, bool force_unique = true
+  );
 \end{verbatim}}
 %
-The function {}\texttt{set\-\_extra\-\_data(...)} adds a piece of extra
-data of any type to an existing {}\texttt{RefCountPtr<T2>} object.  This
-function works with a concept of a context.  By default, the new
-object {}\texttt{extra\-\_data} is appended to a list of objects
-associated with the {}\texttt{RefCountPtr<T2>} object {}\texttt{*p} and
-the context id for this object is returned as an integer from the function.
-This context can be used to access the object using one of the nonmember
-functions
+The function {}\texttt{set\-\_extra\-\_data(...)} adds a piece of
+extra data of any type\footnote{Note: the type {}\texttt{T1} used for
+extra data must support value semantics (i.e.~have default and copy
+constructors defined)} to an existing {}\texttt{RefCountPtr<T2>}
+object.  A string \texttt{name} is associated with each piece of extra
+data to disambiguate from other pieces of extra data with the same
+type and to facilitate later retrieval.  The boolean argument
+\texttt{force\-\_unique} (which has a default value of \texttt{true})
+is used to allow or disallow overwritting existing data of the same
+type and name.  A piece of extra data is keyed both on the type of the
+extra data and its string name and is accessed by one of the following
+non-member functions.
 %
 {\scriptsize\begin{verbatim}
 template<class T1, class T2>
-T1& get_extra_data( RefCountPtr<T2>& p, int ctx );
+T1& get_extra_data( RefCountPtr<T2>& p, const std::string& name );
 
 template<class T1, class T2>
-const T1& get_extra_data( const RefCountPtr<T2>& p, int ctx );
+const T1& get_extra_data( const RefCountPtr<T2>& p, const std::string& name );
 \end{verbatim}}
 %
 \noindent{}
 See the doxygen documentation for these functions
 for more details.
 
-In many cases, one does not care to save a context so that the
-{}\texttt{extra\-\_data} object can be retrieved and in other cases
-one does want to retrieve the object.  The concept of a context allows
-multiple clients to tack on extra data to a {}\texttt{RefCountPtr<>}
-object and retrieve that extra data without stomping on each other.
+In many cases, a client does not care to retrieve a set piece of extra
+data and therefore the string \texttt{name} is not so important and
+really only needs to disambiguate the extra data being added from
+other pieces of extra data that may potentially already be added
+(perhaps by another client).  This allows multiple clients to tack on
+extra data to a {}\texttt{RefCountPtr<>} object and retrieve that
+extra data without stomping on each other.  It is important to
+remember that in order for a client to retrieve a piece of extra data
+that was added to a {}\texttt{RefCountPtr<>} object, the client must
+know the type of the extra data and its string name that where used
+with the call to the {}\texttt{set\-\_extra\-\_data()} function.
 
 New let us see how to use the function {}\texttt{set\-\_extra\-\_data(...)}
 to correctly implement {}\texttt{create\-Base(...)}
@@ -844,30 +866,54 @@ RefCountPtr<Base> createBase(bool someFlag)
   else {
     RefCountPtr<Utility> u = rcp(new Utility);
     RefCountPtr<Base> d = rcp(new Derived2(*u));
-    set_extra_data( u, &d );
+    set_extra_data( u, "Derived2:Utility", &d );
     return d;
   }
 }
 \end{verbatim}}
 %
-\noindent{}
-Now when the last {}\texttt{RefCountPtr<>} object to the dynamically
-allocated {}\texttt{Derived2} object is removed and the
+{}\noindent{}Now when the last {}\texttt{RefCountPtr<>} object to the
+dynamically allocated {}\texttt{Derived2} object is removed and the
 {}\texttt{Derived2} object is deleted, the associated dynamically
 allocated {}\texttt{Utility} object will also be deleted.  Note that
 extra data associated with a {}\texttt{RefCountPtr<>} object is only
 deleted \underline{after} the reference-counted object is deleted.
 This is the correct behavior in use cases like described above where
-the destructor for {}\texttt{Derived2} may need to call functions on its
-aggregate {}\texttt{Utility} object and therefore the utility object
-must be valid at this point.
+the destructor for {}\texttt{Derived2} may need to call functions on
+its aggregate {}\texttt{Utility} object and therefore the utility
+object must be valid at this point.
 
 Note that the ability to add extra data to a {}\texttt{RefCountPtr<>}
 object is an advanced feature that that most programmer may never need
 to use.
 
-ToDo: Discuss how multiple clients can add extra data for a
-{}\texttt{RefCountPtr<>} and they can not interfer with each other.
+The reason that {}\texttt{get\-\_extra\-\_data()} template functions
+are nonmember functions is that the C++ standard does not allow the
+explicit specification of a template argument in a member template
+function without the use of a verbose nonintuitive syntax
+{}\cite[C.13.6]{ref:stroustrup_2000}.  However
+{}\texttt{set\-\_extra\-\_data()} could have been made a member
+function of {}\texttt{RefCountPtr<>} but it was made a nonmember
+function to maintain consistency with the
+{}\texttt{get\-\_extra\-\_data()} functions.  Also, there may be cases
+where a client may want to be specific about what type is being used
+to store extra data such as in the following case
+%
+{\scriptsize\begin{verbatim}
+set_extra_data<float>( 1e+5, "some-number", &a_ptr );
+\end{verbatim}}
+%
+{}\noindent{}In the above example, if the type of the extra data
+{}\texttt{float} had not been explicitly specified, the compiler
+would have used {}\texttt{double} as dictated by the standard.
+However, the same result could have been achieved as
+%
+{\scriptsize\begin{verbatim}
+set_extra_data( float(1e+5), "some-number", &a_ptr );
+\end{verbatim}}
+%
+{}\noindent{}It is up to the developer to decide what form is more
+desirable.
 
 %
 \subsection{Customized deallocation through templated {}\texttt{Dealloc} policy objects}
@@ -1045,15 +1091,16 @@ out.
 The templated C++ class {}\texttt{RefCountPtr<>} provides a
 low-overhead option for (almost) automatic memory management in C++.
 This class has been deveoped and refined over many years and has been
-proven to improve the quality and consistency of software projects
-that use it consistently.  Careful use of {}\texttt{RefCountPtr<>}
-eliminates the need to manually call {}\texttt{deltete} when
-dynamically allocated objects are no longer needed and helps to reduce
-the amount of code that developers have to write (for example, most
-classes that use dynamically allocated memory do not need
-developer-supplied destructors since the compiler-generated
-destructors do exaclty the right thing).
+proven to improve the quality of software projects that use it
+consistently.  Careful use of {}\texttt{RefCountPtr<>} eliminates the
+need to manually call {}\texttt{deltete} when dynamically allocated
+objects are no longer needed and helps to reduce the amount of code
+that developers have to write (for example, most classes that use
+dynamically allocated memory do not need developer-supplied
+destructors since the compiler-generated destructors do exaclty the
+right thing).
 
 The class {}\texttt{RefCountPtr<>} also has other advanced features
 not found in other smart-pointer implementations such as the ability
-to tack on extra data and the customization of deallocation policy.
+to tack on extra data and the customization of the deallocation
+policy.

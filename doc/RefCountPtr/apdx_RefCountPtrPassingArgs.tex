@@ -6,22 +6,107 @@
 The purpose of this section is to explain the reasoning behind the
 idiom recommendations given in Table {}\ref{rcp:tbl:fnc-decl} for how
 to pass objects to and from C++ functions and how
-{}\texttt{RefCountPtr<>} fits in with these idioms.  Many different
+{}\texttt{Ref\-Count\-Ptr<>} fits in with these idioms.  Many different
 code projects do not follow these idioms.  Usually this is because the
 developers were unaware of these idioms and why they are useful to
-follow.  When thinking about how to use {}\texttt{RefCountPtr<>} one
-should think of a {}\texttt{RefCountPtr<>} object as a raw pointer
+follow.  When thinking about how to use {}\texttt{Ref\-Count\-Ptr<>} one
+should think of a {}\texttt{Ref\-Count\-Ptr<>} object as a raw pointer
 except that while raw pointer objects are usually passed by value to a
-function (which is very efficient) where a {}\texttt{RefCountPtr<>}
+function (which is very efficient) where as a {}\texttt{Ref\-Count\-Ptr<>}
 object should usually be passed by reference (but passing by value is
 harmless).
+
+Before getting into great detail as to the why and how of the
+recommendations in Table {}\ref{rcp:tbl:fnc-decl}, consider the
+following example function prototype.
+%
+{\scriptsize\begin{verbatim}
+void foo1(
+  const int              size_x
+  ,const double          x[]
+  ,const int             size_a
+  ,const A*              a[]
+  ,const int             size_y
+  ,double                y[]
+  ,double                *z
+  );
+\end{verbatim}}
+%
+By comparing the argument declarations (which use good argument names)
+in the above function to the recommendations in Table
+{}\ref{rcp:tbl:fnc-decl}, and without looking at any extra
+documentation (if it even exists), we already know a lot about the
+arguments being passed into and out of this function.  First, it is
+clear that {}\texttt{x} is an array of non-mutable {}\texttt{double}
+objects with an presumed length of {}\texttt{size\_x}.  Similarly, we
+know that {}\texttt{y} is an array of mutable {}\texttt{double}
+objects that may be set or modified.  We also know that {}\texttt{z}
+is a single mutable {}\texttt{double} object that may be changed
+inside of the function.  What the above C++ declarations, however, do
+not tell us is if the arguments {}\texttt{x}, {}\texttt{a},
+{}\texttt{y} and {}\texttt{z} are optional (i.e.~a {}\texttt{NULL}
+pointer can be passed in for them) or are required.  We also do not
+now if the mutable objects passed in {}\texttt{y} and {}\texttt{z} are
+only output arguments or are input/output arguments.  This type of
+information must be specified in developer-supplied documentation.
+Note that a required non-mutable object such as {}\texttt{z} could be
+passed using a non-{}\texttt{const} reference, using a
+non-{}\texttt{const} reference for such an argument is usually not
+advised and this issue is described a little later.
+
+Note that the above function {}\texttt{foo(...)} involved all
+transitive arguments which is often the case.  Now lets consider the
+use of non-transitive argument types as supported using
+{}\texttt{Ref\-Count\-Ptr<>}.
+%
+{\scriptsize\begin{verbatim}
+class SomeClass {
+public:
+  ...
+  void foo2(
+    const int                                 size_x
+    ,double                                   x[]
+    ,const RefCountPtr<std::vector<double> >  &y
+    )
+  {
+    y_ = y;
+    ...
+  }
+  ..
+private:
+  RefCountPtr<std::vector<double> >  y_;
+};
+\end{verbatim}}
+%
+{}\noindent{}The above example function
+{}\texttt{SomeClass\-::foo2(...)} is an example a where non-transitive
+argument, {}\texttt{y}, is passed into a function.  In this case, the
+{}\texttt{Ref\-Count\-Ptr<>} argument {}\texttt{y} is delivering a
+{}\texttt{std\-::vector<\-double>} object to be used as private data
+for the class object.
 
 %
 \subsection{Passing non-mutable objects}
 %
 
+Non-mutable objects (i.e.~the state of the objects will not be
+changed) that are passed to a function using a pointer or a reference
+should always be given the {}\texttt{const} modifier.  This both
+serves as documentation and helps the implementor of the function
+avoid accidentaly changing the object.  However, when a small concrete
+object of type {}\texttt{S} (where {}\texttt{S} ise {}\texttt{double}
+or {}\texttt{int} for instance) is being passed it may also be passed
+by value (with or without the {}\texttt{const} modifier as shown in
+the table).  If an concrete object is passed by value, the
+{}\texttt{const} modifier does not in any way affect the client code
+that calls the function.  The {}\texttt{const} modifier only resticts
+the modification of the copied parameter in the function
+implementation.  Some see the use of {}\texttt{const} as a help to
+function implementors while others see this as a unecessary restiction
+on the freedom of the implementation.
+
 ToDo: Discuss the following categories for the cases of concrete
-objects, abstract objects and {}\texttt{RefCountPtr<>} objects for
+objects, abstract objects and {}\texttt{Ref\-Count\-Ptr<>} objects for
 concrete and abstract objects:
 
 \begin{itemize}
@@ -30,16 +115,12 @@ concrete and abstract objects:
 \item Arrays of non-mutable objects (required and optional)
 \end{itemize}
 
-ToDo: Discuss why non-mutable transitive {}\texttt{S} can be
-{}\texttt{(S s)} or {}\texttt{(const S s)} or {}\texttt{(const S \&s)}
-and what the issues are.
-
 %
 \subsection{Passing mutable objects}
 %
 
 ToDo: Discuss the following categories for the cases of concrete
-objects, abstract objects and {}\texttt{RefCountPtr<>} objects for
+objects, abstract objects and {}\texttt{Ref\-Count\-Ptr<>} objects for
 concrete and abstract objects:
 
 \begin{itemize}
@@ -83,12 +164,12 @@ functions unless there is a compelling reason to use a
 non-\texttt{const} reference instead.  Making this determination
 requires experience, taste and in the end is a subjective decision.
 
-There is one use case where a pointer to a {}\texttt{RefCountPtr<>}
+There is one use case where a pointer to a {}\texttt{Ref\-Count\-Ptr<>}
 object should be passed to a function and that is when the calling
-client code is to aquire a {}\texttt{RefCountPtr<>} to an object held
-by the server code.  When only a single {}\texttt{RefCountPtr<>} is to
+client code is to aquire a {}\texttt{Ref\-Count\-Ptr<>} to an object held
+by the server code.  When only a single {}\texttt{Ref\-Count\-Ptr<>} is to
 be aquired for a sinlge object, then it usually best to just return
-a {}\texttt{RefCountPtr<>} object from function as its return type
+a {}\texttt{Ref\-Count\-Ptr<>} object from function as its return type
 such as in the case
 %
 {\scriptsize\begin{verbatim}
@@ -96,8 +177,8 @@ RefCountPtr<Base> createBase(bool someFlag);
 \end{verbatim}}
 %
 {}\noindent{}described in Section {}\ref{rcp:sec:extra-data}.
-However, when more than one {}\texttt{RefCountPtr<>} object is to be
-initialized to be given to a client, then one should consider passing
-pointers to the {}\texttt{RefCountPtr<>} objects to a function (see
-the function {}\texttt{setUninitialized()} in Appendix
+However, when more than one {}\texttt{Ref\-Count\-Ptr<>} object is to
+be initialized to be given to a client, then one should consider
+passing pointers to the {}\texttt{Ref\-Count\-Ptr<>} objects to a
+function (see the function {}\texttt{setUninitialized()} in Appendix
 {}\ref{rcp:apdx:sep-construct-init}).
