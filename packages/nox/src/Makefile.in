@@ -121,18 +121,18 @@ ABSTRACT_H = \
 
 LINESEARCH_H = \
 	$(srcdir)/NOX_Linesearch_Generic.H \
-	$(srcdir)/NOX_Linesearch_Fullstep.H \
+	$(srcdir)/NOX_Linesearch_FullStep.H \
 	$(srcdir)/NOX_Linesearch_Halving.H \
 	$(srcdir)/NOX_Linesearch_Manager.H \
-	$(srcdir)/NOX_Linesearch_MoreThunte.H \
+	$(srcdir)/NOX_Linesearch_MoreThuente.H \
 	$(srcdir)/NOX_Linesearch_Polynomial.H 
 
 
 LINESEARCH = \
-	$(srcdir)/NOX_Linesearch_Fullstep.C \
+	$(srcdir)/NOX_Linesearch_FullStep.C \
 	$(srcdir)/NOX_Linesearch_Halving.C \
 	$(srcdir)/NOX_Linesearch_Manager.C \
-	$(srcdir)/NOX_Linesearch_MoreThunte.C \
+	$(srcdir)/NOX_Linesearch_MoreThuente.C \
 	$(srcdir)/NOX_Linesearch_Polynomial.C 
 
 
@@ -262,10 +262,10 @@ LIBRARIES = $(lib_LIBRARIES)
 
 libnox_a_AR = $(AR) cru
 libnox_a_LIBADD =
-am_libnox_a_OBJECTS = NOX_Linesearch_Fullstep.$(OBJEXT) \
+am_libnox_a_OBJECTS = NOX_Linesearch_FullStep.$(OBJEXT) \
 	NOX_Linesearch_Halving.$(OBJEXT) \
 	NOX_Linesearch_Manager.$(OBJEXT) \
-	NOX_Linesearch_MoreThunte.$(OBJEXT) \
+	NOX_Linesearch_MoreThuente.$(OBJEXT) \
 	NOX_Linesearch_Polynomial.$(OBJEXT) \
 	NOX_Parameter_Entry.$(OBJEXT) NOX_Parameter_List.$(OBJEXT) \
 	NOX_Solver_Newton.$(OBJEXT) NOX_Status_AbsResid.$(OBJEXT) \
@@ -285,10 +285,10 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/NOX_Linesearch_Fullstep.Po \
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/NOX_Linesearch_FullStep.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_Halving.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_Manager.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_MoreThunte.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_MoreThuente.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_Polynomial.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_Entry.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_List.Po \
@@ -379,11 +379,11 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-NOX_Linesearch_Fullstep.$(OBJEXT): $(srcdir)/NOX_Linesearch_Fullstep.C
+NOX_Linesearch_FullStep.$(OBJEXT): $(srcdir)/NOX_Linesearch_FullStep.C
 NOX_Linesearch_Halving.$(OBJEXT): $(srcdir)/NOX_Linesearch_Halving.C
 NOX_Linesearch_Manager.$(OBJEXT): $(srcdir)/NOX_Linesearch_Manager.C
-NOX_Linesearch_MoreThunte.$(OBJEXT): \
-	$(srcdir)/NOX_Linesearch_MoreThunte.C
+NOX_Linesearch_MoreThuente.$(OBJEXT): \
+	$(srcdir)/NOX_Linesearch_MoreThuente.C
 NOX_Linesearch_Polynomial.$(OBJEXT): \
 	$(srcdir)/NOX_Linesearch_Polynomial.C
 NOX_Parameter_Entry.$(OBJEXT): $(srcdir)/NOX_Parameter_Entry.C
@@ -414,10 +414,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_Fullstep.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_FullStep.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_Halving.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_Manager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_MoreThunte.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_MoreThuente.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_Polynomial.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_Entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_List.Po@am__quote@
@@ -446,17 +446,17 @@ distclean-depend:
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-NOX_Linesearch_Fullstep.o: $(srcdir)/NOX_Linesearch_Fullstep.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_Fullstep.C' object='NOX_Linesearch_Fullstep.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_Fullstep.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_Fullstep.TPo' @AMDEPBACKSLASH@
+NOX_Linesearch_FullStep.o: $(srcdir)/NOX_Linesearch_FullStep.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_FullStep.C' object='NOX_Linesearch_FullStep.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_FullStep.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_FullStep.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_Fullstep.o `test -f $(srcdir)/NOX_Linesearch_Fullstep.C || echo '$(srcdir)/'`$(srcdir)/NOX_Linesearch_Fullstep.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_FullStep.o `test -f $(srcdir)/NOX_Linesearch_FullStep.C || echo '$(srcdir)/'`$(srcdir)/NOX_Linesearch_FullStep.C
 
-NOX_Linesearch_Fullstep.obj: $(srcdir)/NOX_Linesearch_Fullstep.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_Fullstep.C' object='NOX_Linesearch_Fullstep.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_Fullstep.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_Fullstep.TPo' @AMDEPBACKSLASH@
+NOX_Linesearch_FullStep.obj: $(srcdir)/NOX_Linesearch_FullStep.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_FullStep.C' object='NOX_Linesearch_FullStep.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_FullStep.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_FullStep.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_Fullstep.obj `cygpath -w $(srcdir)/NOX_Linesearch_Fullstep.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_FullStep.obj `cygpath -w $(srcdir)/NOX_Linesearch_FullStep.C`
 
 NOX_Linesearch_Halving.o: $(srcdir)/NOX_Linesearch_Halving.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_Halving.C' object='NOX_Linesearch_Halving.o' libtool=no @AMDEPBACKSLASH@
@@ -482,17 +482,17 @@ NOX_Linesearch_Manager.obj: $(srcdir)/NOX_Linesearch_Manager.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_Manager.obj `cygpath -w $(srcdir)/NOX_Linesearch_Manager.C`
 
-NOX_Linesearch_MoreThunte.o: $(srcdir)/NOX_Linesearch_MoreThunte.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_MoreThunte.C' object='NOX_Linesearch_MoreThunte.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_MoreThunte.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_MoreThunte.TPo' @AMDEPBACKSLASH@
+NOX_Linesearch_MoreThuente.o: $(srcdir)/NOX_Linesearch_MoreThuente.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_MoreThuente.C' object='NOX_Linesearch_MoreThuente.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_MoreThuente.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_MoreThuente.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_MoreThunte.o `test -f $(srcdir)/NOX_Linesearch_MoreThunte.C || echo '$(srcdir)/'`$(srcdir)/NOX_Linesearch_MoreThunte.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_MoreThuente.o `test -f $(srcdir)/NOX_Linesearch_MoreThuente.C || echo '$(srcdir)/'`$(srcdir)/NOX_Linesearch_MoreThuente.C
 
-NOX_Linesearch_MoreThunte.obj: $(srcdir)/NOX_Linesearch_MoreThunte.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_MoreThunte.C' object='NOX_Linesearch_MoreThunte.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_MoreThunte.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_MoreThunte.TPo' @AMDEPBACKSLASH@
+NOX_Linesearch_MoreThuente.obj: $(srcdir)/NOX_Linesearch_MoreThuente.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_MoreThuente.C' object='NOX_Linesearch_MoreThuente.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Linesearch_MoreThuente.Po' tmpdepfile='$(DEPDIR)/NOX_Linesearch_MoreThuente.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_MoreThunte.obj `cygpath -w $(srcdir)/NOX_Linesearch_MoreThunte.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Linesearch_MoreThuente.obj `cygpath -w $(srcdir)/NOX_Linesearch_MoreThuente.C`
 
 NOX_Linesearch_Polynomial.o: $(srcdir)/NOX_Linesearch_Polynomial.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Linesearch_Polynomial.C' object='NOX_Linesearch_Polynomial.o' libtool=no @AMDEPBACKSLASH@
