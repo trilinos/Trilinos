@@ -158,6 +158,8 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Filtering.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Smoothers.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp \
 $(srcdir)/Utils/ml_anasazi.cpp
 
 
