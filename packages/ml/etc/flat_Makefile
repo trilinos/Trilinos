@@ -31,7 +31,7 @@ ML_C = ml_aztec_utils.c  ml_ggraph.c       ml_memory.c \
        ml_op_utils.c     ml_comminfoop.c   ml_mat_formats.c \
        ml_agg_genP.c ml_lapack.c mli_solver.c ml_agg_coupled.c \
        ml_krylov.c       ml_cg.c           ml_gmres.c \
-       ml_agg_uncoupled.c ml_agg_dd.c ml_reader.c \
+       ml_agg_uncoupled.c ml_agg_dd.c      ml_read_utils.c \
        ml_bicgstabl.c    ml_pde.c          ml_xxt.c ml_agg_MIS.c
 #=======================================================================
 # ML include files
