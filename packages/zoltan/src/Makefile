@@ -16,6 +16,8 @@
 #
 GDEFINES = -DDEBUG 
 
+#
+# Makefile for load-balancing library.
 ############################################################################
 #                  SOURCE CODE
 ############################################################################
@@ -39,19 +41,17 @@ ID_INC= id_const.h id_util.h id_util_const.h
 VX_CSRC=vx.c
 VX_INC= vx_const.h
 
-ALL_MAIN=all_main.c
 ALL_CSRC=all_allo.c
-ALL_INC=all_const.h all_allo.h
+ALL_INC=all_const.h all_allo_const.h
 
-CH_CSRC=ch_input_geom.c ch_input_graph.c ch_input_read.c
-CH_INC=ch_input_const.h
+LB_CSRC=lb.c
+LB_INC=lb_const.h lb.h lbi_const.h
 
 # machine independent routines
-INC          = $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(CH_INC)
-LIB_SRC_C    = $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) $(CH_CSRC)
-ALL_SRC_C    = $(ALL_MAIN) $(LIB_SRC_C)
+INC          = $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) 
+#LIB_SRC_C    = $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) 
+LIB_SRC_C    = $(LB_CSRC) $(ALL_CSRC) 
 LIB_SRC_OBJ  = $(LIB_SRC_C:.c=.o) 
-ALL_SRC_OBJ  = $(ALL_SRC_C:.c=.o) 
 
 #library paths for different machines
 
@@ -76,21 +76,21 @@ TFLOP_INC_PATH   =   -I$(TFLOP_PATH)/include $(SUBINCPATH)
 #
 smos:
 	@cd Obj_smos; \
-	$(MAKE) dlb "SMOS_OBJ=$(ALL_SRC_OBJ)" "INC=$(SMOS_INC)" "TARGET=dlb" \
+	$(MAKE) dlb "SMOS_OBJ=$(LIB_SRC_OBJ)" "INC=$(SMOS_INC)" "TARGET=dlb" \
 	"LIB=$(LIB)" "SMOS_LIB_PATH=$(SMOS_LIB_PATH)" \
 	"SMOS_INC_PATH=$(SMOS_INC_PATH)" "VPATH=$(SUBVPATH)" \
         "GDEFINES=$(GDEFINES)"
 
 tflop:
 	@cd Obj_tflop; \
-	$(MAKE) dlb "TFLOP_OBJ=$(ALL_SRC_OBJ)" "INC=$(TFLOP_INC)" \
+	$(MAKE) dlb "TFLOP_OBJ=$(LIB_SRC_OBJ)" "INC=$(TFLOP_INC)" \
 	"TARGET=dlb" "LIB=$(LIB)" "TFLOP_LIB_PATH=$(TFLOP_LIB_PATH)" \
 	"TFLOP_INC_PATH=$(TFLOP_INC_PATH)" "VPATH=$(SUBVPATH)" \
         "GDEFINES=$(GDEFINES)"
 
 sun:
 	@cd Obj_sun; \
-	$(MAKE) dlb "SUN_OBJ=$(ALL_SRC_OBJ)" "INC=$(INC)" \
+	$(MAKE) dlb "SUN_OBJ=$(LIB_SRC_OBJ)" "INC=$(INC)" \
 	"TARGET=dlb" "LIB=$(LIB) $(SUN_BLASLIB)" \
 	"SUN_LIB_PATH=$(SUN_LIB_PATH)" \
 	"SUN_INC_PATH=$(SUN_INC_PATH)" "VPATH=$(SUBVPATH)" \
@@ -99,7 +99,7 @@ sun:
 
 sgi10k:
 	@cd Obj_sgi10k; \
-	$(MAKE) dlb "SGI_OBJ=$(ALL_SRC_OBJ)" "INC=$(INC)" "TARGET=dlb" \
+	$(MAKE) dlb "SGI_OBJ=$(LIB_SRC_OBJ)" "INC=$(INC)" "TARGET=dlb" \
 	"LIB=$(LIB)" "SGI_LIB_PATH=$(SGI10K_LIB_PATH)" \
 	"SGI_INC_PATH=$(SGI10K_INC_PATH)" "VPATH=$(SUBVPATH)" \
         "GDEFINES=$(GDEFINES)"
@@ -111,7 +111,7 @@ sgi10k:
 #
 
 printout:
-	cat $(MAIN) $(ALL_SRC_C) > source.c
+	cat $(MAIN) $(LIB_SRC_C) > source.c
 	tps -c source.c | lpr
 	-rm source.c
 	tps  $(INC) | lpr
