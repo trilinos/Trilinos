@@ -537,6 +537,7 @@ AC_SUBST(ac_aux_dir)
 #  to add a new directory.
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export
 		src/Makefile
 		examples/Makefile
                 test/Makefile
