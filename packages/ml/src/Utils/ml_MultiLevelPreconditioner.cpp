@@ -61,6 +61,7 @@
 #include "ml_DD_prec.h"
 extern int ML_USE_EDGE_WEIGHT; // defined in ml_agg_METIS.c
 extern double ML_WEIGHT_THRES; // defined in ml_agg_METIS.c
+#include <iostream>
 #include <iomanip>
 
 #include "Epetra_Map.h"
