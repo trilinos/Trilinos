@@ -88,23 +88,20 @@ char  *yo = "Zoltan_PHG_Matching";
   if (hgp->locmatching) { 
       int limit=hg->nVtx;
       PHGComm *hgc=hg->comm;
-      struct {
-          int matchcnt;
-          int rank;
-      } root;
+      int matchcnt;
+      int rank;
       
       if (hgp->matching)
           err = hgp->locmatching (zz, hg, match, &limit);
       
       /* find the index of the proc in column group with the best match; it 
          will be our root proc */
-      /* EBEB This does not seem to work right because we don't have any 
-         quality metric returned from the matching. Currently,
-         matchcnt is never initialized?? */ 
+      /* use number of matches as our quality metric; an alternative is
+         to simply use the number of pins. */
       Zoltan_PHG_Find_Root(hg->nVtx-limit, hgc->myProc_y, hgc->col_comm,
-                           &root.matchcnt, &root.rank);
+                           &matchcnt, &rank);
       
-      MPI_Bcast(match, hg->nVtx, MPI_INT, root.rank, hgc->col_comm);
+      MPI_Bcast(match, hg->nVtx, MPI_INT, rank, hgc->col_comm);
 
     
   } else if (hgp->matching)
@@ -113,7 +110,7 @@ char  *yo = "Zoltan_PHG_Matching";
 End:
 
   /* Restore the old edge weights */
-  if (hg->vwgt && hgp->ews)
+  if (hg->ewgt && hgp->ews)
       hg->ewgt = old_ewgt;
 
   ZOLTAN_FREE ((void**) &new_ewgt);
