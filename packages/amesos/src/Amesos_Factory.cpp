@@ -25,6 +25,9 @@
 #include "Amesos_config.h"
 #include "Amesos_Factory.h"
 #include "Amesos_Klu.h"
+#ifdef HAVE_AMESOS_MUMPS
+#include "Amesos_Mumps.h"
+#endif
 #ifdef HAVE_AMESOS_UMFPACK
 #include "Amesos_Umfpack.h"
 #endif
@@ -42,6 +45,14 @@ Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType,
 			     const AMESOS::Parameter::List &ParameterList ) {
 
   switch( ClassType ) {
+  case AMESOS_MUMPS:
+#ifdef HAVE_AMESOS_MUMPS
+    return new Amesos_Mumps(LinearProblem,ParameterList); 
+#else
+    cerr << "Amesos_Mumps is not implemented" << endl ; 
+    return 0 ; 
+#endif
+    break;
   case AMESOS_UMFPACK:
 #ifdef HAVE_AMESOS_UMFPACK
     return new Amesos_Umfpack(LinearProblem,ParameterList); 

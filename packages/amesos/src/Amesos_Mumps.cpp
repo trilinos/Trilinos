@@ -173,7 +173,6 @@ int Amesos_Mumps::ConvertToTriplet(){
     }
   }
 
-  
   return 0;
 }   
 
@@ -193,19 +192,18 @@ int Amesos_Mumps::PerformSymbolicFactorization() {
   Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
   EPETRA_CHK_ERR( CastCrsMatrixA == 0 ) ; 
   const Epetra_Comm &Comm = RowMatrixA->Comm();
-  const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm);
+  //  const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm);
 //  MPI_Comm MPIC = comm1.Comm() ;
 //  MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MPIC ) ;   // Compiled on cygwin but not on Atlantis
 
 //  MDS.comm_fortran = (F_INT) MPIR_FromPointer( MPIC ) ;  // Other recommendation from the MUMPS manual - did not compile on Atlantis either
+
+
   MDS.job = -1  ;     //  Initialization
   MDS.par = 1 ;       //  Host IS involved in computations
   MDS.sym = 0 ;       //  Matrix is not symmetric
+  MDS.comm_fortran = -987654 ;  // Needed by MUMPS 4.3 
   dmumps_c( &MDS ) ;   //  Initialize MUMPS 
-
-
-
-
 
   MDS.n = NumGlobalElements_ ; 
   MDS.nz = numentries_ ; 
@@ -277,7 +275,7 @@ int Amesos_Mumps::NumericFactorization() {
   ConvertToSerial() ; 
   
   ConvertToTriplet();
-  
+
   if ( ! SymbolicFactorizationOK_ ) {
     PerformSymbolicFactorization();
   }

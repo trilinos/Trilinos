@@ -32,7 +32,10 @@
 enum AmesosClassType {
   AMESOS_KLU,
   AMESOS_UMFPACK,
+  AMESOS_MUMPS,
   AMESOS_SUPERLUDIST,
   AMESOS_DSCPACK };
+
+const int NumAmesosClasses = 5 ; 
 
 #endif /* _AMESOS_CLASS_TYPE_H_ */
