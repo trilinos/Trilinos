@@ -300,6 +300,10 @@ AZ_MATRIX *user_Kn_build(struct user_partition_data *Partition)
 }
 #else
 
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
+
 int main(int argc, char *argv[]) 
 {
 #ifdef ML_MPI
