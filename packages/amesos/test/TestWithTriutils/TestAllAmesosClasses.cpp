@@ -101,6 +101,7 @@ void TestAmesos(char ProblemType[],
     A->Multiply(UseTranspose,*lhs,*rhs);
     
     Epetra_Time Time(A->Comm());
+    Epetra_Time StartTime(A->Comm());
 
     Solver->SymbolicFactorization();
     double TimeForSymbolicFactorization = Time.ElapsedTime();
@@ -137,7 +138,7 @@ void TestAmesos(char ProblemType[],
       cout << msg << "......Time for Symbolic Factorization = " << TimeForSymbolicFactorization << endl;
       cout << msg << "......Time for Numeric Factorization  = " << TimeForNumericFactorization << endl;
       cout << msg << "......Time for Solve                  = " << TimeForSolve << endl;
-      cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
+      cout << msg << "......Total Time = " << StartTime.ElapsedTime() << endl;
     }
 
     TotalErrorExactSol += sqrt(d_tot);
