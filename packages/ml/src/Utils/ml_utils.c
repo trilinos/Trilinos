@@ -2451,3 +2451,264 @@ void ML_print_line (char *charstr, int ntimes)
   printf("\n");
 }
 
+/*MS*/
+int ML_gsum_int(int val, ML_Comm *comm)
+{
+  int sum;
+  MPI_Allreduce( &val, &sum, 1, MPI_INT, MPI_SUM, comm->USR_comm );
+  return sum;
+}
+
+int ML_gmin_int(int val, ML_Comm *comm)
+{
+  int min;
+#ifdef HAVE_MPI
+  MPI_Allreduce(&val, &min, 1, MPI_INT, MPI_MIN, comm->USR_comm );
+#else
+  printf("cannot use without MPI\n");
+#endif
+  return min;
+}
+
+double ML_gmin_double(double val, ML_Comm *comm)
+{
+  double min;
+#ifdef HAVE_MPI
+  MPI_Allreduce(&val, &min, 1, MPI_DOUBLE, MPI_MIN, comm->USR_comm );
+#else
+  printf("cannot use without MPI\n");
+#endif
+  return min;
+}
+
+#include "ml_operator.h"
+
+/* ******************************************************************** */
+/* print a ML_Operator into MATLAB format. Only one file is generated   */
+/* using global ordering.                                               */
+/*                                                                      */
+/* Parameter list:                                                      */
+/* - matrix :           ML_Operator, distributed among the proceses     */
+/* - label :            matrix will be written in MATLAB format on file */
+/*                      label.m. Note that only ONE file will be created*/
+/*                      containing the ENTIRE operator                  */
+/* - comm :             ML_Comm 
+/* Albuquerque, 30-Oct-03                                               */
+/* ******************************************************************** */
+
+int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix, 
+                                           const char label[] )
+
+{
+
+   int    i, j, iproc;
+   int    *bindx;
+   int    MyPID, NumProc;
+   double *val;
+   int    allocated, row_length;
+   char   filename[80];
+   FILE   *fid;
+   int    Nrows, NglobalRows, NglobalCols=0;
+   int    is_global_allocated = 0;
+   ML_Comm * comm = matrix->comm;
+   int *global_ordering = NULL;
+   
+   
+   if( global_ordering == NULL ) {
+     ML_build_global_numbering(matrix, matrix->comm,
+			       &global_ordering);
+     is_global_allocated = 1;
+   }
+         
+   if ( matrix->getrow == NULL) return(1);
+
+   MyPID = comm->ML_mypid;
+   NumProc = comm->ML_nprocs;
+
+   allocated = matrix->max_nz_per_row;
+   bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
+   val   = (double *)  ML_allocate( allocated*sizeof(double));
+
+   Nrows = matrix->getrow->Nrows;
+#ifdef ML_MPI
+   MPI_Reduce((void*)&Nrows, (void*)&NglobalRows,
+	      1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD );
+#else
+   NglobalRows = Nrows; 
+#endif
+
+   if( label != NULL ) {	 
+     sprintf( filename,
+	      "%s.m",
+	      label );
+
+     if( MyPID == 0 )
+       printf("Writing matrix to file %s...\n",filename);
+   } else {
+     if( MyPID == 0 )
+       printf("Writing matrix to stdout...\n");
+   }    
+     
+   for( iproc=0 ; iproc<NumProc ; iproc++ ) {
+
+     if( MyPID == iproc ) {
+
+       if( label != NULL ) {
+         if( MyPID == 0 ) fid = fopen(filename,"w");
+         else             fid = fopen(filename,"a");
+       } else {
+         fid = stdout;
+       }
+       	 
+       if( MyPID == 0 ) {
+	 fprintf( fid,
+		  "%%N_global_rows = %d\n",
+		  NglobalRows );
+       }
+       
+       fprintf( fid,
+		"\%Writing data for processor %d\n"
+		"\%N_update = %d\n",
+		iproc,
+		Nrows );
+              
+       for (i = 0 ; i < matrix->getrow->Nrows; i++) {
+     
+	 ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
+			   &row_length, 0);
+
+	 for  (j = 0; j < row_length; j++) {
+	   fprintf(fid,"%s(%d,%d) = %20.13e;\n",label,
+		   global_ordering[i]+1,
+		   global_ordering[bindx[j]]+1,
+		   val[j]);
+	   if( global_ordering[bindx[j]]>NglobalCols ) 
+	     NglobalCols = global_ordering[bindx[j]];
+	   
+	 }
+	 if (row_length == 0) {
+	   fprintf(fid, "\%no nodes on line %d\n",
+		   global_ordering[i]+1);
+	 }
+       }
+
+       if( label != NULL ) fclose(fid);
+       
+     }
+#ifdef ML_MPI
+     MPI_Barrier( MPI_COMM_WORLD );
+#endif
+     
+   }
+
+   /* compute global number of columns */
+
+#ifdef ML_MPI
+   MPI_Reduce((void*)&NglobalCols, (void*)&i,
+	      1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD );
+#else
+   i = NglobalCols; 
+#endif
+
+   if( MyPID == 0 ) {
+     if( label != NULL ) fid = fopen(filename,"a");     
+     else                fid = stdout;
+     
+     fprintf(fid,
+	     "%%N_global_cols = %d\n",
+	     i );
+     if( label != NULL ) fclose(fid);
+     
+   }
+   
+   /* free memory and return */
+   
+   fflush(stdout);
+   ML_free(val);
+   ML_free(bindx);
+
+   if( is_global_allocated == 1 ) {
+     ML_free( global_ordering );
+     global_ordering = NULL;
+   }
+
+   return 0;
+}
+
+/* ******************************************************************** */
+/* Create global numbering for a ML_Operator. I suppose that tML uses a */
+/* linear decomposition among the processes (that is, proc 0 is assigned*/
+/* the first Nrows elements, and so on). This is enough to define the   */
+/* global numbering of local nodes. For the ghost nodes (columns), I use*/
+/* ML_exhcange_bdry.                                                    */
+/*                                                                      */
+/* Albuquerque, 30-Oct-03                                               */
+/* ******************************************************************** */
+
+ML_build_global_numbering( ML_Operator *Amat,
+			   ML_Comm *comm,
+			   int **pglobal_numbering )
+{
+
+  int    i;
+  int    Nrows, Nghosts, offset;
+  double * dtemp = NULL;
+  int *global_numbering;
+  
+  Nrows = Amat->getrow->Nrows;
+  Nghosts = Amat->getrow->pre_comm->total_rcv_length;
+/*
+  printf("%d %d\n", Nghosts, Amat->outvec_leng);
+*/
+    
+  dtemp = (double *) malloc( sizeof(double) * (Nrows+Nghosts));
+  /* here put the global number for each local node */
+
+#ifdef ML_MPI
+  MPI_Scan ( &Nrows, &offset, 1, MPI_INT, MPI_SUM,
+	     MPI_COMM_WORLD );
+  offset -= Nrows;
+#else
+  offset = 0;
+#endif
+
+  /* global numbering for local nodes. Note that ML always
+     supposes to have continugous local nodes (that is, the
+     global set of nodes has been subdivided into contiguous
+     chuncks). This may not be true for the first level
+     (ML uses an order which is not the physical one). So, dont't
+     be surprised that a tridiagonal matrix (before AZ_transform)
+     is no longer tridiagonal, for instance... */
+    
+  for( i=0 ; i<Nrows ; i++ ) dtemp[i] = i+offset;
+
+  /* I exchange those information using ML_exchange_bdry,
+     which is coded for double vectors. */
+    
+  ML_exchange_bdry(dtemp,Amat->getrow->pre_comm,
+		   Amat->outvec_leng,
+		   comm, ML_OVERWRITE,NULL);
+
+  /* allocates memory for global_ordering */
+    
+  ML_memory_alloc((void*)&global_numbering, sizeof(int)*(Nrows+Nghosts),
+		  "global_ordering");
+       
+  /* put the received double vectors in the integer vector */
+
+  for( i=0 ; i<Nrows+Nghosts ; i++ )
+    global_numbering[i] = (int)dtemp[i];
+
+  *pglobal_numbering = global_numbering;
+  
+  free( dtemp );
+  /*
+  for( i=0 ; i<Nrows+Nghosts ; i++ )
+    printf("(%d) global_ord[%d] = %d\n",
+	   comm->ML_mypid, i,
+	   global_numbering[i] );
+  */
+  return;
+    
+}
+/*ms*/
