@@ -31,24 +31,41 @@ if BUILD_TSF_EXAMPLES
 
 include $(top_builddir)/../TSFExtended/Makefile.export
 
-EXAMPLE = example
-
-noinst_PROGRAMS = $(EXAMPLE)
-
-example_SOURCES = $(srcdir)/mykeplertest.C 
 
 
-example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
+noinst_PROGRAMS = kepler ODE
+
+kepler_SOURCES = $(srcdir)/mykeplertest.C 
+
+
+kepler_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-tsf/libnoxtsf.a 
 
-example_CXXFLAGS = $(EX_CXXFLAGS) \
+kepler_CXXFLAGS = $(EX_CXXFLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src-tsf
 
-example_LDADD = \
+kepler_LDADD = \
 	$(top_builddir)/src-tsf/libnoxtsf.a \
   $(top_builddir)/src/libnox.a \
 	$(TSF_EXPORT_LIBS) \
   $(MPI_LIBS) $(LIBS) 
+
+
+ODE_SOURCES = $(srcdir)/ODETest.C 
+
+
+ODE_DEPENDENCIES = $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-tsf/libnoxtsf.a 
+
+ODE_CXXFLAGS = $(EX_CXXFLAGS) \
+	-I$(top_srcdir)/src -I$(top_srcdir)/src-tsf
+
+ODE_LDADD = \
+	$(top_builddir)/src-tsf/libnoxtsf.a \
+  $(top_builddir)/src/libnox.a \
+	$(TSF_EXPORT_LIBS) \
+  $(MPI_LIBS) $(LIBS) 
+
 
 
 EX_CXXFLAGS = \
