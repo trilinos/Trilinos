@@ -131,6 +131,7 @@ int Zoltan_HG_HPart_Lib (
       ierr = Zoltan_HG_Grouping (zz,hg,pack,hgp,&limit) ;
     else
     { Graph g;
+      Zoltan_HG_Graph_Init(&g);
       ierr = Zoltan_HG_HGraph_to_Graph (zz, hg, &g) ;
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       { ZOLTAN_FREE((void **) &pack);

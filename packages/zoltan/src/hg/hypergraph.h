@@ -165,12 +165,12 @@ typedef struct {
   ZOLTAN_HG_PACKING_FN  *packing;       /* Grouping fn specified by */
   ZOLTAN_HG_GROUPING_FN *grouping;      /* redm_str; NULL if not used */
 
-  char rli_str[MAX_PARAM_STRING_LEN];    /* Reduction Local Improvement string*/
-  ZOLTAN_HG_MATCHING_FN *matching_rli;   /* Pointers to Matching, Packing and */
-  ZOLTAN_HG_PACKING_FN  *packing_rli;    /* Grouping improvement fn specified */
-  ZOLTAN_HG_GROUPING_FN *grouping_rli;   /* by rli_str; NULL if not used */
+  char rli_str[MAX_PARAM_STRING_LEN];   /* Reduction Local Improvement string*/
+  ZOLTAN_HG_MATCHING_FN *matching_rli;  /* Pointers to Matching, Packing and */
+  ZOLTAN_HG_PACKING_FN  *packing_rli;   /* Grouping improvement fn specified */
+  ZOLTAN_HG_GROUPING_FN *grouping_rli;  /* by rli_str; NULL if not used */
 
-  int ews;                               /* Flag for Edge weight scaling */
+  int ews;                              /* Flag for Edge weight scaling */
 
   char global_str[MAX_PARAM_STRING_LEN];/*Global partitioning string and */
   ZOLTAN_HG_GLOBAL_PART_FN *global_part;/* pointer to Global partitioning fn */
@@ -178,9 +178,9 @@ typedef struct {
   char local_str[MAX_PARAM_STRING_LEN]; /*Local refinement string and */
   ZOLTAN_HG_LOCAL_REF_FN *local_ref;    /* pointer to Local refinement fn */
 
-  int check_graph;                       /* Flag indicating whether the input
-                                            hypergraph should be checked for 
-                                            errors. */
+  int check_graph;                      /* Flag indicating whether the input
+                                           hypergraph should be checked for 
+                                           errors. */
 } HGPartParams;
 
 int Zoltan_HG_Set_Part_Options  (ZZ *, HGPartParams *);
