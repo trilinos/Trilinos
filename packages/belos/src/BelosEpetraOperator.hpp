@@ -14,6 +14,8 @@
 #include "BelosBlockGmres.hpp"
 #include "BelosBlockCG.hpp"
 
+namespace Belos {
+
 ///////////////////////////////////////////////////////////////
 //--------template class BelosEpetraOperator--------------------
 //
@@ -24,14 +26,14 @@
 ///////////////////////////////////////////////////////////////
 
 template <class TYPE>
-class BelosEpetraOperator : public virtual Epetra_Operator {
+class EpetraOperator : public virtual Epetra_Operator {
 public:
 	// Constructor / Destructor
-	BelosEpetraOperator( BelosPetraMat<TYPE>& mat, BelosPetraPrec<TYPE>& precond,
+	EpetraOperator( PetraMat<TYPE>& mat, PetraPrec<TYPE>& precond,
 			    const string solver="BlockGMRES", const TYPE tol=1.0e-6, const int maxits=25, 
 			    const int block=1, const int debuglevel=0, bool verbose=false );
 
-	~BelosEpetraOperator();
+	~EpetraOperator();
 
 	// Implement Epetra_Operator functionality
 
@@ -52,8 +54,8 @@ public:
 	const Epetra_Map& OperatorRangeMap() const { return(RangeMap); };	
 	   
 private:
-	BelosPetraMat<TYPE>& Mat;
-	BelosPetraPrec<TYPE>& Prec;
+	PetraMat<TYPE>& Mat;
+	PetraPrec<TYPE>& Prec;
 	const Epetra_Comm& MyComm;
 	const Epetra_Map& DomainMap;
 	const Epetra_Map& RangeMap;
@@ -64,12 +66,12 @@ private:
 };
 //--------------------------------------------------------------
 //
-// implementation of the BelosEpetraOperator class.
+// implementation of the EpetraOperator class.
 //
 // Constructor.
 //
 template <class TYPE>
-BelosEpetraOperator<TYPE>::BelosEpetraOperator( BelosPetraMat<TYPE>& mat, BelosPetraPrec<TYPE>& precond,
+EpetraOperator<TYPE>::EpetraOperator( PetraMat<TYPE>& mat, PetraPrec<TYPE>& precond,
 			    	const string solver, const TYPE tol, const int maxits, const int block, 
 				const int debuglevel, bool verbose )
 	: Mat(mat), Prec(precond), Solver(0), Tol(tol),
@@ -83,29 +85,29 @@ BelosEpetraOperator<TYPE>::BelosEpetraOperator( BelosPetraMat<TYPE>& mat, BelosP
 }
 
 template<class TYPE>
-BelosEpetraOperator<TYPE>::~BelosEpetraOperator()
+EpetraOperator<TYPE>::~EpetraOperator()
 {
 }
 
 template<class TYPE>
-int BelosEpetraOperator<TYPE>::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
+int EpetraOperator<TYPE>::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
 {
 	TYPE zero = 0.0, one = 1.0;
-	BelosPetraVec<TYPE> vec_X(X), vec_Y(Y);
+	PetraVec<TYPE> vec_X(X), vec_Y(Y);
 	int NumRHS = vec_X.GetNumberVecs();
 	//
 	// Create solver and solve problem.  This is inefficient, an instance of the solver should
 	// exist already and just be reset with a new RHS.
 	//
 	if (strcmp(Solver,"BlockGMRES")==0) {
-		Belos::BlockGmres<TYPE> MyBlockGmres( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
+		BlockGmres<TYPE> MyBlockGmres( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
 		MyBlockGmres.SetDebugLevel(DbgLvl);
 		MyBlockGmres.Solve(Vb);
 		MyBlockGmres.GetSolutions( vec_Y );
 		MyBlockGmres.TrueResiduals(Vb);
 	}
 	if (strcmp(Solver,"BlockCG")==0) {
-		Belos::BlockCG<TYPE> MyBlockCG( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
+		BlockCG<TYPE> MyBlockCG( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
 		MyBlockCG.SetDebugLevel(DbgLvl);
 		MyBlockCG.Solve(Vb);
 		MyBlockCG.GetSolutions( vec_Y );
@@ -123,24 +125,24 @@ int BelosEpetraOperator<TYPE>::Apply( const Epetra_MultiVector &X, Epetra_MultiV
 }
 
 template<class TYPE>
-int BelosEpetraOperator<TYPE>::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
+int EpetraOperator<TYPE>::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
 {
 	TYPE zero = 0.0, one = 1.0;
-	BelosPetraVec<TYPE> vec_X(X), vec_Y(Y);
+	PetraVec<TYPE> vec_X(X), vec_Y(Y);
 	int NumRHS = vec_X.GetNumberVecs();
 	//
 	// Create solver and solve problem.  This is inefficient, an instance of the solver should
 	// exist already and just be reset with a new RHS.
 	//
 	if (strcmp(Solver,"BlockGMRES")==0) {
-		Belos::BlockGmres<TYPE> MyBlockGmres( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
+		BlockGmres<TYPE> MyBlockGmres( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
 		MyBlockGmres.SetDebugLevel(DbgLvl);
 		MyBlockGmres.Solve(Vb);
 		MyBlockGmres.GetSolutions( vec_Y );
 		MyBlockGmres.TrueResiduals(Vb);
 	}
 	if (strcmp(Solver,"BlockCG")==0) {
-		Belos::BlockCG<TYPE> MyBlockCG( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
+		BlockCG<TYPE> MyBlockCG( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
 		MyBlockCG.SetDebugLevel(DbgLvl);
 		MyBlockCG.Solve(Vb);
 		MyBlockCG.GetSolutions( vec_Y );
@@ -156,6 +158,8 @@ int BelosEpetraOperator<TYPE>::ApplyInverse( const Epetra_MultiVector &X, Epetra
 	// Assume a good return right now since Belos doesn't have return types yet.
 	return(0);
 }
+
+} // end of Belos namespace
 
 // end of file BELOS_EPETRA_OPERATOR_HPP
 #endif 

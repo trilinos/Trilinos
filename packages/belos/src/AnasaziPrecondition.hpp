@@ -5,7 +5,9 @@
 #include "AnasaziMultiVec.hpp"
 #include "BelosConfigDefs.hpp"
 
-/*!	\class AnasaziPrecondition
+namespace Anasazi {
+
+/*!	\class Anasazi::Precondition
 
 	\brief Belos's templated virtual class for constructing the 
 	preconditioner to the AnasaziMatrix that is used by the linear 
@@ -22,33 +24,32 @@
 */
 
 template <class TYPE>
-class AnasaziPrecondition {
+class Precondition {
 public:
 	//@{ \name Constructor/Destructor.
-	//! %AnasaziPrecondition constructor.
-	AnasaziPrecondition() {
-//		cout << "ctor:AnasaziPrecondition " << this << endl; 
+	//! %Anasazi::Precondition constructor.
+	Precondition() {
+//		cout << "ctor:Anasazi::Precondition " << this << endl; 
 	}
-	//! %AnasaziPrecondition destructor.
-	virtual ~AnasaziPrecondition() {
-//		cout << "dtor:AnasaziPrecondition " << this << endl; 
+	//! %Anasazi::Precondition destructor.
+	virtual ~Precondition() {
+//		cout << "dtor:Anasazi::Precondition " << this << endl; 
 	};
 	//@}
 
 	//@{ \name Preconditioner application method.
 	
-	/*! \brief This routine takes the %AnasaziMultiVec \c x and 
-	applies the preconditioner to it resulting in the %AnasaziMultiVec \c y, 
-	which is returned.  If this routine is not overridden, then the %AnasaziMultiVec
+	/*! \brief This routine takes the %Anasazi::MultiVec \c x and 
+	applies the preconditioner to it resulting in the %Anasazi::MultiVec \c y, 
+	which is returned.  If this routine is not overridden, then the %Anasazi::MultiVec
 	\c x will be passed directly to \c y, resulting in an unpreconditioned linear
 	solver.
 	*/
-	virtual void ApplyPrecondition (const AnasaziMultiVec<TYPE>& x, 
-						      AnasaziMultiVec<TYPE>& y ) const {
+	virtual void ApplyPrecondition (const MultiVec<TYPE>& x, MultiVec<TYPE>& y ) const {
 		//
 		// First cast away the const on x.
 		//
-		AnasaziMultiVec<TYPE>& temp_x = const_cast<AnasaziMultiVec<TYPE>& >(x);
+		MultiVec<TYPE>& temp_x = const_cast<MultiVec<TYPE>& >(x);
 		//
 		// Now create the indexing for copying x into y.
 		//
@@ -61,5 +62,6 @@ public:
 	//@}
 };
 
+}
 #endif
 // end of file AnasaziPrecondition.hpp

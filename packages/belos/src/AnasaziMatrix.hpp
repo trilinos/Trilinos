@@ -4,9 +4,11 @@
 
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziReturnType.hpp"
-#include <iostream>
+#include "BelosConfigDefs.hpp"
 
-/*!	\class AnasaziMatrix
+namespace Anasazi {
+
+/*!	\class Anasazi::Matrix
 
 	\brief Anasazi's templated pure virtual class for constructing the matrix/operator that is
 	used by the eigensolver.
@@ -18,29 +20,30 @@
 */
 
 template <class TYPE>
-class AnasaziMatrix {
+class Matrix {
 public:
 
 	//@{ \name Constructor/Destructor.
-	//! %AnasaziMatrix constructor.
-	AnasaziMatrix() {
-//		cout << "ctor:AnasaziMatrix " << this << endl; 
+	//! %Anasazi::Matrix constructor.
+	Matrix() {
+//		cout << "ctor:Anasazi::Matrix " << this << endl; 
 	}
-	//! %AnasaziMatrix destructor.
-	virtual ~AnasaziMatrix() {
-//		cout << "dtor:AnasaziMatrix " << this << endl; 
+	//! %Anasazi::Matrix destructor.
+	virtual ~Matrix() {
+//		cout << "dtor:Anasazi::Matrix " << this << endl; 
 	};
 	//@}
 	
 	//@{ \name Matrix/Operator application method.
 
-	/*! \brief This routine takes the %AnasaziMultiVec \c x and applies the matrix/operator
-	to it resulting in the %AnasaziMultiVec \c y, which is returned.
+	/*! \brief This routine takes the %Anasazi::MultiVec \c x and applies the matrix/operator
+	to it resulting in the %Anasazi::MultiVec \c y, which is returned.
 	*/
-	virtual Anasazi_ReturnType ApplyMatrix (const AnasaziMultiVec<TYPE>& x, 
-						      AnasaziMultiVec<TYPE>& y ) const = 0;
+	virtual ReturnType ApplyMatrix (const MultiVec<TYPE>& x, 
+						      MultiVec<TYPE>& y ) const = 0;
 	//@}
 };
 
+} // end Anasazi namespace
 #endif
 // end of file AnasaziMatrix.hpp

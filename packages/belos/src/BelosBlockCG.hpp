@@ -41,8 +41,8 @@ class BlockCG {
 public:
 	//@{ \name Constructor/Destructor.
 	//! %Belos::BlockCG constructor.
-	BlockCG(AnasaziMatrix<TYPE> & mat, 
-		AnasaziPrecondition<TYPE> &precond, AnasaziMultiVec<TYPE>& rhs, 
+	BlockCG(Anasazi::Matrix<TYPE> & mat, 
+		Anasazi::Precondition<TYPE> &precond, Anasazi::MultiVec<TYPE>& rhs, 
 		const int numrhs, const TYPE tol=1.0e-6, const int maxits=25, 
 		const int block=1, bool=false);
 
@@ -62,7 +62,7 @@ public:
 	//@{ \name Solution return methods.
 	
 	//! This method puts the current solutions in %soln.
-	void GetSolutions(AnasaziMultiVec<TYPE>& soln);
+	void GetSolutions(Anasazi::MultiVec<TYPE>& soln);
 
 	//! This method computes the true residuals for the current solutions.
     	void TrueResiduals(bool);
@@ -71,7 +71,7 @@ public:
 	//@{ \name Set method.
 
 	//! This method sets the initial guess to be %iguess.
-	void SetInitGuess(AnasaziMultiVec<TYPE>& iguess);
+	void SetInitGuess(Anasazi::MultiVec<TYPE>& iguess);
 	//@}
 
 	//@{ \name Output methods.
@@ -86,16 +86,16 @@ public:
 	//@}
 private:
 	void SetCGBlkTols();
-    	void SetUpBlocks(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, int);
-	void ExtractCurSolnBlock(AnasaziMultiVec<TYPE>&, int);
-	void QRFactorDef(AnasaziMultiVec<TYPE>&, AnasaziDenseMatrix<TYPE>&, bool&,int,
+    	void SetUpBlocks(Anasazi::MultiVec<TYPE>&, Anasazi::MultiVec<TYPE>&, int);
+	void ExtractCurSolnBlock(Anasazi::MultiVec<TYPE>&, int);
+	void QRFactorDef(Anasazi::MultiVec<TYPE>&, Anasazi::DenseMatrix<TYPE>&, bool&,int,
 		                 int[],int&,bool);
-    	void CheckCGOrth(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, bool);
+    	void CheckCGOrth(Anasazi::MultiVec<TYPE>&, Anasazi::MultiVec<TYPE>&, bool);
 	void PrintCGIterInfo(int[], const int, int[], const int, int[], const int);
-	void CheckCGResids(AnasaziMultiVec<TYPE>&, AnasaziMultiVec<TYPE>&, bool) const;
-	AnasaziMatrix<TYPE> &_amat; // must be passed in by the user
-	AnasaziPrecondition<TYPE> &_precond; // must be passed in by user
-	AnasaziMultiVec<TYPE> &_rhs, *_basisvecs, *_solutions, *_residvecs;
+	void CheckCGResids(Anasazi::MultiVec<TYPE>&, Anasazi::MultiVec<TYPE>&, bool) const;
+	Anasazi::Matrix<TYPE> &_amat; // must be passed in by the user
+	Anasazi::Precondition<TYPE> &_precond; // must be passed in by user
+	Anasazi::MultiVec<TYPE> &_rhs, *_basisvecs, *_solutions, *_residvecs;
 	const int _maxits, _blocksize, _numrhs;
 	const TYPE _residual_tolerance;
 	TYPE *_trueresids, *_residerrors;
@@ -110,8 +110,8 @@ private:
 //
 
 template <class TYPE>
-BlockCG<TYPE>::BlockCG(AnasaziMatrix<TYPE> & mat, 
-					         AnasaziPrecondition<TYPE> &precond, AnasaziMultiVec<TYPE>& rhs, 
+BlockCG<TYPE>::BlockCG(Anasazi::Matrix<TYPE> & mat, 
+					         Anasazi::Precondition<TYPE> &precond, Anasazi::MultiVec<TYPE>& rhs, 
 							 const int numrhs, const TYPE tol, const int maxits, 
 							 const int block, bool vb) : 
 							_amat(mat), _precond(precond), 
@@ -178,7 +178,7 @@ void BlockCG<TYPE>::SetCGBlkTols() {
 
 
 template <class TYPE>
-void BlockCG<TYPE>::SetInitGuess(AnasaziMultiVec<TYPE>& iguess) {
+void BlockCG<TYPE>::SetInitGuess(Anasazi::MultiVec<TYPE>& iguess) {
 //  This will set the initial guess to the input vector.  If it has less
 //  columns than the number of right hand sides, then the rest of _solutions
 //  will be filled up with random vectors.
@@ -194,7 +194,7 @@ void BlockCG<TYPE>::SetInitGuess(AnasaziMultiVec<TYPE>& iguess) {
 			for (i=numvecs; i<_numrhs; i++) {
 				index[i-numvecs] = i;
 			}
-			AnasaziMultiVec<TYPE>* U_vec = _solutions->CloneView( index, _numrhs-numvecs );
+			Anasazi::MultiVec<TYPE>* U_vec = _solutions->CloneView( index, _numrhs-numvecs );
 			assert(U_vec!=NULL);
 			U_vec->MvRandom();
 			delete U_vec;
@@ -211,13 +211,13 @@ void BlockCG<TYPE>::SetInitGuess(AnasaziMultiVec<TYPE>& iguess) {
 //
 
 template<class TYPE>
-void BlockCG<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,  
-				     AnasaziMultiVec<TYPE>& rhs_block,  
+void BlockCG<TYPE>::SetUpBlocks (Anasazi::MultiVec<TYPE>& sol_block,  
+				     Anasazi::MultiVec<TYPE>& rhs_block,  
 				     int num_to_solve) {
 	//
 	int i,j;
 	int *index = new int[_blocksize + _numrhs]; assert(index!=NULL);
-	AnasaziMultiVec<TYPE> *tptr=0, *tptr2=0;
+	Anasazi::MultiVec<TYPE> *tptr=0, *tptr2=0;
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
 	//
@@ -306,14 +306,14 @@ void BlockCG<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,
 
 
 template <class TYPE>
-void BlockCG<TYPE>::ExtractCurSolnBlock(AnasaziMultiVec<TYPE>& sol_block,
+void BlockCG<TYPE>::ExtractCurSolnBlock(Anasazi::MultiVec<TYPE>& sol_block,
 										  int num_to_solve) {
 	//
 	int i;
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
 	int * index = new int[_blocksize + _numrhs]; assert(index!=NULL);
-	AnasaziMultiVec<TYPE> *tptr=0, *tptr2=0;
+	Anasazi::MultiVec<TYPE> *tptr=0, *tptr2=0;
 	//
 	if (num_to_solve >= _blocksize) {
 		 for (i=0; i<_blocksize; i++) {
@@ -350,7 +350,7 @@ void BlockCG<TYPE>::ExtractCurSolnBlock(AnasaziMultiVec<TYPE>& sol_block,
 
  template <class TYPE>
 void BlockCG<TYPE>::TrueResiduals (bool vb) {
-	AnasaziMultiVec<TYPE> * AX = _solutions->Clone(_numrhs); assert(AX!=NULL);
+	Anasazi::MultiVec<TYPE> * AX = _solutions->Clone(_numrhs); assert(AX!=NULL);
 	//
 	_amat.ApplyMatrix(*_solutions, *AX);
 	assert(AX->GetNumberVecs()==_rhs.GetNumberVecs());
@@ -416,7 +416,7 @@ void BlockCG<TYPE>::PrintResids(bool vb)const {
 
 
 template <class TYPE>
-void BlockCG<TYPE>::GetSolutions(AnasaziMultiVec<TYPE>& soln) {
+void BlockCG<TYPE>::GetSolutions(Anasazi::MultiVec<TYPE>& soln) {
         int i, numvecs = soln.GetNumberVecs();
         if (numvecs > _numrhs) {
                 numvecs = _numrhs;
@@ -439,10 +439,10 @@ void BlockCG<TYPE>::Solve (bool vb) {
 	bool pflg, exit_flg = false;
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
-	AnasaziMultiVec<TYPE> *cur_block_sol=0, *cur_block_rhs=0;
-	AnasaziMultiVec<TYPE> *R_prev=0, *R_new=0, *P_prev=0, *P_new=0, *AP_prev=0;
-	AnasaziMultiVec<TYPE> *temp_block=0, *PC_resid;
-	AnasaziMultiVec<TYPE> *precond_resid=0, *cur_sol=0;
+	Anasazi::MultiVec<TYPE> *cur_block_sol=0, *cur_block_rhs=0;
+	Anasazi::MultiVec<TYPE> *R_prev=0, *R_new=0, *P_prev=0, *P_new=0, *AP_prev=0;
+	Anasazi::MultiVec<TYPE> *temp_block=0, *PC_resid;
+	Anasazi::MultiVec<TYPE> *precond_resid=0, *cur_sol=0;
 	TYPE * ptr_T1 = 0;
 	TYPE * ptr_T2 = 0;
 	TYPE * cur_resid_norms=0;
@@ -610,7 +610,7 @@ void BlockCG<TYPE>::Solve (bool vb) {
 			// and check for dependencies, adjusting indices of independent
 			// vectors if needed
 		    //
-            AnasaziDenseMatrix<TYPE> G(cur_blksz, cur_blksz);
+            Anasazi::DenseMatrix<TYPE> G(cur_blksz, cur_blksz);
 		    num_ind = 0; pflg = false;
 		    QRFactorDef(*P_prev, G, pflg, cur_blksz, cols, num_ind, vb);
             //
@@ -694,9 +694,9 @@ void BlockCG<TYPE>::Solve (bool vb) {
            // 2) Compute the Cholesky Factorization of T2
            // 3) Back and Forward Solves for alpha
            //
-		   AnasaziDenseMatrix<TYPE> alpha(ind_blksz,cur_blksz);
-           AnasaziDenseMatrix<TYPE> T1(ind_blksz,cur_blksz);
-           AnasaziDenseMatrix<TYPE> T2(ind_blksz,ind_blksz);
+		   Anasazi::DenseMatrix<TYPE> alpha(ind_blksz,cur_blksz);
+           Anasazi::DenseMatrix<TYPE> T1(ind_blksz,cur_blksz);
+           Anasazi::DenseMatrix<TYPE> T2(ind_blksz,ind_blksz);
 		   ptr_T1 = 0; ptr_T2 = 0;
 		   char UPLO = 'U';
            int ii = 0;
@@ -862,8 +862,8 @@ void BlockCG<TYPE>::Solve (bool vb) {
            // 2) Compute the Cholesky Factorization of T2
            // 3) Back and Forward Solves for beta
            //
-           AnasaziDenseMatrix<TYPE> T3(prev_ind_blksz,ind_blksz);
-           AnasaziDenseMatrix<TYPE> beta(prev_ind_blksz,ind_blksz);
+           Anasazi::DenseMatrix<TYPE> T3(prev_ind_blksz,ind_blksz);
+           Anasazi::DenseMatrix<TYPE> beta(prev_ind_blksz,ind_blksz);
 		   ptr_T1 = 0;
 		   //
 		   // 1 & 2)  Note: we already have computed T2 and its Cholesky
@@ -903,7 +903,7 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   // and check for dependencies, adjusting indices of
 		   // independent vectors if needed
 		   //
-		   AnasaziDenseMatrix<TYPE> G(ind_blksz,ind_blksz);
+		   Anasazi::DenseMatrix<TYPE> G(ind_blksz,ind_blksz);
 		   num_ind = 0; pflg = false;
 		   QRFactorDef(*P_new, G, pflg, ind_blksz, cols, num_ind, vb);
 		   //
@@ -1005,8 +1005,8 @@ void BlockCG<TYPE>::Solve (bool vb) {
 
 
 template<class TYPE>
-void BlockCG<TYPE>::QRFactorDef (AnasaziMultiVec<TYPE>& VecIn, 
-				     AnasaziDenseMatrix<TYPE>& FouierR, bool &flg, int blksz,
+void BlockCG<TYPE>::QRFactorDef (Anasazi::MultiVec<TYPE>& VecIn, 
+				     Anasazi::DenseMatrix<TYPE>& FouierR, bool &flg, int blksz,
 					 int cols[], int &num, bool vb) {
 	int i,j,k;
 	int nb = VecIn.GetNumberVecs(); assert (nb == blksz);
@@ -1015,7 +1015,7 @@ void BlockCG<TYPE>::QRFactorDef (AnasaziMultiVec<TYPE>& VecIn,
 	int *dep_idx = new int[nb]; assert(dep_idx!=NULL);
 	int num_dep = 0;
 	TYPE * R = FouierR.getarray();
-	AnasaziMultiVec<TYPE> *qj = 0, *Qj = 0;
+	Anasazi::MultiVec<TYPE> *qj = 0, *Qj = 0;
 	const int IntOne=1;
 	const int IntZero=0;
 	const TYPE zero=0.0;
@@ -1061,7 +1061,7 @@ void BlockCG<TYPE>::QRFactorDef (AnasaziMultiVec<TYPE>& VecIn,
 			// basis for first j columns of the entering VecIn).
 			//
 			Qj = VecIn.CloneView(index, j);
-			AnasaziDenseMatrix<TYPE> rj(j,1);
+			Anasazi::DenseMatrix<TYPE> rj(j,1);
 			//
 			// Enter a for loop that does two (num_orth) steps of classical 
 			// Gram-Schmidt orthogonalization.
@@ -1132,7 +1132,7 @@ void BlockCG<TYPE>::QRFactorDef (AnasaziMultiVec<TYPE>& VecIn,
 
 
 template<class TYPE>
-void BlockCG<TYPE>::CheckCGOrth(AnasaziMultiVec<TYPE>& P1, AnasaziMultiVec<TYPE>& P2,
+void BlockCG<TYPE>::CheckCGOrth(Anasazi::MultiVec<TYPE>& P1, Anasazi::MultiVec<TYPE>& P2,
 								bool vb) {
   //
   // This routine computes P2^T * A * P1
@@ -1148,11 +1148,11 @@ void BlockCG<TYPE>::CheckCGOrth(AnasaziMultiVec<TYPE>& P1, AnasaziMultiVec<TYPE>
   int numvecs1 = P1.GetNumberVecs();
   int numvecs2 = P2.GetNumberVecs();
   //
-  AnasaziMultiVec<TYPE>* AP = P1.CloneCopy();
+  Anasazi::MultiVec<TYPE>* AP = P1.CloneCopy();
   assert(AP!=NULL);
   _amat.ApplyMatrix(P1, *AP);
   //
-  AnasaziDenseMatrix<TYPE> PAP(numvecs2, numvecs1);
+  Anasazi::DenseMatrix<TYPE> PAP(numvecs2, numvecs1);
   AP->MvTransMv(one, P2, PAP);
   //
   TYPE* ptr = PAP.getarray();
@@ -1227,13 +1227,13 @@ void BlockCG<TYPE>::PrintCGIterInfo(int cur[], const int cursz,
 
 
 template<class TYPE>
-void BlockCG<TYPE>::CheckCGResids(AnasaziMultiVec<TYPE>& X, AnasaziMultiVec<TYPE>& B, bool vb) const {
+void BlockCG<TYPE>::CheckCGResids(Anasazi::MultiVec<TYPE>& X, Anasazi::MultiVec<TYPE>& B, bool vb) const {
 	//
 	int i;
 	const TYPE one = 1.0;
 	//
-	AnasaziMultiVec<TYPE> *AX = X.CloneCopy(); assert(AX!=NULL);
-	AnasaziMultiVec<TYPE> *TR = X.CloneCopy(); assert(TR!=NULL);
+	Anasazi::MultiVec<TYPE> *AX = X.CloneCopy(); assert(AX!=NULL);
+	Anasazi::MultiVec<TYPE> *TR = X.CloneCopy(); assert(TR!=NULL);
 	//
 	_amat.ApplyMatrix(X, *AX);
 	TR->MvAddMv(one, B, -one, *AX);
