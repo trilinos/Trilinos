@@ -129,6 +129,9 @@ int unitTests(bool verbose, bool debug) {
 
 	// math functions
 	
+	// dot product
+	if(verbose) cout << "dot product..." << endl;
+	vector.dotProduct(v2); // throw away return value
 	// reciprocal
 	if(verbose) cout << "absolute value..." << endl;
 	vector.absoluteValue(v2);
@@ -147,6 +150,18 @@ int unitTests(bool verbose, bool debug) {
 	if(verbose) cout << "update #2..." << endl;
 	vector.update(Teuchos::ScalarTraits<ScalarType>::random(), v2, 
 			      Teuchos::ScalarTraits<ScalarType>::random(), vector1a, Teuchos::ScalarTraits<ScalarType>::random());
+	// 1-norm
+	if(verbose) cout << "1-norm..." << endl;
+	vector.norm1(); // throw away return value
+	// 2-norm
+	if(verbose) cout << "2-norm..." << endl;
+	vector.norm2(); // throw away return value
+	// Infinity-norm
+	if(verbose) cout << "Infinity-norm..." << endl;
+	vector.normInf(); // throw away return value
+	// Weighted 2-norm
+	if(verbose) cout << "Weighted 2-norm (RMS norm)..." << endl;
+	vector.normWeighted(v2); // throw away return value
 	// min value
 	if(verbose) cout << "minValue..." << endl;
 	vector.minValue();

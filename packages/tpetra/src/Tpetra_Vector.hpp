@@ -168,8 +168,24 @@ public:
 
 	//@{ \name Mathematical Methods
 
-	//! Returns result of dot product, \e this = X.Y.
-	void dotProduct(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType> const& y) const;
+	//! Returns result of dot product, \e result = this.x
+	ScalarType dotProduct(Vector<OrdinalType, ScalarType> const& x) const {
+		if(! vectorSpace().isCompatible(x.vectorSpace()))
+			throw reportError("Vector sizes do not match.", 2);
+		
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+		OrdinalType const length = getNumMyEntries();
+		
+		// call BLAS routine to calculate local dot product
+		ScalarType localDP = BLAS_.DOT(length, &scalarArray_[ordinalZero], ordinalOne, &x.scalarArray_[ordinalZero], ordinalOne);
+		
+		// use Comm call to sum all local dot products
+		ScalarType globalDP;
+		vectorSpace().comm().sumAll(&localDP, &globalDP, ordinalOne);
+		
+		return(globalDP);
+	}
 
 	//! Changes this vector to elementwise absolute values of x.
 	void absoluteValue(Vector<OrdinalType, ScalarType> const& x) {
@@ -253,16 +269,72 @@ public:
   }
 
   //! Compute 1-norm of vector.
-  ScalarType norm1() const;
+	ScalarType norm1() const {
+		// 1-norm = sum of abs. values of vector entries
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+		OrdinalType const length = getNumMyEntries();
+		
+		// compute local 1-norm
+		ScalarType localNorm = BLAS_.ASUM(length, &scalarArray_[ordinalZero], ordinalOne);
+		// call comm's sumAll method to compute global 1-norm
+		ScalarType globalNorm;
+		vectorSpace().comm().sumAll(&localNorm, &globalNorm, ordinalOne);
+		
+		return(globalNorm);
+	}
 
   //! Compute 2-norm of vector.
-  ScalarType norm2() const;
+	ScalarType norm2() const {
+		// 2-norm = square root of the sum of the squares of the abs. values of vector entries
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+		OrdinalType const length = getNumMyEntries();
+		
+		// add up squares of entries
+		ScalarType localSum = Teuchos::ScalarTraits<ScalarType>::zero();
+		for(OrdinalType i = ordinalZero; i < length; i++)
+			localSum += scalarArray_[i] * scalarArray_[i];
+		
+		// calculate global sum
+		ScalarType globalSum;
+		vectorSpace().comm().sumAll(&localSum, &globalSum, ordinalOne);
+		
+		// return square root of global sum
+		return(Teuchos::ScalarTraits<ScalarType>::squareroot(globalSum));
+	}
 
-  //! Compute Inf-norm of vector.
-  ScalarType normInf() const;
+  //! Compute Infinity-norm of vector.
+  ScalarType normInf() const {
+	  // inf-norm = abs. value of the max value
+	  return(Teuchos::ScalarTraits<ScalarType>::magnitude(maxValue()));
+  }
 
   //! Compute Weighted 2-norm (RMS Norm) of vector.
-  ScalarType normWeighted(Vector<OrdinalType, ScalarType> const& weights) const;
+	ScalarType normWeighted(Vector<OrdinalType, ScalarType> const& weights) const {
+		if(!vectorSpace().isCompatible(weights.vectorSpace()))
+			throw reportError("Vector sizes do not match.", 2);
+		
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+		OrdinalType const length = getNumMyEntries();
+		
+		// add up this[i] * weights[i]
+		ScalarType localSum = Teuchos::ScalarTraits<ScalarType>::zero();
+		for(OrdinalType i = ordinalZero; i < length; i++) {
+			ScalarType temp = scalarArray_[i] * weights[i];
+			localSum += temp * temp;
+		}
+		
+		// get global sum
+		ScalarType globalSum;
+		vectorSpace().comm().sumAll(&localSum, &globalSum, ordinalOne);
+		
+		// divide by global length, and then take square root of that
+		globalSum /= static_cast<ScalarType>(getNumGlobalEntries());
+		
+		return(Teuchos::ScalarTraits<ScalarType>::squareroot(globalSum));
+	}
 
   //! Compute minimum value of vector.
   ScalarType minValue() const {
