@@ -27,9 +27,12 @@
 // @HEADER
 
 #include <iostream>
-
 #include "Tpetra_SerialComm.hpp"
 #include "Tpetra_Version.hpp"
+#ifdef TPETRA_MPI
+#include <mpi.h>
+#include "Tpetra_MpiComm.hpp"
+#endif // TPETRA_MPI
 
 // function prototypes
 template<typename PacketType, typename OrdinalType> void setRandom(PacketType& vals, OrdinalType count);
@@ -48,6 +51,9 @@ int main(int argc, char* argv[]) {
 			verbose = true;
 		}
 	}
+  
+  bool verbose1 = verbose;
+  
 
 	if(verbose)
 		cout << Tpetra::Tpetra_Version() << endl << endl;
@@ -57,6 +63,33 @@ int main(int argc, char* argv[]) {
   if(verbose) cout << "Successful" << endl;
 	commTest(comm, verbose);
 	if(verbose) cout << "SerialComm testing successfull." << endl;
+  
+#ifdef TPETRA_MPI
+  if(verbose) cout << "Testing MPI functionality..." << endl;
+  int size = -1;
+  int rank = -1;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  
+  if(verbose) cout << "Image " << rank << " of " << size << " is alive." << endl;
+  
+  if(verbose) cout << "Creating MpiComm object...";
+  Tpetra::MpiComm<float, int> comm2(MPI_COMM_WORLD);
+  if(verbose) cout << "Successful" << endl;
+  
+  if(debug) cout << comm2 << endl;
+  
+  comm2.barrier();
+  
+  if(verbose) cout << "Trying broadcast..." << endl;
+  float foo = rank;
+  if(debug) cout << "Before broadcast, foo = " << foo << " on image " << rank << "." << endl;
+  comm2.broadcast(&foo, 1, 0);
+  if(debug) cout << "After broadcast, foo = " << foo << " on image " << rank << "." << endl;
+  
+  MPI_Finalize();
+#endif // TPETRA_MPI
 
   return(0);
 }

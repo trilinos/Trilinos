@@ -34,6 +34,7 @@
 #include "Tpetra_MpiComm.hpp"
 #include "Tpetra_MpiDirectory.hpp"
 #include "Tpetra_MpiDistributor.hpp"
+#include <mpi.h>
 
 namespace Tpetra {
 
@@ -66,11 +67,11 @@ namespace Tpetra {
 
 		//! Comm Instances
     Comm<ScalarType, OrdinalType>* createScalarComm() const {
-			MpiComm<ScalarType, OrdinalType>* comm = new MpiComm<ScalarType, OrdinalType>();
+			MpiComm<ScalarType, OrdinalType>* comm = new MpiComm<ScalarType, OrdinalType>(MPI_COMM_WORLD);
       return(comm);
 		};
 		Comm<OrdinalType, OrdinalType>* createOrdinalComm() const {
-			MpiComm<OrdinalType, OrdinalType>* comm = new MpiComm<OrdinalType, OrdinalType>();
+			MpiComm<OrdinalType, OrdinalType>* comm = new MpiComm<OrdinalType, OrdinalType>(MPI_COMM_WORLD);
       return(comm);
 		};
 

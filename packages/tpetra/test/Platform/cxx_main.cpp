@@ -60,7 +60,14 @@ int main(int argc, char* argv[]) {
 	if(verbose) cout << "Starting PlatformTest..." << endl;
 	ierr += serialTests<int, double>(verbose, debug);
 #ifdef TPETRA_MPI
+  if(verbose) cout << "Testing MPI functionality..." << endl;
+  int size = -1;
+  int rank = -1;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	ierr += mpiTests<int, double>(verbose, debug);
+  MPI_Finalize();
 #endif
   
 	// finish up

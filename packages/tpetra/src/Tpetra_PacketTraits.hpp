@@ -30,6 +30,7 @@
 #define _TPETRA_PACKETTRAITS_HPP_
 
 #include "Tpetra_ConfigDefs.hpp"
+#include <mpi.h>
 
 namespace Tpetra {
   /** The Tpetra PacketTraits file.
@@ -39,58 +40,58 @@ namespace Tpetra {
 	specializations defined below.
   */	
 
+  template<class T>
+  struct UndefinedScalarTraits {
+    //! This function should not compile if there is an attempt to instantiate!
+    static inline T notDefined() { return T::this_type_is_missing_a_specialization(); };
+  };
+  
 	template<class T>
 	struct PacketTraits {
-		static inline int unsupportedType() {
-#ifndef TPETRA_NO_ERROR_REPORTS
-			cerr << endl << "Tpetra::PacketTraits: unsupported packet type." << endl;
-#endif
-			return(-1);
-		}
-		static inline bool haveMachineParameters() {return(false);}; // Allows testing to see if packet traits machine parameters defined
-		static inline int packetSize()             {throw(unsupportedType());};
-		static inline const char* name()           {throw(unsupportedType());};
+		static inline int packetSize()              {return UndefinedScalarTraits<T>::notDefined();};
+		static inline std::string name()            {return UndefinedScalarTraits<T>::notDefined();};
+    static inline MPI_Datatype mpiDataType()    {return UndefinedScalarTraits<T>::notDefined();};
 	};
 	
 	template<>
 	struct PacketTraits<int> {
-		static inline bool haveMachineParameters() {return(true);}; // Allows testing to see if packet traits machine parameters defined 
-		static inline int packetSize()             {return(sizeof(int));};
-		static inline const char* name()           {return("int");};
+		static inline int packetSize()              {return(sizeof(int));};
+		static inline std::string name()            {return("int");};
+    static inline MPI_Datatype mpiDataType()    {return(MPI_INT);}; 
 	};
 
 	template<>
 	struct PacketTraits<float> {
-		static inline bool haveMachineParameters() {return(true);}; // Allows testing to see if packet traits machine parameters defined 
-		static inline int packetSize()             {return(sizeof(float));};
-		static inline const char* name()           {return("float");};
+		static inline int packetSize()              {return(sizeof(float));};
+		static inline std::string name()            {return("float");};
+    static inline MPI_Datatype mpiDataType()    {return(MPI_FLOAT);}; 
 	};
 
 	template<>
 	struct PacketTraits<double> {
-		static inline bool haveMachineParameters() {return(true);}; // Allows testing to see if packet traits machine parameters defined 
-		static inline int packetSize()             {return(sizeof(double));};
-		static inline const char* name()           {return("double");};
+		static inline int packetSize()              {return(sizeof(double));};
+		static inline std::string name()            {return("double");};
+    static inline MPI_Datatype mpiDataType()    {return(MPI_DOUBLE);}; 
 	};
 
+  /*
 #if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H))
 
 	template<>
 	struct PacketTraits<complex<float> > {
-		static inline bool haveMachineParameters() {return(true);}; // Allows testing to see if packet traits machine parameters defined 
 		static inline int packetSize()             {return(sizeof(complex<float>));};
 		static inline const char* name()           {return("complex<float>");};
 	};
 
 	template<>
 	struct PacketTraits<complex<double> > {
-		static inline bool haveMachineParameters() {return(true);}; // Allows testing to see if packet traits machine parameters defined 
 		static inline int packetSize()             {return(sizeof(complex<double>));};
 		static inline const char* name()           {return("complex<double>");};
 	};
 
 #endif // HAVE_COMPLEX || HAVE_COMPLEX_H
-
+*/
+   
 } // namespace Tpetra
 
 #endif // _TPETRA_PACKETTRAITS_HPP_

@@ -31,6 +31,8 @@
 
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Comm.hpp"
+#include "Tpetra_PacketTraits.hpp"
+#include <mpi.h>
 
 namespace Tpetra {
 
@@ -39,48 +41,86 @@ namespace Tpetra {
 	public:
     
     //@{ \name Constructor/Destructor Methods
-		MpiComm() : Object("Tpetra::Comm[MPI]") {};
+		MpiComm(MPI_Comm Comm) 
+      : Object("Tpetra::Comm[MPI]") 
+      , MpiComm_(Comm)
+    {
+        MPI_Comm_size(Comm, &size_);
+        MPI_Comm_rank(Comm, &rank_);
+    };
 
-    MpiComm(MpiComm<PacketType, OrdinalType> const& comm) {};
+    MpiComm(MpiComm<PacketType, OrdinalType> const& comm) 
+      : Object(comm.label())
+      , MpiComm_(comm.MpiComm_)
+      , size_(comm.size_)
+      , rank_(comm.rank_)
+    {};
 
 		~MpiComm() {};
     //@}
     
     //@{ \name Image Info Methods
-    int getMyImageID() const {return(-1);};
-    int getNumImages() const {return(-1);};
+    int getMyImageID() const {return(rank_);};
+    int getNumImages() const {return(size_);};
     //@}
     
     //@{ \name Barrier Methods
-    void barrier() const {};
+    void barrier() const {
+      MPI_Barrier(MpiComm_);
+    };
     //@}
     
     //@{ \name Broadcast Methods
-    void broadcast(PacketType* myVals, OrdinalType const count, int const root) const {};
+    void broadcast(PacketType* myVals, OrdinalType const count, int const root) const {
+      MPI_Bcast(myVals, count, PacketTraits<PacketType>::mpiDataType(), root, MpiComm_);
+    };
     //@}
     
     //@{ \name Gather Methods
-    void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const {};
+    void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const {
+        throw reportError("This method is not implemented yet.", -1);
+    };
     //@}
     
     //@{ \name Sum Methods
-    void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const {};
+    void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const {
+      throw reportError("This method is not implemented yet.", -1);
+    };
     //@}
     
     //@{ \name Max/Min Methods
-    void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const {};
-    void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const {};
+    void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const {
+      throw reportError("This method is not implemented yet.", -1);
+    };
+    void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const {
+      throw reportError("This method is not implemented yet.", -1);
+    };
     //@}
     
     //@{ \name Parallel Prefix Methods
-    void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const {};
+    void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const {
+      throw reportError("This method is not implemented yet.", -1);
+    };
     //@}
     
     //@{ \name I/O Methods
     //! Print methods
-    void print(ostream& os) const {os << "MpiComm print function." << endl;};
+    void print(ostream& os) const {os << "Image " << getMyImageID() << " of " << getNumImages() << " total images." << endl;};
     void printInfo(ostream& os) const {print(os);};
     //@}
+    
+    //@{ \name MPI-specific methods, not inherited from Tpetra::Comm
+    //! Access method to the MPI Communicator we're using.
+    MPI_Comm getMpiComm() const {
+      return(MpiComm_);
+    };
+    
+    //@}
+    
+private:
+    MPI_Comm MpiComm_; // The MPI Communicator passed in at construction (actually a new one cpy ctr'd from it).
+    int rank_;
+    int size_;
     
 	}; // MpiComm class
   
