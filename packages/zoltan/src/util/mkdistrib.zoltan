@@ -11,13 +11,39 @@ CURDIR="`pwd`"
 #
 # Get rid of space when day of the month is a single digit
 ACT_TAG="`echo "$TAGVAL"|sed s/' '//g`"
-rm -rf Zoltan
-rm -f zoltan_distrib.tar.Z
+rm -rf Zoltan ParMETIS
+rm -f zoltan_distrib.tar.gz
 cvs checkout -P Zoltan
 cvs checkout -P ParMETIS
 find . -name 'CVS' -exec rm -rf {} \;
 find . -name '*.sh' -exec rm -f {} \;
 find . -name '.cvsignore' -exec rm -f {} \;
+cd Zoltan; gmake zscript; cd ..
+rm -rf tmp
+FLIST="`find Zoltan -name '*.[ch]' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
+FLIST="`find Zoltan -name '*.f??' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
+FLIST="`find Zoltan -name '[mM]akefile*' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
+FLIST="`find Zoltan -name 'Config*' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
 chmod -R ogu+r *
 tar cvf zoltan_distrib.tar Zoltan ParMETIS
 gzip zoltan_distrib.tar
