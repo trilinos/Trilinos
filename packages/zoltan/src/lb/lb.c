@@ -122,7 +122,7 @@ int flag;
    */
 
   lb->Method = RCB;    
-  lb->LB_Fn = lb_rcb;
+  lb->LB_Fn = LB_rcb;
   lb->Debug = 0;
   lb->Params = NULL;
   lb->Tolerance = 0.9;
@@ -249,7 +249,7 @@ char *yo = "LB_Set_Fn";
 /****************************************************************************/
 /****************************************************************************/
 
-int LB_Set_Method(LB *lb, char *method_name, double *params)
+int LB_Set_Method(LB *lb, char *method_name)
 {
 /*
  *  Function to set the load balancing method to be used.
@@ -273,7 +273,7 @@ int i;
 
   if (strcasecmp(method_name, "RCB") == 0) {
     lb->Method = RCB;
-    lb->LB_Fn = lb_rcb;
+    lb->LB_Fn = LB_rcb;
 /*
     lb->LB_Comm->Build_Request_Proclist = rcb_build_request_proclist;
     lb->LB_Comm->Build_Send_Request_List = rcb_build_send_request_list;
@@ -317,7 +317,9 @@ int i;
   /*
    *  Set the parameters pointer if the application specifies parameters.
    */
-
+/* BAH: Following now obsolete */
+/* Need to replace it with something. */
+/*
   if (params != NULL) {
     lb->Params = (double *) LB_array_alloc(__FILE__, __LINE__, 1,
                                            LB_PARAMS_MAX_SIZE, sizeof(double));
@@ -329,6 +331,7 @@ int i;
     for (i = 0; i < LB_PARAMS_MAX_SIZE; i++) 
       lb->Params[i] = params[i];
   }
+*/
 
   return (DLB_OK);
 }
@@ -419,9 +422,10 @@ char *yo = "LB_Set_Migration";
 /****************************************************************************/
 /****************************************************************************/
 
+/* BAH: This is now obsolete */
+/*
 int LB_Initialize_Params_Array(double *params)
 {
-/*
  *  Function to initialize an array to pass parameters to the load-balancing
  *  methods.  This function is provided so that the load-balancer
  *  look for array entries not set by the application and use default values
@@ -433,7 +437,6 @@ int LB_Initialize_Params_Array(double *params)
  *                           Upon return, the values in this array are
  *                           initialized to an initial value determined
  *                           by the load-balancer.
- */
 
 int i;
 
@@ -442,6 +445,7 @@ int i;
 
   return (DLB_OK);
 }
+*/
 
 /****************************************************************************/
 /****************************************************************************/

@@ -49,9 +49,22 @@ static char *cvs_lbconsth_id = "$Id$";
 /*
  *  Value used to initialize the parameters when the
  *  load-balancer allocates the parameters array.
+ *  BAH: now obsolete
  */
 
-#define LB_PARAMS_INIT_VALUE -1.
+/* #define LB_PARAMS_INIT_VALUE -1. */
+
+/*
+ * Type used to store linked list of new values for parameters.
+ */
+   
+typedef struct LB_Param {
+  char *name;
+  char *new_val;
+  struct LB_Param *next;
+} LB_PARAM;
+	  
+
 
 #ifndef TRUE
 #define FALSE (0)
@@ -167,8 +180,9 @@ struct LB_Struct {
   LB_FN *LB_Fn;                   /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
                                       based on the method used.              */
-  double *Params;                 /*  Array of parameters passed to the 
+  /*double *Params;*/                 /*  Array of parameters passed to the 
                                       load balancing function.               */
+  LB_PARAM *Params;               /*  List of parameter names & new vals */
   double Tolerance;               /*  Tolerance to which to load balance;
                                       tolerance = 0.9 implies 10% imbalance
                                       is acceptable.                         */
@@ -264,7 +278,7 @@ struct LB_Struct {
 /*****************************************************************************/
 /* PROTOTYPES */
 
-extern LB_FN lb_rcb;
+extern LB_FN LB_rcb;
 extern LB_FN lb_wheat;
 extern LB_FN lb_oct_init;
 extern LB_FN LB_ParMetis_Part;
