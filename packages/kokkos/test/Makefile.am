@@ -27,4 +27,4 @@
 #@HEADER
 
 SUBDIRS = BaseSparseMultiply BaseSparseSolve \
-DenseMultiVector HbMatrix
+DenseMultiVector HbMatrix Permutation
