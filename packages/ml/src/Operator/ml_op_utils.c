@@ -583,9 +583,6 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
    int *remap, remap_leng;
    ML_CommInfoOP *c_info, **c2_info;
 
-   /* pull out things from ml_handle */
-
-
    temp = (struct ML_CSR_MSRdata *) Amat->data;
    isize = Amat->outvec_leng;
    osize = Amat->invec_leng;
@@ -631,7 +628,7 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
       rcv_list   = ML_CommInfoOP_Get_rcvlist(c_info, neigh_list[i]);
       /* handle empty rows ... i.e. ghost variables not used */
       if (rcv_list != NULL) {
-         for (j = 0; j < Nrcv; j++) {
+	for (j = 0; j < Nrcv; j++) {
             if (rcv_list[j] > Nghost2 + osize - 1)
                Nghost2 = rcv_list[j] - osize + 1;
          }
@@ -711,6 +708,7 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
    ML_Operator_Set_ApplyFunc(Amat_trans,ML_INTERNAL, CSR_matvec);
    ML_Operator_Set_Getrow(Amat_trans, ML_EXTERNAL,
                                  Nghost+osize, CSR_getrows);
+
   return(1);
 }
 
@@ -825,7 +823,6 @@ int eye_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 
   return(1);
 }
-
 /************************************************************************/
 /* Take the transpose of an ML_Operator and realign resulting matrix    */
 /* so that it is partitioned by rows.                                   */
@@ -840,4 +837,92 @@ int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans)
   ML_Operator_ColPartition2RowPartition(temp, Atrans);
   ML_Operator_Destroy(&temp);
   return 1;
+}
+#include "ml_utils.h"
+#include "ml_xyt.h"
+int ML_Operator_Dump(ML_Operator *Ke, double *x, double *rhs,
+		     char *istr)	
+{
+  double *global_nodes, *global_rows, colVal[15];
+  int    N_nodes, node_offset, row_offset;
+  int colInd[15], i, j, ncnt;
+  char str[80];
+  FILE *fid;
+  ML_Comm *comm;
+  int Nnodes_global, Nrows_global;
+  int Nghost_nodes;
+  int Nrows;
+  
+
+  comm = Ke->comm;
+  if (Ke->getrow->pre_comm == NULL) Nghost_nodes = 0;
+  else {
+    if (Ke->getrow->pre_comm->total_rcv_length <= 0)
+      ML_CommInfoOP_Compute_TotalRcvLength(Ke->getrow->pre_comm);
+    Nghost_nodes = Ke->getrow->pre_comm->total_rcv_length;
+  }
+
+
+  N_nodes = Ke->invec_leng;
+  node_offset = ML_gpartialsum_int(N_nodes, comm);
+  Nnodes_global = N_nodes;
+  ML_gsum_scalar_int(&Nnodes_global, &i, comm);
+
+  Nrows = Ke->outvec_leng;
+  row_offset = ML_gpartialsum_int(Nrows, comm);
+  Nrows_global = Nrows;
+  ML_gsum_scalar_int(&Nrows_global, &i, comm);
+
+  global_nodes  =(double *) ML_allocate(sizeof(double)*(N_nodes+Nghost_nodes));
+  global_rows   =(double *) ML_allocate(sizeof(double)*(Nrows));
+
+  for (i = 0 ; i < N_nodes; i++) global_nodes[i] = (double) (node_offset + i);
+  for (i = 0 ; i < Nrows; i++) global_rows[i] = (double) (row_offset + i);
+
+  for (i = 0 ; i < Nghost_nodes; i++) global_nodes[i+N_nodes] = -1;
+
+  ML_exchange_bdry(global_nodes,Ke->getrow->pre_comm, 
+ 		 Ke->invec_leng,comm,ML_OVERWRITE,NULL);
+
+  /* spit out Ke  */
+
+  sprintf(str,"%s_mat.%d",istr,comm->ML_mypid);
+  fid = fopen(str,"w");
+  for (i = 0; i < Nrows; i++) {
+    j = ML_Operator_Getrow(Ke,1,&i,15,colInd,colVal,&ncnt);
+    for (j = 0; j < ncnt; j++) {
+      if (colVal[j] != 0.0) {
+	fprintf(fid,"%5d %5d %20.13e\n",(int) global_rows[i]+1,
+		       (int) global_nodes[colInd[j]]+1, colVal[j]);
+      }
+    }
+  }
+  fclose(fid);
+
+  /* spit out x */
+
+  if (x != NULL) {
+    sprintf(str,"%s_xxx.%d",istr,comm->ML_mypid);
+    fid = fopen(str,"w");
+    for (i = 0; i < Ke->invec_leng; i++) {
+      fprintf(fid,"%5d %20.13e\n",(int) global_nodes[i]+1,x[i]);
+    }
+    fclose(fid);
+  }
+
+  /* spit out rhs */
+
+  if (rhs != NULL) {
+    sprintf(str,"%s_rhs.%d",istr,comm->ML_mypid);
+    fid = fopen(str,"w");
+    for (i = 0; i < Ke->outvec_leng; i++) {
+      fprintf(fid,"%5d %20.13e\n",(int) global_rows[i]+1,rhs[i]);
+    }
+    fclose(fid);
+  }
+
+
+  ML_free(global_nodes);
+  ML_free(global_rows);
+  return 0;
 }
