@@ -102,8 +102,7 @@ am_2d_Poisson_OBJECTS = 2d_Poisson-ml_example2d.$(OBJEXT)
 2d_Poisson_OBJECTS = $(am_2d_Poisson_OBJECTS)
 @ML_USING_AZTECOO_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../aztecoo/src/libaztecoo.a
 @ML_USING_IFPACK_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../ifpack/src/libifpack.a
-@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a \
-@ML_USING_AMESOS_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a
 @ML_USING_EPETRA_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../epetra/src/libepetra.a
 @ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../teuchos/src/libteuchos.a
 am__DEPENDENCIES_6 =
@@ -267,11 +266,7 @@ target_vendor = @target_vendor@
 # KLU is part of amesos, which in turn needs teuchos.
 @ML_USING_TEUCHOS_TRUE@teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
 @ML_USING_AMESOS_FALSE@amesos_lib = 
-
-# Amesos require Teuchos
-@ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-@ML_USING_AMESOS_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
-
+@ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
 @ML_USING_IFPACK_FALSE@ifpack_lib = 
 @ML_USING_IFPACK_TRUE@ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
 EXTRA_DIST = 2d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7

@@ -37,7 +37,7 @@ epetra_lib =
 endif
 
 if ML_USING_AZTECOO
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
+aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
 else
 aztecoo_lib =
 endif

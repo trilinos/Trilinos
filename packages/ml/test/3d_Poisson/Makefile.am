@@ -74,9 +74,7 @@ teuchos_lib =
 endif
 
 if ML_USING_AMESOS
-# Amesos require Teuchos
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-             $(top_builddir)/../teuchos/src/libteuchos.a
+amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
 else
 amesos_lib =
 endif

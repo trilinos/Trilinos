@@ -100,20 +100,20 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_MultiLevelPreconditioner_NonSym_OBJECTS = MultiLevelPreconditioner_NonSym-MultiLevelPreconditioner_NonSym.$(OBJEXT)
 MultiLevelPreconditioner_NonSym_OBJECTS =  \
 	$(am_MultiLevelPreconditioner_NonSym_OBJECTS)
-am__DEPENDENCIES_1 =
+@ML_USING_AZTECOO_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../aztecoo/src/libaztecoo.a
 @ML_USING_IFPACK_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../ifpack/src/libifpack.a
 @ML_USING_AMESOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a
-@ML_USING_AZTECOO_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a
 @ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../anasazi/src/libanasazi.a
 @ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../teuchos/src/libteuchos.a
 @ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_6 = $(top_builddir)/../triutils/src/libtriutils.a
 @ML_USING_EPETRA_TRUE@am__DEPENDENCIES_7 = $(top_builddir)/../epetra/src/libepetra.a
-am__DEPENDENCIES_8 = $(top_builddir)/src/libml.a $(am__DEPENDENCIES_1) \
+am__DEPENDENCIES_8 =
+am__DEPENDENCIES_9 = $(top_builddir)/src/libml.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3) \
 	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_5) \
 	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_7) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_8) $(am__DEPENDENCIES_8) \
+	$(am__DEPENDENCIES_8) $(am__DEPENDENCIES_8)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -262,10 +262,10 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 @ML_USING_EPETRA_FALSE@epetra_lib = 
 @ML_USING_EPETRA_TRUE@epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
+@ML_USING_AZTECOO_FALSE@aztecoo_lib = 
+@ML_USING_AZTECOO_TRUE@aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
 @ML_USING_AMESOS_FALSE@amesos_lib = 
 @ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
-@ML_USING_AZTECOO_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
-@ML_USING_AZTECOO_FALSE@aztecoo_lib = 
 @ML_USING_ANASAZI_FALSE@anasazi_lib = 
 @ML_USING_ANASAZI_TRUE@anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
 @ML_USING_TEUCHOS_FALSE@teuchos_lib = 
