@@ -96,7 +96,8 @@ query functions.</I> */</TT>&nbsp;
 <BR><TT>...</TT>&nbsp;
 <BR><TT>/* <I>Perform load balancing AND automatic data migration!</I>
 */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,&amp;new,&amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&nbsp;</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&nbsp;</TT>
 <BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>&nbsp;
 
 <P><TT>/* <I>Free memory allocated for load-balancing results by LB library</I>
@@ -155,7 +156,8 @@ for building the appropriate request lists.
 <TD NOSAVE><A NAME="User-guided Migration Example Fig"></A><TT>/* <I>Assume
 the load-balancing library returns a decomposition of the</I> */</TT>&nbsp;
 <BR><TT>/* <I>nodes of a finite element mesh.</I> */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,&amp;new,&amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&nbsp;</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>&nbsp;
 
 <P><TT>/* <I>Migrate the nodes as directed by the results of LB_Balance.</I>

@@ -121,9 +121,9 @@ with the Zoltan library.</i></caption>
 <br><tt>ierr = <a href="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a>(lb,
 lb_method)</tt>
 <p><tt>! <i>Register load-balancing query functions.</i></tt>
+<br><tt>! omit data = C NULL</tt>
 <br><tt>ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</a>, user_return_dimension)
-! omit data = C NULL</tt>
+<a href="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</a>, user_return_dimension)</tt>
 <br><tt>ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
 <a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>, user_return_coords)</tt>
 <br><tt>ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
