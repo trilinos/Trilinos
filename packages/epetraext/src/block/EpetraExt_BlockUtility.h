@@ -34,6 +34,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include <vector>
 
 #include <Epetra_CrsGraph.h>
+#include <Epetra_RowMatrix.h>
 
 //! EpetraExt::BlockUtility: A class of utilities for constructing block data structs
 
@@ -53,6 +54,9 @@ class BlockUtility {
 	RowIndices - Defines the indices for local block rows
   */
   static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_CrsGraph & BaseGraph, const std::vector< vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
+
+  // Nearly identical version yet using RowMatrix interface instead of CrsGraph
+  static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_RowMatrix & BaseMatrix, const std::vector< vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
 
   //! Routine for calculating Offset for creating unique global IDs for Block representation
   static int CalculateOffset(const Epetra_BlockMap & BaseMap);

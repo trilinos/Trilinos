@@ -65,6 +65,21 @@ BlockCrsMatrix::BlockCrsMatrix(
 }
 
 //==============================================================================
+BlockCrsMatrix::BlockCrsMatrix(
+        const Epetra_RowMatrix & BaseMatrix,
+        const vector< vector<int> > & RowStencil,
+        const vector<int> & RowIndices,
+        const Epetra_Comm & GlobalComm  ) 
+  : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseMatrix, RowStencil, RowIndices, GlobalComm )) ),
+    RowIndices_( RowIndices ),
+    RowStencil_( RowStencil ),
+    BaseGraph_( Copy, BaseMatrix.RowMatrixRowMap(), 1 ), //Junk to satisfy constructor
+    Offset_(BlockUtility::CalculateOffset(BaseMatrix.RowMatrixRowMap()))
+{
+   AllocateBlocks_(); // This is now garbage because bogus baseGraph
+}
+
+//==============================================================================
 BlockCrsMatrix::BlockCrsMatrix( const BlockCrsMatrix & Matrix ) 
   : Epetra_CrsMatrix( dynamic_cast<const Epetra_CrsMatrix &>( Matrix ) ),
     RowIndices_( Matrix.RowIndices_ ),
@@ -137,39 +152,37 @@ void BlockCrsMatrix::DeleteBlocks_()
 }
 
 //==============================================================================
-void BlockCrsMatrix::LoadBlock(const Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col)
+void BlockCrsMatrix::LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col)
 {
   int RowOffset = RowIndices_[Row] * Offset_;
   int ColOffset = (RowIndices_[Row] + RowStencil_[Row][Col]) * Offset_;
 
-  const Epetra_CrsGraph & BaseGraph = BaseMatrix.Graph();
-  const Epetra_BlockMap & BaseMap = BaseMatrix.RowMap();
-
-  //Consider checking that BaseGraph == BaseGraph_ , but it
-  //only needs to be a subset for this to work.
+//  const Epetra_CrsGraph & BaseGraph = BaseMatrix.Graph();
+  const Epetra_BlockMap & BaseMap = BaseMatrix.RowMatrixRowMap();
+  const Epetra_BlockMap & BaseColMap = BaseMatrix.RowMatrixColMap();
 
   // This routine copies entries of a BaseMatrix into big  BlockCrsMatrix
   // It performs the following operation on the global IDs row-by-row
   // this->val[i+rowOffset][j+ColOffset] = BaseMatrix.val[i][j]
 
-  int MaxIndices = BaseGraph.MaxNumIndices();
+  int MaxIndices = BaseMatrix.MaxNumEntries();
   vector<int> Indices(MaxIndices);
   vector<double> Values(MaxIndices);
   int NumIndices;
   int ierr=0;
 
   for (int i=0; i<BaseMap.NumMyElements(); i++) {
-    int BaseRow = BaseMap.GID(i);
-    BaseMatrix.ExtractGlobalRowCopy( BaseRow, MaxIndices, NumIndices, &Values[0], &Indices[0] );
+    BaseMatrix.ExtractMyRowCopy( i, MaxIndices, NumIndices, &Values[0], &Indices[0] );
 
     // Convert to BlockMatrix Global numbering scheme
     for( int l = 0; l < NumIndices; ++l )
-       Indices[l] += ColOffset;
+       Indices[l] = ColOffset +  BaseColMap.GID(Indices[l]);
 
+    int BaseRow = BaseMap.GID(i);
     ierr = this->ReplaceGlobalValues(BaseRow + RowOffset, NumIndices, &Values[0], &Indices[0]); 
     if (ierr != 0) cout << "WARNING BlockCrsMatrix::LoadBlock ReplaceGlobalValues err = " << ierr <<
 	    "\n\t  Row " << BaseRow + RowOffset << "Col start" << Indices[0] << endl;
+
   }
 }
-
 } //namespace EpetraExt

@@ -72,6 +72,8 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
 	RowIndices - Defines the indices used for this block row.
   */
   BlockCrsMatrix( const Epetra_CrsGraph & BaseGraph, const std::vector< std::vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
+
+  BlockCrsMatrix( const Epetra_RowMatrix & BaseMatrix, const std::vector< std::vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
   
   //! Copy constructor.
   BlockCrsMatrix( const BlockCrsMatrix & Matrix );
@@ -92,7 +94,7 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
 	
   //! Routine for loading a base matrices values into the large Block Matrix
   //! For now, the row and column arguments are indices into RowStencil 
-  void LoadBlock(const Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col);
+  void LoadBlock(const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col);
 
  protected:
 
