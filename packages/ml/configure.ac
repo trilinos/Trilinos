@@ -362,6 +362,8 @@ TAC_ARG_WITH_PACKAGE(ml_parpack, [Enable PARPACK support. See notes for --with-m
 #
 TAC_ARG_WITH_PACKAGE(ml_parasails, [Enable Parasails support. See notes for --with-ml_metis.], ML_PARASAILS, no) 
 #
+TAC_ARG_WITH_PACKAGE(ml_zoltan, [Enable Zoltan support. See notes for --with-ml_metis.], ML_ZOLTAN, no) 
+#
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
 # ------------------------------------------------------------------------
@@ -555,6 +557,7 @@ AC_CONFIG_FILES([
 		test/VerySimple/Makefile
 		test/AztecSimple/Makefile
 		test/2d_Poisson/Makefile
+		test/Zoltan/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
                 test/scripts/daily/mpi/Makefile
