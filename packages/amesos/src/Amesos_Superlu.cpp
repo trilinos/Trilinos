@@ -341,7 +341,7 @@ int Amesos_Superlu::Factor(){
   return 0;
 }   
 
-int Amesos_Superlu::SetParameters( const Teuchos::ParameterList &ParameterList ) {
+int Amesos_Superlu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   if( &ParameterList == 0 ) return 0;
 

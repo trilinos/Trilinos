@@ -271,7 +271,7 @@ int Amesos_Scalapack::ConvertToScalapack(){
 }   
 
 
-int Amesos_Scalapack::SetParameters( const Teuchos::ParameterList &ParameterList ) {
+int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   //
   //  We have to set these to their defaults here because user codes 
   //  are not guaranteed to have a "Scalapack" parameter list.

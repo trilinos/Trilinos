@@ -134,7 +134,7 @@ Amesos_Superludist::~Amesos_Superludist(void) {
 //       MaxProcesses_, Redistribute_, AddZeroToDiag_, FactOption_ and 
 //       ReuseSymbolic_ set according to ParameterList_ values.
 //
-int Amesos_Superludist::SetParameters( const Teuchos::ParameterList &ParameterList ) {
+int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   if( (int) &ParameterList == 0 ) return 0;
 
@@ -168,25 +168,25 @@ int Amesos_Superludist::SetParameters( const Teuchos::ParameterList &ParameterLi
   
   // parameters for all packages
 
-  if( ParameterList_->isParameter("Redistribute") )
-    Redistribute_ = ParameterList_->get("Redistribute",Redistribute_);  
+  if( ParameterList.isParameter("Redistribute") )
+    Redistribute_ = ParameterList.get("Redistribute",Redistribute_);  
 
-  if( ParameterList_->isParameter("AddZeroToDiag") )
-    AddZeroToDiag_ = ParameterList_->get("AddZeroToDiag",AddZeroToDiag_); 
+  if( ParameterList.isParameter("AddZeroToDiag") )
+    AddZeroToDiag_ = ParameterList.get("AddZeroToDiag",AddZeroToDiag_); 
   // Ken, should we have a parameter like AddToDiag too ???
   /*
-  if( ParameterList_->isParameter("AddToDiag") )
-    AddToDiag_ = ParameterList_->get("AddToDiag", 0.0);
+  if( ParameterList.isParameter("AddToDiag") )
+    AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
   */
 
   // print some statistics (on process 0). Do not include timing
-  if( ParameterList_->isParameter("PrintStatistics") )
-    PrintStatistics_ = ParameterList_->get("PrintStatistics", false);
+  if( ParameterList.isParameter("PrintStatistics") )
+    PrintStatistics_ = ParameterList.get("PrintStatistics", false);
 
   // parameters for Superludist only
   
-  if (ParameterList_->isSublist("Superludist") ) {
-    Teuchos::ParameterList SuperludistParams = ParameterList_->sublist("Superludist") ;
+  if (ParameterList.isSublist("Superludist") ) {
+    Teuchos::ParameterList SuperludistParams = ParameterList.sublist("Superludist") ;
     if( SuperludistParams.isParameter("ReuseSymbolic") )
       ReuseSymbolic_ = SuperludistParams.get("ReuseSymbolic",ReuseSymbolic_);
     string FactOption;

@@ -170,7 +170,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
 	EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
 	
-	const Teuchos::ParameterList* NullList = (Teuchos::ParameterList*) 0 ;  
+	Teuchos::ParameterList* NullList = (Teuchos::ParameterList*) 0 ;  
 	EPETRA_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
 	EPETRA_CHK_ERR( Abase->Solve(  ) ); 
 	

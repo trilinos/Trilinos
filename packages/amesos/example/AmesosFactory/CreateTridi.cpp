@@ -55,7 +55,6 @@ int CreateTridi(Epetra_CrsMatrix& A)
 
   double *Values = new double[3];
   int *Indices = new int[3];
-  double two = 2.0;
   int NumEntries;
   
   for (int i=0; i<NumMyElements; i++)

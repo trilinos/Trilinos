@@ -72,7 +72,7 @@ Amesos_Dscpack::~Amesos_Dscpack(void) {
   delete DscGraph_;  // This might not exist, is it dangerous to delete it?
 }
 
-int Amesos_Dscpack::SetParameters( const Teuchos::ParameterList &ParameterList ) 
+int Amesos_Dscpack::SetParameters( Teuchos::ParameterList &ParameterList ) 
 {
 
   if( (int) &ParameterList == 0 ) return 0;

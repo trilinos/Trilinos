@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
   //  Solve Ax = b using DSCPACK
   //
   Teuchos::ParameterList ParamList ;
-  Amesos_Dscpack A_dscpack( Problem, ParamList ) ; 
+  Amesos_Dscpack A_dscpack( Problem ) ; 
 
   Problem.SetOperator( &A );
   EPETRA_CHK_ERR( A_dscpack.NumericFactorization(  ) ); 

@@ -47,12 +47,12 @@ public:
    klu_symbolic *Symbolic_ ;
    klu_numeric *Numeric_ ;
 
-  Amesos_Klu_Pimpl::Amesos_Klu_Pimpl():
+  Amesos_Klu_Pimpl():
     Symbolic_(0),
     Numeric_(0)
   {}
   
-  Amesos_Klu_Pimpl::~Amesos_Klu_Pimpl(void){
+  ~Amesos_Klu_Pimpl(void){
 
     if ( Symbolic_ ) klu_btf_free_symbolic (&Symbolic_) ;
     if ( Numeric_ ) klu_btf_free_numeric (&Numeric_) ;
@@ -232,7 +232,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
 }   
 
 
-int Amesos_Klu::SetParameters( const Teuchos::ParameterList &ParameterList ) {
+int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
 
   if( &ParameterList == 0 ) return 0;
@@ -362,9 +362,7 @@ int Amesos_Klu::Solve() {
     assert( SerialXlda == NumGlobalElements_ ) ; 
     
     for ( int j =0 ; j < nrhs; j++ ) { 
-      double *Control = (double *) NULL, *Info = (double *) NULL ;
 
-      int status = 0 ; 
       vector<double> workspace( NumGlobalElements_ ) ; 
       klu_btf_solve( PrivateKluData_->Symbolic_, PrivateKluData_->Numeric_,
 		     &SerialXvalues[j*SerialXlda], &workspace[0] );

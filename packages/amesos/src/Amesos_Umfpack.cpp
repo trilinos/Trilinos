@@ -161,7 +161,7 @@ int Amesos_Umfpack::ConvertToUmfpackCRS(){
 }   
 
 
-int Amesos_Umfpack::SetParameters( const Teuchos::ParameterList &ParameterList ) {
+int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   if(  (int) &ParameterList == 0 ) return 0;
 

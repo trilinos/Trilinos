@@ -255,7 +255,7 @@ revert to their default values.
 
     \return Integer error code, set to 0 if successful. 
    */
-    virtual int SetParameters( const Teuchos::ParameterList &ParameterList ) = 0 ;
+    virtual int SetParameters( Teuchos::ParameterList &ParameterList ) = 0 ;
 
   //@}
   

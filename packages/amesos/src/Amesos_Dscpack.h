@@ -199,7 +199,7 @@ revert to their default values.
 
     \return Integer error code, set to 0 if successful. 
    */
-   int SetParameters( const Teuchos::ParameterList &ParameterList ) = 0 ;
+   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
   //@}
 
  private:  

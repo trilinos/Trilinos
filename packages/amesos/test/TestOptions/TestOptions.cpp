@@ -43,7 +43,6 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
   Epetra_Vector * readx; 
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
-  double idiotic;
    
   string FileName = filename ;
   int FN_Size = FileName.size() ; 
@@ -108,8 +107,7 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
   }
 
 
-
-  
+  return 0;
 }
 
 int TestOneMatrix( 
@@ -121,13 +119,12 @@ int TestOneMatrix(
 
   if ( verbose ) cout << endl << endl << " Matrix = " << filename << endl ;
 
-  bool distribute;
   int NumErrors =0 ;
   double error; 
   double residual;
-  double errors[NumAmesosClasses];
-  double residuals[NumAmesosClasses];
-  for (int i = 0 ; i < NumAmesosClasses; i ++ ) errors[i] = residuals[i] = 0.0 ; 
+  //  double errors[NumAmesosClasses];
+  //  double residuals[NumAmesosClasses];
+  //  for (int i = 0 ; i < NumAmesosClasses; i ++ ) errors[i] = residuals[i] = 0.0 ; 
 
 #if COMPUTE_RCOND 
   Epetra_CrsMatrix *Amat ;
