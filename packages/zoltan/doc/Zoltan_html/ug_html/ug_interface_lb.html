@@ -206,7 +206,7 @@ export_global_ids</I>, <B>LB_LID</B> ** <I>export_local_ids</I>, int **
 import_local_ids, import_procs, num_export, export_global_ids, export_local_ids,
 export_procs</I>)&nbsp;
 <BR>INTEGER(LB_INT) :: LB_Balance&nbsp;
-<BR>TYPE(LB_Struct),INTENT(IN) :: lb&nbsp;
+<BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
 <BR>INTEGER(LB_INT), INTENT(OUT) :: changes&nbsp;
 <BR>INTEGER(LB_INT), INTENT(OUT) :: num_import, num_export&nbsp;
 <BR>&lt;<I>type-gid</I>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
@@ -333,8 +333,15 @@ float *o<I>bj_wgt</I>, int *<I>cut_wgt</I>, int *<I>nboundary</I>, int
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD></TD>
+<TD>SUBROUTINE <B>LB_Eval</B>(<I>lb, print_stats, vwgt_dim, ewgt_dim, nobj,
+obj_wgt, cut_wgt, nboundary, nadj, ierr</I>)&nbsp;
+<BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<BR>LOGICAL, INTENT(IN) :: print_stats&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: vwgt_dim, ewgt_dim&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: nobj, cut_wgt, nboundary, nadj, ierr&nbsp;
+<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim) :: obj_wgt&nbsp;
 </TR>
+
 </TABLE>
 
 <HR WIDTH="100%"><B>LB_Eval </B>evaluates the quality of the load balance

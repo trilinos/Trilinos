@@ -40,8 +40,9 @@ char **<I> argv</I>, float *<I> ver</I>);
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD>INTEGER(LB_INT) FUNCTION <B>LB_Initialize</B>( <I>argc</I>, <I>argv</I>,
+<TD> FUNCTION <B>LB_Initialize</B>( <I>argc</I>, <I>argv</I>,
 <I>ver</I>)&nbsp;
+<BR>INTEGER(LB_INT) :: LB_Initialize&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN), OPTIONAL :: argc&nbsp;
 <BR>CHARACTER(LEN=*), DIMENSION(*), INTENT(IN), OPTIONAL :: argv&nbsp;
 <BR>REAL(LB_FLOAT), INTENT(OUT) :: ver&nbsp;</TD>

@@ -43,8 +43,29 @@ algorithms in the Zoltan library:
 <H2>
 <A NAME="General Functions"></A>General Functions</H2>
 
-<HR WIDTH="100%"><A NAME="LB_NUM_OBJ_FN"></A>typedef int <B>LB_NUM_OBJ_FN</B>(void
-*<I> data</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_NUM_OBJ_FN"></A>typedef int <B>LB_NUM_OBJ_FN</B>(void
+*<I> data</I>,<I> </I>int<I> *ierr</I>);
+<BR>&nbsp;</TD>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> FUNCTION <B><I>Get_Num_Obj</I></B>(<I>data, ierr</I>)&nbsp;
+<BR>INTEGER(LB_INT) :: Get_Num_Obj&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_NUM_OBJ_FN</B> query function returns the number
 of objects to be balanced that are currently assigned to the processor.
 <BR>&nbsp;
@@ -88,9 +109,38 @@ of objects to be balanced that are currently assigned to the processor.
 &nbsp;
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_OBJ_LIST_FN"></A>typedef void<B> LB_OBJ_LIST_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_OBJ_LIST_FN"></A>typedef void<B> LB_OBJ_LIST_FN</B>(void
 *<I> data</I>, <B>LB_GID</B> *<I> global_ids</I>, <B>LB_LID</B> *<I> local_ids</I>,
 int <I>wgt_dim</I>, float * <I>obj_wgts,</I> int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> SUBROUTINE <B><I>Get_Obj_List</I></B>(<I>data, global_ids, local_ids,
+wgt_dim, obj_wgts, ierr</I>)&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_OBJ_LIST_FN</B> query function fills two (three
 if weights are used) arrays with information about the objects currently
 assigned to the processor. Both arrays are allocated (and subsequently
@@ -157,10 +207,40 @@ may be NULL.</TD>
 &nbsp;
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_FIRST_OBJ_FN"></A>typedef int <B>LB_FIRST_OBJ_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_FIRST_OBJ_FN"></A>typedef int <B>LB_FIRST_OBJ_FN</B>(void
 *<I> data, </I><B>LB_GID </B>*<I> first_global_id</I>, <B>LB_LID</B> *<I>
 first_local_id</I>, int <I>wgt_dim,</I> float * <I>first_obj_wgt</I>,&nbsp;<I>
 </I>int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> FUNCTION <B><I>Get_First_Obj</I></B>(<I>data, first_global_id,
+first_local_id, wgt_dim, first_obj_wgt, ierr</I>)&nbsp;
+<BR>INTEGER(LB_INT) :: Get_First_Obj&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(OUT) :: first_global_id&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(OUT) :: first_local_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_FIRST_OBJ_FN</B> query function initializes an
 iteration over objects assigned to the processor. It returns the global
 and local IDs of the first object on the processor. Subsequent calls to
@@ -249,10 +329,42 @@ of the first object.</TD>
 &nbsp;
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_NEXT_OBJ_FN"></A>typedef int <B>LB_NEXT_OBJ_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_NEXT_OBJ_FN"></A>typedef int <B>LB_NEXT_OBJ_FN</B>(void
 *<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID </B><I>local_id</I>,
 <B>LB_GID </B>*<I> next_global_id</I>, <B>LB_LID</B> *<I> next_local_id</I>,
 int <I>wgt_dim,</I> float * <I>next_obj_wgt</I>, int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> FUNCTION <B><I>Get_Next_Obj</I></B>(<I>data, global_id, local_id,
+next_global_id, next_local_id, wgt_dim, next_obj_wgt, ierr</I>)&nbsp;
+<BR>INTEGER(LB_INT) :: Get_Next_Obj&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(OUT) :: next_global_id&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(OUT) :: next_local_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_NEXT_OBJ_FN</B> query function is an iterator
 function which, when given an object assigned to the processor, returns
 the next object assigned to the processor. The first object of the iteration
@@ -352,8 +464,32 @@ of the next object.</TD>
 &nbsp;
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_NUM_BORDER_OBJ_FN"></A>typedef int <B>LB_NUM_BORDER_OBJ_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_NUM_BORDER_OBJ_FN"></A>typedef int <B>LB_NUM_BORDER_OBJ_FN</B>(void
 *<I> data</I>, int <I>nbor_proc</I>, int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> FUNCTION <B><I>Get_Num_Border_Obj</I></B>(<I>data, nbor_proc, ierr</I>)&nbsp;
+<BR>INTEGER(LB_INT) :: Get_Num_Border_Obj
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_NUM_BORDER_OBJ_FN</B> query function returns
 the number of objects sharing a processor subdomain border (in the communication
 graph of the application) with a given processor.
@@ -406,10 +542,40 @@ should be returned.</TD>
 &nbsp;
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_BORDER_OBJ_LIST_FN"></A>typedef void <B>LB_BORDER_OBJ_LIST_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_BORDER_OBJ_LIST_FN"></A>typedef void <B>LB_BORDER_OBJ_LIST_FN</B>(void
 *<I> data</I>, int <I>nbor_proc</I>, <B>LB_GID </B>*<I> global_ids</I>,
 <B>LB_LID</B> *<I> local_ids</I>,<I> </I>int <I>wgt_dim</I>, float * <I>obj_wgts,
 </I>int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> SUBROUTINE <B><I>Get_Border_Obj_List</I></B>(<I>data, nbor_proc,
+global_ids, local_ids, wgt_dim, obj_wgts, ierr</I>)&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_BORDER_OBJ_LIST_FN</B> query function fills two
 arrays with information about the objects currently assigned to the processor
 that share a processor subdomain border (in the communication graph of
@@ -485,10 +651,41 @@ If <I>wgt_dim=0,</I> <I>obj_wgts</I> is undefined and may be NULL.</TD>
 &nbsp;
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_FIRST_BORDER_OBJ_FN"></A>typedef int <B>LB_FIRST_BORDER_OBJ_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_FIRST_BORDER_OBJ_FN"></A>typedef int <B>LB_FIRST_BORDER_OBJ_FN</B>(void
 *<I> data</I>, int <I>nbor_proc</I>, <B>LB_GID</B> *<I> first_global_id</I>,
 <B>LB_LID </B>*<I> first_local_id</I>,<I> </I>int<I> wgt_dim, </I>float<I>
 * first_obj_wgt, </I>int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> FUNCTION <B><I>Get_First_Border_Obj</I></B>(<I>data, nbor_proc,
+first_global_id, first_local_id, wgt_dim, first_obj_wgt, ierr</I>)&nbsp;
+<BR>INTEGER(LB_INT) :: Get_First_Border_Obj
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(OUT) :: first_global_id&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(OUT) :: first_local_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_FIRST_BORDER_OBJ_FN</B> query function initializes
 an iteration over objects assigned to the processor that share a processor
 subdomain border with a given processor. It returns the global and local
@@ -586,11 +783,44 @@ of the first object along the processor border.</TD>
 &nbsp;
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_NEXT_BORDER_OBJ_FN"></A>typedef int <B>LB_NEXT_BORDER_OBJ_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_NEXT_BORDER_OBJ_FN"></A>typedef int <B>LB_NEXT_BORDER_OBJ_FN</B>(void
 *<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
 int <I>nbor_proc</I>, <B>LB_GID</B> *<I> next_global_id</I>, <B>LB_LID</B>
 *<I> next_local_id</I>,<I> </I>int <I>wgt_dim, </I>float <I>*next_obj_wgt,,
 </I>int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> FUNCTION <B><I>Get_Next_Border_Obj</I></B>(<I>data, global_id, local_id,
+nbor_proc, next_global_id, next_local_id, wgt_dim, next_obj_wgt, ierr</I>)&nbsp;
+<BR>INTEGER(LB_INT) :: Get_Next_Border_Obj&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(OUT) :: next_global_id&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(OUT) :: next_local_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_NEXT_BORDER_OBJ_FN</B> query function is an iterator
 function which, when given an object assigned to the processor and a neighboring
 processor ID, returns the next object assigned to the processor that shares
@@ -700,8 +930,31 @@ of the next object along the processor border.</TD>
 <H2>
 <A NAME="Geometry-based Functions"></A>Geometry-based Functions</H2>
 
-<HR WIDTH="100%"><A NAME="LB_NUM_GEOM_FN"></A>typedef int <B>LB_NUM_GEOM_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_NUM_GEOM_FN"></A>typedef int <B>LB_NUM_GEOM_FN</B>(void
 *<I> data</I>, int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> FUNCTION <B><I>Get_Num_Geom</I></B>(<I>data, ierr</I>)&nbsp;
+<BR>INTEGER(LB_INT) :: Get_Num_Geom&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_NUM_GEOM_FN</B> query function returns the number
 of values needed to express the geometry of an object. For example, for
 a two-dimensional mesh-based application, (<I>x</I>,<I>y</I>) coordinates
@@ -749,9 +1002,37 @@ application, the return value should be three.
 &nbsp;
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_GEOM_FN"></A>typedef void <B>LB_GEOM_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_GEOM_FN"></A>typedef void <B>LB_GEOM_FN</B>(void
 *<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
 double *<I> geom_vec</I>, int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> SUBROUTINE <B><I>Get_Geom</I></B>(<I>data, global_id, local_id,
+geom_vec, ierr</I>)&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
+<BR>REAL(LB_DOUBLE), INTENT(OUT), DIMENSION(*) :: geom_vec&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_GEOM_FN</B> query function returns a vector of
 geometry values for a given object. The geometry vector is allocated by
 the load-balancing library to be of the size returned by an <B><A HREF="#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</A></B>
@@ -805,9 +1086,36 @@ query function.
 <H2>
 <A NAME="Graph-based Functions"></A>Graph-based Functions</H2>
 
-<HR WIDTH="100%"><A NAME="LB_NUM_EDGES"></A>typedef int <B>LB_NUM_EDGES_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_NUM_EDGES"></A>typedef int <B>LB_NUM_EDGES_FN</B>(void
 *<I> data</I>, <B>LB_GID </B><I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
 int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> FUNCTION <B><I>Get_Num_Edges</I></B>(<I>data, global_id, local_id, ierr</I>)&nbsp;
+<BR>INTEGER(LB_INT) :: Get_Num_Edges&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_NUM_EDGES_FN</B> query function returns the number
 of edges for a given object in the communication graph of the application
 (i.e., the number of objects with which the given object must share information).
@@ -867,10 +1175,40 @@ returned.</TD>
 &nbsp;
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_EDGE_LIST_FN"></A>typedef void <B>LB_EDGE_LIST_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+<TD><A NAME="LB_EDGE_LIST_FN"></A>typedef void <B>LB_EDGE_LIST_FN</B>(void
 *<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID </B><I>local_id</I>,
 <B>LB_GID</B> *<I> nbor_global_id</I>, int * <I>nbor_procs</I>, int <I>wgt_dim</I>,
 int * <I>ewgts,</I> int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> SUBROUTINE <B><I>Get_Edge_List</I></B>(<I>data, global_id, local_id,
+nbor_global_id, nbor_procs, wgt_dim, ewgts, ierr</I>)&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(OUT), DIMENSION(*) :: nbor_global_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: nbor_procs&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: ewgts&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_EDGE_LIST_FN</B> query function returns lists
 of global IDs, local IDs, and optionally edge weights for objects sharing
 an edge with a given object (i.e., objects that must share information

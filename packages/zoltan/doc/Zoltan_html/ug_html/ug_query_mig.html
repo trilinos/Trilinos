@@ -30,8 +30,31 @@ Optional, additional query functions for migration-help may also be registered:
 <BLOCKQUOTE><B><A HREF="#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN</A></B>
 <BR><B><A HREF="#LB_POST_MIGRATE_FN">LB_POST_MIGRATE_FN</A></B></BLOCKQUOTE>
 
-<HR WIDTH="100%"><A NAME="LB_OBJ_SIZE_FN"></A>typedef int <B>LB_OBJ_SIZE_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_OBJ_SIZE_FN"></A>typedef int <B>LB_OBJ_SIZE_FN</B>(void
 *<I> data</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> FUNCTION <B><I>Obj_Size</I></B>(<I>data, ierr</I>)&nbsp;
+<BR>INTEGER(LB_INT) :: Obj_Size&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_OBJ_SIZE_FN</B> query function returns the size
 (in bytes) of the data buffer that is needed to pack all of a single object's
 data. It is assumed that all objects to be packed in a single <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
@@ -80,12 +103,42 @@ This assumption may be relaxed in future releases of the library.
 &nbsp;
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_PRE_MIGRATE_FN"></A>typedef void <B>LB_PRE_MIGRATE_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_PRE_MIGRATE_FN"></A>typedef void <B>LB_PRE_MIGRATE_FN</B>(void
 *<I> data</I>, int <I>num_import</I>, <B>LB_GID </B>*<I> import_global_ids</I>,
 <B>LB_LID</B> *<I> import_local_ids</I>, int *<I> import_procs</I>, int
 <I>num_export</I>, <B>LB_GID </B>*<I> export_global_ids</I>, <B>LB_LID
 </B>*<I> export_local_ids</I>, int *<I> export_procs</I>,<I> </I>int<I>
 *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> SUBROUTINE <B><I>Pre_Migrate</I></B>(<I>data, num_import,
+import_global_ids, import_local_ids, import_procs, num_export,
+export_global_ids, export_local_ids, export_procs, ierr</I>)&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_PRE_MIGRATE_FN</B> query function performs any
 pre-processing desired by the application. If it is registered, it is called
 at the beginning of the <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
@@ -189,12 +242,40 @@ destination processors.</TD>
 </TABLE>
 &nbsp;
 <BR>
-<HR WIDTH="100%"><A NAME="LB_POST_MIGRATE_FN"></A>typedef void <B>LB_POST_MIGRATE_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+<TD><A NAME="LB_POST_MIGRATE_FN"></A>typedef void <B>LB_POST_MIGRATE_FN</B>(void
 *<I> data</I>, int <I>num_import</I>, <B>LB_GID </B>*<I> import_global_ids</I>,
 <B>LB_LID</B> *<I> import_local_ids</I>, int *<I> import_procs</I>, int
 <I>num_export</I>, <B>LB_GID </B>*<I> export_global_ids</I>, <B>LB_LID
 </B>*<I> export_local_ids</I>, int *<I> export_procs</I>,<I> </I>int<I>
 *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<TD> SUBROUTINE <B><I>Post_Migrate</I></B>(<I>data, num_import,
+import_global_ids, import_local_ids, import_procs, num_export,
+export_global_ids, export_local_ids, export_procs, ierr</I>)&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_POST_MIGRATE_FN</B> query function performs any
 post-processing desired by the application. If it is registered, it is
 called at the end of the <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
@@ -298,10 +379,39 @@ destination processors.</TD>
 </TABLE>
 &nbsp;
 <BR>
-<HR WIDTH="100%"><A NAME="LB_PACK_OBJ_FN"></A>typedef void <B>LB_PACK_OBJ_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_PACK_OBJ_FN"></A>typedef void <B>LB_PACK_OBJ_FN</B>(void
 *<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B><I>local_id</I>,
 int <I>dest_proc</I>, int <I>size</I>, char *<I> buf</I>,<I> </I>int<I>
 *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> SUBROUTINE <B><I>Pack_Obj</I></B>(<I>data, global_id, local_id,
+dest_proc, size, buf, ierr</I>)&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: dest_proc, size&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: buf&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_PACK_OBJ_FN</B> query function allows the application
 to tell the load-balancing library how to copy all needed data for a given
 object into a communication buffer. The object's data can then be sent
@@ -374,9 +484,36 @@ data should be packed.</TD>
 &nbsp;
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_UNPACK_OBJ_FN"></A>typedef void <B>LB_UNPACK_OBJ_FN</B>(void
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_UNPACK_OBJ_FN"></A>typedef void <B>LB_UNPACK_OBJ_FN</B>(void
 *<I> data</I>, <B>LB_GID</B> <I>global_id</I>, int <I>size</I>, char *<I>
 buf</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> SUBROUTINE <B><I>Unpack_Obj</I></B>(<I>data, global_id,
+size, buf, ierr</I>)&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: size&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: buf&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on Fortran for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
 <HR WIDTH="100%">An <B>LB_UNPACK_OBJ_FN</B> query function allows the application
 to tell the load-balancing library how to copy all needed data for a given
 object from a communication buffer into the application's data structure.
