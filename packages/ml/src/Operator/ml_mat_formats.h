@@ -84,6 +84,14 @@ extern int CSR_getrows(void *data,int N_requested_rows,int requested_rows[],
 extern int sCSR_getrows(void *data,int N_requested_rows,int requested_rows[],
                        int allocated_space, int columns[], double values[],
                        int row_lengths[]);
+extern int cCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
+                       int allocated_space, int columns[], double values[],
+                       int row_lengths[]);
+extern int cCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, 
+			     double ap[]);
+extern int cCSR_matvec(void *Amat_in, int ilen, double p[], int olen, 
+		       double ap[]);
+
 extern int CSR_get_ones_rows(void *data, int N_requested_rows, 
 			     int requested_rows[], int allocated_space, 
 			     int columns[], double values[], int row_lengths[]);

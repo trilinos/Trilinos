@@ -28,6 +28,7 @@ extern int ML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2, int size,
      int fine_size );
 
 extern int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix);
+extern int ML_Operator_ChangeToChar(ML_Operator *matrix);
 extern int ML_Operator_ImplicitTranspose(ML_Operator *Rmat, 
 					 ML_Operator *Pmat,
 					 int PostCommAlreadySet);
