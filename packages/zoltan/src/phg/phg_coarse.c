@@ -19,11 +19,14 @@ extern "C" {
 #endif
 
 #include "phg.h"
+#define PIN_OVER_ALLOC 1.2  /* Overallocate pins by 20% */
 
 
 /* Procedure to coarsen a hypergraph based on a matching. All vertices of one
-   match are clustered to a single vertex. All hyperedges are kept;
-   identical hyperedges are not collapsed. 
+   match are clustered to a single vertex. Currently, we allow more
+   than two vertices to be merged/grouped locally on a proc, but
+   allow only pairs of two to be merged between processors.
+   All hyperedges are kept; identical hyperedges are not collapsed. 
    The array LevelMap is the mapping of
    the old vertices to the new vertices. It will be used to pass a partition
    of the coarse graph back to the original graph.                         */
@@ -220,7 +223,7 @@ int Zoltan_PHG_Coarsening
           edge = *ip++;           
           used_edges [edge] = i+1;
           if (c_hg->nPins >= pincnt)  {
-             pincnt = 1 + 1.2 * pincnt;
+             pincnt = 1 + PIN_OVER_ALLOC * pincnt;
              c_vedge = (int*) ZOLTAN_REALLOC (c_vedge, pincnt * sizeof(int));
           }
           c_vedge[c_hg->nPins++] = edge;
@@ -234,7 +237,7 @@ int Zoltan_PHG_Coarsening
         if (used_edges [hg->vedge[j]] <= i)   {
           used_edges [hg->vedge[j]] = i+1;  
           if (c_hg->nPins >= pincnt)  {
-             pincnt = 1 + 1.2 * pincnt;          
+             pincnt = 1 + PIN_OVER_ALLOC * pincnt;     
              c_vedge = (int*) ZOLTAN_REALLOC (c_vedge, pincnt * sizeof(int));
           }                  
           c_vedge[c_hg->nPins++] = hg->vedge[j];
@@ -256,7 +259,7 @@ int Zoltan_PHG_Coarsening
           if (used_edges [hg->vedge[j]] <= i)  {
             used_edges [hg->vedge[j]] = i+1; 
             if (c_hg->nPins >= pincnt)  {
-               pincnt = 1 + 1.2 * pincnt;            
+               pincnt = 1 + PIN_OVER_ALLOC * pincnt;            
                c_vedge = (int*) ZOLTAN_REALLOC (c_vedge, pincnt * sizeof(int));
             }                             
             c_vedge[c_hg->nPins++] = hg->vedge[j];
@@ -282,12 +285,9 @@ int Zoltan_PHG_Coarsening
   MPI_Allgather (&size, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);
   
   c_hg->dist_x[0] = 0;
-  for (i = 1; i < hgc->nProc_x; i++)
+  for (i = 1; i <= hgc->nProc_x; i++)
     c_hg->dist_x[i] = c_hg->dist_x[i-1] + each_size[i-1];
   size = 0;
-  for (i = 0; i < hgc->nProc_x; i++)
-    size += each_size[i];
-  c_hg->dist_x[hgc->nProc_x] = size;  
 
   /* Assuming that we do not collapse Edges, dist_y for the coarse hgraph
    * is the same as dist_y for the fine hgraph */
