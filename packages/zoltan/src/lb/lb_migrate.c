@@ -434,11 +434,10 @@ int ierr = 0;
       return (ZOLTAN_FATAL);
     }
   }
-  id_size = num_gid_entries * sizeof(ZOLTAN_ID_TYPE) 
-          + LB_pad_for_alignment(num_gid_entries * sizeof(ZOLTAN_ID_TYPE));
-  /* Note that the padding for alignment is not strictly necessary 
+  id_size = Zoltan_Align(num_gid_entries * sizeof(ZOLTAN_ID_TYPE));
+  /* Note that alignment is not strictly necessary 
      when ZOLTAN_ID_TYPE is int or unsigned int. */
-  aligned_int = sizeof(int) + LB_pad_for_alignment(sizeof(int));
+  aligned_int = Zoltan_Align(sizeof(int));
   tag_size = id_size + aligned_int;
   total_send_size = 0;
 
@@ -454,7 +453,7 @@ int ierr = 0;
       ZOLTAN_TRACE_EXIT(lb, yo);
       return (ZOLTAN_FATAL);
     }
-    sizes[i] = size + LB_pad_for_alignment(size);
+    sizes[i] = Zoltan_Align(size);
     total_send_size += sizes[i] + tag_size;
   }
 

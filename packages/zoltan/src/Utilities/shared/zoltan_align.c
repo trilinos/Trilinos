@@ -11,19 +11,23 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef __ZOLTAN_UTIL_CONST_H
-#define __ZOLTAN_UTIL_CONST_H
+#include "zoltan_align.h"
 
 /*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
-extern void Zoltan_Get_Obj_List(LB *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float *, int *);
-extern unsigned int Zoltan_Hash(ZOLTAN_ID_PTR, int, unsigned int);
-extern int Zoltan_Clean_String(char *, char **);
-
-/*****************************************************************************/
-/*****************************************************************************/
+/*
+ *  Routines for properly aligning data.
+ */
 /*****************************************************************************/
 
-#endif
+/* 
+ * Plauger alignment algorithm, The Standard C Library.
+ * Forces malloc'ed variable size struct alignment.
+ * ZOLTAN_ALIGN_VAL is defined in Zoltan/include/zoltan_align.h;
+ * values are 0,1,3,7U depending upon machine.
+ */
+
+int Zoltan_Align(int a)
+{
+return((ZOLTAN_ALIGN_VAL + a) & ~ZOLTAN_ALIGN_VAL);
+}
+

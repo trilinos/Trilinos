@@ -58,12 +58,6 @@ LB_OBJ_SIZE_FN migrate_elem_size;
 LB_PACK_OBJ_FN migrate_pack_elem;
 LB_UNPACK_OBJ_FN migrate_unpack_elem;
 
-/*
- *  Other prototypes.
- */
-
-static int pad_for_alignment(int num_bytes);
-
 /*****************************************************************************/
 /*
  *  Static global variables to help with migration.
@@ -531,7 +525,7 @@ int idx;
   size = sizeof(ELEM_INFO);
  
   /* Add space to correct alignment so casts work in (un)packing. */
-  size += pad_for_alignment(size);
+  size = Zoltan_Align(size);
 
   /* Add space for connect table. */
   if (mesh->num_dims > 0)
@@ -543,12 +537,12 @@ int idx;
   /* Assume if one element has edge wgts, all elements have edge wgts. */
   if (Use_Edge_Wgts) {
     /* Add space to correct alignment so casts work in (un)packing. */
-    size += pad_for_alignment(size);
+    size = Zoltan_Align(size);
     size += current_elem->adj_len * sizeof(float);
   }
 
   /* Add space for coordinate info */
-  size += pad_for_alignment(size);
+  size = Zoltan_Align(size);
   size += num_nodes * mesh->num_dims * sizeof(float);
   
   return (size);
@@ -601,7 +595,7 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
 
   /* Pad the buffer so the following casts will work.  */
   
-  size += pad_for_alignment(size);
+  size = Zoltan_Align(size);
 
   buf_int = (int *) (buf + size);
 
@@ -635,7 +629,7 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
   if (Use_Edge_Wgts) {
 
     /* Pad the buffer so the following casts will work.  */
-    size += pad_for_alignment(size);
+    size = Zoltan_Align(size);
     buf_float = (float *) (buf + size);
 
     for (i = 0; i < current_elem->adj_len; i++) {
@@ -646,7 +640,7 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
   }
 
   /* Pad the buffer so the following casts will work.  */
-  size += pad_for_alignment(size);
+  size = Zoltan_Align(size);
   buf_float = (float *) (buf + size);
 
   /* copy coordinate data */
@@ -727,7 +721,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
    */
 
   /* Pad the buffer so the following casts will work.  */
-  size += pad_for_alignment(size);
+  size = Zoltan_Align(size);
   buf_int = (int *) (buf + size);
 
   /* copy the connect table */
@@ -770,7 +764,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
     if (Use_Edge_Wgts) {
 
       /* Pad the buffer so the following casts will work.  */
-      size += pad_for_alignment(size);
+      size = Zoltan_Align(size);
       buf_float = (float *) (buf + size);
 
       current_elem->edge_wgt = (float *) malloc(current_elem->adj_len 
@@ -792,7 +786,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
   if (num_nodes > 0) {
 
     /* Pad the buffer so the following casts will work.  */
-    size += pad_for_alignment(size);
+    size = Zoltan_Align(size);
     buf_float = (float *) (buf + size);
 
     current_elem->coord = (float **) malloc(num_nodes * sizeof(float *));
@@ -826,21 +820,3 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
   else
     *ierr = LB_OK;
 }
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
-#define ALIGN_SIZE 8
-static int pad_for_alignment(int num_bytes)
-{
-/*
- * Function returns the number of bytes needed to increase the buffer
- * to an ALIGN_SIZE-byte boundary. If num_bytes is not divisible by ALIGN_SIZE,
- * return the number of bytes needed to add to it to get a number
- * divisible by ALIGN_SIZE.
- */
-  return(ALIGN_SIZE - (((num_bytes-1) % ALIGN_SIZE) + 1));
-}
-#undef ALIGN_SIZE
-
