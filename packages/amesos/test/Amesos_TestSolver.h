@@ -29,8 +29,8 @@
 */
 
 #include "Epetra_Comm.h"
-enum SparseSolverType { UMFPACKOLD, Aztec, SuperLU, SuperLUdist, 
-			SuperLUdist2, DSCPACK, DSCPACKOLD, UMFPACK, 
+enum SparseSolverType { Aztec, 
+			DSCPACK, UMFPACK, 
 			SPOOLES, SPOOLESSERIAL, KUNDERT, MUMPS, KLU,
                         SCALAPACK, SUPERLUDIST, SUPERLU } ; 
 enum AMESOS_MatrixType { AMESOS_Serial, AMESOS_Distributed } ; 

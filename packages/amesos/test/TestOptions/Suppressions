@@ -2,57 +2,38 @@
 #  This file specifies memory errors which we want valgrind to ignore when running 
 #  TestOptions.
 #
-#  These memory errors may be avoidable and do not necessaily represent errors in the
-#  code.  They may, for example, represent errors in the test code.   
 #
+#  The errors suppressed in this file can be grouped as follows:
+#    1)  Two memory leaks in DSCPACK
+#    2)  Eight errors in write, mwrite and writev
+#    3)  An overlap error in lam_memcpy
+#    4)  A memory leak in AmesosClasses
+#    5)  A memory leak in fopen
+#
+#  The memory leak in AmesosClasses is, I claim, bogus.  Valgrind objects to the following construct:
+#     
+# 
+
+#    1)  Two memory leaks in DSCPACK
 {
-   <Leak in Epetra_MpiComm>
-   Memcheck:Leak
-   fun:__builtin_new
-   fun:_Znwj
-   fun:_ZNK14Epetra_MpiComm5CloneEv
-   fun:_ZTv0_n12_NK14Epetra_MpiComm5CloneEv
-}
-{
-   <Leak in MPID>
-   Memcheck:Leak
-   fun:malloc
-   fun:MPID_SBinit
-   fun:MPID_InitQueue
-   fun:MPID_Init
-}
-{
-   <Leak in Trilinos_Util_ReadMatrixMaket2Epetra>
-   Memcheck:Leak
-   fun:__builtin_new
-   fun:_Znwj
-   fun:_Z37Trilinos_Util_ReadMatrixMarket2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
-   fun:_Z15CreateCrsMatrixPcR11Epetra_CommbbRP16Epetra_CrsMatrix
-}
-{
-   <Leak in Epetra_Object Set Label>
-   Memcheck:Leak
-   fun:__builtin_vec_new
-   fun:_Znaj
-   fun:_ZN13Epetra_Object8SetLabelEPKc
-   fun:_ZN13Epetra_ObjectC2EPKci
-}
-{
-   <Leak B in MPID>
+   <Leak in DSCPACK::DSC_Analayze>
    Memcheck:Leak
    fun:malloc
-   fun:MPID_SBiAllocate
-   fun:MPID_SBinit
-   fun:MPID_InitQueue
+   fun:DSC_Analyze
+   fun:main
+   fun:__libc_start_main
 }
 {
-   <Leak B in Epetra_MpiComm>
+   <Leak in DSCPACK::order_and_make_tree2>
    Memcheck:Leak
-   fun:__builtin_new
-   fun:_Znwj
-   fun:_ZN14Epetra_MpiCommC1Ei
+   fun:malloc
+   fun:order_and_make_tree2
+   fun:DSC_Order
    fun:main
 }
+
+
+#    2)  Eight errors in write, mwrite and writev
 {
    <mwrite #1>
    Memcheck:Param
@@ -99,21 +80,34 @@
    fun:kdetach
 }
 {
-   <Leak in DSCPACK::DSC_Analayze>
-   Memcheck:Leak
-   fun:malloc
-   fun:DSC_Analyze
-   fun:main
-   fun:__libc_start_main
+   <mwrite A#1>
+   Memcheck:Param
+   write(buf)
+   fun:__GI___libc_write
+   fun:mwrite
+   fun:_cio_kreq
+   fun:kattach
 }
 {
-   <Leak in DSCPACK::order_and_make_tree2>
-   Memcheck:Leak
-   fun:malloc
-   fun:order_and_make_tree2
-   fun:DSC_Order
-   fun:main
+   <mwrite uninitialized>
+   Memcheck:Param
+   write(buf)
+   fun:__GI___libc_write
+   fun:mwrite
+   fun:_cio_kreq
+   fun:_cipc_ksend
 }
+{
+   <mwrite uninitialized 2>
+   Memcheck:Param
+   write(buf)
+   fun:__GI___libc_write
+   fun:new_do_write
+   fun:_IO_do_write@@GLIBC_2.1
+   fun:_IO_file_sync@@GLIBC_2.1
+}
+
+#    3)  An overlap error in lam_memcpy
 {
    <Overlap in lam_memcopy>
    Memcheck:Overlap
@@ -122,3 +116,76 @@
    fun:lam_dtsndrcv
    fun:lam_ssi_coll_lam_basic_gather
 }
+#    4)  A memory leak in AmesosClasses
+{
+   <vector string AmesosClasses memory leak>
+   Memcheck:Leak
+   fun:__builtin_new
+   fun:_Znwj
+   fun:_ZNSt24__default_alloc_templateILb1ELi0EE14_S_chunk_allocEjRi
+   fun:_ZNSt24__default_alloc_templateILb1ELi0EE9_S_refillEj
+}
+#    5)  A memory leak in fopen
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:__fopen_internal
+   fun:_IO_fopen@@GLIBC_2.1
+   fun:_Z27Trilinos_Util_ReadHb2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
+}
+
+
+#
+#  The rest of these appear not to be needed anymore
+#
+#
+#{
+#   <Leak in Epetra_MpiComm>
+#   Memcheck:Leak
+#   fun:__builtin_new
+#   fun:_Znwj
+#   fun:_ZNK14Epetra_MpiComm5CloneEv
+#   fun:_ZTv0_n12_NK14Epetra_MpiComm5CloneEv
+#}
+#{
+#   <Leak in MPID>
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:MPID_SBinit
+#   fun:MPID_InitQueue
+#   fun:MPID_Init
+#}
+#{
+#   <Leak in Trilinos_Util_ReadMatrixMaket2Epetra>
+#   Memcheck:Leak
+#   fun:__builtin_new
+#   fun:_Znwj
+#   fun:_Z37Trilinos_Util_ReadMatrixMarket2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
+#   fun:_Z15CreateCrsMatrixPcR11Epetra_CommP10Epetra_MapbbRbRP16Epetra_CrsMatrix
+#}
+#{
+#   <Leak in Epetra_Object Set Label>
+#   Memcheck:Leak
+#   fun:__builtin_vec_new
+#   fun:_Znaj
+#   fun:_ZN13Epetra_Object8SetLabelEPKc
+#   fun:_ZN13Epetra_ObjectC2EPKci
+#}
+#{
+#   <Leak B in MPID>
+#   Memcheck:Leak
+#   fun:malloc
+#   fun:MPID_SBiAllocate
+#   fun:MPID_SBinit
+#   fun:MPID_InitQueue
+#}
+#{
+#   <Leak B in Epetra_MpiComm>
+#   Memcheck:Leak
+#   fun:__builtin_new
+#   fun:_Znwj
+#   fun:_ZN14Epetra_MpiCommC1Ei
+#   fun:main
+#}
+

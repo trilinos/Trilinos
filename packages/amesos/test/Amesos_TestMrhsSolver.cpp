@@ -39,7 +39,6 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #ifdef HAVE_AMESOS_DSCPACK
-#include "DscpackOO.h"
 #include "Amesos_Dscpack.h"
 #endif
 #ifdef HAVE_AMESOS_SCALAPACK

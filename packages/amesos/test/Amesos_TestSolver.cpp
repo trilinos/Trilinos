@@ -65,7 +65,6 @@
 #include "AztecOO.h"
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
-#include "DscpackOO.h"
 #include "Amesos_Dscpack.h"
 #endif
 #ifdef HAVE_AMESOS_SCALAPACK
@@ -308,10 +307,6 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       EPETRA_CHK_ERR( superludist2.Solve( true ) ); 
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
-    } else if ( SparseSolver == DSCPACKOLD ) {
-
-      DscpackOO dscpack( Problem ) ; 
-      EPETRA_CHK_ERR( dscpack.Solve( true ) ); 
     } else if ( SparseSolver == DSCPACK ) {
       
       Teuchos::ParameterList ParamList ;

@@ -268,24 +268,16 @@ main(int argc, char **argv)
     SparseSolver = KLU ; 
   else if  ( Sprogram == "KUNDERT" ) 
     SparseSolver = KUNDERT ; 
-  else if  ( Sprogram == "DSCPACKOLD" ) 
-    SparseSolver = DSCPACKOLD ; 
   else if  ( Sprogram == "DSCPACK" ) 
     SparseSolver = DSCPACK ; 
-  else if  ( Sprogram == "SuperLUdist" ) 
-    SparseSolver = SuperLUdist ; 
   else if  ( Sprogram == "SUPERLUDIST" ) 
     SparseSolver = SUPERLUDIST ; 
   else if  ( Sprogram == "SUPERLU" ) 
     SparseSolver = SUPERLU ; 
-  else if  ( Sprogram == "SuperLUdist2" ) 
-    SparseSolver = SuperLUdist2 ; 
   else if  ( Sprogram == "SPOOLES" ) 
     SparseSolver = SPOOLES ; 
   else if  ( Sprogram == "SPOOLESSERIAL" ) 
     SparseSolver = SPOOLESSERIAL ; 
-  else if  ( Sprogram == "SuperLU" ) 
-    SparseSolver = SuperLU ; 
   else if  ( Sprogram == "MUMPS" ) 
     SparseSolver = MUMPS ; 
   else {
@@ -357,16 +349,6 @@ main(int argc, char **argv)
       cerr << "Our use of SPOOLESSERIAL does not support transpose yet" << endl ;
     exit_value = -1 ; 
   }
-  if ( transpose != 0 && SparseSolver == SuperLUdist2 ) { 
-    if ( ( MyPID == 0 )  ) 
-      cerr << "Our use of SuperLU_DIST_2.0 does not support transpose yet" << endl ;
-    exit_value = -1 ; 
-  }
-  if ( transpose != 0 && SparseSolver == SuperLU ) { 
-    if ( ( MyPID == 0 )  ) 
-      cerr << "Our use of SuperLU serial does not support transpose yet" << endl ;
-    exit_value = -1 ; 
-  }
   if ( transpose != 0 && SparseSolver == KUNDERT ) { 
     if ( ( MyPID == 0 )  ) 
       cerr << "Our use of KUNDERT does not support transpose yet" << endl ;
@@ -387,12 +369,16 @@ main(int argc, char **argv)
       cerr << "AZTEC accepts only distributed matrices on multiple processes" << endl ;
     exit_value = -1 ; 
   }
-  if ( numsolves != 1 &&  SparseSolver != SuperLU && 
+  if ( numsolves != 1 && 
        SparseSolver != SUPERLUDIST  && 
-       SparseSolver != SuperLUdist  && 
-       SparseSolver != SuperLUdist2  && SparseSolver != DSCPACK && SparseSolver != UMFPACK  && SparseSolver != KLU && SparseSolver != MUMPS  && SparseSolver != SCALAPACK  && SparseSolver != SUPERLU ) {
+       SparseSolver != DSCPACK && 
+       SparseSolver != UMFPACK  && 
+       SparseSolver != KLU && 
+       SparseSolver != MUMPS  && 
+       SparseSolver != SCALAPACK  && 
+       SparseSolver != SUPERLU ) {
     if ( ( MyPID == 0 )  ) 
-      cerr << "Only SuperLU, SUEPRLUDIST, SuperLUdist, UMFPACK, MUMPS, KLU and DSCPACK support MRHS and BRHS" << endl ;
+      cerr << "Only SUEPRLUDIST, UMFPACK, MUMPS, KLU, SCALAPACK and DSCPACK support MRHS and BRHS" << endl ;
     exit_value = -1 ; 
   }
     

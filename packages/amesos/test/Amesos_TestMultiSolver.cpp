@@ -51,7 +51,6 @@
 #include "Superludist2_OO.h"
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
-#include "DscpackOO.h"
 #include "Amesos_Dscpack.h"
 #endif
 #ifdef HAVE_AMESOS_UMFPACK

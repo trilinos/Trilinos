@@ -1,7 +1,7 @@
 #@HEADER
 #@HEADER
 
-EXEEXT = .in
+EXEEXT = .exe
 
 TEST = TestOptions 
 

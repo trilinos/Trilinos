@@ -76,19 +76,10 @@ PARAM =
 endif
 
 
-#
-#       We no longer support DscpackOO and hence it is not copied to 
-#  the include directory anymore.
-#
-#	$(srcdir)/DscpackOO.h \
-#
-
 if HAVE_AMESOS_DSCPACK
 DSCPACK_H = \
 	$(srcdir)/Amesos_Dscpack.h \
-	$(srcdir)/DscpackOO.h
 DSCPACK = \
-	$(srcdir)/DscpackOO.cpp \
 	$(srcdir)/Amesos_Dscpack.cpp
 else
 DSCPACK_H =
@@ -124,12 +115,14 @@ if HAVE_AMESOS_KLU
 #  hence they are commented out from here.  
 #
 KLU_H = \
-	$(srcdir)/klu/klu_btf.h \
-	$(srcdir)/Amesos_Klu.h \
-	$(srcdir)/klu/cbtf.h \
-	$(srcdir)/klu/klu.h \
-	$(srcdir)/klu/klu_dump.h \
-	$(srcdir)/klu/klu_kernel.h
+	$(srcdir)/klu_btf/klu_btf.h \
+	$(srcdir)/klu_btf/klu_btf.h \
+	$(srcdir)/klu_btf/klu_dump.h \
+	$(srcdir)/klu_kernel/klu_kernel.h\
+	$(srcdir)/klu_btf/klu_btf_internal.h \
+	$(srcdir)/klu_kernel/klu.h \
+	$(srcdir)/klu_kernel/tictoc.h \
+	$(srcdir)/Amesos_Klu.h
 
 KLU = \
 	$(srcdir)/Amesos_Klu.cpp \

@@ -1,4 +1,9 @@
 //
+//  To run this under valgrind, try:
+//  valgrind --suppressions=Suppressions.exe --gen-suppressions=yes --leak-check=yes --show-reachable=yes ./TestOptions.exe -v
+//
+//
+
 //  TestOptions tests all options for each Amesos Class on a limited number 
 //  of matrices.  
 //
@@ -58,14 +63,14 @@ vector<string> AmesosClasses;
 int NumAmesosClasses;
 
 int CreateCrsMatrix( char *filename, Epetra_Comm &Comm, 
+		     Epetra_Map *& readMap,
 		     bool transpose, bool distribute, 
 		     bool& symmetric, Epetra_CrsMatrix *& Matrix ) {
 
-  Epetra_Map * readMap;
-  Epetra_CrsMatrix * readA; 
-  Epetra_Vector * readx; 
-  Epetra_Vector * readb;
-  Epetra_Vector * readxexact;
+  Epetra_CrsMatrix * readA = 0; 
+  Epetra_Vector * readx = 0; 
+  Epetra_Vector * readb = 0;
+  Epetra_Vector * readxexact = 0;
 
   symmetric = false ; 
   string FileName = filename ;
@@ -74,6 +79,9 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
   string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
   if ( LastFiveBytes == ".triU" ) { 
     // Call routine to read in unsymmetric Triplet matrix
+    EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( filename, false, Comm, readMap, readA, readx, 
+						      readb, readxexact) );
+    symmetric = false; 
   } else {
     if ( LastFiveBytes == ".triS" ) { 
       // Call routine to read in symmetric Triplet matrix
@@ -105,30 +113,36 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
     }
   }
 
-  delete readb;
-  delete readxexact;
+
+  if ( readb )  delete readb;
+  if ( readx ) delete readx;
+  if ( readxexact ) delete readxexact;
 
   Epetra_CrsMatrix *serialA ; 
+  Epetra_CrsMatrix *transposeA;
 
   if ( transpose ) {
-    Epetra_CrsMatrix *transposeA = new Epetra_CrsMatrix( Copy, *readMap, 0 );
+    transposeA = new Epetra_CrsMatrix( Copy, *readMap, 0 );
     assert( CrsMatrixTranspose( readA, transposeA ) == 0 ); 
     serialA = transposeA ; 
     delete readA;
+    readA = 0 ; 
   } else {
     serialA = readA ; 
   }
 
+  assert( (void *) &serialA->Graph() ) ;
+  assert( (void *) &serialA->RowMap() ) ;
   assert( serialA->RowMap().SameAs(*readMap) ) ; 
 
   if ( distribute ) { 
     // Create uniform distributed map
-    Epetra_Map *map = new Epetra_Map(readMap->NumGlobalElements(), 0, Comm);
+    Epetra_Map DistMap(readMap->NumGlobalElements(), 0, Comm);
 
     // Create Exporter to distribute read-in matrix and vectors
-    Epetra_Export exporter( *readMap, *map);
+    Epetra_Export exporter( *readMap, DistMap );
     
-    Epetra_CrsMatrix *Amat = new Epetra_CrsMatrix( Copy, *map, 0 );
+    Epetra_CrsMatrix *Amat = new Epetra_CrsMatrix( Copy, DistMap, 0 );
     Amat->Export(*serialA, exporter, Add);
     assert(Amat->FillComplete()==0);    
     
@@ -141,6 +155,7 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
     //        the memory loss.
     //    assert( &(Amat->RowMap()) == map ) ; 
     delete readMap; 
+    readMap = 0 ; 
     delete serialA; 
   } else { 
 
@@ -162,8 +177,8 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
   if ( verbose ) cout << endl << endl << " Matrix = " << filename << endl ;
 
   int NumErrors =0 ;
-  double error; 
-  double residual;
+  double error = -13; 
+  double residual = -13;
   //  double errors[NumAmesosClasses];
   //  double residuals[NumAmesosClasses];
   //  for (int i = 0 ; i < NumAmesosClasses; i ++ ) errors[i] = residuals[i] = 0.0 ; 
@@ -175,7 +190,8 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
   //  Compute the reciprocal condition number using Amesos_UMFPACK via the Amesos interface
   //
   bool symmetric; 
-  CreateCrsMatrix( filename, Comm, false, false, symmetric, Amat ) ;
+  Epetra_Map *readMap = 0 ; 
+  CreateCrsMatrix( filename, Comm, readMap, false, false, symmetric, Amat ) ;
   Teuchos::ParameterList ParamList ;
   Epetra_LinearProblem Problem;
   Amesos Afactory;
@@ -220,7 +236,7 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
   if (verbose) cout << " Rcond1 = " << Rcond1 << endl; 
   if (verbose) cout << " Rcond2 = " << Rcond2 << endl; 
 
-
+  if ( readMap ) delete readMap ;
 #else
   double Rcond1 = Rcond ;
   double Rcond2 = Rcond ;
@@ -234,8 +250,9 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
       if ( verbose ) cout << "TestOptions.cpp:236 distribute = " << distribute <<
 	" transpose = "  << transpose << " iterDist = " << iterDist << endl ; 
 
-      Epetra_CrsMatrix *Amat ;
-      CreateCrsMatrix( filename, Comm, transpose, distribute, symmetric, Amat ) ;
+      Epetra_CrsMatrix *Amat = 0 ;
+      Epetra_Map *readMap = 0 ;
+      CreateCrsMatrix( filename, Comm, readMap, transpose, distribute, symmetric, Amat ) ;
 
 
       if ( Rcond*Rcond1*Rcond2 > 1e-16 ) 
@@ -291,7 +308,8 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
       }
       //      BUG:  Memory leak 
       //      delete &(Amat->RowMap()) ; 
-      delete Amat ; 
+      if ( Amat ) delete Amat ; 
+      if ( readMap ) delete readMap ; 
 #if 0
       double relresidual = 
       errors[(int) AMESOS_SUPERLUDIST] = EPETRA_MAX( errors[ (int) AMESOS_SUPERLUDIST], error ) ; 
@@ -318,17 +336,17 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
 #endif
 
 //
-//  Usage:  
+//  Usage:  TestOptions [-s] [-v]
 //
 
-int main( int argc, char *argv[] ) {
+int NextMain( int argc, char *argv[] ) {
 
-  AmesosClasses.push_back( "Amesos_Scalapack" ) ;
+  AmesosClasses.push_back( "Amesos_Klu" );
 #if 0
+  AmesosClasses.push_back( "Amesos_Scalapack" ) ;
   AmesosClasses.push_back( "Amesos_Umfpack" );
   AmesosClasses.push_back( "Amesos_Mumps" );
   AmesosClasses.push_back( "Amesos_Superludist" );
-  AmesosClasses.push_back( "Amesos_Klu" );
 #endif
 #if 0
   AmesosClasses.push_back( "Amesos_Superlu" );
@@ -406,6 +424,10 @@ int main( int argc, char *argv[] ) {
   //  result += TestOneMatrix("../bcsstk01.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
   //  result += TestOneMatrix( AmesosClassesInstalled, "../ImpcolB.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
       result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../SuperLU.triU", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../Khead.triS", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+
 
   //
   //  This is really slow when run on valgrind, so we don't want to run 
@@ -418,8 +440,6 @@ int main( int argc, char *argv[] ) {
 #endif
 
     if ( ! Short) { 
-      result += TestOneMatrix( AmesosClassesInstalled, "../SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-      result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk13.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
       //  result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk02.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
       result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk08.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 
@@ -451,4 +471,12 @@ int main( int argc, char *argv[] ) {
   }
 #endif
   return result ; 
+}
+
+//
+//  I put this in hoping that this would eliminate a bogus memory leak report 
+//  from valgrind. 
+//
+int main( int argc, char *argv[] ) {
+  NextMain( argc, argv ) ; 
 }
