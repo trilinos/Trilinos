@@ -112,7 +112,7 @@ COMM_INC	= comm.h
 PAR_CSRC	= par_util.c
 PAR_INC		= par_const.h par.h
 
-PARMETIS_CSRC	= parmetis_jostle.c parmetis_util.c 
+PARMETIS_CSRC	= parmetis_jostle.c 
 PARMETIS_INC	= parmetis_jostle_const.h
 
 TIMER_CSRC	= timer.c
