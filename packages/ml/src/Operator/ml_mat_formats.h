@@ -91,6 +91,11 @@ extern int sCSR_getrows(ML_Operator *data,int N_requested_rows,int requested_row
 extern int cCSR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
                        int allocated_space, int columns[], double values[],
                        int row_lengths[]);
+
+extern int CSR_get_one_row(ML_Operator *data, int N_requested_rows, int
+                           requested_rows[], int allocated_space, int
+                           columns[], double values[], int row_lengths[]);
+
 extern int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, 
 			     double ap[]);
 extern int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, 
