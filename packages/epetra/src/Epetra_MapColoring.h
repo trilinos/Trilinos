@@ -24,6 +24,10 @@
 
 #ifndef EPETRA_MAPCOLORING_H
 #define EPETRA_MAPCOLORING_H
+#include "Epetra_DistObject.h"
+#include "Epetra_BlockMap.h"
+class Epetra_HashTable;
+class Epetra_Map;
 
 //! Epetra_MapColoring: A class for coloring Epetra_Map and Epetra_BlockMap objects.
 
@@ -44,13 +48,25 @@
 
 */
 
-#include "Epetra_BlockMap.h"
-
-class Epetra_MapColoring {
+class Epetra_MapColoring: public Epetra_DistObject {
     
   public:
 
   //@{ \name Constructors/destructors.
+  //! Epetra_MapColoring basic constructor.
+  /*!
+    \param In
+            Map - An Epetra_Map or Epetra_BlockMap (Note: Epetra_BlockMap is a base class of
+	    Epetra_Map, so either can be passed in to this constructor.
+    \param In
+            DefaultColor - The integer value to use as the default color for this map.  This constructor
+	    will initially define the color of all map elements to the default color.
+
+    \return Pointer to a Epetra_MapColoring object.
+
+  */ 
+  Epetra_MapColoring(const Epetra_BlockMap& Map, const int DefaultColor = 0);
+
   //! Epetra_MapColoring constructor.
   /*!
     \param In
@@ -66,45 +82,32 @@ class Epetra_MapColoring {
     \return Pointer to a Epetra_MapColoring object.
 
   */ 
-  Epetra_MapColoring(int * ColorList, const Epetra_BlockMap& Map);
+  Epetra_MapColoring(int * ElementColors, const Epetra_BlockMap& Map, const int DefaultColor = 0);
 
   //! Epetra_MapColoring copy constructor.
   
-  Epetra_MapColoring(const Epetra_MapColoring& map);
+  Epetra_MapColoring(const Epetra_MapColoring& Source);
   
   //! Epetra_MapColoring destructor.
   
-  virtual ~Epetra_MapColoring(void);
+  virtual ~Epetra_MapColoring();
   //@}
   
   //@{ \name Set Color methods.
-  //! Set the color of the given GID to Color, for locally owned GIDs only.
-  /*! 
-    \param In
-            NumIDs - Number of GIDs to color.
-    \param In
-            GIDList - List of GIDs to color.
-    \param In
-            ColorList -List of colors such that ColorList[i] should be the color assigned to 
-	    GIDList[i].
-
-   \return Returns 0 if no errors, -1 if one of the GIDs in GIDList is not part of the map.
-  */ 
-  int SetRemoteGIDColors(int NumIDs, const int *GIDList, const int *ColorList);
-
+  
   //! LID element color assignment method.
   /*! Allows color assignment of ith LID: colormap[i] = color
     \return MapColor(LID).
   */
-  int& operator [] (int LID) { return Color_[LID];};
-
+  int& operator [] (int LID) {ListsAreValid_ = false; return ElementColors_[LID];};
+  
   //! GID element color assignment method, Note:  Valid only for GIDs owned by calling processor.
   /*! Allows color assignment of specified GID \e only if the GID is owned by map on 
-      the calling processor. If you are unsure about the ownership, check by using the MyGID()
-      method on the map object.
-    \return MapColor(GID).
+      the calling processor. If you are unsure about the ownership of a GID, check by using the MyGID()
+      method.  MyGID(GID) returns true if the GID is owned by the calling processor.
+      \return MapColor(GID).
   */
-  int& operator () (int GID) {return Color_[Map_->LID(GID)];};
+  int& operator () (int GID) {ListsAreValid_ = false; return ElementColors_[Map().LID(GID)];};
   //@}
   
   //@{ \name Local/Global color accessor methods.
@@ -112,47 +115,112 @@ class Epetra_MapColoring {
   /*! Returns color  of ith LID: colormap[i] = color
     \return MapColor[LID].
   */
-  const int& operator [] (int LID) const { return Color_[LID];};
-
+  const int& operator [] (int LID) const { return ElementColors_[LID];};
+  
   //! GID element color assignment method, Note:  Valid only for GIDs owned by calling processor.
   /*! Allows color assignment of specified GID \e only if the GID is owned by map on 
       the calling processor. If you are unsure about the ownership, check by using the MyGID()
       method on the map object.
     \return MapColor(GID).
   */
-    const int& operator () const (int GID) {return Color_[Map_->LID(GID)];};
+  const int& operator () (int GID) const {return ElementColors_[Map().LID(GID)];};
   //@}
   
-  //@{ \name Access by color methods.
-    //! Returns number of colors, computed to be MaxColorID - MinColorID + 1.
-    int NumColors() const {return(NumColors_);};
-
-    //! Returns minimum ColorID, least integer value of all color values.
-    int MinColorID() const {return(MinColorID_);};
-
-    //! Returns maximum ColorID, largest integer value of all color values.
-    int MaxColorID() const {return(MaxColorID_);};
-
-    //! Returns number of local map elements having specified ColorID
-    int NumElementsInColor(int ColorID) const {return(NumElements_[ColorID-MinColorID_]);};
-
-    //! Returns pointer to array of Map LIDs associated with the specified color.
-    /*! Returns a pointer to a list of Map LIDs associated with the specified color. 
-        This is a purely local list with no information about other processors.  If there
-	are no LIDs associated with the specified color, the pointer is set to zero.
-    */
-    const int * ColorLIDList(int ColorID) const;
+  //@{ \name Color Information Access Methods.
+  //! Returns number of colors.
+  int NumColors() const {if (!ListsAreValid_) GenerateLists(); return(NumColors_);};
+  
+  //! Returns default color.
+  int DefaultColor() const {return(DefaultColor_);};
+  
+  //! Returns number of map elements on calling processor having specified Color
+  int NumElementsWithColor(int Color) const;
+  
+  //! Returns pointer to array of Map LIDs associated with the specified color.
+  /*! Returns a pointer to a list of Map LIDs associated with the specified color. 
+    This is a purely local list with no information about other processors.  If there
+    are no LIDs associated with the specified color, the pointer is set to zero.
+  */
+  int * ColorLIDList(int Color) const;
+  
+  //! Returns pointer to array of the colors associated with the LIDs on the calling processor.
+  /*! Returns a pointer to the list of colors associated with the elements on this processor
+    such that ElementColor[LID] is the color assigned to that LID.
+  */
+  int * ElementColors() const{if (!ListsAreValid_) GenerateLists(); return(ElementColors_);};
+  
   //@}
-
+  //@{ \name Epetra_Map and Epetra_BlockMap generators.
+  //! Generates an Epetra_Map of the GIDs associated with the specified color.
+  /*! This method will create an Epetra_Map such that on each processor the GIDs associated with
+    the specified color will be part of the map on that processor.  Note that this
+    method always generates an Epetra_Map, not an Epetra_BlockMap, even if the map associated
+    with this map coloring is a block map.  Once the map is generated, the user is responsible for
+    deleting it.
+  */
+  Epetra_Map * GenerateMap(int Color) const;
+  
+  //! Generates an Epetra_BlockMap of the GIDs associated with the specified color.
+  /*! This method will create an Epetra_BlockMap such that on each processor the GIDs associated with
+    the specified color will be part of the map on that processor.  Note that this
+    method will generate an Epetra_BlockMap such that each element as the same element size as the
+    corresponding element of map associated with the map coloring.  
+    Once the map is generated, the user is responsible for
+    deleting it.
+  */
+  Epetra_BlockMap * GenerateBlockMap(int Color) const;
+  //@}
+  
+  //@{ \name I/O methods
+  
+  //! Print method
+  virtual void Print(ostream & os) const;
+  //@}
+  
  private:
+  int Allocate(int * ElementColors, int Increment);
+  int GenerateLists() const;
+  int DeleteLists() const;
+  bool InItemList(int ColorValue) const;
+  
+   // Routines to implement Epetra_DistObject virtual methods
 
-    Epetra_BlockMap * Map_;
-    int NumColors_;
-    int MinColorID_;
-    int MaxColorID_;
-    int * NumElements_;
-    int * Color_;
+  int CheckSizes(const Epetra_DistObject& A);
+  int CopyAndPermute(const Epetra_DistObject & Source, int NumSameIDs, 
+			 int NumPermuteIDs, int * PermuteToLIDs, int * PermuteFromLIDs);
+
+  int PackAndPrepare(const Epetra_DistObject & Source, int NumExportIDs, int * ExportLIDs,
+				      int Nsend, int Nrecv,
+				      int & LenExports, char * & Exports, int & LenImports, 
+				      char * & Imports, 
+				      int & SizeOfPacket, Epetra_Distributor & Distor);
+  
+  int UnpackAndCombine(const Epetra_DistObject & Source,
+		       int NumImportIDs, int * ImportLIDs, 
+		       char * Imports, int & SizeOfPacket, 
+		       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode );
+
+
+  struct ListItem {
+    ListItem * NextItem;
+    int ItemValue;
     
+    ListItem( const int itemValue = 0, ListItem * nextItem = 0)
+      : ItemValue(itemValue), NextItem(nextItem){}
+  };
+  
+  int DefaultColor_;
+  mutable Epetra_HashTable * ColorIDs_;
+  mutable ListItem * FirstColor_;
+  mutable int NumColors_;
+  mutable int * ColorCount_;
+  mutable int * ElementColors_;
+  mutable int ** ColorLists_;
+  bool Allocated_;
+  mutable bool ListsAreGenerated_;
+  mutable bool ListsAreValid_;
+  
+  
 };
 
 #endif /* EPETRA_MAPCOLORING_H */
