@@ -15,17 +15,18 @@
 #ifndef __MEM_CONST_H
 #define __MEM_CONST_H
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 
 #ifdef __STDC__
 #include <string.h>
 #else
 #include <strings.h>
 #endif  /* __STDC__ */
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #ifndef HAVE_PROTOTYPES
 #   if defined(__STDC__) || defined(__GNUC__) || defined(__cplusplus) || defined(c_plusplus)

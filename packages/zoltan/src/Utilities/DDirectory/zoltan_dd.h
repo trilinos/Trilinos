@@ -15,13 +15,13 @@
 #ifndef ZOLTAN_DD_DDIRECTORY_H
 #define ZOLTAN_DD_DDIRECTORY_H
 
+#include "zoltan_types.h"
+#include <mpi.h>
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include "zoltan_types.h"
-#include <mpi.h>
 
 struct Zoltan_DD_Struct;
 typedef struct Zoltan_DD_Struct Zoltan_DD_Directory;

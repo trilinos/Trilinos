@@ -11,12 +11,6 @@
  *    $Revision$
  ****************************************************************************/
 
-
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to migrate elements.                                */
 /*          Contains all of the callback functions that Zoltan needs        */
@@ -41,10 +35,9 @@ extern "C" {
 /*    10 May 1999:       Date of creation.                                  */
 /*--------------------------------------------------------------------------*/
 
+#include <mpi.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#include <mpi.h>
 
 #include "dr_const.h"
 #include "dr_err_const.h"
@@ -55,6 +48,12 @@ extern "C" {
 #include "dr_elem_util_const.h"
 #include "dr_maps_const.h"
 #include "dr_dd.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 /*
  *  PROTOTYPES for load-balancer interface functions.

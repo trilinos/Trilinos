@@ -10,14 +10,6 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
-
-
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -27,6 +19,12 @@ extern "C" {
 #include "dr_elem_const.h"
 #include "dr_util_const.h"
 #include "dr_err_const.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Author(s): Gary L. Hennigan (SNL 9221)

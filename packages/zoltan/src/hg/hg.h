@@ -14,11 +14,6 @@
 #ifndef __HG_H
 #define __HG_H
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
@@ -36,6 +31,12 @@ extern "C" {
 #include "params_const.h"
     
 #include "hg_hypergraph.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #define EPS 1e-6
     

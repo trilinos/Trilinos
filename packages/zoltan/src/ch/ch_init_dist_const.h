@@ -15,14 +15,14 @@
 #ifndef CH_INIT_DIST_CONST_H
 #define CH_INIT_DIST_CONST_H
 
+#include "dr_const.h"
+#include "dr_input_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-
-#include "dr_const.h"
-#include "dr_input_const.h"
 
 /* define the Chaco initial distribution types */
 #define INITIAL_FILE   0

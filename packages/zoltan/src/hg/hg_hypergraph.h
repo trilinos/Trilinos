@@ -14,12 +14,13 @@
 #ifndef __HG_HYPERGRAPH_H
 #define __HG_HYPERGRAPH_H
 
+#include "phg_comm.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-#include "phg_comm.h"
     
 typedef struct {
    int info;    /* primarily for debugging recursive algorithms;initially 0 */

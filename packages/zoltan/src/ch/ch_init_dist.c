@@ -12,16 +12,16 @@
  ****************************************************************************/
 
 
+#include "dr_const.h"
+#include "dr_input_const.h"
+#include "dr_err_const.h"
+#include "ch_init_dist_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-
-#include "dr_const.h"
-#include "dr_input_const.h"
-#include "dr_err_const.h"
-#include "ch_init_dist_const.h"
 
 /*
  *  Routines to perform initial data distributions for Chaco files.

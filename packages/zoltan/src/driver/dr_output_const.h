@@ -15,13 +15,12 @@
 #ifndef _DR_OUTPUT_CONST_H_
 #define _DR_OUTPUT_CONST_H_
 
+#include "dr_input_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include "dr_input_const.h"
 
 extern void print_distributed_mesh(
   int Proc,

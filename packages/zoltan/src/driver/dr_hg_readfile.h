@@ -15,12 +15,12 @@
 #ifndef _ZOLTAN_HG_READFILE_CONST_H_
 #define _ZOLTAN_HG_READFILE_CONST_H_
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include <stdio.h>
 
 /* Hypergraph read from file */
 int HG_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,

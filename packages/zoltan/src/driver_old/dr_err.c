@@ -10,19 +10,17 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "dr_err_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "dr_err_const.h"
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Author(s): Gary L. Hennigan (SNL 9221)

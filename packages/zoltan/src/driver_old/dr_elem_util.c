@@ -10,14 +10,6 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
-
-
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -26,6 +18,12 @@ extern "C" {
 #include "dr_const.h"
 #include "dr_elem_util_const.h"
 #include "dr_util_const.h"
+
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 /*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  * Utility functions for element initialization, etc.

@@ -14,17 +14,17 @@
 #ifndef __ZOLTAN_H
 #define __ZOLTAN_H
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 #include <mpi.h>
 #include "zoltan_types.h"
 #include "zoltan_align.h"
 #include "zoltan_comm.h"
 #include "zoltan_mem.h"
 #include "zoltan_dd.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 /*****************************************************************************
  *  Data types and functions describing the interface between the

@@ -11,18 +11,11 @@
  *    $Revision$
  ****************************************************************************/
 
-
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
+#include <mpi.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <mpi.h>
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -35,6 +28,11 @@ extern "C" {
 #include "ch_input_const.h"
 #include "ch_init_dist_const.h"
 #include "dr_hg_readfile.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 #ifndef MAX_STR_LENGTH
 #define MAX_STR_LENGTH 80

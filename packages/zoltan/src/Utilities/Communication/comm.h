@@ -15,20 +15,19 @@
 #ifndef __COMM_H
 #define __COMM_H
 
+#include <mpi.h>
+#include "zoltan_types.h"
+#include "zoltan_util.h"
+#include "zoltan_comm.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-
 /* Data structures and macros for the Zoltan Communication Package.  */
 /* This file should be included only by communication package files. */
 /* Communication package users should include zoltan_comm.h.          */
-
-#include <mpi.h>
-#include "zoltan_types.h"
-#include "zoltan_util.h"
-#include "zoltan_comm.h"
 
 #ifndef TRUE
 #define FALSE (0)

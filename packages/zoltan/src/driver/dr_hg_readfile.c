@@ -11,17 +11,18 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
 
 #include "dr_hg_readfile.h"
 #include "dr_util_const.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #define BUF_LEN 1000
 #define ERROR(proc,yo,msg,err) \

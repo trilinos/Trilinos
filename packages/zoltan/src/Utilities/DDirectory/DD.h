@@ -15,17 +15,17 @@
 #ifndef ZOLTAN_DD_H
 #define ZOLTAN_DD_H
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 #include "zoltan_mem.h"
 #include "zoltan_comm.h"
 #include "zoltan_types.h"
 #include "zoltan_id.h"
 #include "zoltan_util.h"
 #include "zoltan_dd.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 #define ZOLTAN_DD_HASH_TABLE_COUNT  503   /* default # of linked list heads */
 #define ZOLTAN_DD_NO_PROC           -1    /* not a possible processor #     */

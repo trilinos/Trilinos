@@ -12,12 +12,6 @@
  ****************************************************************************/
 
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -27,6 +21,12 @@ extern "C" {
 #include "dr_const.h"
 #include "dr_util_const.h"
 #include "ch_init_dist_const.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 /*
  * Distribute a graph from one processor to all processors.

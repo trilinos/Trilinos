@@ -11,18 +11,10 @@
  *    $Revision$
  ****************************************************************************/
 
-
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
-
+#include <mpi.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <mpi.h>
 
 #ifdef ZOLTAN_NEMESIS
 #include "exodusII.h"
@@ -38,6 +30,12 @@ extern "C" {
 #include "dr_output_const.h"
 #include "dr_elem_util_const.h"
 #include "zoltan_comm.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #define LIST_ALLOC 10
 

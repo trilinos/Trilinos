@@ -14,13 +14,13 @@
 #ifndef __LBI_CONST_H
 #define __LBI_CONST_H
 
+#include <mpi.h>
+#include "zoltan.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include <mpi.h>
-#include "zoltan.h"
 
 /****************************************************************************
  *  This file is maintained for backward compatability with previous versions

@@ -16,14 +16,14 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
+#include	<stdio.h>
+#include        <string.h>
+#include        "ch_input_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include	<stdio.h>
-#include        <string.h>
-#include        "ch_input_const.h"
 
 static int input_assign_normal(FILE *, char *, int, short*), 
            input_assign_inv(FILE *, char *, int, short*);

@@ -159,7 +159,6 @@ struct Mesh_Description
                                    in hvertex. */
   float  *hewgts;               /* for hypergraphs, an array of hyperedge
                                    weights; size = hewgt_dim * nhedges;      */
-
 };
 typedef struct Mesh_Description  MESH_INFO;
 typedef struct Mesh_Description *MESH_INFO_PTR;

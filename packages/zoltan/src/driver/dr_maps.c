@@ -10,19 +10,17 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
+#include "dr_const.h"
+#include "dr_maps_const.h"
+#include "dr_util_const.h"
+#include "dr_err_const.h"
+#include "dr_par_util_const.h"
 
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include "dr_const.h"
-#include "dr_maps_const.h"
-#include "dr_util_const.h"
-#include "dr_err_const.h"
-#include "dr_par_util_const.h"
 
 #define MAP_ALLOC 10
 

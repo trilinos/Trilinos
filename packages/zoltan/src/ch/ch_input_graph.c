@@ -12,11 +12,6 @@
  ****************************************************************************/
 
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 
 /* This software was developed by Bruce Hendrickson and Robert Leland   *
  * at Sandia National Laboratories under US Department of Energy        *
@@ -27,6 +22,11 @@ extern "C" {
 #include <stdlib.h>
 #include "ch_input_const.h"
 #include "dr_const.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 int chaco_input_graph(
 FILE     *fin,			/* input file */

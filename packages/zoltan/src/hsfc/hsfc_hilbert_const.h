@@ -15,6 +15,8 @@
 #ifndef __HSFC_HILBERT_CONST_H
 #define __HSFC_HILBERT_CONST_H
 
+#include "zz_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -60,7 +62,6 @@ extern "C" {
 *
 ****************************************************************************/
 
-#include "zz_const.h"
 
 static unsigned const int IMAX = ~(0U);
 

@@ -12,16 +12,16 @@
  ****************************************************************************/
 
 
+#include "dr_const.h"
+#include "dr_util_const.h"
+#include "dr_err_const.h"
+#include "dr_dd.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-
-#include "dr_const.h"
-#include "dr_util_const.h"
-#include "dr_err_const.h"
-#include "dr_dd.h"
 
 /****************************************************************************/
 int build_elem_dd(MESH_INFO_PTR mesh) 

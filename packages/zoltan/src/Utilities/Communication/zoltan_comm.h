@@ -15,13 +15,12 @@
 #ifndef __COMM_CONST_H
 #define __COMM_CONST_H
 
+#include <mpi.h>
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include <mpi.h>
 
 /* Interface to the Zoltan Communication Package. */
 /* This file should be included by user's of the  */

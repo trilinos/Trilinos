@@ -14,12 +14,12 @@
 #ifndef __ZOLTAN_TYPES_H
 #define __ZOLTAN_TYPES_H
 
+#include <mpi.h>
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include <mpi.h>
 
 /*****************************************************************************/
 /*

@@ -15,15 +15,14 @@
 #ifndef __CH_INPUT_CONST_H
 #define __CH_INPUT_CONST_H
 
+#include <mpi.h>
+#include "dr_const.h"
+#include "dr_input_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include <mpi.h>
-#include "dr_const.h"
-#include "dr_input_const.h"
 
 extern int chaco_input_graph(FILE *, char *, int **, int **, int *, 
            int *, float **, int *, float **);

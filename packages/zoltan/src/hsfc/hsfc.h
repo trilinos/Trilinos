@@ -15,12 +15,6 @@
 #ifndef ZOLTAN_HSFC_H
 #define ZOLTAN_HSFC_H
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
-
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
@@ -35,6 +29,13 @@ extern "C" {
 #include "zoltan_util.h"  
 #include "hsfc_hilbert_const.h"
 #include "hsfc_const.h"
+
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 
 /* Andy's value * 1.6, points on face of bounding box must become interior */

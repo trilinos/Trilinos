@@ -11,12 +11,7 @@
  *    $Revision$
  ****************************************************************************/
 
-
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
+#include <mpi.h>
 #ifdef TIMER_CALLBACKS
 /* Code that times how much time is spent in the callback functions.
  * By default, this code is OFF.
@@ -29,12 +24,9 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #define STOP_CALLBACK_TIMER 
 #endif /* TIMER_CALLBACKS */
 
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <strings.h>
-
-#include <mpi.h>
 
 #include "dr_const.h"
 #include "dr_err_const.h"
@@ -42,6 +34,12 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #include "dr_eval_const.h"
 #include "dr_util_const.h"
 #include "ch_init_dist_const.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 static int Num_GID = 1, Num_LID = 1;
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,

@@ -15,13 +15,13 @@
 #ifndef _DR_ELEM_UTIL_CONST_H_
 #define _DR_ELEM_UTIL_CONST_H_
 
+
+#include "dr_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include "dr_const.h"
 
 /* Function prototypes */
 extern void initialize_element(ELEM_INFO *elem);

@@ -15,15 +15,15 @@
 #ifndef _DR_INPUT_CONST_H_
 #define _DR_INPUT_CONST_H_
 
-#ifndef _DR_CONST_H
-#include "dr_const.h"
-#endif
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
+#ifndef _DR_CONST_H
+#include "dr_const.h"
+#endif
 
 /* define the input file types */
 #define NO_FILE           0

@@ -15,14 +15,14 @@
 #ifndef __ALL_ALLO_H
 #define __ALL_ALLO_H
 
+#include "zz_const.h"
+#include "zoltan_mem.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-
-#include "zz_const.h"
-#include "zoltan_mem.h"
 
 extern int Zoltan_Set_Malloc_Param(char *, char *);
 
