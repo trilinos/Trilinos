@@ -282,6 +282,17 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
     ml_edges_ = 0;
   }
 
+  if( TMatrixML_ != 0 ) {
+    // FIXME: do something
+  }
+
+  if( TMatrixTransposeML_ != 0 ) {
+    // FIXME: do something
+  }
+
+  // FIXME: how to deal with Tmat_array and Tmat_trans_array ???
+  // are they useful ???
+  
   if( Label_ ) delete Label_;
   
   if( LevelID_ != 0 ) delete [] LevelID_;
@@ -423,7 +434,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
 
 #ifdef HAVE_ML_TRIUTILS
 MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-						   Trilinos_Util_CommandLineParser & CLP,
+						   Trilinos_Util::CommandLineParser & CLP,
 						   const bool ComputePrec ) :
   RowMatrix_(&RowMatrix),
   RowMatrixAllocated_(0)
@@ -468,7 +479,11 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
     List_.set("aggregation: type", CLP.Get("-aggr_scheme","Uncoupled"));
   if( CLP.Has("-aggr_damping_factor") )
     List_.set("aggregation: damping factor", CLP.Get("-aggr_damping_factor",1.333));
-
+  if( CLP.Has("-compute_field_of_values") )
+    List_.set("aggregation: compute field of values", true);
+  if( CLP.Has("-compute_field_of_values_non_scaled") )
+    List_.set("aggregation: compute field of values for non-scaled", true);
+  
   // coarse
   if( CLP.Has("-coarse_type") )
     List_.set("coarse: type", CLP.Get("-coarse_type","Amesos-KLU"));
@@ -533,7 +548,11 @@ void MultiLevelPreconditioner::Initialize()
   TMatrix_ = 0;
   ml_edges_ = 0;
   ml_nodes_ = 0;
-
+  TMatrixML_ = 0;
+  TMatrixTransposeML_ = 0;
+  Tmat_array = 0;
+  Tmat_trans_array = 0;
+  
   // timing
   NumApplications_ = 0;
   ApplicationTime_ = 0.0;
@@ -601,6 +620,8 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   sprintf(parameter,"%sincreasing or decreasing", Prefix_);
   string IsIncreasing = List_.get(parameter,"increasing");
 
+  if( SolvingMaxwell_ == true ) IsIncreasing = "decreasing";
+  
   int FinestLevel;
   
   if( IsIncreasing == "increasing" ) {
@@ -631,7 +652,11 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;
 
   if( SolvingMaxwell_ == false ) {
-    
+
+    /* ********************************************************************** */
+    /* create hierarchy for classical equations (all but Maxwell)             */
+    /* ********************************************************************** */
+
     ML_Create(&ml_,MaxCreationLevels);
 
     int NumMyRows;
@@ -649,20 +674,59 @@ int MultiLevelPreconditioner::ComputePreconditioner()
 
   } else {
 
+    /* ********************************************************************** */
+    /* create hierarchy for Maxwell. Needs to define ml_edges_ and ml_nodes_  */
+    /* The only way to activate SolvingMaxwell_ == true is through the        */
+    /* constructor for Maxwell. I suppose that the matrices are called not    */
+    /* Matrix_, but moreover NodeMatrix_ and EdgeMatrix_.                     */
+    /* ********************************************************************** */
+
+    if( verbose_ ) cout << PrintMsg_ << "Solving Maxwell Equations..." << endl;
+
+    int NumMyRows, N_ghost;
+    
+    // create hierarchy for edges
+
     ML_Create(&ml_edges_,MaxCreationLevels);
+
+    NumMyRows = EdgeMatrix_->NumMyRows();
+    N_ghost   = EdgeMatrix_->NumMyCols() - NumMyRows;
+    
+    if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
+    
+    ML_Init_Amatrix(ml_edges_,LevelID_[0],NumMyRows,
+		    NumMyRows, (void *) EdgeMatrix_);
+    ML_Set_Amatrix_Getrow(ml_edges_, LevelID_[0], Epetra_ML_getrow,
+			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
+
+    ML_Set_Amatrix_Matvec(ml_edges_, LevelID_[0], Epetra_ML_matvec);
+
+    // create hierarchy for nodes
+    
     ML_Create(&ml_nodes_,MaxCreationLevels);
 
-    // DO SOMETHING HERE WITH MATRICES
+    NumMyRows = NodeMatrix_->NumMyRows();
+    N_ghost   = NodeMatrix_->NumMyCols() - NumMyRows;
+    
+    if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
+    
+    ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows, NumMyRows,
+		    (void *) NodeMatrix_);
+    ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], Epetra_ML_getrow,
+			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
+    
+    ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], Epetra_ML_matvec);
     
   }
-    
+  
   ML_Aggregate_Create(&agg_);
   
   /* ********************************************************************** */
   /* set null space                                                         */
   /* ********************************************************************** */
 
-  SetNullSpace();
+  if( SolvingMaxwell_ == false ) SetNullSpace();
+  else                           SetNullSpaceMaxwell();
   
   /* ********************************************************************** */
   /* pick up coarsening strategy. METIS and ParMETIS requires additional    */
@@ -694,8 +758,15 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     sprintf(parameter,"%saggregation: next-level aggregates per process", Prefix_);
     ReqAggrePerProc = List_.get(parameter, ReqAggrePerProc);
   }
-  ML_Aggregate_Set_ReqLocalCoarseSize( ml_, agg_, -1, ReqAggrePerProc);
 
+  if( SolvingMaxwell_ == false ) { 
+    ML_Aggregate_Set_ReqLocalCoarseSize( ml_, agg_, -1, ReqAggrePerProc);
+  } else {
+    // Jonathan, is it right ???
+    ML_Aggregate_Set_ReqLocalCoarseSize( ml_edges_, agg_, -1, ReqAggrePerProc);
+    ML_Aggregate_Set_ReqLocalCoarseSize( ml_nodes_, agg_, -1, ReqAggrePerProc);
+  }
+  
   if( verbose_ ) {
     cout << PrintMsg_ << "Aggregation threshold = " << Threshold << endl;
     cout << PrintMsg_ << "Max coarse size = " << MaxCoarseSize << endl;
@@ -717,10 +788,10 @@ int MultiLevelPreconditioner::ComputePreconditioner()
  
   /* ********************************************************************** */
   /* Define scheme to determine damping parameter in prolongator and        */
-  /* restriction smoother.                                                  */
+  /* restriction smoother. Only for non-Maxwell.                            */
   /* ********************************************************************** */
 
-  SetSmoothingDamping();
+  if( SolvingMaxwell_ == false ) SetSmoothingDamping();
 
   /************************************************************************/
   /* Build hierarchy using smoothed aggregation.                          */
@@ -732,24 +803,28 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   if( IsIncreasing == "increasing" ) Direction = ML_INCREASING;
   else                               Direction = ML_DECREASING;
 
-  if( SolvingMaxwell_ == false ) 
-#ifdef MARZIO
-    NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
-#else
-  NumLevels_ = ML_Gen_MGHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
-#endif
-  /* FIXME *
+  if( SolvingMaxwell_ == false ){
 
-    put here creating for Maxwell
-     NOTE: Tmatrix_ must be converted to an ML_Operator to be defined
-     and TMatrixTranspose_ too.
-  else
-    // other parameters to be added to ParameterList ???
+    NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
+    //~!@ FIXME: erase this
+    //NumLevels_ = ML_Gen_MGHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
+
+  } else {
+
+    // convert TMatrix to ML_Operator
+      
+    TMatrixML_ = ML_Operator_Create(ml_edges_->comm);
+    TMatrixTransposeML_ = ML_Operator_Create(ml_edges_->comm);
+    
+    Epetra2MLMatrix(const_cast<Epetra_RowMatrix*>(TMatrix_),TMatrixML_);
+    ML_Operator_Transpose_byrow(TMatrixML_,TMatrixTransposeML_);
+    
     NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges_, ml_nodes_,LevelID_[0],
-						    Direction,agg_,TMatrix_,TMatrixTranspose_, 
+						    Direction,agg_,TMatrixML_,TMatrixTransposeML_, 
 						    &Tmat_array,&Tmat_trans_array, 
 						    ML_YES, 1.5); 
-  */
+  }
+  
   if( verbose_ ) cout << PrintMsg_ << "Number of actual levels : " << NumLevels_ << endl;
 
   /* ********************************************************************** */
@@ -758,12 +833,6 @@ int MultiLevelPreconditioner::ComputePreconditioner()
 
   if( SolvingMaxwell_ == false ) SetSmoothers();
   else                           SetSmoothersMaxwell();
-
-  // MS ?? Isn't it already set somewhere ????
-  // MS smoother parameters are set in SetSmoother();
-  //  sprintf(parameter,"%ssmoother: damping factor", Prefix_);
-  // double omega = List_.get(parameter,1.0);
-  // what about parallel????  JJH
 
   /* ********************************************************************** */
   /* solution of the coarse problem                                         */
@@ -781,8 +850,17 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   /* be implemented as a post smoother (FIXME)                              */
   /* ********************************************************************** */
 
-  ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
-
+  if( SolvingMaxwell_ == false ) 
+    ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
+  else {
+    ML_Gen_Solver(ml_edges_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
+  }
+    
+  // may want to print some internal stuff 
+  // ML_Operator_Print(&(ml_->Pmat[1]),"Pmat");
+  // ML_Operator_Print(&(ml_->Rmat[0]),"Rmat");
+  // ML_Operator_Print(&(ml_->Amat[4]),"Amat");
+  
   CreateLabel();
   
   SetPreconditioner();
@@ -840,33 +918,43 @@ int MultiLevelPreconditioner::SetParameterList(const ParameterList & List)
 // ============================================================================
 
 int MultiLevelPreconditioner::CreateLabel()
-{
-  
-  int i = ml_->ML_finest_level;
+{  
+
   char finest[80];
   char coarsest[80];
   finest[0] = '\0';
   coarsest[0] = '\0';
+
+
+  ML * ml_ptr;
+  if( SolvingMaxwell_ == false ) ml_ptr = ml_;
+  else                           ml_ptr = ml_edges_;
+ 
+  int i = ml_ptr->ML_finest_level;
+     
+  if (ml_ptr->pre_smoother[i].ML_id != ML_EMPTY) 
+    sprintf(finest, "%s", ml_ptr->pre_smoother[i].label);
+  if (ml_ptr->post_smoother[i].ML_id != ML_EMPTY) 
+    sprintf(finest, "%s/%s", finest,ml_ptr->post_smoother[i].label);
   
-  if (ml_->pre_smoother[i].ML_id != ML_EMPTY) 
-    sprintf(finest, "%s", ml_->pre_smoother[i].label);
-  if (ml_->post_smoother[i].ML_id != ML_EMPTY) 
-    sprintf(finest, "%s/%s", finest,ml_->post_smoother[i].label);
-  
-  if (i != ml_->ML_coarsest_level) {
-    i = ml_->ML_coarsest_level;
-    if ( ML_CSolve_Check( &(ml_->csolve[i]) ) == 1 ) {
-	sprintf(coarsest, "%s", ml_->csolve[i].label);
+  if (i != ml_ptr->ML_coarsest_level) {
+    i = ml_ptr->ML_coarsest_level;
+    if ( ML_CSolve_Check( &(ml_ptr->csolve[i]) ) == 1 ) {
+	sprintf(coarsest, "%s", ml_ptr->csolve[i].label);
     }
     
     else {
-      if (ml_->pre_smoother[i].ML_id != ML_EMPTY) 
-	sprintf(coarsest, "%s", ml_->pre_smoother[i].label);
-      if (ml_->post_smoother[i].ML_id != ML_EMPTY) 
-	sprintf(coarsest, "%s/%s", coarsest,ml_->post_smoother[i].label);
+      if (ml_ptr->pre_smoother[i].ML_id != ML_EMPTY) 
+	sprintf(coarsest, "%s", ml_ptr->pre_smoother[i].label);
+      if (ml_ptr->post_smoother[i].ML_id != ML_EMPTY) 
+	sprintf(coarsest, "%s/%s", coarsest,ml_ptr->post_smoother[i].label);
     }
   }
-  sprintf(Label_,"%d level SA (%s, %s)", ml_->ML_num_actual_levels, finest, coarsest);
+
+  if( SolvingMaxwell_ == false ) 
+    sprintf(Label_,"%d level SA (%s, %s)", ml_->ML_num_actual_levels, finest, coarsest);
+  else
+    sprintf(Label_,"%d level Maxwell (%s, %s)", ml_ptr->ML_num_actual_levels, finest, coarsest);
   
   return 0;
     
@@ -896,38 +984,43 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
   EPETRA_CHK_ERR(xtmp.ExtractView(&xvectors));
   EPETRA_CHK_ERR(Y.ExtractView(&yvectors));
 
+  ML * ml_ptr;
+  
+  if( SolvingMaxwell_ == false ) ml_ptr = ml_;
+  else                           ml_ptr = ml_edges_;
+
   //note: solver_ is the ML handle
 
   for (int i=0; i < X.NumVectors(); i++) {
-    switch(ml_->ML_scheme) {
+    switch(ml_ptr->ML_scheme) {
     case(ML_MGFULLV):
-      ML_Solve_MGFull(ml_, xvectors[i], yvectors[i]); 
+      ML_Solve_MGFull(ml_ptr, xvectors[i], yvectors[i]); 
       break;
     case(ML_SAAMG): //Marian Brezina's solver
-      ML_Solve_AMGV(ml_, xvectors[i], yvectors[i]); 
+      ML_Solve_AMGV(ml_ptr, xvectors[i], yvectors[i]); 
       break;
     case(ML_ONE_LEVEL_DD):
-      ML_DD_OneLevel(&(ml_->SingleLevel[ml_->ML_finest_level]),
+      ML_DD_OneLevel(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
 		     yvectors[i], xvectors[i],
-		     ML_ZERO, ml_->comm, ML_NO_RES_NORM, ml_);
+		     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
       break;
     case(ML_TWO_LEVEL_DD_ADD):
-      ML_DD_Additive(&(ml_->SingleLevel[ml_->ML_finest_level]),
+      ML_DD_Additive(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
 		     yvectors[i], xvectors[i],
-		     ML_ZERO, ml_->comm, ML_NO_RES_NORM, ml_);
+		     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
       break;
     case(ML_TWO_LEVEL_DD_HYBRID):
-      ML_DD_Hybrid(&(ml_->SingleLevel[ml_->ML_finest_level]),
+      ML_DD_Hybrid(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
 		   yvectors[i], xvectors[i],
-		   ML_ZERO, ml_->comm, ML_NO_RES_NORM, ml_);    
+		   ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);    
       break;
     case(ML_TWO_LEVEL_DD_HYBRID_2):
-      ML_DD_Hybrid_2(&(ml_->SingleLevel[ml_->ML_finest_level]),
+      ML_DD_Hybrid_2(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
 		     yvectors[i], xvectors[i],
-		     ML_ZERO, ml_->comm, ML_NO_RES_NORM, ml_);    
+		     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);    
       break;
     default:
-      ML_Solve_MGV(ml_, xvectors[i], yvectors[i]); 
+      ML_Solve_MGV(ml_ptr, xvectors[i], yvectors[i]); 
     }
   }
 
@@ -1109,8 +1202,8 @@ void MultiLevelPreconditioner::SetSmoothers()
       if( ProcConfig_[AZ_node] == 0 )
 	cerr << ErrorMsg_ << "Smoother not recognized!" << endl
 	     << ErrorMsg_ << "(file " << __FILE__ << ",line " << __LINE__ << ")" << endl
-	     << ErrorMsg_ << "Should be: " << endl
-	     << ErrorMsg_ << "<Jacobi>/<Gauss-Seidel>/<Block Gauss-Seidel> / <MLS>" << endl
+	     << ErrorMsg_ << "Now is: " << Smoother << ". It should be: " << endl
+	     << ErrorMsg_ << "<Jacobi> / <Gauss-Seidel>/<Block Gauss-Seidel> / <MLS>" << endl
 	     << ErrorMsg_ << "<Aztec> / <IFPACK>" << endl;
       exit( EXIT_FAILURE );
     }
@@ -1124,6 +1217,42 @@ void MultiLevelPreconditioner::SetSmoothers()
 
 void MultiLevelPreconditioner::SetSmoothersMaxwell()
 {
+
+  // Jonathan....
+  
+  char parameter[80];
+  
+  void ** nodal_args = ML_Smoother_Arglist_Create(2);
+
+  int nodal_its = 1;
+  double nodal_omega = 1.0;
+  
+  int edge_its = 1;
+  double edge_omega = 1.0;
+  
+  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
+  ML_Smoother_Arglist_Set(nodal_args, 1, &nodal_omega);
+
+  void ** edge_args = ML_Smoother_Arglist_Create(2);
+  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
+  ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega);
+
+  sprintf(parameter,"%ssmoother: sweeps", Prefix_);
+  int num_smoother_sweeps = List_.get(parameter, 1);
+
+  int hiptmair_type = HALF_HIPTMAIR;
+  
+  int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
+    
+  for( int level=0 ; level<SmootherLevels ; ++level ) {
+
+    ML_Gen_Smoother_Hiptmair(ml_edges_, LevelID_[level], ML_BOTH, num_smoother_sweeps,
+			     Tmat_array, Tmat_trans_array, NULL, 
+			     (void *)ML_Gen_Smoother_SymGaussSeidel, edge_args, 
+			     (void *)ML_Gen_Smoother_SymGaussSeidel, nodal_args, hiptmair_type);
+  }
+
+  // FIXME: free nodal_args and edge_args
   return;
 }
 
@@ -1143,25 +1272,30 @@ void MultiLevelPreconditioner::SetCoarse()
     
   sprintf(parameter,"%scoarse: max processes", Prefix_);
   int MaxProcs = List_.get(parameter, -1);
+
+  ML * ml_ptr;
   
+  if( SolvingMaxwell_ == false ) ml_ptr = ml_;
+  else                           ml_ptr = ml_edges_;
+    
   if( CoarseSolution == "Jacobi" ) 
-    ML_Gen_Smoother_Jacobi(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
+    ML_Gen_Smoother_Jacobi(ml_ptr, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
 			   NumSmootherSteps, Omega);
   else if( CoarseSolution == "Gauss-Seidel" ) 
-    ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
+    ML_Gen_Smoother_GaussSeidel(ml_ptr, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
 				NumSmootherSteps, Omega);
   else if( CoarseSolution == "SuperLU" ) 
-    ML_Gen_CoarseSolverSuperLU( ml_, LevelID_[NumLevels_-1]);
+    ML_Gen_CoarseSolverSuperLU( ml_ptr, LevelID_[NumLevels_-1]);
   else if( CoarseSolution == "Amesos-KLU" )
-    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
   else if( CoarseSolution == "Amesos-UMFPACK" )
-    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_UMFPACK, MaxProcs);
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_UMFPACK, MaxProcs);
   else if(  CoarseSolution == "Amesos-Superludist" )
-    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_SUPERLUDIST, MaxProcs);
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_SUPERLUDIST, MaxProcs);
   else if( CoarseSolution == "Amesos-MUMPS" )
-    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_MUMPS, MaxProcs);
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_MUMPS, MaxProcs);
   else
-    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
     
 }
 
@@ -1196,11 +1330,11 @@ void MultiLevelPreconditioner::SetAggregation()
          ML_Aggregate_Set_CoarsenSchemeLevel_Coupled(level,NumLevels_,agg_);
        else {
          if( Comm().MyPID() == 0 ) {
-       cout << ErrorMsg_ << "specified options ("
-            << CoarsenScheme << ") not valid. Should be:" << endl;
-       cout << ErrorMsg_ << "<METIS> <ParMETIS> <MIS> <Uncoupled> <Coupled> <Hybrid>" << endl;
-         }
-         ML_Aggregate_Set_CoarsenSchemeLevel_METIS(LevelID_[level],NumLevels_,agg_);
+	   cout << ErrorMsg_ << "specified options ("
+		<< CoarsenScheme << ") not valid. Should be:" << endl;
+	   cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <MIS> / <Uncoupled> / <Coupled> / <Hybrid>" << endl;
+	 }
+	 exit( EXIT_FAILURE );
        } 
    
        if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" ) {
@@ -1354,6 +1488,15 @@ void MultiLevelPreconditioner::SetPreconditioner()
 
 // ================================================ ====== ==== ==== == =
 
+void MultiLevelPreconditioner::SetNullSpaceMaxwell()
+{
+
+  // FIXME...
+  
+}
+
+// ================================================ ====== ==== ==== == =
+
 void MultiLevelPreconditioner::SetNullSpace() 
 {
 
@@ -1406,11 +1549,11 @@ void MultiLevelPreconditioner::SetNullSpace()
     }
 
     sprintf(parameter,"%sadd default null space", Prefix_);
-    bool UseDefaultVectors = List_.get(parameter, false);
+    bool UseDefaultVectors = List_.get(parameter, true);
 
     if( verbose_ ) {
       cout << PrintMsg_ << "Computing " << NullSpaceDim << " null space vector(s)" << endl;
-      if( parameter ) cout << PrintMsg_ << "(plus " << NumPDEEqns_ << " constant vector(s))" << endl;
+      if( UseDefaultVectors ) cout << PrintMsg_ << "(plus " << NumPDEEqns_ << " constant vector(s))" << endl;
     }
     
     int TotalNullSpaceDim = NullSpaceDim;
@@ -1443,9 +1586,10 @@ void MultiLevelPreconditioner::SetNullSpace()
     ParameterList AnasaziList(EigenList_);
     
     // new parameters specific for this function only (not set by the user)
-    AnasaziList.set("matrix operation", "A");    
+    AnasaziList.set("matrix operation", "I-A");
     AnasaziList.set("action", "SM");
-
+    AnasaziList.set("eigen-analysis: use diagonal scaling",true);
+    
     ML_Anasazi::Interface(RowMatrix_,EigenVectors,RealEigenvalues,
 			  ImagEigenvalues, AnasaziList);
     
@@ -1578,8 +1722,10 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       if( Comm().MyPID() == 0 ) {
 	cerr << ErrorMsg_ << "parameter `" << parameter << "' has an incorrect value"
 	     << "(" << str << ")" << endl;
-	cerr << ErrorMsg_ << "Using default value..." << endl;
+	cerr << ErrorMsg_ << "It should be: " << endl
+	     << ErrorMsg_ << "<cg> / <Anorm> / <Anasazi> / <power-method>" << endl;
       }
+      exit( EXIT_FAILURE );
     }
     
   } else if( RandPSmoothing == "advanced" ) {
@@ -1588,8 +1734,8 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
     /* This is the new way, based on Anasazi to compute eigen-widgets         */
     /* ********************************************************************** */
 
-    if( verbose_ )
-      cout << PrintMsg_ << "Use A to smooth restriction operator" << endl;
+    //    if( verbose_ )
+    //      cout << PrintMsg_ << "Use A to smooth restriction operator" << endl;
     agg_->Restriction_smoothagg_transpose = ML_TRUE;
     
     SetEigenList();
@@ -1609,6 +1755,12 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
     else
       field_of_values->compute_field_of_values = ML_NO;
     
+    sprintf(parameter,"%saggregation: compute field of values for non-scaled", Prefix_);
+    if( List_.get(parameter,false) )
+      field_of_values->compute_field_of_values_non_scaled = ML_YES;
+    else
+      field_of_values->compute_field_of_values_non_scaled = ML_NO;
+
     // following values for choice:
     // -1 : undefined
     //  0 : do nothing, put eta = 0 (used in non-smoothed aggregation)
@@ -1627,6 +1779,8 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       if( verbose_ )
 	cout << PrintMsg_ << "R and P smoothing : non-smoothed aggregation" << endl;
 
+      agg_->Restriction_smoothagg_transpose = ML_FALSE;
+      
       field_of_values->choice     =  0;
       field_of_values->poly_order =  0;
       // I don't really need them, smoothing will be set to zero
@@ -1671,10 +1825,10 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       field_of_values->P_coeff[1] = -2.515;
       field_of_values->P_coeff[2] =  0.942;
       
-    } else if( DampingType == "marzio" ) {
+    } else if( DampingType == "fov" ) {
 
       if( verbose_ )
-	cout << PrintMsg_ << "R and P smoothing : Using marzio values" << endl;
+	cout << PrintMsg_ << "R and P smoothing : Using fov values" << endl;
 
       field_of_values->choice     =  1;
       field_of_values->poly_order =  2;
@@ -1687,6 +1841,45 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       field_of_values->P_coeff[1] = -2.179;
       field_of_values->P_coeff[2] =  0.101;
 
+    } else if( DampingType == "fov-5" ) {
+
+      if( verbose_ )
+	cout << PrintMsg_ << "R and P smoothing : Using fov-5 values" << endl;
+   
+      field_of_values->choice     =  1;
+      field_of_values->poly_order =  2;
+
+      field_of_values->R_coeff[0] = 1.631;
+      field_of_values->R_coeff[1] = -3.9015;
+      field_of_values->R_coeff[2] = 2.5957;
+      
+      field_of_values->P_coeff[0] = 1.00145;
+      field_of_values->P_coeff[1] = -1.4252;
+      field_of_values->P_coeff[2] = 0.6627;
+
+    } else if( DampingType == "fov-10" ) {
+
+      if( verbose_ )
+	cout << PrintMsg_ << "R and P smoothing : Using fov-10 values" << endl;
+
+      field_of_values->choice     =  1;
+      field_of_values->poly_order =  2;
+
+
+      field_of_values->R_coeff[0] = 1.768909e+00;
+field_of_values->R_coeff[1] = -4.132227e+00;
+field_of_values->R_coeff[2] = 2.669318e+00;
+field_of_values->P_coeff[0] = 1.619455e+00;
+field_of_values->P_coeff[1] = -2.347773e+00;
+field_of_values->P_coeff[2] = 8.652273e-01;
+/*
+field_of_values->R_coeff[0] = 2.092364e+00;
+field_of_values->R_coeff[1] = -4.923000e+00;
+field_of_values->R_coeff[2] = 3.129545e+00;
+field_of_values->P_coeff[0] = 1.344545e+00;
+field_of_values->P_coeff[1] = -1.631045e+00;
+field_of_values->P_coeff[2] = 4.234091e-01;
+      */      
     } else if( DampingType == "random" ) {
 
       if( verbose_ )
@@ -1722,7 +1915,27 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
     } else if( DampingType == "classic" ) {
 
       agg_->Restriction_smoothagg_transpose = ML_FALSE;      
+      //      ml_->symmetrize_matrix == ML_TRUE;
 
+      sprintf(parameter,"%seigen-analysis: type", Prefix_);
+      string str = List_.get(parameter,"Anorm");
+
+      if( verbose_ ) cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << endl;
+    
+      if( str == "cg" )                ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
+      else if( str == "Anorm" )        ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
+      else if( str == "Anasazi" )      ML_Aggregate_Set_SpectralNormScheme_Anasazi(agg_);
+      else if( str == "power-method" ) ML_Aggregate_Set_SpectralNormScheme_PowerMethod(agg_);
+      else {
+	if( Comm().MyPID() == 0 ) {
+	  cerr << ErrorMsg_ << "parameter `" << parameter << "' has an incorrect value"
+	       << "(" << str << ")" << endl;
+	  cerr << ErrorMsg_ << "It should be: " << endl
+	       << ErrorMsg_ << "<cg> / <Anorm> / <Anasazi> / <power-method>" << endl;
+	}
+	exit( EXIT_FAILURE );
+      }
+      
     }  else if( DampingType == "classic-use-A" ) {
 
       if( verbose_ )
@@ -1791,6 +2004,7 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, char * Pref
     cerr << "ERROR: Wrong input parameter in `SetDefaults' ("
 	 << ProblemType << "). Should be: " << endl
 	 << "ERROR: <SA> / <DD> / <DD-ML> / <maxwell>" << endl;
+    exit( EXIT_FAILURE );
     rv = 1;
   }
 

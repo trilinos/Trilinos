@@ -446,6 +446,40 @@ int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
   return 0;
  
 }
+
+int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
+						       struct ML_Field_Of_Values * fov )
+{
+
+  Epetra_CrsMatrix * CrsTemp;
+  int MaxNumNonzeros;
+  double CPUTime;
+  
+  ML_Operator2EpetraCrsMatrix(Amat,CrsTemp,MaxNumNonzeros,
+			      true,CPUTime);
+  
+  double MaxReal,MaxImag;
+  Teuchos::ParameterList * EigenList = (Teuchos::ParameterList *) fov->EigenList;
+
+  bool UseDiagScaling = EigenList->get("field-of-values: use diagonal scaling", UseDiagScaling);
+  EigenList->set("field-of-values: use diagonal scaling", false);
+  
+  ML_Anasazi::GetFieldOfValuesBox(CrsTemp,MaxReal,MaxImag,*EigenList);
+
+  EigenList->set("field-of-values: use diagonal scaling", UseDiagScaling);
+  
+  double eta = MaxImag/MaxReal;
+
+  fov->eta = eta;
+  fov->real_max = MaxReal;
+  fov->imag_max = MaxImag;
+
+  delete CrsTemp;
+  
+  return 0;
+ 
+}
+
 }
 
 #endif /* ifdef HAVE_ML_TEUCHOS */

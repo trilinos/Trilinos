@@ -12,7 +12,7 @@ class Epetra_Comm;
 class Epetra_CrsMatrix;
 
 #ifdef HAVE_ML_TRIUTILS
-class Trilinos_Util_CommandLineParser;
+#include "Trilinos_Util_CommandLineParser.h"
 #endif
 
 #include "Epetra_RowMatrix.h"
@@ -52,7 +52,7 @@ public:
   //! Constructs an MultiLevelPreconditioner, input parameters are specific in the command line
 
   MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-			   Trilinos_Util_CommandLineParser & CLP,
+			   Trilinos_Util::CommandLineParser & CLP,
                            const bool ComputePrec );
 #endif
   
@@ -331,6 +331,8 @@ private:
 
   void SetNullSpace();
 
+  void SetNullSpaceMaxwell();
+
   void SetEigenList();
 
   void SetSmoothingDamping();
@@ -380,7 +382,8 @@ private:
   const Epetra_RowMatrix * EdgeMatrix_;     // Main matrix for Maxwell
   const Epetra_RowMatrix * NodeMatrix_;     // aux matrix for Maxwell
   const Epetra_RowMatrix * TMatrix_;
-  const Epetra_RowMatrix * TMatrixTranspose_;
+  ML_Operator * TMatrixML_;
+  ML_Operator * TMatrixTransposeML_;
   ML_Operator ** Tmat_array, ** Tmat_trans_array;
   ML * ml_edges_, * ml_nodes_;
 
