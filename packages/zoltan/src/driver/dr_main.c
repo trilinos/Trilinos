@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
   float  version;
 
   int    Proc, Num_Proc;
-  int    error, i;
+  int    error;
 
   MESH_INFO  mesh;             /* mesh information struct */
   PARIO_INFO pio_info;
