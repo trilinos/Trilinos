@@ -1843,8 +1843,6 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
    double       aux_om, om_loc[MLS_MAX_DEG], coord, samplej;
    const double pi=4.e0 * atan(1.e0); /* 3.141592653589793115998e0; */
    int          i, j, nGrid;
-   ML_Krylov   *kdata;
-   ML_Operator *t2, *t3;
 
    /* Get all the pointers */
 
@@ -1856,46 +1854,8 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
        return (pr_error("*** value of deg larger than MLS_MAX_DEG !\n"));
    }
 
-   /* See if we already have the largest eigenvalue */
-   /* corresponding to D^-{1/2} A D^{-1/2}. If we   */
-   /* don't (rho = -666.666),  compute it.          */
-
+   ML_Gimmie_Eigenvalues(Amat, ML_DIAGSCALE, ML_SYMMETRIC, symmetrize);
    rho = Amat->lambda_max;
-   if ((rho < -666.) && (rho > -667)) {
-     kdata = ML_Krylov_Create( Amat->comm );
-     ML_Krylov_Set_PrintFreq( kdata, 0 );
-     ML_Krylov_Set_ComputeEigenvalues( kdata );
-#ifdef SYMMETRIZE
-     ML_Krylov_Set_Amatrix(kdata, t3);
-     t2 = ML_Operator_Create(Amat->comm);
-     ML_Operator_Transpose_byrow(Amat,t2);
-     t3 = ML_Operator_Create(Amat->comm);
-     ML_Operator_Add(Amat,t2,t3, ML_CSR_MATRIX,1.);
-#else
-     if (symmetrize == ML_TRUE) {
-       t2 = ML_Operator_Create(Amat->comm);
-       ML_Operator_Transpose_byrow(Amat,t2);
-       t3 = ML_Operator_Create(Amat->comm);
-       ML_Operator_Add(Amat,t2,t3, ML_CSR_MATRIX,1.);
-       ML_Krylov_Set_Amatrix(kdata, t3);
-     }
-     else  ML_Krylov_Set_Amatrix(kdata, Amat);
-#endif
-     ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
-     Amat->lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
-     Amat->lambda_min = kdata->ML_eigen_min;
-     ML_Krylov_Destroy( &kdata );
-     rho = Amat->lambda_max;
-#ifdef SYMMETRIZE
-     if (t3 != NULL) ML_Operator_Destroy(&t3);
-     if (t2 != NULL) ML_Operator_Destroy(&t2);
-#else
-     if (symmetrize == ML_TRUE) {
-       if (t3 != NULL) ML_Operator_Destroy(&t3);
-       if (t2 != NULL) ML_Operator_Destroy(&t2);
-     }
-#endif
-   }
 
    /* Boost the largest eigenvalue by a fudge factor  */
    /* (mlsOver is now set to 1.1 in the code[1/7/02]).*/
@@ -2015,22 +1975,32 @@ int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, int pre_or_post,
     return 1;
   }
   Amat = &(ml->Amat[nl]);
-  /* put in bogus values for lambda and the diagonal so that 
-     ML_Gen_Smoother_MLS() does not try to compute them */
+
+  /* put in a bogus value for lambda so that ML_Gen_Smoother_MLS() */
+  /* does not try to compute the eigenvalues of A. What we         */
+  /* actually need are the eigenvalues of  Dinv A. These will be   */
+  /* computed later in this function.                              */
 
   temp = Amat->lambda_max;
   Amat->lambda_max = 1.;
   ML_Gen_Smoother_MLS(ml, nl, pre_or_post, eig_ratio, deg);
+  Amat->lambda_max = temp;
+
   ML_Smoother_Create_BGS_Data(&data);
   ML_Smoother_Gen_VBGSFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
 
-  if (pre_or_post != ML_POSTSMOOTHER)
+  if (pre_or_post != ML_POSTSMOOTHER) {
     widget = (struct MLSthing *) ml->pre_smoother[nl].smoother->data;
-  else 
+  }
+  else {
     widget = (struct MLSthing *) ml->post_smoother[nl].smoother->data;
+  }
 
-  widget->block_scaling = data;
+  widget->block_scaling   = data;
   widget->unscaled_matrix = Amat;
+
+  /* create a block matrix wrapper that will correspond to Dinv A */
+
   blockMat = ML_Operator_Create(Amat->comm);
   ML_Operator_Set_ApplyFuncData(blockMat, Amat->invec_leng, Amat->outvec_leng, 
 				ML_EMPTY,
@@ -2038,28 +2008,52 @@ int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, int pre_or_post,
   ML_Operator_Set_ApplyFunc (blockMat, ML_INTERNAL, 
 			     (int (*)(void*,int,double*,int,double*))
 			     ML_BlockScaledApply);
-  printf("these need to be set properly\n");
-  blockMat->lambda_max = .911;
-  blockMat->lambda_min = blockMat->lambda_max/1.1;
-  diagonal = (double *) ML_allocate(sizeof(double)*Amat->invec_leng);
-  for (i = 0; i < Amat->invec_leng; i++) diagonal[i] = 1.;
-  ML_Operator_Set_Diag(blockMat, blockMat->matvec->Nrows, diagonal);
-
 
   widget->scaled_matrix = blockMat;
-
-  /* make a new field in Krylov to turn off the diagonal scaling */
-  /* change the matvec so that it does dinv*a */
-  /* store the new lambda */
-
-
-  Amat->lambda_max = temp;
-  Amat->lambda_max = 1.; printf("need to fix this\n");
+  ML_Gimmie_Eigenvalues(blockMat, ML_NO_SCALE, ML_NONSYMM, ML_NO_SYMMETRIZE);
 
   return 0;
 
 }
+/* Set Amat->lambda_max and Amat->lambda_min by estimating the */
+/* eigenvalues of A or D^-1 A                                  */
+int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
+			  int matrix_is_nonsymmetric, int symmetrize_matrix)
+{
+  ML_Krylov   *kdata;
+  ML_Operator *t2, *t3;
 
+
+  if ((Amat->lambda_max < -666.) && (Amat->lambda_max > -667)) {
+     kdata = ML_Krylov_Create( Amat->comm );
+     if (scale_by_diag == 0) ML_Krylov_Set_DiagScaling_Eig(kdata, 0);
+     if (matrix_is_nonsymmetric && (symmetrize_matrix == 0))
+       ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
+     else 
+       ML_Krylov_Set_ComputeEigenvalues( kdata );
+
+     ML_Krylov_Set_PrintFreq( kdata, 0 );
+
+     if (symmetrize_matrix == ML_TRUE) {
+       t2 = ML_Operator_Create(Amat->comm);
+       ML_Operator_Transpose_byrow(Amat,t2);
+       t3 = ML_Operator_Create(Amat->comm);
+       ML_Operator_Add(Amat,t2,t3, ML_CSR_MATRIX,1.);
+       ML_Krylov_Set_Amatrix(kdata, t3);
+     }
+     else  ML_Krylov_Set_Amatrix(kdata, Amat);
+     ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
+     Amat->lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
+     Amat->lambda_min = kdata->ML_eigen_min;
+
+     ML_Krylov_Destroy( &kdata );
+     if (symmetrize_matrix == ML_TRUE) {
+       if (t3 != NULL) ML_Operator_Destroy(&t3);
+       if (t2 != NULL) ML_Operator_Destroy(&t2);
+     }
+  }
+  return 0;
+} 
 
 int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 			double eig_ratio, int deg)
@@ -2071,9 +2065,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
    char             str[80];
    int                (*fun)(void *, int, double *, int, double *);
    int iii, degree;
-   ML_Krylov   *kdata;
    int ntimes = 1;
-   ML_Operator *t2, *t3;
 
 #ifdef ML_TIMING
    double         t0;
@@ -2118,41 +2110,8 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
      t0 = GetClock();
 #endif
      Amat = &(ml->Amat[i]);
-   if ((Amat->lambda_max < -666.) && (Amat->lambda_max > -667)) {
-     kdata = ML_Krylov_Create( Amat->comm );
-     ML_Krylov_Set_PrintFreq( kdata, 0 );
-     ML_Krylov_Set_ComputeEigenvalues( kdata );
-#ifdef SYMMETRIZE
-     ML_Krylov_Set_Amatrix(kdata, t3);
-     t2 = ML_Operator_Create(Amat->comm);
-     ML_Operator_Transpose_byrow(Amat,t2);
-     t3 = ML_Operator_Create(Amat->comm);
-     ML_Operator_Add(Amat,t2,t3, ML_CSR_MATRIX,1.);
-#else
-     if (ml->symmetrize_matrix == ML_TRUE) {
-       t2 = ML_Operator_Create(Amat->comm);
-       ML_Operator_Transpose_byrow(Amat,t2);
-       t3 = ML_Operator_Create(Amat->comm);
-       ML_Operator_Add(Amat,t2,t3, ML_CSR_MATRIX,1.);
-       ML_Krylov_Set_Amatrix(kdata, t3);
-     }
-     else  ML_Krylov_Set_Amatrix(kdata, Amat);
-#endif
-     ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
-     Amat->lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
-     Amat->lambda_min = kdata->ML_eigen_min;
-     ML_Krylov_Destroy( &kdata );
-#ifdef SYMMETRIZE
-     if (t3 != NULL) ML_Operator_Destroy(&t3);
-     if (t2 != NULL) ML_Operator_Destroy(&t2);
-#else
-     if (ml->symmetrize_matrix == ML_TRUE) {
-       if (t3 != NULL) ML_Operator_Destroy(&t3);
-       if (t2 != NULL) ML_Operator_Destroy(&t2);
-     }
-#endif
-
-   }
+     ML_Gimmie_Eigenvalues(Amat, ML_DIAGSCALE, ML_SYMMETRIC, 
+			   ml->symmetrize_matrix);
 
      /* To avoid division by zero problem. */
      if (Amat->diagonal != NULL)
