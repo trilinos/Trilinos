@@ -44,6 +44,8 @@ int Zoltan_PHG_Coarsening
 
   ZOLTAN_TRACE_ENTER (zz, yo);
   
+uprintf (hgc, "entered coarsening code\n");
+  
   Zoltan_PHG_PHGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   c_hg->info  = hg->info + 1;      /* for debugging */
   c_hg->ratio = hg->ratio;         /* for "global" recursive bisectioning */
@@ -110,7 +112,7 @@ int Zoltan_PHG_Coarsening
   for (i = 0; i < hgc->nProc_x; i++)
     size += each_size[i];
     
-  /* fix for size = 0 */
+  /* fix for size = 0 ????  */
   if (size > 0)
     {  
     if (!(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))   {
@@ -126,7 +128,7 @@ int Zoltan_PHG_Coarsening
     /* Message is list of <gno, gno's edge count, list of edge gno's> */
     ip = (int*) buffer;
     for (i = 0; i < count; i++)  {
-       *ip++ = VTX_LNO_TO_GNO (hg, list[i]);       /* destination vertex gno */        
+       *ip++ = VTX_LNO_TO_GNO (hg, list[i]);       /* destination vertex gno */ 
        *ip++ = hg->vindex[list[i]+1] - hg->vindex[list[i]];   /* count */                                                             /* weights??? */
        for (j = hg->vindex[list[i]]; j < hg->vindex[list[i]+1]; j++)
          *ip++ = EDGE_LNO_TO_GNO (hg, hg->vedge[j]);        /* edges */                           /* edges */
@@ -147,6 +149,7 @@ int Zoltan_PHG_Coarsening
   }
      
   if (!(used_edges = (int*)   ZOLTAN_CALLOC (hg->nEdge,       sizeof(int)))
+   || !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx,        sizeof(float)))
    || !(c_ewgt     = (float*) ZOLTAN_MALLOC (hg->nEdge      * sizeof(float)))
    || !(c_vindex   = (int*)   ZOLTAN_MALLOC ((hg->nVtx+1)   * sizeof(int)))
    || !(c_vedge    = (int*)   ZOLTAN_MALLOC (hg->nNonZero   * sizeof(int)))) {
@@ -192,7 +195,7 @@ int Zoltan_PHG_Coarsening
       vertex = i;
       while (cmatch[vertex] < 0)  {    
         LevelMap[vertex] = c_hg->nVtx;    
-/*        c_hg->vwgt[c_hg->nVtx] += hg->vwgt ? hg->vwgt[vertex] : 1.0;  */
+        c_hg->vwgt[c_hg->nVtx] += hg->vwgt ? hg->vwgt[vertex] : 1.0;
 
         for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++)  {
           if (used_edges [hg->vedge[j]] <= i)  {
@@ -235,11 +238,11 @@ int Zoltan_PHG_Coarsening
     };
   }
   else  {
-/*    c_hg->ewgt   = c_ewgt;  */
-
+/*    c_hg->ewgt   = c_ewgt; */
     c_hg->vindex = c_vindex;
     c_hg->vedge  = c_vedge;
     c_hg->nEdge  = hg->nEdge;
+    c_hg->comm   = hg->comm;
   }
   
   Zoltan_Multifree (__FILE__, __LINE__, 6, &buffer, &rbuffer, &list, &cmatch,
