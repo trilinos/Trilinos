@@ -124,6 +124,7 @@ double factFunc(int x)
   TimeMonitor timer(factTimer());
 
   if (x==0) return 0;
+  if (x==1) return 1;
   return log((double) x)  + factFunc(x-1);
 }
 

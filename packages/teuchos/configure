@@ -10441,7 +10441,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BLAS/Makefile test/LAPACK/Makefile test/DenseMatrix/Makefile test/dyn_cast/Makefile test/ParameterList/Makefile test/Containers/Makefile test/Time/Makefile test/RefCountPtr/Makefile test/XML/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile example/Makefile example/BLAS/Makefile example/CommandLineProcessor/Makefile example/DenseMatrix/Makefile example/hilbert/Makefile example/LAPACK/Makefile example/ParameterList/Makefile"
+                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BLAS/Makefile test/LAPACK/Makefile test/DenseMatrix/Makefile test/dyn_cast/Makefile test/ParameterList/Makefile test/Containers/Makefile test/Time/Makefile test/RefCountPtr/Makefile test/XML/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile example/Makefile example/BLAS/Makefile example/CommandLineProcessor/Makefile example/DenseMatrix/Makefile example/hilbert/Makefile example/LAPACK/Makefile example/ParameterList/Makefile example/TimeMonitor/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11085,6 +11085,7 @@ do
   "example/hilbert/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/hilbert/Makefile" ;;
   "example/LAPACK/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/LAPACK/Makefile" ;;
   "example/ParameterList/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/ParameterList/Makefile" ;;
+  "example/TimeMonitor/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/TimeMonitor/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Teuchos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Teuchos_config.h:src/Teuchos_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
