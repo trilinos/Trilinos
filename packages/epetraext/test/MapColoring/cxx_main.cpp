@@ -171,13 +171,20 @@ int main(int argc, char *argv[]) {
   // Finish up graph construction
   assert(A.TransformToLocal() == 0);
 
-  EpetraExt::CrsGraph_MapColoring MapColoringTransform(verbose);
-  Epetra_MapColoring & ColorMap = MapColoringTransform( A );
+  EpetraExt::CrsGraph_MapColoring
+    GreedyMapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY,
+		          verbose);
+  Epetra_MapColoring & GreedyColorMap = GreedyMapColoringTransform( A );
 
-  int NumColors = ColorMap.NumColors();
-  int * ListOfColors = ColorMap.ListOfColors();
+  EpetraExt::CrsGraph_MapColoring
+    LubiMapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_LUBI,
+		          verbose);
+  Epetra_MapColoring & LubiColorMap = LubiMapColoringTransform( A );
 
-  EpetraExt::CrsGraph_MapColoringIndex MapColoringIndexTransform( ColorMap );
+  int NumColors = GreedyColorMap.NumColors();
+  int * ListOfColors = GreedyColorMap.ListOfColors();
+
+  EpetraExt::CrsGraph_MapColoringIndex MapColoringIndexTransform( GreedyColorMap );
   vector<Epetra_IntVector> & ColIndices = MapColoringIndexTransform( A );
 
   if( verbose )
