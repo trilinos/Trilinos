@@ -22,6 +22,7 @@ void klu_btf_free_numeric (klu_numeric **NumericHandle)
     FREE (Numeric->Offi, int) ;
     FREE (Numeric->Offx, double) ;
     FREE (Numeric->Singleton, double) ;
+    FREE (Numeric->Rs, double) ;
 
     Lbp = Numeric->Lbp ;
     Lbi = Numeric->Lbi ;
@@ -48,8 +49,6 @@ void klu_btf_free_numeric (klu_numeric **NumericHandle)
     FREE (Numeric->Ubp, int *) ;
     FREE (Numeric->Ubi, int *) ;
     FREE (Numeric->Ubx, double *) ;
-
-    FREE (Numeric->Rs, double *) ;
 
     FREE (Numeric, klu_numeric) ;
 }
