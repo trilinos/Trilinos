@@ -764,6 +764,20 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     int NumMyRowEntries(int MyRow, int & NumEntries) const;
   //@}
 
+  //@{ \name Inlined Operator Methods.
+
+    //! Inlined bracket operator for fast access to data. (Const and Non-const versions)
+    /*! No error checking and dangerous for optimization purposes.
+        and error checking is done on the input value MyRow.
+    \param In
+           Loc - Local row.
+	  
+    \return reference to pointer to locally indexed Loc row in matrix.
+  */
+    inline double *& operator[]( int Loc ) { return Values_[Loc]; }
+    inline double * const & operator[]( int Loc ) const { return Values_[Loc]; }
+  //@}
+
   //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
 
 

@@ -223,7 +223,10 @@ int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries, double * Value
   Graph_->SetIndicesAreGlobal(true);
   Row = Graph_->LRID(Row); // Find local row number for this global row index
 
-  EPETRA_CHK_ERR(InsertValues(Row, NumEntries, Values, Indices));
+  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
+
+//  if( !StaticGraph() ) EPETRA_CHK_ERR( Graph_->InsertGlobalIndices( Row, NumEntries, Indices ) );
+
   return(0);
 }
 
@@ -234,15 +237,16 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries, double * Values, i
   if (IndicesAreContiguous()) EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and new
   Graph_->SetIndicesAreLocal(true);
 
-  EPETRA_CHK_ERR(InsertValues(Row, NumEntries, Values, Indices));
+  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
+
+//  if( !StaticGraph() ) EPETRA_CHK_ERR( Graph_->InsertMyIndices( Row, NumEntries, Indices ) );
+
   return(0);
 
 }
 
 //==========================================================================
 int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries, double * Values, int *Indices) {
-
-  if (StaticGraph()) EPETRA_CHK_ERR(-2); // If the matrix graph is fully constructed, we cannot insert new values
 
   int j;
   double * tmp_Values;
@@ -251,11 +255,31 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries, double * Values, int
   if (Row < 0 || Row >= NumMyRows_) EPETRA_CHK_ERR(-1); // Not in Row range
     
   if (CV_==View) {
+
+    //test indices in static graph
+    if( StaticGraph() )
+    {
+      int testNumEntries;
+      int * testIndices;
+      int testRow = Row;
+      if( IndicesAreGlobal() ) testRow = Graph_->LRID( Row );
+      EPETRA_CHK_ERR( Graph_->ExtractMyRowView( testRow, testNumEntries, testIndices ) );
+
+      bool match = true;
+      if( NumEntries != testNumEntries ) match = false;
+      for( int i = 0; i < NumEntries; ++i ) match = match && (Indices[i]==testIndices[i]);
+
+      if( !match ) ierr = -3;
+    }
+
     if (Values_[Row]!=0) ierr = 2; // This row has be defined already.  Issue warning.
     Values_[Row] = Values;
+
   }
   else {
     
+    if (StaticGraph()) EPETRA_CHK_ERR(-2); // If the matrix graph is fully constructed, we cannot insert new values
+
     int start = NumEntriesPerRow_[Row];
     int stop = start + NumEntries;
     int NumAllocatedEntries = NumAllocatedEntriesPerRow_[Row];
@@ -271,9 +295,11 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries, double * Values, int
     }
         
     for (j=start; j<stop; j++) Values_[Row][j] = Values[j-start];
+
   }
 
-  Graph_->InsertIndices(Row, NumEntries, Indices); // Update graph
+  if( !StaticGraph() ) Graph_->InsertIndices( Row, NumEntries, Indices );
+
 
   EPETRA_CHK_ERR(ierr);
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
