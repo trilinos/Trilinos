@@ -37,16 +37,13 @@
 #  to allow cofigure to work on cross-compiled systems.  This is far from 
 #  ideal as many files ought to be checked on cross-compiled systems. 
 
+# M. Sala changes the configure so that all libraries and header
+# files are specified with --with-libs, --with-ldflags, --with-incdirs
+# Each package's options are no longer supported. Trilinos3PL is not
+# longer supported as well.
 
-#
-#  Changes made April 2004:
-#    Each Amesos class will:
-#       1)  First try to compile without specifying the library.  This allows
-#           the user to specify the needed third party library at compile time.
-#       2)  Next try to compile with -lsuperludist.  This allows the user to specify 
-#           the directory while using the default name for the library
-#       3)  Then try the existing Triliinos3PL scheme. 
-#
+# Marzio Sala changes the configure to support triutils and
+# default packages on Sep-04
 
 # ------------------------------------------------------------------------
 # Initialization 
@@ -322,6 +319,11 @@ fi
 # ------------------------------------------------------------------------
 # Checks for addons
 # ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, lapack, [Enable Amesos interface support
+					     for LAPACK], 
+		AMESOS_LAPACK, yes)
+AM_CONDITIONAL(HAVE_AMESOS_LAPACK, true ) 
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, superludist, [Enable Amesos interface support for SuperLU Dist], 
 		AMESOS_SUPERLUDIST, no)
@@ -695,8 +697,14 @@ AC_CONFIG_FILES([
 		test/Test_Epetra_CrsMatrix/Makefile
 		test/Test_Epetra_VbrMatrix/Makefile
 		test/Test_MultipleSolves/Makefile
-		test/TestOptions/Makefile
-		test/TestWithTriutils/Makefile
+		test/Test_Detailed/Makefile
+		test/Test_LAPACK/Makefile
+		test/Test_KLU/Makefile
+		test/Test_UMFPACK/Makefile
+		test/Test_MUMPS/Makefile
+		test/Test_SuperLU/Makefile
+		test/Test_SuperLU_DIST/Makefile
+		test/Test_DSCPACK/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/mpi/Makefile
