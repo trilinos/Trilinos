@@ -156,6 +156,7 @@ struct ML_Sm_Hiptmair_Data_Struct
    double output_level;
    ML    *ml_nodal;
    ML    *ml_edge;
+   int   reduced_smoother;
 };
 
 /* ******************************************************************** */
