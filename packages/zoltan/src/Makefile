@@ -77,9 +77,10 @@ PARMETISLIB_PATH = .
 #   Paths to submodules
 #
 SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct ../driver ../ch \
-		  ../params ../parmetis ../timer
+		  ../params ../parmetis ../timer ../ha
 SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct \
-		  -I../params -I../driver -I../ch -I../parmetis -I../timer
+		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
+                  -I../ha
 
 
 ALL_CSRC	= all_allo.c free_structure.c
@@ -117,6 +118,9 @@ PARMETIS_INC	= parmetis_jostle_const.h
 TIMER_CSRC	= timer.c
 TIMER_INC	= timer_const.h
 
+HA_CSRC         = divide_machine.c
+HA_INC          = ha_const.h
+
 # object files for the Fortran interface
 
 ifdef YES_FORTRAN
@@ -151,10 +155,11 @@ endif
 # machine independent routines
 INC		= $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) \
 		  $(RCB_INC) $(COMM_INC) $(OCT_INC) $(PARAMS_INC) \
-		  $(PARMETIS_INC) $(TIMER_INC)
+		  $(PARMETIS_INC) $(TIMER_INC) $(HA_INC)
 #LIB_SRC_C	= $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) 
 LIB_SRC_C	= $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) $(COMM_CSRC) \
-		  $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC) $(TIMER_CSRC)
+		  $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC) $(TIMER_CSRC) \
+                  $(HA_CSRC)
 LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o) 
 
 #
@@ -163,7 +168,7 @@ LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o)
 #LINT		= alint # SunOs4
 LINT		= lint
 LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
-		  -Icomm -Ioct -Iparmetis -Itimer \
+		  -Icomm -Ioct -Iparmetis -Itimer -Iha\
 		  -I/Net/local/lang/SC3.0.1/include \
 		  -I/Net/local/lang/SC3.0.1/ansi_include \
 		  -I/Net/local/mpi/include \
@@ -172,7 +177,7 @@ LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
 		  -I/Net/proj/zoltan/arch/sun/include
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 LINT_TARGET	= llib-l$(LIB_TARGET).ln
-SUBDIRS		= driver ch all lb par rcb comm oct parmetis params timer
+SUBDIRS		= driver ch all lb par rcb comm oct parmetis params timer ha
 VPATH		= $(SUBDIRS)
 
 ##############################################################################
