@@ -85,7 +85,7 @@ LOCA::Continuation::AnasaziGroup::operator=(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
+LOCA::Continuation::AnasaziGroup::computeEigenvalues(
 					       NOX::Parameter::List& params)
 {
 #ifdef HAVE_LOCA_ANASAZI
@@ -191,14 +191,13 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
     // Un-transform eigenvalues
     anasaziOperator.transformEigenvalue(evalr[i], evali[i]);
 
+    // Compute Rayleigh quotient
+    anasaziOperator.rayleighQuotient(evecR.GetNOXVector(i),
+				     evecI.GetNOXVector(i), 
+				     rq_r, rq_i);
+
     // Print out untransformed eigenvalues and Rayleigh quotient residual
     if (Utils::doPrint(Utils::StepperIteration)) {
-
-      // Compute Rayleigh quotient
-      anasaziOperator.rayleighQuotient(evecR.GetNOXVector(i),
-				       evecI.GetNOXVector(i), 
-				       rq_r, rq_i);
-
       cout << "Eigenvalue " << i << " : " 
 	   << LOCA::Utils::sci(evalr[i]) <<"  "
 	   << LOCA::Utils::sci(evali[i]) << " i    :  RQresid "
@@ -211,16 +210,20 @@ LOCA::Continuation::AnasaziGroup:: computeEigenvalues(
   // Print out remaining eigenvalue approximations from nev to 
   // final arnoldi size
   if (Utils::doPrint(Utils::StepperIteration) && narn>nev) {
-    cout << "~~~~~~~ remaining eigenvalue approximations ~~~~~~~~~~~~" << endl;
-    for (int i=nev; i<narn; i++) {
+    cout << "~~~~~~~ remaining eigenvalue approximations ~~~~~~~~~~~~" 
+	 << endl;
+  }
+  for (int i=nev; i<narn; i++) {
 
       // Un-transform eigenvalues
       anasaziOperator.transformEigenvalue(evalr[i], evali[i]);
 
-      cout << "Eigenvalue " << i << " : " 
-	   << LOCA::Utils::sci(evalr[i]) << "  "
-	   << LOCA::Utils::sci(evali[i]) << " i" <<endl;
-    }
+      if (Utils::doPrint(Utils::StepperIteration) && narn>nev) {
+	cout << "Eigenvalue " << i << " : " 
+	     << LOCA::Utils::sci(evalr[i]) << "  "
+	     << LOCA::Utils::sci(evali[i]) << " i" <<endl;
+      }
+
   }
 
   // Save eigenvectors/eigenvalues
