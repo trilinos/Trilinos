@@ -43,6 +43,8 @@ static PARAM_VARS HG_params[] = {
  { "CHECK_GRAPH",                    NULL, "INT", 0 },
  { "HG_OUTPUT_LEVEL",                NULL, "INT", 0 },
  { "EDGE_SIZE_THRESHOLD",            NULL, "FLOAT", 0 },
+ { "HG_USE_TIMERS",                  NULL, "INT", 0},
+ { "USE_TIMERS",                     NULL, "INT", 0},
  { NULL, NULL, NULL, 0 } };
 
 /* prototypes for static functions: */
@@ -81,6 +83,15 @@ Partition output_parts = NULL;  /* Output partition from HG partitioner. */
 int ierr = ZOLTAN_OK;
 int i;
 char *yo = "Zoltan_HG";
+static int timer_all = -1;       /* Note:  this timer includes other
+                                    timers and their synchronization time,
+                                    so it will be a little high. */
+static int timer_build=-1;       /* timers to be used in this function;
+                                    declared static so that, over multiple
+                                    runs, can accumulate times.  */
+static int timer_patoh=-1;
+static int timer_retlist=-1;
+
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -104,12 +115,27 @@ printf ("RTHRTH: starting\n");
   if (ierr != ZOLTAN_OK)
     goto End;
 
+  if (hgp.use_timers) {
+    if (timer_all < 0)
+      timer_all = Zoltan_Timer_Init(zz->ZTime, 0, "Zoltan_HG");
+    ZOLTAN_TIMER_START(zz->ZTime, timer_all, zz->Communicator);
+  }
+
+  if (hgp.use_timers > 1) {
+    if (timer_build < 0)
+      timer_build = Zoltan_Timer_Init(zz->ZTime, 0, "Build");
+    ZOLTAN_TIMER_START(zz->ZTime, timer_build, zz->Communicator);
+  }
+
   /* build initial Zoltan hypergraph. */
   ierr = Zoltan_HG_Build_Hypergraph(zz, &zoltan_hg, &hgp);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph.");
     goto End;
   }
+
+  if (hgp.use_timers > 1)
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
 
   if (zz->Debug_Level > ZOLTAN_DEBUG_NONE) 
   {
@@ -150,10 +176,17 @@ hgp.kway = ((!strcasecmp(hgp.local_str, "fmkway")) ? 1 : 0);
 hgp.kway = ((!strcasecmp(hgp.local_str,"fmkway") || !strcasecmp(hgp.local_str,"grkway")) ? 1 : 0);
 
   if (zz->LB.Method == PATOH) {
+    if (hgp.use_timers > 1) {
+      if (timer_patoh < 0)
+        timer_patoh = Zoltan_Timer_Init(zz->ZTime, 0, "HG_PaToH");
+      ZOLTAN_TIMER_START(zz->ZTime, timer_patoh, zz->Communicator);
+    }
     ierr = Zoltan_HG_PaToH(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
                            output_parts);
     if (ierr != ZOLTAN_OK) 
       goto End;
+    if (hgp.use_timers > 1)
+      ZOLTAN_TIMER_STOP(zz->ZTime, timer_patoh, zz->Communicator);
   }
   else if (hgp.kway) {
     ierr = Zoltan_HG_HPart_Lib(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts, 
@@ -193,62 +226,107 @@ hgp.kway = ((!strcasecmp(hgp.local_str,"fmkway") || !strcasecmp(hgp.local_str,"g
                  "Final Partition");
 #endif /* KDDKDD_PLOTDATA */
 
-
-if (zz->Proc == 0)
-{
-double *subtotal=NULL;
-double total, top;
-double cuts, tcuts; 
-int temp;
-double remcutl, remcutn;
-
-
- if (!(subtotal = (double *) ZOLTAN_MALLOC(sizeof(double)* zz->LB.Num_Global_Parts))) {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-     goto End;
- }
-     
-for (i = 0; i < zz->LB.Num_Global_Parts; i++)
-   subtotal[i] = 0.0;
-total = 0.0;
-for (i = 0; i < zoltan_hg->HG.nVtx; i++)
-   subtotal[output_parts[i]] += ((zoltan_hg->HG.vwgt == NULL) ? 1.0 : zoltan_hg->HG.vwgt[i]);
-for (i = 0; i < zz->LB.Num_Global_Parts; i++)
-   total += subtotal[i];
-top = 0.0;
-for (i = 0; i < zz->LB.Num_Global_Parts; i++)
-   {
-   subtotal[i] = subtotal[i]/total;
-   if (subtotal[i] > top)
-      top = subtotal[i];
-   }
-
-if (zoltan_hg->HG.info == 0) {
-    ierr = Zoltan_HG_HPart_Info (zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts, output_parts, &hgp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-       goto End;
-    }
-
-cuts = Zoltan_HG_hcut_size_links (zz, &zoltan_hg->HG, output_parts);
-tcuts = Zoltan_HG_hcut_size_total (&zoltan_hg->HG, output_parts);
-
-Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
-cuts += remcutl;
-tcuts += remcutn;
-
-printf ("RTHRTHp=%d, cuts %f%c %f tol %.3f:  ", zz->LB.Num_Global_Parts, cuts,
- hgp.orphan_flag ? '*' : ' ', tcuts, top*zz->LB.Num_Global_Parts);
-
-temp = ((zz->LB.Num_Global_Parts > 8) ? 8 : zz->LB.Num_Global_Parts);
-for (i = 0; i < temp; i++)
-   printf ("%4.2f  ", subtotal[i]);
-printf ("\n");
- ZOLTAN_FREE( &subtotal); 
-}
+  if (hgp.use_timers > 1) {
+    if (timer_retlist < 0)
+      timer_retlist = Zoltan_Timer_Init(zz->ZTime, 0, "Return Lists");
+    ZOLTAN_TIMER_START(zz->ZTime, timer_retlist, zz->Communicator);
+  }
 
   /* Build Zoltan's return arguments. */
   Zoltan_HG_Return_Lists(zz, zoltan_hg, output_parts, num_exp, exp_gids,
                          exp_lids, exp_procs, exp_to_part);
+
+  if (hgp.use_timers > 1)
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_retlist, zz->Communicator);
+
+  if (hgp.use_timers)
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
+
+  if (hgp.final_output) {
+    HGraph *hg = &(zoltan_hg->HG);
+    double *subtotal=NULL;
+    double total, top;
+    double cutl, cutn, bal; 
+    double remcutl, remcutn;
+    static int nRuns=0;
+    static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0;
+    static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0;
+    static double balmin = 1e100, cutlmin = 1e100, cutnmin = 1e100;
+  
+    if (!(subtotal = (double *) ZOLTAN_MALLOC(sizeof(double) *
+                                              zz->LB.Num_Global_Parts))) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      goto End;
+    }
+       
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) subtotal[i] = 0.0;
+    total = 0.0;
+    for (i = 0; i < hg->nVtx; i++) 
+      subtotal[output_parts[i]] += ((hg->vwgt == NULL) ? 1.0 : hg->vwgt[i]);
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) 
+      total += subtotal[i];
+    top = 0.0;
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) {
+      subtotal[i] = subtotal[i]/total;
+      if (subtotal[i] > top)
+        top = subtotal[i];
+    }
+    bal = top * zz->LB.Num_Global_Parts;
+  
+    if (hg->info == 0) {
+      ierr = Zoltan_HG_HPart_Info(zz, hg, zz->LB.Num_Global_Parts, 
+                                  output_parts, &hgp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+         goto End;
+    }
+  
+    cutl = Zoltan_HG_hcut_size_links(zz, hg, output_parts);
+    cutn = Zoltan_HG_hcut_size_total(hg, output_parts);
+  
+    Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
+    cutl += remcutl;
+    cutn += remcutn;
+
+    cutlsum += cutl;
+    if (cutl > cutlmax) cutlmax = cutl;
+    if (cutl < cutlmin) cutlmin = cutl;
+    cutnsum += cutn;
+    if (cutn > cutnmax) cutnmax = cutn;
+    if (cutn < cutnmin) cutnmin = cutn;
+    balsum += bal;
+    if (bal > balmax) balmax = bal;
+    if (bal < balmin) balmin = bal;
+    nRuns++;
+
+    if (zz->Proc == 0) {
+      uprintf(hg->comm,
+              "STATS Runs %d  bal  CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+              nRuns, bal, balmax, balmin, balsum/nRuns);
+      uprintf(hg->comm,
+              "STATS Runs %d  cutl CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+              nRuns, cutl, cutlmax, cutlmin, cutlsum/nRuns);
+      uprintf(hg->comm,
+              "STATS Runs %d  cutn CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+              nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
+    }
+  
+#ifdef RTHRTH
+    {
+      int temp;
+      printf("RTHRTHp=%d, cuts %f%c %f tol %.3f:  ", 
+             zz->LB.Num_Global_Parts, cutl,
+             hgp.orphan_flag ? '*' : ' ', cutn, top*zz->LB.Num_Global_Parts);
+      temp = ((zz->LB.Num_Global_Parts > 8) ? 8 : zz->LB.Num_Global_Parts);
+      for (i = 0; i < temp; i++)
+        printf ("%4.2f  ", subtotal[i]);
+      printf ("\n");
+    }
+#endif
+    ZOLTAN_FREE( &subtotal); 
+  }
+
+  if (hgp.use_timers)
+    Zoltan_Timer_PrintAll(zz->ZTime, zz->Proc, stdout);
 
 End:
   if (ierr == ZOLTAN_MEMERR)
@@ -375,6 +453,10 @@ static int Zoltan_HG_Initialize_Params(
                               (void*) &hgp->check_graph);
   Zoltan_Bind_Param(HG_params,"HG_REDUCTION_LOCAL_IMPROVEMENT",
                               (void*) hgp->redmo_str);
+  Zoltan_Bind_Param(HG_params,"HG_USE_TIMERS",
+                              (void*) &hgp->use_timers);
+  Zoltan_Bind_Param(HG_params,"USE_TIMERS",
+                              (void*) &hgp->use_timers);
   Zoltan_Bind_Param(HG_params,"EDGE_SIZE_THRESHOLD",
                               (void*) &hgp->EdgeSizeThreshold);
 
@@ -389,6 +471,8 @@ static int Zoltan_HG_Initialize_Params(
   hgp->redl = zz->LB.Num_Global_Parts;
   hgp->output_level = HG_DEBUG_LIST;
   hgp->EdgeSizeThreshold = 1.0;   /* Default (for now) -- keep all edges. */
+  hgp->final_output = 1;
+  hgp->use_timers = 0;
 
 hgp->fmswitch        = -1;
 hgp->noimprove_limit = 0.25;

@@ -99,6 +99,10 @@ struct HGPartParamsStruct {
   int output_level;                     /* Flag indicating amount of output
                                            from HG algorithms.  See levels
                                            HG_DEBUG_* below.  */
+  int final_output;                     /* Flag indicating whether to print
+                                           final cut information. */
+  int use_timers;       /* Flag indicating whether to time the HG code. */
+
                                            
 int rthflag;
 
