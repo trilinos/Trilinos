@@ -583,6 +583,36 @@ bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vecto
   // during the AztecOO instantiation)
   Problem.SetPDL(hard);
 
+  // Scale the problem if requested
+  string scalingOption = p.getParameter("Scaling", "None");
+  if (scalingOption == "Row Sum") {
+    if (tmpVectorPtr == 0) 
+      tmpVectorPtr = new Epetra_Vector(xVector.getEpetraVector());
+
+    // make sure the Jacobian is an Epetra_RowMatrix, otherwise we can't scale
+    Epetra_RowMatrix* test = 0;
+    test = dynamic_cast<Epetra_RowMatrix*>(&Jacobian);
+    if (test == 0) {
+      cout << "ERROR: NOX::Epetra::Group::applyJacobianInverse() - "
+	   << "For \"Row Sum\" scaling, the Jacobian must be an "
+	   << "Epetra_RowMatrix derived object!" << endl;
+      throw "NOX Error";
+    }
+
+    test->InvRowSums(*tmpVectorPtr);
+    Problem.LeftScale(*tmpVectorPtr);
+  }
+  else if (scalingOption == "None") {
+    // Do nothing
+  }
+  else {
+    // Throw an error, the requested scaling option is not vaild
+    cout << "ERROR: NOX::Epetra::Group::applyJacobianInverse() - "
+	 << " The parameter chosen for \"Scaling\" is not valid!"
+	 << endl;
+    throw "NOX Error";
+  }
+  
   // Create aztec problem
   AztecOO aztec(Problem);    
 
@@ -599,6 +629,12 @@ bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vecto
 
   // Solve Aztec problem
   int aztecStatus = aztec.Iterate(maxit, tol);
+
+  // Unscale the linear problem
+  if (scalingOption == "Row Sum") {
+    tmpVectorPtr->Reciprocal(*tmpVectorPtr);
+    Problem.LeftScale(*tmpVectorPtr);
+  }
 
   if (aztecStatus != 0) 
     return false;
