@@ -248,7 +248,7 @@ using namespace ML_Epetra;
   
 // ================================================ ====== ==== ==== == =
 
-void MultiLevelPreconditioner::PrintLine() 
+void MultiLevelPreconditioner::PrintLine() const
 {
   cout << "--------------------------------------------------------------------------------" << endl;
 }

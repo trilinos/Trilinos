@@ -2290,7 +2290,7 @@ void ML_random_vec(double u[], int N, ML_Comm *comm)
 
   /* local variables */
 
-  static int seed = 493217272;
+  static int seed = 123456;
   int        i;
 
   /*********************** BEGIN EXECUTION *********************************/
@@ -2315,7 +2315,7 @@ double ML_srandom1(int *seed)
 
 *******************************************************************************/
 {
-  int    a = 16807, m = 2147483647, q = 127773, r = 2836;
+  int    a = 16807, m = 123456, q = 127773, r = 2836;
   int    lo, hi, test;
   double rand_num;
 

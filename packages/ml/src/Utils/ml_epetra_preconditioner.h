@@ -91,7 +91,7 @@ public:
   }
 
   //! Prints unused parameters in the input ParameterList.
-  void PrintUnused(const ostream & os) const
+  void PrintUnused(ostream & os) const
   {
     List_.unused(os);
   }
@@ -335,7 +335,7 @@ private:
 
   void SetSmoothingDamping();
   
-  void PrintLine();
+  void PrintLine() const;
   
   ML * ml_;                                 // ML_Struct
   ML_Aggregate *agg_;                       // ML_Aggregate, contains aggregate information
