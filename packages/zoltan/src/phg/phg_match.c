@@ -32,10 +32,14 @@ static ZOLTAN_PHG_MATCHING_FN matching_no;   /* template -- matching */
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 {
-  if (!strcasecmp(hgp->redm_str, "no"))   hgp->matching = matching_no ;
-  else                                    hgp->matching = NULL;
+    int exist = 1;
+    if (!strcasecmp(hgp->redm_str, "no"))   hgp->matching = NULL;
+    else {
+        exist = 0;
+        hgp->matching = NULL;
+    }
 
-  return (hgp->matching == NULL) ? 0 : 1;
+  return exist;
 }
 
 
