@@ -4,6 +4,15 @@
 
 DEFAULT:
 	echo "Making ML library"
+	@(cp -f Coarsen/*.h Include)
+	@(cp -f Comm/*.h Include)
+	@(cp -f FEGrid/*.h Include)
+	@(cp -f Krylov/*.h Include)
+	@(cp -f Main/*.h Include)
+	@(cp -f Operator/*.h Include)
+	@(cp -f Smoother/*.h Include)
+	@(cp -f Utils/*.h Include)
+	@(cd Include; make)
 	@(cd Coarsen; make)
 	@(cd Comm; make)
 	@(cd FEGrid; make)
@@ -24,5 +33,6 @@ clean:
 	@(cd Smoother; make clean)
 	@(cd Utils; make clean)
 	@(cd lib; make clean)
+	@(cd Include; make clean)
 	@(cd Runtime; make clean)
 
