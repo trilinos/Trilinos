@@ -37,6 +37,20 @@
 #define idxtype int
 #endif
 
+static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
+					 int N_nonzeros,
+					 int N_parts,
+					 int graph_decomposition[],
+					 char bdry_nodes[],
+					 int local_or_global,
+					 int offsets[],
+					 int reorder_flag,
+					 int current_level );
+static int find_max(int length, int vector[] );
+static int find_index( int key, int list[], int N );
+static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
+					 int Nparts, idxtype part[], int level,
+					 ML_Comm *comm );
 /* ======================================================================== */
 /*!
  \brief Set the number of nodes for each aggregate (for graph-based
@@ -397,9 +411,9 @@ int ML_Aggregate_Set_ReorderingFlag( ML *ml, ML_Aggregate *ag,
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
-				int Nparts, idxtype part[], int level,
-				ML_Comm *comm )
+static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
+				       int Nparts, idxtype part[], int level,
+				       ML_Comm *comm )
 {
 
   int i, j, k, count;
