@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
       Epetra_Vector C(Map3);C.Random();
 
       // Test Epetra_Vector label
-      char* VecLabel = A.Label();
+      const char* VecLabel = A.Label();
       const char* VecLabel1 = "Epetra::Vector";
       if (verbose) cout << endl << endl <<"This should say " << VecLabel1 << ": " << VecLabel << endl << endl << endl;
       EPETRA_TEST_ERR(strcmp(VecLabel1,VecLabel),ierr);
