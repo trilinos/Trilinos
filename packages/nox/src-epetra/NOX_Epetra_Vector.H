@@ -130,7 +130,18 @@ class Vector : public Abstract::Vector {
 
   virtual int length() const;
 
- private:
+  //@{ \name LOCA Specific Methods
+
+  virtual bool random();
+
+  virtual bool multiply(double gamma, const Vector& A,
+			const Vector& B, double alpha);
+  //! See above
+  virtual bool multiply(double gamma, const Abstract::Vector& A,
+			const Abstract::Vector& B, double alpha);
+  //@}
+
+ protected:
   
   //! Pointer to petra vector owned by this object
   Epetra_Vector* epetraVec;

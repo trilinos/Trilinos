@@ -85,7 +85,7 @@ public:
     InnerIteration = 0x4,	// 2^2
     Parameters = 0x8,		// 2^3
     Details = 0x10,		// 2^4
-    LocaOuterIteration = 0x20   // 2^5
+    Loca = 0x20                 // 2^5
   };
 
 public:
@@ -93,7 +93,16 @@ public:
   //! Repeat the given character n times to the given stream.
   static ostream& repeat(ostream& stream, int n, char c = '*');
 
-  //! Set the parameters in the utilities class.
+  /*! 
+    \brief Set the parameters in the utilities class.
+    
+    Valid parameters are:
+    <li> "Output Information" - Sum of MsgType flags to set what information
+    to output.
+    <li> "MyPID" - Processor ID.
+    <li> "Output Processor" - Ranges from 0 to MyPID-1.
+    <li> "Output Precision" - Precision of values to be printed by output.
+  */
   static void setUtils(Parameter::List& p);
 
   /*! 

@@ -103,6 +103,7 @@ Group::Group(const Group& source, CopyType type) :
     isValidGrad = source.isValidGrad;
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
+    isValidMassMatrix = source.isValidMassMatrix;
     normRHS = source.normRHS;
     
     // New copy takes ownership of the shared Jacobian
@@ -134,6 +135,7 @@ void Group::resetIsValid() //private
   isValidJacobian = false;
   isValidGrad = false;
   isValidNewton = false;
+  isValidMassMatrix = false;
 }
 
 void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec)
@@ -204,6 +206,7 @@ Abstract::Group& Group::operator=(const Group& source)
   isValidGrad = source.isValidGrad;
   isValidNewton = source.isValidNewton;
   isValidJacobian = source.isValidJacobian;
+  isValidMassMatrix = source.isValidMassMatrix;
 
   // Only copy vectors that are valid
   if (isValidRHS) {
@@ -305,6 +308,7 @@ bool Group::computeJacobian()
 
   // Update status
   isValidJacobian = true;
+  isValidMassMatrix = false;
 
   return status;
 }
@@ -764,5 +768,60 @@ string Group::getPrecType()
 
 bool Group::setParameter(string param, double value)
 {
+  // This is equivalent to changing the solution.  Nothing is valid since a 
+  // parameter has changed.
+  resetIsValid();
   return userInterface.setParameter(param, value);
+}
+
+bool Group::setRHS(const Vector& input)
+{
+  RHSVector = input;
+
+  normRHS = RHSVector.norm();
+
+  isValidRHS = true;
+
+  return true;
+}
+
+bool Group::setRHS(const Abstract::Vector& input)
+{
+  return setRHS(dynamic_cast<const Epetra::Vector&>(input));
+}
+
+bool Group::isMassMatrix() const
+{
+  return isValidMassMatrix;
+}
+
+bool Group::computeMassMatrix()
+{  
+
+  // Skip if the mass matrix is already valid
+  if (isMassMatrix())
+    return true;
+
+  // Take ownership of the matrix and get a reference
+  Epetra_Operator& Matrix = sharedJacobian.getJacobian(this);
+
+  bool status = false;
+  
+  // Make sure this is an Epetra_RowMatrix, it can't be an operator!
+  Epetra_RowMatrix* test = dynamic_cast<Epetra_RowMatrix*>(&Matrix);
+  if (test == 0) {
+    cout << "ERROR: NOX::Epetra::Group::computeMassMatrix() - The mass "
+	 << "matrix computation requires an Epetra_RowMatrix object in "
+	 << "the shared Jacobian!" << endl;
+    throw "NOX Error";
+  }
+
+  // Fill the Mass Matrix
+  status = userInterface.computeMassMatrix(xVector.getEpetraVector(), 
+					   *test); 
+  
+  isValidJacobian = false;
+  isValidMassMatrix = true;
+  
+  return status;
 }

@@ -3,6 +3,7 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Manager.H"
 #include "NOX_Solver_LineSearch.H"
+#include "LOCA_Stepper.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_Status_Test.H"
 #include "NOX_Status_Combo.H"

@@ -30,15 +30,25 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_SOLVER_LOCA_H
-#define NOX_SOLVER_LOCA_H
+#ifndef LOCA_STEPPER_H
+#define LOCA_STEPPER_H
 
-#include "NOX_Solver_Generic.H"	    // base class
+#include "LOCA_Solver_Generic.H"    // class data element
 #include "NOX_Parameter_List.H"	    // class data element
+#include "NOX_Status_Test.H"	    // class data element
 
+// Forward Declarations
 namespace NOX {
-namespace Solver {
+  namespace Abstract {
+    class Vector;
+    class Group;
+  }
+}
+
+namespace LOCA {
   
+using namespace NOX;
+
 /*!
   \brief Driver for the LOCA Library.
 
@@ -46,42 +56,60 @@ namespace Solver {
   Zero order, first order and arc-length continuation routines are in this
   object.
   
-  The following parameters are valid for this solver:
+  The following parameters are valid for the LOCA Library:
 
-  - "Continuation" - Sublist of the LOCA continuation parameters, passed to
-    the NOX::Linesearch::Manager constructor. Defaults to an empty list.
-
-  - "Nonlinear Solver" - Sublist containing the parameters that are 
+  - "Nonlinear %Solver" - Sublist containing the parameters that are 
     normally set for a standard NOX nonlinear solve.  See NOX example problems 
     for details.  This includes the "Line Search", "Direction", and 
     "Linear %Solver" sublists.
 
   - "LOCA Method" - String that chooses the correct algorithm for the 
     nonlinear iteration.  Valid choices are:
+    <ul>
     <li> "Zero Order Continuation"
     <li> "First Order Continuation"
-    <li> "Arc Length Continuation"
-    <li> "Turning Point" - This is a Zero Order method
-    <li> "Pitchfork" - This is a Zero Order method
-    <li> "Hopf" - This is a Zero Order method
+    <li> "Arc Length Continuation" 
+    <li> "Turning Point"
+    <li> "Pitchfork"
+    <li> "Hopf"
     <li> "Homotopy"
-    <li> "Phase Transition" - This is a Zero Order method
- 
+    <li> "Phase Transition" </ul></li>      
 
-  \authors Andrew Salinger (SNL 9233), Roger Pawlowski (SNL 9233)
+  - "Initial Value" - Initial value of continuation parameter.
+
+  - "Final Value" - Final value of continuation parameter.
+
+  - "Initial Step Size" - Initial step size of the continuation parameter.
+
+  - "Min Step Size" - Minimum step size of continuation parameter.
+
+  - "Max Step Size" - Maximum step size of continuation parameter.
+
+  - "Step Size Aggressiveness" - Controls the aggressiveness in computing the next step size.  Must be a positive number and can be greater than 1.0.  Setting this to zero yields a constant step size.
+
+  - "Max Continuation Steps" - Maximum number of continuation steps.
+
+  - "Order of Continuation" - Order of the continuation to use.
+
+  - "Max Nonlinear Iterations" - Maximum number of nonlinear iterations allowed in the nonlinear solve.  This is used in computing a new step size based on the difficulty of the nonlinear solve at the last step.
+
+  \authors Roger Pawlowski (SNL 9233), Andrew Salinger (SNL 9233)
 */
-class LOCA : public Generic {
+
+class Stepper {
 
 public:
 
-  //! %LOCA method constructor. 
-  LOCA(Abstract::Group& xgrp, 
-       Status::Test& continuationTest, 
-       Status::Test& nonlinearSolverTest, 
-       const Parameter::List& p);
+  //! %Stepper method constructor. 
+  Stepper(const Parameter::List& p, 
+	  Status::Test& test,
+	  Abstract::Group& initialGuess,
+	  Abstract::Vector& nullVector1,
+	  Abstract::Vector& nullVector2,
+	  Abstract::Group& massMatrix);
 
   //! Destructor
-  virtual ~LOCA();
+  virtual ~Stepper();
 
   virtual bool reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
 
@@ -110,20 +138,36 @@ protected:
   //! Print out the initialization information
   virtual void printStart();
 
-  //! Prints the current iteration information.
-  virtual void printUpdate();
+  //! Print out information for the beginning of a new continuation step 
+  virtual void printStartStep();
 
-  //! Prints information about a failed continuation step.
-  virtual void printFailedStep();
+  //! Print out information for the end of a successful continuation step .
+  virtual void printEndStep(NOX::Status::StatusType& solverStatus);
 
   //! Creates the LOCA solver algorithm to be used for each continuation step. 
   bool setSolver();
 
+  
+  //! Perturb the current vector values slightly.  
+  /*! this method is used to move a converged solution at a singularity off
+   * of the singularity before doing the next continuation step. 
+   * This isn't pretty but has helped convergence on many turning 
+   * point tracking problems:
+   * 
+   * \f[ this = this * (1.0+1.0E-4 * (x_{random} - 0.5))\f]
+   *
+   * where \f$ this \f$ is the vector to be perturbed 
+   * and \f$x_{random}\f$ is a random vector ranging from 0.0 to 1.0
+   * computed using the absolute values of the random() method.  
+   * Returns true if successful.  
+   */
+  virtual bool perturb();
+  
 protected:
   
-  //! Pointer to the NOX::Solver:Generic object to be used in the nonlinear 
+  //! Pointer to the LOCA::Solver:Generic object to be used in the nonlinear 
   //! solve at each continuation step.
-  Generic* solverPtr;
+  Solver::Generic* solverPtr;
 
   //! Type of continuation routine to use.
   enum Order {ZERO, FIRST, ARC_LENGTH}; 
@@ -138,6 +182,12 @@ protected:
   //Order order;  // compiler is bombing, parameterlist doesn't handle enum.
   int order;          
     
+  //! Input parameters.
+  Parameter::List iparams;	
+
+  //! Stopping test to be used for nonlinear solves.
+  Status::Test* testPtr;		
+
   //! Pointer to the current solution group.
   Abstract::Group* solnPtr;		
 
@@ -147,23 +197,29 @@ protected:
   //! Solution at previous continuation step.
   Abstract::Group& oldSoln;		
 
-  //! Stopping test to be used for the continuation loop.
-  Status::Test* testConPtr;		
+  //! Initial guess for null vector Y.
+  Abstract::Vector* nullVectorXPtr;		
 
-  //! Stopping test to be used for nonlinear solves.
-  Status::Test* testNonlinearPtr;		
+  //! Initial guess for null vector X.
+  Abstract::Vector* nullVectorYPtr;		
 
-  //! Input parameters.
-  Parameter::List iparams;	
+  //! Group for the mass matrix evaluation.
+  Abstract::Group* massMatrixPtr;		
 
   //! string containing the current solver method.
   string method;
+
+  //! Name of the continuation parameter
+  string conParamLabel;
 
   //! Output paramters.
   mutable Parameter::List oparams; 
 
   //! Starting value of continuation parameter, \f$\lambda_b \f$.
   double startValue;
+
+  //! Value of continuation parameter at previous continuation step., \f$\lambda_{i-1} \f$.
+  double oldValue;
 
   //! Current value of continuation parameter, \f$\lambda_i \f$.
   double curValue;
@@ -208,7 +264,6 @@ protected:
   Status::StatusType status;
 
 };
-} // namespace Solver
 } // namespace NOX
 
 #endif

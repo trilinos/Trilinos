@@ -80,14 +80,17 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_LineSearch.H \
 	$(srcdir)/NOX_Solver_TrustRegion.H \
 	$(srcdir)/NOX_Solver_NonlinearCG.H \
-        $(srcdir)/NOX_Solver_LOCA.H 
+        $(srcdir)/LOCA_Stepper.H \
+        $(srcdir)/LOCA_Solver_Generic.H \
+        $(srcdir)/LOCA_Solver_ZeroOrder.H
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearch.C \
 	$(srcdir)/NOX_Solver_TrustRegion.C \
 	$(srcdir)/NOX_Solver_NonlinearCG.C \
-        $(srcdir)/NOX_Solver_LOCA.C 
+        $(srcdir)/LOCA_Stepper.C \
+        $(srcdir)/LOCA_Solver_ZeroOrder.C
 
 STATUS_H = \
 	$(srcdir)/NOX_Status_Test.H \

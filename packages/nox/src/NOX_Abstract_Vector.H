@@ -131,6 +131,27 @@ public:
   //! Return length of vector.
   virtual int length() const = 0;
 
+
+  //@{ \name LOCA Specific Methods.
+
+  //! Generates a random vector between the interval -1.0 to 1.0.  
+  /*! Returns true if successful.  This method is required ONLY 
+   * for LOCA continuation runs. It is used in the 
+   * NOX::Solver::LOCA::perturb() method. 
+   */ 
+  virtual bool random() = 0;
+
+  //! Multiply a vector with another, element-by-element.
+  /*!The actual computation is this = alpha * this + gamma * B @ A 
+   * where @ denotes element-wise multiplication. This method is required ONLY 
+   * for LOCA continuation runs.  It is used in the 
+   * NOX::Solver::LOCA::perturb() method.  
+   */ 
+  virtual bool multiply(double gamma, const Vector& A,
+			const Vector& B, double alpha) = 0;
+  
+  //@}
+
 }; // class Vector
 } // namespace Abstract
 } // namespace NOX

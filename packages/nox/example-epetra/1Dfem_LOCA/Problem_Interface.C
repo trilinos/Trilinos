@@ -50,5 +50,11 @@ bool Problem_Interface::setParameter(string param, double value)
 {
   return problem.setParameter(param, value);
 }
+
+bool Problem_Interface::computeMassMatrix(const Epetra_Vector& x, Epetra_RowMatrix& B)
+{
+  cout << "ERROR: Problem_Interface::computeMassMatrix() - not implemented in this example!" << endl;
+  throw;
+}
 //-----------------------------------------------------------------------------
 

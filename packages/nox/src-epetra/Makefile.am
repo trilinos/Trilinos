@@ -50,7 +50,7 @@ EPETRA = \
 	$(srcdir)/NOX_Epetra_Group.C \
 	$(srcdir)/NOX_Epetra_SharedJacobian.C \
         $(srcdir)/NOX_Epetra_MatrixFree.C \
-        $(srcdir)/NOX_Epetra_FiniteDifference.C
+        $(srcdir)/NOX_Epetra_FiniteDifference.C 
 
 # ------------------------------------------------------------------------
 # Noxepetra library specifications

@@ -81,8 +81,26 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create parameter list
-  NOX::Parameter::List nlParams;
-  nlParams.setParameter("Output Level", 4);
+  NOX::Parameter::List locaParams;
+  locaParams.setParameter("Continuation Parameter", "Nonlinear Factor");
+  locaParams.setParameter("LOCA Method", "Zero Order Continuation");
+  locaParams.setParameter("Initial Value", 1.0);
+  locaParams.setParameter("Final Value", 100.0);
+  locaParams.setParameter("Initial Step Size", 10.0);
+  locaParams.setParameter("Min Step Size", 1.0);
+  locaParams.setParameter("Max Step Size", 500.0);
+  locaParams.setParameter("Step Size Aggressiveness", 1.0);
+  locaParams.setParameter("Max Continuation Steps", 20);
+  locaParams.setParameter("Order of Continuation", 0);
+  locaParams.setParameter("Max Nonlinear Iterations", 20);
+
+  // Nonlinear Solver sublist
+  NOX::Parameter::List& nlParams = locaParams.sublist("Nonlinear Solver");
+  int outputLevel = NOX::Utils::Details + 
+                    NOX::Utils::Warning +
+                    NOX::Utils::Loca +
+                    NOX::Utils::OuterIteration;
+  nlParams.setParameter("Output Information", outputLevel);
   nlParams.setParameter("MyPID", MyPID); 
   //nlParams.setParameter("Nonlinear Solver", "Newton");
   nlParams.setParameter("Nonlinear Solver", "Line Search");
@@ -145,11 +163,6 @@ int main(int argc, char *argv[])
   // 3. Finite Difference (Epetra_RowMatrix)
   //NOX::Epetra::FiniteDifference AAA(interface, soln);
 
-  // Hack to test the setParameter() method
-  Problem.setParameter("Nonlinear Factor", 1000.0);
-  Problem.setParameter("Left BC", 0.0);
-  Problem.setParameter("Right BC", 1.0);
-
   // Create the Group
   NOX::Epetra::Group grp(lsParams, interface, soln, A); 
   //NOX::Epetra::Group grp(lsParams, interface, soln, AA, AAA); 
@@ -162,19 +175,21 @@ int main(int argc, char *argv[])
   converged.addTest(absresid);
   converged.addTest(relresid);
   NOX::Status::MaxResid maxresid(1.0e-10);
-  NOX::Status::MaxIters maxiters(2000);
+  NOX::Status::MaxIters maxiters(20);
   NOX::Status::Combo combo(NOX::Status::Combo::OR);
   combo.addTest(converged);
   combo.addTest(maxresid);
   combo.addTest(maxiters);
 
-  // Create the method
-  NOX::Solver::Manager solver(grp, combo, nlParams);
+  NOX::Epetra::Vector nullVector(soln);
+
+  // Create the LOCA solver
+  LOCA::Stepper solver(locaParams, combo, grp, nullVector, nullVector, grp);
   NOX::Status::StatusType status = solver.solve();
 
   if (status != NOX::Status::Converged)
     if (MyPID==0) 
-      cout << "Nonlinear solver failed to converge!" << endl;
+      cout << "1dfem_LOCA::main() - Continuation run has failed!" << endl;
 
   // Get the Epetra_Vector with the final solution from the solver
   const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());

@@ -65,7 +65,7 @@ namespace Epetra {
   <ul>
   <li> computeRHS()
   <li> computeJacobian() 
-  </ul>
+  </ul></li>
 
   <li> NOX::Epetra::MatrixFree - This object represents a Matrix-Free implementation an thus requires minimal memory since no Jacobian is stored.  The user need only supply the computeRHS() function for the NOX::Epetra::Interface class.
 
@@ -75,24 +75,30 @@ namespace Epetra {
 Preconditioning also has multiple options that may depend on the Jacobian. A flag in the Linear Solver sublist called "Preconditioning" must be set to turn on any preconditioning of the linear solver.  A preconditioner object is an Epetra_Operator derived class just like th Jacobian.  If the AztecOO preconditioners are to be used, they require some knowledge of the matrix and thus at a minimum the preconditioner object must also be an Epetra_RowMatrix. The valid options are listed below:
   <ul>
   <li> "None" - no preconditioning.  This is the default setting.
+
   <li> "AztecOO: Jacobian Matrix" - An AztecOO preconditioner will be used.  The preconditioning will be based on the Jacobian.  This requires that the Jacobian operator MUST BE an Epetra_RowMatrix (NOX will test for this and throw an error if it is not).  This means a NOX::Epetra::MatrixFree Jacobian can NOT be used with this option for preconditioning.
+
   <li> "AztecOO: User RowMatrix" - An AztecOO preconditioner will be used.  The preconditioning will be based on an Epetra_Operator that is separate from the Jacobian.  The constructor with separate Jacobian and preconditioner Epetra_Operators must be used. Since AztecOO preconditioners require matrix information, the preconditioning object (M) must be an Epetra_RowMatix (NOX will test for this and throw an error if it is not). This option requires the user to implement the function computePrecMatrix() in the NOX::Epetra::Interface derived class.
+
   <li> "User Supplied Preconditioner" - The user supplies an Epetra_Operator that will compute and apply the preconditioner to a vector that is passed in. This option requires the user to implement the function computePreconditioner() in the NOX::Epetra::Interface derived class.   
   </ul>
 
 If an AztecOO preconditioner is used, the type of preconditioner can be set with the flag "Aztec Preconditioner" in the "Linear Solver" sublist (defaults to ilu). Currently supported preconditioners and their corresponding parameters that can be set in the "Linear Solver" sublist are shown below (See the Aztec 2.0 manual for more information):
   <ul>
   <li> "ilu" 
+
   <ul>
   <li> "Overlap" - defaults to 0.
   <li> "Graph Fill" - defaults to 0.
-  </ul> 
+  </ul> </li>
+
   <li> "ilut"
   <ul>
   <li> "Overlap" - defaults to 0.
   <li> "Fill Factor" - defaults to 1.0.
   <li> "Drop Tolerance" - defaults to 1.0e-12
-  </ul>
+  </ul> </li>
+
   <li> "Polynomial" - Neumann polynomial
   <ul>
   <li> "Polynomial Order" - defaults to 3.
@@ -102,7 +108,9 @@ If an AztecOO preconditioner is used, the type of preconditioner can be set with
 Addtional Parameters that are set in the "Linear Solver" sublist:
   <ul> 
   <li> "Tolerance" - tolerance used by AztecOO to determine if a linear solve has converged.
+
   <li> "Max Iterations" - maximum number of linear iterations in the 
+
   <li> "Output Frequency" - number of linear solve iterations between output of the linear solve residual. Takes an integer, AZ_none, or AZ_all as a value.
   </ul>
 
@@ -221,8 +229,21 @@ public:
   //! Return the userInterface.
   virtual Interface& getUserInterface();
 
-  //! Set a parameter in the user's code.
+  /** @name LOCA Specific Methods */
+  //@{
+
   virtual bool setParameter(string param, double value);
+
+  virtual bool setRHS(const Vector& input);
+  //! See above.
+  virtual bool setRHS(const Abstract::Vector& input);
+
+  //! Returns true if the mass matrix corresponds to the current solution vector.
+  virtual bool isMassMatrix() const;
+
+  virtual bool computeMassMatrix();
+
+  //@}
 
 protected:
 
@@ -276,6 +297,7 @@ protected:
   bool isValidJacobian;
   bool isValidGrad;
   bool isValidNewton;
+  bool isValidMassMatrix;
   //@}
   
   //! Norm of RHS

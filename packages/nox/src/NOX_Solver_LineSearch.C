@@ -97,6 +97,15 @@ void LineSearch::init()
 
   // Test the initial guess
   status = testptr->operator()(*this);
+  if (status == Status::Converged) {
+    if (Utils::doPrint(Utils::Warning)) {
+      cout << "Warning: NOX::Solver::LineSearch::init() - The solution passed "
+	   << "into the solver (either through constructor or reset method) "
+	   << "is already converged!  The solver wil not "
+	   << "attempt to solve this system since status is flagged as "
+	   << "converged." << endl;
+    }
+  }
 
   if (Utils::doPrint(Utils::Parameters)) {
     cout << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";

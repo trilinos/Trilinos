@@ -15,9 +15,9 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
   NumGlobalElements(numGlobalElements)
 {
   // Set the default parameter values 
-  double factor = 1000.0;
-  double leftBCValue = 0.0;
-  double rightBCValue = 1.0;
+  factor = 1.0;
+  leftBCValue = 0.0;
+  rightBCValue = 1.0;
 
   // Commonly used variables
   int i;
@@ -205,13 +205,13 @@ bool FiniteElementProblem::evaluate(FillType f,
     if ((flag == MATRIX_ONLY) || (flag == ALL)) {
       column=NumMyElements-1;
       jac=1.0;
-      A->ReplaceGlobalValues((NumMyElements-1), 1, &jac, &column);
+      A->ReplaceMyValues((NumMyElements-1), 1, &jac, &column);
       column=NumMyElements-2;
       jac=0.0;
-      A->ReplaceGlobalValues((NumMyElements-1), 1, &jac, &column);
+      A->ReplaceMyValues((NumMyElements-1), 1, &jac, &column);
     }
   }
-  
+
   // Sync up processors to be safe
   Comm->Barrier();
  

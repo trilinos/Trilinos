@@ -76,7 +76,10 @@ public:
 
   //! Sets a parameter in the user's code based on the string passed in.  This is required only for interfacing to LOCA.  
   virtual bool setParameter(string param, double value) = 0;
-
+  
+  //! Computes the Epetra_RowMatrix B.
+  virtual bool computeMassMatrix(const Epetra_Vector& x, Epetra_RowMatrix& B) = 0;
+  
 };
 } // namespace Epetra
 } // namespace NOX
