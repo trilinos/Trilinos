@@ -51,6 +51,7 @@ class Epetra_HashTable
       ptr1 = Container_[i];
       while( ptr1 ) { ptr2 = ptr1; ptr1 = ptr1->Ptr; delete ptr2; }
     }
+    if (Size_ > 0) delete [] Container_;
   }
 
   void Add( const int key, const int value )

@@ -86,12 +86,16 @@ class Epetra_FEVector : public Epetra_MultiVector {
      ignoreNonLocalEntries_ = flag;
    }
 
+   Epetra_FEVector& operator=(const Epetra_FEVector& source);
+
  private:
   int inputValues(int numIDs,
                   const int* GIDs, const double* values,
                   bool accumulate);
 
   int inputNonlocalValue(int GID, double value, bool accumulate);
+
+  void destroyNonlocalData();
 
   int myFirstID_;
   int myNumIDs_;
