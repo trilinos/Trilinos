@@ -38,7 +38,7 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Trilinos_Util_ShellOptions.h"
+#include "Trilinos_Util_CommandLineParser.h"
 
 int main(int argc, char *argv[])
 {
@@ -51,12 +51,12 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  ShellOptions Args(argc,argv);
+  Trilinos_Util::CommandLineParser CLP(argc,argv);
    
-  int nx = Args.GetIntOption("-nx", 123);
-  int ny = Args.GetIntOption("-ny", 145);
-  double tol = Args.GetDoubleOption("-tol", 1e-12);
-  string solver = Args.GetStringOption("-solver");
+  int nx = CLP.Get("-nx", 123);
+  int ny = CLP.Get("-ny", 145);
+  double tol = CLP.Get("-tol", 1e-12);
+  string solver = CLP.Get("-solver","KLU");
   cout << "nx = " << nx << endl;
   cout << "ny = " << ny << " (default value)" << endl;
   cout << "tol = " << tol << endl;
