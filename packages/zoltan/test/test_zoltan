@@ -188,7 +188,6 @@ if (! $no_chaco ) then
           /bin/rm ${outdir}/${ch_name[1]}.$mtd.$np.*
     
           # Run the driver
-          which $run
           $run $np ../$zdrive
     
           # Save and compare output files 
