@@ -22,7 +22,7 @@ extern "C" {
 
 static ZOLTAN_PHG_MATCHING_FN pmatching_local; /* function for local matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;   /* inner product matching */
-static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;   /* local ipm along proc cols*/
+static ZOLTAN_PHG_MATCHING_FN pmatching_col_ipm;   /* OLD column ipm, will be phased out */
 
 
 /*****************************************************************************/
@@ -47,6 +47,8 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
         }
     } else if (!strcasecmp(hgp->redm_str, "c-ipm"))
         hgp->matching = pmatching_ipm;   
+    else if (!strcasecmp(hgp->redm_str, "col-ipm")) /* old c-ipm */
+        hgp->matching = pmatching_col_ipm;          /* will be removed later */
     else if (!strcasecmp(hgp->redm_str, "ipm"))
         hgp->matching = pmatching_ipm;
     else {
