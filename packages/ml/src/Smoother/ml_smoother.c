@@ -3432,6 +3432,8 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
 /* Function to generate the matrix products needed in the Hiptmair smoother  */
 /* on one level.                                                             */
 /* ************************************************************************ */
+#include "ml_mls.h"
+
 
 #ifdef MatrixProductHiptmair
 
@@ -3451,6 +3453,9 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    int *row_ptr, i, j, k;
    double *val_ptr;
    double *dbl_arg1, *diagonal;
+#ifdef GREG
+   struct MLSthing *widget;
+#endif
 #ifdef ML_TIMING_DETAILED
    double t0;
 
@@ -3522,6 +3527,21 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 					  edge_smoother, edge_args, 
 					  dataptr->omega);
 
+   /* For the MLS ... we really want to switch to a complex version */
+#ifdef GREG
+   if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+     dataptr->ml_edge->pre_smoother[0].smoother->internal = ML_complex_Cheby;
+     widget = (struct MLSthing *) dataptr->ml_edge->pre_smoother[0].smoother->data;
+     if (Amat->lambda_max_img != 0.0) {
+       widget->beta_real = Amat->lambda_max;
+       widget->beta_img  = Amat->lambda_max_img;
+     }
+     else {
+       widget->beta_real = 3.265411492391633/1.1;
+       widget->beta_img  = .02605229219923984/1.1;
+     }
+   }
+#endif
 
    /* Triple matrix product T^{*}AT. */
 
@@ -6171,7 +6191,6 @@ void ML_Smoother_Clean_OrderedSGS(void *data)
  *
  *****************************************************************************/ 
 
-#include "ml_mls.h"
 
 int ML_MLS_SandwPres(void *sm, int inlen, double x[], int outlen, double y[])
 {
@@ -6874,8 +6893,9 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
        printf("Generating subsmoother MLS\n");
      ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*dbl_arg1,
-                         *int_arg2);
+			 *int_arg2);
    }
+
    else if (smoother == (void *) ML_Gen_Smoother_Jacobi) {
      if (ML_Smoother_Arglist_Nargs(args) != 2) {
        printf("ML_Smoother_Gen_Hiptmair_Data: Need two arguments for ML_Gen_Smoother_Jacobi() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
@@ -7310,4 +7330,177 @@ int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
    }
 
    return 0;
+}
+#include "ml_operator_blockmat.h"
+int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
+{
+
+  ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
+  ML_Operator     *Amat = smooth_ptr->my_level->Amat;
+  struct MLSthing *widget;
+  int              deg, i, j, k, n, nn;
+  double          *pAux, *dk;
+  double beta_real, beta_img, alpha_real, alpha_img, theta_real, theta_img, delta_real, delta_img, s1_real, s1_img, rhok_real, rhok_img, rhokp1_real, rhokp1_img;
+  int             *cols, allocated_space;
+
+  double          *diagonal, *vals, *tdiag, dtemp1_real, dtemp1_img, dtemp2_real, dtemp2_img;
+  struct ML_Operator_blockmat_data *blockmat;
+  double t1, t2, t3, denom, denom_real, denom_img, numer_real, numer_img, ttti, tttipn, *d1, *d2;
+  int status;
+  double thenorm;
+
+  n = outlen/2;
+  widget = (struct MLSthing *) smooth_ptr->smoother->data;
+
+  deg    = widget->mlsDeg;
+  if (deg == 0)  return 0;
+
+  blockmat = (struct ML_Operator_blockmat_data *) Amat->data;
+
+  pAux  = (double *) ML_allocate(2*(n+1)*sizeof(double));
+  dk     = (double *) ML_allocate(2*(n+1)*sizeof(double));
+
+  if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+  if (dk    == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+
+  beta_real = 1.1*widget->beta_real;   /* try and bracket high */
+  beta_img  = 1.1*widget->beta_img;    /* frequency errors.    */
+  alpha_real= beta_real/(widget->eig_ratio);
+  alpha_img = beta_img;
+
+  delta_real = (beta_real - alpha_real)/2.;
+  delta_img = (beta_img - alpha_img)/2.;
+
+  theta_real = (beta_real + alpha_real)/2.;
+  theta_img = (beta_img + alpha_img)/2.;
+  t1 = 1./(delta_real*delta_real + delta_img*delta_img);
+  s1_real = (theta_real*delta_real+theta_img*delta_img)*t1;
+  s1_img  = (theta_img*delta_real-theta_real*delta_img)*t1;
+  t1 = 1./(s1_real*s1_real + s1_img*s1_img);
+  rhok_real = s1_real*t1;
+  rhok_img  = -s1_img*t1;
+
+  /* ----------------------------------------------------------------- */
+  /* extract diagonal using getrow function if not found               */
+  /* ----------------------------------------------------------------- */
+
+  if (blockmat->Ke_diag == NULL) {
+    allocated_space = blockmat->N_Ke + blockmat->Nghost + 1;
+    cols = (int    *) malloc(allocated_space*sizeof(int   ));
+    vals = (double *) malloc(allocated_space*sizeof(double));
+    tdiag = (double *) malloc(Amat->outvec_leng*sizeof(double));
+    for (i = 0; i < n; i++) {
+      status = blockmat->Ke_getrow(blockmat->Ke_getrow_data,1,&i,
+				   allocated_space, cols, vals, &nn);
+      if (status == 0) {
+	printf("ML_complex_Cheby: not enough space for getrow\n");
+	exit(1);
+      }
+      tdiag[i] = 0.;
+      for (j = 0; j < nn; j++) 
+	if (cols[j] == i) tdiag[i] = vals[j];
+      if (tdiag[i] == 0.) tdiag[i] = 1.;
+    }
+    printf("after loop %d\n",n);
+    free(cols); free(vals);
+    blockmat->Ke_diag = tdiag;  tdiag = NULL;
+  }
+  d1 = blockmat->Ke_diag;
+  if (blockmat->M_diag == NULL) {
+    allocated_space = blockmat->N_Ke + blockmat->Nghost + 1;
+    cols = (int    *) malloc(allocated_space*sizeof(int   ));
+    vals = (double *) malloc(allocated_space*sizeof(double));
+    tdiag = (double *) malloc(Amat->outvec_leng*sizeof(double));
+    for (i = 0; i < n; i++) {
+      status = blockmat->M_getrow(blockmat->M_getrow_data,1,&i,
+				   allocated_space, cols, vals, &nn);
+      if (status == 0) {
+	printf("ML_complex_Cheby: not enough space for getrow\n");
+	exit(1);
+      }
+      tdiag[i] = 0.;
+      for (j = 0; j < nn; j++) 
+	if (cols[j] == i) tdiag[i] = vals[j];
+    }
+    free(cols); free(vals);
+    blockmat->M_diag = tdiag;  tdiag = NULL;
+  }
+  d2 = blockmat->M_diag;
+
+ if (smooth_ptr->init_guess == ML_NONZERO) {
+    printf("Res is %e\n", sqrt(ML_gdot(2*n, rhs, rhs, Amat->comm)));
+   ML_Operator_Apply(Amat, 2*n, x, 2*n, pAux);
+   for (i = 0; i < 2*n; i++) {
+     dk[i] = rhs[i] - pAux[i];
+   }
+   for (k = 1; k < n+1; k++) {
+      denom_real = theta_real*d1[k-1] - theta_img*d2[k-1];
+      denom_img  = theta_real*d2[k-1] + theta_img*d1[k-1];
+      t1  = dk[k-1] * denom_real + dk[k+n-1]* denom_img;
+      t2  = -dk[k-1] * denom_img + dk[k+n-1]* denom_real;
+      t3 = 1./(denom_real*denom_real + denom_img*denom_img);
+      dk[k  -1] = t1*t3;
+      dk[k+n-1] = t2*t3;
+      x[k  -1]  = x[k-1] + dk[k-1];
+      x[k+n-1]  = x[k+n-1] + dk[k+n-1];
+   }
+}
+  else { 
+    printf("res is %e\n", sqrt(ML_gdot(2*n, rhs, rhs, Amat->comm)));
+   for (k = 1; k < n+1; k++) {
+       denom_real = theta_real*d1[k-1] - theta_img*d2[k-1];
+       denom_img  = theta_real*d2[k-1] + theta_img*d1[k-1];
+       t1  = rhs[k-1] * denom_real + rhs[k+n-1]* denom_img;
+       t2  = -rhs[k-1] * denom_img + rhs[k+n-1]* denom_real;
+       t3 = 1./(denom_real*denom_real + denom_img*denom_img);
+       dk[k-1] = t1*t3;
+       dk[k+n-1] = t2*t3;
+       x[k-1] = dk[k-1];
+       x[k+n-1] = dk[k+n-1];
+     }
+    printf("x is %e\n", sqrt(ML_gdot(2*n, x, x, Amat->comm)));
+}
+for (k = 0; k < deg-1; k++) {
+ thenorm = 0.;
+  ML_Operator_Apply(Amat, 2*n, x, 2*n, pAux);
+   denom_real = 2*s1_real - rhok_real;
+   denom_img  = 2*s1_img - rhok_img;
+   t1 = 1./(denom_real*denom_real + denom_img*denom_img);
+   rhokp1_real = denom_real*t1;
+   rhokp1_img  = -denom_img*t1;
+   dtemp1_real = rhokp1_real*rhok_real - rhokp1_img*rhok_img;
+   dtemp1_img  = rhokp1_img*rhok_real + rhokp1_real*rhok_img;
+   t1 = 1./(delta_real*delta_real + delta_img*delta_img);
+   dtemp2_real = 2*(rhokp1_real*delta_real+rhokp1_img*delta_img)*t1;
+   dtemp2_img  = 2*(rhokp1_img*delta_real-rhokp1_real*delta_img)*t1;
+   rhok_real = rhokp1_real;
+   rhok_img  = rhokp1_img;
+#ifdef out
+   fprintf(1,'%d: %e\n',k, norm(rhs-pAux));
+#endif
+
+   for (i = 1; i <= n; i++) {
+    ttti = dtemp1_real*dk[i-1] - dtemp1_img*dk[i+n-1];
+    dk[i+n-1] = dtemp1_img*dk[i-1] + dtemp1_real*dk[i+n-1];
+    dk[i-1] = ttti;
+    ttti = rhs[i-1] - pAux[i-1];
+thenorm += (ttti*ttti);
+    tttipn = rhs[i+n-1] - pAux[i+n-1];
+thenorm += (tttipn*tttipn);
+    numer_real = dtemp2_real*d1[i-1] + dtemp2_img*d2[i-1];
+    numer_img  = dtemp2_img*d1[i-1] - dtemp2_real*d2[i-1];
+    denom      = 1./(d1[i-1]*d1[i-1] + d2[i-1]*d2[i-1]);
+    t1         = ttti*numer_real - tttipn*numer_img;
+    t2         = ttti*numer_img + tttipn*numer_real;
+    dk[i-1] = dk[i-1] + t1*denom;
+    dk[i+n-1]= dk[i+n-1] + t2*denom;
+    x[i  -1] = x[i  -1] + dk[i  -1];
+    x[i+n-1] = x[i+n-1] + dk[i+n-1];
+   }
+   printf("%d: the norm is %20.13e\n",k,sqrt(thenorm));
+  }
+ if (deg == 201) exit(1);
+  ML_free(dk);
+  ML_free(pAux);
+  return 0;
 }
