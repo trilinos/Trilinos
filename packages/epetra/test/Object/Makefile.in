@@ -93,7 +93,9 @@ Object_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 Object_test_CXXFLAGS = -I$(top_srcdir)/src
 
-Object_test_LDADD = -L$(top_builddir)/src -lepetra $(FLIBS)
+Object_test_LDADD = -L$(top_builddir)/src -lepetra $(BLAS_LIBS) \
+	$(LIBS) $(FLIBS)
+
 subdir = test/Object
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Epetra_config.h
