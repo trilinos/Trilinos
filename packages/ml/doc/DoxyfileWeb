@@ -73,6 +73,7 @@ FILE_PATTERNS         += ml_aggregate.h
 FILE_PATTERNS         += ml_RowMatrix.h
 FILE_PATTERNS         += ml_Ifpack_ML.h
 FILE_PATTERNS         += MLAPI*.h
+FILE_PATTERNS         += ml_Epetra_wrap_CrsGraph_as_RowMatrix.H
 FILE_PATTERNS         += ml_nox_preconditioner.H
 FILE_PATTERNS         += ml_nox_preconditioner*.cpp
 FILE_PATTERNS         += ml_nox_fineinterface.H
