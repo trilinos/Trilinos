@@ -189,7 +189,7 @@ HSFC_CSRC 	= hsfc_hilbert.c hsfc.c hsfc_box_assign.c hsfc_point_assign.c
 HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
-		  hg_group.c hg_local.c \
+		  hg_group.c hg_local.c hg_sort.c hg_scale.c \
 		  hg_match.c hg_pack.c \
 		  hg_part.c hg_sort.c hg_util.c
 HG_INC 		= hg.h hypergraph.h
