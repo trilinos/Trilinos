@@ -21,7 +21,7 @@ typedef struct SPBLASMAT_STRUCT SPBLASMAT;
 
 #define name2(a,b) a ## b
 
-#ifdef HAVE_FORTRAN_UNDERSCORE
+#ifndef HAVE_NO_FORTRAN_UNDERSCORE
 #define F77NAME(x) name2(x,_)
 #else
 #define F77NAME(x) x
