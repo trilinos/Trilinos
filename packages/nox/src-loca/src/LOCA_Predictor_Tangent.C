@@ -56,7 +56,7 @@ LOCA::Predictor::Tangent::compute(LOCA::Continuation::Group& prevGroup,
 {
   NOX::Abstract::Group::ReturnType res;
 
-  res = curGroup.computeTangent(parameters);
+  res = curGroup.computeTangent();
   if (res != LOCA::Abstract::Group::Ok)
     return res;
   

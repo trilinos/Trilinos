@@ -65,12 +65,12 @@ namespace LOCA {
   
       //! Constructor with integer continuation parameter id
       ArcLengthGroup(const Abstract::Group& g, int paramID,
-		     const NOX::Parameter::List& linSolverParams,
+		     NOX::Parameter::List& linSolverParams,
 		     NOX::Parameter::List& params);
 
       //! Constructor with string continuation parameter id
       ArcLengthGroup(const Abstract::Group& g, string paramID,
-		     const NOX::Parameter::List& linSolverParams,
+		     NOX::Parameter::List& linSolverParams,
 		     NOX::Parameter::List& params);
 
       //! Copy constructor.
@@ -140,7 +140,7 @@ namespace LOCA {
 
       //! Overloaded Compute tangent from LOCA::Continuation::Group
       virtual NOX::Abstract::Group::ReturnType
-      computeTangent(NOX::Parameter::List& params);
+      computeTangent();
 
       //@}
 

@@ -35,7 +35,7 @@
 
 LOCA::Continuation::Group::Group(const LOCA::Abstract::Group& grp, 
 				 int paramID,
-				 const NOX::Parameter::List& linSolverParams,
+				 NOX::Parameter::List& linSolverParams,
 				 NOX::Parameter::List& params)
   : grpPtr(dynamic_cast<LOCA::Abstract::Group*>(grp.clone(NOX::DeepCopy))),
     conParamID(paramID),
@@ -49,7 +49,7 @@ LOCA::Continuation::Group::Group(const LOCA::Abstract::Group& grp,
 
 LOCA::Continuation::Group::Group(const LOCA::Abstract::Group& grp, 
 				 string paramID,
-				 const NOX::Parameter::List& linSolverParams,
+				 NOX::Parameter::List& linSolverParams,
 				 NOX::Parameter::List& params)
   : grpPtr(dynamic_cast<LOCA::Abstract::Group*>(grp.clone(NOX::DeepCopy))),
     conParamID(0),
@@ -103,7 +103,7 @@ LOCA::Continuation::Group::operator=(const LOCA::Continuation::Group& source)
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Continuation::Group::computeTangent(NOX::Parameter::List& params) {
+LOCA::Continuation::Group::computeTangent() {
   
   // Get references to x, parameter components of tangent vector
   NOX::Abstract::Vector& tanX = predictorVec.getXVec();
@@ -124,7 +124,7 @@ LOCA::Continuation::Group::computeTangent(NOX::Parameter::List& params) {
   dfdpVec->scale(-1.0);
   
   // Solve J*tanX = -df/dp
-  res = grpPtr->applyJacobianInverse(params, *dfdpVec, tanX);
+  res = grpPtr->applyJacobianInverse(linearSolverParams, *dfdpVec, tanX);
   if (res != NOX::Abstract::Group::Ok)
     return res;
 

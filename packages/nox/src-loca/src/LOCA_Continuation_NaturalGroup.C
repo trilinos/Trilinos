@@ -33,7 +33,7 @@
 
 LOCA::Continuation::NaturalGroup::NaturalGroup(const LOCA::Abstract::Group& g,
 					       int paramID,
-					       const NOX::Parameter::List& linSolverParams,
+					       NOX::Parameter::List& linSolverParams,
 					       NOX::Parameter::List& params)
   : LOCA::Continuation::Group(g, paramID, linSolverParams, params),
     xVec(g.getX(), g.getParam(paramID)),
@@ -49,7 +49,7 @@ LOCA::Continuation::NaturalGroup::NaturalGroup(const LOCA::Abstract::Group& g,
 
 LOCA::Continuation::NaturalGroup::NaturalGroup(const LOCA::Abstract::Group& g,
 					       string paramID,
-					       const NOX::Parameter::List& linSolverParams,
+					       NOX::Parameter::List& linSolverParams,
 					       NOX::Parameter::List& params)
   : LOCA::Continuation::Group(g, paramID, linSolverParams, params),
     xVec(g.getX(), g.getParam(paramID)),

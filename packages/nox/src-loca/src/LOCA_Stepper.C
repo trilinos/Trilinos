@@ -72,7 +72,7 @@ LOCA::Stepper::Stepper(LOCA::Abstract::Group& initialGuess,
   paramList()
 {
   // Initialize the utilities
-  Utils::setUtils(p.sublist("Utilities"));
+  Utils::setUtils(p.sublist("LOCA").sublist("Utilities"));
   reset(initialGuess, t, p, dataOut);
 }
 
@@ -143,8 +143,11 @@ LOCA::Stepper::reset(LOCA::Abstract::Group& initialGuess,
   paramList = p;
   dataOutputPtr = &dataOut;
 
+  // Get LOCA sublist
+  NOX::Parameter::List& locaList = paramList.sublist("LOCA");
+
   // Get stepper sublist
-  NOX::Parameter::List& stepperList = paramList.sublist("Stepper");
+  NOX::Parameter::List& stepperList = locaList.sublist("Stepper");
 
   // Reset base class
   LOCA::Abstract::Iterator::reset(stepperList);
@@ -153,9 +156,9 @@ LOCA::Stepper::reset(LOCA::Abstract::Group& initialGuess,
   conGroupManagerPtr = 
     new LOCA::Continuation::Manager(stepperList);
   predictorManagerPtr = 
-    new LOCA::Predictor::Manager(paramList.sublist("Predictor"));
+    new LOCA::Predictor::Manager(locaList.sublist("Predictor"));
   stepSizeManagerPtr = 
-    new LOCA::StepSize::Manager(paramList.sublist("Step Size"));
+    new LOCA::StepSize::Manager(locaList.sublist("Step Size"));
 
   // Get the continuation parameter starting value
   if (stepperList.isParameter("Initial Value"))
@@ -195,7 +198,7 @@ LOCA::Stepper::reset(LOCA::Abstract::Group& initialGuess,
 
   // Create solver using initial conditions
   solverPtr = new NOX::Solver::Manager(initialGuess, *statusTestPtr, 
-				       paramList.sublist("Solver"));
+				       paramList.sublist("NOX"));
 
   printInitializationInfo();
 
@@ -216,7 +219,7 @@ LOCA::Stepper::start() {
   const LOCA::Abstract::Group& solnGrp = 
     dynamic_cast<const LOCA::Abstract::Group&>(solverPtr->getSolutionGroup());
   curGroupPtr = 
-    conGroupManagerPtr->createContinuationGroup(solnGrp, paramList.sublist("Solver").sublist("Direction").sublist("Linear Solver"));
+    conGroupManagerPtr->createContinuationGroup(solnGrp, paramList.sublist("NOX").sublist("Direction").sublist("Linear Solver"));
 
   curGroupPtr->setStepSize(stepSize);
 
@@ -243,7 +246,7 @@ LOCA::Stepper::start() {
   // Create new solver using new continuation groups
   delete solverPtr;
   solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
-				       paramList.sublist("Solver"));
+				       paramList.sublist("NOX"));
 
   return LOCA::Abstract::Iterator::NotFinished;
 }
@@ -285,7 +288,7 @@ LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   curGroupPtr->computeX(*prevGroupPtr, *curPredictorPtr, stepSize);
 
   // Reset solver to compute new solution
-  solverPtr->reset(*curGroupPtr, *statusTestPtr, paramList.sublist("Solver"));
+  solverPtr->reset(*curGroupPtr, *statusTestPtr, paramList.sublist("NOX"));
 
   return stepStatus;
 }

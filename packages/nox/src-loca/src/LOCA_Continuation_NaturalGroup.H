@@ -64,12 +64,12 @@ namespace LOCA {
   
       //! Constructor with integer continuation parameter id
       NaturalGroup(const Abstract::Group& g, int paramID,
-		   const NOX::Parameter::List& linSolverParams,
+		   NOX::Parameter::List& linSolverParams,
 		   NOX::Parameter::List& params);
 
       //! Constructor with string continuation parameter id
       NaturalGroup(const Abstract::Group& g, string paramID,
-		   const NOX::Parameter::List& linSolverParams,
+		   NOX::Parameter::List& linSolverParams,
 		   NOX::Parameter::List& params);
 
       //! Copy constructor.

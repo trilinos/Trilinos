@@ -45,6 +45,7 @@ int main()
     double alpha = 3.0;
     double beta = 0.0;
     double scale = 1.0;
+    int maxNewtonIters = 20;
 
     // Set up the problem interface
     ChanProblemInterface chan(n, alpha, beta, scale);
@@ -74,24 +75,38 @@ int main()
     LOCA::LAPACK::TPDataOutput dataOut(file);
 
     // Create parameter list
-    NOX::Parameter::List locaParamsList;
+    NOX::Parameter::List paramList;
+
+    // Create LOCA sublist
+    NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
-    NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
-    locaStepperList.setParameter("Continuation Parameter", "beta");
-    locaStepperList.setParameter("Stepper Method", "Zero Order");
-    locaStepperList.setParameter("Initial Value", beta);
-    // locaStepperList.setParameter("Final Value", 1.0);
-    locaStepperList.setParameter("Final Value", 0.8);
-    //locaStepperList.setParameter("Initial Step Size", 0.132653);
-    locaStepperList.setParameter("Initial Step Size", 0.1);
-    locaStepperList.setParameter("Min Step Size", 1.0e-3);
-    locaStepperList.setParameter("Max Step Size", 1.0);
-    locaStepperList.setParameter("Step Size Aggressiveness", 1.0);
-    locaStepperList.setParameter("Max Continuation Steps", 100);
-    //locaStepperList.setParameter("Max Continuation Steps", 2);
-    locaStepperList.setParameter("Max Nonlinear Iterations", 15);
-    //locaStepperList.setParameter("First Order Predictor", true);
+    NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
+    stepperList.setParameter("Continuation Method", "Natural");
+    stepperList.setParameter("Continuation Parameter", "beta");
+    stepperList.setParameter("Initial Value", beta);
+    stepperList.setParameter("Max Value", 0.8);
+    stepperList.setParameter("Min Value", 0.0);
+    stepperList.setParameter("Max Steps", 100);
+    stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
+    stepperList.setParameter("Goal g", 0.5);
+    stepperList.setParameter("Max g", 0.7);
+    stepperList.setParameter("Initial Scale Factor", 1.0);
+    stepperList.setParameter("Min Scale Factor", 1.0e-3);
+    stepperList.setParameter("Min Tangent Factor", -1.0);
+    stepperList.setParameter("Tangent Factor Exponent",1.0);
+
+    // Create predictor sublist
+    NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
+    predictorList.setParameter("Method", "Constant");
+
+    // Create step size sublist
+    NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
+    stepSizeList.setParameter("Method", "Adaptive");
+    stepSizeList.setParameter("Initial Step Size", 0.1);
+    stepSizeList.setParameter("Min Step Size", 1.0e-3);
+    stepSizeList.setParameter("Max Step Size", 1.0);
+    stepSizeList.setParameter("Aggressiveness", 0.5);
 
     // Set the LOCA Utilities
     NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
@@ -103,7 +118,7 @@ int main()
 			       LOCA::Utils::SolverDetails);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = locaParamsList.sublist("Solver");
+    NOX::Parameter::List& nlParams = locaParamsList.sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
     nlParams.setParameter("Output Information", 
 			  //NOX::Utils::OuterIteration + 
@@ -119,11 +134,11 @@ int main()
 
     // Set up the status tests
     NOX::StatusTest::NormF statusTestA(tpgrp, 1.0e-8);
-    NOX::StatusTest::MaxIters statusTestB(20);
+    NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
     // Create the stepper  
-    LOCA::Stepper stepper(tpgrp, combo, locaParamsList, dataOut);
+    LOCA::Stepper stepper(tpgrp, combo, paramList, dataOut);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();

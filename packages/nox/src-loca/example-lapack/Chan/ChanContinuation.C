@@ -72,7 +72,10 @@ int main()
     LOCA::LAPACK::DataOutput dataOut(file);
 
     // Create parameter list
-    NOX::Parameter::List locaParamsList;
+    NOX::Parameter::List paramList;
+
+    // Create LOCA sublist
+    NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
     NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
@@ -118,7 +121,7 @@ int main()
 			       LOCA::Utils::SolverDetails);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = locaParamsList.sublist("Solver");
+    NOX::Parameter::List& nlParams = paramList.sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
@@ -137,7 +140,7 @@ int main()
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
     // Create the stepper  
-    LOCA::Stepper stepper(grp, combo, locaParamsList, dataOut);
+    LOCA::Stepper stepper(grp, combo, paramList, dataOut);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();

@@ -34,7 +34,7 @@
 
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
 						   int paramID,
-						   const NOX::Parameter::List& linSolverParams,
+						   NOX::Parameter::List& linSolverParams,
 						   NOX::Parameter::List& params)
   : LOCA::Continuation::Group(g, paramID, linSolverParams, params), 
     xVec(g.getX(), g.getParam(paramID)),
@@ -53,7 +53,7 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
 
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
 						   string paramID,
-						   const NOX::Parameter::List& linSolverParams,
+						   NOX::Parameter::List& linSolverParams,
 						   NOX::Parameter::List& params)
   : LOCA::Continuation::Group(g, paramID, linSolverParams, params), 
     xVec(g.getX(), g.getParam(paramID)),
@@ -307,11 +307,11 @@ LOCA::Continuation::ArcLengthGroup::computeNewton(NOX::Parameter::List& params)
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Continuation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params) {
+LOCA::Continuation::ArcLengthGroup::computeTangent() {
   
   // Compute tangent vector using base class which assumes |dp/ds| = 1
   NOX::Abstract::Group::ReturnType res =
-    LOCA::Continuation::Group::computeTangent(params);
+    LOCA::Continuation::Group::computeTangent();
   if (res != NOX::Abstract::Group::Ok)
     return res;
 

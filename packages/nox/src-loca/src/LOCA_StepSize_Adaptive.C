@@ -76,8 +76,9 @@ LOCA::StepSize::Adaptive::compute(LOCA::Continuation::Group& curGroup,
   }
   else {
     // Get maximum number of nonlinear iterations from stepper parameters
-    const NOX::Parameter::List& stepperParams = stepper.getParameterList();
-    const NOX::Parameter::List& p = stepperParams.sublist("Stepper");
+    const NOX::Parameter::List& locaParams = 
+      stepper.getParameterList().sublist("LOCA");
+    const NOX::Parameter::List& p = locaParams.sublist("Stepper");
     double maxNonlinearSteps 
       = static_cast<double>(p.getParameter("Max Nonlinear Iterations", 15));
 

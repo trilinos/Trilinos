@@ -59,7 +59,7 @@ LOCA::Continuation::Manager::reset(NOX::Parameter::List& p)
 }
 
 LOCA::Continuation::Group* 
-LOCA::Continuation::Manager::createContinuationGroup(const LOCA::Abstract::Group& grp, const NOX::Parameter::List& linSolverParams) 
+LOCA::Continuation::Manager::createContinuationGroup(const LOCA::Abstract::Group& grp, NOX::Parameter::List& linSolverParams) 
 {
   if (method == "Natural") 
     return new LOCA::Continuation::NaturalGroup(grp, conParamID, linSolverParams, *paramsPtr);

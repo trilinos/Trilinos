@@ -78,12 +78,12 @@ namespace LOCA {
   
       //! Constructor with integer continuation parameter id
       Group(const LOCA::Abstract::Group& grp, int paramID,
-	    const NOX::Parameter::List& linSolverParams,
+	    NOX::Parameter::List& linSolverParams,
 	    NOX::Parameter::List& params);
 
       //! Constructor with string continuation parameter id
       Group(const LOCA::Abstract::Group& grp, string paramID,
-	    const NOX::Parameter::List& linSolverParams,
+	    NOX::Parameter::List& linSolverParams,
 	    NOX::Parameter::List& params);
 
       //! Copy constructor
@@ -112,7 +112,7 @@ namespace LOCA {
 
       //! Compute tangent direction of continuation curve
       virtual NOX::Abstract::Group::ReturnType
-      computeTangent(NOX::Parameter::List& params);
+      computeTangent();
 
       //! Compute secant direction of continuation curve
       virtual NOX::Abstract::Group::ReturnType
@@ -169,7 +169,7 @@ namespace LOCA {
       bool isValidPredictor;
 
       //! Stores linear solver parameters for computing tangent vector
-      NOX::Parameter::List linearSolverParams;
+      NOX::Parameter::List& linearSolverParams;
 
       //! Stores (extended) scaling vector
       LOCA::Continuation::Vector scaleVec;
