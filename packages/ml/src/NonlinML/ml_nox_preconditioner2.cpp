@@ -221,7 +221,8 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
          ml_matfreelevel_[i] = new ML_NOX::ML_Nox_MatrixfreeLevel(
                                            i,ml_nlevel_,ml_printlevel_,ml_,
                                            ag_,P,interface_,comm_,xfine,
-                                           fd_alpha_,fd_beta_,isJacobismoother);
+                                           fd_alpha_,fd_beta_,fd_centered_,
+                                           isJacobismoother);
       else // redo an existing level
          ml_matfreelevel_[i]->recreateLevel(i,ml_nlevel_,ml_printlevel_,ml_,
                                             ag_,P,interface_,comm_,xfine);

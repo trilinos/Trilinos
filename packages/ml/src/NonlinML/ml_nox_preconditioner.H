@@ -102,6 +102,7 @@ public:
                                  bool                             matrixfree,
                                  double                           fd_alpha,
                                  double                           fd_beta,
+                                 bool                             fd_centered,
                                  bool                             linearPrec,
                                  double                           FAS_normF,      
                                  double                           FAS_nupdate,
@@ -244,6 +245,7 @@ private:
   ML_NOX::ML_Nox_MatrixfreeLevel**      ml_matfreelevel_;  // vector of matrix-free levels (including fine level)
   double                                fd_alpha_;         // FiniteDifferencing parameters (for matrixfree only)
   double                                fd_beta_;
+  bool                                  fd_centered_;      // use centered finite differencing
 
   // --- data special to the nonlinear preconditioner ---
   int                                   n_nlnlevel_;

@@ -63,7 +63,7 @@ ML_NOX::ML_Nox_MatrixfreeLevel::ML_Nox_MatrixfreeLevel(int level, int nlevel, in
                                  ML* ml, ML_Aggregate* ag, Epetra_CrsMatrix** P,
                                  ML_NOX::Ml_Nox_Fineinterface& interface, Epetra_Comm& comm,
                                  const Epetra_Vector& xfine, double fd_alpha, double fd_beta,
-                                 bool isDiagonalOnly) 
+                                 bool fd_centered, bool isDiagonalOnly) 
 : fineinterface_(interface),
 comm_(comm)                                                          
 {
@@ -74,6 +74,7 @@ comm_(comm)
    ag_             = ag;
    fd_alpha_       = fd_alpha;
    fd_beta_        = fd_beta;
+   fd_centered_    = fd_centered;
    isDiagonalOnly_ = isDiagonalOnly;
    A_              = 0;
    coarseinterface_= 0;
@@ -180,6 +181,11 @@ comm_(comm)
                                               *graph_,
                                               fd_beta_,fd_alpha_);
 #endif
+   // set differencing method
+   if (fd_centered_)
+   {
+      FD_->setDifferenceMethod(NOX::EpetraNew::FiniteDifferenceColoring::Centered);
+   }
 
    bool err = FD_->computeJacobian(*xc); 
    if (err==false)
@@ -383,6 +389,13 @@ bool ML_NOX::ML_Nox_MatrixfreeLevel::recreateLevel(int level, int nlevel, int pl
                                               *graph_,
                                               fd_beta_,fd_alpha_);
 #endif
+
+   // set differencing method
+   if (fd_centered_)
+   {
+      FD_->setDifferenceMethod(NOX::EpetraNew::FiniteDifferenceColoring::Centered);
+   }
+
    bool err = FD_->computeJacobian(*xc); 
    if (err==false)
    {

@@ -62,6 +62,7 @@ ML_NOX::ML_Nox_Preconditioner::ML_Nox_Preconditioner(
                      bool                             matrixfree,
                      double                           fd_alpha,
                      double                           fd_beta,
+                     bool                             fd_centered,
                      bool                             linearPrec,
                      double                           FAS_normF,      
                      double                           FAS_nupdate,    
@@ -293,9 +294,9 @@ comm_(comm)
              << "**WRN**: recommended: 1.0e-12 < fd_beta < 1.0e-02\n";
      }
   }
-  fd_alpha_ = fd_alpha;
-  fd_beta_  = fd_beta;
-
+  fd_alpha_    = fd_alpha;
+  fd_beta_     = fd_beta;
+  fd_centered_ = fd_centered;
   return;
 }
 
@@ -806,7 +807,8 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
       if (!(ml_matfreelevel_[i])) // create a new level   
          ml_matfreelevel_[i] = new ML_NOX::ML_Nox_MatrixfreeLevel(i,ml_nlevel_,ml_printlevel_,ml_,
                                                                   ag_,P,interface_,comm_,xfine,
-                                                                  fd_alpha_,fd_beta_,isJacobismoother);
+                                                                  fd_alpha_,fd_beta_,fd_centered_,
+                                                                  isJacobismoother);
       else // redo an existing level
          ml_matfreelevel_[i]->recreateLevel(i,ml_nlevel_,ml_printlevel_,ml_,
                                             ag_,P,interface_,comm_,xfine);

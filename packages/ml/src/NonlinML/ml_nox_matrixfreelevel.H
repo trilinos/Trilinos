@@ -103,7 +103,8 @@ public:
   explicit ML_Nox_MatrixfreeLevel(int level, int nlevel, int plevel, ML* ml, ML_Aggregate* ag, 
                                   Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface, 
                                   Epetra_Comm& comm, const Epetra_Vector& xfine,
-                                  double fd_alpha, double fd_beta, bool isDiagonalOnly);
+                                  double fd_alpha, double fd_beta, bool fd_centered, 
+                                  bool isDiagonalOnly);
 
   // a reconstructor
   bool recreateLevel(int level, int nlevel, int plevel, ML* ml, ML_Aggregate* ag,
@@ -154,6 +155,7 @@ private:
   vector<Epetra_IntVector>*                 colorcolumns_;
   double                                    fd_alpha_;        // FiniteDifferencing parameters (for matrixfree only)
   double                                    fd_beta_;
+  bool                                      fd_centered_;
   bool                                      isDiagonalOnly_;
 #if 1
   NOX::EpetraNew::FiniteDifferenceColoring* FD_;
