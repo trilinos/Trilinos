@@ -318,7 +318,7 @@ namespace Teuchos
 
 	for(i = izero; i < n; i++)
 	  {
-	    result += x[ix] * y[iy];
+	    result += ScalarTraits<ScalarType>::conjugate(x[ix]) * y[iy];
 	    ix += incx;
 	    iy += incy;
 	  }
@@ -340,7 +340,7 @@ namespace Teuchos
     
 	for(i = izero; i < n; i++)
       	  {
-	    result += x[ix] * x[ix];
+	    result += ScalarTraits<ScalarType>::conjugate(x[ix]) * x[ix];
 	    ix += incx;
        	  }
     	result = ScalarTraits<ScalarType>::squareroot(result);
@@ -745,7 +745,6 @@ namespace Teuchos
   void BLAS<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
-    OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     ScalarType zero = ScalarTraits<ScalarType>::zero();
     ScalarType one = ScalarTraits<ScalarType>::one();
     OrdinalType i, j, p;

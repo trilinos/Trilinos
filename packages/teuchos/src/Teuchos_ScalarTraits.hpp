@@ -120,6 +120,8 @@ namespace Teuchos {
     static inline T zero()                     { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns representation of one for this scalar type.
     static inline T one()                      { return UndefinedScalarTraits<T>::notDefined(); };
+    //! Returns the conjugate of the scalar type \c a.
+    static inline T conjugate(T a) { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns a number that represents NaN.
     static inline T nan()                      { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns <tt>true</tt> if <tt>x</tt> is NaN or Inf.
@@ -145,6 +147,7 @@ namespace Teuchos {
     static inline magnitudeType magnitude(int a) { return abs(a); };
     static inline int zero()  { return 0; };
     static inline int one()   { return 1; };
+    static inline int conjugate(int x) { return x; };
     static inline void seedrandom(unsigned int s) { srand(s); };
     //static inline int random() { return (-1 + 2*rand()); };  // RAB: This version should be used to be consistent with others
     static inline int random() { return rand(); };             // RAB: This version should be used for an unsigned int, not int
@@ -232,6 +235,7 @@ namespace Teuchos {
     static inline magnitudeType magnitude(float a) { return fabs(a); };    
     static inline float zero()  { return(0.0); };
     static inline float one()   { return(1.0); };    
+    static inline float conjugate(float x)   { return(x); };    
     static inline float nan()   { return flt_nan; };
     static inline bool isnaninf(float x) { // RAB: 2004/05/28: Taken from NOX_StatusTest_FiniteValue.C
       const float tol = 1e-6; // Any (bounded) number should do!
@@ -325,6 +329,7 @@ namespace Teuchos {
     static inline magnitudeType magnitude(double a) { return fabs(a); };
     static inline double zero()  { return 0.0; };
     static inline double one()   { return 1.0; };
+    static inline double conjugate(double x)   { return(x); };    
     static inline double nan() { return dbl_nan; };
     static inline bool isnaninf(double x) { // RAB: 2004/05/28: Taken from NOX_StatusTest_FiniteValue.C
       const double tol = 1e-6; // Any (bounded) number should do!
@@ -351,6 +356,7 @@ namespace Teuchos {
     static magnitudeType magnitude(mpf_class a) { return abs(a); };
     static inline mpf_class zero() { mpf_class zero = 0.0; return zero; };
     static inline mpf_class one() { mpf_class one = 1.0; return one; };    
+    static inline mpf_class conjugate(mpf_class x) { return x; };
     static inline void seedrandom(unsigned int s) { 
       unsigned long int seedVal = static_cast<unsigned long int>(s);
       gmp_rng.seed( seedVal );	
@@ -376,6 +382,7 @@ namespace Teuchos {
     static magnitudeType magnitude(mp_real a) { return abs(a); };
     static inline mp_real zero() { mp_real zero = 0.0; return zero; };
     static inline mp_real one() { mp_real one = 1.0; return one; };    
+    static inline mp_real conjugate(mp_real x) { return x; };
     static inline void seedrandom(unsigned int s) { 
       long int seedVal = static_cast<long int>(s);
       srand48(seedVal);
@@ -420,6 +427,7 @@ namespace Teuchos {
     static magnitudeType magnitude(ComplexT a) { return std::abs(a); };
     static inline ComplexT zero()              { return ComplexT(ScalarTraits<magnitudeType>::zero(),ScalarTraits<magnitudeType>::zero()); };
     static inline ComplexT one()               { return ComplexT(ScalarTraits<magnitudeType>::one(),ScalarTraits<magnitudeType>::zero()); };
+    static inline ComplexT conjugate(ComplexT a){ return ComplexT(a.real(),-a.imag()); };
     static inline ComplexT nan()               { return ComplexT(ScalarTraits<magnitudeType>::nan(),ScalarTraits<magnitudeType>::nan()); };
     static inline bool isnaninf(ComplexT x)    { return ScalarTraits<magnitudeType>::isnaninf(x.real()) || ScalarTraits<magnitudeType>::isnaninf(x.imag()); };
     static inline void seedrandom(unsigned int s) { ScalarTraits<magnitudeType>::seedrandom(s); };
