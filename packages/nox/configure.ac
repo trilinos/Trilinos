@@ -641,10 +641,6 @@ AC_LIBTOOLIZE_LINKER_FLAGS(LIBTOOL_LINKER_FLAGS)
 AC_LIBTOOLIZE_CCLINKER_FLAGS(LIBTOOL_CCLINKER_FLAGS)
 
 # ------------------------------------------------------------------------
-# ------------------------------------------------------------------------
-TAC_ARG_WITH_LIBS
-
-# ------------------------------------------------------------------------
 # STL bug on solaris.
 # ------------------------------------------------------------------------
 # Solaris requires a const argument in constructing maps. This is wrong
@@ -1307,6 +1303,9 @@ if test X${BUILD_ANY_EXAMPLES} = Xyes; then
 
   # Find valid LAPACK DGGEV function
   ACX_DGGEV
+
+  # User defined libraries
+  TAC_ARG_WITH_LIBS
 
 fi
 
