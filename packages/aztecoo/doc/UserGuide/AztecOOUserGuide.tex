@@ -68,8 +68,8 @@
 \newcommand{\distobject}{Epetra\_DistObject}
 \newcommand{\linearproblem}{Epetra\_LinearProblem}
 \newcommand{\operator}{Epetra\_Operator}
-\newcommand{\fecrsmatrix}{Epetra\_FECrsMatrix}
-\newcommand{\fevbrmatrix}{Epetra\_FEVbrMatrix}
+\newcommand{\fecrsmatrix}{Epetra\_FE\-Crs\-Matrix}
+\newcommand{\fevbrmatrix}{Epetra\_FE\-Vbr\-Matrix}
 \newcommand{\msrmatrix}{Epetra\_MsrMatrix}
 \newcommand{\statustest}{AztecOO\_StatusTest}
 \newcommand{\oooperator}{AztecOO\_Operator}
@@ -171,7 +171,7 @@ is the best program to use for linking, since it is aware of what system librari
 are needed for linking.
 
 Trilinos (and AztecOO as part of Trilinos) use a much different build 
-process that Aztec 2.1.  Trilinos uses 
+process than Aztec 2.1.  Trilinos uses 
 Autoconf~\cite{Autoconf} and Automake~\cite{Automake} to support a configure/make
 process.  If you are familar
 with configure/make procedures, you should find Trilinos  fairly easy install.  
@@ -186,7 +186,7 @@ Unlike Aztec, AztecOO does not provide its own copies of BLAS, LAPACK or Y12M li
 This change is part of a general policy in Trilinos to provide interfaces to third-party
 libraries but not code.  This change is generally considered good practice from a software
 engineering perspective for a number of reasons, but can be a hindrance to Aztec users
-making a transition to AztectOO.  Optimized BLAS libraries are available for most computer
+making a transition to AztecOO.  Optimized BLAS libraries are available for most computer
 systems.  We recommend you obtain one of these libraries from the Internet, if it is not
 already installed on your computer system.  LAPACK is also available in an optimized form
 for some systems, but this is less critical.  LAPACK can also be obtained from the Internet,
@@ -430,8 +430,8 @@ other ways, but we strongly recommend use of the constructor shown in
 line 53.  Note that when the AztecOO object is constructed, the
 parameter and option values listed in
 Section~\ref{Section:OptionsAndParams} will be set to their default
-values.  These defaults can be changed by calling the SetAztecOption()
-and SetAztecParam() methods.
+values.  These defaults can be changed by calling the SetAztecOption(),
+SetAztecParam() and SetParameters() methods (see section \ref{Section:OptionsAndParams}).
 \paragraph{Lines 55--56}
 Once the solver object is instantiated, we change the value of
 AZ\_precond to AZ\_Jacobi.  Note that the key/value pairs passed in to
@@ -457,9 +457,10 @@ for proper clean up.
 \section{Aztec Options and Parameters\label{Section:OptionsAndParams}}
 
 Because AztecOO is partly a wrapper around Aztec, much of the
-control and selection of solver options and parameters is done via two
+control and selection of solver options and parameters is done via three
 method calls that set Aztec options and parameters, namely
-SetAztecOption() and SetAztecParam().  Most of the
+SetAztecOption(), SetAztecParam() and SetParameters()
+ (see \ref{parameterlist}).  Most of the
 options and parameters are identical to those found in Aztec 2.1.
 However, there are a few new options and parameters.  Below we
 list all options and parameters, including the default value and
@@ -740,6 +741,54 @@ incomplete factorization preconditioners. When {\it params}[{\sf AZ\_omega}] is 
    corresponds to ILU(k). When it is set to one, RILU corresponds to
    MILU(k) where k is given by {\it options}[{\sf AZ\_graph\_fill}]. 
    \cite{milu}\\ DEFAULT: 1.}
+
+\subsection{ParameterList Interface\label{parameterlist}}
+The AztecOO method SetParameters() allows options and parameters to be set
+using values held in a Teuchos::ParameterList container. The SetParameters()
+method is available only if the option \InlineCommand{--enable-aztecoo-teuchos}
+is provided to the \InlineCommand{configure} command.
+
+This method extracts any mixture of options and parameters from a
+Teuchos::\-Para\-meterList object and uses them to set values in AztecOO's
+internal
+options and params arrays. SetParameters() may be called repeatedly, and does
+not reset default values or previously-set values unless those values are
+contained in the current Teuchos::ParameterList argument. (Of course, if the
+method SetAztecDefaults() is called after SetParameters() has been called,
+any parameters that were set by SetParameters() will be lost.)
+
+A Teuchos::ParameterList is a collection of named Teuchos::ParameterEntry
+objects. (Please refer to documentation for the Teuchos package for information
+on using the Teuchos::ParameterList.) AztecOO recognizes names which mirror the
+macros defined in az\_aztec\_defs.h and described above in subsections
+\ref{optionI} and \ref{optionD}.
+In addition, it recognizes case insensitive versions of those names, with or
+without the prepended `AZ\_'. As an example, the following are equivalent and
+valid: ``AZ\_solver", ``SOLVER", ``Solver". To set an entry in the Aztec options
+array, the type of the ParameterEntry value may be either a string or an int
+in some cases. For example, if selecting the solver, the following are equivalent
+and valid: AZ\_gmres (which is an int), ``AZ\_gmres" (which is a string) or
+``GMRES" (case-insensitive, 'AZ\_' is optional).
+
+To set an entry in the Aztec params array, the type of the
+ParameterEntry value must be double.
+
+By default, the SetParameters() method will silently ignore parameters which have
+unrecognized names or invalid types. Users may provide an optional argument
+specifying that warnings be printed for unused parameters. Alternatively,
+users may iterate the ParameterList afterwards and check the isUsed
+attribute on the ParameterEntry objects.
+
+Here is a brief example of setting parameters using the ParameterList interface:
+\begin{verbatim}
+  Teuchos::ParameterList parameterlist;
+  parameterlist.set("solver", AZ_gmres); //AZ_gmres stored as int
+  parameterlist.set("precond", "Jacobi"); //"Jacobi" -> AZ_Jacobi
+  parameterlist.set("AZ_tol", 1.e-10);
+
+  AztecOO azoo;
+  azoo.SetParameters(parameterlist);
+\end{verbatim}
 
 \subsection{Return status\label{status}}
 

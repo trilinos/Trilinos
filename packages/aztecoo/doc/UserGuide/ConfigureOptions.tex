@@ -1,7 +1,7 @@
 \begin{Verbatim}
 `configure' configures aztecoo 3.3d to adapt to many kinds of systems.
 
-Usage: configure [OPTION]... [VAR=VALUE]...
+Usage: ../../../packages/aztecoo/configure [OPTION]... [VAR=VALUE]...
 
 To assign environment variables (e.g., CC, CFLAGS...), specify them as
 VAR=VALUE.  See below for descriptions of some of the useful variables.
@@ -21,9 +21,9 @@ Configuration:
 
 Installation directories:
   --prefix=PREFIX         install architecture-independent files in PREFIX
-			  [/usr/local]
+                          [/usr/local]
   --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
-			  [PREFIX]
+                          [PREFIX]
 
 By default, `make install' will install all the files in
 `/usr/local/bin', `/usr/local/lib' etc.  You can specify
@@ -60,18 +60,30 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-maintainer-mode  enable make rules and dependencies not useful
-			  (and sometimes confusing) to the casual installer
+                          (and sometimes confusing) to the casual installer
   --enable-mpi            MPI support
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-aztecoo-azlu   Enable az-lu preconditioner. Default is no. Requires
                           y12m.
+  --enable-aztecoo-teuchos
+                          Enable AztecOO Teuchos::ParameterList interface.
+                          Default is no. Requires Teuchos package.
   --enable-tests          Build tests for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
+
+  --enable-aztecoo-tests  Build AztecOO tests (default is yes if
+                          --disable-tests is not specified)
   --enable-examples       Build examples for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
                           yes)
+  --enable-aztecoo-examples
+                          Build AztecOO examples (default is yes if
+                          --disable-examples is not specified)
+  --enable-libcheck       Check for some third-party libraries including BLAS
+                          and LAPACK. (Cannot be disabled unless tests and
+                          examples are also disabled.) (default is yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
