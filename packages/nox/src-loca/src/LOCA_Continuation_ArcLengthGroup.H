@@ -291,6 +291,9 @@ namespace LOCA {
       //! Scaling factor for step size
       double stepSizeScaleFactor;
 
+      //! Flag indicating whether this is the first rescaling of predictor
+      bool isFirstRescale;
+
     };
   } // namespace Bifurcation
 } // namespace LOCA

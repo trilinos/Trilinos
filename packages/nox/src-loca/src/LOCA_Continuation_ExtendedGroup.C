@@ -44,8 +44,7 @@ LOCA::Continuation::ExtendedGroup::ExtendedGroup(
     ownsGroup(false),
     isValidPredictor(false),
     linearSolverParams(linSolverParams),
-    theta(params.getParameter("Initial Scale Factor", 1.0)),
-    usedConstantPredictor(true)
+    theta(params.getParameter("Initial Scale Factor", 1.0))
 {
 }
 
@@ -60,8 +59,7 @@ LOCA::Continuation::ExtendedGroup::ExtendedGroup(
     ownsGroup(true),
     isValidPredictor(false),
     linearSolverParams(linSolverParams),
-    theta(params.getParameter("Initial Scale Factor", 1.0)),
-    usedConstantPredictor(true)
+    theta(params.getParameter("Initial Scale Factor", 1.0))
 {
 }
 
@@ -76,8 +74,7 @@ LOCA::Continuation::ExtendedGroup::ExtendedGroup(
     ownsGroup(false),
     isValidPredictor(false),
     linearSolverParams(linSolverParams),
-    theta(params.getParameter("Initial Scale Factor", 1.0)),
-    usedConstantPredictor(true)
+    theta(params.getParameter("Initial Scale Factor", 1.0))
 {
   const ParameterVector& p = grpPtr->getParams();
   conParamID = p.getIndex(paramID);
@@ -94,8 +91,7 @@ LOCA::Continuation::ExtendedGroup::ExtendedGroup(
     ownsGroup(true),
     isValidPredictor(false),
     linearSolverParams(linSolverParams),
-    theta(params.getParameter("Initial Scale Factor", 1.0)),
-    usedConstantPredictor(true)
+    theta(params.getParameter("Initial Scale Factor", 1.0))
 {
   const ParameterVector& p = grpPtr->getParams();
   conParamID = p.getIndex(paramID);
@@ -110,8 +106,7 @@ LOCA::Continuation::ExtendedGroup::ExtendedGroup(
     ownsGroup(true),
     isValidPredictor(source.isValidPredictor),
     linearSolverParams(source.linearSolverParams),
-    theta(source.theta),
-    usedConstantPredictor(source.usedConstantPredictor)
+    theta(source.theta)
 {
 }
 
@@ -144,20 +139,12 @@ LOCA::Continuation::ExtendedGroup::operator=(
 
   // Protect against A = A
   if (this != &source) {
-
-    // delete old values
-    if (ownsGroup)
-      delete grpPtr;
-    
-    // Copy values
-    grpPtr = dynamic_cast<LOCA::Continuation::AbstractGroup*>(source.grpPtr->clone());
+    *grpPtr = *(source.grpPtr);
     conParamID = source.conParamID;
     predictorVec = source.predictorVec;
-    ownsGroup = true;
     isValidPredictor = source.isValidPredictor;
     linearSolverParams = source.linearSolverParams;
     theta = source.theta;
-    usedConstantPredictor = source.usedConstantPredictor;
   }
 
   return *this;
@@ -224,12 +211,6 @@ LOCA::Continuation::ExtendedGroup::computeSecant() {
   predictorVec = getPrevX();
   predictorVec.update(1.0, getX(), -1.0);
   predictorVec.scale(1.0/fabs(predictorVec.getParam()));
-  
-  // else {
-//     predictorVec.init(0.0);
-//     predictorVec.getParam() = 1.0;
-//     usedConstantPredictor = true;
-//   }
 
   isValidPredictor = true;
 

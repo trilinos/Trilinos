@@ -261,13 +261,6 @@ namespace LOCA {
 
       //! Stores scaling factor
       double theta;
-
-      /*! 
-	Stores flag indicating whether a constant predictor was used 
-	in place of the secant predictor (when no previous x-vec available)
-      */
-      bool usedConstantPredictor;
-  
     };
 
   } // namespace Continuation

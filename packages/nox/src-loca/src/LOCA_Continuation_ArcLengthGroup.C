@@ -46,7 +46,8 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
     derivResidualParamPtr(g.getX().clone(NOX::ShapeCopy)),
     arclengthStep(0.0),
     isValidPrevXVec(false),
-    stepSizeScaleFactor(1.0)
+    stepSizeScaleFactor(1.0),
+    isFirstRescale(true)
 {
   resetIsValid();
   gGoal = params.getParameter("Goal g", 0.5);
@@ -67,7 +68,8 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
     derivResidualParamPtr(g.getX().clone(NOX::ShapeCopy)),
     arclengthStep(0.0),
     isValidPrevXVec(false),
-    stepSizeScaleFactor(1.0)
+    stepSizeScaleFactor(1.0),
+    isFirstRescale(true)
 {
   resetIsValid();
   gGoal = params.getParameter("Goal g", 0.5);
@@ -90,7 +92,8 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const LOCA::Continuation::Arc
     gGoal(source.gGoal),
     gMax(source.gMax),
     thetaMin(source.thetaMin),
-    stepSizeScaleFactor(source.stepSizeScaleFactor)
+    stepSizeScaleFactor(source.stepSizeScaleFactor),
+    isFirstRescale(source.isFirstRescale)
 {
 }
 
@@ -138,6 +141,7 @@ LOCA::Continuation::ArcLengthGroup::operator=(const LOCA::Continuation::ArcLengt
     gMax = source.gMax;
     thetaMin = source.thetaMin;
     stepSizeScaleFactor = source.stepSizeScaleFactor;
+    isFirstRescale = source.isFirstRescale;
   }
 
   return *this;
@@ -540,7 +544,8 @@ void
 LOCA::Continuation::ArcLengthGroup::scalePredictor() {
 
   // Estimate dpds
-  double dpdsOld = 1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
+  double dpdsOld = 
+    1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
 
   if (Utils::doPrint(Utils::StepperDetails)) {
     cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
@@ -555,7 +560,8 @@ LOCA::Continuation::ArcLengthGroup::scalePredictor() {
   recalculateScaleFactor(dpdsOld);
 
   // Calculate new dpds using new scale factor
-  double dpdsNew = 1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
+  double dpdsNew = 
+    1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
 
   if (Utils::doPrint(Utils::StepperDetails)) {
     cout << "LOCA::Continuation::ArcLengthGroup::scalePredictor():  "
@@ -571,9 +577,11 @@ LOCA::Continuation::ArcLengthGroup::scalePredictor() {
 
   // Adjust step size scaling factor to reflect changes in 
   // arc-length parameterization
-  if (LOCA::Continuation::ExtendedGroup::usedConstantPredictor && !isPrevXVec()) {
+  // The first time we rescale (first continuation step) we use a different
+  // step size scale factor so that dpds*deltaS = step size provided by user
+  if (isFirstRescale) {
     stepSizeScaleFactor = 1.0/dpdsNew;
-    LOCA::Continuation::ExtendedGroup::usedConstantPredictor = false;
+    isFirstRescale = false;
   }
   else
     stepSizeScaleFactor = dpdsOld/dpdsNew;
@@ -587,12 +595,7 @@ LOCA::Continuation::ArcLengthGroup::recalculateScaleFactor(double dpds) {
   double thetaOld = getScaleFactor();
   double g = dpds*thetaOld;
 
-  static bool isFirstIt = false;
-
-  // if (g >= 0.9)
-//     return;
-
-  if (g > gMax || isFirstIt) {
+  if (g > gMax) {
     double thetaNew;
     
     thetaNew = gGoal/dpds * sqrt( (1.0 - g*g) / (1.0 - gGoal*gGoal) ); 
@@ -601,9 +604,6 @@ LOCA::Continuation::ArcLengthGroup::recalculateScaleFactor(double dpds) {
       thetaNew = thetaMin;
 
     setScaleFactor(thetaNew);
-
-    if (isFirstIt)
-      isFirstIt = false;
   }
 
 }
