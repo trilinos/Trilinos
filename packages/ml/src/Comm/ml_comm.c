@@ -33,6 +33,7 @@ int ML_Comm_Create( ML_Comm ** com )
    com_ptr->USR_sendbytes  = ML_Comm_Send;
    com_ptr->USR_irecvbytes = ML_Comm_Irecv;
    com_ptr->USR_waitbytes  = ML_Comm_Wait;
+   com_ptr->USR_cheapwaitbytes  = ML_Comm_CheapWait;
    com_ptr->USR_errhandler = NULL;
 
 #ifdef ML_MPI
@@ -41,6 +42,7 @@ int ML_Comm_Create( ML_Comm ** com )
    com_ptr->USR_sendbytes  = ML_Comm_Send;
    com_ptr->USR_irecvbytes = ML_Comm_Irecv;
    com_ptr->USR_waitbytes  = ML_Comm_Wait;
+   com_ptr->USR_cheapwaitbytes  = ML_Comm_CheapWait;
    com_ptr->USR_comm       = MPI_COMM_WORLD;
 #ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
    /* register the error handling function */
@@ -93,6 +95,7 @@ int ML_Comm_Check( ML_Comm *com_ptr )
    if ( com_ptr->USR_irecvbytes == NULL ) ready_flag = 0;
    if ( com_ptr->USR_sendbytes  == NULL ) ready_flag = 0;
    if ( com_ptr->USR_waitbytes  == NULL ) ready_flag = 0;
+   if ( com_ptr->USR_cheapwaitbytes  == NULL ) ready_flag = 0;
    if ( com_ptr->USR_errhandler == NULL ) ready_flag = 0;
    if ( com_ptr->ML_mypid  < 0 )          ready_flag = 0;
    if ( com_ptr->ML_nprocs < 0 )          ready_flag = 0;
@@ -242,7 +245,7 @@ int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
 #else
                                     (void *)&Request );
 #endif
-            com_ptr->USR_waitbytes((void*) &indata, k, &partner, 
+            com_ptr->USR_cheapwaitbytes((void*) &indata, k, &partner, 
                                    &msgtype, com_ptr->USR_comm, 
 #ifdef ML_CPP
                                    &Request );
@@ -289,7 +292,7 @@ int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            com_ptr->USR_waitbytes((void*) &outdata, k, &partner, &msgtype,
+            com_ptr->USR_cheapwaitbytes((void*) &outdata, k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -362,7 +365,7 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
 #else
                                     com_ptr->USR_comm, (void *)&Request );
 #endif
-            com_ptr->USR_waitbytes((void*) &indata, k, &partner, &msgtype, 
+            com_ptr->USR_cheapwaitbytes((void*) &indata, k, &partner, &msgtype, 
 #ifdef ML_CPP
                                     com_ptr->USR_comm, &Request );
 #else
@@ -408,7 +411,7 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
 #else
                                     com_ptr->USR_comm, (void *)&Request );
 #endif
-            com_ptr->USR_waitbytes((void*) &outdata, k, &partner, &msgtype,
+            com_ptr->USR_cheapwaitbytes((void*) &outdata, k, &partner, &msgtype,
 #ifdef ML_CPP
                                     com_ptr->USR_comm, &Request );
 #else
@@ -479,7 +482,7 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
 #else
                                     com_ptr->USR_comm, (void *)&Request );
 #endif
-            com_ptr->USR_waitbytes((void*) &indata, k, &partner, &msgtype, 
+            com_ptr->USR_cheapwaitbytes((void*) &indata, k, &partner, &msgtype, 
 #ifdef ML_CPP
                                     com_ptr->USR_comm, &Request );
 #else
@@ -525,7 +528,7 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            com_ptr->USR_waitbytes((void*) &outdata, k, &partner, &msgtype,
+            com_ptr->USR_cheapwaitbytes((void*) &outdata, k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -597,7 +600,7 @@ double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            com_ptr->USR_waitbytes((void*) &indata, k, &partner, &msgtype, 
+            com_ptr->USR_cheapwaitbytes((void*) &indata, k, &partner, &msgtype, 
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -643,7 +646,7 @@ double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            com_ptr->USR_waitbytes((void*) &outdata, k, &partner, &msgtype,
+            com_ptr->USR_cheapwaitbytes((void*) &outdata, k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -710,7 +713,7 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            com_ptr->USR_waitbytes((void*) itmp, k, &partner, &msgtype,
+            com_ptr->USR_cheapwaitbytes((void*) itmp, k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -756,7 +759,7 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            com_ptr->USR_waitbytes((void*) idata, k, &partner, &msgtype,
+            com_ptr->USR_cheapwaitbytes((void*) idata, k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -873,7 +876,7 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            com_ptr->USR_waitbytes((void*) vals, k, &partner, &msgtype, 
+            com_ptr->USR_cheapwaitbytes((void*) vals, k, &partner, &msgtype, 
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -987,7 +990,7 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
          {
             com_ptr->USR_irecvbytes((void*) vals, k, &partner, &msgtype, 
                                     com_ptr->USR_comm, (void *) &Request );
-            com_ptr->USR_waitbytes((void*) vals, k, &partner, &msgtype, 
+            com_ptr->USR_cheapwaitbytes((void*) vals, k, &partner, &msgtype, 
                                     com_ptr->USR_comm, (void *) &Request );
          }
       }
@@ -1054,6 +1057,36 @@ int ML_Comm_Wait (void* buf, unsigned int count, int *src,
    }
 #endif
    return return_cnt;
+}
+
+/*------------------------------------------------------------------------*/
+
+/* Identical to ML_Comm_Wait, but  the message length is not calculated. */
+
+void ML_Comm_CheapWait (void* buf, unsigned int count, int *src,
+                  int *mid, USR_COMM comm, USR_REQ *request )
+{
+#ifdef ML_MPI
+   MPI_Status status;
+   MPI_Wait(request, &status);
+   *src = status.MPI_SOURCE;
+   *mid = status.MPI_TAG;
+   /* bogus code to avoid warnings */
+   if (*mid == -59) {
+     ML_avoid_unused_param(buf);
+     ML_avoid_unused_param((void *) &count);
+     ML_avoid_unused_param((void *) &comm);
+   }
+#else
+   /* bogus code to avoid warnings */
+   if (*mid == -59) {
+     ML_avoid_unused_param(buf);
+     ML_avoid_unused_param((void *) &count);
+     ML_avoid_unused_param((void *) src);
+     ML_avoid_unused_param((void *) &comm);
+     ML_avoid_unused_param((void *) request);
+   }
+#endif
 }
 
 /*------------------------------------------------------------------------*/

@@ -1235,7 +1235,7 @@ void ML_set_message_info(int N_external, int external[], int max_per_proc,
   length = 0;
   for (i = 0; i < num_send_neighbors; i++) {
     partner = -1;
-    comm->USR_waitbytes((void *) external, length, &partner, &type, 
+    comm->USR_cheapwaitbytes((void *) external, length, &partner, &type, 
                         comm->USR_comm, request+i);
     if (partner != -1) neighbors[num_recv_neighbors++] = partner;
   }
@@ -1291,7 +1291,7 @@ void ML_set_message_info(int N_external, int external[], int max_per_proc,
   for (i = 0; i < num_recv_neighbors; i++) {
     length     = sizeof(int);
     partner    = neighbors[i];
-    comm->USR_waitbytes((void *) &(send_lengths[i]), length, 
+    comm->USR_cheapwaitbytes((void *) &(send_lengths[i]), length, 
                  &partner, &type, comm->USR_comm, request+i);
   }
 
@@ -1322,7 +1322,7 @@ void ML_set_message_info(int N_external, int external[], int max_per_proc,
   for (i = 0; i < num_recv_neighbors; i++) {
     length     = send_lengths[i] * sizeof(int);
     partner    = neighbors[i];
-    comm->USR_waitbytes((void *) &(send2_ptr[start]), length, &partner, &type, 
+    comm->USR_cheapwaitbytes((void *) &(send2_ptr[start]), length, &partner, &type, 
                         comm->USR_comm, request+i);
     start += send_lengths[i];
   }

@@ -71,6 +71,7 @@ typedef struct ML_Comm_Struct
    int      (*USR_sendbytes)(void*,unsigned int,int,int,USR_COMM);
    int      (*USR_irecvbytes)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*);
    int      (*USR_waitbytes)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*);
+   void     (*USR_cheapwaitbytes)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*);
    USR_ERRHANDLER *USR_errhandler;
 
 } ML_Comm;
@@ -109,6 +110,7 @@ extern int    ML_Comm_GappendDouble(ML_Comm*,double *dvec,int *lleng,int tleng);
 
 extern int    ML_Comm_Irecv(void*,unsigned int,int *,int *,USR_COMM,USR_REQ*);
 extern int    ML_Comm_Wait (void*,unsigned int,int *,int *,USR_COMM,USR_REQ*);
+extern void   ML_Comm_CheapWait (void*,unsigned int,int *,int *,USR_COMM,USR_REQ*);
 extern int    ML_Comm_Send (void*,unsigned int,int,  int,  USR_COMM );
 
 #ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER

@@ -117,7 +117,7 @@ int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
    }
    for (i = 0; i < N_send_procs ; i++) 
    {
-     ml_comm->USR_waitbytes((void *) &(send_length[i]), sizeof(int) ,
+     ml_comm->USR_cheapwaitbytes((void *) &(send_length[i]), sizeof(int) ,
                 &(send_neighbors[i]), &type, ml_comm->USR_comm, request+i);
    }
    ML_az_sort( send_neighbors, N_send_procs , send_length, NULL);
@@ -155,7 +155,7 @@ int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
    j = 0;
    for (i = 0; i < N_send_procs ; i++) 
    {
-      ml_comm->USR_waitbytes((void *) &(send_list[j]), sizeof(int)*
+      ml_comm->USR_cheapwaitbytes((void *) &(send_list[j]), sizeof(int)*
 			     send_length[i], &(send_neighbors[i]), &type, 
 			     ml_comm->USR_comm, request+i);
       j += send_length[i];
@@ -950,7 +950,7 @@ void ML_cheap_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
   {
     neighbor = &(comm_info->neighbors[i]);
     rtype = type;   j = sizeof(double)* neighbor->N_rcv;
-    /* k = */comm->USR_waitbytes((void *) ptr_recv_list, j, &(neighbor->ML_id),
+    comm->USR_cheapwaitbytes((void *) ptr_recv_list, j, &(neighbor->ML_id),
                         &rtype, comm->USR_comm, request+i);
     ptr_recv_list += neighbor->N_rcv;
   }
@@ -1051,7 +1051,7 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
   {
     neighbor = &(comm_info->neighbors[i]);
     rtype = type;   j = sizeof(double)* neighbor->N_rcv;
-    k = comm->USR_waitbytes((void *) rcv_buf[i], j, &(neighbor->ML_id),
+    comm->USR_cheapwaitbytes((void *) rcv_buf[i], j, &(neighbor->ML_id),
                         &rtype, comm->USR_comm, request+i);
     temp = comm_info->neighbors[i].rcv_list;
     if (temp == NULL) 
@@ -1189,19 +1189,18 @@ void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
   {
     neighbor = &(comm_info->neighbors[i]);
     rtype = type;   j = sizeof(double)* neighbor->N_send;
-    k = comm->USR_waitbytes((void *) rcv_buf[i], j, &(neighbor->ML_id),
+    comm->USR_cheapwaitbytes((void *) rcv_buf[i], j, &(neighbor->ML_id),
                         &rtype, comm->USR_comm, request+i);
     temp = comm_info->neighbors[i].send_list;
-       if (overwrite_or_add == ML_ADD) 
-       {
-          for (k = 0; k < neighbor->N_send; k++) 
-             x[ temp[k] ] += rcv_buf[i][k];
-       }
-       else 
-       {
-          for (k = 0; k < neighbor->N_send; k++) 
-             x[ temp[k] ] = rcv_buf[i][k];
-       }
+    if (overwrite_or_add == ML_ADD) 
+    {
+      for (k = 0; k < neighbor->N_send; k++) 
+        x[ temp[k] ] += rcv_buf[i][k];
+    }
+    else {
+      for (k = 0; k < neighbor->N_send; k++) 
+        x[ temp[k] ] = rcv_buf[i][k];
+    }
     if (rcv_buf[i] != NULL) ML_free(rcv_buf[i]);
   }
   if ( N_neighbors > 0 ) ML_free(rcv_buf);
@@ -1210,7 +1209,7 @@ void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
   if (comm_info->remap != NULL) 
   {
      printf("comm_info->remap != NULL\n");
-	 exit(1);
+     exit(1);
   }
 } /* ML_transposed_exchange_bdry */
 
