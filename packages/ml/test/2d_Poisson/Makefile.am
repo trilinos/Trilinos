@@ -29,8 +29,21 @@
 
 EXEEXT = .exe
 
+if ML_USING_EPETRA
+epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
+else
+epetra_lib =
+endif
+
+if ML_USING_AZTECOO
+aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
+else
+aztecoo_lib =
+endif
+
 # One of the input options for this example is the coarse direct solver KLU.
 # KLU is part of amesos, which in turn needs teuchos.
+
 if ML_USING_TEUCHOS 
 teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
 else
@@ -79,10 +92,10 @@ GetNecessaryFiles: $(EXTRA_DIST)
 
 2d_Poisson_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
-	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-    ${amesos_lib} \
-	$(top_builddir)/../epetra/src/libepetra.a \
-    ${teuchos_lib} \
+	$(aztecoo_lib) \
+        ${amesos_lib} \
+	$(epetra_lib) \
+        ${teuchos_lib} \
 	GetNecessaryFiles
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
@@ -103,11 +116,11 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_builddir)/../amesos/src
 
 ml_libs = $(top_builddir)/src/libml.a        \
-                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+                $(aztecoo_lib) \
                 ${ifpack_lib} \
-	            ${amesos_lib} \
-                $(top_builddir)/../epetra/src/libepetra.a \
-	            ${teuchos_lib} \
+	        ${amesos_lib} \
+                $(epetra_lib) \
+	        ${teuchos_lib} \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \

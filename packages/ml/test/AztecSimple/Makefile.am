@@ -28,11 +28,47 @@
 
 EXEEXT = .exe
 
+if ML_USING_EPETRA
+epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
+else
+epetra_lib =
+endif
+
+if ML_USING_AZTECOO
+aztecoo_lib = $(top_builddir)/../epetra/src/libaztecoo.a
+else
+aztecoo_lib =
+endif
+
 if ML_USING_AMESOS
+amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
+else
+amesos_lib =
+endif
+
 if ML_USING_ANASAZI
+anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
+else
+anasazi_lib = 
+endif
+
 if ML_USING_TEUCHOS 
+teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
+else
+teuchos_lib =
+endif
+
 if ML_USING_TRIUTILS
+triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
+else
+triutils_lib =
+endif
+
 if ML_USING_IFPACK
+ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
+else
+ifpack_lib =
+endif
 
 noinst_PROGRAMS = AztecSimple
 
@@ -40,9 +76,9 @@ AztecSimple_SOURCES = $(srcdir)/AztecSimple.c
 
 AztecSimple_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a 
+	$(epetra_lib) \
+	$(triutils_lib) \
+	$(teuchos_lib)
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Coarsen                  \
@@ -63,44 +99,14 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/../triutils/src            \
                    -I$(top_builddir)/../triutils/src
 
-if ML_USING_AMESOS
-# Amesos require Teuchos
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-             $(top_builddir)/../teuchos/src/libteuchos.a
-else
-amesos_lib =
-endif
-if ML_USING_ANASAZI
-# Anasazi require Teuchos
-anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a  \
-             $(top_builddir)/../teuchos/src/libteuchos.a
-else
-anasazi_lib = 
-endif
-if ML_USING_TEUCHOS 
-teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
-else
-teuchos_lib =
-endif
-if ML_USING_TRIUTILS
-triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
-else
-triutils_lib =
-endif
-if ML_USING_IFPACK
-ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
-else
-ifpack_lib =
-endif
-#
 ml_libs = $(top_builddir)/src/libml.a        \
-                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+                $(aztecoo_lib) \
                 ${ifpack_lib} \
                 ${amesos_lib} \
                 ${anasazi_lib} \
                 ${teuchos_lib} \
                 ${triutils_lib} \
-                $(top_builddir)/../epetra/src/libepetra.a \
+                $(epetra_lib) \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \
@@ -112,9 +118,3 @@ AztecSimple_CPPFLAGS = ${ml_common_include_locations}
 AztecSimple_CXXFLAGS = ${ml_common_include_locations}
 AztecSimple_LDADD = ${ml_libs}
 AztecSimple_LINK = ${mllink}
-
-endif #if ML_USING_AMESOS
-endif #if ML_USING_ANASAZI
-endif #if ML_USING_TEUCHOS 
-endif #if ML_USING_TRIUTILS
-endif #if ML_USING_IFPACK

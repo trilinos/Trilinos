@@ -55,6 +55,18 @@ GetNecessaryFiles: $(EXTRA_DIST)
 
 #3d_Poisson$(REALEXT): $(3d_Poisson_SOURCES)
 
+if ML_USING_EPETRA
+epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
+else
+epetra_lib =
+endif
+
+if ML_USING_AZTECOO
+aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
+else
+aztecoo_lib =
+endif
+
 if ML_USING_TEUCHOS 
 teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
 else
@@ -77,10 +89,10 @@ endif
 
 3d_Poisson_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
-	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-    ${amesos_lib} \
-	$(top_builddir)/../epetra/src/libepetra.a \
-    ${teuchos_lib} \
+	$(aztecoo_lib) \
+        ${amesos_lib} \
+	$(epetra_lib) \
+        ${teuchos_lib} \
 	GetNecessaryFiles
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
@@ -101,11 +113,11 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_builddir)/../amesos/src
 
 ml_libs = $(top_builddir)/src/libml.a        \
-                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+                $(epetra_lib) \
                 ${ifpack_lib} \
-	            $(top_builddir)/../amesos/src/libamesos.a  \
-                $(top_builddir)/../epetra/src/libepetra.a \
-	            $(top_builddir)/../teuchos/src/libteuchos.a  \
+                $(amesos_lib) \
+                $(epetra_lib) \
+                $(teuchos_lib) \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \

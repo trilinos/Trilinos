@@ -30,28 +30,42 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = MultiLevelPreconditioner_NonSym 
 
+if ML_USING_EPETRA
+epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
+else
+epetra_lib =
+endif
+
+if ML_USING_AZTECOO
+amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
+else
+aztecoo_lib =
+endif
+
 if ML_USING_AMESOS
-# Amesos require Teuchos
 amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
 else
 amesos_lib =
 endif
+
 if ML_USING_ANASAZI
-# Anasazi require Teuchos
 anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
 else
 anasazi_lib = 
 endif
+
 if ML_USING_TEUCHOS 
 teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
 else
 teuchos_lib =
 endif
+
 if ML_USING_TRIUTILS
 triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
 else
 triutils_lib =
 endif
+
 if ML_USING_IFPACK
 ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
 else
@@ -62,7 +76,8 @@ MultiLevelPreconditioner_NonSym_SOURCES = $(srcdir)/MultiLevelPreconditioner_Non
 
 MultiLevelPreconditioner_NonSym_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
+    ${aztecoo_lib} \
+    ${epetra_lib} \
     ${triutils_lib} \
     ${amesos_lib} \
     ${anasazi_lib} \
@@ -88,13 +103,13 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_builddir)/../triutils/src
 #
 ml_libs = $(top_builddir)/src/libml.a        \
-                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+                $(aztecoo_lib)    \
                 ${ifpack_lib} \
                 ${amesos_lib} \
                 ${anasazi_lib} \
                 ${teuchos_lib} \
                 ${triutils_lib} \
-                $(top_builddir)/../epetra/src/libepetra.a \
+                $(epetra_lib) \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \
