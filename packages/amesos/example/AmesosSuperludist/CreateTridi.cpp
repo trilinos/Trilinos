@@ -71,9 +71,9 @@ int CreateTridi(Epetra_CrsMatrix& A)
   assert(A.TransformToLocal()==0);
 
 
-  delete MyGlobalElements;
-  delete Values;
-  delete Indices;
+  delete[] MyGlobalElements;
+  delete[] Values;
+  delete[] Indices;
   return 0;
 }
 
@@ -139,9 +139,9 @@ int CreateTridiPlus(Epetra_CrsMatrix& A)
   assert(A.TransformToLocal()==0);
 
 
-  delete MyGlobalElements;
-  delete Values;
-  delete Indices;
+  delete[] MyGlobalElements;
+  delete[] Values;
+  delete[] Indices;
   return 0;
 }
 
