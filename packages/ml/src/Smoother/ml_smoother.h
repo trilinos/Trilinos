@@ -74,6 +74,7 @@ struct ML_Smoother_Struct
    ML_SmootherFunc         *smoother;
    void                    (*data_destroy)(void *);
    double                  build_time, apply_time;
+  int                     times_applied;
    char                    *label;
    int                     pre_or_post;
    ML_Comm_Envelope        *envelope;

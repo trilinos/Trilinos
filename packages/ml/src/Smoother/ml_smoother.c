@@ -105,6 +105,7 @@ int ML_Smoother_Init(ML_Smoother *ml_sm, ML_1Level *mylevel)
    ml_sm->data_destroy = NULL;
    ml_sm->build_time = 0.0;
    ml_sm->apply_time = 0.0;
+   ml_sm->times_applied = 0;
    ml_sm->label      = NULL;
    ml_sm->pre_or_post = 0;
    ml_sm->envelope = NULL;
@@ -175,6 +176,8 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
       t1 = - t1;
       if ( (mypid == 0) && (t1 != 0.0))
          printf(" Apply time for %s (minimum) \t= %e\n",ml_sm->label,t1);
+      if ( (mypid == 0) && (ml_sm->times_applied != 0))
+         printf(" Number of Applies for %s \t= %d\n",ml_sm->label,ml_sm->times_applied);
    }
 #endif
 
@@ -311,6 +314,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, double sol[],
 
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
   pre->apply_time += (GetClock() - t0);
+  pre->times_applied++;
 #endif
   return 1;
 }
@@ -8060,6 +8064,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, Epetra_MultiVector &ep_sol,
    }
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
    pre->apply_time += (GetClock() - t0);
+   pre->times_applied++;
 #endif
    return 1;
 }
