@@ -144,6 +144,7 @@ int ML_Operator_Clean( ML_Operator *mat)
    }
 #endif
 #if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
+#if ! ( defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) )
    /* this could be wrong if one processor does nothing with a particular
       operator, but others do something. */
    if  (mat->label != NULL && mat->apply_time != 0.0)
@@ -157,6 +158,7 @@ int ML_Operator_Clean( ML_Operator *mat)
        printf(" Mflop rating for %s (min, avg, max) \t= %e  %e  %e\n",
               mat->label,minfl,avgfl,maxfl);
    }
+#endif   
 #endif
 
    if (mat->sub_matrix != NULL) ML_Operator_Destroy(&(mat->sub_matrix));
