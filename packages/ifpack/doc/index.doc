@@ -24,7 +24,7 @@ IFPACK is part of the Trilinos Solver Project and IFPACK object
 interacts well with other Trilinos classes.  In particular, IFPACK can
 be used as a preconditioner for AztecOO.
 
-<P>All IFPACK preconditioners can be rewritten as additive Schwarz methods,
+<P>Most IFPACK preconditioners can be rewritten as additive Schwarz methods,
 of overlapping domain decomposition type. The user can adopt
 a minimal-overlap (that is, zero-row overlap), 
 or ask IFPACK to extend the overlap.
@@ -293,7 +293,7 @@ parameter.
 </tr> <tr>
 <td>\c "partitioner: root node"   </td><td>\c int    </td><td>\c "0" </td>
 </tr> <tr>
-<td>\c "partitioner: use symmetric graph"</td><td>\c bool </td><td>\c "true" </td>
+<td>\c "partitioner: use symmetric graph" </td><td>\c bool </td><td>\c "true" </td>
 </tr> <tr>
 <td>\c "amesos: solver type"      </td><td>\c string </td><td>\c "Amesos_Klu" </td>
 </tr> <tr>
@@ -310,36 +310,20 @@ use Amesos as local solver. As the the list given in input to SetParameters()
 is parsed or copied, this list can go out of scope after this function
 returns. 
 
-\section ifp_note Note On IFPACK Classes
-
-The only class the IFPACK users should consider  is
-Ifpack_AdditiveSchwarz.
-The distribution contains several other classes, that are supposed to 
-be used as \e tools for Ifpack_AdditiveSchwarz (see above examples). These
-classes are Ifpack_Jacobi, Ifpack_GaussSeidel, Ifpack_SymGaussSeidel,
-Ifpack_SOR, Ifpack_SSOR, Ifpack_BlockJacobi, Ifpack_BlockGaussSeidel,
-Ifpack_BlockSymGaussSeidel, Ifpack_Amesos, Ifpack_vIct, Ifpack_vRiluk,
-Ifpack_gIct, Ifpack_gRiluk.
-These classes operate on local components only (with the assumption that
-OperatorDomainMap(), OperatorRangeMap() and RowMatrixRowMap()
-coincide). A robust code should use them directly only
-to specify templates for Ifpack_AdditiveSchwarz objects.
-
-
 \section ifp_tools Developers' Tools 
 
 IFPACK contains several classes, meant for developers rather than
 for users:
 - Graphs are derived from the pure virtual class Ifpack_Graph
   (whose documentation details the concept of graphs for IFPACK).
-  Concreate implementations are Ifpack_Graph_Epetra_CrsGraph 
+  Concrete implementations are Ifpack_Graph_Epetra_CrsGraph 
   and Ifpack_Graph_Epetra_RowMatrix;
 - Containers are derived from the pure virtual class Ifpack_Container
-  (whose documentation describes what a container is). Concreate
+  (whose documentation describes what a container is). Concrete
   implementations are Ifpack_DenseContainer and Ifpack_SparseContainer;
 - Reorderings are derived from the pure virtual class Ifpack_Reordering
   (whose documentation outlines the features of reorderings)
-  Concreate implementations are
+  Concrete implementations are
   Ifpack_RCMReordering and Ifpack_METISReordering;
 - Partitioners are derived from the pure virtual class Ifpack_Partitioner 
   (whose
