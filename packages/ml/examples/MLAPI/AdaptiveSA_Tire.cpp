@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
   Epetra_MpiComm comm(MPI_COMM_WORLD);
 #else
-  Epetra_SerialComm Comm;
+  Epetra_SerialComm comm;
 #endif
   int nproc = comm.NumProc();
 
