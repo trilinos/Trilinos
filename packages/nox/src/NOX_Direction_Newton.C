@@ -36,6 +36,7 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
+#include "NOX_Parameter_UserNorm.H"
 
 NOX::Direction::Newton::Newton(const NOX::Utils& u, NOX::Parameter::List& p) :
   utils(u),
@@ -193,17 +194,49 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       // Compute predRhs = RHSVector + predRhs (this is the predicted RHS)
       predRhs->update(1.0, oldsoln.getF(), 1.0);
       
-      // Return norm of predicted RHS
-      const double normpredf = predRhs->norm();
-      if (normpredf < 0) {
-	cerr << "NOX::Direction::Newton::resetForcingTerm " 
-	     << "- getNormNewtonSolveResidual returned a negative value" << endl;
-      }
+      // Compute the norms
+      double normpredf = 0.0;
+      double normf = 0.0;
+      double normoldf = 0.0;
 
-      // Get other norms
-      const double normf = soln.getNormF();
-      const double normoldf = oldsoln.getNormF();
-      
+      if (paramsPtr->sublist("Newton").isParameter("User Defined Norm")) {
+
+	const NOX::Parameter::Arbitrary& arbitrary = paramsPtr->
+	  sublist("Newton").getArbitraryParameter("User Defined Norm");
+	const NOX::Parameter::UserNorm* userNorm = 0;
+	userNorm = dynamic_cast<const NOX::Parameter::UserNorm*>(&arbitrary);
+	
+	if (userNorm != 0) {
+	  if (utils.isPrintProcessAndType(Utils::Details)) {
+	    cout << indent << "User defined norm:" << userNorm->getType()
+		 << endl;
+	  }
+	  normpredf = userNorm->computeNorm(*predRhs);
+	  normf = userNorm->computeNorm(soln.getF());
+	  normoldf = userNorm->computeNorm(oldsoln.getF());
+	}
+	else {
+	  if (utils.isPrintProcessAndType(Utils::Warning)) {
+	    cout << "WARNING: NOX::Direction::Newton::resetForcingTerm() - "
+		 << "\"User Defined Norm\" is not of type "
+		 << "NOX::Parameter::UserNorm!\n" 
+		 << "Defaulting to L-2 Norms!" << endl; 
+	  }
+	  normpredf = predRhs->norm();
+	  normf = soln.getNormF();
+	  normoldf = oldsoln.getNormF();
+	}
+      }
+      else {
+	if (utils.isPrintProcessAndType(Utils::Details)) {
+	  cout << indent << "Using L-2 norm for forcing term calc."
+	       << endl;
+	}
+	normpredf = predRhs->norm();
+	normf = soln.getNormF();
+	normoldf = oldsoln.getNormF();
+      }      
+
       // Compute forcing term
       eta_k = fabs(normf - normpredf) / normoldf;
       
@@ -273,12 +306,6 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 
   if (utils.isPrintProcessAndType(Utils::Details)) 
     cout << indent << "Forcing Term: " << eta_k << endl;
-
-  // Tell the linear solver that an adjustable forcing term is being used.
-  // This is required to account for linear solves that are scaled. 
-  if ((method == "Type 1") || (method == "Type 2")) {
-    paramsPtr->sublist("Newton").sublist("Linear Solver").setParameter("Using Adjustable Forcing Term", true);
-  }
   
   return true;
 }
