@@ -49,7 +49,7 @@ namespace LOCA {
       iterations required in the previous step.  In particular, the new
       step size \f$\Delta s_{new}\f$ is given by
       \f[
-         \Delta s_{new} = \Delta s_{old}\left(1 + a\left(\frac{N_{max} - N}{N_{max} -1}\right)^2\right)
+         \Delta s_{new} = \Delta s_{old}\left(1 + a\left(\frac{N_{max} - N}{N_{max}}\right)^2\right)
       \f]
       where \f$a\in[0,1]\f$ is an aggressiveness factor, \f$N\f$ is the 
       number of nonlinear solver iterations in the previous step, and

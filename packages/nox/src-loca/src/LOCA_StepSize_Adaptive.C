@@ -77,26 +77,28 @@ LOCA::StepSize::Adaptive::compute(
     prevStepSize = 0.0;
   }
   else {
-    double ds_ratio = curGroup.getStepSizeScaleFactor();
-    LOCA::StepSize::Constant::startStepSize *= ds_ratio;
-    LOCA::StepSize::Constant::maxStepSize *= ds_ratio;
-    LOCA::StepSize::Constant::minStepSize *= ds_ratio;
-
-    // Get maximum number of nonlinear iterations from stepper parameters
-    const NOX::Parameter::List& locaParams = 
-      stepper.getParameterList().sublist("LOCA");
-    const NOX::Parameter::List& p = locaParams.sublist("Stepper");
-    double maxNonlinearSteps 
-      = static_cast<double>(p.getParameter("Max Nonlinear Iterations", 15));
-
-    // Get number of nonlinear iterations in last step
-    double numNonlinearSteps = static_cast<double>(solver.getNumIterations());
   
     // A failed nonlinear solve cuts the step size in half
     if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
-      stepSize *= 0.5;    
+      stepSize *= LOCA::StepSize::Constant::failedFactor;    
     }
     else {
+
+      double ds_ratio = curGroup.getStepSizeScaleFactor();
+      LOCA::StepSize::Constant::startStepSize *= ds_ratio;
+      LOCA::StepSize::Constant::maxStepSize *= ds_ratio;
+      LOCA::StepSize::Constant::minStepSize *= ds_ratio;
+
+      // Get maximum number of nonlinear iterations from stepper parameters
+      const NOX::Parameter::List& locaParams = 
+	stepper.getParameterList().sublist("LOCA");
+      const NOX::Parameter::List& p = locaParams.sublist("Stepper");
+      double maxNonlinearSteps 
+	= static_cast<double>(p.getParameter("Max Nonlinear Iterations", 15));
+      
+      // Get number of nonlinear iterations in last step
+      double numNonlinearSteps = 
+	static_cast<double>(solver.getNumIterations());
 
       // Save successful stepsize as previous
       prevStepSize = stepSize;
@@ -106,9 +108,9 @@ LOCA::StepSize::Adaptive::compute(
                	      / (maxNonlinearSteps);
 
       stepSize *= (1.0 + agrValue * factor * factor);
-    } 
 
-    stepSize *= ds_ratio;
+      stepSize *= ds_ratio;
+    } 
   }
 
   // Clip step size to be within prescribed bounds

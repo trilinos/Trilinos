@@ -45,8 +45,6 @@ Unlike %NOX which can provide a range of nonlinear solvers using a single abstra
 
 both of which implement the interface required for all levels of functionality provided by %LOCA.
 
-To learn more about the theory behind %LOCA algorithms, please read the %LOCA v1.0 manual (<a href="../../src-loca/doc/loca_v1.0_manual/src_latex/loca_book.ps">ps</a>, <a href="../../src-loca/doc/loca_v1.0_manual/src_latex/loca_book.pdf">pdf</a>, <a href="../../src-loca/doc/loca_v1.0_manual/src_latex/loca_book/index.html">html</a>).  Please note the theory and implementation described in this manual is for the original version of %LOCA available <a href="http://www.cs.sandia.gov/loca">here</a>.  The implementation here is completely different, but the theory is more-or-less the same.
-
 \section loca_user LOCA User Information
 
 See \ref loca_user_info.
@@ -121,12 +119,13 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	  <li> "Initial Value" -- [double] Initial value of continuation parameter
 	  <li> "Max Value" -- [double] Maximum value of continuation parameter
 	  <li> "Min Value" -- [double] Minimum value of continuation parameter
-	  <li> "Max Steps" -- [int] Maximum number of continuation steps
+	  <li> "Max Steps" -- [int] Maximum number of continuation steps (including failed steps)
 	  <li> "Max Nonlinear Iterations" -- [int] Maximum number of nonlinear iterations per continuation step
-	  <li> "Goal g" -- [double] Goal for parameter contribution to unit arclength
-	  <li> "Max g" -- [double] Max for parameter contribution to unit arclength, triggering rescaling
-	  <li> "Initial Scale Factor" -- [double] Initial factor for scaling solution term of arclength eq.
+	  <li> "Goal Arc Length Parameter Contribution" -- [double] Goal for parameter contribution to unit arclength
+	  <li> "Max Arc Length Parameter Contribution" -- [double] Max for parameter contribution to unit arclength, triggering rescaling
+	  <li> "Initial Scale Factor" -- [double] Initial factor for parameter term of arclength eq.
 	  <li> "Min Scale Factor" -- [double] Minimum factor for scaling solution term of arclength eq.
+	  <li> "Enable Tangent Factor Step Size Scaling" -- [bool] Enable step size scaling by cosine between two consective tangent vectors \f$v_0\f$ and \f$v_1\f$ to continuation curve:  \f$|v_0\cdot v_1|^{\alpha} where \f$\alpha\f$ is the tangent factor exponent.
 	  <li> "Min Tangent Factor" -- [double] Minumum cosine between two consecutive tangent vectors, below which the continuation step is failed
 	  <li> "Tangent Factor Exponent" -- [double] Exponent on the cosine between two consecutive tangent vectors, which then modifies the step size
 	  <li> "Compute Eigenvalues" -- [bool] Flag for requesting eigenvalue calculation after each continuation step
@@ -136,6 +135,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	  <li> "Method" -- ["Constant", "Secant", "Tangent", "Random"] Predictor method
 	  <li> "Epsilon" -- [double] Size of perturbation for LOCA::Predictor::Random predictor
 	  <li> "First Step Predictor" sublist -- used by LOCA::Predictor::Secant -- Replicates "Predictor" sublist structure
+	  <li> "Last Step Predictor" sublist -- Predictor to use for last step of arc-length continuation to hit target (max or min) value exactly -- Replicates "Predictor" sublist structure
 	  </ul>
      <li> "Step Size" sublist -- used by LOCA::StepSize::Manager
           <ul>
@@ -143,6 +143,8 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	  <li> "Initial Step Size" -- [double] Initial parameter step size
 	  <li> "Min Step Size" -- [double] Minimum parameter step size
 	  <li> "Max Step Size" -- [double] Maximum parameter step size
+	  <li> "Failed Step Reduction Factor" -- [double] Factor by which step size is reduced after a failed step
+	  <li> "Successful Step Increase Factor" - [double] Factor by which step size is increased after a successful step when the step size is smaller than the initial step size (Constant step size method only). 
 	  <li> "Aggressiveness" -- [double] Aggressiveness factor in adaptive step size adjustment
 	  </ul>
      <li> "Utilities" sublist -- used by LOCA::Utils

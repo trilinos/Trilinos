@@ -50,8 +50,9 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
     isFirstRescale(true)
 {
   resetIsValid();
-  gGoal = params.getParameter("Goal g", 0.5);
-  gMax = params.getParameter("Max g", 0.0);
+  doArcLengthScaling = params.getParameter("Enable Arc Length Scaling",true); 
+  gGoal = params.getParameter("Goal Arc Length Parameter Contribution", 0.5);
+  gMax = params.getParameter("Max Arc Length Parameter Contribution", 0.0);
   thetaMin = params.getParameter("Min Scale Factor", 1.0e-3);
 }
 
@@ -72,8 +73,9 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
     isFirstRescale(true)
 {
   resetIsValid();
-  gGoal = params.getParameter("Goal g", 0.5);
-  gMax = params.getParameter("Max g", 0.0);
+  doArcLengthScaling = params.getParameter("Enable Arc Length Scaling",true);
+  gGoal = params.getParameter("Goal Arc Length Parameter Contribution", 0.5);
+  gMax = params.getParameter("Max Arc Length Parameter Contribution", 0.0);
   thetaMin = params.getParameter("Min Scale Factor", 1.0e-3);
 }
 
@@ -89,6 +91,7 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const LOCA::Continuation::Arc
     isValidJacobian(source.isValidJacobian),
     isValidNewton(source.isValidNewton),
     isValidPrevXVec(source.isValidPrevXVec),
+    doArcLengthScaling(source.doArcLengthScaling),
     gGoal(source.gGoal),
     gMax(source.gMax),
     thetaMin(source.thetaMin),
@@ -137,6 +140,7 @@ LOCA::Continuation::ArcLengthGroup::operator=(const LOCA::Continuation::ArcLengt
     isValidJacobian = source.isValidJacobian;
     isValidNewton = source.isValidNewton;
     isValidPrevXVec = source.isValidPrevXVec;
+    doArcLengthScaling = source.doArcLengthScaling;
     gGoal = source.gGoal;
     gMax = source.gMax;
     thetaMin = source.thetaMin;
@@ -545,53 +549,56 @@ LOCA::Continuation::ArcLengthGroup::resetIsValid() {
 void
 LOCA::Continuation::ArcLengthGroup::scalePredictor() {
 
-  // Estimate dpds
-  double dpdsOld = 
-    1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
+  if (doArcLengthScaling) {
 
-   if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-     cout << endl 
-	  << "\t" << LOCA::Utils::fill(64, '+') << endl 
-	  << "\t" << "Arc-length scaling calculation:" << endl
-	  << "\t" << "Parameter component of predictor before rescaling = " 
-	  << LOCA::Utils::sci(dpdsOld) << endl
-	  << "\t" << "Scale factor from previous step                   = "
-	  << LOCA::Utils::sci(theta) << endl
-	  << "\t" << "Parameter contribution to arc-length equation     = "
-	  << LOCA::Utils::sci(theta*dpdsOld) << endl;
-   }
+    // Estimate dpds
+    double dpdsOld = 
+      1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
 
-  // Recompute scale factor
-  recalculateScaleFactor(dpdsOld);
+    if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+      cout << endl 
+	   << "\t" << LOCA::Utils::fill(64, '+') << endl 
+	   << "\t" << "Arc-length scaling calculation:" << endl
+	   << "\t" << "Parameter component of predictor before rescaling = " 
+	   << LOCA::Utils::sci(dpdsOld) << endl
+	   << "\t" << "Scale factor from previous step                   = "
+	   << LOCA::Utils::sci(theta) << endl
+	   << "\t" << "Parameter contribution to arc-length equation     = "
+	   << LOCA::Utils::sci(theta*dpdsOld) << endl;
+    }
 
-  // Calculate new dpds using new scale factor
-  double dpdsNew = 
-    1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
+    // Recompute scale factor
+    recalculateScaleFactor(dpdsOld);
 
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-     cout << endl 
-	  << "\t" << "Parameter component of predictor after rescaling  = " 
-	  << LOCA::Utils::sci(dpdsNew) << endl
-	  << "\t" << "New scale factor (theta)                          = "
-	  << LOCA::Utils::sci(theta) << endl
-	  << "\t" << "Parameter contribution to arc-length equation     = "
-	  << LOCA::Utils::sci(theta*dpdsNew) << endl
-	  << "\t" << LOCA::Utils::fill(64, '+') << endl;
-   }
+    // Calculate new dpds using new scale factor
+    double dpdsNew = 
+      1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
 
-  // Rescale predictor vector
-  predictorVec.scale(dpdsNew);
+    if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+      cout << endl 
+	   << "\t" << "Parameter component of predictor after rescaling  = " 
+	   << LOCA::Utils::sci(dpdsNew) << endl
+	   << "\t" << "New scale factor (theta)                          = "
+	   << LOCA::Utils::sci(theta) << endl
+	   << "\t" << "Parameter contribution to arc-length equation     = "
+	   << LOCA::Utils::sci(theta*dpdsNew) << endl
+	   << "\t" << LOCA::Utils::fill(64, '+') << endl;
+    }
 
-  // Adjust step size scaling factor to reflect changes in 
-  // arc-length parameterization
-  // The first time we rescale (first continuation step) we use a different
-  // step size scale factor so that dpds*deltaS = step size provided by user
-  if (isFirstRescale) {
-    stepSizeScaleFactor = 1.0/dpdsNew;
-    isFirstRescale = false;
+    // Rescale predictor vector
+    predictorVec.scale(dpdsNew);
+
+    // Adjust step size scaling factor to reflect changes in 
+    // arc-length parameterization
+    // The first time we rescale (first continuation step) we use a different
+    // step size scale factor so that dpds*deltaS = step size provided by user
+    if (isFirstRescale) {
+      stepSizeScaleFactor = 1.0/dpdsNew;
+      isFirstRescale = false;
+    }
+    else
+      stepSizeScaleFactor = dpdsOld/dpdsNew;
   }
-  else
-    stepSizeScaleFactor = dpdsOld/dpdsNew;
 
   return;
 }

@@ -57,8 +57,10 @@ namespace LOCA {
 
     //! %Generic step size control interface.
     /*! 
-      %Generic interface for computing a step size.
-    */
+     * %Generic interface for computing a step size.  Any step size control
+     * strategy class should be derived from this class and implement the
+     * pure virtual methods of this class.
+     */
     class Generic {
 
     public:
@@ -80,9 +82,9 @@ namespace LOCA {
 	\brief Compute the step size.
       */
       /*!
-	Returns NOX::Abstract::Group::Failed if the computed step size
-	fails certain criteria (e.g., if it is too small)
-      */
+       * Returns NOX::Abstract::Group::Failed if the computed step size
+       * fails certain criteria (e.g., if it is too small)
+       */
       virtual NOX::Abstract::Group::ReturnType 
       compute(LOCA::Continuation::ExtendedGroup& curGroup,
 	      const LOCA::Continuation::ExtendedVector& predictor,

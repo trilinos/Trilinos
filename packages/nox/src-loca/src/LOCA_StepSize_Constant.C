@@ -52,6 +52,8 @@ LOCA::StepSize::Constant::reset(NOX::Parameter::List& params)
   maxStepSize = params.getParameter("Max Step Size", 1.0e+12);
   minStepSize = params.getParameter("Min Step Size", 1.0e-12);
   startStepSize = params.getParameter("Initial Step Size", 1.0);
+  failedFactor = params.getParameter("Failed Step Reduction Factor", 0.5);
+  successFactor = params.getParameter("Successful Step Increase Factor", 1.26);
   prevStepSize = 0.0;
   isFirstStep = true;
 
@@ -80,17 +82,19 @@ LOCA::StepSize::Constant::compute(
     prevStepSize = 0.0;
   }
   else {
-    double ds_ratio = curGroup.getStepSizeScaleFactor();
-    startStepSize *= ds_ratio;
-    maxStepSize *= ds_ratio;
-    minStepSize *= ds_ratio;
 
     // Step size remains constant, unless...
-    // A failed nonlinear solve cuts the step size in half
+    // A failed nonlinear solve cuts the step size by failedFactor
     if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
-      stepSize *= 0.5;
+      stepSize *= failedFactor;
     }
     else {
+
+      double ds_ratio = curGroup.getStepSizeScaleFactor();
+      startStepSize *= ds_ratio;
+      maxStepSize *= ds_ratio;
+      minStepSize *= ds_ratio;
+
       prevStepSize = stepSize;
       stepSize *= ds_ratio;
 
@@ -100,7 +104,7 @@ LOCA::StepSize::Constant::compute(
 
       if (stepSize != startStepSize) {
 
-        stepSize *= 1.26;
+        stepSize *= successFactor;
 
         if (startStepSize > 0.0)
           stepSize = min(stepSize, startStepSize);

@@ -48,8 +48,8 @@ namespace LOCA {
       <ul>
       <li> "Method" - Name of the step size control method. Valid choices are
       <ul> 
-      <li> "%Constant" (LOCA::StepSize::Constant) [Default]
-      <li> "%Adaptive" (LOCA::StepSize::Adaptive) 
+      <li> "Constant" (LOCA::StepSize::Constant) [Default]
+      <li> "Adaptive" (LOCA::StepSize::Adaptive) 
       </ul>
       </ul>
     */  

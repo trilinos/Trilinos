@@ -279,6 +279,9 @@ namespace LOCA {
       //! Is previous solution vector valid
       bool isValidPrevXVec;
 
+      //! Flag indicating whether to do arc-length scaling
+      bool doArcLengthScaling;
+
       //! Goal value of dp/ds squared
       double gGoal;
 

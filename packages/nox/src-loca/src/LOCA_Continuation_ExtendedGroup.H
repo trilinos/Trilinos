@@ -67,11 +67,26 @@ namespace LOCA {
      *  continuation equation
      *  and different choices of \f$g\f$ yield different continuation methods.
      *
-     * This group, derived from the NOX::Abstract::Group, defines an 
-     * additional interface that continuation groups should implement, 
-     * as well as some generic algorithms for commom computations among 
-     * continuation groups.  It stores a pointer to the underlying group,
+     * This group, derived from the LOCA::Extended::AbstractGroup, defines an 
+     * additional interface that continuation groups should implement
+     * so that all continuation groups can be manipulated by the 
+     * LOCA::Stepper and LOCA::StepSize objects in a consistent fashion.
+     * This group also defines some generic algorithms for commom 
+     * computations among continuation groups and manages some of the data
+     * needed by all continuation groups..  It stores a pointer to the 
+     * underlying group (representing \f$F\f$),
      * a class of the type LOCA::Continuation::AbstractGroup.
+     *
+     * Ofter duing a continuation run, the continuation path must be
+     * reparameterized due to changing relative magnitudes of the solution
+     * component \f$x\f$ and parameter component \f$p\f$.  Since any 
+     * reparameterization will impact step size control, this group defines
+     * an interface for computing a "scale factor" for the continuation
+     * equation \f$g = 0\f$ and a step size scale factor which can be
+     * multiplied by the step size to have a consitent step size across
+     * reparameterizations.  See LOCA::Continuation::ArcLengthGroup for an
+     * example on how this can be used.  The default implementation here
+     * is for no reparameterization (scale factors are identically 1).
      *
      * The constructors take two parameter list arguments:  the first stores
      * the linear solver parameters required for the underlying group's 
@@ -89,13 +104,14 @@ namespace LOCA {
   
       //! Constructor with integer continuation parameter id
       /*!
-       * The argument grp is the underlying group which implements \f$F\f$,
-       * paramID is the index of the continuation parameter, linSolverParams
+       * The argument \em grp is the underlying group which implements \f$F\f$,
+       * \em paramID is the index of the continuation parameter, 
+       * \em linSolverParams
        * is the parameter list passed to the underlying groups 
-       * applyJacobianInverse() routine (for computeTangent()), and params
+       * applyJacobianInverse() routine (for computeTangent()), and \em params
        * is the parameter list for the continuation groups described above.
        *
-       * The grp argument is a non-const reference and may be modified.
+       * The \em grp argument is a non-const reference and may be modified.
        */
       ExtendedGroup(LOCA::Continuation::AbstractGroup& grp, int paramID,
 		    NOX::Parameter::List& linSolverParams,
@@ -103,10 +119,11 @@ namespace LOCA {
 
       //! Constructor with const grp, integer continuation parameter id
       /*!
-       * The argument grp is the underlying group which implements \f$F\f$,
-       * paramID is the index of the continuation parameter, linSolverParams
+       * The argument \em grp is the underlying group which implements \f$F\f$,
+       * \em paramID is the index of the continuation parameter, 
+       * \em linSolverParams
        * is the parameter list passed to the underlying groups 
-       * applyJacobianInverse() routine (for computeTangent()), and params
+       * applyJacobianInverse() routine (for computeTangent()), and \em params
        * is the parameter list for the continuation groups described above.
        */
       ExtendedGroup(const LOCA::Continuation::AbstractGroup& grp, int paramID,
@@ -115,13 +132,14 @@ namespace LOCA {
 
       //! Constructor with string continuation parameter id
      /*!
-       * The argument grp is the underlying group which implements \f$F\f$,
-       * paramID is the index of the continuation parameter, linSolverParams
+       * The argument \em grp is the underlying group which implements \f$F\f$,
+       * \em paramID is the index of the continuation parameter, 
+       * \em linSolverParams
        * is the parameter list passed to the underlying groups 
-       * applyJacobianInverse() routine (for computeTangent()), and params
+       * applyJacobianInverse() routine (for computeTangent()), and \em params
        * is the parameter list for the continuation groups described above.
        *
-       * The grp argument is a non-const reference and may be modified.
+       * The \em grp argument is a non-const reference and may be modified.
        */ 
       ExtendedGroup(LOCA::Continuation::AbstractGroup& grp, string paramID,
 		    NOX::Parameter::List& linSolverParams,
@@ -129,10 +147,11 @@ namespace LOCA {
 
       //! Constructor with const grp, string continuation parameter id
       /*!
-       * The argument grp is the underlying group which implements \f$F\f$,
-       * paramID is the index of the continuation parameter, linSolverParams
+       * The argument \em grp is the underlying group which implements \f$F\f$,
+       * \em paramID is the index of the continuation parameter, 
+       * \em linSolverParams
        * is the parameter list passed to the underlying groups 
-       * applyJacobianInverse() routine (for computeTangent()), and params
+       * applyJacobianInverse() routine (for computeTangent()), and \em params
        * is the parameter list for the continuation groups described above.
        */
       ExtendedGroup(const LOCA::Continuation::AbstractGroup& grp, 

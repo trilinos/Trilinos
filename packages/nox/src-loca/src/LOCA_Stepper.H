@@ -184,6 +184,9 @@ namespace LOCA {
     //! Flag indicating if this is an extra step to hit target value
     bool isTargetStep;
 
+    //! Flag indicating whether to do tangent factor step size scaling
+    bool doTangentFactorScaling;
+
     //! Tangent factor
     double tangentFactor;
 

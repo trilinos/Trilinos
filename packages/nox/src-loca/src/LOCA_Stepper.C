@@ -94,6 +94,7 @@ LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
   maxNonlinearSteps(s.maxNonlinearSteps),
   targetValue(s.targetValue),
   isTargetStep(s.isTargetStep),
+  doTangentFactorScaling(s.doTangentFactorScaling),
   tangentFactor(s.tangentFactor),
   minTangentFactor(s.minTangentFactor),
   tangentFactorExponent(s.tangentFactorExponent),
@@ -206,6 +207,8 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   targetValue = 0.0;
   isTargetStep = false;
   tangentFactor = 1.0;
+  doTangentFactorScaling = 
+    stepperList.getParameter("Enable Tangent Factor Step Size Scaling", false);
   minTangentFactor = stepperList.getParameter("Min Tangent Factor",0.1);
   tangentFactorExponent = 
     stepperList.getParameter("Tangent Factor Exponent",1.0);
@@ -328,26 +331,21 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus)
     *prevGroupPtr = *curGroupPtr;
 
     // Get underyling solution group
-    //LOCA::Continuation::AbstractGroup& underlyingGroup 
-    //  = dynamic_cast<LOCA::Continuation::AbstractGroup&>(prevGroupPtr->getUnderlyingGroup());
     LOCA::Continuation::AbstractGroup& underlyingGroup 
       = dynamic_cast<LOCA::Continuation::AbstractGroup&>(getSolutionGroup());
 
     // Make a copy of the parameter list, change continuation method to 
-    // natural, predictor method to constant
+    // natural
     NOX::Parameter::List lastStepParams(*paramListPtr);
     NOX::Parameter::List& lastStepperParams 
       = lastStepParams.sublist("LOCA").sublist("Stepper");
     lastStepperParams.setParameter("Continuation Method", "Natural");
-    lastStepperParams.sublist("Predictor").setParameter("Method", "Random");
 
     // Reset continuation manager
-    //conGroupManagerPtr->reset(lastStepperParams);
-    delete conGroupManagerPtr;
-    conGroupManagerPtr = new LOCA::Continuation::Manager(lastStepperParams);
+    conGroupManagerPtr->reset(lastStepperParams);
       
     // Reset predictor manager
-    predictorManagerPtr->reset(lastStepperParams.sublist("Predictor"));
+    predictorManagerPtr->reset(paramListPtr->sublist("LOCA").sublist("Predictor").sublist("Last Step Predictor"));
 
     // Get new continuation group
     delete curGroupPtr;
@@ -433,10 +431,13 @@ LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   NOX::StatusTest::StatusType solverStatus;
 
+  // Print info for beginning of step
   printStartStep();
 
+  // Compute next point on continuation curve
   solverStatus = solverPtr->solve();
 
+  // Check solver status
   if (solverStatus == NOX::StatusTest::Failed) {
     printEndStep(LOCA::Abstract::Iterator::Unsuccessful);
     return LOCA::Abstract::Iterator::Unsuccessful;
@@ -445,8 +446,10 @@ LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
   // Copy solution out of solver
   *curGroupPtr = solverPtr->getSolutionGroup();
 
+  // Print successful info for end of step
   printEndStep(LOCA::Abstract::Iterator::Successful);
 
+  // Print (save) solution
   curGroupPtr->printSolution();
 
   return LOCA::Abstract::Iterator::Successful;
@@ -467,7 +470,7 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   predictorManagerPtr->compute(*prevGroupPtr, *curGroupPtr, *curPredictorPtr);
 
-  if (getStepNumber() > 1) {
+  if (doTangentFactorScaling && (getStepNumber() > 1)) {
     tangentFactor = curGroupPtr->computeScaledDotProduct(*curPredictorPtr, 
 							 *prevPredictorPtr) / 
       sqrt(curGroupPtr->computeScaledDotProduct(*curPredictorPtr, 
@@ -486,6 +489,17 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 LOCA::Abstract::Iterator::IteratorStatus
 LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
+
+  // Check to see if max number of steps has been reached
+  if (LOCA::Abstract::Iterator::numTotalSteps
+        >= LOCA::Abstract::Iterator::maxSteps) {
+    if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
+      cout << "\n\tContinuation run stopping: reached maximum number of steps "
+	   << LOCA::Abstract::Iterator::maxSteps << endl;
+    }
+    return LOCA::Abstract::Iterator::Failed;
+  }
+
   if (stepStatus == LOCA::Abstract::Iterator::Successful) {
     
     double value = curGroupPtr->getContinuationParameter();
@@ -521,16 +535,6 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
   else if (isLastIteration())  // Failed step did not reach bounds as predicted
     return LOCA::Abstract::Iterator::NotFinished;
 
-  // Check to see if max number of steps has been reached
-  if (LOCA::Abstract::Iterator::numTotalSteps
-        >= LOCA::Abstract::Iterator::maxSteps) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
-      cout << "\n\tContinuation run stopping: reached maximum number of steps "
-	   << LOCA::Abstract::Iterator::maxSteps << endl;
-    }
-    return LOCA::Abstract::Iterator::Failed;
-  }
-
   return LOCA::Abstract::Iterator::NotFinished;
 }
 
@@ -545,14 +549,16 @@ LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
   if (res == NOX::Abstract::Group::Failed)
     return LOCA::Abstract::Iterator::Provisional;
 
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "\n\tTangent factor scaling:  Rescaling step size by "
-	 << LOCA::Utils::sci(pow(fabs(tangentFactor), tangentFactorExponent))
-	 << endl;
+  if (doTangentFactorScaling) {
+    if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+      cout << "\n\tTangent factor scaling:  Rescaling step size by "
+	   << LOCA::Utils::sci(pow(fabs(tangentFactor), tangentFactorExponent))
+	   << endl;
+    }
+
+    stepSize *= pow(fabs(tangentFactor), tangentFactorExponent);
   }
 
-  stepSize *= pow(fabs(tangentFactor), tangentFactorExponent);
-  
   // Cap the con parameter so we don't go past bounds
   double prevValue = curGroupPtr->getContinuationParameter();
   double dpds = curPredictorPtr->getParam();
