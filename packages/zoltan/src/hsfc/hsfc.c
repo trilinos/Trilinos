@@ -464,14 +464,6 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       }
 #endif
 
-   /* done, do we keep data structure for box drop and point drop? */
-   Zoltan_Bind_Param (HSFC_params, "KEEP_CUTS", (void *) &param) ;
-   param = 0 ;
-   Zoltan_Assign_Param_Vals (zz->Params, HSFC_params, zz->Debug_Level, zz->Proc,
-    zz->Debug_Proc) ;
-   if (param == 0)
-      Zoltan_HSFC_Free_Structure (zz) ;
-
    /* DEBUG: print useful information */
    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL  &&  zz->Proc == 0)
       printf ("<%d> Number of loops = %d\n", zz->Proc, loop+1) ;
@@ -485,6 +477,14 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
           dots[i].weight, dots[i].fsfc) ;
          printf ("PROC %d DOT %03u\n", p->index, gids[i]) ;
          }
+
+   /* done, do we keep data structure for box drop and point drop? */
+   Zoltan_Bind_Param (HSFC_params, "KEEP_CUTS", (void *) &param) ;
+   param = 0 ;
+   Zoltan_Assign_Param_Vals (zz->Params, HSFC_params, zz->Debug_Level, zz->Proc,
+    zz->Debug_Proc) ;
+   if (param == 0)
+      Zoltan_HSFC_Free_Structure (zz) ;
 
    /* really done now, now free dynamic storage and exit with return status */
    err = ((out_of_tolerance) ? ZOLTAN_WARN : ZOLTAN_OK) ;
