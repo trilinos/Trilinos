@@ -145,20 +145,21 @@ int ML_AMG_Set_AMGScheme_Scalar( ML_AMG *amg  )
 
 /* -------------------------------------------------------------------- */
 
-int ML_AMG_Set_AMGScheme_SystemUnknown( ML_AMG *amg  )
+int ML_AMG_Set_AMGScheme_SystemUnknown( ML_AMG *amg, int numPDE  )
 {
    if ( amg->ML_id != ML_ID_AMG ) 
    {
       printf("ML_AMG_Set_AMGScheme_SystemUnknown : wrong object. \n");
       exit(-1);
    }
-   amg->amg_scheme = ML_AMG_SYSTEM_UNKNOWN;
+   amg->amg_scheme   = ML_AMG_SYSTEM_UNKNOWN;
+   if ( numPDE > 0 ) amg->num_PDE_eqns = numPDE;
    return 0;
 }
 
 /* -------------------------------------------------------------------- */
 
-int ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg  )
+int ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg, int numPDE  )
 {
    if ( amg->ML_id != ML_ID_AMG ) 
    {
@@ -166,6 +167,7 @@ int ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg  )
       exit(-1);
    }
    amg->amg_scheme = ML_AMG_SYSTEM_NODAL;
+   if ( numPDE > 0 ) amg->num_PDE_eqns = numPDE;
    return 0;
 }
 

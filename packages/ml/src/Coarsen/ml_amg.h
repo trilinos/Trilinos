@@ -131,8 +131,8 @@ extern int  ML_AMG_Set_MaxCoarseSize( ML_AMG *amg, int size );
 /* -------------------------------------------------------------------- */
 
 extern int  ML_AMG_Set_AMGScheme_Scalar( ML_AMG *amg  );
-extern int  ML_AMG_Set_AMGScheme_SystemUnknown( ML_AMG *amg  );
-extern int  ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg  );
+extern int  ML_AMG_Set_AMGScheme_SystemUnknown( ML_AMG *amg, int  );
+extern int  ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg, int  );
 
 /* -------------------------------------------------------------------- */
 /* different parallel coarsening schemes                                */
