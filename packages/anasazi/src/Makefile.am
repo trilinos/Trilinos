@@ -19,6 +19,7 @@
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
 	$(srcdir)/AnasaziBlockArnoldi.hpp \
+	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
 	$(srcdir)/AnasaziMatrix.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
