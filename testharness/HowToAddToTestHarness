@@ -5,7 +5,7 @@ How to Add a Script to the Test Harness (DRAFT)
 This discussion assumes that the reader has test executables for one or more 
 Trilinos packages that are produced by autotools and would like to add those
 tests to the automated daily or weekly testing for Trilinos.  These tests
-should return 0 to indicate 'pass' and non zero to indicate 'fail' (See
+should return 0 to indicate 'pass' and nonzero to indicate 'fail' (See
 section below on how to return status).  Developers who have written tests 
 that do not return such values, but rather produce output that is visually 
 inspected, can consider wrapping an additional script around their existing 
@@ -39,7 +39,7 @@ script must be executed to run the test harness.  It performs a sequence of
 tasks necessary to complete periodic testing (update source, rebuild libraries 
 and tests, call scripts that run the tests, send results emails, etc).  A 
 developer does not need to know exactly how this script works, or what it does 
-to add to contribute new tests to the test harness.
+to contribute new tests to the test harness.
 
 2) Shell scripts that are called by 
 
