@@ -45,7 +45,7 @@ ML_EXPORT_INCLUDES = $(ML_INCLUDES) \
 # Set the absolute path to the ml build directory
 ##########################################################################
 
-ML_SOURCE_DIRECTORY = $(top_srcdir)
+ML_SOURCE_DIRECTORY = $(top_srcdir)/../ml
 ML_BUILD_DIRECTORY = @ML_BUILD_DIRECTORY@
 
 ##########################################################################

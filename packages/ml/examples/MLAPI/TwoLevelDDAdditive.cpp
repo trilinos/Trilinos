@@ -103,6 +103,14 @@ public:
     return(0);
   }
 
+  const Space GetOperatorDomainSpace() const {
+    return(FineMatrix_.GetDomainSpace());
+  }
+
+  const Space GetOperatorRangeSpace() const {
+    return(FineMatrix_.GetRangeSpace());
+  }
+
   const Space GetDomainSpace() const {
     return(FineMatrix_.GetDomainSpace());
   }
