@@ -1522,13 +1522,13 @@ extern void   AZ_sym_rescale_vbr(double x[], int data_org[], int options[]);
 /* When calling this fortran routine from C we need to include an extra     */
 /* parameter on the end indicating the string length of the first parameter */
 
-#ifdef AZ_PA_RISC
-extern void   dgemvnsqr_(int *, double *, double *, double *);
-extern void   vec_$dcopy(double *, double *, int *);
-extern void   blas_$dgemm(char *, char *, int *, int *, int *, double *,
-                          double *, int *, double *, int *, double *, double *,
-                          int *, int, int);
-#endif
+/* #ifdef AZ_PA_RISC */
+/* extern void   dgemvnsqr_(int *, double *, double *, double *); */
+/* extern void   vec_$dcopy(double *, double *, int *); */
+/* extern void   blas_$dgemm(char *, char *, int *, int *, int *, double *, */
+/*                          double *, int *, double *, int *, double *, double *, */
+/*                          int *, int, int); */
+/*#endif */
 
 
 
