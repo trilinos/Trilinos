@@ -167,7 +167,8 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
  
   for (int level = 1 ; level <= OverlappingLevel_ ; ++level) {
 
-    vector<int> tmp[NumLocalParts_];
+    vector<vector<int> > tmp;
+    tmp.resize(NumLocalParts_);
 
     // cycle over all rows in the local graph (that is the overlapping
     // graph). For each row, all columns will belong to the subgraph of
