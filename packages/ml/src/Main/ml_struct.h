@@ -127,6 +127,7 @@ extern "C" {
 #endif
 
 extern int ML_Create(ML **ml, int Nlevels);
+extern int ML_build_ggb(ML *ml, void *data);
 extern int ML_Set_Symmetrize(ML *ml, int true_or_false);
 extern int ML_Set_OutputLevel(ML *ml, int output_level);
 extern int ML_Set_PrintLevel(int);
