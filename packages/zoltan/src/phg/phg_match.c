@@ -722,18 +722,16 @@ static int pmatching_ipm(
         msgsize = HEADER_COUNT + 2 * count;
         
         /* iff necessary, resize send buffer to fit at least one message */
-        if (nsend == 0 && (msgsize > nSend))
-           {
-uprintf (hgc, "RTHRTH needed to realloc send buffer\n");  
-           nSend += msgsize;         
-           send = (int*) ZOLTAN_REALLOC(send, nSend * sizeof(int));
-           if (send == NULL) {
-              ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-              err = ZOLTAN_MEMERR;
-              goto fini;
-              }
-           s = send;    
-           }
+        if (nsend == 0 && (msgsize > nSend))  {
+          nSend += msgsize;         
+          send = (int*) ZOLTAN_REALLOC(send, nSend * sizeof(int));
+          if (send == NULL) {
+            ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+            err = ZOLTAN_MEMERR;
+            goto fini;
+          }
+          s = send;    
+        }
 
         if (sendsize + msgsize <= nSend)  {
           /* current partial sums fit, so put them into the send buffer */
