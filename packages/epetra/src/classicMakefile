@@ -28,6 +28,7 @@ EPETRA_CC = Epetra_SerialComm.cpp \
             Epetra_BasicDirectory.cpp \
             Epetra_Export.cpp \
             Epetra_FECrsMatrix.cpp \
+            Epetra_FEVbrMatrix.cpp \
             Epetra_FEVector.cpp \
             Epetra_Import.cpp \
             Epetra_MultiVector.cpp \

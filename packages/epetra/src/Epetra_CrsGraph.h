@@ -31,7 +31,8 @@ class Epetra_Util;
 class Epetra_Time;
 class Epetra_Import;
 class Epetra_Export;
-class Epetra_Distributor; 
+class Epetra_Distributor;
+class Epetra_RowMatrix;
 
 //! Epetra_CrsGraph: A class for constructing and using sparse compressed row graphs.
 
@@ -523,6 +524,14 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 		     int NumSameIDs, 
 		     int NumPermuteIDs, int * PermuteToLIDs,
 		     int *PermuteFromLIDs);
+    int CopyAndPermuteRowMatrix(const Epetra_RowMatrix & A,
+		     int NumSameIDs, 
+		     int NumPermuteIDs, int * PermuteToLIDs,
+		     int *PermuteFromLIDs);
+    int CopyAndPermuteCrsGraph(const Epetra_CrsGraph & A,
+		     int NumSameIDs, 
+		     int NumPermuteIDs, int * PermuteToLIDs,
+		     int *PermuteFromLIDs);
   
   int PackAndPrepare(const Epetra_SrcDistObject & Source,
 				     int NumExportIDs, int * ExportLIDs,
@@ -530,6 +539,18 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 				     int & LenExports, char * & Exports, int & LenImports, 
 				     char * & Imports, 
 				     int & SizeOfPacket, Epetra_Distributor & Distor);
+  int PackAndPrepareCrsGraph(const Epetra_CrsGraph & A,
+				     int NumExportIDs, int * ExportLIDs,
+				     int Nsend, int Nrecv,
+				     int & LenExports, char * & Exports, int & LenImports, 
+				     char * & Imports, 
+				     int & SizeOfPacket, Epetra_Distributor & Distor, int IntPacketSize);
+  int PackAndPrepareRowMatrix(const Epetra_RowMatrix & A,
+				     int NumExportIDs, int * ExportLIDs,
+				     int Nsend, int Nrecv,
+				     int & LenExports, char * & Exports, int & LenImports, 
+				     char * & Imports, 
+				     int & SizeOfPacket, Epetra_Distributor & Distor, int IntPacketSize);
   
   int UnpackAndCombine(const Epetra_SrcDistObject & Source,
 		       int NumImportIDs, int * ImportLIDs, 
