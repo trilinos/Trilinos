@@ -24,6 +24,9 @@ noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort
 	AmesosSuperludist AmesosSuperludistShort AmesosSuperludistSerial 
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
+A_Superludist_SOURCES = $(srcdir)/AmesosDscpack
+B_Superludist_SOURCES = $(srcdir)/AmesosDscpack
+C_Superludist_SOURCES = $(srcdir)/AmesosDscpack
 AmesosDscpack_SOURCES = $(srcdir)/AmesosDscpack
 AmesosDscpackShort_SOURCES = $(srcdir)/AmesosDscpackShort
 AmesosMumps_SOURCES = $(srcdir)/AmesosMumps
@@ -47,6 +50,15 @@ SpoolesScript_SOURCES = $(srcdir)/SpoolesScript
 
 AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
 	cp  $(srcdir)/AmesosShellScript  AmesosShellScript$(EXEEXT)
+
+A_Superludist$(EXEEXT): $(srcdir)/A_Superludist
+	cp  $(srcdir)/A_Superludist  A_Superludist$(EXEEXT)
+
+B_Superludist$(EXEEXT): $(srcdir)/B_Superludist
+	cp  $(srcdir)/B_Superludist  B_Superludist$(EXEEXT)
+
+C_Superludist$(EXEEXT): $(srcdir)/C_Superludist
+	cp  $(srcdir)/C_Superludist  C_Superludist$(EXEEXT)
 
 AmesosDscpack$(EXEEXT): $(srcdir)/AmesosDscpack
 	cp  $(srcdir)/AmesosDscpack  AmesosDscpack$(EXEEXT)
