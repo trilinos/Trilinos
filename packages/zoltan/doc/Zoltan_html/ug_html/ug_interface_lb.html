@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <TITLE>Zoltan User's Guide:  Interface</TITLE>
 <!
   ------------------------
@@ -119,10 +119,9 @@ is used.</TD>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
 <TD>FUNCTION <B>LB_Set_Param</B>(<I>lb, param_name, new_val</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: LB_Set_Param
+<BR>INTEGER(LB_INT) :: LB_Set_Param&nbsp;
 <BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<BR>CHARACTER(LEN=*), INTENT(IN) :: param_name, new_value&nbsp;
-</TD>
+<BR>CHARACTER(LEN=*), INTENT(IN) :: param_name, new_value&nbsp;</TD>
 </TR>
 </TABLE>
 
@@ -324,24 +323,21 @@ IDs of processors that will own the exported objects in the new decomposition
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
 <TD><A NAME="LB_Eval"></A>void <B>LB_Eval</B>(struct <B>LB_struct *</B><I>lb</I>,
-int <I>print_stats</I>, int <I>vwgt_dim</I>, int <I>ewgt_dim</I>, int *<I>nobj</I>,
-float *o<I>bj_wgt</I>, int *<I>cut_wgt</I>, int *<I>nboundary</I>, int
-*<I>nadj</I>, int *<I>ierr</I>);&nbsp;
+int <I>print_stats</I>, int *<I>nobj</I>, float *o<I>bj_wgt</I>, int *<I>cut_wgt</I>,
+int *<I>nboundary</I>, int *<I>nadj</I>, int *<I>ierr</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD>SUBROUTINE <B>LB_Eval</B>(<I>lb, print_stats, vwgt_dim, ewgt_dim, nobj,
-obj_wgt, cut_wgt, nboundary, nadj, ierr</I>)&nbsp;
+<TD>SUBROUTINE <B>LB_Eval</B>(<I>lb, print_stats,&nbsp; nobj, obj_wgt,
+cut_wgt, nboundary, nadj, ierr</I>)&nbsp;
 <BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
 <BR>LOGICAL, INTENT(IN) :: print_stats&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: vwgt_dim, ewgt_dim&nbsp;
 <BR>INTEGER(LB_INT), INTENT(OUT) :: nobj, cut_wgt, nboundary, nadj, ierr&nbsp;
-<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim) :: obj_wgt&nbsp;
+<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim) :: obj_wgt&nbsp;</TD>
 </TR>
-
 </TABLE>
 
 <HR WIDTH="100%"><B>LB_Eval </B>evaluates the quality of the load balance
@@ -368,20 +364,6 @@ the results in the output parameters.
 
 <TD>If <I>print_stats</I>>0, print a summary (maximum and sum) of the quality
 metrics to <I>stdout.</I></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; vwgt_dim</I></TD>
-
-<TD>Object (vertex) weight dimension: compute statistics for the <I>vwgt_dim
-</I>first weights<I>. </I>(0 if no weights)</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ewgt_dim</I></TD>
-
-<TD>Edge weight dimension: compute statistics for the <I>ewgt_dim </I>first
-weights<I>. </I>(must be 0 or 1 in this version)</TD>
 </TR>
 
 <TR>
@@ -446,7 +428,7 @@ the communication graph.</TD>
 <BR>&nbsp;&nbsp;&nbsp;&nbsp; Required:</TD>
 
 <TD NOSAVE>&nbsp;
-<BR><A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A>
+<BR><A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A>&nbsp;
 <BR><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A> or <A HREF="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A>/<A HREF="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></TD>
 </TR>
 
@@ -570,15 +552,14 @@ objects in the new decomposition (i.e., the destination processors).</TD>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
 <TD>SUBROUTINE <B>LB_Destroy_Object</B>(<I>lb</I>)&nbsp;
-<BR>TYPE(LB_Struct), POINTER :: lb&nbsp;
-</TD>
+<BR>TYPE(LB_Struct), POINTER :: lb&nbsp;</TD>
 </TR>
 </TABLE>
 
 <HR WIDTH="100%"><B>LB_Destroy_Object</B> frees the memory associated with
 a load balancing object and sets the object to NULL in C or nullifies the
-object in Fortran. Note that <B>LB_Destroy_Object</B>
-does not deallocate the import and export arrays returned from <B><A HREF="#LB_Balance">LB_Balance</A></B>.
+object in Fortran. Note that <B>LB_Destroy_Object</B> does not deallocate
+the import and export arrays returned from <B><A HREF="#LB_Balance">LB_Balance</A></B>.
 This requires a separate call to <B><A HREF="#LB_Free_Data">LB_Free_Data</A></B>.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >

@@ -48,8 +48,8 @@ more details see the ParMETIS documentation. The methods fall into three
 categories:
 <OL>
 <LI>
-Part* - Perform graph partitioning without consideration
-of the initial distribution.</LI>
+Part* - Perform graph partitioning without consideration of the initial
+distribution.</LI>
 
 <LI>
 Repart* - Incremental algorithms with small migration cost.</LI>
@@ -64,12 +64,11 @@ Repart* methods when you have a reasonably good load balance that you wish
 to update incrementally (for example, in adaptive mesh refinement).
 <BR>&nbsp;
 <BR>The current version of Zoltan ignores the imbalance tolerance parameter,
-IMBALANCE_TOL, when ParMETIS is used. The reason is that
-the corresponding imbalance parameter is fixed at 1.05 in ParMETIS 2.0. 
-We expect that
-future versions of ParMETIS will allow the user to select the tolerance
-for load imbalance. When this feature becomes available in
-ParMETIS, it will also be supported through IMBALANCE_TOL in Zoltan.
+IMBALANCE_TOL, when ParMETIS is used. The reason is that the corresponding
+imbalance parameter is fixed at 1.05 in ParMETIS 2.0. We expect that future
+versions of ParMETIS will allow the user to select the tolerance for load
+imbalance. When this feature becomes available in ParMETIS, it will also
+be supported through IMBALANCE_TOL in Zoltan.
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >
 <TR>
@@ -95,7 +94,7 @@ ParMETIS, it will also be supported through IMBALANCE_TOL in Zoltan.
 <BR><I>RepartLDiffusion</I> - diffusion algorithm (local)&nbsp;
 <BR><I>RepartGDiffusion</I> - diffusion algorithm (global)&nbsp;
 <BR><I>RepartRemap</I> - multilevel partioning with remap seeking to minimize
-migration cost&nbsp;
+migration cost&nbsp;&nbsp;
 <BR><I>RepartMLRemap</I> - similar to RepartRemap but with additional multilevel
 refinement&nbsp;
 <BR><I>RefineKway</I> - refine the current partitioning (balance)</TD>
@@ -107,22 +106,6 @@ refinement&nbsp;
 <TD>Amount of output the load-balancing algorithm should produce.&nbsp;
 <BR>0 = no output, 1 = print timing info. Turning on more bits displays
 more information (for example, 3=1+2, 5=1+4, 6=2+4).</TD>
-</TR>
-
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>PARMETIS_VWGT_DIM</I></TD>
-
-<TD>Dimension of vertex (that is, object) weights to use .&nbsp;
-<BR>0 = don't use object weights; 1 = use scalar object weights, n>1 =
-use multidimensional weights (not yet supported by ParMetis)</TD>
-</TR>
-
-<TR VALIGN=TOP NOSAVE>
-<TD NOSAVE>&nbsp;&nbsp;&nbsp; <I>PARMETIS_EWGT_DIM</I></TD>
-
-<TD>Dimension of&nbsp; edge weights to use .&nbsp;
-<BR>0 = don't use edge weights; 1 = use scalar edge weights, n>1 = use
-multidimensional weights (not yet supported by ParMetis)</TD>
 </TR>
 
 <TR>
@@ -153,18 +136,6 @@ multidimensional weights (not yet supported by ParMetis)</TD>
 <TD></TD>
 
 <TD><I>PARMETIS_OUTPUT_LEVEL</I> = 0</TD>
-</TR>
-
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE></TD>
-
-<TD><I>PARMETIS_VWGT_DIM</I> = 0</TD>
-</TR>
-
-<TR>
-<TD></TD>
-
-<TD><I>PARMETIS_EWGT_DIM</I> = 0</TD>
 </TR>
 
 <TR>

@@ -36,11 +36,11 @@ splitting algorithm until the number of sub-regions equals the number of
 processors. Although this algorithm was first devised to cut into a number
 of sets which is a power of two, the set sizes in a particular cut needn't
 be equal. By adjusting the partition sizes appropriately, any number of
-equally-sized sets can be created.  If the parallel machine has processors
+equally-sized sets can be created. If the parallel machine has processors
 with different speeds, unequally-sized sets can also be easily generated.
-The Zoltan implementation of RCB has several parameters which can be
-modified by the
-<B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B> function.
+The Zoltan implementation of RCB has several parameters which can be modified
+by the <B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>
+function.
 <BR>&nbsp;
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >
@@ -74,16 +74,9 @@ the current RCB invocation.&nbsp;
 </TR>
 
 <TR>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;<I> RCB_WGTFLAG</I></TD>
-
-<TD>Flag to indicate whether to use object weights in the RCB computation.&nbsp;
-<BR>0 = don't use object weights; 1 = use object weights.</TD>
-</TR>
-
-<TR>
 <TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;<I> RCB_CHECK</I></TD>
 
-<TD>Flag controlling the invocation of input and outpur error checking.&nbsp;
+<TD>Flag controlling the invocation of input and output error checking.&nbsp;
 <BR>0 = don't do checking; 1 = do checking.</TD>
 </TR>
 
@@ -98,14 +91,13 @@ produces.&nbsp;
 <TR>
 <TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;<I> KEEP_CUTS</I></TD>
 
-<TD>Should information about the cuts determining the RCB decomposition be
-retained?  It costs a bit of time to do so, but this information is necessary
+<TD>Should information about the cuts determining the RCB decomposition
+be retained? It costs a bit of time to do so, but this information is necessary
 if application wants to add more objects to the decomposition via calls
 to <B><A HREF="ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</A></B>
-or to <B><A HREF="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</A></B>.
+or to <B><A HREF="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</A></B>.&nbsp;
 <BR>0 = don't keep cuts; 1 = keep cuts.</TD>
 </TR>
-
 
 <TR>
 <TD VALIGN=TOP><B>Default:</B></TD>
@@ -123,12 +115,6 @@ or to <B><A HREF="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</A></B>
 <TD></TD>
 
 <TD><I>RCB_REUSE</I> = 0</TD>
-</TR>
-
-<TR>
-<TD></TD>
-
-<TD><I>RCB_WGTFLAG</I> = 0</TD>
 </TR>
 
 <TR>

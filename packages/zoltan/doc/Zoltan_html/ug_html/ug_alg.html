@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <TITLE>Zoltan User's Guide:  Algorithms</TITLE>
 <!
   ------------------------
@@ -65,6 +65,23 @@ A full discussion of automatic migration can be found in the description
 of the <A HREF="ug_interface_mig.html">migration interface functions</A>.&nbsp;</TD>
 </TR>
 
+<TR VALIGN=TOP NOSAVE>
+<TD>&nbsp;&nbsp;&nbsp; <I>OBJ_WEIGHT_DIM</I></TD>
+
+<TD NOSAVE>The dimension of the object weights to be used for load balancing.
+If this parameter is zero, load balancing is performed with respect to
+the number of objects. Some algorithms may not support multiple (multidimensional)
+weights.</TD>
+</TR>
+
+<TR VALIGN=TOP NOSAVE>
+<TD>&nbsp;&nbsp;&nbsp; <I>COMM_WEIGHT_DIM</I></TD>
+
+<TD NOSAVE>The dimension of the communication weights to be used for load
+balancing. If there is no communication graph, set this parameter to zero.
+Many algorithms do not support multiple (multidimensional) weights.</TD>
+</TR>
+
 <TR>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>KEEP_CUTS</I></TD>
 
@@ -93,6 +110,18 @@ the geometric partitioning must be retained by setting KEEP_CUTS to 1.&nbsp;</TD
 <TD></TD>
 
 <TD><I>AUTO_MIGRATE</I> = FALSE</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>OBJ_WEIGHT_DIM = 0</I></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>COMM_WEIGHT_DIM = 0</I></TD>
 </TR>
 
 <TR>
