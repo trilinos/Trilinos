@@ -2081,8 +2081,8 @@ report($SUMMARY);
         
         # if MPIGO_CMD is specified, enforce one and only one trailing space
         if (defined $options{'MPIGO_CMD'} && defined $options{'MPIGO_CMD'}[0]) {
-            $options{'MAKE_FLAGS'}[0] =~ s/\s*$//;  # trim trailing spaces
-            $options{'MAKE_FLAGS'}[0] .= " ";       # append trailing space 
+            $options{'MPIGO_CMD'}[0] =~ s/\s*$//;  # trim trailing spaces
+            $options{'MPIGO_CMD'}[0] .= " ";       # append trailing space 
         } 
                 
         # Resolve MPIGO_CMD		
