@@ -1,3 +1,5 @@
+#include "Tpetra_ElementSpace.hpp"
+#include "Tpetra_ElementSpaceData.hpp"
 #include "Tpetra_Platform.hpp"
 
 namespace Tpetra {
@@ -91,7 +93,7 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 	OrdinalType maxMyGID = minMyGID + numMyElements - 1;
 
 	// call ESData constructor
-	ElementSpaceData = Teuchos::rcp(new ElementSpaceData<OrdinalType>(indexBase, numGlobalElements, numMyElements, minAllGID, maxAllGID, 
+	ElementSpaceData_ = Teuchos::rcp(new ElementSpaceData<OrdinalType>(indexBase, numGlobalElements, numMyElements, minAllGID, maxAllGID, 
 																																		minMyGID, maxMyGID, lgMap, glMap, true, Platform, comm));
   
 	// initialize directory

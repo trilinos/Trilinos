@@ -162,7 +162,7 @@ void directorySetup();
 }; // ElementSpace class
 } // Tpetra namespace
 
-#include "Tpetra_ElementSpaceData.hpp"
-#include "Tpetra_ElementSpace.cpp"
+//#include "Tpetra_ElementSpaceData.hpp"
+//#include "Tpetra_ElementSpace.cpp"
 
 #endif // _TPETRA_ELEMENTSPACE_HPP_

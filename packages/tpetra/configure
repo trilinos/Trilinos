@@ -272,7 +272,7 @@ PACKAGE_VERSION='0.1'
 PACKAGE_STRING='tpetra 0.1'
 PACKAGE_BUGREPORT='pmsext@software.sandia.gov'
 
-ac_unique_file="/src/Tpetra_ElementSpace.hpp"
+ac_unique_file="/src/Tpetra_Object.hpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -5577,30 +5577,6 @@ fi
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# #np# newp_swahili is an example of a package feature which requires both
-# a cpp #define command and one or more source or header files  - ie
-# conditional compilation which requires a change to the makefile.
-# If configure is called with "--enable-newp_swahili", it will place
-# a #define HAVE_NEWP_SWAHILI in New_Package_config.h and add source
-# and header files as specified in Makefile.am
-#
-# To add an option to your package, you will need to modify this file
-# (i.e. configure.ac), and src/Makefile.am.  A bootstrap is also required.
-# Look for SWAHILI in both files listed above.
-#
-# TAC_ARG_ENABLE_OPTION performs several tasks, including:
-#   1)  Setting a help string
-#   2)  Printing a message to standard out
-#   3)  Defining HAVE_NEWP_SWAHILI (For use in New_Package_config.h)
-#
-# AM_CONDITIONAL makes HAVE_NEWP_SWAHILI available for use in Makefile.am
-# ------------------------------------------------------------------------
-#
-## following 2 lines commented out by Paul 2003/10/29
-#TAC_ARG_ENABLE_OPTION(newp_swahili, [enable swahili support], NEWP_SWAHILI, no)
-#AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
-
-# ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
@@ -5794,7 +5770,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5797: \"$ac_link\") >&5
+(eval echo $as_me:5773: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5874,7 +5850,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5877: \"$ac_link\") >&5
+(eval echo $as_me:5853: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8015,7 +7991,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8018: \"$ac_link\") >&5
+(eval echo $as_me:7994: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8095,7 +8071,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8098: \"$ac_link\") >&5
+(eval echo $as_me:8074: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8314,7 +8290,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                              ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile"
+                                                  ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/verySimple/Makefile test/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8903,6 +8879,8 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+  "example/verySimple/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/verySimple/Makefile" ;;
+  "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Tpetra_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Tpetra_config.h:src/Tpetra_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

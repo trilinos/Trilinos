@@ -50,7 +50,7 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-AC_CONFIG_SRCDIR(/src/Tpetra_ElementSpace.hpp)
+AC_CONFIG_SRCDIR(/src/Tpetra_Object.hpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -199,30 +199,6 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# #np# newp_swahili is an example of a package feature which requires both
-# a cpp #define command and one or more source or header files  - ie 
-# conditional compilation which requires a change to the makefile.
-# If configure is called with "--enable-newp_swahili", it will place 
-# a #define HAVE_NEWP_SWAHILI in New_Package_config.h and add source 
-# and header files as specified in Makefile.am 
-#
-# To add an option to your package, you will need to modify this file
-# (i.e. configure.ac), and src/Makefile.am.  A bootstrap is also required.
-# Look for SWAHILI in both files listed above.
-#
-# TAC_ARG_ENABLE_OPTION performs several tasks, including:
-#   1)  Setting a help string
-#   2)  Printing a message to standard out
-#   3)  Defining HAVE_NEWP_SWAHILI (For use in New_Package_config.h)
-#
-# AM_CONDITIONAL makes HAVE_NEWP_SWAHILI available for use in Makefile.am
-# ------------------------------------------------------------------------
-#
-## following 2 lines commented out by Paul 2003/10/29
-#TAC_ARG_ENABLE_OPTION(newp_swahili, [enable swahili support], NEWP_SWAHILI, no)
-#AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
-
-# ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
@@ -357,6 +333,8 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		example/Makefile
+		example/verySimple/Makefile
+		test/Makefile
 		])
 
 AC_OUTPUT()

@@ -123,15 +123,11 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 CORE_H = \
-	$(srcdir)/Tpetra_Directory.hpp \
-	$(srcdir)/Tpetra_Distributor.hpp \
-	$(srcdir)/Tpetra_ElementSpace.hpp \
-	$(srcdir)/Tpetra_ElementSpaceData.hpp \
-	$(srcdir)/Tpetra_Platform.hpp 
+	$(srcdir)/Tpetra_Object.hpp 
 
 
 CORE = \
-	$(srcdir)/Tpetra_ElementSpace.cpp 
+	$(srcdir)/Tpetra_Object.cpp
 
 
 UTIL_H = \
@@ -142,28 +138,11 @@ UTIL =
 
 ENUM_H = 
 
-UNIPROC_H = \
-	$(srcdir)/Tpetra_Object.hpp \
-	$(srcdir)/Tpetra_Comm.hpp \
-	$(srcdir)/Tpetra_SerialComm.hpp
+UNIPROC_H = 
 
-
-UNIPROC = \
-	$(srcdir)/Tpetra_Object.cpp \
-	$(srcdir)/Tpetra_SerialComm.cpp
-
-
-SERIAL_H = \
-	$(srcdir)/Tpetra_SerialDirectory.hpp \
-	$(srcdir)/Tpetra_SerialDistributor.hpp \
-	$(srcdir)/Tpetra_SerialPlatform.hpp
-
-
-SERIAL = \
-	$(srcdir)/Tpetra_SerialDirectory.cpp \
-	$(srcdir)/Tpetra_SerialDistributor.cpp \
-	$(srcdir)/Tpetra_SerialPlatform.hpp
-
+UNIPROC = 
+SERIAL_H = 
+SERIAL = 
 
 EXTRA_MPI_H = 
 
@@ -287,16 +266,13 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 libtpetra_a_DEPENDENCIES =
-am__objects_1 = Tpetra_ElementSpace.$(OBJEXT)
+am__objects_1 = Tpetra_Object.$(OBJEXT)
 am__objects_2 =
-am__objects_3 = Tpetra_Object.$(OBJEXT) Tpetra_SerialComm.$(OBJEXT)
-am__objects_4 = Tpetra_SerialDirectory.$(OBJEXT) \
-	Tpetra_SerialDistributor.$(OBJEXT)
-@HAVE_MPI_TRUE@am__objects_5 = $(am__objects_2)
-@HAVE_MPI_FALSE@am__objects_5 =
+@HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
+@HAVE_MPI_FALSE@am__objects_3 =
 am_libtpetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	$(am__objects_3) $(am__objects_4) $(am__objects_2) \
-	$(am__objects_2) $(am__objects_5)
+	$(am__objects_2) $(am__objects_2) $(am__objects_2) \
+	$(am__objects_2) $(am__objects_3)
 libtpetra_a_OBJECTS = $(am_libtpetra_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -306,22 +282,13 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Tpetra_ElementSpace.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Tpetra_Object.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Tpetra_SerialComm.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Tpetra_SerialDirectory.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Tpetra_SerialDistributor.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Tpetra_Object.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
-CFLAGS = @CFLAGS@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(libtpetra_a_SOURCES) $(EXTRA_libtpetra_a_SOURCES)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
 
@@ -388,12 +355,7 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-Tpetra_ElementSpace.$(OBJEXT): $(srcdir)/Tpetra_ElementSpace.cpp
 Tpetra_Object.$(OBJEXT): $(srcdir)/Tpetra_Object.cpp
-Tpetra_SerialComm.$(OBJEXT): $(srcdir)/Tpetra_SerialComm.cpp
-Tpetra_SerialDirectory.$(OBJEXT): $(srcdir)/Tpetra_SerialDirectory.cpp
-Tpetra_SerialDistributor.$(OBJEXT): \
-	$(srcdir)/Tpetra_SerialDistributor.cpp
 libtpetra.a: $(libtpetra_a_OBJECTS) $(libtpetra_a_DEPENDENCIES) 
 	-rm -f libtpetra.a
 	$(libtpetra_a_AR) libtpetra.a $(libtpetra_a_OBJECTS) $(libtpetra_a_LIBADD)
@@ -405,11 +367,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_ElementSpace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_Object.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_SerialComm.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_SerialDirectory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_SerialDistributor.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -426,18 +384,6 @@ distclean-depend:
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-Tpetra_ElementSpace.o: $(srcdir)/Tpetra_ElementSpace.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Tpetra_ElementSpace.cpp' object='Tpetra_ElementSpace.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_ElementSpace.Po' tmpdepfile='$(DEPDIR)/Tpetra_ElementSpace.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_ElementSpace.o `test -f '$(srcdir)/Tpetra_ElementSpace.cpp' || echo '$(srcdir)/'`$(srcdir)/Tpetra_ElementSpace.cpp
-
-Tpetra_ElementSpace.obj: $(srcdir)/Tpetra_ElementSpace.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Tpetra_ElementSpace.cpp' object='Tpetra_ElementSpace.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_ElementSpace.Po' tmpdepfile='$(DEPDIR)/Tpetra_ElementSpace.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_ElementSpace.obj `cygpath -w $(srcdir)/Tpetra_ElementSpace.cpp`
-
 Tpetra_Object.o: $(srcdir)/Tpetra_Object.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Tpetra_Object.cpp' object='Tpetra_Object.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_Object.Po' tmpdepfile='$(DEPDIR)/Tpetra_Object.TPo' @AMDEPBACKSLASH@
@@ -449,42 +395,6 @@ Tpetra_Object.obj: $(srcdir)/Tpetra_Object.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_Object.Po' tmpdepfile='$(DEPDIR)/Tpetra_Object.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_Object.obj `cygpath -w $(srcdir)/Tpetra_Object.cpp`
-
-Tpetra_SerialComm.o: $(srcdir)/Tpetra_SerialComm.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Tpetra_SerialComm.cpp' object='Tpetra_SerialComm.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_SerialComm.Po' tmpdepfile='$(DEPDIR)/Tpetra_SerialComm.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_SerialComm.o `test -f '$(srcdir)/Tpetra_SerialComm.cpp' || echo '$(srcdir)/'`$(srcdir)/Tpetra_SerialComm.cpp
-
-Tpetra_SerialComm.obj: $(srcdir)/Tpetra_SerialComm.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Tpetra_SerialComm.cpp' object='Tpetra_SerialComm.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_SerialComm.Po' tmpdepfile='$(DEPDIR)/Tpetra_SerialComm.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_SerialComm.obj `cygpath -w $(srcdir)/Tpetra_SerialComm.cpp`
-
-Tpetra_SerialDirectory.o: $(srcdir)/Tpetra_SerialDirectory.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Tpetra_SerialDirectory.cpp' object='Tpetra_SerialDirectory.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_SerialDirectory.Po' tmpdepfile='$(DEPDIR)/Tpetra_SerialDirectory.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_SerialDirectory.o `test -f '$(srcdir)/Tpetra_SerialDirectory.cpp' || echo '$(srcdir)/'`$(srcdir)/Tpetra_SerialDirectory.cpp
-
-Tpetra_SerialDirectory.obj: $(srcdir)/Tpetra_SerialDirectory.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Tpetra_SerialDirectory.cpp' object='Tpetra_SerialDirectory.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_SerialDirectory.Po' tmpdepfile='$(DEPDIR)/Tpetra_SerialDirectory.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_SerialDirectory.obj `cygpath -w $(srcdir)/Tpetra_SerialDirectory.cpp`
-
-Tpetra_SerialDistributor.o: $(srcdir)/Tpetra_SerialDistributor.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Tpetra_SerialDistributor.cpp' object='Tpetra_SerialDistributor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_SerialDistributor.Po' tmpdepfile='$(DEPDIR)/Tpetra_SerialDistributor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_SerialDistributor.o `test -f '$(srcdir)/Tpetra_SerialDistributor.cpp' || echo '$(srcdir)/'`$(srcdir)/Tpetra_SerialDistributor.cpp
-
-Tpetra_SerialDistributor.obj: $(srcdir)/Tpetra_SerialDistributor.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Tpetra_SerialDistributor.cpp' object='Tpetra_SerialDistributor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_SerialDistributor.Po' tmpdepfile='$(DEPDIR)/Tpetra_SerialDistributor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_SerialDistributor.obj `cygpath -w $(srcdir)/Tpetra_SerialDistributor.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 includeHEADERS_INSTALL = $(INSTALL_HEADER)

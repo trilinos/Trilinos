@@ -26,5 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = BlockElementSpace complexArrayTest Distributor \
-ElementSpace enum Platform VectorSpace
+SUBDIRS = 

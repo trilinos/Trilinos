@@ -26,5 +26,17 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = verySimple
+EXEEXT = .exe
 
+noinst_PROGRAMS = verySimple
+
+verySimple_SOURCES = $(srcdir)/cxx_main.cpp
+
+verySimple_DEPENDENCIES = $(top_builddir)/src/libtpetra.a
+
+verySimple_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
+	-I$(top_builddir)/../teuchos/src
+
+verySimple_LDADD = $(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(LIBS) $(FLIBS)
