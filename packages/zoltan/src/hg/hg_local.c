@@ -19,13 +19,13 @@ extern "C" {
 #include "hypergraph.h"
 
 static ZOLTAN_HG_LOCAL_REF_FN local_no;
-static ZOLTAN_HG_LOCAL_REF_FN local_hc;
+static ZOLTAN_HG_LOCAL_REF_FN local_fm;
 
 /****************************************************************************/
 
 ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *str)
 {
-  if      (!strcasecmp(str, "hc")) return local_hc;
+  if      (!strcasecmp(str, "fm")) return local_fm;
   else if (!strcasecmp(str, "no")) return local_no;
   else                             return NULL;
 }
@@ -51,306 +51,260 @@ static int local_no (
 
 /****************************************************************************/
 
-static int local_hc (
+static int local_fm (
   ZZ *zz, 
   HGraph *hg,
   int p,
   Partition part,
   float bal_tol
 )
-{ int    i, j, side, vertex, edge, *cut[2], *boundary[2], boundary_n[2],
-         best_vertex, *locked, round=0;
-  float  total_weight, max_weight, improvement, best_improvement,
+{ int    i, j, v, vertex, edge, *cut[2], *locked, *locked_list, round=0;
+  float  total_weight, max_weight, max, best_max_weight, *gain,
          part_weight[2], cutsize, best_cutsize;
-  char   *yo="local_hc";
+  HEAP   heap[2];
+  char   *yo="local_fm";
 
   if (p != 2)
-  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not yet implemented for local_hc.");
+  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not yet implemented for local_fm.");
     return ZOLTAN_FATAL;
   }
 
   if (hg->nEdge == 0)
     return ZOLTAN_OK;
-/*
-  printf("START cuts:%.2f %.2f\n",hcut_size_total(hg,part),hcut_size_links (zz,hg,2,part));
-*/
 
-  best_cutsize = cutsize = hcut_size_total(hg,part);
-
+  /* Calculate the different weights */
+  for (i=0; i<p; i++)
+    part_weight[i] = 0.0;
   if (hg->vwgt)
   { total_weight = 0.0;
     for (i=0; i<hg->nVtx; i++)
-      total_weight += hg->vwgt[i];
+    { total_weight += hg->vwgt[i];
+      part_weight[part[i]] += hg->vwgt[i];
+    }
   }
   else
-    total_weight = (float)(hg->nVtx);
+  { total_weight = (float)(hg->nVtx);
+    for (i=0; i<hg->nVtx; i++)
+      part_weight[part[i]] += 1.0;
+
+  }
   max_weight = (total_weight/(float)p)*bal_tol;
-/*
-  printf("total_weight:%f max_weight:%f \n",total_weight, max_weight);
-*/
-
-  part_weight[0] = part_weight[1] = 0.0;
-  for (i=0; i<hg->nVtx; i++)
-    part_weight[part[i]] += (hg->vwgt?hg->vwgt[i]:1.0);
-/*
-  printf("weights: %f %f\n",part_weight[0],part_weight[1]);
-*/
-
-  if (!(boundary[0] = (int *) ZOLTAN_MALLOC(2*hg->nVtx* sizeof(int))) || 
-      !(cut[0]      = (int *) ZOLTAN_CALLOC(2*hg->nEdge,sizeof(int))) ||
-      !(locked      = (int *) ZOLTAN_CALLOC(hg->nVtx,sizeof(int)))     )
+  
+  if (!(cut[0]      = (int *)  ZOLTAN_CALLOC(2*hg->nEdge,sizeof(int))) ||
+      !(locked      = (int *)  ZOLTAN_CALLOC(hg->nVtx,sizeof(int)))    ||
+      !(locked_list = (int *)  ZOLTAN_CALLOC(hg->nVtx,sizeof(int)))    ||
+      !(gain        = (float *)ZOLTAN_CALLOC(hg->nVtx,sizeof(float)))   )
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
-  boundary[1] = &(boundary[0][hg->nVtx]);
   cut[1] = &(cut[0][hg->nEdge]);
 
+  /* Initial cvalculation of the cut distribution and gain values */
   for (i=0; i<hg->nEdge; i++)
-  { cut[0][i] = cut[1][i] = 0;
     for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
       (cut[part[hg->hvertex[j]]][i])++;
-  }
+  for (i=0; i<hg->nVtx; i++)
+    for (j=hg->vindex[i]; j<hg->vindex[i+1]; j++)
+    { edge = hg->vedge[j];
+      if (cut[part[i]][edge] == 1)
+        gain[i] += (hg->ewgt?(hg->ewgt[edge]):1.0);
+      else if (cut[1-part[i]][edge] == 0)
+        gain[i] -= (hg->ewgt?(hg->ewgt[edge]):1.0);
+    }
+
+  /* Initialize the heaps and fill them with the gain values */
+  for (i=0; i<p; i++)
+    heap_init(&(heap[i]),hg->nVtx);
+  for (i=0; i<hg->nVtx; i++)
+    heap_input(&(heap[part[i]]),i,gain[i]);
+  for (i=0; i<p; i++)
+    heap_make(&(heap[i]));
+
+  /* Initialize given partition as best partition */
+  best_cutsize = cutsize = hcut_size_total(hg,part);
+  best_max_weight = part_weight[0];
+  for (i=1; i<p; i++)
+    best_max_weight = MAX(best_max_weight,part_weight[i]);
 
   do
-  { boundary_n[0] = boundary_n[1] = 0;
-    for (i=0; i<hg->nVtx; i++)
-    { for (j=hg->vindex[i]; j<hg->vindex[i+1]; j++)
-        if (cut[0][hg->vedge[j]]==1 || cut[1][hg->vedge[j]]==1)
-        { boundary[part[i]][boundary_n[part[i]]++] = i;
-          break;
-        }
-    }
-/*
-    printf("boundaries:%d %d\n",boundary_n[0],boundary_n[1]);
-*/
-    best_vertex = -1;
-    best_improvement = 0.0;
+  { int   step=0, no_better_steps=0, number_locked=0, best_locked=0,
+          sour, dest;
+    float akt_cutsize=best_cutsize;
 
-    for (side=0; side<2; side++)
-    { for (i=0; i<boundary_n[side]; i++)
-      { vertex = boundary[side][i];
-        if (part_weight[1-part[vertex]]+(hg->vwgt?hg->vwgt[vertex]:1.0) < max_weight)
-        { improvement = 0.0;
-          for (j=hg->vindex[vertex]; j<hg->vindex[vertex+1]; j++)
-          { edge = hg->vedge[j];
-            if (cut[part[vertex]][edge] == 1)
-              improvement += (hg->ewgt?(hg->ewgt[edge]):1.0);
-            else if (cut[1-part[vertex]][edge] == 0)
-              improvement -= (hg->ewgt?(hg->ewgt[edge]):1.0); 
-          }
-
-          if (improvement > best_improvement)
-          { best_vertex = vertex;
-            best_improvement = improvement;
-          }
-        }
-      }
-    }
-/*
-    printf("best: %d %f %d\n",best_vertex, best_improvement,part[best_vertex]);
-*/
-    if (best_improvement > 0.0)
-    { if (best_vertex < 0)
-        return ZOLTAN_FATAL;
-
-      for (i=hg->vindex[best_vertex]; i<hg->vindex[best_vertex+1]; i++)
-      { cut[part[best_vertex]][hg->vedge[i]] --;
-        cut[1-part[best_vertex]][hg->vedge[i]] ++;
-      }
-      part_weight[part[best_vertex]] -= (hg->vwgt?hg->vwgt[best_vertex]:1.0);
-      part[best_vertex] = 1-part[best_vertex];
-      part_weight[part[best_vertex]] += (hg->vwgt?hg->vwgt[best_vertex]:1.0);
-    }
-  } while (best_improvement > 0.0);
-
-  ZOLTAN_FREE ((void **) &(boundary[0]));
-  ZOLTAN_FREE ((void **) &(cut[0]));
-  ZOLTAN_FREE ((void **) &(locked));
-
-/*
-  printf("END   cuts:%.2f %.2f\n",hcut_size_total(hg,part),hcut_size_links (zz,hg,2,part));
-*/
-  return ZOLTAN_OK;
-}
-
-#ifdef __cplusplus
-} /* closing bracket for extern "C" */
-#endif
-
-
-/*
-#define gain(V) \
-{ int _j; for(_j=0;_j<p;_j++) edges[_j]=0; \
-  orient[(V)]=(part[(V)]+1)%p; \
-  for(_j=ep[(V)];_j<ep[(V)+1];_j++) \
-    edges[part[edge[_j]]] += (ew?ew[_j]:1); \
-  in[(V)] = edges[part[(V)]]; \
-  for(_j=0;_j<p;_j++) \
-    if (_j!=part[(V)] && edges[_j]>edges[orient[(V)]]) \
-      orient[(V)] = _j; \
-  ex[(V)]=edges[orient[(V)]]; \
-}
-
-int local_kl ()
-{ int		vertex, neig, *in, *ex, *orient, *locked_list, *edges;
-  int		max_vw=1, max_w, best_max_w=0;
-  BUCKETS	**B;
-  BUCKET_ELE	*bucket_ele;
-
-  CALLOC("LOCAL_KL",in,int,n);
-  CALLOC("LOCAL_KL",ex,int,n);
-  CALLOC("LOCAL_KL",orient,int,n);
-  CALLOC("LOCAL_KL",locked_list,int,n);
-  CALLOC("LOCAL_KL",edges,int,p);
-  CALLOC("LOCAL_KL",B,BUCKETS*,p);
-  CALLOC("LOCAL_KL",bucket_ele,BUCKET_ELE,n);
-
-  for (i=0; i<n; i++)
-    bucket_ele[i].element = (void*)i;
-  for (i=0; i<p; i++)
-  { if (bucket_cal(&(B[i]),-maxdegree, maxdegree))
-      ERROR ("LOCAL_KL", "bucket_cal");
-    best_max_w = MAX(best_max_w,part_w[i]);
-  }
-  for (i=0; i<n; i++)
-  { gain(i);
-    if (ex[i]>0)
-      bucket_in(B[part[i]],&(bucket_ele[i]),ex[i]-in[i]);
-  }
-
-  do 
-  { int	step=0, akt_cutsize=best_cutsize, number_locked=0, 
-	best_locked=0, sour, dest, vertex_j;
-    int	no_better_steps=0, vweight, max_sour, max_j;
-    
     round++;
     cutsize = best_cutsize;
-    if (Out > 3)
+    if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
       printf("ROUND %d:\nSTEP VERTEX  PARTS MAX_WGT CHANGE CUTSIZE\n",round);
 
-    while (step<total_w && no_better_steps<total_w/4)
+    while (step<hg->nVtx && no_better_steps<hg->nVtx/4)
     { step++;
-      for(sour=0; sour<p && bucket_empty(B[sour]); sour++);
-      if (sour == p)
-	break;
-      for (j=sour+1; j<p; j++)
-        if (bucket_not_empty(B[j]))
-	{ if (part_w[j] >= max_part_w)
-	  { if (part_w[sour] >= max_part_w)
-	    { vertex = (int)(bucket_max_element(B[sour]));
-	      vweight = vw[vertex]);
-	      max_sour = MAX(part_w[sour]-vweight,part_w[orient[vertex]]+vweight);
-	      vertex_j = (int)(bucket_max_element(B[j]));
-	      vweight = vw[vertex_j]);
-	      max_j = MAX(part_w[j]-vweight,part_w[orient[vertex_j]]+vweight);
-              if (max_j<max_sour || (max_j==max_sour && ex[vertex_j]-in[vertex_j]>ex[vertex]-in[vertex]))
-	        sour = j;
-            }
-	    else
-	      sour = j;
-	  }
-	  else
-	  { if (part_w[sour] < max_part_w)
-	    { vertex = (int)(bucket_max_element(B[sour]));
-	      vweight = (vw?vw[vertex]:1);
-	      max_sour = MAX(part_w[sour]-vweight,part_w[orient[vertex]]+vweight);
-	      vertex_j = (int)(bucket_max_element(B[j]));
-	      vweight = vw[vertex_j]);
-	      max_j = MAX(part_w[j]-vweight,part_w[orient[vertex_j]]+vweight);
-	      if (max_j >= max_part_w)
-	      { if (max_sour>=max_part_w && (max_j<max_sour || (max_j==max_sour && ex[vertex_j]-in[vertex_j]>ex[vertex]-in[vertex])))
-		  sour = j;
-	      }
-	      else if (max_sour>=max_part_w || (ex[vertex_j]-in[vertex_j]>ex[vertex]-in[vertex] || (ex[vertex_j]-in[vertex_j]==ex[vertex]-in[vertex] && max_j<max_sour)))
-		sour = j;
-	    }
-	  }
-	}
+      no_better_steps ++;
 
-      vertex = (int)(bucket_max_element(B[sour]));
-      bucket_del (&(bucket_ele[vertex]));
+      if (heap_empty(&(heap[0])))
+        sour = 1;
+      else if (heap_empty(&(heap[1])))
+        sour = 0;
+      else if (part_weight[0] > max_weight)
+        sour = 0;
+      else if (part_weight[1] > max_weight)
+        sour = 1;
+      else if (part_weight[0] > part_weight[1])
+        sour = 0;
+      else
+        sour = 1;
+      dest = 1-sour;
+
+      vertex = heap_extract_max(&(heap[sour]));
       locked[vertex] = part[vertex]+1;
       locked_list[number_locked++] = vertex;
-      dest = part[vertex] = orient[vertex];
-      akt_cutsize -= (ex[vertex]-in[vertex]);
-      gain(vertex);
-      part_w[sour] -= vw[vertex];
-      part_w[dest] += vw[vertex];
-      no_better_steps += vw[vertex];
+      part[vertex] = dest;
+      akt_cutsize -= gain[vertex];
+      part_weight[sour] -= (hg->vwgt?hg->vwgt[vertex]:1.0);
+      part_weight[dest] += (hg->vwgt?hg->vwgt[vertex]:1.0);
+      gain[vertex] *= -1;
 
-      for (j=ep[vertex]; j<ep[vertex+1]; j++)
-	if (!locked[neig=edge[j]])
-        { gain(neig);
-	  if (buckets(bucket_ele[neig]))
-	  { if (ex[neig]==0)
-	      bucket_del (&(bucket_ele[neig]));
-            else
-	      bucket_new_key(&(bucket_ele[neig]), ex[neig]-in[neig]);
-          }
-	  else if (ex[neig]>0)
-	    bucket_in(B[part[neig]],&(bucket_ele[neig]),ex[neig]-in[neig]);
+      for (i=hg->vindex[vertex]; i<hg->vindex[vertex+1]; i++)
+      { edge = hg->vedge[i];
+        if (cut[sour][edge] == 1)
+        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+            if (!locked[v=hg->hvertex[j]])
+            { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
+              heap_change_key(&(heap[part[v]]),v,gain[v]);
+            }
         }
+        else if (cut[sour][edge] == 2)
+        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+            if (!locked[v=hg->hvertex[j]] && part[v] == sour)
+            { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
+              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              break;
+            }
+        }
+        if (cut[dest][edge] == 0)
+        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+            if (!locked[v=hg->hvertex[j]])
+            { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
+              heap_change_key(&(heap[part[v]]),v,gain[v]);
+            }
+        }
+        else if (cut[dest][edge] == 1)
+        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+            if (!locked[v=hg->hvertex[j]] && part[v]==dest)
+            { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
+              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              break;
+            }
+        }
+        cut[sour][edge]--;
+        cut[dest][edge]++;
+      }
 
-      max_w = 0;
-      for (i=0; i<p; i++)
-	max_w = MAX(max_w,part_w[i]);
-      if ((best_max_w>max_part_w && max_w<best_max_w) ||
-	  (max_w<=max_part_w && akt_cutsize<best_cutsize))
+      max = MAX(part_weight[0],part_weight[1]);
+      if ((best_max_weight>max_weight && max<best_max_weight) ||
+          (max<=max_weight && akt_cutsize<best_cutsize))
       { best_locked = number_locked;
         best_cutsize = akt_cutsize;
-	best_max_w = max_w;
-        if (Out > 3)
-	  printf ("KL New best cutsize : %d\n",best_cutsize);
+        best_max_weight = max;
+        if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
+          printf ("New Partition:%f\n",akt_cutsize);
         no_better_steps = 0;
       }
+      if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
+        printf ("%4d %6d %2d->%2d %7.2f %f %f\n",step,vertex,sour,dest,
+                max,akt_cutsize-cutsize,akt_cutsize);
     }
 
     while (number_locked != best_locked)
     { vertex = locked_list[--number_locked];
       sour = part[vertex];
       dest = locked[vertex]-1;
-      part[vertex] = dest;
-      gain(vertex);
-      locked[vertex] = 0;
-      part_w[sour] -= (vw?vw[vertex]:1);
-      part_w[dest] += (vw?vw[vertex]:1);
-      if (ex[vertex]>0)
-	bucket_in(B[part[vertex]],&(bucket_ele[vertex]),ex[vertex]-in[vertex]);
-      for (j=ep[vertex]; j<ep[vertex+1]; j++)
-        if (!locked[neig=edge[j]])
-	{ gain(neig);
-	  if (buckets(bucket_ele[neig]))
-	  { if (ex[neig]==0)
-	      bucket_del (&(bucket_ele[neig]));
-	    else
-	      bucket_new_key(&(bucket_ele[neig]),ex[neig]-in[neig]);
-	  }
-	  else if (ex[neig]>0)
-	    bucket_in(B[part[neig]],&(bucket_ele[neig]),ex[neig]-in[neig]);
+      for (i=hg->vindex[vertex]; i<hg->vindex[vertex+1]; i++)
+      { edge = hg->vedge[i];
+        if (cut[sour][edge] == 1)
+        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+            if (!locked[v=hg->hvertex[j]])
+            { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
+              heap_change_key(&(heap[part[v]]),v,gain[v]);
+            }
         }
+        else if (cut[sour][edge] == 2)
+        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+            if (!locked[v=hg->hvertex[j]] && part[v] == sour)
+            { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
+              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              break;
+            }
+        }
+        if (cut[dest][edge] == 0)
+        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+            if (!locked[v=hg->hvertex[j]])
+            { gain[v] += (hg->ewgt?hg->ewgt[edge]:1.0);
+              heap_change_key(&(heap[part[v]]),v,gain[v]);
+            }
+        }
+        else if (cut[dest][edge] == 1)
+        { for (j=hg->hindex[edge]; j<hg->hindex[edge+1]; j++)
+            if (!locked[v=hg->hvertex[j]] && part[v]==dest)
+            { gain[v] -= (hg->ewgt?hg->ewgt[edge]:1.0);
+              heap_change_key(&(heap[part[v]]),v,gain[v]);
+              break;
+            }
+        }
+        cut[sour][edge]--;
+        cut[dest][edge]++;
+      }
+      part[vertex] = dest;
+      part_weight[sour] -= (hg->vwgt?hg->vwgt[vertex]:1.0);
+      part_weight[dest] += (hg->vwgt?hg->vwgt[vertex]:1.0);
+      gain[vertex] *= -1;
+      heap_input(&(heap[dest]),vertex,gain[vertex]);
+      locked[vertex] = 0;
     }
+
     while (number_locked)
     { vertex = locked_list[--number_locked];
       locked[vertex] = 0;
-      gain(vertex);
-      if (ex[vertex]>0)
-	bucket_in(B[part[vertex]],&(bucket_ele[vertex]),ex[vertex]-in[vertex]);
+      gain[vertex] = 0.0;
+      for (j=hg->vindex[vertex]; j<hg->vindex[vertex+1]; j++)
+      { edge = hg->vedge[j];
+        if (cut[part[vertex]][edge] == 1)
+          gain[vertex] += (hg->ewgt?(hg->ewgt[edge]):1.0);
+        else if (cut[1-part[vertex]][edge] == 0)
+          gain[vertex] -= (hg->ewgt?(hg->ewgt[edge]):1.0);
+      }
+      heap_input(&(heap[part[vertex]]),vertex,gain[vertex]);
     }
-
+    for (i=0; i<p; i++)
+      heap_make(&(heap[i]));
   } while (best_cutsize < cutsize);
 
-  FREE(in,int,n);
-  FREE(ex,int,n);
-  FREE(orient,int,n);
-  FREE(locked,int,n);
-  FREE(locked_list,int,n);
-  FREE(edges,int,p);
-  FREE(part_w,int,p);
-  for (i=0; i<p; i++)
-    bucket_free(B[i]);
-  FREE(B,BUCKETS*,p);
-  FREE(bucket_ele,BUCKET_ELE,n);
+/*
+  for (i=0; i<hg->nVtx; i++)
+  { for (j=hg->vindex[i]; j<hg->vindex[i+1]; j++)
+    { edge = hg->vedge[j];
+      if (cut[part[i]][edge] == 1)
+        gain[i] -= (hg->ewgt?(hg->ewgt[edge]):1.0);
+      else if (cut[1-part[i]][edge] == 0)
+        gain[i] += (hg->ewgt?(hg->ewgt[edge]):1.0);
+    }
 
-  return 0;
-}
+    if (gain[i] != 0.0) 
+    { printf("gain[%d]=%f\n",i,gain[i]);
+      exit(0);
+    }
+  }
 */
+
+  ZOLTAN_FREE ((void **) &(cut[0]));
+  ZOLTAN_FREE ((void **) &(locked));
+  ZOLTAN_FREE ((void **) &(locked_list));
+  ZOLTAN_FREE ((void **) &(gain));
+  heap_free(&(heap[0]));
+  heap_free(&(heap[1]));
+
+  return ZOLTAN_OK;
+}
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

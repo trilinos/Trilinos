@@ -174,7 +174,7 @@ int ierr = ZOLTAN_OK;
   strcpy(hgp->redmo_str, "aug3");
   hgp->ews = 1;
   strcpy(hgp->global_str, "lin");
-  strcpy(hgp->local_str, "hc");
+  strcpy(hgp->local_str, "fm");
   hgp->check_graph = 1;
   hgp->bal_tol = zz->LB.Imbalance_Tol;
 

@@ -50,7 +50,7 @@ int main (int argc, char **argv)
   strcpy(hgp.redmo_str, "aug3");
   hgp.ews = 1;
   strcpy(hgp.global_str, "lin");
-  strcpy(hgp.local_str, "hc");
+  strcpy(hgp.local_str, "fm");
   hgp.check_graph = 1;
 
   zz.Debug_Level = 1;
@@ -73,7 +73,7 @@ int main (int argc, char **argv)
     puts("-reda   reduction augment:{no,aug1,aug2,(aug3)}");
     puts("-reds   reduction scaling:(1)");
     puts("-g      global method:    {ran,(lin),bfs,bfsr}");
-    puts("-l      local method:     no,(hc)");
+    puts("-l      local method:     no,(fm)");
     puts("-d      debug level:      (1)");
     puts("default values are in brackets ():");
     return 0;
@@ -102,7 +102,7 @@ int main (int argc, char **argv)
 /* load and info hypergraph */
   if (hg_readfile(&zz,&hg,hgraphfile,&base))
     return 1;
-  if (zz.Debug_Level >= ZOLTAN_DEBUG_ALL)
+  if (zz.Debug_Level > ZOLTAN_DEBUG_ALL)
     Zoltan_HG_Print(&zz, &hg);
   memory_graph = Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL);
   printf("Initial Memory: %d %d\n", memory_graph,
