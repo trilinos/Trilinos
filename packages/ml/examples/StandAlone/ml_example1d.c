@@ -434,7 +434,11 @@ void sample1(struct data *Afine_data, struct data *Acoarse_data,
 
 
    ML_Gen_AmatrixRAP(my_ml,grid1, grid0);
+#ifdef SUPERLU
    ML_Gen_CoarseSolverSuperLU(my_ml, grid0);
+#else
+   ML_Gen_Smoother_Jacobi(my_ml, grid0,  ML_PRESMOOTHER, 100, ML_DEFAULT);
+#endif
 
 /* ML_Gen_Smoother_Jacobi(my_ml, grid0, ML_PRESMOOTHER, 200, ML_DEFAULT); */
 /* ML_Gen_Smoother_GaussSeidel(my_ml, grid0, ML_PRESMOOTHER, 200, 1.);    */
