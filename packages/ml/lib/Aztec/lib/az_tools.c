@@ -4468,7 +4468,11 @@ void AZ_transform(int proc_config[], int *external[], int bindx[], double val[],
   }
 
   AZ_order_ele(*update_index, *extern_index, &N_internal, &N_border, N_update,
+#ifdef MB_MODIF
+               bnptr, bindx, extern_proc, N_extern, AZ_EXTERNS, mat_type);
+#else
                bnptr, bindx, extern_proc, N_extern, AZ_ALL, mat_type);
+endif
 
   /*
    * Permute the matrix using the new ordering.  IMPORTANT: This routine assumes
