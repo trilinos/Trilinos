@@ -77,8 +77,10 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
          sum += vwgt[i*vwgt_dim+k];
        }
        if (sum == 0){
-          sprintf(msg, "Zero vertex weights for object %d.", i);
-          LB_PRINT_WARN(proc, yo, msg);
+          if (debug_level>0) {
+            sprintf(msg, "Zero vertex weights for object %d.", i);
+            LB_PRINT_WARN(proc, yo, msg);
+          }
           ierr = LB_WARN;
        }
     }
@@ -100,9 +102,11 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
         sum += adjwgt[j*ewgt_dim+k];
       }
       if (sum == 0){
-         sprintf(msg, "Zero communication weights for edge %d.", j);
-         LB_PRINT_WARN(proc, yo, msg);
-         ierr = LB_WARN;
+        if (debug_level>0) {
+          sprintf(msg, "Zero communication weights for edge %d.", j);
+          LB_PRINT_WARN(proc, yo, msg);
+        }
+        ierr = LB_WARN;
       }
     }
   }
@@ -125,15 +129,19 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       }
       /* Self edge? */
       if (global_j == global_i){
-        sprintf(msg, "Self edge for vertex %d detected.", global_i);
-        LB_PRINT_WARN(proc, yo, msg);
+        if (debug_level>0){
+          sprintf(msg, "Self edge for vertex %d detected.", global_i);
+          LB_PRINT_WARN(proc, yo, msg);
+        }
         ierr = LB_WARN;
       }
       /* Duplicate edge? */
       for (kk=xadj[i]; kk<xadj[i+1]; kk++){
         if ((kk != ii) && (adjncy[kk] == adjncy[ii])){
-          sprintf(msg, "Duplicate edge (%d,%d) detected.", global_i, global_j);
-          LB_PRINT_WARN(proc, yo, msg);
+          if (debug_level>0){
+            sprintf(msg, "Duplicate edge (%d,%d) detected.", global_i, global_j);
+            LB_PRINT_WARN(proc, yo, msg);
+          }
           ierr = LB_WARN;
         }
       }
