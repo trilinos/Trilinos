@@ -461,7 +461,6 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    csr_data->rowptr  = new_ia;
    csr_data->columns = new_ja;
    csr_data->values  = new_val;
-   (*Pmatrix) = ML_Operator_Create(comm);
    ML_Operator_Set_ApplyFuncData(*Pmatrix, nullspace_dim*Ncoarse, Nrows,
                                  ML_EMPTY, csr_data, Nrows, NULL, 0);
    (*Pmatrix)->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
