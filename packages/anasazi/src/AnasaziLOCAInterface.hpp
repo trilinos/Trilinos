@@ -6,6 +6,7 @@
 #include "AnasaziMatrix.hpp"
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziCommon.hpp"
+#include "AnasaziReturnType.hpp"
 #include "NOX_Abstract_Vector.H"
 #include "LOCA_Abstract_Group.H"
 #include "NOX_Parameter_List.H"
@@ -22,7 +23,8 @@ class AnasaziLOCAMat : public AnasaziMatrix<TYPE> {
 public:
 	AnasaziLOCAMat( NOX::Parameter::List&, NOX::Abstract::Group& );
 	~AnasaziLOCAMat();
-	void ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, AnasaziMultiVec<TYPE>& y ) const;
+	Anasazi_ReturnType ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, 
+					AnasaziMultiVec<TYPE>& y ) const;
 private:
 	NOX::Parameter::List& locaParams;
 	NOX::Abstract::Group& locaGroup;
@@ -402,7 +404,7 @@ AnasaziLOCAMat<TYPE>::~AnasaziLOCAMat() {
 // AnasaziMatrix matrix multiply
 //
 template <class TYPE>
-void AnasaziLOCAMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, 
+Anasazi_ReturnType AnasaziLOCAMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, 
 					  AnasaziMultiVec<TYPE>& y ) const {
 	
 	NOX::Abstract::Group::ReturnType res;
@@ -415,8 +417,11 @@ void AnasaziLOCAMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x,
 		res = locaGroup.applyJacobianInverse(locaParams, *(x_vec->mvPtrs[i]), 
 						*(y_vec->mvPtrs[i])); 
 //		res = locaGroup.applyJacobian(*(x_vec->mvPtrs[i]), *(y_vec->mvPtrs[i])); 
-		if (res != NOX::Abstract::Group::Ok)
-			cout << "Error in applyJacobianInverse "<<endl;
+	}
+	if (res == NOX::Abstract::Group::Ok) {
+	    return Ok;
+	} else {
+	    return Failed;
 	}
 }
 

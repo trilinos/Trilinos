@@ -5,9 +5,12 @@
 
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziMatrix.hpp"
+#include "AnasaziOperator.hpp"
 #include "AnasaziCommon.hpp"
+#include "AnasaziReturnType.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Operator.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 
@@ -235,7 +238,7 @@ void AnasaziPetraVec<TYPE>::MvAddMv ( TYPE alpha , AnasaziMultiVec<TYPE>& A,
 //
 template<class TYPE>
 void AnasaziPetraVec<TYPE>::MvTransMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A,
-									   AnasaziDenseMatrix<TYPE>& B) {
+						   AnasaziDenseMatrix<TYPE>& B) {
 	int info=0;
 	const int izero=0;
 	const TYPE zero=0.0;
@@ -308,7 +311,8 @@ class AnasaziPetraMat : public AnasaziMatrix<TYPE> {
 public:
 	AnasaziPetraMat(const Epetra_CrsMatrix& );
 	~AnasaziPetraMat();
-	void ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, AnasaziMultiVec<TYPE>& y ) const;
+	Anasazi_ReturnType ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, 
+					AnasaziMultiVec<TYPE>& y ) const;
 private:
 	const Epetra_CrsMatrix & Epetra_Mat;
 };
@@ -334,7 +338,7 @@ AnasaziPetraMat<TYPE>::~AnasaziPetraMat() {
 // AnasaziMatrix matrix multiply
 //
 template <class TYPE>
-void AnasaziPetraMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, 
+Anasazi_ReturnType AnasaziPetraMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, 
 					  AnasaziMultiVec<TYPE>& y ) const {
 	int info=0;
 	bool trans=false;
@@ -348,8 +352,65 @@ void AnasaziPetraMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x,
 	// is not declared const.
 	//
 	info=const_cast<Epetra_CrsMatrix&>(Epetra_Mat).Multiply( trans, *vec_x, *vec_y );
-	assert(info==0);
-	
+	if (info==0) { 
+		return Ok; 
+	} else { 
+		return Failed; 
+	}		
+}
+
+///////////////////////////////////////////////////////////////
+//--------template class AnasaziPetraOp-----------------------
+template <class TYPE> 
+class AnasaziPetraOp : public AnasaziOperator<TYPE> {
+public:
+	AnasaziPetraOp(const Epetra_Operator& );
+	~AnasaziPetraOp();
+	Anasazi_ReturnType ApplyOp ( const AnasaziMultiVec<TYPE>& x, 
+					AnasaziMultiVec<TYPE>& y ) const;
+private:
+	const Epetra_Operator & Epetra_Op;
+};
+//-------------------------------------------------------------
+//
+// implementation of the AnasaziPetraOp class.
+//
+////////////////////////////////////////////////////////////////////
+//
+// AnasaziMatrix constructors
+//
+template <class TYPE>
+AnasaziPetraOp<TYPE>::AnasaziPetraOp(const Epetra_Operator& Op) :
+						Epetra_Op(Op) {
+//	cout << "ctor:AnasaziPetraOp " << this << endl;
+	}
+
+template <class TYPE>
+AnasaziPetraOp<TYPE>::~AnasaziPetraOp() {
+//	cout << "dtor:AnasaziPetraOp " << this << endl;
+	}
+//
+// AnasaziMatrix matrix multiply
+//
+template <class TYPE>
+Anasazi_ReturnType AnasaziPetraOp<TYPE>::ApplyOp ( const AnasaziMultiVec<TYPE>& x, 
+					  AnasaziMultiVec<TYPE>& y ) const {
+	int info=0;
+	AnasaziMultiVec<TYPE> & temp_x = const_cast<AnasaziMultiVec<TYPE> &>(x);
+	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+
+	assert( vec_x && vec_y );
+	//
+	// Need to cast away constness because the member function Apply
+	// is not declared const.
+	//
+	info=const_cast<Epetra_Operator&>(Epetra_Op).Apply( *vec_x, *vec_y );
+	if (info==0) { 
+		return Ok; 
+	} else { 
+		return Failed; 
+	}	
 }
 
 #endif 

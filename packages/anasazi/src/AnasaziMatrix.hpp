@@ -3,6 +3,7 @@
 #define ANASAZI_MATRIX_HPP
 
 #include "AnasaziMultiVec.hpp"
+#include "AnasaziReturnType.hpp"
 #include <iostream>
 
 /*!	\class AnasaziMatrix
@@ -19,6 +20,7 @@
 template <class TYPE>
 class AnasaziMatrix {
 public:
+
 	//@{ \name Constructor/Destructor.
 	//! %AnasaziMatrix constructor.
 	AnasaziMatrix() {
@@ -35,7 +37,7 @@ public:
 	/*! \brief This routine takes the %AnasaziMultiVec \c x and applies the matrix/operator
 	to it resulting in the %AnasaziMultiVec \c y, which is returned.
 	*/
-	virtual void ApplyMatrix (const AnasaziMultiVec<TYPE>& x, 
+	virtual Anasazi_ReturnType ApplyMatrix (const AnasaziMultiVec<TYPE>& x, 
 						      AnasaziMultiVec<TYPE>& y ) const = 0;
 	//@}
 };
