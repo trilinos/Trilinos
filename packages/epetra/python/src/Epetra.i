@@ -46,6 +46,7 @@ on-line documentation for more in-depth information."
 #include <vector>
 
 // Epetra includes
+#include "Epetra_Version.h"
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
@@ -130,6 +131,7 @@ on-line documentation for more in-depth information."
 %ignore NumPyArrayBase::getArrayObject() const;
 
 // Rename directives
+%rename(Version             ) Epetra_Version;
 %rename(Object              ) Epetra_Object;
 %rename(Comm                ) Epetra_Comm;
 %rename(SerialComm          ) Epetra_SerialComm;
@@ -188,7 +190,10 @@ on-line documentation for more in-depth information."
 %include "std_vector.i"
 %include "exception.i"
 
+
 // Epetra interface includes
+using namespace std;
+%include "Epetra_Version.h"
 %include "Epetra_Object.h"
 %include "Epetra_Comm.h"
 %include "Epetra_SerialComm.h"
@@ -222,7 +227,6 @@ on-line documentation for more in-depth information."
 
 // Extensions
 %extend Epetra_Object {
-  using namespace std;
   string __str__() {
     stringstream os;
     self->Print(os);                  // Put the output in os
@@ -238,6 +242,15 @@ on-line documentation for more in-depth information."
 
   void Print() {
     self->Print(cout);
+  }
+
+  PyObject * Norm1() {
+    int n = self->NumVectors();
+    double result[n];
+    int numVectors[1] = {n};
+    int status        = self->Norm1(result);
+    return Py_BuildValue("(iO)", status, PyArray_FromDimsAndData(1,numVectors,PyArray_DOUBLE,
+								 (char *)(&result[0])));
   }
 }
 

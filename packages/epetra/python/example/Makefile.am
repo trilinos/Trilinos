@@ -52,7 +52,12 @@ EXTRA_DIST = \
 ## #######################################################################
 MAINTAINERCLEANFILES = Makefile.in
 
-## #######################################################################
-## Subdirectories to be make'd recursively
-## #######################################################################
+# Define the suite of examples
+EXAMPLE_SUITE = exSimple
 
+check-am: $(EXAMPLE_SUITE)
+
+# Run the test
+ex%: $(srcdir)/ex%.py $(srcdir)/setpath.py
+	cp $^ .
+	./$@.py

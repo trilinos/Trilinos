@@ -246,8 +246,8 @@ AUTOMAKE_OPTIONS = foreign
 #       could get rid of these.
 #
 EXTRA_DIST = \
-	setpath.py testEpetraExt.py testEpetra.py testExample.py \
-	testNOX.py
+	setpath.py testBlockMap.py testComm.py testCsrGraph.py testMap.py \
+	testObject.py testSerialDense.py testVector.py
 
 MAINTAINERCLEANFILES = Makefile.in
 
@@ -409,7 +409,7 @@ uninstall-am: uninstall-info-am
 
 check-am: $(TEST_SUITE)
 
-# Run the test
+# Run the test script
 test%: $(srcdir)/test%.py $(srcdir)/setpath.py
 	cp $^ .
 	./$@.py

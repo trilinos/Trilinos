@@ -49,13 +49,15 @@ WRAPPERS   = $(patsubst %.i, $(srcdir)/wrap_%.cpp, $(INTERFACES))
 # python script
 setup.txt: $(srcdir)/Makefile.am
 	@echo "creating $@"
-	@echo "{"                                  >  $@
-	@echo "  'top_srcdir' : '$(top_srcdir)',"  >> $@
-	@echo "  'srcdir'     : '$(srcdir)',"  	   >> $@
-	@echo "  'LDFLAGS'    : '$(LDFLAGS)'," 	   >> $@
-	@echo "  'FLIBS'      : '$(FLIBS)',"   	   >> $@
-	@echo "  'LIBS'       : '$(LIBS)',"    	   >> $@
-	@echo "}"                                  >> $@
+	@echo "{"                                   >  $@
+	@echo "  'top_srcdir'  : '$(top_srcdir)',"  >> $@
+	@echo "  'srcdir'      : '$(srcdir)',"      >> $@
+	@echo "  'LDFLAGS'     : '$(LDFLAGS)',"     >> $@
+	@echo "  'FLIBS'       : '$(FLIBS)',"       >> $@
+	@echo "  'LIBS'        : '$(LIBS)',"        >> $@
+	@echo "  'BLAS_LIBS'   : '$(BLAS_LIBS)',"   >> $@
+	@echo "  'LAPACK_LIBS' : '$(LAPACKLIBS)',"  >> $@
+	@echo "}"                                   >> $@
 
 build: $(WRAPPERS) setup.txt $(tempdir)
 	$(srcdir)/setup.py build

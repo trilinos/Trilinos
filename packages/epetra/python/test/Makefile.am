@@ -44,17 +44,13 @@ ACLOCAL	= aclocal -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
-	setpath.py testEpetraExt.py testEpetra.py testExample.py \
-	testNOX.py
+	setpath.py testBlockMap.py testComm.py testCsrGraph.py testMap.py \
+	testObject.py testSerialDense.py testVector.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
 ## #######################################################################
 MAINTAINERCLEANFILES = Makefile.in
-
-## #######################################################################
-## Subdirectories to be make'd recursively
-## #######################################################################
 
 # Define the suite of tests
 TEST_SUITE = testObject testSerialDense testComm testBlockMap testMap \
@@ -62,7 +58,7 @@ TEST_SUITE = testObject testSerialDense testComm testBlockMap testMap \
 
 check-am: $(TEST_SUITE)
 
-# Run the test
+# Run the test script
 test%: $(srcdir)/test%.py $(srcdir)/setpath.py
 	cp $^ .
 	./$@.py

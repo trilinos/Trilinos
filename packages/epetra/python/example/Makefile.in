@@ -250,6 +250,9 @@ EXTRA_DIST = \
 	testNOX.py
 
 MAINTAINERCLEANFILES = Makefile.in
+
+# Define the suite of examples
+EXAMPLE_SUITE = exSimple
 all: all-am
 
 .SUFFIXES:
@@ -401,6 +404,13 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am uninstall uninstall-am \
 	uninstall-info-am
 
+
+check-am: $(EXAMPLE_SUITE)
+
+# Run the test
+ex%: $(srcdir)/ex%.py $(srcdir)/setpath.py
+	cp $^ .
+	./$@.py
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

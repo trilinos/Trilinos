@@ -73,8 +73,11 @@ if sysName == "Linux":
 # is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
 # adding them to the appropriate list.
 extraArgs = [ ]
-libs = makeInfo.get("LDFLAGS","").split() + makeInfo.get("FLIBS","").split() + \
-       makeInfo.get("LIBS"   ,"").split()
+libs = makeInfo.get("LDFLAGS"    ,"").split() + \
+       makeInfo.get("FLIBS"      ,"").split() + \
+       makeInfo.get("LIBS"       ,"").split() + \
+       makeInfo.get("BLAS_LIBS"  ,"").split() + \
+       makeInfo.get("LAPACK_LIBS","").split()
 for lib in libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
