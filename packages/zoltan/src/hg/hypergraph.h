@@ -94,7 +94,7 @@ typedef struct
    int info;     /* primarily for debugging recursive algorithms;initially 0 */
    int nVtx ;    /* number of vertices, |V| */
    int nEdge ;   /* number of hyperedges, |E| */
-   int nPin ;    /* number of pins, |P| */
+   int nInput ;  /* number of inputs, |I| */
    int nDim ;    /* Number of dimensions of a vertex's coordinate */
    int VertexWeightDim ;  /* number of weight dimensions for a vertex */
    int EdgeWeightDim ;    /* number of weight dimensions for an edge */
@@ -201,6 +201,7 @@ float hcut_size_links (ZZ *, HGraph *, int, Partition);
 int Zoltan_HG_Scale_HGraph_Weight (ZZ *, HGraph *, float *, int);
 int Zoltan_HG_Scale_Graph_Weight  (ZZ *, Graph *, float *, int);
 float sim (HGraph *, int, int);
+float sim_scale (HGraph *, int, int, float);
 void sim_check (HGraph *, Graph *);
 
 /* Matching functions */

@@ -19,18 +19,18 @@ I		= -I../Utilities/Memory
 C		= $(C_pre) $(C_comp) $(C_flag_$(OSTYPE)) $(DTIME) $(I)
 L		= -L. -lhg -lm
 
-src.c		= hg_test.c hg_readfile.c hg_util.c \
+src.c		= hg_exec.c hg_readfile.c hg_util.c \
 		  hg_part.c hg_match.c hg_pack.c hg_group.c hg_scale.c \
 		  hg_coarse.c hg_global.c hg_local.c hg_sort.c hg_heap.c \
 		  zoltan_hg_readfile.c mem.c
 
-all:            	./hg_test
-./hg_test:		./libhg.a hg_test.o
-			$(C) hg_test.o $(L) -o $@
+all:            	./hg_exec
+./hg_exec:		./libhg.a hg_exec.o
+			$(C) hg_exec.o $(L) -o $@
 ./libhg.a:		$(src.c:.c=.o)
 			ar rv $@ $?
 .c.o:			$<
 	  		$(C) -c $<
 
 clean:	
-	  		rm -f ./hg_test ./libhg.a $(src.c:.c=.o)
+	  		rm -f ./hg_exec ./libhg.a $(src.c:.c=.o)

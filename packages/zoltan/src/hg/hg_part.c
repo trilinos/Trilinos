@@ -77,8 +77,9 @@ int Zoltan_HG_HPart_Lib (
   }
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
-  {  printf("START %3d |V|=%6d |E|=%6d %d/%s/%s-%s p=%d...\n", hg->info,hg->nVtx,
-      hg->nEdge, hgp->redl, hgp->redm_str, hgp->global_str, hgp->local_str, p);
+  {  printf("START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
+       hg->info,hg->nVtx,hg->nEdge,hg->nInput,hgp->redl,hgp->redm_str,
+       hgp->global_str,hgp->local_str,p);
     if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
     { ierr = Zoltan_HG_Info(zz, hg);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
@@ -208,9 +209,9 @@ int Zoltan_HG_HPart_Lib (
       return ierr ;
   }
   if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
-    printf("FINAL %3d |V|=%6d |E|=%6d %d/%s/%s-%s p=%d cutt=%.2f cutl=%.2f\n",
-     hg->info,hg->nVtx,hg->nEdge,hgp->redl,hgp->redm_str,hgp->global_str,
-     hgp->local_str, p,hcut_size_total(hg,part), hcut_size_links(zz,hg,p,part));
+    printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d cutl=%.2f\n",
+      hg->info,hg->nVtx,hg->nEdge,hg->nInput,hgp->redl,hgp->redm_str,
+      hgp->global_str,hgp->local_str,p,hcut_size_links(zz,hg,p,part));
 
   return ierr ;
 }

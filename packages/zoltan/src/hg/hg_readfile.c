@@ -40,7 +40,7 @@ int hg_readfile (ZZ *zz, HGraph *hg, char *hgraphfile, int *base)
       return ZOLTAN_FATAL;
       }
 
-   ierr = Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nPin, 
+   ierr = Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nInput, 
     &hg->hindex, &hg->hvertex, &hg->VertexWeightDim, &hg->vwgt, 
     &hg->EdgeWeightDim, &hg->ewgt, base) ;
    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
@@ -50,7 +50,7 @@ int hg_readfile (ZZ *zz, HGraph *hg, char *hgraphfile, int *base)
       {
       /* Convert to zero-based vertex numbers */
       int i;
-      for (i = 0; i < hg->nPin; i++) 
+      for (i = 0; i < hg->nInput; i++) 
          hg->hvertex[i] -= *base;
       }
 

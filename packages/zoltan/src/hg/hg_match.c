@@ -18,6 +18,9 @@ extern "C" {
 
 #include "hypergraph.h"
 
+static void check_upper_bound_of_matching_weight (Graph*, ZZ*, Matching);
+static int graph_connected_components (int, int*, int*, int);
+
 static ZOLTAN_HG_MATCHING_FN matching_mxm;  /* maximal matching */
 static ZOLTAN_HG_MATCHING_FN matching_rem;  /* random edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_rrm;  /* random, random edge matching */
@@ -83,7 +86,6 @@ int Zoltan_HG_Matching (
 /*
     graph_connected_components (g.nVtx,g.nindex,g.neigh,zz->Debug_Level);
 */
-
     /* Scaling the edge weights */
     if (g.vwgt && hgp->ews>0)
     { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (g.nEdge*sizeof(float))))
@@ -112,27 +114,7 @@ int Zoltan_HG_Matching (
 
   /* compare matching weight to an upper bound */
   if (g.ewgt && zz->Debug_Level>=2)
-  { int i, j;
-    double highest, matching_weight=0.0, upper_bound=0.0;
-    
-    for (i=0; i<g.nVtx; i++)
-    { highest = 0.0;
-      for (j=g.nindex[i]; j<g.nindex[i+1]; j++)
-      { highest = MAX(highest,g.ewgt[j]);
-        if (g.neigh[j] == match[i])
-        { if (g.ewgt[j] == FLT_MAX)
-            matching_weight = FLT_MAX;
-          else
-            matching_weight += (g.ewgt[j]);
-      } }
-
-      if (highest < FLT_MAX)
-        upper_bound += highest;
-      else
-        upper_bound = FLT_MAX;
-    }
-    printf("matching/upper_bound ratio:%.3f\n",matching_weight/upper_bound);
-  }
+    check_upper_bound_of_matching_weight (&g,zz, match);
 
 End:
 /* more temporary code while graphs are being replaced by hypergraphs */
@@ -217,7 +199,7 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
 static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
    {
-   int i, j, *edges=NULL, edge, random, vertex, *Hindex, n, temp ;
+   int i, j, *edges=NULL, edge, random, vertex, *Hindex, partner ;
    char *yo = "matching_rem" ;
 
    if (!(Hindex    = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nEdge+1)) ))
@@ -242,31 +224,31 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
       edge = edges[random] ;
       edges[random] = edges[i-1] ;
       for (j = Hindex[edge]++ ; j < hg->hindex[edge+1]; j = Hindex[edge]++)
-         if (match[hg->hvertex[j]] == hg->hvertex[j])
+         {
+         vertex = hg->hvertex[j] ;
+         if (match[vertex] == vertex)
             {
-            vertex = hg->hvertex[j] ;
-            while (hg->hindex[edge+1] > (j=Hindex[edge]++))
+            while (match[vertex]==vertex && (j=Hindex[edge]++)<hg->hindex[edge+1])
                {
-               n = Zoltan_HG_Rand() % (hg->hindex[edge+1]-j) ;
-               temp = hg->hvertex[j] ;
-               hg->hvertex[j]   = hg->hvertex[j+n] ;
-               hg->hvertex[j+n] = temp ;
-               if (match[hg->hvertex[j]] == hg->hvertex[j])
+               random = j+Zoltan_HG_Rand() % (hg->hindex[edge+1]-j) ;
+               partner = hg->hvertex[random] ;
+               hg->hvertex[random] = hg->hvertex[j] ;
+               hg->hvertex[j] = partner ;
+               if (match[partner] == partner)
                   {
-                  match[vertex]          = hg->hvertex[j] ;
-                  match [hg->hvertex[j]] = vertex ;
+                  match[vertex] = partner ;
+                  match[partner] = vertex ;
                   (*limit)-- ;
-                  break ;
                   }
                }
-            break ;
+            break;
             }
+         }
       }
    ZOLTAN_FREE ((void **) &Hindex);
    ZOLTAN_FREE ((void **) &edges) ;
    return ZOLTAN_OK ;
    }
-
 
 /*****************************************************************************/
 /* Replacing graph version below with hypergraph version */
@@ -725,7 +707,7 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
 static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
 { int	i, j, k, side=0, edge, vertex, *Match[2], limits[2], neighbor, next_vertex,
-        pins, scale=1;
+        pins;
   float	w[2]={0.0,0.0}, weight, max_weight, *sims;
   char  *yo = "matching_pgm" ;
 
@@ -752,38 +734,24 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
           weight = 2.0/((pins-1)*pins);
           if (hg->ewgt)
             weight *= hg->ewgt[edge];
-          for (k = hg->hindex[edge] ; k < hg->hindex[edge+1] ; k++)
+          for (k=hg->hindex[edge]; k<hg->hindex[edge+1]; k++)
           { neighbor = hg->hvertex[k] ;
             if (neighbor!=vertex && Match[0][neighbor]==neighbor &&
                 Match[1][neighbor]==neighbor)
               sims[neighbor] += weight;
-          }
-        }
+        } }
         for (j=hg->vindex[vertex]; j<hg->vindex[vertex+1]; j++)
         { edge = hg->vedge[j];
           for (k=hg->hindex[edge]; k<hg->hindex[edge+1]; k++)
           { neighbor = hg->hvertex[k];
             if (sims[neighbor] > 0.0)
-            { if (hg->vwgt && scale>0)
-              { if (hg->vwgt[vertex]<=(float)0.0 || hg->vwgt[neighbor]<=(float)0.0)
-                  sims[neighbor] = FLT_MAX/10.0;
-                else if (scale == 1)
-                  sims[neighbor] = sims[neighbor]/(hg->vwgt[vertex]*hg->vwgt[neighbor]);
-                else if (scale == 2)
-                  sims[neighbor] = sims[neighbor]/(hg->vwgt[vertex]+hg->vwgt[neighbor]);
-                else if (scale == 3)
-                  sims[neighbor] = sims[neighbor]/MAX(hg->vwgt[vertex],hg->vwgt[neighbor]);
-                else if (scale == 4)
-                  sims[neighbor] = sims[neighbor]/MIN(hg->vwgt[vertex],hg->vwgt[neighbor]);
-              }
+            { sims[neighbor] = sim_scale(hg,vertex,neighbor,sims[neighbor]);
               if (sims[neighbor] > max_weight)
               { max_weight = sims[neighbor];
                 next_vertex = neighbor;
               }
               sims[neighbor] = 0.0;
-            }
-          }
-        }
+        } } }
 
         if (next_vertex >= 0)
         { Match[side][vertex] = next_vertex;
@@ -793,8 +761,7 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
           side = 1-side;
         }
         vertex = next_vertex;
-      }
-    }
+    } }
 
   if (w[0] < w[1])
   { for (i=0; i<hg->nVtx; i++)
@@ -943,8 +910,30 @@ static int matching_aug3 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
 
 /*****************************************************************************/
 
-/*
-int graph_connected_components (int n, int *ep, int *edge, int Out)
+static void check_upper_bound_of_matching_weight (Graph *g, ZZ *zz, Matching match)
+{ int i, j;
+  double highest, matching_weight=0.0, upper_bound=0.0;
+ 
+  for (i=0; i<g->nVtx; i++)
+  { highest = 0.0;
+    for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
+    { highest = MAX(highest,g->ewgt[j]);
+      if (g->neigh[j] == match[i])
+      { if (g->ewgt[j] == FLT_MAX)
+          matching_weight = FLT_MAX;
+        else
+          matching_weight += (g->ewgt[j]);
+    } }
+
+    if (highest < FLT_MAX)
+      upper_bound += highest;
+    else
+      upper_bound = FLT_MAX;
+  }
+  printf("matching/upper_bound ratio:%.3f\n",matching_weight/upper_bound);
+}
+
+static int graph_connected_components (int n, int *ep, int *edge, int Out)
 { int   i=0, *locked, *queue, queue_head, queue_tail,
         components=0, first_unlocked=0;
 
@@ -983,7 +972,6 @@ int graph_connected_components (int n, int *ep, int *edge, int Out)
   ZOLTAN_FREE((void **) &queue);
   return components;
 }
-*/
 
 /*****************************************************************************/
 #ifdef __cplusplus

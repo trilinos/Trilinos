@@ -27,7 +27,7 @@ void Zoltan_HG_HGraph_Init(
   hgraph->info  = 0;
   hgraph->nVtx  = 0;
   hgraph->nEdge = 0;
-  hgraph->nPin  = 0;
+  hgraph->nInput= 0;
   hgraph->nDim  = 0;
   hgraph->EdgeWeightDim   = 0 ;
   hgraph->VertexWeightDim = 0 ;
@@ -117,7 +117,7 @@ int Zoltan_HG_Info (
 
   printf("--------- HGraph Information (min/ave/max/tot) ------------------\n");
   printf("info:%d |V|=%d |E|=%d |P|=%d \n",
-         hg->info,hg->nVtx,hg->nEdge,hg->nPin);
+         hg->info,hg->nVtx,hg->nEdge,hg->nInput);
 
 /* print weights */
   if (hg->vwgt)
@@ -155,7 +155,7 @@ int Zoltan_HG_Info (
       size_max = MAX(size_max,size);
     }
     printf("Edge sizes       :    %6d    %9.2f %6d    %9d\n",size_min,
-     (float)(hg->nPin)/hg->nEdge,size_max,hg->nPin);
+     (float)(hg->nInput)/hg->nEdge,size_max,hg->nInput);
   }
   if (hg->vindex)
   { size_min = INT_MAX;
@@ -166,7 +166,7 @@ int Zoltan_HG_Info (
       size_max = MAX(size_max,size);
     }
     printf("Vertex sizes     :    %6d    %9.2f %6d    %9d\n",size_min,
-     (float)(hg->nPin)/hg->nEdge,size_max,hg->nPin);
+     (float)(hg->nInput)/hg->nEdge,size_max,hg->nInput);
   }
 
   printf("-----------------------------------------------------------------\n");
@@ -202,7 +202,7 @@ int Zoltan_HG_Create_Mirror (
      index     = hg->hindex ;
      data      = hg->hvertex ;
      if (!(outindex=hg->vindex=(int*)ZOLTAN_MALLOC((hg->nVtx+1)*sizeof(int)))||
-         !(outdata =hg->vedge =(int*)ZOLTAN_MALLOC(hg->nPin*sizeof(int)))    )
+         !(outdata =hg->vedge =(int*)ZOLTAN_MALLOC(hg->nInput*sizeof(int)))    )
        {
        ZOLTAN_FREE ((void **) &(hg->vindex)) ;
        ZOLTAN_FREE ((void **) &(hg->vedge)) ;
@@ -219,7 +219,7 @@ int Zoltan_HG_Create_Mirror (
      index     = hg->vindex ;
      data      = hg->vedge ;
      if (!(outindex=hg->hindex =(int*)ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int)))||
-         !(outdata =hg->hvertex=(int*)ZOLTAN_MALLOC(hg->nPin*sizeof(int)))     )
+         !(outdata =hg->hvertex=(int*)ZOLTAN_MALLOC(hg->nInput*sizeof(int)))     )
        {
        ZOLTAN_FREE ((void **) &(hg->hindex)) ;
        ZOLTAN_FREE ((void **) &(hg->hvertex)) ;
@@ -537,7 +537,7 @@ int ierr = ZOLTAN_OK;
   hg->info  = g->info;
   hg->nVtx  = g->nVtx;
   hg->nEdge = g->nVtx;
-  hg->nPin  = g->nVtx + g->nEdge;
+  hg->nInput  = g->nVtx + g->nEdge;
   hg->nDim  = g->nDim;
   hg->VertexWeightDim = g->VertexWeightDim;
   hg->EdgeWeightDim = g->EdgeWeightDim;
@@ -566,9 +566,9 @@ int ierr = ZOLTAN_OK;
 
   /* Allocate memory for hypergraph edges */
   ZOLTAN_TRACE_DETAIL(zz, yo, "Allocating edge arrays");
-  if (hg->nEdge > 0 && hg->nPin > 0)
+  if (hg->nEdge > 0 && hg->nInput > 0)
     if (!(hindex = hg->hindex=(int *)ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int)))||
-        !(hvertex = hg->hvertex=(int *)ZOLTAN_MALLOC(hg->nPin*sizeof(int)))    )
+        !(hvertex = hg->hvertex=(int *)ZOLTAN_MALLOC(hg->nInput*sizeof(int)))    )
     { ierr = ZOLTAN_MEMERR;
       goto End;
     }
@@ -601,8 +601,8 @@ int ierr = ZOLTAN_OK;
   hindex[hg->nEdge] = cnt;
 
   /* Sanity check */
-  if (hg->nPin != cnt) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Sanity check failed: nPin != cnt.");
+  if (hg->nInput != cnt) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Sanity check failed: nInput != cnt.");
     ierr = ZOLTAN_FATAL;
     goto End;
   }

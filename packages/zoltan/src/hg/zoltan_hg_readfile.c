@@ -33,7 +33,7 @@ static int patoh_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
 int Zoltan_HG_Readfile (
  int Proc,
  FILE *f,
- int *nVtx, int *nEdge, int *nPin,
+ int *nVtx, int *nEdge, int *nInput,
  int **hindex,   int **hvertex,
  int *vwgt_dim, float **vwgt,
  int *ewgt_dim, float **ewgt,
@@ -44,7 +44,7 @@ int Zoltan_HG_Readfile (
     char *yo = "Zoltan_HG_Readfile" ;
 
     /* Initialize return values in case of error. */
-    *nVtx   = *nEdge   = *nPin = *vwgt_dim = *ewgt_dim = 0;
+    *nVtx   = *nEdge   = *nInput = *vwgt_dim = *ewgt_dim = 0;
     *hindex = *hvertex = NULL;
     *vwgt   = *ewgt    = NULL;
     *base   = 0;
@@ -61,10 +61,10 @@ int Zoltan_HG_Readfile (
 
     if (atoi(s) < 2) /* Note -- this logic is not correct for files 
                         with only one vertex. */
-       err = patoh_readfile (Proc,f,nVtx,nEdge,nPin,hindex,hvertex,
+       err = patoh_readfile (Proc,f,nVtx,nEdge,nInput,hindex,hvertex,
                              vwgt_dim,vwgt,ewgt_dim,ewgt,base) ;
     else if (atoi(s) > 1) 
-       err = old_readfile   (Proc,f,nVtx,nEdge,nPin,hindex,hvertex,
+       err = old_readfile   (Proc,f,nVtx,nEdge,nInput,hindex,hvertex,
                              vwgt_dim,vwgt,ewgt_dim,ewgt,base) ;
 
 End:
@@ -76,7 +76,7 @@ End:
 
 static int old_readfile (int Proc,
  FILE *f,
- int *nVtx, int *nEdge, int *nPin,
+ int *nVtx, int *nEdge, int *nInput,
  int **index,   int **vertex,
  int *vwgt_dim, float **vwgt,
  int *ewgt_dim, float **ewgt,
@@ -104,11 +104,11 @@ static int old_readfile (int Proc,
           }
     } while (string[0] == '%');  /* Skip leading comment lines. */
 
-    count = sscanf (string, "%d %d %d %d", nVtx, nEdge, nPin, &code) ;
+    count = sscanf (string, "%d %d %d %d", nVtx, nEdge, nInput, &code) ;
     if (count <  3)
        {
        ZOLTAN_PRINT_ERROR (Proc, yo, 
-                   "ERROR, first line of file must be: |V| |E| |P| (code)\n") ;
+                   "ERROR, first line of file must be: |V| |E| |I| (code)\n") ;
        ierr = ZOLTAN_FATAL;
        goto End;
        }
@@ -116,7 +116,7 @@ static int old_readfile (int Proc,
     /* nEdge HYPEREDGE LINES */
     /* KDD -- This logic is wrong if no pins are specified. */
     if (!((*index)  = (int *) ZOLTAN_MALLOC ((*nEdge+1)*sizeof(int))) ||
-        !((*vertex) = (int *) ZOLTAN_MALLOC (*nPin*sizeof(int))))
+        !((*vertex) = (int *) ZOLTAN_MALLOC (*nInput*sizeof(int))))
            {
            ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
            ierr = ZOLTAN_MEMERR;
@@ -185,7 +185,7 @@ static int old_readfile (int Proc,
 End:
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) 
        {
-       *nVtx  = *nEdge  = *nPin = *vwgt_dim = *ewgt_dim = 0;
+       *nVtx  = *nEdge  = *nInput = *vwgt_dim = *ewgt_dim = 0;
        Zoltan_Multifree(__FILE__, __LINE__, 4, index, vertex, ewgt, vwgt);
        }
     return ierr;
@@ -196,7 +196,7 @@ End:
 
 static int patoh_readfile (int Proc,
  FILE *f,
- int *nVtx, int *nEdge, int *nPin,
+ int *nVtx, int *nEdge, int *nInput,
  int **index,   int **vertex,
  int *vwgt_dim, float **vwgt,
  int *ewgt_dim, float **ewgt,
@@ -225,7 +225,7 @@ static int patoh_readfile (int Proc,
     } while (string[0] == '%');  /* Skip leading comment lines. */
 
     count = sscanf (string, "%d %d %d %d %d %d", 
-                    base, nVtx, nEdge, nPin, &code, &dims) ;
+                    base, nVtx, nEdge, nInput, &code, &dims) ;
     if (count <  4)  /* code and dims are optional */ 
        {
        ZOLTAN_PRINT_ERROR (Proc, yo, 
@@ -237,7 +237,7 @@ static int patoh_readfile (int Proc,
     /* nEdge HYPEREDGE LINES */
     /* KDD -- This logic is wrong if no pins are specified. */
     if (!((*index)  = (int *) ZOLTAN_MALLOC ((*nEdge+1)*sizeof(int))) ||
-        !((*vertex) = (int *) ZOLTAN_MALLOC (*nPin*sizeof(int))))
+        !((*vertex) = (int *) ZOLTAN_MALLOC (*nInput*sizeof(int))))
            {
            ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
            ierr = ZOLTAN_MEMERR;
@@ -326,7 +326,7 @@ static int patoh_readfile (int Proc,
 End:
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) 
        {
-       *nVtx  = *nEdge  = *nPin = *vwgt_dim = *ewgt_dim = 0;
+       *nVtx  = *nEdge  = *nInput = *vwgt_dim = *ewgt_dim = 0;
        Zoltan_Multifree(__FILE__, __LINE__, 4, index, vertex, ewgt, vwgt);
        }
     return ierr ;

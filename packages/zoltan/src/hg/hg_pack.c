@@ -404,7 +404,7 @@ static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
   if (!(del_edge   = (int *) ZOLTAN_CALLOC (hg->nEdge,sizeof(int)))  ||
       !(Vindex     = (int *) ZOLTAN_MALLOC ((hg->nVtx+1)*sizeof(int))) ||
-      !(Vindex_old = (int *) ZOLTAN_MALLOC (hg->nPin*sizeof(int)))  )
+      !(Vindex_old = (int *) ZOLTAN_MALLOC (hg->nInput*sizeof(int)))  )
   { ZOLTAN_FREE ((void **) &del_edge) ;
     ZOLTAN_FREE ((void **) &Vindex) ;
     ZOLTAN_FREE ((void **) &Vindex_old) ;

@@ -195,6 +195,24 @@ float sim (HGraph *hg, int a, int b)
   return sim;
 }
 
+float sim_scale (HGraph *hg, int a, int b, float sim)
+{ int scale=1;
+
+  if (hg->vwgt && scale>0)
+  { if (hg->vwgt[a]<=(float)0.0 || hg->vwgt[b]<=(float)0.0)
+      sim = FLT_MAX/10.0;
+    else if (scale == 1)
+      sim = sim/(hg->vwgt[a]*hg->vwgt[b]);
+    else if (scale == 2)
+      sim = sim/(hg->vwgt[a]+hg->vwgt[b]);
+    else if (scale == 3)
+      sim = sim/MAX(hg->vwgt[a],hg->vwgt[b]);
+    else if (scale == 4)
+      sim = sim/MIN(hg->vwgt[a],hg->vwgt[b]);
+  }
+  return sim;
+}
+
 void sim_check (HGraph *hg, Graph *g)
 { int i, j;
   for (i=0; i<g->nVtx; i++)
