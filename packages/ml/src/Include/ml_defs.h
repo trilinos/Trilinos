@@ -165,6 +165,6 @@ typedef ML_BIG_INT ml_big_int;
 #define ML_SYMMETRIZE_MATRIX   1
 #define ML_NO_SYMMETRIZE       0
 
-
+#define ML_Get_MySmootherData(smoother_obj) ((smoother_obj)->smoother->data)
 
 #endif

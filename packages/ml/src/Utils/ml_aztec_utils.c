@@ -1139,14 +1139,6 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
                     )) {
          exit(-1);
       }
-#ifdef ML_EXPERIMENT
-size = data_org[AZ_N_internal] + data_org[AZ_N_border];
-xxx  = (double *) ML_allocate( sizeof(double)*size );
-rhss = (double *) ML_allocate( sizeof(double)*size );
-az_wrap_solvers(context, 1, xxx, 1, rhss);
-free(rhss);
-free(xxx);
-#endif
    }
 
 }
@@ -1154,7 +1146,7 @@ free(xxx);
 /*****************************************************************************/
 /*****************************************************************************/
 
-int az_wrap_solvers(void *data, int in, double x[], int out, 
+int az_wrap_solvers(ML_Smoother *smoo, int in, double x[], int out, 
                     double rhs[])
 {
    struct aztec_context *context;
@@ -1162,7 +1154,7 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
    double *p2, alpha = 1.; 
    double temp, *global_rhs, *global_x, *orig_x = NULL;
 
-   context = (struct aztec_context *) data;
+   context = (struct aztec_context *) ML_Get_MySmootherData(smoo);
    data_org = context->Amat->data_org;
 
    n        = data_org[AZ_N_internal] + data_org[AZ_N_border];
@@ -1190,21 +1182,27 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
       rhs = global_rhs;
    }
 
-   for (i = 0; i < n; i++) p2[i] = x[i];
    if (context->prec_or_solver == AZ_ONLY_PRECONDITIONER) {
-      context->Amat->matvec(p2,x,context->Amat,context->proc_config);
-
-      for (i = 0; i < n; i++) {
+     if (smoo->init_guess == ML_NONZERO) {
+       for (i = 0; i < n; i++) p2[i] = x[i];
+       context->Amat->matvec(p2,x,context->Amat,context->proc_config);
+       
+       for (i = 0; i < n; i++) {
          temp  = p2[i];
          p2[i] = rhs[i] - x[i];
          x[i]  = temp;
-      }
-      context->Prec->prec_function(p2,context->options,
-                                    context->proc_config,context->params,
-                                    context->Amat, context->Prec);
+       }
+     }
+     else {
+       for (i = 0; i < n; i++) p2[i] = rhs[i];
+     }
+     context->Prec->prec_function(p2,context->options,
+				  context->proc_config,context->params,
+				  context->Amat, context->Prec);
       for (i = 0; i < n; i++)	x[i] += alpha*p2[i];
    }
    else {
+     for (i = 0; i < n; i++) p2[i] = x[i];
       AZ_oldsolve(p2,rhs,context->options,context->params, 
                   context->status,context->proc_config,context->Amat,
                   context->Prec, context->scaling);

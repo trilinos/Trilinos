@@ -861,17 +861,17 @@ int ML_Set_Smoother( ML *ml , int nl , int pre_or_post, void *data,
       return 1;
    }
    if (pre_or_post == ML_PRESMOOTHER) {
-      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_EXTERNAL, data,
-                              NULL, func, 1,(double) ML_DEFAULT, tptr));
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, data,
+			     func, NULL, 1,(double) ML_DEFAULT, tptr));
    }
    else if (pre_or_post == ML_POSTSMOOTHER)
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_EXTERNAL, data,
-                              NULL, func, 1, (double) ML_DEFAULT, tptr));
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, data,
+			     func, NULL, 1, (double) ML_DEFAULT, tptr));
    else if (pre_or_post == ML_BOTH)  {
-      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_EXTERNAL, data,
-                              NULL, func, 1,(double) ML_DEFAULT, tptr);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_EXTERNAL, data,
-                              NULL, func, 1, (double) ML_DEFAULT, tptr));
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, data,
+                      func, NULL, 1,(double) ML_DEFAULT, tptr);
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, data,
+                             func, NULL, 1, (double) ML_DEFAULT, tptr));
    }
    else return(pr_error("ML_Set_Smoother: unknown pre_or_post choice\n"));
 }
