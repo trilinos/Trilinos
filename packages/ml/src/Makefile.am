@@ -155,7 +155,10 @@ $(srcdir)/Utils/ml_amesos.c \
 $(srcdir)/Utils/ml_amesos_wrap.cpp \
 $(srcdir)/Utils/ml_ifpack.c \
 $(srcdir)/Utils/ml_ifpack_wrap.cpp \
-$(srcdir)/Utils/ml_epetra_preconditioner.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Adaptive.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_Defaults.cpp \
 $(srcdir)/Utils/ml_anasazi.cpp
 
 
