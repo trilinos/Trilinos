@@ -55,6 +55,7 @@
 #include "ml_smoother.h"
 #include "ml_lapack.h"
 #include "ml_utils.h"
+#include "ml_op_utils.h"
 
 #ifdef out
 /* ************************************************************************* */

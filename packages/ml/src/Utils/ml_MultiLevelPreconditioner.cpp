@@ -15,6 +15,7 @@
 
 #include "ml_common.h"
 #include "ml_epetra_preconditioner.h"
+#include "ml_memory.h"
 #include <iomanip>
 
 extern "C" {
@@ -31,8 +32,8 @@ extern double ML_DD_Hybrid(ML_1Level *curr, double *sol, double *rhs,
 extern double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 			     int approx_all_zeros, ML_Comm *comm,
 			     int res_norm_or_not, ML *ml);
-extern int ML_MaxAllocatableSize();
-extern int ML_MaxMemorySize();
+//extern int ML_MaxAllocatableSize();
+//extern int ML_MaxMemorySize();
 
 }
 
