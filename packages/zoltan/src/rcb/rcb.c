@@ -337,7 +337,7 @@ static int rcb_fn(
   int *dotmark0 = NULL;             /* temp dotmark array */
   int *dotmark_best = NULL;         /* temp dotmark array */
   double valuehalf_best;            /* temp valuehalf */
-  int dim_best= -1;                 /* best cut dimension  */
+  int dim_best;                     /* best cut dimension  */
   double norm_max, norm_best;       /* norm of largest half after bisection */
   double max_box;                   /* largest length of bbox */
   char msg[128];                    /* buffer for error messages */
@@ -732,7 +732,7 @@ static int rcb_fn(
                old_nprocs, proclower, old_nparts, 
                rcbbox->lo[dim], rcbbox->hi[dim], 
                weight, weightlo, weighthi, &norm_max,
-               dotlist, rectilinear_blocks, obj_wgt_comp)
+               dotlist, rectilinear_blocks)
           != ZOLTAN_OK) {
           ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
           ierr = ZOLTAN_FATAL;
@@ -740,8 +740,9 @@ static int rcb_fn(
         }
 
         /* test for better balance */
-        printf("[%1d] Debug: dim=%1d, norm_max=%f, dim_best=%1d, norm_best=%f\n", 
-          proc, dim, norm_max, dim_best, norm_best);
+        if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+          printf("[%1d] Debug: cut dim=%1d, norm_max=%f, dim_best=%1d, norm_best=%f\n", 
+            proc, dim, norm_max, dim_best, norm_best);
 
         if ((!one_cut_dir) && 
             ((norm_max < norm_best) || (norm_best<0.))){
@@ -761,6 +762,11 @@ static int rcb_fn(
 
     if (!one_cut_dir){
       /* We have tried all cut directions. Restore best result. */
+      if (dim_best<0){
+        ZOLTAN_PRINT_ERROR(proc, yo, "Zoltan could not find any valid RCB cut.");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
       dim = dim_best;
       for (j=0; j<wgtflag; j++){
         weightlo[j] = weightlo_best[j];
@@ -1001,7 +1007,7 @@ static int rcb_fn(
     treept[0].dim = -1;
   }
 
-  /* if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) */
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
     print_rcb_tree(zz, np, fp, &(treept[fp]));
 
   end_time = Zoltan_Time(zz->Timer);
@@ -1346,7 +1352,7 @@ double norm_max;
              1, 0, num_parts, 
              rcbbox->lo[dim], rcbbox->hi[dim], 
              weight, weightlo, weighthi, &norm_max,
-             dotlist, rectilinear_blocks, obj_wgt_comp)
+             dotlist, rectilinear_blocks)
         != ZOLTAN_OK) {
         ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
         ierr = ZOLTAN_FATAL;

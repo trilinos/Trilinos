@@ -108,8 +108,7 @@ int Zoltan_RB_find_bisector(
   double *weighthi,     /* weight of upper partition (output) */
   double *norm_max,     /* norm of largest partition (output) */
   int    *dotlist,      /* list of active dots. */
-  int rectilinear,      /* if 1, all dots with same value on same side of cut*/
-  int obj_wgt_comparable /* 1 if object weights are of same units, no scaling */
+  int rectilinear       /* if 1, all dots with same value on same side of cut*/
 )
 {
 /* Local declarations. */
@@ -419,23 +418,6 @@ int Zoltan_RB_find_bisector(
     /* Use the weight sum we computed, do not trust input 'weight'. */
     weight[j] = wtsum[j];
   }
-
-  /*********************************************************************************
-     EBEB 2004/06/07: 
-     This scaling should only be done once in RCB, not inside the bisection routine!
-
-     Scaling. If weights aren't comparable, set scale vectors
-     such as to normalize the sum of weights to one.
-     Note that we don't scale the weights, only the inner products. 
-  if (!obj_wgt_comparable){
-    for (j=0; j<nwgts; j++){
-      if (wtsum[j]>0) 
-        scale[j] /= wtsum[j];
-        scalelo[j] /= wtsum[j];
-        scalehi[j] /= wtsum[j];
-    }
-  }
-  **************************************************************************************/
 
   /* weightlo/hi = total weight in non-active parts of partition */
   for (j=0; j<nwgts; j++)
