@@ -83,6 +83,16 @@ static float sim (HGraph *hg, int a, int b)
   return sim;
 }
 
+static sim_check (HGraph *hg, Graph *g)
+{ int i, j;
+  for (i=0; i<g->nVtx; i++)
+  { for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
+     if ((fabs(g->ewgt[j] - sim(hg,i,g->neigh[j]))) > EPS*(g->ewgt[j]))
+       printf("%d %d %.20f %.20f\n",i,g->neigh[j],g->ewgt[j],sim(hg,i,g->neigh[j])
+);
+  }
+}
+
 /*****************************************************************************/
 
 int Zoltan_HG_Matching (
@@ -117,12 +127,15 @@ int Zoltan_HG_Matching (
          Zoltan_HG_Graph_Free (&g) ;
          return ierr ;
          }
+/*
+      graph_connected_components (g.nVtx,g.nindex,g.neigh,zz->Debug_Level);
+*/
       }
 
 if (need_graph == 1)
 {
   if (g.vwgt && hgp->ews>0)
-  { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g.nEdge)))
+  { if (!(new_ewgt = (float *) ZOLTAN_MALLOC (g.nEdge*sizeof(float))))
     { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
@@ -133,14 +146,9 @@ if (need_graph == 1)
   }
 }
 
-
 /*
-{ int i, j;
-  for (i=0; i<g->nVtx; i++)
-    for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
-      if (abs(g->ewgt[j] - sim(hg,i,g->neigh[j])) > EPS*(g->ewgt[j]))
-        printf("%d %d %.20f %.20f\n",i,g->neigh[j],g->ewgt[j],sim(hg,i,g->neigh[j]));
-}
+  if (need_graph == 1)
+    sim_check(hg,&g);
 */
 
   for (i=0; i<hg->nVtx; i++)
@@ -208,12 +216,12 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 { int i, j, k=0, *v1, *v2, random ;
   char *yo = "matching_rem" ;
 
-  if (!(v1    = (int *) ZOLTAN_MALLOC (sizeof (int) * 2*g->nEdge) ))
+  if (!(v1    = (int *) ZOLTAN_MALLOC (g->nEdge*sizeof(int))))
   { ZOLTAN_FREE ((void **) &v1) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR ;
   }
-  v2 = &(v1[g->nEdge]);
+  v2 = &(v1[g->nEdge/2]);
   for (i = 0 ; i < g->nVtx ; i++)
     for (j = g->nindex[i] ; j < g->nindex[i+1] ; j++)
       if (i < g->neigh[j])
@@ -243,7 +251,7 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 { int   i, j, *vertices, vertex, number, free_neighbors, random;
   char *yo = "matching_rrm" ;
 
-  if (!(vertices = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nVtx)))
+  if (!(vertices = (int *) ZOLTAN_MALLOC (g->nVtx*sizeof(int))))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
@@ -280,7 +288,7 @@ static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   if (!g->ewgt)
      return matching_rrm(zz,hg,g,match,limit);
 
-  if (!(vertices = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nVtx)))
+  if (!(vertices = (int *) ZOLTAN_MALLOC (g->nVtx*sizeof(int))))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
@@ -324,8 +332,8 @@ static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   if (!g->ewgt)
     return matching_mxm(zz,hg,g,match,limit);
 
-  if (!(order  = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge)) ||
-      !(vertex = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge))  )
+  if (!(order  = (int *) ZOLTAN_MALLOC (g->nEdge*sizeof(int))) ||
+      !(vertex = (int *) ZOLTAN_MALLOC (g->nEdge*sizeof(int)))  )
   { ZOLTAN_FREE ((void **) &order) ;
     ZOLTAN_FREE ((void **) &vertex) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -340,7 +348,7 @@ static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
   quicksort_pointer_dec_float (order,g->ewgt,0,g->nEdge-1);
 
-  for (i=0; i<g->nindex[g->nVtx] && (*limit)>0; i++)
+  for (i=0; i<g->nEdge && (*limit)>0; i++)
   { vertex1 = vertex[order[i]];
     vertex2 = g->neigh[order[i]];
     if (vertex1!=vertex2 && match[vertex1]==vertex1 && match[vertex2]==vertex2)
@@ -414,7 +422,7 @@ static int matching_lhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   if (!g->ewgt)
      return matching_mxm(zz,hg,g,match,limit);
 
-  if (!(Nindex = (int *) ZOLTAN_MALLOC (sizeof (int) *  g->nVtx+1)))
+  if (!(Nindex = (int *) ZOLTAN_MALLOC ((g->nVtx+1)*sizeof(int))))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
@@ -440,7 +448,7 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
   limits[0] = limits[1] = (*limit);
   Match[0] = match;
-  if (!(Match[1] = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nVtx)))
+  if (!(Match[1] = (int *) ZOLTAN_MALLOC (g->nVtx*sizeof(int))))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
@@ -499,7 +507,7 @@ static int matching_aug2 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
   if (!(g->ewgt))
     return matching_aug1 (zz,hg,g,match,limit);
 
-  if (!(stack = (int*) ZOLTAN_MALLOC (sizeof (int) * g->nVtx)))
+  if (!(stack = (int*) ZOLTAN_MALLOC (g->nVtx*sizeof(int))))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
@@ -547,7 +555,7 @@ static int matching_aug3 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
   float gain, gain_2, gain_3;
   char  *yo = "matching_aug3" ;
 
-  if (!(stack = (int*) ZOLTAN_MALLOC (sizeof (int) * g->nVtx)))
+  if (!(stack = (int*) ZOLTAN_MALLOC (g->nVtx*sizeof(int))))
   { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
@@ -614,6 +622,50 @@ static int matching_aug3 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *lim
   ZOLTAN_FREE ((void **) &stack);
   return ZOLTAN_OK;
 }
+
+/*****************************************************************************/
+
+/*
+int graph_connected_components (int n, int *ep, int *edge, int Out)
+{ int   i=0, *locked, *queue, queue_head, queue_tail,
+        components=0, first_unlocked=0;
+
+  if (!(queue  = (int*) ZOLTAN_MALLOC (n*sizeof(int))) ||
+      !(locked = (int*) ZOLTAN_CALLOC (n,sizeof(int)))   )
+    return ZOLTAN_MEMERR;
+
+  if (Out > 1)
+    printf ("Component Sizes     : ");
+  while (i<n)
+  { int k, size=1, vertex;
+    queue_head=0;
+    queue_tail=1;
+    components++;
+    while (locked[first_unlocked])
+      first_unlocked++;
+    queue[0] = first_unlocked;
+    locked[first_unlocked] = 1;
+    while (queue_head < queue_tail)
+    { vertex = queue[queue_head++];
+      for (k=ep[vertex]; k<ep[vertex+1]; k++)
+        if (!(locked[edge[k]]))
+        { size++;
+          locked[edge[k]] = 1;
+          queue[queue_tail++] = edge[k];
+    }   }
+    if (Out > 1)
+      printf ("%d ", size);
+    i += size;
+  }
+  if (Out > 1)
+    printf ("\n");
+  if (Out > 0)
+    printf("Components          : %d\n",components);
+  ZOLTAN_FREE((void **) &locked);
+  ZOLTAN_FREE((void **) &queue);
+  return components;
+}
+*/
 
 /*****************************************************************************/
 #ifdef __cplusplus

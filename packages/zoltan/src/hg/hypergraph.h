@@ -24,6 +24,7 @@ extern "C" {
 #include <limits.h>
 #include <float.h>
 #include <string.h>
+#include <math.h>
 
 #ifdef HTEST
 #include "zoltan_mem.h"
