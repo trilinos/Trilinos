@@ -56,7 +56,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_analyze \
 		  ml_example_MultiLevelPreconditioner_maxwell  \
 		  ml_read_matrix_AIJ \
-          ml_multiple_rhs ml_aztecoo
+		  ml_multiple_rhs ml_aztecoo
 
 endif #ML_BENCHMARKING
 else #no mpi
@@ -77,7 +77,7 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_analyze \
 		  ml_example_MultiLevelPreconditioner_maxwell  \
 		  ml_read_matrix_AIJ \
-          ml_multiple_rhs ml_aztecoo
+		  ml_multiple_rhs ml_aztecoo
 
 endif #HAVE_MPI
 
