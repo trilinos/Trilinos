@@ -13,6 +13,14 @@
 #ifndef __MLCOMMON__
 #define __MLCOMMON__
 
+/* this avoids the classic build system from picking up a spurious
+ * macro from other packages that may have been autotooled */
+#ifdef ML_CLASSIC_BUILD
+#ifdef HAVE_CONFIG_H
+#undef HAVE_CONFIG_H
+#endif
+#endif
+
 #ifdef HAVE_CONFIG_H 
 #include "ml_config.h"
 

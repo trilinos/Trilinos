@@ -8,7 +8,7 @@
 include ../make_$(ARCH).variables
 include ../etc/makefile.$(ARCH)
 
-DEFINES= -D$(ARCH) $(PACKAGES)
+DEFINES= -D$(ARCH) $(PACKAGES) -DML_CLASSIC_BUILD
 
 INCLUDES=-I. $(INC_PATH) 
 LIB_PATHS=$(LIBRARIES) 
