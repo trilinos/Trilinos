@@ -151,11 +151,13 @@ pkginclude_HEADERS = \
 # Parts of the code that are not ready to be included in nightly release
 # ------------------------------------------------------------------------
 @BUILD_PRERELEASE_TRUE@nodist_pkginclude_HEADERS = \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.H 
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Tensor.H \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_TensorBased.H
 
 
 @BUILD_PRERELEASE_TRUE@nodist_libnox_a_SOURCES = \
-@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_QuasiNewton.C
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Direction_Tensor.C \
+@BUILD_PRERELEASE_TRUE@	$(srcdir)/NOX_Solver_TensorBased.C
 
 
 
@@ -197,6 +199,7 @@ ABSTRACT_H = \
 
 LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Generic.H \
+	$(srcdir)/NOX_LineSearch_Common.H \
 	$(srcdir)/NOX_LineSearch_FullStep.H \
 	$(srcdir)/NOX_LineSearch_Backtrack.H \
 	$(srcdir)/NOX_LineSearch_Manager.H \
@@ -207,6 +210,7 @@ LINESEARCH_H = \
 
 
 LINESEARCH = \
+	$(srcdir)/NOX_LineSearch_Common.C \
 	$(srcdir)/NOX_LineSearch_FullStep.C \
 	$(srcdir)/NOX_LineSearch_Backtrack.C \
 	$(srcdir)/NOX_LineSearch_Manager.C \
@@ -221,7 +225,7 @@ DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Manager.H \
 	$(srcdir)/NOX_Direction_Newton.H \
 	$(srcdir)/NOX_Direction_NonlinearCG.H \
-	$(srcdir)/NOX_Direction_Tensor.H \
+	$(srcdir)/NOX_Direction_QuasiNewton.H \
 	$(srcdir)/NOX_Direction_SteepestDescent.H 
 
 
@@ -229,7 +233,7 @@ DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Newton.C \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
-	$(srcdir)/NOX_Direction_Tensor.C \
+	$(srcdir)/NOX_Direction_QuasiNewton.C \
 	$(srcdir)/NOX_Direction_SteepestDescent.C 
 
 
@@ -247,15 +251,13 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
-	$(srcdir)/NOX_Solver_TrustRegionBased.H \
-	$(srcdir)/NOX_Solver_TensorBased.H
+	$(srcdir)/NOX_Solver_TrustRegionBased.H 
 
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
-	$(srcdir)/NOX_Solver_TrustRegionBased.C \
-	$(srcdir)/NOX_Solver_TensorBased.C
+	$(srcdir)/NOX_Solver_TrustRegionBased.C 
 
 
 STATUSTEST_H = \
@@ -321,7 +323,8 @@ LIBRARIES = $(lib_LIBRARIES)
 
 libnox_a_DEPENDENCIES =
 am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
-	NOX_Abstract_Group.$(OBJEXT) NOX_LineSearch_FullStep.$(OBJEXT) \
+	NOX_Abstract_Group.$(OBJEXT) NOX_LineSearch_Common.$(OBJEXT) \
+	NOX_LineSearch_FullStep.$(OBJEXT) \
 	NOX_LineSearch_Backtrack.$(OBJEXT) \
 	NOX_LineSearch_Manager.$(OBJEXT) \
 	NOX_LineSearch_MoreThuente.$(OBJEXT) \
@@ -330,20 +333,20 @@ am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
 	NOX_LineSearch_Secant.$(OBJEXT) NOX_Direction_Manager.$(OBJEXT) \
 	NOX_Direction_Newton.$(OBJEXT) \
 	NOX_Direction_NonlinearCG.$(OBJEXT) \
-	NOX_Direction_Tensor.$(OBJEXT) \
+	NOX_Direction_QuasiNewton.$(OBJEXT) \
 	NOX_Direction_SteepestDescent.$(OBJEXT) \
 	NOX_Parameter_Entry.$(OBJEXT) NOX_Parameter_List.$(OBJEXT) \
 	NOX_Solver_Manager.$(OBJEXT) \
 	NOX_Solver_LineSearchBased.$(OBJEXT) \
 	NOX_Solver_TrustRegionBased.$(OBJEXT) \
-	NOX_Solver_TensorBased.$(OBJEXT) \
 	NOX_StatusTest_Generic.$(OBJEXT) NOX_StatusTest_NormF.$(OBJEXT) \
 	NOX_StatusTest_NormUpdate.$(OBJEXT) \
 	NOX_StatusTest_Combo.$(OBJEXT) \
 	NOX_StatusTest_MaxIters.$(OBJEXT) \
 	NOX_StatusTest_NormWRMS.$(OBJEXT) NOX_Utils.$(OBJEXT)
 @BUILD_PRERELEASE_TRUE@nodist_libnox_a_OBJECTS = \
-@BUILD_PRERELEASE_TRUE@	NOX_Direction_QuasiNewton.$(OBJEXT)
+@BUILD_PRERELEASE_TRUE@	NOX_Direction_Tensor.$(OBJEXT) \
+@BUILD_PRERELEASE_TRUE@	NOX_Solver_TensorBased.$(OBJEXT)
 @BUILD_PRERELEASE_FALSE@nodist_libnox_a_OBJECTS =
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS) $(nodist_libnox_a_OBJECTS)
 
@@ -362,6 +365,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_SteepestDescent.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Tensor.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Backtrack.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Common.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_FullStep.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_MoreThuente.Po \
@@ -462,6 +466,7 @@ clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
 NOX_Abstract_Vector.$(OBJEXT): $(srcdir)/NOX_Abstract_Vector.C
 NOX_Abstract_Group.$(OBJEXT): $(srcdir)/NOX_Abstract_Group.C
+NOX_LineSearch_Common.$(OBJEXT): $(srcdir)/NOX_LineSearch_Common.C
 NOX_LineSearch_FullStep.$(OBJEXT): $(srcdir)/NOX_LineSearch_FullStep.C
 NOX_LineSearch_Backtrack.$(OBJEXT): $(srcdir)/NOX_LineSearch_Backtrack.C
 NOX_LineSearch_Manager.$(OBJEXT): $(srcdir)/NOX_LineSearch_Manager.C
@@ -475,7 +480,8 @@ NOX_Direction_Manager.$(OBJEXT): $(srcdir)/NOX_Direction_Manager.C
 NOX_Direction_Newton.$(OBJEXT): $(srcdir)/NOX_Direction_Newton.C
 NOX_Direction_NonlinearCG.$(OBJEXT): \
 	$(srcdir)/NOX_Direction_NonlinearCG.C
-NOX_Direction_Tensor.$(OBJEXT): $(srcdir)/NOX_Direction_Tensor.C
+NOX_Direction_QuasiNewton.$(OBJEXT): \
+	$(srcdir)/NOX_Direction_QuasiNewton.C
 NOX_Direction_SteepestDescent.$(OBJEXT): \
 	$(srcdir)/NOX_Direction_SteepestDescent.C
 NOX_Parameter_Entry.$(OBJEXT): $(srcdir)/NOX_Parameter_Entry.C
@@ -485,7 +491,6 @@ NOX_Solver_LineSearchBased.$(OBJEXT): \
 	$(srcdir)/NOX_Solver_LineSearchBased.C
 NOX_Solver_TrustRegionBased.$(OBJEXT): \
 	$(srcdir)/NOX_Solver_TrustRegionBased.C
-NOX_Solver_TensorBased.$(OBJEXT): $(srcdir)/NOX_Solver_TensorBased.C
 NOX_StatusTest_Generic.$(OBJEXT): $(srcdir)/NOX_StatusTest_Generic.C
 NOX_StatusTest_NormF.$(OBJEXT): $(srcdir)/NOX_StatusTest_NormF.C
 NOX_StatusTest_NormUpdate.$(OBJEXT): \
@@ -494,8 +499,8 @@ NOX_StatusTest_Combo.$(OBJEXT): $(srcdir)/NOX_StatusTest_Combo.C
 NOX_StatusTest_MaxIters.$(OBJEXT): $(srcdir)/NOX_StatusTest_MaxIters.C
 NOX_StatusTest_NormWRMS.$(OBJEXT): $(srcdir)/NOX_StatusTest_NormWRMS.C
 NOX_Utils.$(OBJEXT): $(srcdir)/NOX_Utils.C
-NOX_Direction_QuasiNewton.$(OBJEXT): \
-	$(srcdir)/NOX_Direction_QuasiNewton.C
+NOX_Direction_Tensor.$(OBJEXT): $(srcdir)/NOX_Direction_Tensor.C
+NOX_Solver_TensorBased.$(OBJEXT): $(srcdir)/NOX_Solver_TensorBased.C
 libnox.a: $(libnox_a_OBJECTS) $(libnox_a_DEPENDENCIES) 
 	-rm -f libnox.a
 	$(libnox_a_AR) libnox.a $(libnox_a_OBJECTS) $(libnox_a_LIBADD)
@@ -516,6 +521,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_SteepestDescent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Tensor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Backtrack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_FullStep.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_MoreThuente.Po@am__quote@
@@ -574,6 +580,18 @@ NOX_Abstract_Group.obj: $(srcdir)/NOX_Abstract_Group.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Abstract_Group.Po' tmpdepfile='$(DEPDIR)/NOX_Abstract_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Abstract_Group.obj `cygpath -w $(srcdir)/NOX_Abstract_Group.C`
+
+NOX_LineSearch_Common.o: $(srcdir)/NOX_LineSearch_Common.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Common.C' object='NOX_LineSearch_Common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Common.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Common.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Common.o `test -f $(srcdir)/NOX_LineSearch_Common.C || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Common.C
+
+NOX_LineSearch_Common.obj: $(srcdir)/NOX_LineSearch_Common.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Common.C' object='NOX_LineSearch_Common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Common.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Common.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Common.obj `cygpath -w $(srcdir)/NOX_LineSearch_Common.C`
 
 NOX_LineSearch_FullStep.o: $(srcdir)/NOX_LineSearch_FullStep.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_FullStep.C' object='NOX_LineSearch_FullStep.o' libtool=no @AMDEPBACKSLASH@
@@ -695,17 +713,17 @@ NOX_Direction_NonlinearCG.obj: $(srcdir)/NOX_Direction_NonlinearCG.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_NonlinearCG.obj `cygpath -w $(srcdir)/NOX_Direction_NonlinearCG.C`
 
-NOX_Direction_Tensor.o: $(srcdir)/NOX_Direction_Tensor.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Tensor.C' object='NOX_Direction_Tensor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Tensor.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Tensor.TPo' @AMDEPBACKSLASH@
+NOX_Direction_QuasiNewton.o: $(srcdir)/NOX_Direction_QuasiNewton.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_QuasiNewton.C' object='NOX_Direction_QuasiNewton.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_QuasiNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_QuasiNewton.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Tensor.o `test -f $(srcdir)/NOX_Direction_Tensor.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Tensor.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_QuasiNewton.o `test -f $(srcdir)/NOX_Direction_QuasiNewton.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_QuasiNewton.C
 
-NOX_Direction_Tensor.obj: $(srcdir)/NOX_Direction_Tensor.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Tensor.C' object='NOX_Direction_Tensor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Tensor.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Tensor.TPo' @AMDEPBACKSLASH@
+NOX_Direction_QuasiNewton.obj: $(srcdir)/NOX_Direction_QuasiNewton.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_QuasiNewton.C' object='NOX_Direction_QuasiNewton.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_QuasiNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_QuasiNewton.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Tensor.obj `cygpath -w $(srcdir)/NOX_Direction_Tensor.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_QuasiNewton.obj `cygpath -w $(srcdir)/NOX_Direction_QuasiNewton.C`
 
 NOX_Direction_SteepestDescent.o: $(srcdir)/NOX_Direction_SteepestDescent.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_SteepestDescent.C' object='NOX_Direction_SteepestDescent.o' libtool=no @AMDEPBACKSLASH@
@@ -778,18 +796,6 @@ NOX_Solver_TrustRegionBased.obj: $(srcdir)/NOX_Solver_TrustRegionBased.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_TrustRegionBased.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_TrustRegionBased.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_TrustRegionBased.obj `cygpath -w $(srcdir)/NOX_Solver_TrustRegionBased.C`
-
-NOX_Solver_TensorBased.o: $(srcdir)/NOX_Solver_TensorBased.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_TensorBased.C' object='NOX_Solver_TensorBased.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_TensorBased.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_TensorBased.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_TensorBased.o `test -f $(srcdir)/NOX_Solver_TensorBased.C || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_TensorBased.C
-
-NOX_Solver_TensorBased.obj: $(srcdir)/NOX_Solver_TensorBased.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_TensorBased.C' object='NOX_Solver_TensorBased.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_TensorBased.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_TensorBased.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_TensorBased.obj `cygpath -w $(srcdir)/NOX_Solver_TensorBased.C`
 
 NOX_StatusTest_Generic.o: $(srcdir)/NOX_StatusTest_Generic.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_Generic.C' object='NOX_StatusTest_Generic.o' libtool=no @AMDEPBACKSLASH@
@@ -875,17 +881,29 @@ NOX_Utils.obj: $(srcdir)/NOX_Utils.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Utils.obj `cygpath -w $(srcdir)/NOX_Utils.C`
 
-NOX_Direction_QuasiNewton.o: $(srcdir)/NOX_Direction_QuasiNewton.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_QuasiNewton.C' object='NOX_Direction_QuasiNewton.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_QuasiNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_QuasiNewton.TPo' @AMDEPBACKSLASH@
+NOX_Direction_Tensor.o: $(srcdir)/NOX_Direction_Tensor.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Tensor.C' object='NOX_Direction_Tensor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Tensor.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Tensor.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_QuasiNewton.o `test -f $(srcdir)/NOX_Direction_QuasiNewton.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_QuasiNewton.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Tensor.o `test -f $(srcdir)/NOX_Direction_Tensor.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Tensor.C
 
-NOX_Direction_QuasiNewton.obj: $(srcdir)/NOX_Direction_QuasiNewton.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_QuasiNewton.C' object='NOX_Direction_QuasiNewton.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_QuasiNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_QuasiNewton.TPo' @AMDEPBACKSLASH@
+NOX_Direction_Tensor.obj: $(srcdir)/NOX_Direction_Tensor.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Tensor.C' object='NOX_Direction_Tensor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Tensor.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Tensor.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_QuasiNewton.obj `cygpath -w $(srcdir)/NOX_Direction_QuasiNewton.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Tensor.obj `cygpath -w $(srcdir)/NOX_Direction_Tensor.C`
+
+NOX_Solver_TensorBased.o: $(srcdir)/NOX_Solver_TensorBased.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_TensorBased.C' object='NOX_Solver_TensorBased.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_TensorBased.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_TensorBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_TensorBased.o `test -f $(srcdir)/NOX_Solver_TensorBased.C || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_TensorBased.C
+
+NOX_Solver_TensorBased.obj: $(srcdir)/NOX_Solver_TensorBased.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_TensorBased.C' object='NOX_Solver_TensorBased.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_TensorBased.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_TensorBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_TensorBased.obj `cygpath -w $(srcdir)/NOX_Solver_TensorBased.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)

@@ -73,10 +73,13 @@ pkginclude_HEADERS = \
 if BUILD_PRERELEASE
 
 nodist_pkginclude_HEADERS = \
-	$(srcdir)/NOX_Direction_QuasiNewton.H 
+	$(srcdir)/NOX_Direction_Tensor.H \
+	$(srcdir)/NOX_Solver_TensorBased.H
 
 nodist_libnox_a_SOURCES = \
-	$(srcdir)/NOX_Direction_QuasiNewton.C
+	$(srcdir)/NOX_Direction_Tensor.C \
+	$(srcdir)/NOX_Solver_TensorBased.C
+
 
 endif
 
@@ -117,6 +120,7 @@ ABSTRACT_H = \
 
 LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Generic.H \
+	$(srcdir)/NOX_LineSearch_Common.H \
 	$(srcdir)/NOX_LineSearch_FullStep.H \
 	$(srcdir)/NOX_LineSearch_Backtrack.H \
 	$(srcdir)/NOX_LineSearch_Manager.H \
@@ -126,6 +130,7 @@ LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Secant.H 
 
 LINESEARCH = \
+	$(srcdir)/NOX_LineSearch_Common.C \
 	$(srcdir)/NOX_LineSearch_FullStep.C \
 	$(srcdir)/NOX_LineSearch_Backtrack.C \
 	$(srcdir)/NOX_LineSearch_Manager.C \
@@ -139,14 +144,14 @@ DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Manager.H \
 	$(srcdir)/NOX_Direction_Newton.H \
 	$(srcdir)/NOX_Direction_NonlinearCG.H \
-	$(srcdir)/NOX_Direction_Tensor.H \
+	$(srcdir)/NOX_Direction_QuasiNewton.H \
 	$(srcdir)/NOX_Direction_SteepestDescent.H 
 
 DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Newton.C \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
-	$(srcdir)/NOX_Direction_Tensor.C \
+	$(srcdir)/NOX_Direction_QuasiNewton.C \
 	$(srcdir)/NOX_Direction_SteepestDescent.C 
 
 PARAMETER_H = \
@@ -161,14 +166,12 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearchBased.H \
-	$(srcdir)/NOX_Solver_TrustRegionBased.H \
-	$(srcdir)/NOX_Solver_TensorBased.H
+	$(srcdir)/NOX_Solver_TrustRegionBased.H 
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearchBased.C \
-	$(srcdir)/NOX_Solver_TrustRegionBased.C \
-	$(srcdir)/NOX_Solver_TensorBased.C
+	$(srcdir)/NOX_Solver_TrustRegionBased.C 
 
 STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Generic.H \

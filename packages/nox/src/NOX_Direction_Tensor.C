@@ -1,3 +1,4 @@
+#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -1251,3 +1252,4 @@ double* Tensor::backsolve(double** U, double* b, int* perm, int n, int dim)
 
   return x;
 }
+#endif

@@ -36,10 +36,10 @@
 #include "NOX_Direction_Newton.H"
 #include "NOX_Direction_NonlinearCG.H"
 #include "NOX_Direction_SteepestDescent.H"
-#include "NOX_Direction_Tensor.H"
+#include "NOX_Direction_QuasiNewton.H"
 
 #ifdef WITH_PRERELEASE
-#include "NOX_Direction_QuasiNewton.H"
+#include "NOX_Direction_Tensor.H"
 #endif
 
 #include "NOX_Utils.H"
@@ -82,12 +82,12 @@ bool Manager::reset(Parameter::List& params)
       ptr = new NonlinearCG(params);
     else if (method == "Steepest Descent")
       ptr = new SteepestDescent(params);
+#ifdef WITH_PRERELEASE
     else if (method == "Tensor")
       ptr = new Tensor(params);
-#ifdef WITH_PRERELEASE
+#endif
     else if (method == "Quasi-Newton")
       ptr = new QuasiNewton(params);
-#endif
     else {
       ptr = NULL;
       if (Utils::doPrint(NOX::Utils::Warning)) {

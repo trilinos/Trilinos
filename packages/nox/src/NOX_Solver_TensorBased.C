@@ -1,3 +1,4 @@
+#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -558,3 +559,4 @@ bool TensorBased::performCurvilinearLinesearch()
 }
 
 
+#endif
