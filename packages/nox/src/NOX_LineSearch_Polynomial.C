@@ -120,6 +120,9 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
   double oldf = 0.5 * oldGrp.getNormF() * oldGrp.getNormF();  
 
+  // Compute the slope at oldf. 
+  double slope = slopeObj.computeSlope(dir, oldGrp);
+
   // Get New F
   step = defaultStep;
   newGrp.computeX(oldGrp, dir, step);
@@ -138,10 +141,13 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
 
   bool isConverged = false;
   bool isFailed = false;
-  double slope = slopeObj.computeSlope(dir, oldGrp);
 
-  if (slope >= 0)
+  if (slope >= 0) {
+    if (print.isPrintProcessAndType(NOX::Utils::Warning))
+      cout << "WARNING: Computed slope is positive (slope = " << slope 
+	   << ").\nUsing recovery step!" << endl;
     isFailed = true;
+  }
   else if (doForceInterpolation)
     isConverged = false;
   else 
