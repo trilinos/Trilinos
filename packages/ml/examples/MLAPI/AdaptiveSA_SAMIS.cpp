@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 
     if (limKer) {
       MultiVector NS;
-      ReadSAMISKernel("ker.dat", NS);
+      ReadSAMISKernel("ker.dat", NS, limKer);
       Prec.SetNullSpace(NS);
       Prec.AdaptCompute(true, AdditionalCandidates);
     }
@@ -93,7 +93,10 @@ int main(int argc, char *argv[])
     LHS.Random();
     RHS = 0.0;
 
-    List.set("krylov: type", "cg_condnum");
+    // Set krylov: type unless specified in the config. file
+    if (List.isParameter("krylov: type") == 0)
+        List.set("krylov: type","cg_condnum");
+
     Krylov(A, LHS, RHS, Prec, List);
 
     Finalize(); 
