@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
   AZ_PRECOND  *Pmat = NULL;
   AZ_MATRIX   *Amat = NULL;
-  ML          *ml;
+  ML          *ml   = NULL;
   ML_Aggregate *ml_ag = NULL;
 #ifdef ML_BENCHMARK
   char input[MAX_INPUT_STR_LN];
