@@ -54,5 +54,7 @@
 
 INPUT                  = ../../../../Trilinos/packages/epetraext/src
 INPUT                 += ../../../../Trilinos/packages/epetraext/doc/index.doc
+INPUT                 += ../../../../Trilinos/packages/epetraext/example/matlab/cxx_main.cpp
+INPUT                 += ../../../../Trilinos/packages/epetraext/doc/matlab.README
 
 EXAMPLE_PATH           = ../../../../Trilinos/packages/epetraext/example
