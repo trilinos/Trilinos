@@ -60,9 +60,9 @@ typedef int LB_SET_PARAM_FN(char *, char *);
 
 extern int LB_Assign_Param_Vals(LB_PARAM *, PARAM_VARS *, int, int, int);
 extern int LB_Bind_Param(PARAM_VARS *, char *, void *);
-extern int LB_Set_Param(LB *, char *, char *);
 extern int LB_Set_Key_Param(LB *, char *, char *);
 extern void LB_Print_Key_Params(LB *);
+extern void LB_Print_Params(LB_PARAM *ptr);
 extern int LB_Check_Param(char *, char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);
 extern void LB_Free_Params(LB_PARAM **);

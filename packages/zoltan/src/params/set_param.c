@@ -21,7 +21,6 @@
 #include "lb_const.h"
 #include "lb_util_const.h"
 #include "params_const.h"
-#include "all_allo_const.h"
 #include "rcb_const.h"
 #include "octupdate_const.h"
 #include "parmetis_jostle_const.h"
@@ -29,6 +28,7 @@
 #include "timer_const.h"
 #include "ha_const.h"
 #include "irb_const.h"
+#include "all_allo_const.h"
 
 static int add_param(LB *, char *, char *);
 static int remove_param(LB *, char *);

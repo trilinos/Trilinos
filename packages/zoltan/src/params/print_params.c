@@ -15,16 +15,13 @@
 #include "lb_const.h"
 
 
-void      LB_Print_Params(
-LB *lb)				/* load balance structure */
+void LB_Print_Params(
+  LB_PARAM *ptr)			/* pointer to list of parameters */
 {
 /*
  *  Function to print out list of set parameter values.
  */
 
-    LB_PARAM *ptr;
-
-    ptr = lb->Params;
     printf("Parameter Settings\n");
     while (ptr != NULL) {
        printf("%s = %s\n",ptr->name, ptr->new_val);

@@ -19,8 +19,6 @@
 #else
 #include <strings.h>
 #endif  /* __STDC__ */
-#include "lb_const.h"
-#include "lbi_const.h"
 #include "params_const.h"
 
 
