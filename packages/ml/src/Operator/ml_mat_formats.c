@@ -899,6 +899,90 @@ int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
   return(1);
 }
 
+int CSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
+{
+
+   int i, jj, k, /* Nrows,*/ *bindx;
+   double            *p2/*, sum*/, *ap2;
+   double *val;
+   struct ML_CSR_MSRdata *temp;
+   ML_CommInfoOP     *getrow_comm;
+   ML_Operator       *Amat;
+   int               *row_ptr, Nstored;
+   ML_Comm           *comm;
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   double t0;
+#endif
+
+   Amat    = (ML_Operator *) Amat_in;
+   comm    = Amat->comm;
+   Nstored = Amat->getrow->Nrows;
+   temp    = (struct ML_CSR_MSRdata *) Amat->data;
+   val     = (double *) temp->values;
+   bindx   = temp->columns;
+   row_ptr = temp->rowptr;
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+     p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
+                                  sizeof(double));
+     if (p2 == NULL) 
+       pr_error("sCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
+     for (i = 0; i < ilen; i++) p2[i] = p[i];
+
+     ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE,NULL);
+
+   }
+   else p2 = p;
+
+   getrow_comm= Amat->getrow->post_comm;
+   if (getrow_comm != NULL) {
+      i = Nstored+getrow_comm->minimum_vec_size + 1;
+      if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
+      ap2 = (double *) ML_allocate(i* sizeof(double));
+      if (ap2 == NULL) 
+	pr_error("sCSR_trans_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+
+      for (k = 0; k < i; k++) ap2[k] = 0.;
+   }
+   else {
+     ap2 = ap;
+     for (i = 0; i < olen; i++) ap2[i] = 0.;
+   }
+
+
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   t0 = GetClock();
+#endif
+   for (i = 0; i < ilen; i++) {
+     for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
+     {
+        ap2[bindx[k]] += ((double) val[k]) * p2[i];
+     }
+   }
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   Amat->apply_without_comm_time += (GetClock() - t0);
+#endif
+
+   if (Amat->getrow->pre_comm != NULL) ML_free(p2);
+
+   if (getrow_comm != NULL) {
+      if (getrow_comm->remap != NULL) {
+         if (getrow_comm->remap_max != olen-1) {
+            printf("Error: The largest remapping index after communication\n");
+            printf("       should be one less than the vector's output\n");
+            printf("       length (%d vs %d)???\n",getrow_comm->remap_max,olen);
+            exit(1);
+         }
+      }
+      ML_exchange_bdry(ap2,getrow_comm, Nstored, comm, ML_ADD,NULL);
+      for (jj = 0; jj < olen; jj++) ap[jj] = ap2[jj];
+      ML_free(ap2);
+  }
+  return(1);
+}
+
 int sCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 

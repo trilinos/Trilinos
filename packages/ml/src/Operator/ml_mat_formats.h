@@ -101,6 +101,8 @@ extern int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int ole
 extern int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, 
 		       double ap[]);
 
+extern int CSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]);
+
 extern int MSR_get_ones_rows(ML_Operator *data, int N_requested_rows, int requested_rows[],
                        int allocated_space, int columns[], double values[],
                        int row_lengths[]);
