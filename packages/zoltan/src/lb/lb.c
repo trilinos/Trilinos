@@ -829,12 +829,13 @@ int ierr = LB_OK;
   msgtag = 32767;
   ierr = LB_Comm_Create(&comm_plan, num_import, proc_list, lb->Communicator, 
                         msgtag, lb->Deterministic, num_export);
-  if (ierr != LB_OK && ierr != LB_WARN) {
-    fprintf(stderr, "%s Error %d returned from LB_Comm_Create\n", yo, ierr);
+  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+    fprintf(stderr, "%s Error %s returned from LB_Comm_Create\n", yo,
+            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
     LB_FREE(&proc_list);
     LB_FREE(&import_objs);
     LB_TRACE_EXIT(lb, yo);
-    return ierr;
+    return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
   }
   
 
@@ -900,14 +901,15 @@ int ierr = LB_OK;
   msgtag2 = 32766;
   ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_objs, 
                     (int) sizeof(LB_TAG), (char *) export_objs);
-  if (ierr != LB_OK && ierr != LB_WARN) {
-    fprintf(stderr, "%s Error %d returned from LB_Comm_Do\n", yo, ierr);
+  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+    fprintf(stderr, "%s Error %s returned from LB_Comm_Do\n", yo,
+            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
     LB_FREE(&proc_list);
     LB_FREE(&import_objs);
     LB_FREE(&export_objs);
     LB_Comm_Destroy(&comm_plan);
     LB_TRACE_EXIT(lb, yo);
-    return (ierr);
+    return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
   }
 
   LB_TRACE_DETAIL(lb, yo, "Done comm_do");
@@ -1125,12 +1127,13 @@ int ierr = 0;
   msgtag = 32767;
   ierr = LB_Comm_Create(&comm_plan, num_export, proc_list, lb->Communicator, 
                         msgtag, lb->Deterministic, &tmp_import);
-  if (ierr != LB_OK && ierr != LB_WARN) {
-    fprintf(stderr, "%s Error %d returned from LB_Comm_Create\n", yo, ierr);
+  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+    fprintf(stderr, "%s Error %s returned from LB_Comm_Create\n", yo, 
+            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
     LB_FREE(&export_buf);
     LB_FREE(&proc_list);
     LB_TRACE_EXIT(lb, yo);
-    return ierr;
+    return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
   }
   if (tmp_import != num_import) {
     fprintf(stderr, "%d  Error in %s:  tmp_import %d != num_import %d\n", 
@@ -1156,14 +1159,15 @@ int ierr = 0;
 
   msgtag2 = 32766;
   ierr = LB_Comm_Do(comm_plan, msgtag2, export_buf, size, import_buf);
-  if (ierr != LB_OK && ierr != LB_WARN) {
-    fprintf(stderr, "%s Error %d returned from LB_Comm_Do\n", yo, ierr);
+  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+    fprintf(stderr, "%s Error %s returned from LB_Comm_Do\n", yo,
+            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
     LB_FREE(&proc_list);
     LB_FREE(&export_buf);
     LB_FREE(&import_buf);
     LB_Comm_Destroy(&comm_plan);
     LB_TRACE_EXIT(lb, yo);
-    return (ierr);
+    return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
   }
 
   /*

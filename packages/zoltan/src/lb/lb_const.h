@@ -24,6 +24,7 @@
 #endif  /* __STDC__ */
 
 #include "lbi_const.h"
+#include "mem_const.h"
 
 /*
  *  See bottom for other included files.
