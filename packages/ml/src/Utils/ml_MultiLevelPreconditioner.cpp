@@ -11,7 +11,7 @@
 
 
 #include "ml_common.h"
-#include "ml_epetra_preconditioner.h"
+#include "ml_include.h"
 #include "ml_memory.h"
 #include <iomanip>
 
@@ -253,10 +253,7 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 #include "Trilinos_Util_CommandLineParser.h"
 #endif
 
-#include "ml_ggb.h"
-
 using namespace Teuchos;
-using namespace ML_Epetra;
 
 void ML_Epetra::MultiLevelPreconditioner::PrintMem(char *fmt, int min, int avg, int max)
 {
@@ -269,14 +266,14 @@ void ML_Epetra::MultiLevelPreconditioner::PrintMem(char *fmt, int min, int avg, 
 
 // ================================================ ====== ==== ==== == =
 
-void MultiLevelPreconditioner::PrintLine() const
+void ML_Epetra::MultiLevelPreconditioner::PrintLine() const
 {
   cout << "--------------------------------------------------------------------------------" << endl;
 }
 
 // ================================================ ====== ==== ==== == =
 
-void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
+void ML_Epetra::MultiLevelPreconditioner::Destroy_ML_Preconditioner()
 {
 
   char parameter[80];
@@ -442,7 +439,7 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
 
 // ================================================ ====== ==== ==== == =
 
-MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
+ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
 						   const bool ComputePrec ) :
   RowMatrix_(&RowMatrix),
   RowMatrixAllocated_(0)
@@ -462,7 +459,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   
 // ================================================ ====== ==== ==== == =
 
-MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
+ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
 						    const ParameterList & List, const bool ComputePrec,
 						    const char Prefix[] ) :
   RowMatrix_(&RowMatrix),
@@ -485,7 +482,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & Row
  * - TMatrix.OperatorDomainMap() == NodeMatrix.OperatorRangeMap()
  * - TMatrix.OperatorRangeMap()  == EdgeMatrix.OperatorDomainMap()
  */
-MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & EdgeMatrix,
+ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & EdgeMatrix,
 						    const Epetra_RowMatrix & TMatrix,
 						    const Epetra_RowMatrix & NodeMatrix,
 						    const ParameterList & List,
@@ -534,7 +531,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & Edg
 
 // ================================================ ====== ==== ==== == =
 // FIXME: should I be deleted??
-MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
+ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
 						    const ParameterList & List, const bool ComputePrec,
 						    const char Prefix[] )
 {
@@ -564,206 +561,11 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
 }
 
 // ================================================ ====== ==== ==== == =
-
-#ifdef HAVE_ML_TRIUTILS
-int ML_Epetra::Set(Teuchos::ParameterList & List,
-		   Trilinos_Util::CommandLineParser & CLP) 
-{
- 
-  if( CLP.Has("-ml_defaults") )
-    SetDefaults(CLP.Get("-ml_defaults","DD"),List);
-
-  // general
-  if( CLP.Has("-ml_num_levels") )
-    List.set("max levels",CLP.Get("-ml_num_levels",2));
-  if( CLP.Has("-ml_incr_or_decr" ) )
-      List.set("increasing or decreasing",CLP.Get("-ml_incr_or_decr","increasing"));
-  if( CLP.Has("-ml_output" ) )
-      List.set("output",CLP.Get("-ml_output",10));
-  if( CLP.Has("-ml_memory" ) )
-      List.set("analyze memory",CLP.Get("-ml_memory",false));
-  
-  // smoother
-  if( CLP.Has("-ml_smoother_type") )
-    List.set("smoother: type", CLP.Get("-ml_smoother_type","Gauss-Seidel"));
-  
-  if( CLP.Has("-ml_smoother_type_level_0") )
-    List.set("smoother: type (level 0)", CLP.Get("-ml_smoother_type_level_0","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_1") )
-    List.set("smoother: type (level 1)", CLP.Get("-ml_smoother_type_level_1","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_2") )
-    List.set("smoother: type (level 2)", CLP.Get("-ml_smoother_type_level_2","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_3") )
-    List.set("smoother: type (level 3)", CLP.Get("-ml_smoother_type_level_3","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_4") )
-    List.set("smoother: type (level 4)", CLP.Get("-ml_smoother_type_level_4","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_5") )
-    List.set("smoother: type (level 5)", CLP.Get("-ml_smoother_type_level_5","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_6") )
-    List.set("smoother: type (level 6)", CLP.Get("-ml_smoother_type_level_6","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_7") )
-    List.set("smoother: type (level 7)", CLP.Get("-ml_smoother_type_level_7","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_8") )
-    List.set("smoother: type (level 8)", CLP.Get("-ml_smoother_type_level_8","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_type_level_9") )
-    List.set("smoother: type (level 9)", CLP.Get("-ml_smoother_type_level_9","Gauss-Seidel"));
-  
-  if( CLP.Has("-ml_smoother_sweeps") )
-    List.set("smoother: sweeps", CLP.Get("-ml_smoother_sweeps",1));
-  if( CLP.Has("-ml_smoother_pre_or_post") )
-    List.set("smoother: pre or post", CLP.Get("-ml_smoother_pre_or_post","both"));
-  if( CLP.Has("-ml_smoother_damping_factor") )
-    List.set("smoother: damping factor", CLP.Get("-ml_smoother_damping_factor",1.0));
-
-  // smoother-advanced
-  if( CLP.Has("-ml_RP_smoothing") )
-    List.set("R and P smoothing: type", CLP.Get("-ml_RP_smoothing","classic"));
-  if( CLP.Has("-ml_RP_damping") )
-    List.set("R and P smoothing: damping", CLP.Get("-ml_RP_damping","fov-10"));
-  if( CLP.Has("-ml_fov_not_scaled") )
-    List.set("field-of-values: use diagonal scaling", false);
-
-  
-  // aggregation
-  if( CLP.Has("-ml_aggr_type") )
-    List.set("aggregation: type", CLP.Get("-ml_aggr_type","Uncoupled"));
-
-  if( CLP.Has("-ml_aggr_type_level_0") )
-    List.set("aggregation: type (level 0)", CLP.Get("-ml_aggr_type_level_0","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_1") )
-    List.set("aggregation: type (level 1)", CLP.Get("-ml_aggr_type_level_1","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_2") )
-    List.set("aggregation: type (level 2)", CLP.Get("-ml_aggr_type_level_2","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_3") )
-    List.set("aggregation: type (level 3)", CLP.Get("-ml_aggr_type_level_3","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_4") )
-    List.set("aggregation: type (level 4)", CLP.Get("-ml_aggr_type_level_4","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_5") )
-    List.set("aggregation: type (level 5)", CLP.Get("-ml_aggr_type_level_5","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_6") )
-    List.set("aggregation: type (level 6)", CLP.Get("-ml_aggr_type_level_6","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_7") )
-    List.set("aggregation: type (level 7)", CLP.Get("-ml_aggr_type_level_7","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_8") )
-    List.set("aggregation: type (level 8)", CLP.Get("-ml_aggr_type_level_8","Uncoupled"));
-  if( CLP.Has("-ml_aggr_type_level_9") )
-    List.set("aggregation: type (level 9)", CLP.Get("-ml_aggr_type_level_9","Uncoupled"));
-
-  if( CLP.Has("-ml_num_nodes_per_aggr") )
-    List.set("aggregation: nodes per aggregate", CLP.Get("-ml_num_nodes_per_aggr",512));
-
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_0") )
-    List.set("aggregation: nodes per aggregate (level 0)", CLP.Get("-ml_num_nodes_per_aggr_level_0",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_1") )
-    List.set("aggregation: nodes per aggregate (level 1)", CLP.Get("-ml_num_nodes_per_aggr_level_1",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_2") )
-    List.set("aggregation: nodes per aggregate (level 2)", CLP.Get("-ml_num_nodes_per_aggr_level_2",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_3") )
-    List.set("aggregation: nodes per aggregate (level 3)", CLP.Get("-ml_num_nodes_per_aggr_level_3",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_4") )
-    List.set("aggregation: nodes per aggregate (level 4)", CLP.Get("-ml_num_nodes_per_aggr_level_4",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_5") )
-    List.set("aggregation: nodes per aggregate (level 5)", CLP.Get("-ml_num_nodes_per_aggr_level_5",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_6") )
-    List.set("aggregation: nodes per aggregate (level 6)", CLP.Get("-ml_num_nodes_per_aggr_level_6",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_7") )
-    List.set("aggregation: nodes per aggregate (level 7)", CLP.Get("-ml_num_nodes_per_aggr_level_7",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_8") )
-    List.set("aggregation: nodes per aggregate (level 8)", CLP.Get("-ml_num_nodes_per_aggr_level_8",512));
-  if( CLP.Has("-ml_num_nodes_per_aggr_level_9") )
-    List.set("aggregation: nodes per aggregate (level 9)", CLP.Get("-ml_num_nodes_per_aggr_level_9",512));
-
-  if( CLP.Has("-ml_num_local_aggr") )
-    List.set("aggregation: local aggregates", CLP.Get("-ml_num_local_aggr",512));
-
-  if( CLP.Has("-ml_num_local_aggr_level_0") )
-    List.set("aggregation: local aggregates (level 0)", CLP.Get("-ml_num_local_aggr_level_0",512));
-  if( CLP.Has("-ml_num_local_aggr_level_1") )
-    List.set("aggregation: local aggregates (level 1)", CLP.Get("-ml_num_local_aggr_level_1",512));
-  if( CLP.Has("-ml_num_local_aggr_level_2") )
-    List.set("aggregation: local aggregates (level 2)", CLP.Get("-ml_num_local_aggr_level_2",512));
-  if( CLP.Has("-ml_num_local_aggr_level_3") )
-    List.set("aggregation: local aggregates (level 3)", CLP.Get("-ml_num_local_aggr_level_3",512));
-  if( CLP.Has("-ml_num_local_aggr_level_4") )
-    List.set("aggregation: local aggregates (level 4)", CLP.Get("-ml_num_local_aggr_level_4",512));
-  if( CLP.Has("-ml_num_local_aggr_level_5") )
-    List.set("aggregation: local aggregates (level 5)", CLP.Get("-ml_num_local_aggr_level_5",512));
-  if( CLP.Has("-ml_num_local_aggr_level_6") )
-    List.set("aggregation: local aggregates (level 6)", CLP.Get("-ml_num_local_aggr_level_6",512));
-  if( CLP.Has("-ml_num_local_aggr_level_7") )
-    List.set("aggregation: local aggregates (level 7)", CLP.Get("-ml_num_local_aggr_level_7",512));
-  if( CLP.Has("-ml_num_local_aggr_level_8") )
-    List.set("aggregation: local aggregates (level 8)", CLP.Get("-ml_num_local_aggr_level_8",512));
-  if( CLP.Has("-ml_num_local_aggr_level_9") )
-    List.set("aggregation: local aggregates (level 9)", CLP.Get("-ml_num_local_aggr_level_9",512));
-
-  if( CLP.Has("-ml_aggr_damping_factor") )
-    List.set("aggregation: damping factor", CLP.Get("-ml_aggr_damping_factor",1.333));
-  if( CLP.Has("-ml_compute_field_of_values") )
-    List.set("aggregation: compute field of values", true);
-  if( CLP.Has("-ml_compute_field_of_values_non_scaled") )
-    List.set("aggregation: compute field of values for non-scaled", true);
-  
-  // preconditioning type
-  if( CLP.Has("-ml_prec_type") ) {
-    List.set("prec type", CLP.Get("-ml_prec_type","full-MGV"));
-  }
-
-  // coarse
-  if( CLP.Has("-ml_coarse_type") )
-    List.set("coarse: type", CLP.Get("-ml_coarse_type","Amesos-KLU"));
-  if( CLP.Has("-ml_coarse_max_procs") ) 
-    List.set("coarse: max processes", CLP.Get("-ml_coarse_max_procs",4));
-
-  // eigen-analysis
-  if( CLP.Has("-ml_eigen_analysis_type") )
-    List.set("eigen-analysis: type", CLP.Get("-ml_eigen_analysis_type","Anorm"));
-  if( CLP.Has("-ml_eigen_analysis_tol") )
-    List.set("eigen-analysis: tolerance", CLP.Get("-ml_eigen_analysis_tol",1e-2));
-  if( CLP.Has("-ml_compute_null_space") )
-    List.set("compute null space", CLP.Has("-ml_compute_null_space"));
-  if( CLP.Has("-ml_null_space_dim") )
-    List.set("null space dimension", CLP.Get("-ml_null_space_dim",1));
-  if( CLP.Has("-ml_add_default_null_space") )
-    List.set("add default null space", CLP.Has("-ml_add_default_null_space"));
-
-  return 0;
-  
-}
-
-// ================================================ ====== ==== ==== == =
-
-MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-						   Trilinos_Util::CommandLineParser & CLP,
-						   const bool ComputePrec ) :
-  RowMatrix_(&RowMatrix),
-  RowMatrixAllocated_(0)
-{
-  Prefix_[0] = '\0';
-
-  /* ********************************************************************** */
-  /* Parse command line to get main options                                 */
-  /* ********************************************************************** */
-
-  Set(List_,CLP);
-   
-  /* ********************************************************************** */
-  /* back to normal initialization                                          */
-  /* ********************************************************************** */
-
-  Initialize();
-  
-  // construct hierarchy
-  if( ComputePrec == true ) ComputePreconditioner();
-}
-#endif
-
-// ================================================ ====== ==== ==== == =
 /*! - set to 0 all allocatable pointers
  *  - put default values in Aztec vectors.
  *  - zero-out timing
  */
-void MultiLevelPreconditioner::Initialize()
+void ML_Epetra::MultiLevelPreconditioner::Initialize()
 {
 
   Comm_ = &(RowMatrix_->Comm());
@@ -838,7 +640,7 @@ void MultiLevelPreconditioner::Initialize()
 
 // ================================================ ====== ==== ==== == =
 // FIXME: test me of delete me??
-int MultiLevelPreconditioner::ComputeFilteringPreconditioner()
+int ML_Epetra::MultiLevelPreconditioner::ComputeFilteringPreconditioner()
 {
 
   char parameter[80];
@@ -891,7 +693,7 @@ int MultiLevelPreconditioner::ComputeFilteringPreconditioner()
 
 // ================================================ ====== ==== ==== == =
 
-int MultiLevelPreconditioner::ComputePreconditioner(const bool CheckPreconditioner)
+int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckPreconditioner)
 {
 
   BreakForDebugger();
@@ -1662,7 +1464,7 @@ int MultiLevelPreconditioner::ComputePreconditioner(const bool CheckPrecondition
 
 // ============================================================================
 
-void MultiLevelPreconditioner::PrintUnused(const int MyPID) const
+void ML_Epetra::MultiLevelPreconditioner::PrintUnused(const int MyPID) const
 {
   if( Comm().MyPID() == MyPID ) {
     PrintLine();
@@ -1674,7 +1476,7 @@ void MultiLevelPreconditioner::PrintUnused(const int MyPID) const
 
 // ============================================================================
 
-void MultiLevelPreconditioner::PrintList(int MyPID) 
+void ML_Epetra::MultiLevelPreconditioner::PrintList(int MyPID) 
 {
   if( Comm().MyPID() == MyPID ) {
     PrintLine();
@@ -1685,7 +1487,7 @@ void MultiLevelPreconditioner::PrintList(int MyPID)
 
 // ============================================================================
 
-int MultiLevelPreconditioner::SetParameterList(const ParameterList & List) 
+int ML_Epetra::MultiLevelPreconditioner::SetParameterList(const ParameterList & List) 
 {
   if( IsComputePreconditionerOK_ == true ) DestroyPreconditioner();
   List_ = List;
@@ -1695,7 +1497,7 @@ int MultiLevelPreconditioner::SetParameterList(const ParameterList & List)
 
 // ============================================================================
 
-int MultiLevelPreconditioner::CreateLabel()
+int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
 {  
 
   char finest[80];
@@ -1753,7 +1555,7 @@ int MultiLevelPreconditioner::CreateLabel()
 
 // ============================================================================
 
-int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
+int ML_Epetra::MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
 					   Epetra_MultiVector& Y) const
 {
 
@@ -1905,318 +1707,6 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
 }
 
 // ============================================================================
-/*! Values for \c "smoother: type"
- * - \c Jacobi
- * - \c Gauss-Seidel
- * - \c symmetric Gauss-Seidel
- * - \c block Gauss-Seidel
- * - \c MLS
- * - \c Aztec
- * - \c IFPACK (still under development)
- * - \c do-nothing
- */
-void MultiLevelPreconditioner::SetSmoothers() 
-{
-
-  /*! SET SMOOTHZ */
-
-  char parameter[80];
-
-  sprintf(parameter,"%ssmoother: sweeps", Prefix_);
-  int num_smoother_steps = List_.get(parameter, 1);
-
-  sprintf(parameter,"%ssmoother: damping factor", Prefix_);
-  double omega = List_.get(parameter,1.0);
-
-  sprintf(parameter,"%ssmoother: pre or post", Prefix_);
-  int pre_or_post = 0;
-  string PreOrPostSmoother = List_.get(parameter,"post");
-
-  sprintf(parameter,"%ssmoother: type", Prefix_);
-  string Smoother = List_.get(parameter,"MLS");
-
-  sprintf(parameter,"%ssmoother: Aztec options", Prefix_);
-  int * SmootherOptionsPtr = NULL;
-  SmootherOptionsPtr = List_.get(parameter,SmootherOptionsPtr);
-
-  sprintf(parameter,"%ssmoother: Aztec params", Prefix_);
-  double * SmootherParamsPtr = NULL;
-  SmootherParamsPtr = List_.get(parameter,SmootherParamsPtr);
-
-  sprintf(parameter,"%ssmoother: Aztec as solver", Prefix_);
-  bool AztecSmootherAsASolver = List_.get(parameter,false);
-  int aztec_its;
-
-  sprintf(parameter,"%ssmoother: MLS polynomial order", Prefix_);
-  int MLSPolynomialOrder = List_.get(parameter,3);
-
-  sprintf(parameter,"%ssmoother: MLS alpha",Prefix_);
-  double MLSalpha = List_.get(parameter,30.0);;
-  
-  int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
-
-  for( int level=0 ; level<SmootherLevels ; ++level ) {
-
-    sprintf(parameter,"%ssmoother: sweeps (level %d)", Prefix_, LevelID_[level] );
-    num_smoother_steps = List_.get(parameter,num_smoother_steps);
-
-    sprintf(parameter,"%ssmoother: damping factor (level %d)", Prefix_, LevelID_[level] );
-    omega = List_.get(parameter,omega);
-
-    sprintf(parameter,"%ssmoother: pre or post (level %d)", Prefix_, LevelID_[level] );
-    PreOrPostSmoother = List_.get(parameter, PreOrPostSmoother);
-    
-    if( PreOrPostSmoother == "post" ) pre_or_post = ML_POSTSMOOTHER;
-    else if( PreOrPostSmoother == "pre" ) pre_or_post = ML_PRESMOOTHER;
-    else if( PreOrPostSmoother == "both" ) pre_or_post = ML_BOTH;
-    else 
-      cerr << ErrorMsg_ << "smoother not recognized (" << PreOrPostSmoother << ")\n";
-    
-    sprintf(parameter,"%ssmoother: type (level %d)", Prefix_, LevelID_[level]);
-    Smoother = List_.get(parameter,Smoother);
-
-    char msg[80];
-    sprintf(msg,"Smoother (level %d) : ", LevelID_[level]);
-    if( Smoother == "Jacobi" ) {
-      if( verbose_ ) cout << msg << "Jacobi (sweeps="
-			 << num_smoother_steps << ",omega=" << omega << ","
-			 << PreOrPostSmoother << ")" << endl;
-      ML_Gen_Smoother_Jacobi(ml_, LevelID_[level], pre_or_post,
-			     num_smoother_steps, omega);
-    } else if( Smoother == "Gauss-Seidel" ) {
-      if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
-			 << num_smoother_steps << ",omega=" << omega << ","
-			 << PreOrPostSmoother << ")" << endl;
-      ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[level], pre_or_post,
-				  num_smoother_steps, omega);
-    } else if( Smoother == "symmetric Gauss-Seidel" ) {
-      if( verbose_ ) cout << msg << "symmetric Gauss-Seidel (sweeps="
-			  << num_smoother_steps << ",omega=" << omega << ","
-			  << PreOrPostSmoother << ")" << endl;
-      ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[level], pre_or_post,
-				     num_smoother_steps, omega);
-    } else if( Smoother == "block Gauss-Seidel" ) {
-      if( verbose_ ) cout << msg << "block Gauss-Seidel (sweeps="
-			  << num_smoother_steps << ",omega=" << omega << ","
-			  << PreOrPostSmoother << ")" << endl;
-      ML_Gen_Smoother_BlockGaussSeidel(ml_, LevelID_[level], pre_or_post,
-				       num_smoother_steps, omega, NumPDEEqns_);
-    } else if( Smoother == "MLS" ) {
-      sprintf(parameter,"smoother: MLS polynomial order (level %d)", LevelID_[level]);
-      if( verbose_ ) cout << msg << "MLS,"
-			 << PreOrPostSmoother << endl;
-      
-      ML_Gen_Smoother_MLS(ml_, LevelID_[level], pre_or_post, MLSalpha,
-			  MLSPolynomialOrder);
-      
-    } else if( Smoother == "Aztec" ) {
-      
-      sprintf(parameter,"%ssmoother: Aztec options (level %d)", Prefix_, LevelID_[level]);
-      SmootherOptionsPtr = List_.get(parameter, SmootherOptionsPtr);
-      sprintf(parameter,"%ssmoother: Aztec params (level %d)", Prefix_, LevelID_[level]);
-      SmootherParamsPtr = List_.get(parameter, SmootherParamsPtr);
-      sprintf(parameter,"%ssmoother: Aztec as solver (level %d)", Prefix_, LevelID_[level]);
-      AztecSmootherAsASolver = List_.get(parameter,AztecSmootherAsASolver);
-     
-      if( AztecSmootherAsASolver == false ) aztec_its = AZ_ONLY_PRECONDITIONER;
-      else                                  aztec_its = num_smoother_steps;
-      
-      if( SmootherOptionsPtr == NULL || SmootherParamsPtr == NULL ) {
-      	SmootherOptionsPtr = SmootherOptions_;
-      	SmootherParamsPtr = SmootherParams_;
-      }
-
-      if( verbose_ ) {
-	cout << msg << "Aztec";
-	if( SmootherOptionsPtr[AZ_precond] == AZ_dom_decomp ) {
-	  cout << " DD, overlap=" << SmootherOptionsPtr[AZ_overlap] << ", ";
-	  if( SmootherOptionsPtr[AZ_reorder] == 1 ) cout << "reord, ";
-	  else cout << "no reord, ";
-	  switch( SmootherOptionsPtr[AZ_subdomain_solve] ) {
-	  case AZ_lu: cout << " LU"; break;
-	  case AZ_ilu:
-	    cout << "ILU(fill="  << SmootherOptionsPtr[AZ_graph_fill] << ")";
-	    break;
-	  case AZ_ilut:
-	    cout << "ILUT(fill=" << SmootherParamsPtr[AZ_ilut_fill] << ",drop="
-		 << SmootherParamsPtr[AZ_drop] << ")";
-	    break;
-	  case AZ_icc:
-	    cout << "ICC(fill="  << SmootherOptionsPtr[AZ_graph_fill] << ")";
-	    break;
-	  case AZ_bilu:
-	    cout << "BILU(fill="  << SmootherOptionsPtr[AZ_graph_fill] << ")";
-	    break;
-	  case AZ_rilu:
-	    cout << "RILU(fill="  << SmootherOptionsPtr[AZ_graph_fill] << ",omega="
-		 << SmootherParamsPtr[AZ_omega] << ")";
-	    break;
-	  }
-	} else if( SmootherOptionsPtr[AZ_precond] == AZ_Jacobi ) {
-	  cout << msg << " Jacobi preconditioner";
-	} else if( SmootherOptionsPtr[AZ_precond] == AZ_Neumann ) {
-	  cout << msg << " Neumann preconditioner, order = " << SmootherOptionsPtr[AZ_poly_ord];
-	} else if( SmootherOptionsPtr[AZ_precond] == AZ_ls ) {
-	  cout << msg << " LS preconditioner, order = " << SmootherOptionsPtr[AZ_poly_ord];
-	} else if( SmootherOptionsPtr[AZ_precond] == AZ_sym_GS ) {
-	  cout << msg << " symmetric Gauss-Seidel preconditioner, sweeps = " << SmootherOptionsPtr[AZ_poly_ord];
-	} else if( SmootherOptionsPtr[AZ_precond] == AZ_none ) {
-	  cout << msg << " with no preconditioning";
-	}
-	cout << ", "  << PreOrPostSmoother << endl;
-      }
-      
-      ML_Gen_SmootherAztec(ml_, LevelID_[level], SmootherOptionsPtr, SmootherParamsPtr,
-			   ProcConfig_, SmootherStatus_,
-			   aztec_its, pre_or_post, NULL);
-      
-    } else if( Smoother == "IFPACK" ) {
-      if( verbose_ ) cout << msg << "IFPACK" << ","
-			 << PreOrPostSmoother << endl;
-      // get ifpack options from list ??? pass list ???
-      ML_Gen_Smoother_Ifpack(ml_, LevelID_[level], pre_or_post, NULL, NULL);
-    } else if( Smoother == "do-nothing" ) {
-      if( verbose_ ) cout << msg << "do-nothing smoother" << endl;
-    } else {
-      if( ProcConfig_[AZ_node] == 0 )
-	cerr << ErrorMsg_ << "Smoother not recognized!" << endl
-	     << ErrorMsg_ << "(file " << __FILE__ << ",line " << __LINE__ << ")" << endl
-	     << ErrorMsg_ << "Now is: " << Smoother << ". It should be: " << endl
-	     << ErrorMsg_ << "<Jacobi> / <Gauss-Seidel> / <block Gauss-Seidel> / <MLS>" << endl
-	     << ErrorMsg_ << "<symmetric Gauss-Seidel> / <Aztec> / <IFPACK>" << endl;
-      exit( EXIT_FAILURE );
-    }
-    
-  } /* for */
-
-  return;
-}
-
-// ============================================================================
-
-/*! Options for Maxwell smoothing:
- *  - \c "smoother: sweeps" (int)
- *  - \c "smoother: type" (string). Possible values:
- *    - \c MLS
- *    - \c Gauss-Seidel
- *  - \c "smoother: node: sweeps" (int): sweeps for nodal hierarchy
- *  - \c "smoother: node: damping factor" (double)
- *  - \c "smoother: edge: sweeps" (int): sweeps for edge hierarchy
- *  - \c "smoother:  edge: damping factor" (double)
- *  
- * This function is still under development. The following options are
- * hardwired:
- * - HALF_HIPTMAIR
- *   
- */
-
-void MultiLevelPreconditioner::SetSmoothersMaxwell()
-{
-
-  char parameter[80];
-  
-  sprintf(parameter,"%ssmoother: sweeps", Prefix_);
-  int num_smoother_sweeps = List_.get(parameter, 1);
-
-  sprintf(parameter,"%ssmoother: type", Prefix_);
-  string SmootherType = List_.get(parameter,"MLS");
-
-  // get user's defined parameters for nodal smoothing
- 
-  sprintf(parameter,"%ssmoother: node: sweeps", Prefix_);
-  int nodal_its = List_.get(parameter, 1);
-
-  sprintf(parameter,"%ssmoother: node: damping factor", Prefix_);
-  double nodal_omega = List_.get(parameter,1.0);
-
-
-  // get user's defined parameters for edge smoothing
- 
-  sprintf(parameter,"%ssmoother: edge: sweeps", Prefix_);
-  int edge_its = List_.get(parameter, 1);
-
-  sprintf(parameter,"%ssmoother: edge: damping factor", Prefix_);
-  double edge_omega = List_.get(parameter,1.0);
-
-  // arguments for nodal smoother
-
-  nodal_args_ = ML_Smoother_Arglist_Create(2);
-
-  int hiptmair_type = HALF_HIPTMAIR;
-
-  int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
-    
-  // set the smoother (only two choices at this time)
-
-  SmootherType = "Gauss-Seidel";
-
-  if( SmootherType == "MLS" ) {
-#ifdef LATER    
-    int coarsest_level = -1;
-    cout << "FIX COARSEST_LEVEL!!!" << endl;
-    int Ncoarse_edge, Ncoarse_node;
-    double edge_coarsening_rate, node_coarsening_rate;
-    int Nfine_edge, itmp;
-
-    for( int level=0 ; level<SmootherLevels ; ++level ) {
-
-      if (level != coarsest_level) {
-	Ncoarse_edge = Tmat_array[level-1]->outvec_leng;
-	ML_gsum_scalar_int(&Ncoarse_edge, &itmp, ml_edges_->comm);
-	edge_coarsening_rate =  2.*((double) Nfine_edge)/
-                                   ((double) Ncoarse_edge);
-      }
-      else edge_coarsening_rate =  (double) Nfine_edge;
-
-      ML_Smoother_Arglist_Set(edge_args_, 1, &edge_coarsening_rate);
-      Nfine_edge = Ncoarse_edge;
-
-      if (level != coarsest_level) {
-	Ncoarse_node = Tmat_array[level-1]->invec_leng;
-	ML_gsum_scalar_int(&Ncoarse_node, &itmp, ml_edges_->comm);
-	node_coarsening_rate =  2.*((double) Nfine_node)/ 
-                                   ((double) Ncoarse_node);
-      }
-      else node_coarsening_rate = (double) Nfine_node;
-
-      ML_Smoother_Arglist_Set(nodal_args_, 1, &node_coarsening_rate);
-      Nfine_node = Ncoarse_node;
-    }
-
-    ML_Gen_Smoother_Hiptmair(ml_edges_, LevelID_[level], ML_BOTH, num_smoother_sweeps,
-			     Tmat_array, Tmat_trans_array, NULL, 
-			     (void *)ML_Gen_Smoother_MLS, edge_args, 
-			     (void *)ML_Gen_Smoother_MLS, nodal_args, hiptmair_type);
-#endif
-  } else if( SmootherType == "Gauss-Seidel") {
-
-    ML_Smoother_Arglist_Set(nodal_args_, 0, &nodal_its);
-    ML_Smoother_Arglist_Set(nodal_args_, 1, &nodal_omega);
-
-    // arguments for edge smoother
-    edge_args_ = ML_Smoother_Arglist_Create(2);
-
-    ML_Smoother_Arglist_Set(edge_args_, 0, &edge_its);
-    ML_Smoother_Arglist_Set(edge_args_, 1, &edge_omega);
-
-    for( int level=0 ; level<SmootherLevels ; ++level ) {
-
-      ML_Gen_Smoother_Hiptmair(ml_edges_, LevelID_[level], ML_BOTH, num_smoother_sweeps,
-			       Tmat_array, Tmat_trans_array, NULL, 
-			       (void *)ML_Gen_Smoother_SymGaussSeidel, edge_args_, 
-			       (void *)ML_Gen_Smoother_SymGaussSeidel, nodal_args_, hiptmair_type);
-    }
-  } else {
-    cerr << ErrorMsg_ << "`smoother: type' has an incorrect value (" << SmootherType << ")" << endl
-         << ErrorMsg_ << "For Maxwell, it should be" << endl
-	 << ErrorMsg_ << "<MLS> / <Gauss-Seidel>" << endl;
-    exit( EXIT_FAILURE );
-  }
-
-  return;
-}
-
-// ============================================================================
 /*! Values for \c "coarse: type"
  * - \c Jacobi
  * - \c Gauss-Seidel
@@ -2228,7 +1718,7 @@ void MultiLevelPreconditioner::SetSmoothersMaxwell()
  * - \c Amesos-ScALAPACK (under development in Amesos)
  * - \c do-nothing
  */
-void MultiLevelPreconditioner::SetCoarse() 
+void ML_Epetra::MultiLevelPreconditioner::SetCoarse() 
 {
 
   char parameter[80];
@@ -2283,7 +1773,7 @@ void MultiLevelPreconditioner::SetCoarse()
  * - \c Coupled (deprecated)
  * - \c MIS
  */
-void MultiLevelPreconditioner::SetAggregation() 
+void ML_Epetra::MultiLevelPreconditioner::SetAggregation() 
 {
 
   char parameter[80];
@@ -2403,7 +1893,7 @@ void MultiLevelPreconditioner::SetAggregation()
 
 // ================================================ ====== ==== ==== == =
 
-void MultiLevelPreconditioner::SetPreconditioner() 
+void ML_Epetra::MultiLevelPreconditioner::SetPreconditioner() 
 {
 
   char parameter[80];
@@ -2470,7 +1960,7 @@ void MultiLevelPreconditioner::SetPreconditioner()
 
 // ================================================ ====== ==== ==== == =
 
-void MultiLevelPreconditioner::SetSmoothingDamping() 
+void ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping() 
 {
 
   Epetra_Time Time(Comm());

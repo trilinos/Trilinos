@@ -44,11 +44,10 @@
 #include "ml_anasazi.h"
 
 using namespace Teuchos;
-using namespace ML_Epetra;
 
 // ================================================ ====== ==== ==== == =
 
-void MultiLevelPreconditioner::SetNullSpaceMaxwell()
+void ML_Epetra::MultiLevelPreconditioner::SetNullSpaceMaxwell()
 {
 
   // FIXME...
@@ -57,7 +56,7 @@ void MultiLevelPreconditioner::SetNullSpaceMaxwell()
 
 // ================================================ ====== ==== ==== == =
 
-void MultiLevelPreconditioner::SetNullSpace() 
+void ML_Epetra::MultiLevelPreconditioner::SetNullSpace() 
 {
 
   char parameter[80];
@@ -307,7 +306,7 @@ void MultiLevelPreconditioner::SetNullSpace()
 
 // ================================================ ====== ==== ==== == =
 
-void MultiLevelPreconditioner::SetEigenList() 
+void ML_Epetra::MultiLevelPreconditioner::SetEigenList() 
 {
 
   char parameter[80];

@@ -214,6 +214,9 @@ void ML_Ifpack_Destroy(void * Ifpack_Handle)
 
 #else
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 static int ciao=0;
+#endif
+
 
 #endif /* #ifdef HAVE_ML_IFPACK */

@@ -23,11 +23,29 @@
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
 /*!
- *  \file ml_epetra_operator.h
+ * \file ml_epetra_operator.h
  *
- *  \brief Defines an ML preconditioner as a Epetra_Operator derived class.
+ * \brief Defines an ML preconditioner as a Epetra_Operator derived class.
  *
- *  \date Last update do Doxygen: 22-Jul-04
+ * ML offers two preconditioners suitable for the solution of 
+ * Epetra_LinearProblem objects. This file define one the two, called
+ * MultiLevelOperator (in the ML_Epetra namespace). This preconditioner is
+ * simple wrapper of the ML_Solve() function, so that ML can be applied to
+ * Epetra_MultiVector's. 
+ *
+ * When you should use MultiLevelOperator:
+ * - when your code already defines the required ML objects, with the optimal
+ *   choice of parameters, and you want to use ML for Epetra_LinearProblem or
+ *   AztecOO problems;
+ *
+ * When you should use MultiLevelPreconditioner:  
+ * - when you have an Epetra_RowMatrix, and you don't want to code the
+ *   conversion to ML_Operator, the creation of the hierarchy and the
+ *   aggregates, and/or you want to experiment various combinations of the
+ *   parameters, simply changing some parameters in a Teuchos::ParameterList.
+ *
+ * 
+ * \date Last update to Doxygen: 22-Jul-04
  *
  */
 
@@ -62,10 +80,10 @@ class MultiLevelOperator: public virtual Epetra_Operator {
     //! Uses an ML instance to implement the Epetra_Operator interface.
   /*! This is designed
       for using ML as a preconditioner within an AztecOO solver instance.
-    \param In - A fully-constructed ML object.
-    \param In - An Epetra communicator
-    \param In - An Epetra domain map
-    \param In - An Epetra range map
+    \param ml_handle A fully-constructed ML object (In) 
+    \param myComm - Epetra communicator (In) 
+    \param DomainMap - Epetra domain map (In) 
+    \param RangeMap - Epetra range map (In) 
   */
   MultiLevelOperator(ML * ml_handle, const Epetra_Comm & myComm,
                      const Epetra_Map & DomainMap,
@@ -86,7 +104,7 @@ class MultiLevelOperator: public virtual Epetra_Operator {
         and so it is not freed.  By default, the multigrid hierarchy is
         not owned by this object.
       
-    \param In ownership - If true, this object owns the corresponding
+    \param ownership (In) - If true, this object owns the corresponding
     multigrid hierarchy.
 
   */
@@ -103,7 +121,7 @@ class MultiLevelOperator: public virtual Epetra_Operator {
         does not support transpose use, this method should return a
         value of -1.
       
-	\param In UseTranspose - If true, multiply by the transpose of
+	\param UseTranspose (In) - If true, multiply by the transpose of
 	operator, otherwise just use operator.
 
     \warning - This method has no effect and returns -1 as error code.
@@ -116,8 +134,8 @@ class MultiLevelOperator: public virtual Epetra_Operator {
 
   //! Returns the result of a Operator applied to a Epetra_MultiVector X in Y.
   /*! 
-    \param \In X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param \Out Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    \param X (In) - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param Y (Out) -A Epetra_MultiVector of dimension NumVectors containing result.
     \warning - This method has no effect and returns -1 as error code.
   */
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
@@ -125,8 +143,8 @@ class MultiLevelOperator: public virtual Epetra_Operator {
 
   //! Returns the result of a Operator inverse applied to an Epetra_MultiVector X in Y.
   /*! 
-    \param \In X - A Epetra_MultiVector of dimension NumVectors to solve for.
-    \param \Out Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    \param X (In) - A Epetra_MultiVector of dimension NumVectors to solve for.
+    \param Y (Out) -A Epetra_MultiVector of dimension NumVectors containing result.
     
     \return Integer error code, set to 0 if successful.
   */

@@ -47,26 +47,31 @@ int Epetra_ML_matvec_WKC(ML_Operator *data, int in, double *p, int out,
 
 //! Getrow function for matrix of type Epetra_RowMatrix.
 /*!
- * Supply local matrix (without ghost node columns) for rows given by
- * requested_rows[0 ... N_requested_rows-1].  Return this information in
- * 'row_lengths, columns, values'.  If there is not enough space to complete
- * this operation, return 0. Otherwise, return 1.
- *
- * \param \in  data             Points to user's data containing matrix values.
- * \parrm \in  N_requested_rows Number of rows for which nonzero are to be
- *                  returned.
- * \param \in  requested_rows   Requested_rows[0...N_requested_rows-1] give the
- *                  row indices of the rows for which nonzero values are
- *                  returned.
- * \param \out row_lengths      Row_lengths[i] is the number of nonzeros in the
- *                  row 'requested_rows[i]'
- * \param \out columns,values   Columns[k] and values[k] contains the column
- *                  number and value of a matrix nonzero where all nonzeros for
- *                  requested_rows[i] appear before requested_rows[i+1]'s
- *                  nonzeros.  NOTE: Arrays are of size 'allocated_space'.
- * \param \in allocated_space  Indicates the space available in 'columns' and
- *                  'values' for storing nonzeros. If more space is needed,
- *                  return 0.
+  Supply local matrix (without ghost node columns) for rows given by
+  requested_rows[0 ... N_requested_rows-1].  Return this information in
+  'row_lengths, columns, values'.  If there is not enough space to complete
+  this operation, return 0. Otherwise, return 1.
+ 
+  \param data (In)             
+         Points to user's data containing matrix values. 
+  \param N_requested_rows (In) Number of rows for which nonzero are to be
+                   returned.
+  \param requested_rows (In)  
+         Requested_rows[0...N_requested_rows-1] give the
+                   row indices of the rows for which nonzero values are
+                   returned.
+  \param row_lengths (Out)
+         Row_lengths[i] is the number of nonzeros in the
+         row 'requested_rows[i]'
+  \param columns,values (Out)  
+         Columns[k] and values[k] contains the column
+         number and value of a matrix nonzero where all nonzeros for
+         requested_rows[i] appear before requested_rows[i+1]'s
+         nonzeros.  NOTE: Arrays are of size 'allocated_space'.
+  \param allocated_space  (In)
+         Indicates the space available in 'columns' and
+         'values' for storing nonzeros. If more space is needed,
+         return 0.
  */
 int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows,
                  int requested_rows[], int allocated_space, int columns[],
@@ -74,16 +79,16 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows,
 
 //! Update vec's ghost node via communication.
 /*! Update vec's ghost node via communication. Note: the length of vec is
- * given by N_local + N_ghost where Amat was created via
- *                 \c AZ_matrix_create(N_local);
- * and a 'getrow' function was supplied via
- *                 \c AZ_set_MATFREE_getrow(Amat,,,,N_ghost,);
- *
- * \param \inout vec Vec contains data. On output, ghost values
- *                   are updated.
- *
- * \param \in data  points to user's data containing matrix values.
- *                  and communication information.
+  given by N_local + N_ghost where Amat was created via
+                  \c AZ_matrix_create(N_local);
+  and a 'getrow' function was supplied via
+                  \c AZ_set_MATFREE_getrow(Amat,,,,N_ghost,).
+ 
+  \param vec Vector containing data. On output, ghost values
+                    are updated.
+ 
+  \param data  points to user's data containing matrix values.
+                   and communication information.
  */ 
 int Epetra_ML_comm_wrapper(double vec[], void *data);
 

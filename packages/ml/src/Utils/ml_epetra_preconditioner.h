@@ -1,10 +1,26 @@
 /*!
- *  \file ml_epetra_preconditioner.h
+ * \file ml_epetra_preconditioner.h
  *
- *  \brief ML black-box preconditioner for Epetra_RowMatrix derived classes.
+ * \class MultiLevelPreconditioner
  *
- *  \author Marzio Sala, SNL, 9214
+ * \brief ML black-box preconditioner for Epetra_RowMatrix derived classes.
  *
+ * ML offers two preconditioners suitable for the solution of 
+ * Epetra_LinearProblem objects. This file define one the two, called
+ * MultiLevelOperator (in the ML_Epetra namespace). This preconditioner is
+ * simple wrapper of the ML_Solve() function, so that ML can be applied to
+ * Epetra_MultiVector's. 
+ *
+ * When you should use MultiLevelOperator:
+ * - when your code already defines the required ML objects, with the optimal
+ *   choice of parameters, and you want to use ML for Epetra_LinearProblem or
+ *   AztecOO problems;
+ *
+ * When you should use MultiLevelPreconditioner:  
+ * - when you have an Epetra_RowMatrix, and you don't want to code the
+ *   conversion to ML_Operator, the creation of the hierarchy and the
+ *   aggregates, and/or you want to experiment various combinations of the
+ *   parameters, simply changing some parameters in a Teuchos::ParameterList.
  *  \date Last update do Doxygen: 22-Jul-04
  *
  */
@@ -52,37 +68,35 @@ class Epetra_CrsMatrix;
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 
-//! ML_Epetra: default namespace for all Epetra interfaces.
-
 namespace ML_Epetra
 {
 
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
   /*! This function, defined in the namespace ML_Epetra, can be used to set
-   * default values in a user's defined Teuchos::ParameterList.
-   * \param \in ProblemType: a string, whose possible values are:
-   *    - "DD" : defaults for 2-level domain decomposition preconditioners based
-   *    on aggregation;
-   *    - "DD-ML" : 3-level domain decomposition preconditioners, with coarser
-   *    spaces defined by aggregation;
-   *    - "SA" : classical smoothed aggregation preconditioners;
-   *    - "maxwell" : default values for Maxwell.
-   * \param \out List : list which will populated by the default parameters
-   * \param \in options : integer array, of size \c AZ_OPTIONS_SIZE, that will be
-   * populated with suitable values. A pointer to \c options will be stick into
-   * the parameters list. Note that this array is still required to apply the
-   * preconditioner! Do not delete options, nor let it go out of scope. The default value is 
-   * 0, meaning that \c SetDefaults() will allocate the array. It is
-   * responsibility of the user to free this memory.
-   * \param \out params : double array, of size \c AZ_PARAMS_SIZE. See comments
-   * for \c options.    
-   * * \param \in Prefix : a string value, defaulted to "". All parameters will have
-   * \c Prefix as prefix. For example, the maximum number of level is defined as
-   * \c "aggregation: max levels". If \c Prefix == "vel prob: ", than the maximum
-   * number of levels will be inserted as \c "vel prob: aggregation: max levels".
-   * An ML_Epetra::MultiLevelPreconditioner can be created with a specified
-   * prefix. This is useful when more than one preconditioner must be created, and
-   * the user wants to put all the parameters in the same parameters list.
+    default values in a user's defined Teuchos::ParameterList.
+    \param ProblemType (In) : a string, whose possible values are:
+       - "DD" : defaults for 2-level domain decomposition preconditioners based
+       on aggregation;
+       - "DD-ML" : 3-level domain decomposition preconditioners, with coarser
+       spaces defined by aggregation;
+       - "SA" : classical smoothed aggregation preconditioners;
+       - "maxwell" : default values for Maxwell.
+    \param List (Out) : list which will populated by the default parameters
+    \param options (In) : integer array, of size \c AZ_OPTIONS_SIZE, that will be
+    populated with suitable values. A pointer to \c options will be stick into
+    the parameters list. Note that this array is still required to apply the
+    preconditioner! Do not delete options, nor let it go out of scope. The default value is 
+    0, meaning that \c SetDefaults() will allocate the array. It is
+    responsibility of the user to free this memory.
+    \param params (Out) : double array, of size \c AZ_PARAMS_SIZE. See comments
+    for \c options.    
+    \param Prefix (In) : a string value, defaulted to "". All parameters will have
+    \c Prefix as prefix. For example, the maximum number of level is defined as
+    \c "aggregation: max levels". If \c Prefix == "vel prob: ", than the maximum
+    number of levels will be inserted as \c "vel prob: aggregation: max levels".
+    An ML_Epetra::MultiLevelPreconditioner can be created with a specified
+    prefix. This is useful when more than one preconditioner must be created, and
+    the user wants to put all the parameters in the same parameters list.
    */
   int SetDefaults(string ProblemType, Teuchos::ParameterList & List,
 		  int * options = 0, double * params = 0, const string Prefix = "");
@@ -241,7 +255,7 @@ public:
   /*! Mispelled parameters are simply ignored. Therefore, it is often the best
    * choice to print out the parameters that have not been used in the
    * construction phase. 
-   * - \param \in MyPID : ID of process that should print the unused parameters.
+   * - \param MyPID (In) : ID of process that should print the unused parameters.
    */
   void PrintUnused(const int MyPID) const;
 
@@ -483,7 +497,6 @@ public:
   {
     return RowMatrix_->RowMatrixColMap();
   }
-  //@}
 
   //@{ \name debugging and other utilities
 
@@ -508,12 +521,12 @@ public:
   /*! For problems defined on 2D Cartesian grids (with node numbering increasing
    * along the x-axis), this function prints out the stencil in an intelligible
    * form.
-   * \param \in nx : number of nodes along the X-axis
-   * \param \in ny : number of nodes along the Y-axis
-   * \param \in NodeID : (local) ID of node that will be used to print the
+   * \param nx (In) : number of nodes along the X-axis
+   * \param ny (In) : number of nodes along the Y-axis
+   * \param NodeID (In) : (local) ID of node that will be used to print the
    *   stencil. If set to -1, the code will automatically chose an internal node.
    *   Default: -1.
-   * \param \in EquationID : ID of the equation that will be used to print the
+   * \param EquationID (In) : ID of the equation that will be used to print the
    *   stencil (default = 0)  
    */
   int PrintStencil2D(const int nx, const int ny, 
@@ -580,13 +593,13 @@ private:
   int SetFiltering();
 
   //! Checks whether the previously computed preconditioner is still valuable for the newly available linear system.
-  /*! Used only when \c "adaptive: \c enable" is \c false and \c "filtering: \c enable" is true.
+  /*! Used only when \c "adaptive: enable" is false and \c "filtering: enable" is true.
    * \warning: still under development
    */
   bool CheckPreconditionerFiltering();
   
   //! Checks whether the previously computed preconditioner is still valuable for the newly available linear system.
-  /*! Used only when \c "adaptive: \c enable" is \c true, and
+  /*! Used only when \c "adaptive: enable" is \c true, and
    * ComputePreconditioner(true) is called. */
   bool CheckPreconditionerKrylov();
   //@}

@@ -41,7 +41,7 @@ static double TimeForSolve__ = 0.0;
 static int Level__ = -1;
 static int NumSolves__ = 0;
 
-#ifdef DEBUG
+#ifdef ML_AMESOS_DEBUG
 static double MaxError__ = 0.0;
 #endif
 
@@ -278,7 +278,7 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
 
   Epetra_LinearProblem *Amesos_LinearProblem = (Epetra_LinearProblem *)A_Base->GetProblem() ;
   
-  Epetra_BlockMap map = Amesos_LinearProblem->GetOperator()->OperatorDomainMap() ; 
+  Epetra_BlockMap & map = Amesos_LinearProblem->GetOperator()->OperatorDomainMap() ; 
 
   Epetra_Vector EV_rhs( View, map, rhs ) ;
   Epetra_Vector EV_lhs( View, map, x ) ;
@@ -291,7 +291,7 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
   TimeForSolve__ += Time.ElapsedTime();
   NumSolves__++;
 
-#ifdef DEBUG
+#ifdef ML_AMESOS_DEBUG
   // verify that the residual is actually small (and print the max
   // in the destruction phase)
   Epetra_Vector Ax(map);
@@ -308,7 +308,7 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
   return 0;
 }
 
-#ifdef DEBUG
+#ifdef ML_AMESOS_DEBUG
 #include <iomanip>
 #endif
 
@@ -340,7 +340,7 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
       cout << "Amesos (level " << Level__
 	   << ") : no solve" << endl;
 
-#ifdef DEBUG
+#ifdef ML_AMESOS_DEBUG
     cout << "Amesos (level " << Level__
 	 << ") : max (over solves) ||Ax - b|| = " << setiosflags(ios::scientific) << MaxError__ << endl;
 #endif

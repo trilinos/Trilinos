@@ -68,21 +68,59 @@ using namespace Anasazi;
 enum MLMatOp { A_MATRIX, I_MINUS_A_MATRIX, A_PLUS_AT_MATRIX,
 	       A_MINUS_AT_MATRIX, ITERATION_MATRIX };
 
-// ================================================ ====== ==== ==== == =
 
+// ================================================ ====== ==== ==== == =
+//! ML/Anasazi matrix for matrix-vector product.
+/*! Anasazi requires the input matrix to be derived from class
+ * Anasazi::Matrix<TYPE> (here TYPE is double).
+ *
+ * This class wraps a given Epetra_RowMatrix into an Anasazi matrix. As
+ * Epetra_RowMatrix can perform a multiplication by A, as well as by A^T, the
+ * class can perform the following operations:
+ * - A * x
+ * - (A + A^T) * x
+ * - (A - A^T) * x
+ * - (I - ML^{-1} A ) * x
+ * 
+ * Optionally, the matrix can be scaled by the diagonal.
+ *
+ */
 template <class TYPE> 
 class MLMat : public virtual Matrix<TYPE> {
+
 public:
-  MLMat(const Epetra_RowMatrix &, const MLMatOp MatOp, const bool UseDiagScaling,
+  //! Default constructor
+  /*! Constructs an ML/Anasazi matrix.
+    \param Matrix (In) : square matrix
+    \param MatOp (In) : MatOp is an enum MLMatOp, that can assume the
+      following values:
+      - A_MATRIX (compute the eigenvalues of A)
+      - I_MINUS_A_MATRIX (compute the eigenvalues of I-A
+      - I_PLUS_A_MATRIX (compute the eigenvalue of I+A)
+      - A_MINUS_A_MATRIX (compute the eigenvalue of A-A^T)
+      - A_PLUS_A_MATRIX (compute the eigenvalue of A+A^T)
+      - ITERATION_MATRIX (compute the eigenvalue of I-ML^{-1}A, 
+        where ML is an already build ML preconditioner.
+    \param UseDiagScaling (In) : if \c true, the matrix is scaled by the
+      diagonal
+    \param ml (In) : pointer to an already built ML hierarchy.
+   */
+  MLMat(const Epetra_RowMatrix & Matrix, const MLMatOp MatOp, 
+	const bool UseDiagScaling,
 	ML * ml = 0);
   ~MLMat();
+
+  //! Applies the flavor of ML/Anasazi matrix to Anasazi::Vector x, stores the result in y.
   ReturnType ApplyMatrix ( const MultiVec<TYPE>& x, 
 			   MultiVec<TYPE>& y ) const;
+
+  //! Sets matrix operation.
   void SetMatOp(const MLMatOp MatOp) 
   {
     MatOp_ = MatOp;
   }
 
+  //! Sets the diagonal scaling.
   void SetDiagScaling(const bool UseDiagScaling) 
   {
     UseDiagScaling_ = UseDiagScaling;
@@ -100,8 +138,6 @@ private:
   int NumMyRows_;
   ML * ml_;
 };
-
-// ================================================ ====== ==== ==== == =
 
 template <class TYPE>
 MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
@@ -278,7 +314,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   UseDiagScaling = List.get("eigen-analysis: use diagonal scaling", UseDiagScaling);
   bool isSymmetric = List.get("eigen-analysis: symmetric problem", false);
 
-  MLMatOp MatOp;
+  MLMatOp MatOp = A_MATRIX;
   string MatOpStr = "A";
   MatOpStr = List.get("eigen-analysis: matrix operation", MatOpStr);
   if( MatOpStr == "A" ) MatOp = A_MATRIX;
