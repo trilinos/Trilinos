@@ -399,6 +399,7 @@ usage:
   echo "   -no_parmetis"
   echo "   -no_nemesis"
   echo "   -no_chaco"
+  echo "   -yes_fortran"
   echo "The default is to run all methods and file formats."
   exit -1
 
