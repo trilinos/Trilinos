@@ -12,16 +12,16 @@
 // information used by block solver - can be user specified) to solve for
 // other sizes of systems. For example, one could set numrhs = 1 and block = 1,
 // to solve a single right-hand side system in the traditional way, or, set
-// numrhs = 1 and block > 1 to sove a single rhs-system with a block implementation. 
+// numrhs = 1 and block > 1 to solve a single rhs-system with a block implementation. 
 //
 // 
 #include "BelosConfigDefs.hpp"
-#include "AnasaziPetra.hpp"
+#include "BelosPetraInterface.hpp"
 #include "BelosBlockCG.hpp"
 #include "Trilinos_Util.h"
 #include "Util.h"
 #include "Ifpack_CrsIct.h"
-#include "AnasaziPrecondition.hpp"
+#include "Epetra_CrsMatrix.h"
 //
 //
 #ifdef EPETRA_MPI
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor that calls the petra ctor for a matrix
 	//
-	AnasaziPetraMat<double> Amat(A);
+	BelosPetraMat<double> Amat(A);
 	//
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor for the preconditioning object
 	//
-	AnasaziPetraPrecOp<double> EpetraOpPrec(prec);
+	BelosPetraPrec<double> EpetraOpPrec(prec);
 
 	//
 	//*****Construct random right-hand-sides *****
@@ -190,12 +190,12 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	//
-	// create a AnasaziPetraVec. Note that the decision to make a view or
+	// create a BelosPetraVec. Note that the decision to make a view or
 	// or copy is determined by the Petra constructor called by AnasaziPetraVec.
 	// This is possible because I pass in arguements needed by petra.
 	//
     	int stride=NumMyElements;
-	AnasaziPetraVec<double> rhs(Map, array, numrhs, stride);
+	BelosPetraVec<double> rhs(Map, array, numrhs, stride);
 	rhs.MvRandom();
 	//
 	// **********Print out information about problem*******************
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	
-	AnasaziPetraVec<double> iguess(Map, array, numrhs, stride);
+	BelosPetraVec<double> iguess(Map, array, numrhs, stride);
 	MyBlockCG.SetInitGuess( iguess );
 
 	MyBlockCG.SetDebugLevel(0);
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
 	}
 	MyBlockCG.TrueResiduals(verbose);
 
-	AnasaziPetraVec<double> solutions(Map, numrhs);
+	BelosPetraVec<double> solutions(Map, numrhs);
 	MyBlockCG.GetSolutions( solutions );
 
 	

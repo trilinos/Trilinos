@@ -17,11 +17,11 @@
 // NOTE:  No preconditioner is used for this test case. 
 //
 #include "BelosConfigDefs.hpp"
-#include "AnasaziPetra.hpp"
+#include "BelosPetraInterface.hpp"
 #include "BelosBlockCG.hpp"
 #include "Trilinos_Util.h"
 #include "Util.h"
-#include "AnasaziPrecondition.hpp"
+#include "Epetra_CrsMatrix.h"
 //
 //
 #ifdef EPETRA_MPI
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor that calls the petra ctor for a matrix
 	//
-	AnasaziPetraMat<double> Amat(A);
+	BelosPetraMat<double> Amat(A);
 	//
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
 	// This is possible because I pass in arguements needed by petra.
 	//
     	int stride=NumMyElements;
-	AnasaziPetraVec<double> rhs(Map, array, numrhs, stride);
+	BelosPetraVec<double> rhs(Map, array, numrhs, stride);
 	rhs.MvRandom();
 	//
 	// **********Print out information about problem*******************
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	
-	AnasaziPetraVec<double> iguess(Map, array, numrhs, stride);
+	BelosPetraVec<double> iguess(Map, array, numrhs, stride);
 	MyBlockCG.SetInitGuess( iguess );
 
 	MyBlockCG.SetDebugLevel(0);
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
 	}
 	MyBlockCG.TrueResiduals(verbose);
 
-	AnasaziPetraVec<double> solutions(Map, numrhs);
+	BelosPetraVec<double> solutions(Map, numrhs);
 	MyBlockCG.GetSolutions( solutions );
 
 	
