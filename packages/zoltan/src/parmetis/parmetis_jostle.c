@@ -744,6 +744,13 @@ static int Zoltan_ParMetis_Jostle(
     }
 
   if (get_geom_data){
+    /* Check for needed query functions. */
+    if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL) {
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, 
+        "ZOLTAN_NUM_GEOM_FN and ZOLTAN_GEOM_FN must be registered "
+        "for ParMETIS PartGeom methods.");
+    }
+
     /* Determine how many dimensions the data have */
     ndims = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &ierr);
     if (ierr){

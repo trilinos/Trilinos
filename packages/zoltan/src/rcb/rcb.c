@@ -337,7 +337,7 @@ static int rcb_fn(
 
   /* MPI data types and user functions */
 
-  MPI_Comm local_comm, tmp_comm;
+  MPI_Comm local_comm = NULL, tmp_comm = NULL;
   MPI_Op box_op;
   MPI_Datatype box_type;
   MPI_User_function Zoltan_RCB_box_merge;
@@ -907,7 +907,7 @@ End:
 
   /* Free memory allocated by the algorithm. */
 
-  if (!zz->Tflops_Special) MPI_Comm_free(&local_comm);
+  if (!zz->Tflops_Special && local_comm != NULL) MPI_Comm_free(&local_comm);
   MPI_Type_free(&box_type);
   MPI_Op_free(&box_op);
 
@@ -921,7 +921,7 @@ End:
     /* Free all memory used. */
     Zoltan_RCB_Free_Structure(zz);
   }
-  else {
+  else if (rcb != NULL) {
     /* Free only Dots and IDs; keep other structures. */
     ZOLTAN_FREE(&(rcb->Global_IDs));
     ZOLTAN_FREE(&(rcb->Local_IDs));

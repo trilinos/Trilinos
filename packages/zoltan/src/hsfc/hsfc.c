@@ -103,6 +103,13 @@ int Zoltan_HSFC(
    *num_export = *num_import = -1;            /* in case of early error exit */
    MPI_Op_create(&Zoltan_HSFC_mpi_sum_max_min, 1, &mpi_op); /* register user method */
 
+  /* Check for needed query functions. */
+  /* Check only for coordinates; Zoltan_Get_Obj_List will check for others. */
+  if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL) 
+    ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL,
+      "ZOLTAN_NUM_GEOM_FN and ZOLTAN_GEOM_FN must be registered "
+      "for HSFC method");
+
    /* allocate persistant storage required by box assign and point assign */
    Zoltan_HSFC_Free_Structure (zz);
    zz->LB.Data_Structure = (void*) ZOLTAN_MALLOC (sizeof (HSFC_Data));

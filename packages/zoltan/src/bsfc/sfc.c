@@ -213,6 +213,15 @@ int Zoltan_BSFC(
     subbins_per_bin = BINS_PER_PROC;
   }
 
+  /* Check for needed query functions. */
+  /* Check only for coordinates; Zoltan_Get_Obj_List will check for others. */
+  if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+      "ZOLTAN_NUM_GEOM_FN and ZOLTAN_GEOM_FN must be registered "
+      "for BSFC method");
+    return ZOLTAN_FATAL;
+  }
+
   /* Initializations in case of early exit. */
   *num_import = -1;  /* We don't compute the import map. */
   *num_export = -1;  

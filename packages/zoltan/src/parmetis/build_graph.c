@@ -56,18 +56,18 @@ int Zoltan_Build_Graph(
 {
   /* Local variables */
   int nedges, num_edges, cross_edges, max_edges;
-  int *nbors_proc, *plist;
+  int *nbors_proc, *plist = NULL;
   int nsend, nrecv, nself, num_border, max_proc_list_len;
   int i, i99, j, jj, k, ierr, packet_size, offset, tmp, flag;
   float *tmp_ewgts;
-  char *sendbuf, *recvbuf;
-  struct Hash_Node **hashtab, *hash_nodes;
+  char *sendbuf = NULL, *recvbuf = NULL;
+  struct Hash_Node **hashtab = NULL, *hash_nodes = NULL;
   struct Edge_Info *ptr;
   struct Edge_Info *proc_list;   /* Edge information; contains global IDs
-                                    of objects with off-processor nbors. */
+                                 of objects with off-processor nbors. */
   ZOLTAN_ID_PTR lid;
   ZOLTAN_ID_PTR nbors_global;
-  ZOLTAN_ID_PTR proc_list_nbor;         /* Global IDs of neighbors of proc_list
+  ZOLTAN_ID_PTR proc_list_nbor; /* Global IDs of neighbors of proc_list
                                        entries.  This array is separate from
                                        proc_list to prevent individual mallocs
                                        for nbor global IDs.   */

@@ -246,6 +246,15 @@ static int lb_oct_init(
 
   count = nsentags = nrectags = 0;
 
+  /* Check for needed query functions. */
+  /* Check only for coordinates; Zoltan_Oct_get_bounds will check for others. */
+  if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+      "ZOLTAN_NUM_GEOM_FN and ZOLTAN_GEOM_FN must be registered "
+      "for OCTPART method");
+    return ZOLTAN_FATAL;
+  }
+
   if(zz->LB.Data_Structure == NULL) {
     OCT_info = Zoltan_Oct_POct_init(zz, zz->Proc, oct_dim);
     Zoltan_Oct_set_method(OCT_info, oct_method);
@@ -417,7 +426,7 @@ static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag, int *c1
    */
   if(zz->Get_Num_Obj == NULL) {
     fprintf(stderr, "OCT %s\n\t%s\n", "Error in octree load balance:",
-	    "Must register Get_Num_Local_Objects function");
+	    "Must register ZOLTAN_NUM_OBJ_FN function");
     abort();
   }
   *c3 = num_objs = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);

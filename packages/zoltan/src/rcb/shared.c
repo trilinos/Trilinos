@@ -69,6 +69,16 @@ float *objs_wgt = NULL;               /* Array of object weights returned by
 int *parts = NULL;
 int ierr = ZOLTAN_OK;
 
+  /* Check for needed query functions. */
+  /* Check only for coordinates; Zoltan_Get_Obj_List will check for others. */
+  if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+      "ZOLTAN_NUM_GEOM_FN and ZOLTAN_GEOM_FN must be registered "
+      "for RCB and RIB methods.");
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
   /*
    * Compute the number of geometry fields per object.  This
    * value should be one, two or three, describing the x-, y-, and z-coords.

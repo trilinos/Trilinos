@@ -288,7 +288,7 @@ static int rib_fn(
 
   /* MPI data types and user functions */
 
-  MPI_Comm local_comm, tmp_comm;
+  MPI_Comm local_comm = NULL, tmp_comm = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
@@ -742,7 +742,7 @@ End:
 
   /* Free memory allocated by the algorithm.  */
 
-  if (!zz->Tflops_Special) MPI_Comm_free(&local_comm);
+  if (!zz->Tflops_Special && local_comm != NULL) MPI_Comm_free(&local_comm);
   ZOLTAN_FREE(&wgts);
   ZOLTAN_FREE(&dotmark);
   ZOLTAN_FREE(&value);
@@ -752,7 +752,7 @@ End:
     /* Free all memory used. */
     Zoltan_RIB_Free_Structure(zz);
   }
-  else {
+  else if (rib != NULL) {
     /* Free only Dots and IDs; keep other structures. */
     ZOLTAN_FREE(&(rib->Global_IDs));
     ZOLTAN_FREE(&(rib->Local_IDs));
