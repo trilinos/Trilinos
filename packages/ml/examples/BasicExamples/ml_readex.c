@@ -18,6 +18,8 @@
 /* date:         10/21/99                                                    */
 /*****************************************************************************/
 
+#if (defined(HAVE_ML_AZTEC) || defined(HAVE_ML_AZTECOO))
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -285,5 +287,30 @@ start_time = AZ_second();
 	
 }
 
+#else
 
+#include <stdlib.h>
+#include <stdio.h>
+#ifdef ML_MPI
+#include "mpi.h"
+#endif
 
+int main(int argc, char *argv[])
+{
+
+  /* still need to deal with MPI, some architecture don't like
+     an exit(0) without MPI_Finalize() */
+#ifdef ML_MPI
+  MPI_Init(&argc,&argv);
+#endif
+
+  puts("This test requires Aztec.");
+
+#ifdef ML_MPI
+  MPI_Finalize();
+#endif
+
+  return(0);
+}
+
+#endif
