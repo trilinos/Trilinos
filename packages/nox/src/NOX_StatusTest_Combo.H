@@ -35,7 +35,9 @@
 
 #include "NOX_StatusTest_Generic.H" // base class
 #include "NOX_Common.H"		// class data element (vector)
+
 namespace NOX {
+
 namespace StatusTest {
 
 /*!
@@ -95,14 +97,14 @@ public:
   /*!
     \brief Calls checkStatus(problem, NOX::StatusTest::Minimal)
    */
-  virtual StatusType checkStatus(const Solver::Generic& problem);
+  virtual StatusType checkStatus(const NOX::Solver::Generic& problem);
 
   /*!
     \brief Tests stopping criterion.
     
     See addOp() and orOp() for details.
   */
-  virtual StatusType checkStatusEfficiently(const Solver::Generic& problem, NOX::StatusTest::CheckType checkType);
+  virtual StatusType checkStatusEfficiently(const NOX::Solver::Generic& problem, NOX::StatusTest::CheckType checkType);
 
   virtual StatusType getStatus() const;
 
