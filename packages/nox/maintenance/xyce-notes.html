@@ -1,0 +1,491 @@
+<html>
+<body bgcolor="white">
+
+<H1>Notes on Configuring and Installing NOX for Xyce</H1>
+
+Jump to: 
+<A HREF="#ALPHA-OSF1">alpha-osf1</A>
+<A HREF="#FREEBSD">freebsd</A>
+<A HREF="#FREEBSD_GCC3">freebsd_gcc3</A>
+<A HREF="#LINUX">linux</A>
+<A HREF="#MINGW">mingw</A>
+<A HREF="#SGI10K">sgi10k</A>
+<A HREF="#SGIN32">sgin32</A>
+
+<A NAME="ALPHA-OSF1"><H3>Configuring for alpha-osf1 (electron)</H3></A>
+
+<P><EM>Configure NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/alpha-osf1/nox<BR>
+../../nox/configure \<BR>
+--with-cppflags="-D__USE_STD_IOSTREAM" \<BR>
+--prefix=/Net/Proj/Xyce/arch/alpha-osf1 \<BR>
+--enable-examples 
+</CODE>
+
+<P><EM>Compile and test NOX's simple example</EM></P>
+
+<CODE>
+make<BR>
+./example/rosenbrock
+</CODE>
+
+<P><EM>Compile and install NOX</EM></p>
+
+<CODE>
+make install
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/alpha-osf1/Xyce<BR>
+../../Xyce/configure 
+--with-archdir=/Net/Proj/Xyce/arch/alpha-osf1 
+--enable-nox
+</CODE>
+
+<P><EM>Clean Xyce executable and NonlinearSolverPKG</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/alpha-osf1/Xyce<BR>
+/bin/rm -rf src/Xyce<BR>
+cd src/NonlinearSolverPKG<BR>
+make clean<BR>
+cd ../..
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+make
+</CODE>
+
+<P><EM>Test Xyce</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/Xyce_Test/TestScripts<BR>
+./tvr_test_serial  /Net/Proj/Xyce/people/tgkolda/alpha-osf1/Xyce/src/Xyce
+</CODE>
+
+<P><EM>Create links for other versions on the same OS</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/arch/alpha-osf1_MPI/lib<BR>
+ln -s /Net/Proj/Xyce/arch/alpha-osf1/lib/libnox.a<BR>
+cd ../include<BR>
+ln -s /Net/Proj/Xyce/arch/alpha-osf1/include/nox
+</CODE>
+
+
+<A NAME="FREEBSD"><H3>Configuring for freebsd (goldstein)</H3></A>
+
+<P><EM>Configure NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/freebsd/nox<BR>
+../../nox/configure \<BR>
+LIBS="-L/usr/local/lib -L/Net/Proj/Xyce/arch/freebsd/lib/epetra" \<BR>
+--prefix=/Net/Proj/Xyce/arch/freebsd <BR>
+--enable-examples 
+</CODE>
+
+<P><EM>Compile and test NOX's simple example</EM></P>
+
+<CODE>
+make<BR>
+./example/rosenbrock
+</CODE>
+
+<P><EM>Compile and install NOX</EM></p>
+
+<CODE>
+make install
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/freebsd/Xyce<BR>
+../../Xyce/configure \<BR>
+--with-archdir=/Net/Proj/Xyce/arch/freebsd \<BR>
+--enable-nox
+</CODE>
+
+<P><EM>Clean Xyce executable and NonlinearSolverPKG</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/freebsd/Xyce<BR>
+/bin/rm -rf src/Xyce<BR>
+cd src/NonlinearSolverPKG<BR>
+make clean<BR>
+cd ../..
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+make
+</CODE>
+
+<P><EM>Test Xyce</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/Xyce_Test/TestScripts<BR>
+./tvr_test_serial  /Net/Proj/Xyce/people/tgkolda/freebsd/Xyce/src/Xyce
+</CODE>
+
+<P><EM>Create links for other versions on the same OS</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/arch/freebsd_MPI/lib<BR>
+ln -s /Net/Proj/Xyce/arch/freebsd/lib/libnox.a<BR>
+cd ../include<BR>
+ln -s /Net/Proj/Xyce/arch/freebsd/include/nox<BR>
+ln -s /Net/Proj/Xyce/arch/freebsd/include/nox<BR>
+cd /Net/Proj/Xyce/arch/freebsd_MPICH/lib<BR>
+ln -s /Net/Proj/Xyce/arch/freebsd/lib/libnox.a<BR>
+cd ../include<BR>
+ln -s /Net/Proj/Xyce/arch/freebsd/include/nox<BR>
+cd /Net/Proj/Xyce/arch/freebsd_MPILAM/lib<BR>
+ln -s /Net/Proj/Xyce/arch/freebsd/lib/libnox.a<BR>
+cd ../include<BR>
+ln -s /Net/Proj/Xyce/arch/freebsd/include/nox
+</CODE>
+
+<A NAME="FREEBSD_GCC3"><H3>Configuring for freebsd_gcc3 (goldstein)</H3></A>
+
+<P><EM>Configure NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/freebsd_gcc3/nox<BR>
+../../nox/configure CXX=g++30 \<BR>
+LIBS="-L/usr/local/lib -L/Net/Proj/Xyce/arch/freebsd_gcc3/lib/epetra" \<BR>
+--prefix=/Net/Proj/Xyce/arch/freebsd_gcc3 <BR>
+--enable-examples 
+</CODE>
+
+<P><EM>Compile and test NOX's simple example</EM></P>
+
+<CODE>
+make<BR>
+./example/rosenbrock
+</CODE>
+
+<P><EM>Compile and install NOX</EM></p>
+
+<CODE>
+make install
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/freebsd_gcc3/Xyce<BR>
+../../Xyce/configure \<BR>
+--with-archdir=/Net/Proj/Xyce/arch/freebsd_gcc3 \<BR>
+--enable-nox
+</CODE>
+
+<P><EM>Clean Xyce executable and NonlinearSolverPKG</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/freebsd_gcc3/Xyce<BR>
+/bin/rm -rf src/Xyce<BR>
+cd src/NonlinearSolverPKG<BR>
+make clean<BR>
+cd ../..
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+make
+</CODE>
+
+<P><EM>Test Xyce</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/Xyce_Test/TestScripts<BR>
+./tvr_test_serial  /Net/Proj/Xyce/people/tgkolda/freebsd_gcc3/Xyce/src/Xyce
+</CODE>
+
+
+
+<A NAME="LINUX"><H3>Configuring for linux (lifshitz)</H3></A>
+
+<P><EM>Configure NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/linux/nox<BR>
+../../nox/configure --prefix=/Net/Proj/Xyce/arch/linux --enable-examples 
+</CODE>
+
+<P><EM>Compile and test NOX's simple example</EM></P>
+
+<CODE>
+make<BR>
+./example/rosenbrock
+</CODE>
+
+<P><EM>Compile and install NOX</EM></p>
+
+<CODE>
+make install
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/linux/Xyce<BR>
+../../Xyce/configure \<BR>
+--with-archdir=/Net/Proj/Xyce/arch/linux \<BR>
+--enable-nox
+</CODE>
+
+<P><EM>Clean Xyce executable and NonlinearSolverPKG</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/linux/Xyce<BR>
+/bin/rm -rf src/Xyce<BR>
+cd src/NonlinearSolverPKG<BR>
+make clean<BR>
+cd ../..
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+make
+</CODE>
+
+<P><EM>Test Xyce</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/Xyce_Test/TestScripts<BR>
+./tvr_test_serial  /Net/Proj/Xyce/people/tgkolda/linux/Xyce/src/Xyce
+</CODE>
+
+<P><EM>Create links for other versions on the same OS</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/arch/linux_MPI/lib<BR>
+ln -s /Net/Proj/Xyce/arch/linux/lib/libnox.a<BR>
+cd ../include<BR>
+ln -s /Net/Proj/Xyce/arch/linux/include/nox<BR>
+cd /Net/Proj/Xyce/arch/linux_MPICH/lib<BR>
+ln -s /Net/Proj/Xyce/arch/linux/lib/libnox.a<BR>
+cd ../include<BR>
+ln -s /Net/Proj/Xyce/arch/linux/include/nox<BR>
+cd /Net/Proj/Xyce/arch/linux_MPILAM/lib<BR>
+ln -s /Net/Proj/Xyce/arch/linux/lib/libnox.a<BR>
+cd ../include<BR>
+ln -s /Net/Proj/Xyce/arch/linux/include/nox
+</CODE>
+
+<A NAME="MINGW"><H3>Configuring for mingw (goldstein)</H3></A>
+
+
+<P><EM>Configure NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/mingw/nox<BR>
+../../nox/configure \<BR>
+--host=i386-mingw32msvc \<BR>
+LDFLAGS="-L/Net/Proj/Xyce/arch/mingw/lib/epetra" \<BR>
+--prefix=/Net/Proj/Xyce/arch/mingw \<BR>
+ --enable-examples 
+</CODE>
+
+<P><EM>Compile and test NOX's simple example</EM></P>
+
+<CODE>
+make<BR>
+wine ./example/rosenbrock
+</CODE>
+
+<P><EM>Compile and install NOX</EM></p>
+
+<CODE>
+make install
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/mingw/Xyce<BR>
+../../Xyce/configure \<BR>
+--host=i386-mingw32msvc \<BR>
+--with-archdir=/Net/Proj/Xyce/arch/mingw \<BR>
+--enable-nox
+</CODE>
+
+<P><EM>Clean Xyce executable and NonlinearSolverPKG</EM></P>
+
+<CODE>
+/bin/rm -rf src/Xyce<BR>
+cd src/NonlinearSolverPKG<BR>
+make clean<BR>
+cd ../..
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+make
+</CODE>
+
+<P><EM>Test Xyce</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/Xyce_Test/TestScripts<BR>
+./tvr_test_serial  /Net/Proj/Xyce/people/tgkolda/mingw/Xyce/src/Xyce
+</CODE>
+
+<P><EM>Create links for other versions on the same OS</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/arch/mingw_MPI/lib
+ln -s /Net/Proj/Xyce/arch/mingw/lib/libnox.a
+cd ../include
+ln -s /Net/Proj/Xyce/arch/mingw/include/nox
+</CODE>
+-->
+
+<A NAME="SGI10K"><H3>Configuring for sgi10k (bardeen)</H3></A>
+
+<P><EM>Configure NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/sgi10k/nox<BR>
+../../nox/configure --prefix=/Net/Proj/Xyce/arch/sgi10k --enable-examples 
+</CODE>
+
+<P><EM>Compile and test NOX's simple example</EM></P>
+
+<CODE>
+make<BR>
+./example/rosenbrock
+</CODE>
+
+<P><EM>Compile and install NOX</EM></p>
+
+<CODE>
+make install
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/sgi10k/Xyce<BR>
+../../Xyce/configure \<BR>
+--with-archdir=/Net/Proj/Xyce/arch/sgi10k \<BR>
+--enable-nox
+</CODE>
+
+<P><EM>Clean Xyce executable and NonlinearSolverPKG</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/sgi10k/Xyce<BR>
+/bin/rm -rf src/Xyce<BR>
+cd src/NonlinearSolverPKG<BR>
+make clean<BR>
+cd ../..
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+make
+</CODE>
+
+<P><EM>Test Xyce</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/Xyce_Test/TestScripts<BR>
+./tvr_test_serial  /Net/Proj/Xyce/people/tgkolda/sgi10k/Xyce/src/Xyce
+</CODE>
+
+<P><EM>Create links for other versions on the same OS</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/arch/sgi10k_MPI/lib<BR>
+ln -s /Net/Proj/Xyce/arch/sgi10k/lib/libnox.a<BR>
+cd ../include<BR>
+ln -s /Net/Proj/Xyce/arch/sgi10k/include/nox
+</CODE>
+
+
+<A NAME="SGIN32"><H3>Configuring for sgin32 (bardeen)</H3></A>
+
+<P><EM>Configure NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/sgin32/nox<BR>
+../../nox/configure \<BR>
+CXX=CC CXXFLAGS="-LANG:std -LANG:ansi-for-init-scope=ON -n32" \<BR>
+F77=f77 FFLAGS=-n32 \<BR>
+--prefix=/Net/Proj/Xyce/arch/sgin32 \<BR>
+--enable-examples 
+</CODE>
+
+<P><EM>Compile and test NOX's simple example</EM></P>
+
+<CODE>
+make<BR>
+./example/rosenbrock
+</CODE>
+
+<P><EM>Compile and install NOX</EM></p>
+
+<CODE>
+make install
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/sgin32/Xyce<BR>
+../../Xyce/configure \<BR>
+--with-archdir=/Net/Proj/Xyce/arch/sgin32 --enable-sgin32 \<BR>
+--enable-nox
+</CODE>
+
+<P><EM>Clean Xyce executable and NonlinearSolverPKG</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/sgin32/Xyce<BR>
+/bin/rm -rf src/Xyce<BR>
+cd src/NonlinearSolverPKG<BR>
+make clean<BR>
+cd ../..
+</CODE>
+
+<P><EM>Compile Xyce with NOX</EM></P>
+
+<CODE>
+make
+</CODE>
+
+<P><EM>Test Xyce</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/people/tgkolda/Xyce_Test/TestScripts<BR>
+./tvr_test_serial  /Net/Proj/Xyce/people/tgkolda/sgin32/Xyce/src/Xyce
+</CODE>
+
+<P><EM>Create links for other versions on the same OS</EM></P>
+
+<CODE>
+cd /Net/Proj/Xyce/arch/sgin32_MPI/lib<BR>
+ln -s /Net/Proj/Xyce/arch/sgin32/lib/libnox.a<BR>
+cd ../include<BR>
+ln -s /Net/Proj/Xyce/arch/sgin32/include/nox
+</CODE>
+
+</html>
+
+
+
+
