@@ -27,7 +27,7 @@ namespace Solver{
   The parameters may specify the method:
 
    <ul>
-   <li> "Method" - Name of the solver method. Valid choices are
+   <li> "Nonlinear Solver" - Name of the solver method. Valid choices are
    <ul> 
    <li> "%Newton" (NOX::Solver::Newton) [Default]
    <li> "Nonlinear CG" (NOX::Solver::NonlinearCG)
