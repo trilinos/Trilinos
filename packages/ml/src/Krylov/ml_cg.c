@@ -336,6 +336,9 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       if (r  != NULL) free(r);
       if (p  != NULL) free(p);
       if (ap != NULL) free(ap);
+      data->ML_eigen_max = 1.;
+      data->ML_eigen_min = 1.;
+
       return 1;
    }
 
