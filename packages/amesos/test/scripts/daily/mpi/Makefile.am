@@ -71,6 +71,10 @@ endif
 
 if HAVE_AMESOS_KLU
 KLU_TEST = TestKlu
+TestKlu_SOURCES = $(srcdir)/TestKlu
+
+TestKlu$(EXEEXT): $(srcdir)/TestKlu
+	cp $(srcdir)/TestKlu TestKlu$(EXEEXT) 
 else
 KLU_TEST = 
 endif
@@ -110,10 +114,6 @@ endif
 # endif
 
 if HAVE_AMESOS_KLU
-TestKlu_SOURCES = $(srcdir)/TestKlu
-
-TestKlu$(EXEEXT): $(srcdir)/TestKlu
-	cp $(srcdir)/TestKlu TestKlu$(EXEEXT) 
 endif
 
 if HAVE_AMESOS_SUPERLUDIST

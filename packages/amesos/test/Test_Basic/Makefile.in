@@ -673,6 +673,9 @@ TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.c
 	cp  $(srcdir)/In_AmesosSuperlu.csh AmesosSuperlu.csh 
 	cp  $(srcdir)/In_AmesosScalapack.csh AmesosScalapack.csh 
 	cp  $(srcdir)/In_AmesosMumps.csh AmesosMumps.csh 
+	cp  $(srcdir)/In_AmesosKluSerial.csh AmesosKluSerial.csh 
+	cp  $(srcdir)/In_AmesosSuperluSerial.csh AmesosSuperluSerial.csh 
+	cp  $(srcdir)/In_AmesosUmfpackSerial.csh AmesosUmfpackSerial.csh 
 	cp  $(srcdir)/In_Suppressions Suppressions 
 
 Matrices: $(srcdir)/662_bus.rsa

@@ -28,13 +28,34 @@
 
 EXEEXT = .exe
 # Nothing should be done for a serial build
-if  HAVE_MPI
 
-noinst_PROGRAMS = TestAmesos
 
-TestAmesos_SOURCES = $(srcdir)/TestAmesos.sh
-TestAmesos$(EXEEXT):
-	cp $(srcdir)/TestAmesos.sh TestAmesos$(EXEEXT) 
+if HAVE_AMESOS_KLU
+KLU_TEST = TestKluSerial
+TestKluSerial_SOURCES = $(srcdir)/TestKluSerial
 
+TestKluSerial$(EXEEXT): $(srcdir)/TestKluSerial
+	cp $(srcdir)/TestKluSerial TestKluSerial$(EXEEXT) 
+else
+KLU_TEST = 
 endif
+
+if HAVE_AMESOS_UMFPACK
+UMFPACK_TEST = TestUmfpackSerial
+TestUmfpackSerial_SOURCES = $(srcdir)/TestUmfpackSerial
+
+TestUmfpackSerial$(EXEEXT): $(srcdir)/TestUmfpackSerial
+	cp $(srcdir)/TestUmfpackSerial TestUmfpackSerial$(EXEEXT) 
+else
+UMFPACK_TEST = 
+endif
+
+#TestAmesos_SOURCES = $(srcdir)/TestAmesos.sh
+#TestAmesos$(EXEEXT):
+#	cp $(srcdir)/TestAmesos.sh TestAmesos$(EXEEXT) 
+
+# noinst_PROGRAMS = TestAmesos $(UMFPACK_TEST) $(KLU_TEST)
+noinst_PROGRAMS = $(UMFPACK_TEST) $(KLU_TEST)
+
+
 

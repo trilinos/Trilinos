@@ -312,6 +312,7 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_SUPERLU_TRUE@SUPERLU_TEST = Test_Superlu
 @HAVE_AMESOS_KLU_FALSE@KLU_TEST = 
 @HAVE_AMESOS_KLU_TRUE@KLU_TEST = TestKlu
+@HAVE_AMESOS_KLU_TRUE@TestKlu_SOURCES = $(srcdir)/TestKlu
 @HAVE_AMESOS_SUPERLUDIST_FALSE@SUPERLUDIST_TEST = 
 @HAVE_AMESOS_SUPERLUDIST_TRUE@SUPERLUDIST_TEST = TestSuperlud
 @HAVE_AMESOS_MUMPS_FALSE@MUMPS_TEST = 
@@ -325,7 +326,6 @@ target_vendor = @target_vendor@
 # TestScalapack$(EXEEXT): $(srcdir)/TestScalapack
 # 	cp $(srcdir)/TestScalapack TestScalapack$(EXEEXT) 
 # endif
-@HAVE_AMESOS_KLU_TRUE@TestKlu_SOURCES = $(srcdir)/TestKlu
 @HAVE_AMESOS_SUPERLUDIST_TRUE@TestSuperlud_SOURCES = $(srcdir)/TestSuperlud
 @HAVE_AMESOS_MUMPS_TRUE@TestMumps_SOURCES = $(srcdir)/TestMumps
 all: all-am
@@ -519,14 +519,14 @@ uninstall-am: uninstall-info-am
 @HAVE_MPI_TRUE@TestExamples$(EXEEXT):
 @HAVE_MPI_TRUE@	cp $(srcdir)/TestExamples.sh TestExamples$(EXEEXT) 
 
+@HAVE_AMESOS_KLU_TRUE@TestKlu$(EXEEXT): $(srcdir)/TestKlu
+@HAVE_AMESOS_KLU_TRUE@	cp $(srcdir)/TestKlu TestKlu$(EXEEXT) 
+
 @HAVE_AMESOS_DSCPACK_TRUE@TestDscpack$(EXEEXT): $(srcdir)/TestDscpack
 @HAVE_AMESOS_DSCPACK_TRUE@	cp $(srcdir)/TestDscpack TestDscpack$(EXEEXT) 
 
 @HAVE_AMESOS_UMFPACK_TRUE@TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
 @HAVE_AMESOS_UMFPACK_TRUE@	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
-
-@HAVE_AMESOS_KLU_TRUE@TestKlu$(EXEEXT): $(srcdir)/TestKlu
-@HAVE_AMESOS_KLU_TRUE@	cp $(srcdir)/TestKlu TestKlu$(EXEEXT) 
 
 @HAVE_AMESOS_SUPERLUDIST_TRUE@TestSuperlud$(EXEEXT): $(srcdir)/TestSuperlud
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	cp $(srcdir)/TestSuperlud TestSuperlud$(EXEEXT) 
