@@ -104,14 +104,6 @@ class Ifpack_vIct: public Ifpack_Preconditioner {
   */
   int SetParameters(Teuchos::ParameterList& parameterlis);
 #endif
-  int SetParameter(const string Name, const int Value)
-  {
-    IFPACK_CHK_ERR(-1);
-  }
-  int SetParameter(const string Name, const double Value)
-  {
-    IFPACK_CHK_ERR(-1);
-  }
 
   const Epetra_RowMatrix& Matrix() const
   {
@@ -173,10 +165,11 @@ class Ifpack_vIct: public Ifpack_Preconditioner {
     the infinity-norm estimate of the condition number of the inverse of LDU.
   */
   double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
+                 const int MaxIters = 1550,
+                 const double Tol = 1e-9,
 		 Epetra_RowMatrix* Matrix = 0);
 
-  double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
-		 Epetra_RowMatrix* Matrix = 0) const
+  double Condest() const
   {
     return(Condest_);
   }
@@ -265,16 +258,6 @@ class Ifpack_vIct: public Ifpack_Preconditioner {
   //! Prints basic information on iostream. This function is used by operator<<.
   virtual ostream& Print(std::ostream& os) const;
 
-  int CondestMaxIters() const
-  {
-    return(CondestMaxIters_);
-  }
-
-  double CondestTol() const
-  {
-    return(CondestTol_);
-  }
-
   //! Returns the number of calls to Initialize().
   virtual int NumInitialize() const
   {
@@ -329,8 +312,6 @@ class Ifpack_vIct: public Ifpack_Preconditioner {
   Epetra_CrsMatrix* H_;
 
   double Condest_;
-  int CondestMaxIters_;
-  double CondestTol_;
   double Relax_;
   double Threshold_;
   double Athresh_;

@@ -63,8 +63,6 @@ Ifpack_gRiluk::Ifpack_gRiluk(Epetra_RowMatrix* Matrix) :
   Rthresh_(1.0),
   LevelOfFill_(0),
   Condest_(-1.0),
-  CondestMaxIters_(1550),
-  CondestTol_(1e-9),
   IsInitialized_(false),
   IsComputed_(false)
 {
@@ -109,9 +107,6 @@ int Ifpack_gRiluk::SetParameters(Teuchos::ParameterList& List)
   Athresh_ = List.get("fact: absolute threshold", Athresh_);
   Rthresh_ = List.get("fact: relative threshold", Rthresh_);
   LevelOfFill_ = List.get("fact: level-of-fill", LevelOfFill_);
-
-  CondestMaxIters_ = List.get("condest: max iters", CondestMaxIters_);
-  CondestTol_ = List.get("condest: tolerance", CondestTol_);
 
   // set label
   sprintf(Label_, "RILUK (fill=%d, relax=%f)",
@@ -330,7 +325,6 @@ int Ifpack_gRiluk::Initialize()
 int Ifpack_gRiluk::Compute() 
 {
 
-  // FIXME: free memory ??
   if (!IsInitialized()) 
     IFPACK_CHK_ERR(Initialize());
   IsComputed_ = false;
@@ -541,14 +535,14 @@ int Ifpack_gRiluk::Multiply(bool Trans, const Epetra_MultiVector& X,
 }
 //=============================================================================
 double Ifpack_gRiluk::Condest(const Ifpack_CondestType CT, 
-			     Epetra_RowMatrix* Matrix)
+                              const int MaxIters, const double Tol,
+                              Epetra_RowMatrix* Matrix)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
   if (Condest_ == -1.0)
-    Condest_ = Ifpack_Condest(*this, CT, CondestMaxIters_, CondestTol_,
-			      Matrix);
+    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
 
   return(Condest_);
 }

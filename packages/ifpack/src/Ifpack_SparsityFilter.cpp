@@ -135,8 +135,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 int Ifpack_SparsityFilter::
 ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
-  IFPACK_CHK_ERR(A_.ExtractDiagonalCopy(Diagonal));
-  return(0);
+  IFPACK_RETURN(A_.ExtractDiagonalCopy(Diagonal));
 }
 
 //==============================================================================
@@ -144,7 +143,6 @@ int Ifpack_SparsityFilter::
 Multiply(bool TransA, const Epetra_MultiVector& X, 
 	 Epetra_MultiVector& Y) const
 {
-  // FIXME: I do not work with funky Range and Domain maps
 
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors())
@@ -155,8 +153,6 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
   vector<int> Indices(MaxNumEntries_);
   vector<double> Values(MaxNumEntries_);
 
-  // NOTE: at this point the off-process elements are ignored.
-  // TO BE FIXED???
   for (int i = 0 ; i < A_.NumMyRows() ; ++i) {
 
     int Nnz;
@@ -195,13 +191,12 @@ Solve(bool Upper, bool Trans, bool UnitDiagonal,
 int Ifpack_SparsityFilter::
 Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  IFPACK_CHK_ERR(Multiply(false,X,Y));
-  return(0);
+  IFPACK_RETURN(Multiply(UseTranspose(),X,Y));
 }
 
 //==============================================================================
 int Ifpack_SparsityFilter::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  return(-1); // NOT IMPLEMENTED AT THIS STAGE
+  IFPACK_CHK_ERR(-98); 
 }

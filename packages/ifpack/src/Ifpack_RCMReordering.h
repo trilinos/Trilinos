@@ -11,34 +11,6 @@ class Ifpack_Graph;
 class Epetra_MultiVector;
 
 //! Ifpack_RCMReordering: reverse Cuthill-McKee reordering.
-/*!
-Ifpack_RCMReordering defined reverse Cuthill-McKee reordering
-for a given Ifpack_Graph. Note that the graph is used \e only
-by method Compute().
-
-A typical code reads as follows:
-\code
-#include "Ifpack_RCMReordering.h"
-#include "Ifpack_Graph.h"
-// A is an Epetra_RowMatrix pointer.
-// Need to create a graph (which is a simple wrapper)
-// This required include file Ifpack_Graph_Epetra_RowMatrix.h
-Ifpack_Graph_Epetra_RowMatrix Graph(A);
-
-// Construct the object
-Ifpack_RCMReordering Reorder(Graph);
-// Compute the reordering.
-IFPACK_CHK_ERR(Reorder.Compute());
-// Prints out some information
-cout << Reorder;
-\endcode
-
-\note TODO: In P() and Pinv(), support the case of equal vectors.
-
-\author Marzio Sala, SNL 9214
-
-\date Oct-04
-*/
 
 class Ifpack_RCMReordering : public Ifpack_Reordering {
 

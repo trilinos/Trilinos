@@ -27,12 +27,10 @@ To improve the performances of Ifpack_AdditiveSchwarz, some
 operations are not performed in the construction phase (like
 for instance the computation of the 1-norm and infinite-norm,
 of check whether the reordered matrix is lower/upper triangular or not).
-The user can enable these additional checks by calling the constructor
-with \c "LightWeight = false". 
 
-\author Marzio Sala, SNL 9214
+\author Marzio Sala, SNL 9214.
 
-\date Started in Oct-04, last update Oct-04
+\date Last modified: Oct-04.
 
 */
 
@@ -41,8 +39,7 @@ class Ifpack_ReorderFilter : public virtual Epetra_RowMatrix {
 public:
   // Constructor.
   Ifpack_ReorderFilter(Epetra_RowMatrix* Matrix,
-		       Ifpack_Reordering* Reordering,
-		       const bool LightWeight = true);
+		       Ifpack_Reordering* Reordering);
 
   //! Copy constructor.
   Ifpack_ReorderFilter(const Ifpack_ReorderFilter& RHS);
@@ -75,7 +72,7 @@ public:
   virtual int Multiply(bool TransA, const Epetra_MultiVector& X, 
 		       Epetra_MultiVector& Y) const;
 
-  //! FIXME: NOT YET IMPLEMENTED.
+  //! Solve, not implemented.
   virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, 
 		    const Epetra_MultiVector& X,
 		    Epetra_MultiVector& Y) const;
@@ -84,33 +81,38 @@ public:
   virtual int Apply(const Epetra_MultiVector& X,
 		    Epetra_MultiVector& Y) const;
 
-  //! Applies the inverse of \c this operator.
+  //! Applies the inverse of \c this operator (not implemented).
   virtual int ApplyInverse(const Epetra_MultiVector& X,
 			   Epetra_MultiVector& Y) const
   {
     return(-1);
   }
 
+  //! Inverse of row sums (not implemented).
   virtual int InvRowSums(Epetra_Vector& x) const
   {
     return(-1);
   }
 
+  //! Left scale of the matrix (not implemented).
   virtual int LeftScale(const Epetra_Vector& x)
   {
     return(-1);
   }
 
+  //! Inverse of column sums (not implemented).
   virtual int InvColSums(Epetra_Vector& x) const
   {
     return(-1);
   }
 
+  //! Right scale of the matrix (not implemented).
   virtual int RightScale(const Epetra_Vector& x) 
   {
     return(-1);
   }
 
+  //! Returns \c true is the matrix called FillComplete().
   virtual bool Filled() const
   {
     return(Matrix().Filled());
@@ -254,12 +256,12 @@ public:
   }
 
   //! Returns a reference to the internally stored pointer to Epetra_RowMatrix.
-  Epetra_RowMatrix& Matrix() const {
+  inline Epetra_RowMatrix& Matrix() const {
     return(*A_);
   }
 
   //! Returns a reference to the internally stored pointer to Ifpack_Reordering..
-  Ifpack_Reordering& Reordering() const {
+  inline Ifpack_Reordering& Reordering() const {
     return(*Reordering_);
   }
 
@@ -274,10 +276,6 @@ private:
   int NumMyRows_;
   //! Maximum number of entries in A_.
   int MaxNumEntries_;
-  //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable vector<int> Indices_;
-  //! Used in ExtractMyRowCopy, to avoid allocation each time.
-  mutable vector<double> Values_;
   //! Label for \c this object.
   char Label_[80];
 

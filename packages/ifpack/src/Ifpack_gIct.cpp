@@ -51,8 +51,6 @@ Ifpack_gIct::Ifpack_gIct(Epetra_RowMatrix* A) :
   IsInitialized_(false),
   IsComputed_(false),
   Condest_(-1.0),
-  CondestMaxIters_(1550),
-  CondestTol_(1e-9),
   Athresh_(0.0),
   Rthresh_(1.0),
   Droptol_(0.0),
@@ -102,9 +100,6 @@ int Ifpack_gIct::SetParameters(Teuchos::ParameterList& List)
   Athresh_ = List.get("fact: absolute threshold", Athresh_);
   Rthresh_ = List.get("fact: relative threshold", Rthresh_);
   Droptol_ = List.get("fact: drop tolerance", Droptol_);
-
-  CondestMaxIters_ = List.get("condest: max iters", CondestMaxIters_);
-  CondestTol_ = List.get("condest: tolerance", CondestTol_);
 
   // set label
   sprintf(Label_, "graph-based ICT (fill=%d, drop=%f)",
@@ -343,14 +338,14 @@ int Ifpack_gIct::Apply(const Epetra_MultiVector& X,
 }
 //=============================================================================
 double Ifpack_gIct::Condest(const Ifpack_CondestType CT, 
-			   Epetra_RowMatrix* Matrix)
+                            const int MaxIters, const double Tol,
+                            Epetra_RowMatrix* Matrix)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
   if (Condest_ == -1.0)
-    Condest_ = Ifpack_Condest(*this, CT, CondestMaxIters_, CondestTol_,
-			      Matrix);
+    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
 
   return(Condest_);
 }

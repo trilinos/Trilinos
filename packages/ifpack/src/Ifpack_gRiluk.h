@@ -191,15 +191,6 @@ class Ifpack_gRiluk: public Ifpack_Preconditioner {
   */
   int SetParameters(Teuchos::ParameterList& parameterlist);
 #endif
-  int SetParameter(const string Name, const int Value)
-  {
-    return(-1);
-  }
-
-  int SetParameter(const string Name, const double Value)
-  {
-    return(-1);
-  }
 
   //! Compute ILU factors L and U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
   /*! This function computes the RILU(k) factors L and U using the current:
@@ -242,10 +233,11 @@ class Ifpack_gRiluk: public Ifpack_Preconditioner {
   int Solve(bool Trans, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
+                 const int MaxIters = 1550,
+                 const double Tol = 1e-9,
 		 Epetra_RowMatrix* Matrix = 0);
 
-  double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
-		 Epetra_RowMatrix* Matrix = 0) const
+  double Condest() const
   {
     return(Condest_);
   }
@@ -451,8 +443,6 @@ private:
   double Athresh_;
   double Rthresh_;
   double Condest_;
-  int CondestMaxIters_;
-  double CondestTol_;
   int LevelOfFill_;
 
   bool IsInitialized_;

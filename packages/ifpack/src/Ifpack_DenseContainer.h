@@ -7,7 +7,7 @@
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_IntSerialDenseVector.h"
-class Epetra_RowMatrix;
+#include "Epetra_RowMatrix.h"
 
 //! Ifpack_DenseContainer: a class to define containers for dense matrices.
 /*!
@@ -303,11 +303,19 @@ int Ifpack_DenseContainer::Initialize()
   
   IsInitialized_ = false;
 
-  IFPACK_CHK_ERR(LHS_.Reshape(NumRows_,NumVectors_));
-  IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors_));
-  IFPACK_CHK_ERR(ID_.Reshape(NumRows_,NumVectors_));
+  if (Matrix_.N() == 0) {
+    IFPACK_CHK_ERR(LHS_.Shape(NumRows_,NumVectors_));
+    IFPACK_CHK_ERR(RHS_.Shape(NumRows_,NumVectors_));
+    IFPACK_CHK_ERR(ID_.Shape(NumRows_,NumVectors_));
+    IFPACK_CHK_ERR(Matrix_.Shape(NumRows_,NumRows_));
+  }
+  else {
+    IFPACK_CHK_ERR(LHS_.Reshape(NumRows_,NumVectors_));
+    IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors_));
+    IFPACK_CHK_ERR(ID_.Reshape(NumRows_,NumVectors_));
+    IFPACK_CHK_ERR(Matrix_.Reshape(NumRows_,NumRows_));
+  }
 
-  Matrix_.Reshape(NumRows_,NumRows_);
   // zero out matrix elements
   for (int i = 0 ; i < NumRows_ ; ++i)
     for (int j = 0 ; j < NumRows_ ; ++j)
@@ -470,10 +478,10 @@ int Ifpack_DenseContainer::Apply()
     IFPACK_CHK_ERR(-1);
 
   if (KeepNonFactoredMatrix_) {
-    IFPACK_CHK_ERR(LHS_.Multiply('N','N', 1.0,NonFactoredMatrix_,RHS_,0.0));
+    IFPACK_CHK_ERR(RHS_.Multiply('N','N', 1.0,NonFactoredMatrix_,LHS_,0.0));
   }
   else
-    IFPACK_CHK_ERR(LHS_.Multiply('N','N', 1.0,Matrix_,RHS_,0.0));
+    IFPACK_CHK_ERR(RHS_.Multiply('N','N', 1.0,Matrix_,LHS_,0.0));
   return(0);
 }
 

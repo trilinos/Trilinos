@@ -1,14 +1,8 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack.h"
 #include "Ifpack_Preconditioner.h"
-#include "Ifpack_Jacobi.h"
-#include "Ifpack_GaussSeidel.h"
-#include "Ifpack_SymGaussSeidel.h"
-#include "Ifpack_SOR.h"
-#include "Ifpack_SSOR.h"
-#include "Ifpack_BlockJacobi.h"
-#include "Ifpack_BlockGaussSeidel.h"
-#include "Ifpack_BlockSymGaussSeidel.h"
+#include "Ifpack_PointRelaxation.h"
+#include "Ifpack_BlockRelaxation.h"
 #include "Ifpack_gIct.h"
 #include "Ifpack_vIct.h"
 #include "Ifpack_gRiluk.h"
@@ -25,45 +19,17 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
                                       const int Overlap)
 {
 
-  if (PrecType == "Jacobi") {
-    return(new Ifpack_AdditiveSchwarz<Ifpack_Jacobi>(Matrix, Overlap));
+  if (PrecType == "point relaxation") {
+    return(new Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>(Matrix, Overlap));
   }
-  else if (PrecType == "Gauss-Seidel") {
-    return(new Ifpack_AdditiveSchwarz<Ifpack_GaussSeidel>(Matrix,Overlap));
-  }
-  else if (PrecType == "symmetric Gauss-Seidel") {
-    return(new Ifpack_AdditiveSchwarz<Ifpack_SymGaussSeidel>(Matrix,Overlap));
-  }
-  if (PrecType == "SOR") {
-    return(new Ifpack_AdditiveSchwarz<Ifpack_SOR>(Matrix, Overlap));
-  }
-  if (PrecType == "SSOR") {
-    return(new Ifpack_AdditiveSchwarz<Ifpack_SSOR>(Matrix, Overlap));
-  }
-  else if (PrecType == "block Jacobi") {
+  else if (PrecType == "block relaxation") {
     return(new Ifpack_AdditiveSchwarz<
-           Ifpack_BlockJacobi<Ifpack_DenseContainer> >(Matrix,Overlap));
-  }
-  else if (PrecType == "block Gauss-Seidel") {
-    return(new Ifpack_AdditiveSchwarz<
-           Ifpack_BlockGaussSeidel<Ifpack_DenseContainer> >(Matrix,Overlap));
-  }
-  else if (PrecType == "block symmetric Gauss-Seidel") {
-    return(new Ifpack_AdditiveSchwarz<
-           Ifpack_BlockSymGaussSeidel<Ifpack_DenseContainer> >(Matrix,Overlap));
+            Ifpack_BlockRelaxation<Ifpack_DenseContainer> >(Matrix,Overlap));
   }
 #ifdef HAVE_IFPACK_AMESOS
-  else if (PrecType == "block Jacobi (Amesos)") {
+  else if (PrecType == "block relaxation (Amesos)") {
     return(new Ifpack_AdditiveSchwarz<
-            Ifpack_BlockJacobi<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
-  }
-  else if (PrecType == "block Gauss-Seidel (Amesos)") {
-    return(new Ifpack_AdditiveSchwarz<
-           Ifpack_BlockGaussSeidel<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
-  }
-  else if (PrecType == "block symmetric Gauss-Seidel (Amesos)") {
-    return(new Ifpack_AdditiveSchwarz<
-           Ifpack_BlockSymGaussSeidel<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
+            Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
   }
   else if (PrecType == "Amesos") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(Matrix,Overlap));
@@ -77,7 +43,7 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
     return(new Ifpack_AdditiveSchwarz<Ifpack_vIct>(Matrix,Overlap));
 
   } 
-  else if (PrecType == "gILUK") {
+  else if (PrecType == "gRILUK") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_gRiluk>(Matrix,Overlap));
   }
   else

@@ -11,27 +11,31 @@ class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_Import;
 
-//! Ifpack_OverlappingPartitioner: A class to create overlapping local partitions.
+/* \brief Ifpack_OverlappingPartitioner: A class to create overlapping
+    partitions of a local graph.
 
-/*!
-Class Ifpack_OverlappingPartitioner enables the construction of
-overlapping partitions. This class extends the non-overlapping
-partitions created by a Ifpack_Partitioner derived class, by
-the required amount of overlap.
+Class Ifpack_OverlappingPartitioner enables the extension of 
+non-overlapping partitions to an arbitrary value of overlap.
+Note that overlap refers to the overlap among \e local parts,
+and not the overlap among the processes.
 
 Supported parameters are:
+- \c "partitioner: local parts": the required number of parts;
 - \c "partitioner: overlap": the required amount of overlap is set in 
   parameter. Default = 0 (integer).
-- \c "partitioner: local parts": the number of local partition to compute
-  (int, default = 1).
-- \c "partitioner: print level": the print level, from 0 (silent)
-  to 10 (verbose). (int, default = 0).
+- \c "partitioner: verbose": if \c true, information are reported on
+  cout. Nothing is reported otherwise.
 
-We note that this overlap refers to \e local graph only. This means
-the non-overlapping partitions are extended in the \c local graph,
-not in the non-local components.
+This class is a semi-virtual class, that contains the basic utilities
+for derived classes Ifpack_LinearPartitioner, Ifpack_GreedyPartitioner,
+Ifpack_METISPartitioner, and Ifpack_EquationPartitioner. Graphs in
+input to one of these classes are supposed to contain no singletons.
+Usually, this means that the graph is derived from an Epetra_RowMatrix,
+that has been filtered using Ifpack_SingletonFilter.
 
-\date Sep-04
+\author Marzio Sala, SNL 9214.
+
+\date Last update: Oct-04.
 */  
 class Ifpack_OverlappingPartitioner : public Ifpack_Partitioner {
 
@@ -136,52 +140,29 @@ protected:
    
   //! Returns the number of local rows.
   const int NumMyRows() const;
-
   //! Returns the number of local nonzero elements.
   const int NumMyNonzeros() const;
-
   //! Returns the number of local rows.
   const int NumGlobalRows() const;
-
   //! Returns the max number of local entries in a row.
   int MaxNumEntries() const;
-    
   //! Returns the communicator object of Graph.
   const Epetra_Comm& Comm() const;
-
   //! Number of local subgraphs
   int NumLocalParts_;
- 
   //! Partition_[i] contains the ID of non-overlapping part it belongs to
   vector<int> Partition_; 
-
   //! Parts_[i][j] is the ID of the j-th row contained in the (overlapping) 
   // partition i
   vector<vector<int> > Parts_;
-  
   //! Reference to the graph to be partitioned
   const Ifpack_Graph* Graph_;
-
   //! Overlapping level.
   int OverlappingLevel_;
-
-  //! true if the partition has been computed with no errors
+  //! If \c true,  the graph has been successfully partitioned.
   bool IsComputed_;
-
-  //! Sets the output level.
-  /*! Sets the output level as follows:
-   *  - 0 no output
-   *  - 1 warnings
-   *  - 2 normal output
-   *  - 3 print information about input parameter
-   *  - 5 print timing
-   *  - 6 print memory allocation information
-   *  - 9 verbose
-   *  - 10 verbose on all processors
-   */
-  int verbose_;
-  string PrintMsg_;
-  string ErrorMsg_;
+  //! If \c true, information are reported on cout.
+  bool verbose_;
 
 }; // class Ifpack_Partitioner
 

@@ -162,18 +162,6 @@ public:
    */   
   virtual int SetParameters(Teuchos::ParameterList& List);
 
-  //! Sets integer parameters.
-  virtual int SetParameter(const string Name, const int value)
-  {
-    return(0);
-  }
-
-  //! Sets double parameters.
-  virtual int SetParameter(const string Name, const double value)
-  {
-    return(0);
-  }
-
   //@}
 
   //@{ \name Query methods.
@@ -186,11 +174,12 @@ public:
 
   //! Returns the estimated condition number, computes it if necessary.
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
+                         const int MaxIters = 1550,
+                         const double Tol = 1e-9,
 			 Epetra_RowMatrix* Matrix= 0);
   
   //! Returns the estimated condition number, never computes it.
-  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
-			 Epetra_RowMatrix* Matrix = 0) const
+  virtual double Condest() const
   {
     return(Condest_);
   }
@@ -247,18 +236,6 @@ public:
   virtual const Teuchos::ParameterList& List() const 
   {
     return(List_);
-  }
-
-  //! Returns the maximum numer of iterations that will be used to estimate the condition number.
-  virtual int CondestMaxIters() const
-  {
-    return(CondestMaxIters_);
-  }
-
-  //! Returns the tolerance that will be used to estimate the condition number.
-  virtual double CondestTol() const
-  {
-    return(CondestTol_);
   }
 
   //! Prints on ostream basic information about \c this object.
@@ -385,11 +362,6 @@ private:
 
   //! Contains the estimated condition number.
   double Condest_;
-  //! Maximum number of iterations for condest
-  int CondestMaxIters_;
-  //! Tolerance for condest
-  double CondestTol_;
-
 };
 
 #endif // HAVE_IFPACK_AMESOS && HAVE_IFPAC_TEUCHOS

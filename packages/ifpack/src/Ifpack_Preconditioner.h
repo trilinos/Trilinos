@@ -51,23 +51,23 @@ precision, means that any results involving \f$B\f$ or \f$B^{-1}\f$ may be
 meaningless.
 
 Method Compute() can be use to estimate of the condition number.
-Compute() requires one parameter, of type Ifpack_CondestType, and
-defaulted to Ifpack_Cheap. Other values are Ifpack_CG and
-Ifpack_GMRES.
+Compute() requires one parameter, of type Ifpack_CondestType
+(default value is Ifpack_Cheap; other valid choices are Ifpack_CG and
+Ifpack_GMRES).
 
 While Ifpack_CG and Ifpack_GMRES construct and AztecOO solver, and
 use methods AZ_cg_condnum and AZ_gmres_condnum to evaluate an
 accurate (but very expensive) estimate of the condition number, 
 Ifpack_Cheap computes \f$\|(P)^{-1}e\|_\infty\f$, which is
 only a very rude estimation of the actual condition number. Note that
-this estimated number can be less than 1.0. 
+this estimated number can result < 1.0. 
 However, this approach has the following advantages:
 - since finding \f$z\f$ such that \f$P z = y\f$
 is a basic kernel for applying the preconditioner, computing this
-estimate of \f$cond_\infty(LU)\f$ is performed by setting \f$y = e\f$, calling
+estimate of \f$cond_\infty(P^{-1})\f$ is performed by setting \f$y = e\f$, calling
 the solve kernel to compute \f$z\f$ and then
 computing \f$\|z\|_\infty\f$;
-- the only cost is the one application of the preconditioner.
+- the only cost is one application of the preconditioner.
 
 If this estimate is very large, the application of the computed 
 preconditioner may generate large numerical errors. Hence, the user
@@ -102,12 +102,6 @@ public:
   virtual int SetParameters(Teuchos::ParameterList& List) = 0;
 #endif
 
-  //! Sets integer parameters `Name' for the preconditioner.
-  virtual int SetParameter(const string Name, const int Value) = 0;
-
-  //! Sets double parameters `Name' for the preconditioner.
-  virtual int SetParameter(const string Name, const double Value) = 0;
-
   //! Computes all it is necessary to initialize the preconditioner.
   virtual int Initialize() = 0;
 
@@ -122,11 +116,12 @@ public:
 
   //! Returns the condition number estimate, computes it if necessary.
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
+                         const int MaxIters = 1550,
+                         const double Tol = 1e-9,
 			 Epetra_RowMatrix* Matrix = 0) = 0;
 
   //! Returns the condition number estimate, never computes it.
-  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
-			 Epetra_RowMatrix* Matrix = 0) const = 0;
+  virtual double Condest() const = 0;
 
   //! Applies the preconditioner to vector X, returns the result in Y.
   virtual int ApplyInverse(const Epetra_MultiVector& X,

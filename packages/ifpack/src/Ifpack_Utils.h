@@ -12,11 +12,11 @@ class Epetra_MultiVector;
 void Ifpack_BreakForDebugger(Epetra_Comm& Comm);
 
 //! Creates an overlapping Epetra_CrsMatrix. Returns 0 if OverlappingLevel is 0.
-Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(Epetra_RowMatrix* Matrix,
+Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(const Epetra_RowMatrix* Matrix,
 						    const int OverlappingLevel);
 
 //! Creates an overlapping Epetra_CrsGraph. Returns 0 if OverlappingLevel is 0.
-Epetra_CrsGraph* Ifpack_CreateOverlappingCrsMatrix(Epetra_CrsGraph* Graph,
+Epetra_CrsGraph* Ifpack_CreateOverlappingCrsMatrix(const Epetra_CrsGraph* Graph,
 						   const int OverlappingLevel);
 
 //! Convertes an integer to string.

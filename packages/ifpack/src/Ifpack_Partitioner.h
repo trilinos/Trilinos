@@ -10,61 +10,90 @@ class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_Import;
 
-//! Ifpack_Partitioner: A class to decompose overlapping and non-overlapping Ifpack_Graph's.
+//! Ifpack_Partitioner: A class to decompose local Ifpack_Graph's.
 
 /*!
  
-  FIXME:
-
-  Class Ifpack_Partitioner enables the decomposition of Ifpack_Graph's.
-  The constructor of Ifpack_Partitioner requires one graph (\c G).
-  Only the \e local graph will be partitioned, and all intra-process
-  edges will be ignored.
+  Class Ifpack_Partitioner enables the decomposition of a local
+  Ifpack_Graph's. It is supposed that the graph refers to
+  a localized matrix (that is, a matrix that has been filtered
+  through Ifpack_LocalFilter).
   
-  Ifpack_Partitioner operates as follows:
-  - \c G will be decomposed into the specified number of parts. 
-    Only the local subgraph of G is partitioned. The overloaded operator
-    (int i) can be used to extract the local partition ID of local row i.
-    Partitions are non-overlapping (in graph sense), as each row of \c G
-    is included in exactly one partition.
-  - If required, the non-overlapping partitions can be extended, so that
-    they share an overlap (\c OverlapLevel). Overlapping partitions
-    are created from the same graph \c G, hence the overlap will be
-    created in the local graph only. Overlapping partitions are
-    created by derived class Ifpack_OverlappingPartitioner.
-
-  Ifpack_Partitioner requires an Ifpack_Graph object. Concrete classes
-  are provided, to create Ifpack_Graph's as light-weight conversions
-  from Epetra_CrsGraph's, and Epetra_CrsMatrix's.
+  The overloaded operator (int i) can be used to extract the local partition
+  ID of local row i.  
   
-  An example of use is a follows:  
+  The partitions created by Ifpack_Partitioner derived clased 
+  are non-overlapping in graph sense. This means that each row
+  (or, more approriately, vertex)
+  of \c G is assigned to exactly one partition.
+
+  Partitioner can be extended using the functionalities of class
+  Ifpack_OverlappingPartitioner (itself derived from Ifpack_Partitioner.
+  This class extends the non-overlapping partitions by the required
+  amount of overlap, considering local nodes only (that is, this
+  overlap do \e not modify the overlap among the processes).
+
+  Ifpack_Partitioner is a pure virtual class. Concrete implementations
+  are:
+  - Ifpack_LinearPartitioner, which allows the decomposition of the
+    rows of the graph in simple consecutive chunks;
+  - Ifpack_METISPartitioner, which calls METIS to decompose the graph
+    (this requires the configuration option --enable-ifpack-metis);
+  - Ifpack_GreedyPartitioner, a simple greedy algorith;
+  - Ifpack_EquationPartitioner, which creates \c NumPDEEqns parts
+    (where \c NumPDEEqns is the number of equations in the linear
+    system). It is supposed that all the equations referring to the 
+    same grid node are ordered consecutively. Besides, the 
+    number of equations per node must be constant in the domain.
+
+  Generically, a constructor requires an Ifpack_Graph object. 
+  Ifpack_Graph is a pure virtual class. Concrete implentations are:
+  - Ifpack_Graph_Epetra_CrsGraph, a light-weight class to wrap 
+    Epetra_CrsGraph objects as Ifpack_Graph objects;
+  - Ifpack_Graph_Epetra_RowMatrix, a light-weight class to
+    wrap Epetra_RowMatrix objects as Ifpack_Graph objects.
+  
+  <P>An example of use is an Ifpack_Partitioner derived class is as follows:  
   \code
 #include "Ifpack_Partitioner.h"
+#include "Ifpack_LinearPartitioner.h"
 #include "Ifpack_Graph.h"
-#include "Ifpack_GraphEpetraCrs.h"
+#include "Ifpack_Graph_Epetra_CrsGraph.h"
 ...
 Epetra_CrsMatrix* A;         // A is filled
-Ifpack_Graph Graph = new Ifpack_GraphEpetraCrs(A);
+// create the wrapper from Epetra_CrsGraph
+Ifpack_Graph Graph = new Ifpack_Graph_Epetra_CrsGraph(A);
 
 // we aim to create non-overlapping partitions only
 Ifpack_Partitioner Partitioner(Graph);
 
-Teuchos::ParameterList List;
-List.set("partitioner: type", "linear");     // linear decomposition
-List.set("partitioner: overlap", 0);   // no overlap (default)
+Ifpack_Partitioner* Partitioner;
+Partitioner = new Ifpack_Graph_Epetra_CrsGraph(&A);
 
-Partitioner.Create(List);              // decompose the graph;
-delete Graph;                          // now Graph can be delete
+// we want 16 local parts
+List.set("partitioner: local parts", 16);
+// and an overlap of 0 among the local parts (default option)
+List.set("partitioner: overlap", 0);
 
-int NumParts = Partitioner.NumParts(); // parts actually created
+// decompose the graph
+Partitioner.Create(List);
 
-for (int i = 0 ; i < NumParts ; ++i) { // gets the rows in each part
+// now Graph can be deleted, as Partitioner contains all the
+// necessary information to use the partitions
+delete Graph;
+
+// we can get the number of parts actually created...
+int NumParts = Partitioner.NumParts();
+
+// ... and the number of rows in each of them
+for (int i = 0 ; i < NumParts ; ++i) {
   cout << "rows in " << i << "=" << Partitioner.RowsInPart(i);
 }  
 
-// get the partition ID for each local row
+// .. and, for non-overlapping partitions only, the partition ID 
+// for each local row simply using:
 for (int i = 0 ; i < A->NumMyRows() ; ++i)
-cout << "Partition[" << i <<"] = " << Partitioner(i) << endl;
+  cout << "Partition[" << i <<"] = " << Partitioner(i) << endl;
 
 \endcode
   
@@ -79,13 +108,13 @@ for (int i = 0 ; i < NumParts ; ++i) {
 }  
 \endcode
   
-Ifpack_Partitioner is used to create the subblocks in Ifpack_BlockJacobi,
-Ifpack_OverlappingBlockJacobi, Ifpack_GaussSeidel, 
-Ifpack_OverlappingGaussSeidel. 
+Ifpack_Partitioner is used to create the subblocks in 
+Ifpack_BlockJacobi, Ifpack_BlockGaussSeidel, and 
+Ifpack_BlockSymGaussSeidel.
 
-\note Partition ID's are local with respect to the numbering of \c G.
+\author Marzio Sala, SNL 9214.
 
-\date Sep-04
+\date Last update: Oct-04.
 */  
 class Ifpack_Partitioner {
 
@@ -116,8 +145,10 @@ public:
   //! Returns the number of rows contained in specified partition.
   virtual int NumRowsInPart(const int Part) const = 0;
     
+  //! Copies into List the rows in the (overlapping) partition Part.
   virtual int RowsInPart(const int Part, int* List) const = 0;
   
+  //! Returns a pointer to the integer vector containing the non-overlapping partition ID of each local row.
   virtual const int* NonOverlappingPartition() const = 0;
 
   //! Sets all the parameters for the partitioner.

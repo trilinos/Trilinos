@@ -29,7 +29,7 @@
 
 #include "Ifpack_ConfigDefs.h"
 
-	string Ifpack_Version() { 
-		return("Ifpack Version 2.2d - 05/13/2004"); 
-	};
+string Ifpack_Version() { 
+  return("Ifpack Version 2.3 - 10/15/2004"); 
+};
 

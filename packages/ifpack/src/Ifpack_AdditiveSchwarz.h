@@ -91,7 +91,8 @@ public:
   Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
 			 int OverlapLevel = 0);
   
-  //@{ \name Destructor.
+  Ifpack_AdditiveSchwarz(const Ifpack_AdditiveSchwarz& RHS);
+
   //! Destructor
   virtual ~Ifpack_AdditiveSchwarz();
   //@}
@@ -199,18 +200,6 @@ public:
    */
   virtual int SetParameters(Teuchos::ParameterList& List);
 
-  //! Sets an integer parameters. Not implemented.
-  virtual int SetParameter(const string Name, const int Value)
-  {
-    return(-1);
-  }
-
-  //! Sets a double parameters. Not implemented.
-  virtual int SetParameter(const string Name, const double Value)
-  {
-    return(-1);
-  }
-
   //! Initialized the preconditioner.
   virtual int Initialize();
 
@@ -219,23 +208,18 @@ public:
 
   //! Returns the estimated condition number (if computed).
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
+                         const int MaxIters = 1550,
+                         const double Tol = 1e-9,
 			 Epetra_RowMatrix* Matrix = 0);
 
   //! Returns the estimated condition number, never computes it.
-  virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
-			 Epetra_RowMatrix* Matrix = 0) const
+  virtual double Condest() const
   {
     return(Condest_);
   }
 
   //! Returns a refernence to the internally stored matrix.
   virtual const Epetra_RowMatrix& Matrix() const
-  {
-    return(*Matrix_);
-  }
-
-  //! Returns a refernence to the internally stored matrix.
-  virtual Epetra_RowMatrix& Matrix()
   {
     return(*Matrix_);
   }
@@ -300,6 +284,16 @@ public:
     return(ApplyInverseFlops_);
   }
 
+  virtual int OverlapLevel() const
+  {
+    return(OverlapLevel_);
+  }
+
+  virtual const Teuchos::ParameterList& List() const
+  {
+    return(List_);
+  }
+
 protected:
 
   //! Sets up LocalizedMatrix_, Importer and Exporter_.
@@ -309,7 +303,7 @@ protected:
   void Destroy();
 
   //! Pointers to the matrix to be preconditioned.
-  Epetra_RowMatrix* Matrix_;
+  const Epetra_RowMatrix* Matrix_;
   //! Pointers to the overlapping matrix.
   Epetra_CrsMatrix* OverlappingMatrix_;
   //! Localized version of Matrix_ or OverlappingMatrix_.
@@ -333,10 +327,6 @@ protected:
   Epetra_CombineMode CombineMode_;
   //! Contains the estimated condition number.
   double Condest_;
-  //! Maximum number of iterations for condest
-  int CondestMaxIters_;
-  //! Tolerance for condest
-  double CondestTol_;
   
   bool UseReordering_;
   string ReorderingType_;
@@ -385,8 +375,6 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   Exporter_(0),
   CombineMode_(Add),
   Condest_(-1.0),
-  CondestMaxIters_(1550),
-  CondestTol_(1e-12),
   UseReordering_(false),
   ReorderedLocalizedMatrix_(0),
   Reordering_(0),
@@ -411,6 +399,52 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   // Sets parameters to default values
   Teuchos::ParameterList List;
   SetParameters(List);
+}
+
+//==============================================================================
+template<typename T>
+Ifpack_AdditiveSchwarz<T>::
+Ifpack_AdditiveSchwarz(const Ifpack_AdditiveSchwarz& RHS) :
+  Matrix_(&RHS.Matrix()),
+  OverlappingMatrix_(0),
+  LocalizedMatrix_(0),
+  IsInitialized_(false),
+  IsComputed_(false),
+  Inverse_(0),
+  OverlapLevel_(RHS.OverlapLevel()),
+  IsOverlapping_(RHS.IsOverlapping()),
+  Importer_(0),
+  Exporter_(0),
+  CombineMode_(Add),
+  Condest_(-1.0),
+  UseReordering_(false),
+  ReorderedLocalizedMatrix_(0),
+  Reordering_(0),
+  UseFilter_(false),
+  FilteredMatrix_(0),
+  SingletonFilter_(0),
+  NumInitialize_(0),
+  NumCompute_(0),
+  NumApplyInverse_(0),
+  InitializeTime_(0.0),
+  ComputeTime_(0.0),
+  ApplyInverseTime_(0.0),
+  ComputeFlops_(0),
+  ApplyInverseFlops_(0),
+  Time_(0)
+{
+  // Sets parameters to default values
+  Teuchos::ParameterList List(RHS.List());
+  SetParameters(List);
+
+  // as Inverse_ is a generic (without copy constructor) 
+  // Ifpack_Preconditioner, I simply recall Initialize() and
+  // Construct() is RHS has been initialized and/or constructed
+  if (RHS.IsInitialized())
+    Initialize();
+
+  if (RHS.IsComputed())
+    Compute();
 }
 
 //==============================================================================
@@ -558,8 +592,6 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
   UseReordering_ = List.get("schwarz: use reordering", UseReordering_);
   ReorderingType_ = List.get("schwarz: reordering type", "RCM");
   UseFilter_ = List.get("schwarz: use filter", UseFilter_);
-  CondestMaxIters_ = List.get("condest: max iters", CondestMaxIters_);
-  CondestTol_ = List.get("condest: tolerance", CondestTol_);
 
   // This copy may be needed by Amesos or other preconditioners.
   List_ = List;
@@ -630,6 +662,9 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
   if (UseReordering_)
     R = ReorderingType_ + " reord, ";
 
+  // A call to Condest() will update the condition number estimate
+  Condest();
+  
   // reset lavel with condest()
   Label_ = "Ifpack_AdditiveSchwarz, ov = " + Ifpack_toString(OverlapLevel_)
     + ", local solver = \n\t\t***** `" + string(Inverse_->Label()) + "'"
@@ -825,15 +860,14 @@ Print(std::ostream& os) const
 //==============================================================================
 template<typename T>
 double Ifpack_AdditiveSchwarz<T>::
-Condest(const Ifpack_CondestType CT, 
-	Epetra_RowMatrix* Matrix)
+Condest(const Ifpack_CondestType CT, const int MaxIters, 
+        const double Tol, Epetra_RowMatrix* Matrix)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
 
   if (Condest_ == -1.0)
-    Condest_ = Ifpack_Condest(*this, CT, CondestMaxIters_, CondestTol_,
-			      Matrix);
+    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
 
   return(Condest_);
 }

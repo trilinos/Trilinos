@@ -41,7 +41,7 @@ void Ifpack_BreakForDebugger(Epetra_Comm& Comm)
 }
 
 //============================================================================
-Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(Epetra_RowMatrix* Matrix,
+Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(const Epetra_RowMatrix* Matrix,
 						    const int OverlappingLevel)
 {
 
@@ -55,7 +55,7 @@ Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(Epetra_RowMatrix* Matrix,
   Epetra_Map* OverlappingMap;
   OverlappingMap = (Epetra_Map*)&(Matrix->RowMatrixRowMap());
 
-  Epetra_RowMatrix* OldMatrix;
+  const Epetra_RowMatrix* OldMatrix;
   const Epetra_Map* DomainMap = &(Matrix->OperatorDomainMap());
   const Epetra_Map* RangeMap = &(Matrix->OperatorRangeMap());
 
@@ -107,7 +107,7 @@ Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(Epetra_RowMatrix* Matrix,
 }
 
 //============================================================================
-Epetra_CrsGraph* Ifpack_CreateOverlappingCrsMatrix(Epetra_CrsGraph* Graph,
+Epetra_CrsGraph* Ifpack_CreateOverlappingCrsMatrix(const Epetra_CrsGraph* Graph,
 						   const int OverlappingLevel)
 {
 

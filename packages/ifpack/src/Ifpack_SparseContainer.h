@@ -209,6 +209,7 @@ private:
   T* Inverse_;
   //! Label for \c this object
   string Label_;
+  Teuchos::ParameterList List_;
 
 };
 
@@ -312,6 +313,8 @@ int Ifpack_SparseContainer<T>::Initialize()
 
   if (Inverse_ == 0)
     IFPACK_CHK_ERR(-10);
+
+  IFPACK_CHK_ERR(Inverse_->SetParameters(List_));
 
   Label_ = "Ifpack_SparseContainer";
 
@@ -460,7 +463,7 @@ template<typename T>
 int Ifpack_SparseContainer<T>::
 SetParameters(Teuchos::ParameterList& List)
 {
-  IFPACK_CHK_ERR(Inverse_->SetParameters(List));
+  List_ = List;
   return(0);
 }
 

@@ -18,11 +18,7 @@ Ifpack_Graph's using METIS. In order to work properly, this class requires
 IFPACK to be configured with option \c --enable-ifpack-metis.
 Otherwise, this class will always create one partition.
 
-\note It can happen that METIS is not capable to create the required number
-of partitions. In this latter case, METIS will be re-called, asking for
-the half of the previously required number of parts.
-
-\date Sep-04.
+\date Last modified: Oct-04.
 */
 
 class Ifpack_METISPartitioner : public Ifpack_OverlappingPartitioner {

@@ -11,15 +11,12 @@
 
 //==============================================================================
 Ifpack_ReorderFilter::Ifpack_ReorderFilter(Epetra_RowMatrix* Matrix,
-					   Ifpack_Reordering* Reordering,
-					   const bool LightWeigth) :
+                                           Ifpack_Reordering* Reordering) :
   A_(Matrix),
   Reordering_(Reordering),
   MaxNumEntries_(Matrix->MaxNumEntries()),
   NumMyRows_(Matrix->NumMyRows())
 {
-  Indices_.resize(MaxNumEntries_);
-  Values_.resize(MaxNumEntries_);
 }
 
 //==============================================================================
@@ -29,8 +26,6 @@ Ifpack_ReorderFilter::Ifpack_ReorderFilter(const Ifpack_ReorderFilter& RHS) :
   MaxNumEntries_(RHS.MaxNumEntries()),
   NumMyRows_(RHS.NumMyRows())
 {
-  Indices_.resize(MaxNumEntries_);
-  Values_.resize(MaxNumEntries_);
   strcpy(Label_,RHS.Label());
 }
 
@@ -52,8 +47,6 @@ Ifpack_ReorderFilter::operator=(const Ifpack_ReorderFilter& RHS)
   MaxNumEntries_ = RHS.MaxNumEntries();
   NumMyRows_ = RHS.NumMyRows();
 
-  Indices_.resize(MaxNumEntries_);
-  Values_.resize(MaxNumEntries_);
   strcpy(Label_,RHS.Label());
   return(*this);
 }
@@ -61,19 +54,17 @@ Ifpack_ReorderFilter::operator=(const Ifpack_ReorderFilter& RHS)
 //==============================================================================
 int Ifpack_ReorderFilter::
 ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
-		 double *Values, int * Indices) const
+                 double *Values, int * Indices) const
 {
-  int MyReorderdRow = Reordering().InvReorder(MyRow);
+  int MyReorderdRow = Reordering_->InvReorder(MyRow);
 
-  // FIXME: delete Indices_ Values_
   IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(MyReorderdRow,MaxNumEntries_,
-					   NumEntries, Values,Indices));
+                                           NumEntries, Values,Indices));
 
+  // suppose all elements are local. Note that now
+  // Indices can have indices in non-increasing order.
   for (int i = 0 ; i < NumEntries ; ++i) {
-    // ignore off-process elements, leave them as they are
-    if (Indices[i] >= NumMyRows_)
-      continue;
-    Indices[i] = Reordering().Reorder(Indices[i]);
+    Indices[i] = Reordering_->Reorder(Indices[i]);
   }
 
   return(0);
@@ -83,25 +74,26 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 int Ifpack_ReorderFilter::
 ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
-  Epetra_Vector DiagonalTilde(Diagonal);
+  Epetra_Vector DiagonalTilde(Diagonal.Map());
   IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(DiagonalTilde));
-  IFPACK_CHK_ERR((Reordering().P(DiagonalTilde,Diagonal)));
+  IFPACK_CHK_ERR((Reordering_->P(DiagonalTilde,Diagonal)));
   return(0);
 }
 
 //==============================================================================
 int Ifpack_ReorderFilter::
 Multiply(bool TransA, const Epetra_MultiVector& X, 
-	 Epetra_MultiVector& Y) const
+         Epetra_MultiVector& Y) const
 {
-  Epetra_MultiVector Xtilde(X);
-  Epetra_MultiVector Ytilde(Y);
+  // need two additional vectors
+  Epetra_MultiVector Xtilde(X.Map(),X.NumVectors());
+  Epetra_MultiVector Ytilde(Y.Map(),Y.NumVectors());
   // bring X back to original ordering
-  Reordering().Pinv(X,Xtilde);
+  Reordering_->Pinv(X,Xtilde);
   // apply original matrix
   IFPACK_CHK_ERR(Matrix().Multiply(TransA,Xtilde,Ytilde));
   // now reorder result
-  Reordering().P(Ytilde,Y);
+  Reordering_->P(Ytilde,Y);
 
 
   return(0);
@@ -112,13 +104,12 @@ int Ifpack_ReorderFilter::
 Solve(bool Upper, bool Trans, bool UnitDiagonal, 
       const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  IFPACK_CHK_ERR(-1);
+  IFPACK_CHK_ERR(-98);
 }
 
 //==============================================================================
 int Ifpack_ReorderFilter::
 Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  IFPACK_CHK_ERR(Multiply(false,X,Y));
-  return(0);
+  IFPACK_RETURN(Multiply(UseTranspose(),X,Y));
 }

@@ -12,7 +12,7 @@ class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_Import;
 
-//! Ifpack_LinearPartitioner: A class to decompose overlapping and non-overlapping Ifpack_Graph's.
+//! Ifpack_LinearPartitioner: A class to define linear partitions.
 
 class Ifpack_LinearPartitioner : public Ifpack_OverlappingPartitioner {
 

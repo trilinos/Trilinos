@@ -10,7 +10,30 @@ class Epetra_Import;
 class Epetra_BlockMap;
 
 //! Ifpack_DropFilter: Filter based on matrix entries.
-//
+/*!
+Ifpack_DropFilter enables the dropping of all elements whose
+absolute value is below a specified threshold.
+
+A typical use is as follows:
+\code
+Epetra_RowMatrix* A;
+// first localize the matrix
+Ifpack_LocalFilter LocalA(&A);
+// drop all elements below this value
+double DropTol = 1e-5;
+// now create the matrix, elements below DropTol are
+// not included in calls to ExtractMyRowCopy(), Multiply()
+// and Apply()
+Ifpack_DropFilter DropA(&LocalA,DropTol)
+\endcode
+
+<P>It is supposed that Ifpack_DropFilter is used on localized matrices.
+
+\author Marzio Sala, SNL 9214.
+
+\data Last modified: Oct-04.
+
+*/
 class Ifpack_DropFilter : public virtual Epetra_RowMatrix {
 
 public:
@@ -51,20 +74,14 @@ public:
   virtual int ApplyInverse(const Epetra_MultiVector& X,
 			   Epetra_MultiVector& Y) const;
 
-  virtual int InvRowSums(Epetra_Vector& x) const
-  {
-    return(-1);
-  }
+  virtual int InvRowSums(Epetra_Vector& x) const;
 
   virtual int LeftScale(const Epetra_Vector& x)
   {
     return(A_.LeftScale(x));
   }
 
-  virtual int InvColSums(Epetra_Vector& x) const
-  {
-    return(-1);
-  }
+  virtual int InvColSums(Epetra_Vector& x) const;
 
   virtual int RightScale(const Epetra_Vector& x) 
   {

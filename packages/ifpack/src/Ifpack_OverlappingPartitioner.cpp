@@ -9,6 +9,8 @@
 #include "Epetra_Map.h"
 #include "Teuchos_ParameterList.hpp"
 
+static const string PrintMsg_ = "(Ifpack_OvPartitioner) ";
+
 //==============================================================================
 Ifpack_OverlappingPartitioner::
 Ifpack_OverlappingPartitioner(const Ifpack_Graph* Graph) :
@@ -16,9 +18,7 @@ Ifpack_OverlappingPartitioner(const Ifpack_Graph* Graph) :
   Graph_(Graph),
   OverlappingLevel_(0),
   IsComputed_(false),
-  verbose_(2),
-  PrintMsg_("(Ifpack_Partitioner) "),
-  ErrorMsg_("Ifpack_Partitioner ERROR ")
+  verbose_(false)
 {
 }
 
@@ -33,7 +33,7 @@ int Ifpack_OverlappingPartitioner::SetParameters(Teuchos::ParameterList& List)
 
   NumLocalParts_ = List.get("partitioner: local parts", NumLocalParts_);
   OverlappingLevel_ = List.get("partitioner: overlap", OverlappingLevel_);
-  verbose_ = List.get("partitioner: print level", 2);
+  verbose_ = List.get("partitioner: print level", verbose_);
 
   SetPartitionParameters(List);
 
@@ -52,7 +52,7 @@ int Ifpack_OverlappingPartitioner::Compute()
 
   // some output
 
-  if ((verbose_ > 2) && (Comm().MyPID() == 0)) {
+  if (verbose_ && (Comm().MyPID() == 0)) {
     cout << PrintMsg_ << "Number of local parts  = " << NumLocalParts_ << endl;
     cout << PrintMsg_ << "Number of global parts = " 
          << NumLocalParts_ * Comm().NumProc() << endl;
@@ -88,6 +88,7 @@ int Ifpack_OverlappingPartitioner::Compute()
 
   return(0);
 }
+
 int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 {
 
@@ -103,17 +104,19 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 
   for (int i = 0 ; i < NumMyRows() ; ++i) {
     if (Partition_[i] >= NumLocalParts_) {
-      cout << "Partition[" << i << "] = "<< Partition_[i] 
+      cerr << "ERROR: Partition[" << i << "] = "<< Partition_[i] 
 	   << ", NumLocalParts = " << NumLocalParts_ << endl;
+      cerr << "(file = " << __FILE__ << ", line = "
+           << __LINE__ << ")" << endl;
       IFPACK_CHK_ERR(-10);
     }
-    // discard singletons
-    if (Partition_[i] != -1)
-      sizes[Partition_[i]]++;
+    // no singletons should be here, as the matrix is
+    // supposed to be filtered through Ifpack_SingletonFilter
+    assert (Partition_[i] != -1);
+    sizes[Partition_[i]]++;
   }
 
   // 2.- allocate space for each subgraph
-
   for (int i = 0 ; i < NumLocalParts_ ; ++i)
     Parts_[i].resize(sizes[i]);
 
@@ -124,9 +127,6 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 
   for (int i = 0 ; i < NumMyRows() ; ++i) {
     int part = Partition_[i];
-    // discard singletons
-    if (part == -1)
-      continue;
     int count = sizes[part];
     Parts_[part][count] = i;
     sizes[part]++;
@@ -136,7 +136,6 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
     return(0);
 
   // wider overlap requires further computations
- 
   for (int level = 1 ; level <= OverlappingLevel_ ; ++level) {
 
     vector<vector<int> > tmp;
@@ -157,7 +156,7 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 	int LRID = Parts_[part][i];
 	int NumIndices;
 	int ierr = Graph_->ExtractMyRowCopy(LRID, MaxNumEntries, 
-							NumIndices, &Indices[0]);
+                                            NumIndices, &Indices[0]);
 	IFPACK_CHK_ERR(ierr);
 
 	for (int j = 0 ; j < NumIndices ; ++j) {
@@ -171,20 +170,16 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 	  if (where == tmp[part].end()) {
 	    tmp[part].push_back(col);
 	  }
-
 	}
       }
-
     }
 
     // now I convert the STL vectors into Epetra_IntSerialDenseVectors.
-
     for (int i = 0 ; i < NumLocalParts_ ; ++i) {
       Parts_[i].resize(tmp[i].size());
       for (int j = 0 ; j < tmp[i].size() ; ++j)
 	Parts_[i][j] = tmp[i][j];
     }
-
   }
 
   return(0);

@@ -199,10 +199,11 @@ class Ifpack_gIct: public Ifpack_Preconditioner {
     the infinity-norm estimate of the condition number of the inverse of LDU.
   */
   double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
+                 const int MaxIters = 1550, 
+                 const double Tol = 1e-9,
 		 Epetra_RowMatrix* Matrix = 0);
 
-  double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
-		 Epetra_RowMatrix* Matrix = 0) const
+  double Condest() const
   {
     return(Condest_);
   }
@@ -333,8 +334,6 @@ class Ifpack_gIct: public Ifpack_Preconditioner {
   bool UseTranspose_;
 
   double Condest_;
-  int CondestMaxIters_;
-  double CondestTol_;
   double Athresh_;
   double Rthresh_;
   double Droptol_;

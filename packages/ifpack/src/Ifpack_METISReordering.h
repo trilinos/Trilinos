@@ -65,11 +65,11 @@ public:
   //! Returns the inverse reordered index of row \c i.
   virtual int InvReorder(const int i) const;
 
-  //! Applies reordering to multivector X, whose local length equals the number of local rows.
+  //! Applies reordering to multivector Xorig, whose local length equals the number of local rows, stores result in X.
   virtual int P(const Epetra_MultiVector& Xorig,
 		Epetra_MultiVector& X) const;
 
-  //! Applies inverse reordering to multivector X, whose local length equals the number of local rows.
+  //! Applies inverse reordering to multivector Xorig, whose local length equals the number of local rows, stores result in X.
   virtual int Pinv(const Epetra_MultiVector& Xorig,
 		   Epetra_MultiVector& X) const;
 
@@ -77,7 +77,7 @@ public:
   virtual ostream& Print(std::ostream& os) const;
 
 private:
-  //! If \c true, the graph is symmetrize before calling METIS.
+  //! If \c true, the graph has to be symmetrized before calling METIS.
   bool UseSymmetricGraph_;
   //! Number of local rows in the graph.
   int NumMyRows_;

@@ -105,8 +105,8 @@ int Ifpack_DropFilter::
 Multiply(bool TransA, const Epetra_MultiVector& X, 
 	 Epetra_MultiVector& Y) const
 {
-  // FIXME: I do not work with funky Range and Domain maps
-
+  // NOTE: I suppose that the matrix has been localized,
+  // hence all maps are trivial.
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors())
     IFPACK_CHK_ERR(-1);
@@ -154,13 +154,24 @@ Solve(bool Upper, bool Trans, bool UnitDiagonal,
 int Ifpack_DropFilter::
 Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  IFPACK_CHK_ERR(Multiply(false,X,Y));
-  return(0);
+  IFPACK_RETURN(Multiply(UseTranspose(),X,Y));
 }
 
 //==============================================================================
 int Ifpack_DropFilter::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  return(-1); // NOT IMPLEMENTED AT THIS STAGE
+  IFPACK_CHK_ERR(-99);
+}
+
+//==============================================================================
+int Ifpack_DropFilter::InvRowSums(Epetra_Vector& x) const
+{
+  IFPACK_CHK_ERR(-1);
+}
+
+//==============================================================================
+int Ifpack_DropFilter::InvColSums(Epetra_Vector& x) const
+{
+  IFPACK_CHK_ERR(-1);
 }

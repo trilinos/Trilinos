@@ -104,8 +104,6 @@ Ifpack_vIct::Ifpack_vIct(const Epetra_RowMatrix* A) :
   IsInitialized_(false),
   IsComputed_(false),
   Condest_(-1.0),
-  CondestMaxIters_(1550),
-  CondestTol_(1e-9),
   LevelOfFill_(0),
   H_(0),
   NumInitialize_(0),
@@ -127,8 +125,6 @@ Ifpack_vIct::Ifpack_vIct(const Ifpack_vIct& rhs) :
   IsInitialized_(rhs.IsInitialized()),
   IsComputed_(rhs.IsComputed()),
   Condest_(rhs.Condest()),
-  CondestMaxIters_(rhs.CondestMaxIters()),
-  CondestTol_(rhs.CondestTol()),
   LevelOfFill_(rhs.LevelOfFill()),
   H_(0),
   NumInitialize_(rhs.NumInitialize()),
@@ -162,9 +158,6 @@ int Ifpack_vIct::SetParameters(Teuchos::ParameterList& List)
   LevelOfFill_ = List.get("fact: level-of-fill",LevelOfFill());
   Athresh_ = List.get("fact: absolute threshold", Athresh_);
   Rthresh_ = List.get("fact: relative threshold", Rthresh_);
-
-  CondestMaxIters_ = List.get("condest: max iters", CondestMaxIters_);
-  CondestTol_ = List.get("condest: tolerance", CondestTol_);
 
   // set label
   sprintf(Label_, "vICT (fill=%d, athr=%f, rthr=%f)",
@@ -498,6 +491,7 @@ int Ifpack_vIct::Apply(const Epetra_MultiVector& X,
 
 //=============================================================================
 double Ifpack_vIct::Condest(const Ifpack_CondestType CT, 
+                            const int MaxIters, const double Tol,
 			    Epetra_RowMatrix* Matrix)
 {
   if (!IsComputed()) // cannot compute right now
@@ -505,8 +499,7 @@ double Ifpack_vIct::Condest(const Ifpack_CondestType CT,
 
   // NOTE: this is computing the *local* condest
   if (Condest_ == -1.0)
-    Condest_ = Ifpack_Condest(*this, CT, CondestMaxIters_, CondestTol_,
-			      Matrix);
+    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
 
   return(Condest_);
 }

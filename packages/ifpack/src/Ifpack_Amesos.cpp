@@ -29,9 +29,7 @@ Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix) :
   ApplyInverseTime_(0.0),
   ComputeFlops_(0),
   ApplyInverseFlops_(0),
-  Time_(0),
-  CondestMaxIters_(1550),
-  CondestTol_(1e-12)
+  Time_(0)
 {
   Problem_ = new Epetra_LinearProblem;
 }
@@ -53,9 +51,7 @@ Ifpack_Amesos::Ifpack_Amesos(const Ifpack_Amesos& rhs) :
   ApplyInverseTime_(rhs.ApplyInverseTime()),
   ComputeFlops_(rhs.ComputeFlops()),
   ApplyInverseFlops_(rhs.ApplyInverseFlops()),
-  Time_(0),
-  CondestMaxIters_(rhs.CondestMaxIters()),
-  CondestTol_(rhs.CondestTol())
+  Time_(0)
 {
 
   Problem_ = new Epetra_LinearProblem;
@@ -259,6 +255,7 @@ const Epetra_Map & Ifpack_Amesos::OperatorRangeMap() const
 
 //==============================================================================
 double Ifpack_Amesos::Condest(const Ifpack_CondestType CT,
+                              const int MaxIters, const double Tol,
 			      Epetra_RowMatrix* Matrix)
 {
 
@@ -266,8 +263,7 @@ double Ifpack_Amesos::Condest(const Ifpack_CondestType CT,
     return(-1.0);
 
   if (Condest_ == -1.0)
-    Condest_ = Ifpack_Condest(*this, CT, CondestMaxIters_, CondestTol_,
-                              Matrix);
+    Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
 
   return(Condest_);
 }
