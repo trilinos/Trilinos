@@ -76,7 +76,9 @@ chdir"$homedir";
 #
 # Setup files used for reporting results
 #
-
+($sec,$min,$hour,$mday,$mon,$year) = localtime();
+$year+=1900;
+my $logdate="$mday\_$mon\_$year\_$hour\_$min\_$sec";
 my $errorcount=0; # Doesn't count the actual number of errors, but rather
                   # the number of times ERRORS is written to.
 my $warningcount=0; #Analogous to errorcount
@@ -86,6 +88,12 @@ my $trilinosCompileError=0; # If an error occurs during the compilation of
 my $testCompileError=0; # If an error occurs while running one of
                         # the tests, this indicates that testCompileLog.txt
                         # should be attached
+my $problemencountered=0; # The error and warning counting (as tracked above) 
+                    #occurs on a per script basis; this variable will carry 
+                    # over through
+                    # all scripts and will produce the "passed" or "failed"
+                    # portion of the log file name.
+
 open (ERRORS, ">>errors.txt") or die "$! error trying to open file";
 open (WARNINGS, ">>warnings.txt") or die "$! error trying to open file";
 # Summary file serves as the body of the email, rather than an attachment
@@ -223,7 +231,16 @@ close ERRORS;
 close WARNINGS;
 
 system "rm -f list_of_test_dirs list_of_files";
+chdir"$homedir/testharness";
+#
+# Create the final log file
+#
 
+my $teststatus="passed";
+if ($problemencountered) {
+  $teststatus="failed";
+}
+system "mv results.txt log_$ARCH\_$logdate\_$teststatus.txt";
 #
 # This subroutine is called when script is forced to try a default set of
 # build directories
@@ -262,6 +279,7 @@ sub sendemail {
 
     # At least one problem occurred throughout the course of testing
     my $subject_line=join " - ", $ARCH,'At least one test failed';
+    $problemencountered=1;
     print SUMM $subject_line;
     print SUMM "\n";
 
@@ -315,16 +333,16 @@ sub sendemail {
   }
   else {
     # No problems occurred of any kind
-    my $subject_line=join "-", $ARCH,'AllTestsPassed',$potentialscript;
+    my $subject_line=join "-", $ARCH,'AllTestsPassed';
     print SUMM $subject_line;
 #	      Path=>'summ.txt',
     if ($potentialscript) {
-      print SUMM "Test script: ";
+      print SUMM "-Test script: ";
       print SUMM $potentialscript;
-      print SUMM "\n";
     }
+    print SUMM "\n";
 
-    print SUMM "*****************************************************\nThe following is the output from the test script listed above.\nPlease note that the -v option was not selected for this log.\nWhile no errors occurred during this test, this log can still be examined to see which tests were run.\n******************************************************\n";
+    print SUMM "********************************************************************\nThe following is the output from the test script listed above.  Please note that\nthe -v option was not selected for this log.While no errors occurred during\nthis test, this log can still be examined to see which tests were run.\n********************************************************************\n";
 
 system "cat summary.txt >> summ.txt";
   }
