@@ -554,6 +554,7 @@ AC_CONFIG_FILES([
 		test/MultiLevelPreconditioner_Sym/Makefile
 		test/MultiLevelPreconditioner_Maxwell/Makefile
 		test/ML_Operator2Epetra_RowMatrix/Makefile
+		test/Scalability/Makefile
 		test/VerySimple/Makefile
 		test/AztecSimple/Makefile
 		test/2d_Poisson/Makefile
