@@ -13,7 +13,7 @@
 #ifdef ML_MPI
 #define AZ_MPI
 #endif
-#include "ml_include.h"
+#include "ml_struct.h"
 #include "ml_aztec_utils.h"
 
 int warning_flag = 0;

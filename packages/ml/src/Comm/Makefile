@@ -59,21 +59,21 @@ tolib: $(ML_OBJ)
 #include ../../etc/depends.ml
 
 ml_comm.o : ml_comm.c ml_comm.h ../Include/ml_defs.h ../Utils/ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_comm.c -o $@
+	$(CC) -c $(CFLAGS) ml_comm.c -o $@
 
 ml_comminfoagx.o : ml_comminfoagx.c ml_comminfoagx.h ../Include/ml_defs.h\
                    ../Utils/ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_comminfoagx.c -o $@
+	$(CC) -c $(CFLAGS) ml_comminfoagx.c -o $@
 
 ml_comminfoop.o : ml_comminfoop.c ml_comm.h ../Include/ml_defs.h \
-                  ../Include/ml_include.h ../Utils/ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_comminfoop.c -o $@
+                  ../Utils/ml_memory.h
+	$(CC) -c $(CFLAGS) ml_comminfoop.c -o $@
 
 ml_exch_row.o : ml_exch_row.c ../Main/ml_1level.h \
                 ml_comm.h ml_comminfoop.h ../Include/ml_defs.h \
                 ../Operator/ml_operator.h ../Main/ml_struct.h \
                 ../Utils/ml_utils.h ../Operator/ml_mat_formats.h
-	@$(CC) -c $(CFLAGS) ml_exch_row.c -o $@
+	$(CC) -c $(CFLAGS) ml_exch_row.c -o $@
 
 #=======================================================================
 

@@ -15,6 +15,8 @@
 
 #include <stdlib.h>
 
+#include "ml_defs.h"
+
 typedef struct ML_Solver_Struct 
 {
    int          ML_id;               /* ID for the Solver structure     */

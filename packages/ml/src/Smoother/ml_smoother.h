@@ -30,7 +30,8 @@ typedef struct ML_Sm_Schwarz_Data_Struct ML_Sm_Schwarz_Data;
 #include "ml_defs.h"
 #include "ml_memory.h"
 #include "ml_1level.h"
-#include "ml_include.h"
+#include "ml_operator.h"
+#include "ml_comminfoop.h"
 #include <math.h>
 #ifdef SUPERLU
 #include "dsp_defs.h"

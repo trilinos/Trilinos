@@ -13,6 +13,8 @@
 #ifndef __MLCOMMINFOOP__
 #define __MLCOMMINFOOP__
 
+#include "ml_comm.h"
+
 typedef struct ML_CommInfoOP_Struct ML_CommInfoOP;
 typedef struct ML_NeighborList_Struct ML_NeighborList;
 

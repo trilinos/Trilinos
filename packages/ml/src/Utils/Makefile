@@ -64,27 +64,27 @@ tolib: $(ML_OBJ)
 ml_aztec_utils.o : ml_aztec_utils.c ../Include/ml_defs.h ml_memory.h \
                    ../Main/ml_struct.h ../Operator/ml_operator.h \
                    ../Comm/ml_comminfoop.h
-	@$(CC) -c $(CFLAGS) ml_aztec_utils.c -o $@
+	$(CC) -c $(CFLAGS) ml_aztec_utils.c -o $@
 
 ml_intlist.o : ml_intlist.c ../Include/ml_defs.h ml_intlist.h ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_intlist.c -o $@
+	$(CC) -c $(CFLAGS) ml_intlist.c -o $@
 
 ml_lapack.o : ml_lapack.c ../Include/ml_defs.h
-	@$(CC) -c $(CFLAGS) ml_lapack.c -o $@
+	$(CC) -c $(CFLAGS) ml_lapack.c -o $@
 
 ml_memory.o : ml_memory.c ../Comm/ml_comm.h ../Include/ml_defs.h \
               ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_memory.c -o $@
+	$(CC) -c $(CFLAGS) ml_memory.c -o $@
 
 ml_rbm.o : ml_rbm.c ml_rbm.h 
-	@$(CC) -c $(CFLAGS) ml_rbm.c -o $@
+	$(CC) -c $(CFLAGS) ml_rbm.c -o $@
 
 ml_utils.o : ml_utils.c ../Comm/ml_comm.h ../Include/ml_defs.h ml_utils.h 
-	@$(CC) -c $(CFLAGS) ml_utils.c -o $@
+	$(CC) -c $(CFLAGS) ml_utils.c -o $@
 
 ml_vec.o : ml_vec.c ../Comm/ml_comm.h ../Include/ml_defs.h ml_vec.h \
            ml_memory.h
-	@$(CC) -c $(CFLAGS) ml_vec.c -o $@
+	$(CC) -c $(CFLAGS) ml_vec.c -o $@
 
 #=======================================================================
 

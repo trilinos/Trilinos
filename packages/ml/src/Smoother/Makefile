@@ -61,34 +61,33 @@ tolib: $(ML_OBJ)
 
 ml_csolve.o : ml_csolve.c ../Utils/ml_aztec_utils.h ../Comm/ml_comm.h\
               ../Comm/ml_comminfoagx.h ../Include/ml_defs.h \
-              ../Include/ml_include.h ../Operator/ml_mat_formats.h \
+              ../Operator/ml_mat_formats.h \
               ../Utils/ml_memory.h ../Operator/ml_op_utils.h \
               ../Main/ml_struct.h ../Utils/ml_utils.h ml_csolve.h
-	@$(CC) -c $(CFLAGS) ml_csolve.c -o $@
+	$(CC) -c $(CFLAGS) ml_csolve.c -o $@
 
 ml_solver.o : ml_solver.c ../Utils/ml_aztec_utils.h ../Comm/ml_comm.h\
               ../Comm/ml_comminfoagx.h ../Include/ml_defs.h \
-              ../Include/ml_include.h ../Operator/ml_mat_formats.h \
+              ../Operator/ml_mat_formats.h \
               ../Utils/ml_memory.h ../Operator/ml_op_utils.h \
               ../Main/ml_struct.h ../Utils/ml_utils.h ml_solver.h
-	@$(CC) -c $(CFLAGS) ml_solver.c -o $@
+	$(CC) -c $(CFLAGS) ml_solver.c -o $@
 
 ml_smoother.o : ml_smoother.c ../Main/ml_1level.h ../Include/ml_defs.h \
-                ../Include/ml_include.h ../Utils/ml_lapack.h \
-                ../Utils/ml_memory.h ml_smoother.h \
+                ../Utils/ml_lapack.h ../Utils/ml_memory.h ml_smoother.h \
                 ../Operator/ml_operator.h
-	@$(CC) -c $(CFLAGS) ml_smoother.c -o $@
+	$(CC) -c $(CFLAGS) ml_smoother.c -o $@
 
 ml_superlu.o : ml_superlu.c ../Comm/ml_comm.h ml_solver.h \
                ../Include/ml_defs.h ../Operator/ml_mat_formats.h \
                ../Utils/ml_memory.h ../Main/ml_struct.h ../Utils/ml_utils.h 
-	@$(CC) -c $(CFLAGS) ml_superlu.c -o $@
+	$(CC) -c $(CFLAGS) ml_superlu.c -o $@
 
 ml_xxt.o : ml_xxt.c ../Comm/ml_comm.h ../Comm/ml_comminfoop.h \
-           ../Include/ml_defs.h ../Include/ml_include.h \
+           ../Include/ml_defs.h \
            ../Operator/ml_mat_formats.h ../Utils/ml_memory.h \
            ../Operator/ml_op_utils.h ../Main/ml_struct.h ../Utils/ml_utils.h
-	@$(CC) -c $(CFLAGS) ml_xxt.c -o $@
+	$(CC) -c $(CFLAGS) ml_xxt.c -o $@
 
 
 #=======================================================================
