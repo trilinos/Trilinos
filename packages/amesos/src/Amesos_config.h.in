@@ -17,6 +17,9 @@
 /* Define if want to build amesos-dscpack */
 #undef HAVE_AMESOS_DSCPACK
 
+/* Define if want to build amesos-examples */
+#undef HAVE_AMESOS_EXAMPLES
+
 /* Define if want to build amesos-klu */
 #undef HAVE_AMESOS_KLU
 
@@ -43,6 +46,9 @@
 
 /* Define if want to build amesos-superludist */
 #undef HAVE_AMESOS_SUPERLUDIST
+
+/* Define if want to build amesos-tests */
+#undef HAVE_AMESOS_TESTS
 
 /* Define if want to build amesos-umfpack */
 #undef HAVE_AMESOS_UMFPACK

@@ -258,9 +258,11 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( amesos, tests, [Build Amesos tests], AMESOS_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( amesos, examples, [Build Amesos examples], AMESOS_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(valgrind, [Use valgrind to perform memory checks and detect leaks (not all packages are sensitive to this option)], VALGRIND, no)
@@ -286,7 +288,7 @@ AC_F77_WRAPPERS
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
-if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 dnl Check for user-specified names for LAPACK and BLAS
 TAC_ARG_WITH_BLASLIB
