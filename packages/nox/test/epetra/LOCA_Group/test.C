@@ -90,6 +90,10 @@ int main(int argc, char *argv[]) {
       cout << "Test Failed!" << endl;
   }
 
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+
   // return 0 for a successful test
   return status;
 }
