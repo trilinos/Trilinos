@@ -2,7 +2,7 @@
 # Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
 # Copyright (c) 2000, Sandia National Laboratories.                          #
 # Zoltan is distributed under the GNU Lesser General Public License 2.1.     #
-# For more info, see the README file in the top-level Zoltan directory.      # 
+# For more info, see the README file in the top-level Zoltan directory.      #
 ##############################################################################
 ##############################################################################
 # CVS File Information
@@ -13,10 +13,12 @@
 ##############################################################################
 
 
-RCB DIRECTORY -- Implementation of Recursive Coordinate Bisection.
+RCB DIRECTORY -- Implementation of Recursive Coordinate Bisection.  Also
+                 includes Inertial Recursive Bisection due to the similarity
+                 of the algorithms.
 -----------------------------------------------------------------------------
 
-rcb_const.h   -- Data structure definitions needed for RCB (RCB_Struct, rcb_rtn,
+rcb_const.h   -- Data structure definitions needed for RCB (RCB_Struct,
                  rcb_box, rcb_median, rcb_tree, rcb_dot).  Prototypes for
                  external functions in rcb_util.c.
 
@@ -26,10 +28,35 @@ rcb_util.c    -- Functions that call the load-balancing query routines to
                  build the data structures needed for RCB algorithm.
                  (initialize_dot, rcb_build_data_structure)
 
-point_assign.c -- Given a geometric decomposition constructed via RCB,
+point_assign.c -- Given a geometric decomposition constructed via RCB or IRB,
 		 this routine determines which processor a particular
 		 geometric point is assigned to.
 
-box_assign.c  -- Given a geometric decomposition constructed via RCB,
+box_assign.c  -- Given a geometric decomposition constructed via RCB or IRB,
 		 this routine determines which processors an axis-aligned
 		 box intersects.
+
+create_proc_list.c -- Create the communication list to communicate dots
+                      between processors in each half at each step of
+                      RCB or IRB.
+
+create_proc_list_const.h -- Prototype for create_proc_list.c.
+
+irb_const.h   -- Data structure definitions needed for IRB (IRB_Struct,
+                 irb_dot, irb_tree).  Prototypes for external functions
+                 in irb_util.c
+
+irb.c         -- Implementation of IRB.
+
+irb_util.c    -- Functions that call the load-balancing query routines to
+                 build the data structures needed for RCB algorithm.
+                 (initialize_dot, LB_IRB_Build_Structure, LB_IRB_Free_Structure)
+
+inertial1d.c  -- Determine center of mass and direction of perpendicular to
+                 cutting plane for 1d inertial.
+
+inertial2d.c  -- Determine center of mass and direction of perpendicular to
+                 cutting plane for 2d inertial.
+
+inertial3d.c  -- Determine center of mass and direction of perpendicular to
+                 cutting plane for 3d inertial.
