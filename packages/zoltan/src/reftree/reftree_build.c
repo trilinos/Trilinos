@@ -45,7 +45,13 @@ static int Zoltan_Reftree_Reinit_Coarse(ZZ *zz);
 static int Zoltan_Reftree_Build_Recursive(ZZ *zz,ZOLTAN_REFTREE *subroot);
 static int alloc_reftree_nodes(ZZ *zz, ZOLTAN_REFTREE **node, int num_node,
                                int *num_vert);
-void free_reftree_nodes(ZOLTAN_REFTREE **node);
+static void free_reftree_nodes(ZOLTAN_REFTREE **node);
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+/* Variables that are global to this file */
 
 static ZOLTAN_ID_PTR slocal_gids;  /* coarse element Global IDs from user */
 static ZOLTAN_ID_PTR slocal_lids;  /* coarse element Local IDs from user */
@@ -154,6 +160,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
   ierr = alloc_reftree_nodes(zz, &root, 1, root_vert);
   if (ierr == ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned by alloc_reftree_nodes.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ierr);
   }
 
@@ -600,6 +607,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
     ZOLTAN_FREE(&out_vertex);
     ZOLTAN_FREE(&order);
     Zoltan_Reftree_Free_Structure(zz);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ierr);
   }
 
@@ -738,6 +746,8 @@ ZOLTAN_REFTREE *root;          /* Root of the refinement tree */
 int ierr;                  /* Error code returned by called functions */
 int i;                     /* loop counter */
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   /*
    * Initialize the tree, if not already there, and set the root.  If already
    * there, reinitialize coarse grid.
@@ -747,6 +757,7 @@ int i;                     /* loop counter */
     ierr = Zoltan_Reftree_Init(zz);
     if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Reftree_Init.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
       return(ierr);
     }
   }
@@ -763,6 +774,7 @@ int i;                     /* loop counter */
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Must register ZOLTAN_NUM_CHILD_FN"
             " and ZOLTAN_CHILD_LIST_FN.");
     Zoltan_Reftree_Free_Structure(zz);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_FATAL);
   }
 
@@ -778,11 +790,13 @@ int i;                     /* loop counter */
       if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                        "Error returned from Zoltan_Reftree_Build_Recursive.");
+        ZOLTAN_TRACE_EXIT(zz, yo);
         return(ierr);
       }
     }
   }
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return(ZOLTAN_OK);
 }
 
@@ -1965,7 +1979,7 @@ char *yo = "alloc_reftree_nodes";
 
 /*****************************************************************************/
 
-void free_reftree_nodes(ZOLTAN_REFTREE **node)
+static void free_reftree_nodes(ZOLTAN_REFTREE **node)
 
 {
 /*
@@ -2125,6 +2139,8 @@ ZOLTAN_ID_PTR zero_gid; /* a global ID containing 0, for comparison */
 int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
 int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
   hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table;
   hashsize = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table_size;
@@ -2156,6 +2172,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                      "Error returned from user function Get_Num_Coarse_Obj.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
       return(ierr);
     }
 
@@ -2180,6 +2197,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
         ZOLTAN_FREE(&vertices);
         ZOLTAN_FREE(&in_vertex);
         ZOLTAN_FREE(&out_vertex);
+        ZOLTAN_TRACE_EXIT(zz, yo);
         return(ZOLTAN_MEMERR);
       }
 
@@ -2198,6 +2216,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
         ZOLTAN_FREE(&vertices);
         ZOLTAN_FREE(&in_vertex);
         ZOLTAN_FREE(&out_vertex);
+        ZOLTAN_TRACE_EXIT(zz, yo);
         return(ierr);
       }
 
@@ -2269,6 +2288,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
       ZOLTAN_FREE(&slocal_gids);
       ZOLTAN_FREE(&slocal_lids);
       ZOLTAN_FREE(&vertices);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       return(ZOLTAN_MEMERR);
     }
 
@@ -2283,6 +2303,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
       ZOLTAN_FREE(&slocal_gids);
       ZOLTAN_FREE(&slocal_lids);
       ZOLTAN_FREE(&vertices);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       return(ierr);
     }
     while (found) {
@@ -2331,6 +2352,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
     ZOLTAN_FREE(&plocal_lids);
     ZOLTAN_FREE(&vertices);  /* KAREN */
   }
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return(final_ierr);
 }
 
@@ -2396,9 +2418,9 @@ int i;
    * add the subroot and children to order
    */
 
-  order[*isub] = subroot->local_id[0];
+  order[*isub] = subroot->global_id[0];
   for (i=0; i<subroot->num_child; i++) {
-    order[*isub+i+1] = (subroot->children[i]).local_id[0];
+    order[*isub+i+1] = (subroot->children[i]).global_id[0];
   }
   *isub = *isub + subroot->num_child + 1;
 
@@ -2415,9 +2437,9 @@ void Zoltan_Reftree_Get_Child_Order(ZZ *zz, int *order, int *ierr)
 {
 /*
  * Return the order of the children in the refinement tree.
- * Upon return, order contains LIDs assumed to be an integer.  It contains
- * sets of entries consisting of the LID of an element followed by the
- * LIDs of the children in the order determined by the reftree code.
+ * Upon return, order contains GIDs assumed to be an integer.  It contains
+ * sets of entries consisting of the GID of an element followed by the
+ * GIDs of the children in the order determined by the reftree code.
  * order should be allocated to the correct size by the caller.
  * This is a hack, will be removed in the future, and should not be publicized.
  */

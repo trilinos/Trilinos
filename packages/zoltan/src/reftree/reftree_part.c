@@ -35,11 +35,6 @@ extern "C" {
         to the slower communication channels.  Currently this algorithm
         doesn't even consider the mapping of partitions to processors.  */
 
-/* TEMP k != p Support for number of partitions not equal to number of procs.
-        To find all places where changes may be needed to support a
-        different number of partitions than the number of processors,
-        search for "TEMP k != p". */
-
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -54,16 +49,18 @@ static void Zoltan_Reftree_List_Other_Leaves(ZZ *zz, ZOLTAN_REFTREE *subroot,
        ZOLTAN_ID_PTR list, int *count);
 static int Zoltan_Reftree_Partition(ZZ *zz, int *num_export, 
        ZOLTAN_ID_PTR *export_global_ids, ZOLTAN_ID_PTR *export_local_ids, 
-       int **export_to_partition);
-static void Zoltan_Reftree_Part_Recursive(ZZ *zz, ZOLTAN_REFTREE *subroot, int *part,
+       int **export_to_partition, int **export_procs);
+static int Zoltan_Reftree_Part_Recursive(ZZ *zz, ZOLTAN_REFTREE *subroot, int *part,
        float *current_size, int *num_exp, float *cutoff,
        int num_part);
-static void Zoltan_Reftree_Mark_and_Count(ZOLTAN_REFTREE *subroot, int part, 
-       int *num_exp, ZZ *zz);  /* TEMP k != p don't need zz */
-static void Zoltan_Reftree_Export_Lists(ZZ *zz, ZOLTAN_REFTREE *subroot, 
+static int Zoltan_Reftree_Mark_and_Count(ZOLTAN_REFTREE *subroot, int part, 
+       int *num_exp, ZZ *zz);
+static int Zoltan_Reftree_Export_Lists(ZZ *zz, ZOLTAN_REFTREE *subroot, 
        int *num_export, ZOLTAN_ID_PTR *export_global_ids,
-       ZOLTAN_ID_PTR *export_local_ids, int **export_to_partition);
-static int get_partition(ZOLTAN_REFTREE *subroot, ZZ *zz); /* TEMP k != p */
+       ZOLTAN_ID_PTR *export_local_ids, int **export_to_partition,
+       int **export_procs);
+static int export_it(ZOLTAN_REFTREE *subroot, ZZ *zz, int *ierr);
+static int get_current_partition(ZOLTAN_REFTREE *subroot, ZZ *zz, int *ierr);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -81,19 +78,15 @@ int Zoltan_Reftree_Part(
   ZOLTAN_ID_PTR *export_global_ids, /* global ids of objects to be exported */
   ZOLTAN_ID_PTR *export_local_ids,  /* local  ids of objects to be exported */
   int **export_procs,           /* list of processors to export to */
-/* TEMP k != p
-        The interface currently supports export_procs, but I will be returning
-        export_to_partition.  For the sake of everything else, I am just
-        renaming it here, but eventually it should really be in the interface */
-/* TEMP k != p  KAREN KDD -- merged interface but didn't change functionality. 
-                Need export_procs to be built and filled. */
-  int **export_to_partition
+  int **export_to_partition     /* list of partitions to export to */
 )
 {
 char *yo = "Zoltan_Reftree_Part";
 int ierr;       /* error code returned by called routines */
 int final_ierr; /* error code returned by this routine */
 double time0, time1, time2, time3, time4;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Initializations in case of early exit. */
   *num_export = -1;
@@ -110,6 +103,7 @@ double time0, time1, time2, time3, time4;
     if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                      "Error returned by Zoltan_Reftree_Init.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
       return(ierr);
     }
     if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
@@ -129,6 +123,7 @@ double time0, time1, time2, time3, time4;
   if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                    "Error returned by Zoltan_Reftree_Build.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ierr);
   }
   if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
@@ -142,6 +137,7 @@ double time0, time1, time2, time3, time4;
   if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                    "Error returned by Zoltan_Reftree_Sum_Weights.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ierr);
   }
   if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
@@ -152,10 +148,11 @@ double time0, time1, time2, time3, time4;
    */
 
   ierr = Zoltan_Reftree_Partition(zz, num_export, export_global_ids,
-                                  export_local_ids, export_to_partition);
+                          export_local_ids, export_to_partition, export_procs);
   if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                    "Error returned by Zoltan_Reftree_Partition.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ierr);
   }
   if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
@@ -174,6 +171,7 @@ double time0, time1, time2, time3, time4;
                    "REFTREE Time to partition  :");
   }
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return(final_ierr);
 }
 
@@ -181,7 +179,7 @@ double time0, time1, time2, time3, time4;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int Zoltan_Reftree_Sum_Weights(ZZ *zz)
+static int Zoltan_Reftree_Sum_Weights(ZZ *zz)
 
 {
 /*
@@ -216,6 +214,8 @@ float *send_float;        /* sending message of floats */
 float *req_weights;       /* the requested weights */
 int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
 
+   ZOLTAN_TRACE_ENTER(zz, yo);
+
   /*
    * set the root and hash table
    */
@@ -223,6 +223,7 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
   root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
   if (root == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Refinement tree not defined.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_FATAL);
   }
   hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table;
@@ -259,6 +260,7 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
     leaf_list = ZOLTAN_MALLOC_GID_ARRAY(zz, count);
   if (leaf_list == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_MEMERR);
   }
 
@@ -288,6 +290,7 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
     ZOLTAN_FREE(&displs);
     ZOLTAN_FREE(&reqsize_all);
     ZOLTAN_FREE(&leaf_list);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_MEMERR);
   }
 
@@ -320,6 +323,7 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
       ZOLTAN_FREE(&displs);
       ZOLTAN_FREE(&reqsize_all);
       ZOLTAN_FREE(&leaf_list);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       return(ZOLTAN_MEMERR);
     }
 
@@ -350,6 +354,7 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
       ZOLTAN_FREE(&send_float);
       ZOLTAN_FREE(&all_leaflist);
       ZOLTAN_FREE(&reqsize_all);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       return(ZOLTAN_MEMERR);
     }
 
@@ -377,6 +382,7 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
       ZOLTAN_FREE(&send_float);
       ZOLTAN_FREE(&all_leaflist);
       ZOLTAN_FREE(&reqsize_all);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       return(ZOLTAN_MEMERR);
     }
 
@@ -408,6 +414,7 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
 
   Zoltan_Reftree_Sum_All_Weights(zz,root,wdim);
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return(ZOLTAN_OK);
 }
 
@@ -557,7 +564,7 @@ int j;   /* loop counter */
 
 static int Zoltan_Reftree_Partition(ZZ *zz, int *num_export, 
        ZOLTAN_ID_PTR *export_global_ids, ZOLTAN_ID_PTR *export_local_ids, 
-       int **export_to_partition)
+       int **export_to_partition, int **export_procs)
 
 {
 /*
@@ -572,6 +579,9 @@ float *cutoff;        /* the relative sizes of the partitions */
 int part;             /* partition under construction */
 float current_size;   /* amount of weight consumed so far */
 int num_part;         /* number of partitions */
+int ierr;             /* error flag */
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
 
@@ -579,10 +589,7 @@ int num_part;         /* number of partitions */
    * determine the size of the partitions and tolerance interval
    */
 
-/* TEMP k != p
-        using Num_Proc for number of partitions */
-
-  num_part = zz->Num_Proc;
+  num_part = zz->LB.Num_Global_Parts;
 
 /* Set the cutoff points of summed weights for the end of each partition */
 
@@ -604,6 +611,7 @@ int num_part;         /* number of partitions */
   cutoff = (float *)ZOLTAN_MALLOC((num_part)*sizeof(float));
   if (cutoff == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_MEMERR);
   }
 
@@ -633,19 +641,25 @@ int num_part;         /* number of partitions */
   num_exp = 0;
   part = 0;
   current_size = 0.0;
-  Zoltan_Reftree_Part_Recursive(zz,root,&part,&current_size,&num_exp,cutoff,
-                                num_part);
+  ierr = Zoltan_Reftree_Part_Recursive(zz,root,&part,&current_size,&num_exp,
+                                       cutoff,num_part);
   ZOLTAN_FREE(&cutoff);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ierr);
+  }
 
   /*
    * if no exports, we're done
    */
 
   if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_OK);
   }
   else if (num_exp == 0) {
     *num_export = 0;
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_OK);
   }
 
@@ -654,17 +668,29 @@ int num_part;         /* number of partitions */
    */
 
   if (!Zoltan_Special_Malloc(zz,(void **)export_global_ids,num_exp,
-                         ZOLTAN_SPECIAL_MALLOC_GID))
+                         ZOLTAN_SPECIAL_MALLOC_GID)) {
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
+  }
   if (!Zoltan_Special_Malloc(zz,(void **)export_local_ids,num_exp,
                          ZOLTAN_SPECIAL_MALLOC_LID)) {
     Zoltan_Special_Free(zz,(void **)export_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
   if (!Zoltan_Special_Malloc(zz,(void **)export_to_partition,num_exp,
                          ZOLTAN_SPECIAL_MALLOC_INT)) {
     Zoltan_Special_Free(zz,(void **)export_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
     Zoltan_Special_Free(zz,(void **)export_local_ids,ZOLTAN_SPECIAL_MALLOC_LID);
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return ZOLTAN_MEMERR;
+  }
+  if (!Zoltan_Special_Malloc(zz,(void **)export_procs,num_exp,
+                         ZOLTAN_SPECIAL_MALLOC_INT)) {
+    Zoltan_Special_Free(zz,(void **)export_to_partition,ZOLTAN_SPECIAL_MALLOC_INT);
+    Zoltan_Special_Free(zz,(void **)export_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
+    Zoltan_Special_Free(zz,(void **)export_local_ids,ZOLTAN_SPECIAL_MALLOC_LID);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -673,16 +699,22 @@ int num_part;         /* number of partitions */
    */
 
   *num_export = 0;
-  Zoltan_Reftree_Export_Lists(zz,root,num_export,export_global_ids,
-                          export_local_ids,export_to_partition);
+  ierr = Zoltan_Reftree_Export_Lists(zz,root,num_export,export_global_ids,
+                          export_local_ids,export_to_partition,export_procs);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ierr);
+  }
 
   if (num_exp != *num_export) {
     sprintf(msg, "num_exp = %d not equal to num_export = %d.",
             num_exp,*num_export);
     ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_WARN);
   }
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return(ZOLTAN_OK);
 }
 
@@ -690,7 +722,7 @@ int num_part;         /* number of partitions */
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void Zoltan_Reftree_Part_Recursive(ZZ *zz, ZOLTAN_REFTREE *subroot, int *part,
+static int Zoltan_Reftree_Part_Recursive(ZZ *zz, ZOLTAN_REFTREE *subroot, int *part,
                               float *current_size, int *num_exp, float *cutoff,
                               int num_part)
 
@@ -701,7 +733,7 @@ static void Zoltan_Reftree_Part_Recursive(ZZ *zz, ZOLTAN_REFTREE *subroot, int *
 int i;         /* loop counter */
 float newsize; /* size of partition if this subroot gets added to it */
 float eps;     /* imbalance tolerance in units of weight */
-int old_partition; /* partition of an object before repartitioning */
+int ierr;      /* error flag */
 
   newsize = *current_size + subroot->summed_weight[0]; /* TEMP SINGLE WEIGHT */
   if (*part != num_part-1)
@@ -726,16 +758,16 @@ int old_partition; /* partition of an object before repartitioning */
 
     if (subroot->assigned_to_me) {
       if (subroot->num_child == 0) {
-/* TEMP k != p Zoltan should provide a function that returns the current
-               partition */
-        old_partition = get_partition(subroot,zz);
-        if (old_partition != subroot->partition)
+        if (export_it(subroot,zz,&ierr))
           *num_exp += 1;
+        if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) return(ierr);
       }
       else
-        for (i=0; i<subroot->num_child; i++)
-          Zoltan_Reftree_Mark_and_Count(&(subroot->children[i]), *part, num_exp,
-                             zz); /* TEMP k != p don't need zz */
+        for (i=0; i<subroot->num_child; i++) {
+          ierr = Zoltan_Reftree_Mark_and_Count(&(subroot->children[i]), *part,
+                                               num_exp, zz);
+          if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) return(ierr);
+        }
     }
 
   /*
@@ -764,8 +796,8 @@ int old_partition; /* partition of an object before repartitioning */
     if (subroot->num_child != 0) {
       subroot->partition = -1;
       for (i=0; i<subroot->num_child; i++)
-        Zoltan_Reftree_Part_Recursive(zz, &(subroot->children[i]),part,
-               current_size, num_exp, cutoff, num_part);
+        ierr = Zoltan_Reftree_Part_Recursive(zz, &(subroot->children[i]),part,
+                                     current_size, num_exp, cutoff, num_part);
     }
     else {
 
@@ -787,81 +819,77 @@ int old_partition; /* partition of an object before repartitioning */
       }
       subroot->partition = *part;
       *current_size = newsize;
-/* TEMP k != p Zoltan should provide a function that returns the current
-               partition */
-      old_partition = get_partition(subroot,zz);
-      if (old_partition != subroot->partition && subroot->assigned_to_me)
-        *num_exp += 1;
+      if (export_it(subroot,zz,&ierr)) *num_exp += 1;
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) return(ierr);
     }
   }
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void Zoltan_Reftree_Mark_and_Count(ZOLTAN_REFTREE *subroot, int part, 
-       int *num_exp, ZZ *zz) /* TEMP k != p don't need zz */
-
+static int Zoltan_Reftree_Mark_and_Count(ZOLTAN_REFTREE *subroot, int part, 
+                                         int *num_exp, ZZ *zz)
 {
 /*
  * Function to set the partition and count exports
  */
-int i, old_partition;
+int i, ierr;
 
   subroot->partition = part;
   if (subroot->num_child == 0) {
-/* TEMP k != p Zoltan should provide a function that returns the current
-               partition */
-    old_partition = get_partition(subroot,zz);
-    if (old_partition != subroot->partition && subroot->assigned_to_me)
+    if (export_it(subroot,zz,&ierr))
       *num_exp += 1;
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) return(ierr);
   } else {
-    for (i=0; i<subroot->num_child; i++)
-      Zoltan_Reftree_Mark_and_Count(&(subroot->children[i]), part, num_exp,
-                         zz); /* TEMP k != p don't need zz */
+    for (i=0; i<subroot->num_child; i++) {
+      ierr = Zoltan_Reftree_Mark_and_Count(&(subroot->children[i]), part,
+                                           num_exp, zz);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) return(ierr);
+    }
   }
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void Zoltan_Reftree_Export_Lists(ZZ *zz, ZOLTAN_REFTREE *subroot, 
+static int Zoltan_Reftree_Export_Lists(ZZ *zz, ZOLTAN_REFTREE *subroot, 
                             int *num_export, ZOLTAN_ID_PTR *export_global_ids,
                             ZOLTAN_ID_PTR *export_local_ids,
-                            int **export_to_partition)
+                            int **export_to_partition, int **export_procs)
 {
 /*
  * Function to build the export lists
  */
-int i, old_partition;
+int i, ierr;
 
 /*
  * if this subtree has no leaves assigned to this processor then there can be
  * no exports below it
  */
 
-  if (!subroot->assigned_to_me) return;
+  if (!subroot->assigned_to_me) return(ZOLTAN_OK);
 
   if (subroot->num_child == 0) {
 
 /*
- * if this is a leaf, put it on the export lists if the new partition is
- * not the old partition
+ * if this is a leaf, put it on the export lists if it is to be exported
  */
-/* TEMP k != p Zoltan should provide a function that returns the current
-               partition */
-    old_partition = get_partition(subroot,zz);
 
-    if (old_partition != subroot->partition) {
+    if (export_it(subroot,zz,&ierr)) {
       ZOLTAN_SET_GID(zz, &((*export_global_ids)[(*num_export)*zz->Num_GID]),
                      subroot->global_id);
       ZOLTAN_SET_LID(zz, &((*export_local_ids)[(*num_export)*zz->Num_LID]),
                      subroot->local_id);
       (*export_to_partition)[*num_export] = subroot->partition;
+      (*export_procs)[*num_export] = Zoltan_LB_Part_To_Proc(zz,subroot->partition);
       *num_export += 1;
     }
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) return(ierr);
   }
   else {
 
@@ -869,31 +897,81 @@ int i, old_partition;
  * if it is not a leaf, traverse the subtree
  */
 
-    for (i=0; i<subroot->num_child; i++)
-      Zoltan_Reftree_Export_Lists(zz, &(subroot->children[i]), num_export,
-                                  export_global_ids,export_local_ids,
-                                  export_to_partition);
+    for (i=0; i<subroot->num_child; i++) {
+      ierr = Zoltan_Reftree_Export_Lists(zz, &(subroot->children[i]),num_export,
+                                         export_global_ids,export_local_ids,
+                                         export_to_partition,export_procs);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) return(ierr);
+    }
   }
+  return(ZOLTAN_OK);
 }
 
-/* TEMP k != p
-        This temporary function plays the role of a function that Zoltan will
-        provide once support for k != p is available.  That function will
-        return the current partition of an object.  In the REFTREE code, that
-        result is only used to compare for equality with the new partition.
-        To tide it over while we still need to work for k == p, this function
-        returns the processor number if the object is assigned to this
-        processor, and something else (Proc-1) if it is not.  This should only
-        be called with subroot as a leaf.
-*/
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 
-static int get_partition(ZOLTAN_REFTREE *subroot, ZZ *zz)
+static int export_it(ZOLTAN_REFTREE *subroot, ZZ *zz, int *ierr)
 {
-  int result;
-  if (subroot->assigned_to_me)
-    result = zz->Proc;
-  else
-    result = zz->Proc-1;
+/*
+ * Function to determine if an object belongs on the export list.
+ */
+
+int current_part;
+
+/* return TRUE if it is currently assigned to this processor and
+   either the new partition is not the old partition or the new
+   partition is not assigned to this processor */
+
+  current_part = get_current_partition(subroot,zz,ierr);
+  if (*ierr != ZOLTAN_OK && *ierr != ZOLTAN_WARN) return(FALSE);
+
+  if ((current_part != subroot->partition ||
+       Zoltan_LB_Part_To_Proc(zz,subroot->partition) != zz->Proc)
+       && subroot->assigned_to_me) return(TRUE);
+
+  return(FALSE);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+static int get_current_partition(ZOLTAN_REFTREE *subroot, ZZ *zz, int *ierr)
+{
+/*
+ * Function to return the current partition of an object.
+ * If there is no user defined get_partition function, then the returned
+ * value only indicates whether or not the partition number is this
+ * processor's number.
+ */
+
+char *yo = "get_current_partition";
+int result;
+
+  *ierr = ZOLTAN_OK;
+
+/* if the user registered a partition function, then use it */
+
+  if (zz->Get_Partition != NULL) {
+    result = zz->Get_Partition(zz->Get_Partition_Data,zz->Num_GID,zz->Num_LID,
+                               subroot->global_id,subroot->local_id, ierr);
+    if (*ierr != ZOLTAN_OK && *ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                         "Error returned from ZOLTAN_PARTITION_FN");
+    }
+  }
+  else {
+
+/* otherwise, return my processor number if the object is assigned to
+   this processor, or any other value if it is not */
+
+    if (subroot->assigned_to_me)
+      result = zz->Proc;
+    else
+      result = zz->Proc-1;
+  }
+
   return(result);
 }
 
