@@ -654,7 +654,7 @@ void Zoltan_BSFC_single_wgt_calc_partition(int wgt_dim, float work_prev_allocate
 
   /* make sure that the first bin gets the rest of the work */
   bin_proc_array[0] = -1;
-  if(level_flag != BSFC_COARSE_LEVEL_FLAG)
+  if(level_flag != BSFC_COARSE_LEVEL_FLAG && current_loc >= 0)
     bin_proc_array[current_loc] = -1;
 
   return;
