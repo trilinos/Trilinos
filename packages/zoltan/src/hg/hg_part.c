@@ -101,7 +101,7 @@ char *yo = "Zoltan_HG_HPart_Lib";
         }
      }
 
-  /* the graph will only be reduced to a size equal to the number of parts */
+  /* the graph will only be reduced to a size equal to the number of parts */  
   if (hg->redl < p)
       hg->redl = p;
 
@@ -184,7 +184,7 @@ char *yo = "Zoltan_HG_HPart_Lib";
 
      /* heuristic: stop on diminishing returns */
      if (c_hg.nVtx > 0.9 * hg->nVtx)
-        hg->redl = c_hg.nVtx;
+        hg->redl = c_hg.redl = c_hg.nVtx;
 
      ZOLTAN_FREE ((void**) &pack);
 
