@@ -1,0 +1,54 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Adding Algorithms: How to handle memory</title>
+<!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! Zoltan is distributed under the GNU Lesser General Public License 2.1.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      ! 
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+>
+<! CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+>
+</head>
+<body bgcolor="#FFFFFF">
+
+<div ALIGN=right>
+<h3>
+<img SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></h3></div>
+
+<h2>
+Memory Management in Load-Balancing Algorithms in Zoltan</h2>
+Zoltan contains a set of <a href="dev_util_mem.html">memory management
+routines</a>. It is strongly recommended that load-balancing algorithm
+developers use <a href="dev_util_mem.html#LB_Malloc"><b>LB_Malloc</b> </a>and
+<a href="dev_util_mem.html#LB_Free"><b>LB_Free</b> </a>instead of the standard
+C routines. A special case is when a dynamic structure needs to be returned
+to the application. The only situation where this happens, is when the
+algorithm builds import or export lists of data to migrate. There are two
+special routines for this purpose, called <b><a href="dev_util_mem.html#LB_Special_Malloc">LB_Special_Malloc</a></b>
+and <b><a href="dev_util_mem.html#LB_Special_Free">LB_Special_Free</a></b>.
+It is required to use these functions. The reason is that the load-balancing
+algorithm does not know which language the application uses, and hence
+cannot allocate memory in a way that is compatible with the application.
+<p>Some load-balancing algorithms may contain persistent data structures,
+that is, data structures that are preserved between calls to the load-balancing
+routine. The <i>lb</i> structure contains a field<i> lb->Data_Structure</i>
+for this purpose. The developer should write a function that frees this
+data structure.&nbsp; Use <b>LB_RCB_Free_Structure </b>as an example.
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_add_params.html">Next:&nbsp;
+Parameters</a>&nbsp; |&nbsp; <a href="dev_add_struct.html">Previous:&nbsp;
+Data Structures</a>]
+</body>
+</html>
