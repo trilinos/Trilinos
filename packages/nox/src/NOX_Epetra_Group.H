@@ -98,6 +98,10 @@ public:
   //! See above
   virtual bool applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const;
   
+  virtual bool applyJacobianDiagonalInverse(const Vector& input, Vector& result) const;
+  //! See above
+  virtual bool applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
+  
   //@}
 
   /** @name "Is" functions
@@ -155,6 +159,9 @@ protected:
   //! Newton direction vector.
   Vector NewtonVector;
   //@}
+
+  //! An extra temporary vector, only allocated if needed.
+  mutable Epetra_Vector* tmpVectorPtr;
 
   /** @name IsValid flags 
    *  

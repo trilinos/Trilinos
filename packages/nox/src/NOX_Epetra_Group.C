@@ -44,6 +44,7 @@ Group::Group(Epetra_Vector& x, LinearOperator& lo) :
   RHSVector(x, CopyShape), // new vector of same size
   gradVector(x, CopyShape), // new vector of same size
   NewtonVector(x, CopyShape), // new vector of same size
+  tmpVectorPtr(NULL),
   linearOperator(lo), // set reference
   sharedJacobian(lo.getSharedJacobian()) // pass J to SharedJacobian
 {
@@ -87,6 +88,7 @@ Group::Group(const Group& source, CopyType type) :
 
 Group::~Group() 
 {
+  delete tmpVectorPtr;
 }
 
 void Group::resetIsValid() //private
@@ -267,6 +269,49 @@ bool Group::applyJacobian(const Vector& input, Vector& result) const
 
   return true;
 }
+
+bool Group::applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const
+{
+  const Vector& epetrainput = dynamic_cast<const Vector&> (input);
+  Vector& epetraresult = dynamic_cast<Vector&> (result);
+  return applyJacobianDiagonalInverse(epetrainput, epetraresult);
+}
+
+bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) const
+{
+  if (!isJacobian()) 
+    return false;
+
+  // Get a reference to the Jacobian 
+  const Epetra_RowMatrix& Jacobian = sharedJacobian.getJacobian();
+
+  // Get epetra reference to the result vector
+  Epetra_Vector& r = result.getEpetraVector();
+
+  // Allocate the extra tmpVectorPtr if necessary
+  if (tmpVectorPtr == NULL)
+    tmpVectorPtr = new Epetra_Vector(r.Map());
+
+  // Get the reference to the temporary vector
+  Epetra_Vector& tmpVector = *tmpVectorPtr;
+
+  // Put a copy of the diagonal of the Jacobian into tmpVector
+  int retcode = Jacobian.ExtractDiagonalCopy(tmpVector);
+  
+  // Check if ExtractDiagonalCopy is supported
+  if (retcode != 0)
+    return false;
+
+  // Calculate r = input ./ tmpVector (./ is element-by-element divide)
+  retcode = r.ReciprocalMultiply(1.0, tmpVector, input.getEpetraVector(), 0.0);
+
+  // Check if this worked
+  if (retcode != 0)
+    return false;
+
+  return true;
+}
+
 
 
 bool Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const

@@ -39,14 +39,16 @@
 namespace NOX { 
 namespace Abstract { 
 
-/*! \brief %NOX pure abstract interface to a "group"; i.e., a solution
- *  vector and the corresponding RHS, Jacobian, gradient, and Newton
- *  vectors, as well as any shared objects.
- *
- * This class groups together the objects relating to a particular
- * solution vector. Each time the solution vector is updated via the
- * "computeX" objects, all the previously computed values become
- * invalid. */
+/*! 
+  \brief %NOX pure abstract interface to a "group"; i.e., a solution
+  vector and the corresponding RHS, Jacobian, gradient, and Newton
+  vectors, as well as any shared objects.
+ 
+  This class groups together the objects relating to a particular
+  solution vector. Each time the solution vector is updated via the
+  "computeX" objects, all the previously computed values become
+  invalid.
+*/
 
 class Group {
 
@@ -58,9 +60,11 @@ public:
   //! Destructor.
   virtual ~Group() {};
   
-  /*! \brief Copies the values of all vectors and any other data in
-   *  source group to this group.  (May invalidate shared data for
-   *  source group.) */
+  /*! 
+    \brief Copies the values of all vectors and any other data in
+    source group to this group.  (May invalidate shared data for
+    source group.)
+  */
   virtual Group& operator=(const Group& source) = 0;
       
   //@{ \name "Compute" functions.
@@ -85,30 +89,43 @@ public:
   //@}
 
   /** @name Jacobian operations.
-   *
-   * Operations using the Jacobian matrix. These may not be defined in
-   * matrix-free scenarios. */
+   
+    Operations using the Jacobian matrix. These may not be defined in
+    matrix-free scenarios.
+  */
 
   //@{
   
-  /*! \brief If supported, returns true and calculates result =
-   *  Jacobian * input.  Otherwise, returns false.  Throws an error if
-   *  the Jacobian has not been computed. */
+  /*! 
+    \brief If supported, returns true and calculates 
+    result = Jacobian * input.  Otherwise, returns false.  
+    Returns false is any errors occur, such as the Jacobian not being
+    computed.
+  */
   virtual bool applyJacobian(const Vector& input, Vector& result) const = 0;
 
-  /*! \brief If supported, returns true and calculates result =
-   *  Jacobian^T * input.  Otherwise, returns false.  Throws an error
-   *  if the Jacobian has not been computed. */
+  /*! 
+    \brief If supported, returns true and calculates result =
+    Jacobian^T * input.  Otherwise, returns false.  Throws an error if
+    the Jacobian has not been computed. 
+  */
   virtual bool applyJacobianTranspose(const Vector& input, Vector& result) const = 0;
   
+  /*!
+    \brief Applies the Jacobian Diagonal to the given input vector.
+  */
+  virtual bool applyJacobianDiagonalInverse(const Vector& input, Vector& result) const = 0;
+    
+
   //@}
 
   /** @name "Is" functions.
-   *
-   * Checks to see if various objects have been computed. Returns true
-   * if the corresponding "compute" function has been called since the
-   * last update to the solution vector (via instantiation or
-   * computeX). */
+   
+    Checks to see if various objects have been computed. Returns true
+    if the corresponding "compute" function has been called since the
+    last update to the solution vector (via instantiation or
+    computeX).
+  */
 
   //@{
   
@@ -124,9 +141,10 @@ public:
   //@}
 
   /** @name "Get" functions.
-   *
-   * Note that these function do not check whether or not the vectors
-   * are valid. Must use the "Is" functions for that purpose. */
+   
+    Note that these function do not check whether or not the vectors
+    are valid. Must use the "Is" functions for that purpose.
+  */
   //@{ 
 
   //! Return solution vector.  
@@ -149,11 +167,13 @@ public:
 
   //@{ \name Creating new Groups.
 
-  /*! \brief Create a new %Group of the same derived type as this one
-   * by cloning this one, and return a pointer to the new group.  If
-   * type is "DeepCopy", then we need to create an exact replica of
-   * "this". Otherwise, if type is "CopyShape", we need only replicate
-   * the shape of "this". Returns NULL if clone is not supported. */
+  /*! 
+    \brief Create a new %Group of the same derived type as this one by
+    cloning this one, and return a pointer to the new group.  If type
+    is "DeepCopy", then we need to create an exact replica of
+    "this". Otherwise, if type is "CopyShape", we need only replicate
+    the shape of "this". Returns NULL if clone is not supported.
+  */
   virtual Group* clone(CopyType type = DeepCopy) const = 0;
 
   //@}
