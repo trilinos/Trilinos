@@ -983,7 +983,6 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
      coarsen_scheme = ag->coarsen_scheme_level[ag->cur_level];
    }
    /*ms*/
-   
    if ( ndofs == nprocs ) 
    {
       if (coarsen_scheme == ML_AGGR_UNCOUPLED) 
@@ -1007,6 +1006,10 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    }
    else 
    {
+#ifdef ML_repartition
+      if (coarsen_scheme == ML_AGGR_UNCOUPLED) 
+         coarsen_scheme = ML_AGGR_UNCOUPLED;
+#endif
       if (coarsen_scheme == ML_AGGR_COUPLED) 
          coarsen_scheme = ML_AGGR_COUPLED;
       else if (coarsen_scheme == ML_AGGR_MIS) 
@@ -1041,7 +1044,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    
    if (status == 0) {
      if (ag->nullspace_vect != NULL) {
-       new_null = ML_allocate(sizeof(double)*ag->nullspace_dim*
+       new_null = (double *) ML_allocate(sizeof(double)*ag->nullspace_dim*
 			      perm->outvec_leng);
        offset1 = 0;
        offset2 = 0;
@@ -1571,64 +1574,90 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 			  int num_PDE_eqns)
 			  
 {
+#ifdef throwaway
   int    proc_index, Nsnd, Nrcv, *neighbors, flag, oldj;
   int    *NeighborList, *Nsnds, *Nrcvs, **SndIndices, **RcvIndices, count;
   int    *the_list, the_length, offset, Nnonzero, Nglobal, oldNnonzero;
   int    *remote_offsets, Nneighbors, i, j, Nrows, Nghost;
   int    *permute_array, *itemp, *columns, *rowptr;
   double *dvec, *d2vec, *values;
-  ML_Operator *perm_mat, *permt_mat, *permuted_Amat;
+  ML_Operator *perm_mat, *permt_mat, *permuted_Amat, *newpermt, *opermt;
   ML_CommInfoOP *mat_comm = NULL;
-  struct ML_CSR_MSRdata *temp;
+ int *iwork, *ttemp, msgtype, Nprocs_WhoGive_TheirUnPermuted_Rows, fromproc, toproc, MyGlobal_Id;
+ int  *GlobalId_Rows_ISend, Nrows_In_Both_Permuted_And_UnPermuted, 
+   *Procs_WhoGet_MyUnpermutedRows, prev, max_per_processor;
+ int Nprocs_WhoGet_MyUnpermutedRows, mypid, nprocs;
 
+ int *newrowptr, *newcolumns, Nrows_Permuted;
+ double *newvalues;
+ int *Procs_WhoGive_TheirUnPermuted_Rows, *N_UnPermutedRows_ToSend;
+ int GlobalId_RowsStaying_WithMe;
+#endif
+ int mypid, nprocs, Nglobal, i, j, oldj, *the_list = NULL, the_length, offset;
+ int *remote_offsets, *itemp = NULL, Nnonzero, oldNnonzero, *iwork = NULL;
+ int *ttemp = NULL, *Procs_WhoGive_TheirUnPermuted_Rows = NULL;
+ int Nprocs_WhoGive_TheirUnPermuted_Rows, msgtype, prev;
+ int *NRows_IGet_ForPermuted = NULL, *N_UnPermutedRows_ToSend = NULL;
+ int Nrows_In_Both_Permuted_And_UnPermuted, fromproc, toproc;
+ int Nprocs_WhoGet_MyUnpermutedRows, *Procs_WhoGet_MyUnpermutedRows = NULL;
+ int Nrows_Permuted, max_per_processor, MyGlobal_Id, *GlobalId_Rows_ISend=NULL;
+ int GlobalId_RowsStaying_WithMe, *columns = NULL, *rowptr = NULL;
+ ML_Operator *permt_mat = NULL, *perm_mat = NULL, *permuted_Amat = NULL;
+ struct ML_CSR_MSRdata *temp = NULL;
+ double *dvec, *d2vec, *values = NULL;
+ USR_REQ *request = NULL; 
+ ML_Comm *comm;
+
+ 
+ comm = mat->comm;
+ mypid = comm->ML_mypid;
+ nprocs = comm->ML_nprocs;
   *new_mat = NULL;
   *permutation = NULL;
   Nglobal = mat->invec_leng;
-  ML_gsum_scalar_int(&Nglobal, &i, mat->comm);
-
-  if (Nglobal/num_PDE_eqns >= 12*mat->comm->ML_nprocs) return 1;
+  ML_gsum_scalar_int(&Nglobal, &i, comm);
+  if (Nglobal/num_PDE_eqns >= 12*nprocs) return 1;
 
   /* Choose a random subset of global unknowns. These will become root nodes */
   /* for a very simple aggregation scheme. These aggregates/subdomains are   */ 
   /* later assigned to processors defining the new partitioning.             */
 
-  ML_random_global_subset(mat, 20.,&the_list, &the_length, num_PDE_eqns);
+  ML_random_global_subset(mat, 5.,&the_list, &the_length, num_PDE_eqns);
   for (i = 0; i < the_length; i++) the_list[i] *= num_PDE_eqns;
 #ifdef DEBUG
-  if (mat->comm->ML_mypid == 0) {
+  if (mypid == 0) {
     for (i = 0; i < the_length; i++) 
-      printf("%d: ML_reparition_matrix: root_node(%d) = %d\n",mat->comm->ML_mypid,i,the_list[i]);
+      printf("%d: ML_reparition_matrix: root_node(%d) = %d\n",mypid,i,the_list[i]);
   }
   fflush(stdout);
 #endif
 
-  if (the_length >= mat->comm->ML_nprocs) {
+  if (the_length >= nprocs) {
     ML_free(the_list);
     return 1;
   }
-  printf("%d: continue\n",mat->comm->ML_mypid); fflush(stdout);
 
   /* Make up a global numbering for the matrix unknowns. The jth  */
   /* unknown on processor k has global id = remote_offsets[k] + j */
 
-  remote_offsets = (int *) ML_allocate(sizeof(int)*(mat->comm->ML_nprocs + 1));
+  remote_offsets = (int *) ML_allocate(sizeof(int)*(nprocs + 1));
   itemp         = (int *) ML_allocate(sizeof(int)*(Nglobal +
-						   mat->comm->ML_nprocs + 1));
-  for (i = 0; i < mat->comm->ML_nprocs; i++) remote_offsets[i] = 0;
-  remote_offsets[mat->comm->ML_mypid] = mat->invec_leng;
-  ML_gsum_vec_int(&remote_offsets,&itemp,mat->comm->ML_nprocs,mat->comm);
+						   nprocs + 1));
+  for (i = 0; i < nprocs; i++) remote_offsets[i] = 0;
+  remote_offsets[mypid] = mat->invec_leng;
+  ML_gsum_vec_int(&remote_offsets,&itemp,nprocs,comm);
   j = 0; oldj = 0;
-  for (i = 1; i < mat->comm->ML_nprocs; i++) {
+  for (i = 1; i < nprocs; i++) {
     oldj = j;
     j += remote_offsets[i-1];
     remote_offsets[i-1] = oldj;
   }
-  remote_offsets[ mat->comm->ML_nprocs-1] = j;
-  remote_offsets[mat->comm->ML_nprocs] = Nglobal;
-  offset = remote_offsets[mat->comm->ML_mypid];
+  remote_offsets[ nprocs-1] = j;
+  remote_offsets[nprocs] = Nglobal;
+  offset = remote_offsets[mypid];
 #ifdef DEBUG
-  if (mat->comm->ML_mypid == 0) 
-    for (i = 0; i <= mat->comm->ML_nprocs; i++)
+  if (mypid == 0) 
+    for (i = 0; i <= nprocs; i++)
       printf("ML_repartition_matrix: REMOTE OFFSET(%d) = %d\n",i,remote_offsets[i]);
   fflush(stdout);
 #endif
@@ -1680,9 +1709,9 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
       dvec[i] = d2vec[i];
       if (dvec[i] > 0.0) Nnonzero++;
     }
-    ML_gsum_scalar_int(&Nnonzero,&i,mat->comm);
+    ML_gsum_scalar_int(&Nnonzero,&i,comm);
   }
-  ML_free(d2vec);
+  if (d2vec != NULL) ML_free(d2vec);
 
   /* Assign any singletons to the a new domain */
 
@@ -1692,19 +1721,211 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 
 #ifdef DEBUG
   for (i = 0; i < mat->outvec_leng; i++) 
-    printf("%d: ML_repartition_matrix: domain_assignment(%d) = %e\n",mat->comm->ML_mypid,i,dvec[i]);
+    printf("%d: ML_repartition_matrix: domain_assignment(%d) = %e\n",mypid,i,dvec[i]);
   fflush(stdout);
 #endif
 
+  /* Change dvec so that it now contains the global id (instead */
+  /* of the subdomain number) corresponding to the row in the   */
+  /* permuted system.                                           */
+
+  /* Compute the number of processors (not including myself) */
+  /* owning rows in the unpermuted system that correspond    */
+  /* to rows that I will now own in the permuted system.     */
+  
+  iwork  = (int *) ML_allocate(sizeof(int)*nprocs);
+  ttemp  = (int *) ML_allocate(sizeof(int)*nprocs);
+  for (i = 0; i < nprocs; i++) iwork[i] = 0;
+  for (i = 0; i < mat->invec_leng; i++) {
+    j = (int) dvec[i];
+    j--;
+    if (j < 0) j = 0;
+    if ( j > nprocs) 
+      pr_error("%d: dvec > Nprocs?  %d\n",mypid,(int) dvec[i]);
+    iwork[j] = 1;
+  }
+  iwork[mypid] = 0;
+  ML_gsum_vec_int(&iwork,&ttemp,nprocs,comm);
+  Nprocs_WhoGive_TheirUnPermuted_Rows = iwork[mypid];
+  if (ttemp != NULL) ML_free(ttemp);
+  if (iwork != NULL) ML_free(iwork);
+
+
+  /* Compute the # of my unpermuted rows that will be   */
+  /* assigned to each processor in the permuted system. */     
+
+  if (Nprocs_WhoGive_TheirUnPermuted_Rows > 0) 
+    request = (USR_REQ *) ML_allocate(Nprocs_WhoGive_TheirUnPermuted_Rows*
+				      sizeof(USR_REQ));
+  else            request = NULL;
+  Procs_WhoGive_TheirUnPermuted_Rows=(int *) ML_allocate(sizeof(int)*
+							 (Nprocs_WhoGive_TheirUnPermuted_Rows+1));
+  NRows_IGet_ForPermuted = (int *) ML_allocate(sizeof(int)*
+					       (Nprocs_WhoGive_TheirUnPermuted_Rows+1));
+  N_UnPermutedRows_ToSend = (int *) ML_allocate(sizeof(int)*(nprocs));
+
+  for (i = 0; i < nprocs; i++) N_UnPermutedRows_ToSend[i] = 0;
+  for (i = 0; i < mat->invec_leng; i++) {
+    j = (int) dvec[i];
+    j--;
+    if (j < 0) j = 0;
+    (N_UnPermutedRows_ToSend[j])++;
+  }
+  Nrows_In_Both_Permuted_And_UnPermuted = N_UnPermutedRows_ToSend[mypid];
+
+  /* Now send the # of my unpermuted rows that will be    */
+  /* assigned to other processors in the permuted system. */     
+
+  for (i = 0; i < Nprocs_WhoGive_TheirUnPermuted_Rows; i++)    {
+    msgtype = 1794;
+    fromproc = -1;
+    comm->USR_irecvbytes((void *)&(NRows_IGet_ForPermuted[i]),
+			 sizeof(int),&fromproc,&msgtype,comm->USR_comm,request+i);
+    if (fromproc != -1) Procs_WhoGive_TheirUnPermuted_Rows[i] = fromproc;
+  }
+  Nprocs_WhoGet_MyUnpermutedRows = 0;
+  for (i = 0; i < nprocs; i++) {
+    if ( (N_UnPermutedRows_ToSend[i] != 0) && (i != mypid)) {
+      msgtype = 1794;
+      toproc = i;
+      comm->USR_sendbytes((void *) &(N_UnPermutedRows_ToSend[i]),sizeof(int),
+			  toproc,msgtype, comm->USR_comm);
+      Nprocs_WhoGet_MyUnpermutedRows++;
+    }
+  }
+  Procs_WhoGet_MyUnpermutedRows = (int *) ML_allocate(sizeof(int)*
+						      (Nprocs_WhoGet_MyUnpermutedRows+1));
+  Nprocs_WhoGet_MyUnpermutedRows = 0;
+  for (i = 0; i < nprocs; i++) {
+    if ( (N_UnPermutedRows_ToSend[i] != 0) && (i != mypid))
+      Procs_WhoGet_MyUnpermutedRows[Nprocs_WhoGet_MyUnpermutedRows++] = i;
+  }
+  if (N_UnPermutedRows_ToSend != NULL) ML_free(N_UnPermutedRows_ToSend);
+
+  for (i = 0; i < Nprocs_WhoGive_TheirUnPermuted_Rows; i++)    {
+    msgtype = 1794;
+    fromproc = -1;
+    comm->USR_cheapwaitbytes((void *) &(NRows_IGet_ForPermuted[i]),sizeof(int),
+			     &fromproc,&msgtype, comm->USR_comm, request+i);
+    if (fromproc != -1) Procs_WhoGive_TheirUnPermuted_Rows[i] = fromproc;
+  }
+  ML_az_sort(Procs_WhoGive_TheirUnPermuted_Rows,
+	     Nprocs_WhoGive_TheirUnPermuted_Rows,NRows_IGet_ForPermuted,NULL);
+
+  Nrows_Permuted = 0;
+  for (i = 0; i < Nprocs_WhoGive_TheirUnPermuted_Rows; i++) 
+    Nrows_Permuted += NRows_IGet_ForPermuted[i];
+  Nrows_Permuted += Nrows_In_Both_Permuted_And_UnPermuted;
+  max_per_processor = ML_gmax_int(Nrows_Permuted, comm);
+
+  MyGlobal_Id = max_per_processor*mypid;
+
+  if (Nprocs_WhoGet_MyUnpermutedRows > Nprocs_WhoGive_TheirUnPermuted_Rows ) {
+    if (request != NULL) ML_free(request);
+    request = (USR_REQ *) ML_allocate(Nprocs_WhoGet_MyUnpermutedRows*
+				      sizeof(USR_REQ));
+  }
+
+  /* send back the start index for each of rows represented in dvec */
+  /* so that we can convert dvec to a global id                     */
+  GlobalId_Rows_ISend = (int *) ML_allocate(sizeof(int)*(nprocs));
+  for (i = 0; i < nprocs; i++) GlobalId_Rows_ISend[i] = -1;
+
+
+  for (i = 0; i < Nprocs_WhoGet_MyUnpermutedRows; i++)    {
+    msgtype = 4971;
+    fromproc = Procs_WhoGet_MyUnpermutedRows[i];
+    comm->USR_irecvbytes((void *) &(GlobalId_Rows_ISend[fromproc]),sizeof(int),
+			 &fromproc,&msgtype, comm->USR_comm, request+i);
+  }
+  prev = -1;
+  GlobalId_RowsStaying_WithMe = MyGlobal_Id;
+
+  for (i = 0; i < Nprocs_WhoGive_TheirUnPermuted_Rows; i++)    {
+    msgtype = 4971;
+    toproc = Procs_WhoGive_TheirUnPermuted_Rows[i];
+
+    if ( (prev < mypid) && (toproc > mypid) ) {
+      MyGlobal_Id += Nrows_In_Both_Permuted_And_UnPermuted;
+    }
+    prev = toproc;
+    comm->USR_sendbytes((void *) &MyGlobal_Id, sizeof(int), toproc, 
+			msgtype, comm->USR_comm);
+    MyGlobal_Id += NRows_IGet_ForPermuted[i];
+    if (toproc < mypid) {
+      GlobalId_RowsStaying_WithMe = MyGlobal_Id;
+    }
+  }
+  if (NRows_IGet_ForPermuted != NULL) ML_free(NRows_IGet_ForPermuted);
+  if (Procs_WhoGive_TheirUnPermuted_Rows != NULL) 
+    ML_free(Procs_WhoGive_TheirUnPermuted_Rows);
+
+  for (i = 0; i < Nprocs_WhoGet_MyUnpermutedRows; i++)    {
+    msgtype = 4971;
+    fromproc = Procs_WhoGet_MyUnpermutedRows[i];
+    comm->USR_cheapwaitbytes((void *) &(GlobalId_Rows_ISend[fromproc]),
+			     sizeof(int),&fromproc,&msgtype,comm->USR_comm,request+i);
+  }
+  if (Procs_WhoGet_MyUnpermutedRows != NULL)
+    ML_free(Procs_WhoGet_MyUnpermutedRows);
+  if (request != NULL) ML_free(request);
+
+#ifdef throwaway
   /* Build a global array containing all the subdomain assignments */
 
   permute_array = (int *) ML_allocate(sizeof(int)*(Nglobal+1));
   for (i = 0; i <= Nglobal; i++) permute_array[i] = 0;
   for (i = 0; i < mat->invec_leng; i++) 
     permute_array[i+offset] = (int) dvec[i];
-  ML_gsum_vec_int(&permute_array,&itemp,Nglobal,mat->comm);
+  ML_gsum_vec_int(&permute_array,&itemp,Nglobal,comm);
   ML_free(itemp);
-  ML_free(dvec);
+#endif
+  for (i = 0; i < mat->invec_leng; i++) {
+    j = (int) dvec[i];
+    j--;
+    if (j < 0) j = 0;
+    if (j != mypid) {
+      dvec[i] = GlobalId_Rows_ISend[j];
+      GlobalId_Rows_ISend[j]++;
+    }
+    else dvec[i] = GlobalId_RowsStaying_WithMe++;
+  }
+  if (GlobalId_Rows_ISend != NULL) ML_free(GlobalId_Rows_ISend);
+  /* build the new matrix */
+  columns = (int *) ML_allocate(sizeof(int)*(mat->invec_leng+1));
+  values  = (double *) ML_allocate(sizeof(double)*(mat->invec_leng+1));
+  rowptr = (int *) ML_allocate(sizeof(int)*(mat->invec_leng+1));
+  rowptr[0] = 0;
+  for (i = 0; i < mat->invec_leng; i++) {
+    rowptr[i+1] = i+1;
+    values[i]   = 1.;
+    columns[i]  = (int) dvec[i];
+  }
+  temp = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  temp->columns = columns;
+  temp->values  = values;
+  temp->rowptr  = rowptr;
+  permt_mat = ML_Operator_Create(comm);
+  ML_Operator_Set_ApplyFuncData(permt_mat,Nrows_Permuted,mat->invec_leng,
+				ML_EMPTY,temp,Nrows_Permuted,NULL,0);
+  ML_Operator_Set_Getrow(permt_mat, ML_EXTERNAL, mat->invec_leng, CSR_getrows);
+  ML_Operator_Set_ApplyFunc( permt_mat, ML_INTERNAL, CSR_matvec);
+  permt_mat->max_nz_per_row = 1;
+  permt_mat->N_nonzeros     = mat->invec_leng;
+  *permt = ML_Operator_Create(comm);
+  ML_back_to_csrlocal(permt_mat, *permt, max_per_processor);
+  printf("almost finished\n");
+  perm_mat = ML_Operator_Create(comm);
+  ML_Operator_Transpose_byrow(*permt, perm_mat);
+  permuted_Amat = ML_Operator_Create(comm);
+  ML_rap(perm_mat,mat,*permt,permuted_Amat, ML_CSR_MATRIX);
+  *new_mat = permuted_Amat;
+  *permutation = perm_mat;
+
+  if (dvec != NULL) ML_free(dvec);
+  if (remote_offsets != NULL) ML_free(remote_offsets);
+
+#ifdef throwaway
 
   /* Count the number of rows assigned to this processor */
   Nrows = 0;
@@ -1869,14 +2090,18 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   perm_mat->data_destroy = ML_CSR_MSRdata_Destroy;
   permt_mat = ML_Operator_Create(mat->comm);
 
+  ML_Operator_Print(perm_mat,"perm");
+  ML_Operator_Dump(perm_mat, NULL, NULL, "pdump",1);
   ML_Operator_Transpose_byrow(perm_mat,permt_mat);
+  ML_Operator_Print(permt_mat,"permt");
+  ML_Operator_Dump(permt_mat, NULL, NULL, "ptdump",1);
 
   permuted_Amat = ML_Operator_Create(mat->comm);
   ML_rap(perm_mat,mat,permt_mat,permuted_Amat, ML_CSR_MATRIX);
   *new_mat = permuted_Amat;
   *permutation = perm_mat;
   *permt       = permt_mat;
-
+#endif
   return 0;
 }
 
