@@ -52,8 +52,15 @@ static char *cvs_rcbc_id = "$Id$";
 #define RCB_DEFAULT_OVERALLOC 1.0
 #define RCB_DEFAULT_REUSE FALSE
 
+/* function prototypes */
+
+static void RCB_error(LB *, int);
+static void RCB_check(LB *, struct rcb_dot *, int, int, struct rcb_box *);
+static void RCB_stats(LB *, double, struct rcb_dot *,int, double *, 
+ 		      int *, struct rcb_box *, int, int);
+
 static int rcb(LB *, int *, LB_GID **, LB_LID **, int **, double,
-    int, int, int, int, int);
+               int, int, int, int, int);
 
 /*  RCB_CHECK = 0  No consistency check on input or results */
 /*  RCB_CHECK = 1  Check input weights and final results for consistency */
@@ -233,13 +240,6 @@ static int rcb(
 
   double start_time, end_time;
   double lb_time[2];
-
-  /* function prototypes */
-
-  static void RCB_error(LB *, int);
-  static void RCB_check(LB *, struct rcb_dot *, int, int, struct rcb_box *);
-  static void RCB_stats(LB *, double, struct rcb_dot *,int, double *, 
-		 int *, struct rcb_box *, int, int);
 
   /* MPI data types and user functions */
 

@@ -251,7 +251,6 @@ void LB_RCB_Free_Structure(LB *lb)
 /*
  * Deallocate the persistent RCB data structures in lb->Structure.
  */
-int ierr = 0;
 char *yo = "LB_RCB_Free_Structure";
 
 RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
@@ -279,7 +278,7 @@ static int initialize_dot(LB *lb, struct rcb_dot *dot, LB_GID global_id,
  *  Function that initializes the dot data structure for RCB.  It uses the 
  *  global ID, coordinates and weight provided by the application.  
  */
-int ierr = 0;
+int ierr = LB_OK;
 char *yo = "initialize_dot";
 
   LB_SET_GID(dot->Tag.Global_ID, global_id);
@@ -294,4 +293,5 @@ char *yo = "initialize_dot";
   }
   if (wgtflag)
      dot->Weight = wgt;
+  return(ierr);
 }
