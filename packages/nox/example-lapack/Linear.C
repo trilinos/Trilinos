@@ -174,6 +174,7 @@
 
 
 #include "NOX.H"
+#include "NOX_Random.H"
 #include "NOX_LAPACK_Vector.H"
 #include "NOX_LAPACK_Group.H"
 #include "NOX_LAPACK_Matrix.H"
@@ -225,11 +226,11 @@ public:
 
       initialGuess.init(1);
       b.init(1);
-      NOX::Random random(1.0);
+      NOX::Random random(1);
 
       for (int i = 0; i < n; i ++)
 	for (int j = 0; j < n; j ++)
-	  A(i,j) = random();
+	  A(i,j) = random.number();
     }
 
     int info;
