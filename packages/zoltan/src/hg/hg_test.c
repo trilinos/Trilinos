@@ -54,7 +54,7 @@ int main (int argc, char **argv)
 
   zz.Debug_Level = 1;
 
-  Zoltan_Memory_Debug(1);
+  Zoltan_Memory_Debug(2);
 
 /* Start of the time*/
   INIT_TIME();
