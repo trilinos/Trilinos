@@ -73,8 +73,8 @@ typedef enum LB_Method {
   NONE = -1,
   RCB,
   OCTPART,
-  WHEAT,
   PARMETIS,
+  JOSTLE,
   LB_MAX_METHODS                  /*  This entry should always be last.      */
 } LB_METHOD;
 
@@ -310,9 +310,9 @@ struct LB_Struct {
 /* PROTOTYPES */
 
 extern LB_FN LB_rcb;
-extern LB_FN lb_wheat;
 extern LB_FN LB_octpart;
 extern LB_FN LB_ParMetis;
+extern LB_FN LB_Jostle;
 
 #include "par_const.h"
 

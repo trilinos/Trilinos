@@ -342,6 +342,10 @@ int LB_Set_Method(LB *lb, char *method_name)
     lb->Method = PARMETIS;
     lb->LB_Fn = LB_ParMetis;
   }
+  else if (strcmp(method_upper, "JOSTLE") == 0) {
+    lb->Method = JOSTLE;
+    lb->LB_Fn = LB_Jostle;
+  }
   else if (strcmp(method_upper, "NONE") == 0) {
     lb->Method = NONE;
     lb->LB_Fn = NULL;
