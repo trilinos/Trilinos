@@ -19,7 +19,7 @@ PLAT		= _tflops
 #
 #  The name of the libraries to be created/linked to
 #
-DSuperLUroot 	= /scratch/tmp_6/dmday/SuperLU
+DSuperLUroot 	= .. 
 DSUPERLULIB   	= $(DSuperLUroot)/superlu$(PLAT).a
 BLASDEF	     	= -DUSE_VENDOR_BLAS
 BLASLIB		= -lkmath -lcmplx
