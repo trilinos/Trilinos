@@ -1,0 +1,142 @@
+################## Trilinos Defines ##########################
+
+TRILINOS_ARCH = SUNOS
+
+TRILINOS_FORTRAN_UNDERSCORE =
+
+TRILINOS_DEFINES = -D$(TRILINOS_ARCH) -DHAVE_CONFIG_H \
+                   $(EPETRA_ARCH_DEFINES)
+
+################## Trilinos Component Includes ##########################
+
+# The Trilinos build environment will use the following locations when
+# looking for header files
+
+TRILINOS_HOME = /home/hkthorn/Trilinos
+
+AZTECOO_INCLUDES =    -I$(TRILINOS_HOME)/packages/aztecoo/src \
+                      -I$(TRILINOS_HOME)/SUNOS.SERIAL/packages/aztecoo/src
+EPETRA_INCLUDES =     -I$(TRILINOS_HOME)/packages/epetra/src \
+                      -I$(TRILINOS_HOME)/SUNOS.SERIAL/packages/epetra/src
+IFPACK_INCLUDES =     -I$(TRILINOS_HOME)/packages/ifpack/src \
+                      -I$(TRILINOS_HOME)/SUNOS.SERIAL/packages/ifpack/src
+TRIUTILS_INCLUDES =   -I$(TRILINOS_HOME)/packages/triutils/src \
+                      -I$(TRILINOS_HOME)/SUNOS.SERIAL/packages/triutils/src
+ML_INCLUDES =         -I$(TRILINOS_HOME)/packages/ml/src/Coarsen \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Comm \
+                      -I$(TRILINOS_HOME)/packages/ml/src/FEGrid \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Include \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Krylov \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Main \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Operator \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Smoother \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Utils \
+                      -I$(TRILINOS_HOME)/SUNOS.SERIAL/packages/ml/src
+
+TRILINOS_INCLUDES = $(IFPACK_INCLUDES) $(AZTECOO_INCLUDES) $(ML_INCLUDES) \
+                    $(TRIUTILS_INCLUDES) $(EPETRA_INCLUDES)
+
+################## Trilinos Libraries ##########################
+
+# The Trilinos build environment will use the following locations for building,
+# storing and using its own libraries
+
+LIBAZTECOO =    $(TRILINOS_HOME)/SUNOS.SERIAL/packages/aztecoo/src/libaztecoo.a
+LIBEPETRA =     $(TRILINOS_HOME)/SUNOS.SERIAL/packages/epetra/src/libepetra.a
+LIBIFPACK =     $(TRILINOS_HOME)/SUNOS.SERIAL/packages/ifpack/src/libifpack.a
+LIBTRIUTILS =   $(TRILINOS_HOME)/SUNOS.SERIAL/packages/triutils/src/libtriutils.a
+LIBML =         $(TRILINOS_HOME)/SUNOS.SERIAL/packages/ml/src/libml.a
+
+TRILINOS_LIBRARIES = $(LIBIFPACK) $(LIBAZTECOO) $(LIBML)\
+                     $(LIBTRIUTILS) $(LIBEPETRA)
+
+############## Machine dependent definitions ##################
+
+# Define link flags
+ARCH_LDFLAGS := -xlic_lib=sunperf
+
+#Define include directories (remember to use -Idirectory_name)
+ARCH_INCLUDES :=
+
+#Define libraries
+ARCH_LIBRARIES = -lf77compat -lsunperf -lm
+
+#Define compilers
+#cc: Forte Developer 7 C 5.4 2002/03/09
+#CC: Forte Developer 7 C++ 5.4 2002/03/09
+#NOTICE: Invoking /Net/local/bin/f90 -f77 -ftrap=%none -V
+#f90: Forte Developer 7 Fortran 95 7.0 2002/03/09
+CC      = cc
+CXX     = CC 
+FC      = f77
+RANLIB  = ranlib -s
+LINKER  = $(CXX)
+AR      = ar
+ARFLAGS = rcv
+LN      = ln -s
+
+.SUFFIXES : .o .cc .cpp
+
+.cpp.o:
+	$(CXX) $(CXXFLAGS) -c $<
+
+.cc.o:
+	$(CXX) $(CXXFLAGS) -c $<
+
+################## External Include ##########################
+
+EXTERNAL_DEFINES =
+
+################## External Include ##########################
+
+EXTERNAL_INCLUDES =
+
+################## External Libraries ##########################
+
+LIBARPACK = /local/homes/uhetma/ARPACK/libarpack_SUNOS.a
+
+EXTERNAL_LIBRARIES = $(LIBARPACK)
+
+################# Code dependent section #######################
+
+DEFINES= $(ARCH_DEFINES) $(TRILINOS_DEFINES) $(EXTERNAL_DEFINES)
+
+INCLUDES = $(ARCH_INCLUDES) $(TRILINOS_INCLUDES) \
+           $(EXTERNAL_INCLUDES)
+
+CFLAGS= -O $(DEFINES) $(INCLUDES)
+FFLAGS= -O $(DEFINES) $(INCLUDES)
+CXXFLAGS = -O $(DEFINES) $(INCLUDES)
+
+#CFLAGS= -g $(DEFINES) $(INCLUDES)
+#FFLAGS= -g $(DEFINES) $(INCLUDES)
+#CXXFLAGS = -g $(DEFINES) $(INCLUDES)
+
+LDFLAGS = $(ARCH_LDFLAGS)
+
+LIB_PATHS = $(TRILINOS_LIBRARIES) \
+            $(EXTERNAL_LIBRARIES) \
+            $(ARCH_LIBRARIES)
+
+#=======================================================================
+
+OFILE = mydsaupd.o mydsaup2.o \
+        FortranRoutines.o \
+        MyMemory.o \
+        ModalTools.o CheckingTools.o SortingTools.o \
+        BlockDACG.o BRQMIN.o LOBPCG.o KnyazevLOBPCG.o \
+        ARPACKm3.o ModifiedARPACKm3.o \
+        Davidson.o \
+        LinSolvers.o OrthoPack.o Projectors.o JDBSYM.o \
+        JDPCG.o \
+        BlockPCGSolver.o \
+        ModeLaplace1DQ1.o ModeLaplace2DQ1.o ModeLaplace3DQ1.o \
+        ModeLaplace1DQ2.o ModeLaplace2DQ2.o ModeLaplace3DQ2.o \
+        ModeFileMatrices.o
+
+driver: $(OFILE) driver.o
+	$(LINKER) $(LDFLAGS) $(OFILE) driver.o $(LIB_PATHS) -o driver.serial
+
+clean:
+	rm -f *.o *.serial;
+

@@ -1,0 +1,154 @@
+################## Trilinos Defines ##########################
+
+TRILINOS_ARCH = DEC
+
+TRILINOS_FORTRAN_UNDERSCORE = TRILINOS_HAVE_FORTRAN_UNDERSCORE
+
+TRILINOS_DEFINES = -D$(TRILINOS_ARCH) -DHAVE_CONFIG_H \
+                   $(EPETRA_ARCH_DEFINES) -DEPETRA_MPI
+
+################## Trilinos Component Includes ##########################
+
+# The Trilinos build environment will use the following locations when
+# looking for header files
+
+TRILINOS_HOME = /paunchy/homes/uhetma/Trilinos
+
+AZTECOO_INCLUDES =    -I$(TRILINOS_HOME)/packages/aztecoo/src \
+                      -I$(TRILINOS_HOME)/DEC.MPI/packages/aztecoo/src
+EPETRA_INCLUDES =     -I$(TRILINOS_HOME)/packages/epetra/src \
+                      -I$(TRILINOS_HOME)/DEC.MPI/packages/epetra/src
+IFPACK_INCLUDES =     -I$(TRILINOS_HOME)/packages/ifpack/src \
+                      -I$(TRILINOS_HOME)/DEC.MPI/packages/ifpack/src
+TRIUTILS_INCLUDES =   -I$(TRILINOS_HOME)/packages/triutils/src \
+                      -I$(TRILINOS_HOME)/DEC.MPI/packages/triutils/src
+ML_INCLUDES =         -I$(TRILINOS_HOME)/packages/ml/src/Coarsen \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Comm \
+                      -I$(TRILINOS_HOME)/packages/ml/src/FEGrid \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Include \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Krylov \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Main \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Operator \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Smoother \
+                      -I$(TRILINOS_HOME)/packages/ml/src/Utils \
+                      -I$(TRILINOS_HOME)/DEC.MPI/packages/ml/src
+
+TRILINOS_INCLUDES = $(IFPACK_INCLUDES) $(AZTECOO_INCLUDES) $(ML_INCLUDES) \
+                    $(TRIUTILS_INCLUDES) $(EPETRA_INCLUDES)
+
+################## Trilinos Libraries ##########################
+
+# The Trilinos build environment will use the following locations for building,
+# storing and using its own libraries
+
+LIBAZTECOO =    $(TRILINOS_HOME)/DEC.MPI/packages/aztecoo/src/libaztecoo.a
+LIBEPETRA =     $(TRILINOS_HOME)/DEC.MPI/packages/epetra/src/libepetra.a
+LIBIFPACK =     $(TRILINOS_HOME)/DEC.MPI/packages/ifpack/src/libifpack.a
+LIBTRIUTILS =   $(TRILINOS_HOME)/DEC.MPI/packages/triutils/src/libtriutils.a
+LIBML =         $(TRILINOS_HOME)/DEC.MPI/packages/ml/src/libml.a
+
+TRILINOS_LIBRARIES = $(LIBIFPACK) $(LIBAZTECOO) $(LIBML)\
+                     $(LIBTRIUTILS) $(LIBEPETRA)
+
+############## Machine dependent definitions ##################
+
+# MPI definition
+MPI_INCLUDES = -I/usr/opt/mpi/include
+
+#Define include directories (remember to use -Idirectory_name)
+ARCH_INCLUDES := $(MPI_INCLUDES)
+
+#Define libraries
+ARCH_LIBRARIES = -L/usr/lib -lots \
+                 -lUfor -lfor -lFutil \
+                 -lm_c32 -lmld -lexc \
+                 -lcxml -lm \
+                 -lmpi
+
+#Define compilers
+#cc:Compaq C V6.4-009 on Compaq Tru64 UNIX V5.1A (Rev. 1885)
+#cxx:Compaq C++ V6.5-014 for Compaq Tru64 UNIX V5.1A (Rev. 1885)
+#f77: Compaq Fortran V5.5-1877
+CC      = cc
+CXX     = cxx
+FC      = f77
+RANLIB  = ranlib -s
+LINKER  = $(CXX)
+AR      = ar
+ARFLAGS = rcv
+LN      = ln -s
+
+.SUFFIXES : .o .cc .cpp
+
+.cpp.o:
+	$(CXX) $(CXXFLAGS) -c $<
+
+.cc.o:
+	$(CXX) $(CXXFLAGS) -c $<
+
+################## External Defines ##########################
+
+# Use Chaco to distribute the rows across processors
+# Note: If Chaco is not available, a uniform distribution is used
+#EXTERNAL_DEFINES = -D_USE_CHACO
+EXTERNAL_DEFINES =
+
+################## External Include ##########################
+
+EXTERNAL_INCLUDES = 
+
+################## External Libraries ##########################
+
+# Use Chaco to distribute the rows across processors
+# Note: If Chaco is not available, a uniform distribution is used
+#LIBCHACO = /paunchy/homes/ulhetma/Chaco-2.2/libchaco_OSF1.a
+LIBCHACO =
+
+LIBARPACK = /paunchy/homes/ulhetma/ARPACK/parpack_MPI-OSF1.a \
+            /paunchy/homes/ulhetma/ARPACK/libarpack_OSF1.a
+
+EXTERNAL_LIBRARIES = $(LIBARPACK) $(LIBCHACO)
+
+################# Code dependent section #######################
+
+DEFINES= $(ARCH_DEFINES) $(TRILINOS_DEFINES) $(EXTERNAL_DEFINES)
+
+INCLUDES = $(ARCH_INCLUDES) $(TRILINOS_INCLUDES) \
+           $(EXTERNAL_INCLUDES)
+
+CFLAGS= -O $(DEFINES) $(INCLUDES)
+FFLAGS= -O $(DEFINES) $(INCLUDES)
+CXXFLAGS = -O $(DEFINES) $(INCLUDES)
+
+#CFLAGS= -g -check_bounds $(DEFINES) $(INCLUDES)
+#FFLAGS= -g -C $(DEFINES) $(INCLUDES)
+#CXXFLAGS = -g -trapuv -fptm u -Hx $(DEFINES) $(INCLUDES)
+
+LDFLAGS = $(ARCH_LDFLAGS)
+
+LIB_PATHS = $(TRILINOS_LIBRARIES) \
+            $(EXTERNAL_LIBRARIES) \
+            $(ARCH_LIBRARIES)
+
+#=======================================================================
+
+OFILE = mydsaupd.o mydsaup2.o \
+        mypdsaupd.o mypdsaup2.o \
+        FortranRoutines.o \
+        MyMemory.o \
+        ModalTools.o CheckingTools.o SortingTools.o \
+        BlockDACG.o BRQMIN.o LOBPCG.o KnyazevLOBPCG.o \
+        ARPACKm3.o ModifiedARPACKm3.o \
+        Davidson.o \
+        LinSolvers.o OrthoPack.o Projectors.o JDBSYM.o \
+        JDPCG.o \
+        BlockPCGSolver.o \
+        ModeLaplace1DQ1.o ModeLaplace2DQ1.o ModeLaplace3DQ1.o \
+        ModeLaplace1DQ2.o ModeLaplace2DQ2.o ModeLaplace3DQ2.o \
+        ModeFileMatrices.o
+
+driver: $(OFILE) driver.o
+	$(LINKER) $(LDFLAGS) $(OFILE) driver.o $(LIB_PATHS) -o driver.mpi
+
+clean:
+	rm -f *.o *.mpi;
