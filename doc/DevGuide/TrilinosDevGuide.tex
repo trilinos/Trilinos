@@ -255,10 +255,18 @@ Optional parameters. \\ \hline
 
 \section{Getting Started}
 \label{Section:GettingStarted}
+
 This chapter covers some of the basics that a developer will need to know when 
 beginning to work on the Trilinos project.  We address how to obtain, 
 configure and build Trilinos, as well as how to add files to an 
 existing package.
+
+\framebox{\begin{minipage}[r]{.75\textwidth}{
+{\bf Tip:}
+Check out the Trilinos Developer Home Page at \newline
+\InlineDirectory{http://software.sandia.gov/Trilinos/developer}.  
+
+}\end{minipage}}
 
 \subsection{Obtaining a Copy of Trilinos}
 
@@ -459,7 +467,7 @@ become obsolete if it is not updated by the user who submitted it.
 
 Users who create scripts for other machines are encouraged to check them into 
 the repository for the benefit of other users.  Users who do not have access to
-the repository can send their scripts to \InlineCommand{jmwille@sandia.gov}.
+the repository can send their scripts to the Trilinos Library Manager.
 \end{enumerate}
 
 \subsection{Building Trilinos}
@@ -1045,10 +1053,15 @@ Mailing list for representatives for each Trilinos package.  There are no
 leaders lists for individual packages.
 \end{itemize}
 
-%\subsection{Package Website Template}
-%\label{subsect:Website}
+\subsection{Package Website Template}
+\label{subsect:Website}
 
-%A template is available at the Trilinos website for new package websites.  
+A template is available at the new\_package website \newline
+\InlineDirectory{http://software.sandia.gov/trilinos/packages/new\_package}
+for creating websites for new packages.  Package developers are free to 
+use this template or create their own website from scratch.  The 
+new\_package website also contains information about many of the other 
+services that are available to Trilinos packages.
 
 \subsection{Portable Interface to BLAS and LAPACK}
 
@@ -1295,7 +1308,9 @@ Package specifications can be done in many ways.  An effective way for
 object-oriented, e.g., C++ packages is to use documented header files and a 
 documentation tool such as Doxygen~\cite{Doxygen}, and then communicate the 
 generated HTML output to the package development team via the \newline
-\InlineCommand{package-developers@software.sandia.gov} email list.  If
+\InlineCommand{package-developers@software.sandia.gov} email list.  
+Package specifications created using another method should also be 
+communicated to the development team.  If
 appropriate, the clients for this feature should also be included on
 this correspondence.  This
 approach satisfies both the specification and the design requirements
@@ -1321,11 +1336,11 @@ regression tests for any affected package should be run by the
 developer.  Also, the developer should make a special point of
 confirming that nightly automatic regression tests ran successfully.
 Confirmation is easily done by visiting the archives for the 
-\InlineCommand{trilinos-regression@software.sandia.gov}.  The archives
-contain the results of all Trilinos regression test runs.  
-A developer will also see the results of the regression tests if their 
-email address is explicitly listed in a regression test script.
-
+\InlineCommand{package-regression@software.sandia.gov} mail lists.  
+The archives contain the results of the regression test runs for all 
+Trilinos packages.  A developer will also see the results of 
+the regression tests run by a particular script if their 
+email address is explicitly listed in that test script.
 
 \subsection{Maintenance}
 Trilinos provides a number of tools to facilitate the ongoing
@@ -1566,20 +1581,20 @@ listed behind
 \end{verbatim}
 in the following files:
 \begin{verbatim}
-     Trilinos/configure.ac
-     Trilinos/packages/Makefile.am
-     Trilinos/packages/new_package/Makefile.am
-     Trilinos/packages/new_package/configure.ac  
-     Trilinos/packages/new_package/src/Makefile.am
-     Trilinos/packages/new_package/example/Makefile.am
-     Trilinos/packages/new_package/example/example1/Makefile.am
-     Trilinos/packages/new_package/test/Makfile.am
-     Trilinos/packages/new_package/test/test1/Makefile.am
-     Trilinos/packages/new_package/test/scripts/Makfile.am
-     Trilinos/packages/new_package/test/scripts/daily/Makfile.am
-     Trilinos/packages/new_package/test/scripts/daily/mpi/Makfile.am
-     Trilinos/packages/new_package/test/scripts/daily/serial/Makfile.am
-     Trilinos/packages/new_package/test/scripts/weekly/Makfile.am
+   Trilinos/configure.ac
+   Trilinos/packages/Makefile.am
+   Trilinos/packages/new_package/Makefile.am
+   Trilinos/packages/new_package/configure.ac  
+   Trilinos/packages/new_package/src/Makefile.am
+   Trilinos/packages/new_package/example/Makefile.am
+   Trilinos/packages/new_package/example/example1/Makefile.am
+   Trilinos/packages/new_package/test/Makefile.am
+   Trilinos/packages/new_package/test/test1/Makefile.am
+   Trilinos/packages/new_package/test/scripts/Makefile.am
+   Trilinos/packages/new_package/test/scripts/daily/Makefile.am
+   Trilinos/packages/new_package/test/scripts/daily/mpi/Makefile.am
+   Trilinos/packages/new_package/test/scripts/daily/serial/Makefile.am
+   Trilinos/packages/new_package/test/scripts/weekly/Makefile.am
 \end{verbatim}
 
 Note that not all of these files are used in building new\_package, as it is 
