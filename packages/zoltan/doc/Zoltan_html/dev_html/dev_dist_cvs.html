@@ -1,0 +1,56 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE> Zoltan Developer's Guide:  Distribution</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="CVS"></A>CVS</H2>
+The source code and documentation for the Zoltan library is maintained
+under the Concurrent Versions System (CVS) software. CVS allows multiple
+developers to edit their own copies of the software and merges updated
+versions with the developers' own versions.
+
+<P>On Sandia's MPCRL LAN (building 980), CVS is accessed through the following
+paths:
+<BLOCKQUOTE>/Net/pecos/rf_crew/arch/sun/bin/cvs&nbsp; for Sun workstations
+running SunOS, and
+<BR>/Net/pecos/rf_crew/arch/sgi/bin/cvs&nbsp; for SGI workstations.</BLOCKQUOTE>
+Developers must set the CVSROOT environment variable to the repository
+directory used by MPSalsa's developers:
+<BLOCKQUOTE>setenv CVSROOT /Net/pecos/rf_crew/CVS</BLOCKQUOTE>
+To get a working copy of the Zoltan software, the CVS check-out facility
+is used:
+<BLOCKQUOTE>cvs checkout DLB</BLOCKQUOTE>
+Other useful CVS commands update a developer's working directory, merging
+the developer's changes with those in the repository:
+<BLOCKQUOTE>cvs update</BLOCKQUOTE>
+and check into the repository a developer's changes:
+<BLOCKQUOTE>cvs commit</BLOCKQUOTE>
+The UNIX man page for cvs contains information on these and other useful
+CVS commands.
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_dist_dir.html">Next:&nbsp;
+Layout of Directories</A>&nbsp; |&nbsp; <A HREF="dev_dist.html">Previous:&nbsp;
+Zoltan Distribution</A>]
+</BODY>
+</HTML>

@@ -1,0 +1,472 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE> Zoltan Developer's Guide:  Load Balancing</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="interface_structs"></A>Data Structures</H2>
+The <B>LB_Struct</B> data structure is the main data structure for interfacing
+between the load-balancing library and the application. The application
+creates an <B>LB_Struct</B> data structure through a call to <B><A HREF="../ug_html/ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.
+Fields of the data structure are then set through calls from the application
+to load-balancing interface routines such as <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>
+and <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.
+The fields of the <B>LB_Struct</B> data structure are listed and described
+in the table below. See the <A HREF="../ug_html/ug.html">Zoltan User's
+Guide</A> for descriptions of the function types used in the <B>LB_Struct</B>.
+
+<P>An <B>LB_Struct</B> data structure <I>lb</I> is passed from the application
+to the load-balancing library in the call to <B><A HREF="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
+This data structure is passed to the individual load-balancing routines.
+The <I>lb->Data_Structure</I> pointer field should point to the main data
+structures of the particular load-balancing algorithm so that the data
+structures may be preserved for future calls to <B><A HREF="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
+and so that separate instances of the same load-balancing algorithm (with
+different <B>LB_Struct</B> structures) can be used by the application.
+<BR>&nbsp;
+<CENTER><TABLE BORDER WIDTH="90%" >
+<TR>
+<TH>Field of LB_Struct</TH>
+
+<TH>Description</TH>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>MPI_Comm <I>Communicator</I></TD>
+
+<TD>The MPI communicator to be used by the load-balancing object; set by
+<B><A HREF="../ug_html/ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>int <I>Proc</I></TD>
+
+<TD>The rank of the processor within <I>Communicator</I>; set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>int <I>Num_Proc</I></TD>
+
+<TD>The number of processors in <I>Communicator</I>; set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>int <I>Debug</I></TD>
+
+<TD>A flag indicating the amount of debugging information that should be
+printed by the load-balancing library.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>LB_METHOD <I>Method</I></TD>
+
+<TD>An enumerated type designating which load-balancing algorithm should
+be used with this load-balancing object; set by <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>LB_FN *<I> LB_Fn</I></TD>
+
+<TD>A pointer to the load-balancing function specified by <I>Method</I>;
+set in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>double *<I> Params</I></TD>
+
+<TD>An array of parameters to be passed to the load-balancing function
+specified by <I>Method</I>; set in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>double <I>Tolerance</I></TD>
+
+<TD>The tolerance to which to load balance; <I>Tolerance</I> = 0.9 implies
+a 10% imbalance is acceptable. Set in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Tolerance">LB_Set_Tolerance</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void *<I> Data_Structure</I></TD>
+
+<TD>The data structure used by the selected load-balancing algorithm; this
+pointer is cast by the algorithm to the appropriate data type.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_OBJ_WEIGHT_FN">LB_OBJ_WEIGHT_FN</A>
+*<I> Get_Obj_Weight</I></TD>
+
+<TD>A pointer to an application-registered function that returns a given
+object's weight. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Obj_Weight_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Obj_Weight</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_NUM_EDGES">LB_NUM_EDGES_FN</A>
+*<I> Get_Num_Edges</I></TD>
+
+<TD>A pointer to an application-registered function that returns the number
+of edges associated with a given object. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Num_Edges_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Num_Edges</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_EDGE_LIST_FN">LB_EDGE_LIST_FN</A>
+*<I> Get_Edge_List</I></TD>
+
+<TD>A pointer to an application-registered function that returns a given
+object's neighbors along its edges. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Edge_List_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Edge_List</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</A>
+*<I> Get_Num_Geom</I></TD>
+
+<TD>A pointer to an application-registered function that returns the number
+of geometry values needed to describe the positions of objects. Set in
+<B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Num_Geom_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Num_Geom</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A>
+*<I> Get_Geom</I></TD>
+
+<TD>A pointer to an application-registered function that returns a given
+object's geometry information (e.g., coordinates). Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Geom_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Geom</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A>
+*<I> Get_Num_Obj</I></TD>
+
+<TD>A pointer to an application-registered function that returns the number
+of objects assigned to the processor before load balancing. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Num_Obj_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Num_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A>
+*<I> Get_Obj_List</I></TD>
+
+<TD>A pointer to an application-registered function that returns arrays
+of objects assigned to the processor before load balancing. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Obj_List_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Obj_List</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A>
+*<I> Get_First_Obj</I></TD>
+
+<TD>A pointer to an application-registered function that returns the first
+object assigned to the processor before load balancing. Used with <I>Get_Next_Obj</I>
+as an iterator over all objects. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_First_Obj_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_First_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A>
+*<I> Get_Next_Obj</I></TD>
+
+<TD>A pointer to an application-registered function that, given an object
+assigned to the processor, returns the next object assigned to the processor
+before load balancing. Used with <I>Get_First_Obj</I> as an iterator over
+all objects. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Next_Obj_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Next_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_NUM_BORDER_OBJ_FN">LB_NUM_BORDER_OBJ_FN</A>
+*<I> Get_Num_Border_Obj</I></TD>
+
+<TD>A pointer to an application-registered function that returns the number
+of objects sharing a subdomain border with a given processor. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Num_Border_Obj_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Num_Border_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</A>
+*<I> Get_Border_Obj_List</I></TD>
+
+<TD>A pointer to an application-registered function that returns arrays
+of objects that share a subdomain border with a given processor. Set in
+<B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Border_Obj_List_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Border_Obj_List</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</A>
+*<I> Get_First_Border_Obj</I></TD>
+
+<TD>A pointer to an application-registered function that returns the first
+object sharing a subdomain border with a given processor. Used with <I>Get_Next_Border_Obj</I>
+as an iterator over objects along borders. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_First_Border_Obj_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_First_Border_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_lb.html#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</A>
+*<I> Get_Next_Border_Obj</I></TD>
+
+<TD>A pointer to an application-registered function that, given an object,
+returns the next object sharing a subdomain border with a given processor.
+Used with <I>Get_First_Border_Obj</I> as an iterator over objects along
+borders. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Next_Border_Obj_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Next_Border_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>LB_MIGRATE <I>Migrate</I></TD>
+
+<TD>A structure with data used by the migration-help tools. See the <A HREF="#Migrate_Fields">table</A>
+below.</TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><A NAME="LB_Struct"></A><I>Fields of the </I><B>LB_Struct</B><I>
+data structure.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
+
+<P>Each <B>LB_Struct</B> data structure has an <B>LB_Migrate</B> sub-structure.
+The <B>LB_Migrate</B> structure contains data used by the migration-help
+tools, including pointers to object packing and unpacking routines. These
+pointers are set through the load-balancing interface routine <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>
+and are used in <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>.
+The fields of the <B>LB_Migrate</B> structure are listed and described
+in in the following <A HREF="#Migrate_Fields">table</A>.
+<BR>&nbsp;
+<CENTER><TABLE BORDER WIDTH="90%" >
+<TR>
+<TH>Field of LB_Migrate</TH>
+
+<TH>Description</TH>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>int <I>Help_Migrate</I></TD>
+
+<TD>A flag indicating whether the load-balancing library should perform
+auto-migration for the application. If true, the load-balancing library
+calls <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+to move objects to their new processors; if false, data migration is left
+to the user. Set in <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_mig.html#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN</A>
+*<I> Pre_Process</I></TD>
+
+<TD>A pointer to an application-registered function that performs pre-processing
+for data migration. The function is called by <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+before data migration is performed. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Pre_Process_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Pre_Process</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</A>
+*<I> Get_Obj_Size</I></TD>
+
+<TD>A pointer to an application-registered function that returns the size
+(in bytes) of data objects to be migrated. Called by <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>;
+set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Get_Obj_Size_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Get_Obj_Size</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</A>
+*<I> Pack_Obj</I></TD>
+
+<TD>A pointer to an application-registered function that packs all data
+for a given object into a communication buffer provided by the migration-help
+tools in preparation for data-migration communication. Called by <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+for each object to be exported; set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Pack_Obj_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Pack_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="../ug_html/ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</A>
+*<I> Unpack_Obj</I></TD>
+
+<TD>A pointer to an application-registered function that unpacks all data
+for a given object from a communication buffer after the communication
+for data migration is completed. Called by <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+for each imported object; set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>void <I>*Unpack_Obj_Data</I></TD>
+
+<TD>A pointer to data provided by the user that will be passed to the function
+pointed to by <I>Unpack_Obj</I>. Set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.</TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><A NAME="Migrate_Fields"></A><I>Fields of the </I><B>LB_Migrate</B><I>
+data structure.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
+
+<P>The <B>LB_Tag_Struct</B> is provided to simplify the mechanics of storing
+both the global and local IDs (see <A HREF="#Tag_Struct">table</A> below).
+An <B>LB_Tag_Struct</B> can be associated with each object and manipulated
+as a single entity. A processor ID field is also associated with the <B>LB_Tag_Struct</B>;
+its use is determined by the algorithm. It can be used as a destination
+processor or as the "home" processor of the object.
+<BR>&nbsp;
+<CENTER><TABLE BORDER WIDTH="90%" >
+<TR>
+<TH>Field of LB_Tag_Struct</TH>
+
+<TH>Description</TH>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="dev_lb_types.html">LB_GID</A> <I>Global_ID</I></TD>
+
+<TD>The unique global ID for an object, provided by the application.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><A HREF="dev_lb_types.html">LB_LID</A> <I>Local_ID</I></TD>
+
+<TD>A local ID for an object, provided by the application. This field is
+used for performance optimization within the application. It is not used
+by the load-balancing library but must be stored with the object to be
+passed to query functions.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>int <I>Proc</I></TD>
+
+<TD>A processor rank for the object within the <I>Communicator</I> of <B>LB_Struct</B>.
+This field may be the eventual destination of the object or the source
+processor for the object; its use is determined by the load-balancing algorithm.</TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><A NAME="Tag_Struct"></A><I>Fields of the</I> <B>LB_Tag_Struct</B><I>
+data structure.</I></CAPTION>
+</TABLE></CENTER>
+
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_util.html">Next:&nbsp;
+Utilities</A>&nbsp; |&nbsp; <A HREF="dev_lb_types.html">Previous:&nbsp;
+Interface Data Types</A>]
+</BODY>
+</HTML>

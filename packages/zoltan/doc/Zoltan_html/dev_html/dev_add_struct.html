@@ -1,0 +1,59 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE> Zoltan Developer's Guide:  Adding Algorithms</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="new_data_structs"></A>Data Structures</H2>
+The main data structures for the algorithm should be pointed to by the
+<I>Data_Structure</I> field of the <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>.
+This requirement allows reuse of data structures from one invocation of
+the new load-balancing algorithm to the next. It also prevents the use
+of global data structures for the algorithm so that multiple instances
+of the algorithm may be used (i.e., the same algorithm can be used for
+multiple <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B> structures).
+
+<P>The data needed for the algorithm is collected through calls to the
+query functions registered by the application. Algorithms should test the
+query function pointers for NULL and report errors when needed functions
+are not registered. The appropriate query functions can be called to build
+the algorithm's data structures up front, or they can be called during
+the algorithm's execution to gather data only as it is needed. An example
+showing the construction of data structures for the Recursive Coordinate
+Bisection (RCB) algorithm is included in the <A HREF="#RCB_example">figure</A>
+below.&nbsp; The <I>Dots</I> data structure needed by RCB can be built
+either through a single call to <I>lb->Get_Obj_List</I> or through repeated
+calls to <I>lb->Get_First_Obj</I> and <I>lb->Get_Next_Obj</I>, depending
+on which functions are registered by the application. The data for each
+<I>Dot</I> is set in the function <I>initialize_dot</I>, which includes
+calls to <I>lb->Get_Geom</I> and <I>lb->Get_Obj_Weight</I>.
+
+<P><A NAME="RCB_example"></A><IMG SRC="figures/RCB_examp.gif" HEIGHT=650 WIDTH=469>
+<BR>&nbsp;
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_add_param.html">Next:&nbsp;
+Parameters</A>&nbsp; |&nbsp; <A HREF="dev_add_lb.html">Previous:&nbsp;
+Load-Balancing Function Implementation</A>]
+<BR>&nbsp;
+</BODY>
+</HTML>

@@ -1,0 +1,82 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE> Zoltan Developer's Guide:  Distribution</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="compilation"></A>Compilation</H2>
+The Zoltan distribution includes a main (top-level) Makefile with compilation
+instructions for several target architectures. When the library is compiled
+for a specific target architecture, <I>A</I>, a subdirectory, <I>Obj_A</I>,
+is created, and Makefile_sub is copied into that directory. This Makefile
+is then called with architecture-specific values passed in from the main
+Makefile. Currently supported architectures and their targets are listed
+in the <A HREF="#Architectures table">table</A> below.
+<BR>&nbsp;
+<CENTER><TABLE BORDER WIDTH="90%" >
+<TR>
+<TH>Target</TH>
+
+<TH>Architecture</TH>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>smos</TD>
+
+<TD>Intel Paragon running SUNMOS (sipapu).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>tflop</TD>
+
+<TD>Sandia/Intel Teraflops computer (janus).</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>sun</TD>
+
+<TD>Sun workstations.</TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><A NAME="Architectures table"></A><I>Targets and
+architectures currently supported in the Makefiles of the Zoltan distribution.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
+
+<P>The top-level Makefile includes compiler, include-file, and library
+paths that are specific to Sandia's MPCRL LAN (building 980); these paths
+must be adjusted to compile the library in different environments.
+
+<P>The GNU <I>gmake</I> utility is used to build dependency files and compile
+the library for a given target: e.g.,
+<BLOCKQUOTE>gmake smos</BLOCKQUOTE>
+builds the library for the Intel Paragon running SUNMOS.
+
+<P>After compilation, the library <I>libdlb.a</I> is stored in the appropriate
+<I>Obj_*</I> directory for the specified architecture.
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_lb.html">Next:&nbsp;
+Load-Balancing Interface and Data Structures</A>&nbsp; |&nbsp; <A HREF="dev_dist_dir.html">Previous:&nbsp;
+Layout of Directories</A>]
+</BODY>
+</HTML>

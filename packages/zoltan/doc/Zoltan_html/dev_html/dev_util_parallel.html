@@ -1,0 +1,133 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE> Zoltan Developer's Guide:  Utilities</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="parallel_compute"></A>Parallel Computing</H2>
+Parallel computing utilities are described in this section.
+<BLOCKQUOTE><B><A HREF="#LB_print_sync_start">LB_print_sync_start</A></B>
+/ <B><A HREF="#LB_print_sync_end">LB_print_sync_end</A></B>:&nbsp; provide
+synchronization of processors for I/O (with <A HREF="#print_sync_example">example</A>).</BLOCKQUOTE>
+
+<HR><A NAME="LB_print_sync_start"></A>void <B>LB_print_sync_start</B>(struct
+<B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B> *<I>lb</I>,
+int <I>do_print_line</I>);&nbsp;
+<HR>
+
+<P>The <B>LB_print_sync_start</B> function is adapted from work of John
+Shadid for the MPSalsa project at Sandia National Laboratories. With <B><A HREF="#LB_print_sync_end">LB_print_sync_end</A></B>,
+it provides synchronization so that one processor in the load-balancing
+communicator can complete its I/O before the next processor begins its
+I/O. This synchronization utility is useful for debugging algorithms, as
+it allows the output from processors to be produced in an organized manner.
+It is, however, a serializing process, and thus, does not scale well to
+large number of processors.
+
+<P><B>LB_print_sync_start</B> should called by each processor in the MPI
+communicator before the desired I/O is performed. <B><A HREF="#LB_print_sync_end">LB_print_sync_end</A></B>
+is called by each processor after the I/O is performed. No communication
+can be performed between calls to <B>LB_print_sync_start</B> and <B><A HREF="#LB_print_sync_end">LB_print_sync_end</A></B>.
+See the <A HREF="#print_sync_example">example</A> below for usage <B>LB_print_sync_start</B>.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>lb</I></TD>
+
+<TD>The load-balancing data structure used in the invocation of the load-balancing
+routines.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>do_print_line</I></TD>
+
+<TD>A flag indicating whether to print a line of "#" characters before
+and after the synchronization block. If <I>do_print_line</I> is TRUE, a
+line is printed; no line is printed otherwise.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P>
+<HR><A NAME="LB_print_sync_end"></A>void <B>LB_print_sync_end</B>(struct
+<B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B> *<I>lb</I>,
+int <I>do_print_line</I>);&nbsp;
+<HR>
+
+<P>The <B>LB_print_sync_end </B>function is adapted from work of John Shadid
+for the MPSalsa project at Sandia National Laboratories. With <B><A HREF="#LB_print_sync_start">LB_print_sync_start</A></B>,
+it provides synchronization so that one processor in the load-balancing
+communicator can complete its I/O before the next processor begins its
+I/O. This synchronization utility is useful for debugging algorithms, as
+it allows the output from processors to be produced in an organized manner.
+It is, however, a serializing process, and thus, does not scale well to
+large number of processors.
+
+<P><B><A HREF="#LB_print_sync_start">LB_print_sync_start</A></B> should
+called by each processor in the MPI communicator before the desired I/O
+is performed. <B>LB_print_sync_end</B> is called by each processor after
+the I/O is performed. No communication can be performed between calls to
+<B><A HREF="#LB_print_sync_start">LB_print_sync_start</A></B> and <B>LB_print_sync_end</B>.
+See the <A HREF="#print_sync_example">example</A> below for usage of <B>LB_print_sync_end</B>.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>lb</I></TD>
+
+<TD>The load-balancing data structure used in the invocation of the load-balancing
+routines.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>do_print_line</I></TD>
+
+<TD>A flag indicating whether to print a line of "#" characters before
+and after the synchronization block. If <I>do_print_line</I> is TRUE, a
+line is printed; no line is printed otherwise.</TD>
+</TR>
+</TABLE>
+
+
+<P>&nbsp;
+
+<P><A NAME="print_sync_example"></A><IMG SRC="figures/print_examp.gif" USEMAP="#print_examp" HEIGHT=190 WIDTH=469>
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_add.html">Next:&nbsp;
+Adding New Load-Balancing Algorithms</A>&nbsp; |&nbsp; <A HREF="dev_util_comm.html">Previous:&nbsp;
+Irregular Communication Library</A>]
+</BODY>
+</HTML>

@@ -1,0 +1,97 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE> Zoltan Developer's Guide:  Adding Algorithms</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="new_implementation"></A>Load-Balancing Function Implementation</H2>
+The new load-balancing algorithm should be implemented as an <B>LB_FN</B>.
+The type definition for an <B>LB_FN</B> is in <I>lb/lb_const.h</I> and
+is described below. When the new algorithm is selected in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>,
+the <I>LB_Fn</I> field of the <B>LB_Struct</B> is set to point to the <B>LB_FN</B>
+function for the new algorithm. This pointer is then used in invoking load
+balancing in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
+<BR>&nbsp;
+
+<P>
+<HR>typedef void <B>LB_FN</B>(struct <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
+*<I>lb</I>, int *<I>num_import</I>, <B><A HREF="dev_lb_types.html#Macros">LB_GID</A></B>
+**<I>import_global_ids</I>, <B><A HREF="dev_lb_types.html#Macros">LB_LID</A></B>
+**<I>import_local_ids</I>, int **<I>import_procs</I>);&nbsp;
+<HR>
+<BR>The <B>LB_FN</B> function type describes the arguments passed to a
+load-balancing function. The input to the function is an <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
+containing pointers to application-registered functions to be used in the
+load-balancing algorithm. The remaining arguments are output parameters
+listing the objects to be imported to the processor in the new decomposition.
+The arrays for global and local IDs and source processors must be allocated
+by the load-balancing function.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+
+<TD>A pointer to the <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
+to be used in the load-balancing algorithm.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
+
+<TD>Upon return, the number of objects to be imported to the processor
+for the new decomposition.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+
+<TD>Upon return, an array of size <I>num_import</I> containing global IDs
+of the objects to be imported to the processor for the new decomposition.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>import_local_ids</I></TD>
+
+<TD>Upon return, an array of size <I>num_import</I> containing local IDs
+of the objects to be imported to the processor for the new decomposition.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp; <I>import_procs</I></TD>
+
+<TD>Upon return, an array of size <I>num_import</I> containing the processor
+IDs of processors owning (in the old decomposition) the objects to be imported
+for the new decomposition.&nbsp;</TD>
+</TR>
+</TABLE>
+
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_add_struct.html">Next:&nbsp;
+Data Structures</A>&nbsp; |&nbsp; <A HREF="dev_add_interface.html">Previous:&nbsp;
+Load-Balancing Interface Routines</A>]
+</BODY>
+</HTML>

@@ -1,0 +1,78 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE> Zoltan Developer's Guide:  Introduction</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="philosophy"></A>Philosophy of Zoltan</H2>
+The Zoltan load-balancing library is designed to be a general-purpose tool-kit
+providing a variety of dynamic load-balancing algorithms to a wide range
+of scientific applications (see the <A HREF="../ug_html/ug.html">Zoltan
+User's Guide</A>). To enable general use of the library, the library does
+not directly access the data structures of an application. Instead, the
+library obtains information it needs to perform load balancing through
+an object-oriented interface between the load-balancing library and the
+application [<A HREF="dev_refs.html#HD99">Hendrickson and Devine</A>].
+This interface uses call-back query functions to gather information. An
+application developer must write and register these query functions before
+using the load-balancing library. The intent, however, is that the number
+and complexity of these query functions are low, allowing applications
+to easily interface with the library. In addition, new load-balancing algorithm
+development would use the same query functions as previous algorithms,
+enabling applications to use new algorithms without changes to the query
+functions.
+
+<P>An example of the interaction between an application and the load-balancing
+library is shown in the <A HREF="#interact figure">figure</A> below. An
+application creates a load-balancing object <I>lb</I> through a call to
+<B>LB_Create_Object</B>. This load-balancing object stores pointers to
+registered functions and data structures for a particular instance of load
+balancing. The application selects the load-balancing method for <I>lb</I>
+through a call to <B>LB_Set_Method</B>. Then the application registers
+the application query functions <I>user_return_coords_fn</I>, <I>user_return_num_elems_fn</I>,
+and <I>user_return_elem_list_fn</I> to return the coordinates of an object,
+the number of objects, and a list of objects, respectively. The application
+then calls <B>LB_Balance</B> to compute a new decomposition. The load-balancing
+library follows pointers to the registered functions to build the data
+structures it needs to perform load balancing. It follows the <I>lb->Get_Num_Obj</I>
+pointer to <I>user_return_num_elems_fn</I> to obtain the number of objects
+assigned to the processor. It then follows the <I>lb->Get_Obj_List</I>
+pointer to <I>user_return_elem_list_fn</I> to get a list of the objects.
+For each object, it follows the <I>lb->Get_Geom</I> pointer to <I>user_return_coords_fn</I>
+to get the coordinates of the object. After gathering this data, the load-balancing
+library can perform the desired load balancing.
+
+<P><A NAME="interact figure"></A><IMG SRC="figures/interact.gif" USEMAP="#interact" HEIGHT=506 WIDTH=469>
+
+<P>In developing new load-balancing algorithms for the library, the developer
+must write the code that calls the query functions to build the needed
+data structures for the algorithm. However, the application need not change
+its query functions. Thus, new algorithms can be added to the library and
+used by an application with minimal effort on the part of the application
+coder.
+
+<P>
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_intro_coding.html">Next:&nbsp;
+Coding Principles</A>&nbsp; | <A HREF="dev_intro.html">Previous:&nbsp;
+Introduction</A>]
+</BODY>
+</HTML>

@@ -1,0 +1,178 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE> Zoltan Developer's Guide:  Plan for Future Development</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
+</H3></DIV>
+
+<H2>
+<A NAME="future"></A>Plan for Future Development</H2>
+Get integrated into SIERRA and ALEGRA projects.
+<UL>
+<LI>
+Consult with SIERRA and ALEGRA on needs, functionality and usage.</LI>
+
+<LI>
+Allow variable-sized objects in irregular communication package.</LI>
+</UL>
+Documentation: an ongoing process.
+<UL>
+<LI>
+User's guide: philosophy and interface.</LI>
+
+<LI>
+Developer's guide: software structure and components.</LI>
+</UL>
+Implement performance monitors.
+<BLOCKQUOTE>
+<LI>
+Run time of partitioner.</LI>
+
+<LI>
+Amount of data moved (and time to pack/move/unpack it).</LI>
+
+<LI>
+Load balance and communication requirements of new decomposition. (Communication
+is hard due to complicated dependence upon application.)</LI>
+</BLOCKQUOTE>
+Support heterogeneous computing systems.
+<UL>
+<LI>
+Three levels of support:</LI>
+
+<UL>
+<LI>
+Heterogeneous processors: Vector of processor speeds; partition to match
+it.</LI>
+
+<LI>
+Heterogeneous memory sizes: Vector of memory sizes; partition to not exceed
+it.</LI>
+
+<LI>
+Heterogeneous networks: Graph of network; map well to it.</LI>
+</UL>
+
+<LI>
+Augment existing algorithms to handle heterogeneity.</LI>
+
+<LI>
+Insist that new algorithms handle it, too.</LI>
+
+<UL>
+<LI>
+Develop a good model of heterogeneity before implementing too many algorithms.</LI>
+</UL>
+</UL>
+Add Partitioning Algorithms to the Library.
+<UL>
+<LI>
+Decide on a graph data structure</LI>
+
+<UL>
+<LI>
+Get input from MPSalsa, ALEGRA, SIERRA.</LI>
+
+<LI>
+Understand what ParMetis and Jostle use.</LI>
+</UL>
+
+<LI>
+Diffusion algorithms.</LI>
+
+<LI>
+Inertial algorithms.</LI>
+
+<UL>
+<LI>
+Add heterogeneity and prefix-sum to limit memory problems.</LI>
+</UL>
+
+<LI>
+Unbalanced Recursive Bisection (URB).</LI>
+
+<UL>
+<LI>
+Hard to fit into current thinking about heterogeneity.</LI>
+
+<LI>
+Requires application to be partitioned before machine.</LI>
+</UL>
+
+<LI>
+Implement tree-based partitioning algorithms</LI>
+
+<UL>
+<LI>
+Define tree data structure.</LI>
+
+<LI>
+Define tree interface.</LI>
+
+<LI>
+Devise hybrid refinement-tree/space-filling-curve algorithm.</LI>
+</UL>
+
+<LI>
+Improve performance of space-filling-curves.</LI>
+
+<LI>
+Add hooks to ParMetis and Jostle.</LI>
+
+<UL>
+<LI>
+Adding heterogeneity is much more work.</LI>
+
+<LI>
+Can we ask Karypis and Kumar to do this as part of their ASCI grant?</LI>
+</UL>
+
+<LI>
+Terminal propagation.</LI>
+
+<LI>
+Empirical comparisons.</LI>
+</UL>
+Tool for Determining New Communication Pattern.
+<UL>
+<LI>
+Closely related to metric of partition quality.</LI>
+
+<LI>
+Dependent upon the application.</LI>
+</UL>
+Miscellaneous Performance Improvement Tools.
+<UL>
+<LI>
+Mechanisms for incrementally modifying graph passed to balancer. (Consider
+impact on data structures before doing too many algorithms.)</LI>
+
+<LI>
+Modify interface for FORTRAN compatibility.</LI>
+
+<LI>
+Automated algorithm selection and go/no-go decisions.</LI>
+</UL>
+
+<HR WIDTH="100%">
+<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_refs.html">Next:&nbsp;
+References</A>&nbsp; |&nbsp; <A HREF="dev_mig.html">Previous:&nbsp; Migration-Help
+Tools</A>]
+</BODY>
+</HTML>
