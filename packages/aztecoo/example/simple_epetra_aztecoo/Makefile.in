@@ -96,12 +96,12 @@ epetra_crsmatrix_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../epetra/src
 
 
-@BUILD_Y12M_TRUE@REFERENCE_Y12M_LIBS = -L$(top_builddir)/../../external/y12m -ly12m
+@BUILD_Y12M_TRUE@REFERENCE_Y12M_LIBS = $(top_builddir)/../../external/y12m/liby12m.a
 
-@BUILD_OLDIFPACK_TRUE@OLDIFPACK_LIBS = -L$(top_builddir)/../ifpack/src -lifpack
+@BUILD_OLDIFPACK_TRUE@OLDIFPACK_LIBS = $(top_builddir)/../ifpack/src/libifpack.a
 
-epetra_crsmatrix_LDADD = -L$(top_builddir)/src -laztecoo $(OLDIFPACK_LIBS) \
-	-L$(top_builddir)/../epetra/src -lepetra $(REFERENCE_Y12M_LIBS) \
+epetra_crsmatrix_LDADD = $(top_builddir)/src/libaztecoo.a $(OLDIFPACK_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a $(REFERENCE_Y12M_LIBS) \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 subdir = example/simple_epetra_aztecoo
@@ -113,10 +113,22 @@ PROGRAMS = $(noinst_PROGRAMS)
 
 am_epetra_crsmatrix_OBJECTS = epetra_crsmatrix-cxx_main.$(OBJEXT)
 epetra_crsmatrix_OBJECTS = $(am_epetra_crsmatrix_OBJECTS)
-@BUILD_OLDIFPACK_FALSE@@BUILD_Y12M_TRUE@epetra_crsmatrix_DEPENDENCIES =
-@BUILD_OLDIFPACK_FALSE@@BUILD_Y12M_FALSE@epetra_crsmatrix_DEPENDENCIES =
-@BUILD_OLDIFPACK_TRUE@@BUILD_Y12M_TRUE@epetra_crsmatrix_DEPENDENCIES =
-@BUILD_OLDIFPACK_TRUE@@BUILD_Y12M_FALSE@epetra_crsmatrix_DEPENDENCIES =
+@BUILD_OLDIFPACK_FALSE@@BUILD_Y12M_TRUE@epetra_crsmatrix_DEPENDENCIES = \
+@BUILD_OLDIFPACK_FALSE@@BUILD_Y12M_TRUE@	$(top_builddir)/src/libaztecoo.a \
+@BUILD_OLDIFPACK_FALSE@@BUILD_Y12M_TRUE@	$(top_builddir)/../epetra/src/libepetra.a \
+@BUILD_OLDIFPACK_FALSE@@BUILD_Y12M_TRUE@	$(top_builddir)/../../external/y12m/liby12m.a
+@BUILD_OLDIFPACK_FALSE@@BUILD_Y12M_FALSE@epetra_crsmatrix_DEPENDENCIES = \
+@BUILD_OLDIFPACK_FALSE@@BUILD_Y12M_FALSE@	$(top_builddir)/src/libaztecoo.a \
+@BUILD_OLDIFPACK_FALSE@@BUILD_Y12M_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
+@BUILD_OLDIFPACK_TRUE@@BUILD_Y12M_TRUE@epetra_crsmatrix_DEPENDENCIES = \
+@BUILD_OLDIFPACK_TRUE@@BUILD_Y12M_TRUE@	$(top_builddir)/src/libaztecoo.a \
+@BUILD_OLDIFPACK_TRUE@@BUILD_Y12M_TRUE@	$(top_builddir)/../ifpack/src/libifpack.a \
+@BUILD_OLDIFPACK_TRUE@@BUILD_Y12M_TRUE@	$(top_builddir)/../epetra/src/libepetra.a \
+@BUILD_OLDIFPACK_TRUE@@BUILD_Y12M_TRUE@	$(top_builddir)/../../external/y12m/liby12m.a
+@BUILD_OLDIFPACK_TRUE@@BUILD_Y12M_FALSE@epetra_crsmatrix_DEPENDENCIES = \
+@BUILD_OLDIFPACK_TRUE@@BUILD_Y12M_FALSE@	$(top_builddir)/src/libaztecoo.a \
+@BUILD_OLDIFPACK_TRUE@@BUILD_Y12M_FALSE@	$(top_builddir)/../ifpack/src/libifpack.a \
+@BUILD_OLDIFPACK_TRUE@@BUILD_Y12M_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
 epetra_crsmatrix_LDFLAGS =
 
 DEFS = @DEFS@

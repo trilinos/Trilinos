@@ -15,11 +15,11 @@ Poisson2d_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../triutils/src
 
 if BUILD_Y12M
-REFERENCE_Y12M_LIBS=-L$(top_builddir)/../../external/y12m -ly12m
+REFERENCE_Y12M_LIBS=$(top_builddir)/../../external/y12m/liby12m.a
 endif
 
-Poisson2d_LDADD = -L$(top_builddir)/src -laztecoo \
-	-L$(top_builddir)/../epetra/src -lepetra $(REFERENCE_Y12M_LIBS) \
+Poisson2d_LDADD = $(top_builddir)/src/libaztecoo.a \
+	$(top_builddir)/../epetra/src/libepetra.a $(REFERENCE_Y12M_LIBS) \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 

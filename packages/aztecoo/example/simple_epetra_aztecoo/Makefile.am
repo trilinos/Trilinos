@@ -13,15 +13,15 @@ epetra_crsmatrix_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../epetra/src
 
 if BUILD_Y12M
-REFERENCE_Y12M_LIBS=-L$(top_builddir)/../../external/y12m -ly12m
+REFERENCE_Y12M_LIBS=$(top_builddir)/../../external/y12m/liby12m.a
 endif
 
 if BUILD_OLDIFPACK
-OLDIFPACK_LIBS=-L$(top_builddir)/../ifpack/src -lifpack
+OLDIFPACK_LIBS=$(top_builddir)/../ifpack/src/libifpack.a
 endif 
 
-epetra_crsmatrix_LDADD = -L$(top_builddir)/src -laztecoo $(OLDIFPACK_LIBS) \
-	-L$(top_builddir)/../epetra/src -lepetra $(REFERENCE_Y12M_LIBS) \
+epetra_crsmatrix_LDADD = $(top_builddir)/src/libaztecoo.a $(OLDIFPACK_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a $(REFERENCE_Y12M_LIBS) \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 
