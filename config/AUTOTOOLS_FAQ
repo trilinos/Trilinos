@@ -1,18 +1,7 @@
-Q1)  When I run bootstrap, I see warnings, "do not use m4_patsubst" and 
-"do not use m4_regexp"
-
-A1) The bootstrap should complete without any errors, however, at this
-time it is not uncommon to have the following warnings:
-
-configure.ac:63: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
-configure.ac:341: warning: do not use m4_regexp: use regexp or m4_bregexp
-
-These warnings will be fixed in the future.
-
-Q2)  When I run configure in the build directory, it uses object code in 
+Q1)  When I run configure in the build directory, it uses object code in 
 the source directory.  
 
-A2) If you wish to configure in a separate build directory (which is
+A1) If you wish to configure in a separate build directory (which is
 highly recommended) you must not run configure or make in the source
 directory.  If you have done so, you will have to get rid of all
 conflicting files.  The only way that I know of to guarantee this is
@@ -20,29 +9,27 @@ to start from scratch (checkout a clean set of files and copy your
 source files over).  In principle, "make distclean" should do this,
 but I have mixed success with this.
 
-Q3)  The compiler complains that PACKAGE is defined twice.
+Q2)  The compiler complains that PACKAGE is defined twice.
 
-A3)  PACKAGE is defined in Epetra_config.h and also in
+A2)  PACKAGE is defined in Epetra_config.h and also in
 YourPackage_config.h.  Consider including YourPackage_config.h first
 before any other include files.
 
-Q4) Some systems offer <stdio> but not <stdio.h> others offer
+Q3) Some systems offer <stdio> but not <stdio.h> others offer
 <stdio.h> and not <stdio>.
 
-A4) Do not include <Stdio> or <stdio.h> directly.  Include
+A3) Do not include <Stdio> or <stdio.h> directly.  Include
 Epetra_ConfigDefs.h (also included in almost any Epetra.*.h file)  
 
+Q4)  How do I debug configure.ac, Makefile.am, src/Makefile.am and test/Makefile.am
 
-
-Q5)  How do I debug configure.ac, Makefile.am, src/Makefile.am and test/Makefile.am
-
-A5)  You can use echo in configure.ac to print out variables. AC_CHECK_FILE can be used
+A4)  You can use echo in configure.ac to print out variables. AC_CHECK_FILE can be used
 like an assert on the existence of a particular file.  
 
 
-Q6)  How can I move files (such as data files or test scripts) from the source directory to the build directory?
+Q5)  How can I move files (such as data files or test scripts) from the source directory to the build directory?
 
-A6)  Look at aztecoo/test/AztecOO_UserOpUserMat/Makefile.am.  This creates a Makefile
+A5)  Look at aztecoo/test/AztecOO_UserOpUserMat/Makefile.am.  This creates a Makefile
 which when executed causes Ex_AztecOO_UserOpUserMat to be copied from 
 the source directory and renamed to Ex_AztecOO_UserOpUserMat.exe in 
 the build directory.  It also copies referencelog and renames it to 
