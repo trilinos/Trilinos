@@ -1027,10 +1027,10 @@ int cCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
   return(1);
 }
 
-int CSR_denseserialmatvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+int CSR_densematvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
-   int i, j, jj, k, /* Nrows,*/ *bindx;
+   int i, j, jj, k, k2, /* Nrows,*/ *bindx;
    double            *p2, *val, sum, *ap2, *oldp2;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP     *getrow_comm;
@@ -1052,7 +1052,7 @@ int CSR_denseserialmatvec(void *Amat_in, int ilen, double p[], int olen, double 
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
      if (p2 == NULL) 
-       pr_error("CSR_dense_serial_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+       pr_error("CSR_dense_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
      for (i = 0; i < ilen; i++) p2[i] = p[i];
 
@@ -1067,27 +1067,37 @@ int CSR_denseserialmatvec(void *Amat_in, int ilen, double p[], int olen, double 
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
       if (ap2 == NULL) 
-	pr_error("CSR_dense_serial_matvec(%d): out of space\n",Amat->comm->ML_mypid);
+	pr_error("CSR_dense_matvec(%d): out of space\n",Amat->comm->ML_mypid);
 
    }
    else ap2 = ap;
 
    j = 0;
    /*   jj = Amat->invec_leng; */
+   
    oldp2 = p2;
+
+   /* length of the product is the same for all vectors */
+   /* It is enough to get the first length */
+   k2    = row_ptr[1];
+   
    for (i = 0; i < Nstored; i++) {
      p2 = oldp2;
      sum = 0.;
-     for (k = 0; k < Amat->invec_leng; k++) {
-       /*       sum += val[j++]*p2[k]; */
-       sum += *val++ * *p2++;
+     /* jj = 0 */
+     for (k = 0; k < k2; k++) {
+       /*       sum += val[j++]*p2[k];  */
+       /*  sum += val[j++]*p2[jj++];  */  
+       
+       sum += *val++ * *p2++; 
      }
-     /* ap2[i] = sum; */
-     *ap2++ = sum;
+     /*  ap2[i] = sum;  */
+     
+     *ap2++ = sum; 
    }
-
+   
    if (Amat->getrow->pre_comm != NULL) ML_free(oldp2);
-
+ 
    if (getrow_comm != NULL) {
       if (getrow_comm->remap != NULL) {
          if (getrow_comm->remap_max != olen-1) {

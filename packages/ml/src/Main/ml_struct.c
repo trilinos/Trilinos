@@ -5777,10 +5777,7 @@ int ML_build_ggb(ML *ml, void *data)
   
   /* Only processor 0 has the coarse vector information */
 
-  ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
-				Nrows, NULL, 0);
-  
-  if (ml_ggb->comm->ML_mypid == 0)     
+  if (ml_ggb->comm->ML_mypid == 0) 
     ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
 				  Nrows, NULL, 0);
    
@@ -5790,8 +5787,9 @@ int ML_build_ggb(ML *ml, void *data)
   
   
   ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
-  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_denseserialmatvec);
-  
+  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_densematvec); 
+  /*  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_matvec);  */
+
   nprocs  = ml_ggb->comm->ML_nprocs;           /* Number of processors */  
   Nlocal  =  Pmat->invec_leng;                 /* size of coarse grid vector  */
     
@@ -5851,7 +5849,7 @@ int ML_build_ggb(ML *ml, void *data)
 
   ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
   /*  ML_Operator_Set_ApplyFunc (&(ml_ggb->Rmat[1]), ML_INTERNAL,
-      CSR_denseserialmatvec); */
+      CSR_densematvec); */
 
   ML_Gen_AmatrixRAP(ml_ggb, 1, 0);
 
@@ -5917,7 +5915,7 @@ void ML_build_ggb_cheap(ML *ml, void *data)
   ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
 				Nrows, NULL, 0);
   ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
-  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_denseserialmatvec);
+  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_densematvec);
 
   /* ML_Operator_Print(Pmat, "Pmat"); */
  

@@ -111,7 +111,7 @@ extern int MSR_matvec(void *Amat, int, double p[], int, double ap[]);
 extern int MSR_matvec_WKC(void *Amat, int, double *p, int, double *ap);
 #endif
 
-extern int CSR_denseserialmatvec(void *Amat_in, int ilen, double p[], int olen, double ap[]);
+extern int CSR_densematvec(void *Amat_in, int ilen, double p[], int olen, double ap[]);
 extern int CSR_matvec(void *Amat, int, double p[], int, double ap[]);
 extern int sCSR_trans_matvec(void *Amat, int, double p[], int, double ap[]);
 extern int sCSR_matvec(void *Amat, int, double p[], int, double ap[]);
