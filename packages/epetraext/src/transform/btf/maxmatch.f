@@ -230,7 +230,7 @@ c     -------------
       stop
 
   803 write (6, 903) col, row, row, rowset (row)
-  903 format (' bug in maxmatch : pointer toward root disagrees with '
+  903 format (' bug in maxmatch : pointer toward root disagrees with ',
      $        'matching.' /
      $        'prevcl (', i4, ')  = ', i4, ' but colset (', i4, ')  = ',
      $        i4)
