@@ -82,8 +82,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int gid_off, lid_off;
   char msg[256];
   /* Arrays for partition data. */
-  int *nobj_arr, *cut_arr, *bndry_arr, *nadj_arr, *all_arr, *part_count;
-  float *vwgt_arr, *ewgt_arr;
+  int *nobj_arr, *cut_arr, *bndry_arr, *nadj_arr, *all_arr;
+  float *vwgt_arr, *cutwgt_arr;
   
   
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -97,9 +97,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   part = NULL;
   tmp_vwgt = tmp_cutwgt = NULL;
   vwgts = ewgts = NULL;
-  nbors_global = nbors_proc = NULL;
-  proc_count = part_count = NULL;
-  vwgt_arr = ewgt_arr = NULL;
+  nbors_global = NULL;
+  nbors_proc = proc_count = NULL;
+  vwgt_arr = cutwgt_arr = NULL;
   nobj_arr = cut_arr = bndry_arr = nadj_arr = all_arr = NULL;
 
   ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 
@@ -118,9 +118,10 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
   if (compute_part){
     /* Allocate space. */
-    all_arr = (int *)  ZOLTAN_CALLOC((NUM_STATS+1)*nparts, sizeof(int));
-    vwgt_arr = (float *) ZOLTAN_CALLOC(nparts*zz->Obj_Weight_Dim, sizeof(float));
-    if (!all_arr || (zz->Obj_Weight_Dim && !vwgt_arr)){
+    all_arr = (int *)  ZOLTAN_CALLOC(NUM_STATS*nparts, sizeof(int));
+    vwgt_arr = (float *) ZOLTAN_CALLOC(nparts*(zz->Obj_Weight_Dim +
+                           zz->Edge_Weight_Dim), sizeof(float));
+    if (!all_arr || (zz->Obj_Weight_Dim+zz->Edge_Weight_Dim && !vwgt_arr)){
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
@@ -128,7 +129,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     cut_arr  = nobj_arr + nparts;
     bndry_arr  = cut_arr + nparts;
     nadj_arr = bndry_arr + nparts;
-    part_count = nadj_arr + nparts;
+    cutwgt_arr = vwgt_arr + nparts*(zz->Obj_Weight_Dim);
 
     /* Count number of objects. */
     for (i=0; i<num_obj; i++){
@@ -189,7 +190,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Allocate space for edge weights if needed */
     if (zz->Edge_Weight_Dim){
       ewgts = (float *)ZOLTAN_MALLOC((zz->Edge_Weight_Dim)*max_edges * sizeof(float));
-      tmp_cutwgt = (float *) ZOLTAN_MALLOC(4*(zz->Edge_Weight_Dim) * sizeof(float));
+      tmp_cutwgt = (float *) ZOLTAN_MALLOC(6*(zz->Edge_Weight_Dim) * sizeof(float));
     }
 
     if ((max_edges && ((!nbors_global) || (!nbors_proc) || (zz->Edge_Weight_Dim && !ewgts))) || 
@@ -249,7 +250,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           }
           if (p != part[k]){
             cut_arr[part[k]]++;
-            /* part_count[nbors_proc[j]]++; */
+            for (i=0; i<zz->Edge_Weight_Dim; i++)
+              cutwgt_arr[part[k]*zz->Edge_Weight_Dim+i] 
+                += ewgts[j*zz->Edge_Weight_Dim+i];
           }
         }
 
@@ -303,7 +306,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Print min-max-sum of results */
     if (zz->Proc == zz->Debug_Proc){
       printf("\n%s  Statistics with respect to processors:\n", yo);
-      printf("%s                         Min.    Max.    Sum   Imbalance\n");
+      printf("%s                         Min.    Max.    Sum   Imbalance\n", yo);
       printf("%s  No. of objects   :  %7d %7d %7d  %5.3f\n",
         yo, stats[imin*NUM_STATS], 
         stats[imax*NUM_STATS],
@@ -324,8 +327,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
       if (zz->Get_Num_Edges && zz->Get_Edge_List){
         for (i=0; i<zz->Edge_Weight_Dim; i++){
-          printf("%s  Comm. weight  #%1d :  %8.3g %8.3g %8.3  %5.3f\n",
-            yo, i+1, tmp_cutwgt[imin*(zz->Edge_Weight_Dim)+i], 
+          printf("%s  Cut weight  #%1d   :  %7.3g %7.3g %7.3g  %5.3f\n",
+            yo, i, tmp_cutwgt[imin*(zz->Edge_Weight_Dim)+i], 
             tmp_cutwgt[imax*(zz->Edge_Weight_Dim)+i], 
             tmp_cutwgt[isum*(zz->Edge_Weight_Dim)+i], 
             (tmp_cutwgt[isum*(zz->Edge_Weight_Dim)+i] > 0 
@@ -437,10 +440,40 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
                     zz->Obj_Weight_Dim, MPI_FLOAT, MPI_SUM, zz->Communicator);
     }
 
+    /* Local and global reduction for cut weights. */
+    if (zz->Edge_Weight_Dim>0){
+      for (i=0; i<zz->Edge_Weight_Dim; i++)
+        tmp_cutwgt[i] = FLOAT_MAX; /*min */
+      for (i=zz->Edge_Weight_Dim; i<6*zz->Edge_Weight_Dim; i++)
+        tmp_cutwgt[i] = 0; /* max and sum */
+      for (j=0; j<nparts; j++){
+        if ((zz->LB.PartDist == NULL) ||
+            (Zoltan_LB_Part_To_Proc(zz, j) == zz->Proc)){
+          for (i=0; i<zz->Edge_Weight_Dim; i++){
+            if (cutwgt_arr[j*zz->Edge_Weight_Dim+i] < tmp_cutwgt[i]) 
+              tmp_cutwgt[i] = cutwgt_arr[j*zz->Edge_Weight_Dim+i];
+            if (cutwgt_arr[j*zz->Edge_Weight_Dim+i] > tmp_cutwgt[zz->Edge_Weight_Dim+i]) 
+              tmp_cutwgt[zz->Edge_Weight_Dim+i] = cutwgt_arr[j*zz->Edge_Weight_Dim+i];
+            tmp_cutwgt[2*zz->Edge_Weight_Dim+i] += cutwgt_arr[j*zz->Edge_Weight_Dim+i]; 
+          }
+        }
+      }
+
+      
+      MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[imin*zz->Edge_Weight_Dim], 
+                    zz->Edge_Weight_Dim, MPI_FLOAT, MPI_MIN, zz->Communicator);
+      MPI_Allreduce(&tmp_cutwgt[zz->Edge_Weight_Dim], 
+                    &tmp_cutwgt[imax*zz->Edge_Weight_Dim], 
+                    zz->Edge_Weight_Dim, MPI_FLOAT, MPI_MAX, zz->Communicator);
+      MPI_Allreduce(&tmp_cutwgt[2*zz->Edge_Weight_Dim], 
+                    &tmp_cutwgt[isum*zz->Edge_Weight_Dim], 
+                    zz->Edge_Weight_Dim, MPI_FLOAT, MPI_SUM, zz->Communicator);
+    }
+
     /* Print min-max-sum of results */
     if (zz->Proc == zz->Debug_Proc){
       printf("\n%s  Statistics with respect to partitions: \n", yo);
-      printf("%s                         Min.    Max.    Sum   Imbalance\n");
+      printf("%s                         Min.    Max.    Sum   Imbalance\n", yo);
       printf("%s  No. of objects   :  %7d %7d %7d  %5.3f\n",
         yo, stats[imin*NUM_STATS], 
         stats[imax*NUM_STATS],
@@ -452,54 +485,49 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       for (i=0; i<zz->Obj_Weight_Dim; i++){
         printf("%s  Object weight #%1d :  %7.3g %7.3g %7.3g  %5.3f\n",
           yo, i, tmp_vwgt[imin*zz->Obj_Weight_Dim+i], 
-          tmp_vwgt[imax*zz->Obj_Weight_Dim+i], 
-          tmp_vwgt[isum*zz->Obj_Weight_Dim+i], 
-          (tmp_vwgt[isum*zz->Obj_Weight_Dim+i] > 0 
+        tmp_vwgt[imax*zz->Obj_Weight_Dim+i], 
+        tmp_vwgt[isum*zz->Obj_Weight_Dim+i], 
+        (tmp_vwgt[isum*zz->Obj_Weight_Dim+i] > 0 
            ? tmp_vwgt[imax*zz->Obj_Weight_Dim+i]*nparts/
              tmp_vwgt[isum*zz->Obj_Weight_Dim+i]
            : 1.));
       }
 
-/*
-      EBEB: Weighted cuts Not Yet Implemeted!
-
       if (zz->Get_Num_Edges && zz->Get_Edge_List){
         for (i=0; i<zz->Edge_Weight_Dim; i++){
-          printf("%s  Edge weight  #%1d :  %8.3g %8.3g %8.3  %5.3f\n",
-            yo, i+1, tmp_cutwgt[imin*(zz->Edge_Weight_Dim)+i], 
-            tmp_cutwgt[imax*(zz->Edge_Weight_Dim)+i], 
-            tmp_cutwgt[isum*(zz->Edge_Weight_Dim)+i], 
-            (tmp_cutwgt[isum*(zz->Edge_Weight_Dim)+i] > 0 
+          printf("%s  Cut weight  #%1d   :  %7.3g %7.3g %7.3g  %5.3f\n",
+            yo, i, tmp_cutwgt[imin*(zz->Edge_Weight_Dim)+i], 
+          tmp_cutwgt[imax*(zz->Edge_Weight_Dim)+i], 
+          tmp_cutwgt[isum*(zz->Edge_Weight_Dim)+i], 
+          (tmp_cutwgt[isum*(zz->Edge_Weight_Dim)+i] > 0 
              ? tmp_cutwgt[imax*(zz->Edge_Weight_Dim)+i]*nparts/tmp_cutwgt[isum*(zz->Edge_Weight_Dim)+i]
              : 1.));
         }
-*/
+      }
 
-        for (i=1; i<2 /* NUM_STATS */; i++){
-          switch(i){
-          case 1:  sprintf(msg, "%s", "No. of cuts      : ");
-                   break;
-          case 2:  sprintf(msg, "%s", "Boundary objects : ");
-                   break;
-          case 3:  sprintf(msg, "%s", "Adj. partitions  : ");
-                   break;
-          default: sprintf(msg, "%s", "                   ");
-                   break;
-          }
-
-          printf("%s  %s %7d %7d %7d  %5.3f\n",
-            yo, msg, stats[imin*NUM_STATS+i], 
-            stats[imax*NUM_STATS+i],
-            stats[isum*NUM_STATS+i], 
-            (stats[isum*NUM_STATS+i] > 0 
-                  ? stats[imax*NUM_STATS+i]*nparts/ (float) stats[isum*NUM_STATS+i]
-                  : 1.));
+      for (i=1; i<2 /* NUM_STATS */; i++){
+        switch(i){
+        case 1:  sprintf(msg, "%s", "No. of cuts      : ");
+                 break;
+        case 2:  sprintf(msg, "%s", "Boundary objects : ");
+                 break;
+        case 3:  sprintf(msg, "%s", "Adj. partitions  : ");
+                 break;
+        default: sprintf(msg, "%s", "                   ");
+                 break;
         }
- 
+
+        printf("%s  %s %7d %7d %7d  %5.3f\n",
+          yo, msg, stats[imin*NUM_STATS+i], 
+          stats[imax*NUM_STATS+i],
+          stats[isum*NUM_STATS+i], 
+          (stats[isum*NUM_STATS+i] > 0 
+                ? stats[imax*NUM_STATS+i]*nparts/ (float) stats[isum*NUM_STATS+i]
+                : 1.));
+      }
       printf("\n");
     }
 
-    ZOLTAN_FREE(&all_arr);
   }
 
 End:
@@ -514,8 +542,10 @@ End:
   ZOLTAN_FREE(&nbors_global);
   ZOLTAN_FREE(&nbors_proc);
   ZOLTAN_FREE(&proc_count);
-  ZOLTAN_FREE(&vwgt_arr);
-  ZOLTAN_FREE(&ewgt_arr);
+  if (compute_part){
+    ZOLTAN_FREE(&all_arr);
+    ZOLTAN_FREE(&vwgt_arr);
+  }
   ZOLTAN_TRACE_EXIT(zz, yo);
 
   return ierr;
