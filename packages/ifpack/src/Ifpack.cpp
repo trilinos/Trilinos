@@ -22,47 +22,58 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
                                       const int Overlap)
 {
 
-  if (PrecType == "point relaxation (no AS)") {
-    return(new Ifpack_PointRelaxation(Matrix));
-  }
-  else if (PrecType == "block relaxation (no AS)") {
-    return(new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(Matrix));
-  }
-  else if (PrecType == "point relaxation") {
+  if (PrecType == "point relaxation") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>(Matrix, Overlap));
+  }
+  else if (PrecType == "point relaxation stand-alone") {
+    return(new Ifpack_PointRelaxation(Matrix));
   }
   else if (PrecType == "block relaxation") {
     return(new Ifpack_AdditiveSchwarz<
             Ifpack_BlockRelaxation<Ifpack_DenseContainer> >(Matrix,Overlap));
+  }
+  else if (PrecType == "block relaxation stand-alone") {
+    return(new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(Matrix));
   }
 #ifdef HAVE_IFPACK_AMESOS
   else if (PrecType == "block relaxation (Amesos)" && Overlap) {
     return(new Ifpack_AdditiveSchwarz<
             Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
   }
-  else if (PrecType == "Amesos (no AS)") {
-    return(new Ifpack_Amesos(Matrix));
-  }
   else if (PrecType == "Amesos") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(Matrix,Overlap));
+  }
+  else if (PrecType == "Amesos stand-alone") {
+    return(new Ifpack_Amesos(Matrix));
   }
 #endif
   else if (PrecType == "IC") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_IC>(Matrix,Overlap));
 
   } 
+  else if (PrecType == "IC stand-alone") {
+    return(new Ifpack_IC(Matrix));
+
+  } 
   else if (PrecType == "ICT") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_ICT>(Matrix,Overlap));
 
   } 
-  else if (PrecType == "ILU (no AS)") {
-    return(new Ifpack_AdditiveSchwarz<Ifpack_ILU>(Matrix,Overlap));
-  }
+  else if (PrecType == "ICT stand-alone") {
+    return(new Ifpack_ICT(Matrix));
+
+  } 
   else if (PrecType == "ILU") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_ILU>(Matrix,Overlap));
   }
+  else if (PrecType == "ILU stand-alone") {
+    return(new Ifpack_ILU(Matrix));
+  }
   else if (PrecType == "ILUT") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_ILUT>(Matrix,Overlap));
+  }
+  else if (PrecType == "ILUT stand-alone") {
+    return(new Ifpack_ILUT(Matrix));
   }
   else
     // nothing understandable

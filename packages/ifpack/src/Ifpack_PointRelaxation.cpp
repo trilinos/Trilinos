@@ -17,8 +17,6 @@
 static const int IFPACK_JACOBI = 0;
 static const int IFPACK_GS = 1;
 static const int IFPACK_SGS = 2;
-static const int IFPACK_SOR = 3;
-static const int IFPACK_SSOR = 4;
 
 //==============================================================================
 Ifpack_PointRelaxation::
@@ -31,8 +29,8 @@ Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix) :
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
-  ComputeFlops_(0),
-  ApplyInverseFlops_(0),
+  ComputeFlops_(0.0),
+  ApplyInverseFlops_(0.0),
   NumSweeps_(1),
   DampingFactor_(1.0),
   UseTranspose_(false),
@@ -76,10 +74,6 @@ int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
     PT = "Gauss-Seidel";
   else if (PrecType_ == IFPACK_SGS)
     PT = "symmetric Gauss-Seidel";
-  else if (PrecType_ == IFPACK_SOR)
-    PT = "SOR";
-  else if (PrecType_ == IFPACK_SSOR)
-    PT = "SSOR";
 
   PT = List.get("relaxation: type", PT);
 
@@ -89,15 +83,19 @@ int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
     PrecType_ = IFPACK_GS;
   else if (PT == "symmetric Gauss-Seidel")
     PrecType_ = IFPACK_SGS;
-  else if (PT == "SOR")
-    PrecType_ = IFPACK_SOR;
-  else if (PT == "SSOR")
-    PrecType_ = IFPACK_SSOR;
+  else {
+    IFPACK_CHK_ERR(-2);
+  }
   
-  NumSweeps_ = List.get("relaxation: sweeps",NumSweeps_);
-  DampingFactor_ = List.get("relaxation: damping factor", DampingFactor_);
-  MinDiagonalValue_ = List.get("relaxation: min diagonal value", MinDiagonalValue_);
-  ZeroStartingSolution_ = List.get("relaxation: zero starting solution", ZeroStartingSolution_);
+  UseWithAztecOO_       = List.get("relaxation: AztecOO compliant", 
+                                   UseWithAztecOO_);
+  NumSweeps_            = List.get("relaxation: sweeps",NumSweeps_);
+  DampingFactor_        = List.get("relaxation: damping factor", 
+                                   DampingFactor_);
+  MinDiagonalValue_     = List.get("relaxation: min diagonal value", 
+                                   MinDiagonalValue_);
+  ZeroStartingSolution_ = List.get("relaxation: zero starting solution", 
+                                   ZeroStartingSolution_);
 
   SetLabel();
 
@@ -128,10 +126,10 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
 
   if (IsComputed() == false)
-    IFPACK_CHK_ERR(-4);
+    IFPACK_CHK_ERR(-3);
 
   if (X.NumVectors() != Y.NumVectors())
-    IFPACK_CHK_ERR(-3);
+    IFPACK_CHK_ERR(-2);
 
   IFPACK_CHK_ERR(Matrix_->Multiply(UseTranspose(),X,Y));
   return(0);
@@ -143,13 +141,13 @@ int Ifpack_PointRelaxation::Initialize()
   IsInitialized_ = false;
 
   if (Matrix_ == 0)
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-2);
 
   if (Time_ == 0)
     Time_ = new Epetra_Time(Comm());
 
   if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
-    IFPACK_CHK_ERR(-3); // only square matrices
+    IFPACK_CHK_ERR(-2); // only square matrices
 
   NumMyRows_ = Matrix_->NumMyRows();
   NumMyNonzeros_ = Matrix_->NumMyNonzeros();
@@ -180,14 +178,14 @@ int Ifpack_PointRelaxation::Compute()
   Condest_ = -1.0;
 
   if (NumSweeps_ <= 0)
-    IFPACK_CHK_ERR(-3); // at least one application
+    IFPACK_CHK_ERR(-2); // at least one application
   
   if (Diagonal_)
     delete Diagonal_;
   Diagonal_ = new Epetra_Vector(Matrix().RowMatrixRowMap());
 
   if (Diagonal_ == 0)
-    IFPACK_CHK_ERR(-11);
+    IFPACK_CHK_ERR(-5);
 
   IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(*Diagonal_));
 
@@ -199,15 +197,19 @@ int Ifpack_PointRelaxation::Compute()
   }
 
   // some methods require the inverse of the diagonal, compute it
-  // now
-  if ((PrecType_ == IFPACK_JACOBI) || (PrecType_ == IFPACK_GS) 
-      || (PrecType_ == IFPACK_SOR) || (PrecType_ == IFPACK_SSOR)) {
+  // now and store it in `Diagonal_'
+  if ((PrecType_ == IFPACK_JACOBI) || (PrecType_ == IFPACK_GS)) {
     Diagonal_->Reciprocal(*Diagonal_);
     // update flops
     ComputeFlops_ += NumMyRows_;
   }
 
-  // FIXME for SOR and SSOR
+  // We need to import data from external processors. Here I create an
+  // Epetra_Import object because I cannot assume that Matrix_ has one.
+  // This is a bit of waste of resources (but the code is more robust).
+  // Note that I am doing some strange stuff to set the components of Y
+  // from Y2 (to save some time).
+  //
   if (IsParallel_ && ((PrecType_ == IFPACK_GS) || (PrecType_ == IFPACK_SGS))) {
     Importer_ = new Epetra_Import(Matrix().RowMatrixColMap(),
                                   Matrix().RowMatrixRowMap());
@@ -244,18 +246,18 @@ ostream& Ifpack_PointRelaxation::Print(ostream & os) const
       cout << ", using zero starting solution" << endl;
     else
       cout << ", using input starting solution" << endl;
-    os << "Condition number estimate = " << Condest_ << endl;
+    os << "Condition number estimate = " << Condest() << endl;
     os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
     if (IsComputed_) {
       os << "Minimum value on stored diagonal = " << MinVal << endl;
-      os << "Average value on stored diagonal = " << MaxVal << endl;
+      os << "Maximum value on stored diagonal = " << MaxVal << endl;
     }
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
     os << "Initialize()    "   << std::setw(5) << NumInitialize_ 
        << "  " << std::setw(15) << InitializeTime_ 
-       << "                -              -" << endl;
+       << "              0.0              0.0" << endl;
     os << "Compute()       "   << std::setw(5) << NumCompute_ 
        << "  " << std::setw(15) << ComputeTime_
        << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ 
@@ -297,10 +299,6 @@ void Ifpack_PointRelaxation::SetLabel()
     PT = "GS";
   else if (PrecType_ == IFPACK_SGS)
     PT = "SGS";
-  else if (PrecType_ == IFPACK_SOR)
-    PT = "SOR";
-  else if (PrecType_ == IFPACK_SSOR)
-    PT = "SSOR";
 
   Label_ = "IFPACK (" + PT + ", sweeps=" + Ifpack_toString(NumSweeps_)
     + ", damping=" + Ifpack_toString(DampingFactor_) + ")";
@@ -308,25 +306,25 @@ void Ifpack_PointRelaxation::SetLabel()
 
 //==============================================================================
 // Recall that this method is NOT supposed to be AztecOO compatible
-// (AztecOO users should call Ifpack_AdditiveSchwarz, while ML users
-// will not require any AztecOO compatibiliness). 
+// unless option "relaxation: AztecOO compliant" is set to true.
+// ML users should set this option to false.
+// 
 // Note that Ifpack_PointRelaxation and Jacobi is much faster than
 // Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation> (because of the
 // way the matrix-vector produce is performed).
 //
 // Another ML-related observation is that the starting solution (in Y)
 // is NOT supposed to be zero. This may slow down the application of just
-// one sweep of Jacobi, but anyway who really cares for just one step
-// of Jacobi as preconditioner?
+// one sweep of Jacobi.
 //
 int Ifpack_PointRelaxation::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  if (IsComputed() == false)
-    IFPACK_CHK_ERR(-4);
+  if (!IsComputed())
+    IFPACK_CHK_ERR(-3);
 
   if (X.NumVectors() != Y.NumVectors())
-    IFPACK_CHK_ERR(-3);
+    IFPACK_CHK_ERR(-2);
 
   Time_->ResetStartTime();
 
@@ -339,7 +337,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (ZeroStartingSolution_)
     Y.PutScalar(0.0);
 
-  // Flops are updated in each of the following. SOR and SSOR do not work.
+  // Flops are updated in each of the following. 
   switch (PrecType_) {
   case IFPACK_JACOBI:
     IFPACK_CHK_ERR(ApplyInverseJacobi(*Xcopy,Y));
@@ -350,14 +348,6 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   case IFPACK_SGS:
     IFPACK_CHK_ERR(ApplyInverseSGS(*Xcopy,Y));
     break;
-#ifdef FIXME
-  case IFPACK_SOR:
-    IFPACK_CHK_ERR(ApplyInverseSOR(*Xcopy,Y));
-    break;
-  case IFPACK_SSOR:
-    IFPACK_CHK_ERR(ApplyInverseSSOR(*Xcopy,Y));
-    break;
-#endif
   default:
     IFPACK_CHK_ERR(-1); // something wrong
   }
@@ -399,19 +389,14 @@ ApplyInverseJacobi(const Epetra_MultiVector& RHS, Epetra_MultiVector& LHS) const
   //   - DampingFactor            (NumGlobalRows_)
   //   - Diagonal                 (NumGlobalRows_)
   //   - A + B                    (NumGlobalRows_)
-  ApplyInverseFlops_ += NumVectors * (5 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
+  //   - 1.0                      (NumGlobalRows_)
+  ApplyInverseFlops_ += NumVectors * (6 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
 
   return(0);
 
 }
 
 //==============================================================================
-// We need to import data from external processors. Here I create an
-// Epetra_Import object because I cannot assume that Matrix_ has one.
-// This is a bit of waste of resources (but the code is more robust).
-// Note that I am doing some strange stuff to set the components of Y
-// from Y2 (to save some time).
-//
 int Ifpack_PointRelaxation::
 ApplyInverseGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
@@ -440,7 +425,7 @@ ApplyInverseGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     if (IsParallel_)
       IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
 
-    // do I really need this code below?
+    // FIXME: do I really need this code below?
     if (NumVectors == 1) {
 
       double* y0_ptr = y_ptr[0];
@@ -509,8 +494,6 @@ ApplyInverseGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 }
 
 //==============================================================================
-// Same comments as for ApplyInverseGS()
-//
 int Ifpack_PointRelaxation::
 ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
@@ -593,7 +576,7 @@ ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (IsParallel_)
     delete Y2;
 
-  ApplyInverseFlops_ += NumVectors * (4 * NumGlobalNonzeros_ + 8 * NumGlobalRows_);
+  ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
   return(0);
 }
 

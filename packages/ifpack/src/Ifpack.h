@@ -18,33 +18,24 @@ Create requires 3 arguments:
   overlap among the processes.
 
 The first argument can assume the following values:
-- \c "Jacobi"
-- \c "Gauss-Seidel"
-- \c "symmetric Gauss-Seidel"
-- \c "SOR"
-- \c "SSOR"
-- \c "block Jacobi": block Jacobi preconditioner,
-  using LAPACK to apply the inverse of each  block.
-- \c "block Gauss-Seidel": block Gauss-Seidel preconditioner,
-  using LAPACK to apply the inverse of each  block.
-- \c "block symmetric Gauss-Seidel": block 
-  symmetric Gauss-Seidel preconditioner,
-  using LAPACK to apply the inverse of each  block.
-- \c "block Jacobi (Amesos)": block Jacobi, using
-  Amesos to apply the inverse of each block
-  (require \c --enable-amesos)
-- \c "block Gauss-Seidel (Amesos)": block Gauss-Seidel, using
-  Amesos to apply the inverse of each block
-  (require \c --enable-amesos)
-- \c "block symmetric Gauss-Seidel (Amesos)": 
-  block symmetric Gauss-Seidel using
-  Amesos to apply the inverse of each block
-  (require \c --enable-amesos)
-- \c "Amesos"
-- \c "gICT": graph-based incomplete Cholesky factorization
-- \c "vICT": value-based incomplete Cholesky factorization
-- \c "gRILUK": graph-based RILU(K) factorization
+- \c "point relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>
+- \c "point relaxation stand-alone" : returns an instance of Ifpack_PointRelaxation (value of overlap is ignored).
+- \c "block relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation>
+- \c "block relaxation stand-alone)" : returns an instance of Ifpack_BlockRelaxation.
+- \c "Amesos" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_Amesos>.
+- \c "Amesos" : returns an instance of Ifpack_Amesos.
+- \c "IC" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_IC>.
+- \c "IC stand-alone" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_IC>.
+- \c "ICT" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ICT>.
+- \c "ICT stand-alone" : returns an instance of Ifpack_ICT.
+- \c "ILU" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ILU>.
+- \c "ILU stand-alone" : returns an instance of Ifpack_ILU.
+- \c "ILUT" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ILUT>.
+- \c "ILUT stand-alone" : returns an instance of Ifpack_ILUT.
 - otherwise, Create() returns 0.
+
+\note Objects in stand-alone mode cannot use reordering, variable overlap, and singleton filters.
+However, their construction can be slightly faster than the non stand-alone counterpart. 
 
 <P> The following fragment of code shows the
 basic usage of this class.
@@ -56,13 +47,13 @@ basic usage of this class.
 Ifpack Factory;
 
 Epetra_RowMatrix* A; // A is FillComplete()'d.
-string PrecType = "vICT"; // use incomplete Cholesky on each process
+string PrecType = "ILU"; // use incomplete LU on each process
 int OverlapLevel = 1; // one row of overlap among the processes
 Ifpack_Preconditioner* Prec = Factory.Create(PrecType, A, OverlapLevel);
 assert (Prec != 0);
 
 Teuchos::ParameterList List;
-List.set("fact: level-of-fill", 5); // use ICT(5)
+List.set("fact: level-of-fill", 5); // use ILU(5)
 
 IFPACK_CHK_ERR(Prec->SetParameters(List));
 IFPACK_CHK_ERR(Prec->Initialize());
@@ -91,7 +82,7 @@ delete Prec;
 
 \author Marzio Sala, SNL 9214
 
-\date Started Oct-04, last update Oct-04
+\date Last updated on 25-Jan-05.
 */
 
 class Ifpack {

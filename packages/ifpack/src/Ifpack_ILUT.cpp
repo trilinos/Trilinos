@@ -87,7 +87,7 @@ int Ifpack_ILUT::SetParameters(Teuchos::ParameterList& List)
 
   LevelOfFill_ = List.get("fact: ilut level-of-fill",LevelOfFill());
   if (LevelOfFill_ <= 0.0)
-    IFPACK_CHK_ERR(-1); // must be greater than 0.0
+    IFPACK_CHK_ERR(-2); // must be greater than 0.0
 
   Athresh_ = List.get("fact: absolute threshold", Athresh_);
   Rthresh_ = List.get("fact: relative threshold", Rthresh_);
@@ -106,13 +106,8 @@ int Ifpack_ILUT::Initialize()
   IsInitialized_ = false;
   Time_.ResetStartTime();
 
-  // I work on one process only (use Ifpack_AdditiveSchwarz
-  // if using more than one process)
-  if (Matrix().Comm().NumProc() != 1)
-    IFPACK_CHK_ERR(-2);
-
   if (Matrix().NumMyRows() != Matrix().NumMyCols())
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-2);
     
   NumMyRows_ = Matrix().NumMyRows();
 
@@ -214,7 +209,7 @@ int Ifpack_ILUT::Compute() {
   L_ = new Epetra_CrsMatrix(Copy,Matrix().RowMatrixRowMap(),0);
   U_ = new Epetra_CrsMatrix(Copy,Matrix().RowMatrixRowMap(),0);
   if ((L_ == 0) || (U_ == 0))
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-5);
 
   // insert first row in U_
   IFPACK_CHK_ERR(U_->InsertGlobalValues(0,(int)U_size[0],
@@ -370,9 +365,9 @@ int Ifpack_ILUT::Compute() {
     L_size[i] = L_count;
     U_size[i] = U_count;
     if (L_size[i] > (int)LI[i].size())
-      IFPACK_CHK_ERR(-1);
+      IFPACK_CHK_ERR(-4);
     if (U_size[i] > (int)UI[i].size())
-      IFPACK_CHK_ERR(-1);
+      IFPACK_CHK_ERR(-4);
 
     old_l_cutoff = l_cutoff / abs_diag;
     old_u_cutoff = u_cutoff / abs_diag;
@@ -436,13 +431,13 @@ int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X,
 			     Epetra_MultiVector& Y) const
 {
 
-  Time_.ResetStartTime();
+  if (!IsComputed())
+    IFPACK_CHK_ERR(-2); // compute preconditioner first
 
   if (X.NumVectors() != Y.NumVectors()) 
-    IFPACK_CHK_ERR(-1); // Return error: X and Y not the same size
+    IFPACK_CHK_ERR(-3); // Return error: X and Y not the same size
 
-  if (!IsComputed())
-    IFPACK_CHK_ERR(-1); // compute preconditioner first
+  Time_.ResetStartTime();
 
   // NOTE: I do suppose that X and Y are two different vectors
   EPETRA_CHK_ERR(L_->Solve(false,false,false,X,Y));
@@ -460,22 +455,7 @@ int Ifpack_ILUT::Apply(const Epetra_MultiVector& X,
 		      Epetra_MultiVector& Y) const 
 {
 
-  if (X.NumVectors() != Y.NumVectors()) 
-    IFPACK_CHK_ERR(-1); // Return error: X and Y not the same size
-
-#ifdef FIXME
-  Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;
-  Epetra_MultiVector * Y1 = (Epetra_MultiVector *) &Y;
-
-  U_->Multiply(false, *X1, *Y1);
-  Y1->Update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
-  Y1->ReciprocalMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
-  Epetra_MultiVector Y1temp(*Y1); // Need a temp copy of Y1
-  U_->Multiply(true, Y1temp, *Y1);
-  Y1->Update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
-  return(0);
-#endif
-  return(-1);
+  return(-98);
 }
 
 //=============================================================================
@@ -497,41 +477,39 @@ double Ifpack_ILUT::Condest(const Ifpack_CondestType CT,
 std::ostream&
 Ifpack_ILUT::Print(std::ostream& os) const
 {
-  os << endl << "*** Ifpack_ILUT : " << Label() << endl << endl;
-  os << "Level-of-fill      = " << LevelOfFill() << endl;
-  os << "Absolute threshold = " << AbsoluteThreshold() << endl;
-  os << "Relative threshold = " << RelativeThreshold() << endl;
-  os << "Relax value        = " << RelaxValue() << endl;
-//  os << "Relaxation value   = " << RelaxValue() << endl;
-  if (IsInitialized()) {
-    os << "Preconditioner has been initialized" << endl;
-  }
-  if (IsComputed()) {
-    os << "Preconditioner has been computed" << endl;
+  if (!Comm().MyPID()) {
     os << endl;
-    os << "Number of rows of L, U          = " << L_->NumMyRows() << endl;
-    os << "Number of nonzeros of L + U     = " << NumGlobalNonzeros() << endl;
-    os << "nonzeros / rows                 = " 
-       << 1.0 * NumGlobalNonzeros() / U_->NumMyRows() << endl;
-    Epetra_Vector Diagonal(U_->RowMatrixRowMap());
-    U_->ExtractDiagonalCopy(Diagonal);
-    double MinValue;
-    double MaxValue;
-    Diagonal.MinValue(&MinValue);
-    Diagonal.MaxValue(&MaxValue);
-    os << "Minimum diagonal value          = " << MinValue << endl;
-    os << "Maximum diagonal value          = " << MaxValue << endl;
+    os << "================================================================================" << endl;
+    os << "Ifpack_ILUT: " << Label() << endl << endl;
+    os << "Level-of-fill      = " << LevelOfFill() << endl;
+    os << "Absolute threshold = " << AbsoluteThreshold() << endl;
+    os << "Relative threshold = " << RelativeThreshold() << endl;
+    os << "Relax value        = " << RelaxValue() << endl;
+    os << "Condition number estimate = " << Condest() << endl;
+    os << "Global number of rows            = " << A_.NumGlobalRows() << endl;
+    if (IsComputed_) {
+      os << "Number of nonzeros of L + U     = " << NumGlobalNonzeros() << endl;
+      os << "nonzeros / rows                 = " 
+        << 1.0 * NumGlobalNonzeros() / U_->NumGlobalRows() << endl;
+    }
+    os << endl;
+    os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
+    os << "-----           -------   --------------       ------------     --------" << endl;
+    os << "Initialize()    "   << std::setw(5) << NumInitialize() 
+       << "  " << std::setw(15) << InitializeTime() 
+       << "               0.0            0.0" << endl;
+    os << "Compute()       "   << std::setw(5) << NumCompute() 
+       << "  " << std::setw(15) << ComputeTime()
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
+       << "  " << std::setw(15) << ApplyInverseTime()
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
+    os << "================================================================================" << endl;
+    os << endl;
   }
-  os << endl;
-  os << "Number of initialization phases = " << NumInitialize_ << endl;
-  os << "Number of computation phases    = " << NumCompute_ << endl;
-  os << "Number of applications          = " << NumApplyInverse_ << endl;
-  os << endl;
-  os << "Total time for Initialize()     = " << InitializeTime_ << " (s)\n";
-  os << "Total time for Compute()        = " << ComputeTime_ << " (s)\n";
-  os << "Total time for ApplyInverse()   = " << ApplyInverseTime_ << " (s)\n";
-  os << endl;
-  
+
   return(os);
 }
 #endif // HAVE_IFPACK_TEUCHOS

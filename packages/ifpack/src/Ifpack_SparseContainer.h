@@ -193,9 +193,21 @@ public:
   //@}
 
   //! Returns the flops in Compute().
+  virtual double InitializeFlops() const
+  {
+    if (Inverse_ == 0)
+      return (0.0);
+    else
+      return(Inverse_->InitializeFlops());
+  }
+
+  //! Returns the flops in Compute().
   virtual double ComputeFlops() const
   {
-    return(ComputeFlops_);
+    if (Inverse_ == 0)
+      return (0.0);
+    else
+      return(Inverse_->ComputeFlops());
   }
 
   //! Returns the flops in Apply().
@@ -207,7 +219,10 @@ public:
   //! Returns the flops in ApplyInverse().
   virtual double ApplyInverseFlops() const
   {
-    return(ApplyInverseFlops_);
+    if (Inverse_ == 0)
+      return (0.0);
+    else
+      return(Inverse_->ApplyInverseFlops());
   }
   
   //! Prints basic information on iostream. This function is used by operator<<.
@@ -243,9 +258,7 @@ private:
   //! Label for \c this object
   string Label_;
   Teuchos::ParameterList List_;
-  double ComputeFlops_;
   double ApplyFlops_;
-  double ApplyInverseFlops_;
 
 };
 
@@ -263,9 +276,7 @@ Ifpack_SparseContainer(const int NumRows, const int NumVectors) :
   IsComputed_(false),
   SerialComm_(0),
   Inverse_(0),
-  ComputeFlops_(0),
-  ApplyFlops_(0),
-  ApplyInverseFlops_(0)
+  ApplyFlops_(0.0)
 {
 
 #ifdef HAVE_MPI
@@ -344,7 +355,6 @@ int Ifpack_SparseContainer<T>::Initialize()
   RHS_ = new Epetra_MultiVector(*Map_,NumVectors_);
   GID_.Reshape(NumRows_,1);
 
-  // FIXME: try View??
   Matrix_ = new Epetra_CrsMatrix(Copy,*Map_,0);
 
   // create the inverse
@@ -354,6 +364,10 @@ int Ifpack_SparseContainer<T>::Initialize()
     IFPACK_CHK_ERR(-5);
 
   IFPACK_CHK_ERR(Inverse_->SetParameters(List_));
+
+  // Call Inverse_->Initialize() in Compute(). This saves
+  // some time, because I can extract the diagonal blocks faster,
+  // and only once.
 
   Label_ = "Ifpack_SparseContainer";
 
@@ -381,7 +395,7 @@ template<typename T>
 int Ifpack_SparseContainer<T>::
 SetMatrixElement(const int row, const int col, const double value)
 {
-  if (IsInitialized() == false)
+  if (!IsInitialized())
     IFPACK_CHK_ERR(-3); // problem not shaped yet
 
   if ((row < 0) || (row >= NumRows())) {
@@ -409,7 +423,7 @@ int Ifpack_SparseContainer<T>::Compute(const Epetra_RowMatrix& Matrix)
 {
 
   IsComputed_ = false;
-  if (IsInitialized() == false) {
+  if (!IsInitialized()) {
     IFPACK_CHK_ERR(Initialize()); 
   }
 
@@ -425,7 +439,6 @@ int Ifpack_SparseContainer<T>::Compute(const Epetra_RowMatrix& Matrix)
   Label_ = "Ifpack_SparseContainer";
   
   IsComputed_ = true;
-  ComputeFlops_ += Inverse_->ComputeFlops();
 
   return(0);
 }
@@ -448,17 +461,11 @@ int Ifpack_SparseContainer<T>::Apply()
 template<typename T>
 int Ifpack_SparseContainer<T>::ApplyInverse()
 {
-  if (IsComputed() == false) {
-    IFPACK_CHK_ERR(-3); // not yet computed
-  }
+  if (!IsComputed())
+    IFPACK_CHK_ERR(-1);
   
-  if (Inverse_ == 0) {
-    IFPACK_CHK_ERR(-6);
-  }
-
   IFPACK_CHK_ERR(Inverse_->ApplyInverse(*RHS_, *LHS_));
 
-  ApplyInverseFlops_ += Inverse_->ApplyInverseFlops();
   return(0);
 }
  
@@ -574,12 +581,13 @@ ostream& Ifpack_SparseContainer<T>::Print(ostream & os) const
 {
   os << "================================================================================" << endl;
   os << "Ifpack_SparseContainer" << endl;
-  os << "Number of rows          = " << NumRows_ << endl;
-  os << "Number of vectors       = " << NumVectors_ << endl;
-  os << "IsInitialized()         = " << IsInitialized_ << endl;
-  os << "IsComputed()            = " << IsComputed_ << endl;
-  os << "Flops in Compute()      = " << ComputeFlops_ << endl; 
-  os << "Flops in ApplyInverse() = " << ApplyInverseFlops_ << endl; 
+  os << "Number of rows          = " << NumRows() << endl;
+  os << "Number of vectors       = " << NumVectors() << endl;
+  os << "IsInitialized()         = " << IsInitialized() << endl;
+  os << "IsComputed()            = " << IsComputed() << endl;
+  os << "Flops in Initialize()   = " << InitializeFlops() << endl; 
+  os << "Flops in Compute()      = " << ComputeFlops() << endl; 
+  os << "Flops in ApplyInverse() = " << ApplyInverseFlops() << endl; 
   os << "================================================================================" << endl;
   os << endl;
 

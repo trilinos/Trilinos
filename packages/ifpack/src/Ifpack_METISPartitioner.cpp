@@ -35,8 +35,10 @@ int Ifpack_METISPartitioner::ComputePartitions()
 {
 
   int ierr;
+#ifdef HAVE_IFPACK_METIS
   int nbytes = 0;
   int edgecut;
+#endif
 
   Epetra_CrsGraph* SymGraph = 0;
   Epetra_Map* SymMap = 0;
@@ -153,8 +155,8 @@ int Ifpack_METISPartitioner::ComputePartitions()
       for (int i = 0 ; i < NumMyRows() ; ++i) 
 	Partition_[i] = -1;
     
-      int j = NumMyRows();
 #ifdef HAVE_IFPACK_METIS
+      int j = NumMyRows();
       if (NumLocalParts_ < 8) {
 
 	int i = 1; /* optype in the METIS manual */

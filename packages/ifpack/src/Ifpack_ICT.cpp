@@ -50,7 +50,6 @@ Ifpack_ICT::Ifpack_ICT(const Epetra_RowMatrix* A) :
   H_(0),
   Condest_(-1.0),
   Relax_(1.0),
-  Threshold_(0.0),
   Athresh_(0.0),
   Rthresh_(0.0),
   LevelOfFill_(1.0),
@@ -100,13 +99,8 @@ int Ifpack_ICT::Initialize()
   IsInitialized_ = false;
   Time_.ResetStartTime();
 
-  // I work on one process only (use Ifpack_AdditiveSchwarz
-  // if using more than one process)
-  if (Matrix().Comm().NumProc() != 1)
-    IFPACK_CHK_ERR(-2);
-
   if (Matrix().NumMyRows() != Matrix().NumMyCols())
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-2);
     
   NumMyRows_ = Matrix().NumMyRows();
 
@@ -202,7 +196,7 @@ int Ifpack_ICT::Compute() {
 
   H_ = new Epetra_CrsMatrix(Copy,Matrix().RowMatrixRowMap(),0);
   if (H_ == 0)
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-5);
 
   // insert element Matrix()(0,0)
   Values[0][0] = sqrt(Values[0][0]);
@@ -321,13 +315,13 @@ int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X,
 			     Epetra_MultiVector& Y) const
 {
 
-  Time_.ResetStartTime();
+  if (!IsComputed())
+    IFPACK_CHK_ERR(-3); // compute preconditioner first
 
   if (X.NumVectors() != Y.NumVectors()) 
-    IFPACK_CHK_ERR(-1); // Return error: X and Y not the same size
+    IFPACK_CHK_ERR(-2); // Return error: X and Y not the same size
 
-  if (!IsComputed())
-    IFPACK_CHK_ERR(-1); // compute preconditioner first
+  Time_.ResetStartTime();
 
   // NOTE: I do suppose that X and Y are two different vectors
   EPETRA_CHK_ERR(H_->Solve(false,false,false,X,Y));
@@ -346,22 +340,7 @@ int Ifpack_ICT::Apply(const Epetra_MultiVector& X,
 		      Epetra_MultiVector& Y) const 
 {
 
-  if (X.NumVectors() != Y.NumVectors()) 
-    IFPACK_CHK_ERR(-1); // Return error: X and Y not the same size
-
-#ifdef FIXME
-  Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;
-  Epetra_MultiVector * Y1 = (Epetra_MultiVector *) &Y;
-
-  U_->Multiply(false, *X1, *Y1);
-  Y1->Update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
-  Y1->ReciprocalMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
-  Epetra_MultiVector Y1temp(*Y1); // Need a temp copy of Y1
-  U_->Multiply(true, Y1temp, *Y1);
-  Y1->Update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
-  return(0);
-#endif
-  IFPACK_CHK_ERR(-1);
+  IFPACK_CHK_ERR(-98);
 }
 
 //=============================================================================
@@ -383,39 +362,39 @@ double Ifpack_ICT::Condest(const Ifpack_CondestType CT,
 std::ostream&
 Ifpack_ICT::Print(std::ostream& os) const
 {
-  os << endl << "*** Ifpack_ICT : " << Label() << endl << endl;
-  os << "Level-of-fill      = " << LevelOfFill_ << endl;
-  os << "Absolute threshold = " << Athresh_ << endl;
-  os << "Relative threshold = " << Rthresh_ << endl;
-//  os << "Relaxation value   = " << RelaxValue() << endl;
-  if (IsInitialized()) {
-    os << "Preconditioner has been initialized" << endl;
-  }
-  if (IsComputed()) {
-    os << "Preconditioner has been computed" << endl;
+  if (!Comm().MyPID()) {
     os << endl;
-    os << "Number of rows of H             = " << H_->NumMyRows() << endl;
-    os << "Number of nonzeros of H         = " << H_->NumMyNonzeros() << endl;
-    os << "nonzeros / rows                 = " 
-       << 1.0 * H_->NumMyNonzeros() / H_->NumMyRows() << endl;
-    Epetra_Vector Diagonal(H_->RowMatrixRowMap());
-    H_->ExtractDiagonalCopy(Diagonal);
-    double MinValue;
-    double MaxValue;
-    Diagonal.MinValue(&MinValue);
-    Diagonal.MaxValue(&MaxValue);
-    os << "Minimum diagonal value          = " << MinValue << endl;
-    os << "Maximum diagonal value          = " << MaxValue << endl;
+    os << "================================================================================" << endl;
+    os << "Ifpack_ICT: " << Label() << endl << endl;
+    os << "Level-of-fill      = " << LevelOfFill() << endl;
+    os << "Absolute threshold = " << AbsoluteThreshold() << endl;
+    os << "Relative threshold = " << RelativeThreshold() << endl;
+    os << "Relax value        = " << RelaxValue() << endl;
+    os << "Condition number estimate = " << Condest() << endl;
+    os << "Global number of rows            = " << Matrix().NumGlobalRows() << endl;
+    if (IsComputed_) {
+      os << "Number of nonzeros of H         = " << H_->NumGlobalNonzeros() << endl;
+      os << "nonzeros / rows                 = " 
+         << 1.0 * H_->NumGlobalNonzeros() / H_->NumGlobalRows() << endl;
+    }
+    os << endl;
+    os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
+    os << "-----           -------   --------------       ------------     --------" << endl;
+    os << "Initialize()    "   << std::setw(5) << NumInitialize() 
+       << "  " << std::setw(15) << InitializeTime() 
+       << "               0.0            0.0" << endl;
+    os << "Compute()       "   << std::setw(5) << NumCompute() 
+       << "  " << std::setw(15) << ComputeTime()
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
+       << "  " << std::setw(15) << ApplyInverseTime()
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
+    os << "================================================================================" << endl;
+    os << endl;
   }
-  os << endl;
-  os << "Number of initialization phases = " << NumInitialize_ << endl;
-  os << "Number of computation phases    = " << NumCompute_ << endl;
-  os << "Number of applications          = " << NumApplyInverse_ << endl;
-  os << endl;
-  os << "Total time for Initialize()     = " << InitializeTime_ << " (s)\n";
-  os << "Total time for Compute()        = " << ComputeTime_ << " (s)\n";
-  os << "Total time for ApplyInverse()   = " << ApplyInverseTime_ << " (s)\n";
-  os << endl;
+
   
   return(os);
 }

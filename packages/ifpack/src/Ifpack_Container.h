@@ -115,6 +115,9 @@ public:
   //! Returns the label of \e this container.
   virtual const char* Label() const = 0;
 
+  //! Returns the flops in Initialize().
+  virtual double InitializeFlops() const = 0;
+
   //! Returns the flops in Compute().
   virtual double ComputeFlops() const = 0;
 

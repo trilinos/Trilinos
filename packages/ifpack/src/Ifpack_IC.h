@@ -98,11 +98,11 @@ class Ifpack_IC: public Ifpack_Preconditioner {
 #endif
   int SetParameter(const string Name, const int Value)
   {
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-98);
   }
   int SetParameter(const string Name, const double Value)
   {
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-98);
   }
 
   const Epetra_RowMatrix& Matrix() const
@@ -244,11 +244,7 @@ class Ifpack_IC: public Ifpack_Preconditioner {
     }
  
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const
-  {
-    // FIXME
-    return(os);
-  }
+  virtual ostream& Print(std::ostream& os) const;
 
   //! Returns the number of calls to Initialize().
   virtual int NumInitialize() const
@@ -305,6 +301,26 @@ class Ifpack_IC: public Ifpack_Preconditioner {
 
  private:
   
+  double LevelOfFill() const
+  {
+    return(Lfil_);
+  }
+
+  double AbsoluteThreshold() const
+  {
+    return(Athresh_);
+  }
+
+  double RelativeThreshold() const
+  {
+    return(Rthresh_);
+  }
+
+  double DropTolerance() const
+  {
+    return(Droptol_);
+  }
+
   Epetra_RowMatrix &A_;
   const Epetra_Comm & Comm_;
   Epetra_CrsMatrix * U_;

@@ -65,8 +65,8 @@ Ifpack_IC::Ifpack_IC(Epetra_RowMatrix* A) :
   InitializeTime_(0.0),
   ComputeTime_(0),
   ApplyInverseTime_(0),
-  ComputeFlops_(0),
-  ApplyInverseFlops_(0)
+  ComputeFlops_(0.0),
+  ApplyInverseFlops_(0.0)
 {
 #ifdef HAVE_IFPACK_TEUCHOS
   Teuchos::ParameterList List;
@@ -138,7 +138,7 @@ int Ifpack_IC::ComputeSetup()
   D_ = new Epetra_Vector(Matrix().RowMatrixRowMap());
 
   if (U_ == 0 || D_ == 0)
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-5);
 
   int ierr = 0;
   int i, j;
@@ -284,7 +284,7 @@ int Ifpack_IC::Compute() {
     
   A_.Comm().SumAll(&current_flops, &total_flops, 1); // Get total madds across all PEs
 
-  ComputeFlops_ += total_flops; // FIXME: not so sure...
+  ComputeFlops_ += total_flops; 
   // Now count the rest
   ComputeFlops_ += (double) U_->NumGlobalNonzeros(); // Accounts for multiplier above
   ComputeFlops_ += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
@@ -301,11 +301,11 @@ int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X,
 			     Epetra_MultiVector& Y) const
 {
 
-  if (X.NumVectors() != Y.NumVectors()) 
-    IFPACK_CHK_ERR(-1); // Return error: X and Y not the same size
-
   if (!IsComputed())
-    IFPACK_CHK_ERR(-1); // compute preconditioner first
+    IFPACK_CHK_ERR(-3); // compute preconditioner first
+
+  if (X.NumVectors() != Y.NumVectors()) 
+    IFPACK_CHK_ERR(-2); // Return error: X and Y not the same size
 
   bool Upper = true;
   bool UnitDiagonal = true;
@@ -322,6 +322,7 @@ int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X,
   return(0);
 
 }
+
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 int Ifpack_IC::Apply(const Epetra_MultiVector& X, 
@@ -329,7 +330,7 @@ int Ifpack_IC::Apply(const Epetra_MultiVector& X,
 {
 
   if (X.NumVectors() != Y.NumVectors()) 
-    IFPACK_CHK_ERR(-1); // Return error: X and Y not the same size
+    IFPACK_CHK_ERR(-2); // Return error: X and Y not the same size
 
   Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;
   Epetra_MultiVector * Y1 = (Epetra_MultiVector *) &Y;
@@ -342,6 +343,7 @@ int Ifpack_IC::Apply(const Epetra_MultiVector& X,
   Y1->Update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
   return(0);
 }
+
 //=============================================================================
 double Ifpack_IC::Condest(const Ifpack_CondestType CT, 
                             const int MaxIters, const double Tol,
@@ -355,4 +357,45 @@ double Ifpack_IC::Condest(const Ifpack_CondestType CT,
 
   return(Condest_);
 }
+
+//=============================================================================
+std::ostream&
+Ifpack_IC::Print(std::ostream& os) const
+{
+  if (!Comm().MyPID()) {
+    os << endl;
+    os << "================================================================================" << endl;
+    os << "Ifpack_IC: " << Label() << endl << endl;
+    os << "Level-of-fill      = " << LevelOfFill() << endl;
+    os << "Absolute threshold = " << AbsoluteThreshold() << endl;
+    os << "Relative threshold = " << RelativeThreshold() << endl;
+    os << "Drop tolerance     = " << DropTolerance() << endl;
+    os << "Condition number estimate = " << Condest() << endl;
+    os << "Global number of rows            = " << A_.NumGlobalRows() << endl;
+    if (IsComputed_) {
+      os << "Number of nonzeros of H         = " << U_->NumGlobalNonzeros() << endl;
+      os << "nonzeros / rows                 = " 
+         << 1.0 * U_->NumGlobalNonzeros() / U_->NumGlobalRows() << endl;
+    }
+    os << endl;
+    os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
+    os << "-----           -------   --------------       ------------     --------" << endl;
+    os << "Initialize()    "   << std::setw(5) << NumInitialize() 
+       << "  " << std::setw(15) << InitializeTime() 
+       << "               0.0            0.0" << endl;
+    os << "Compute()       "   << std::setw(5) << NumCompute() 
+       << "  " << std::setw(15) << ComputeTime()
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
+       << "  " << std::setw(15) << ApplyInverseTime()
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
+    os << "================================================================================" << endl;
+    os << endl;
+  }
+
+  
+  return(os);
+} 
 #endif // HAVE_IFPACK_TEUCHOS

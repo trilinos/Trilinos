@@ -288,17 +288,28 @@ public:
   //! Returns the number of flops in the initialization phase.
   virtual double InitializeFlops() const
   {
-    return(0.0);
+    if (Inverse_ == 0)
+      return (0.0);
+    else 
+      // no flops occur in AdditiveSchwarz, only in Inverse_
+      return(Inverse_->InitializeFlops());
   }
 
   virtual double ComputeFlops() const
   {
-    return(ComputeFlops_);
+    if (Inverse_ == 0)
+      return (ComputeFlops_);
+    else 
+      // no flops occur in AdditiveSchwarz, only in Inverse_
+      return(ComputeFlops_ + Inverse_->ComputeFlops());
   }
 
   virtual double ApplyInverseFlops() const
   {
-    return(ApplyInverseFlops_);
+    if (Inverse_ == 0)
+      return (ApplyInverseFlops_);
+    else 
+      return(ApplyInverseFlops_ + Inverse_->ApplyInverseFlops());
   }
 
   //! Returns the level of overlap.
@@ -487,7 +498,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
     LocalizedMatrix_ = new Ifpack_LocalFilter(Matrix_);
 
   if (LocalizedMatrix_ == 0)
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-5);
 
   // users may want to skip singleton check
   if (FilterSingletons_) {
@@ -523,7 +534,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   Inverse_ = new T(MatrixPtr);
 
   if (Inverse_ == 0)
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-5);
 
   return(0);
 }
@@ -576,16 +587,16 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
     OverlappingMatrix_ = 
       new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_);
     if (OverlappingMatrix_ == 0)
-      IFPACK_CHK_ERR(-1);
+      IFPACK_CHK_ERR(-5);
   }
 
   IFPACK_CHK_ERR(Setup());
 
   if (Inverse_ == 0)
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-5);
 
   if (LocalizedMatrix_ == 0)
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-5);
 
   IFPACK_CHK_ERR(Inverse_->SetParameters(List_));
   IFPACK_CHK_ERR(Inverse_->Initialize());
@@ -597,6 +608,7 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
   IsInitialized_ = true;
   ++NumInitialize_;
   InitializeTime_ += Time_->ElapsedTime();
+  // flops are summed up in method InitializeFlops()
 
   return(0);
 }
@@ -615,10 +627,7 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
   
   IFPACK_CHK_ERR(Inverse_->Compute());
 
-  // sum up flops for Inverse_
-  ComputeFlops_ += Inverse_->ComputeFlops();
-
-  IsComputed_ = true;
+  IsComputed_ = true; // need this here for Condest(Ifpack_Cheap)
   ++NumCompute_;
 
   string R = "";
@@ -635,6 +644,7 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
     + Ifpack_toString(Condest());
 
   ComputeTime_ += Time_->ElapsedTime();
+  // flops are summed up in method ComputeFlops()
   return(0);
 }
 
@@ -708,16 +718,14 @@ template<typename T>
 int Ifpack_AdditiveSchwarz<T>::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
+  // compute the preconditioner is not done by the user
+  if (!IsComputed())
+    IFPACK_CHK_ERR(-3);
+  
   int NumVectors = X.NumVectors();
 
   if (NumVectors != Y.NumVectors())
-    IFPACK_CHK_ERR(-1); // wrong input
-
-  // FIXME
-  if (!X.Map().SameAs(Matrix().RowMatrixRowMap()))
-    IFPACK_CHK_ERR(-99);
-  if (!Y.Map().SameAs(Matrix().RowMatrixRowMap()))
-    IFPACK_CHK_ERR(-99);
+    IFPACK_CHK_ERR(-2); // wrong input
 
   Time_->ResetStartTime();
 
@@ -790,11 +798,10 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (Xtmp)
     delete Xtmp;
 
+  // FIXME: right now I am skipping the overlap and singletons
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();
 
-  // FIXME: flops in the overlapping region are now ignored
-  ApplyInverseFlops_ += Inverse_->ApplyInverseFlops();
   return(0);
  
 }
@@ -827,17 +834,18 @@ Print(std::ostream& os) const
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize_ 
-       << "  " << std::setw(15) << InitializeTime_ 
-       << "                -              -" << endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute_ 
-       << "  " << std::setw(15) << ComputeTime_
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ 
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_ 
-       << "  " << std::setw(15) << ApplyInverseTime_
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ 
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
+    os << "Initialize()    "   << std::setw(5) << NumInitialize()
+       << "  " << std::setw(15) << InitializeTime() 
+       << "  " << std::setw(15) << 1.0e-6 * InitializeFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * InitializeFlops() / InitializeTime() << endl;
+    os << "Compute()       "   << std::setw(5) << NumCompute() 
+       << "  " << std::setw(15) << ComputeTime()
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
+       << "  " << std::setw(15) << ApplyInverseTime()
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
     os << "================================================================================" << endl;
     os << endl;
 

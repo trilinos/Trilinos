@@ -14,18 +14,10 @@ int Ifpack_DenseContainer::Initialize()
   
   IsInitialized_ = false;
 
-  if (Matrix_.N() == 0) {
-    IFPACK_CHK_ERR(LHS_.Shape(NumRows_,NumVectors_));
-    IFPACK_CHK_ERR(RHS_.Shape(NumRows_,NumVectors_));
-    IFPACK_CHK_ERR(ID_.Shape(NumRows_,NumVectors_));
-    IFPACK_CHK_ERR(Matrix_.Shape(NumRows_,NumRows_));
-  }
-  else {
-    IFPACK_CHK_ERR(LHS_.Reshape(NumRows_,NumVectors_));
-    IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors_));
-    IFPACK_CHK_ERR(ID_.Reshape(NumRows_,NumVectors_));
-    IFPACK_CHK_ERR(Matrix_.Reshape(NumRows_,NumRows_));
-  }
+  IFPACK_CHK_ERR(LHS_.Reshape(NumRows_,NumVectors_));
+  IFPACK_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors_));
+  IFPACK_CHK_ERR(ID_.Reshape(NumRows_,NumVectors_));
+  IFPACK_CHK_ERR(Matrix_.Reshape(NumRows_,NumRows_));
 
   // zero out matrix elements
   for (int i = 0 ; i < NumRows_ ; ++i)
@@ -88,8 +80,8 @@ SetMatrixElement(const int row, const int col, const double value)
 int Ifpack_DenseContainer::ApplyInverse()
 {
 
-  if (IsComputed() == false) {
-    IFPACK_CHK_ERR(-3); // not yet computed
+  if (!IsComputed()) {
+    IFPACK_CHK_ERR(-1);
   }
   
   IFPACK_CHK_ERR(Solver_.Solve());
@@ -184,7 +176,7 @@ int Ifpack_DenseContainer::Compute(const Epetra_RowMatrix& Matrix)
   Label_ = "Ifpack_DenseContainer";
 
   // not sure of count
-  ComputeFlops_ += 2.0 * NumRows_ * NumRows_ * NumRows_ / 3;
+  ComputeFlops_ += 4.0 * NumRows_ * NumRows_ * NumRows_ / 3;
   IsComputed_ = true;
 
   return(0);
@@ -211,12 +203,12 @@ ostream& Ifpack_DenseContainer::Print(ostream & os) const
 {
     os << "================================================================================" << endl;
   os << "Ifpack_DenseContainer" << endl;
-  os << "Number of rows          = " << NumRows_ << endl;
-  os << "Number of vectors       = " << NumVectors_ << endl;
-  os << "IsInitialized()         = " << IsInitialized_ << endl;
-  os << "IsComputed()            = " << IsComputed_ << endl;
-  os << "Flops in Compute()      = " << ComputeFlops_ << endl; 
-  os << "Flops in ApplyInverse() = " << ApplyInverseFlops_ << endl; 
+  os << "Number of rows          = " << NumRows() << endl;
+  os << "Number of vectors       = " << NumVectors() << endl;
+  os << "IsInitialized()         = " << IsInitialized() << endl;
+  os << "IsComputed()            = " << IsComputed() << endl;
+  os << "Flops in Compute()      = " << ComputeFlops() << endl; 
+  os << "Flops in ApplyInverse() = " << ApplyInverseFlops() << endl; 
   os << "================================================================================" << endl;
   os << endl;
 

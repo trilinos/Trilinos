@@ -84,16 +84,9 @@ solver.SetPrecOperator(&Prec);
 <P>The complete list of supported parameters is reported in page \ref ifp_params. For a presentation of basic relaxation schemes, please refer to page
 \ref Ifpack_PointRelaxation.
 
-\note The ApplyInverse() implementation of this class is \e not AztecOO
-complaint, as it does assume that the two input vectors X and Y actually
-refer to two different memory location. In fact, this case is handled
-by class Ifpack_AdditiveSchwarz, which takes care of calling methods ApplyInverse()
-of Ifpack_BlockRelaxation with two vectors pointing to different memory
-locations.
-
 \author Marzio Sala, SNL 9214.
 
-\date Last modified: Nov-04.
+\date Last modified on 25-Jan-05.
   
 */
 template<typename T>
@@ -154,7 +147,7 @@ public:
 
   virtual int SetUseTranspose(bool UseTranspose)
   {
-    IFPACK_CHK_ERR(-1); // FIXME: can I work with the transpose?
+    IFPACK_CHK_ERR(-98); // FIXME: can I work with the transpose?
   }
 
   virtual const char* Label() const;
@@ -267,17 +260,30 @@ public:
   //! Returns the number of flops in the initialization phase.
   virtual double InitializeFlops() const
   {
-    return(0.0);
+    // the total number of flops is computed each time InitializeFlops() is
+    // called. This is becase I also have to add the contribution from each
+    // container.
+    double total = InitializeFlops_;
+    for (int i = 0 ; i < NumLocalBlocks() ; ++i)
+      total += Containers_[i]->InitializeFlops();
+    return(total);
   }
 
   virtual double ComputeFlops() const
   {
-    return(ComputeFlops_);
+    double total = ComputeFlops_;
+    for (int i = 0 ; i < NumLocalBlocks() ; ++i)
+      total += Containers_[i]->ComputeFlops();
+    return(total);
   }
 
   virtual double ApplyInverseFlops() const
   {
-    return(ApplyInverseFlops_);
+    double total = ApplyInverseFlops_;
+    for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
+      total += Containers_[i]->ApplyInverseFlops();
+    }
+    return(total);
   }
 
 private:
@@ -330,6 +336,8 @@ private:
   double ComputeTime_;
   //! Contains the time for all successful calls to ApplyInverse().
   mutable double ApplyInverseTime_;
+  //! Contains the number of flops for Initialize().
+  double InitializeFlops_;
   //! Contains the number of flops for Compute().
   double ComputeFlops_;
   //! Contain sthe number of flops for ApplyInverse().
@@ -355,6 +363,8 @@ private:
   //! Contains information about non-overlapping partitions.
   Ifpack_Partitioner* Partitioner_;
   string PartitionerType_;
+  //! If \c true, this object can be used as preconditioner for AztecOO
+  bool UseWithAztecOO_;
   int PrecType_;
   //! Label for \c this object
   string Label_;
@@ -365,7 +375,7 @@ private:
   Epetra_Vector* W_;
   // Level of overlap among blocks (for Jacobi only).
   int OverlapLevel_;
-  Epetra_Time* Time_;
+  mutable Epetra_Time Time_;
   bool IsParallel_;
   Epetra_Import* Importer_;
   // @}
@@ -384,8 +394,9 @@ Ifpack_BlockRelaxation(const Epetra_RowMatrix* Matrix) :
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
-  ComputeFlops_(0),
-  ApplyInverseFlops_(0),
+  InitializeFlops_(0.0),
+  ComputeFlops_(0.0),
+  ApplyInverseFlops_(0.0),
   NumSweeps_(1),
   DampingFactor_(1.0),
   NumLocalBlocks_(1),
@@ -393,16 +404,16 @@ Ifpack_BlockRelaxation(const Epetra_RowMatrix* Matrix) :
   Containers_(0),
   Partitioner_(0),
   PartitionerType_("greedy"),
+  UseWithAztecOO_(true),
   PrecType_(IFPACK_JACOBI),
   ZeroStartingSolution_(true),
   Graph_(0),
   W_(0),
   OverlapLevel_(0),
-  Time_(0),
+  Time_(Comm()),
   IsParallel_(false),
   Importer_(0)
 {
-  Time_ = new Epetra_Time(Matrix->Comm());
   if (Matrix->Comm().NumProc() != 1)
     IsParallel_ = true;
 }
@@ -419,8 +430,6 @@ Ifpack_BlockRelaxation<T>::~Ifpack_BlockRelaxation()
     delete Graph_;
   if (W_)
     delete W_;
-  if (Time_)
-    delete Time_;
   if (Importer_)
     delete Importer_;
 }
@@ -470,7 +479,7 @@ int Ifpack_BlockRelaxation<T>::ExtractSubmatrices()
 {
 
   if (Partitioner_ == 0)
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-3);
 
   NumLocalBlocks_ = Partitioner_->NumLocalParts();
 
@@ -485,10 +494,11 @@ int Ifpack_BlockRelaxation<T>::ExtractSubmatrices()
     DC = dynamic_cast<Ifpack_DenseContainer*>(Containers_[i]);
 
     if (Containers_[i] == 0)
-      IFPACK_CHK_ERR(-10);
+      IFPACK_CHK_ERR(-5);
     
     IFPACK_CHK_ERR(Containers_[i]->SetParameters(List_));
     IFPACK_CHK_ERR(Containers_[i]->Initialize());
+    // flops in Initialize() will be computed on-the-fly in method InitializeFlops().
 
     // set "global" ID of each partitioner row
     for (int j = 0 ; j < rows ; ++j) {
@@ -497,7 +507,7 @@ int Ifpack_BlockRelaxation<T>::ExtractSubmatrices()
     }
 
     IFPACK_CHK_ERR(Containers_[i]->Compute(*Matrix_));
-    ComputeFlops_ += Containers_[i]->ComputeFlops();
+    // flops in Compute() will be computed on-the-fly in method ComputeFlops().
 
   }
 
@@ -509,14 +519,15 @@ template<typename T>
 int Ifpack_BlockRelaxation<T>::Compute()
 {
 
-  Time_->ResetStartTime();
-
   if (!IsInitialized())
     IFPACK_CHK_ERR(Initialize());
+
+  Time_.ResetStartTime();
+
   IsComputed_ = false;
 
   if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
-    IFPACK_CHK_ERR(-1); // only square matrices
+    IFPACK_CHK_ERR(-2); // only square matrices
 
   IFPACK_CHK_ERR(ExtractSubmatrices());
   
@@ -527,7 +538,7 @@ int Ifpack_BlockRelaxation<T>::Compute()
     assert (Importer_ != 0);
   }
   IsComputed_ = true;
-  ComputeTime_ += Time_->ElapsedTime();
+  ComputeTime_ += Time_.ElapsedTime();
   ++NumCompute_;
 
   return(0);
@@ -539,27 +550,36 @@ template<typename T>
 int Ifpack_BlockRelaxation<T>::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  Time_->ResetStartTime();
-
-  if (IsComputed() == false)
-    IFPACK_CHK_ERR(-4);
+  if (!IsComputed())
+    IFPACK_CHK_ERR(-3);
 
   if (X.NumVectors() != Y.NumVectors())
-    IFPACK_CHK_ERR(-3);
+    IFPACK_CHK_ERR(-2);
+
+  Time_.ResetStartTime();
+
+  const Epetra_MultiVector* Xcopy;
+  if (UseWithAztecOO_)
+    Xcopy = new Epetra_MultiVector(X);
+  else
+    Xcopy = &X;
 
   switch (PrecType_) {
   case IFPACK_JACOBI:
-    IFPACK_CHK_ERR(ApplyInverseJacobi(X,Y));
+    IFPACK_CHK_ERR(ApplyInverseJacobi(*Xcopy,Y));
     break;
   case IFPACK_GS:
-    IFPACK_CHK_ERR(ApplyInverseGS(X,Y));
+    IFPACK_CHK_ERR(ApplyInverseGS(*Xcopy,Y));
     break;
   case IFPACK_SGS:
-    IFPACK_CHK_ERR(ApplyInverseSGS(X,Y));
+    IFPACK_CHK_ERR(ApplyInverseSGS(*Xcopy,Y));
     break;
   }
 
-  ApplyInverseTime_ += Time_->ElapsedTime();
+  if (UseWithAztecOO_)
+    delete Xcopy;
+
+  ApplyInverseTime_ += Time_.ElapsedTime();
   ++NumApplyInverse_;
 
   return(0);
@@ -587,9 +607,13 @@ ApplyInverseJacobi(const Epetra_MultiVector& X,
 
   for (int j = 0; j < NumSweeps_ ; j++) {
     IFPACK_CHK_ERR(Apply(Y,AX));
+    ApplyInverseFlops_ += X.NumVectors() * 2 * Matrix_->NumGlobalNonzeros();
     IFPACK_CHK_ERR(AX.Update(1.0,X,-1.0));
+    ApplyInverseFlops_ += X.NumVectors() * 2 * Matrix_->NumGlobalRows();
     IFPACK_CHK_ERR(DoJacobi(AX,Y));
+    // flops counted in DoJacobi()
   }
+
 
   return(0);
 }
@@ -599,6 +623,8 @@ template<typename T>
 int Ifpack_BlockRelaxation<T>::
 DoJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
+  int NumVectors = X.NumVectors();
+
   if (OverlapLevel_ == 0) {
 
     for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
@@ -612,22 +638,29 @@ DoJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       // extract RHS from X
       for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
         LID = Containers_[i]->ID(j);
-        for (int k = 0 ; k < X.NumVectors() ; ++k) {
+        for (int k = 0 ; k < NumVectors ; ++k) {
           Containers_[i]->RHS(j,k) = X[k][LID];
         }
       }
 
-      // apply the inverse of each block
+      // apply the inverse of each block. NOTE: flops occurred
+      // in ApplyInverse() of each block are summed up in method
+      // ApplyInverseFlops().
       IFPACK_CHK_ERR(Containers_[i]->ApplyInverse());
 
       // copy back into solution vector Y
       for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
         LID = Containers_[i]->ID(j);
-        for (int k = 0 ; k < Y.NumVectors() ; ++k) {
+        for (int k = 0 ; k < NumVectors ; ++k) {
           Y[k][LID] += DampingFactor_ * Containers_[i]->LHS(j,k);
         }
       }
+
     }
+    // NOTE: flops for ApplyInverse() of each block are summed up
+    // in method ApplyInverseFlops()
+    ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalRows();
+
   }
   else {
 
@@ -642,7 +675,7 @@ DoJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       // extract RHS from X
       for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
         LID = Containers_[i]->ID(j);
-        for (int k = 0 ; k < X.NumVectors() ; ++k) {
+        for (int k = 0 ; k < NumVectors ; ++k) {
           Containers_[i]->RHS(j,k) = (*W_)[LID] * X[k][LID];
         }
       }
@@ -653,12 +686,18 @@ DoJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       // copy back into solution vector Y
       for (int j = 0 ; j < Partitioner_->NumRowsInPart(i) ; ++j) {
         LID = Containers_[i]->ID(j);
-        for (int k = 0 ; k < Y.NumVectors() ; ++k) {
+        for (int k = 0 ; k < NumVectors ; ++k) {
           Y[k][LID] += DampingFactor_ * (*W_)[LID] * Containers_[i]->LHS(j,k);
         }
       }
+
     }
+    // NOTE: flops for ApplyInverse() of each block are summed up
+    // in method ApplyInverseFlops()
+    // NOTE: do not count for simplicity the flops due to overlapping rows
+    ApplyInverseFlops_ += NumVectors * 4 * Matrix_->NumGlobalRows();
   }
+
   return(0);
 }
 
@@ -760,7 +799,14 @@ DoGaussSeidel(Epetra_MultiVector& X, Epetra_MultiVector& Y) const
         y2_ptr[k][LID] += DampingFactor_ * Containers_[i]->LHS(j,k);
       }
     }
+
   }
+
+  // operations for all getrow()'s
+  // NOTE: flops for ApplyInverse() of each block are summed up
+  // in method ApplyInverseFlops()
+  ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalNonzeros();
+  ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalRows();
 
   // Attention: this is delicate... Not all combinations
   // of Y2 and Y will always work (tough for ML it should be ok)
@@ -873,6 +919,10 @@ DoSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Xcopy,
     }
   }
 
+  // operations for all getrow()'s
+  ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalNonzeros();
+  ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalRows();
+
   Xcopy = X;
 
   for (int i = NumLocalBlocks() - 1; i >=0 ; --i) {
@@ -920,6 +970,10 @@ DoSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Xcopy,
     }
   }
 
+  // operations for all getrow()'s
+  ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalNonzeros();
+  ApplyInverseFlops_ += NumVectors * 2 * Matrix_->NumGlobalRows();
+
   // Attention: this is delicate... Not all combinations
   // of Y2 and Y will always work (tough for ML it should be ok)
   if (IsParallel_)
@@ -962,17 +1016,18 @@ ostream& Ifpack_BlockRelaxation<T>::Print(ostream & os) const
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize_ 
-       << "  " << std::setw(15) << InitializeTime_ 
-       << "                -              -" << endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute_ 
-       << "  " << std::setw(15) << ComputeTime_
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ 
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_ 
-       << "  " << std::setw(15) << ApplyInverseTime_
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ 
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
+    os << "Initialize()    "   << std::setw(5) << NumInitialize() 
+       << "  " << std::setw(15) << InitializeTime() 
+       << "  " << std::setw(15) << 1.0e-6 * InitializeFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * InitializeFlops() / InitializeTime() << endl;
+    os << "Compute()       "   << std::setw(5) << NumCompute() 
+       << "  " << std::setw(15) << ComputeTime()
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
+       << "  " << std::setw(15) << ApplyInverseTime()
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() 
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
     os << "================================================================================" << endl;
     os << endl;
   }
@@ -1010,14 +1065,19 @@ int Ifpack_BlockRelaxation<T>::SetParameters(Teuchos::ParameterList& List)
     exit(EXIT_FAILURE);
   }
 
-  NumSweeps_ = List.get("relaxation: sweeps",NumSweeps_);
-  DampingFactor_ = List.get("relaxation: damping factor", DampingFactor_);
+  UseWithAztecOO_       = List.get("relaxation: AztecOO compliant", UseWithAztecOO_);
+  NumSweeps_            = List.get("relaxation: sweeps", NumSweeps_);
+  DampingFactor_        = List.get("relaxation: damping factor", 
+                                   DampingFactor_);
   ZeroStartingSolution_ = List.get("relaxation: zero starting solution", 
                                    ZeroStartingSolution_);
-  PartitionerType_ = List.get("partitioner: type", PartitionerType_);
-  NumLocalBlocks_ = List.get("partitioner: local parts", NumLocalBlocks_);
+  PartitionerType_      = List.get("partitioner: type", 
+                                   PartitionerType_);
+  NumLocalBlocks_       = List.get("partitioner: local parts", 
+                                   NumLocalBlocks_);
   // only Jacobi can work with overlap among local domains,
-  OverlapLevel_ = List.get("partitioner: overlap", OverlapLevel_);
+  OverlapLevel_         = List.get("partitioner: overlap", 
+                                   OverlapLevel_);
 
   // check parameters
   if (PrecType_ != IFPACK_JACOBI)
@@ -1051,6 +1111,7 @@ template<typename T>
 int Ifpack_BlockRelaxation<T>::Initialize()
 {
   IsInitialized_ = false;
+  Time_.ResetStartTime();
 
   if (Partitioner_)
     delete Partitioner_;
@@ -1071,7 +1132,7 @@ int Ifpack_BlockRelaxation<T>::Initialize()
   else if (PartitionerType_ == "user")
     Partitioner_ = new Ifpack_UserPartitioner(Graph_);
   else
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-2);
 
   assert (Partitioner_ != 0);
 
@@ -1097,6 +1158,7 @@ int Ifpack_BlockRelaxation<T>::Initialize()
   }
   W_->Reciprocal(*W_);
 
+  InitializeTime_ += Time_.ElapsedTime();
   IsInitialized_ = true;
   ++NumInitialize_;
 

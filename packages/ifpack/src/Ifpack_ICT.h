@@ -288,6 +288,25 @@ class Ifpack_ICT: public Ifpack_Preconditioner {
     return(*this);
   }
 
+  double LevelOfFill() const
+  {
+    return(LevelOfFill_);
+  }
+
+  double AbsoluteThreshold() const
+  {
+    return(Athresh_);
+  }
+
+  double RelativeThreshold() const
+  {
+    return(Rthresh_);
+  }
+
+  double RelaxValue() const
+  {
+    return(Relax_);
+  }
 
   const Epetra_RowMatrix& A_;
   const Epetra_Comm& Comm_;
@@ -295,7 +314,6 @@ class Ifpack_ICT: public Ifpack_Preconditioner {
 
   double Condest_;
   double Relax_;
-  double Threshold_;
   double Athresh_;
   double Rthresh_;
   double LevelOfFill_;

@@ -273,23 +273,30 @@ double Ifpack_Amesos::Condest(const Ifpack_CondestType CT,
 //==============================================================================
 std::ostream& Ifpack_Amesos::Print(std::ostream& os) const
 {
-  if (Matrix().Comm().MyPID())
-    return(os);
+  if (!Comm().MyPID()) {
+    os << endl;
+    os << "================================================================================" << endl;
+    os << "Ifpack_Amesos: " << Label () << endl << endl;
+    os << "Condition number estimate = " << Condest() << endl;
+    os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
+    os << endl;
+    os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
+    os << "-----           -------   --------------       ------------     --------" << endl;
+    os << "Initialize()    "   << std::setw(5) << NumInitialize_ 
+       << "  " << std::setw(15) << InitializeTime_ 
+       << "              0.0              0.0" << endl;
+    os << "Compute()       "   << std::setw(5) << NumCompute_ 
+       << "  " << std::setw(15) << ComputeTime_
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ 
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_ 
+       << "  " << std::setw(15) << ApplyInverseTime_
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ 
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
+    os << "================================================================================" << endl;
+    os << endl;
+  }
 
-  os << "*** Ifpack_Amesos" << endl;
-
-  os << "Amesos solver        = " << Label_ << endl;
-  os << "Cond number estimate = " << Condest_ << endl;
-  os << endl;
-  os << "Number of initialization phases = " << NumInitialize_ << endl;
-  os << "Number of computation phases    = " << NumCompute_ << endl;
-  os << "Number of applications          = " << NumApplyInverse_ << endl;
-  os << endl;
-  os << "Total time for Initialize()     = " << InitializeTime_ << " (s)\n";
-  os << "Total time for Compute()        = " << ComputeTime_ << " (s)\n";
-  os << "Total time for ApplyInverse()   = " << ApplyInverseTime_ << " (s)\n";
-  os << endl;
-  
   return(os);
 }
 #endif // HAVE_IFPACK_AMESOS && HAVE_IFPACK_TEUCHOS

@@ -85,9 +85,9 @@ public:
     KeepNonFactoredMatrix_(false),
     IsInitialized_(false),
     IsComputed_(false),
-    ComputeFlops_(0),
-    ApplyFlops_(0),
-    ApplyInverseFlops_(0)
+    ComputeFlops_(0.0),
+    ApplyFlops_(0.0),
+    ApplyInverseFlops_(0.0)
   {}
 
   //! Copy constructor
@@ -270,6 +270,11 @@ public:
   virtual int ApplyInverse();
 
   //@}
+
+  virtual double InitializeFlops() const
+  {
+    return(0.0);
+  }
 
   virtual double ComputeFlops() const
   {

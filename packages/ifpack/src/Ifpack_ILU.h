@@ -46,6 +46,7 @@
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_Time.h"
 
 #ifdef HAVE_IFPACK_TEUCHOS
 namespace Teuchos {
@@ -75,7 +76,10 @@ public:
   Ifpack_ILU(Epetra_RowMatrix* A);
   
   //! Destructor
-  ~Ifpack_ILU();
+  ~Ifpack_ILU()
+  {
+    Destroy();
+  }
 
   // @}
   // @{ Construction methods
@@ -154,10 +158,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
   */
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
-  {
-    return(Solve(Ifpack_ILU::UseTranspose(), X, Y));
-  };
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Computes the estimated condition number and returns the value.
   double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
@@ -279,7 +280,8 @@ private:
 
   //! Copy constructor (should never be used)
   Ifpack_ILU(const Ifpack_ILU& RHS) :
-    Comm_(RHS.Comm())
+    Comm_(RHS.Comm()),
+    Time_(RHS.Comm())
   {}
 
   //! operator= (should never be used)
@@ -287,6 +289,9 @@ private:
   {
     return(*this);
   }
+
+  //! Destroys all internal data
+  void Destroy();
 
   //! Returns the result of a Ifpack_ILU forward/back solve on a Epetra_MultiVector X in Y.
   /*! 
@@ -403,17 +408,19 @@ private:
   //! Contains the number of successful call to Compute().
   int NumCompute_;
   //! Contains the number of successful call to ApplyInverse().
-  int NumApplyInverse_;
+  mutable int NumApplyInverse_;
   //! Contains the time for all successful calls to Initialize().
   double InitializeTime_;
   //! Contains the time for all successful calls to Compute().
   double ComputeTime_;
   //! Contains the time for all successful calls to ApplyInverse().
-  double ApplyInverseTime_;
+  mutable double ApplyInverseTime_;
   //! Contains the number of flops for Compute().
   double ComputeFlops_;
   //! Contain sthe number of flops for ApplyInverse().
-  double ApplyInverseFlops_;
+  mutable double ApplyInverseFlops_;
+  //! Used for timing issues
+  mutable Epetra_Time Time_;
 
 };
 
