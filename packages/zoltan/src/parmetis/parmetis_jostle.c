@@ -25,9 +25,9 @@
 /**********  parameters structure for parmetis methods **********/
 static PARAM_VARS Parmetis_params[] = {
         { "PARMETIS_METHOD", NULL, "STRING" },
+        { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
         { "PARMETIS_COARSE_ALG", NULL, "INT" },
         { "PARMETIS_FOLD", NULL, "INT" },
-        { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
         { NULL, NULL, NULL } };
 
 /**********  parameters structure for jostle methods **********/
@@ -37,6 +37,12 @@ static PARAM_VARS Jostle_params[] = {
         { "JOSTLE_GATHER_THRESHOLD", NULL, "INT" },
         { "JOSTLE_MATCHING", NULL, "STRING" },
         { "JOSTLE_REDUCTION", NULL, "STRING" },
+        { NULL, NULL, NULL } };
+
+/**********  parameters structure used by both ParMetis and Jostle **********/
+static PARAM_VARS Graph_params[] = {
+        { "CHECK_GRAPH", NULL, "INT" },
+        { "SCALED_WEIGHT_MAX", NULL, "INT" },
         { NULL, NULL, NULL } };
 
 /***************  prototypes for internal functions ********************/
@@ -261,14 +267,15 @@ static int LB_ParMetis_Jostle(
 )
 {
   static char *yo = "LB_ParMetis_Jostle";
-  int i, j, ierr, packet_size, offset, tmp, flag, ndims;
+  int i, j, ierr, packet_size, offset, tmp, flag, ndims; 
+  int check_graph, scale; 
   int num_obj, nedges, num_edges, cross_edges, max_edges, edgecut;
   int *nbors_proc, *plist;
   int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *adjptr, *vwgt, *adjwgt, *part;
   int network[4] = {0, 1, 1, 1};
-  float  max_wgt, *float_vwgt, *xyz;
+  float  *float_vwgt, *xyz, max_wgt, max_local;
   double geom_vec[6];
   struct LB_edge_info  *proc_list, *ptr;
   struct LB_hash_node **hashtab, *hash_nodes;
@@ -314,6 +321,14 @@ static int LB_ParMetis_Jostle(
     MPI_Barrier(lb->Communicator);
     times[0] = MPI_Wtime();
   }
+
+  /* Get parameter options shared by ParMetis and Jostle */
+  scale = 100;     /* default */
+  check_graph = 1; /* default */
+  LB_Bind_Param(Graph_params, "CHECK_GRAPH", (void *) &check_graph);
+  LB_Bind_Param(Graph_params, "SCALED_WEIGHT_MAX", (void *) &scale);
+  LB_Assign_Param_Vals(lb->Params, Graph_params, lb->Debug_Level, lb->Proc,
+                       lb->Debug_Proc);
 
   /* Most ParMetis methods use only graph data */
   get_graph_data = 1;
@@ -733,13 +748,22 @@ static int LB_ParMetis_Jostle(
         printf("[%1d] Debug: Converting vertex weights...\n", lb->Proc);
       vwgt = (idxtype *)LB_MALLOC((lb->Obj_Weight_Dim*num_obj)
                           * sizeof(idxtype));
-      max_wgt = 0;
+      /* Compute global max of the weights */
+      max_local = 0;
       for (i=0; i<num_obj; i++){
-        if (float_vwgt[i]>max_wgt) max_wgt = float_vwgt[i];
+        if (float_vwgt[i]>max_local) max_local = float_vwgt[i];
       }
-      /* Convert weights to integers between 1 and 100 */
+      MPI_Allreduce(&max_local, &max_wgt, 1, MPI_FLOAT, MPI_MAX, 
+          lb->Communicator);
+
+      /* Convert weights to integers between 1 and SCALED_WEIGHT_MAX */
       for (i=0; i<(lb->Obj_Weight_Dim)*num_obj; i++){
-        vwgt[i] = (int) ceil(float_vwgt[i]*100/max_wgt);
+        if (scale>0)
+           vwgt[i] = (int) ceil(float_vwgt[i]*scale/max_wgt);
+        else if (scale<0)
+           vwgt[i] = (int) (-float_vwgt[i]*scale/max_wgt);
+        else /* scale == 0 */
+           vwgt[i] = (int) float_vwgt[i];
       }
       LB_FREE(&float_vwgt);
     }
@@ -959,11 +983,13 @@ char *val)                      /* value of variable */
          NULL };
 
     status = LB_Check_Param(name, val, Parmetis_params, &result, &index);
+    if (status == 1)
+       status = LB_Check_Param(name, val, Graph_params, &result, &index);
 
     if (status == 0){
       /* OK so far, do sanity check of parameter values */
 
-      if (index == 0){
+      if (strcmp(name, "PARMETIS_METHOD") == 0){
         status = 2;
         for (i=0; valid_methods[i] != NULL; i++){
           if (strcmp(val, valid_methods[i]) == 0){
@@ -972,9 +998,10 @@ char *val)                      /* value of variable */
           }
         }
       }
-      else{ /* index > 0 */
+      else if (strcmp(name, "SCALED_WEIGHT_MAX") != 0){
+        /* All parameters but SCALED_WEIGHT_MAX must be non-negative */
         if (result.ival < 0)
-          status = 2; /* all integer parameters must be non-negative */
+          status = 2; 
       }
     }
 
@@ -994,11 +1021,13 @@ char *val)                      /* value of variable */
     int index;                  /* index returned from Check_Param */
 
     status = LB_Check_Param(name, val, Jostle_params, &result, &index);
+    if (status == 1)
+       status = LB_Check_Param(name, val, Graph_params, &result, &index);
 
     if (status == 0){
       /* OK so far, do sanity check of parameter values */
 
-      if (index == 1){ 
+      if (strcmp(name, "JOSTLE_OUTPUT_LEVEL") == 0){
         if (result.ival < 0)
           status = 2; /* output level must be non-negative */
       }
