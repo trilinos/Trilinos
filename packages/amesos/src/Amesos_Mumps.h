@@ -25,6 +25,18 @@
 #ifndef _EPETRA_MUMPS_H_
 #define _EPETRA_MUMPS_H_
 
+class Epetra_Import;
+class Epetra_CrsMatrix;
+class Epetra_RowMatrix;
+class Epetra_CrsMatrix;
+class Epetra_VbrMatrix;
+class Epetra_MultiVector;
+#include "Epetra_SerialDenseVector.h"
+class Epetra_IntSerialDenseVector;
+class Epetra_SerialDenseMatrix;
+class Amesos_EpetraInterface;
+class Amesos_EpetraRedistributor;
+
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Epetra_LinearProblem.h"
@@ -33,7 +45,7 @@
 #else
 #include "Epetra_Comm.h"
 #endif
-#include "Epetra_CrsGraph.h"
+#include "Amesos_EpetraRedistributor.h"
 
 extern "C" {
 #include "dmumps_c.h"
@@ -54,7 +66,7 @@ extern "C" {
   solver.
     
 */
-class Amesos_Mumps: public Amesos_BaseSolver { 
+class Amesos_Mumps : public Amesos_EpetraRedistributor { 
 
 public: 
 
@@ -162,9 +174,6 @@ public:
   char * Label() const {return(Epetra_Object::Label());};
 #endif
     
-  //! Get a pointer to the Problem.
-  const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
-
   //! Get a pointer to the ParameterList.
   const AMESOS::Parameter::List *GetParameterList() const { return(ParameterList_); };
 
@@ -176,11 +185,27 @@ public:
 
   int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
 
+  //! Update the values of the linear system matrix.
+  int UpdateMatrixValues();
+
+  //! Returns the Schur complement matrix as an Epetra_CrsMatrix.
+  /*! Returns the (dense) SSchur complement matrix as an Epetra_CrsMatrix. This
+      matrix is defined on all the processes in the Epetra Communicator. However,
+      it has rows on the host process only.
+      If \in flag : if \c true, MUMPS will compute the Schur complement matrix,
+      with respect to the (global) rows defined in the integer array
+      \c SchurComplementRows, of size \c NumSchurComplementRows.
+      Those two arrays are defined on the host only.
+  */
+  int ComputeSchurComplement(bool flag,
+			     int NumSchurComplementRows, int * SchurComplementRows);
+
+  Epetra_CrsMatrix * GetSchurComplement() {
+    return SchurComplement_;
+  };
+  
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
-
-  //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
-  const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
   //! Reads the parameter list and updates internal variables. 
   /*!
@@ -190,23 +215,77 @@ public:
   int ReadParameterList() ;
   //@}
 
- private:  
-  /*
-  ConvertToSerial - Convert matrix to a serial Epetra_CrsMatrix
-    Preconditions:
-      Problem_ must be set 
-      SerialMap and SerialCrsMatrix must either be 0 or be pointers to 
-        appropriatly allocate objects.  If they are non-zero, those objects
-	will be deleted (and possibly recreated).  
-	
-    Postconditions:
-      IsLocal is set to 1 if the input matrix is entirely stored on process 0
-      SerialMap points to a serial map if IsLocal==1
-      SerialCrsMatrix contains a serial version of the matrix A if IsLocal==1
-      SerialMatrix points to a serial copy of the matrix
-      NumGlobalElements_   is set to the number of rows in the matrix
-      numentries_ is set to the number of non-zeroes in the matrix 
-   */
+  //! Set prescaling.
+  /*! Use double precision vectors of size N (global dimension of the matrix) as
+      scaling for columns and rows. \c ColSca and \c RowSca must be defined on the host
+      only, and allocated by the user, if the user sets ICNTL(8) = -1.
+  */
+  int SetPrecscaling(double * ColSca, double * RowSca )
+  {
+    ColSca_ = ColSca;
+    RowSca_ = RowSca;
+    return 0;
+  }
+
+  //! Set ordering.
+  /*! Use integer vectors of size N (global dimension of the matrix) as
+      given ordering. \c PermIn must be defined on the host
+      only, and allocated by the user, if the user sets ICNTL(7) = 1.
+  */
+  int SetOrdering(int * PermIn)
+  {
+    PermIn_ = PermIn;
+    return 0;
+  }
+
+  int SetMaxis(int Maxis)
+  {
+    Maxis_ = Maxis;
+    return 0;
+  }
+
+  int SetMaxs( int Maxs) 
+  {
+    Maxs_ = Maxs;
+    return 0;
+  }
+
+  //! Get the pointer to the RINFO array (defined on all processes).
+  double * GetRINFO() 
+  {
+    return (MDS.rinfo);
+  }
+
+  //! Get the pointer to the INFO array (defined on all processes).
+  int * GetINFO() 
+  {
+    return (MDS.info);
+  }
+
+  //! Get the pointer to the RINFOG array (defined on host only).
+  double * GetRINFOG()
+  {
+    return (MDS.rinfog);
+  }
+
+  //! Get the pointer to the INFOG array (defined on host only).
+  int * GetINFOG()
+  {
+    return (MDS.infog);
+  }
+
+  int SetKeepMatrixDistributed(bool flag) 
+  {
+    KeepMatrixDistributed_ = flag;
+    return 0;
+  }
+  
+  int SetICNTL(int pos, int value);
+  int SetCNTL(int pos, double value);
+  
+  int PrintInformation();
+  
+private:  
   int ConvertToSerial(); 
   /*
     ConvertToTriplet - Convert matirx to form expected by Mumps: Row, Col, Val
@@ -246,37 +325,56 @@ public:
   */
   int PerformNumericFactorization(); 
 
+  void SetICNTLandCNTL();
+  
  protected:
 
   bool SymbolicFactorizationOK_;   // True if SymbolicFactorization has been done
   bool NumericFactorizationOK_;    // True if NumericFactorization has been done
+  bool IsConvertToTripletOK_;
+  bool IsComputeSchurComplementOK_;
+  
   DMUMPS_STRUC_C MDS ;             // Mumps data structure 
 
   //
   //  Row, Col, Val form the triplet representation used by Mumps
   //
-  vector <int> Row;
-  vector <int> Col;
-  vector <double> Val;
+  Epetra_IntSerialDenseVector * Row; // MS // store COO format in epetra vectors
+  Epetra_IntSerialDenseVector * Col;
+  Epetra_SerialDenseVector    * Val;
 
-  int iam;                 //  Process number (i.e. Comm().MyPID() 
+  int MyPID;               //  Process number (i.e. Comm().MyPID() 
   
-  int IsLocal_;            //  1 if Problem_->GetOperator() is stored entirely on process 0
-                           //  Note:  Local Problems do not require redistribution of
-                           //  the matrix A or vectors X and B.
   int numentries_;         //  Number of non-zero entries in Problem_->GetOperator()
   int NumGlobalElements_;  //  Number of rows and columns in the Problem_->GetOperator()
 
-  Epetra_Map *SerialMap_ ;               //  Points to a Serial Map (unused if IsLocal == 1 ) 
-  Epetra_CrsMatrix *SerialCrsMatrixA_ ;  //  Points to a Serial Copy of A (unused if IsLocal==1)
-  Epetra_CrsMatrix *SerialMatrix_ ;      //  Points to a Serial Copy of A 
-                                         //  IsLocal==1 - Points to the original matix 
-                                         //  IsLocal==0 - Points to SerialCrsMatrixA
-                                     
+  bool  KeepMatrixDistributed_;          // MS // this governs the ICNTL(18) parameter.
+                                         // MS // If false, then matrix is redistributed
+                                         // MS // to proc 0 before converting it to
+                                         // MS // triplet format. Then, MUMPS will take care
+                                         // MS // of reditribution. If true, the input
+                                         // MS // distributed matrix is passed to MUMPS.
+  
+  const Epetra_Map * Map_;
 
-  bool UseTranspose_;      //  Set by 
-  const Epetra_LinearProblem * Problem_;
+  int NumMUMPSNonzeros_;                  // MS // actual number of nonzeros in the matrix
+  int ErrorMsgLevel_;                     // MS // output level 
+  
+  bool UseTranspose_;
+  
   const AMESOS::Parameter::List * ParameterList_ ; 
 
-};  // End of  class Amesos_Mumps  
+  int icntl_[40];                         // MS // to allow users overwrite default settings
+  double cntl_[5];                        // MS // as specified by Amesos
+  double * RowSca_, * ColSca_;
+  int * PermIn_;
+  int Maxis_, Maxs_;  
+
+  int NumSchurComplementRows_;            // MS // Schur complement section
+  int * SchurComplementRows_;
+
+  Epetra_CrsMatrix * SchurComplement_;
+
+};  // End of  class Amesos_Mumps
+
 #endif /* _EPETRA_MUMPS_H_ */

@@ -1,0 +1,229 @@
+ /* Copyright (2003) Sandia Corportation. Under the terms of Contract 
+   * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
+   * work by or on behalf of the U.S. Government.  Export of this program
+   * may require a license from the United States Government. */
+
+
+  /* NOTICE:  The United States Government is granted for itself and others
+   * acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
+   * license in ths data to reproduce, prepare derivative works, and
+   * perform publicly and display publicly.  Beginning five (5) years from
+   * July 25, 2001, the United States Government is granted for itself and
+   * others acting on its behalf a paid-up, nonexclusive, irrevocable
+   * worldwide license in this data to reproduce, prepare derivative works,
+   * distribute copies to the public, perform publicly and display
+   * publicly, and to permit others to do so.
+   * 
+   * NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
+   * OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
+   * ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
+   * RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
+   * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
+   * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
+
+#include "Amesos_ConfigDefs.h"
+#include "Amesos_BaseSolver.h"
+#include "Epetra_LinearProblem.h"
+#include "Epetra_Import.h"
+#include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
+#include "Epetra_Vector.h"
+#include "Epetra_Util.h"
+#include "Epetra_Time.h"
+#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_SerialDenseMatrix.h"
+#include "Amesos_EpetraInterface.h"
+
+Amesos_EpetraInterface::Amesos_EpetraInterface(const Epetra_LinearProblem * Problem) :
+  RowIndices_(0),
+  ColIndices_(0),
+  Values_(0),
+  MaxNumEntries_(0),
+  NumMyRows_(0),
+  NumMyBlockRows_(0),
+  NumGlobalRows_(0),
+  NumMyNonzeros_(0),
+  NumGlobalNonzeros_(0),
+  MyGlobalElements_(0),
+  IsSetOperatorOK_(false),
+  Entries_(0),
+  BlockIndices_(0),
+  NumPDEEqns_(1),
+  Problem_(Problem),
+  SymFactTime_(0.0),
+  NumFactTime_(0.0),
+  SolFactTime_(0.0),
+  MatrixProperty_(AMESOS_UNSYM)
+{
+  assert(Problem_!=NULL);
+  SetOperator(Problem->GetMatrix());
+}
+ 
+Amesos_EpetraInterface::~Amesos_EpetraInterface()
+{
+  if( RowIndices_ ) delete RowIndices_;
+  if( ColIndices_ ) delete ColIndices_;
+  if( Values_ ) delete Values_;
+}
+
+int Amesos_EpetraInterface::SetOperator(Epetra_RowMatrix * RowA)
+{
+
+  RowA_ = RowA;       MatrixType_ = AMESOS_ROW_MATRIX;
+  assert( RowA_ != NULL );
+  
+  CrsA_ = dynamic_cast<Epetra_CrsMatrix*>(RowA_) ; 
+  if( CrsA_ != NULL ) MatrixType_ = AMESOS_CRS_MATRIX;
+
+  VbrA_ = dynamic_cast<Epetra_VbrMatrix*>(RowA_) ; 
+  if( VbrA_ != NULL )  MatrixType_ = AMESOS_VBR_MATRIX;
+
+  // MS // retrive information about the distributed matrix
+  // MS // Some of the information are not really needed, but will
+  // MS // improve performances in allocating memory for Col, Row and Val.
+
+  // MS // Notation: I use `rows' for matrix, and `elements' for map
+
+  NumMyRows_ =  RowA_->NumMyRows();
+  NumGlobalRows_ =  RowA_->NumGlobalRows();
+  NumMyNonzeros_ = RowA_->NumMyNonzeros();
+  
+  NumGlobalNonzeros_ = RowA_->NumGlobalNonzeros();
+ 
+  // matrix must be square
+  assert( NumGlobalRows_ == RowA_->NumGlobalCols() );  
+  
+  MaxNumEntries_ = RowA_->MaxNumEntries();
+  
+  assert(MaxNumEntries_>0);
+  
+  if( MatrixType_ != AMESOS_VBR_MATRIX ) {
+    
+    MyGlobalElements_ = RowA_->RowMatrixRowMap().MyGlobalElements();
+    NumMyBlockRows_ = NumMyRows_;
+    
+  } else {
+    
+    if( VbrA_->RowMap().ConstantElementSize () == false ) {
+      // non-constant element size can indeed be supported,
+      // but in a less efficient way.
+      if( RowA_->Comm().MyPID() == 0 ) {
+	cerr << "Amesos ERROR : VBR matrices with non-constant element size\n"
+	     << "Amesos ERROR : are not supported\n";
+	exit( EXIT_FAILURE );
+      }
+    }
+
+    NumMyBlockRows_ = VbrA_->NumMyBlockRows();
+    
+    NumPDEEqns_ = VbrA_->RowMap().NumMyPoints()/NumMyBlockRows_;
+    MyGlobalElements_ = VbrA_->RowMap().MyGlobalElements();
+  }
+
+  RowIndices_ = new Epetra_IntSerialDenseVector(MaxNumEntries_);
+  ColIndices_ = new Epetra_IntSerialDenseVector(MaxNumEntries_);
+  Values_     = new Epetra_SerialDenseVector(MaxNumEntries_);
+  
+  IsSetOperatorOK_ = true;
+
+  return 0;
+}
+
+int Amesos_EpetraInterface::GetRow(int BlockRow, int & NumIndices,
+				   int * & RowIndices,
+				   int * & ColIndices, double * & MatrixValues)
+{
+
+  int * ColIndices1;
+  
+  if( IsSetOperatorOK_ == false ) return -1;
+  
+  switch( MatrixType_ ) {
+
+  case AMESOS_CRS_MATRIX: {
+
+    CrsA_->ExtractMyRowView(BlockRow, NumIndices, MatrixValues, ColIndices1);
+    for( int i=0 ; i<NumIndices ; ++i ) {
+      RowIndices[i] = MyGlobalElements_[BlockRow];
+      ColIndices[i] = CrsA_->ColMap().GID(ColIndices1[i]);
+    }
+    
+  } break;
+
+  case AMESOS_VBR_MATRIX: {
+
+    int ierr;
+    int NumBlockEntries;
+    int * BlockIndices;
+    int count = 0;
+    int GlobalRow = MyGlobalElements_[BlockRow]*NumPDEEqns_;
+      
+    int RowDim;
+    ierr = VbrA_->ExtractMyBlockRowView(BlockRow,RowDim,
+					NumBlockEntries, BlockIndices, Entries_);
+    assert(ierr==0);
+    assert(RowDim==NumPDEEqns_);
+      
+    // insert all the nonzeros in the block
+    for( int j=0 ; j<NumBlockEntries ; ++j ) {
+	
+      int GlobalCol = VbrA_->ColMap().GID(BlockIndices[j])*NumPDEEqns_;
+      for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
+	for( int kk=0 ; kk<NumPDEEqns_ ; ++kk ) {
+	  if( (*Entries_[j])(k,kk) ) {
+	    RowIndices[count] = GlobalRow + k;
+	    ColIndices[count] = GlobalCol + kk;
+	    MatrixValues[count] = (*Entries_[j])(k,kk);
+	    count++;
+	  }
+	}
+      }    
+    }
+
+    NumIndices = count;
+
+    } break;
+
+  case AMESOS_ROW_MATRIX:  {
+
+    // in this case BlockRow is a Row
+    RowA_->ExtractMyRowCopy(BlockRow,MaxNumEntries_,NumIndices,MatrixValues,ColIndices1);
+    for( int i=0 ; i<NumIndices ; ++i ) {
+      RowIndices[i] = MyGlobalElements_[BlockRow];
+      ColIndices[i] = RowA_->RowMatrixColMap().GID(ColIndices1[i]);
+    }
+    
+  } break;
+  
+  default:
+    return -1;
+    
+  }
+  
+  return 0;
+  
+} 
+
+int Amesos_EpetraInterface::AddToNumFactTime(double t)
+{
+  NumFactTime_ += t;
+  return 0;
+}
+
+int Amesos_EpetraInterface::AddToSymFactTime(double t)
+{
+  SymFactTime_ += t;
+  return 0;
+}
+
+int Amesos_EpetraInterface::AddToSolFactTime(double t)
+{
+  SolFactTime_ += t;
+  return 0;
+  
+}
+

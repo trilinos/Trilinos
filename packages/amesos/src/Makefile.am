@@ -111,9 +111,13 @@ endif
 
 if HAVE_AMESOS_MUMPS
 MUMPS_H = \
-	$(srcdir)/Amesos_Mumps.h
+	$(srcdir)/Amesos_Mumps.h \
+	$(srcdir)/Amesos_EpetraInterface.h \
+	$(srcdir)/Amesos_EpetraRedistributor.h
 MUMPS = \
-	$(srcdir)/Amesos_Mumps.cpp
+	$(srcdir)/Amesos_Mumps.cpp \
+	$(srcdir)/Amesos_EpetraInterface.cpp \
+	$(srcdir)/Amesos_EpetraRedistributor.cpp
 else
 MUMPS_H =
 MUMPS =
@@ -214,7 +218,10 @@ AMESOS_H = \
 	$(SLUDIST2_H) \
 	$(SLUSERIAL_H) \
 	$(KUNDERT_H) \
-	$(COMP_H)
+	$(COMP_H) \
+	$(srcdir)/AmesosClassType.h \
+	$(srcdir)/Amesos_BaseSolver.h
+
 
 libamesos_a_SOURCES = \
 	$(PARAM) \
