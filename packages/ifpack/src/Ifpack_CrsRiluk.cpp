@@ -783,9 +783,9 @@ int Ifpack_CrsRiluk::Condest(bool Trans, double & ConditionNumberEstimate) const
 
 ostream& operator << (ostream& os, const Ifpack_CrsRiluk& A)
 {
-  Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
+/*  Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
   Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
-  int oldp = os.precision(12);
+  int oldp = os.precision(12); */
   int LevelFill = A.Graph().LevelFill();
   int LevelOverlap = A.Graph().LevelOverlap();
   Epetra_CrsMatrix & L = (Epetra_CrsMatrix &) A.L();
@@ -820,9 +820,9 @@ ostream& operator << (ostream& os, const Ifpack_CrsRiluk& A)
  
   // Reset os flags
 
-  os.setf(olda,ios::adjustfield);
+/*  os.setf(olda,ios::adjustfield);
   os.setf(oldf,ios::floatfield);
-  os.precision(oldp);
+  os.precision(oldp); */
 
   return os;
 }

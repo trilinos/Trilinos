@@ -121,11 +121,11 @@ Must refine the following up to #else HAVE_CONFIG_H is not defined
 
 // RAB: 2002/1/25: Define EPETRA_ANSI_CPP as an argument to the compiler!
 //#undef EPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
-#ifdef EPETRA_ANSI_CPP
+/*#ifdef EPETRA_ANSI_CPP
 typedef std::ios_base::fmtflags   Epetra_fmtflags;
 #else
 typedef long int                  Epetra_fmtflags;
-#endif
+#endif*/
 
 #ifndef HAVE_FORMAT_IO
 const bool Epetra_FormatStdout = false; // Set true if the ostream << operator should format output
@@ -208,11 +208,11 @@ using namespace std;
 
 // RAB: 2002/1/25: Define EPETRA_ANSI_CPP as an argument to the compiler!
 //#undef EPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
-#ifdef EPETRA_ANSI_CPP
+/*#ifdef EPETRA_ANSI_CPP
 typedef std::ios_base::fmtflags   Epetra_fmtflags;
 #else
 typedef long int                  Epetra_fmtflags;
-#endif
+#endif */
 
 const bool Epetra_FormatStdout = true; // Set true if the ostream << operator should format output
 const int DefaultTracebackMode = 1; 

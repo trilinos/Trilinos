@@ -1547,9 +1547,9 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
 
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
-      const Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
+/*      const Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
       const Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
-      const int             oldp = os.precision(12);
+      const int             oldp = os.precision(12); */
       if (MyPID==0) {
 	os <<  "\nNumber of Global Rows        = "; os << NumGlobalRows(); os << endl;
 	os <<    "Number of Global Cols        = "; os << NumGlobalCols(); os << endl;
@@ -1571,9 +1571,9 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
       
       // Reset os flags
       
-      os.setf(olda,ios::adjustfield);
+/*      os.setf(olda,ios::adjustfield);
       os.setf(oldf,ios::floatfield);
-      os.precision(oldp);
+      os.precision(oldp); */
     }
     // Do a few global ops to give I/O a chance to complete
     Comm().Barrier();

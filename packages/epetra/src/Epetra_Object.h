@@ -137,16 +137,16 @@ class Epetra_Object {
 inline ostream& operator<<(ostream& os, const Epetra_Object& obj)
 {
   if (Epetra_FormatStdout) {
-    const Epetra_fmtflags  olda = os.setf(ios::right,ios::adjustfield);
+/*    const Epetra_fmtflags  olda = os.setf(ios::right,ios::adjustfield);
     const Epetra_fmtflags  oldf = os.setf(ios::scientific,ios::floatfield);
-    const int              oldp = os.precision(12);
+    const int              oldp = os.precision(12); */
 
     os << obj.Label() << endl;
     obj.Print(os);
 
-    os.setf(olda,ios::adjustfield);
+/*    os.setf(olda,ios::adjustfield);
     os.setf(oldf,ios::floatfield);
-    os.precision(oldp);
+    os.precision(oldp); */
   }
   else {
 

@@ -368,9 +368,9 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 
 ostream& operator << (ostream& os, const Ifpack_IlukGraph& A)
 {
-  Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
+/*  Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
   Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
-  int oldp = os.precision(12);
+  int oldp = os.precision(12); */
   int LevelFill = A.LevelFill();
   Epetra_CrsGraph & L = (Epetra_CrsGraph &) A.L_Graph();
   Epetra_CrsGraph & U = (Epetra_CrsGraph &) A.U_Graph();
@@ -390,9 +390,9 @@ ostream& operator << (ostream& os, const Ifpack_IlukGraph& A)
  
   // Reset os flags
 
-  os.setf(olda,ios::adjustfield);
+/*  os.setf(olda,ios::adjustfield);
   os.setf(oldf,ios::floatfield);
-  os.precision(oldp);
+  os.precision(oldp); */
 
   return os;
 }

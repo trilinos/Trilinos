@@ -197,7 +197,7 @@ AC_CXX_HAVE_STL
 AC_CXX_BOOL
 AC_CXX_MUTABLE
 AC_CXX_NEW_FOR_SCOPING
-AC_CXX_STD_IOS_BASE_FMTFLAGS
+#AC_CXX_STD_IOS_BASE_FMTFLAGS
 AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------
@@ -229,7 +229,7 @@ if test "X$ac_cv_use_referencey12m" = "Xno"; then
   AC_LANG_SAVE
   AC_LANG_FORTRAN77
   AC_SEARCH_LIBS(y12mae,[y12m],,
-  AC_MSG_ERROR([[Cannot find y12m library, please specify additional locations using --with-libdirs or type --with-referencey12m on the configure line in the Trilinos level directory to use the y12m library included with the distribution]]))
+  AC_MSG_ERROR([[Cannot find y12m library, please specify additional locations using --with-libdirs or type --enable-referencey12m on the configure line in the Trilinos level directory to use the y12m library included with the distribution]]))
   AC_LANG_RESTORE
 fi
 

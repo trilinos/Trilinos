@@ -80,9 +80,6 @@
 /* Define if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* define if std::ios_base::fmtflags is supported type */
-#undef HAVE_STD_IOS_BASE_FMTFLAGS
-
 /* define if std::sprintf is supported */
 #undef HAVE_STD_SPRINTF
 

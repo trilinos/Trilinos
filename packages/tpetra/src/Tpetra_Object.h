@@ -132,16 +132,16 @@ inline ostream& operator<<(ostream& os, const Tpetra::Object& Obj)
 {
   if (Tpetra_FormatStdout)
   {
-    const Tpetra_fmtflags  olda = os.setf(ios::right,ios::adjustfield);
+/*    const Tpetra_fmtflags  olda = os.setf(ios::right,ios::adjustfield);
     const Tpetra_fmtflags  oldf = os.setf(ios::scientific,ios::floatfield);
-    const int              oldp = os.precision(12);
+    const int              oldp = os.precision(12); */
 
     os << Obj.label() << endl;
     Obj.print(os);
 
-    os.setf(olda,ios::adjustfield);
+/*    os.setf(olda,ios::adjustfield);
     os.setf(oldf,ios::floatfield);
-    os.precision(oldp);
+    os.precision(oldp); */
   }
   else
   {

@@ -81,11 +81,11 @@ const double Tpetra_Underflow = 2.23E-308;
 
 // RAB: 2002/1/25: Define TPETRA_ANSI_CPP as an argument to the compiler!
 //#undef TPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
-#ifdef TPETRA_ANSI_CPP
+/*#ifdef TPETRA_ANSI_CPP
 typedef std::ios_base::fmtflags Tpetra_fmtflags;
 #else
 typedef long int Tpetra_fmtflags;
-#endif
+#endif */
 
 const bool Tpetra_FormatStdout = true; // Set true if the ostream << operator should format output
 

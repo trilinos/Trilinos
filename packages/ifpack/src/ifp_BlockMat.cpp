@@ -2,7 +2,8 @@
 #include "ifp_BlockVec.h"
 #include "ifp_DenseMat.h"
 #include "ifp_ifpack.h"
-#include "Epetra_Object.h" // Bring in Epetra_fmtflags typedef
+/* Epetra typedef no longer used */
+/*#include "Epetra_Object.h" // Bring in Epetra_fmtflags typedef*/
 /*#define DEBUG */
 
 ifp_BlockMat::~ifp_BlockMat()
@@ -118,9 +119,9 @@ ostream& operator << (ostream& os, const ifp_BlockMat& mat)
         int N = mat.numcol();
         int rowp1, colp1;
         int flag = 0;
-        Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
+/*        Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
         Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
-        int oldp = os.precision(12);
+        int oldp = os.precision(12); */
 
         for (int i = 0; i < M ; i++)
            for (int j=mat.row_ptr(i);j<mat.row_ptr(i+1);j++)
@@ -151,9 +152,9 @@ ostream& operator << (ostream& os, const ifp_BlockMat& mat)
         }
 #endif
 
-        os.setf(olda,ios::adjustfield);
+/*        os.setf(olda,ios::adjustfield);
         os.setf(oldf,ios::floatfield);
-        os.precision(oldp);
+        os.precision(oldp); */
 
         return os;
 }
