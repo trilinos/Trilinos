@@ -63,7 +63,7 @@ EXTRACT_STATIC         = YES
 # various overviews, but no documentation section is generated. 
 # This option has no effect if EXTRACT_ALL is enabled. 
 
-HIDE_UNDOC_MEMBERS     = YES
+HIDE_UNDOC_MEMBERS     = NO
 
 # If the HIDE_UNDOC_CLASSES tag is set to YES, Doxygen will hide all 
 # undocumented classes that are normally visible in the class hierarchy. 
@@ -126,7 +126,7 @@ SOURCE_BROWSER         = NO
 # Setting the INLINE_SOURCES tag to YES will include the body 
 # of functions and classes directly in the documentation. 
 
-INLINE_SOURCES         = YES
+INLINE_SOURCES         = NO
 
 # Setting the STRIP_CODE_COMMENTS tag to YES (the default) will instruct 
 # doxygen to hide any special comment blocks from generated source code 
@@ -244,14 +244,14 @@ WARN_FORMAT            = "$file:$line: $text"
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces. 
 
-INPUT                  = index.doc ../src/
+INPUT                  = mainpage.doxygen ../src/Utils
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
 # and *.h) to filter out the source-files in the directories. If left 
 # blank all files are included. 
 
-FILE_PATTERNS          = *.h *.c *.cpp
+FILE_PATTERNS          = ml_MultiLevelPreconditioner* ml_epetra*.h ml_*.cpp ml_amesos_wrap.h ml_anasazi.cpp ml_anasazi.h ml_ifpack_wrap.* 
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 
@@ -277,7 +277,7 @@ EXCLUDE_PATTERNS       = *.x \
 # directories that contain example code fragments that are included (see 
 # the \include command). 
 
-EXAMPLE_PATH           = 
+EXAMPLE_PATH           = ../examples/
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the 
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -290,7 +290,7 @@ EXAMPLE_PATTERNS       =
 # directories that contain image that are included in the documentation (see 
 # the \image command). 
 
-IMAGE_PATH             = 
+IMAGE_PATH             = .
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should 
 # invoke to filter for each input file. Doxygen will invoke the filter program 
@@ -384,7 +384,7 @@ DISABLE_INDEX          = NO
 # If the GENERATE_LATEX tag is set to YES (the default) Doxygen will 
 # generate Latex output. 
 
-GENERATE_LATEX         = YES
+GENERATE_LATEX         = NO
 
 # The LATEX_OUTPUT tag is used to specify where the LaTeX docs will be put. 
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be 
@@ -480,7 +480,7 @@ RTF_STYLESHEET_FILE    =
 # If the GENERATE_MAN tag is set to YES (the default) Doxygen will 
 # generate man pages 
 
-GENERATE_MAN           = YES
+GENERATE_MAN           = NO
 
 # The MAN_OUTPUT tag is used to specify where the man pages will be put. 
 # If a relative path is entered the value of OUTPUT_DIRECTORY will be 
@@ -519,7 +519,7 @@ ENABLE_PREPROCESSING   = YES
 # compilation will be performed. Macro expansion can be done in a controlled 
 # way by setting EXPAND_ONLY_PREDEF to YES. 
 
-MACRO_EXPANSION        = YES
+MACRO_EXPANSION        = NO
 
 # If the EXPAND_ONLY_PREDEF and MACRO_EXPANSION tags are both set to YES 
 # then the macro expansion is limited to the macros specified with the 
@@ -551,7 +551,7 @@ INCLUDE_FILE_PATTERNS  =
 # or name=definition (no spaces). If the definition and the = are 
 # omitted =1 is assumed. 
 
-PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_TEUCHOS HAVE_ML_IFAPCK HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X HAVE_ML_AMESOS
+PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_TEUCHOS HAVE_ML_IFAPCK HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X HAVE_ML_AMESOS HAVE_ML_AZTECOO
 
 # If the MACRO_EXPANSION and EXPAND_PREDEF_ONLY tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 
