@@ -4,21 +4,20 @@
 # Jim Willenbring
 #
 
-### Will probably want a simple results file.  Will require users to
-### fire up their own mpi.  May want to break out code for compiling and 
-### running into one or two files that can be used for both the checkin
-### script and the nightly test script.
+### May want to break out code for compiling and running into separate files
+### that can be used for both the checkin script and the nightly test script.
 
 # The purpose of this file is to simplify the process of running existing
 # trilinos serial and parallel test scripts.  This script will run many of the
 # tests that need to be run before a developer can commit changes.
 
+# When running mpi tests, make sure to fire up mpi if necessary (ie lamboot).
 # To run this script, simply cd to the directory in which it is located and
 # type 'perl checkin-test-harness'
 # Currently, there are no command line options.  Before running the script,
 # set the paths listed in the section 'THESE OPTIONS CAN BE CONFIGURED AS 
-# NEEDED'.  Also, see the 'subdir-list' file located in the same directory as
-# this file.
+# NEEDED'.  Before attempting to run this script, see the 'subdir-list' file 
+# located in the same directory as this file for further setup instructions.
 
 # Required files:
 # checkin-test-harness is the main driver program.  It calls existing test 
@@ -26,23 +25,17 @@
 # based on Paul Lin's salsa-check, which was adapted from Gary Hennigan's
 # Salsa-Check.sh
 
-### Fix up the following paragraph
 # The directory homedir (defined below) should contain a file called
 # "subdir-list".  This file should list buid directories that are to be 
 # used in the testing process.  These directories must be direct subdirectories
 # of  Trilinos/ and contain "invoke-configure" scripts.  These scripts, as
 # the name implies, pass arguments to the "configure" script.  By specifying
-# multiple build directories, multiple builds can be tested.  If this file is
-# not present, a defalut set of build directories will be attempted, however, it is
-# recommended that a subdir-list file be used.  Minimally, developers should
-# list at least one serial and one mpi build directory in the subdir-list file.
-# This will help ensure that the general serial and mpi builds of Trilinos are
-# not broken by a commit.
-
-# Other required files include:
+# multiple build directories, multiple builds can be tested.  Minimally, 
+# developers should list at least one serial and one mpi build directory in the
+# subdir-list file.  This will help ensure that the general serial and mpi
+# builds of Trilinos are not broken by a commit.
 
 # Output
-### This section must be updated
 
 #
 # Useful vocabulary
@@ -59,16 +52,16 @@
 # location of the top-level "Trilinos" directory
 # default location is just below user's home directory
 my $homedir="$ENV{'HOME'}/Trilinos";
-my $frequency="daily"; #daily tests are used for commits
 
 #
 # Determine host os
 #
 
 chomp (my $hostos=`uname -a`);
-chomp (my $ARCH=`uname`); # This value must match the middle portion of the name of the log
-# file written to by the testAll file - for example on a Linux platform, the
-# log file is called logLinux.txt, so $ARCH=Linux
+chomp (my $ARCH=`uname`); # This value must match the middle portion of the 
+# name of the log file written to by the testAll file - for example on a Linux
+# platform, the log file is called logLinux.txt, so $ARCH=Linux
+my $frequency="daily"; #daily tests are used for commits
 
 print "\$hostos=$hostos\n";
 
@@ -90,9 +83,8 @@ my $testCompileError=0; # If an error occurs while running one of
                         # should be attached
 my $problemencountered=0; # The error and warning counting (as tracked above) 
                     #occurs on a per script basis; this variable will carry 
-                    # over through
-                    # all scripts and will produce the "passed" or "failed"
-                    # portion of the log file name.
+                    # over through all scripts and will produce the "passed" 
+                    # or "failed" portion of the log file name.
 
 open (ERRORS, ">>errors.txt") or die "$! error trying to open file";
 open (WARNINGS, ">>warnings.txt") or die "$! error trying to open file";
@@ -146,8 +138,8 @@ else {
 #
 chdir"$homedir";
 system "find packages/ -name test -print > list_of_test_dirs";
-### May need to append to list_of_test_dirs to account for test
-### directories in contrib or other directories not in packages/
+# May need to append to list_of_test_dirs to account for test
+# directories in contrib or other directories not in packages/
 
 #
 # Compile the required Trilinos builds for tests determined above
@@ -173,7 +165,7 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	  ++$errorcount;
 	  ++$trilinosCompileError;
 	  print ERRORS "Trilinos compilation process failed for the $subdirs[$i] test.\nWill skip associated tests.\n";
-	  &sendemail;
+	  &reportresults;
 	  $compileFail=0; # reset so the positive value doesn't trigger an error again
 	}
 	else {
@@ -211,7 +203,7 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 		  # Compile and report results
 		  #
 		  system "rm -f list_of_files";
-		  &sendemail;
+		  &reportresults;
 		  $compileFail=0; # reset so the positive value doesn't trigger an error again
 		}
 	      }
@@ -257,12 +249,12 @@ sub usedefaultparameters {
 }
 
 #
-# This subroutine is called when it is time to send the email - either
+# This subroutine is called when it is time to create the results file - either
 # when the tests are complete or when an error occurs from which the
-# script cannot recover
+# script cannot recover.
 #
 
-sub sendemail {
+sub reportresults {
   chdir"$homedir";
   # The following line constructs the name of the log that is produced during 
   # tests whether errors occurred or not.  (-v not used.)
@@ -311,22 +303,23 @@ sub sendemail {
     system "cat testCompileLog.txt >> summ.txt";
   }
 
-  if ( -f $testfile1) {
-    print SUMM "--> Parallel testing did not complete successfully.  See details below.\n\n";
-
-    system "cat logMpiErrors.txt >> summ.txt";
-  }
-
-  if ( -f $testfile) {
-    print SUMM "--> Serial testing did not complete successfully.  See details below.\n\n";
-    system "cat logErrors.txt >> summ.txt";
-  }
-
     print SUMM "************************************************\nThe following is the output from the test script listed above (or failed compile attempt).\nPlease note that the -v option was not selected for this log.\n*************************************************\n";
     if (-f "summary.txt") {
 
       system "cat summary.txt >> summ.txt";
     }
+
+  if ( -f $testfile1) {
+    print SUMM "--> Parallel testing did not complete successfully.  The individual tests that failed are listed below.\n\n";
+
+    system "cat logMpiErrors.txt >> summ.txt";
+  }
+
+  if ( -f $testfile) {
+    print SUMM "--> Serial testing did not complete successfully.  The individual tests that failed are listed below.\n\n";
+    system "cat logErrors.txt >> summ.txt";
+  }
+
 
     system "rm -f logErrors.txt logMpiErrors.txt";
 
