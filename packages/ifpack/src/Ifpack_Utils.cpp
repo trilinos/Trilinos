@@ -377,8 +377,8 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A)
   int NumMyEmptyRows = 0, NumGlobalEmptyRows;
   int NumMyDirichletRows = 0, NumGlobalDirichletRows;
 
-  vector<int> colInd(A.MaxNumEntries());
-  vector<double> colVal(A.MaxNumEntries());
+  vector<int> colInd(1000 + A.MaxNumEntries()); // FIXME
+  vector<double> colVal(1000 + A.MaxNumEntries()); // FIXME
 
   for (int i = 0 ; i < NumMyRows ; ++i) {
 
@@ -442,6 +442,10 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A)
   A.Comm().SumAll(&MyDiagonallyDominant, &GlobalDiagonallyDominant, 1);
   A.Comm().SumAll(&MyWeaklyDiagonallyDominant, &GlobalWeaklyDiagonallyDominant, 1);
  
+  double NormOne = A.NormOne();
+  double NormInf = A.NormInf();
+  double NormF   = Ifpack_FrobeniusNorm(A);
+
   if (verbose) {
     print();
     print<int>("Actual nonzeros", NumGlobalActualNonzeros);
@@ -465,7 +469,7 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A)
     print("", "========", "========", "=========", false);
     print();
 
-    print<double>("A", A.NormOne(), A.NormInf(), Ifpack_FrobeniusNorm(A));
+    print<double>("A", NormOne, NormInf, NormF);
   }
 
   // create A + A^T and A - A^T
@@ -476,6 +480,7 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A)
   for (int i = 0 ; i < NumMyRows ; ++i) {
 
     int GRID = A.RowMatrixRowMap().GID(i);
+    assert (GRID != -1);
 
     int Nnz;
     IFPACK_CHK_ERR(A.ExtractMyRowCopy(i,A.MaxNumEntries(),Nnz,
@@ -484,6 +489,8 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A)
     for (int j = 0 ; j < Nnz ; ++j) {
 
       int GCID         = A.RowMatrixColMap().GID(colInd[j]);
+      assert (GCID != -1);
+
       double plus_val  = colVal[j];
       double minus_val = -colVal[j];
 
@@ -512,13 +519,20 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A)
   AplusAT.Scale(0.5);
   AminusAT.Scale(0.5);
 
+  NormOne = AplusAT.NormOne();
+  NormInf = AplusAT.NormInf();
+  NormF   = Ifpack_FrobeniusNorm(AplusAT);
+
   if (verbose) {
-    print<double>("A + A^T", AplusAT.NormOne(), 
-                  AplusAT.NormInf(),
-                  Ifpack_FrobeniusNorm(AplusAT));
-    print<double>("A - A^T", AminusAT.NormOne(), 
-                  AminusAT.NormInf(),
-                  Ifpack_FrobeniusNorm(AminusAT));
+    print<double>("A + A^T", NormOne, NormInf, NormF);
+  }
+
+  NormOne = AminusAT.NormOne();
+  NormInf = AminusAT.NormInf();
+  NormF   = Ifpack_FrobeniusNorm(AminusAT);
+
+  if (verbose) {
+    print<double>("A - A^T", NormOne, NormInf, NormF);
 
     print();
     print<char*>("", "min", "avg", "max", false);
