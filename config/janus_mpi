@@ -1,11 +1,9 @@
 ../configure --host=i686-intel-linux \
 	--with-blas=$TFLOPS_XDEV/tflops/lib/libcsmath.a \
 	--with-lapack=$TFLOPS_XDEV/tflops/lib/scalapack/liblapack.a \
-	--enable-referencey12m \
 	CXX=ciCC CC=cicc F77=cif77 \
 	--with-cxxflags="-g -rwstl -Wc,-tlocal" \
-	--enable-mpi --with-mpi-cxx=ciCC \
-	--with-mpi-cc=cicc --with-mpi-f77=cif77 \
-     --with-mpi-include=-I. --with-mpi-libdir=-L. --with-mpi-libs=-lmpi \
+	--enable-mpi \
+     --with-mpi-incdir=. --with-mpi-libdir=. --with-mpi-libs=-lmpi \
      CPPFLAGS=-DTFLOP 
 

@@ -10,14 +10,19 @@ Two useful terms:
 
 Source tree - The directory structure where source files are found.  A source 
 	tree is obtained by expanding a distribution tar ball, or by checking 
-	out a copy of the Trilinos repository.  Please note: typing 'configure 
-	--help=recursive' from the top level of the source tree will display 
-	the help page for ALL Trilinos packages that use autoconf and automake.
-
+	out a copy of the Trilinos repository.  
 Build tree - The directory structure where object and library files, as well 
 	as executables are located.  
 
-	Although it is possible to run 'configure' from the source tree (in 
+Please note: typing "configure --help=recursive" from the top level of the 
+source tree will display the help page for the Trilinos level as well as all 
+Trilinos packages that use autoconf and automake.  The output from this command
+is quite extensive.  To view the help page for an individual package, cd to 
+the home directory for the package in the source tree, and type "configure 
+--help".  This command will also display the help page for Trilinos level 
+options when used from the Trilinos home directory in the source tree.
+
+Although it is possible to run 'configure' from the source tree (in 
 the directory where the configure file is located), it is recommended that a 
 user have separate build trees.  The greatest advantage to having a separate 
 build tree is that multiple builds of the libraries can be maintained.  For 
@@ -26,34 +31,37 @@ there can be problems with configuring in a 'dirty' directory (one that has
 already been configured in).
 
 	Setting up a build tree is very easy.  First, cd to the highest 
-directory in the source tree (Trilinos for a repositry copy, Trilinos-2.1 
-for a distribution).  Now, make a new directory - if planning a serial build, 
-a good name would be SERIAL.  Finally cd into that dirctory.  Please note: a 
-user can set up a build tree anywhere - the highest direcotry in the source 
-tree is merely an example.
+directory in the source tree (Trilinos for a repositry copy, Trilinos-3.0.1 
+for a distribution).  Now, make a new directory - for a serial build, a 
+typical name is SERIAL.  Finally cd into that dirctory.  Please note that a 
+user can set up a build tree anywhere - the highest directory in the source 
+tree is merely a common example.
 
 II. Configuring 
 
 	To configure from a remote build tree, simply run the configure script 
 in source tree from the root of the build tree.  In the example above, cd to 
-the SERIAL directory and type ../configure <options described below>.
+the SERIAL directory and type ../configure <options as described under 
+"Configure Options" section>.
 
 	The user needs to provide two important pieces of information at this 
 stage.  First, the user needs to describe what kind of a build is needed.  For 
 instance, serial or mpi, all of the packages, or just a proper subset.  
-(NOTE: At this time, some of the other options listed on the help screen do 
-not work (--enable-debug, --enable-opt, and others.  For questions please 
-contact jmwille@sandia.gov.)
 
 	For example, to configure for serial libraries, no action is necessary,
-but to configure for parallel libraries, a user must append '--enable-mpi' to 
-the configure line.
+but to configure for parallel libraries, a user must append appropriate 
+arguments to the configure invocation line as described in the "Configure 
+Options" section.
 
-	Also, to build all Trilinos libraries, no action is necessary, but to 
-exclude a package, komplex for example, a user must append '--disable-komplex' 
-to the configure line.  It is recommended that users always configure from the 
-Trilinos level and use --disable-<package> as necessary, rather than trying to 
-configure from a lower level.
+	Also, to build the default set of Trilinos libraries, no action is 
+necessary, but to exclude a default package, komplex for example, a user must 
+append "--disable-komplex" to the configure invocation  line.  Similarly, to 
+include a package that is not currently built by default, NOX for example, 
+users must append "--enable-nox" to the configure invocation line.  It is 
+recommended that users always configure from the Trilinos level and use 
+--disable-<package> as necessary, rather than trying to configure from a lower 
+level.  To see which packages build by default and which ones don't, simply 
+cd to the Trilinos home directory and type "configure --help".
 
 NOTE: Ifpack is divided into old and new portions.  Future ifpack developments 
 will replace all of old ifpack, but at this time some users will need to append
@@ -63,9 +71,9 @@ NOTE: The configure process is set up to detect when a --disable-<package>
 command would break a package dependency.  For example, ifpack depends on 
 epetra, so if a user wants to build ifpack, but types --disable-epetra, epetra 
 will be configured and built anyway.  However, some of the tests and examples 
-have different dependencies than the core package.  Not all of these 
-dependencies have been accounted for.  Please submit a bug report for any 
-problems found with this matter.
+have different dependencies than the core package.  It is possible that not 
+all of these dependencies have been accounted for.  Please submit a bug report 
+for any problems found with this matter.
 
 	To install libraries and header files in a particular location, use 
 --prefix=<dir>.  If this option is used, libraries will be located in 
@@ -76,21 +84,25 @@ this stage is the name and or location of anything that autotools needs and
 cannot find on its own.  Also, if autotools selects, for example, the wrong 
 blas library by default, the user must indicate which blas library to use.  
 Other more obscure issues dealing with enjoyable topics such as standard 
-noncompliance are also dealt with here.  If all required libraries (blas, 
-lapack, y12m) and (if doing an mpi build) mpiCC, mpicc, and mpif77, as well as 
-mpi are all located in standard places, try configuring with what you have.  If
-the configure stage completes successfully, move on to part III.  However, keep
-in mind that some issues involving the more 'enjoyable topics' often do not 
-show up until the build stage, so reading on might be worthwhile.
+noncompliance are also dealt with here.  If all required libraries (often 
+blas, and lapack) are located in standard places, try configuring with what 
+you have.  If the configure stage completes successfully, move on to part 
+III.  However, keep in mind that some issues involving the more 'enjoyable topics' often do not show up until the build stage, so reading on might be 
+worthwhile.
 
 	For a machine that requires additional configure line options, a good 
-place to start is Trilinos(-2.1)/config.  There are configure scripts here for 
-various platforms.  These scripts are named using the following naming 
-convention:
-arch_comm_id
-where id can contain any important information, or can be left blank.  For many
-of the existing scripts, id is the name of the machine that the script was used
-on.  Other uses include id=debug, or opt when those options are completed.
+place to start is Trilinos(-3.0.1)/config.  There are configure invocation 
+scripts here for various platforms.  These scripts are named using the 
+following naming convention:
+arch_comm_machine
+For example "sgi64_mpi_atlantis".  Note that these scripts are examples only.  
+Users should not necessarily expect to be able to find the perfect script and 
+use it, but rather should choose a script for a similar machine, examine the 
+options used in the script and figure out if those options make sense for the 
+case at hand.  Some of the scripts in the repository have not been updated to 
+reflect recent option changes, particularly for mpi option changes.  The 
+greatest value in these scripts tend to be the values for options such as 
+LDFLAGS, CPPFLAGS, and CXXFLAGS.  
 
 Users who create scripts for other machines are encouraged to check them into 
 the repository for the benefit of other users.  Users who do not have access to
@@ -98,10 +110,167 @@ the repository can send their scripts to jmwille@sandia.gov.
 
 III. Building
 
-If the configure stage completed successfully, just type make, or make install,
-if --prefix was specified.
+If the configure stage completed successfully, just type "make", and if 
+--prefix was specified, "make install".
 
+The following section describes the configuration options mentioned above that 
+are common to all Trilinos packages.  These options DO NOT cover all options 
+for all Trilinos packages.
+
+\subsection{Trilinos Configuration Options}
+
+The following options apply to all Trilinos packages unless 
+the option doesn't make sense for a particular package (for example, a 
+package that does not include any Fortran code will not be sensitive to 
+F77=g77), or otherwise noted.  NOTE: This list is not yet complete, in 
+particular many options that apply to only a subset of Trilinos packages 
+are not included.  For options specific to individual package, 'cd' to the 
+home directory of the source code of the individual package and type 
+``configure --help'' (without quotes).
+
+Basic Options
+
+\begin{itemize}
+\item --enable-debug 
+
+(Nox only.)  This turns on compiler debugger flags. It has 
+not been fully tested. As an alternate, specify CXXFLAGS on the 
+                 configure line.
+
+\item --enable-opt
+
+(Nox only.)  This turns on compiler optimization flags. It 
+has not been fully tested. As an alternate, specify CXXFLAGS on the 
+                 configure line. 
+
+\item --with-cppflags 
+
+Specify additional preprocessor flags (e.g., "-Dflag -Idir") 
+
+\item --with-cxxflags 
+
+Specify additional C++ flags 
+
+\item --with-ldflags 
+
+Specify additional linker flags (e.g., "-Ldir") 
+
+\item --with-ar 
+
+Specify a special archiver command, the default is "ar cru". 
+\end{itemize}
+
+ Influential Environmental Variables
+
+\begin{itemize}
+\item CC 
+
+C compiler command.
+
+\item CFLAGS 
+
+C compiler flags.
+
+\item CXX 
+
+C++ compiler command.
+
+\item CXXFLAGS 
+
+C++ compiler flags.
+
+\item LDFLAGS 
+
+Specify linker flags.
+
+\item CPPFLAGS 
+
+C/C++ preprocessor flags.
+
+\item CXXCPP 
+
+C++ preprocessor.
+
+\item F77 
+
+Fortran 77 compiler command.
+
+\item FFLAGS 
+
+Fortran 77 compiler flags.
+\end{itemize}
+
+MPI-Related Options
+
+\begin{itemize}
+\item --enable-mpi 
+
+Enables MPI mode. Defines HAVE\_MPI in the (Package)\_Config.h file. Will test 
+for the ability to preprocess the MPI header file and may test ability to link 
+with MPI.  This option is rarely necessary as many of the below options also 
+turn MPI on.  
+
+\item --with-mpi-compilers
+
+Sets the MPI c++ compiler = mpicxx (or mpiCC if mpicxx not available), 
+the MPI C compiler = mpicc and the MPI Fortran compiler = mpif77.  
+Automatically enables MPI mode.  To use compilers other than these, 
+specify mpi locations with the below options.  If none of these options 
+are necessary, don't forget to use --enable-mpi.  CXX, CC, and F77 may also 
+have to be set if autoconf does not choose the correct compilers by default.
+
+\item --with-mpi=MPIROOT 
+
+Specify the MPI root directory. Automatically enables MPI mode.  If this 
+option is set, --with-mpi-incdir and --with-mpi-libdir should not be used.  
+--with-mpi is meant to be a shortcut for setting --with-mpi-libdir=MPIROOT/lib 
+and --with-mpi-incdir=MPIROOT/include.  Use these two options instead if 
+these default locations are not correct.
+
+\item --with-mpi-libdir=DIR 
+
+Specify the MPI libraries location. Defaults to MPIROOT/lib if --with-mpi 
+is specified. If multiple directories must be specified, try 
+--with-ldflags="-L<dir1> -L<dir2>" instead. 
+
+\item --with-mpi-libs="LIBS" 
+
+Specify the MPI libraries. Defaults to "-lmpi" if either --with-mpi or 
+--with-mpi-libdir is specified.
+
+\item --with-mpi-incdir=DIR
+
+Specify the MPI include files location. Defaults to MPIROOT/include if 
+--with-mpi is specified. If multiple directories  must be specified, try 
+--with-cppflags="-I<dir1> -I<dir2>" instead.
+\end{itemize}
+
+Developer-Related Options
+\begin{itemize}
+\item --enable-maintainer-mode 
+
+Enable make rules and dependencies not useful (and sometimes confusing) to 
+the casual installer.
+\end{itemize}
+
+Other important notes about the configure/build process.
+\begin{itemize}
+\item Any code that links to Trilinos should define 'HAVE\_CONFIG\_H' (without
+quotes).
+\item Often the output from 'configure' will be inadequate for diagnosing 
+problems.  A developer should look (in the buildtree) at the config.log file 
+for the package that failed to configure properly.  To figure out which 
+package failed to configure, simply look at the bottom of the output from the 
+'configure' command.  One of the last lines should say something like:
+configure: error: /bin/sh '../../../packages/epetra/configure' failed 
+for packages/epetra.
+
+This particular error indicates to look in packages/epetra/config.log.  This 
+file is useful for developers trying to build Trilinos, and those who are 
+adding or editing autoconf-specific files such as configure.ac.
+\end{itemize}
 
 Additional questions and any suggestions can be directed to 
 Jim Willenbring (jmwille@sandia.gov).  If the concern is a bug or enhancement
 request for the Autotools system, please submit a bug report to Bugzilla.
+
