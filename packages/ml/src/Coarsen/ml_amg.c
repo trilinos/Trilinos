@@ -44,7 +44,7 @@ int ML_AMG_Create( ML_AMG **amg )
    ML_memory_alloc( (void **) amg, sizeof(ML_AMG), "MG1" );
    (*amg)->ML_id                      = ML_ID_AMG;
    (*amg)->print_flag                 = 1;
-   (*amg)->max_coarse_size            = 4;
+   (*amg)->max_coarse_size            = 100;
    (*amg)->threshold                  = 0.2;
    (*amg)->curr_threshold             = 0.2;
    (*amg)->amg_scheme                 = ML_AMG_SCALAR;
