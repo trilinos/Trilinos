@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include "lb_const.h"
 #include "reftree_const.h"
-#include "all_allo_const.h"
 #include "params_const.h"
 
 /*****************************************************************************/

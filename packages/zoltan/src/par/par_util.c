@@ -15,7 +15,6 @@
 #include <stdlib.h>
 #include "lb_const.h"
 #include "par_const.h"
-#include "all_allo_const.h"
 
 
 #define PRINT_SYNC 5000   /* definition needed for print sync */
