@@ -3,8 +3,8 @@
 06-August-2002 Changed to images, (nothing changed).
 */
 
-#include "Tpetra_BLAS_wrappers.h"
-#include "Tpetra_ScalarTraits.h"
+#include "Tpetra_BLAS_wrappers.hpp"
+#include "Tpetra_ScalarTraits.hpp"
 
 namespace Tpetra {
   // Tpetra::BLAS constructor

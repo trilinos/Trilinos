@@ -1,7 +1,7 @@
 // 27-May-2002 General cleanup. Changed method names to fit namingConvention (nothing changed).
 
-#ifndef _TPETRA_LAPACK_WRAPPERS_H_
-#define _TPETRA_LAPACK_WRAPPERS_H_
+#ifndef _TPETRA_LAPACK_WRAPPERS_HPP_
+#define _TPETRA_LAPACK_WRAPPERS_HPP_
 
 /*! \file Tpetra_LAPACK_wrappers.h
     \brief It should be noted that Tpetra_LAPACK_wrappers.h is an almost 
@@ -287,4 +287,4 @@ float  SLAMCH_F77(Tpetra_fcd);
 }
 #endif
 
-#endif // end of TPETRA_LAPACK_WRAPPERS_H_
+#endif // end of TPETRA_LAPACK_WRAPPERS_HPP_

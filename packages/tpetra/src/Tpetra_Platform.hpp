@@ -6,13 +6,13 @@
 23-Nov-2002 Distributor methods added.
 */
 
-#ifndef _TPETRA_PLATFORM_H_
-#define _TPETRA_PLATFORM_H_
+#ifndef _TPETRA_PLATFORM_HPP_
+#define _TPETRA_PLATFORM_HPP_
 
-#include "Tpetra_ConfigDefs.h"
-#include "Tpetra_Comm.h"
-#include "Tpetra_Directory.h"
-#include "Tpetra_Distributor.h"
+#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_Comm.hpp"
+#include "Tpetra_Directory.hpp"
+#include "Tpetra_Distributor.hpp"
 
 namespace Tpetra {
 
@@ -59,4 +59,4 @@ public:
 
 } // namespace Tpetra
 
-#endif // _TPETRA_PLATFORM_H_
+#endif // _TPETRA_PLATFORM_HPP_

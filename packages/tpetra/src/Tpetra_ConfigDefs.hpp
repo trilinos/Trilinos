@@ -6,8 +6,8 @@
 04-Dec-2002 Moved configs out of Tpetra_ScalarTraits.h.
 */
 
-#ifndef _TPETRA_CONFIGDEFS_H_
-#define _TPETRA_CONFIGDEFS_H_
+#ifndef _TPETRA_CONFIGDEFS_HPP_
+#define _TPETRA_CONFIGDEFS_HPP_
 
 #ifndef __cplusplus
 #define __cplusplus
@@ -101,16 +101,6 @@ const double Tpetra_MaxDouble = 1.0E+100;
 const double Tpetra_Overflow = 1.79E308; // Used to test if equilibration should be done.
 const double Tpetra_Underflow = 2.23E-308;
 
-// RAB: 2002/1/25: Define TPETRA_ANSI_CPP as an argument to the compiler!
-//#undef TPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
-/*#ifdef TPETRA_ANSI_CPP
-typedef std::ios_base::fmtflags Tpetra_fmtflags;
-#else
-typedef long int Tpetra_fmtflags;
-#endif */
-
-const bool Tpetra_FormatStdout = true; // Set true if the ostream << operator should format output
-
 // Delete any previous definition of TPETRA_NO_ERROR_REPORTS
 
 #ifdef TPETRA_CHK_ERR
@@ -132,4 +122,4 @@ const int Tpetra_DefaultTracebackMode = 1; // Default value for traceback behavi
 
 //} // namespace Tpetra
 
-#endif // _TPETRA_CONFIGDEFS_H_
+#endif // _TPETRA_CONFIGDEFS_HPP_

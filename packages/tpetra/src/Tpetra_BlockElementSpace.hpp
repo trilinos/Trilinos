@@ -10,11 +10,11 @@
 14-Nov-2002 Changed slightly for switch to massive constructor call
 */
 
-#ifndef _TPETRA_BLOCKELEMENTSPACE_H_
-#define _TPETRA_BLOCKELEMENTSPACE_H_
+#ifndef _TPETRA_BLOCKELEMENTSPACE_HPP_
+#define _TPETRA_BLOCKELEMENTSPACE_HPP_
 
-#include "Tpetra_Object.h"
-#include "Tpetra_ElementSpace.h"
+#include "Tpetra_Object.hpp"
+#include "Tpetra_ElementSpace.hpp"
 #include <boost/shared_ptr.hpp>
 
 namespace Tpetra {
@@ -145,6 +145,6 @@ boost::shared_ptr<BlockElementSpaceData<OrdinalType> > BlockElementSpaceData_; /
 
 } // Tpetra namespace
 
-#include "Tpetra_BlockElementSpaceData.h"
+#include "Tpetra_BlockElementSpaceData.hpp"
 #include "Tpetra_BlockElementSpace.cpp"
-#endif // _TPETRA_BLOCKELEMENTSPACE_H_
+#endif // _TPETRA_BLOCKELEMENTSPACE_HPP_

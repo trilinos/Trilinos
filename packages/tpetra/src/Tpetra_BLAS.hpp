@@ -4,8 +4,8 @@
 */
 
 
-#ifndef _TPETRA_BLAS_H_
-#define _TPETRA_BLAS_H_
+#ifndef _TPETRA_BLAS_HPP_
+#define _TPETRA_BLAS_HPP_
 
 namespace Tpetra
 {
@@ -58,4 +58,4 @@ namespace Tpetra
 
 #include "Tpetra_BLAS.cpp"
 
-#endif // end of _TPETRA_BLAS_H_
+#endif // end of _TPETRA_BLAS_HPP_

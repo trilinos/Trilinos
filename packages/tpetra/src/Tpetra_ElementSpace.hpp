@@ -17,14 +17,14 @@
 12-Nov-2002 Updated to use createOrdinalComm() instead of createComm() (nothing changed)
 */
 
-#ifndef _TPETRA_ELEMENTSPACE_H_
-#define _TPETRA_ELEMENTSPACE_H_
+#ifndef _TPETRA_ELEMENTSPACE_HPP_
+#define _TPETRA_ELEMENTSPACE_HPP_
 
-#include "Tpetra_Object.h"
-#include "Tpetra_Directory.h"
+#include "Tpetra_Object.hpp"
+#include "Tpetra_Directory.hpp"
 #include <map>
 #include <boost/shared_ptr.hpp>
-#include "Tpetra_ElementSpaceData.h"
+#include "Tpetra_ElementSpaceData.hpp"
 
 namespace Tpetra {
 
@@ -170,24 +170,6 @@ const Platform<OrdinalType, OrdinalType>& platform() const {return(*ElementSpace
 private:
 // private data members
 boost::shared_ptr< ElementSpaceData<OrdinalType> > ElementSpaceData_; // Boost shared pointer
-// contained in ElementSpaceData class
-//   OrdinalType numGlobalElements_;
-//   OrdinalType numMyElements_;
-//   OrdinalType indexBase_;
-//   OrdinalType minLID_;
-//   OrdinalType maxLID_;
-//   OrdinalType minMyGID_;
-//   OrdinalType maxMyGID_;
-//   OrdinalType minAllGID_;
-//   OrdinalType maxAllGID_;
-//   bool contiguous_;
-//   bool global_;
-//   map<OrdinalType, OrdinalType> lgMap_;
-//   map<OrdinalType, OrdinalType> glMap_;
-//   Comm<OrdinalType, OrdinalType>* Comm_;
-//   OrdinalType* myGlobalElements_;
-//   Directory<OrdinalType>* Directory_;
-//   Platform<OrdinalType, OrdinalType>* Platform_;
 
 // private functions
 void directorySetup();
@@ -197,4 +179,4 @@ void directorySetup();
 
 #include "Tpetra_ElementSpace.cpp"
 
-#endif // _TPETRA_ELEMENTSPACE_H_
+#endif // _TPETRA_ELEMENTSPACE_HPP_

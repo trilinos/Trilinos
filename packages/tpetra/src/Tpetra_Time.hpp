@@ -4,11 +4,11 @@
 06-August-2002 Changed to images (nothing changed). Also updated a few naming conventions, and to use a templated Comm.
 */
 
-#ifndef _TPETRA_TIME_H_
-#define _TPETRA_TIME_H_
+#ifndef _TPETRA_TIME_HPP_
+#define _TPETRA_TIME_HPP_
 
-#include "Tpetra_Object.h"
-#include "Tpetra_Comm.h"
+#include "Tpetra_Object.hpp"
+#include "Tpetra_Comm.hpp"
 #include <sys/time.h>
 #include <sys/resource.h>
 
@@ -54,4 +54,4 @@ private:
 
 #include "Tpetra_Time.cpp"
 
-#endif // TPETRA_TIME_H_
+#endif // TPETRA_TIME_HPP_

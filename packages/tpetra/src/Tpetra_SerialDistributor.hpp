@@ -6,11 +6,11 @@
 25-Nov-2002 do methods fixed.
 */
 
-#ifndef _TPETRA_SERIALDISTRIBUTOR_H_
-#define _TPETRA_SERIALDISTRIBUTOR_H_
+#ifndef _TPETRA_SERIALDISTRIBUTOR_HPP_
+#define _TPETRA_SERIALDISTRIBUTOR_HPP_
 
-#include "Tpetra_Object.h"
-#include "Tpetra_Distributor.h"
+#include "Tpetra_Object.hpp"
+#include "Tpetra_Distributor.hpp"
 
 namespace Tpetra {
 
@@ -115,4 +115,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_SERIALDISTRIBUTOR_H_
+#endif // _TPETRA_SERIALDISTRIBUTOR_HPP_

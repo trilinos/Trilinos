@@ -3,11 +3,11 @@
 06-August-2002 Changed to images (nothing changed). Documentation cleaned up a bit.
 */
 
-#ifndef _TPETRA_DENSEMATRIX_H_
-#define _TPETRA_DENSEMATRIX_H_
+#ifndef _TPETRA_DENSEMATRIX_HPP_
+#define _TPETRA_DENSEMATRIX_HPP_
 
-#include "Tpetra_CompObject.h"
-#include "Tpetra_BLAS.h"
+#include "Tpetra_CompObject.hpp"
+#include "Tpetra_BLAS.hpp"
 
 namespace Tpetra
 {
@@ -265,4 +265,4 @@ inline ostream& operator<<(ostream& os, const Tpetra::DenseMatrix<scalarType>& o
 
 #include "Tpetra_DenseMatrix.cpp"
 
-#endif /* _TPETRA_DENSEMATRIX_H_ */
+#endif /* _TPETRA_DENSEMATRIX_HPP_ */

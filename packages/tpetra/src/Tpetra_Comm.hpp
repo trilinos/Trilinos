@@ -7,10 +7,10 @@
 19-Nov-2002 myImageID and numImages moved back from Platform.
 */
 
-#ifndef _TPETRA_COMM_H_
-#define _TPETRA_COMM_H_
+#ifndef _TPETRA_COMM_HPP_
+#define _TPETRA_COMM_HPP_
 
-#include "Tpetra_ConfigDefs.h"
+#include "Tpetra_ConfigDefs.hpp"
 
 namespace Tpetra {
 
@@ -143,4 +143,4 @@ class Comm {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_COMM_H_
+#endif // _TPETRA_COMM_HPP_

@@ -5,7 +5,7 @@
 23-Nov-2002 Updated for myImageID moved back to Comm
 */
 
-#include "Tpetra_ElementSpace.h"
+#include "Tpetra_ElementSpace.hpp"
 
 namespace Tpetra {
 

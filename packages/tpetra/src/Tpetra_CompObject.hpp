@@ -3,11 +3,11 @@
 06-August-2002 Changed to images (nothing changed).
 */
 
-#ifndef _TPETRA_COMPOBJECT_H_
-#define _TPETRA_COMPOBJECT_H_
+#ifndef _TPETRA_COMPOBJECT_HPP_
+#define _TPETRA_COMPOBJECT_HPP_
 
-#include "Tpetra_Object.h"
-#include "Tpetra_Flops.h"
+#include "Tpetra_Object.hpp"
+#include "Tpetra_Flops.hpp"
 
 namespace Tpetra
 {
@@ -86,4 +86,4 @@ class CompObject
 
 #include "Tpetra_CompObject.cpp"
 
-#endif // end of _TPETRA_COMPOBJECT_H_
+#endif // end of _TPETRA_COMPOBJECT_HPP_

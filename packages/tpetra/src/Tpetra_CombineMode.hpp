@@ -3,9 +3,9 @@
 06-August-2002 Changed to images.
 */
 
-#ifndef _TPETRA_COMBINEMODE_H_
-#define _TPETRA_COMBINEMODE_H_
-/*! \file Tpetra_CombineMode.h 
+#ifndef _TPETRA_COMBINEMODE_HPP_
+#define _TPETRA_COMBINEMODE_HPP_
+/*! \file Tpetra_CombineMode.hpp 
     \brief Tpetra_CombineMode enumerable type
 */
 
@@ -33,4 +33,4 @@ enum Tpetra_CombineMode {Tpetra_Add,    /*!< Components on the receiving image
                                      on the receiving image. */
                         };
 
-#endif /* _TPETRA_COMBINEMODE_H_ */
+#endif /* _TPETRA_COMBINEMODE_HPP_ */

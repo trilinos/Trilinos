@@ -4,11 +4,11 @@
 21-Sept-2002 Comm/Platform split
 */
 
-#ifndef _TPETRA_SERIALDIRECTORY_H_
-#define _TPETRA_SERIALDIRECTORY_H_
+#ifndef _TPETRA_SERIALDIRECTORY_HPP_
+#define _TPETRA_SERIALDIRECTORY_HPP_
 
-#include "Tpetra_Directory.h"
-#include "Tpetra_Object.h"
+#include "Tpetra_Directory.hpp"
+#include "Tpetra_Object.hpp"
 
 namespace Tpetra {
 
@@ -70,4 +70,4 @@ class SerialDirectory : public Object, public virtual Directory<OrdinalType> {
 } // namespace Tpetra
 
 #include "Tpetra_SerialDirectory.cpp"
-#endif // _TPETRA_SERIALDIRECTORY_H_
+#endif // _TPETRA_SERIALDIRECTORY_HPP_

@@ -2,8 +2,8 @@
 19-Nov-2002 OrdinalTraits written, based on ScalarTraits form
 */
 
-#ifndef _TPETRA_ORDINALTRAITS_H_
-#define _TPETRA_ORDINALTRAITS_H_
+#ifndef _TPETRA_ORDINALTRAITS_HPP_
+#define _TPETRA_ORDINALTRAITS_HPP_
 
 namespace Tpetra {
   /** The Tpetra OrdinalTraits file.
@@ -32,7 +32,7 @@ namespace Tpetra {
 	template<>
 	struct OrdinalTraits<int> {
 
-		static inline bool haveMachineParameters() {return(false);}; // Allows testing to see if scalar traits machine parameters defined 
+		static inline bool haveMachineParameters() {return(false);}; // Allows testing to see if ordinal traits machine parameters defined 
 		static inline int zero()                   {return(0);};
 		static inline int one()                    {return(1);};
 		static inline const char* name()           {return("int");};
@@ -40,4 +40,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_ORDINALTRAITS_H_
+#endif // _TPETRA_ORDINALTRAITS_HPP_

@@ -2,8 +2,8 @@
 19-Nov-2002 PacketTraits written, based on ScalarTraits form
 */
 
-#ifndef _TPETRA_PACKETTRAITS_H_
-#define _TPETRA_PACKETTRAITS_H_
+#ifndef _TPETRA_PACKETTRAITS_HPP_
+#define _TPETRA_PACKETTRAITS_HPP_
 
 namespace Tpetra {
   /** The Tpetra PacketTraits file.
@@ -68,4 +68,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_ORDINALTRAITS_H_
+#endif // _TPETRA_ORDINALTRAITS_HPP_

@@ -3,8 +3,8 @@
 06-August-2002 Changed to images (nothing changed).
 */
 
-#ifndef _TPETRA_BLAS_WRAPPERS_H_
-#define _TPETRA_BLAS_WRAPPERS_H_
+#ifndef _TPETRA_BLAS_WRAPPERS_HPP_
+#define _TPETRA_BLAS_WRAPPERS_HPP_
 
 /*! \file Tpetra_BLAS_wrappers.h  
     \brief The Templated Petra BLAS Class.
@@ -174,4 +174,4 @@ void XERBLA_F77(Tpetra_fcd, int *info);
 #ifdef __cplusplus
 }
 #endif
-#endif // end of TPETRA_BLAS_WRAPPERS_H_
+#endif // end of TPETRA_BLAS_WRAPPERS_HPP_

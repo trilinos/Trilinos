@@ -6,11 +6,11 @@
 19-Nov-2002 myImageID and numImages moved back from Platform, print method updated
 */
 
-#ifndef _TPETRA_SERIALCOMM_H_
-#define _TPETRA_SERIALCOMM_H_
+#ifndef _TPETRA_SERIALCOMM_HPP_
+#define _TPETRA_SERIALCOMM_HPP_
 
-#include "Tpetra_Comm.h"
-#include "Tpetra_Object.h"
+#include "Tpetra_Comm.hpp"
+#include "Tpetra_Object.hpp"
 
 namespace Tpetra {
 
@@ -149,4 +149,4 @@ public:
 } // namespace Tpetra
 
 #include "Tpetra_SerialComm.cpp"
-#endif // _TPETRA_SERIALCOMM_H_
+#endif // _TPETRA_SERIALCOMM_HPP_

@@ -4,8 +4,8 @@
 21-Sept-2002 Comm/Platform split
 */
 
-#ifndef _TPETRA_DIRECTORY_H_
-#define _TPETRA_DIRECTORY_H_
+#ifndef _TPETRA_DIRECTORY_HPP_
+#define _TPETRA_DIRECTORY_HPP_
 
 namespace Tpetra {
 
@@ -50,4 +50,4 @@ class Directory {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_DIRECTORY_H_
+#endif // _TPETRA_DIRECTORY_HPP_

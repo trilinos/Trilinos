@@ -5,8 +5,8 @@
 24-Nov-2002 Rewritten with massive constructor call.
 */
 
-#ifndef _TPETRA_BLOCKELEMENTSPACEDATA_H_
-#define _TPETRA_BLOCKELEMENTSPACEDATA_H_
+#ifndef _TPETRA_BLOCKELEMENTSPACEDATA_HPP_
+#define _TPETRA_BLOCKELEMENTSPACEDATA_HPP_
 
 namespace Tpetra {
 
@@ -78,4 +78,4 @@ class BlockElementSpaceData : public Object {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_BLOCKELEMENTSPACEDATA_H_
+#endif // _TPETRA_BLOCKELEMENTSPACEDATA_HPP_

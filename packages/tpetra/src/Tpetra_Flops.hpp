@@ -3,8 +3,8 @@
 06-August-2002 Changed to images (nothing changed).
 */
 
-#ifndef _TPETRA_FLOPS_H_
-#define _TPETRA_FLOPS_H_
+#ifndef _TPETRA_FLOPS_HPP_
+#define _TPETRA_FLOPS_HPP_
 
 namespace Tpetra
 {
@@ -66,4 +66,4 @@ class Flops
 
 } // namespace Tpetra
 
-#endif // end of _TPETRA_FLOPS_H_
+#endif // end of _TPETRA_FLOPS_HPP_

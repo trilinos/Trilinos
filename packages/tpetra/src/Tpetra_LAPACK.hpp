@@ -3,8 +3,8 @@
 06-August-2002 Changed to images (nothing changed).
 */
 
-#ifndef _TPETRA_LAPACK_H_
-#define _TPETRA_LAPACK_H_
+#ifndef _TPETRA_LAPACK_HPP_
+#define _TPETRA_LAPACK_HPP_
 
 #include "Tpetra_Object.h"
 
@@ -215,4 +215,4 @@ class LAPACK
 };
 #include "Tpetra_LAPACK.cpp"
 } // namespace Tpetra
-#endif /* _TPETRA_LAPACK_H_ */
+#endif /* _TPETRA_LAPACK_HPP_ */

@@ -7,12 +7,12 @@
 04-Dec-2002 Moved configs to Tpetra_ConfigDefs.h.
 */
 
-#ifndef _TPETRA_SCALARTRAITS_H_
-#define _TPETRA_SCALARTRAITS_H_
+#ifndef _TPETRA_SCALARTRAITS_HPP_
+#define _TPETRA_SCALARTRAITS_HPP_
 
 #include <cmath> //for the fabs function...
-#include "Tpetra_LAPACK.h"
-#include "Tpetra_ConfigDefs.h"
+#include "Tpetra_LAPACK.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 #ifndef NO_COMPLEX
 #include <complex>
 #endif
@@ -245,5 +245,5 @@ namespace Tpetra {
 #endif  // NO_COMPLEX
 
 }     // Tpetra namespace
-#endif // _TPETRA_SCALARTRAITS_H_
+#endif // _TPETRA_SCALARTRAITS_HPP_
 

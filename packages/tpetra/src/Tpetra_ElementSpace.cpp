@@ -13,7 +13,7 @@
 24-Nov-2002 Updated for imageID methods moved back to Comm
 */
 
-#include "Tpetra_Platform.h"
+#include "Tpetra_Platform.hpp"
 
 namespace Tpetra {
 

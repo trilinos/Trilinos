@@ -3,9 +3,9 @@
 06-August-2002 Changed to images (nothing changed).
 */
 
-#ifndef _TPETRA_DATAACCESS_H_
-#define _TPETRA_DATAACCESS_H_
-/*! \file Tpetra_DataAccess.h 
+#ifndef _TPETRA_DATAACCESS_HPP_
+#define _TPETRA_DATAACCESS_HPP_
+/*! \file Tpetra_DataAccess.hpp 
     \brief Tpetra_DataAccess Mode enumerable type
 */
 
@@ -20,4 +20,4 @@ enum Tpetra_DataAccess {Tpetra_Copy, /*!< User data will be copied at
                                  used throughout the life of the object. */
                        };
 
-#endif /* _TPETRA_DATAACCESS_H_ */
+#endif /* _TPETRA_DATAACCESS_HPP_ */

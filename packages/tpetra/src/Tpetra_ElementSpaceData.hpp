@@ -6,8 +6,8 @@
 25-Nov-2002 Member definitions moved around to match declaration order.
 */
 
-#ifndef _TPETRA_ELEMENTSPACEDATA_H_
-#define _TPETRA_ELEMENTSPACEDATA_H_
+#ifndef _TPETRA_ELEMENTSPACEDATA_HPP_
+#define _TPETRA_ELEMENTSPACEDATA_HPP_
 
 namespace Tpetra {
 
@@ -100,4 +100,4 @@ class ElementSpaceData : public Object {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_ELEMENTSPACEDATA_H_
+#endif // _TPETRA_ELEMENTSPACEDATA_HPP_

@@ -29,7 +29,7 @@
 #define CMACH_MACRO &CMACH
 #endif
 
-#include "Tpetra_LAPACK_wrappers.h"
+#include "Tpetra_LAPACK_wrappers.hpp"
 
 namespace Tpetra 
 {

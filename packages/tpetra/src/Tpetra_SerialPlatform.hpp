@@ -4,14 +4,14 @@
 23-Nov-2002 Distributor methods added, distributor arguments commented out.
 */
 
-#ifndef _TPETRA_SERIALPLATFORM_H_
-#define _TPETRA_SERIALPLATFORM_H_
+#ifndef _TPETRA_SERIALPLATFORM_HPP_
+#define _TPETRA_SERIALPLATFORM_HPP_
 
-#include "Tpetra_Object.h"
-#include "Tpetra_Platform.h"
-#include "Tpetra_SerialComm.h"
-#include "Tpetra_SerialDirectory.h"
-#include "Tpetra_SerialDistributor.h"
+#include "Tpetra_Object.hpp"
+#include "Tpetra_Platform.hpp"
+#include "Tpetra_SerialComm.hpp"
+#include "Tpetra_SerialDirectory.hpp"
+#include "Tpetra_SerialDistributor.hpp"
 
 namespace Tpetra {
 
@@ -80,4 +80,4 @@ template<typename OrdinalType> class ElementSpace;
 
 } // namespace Tpetra
 
-#endif // _TPETRA_SERIALPLATFORM_H_
+#endif // _TPETRA_SERIALPLATFORM_HPP_

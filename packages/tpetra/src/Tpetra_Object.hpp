@@ -5,12 +5,12 @@
 30-Oct-2002 Updated for Compiler_Directives -> ConfigDefs renaming.
 */
 
-#ifndef _TPETRA_OBJECT_H_
-#define _TPETRA_OBJECT_H_
+#ifndef _TPETRA_OBJECT_HPP_
+#define _TPETRA_OBJECT_HPP_
 
-#include "Tpetra_ConfigDefs.h"
-#include "Tpetra_CombineMode.h"
-#include "Tpetra_DataAccess.h"
+#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_CombineMode.hpp"
+#include "Tpetra_DataAccess.hpp"
 
 namespace Tpetra
 {
@@ -128,28 +128,11 @@ class Object
 
 inline ostream& operator<<(ostream& os, const Tpetra::Object& Obj)
 {
-  if (Tpetra_FormatStdout)
-  {
-/*    const Tpetra_fmtflags  olda = os.setf(ios::right,ios::adjustfield);
-    const Tpetra_fmtflags  oldf = os.setf(ios::scientific,ios::floatfield);
-    const int              oldp = os.precision(12); */
-
-    os << Obj.label() << endl;
-    Obj.print(os);
-
-/*    os.setf(olda,ios::adjustfield);
-    os.setf(oldf,ios::floatfield);
-    os.precision(oldp); */
-  }
-  else
-  {
-
-    os << Obj.label();
-    Obj.print(os);
-  }
-  
+  os << Obj.label() << endl;
+  Obj.print(os);
+ 
   return os;
 }
 
 
-#endif /* _TPETRA_OBJECT_H_ */
+#endif /* _TPETRA_OBJECT_HPP_ */

@@ -5,10 +5,10 @@
 25-Nov-2002 do methods fixed
 */
 
-#ifndef _TPETRA_DISTRIBUTOR_H_
-#define _TPETRA_DISTRIBUTOR_H_
+#ifndef _TPETRA_DISTRIBUTOR_HPP_
+#define _TPETRA_DISTRIBUTOR_HPP_
 
-#include "Tpetra_ConfigDefs.h"
+#include "Tpetra_ConfigDefs.hpp"
 
 namespace Tpetra {
 
@@ -122,4 +122,4 @@ class Distributor {
 
 } // namespace Tpetra
 
-#endif // _TPETRA_DISTRIBUTOR_H_
+#endif // _TPETRA_DISTRIBUTOR_HPP_
