@@ -96,12 +96,17 @@ int read_hypergraph_file(
   if (Proc == 0) {
 
     /* Open and read the hypergraph file. */
-    sprintf(filename, "%s.hg", pio_info->pexo_fname);
-    fp = fopen(filename, "r");
-    if (fp == NULL) {
-      sprintf(cmesg, "fatal:  Could not open hypergraph file %s", filename);
-      Gen_Error(0, cmesg);
-      return 0;
+    /* First try using the filename with no suffix */
+    sprintf(filename, "%s", pio_info->pexo_fname);
+    if ((fp = fopen(filename, "r")) == NULL){
+      /* If that didn't work, try the suffix ".hg" */
+      sprintf(filename, "%s.hg", pio_info->pexo_fname);
+      fp = fopen(filename, "r");
+      if (fp == NULL) {
+        sprintf(cmesg, "fatal:  Could not open hypergraph file %s", filename);
+        Gen_Error(0, cmesg);
+        return 0;
+      }
     }
 
     /* read the array in on processor 0 */

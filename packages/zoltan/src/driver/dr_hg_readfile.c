@@ -25,13 +25,26 @@ extern "C" {
 
 #include "dr_hg_readfile.h"
 #include "dr_util_const.h"
+#include "dr_mmio.h"
 
 #define BUF_LEN 1000000
+
+/* struct for indices i & j and a value */
+struct ijv
+{
+  int i, j;
+  double val;
+};
+
+/* comparison functions. */
+static int comp(const void *, const void *);
 
 
 static int old_readfile  (int, FILE*, int*, int*, int*, int**, int**, int*,
  float**, int*, float**, int*);
 static int patoh_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
+ float**, int*, float**, int*);
+static int MM_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
  float**, int*, float**, int*);
 
 static int nextstr (FILE *f, char *string);
@@ -56,6 +69,7 @@ int Zoltan_HG_Readfile (
 char string[81], *s;
 int err = ZOLTAN_OK;
 char *yo = "Zoltan_HG_Readfile";
+int MM = 0;
 
   /* Initialize return values in case of error. */
   *nVtx   = *nEdge   = *nInput = *vwgt_dim = *ewgt_dim = 0;
@@ -70,14 +84,23 @@ char *yo = "Zoltan_HG_Readfile";
       goto End;
     }
     s = strtok(string, " \t\n");
+    if (!MM) 
+      MM = !strncmp(s, "%%Matrix", 8); /* MM !=0 if match */
+
   } while (*s == '%');         /* Skip leading comment lines. */
 
-  if (atoi(s) < 2) /* Note -- Not correct for files with only one vertex. */
+  if (atoi(s) < 2) /* Guess Patoh -- Not correct for files 
+                                     with only one vertex. */
     err = patoh_readfile (Proc, f, nVtx, nEdge, nInput, hindex, hvertex,
                           vwgt_dim, vwgt, ewgt_dim, ewgt,base);
-  else if (atoi(s) > 1)
-    err = old_readfile (Proc, f, nVtx, nEdge, nInput, hindex, hvertex,
-                        vwgt_dim, vwgt, ewgt_dim, ewgt, base);
+  else if (atoi(s) > 1) {
+    if (MM) /* MatrixMarket format */
+      err = MM_readfile (Proc, f, nVtx, nEdge, nInput, hindex, hvertex,
+                         vwgt_dim, vwgt, ewgt_dim, ewgt, base);
+    else /* Assume our HG format */
+      err = old_readfile (Proc, f, nVtx, nEdge, nInput, hindex, hvertex,
+                          vwgt_dim, vwgt, ewgt_dim, ewgt, base);
+  }
 
 End:
   return  err;
@@ -373,10 +396,183 @@ End:
 }
 
 /*****************************************************************************/
+/* Read MatrixMarket sparse matrix. Weights currently not supported. */
+
+static int MM_readfile (
+ int Proc,
+ FILE *f,
+ int *nVtx, int *nEdge, int *nInput,
+ int **index,   int **vertex,
+ int *vwgt_dim, float **vwgt,
+ int *ewgt_dim, float **ewgt,
+ int *base)
+{
+int err = ZOLTAN_OK;
+char errstr[200];
+int prev_edge;
+int rowhedges=1; /* default is row hyperedge model */
+char *yo = "MM_readfile";
+
+    *base = 0;   /* MatrixMarket is 1-based, but we convert to 0-based. */
+    rewind(f);   /* need to read first line again! */
+          
+
+/*
+*  This code was adapted from NIST's MatrixMarket examples, see
+*    http://math.nist.gov/MatrixMarket/formats.html
+*
+*   NOTES:
+*
+*   1) Matrix Market files are always 1-based, i.e. the index of the first
+*      element of a matrix is (1,1), not (0,0) as in C.  ADJUST THESE
+*      OFFSETS ACCORDINGLY offsets accordingly when reading and writing 
+*      to files.
+*
+*   2) ANSI C requires one to use the "l" format modifier when reading
+*      double precision floating point numbers in scanf() and
+*      its variants.  For example, use "%lf", "%lg", or "%le"
+*      when reading doubles, otherwise errors will occur.
+*/
 
 
+    int ret_code;
+    MM_typecode matcode;
+    int M, N, nz;   
+    int i, j, k, tmp;
+    struct ijv *mat;
 
+    if (mm_read_banner(f, &matcode) != 0)
+    {
+        printf("Could not process Matrix Market banner.\n");
+        exit(1);
+    }
+
+
+    /*  This is how one can screen matrix types if their application */
+    /*  only supports a subset of the Matrix Market data types.      */
+
+    if (mm_is_complex(matcode) && mm_is_matrix(matcode) && 
+            mm_is_sparse(matcode) )
+    {
+        printf("Sorry, this application does not support ");
+        printf("Market Market type: [%s]\n", mm_typecode_to_str(matcode));
+        exit(1);
+    }
+
+    /* find out size of sparse matrix .... */
+
+    if ((ret_code = mm_read_mtx_crd_size(f, &M, &N, &nz)) !=0)
+        exit(1);
+
+
+    /* reserve memory for matrices */
+
+    mat = (struct ijv *) malloc(nz * sizeof(struct ijv));
+
+    /* NOTE: when reading in doubles, ANSI C requires the use of the "l"  */
+    /*   specifier as in "%lg", "%lf", "%le", otherwise errors will occur */
+    /*  (ANSI C X3.159-1989, Sec. 4.9.6.2, p. 136 lines 13-15)            */
+
+    for (k=0; k<nz; k++)
+    {
+        fscanf(f, "%d %d %lg\n", &mat[k].i, &mat[k].j, &mat[k].val);
+        (mat[k].i)--;  /* adjust from 1-based to 0-based */
+        (mat[k].j)--;
+        if (!rowhedges){
+          /* swap (i,j) to transpose matrix and make rows hyperedges. */
+          tmp = mat[k].i;
+          mat[k].i = mat[k].j;
+          mat[k].j = tmp;
+        }
+    }
+
+    if (f !=stdin) fclose(f);
+
+    /************************/
+    /* sort indices         */
+    /************************/
+    qsort(mat, nz, sizeof(struct ijv), comp);
+
+    /************************/
+    /* Debug: write out matrix */
+    /************************/
+
+    mm_write_banner(stdout, matcode);
+    mm_write_mtx_crd_size(stdout, M, N, nz);
+    for (k=0; k<nz; k++)
+        fprintf(stdout, "%d %d %20.19g\n", mat[k].i+1, mat[k].j+1, mat[k].val);
+
+    /************************/
+    /* Populate Zoltan hg data structs. */
+    /************************/
+
+    /* Weights not supported. */
+    *vwgt_dim = 0;
+    *ewgt_dim = 0;
+
+    /* Rows or columns are hedges? */
+    if (rowhedges){
+      *nVtx = N;
+      *nEdge = M;
+    }
+    else{
+      *nVtx = M;
+      *nEdge = N;
+    }
+    *nInput = nz;
+
+
+    /* allocate storage for hypergraph data */    
+    if (!(*index  = (int*) malloc ((*nEdge+1) * sizeof(int)))
+     || !(*vertex = (int*) malloc  (*nInput   * sizeof(int)))) {
+         fprintf(stderr, "%s Insufficient memory.", yo);
+         err = ZOLTAN_MEMERR;
+         goto End;
+    }
+
+    /* Construct index and vertex arrays from mat (ijv) array */
+
+    /* Initialize index array to -1. */
+    for (j=0; j<(*nEdge+1); j++)
+      (*index)[j] = -1;
+    /* Loop over the nonzeros. For each hyperedge, make list of vertices. */
+    prev_edge = -1;
+    for (k=0; k<(*nInput); k++){
+      /* next edge is mat[k].i */
+      if (mat[k].i > prev_edge) 
+        (*index)[mat[k].i] = k;
+      prev_edge = mat[k].i;
+      (*vertex)[k] = mat[k].j;
+    }
+    /* Complete index array; overwrite -1s. */
+    tmp = *nInput;
+    for (j=(*nEdge); j; j--){
+      if ((*index)[j] == -1)
+        (*index)[j] = tmp;
+      else
+        tmp = (*index)[j];
+    }
+
+End:
+    if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
+       *nVtx  = *nEdge  = *nInput = *vwgt_dim = *ewgt_dim = 0;
+       Zoltan_Multifree(__FILE__, __LINE__, 4, index, vertex, ewgt, vwgt);
+    }
+    return err;
+}
+
+
+static int comp(const void *a, const void *b)
+{
+  return ((struct ijv *)a)->i - ((struct ijv *)b)->i;
+}
+
+/*****************************************************************************/
+
+
+/*
 #include <ctype.h>
+*/
 
 static int nextstr (FILE *f, char *string)
 {
