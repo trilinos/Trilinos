@@ -60,7 +60,9 @@ namespace Anasazi {
 		  const int block=1,
 		  const string which="LM", 
 		  const int step=25, 
-		  const int restarts=0 
+		  const int restarts=0, 
+		  const TYPE sigma=0,
+		  const TYPE mu=0 
 		  );
     
     //! %Anasazi::BlockArnoldi destructor.
@@ -142,6 +144,7 @@ namespace Anasazi {
     void ComputeEvecs();
     void Restart();
     void SortEvals();
+    double realLambda(double er, double ei); // Undo Cayley for sorting
     void SetInitBlock();
     void SetBlkTols();
     void CheckBlkArnRed( const int j );
@@ -158,6 +161,8 @@ namespace Anasazi {
     int _offset, _maxoffset;
     bool _initialguess, _issym, _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
     TYPE _schurerror, _scalefactor, _dep_tol, _blk_tol, _sing_tol, _def_tol;
+    // Andy's Hack ( and mine too )
+    TYPE _sigma, _mu;
   };
   //
   // Implementation
@@ -172,7 +177,9 @@ namespace Anasazi {
 				   const int block,
 				   const string which, 
 				   const int step, 
-				   const int restarts
+				   const int restarts,
+				   const TYPE sigma,
+				   const TYPE mu
 				   ): 
     _problem(problem), 
     _basisvecs(0), 
@@ -211,7 +218,9 @@ namespace Anasazi {
     _dep_tol(1.0), 
     _blk_tol(1.0),
     _sing_tol(1.0),
-    _def_tol(1.0)
+    _def_tol(1.0),
+    _sigma(sigma),
+    _mu(mu)
     {     
     //
     // Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
@@ -1855,6 +1864,36 @@ namespace Anasazi {
 	_evalr[i+1] = tempr; _evali[i+1] = tempi; _order[i+1] = tempord;	
       }
     }
+    //---------------------------------------------------------------
+    // Sort eigenvalues however Andy wants them ( which is always correct )
+    //---------------------------------------------------------------
+    if (!_which.compare("CA")) {
+      // Sigma and mu are available here      
+      // use _evalr and _evali and the ordering goes in _order
+      // remember to actually sort the eigenvalues yourself
+      //
+      // LM code to start with....
+	for (j=1; j < n; ++j) {
+	  tempr = _evalr[j]; tempi = _evali[j]; 
+	  tempord = _order[j];
+	  temp=realLambda(_evalr[j],_evali[j]);
+	  for (i=j-1; i>=0 && realLambda(_evalr[i],_evali[i])<temp; --i) {
+	    _evalr[i+1]=_evalr[i]; _evali[i+1]=_evali[i];
+	    _order[i+1]=_order[i];
+				}
+	  _evalr[i+1] = tempr; _evali[i+1] = tempi; _order[i+1] = tempord;	
+	}	
+    }
+  }
+
+  template<class TYPE>
+  double  BlockArnoldi<TYPE>::realLambda(double er, double ei) {
+    // Utility that returns the real part of the un-Cayley-transformed eigenvalue for sorting
+    // Reject if it is to the right of sigma --- these are junk
+    // This is temporary, to be replaced by sorting class
+    double reLambda =  (_sigma*(er*er+ei*ei) - (_sigma+_mu)*er + _mu)/ ( (er-1.0)*(er-1.0) + ei*ei);
+    if (reLambda > _sigma) return -1.0e6;
+    else                   return reLambda;
   }
   
   template<class TYPE>
