@@ -70,7 +70,6 @@ EXTRA_TRANSFORM = \
      $(srcdir)/transform/EpetraExt_View_MultiVector.cpp \
      $(srcdir)/transform/EpetraExt_Transpose_CrsGraph.cpp \
      $(srcdir)/transform/EpetraExt_Transpose_RowMatrix.cpp \
-     $(srcdir)/transform/EpetraExt_SymmRCM_CrsGraph.cpp \
      $(srcdir)/transform/EpetraExt_Scale_LinearProblem.cpp \
      $(srcdir)/transform/EpetraExt_CrsSingletonFilter_LinearProblem.cpp \
      $(srcdir)/transform/EpetraExt_Overlap_CrsGraph.cpp \

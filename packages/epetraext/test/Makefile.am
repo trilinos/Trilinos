@@ -31,28 +31,25 @@ if BUILD_TESTS
 if BUILD_TRANSFORM
 
 if BUILD_EXPERIMENTAL
-
-TRANSFORM_SUBDIRS = Composite Permutation SingletonFilter View Overlap Transpose SymmRCM scripts
-
-else
-
-TRANSFORM_SUBDIRS = Composite Permutation SingletonFilter View Overlap Transpose scripts
-
+COMPOSITE_SUBDIR = Composite
+SYMMRCM_SUBDIR = SymmRCM
 endif
 
-else
-
-TRANSFORM_SUBDIRS =
-
+PERMUTATION_SUBDIR = Permutation
+SINGLETONFILTER_SUBDIR = SingletonFilter
+VIEW_SUBDIR = View
+OVERLAP_SUBDIR = Overlap
+TRANSPOSE_SUBDIR = Transpose
+SCRIPTS_SUBDIR = scripts
 endif
+
+TRANSFORM_SUBDIRS = $(COMPOSITE_SUBDIR) $(PERMUTATION_SUBDIR) \
+	$(SINGLETONFILTER_SUBDIR) $(VIEW_SUBDIR) $(OVERLAP_SUBDIR) \
+	$(TRANSPOSE_SUBDIR) $(SYMMRCM_SUBDIR) $(SCRIPTS_SUBDIR) 
 
 if BUILD_BTF
 
 BTF_SUBDIRS = BTF
-
-else
-
-BTF_SUBDIRS =
 
 endif
 
@@ -60,29 +57,17 @@ if BUILD_INOUT
 
 INOUT_SUBDIRS = inout
 
-else 
-
-INOUT_SUBDIRS = 
-
 endif 
 
 if BUILD_ZOLTAN
 
 ZOLTAN_SUBDIRS = Zoltan
 
-else
-
-ZOLTAN_SUBDIRS =
-
 endif
 
 if BUILD_COLORING
 
 COLORING_SUBDIRS = MapColoring
-
-else
-
-COLORING_SUBDIRS = 
 
 endif
 

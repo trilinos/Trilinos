@@ -88,7 +88,7 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach f (Composite inout MapColoring MatrixMatrix Permutation Transpose)
+foreach f (inout MapColoring MatrixMatrix Permutation Transpose)
 	cd $f
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
