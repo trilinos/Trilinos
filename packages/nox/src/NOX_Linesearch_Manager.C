@@ -42,6 +42,7 @@
 #include "NOX_Linesearch_Backtrack.H"
 #include "NOX_Linesearch_Polynomial.H"
 #include "NOX_Linesearch_MoreThuente.H"
+#include "NOX_Linesearch_Secant.H"
 
 using namespace NOX;
 using namespace NOX::Linesearch;
@@ -77,6 +78,8 @@ bool Manager::reset(Parameter::List& params)
       ptr = new Polynomial(params);
     else if (method == "More'-Thuente")
       ptr = new MoreThuente(params);
+    else if (method == "Secant")
+      ptr = new Secant(params);
     else {
       ptr = NULL;
       cout << "ERROR: NOX::Linesearch::Manager - invalid choice \"" 
