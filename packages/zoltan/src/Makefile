@@ -77,7 +77,6 @@ endif
 ##############################################################################
 # Default values for inclusion of methods.
 ZOLTAN_HG=1
-ZOLTAN_HG=1
 ZOLTAN_OCT=1
 
 GDEFINES	=
