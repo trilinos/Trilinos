@@ -57,7 +57,9 @@ namespace LineSearch {
 
   The line search iterates over the computation of \f$ \lambda \f$ until:
   
-  - The Armijo-Goldstein conditions are met: \f$ f(x_{n-1}+ \lambda s) = f(x_{n-1}) +\alpha \lambda f'(x_{n-1}) \f$
+  - One of the following "Convergence Criteria" is met: <br>
+  1. "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le f(x_{n-1}) +\alpha \lambda f'(x_{n-1}) \f$ <br>
+  2. "Ared/Pred" conditions: \f$ f(x_{n-1}+ \lambda s) \le  f(x_{n-1})(1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear solve tolerance in the inexact Newton method. <br><br>
 
   - The maximum iterations are reached. This is considered a failure and the recovery step is taken.
 
@@ -79,6 +81,12 @@ namespace LineSearch {
   - "Alpha Factor" - Scaling factor for the Armijo-Goldstein condition (defaults to 1.0e-4)
 
   - "Bounds Factor" - Factor that limits the minimum size of the new step based on the previous step (defaults to 0.1)
+
+A sublist for output parameters will be created called "Output" in the parameter list used to instantiate or reset the class.  Valid output parameters are:
+
+  - "Total Number of Line Search Iterations"
+
+  - "Total Number of Failed Line Searches"
 
 */
 
