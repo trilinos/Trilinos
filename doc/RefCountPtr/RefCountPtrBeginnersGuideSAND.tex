@@ -722,8 +722,13 @@ namespace Teuchos {
 
 enum ENull { null };
 
+enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
+
 template<class T>
 class DeallocDelete { public: void free( T* ptr ) { if(ptr) delete ptr; }  };
+
+template<class T>
+class DeallocArrayDelete { public: void free( T* ptr ) { if(ptr) delete [] ptr; }  };
 
 template<class T>
 class RefCountPtr {
@@ -756,7 +761,8 @@ template<class T2, class T1> RefCountPtr<T2>  rcp_const_cast(const RefCountPtr<T
 template<class T2, class T1> RefCountPtr<T2>  rcp_dynamic_cast(const RefCountPtr<T1>& p1);
 template<class T1, class T2> int              set_extra_data( const T1 &extra_data
                                                 ,const std::string& name, RefCountPtr<T2> *p
-                                                ,bool force_unique = true );
+                                                ,bool force_unique = true
+                                                ,EPrePostDestruction destroy_when = POST_DESTROY );
 template<class T1, class T2> T1&              get_extra_data( RefCountPtr<T2>& p
                                                 ,const std::string& name );
 template<class T1, class T2> const T1&        get_extra_data( const RefCountPtr<T2>& p
@@ -809,6 +815,13 @@ other declarations from the {}\texttt{Teuchos} namespace.
 %
  {\small\begin{verbatim}
 RefCountPtr<C> c_ptr = rcp(new C);
+\end{verbatim}}
+%
+\item {\bf Creating a \texttt{RefCountPtr<>} object to an array allocated using \texttt{new[n]}}
+\label{rcpqs:apdx:qs:new}
+%
+ {\small\begin{verbatim}
+RefCountPtr<C> c_ptr = rcp(new C[n],DeallocArrayDelete<C>(),true);
 \end{verbatim}}
 %
 \item {\bf Initializing a \texttt{RefCountPtr<>} object to NULL}
@@ -963,10 +976,16 @@ RefCountPtr<C>     c_ptr  = rcp_dynamic_cast<C>(b2_ptr);  // Checked, safe!
 %
 \begin{enumerate}
 %
-\item {\bf Adding extra data}
+\item {\bf Adding extra data (post destruction of extra data)}
 %
 {\small\begin{verbatim}
 set_extra_data(rcp(new B1),"A:B1",&a_ptr);
+\end{verbatim}}
+%
+\item {\bf Adding extra data (pre destruction of extra data)}
+%
+{\small\begin{verbatim}
+set_extra_data(rcp(new B1),"A:B1",&a_ptr,PRE_DESTORY);
 \end{verbatim}}
 %
 \item {\bf Retrieving extra data}
