@@ -32,15 +32,13 @@ noinst_PROGRAMS = MultiLevelPreconditioner_NonSym
 
 if ML_USING_AMESOS
 # Amesos require Teuchos
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-             $(top_builddir)/../teuchos/src/libteuchos.a
+amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
 else
 amesos_lib =
 endif
 if ML_USING_ANASAZI
 # Anasazi require Teuchos
-anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a  \
-             $(top_builddir)/../teuchos/src/libteuchos.a
+anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
 else
 anasazi_lib = 
 endif
@@ -66,6 +64,8 @@ MultiLevelPreconditioner_NonSym_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
     ${triutils_lib} \
+    ${amesos_lib} \
+    ${anasazi_lib} \
     ${teuchos_lib} 
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
