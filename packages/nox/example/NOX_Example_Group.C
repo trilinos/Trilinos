@@ -299,7 +299,7 @@ bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
   if (!isJacobian()) 
     return false;
 
-  // Compute result = J * input
+  // Compute result = J' * input
   int n = input.length();
   for (int i = 0; i < n; i ++) { 
     result(i) = 0;
