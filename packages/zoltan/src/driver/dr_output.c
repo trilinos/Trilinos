@@ -145,7 +145,7 @@ int output_results(char *cmd_file,
   char  *yo = "output_results";
   char   par_out_fname[FILENAME_MAX+1], ctemp[FILENAME_MAX+1];
 
-  int   *global_ids;
+  int   *global_ids = NULL;
   int    i, j;
 
   FILE  *fp;

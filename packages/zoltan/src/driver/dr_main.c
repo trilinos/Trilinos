@@ -40,6 +40,7 @@
 #include "mem_const.h"
 
 int Debug_Driver = 1;
+int Gnuplot_Output = 0;
 int Number_Iterations = 1;
 int Debug_Chaco_Input = 0;
 int Chaco_In_Assign_Inv = 0;
@@ -190,6 +191,11 @@ int main(int argc, char *argv[])
         error_report(Proc);
         exit(1);
       }
+      if (Gnuplot_Output)
+        if (!output_gnu(cmd_file,"in",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
+          Gen_Error(0, "warning: Error returned from output_gnu\n");
+          error_report(Proc);
+        }
     }
 
     /*
@@ -221,6 +227,13 @@ int main(int argc, char *argv[])
     Gen_Error(0, "fatal: Error returned from output_results\n");
     error_report(Proc);
     exit(1);
+  }
+
+  if (Gnuplot_Output) {
+    if (!output_gnu(cmd_file,"out",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
+      Gen_Error(0, "warning: Error returned from output_gnu\n");
+      error_report(Proc);
+    }
   }
 
   free_mesh_arrays(&mesh);

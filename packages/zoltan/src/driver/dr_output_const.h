@@ -31,4 +31,12 @@ extern int output_results(
   PARIO_INFO_PTR pio_info,
   MESH_INFO_PTR mesh);
 
+extern int output_gnu(char *cmd_file,
+  char *tag,
+  int Proc,
+  int Num_Proc,
+  PROB_INFO_PTR prob,
+  PARIO_INFO_PTR pio_info,
+  MESH_INFO_PTR mesh);
+
 #endif /* _DR_OUTPUT_CONST_H_ */

@@ -160,7 +160,17 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         }
       }
 
-      /****** The Number of iterations of the balancer to preform ******/
+      /****** Generate GNUplot output? ******/
+      else if (token_compare(cptr, "gnuplot output")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Gnuplot_Output) != 1) {
+          Gen_Error(0, "fatal: gnuplot output indicator must be an integer.");
+          return 0;
+        }
+      }
+
+      /****** The Number of iterations of the balancer to perform ******/
       else if (token_compare(cptr, "number of iterations")) {
         cptr = strtok(NULL, "\t=");
         strip_string(cptr, " \t\n");
@@ -489,6 +499,7 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 /***************************** BEGIN EXECUTION ******************************/
 
   MPI_Bcast(&Debug_Driver, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&Gnuplot_Output, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   MPI_Bcast(&Number_Iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
