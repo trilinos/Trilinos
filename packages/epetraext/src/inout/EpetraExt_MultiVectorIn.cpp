@@ -25,30 +25,16 @@
 // 
 // ************************************************************************
 //@HEADER
-#include "EpetraExt_CrsMatrixIn.h"
+#include "EpetraExt_MultiVectorIn.h"
 #include "Epetra_Comm.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Map.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_IntSerialDenseVector.h"
-#include "Epetra_Import.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_BlockMap.h"
 
 using namespace EpetraExt;
 namespace EpetraExt {
 
-int MatrixMarketFileToCrsMatrix( const char *filename, const Epetra_Map & rowMap, Epetra_CrsMatrix * & A) {
-
-  A = new Epetra_CrsMatrix(Copy, rowMap, 0);
-  return(MatrixMarketFileToCrsMatrixHandle(filename, A));
-}
-
-int MatrixMarketFileToCrsMatrix( const char *filename, const Epetra_Map & rowMap, const Epetra_Map & colMap, Epetra_CrsMatrix * & A) {
-
-  A = new Epetra_CrsMatrix(Copy, rowMap, colMap, 0);
-  return(MatrixMarketFileToCrsMatrixHandle(filename, A));
-}
-
-int MatrixMarketFileToCrsMatrixHandle( const char *filename, Epetra_CrsMatrix * A) {
+int MatrixMarketFileToMultiVector( const char *filename, const Epetra_BlockMap & map, Epetra_MultiVector * & A) {
 
   const int lineLength = 1025;
   const int tokenLength = 35;
@@ -59,7 +45,7 @@ int MatrixMarketFileToCrsMatrixHandle( const char *filename, Epetra_CrsMatrix * 
   char token3[tokenLength];
   char token4[tokenLength];
   char token5[tokenLength];
-  int M, N, NZ;
+  int M, N;
 
   FILE * handle = 0;
 
@@ -70,7 +56,7 @@ int MatrixMarketFileToCrsMatrixHandle( const char *filename, Epetra_CrsMatrix * 
   if(sscanf(line, "%s %s %s %s %s", token1, token2, token3, token4, token5 )==0) return(-1);
   if (strcmp(token1, "%%MatrixMarket") ||
       strcmp(token2, "matrix") ||
-      strcmp(token3, "coordinate") ||
+      strcmp(token3, "array") ||
       strcmp(token4, "real") ||
       strcmp(token5, "general")) return(-1);
 
@@ -79,22 +65,37 @@ int MatrixMarketFileToCrsMatrixHandle( const char *filename, Epetra_CrsMatrix * 
     if(fgets(line, lineLength, handle)==0) return(-1);
   } while (line[0] == '%');
 
-  // Next get problem dimensions: M, N, NZ
-  if(sscanf(line, "%d %d %d", &M, &N, &NZ)==0) return(-1);
+  // Next get problem dimensions: M, N
+  if(sscanf(line, "%d %d", &M, &N)==0) return(-1);
 
-  // Now read in each triplet and store to the local portion of the matrix if the row is owned.
-  int I, J;
-  double V;
-  const Epetra_Map & map = A->RowMap();
-  for (int i=0; i<NZ; i++) {
-    if(fgets(line, lineLength, handle)==0) return(-1);
-    if(sscanf(line, "%d %d %lg\n", &I, &J, &V)==0) return(-1);
-    I--; J--; // Convert to Zero based
-    if (map.MyGID(I))
-      A->InsertGlobalValues(I, 1, &V, &J);
+  // Compute the offset for each processor for when it should start storing values
+  int numMyPoints = map.NumMyPoints();
+  int offset;
+  map.Comm().ScanSum(&numMyPoints, &offset, 1); // ScanSum will compute offsets for us
+
+  // Now construct vector/multivector
+  if (N==1)
+    A = new Epetra_Vector(map);
+  else
+    A = new Epetra_MultiVector(map, N);
+
+  double ** Ap = A->Pointers();
+
+  for (int j=0; j<N; j++) {
+    double * v = Ap[j];
+
+    // Now read in lines that we will discard
+    for (int i=0; i<offset; i++)
+      if(fgets(line, lineLength, handle)==0) return(-1);
+    
+    // Now read in each value and store to the local portion of the the  if the row is owned.
+    double V;
+    for (int i=0; i<numMyPoints; i++) {
+      if(fgets(line, lineLength, handle)==0) return(-1);
+      if(sscanf(line, "%lg\n", &V)==0) return(-1);
+      v[i] = V;
+    }
   }
-
-  A->FillComplete();
 
   return(0);
 }
