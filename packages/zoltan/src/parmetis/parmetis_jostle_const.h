@@ -66,11 +66,11 @@ struct LB_hash_node {
 #ifdef IDXTYPE_IS_SHORT
 typedef short idxtype;
 #define IDX_DATATYPE    MPI_SHORT
-#define MAX_WGT_SUM (.5*SHRT_MAX)
+#define MAX_WGT_SUM (.2*SHRT_MAX)
 #else /* the default is int */
 typedef int idxtype;
 #define IDX_DATATYPE    MPI_INT
-#define MAX_WGT_SUM (.5*INT_MAX)
+#define MAX_WGT_SUM (.2*INT_MAX)
 #endif
 
 /* Zoltan function prototypes */
