@@ -784,7 +784,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
     /* hack in a function that will be invoked */
     /* by ML_Destroy() to clean up memory       */
 
-    if (pre_or_post == ML_PRESMOOTH) 
+    if (pre_or_post == ML_PRESMOOTHER) 
        ml_handle->pre_smoother[level].data_destroy = AZ_ML_SmootherClean;
     else
        ml_handle->post_smoother[level].data_destroy= AZ_ML_SmootherClean;

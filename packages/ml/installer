@@ -110,7 +110,7 @@ then
   ${echo}  >  make_${ARCH}.variables
   cd Obj; make "ARCH=${ARCH}" clean; cd ..
 else
-  cd etc; flatten;  cd ..
+  cd etc; ./flatten;  cd ..
 fi
 #
 # Set up the machine dependent environment variables
