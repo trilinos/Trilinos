@@ -40,34 +40,39 @@ class Epetra_Map;
     distribution.
     <li> Input data, including non-local data, using the methods
     SumIntoGlobalValues() and/or ReplaceGlobalValues().
-    <li> Call the method GlobalAssemble(), which gathers all non-local data onto
-    the owning processors as determined by the map provided at construction.
+    <li> Call the method GlobalAssemble(), which gathers all non-local data
+    onto the owning processors as determined by the map provided at
+    construction. Users should note that the GlobalAssemble() method has an
+    optional argument which determines whether GlobalAssemble() in turn calls
+    TransformToLocal() after the data-exchange has occurred. If not explicitly
+    supplied, this argument defaults to true.
     </ul>
 
     Sub-matrix data, which is assumed to be a rectangular 'table' of
-    coefficients accompanied by 'scatter-indices', can be provided in two forms:
+    coefficients accompanied by 'scatter-indices', can be provided in two
+    forms:
     <ul>
     <li>Fortran-style packed 1-D array
     <li>C-style double-pointer, or list-of-rows.
     </ul>
     In both cases, a "format" parameter specifies whether the data is laid out
-    in row-major or column-major order (i.e., whether coefficients for a row lie
-    contiguously or whether coefficients for a column lie contiguously). See
-    the documentation for the methods SumIntoGlobalValues() and
+    in row-major or column-major order (i.e., whether coefficients for a row
+    lie contiguously or whether coefficients for a column lie contiguously).
+    See the documentation for the methods SumIntoGlobalValues() and
     ReplaceGlobalValues().
 */
 class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
   public:
   /** Constructor. */
    Epetra_FECrsMatrix(Epetra_DataAccess CV,
-                   const Epetra_Map& RowMap,
-                   int* NumEntriesPerRow,
+		      const Epetra_Map& RowMap,
+		      int* NumEntriesPerRow,
 		      bool ignoreNonLocalEntries=false);
 
    /** Constructor. */
    Epetra_FECrsMatrix(Epetra_DataAccess CV,
-                   const Epetra_Map& RowMap,
-                   int NumEntriesPerRow,
+		      const Epetra_Map& RowMap,
+		      int NumEntriesPerRow,
 		      bool ignoreNonLocalEntries=false);
 
    /** Destructor. */
@@ -238,8 +243,14 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
       with a "sumInto" or accumulate operation.
       This is a collective method -- every processor must enter it before any
       will complete it.
+
+      @param callTransformToLocal option argument, defaults to true.
+        Determines whether GlobalAssemble() internally calls the
+        TransformToLocal() method on this matrix.
+
+      @return error-code 0 if successful, non-zero if some error occurs
    */
-   int GlobalAssemble();
+   int GlobalAssemble(bool callTransformToLocal=true);
 
    /** Set whether or not non-local data values should be ignored.
     */

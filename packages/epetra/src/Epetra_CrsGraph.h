@@ -480,6 +480,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   //@}
 
     
+    void SetIndicesAreGlobal(bool Flag) {IndicesAreGlobal_ = Flag;};
+
  protected:
 
     // If column indices are stored in one long array (via a call to OptimizeStorage), this query returns true, 
@@ -490,7 +492,6 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     int * NumAllocatedIndicesPerRow() const {return(NumAllocatedIndicesPerRow_);};
     void SetSorted(bool Flag) {Sorted_ = Flag;};
     void SetGlobalConstantsComputed(bool Flag) {GlobalConstantsComputed_ = Flag;};
-    void SetIndicesAreGlobal(bool Flag) {IndicesAreGlobal_ = Flag;};
     void SetIndicesAreLocal(bool Flag) {IndicesAreLocal_ = Flag;};
     void SetIndicesAreContiguous(bool Flag) {IndicesAreContiguous_ = Flag;};
     void SetNoRedundancies(bool Flag) {NoRedundancies_ = Flag;};
