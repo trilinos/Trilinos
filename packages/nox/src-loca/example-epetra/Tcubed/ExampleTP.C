@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
   nullVec.init(1.0);             // initial value 1.0
 
   // Create a turning point group that uses the lapack group
-  LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, lsParams, 2);
+  LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, nullVec, 2);
   
   // Create the Solver convergence test
   NOX::StatusTest::NormF normF(1.0e-8);

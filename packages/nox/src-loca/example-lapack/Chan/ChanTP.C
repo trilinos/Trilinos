@@ -93,7 +93,7 @@ int main()
   NOX::Parameter::List& linearSolverParameters = newtonParameters.sublist("Linear Solver");
 
   // Create a turning point group that uses the lapack group
-  LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, linearSolverParameters, 0);
+  LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, nullVec, 0);
 
   // Create the solver
   NOX::Solver::Manager solver(tpgrp, statusTestsCombo, solverParameters);

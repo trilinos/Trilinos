@@ -104,38 +104,38 @@ namespace LOCA {
       public:
   
 	/*! 
-	 * \brief Constructor to set the base group, bifurcation paramter id
-	 * and length vector.
+	 * \brief Constructor to set the base group, length normalization 
+	 * vector \f$l\f$, initial guess for the null vector \f$n\f$, and 
+	 * bifurcation paramter id (integer).
 	 */
 	/*!
-	 * The initial guess to the null vector is set to \em lenVec and if
-	 * necessary is  re-scaled so that the normalization condition 
-	 * \f$l^Tn = 1\f$ is satisfied.
+	 * The initial guess to the null vector is re-scaled so that the 
+	 * normalization condition \f$l^Tn = 1\f$ is satisfied.
 	 *
 	 * In this version of the constructor, a non-const reference to the
 	 * underlying group \em g is passed and therefore the group will
 	 * not be copied.  
 	 */
 	ExtendedGroup(LOCA::Bifurcation::TPBord::AbstractGroup& g, 
-	      const NOX::Abstract::Vector& lenVec, 
-		      NOX::Parameter::List& lsParams, int paramId = 0);
+		      const NOX::Abstract::Vector& lenVec, 
+		      const NOX::Abstract::Vector& nullVec, int paramId);
 
 	/*! 
-	 * \brief Constructor to set the base group, bifurcation paramter id
-	 * and length vector.
+	 * \brief Constructor to set the base group, length normalization 
+	 * vector \f$l\f$, initial guess for the null vector \f$n\f$, and 
+	 * bifurcation paramter id (integer).
 	 */
 	/*!
-	 * The initial guess to the null vector is set to \em lenVec and if
-	 * necessary is  re-scaled so that the normalization condition 
-	 * \f$l^Tn = 1\f$ is satisfied.
+	 * The initial guess to the null vector is re-scaled so that the 
+	 * normalization condition \f$l^Tn = 1\f$ is satisfied.
 	 *
 	 * In this version of the constructor, a const reference to the
 	 * underlying group \em g is passed and therefore the group will
 	 * be copied.  
 	 */
 	ExtendedGroup(const LOCA::Bifurcation::TPBord::AbstractGroup& g, 
-	      const NOX::Abstract::Vector& lenVec, 
-		      NOX::Parameter::List& lsParams, int paramId = 0);
+		      const NOX::Abstract::Vector& lenVec, 
+		      const NOX::Abstract::Vector& nullVec, int paramId);
 
 	//! Copy constructor.
 	ExtendedGroup(const ExtendedGroup& source, 
@@ -163,7 +163,7 @@ namespace LOCA {
 	//! Set the solution vector, x, to y.
 	virtual void setX(const NOX::Abstract::Vector& y);
 
-	//! Set the solution vector, x, to y.
+		//! Set the solution vector, x, to y.
 	virtual void setX(const LOCA::Bifurcation::TPBord::ExtendedVector& y);
 
 	//! Compute this.x = grp.x + step * d.
@@ -173,9 +173,9 @@ namespace LOCA {
 
 	//! Compute this.x = grp.x + step * d.
 	virtual void computeX(
-		        const ExtendedGroup& g, 
-			const LOCA::Bifurcation::TPBord::ExtendedVector& d,
-			double step);
+			  const LOCA::Bifurcation::TPBord::ExtendedGroup& g, 
+			  const LOCA::Bifurcation::TPBord::ExtendedVector& d,
+			  double step);
 
 	//! Compute the turning point equation residual \f$G\f$.
 	/*!
@@ -470,10 +470,13 @@ namespace LOCA {
       protected:
 
 	//! Initializes group
-	void init(NOX::Parameter::List& lsParams);
+	void init();
 
 	//! Set bifurcation parameter
 	void setBifParam(double param);
+
+	//! Defines null vector normalization \f$l^Tn\f$
+	double lTransNorm(const NOX::Abstract::Vector& n) const;
 
       protected:
 

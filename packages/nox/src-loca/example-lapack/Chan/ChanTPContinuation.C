@@ -150,7 +150,7 @@ int main()
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
     // Create a turning point group that uses the lapack group
-    LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, linearSolverParameters, 0);
+    LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, nullVec, 0);
 
     // Create the stepper  
     LOCA::Stepper stepper(tpgrp, combo, paramList);
