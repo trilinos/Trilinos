@@ -44,7 +44,13 @@ ACLOCAL	= aclocal -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
-	testharness/subdir-list testharness/checkin-test-harness \
+	testharness/test-harness.plx \
+	testharness/dependencies \
+	testharness/elements-machine/linux-software \
+	testharness/elements-machine/linux-software-mpi \
+	testharness/elements-trilinos/linux-software \
+	testharness/config/checkin \
+	testharness/lib/MIME-Lite-3.01/lib/MIME/Lite.pm \
 	sampleScripts/aix_mpi_xlC sampleScripts/aix_mpi_xlC2 \
 	sampleScripts/compaqCluster_mpi_stratus \
 	sampleScripts/compaqCluster_serial_stratus sampleScripts/cplant_mpi_ross \
@@ -62,7 +68,7 @@ EXTRA_DIST = \
 	sampleScripts/sgi64_serial_atlantis \
 	sampleScripts/solaris_mpi_conejo sampleScripts/solaris_serial_paul \
 	sampleScripts/README config/AutotoolsVersionInfo \
-	doc/Tutorial/README
+	doc/Tutorial/README RELEASE_NOTES
 
 ## #######################################################################
 ## Tools in the auxillary directory 
