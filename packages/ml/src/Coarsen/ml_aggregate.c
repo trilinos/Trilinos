@@ -565,6 +565,9 @@ int ML_Aggregate_Set_Threshold( ML_Aggregate *ag, double epsilon )
    }
    if ( epsilon > 0.0 ) ag->threshold = epsilon;
    else                 ag->threshold = 0.0;
+
+   ag->drop_tol_for_smoothing = ag->threshold;
+
    return 0;
 }
 
