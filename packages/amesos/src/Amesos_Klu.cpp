@@ -279,8 +279,7 @@ int Amesos_Klu::Solve() {
       double *Control = (double *) NULL, *Info = (double *) NULL ;
 
       int status = 0 ; 
-	//  kludge debugxx knen fix this:  
-      vector<double> workspace( 100* (10+NumGlobalElements_) ) ; 
+      vector<double> workspace( NumGlobalElements_ ) ; 
       klu_btf_solve( Symbolic_, Numeric_,  
 		     &SerialXvalues[j*SerialXlda], &workspace[0] );
     }
