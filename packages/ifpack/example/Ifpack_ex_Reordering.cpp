@@ -37,49 +37,7 @@
 #include "Ifpack_Reordering.h"
 #include "Ifpack_RCMReordering.h"
 #include "Ifpack_ReorderFilter.h"
-
-//==============================================================================
-void PrintSparsity(Epetra_RowMatrix& A)
-{
-  int MaxEntries = A.MaxNumEntries();
-  vector<int> Indices(MaxEntries);
-  vector<double> Values(MaxEntries);
-  vector<bool> FullRow(A.NumMyRows());
-
-  cout << "+-";
-  for (int j = 0 ; j < A.NumMyRows() ; ++j)
-    cout << '-';
-  cout << "-+" << endl;
-
-  for (int i = 0 ; i < A.NumMyRows() ; ++i) {
-
-    int Length;
-    A.ExtractMyRowCopy(i,MaxEntries,Length,
-		       &Values[0], &Indices[0]);
-
-    for (int j = 0 ; j < A.NumMyRows() ; ++j)
-      FullRow[j] = false;
-    
-    for (int j = 0 ; j < Length ; ++j) {
-      FullRow[Indices[j]] = true;
-    }
-
-    cout << "| ";
-    for (int j = 0 ; j < A.NumMyRows() ; ++j) {
-      if (FullRow[j])
-	cout << '*';
-      else
-	cout << ' ';
-    }
-    cout << " |" << endl;
-  }
-
-  cout << "+-";
-  for (int j = 0 ; j < A.NumMyRows() ; ++j)
-    cout << '-';
-  cout << "-+" << endl << endl;
-
-}
+#include "Ifpack_Utils.h"
 
 //==============================================================================
 int main(int argc, char *argv[])
@@ -134,7 +92,7 @@ int main(int argc, char *argv[])
   A.FillComplete();
 
   // print the sparsity on screen
-  PrintSparsity(A);
+  Ifpack_PrintSparsity(A);
 
   // create the reordering...
   Ifpack_RCMReordering Reorder;
@@ -148,7 +106,7 @@ int main(int argc, char *argv[])
   Ifpack_ReorderFilter ReordA(&A,&Reorder);
 
   // print the sparsity
-  PrintSparsity(ReordA);
+  Ifpack_PrintSparsity(ReordA);
 
 #ifdef HAVE_MPI
   MPI_Finalize(); 

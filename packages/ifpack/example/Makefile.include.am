@@ -27,9 +27,12 @@
 #@HEADER
 
 EXEEXT = .exe
-EXAMPLE = Ifpack_ex_Factory Ifpack_ex_Amesos \
-          Ifpack_ex_Ict Ifpack_ex_BlockPrec \
-          Ifpack_ex_Reordering
+EXAMPLE = Ifpack_ex_Factory Ifpack_ex_Amesos  \
+          Ifpack_ex_Ict Ifpack_ex_BlockPrec   \
+	  Ifpack_ex_MatrixMarket              \
+          Ifpack_ex_Reordering                \
+          Ifpack_ex_Filtering                 \
+          Ifpack_ex_SingletonFilter
 
 noinst_PROGRAMS = $(EXAMPLE)
 
@@ -147,6 +150,25 @@ Ifpack_ex_BlockPrec_LDADD = $(top_builddir)/src/libifpack.a \
 	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 
 
+Ifpack_ex_MatrixMarket_SOURCES = $(srcdir)/Ifpack_ex_MatrixMarket.cpp
+
+Ifpack_ex_MatrixMarket_DEPENDENCIES = \
+	$(top_builddir)/../ifpack/src/libifpack.a \
+	${AZTECOO_LIBS} \
+	${TEUCHOS_LIBS} \
+	${TRIUTILS_LIBS} \
+	${AMESOS_LIBS}
+
+Ifpack_ex_MatrixMarket_LDADD = $(top_builddir)/src/libifpack.a \
+	$(AZTECOO_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(AMESOS_LIBS) \
+	$(TEUCHOS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
+
 Ifpack_ex_Reordering_SOURCES = $(srcdir)/Ifpack_ex_Reordering.cpp
 
 Ifpack_ex_Reordering_DEPENDENCIES = \
@@ -157,6 +179,44 @@ Ifpack_ex_Reordering_DEPENDENCIES = \
 	${AMESOS_LIBS}
 
 Ifpack_ex_Reordering_LDADD = $(top_builddir)/src/libifpack.a \
+	$(AZTECOO_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(AMESOS_LIBS) \
+	$(TEUCHOS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
+
+Ifpack_ex_Filtering_SOURCES = $(srcdir)/Ifpack_ex_Filtering.cpp
+
+Ifpack_ex_Filtering_DEPENDENCIES = \
+	$(top_builddir)/../ifpack/src/libifpack.a \
+	${AZTECOO_LIBS} \
+	${TEUCHOS_LIBS} \
+	${TRIUTILS_LIBS} \
+	${AMESOS_LIBS}
+
+Ifpack_ex_Filtering_LDADD = $(top_builddir)/src/libifpack.a \
+	$(AZTECOO_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(AMESOS_LIBS) \
+	$(TEUCHOS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
+
+Ifpack_ex_SingletonFilter_SOURCES = $(srcdir)/Ifpack_ex_SingletonFilter.cpp
+
+Ifpack_ex_SingletonFilter_DEPENDENCIES = \
+	$(top_builddir)/../ifpack/src/libifpack.a \
+	${AZTECOO_LIBS} \
+	${TEUCHOS_LIBS} \
+	${TRIUTILS_LIBS} \
+	${AMESOS_LIBS}
+
+Ifpack_ex_SingletonFilter_LDADD = $(top_builddir)/src/libifpack.a \
 	$(AZTECOO_LIBS) \
 	$(TRIUTILS_LIBS) \
 	$(AMESOS_LIBS) \

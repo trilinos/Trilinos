@@ -40,7 +40,10 @@
 #include "Teuchos_ParameterList.hpp"
 #include "AztecOO.h"
 #include "Ifpack_AdditiveSchwarz.h"
+#include "Ifpack_Jacobi.h"
 #include "Ifpack_BlockJacobi.h"
+#include "Ifpack_BlockGaussSeidel.h"
+#include "Ifpack_DenseContainer.h"
 #include "Ifpack_SparseContainer.h"
 #include "Ifpack_Amesos.h"
 
@@ -58,11 +61,11 @@ int main(int argc, char *argv[])
 #endif
 
   // size of the global matrix (must be a square number)
-  const int NumPoints = 10000;
+  const int NumPoints = 100;
 
   // build the matrix corresponding to a 2D Laplacian on a
   // structured grid.
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
+  CrsMatrixGallery Gallery("laplace_2d_bc", Comm);
   Gallery.Set("problem_size", NumPoints);
   // for simplicity, linear map.
   Gallery.Set("map_type", "linear");
@@ -70,6 +73,8 @@ int main(int argc, char *argv[])
   // get the pointer to the linear system matrix
   Epetra_RowMatrix* A = Gallery.GetMatrix();
 
+// cout << *(dynamic_cast<Epetra_CrsMatrix*>(A));
+//  exit(0);
   // =============================================================== //
   // B E G I N N I N G   O F   I F P A C K   C O N S T R U C T I O N //
   // =============================================================== //
@@ -93,18 +98,19 @@ int main(int argc, char *argv[])
   // and the overlap among the blocks. The two values
   // can be different.
   int OverlapProcs = 2;
-  int OverlapBlocks = 5;
+  int OverlapBlocks = 0;
 
-  Ifpack_AdditiveSchwarz<Ifpack_BlockJacobi<Ifpack_SparseContainer<Ifpack_Amesos> > > Prec(A, OverlapProcs);
+  Ifpack_AdditiveSchwarz<Ifpack_BlockGaussSeidel<Ifpack_SparseContainer<Ifpack_Amesos> > > Prec(A, OverlapProcs);
 
   List.set("block: overlap", OverlapBlocks);
   // use METIS to create the blocks. This requires --enable-ifpack-metis.
   // If METIS is not installed, the user may select "linear".
-  List.set("partitioner: type", "METIS");
+  List.set("partitioner: type", "Linear");
+  List.set("partitioner: use symmetric graph", true);
   // defines here the number of local blocks. If 1,
   // and only one process is used in the computation, then
   // the preconditioner must converge in one iteration.
-  List.set("partitioner: local parts", 16);
+  List.set("partitioner: local parts", 4);
 
   // sets the parameters
   IFPACK_CHK_ERR(Prec.SetParameters(List));
