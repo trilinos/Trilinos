@@ -1,0 +1,120 @@
+#!/bin/csh
+
+#@HEADER
+# ************************************************************************
+# 
+#          Tpetra: Templated Linear Algebra Services Package
+#                 Copyright (2004) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# 
+# ************************************************************************
+#@HEADER
+
+# NOTE: This script is based on epetra/test/scripts/daily/mpi/epetraTestAllMpi
+# and has had only slight modifications made to it. (Paul Sexton, 07/2004)
+
+# $1 - Used only for automated testing.  No action required by script owner.
+#      This parameter names the subdirectory from which the script is being
+#      run.  This assists a developer in figuring out which tests failed.
+# $2 - Indicates if the test is an automated nightly test.  No action required
+#      by script owner.
+
+set error = None
+set AnError = False
+set printexitvalue
+if( "$2" == "True" ) then 
+    # $2 is an optional parameter indicating if 
+    # this is an automated test or not
+    # file2 is the log that is created and put into a results email if 
+    # errors occur.
+    set file2 = ../../../../logMpiErrors.txt
+    rm -f $file2
+    # Echo some important information into the log file to help developers
+    # figure out which tests failed.
+    echo "Package being tested: Tpetra  " >>& $file2
+    echo "Name of subdirectory: " $1 >>& $file2
+    echo "Date: " `eval date` >>& $file2
+    echo `uname -a` >>& $file2
+    #'file' is a shorter log that is retained even if all tests pass.
+    set file = ../../../../log`eval uname`.txt
+    rm -f $file
+    # should mherou@sandia.gov be listed as an owner as well?
+    echo "pmsext@software.sandia.gov" >>& $file
+    echo "Script owner(s) is listed on the previous line." >>& $file
+    echo "Package being tested: Tpetra  " >>& $file
+    echo "Name of subdirectory: " $1 >>& $file
+    # tempfile and tempfile2 (file3 and file4) are used only in the creation 
+    #of the longer log file (file2).
+    set file3 = tempfile
+    rm -f $file3
+    set file4 = tempfile2
+    rm -f $file4
+else
+    cd ../../../
+    set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
+    rm -f $file
+endif
+echo $file
+echo "Date: " `eval date` > $file
+echo `uname -a` >>& $file
+
+# This file assumes that exe's live in a direct subdirectory of 'tpetra/test' 
+# Keep in mind that file and file2-4 live in 'package_name/test'
+# Also, 'tpetra/test' is the current directory
+# It is recommended that all directory changing be done relative to
+# the current directory because scripts live in the source directory,
+# but are invoked from various build directories
+
+# List the subdirectories of 'test' containing test exe's in the foreach loop
+foreach f (BlockElementSpace CisMatrix Comm Distributor ElementSpace ImportExport Platform Vector VectorSpace)
+	cd $f
+	foreach g(*.exe)
+		echo "############" $g "##############" >>& ../$file
+		if( "$2" == "True" ) then
+		    ( mpirun -np 3 $g > ../$file3 ) >>& ../$file4
+		    if(! -z ../$file4 ) then
+		    # A test failed.
+			set AnError = True
+			echo "  ******** Test failed ********" >>& ../$file
+			echo "############" $g "##############" >>& ../$file2
+			mpirun -np 3 $g -d >>& ../$file2
+			cat ../$file4 >> ../$file
+			rm -f ../$file4
+		    else
+		    # Tests passed
+			echo "******** Test passed ********" >>& ../$file
+		    endif
+		else
+		# This is not an automated test.
+		    mpirun -np 3 $g -v >>& ../$file
+		endif
+	end
+	cd ..
+end
+
+# At this point, it is assumed that the current directory is
+# 'tpetra/test'
+if ( "$2" == "True" ) then
+    rm $file3
+    if( "$AnError" != "True" ) then
+	rm -f $file2
+    endif
+endif
