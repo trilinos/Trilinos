@@ -86,12 +86,12 @@ class CisMatrixData : public Object {
   std::vector<OrdinalType> pntr_;
   std::vector<OrdinalType> indx_;
   std::vector<ScalarType> values_;
-  //Kokkos::HbMatrix<OrdinalType, ScalarType> HbMatrix_;
+  Kokkos::HbMatrix<OrdinalType, ScalarType> HbMatrix_;
   
 
 	// VectorSpaces
 	VectorSpace<OrdinalType, ScalarType> const primary_;
-	VectorSpace<OrdinalType, ScalarType> const secondary_;
+	VectorSpace<OrdinalType, ScalarType> secondary_;
 	VectorSpace<OrdinalType, ScalarType> domain_;
 	VectorSpace<OrdinalType, ScalarType> range_;
 

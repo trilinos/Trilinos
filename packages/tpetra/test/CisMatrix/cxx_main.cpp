@@ -39,6 +39,8 @@
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>
+int codeCoverage(bool verbose, bool debug);
+template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug);
 template <typename OrdinalType, typename ScalarType>
 int mapTester();
@@ -59,7 +61,7 @@ int main(int argc, char* argv[]) {
 	// call test routine
 	int ierr = 0;
 	if(verbose) cout << "Starting CisMatrixTest..." << endl;
-	//ierr += unitTests<int, float>(verbose, debug);
+	ierr += codeCoverage<int, double>(verbose, debug);
 	ierr += unitTests<int, double>(verbose, debug);
   //int tmp = mapTester<int, double>();
 
@@ -108,17 +110,11 @@ int mapTester() {
 
 //======================================================================
 template <typename OrdinalType, typename ScalarType>
-int unitTests(bool verbose, bool debug) {
-	int ierr = 0;
-	int returnierr = 0;
+int codeCoverage(bool verbose, bool debug) {
 	char const * OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
 	char const * STName = Teuchos::ScalarTraits<ScalarType>::name();
 
-	if(verbose) cout << "Starting unit tests for CisMatrix<" << OTName << "," << STName << ">." << endl;
-
-	// ======================================================================
-	// code coverage section - just call functions, no testing
-	// ======================================================================
+	if(verbose) cout << "Starting code coverage for CisMatrix<" << OTName << "," << STName << ">." << endl;
 
 	if(verbose) cout << "Constructors..." << endl;
 	// have to create ElementSpace and VectorSpace first
@@ -186,20 +182,27 @@ int unitTests(bool verbose, bool debug) {
   cout << sm << endl;
   
 
-	if(verbose) cout << "Code coverage section finished." << endl;
+	if(verbose) cout << "Code coverage <" << OTName << ", " << STName << "> section finished." << endl;
 
-	// ======================================================================
-	// actual testing section - affects return code
-	// ======================================================================
+	return(0);
+}
+
+//======================================================================
+template <typename OrdinalType, typename ScalarType>
+int unitTests(bool verbose, bool debug) {
+	//int ierr = 0;
+	int returnierr = 0;
+	char const * OTName = Teuchos::OrdinalTraits<OrdinalType>::name();
+	char const * STName = Teuchos::ScalarTraits<ScalarType>::name();
 
 	if(verbose) cout << "Starting actual testing section... (none to do)" << endl;
-
+  
 	// finish up
 	if(verbose)
 		if(returnierr == 0)
-			cout << "CisMatrixTest <" << OTName << ", " << STName << "> passed." << endl;
+			cout << "Unit tests <" << OTName << ", " << STName << "> passed." << endl;
 		else
-			cout << "CisMatrixTest <" << OTName << ", " << STName << "> failed." << endl;
+			cout << "Unit Tests <" << OTName << ", " << STName << "> failed." << endl;
   
 	return(returnierr);
 }

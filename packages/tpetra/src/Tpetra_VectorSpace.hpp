@@ -218,6 +218,9 @@ public:
 	//! Access functions for the Tpetra::Platform and Tpetra::Comm communicators.
 	Platform<OrdinalType, ScalarType> const& platform() const {return(*VectorSpaceData_->Platform_);};
 	Comm<ScalarType, OrdinalType> const& comm() const {return(*VectorSpaceData_->Comm_);}; // Comm is <ST, OT> because ST represents PT
+
+	//! Access function for the ElementSpace used by this VectorSpace
+	ElementSpace<OrdinalType> const& elementSpace() const {return(*VectorSpaceData_->ElementSpace_);};
 	
 	//! Assignment operator
 	VectorSpace<OrdinalType, ScalarType>& operator = (VectorSpace<OrdinalType, ScalarType> const& Source) {
@@ -229,7 +232,6 @@ public:
 	
 private:
 	
-	ElementSpace<OrdinalType> const& elementSpace() const {return(*VectorSpaceData_->ElementSpace_);};
 	BlockElementSpace<OrdinalType> const& blockElementSpace() const {return(*VectorSpaceData_->BlockElementSpace_);};
 	bool isBlockSpace() const {return(VectorSpaceData_->blockspace_);};
     

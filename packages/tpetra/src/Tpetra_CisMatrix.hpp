@@ -31,7 +31,7 @@
 
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_CompObject.hpp>
-//#include <Kokkos_HbMatrix.hpp>
+#include <Kokkos_HbMatrix.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_VectorSpace.hpp"
@@ -72,6 +72,13 @@ distribution is specified at construction, then CisMatrix will analyze the struc
 VectorSpace that matches the distribution found in the matrix. Note that this is done when fillComplete is called, and so
 information about the secondary distribution is not available prior to that.
 
+<b> FillComplete </b>
+A Tpetra::CisMatrix exists in one of two states. Prior to calling fillComplete, data is stored in a format optimized for
+easy and efficient insertions/deletions/modifications. It is not a very efficient form for doing matvec operations though.
+After calling fillComplete, the data is transformed into a format optimized for matvec operations. It is not very efficient
+at modifying data though. So after fillComplete has been called, the matrix should be viewed as const, and cannot be modified.
+Trying to do so will result in an exception being thrown.
+
 <b> Counting Floating Point Operations </b>
 
 CisMatrix inherits from Teuchos::CompObject, and keeps track of the number of floating point operations
@@ -84,6 +91,7 @@ CisMatrix error codes (positive for non-fatal, negative for fatal):
 <li> +2  Unsupported combine mode specified.
 <li> +3  Requested distribution is not currently defined.
 <li> +4  Cannot call that method until after fillComplete.
+<li> +5  Cannot call that method after fillComplete.
 <li> -99 Internal CisMatrix error. Contact developer.
 </ol>
 
@@ -104,7 +112,7 @@ public:
     CisMatrixData_ = Teuchos::rcp(new CisMatrixData<OrdinalType, ScalarType>(primaryDist, rowOriented));
   }
   
-  //! Constructor specifying both row and column distribution.
+  //! Constructor specifying both primary and secondary distributions.
 	CisMatrix(VectorSpace<OrdinalType, ScalarType> const& primaryDist, 
 							 VectorSpace<OrdinalType, ScalarType> const& secondaryDist, 
 							 bool rowOriented = true)
@@ -129,6 +137,8 @@ public:
   
   //! Set all matrix entries equal to scalarThis
   void setAllToScalar(ScalarType scalarThis) {
+    if(isFillCompleted())
+      throw reportError("Cannot change matrix values after fillComplete has been called.", 5);
     typedef std::map<OrdinalType, ScalarType> OrdScalMap;
     typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
     MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
@@ -141,6 +151,8 @@ public:
   
   //! Scale the current values of a matrix, \e this = scalarThis*\e this.
   void scale(ScalarType scalarThis) {
+    if(isFillCompleted())
+      throw reportError("Cannot change matrix values after fillComplete has been called.", 5);
     typedef std::map<OrdinalType, ScalarType> OrdScalMap;
     typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
     MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
@@ -157,6 +169,8 @@ public:
   //! Submit multiple entries, using global IDs.
   /*! All index values must be in the global space. Behavoir is defined by the CombineMode passed in. */
   void submitEntries(CombineMode CM, OrdinalType myRowOrColumn, OrdinalType numEntries, ScalarType const* values, OrdinalType const* indices) {
+		if(isFillCompleted())
+      throw reportError("Cannot change matrix values after fillComplete has been called.", 5);
     OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
     for(OrdinalType i = zero; i < numEntries; i++)
       submitEntry(CM, myRowOrColumn, *values++, *indices++);
@@ -165,6 +179,8 @@ public:
   //! Submit a single entry, using global IDs.
   /*! All index values must be in the global space. Behavoir is defined by the CombineMode passed in. */
   void submitEntry(CombineMode CM, OrdinalType myRowOrColumn, ScalarType value, OrdinalType index) {
+    if(isFillCompleted())
+      throw reportError("Cannot change matrix values after fillComplete has been called.", 5);
     // first check for proper index values
     if(!getPrimaryDist().isMyGlobalIndex(myRowOrColumn))
       throw reportError("Global primary index " + toString(myRowOrColumn) + " is not owned by this image.", 1);
@@ -214,6 +230,9 @@ public:
   //! Signals that data entry is complete. Matrix data is converted into a more optimized form.
   /*! The VectorSpaces passed in will be used for the domain and range distributions. */
   void fillComplete(VectorSpace<OrdinalType, ScalarType> const& domainSpace, VectorSpace<OrdinalType, ScalarType> const& rangeSpace) {
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
+
     // set domain and range distributions
     data().domain_ = domainSpace;
     data().range_ = rangeSpace;
@@ -222,12 +241,12 @@ public:
     
     // fill pntr_, indx_ and values_ arrays from map values
     OrdinalType const numPrimaryIndices = getPrimaryDist().getNumMyEntries();
-    data().pntr_.reserve(numPrimaryIndices + Teuchos::OrdinalTraits<OrdinalType>::one());
+    data().pntr_.reserve(numPrimaryIndices + ordinalOne);
     data().indx_.reserve(numPrimaryIndices);   // reserve enough space in the vectors now
     data().values_.reserve(numPrimaryIndices); // so they don't have to reallocate later
 
-    OrdinalType pntr_loc = Teuchos::OrdinalTraits<OrdinalType>::zero();   // current index in pntr_
-    OrdinalType pntr_value = Teuchos::OrdinalTraits<OrdinalType>::zero(); // value to put into pntr_[pntr_loc]
+    OrdinalType pntr_loc = ordinalZero;   // current index in pntr_
+    OrdinalType pntr_value = ordinalZero; // value to put into pntr_[pntr_loc]
 
     typedef std::map<OrdinalType, ScalarType> OrdScalMap;
     typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
@@ -244,13 +263,34 @@ public:
     }
     data().pntr_[pntr_loc] = pntr_value; // pntr_ has an extra element on the end
 
-    // create ElementSpace for secondary distribution if we need to
+    // create secondary distribution if we need to
     if(!data().haveSecondary_) {
-      cerr << "*** elementspace creation not implemented yet ***" << endl;
+			// create elementspace first
+			OrdinalType numGlobalElements = ordinalZero - ordinalOne; // set to -1
+			OrdinalType numMyElements = data().indx_.size();
+			OrdinalType* elementList = &data().indx_[ordinalZero]; // address of first element in indx_
+			OrdinalType indexBase = getPrimaryDist().getIndexBase();
+			Platform<OrdinalType, OrdinalType> const& platformO = getPrimaryDist().elementSpace().platform();
+			ElementSpace<OrdinalType> elementspace(numGlobalElements, numMyElements, elementList, indexBase, platformO);
+			// then create vectorspace using it
+			Platform<OrdinalType, ScalarType> const& platformS = platform();
+			VectorSpace<OrdinalType, ScalarType> vectorspace(elementspace, platformS);
+			data().secondary_ = vectorspace;
+			data().haveSecondary_ = true;
+			if(isRowOriented())
+				data().haveCol_ = true;
+			else
+				data().haveRow_ = true;
     }
 
-    // initialize Kokkos::HbMatrix
-    cerr << "*** HbMatrix creation not implemented yet ***" << endl;
+    // initialize Kokkos::HbMatrix (Classical form)
+		data().HbMatrix_.initializeStructure(getRowDist().getNumMyEntries(), 
+																				 getColumnDist().getNumMyEntries(), 
+																				 isRowOriented(), 
+																				 &data().pntr_[Teuchos::OrdinalTraits<OrdinalType>::zero()],
+																				 &data().indx_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
+		data().HbMatrix_.initializeValues(&data().values_[Teuchos::OrdinalTraits<OrdinalType>::zero()]);
+
 
     data().fillCompleted_ = true;
   }
@@ -261,7 +301,7 @@ public:
   
   //! Computes the matrix-vector multiplication y = Ax
   void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y) const {
-    if(!data().fillCompleted_)
+    if(!isFillCompleted())
       throw reportError("Cannot apply until after fillComplete.", 4);
     cerr << "*** apply not implemented yet ***" << endl;
   }
@@ -390,6 +430,11 @@ public:
   bool isRowOriented() const {
     return(CisMatrixData_->rowOriented_);
   }
+
+	//! Returns true if the state of this matrix is post-fillComplete, and false if it is pre-fillComplete.
+	bool isFillCompleted() const {
+		return(data().fillCompleted_);
+	}
   
   //! Returns the VectorSpace that describes the primary distribution in this matrix.
   /*! In a row-oriented matrix, this will be the row VectorSpace. In a column-oriented matrix, this will be the column VectorSpace. */
@@ -441,7 +486,7 @@ public:
   
   //! Returns the Platform object used by this matrix
   Platform<OrdinalType, ScalarType> const& platform() const {
-		return(data().platform_);
+		return(*data().platform_);
 	}
   
   //@}
@@ -451,10 +496,10 @@ public:
   // Print method, used by the overloaded << operator
   void print(ostream& os) const {
     os << "Orientation: " << (data().rowOriented_ ? "Row" : "Column") << "-oriented" << endl;
+		os << "State: " << (isFillCompleted() ? "Post-fillComplete" : "Pre-fillCompleter") << endl;
     os << "Secondary distribution defined? " << (data().haveSecondary_ ? "yes" : "no") << endl;
     os << "Domain distribution defined? " << (data().haveDomain_ ? "yes" : "no") << endl;
     os << "Range distribution defined? " << (data().haveRange_ ? "yes" : "no") << endl;
-    os << "Fill-completed? " << (data().fillCompleted_ ? "yes" : "no") << endl;
 
     os << "Contents:" << endl;
     typedef std::map<OrdinalType, ScalarType> OrdScalMap;
