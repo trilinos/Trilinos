@@ -116,18 +116,18 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       if (current->getrow->pre_comm != NULL) {
 	if (current->getrow->pre_comm->total_rcv_length <= 0) {
 #ifdef charles
-	  printf("recomputing rcv length\n"); fflush(stdout);
+	  printf("%d: recomputing rcv length (%u %u)\n",Bmatrix->comm->ML_mypid,Bmatrix,current); fflush(stdout);
 #endif
 	  ML_CommInfoOP_Compute_TotalRcvLength(current->getrow->pre_comm);
 	}
 
          Next_est += current->getrow->pre_comm->total_rcv_length;
 #ifdef charles
-	  printf("Nghost = %d  %d\n",Next_est,current->getrow->pre_comm->total_rcv_length); fflush(stdout);
+	  printf("%d: Nghost = %d  %d\n",Bmatrix->comm->ML_mypid,Next_est,current->getrow->pre_comm->total_rcv_length); fflush(stdout);
 #endif
       }
 #ifdef charles
-      else {printf("pre_comm is null?\n"); fflush(stdout);}
+      else {printf("%d: pre_comm is null?\n",Bmatrix->comm->ML_mypid); fflush(stdout);}
 #endif
       current = current->sub_matrix;
    }
@@ -362,8 +362,11 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 	      Bmatrix->comm->ML_mypid,tcols,index_length);
        fflush(stdout);
 #endif
+       ML_free(accum_index);
+       accum_index = ML_allocate(sizeof(int)*2*index_length);
        tptr = ML_allocate(sizeof(int)*2*index_length);
        if (tptr == NULL) pr_error("ML_matmat_mult: out of tptr space\n");
+       for (j = 0; j < 2*index_length; j++) accum_index[j] = -1;
        for (j = 0; j < 2*index_length; j++) tptr[j] = -1;
        for (j = 0; j < i; j++)
 	 Bcols[j] = col_inds[Bcols[j]];
