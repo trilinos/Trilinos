@@ -2290,12 +2290,40 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ML_Aggregate_Set_CurrentLevel( ag, level );
 
    /* ********************************************************************** */
+   /* May require field-of-values computations for classic ML                */
+   /* ********************************************************************** */
+
+   if( ag->Restriction_smoothagg_transpose == ML_FALSE &&
+       ag->field_of_values != NULL ) {
+     
+     fov = (struct ML_Field_Of_Values * )(ag->field_of_values);
+
+     if( fov->compute_field_of_values == ML_YES ) {
+
+              ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
+       if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+	 printf("\nField of Values Box (level %d) : Max Real = %e\n",
+		level,
+		fov->real_max );
+	 printf("Field of Values Box (level %d) : Max Imag = %e\n",
+		level,
+		fov->imag_max );
+	 printf("Field of Values Box (level %d) : eta = %e\n\n",
+		level,
+		fov->eta );
+       }
+       
+     }
+     
+   }
+   
+   /* ********************************************************************** */
    /* Methods based on field-of-values requires to stick some parameres now  */
    /* This is not an error! Here use R (this P will become R later)          */
    /* ********************************************************************** */
-
+   
    if( ag->smoothP_damping_factor == 0.0 && ag->Restriction_smoothagg_transpose == ML_TRUE ) {
-
+     
      if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
        printf("\n(level %d) : Using non-smoothed aggregation\n\n",
 	      level );
@@ -2308,6 +2336,24 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      /* compute box surrounding field-of-values */
 
 #if defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
+
+     if( fov->compute_field_of_values == ML_YES && fov->choice != 1 ) {
+       
+       ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
+       if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+	 printf("\nField of Values Box (level %d) : Max Real = %e\n",
+		level,
+		fov->real_max );
+	 printf("Field of Values Box (level %d) : Max Imag = %e\n",
+		level,
+		fov->imag_max );
+	 printf("Field of Values Box (level %d) : eta = %e\n\n",
+		level,
+		fov->eta );
+       }
+       
+     }
+     
      if( fov->choice == 0 ) {
 
        fov->eta = 0;

@@ -434,32 +434,48 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   /* Parse command line to get main options                                 */
   /* ********************************************************************** */
 
-  string def = CLP.Get("-default","DD");
-  SetDefaults(def,List_,"");
+  if( CLP.Has("-defaults") )
+    SetDefaults(CLP.Get("-defaults","DD"),List_);
 
+  // general
   if( CLP.Has("-num_levels") )
     List_.set("max levels",CLP.Get("-num_levels",2));
   if( CLP.Has("-incr_or_decr" ) )
       List_.set("increasing or decreasing",CLP.Get("-incr_or_decr","increasing"));
-  if( CLP.Has("-aggr_scheme") )
-    List_.set("aggregation: type", CLP.Get("-aggr_scheme","Uncoupled"));
+
+  // smoother
   if( CLP.Has("-smoother_type") )
     List_.set("smoother: type", CLP.Get("-smoother_type","Gauss-Seidel"));
-  if( CLP.Has("-num_nodes_per_aggr") )
-    List_.set("aggregation: nodes per aggregate", CLP.Get("-num_nodes_per_aggr",512));
-  if( CLP.Has("-num_local_aggr") )
-    List_.set("aggregation: local aggregates", CLP.Get("-num_local_aggr",512));
+  if( CLP.Has("-smoother_sweeps") )
+    List_.set("smoother: sweeps", CLP.Get("-smoother_sweeps",1));
   if( CLP.Has("-smoother_pre_or_post") )
     List_.set("smoother: pre or post", CLP.Get("-smoother_pre_or_post","both"));
   if( CLP.Has("-smoother_damping_factor") )
     List_.set("smoother: damping factor", CLP.Get("-smoother_damping_factor",1.0));
-  if( CLP.Has("-coarse_type") )
-    List_.set("coarse: type", CLP.Get("-coarse_type","Amesos_KLU"));
-  if( CLP.Has("-coarse_max_procs") ) 
-    List_.set("coarse: max processes", CLP.Get("-coarse_max_procs",4));
+
+  // smoother-advanced
+  if( CLP.Has("-RP_smoothing") )
+    List_.set("R and P smoothing: type", CLP.Get("-RP_smoothing","classic"));
+  if( CLP.Has("-RP_damping") )
+    List_.set("R and P smoothing: damping", CLP.Get("-RP_damping","classic"));
+
+  // aggregation
+  if( CLP.Has("-num_nodes_per_aggr") )
+    List_.set("aggregation: nodes per aggregate", CLP.Get("-num_nodes_per_aggr",512));
+  if( CLP.Has("-num_local_aggr") )
+    List_.set("aggregation: local aggregates", CLP.Get("-num_local_aggr",512));
+  if( CLP.Has("-aggr_scheme") )
+    List_.set("aggregation: type", CLP.Get("-aggr_scheme","Uncoupled"));
   if( CLP.Has("-aggr_damping_factor") )
     List_.set("aggregation: damping factor", CLP.Get("-aggr_damping_factor",1.333));
-  
+
+  // coarse
+  if( CLP.Has("-coarse_type") )
+    List_.set("coarse: type", CLP.Get("-coarse_type","Amesos-KLU"));
+  if( CLP.Has("-coarse_max_procs") ) 
+    List_.set("coarse: max processes", CLP.Get("-coarse_max_procs",4));
+
+  // eigen-analysis
   if( CLP.Has("-eigen_analysis_type") )
     List_.set("eigen-analysis: type", CLP.Get("-eigen_analysis_type","Anorm"));
   if( CLP.Has("-eigen_analysis_tol") )
@@ -470,10 +486,6 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
     List_.set("null space dimension", CLP.Get("-null_space_dim",1));
   if( CLP.Has("-add_default_null_space") )
     List_.set("add default null space", CLP.Has("-add_default_null_space"));
-  if( CLP.Has("-RP_smoothing") )
-    List_.set("R and P smoothing: type", CLP.Get("-RP_smoothing","classic"));
-  if( CLP.Has("-RP_damping") )
-    List_.set("R and P smoothing: damping", CLP.Get("-RP_damping","classic"));
   
   /* ********************************************************************** */
   /* back to normal initialization                                          */
@@ -954,15 +966,15 @@ void MultiLevelPreconditioner::SetSmoothers()
   sprintf(parameter,"%ssmoother: type", Prefix_);
   string Smoother = List_.get(parameter,"MLS");
 
-  sprintf(parameter,"%ssmoother: aztec options", Prefix_);
+  sprintf(parameter,"%ssmoother: Aztec options", Prefix_);
   int * SmootherOptionsPtr = NULL;
   SmootherOptionsPtr = List_.get(parameter,SmootherOptionsPtr);
 
-  sprintf(parameter,"%ssmoother: aztec params", Prefix_);
+  sprintf(parameter,"%ssmoother: Aztec params", Prefix_);
   double * SmootherParamsPtr = NULL;
   SmootherParamsPtr = List_.get(parameter,SmootherParamsPtr);
 
-  sprintf(parameter,"%ssmoother: aztec as solver", Prefix_);
+  sprintf(parameter,"%ssmoother: Aztec as solver", Prefix_);
   bool AztecSmootherAsASolver = List_.get(parameter,false);
   int aztec_its;
 
@@ -1027,13 +1039,13 @@ void MultiLevelPreconditioner::SetSmoothers()
       
       ML_Gen_Smoother_MLS(ml_, LevelID_[level], pre_or_post, MLSalpha,
 			  MLSPolynomialOrder);
-    } else if( Smoother == "aztec" ) {
+    } else if( Smoother == "Aztec" ) {
       
-      sprintf(parameter,"%ssmoother: aztec options (level %d)", Prefix_, LevelID_[level]);
+      sprintf(parameter,"%ssmoother: Aztec options (level %d)", Prefix_, LevelID_[level]);
       SmootherOptionsPtr = List_.get(parameter, SmootherOptionsPtr);
-      sprintf(parameter,"%ssmoother: aztec params (level %d)", Prefix_, LevelID_[level]);
+      sprintf(parameter,"%ssmoother: Aztec params (level %d)", Prefix_, LevelID_[level]);
       SmootherParamsPtr = List_.get(parameter, SmootherParamsPtr);
-      sprintf(parameter,"%ssmoother: aztec as solver (level %d)", Prefix_, LevelID_[level]);
+      sprintf(parameter,"%ssmoother: Aztec as solver (level %d)", Prefix_, LevelID_[level]);
       AztecSmootherAsASolver = List_.get(parameter,AztecSmootherAsASolver);
      
       if( AztecSmootherAsASolver == false ) aztec_its = AZ_ONLY_PRECONDITIONER;
@@ -1045,7 +1057,7 @@ void MultiLevelPreconditioner::SetSmoothers()
       }
 
       if( verbose_ ) {
-	cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : aztec";
+	cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : Aztec";
 	if( SmootherOptionsPtr[AZ_precond] == AZ_dom_decomp ) {
 	  cout << " DD, overlap=" << SmootherOptionsPtr[AZ_overlap] << ", ";
 	  if( SmootherOptionsPtr[AZ_reorder] == 1 ) cout << "reord, ";
@@ -1088,8 +1100,8 @@ void MultiLevelPreconditioner::SetSmoothers()
 			   ProcConfig_, SmootherStatus_,
 			   aztec_its, pre_or_post, NULL);
       
-    } else if( Smoother == "ifpack" ) {
-      if( verbose_ ) cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : Ifpack" << ","
+    } else if( Smoother == "IFPACK" ) {
+      if( verbose_ ) cout << PrintMsg_ << "Smoother (level " << LevelID_[level] << ") : IFPACK" << ","
 			 << PreOrPostSmoother << endl;
       // get ifpack options from list ??? pass list ???
       ML_Gen_Smoother_Ifpack(ml_, LevelID_[level], pre_or_post, NULL, NULL);
@@ -1099,7 +1111,7 @@ void MultiLevelPreconditioner::SetSmoothers()
 	     << ErrorMsg_ << "(file " << __FILE__ << ",line " << __LINE__ << ")" << endl
 	     << ErrorMsg_ << "Should be: " << endl
 	     << ErrorMsg_ << "<Jacobi>/<Gauss-Seidel>/<Block Gauss-Seidel> / <MLS>" << endl
-	     << ErrorMsg_ << "<aztec> " << endl;
+	     << ErrorMsg_ << "<Aztec> / <IFPACK>" << endl;
       exit( EXIT_FAILURE );
     }
     
@@ -1123,7 +1135,7 @@ void MultiLevelPreconditioner::SetCoarse()
   char parameter[80];
 
   sprintf(parameter,"%scoarse: type", Prefix_);
-  string CoarseSolution = List_.get(parameter, "Amesos_KLU");
+  string CoarseSolution = List_.get(parameter, "Amesos-KLU");
   sprintf(parameter,"%scoarse: sweeps", Prefix_);
   int NumSmootherSteps = List_.get(parameter, 1);
   sprintf(parameter,"%scoarse: damping factor", Prefix_);
@@ -1140,13 +1152,13 @@ void MultiLevelPreconditioner::SetCoarse()
 				NumSmootherSteps, Omega);
   else if( CoarseSolution == "SuperLU" ) 
     ML_Gen_CoarseSolverSuperLU( ml_, LevelID_[NumLevels_-1]);
-  else if( CoarseSolution == "Amesos_KLU" )
+  else if( CoarseSolution == "Amesos-KLU" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
-  else if( CoarseSolution == "Amesos_UMFPACK" )
+  else if( CoarseSolution == "Amesos-UMFPACK" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_UMFPACK, MaxProcs);
-  else if(  CoarseSolution == "Amesos_Superludist" )
+  else if(  CoarseSolution == "Amesos-Superludist" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_SUPERLUDIST, MaxProcs);
-  else if( CoarseSolution == "Amesos_MUMPS" )
+  else if( CoarseSolution == "Amesos-MUMPS" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_MUMPS, MaxProcs);
   else
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
@@ -1560,7 +1572,7 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
     
     if( str == "cg" )                ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
     else if( str == "Anorm" )        ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
-    else if( str == "anasazi" )      ML_Aggregate_Set_SpectralNormScheme_Anasazi(agg_);
+    else if( str == "Anasazi" )      ML_Aggregate_Set_SpectralNormScheme_Anasazi(agg_);
     else if( str == "power-method" ) ML_Aggregate_Set_SpectralNormScheme_PowerMethod(agg_);
     else {
       if( Comm().MyPID() == 0 ) {
@@ -1570,37 +1582,6 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       }
     }
     
-  } else if( RandPSmoothing == "classic2" ) {
-
-    /* ********************************************************************** */
-    /* This is the standard approach followed by ML (R = P^T)                 */
-    /* I re-set damping factor.                                               */
-    /* ********************************************************************** */
-
-    sprintf(parameter,"%saggregation: damping factor", Prefix_);
-    DampingFactor = 1.333;
-    DampingFactor = List_.get(parameter, DampingFactor);
-    ML_Aggregate_Set_DampingFactor( agg_, DampingFactor );
-    
-    agg_->Restriction_smoothagg_transpose = ML_FALSE;
-    if( verbose_ )
-      cout << PrintMsg_ << "R and P smoothing : Standard ML procedure" << endl;
-    
-  } else if( RandPSmoothing == "standard-use A in R" ) {
-
-    /* ********************************************************************** */
-    /* This is the ML way, but with A in R                                    */
-    /* ********************************************************************** */
-
-    sprintf(parameter,"%saggregation: damping factor", Prefix_);
-    DampingFactor = List_.get(parameter, DampingFactor);
-    ML_Aggregate_Set_DampingFactor( agg_, DampingFactor );
-
-    if( verbose_ )
-      cout << PrintMsg_ << "R and P smoothing : Standard ML procedure with A to smooth restriction"
-	   << endl;
-    agg_->Restriction_smoothagg_transpose = ML_TRUE;
-
   } else if( RandPSmoothing == "advanced" ) {
 
     /* ********************************************************************** */
@@ -1621,12 +1602,18 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
     field_of_values->real_max= -1.0;
     field_of_values->imag_max= -1.0;
     field_of_values->poly_order = 0;
+
+    sprintf(parameter,"%saggregation: compute field of values", Prefix_);
+    if( List_.get(parameter,true) )
+      field_of_values->compute_field_of_values = ML_YES;
+    else
+      field_of_values->compute_field_of_values = ML_NO;
+    
     // following values for choice:
     // -1 : undefined
     //  0 : do nothing, put eta = 0 (used in non-smoothed aggregation)
     //  1 : compute the box of the field of values (eta = imag_max/real_max)
     //  2 : compute ||lambda_max|| (eta = sqrt(imag_max^2 + real_max^2))
-    
     field_of_values->choice     = -1;
     // and this is a pointer for the object's interal ParameterList
     // That's stilistically hugly, but I need this because ML is mainly C-coded
@@ -1635,7 +1622,7 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
     // still to set up polynomial coeffiecients
     string DampingType =  List_.get("R and P smoothing: damping", "default");
   
-    if( DampingType == "non_smoothed" ) {
+    if( DampingType == "non-smoothed" ) {
 
       if( verbose_ )
 	cout << PrintMsg_ << "R and P smoothing : non-smoothed aggregation" << endl;
@@ -1650,8 +1637,9 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       field_of_values->P_coeff[0] =  0.0;
       field_of_values->P_coeff[1] =  0.0;
       field_of_values->P_coeff[2] =  0.0;
+
       
-    } else if( DampingType == "almost_non_smoothed" ) {
+    } else if( DampingType == "almost-non-smoothed" ) {
 
       if( verbose_ )
 	cout << PrintMsg_ << "R and P smoothing : almost non-smoothed aggregation" << endl;
@@ -1732,6 +1720,10 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       }
       
     } else if( DampingType == "classic" ) {
+
+      agg_->Restriction_smoothagg_transpose = ML_FALSE;      
+
+    }  else if( DampingType == "classic-use-A" ) {
 
       if( verbose_ )
 	cout << PrintMsg_ << "R and P smoothing : Using 4/3" << endl;
@@ -1835,7 +1827,7 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, char * Prefix)
   List.set(parameter,1);
   
   sprintf(parameter,"%saggregation: damping factor",Prefix);
-  List.set(parameter,0.01);
+  List.set(parameter,1.333);
 
   sprintf(parameter,"%scoarse: max size",Prefix);
   List.set(parameter,128);
@@ -1855,7 +1847,7 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, char * Prefix)
   // -- aztec section -- //
   
   sprintf(parameter,"%ssmoother: type",Prefix);
-  List.set(parameter,"aztec");
+  List.set(parameter,"Aztec");
 
   int * SmootherOptionsList = new int[AZ_OPTIONS_SIZE];
   double * SmootherParamsList = new double[AZ_PARAMS_SIZE];
@@ -1865,19 +1857,19 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, char * Prefix)
   SmootherOptionsList[AZ_scaling] = AZ_none;
   SmootherOptionsList[AZ_subdomain_solve] = AZ_ilut;
   
-  sprintf(parameter,"%ssmoother: aztec options",Prefix);
+  sprintf(parameter,"%ssmoother: Aztec options",Prefix);
   List.set(parameter,SmootherOptionsList);
     
-  sprintf(parameter,"%ssmoother: aztec params",Prefix);
+  sprintf(parameter,"%ssmoother: Aztec params",Prefix);
   List.set(parameter,SmootherParamsList);
     
-  sprintf(parameter,"%ssmoother: aztec as solver",Prefix);
+  sprintf(parameter,"%ssmoother: Aztec as solver",Prefix);
   List.set(parameter,false);
 
   // --- coarse solver --- ///
   
   sprintf(parameter,"%scoarse: type",Prefix);
-  List.set(parameter,"Amesos_KLU");
+  List.set(parameter,"Amesos-KLU");
 
   sprintf(parameter,"%sprec type",Prefix);
   List.set(parameter,"MGV");
@@ -1935,7 +1927,7 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, char * Prefix)
   // -- aztec section -- //
   
   sprintf(parameter,"%ssmoother: type",Prefix);
-  List.set(parameter,"aztec");
+  List.set(parameter,"Aztec");
 
   int * SmootherOptionsList = new int[AZ_OPTIONS_SIZE];
   double * SmootherParamsList = new double[AZ_PARAMS_SIZE];
@@ -1945,19 +1937,19 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, char * Prefix)
   SmootherOptionsList[AZ_scaling] = AZ_none;
   SmootherOptionsList[AZ_subdomain_solve] = AZ_lu;
   
-  sprintf(parameter,"%ssmoother: aztec options",Prefix);
+  sprintf(parameter,"%ssmoother: Aztec options",Prefix);
   List.set(parameter,SmootherOptionsList);
     
-  sprintf(parameter,"%ssmoother: aztec params",Prefix);
+  sprintf(parameter,"%ssmoother: Aztec params",Prefix);
   List.set(parameter,SmootherParamsList);
     
-  sprintf(parameter,"%ssmoother: aztec as solver",Prefix);
+  sprintf(parameter,"%ssmoother: Aztec as solver",Prefix);
   List.set(parameter,false);
 
   // --- coarse solver --- ///
   
   sprintf(parameter,"%scoarse: type",Prefix);
-  List.set(parameter,"Amesos_KLU");
+  List.set(parameter,"Amesos-KLU");
 
   sprintf(parameter,"%sprec type",Prefix);
   List.set(parameter,"MGV");
@@ -2018,10 +2010,10 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, char * Prefix_)
   sprintf(parameter,"%ssmoother: pre or post (level 0)",Prefix_);
   List.set(parameter,"both");
 
-  // --- aztec --- //
+  // --- Aztec --- //
   
   sprintf(parameter,"%ssmoother: type",Prefix_);
-  List.set(parameter,"aztec");
+  List.set(parameter,"Aztec");
   
   int * SmootherOptionsList = new int[AZ_OPTIONS_SIZE];
   double * SmootherParamsList = new double[AZ_PARAMS_SIZE];
@@ -2031,19 +2023,19 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, char * Prefix_)
   SmootherOptionsList[AZ_subdomain_solve] = AZ_ilut;
   SmootherOptionsList[AZ_overlap] = 0;
 
-  sprintf(parameter,"%ssmoother: aztec options (level 0)",Prefix_);
+  sprintf(parameter,"%ssmoother: Aztec options (level 0)",Prefix_);
   List.set(parameter,SmootherOptionsList);
     
-  sprintf(parameter,"%ssmoother: aztec params (level 0)",Prefix_);
+  sprintf(parameter,"%ssmoother: Aztec params (level 0)",Prefix_);
   List.set(parameter,SmootherParamsList);
     
-  sprintf(parameter,"%ssmoother: aztec as solver (level 0)",Prefix_);
+  sprintf(parameter,"%ssmoother: Aztec as solver (level 0)",Prefix_);
   List.set(parameter,false);
   
   // --- coarse --- ///
   
   sprintf(parameter,"%scoarse: type",Prefix_);
-  List.set(parameter,"Amesos_KLU");
+  List.set(parameter,"Amesos-KLU");
 
   sprintf(parameter,"%sprec type",Prefix_);
   List.set(parameter,"MGV");
@@ -2114,7 +2106,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, char * Prefix_)
   List.set(parameter,"SuperLU");
 //  Tim Davis' simple serial LU package.  It's part of Amesos
 //  itself.
-//  List.set(parameter,"Amesos_KLU");
+//  List.set(parameter,"Amesos-KLU");
 
   sprintf(parameter,"%sprec type",Prefix_);
   List.set(parameter,"MGV");
@@ -2184,7 +2176,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, char * Prefix_)
   
   // simplest solver on coarse problem
   sprintf(parameter,"%scoarse: type",Prefix_);
-  List.set(parameter,"Amesos_KLU");
+  List.set(parameter,"Amesos-KLU");
 
   sprintf(parameter,"%sprec type",Prefix_);
   List.set(parameter,"MGV");
