@@ -487,15 +487,189 @@ int main(int argc, char *argv[])
 
     if (verbose) cout << "\n\nPrint out tridiagonal matrix, each part on each processor.\n\n" << endl;
     cout << A1 << endl;
-    
+   
+
   // Release all objects
   delete [] NumNz1;
-  delete [] Values1;
-  delete [] Indices1;
   delete [] MyGlobalElements1;
 
   }
-			
+
+  if (verbose) cout << "\n\n*****Testing LeftScale and RightScale" << endl << endl;
+
+  int NumMyElements2 = 7;
+  int NumMyRows2 = 1;//This value should not be changed without editing the
+		// code below.
+  Epetra_Map RowMap(-1,NumMyRows2,0,Comm);
+  Epetra_Map ColMap(NumMyElements2,NumMyElements2,0,Comm);
+  // The DomainMap needs to be different from the ColMap for the test to 
+  // be meaningful.
+  Epetra_Map DomainMap(NumMyElements2,0,Comm);
+  int NumMyRangeElements2 = 0;
+  // We need to distribute the elements differently for the range map also.
+  if (MyPID % 2 == 0)
+    NumMyRangeElements2 = NumMyRows2*2; //put elements on even number procs 
+  if (NumProc % 2 == 1 && MyPID == NumProc-1)
+    NumMyRangeElements2 = NumMyRows2; //If number of procs is odd, put
+			// the last NumMyElements2 elements on the last proc
+  Epetra_Map RangeMap(-1,NumMyRangeElements2,0,Comm);
+  Epetra_CrsMatrix A2(Copy,RowMap,ColMap,NumMyElements2);
+  double * Values2 = new double[NumMyElements2];
+  int * Indices2 = new int[NumMyElements2]; 
+
+  for (int i=0; i<NumMyElements2; i++) {
+    Values2[i] = i+MyPID;
+    Indices2[i]=i;
+  }
+
+  A2.InsertMyValues(0,NumMyElements2,Values2,Indices2);
+  A2.FillComplete(DomainMap,RangeMap);
+  Epetra_CrsMatrix A2copy(A2);
+
+  double * RowLeftScaleValues = new double[NumMyRows2];
+  double * ColRightScaleValues = new double[NumMyElements2];
+  int RowLoopLength = RowMap.MaxMyGID()-RowMap.MinMyGID()+1;
+  for (int i=0; i<RowLoopLength; i++)
+    RowLeftScaleValues[i] = (i + RowMap.MinMyGID() ) % 2 + 1;
+  // For the column map, all procs own all elements
+  for (int  i=0; i<NumMyElements2;i++)
+    ColRightScaleValues[i] = i % 2 + 1;
+
+  int RangeLoopLength = RangeMap.MaxMyGID()-RangeMap.MinMyGID()+1;
+  double * RangeLeftScaleValues = new double[RangeLoopLength];
+  int DomainLoopLength = DomainMap.MaxMyGID()-DomainMap.MinMyGID()+1;
+   double * DomainRightScaleValues = new double[DomainLoopLength];
+  for (int i=0; i<RangeLoopLength; i++)
+    RangeLeftScaleValues[i] = 1.0/((i + RangeMap.MinMyGID() ) % 2 + 1);
+  for (int  i=0; i<DomainLoopLength;i++)
+    DomainRightScaleValues[i] = 1.0/((i + DomainMap.MinMyGID() ) % 2 + 1);
+                                                                                
+  Epetra_Vector xRow(View,RowMap,RowLeftScaleValues);
+  Epetra_Vector xCol(View,ColMap,ColRightScaleValues);
+  Epetra_Vector xRange(View,RangeMap,RangeLeftScaleValues);
+  Epetra_Vector xDomain(View,DomainMap,DomainRightScaleValues);
+
+  double A2infNorm = A2.NormInf();
+  double A2oneNorm = A2.NormOne();
+
+cout << A2;
+  EPETRA_TEST_ERR(A2.LeftScale(xRow),ierr);
+  double A2infNorm1 = A2.NormInf();
+  double A2oneNorm1 = A2.NormOne();
+  bool ScalingBroke = false;
+  if (A2infNorm1>2*A2infNorm||A2infNorm1<A2infNorm) {
+    EPETRA_TEST_ERR(-31,ierr);
+    ScalingBroke = true;
+  }
+  if (A2oneNorm1>2*A2oneNorm||A2oneNorm1<A2oneNorm) {
+
+    EPETRA_TEST_ERR(-32,ierr);
+    ScalingBroke = true;
+  }
+cout << A2;
+  EPETRA_TEST_ERR(A2.RightScale(xCol),ierr);
+  double A2infNorm2 = A2.NormInf();
+  double A2oneNorm2 = A2.NormOne();
+  if (A2infNorm2>=2*A2infNorm1||A2infNorm2<=A2infNorm1) {
+    EPETRA_TEST_ERR(-33,ierr);
+    ScalingBroke = true;
+  }
+  if (A2oneNorm2>2*A2oneNorm1||A2oneNorm2<=A2oneNorm1) {
+    EPETRA_TEST_ERR(-34,ierr);
+    ScalingBroke = true;
+  }
+cout << A2;
+  EPETRA_TEST_ERR(A2.RightScale(xDomain),ierr);
+  double A2infNorm3 = A2.NormInf();
+  double A2oneNorm3 = A2.NormOne();
+  // The last two scaling ops cancel each other out
+  if (A2infNorm3!=A2infNorm1) {
+    EPETRA_TEST_ERR(-35,ierr)
+    ScalingBroke = true;
+  }
+  if (A2oneNorm3!=A2oneNorm1) {
+    EPETRA_TEST_ERR(-36,ierr)
+    ScalingBroke = true;
+  }
+cout << A2;
+  if (verbose1) cout << "error code 3 expected" << endl; 
+  EPETRA_TEST_ERR(A2.LeftScale(xRange),ierr);
+  double A2infNorm4 = A2.NormInf();
+  double A2oneNorm4 = A2.NormOne();
+  // The 4 scaling ops all cancel out
+  if (A2infNorm4!=A2infNorm) {
+    EPETRA_TEST_ERR(-37,ierr)
+    ScalingBroke = true;
+  }
+  if (A2oneNorm4!=A2oneNorm) {
+    EPETRA_TEST_ERR(-38,ierr)
+    ScalingBroke = true;
+  }
+cout << A2;
+
+  if (ScalingBroke) {
+    if (verbose) cout << endl << "LeftScale and RightScale tests FAILED" << endl << endl;
+  }
+  else {
+    if (verbose) cout << endl << "LeftScale and RightScale tests PASSED" << endl << endl;
+  }
+
+/*
+  if (verbose) cout << "\n\n*****Testing InvRowSums" << endl << endl;
+
+  EPETRA_TEST_ERR(A2.InvRowSums(xRow),ierr);
+  cout << xRow;
+//  EPETRA_TEST_ERR(A2.LeftScale(xRow),ierr);
+  float A2infNormFloat = A2.NormInf();
+//cout << A2;
+  bool InvSumsBroke = false;
+//  if (1.0!=A2infNormFloat) {
+//    EPETRA_TEST_ERR(-41,ierr);
+//    InvSumsBroke = true;
+//  }
+
+//  EPETRA_TEST_ERR(A2.InvColSums(xCol),ierr);
+//cout << xCol;
+//  EPETRA_TEST_ERR(A2.RightScale(xCol),ierr);
+//  float A2oneNormFloat = A2.NormOne();
+//cout << A2;
+//  if (1.0!=A2oneNormFloat) {
+//    EPETRA_TEST_ERR(-42,ierr);
+//    InvSumsBroke = true;
+//  }
+
+  EPETRA_TEST_ERR(A2.InvRowSums(xRange),ierr);
+cout << xRange;
+  if (verbose1 && NumProc != 1) cout << "error code 3 expected" << endl;
+  EPETRA_TEST_ERR(A2.LeftScale(xRange),ierr);
+  float A2infNormFloat2 = A2.NormInf(); // We use a float so that rounding error
+	// will not prevent the sum from being 1.0.
+//cout << A2;
+  if (1.0!=A2infNormFloat2) {
+    EPETRA_TEST_ERR(-43,ierr)
+    InvSumsBroke = true;
+  }
+
+//  EPETRA_TEST_ERR(A2.InvColSums(xDomain),ierr);
+//  if (verbose1 && NumProc != 1) cout << "error code 3 expected" << endl; 
+//  EPETRA_TEST_ERR(A2.RightScale(xDomain),ierr);
+//  float A2oneNormFloat2 = A2.NormOne();
+//cout << A2;
+//  if (1.0!=A2oneNormFloat2) {
+//    EPETRA_TEST_ERR(-44,ierr)
+//    InvSumsBroke = true;
+//  }
+
+  if (InvSumsBroke) {
+    if (verbose) cout << endl << "InvRowSums tests FAILED" << endl << endl;
+  }
+  else
+    if (verbose) cout << endl << "InvRowSums tests PASSED" << endl << endl;
+*/
+  //cout << A2;
+delete [] Values2;
+delete [] Indices2;
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
