@@ -79,6 +79,7 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   debug_(0),
   refactorize_(false),
   rcond_threshold_(1e-12),
+  ScaleMethod_(1),
   ConTime_(0.0),
   SymTime_(0.0),
   NumTime_(0.0),
@@ -334,6 +335,11 @@ int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
   if( ParameterList.isParameter("RcondThreshold") )
     rcond_threshold_ = ParameterList.get("RcondThreshold", 1e-12);
 
+  // scaling method: 0: none, 1: use method's default, 2: use
+  // the method's 1st alternative, 3: etc.
+  if( ParameterList.isParameter("ScaleMethod") )
+    ScaleMethod_ = ParameterList.get("ScaleMethod", 1);
+
   // MS // now comment it out, if we have parameters for KLU sublist
   // MS // uncomment it
   /*
@@ -379,6 +385,11 @@ int Amesos_Klu::PerformNumericFactorization( ) {
 
     bool factor_with_pivoting = true ;
 
+    // set the default parameters
+    klu_control control ;
+    klu_btf_defaults (&control) ;
+    control.scale = ScaleMethod_ ;
+
     // see if we can "refactorize"
     if ( refactorize_ && PrivateKluData_->Numeric_ ) {
 
@@ -386,7 +397,7 @@ int Amesos_Klu::PerformNumericFactorization( ) {
 	// using the identical pivot ordering as the prior klu_btf_factor.
 	// No partial pivoting is done.
 	int result = klu_btf_refactor (&Ap[0], &Ai[0], &Aval[0],
-		    PrivateKluData_->Symbolic_, (klu_control *) 0,
+		    PrivateKluData_->Symbolic_, &control,
 		    PrivateKluData_->Numeric_) ;
 
 	// Did it work?
@@ -405,7 +416,6 @@ int Amesos_Klu::PerformNumericFactorization( ) {
 		factor_with_pivoting = false ;
 	    }
 	}
-
     }
 
     if ( factor_with_pivoting ) {
@@ -423,7 +433,7 @@ int Amesos_Klu::PerformNumericFactorization( ) {
 	// factor the matrix using partial pivoting
 	PrivateKluData_->Numeric_ =
 	    klu_btf_factor (&Ap[0], &Ai[0], &Aval[0],
-		    PrivateKluData_->Symbolic_, (klu_control *) 0) ;
+		    PrivateKluData_->Symbolic_, &control) ;
 	if ( PrivateKluData_->Numeric_ == 0 ) EPETRA_CHK_ERR( 2 ) ;
     }
 

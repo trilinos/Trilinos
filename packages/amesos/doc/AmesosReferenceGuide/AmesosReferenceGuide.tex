@@ -472,6 +472,32 @@ refer to table~\ref{tab:options}.
 \choicebox{\tt DebugLevel}{If {\tt 1}, some debugging information are
   printed on the standard output.}
 
+\choicebox{\tt Refactorize}{
+  ``Refactorization'' of a matrix refers to the use of a prior
+  symbolic and numeric factorization (including row and column
+  ordering), to factorize a subsequent matrix using the same
+  pivot ordering.  This can be signicantly faster, but the
+  numerical quality of the factorization may suffer.
+  If {\tt true}, then attempt to re-use the existing
+  symbolic and numeric factorization, to factorize a new matrix using
+  the identical pivot ordering (both row and column ordering) as
+  a prior pivot-capable factorization.}
+
+\choicebox{\tt RcondThreshold}{After a refactorization,
+    an estimate of the reciprocal of the condition number is computed.
+    If this estimate is too small (less than {\tt RcondThreshold}),
+    then the pivot-less factorization is aborted, and the matrix
+    is factorized again with normal numerical pivoting.}
+
+\choicebox{\tt ScaleMethod}{Most methods can scale the input matrix
+prior to factorization.  This typically improves the quality of
+the factorization and reduces fill-in as well.  Setting this
+parameter to zero turns off scaling.  A value of 1 selects the
+method's default scaling method (which may in fact be not to
+scale at all).  A value of 2 means to scale the matrix
+using the first non-default method the package has, 3
+means to use its 2nd alternative method, and so on.}
+
 %\choicebox{\tt Redistribute}{[bool] If true, ..... Default: true.}
 
 \smallskip
@@ -481,9 +507,7 @@ refer to table~\ref{tab:options}.
   \begin{tabular}{| p{5cm} | p{2cm} | p{2cm} | c | c | c
       | c | c |}
     \hline
-    option & type & default value & KLU & 
-    UMFPACK & SuperLU\_DIST &  MUMPS & 
-    ScaLAPACK \\
+    option & type & default value & KLU & UMFPACK & SuperLU\_DIST &  MUMPS & ScaLAPACK \\
     \hline
     \tt UseTranspose & \tt bool & \tt false & $\bullet$ & $\bullet$ & -- & $\bullet$
     & $\bullet$ \\
@@ -507,8 +531,12 @@ refer to table~\ref{tab:options}.
     $\bullet$ & $\bullet$ \\
     \tt OutputLevel & \tt int & \tt 1 & $\bullet$ & $\bullet$ & $\bullet$ &
     $\bullet$ & $\bullet$ \\
-    \tt DebugLevel & \tt int & \tt 0 & $\bullet$ & $\bullet$ & $\bullet$ &
-    $\bullet$ & $\bullet$ \\
+    \tt DebugLevel & \tt int & \tt 0 & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ \\
+%---- added by Tim Davis:
+    \tt Refactorize    & \tt bool   & \tt false  & $\bullet$ & -- & -- & -- & -- \\
+    \tt RcondThreshold & \tt double & $10^{-12}$ & $\bullet$ & -- & -- & -- & -- \\
+    \tt ScaleMethod    & \tt int    & 1          & $\bullet$ & -- & -- & -- & -- \\
+%----
     \hline
   \end{tabular}
   \caption{Supported options. `$\bullet$' means that the interface

@@ -379,6 +379,15 @@ private:
 			    // the "refactorization" is scrapped, and we factor
 			    // with full partial pivoting instead.
 
+  int ScaleMethod_;	    // most methods (KLU, UMFPACK, Mumps, ...) can scale
+			    // the input matrix prior to factorization.  This can
+			    // improve pivoting, reduce fill-in, and lead to a
+			    // better quality factorization.  The options are:
+			    // 0: no scaling
+			    // 1: use the default method for the specific package
+			    // 2: use the method's 1st alternative (if it has one)
+			    // 3: use the method's 2nd alternative, and so on.
+
   // some timing internal, copied from MUMPS
   double ConTime_;                        // time to convert to KLU format
   double SymTime_;                        // time for symbolic factorization

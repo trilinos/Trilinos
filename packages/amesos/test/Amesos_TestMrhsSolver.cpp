@@ -437,6 +437,9 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       Amesos_Klu klu( Problem ) ; 
       EPETRA_CHK_ERR( klu.SetUseTranspose( transpose ) ); 
 
+      // ParamList.set ("ScaleMethod", 0) ;
+      // klu.SetParameters (ParamList) ;
+
       bool factor = true; 
       EPETRA_CHK_ERR( klu.SymbolicFactorization(  ) ); 
       for ( int trials = 0 ; trials <= 1 ; trials++) {
