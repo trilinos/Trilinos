@@ -161,30 +161,84 @@ namespace Teuchos {
     static inline bool haveMachineParameters() { return true; };
     static inline float eps()   {
 #ifdef HAVE_NUMERIC_LIMITS
-			return std::numeric_limits<float>::epsilon();
+      return std::numeric_limits<float>::epsilon();
 #else
-			LAPACK<int, float> lp; return lp.LAMCH('E');
+      LAPACK<int, float> lp; return lp.LAMCH('E');
 #endif
-		}
-    static inline float sfmin() { LAPACK<int, float> lp; return lp.LAMCH('S'); };
-    static inline float base()  { LAPACK<int, float> lp; return lp.LAMCH('B'); };
-    static inline float prec()  { LAPACK<int, float> lp; return lp.LAMCH('P'); };
-    static inline float t()     { LAPACK<int, float> lp; return lp.LAMCH('N'); };
-    static inline float rnd()   { LAPACK<int, float> lp; return lp.LAMCH('R'); };
-    static inline float emin()  { LAPACK<int, float> lp; return lp.LAMCH('M'); };
-    static inline float rmin()  { LAPACK<int, float> lp; return lp.LAMCH('U'); };
-    static inline float emax()  { LAPACK<int, float> lp; return lp.LAMCH('L'); };
-    static inline float rmax()  { LAPACK<int, float> lp; return lp.LAMCH('O'); };
+    }
+    static inline float sfmin() {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<float>::min();
+#else
+      LAPACK<int, float> lp; return lp.LAMCH('S');
+#endif
+    };
+    static inline float base()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<float>::radix;
+#else
+      LAPACK<int, float> lp; return lp.LAMCH('B');
+#endif
+    };
+    static inline float prec()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return eps()*base();
+#else
+      LAPACK<int, float> lp; return lp.LAMCH('P');
+#endif
+    };
+    static inline float t()     {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<float>::digits;
+#else
+      LAPACK<int, float> lp; return lp.LAMCH('N');
+#endif
+    };
+    static inline float rnd()   {
+#ifdef HAVE_NUMERIC_LIMITS
+      return ( std::numeric_limits<float>::round_style == std::round_to_nearest ? float(1.0) : float(0.0) );
+#else
+      LAPACK<int, float> lp; return lp.LAMCH('R');
+#endif
+    };
+    static inline float emin()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<float>::min_exponent;
+#else
+      LAPACK<int, float> lp; return lp.LAMCH('M');
+#endif
+    };
+    static inline float rmin()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<float>::min();
+#else
+      LAPACK<int, float> lp; return lp.LAMCH('U');
+#endif
+    };
+    static inline float emax()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<float>::max_exponent;
+#else
+      LAPACK<int, float> lp; return lp.LAMCH('L');
+#endif
+    };
+    static inline float rmax()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<float>::max();
+#else
+      LAPACK<int, float> lp; return lp.LAMCH('O');
+#endif
+    };
     static inline magnitudeType magnitude(float a) { return fabs(a); };    
     static inline float zero()  { return(0.0); };
     static inline float one()   { return(1.0); };    
     static inline float nan()   { return flt_nan; };
     static inline bool isnaninf(float x) { // RAB: 2004/05/28: Taken from NOX_StatusTest_FiniteValue.C
-			const float tol = 1e-6; // Any (bounded) number should do!
-			if( !(x <= tol) && !(x > tol) ) return true;                 // IEEE says this should fail for NaN
-			float z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
-			return false;
-		}
+      const float tol = 1e-6; // Any (bounded) number should do!
+      if( !(x <= tol) && !(x > tol) ) return true;                 // IEEE says this should fail for NaN
+      float z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
+      return false;
+    }
     static inline void seedrandom(unsigned int s) { srand(s); };
     static inline float random() { float rnd = (float) rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); };
     static inline std::string name() { return "float"; };
@@ -200,30 +254,84 @@ namespace Teuchos {
     static inline bool haveMachineParameters() { return true; };
     static inline double eps()   {
 #ifdef HAVE_NUMERIC_LIMITS
-			return std::numeric_limits<double>::epsilon();
+      return std::numeric_limits<double>::epsilon();
 #else
-			LAPACK<int, double> lp; return lp.LAMCH('E');
+      LAPACK<int, double> lp; return lp.LAMCH('E');
 #endif
-		};
-    static inline double sfmin() { LAPACK<int, double> lp; return lp.LAMCH('S'); };
-    static inline double base()  { LAPACK<int, double> lp; return lp.LAMCH('B'); };
-    static inline double prec()  { LAPACK<int, double> lp; return lp.LAMCH('P'); };
-    static inline double t()     { LAPACK<int, double> lp; return lp.LAMCH('N'); };
-    static inline double rnd()   { LAPACK<int, double> lp; return lp.LAMCH('R'); };
-    static inline double emin()  { LAPACK<int, double> lp; return lp.LAMCH('M'); };
-    static inline double rmin()  { LAPACK<int, double> lp; return lp.LAMCH('U'); };
-    static inline double emax()  { LAPACK<int, double> lp; return lp.LAMCH('L'); };
-    static inline double rmax()  { LAPACK<int, double> lp; return lp.LAMCH('O'); };
+    }
+    static inline double sfmin() {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<double>::min();
+#else
+      LAPACK<int, double> lp; return lp.LAMCH('S');
+#endif
+    };
+    static inline double base()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<double>::radix;
+#else
+      LAPACK<int, double> lp; return lp.LAMCH('B');
+#endif
+    };
+    static inline double prec()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return eps()*base();
+#else
+      LAPACK<int, double> lp; return lp.LAMCH('P');
+#endif
+    };
+    static inline double t()     {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<double>::digits;
+#else
+      LAPACK<int, double> lp; return lp.LAMCH('N');
+#endif
+    };
+    static inline double rnd()   {
+#ifdef HAVE_NUMERIC_LIMITS
+      return ( std::numeric_limits<double>::round_style == std::round_to_nearest ? double(1.0) : double(0.0) );
+#else
+      LAPACK<int, double> lp; return lp.LAMCH('R');
+#endif
+    };
+    static inline double emin()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<double>::min_exponent;
+#else
+      LAPACK<int, double> lp; return lp.LAMCH('M');
+#endif
+    };
+    static inline double rmin()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<double>::min();
+#else
+      LAPACK<int, double> lp; return lp.LAMCH('U');
+#endif
+    };
+    static inline double emax()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<double>::max_exponent;
+#else
+      LAPACK<int, double> lp; return lp.LAMCH('L');
+#endif
+    };
+    static inline double rmax()  {
+#ifdef HAVE_NUMERIC_LIMITS
+      return std::numeric_limits<double>::max();
+#else
+      LAPACK<int, double> lp; return lp.LAMCH('O');
+#endif
+    };
     static inline magnitudeType magnitude(double a) { return fabs(a); };
     static inline double zero()  { return 0.0; };
     static inline double one()   { return 1.0; };
     static inline double nan() { return dbl_nan; };
     static inline bool isnaninf(double x) { // RAB: 2004/05/28: Taken from NOX_StatusTest_FiniteValue.C
-			const double tol = 1e-6; // Any (bounded) number should do!
-			if( !(x <= tol) && !(x > tol) ) return true;                  // IEEE says this should fail for NaN
-			double z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
-			return false;
-		}
+      const double tol = 1e-6; // Any (bounded) number should do!
+      if( !(x <= tol) && !(x > tol) ) return true;                  // IEEE says this should fail for NaN
+      double z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
+      return false;
+    }
     static inline void seedrandom(unsigned int s) { srand(s); };
     static inline double random() { double rnd = (double) rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); };
     static inline std::string name() { return "double"; };
