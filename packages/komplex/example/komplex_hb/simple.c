@@ -4,15 +4,15 @@
  * Export of this program may require a license from the United States         *
  * Government.                                                                 *
  ******************************************************************************/
+#include "azk_komplex.h"
+#include "az_aztec.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #ifdef AZTEC_MPI
 #include <mpi.h>
 #endif
-
-#include "az_aztec.h"
-#include "azk_komplex.h"
 
 int main(int argc, char *argv[])
 {

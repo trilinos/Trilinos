@@ -4,7 +4,8 @@
  * Export of this program may require a license from the United States         *
  * Government.                                                                 *
  ******************************************************************************/
-
+#include "azk_komplex.h"
+#include "az_aztec.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,10 +16,8 @@
 #ifdef AZTEC_MPI
 #include "mpi.h"
 #endif
-#include "az_aztec.h"
 #include "prototypes.h"
 
-#include "azk_komplex.h"
 #define perror(str) { fprintf(stderr,"%s\n",str);   exit(-1); }
 #define double_quote '"'
 

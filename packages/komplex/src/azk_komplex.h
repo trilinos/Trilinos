@@ -75,6 +75,13 @@ AZ_transform).
 /**********************************************************************/
 /**********************************************************************/
 
+#ifndef NO_AUTOTOOLS
+#include <Komplex_config.h>
+#ifdef HAVE_MPI
+#define AZTEC_MPI
+#endif
+#endif
+
 /* Define some constants for the user */
 #define AZK_True_Complex 	     1
 #define AZK_Komplex_Same_Structure   2
