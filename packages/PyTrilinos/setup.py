@@ -19,24 +19,6 @@ pakDir = os.path.split(pyTDir      )[0]
 srcDir = os.path.join( pyTDir,"src")
 noxDir = os.path.join( srcDir,"NOX")
 
-## # Trilinos data
-## searchList = ["/usr/local", "/Users/aalorbe/local", "~/scratch2/local",
-##               "/usr/netpub/Trilinos-10_31_03", "/smallHD/scratch/install",
-## 	      "/u/TrilinosTestHarness/install"]
-## trilHome = None
-## for dir in searchList:
-##     epetraHeader = dir + "/include/Epetra_Comm.h"
-##     if os.path.isfile(epetraHeader):
-##         trilHome = dir
-##         break
-## if not trilHome:
-##     raise RunTimeError, "Trilinos not found"
-## if trilHome == "/usr/local":
-##     trilIncDir = [ ]
-## else:
-##     trilIncDir = [trilHome + "/include"]
-## trilLibDir   = [trilHome + "/lib"]
-
 # Include directories
 epetraInc    = [os.path.join(pakDir, "epetra",    "src"             )  ]
 epetraExtInc = [os.path.join(pakDir, "epetraext", "src", "transform"), \
@@ -78,17 +60,12 @@ if sysName == "Linux":
 else:
     swigPath = [ ]
 
-# Standard C++ library
+# Standard libraries
 if sysName == "Linux":
     stdCXX = ["stdc++"]
 else:
     stdCXX = [ ]
-
-## # Standard extension data
-## stdIncDirs = [ ]
-## stdLibDirs = swigDir
 stdLibs    = stdCXX + swigLib
-## stdArgs    = swigPath
 
 # Source files
 rawEpetraWrap      = os.path.join(srcDir,"RawEpetra_wrap.cxx"     )

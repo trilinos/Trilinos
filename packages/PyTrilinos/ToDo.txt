@@ -82,7 +82,7 @@
     [Done] Change to recognize separate source and build directories
     [Done] Change SWIG invocations to use local Trilinos include
            directories
-    ------ Change setup.py to look in local Trilinos source
+    [Done] Change setup.py to look in local Trilinos source
            directories for libraries
     ------ Get test script to work from build directory
     ------ Check for presence of SWIG

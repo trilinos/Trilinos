@@ -109,6 +109,8 @@ endif
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
+tempdir = $(shell $(srcdir)/pyLocate --temp)
+
 all-recursive: build
 
 wrappers:
@@ -117,7 +119,10 @@ wrappers:
 SRCDIR:
 	@echo $(srcdir) > $@
 
-build: wrappers SRCDIR
+$(tempdir):
+	mkdir -p $@
+
+build: wrappers SRCDIR $(tempdir)
 	$(srcdir)/setup.py build
 
 install: build

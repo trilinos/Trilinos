@@ -284,6 +284,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
 @BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+tempdir = $(shell $(srcdir)/pyLocate --temp)
 all: all-recursive
 
 .SUFFIXES:
@@ -683,7 +684,10 @@ wrappers:
 SRCDIR:
 	@echo $(srcdir) > $@
 
-build: wrappers SRCDIR
+$(tempdir):
+	mkdir -p $@
+
+build: wrappers SRCDIR $(tempdir)
 	$(srcdir)/setup.py build
 
 install: build

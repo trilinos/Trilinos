@@ -11,11 +11,11 @@ from   distutils.util      import get_platform
 def main():
   (execDirName,execBaseName) = os.path.split(sys.argv[0])
 
-  USAGE="usage: "+execBaseName+" [-h] [-v] [--build] [--include]"
+  USAGE="usage: "+execBaseName+" [-h] [-v] [--help] [--verbose] [--build] [--include] [--temp]"
 
   try:
     opts, args = getopt.getopt(sys.argv[1:], "hv", ["help", "verbose", \
-                                                    "build", "include"])
+                                                    "build", "include", "temp"])
   except getopt.GetoptError:
     # print help information and exit:
     print USAGE
@@ -25,6 +25,7 @@ def main():
   verboseMode  = False
   buildFlag    = False
   includeFlag  = False
+  tempFlag     = False
 
   # Loop over options
   for (flag, value) in opts:
@@ -37,6 +38,8 @@ def main():
       buildFlag = True
     if flag == "--include":
       includeFlag = True
+    if flag == "--temp":
+      tempFlag = True
 
   # Python include directory
   if includeFlag:
@@ -49,6 +52,14 @@ def main():
   if buildFlag:
     lib_dir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
     print os.path.join('build', lib_dir)
+
+  # Python distutils build directory.  This essentially emulates the code used
+  # by distutils.commands.build to generate the name of the build directory.  If
+  # that code ever changes, this could break, but it is not easily accessible
+  # code, so this is my hack.
+  if tempFlag:
+    temp_dir = "temp.%s-%s" % (get_platform(), sys.version[0:3])
+    print os.path.join('build', temp_dir)
 
 if (__name__ == '__main__'):
   main()
