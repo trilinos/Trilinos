@@ -206,9 +206,9 @@ static int rcb(
 
   /* function prototypes */
 
-  void rcb_error(LB *, int);
-  void rcb_check(LB *, struct rcb_dot *, int, int, struct rcb_box *);
-  void rcb_stats(LB *, double, struct rcb_dot *,int, double *, 
+  static void rcb_error(LB *, int);
+  static void rcb_check(LB *, struct rcb_dot *, int, int, struct rcb_box *);
+  static void rcb_stats(LB *, double, struct rcb_dot *,int, double *, 
 		 int *, struct rcb_box *, int);
 
   /* MPI data types and user functions */
@@ -692,7 +692,7 @@ static int rcb(
 
 /* error message for malloc/realloc overflow */
 
-void rcb_error(LB *lb, int size)
+static void rcb_error(LB *lb, int size)
 
 {
   int proc;
@@ -726,7 +726,7 @@ void rcb_box_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
 
 /* consistency checks on RCB results */
 
-void rcb_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
+static void rcb_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
 	       struct rcb_box *rcbbox)
 
 {
@@ -793,7 +793,7 @@ void rcb_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
 
 /* RCB statistics */
 
-void rcb_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
+static void rcb_stats(LB *lb, double timetotal, struct rcb_dot *dotpt,
 	       int dotnum, double *timers, int *counters,
 	       struct rcb_box *rcbbox, int reuse)
 
