@@ -47,6 +47,11 @@
 #include "mp/mpreal.h"
 #endif
 
+#ifdef HAVE_TEUCHOS_GNU_MP
+#include "gmp.h"
+#include "gmpxx.h"
+#endif
+
 /*! \struct Teuchos::ScalarTraits
     \brief This structure defines some basic traits for a scalar field type.
 
@@ -224,6 +229,33 @@ namespace Teuchos {
     static inline std::string name() { return "double"; };
     static inline double squareroot(double x) { return sqrt(x); };
   };
+
+#ifdef HAVE_TEUCHOS_GNU_MP
+
+  extern gmp_randclass gmp_rng; 
+
+  template<>
+  struct ScalarTraits<mpf_class>
+  {
+    typedef mpf_class magnitudeType;
+    static inline bool haveMachineParameters() { return false; };
+    // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+    static magnitudeType magnitude(mpf_class a) { return abs(a); };
+    static inline mpf_class zero() { mpf_class zero = 0.0; return zero; };
+    static inline mpf_class one() { mpf_class one = 1.0; return one; };    
+    static inline void seedrandom(unsigned int s) { 
+      unsigned long int seedVal = static_cast<unsigned long int>(s);
+      gmp_rng.seed( seedVal );	
+    };
+    static inline mpf_class random() { 
+      return gmp_rng.get_f(); 
+    };
+    static inline std::string name() { return "mpf_class"; };
+    static inline mpf_class squareroot(mpf_class x) { return sqrt(x); };
+    // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
+  };
+
+#endif  
 
 #ifdef HAVE_TEUCHOS_ARPREC
 

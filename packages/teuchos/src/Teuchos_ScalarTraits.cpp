@@ -30,7 +30,13 @@
 
 namespace Teuchos {
 
+#ifdef HAVE_TEUCHOS_GNU_MP
+gmp_randclass gmp_rng ( gmp_randinit_default );
+#endif
+
 float  flt_nan = +0.0/sin(0.0);
 double dbl_nan = +0.0/sin(0.0);
 
 } // Teuchos namespace
+
+

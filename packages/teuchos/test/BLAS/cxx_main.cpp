@@ -30,7 +30,6 @@
 // 07.24.03 -- Initial checkin
 // 08.08.03 -- All test suites except for TRSM are finished.
 // 08.14.03 -- The test suite for TRSM is finished (Heidi).
-
 /*
 
 This test program is intended to check an experimental default type (e.g. mp_real) against an "officialy supported" control type (e.g. double). For each test, the program will generate the appropriate scalars and randomly-sized vectors and matrices of random numbers for the routine being tested. All of the input data for the experimental type is casted into the control type, so in theory both BLAS routines should get the same input data. Upon return, the experimental output data is casted back into the control type, and the results are compared; if they are equal (within a user-definable tolerance) the test is considered successful.
@@ -42,10 +41,6 @@ The test routine for TRSM is still being developed; all of the others are more o
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_Version.hpp"
 
-#ifdef HAVE_TEUCHOS_ARPREC
-#include "mp/mpreal.h"
-#endif
-
 using namespace std;
 using namespace Teuchos;
 
@@ -54,6 +49,8 @@ using namespace Teuchos;
 
 #ifdef HAVE_TEUCHOS_ARPREC
 #define SType1	   mp_real
+#elif defined(HAVE_TEUCHOS_GNU_MP)
+#define SType1     mpf_class
 #else
 #define SType1     float
 #endif
@@ -123,6 +120,11 @@ TYPE2 ConvertType(TYPE1, TYPE2);
 #ifdef HAVE_TEUCHOS_ARPREC
 template<>
 double ConvertType(mp_real, double);
+#endif
+
+#ifdef HAVE_TEUCHOS_GNU_MP
+template<>
+double ConvertType(mpf_class, double);
 #endif
 
 // These functions return a random character appropriate for the BLAS arguments that share their names (uses GetRandom())
@@ -1664,6 +1666,14 @@ template<>
 double ConvertType(mp_real T1, double T2)
 {
   return dble(T1);
+}
+#endif
+
+#ifdef HAVE_TEUCHOS_GNU_MP
+template<>
+double ConvertType(mpf_class T1, double T2)
+{
+  return T1.get_d();
 }
 #endif
 
