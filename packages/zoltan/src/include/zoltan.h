@@ -70,6 +70,7 @@ enum Zoltan_Fn_Type {
   ZOLTAN_PACK_OBJ_MULTI_FN_TYPE,
   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE,
   ZOLTAN_PARTITION_FN_TYPE,
+  ZOLTAN_PARTITION_MULTI_FN_TYPE,
   ZOLTAN_GET_PROCESSOR_NAME_FN_TYPE,
   ZOLTAN_NUM_HG_EDGES_FN_TYPE,
   ZOLTAN_NUM_HG_PINS_FN_TYPE,
@@ -104,6 +105,48 @@ struct Zoltan_Struct;
 /*****************************************************************************/
 /**********************  Functions to query application  *********************/
 /*****************************************************************************/
+
+/*****************************************************************************/
+/*
+ *  Function to return, for a list of object IDs, 
+ *  the partition numbers the objects are assigned to.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_obj             --  number of objects for which partition values 
+ *                            should be returned.
+ *    global_id           --  the Global IDs for the objects
+ *    local_id            --  the Local IDs for the objects
+ *  Output:
+ *    parts               --  upon return, an array of partition assignments
+ *                            for objects specified in global_id.
+ *    *ierr               --  error code
+ */
+
+typedef void ZOLTAN_PARTITION_MULTI_FN(
+  void *data,              
+  int num_gid_entries, 
+  int num_lid_entries,
+  int num_obj,
+  ZOLTAN_ID_PTR global_id, 
+  ZOLTAN_ID_PTR local_id,
+  int *parts,
+  int *ierr
+);
+
+typedef void ZOLTAN_PARTITION_MULTI_FORT_FN(
+  void *data, 
+  int *num_gid_entries, 
+  int *num_lid_entries,
+  int *num_obj,
+  ZOLTAN_ID_PTR global_id, 
+  ZOLTAN_ID_PTR local_id, 
+  int *parts,
+  int *ierr
+);
 
 /*****************************************************************************/
 /*
@@ -496,185 +539,6 @@ typedef int ZOLTAN_NEXT_OBJ_FORT_FN(
   int *ierr
 );
 
-/*****************************************************************************/
-/*
- *  Function to return, for the calling processor, the number of objects 
- *  sharing a subdomain border with a given processor.
- *  Input:  
- *    data                --  pointer to user defined data structure
- *    nbor_proc           --  processor ID of the neighboring processor.
- *  Output:
- *    ierr                --  error code
- *  Returned value:       --  the number of local objects.
- */
-
-typedef int ZOLTAN_NUM_BORDER_OBJ_FN(
-  void *data, 
-  int nbor_proc, 
-  int *ierr
-);
-
-typedef int ZOLTAN_NUM_BORDER_OBJ_FORT_FN(
-  void *data, 
-  int *nbor_proc, 
-  int *ierr
-);
-
-/*****************************************************************************/
-/*
- *  Function to return a list of all objects sharing a subdomain border 
- *  with a given processor.
- *  Input:  
- *    data                --  pointer to user defined data structure
- *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a global ID
- *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a local ID
- *    nbor_proc           --  processor ID of the neighboring processor.
- *    wdim                --  dimension of object weight, or 0 if
- *                            the weights are not sought.
- *  Output:
- *    global_ids          --  array of Global IDs of all objects on the
- *                            processor border with the given neighboring
- *                            processor.
- *    local_ids           --  array of Local IDs of all objects on the 
- *                            processor border with the given neighboring 
- *                            processor.
- *    objwgts            --  objwgts[i*wdim:(i+1)*wdim-1] correponds
- *                            to the weight of object i 
- *                            (objwgts is undefined if wdim=0)
- *    ierr               --  error code
- */
-
-typedef void ZOLTAN_BORDER_OBJ_LIST_FN(
-  void *data, 
-  int num_gid_entries, 
-  int num_lid_entries,
-  int nbor_proc,
-  ZOLTAN_ID_PTR global_ids, 
-  ZOLTAN_ID_PTR local_ids,
-  int wdim, 
-  float *objwgts, 
-  int *ierr
-);
-
-typedef void ZOLTAN_BORDER_OBJ_LIST_FORT_FN(
-  void *data,
-  int *num_gid_entries, 
-  int *num_lid_entries,
-  int *nbor_proc,
-  ZOLTAN_ID_PTR global_ids, 
-  ZOLTAN_ID_PTR local_ids,
-  int *wdim, 
-  float *objwgts, 
-  int *ierr
-);
-
-/*****************************************************************************/
-/*
- *  Iterator function for border objects; return the first local object 
- *  along the subdomain boundary with a given processor.
- *  Input:  
- *    data                --  pointer to user defined data structure
- *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a global ID
- *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a local ID
- *    nbor_proc           --  processor ID of the neighboring processor.
- *    wdim                --  dimension of object weight, or 0 if
- *                                  the weight is not sought.
- *  Output:
- *    first_global_id     --  Global ID of the first object; NULL if no
- *                            objects.
- *    first_local_id      --  Local ID of the first object; NULL if no 
- *                            objects.
- *    first_obj_wgt       --  weight vector for the first object
- *                            (undefined if wdim=0)
- *    ierr                --  error code
- *  Returned value:       --  1 if a valid object is returned; 0 if
- *                            no more objects exist (i.e., global_id is
- *                            the last object).
- */
-
-typedef int ZOLTAN_FIRST_BORDER_OBJ_FN(
-  void *data, 
-  int num_gid_entries, 
-  int num_lid_entries, 
-  int nbor_proc,
-  ZOLTAN_ID_PTR first_global_id,
-  ZOLTAN_ID_PTR first_local_id, 
-  int wdim, 
-  float *first_obj_wgt,
-  int *ierr
-);
-
-typedef int ZOLTAN_FIRST_BORDER_OBJ_FORT_FN(
-  void *data, 
-  int *num_gid_entries, 
-  int *num_lid_entries, 
-  int *nbor_proc,
-  ZOLTAN_ID_PTR first_global_id,
-  ZOLTAN_ID_PTR first_local_id, 
-  int *wdim, 
-  float *first_obj_wgt,
-  int *ierr
-);
-
-/*****************************************************************************/
-/*
- *  Iterator function for border objects; return the next local object 
- *  along the subdomain boundary with a given processor.
- *  Input:  
- *    data                --  pointer to user defined data structure
- *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a global ID
- *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a local ID
- *    global_id           --  Global ID of the previous object.
- *    local_id            --  Local ID of the previous object.
- *    nbor_proc           --  processor ID of the neighboring processor.
- *    wdim                --  dimension of object weight, or 0 if
- *                            the weight is not sought.
- *  Output:
- *    next_global_id      --  Global ID of the next object; NULL if no
- *                            more objects.
- *    next_local_id       --  Local ID of the next object; NULL if no 
- *                            more objects.
- *    next_obj_wgt        --  weight vector for the next object
- *                            (undefined if wdim=0)
- *    ierr                --  error code
- *  Returned value:       --  1 if a valid object is returned; 0 if
- *                            no more objects exist (i.e., global_id is
- *                            the last object).
- */
-
-typedef int ZOLTAN_NEXT_BORDER_OBJ_FN(
-  void *data, 
-  int num_gid_entries, 
-  int num_lid_entries,
-  ZOLTAN_ID_PTR global_id,
-  ZOLTAN_ID_PTR local_id, 
-  int nbor_proc,
-  ZOLTAN_ID_PTR next_global_id,
-  ZOLTAN_ID_PTR next_local_id, 
-  int wdim, 
-  float *next_obj_wgt,
-  int *ierr
-);
-
-typedef int ZOLTAN_NEXT_BORDER_OBJ_FORT_FN(
-  void *data, 
-  int *num_gid_entries, 
-  int *num_lid_entries,
-  ZOLTAN_ID_PTR global_id,
-  ZOLTAN_ID_PTR local_id, 
-  int *nbor_proc,
-  ZOLTAN_ID_PTR next_global_id,
-  ZOLTAN_ID_PTR next_local_id, 
-  int *wdim, 
-  float *next_obj_wgt,
-  int *ierr
-);
 
 /*****************************************************************************/
 /*
@@ -1825,6 +1689,186 @@ typedef int ZOLTAN_HG_EDGE_LIST_FORT_FN(
 );
 
 /*****************************************************************************/
+/*
+ *  Function to return, for the calling processor, the number of objects 
+ *  sharing a subdomain border with a given processor.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    nbor_proc           --  processor ID of the neighboring processor.
+ *  Output:
+ *    ierr                --  error code
+ *  Returned value:       --  the number of local objects.
+ */
+
+typedef int ZOLTAN_NUM_BORDER_OBJ_FN(
+  void *data, 
+  int nbor_proc, 
+  int *ierr
+);
+
+typedef int ZOLTAN_NUM_BORDER_OBJ_FORT_FN(
+  void *data, 
+  int *nbor_proc, 
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return a list of all objects sharing a subdomain border 
+ *  with a given processor.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    nbor_proc           --  processor ID of the neighboring processor.
+ *    wdim                --  dimension of object weight, or 0 if
+ *                            the weights are not sought.
+ *  Output:
+ *    global_ids          --  array of Global IDs of all objects on the
+ *                            processor border with the given neighboring
+ *                            processor.
+ *    local_ids           --  array of Local IDs of all objects on the 
+ *                            processor border with the given neighboring 
+ *                            processor.
+ *    objwgts            --  objwgts[i*wdim:(i+1)*wdim-1] correponds
+ *                            to the weight of object i 
+ *                            (objwgts is undefined if wdim=0)
+ *    ierr               --  error code
+ */
+
+typedef void ZOLTAN_BORDER_OBJ_LIST_FN(
+  void *data, 
+  int num_gid_entries, 
+  int num_lid_entries,
+  int nbor_proc,
+  ZOLTAN_ID_PTR global_ids, 
+  ZOLTAN_ID_PTR local_ids,
+  int wdim, 
+  float *objwgts, 
+  int *ierr
+);
+
+typedef void ZOLTAN_BORDER_OBJ_LIST_FORT_FN(
+  void *data,
+  int *num_gid_entries, 
+  int *num_lid_entries,
+  int *nbor_proc,
+  ZOLTAN_ID_PTR global_ids, 
+  ZOLTAN_ID_PTR local_ids,
+  int *wdim, 
+  float *objwgts, 
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Iterator function for border objects; return the first local object 
+ *  along the subdomain boundary with a given processor.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    nbor_proc           --  processor ID of the neighboring processor.
+ *    wdim                --  dimension of object weight, or 0 if
+ *                                  the weight is not sought.
+ *  Output:
+ *    first_global_id     --  Global ID of the first object; NULL if no
+ *                            objects.
+ *    first_local_id      --  Local ID of the first object; NULL if no 
+ *                            objects.
+ *    first_obj_wgt       --  weight vector for the first object
+ *                            (undefined if wdim=0)
+ *    ierr                --  error code
+ *  Returned value:       --  1 if a valid object is returned; 0 if
+ *                            no more objects exist (i.e., global_id is
+ *                            the last object).
+ */
+
+typedef int ZOLTAN_FIRST_BORDER_OBJ_FN(
+  void *data, 
+  int num_gid_entries, 
+  int num_lid_entries, 
+  int nbor_proc,
+  ZOLTAN_ID_PTR first_global_id,
+  ZOLTAN_ID_PTR first_local_id, 
+  int wdim, 
+  float *first_obj_wgt,
+  int *ierr
+);
+
+typedef int ZOLTAN_FIRST_BORDER_OBJ_FORT_FN(
+  void *data, 
+  int *num_gid_entries, 
+  int *num_lid_entries, 
+  int *nbor_proc,
+  ZOLTAN_ID_PTR first_global_id,
+  ZOLTAN_ID_PTR first_local_id, 
+  int *wdim, 
+  float *first_obj_wgt,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Iterator function for border objects; return the next local object 
+ *  along the subdomain boundary with a given processor.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    global_id           --  Global ID of the previous object.
+ *    local_id            --  Local ID of the previous object.
+ *    nbor_proc           --  processor ID of the neighboring processor.
+ *    wdim                --  dimension of object weight, or 0 if
+ *                            the weight is not sought.
+ *  Output:
+ *    next_global_id      --  Global ID of the next object; NULL if no
+ *                            more objects.
+ *    next_local_id       --  Local ID of the next object; NULL if no 
+ *                            more objects.
+ *    next_obj_wgt        --  weight vector for the next object
+ *                            (undefined if wdim=0)
+ *    ierr                --  error code
+ *  Returned value:       --  1 if a valid object is returned; 0 if
+ *                            no more objects exist (i.e., global_id is
+ *                            the last object).
+ */
+
+typedef int ZOLTAN_NEXT_BORDER_OBJ_FN(
+  void *data, 
+  int num_gid_entries, 
+  int num_lid_entries,
+  ZOLTAN_ID_PTR global_id,
+  ZOLTAN_ID_PTR local_id, 
+  int nbor_proc,
+  ZOLTAN_ID_PTR next_global_id,
+  ZOLTAN_ID_PTR next_local_id, 
+  int wdim, 
+  float *next_obj_wgt,
+  int *ierr
+);
+
+typedef int ZOLTAN_NEXT_BORDER_OBJ_FORT_FN(
+  void *data, 
+  int *num_gid_entries, 
+  int *num_lid_entries,
+  ZOLTAN_ID_PTR global_id,
+  ZOLTAN_ID_PTR local_id, 
+  int *nbor_proc,
+  ZOLTAN_ID_PTR next_global_id,
+  ZOLTAN_ID_PTR next_local_id, 
+  int *wdim, 
+  float *next_obj_wgt,
+  int *ierr
+);
+
+/*****************************************************************************/
 /*****************************************************************************/
 /*******  Functions to set-up Zoltan load-balancing data structure  **********/
 /*****************************************************************************/
@@ -1920,6 +1964,12 @@ extern int Zoltan_Set_Fn(
  *    zz                  --  Appropriate field set to value in fn_ptr.
  *  Returned value:       --  Error code
  */
+
+extern int Zoltan_Set_Partition_Multi_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_PARTITION_MULTI_FN *fn_ptr, 
+  void *data_ptr
+);
 
 extern int Zoltan_Set_Partition_Fn(
   struct Zoltan_Struct *zz, 
