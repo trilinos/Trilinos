@@ -205,7 +205,9 @@ ABSTRACT_H = \
 
 LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Generic.H \
-	$(srcdir)/NOX_LineSearch_Common.H \
+	$(srcdir)/NOX_LineSearch_Utils_Slope.H \
+	$(srcdir)/NOX_LineSearch_Utils_Printing.H \
+	$(srcdir)/NOX_LineSearch_Utils_Counters.H \
 	$(srcdir)/NOX_LineSearch_FullStep.H \
 	$(srcdir)/NOX_LineSearch_Backtrack.H \
 	$(srcdir)/NOX_LineSearch_Manager.H \
@@ -215,7 +217,9 @@ LINESEARCH_H = \
 
 
 LINESEARCH = \
-	$(srcdir)/NOX_LineSearch_Common.C \
+	$(srcdir)/NOX_LineSearch_Utils_Slope.C \
+	$(srcdir)/NOX_LineSearch_Utils_Printing.C \
+	$(srcdir)/NOX_LineSearch_Utils_Counters.C \
 	$(srcdir)/NOX_LineSearch_FullStep.C \
 	$(srcdir)/NOX_LineSearch_Backtrack.C \
 	$(srcdir)/NOX_LineSearch_Manager.C \
@@ -330,7 +334,10 @@ LIBRARIES = $(lib_LIBRARIES)
 
 libnox_a_DEPENDENCIES =
 am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
-	NOX_Abstract_Group.$(OBJEXT) NOX_LineSearch_Common.$(OBJEXT) \
+	NOX_Abstract_Group.$(OBJEXT) \
+	NOX_LineSearch_Utils_Slope.$(OBJEXT) \
+	NOX_LineSearch_Utils_Printing.$(OBJEXT) \
+	NOX_LineSearch_Utils_Counters.$(OBJEXT) \
 	NOX_LineSearch_FullStep.$(OBJEXT) \
 	NOX_LineSearch_Backtrack.$(OBJEXT) \
 	NOX_LineSearch_Manager.$(OBJEXT) \
@@ -376,7 +383,6 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_SteepestDescent.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Tensor.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Backtrack.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Common.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_FullStep.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_MoreThuente.Po \
@@ -384,6 +390,9 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Polynomial.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Quadratic.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Secant.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Utils_Counters.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Utils_Printing.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Utils_Slope.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_Entry.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_List.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Random.Po \
@@ -479,7 +488,12 @@ clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
 NOX_Abstract_Vector.$(OBJEXT): $(srcdir)/NOX_Abstract_Vector.C
 NOX_Abstract_Group.$(OBJEXT): $(srcdir)/NOX_Abstract_Group.C
-NOX_LineSearch_Common.$(OBJEXT): $(srcdir)/NOX_LineSearch_Common.C
+NOX_LineSearch_Utils_Slope.$(OBJEXT): \
+	$(srcdir)/NOX_LineSearch_Utils_Slope.C
+NOX_LineSearch_Utils_Printing.$(OBJEXT): \
+	$(srcdir)/NOX_LineSearch_Utils_Printing.C
+NOX_LineSearch_Utils_Counters.$(OBJEXT): \
+	$(srcdir)/NOX_LineSearch_Utils_Counters.C
 NOX_LineSearch_FullStep.$(OBJEXT): $(srcdir)/NOX_LineSearch_FullStep.C
 NOX_LineSearch_Backtrack.$(OBJEXT): $(srcdir)/NOX_LineSearch_Backtrack.C
 NOX_LineSearch_Manager.$(OBJEXT): $(srcdir)/NOX_LineSearch_Manager.C
@@ -540,7 +554,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_SteepestDescent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Tensor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Backtrack.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_FullStep.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_MoreThuente.Po@am__quote@
@@ -548,6 +561,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Polynomial.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Quadratic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Secant.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Utils_Counters.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Utils_Printing.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Utils_Slope.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_Entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_List.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Random.Po@am__quote@
@@ -602,17 +618,41 @@ NOX_Abstract_Group.obj: $(srcdir)/NOX_Abstract_Group.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Abstract_Group.obj `cygpath -w $(srcdir)/NOX_Abstract_Group.C`
 
-NOX_LineSearch_Common.o: $(srcdir)/NOX_LineSearch_Common.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Common.C' object='NOX_LineSearch_Common.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Common.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Common.TPo' @AMDEPBACKSLASH@
+NOX_LineSearch_Utils_Slope.o: $(srcdir)/NOX_LineSearch_Utils_Slope.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Utils_Slope.C' object='NOX_LineSearch_Utils_Slope.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Utils_Slope.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Utils_Slope.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Common.o `test -f $(srcdir)/NOX_LineSearch_Common.C || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Common.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Utils_Slope.o `test -f $(srcdir)/NOX_LineSearch_Utils_Slope.C || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Utils_Slope.C
 
-NOX_LineSearch_Common.obj: $(srcdir)/NOX_LineSearch_Common.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Common.C' object='NOX_LineSearch_Common.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Common.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Common.TPo' @AMDEPBACKSLASH@
+NOX_LineSearch_Utils_Slope.obj: $(srcdir)/NOX_LineSearch_Utils_Slope.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Utils_Slope.C' object='NOX_LineSearch_Utils_Slope.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Utils_Slope.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Utils_Slope.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Common.obj `cygpath -w $(srcdir)/NOX_LineSearch_Common.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Utils_Slope.obj `cygpath -w $(srcdir)/NOX_LineSearch_Utils_Slope.C`
+
+NOX_LineSearch_Utils_Printing.o: $(srcdir)/NOX_LineSearch_Utils_Printing.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Utils_Printing.C' object='NOX_LineSearch_Utils_Printing.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Utils_Printing.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Utils_Printing.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Utils_Printing.o `test -f $(srcdir)/NOX_LineSearch_Utils_Printing.C || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Utils_Printing.C
+
+NOX_LineSearch_Utils_Printing.obj: $(srcdir)/NOX_LineSearch_Utils_Printing.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Utils_Printing.C' object='NOX_LineSearch_Utils_Printing.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Utils_Printing.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Utils_Printing.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Utils_Printing.obj `cygpath -w $(srcdir)/NOX_LineSearch_Utils_Printing.C`
+
+NOX_LineSearch_Utils_Counters.o: $(srcdir)/NOX_LineSearch_Utils_Counters.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Utils_Counters.C' object='NOX_LineSearch_Utils_Counters.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Utils_Counters.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Utils_Counters.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Utils_Counters.o `test -f $(srcdir)/NOX_LineSearch_Utils_Counters.C || echo '$(srcdir)/'`$(srcdir)/NOX_LineSearch_Utils_Counters.C
+
+NOX_LineSearch_Utils_Counters.obj: $(srcdir)/NOX_LineSearch_Utils_Counters.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_Utils_Counters.C' object='NOX_LineSearch_Utils_Counters.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_LineSearch_Utils_Counters.Po' tmpdepfile='$(DEPDIR)/NOX_LineSearch_Utils_Counters.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_LineSearch_Utils_Counters.obj `cygpath -w $(srcdir)/NOX_LineSearch_Utils_Counters.C`
 
 NOX_LineSearch_FullStep.o: $(srcdir)/NOX_LineSearch_FullStep.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_LineSearch_FullStep.C' object='NOX_LineSearch_FullStep.o' libtool=no @AMDEPBACKSLASH@

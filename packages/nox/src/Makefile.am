@@ -126,7 +126,9 @@ ABSTRACT_H = \
 
 LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Generic.H \
-	$(srcdir)/NOX_LineSearch_Common.H \
+	$(srcdir)/NOX_LineSearch_Utils_Slope.H \
+	$(srcdir)/NOX_LineSearch_Utils_Printing.H \
+	$(srcdir)/NOX_LineSearch_Utils_Counters.H \
 	$(srcdir)/NOX_LineSearch_FullStep.H \
 	$(srcdir)/NOX_LineSearch_Backtrack.H \
 	$(srcdir)/NOX_LineSearch_Manager.H \
@@ -135,7 +137,9 @@ LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Secant.H 
 
 LINESEARCH = \
-	$(srcdir)/NOX_LineSearch_Common.C \
+	$(srcdir)/NOX_LineSearch_Utils_Slope.C \
+	$(srcdir)/NOX_LineSearch_Utils_Printing.C \
+	$(srcdir)/NOX_LineSearch_Utils_Counters.C \
 	$(srcdir)/NOX_LineSearch_FullStep.C \
 	$(srcdir)/NOX_LineSearch_Backtrack.C \
 	$(srcdir)/NOX_LineSearch_Manager.C \
