@@ -393,8 +393,6 @@ void FiniteElementProblem::createSolverParameters()
   //lsParams.setParameter("Max Iterations", 800);  
   //lsParams.setParameter("Tolerance", 1e-4);
   //lsParams.setParameter("Output Frequency", 50);    
-  //lsParams.setParameter("Scaling", "None");             
-  //lsParams.setParameter("Scaling", "Row Sum");          
   //lsParams.setParameter("Preconditioning", "None");   
   //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
