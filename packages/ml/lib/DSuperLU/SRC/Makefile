@@ -32,9 +32,11 @@ include ../make.inc
 #
 #######################################################################
 
-ALLAUX = superlu_timer.o lsame.o util.o memory.o get_perm_c.o mmd.o \
-	 sp_coletree.o sp_preorder.o sp_ienv.o relax_snode.o \
-	 xerbla.o
+#ALLAUX = superlu_timer.o lsame.o util.o memory.o get_perm_c.o mmd.o \
+#	 sp_coletree.o sp_preorder.o sp_ienv.o relax_snode.o \
+#	 xerbla.o
+ALLAUX = superlu_timer.o util.o memory.o get_perm_c.o mmd.o \
+	 sp_coletree.o sp_preorder.o sp_ienv.o relax_snode.o
 
 SCLAUX = slamch.o
 
