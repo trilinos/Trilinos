@@ -38,5 +38,5 @@ FECrsMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 FECrsMatrix_test_CXXFLAGS = -I$(top_srcdir)/src
 
-FECrsMatrix_test_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+FECrsMatrix_test_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)

@@ -36,5 +36,5 @@ UG_ExMaps_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 UG_ExMaps_CXXFLAGS = -I$(top_srcdir)/src
 
-UG_ExMaps_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+UG_ExMaps_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)

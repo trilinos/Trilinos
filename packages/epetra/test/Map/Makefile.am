@@ -36,7 +36,7 @@ Map_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 Map_test_CXXFLAGS = -I$(top_srcdir)/src
 #Unsure why this test has to link with BLAS for IBM
-Map_test_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+Map_test_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 

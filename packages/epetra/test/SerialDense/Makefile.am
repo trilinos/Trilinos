@@ -36,6 +36,7 @@ SerialDense_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 SerialDense_test_CXXFLAGS = -I$(top_srcdir)/src
 
-SerialDense_test_LDADD = $(top_builddir)/src/libepetra.a $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+SerialDense_test_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 

@@ -36,5 +36,5 @@ UG_Ex1_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 UG_Ex1_CXXFLAGS = -I$(top_srcdir)/src
 
-UG_Ex1_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+UG_Ex1_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)

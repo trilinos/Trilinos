@@ -36,7 +36,7 @@ Comm_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 Comm_test_CXXFLAGS = -I$(top_srcdir)/src
 #Unsure why this test need to link to the BLAS on an IBM.
-Comm_test_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+Comm_test_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 

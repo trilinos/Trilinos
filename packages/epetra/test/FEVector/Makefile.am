@@ -38,5 +38,5 @@ FEVector_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 FEVector_test_CXXFLAGS = -I$(top_srcdir)/src
 
-FEVector_test_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+FEVector_test_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)

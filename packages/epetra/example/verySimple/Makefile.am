@@ -36,5 +36,5 @@ example_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 example_CXXFLAGS = -I$(top_srcdir)/src
 
-example_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+example_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)

@@ -36,5 +36,5 @@ ImportExport_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 ImportExport_test_CXXFLAGS = -I$(top_srcdir)/src
 
-ImportExport_test_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+ImportExport_test_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)

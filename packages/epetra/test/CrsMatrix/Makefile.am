@@ -36,5 +36,5 @@ CrsMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 CrsMatrix_test_CXXFLAGS = -I$(top_srcdir)/src
 
-CrsMatrix_test_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+CrsMatrix_test_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)

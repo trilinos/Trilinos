@@ -36,5 +36,5 @@ power_method_example_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 power_method_example_CXXFLAGS = -I$(top_srcdir)/src
 
-power_method_example_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+power_method_example_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)

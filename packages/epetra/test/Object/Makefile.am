@@ -36,7 +36,7 @@ Object_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 Object_test_CXXFLAGS = -I$(top_srcdir)/src
 
-Object_test_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+Object_test_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 

@@ -38,5 +38,5 @@ Vector_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
 Vector_test_CXXFLAGS = -I$(top_srcdir)/src
 
-Vector_test_LDADD = $(top_builddir)/src/libepetra.a $(BLAS_LIBS) \
-	$(LIBS) $(FLIBS)
+Vector_test_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)
