@@ -119,6 +119,8 @@ AUTOMAKE_OPTIONS = foreign
 
 @BUILD_AMESOS_TRUE@AMESOS_SUBDIR = amesos
 
+@BUILD_NEW_PACKAGE_TRUE@NEW_PACKAGE_SUBDIR = new_package
+
 @BUILD_NOX_TRUE@NOX_SUBDIR = nox
 
 @BUILD_KOMPLEX_TRUE@KOMPLEX_SUBDIR = komplex
@@ -136,7 +138,7 @@ AUTOMAKE_OPTIONS = foreign
 #Epetra must be listed first due to aztecoo's dependence on Epetra
 SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
 	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR) $(TSF_SUBDIR) \
-	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR)
+	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR) $(NEW_PACKAGE_SUBDIR)
 
 subdir = packages
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -150,7 +152,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
 DIST_SUBDIRS = epetra triutils ifpack aztecoo komplex nox TSF amesos \
-	epetraext
+	epetraext new_package
 all: all-recursive
 
 .SUFFIXES:
