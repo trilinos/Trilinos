@@ -3,10 +3,11 @@ dnl
 dnl Test a variety of MPI options:
 dnl --enable-mpi       - Turns MPI compiling mode on
 dnl --with-mpi         - specify root directory of MPI
-dnl --with-mpi-cxx     - specify MPI C++ compiler
-dnl --with-mpi-cc      - specify MPI C compiler
-dnl --with-mpi-f77     - specify MPI Fortran 77 compiler
-dnl --with-mpi-include - specify include directory for MPI 
+dnl --with-mpi-compilers - Turns on MPI compiling mode and sets the MPI C++
+dnl                       compiler = mpicxx or mpiCC (if mpicxx not available),
+dnl                       the MPI C compiler = mpicc and 
+dnl                       the MPI Fortran compiler = mpif77
+dnl --with-mpi-incdir - specify include directory for MPI 
 dnl --with-mpi-libs    - specify MPI libraries
 dnl --with-mpi-libdir  - specify location of MPI libraries
 dnl
@@ -21,10 +22,7 @@ AC_DEFUN([TAC_ARG_CONFIG_MPI],
 [
 AC_ARG_ENABLE(mpi,
 [AC_HELP_STRING([--enable-mpi],[MPI support])],
-[
-HAVE_PKG_MPI=$enableval
-MPI_CXX=mpiCC
-],
+[HAVE_PKG_MPI=$enableval],
 [HAVE_PKG_MPI=no]
 )
 
@@ -38,45 +36,28 @@ AC_ARG_WITH(mpi,
 ]
 )
 
-AC_ARG_WITH(mpi-cxx,
-[AC_HELP_STRING([--with-mpi-cxx],[use MPI C++ compiler (enables MPI) @<:@mpiCC@:>@])],
+AC_ARG_WITH(mpi-compilers,
+[AC_HELP_STRING([--with-mpi-compilers=PATH],[use MPI C++ compiler mpicxx, or mpiCC (if mpicxx not available), MPI C compiler mpicc and MPI Fortran compiler mpif77 found in PATH (PATH optional).  Enables MPI])],
 [
-  HAVE_PKG_MPI=yes 
   if test X${withval} = Xyes; then
-    MPI_CXX=mpiCC
-  else
-    MPI_CXX=${withval}
-  fi
-  AC_MSG_CHECKING(user-defined MPI C++ compiler)
-  AC_MSG_RESULT([${MPI_CXX}])
-]
-)
-
-AC_ARG_WITH(mpi-cc,
-[AC_HELP_STRING([--with-mpi-cc],[use MPI C compiler (enables MPI) @<:@mpicc@:>@])],
-[
-  HAVE_PKG_MPI=yes 
-  if test X${withval} = Xyes; then
+    HAVE_PKG_MPI=yes 
+    # Check for mpicxx, if it does not exist, use mpiCC instead.
+    AC_CHECK_PROG(MPI_CXX, mpicxx, mpicxx, mpiCC)
     MPI_CC=mpicc
-  else
-    MPI_CC=${withval}
-  fi
-  AC_MSG_CHECKING(user-defined MPI C compiler)
-  AC_MSG_RESULT([${MPI_CC}])
-]
-)
-
-AC_ARG_WITH(mpi-f77,
-[AC_HELP_STRING([--with-mpi-f77],[use MPI Fortran 77 compiler (enables MPI) @<:@mpicc@:>@])],
-[
-  HAVE_PKG_MPI=yes 
-  if test X${withval} = Xyes; then
     MPI_F77=mpif77
   else
-    MPI_F77=${withval}
+    if test X${withval} != Xno; then
+      MPI_TEMP_CXX=${withval}/mpicxx
+      if test -f ${MPI_TEMP_CXX}; then
+        MPI_CXX=${MPI_TEMP_CXX}
+      else
+        MPI_CXX=${withval}/mpiCC
+      fi
+      MPI_CC=${withval}/mpicc
+      MPI_F77=${withval}/mpif77
+
+    fi
   fi
-AC_MSG_CHECKING(user-defined MPI Fortran 77 compiler)
-AC_MSG_RESULT([${MPI_F77}])
 ]
 )
 
@@ -143,7 +124,9 @@ if test -n "${MPI_CXX}"; then
   else
     echo "-----"
     echo "Cannot find MPI C++ compiler ${MPI_CXX}."
-    echo "Specify with --with-mpi-cxx."
+    echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
+    echo "or specify a C++ compiler using CXX="
+    echo "Do not use --with-mpi-compilers if using CXX="
     echo "-----"
     AC_MSG_ERROR([MPI C++ compiler (${MPI_CXX}) not found.])
   fi
@@ -161,7 +144,9 @@ if test -n "${MPI_CC}"; then
   else
     echo "-----"
     echo "Cannot find MPI C compiler ${MPI_CC}."
-    echo "Specify with --with-mpi-cc."
+    echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
+    echo "or specify a C compiler using CC="
+    echo "Do not use --with-mpi-compilers if using CC="
     echo "-----"
     AC_MSG_ERROR([MPI C compiler (${MPI_CC}) not found.])
   fi
@@ -179,7 +164,9 @@ if test -n "${MPI_F77}"; then
   else
     echo "-----"
     echo "Cannot find MPI Fortran compiler ${MPI_F77}."
-    echo "Specify with --with-mpi-f77."
+    echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
+    echo "or specify a Fortran 77 compiler using F77="
+    echo "Do not use --with-mpi-compilers if using F77="
     echo "-----"
     AC_MSG_ERROR([MPI Fortran 77 compiler (${MPI_F77}) not found.])
   fi
