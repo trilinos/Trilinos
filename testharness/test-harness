@@ -259,6 +259,9 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	      chomp(@potentialscripts=<FILELIST>);
 	      close FILELIST;
 	      foreach $potentialscript (@potentialscripts) {
+#  Ken Stanley added the following to the checkin-test-harness.  JW copied it here also.  We shouldn't really need
+# it, but if a script fails to return to the directory it started in, this will fix the problem.
+	        chdir "$homedir/$subdirs[$i]/$testdirectory";
 		if (-x $potentialscript ) {
 		  $compileFail+=system "$potentialscript $subdirs[$i] True >> $homedir/testCompileLog.txt 2>&1";
 		  if ($compileFail) {
