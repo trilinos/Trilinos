@@ -43,6 +43,7 @@ void Zoltan_HG_HGraph_Init(
   hgraph->coor    = NULL;
 }
 
+
 /*****************************************************************************/
 
 void Zoltan_HG_Graph_Init(
@@ -67,6 +68,7 @@ void Zoltan_HG_Graph_Init(
 
 
 /****************************************************************************/
+
 int Zoltan_HG_HGraph_Free(
   HGraph *hg
 )
@@ -86,7 +88,9 @@ int Zoltan_HG_HGraph_Free(
   return ZOLTAN_OK;
 }
 
+
 /****************************************************************************/
+
 int Zoltan_HG_Graph_Free(
   Graph *g
 )
@@ -105,6 +109,7 @@ int Zoltan_HG_Graph_Free(
 
 
 /****************************************************************************/
+
 int Zoltan_HG_Info (
   ZZ *zz, 
   HGraph *hg
@@ -284,18 +289,18 @@ int Zoltan_HG_Check (
       for (j = hg->hindex[iedge] ; j < hg->hindex[iedge+1] ; j++)  /* get index to vertices */
          {
          for (k = hg->vindex[hg->hvertex[j]] ;   /* for each vertex of current hyperedge */
-              k < hg->vindex[hg->hvertex[j]+1] ; k++)  /* get index to hyperedges */
+              k < hg->vindex[hg->hvertex[j]+1] ; k++) /* get index to hyperedges */
                  if (hg->vedge[k] == iedge)           /* use index value to find an edge */
-                    break ;                          /* still looking for agreement */
-         if (k == hg->vindex[hg->hvertex[j]+1])        /* did we succeed for this hyperedge? */
-            return ZOLTAN_WARN ;                     /* if yes, carry on. if no, failure exit */
+                    break ;                           /* still looking for agreement */
+         if (k == hg->vindex[hg->hvertex[j]+1])       /* did we succeed for this hyperedge? */
+            return ZOLTAN_WARN ;                      /* if yes, carry on. if no, failure exit */
          }
    return ZOLTAN_OK ;
 }
 
 
-
 /****************************************************************************/
+
 int Zoltan_HG_HGraph_to_Graph(
   ZZ *zz,
   HGraph *hg, 
@@ -406,6 +411,7 @@ int Zoltan_HG_HGraph_to_Graph(
 }
 
 /****************************************************************************/
+
 int Zoltan_HG_Graph_to_HGraph(
   ZZ *zz,   
   Graph *g,        /* Input graph */
@@ -497,10 +503,8 @@ int ierr = ZOLTAN_OK;
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Creating mirror");
   ierr = Zoltan_HG_Create_Mirror(zz, hg);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in building mirror.");
-    goto End;
-  }
 
 
 End:

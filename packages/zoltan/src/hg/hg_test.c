@@ -27,7 +27,8 @@ struct rusage    Rusage;
 
 static void times_output ()
 { long t_all=t_load+t_part+t_rest;
-  printf("TIME                : %d:%d:%.2f\n", (int)(t_all/3600000),(int)((t_all%3600000)/60000),(float)((float)(t_all%60000)/1000));
+  printf("TIME                : %d:%d:%.2f\n", (int)(t_all/3600000),
+   (int)((t_all%3600000)/60000),(float)((float)(t_all%60000)/1000));
   printf("  Load/Check        : %.2f\n",(float)t_load/1000);
   printf("  Part              : %.2f\n",(float)t_part/1000);
   printf("  Rest              : %.2f\n",(float)t_rest/1000);

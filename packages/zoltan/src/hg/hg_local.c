@@ -27,6 +27,8 @@ ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *str)
   return NULL;
 }
 
+
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

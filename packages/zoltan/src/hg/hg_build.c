@@ -20,6 +20,7 @@ extern "C" {
 #include "hypergraph.h"
 #include "parmetis_jostle.h"
 
+
 /*****************************************************************************/
 
 int Zoltan_HG_Build_Hypergraph(
@@ -127,6 +128,7 @@ End:
   return ierr;
 }
 
+
 /*****************************************************************************/
 int Zoltan_HG_Fill_Hypergraph(
   ZZ *zz, 
@@ -138,6 +140,7 @@ int Zoltan_HG_Fill_Hypergraph(
 
   return ZOLTAN_OK;
 }
+
 
 /*****************************************************************************/
 int Zoltan_Get_Coordinates(

@@ -45,8 +45,6 @@ static int Zoltan_HG_Return_Lists(ZZ *, struct Zoltan_HGraph *, Partition,
 /*****************************************************************************/
 
 /* Main partitioning routine:  Type = ZOLTAN_LB_FN.  */
-/* KDD  For now, returning import lists.             */
-/* KDD  Can change to returning export lists.        */
 
 int Zoltan_HG(
   ZZ *zz,                    /* The Zoltan structure  */
@@ -73,7 +71,6 @@ Partition output_parts = NULL;  /* Output partition from HG partitioner. */
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Initialization of return arguments. */
-
   *num_imp = *num_exp = -1;
   *imp_gids = *exp_gids = NULL;
   *imp_lids = *exp_lids = NULL;
@@ -85,7 +82,6 @@ Partition output_parts = NULL;  /* Output partition from HG partitioner. */
     goto End;
 
   /* build initial Zoltan hypergraph. */
-
   ierr = Zoltan_HG_Build_Hypergraph(zz, &zoltan_hg, hgp.check_graph);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph.");
@@ -98,7 +94,6 @@ Partition output_parts = NULL;  /* Output partition from HG partitioner. */
   Zoltan_HG_HGraph_Print(zz, zoltan_hg, &(zoltan_hg->HG));
 
   /* Call partitioning routines. */
-
   output_parts = (Partition) ZOLTAN_MALLOC(nVtx * sizeof(int));
   if (output_parts == NULL) {
     ierr = ZOLTAN_MEMERR;
@@ -126,6 +121,7 @@ End:
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
+
 
 /*****************************************************************************/
 
@@ -181,6 +177,7 @@ int ierr = ZOLTAN_OK;
   return ierr;
 }
 
+
 /*****************************************************************************/
 
 int Zoltan_HG_Set_Param(
@@ -195,6 +192,7 @@ char *val)                      /* value of variable */
 
     return(status);
 }
+
 
 /*****************************************************************************/
 
@@ -219,16 +217,15 @@ Partition input_parts = zoltan_hg->Parts;
 ZOLTAN_ID_PTR gids = zoltan_hg->Global_IDs;
 ZOLTAN_ID_PTR lids = zoltan_hg->Local_IDs;
 
-  /*
-   */
 
   if (zz->LB.Return_Lists) {
 
-    /* Count number of objects with new partitions. */
+    /* Count number of objects with new partitions or new processors. */
     *num_exp = 0;
     for (i = 0; i < nVtx; i++)
-      if (output_parts[i] != input_parts[i])
-        (*num_exp)++;
+      if (output_parts[i] != input_parts[i]
+       || zz->Proc != Zoltan_LB_Part_To_Proc(zz, output_parts[i]))
+         (*num_exp)++;
 
     /* Allocate memory for return lists. */
     if (*num_exp > 0) {
@@ -265,6 +262,7 @@ ZOLTAN_ID_PTR lids = zoltan_hg->Local_IDs;
   }
   return ZOLTAN_OK;
 }
+
 
 /****************************************************************************/
 void Zoltan_HG_HGraph_Print(
@@ -330,6 +328,7 @@ int num_ewgt = zz->Edge_Weight_Dim;
 
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }
+
 
 /*****************************************************************************/
 #ifdef __cplusplus

@@ -23,6 +23,7 @@ extern "C" {
 #include "hg_const.h"
 #include "hypergraph.h"
 
+
 /*****************************************************************************/
 /*
  * Data structure for Zoltan's base hypergraph.
@@ -39,6 +40,7 @@ struct Zoltan_HGraph {
                                     be part of HG.                        */
   HGraph HG;                     /* Hypergraph for initial objects.       */
 };
+
 
 /*****************************************************************************/
 /* Prototypes */

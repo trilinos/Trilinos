@@ -27,12 +27,12 @@ static ZOLTAN_HG_PACKING_FN packing_pgp;  /* path growing packing */
 static ZOLTAN_HG_PACKING_FN packing_dep;  /* decreasing packing */
 static ZOLTAN_HG_PACKING_FN packing_rrp;  /* random vertex, random edge packing */
 
+
 /****************************************************************************/
 
 ZOLTAN_HG_PACKING_FN *Zoltan_HG_Set_Packing_Fn(char *str)
 {
   static int srand_set ;
-
   if (srand_set == 0)
      {
      srand_set = 1 ;
@@ -49,6 +49,7 @@ ZOLTAN_HG_PACKING_FN *Zoltan_HG_Set_Packing_Fn(char *str)
   else if (strcasecmp(str, "rrp") == 0)  return packing_rrp;
   else                                   return NULL;
 }
+
 
 /****************************************************************************/
 
@@ -90,6 +91,7 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGParams *hgp)
   return ierr;
 }
 
+
 /****************************************************************************/
 
 static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack, int limit)
@@ -114,6 +116,7 @@ static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack, int limit)
       }
    return ZOLTAN_OK ;
    }
+
 
 /****************************************************************************/
 
@@ -152,6 +155,7 @@ static int packing_rep (ZZ *zz, HGraph *hg, Packing pack, int limit)
    ZOLTAN_FREE ((void **) &edges) ;
    return ZOLTAN_OK ;
    }
+
 
 /****************************************************************************/
 
@@ -220,6 +224,7 @@ static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int limit)
    return ZOLTAN_OK ;
    }
 
+
 /****************************************************************************/
 
 static int packing_hep (ZZ *zz, HGraph *hg, Packing pack, int limit)
@@ -283,6 +288,7 @@ static int packing_hep (ZZ *zz, HGraph *hg, Packing pack, int limit)
    return ZOLTAN_OK ;
 }
 
+
 /****************************************************************************/
 
 static void quickpart_dec_float_int (float *val1, int *val2, int *sorted,
@@ -321,6 +327,7 @@ int start, int end)
     quicksort_dec_float_int (val1,val2,sorted,smaller,end);
   }
 }
+
 
 /****************************************************************************/
 
@@ -362,6 +369,7 @@ static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   ZOLTAN_FREE ((void **) &sorted);
   return ZOLTAN_OK;
 }
+
 
 /****************************************************************************/
 
@@ -413,6 +421,7 @@ static int lhp_pack (ZZ *zz, HGraph *hg, int edge, int *del_edge, int *Vindex,
   return ZOLTAN_OK;
 }
 
+
 /****************************************************************************/
 
 static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack, int limit)
@@ -444,6 +453,7 @@ static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   ZOLTAN_FREE ((void **) &Vindex);
   return ZOLTAN_OK;
 }
+
 
 /****************************************************************************/
 
@@ -515,6 +525,7 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int limit)
   return ZOLTAN_OK;
 }
 
+
 /****************************************************************************/
 
 static int packing_dep (ZZ *zz, HGraph *hg, Packing pack, int limit)
@@ -562,6 +573,7 @@ static int packing_dep (ZZ *zz, HGraph *hg, Packing pack, int limit)
   ZOLTAN_FREE ((void **) &sorted);
   return ZOLTAN_OK;
 }
+
 
 /****************************************************************************/
 

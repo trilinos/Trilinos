@@ -23,6 +23,7 @@ static float hcut_size_total (HGraph *, Partition);
 
 
 /****************************************************************************/
+
 int Zoltan_HG_Set_Options(ZZ *zz, HGParams *hgp)
 {
 /* Routine to set function pointers corresponding to input-string options. */

@@ -27,6 +27,7 @@ static ZOLTAN_HG_MATCHING_FN matching_lhm;      /* locally heaviest matching */
 static ZOLTAN_HG_MATCHING_FN matching_pgm;      /* path growing matching */
 static ZOLTAN_HG_MATCHING_FN matching_w3;       /* post matching optimizer */
 
+
 /*****************************************************************************/
 
 ZOLTAN_HG_MATCHING_FN *Zoltan_HG_Set_Matching_Fn(char *str)

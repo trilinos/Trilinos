@@ -31,7 +31,6 @@ static ZOLTAN_HG_GROUPING_FN grouping_rrg;  /* random vertex, random edge groupi
 ZOLTAN_HG_GROUPING_FN *Zoltan_HG_Set_Grouping_Fn(char *str)
 {
   static int srand_set ;
-
   if (srand_set == 0)
      {
      srand_set = 1 ;
@@ -44,7 +43,6 @@ ZOLTAN_HG_GROUPING_FN *Zoltan_HG_Set_Grouping_Fn(char *str)
   else if (strcasecmp(str, "grg") == 0)  return grouping_grg;
   else if (strcasecmp(str, "deg") == 0)  return grouping_deg;
   else if (strcasecmp(str, "rrg") == 0)  return grouping_rrg;
-
   else                                   return NULL;
 }
 
@@ -400,6 +398,7 @@ static int grouping_deg (ZZ *zz, HGraph *hg, Packing pack, int limit)
   ZOLTAN_FREE ((void **) &sorted);
   return ZOLTAN_OK;
 }
+
 
 /****************************************************************************/
 

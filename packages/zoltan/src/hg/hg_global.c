@@ -22,6 +22,7 @@ extern "C" {
 static ZOLTAN_HG_GLOBAL_PART_FN global_ran;
 static ZOLTAN_HG_GLOBAL_PART_FN global_lin;
 
+
 /****************************************************************************/
 
 ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
@@ -36,8 +37,8 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
     return NULL;
 }
 
-/****************************************************************************/
 
+/****************************************************************************/
 
 static int global_ran (
   ZZ *zz, 
@@ -48,8 +49,14 @@ static int global_ran (
 { 
   int i, j, number, vertex, *order=NULL, new_part;
   float *weight=NULL;
+  static int srand_set ;
   char *yo = "global_ran" ;
 
+  if (srand_set == 0)
+     {
+     srand_set = 1 ;
+     srand ((unsigned long) RANDOM_SEED) ;
+     }
 
   order = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx);
   weight = (float *) ZOLTAN_MALLOC (sizeof (float) * p);
@@ -79,6 +86,7 @@ static int global_ran (
   return 0;
 }
 
+
 /****************************************************************************/
 
 static int global_lin (ZZ *zz, HGraph *hg, int p, Partition part)
@@ -101,6 +109,7 @@ static int global_lin (ZZ *zz, HGraph *hg, int p, Partition part)
   }
   return 0;
 }
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
