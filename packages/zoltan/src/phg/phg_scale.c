@@ -108,7 +108,51 @@ static char *yo = "Zoltan_PHG_Scale_Weights";
 
 int Zoltan_PHG_Scale_Vtx (ZZ *zz, HGraph *hg, PHGPartParams *hgp)
 {
-  /* Dummy routine for now. */ 
+  int i;
+  int *ldegree, *gdegree; 
+  char *yo = "Zoltan_PHG_Scale_Vtx";
+
+  if ((hgp->vtx_scaling==0) || (hg->nVtx==0))
+    return ZOLTAN_OK;
+
+  /* Allocate vtx_scal array if necessary */
+  if (hgp->vtx_scal==NULL){  /* first level in V-cycle */
+    if (!(hgp->vtx_scal = (float*) ZOLTAN_MALLOC (hg->nVtx *
+                           sizeof(float)))) {
+       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+       return ZOLTAN_MEMERR;
+    }
+  }
+
+  /* Allocate temp arrays */
+  if (!(ldegree = (int *) ZOLTAN_MALLOC(2*hg->nVtx * sizeof(int)))){
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Out of memory");
+    return ZOLTAN_MEMERR;
+  }
+  gdegree = ldegree + hg->nVtx;
+
+
+  /* First compute local vertex degrees. */
+  for (i=0; i<hg->nVtx; i++){
+     ldegree[i] = hg->vindex[i+1] - hg->vindex[i]; /* local degree */
+  }
+                                                                                
+  /* Sum up along columns for global degrees. */
+  MPI_Allreduce(ldegree, gdegree, hg->nVtx, MPI_INT, MPI_SUM,
+        hg->comm->col_comm);
+
+  /* Compute scale factor from degrees. */
+  if (hgp->vtx_scaling==1){ /* cosine metric, scale by sqrt of degree */
+    for (i=0; i<hg->nVtx; i++)
+      hgp->vtx_scal[i] = 1. / sqrt((double)gdegree[i]);
+  }
+  else if (hgp->vtx_scaling==2){  /* scale by degree */
+    for (i=0; i<hg->nVtx; i++)
+      hgp->vtx_scal[i] = 1. / gdegree[i];
+  }
+
+  ZOLTAN_FREE(&ldegree);
+
   return ZOLTAN_OK;
 }
  

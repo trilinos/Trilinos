@@ -91,15 +91,6 @@ char  *yo = "Zoltan_PHG_Matching";
 
   /* Create/update scale vector for vertices for inner product */
   if (hgp->vtx_scaling) {
-     if (hgp->vtx_scal==NULL){  /* first level in V-cycle */
-        if (!(hgp->vtx_scal = (float*) ZOLTAN_MALLOC (hg->nVtx * 
-                               sizeof(float)))) {
-           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-           err = ZOLTAN_MEMERR;
-           goto End;
-        }
-     }
- 
      Zoltan_PHG_Scale_Vtx (zz, hg, hgp);
   }
 
@@ -232,7 +223,13 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
                     /* v2 is not matched yet */
                     if (lips[v2]==0.0)   /* v2 is a new neighbor */
                         adj[nadj++] = v2;
-                    lips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                    /* Check for vertex scaling. For efficiency we may 
+                       have to move the 'if' test out of the inner loop. */
+                    if (hgp->vtx_scal)
+                      lips[v2] += hgp->vtx_scal[v2]*
+                                  (hg->ewgt ? hg->ewgt[edge] : 1.0);
+                    else
+                      lips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
                 }
             }
         }

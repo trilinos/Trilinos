@@ -237,7 +237,7 @@ static int Zoltan_PHG_Initialize_Params(
 
   /* Set default values */
   strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
-  strncpy(hgp->redmo_str,           "aug2",  MAX_PARAM_STRING_LEN);  
+  strncpy(hgp->redmo_str,           "no",    MAX_PARAM_STRING_LEN);  
   strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
   
@@ -245,7 +245,9 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->locmatching = NULL;
   hgp->edge_scaling = 0;
   hgp->vtx_scaling = 0;
-  hgp->vtx_scal = NULL;
+  hgp->vtx_scal = NULL;  /* Array for storing vertex degree scale vector. 
+                            Should perhaps go in hg structure, not the
+                            param struct? */
   hgp->visit_order = 1;  /* Random */
   hgp->check_graph = 1;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
