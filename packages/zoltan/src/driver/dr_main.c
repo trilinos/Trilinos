@@ -101,6 +101,7 @@ int main(int argc, char *argv[])
   Test.Gen_Files = 0;
   Test.Null_Lists = NONE;
 
+  Output.Text = 1;
   Output.Gnuplot = 0;
   Output.Nemesis = 0;
   Output.Plot_Partitions = 0;
@@ -187,6 +188,7 @@ int main(int argc, char *argv[])
   brdcst_cmd_info(Proc, &prob, &pio_info, &mesh);
 
   Zoltan_Set_Param(NULL, "DEBUG_MEMORY", "1");
+  print_output = Output.Text;
 
   /*
    *  Create a Zoltan structure.

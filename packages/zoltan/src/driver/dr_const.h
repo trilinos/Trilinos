@@ -199,6 +199,7 @@ struct Test_Flags {
 
 /* Structure for output flags for various types of output. */
 struct Output_Flags {
+  int Text;
   int Gnuplot;
   int Nemesis;
   int Plot_Partitions;

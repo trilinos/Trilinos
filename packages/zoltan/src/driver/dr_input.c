@@ -228,6 +228,9 @@ int read_cmd_file (
       }
     }
 
+    else if (sscanf(line, " text output" SKIPEQ "%d", &Output.Text) == 1)
+      continue;                                 /* Generate text output */
+
     else if (sscanf(line, " gnuplot output" SKIPEQ "%d", &Output.Gnuplot) == 1)
       continue;                                 /* Generate GNUplot output */
 
@@ -504,7 +507,7 @@ void brdcst_cmd_info (
 {
   int ctrl_id;
   int size;
-  int int_params[14];  /* Make sure this array is large enough */
+  int int_params[15];  /* Make sure this array is large enough */
 
   int j = 0;
   int_params[j++] = Debug_Driver;
@@ -512,6 +515,7 @@ void brdcst_cmd_info (
   int_params[j++] = Test.Local_Partitions;
   int_params[j++] = Test.Multi_Callbacks;
   int_params[j++] = Test.Null_Lists;
+  int_params[j++] = Output.Text;
   int_params[j++] = Output.Gnuplot;
   int_params[j++] = Output.Nemesis;
   int_params[j++] = Output.Plot_Partitions;
@@ -530,6 +534,7 @@ void brdcst_cmd_info (
   Test.Local_Partitions  = int_params[j++];
   Test.Multi_Callbacks   = int_params[j++];
   Test.Null_Lists        = int_params[j++];
+  Output.Text            = int_params[j++];
   Output.Gnuplot         = int_params[j++];
   Output.Nemesis         = int_params[j++];
   Output.Plot_Partitions = int_params[j++];
