@@ -19,8 +19,18 @@ struct MLSthing {
   double *pAux, *res, *y;  /* workarrays allocated in .... to be reused */
   double eig_ratio;
   double beta_real, beta_img;
-};
 
+  ML_Sm_BGS_Data *block_scaling;/* these last arguments are used to */
+  ML_Operator *unscaled_matrix;     /* implement block scaling instead  */
+  ML_Operator *scaled_matrix;       /* of point scaling when doing      */
+                                    /* Chebyshev smoothing. The basic   */
+                                    /* idea is to turn off diagonal     */
+                                    /* scaling by setting the diagonal  */
+                                    /* to 1. Then to create a matrix    */
+                                    /* wrapper that does Dinv*Amat*v    */
+                                    /* when a matvec is requested (where*/
+                                    /* D is some block diagonal */
+};
 
 #ifndef ML_CPP
 #ifdef __cplusplus
