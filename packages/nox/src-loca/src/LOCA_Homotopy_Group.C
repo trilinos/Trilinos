@@ -49,7 +49,8 @@ LOCA::Homotopy::Group::Group(NOX::Parameter::List& locaSublist,
   conParam(0.0),
   conParamID(-1),
   conParamLabel("Homotopy Continuation Parameter"),
-  ownsGroup(false)
+  ownsGroup(false),
+  augmentJacForHomotopyNotImplemented(false)
 {
   // construct a random vector for the problem 
   randomVecPtr->random();
@@ -84,7 +85,8 @@ LOCA::Homotopy::Group::Group(NOX::Parameter::List& locaSublist,
   conParam(0.0),
   conParamID(-1),
   conParamLabel("Homotopy Continuation Parameter"),
-  ownsGroup(false)
+  ownsGroup(false),
+  augmentJacForHomotopyNotImplemented(false)
 {
   // construct a random vector for the problem 
   *randomVecPtr = randomVector;
@@ -116,7 +118,8 @@ LOCA::Homotopy::Group::Group(const LOCA::Homotopy::Group& source,
   conParam(source.conParam),
   conParamID(source.conParamID),
   conParamLabel(source.conParamLabel),
-  ownsGroup(true)
+  ownsGroup(true),
+  augmentJacForHomotopyNotImplemented(source.augmentJacForHomotopyNotImplemented)
 {
   if (source.newtonVecPtr != 0)
     newtonVecPtr = source.newtonVecPtr->clone(type);
@@ -327,7 +330,12 @@ LOCA::Homotopy::Group::computeJacobian()
   LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // Augment the group's Jacobian for homotopy
-  grpPtr->augmentJacobianForHomotopy(conParam);
+  NOX::Abstract::Group::ReturnType augHomTest = 
+    grpPtr->augmentJacobianForHomotopy(conParam);
+  // If it is not implemented, augment the Jacobian during the 
+  // applyJacobian() call.
+  if (augHomTest == NOX::Abstract::Group::NotDefined)
+    augmentJacForHomotopyNotImplemented = true;
 
   isValidJacobian = true;
 
@@ -406,6 +414,13 @@ LOCA::Homotopy::Group::applyJacobian(const NOX::Abstract::Vector& input,
 
   finalStatus = grpPtr->applyJacobian(input, result);
   LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  // If the Jacobian is not augmented for homotopy (i.e. using MFNK)
+  // then lets augment it here.
+  if (augmentJacForHomotopyNotImplemented) {
+    double value = 1.0 - conParam;
+    result.update(value, input, 1.0);
+  }
 
   return finalStatus;
 }

@@ -35,6 +35,8 @@
 #include "LOCA_EpetraNew_Interface_Required.H"        // class data members
 #include "NOX_Parameter_List.H"
 #include "Epetra_Vector.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
 #include "LOCA_Utils.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Epetra_BorderedOp.H"
@@ -344,6 +346,52 @@ int
 LOCA::EpetraNew::Group::projectToDrawDimension() const
 {
   return userInterface.projectToDrawDimension();
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::EpetraNew::Group::augmentJacobianForHomotopy(double conParamValue)
+{
+
+  //Allocate temporary vectors if not aready done
+  if (tmpVectorPtr == 0)
+    tmpVectorPtr = new Epetra_Vector(xVector.getEpetraVector());
+  if (tmpVectorPtr2 == 0)
+    tmpVectorPtr2 = new Epetra_Vector(xVector.getEpetraVector());
+
+  tmpVectorPtr2->PutScalar(1.0-conParamValue);
+
+  // See if it is an Epetra_CrsMatrix
+  const Epetra_CrsMatrix* constTestCrs = 0;
+  Epetra_CrsMatrix* testCrs = 0;
+  constTestCrs = dynamic_cast<const Epetra_CrsMatrix*>
+    (&(sharedLinearSystemPtr->getObject(this).getJacobianOperator()));
+  if (constTestCrs != 0) {
+    testCrs = const_cast<Epetra_CrsMatrix*>(constTestCrs);
+    testCrs->Scale(conParamValue);
+    testCrs->ExtractDiagonalCopy(*tmpVectorPtr);
+    tmpVectorPtr->Update(1.0, *tmpVectorPtr2, 1.0);
+    testCrs->ReplaceDiagonalValues(*tmpVectorPtr);
+    return LOCA::Abstract::Group::Ok;
+
+  }
+
+  // See if it is an Epetra_VbrMatrix
+  const Epetra_VbrMatrix* constTestVbr = 0;
+  Epetra_VbrMatrix* testVbr = 0;
+  constTestVbr = dynamic_cast<const Epetra_VbrMatrix*>
+    (&(sharedLinearSystemPtr->getObject(this).getJacobianOperator()));
+  if (testVbr != 0) {
+    testVbr = const_cast<Epetra_VbrMatrix*>(constTestVbr);
+    testVbr->Scale(conParamValue);
+    testVbr->ExtractDiagonalCopy(*tmpVectorPtr);
+    tmpVectorPtr->Update(1.0, *tmpVectorPtr2, 1.0);
+    testVbr->ReplaceDiagonalValues(*tmpVectorPtr);
+    return LOCA::Abstract::Group::Ok;
+  }
+
+  // Otherwise this alg won't work -- return NotDefined
+
+  return LOCA::Abstract::Group::NotDefined;
 }
 
 // NOX::Abstract::Group::ReturnType 

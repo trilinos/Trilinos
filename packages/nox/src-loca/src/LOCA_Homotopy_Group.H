@@ -323,6 +323,8 @@ namespace LOCA {
       //! Tells whether the underlying group was created by the Group.  If so, the destructor should destroy the group.  
       bool ownsGroup;
 
+      //! Tracks whether the LOCA::Homotopy::Group method augmentJacobianForHomotopy is implemented.  If not, the augmentation is applied during the applyJacobian assuming a matrix-free implementation.
+      bool augmentJacForHomotopyNotImplemented;
     };
 
   } // namespace Homotopy
