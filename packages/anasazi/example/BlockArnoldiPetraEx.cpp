@@ -125,34 +125,35 @@ int main(int argc, char *argv[]) {
 	//  Variables used for the Block Arnoldi Method
 	//
 	int block = 5;
-	int length = 50;
-	int nev = 4;
-	double tol = 1.0e-4;
-	string which="SR";
+	int length = 10;
+	int nev = 3;
+	double tol = 1.0e-8;
+	string which="LM";
+	int step = 1;
+	int restarts = 20;
 
 	// create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by AnasaziPetraVec.
 	// This is possible because I pass in arguements needed by petra.
 	AnasaziPetraVec<double> ivec(Map, block);
+	ivec.MvRandom();
 	// call the ctor that calls the petra ctor for a matrix
 	AnasaziPetraMat<double> Amat(A);
 
 	// initialize the Block Arnoldi solver
-	BlockArnoldi<double> MyBlockArnoldi(Amat, ivec, tol, nev, length, block, which);
+	BlockArnoldi<double> MyBlockArnoldi(Amat, ivec, tol, nev, length, block, 
+						which, step, restarts);
 	
 	// inform the solver that the problem is symmetric
 	MyBlockArnoldi.setSymmetric(true);
-	//MyBlockArnoldi.setDebugLevel(1);
+	MyBlockArnoldi.setDebugLevel(3);
 
 #ifdef UNIX
 	Epetra_Time & timer = *new Epetra_Time(Comm);
 #endif
 
 	// iterate a few steps (if you wish)
-	MyBlockArnoldi.iterate(5);
-	MyBlockArnoldi.iterate(5);
-	MyBlockArnoldi.iterate(5);
-	MyBlockArnoldi.iterate(5);
+	//MyBlockArnoldi.iterate(5);
 
 	// solve the problem to the specified tolerances or length
 	MyBlockArnoldi.solve();
@@ -167,8 +168,11 @@ int main(int argc, char *argv[]) {
 	double* resids = MyBlockArnoldi.getResiduals();
 	double* evals = MyBlockArnoldi.getEvals(); 
 
+	AnasaziPetraVec<double> evecs(Map, nev);
+	MyBlockArnoldi.getEvecs( evecs );	
+
 	// output results to screen
-	MyBlockArnoldi.currentStatus();
+	//MyBlockArnoldi.currentStatus();
 
 #ifdef UNIX
 	if (verbose)
