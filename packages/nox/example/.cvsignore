@@ -1,3 +1,5 @@
 .deps
 Makefile
+broyden
 example
+rosenbrock
