@@ -22,26 +22,17 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _AMESOS_FACTORY_H_
-#define _AMESOS_FACTORY_H_
-#include "Amesos_BaseSolver.h"
-#include "AmesosClassType.h"
-
-//! Amesos_Factory:  A method for creating Amesos classes
-/*!  Amesos_Factory allows a code to delay the decision about which
-concrete class to use to implement the Amesos_BaseSolver interface.  
-*/
 //
-class Amesos_Factory { 
+//  This file does not contain any c++ constructs and can hence be included
+//  in c files.
+//
+#ifndef _AMESOS_CLASS_TYPE_H_
+#define _AMESOS_CLASS_TYPE_H_
 
-  //@{ \name Creation method
-  //! Amesos_Factory Create method
-  /*! Creates an instance of the Amesos_BaseSolver class specified by 
-    ClassType 
-  */
-public: 
-  Amesos_BaseSolver *Create( AmesosClassType ClassType, 
-			     const Epetra_LinearProblem& LinearProblem, 
-			     const AMESOS::Parameter::List &ParameterList );
-};  // End of  class Amesos_Factory  
-#endif /* _AMESOS_FACTORY_H_ */
+enum AmesosClassType {
+  AMESOS_KLU,
+  AMESOS_UMFPACK,
+  AMESOS_SUPERLUDIST,
+  AMESOS_DSCPACK };
+
+#endif /* _AMESOS_CLASS_TYPE_H_ */
