@@ -90,8 +90,8 @@ public:
   //! Get number of iterations.
   virtual int getNumIterations() const = 0;
 
-  //! Return list containing various output parameters.
-  virtual const Parameter::List& getOutputParameters() const = 0;
+  //! Return list containing various all parameters.
+  virtual const Parameter::List& getParameterList() const = 0;
 
 };
 } // namespace Solver

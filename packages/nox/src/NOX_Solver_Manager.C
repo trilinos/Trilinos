@@ -138,14 +138,14 @@ int Manager::getNumIterations() const
   return ptr->getNumIterations();
 }
 
-const Parameter::List& Manager::getOutputParameters() const
+const Parameter::List& Manager::getParameterList() const
 {
   if (ptr == NULL) {
-    cout << "NOX::Solver::Manager::getOutputParameters - Null pointer error" << endl;
+    cout << "NOX::Solver::Manager::getParameterList - Null pointer error" << endl;
     throw "NOX Error";
   }
     
-  return ptr->getOutputParameters();
+  return ptr->getParameterList();
 }
 
 

@@ -88,7 +88,7 @@ public:
 
   int getNumIterations() const;
 
-  const Parameter::List& getOutputParameters() const;
+  const Parameter::List& getParameterList() const;
 
 private:
 

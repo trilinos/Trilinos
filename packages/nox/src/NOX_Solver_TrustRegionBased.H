@@ -134,7 +134,7 @@ public:
   virtual const Abstract::Group& getSolutionGroup() const;
   virtual const Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
-  virtual const Parameter::List& getOutputParameters() const;
+  virtual const Parameter::List& getParameterList() const;
 
 protected:
   
@@ -188,10 +188,7 @@ protected:
   StatusTest::Generic* testPtr;		
 
   //! Input parameters.
-  Parameter::List iparams;	
-
-  //! Output paramters.
-  mutable Parameter::List oparams; 
+  Parameter::List params;	
 
   //! %Newton %Search %Direction. 
   Direction::Manager newton; 
@@ -228,15 +225,15 @@ protected:
   double recoveryStep;
 
   //! Value of \f$ f \f$ at current solution
-  double fnew;
+  double newF;
   //! Value of \f$ f \f$ at previous solution
-  double fold;
+  double oldF;
 
   //! norm(xnew - xold)
   double dx;
 
   //! Number of nonlinear iterations.
-  int niter;                    
+  int nIter;                    
 
   //! %Status of nonlinear solver.
   StatusTest::StatusType status;
