@@ -2,7 +2,7 @@
 #include <iostream>
 #include <mpi.h>
 #include <assert.h>
-#include <climits>
+//#include <climits>
 #include "CLOP_solver.hpp"
 #include "myzero.hpp"
 #include <algorithm>
