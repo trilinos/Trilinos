@@ -74,6 +74,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->nullspace_dim              = 1;
    (*ag)->nullspace_vect             = NULL;
    (*ag)->nullspace_corrupted        = ML_EMPTY;
+   (*ag)->keep_agg_information       = 0;
    (*ag)->max_levels                 = 0;
    (*ag)->max_coarse_size            = 32;
    (*ag)->begin_level                = 0;
@@ -218,6 +219,18 @@ int ML_Aggregate_Set_BlockDiagScaling( ML_Aggregate *ag)
    ag->block_scaled_SA = 1;
    return 0;
 }
+int ML_Aggregate_KeepInfo(ML_Aggregate *ag, int value)
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_BlockDiagScaling : wrong object. \n");
+      exit(-1);
+   }
+   ag->keep_agg_information = value;
+   return 0;
+}
+
+
 /* ************************************************************************* */
 /* set Prolongator smoother to use point diagonal scaling                    */
 /* ------------------------------------------------------------------------- */
@@ -1123,8 +1136,15 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
        if ( ( label[2] == ':') || ( label[3] == ':') ) 
 	 sscanf(&(label[1]),"%d",&i);
 
+   if (ag->keep_agg_information != 1) {
+      if ((ag)->aggr_info != NULL) {
+	  if ((ag)->aggr_info[ag->cur_level] != NULL) 
+	    ML_memory_free((void **)&((ag)->aggr_info[i]));
+      } 
+   }
    if (i != 1) ML_memory_check("L%d: agg end",i);
    else ML_memory_check("agg end");
+
 
    return Ncoarse;
 }

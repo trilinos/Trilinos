@@ -43,6 +43,8 @@ typedef struct ML_Aggregate_Struct
    int    nullspace_corrupted;         /** indicates whether fine grid   */
                                        /** nullspace has been overwritten*/
    int    *aggr_count;                 /** no. aggregates at each level  */
+  int    keep_agg_information;         /** 1: keep aggr_info             */
+                                       /** otherwise: free it            */
    int    **aggr_info;                 /** node to aggregate map         */
    int    max_levels;                  /** maximum number of levels      */
    int    begin_level;                 /** finest grid level             */
@@ -288,6 +290,7 @@ int ML_Aggregate_CoarsenParMETIS(ML_Aggregate *ml_ag,
 /* miscellaneous local functions                                             */
 /* ------------------------------------------------------------------------- */
 
+int ML_Aggregate_KeepInfo(ML_Aggregate *ag, int value);
 int ML_Aggregate_LabelVertices(int, int *, char, char *,char *,int,
               int *, int *, int, int **, int, int **, int *, int *,
               int, int **, int *, int *, int **, int, ML_Comm *, int *);
