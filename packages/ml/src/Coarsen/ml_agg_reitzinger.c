@@ -154,20 +154,21 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
        ML_get_matrix_row(Tfine, 1, &i, &allocated, &temp_bindx, &temp_val,
 			 &row_length, 0);
        if (row_length == 2) {
-	 if (temp_val[1] == 0.) row_length--;
-	 if (temp_val[0] == 0.) {
-	   row_length--;
-	   if (row_length != 0) {
-	     temp_bindx[1] = temp_bindx[0];
-	     temp_val[1] = temp_val[0];
-	   }
-	 }
+	     if (temp_val[1] == 0.) row_length--;
+	     if (temp_val[0] == 0.) {
+	       row_length--;
+	       if (row_length != 0) {
+	         temp_bindx[0] = temp_bindx[1];
+	         temp_val[0] = temp_val[1];
+	       }
+	     }
        }
        else if ( (row_length == 1) && (temp_val[0] == 0.)) row_length--;
+
        if (row_length == 1) {
-	 if      (temp_val[0] ==  1.) encoded_dir_node[i] = (1 + temp_bindx[0]);
-	 else if (temp_val[0] == -1.) encoded_dir_node[i] = -(1 + temp_bindx[0]);
-	 else printf("Warning uknown value T(%d,%d) = %e\n",
+	     if      (temp_val[0] == 1.) encoded_dir_node[i] = (1 + temp_bindx[0]);
+	     else if (temp_val[0] ==-1.) encoded_dir_node[i] = -(1 + temp_bindx[0]);
+	     else printf("Warning uknown value T(%d,%d) = %e\n",
 		     i,temp_bindx[0],temp_val[0]); 
        }
        else encoded_dir_node[i] = 0;
@@ -1024,9 +1025,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      for (i = 0; i < Pe->outvec_leng ; i++) 
        vec[i] = vec[i] - Tfine_Pn_vec[i];
 
-     d1 = ML_gdot(Pe->outvec_leng, vec,vec, Pe->comm);
+     if (8 < ML_Get_PrintLevel())  {
+       d1 = sqrt(ML_gdot(Tfine->outvec_leng, Tfine_Pn_vec,Tfine_Pn_vec, Pe->comm));
+       printf("\n\nML_agg_reitzinger:  ||Th Pn v|| = %15.10e\n\n",d1);
+     }
+     d1 = sqrt(ML_gdot(Pe->outvec_leng, vec,vec, Pe->comm));
 
      if (8 < ML_Get_PrintLevel())  {
+	   printf("ML_agg_reitzinger: %e\n",d1);
        if ( fabs(d1) > 1.0e-4) {
 	 if (ml_edges->comm->ML_mypid == 0 )
 	   printf("ML_agg_reitzinger: Pe TH != Th Pn %e (level %d)\n",
