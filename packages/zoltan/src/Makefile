@@ -154,7 +154,7 @@ ALL_INC		= all_const.h all_allo_const.h
 LB_CSRC		= lb_balance.c lb_eval.c lb_init.c lb_migrate.c \
 		  lb_set_fn.c lb_set_method.c  \
 		  lb_point_assign.c lb_box_assign.c
-LB_INC		= lb_const.h lb_set_fn_const.h lb_init_const.h
+LB_INC		= lb_const.h lb_init_const.h
 
 RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \
                   create_proc_list.c rib.c rib_util.c \
