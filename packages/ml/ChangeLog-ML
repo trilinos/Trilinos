@@ -32,6 +32,26 @@ report bugs to jhu@sandia.gov.
 
 ------------------------------------------------------------------------------
 	
+Mar 2005
+
+        * Added a class, Ifpack_ML, that wraps an MultiLevelPreconditioner
+          as Ifpack_Preconditioner, so that ML can be used as local
+          solver in a domain decomposition preconditioner.
+        * Extended capabilities to read matrices from file in various
+          formats.
+        * Added support for adaptive smoothed aggregation within MLAPI.
+          A new class, called MultiLevelAdaptiveSA, has been added.
+        * Added a prototype of class for non-symmetric smoothed 
+          aggregation.
+        
+------------------------------------------------------------------------------
+	
+Feb 2005
+
+        * Improved the MLAPI files.
+        
+------------------------------------------------------------------------------
+	
 Jan 2005
 
         * The first cut of the MLAPI is now available. MLAPI is the 
