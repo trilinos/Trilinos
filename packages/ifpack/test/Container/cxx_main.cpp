@@ -63,24 +63,20 @@ int TestContainer(string Type, CrsMatrixGallery& Gallery)
   Ifpack_Container* Container;
 
   if (Type == "dense")
-    Container = new Ifpack_DenseContainer;
+    Container = new Ifpack_DenseContainer(A->NumMyRows(), NumVectors);
   else
-    Container = new Ifpack_SparseContainer<Ifpack_Amesos>;
+    Container = new Ifpack_SparseContainer<Ifpack_Amesos>(A->NumMyRows(), NumVectors);
 
   assert (Container != 0);
 
-  // shape the container to hold the entire local matrix,
-  // and NumVectors vectors.
-  IFPACK_CHK_ERR(Container->Shape(A->NumMyRows(), NumVectors));
-
+  IFPACK_CHK_ERR(Container->Initialize());
   // set as ID all the local rows of A
   for (int i = 0 ; i < A->NumMyRows() ; ++i)
     Container->ID(i) = i;
 
   // extract submatrix (in this case, the entire matrix)
   // and complete setup
-  IFPACK_CHK_ERR(Container->Extract(A));
-  IFPACK_CHK_ERR(Container->Compute());
+  IFPACK_CHK_ERR(Container->Compute(*A));
 
   // set the RHS and LHS
   for (int i = 0 ; i < A->NumMyRows() ; ++i)
@@ -88,7 +84,6 @@ int TestContainer(string Type, CrsMatrixGallery& Gallery)
       Container->RHS(i,j) = RHS[j][i];
       Container->LHS(i,j) = LHS[j][i];
     }
-
   
   // set parameters (empty for dense containers)
   Teuchos::ParameterList List;

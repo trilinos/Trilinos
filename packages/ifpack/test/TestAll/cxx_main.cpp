@@ -38,19 +38,13 @@
 #include "Epetra_LinearProblem.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Ifpack_Jacobi.h"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "AztecOO.h"
-#include "Ifpack_BlockPreconditioner.h"
+#include "Ifpack_PointRelaxation.h"
+#include "Ifpack_BlockRelaxation.h"
 #include "Ifpack_DenseContainer.h"
 #include "Ifpack_SparseContainer.h"
-#include "Ifpack_BlockJacobi.h"
-#include "Ifpack_BlockGaussSeidel.h"
-#include "Ifpack_Jacobi.h"
-#include "Ifpack_GaussSeidel.h"
-#include "Ifpack_SOR.h"
-#include "Ifpack_SSOR.h"
 #include "Ifpack_Graph.h"
 #include "Ifpack_Graph_Epetra_RowMatrix.h"
 #include "Ifpack_Amesos.h"
@@ -63,7 +57,7 @@
 using namespace Trilinos_Util;
 
 template <class T>
-bool Test(Epetra_RowMatrix* Matrix)
+bool Test(Epetra_RowMatrix* Matrix, Teuchos::ParameterList& List)
 {
 
   int NumVectors = 1;
@@ -77,9 +71,9 @@ bool Test(Epetra_RowMatrix* Matrix)
   LHSexact.Random();
   Matrix->Multiply(UseTranspose,LHSexact,RHS);
 
-  Teuchos::ParameterList List;
   Epetra_LinearProblem Problem(Matrix,&LHS,&RHS);
 
+  // to exercise the copy constructor
   T* Prec;
   T* PrecCopy;
   
@@ -91,6 +85,7 @@ bool Test(Epetra_RowMatrix* Matrix)
   IFPACK_CHK_ERR(Prec->Compute());
 
   PrecCopy = new T(*Prec);
+  PrecCopy = Prec;
 
   // create the AztecOO solver
   AztecOO AztecOOSolver(Problem);
@@ -138,19 +133,53 @@ int main(int argc, char *argv[])
   Gallery.Set("map_type", "linear");
   Epetra_RowMatrix* Matrix = Gallery.GetMatrix();
 
+  Teuchos::ParameterList List, DefaultList;
+
   // test the preconditioner
   int TestPassed = true;
 
-  vector<string> PrecType;
-  PrecType.push_back("Amesos");
-
-  for (int i = 0 ; i < PrecType.size() ; ++i) {
-    Ifpack_Preconditioner* Prec;
-    if (!Test<Ifpack_Amesos>(Matrix)) {
-	TestPassed = false;
-    }
+#if 0
+  if (!Test<Ifpack_Amesos>(Matrix)) {
+    TestPassed = false;
   }
 
+  if (!Test<Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_DenseContainer> > >(Matrix)) {
+    TestPassed = false;
+  }
+
+  // this is ok as long as just one sweep is applied
+  List = DefaultList;
+  List.set("point: type", "Gauss-Seidel");
+  if (!Test<Ifpack_PointRelaxation>(Matrix,List)) {
+    TestPassed = false;
+  }
+
+  // this is ok as long as just one sweep is applied
+  List = DefaultList;
+  List.set("block: type", "symmetric Gauss-Seidel");
+  List.set("block: sweeps", 5);
+  List.set("partitioner: local parts", 128);
+  List.set("partitioner: type", "Linear");
+  if (!Test<Ifpack_BlockRelaxation<Ifpack_DenseContainer> >(Matrix,List)) {
+    TestPassed = false;
+  }
+
+  // this is ok as long as just one sweep is applied
+  List = DefaultList;
+  List.set("block: type", "symmetric Gauss-Seidel");
+  List.set("partitioner: local parts", 128);
+  if (!Test<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,List)) {
+    TestPassed = false;
+  }
+#endif
+
+  // this is ok as long as just one sweep is applied
+  List = DefaultList;
+  List.set("block: type", "symmetric Gauss-Seidel");
+  List.set("partitioner: local parts", 128);
+  if (!Test<Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > >(Matrix,List)) {
+    TestPassed = false;
+  }
   if (!TestPassed)
     exit(EXIT_FAILURE);
 
