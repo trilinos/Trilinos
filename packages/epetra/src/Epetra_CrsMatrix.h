@@ -44,10 +44,10 @@ class Epetra_MultiVector;
 
 //! Epetra_CrsMatrix: A class for constructing and using real-valued double-precision sparse compressed row matrices.
 
-/*! The Epetra_CrsMatrix enable the piecewise construction and use of real-valued double-precision sparse matrices
+/*! The Epetra_CrsMatrix enables the piecewise construction and use of real-valued double-precision sparse matrices
     where matrix entries are intended for row access.
 
-    At this time, the primary function provided by Epetra_CrsMatrix is matrix time vector and matrix 
+    At this time, the primary function provided by Epetra_CrsMatrix is matrix times vector and matrix 
     times multi-vector multiplication.  It is also possible to extract matrix rows from a constructed matrix.
 
 <b>Constructing Epetra_CrsMatrix objects</b>
@@ -663,7 +663,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	
 	//! Returns the Epetra_Map object associated with the rows of this matrix.
 	const Epetra_Map& RowMap() const {return((Epetra_Map &)Graph_->RowMap());};
-	
+
+	//! Replaces the current RowMap with the user-specified map object.
+	void ReplaceRowMap(const Epetra_BlockMap& newmap) {Graph_->ReplaceRowMap(newmap); }
 	//! Returns the Epetra_Map object that describes the column distribution across processors.
 	const Epetra_Map& ColMap() const {return((Epetra_Map &) Graph_->ColMap());};
 	

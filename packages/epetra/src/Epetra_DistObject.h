@@ -220,8 +220,8 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 															 Epetra_Distributor& Distor, Epetra_CombineMode CombineMode ) = 0;
 
   //@}
-  const Epetra_BlockMap Map_;
-	const Epetra_Comm* Comm_;
+  Epetra_BlockMap Map_;
+  const Epetra_Comm* Comm_;
   bool DistributedGlobal_;
   char* Exports_;
   char* Imports_;

@@ -1046,6 +1046,17 @@ int Epetra_CrsGraph::NumAllocatedGlobalIndices(int Row) const {
     return(0); // No indices allocated for this row on this processor
 }
 
+//==============================================================================
+int Epetra_CrsGraph::ReplaceRowMap(const Epetra_BlockMap& newmap)
+{
+  if (RowMap().PointSameAs(newmap)) {
+    Epetra_DistObject::Map_ = newmap;
+    return(0);
+  }
+
+  return(-1);
+}
+
 // private =====================================================================
 int Epetra_CrsGraph::CheckSizes(const Epetra_SrcDistObject& Source) {
   try {

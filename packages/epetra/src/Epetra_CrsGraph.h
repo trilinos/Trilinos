@@ -442,6 +442,12 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	//! Returns the RowMap associated with this matrix.
 	const Epetra_BlockMap& RowMap() const {return(Epetra_DistObject::Map());};
     
+	/** Replaces the current RowMap with the user-specified map object, but only
+	    if currentmap->PointSameAs(newmap) is true. This is a collective function.
+	    Returns 0 if map is replaced, -1 if not.
+	*/
+	int ReplaceRowMap(const Epetra_BlockMap& newmap);
+
 	//! Returns the Column Map associated with this matrix.
 	const Epetra_BlockMap& ColMap() const {return(CrsGraphData_->ColMap_);};
 	

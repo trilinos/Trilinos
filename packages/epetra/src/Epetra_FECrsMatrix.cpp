@@ -191,11 +191,10 @@ int Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const int* rows,
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::GlobalAssemble(bool callFillComplete)
 {
-  if (Map().Comm().NumProc() < 2) {
-    return(0);
-  }
-
-  if (ignoreNonLocalEntries_) {
+  if (Map().Comm().NumProc() < 2 || ignoreNonLocalEntries_) {
+    if (callFillComplete) {
+      EPETRA_CHK_ERR( FillComplete() );
+    }
     return(0);
   }
 
