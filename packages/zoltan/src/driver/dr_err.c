@@ -27,7 +27,7 @@
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 static int error_cnt = 0;
-int error_lev = 3;
+static int error_lev = 3;
 
 static ERROR_MSG_PTR error_info;
 

@@ -24,6 +24,12 @@ static void initialize_region(LB *, pRegion *, LB_GID, LB_LID, int, float);
 static int lb_oct_init(LB *lb, int *num_import, LB_GID **import_global_ids,
   LB_LID **import_local_ids, int **import_procs, int oct_dim, int oct_method,
   int oct_granularity, int oct_output_level, int oct_wgtflag); 
+static void    LB_oct_gen_tree_from_input_data(LB *lb, int, int *c1, int *c2,
+                                               int *c3, float *c0);
+static pOctant LB_oct_global_insert(LB *, pRegion region);
+static void    LB_oct_terminal_refine(LB *, pOctant oct,int count);
+
+
 
 /*****************************************************************************/
 /* NOTE: be careful later about region lists for nonterminal octants */
@@ -293,8 +299,8 @@ static int lb_oct_init(
  * tree will then be balanced and the output used to balance "mesh regions"
  * on several processors.
  */
-void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1, int *c2, 
-				     int *c3, float *c0) 
+static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1, 
+                                     int *c2, int *c3, float *c0) 
 {
   char *yo = "LB_oct_gen_tree_from_input_data";
   COORD min,              /* min coord bounds of objects */
@@ -763,7 +769,7 @@ static int LB_oct_global_insert_object(LB *lb, pRegion Region_list, int num_objs
  * of the octant to which the region is attached.
  *
  */
-pOctant LB_oct_global_insert(LB *lb, pRegion region) 
+static pOctant LB_oct_global_insert(LB *lb, pRegion region) 
 {
   pOctant oct;                            /* octree octant */
   OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
@@ -882,7 +888,7 @@ static pOctant LB_oct_findOctant(OCT_Global_Info *OCT_info,pOctant oct, COORD co
  * necessary to satisfy MAXOCTREGIONS
  *
  */
-void LB_oct_terminal_refine(LB *lb, pOctant oct,int count) 
+static void LB_oct_terminal_refine(LB *lb, pOctant oct,int count) 
 {
   COORD min,                      /* coordinates of minimum bounds of region */
         max,                      /* coordinates of maximum bounds of region */

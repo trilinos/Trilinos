@@ -130,8 +130,6 @@ struct Problem_Description
 typedef struct Problem_Description  PROB_INFO;
 typedef struct Problem_Description *PROB_INFO_PTR;
 
-extern void print_input_info(FILE *, int, PROB_INFO_PTR);
-
 extern int Debug_Driver;
 extern int Debug_Input;
 

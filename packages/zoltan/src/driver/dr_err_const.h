@@ -22,7 +22,6 @@ struct error_message
 {
   int   level;
   char *err_mesg;
-  int   error_level;
   int   line_no;
   char *filename;
 };
@@ -30,7 +29,6 @@ struct error_message
 typedef struct error_message ERROR_MSG;
 typedef struct error_message *ERROR_MSG_PTR;
 
-extern int error_lev;
 
 /* Macro used in the code to add an error message */
 #define Gen_Error(a,b) (error_add(a, b, __FILE__, __LINE__))

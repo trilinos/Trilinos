@@ -18,19 +18,21 @@
 
 /* Prototypes for functions internal to this file */
 
-void LB_Reftree_Free_Subtree(LB_REFTREE *subroot);
-int any_vert_equals(int vert_match, int *vertices, int start, int finish);
-int order_tri_bisect(LB *lb, int *vert1, int *order, int *vertices,
+static void LB_Reftree_Free_Subtree(LB_REFTREE *subroot);
+static int any_vert_equals(int vert_match, int *vertices, int start, int finish);
+static int order_tri_bisect(LB *lb, int *vert1, int *order, int *vertices,
                      int *in_vertex, int *out_vertex, LB_REFTREE *subroot);
-int order_other_ref(LB *lb, LB_REFTREE *parent, int num_child, int *num_vert,
+static int order_other_ref(LB *lb, LB_REFTREE *parent, int num_child, 
+                    int *num_vert,
                     int *vert1, int *vertices, int *order, int *in_vertex,
                     int *out_vertex);
-void order_other_ref_recur(int new_entry, int level, int *order, int *on_path,
+static void order_other_ref_recur(int new_entry, int level, int *order, 
+                          int *on_path,
                           int num_child, int *has_out, int **share_vert,
                           int *solved);
-int find_inout(int level, int num_child, int *num_vert, int *vert1,
+static int find_inout(int level, int num_child, int *num_vert, int *vert1,
                int *vertices, int *in_vertex, int *out_vertex, int *order);
-int LB_Reftree_Reinit_Coarse(LB *lb);
+static int LB_Reftree_Reinit_Coarse(LB *lb);
 static int LB_Reftree_Build_Recursive(LB *lb,LB_REFTREE *subroot);
 
 /*****************************************************************************/
@@ -1116,7 +1118,7 @@ int hashsize;              /* size of the hash table */
 
 /*****************************************************************************/
 
-int any_vert_equals(int vert_match, int *vertices, int start, int finish)
+static int any_vert_equals(int vert_match, int *vertices, int start, int finish)
 {
 /*
  * function to see if one of the vertices between start and finish is vert_match
@@ -1131,7 +1133,7 @@ int i, result;
 
 /*****************************************************************************/
 
-int order_tri_bisect(LB *lb, int *vert1, int *order, int *vertices,
+static int order_tri_bisect(LB *lb, int *vert1, int *order, int *vertices,
                      int *in_vertex, int *out_vertex, LB_REFTREE *subroot)
 {
 /*
@@ -1312,7 +1314,8 @@ int bad_case;              /* flag for failing to identify order */
 
 /*****************************************************************************/
 
-int order_other_ref(LB *lb, LB_REFTREE *parent, int num_child, int *num_vert,
+static int order_other_ref(LB *lb, LB_REFTREE *parent, int num_child, 
+                    int *num_vert,
                     int *vert1, int *vertices, int *order, int *in_vertex,
                     int *out_vertex)
 {
@@ -1469,7 +1472,8 @@ int *on_path;       /* flag for already placed element on path */
 
 /*****************************************************************************/
 
-void order_other_ref_recur(int new_entry, int level, int *order, int *on_path,
+static void order_other_ref_recur(int new_entry, int level, int *order, 
+                          int *on_path,
                           int num_child, int *has_out, int **share_vert,
                           int *solved)
 {
@@ -1521,7 +1525,7 @@ int i;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int find_inout(int level, int num_child, int *num_vert, int *vert1,
+static int find_inout(int level, int num_child, int *num_vert, int *vert1,
                int *vertices, int *in_vertex, int *out_vertex, int *order)
 {
 /*
@@ -1630,7 +1634,7 @@ int i;                                       /* loop counter */
 
 }
 
-void LB_Reftree_Free_Subtree(LB_REFTREE *subroot)
+static void LB_Reftree_Free_Subtree(LB_REFTREE *subroot)
 
 {
 /*
@@ -1725,7 +1729,7 @@ int i, j;                                    /* loop counters */
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Reftree_Reinit_Coarse(LB *lb)
+static int LB_Reftree_Reinit_Coarse(LB *lb)
 
 {
 /*

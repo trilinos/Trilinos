@@ -43,6 +43,7 @@ int Debug_Driver = 1;
 int Debug_Input = 0;
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
+static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -232,7 +233,7 @@ static int read_mesh(
 
 /*****************************************************************************/
 /*****************************************************************************/
-void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob)
+static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob)
 {
 int i;
 

@@ -65,10 +65,13 @@ bit is the trailing bit of the last word.
 #include <limits.h>
 #include "hilbert_const.h"
 
+static void LB_hsfc2d(unsigned coord[], unsigned *nkey, unsigned key[]); 
+static void LB_hsfc3d(unsigned coord[], unsigned *nkey, unsigned key[]);
+
 /*--------------------------------------------------------------------*/
 /* 2D Hilbert Space-filling curve */
 
-void LB_hsfc2d(
+static void LB_hsfc2d(
   unsigned   coord[] , /* IN: Normalized integer coordinates */
   unsigned * nkey ,    /* IN: Word length of key */
   unsigned   key[] )   /* OUT: space-filling curve key */
@@ -143,7 +146,7 @@ void LB_hsfc2d(
 /*--------------------------------------------------------------------*/
 /* 3D Hilbert Space-filling curve */
 
-void LB_hsfc3d(
+static void LB_hsfc3d(
   unsigned   coord[] , /* IN: Normalized integer coordinates */
   unsigned * nkey ,    /* IN: Word length of 'key' */
   unsigned   key[] )   /* OUT: space-filling curve key */

@@ -22,7 +22,5 @@ typedef struct
 
 void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids, 
 			       int nregions, int *c2);
-void LB_insert_orphan(LB *, Region reg);
-void LB_copy_info(pRegion src, pRegion *dest);
 
 #endif

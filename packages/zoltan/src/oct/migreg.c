@@ -12,6 +12,8 @@
 #include "dfs_const.h"
 #include "all_allo_const.h"
 
+static void LB_insert_orphan(LB *lb, Region reg);
+static void LB_copy_info(pRegion src, pRegion *dest);
 /*
  * LB_migreg_migrate_regions(Message *message_Array, int number_of_regions)
  *
@@ -22,7 +24,9 @@
 
 void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids, 
 			       int nregions, int *c2) {
+  char *yo = "LB_migreg_migrate_regions";
   int i;                         /* index counter */
+  int ierr;
   int n_import;
   int msgtag, msgtag2;
   COMM_OBJ *comm_plan;           /* Object returned by communication routines */
@@ -30,22 +34,31 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
 				    the objs from other processors. */
 
   msgtag = 32767;
-  LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, msgtag, 
+  ierr = LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, msgtag, 
                  lb->Deterministic, &n_import);
+  if (ierr != LB_OK && ierr != LB_WARN) {
+    fprintf(stderr, "OCT %s Error %d returned from LB_Comm_Create\n", yo, ierr);
+    abort();
+  }
   *c2 = n_import;
   if (n_import > 0) {
     import_objs = (Region *) LB_MALLOC(n_import * sizeof(Region));
 
     if(import_objs == NULL) {
-      fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
-  	    "cannot allocate memory for import_objs.");
+      fprintf(stderr,"ERROR in %s: cannot allocate memory for import_objs.\n", 
+              yo);
       abort();
     }
   }
 
   msgtag2 = 32766;
-  LB_Comm_Do(comm_plan, msgtag2, (char *) regions, sizeof(Region), 
-          (char *) import_objs);
+  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) regions, sizeof(Region), 
+                   (char *) import_objs);
+  if (ierr != LB_OK && ierr != LB_WARN) {
+    fprintf(stderr, "OCT %s Error %d returned from LB_Comm_Create\n", yo, ierr);
+    LB_FREE(&import_objs);
+    abort();
+  }
 
   for (i=0; i<n_import; i++) {
     LB_insert_orphan(lb, import_objs[i]);
@@ -61,7 +74,7 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
  * Insert orphan regions migrated from off processors, or to insert
  * regions that lie on the boundary.
  */
-void LB_insert_orphan(LB *lb, Region reg) {
+static void LB_insert_orphan(LB *lb, Region reg) {
   pRList rootlist;                 /* list of all local roots */
   int rflag;                       /* flag to indicate region fits in octant */
   int i, j;                        /* index counters */
@@ -247,7 +260,7 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
  *
  * Copies region information from the source to the destination
  */
-void LB_copy_info(pRegion src, pRegion *dest) {
+static void LB_copy_info(pRegion src, pRegion *dest) {
   pRegion copy;
 
   /* mallloc space for destination */

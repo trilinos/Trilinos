@@ -25,6 +25,11 @@ static float optcost;              /* Optimal partition cost */
 static float pmass;                /* octant volume for partition */
 static double pcoord[3];           /* Sum of octant position-volume products */
 
+static void LB_visit(OCT_Global_Info *OCT_info,pOctant octant);
+static void LB_visit_all_subtrees(OCT_Global_Info *OCT_info);
+static void LB_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int part);
+static void LB_visit_by_dist(OCT_Global_Info *OCT_info,pOctant octant, pOctant children[8]);
+
 
 
 /*****************************************************************************/
@@ -123,7 +128,7 @@ int LB_dfs_SetIds(pOctant oct, int nprevoct) {
  *
  * visits each of the subtrees that are on the local processor
  */
-void LB_visit_all_subtrees(OCT_Global_Info *OCT_info) {
+static void LB_visit_all_subtrees(OCT_Global_Info *OCT_info) {
   pRList localroots;                              /* list of all local roots */
 
   /* get the list of all the local roots */
@@ -151,7 +156,7 @@ void LB_visit_all_subtrees(OCT_Global_Info *OCT_info) {
  *   pcost     - (RW) partition cost for current partition
  *   optcost   - (RO) optimal partition cost
  */
-void LB_visit(OCT_Global_Info *OCT_info,pOctant octant) {
+static void LB_visit(OCT_Global_Info *OCT_info,pOctant octant) {
   float cost;                 /* Cost of this octant */
   float togo;                 /* Remaining room in current partition */
   float behind;               /* How many to make up for from all prev parts */
@@ -237,7 +242,7 @@ void LB_visit(OCT_Global_Info *OCT_info,pOctant octant) {
  *
  * marks all the octants within the subtree to be in the current partition
  */
-void LB_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int part) {
+static void LB_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int part) {
   pOctant children[8];                                 /* children of octant */
   int i;                                               /* index counter */
 
@@ -352,7 +357,7 @@ void LB_dfs_migrate(LB *lb, pRegion *export_regs, int *nsentags,
  *
  * tries to find the closest child to add to the partition 
  */
-void LB_visit_by_dist(OCT_Global_Info *OCT_info,pOctant octant, pOctant children[8])
+static void LB_visit_by_dist(OCT_Global_Info *OCT_info,pOctant octant, pOctant children[8])
 {
   COORD min,                    /* min bounds of the octant */
         max;                    /* max bounds of the octant */

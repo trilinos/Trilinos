@@ -12,9 +12,5 @@
 #include "dfs_const.h"
 
 extern int  LB_dfs_SetIds(pOctant oct, int nprevoct);
-extern void LB_visit_all_subtrees(OCT_Global_Info *OCT_info);
-extern void LB_visit(OCT_Global_Info *OCT_info,pOctant octant);
-extern void LB_visit_by_dist(OCT_Global_Info *OCT_info,pOctant octant, pOctant children[8]);
-extern void LB_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int partition);
 
 #endif

@@ -14,6 +14,8 @@
 #include "all_allo_const.h"
 
 /* function prototype */
+static int LB_convert_from_gray(int input);
+
 static int compare( unsigned * x, unsigned * y);
 static int hilbert_bounds(OCT_Global_Info *OCT_info,COORD min, COORD max, COORD cmin[], COORD cmax[]);
 static int hilbert2d_bounds(OCT_Global_Info *OCT_info,COORD min, COORD max, COORD cmin[], COORD cmax[]);
@@ -304,7 +306,7 @@ int LB_child_which(OCT_Global_Info *OCT_info,COORD porigin, COORD point) {
  *
  * takes a Gray code number and converts it into Binary
  */
-int LB_convert_from_gray(int input) {
+static int LB_convert_from_gray(int input) {
   int prev,                      /* previous result */
       num,                       /* bit currently being examines */
       res,                       /* result to be returned */

@@ -15,6 +15,13 @@
 static int OCT_count;                /* count of all local octants           */
 static int OCT_idcount;              /* count for id's, help with uniqueness */
 
+static pOctant POC_malloc();
+static void    POC_clearRegions(pOctant oct);
+static int     POC_nlocal(pOctant oct);
+static void    POC_DfsTraversal(OCT_Global_Info *OCT_info, pOctant oct);
+static void    POC_printRegionInfo(OCT_Global_Info * OCT_info, pOctant oct);
+
+
 /*****************************************************************************/
 /*
  * void POC_init(int processor_id)
@@ -44,7 +51,7 @@ OCT_Global_Info *OCT_info;
  *
  * creates space in memory for a new octant
  */
-pOctant POC_malloc() {
+static pOctant POC_malloc() {
   pOctant ptr;                                  /* pointer to the new octant */
   
   ptr=(pOctant) LB_MALLOC(sizeof(Octant));                /* allocate space */
@@ -358,7 +365,7 @@ void POC_addRegion(pOctant oct, pRegion region) {
  * void POC_clearRegions(pOctant octant)
  * erase all of a oct's regions
  */
-void POC_clearRegions(pOctant oct) { 
+static void POC_clearRegions(pOctant oct) { 
   pRegion ptr;                                         /* pointer to regions */
   
   ptr = oct->list;
@@ -448,7 +455,7 @@ int POC_data_newpid(pOctant oct)
  *
  * return the number of local leaves in the subtree
  */
-int POC_nlocal(pOctant oct) {
+static int POC_nlocal(pOctant oct) {
   int i;                                    /* index counter */
   pOctant child;                            /* child of an octant */
   int total;                                /* total number of local octants */
@@ -512,7 +519,7 @@ void POC_printResults(OCT_Global_Info *OCT_info) {
  *
  * traverse through the octree in DFS order to get a printout
  */
-void POC_DfsTraversal(OCT_Global_Info *OCT_info, pOctant oct) {
+static void POC_DfsTraversal(OCT_Global_Info *OCT_info, pOctant oct) {
   int i;                                                    /* index counter */
 
   if(oct == NULL)
@@ -532,7 +539,7 @@ void POC_DfsTraversal(OCT_Global_Info *OCT_info, pOctant oct) {
  *
  * prints out region information
  */
-void POC_printRegionInfo(OCT_Global_Info * OCT_info, pOctant oct) {
+static void POC_printRegionInfo(OCT_Global_Info * OCT_info, pOctant oct) {
   pRegion ptr;            /* pointer to iterate through octant's region list */
   pOctant parent;
 

@@ -39,6 +39,7 @@ void *var)			/* pointer to variable to be associated with the parameter name */
  *    LB_FATAL signals something more serious.
  */
 
+    char     *yo = "LB_Bind_Param";
     char     *name2;		/* clean version of name */
     int       flag;		/* return value from function */
     PARAM_VARS *ptr;		/* pointer to a parameter */
@@ -59,6 +60,8 @@ void *var)			/* pointer to variable to be associated with the parameter name */
     }
 
     /* If we reach this point, the parameter name must be invalid */
+    fprintf(stderr, "%s Warning:  Parameter name %s not found; it will"
+                    "not be bound to any variable\n", yo, name2);
     LB_FREE(&name2);
     return (LB_WARN);
 }

@@ -24,7 +24,6 @@ extern void   LB_child_bounds(COORD pmin, COORD pmax, COORD porigin,
 extern int    LB_child_which_wrapper(OCT_Global_Info *OCT_info,pOctant oct, COORD point);
 extern int    LB_child_which(OCT_Global_Info *OCT_info,COORD origin, COORD point);
 extern int    LB_convert_to_gray(int input);
-extern int    LB_convert_from_gray(int input);
 
 extern int    LB_child_orientation(int o, int cnum);
 extern int    LB_change_to_hilbert2d(OCT_Global_Info *OCT_info,COORD min, COORD max, 

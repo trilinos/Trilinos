@@ -242,13 +242,18 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   pRegion tmp = NULL;
   int msgtag, msgtag2;
   int j;
+  int ierr;
   float im_load;
   COMM_OBJ *comm_plan;           /* Object returned by communication routines */
 
   im_load = 0;
   msgtag = 32767;
-  LB_Comm_Create(&comm_plan, nsentags, tag_pids, lb->Communicator, 
+  ierr = LB_Comm_Create(&comm_plan, nsentags, tag_pids, lb->Communicator, 
       msgtag, lb->Deterministic, &nreceives);
+  if (ierr != LB_OK && ierr != LB_WARN) {
+    fprintf(stderr, "OCT %s Error %d returned from LB_Comm_Create\n", yo, ierr);
+    abort();
+  }
 
   if (nreceives > 0) {
     tmp = (pRegion) LB_MALLOC(nreceives * sizeof(Region));
@@ -259,8 +264,13 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   }
   
   msgtag2 = 32766;
-  LB_Comm_Do(comm_plan, msgtag2, (char *) export_tags, sizeof(Region),
-      (char *) tmp);
+  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_tags, sizeof(Region),
+         (char *) tmp);
+  if (ierr != LB_OK && ierr != LB_WARN) {
+    fprintf(stderr, "OCT %s Error %d returned from LB_Comm_Create\n", yo, ierr);
+    LB_FREE(&tmp);
+    abort();
+  }
   LB_Comm_Destroy(&comm_plan);
 
   /* get each message sent, and store region in import array */

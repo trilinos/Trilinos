@@ -220,41 +220,56 @@ barrier1:
     }
 
     /* Do the irregular communication */
-    LB_Comm_Create(&comm_plan, cross_edges, proclist, comm, TAG1, TRUE, &k);
-    if (k != cross_edges){
-        fprintf(stderr, "Zoltan error: Incorrect number of edges to/from proc %d\n",
-                proc);
-        ierr = LB_FATAL;
+    ierr = LB_Comm_Create(&comm_plan, cross_edges, proclist, comm, TAG1, 
+                          TRUE, &k);
+    if (ierr != LB_OK && ierr != LB_WARN) {
+      fprintf(stderr, "%s Error %d returned from LB_Comm_Create\n", yo, ierr);
     }
+    else {
+      if (k != cross_edges){
+        fprintf(stderr, "Zoltan error: Incorrect number of edges to/from "
+                        "proc %d\n", proc);
+        ierr = LB_FATAL;
+      }
 
-    LB_Comm_Do(comm_plan, TAG2, sendbuf, mesg_size, recvbuf);
+      ierr = LB_Comm_Do(comm_plan, TAG2, sendbuf, mesg_size, recvbuf);
+      LB_Comm_Destroy(&comm_plan);
+      if (ierr != LB_OK && ierr != LB_WARN) {
+        fprintf(stderr, "%s Error %d returned from LB_Comm_Do\n", yo, ierr);
+      }
+      else {
 
-    LB_Comm_Destroy(&comm_plan);
 
 
-    /* Third pass: Compare on-proc data to the off-proc data we received */
-    /* sendbuf and recvbuf should contain the same data except (i,j) is (j,i) */
-    for (i=0, ptr1=(idxtype *)sendbuf; i<cross_edges; i++, ptr1 += (2+ewgt_dim)){
-      flag = 0;
-      for (j=0, ptr2=(idxtype *)recvbuf; j<cross_edges; j++, ptr2 += (2+ewgt_dim)){
-        if ((ptr2[0] == ptr1[1]) && (ptr2[1] == ptr1[0])){
-          /* Found matching edge */
-          flag = 1;
-          /* Check weights */
-          for (k=0; k<ewgt_dim; k++){
-            if (ptr1[2+k] != ptr2[2+k]){
-              fprintf(stderr, "Zoltan error: edge weight (%d,%d) is not symmetric: "
-                      "%d != %d\n", ptr1[0], ptr1[1], ptr1[2+k], ptr2[2+k]);
-              ierr = LB_FATAL;
+        /* Third pass: Compare on-proc data to the off-proc data we received */
+        /* sendbuf and recvbuf should contain the same data except (i,j) is  */
+        /* (j,i)                                                             */
+        for (i=0, ptr1=(idxtype *)sendbuf; i<cross_edges; 
+             i++, ptr1 += (2+ewgt_dim)){
+          flag = 0;
+          for (j=0, ptr2=(idxtype *)recvbuf; j<cross_edges; 
+               j++, ptr2 += (2+ewgt_dim)){
+            if ((ptr2[0] == ptr1[1]) && (ptr2[1] == ptr1[0])){
+              /* Found matching edge */
+              flag = 1;
+              /* Check weights */
+              for (k=0; k<ewgt_dim; k++){
+                if (ptr1[2+k] != ptr2[2+k]){
+                  fprintf(stderr, "Zoltan error: edge weight (%d,%d) is not "
+                          "symmetric: %d != %d\n", 
+                           ptr1[0], ptr1[1], ptr1[2+k], ptr2[2+k]);
+                  ierr = LB_FATAL;
+                }
+              }
             }
           }
+          if (!flag){
+            fprintf(stderr, "Zoltan error: Graph is not symmetric in %s. "
+                    "Edge (%d,%d) exists, but not (%d,%d)\n", 
+                    yo, ptr1[0], ptr1[1], ptr1[1], ptr1[0]);
+            ierr = LB_FATAL;
+          }
         }
-      }
-      if (!flag){
-        fprintf(stderr, "Zoltan error: Graph is not symmetric in %s. "
-                "Edge (%d,%d) exists, but not (%d,%d)\n", 
-                yo, ptr1[0], ptr1[1], ptr1[1], ptr1[0]);
-        ierr = LB_FATAL;
       }
     }
 

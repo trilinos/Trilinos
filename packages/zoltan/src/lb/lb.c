@@ -356,6 +356,7 @@ int LB_Set_Method(LB *lb, char *method_name)
 
   char *yo = "LB_Set_Method";
   char *method_upper;
+  int error;
 
   /*
    *  Compare method_name string with standard strings for methods.
@@ -370,7 +371,13 @@ int LB_Set_Method(LB *lb, char *method_name)
    *  Do not change the original string.
    */
 
-  LB_clean_string(method_name, &method_upper);
+  error = LB_clean_string(method_name, &method_upper);
+  if (error) {
+    fprintf(stderr, "%s Error %d returned from LB_clean_string; "
+                    "No method set.\n", yo, error);
+    LB_FREE(&method_upper);
+    return error;
+  }
 
   if (strcmp(method_upper, "RCB") == 0) {
     lb->Method = RCB;
@@ -611,20 +618,37 @@ double lb_time[2] = {0.0,0.0};
   if (*num_import_objs >= 0){
     if (*num_export_objs >= 0)
       /* Both maps already available; nothing to do. */;
-    else
+    else {
       /* Compute export map */
-      LB_Compute_Destinations(lb, *num_import_objs, *import_global_ids, 
-                              *import_local_ids, *import_procs,
-                              num_export_objs, export_global_ids,
-                              export_local_ids, export_procs);
+      error = LB_Compute_Destinations(lb, *num_import_objs, *import_global_ids, 
+                                      *import_local_ids, *import_procs,
+                                      num_export_objs, export_global_ids,
+                                      export_local_ids, export_procs);
+      if (error != LB_OK && error != LB_WARN) {
+        fprintf(stderr, "%s Error building return arguments; "
+                        "%d returned by LB_Compute_Destinations\n",
+                yo, error);
+        LB_TRACE_EXIT(lb, yo);
+        return error;
+      }
+    }
   }
   else { /* if (*num_import_objs < 0) */
-    if (*num_export_objs >= 0)
+    if (*num_export_objs >= 0) {
       /* Compute export map */
-      LB_Compute_Destinations(lb, *num_export_objs, *export_global_ids, 
-                              *export_local_ids, *export_procs,
-                              num_import_objs, import_global_ids,
-                              import_local_ids, import_procs);
+      error = LB_Compute_Destinations(lb, *num_export_objs, *export_global_ids, 
+                                      *export_local_ids, *export_procs,
+                                      num_import_objs, import_global_ids,
+                                      import_local_ids, import_procs);
+
+      if (error != LB_OK && error != LB_WARN) {
+        fprintf(stderr, "%s Error building return arguments; "
+                        "%d returned by LB_Compute_Destinations\n",
+                yo, error);
+        LB_TRACE_EXIT(lb, yo);
+        return error;
+      }
+    }
     else{
       /* No map at all available */
       fprintf(stderr, "%s Error: Load-balancing function returned neither "
@@ -664,10 +688,16 @@ double lb_time[2] = {0.0,0.0};
     LB_TRACE_DETAIL(lb, yo, "Begin auto-migration");
 
     start_time = LB_Time();
-    LB_Help_Migrate(lb, *num_import_objs, *import_global_ids,
-                    *import_local_ids, *import_procs,
-                    *num_export_objs, *export_global_ids,
-                    *export_local_ids, *export_procs);
+    error = LB_Help_Migrate(lb, *num_import_objs, *import_global_ids,
+                            *import_local_ids, *import_procs,
+                            *num_export_objs, *export_global_ids,
+                            *export_local_ids, *export_procs);
+    if (error != LB_OK && error != LB_WARN) {
+      fprintf(stderr, "%s Error in auto-migration; %d returned from "
+                      "LB_Help_Migrate\n", yo, error);
+      LB_TRACE_EXIT(lb, yo);
+      return error;
+    }
     end_time = LB_Time();
     lb_time[1] = end_time - start_time;
 
@@ -741,6 +771,7 @@ LB_TAG *export_objs = NULL; /* Array of export objects describing which objs
                                must be sent to other processors.            */
 int msgtag, msgtag2;        /* Message tags for communication routines */
 int i;
+int ierr = LB_OK;
 
 
   LB_TRACE_ENTER(lb, yo);
@@ -790,8 +821,16 @@ int i;
    */
 
   msgtag = 32767;
-  LB_Comm_Create(&comm_plan, num_import, proc_list, lb->Communicator, msgtag,
-                 lb->Deterministic, num_export);
+  ierr = LB_Comm_Create(&comm_plan, num_import, proc_list, lb->Communicator, 
+                        msgtag, lb->Deterministic, num_export);
+  if (ierr != LB_OK && ierr != LB_WARN) {
+    fprintf(stderr, "%s Error %d returned from LB_Comm_Create\n", yo, ierr);
+    LB_FREE(&proc_list);
+    LB_FREE(&import_objs);
+    LB_TRACE_EXIT(lb, yo);
+    return ierr;
+  }
+  
 
   LB_TRACE_DETAIL(lb, yo, "Done comm create");
 
@@ -853,8 +892,17 @@ int i;
   }
 
   msgtag2 = 32766;
-  LB_Comm_Do(comm_plan, msgtag2, (char *) import_objs, (int) sizeof(LB_TAG), 
-          (char *) export_objs);
+  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_objs, 
+                    (int) sizeof(LB_TAG), (char *) export_objs);
+  if (ierr != LB_OK && ierr != LB_WARN) {
+    fprintf(stderr, "%s Error %d returned from LB_Comm_Do\n", yo, ierr);
+    LB_FREE(&proc_list);
+    LB_FREE(&import_objs);
+    LB_FREE(&export_objs);
+    LB_Comm_Destroy(&comm_plan);
+    LB_TRACE_EXIT(lb, yo);
+    return (ierr);
+  }
 
   LB_TRACE_DETAIL(lb, yo, "Done comm_do");
 
@@ -877,7 +925,7 @@ int i;
   LB_TRACE_DETAIL(lb, yo, "Done comm destroy");
 
   LB_TRACE_EXIT(lb, yo);
-  return (LB_OK);
+  return (ierr);
 }
 
 /****************************************************************************/
@@ -1052,6 +1100,8 @@ int ierr = 0;
       if (ierr) {
         fprintf(stderr, "[%d] %s: Error returned from user defined "
                         "Migrate.Pack_Obj function.\n", lb->Proc, yo);
+        LB_FREE(&export_buf);
+        LB_FREE(&proc_list);
         LB_TRACE_EXIT(lb, yo);
         return (LB_FATAL);
       }
@@ -1067,8 +1117,15 @@ int ierr = 0;
    */
 
   msgtag = 32767;
-  LB_Comm_Create(&comm_plan, num_export, proc_list, lb->Communicator, msgtag,
-                 lb->Deterministic, &tmp_import);
+  ierr = LB_Comm_Create(&comm_plan, num_export, proc_list, lb->Communicator, 
+                        msgtag, lb->Deterministic, &tmp_import);
+  if (ierr != LB_OK && ierr != LB_WARN) {
+    fprintf(stderr, "%s Error %d returned from LB_Comm_Create\n", yo, ierr);
+    LB_FREE(&export_buf);
+    LB_FREE(&proc_list);
+    LB_TRACE_EXIT(lb, yo);
+    return ierr;
+  }
   if (tmp_import != num_import) {
     fprintf(stderr, "%d  Error in %s:  tmp_import %d != num_import %d\n", 
             lb->Proc, yo, tmp_import, num_import);
@@ -1092,7 +1149,16 @@ int ierr = 0;
    */
 
   msgtag2 = 32766;
-  LB_Comm_Do(comm_plan, msgtag2, export_buf, size, import_buf);
+  ierr = LB_Comm_Do(comm_plan, msgtag2, export_buf, size, import_buf);
+  if (ierr != LB_OK && ierr != LB_WARN) {
+    fprintf(stderr, "%s Error %d returned from LB_Comm_Do\n", yo, ierr);
+    LB_FREE(&proc_list);
+    LB_FREE(&export_buf);
+    LB_FREE(&import_buf);
+    LB_Comm_Destroy(&comm_plan);
+    LB_TRACE_EXIT(lb, yo);
+    return (ierr);
+  }
 
   /*
    *  Free whatever memory we can.
@@ -1121,6 +1187,7 @@ int ierr = 0;
     if (ierr) {
       fprintf(stderr, "[%d] %s: Error returned from user defined "
                       "Migrate.Unpack_Obj function.\n", lb->Proc, yo);
+      LB_FREE(&import_buf);
       LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }

@@ -18,6 +18,9 @@
  * all subtrees.
  */
 
+static void LB_costs_init(OCT_Global_Info *OCT_info,pOctant octant);
+static float LB_costs_subtree_compute(OCT_Global_Info *OCT_info,pOctant octant, int *seq);
+static float LB_costs_weight(pOctant octant);
 
 /*
  * void LB_costs_init(pOctant octant)
@@ -25,7 +28,7 @@
  * initialize costs for the subtree rooted at octant
  * ATTN: This function may not be necessary anymore
  */
-void LB_costs_init(OCT_Global_Info *OCT_info,pOctant octant) {
+static void LB_costs_init(OCT_Global_Info *OCT_info,pOctant octant) {
   pOctant children[8];                 /* children of the octant */
 /*
   float *data;
@@ -82,7 +85,7 @@ void LB_costs_free(OCT_Global_Info *OCT_info,pOctant octant) {
  *
  * NOTE: must call LB_costs_init() first
  */
-float LB_costs_subtree_compute(OCT_Global_Info *OCT_info,pOctant octant, int *seq) {
+static float LB_costs_subtree_compute(OCT_Global_Info *OCT_info,pOctant octant, int *seq) {
   pOctant children[8];                       /* the children of the octant */
   float c;                                   /* cost of each subtree */
   int i;                                     /* index counter */
@@ -180,7 +183,7 @@ float LB_costs_global_compute(OCT_Global_Info *OCT_info) {
  *
  * calculates the cost of an octant. returns the cost..
  */
-float LB_costs_weight(pOctant octant) {
+static float LB_costs_weight(pOctant octant) {
   pRegion region;                                  /* a region from the list */
   float cost;                                      /* cost of the octant */
 

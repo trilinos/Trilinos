@@ -566,6 +566,7 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
                       LB_SPECIAL_MALLOC_TYPE type)
 {
    int *ret_addr, success;
+   char *yo = "LB_Special_Malloc";
 
    success = 1;
    if (lb->Fortran) {
@@ -634,7 +635,7 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
          if (ret_addr==0) success=0;
          break;
       default:
-         fprintf(stderr, "Error: illegal value passed for type in LB_Special_Malloc\n");
+         fprintf(stderr, "Error: illegal value passed for type in %s\n", yo);
          success = 0;
       }
       if (success) {
@@ -658,7 +659,7 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
          *array = (LB_LID *) LB_MALLOC(size*sizeof(LB_LID));
          break;
       default:
-         fprintf(stderr, "Error: illegal value passed for type in LB_Special_Malloc\n");
+         fprintf(stderr, "Error: illegal value passed for type in %s\n", yo);
          *array = NULL;
       }
       if (*array==NULL) success=0;
@@ -666,10 +667,15 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
    return success;
 }
 
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
 int LB_Special_Free(struct LB_Struct *lb, void **array,
                     LB_SPECIAL_MALLOC_TYPE type)
 {
    int success;
+   char *yo = "LB_Special_Free";
 
    success = 1;
    if (lb->Fortran) {
@@ -735,7 +741,7 @@ int LB_Special_Free(struct LB_Struct *lb, void **array,
          }
          break;
       default:
-         fprintf(stderr, "Error: illegal value passed for type in LB_Special_Free\n");
+         fprintf(stderr, "Error: illegal value passed for type in %s\n", yo);
          success = 0;
       }
 
