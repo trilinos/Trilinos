@@ -9,6 +9,7 @@
 - \ref example 
 - \ref note 
 - \ref tools 
+- \ref error 
 - \ref copyright
 
 \section intro Introduction
@@ -144,6 +145,17 @@ Ifpack_AdditiveSchwarz Prec<Ifpack_BlockJacobi<Ifpack_SparseContainer<Ifpack_Ame
 comments:
 - \ref ex_factory shows how to use Ifpack factory to create
                             a variety of IFPACK preconditioners.  This is the simplest way to use IFPACK.  The example details all the phases of IFPACK. Difficulty = beginners.
+- \ref ex_mm reads an MatrixMarket matrix (a simple
+                             format that contains i,j and a(i,j) of
+                             all nonzero elements), redistribute
+                             the matrix to all avaialble processes
+                             (using a linear distribution), and
+                             solve the problem with AztecOO and IFPACK.
+                             Matrices downloaded from
+                             math.nist.gov/MatrixMarket/ in .mtx
+                             format can be used with this example. A
+                             small example is reported.
+                             Difficulty = beginners.
 - \ref ex_amesos      shows how to use exact LU solvers on
                             each subdomain, using Amesos. This example
                             is very similar to the previous one.
@@ -164,17 +176,13 @@ comments:
 
 \section note Note On IFPACK Classes
 
-Users of IFPACK should consider only three preconditioing classes:
-- Ifpack_AdditiveSchwarz;
-- Ifpack_CrsIct;
-- Ifpack_CrsRiluk.
-
-The last two are available through Ifpack_AdditiveSchwarz. The
-distributed contains several other classes, that are supposed to 
+The only class the IFPACK users should consider  is
+Ifpack_AdditiveSchwarz.
+The distribution contains several other classes, that are supposed to 
 be used as \e tools for Ifpack_AdditiveSchwarz (see above examples). These
 classes are Ifpack_Jacobi, Ifpack_GaussSeidel, Ifpack_SymGaussSeidel,
 Ifpack_SOR, Ifpack_SSOR, Ifpack_BlockJacobi, Ifpack_BlockGaussSeidel,
-Ifpack_SymBlockGaussSeidel, Ifpack_Amesos, Ifpack_Ict, Ifpack_Riluk.
+Ifpack_BlockSymGaussSeidel, Ifpack_Amesos, Ifpack_Ict, Ifpack_Riluk.
 These classes operate on local components only (with the assumption that
 OperatorDomainMap(), OperatorRangeMap() and RowMatrixRowMap()
 coincide). A robust code should use them directly only
@@ -199,6 +207,47 @@ for users:
 - Semi-virtual classes are Ifpack_PointPreconditioner and
   Ifpack_BlockPreconditioner.
 
+\section error Error Table
+
+The following table defines the class of IFPACK errors.
+Return code should be checked using the IFPACK_CHK_ERR() macro.
+In general terms, we follow this convention:
+- a return value of 0 means that the called 
+function or method successfully completed;
+- a negative return function means that an error occurred;
+- a positive value is a warning for the user.
+
+<table>
+<tr>
+<td><b>Error Code</b></td><td><b>Meaning</b></td>
+</tr>
+<tr>
+<td>-1</td><td>Generic Error (Called function returns error)</td>
+</tr>
+<tr>
+<td>-2</td><td>Range not valid (Out-of-bounds)</td>
+</tr>
+<tr>
+<td>-3</td><td>Data has not been correctly pre-processed</td>
+</tr>
+<tr>
+<td>-4</td><td>Division by zero</td>
+</tr>
+<tr>
+<td>-10</td><td>Memory allocation error</td>
+</tr>
+<tr>
+<td>-20</td><td>Failure of the algorithm</td>
+</tr>
+<tr>
+<td>-98</td><td>Feature is not supported</td>
+</tr>
+<tr>
+<td>-99</td><td>Feature is not implemented (submit a bug?)</td>
+</tr>
+</table>
+
+</tr>
 \section copyright Copyright
 
 \verbatim
@@ -244,6 +293,12 @@ USA
 /*! \page ex_block
 
 \include Ifpack_ex_BlockPrec.cpp
+
+*/
+
+/*! \page ex_mm
+
+\include Ifpack_ex_MatrixMarket.cpp
 
 */
 
