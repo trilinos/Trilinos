@@ -295,7 +295,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
   return true;
 }
 
-bool FiniteDifference::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M)
+bool FiniteDifference::computePreconditioner(const Epetra_Vector& x, Epetra_RowMatrix& M)
 {
   return computeJacobian(x, M);
 }

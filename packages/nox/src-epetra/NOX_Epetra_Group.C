@@ -58,7 +58,7 @@ Group::Group(const Parameter::List& params, Interface& i,
   tmpVectorPtr(0),
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedJacobian
   sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
-  sharedPrecMatrixPtr(0),  // A separate preconditioner is not supplied
+  sharedPreconditionerPtr(0),  // A separate preconditioner is not supplied
   userInterface(i)
 {
   resetIsValid();
@@ -75,7 +75,7 @@ Group::Group(const Parameter::List& params, Interface& i,
   tmpVectorPtr(NULL),
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedOperator
   sharedJacobian(*sharedJacobianPtr), // create reference from pointer
-  sharedPrecMatrixPtr(new SharedOperator(M)), // pass M to SharedOperator
+  sharedPreconditionerPtr(new SharedOperator(M)), // pass M to SharedOperator
   userInterface(i)
 {
   resetIsValid();
@@ -91,7 +91,7 @@ Group::Group(const Group& source, CopyType type) :
   tmpVectorPtr(NULL),
   sharedJacobianPtr(NULL),
   sharedJacobian(source.sharedJacobian),
-  sharedPrecMatrixPtr(source.sharedPrecMatrixPtr),
+  sharedPreconditionerPtr(source.sharedPreconditionerPtr),
   userInterface(source.userInterface),
   jacType(source.jacType),
   precOption(source.precOption),
@@ -107,7 +107,7 @@ Group::Group(const Group& source, CopyType type) :
     isValidGrad = source.isValidGrad;
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
-    isValidPrecMatrix = source.isValidPrecMatrix;
+    isValidPreconditioner = source.isValidPreconditioner;
     normRHS = source.normRHS;
     
     // New copy takes ownership of the shared Jacobian
@@ -115,8 +115,8 @@ Group::Group(const Group& source, CopyType type) :
       sharedJacobian.getOperator(this);
 
     // New copy takes ownership of the shared Preconditioning Matrix
-    if (isValidPrecMatrix)
-      sharedPrecMatrixPtr->getOperator(this);
+    if (isValidPreconditioner)
+      sharedPreconditionerPtr->getOperator(this);
 
     break;
 
@@ -135,7 +135,7 @@ Group::~Group()
 {
   delete tmpVectorPtr;
   delete sharedJacobianPtr;
-  delete sharedPrecMatrixPtr;
+  delete sharedPreconditionerPtr;
 }
 
 void Group::resetIsValid() //private
@@ -144,7 +144,7 @@ void Group::resetIsValid() //private
   isValidJacobian = false;
   isValidGrad = false;
   isValidNewton = false;
-  isValidPrecMatrix = false;
+  isValidPreconditioner = false;
 }
 
 void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec)
@@ -248,7 +248,7 @@ Abstract::Group& Group::operator=(const Group& source)
   isValidGrad = source.isValidGrad;
   isValidNewton = source.isValidNewton;
   isValidJacobian = source.isValidJacobian;
-  isValidJacobian = source.isValidPrecMatrix;
+  isValidJacobian = source.isValidPreconditioner;
 
   // Only copy vectors that are valid
   if (isValidRHS) {
@@ -267,7 +267,7 @@ Abstract::Group& Group::operator=(const Group& source)
     sharedJacobian.getOperator(this);
     
   // If valid, this takes ownership of the shared preconditioning matrix
-  if (isValidPrecMatrix)
+  if (isValidPreconditioner)
     sharedJacobian.getOperator(this);
     
   // Copy linear solver options
@@ -459,19 +459,19 @@ bool Group::computeNewton(NOX::Parameter::List& p)
   return true;
 }
 
-bool Group::computePrecMatrix()
+bool Group::computePreconditioner()
 {
-  cout << "NOX::Epetra::Group::computePrecMatrix() NOT Implemented yet!!" << endl;
+  cout << "NOX::Epetra::Group::computePreconditioner() NOT Implemented yet!!" << endl;
   exit(0);
 
   /* RPP: This will come online soon 
 
   // Skip if the preconditioning matrix is already valid
-  if (isPrecMatrix())
+  if (isPreconditioner())
     return true;
 
-  // Take ownership of the PrecMatrix and get a reference to the underlying operator
-  Epetra_Operator& prec = sharedPrecMatrix.getOperator(this);
+  // Take ownership of the Preconditioner and get a reference to the underlying operator
+  Epetra_Operator& prec = sharedPreconditioner.getOperator(this);
 
   // Fill the Preconditioning matrix
 
@@ -575,24 +575,24 @@ bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) co
   return true;
 }
 
-bool Group::applyPrecMatrixInverse(const Abstract::Vector& input, Abstract::Vector& result) const
+bool Group::applyPreconditionerInverse(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& epetrainput = dynamic_cast<const Vector&> (input);
   Vector& epetraresult = dynamic_cast<Vector&> (result);
-  return applyPrecMatrixInverse(epetrainput, epetraresult);
+  return applyPreconditionerInverse(epetrainput, epetraresult);
 }
 
-bool Group::applyPrecMatrixInverse(const Vector& input, Vector& result) const
+bool Group::applyPreconditionerInverse(const Vector& input, Vector& result) const
 {
   return applyJacobianDiagonalInverse(input, result);
 
   /* RPP: Stuff below will come online soon 
-  if (isPrecMatrix()) {
-    NOX::Epetra::Preconditioner* prec = dynamic_cast<NOX::Epetra::Preconditoner*>(&(sharedPrecMatrix.getOperator()));
+  if (isPreconditioner()) {
+    NOX::Epetra::Preconditioner* prec = dynamic_cast<NOX::Epetra::Preconditoner*>(&(sharedPreconditioner.getOperator()));
     return prec.ApplyInverse(input.getEpetraVector(), result.getEpetraVector());
   }
   else {
-    cout << "ERROR: NOX::Epetra::Group::applyPrecMatrixInverse() - is only "
+    cout << "ERROR: NOX::Epetra::Group::applyPreconditionerInverse() - is only "
 	 << "implemented for a User Supplied Preconditioner through the "
 	 << "NOX::Epetra::Preconditioner interface!" << endl;
     throw "NOX Error";
@@ -650,9 +650,9 @@ bool Group::isNewton() const
   return isValidNewton;
 }
 
-bool Group::isPrecMatrix() const
+bool Group::isPreconditioner() const
 {
-  return isValidPrecMatrix;
+  return isValidPreconditioner;
 }
 
 const Abstract::Vector& Group::getX() const 
@@ -706,9 +706,9 @@ SharedOperator& Group::getSharedJacobian()
   return sharedJacobian;
 }
 
-SharedOperator& Group::getSharedPrecMatrix()
+SharedOperator& Group::getSharedPreconditioner()
 {
-  return *sharedPrecMatrixPtr;
+  return *sharedPreconditionerPtr;
 }
 
 Interface& Group::getUserInterface()
@@ -756,7 +756,7 @@ bool Group::setLinearSolver(const Parameter::List& params)
     /* NOTE:SharedJacobian.getPrec() print a WARNING if no 
      * preconditioner was supplied.  We'll throw an error and explain why. 
      */   
-    Epetra_Operator& Prec = sharedPrecMatrixPtr->getOperator(this);
+    Epetra_Operator& Prec = sharedPreconditionerPtr->getOperator(this);
 
     // The Preconditioning Operator MUST BE an Epetra_RowMatrix
     test = dynamic_cast<Epetra_RowMatrix*>(&Prec);
@@ -780,7 +780,7 @@ bool Group::setLinearSolver(const Parameter::List& params)
     /* NOTE:SharedJacobian.getPrec() print a WARNING if no 
      * preconditioner was supplied.  We'll throw an error and explain why. 
      */   
-    const Epetra_Operator& Prec = sharedPrecMatrixPtr->getOperator();
+    const Epetra_Operator& Prec = sharedPreconditionerPtr->getOperator();
     if (&Prec == 0) {
       cout << "ERROR: NOX::Epetra::Group::setLinearSolver() - The flag "
 	   << "\"Preconditioning\" with value \"" << precOption
@@ -816,20 +816,20 @@ bool Group::computePreconditioner(AztecOO& aztec)
   else if (precOption == "AztecOO: User RowMatrix") {
     
     Epetra_RowMatrix& precMatrix = 
-      dynamic_cast<Epetra_RowMatrix&>(sharedPrecMatrixPtr->getOperator(this));
+      dynamic_cast<Epetra_RowMatrix&>(sharedPreconditionerPtr->getOperator(this));
     
     if (precType == NoxFiniteDifferencePrec) {
       (dynamic_cast<FiniteDifference&>(precMatrix))
-	.computePrecMatrix(xVector.getEpetraVector(), precMatrix);
+	.computePreconditioner(xVector.getEpetraVector(), precMatrix);
     }
     else 
-      userInterface.computePrecMatrix(xVector.getEpetraVector(), precMatrix);
+      userInterface.computePreconditioner(xVector.getEpetraVector(), precMatrix);
     
     aztec.SetPrecMatrix(&precMatrix);
   }
   else if (precOption == "User Supplied Preconditioner") {
     
-    Epetra_Operator& precOperator = sharedPrecMatrixPtr->getOperator(this);
+    Epetra_Operator& precOperator = sharedPreconditionerPtr->getOperator(this);
 
     // Fro user supplied Precs the user may supply them in one of two ways:
     if (precType == NoxPreconditioner) {
@@ -879,7 +879,7 @@ Group::JacType Group::getJacobianType()
 Group::PrecType Group::getPrecType()
 {
   // Get a reference to the preconditioner 
-  Epetra_Operator& precMatrix = sharedPrecMatrixPtr->getOperator(this);
+  Epetra_Operator& precMatrix = sharedPreconditionerPtr->getOperator(this);
 
   Epetra_Operator* test = 0;
   

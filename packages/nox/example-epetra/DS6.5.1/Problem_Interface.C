@@ -29,12 +29,12 @@ bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator&
   return problem.evaluate(MATRIX_ONLY, &x, NULL, Jacobian);
 }
 
-bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M)
+bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_RowMatrix& M)
 {
   // For now we will compute the entire Jacobian for the preconditioner
   Epetra_RowMatrix* precMatrix = dynamic_cast<Epetra_RowMatrix*>(&M);
   if (precMatrix == NULL) {
-    cout << "ERROR: Problem_Interface::computePrecMatrix() - The supplied"
+    cout << "ERROR: Problem_Interface::computePreconditioner() - The supplied"
 	 << "Epetra_Operator is NOT an Epetra_RowMatrix!" << endl;
     throw;
   }

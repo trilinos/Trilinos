@@ -96,7 +96,7 @@ Preconditioning also has multiple options that may depend on the Jacobian. A fla
 
   <li> "AztecOO: Jacobian Matrix" - An AztecOO preconditioner will be used.  The preconditioning will be based on the Jacobian matrix.  This requires that the Epetra_Operator supplied for the Jacobian MUST be an Epetra_RowMatrix (NOX will test for this and throw an error if it is not).  AztecOO preconditioners need to know the graph pattern of the matrix.  This means a NOX::Epetra::MatrixFree Jacobian can NOT be used with this option for preconditioning.
 
-  <li> "AztecOO: User RowMatrix" - An AztecOO preconditioner will be used.  The preconditioning will be based on an Epetra_Operator that is separate from the Jacobian.  The Group constructor with separate entries for the Jacobian and preconditioner Epetra_Operators must be used. Since AztecOO preconditioners require matrix information, the preconditioning object (M) must be an Epetra_RowMatix (NOX will test for this and throw an error if it is not). This option requires the user to implement the function computePrecMatrix() in the NOX::Epetra::Interface derived class.
+  <li> "AztecOO: User RowMatrix" - An AztecOO preconditioner will be used.  The preconditioning will be based on an Epetra_Operator that is separate from the Jacobian.  The Group constructor with separate entries for the Jacobian and preconditioner Epetra_Operators must be used. Since AztecOO preconditioners require matrix information, the preconditioning object (M) must be an Epetra_RowMatix (NOX will test for this and throw an error if it is not). This option requires the user to implement the function computePreconditioner() in the NOX::Epetra::Interface derived class.
 
   <li> "User Supplied %Preconditioner" - The user supplies an Epetra_Operator or NOX::Epetra::Preconditioner and computes their own inverse of the preconditioning matrix. This object will compute and then apply the preconditioner to an Eeptra_Vector that is passed in.  If an Epetra_Operator is passed in, the user must implement the function computePreconditioner() in the NOX::Epetra::Interface derived class.  Alternately, the user could implement and pass in a NOX::Epetra::Preconditioner object instead of a pure Epetra_Operator. In this case, the user does not need to implement the computePreconditioner function in the NOX::Epetra::Interface object since it is implemented as part of the NOX::Epetra::Preconditioner class. 
   </ul>
@@ -223,7 +223,7 @@ public:
 
   virtual bool computeNewton(Parameter::List& params);
 
-  virtual bool computePrecMatrix();
+  virtual bool computePreconditioner();
 
   //@}
 
@@ -246,9 +246,9 @@ public:
   //! See above
   virtual bool applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
   
-  virtual bool applyPrecMatrixInverse(const Vector& input, Vector& result) const;
+  virtual bool applyPreconditionerInverse(const Vector& input, Vector& result) const;
   //! See above
-  virtual bool applyPrecMatrixInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
+  virtual bool applyPreconditionerInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
 
   //@}
 
@@ -264,7 +264,7 @@ public:
   virtual bool isJacobian() const;
   virtual bool isGradient() const;
   virtual bool isNewton() const;
-  virtual bool isPrecMatrix() const;
+  virtual bool isPreconditioner() const;
 
   //@}
 
@@ -291,8 +291,8 @@ public:
   //! Return the SharedJacobian.
   virtual SharedOperator& getSharedJacobian();
 
-  //! Return the SharedPrecMatrix.
-  virtual SharedOperator& getSharedPrecMatrix();
+  //! Return the SharedPreconditioner.
+  virtual SharedOperator& getSharedPreconditioner();
 
   //! Return the userInterface.
   virtual Interface& getUserInterface();
@@ -349,7 +349,7 @@ protected:
   bool isValidJacobian;
   bool isValidGrad;
   bool isValidNewton;
-  bool isValidPrecMatrix;
+  bool isValidPreconditioner;
   //@}
   
   //! Norm of RHS
@@ -364,7 +364,7 @@ protected:
   SharedOperator& sharedJacobian;
 
   //! Pointer to shared Preconditioning matrix.  We do not create a corresponding reference as we did with the sharedJacobian since this object is optionally supplied. 
-  SharedOperator* sharedPrecMatrixPtr;
+  SharedOperator* sharedPreconditionerPtr;
   //@}
 
   //! Reference to the user supplied interface functions

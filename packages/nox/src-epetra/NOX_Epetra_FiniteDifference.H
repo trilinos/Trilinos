@@ -172,7 +172,7 @@ class FiniteDifference : public Epetra_RowMatrix {
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
 
   //! Compute an Epetra_RowMatrix to be used by Aztec preconditioners given the specified input vector, x. Returns true if computation was successful.
-  virtual bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M);
+  virtual bool computePreconditioner(const Epetra_Vector& x, Epetra_RowMatrix& M);
 
 protected:
 
