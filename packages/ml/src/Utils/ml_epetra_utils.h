@@ -159,6 +159,9 @@ int ML_Operator_DiscreteLaplacian(ML_Operator* Op, int SymmetricPattern,
 				  double* x_coord, double* y_coord,
 				  double* z_coord, double theta,
 				  ML_Operator** NewOp);
+bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector, 
+                               Epetra_Map& map,Epetra_Comm& comm, int ivec);
+                                  
 #ifdef __cplusplus
 }
 #endif

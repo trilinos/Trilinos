@@ -1442,15 +1442,86 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
             }
          }
          cout << endl;   
+         fclose(fp); fp = 0;
       }
       comm.Barrier();
    }
-   
+   A->FillComplete();
    
    return A;
 }
 
 
+
+bool Epetra_ML_readaztecvector(char* filename, Epetra_MultiVector& Vector, 
+                               Epetra_Map& map,Epetra_Comm& comm, int ivec)
+{
+  char  buffer[200];
+  char* bptr      = 0;
+
+  int  numeq_total = map.NumGlobalElements();
+  int  numeq       = map.NumMyElements();
+  int  nproc       = comm.NumProc();
+  int  proc        = comm.MyPID();
+   
+  FILE *fp = fopen(filename,"r");
+  if (!fp) return false;
+  if (proc) 
+  {
+    fclose(fp);
+    fp = 0;
+  }
+
+  int ok = 1;
+  if (proc==0)
+  {
+     fgets(buffer,199,fp);
+     int tmp = strtol(buffer,&bptr,10); // read number of global rows
+     if (tmp != numeq_total) ok = 0;
+     fgets(buffer,199,fp);
+  }
+  comm.Broadcast(&ok,1,0);
+  if (!ok) return false;
+
+  for (int activeproc=0; activeproc<nproc; activeproc++)
+  {
+     int ok = 0;
+     FILE* fp = 0;
+     if (activeproc==proc)
+     {
+        fp = fopen(filename,"r");
+        if (fp)
+        {
+           ok = 1;
+           fgets(buffer,199,fp);
+        }
+        else ok = 0;
+     }
+     comm.Broadcast(&ok,1,activeproc);
+     if (!ok)
+        return false;
+     if (activeproc==proc)
+     {
+        for (int i=0; i<numeq_total; i++)
+        {
+           fgets(buffer,199,fp);
+           int row = strtol(buffer,&bptr,10);
+           if (!map.MyGID(row))
+              continue;
+           else
+           {
+              double value = strtod(bptr,&bptr);
+              Vector.ReplaceGlobalValue(row,ivec,value);
+           }
+        }
+        fclose(fp); fp = 0;
+     }
+     comm.Barrier();
+  }
+  
+
+  return true;
+}                               
 
 #else
 

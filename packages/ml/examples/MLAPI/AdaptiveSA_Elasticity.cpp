@@ -27,6 +27,10 @@
 // ************************************************************************
 //@HEADER
 
+// usage: 
+// the exe takes the path to the example as input parameter, e.g.
+// AdaptiveSA_Elasticity.exe ../ExampleMatrices/sphere
+
 #ifdef HAVE_MPI
 #include "mpi.h"
 #endif
@@ -72,8 +76,27 @@ int main(int argc, char *argv[])
   // read the Epetra_RowMatrix
   sprintf(filename,"%s/data_matrix.txt",argv[1]);
   Epetra_CrsMatrix* Afine = Epetra_ML_readaztecmatrix(filename,*map,comm);
-  exit(0);   
-     
+  if (!Afine) {
+     cout << "**ERR**: could not read matrix\n"; throw -1; }
+
+  // read the nullspace
+  int dimNS = 6;
+  Epetra_MultiVector* NSfine = new Epetra_MultiVector(*map,dimNS,true);
+  for (int i=0; i<dimNS; i++)
+  {
+     sprintf(filename,"%s/data_nullsp%d.txt",argv[1],i);
+     bool ok = Epetra_ML_readaztecvector(filename,*NSfine,*map,comm,i);
+     if (!ok) {
+        cout << "**ERR**: could not read nullspace\n"; throw -1; }
+  }
+  
+  // read the rhs
+  Epetra_MultiVector* Rhs = new Epetra_MultiVector(*map,1,true);
+  sprintf(filename,"%s/data_rhs.txt",argv[1]);
+  bool ok = Epetra_ML_readaztecvector(filename,*Rhs,*map,comm,0);
+  if (!ok) {
+     cout << "**ERR**: could not read rhs\n"; throw -1; }
+       
 
 #ifdef HAVE_MPI
   MPI_Finalize(); 
