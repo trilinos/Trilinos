@@ -145,6 +145,10 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
    accum_size = Bmatrix->invec_leng + 75;
    accum_size += 3*Next_est;
+   if (Bmatrix->N_total_cols_est + 75 > accum_size ) {
+     accum_size = Bmatrix->N_total_cols_est + 75;
+   }
+
            /* the '3' above is a total kludge. the problem is that we   */
            /* need to know the number of neighbors in the external rows */
            /* and this is annoying to compute */
@@ -554,6 +558,10 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    if (A_i_allocated-1 > Amatrix->max_nz_per_row) 
       Amatrix->max_nz_per_row = A_i_allocated;
 
+   (*Cmatrix)->N_total_cols_est = hash_used;
+   Bmatrix->N_total_cols_est = hash_used;
+
+
    if (Bmatrix->getrow->pre_comm != NULL) {
      ML_CommInfoOP_Clone(&((*Cmatrix)->getrow->pre_comm),
 			 Bmatrix->getrow->pre_comm);
@@ -927,7 +935,10 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
 
 int ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used) {
 
-  int index, origindex;
+  int index;
+#ifdef charles
+  int origindex;
+#endif
 
   index = new_val<<1;
   if (index < 0) index = new_val;
@@ -937,7 +948,9 @@ int ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used) {
      index = (++index)%hash_length;
   }
   */
+#ifdef charles
   origindex = index;
+#endif
   while ( hash_list[index] != new_val) {
     if (hash_list[index] == -1) { (*hash_used)++; break;}
     index = (++index)%hash_length;
