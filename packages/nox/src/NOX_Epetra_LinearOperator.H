@@ -60,6 +60,7 @@ public:
   //! Returns true if solved, false if linear solve failed.  
   bool solveLinearSystem(const Parameter::List& params, Group* g);
 
+  //! Set any required Aztec options.  Not all options are present, will be filled in as needed.
   void setAztecOptions(const Parameter::List& params, AztecOO& aztec);
 
   //! Return the SharedJacobian created by LinearOperator.
