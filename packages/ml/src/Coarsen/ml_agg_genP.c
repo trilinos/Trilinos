@@ -228,6 +228,12 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 #ifdef SYMMETRIZE
    ML_Operator *t2, *t3;
 #endif
+#ifdef GEOMETRIC_2D
+   int nx, nxcoarse, ii, coarse_me, fine_me, *rowptr, *bindx, k,free_ptr,start;
+   int i,j, end;
+   double *val;
+   struct  ML_CSR_MSRdata *csr_data;
+#endif
 
 #ifdef ML_TIMING
    double t0;
@@ -250,6 +256,124 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    */
 
    Nfine    = Amat->outvec_leng;
+#ifdef GEOMETRIC_2D
+   nx = (int) floor( sqrt( (double) Nfine) + .00001 );
+   printf("in here %d %d\n",Nfine,nx);
+   nxcoarse = (nx-1)/2;
+   rowptr = (int *) malloc(sizeof(int)*(Nfine+1));
+   bindx  = (int *) malloc(sizeof(int)*(Nfine*4+1));
+   val    = (double *) malloc(sizeof(double)*Nfine*4);
+   for (ii = 0; ii <= Nfine; ii++) rowptr[ii] = 4*ii;
+   for (ii = 0; ii <= 4*Nfine; ii++) bindx[ii] = -1;
+   for (ii = 0; ii < nxcoarse; ii++) {
+      for (jj = 0; jj < nxcoarse; jj++) {
+	coarse_me = jj*nxcoarse+ii;
+	fine_me = (2*jj+1)*nx + 2*ii+1;
+	if (jj == 0) {
+	  if (ii == 0) {
+	    bindx[rowptr[fine_me-nx-1]] = coarse_me;
+	    val[  rowptr[fine_me-nx-1]] = .25;
+	  }
+	  bindx[rowptr[fine_me-nx]] = coarse_me;
+	  val[  rowptr[fine_me-nx]] = .5;
+	  bindx[rowptr[fine_me-nx+1]] = coarse_me;
+	  val[  rowptr[fine_me-nx+1]] = .25;
+	  if (ii != nxcoarse-1) {
+	    bindx[rowptr[fine_me-nx+1]+1] = coarse_me+1;
+	    val[  rowptr[fine_me-nx+1]+1] = .25;
+	  }
+	}
+	if (ii == 0) {
+	  bindx[rowptr[fine_me-1]] = coarse_me;
+	  val[  rowptr[fine_me-1]] = .5;
+	  bindx[rowptr[fine_me-1+nx]] = coarse_me;
+	  val[  rowptr[fine_me-1+nx]] = .25;
+	  if (jj != nxcoarse-1) {
+	    bindx[rowptr[fine_me-1+nx]+1] = coarse_me+nxcoarse;
+	    val[  rowptr[fine_me-1+nx]+1] = .25;
+	  }
+	}
+	bindx[rowptr[fine_me]] = coarse_me;
+	val[  rowptr[fine_me]] = 1.;
+	bindx[rowptr[fine_me+1]] = coarse_me;
+	val[  rowptr[fine_me+1]] = .5;
+        if (ii != nxcoarse-1) {
+	  bindx[rowptr[fine_me+1]+1] = coarse_me + 1;
+	  val[  rowptr[fine_me+1]+1] = .5;
+	}
+	bindx[rowptr[fine_me+nx]] = coarse_me;
+	val[  rowptr[fine_me+nx]] = .5;
+        if (jj != nxcoarse-1) {
+	  bindx[rowptr[fine_me+nx]+1] = coarse_me + nxcoarse;
+	  val[  rowptr[fine_me+nx]+1] = .5;
+	}
+	bindx[rowptr[fine_me+1+nx]] = coarse_me;
+	val[  rowptr[fine_me+1+nx]] = .25; 
+	k = 1;
+	if (ii != nxcoarse-1) {
+	  bindx[rowptr[fine_me+1+nx]+k] = coarse_me+1;
+	  val[  rowptr[fine_me+1+nx]+k] = .25;
+	  k++;
+	}
+	if (jj != nxcoarse-1) {
+	  bindx[rowptr[fine_me+1+nx]+k] = coarse_me+nxcoarse;
+	  val[  rowptr[fine_me+1+nx]+k] = .25;
+	  k++;
+	}
+	if ((ii != nxcoarse-1) && (jj != nxcoarse-1)) {
+	  bindx[rowptr[fine_me+1+nx]+k] = coarse_me+nxcoarse+1;
+	  val[  rowptr[fine_me+1+nx]+k] = .25;
+	  k++;
+	}
+
+      }
+   }
+   csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata)); 
+   ml->Pmat[clevel].data = csr_data;
+   csr_data->rowptr = rowptr;
+   csr_data->values = val;
+   csr_data->columns = bindx;
+
+   /* compress bindx[] = '1  out matrix */
+
+   free_ptr = rowptr[0];
+   start = rowptr[0];
+   for (i = 0; i < Nfine; i++) {
+     rowptr[i] = rowptr[i+1] - rowptr[i];
+   }
+   for (i = 0; i < Nfine; i++) {
+     end = start + rowptr[i] - 1;
+     for (j = start; j <= end; j++) {
+       if (bindx[j] != -1) {
+	 val[free_ptr] = val[j];
+	 bindx[free_ptr] = bindx[j];
+	 free_ptr++;
+       }
+       else rowptr[i]--;
+     }
+     start = end+1;
+   }
+
+   start = 0;
+   for (i = 0; i <= Nfine; i++) {
+     j = rowptr[i];
+     rowptr[i] = start;
+     start += j;
+   }
+
+   ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
+              &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));
+   ML_Operator_Set_ApplyFuncData(&(ml->Pmat[clevel]), nxcoarse*nxcoarse,
+				 Nfine, ML_EMPTY, csr_data,
+				 Nfine, NULL, 0);
+   ML_Operator_Set_Getrow(&(ml->Pmat[clevel]), ML_EXTERNAL, 
+			  Nfine, CSR_getrows);
+   ml->Pmat[clevel].max_nz_per_row = 4;
+   ml->Pmat[clevel].N_nonzeros = bindx[Nfine];
+   ML_Operator_Set_ApplyFunc (&(ml->Pmat[clevel]), ML_INTERNAL, CSR_matvec);
+   //   ML_Operator_Print( &(ml->Pmat[clevel]),"Pmat");
+   return 1;
+#endif
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
    ML_Aggregate_Set_CurrentLevel( ag, level );
 
