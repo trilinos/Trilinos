@@ -157,7 +157,10 @@ bool Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group
 
   if (method == "Constant") {    
 
-    eta_k = eta_min;
+    if (eta_km1 != 0.0) 
+      eta_k = eta_km1;
+    else
+      eta_k = eta_min;
 
   }        
 

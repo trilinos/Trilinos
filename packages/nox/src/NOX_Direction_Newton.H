@@ -87,7 +87,7 @@ namespace Direction {
 
   - "Forcing Term Method" - Method to compute the forcing term, i.e.,
     the tolerance for the linear solver. Defaults to ""
-    (nothing). Choices are "Type 1" and "Type 2".
+    (nothing). Choices are "Constant", "Type 1", and "Type 2".
 
   - "Forcing Term Initial Tolerance" - Initial linear
     solver tolerance (\f$\eta_0\f$). Defaults to 1.0e-1.

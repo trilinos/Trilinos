@@ -111,6 +111,11 @@ int main(int argc, char *argv[])
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
   dirParams.setParameter("Method", "Newton");
+    //dirParams.setParameter("Forcing Term Method", "Constant");
+    //dirParams.setParameter("Forcing Term Method", "Type 1");
+    //dirParams.setParameter("Forcing Term Method", "Type 2");
+    //dirParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
+    //dirParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
   //dirParams.setParameter("Method", "Steepest Descent");
     //dirParams.setParameter("Scaling Type", "None");
     //dirParams.setParameter("Scaling Type", "2-Norm");
