@@ -49,8 +49,11 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  if (Comm.NumProc() != 1)
-    exit(EXIT_FAILURE);
+  if (Comm.NumProc() != 1) {
+    cerr << "This example must be run with one process only." << endl;
+    // exit with success not to break the test harness
+    exit(EXIT_SUCCESS);
+  }
   
   int NumPoints = 5;
   Epetra_Map Map(NumPoints,0,Comm);

@@ -84,14 +84,17 @@ int main(int argc, char *argv[])
   // Prec(A,OverlapLevel) for the general case.
   Ifpack_AdditiveSchwarz<Ifpack_ICT> Prec(A);
 
-  // `1.0' means that the factorization should approximatibely
-  // kep the same number of nonzeros per row of the original matrix.
+  // `1.0' means that the factorization should approximatively
+  // keep the same number of nonzeros per row of the original matrix.
   List.set("fact: ict level-of-fill", 1.0);
+  // no modifications on the diagonal
   List.set("fact: absolute threshold", 0.0);
-  List.set("fact: relative threshold", 0.0);
-  // matrix `laplace_2d_bc' is not symmetric because of
-  // the boundary conditions. We can filter the singletons,
-  // and end up with a symmetric matrix (as ICT requires).
+  List.set("fact: relative threshold", 1.0);
+  List.set("fact: relaxation value", 0.0);
+  // matrix `laplace_2d_bc' is not symmetric because of the way
+  // boundary conditions are imposed. We can filter the singletons,
+  // (that is, Dirichlet nodes) and end up with a symmetric
+  // matrix (as ICT requires).
   List.set("schwarz: filter singletons", true);
 
   // sets the parameters
@@ -99,12 +102,10 @@ int main(int argc, char *argv[])
 
   // initialize the preconditioner. At this point the matrix must
   // have been FillComplete()'d, but actual values are ignored.
-  // At this call, Amesos will perform the symbolic factorization.
   IFPACK_CHK_ERR(Prec.Initialize());
 
   // Builds the preconditioners, by looking for the values of 
-  // the matrix. At this call, Amesos will perform the
-  // numeric factorization.
+  // the matrix. 
   IFPACK_CHK_ERR(Prec.Compute());
 
   // =================================================== //
@@ -128,7 +129,7 @@ int main(int argc, char *argv[])
   AztecOO Solver(Problem);
 
   // specify solver
-  Solver.SetAztecOption(AZ_solver,AZ_cg);
+  Solver.SetAztecOption(AZ_solver,AZ_cg_condnum);
   Solver.SetAztecOption(AZ_output,32);
 
   // HERE WE SET THE IFPACK PRECONDITIONER
@@ -137,16 +138,16 @@ int main(int argc, char *argv[])
   // .. and here we solve
   // NOTE: with one process, the solver must converge in
   // one iteration.
-  Solver.Iterate(1550,1e-8);
+  Solver.Iterate(1550,1e-5);
 
   // Prints out some information about the preconditioner
   cout << Prec;
 
 #ifdef HAVE_MPI
-  MPI_Finalize() ; 
+  MPI_Finalize(); 
 #endif
 
-    return(EXIT_SUCCESS);
+  return (EXIT_SUCCESS);
 }
 
 #else

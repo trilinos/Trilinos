@@ -63,16 +63,12 @@ int main(int argc, char *argv[])
 
   // build the matrix corresponding to a 2D Laplacian on a
   // structured grid.
-  CrsMatrixGallery Gallery("laplace_2d_bc", Comm);
+  CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", NumPoints);
-  // for simplicity, linear map.
-  Gallery.Set("map_type", "linear");
 
   // get the pointer to the linear system matrix
   Epetra_RowMatrix* A = Gallery.GetMatrix();
 
-// cout << *(dynamic_cast<Epetra_CrsMatrix*>(A));
-//  exit(0);
   // =============================================================== //
   // B E G I N N I N G   O F   I F P A C K   C O N S T R U C T I O N //
   // =============================================================== //
@@ -95,23 +91,31 @@ int main(int argc, char *argv[])
  
   // We still have to decide the overlap among the processes,
   // and the overlap among the blocks. The two values
-  // can be different.
+  // can be different. The overlap among the blocks is
+  // considered only if block Jacobi is used.
   int OverlapProcs = 2;
   int OverlapBlocks = 0;
 
+  // define the block below to use dense containers
+#if 0
+  Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_DenseContainer> > Prec(A, OverlapProcs);
+#else
   Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > Prec(A, OverlapProcs);
+#endif
 
-  // other options are "Jacobi", "symmetric Gauss-Seidel"
-  List.set("block: type", "Gauss-Seidel");
-  List.set("block: overlap", OverlapBlocks);
+  List.set("relaxation: type", "symmetric Gauss-Seidel");
+  List.set("partitioner: overlap", OverlapBlocks);
+#ifdef HAVE_IFPACK_METIS
   // use METIS to create the blocks. This requires --enable-ifpack-metis.
-  // If METIS is not installed, the user may select "linear". A
-  // simple greedy algorithm can be enabled using option "greedy
+  // If METIS is not installed, the user may select "linear". 
   List.set("partitioner: type", "metis");
-  List.set("partitioner: use symmetric graph", true);
+#else
+  // or a simple greedy algorithm is METIS is not enabled
+  List.set("partitioner: type", "greedy");
+#endif
   // defines here the number of local blocks. If 1,
   // and only one process is used in the computation, then
-  // the preconditioner must converge in one iteration.
+  // the preconditioner must converge in one iteration. 
   List.set("partitioner: local parts", 4);
 
   // sets the parameters
@@ -144,7 +148,7 @@ int main(int argc, char *argv[])
   AztecOO Solver(Problem);
 
   // specify solver
-  Solver.SetAztecOption(AZ_solver,AZ_gmres);
+  Solver.SetAztecOption(AZ_solver,AZ_cg);
   Solver.SetAztecOption(AZ_output,32);
 
   // HERE WE SET THE IFPACK PRECONDITIONER
@@ -153,13 +157,13 @@ int main(int argc, char *argv[])
   // .. and here we solve
   // NOTE: with one process, the solver must converge in
   // one iteration.
-  Solver.Iterate(1550,1e-8);
+  Solver.Iterate(1550,1e-5);
 
 #ifdef HAVE_MPI
   MPI_Finalize() ; 
 #endif
 
-    return(EXIT_SUCCESS);
+  return(EXIT_SUCCESS);
 }
 
 #else

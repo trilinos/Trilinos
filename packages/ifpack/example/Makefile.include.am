@@ -27,200 +27,70 @@
 #@HEADER
 
 EXEEXT = .exe
-EXAMPLE = Ifpack_ex_Factory Ifpack_ex_Amesos        \
-          Ifpack_ex_ICT Ifpack_ex_BlockRelaxation  \
-	  Ifpack_ex_MatrixMarket                    \
-          Ifpack_ex_Reordering                      \
-          Ifpack_ex_Filtering                       \
-          Ifpack_ex_SingletonFilter
 
-noinst_PROGRAMS = $(EXAMPLE)
+EXAMPLE = Ifpack_ex_Factory              \
+          Ifpack_ex_Amesos               \
+          Ifpack_ex_ICT                  \
+          Ifpack_ex_BlockRelaxation      \
+          Ifpack_ex_MatrixMarket         \
+          Ifpack_ex_Reordering           \
+          Ifpack_ex_Filtering            \
+          Ifpack_ex_SingletonFilter      \
+          Ifpack_ex_Test  
+          
 
-if HAVE_IFPACK_AMESOS
-AMESOS_INCDIR = -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src
-AMESOS_LIBS = $(top_builddir)/../amesos/src/libamesos.a
-else
-AMESOS_INCDIR = 
-AMESOS_LIBS = 
-endif
+include $(top_builddir)/Makefile.export
 
-if HAVE_IFPACK_AZTECOO
-AZTECOO_INCDIR = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src
-AZTECOO_LIBS = $(top_builddir)/../aztecoo/src/libaztecoo.a
-else
-AZTECOO_INCDIR = 
-AZTECOO_LIBS = 
-endif
+noinst_PROGRAMS = $(EXAMPLE) test
 
-if HAVE_IFPACK_TEUCHOS
-TEUCHOS_INCDIR = -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
-TEUCHOS_LIBS = $(top_builddir)/../teuchos/src/libteuchos.a
-else
-TEUCHOS_INCDIR = 
-TEUCHOS_LIBS = 
-endif
+Ifpack_ex_Factory_SOURCES      = $(srcdir)/Ifpack_ex_Factory.cpp
+Ifpack_ex_Factory_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+Ifpack_ex_Factory_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+Ifpack_ex_Factory_CXXFLAGS     = $(IFPACK_INCLUDES)
 
-if HAVE_IFPACK_TRIUTILS
-TRIUTILS_INCDIR = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
-TRIUTILS_LIBS = $(top_builddir)/../triutils/src/libtriutils.a
-else
-TRIUTILS_INCDIR = 
-TRIUTILS_LIBS = 
-endif
+Ifpack_ex_Amesos_SOURCES      = $(srcdir)/Ifpack_ex_Amesos.cpp
+Ifpack_ex_Amesos_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+Ifpack_ex_Amesos_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+Ifpack_ex_Amesos_CXXFLAGS     = $(IFPACK_INCLUDES)
 
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-              -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
-	      ${TRIUTILS_INCDIR} \
-	      ${TEUCHOS_INCDIR} \
-	      ${AZTECOO_INCDIR}
+Ifpack_ex_ICT_SOURCES      = $(srcdir)/Ifpack_ex_ICT.cpp
+Ifpack_ex_ICT_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+Ifpack_ex_ICT_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+Ifpack_ex_ICT_CXXFLAGS     = $(IFPACK_INCLUDES)
 
-Ifpack_ex_Factory_SOURCES = $(srcdir)/Ifpack_ex_Factory.cpp
+Ifpack_ex_BlockRelaxation_SOURCES      = $(srcdir)/Ifpack_ex_BlockRelaxation.cpp
+Ifpack_ex_BlockRelaxation_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+Ifpack_ex_BlockRelaxation_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+Ifpack_ex_BlockRelaxation_CXXFLAGS     = $(IFPACK_INCLUDES)
 
-Ifpack_ex_Factory_DEPENDENCIES = \
-	$(top_builddir)/../ifpack/src/libifpack.a \
-	${AZTECOO_LIBS} \
-	${TEUCHOS_LIBS} \
-	${TRIUTILS_LIBS} \
-	${AMESOS_LIBS}
+Ifpack_ex_MatrixMarket_SOURCES      = $(srcdir)/Ifpack_ex_MatrixMarket.cpp
+Ifpack_ex_MatrixMarket_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+Ifpack_ex_MatrixMarket_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+Ifpack_ex_MatrixMarket_CXXFLAGS     = $(IFPACK_INCLUDES)
 
-Ifpack_ex_Factory_LDADD = $(top_builddir)/src/libifpack.a \
-	$(AZTECOO_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(AMESOS_LIBS) \
-	$(TEUCHOS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+Ifpack_ex_Reordering_SOURCES      = $(srcdir)/Ifpack_ex_Reordering.cpp
+Ifpack_ex_Reordering_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+Ifpack_ex_Reordering_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+Ifpack_ex_Reordering_CXXFLAGS     = $(IFPACK_INCLUDES)
+
+Ifpack_ex_Filtering_SOURCES      = $(srcdir)/Ifpack_ex_Filtering.cpp
+Ifpack_ex_Filtering_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+Ifpack_ex_Filtering_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+Ifpack_ex_Filtering_CXXFLAGS     = $(IFPACK_INCLUDES)
+
+Ifpack_ex_SingletonFilter_SOURCES      = $(srcdir)/Ifpack_ex_SingletonFilter.cpp
+Ifpack_ex_SingletonFilter_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+Ifpack_ex_SingletonFilter_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+Ifpack_ex_SingletonFilter_CXXFLAGS     = $(IFPACK_INCLUDES)
+
+Ifpack_ex_Test_SOURCES      = $(srcdir)/Ifpack_ex_Test.cpp
+Ifpack_ex_Test_DEPENDENCIES = $(top_builddir)/../ifpack/src/libifpack.a 
+Ifpack_ex_Test_LDADD        = $(IFPACK_LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+Ifpack_ex_Test_CXXFLAGS     = $(IFPACK_INCLUDES)
 
 
-Ifpack_ex_Amesos_SOURCES = $(srcdir)/Ifpack_ex_Amesos.cpp
 
-Ifpack_ex_Amesos_DEPENDENCIES = \
-	$(top_builddir)/../ifpack/src/libifpack.a \
-	${AZTECOO_LIBS} \
-	${TEUCHOS_LIBS} \
-	${TRIUTILS_LIBS} \
-	${AMESOS_LIBS}
+test_SOURCES = $(srcdir)/test.sh
+test$(EXEEXT): $(srcdir)/test.sh
+	cp $(srcdir)/test.sh test$(EXEEXT)
 
-Ifpack_ex_Amesos_LDADD = $(top_builddir)/src/libifpack.a \
-	$(AZTECOO_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(AMESOS_LIBS) \
-	$(TEUCHOS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
-
-
-Ifpack_ex_ICT_SOURCES = $(srcdir)/Ifpack_ex_ICT.cpp
-
-Ifpack_ex_ICT_DEPENDENCIES = \
-	$(top_builddir)/../ifpack/src/libifpack.a \
-	${AZTECOO_LIBS} \
-	${TEUCHOS_LIBS} \
-	${TRIUTILS_LIBS} \
-	${AMESOS_LIBS}
-
-Ifpack_ex_ICT_LDADD = $(top_builddir)/src/libifpack.a \
-	$(AZTECOO_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(AMESOS_LIBS) \
-	$(TEUCHOS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
-
-
-Ifpack_ex_BlockRelaxation_SOURCES = $(srcdir)/Ifpack_ex_BlockRelaxation.cpp
-
-Ifpack_ex_BlockRelaxation_DEPENDENCIES = \
-	$(top_builddir)/../ifpack/src/libifpack.a \
-	${AZTECOO_LIBS} \
-	${TEUCHOS_LIBS} \
-	${TRIUTILS_LIBS} \
-	${AMESOS_LIBS}
-
-Ifpack_ex_BlockRelaxation_LDADD = $(top_builddir)/src/libifpack.a \
-	$(AZTECOO_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(AMESOS_LIBS) \
-	$(TEUCHOS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
-
-
-Ifpack_ex_MatrixMarket_SOURCES = $(srcdir)/Ifpack_ex_MatrixMarket.cpp
-
-Ifpack_ex_MatrixMarket_DEPENDENCIES = \
-	$(top_builddir)/../ifpack/src/libifpack.a \
-	${AZTECOO_LIBS} \
-	${TEUCHOS_LIBS} \
-	${TRIUTILS_LIBS} \
-	${AMESOS_LIBS}
-
-Ifpack_ex_MatrixMarket_LDADD = $(top_builddir)/src/libifpack.a \
-	$(AZTECOO_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(AMESOS_LIBS) \
-	$(TEUCHOS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
-
-
-Ifpack_ex_Reordering_SOURCES = $(srcdir)/Ifpack_ex_Reordering.cpp
-
-Ifpack_ex_Reordering_DEPENDENCIES = \
-	$(top_builddir)/../ifpack/src/libifpack.a \
-	${AZTECOO_LIBS} \
-	${TEUCHOS_LIBS} \
-	${TRIUTILS_LIBS} \
-	${AMESOS_LIBS}
-
-Ifpack_ex_Reordering_LDADD = $(top_builddir)/src/libifpack.a \
-	$(AZTECOO_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(AMESOS_LIBS) \
-	$(TEUCHOS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
-
-
-Ifpack_ex_Filtering_SOURCES = $(srcdir)/Ifpack_ex_Filtering.cpp
-
-Ifpack_ex_Filtering_DEPENDENCIES = \
-	$(top_builddir)/../ifpack/src/libifpack.a \
-	${AZTECOO_LIBS} \
-	${TEUCHOS_LIBS} \
-	${TRIUTILS_LIBS} \
-	${AMESOS_LIBS}
-
-Ifpack_ex_Filtering_LDADD = $(top_builddir)/src/libifpack.a \
-	$(AZTECOO_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(AMESOS_LIBS) \
-	$(TEUCHOS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
-
-
-Ifpack_ex_SingletonFilter_SOURCES = $(srcdir)/Ifpack_ex_SingletonFilter.cpp
-
-Ifpack_ex_SingletonFilter_DEPENDENCIES = \
-	$(top_builddir)/../ifpack/src/libifpack.a \
-	${AZTECOO_LIBS} \
-	${TEUCHOS_LIBS} \
-	${TRIUTILS_LIBS} \
-	${AMESOS_LIBS}
-
-Ifpack_ex_SingletonFilter_LDADD = $(top_builddir)/src/libifpack.a \
-	$(AZTECOO_LIBS) \
-	$(TRIUTILS_LIBS) \
-	$(AMESOS_LIBS) \
-	$(TEUCHOS_LIBS) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)

@@ -57,9 +57,9 @@
 // 
 // for a list of available options. For example, the user amy type:
 //
-// $ ./Ifpack_ex_MatrixMarket --matrix=e05r0500.mtx --prec=RILUK --fill=2
+// $ ./Ifpack_ex_MatrixMarket --matrix=e05r0500.mtx --prec=ILUT --fill=2
 //
-// to solve using RILUK preconditioner, and a level-of-fill of 2.
+// to solve using ILUT preconditioner, and a level-of-fill of 2.
 
 int main(int argc, char *argv[])
 {
@@ -81,14 +81,14 @@ int main(int argc, char *argv[])
   int BlockOverlap = 0;
   CLP.setOption("block-overlap", &BlockOverlap, "Overlap among blocks");
   // chosen preconditioner
-  string PrecType = "RILUK";
+  string PrecType = "ILUT";
   CLP.setOption("prec", &PrecType, "IFPACK preconditioner");
-  // level-of-fill for ICT and RILUK
+  // level-of-fill for IC and ILU
   int LevelOfFill = 0;
-  CLP.setOption("fill", &LevelOfFill, "level-of-fill for ICT and RILUK");
-  // relaxation value for RILUK
+  CLP.setOption("fill", &LevelOfFill, "level-of-fill for IC and ILU");
+  // relaxation value for ICT and ILUT
   double Relax = 0.0;
-  CLP.setOption("relax", &Relax, "relaxation value for RILUK");
+  CLP.setOption("relax", &Relax, "relaxation value for ICT and ILUT");
   double AddToDiag = 1e-5;
   CLP.setOption("add-diag", &AddToDiag, "value to be added to diagonals");
   // dropping value 
@@ -219,17 +219,13 @@ int main(int argc, char *argv[])
   List.set("fact: level-of-fill", LevelOfFill);
   List.set("fact: relax value", Relax);
 
-  // for example, drop elements by value
-  List.set("schwarz: use filter", true);
-  List.set("filter: type", "by-value");
-  List.set("filter: drop value", DropTol);
-
-  // add this value to each diagonal
-  List.set("filter: add to diagonal", AddToDiag);
-
   // other parameters
-  List.set("block: overlap", BlockOverlap);
+  List.set("partitioner: overlap", BlockOverlap);
+#ifdef HAVE_IFPACK_METIS
   List.set("partitioner: type", "METIS");
+#else
+  List.set("partitioner: type", "greedy");
+#endif
   List.set("partitioner: local parts", LocalParts);
 
   // sets the parameters
@@ -293,7 +289,7 @@ int main(int argc, char *argv[])
   MPI_Finalize() ; 
 #endif
 
-    return(EXIT_SUCCESS);
+  return(EXIT_SUCCESS);
 }
 
 #else
