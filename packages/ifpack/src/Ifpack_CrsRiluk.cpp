@@ -70,6 +70,8 @@ int Ifpack_CrsRiluk::AllocateCrs() {
   L_ = new Epetra_CrsMatrix(Copy, Graph_.L_Graph());
   U_ = new Epetra_CrsMatrix(Copy, Graph_.U_Graph());
   D_ = new Epetra_Vector(Graph_.L_Graph().RowMap());
+  L_Graph_ = 0;
+  U_Graph_ = 0;
   SetAllocated(true);
   return(0);
 }
@@ -85,10 +87,87 @@ int Ifpack_CrsRiluk::AllocateVbr() {
   
   IlukRowMap_ = new Epetra_Map(-1, NumMyPoints, 0, Comm());
 
-  // Allocate Epetra_CrsMatrix using ILUK graphs
-  L_ = new Epetra_CrsMatrix(Copy, *IlukRowMap_, 0);
-  U_ = new Epetra_CrsMatrix(Copy, *IlukRowMap_, 0);
-  D_ = new Epetra_Vector(*IlukRowMap_);
+  if (Graph().LevelFill()) { // If there is fill, then pre-build the L and U structures from the Block version of L and U.
+    L_Graph_ = new Epetra_CrsGraph(Copy, *IlukRowMap_, 0);
+    U_Graph_ = new Epetra_CrsGraph(Copy, *IlukRowMap_, 0);
+    EPETRA_CHK_ERR(BlockGraph2PointGraph(Graph_.L_Graph(), *L_Graph_, false));
+    EPETRA_CHK_ERR(BlockGraph2PointGraph(Graph_.U_Graph(), *U_Graph_, true));
+    L_Graph_->TransformToLocal();
+    U_Graph_->TransformToLocal();
+
+    L_ = new Epetra_CrsMatrix(Copy, *L_Graph_);
+    U_ = new Epetra_CrsMatrix(Copy, *U_Graph_);
+    D_ = new Epetra_Vector(*IlukRowMap_);
+  }
+  else {
+    // Allocate Epetra_CrsMatrix using ILUK graphs
+    L_ = new Epetra_CrsMatrix(Copy, *IlukRowMap_, 0);
+    U_ = new Epetra_CrsMatrix(Copy, *IlukRowMap_, 0);
+    D_ = new Epetra_Vector(*IlukRowMap_);
+    L_Graph_ = 0;
+    U_Graph_ = 0;
+  }
+
+}
+//==============================================================================
+int Ifpack_CrsRiluk::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_CrsGraph & PG, bool Upper) {
+
+  if (!BG.IndicesAreLocal()) {EPETRA_CHK_ERR(-1);} // Must have done TransformToLocal on BG
+
+  int * ColFirstPointInElementList = BG.RowMap().FirstPointInElementList();
+  int * ColElementSizeList = BG.RowMap().ElementSizeList();
+  if (BG.Importer()!=0) {
+    ColFirstPointInElementList = BG.ImportMap().FirstPointInElementList();
+    ColElementSizeList = BG.ImportMap().ElementSizeList();
+  }
+
+  int Length = (BG.MaxNumIndices()+1) * BG.ImportMap().MaxMyElementSize();
+  int * tmpIndices = new int[Length];
+
+
+  int BlockRow, BlockOffset, NumEntries;
+  int NumBlockEntries;
+  int * BlockIndices;
+
+  int NumMyRows = PG.NumMyRows();
+
+  for (int i=0; i<NumMyRows; i++) {
+    EPETRA_CHK_ERR(BG.RowMap().FindLocalElementID(i, BlockRow, BlockOffset));
+    EPETRA_CHK_ERR(BG.ExtractMyRowView(BlockRow, NumBlockEntries, BlockIndices));
+
+    int * ptr = tmpIndices; // Set pointer to beginning of buffer
+
+    int RowDim = BG.RowMap().ElementSize(BlockRow);
+    NumEntries = 0;
+
+    // This next line make sure that the off-diagonal entries in the block diagonal of the 
+    // original block entry matrix are included in the nonzero pattern of the point graph
+    if (Upper) {
+      int jstart = i+1;
+      int jstop = EPETRA_MIN(NumMyRows,i+RowDim-BlockOffset);
+      for (int j= jstart; j< jstop; j++) {*ptr++ = j; NumEntries++;}
+    }
+
+    for (int j=0; j<NumBlockEntries; j++) {
+      int ColDim = ColElementSizeList[BlockIndices[j]];
+      NumEntries += ColDim;
+      assert(NumEntries<=Length); // Sanity test
+      int Index = ColFirstPointInElementList[BlockIndices[j]];
+      for (int k=0; k < ColDim; k++) *ptr++ = Index++;
+    }
+
+    // This next line make sure that the off-diagonal entries in the block diagonal of the 
+    // original block entry matrix are included in the nonzero pattern of the point graph
+    if (!Upper) {
+      int jstart = EPETRA_MAX(0,i-RowDim+1);
+      int jstop = i;
+      for (int j = jstart; j < jstop; j++) {*ptr++ = j; NumEntries++;}
+    }
+
+    EPETRA_CHK_ERR(PG.InsertMyIndices(i, NumEntries, tmpIndices));
+  }
+  delete [] tmpIndices;
+
   SetAllocated(true);
 
   return(0);
@@ -103,6 +182,8 @@ Ifpack_CrsRiluk::~Ifpack_CrsRiluk(){
 
   if (OverlapX_!=0) delete OverlapX_;
   if (OverlapY_!=0) delete OverlapY_;
+  if (L_Graph_!=0) delete L_Graph_;
+  if (U_Graph_!=0) delete U_Graph_;
   if (IlukRowMap_!=0) delete IlukRowMap_;
 
   OverlapX_ = 0;
@@ -149,6 +230,16 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_VbrMatrix & A) {
 
   if (!Allocated()) AllocateVbr();
 
+  //cout << "Original Graph " << endl <<  A.Graph() << endl << flush;
+  //A.Comm().Barrier(); 
+  //if (A.Comm().MyPID()==0) cout << "*****************************************************" <<endl;
+  //cout << "Original Matrix " << endl << A << endl << flush;
+  //A.Comm().Barrier(); 
+  //if (A.Comm().MyPID()==0) cout << "*****************************************************" <<endl;
+  //cout << "Overlap Graph " << endl << *Graph_.OverlapGraph() << endl << flush;
+  //A.Comm().Barrier(); 
+  //if (A.Comm().MyPID()==0) cout << "*****************************************************" <<endl;
+
   Epetra_VbrMatrix * OverlapA = (Epetra_VbrMatrix *) &A;
 
   if (IsOverlapped_) {
@@ -158,6 +249,8 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_VbrMatrix & A) {
     EPETRA_CHK_ERR(OverlapA->TransformToLocal());
   }
   
+  //cout << "Overlap Matrix " << endl << *OverlapA << endl << flush;
+
   // Get Maximun Row length
   int MaxNumEntries = OverlapA->MaxNumNonzeros();
 
@@ -221,7 +314,7 @@ int Ifpack_CrsRiluk::InitAllValues(const Epetra_RowMatrix & OverlapA, int MaxNum
 	DV[i] += Rthresh_ * InV[j] + EPETRA_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Epetra_Vector D_
       }
 
-      else if (k < 0) return(-1); // Out of range
+      else if (k < 0) {EPETRA_CHK_ERR(-1);} // Out of range
 
       else if (k < i) {
 	LI[NumL] = k;

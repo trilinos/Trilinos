@@ -397,6 +397,7 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   void SetValuesInitialized(bool Flag) {ValuesInitialized_ = Flag;};
   bool Allocated() const {return(Allocated_);};
   int SetAllocated(bool Flag) {Allocated_ = Flag; return(0);};
+  int Ifpack_CrsRiluk::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_CrsGraph & PG, bool Upper);
   
  private:
   
@@ -414,6 +415,8 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   const Epetra_Comm & Comm_;
   Epetra_CrsMatrix * L_;
   Epetra_CrsMatrix * U_;
+  Epetra_CrsGraph * L_Graph_;
+  Epetra_CrsGraph * U_Graph_;
   Epetra_Vector * D_;
   bool UseTranspose_;
 
