@@ -1,4 +1,5 @@
 #ifdef WITH_PRERELEASE
+
 // $Id$ 
 // $Source$ 
 
@@ -34,9 +35,10 @@
 #ifndef NOX_DIRECTION_QUASINEWTON_H
 #define NOX_DIRECTION_QUASINEWTON_H
 
+#include "NOX_Common.H"		   
+
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Parameter_List.H"	   // class data element 
-#include "NOX_Common.H"		   // for deque
 
 namespace NOX {
 
@@ -74,26 +76,6 @@ public:
 
 protected:
 
-  // Forward declarations
-  class Update;
-  class Updates;
-
-  //! "Direction" sublist with parameters for the direction vector
-  /*! 
-    \note This is pointer rather than a reference to allow for the
-    reset function. 
-   */
-  Parameter::List* paramsPtr;
-
-  //! Vector containing the computed direction
-  Abstract::Vector* stepDirPtr;
-
-  //! Maximum number of updates to be stored
-  int maxUpdates;
-
-  //! Updates 
-  Updates updates;
-
   //! Private auxillary class for NOX::Direction::QuasiNewton method
   /*! Stores an (s,y)-pair for the BFGS update */
   class Update {
@@ -101,14 +83,23 @@ protected:
   public:
     
     //! Constructor
-    Update(const Abstract::Vector& sin, const Abstract::Vector& yin);
+    /*! See reset(). */
+    Update(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
+	   const Abstract::Vector& newG, const Abstract::Vector& oldG);
     
     //! Destuctor
     ~Update();
 
     //! Reset s and y with new vectors
-    void reset(const Abstract::Vector& sin, const Abstract::Vector& yin);
-
+    /* \f[
+       s = x_{\rm new} - x_{\rm old} 
+       \quad
+       y = g_{\rm new} - g_{\rm old} 
+       \f]
+    */
+    void reset(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
+	       const Abstract::Vector& newG, const Abstract::Vector& oldG);
+    
     //! Get s
     const Abstract::Vector& s() const;
 
@@ -123,14 +114,8 @@ protected:
     //! s-vector pointer
     Abstract::Vector* sptr;
 
-    //! Reference to s-vector pointer
-    Abstract::Vector& sref;
-
     //! y-vector pointer
     Abstract::Vector* yptr;
-
-    //! Reference to y-vector pointer
-    Abstract::Vector& yref;
 
     //! \f$\rho = s^Ty\f$
     double rho;
@@ -168,7 +153,11 @@ protected:
     void reset(int m = 0);
 
     //! Add an element at the end of the deque
-    void push_back(const Abstract::Vector& s, const Abstract::Vector& y);
+    void push_back(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
+		   const Abstract::Vector& newG, const Abstract::Vector& oldG);
+
+    //! Returns the last update
+    const Update* back() const;
 
     //! Returns a const iterator that can be used to begin traversing through the updates
     UpdateConstIterator begin() const;
@@ -189,7 +178,7 @@ protected:
   private:
 
     //! Maximum size of deque
-    int maxSize;
+    int maxUpdates;
 
     //! Update deque
     deque<Update*> updateDeque;
@@ -199,8 +188,20 @@ protected:
   
   };
 
+  //! "Direction" sublist with parameters for the direction vector
+  /*! 
+    \note This is pointer rather than a reference to allow for the
+    reset function. It should not be deleted.
+   */
+  Parameter::List* paramsPtr;
+
+  //! Updates 
+  Updates updates;
+
+
 };
 } // namespace Direction
 } // namespace NOX
+
 #endif
 #endif

@@ -1,4 +1,5 @@
 #ifdef WITH_PRERELEASE
+
 // $Id$ 
 // $Source$ 
 
@@ -31,8 +32,9 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Direction_QuasiNewton.H" // class definition
 #include "NOX_Common.H"
+
+#include "NOX_Direction_QuasiNewton.H" 
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
@@ -43,13 +45,12 @@ using namespace NOX::Direction;
 
 //------------------------------------------------------------
 
-QuasiNewton::Update::Update(const Abstract::Vector& sin, const Abstract::Vector& yin) :
-  sptr(sin.clone(DeepCopy)), 
-  sref(*sptr),
-  yptr(yin.clone(DeepCopy)), 
-  yref(*yptr),
-  rho(sref.dot(yref))
+QuasiNewton::Update::Update(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
+			    const Abstract::Vector& newG, const Abstract::Vector& oldG) :
+  sptr(newX.clone(ShapeCopy)), 
+  yptr(newX.clone(ShapeCopy))
 {
+  reset(newX, oldX, newG, oldG);
 }
 
 QuasiNewton::Update::~Update() 
@@ -58,21 +59,22 @@ QuasiNewton::Update::~Update()
   delete yptr;
 }
 
-void QuasiNewton::Update::reset(const Abstract::Vector& sin, const Abstract::Vector& yin) 
+void QuasiNewton::Update::reset(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
+				const Abstract::Vector& newG, const Abstract::Vector& oldG)
 {
-  sref = sin;
-  yref = yin;
-  rho = sref.dot(yref);
+  sptr->update(1.0, newX, -1.0, oldX, 0.0);
+  yptr->update(1.0, newG, -1.0, oldG, 0.0);
+  rho = sptr->dot(*yptr);
 }
 
 const Abstract::Vector& QuasiNewton::Update::s() const
 {
-  return sref;
+  return *sptr;
 }
 
 const Abstract::Vector& QuasiNewton::Update::y() const
 {
-  return yref;
+  return *yptr;
 }
 
 double QuasiNewton::Update::sdoty() const
@@ -83,7 +85,7 @@ double QuasiNewton::Update::sdoty() const
 //------------------------------------------------------------
 
 QuasiNewton::Updates::Updates(int m) :
-  maxSize(m)
+  maxUpdates(m)
 {
 }
 
@@ -115,15 +117,16 @@ void QuasiNewton::Updates::reset(int m)
   updateDeque.clear();
 
   // Reset the max size
-  maxSize = m;
+  maxUpdates = m;
 }
 
-void QuasiNewton::Updates::push_back(const Abstract::Vector& s, const Abstract::Vector& y)
+void QuasiNewton::Updates::push_back(const Abstract::Vector& newX, const Abstract::Vector& oldX, 
+				     const Abstract::Vector& newG, const Abstract::Vector& oldG)
 {
   Update* updatePtr;
 
   // If the updateDeque is full, recycle and delete the first entry
-  if (updateDeque.size() == maxSize) {
+  if (updateDeque.size() == maxUpdates) {
     recycleDeque.push_back(updateDeque.front());
     updateDeque.pop_front();
   }
@@ -132,13 +135,18 @@ void QuasiNewton::Updates::push_back(const Abstract::Vector& s, const Abstract::
   if (!recycleDeque.empty()) {
     updatePtr = recycleDeque.front();
     recycleDeque.pop_front();
-    updatePtr->reset(s,y);
+    updatePtr->reset(newX, oldX, newG, oldG);
   }
   else 
-    updatePtr = new Update(s,y);
+    updatePtr = new Update(newX, oldX, newG, oldG);
 
   // Push the new (or recycled) update onto the end of the deque.
   updateDeque.push_back(updatePtr);
+}
+
+const QuasiNewton::Update* QuasiNewton::Updates::back() const
+{
+  return updateDeque.back();
 }
 
 QuasiNewton::UpdateConstIterator QuasiNewton::Updates::begin() const
@@ -169,30 +177,19 @@ bool QuasiNewton::Updates::empty() const
 //------------------------------------------------------------
 
 QuasiNewton::QuasiNewton(Parameter::List& p) :
-  paramsPtr(NULL),
-  stepDirPtr(NULL),
-  nMemory(0),
-  updates()
+  paramsPtr(NULL)
 {
   reset(p);
 }
 
 QuasiNewton::~QuasiNewton()
 {
-  // Empty out the memory deque
-  /*
-  deque<tuplet*>::iterator i;
-  for (i = memory.begin(); i != memory.end(); ++i) 
-  {
-    delete i->sPtr;
-    delete i->yPtr;
-  }
-  */
 }
 
 bool QuasiNewton::reset(Parameter::List& p)
 {
   paramsPtr = &p;
+  updates.reset(p.getParameter("Memory", 5));
   return true;
 }
 
@@ -218,11 +215,65 @@ bool QuasiNewton::compute(Abstract::Vector& dir,
       cout << "NOX::Direction::QuasiNewton::compute - Unable to compute Jacobian." << endl;
     return false;
   }
+
+  // Compute the gradient at the current solution
+  ok = soln.computeGradient();
+
+  if (!ok) {
+    if (Utils::doPrint(Utils::Warning))
+      cout << "NOX::Direction::QuasiNewton::compute - Unable to compute gradient." << endl;
+    return false;
+  }
   
-  // Compute the QuasiNewton direction
+  if (solver.getNumIterations() > 0) {
+    const Abstract::Group& oldsoln = solver.getPreviousSolutionGroup();
+    updates.push_back(soln.getX(), oldsoln.getX(), soln.getGradient(), oldsoln.getGradient());
+  }
+
+  dir = soln.getGradient();
+
+  deque<double> alpha;
+  double a, b, c;
   
+  if (!updates.empty()) {
+
+    for (UpdateConstReverseIterator i = updates.rbegin(); i != updates.rend(); i++) {
+
+      const Update& u = *(*i);
+      const double rho = u.sdoty();
+      const Abstract::Vector& s = u.s();
+      const Abstract::Vector& y = u.y();
+      a = rho * dir.dot(s);
+      dir.update(-1.0 * a, y, 1.0);
+      alpha.push_front(a);
+      
+    }
+    
+    const Update& u = *(updates.back());
+    const double rho = u.sdoty();
+    const Abstract::Vector& y = u.y();
+    double gamma = rho / y.dot(y);
+    dir.scale(gamma);
+    
+    for (UpdateConstIterator i = updates.begin(); i != updates.end(); i++) {
+      
+      const Update& u = *(*i);
+      const double rho = u.sdoty();
+      const Abstract::Vector& s = u.s();
+      const Abstract::Vector& y = u.y();
+      a = alpha.front();
+      b = rho * dir.dot(y);
+      dir.update(a - b, s, 1.0);
+      alpha.pop_front();
+      
+    }
+  }
+
+  dir.scale(-1.0);
+
   return ok;
 }
+
 
 
 #endif
