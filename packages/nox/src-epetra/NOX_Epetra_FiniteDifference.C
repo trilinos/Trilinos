@@ -28,6 +28,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
+
 #include "NOX_Epetra_Interface.H"
 #include "NOX_Utils.H"
 
@@ -249,7 +250,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
   int myMax = map.MaxMyGID(); // Maximum Local ID value
 
   // Compute the RHS at the initial solution
-  interface.computeF(x,fo);
+  interface.computeF(x, fo, Interface::Jacobian);
 
   x_perturb = x;
 
@@ -272,7 +273,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
     map.Comm().Broadcast(&eta, 1, broadcastProc); 
 
     // Compute the perturbed RHS
-    interface.computeF(x_perturb,fp);
+    interface.computeF(x_perturb,fp, Interface::Jacobian);
     
     // Compute the column k of the Jacobian
     Jc.Update(1.0, fp, -1.0, fo, 0.0);

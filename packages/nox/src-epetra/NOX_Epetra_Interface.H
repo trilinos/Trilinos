@@ -56,6 +56,9 @@ class Interface {
 
 public:
  
+  //! Type of fill that a computeF() method is used for.  This flag is used when a computeF() is used to compute a lagged Jacobian by finite difference or matrix-free methods.  This allows for removing specific terms of the Jacobian 
+  enum FillType {F, Jacobian};
+
   //! Constructor
   Interface() {};
 
@@ -63,7 +66,7 @@ public:
   virtual ~Interface() {};
 
   //! Compute RHS given the specified input vector x.  Returns true if computation was successful.
-  virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& RHS) = 0;
+  virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& RHS, FillType flag = F) = 0;
   
   //! Compute Jacobian given the specified input vector x.  Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac) = 0;

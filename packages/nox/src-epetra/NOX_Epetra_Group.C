@@ -620,8 +620,12 @@ bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vecto
    */
   Epetra_Operator& Jacobian = sharedJacobian.getOperator(this);
 
-  // Epetra_LinearProblem does not allow for const vectors
+  // Epetra_LinearProblem does not allow for const vectors 
+  // (This allows us to scale the linear problem)
   Vector& nonConstInput = const_cast<Vector&>(input);
+
+  // Zero out the delta X of the linear problem 
+  result.init(0.0);
 
   // Create Epetra problem for the linear solve
   Epetra_LinearProblem Problem(&Jacobian, 

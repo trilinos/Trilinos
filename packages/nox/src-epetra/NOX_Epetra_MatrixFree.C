@@ -118,7 +118,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   Y = X;
   Y.Scale(eta);
   perturbX.Update(1.0,Y,1.0);
-  interface.computeF(perturbX,fp);
+  interface.computeF(perturbX, fp, Interface::Jacobian);
   
   // Compute the directional derivative
   Y.Update(1.0, fp, -1.0, fo, 0.0);
@@ -181,5 +181,5 @@ bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   // derivative.
   currentX = x;
 
-  return interface.computeF(x,fo);
+  return interface.computeF(x, fo, Interface::Jacobian);
 }

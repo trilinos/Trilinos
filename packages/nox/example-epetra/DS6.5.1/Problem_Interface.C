@@ -13,7 +13,7 @@ Problem_Interface::Problem_Interface(DennisSchnabel& Problem) :
 Problem_Interface::~Problem_Interface()
 { }
 
-bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& F)
+bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& F, FillType)
 {
   return problem.evaluate(F_ONLY, &x, &F, NULL);
 }
