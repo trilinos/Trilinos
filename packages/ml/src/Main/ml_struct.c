@@ -18,6 +18,9 @@
 #include "ml_amg_genP.h"
 #include "ml_smoother.h"
 #include "ml_op_utils.h"
+#ifdef  MB_MODIF_QR
+#include "ml_qr_fix.h"
+#endif
 
 #ifdef ML_MPI
 #include "mpi.h"
@@ -139,7 +142,6 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
    (*ml_ptr)->symmetrize_matrix  = ML_FALSE;
    (*ml_ptr)->Amat_Normalization = Amat_Normalization ;
    (*ml_ptr)->timing             = NULL;
-   (*ml_ptr)->xCDeadNodDof       = NULL;
 
 #ifdef ML_TIMING
    ML_memory_alloc((void**) &timing, sizeof(struct ML_Timing),"MT");
@@ -241,7 +243,6 @@ int ML_Destroy(ML **ml_ptr)
       ML_memory_free( (void**) &(ml->spectral_radius) );
       if (ml->timing != NULL) ML_memory_free( (void**) &(ml->timing) );
       ML_Comm_Destroy( &(ml->comm) );
-      ML_qr_fix_Destroy( &(ml->xCDeadNodDof) );
       ML_memory_free( (void**) &(ml) );
 
       (*ml_ptr) = NULL;
@@ -2462,6 +2463,79 @@ for (j = 0; j < row_length; j++)
 #endif
 }
 
+#ifdef  MB_MODIF_QR
+/* ************************************************************************* */
+/* function to fix MSR coarse matrix in case candidates are locally dropped  */
+/* ------------------------------------------------------------------------- */
+
+int ML_fixCoarseMtx(
+        ML_Operator *Cmat,          /*-up- coarse operator in MSR format     */
+        const int    CoarseMtxType  /*-in- coarse-lev mtx storage type       */
+    )
+{
+   /**************************************************************************
+    * NOTE: Curently, we only support MSR coarse storage format here.
+    * Return 0 if OK
+    *        1 if failed
+    **************************************************************************/
+    int           *bindx, i, j, nLocRows, nf, nCand, numDeadNodDof;
+    double        *val, mxdia;
+    ML_QR_FIX_TYPE dead;
+    struct ML_CSR_MSRdata* data = (struct ML_CSR_MSRdata*) Cmat->data;
+
+    if (ML_qr_fix_NumDeadNodDof() < 1) return 0;
+
+    if (CoarseMtxType != ML_MSR_MATRIX) {
+        fprintf(stderr,
+           "[SS] ML_fixCoarseMtx: illegal arg CoarseMtxType=%d +%d %s\n",
+            CoarseMtxType, __LINE__, __FILE__);
+        exit(EXIT_FAILURE);
+    }
+    bindx         = data->columns;
+    val           = data->values;
+    nLocRows      = bindx[0]-1;
+    nf            = Cmat->num_PDEs;
+    numDeadNodDof = ML_qr_fix_NumDeadNodDof();
+
+    if (numDeadNodDof < 1) return 0;
+
+    fprintf(stderr,"[II] fixing the coarse-level matrix dead dofs\n");
+
+#ifdef MB_CHATTY
+    fprintf(stderr,"[DD] fixCoarse: nLocRows=%7d nf=%3d\n", nLocRows, nf);
+#endif
+    for (i=0; i < nLocRows/nf; i++) {
+         dead =  ML_qr_fix_getDeadNod(i);
+         if (dead) {
+             mxdia = 0.e0;
+             for (j=0; j < nf; j++) {
+                 mxdia = ( mxdia > fabs(val[i*nf+j]) ) ?
+                           mxdia : fabs(val[i*nf+j]) ;
+             }
+             for (j=0; j < nf; j++) {
+#ifdef MB_CHATTY
+             fprintf(stderr,
+                "[DD] fixCoarse: dead=%4d node=%7d dof=%3d val=%12.3e\n",
+                dead, i, j, val[i*nf + j]); 
+#endif
+                 if (dead & (1 << j)) {
+                    /* this is a dead coarse dof */
+                    if (val[i*nf + j] != 0.e0) {
+                        fprintf(stderr,"[SS] dead dof diag val=%12.3e\n",
+                            val[i*nf+j]); 
+                        abort(); /* just for debugging */
+                        return 1;
+                    }
+                    val[i*nf+j] = mxdia; 
+                 }
+             }
+         }
+    }
+
+    return 0;
+}
+#endif/*MB_MODIF_QR*/
+
 /* ************************************************************************* */
 /* functions to generate Galerkin coarse grid operator                       */
 /* ------------------------------------------------------------------------- */
@@ -2554,9 +2628,25 @@ fflush(stdout);
    }
 
 /*ML_Operator_Print(&(ml->Pmat[child_level]),"Pn");*/
+#ifdef  MB_MODIF_QR
+{
+   int    CoarseMtxType = ML_MSR_MATRIX;
+   ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]),
+          &(ml->Pmat[child_level]), &(ml->Amat[child_level]),
+          CoarseMtxType);
+/* The fixing of coarse matrix only works if it is in MSR format */
+   ML_fixCoarseMtx(
+          &(ml->Amat[child_level]),/* -up- coarse mtx                        */
+          CoarseMtxType            /* -in- storage type for coarse-lev mtx   */
+   );
+/* the dead-nod indicator array no longer needed on this level */
+   ML_qr_fix_Destroy();
+}
+#else /*MB_MODIF_QR*/
    ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]),
           &(ml->Pmat[child_level]), &(ml->Amat[child_level]),
           ML_MSR_MATRIX);
+#endif/*MB_MODIF_QR*/
 
 #ifdef ML_TIMING
    ml->Amat[child_level].build_time = GetClock() - t0;
@@ -2762,14 +2852,15 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
       if (current_level->pre_smoother->ntimes == ML_NOTSET)
             current_level->pre_smoother->ntimes = 2;
       if (temp != NULL) {
-         t1 = current_level->Amat->outvec_leng;
-         t2 = temp->Amat->outvec_leng;
+         /* scale by num_PDEs, so we are comparing aggregates instead of dofs */
+         t1 = current_level->Amat->outvec_leng / current_level->Amat->num_PDEs;
+         t2 = temp->Amat->outvec_leng / temp->Amat->num_PDEs;
          ML_gsum_scalar_int(&t1, &j, ml->comm);
          ML_gsum_scalar_int(&t2, &j, ml->comm);
          if (t2 >= t1) {
             if (ml->comm->ML_mypid == 0)
-               pr_error("Error: Grid %d (where finest = 0) has %d unknowns \
-                       and restricts to a grid with %d (i.e. more) unknowns.\n",
+
+               pr_error("Error: Grid %d (where finest = 0) has %d unknowns\n and restricts to a grid with %d (i.e. more) unknowns.\n",
 	                i, t1, t2);
             else pr_error("");
          }
