@@ -252,31 +252,38 @@ namespace Belos {
   template <class TYPE>
   MultiVec<TYPE>* BlockGmres<TYPE>::GetCurrentSoln()
   {    
-    const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
-    int i, m = _iter*_blocksize;
-    Teuchos::BLAS<int,TYPE> blas;
-    int *index = new int[m]; assert(index!=NULL);
-    for ( i=0; i<m; i++ ) {   
-      index[i] = i;
-    }
-    MultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, m); assert(Vjp1!=NULL);
+    //
+    // If this is the first iteration of the Arnoldi factorization, return the current solution.
+    // It has either been updated recently, if there was a restart, or we haven't computed anything yet.
+    //
     MultiVec<TYPE> * cur_sol_copy = _cur_block_sol->CloneCopy(); assert(cur_sol_copy!=NULL);
-    //
-    //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
-    //
-    Teuchos::SerialDenseMatrix<int,TYPE> y( Teuchos::Copy, _z, m, _blocksize );
-    //
-    //  Solve the least squares problem and compute current solutions.
-    //
-    blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
+    if (_iter==0) { 
+        return cur_sol_copy; 
+    } else {
+      const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+      int i, m = _iter*_blocksize;
+      Teuchos::BLAS<int,TYPE> blas;
+      int *index = new int[m]; assert(index!=NULL);
+      for ( i=0; i<m; i++ ) {   
+        index[i] = i;
+      }
+      MultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, m); assert(Vjp1!=NULL);
+      //
+      //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
+      //
+      Teuchos::SerialDenseMatrix<int,TYPE> y( Teuchos::Copy, _z, m, _blocksize );
+      //
+      //  Solve the least squares problem and compute current solutions.
+      //
+      blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS,
 	       Teuchos::NON_UNIT_DIAG, m, _blocksize, one,  
 	       _hessmatrix.values(), _hessmatrix.stride(), y.values(), y.stride() );
     
-    cur_sol_copy->MvTimesMatAddMv( one, *Vjp1, y, one );
+      cur_sol_copy->MvTimesMatAddMv( one, *Vjp1, y, one );
     
-    if (Vjp1) delete Vjp1;
-    if (index) delete [] index;
-
+      if (Vjp1) delete Vjp1;
+      if (index) delete [] index;
+    }
     return cur_sol_copy;
   }
     
@@ -430,12 +437,14 @@ namespace Belos {
 		   _hessmatrix.values(), _hessmatrix.stride(), _z_copy.values(), _z_copy.stride() ); 
 	  // Create view into current basis vectors.
 	  MultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, _iter*_blocksize);
-	  _cur_block_sol->MvTimesMatAddMv( one, *Vjp1, _z_copy, one );
+          MultiVec<TYPE> * solnUpdate = _cur_block_sol->Clone( _blocksize );	  
+	  solnUpdate->MvTimesMatAddMv( one, *Vjp1, _z_copy, zero );
 	  delete Vjp1;
 	  //
-	  // Inform the linear problem that we updated to solution.
+	  // Update the solution held by the linear problem.
 	  //	  
-	  _lp.SolutionUpdated();
+	  _lp.SolutionUpdated( solnUpdate );
+	  delete solnUpdate;
         }
 	//
 	// Print out solver status
@@ -452,7 +461,7 @@ namespace Belos {
 	//
 	// Break out of this loop before the _restartiter is incremented if we are finished.
 	//
-	if ( _stest.GetStatus() != Unconverged || exit_flg ) { break; }
+        if ( _stest.GetStatus() != Unconverged || exit_flg ) { break; }
         //
       } // end for (_restartiter=0;...
       //

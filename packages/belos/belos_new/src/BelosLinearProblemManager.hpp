@@ -129,7 +129,7 @@ class LinearProblemManager {
     linear problem from having to recompute the residual vector everytime it's asked for if
     the solution hasn't been updated.
   */
-  void SolutionUpdated(){ solutionUpdated_ = true; };
+  void SolutionUpdated( MultiVec<TYPE>* SolnUpdate = 0 );
 
   //@}
   
@@ -150,9 +150,15 @@ class LinearProblemManager {
   MultiVec<TYPE> * GetInitResVec();
 
   //! Get a pointer to the current residual vector.
-  /*! \note This may be the preconditioned residual, if the linear problem is left-preconditioned.
+  /*! \note <ul>
+	    <li> This method computes the true residual of the current linear system
+		 obtained using GetCurr[RHS/LHS]Vec().
+	    <li> If the solution hasn't been updated in the LinearProblemManager and
+                 a current solution has been computed by the solver (like GMRES), it can
+                 be passed into this method to update the residual.
+ 	    </ul>
    */
-  MultiVec<TYPE> * GetCurrResVec();
+  MultiVec<TYPE> * GetCurrResVec( MultiVec<TYPE>* CurrSoln = 0 );
 
   //! Get a pointer to the current left-hand side (solution) of the linear system.
   /*! This method is called by the solver or any method that is interested in the current linear system
@@ -352,11 +358,10 @@ LinearProblemManager<TYPE>::LinearProblemManager(Operator<TYPE> * A,
   Left_Scale_(false),
   Right_Scale_(false),
   operatorSymmetric_(false),
-  solutionUpdated_(true),
+  solutionUpdated_(false),
   solutionFinal_(true),
   initresidsComputed_(false)
 {
-  R_ = X_->Clone( X_->GetNumberVecs() );
   R0_ = X_->Clone( X_->GetNumberVecs() );
 }
 
@@ -405,37 +410,31 @@ void LinearProblemManager<TYPE>::SetUpBlocks()
   // ( first clean up old linear system )
   if (CurB_) delete CurB_; CurB_ = 0;
   if (CurX_) delete CurX_; CurX_ = 0;
+  if (R_) delete R_; R_ = 0;
   //
   // Determine how many linear systems are left to solve for and populate LHS and RHS vector.
+  // If the number of linear systems left are less than the current blocksize, then
+  // we create a multivector and copy the left over LHS and RHS vectors into them.
+  // The rest of the multivector is populated with random vectors (RHS) or zero vectors (LHS).
   //
-  if ( (rhs_index_ + blocksize_) < X_->GetNumberVecs() ) {
-    //
-    // If the number of linear systems left are more than the current blocksize, then
-    // we create a view into the LHS and RHS.
-    //
-    num_to_solve_ = blocksize_;
-    CurX_ = X_->CloneView( index, num_to_solve_);
-    CurB_ = B_->CloneView( index, num_to_solve_);
-    //
-  } else { 
+  num_to_solve_ = X_->GetNumberVecs() - rhs_index_;
+  //
+  // Return the NULL pointer if we don't have any more systems to solve for.
+  if ( num_to_solve_ <= 0 ) { return; }  
+  //
+  if ( num_to_solve_ < blocksize_ ) 
+  {
     int* index2 = new int[ num_to_solve_ ];
     for (i=0; i<num_to_solve_; i++) {
       index2[i] = i;
     }
-    //
-    // If the number of linear systems left are less than the current blocksize, then
-    // we create a multivector and copy the left over LHS and RHS vectors into them.
-    // The rest of the multivector is populated with random vectors (RHS) or zero vectors (LHS).
-    num_to_solve_ = X_->GetNumberVecs() - rhs_index_;
-    //
-    // Return the NULL pointer if we don't have any more systems to solve for.
-    if ( num_to_solve_ <= 0 ) { return; }  
     //
     // First create multivectors of blocksize and fill the RHS with random vectors LHS with zero vectors.
     CurX_ = X_->Clone(blocksize_); assert(CurX_!=NULL); 
     CurX_->MvInit();
     CurB_ = B_->Clone(blocksize_); assert(CurB_!=NULL);
     CurB_->MvRandom();
+    R_ = X_->Clone(blocksize_); assert(R_!=NULL);
     //
     MultiVec<TYPE> *tptr = B_->CloneView(index,num_to_solve_); assert(tptr!=NULL);
     CurB_->SetBlock( *tptr, index2, num_to_solve_);
@@ -448,6 +447,25 @@ void LinearProblemManager<TYPE>::SetUpBlocks()
     delete tptr; tptr = 0;
     delete tptr2; tptr2 = 0;
     delete [] index2; index2=0;
+    //
+  } else { 
+    //
+    // If the number of linear systems left are more than or equal to the current blocksize, then
+    // we create a view into the LHS and RHS.
+    //
+    num_to_solve_ = blocksize_;
+    CurX_ = X_->CloneView( index, num_to_solve_);
+    CurB_ = B_->CloneView( index, num_to_solve_);
+    R_ = X_->Clone( num_to_solve_ );
+    //
+  }
+  //
+  // Compute the current residual.
+  // 
+  if (R_) {
+    A_->Apply( *CurX_, *R_ );
+    R_->MvAddMv( 1.0, *CurB_, -1.0, *R_ );
+    solutionUpdated_ = false;
   }
   delete [] index; index=0;
 }
@@ -456,20 +474,18 @@ template<class TYPE>
 void LinearProblemManager<TYPE>::SetLHS(MultiVec<TYPE> * X)
 {
   X_ = X; 
-  solutionUpdated_ = true; 
   R0_ = X_->Clone( X_->GetNumberVecs() ); 
-  R_ = X_->Clone( X_->GetNumberVecs() );
 }
 
 template<class TYPE>
 void LinearProblemManager<TYPE>::SetCurrLSVec() 
 { 
+  int i;
   //
   // We only need to copy the solutions back if the linear systems of
   // interest are less than the block size.
   //
   if (num_to_solve_ < blocksize_) {
-    int i;
     //
     int * index = new int[num_to_solve_]; assert(index!=NULL);
     MultiVec<TYPE> *tptr=0;
@@ -501,6 +517,24 @@ void LinearProblemManager<TYPE>::SetCurrLSVec()
 }
 
 template<class TYPE>
+void LinearProblemManager<TYPE>::SolutionUpdated( MultiVec<TYPE>* SolnUpdate )
+{ 
+  if (SolnUpdate) {
+    if (Right_Prec_) {
+      //
+      // Apply the right preconditioner before computing the current solution.
+      MultiVec<TYPE>* TrueUpdate = SolnUpdate->Clone( SolnUpdate->GetNumberVecs() );
+      RP_->Apply( *SolnUpdate, *TrueUpdate ); 
+      CurX_->MvAddMv( 1.0, *CurX_, 1.0, *TrueUpdate ); 
+      delete TrueUpdate; TrueUpdate = 0;
+    } else {
+      CurX_->MvAddMv( 1.0, *CurX_, 1.0, *SolnUpdate ); 
+    }
+  }
+  solutionUpdated_ = true; 
+}
+
+template<class TYPE>
 MultiVec<TYPE>* LinearProblemManager<TYPE>::GetInitResVec() 
 {
   // Compute the initial residual if it hasn't been computed
@@ -509,27 +543,32 @@ MultiVec<TYPE>* LinearProblemManager<TYPE>::GetInitResVec()
   // in a preconditioned residual.
   if (!initresidsComputed_ && A_ && X_ && B_) 
     {
-      ComputeResVec( R0_ );
+      A_->Apply( *X_, *R0_ );
+      R0_->MvAddMv( 1.0, *B_, -1.0, *R0_ );
       initresidsComputed_ = true;
     }
   return (R0_);
 }
 
 template<class TYPE>
-MultiVec<TYPE>* LinearProblemManager<TYPE>::GetCurrResVec() 
+MultiVec<TYPE>* LinearProblemManager<TYPE>::GetCurrResVec( MultiVec<TYPE>* CurrSoln ) 
 {
-  // Compute the current residual of the linear system.
+  // Compute the residual of the current linear system.
   // This should be used if the solution has been updated.
-  // In the case of GMRES, this solution is only updated at restarts,
-  // or when the solver exists.
+  // Alternatively, if the current solution has been computed by GMRES
+  // this can be passed in and the current residual will be updated using
+  // it.
   //
-  // The left preconditioner will be applied if it exists, resulting
-  // in a preconditioned residual.
-  //
-  if (solutionUpdated_ && A_ && X_ && B_) 
+  if (solutionUpdated_) 
     {
-      ComputeResVec( R_ );
+      A_->Apply( *GetCurrLHSVec(), *R_ );
+      R_->MvAddMv( 1.0, *GetCurrRHSVec(), -1.0, *R_ ); 
       solutionUpdated_ = false;
+    }
+  else if (CurrSoln) 
+    {
+      A_->Apply( *CurrSoln, *R_ );
+      R_->MvAddMv( 1.0, *GetCurrRHSVec(), -1.0, *R_ ); 
     }
   return (R_);
 }

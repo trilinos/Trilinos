@@ -214,17 +214,22 @@ int main(int argc, char *argv[]) {
 	Belos::PetraVec<double> rhs(Map, numrhs);
 	rhs.MvRandom();
 	Belos::LinearProblemManager<double> My_LP( &Amat, &soln, &rhs);
-	My_LP.SetLeftPrec( &EpetraOpPrec );
+	My_LP.SetRightPrec( &EpetraOpPrec );
+	//My_LP.SetLeftPrec( &EpetraOpPrec );
 	My_LP.SetBlockSize( block );
 
 	Belos::StatusTestMaxIters<double> test1( maxits );
 	Belos::StatusTestMaxRestarts<double> test2( numrestarts );
-	Belos::StatusTestCombo<double> test3( Belos::StatusTestCombo<double>::OR, test1, test2 );
-	Belos::StatusTestResNorm<double> test4( tol );
-	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test3, test4 );
+	Belos::StatusTestCombo<double> BasicTest( Belos::StatusTestCombo<double>::OR, test1, test2 );
+	Belos::StatusTestResNorm<double> test3( tol );
+	test3.DefineScaleForm( Belos::StatusTestResNorm<double>::NormOfPrecInitRes, Belos::TwoNorm );
+	BasicTest.AddStatusTest( test3 );
+	Belos::StatusTestResNorm<double> ExpTest( tol );
+	ExpTest.DefineResForm( Belos::StatusTestResNorm<double>::Explicit, Belos::TwoNorm ); 
+	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::SEQ, BasicTest, ExpTest );
 
 	Belos::OutputManager<double> My_OM( MyPID );
-	//My_OM.SetVerbosity( 1 );
+	//My_OM.SetVerbosity( 4 );
 	//
 	//*******************************************************************
 	// *************Start the block Gmres iteration*************************
@@ -240,7 +245,8 @@ int main(int argc, char *argv[]) {
 	   cout << "Number of right-hand sides: " << numrhs << endl;
 	   cout << "Block size used by solver: " << block << endl;
 	   cout << "Number of restarts allowed: " << numrestarts << endl;
-	   cout << "Max number of Gmres iterations per restart cycle: " << maxits << endl; 
+	   cout << "Length of block Arnoldi factorization: " << length*block << " ( "<< length << " blocks ) " <<endl;
+	   cout << "Max number of Gmres iterations: " << maxits << endl; 
 	   cout << "Relative residual tolerance: " << tol << endl;
        	   cout << endl;
 	}
@@ -255,7 +261,21 @@ int main(int argc, char *argv[]) {
 			<< endl << endl;
 	}
 	MyBlockGmres.Solve();
-	My_Test.Print(cout);
+	My_Test.Print(cout);	
+	//
+	// Compute actual residuals.
+	//
+	double* actual_resids = new double[numrhs];
+	double* rhs_norm = new double[numrhs];
+	Belos::PetraVec<double> resid( Map, numrhs );
+	Amat.Apply( soln, resid );
+	resid.MvAddMv( -1.0, resid, 1.0, rhs ); 
+	resid.MvNorm( actual_resids );
+	rhs.MvNorm( rhs_norm );
+	cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+	for (i=0; i<numrhs; i++) {
+		cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+	}
 
 	// Release all objects  
 	if (ilukGraph) delete ilukGraph;
@@ -264,7 +284,8 @@ int main(int argc, char *argv[]) {
 	delete [] bindx;
 	delete [] update;
 	delete [] val;
-	
+	delete [] actual_resids;
+	delete [] rhs_norm;	
 	
   return 0;
   //

@@ -110,7 +110,7 @@ public:
 	manager always has the current solution (even when the blocksize is larger
 	than the current number of linear systems being solved for).  
   */
-  MultiVec<TYPE>* GetCurrentSoln();
+  MultiVec<TYPE>* GetCurrentSoln() { return _cur_block_sol->CloneCopy(); };
   
   //! Get a constant reference to the current linear problem.  
   /*! This may include a current solution, if the solver has recently restarted or completed.
@@ -221,16 +221,6 @@ MultiVec<TYPE>* BlockCG<TYPE>::GetNativeResiduals( TYPE *normvec ) const
   MultiVec<TYPE>* ResidMV = _residvecs->CloneView( index, _blocksize );
   delete [] index;
   return ResidMV;
-}
-
-template <class TYPE>
-MultiVec<TYPE>* BlockCG<TYPE>::GetCurrentSoln() 
-{ 
-  int* index = new int[_blocksize];
-  for (int i=0; i<_blocksize; i++) { index[i] = i; }
-  MultiVec<TYPE>* SolnMV = _cur_block_sol->CloneView( index, _blocksize );
-  delete [] index; 
-  return SolnMV;
 }
 
 template <class TYPE>
@@ -486,10 +476,10 @@ void BlockCG<TYPE>::Solve ()
 	break;
       }
       //
-      // Update the solution: cur_sol = one*cur_sol + one*P_prev*alpha
+      // Update the solution: cur_block_sol = cur_block_sol + P_prev*alpha
       // 
-      _cur_block_sol->MvTimesMatAddMv(one, *P_prev, alpha, one);
-      _lp.SolutionUpdated();	// Inform the linear problem that the solution was updated.
+      _cur_block_sol->MvTimesMatAddMv( one, *P_prev, alpha, one );
+      _lp.SolutionUpdated();
       //
       // Update the residual vectors: R_new = R_prev - A*P_prev*alpha
       //
@@ -648,7 +638,6 @@ void BlockCG<TYPE>::Solve ()
     // Inform the linear problem manager that we are done with the current block of linear systems.
     //
     _lp.SetCurrLSVec();
-    _lp.SolutionUpdated();
     //
     // Get the next block of linear systems, if it returns the null pointer we are done.
     //

@@ -82,6 +82,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   */
   enum ScaleType {NormOfRHS,     /*!< Use the norm of the right-hand-side. */
 		  NormOfInitRes, /*!< Use the initial residual vector (exlicitly computed). */
+		  NormOfPrecInitRes, /*!< Use the preconditioned initial residual vector (exlicitly computed). */
 		  None,          /*!< Use unscaled residual. */
 		  UserProvided   /*!< User provides an explicit value that the norm of 
 				   the residual will be divided by. */
@@ -288,7 +289,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   template <class TYPE>
   int StatusTestResNorm<TYPE>::DefineResForm( ResType TypeOfResidual, NormType TypeOfNorm )
   {    
-    assert( firstcallDefineResNorm_ );
+    assert( firstcallDefineResForm_ );
     firstcallDefineResForm_ = false;
     
     restype_ = TypeOfResidual;
@@ -335,18 +336,32 @@ class StatusTestResNorm: public StatusTest<TYPE> {
       MultiVec<TYPE>* rhs = lp.GetRHS();
       numrhs_ = rhs->GetNumberVecs();
       scalevector_ = new TYPE[ numrhs_ ];
-      resvector_ = new TYPE[ numrhs_ + cur_blksz_ ];
+      resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
       testvector_ = new TYPE[ numrhs_ ];
       rhs->MvNorm( scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
       MultiVec<TYPE>* init_res = lp.GetInitResVec();
       numrhs_ = init_res->GetNumberVecs();
-      scalevector_ = new TYPE[ numrhs_ + cur_blksz_ ];
-      resvector_ = new TYPE[ numrhs_ + cur_blksz_ ];
+      scalevector_ = new TYPE[ numrhs_ ];
+      resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
       testvector_ = new TYPE[ numrhs_ ];
       init_res->MvNorm( scalevector_, scalenormtype_ );
     }
+    else if (scaletype_==NormOfPrecInitRes) {
+      MultiVec<TYPE>* init_res = lp.GetInitResVec();
+      numrhs_ = init_res->GetNumberVecs();
+      scalevector_ = new TYPE[ numrhs_ ];
+      resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
+      testvector_ = new TYPE[ numrhs_ ];
+      MultiVec<TYPE>* prec_init_res = init_res->Clone( numrhs_ );
+      if (lp.ApplyLeftPrec( *init_res, *prec_init_res ) != Undefined)
+          prec_init_res->MvNorm( scalevector_, scalenormtype_ );
+      else 
+          init_res->MvNorm( scalevector_, scalenormtype_ );
+      delete prec_init_res; prec_init_res=0;
+    }
+
     // Initialize the testvector.
     for (i=0; i<numrhs_; i++) { testvector_[i] = 1.0; }
 
@@ -365,6 +380,11 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     //
     cur_rhs_num_ = lp.GetRHSIndex();
     cur_blksz_ = lp.GetNumToSolve();
+  } else {
+    //
+    // We are in the same rhs block, return if we are converged
+    //
+    if (status_==Converged) { return status_; }
   }
   if (restype_==Implicit) {
     //
@@ -383,11 +403,9 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     // Request the true residual for this block of right-hand sides.
     // See if the linear problem manager has been updated before
     // asking for the true residual from the solver.
-    // (NOTE:  This residual may be preconditioned)
     //
-    MultiVec<TYPE>* cur_res=0;
     if ( lp.IsSolutionUpdated() ) {
-      cur_res = lp.GetCurrResVec();
+      MultiVec<TYPE>* cur_res = lp.GetCurrResVec();
       ret = cur_res->MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
       if ( ret != Ok ) {
         status_ = Failed;
@@ -395,8 +413,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
       }
     } else {
       MultiVec<TYPE>* cur_soln = iSolver->GetCurrentSoln();
-      cur_res = cur_soln->Clone( cur_blksz_ );
-      ret = lp.ComputeResVec( cur_res, cur_soln, lp.GetCurrRHSVec() );
+      MultiVec<TYPE>* cur_res = lp.GetCurrResVec( cur_soln );
       ret = cur_res->MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
       if ( ret != Ok ) {
         status_ = Failed;
@@ -404,7 +421,6 @@ class StatusTestResNorm: public StatusTest<TYPE> {
       }
       delete cur_soln;
     }
-    delete cur_res;
   }
   //
   // Compute the new linear system residuals for testing.
@@ -460,6 +476,8 @@ ostream& StatusTestResNorm<TYPE>::Print(ostream& os, int indent) const
     os << ((scalenormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
     if (scaletype_==NormOfInitRes)
       os << " Res0";
+    else if (scaletype_==NormOfPrecInitRes)
+      os << " Prec Res0";
     else
       os << " RHS ";
     os << ")";

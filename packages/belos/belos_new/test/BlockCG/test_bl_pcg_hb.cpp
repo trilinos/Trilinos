@@ -255,6 +255,21 @@ int main(int argc, char *argv[]) {
 	MyBlockCG.Solve();
 	My_Test.Print(cout);
 	
+        //
+        // Compute actual residuals.
+        //
+        double* actual_resids = new double[numrhs];
+        double* rhs_norm = new double[numrhs];
+        Belos::PetraVec<double> resid( Map, numrhs );
+        Amat.Apply( soln, resid );
+        resid.MvAddMv( -1.0, resid, 1.0, rhs );
+        resid.MvNorm( actual_resids );
+        rhs.MvNorm( rhs_norm );
+        cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+        for (i=0; i<numrhs; i++) {
+                cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+        }
+
 // Release all objects  
 
   if (ICT) { delete ICT; ICT = 0; }
@@ -262,6 +277,8 @@ int main(int argc, char *argv[]) {
   delete [] bindx;
   delete [] update;
   delete [] val; 
+  delete [] actual_resids;
+  delete [] rhs_norm;
 	
   return 0;
   //
