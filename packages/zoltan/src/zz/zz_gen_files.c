@@ -63,7 +63,6 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   int error=ZOLTAN_OK;
   ZOLTAN_ID_PTR local_ids = NULL;
   ZOLTAN_ID_PTR global_ids = NULL;
-  ZHG *zhg;
   FILE *fp;
   char full_fname[256];
   int *vtxdist, *xadj, *adjncy, *part;
@@ -72,7 +71,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
   ZOLTAN_ID_PTR hevtxs;
   float *float_vwgt, *ewgts, *hewgts;
   double *xyz;
-  int i, j, k, num_obj, num_geom, num_edges, nhedges; 
+  int i, j, k, num_obj, num_geom, num_edges;
   int glob_edges, glob_hedges, glob_pins;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
   char *yo = "Zoltan_Generate_Files";
@@ -154,7 +153,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
     fclose(fp);
   }
 
-#if 0 /* EBEB - Temporarily take out geometry part */
+#if 1 /* EBEB - Temporarily take out geometry part for Xyce runs */
   /* Write geometry to file, if applicable. */
   if (zz->Get_Num_Geom != NULL && zz->Get_Geom != NULL) {
     num_geom = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &error);
