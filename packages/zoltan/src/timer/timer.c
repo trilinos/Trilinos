@@ -34,9 +34,9 @@ int LB_Set_Timer_Param(
 char *name,                     /* name of variable */
 char *val)                      /* value of variable */
 {
-    int status;
     PARAM_UTYPE result;         /* value returned from Check_Param */
     int index;                  /* index returned from Check_Param */
+    int i, status;
     PARAM_VARS timer_params[] = {
         { "TIMER", &Timer, "STRING" },
         { NULL, NULL, NULL }
@@ -46,9 +46,9 @@ char *val)                      /* value of variable */
 
     if (status == 0 && index == 0) {
         status = 3; /* Don't add to params list */
-        if (strcasecmp(result.sval, "wall")==0)
+        if (strcmp(result.sval, "WALL")==0)
           Timer = LB_TIME_WALL;
-        else if (strcasecmp(result.sval, "cpu")==0) {
+        else if (strcmp(result.sval, "CPU")==0) {
 #if (defined(_CLOCK_T) && ! defined(SMOS))
           Timer = LB_TIME_CPU;
 #else  /* SMOS or !_CLOCK_T */
@@ -57,7 +57,7 @@ char *val)                      /* value of variable */
           Timer = LB_TIME_WALL;
 #endif /* SMOS or !_CLOCK_T */
         }
-        else if (strcasecmp(result.sval, "user")==0){
+        else if (strcmp(result.sval, "USER")==0){
 #if (defined(HAVE_TIMES) || defined(HAVE_RUSAGE))
           Timer = LB_TIME_USER;
 #else
@@ -66,7 +66,7 @@ char *val)                      /* value of variable */
           Timer = LB_TIME_WALL;
 #endif
         }
-        else if (strcasecmp(result.sval, "usersys")==0){
+        else if (strcmp(result.sval, "USERSYS")==0){
 #if (defined(HAVE_TIMES) || defined(HAVE_RUSAGE))
           Timer = LB_TIME_USERSYS;
 #else

@@ -301,13 +301,14 @@ int LB_Set_Method(LB *lb, char *method_name)
  *    lb                 --  The load balancing object to which this method
  *                           applies.
  *    method_name        --  String specifying the desired method.
- *    params             --  Params needed by desired method.  (This field
- *                           will be better defined later.)
+ *
  *  Output:
  *    lbf*               --  Appropriate fields set to designated values.
  */
 
-char *yo = "LB_Set_Method";
+  char *yo = "LB_Set_Method";
+  char *method_upper;
+  int i;
 
   /*
    *  Compare method_name string with standard strings for methods.
@@ -317,19 +318,28 @@ char *yo = "LB_Set_Method";
 
   LB_Free_Structure(lb);
 
-  if (strcasecmp(method_name, "RCB") == 0) {
+  /*
+   *  Convert method_name to all upper case.
+   *  Do not change the original string.
+   */
+  method_upper = (char *)LB_MALLOC((strlen(method_name)+1)*sizeof(char));
+  for (i=strlen(method_name); i>=0; i--){
+      method_upper[i] = toupper(method_name[i]);
+  }
+
+  if (strcmp(method_upper, "RCB") == 0) {
     lb->Method = RCB;
     lb->LB_Fn = LB_rcb;
   }
-  else if (strcasecmp(method_name, "OCTPART") == 0) {
+  else if (strcmp(method_upper, "OCTPART") == 0) {
     lb->Method = OCTPART;
     lb->LB_Fn = LB_octpart;
   }
-  else if (strcasecmp(method_name, "PARMETIS") == 0) {
+  else if (strcmp(method_upper, "PARMETIS") == 0) {
     lb->Method = PARMETIS;
     lb->LB_Fn = LB_ParMetis;
   }
-  else if (strcasecmp(method_name, "NONE") == 0) {
+  else if (strcmp(method_upper, "NONE") == 0) {
     lb->Method = NONE;
     lb->LB_Fn = NULL;
   }
@@ -347,6 +357,8 @@ char *yo = "LB_Set_Method";
   if (lb->Proc == 0) {
     printf("LB:  Load balancing method = %d (%s)\n", lb->Method, method_name);
   }
+
+  LB_FREE(&method_upper);
 
   return (LB_OK);
 }
