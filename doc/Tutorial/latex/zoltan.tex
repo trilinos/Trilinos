@@ -1,0 +1,150 @@
+% @HEADER
+% ***********************************************************************
+% 
+%            Trilinos: An Object-Oriented Solver Framework
+%                 Copyright (2001) Sandia Corporation
+% 
+% Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+% license for use of this work by or on behalf of the U.S. Government.
+% 
+% This library is free software; you can redistribute it and/or modify
+% it under the terms of the GNU Lesser General Public License as
+% published by the Free Software Foundation; either version 2.1 of the
+% License, or (at your option) any later version.
+%  
+% This library is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+% Lesser General Public License for more details.
+%  
+% You should have received a copy of the GNU Lesser General Public
+% License along with this library; if not, write to the Free Software
+% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+% USA
+% Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+% 
+% ***********************************************************************
+% @HEADER
+
+\section{Partitioning and Load Balancing using Zoltan}
+\label{chap:zoltan}
+
+In order to get good parallel performance, the data 
+distribution (layout) is important. Poor data distribution can both
+cause high communication between processes and also load imbalance,
+that is, some processes have more work than others. 
+
+The Zoltan library \cite{ZoltanUG} was developed at Sandia to assist
+scientific computing applications with load balancing and parallel
+data management. Zoltan is not a Trilinos package, and must be
+obtained separately. The Trilinos package EpetraExt provides
+an interface between Epetra and Zoltan, which is described in
+this chapter. Note that Zoltan may be used independently of Epetra
+or Trilinos. Zoltan contains a collection of load-balancing algorithms 
+with a single, data-structure neutral interface.
+
+\subsection{Background}
+In parallel linear algebra applications, the most critical part is to 
+distribute the matrices. The vectors are often distributed to conform
+with the appropriate matrices, though not always. Matrices can
+be partitioned either along rows, columns, or by a 2-dimensional
+block decomposition. We limit our discussion to 1-dimensional data
+distributions (which are supported in Epetra). In this case, 
+partitioning dense matrices is easy.
+For a matrix with $n$ rows and with $p$ processes, simply give
+each process $n/p$  rows. For sparse matrices, the situation
+is more complicated. To achieve load-balance, one may wish 
+that each process obtains approximately the same number of rows,
+or alternatively, similar number of nonzero entries. 
+Additionally, the communication cost when applying the matrix
+should be small. Specifically, for iterative solvers, the
+communication cost in a matrix-vector product should be minimized.
+
+A common abstraction of this problem is \emph{graph partitioning}.
+This model assumes the matrix is symmetric, so the sparsity 
+pattern of the matrix can be represented by an undirected graph.
+The graph partitioning problem is to partition the
+vertices into $p$ sets such that the number of edges between
+sets are minimized. The number of cut edges approximates the
+communication cost in the parallel computation. Although 
+graph partitioning is NP-hard to solve exactly, there are
+several fast algorithms that work well in practice. Zoltan
+provides a common interface to graph partitioners (and other algorithms).
+At present, the most widely used software for graph partitioning,
+are the METIS and ParMETIS \cite{} packages from University of Minnesota.
+
+In recent years, it has been shown \cite{Aykanat} that hypergraph partitioning 
+is a more accurate model for parallel matrix-vector communication cost.
+Work is currently underway to provide such advanced partitioning capability
+in future versions of Zoltan and EpetraExt. Hypergraph partitioning
+also applies to rectangular matrices.
+
+\subsection{Installing Zoltan and Configuration}
+Zoltaan is not a Trilinos package and must be obtained separately.
+Zoltan is freely available under the LGPL license, and can
+be obtained from the Zoltan home page at 
+\texttt{http://www.cs.sandia.gov/Zoltan}. (If you have access
+to the Trilinos developers cvs repository, you may also  
+get Zoltan from the Trilinos3PL module.)
+Zoltan versions 1.5x are compatible with Trilinos 4.0. 
+
+We suggest that you install Zoltan together with other 3rd party software 
+for Trilinos. It is helpful to define a shell variable \verb!TRILINOS_3PL! 
+for this location, see section \ref{sec:3pl} for details. After 
+you download Zoltan, you must uncompress and untar the
+\verb!Zoltan.tar.gz! file and then follow the instructions. 
+Zoltan has not been autotool'ed so you must manually configure
+Zoltan to your machine. (Sample configuration files for common
+platforms are included in the \verb!Utilities/Config! directory.) 
+
+Before you compile Zoltan, you need to know if you have the ParMetis 
+library installed.
+If you don't have it already, there should be a copy bundled
+with Zoltan. It is also possible that you got ParMetis with
+the ML package in Trilinos. If you can't find it anywhere, 
+download ParMetis from \texttt{http://www-users.cs.umn.edu/~karypis/metis/parmetis}. Version 3.1 is recommended, though other versions will work, too.
+It is a good idea to put the ParMetis library in the \verb!TRILINOS_3PL!
+as well. You should not build more than one version of ParMetis; multiple versions may cause problems. After building ParMetis, you need to put
+the correct path (for your system) in the relevant Zoltan configuration file
+in the \verb!Utilities/Config! directory. Then you can finally make Zoltan
+by typing \verb!make zoltan!. (See the Zoltan documentation for more details.)
+
+After you have built Zoltan, copy the \verb!libzoltan.a! file over to
+your \verb!TRILINOS_3PL/LINUX_MPI/lib! directory. You also
+need to copy the header files in the Zoltan \verb!include! directory
+to \verb!TRILINOS_3PL/LINUX_MPI/include!. 
+Alternatively, leave the header files where they are and add this
+directory to the include path in the Trilinos configure.
+
+Next you need to configure Trilinos to use EpetraExt with Zoltan.
+You do this with a command of the type
+\begin{verbatim}
+./configure --prefix=${TRILINOS_HOME}/LINUX_MPI \
+--enable-mpi --with-mpi-compilers \
+--enable-epetraext-zoltan \
+--with-trilinos3pldir=${TRILINOS_3PL} \
+--with-ldflags="-L${TRILINOS_3PL}/LINUX_MPI/lib" \
+--with-incdirs="-I${TRILINOS_3PL}/LINUX_MPI/include"
+\end{verbatim}
+
+Then type \verb!make! and \verb!make install! as usual.
+
+\section{Load-balancing with Zoltan via EpetraExt}
+
+TO COME:
+Simple example using Zoltan\_CrsGraph. 
+Second example using Transforms.
+
+
+\subsection{Load-balancing with Zoltan in other ways}
+
+Many applications use Zoltan for load-balancing directly, without
+going through EpetraExt. This allows a full choice of algorithms
+and options, while the EpetraExt interface only supports
+Zoltan with ParMetis graph partitioning. Zoltan is written in ANSI C,
+and a light-weight C++ interface will be included in future Zoltan
+releases.  There is a fairly sophisticated
+C++ interface to Zoltan in EpetraExt. The relevant classes
+are \verb!Zoltan::LoadBalance!, \verb!Zoltan::QueryObject!,
+and \verb!Zoltan::MigrationObject!. 
+
