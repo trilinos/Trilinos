@@ -161,6 +161,7 @@ bool NOX::LineSearch::PolynomialNew::compute(Abstract::Group& newGrp,
 
   bool isConverged = false;
   bool isFailed = false;
+  int nIters = 1;
 
   if (oldSlope >= 0.0) 
   {
@@ -168,13 +169,12 @@ bool NOX::LineSearch::PolynomialNew::compute(Abstract::Group& newGrp,
     isFailed = true;
   }
   else 
-    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, eta, nNonlinearIters);
+    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, eta, nIter, nNonlinearIters);
 
   // Increment the number of newton steps requiring a line search
   if ((useCounter) && (!isConverged))
     counter.incrementNumNonTrivialLineSearches();
 
-  int nIters = 1;
   while ((!isConverged) && (!isFailed)) 
   {
     print.printStep(nIters, step, oldValue, newValue, "", (suffDecrCond != AredPred));
@@ -258,13 +258,13 @@ bool NOX::LineSearch::PolynomialNew::compute(Abstract::Group& newGrp,
     newPhi = computePhi(newGrp);
     newValue = computeValue(newGrp, newPhi);
     
-    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, eta, nNonlinearIters);
-    
     nIters ++;
 
     if (useCounter)
       counter.incrementNumIterations();
 
+    isConverged = checkConvergence(newValue, oldValue, oldSlope, step, eta, nIters, nNonlinearIters);
+    
   } // End while loop 
 
 
@@ -301,11 +301,12 @@ bool NOX::LineSearch::PolynomialNew::compute(Abstract::Group& newGrp,
 }
 
 bool NOX::LineSearch::PolynomialNew::checkConvergence(double newValue, double oldValue, 
-						   double oldSlope,
-						   double step, double eta, 
-						   int nNonlinearIters) const
+						      double oldSlope,
+						      double step, double eta, 
+						      int nIters,
+						      int nNonlinearIters) const
 {
-  if ((nNonlinearIters == 1) && (doForceInterpolation))
+  if ((nIters == 1) && (doForceInterpolation))
     return false;
 
   if ((doAllowIncrease) && (nNonlinearIters <= maxIncreaseIter))
