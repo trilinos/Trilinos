@@ -1815,7 +1815,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    printf(" @@@(D) rhoAS=%9.3g    om2 :%9.3g\n", rho2,om2);
    
    widget->mlsOm2 = om2;
-   for (i=0; i<deg; i++) widget->mlsOm[i] = om_loc[i]; // @@@ do this directly above
+   for (i=0; i<deg; i++) widget->mlsOm[i] = om_loc[i]; /*@@@ do this directly above*/
 	
    return 0;
 
@@ -1851,7 +1851,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
 
          widget = (struct MLSthing *) ML_allocate(sizeof(struct MLSthing));
 	 printf("@@@ current level = %d\n", i);
-	 widget->mlsLevel = i; // @@@ wrong notion of level here ...
+	 widget->mlsLevel = i; /* @@@ wrong notion of level here ... */
 	 widget->mlsDeg   = 1;
 	 widget->mlsBoost = 1.1; 
 	 widget->mlsOver  = 1.10e0;
@@ -1865,9 +1865,9 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
 	 widget->y        = NULL;
 	 widget->mlsReady = 0;  
 
-//@@@	 if (ML_MLS_Setup_Coef(widget, 1)) { 
-//@@@	     return pr_error("*** MLS setup failed!\n");  
-//@@@	 }
+/*@@@	 if (ML_MLS_Setup_Coef(widget, 1)) { 
+@@@	     return pr_error("*** MLS setup failed!\n");  
+@@@	 } */
 
 	 if (pre_or_post == ML_PRESMOOTHER) {
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
@@ -2358,8 +2358,10 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
       current_level = temp;
    }
    ml->ML_num_actual_levels = i;
+   /*
    if ((ml->comm->ML_mypid == 0) && (output_level > 0)) 
       printf("Total number of levels = %d\n",i);
+   */
   
    if ((output_level > 5) && (ml->comm->ML_mypid == 0)) {
       if (i == 1) printf("Warning: Only a one level multilevel scheme!!\n");
@@ -3667,7 +3669,7 @@ int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, ML_Matrix_DCSR *outmat,
    ML_memory_alloc( (void**) &dtmp, N_total * sizeof(double), "KLC" );
    for ( i = 0; i < N_internal; i++ ) 
       dtmp[i] = (double) (proc_array[mypid] + i);
-   ML_exchange_bdry(dtmp, inmat->comminfo, N_internal, comm, ML_OVERWRITE);
+   ML_exchange_bdry(dtmp, inmat->comminfo, N_internal, comm, ML_OVERWRITE,NULL);
    ML_memory_alloc( (void**) &itmp, N_total * sizeof(int), "KLE" );
    for ( i = 0; i < N_total; i++ ) itmp[i] = (int) dtmp[i];
    ML_memory_free( (void **) &dtmp );
@@ -4747,6 +4749,105 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 				      (void *) data, fun, NULL, ntimes, omega, str);
              sprintf(str,"Hiptmair_post%d",i);
              status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
+				      (void *) data, fun, NULL, ntimes, omega, str);
+#ifdef ML_TIMING
+         ml->post_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->post_smoother[i].build_time;
+#endif
+      }
+   }
+   else return(pr_error("ML_Gen_Smoother_Hiptmair: unknown "
+                        "pre_or_post choice\n"));
+   return(status);
+}
+
+/* ------------------------------------------------------------------------- 
+   Regenerate the Hiptmair smoother. Assume that only the fine level edge
+   matrix has changed.  The nodal interpolation, nodal restriction, and 
+   gradient matrices have not changed.
+   ------------------------------------------------------------------------- */
+
+int ML_Gen_Smoother_HiptmairReuse( ML *ml , int nl, int pre_or_post, int ntimes,
+			      double omega)
+{
+   ML_Sm_Hiptmair_Data *data;
+   int (*fun)(void *, int, double *, int, double *);
+   int start_level, end_level, i, status = 1;
+   char str[80];
+#ifdef ML_TIMING
+   double         t0;
+   t0 = GetClock();
+#endif
+
+
+   if (nl == ML_ALL_LEVELS) {start_level = 0; end_level = ml->ML_num_levels-1;
+#ifdef ML_TIMING
+      printf("Timing is incorrect when ML_ALL_LEVELS is used with Hiptmair\n");
+#endif
+}
+   else { start_level = nl; end_level = nl;}
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_HiptmairReuse: cannot set smoother on level %d\n",
+	         start_level);
+      return 1;
+   }
+
+   fun = ML_Smoother_Hiptmair;
+
+   if (pre_or_post == ML_PRESMOOTHER)
+   {
+      for (i = start_level; i <= end_level; i++)
+	  {
+         data = ml->pre_smoother[i].smoother->data;
+	     ML_Smoother_Gen_Hiptmair_DataReuse(&data, &(ml->Amat[i]));
+         /* Data destroy function should already be set, but check
+            just in case. */
+         if ( ml->pre_smoother[i].data_destroy == NULL )
+	        ml->pre_smoother[i].data_destroy =
+			                            ML_Smoother_Destroy_Hiptmair_Data;
+         sprintf(str,"Hiptmair_pre%d",i);
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+				  (void *) data, fun, NULL, ntimes, omega, str);
+#ifdef ML_TIMING
+         ml->pre_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
+#endif
+      }
+   }
+   else if (pre_or_post == ML_POSTSMOOTHER)
+   {
+      printf("ML_Gen_Smoother_Hiptmair: ML_POSTSMOOTHER isn't done.\n");
+      data = ml->post_smoother[i].smoother->data;
+      for (i = start_level; i <= end_level; i++)
+	  {
+             sprintf(str,"Hiptmair_post%d",i);
+             status = ML_Smoother_Set(&(ml->post_smoother[i]),ML_INTERNAL,
+				      (void *) data, fun, NULL, ntimes, omega, str);
+#ifdef ML_TIMING
+         ml->post_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->post_smoother[i].build_time;
+#endif
+
+      }
+
+   }
+   else if (pre_or_post == ML_BOTH)
+   {
+      for (i = start_level; i <= end_level; i++)
+	  {
+         /* Smoother should have already been generated. */
+         data = ml->pre_smoother[i].smoother->data;
+	     ML_Smoother_Gen_Hiptmair_DataReuse(&data, &(ml->Amat[i]));
+         /* Data destroy function should already be set, but check
+            just in case. */
+         if ( ml->post_smoother[i].data_destroy == NULL )
+	        ml->post_smoother[i].data_destroy =
+			                            ML_Smoother_Destroy_Hiptmair_Data;
+         sprintf(str,"Hiptmair_pre%d",i);
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+				       (void *) data, fun, NULL, ntimes, omega, str);
+         sprintf(str,"Hiptmair_post%d",i);
+         status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
 				      (void *) data, fun, NULL, ntimes, omega, str);
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
