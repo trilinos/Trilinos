@@ -22,6 +22,14 @@ foreach $srcdir (@SRCDIR) {
     }
     closedir(DIR);
 }
+foreach $srcdir (@SRCDIR) {
+    opendir(DIR, $srcdir) || die "Can't open $srcdir. $!\n";
+    @filenames = readdir(DIR);
+    foreach (@filenames) {
+	(/.cpp$/) && push(@srcfiles, "$srcdir/$_");
+    }
+    closedir(DIR);
+}
 
 foreach $incfile (@incfiles) {
     open(INCFILE, "<$incfile") || die "Can't open $incfile. $!\n";
@@ -40,13 +48,14 @@ foreach $srcfile (@srcfiles) {
 
     $objfile = $srcfile;
     $objfile =~ s/(.*)\///;
+    $objfile =~ s/\.cpp/\.o/;
     $objfile =~ s/\.[cC]/\.o/;
 
     $deplist = "";
     open(SRCFILE, "<$srcfile") || die "Can't open $srcfile. $!\n";
     foreach (<SRCFILE>) {
 	if (/^#include\s+"(.*)"/) {
-	    @list = grep(/\/$1$/, @incfiles);
+ 	    @list = grep(/\/$1$/, @incfiles);
 	    foreach (@list) {
 		$deplist .= $_ . ' ' . $includes{$_} . ' ';
 	    }
