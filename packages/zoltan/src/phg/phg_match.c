@@ -266,7 +266,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        
    
   /* determine number of basic matching rounds scaled by number of procs */
-  nrounds = MAX(1, hg->dist_x[hgc->nProc_x] / (hgc->nProc_x * LOOP_FACTOR));
+  nrounds = MAX (1, hgc->nProc_x * LOOP_FACTOR);
   ncandidates = hg->nVtx/nrounds/2 + 1;  /* 2: each match removes 2 vertices */
         
   /* allocate storage proportional to number of local vertices */  
@@ -286,7 +286,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
    * an unmatched vertex. A matching between vertices i & j is indicated by 
    * match[i] = j & match [j] = i.  NOTE: a match to an off processor vertex is
    * indicated my a negative number, -(gno+1), which must use global numbers
-   * (gno's).        */
+   * (gno's) and not local numbers, lno.        */
   for (i = 0; i < hg->nVtx; i++)
     match[i] = i;                /* initialize match array to all unmatched */
    
@@ -553,9 +553,8 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
       displs, MPI_INT, hgc->row_comm);
      
      /* extract messages. If I own either gno, process it. */
-     /* Note: -gno-1 designates an external match */ 
-     ip = (int*) rbuffer;                   
-     for (i = 0; i < total_count; i++)  {
+     /* Note: -gno-1 designates an external match as a negative number */ 
+     for (ip = (int*) rbuffer; ip < (int*) rbuffer + (PHASE4 * total_count); )  {
        bestv  = *ip++;
        vertex = *ip++; 
                 
