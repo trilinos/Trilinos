@@ -201,7 +201,8 @@ int main(int argc, char *argv[]) {
 	// *************Start the block Gmres iteration*************************
 	//*******************************************************************
 	//
-	BlockGmres<double> MyBlockGmres(Amat, EpetraOpPrec, rhs, numrhs, tol, maxits, block,verbose);
+	Belos::BlockGmres<double> MyBlockGmres(Amat, EpetraOpPrec, rhs, numrhs, tol, 
+						maxits, block,verbose);
 	//
 	// Set initial guesses all to zero vectors.
 	//

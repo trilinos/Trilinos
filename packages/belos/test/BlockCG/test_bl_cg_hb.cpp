@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
 	// *************Start the block CG iteration*************************
 	//*******************************************************************
 	//
-	BlockCG<double> MyBlockCG(Amat, Prec, rhs, numrhs, tol, maxits, block,verbose);
+	Belos::BlockCG<double> MyBlockCG(Amat, Prec, rhs, numrhs, tol, maxits, block,verbose);
 	//
 	// Set initial guesses all to zero vectors.
 	//
