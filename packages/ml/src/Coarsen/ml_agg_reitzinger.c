@@ -16,9 +16,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                     int smooth_flag, double smooth_factor)
 {
   int coarsest_level, counter, Nghost, i, *Tcoarse_bindx = NULL;
-  int *Tcoarse_rowptr, nz_ptr, row_length, j, *bindx = NULL;
-  double *Tcoarse_val = NULL, *node2proc, *val = NULL;
+  int *Tcoarse_rowptr, nz_ptr, row_length, j, *temp_bindx = NULL;
+  double *Tcoarse_val = NULL, *temp_val = NULL;
   int allocated = 0, lower;
+  double *pid_coarse_node, *pid_fine_node;
+  int    *pid_fine_edge;
   ML_Operator *Kn_coarse, *Rn_coarse, *Tcoarse, *Pn_coarse;
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
 #ifdef LEASTSQ_SERIAL
@@ -32,11 +34,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int i1, old_nzptr, i3, *index;
   int Npos_dirichlet = 0, Nneg_dirichlet = 0;
   int Nnondirichlet, Nnz_finegrid, Nnz_allgrids;
-  double d1, d2;
+  double d1;
   double droptol;
+  int *num_msgs, *tmp_msgs, *Nsnd_info, *Nrcv_info, type, partner;
+  int *tmp1, *tmp2, Nlocal, Nneighbors_rcv, Nneighbors_snd, new_length;
+  double *new_Tfine_Pn_vec;
+  USR_REQ         *request;
 #ifdef NEW_T_PE
-  int *temp_bindx, *encoded_dir_node;
-  double *temp_val, *pos_coarse_dirichlet, *neg_coarse_dirichlet;
+  int    *encoded_dir_node, Pn_ghost = 0;
+  double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *edge_type;
 #endif
 
   ML_CommInfoOP *getrow_comm; 
@@ -99,12 +105,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   {
      Kn_coarse = &(ml_nodes->Amat[grid_level]);
      Rn_coarse = &(ml_nodes->Rmat[grid_level+1]);
-   
      if (Kn_coarse->getrow->pre_comm != NULL)
         Nghost = Kn_coarse->getrow->pre_comm->total_rcv_length;
      else Nghost = 0;
    
-     /* node2proc = node to processor lookup table
+     /* pid_coarse_node = node to processor lookup table
         Main idea:
         
         1) Record the proc. id of all nodes (local + ghost) on the processor.
@@ -118,13 +123,13 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         will own row i.
      */
    
-     node2proc = (double *) ML_allocate(sizeof(double)*(Nghost+
+     pid_coarse_node = (double *) ML_allocate(sizeof(double)*(Nghost+
                             Kn_coarse->invec_leng+1));
      for (i = 0; i < Kn_coarse->invec_leng+Nghost; i++)
-        node2proc[i] = (double) Kn_coarse->comm->ML_mypid;
+        pid_coarse_node[i] = (double) Kn_coarse->comm->ML_mypid + 1;
    
      if (Kn_coarse->getrow->pre_comm != NULL)
-     ML_exchange_bdry(node2proc, Kn_coarse->getrow->pre_comm,
+     ML_exchange_bdry(pid_coarse_node, Kn_coarse->getrow->pre_comm,
                       Kn_coarse->outvec_leng, Kn_coarse->comm,
                       ML_OVERWRITE,NULL);
    
@@ -166,13 +171,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
        }
        else encoded_dir_node[i] = 0;
      }
-     ML_free(temp_bindx);
-     ML_free(temp_val);
-     allocated = 0;
+
+     if (ml_nodes->Pmat[grid_level].getrow->pre_comm != NULL) {
+       ML_CommInfoOP_Compute_TotalRcvLength(ml_nodes->Pmat[grid_level].getrow->pre_comm);
+       Pn_ghost = ml_nodes->Pmat[grid_level].getrow->pre_comm->total_rcv_length;
+     }
 
 
-     vec = (double *) ML_allocate(sizeof(double)*(Rn_coarse->invec_leng
-						     +1));
+     vec = (double *) ML_allocate(sizeof(double)*(Rn_coarse->invec_leng +
+						  Pn_ghost+1));
 
      pos_coarse_dirichlet = (double *) ML_allocate(sizeof(double)*(Rn_coarse->outvec_leng
 						     +1));
@@ -180,10 +187,13 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
         exit(1);
      }
-     for (i = 0; i < Rn_coarse->invec_leng; i++) vec[i] = 0.;
+     for (i = 0; i < Rn_coarse->invec_leng + Pn_ghost; i++) vec[i] = 0.;
      for (i = 0; i < Tfine->outvec_leng; i++) {
        if(encoded_dir_node[i] > 0) vec[encoded_dir_node[i]-1] = 1.;
      }
+     ML_transposed_exchange_bdry(vec,ml_nodes->Pmat[grid_level].getrow->pre_comm, 
+				 -1, Rn_coarse->comm, ML_ADD);
+
      ML_Operator_Apply(Rn_coarse, Rn_coarse->invec_leng, vec,
 		       Rn_coarse->outvec_leng,pos_coarse_dirichlet);
      Npos_dirichlet = 0;
@@ -199,10 +209,13 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to check T.\n\n");
         exit(1);
      }
-     for (i = 0; i < Rn_coarse->invec_leng; i++) vec[i] = 0.;
+     for (i = 0; i < Rn_coarse->invec_leng + Pn_ghost; i++) vec[i] = 0.;
      for (i = 0; i < Tfine->outvec_leng; i++) {
        if(encoded_dir_node[i] < 0) vec[-encoded_dir_node[i]-1] = 1.;
      }
+     ML_transposed_exchange_bdry(vec,ml_nodes->Pmat[grid_level].getrow->pre_comm, 
+				 -1, Rn_coarse->comm, ML_ADD);
+
      ML_Operator_Apply(Rn_coarse, Rn_coarse->invec_leng, vec,
 		       Rn_coarse->outvec_leng,neg_coarse_dirichlet);
      ML_free(vec);
@@ -230,8 +243,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      for (i = 0; i < Kn_coarse->outvec_leng; i++)
      {
         ML_get_matrix_row(Kn_coarse,1, &i,&allocated,
-                          &bindx,&val,&row_length, 0);
-        ML_az_sort(bindx, row_length, NULL, NULL);
+                          &temp_bindx,&temp_val,&row_length, 0);
+        ML_az_sort(temp_bindx, row_length, NULL, NULL);
         nzctr += row_length;
    
         /* Step through unknowns bindx[j] connected to unknown i. */
@@ -239,11 +252,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         {
           {
              /* If nodes i and bindx[j] are owned by same processor ... */
-             if (node2proc[i] == node2proc[bindx[j]])
+             if (pid_coarse_node[i] == pid_coarse_node[temp_bindx[j]])
              {
-                if (bindx[j] > i)
+                if (temp_bindx[j] > i)
                 {
-                   Tcoarse_bindx[nz_ptr]  =  bindx[j];
+                   Tcoarse_bindx[nz_ptr]  =  temp_bindx[j];
                    Tcoarse_val[nz_ptr++]  =  1.;
                    Tcoarse_bindx[nz_ptr]  =  i;
                    Tcoarse_val[nz_ptr++]  = -1.;
@@ -253,9 +266,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
              }
              /* If node i is owned by a smaller processor than
                 node bindx[j] ... */
-             else if (node2proc[i] < node2proc[bindx[j]])
+             else if (pid_coarse_node[i] < pid_coarse_node[temp_bindx[j]])
              {
-                Tcoarse_bindx[nz_ptr]  =  bindx[j];
+                Tcoarse_bindx[nz_ptr]  =  temp_bindx[j];
                 Tcoarse_val[nz_ptr++]  =  1.;
                 Tcoarse_bindx[nz_ptr]  =  i;
                 Tcoarse_val[nz_ptr++]  = -1.;
@@ -272,6 +285,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to build T.\n\n");
         exit(1);
      }
+     Nnondirichlet = counter;
 #ifdef NEW_T_PE
      for (i = 0; i < Rn_coarse->outvec_leng; i++) {
        if (pos_coarse_dirichlet[i] != 0) {
@@ -303,11 +317,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 	  printf("actual nnz(Tcoarse) = %d,\n"nz_ptr);
 	  printf(" invec_leng = %d, nghost = %d\n",
 		 Kn_coarse->invec_leng,  Nghost);
+	  fflush(stdout);
        }
-     fflush(stdout);
 #endif /* ifdef DEBUG_T_BUILD */
 
-     ML_free(node2proc);
    
      csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
                                  ML_CSR_MSRdata));
@@ -370,7 +383,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++) 
        if (Tcoarse_vec[i1] < 0) Tcoarse_vec[i1] = -Tcoarse_vec[i1];
 
-     Pn_coarse->matvec->internal = CSR_ones_matvec; /* turn of the scaling */
+     Pn_coarse->matvec->internal = CSR_ones_matvec; /* turn off the scaling */
                                                     /* in Pn for the test. */
      Pn_vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->outvec_leng
 						     +1));
@@ -382,6 +395,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
      ML_Operator_Apply(Pn_coarse, Pn_coarse->invec_leng, vec,
 		       Pn_coarse->outvec_leng,Pn_vec);
+
      ML_free(vec);
      Tfine_Pn_vec = (double *) ML_allocate(sizeof(double)*(Tfine->outvec_leng
 							   +1));
@@ -396,7 +410,219 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      for (i1 = 0; i1 < Tfine->outvec_leng; i1++) 
        if (Tfine_Pn_vec[i1] < 0) Tfine_Pn_vec[i1] = -Tfine_Pn_vec[i1];
 
-     /* First sort the two vectors and then compare them.    */
+     /* This code is to fix a bug that can occur in parallel   */
+     /* Basically, the problem is that the fine grid edge that */
+     /* we are trying to match with a coarse grid edge may     */
+     /* reside on another processor. The way we will get around*/
+     /* this is to figure out what processor will need each    */
+     /* fine grid node and ship it to that processor. This is  */
+     /* done as follows:                                       */
+     /*   1) fill coarse nodes with proc id                    */
+     /*   2) interpolate coarse nodes (no scaling in interp)   */
+     /*   3) Use Tfine's pre_comm is communicate the proc ids  */
+     /*   4) Go through each row of Tfine and record the lower */
+     /*      node proc id for each edge. This is the processor */
+     /*      that will need the information when looking for   */
+     /*      bogus edges.                                      */
+     /*   5) Send this information to the relevant processor   */
+     /*      so that he can append it to his list.             */
+
+     Pn_coarse = &(ml_nodes->Pmat[grid_level]);
+     i = 0;
+     if (Tfine->getrow->pre_comm != NULL) {
+       ML_CommInfoOP_Compute_TotalRcvLength(Tfine->getrow->pre_comm);
+       i = Tfine->getrow->pre_comm->total_rcv_length;
+     }
+     pid_fine_node = (double *) ML_allocate(sizeof(double)*(1+i+
+					      Tfine->invec_leng));
+     if (pid_fine_node == NULL) {
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to ship fine edges in T.\n\n");
+        exit(1);
+     }
+
+     Pn_coarse->matvec->internal = CSR_ones_matvec; /* turn off the scaling */
+                                                    /* in Pn for the test. */
+     ML_Operator_Apply(Pn_coarse, Pn_coarse->invec_leng, pid_coarse_node,
+		       Pn_coarse->outvec_leng, pid_fine_node);
+     Pn_coarse->matvec->internal = CSR_matvec;      /* turn on the scaling */
+     ML_free(pid_coarse_node);
+
+     if (Tfine->getrow->pre_comm != NULL) {
+       ML_exchange_bdry(pid_fine_node, Tfine->getrow->pre_comm,
+			Tfine->invec_leng, Tfine->comm,
+			ML_OVERWRITE,NULL);
+     }
+     pid_fine_edge = (int *) ML_allocate(sizeof(int)*(1+
+					      Tfine->outvec_leng));
+     if (pid_fine_edge == NULL) {
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to ship fine edges in T.\n\n");
+        exit(1);
+     }
+     for (i = 0 ; i < Tfine->getrow->Nrows; i++) {
+       pid_fine_edge[i] = Tfine->comm->ML_nprocs + 10;
+       ML_get_matrix_row(Tfine, 1, &i, &allocated, &temp_bindx, &temp_val,
+			 &row_length, 0);
+       if ((row_length > 0) && (pid_fine_node[temp_bindx[0]] != 0.)) 
+	 pid_fine_edge[i] = (int) pid_fine_node[temp_bindx[0]];
+       if ((row_length > 1) && (pid_fine_node[temp_bindx[1]] != 0.)) {
+	 if ( pid_fine_node[temp_bindx[1]] < pid_fine_node[temp_bindx[0]])
+	   pid_fine_edge[i] = (int) pid_fine_node[temp_bindx[1]];
+       }
+       pid_fine_edge[i]--;
+     }
+     ML_free(pid_fine_node);
+     ML_free(temp_bindx);
+     ML_free(temp_val);
+     allocated = 0;
+
+     num_msgs = (int *) ML_allocate(sizeof(int)*(Tfine->comm->ML_nprocs+1));
+     tmp_msgs = (int *) ML_allocate(sizeof(int)*(Tfine->comm->ML_nprocs+1));
+     for (i = 0; i < Tfine->comm->ML_nprocs; i++) num_msgs[i] = 0;
+     for (i = 0; i < Tfine->comm->ML_nprocs; i++) tmp_msgs[i] = 0;
+     Nneighbors_snd = 0;
+     for (i = 0 ; i < Tfine->getrow->Nrows; i++) {
+       if ( (pid_fine_edge[i] < Tfine->comm->ML_nprocs) &&
+	    (pid_fine_edge[i] != Tfine->comm->ML_mypid)) {
+	 tmp_msgs[pid_fine_edge[i]]++;
+	 if (num_msgs[pid_fine_edge[i]] == 0) {
+	   num_msgs[pid_fine_edge[i]] = 1;
+	   Nneighbors_snd++;
+	 }
+       }
+     }
+     /* Set up a send list and a receive list. In each list a pair of    */
+     /* numbers is stored (neighbor, length) indicating the neighbor and */
+     /* and the message length. For example, the ith neighbor and length */
+     /* would be in Nsnd_info[2*i] and Nsnd_info[2*i+1] respectively.    */
+
+     Nsnd_info = (int *) ML_allocate(sizeof(int)*(2*Nneighbors_snd+1));
+     Nneighbors_snd = 0;
+     for (i = 0; i < Tfine->comm->ML_nprocs; i++) {
+       if (tmp_msgs[i] > 0) {
+	 Nsnd_info[Nneighbors_snd++] = i;
+	 Nsnd_info[Nneighbors_snd++] = tmp_msgs[i];
+       }
+     }
+     Nneighbors_snd /= 2;
+
+     /* Figure out how many neighbors we will recieve from */     
+     ML_gsum_vec_int(num_msgs,tmp_msgs,Tfine->comm->ML_nprocs,Tfine->comm);
+     Nneighbors_rcv = num_msgs[Tfine->comm->ML_mypid];
+     ML_free(tmp_msgs);
+     ML_free(num_msgs);
+
+     /* Build a receive list similar to the send list */
+
+     Nrcv_info = (int *) ML_allocate(sizeof(int)*(2*Nneighbors_rcv+1));
+     if ( Nneighbors_rcv > 0 )  {
+       request = (USR_REQ  *)  ML_allocate(Nneighbors_rcv*sizeof(USR_REQ ));
+     } else request = NULL;
+
+
+     type = 1235; 
+     /* post receives */
+     for (i = 0 ; i < Nneighbors_rcv ; i++) {
+       partner = -1;
+       Tfine->comm->USR_irecvbytes((void *) &(Nrcv_info[2*i]), 2*sizeof(int),
+			    &partner, &type,Tfine->comm->USR_comm,request+i);
+     }  
+     /* send messages */
+     for (i = 0 ; i < Nneighbors_snd ; i++) {
+       partner = Nsnd_info[2*i]; 
+       Nsnd_info[2*i] = Tfine->comm->ML_mypid;
+       Tfine->comm->USR_sendbytes((void *) &(Nsnd_info[2*i]), 2*sizeof(int), 
+			   partner, type, Tfine->comm->USR_comm);
+       Nsnd_info[2*i] = partner;
+     }
+     /* wait */
+     for (i = 0; i <  Nneighbors_rcv ; i++) {
+       partner = -1;
+       Tfine->comm->USR_waitbytes((void *) &(Nrcv_info[2*i]), 2*sizeof(int), 
+			   &partner, &type, Tfine->comm->USR_comm, request+i);
+     }
+
+     /* sort `Nrcv_info' by proc id's */
+
+     tmp1 = (int *) ML_allocate(sizeof(int)*(Nneighbors_rcv+1));
+     tmp2 = (int *) ML_allocate(sizeof(int)*(Nneighbors_rcv+1));
+     for (i = 0; i < Nneighbors_rcv; i++) {
+       tmp1[i] = Nrcv_info[2*i];
+       tmp2[i] = Nrcv_info[2*i+1];
+     }
+     ML_az_sort(tmp1, Nneighbors_rcv, tmp2, NULL);
+     for (i = 0; i < Nneighbors_rcv; i++) {
+       Nrcv_info[2*i]   = tmp1[i];
+       Nrcv_info[2*i+1] = tmp2[i];
+     }
+     ML_free(tmp2); ML_free(tmp1);
+
+     /* Reorder Tfine_Pn_vec so that all values needed locally */
+     /* come first, followed by all values to be sent to the   */
+     /* lowest numbered processor to highest numbered processor*/
+
+     for (i = 0 ; i < Tfine->getrow->Nrows; i++) {
+       if (pid_fine_edge[i] > Tfine->comm->ML_nprocs) 
+	 pid_fine_edge[i] = -1;
+      if (pid_fine_edge[i] == Tfine->comm->ML_mypid) 
+	 pid_fine_edge[i] = -1;
+     }
+     ML_az_sort(pid_fine_edge, Tfine->outvec_leng, NULL, Tfine_Pn_vec);
+
+     /* Organize a new Tfine_Pn_vec which will contain the locally */
+     /* needed components as well as those received from other processors */
+
+     Nlocal = 0;
+     for (i = 0; i <  Tfine->outvec_leng; i++) {
+       if ( pid_fine_edge[i] != -1) break;
+     }
+     if (i < Tfine->outvec_leng ) Nlocal = i;
+     ML_free(pid_fine_edge);
+
+     i1 = 0;
+     for (i = 0; i <  Nneighbors_rcv ; i++) 
+       i1 += Nrcv_info[2*i+1];
+
+     new_Tfine_Pn_vec = (double *) ML_allocate(sizeof(double)*(Nlocal+1+i1));
+     for (i = 0; i < Nlocal; i++) new_Tfine_Pn_vec[i] = Tfine_Pn_vec[i];
+
+     
+     /* pack up data and communicate data */
+
+     type = 1275; 
+     /* post receives */
+     i1 = Nlocal;
+     for (i = 0 ; i < Nneighbors_rcv ; i++) {
+       Tfine->comm->USR_irecvbytes((void *) &(new_Tfine_Pn_vec[i1]), 
+				   Nrcv_info[2*i+1]*sizeof(double),
+				   &(Nrcv_info[2*i]), &type,
+				   Tfine->comm->USR_comm, request+i);
+       i1 += Nrcv_info[2*i+1];
+     }
+     i1 = Nlocal;
+     for (i = 0 ; i < Nneighbors_snd ; i++) {
+       Tfine->comm->USR_sendbytes((void *) &(Tfine_Pn_vec[i1]), 
+				  Nsnd_info[2*i+1]*sizeof(double), 
+				  Nsnd_info[2*i],type,Tfine->comm->USR_comm);
+       i1 += Nsnd_info[2*i+1];
+     }
+
+     i1 = Nlocal;
+     for (i = 0; i <  Nneighbors_rcv ; i++) {
+       Tfine->comm->USR_waitbytes((void *) &(new_Tfine_Pn_vec[i1]), 
+				  Nrcv_info[2*i+1]*sizeof(double),
+				  &(Nrcv_info[2*i]), &type,
+				  Tfine->comm->USR_comm, request+i);
+       i1 += Nrcv_info[2*i+1];
+     }
+     new_length = i1;
+     ML_free(Nrcv_info);
+     ML_free(Nsnd_info);
+     ML_free(request);
+     ML_free(Tfine_Pn_vec);
+     Tfine_Pn_vec = new_Tfine_Pn_vec;
+
+
+     /* Now sort the two vectors and then compare them.    */
      /* Mark Tcoarse_vec[i] with a '1.' if its corresponding */
      /* edge can be removed.                                 */
 
@@ -405,15 +631,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                             /* use index to keep track of which edge */
                             /* is which in the sorted Tcoarse_vec    */
      ML_az_dsort2(Tcoarse_vec,Tcoarse->outvec_leng, index);
-     ML_az_dsort(Tfine_Pn_vec,Tfine->outvec_leng);
+     ML_az_dsort(Tfine_Pn_vec,new_length);
 
      i3 = 0;
      for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++) {
-       while ( (i3 != Tfine->outvec_leng) && 
+       while ( (i3 != new_length) && 
 	       (Tcoarse_vec[i1] > Tfine_Pn_vec[i3])) {
 	 i3++;
        }
-       if ((i3 < Tfine->outvec_leng)&&(Tcoarse_vec[i1] == Tfine_Pn_vec[i3])) {
+       if ((i3 < new_length)&&(Tcoarse_vec[i1] == Tfine_Pn_vec[i3])) {
 	 Tcoarse_vec[i1] = 0.;
        }
        else Tcoarse_vec[i1] = 1.;
@@ -422,6 +648,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_az_sort(index, Tcoarse->outvec_leng, NULL, Tcoarse_vec);
      ML_free(index);
 
+     for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++) {
+       if (Tcoarse_vec[i1] != 0.) {
+	 if (i1 < Nnondirichlet) Nnondirichlet--;
+	 else if (i1 < Nnondirichlet + Npos_dirichlet) 
+	   Npos_dirichlet--;
+	 else if (i1 < Nnondirichlet + Npos_dirichlet + Nneg_dirichlet) 
+	   Nneg_dirichlet--;
+       }
+     }
      csr_data = (struct ML_CSR_MSRdata *) Tcoarse->data;
      nz_ptr = 0;
      old_nzptr = 0;
@@ -642,21 +877,40 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /*------------------------------------------------------------------*/
    
 #ifdef NEW_T_PE
+     i = 0;
+     if (Pe->getrow->pre_comm != NULL) {
+       ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
+       i = Pe->getrow->pre_comm->total_rcv_length;
+     }
+     edge_type = (double *) ML_allocate(sizeof(double)*(1+i+Pe->invec_leng));
+     if (edge_type == NULL) {
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space allocated to weed out Pe.\n\n");
+        exit(1);
+     }
      Nnondirichlet = Pe->invec_leng - Npos_dirichlet - Nneg_dirichlet;
+
+     for (i = 0; i < Nnondirichlet; i++) edge_type[i] = 0.;
+     for (i = 0; i < Npos_dirichlet; i++) edge_type[i+Nnondirichlet] = 1.;
+     for (i = 0; i < Nneg_dirichlet; i++) edge_type[i+Nnondirichlet+
+                                                    Npos_dirichlet] = -1.;
+     if (Pe->getrow->pre_comm != NULL) {
+       ML_exchange_bdry(edge_type, Pe->getrow->pre_comm,
+			Pe->invec_leng, Pe->comm,
+			ML_OVERWRITE,NULL);
+     }
 #endif
      for (i = 0; i < Pe->outvec_leng ; i++) {
 #ifdef NEW_T_PE
        if (encoded_dir_node[i] > 0) {
 	 for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
-	   if ( (csr_data->columns[j] < Nnondirichlet) ||
-		(csr_data->columns[j] >= Nnondirichlet+Npos_dirichlet)) {
+           if (edge_type[csr_data->columns[j]] != 1.0 ) {
 	     csr_data->values[j] = 0.;
 	   }
 	 }
        }
        if (encoded_dir_node[i] < 0) {
 	 for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
-	   if (csr_data->columns[j] < Nnondirichlet+Npos_dirichlet) {
+           if (edge_type[csr_data->columns[j]] != -1.0 ) {
 	     csr_data->values[j] = 0.;
 	   }
 	 }
@@ -681,6 +935,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      }
 #ifdef NEW_T_PE
      ML_free(encoded_dir_node);
+     ML_free(edge_type);
 #endif
     
      /*******************************************************************/
@@ -739,6 +994,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 						     Tcoarse->outvec_leng+1));
      Tfine_Pn_vec = (double *) ML_allocate(sizeof(double)*(Tfine->outvec_leng+1));
      ML_random_vec(vec, Pn_coarse->invec_leng, ml_edges->comm);
+     d1 = sqrt(ML_gdot(Pn_coarse->invec_leng, vec, vec, ml_edges->comm));
+     for (i = 0; i < Pn_coarse->invec_leng; i++) 
+       vec[i] /= d1;
 
      /*sprintf(filename,"randvec%d",grid_level-1);
      fid = fopen(filename,"w");
@@ -755,26 +1013,25 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_Operator_Apply(Pe, Pe->invec_leng, Pn_vec,
 		       Pe->outvec_leng,vec);
      ML_free(Pn_vec);
+
+     for (i = 0; i < Pe->outvec_leng ; i++) 
+       vec[i] = vec[i] - Tfine_Pn_vec[i];
+
      d1 = ML_gdot(Pe->outvec_leng, vec,vec, Pe->comm);
 
-     /*sprintf(filename,"PeTcoarsevec%d",grid_level-1);
-     fid = fopen(filename,"w");
-     for (i=0; i<Pe->outvec_leng; i++)
-        fprintf(fid,"%d    %20.15e\n",i,vec[i]);
-     fclose(fid);*/
-
-
-     d2 = ML_gdot(Pe->outvec_leng, Tfine_Pn_vec,Tfine_Pn_vec, Pe->comm);
-     /*sprintf(filename,"TfinePnvec%d",grid_level-1);
-     fid = fopen(filename,"w");
-     for (i=0; i<Pe->outvec_leng; i++)
-        fprintf(fid,"%d    %20.15e\n",i,Tfine_Pn_vec[i]);
-     fclose(fid);*/
-
-     if (ml_edges->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel())  {
-       if ( fabs(d1 - d2) > 1.0e-3)  
-         printf("ML_agg_reitzinger: Pe TH != Th Pn %e %e (level %d)\n",
-            d1,d2,grid_level);
+     if (8 < ML_Get_PrintLevel())  {
+       if ( fabs(d1) > 1.0e-4) {
+	 if (ml_edges->comm->ML_mypid == 0 )
+	   printf("ML_agg_reitzinger: Pe TH != Th Pn %e (level %d)\n",
+		  d1,grid_level);
+	 for (i = 0; i < Pe->outvec_leng; i++) {
+	   /* change this tolerance if you actually want */
+	   /* to see the individual components.          */
+	   if (fabs(vec[i]) > 1.0e1) 
+	     printf("%d: ===> %d is %20.13e vs %20.13e\n",
+		    Pe->comm->ML_mypid,i,vec[i] + Tfine_Pn_vec[i],Tfine_Pn_vec[i]);
+	 }
+       }
      }
      ML_free(vec); ML_free(Tfine_Pn_vec);
 
@@ -821,7 +1078,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      exit(1);
 #endif /*postprocesscheck*/
 
-
       /***************************
       * Smooth edge prolongator. *
       ***************************/
@@ -841,6 +1097,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         
         /* Weed out small values in Pe. */
         droptol = 1e-4;
+#ifdef GREG
+        droptol = 1e-24;
+#endif
         if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel()) {
            printf("Dropping Pe entries with absolute value smaller than %e\n",
                   droptol);
@@ -909,9 +1168,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                ((double) Nnz_allgrids)/((double) Nnz_finegrid));
     }
   }
-
-  ML_free(bindx);
-  ML_free(val);
 
   if (created_ag_obj == 1) ML_Aggregate_Destroy(&ag);
   return(Nlevels_nodal);
@@ -1518,15 +1774,14 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
  
      /* comment these two out if you want to do rap */
      ML_Operator_Gen_blockmat(blockmat, original, newM);
+
+
 #ifdef GREG
      blockmat->lambda_max = 3.286003165408382;
      blockmat->lambda_max_img = 3.148601063739487e-02;
      blockmat->lambda_max = 5.5*2.49357;
      blockmat->lambda_max_img = 5.5*.0142284;
 #endif
-     blockmat->getrow->pre_comm = ML_CommInfoOP_Create(); 
-              /* ugh. The superlu interface seems to not work */
-              /* with an empty communication object */
 
      /* RAP works too */
      /* ML_Gen_AmatrixRAP(block_ml, old_mesh_level, mesh_level); */
