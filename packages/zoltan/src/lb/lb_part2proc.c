@@ -38,6 +38,7 @@ int Zoltan_LB_Part_To_Proc(ZZ *zz, int part, ZOLTAN_ID_PTR gid)
  * If a partition is spread across several processors, find the range of its
  * processors.  If zz->Proc is one of them, return zz->Proc.  Otherwise,
  * hash the input gid to a processor within the range of processors.
+ * If no input gid is given, the processor number is hashed instead.
  * NOTE:  The special case of returning zz->Proc when it is within range 
  * reduces data movement, but can result in different processor assignments 
  * for the same gid on different processors.
@@ -71,8 +72,14 @@ int hash_value;
        * processors holding the partition. */
       if (gid != NULL) 
         hash_value = Zoltan_Hash(gid, zz->Num_GID, num_procs_for_part);
-      else 
-        hash_value = 0;
+      else {
+      /* Hash on processor number if no gid is given.
+       * This will make sure that different processors
+       * compute different values, to improve load balance. */
+        ZOLTAN_ID_TYPE procid = (ZOLTAN_ID_TYPE) zz->Proc;
+        hash_value = Zoltan_Hash((ZOLTAN_ID_PTR) &procid, 
+                     1, num_procs_for_part);
+      }
       proc = pdist[part] + hash_value;
     }
   }
