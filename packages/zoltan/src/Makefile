@@ -209,7 +209,7 @@ ifdef ZOLTAN_HG
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_heap.c hg_local.c hg_sort.c hg_scale.c \
 		  hg_match.c hg_pack.c \
-		  hg_part.c hg_sort.c hg_util.c zoltan_hg_readfile.c
+		  hg_part.c hg_util.c zoltan_hg_readfile.c
 HG_INC 		= hg.h hypergraph.h
 GDEFINES       += -DZOLTAN_HG
 else
@@ -547,7 +547,9 @@ cleantest:
 	 then cd test; \
 	 touch ch_simple/zdrive.inp; \
 	 touch ch_simple/output/junk; \
+	 touch nem_box_064/pio_01/.blot.; \
 	 /bin/rm -f */zdrive.inp; \
 	 /bin/rm -f */output/*; \
+         /bin/rm -f */pio*/*.blot.*; \
 	 fi;
 	 exit 0
