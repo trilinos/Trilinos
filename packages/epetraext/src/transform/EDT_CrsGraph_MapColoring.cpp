@@ -101,7 +101,7 @@ operator()( OriginalTypeRef orig  )
     multimap<int,int>::iterator iter = adjMap.begin();
     multimap<int,int>::iterator end = adjMap.end();
     for( int i = 1; iter != end; ++iter, ++i )
-      rowOrder[ nCols - i ] = iter->second;
+      rowOrder[ nCols - i ] = (*iter).second;
   }
 
   Epetra_MapColoring * ColorMap = new Epetra_MapColoring( ColMap );

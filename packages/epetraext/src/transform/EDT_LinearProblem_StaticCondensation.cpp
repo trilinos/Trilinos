@@ -115,7 +115,7 @@ operator()( OriginalTypeRef orig )
     cout << "-------------------------\n";
     cout << "Row Singletons\n";
     for( map<int,int>::iterator itM = RS_Map.begin(); itM != RS_Map.end(); ++itM )
-      cout << itM->first << "\t" << itM->second << endl;
+      cout << (*itM).first << "\t" << (*itM).second << endl;
     cout << "Col Counts\n";
     for( int i = 0; i < NRows; ++i )
       cout << i << "\t" << ColNZCnt[i] << "\t" << CS_RowIndices[i] << endl;
