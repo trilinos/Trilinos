@@ -309,8 +309,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Print min-max-sum of results */
     if (zz->Proc == zz->Debug_Proc){
       printf("\n%s  Statistics with respect to %1d processors:\n", yo, nproc);
-      printf("%s                         Min.    Max.    Sum   Imbalance\n", yo);
-      printf("%s  No. of objects   :  %7d %7d %7d  %5.3f\n",
+      printf("%s                         Min.     Max.      Sum  Imbalance\n", yo);
+      printf("%s  No. of objects   :  %8d %8d %8d   %5.3f\n",
         yo, stats[imin*NUM_STATS], 
         stats[imax*NUM_STATS],
         stats[isum*NUM_STATS], 
@@ -319,7 +319,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
               : 1.));
  
       for (i=0; i<zz->Obj_Weight_Dim; i++){
-        printf("%s  Object weight #%1d :  %7.3g %7.3g %7.3g  %5.3f\n",
+        printf("%s  Object weight #%1d :  %8.3g %8.3g %8.3g   %5.3f\n",
           yo, i, tmp_vwgt[imin*zz->Obj_Weight_Dim+i], 
           tmp_vwgt[imax*zz->Obj_Weight_Dim+i], 
           tmp_vwgt[isum*zz->Obj_Weight_Dim+i], 
@@ -330,7 +330,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
       if (zz->Get_Num_Edges && zz->Get_Edge_List){
         for (i=0; i<zz->Edge_Weight_Dim; i++){
-          printf("%s  Cut weight  #%1d   :  %7.3g %7.3g %7.3g  %5.3f\n",
+          printf("%s  Cut weight  #%1d   :  %8.3g %8.3g %8.3g   %5.3f\n",
             yo, i, tmp_cutwgt[imin*(zz->Edge_Weight_Dim)+i], 
             tmp_cutwgt[imax*(zz->Edge_Weight_Dim)+i], 
             tmp_cutwgt[isum*(zz->Edge_Weight_Dim)+i], 
@@ -351,7 +351,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
                    break;
           }
 
-          printf("%s  %s %7d %7d %7d  %5.3f\n",
+          printf("%s  %s %8d %8d %8d   %5.3f\n",
             yo, msg, stats[imin*NUM_STATS+i], 
             stats[imax*NUM_STATS+i],
             stats[isum*NUM_STATS+i], 
@@ -476,8 +476,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     /* Print min-max-sum of results */
     if (zz->Proc == zz->Debug_Proc){
       printf("\n%s  Statistics with respect to %1d partitions: \n", yo, nparts);
-      printf("%s                         Min.    Max.    Sum   Imbalance\n", yo);
-      printf("%s  No. of objects   :  %7d %7d %7d  %5.3f\n",
+      printf("%s                         Min.     Max.      Sum  Imbalance\n", yo);
+      printf("%s  No. of objects   :  %8d %8d %8d   %5.3f\n",
         yo, stats[imin*NUM_STATS], 
         stats[imax*NUM_STATS],
         stats[isum*NUM_STATS], 
@@ -486,7 +486,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
               : 1.));
  
       for (i=0; i<zz->Obj_Weight_Dim; i++){
-        printf("%s  Object weight #%1d :  %7.3g %7.3g %7.3g  %5.3f\n",
+        printf("%s  Object weight #%1d :  %8.3g %8.3g %8.3g   %5.3f\n",
           yo, i, tmp_vwgt[imin*zz->Obj_Weight_Dim+i], 
         tmp_vwgt[imax*zz->Obj_Weight_Dim+i], 
         tmp_vwgt[isum*zz->Obj_Weight_Dim+i], 
@@ -498,7 +498,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
       if (zz->Get_Num_Edges && zz->Get_Edge_List){
         for (i=0; i<zz->Edge_Weight_Dim; i++){
-          printf("%s  Cut weight  #%1d   :  %7.3g %7.3g %7.3g  %5.3f\n",
+          printf("%s  Cut weight  #%1d   :  %8.3g %8.3g %8.3g   %5.3f\n",
             yo, i, tmp_cutwgt[imin*(zz->Edge_Weight_Dim)+i], 
           tmp_cutwgt[imax*(zz->Edge_Weight_Dim)+i], 
           tmp_cutwgt[isum*(zz->Edge_Weight_Dim)+i], 
@@ -520,7 +520,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
                  break;
         }
 
-        printf("%s  %s %7d %7d %7d  %5.3f\n",
+        printf("%s  %s %8d %8d %8d   %5.3f\n",
           yo, msg, stats[imin*NUM_STATS+i], 
           stats[imax*NUM_STATS+i],
           stats[isum*NUM_STATS+i], 
