@@ -1,6 +1,6 @@
 /*
 #define AZ_CONVR0
-#ifdef AZ_CONVRHS
+#define AZ_CONVRHS
 #define ML_partition
 #define ReuseOps
 */
@@ -155,10 +155,12 @@ int reduced_smoother_flag = 0;
 double *xxx;
 #endif
 /******************************************************************************/
+extern int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original1,
+                          ML_Operator *original2);
 
-extern int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array, 
+extern int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges,ML_Operator **Tmat_array, 
 					   ML_Operator **Tmat_trans_array,
-					   ML **newml);
+					   ML **newml, ML_Operator *M);
 struct ml_operator_wrapper {
   int (*diag_matvec)(void *, int, double *, int, double *);
   int (*diag_getrow)(void *,int,int*,int,int*,double*,int*);
@@ -166,6 +168,9 @@ struct ml_operator_wrapper {
   int (*offdiag_matvec)(void *, int, double *, int, double *);
   int (*offdiag_getrow)(void *,int,int*,int,int*,double*,int*);
   void *offdiag_matvec_data, *offdiag_getrow_data;
+  /* work vectors for block matrix getrow */
+  int *cols;
+  double *vals;
 };
 void aztec_block_matvec(double *x, double *y, AZ_MATRIX *Amat,
                              int proc_config[]);
@@ -194,6 +199,9 @@ int main(int argc, char *argv[])
 
   double *Ke_val = NULL, *Kn_val, *Tmat_val = NULL, *rhs, solve_time,
     setup_time, start_time, *yyy, *vvv, *zzz;
+  /* A Josh hack - double *blockrhs */
+  double *blockrhs;
+  
   double *M_val = NULL;
   int *M_bindx = NULL, *M_data_org = NULL;
   AZ_MATRIX *M_mat, *blockmat;
@@ -830,6 +838,7 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
   /* rst: Make an ML matrix. Unfortunately, we have to create a bogus */
   /* hierarchy to make this work. After these two lines,         */
   /* &(ml_M->Amat[0]) is an ML matrix corresponding to M.        */
+  //leak!!!
   ML_Create(&ml_M,1);
   AZ_ML_Set_Amat(ml_M, 0, Nlocal_edges, Nlocal_edges, M_mat, proc_config);
   Mmat_ml = &(ml_M->Amat[0]);
@@ -838,8 +847,7 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
 
   /*rhs=(double *) ML_allocate(Nlocal_edges*sizeof(double));*/
  
-  fp = fopen("rhsfile","r");
-  if (fp == NULL)
+  if(0)
   {
     printf("%d: rhsfile file pointer is NULL\n",proc_config[AZ_node]); fflush(stdout);
     if (proc_config[AZ_node] == 0 && 0.5 < ML_Get_PrintLevel())
@@ -873,30 +881,70 @@ for (i = 0; i < -Nlocal_edges; i++) {
      AZ_random_vector(rhs, Ke_data_org, proc_config);
 for (i = 0; i < Nlocal_edges; i++) rhs[i+Nlocal_edges] = rhs[i];
 
-//     AZ_random_vector(&(rhs[Nlocal_edges]), Ke_data_org, proc_config);
+/*     AZ_random_vector(&(rhs[Nlocal_edges]), Ke_data_org, proc_config); */
 
 Ke_mat->matvec(rhs, xxx, Ke_mat, proc_config);
-//for (i = 0; i < Nlocal_edges; i++) rhs[i] = xxx[i];
+/* for (i = 0; i < Nlocal_edges; i++) rhs[i] = xxx[i]; */
 free(xxx);
   }
 
   else
   {
+    rhs = (double *)
+	  ML_allocate(2*(Nlocal_edges + Ke_mat->data_org[AZ_N_external])
+          *sizeof(double)); 
+/* read in real rhs here */
+    fp = fopen("rhsfile_re","r");
+    if (proc_config[AZ_node] == 0)
+    {
+       printf("%d: reading real part of rhs from a file\n",proc_config[AZ_node]);
+       fflush(stdout);
+    }
+    AZ_input_msr_matrix("rhsfile_re", global_edge_inds, &rhs, &garbage,
+                                    Nlocal_edges, proc_config);
+    
+    dtemp = sqrt(abs(ML_gdot(Nlocal_edges, rhs, rhs, ml_M->comm)));
+    printf("\n\n\n%20.15e\n\n\n",dtemp);
+
+
     fclose(fp);
     if (proc_config[AZ_node] == 0)
     {
-       printf("%d: reading rhs from a file\n",proc_config[AZ_node]);
+       printf("%d: Done reading real part of rhs from a file\n",proc_config[AZ_node]);
        fflush(stdout);
     }
-    AZ_input_msr_matrix("rhsfile", global_edge_inds, &rhs, &garbage,
-                                    Nlocal_edges, proc_config);
 
+/* create block rhs 
+   double *blockrhs; */
+   blockrhs = (double *)
+	      ML_allocate(2*(Nlocal_edges + Ke_mat->data_org[AZ_N_external])
+                      *sizeof(double)); 
+   for (i=0; i < Nlocal_edges; i++) blockrhs[i] = rhs[i];
+
+/* read in imaginary rhs here */
+    fp = fopen("rhsfile_im","r");
     if (proc_config[AZ_node] == 0)
     {
-       printf("%d: Done reading rhs from a file\n",proc_config[AZ_node]);
+       printf("%d: reading imaginary part of rhs from a file\n",proc_config[AZ_node]);
+       fflush(stdout);
+    }
+    AZ_input_msr_matrix("rhsfile_im", global_edge_inds, &rhs, &garbage,
+                                    Nlocal_edges, proc_config);
+
+    fclose(fp);
+    if (proc_config[AZ_node] == 0)
+    {
+       printf("%d: Done reading imaginary part of rhs from a file\n",proc_config[AZ_node]);
        fflush(stdout);
     }
   }
+//  }
+/* and shove into blockrhs */
+
+   for (i=0; i < Nlocal_edges; i++) blockrhs[i+Nlocal_edges+Ke_mat->data_org[AZ_N_external]] = rhs[i];
+
+   ML_free(rhs);
+   rhs = blockrhs;
 
 /*
 #define ZEROOUTDIRICHLET
@@ -1595,6 +1643,7 @@ nx = nx--; /* rst dirichlet */
     }
   }
 
+  //blockrhs ?
   AZ_reorder_vec(rhs, Ke_data_org, reordered_glob_edges, NULL);
 
   for (i = 0; i < Nrigid; i++) {
@@ -1677,9 +1726,9 @@ nx = nx--; /* rst dirichlet */
 							 ML_NO, 1.5);
 
   ml_edges->ML_finest_level = N_levels-1;
-  ML_Gen_Hierarchy_ComplexMaxwell(ml_edges, Tmat_array, Tmat_trans_array, &ml_block /* , Mmat_ml */ );
+  ML_Gen_Hierarchy_ComplexMaxwell(ml_edges, Tmat_array, Tmat_trans_array, &ml_block, Mmat_ml);
    // rst: comment this out to use the original multigrid stuff
-   //   ml_edges = ml_block;
+      ml_edges = ml_block;
 
 #ifdef ReuseOps
   {printf("Starting reuse\n"); fflush(stdout);}
@@ -1794,9 +1843,10 @@ nx = nx--; /* rst dirichlet */
                       Tmat_array, Tmat_trans_array, Tmatbc, edge_smoother,
                       edge_args, nodal_smoother,nodal_args);
       else
-         ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-                      Tmat_array, Tmat_trans_array, 
-				      NULL, edge_smoother,edge_args, nodal_smoother,nodal_args);
+	      //jes
+         ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_PRESMOOTHER, nsmooth,
+                      Tmat_array, Tmat_trans_array, NULL, edge_smoother,
+		      edge_args, nodal_smoother,nodal_args);
 	  }
       /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
       /* In parallel, it is not a true Gauss-Seidel in that each processor */
@@ -1900,11 +1950,13 @@ nx = nx--; /* rst dirichlet */
        ML_Smoother_Arglist_Set(nodal_args, 3, &mls_poly_degree);
     }
     if (coarsest_level == N_levels-1)
-       ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+	    //jes
+       ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth,
 				Tmat_array, Tmat_trans_array, Tmatbc, 
 edge_smoother,edge_args, nodal_smoother,nodal_args);
     else
-       ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+	    //jes
+       ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth,
 				Tmat_array, Tmat_trans_array, NULL, 
 				edge_smoother,edge_args, nodal_smoother,nodal_args);
   }
@@ -1993,12 +2045,14 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
         calculation in ML_Smoother_Gen_Hiptmair_Data. */
      omega = (double) ML_DEFAULT;
      if (coarsest_level == N_levels-1)
-        ML_Gen_Smoother_Hiptmair(ml_edges , coarsest_level, ML_BOTH,
+	     //jes
+        ML_Gen_Smoother_BlockHiptmair(ml_edges , coarsest_level, ML_BOTH,
 				 nsmooth,Tmat_array, Tmat_trans_array, 
 				 Tmat, Tmat_trans, Tmatbc, 
 				edge_smoother,edge_args, nodal_smoother,nodal_args);
      else
-        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth, 
+	     //jes
+        ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth, 
 				 Tmat_array, Tmat_trans_array, Tmat, 
 				 Tmat_trans, NULL, 
 				edge_smoother,edge_args, nodal_smoother,nodal_args);
@@ -2048,9 +2102,9 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   options[AZ_conv]     = AZ_rhs;
 #endif
   options[AZ_output]   = 1;
-  options[AZ_max_iter] = 10;
+  options[AZ_max_iter] = 10; 
   options[AZ_poly_ord] = 5;
-  options[AZ_kspace]   = 130;
+  options[AZ_kspace]   = 15;
   params[AZ_tol]       = context->tol;
   options[AZ_output]   = context->output;
 	
@@ -2078,9 +2132,9 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   }
   else
   {
-    if (proc_config[AZ_node]== 0) printf("taking random initial guess \n");
-    AZ_random_vector(xxx, Ke_data_org, proc_config);
-    AZ_random_vector(&(xxx[Nlocal_edges]), Ke_data_org, proc_config);
+  //  if (proc_config[AZ_node]== 0) printf("taking random initial guess \n");
+  //  AZ_random_vector(xxx, Ke_data_org, proc_config);
+  //  AZ_random_vector(&(xxx[Nlocal_edges]), Ke_data_org, proc_config);
   }
   //  AZ_reorder_vec(xxx, Ke_data_org, reordered_glob_edges, NULL);
   /*
@@ -2179,9 +2233,12 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
 #endif
     /*options[AZ_conv] = AZ_expected_values;*/
 
+
+
+  //sfksdkfksdfkskdfksdfksdk
  
   /**** check various operators and vectors ****/
-  if ( 5 < ML_Get_PrintLevel() )
+  if ( -1 < ML_Get_PrintLevel() )
   {
 
     printf("\nChecking various operators...\n\n");
@@ -2199,13 +2256,25 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
        ML_free(yyy);
     }
 
-
+    dtemp = sqrt(ML_gdot(Amat->outvec_leng, rhs, rhs, ml_edges->comm));
+    printf("||rhs|| = %20.15e\n",dtemp);
+    
+    dtemp = sqrt(ML_gdot(Amat->outvec_leng, xxx, xxx, ml_edges->comm));
+    printf("||xxx|| = %20.15e\n",dtemp);
+    
+    yyy = (double *) malloc( 2 * Mmat_ml->outvec_leng * sizeof(double) );
+    ML_Operator_Apply(Mmat_ml, Mmat_ml->invec_leng, rhs, Mmat_ml->outvec_leng, yyy);
+    dtemp = sqrt(ML_gdot(Mmat_ml->outvec_leng, yyy, yyy, ml_edges->comm));
+    printf("||Mmat_ml * rhs|| = %20.15e\n",dtemp);
+    //ML_Operator_Print(Mmat_ml,"Mmat_ml");
+    
     Amat = &(ml_edges->Amat[N_levels-1]);
-    yyy = (double *) malloc( Amat->outvec_leng * sizeof(double) );
     ML_Operator_Apply(Amat, Amat->invec_leng, rhs,Amat->outvec_leng,yyy);
     dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
     printf("||Ke_mat * rhs|| = %20.15e\n",dtemp);
 
+    //ML_Operator_Print(Amat,"crap");
+    
     ML_Operator_Apply(Amat, Amat->invec_leng, xxx,Amat->outvec_leng,yyy);
     dtemp = sqrt(ML_gdot(Amat->outvec_leng, yyy, yyy, ml_edges->comm));
     printf("||Ke_mat * xxx|| = %20.15e\n",dtemp);
@@ -2270,6 +2339,22 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
    aztec_block_data.Ke = Ke_mat;
    aztec_block_data.M = M_mat;
    AZ_set_MATFREE(blockmat, &aztec_block_data, aztec_block_matvec);
+
+   /*
+   fp = fopen("rhs.dat","a");
+   xxx = ML_allocate( 2*Nlocal_edges * sizeof(double));
+   for (i=0; i < 2*Nlocal_edges; i ++) xxx[i] = 0.;
+   //for (i=0; i < 2*Nlocal_edges; i ++)
+   i = Nlocal_edges+20;
+   {
+      xxx[i] = 1.;
+      blockmat->matvec(xxx, rhs, blockmat, proc_config);
+      for (j = 0; j < 2*Nlocal_edges; j++)
+         if (rhs[j] != 0.0)  fprintf(fp,"%d %d %20.13e\n",i,j,rhs[j]);
+      xxx[i] = 0.;
+   }
+   fclose(fp);
+   */
    /*
 AZ_random_vector(xxx, blockmat->data_org, proc_config);
 blockmat->matvec(xxx, rhs, blockmat, proc_config);
@@ -2283,10 +2368,9 @@ blockmat->matvec(xxx, rhs, blockmat, proc_config);
 
    // rst: line below should be commented out to turn on ml preconditioning
    //   options[AZ_precond] = AZ_none; 
-   options[AZ_conv]     = AZ_r0;
    /* rst: toggle these two to switch between regular and 2x2 block system */
-   //  AZ_iterate(xxx, rhs, options, params, status, proc_config, blockmat,  
-       AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat,
+     AZ_iterate(xxx, rhs, options, params, status, proc_config, blockmat,  
+   //  AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat,
 	      Pmat, scaling); 
 
     options[AZ_pre_calc] = AZ_reuse;
@@ -2628,11 +2712,11 @@ void compress_matrix(double val[], int bindx[], int N_points)
 
 int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array, 
 				    ML_Operator **Tmat_trans_array,
-				    ML **new_ml /* , ML_Operator *Mmat_ml*/)
+				    ML **new_ml , ML_Operator *originalM)
 {
 
    int mesh_level, old_mesh_level, i, levels;
-   ML_Operator *original, *blockmat, *mat;
+   ML_Operator *original, *blockmat, *mat, *newM, *lastM;
    ML  *block_ml;
    struct ml_operator_wrapper *ml_operator_wrapper;
    int scale_fact = 2;
@@ -2650,7 +2734,8 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
    levels = 1;
    original = &(ml_edges->Amat[mesh_level]);
    blockmat = &(block_ml->Amat[mesh_level]);
-   ML_make_block_matrix(blockmat, original /* , Mmat_ml */ );
+   ML_make_block_matrix(blockmat, original , originalM );
+   blockmat->sub_matrix1 = originalM;
    /* ML_Operator_Print(blockmat,"Ablock"); */
 
    /* rst: I'm not sure ... but something like the following */
@@ -2664,6 +2749,7 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
    ML_make_block_matrix(blockmat, original);
    */
 
+   lastM = originalM;
    while( ml_edges->SingleLevel[mesh_level].Rmat->to != NULL) {
      levels++;
      old_mesh_level = mesh_level;
@@ -2673,7 +2759,7 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
 
      original = &(ml_edges->Pmat[mesh_level]);
      blockmat = &(block_ml->Pmat[mesh_level]);
-     ML_make_block_matrix(blockmat, original /* , NULL */ );
+     ML_make_block_matrix(blockmat, original , NULL );
      /* This stuff sets the 'to' and 'from' field in P */
      /* which indicates from what level we interpolate */
      /* and to what level the interpolation goes.      */
@@ -2684,11 +2770,12 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
 
      original = &(ml_edges->Rmat[old_mesh_level]);
      blockmat = &(block_ml->Rmat[old_mesh_level]);
-     ML_make_block_matrix(blockmat, original /* , NULL */ );
+     ML_make_block_matrix(blockmat, original, NULL );
      /* This stuff sets the 'to' and 'from' field in P */
      /* which indicates from what level we interpolate */
      /* and to what level the interpolation goes.      */
-     ML_Operator_Set_1Levels(blockmat, &(block_ml->SingleLevel[old_mesh_level]), 
+     ML_Operator_Set_1Levels(blockmat,
+                             &(block_ml->SingleLevel[old_mesh_level]), 
 			     &(block_ml->SingleLevel[mesh_level]));
 				  
      /* Make 2x2 block diagonal A */
@@ -2698,10 +2785,16 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
      /*  newM = ML_Operator_Create(ml_edges->comm);
 	 ML_rap(&(ml_edges->Rmat[old_mesh_level]), original, 
 	 &(ml_edges->Pmat[mesh_level]), newM, ML_CSR_MATRIX);
+     //JJH
      */
+     newM = ML_Operator_Create(ml_edges->comm);
+     ML_rap(&(ml_edges->Rmat[old_mesh_level]), lastM, 
+            &(ml_edges->Pmat[mesh_level]), newM, ML_CSR_MATRIX);
+     lastM = newM;
      
      /* comment these two out if you want to do rap */
-     ML_make_block_matrix(blockmat, original /* , newM */ );
+     ML_make_block_matrix(blockmat, original, newM);
+     blockmat->sub_matrix1 = newM;
      blockmat->getrow->pre_comm = ML_CommInfoOP_Create(); 
               /* ugh. The superlu interface seems to not work */
               /* with an empty communication object */
@@ -2783,70 +2876,166 @@ int blockdiag_getrow(void *data, int N_requested,
     return(status);
   }
 }
+
+/* Getrow for 2x2 block matrix */
+
+int block_getrow(void *data, int N_requested,
+			  int requested_rows[], int allocated,
+			  int columns[], double values[], int row_lengths[])
+{
+  ML_Operator *mat;
+  struct ml_operator_wrapper *ml_operator_wrapper;
+  int newrow, status, i;
+  int *workcol;
+  double *workval;
+  int work_lengths[1];
+
+  mat = (ML_Operator *) data;
+  ml_operator_wrapper = (struct ml_operator_wrapper *) mat->data;
+
+  workcol = ml_operator_wrapper->cols;
+  workval = ml_operator_wrapper->vals;
+
+  if (N_requested != 1) return(1);
+
+  /* (1,1) and (1,2) blocks */
+  if (requested_rows[0] < mat->outvec_leng/2)
+  {
+    /* (1,1) block */
+    ml_operator_wrapper->diag_getrow(ml_operator_wrapper->diag_getrow_data,
+				      N_requested, requested_rows, allocated, 
+				      columns, values, row_lengths);
+    /* (1,2) block */
+    ml_operator_wrapper->offdiag_getrow(ml_operator_wrapper->offdiag_getrow_data,
+				      N_requested, requested_rows, 100, 
+				      workcol, workval, work_lengths);
+    for (i=0; i< work_lengths[0]; i++) {
+	workcol[i] += mat->invec_leng/2;
+	workval[i] = -workval[i];     /* josh says -M */
+    }
+
+  }
+  /* (2,1) and (2,2) blocks */
+  else {
+    /* shift requested row to (1,1) block */
+    newrow = requested_rows[0] - mat->outvec_leng/2;
+    /* (2,2) block */
+    status = ml_operator_wrapper->diag_getrow(ml_operator_wrapper->diag_getrow_data,
+					N_requested, &newrow, 100, 
+					workcol, workval, work_lengths);
+    /* post process data so that columns correspond to (2,2) block */
+    if (status != 0) {
+      for (i = 0; i < work_lengths[0]; i++) 
+	workcol[i] += mat->invec_leng/2;
+    }
+
+    /* (2,1) block */
+    status = ml_operator_wrapper->offdiag_getrow(
+		                      ml_operator_wrapper->offdiag_getrow_data,
+				      N_requested, &newrow, allocated, 
+				      columns, values, row_lengths);
+  }
+
+  /*make sure columns is long enough for the concatenation*/
+  if (row_lengths[0] + work_lengths[0] > allocated) {
+    realloc(columns, (row_lengths[0] + work_lengths[0]) * sizeof(int) );
+    realloc(values, (row_lengths[0] + work_lengths[0]) * sizeof(double) );
+  }
+
+  for (i=0; i<work_lengths[0]; i++) {
+    columns[i + row_lengths[0]] = workcol[i];
+    values[i + row_lengths[0]] = workval[i];
+  }
+  row_lengths[0] += work_lengths[0]; 
+}
+
+/******************************************************************************/
+
+
 /* Convert 'original' into a 2x2 block matrix of the following form: */
 /*                         (original    0     )                      */
 /*      blockmat =         (  0       original)                      */
 /*                                                                   */
 /* NOTE: This routine needs to be modified to handle matrices of the */
 /* form:                                                             */
-/*                         ( orig1    orig2   )                      */
-/*      blockmat =         (-orig2    orig1   )                      */
+/*                         ( orig1   -orig2   )                      */
+/*      blockmat =         ( orig2    orig1   )                      */
 
-int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original) {
+int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original1,
+                          ML_Operator *original2)
+{
 
   struct ml_operator_wrapper *ml_operator_wrapper;
-  int scale_fact = 2;
+  int scale_fact = 2; /* b/c we're building a 2x2 system */
 
   /* make a new data structure which `blockdiag_matvec' and `blockdiag_getrow' */
   /* will use. Shove the new data structure into blockmat along with the       */
   /* 'blockdiag_matvec' and 'blockdiag_getrow'.                                */
-  ML_Operator_Init(blockmat,original->comm);
+  ML_Operator_Init(blockmat,original1->comm);
 
   ml_operator_wrapper = (struct ml_operator_wrapper *) AZ_allocate(
 				       sizeof(struct ml_operator_wrapper));
-  if (original->matvec->ML_id == ML_INTERNAL) {
-    ml_operator_wrapper->diag_matvec = original->matvec->internal;
-    ml_operator_wrapper->diag_matvec_data = original;
-    /* rst: this might work?
-    ml_operator_wrapper->offdiag_matvec = M->matvec->internal;
-    ml_operator_wrapper->offdiag_matvec_data = M;
-    */
+  ml_operator_wrapper->cols = (int *) ML_allocate(100 * sizeof(int));
+  ml_operator_wrapper->vals = (double *) ML_allocate(100 * sizeof(double));
+
+  /* setup matvec for diagonal part */
+  if (original1->matvec->ML_id == ML_INTERNAL) {
+    ml_operator_wrapper->diag_matvec = original1->matvec->internal;
+    ml_operator_wrapper->diag_matvec_data = original1;
   }
   else {
-    ml_operator_wrapper->diag_matvec = original->matvec->external;
-    ml_operator_wrapper->diag_matvec_data = original->data;
-    /* rst: this might work?
-    ml_operator_wrapper->offdiag_matvec = M->matvec->external;
-    ml_operator_wrapper->offdiag_matvec_data = M->data;
-    */
+    ml_operator_wrapper->diag_matvec = original1->matvec->external;
+    ml_operator_wrapper->diag_matvec_data = original1->data;
+  } //if
+
+  /* setup matvec for offdiagonal part */
+  if (original2 != NULL) {
+    if (original2->matvec->ML_id == ML_INTERNAL) {
+      ml_operator_wrapper->offdiag_matvec = original2->matvec->internal;
+      ml_operator_wrapper->offdiag_matvec_data = original2->data;
+    }
+    else {
+      ml_operator_wrapper->offdiag_matvec = original2->matvec->external;
+      ml_operator_wrapper->offdiag_matvec_data = original2->data;
+    }
+  } //if
+
+  ML_Operator_Set_ApplyFuncData(blockmat, scale_fact*original1->invec_leng, 
+				scale_fact*original1->outvec_leng, ML_INTERNAL,
+				ml_operator_wrapper,
+				scale_fact*original1->outvec_leng,
+				blockdiag_matvec,0);
+
+  /* set getrow for diagonal block */
+  if (original1->getrow->ML_id == ML_INTERNAL) {
+    ml_operator_wrapper->diag_getrow = original1->getrow->internal;
+    ml_operator_wrapper->diag_getrow_data = original1;
+  }
+  else {
+    ml_operator_wrapper->diag_getrow = original1->getrow->external;
+    ml_operator_wrapper->diag_getrow_data = original1->data;
   }
 
-  ML_Operator_Set_ApplyFuncData(blockmat, scale_fact*original->invec_leng, 
-				scale_fact*original->outvec_leng, ML_INTERNAL,
-				ml_operator_wrapper,
-				scale_fact*original->outvec_leng,
-				blockdiag_matvec,0);
-  if (original->getrow->ML_id == ML_INTERNAL) {
-    ml_operator_wrapper->diag_getrow = original->getrow->internal;
-    ml_operator_wrapper->diag_getrow_data = original;
-    /* rst: this might work?
-    ml_operator_wrapper->offdiag_getrow = M->getrow->internal;
-    ml_operator_wrapper->offdiag_getrow_data = M;
-    */
+  /* set getrow for offdiagonal block */
+  if (original2 != NULL) {
+    if (original2->getrow->ML_id == ML_INTERNAL) {
+      ml_operator_wrapper->offdiag_getrow = original2->getrow->internal;
+      ml_operator_wrapper->offdiag_getrow_data = original2;
+    }
+    else {
+      ml_operator_wrapper->offdiag_getrow = original2->getrow->external;
+      ml_operator_wrapper->offdiag_getrow_data = original2->data;
+    }
   }
-  else {
-    ml_operator_wrapper->diag_getrow = original->getrow->external;
-    ml_operator_wrapper->diag_getrow_data = original->data;
-    /* rst: this might work?
-    ml_operator_wrapper->offdiag_getrow = M->getrow->external;
-    ml_operator_wrapper->offdiag_getrow_data = M->data;
-    */
-  }
+
   ML_Operator_Set_Getrow(blockmat, ML_INTERNAL, scale_fact*
-			 original->outvec_leng, blockdiag_getrow);
+			 original1->outvec_leng, block_getrow /*blockdiag_getrow*/);
   
   return 1;
 }
+
+/******************************************************************************/
+
 /* New aztec block matvec function */
 void aztec_block_matvec(double *x, double *y, AZ_MATRIX *Amat,
                              int proc_config[])
@@ -2859,19 +3048,23 @@ void aztec_block_matvec(double *x, double *y, AZ_MATRIX *Amat,
   z = (double *) AZ_allocate((aztec_block_data->N+1)*sizeof(double));
   aztec_block_data->Ke->matvec( x, y, aztec_block_data->Ke, proc_config);
 
-  if (aztec_block_data->M != NULL) {
+  if (aztec_block_data->M != NULL)
+  {
     aztec_block_data->M->matvec( &(x[aztec_block_data->N]), z, 
                                  aztec_block_data->M, proc_config);
-    for (i = 0; i < aztec_block_data->N; i++) y[i] += z[i];
+    for (i = 0; i < aztec_block_data->N; i++) y[i] -= z[i];
   }
 
   aztec_block_data->Ke->matvec( &(x[aztec_block_data->N]), 
                                 &(y[aztec_block_data->N]),
 				aztec_block_data->Ke, proc_config);
 
-  if (aztec_block_data->M != NULL) {
+  if (aztec_block_data->M != NULL)
+  {
     aztec_block_data->M->matvec( x, z, aztec_block_data->M, proc_config);
-    for (i = 0; i < aztec_block_data->N; i++) y[i+aztec_block_data->N] -= z[i];
+    for (i = 0; i < aztec_block_data->N; i++) y[i+aztec_block_data->N] += z[i];
   }
+  else
+     printf("Block matrix appears to be diagonal!!\n");
   AZ_free(z);
 }
