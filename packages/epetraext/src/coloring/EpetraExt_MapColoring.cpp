@@ -426,94 +426,89 @@ operator()( OriginalTypeRef orig  )
     BoundaryColoring.Export( LocalBoundaryColoring, BoundaryExport, Insert );
     if( verbose_ ) cout << "BoundaryColoring:\n " << BoundaryColoring;
 
-    Epetra_Map InteriorMap( -1, interiorGIDs.size(), &interiorGIDs[0], 0, RowMap.Comm() );
-    if( verbose_ ) cout << "InteriorMap:\n " << InteriorMap;
+//    Epetra_Map InteriorMap( -1, interiorGIDs.size(), &interiorGIDs[0], 0, RowMap.Comm() );
+//    if( verbose_ ) cout << "InteriorMap:\n " << InteriorMap;
 
-    Epetra_CrsGraph InteriorGraph( Copy, InteriorMap, InteriorMap, 0 );
-    Epetra_Import InteriorImport( InteriorMap, Adj2.RowMap() );
-    InteriorGraph.Import( Adj2, InteriorImport, Insert );
-    InteriorGraph.TransformToLocal();
-    if( verbose_ ) cout << "InteriorGraph:\n " << InteriorGraph;
+//    Epetra_CrsGraph InteriorGraph( Copy, InteriorMap, InteriorMap, 0 );
+//    Epetra_Import InteriorImport( InteriorMap, Adj2.RowMap() );
+//    InteriorGraph.Import( Adj2, InteriorImport, Insert );
+//    InteriorGraph.TransformToLocal();
+//    if( verbose_ ) cout << "InteriorGraph:\n " << InteriorGraph;
 
-    EpetraExt::CrsGraph_MapColoring InteriorTrans;
-    Epetra_MapColoring & InteriorColoring = InteriorTrans( InteriorGraph );
-    if( verbose_ ) cout << "InteriorColoring:\n " << InteriorColoring;
+//    EpetraExt::CrsGraph_MapColoring InteriorTrans;
+//    Epetra_MapColoring & InteriorColoring = InteriorTrans( InteriorGraph );
+//    if( verbose_ ) cout << "InteriorColoring:\n " << InteriorColoring;
 
-    ColorMap = new Epetra_MapColoring( RowMap );
+    Epetra_MapColoring RowColorMap( RowMap );
 
     //Add Boundary Colors
     for( int i = 0; i < LocalBoundarySize; ++i )
     {
       int GID = BoundaryMap.GID(i);
-      (*ColorMap)(GID) = BoundaryColoring(GID);
+      RowColorMap(GID) = BoundaryColoring(GID);
     }
 
-    if( colorParallel_ == 1 )
-    {
-      int MaxBoundaryColors = LocalBoundaryColoring.MaxNumColors();
+    Epetra_MapColoring Adj2ColColorMap( Adj2.ColMap() );
+    Epetra_Import Adj2Import( Adj2.ColMap(), RowMap );
+    Adj2ColColorMap.Import( RowColorMap, Adj2Import, Insert );
 
-      for( int i = 0; i < LocalInteriorSize; ++i )
+    vector<int> rowOrder( nRows );
+    if( reordering_ == 0 || reordering_ == 1 ) 
+    {
+      multimap<int,int> adjMap;
+      typedef multimap<int,int>::value_type adjMapValueType;
+      for( int i = 0; i < nRows; ++i )
+        adjMap.insert( adjMapValueType( Adj2.NumMyIndices(i), i ) );
+      multimap<int,int>::iterator iter = adjMap.begin();
+      multimap<int,int>::iterator end = adjMap.end();
+      if( reordering_ == 0 ) //largest first (less colors)
       {
-        int GID = InteriorMap.GID(i);
-        (*ColorMap)(GID) = InteriorColoring(GID) + MaxBoundaryColors;
+        for( int i = 1; iter != end; ++iter, ++i )
+          rowOrder[nRows-i] = (*iter).second;
+      }
+      else                  //smallest first (better balance)
+      {
+        for( int i = 0; iter != end; ++iter, ++i )
+          rowOrder[i] = (*iter).second;
       }
     }
-    else
+    else if( reordering_ == 2 ) //random
     {
-      vector<int> rowOrder( nRows );
-      if( reordering_ == 0 || reordering_ == 1 ) 
-      {
-        multimap<int,int> adjMap;
-        typedef multimap<int,int>::value_type adjMapValueType;
-        for( int i = 0; i < nRows; ++i )
-          adjMap.insert( adjMapValueType( Adj2.NumMyIndices(i), i ) );
-        multimap<int,int>::iterator iter = adjMap.begin();
-        multimap<int,int>::iterator end = adjMap.end();
-        if( reordering_ == 0 ) //largest first (less colors)
-        {
-          for( int i = 1; iter != end; ++iter, ++i )
-            rowOrder[nRows-i] = (*iter).second;
-        }
-        else                  //smallest first (better balance)
-        {
-          for( int i = 0; iter != end; ++iter, ++i )
-            rowOrder[i] = (*iter).second;
-        }
-      }
-      else if( reordering_ == 2 ) //random
-      {
-        for( int i = 0; i < nRows; ++i )
-          rowOrder[i] = i;
-#ifndef TFLOP
-        random_shuffle( rowOrder.begin(), rowOrder.end() );
+      for( int i = 0; i < nRows; ++i )
+        rowOrder[i] = i;
+#ifdef TFLOP
+      random_shuffle( rowOrder.begin(), rowOrder.end() );
 #endif
-      }
+    }
 
-      //Constrained greedy coloring of interior
-      for( int row = 0; row < nRows; ++row )
+    //Constrained greedy coloring of interior
+    for( int row = 0; row < nRows; ++row )
+    {
+      if( !RowColorMap[ rowOrder[row] ] )
       {
-        if( !(*ColorMap)[ rowOrder[row] ] )
-        {
-          Adj2.ExtractMyRowView( rowOrder[row], NumIndices, Indices );
+        Adj2.ExtractMyRowView( rowOrder[row], NumIndices, Indices );
 
-          set<int> usedColors;
-          int color;
-          for( int i = 0; i < NumIndices; ++i )
+        set<int> usedColors;
+        int color;
+        for( int i = 0; i < NumIndices; ++i )
+        {
+          color = Adj2ColColorMap[ Indices[i] ];
+          if( color > 0 ) usedColors.insert( color );
+          color = 0;
+          int testcolor = 1;
+          while( !color )
           {
-            color = (*ColorMap)[ Indices[i] ];
-            if( color > 0 ) usedColors.insert( color );
-            color = 0;
-            int testcolor = 1;
-            while( !color )
-            {
-              if( !usedColors.count( testcolor ) ) color = testcolor;
-              ++testcolor;
-            }
+            if( !usedColors.count( testcolor ) ) color = testcolor;
+            ++testcolor;
           }
-          (*ColorMap)[ rowOrder[row] ] = color;
         }
+        RowColorMap[ rowOrder[row] ] = color;
       }
     }
+
+    ColorMap = new Epetra_MapColoring( ColMap );
+    Epetra_Import ColImport( ColMap, RowMap );
+    ColorMap->Import( RowColorMap, ColImport, Insert );
   }
 
   if( verbose_ ) cout << "ColorMap!\n" << *ColorMap;
