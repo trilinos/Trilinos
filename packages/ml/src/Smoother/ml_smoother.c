@@ -3911,10 +3911,9 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 	  }
 	}
       }
-      ML_Operator_ChangeToChar(tmpmat);
+      ML_Operator_ChangeToSinglePrecision(tmpmat);
       ML_Operator_ImplicitTranspose(Tmat_trans,
       			    Tmat, ML_FALSE);
-      ML_memory_check("after TAT");
    }
 /*
    kdata = ML_Krylov_Create( tmpmat->comm );
@@ -3948,11 +3947,6 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    ML_Smoother_HiptmairSubsmoother_Create(&(dataptr->ml_nodal),tmpmat,
 					  nodal_smoother, nodal_args, 
 					  dataptr->omega);
-   ML_memory_check("before work vectors");
-
-   /* Allocate some work vectors that are needed in the smoother. */
-
-   ML_memory_check("after work vectors");
 
    /*
 #ifdef ML_TIMING
