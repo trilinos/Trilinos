@@ -61,23 +61,33 @@ int Epetra_ML_getrow(void *data, int N_requested_rows, int requested_rows[],
  *                  'values' for storing nonzeros. If more space is needed,
  *                  return 0.
  */
-  Epetra_RowMatrix  *A = (Epetra_RowMatrix *) data;
+  Epetra_RowMatrix *Abase = (Epetra_RowMatrix *) data;
   int nz_ptr = 0;
-  int NumRows = A->NumMyRows();
   int NumEntries;
-  double *Values;
-  int *Indices;
+  int MaxPerRow;
 
-  // An estimate of max number of nonzero's per row is needed
-  // this is a temporary fix
-  Values = new double [100]; 
-  Indices = new int [100]; 
+  Epetra_CrsMatrix * Acrs = dynamic_cast<Epetra_CrsMatrix *>(Abase);
+  int MatrixIsCrsMatrix = (Acrs!=0); // If this pointer is non-zero,
+                                  // the cast to Epetra_CrsMatrix worked
+  int *Indices;
+  double *Values;
+  if (!MatrixIsCrsMatrix) {
+    MaxPerRow = Abase->MaxNumEntries();
+    Values = new double [MaxPerRow]; 
+    Indices = new int [MaxPerRow]; 
+  }
 
   for (int i = 0; i < N_requested_rows; i++)
   {
+    int ierr;
     int LocalRow = requested_rows[i];
-    int ierr = A->ExtractMyRowCopy(LocalRow, 100, NumEntries, Values, Indices);
-    if (ierr) return(1);
+    if (MatrixIsCrsMatrix)
+      ierr = Acrs->ExtractMyRowView(LocalRow, NumEntries, Values, Indices);
+    else
+      ierr = Abase->ExtractMyRowCopy(LocalRow, MaxPerRow, NumEntries,
+                                      Values, Indices);
+    if (ierr) return(0); //JJH I think this is the correct thing to return if
+                         //    A->ExtractMyRowCopy returns something nonzero ..
     row_lengths[i] = NumEntries;
     if (nz_ptr + NumEntries > allocated_space) return(0);
     for (int j=0; j<NumEntries; j++) {
