@@ -128,6 +128,10 @@ install_sh = @install_sh@
 
 CORE_H = \
 	$(srcdir)/Trilinos_Util.h \
+	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.h \
+	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.h \
+	$(srcdir)/Trilinos_Util_CountMatrixMarket.h \
+	$(srcdir)/Trilinos_Util_CountTriples.h \
 	$(srcdir)/Trilinos_Util_MatrixGallery.h \
 	$(srcdir)/Trilinos_Util_ShellOptions.h
 
@@ -151,6 +155,10 @@ CORE = \
 	$(srcdir)/Trilinos_Util_csrmsr.cpp \
 	$(srcdir)/Trilinos_Util_ssrcsr.cpp \
 	$(srcdir)/Trilinos_Util_coocsr.cpp \
+	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp \
+	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp \
+	$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp \
+	$(srcdir)/Trilinos_Util_CountTriples.cpp \
 	$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp \
 	$(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp \
 	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp \
@@ -320,6 +328,10 @@ am__objects_1 = Trilinos_Util_duscr_vbr.$(OBJEXT) \
 	Trilinos_Util_smsrres.$(OBJEXT) Trilinos_Util_csrcsc.$(OBJEXT) \
 	Trilinos_Util_csrmsr.$(OBJEXT) Trilinos_Util_ssrcsr.$(OBJEXT) \
 	Trilinos_Util_coocsr.$(OBJEXT) \
+	Trilinos_Util_ReadMatrixMarket2Epetra.$(OBJEXT) \
+	Trilinos_Util_ReadTriples2Epetra.$(OBJEXT) \
+	Trilinos_Util_CountMatrixMarket.$(OBJEXT) \
+	Trilinos_Util_CountTriples.$(OBJEXT) \
 	Trilinos_Util_ReadHb2Epetra.$(OBJEXT) \
 	Trilinos_Util_ReadHpc2Epetra.$(OBJEXT) \
 	Trilinos_Util_ReadHb2EpetraVbr.$(OBJEXT) \
@@ -342,12 +354,16 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Trilinos_Util_GenerateCrsProblem.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Trilinos_Util_CountMatrixMarket.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_CountTriples.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_GenerateCrsProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_GenerateVbrProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_MatrixGallery.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ReadMatrixMarket2Epetra.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ReadTriples2Epetra.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_ShellOptions.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_coocsr.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Trilinos_Util_create_vbr.Po \
@@ -461,6 +477,14 @@ Trilinos_Util_csrcsc.$(OBJEXT): $(srcdir)/Trilinos_Util_csrcsc.cpp
 Trilinos_Util_csrmsr.$(OBJEXT): $(srcdir)/Trilinos_Util_csrmsr.cpp
 Trilinos_Util_ssrcsr.$(OBJEXT): $(srcdir)/Trilinos_Util_ssrcsr.cpp
 Trilinos_Util_coocsr.$(OBJEXT): $(srcdir)/Trilinos_Util_coocsr.cpp
+Trilinos_Util_ReadMatrixMarket2Epetra.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
+Trilinos_Util_ReadTriples2Epetra.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+Trilinos_Util_CountMatrixMarket.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp
+Trilinos_Util_CountTriples.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_CountTriples.cpp
 Trilinos_Util_ReadHb2Epetra.$(OBJEXT): \
 	$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp
 Trilinos_Util_ReadHpc2Epetra.$(OBJEXT): \
@@ -487,12 +511,16 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_CountMatrixMarket.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_CountTriples.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_GenerateCrsProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_GenerateVbrProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_MatrixGallery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ReadHb2Epetra.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ReadHb2EpetraVbr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ReadHpc2Epetra.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ReadMatrixMarket2Epetra.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ReadTriples2Epetra.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_ShellOptions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_coocsr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Trilinos_Util_create_vbr.Po@am__quote@
@@ -744,6 +772,54 @@ Trilinos_Util_coocsr.obj: $(srcdir)/Trilinos_Util_coocsr.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_coocsr.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_coocsr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_coocsr.obj `cygpath -w $(srcdir)/Trilinos_Util_coocsr.cpp`
+
+Trilinos_Util_ReadMatrixMarket2Epetra.o: $(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp' object='Trilinos_Util_ReadMatrixMarket2Epetra.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ReadMatrixMarket2Epetra.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ReadMatrixMarket2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ReadMatrixMarket2Epetra.o `test -f '$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp' || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
+
+Trilinos_Util_ReadMatrixMarket2Epetra.obj: $(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp' object='Trilinos_Util_ReadMatrixMarket2Epetra.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ReadMatrixMarket2Epetra.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ReadMatrixMarket2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ReadMatrixMarket2Epetra.obj `cygpath -w $(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp`
+
+Trilinos_Util_ReadTriples2Epetra.o: $(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp' object='Trilinos_Util_ReadTriples2Epetra.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ReadTriples2Epetra.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ReadTriples2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ReadTriples2Epetra.o `test -f '$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp' || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+
+Trilinos_Util_ReadTriples2Epetra.obj: $(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp' object='Trilinos_Util_ReadTriples2Epetra.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_ReadTriples2Epetra.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_ReadTriples2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_ReadTriples2Epetra.obj `cygpath -w $(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp`
+
+Trilinos_Util_CountMatrixMarket.o: $(srcdir)/Trilinos_Util_CountMatrixMarket.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp' object='Trilinos_Util_CountMatrixMarket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_CountMatrixMarket.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_CountMatrixMarket.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_CountMatrixMarket.o `test -f '$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp' || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp
+
+Trilinos_Util_CountMatrixMarket.obj: $(srcdir)/Trilinos_Util_CountMatrixMarket.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp' object='Trilinos_Util_CountMatrixMarket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_CountMatrixMarket.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_CountMatrixMarket.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_CountMatrixMarket.obj `cygpath -w $(srcdir)/Trilinos_Util_CountMatrixMarket.cpp`
+
+Trilinos_Util_CountTriples.o: $(srcdir)/Trilinos_Util_CountTriples.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_CountTriples.cpp' object='Trilinos_Util_CountTriples.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_CountTriples.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_CountTriples.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_CountTriples.o `test -f '$(srcdir)/Trilinos_Util_CountTriples.cpp' || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_CountTriples.cpp
+
+Trilinos_Util_CountTriples.obj: $(srcdir)/Trilinos_Util_CountTriples.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_CountTriples.cpp' object='Trilinos_Util_CountTriples.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Trilinos_Util_CountTriples.Po' tmpdepfile='$(DEPDIR)/Trilinos_Util_CountTriples.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Trilinos_Util_CountTriples.obj `cygpath -w $(srcdir)/Trilinos_Util_CountTriples.cpp`
 
 Trilinos_Util_ReadHb2Epetra.o: $(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp' object='Trilinos_Util_ReadHb2Epetra.o' libtool=no @AMDEPBACKSLASH@
