@@ -165,7 +165,10 @@ int checkmultiply( bool transpose, Epetra_VbrMatrix& A, Epetra_MultiVector& X, E
     Error.Update( 1.0, Y, -1.0, *vecY, 0.0 ) ; 
       
     Error.NormInf( &NormError ) ; 
-    if ( NormError / normY > 1e-13 ) numerrors++; 
+    if ( NormError / normY > 1e-13 ) {
+      numerrors++; 
+      cout << "Error = " << Error <<endl;
+    }
     //
     //  Check x = Ax
     //
@@ -174,10 +177,12 @@ int checkmultiply( bool transpose, Epetra_VbrMatrix& A, Epetra_MultiVector& X, E
     A.Multiply1( transpose, Z, Z ) ;  
     Error.Update( 1.0, Z, -1.0, *vecY, 0.0 ) ; 
     //    Error.Update( 1.0, Y, -1.0, *vecY, 0.0 ) ; 
+    cout << "Error = " << Error <<endl;
       
     Error.NormInf( &NormError ) ; 
     if ( NormError / normY > 1e-13 ) {
       numerrors++; 
+      cout << "Error = " << Error <<endl;
     }
   }
   //
@@ -202,7 +207,10 @@ int checkmultiply( bool transpose, Epetra_VbrMatrix& A, Epetra_MultiVector& X, E
       LoopError = true ;
     }
   }
-  if ( LoopError ) numerrors++ ; 
+  if ( LoopError ) {
+    numerrors++ ; 
+    cout << "Error = " << Error <<endl;
+  }
 
   //
   //  Check X = AX
@@ -788,8 +796,10 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   CrsA->Multiply( true, CrsX, CrsY ) ; 
   check_ytranspose = CrsY ; 
 
+  if (verbose) cout << "     No-Transpose " << endl<< endl;
   EPETRA_TEST_ERR( checkmultiply( false, *A, x, check_y ), ierr ); 
 
+  if (verbose) cout << "     Transpose " << endl<< endl;
   EPETRA_TEST_ERR( checkmultiply( true, *A, x, check_ytranspose ), ierr ); 
 
   if (! symmetric ) EPETRA_TEST_ERR( !checkmultiply( false, *A, x, check_ytranspose ), ierr );   // Just to confirm that A is not symmetric

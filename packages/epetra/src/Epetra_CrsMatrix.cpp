@@ -134,21 +134,9 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix)
     Epetra_CompObject(Matrix),
     Epetra_BLAS(),
     Graph_(Matrix.Graph()),
-    Allocated_(Matrix.Allocated_),
-    StaticGraph_(false),
-    UseTranspose_(Matrix.UseTranspose_),
-    constructedWithFilledGraph_(Matrix.constructedWithFilledGraph_),
-    matrixFillCompleteCalled_(Matrix.matrixFillCompleteCalled_),
-    StorageOptimized_(Matrix.StorageOptimized_),
-    Values_(0),
-    All_Values_(0),
-    NormInf_(-1.0),
-    NormOne_(-1.0),
-    NumMyRows_(0),
-    ImportVector_(0),
-    ExportVector_(0),
     CV_(Copy)
 {
+  InitializeDefaults();
   operator=(Matrix);
 }
 
@@ -159,24 +147,45 @@ Epetra_CrsMatrix& Epetra_CrsMatrix::operator=(const Epetra_CrsMatrix& src)
     return( *this );
   }
 
+  if (!src.Filled()) throw ReportError("Copying an Epetra_CrsMatrix requires source matrix to have Filled()==true", -1);
+
+  Graph_ = src.Graph_; // Copy graph
+
   DeleteMemory();
 
-  Allocated_ = src.Allocated_;
+  StaticGraph_ = true;
   UseTranspose_ = src.UseTranspose_;
+  constructedWithFilledGraph_ = src.constructedWithFilledGraph_;
+  matrixFillCompleteCalled_ = src.matrixFillCompleteCalled_;
+  Values_ = 0;
+  All_Values_ = 0;
   NormInf_ = -1.0;
   NormOne_ = -1.0;
-
   NumMyRows_ = src.NumMyRows_;
+  ImportVector_ = 0;
+  ExportVector_ = 0;
 
-  CV_ = src.CV_;
+  CV_ = Copy;
 
-  Graph_ = src.Graph_;
-  Allocate();
-  for (int i=0; i<NumMyRows_; i++) {
-    int NumEntries = src.NumMyEntries(i);
-    double * const srcValues = src.Values(i);
-    double * targValues = Values(i);
-    for (int j=0; j< NumEntries; j++) targValues[j] = srcValues[j];
+  StorageOptimized_ = src.StorageOptimized_;
+  if (src.StorageOptimized()) { // Special copy for case where storage is optimized
+
+    int NumMyNonzeros = Graph().NumMyEntries();
+    if (NumMyNonzeros>0) All_Values_ = new double[NumMyNonzeros];
+    double * srcValues = src.All_Values();
+    for (int i=0; i<NumMyNonzeros; ++i) All_Values_[i] = srcValues[i];
+    Allocated_ = true;
+
+  }
+  else { // copy for non-optimized storage
+    
+    Allocate();
+    for (int i=0; i<NumMyRows_; i++) {
+      int NumEntries = src.NumMyEntries(i);
+      double * const srcValues = src.Values(i);
+      double * targValues = Values(i);
+      for (int j=0; j< NumEntries; j++) targValues[j] = srcValues[j];
+    }
   }
 
   return( *this );
@@ -252,7 +261,7 @@ void Epetra_CrsMatrix::DeleteMemory()
   if (CV_==Copy) {
     if (All_Values_!=0)
       delete [] All_Values_;
-    else 
+    else if (Values_!=0)
       for (i=0; i<NumMyRows_; i++) 
 	if (Graph().NumAllocatedMyIndices(i) >0) 
 	  delete [] Values_[i];
@@ -267,7 +276,7 @@ void Epetra_CrsMatrix::DeleteMemory()
   ExportVector_=0;
     
   delete [] Values_;
-  Values_ = NULL;
+  Values_ = 0;
 
   NumMyRows_ = 0;
 

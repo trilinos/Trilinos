@@ -1019,7 +1019,10 @@ or if the number of entries in this row exceed the Length parameter.
     if (!StorageOptimized()) throw ReportError("This method: double* All_Values()cannot be called when StorageOptimized()==false", -1);
     else return(All_Values_);}
   double* Values(int LocalRow) const {
-    if (StorageOptimized()) return(All_Values_+Graph().IndexOffset()[LocalRow]);
+    if (StorageOptimized())
+      if (Graph().StorageOptimized())
+	return(All_Values_+Graph().IndexOffset()[LocalRow]);
+      else throw ReportError("This method: double* Values()cannot be called when StorageOptimized()==true and Graph().StorageOptimized()==false", -1);
     else return(Values_[LocalRow]);}
   
   void InitializeDefaults();

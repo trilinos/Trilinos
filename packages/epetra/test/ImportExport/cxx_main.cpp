@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
 
   // Finish up
   EPETRA_TEST_ERR(!(StandardGraph.IndicesAreGlobal()),ierr);
-  EPETRA_TEST_ERR(!(StandardGraph.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(!(StandardGraph.FillComplete()==0),ierr);
   EPETRA_TEST_ERR(!(StandardGraph.IndicesAreLocal()),ierr);
   EPETRA_TEST_ERR(StandardGraph.StorageOptimized(),ierr);
   StandardGraph.OptimizeStorage();
@@ -312,8 +312,10 @@ int main(int argc, char *argv[])
 
   // Finish up
   EPETRA_TEST_ERR(!(StandardMatrix.IndicesAreLocal()),ierr);
-  EPETRA_TEST_ERR(!(StandardMatrix.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(!(StandardMatrix.FillComplete()==0),ierr);
   EPETRA_TEST_ERR(!(StandardMatrix.IndicesAreLocal()),ierr);
+  EPETRA_TEST_ERR((StandardMatrix.StorageOptimized()),ierr);
+  EPETRA_TEST_ERR((StandardMatrix.OptimizeStorage()),ierr);
   EPETRA_TEST_ERR(!(StandardMatrix.StorageOptimized()),ierr);
   EPETRA_TEST_ERR(StandardMatrix.UpperTriangular(),ierr);
   EPETRA_TEST_ERR(StandardMatrix.LowerTriangular(),ierr);
@@ -377,14 +379,14 @@ int main(int argc, char *argv[])
     EPETRA_TEST_ERR(!(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0),ierr);
   }
     
-  EPETRA_TEST_ERR(!(OverlapMatrix.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(!(OverlapMatrix.FillComplete()==0),ierr);
 
   // Make a gathered matrix from OverlapMatrix.  It should be identical to StandardMatrix
 
   Epetra_CrsMatrix GatheredMatrix(Copy, StandardGraph);
   Epetra_Export Exporter(OverlapMap, StandardMap);
   EPETRA_TEST_ERR(!(GatheredMatrix.Export(OverlapMatrix, Exporter, Add)==0),ierr);
-  EPETRA_TEST_ERR(!(GatheredMatrix.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(!(GatheredMatrix.FillComplete()==0),ierr);
 
   // Check if entries of StandardMatrix and GatheredMatrix are identical
 
