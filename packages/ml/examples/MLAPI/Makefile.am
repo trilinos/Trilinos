@@ -3,9 +3,7 @@
 
 # include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
 include $(top_builddir)/Makefile.export
-ml_common_include_locations = $(ML_EXPORT_INCLUDES)
-ml_libs = $(ML_EXPORT_LIBS) $(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+include ../Makefile-common.include
 
 EXEEXT = .exe
 

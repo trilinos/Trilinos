@@ -3,6 +3,7 @@
 
 # include definitions of ML_EXPORT_INCLUDES and ML_EXPORT_LIBS
 include $(top_builddir)/Makefile.export
+include ../Makefile-common.include
 
 EXEEXT = .exe
 
@@ -10,5 +11,9 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = ml_multiple_rhs
 
-# source file definitions, link lines
-include ../Makefile-common.include
+ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
+ml_multiple_rhs_CPPFLAGS = ${ml_common_include_locations}
+ml_multiple_rhs_CXXFLAGS = ${ml_common_include_locations}
+ml_multiple_rhs_LDADD = ${ml_libs}
+ml_multiple_rhs_LINK = ${mllink}
+ml_multiple_rhs_DEPENDENCIES = $(top_builddir)/src/libml.a

@@ -125,7 +125,9 @@ AC_ARG_WITH( ml_multiple_rhs,
                 --with-ml_multiple_rhs=4 for a blocking factor of 4.
                 NOTE:  With the icc compiler, you may need to add
                 CFLAGS="-x c++" to the configure line, in order for it to
-                interpret *.c files as c++ files.  (default is no)]),
+                interpret *.c files as c++ files.  Similarly, with Compaq
+                compilers, you may need to add CFLAGS="-x cxx" to the configure
+                line.(default is no)]),
              [ac_cv_use_ml_multiple_rhs=${withval}],
              [ac_cv_use_ml_multiple_rhs=no])
 
@@ -459,7 +461,7 @@ AM_CONDITIONAL(ML_BUILD_EXAMPLES, test "X$ac_cv_use_ml_examples" != "Xno")
 # End of embedded tac_arg_enable_feature_sub_check.m4
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-TAC_ARG_ENABLE_FEATURE_SUB( ml, tests, [Build ML tests], ML_TESTS,no)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( ml, tests, [Build ML tests], ML_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_ml_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
