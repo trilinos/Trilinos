@@ -1,0 +1,7 @@
+# List the names of all of the build directories that should be configured,
+# compiled and tested for the test harness.  Each build directory must be a 
+# subdirectory of 'Trilinos/'.  One subdirectory per line.
+SERIAL
+MPI
+
+
