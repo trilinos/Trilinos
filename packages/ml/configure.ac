@@ -142,6 +142,26 @@ AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
+# Get the absolute path to the build directory.
+#
+# We need this to be able to figure out paths to the libraries for the
+# other Trilinos packages.
+# ------------------------------------------------------------------------
+
+AC_MSG_CHECKING([finding build directory])
+if test "X" = "X"; then
+  ML_BUILD_DIRECTORY=`pwd`
+  AC_MSG_RESULT($ML_BUILD_DIRECTORY)
+fi
+
+# ------------------------------------------------------------------------
+# Perform substitutions in output files
+# ------------------------------------------------------------------------
+                                                                                
+##AC_SUBST(ac_aux_dir)
+AC_SUBST(ML_BUILD_DIRECTORY)
+                                                                                
+# ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------
 
@@ -548,13 +568,46 @@ AC_SUBST(ac_aux_dir)
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
+#AC_CONFIG_FILES([
+#		Makefile 
+#		Makefile.export
+#		src/Makefile
+#		examples/Makefile
+#                test/Makefile
+#                test/MultiLevelPreconditioner_NonSym/Makefile
+#		test/MultiLevelPreconditioner_Sym/Makefile
+#		test/MultiLevelPreconditioner_Maxwell/Makefile
+#		test/ML_Operator2Epetra_RowMatrix/Makefile
+#		test/Scalability/Makefile
+#		test/VerySimple/Makefile
+#		test/AztecSimple/Makefile
+#		test/2d_Poisson/Makefile
+#		test/3d_Poisson/Makefile
+#		test/Zoltan/Makefile
+#		test/IFPACKSmoothers/Makefile
+#                test/scripts/Makefile
+#                test/scripts/daily/Makefile
+#                test/scripts/daily/mpi/Makefile
+#                test/scripts/daily/serial/Makefile
+#		])
 AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export
 		src/Makefile
 		examples/Makefile
-                test/Makefile
-                test/MultiLevelPreconditioner_NonSym/Makefile
+		examples/Advanced/Makefile
+		examples/BasicExamples/Makefile
+		examples/Elasticity/Makefile
+		examples/MatrixFormats/Makefile
+        examples/MatrixReading/Makefile
+		examples/StandAlone/Makefile
+        examples/TwoLevelDD/Makefile
+        examples/Maxwell/Makefile
+        examples/Visualization/Makefile
+        examples/MultipleRHS/Makefile
+        examples/Other/Makefile
+        test/Makefile
+        test/MultiLevelPreconditioner_NonSym/Makefile
 		test/MultiLevelPreconditioner_Sym/Makefile
 		test/MultiLevelPreconditioner_Maxwell/Makefile
 		test/ML_Operator2Epetra_RowMatrix/Makefile

@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP LIBOBJS ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_TRIUTILS_TRUE ML_USING_TRIUTILS_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP LIBOBJS ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_TRIUTILS_TRUE ML_USING_TRIUTILS_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -4138,6 +4138,28 @@ fi
 else
   RANLIB="$ac_cv_prog_RANLIB"
 fi
+
+
+# ------------------------------------------------------------------------
+# Get the absolute path to the build directory.
+#
+# We need this to be able to figure out paths to the libraries for the
+# other Trilinos packages.
+# ------------------------------------------------------------------------
+
+echo "$as_me:$LINENO: checking finding build directory" >&5
+echo $ECHO_N "checking finding build directory... $ECHO_C" >&6
+if test "X" = "X"; then
+  ML_BUILD_DIRECTORY=`pwd`
+  echo "$as_me:$LINENO: result: $ML_BUILD_DIRECTORY" >&5
+echo "${ECHO_T}$ML_BUILD_DIRECTORY" >&6
+fi
+
+# ------------------------------------------------------------------------
+# Perform substitutions in output files
+# ------------------------------------------------------------------------
+
+##AC_SUBST(ac_aux_dir)
 
 
 # ------------------------------------------------------------------------
@@ -8234,7 +8256,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8237: \"$ac_link\") >&5
+(eval echo $as_me:8259: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8312,7 +8334,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8315: \"$ac_link\") >&5
+(eval echo $as_me:8337: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11265,7 +11287,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11268: \"$ac_link\") >&5
+(eval echo $as_me:11290: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11343,7 +11365,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11346: \"$ac_link\") >&5
+(eval echo $as_me:11368: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11571,7 +11593,29 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                                                                                        ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile examples/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/Scalability/Makefile test/VerySimple/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/Zoltan/Makefile test/IFPACKSmoothers/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
+#AC_CONFIG_FILES([
+#		Makefile
+#		Makefile.export
+#		src/Makefile
+#		examples/Makefile
+#                test/Makefile
+#                test/MultiLevelPreconditioner_NonSym/Makefile
+#		test/MultiLevelPreconditioner_Sym/Makefile
+#		test/MultiLevelPreconditioner_Maxwell/Makefile
+#		test/ML_Operator2Epetra_RowMatrix/Makefile
+#		test/Scalability/Makefile
+#		test/VerySimple/Makefile
+#		test/AztecSimple/Makefile
+#		test/2d_Poisson/Makefile
+#		test/3d_Poisson/Makefile
+#		test/Zoltan/Makefile
+#		test/IFPACKSmoothers/Makefile
+#                test/scripts/Makefile
+#                test/scripts/daily/Makefile
+#                test/scripts/daily/mpi/Makefile
+#                test/scripts/daily/serial/Makefile
+#		])
+                                                                                                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/Scalability/Makefile test/VerySimple/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/Zoltan/Makefile test/IFPACKSmoothers/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -12239,6 +12283,17 @@ do
   "Makefile.export" ) CONFIG_FILES="$CONFIG_FILES Makefile.export" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "examples/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
+  "examples/Advanced/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Advanced/Makefile" ;;
+  "examples/BasicExamples/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/BasicExamples/Makefile" ;;
+  "examples/Elasticity/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Elasticity/Makefile" ;;
+  "examples/MatrixFormats/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/MatrixFormats/Makefile" ;;
+  "examples/MatrixReading/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/MatrixReading/Makefile" ;;
+  "examples/StandAlone/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/StandAlone/Makefile" ;;
+  "examples/TwoLevelDD/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/TwoLevelDD/Makefile" ;;
+  "examples/Maxwell/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Maxwell/Makefile" ;;
+  "examples/Visualization/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Visualization/Makefile" ;;
+  "examples/MultipleRHS/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/MultipleRHS/Makefile" ;;
+  "examples/Other/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Other/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/MultiLevelPreconditioner_NonSym/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MultiLevelPreconditioner_NonSym/Makefile" ;;
   "test/MultiLevelPreconditioner_Sym/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MultiLevelPreconditioner_Sym/Makefile" ;;
@@ -12411,6 +12466,7 @@ s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t
 s,@RANLIB@,$RANLIB,;t t
 s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
+s,@ML_BUILD_DIRECTORY@,$ML_BUILD_DIRECTORY,;t t
 s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
 s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t

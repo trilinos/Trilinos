@@ -22,13 +22,22 @@
 
 
 ML_EXPORT_LIBS = -L$(ML_BUILD_DIRECTORY)/src -lml \
-                  -L$(AZTECOO_BUILD_DIRECTORY)/src  -laztecoo \
+                  -L$(AZTECOO_BUILD_DIRECTORY)/src $(AZTECOO_LIBS) \
                   -L$(IFPACK_BUILD_DIRECTORY)/src  $(IFPACK_LIBS) \
                   -L$(AMESOS_BUILD_DIRECTORY)/src  $(AMESOS_LIBS) \
-                  -L$(EPETRA_BUILD_DIRECTORY)/src  -lepetra \
+                  -L$(EPETRA_BUILD_DIRECTORY)/src  $(EPETRA_LIBS) \
                   -L$(TRIUTILS_BUILD_DIRECTORY)/src $(TRIUTILS_LIBS) \
                   -L$(ANASAZI_BUILD_DIRECTORY)/src $(ANASAZI_LIBS) \
                   -L$(TEUCHOS_BUILD_DIRECTORY)/src  $(TEUCHOS_LIBS)
+
+ML_EXPORT_INCLUDES = $(ML_INCLUDES) \
+                  $(AZTECOO_INCLUDES)  \
+                  $(IFPACK_INCLUDES)  \
+                  $(AMESOS_INCLUDES)  \
+                  $(EPETRA_INCLUDES)  \
+                  $(TRIUTILS_INCLUDES)  \
+                  $(ANASAZI_INCLUDES)  \
+                  $(TEUCHOS_INCLUDES) 
 
 ##########################################################################
 # Set the absolute path to the ml build directory
@@ -36,6 +45,20 @@ ML_EXPORT_LIBS = -L$(ML_BUILD_DIRECTORY)/src -lml \
 
 ML_BUILD_DIRECTORY = @ML_BUILD_DIRECTORY@
 
+##########################################################################
+# ML's include directories
+##########################################################################
+
+ML_INCLUDES = -I$(top_srcdir)/src/Include            \
+              -I$(top_srcdir)/src/Coarsen            \
+              -I$(top_srcdir)/src/Comm               \
+              -I$(top_srcdir)/src/FEGrid             \
+              -I$(top_srcdir)/src/Include            \
+              -I$(top_srcdir)/src/Krylov             \
+              -I$(top_srcdir)/src/Main               \
+              -I$(top_srcdir)/src/Operator           \
+              -I$(top_srcdir)/src/Smoother           \
+              -I$(top_srcdir)/src/Utils
 
 ##########################################################################
 # Using the absolute location of ml's build directory as
@@ -57,46 +80,34 @@ ANASAZI_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../anasazi
 TRIUTILS_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../triutils
 
 ##########################################################################
-# Decide whether to link with Amesos, Teuchos, or Ifpack libraries
+# Other Trilinos package libraries
 ##########################################################################
 
-HAVE_ML_IFPACK = @HAVE_ML_IFPACK@
-ifeq ($(HAVE_ML_IFPACK),true)
-IFPACK_LIBS = libifpack.a
-else
-IFPACK_LIBS =
-endif
+@ML_USING_AZTECOO_TRUE@AZTECOO_LIBS = -laztecoo
 
-HAVE_ML_TEUCHOS = @HAVE_ML_TEUCHOS@
-ifeq ($(HAVE_ML_TEUCHOS),true)
-TEUCHOS_LIBS = libteuchos.a
-else
-TEUCHOS_LIBS =
-endif
+@ML_USING_EPETRA_TRUE@EPETRA_LIBS = -lepetra
 
-HAVE_ML_AMESOS = @HAVE_ML_AMESOS@
-ifeq ($(HAVE_ML_AMESOS),true)
-AMESOS_LIBS = libamesos.a
-#amesos depends on teuchos
-TEUCHOS_LIBS = libteuchos.a
-else
-AMESOS_LIBS = 
-endif
+@ML_USING_IFPACK_TRUE@IFPACK_LIBS = -lifpack
 
-HAVE_ML_TRIUTILS = @HAVE_ML_TRIUTILS@
-ifeq ($(HAVE_ML_TRIUTILS),true)
-TRIUTILS_LIBS = libtriutils.a
-else
-TRIUTILS_LIBS =
-endif
+@ML_USING_TEUCHOS_TRUE@TEUCHOS_LIBS = -lteuchos
 
-HAVE_ML_ANASAZI = @HAVE_ML_ANASAZI@
-ifeq ($(HAVE_ML_ANASAZI),true)
-ANASAZI_LIBS = libanasazi.a
-else
-ANASAZI_LIBS =
-endif
+@ML_USING_AMESOS_TRUE@AMESOS_LIBS = -lamesos
 
+@ML_USING_TRIUTILS_TRUE@TRIUTILS_LIBS = -ltriutils
+
+@ML_USING_ANASAZI_TRUE@ANASAZI_LIBS = -lanasazi
+
+##########################################################################
+# Other Trilinos package include directories
+##########################################################################
+
+@ML_USING_AZTECOO_TRUE@AZTECOO_INCLUDES = -I$(top_srcdir)/../aztecoo/src -I$(AZTECOO_BUILD_DIRECTORY)/src
+@ML_USING_AMESOS_TRUE@AMESOS_INCLUDES = -I$(top_srcdir)/../amesos/src -I$(AMESOS_BUILD_DIRECTORY)/src
+@ML_USING_IFPACK_TRUE@IFPACK_INCLUDES = -I$(top_srcdir)/../ifpack/src -I$(IFPACK_BUILD_DIRECTORY)/src
+@ML_USING_TEUCHOS_TRUE@TEUCHOS_INCLUDES = -I$(top_srcdir)/../teuchos/src -I$(TEUCHOS_BUILD_DIRECTORY)/src
+@ML_USING_ANASAZI_TRUE@ANASAZI_INCLUDES = -I$(top_srcdir)/../anasazi/src -I$(ANASAZI_BUILD_DIRECTORY)/src
+@ML_USING_TRIUTILS_TRUE@TRIUTILS_INCLUDES = -I$(top_srcdir)/../triutils/src -I$(TRIUTILS_BUILD_DIRECTORY)/src
+@ML_USING_EPETRA_TRUE@EPETRA_INCLUDES = -I$(top_srcdir)/../epetra/src -I$(EPETRA_BUILD_DIRECTORY)/src
 ##########################################################################
 #
 # Macro definitions to be exported from ml to non-Trilinos clients.
