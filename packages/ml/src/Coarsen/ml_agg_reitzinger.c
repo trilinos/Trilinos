@@ -2082,6 +2082,7 @@ void ML_Reitzinger_CheckCommutingProperty(ML *ml_nodes, ML *ml_edges,
   int *glob_fine_edge_nums, *glob_fine_node_nums;
   int *glob_coarse_edge_nums, *glob_coarse_node_nums;
   double d1, *vec, *Pn_vec, *Tfine_Pn_vec;
+  char filename[80];
   ML_Operator *Pn_coarse, *Tfine, *Tcoarse, *Pe, *Ke, *Ttrans, *tmpmat;
 
   /*********************** start of execution *******************************/
@@ -2123,7 +2124,7 @@ void ML_Reitzinger_CheckCommutingProperty(ML *ml_nodes, ML *ml_edges,
       printf("\n\nML_agg_reitzinger:  ||Th Pn v|| = %15.10e  (levels %d & %d)\n",d1, finelevel,coarselevel);
     */
     d1 = sqrt(ML_gdot(Pe->outvec_leng, vec,vec, Pe->comm));
-    if ( fabs(d1) > 1.0e-4 )
+    if ( fabs(d1) > 1.0e-4 || ML_Get_PrintLevel() > 49)
     {
       if (ml_edges->comm->ML_mypid == 0 ) {
         printf("\n*** WARNING ****   In ML_agg_reitzinger: Pe TH != Th Pn       (levels %d & %d)\n", finelevel,coarselevel);
@@ -2147,21 +2148,34 @@ void ML_Reitzinger_CheckCommutingProperty(ML *ml_nodes, ML *ml_edges,
                                    &glob_coarse_edge_nums);
          ML_Operator_Destroy(&tmpmat);
 
-         ML_Operator_Print_UsingGlobalOrdering(Ke,"Kn_coarse_debug",
+         sprintf(filename,"Kn_%d",coarselevel);
+         ML_Operator_Print_UsingGlobalOrdering(Ke,filename,
                            glob_coarse_node_nums,glob_coarse_node_nums);
+         sprintf(filename,"Kn_%d",finelevel);
          Ke = ml_nodes->Amat+coarselevel+1;
-         ML_Operator_Print_UsingGlobalOrdering(Ke,"Kn_fine_debug",
+         ML_Operator_Print_UsingGlobalOrdering(Ke,filename,
                            glob_fine_node_nums,glob_fine_node_nums);
+         sprintf(filename,"Ke_%d",finelevel);
          Ke = ml_edges->Amat+coarselevel+1;
-         ML_Operator_Print_UsingGlobalOrdering(Ke,"Ke_fine_debug",
+         ML_Operator_Print_UsingGlobalOrdering(Ke,filename,
                            glob_fine_edge_nums,glob_fine_edge_nums);
-         ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,"Pn_debug",
+/*
+         sprintf(filename,"Ke_%d",coarselevel);
+         Ke = ml_edges->Amat+coarselevel;
+         ML_Operator_Print_UsingGlobalOrdering(Ke,filename,
+                           glob_coarse_edge_nums,glob_coarse_edge_nums);
+*/
+         sprintf(filename,"Pn_%d",coarselevel);
+         ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,filename,
                            glob_fine_node_nums,glob_coarse_node_nums);
-         ML_Operator_Print_UsingGlobalOrdering(Tfine,"Tfine_debug",
+         sprintf(filename,"T_%d",finelevel);
+         ML_Operator_Print_UsingGlobalOrdering(Tfine,filename,
                            glob_fine_edge_nums,glob_fine_node_nums);
-         ML_Operator_Print_UsingGlobalOrdering(Tcoarse,"Tcoarse_debug",
+         sprintf(filename,"T_%d",coarselevel);
+         ML_Operator_Print_UsingGlobalOrdering(Tcoarse,filename,
                            glob_coarse_edge_nums,glob_coarse_node_nums);
-         ML_Operator_Print_UsingGlobalOrdering(Pe,"Pe_debug",
+         sprintf(filename,"Pe_%d",coarselevel);
+         ML_Operator_Print_UsingGlobalOrdering(Pe,filename,
                            glob_fine_edge_nums,glob_coarse_edge_nums);
 
          ML_free(glob_fine_edge_nums);
