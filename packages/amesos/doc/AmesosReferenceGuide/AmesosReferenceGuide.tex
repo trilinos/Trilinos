@@ -691,7 +691,7 @@ values are taken as reported in the SuperLU\_dist manual.
     SamePattern\_SameRowPerm, FACTORED}. Default: {\tt
     SamePattern\_SameRowPerm}.}
 
-\choicebox{\tt Equil}{){\tt bool}) Specifies whether to equilibrate the system of
+\choicebox{\tt Equil}{({\tt bool}) Specifies whether to equilibrate the system of
   not. Default: true.}
 
 \choicebox{\tt ColPerm}{({\tt string}) Specifies the column ordering
@@ -943,7 +943,7 @@ compilation time.
 #ifndef HAVE_CONFIG_H
 #define HAVE_CONFIG_H
 #endif
-#include "Epetra_config.h"
+#include "Epetra_ConfigDefs.h"
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -952,7 +952,7 @@ compilation time.
 #endif
 #include "Epetra_Vector.h"
 #include "Epetra_Time.h"
-#include "Amesos_config.h"
+#include "Amesos_ConfigDefs.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Amesos.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
