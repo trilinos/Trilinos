@@ -4,6 +4,7 @@
 #endif
 #include "ml_xyt.h"
 #include "ml_utils.h"
+#include "ml_memory.h"
 extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
 extern int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
