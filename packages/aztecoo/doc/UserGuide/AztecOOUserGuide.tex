@@ -15,8 +15,8 @@
     \date{} % Remove ``\today'' in final version 
 
 
-\SANDnum{SAND2003-xxxx}
-\SANDprintDate{Printed October 2003} 
+\SANDnum{SAND2004-xxxx}
+\SANDprintDate{Printed July 2004} 
 \SANDauthor{Michael A. Heroux \\
 	Computational Mathematics and Algorithms Department \\
 	 Sandia National Laboratories \\
@@ -99,7 +99,7 @@ provides some signficant new functionality.  In particular it provides
 an extensible status testing capability that allows expression of
 sophisticated stopping criteria as is needed in production use of
 iterative solvers.  AztecOO also provides mechanisms for using 
-Ifpack~\cite{Ifpack-Ref-Guide}, ML~\cite{ML-home-page} and AztecOO
+Ifpack~\cite{Ifpack-home-page}, ML~\cite{ML-home-page} and AztecOO
 itself as preconditioners.
 \end{abstract}
 
@@ -156,6 +156,50 @@ another instance of the AztecOO class as a preconditioner.  Users can
 also override the default convergence tests in Aztec and use any
 combination of available status tests in \statustest{} classes,
 or define their own.
+
+\subsection{A Special Note for Aztec Users}
+
+AztecOO completely contains the full functionality and interface of 
+Aztec 2.1~\cite{Aztec2.1}.  Therefore, any code that calls Aztec 2.1 functions
+can use AztecOO include files and library in place of Aztec 2.1.   Any file
+that includes Aztec header files must be recompiled and the executable file must
+be re-linked with the AztecOO library, and the Aztec library must not be linked.  
+In addition, the Epetra~\cite{Epetra-home-page}, 
+LAPACK~\cite{lapack} and BLAS~\cite{BLAS1, BLAS2, BLAS3}
+libraries must also be available to the linker.  
+If \InlineCommand{--enable-aztecoo-azlu} is
+provided to the \InlineCommand{configure} command, 
+the Y12M~\cite{y12m} library must also be provided.
+Finally, it is likely that you
+will need the linker to be aware of C++ libraries.  Often the C++ compiler itself
+is the best program to use for linking, since it is aware of what system libraries
+are needed for linking.
+
+Trilinos (and AztecOO as part of Trilinos) use a much different build 
+process that Aztec 2.1.  Trilinos uses 
+Autoconf~\cite{Autoconf} and Automake~\cite{Automake} to support a configure/make
+process.  If you are familar
+with configure/make procedures, you should find Trilinos  fairly easy install.  
+A Trilinos Installation Guide is available from
+the Trilinos website~\cite{Trilinos-home-page}.  If you are familiar with the ad hoc
+build process of Aztec 2.1 and are unfamiliar with configure/make, you may find 
+building Trilinos and AztecOO challenging.  We encourage you to carefully read the 
+Trilinos Installation Guide, since it will help you with understanding configure/make
+procedures in general, and the use of the processes in Trilinos specifically.
+
+Unlike Aztec, AztecOO does not provide its own copies of BLAS, LAPACK or Y12M libraries. 
+This change is part of a general policy in Trilinos to provide interfaces to third-party
+libraries but not code.  This change is generally considered good practice from a software
+engineering perspective for a number of reasons, but can be a hindrance to Aztec users
+making a transition to AztectOO.  Optimized BLAS libraries are available for most computer
+systems.  We recommend you obtain one of these libraries from the Internet, if it is not
+already installed on your computer system.  LAPACK is also available in an optimized form
+for some systems, but this is less critical.  LAPACK can also be obtained from the Internet,
+or may already be installed on your system.  Y12M is an old sparse direct solver also available
+from the Internet.  It is used by Aztec's domain decomposition preconditioners as a local 
+subdomain solver.  Most Aztec users do not require it.  By default, it is not required for
+building the AztecOO library.  You may enable it by passing the argument 
+\InlineCommand{--enable-aztecoo-azlu} to the configure command.
 
 \subsection{Use of Epetra}
 
@@ -444,7 +488,7 @@ SetAztecOption() method to change the behavior of the Iterate() method:
 \choicebox{AZ\_bicgstab}{Bi-conjugate gradient with
   stabilization.}
 \choicebox{AZ\_lu}{Sparse direct solver (single processor only).
-{\bf Note: This option is available only when --enable-y12m is
+{\bf Note: This option is available only when --enable-aztecoo-azlu is
 specified on the AztecOO configure script invocation command}}
 %
 %\optionbox{options[{\sf AZ\_scaling}]}{Specifies scaling algorithm.
@@ -507,8 +551,8 @@ specified on the AztecOO configure script invocation command}}
 \choicebox{AZ\_lu}{Approximately solve processor's submatrix via
   a sparse LU factorization in conjunction with a drop tolerance 
   {\it params}[{\sf AZ\_drop}]. The current sparse
-  lu factorization is provided by the package y12m~\cite{y12m}.
-  {\bf Note: This option is available only when --enable-y12m is
+  lu factorization is provided by the package Y12M~\cite{y12m}.
+  {\bf Note: This option is available only when --enable-aztecoo-azlu is
 specified on the AztecOO configure script invocation command}}
 \choicebox{AZ\_ilut}{Similar to {\sf AZ\_lu} using
   Saad's {\sf ILUT} instead of LU \cite{ilut}. The drop 
@@ -936,7 +980,19 @@ will never be reset by AztecOO.  Instead, the user has this responsibility.
 \bibliography{../../../../doc/CommonFiles/TrilinosBibliography}
 \addcontentsline{toc}{section}{References}
 
-%\appendix
+\appendix
+\section{AztecOO \InlineCommand{configure} Options}
+
+Most often AztecOO's \InlineCommand{configure} command will be invoked automatically as
+part of the Trilinos-level \InlineCommand{configure} command.  Regardless of how 
+AztecOO's \InlineCommand{configure} command is invoked, the following options can be 
+used to customize the configure process.  These options can also be listed  by executing
+\DisplayCommand{./nfigure --help}
+in the main AztecOO directory.  In fact, obtaining the options this way is preferred, since
+option may have changed since the publiction of this document.  However, for convenience, we
+list the configuration options presently available:
+
+\input{ConfigureOptions}
 %\section{Troubleshooting}
 %\label{Section:Troubleshooting}
 %\subsection{Conditional Code, Incorrect Results and Stalled Programs}
