@@ -2646,28 +2646,33 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
 /* Albuquerque, 30-Oct-03                                               */
 /* ******************************************************************** */
 
-ML_build_global_numbering( ML_Operator *Amat,
-			   ML_Comm *comm,
-			   int **pglobal_numbering )
+int ML_build_global_numbering( ML_Operator *Amat,
+			       ML_Comm *comm,
+			       int **pglobal_numbering )
 {
 
   int    i;
   int    Nrows, Nghosts, offset;
   double * dtemp = NULL;
-  int *global_numbering;
+  int * global_numbering;
   
   Nrows = Amat->getrow->Nrows;
   Nghosts = Amat->getrow->pre_comm->total_rcv_length;
-/*
-  printf("%d %d\n", Nghosts, Amat->outvec_leng);
-*/
-    
+  
   dtemp = (double *) malloc( sizeof(double) * (Nrows+Nghosts));
-  /* here put the global number for each local node */
+  if( dtemp == NULL ) {
+    fprintf( stderr,
+	     "*ML*ERR* not enough memory to allocated %d bytes\n"
+	     "*ML*ERR* (file %s, line %d)\n",
+	     sizeof(double) * (Nrows+Nghosts),
+	     __FILE__,
+	     __LINE__ );
+    exit( EXIT_FAILURE );
+  }
 
 #ifdef ML_MPI
   MPI_Scan ( &Nrows, &offset, 1, MPI_INT, MPI_SUM,
-	     MPI_COMM_WORLD );
+	     Amat->comm->USR_comm );
   offset -= Nrows;
 #else
   offset = 0;
@@ -2681,7 +2686,7 @@ ML_build_global_numbering( ML_Operator *Amat,
      be surprised that a tridiagonal matrix (before AZ_transform)
      is no longer tridiagonal, for instance... */
     
-  for( i=0 ; i<Nrows ; i++ ) dtemp[i] = i+offset;
+  for( i=0 ; i<Nrows ; i++ ) dtemp[i] = 1.0*(i+offset);
 
   /* I exchange those information using ML_exchange_bdry,
      which is coded for double vectors. */
@@ -2693,8 +2698,18 @@ ML_build_global_numbering( ML_Operator *Amat,
   /* allocates memory for global_ordering */
     
   ML_memory_alloc((void*)&global_numbering, sizeof(int)*(Nrows+Nghosts),
-		  "global_ordering");
+		  "global numbering 1812");
        
+  if( global_numbering == NULL ) {
+    fprintf( stderr,
+	     "*ML*ERR* not enough memory to allocated %d bytes\n"
+	     "*ML*ERR* (file %s, line %d)\n",
+	     sizeof(int) * (Nrows+Nghosts),
+	     __FILE__,
+	     __LINE__ );
+    exit( EXIT_FAILURE );
+  }
+
   /* put the received double vectors in the integer vector */
 
   for( i=0 ; i<Nrows+Nghosts ; i++ )
@@ -2702,14 +2717,9 @@ ML_build_global_numbering( ML_Operator *Amat,
 
   *pglobal_numbering = global_numbering;
   
-  free( dtemp );
-  /*
-  for( i=0 ; i<Nrows+Nghosts ; i++ )
-    printf("(%d) global_ord[%d] = %d\n",
-	   comm->ML_mypid, i,
-	   global_numbering[i] );
-  */
-  return;
+  free( dtemp ); dtemp = NULL;
+
+  return 0;
     
 }
 /*ms*/
