@@ -816,19 +816,19 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 
  protected:
 	int *All_Indices() const {
-	  if (!StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==false", -1);
+	  if (!StorageOptimized()) throw ReportError("This method: int *All_Indices() cannot be called when StorageOptimized()==false", -1);
 	  else return(CrsGraphData_->All_Indices_.Values());}
 	int *IndexOffset() const {
-	  if (!StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==false", -1);
+	  if (!StorageOptimized()) throw ReportError("This method: int *IndexOffset()  cannot be called when StorageOptimized()==false", -1);
 	  else return(CrsGraphData_->IndexOffset_.Values());}
 	int* NumIndicesPerRow() const {
-	  if (StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==true", -1);
+	  if (StorageOptimized()) throw ReportError("This method: int* NumIndicesPerRow() cannot be called when StorageOptimized()==true", -1);
 	  else return(CrsGraphData_->NumIndicesPerRow_.Values());}
 	int* NumAllocatedIndicesPerRow() const {
-	  if (StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==true", -1);
+	  if (StorageOptimized()) throw ReportError("This method: int* NumAllocatedIndicesPerRow() cannot be called when StorageOptimized()==true", -1);
 	  else return(CrsGraphData_->NumAllocatedIndicesPerRow_.Values());}
 	int** Indices() const {
-	  if (StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==true", -1);
+	  if (StorageOptimized()) throw ReportError("This method: int** Indices() cannot be called when StorageOptimized()==true", -1);
 	  else return(CrsGraphData_->Indices_);}
 	int* Indices(int LocalRow) const {
 	  if (StorageOptimized()) return(CrsGraphData_->All_Indices_.Values()+CrsGraphData_->IndexOffset_[LocalRow]);

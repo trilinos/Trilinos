@@ -1013,10 +1013,10 @@ or if the number of entries in this row exceed the Length parameter.
   bool Allocated() const {return(Allocated_);}
   int SetAllocated(bool Flag) {Allocated_ = Flag; return(0);}
   double** Values() const {
-    if (StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==true", -1);
+    if (StorageOptimized()) throw ReportError("This method: double** Values() cannot be called when StorageOptimized()==true", -1);
     else return(Values_);}
   double* All_Values() const {
-    if (!StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==false", -1);
+    if (!StorageOptimized()) throw ReportError("This method: double* All_Values()cannot be called when StorageOptimized()==false", -1);
     else return(All_Values_);}
   double* Values(int LocalRow) const {
     if (StorageOptimized()) return(All_Values_+Graph().IndexOffset()[LocalRow]);

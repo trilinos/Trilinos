@@ -2250,7 +2250,7 @@ void Epetra_CrsMatrix::UpdateExportVector(int NumVectors) const {
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
   
-  if (StorageOptimized()) {
+  if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
@@ -2264,7 +2264,7 @@ void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
       y[i] = sum; 
     }
   }
-  else {
+  else if (!StorageOptimized() && !Graph().StorageOptimized()) {
 
 
     int* NumEntriesPerRow = Graph().NumIndicesPerRow();
@@ -2284,6 +2284,22 @@ void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
       
     }
   } 
+  else { // Case where StorageOptimized is incompatible:  Use general accessors.
+
+    
+    // Do actual computation
+    for(int i = 0; i < NumMyRows_; i++) {
+      int     NumEntries = NumMyEntries(i);
+      int*    RowIndices = Graph().Indices(i);
+      double* RowValues  = Values(i);
+      double sum = 0.0;
+      for(int j = 0; j < NumEntries; j++) 
+	sum += *RowValues++ * x[*RowIndices++];
+      
+      y[i] = sum;
+      
+    }
+  } 
   return;
 }
 //=======================================================================================================
@@ -2293,7 +2309,7 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
   for(int i = 0; i < NumCols; i++) 
     y[i] = 0.0; // Initialize y for transpose multiply
 
-  if (StorageOptimized()) {
+  if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
@@ -2305,7 +2321,7 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 	y[*Indices++] += *Values++ * xi;
     }
   }
-  else {
+  else if (!StorageOptimized() && !Graph().StorageOptimized()) {
 
     int* NumEntriesPerRow = Graph().NumIndicesPerRow();
     int** Indices = Graph().Indices();
@@ -2320,13 +2336,24 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 	y[*RowIndices++] += *RowValues++ * xi;
     }
   }
+  else { // Case where StorageOptimized is incompatible:  Use general accessors.
+  
+    for(int i = 0; i < NumMyRows_; i++) {
+      int     NumEntries = NumMyEntries(i);
+      int*    RowIndices = Graph().Indices(i);
+      double* RowValues  = Values(i);
+      double xi = x[i];
+      for(int j = 0; j < NumEntries; j++) 
+	y[*RowIndices++] += *RowValues++ * xi;
+    }
+  }
 
   return;
 }
 //=======================================================================================================
 void Epetra_CrsMatrix::GeneralMM(double ** X, double ** Y, int NumVectors) const {
 
-  if (StorageOptimized()) {
+  if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
@@ -2343,7 +2370,7 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, double ** Y, int NumVectors) const
       }
     }
   }
-  else {
+  else if (!StorageOptimized() && !Graph().StorageOptimized()) {
 
     int* NumEntriesPerRow = Graph().NumIndicesPerRow();
     int** Indices = Graph().Indices();
@@ -2353,6 +2380,20 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, double ** Y, int NumVectors) const
       int      NumEntries = *NumEntriesPerRow++;
       int *    RowIndices = *Indices++;
       double * RowValues  = *srcValues++;
+      for (int k=0; k<NumVectors; k++) {
+	double sum = 0.0;
+	double * x = X[k];
+	for (int j=0; j < NumEntries; j++) sum += RowValues[j] * x[RowIndices[j]];
+	Y[k][i] = sum;
+      }
+    }
+  }
+  else {
+
+    for (int i=0; i < NumMyRows_; i++) {
+      int     NumEntries = NumMyEntries(i);
+      int*    RowIndices = Graph().Indices(i);
+      double* RowValues  = Values(i);
       for (int k=0; k<NumVectors; k++) {
 	double sum = 0.0;
 	double * x = X[k];
@@ -2372,7 +2413,7 @@ void Epetra_CrsMatrix::GeneralMTM(double ** X, double ** Y, int NumVectors)  con
     for (int i=0; i < NumCols; i++) 
       Y[k][i] = 0.0; // Initialize y for transpose multiply
   
-  if (StorageOptimized()) {
+  if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
@@ -2390,7 +2431,7 @@ void Epetra_CrsMatrix::GeneralMTM(double ** X, double ** Y, int NumVectors)  con
       }
     }
   }
-  else {
+  else if (!StorageOptimized() && !Graph().StorageOptimized()) {
     
     int* NumEntriesPerRow = Graph().NumIndicesPerRow();
     int** Indices = Graph().Indices();
@@ -2408,6 +2449,20 @@ void Epetra_CrsMatrix::GeneralMTM(double ** X, double ** Y, int NumVectors)  con
       }
     }
   }
+  else { // Case where StorageOptimized is incompatible:  Use general accessors.
+    
+    for (int i=0; i < NumMyRows_; i++) {
+      int     NumEntries = NumMyEntries(i);
+      int*    RowIndices = Graph().Indices(i);
+      double* RowValues  = Values(i);
+      for (int k=0; k<NumVectors; k++) {
+	double * y = Y[k];
+	double * x = X[k];
+	for (int j=0; j < NumEntries; j++) 
+	  y[RowIndices[j]] += RowValues[j] * x[i];
+      }
+    }
+  }
   return;
 }
 //=======================================================================================================
@@ -2417,7 +2472,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
   int i, j, j0;
   int NumCols = NumMyCols();
 
-  if (StorageOptimized()) {
+  if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
@@ -2516,17 +2571,6 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
   //=================================================================
   else { // !StorageOptimized()
   //=================================================================
-
-    int* NumEntriesPerRow = Graph().NumIndicesPerRow();
-    int** Indices = Graph().Indices();
-    double** srcValues = Values();
-    
-    // If upper, point to last row
-    if ((Upper && !Trans) || (!Upper && Trans)) {
-      NumEntriesPerRow += NumMyRows_-1;
-      Indices += NumMyRows_-1;
-      srcValues += NumMyRows_-1;
-    }
     
     if (!Trans) {
       
@@ -2536,9 +2580,9 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 	if (NoDiagonal()) 
 	  j0--; // Include first term if no diagonal
 	for (i=NumMyRows_-1; i >=0; i--) {
-	  int      NumEntries = *NumEntriesPerRow--;
-	  int *    RowIndices = *Indices--;
-	  double * RowValues  = *srcValues--;
+	  int      NumEntries = NumMyEntries(i);
+	  int *    RowIndices = Graph().Indices(i);
+	  double * RowValues  = Values(i);
 	  double sum = 0.0;
 	  for (j=j0; j < NumEntries; j++) 
 	    sum += RowValues[j] * yp[RowIndices[j]];
@@ -2555,9 +2599,9 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 	if (NoDiagonal())
 	  j0--; // Include first term if no diagonal
 	for (i=0; i < NumMyRows_; i++) {
-	  int      NumEntries = *NumEntriesPerRow++ - j0;
-	  int *    RowIndices = *Indices++;
-	  double * RowValues  = *srcValues++;
+	  int      NumEntries = NumMyEntries(i) - j0;
+	  int *    RowIndices = Graph().Indices(i);
+	  double * RowValues  = Values(i);
 	  double sum = 0.0;
 	  for (j=0; j < NumEntries; j++) 
 	    sum += RowValues[j] * yp[RowIndices[j]];
@@ -2586,9 +2630,9 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 	  j0--; // Include first term if no diagonal
 	
 	for (i=0; i < NumMyRows_; i++) {
-	  int      NumEntries = *NumEntriesPerRow++;
-	  int *    RowIndices = *Indices++;
-	  double * RowValues  = *srcValues++;
+	  int      NumEntries = NumMyEntries(i);
+	  int *    RowIndices = Graph().Indices(i);
+	  double * RowValues  = Values(i);
 	  if (!UnitDiagonal) 
 	    yp[i] = yp[i]/RowValues[0];
 	  double ytmp = yp[i];
@@ -2603,9 +2647,9 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 	  j0--; // Include first term if no diagonal
 	
 	for (i=NumMyRows_-1; i >= 0; i--) {
-	  int      NumEntries = *NumEntriesPerRow-- - j0;
-	  int *    RowIndices = *Indices--;
-	  double * RowValues  = *srcValues--;
+	  int      NumEntries = NumMyEntries(i) - j0;
+	  int *    RowIndices = Graph().Indices(i);
+	  double * RowValues  = Values(i);
 	  if (!UnitDiagonal) 
 	    yp[i] = yp[i]/RowValues[NumEntries];
 	  double ytmp = yp[i];
@@ -2624,7 +2668,7 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
   int i, j, j0, k;
   double diag;
 
-  if (StorageOptimized()) {
+  if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
@@ -2732,26 +2776,15 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
   else { // !StorageOptimized()
     // ========================================================
 
-    int* NumEntriesPerRow = Graph().NumIndicesPerRow();
-    int** Indices = Graph().Indices();
-    double** srcValues = Values();
-    
-    // If upper, point to last row
-    if((Upper && !Trans) || (!Upper && Trans)) {
-      NumEntriesPerRow += NumMyRows_-1;
-      Indices += NumMyRows_-1;
-      srcValues += NumMyRows_-1;
-    }
-
     if(!Trans) {   
       if(Upper) {   
 	j0 = 1;
 	if(NoDiagonal()) 
 	  j0--; // Include first term if no diagonal
 	for(i = NumMyRows_ - 1; i >= 0; i--) {
-	  int     NumEntries = *NumEntriesPerRow--;
-	  int*    RowIndices = *Indices--;
-	  double* RowValues  = *srcValues--;
+	  int     NumEntries = NumMyEntries(i);
+	  int*    RowIndices = Graph().Indices(i);
+	  double* RowValues  = Values(i);
 	  if(!UnitDiagonal) 
 	    diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
 	  for(k = 0; k < NumVectors; k++) {
@@ -2771,9 +2804,9 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
 	if(NoDiagonal()) 
 	  j0--; // Include first term if no diagonal
 	for(i = 0; i < NumMyRows_; i++) {
-	  int     NumEntries = *NumEntriesPerRow++ - j0;
-	  int*    RowIndices = *Indices++;
-	  double* RowValues  = *srcValues++;
+	  int     NumEntries = NumMyEntries(i) - j0;
+	  int*    RowIndices = Graph().Indices(i);
+	  double* RowValues  = Values(i);
 	  if(!UnitDiagonal)
 	    diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
 	  for(k = 0; k < NumVectors; k++) {
@@ -2803,9 +2836,9 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
 	  j0--; // Include first term if no diagonal
       
 	for(i = 0; i < NumMyRows_; i++) {
-	  int     NumEntries = *NumEntriesPerRow++;
-	  int*    RowIndices = *Indices++;
-	  double* RowValues  = *srcValues++;
+	  int     NumEntries = NumMyEntries(i);
+	  int*    RowIndices = Graph().Indices(i);
+	  double* RowValues  = Values(i);
 	  if(!UnitDiagonal) 
 	    diag = 1.0/RowValues[0]; // Take inverse of diagonal once for later use
 	  for(k = 0; k < NumVectors; k++) {
@@ -2822,9 +2855,9 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
 	if(NoDiagonal()) 
 	  j0--; // Include first term if no diagonal  
 	for(i = NumMyRows_ - 1; i >= 0; i--) {
-	  int     NumEntries = *NumEntriesPerRow-- - j0;
-	  int*    RowIndices = *Indices--;
-	  double* RowValues  = *srcValues--;
+	  int     NumEntries = NumMyEntries(i) - j0;
+	  int*    RowIndices = Graph().Indices(i);
+	  double* RowValues  = Values(i);
 	  if(!UnitDiagonal) 
 	    diag = 1.0/RowValues[NumEntries]; // Take inverse of diagonal once for later use
 	  for(k = 0; k < NumVectors; k++) {
