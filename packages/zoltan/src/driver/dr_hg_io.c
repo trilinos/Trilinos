@@ -135,20 +135,22 @@ int read_hypergraph_file(
     }
 
     /* read the array in on processor 0 */
-    if (pio_info->file_type == HYPERGRAPH_FILE)
+    if (pio_info->file_type == HYPERGRAPH_FILE) {
       if (HG_readfile(Proc, fp, &nvtxs, &nhedges, &npins,
                       &hindex, &hvertex, &vwgt_dim, &vwgts, 
                       &hewgt_dim, &hewgts, &base) != 0){
         Gen_Error(0, "fatal: Error returned from HG_readfile");
         return 0;
       }
-    else if (pio_info->file_type == MATRIXMARKET_FILE)
+    }
+    else if (pio_info->file_type == MATRIXMARKET_FILE) {
       if (MM_readfile(Proc, fp, &nvtxs, &nhedges, &npins,
                       &hindex, &hvertex, &vwgt_dim, &vwgts, 
                       &hewgt_dim, &hewgts, &base) != 0){
         Gen_Error(0, "fatal: Error returned from MM_readfile");
         return 0;
       }
+    }
 
     fclose(fp);
 

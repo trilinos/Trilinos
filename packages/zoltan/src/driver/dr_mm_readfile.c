@@ -209,10 +209,10 @@ End:
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
       /* Set hypergraph to be empty. */
       *nVtx  = *nEdge  = *nPins = *vwgt_dim = *ewgt_dim = 0;
+      safe_free((void **) &index);
+      safe_free((void **) &vertex);
     }
     safe_free((void **) &mat);
-    safe_free((void **) &index);
-    safe_free((void **) &vertex);
     return err;
 }
 
