@@ -803,6 +803,9 @@ report($SUMMARY);
         }
         
         if (defined $brokenPackage) {
+            $brokenPackage =~ s/~\s*//;             # trim leading spaces
+            $brokenPackage =~ s/\s*$//;             # trim trailing spaces
+            $brokenPackage = lc($brokenPackage);    # convert to lower-case
         } else {
             printEvent("error fixing invoke-configure--can't detect package\n");
             return ("error", "error");
@@ -1661,20 +1664,20 @@ report($SUMMARY);
         print "  -f FILE  : Run test harness normally with given test-harness-config file\n";
         print "\n";
         print "  -nf FILE : Run test harness with given test-harness-config file, but\n";
-        print "             don't run tests (for cross-compiling machines).\n";
+        print "             don't run tests (for cross-compiling machines)\n";
         print "\n";
         print "  -tf FILE : Run test harness with given test-harness-config file, but\n";
         print "             don't configure and build--only run tests (for cross-\n";
-        print "             compiling machines).\n";
+        print "             compiling machines)\n";
         print "\n";
         print "  -p FILE  : Parse given test-harness-config file and exit. This is useful\n";
         print "             for catching errors and inconsistencies without running the\n";
-        print "             entire test-harness.\n";
+        print "             entire test-harness\n";
         print "\n";
         print "  -g FILE  : Generate template configuration file (with defaults) named \n";
         print "             FILE and exit\n";
         print "\n";
-        print "  -s       : Omit comments from generated configuration file\n";
+        print "  -sg FILE : Same as -g, but comments are omitted\n";
         print "             (must be of the form: -sg FILE) (do not use -gs)\n";
         print "\n";
         print "  -h       : Print this help page and exit\n";
