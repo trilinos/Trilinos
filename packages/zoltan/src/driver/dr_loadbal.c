@@ -45,9 +45,8 @@ static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
  */
 
 ZOLTAN_NUM_OBJ_FN get_num_elements;
-/* not used right now --->
+
 ZOLTAN_OBJ_LIST_FN get_elements;
-*/
 ZOLTAN_FIRST_OBJ_FN get_first_element;
 ZOLTAN_NEXT_OBJ_FN get_next_element;
 
@@ -184,17 +183,28 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
-  if (Zoltan_Set_Fn(zz, ZOLTAN_FIRST_OBJ_FN_TYPE,
-                    (void (*)()) get_first_element,
-                    (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-    return 0;
+  if (Test.Multi_Callbacks) {
+    if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_LIST_FN_TYPE,
+                      (void (*)()) get_elements,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
   }
+  else {
+    if (Zoltan_Set_Fn(zz, ZOLTAN_FIRST_OBJ_FN_TYPE,
+                      (void (*)()) get_first_element,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
 
-  if (Zoltan_Set_Fn(zz, ZOLTAN_NEXT_OBJ_FN_TYPE, (void (*)()) get_next_element,
-                    (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-    return 0;
+    if (Zoltan_Set_Fn(zz, ZOLTAN_NEXT_OBJ_FN_TYPE,
+                      (void (*)()) get_next_element,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
   }
 
   /* Functions for geometry based algorithms */
@@ -486,6 +496,43 @@ MESH_INFO_PTR mesh;
   *ierr = ZOLTAN_OK; /* set error code */
 
   return(mesh->num_elems);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void get_elements(void *data, int num_gid_entries, int num_lid_entries,
+                  ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+                  int wdim, float *wgt, int *ierr)
+{
+  MESH_INFO_PTR mesh;
+  ELEM_INFO *elem;
+  ELEM_INFO *current_elem;
+  int i, j;
+  int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
+
+  *ierr = ZOLTAN_OK; 
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+  
+  mesh = (MESH_INFO_PTR) data;
+  elem = mesh->elements;
+  for (i = 0; i < mesh->num_elems; i++) {
+    current_elem = &elem[i];
+    global_id[i*num_gid_entries+gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
+    if (num_lid_entries) 
+      local_id[i*num_lid_entries+lid] = i;
+
+    if (wdim>0) {
+      for (j=0; j<wdim; j++) {
+        wgt[i*wdim+j] = current_elem->cpu_wgt[j];
+      }
+    }
+  }
 }
 
 /*****************************************************************************/

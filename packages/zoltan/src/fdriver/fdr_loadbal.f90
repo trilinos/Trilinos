@@ -202,22 +202,27 @@ type(PARIO_INFO) :: pio_info
     goto 9999
   endif
 
-! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_FIRST_OBJ_FN_TYPE, get_first_element, &
-!               mesh_wrapper) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_First_Obj_Fn(zz_obj, get_first_element, &
-                mesh_wrapper) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Fn()"
-    run_zoltan = .false.
-    goto 9999
-  endif
+  if (Test_Multi_Callbacks .eq. 1)  then
+    if (Zoltan_Set_Obj_List_Fn(zz_obj, get_elements, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      goto 9999
+    endif
+  else
+    if (Zoltan_Set_First_Obj_Fn(zz_obj, get_first_element, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      goto 9999
+    endif
 
-! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_NEXT_OBJ_FN_TYPE, get_next_element, &
-!               mesh_wrapper) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Next_Obj_Fn(zz_obj, get_next_element, &
-                mesh_wrapper) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Fn()"
-    run_zoltan = .false.
-    goto 9999
+    if (Zoltan_Set_Next_Obj_Fn(zz_obj, get_next_element, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      goto 9999
+    endif
   endif
 
 !  /* Functions for geometry based algorithms */
@@ -347,6 +352,53 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   get_num_elements = data%ptr%num_elems
 end function get_num_elements
+
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*****************************************************************************/
+subroutine get_elements(data, num_gid_entries, num_lid_entries, &
+                        global_id, local_id, wdim, wgt, ierr)
+
+  type(Zoltan_User_Data_2), intent(in) :: data
+  integer(Zoltan_INT), intent(in) :: num_gid_entries
+  integer(Zoltan_INT), intent(in) :: num_lid_entries
+  integer(Zoltan_INT), intent(out) :: global_id(*)
+  integer(Zoltan_INT), intent(out) :: local_id(*)
+  integer(Zoltan_INT), intent(in) :: wdim
+  real(Zoltan_FLOAT), intent(out) :: wgt(*)
+  integer(Zoltan_INT), intent(out) :: ierr
+
+  type(MESH_INFO), pointer :: mesh_data
+  integer(Zoltan_INT) :: gid  ! Temp variables to change positioning of IDs.
+  integer(Zoltan_INT) :: lid
+  integer(Zoltan_INT) :: i
+
+  gid = num_gid_entries
+  lid = num_lid_entries
+
+  mesh_data => data%ptr
+
+  if (.not. associated(mesh_data%elements)) then
+    ierr = ZOLTAN_FATAL
+    return
+  endif
+  
+  do i = 0, mesh_data%num_elems-1
+    if (num_lid_entries.gt.0) local_id(i*num_lid_entries + lid) = i
+    global_id(i*num_gid_entries + gid) = mesh_data%elements(i)%globalID
+
+    if (wdim>0) then
+      wgt(i*wdim+1) = mesh_data%elements(i)%cpu_wgt
+    endif
+
+    if (wdim>1) then
+      ierr = ZOLTAN_WARN ! /* we didn't expect multidimensional weights */
+    else
+      ierr = ZOLTAN_OK
+    endif
+  enddo
+
+end subroutine get_elements
 
 !/*****************************************************************************/
 !/*****************************************************************************/
@@ -591,16 +643,16 @@ integer(Zoltan_INT), intent(out) :: ierr
 
 integer(Zoltan_INT) :: i
 
-  do i = 1, num_obj
+  do i = 0, num_obj-1
     if (num_lid_entries .eq. 0) then
       call get_geom(data, num_gid_entries, num_lid_entries, &
-                    global_id((i-1)*num_gid_entries + 1),   &
-                    local_id, coor((i-1)*num_dim + 1), ierr)
+                    global_id(i*num_gid_entries + 1),   &
+                    local_id, coor(i*num_dim + 1), ierr)
     else
       call get_geom(data, num_gid_entries, num_lid_entries, &
-                    global_id((i-1)*num_gid_entries + 1),   &
-                    local_id((i-1)*num_lid_entries + 1),    &
-                    coor((i-1)*num_dim + 1), ierr)
+                    global_id(i*num_gid_entries + 1),   &
+                    local_id(i*num_lid_entries + 1),    &
+                    coor(i*num_dim + 1), ierr)
     endif
     if (ierr.ne.ZOLTAN_OK) exit
   enddo
