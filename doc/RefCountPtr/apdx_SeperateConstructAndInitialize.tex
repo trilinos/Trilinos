@@ -5,19 +5,19 @@
 
 Here we describe an idiom which works most effectively when using
 {}\texttt{RefCountPtr<>} for implementing concrete classes (that may
-be used using reference semantics) that maximizes flexibility and
-reusability.  This is the concept of ``seperate construction and
-initialization''.  The idea is that if an class object can be default
-constructed to a potentially ``uninitialized'' state and then at any
-time later can be seperately initialized then such a class will have
-the maximum reusability and this can not be disputed.  The idiom
-described here is more effective for concrete classes where are
-derived from abstract interface classes.  It will be shown below that
-this ``seperate construction and initialization'' idiom also trivially
-supports the ``initialization and construction'' idiom which is
-preferable in many cases and is advocated by many experts (for
-example, see {}\cite[Section 10.2.3]{ref:stroustrup_2000} and
-{}\cite[Item 4]{ref:meyers_1996}).
+be manipulated using reference (i.e.~pointer) semantics) that
+maximizes flexibility and reusability.  This is the concept of
+``seperate construction and initialization''.  The idea is that if an
+class object can be default constructed to a potentially
+``uninitialized'' state and then at any time later can be seperately
+initialized then such a class will have the maximum reusability and
+this can not be disputed.  The idiom described here is more effective
+for concrete classes which are derived from abstract interface
+classes.  It will be shown below that this ``seperate construction and
+initialization'' idiom also trivially supports the ``initialization
+on construction'' idiom which is preferable in many cases and is
+advocated by many experts (for example, see {}\cite[Section
+10.2.3]{ref:stroustrup_2000} and {}\cite[Item 4]{ref:meyers_1996}).
 
 What many C++ experts fail to recongnise, however, is that in many
 cases the entities that are best qualifed to fully initialize and
@@ -26,15 +26,23 @@ concrete subclass of an objects that they initialize.  To force some
 types of entities to both allocate and initialize objects is to complicate the
 design and limit the reusablity of such entities.
 
-As an example for where it make since to seperate construction and
+As an example for where it make sense to seperate construction and
 initialization, consider an object-oriented design for filling spare
-matrix objects.
-
-ToDo: finish this sparse matrix example!
+matrix objects.  An example of such an interface is the abstract
+{}\texttt{Epetra\_\-Row\-Matrix} interface class in the Epetra [???]
+package.  {}\texttt{Epetra\_\-Row\-Matrix} defines operations to
+insert/replace/sum-into nonzero elements row by row.  It is posible
+two write generic code that takes a pre-allocated
+{}\texttt{Epetra\_\-Row\-Matrix} object and then initalize this object
+with nonzero values.  Such a piece of generica code would be
+compilcated if it had to also know the concrete subclass in order to
+create the object first and then initialize it.  This is prehaps not
+the best example but the reader should get the general idea behind the
+argument for the ``separate construction from initialization'' idiom.
 
 The basics of this ``seperate construction and initialization'' idiom
-are demonstrated in the following example subclass
-%
+are demonstrated in the following example subclass.
+
 {\scriptsize\begin{verbatim}
 class ConcreteClass1 : public AbstractClass {
 public:
@@ -44,7 +52,7 @@ private:
     RefCountPtr<B>  b_;
 };
 \end{verbatim}}
-%
+
 {}\noindent{}In the above concrete class, {}\texttt{RefCountPtr<>}
 objects are maintained to objects of type {}\texttt{A} and
 {}\texttt{B}.  Note that the types {}\texttt{A} and/or {}\texttt{B}
@@ -67,7 +75,7 @@ public:
   { initialize(a,b); }
   void initialize( const RefCountPtr<A>& a, const RefCountPtr<B>& b )
   { a_ = a; b_ = b; }
-  void setUninitialized( RefCountPtr<A> *a = NULL, RefCountPtr<B> *b = NULL )
+  void uninitialize( RefCountPtr<A> *a = NULL, RefCountPtr<B> *b = NULL )
   { if(a) *a = a_; if(b) *b = b_; a_ = null; b_ = null; }
   ...
 private:
@@ -78,33 +86,31 @@ private:
 
 Note that in the above implementation of {}\texttt{ConcreteClass1}
 that an object can be default constructed to an ``uninitialized''
-state or can be fully on object creation (using the second constructor
-that calls the {}\texttt{initialize()} function).
+state or can be fully initialized on object creation (using the second
+constructor that calls the {}\texttt{initialize()} function).
 
-The form of the {}\texttt{setUninitialized()} function allows a client
-to uninitialize it and optionally that client the option to take
-ownership of two objects of type {}\texttt{A} and {}\texttt{B}.  A
-client can uninitialize an object of type {}\texttt{Concrete\-Class1}
-and take ownership of the aggregate {}\texttt{A} and {}\texttt{B}
-objects as
-%
+A client can later uninitialize an object of type
+{}\texttt{Concrete\-Class1} and take ownership of the aggregate
+{}\texttt{A} and {}\texttt{B} objects by calling the
+{}\texttt{uninitialize()} function as
+
 {\scriptsize\begin{verbatim}
 ConcreteClass1 cc1;
 ...
 RefCountPtr<A> a;
 RefCountPtr<B> b;
-cc1.setUninitialized(&a,&b);
+cc1.uninitialize(&a,&b);
 \end{verbatim}}
-%
+
 {}\noindent{}or could uninitialize a {}\texttt{Concrete\-Class1}
 object and not take ownership as
-%
+
 {\scriptsize\begin{verbatim}
 ConcreteClass1 cc1;
 ...
-cc1.setUninitialized();
+cc1.uninitialize();
 \end{verbatim}}
-%
+
 {}\noindent{}In the last example, if {}\texttt{cc1} was the only
 client maintaining {}\texttt{RefCountPtr<>} objects to its aggregate
 {}\texttt{A} and {}\texttt{B} objects then these objects would be
@@ -118,6 +124,6 @@ as
 ConcreteClass1 cc1;
 ...
 RefCountPtr<B> b;
-cc1.setUninitialized(NULL,&b);
+cc1.uninitialize(NULL,&b);
 \end{verbatim}}
 %
