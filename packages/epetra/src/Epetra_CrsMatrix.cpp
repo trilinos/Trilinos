@@ -2238,7 +2238,7 @@ void Epetra_CrsMatrix::UpdateImportVector(int NumVectors) const {
       }
     }
     if(ImportVector_ == 0) 
-      ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
+      ImportVector_ = new Epetra_MultiVector(ColMap(),NumVectors); // Create import vector if needed
   }
   return;
 }
@@ -2252,7 +2252,7 @@ void Epetra_CrsMatrix::UpdateExportVector(int NumVectors) const {
       }
     }
     if(ExportVector_ == 0) 
-      ExportVector_ = new Epetra_MultiVector(RowMap(),1); // Create Export vector if needed
+      ExportVector_ = new Epetra_MultiVector(RowMap(),NumVectors); // Create Export vector if needed
   }
   return;
 }
