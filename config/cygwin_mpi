@@ -1,0 +1,1 @@
+../configure --with-mpi-include=-I/usr/SDK.gcc/include --enable-mpi --with-mpi-cxx=g++ --with-mpi=cc=gcc --with-mpi-f77=g77 --with-mpi-libdir=-L/usr/SDK.gcc/lib --with-mpi-libs=-lmpich
