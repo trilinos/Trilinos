@@ -41,6 +41,9 @@
 /* define that anasazi is activated in loca */
 #undef HAVE_LOCA_ANASAZI
 
+/* define that epetraext is activated */
+#undef HAVE_NOX_EPETRAEXT
+
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
 
