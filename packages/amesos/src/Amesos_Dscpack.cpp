@@ -186,10 +186,10 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   Epetra_Map ReplicatedMap( -1, numrows, &AllIDs[0], 0, Comm());
   Epetra_Import importer( ReplicatedMap, OriginalMap );
 
-  Epetra_Import ImportToReplicated( ReplicatedMap, OriginalMap);
+  //  Epetra_Import ImportToReplicated( ReplicatedMap, OriginalMap);
   Epetra_CrsGraph ReplicatedGraph( Copy, ReplicatedMap, 0 ); 
   EPETRA_CHK_ERR( ReplicatedGraph.Import( (CastCrsMatrixA->Graph()), importer, Insert) );
-  EPETRA_CHK_ERR( ReplicatedGraph.TransformToLocal() ) ;
+  EPETRA_CHK_ERR( ReplicatedGraph.FillComplete() ) ;
 
   
   //
@@ -336,7 +336,7 @@ int Amesos_Dscpack::PerformNumericFactorization()
   
   Epetra_CrsMatrix DscMat(Copy, *DscMap_, 0);
   EPETRA_CHK_ERR( DscMat.Import( *CastCrsMatrixA, *ImportToSerial_, Insert) );
-  EPETRA_CHK_ERR( DscMat.TransformToLocal() ) ; 
+  EPETRA_CHK_ERR( DscMat.FillComplete() ) ; 
 
   //    cout << "Amesos_Dscpack.cpp:: DscMat = " << DscMat << endl ; 
 

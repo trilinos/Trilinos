@@ -114,6 +114,6 @@ int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) {
   }
 
 
-  assert( Out->TransformToLocal()==0 ) ;
+  assert( Out->FillComplete()==0 ) ;
   return 0 ; 
 }

@@ -129,7 +129,7 @@ int Amesos_Umfpack::ConvertToSerial()
     SerialCrsMatrixA = new Epetra_CrsMatrix(Copy,*SerialMap_,0);
     SerialCrsMatrixA->Export(*Matrix(), export_to_serial,Insert); 
     
-    SerialCrsMatrixA->TransformToLocal(); 
+    SerialCrsMatrixA->FillComplete(); 
     SerialMatrix_ = SerialCrsMatrixA;
   }
 
