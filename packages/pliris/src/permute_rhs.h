@@ -28,4 +28,17 @@
 // @HEADER
 */
 
+#ifndef __PERMUTERHSH__
+#define __PERMUTERHSH__
+
+#include "defines.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void	permute_rhs(DATA_TYPE *,int *);
+
+#ifdef __cplusplus
+}
+#endif 
+#endif

@@ -28,4 +28,18 @@
 // @HEADER
 */
 
+
+#ifndef __PERMUTEH__
+#define __PERMUTEH__
+
+#include "defines.h"
+#ifdef __cplusplus
+extern "C" {
+#endif 
+
  void X_PERMUTE_(DATA_TYPE *, int *);
+
+#ifdef __cplusplus
+}
+#endif 
+#endif 

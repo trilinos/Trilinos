@@ -28,8 +28,24 @@
 // @HEADER
 */
 
+#ifndef __XSOLVEH__
+#define __XSOLVEH__
+
+#include "defines.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 void X_SOLVE_ (DATA_TYPE *,   /* Matrix   input*/
 	       int *,         /* Permutation Vector  Input */
                DATA_TYPE *,   /*  RHS Input Output Solution */
 	       int *);       /* Total Number of RHS  */
- 
+
+
+
+#ifdef __cplusplus
+}
+#endif 
+#endif 

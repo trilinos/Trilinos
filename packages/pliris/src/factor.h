@@ -28,4 +28,19 @@
 // @HEADER
 */
 
+#ifndef __FACTORH__
+#define __FACTORH__
+
+#include "defines.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif 
+
 void	factor(DATA_TYPE *);
+
+
+#ifdef __cplusplus
+}
+#endif 
+#endif 

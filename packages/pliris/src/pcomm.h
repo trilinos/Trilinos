@@ -28,6 +28,18 @@
 // @HEADER
 */
 
-void initcomm(  );
-double max_all(double buf, int type);
 
+#ifndef __PCOMMH__
+#define __PCOMMH__
+
+#ifdef __cplusplus
+extern "C" {
+#endif 
+
+void initcomm(  );
+double max_all(double , int );
+
+#ifdef __cplusplus
+}
+#endif 
+#endif 

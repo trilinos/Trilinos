@@ -28,4 +28,19 @@
 // @HEADER
 */
 
+#ifndef __PERM1H__
+#define __PERM1H__
+
+#include "defines.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 void perm1_(DATA_TYPE *, int *);
+
+#ifdef __cplusplus
+}
+#endif 
+#endif

@@ -28,4 +28,20 @@
 // @HEADER
 */
 
+
+#ifndef __SOLVEH__
+#define __SOLVEH__
+
+#include "defines.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif 
+
 void back_solve6(DATA_TYPE *, DATA_TYPE *);
+
+
+#ifdef __cplusplus
+}
+#endif 
+#endif 

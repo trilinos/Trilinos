@@ -28,5 +28,20 @@
 // @HEADER
 */
 
-void	forwardall(DATA_TYPE *mat, int *permutations, DATA_TYPE *rhs_copy, 
-	DATA_TYPE *rhs);
+
+#ifndef __FORWARDALLH__
+#define __FORWARDALLH__
+
+#include "defines.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void	forwardall(DATA_TYPE *, int *, DATA_TYPE *, 
+	DATA_TYPE *);
+
+#ifdef __cplusplus
+}
+#endif 
+#endif 

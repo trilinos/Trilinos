@@ -28,4 +28,19 @@
 // @HEADER
 */
 
+
+#ifndef __XFACTORH__
+#define __XFACTORH__
+
+#include "defines.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif 
+
 void X_FACTOR_ (DATA_TYPE *, int *,int *, int *, double *);
+
+#ifdef __cplusplus
+}
+#endif
+#endif

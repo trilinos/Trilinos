@@ -28,4 +28,17 @@
 // @HEADER
 */
 
+
+#ifndef __MYTIMEH__
+#define __MYTIMEH__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void showtime(char *, double *);
+
+#ifdef __cplusplus
+}
+#endif 
+#endif 
