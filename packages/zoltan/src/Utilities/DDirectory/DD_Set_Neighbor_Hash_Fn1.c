@@ -40,8 +40,13 @@ static int groupsize ;
 
 int Zoltan_DD_Set_Neighbor_Hash1_Fn1 (Zoltan_DD_Directory *dd, int size)
    {
+   char *yo = "Zoltan_DD_Set_Hash_Fn1" ;
+
    if (dd == NULL || size < 1)
+      {
+      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
       return ZOLTAN_DD_INPUT_ERROR ;
+      }
 
    groupsize   = size ;
    dd->hash    = dd_nh1 ;

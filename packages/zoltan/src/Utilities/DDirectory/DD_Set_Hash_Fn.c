@@ -32,16 +32,19 @@
 int Zoltan_DD_Set_Hash_Fn (Zoltan_DD_Directory *dd,
  unsigned int (*hash) (LB_ID_PTR, int, unsigned int))
      {
+     char *yo = "Zoltan_DD_Set_Hash_Fn" ;
 
      /* input sanity checking */
      if (dd == NULL || hash == NULL)
+        {
+        ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
         return ZOLTAN_DD_INPUT_ERROR ;
+        }
 
      dd->hash = hash ;
 
      if (dd->debug_level > 0)
-        printf ("ZOLTAN_DD_SET_HASH_FN(%d): Successful completion\n",
-         dd->my_proc) ;
+        ZOLTAN_PRINT_INFO (dd->my_proc, yo, "Successful") ;
 
      return ZOLTAN_DD_NORMAL_RETURN ;
      }

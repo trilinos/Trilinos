@@ -108,7 +108,7 @@ DD_TARGET	= zoltan_dd
 
 DD_DRIVER	= zdrive_dd
 DD_DRIVER_CSRC	= dd_main.c
-DD_DRIVER_LIBS 	= -L. -l$(DD_TARGET) -l$(COMM_TARGET) $(MEM_TARGET) \
+DD_DRIVER_LIBS 	= -L. -l$(DD_TARGET) -l$(COMM_TARGET) -l$(MEM_TARGET) \
                   $(MPI_LIBPATH) $(MPI_LIB)
 DD_DRIVER_DEP  	= $(DD_LIB) $(COMM_LIB) $(MEM_LIB)
 
@@ -369,7 +369,7 @@ lint_comm: $(MEM_CSRC) $(COMM_CSRC) $(COMM_DRIVER_CSRC)
 
 lint_dd: $(MEM_CSRC) $(COMM_CSRC) $(DD_CSRC) $(DD_DRIVER_CSRC) 
 	@echo "running lint..."
-	$(LINT) $(LINT_FLAGS) $?
+	$(LINT) -I/Net/local/homes/rheaphy/Zoltan/lb $(LINT_FLAGS)  $?
 
 #
 ############################################################################

@@ -40,7 +40,13 @@
 #define ZOLTAN_DD_FIND_MSG_TAG     29137  /* needs 3 consecutive values */
 #define ZOLTAN_DD_UPDATE_MSG_TAG   29140  /* needs 2 consecutive values */
 #define ZOLTAN_DD_REMOVE_MSG_TAG   29142  /* needs 2 consecutive values */
-
+
+
+
+
+
+
+
 /************  Zoltan_DD_Directory, DD_Node  **********************/
 
 
@@ -94,14 +100,20 @@ typedef struct
    MPI_Comm comm ;          /* Dup of original MPI Comm (KDD)         */
    DD_Node *table[1] ;      /* Hash table, heads of the link lists    */
    } Zoltan_DD_Directory ;
-
+
+
+
+
+
+
+
 /*************** DD Communication Messages *********************/
 
 /* Note: These message structures should become MPI datatypes (KDD)   */
 
 
 typedef struct           /* Only used by Zoltan_DD_Update()           */
-   { 
+   {
    int owner ;           /* range [0, nproc-1]                        */
    int partition ;
    LB_ID_TYPE gid[1] ;   /* struct malloc'd to include gid & lid & user */
@@ -143,7 +155,13 @@ typedef struct           /* Only used by Zoltan_DD_Remove()      */
    int        owner ;    /* range [0, nproc-1]                   */
    LB_ID_TYPE gid[1] ;   /* structure malloc'd to include gid    */
    }  DD_Remove_Msg ;
-
+
+
+
+
+
+
+
 /***********  Distributed Directory Function Prototypes ************/
 
 int Zoltan_DD_Create (Zoltan_DD_Directory **dd, MPI_Comm comm,
@@ -158,7 +176,7 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
  LB_ID_PTR lid, LB_ID_PTR user, int *partition, int count) ;
 
 
-int Zoltan_DD_Find (Zoltan_DD_Directory *dd, LB_ID_PTR gid, 
+int Zoltan_DD_Find (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
  LB_ID_PTR lid, LB_ID_PTR data, int *partition, int count,
  int *owner) ;
 

@@ -56,9 +56,13 @@ int Zoltan_DD_Set_Neighbor_Hash2_Fn (Zoltan_DD_Directory *dd, int *proc,
  int *low, int *high)
    {
    int i ;
+   char *yo = "Zoltan_DD_Set_Hash_Fn2" ;
 
    if (dd == NULL || proc == NULL || low == NULL || high == NULL)
+      {
+      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
       return ZOLTAN_DD_INPUT_ERROR ;
+      }
 
    dd->hash = dd_nh2 ;
    dd->cleanup = dd_nh2_cleanup ;
@@ -66,6 +70,11 @@ int Zoltan_DD_Set_Neighbor_Hash2_Fn (Zoltan_DD_Directory *dd, int *proc,
    nproc = dd->nproc ;
 
    ptr = (Range_Info *)  LB_MALLOC (dd->nproc * sizeof (Range_Info)) ;
+   if (ptr == NULL)
+      {
+      ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to Malloc range info") ;
+      return ZOLTAN_DD_MEMORY_ERROR ;
+      }
 
    for (i = 0 ;  i < dd->nproc ; i++)
        {
@@ -79,23 +88,41 @@ int Zoltan_DD_Set_Neighbor_Hash2_Fn (Zoltan_DD_Directory *dd, int *proc,
    return ZOLTAN_DD_NORMAL_RETURN ;
    }
 
+
+
+
+
+
+
 static unsigned int dd_nh2 (LB_ID_PTR gid, int gid_length,
  unsigned int junk)
    {
    Range_Info *temp ;
- 
+   char *yo = "dd_ny2" ;
+
    /* check if gid is out of range */
    if (*gid > ptr[nproc-1].high || *gid < ptr[0].low)
+      {
+      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
       return nproc-1 ;
+      }
 
    temp = (Range_Info *) bsearch (gid, ptr, nproc,
     sizeof (Range_Info), compare_search) ;
 
    if (temp == NULL)              /* shouldn't happen */
-      return ZOLTAN_DD_NO_PROC ;
+      {
+      ZOLTAN_PRINT_ERROR (0, yo, "C function bsearch returned NULL") ;
+      return nproc-1 ;
+      }
 
    return temp->proc ;
    }
+
+
+
+
+
 
 
 static int compare_sort (const void *a, const void *b)
@@ -112,6 +139,9 @@ static int compare_search (const void *a, const void *b)
     if (*((LB_ID_TYPE *) a) > ((Range_Info *) b)->high) return  1 ;
     else return 0 ;
     }
+
+
+
 
 
 static void dd_nh2_cleanup (void)

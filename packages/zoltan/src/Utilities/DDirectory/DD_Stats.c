@@ -22,7 +22,10 @@
 /*  NOTE: See file, README, for associated documentation. (RTH) */
 
 
-
+
+
+
+
 /*******************  Zoltan_DD_Stats()  ***************************/
 
 void Zoltan_DD_Stats (Zoltan_DD_Directory *dd)
@@ -34,10 +37,16 @@ void Zoltan_DD_Stats (Zoltan_DD_Directory *dd)
    int len ;
    int i ;
    DD_Node *ptr ;
+   char str[100] ;  /* used to build message string */
+   char *yo = "Zoltan_DD_Stats" ;
+
 
    /* Input sanity check */
    if (dd == NULL)
+      {
+      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
       return ;
+      }
 
    for (i = 0 ; i < dd->table_length ; i++)
       {
@@ -46,20 +55,22 @@ void Zoltan_DD_Stats (Zoltan_DD_Directory *dd)
          chains++ ;
 
       for (ptr = dd->table[i] ; ptr != NULL ; ptr = ptr->next)
-          {
+         {
+         sprintf (str, "GID %4u, Owner %d, Table Index %d\n",
+          *ptr->gid, ptr->owner, i) ;
+         ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
 
-printf ("ZOLTAN_DD_STATS(%d) GID %4u, Owner %d, Table Index %d\n",
- dd->my_proc, *ptr->gid, ptr->owner, i) ;
-
-          len++ ;
-          total++ ;
-          }
+         len++ ;
+         total++ ;
+         }
       if (len > maxlen)
          maxlen = len ;
       }
 
    if (dd->debug_level >= 0)
-      printf ("ZOLTAN_DD_STATS(%d): Hash table length %d, %d nodes with %d "
-       "chains, longest chain %d\n", dd->my_proc, dd->table_length, total,
-       chains, maxlen) ;
+      {
+      sprintf (str, "Hash table size %d, %d nodes with %d chains, max chain %d",
+       dd->table_length, total, chains, maxlen) ;
+      ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
+      }
    }

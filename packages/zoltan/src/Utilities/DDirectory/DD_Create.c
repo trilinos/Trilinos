@@ -23,7 +23,7 @@
 
 
 
-
+
 /*******************  Zoltan_DD_Create()  ***************************/
 
 int Zoltan_DD_Create (Zoltan_DD_Directory **dd,
@@ -35,17 +35,25 @@ int Zoltan_DD_Create (Zoltan_DD_Directory **dd,
  int debug_level)             /* control actions to errors, normally 0 */
    {
    int size ;
+   unsigned int align ;
+   char *yo = "Zoltan_DD_Create" ;
 
    /* input sanity check */
    if (dd == NULL || num_gid < 1 || table_length < 0 || num_lid < 0)
+      {
+      ZOLTAN_PRINT_ERROR (0, yo, "invalid input argument") ; /* nproc unknown */
       return ZOLTAN_DD_INPUT_ERROR ;
+      }
 
    /* malloc memory for the directory structure + hash table */
    size = (table_length == 0) ? ZOLTAN_DD_HASH_TABLE_COUNT : table_length ;
    *dd = (Zoltan_DD_Directory *) LB_MALLOC (sizeof (Zoltan_DD_Directory)
        + size * sizeof (DD_Node*)) ;
    if (*dd == NULL)
+      {
+      ZOLTAN_PRINT_ERROR (0, yo, "can not malloc hash table") ; /* nproc ??? */
       return ZOLTAN_DD_MEMORY_ERROR ;
+      }
 
    /* NULL heads of link list in hash table */
    memset ((char *) (*dd)->table, '\0', size * sizeof (DD_Node*)) ;
@@ -70,15 +78,25 @@ int Zoltan_DD_Create (Zoltan_DD_Directory **dd,
 
    size = (user_length + (*dd)->max_id_length) * sizeof (LB_ID_PTR) ;
    (*dd)->find_msg_size   = size + sizeof (DD_Find_Msg) ;
- 
-   /* duplicate MPI comm to prevent future comm changes from disrupting */
-   /* directory communications & save the associated comm size & rank   */
+
+   /* force alignment, algorithm from Plauger, The Standard C Library    */
+   align = 7U ;  /* from 0,1,3,7 depending upon machine, set worst case  */
+   (*dd)->update_msg_size = (align + (*dd)->update_msg_size) & ~align ;
+   (*dd)->remove_msg_size = (align + (*dd)->remove_msg_size) & ~align ;
+   (*dd)->find_msg_size   = (align + (*dd)->find_msg_size)   & ~align ;
+
+   /* duplicate MPI comm to prevent future comm changes from disrupting  */
+   /* directory communications & save the associated comm size & rank    */
    if (MPI_Comm_dup  (comm,  &((*dd)->comm))    != MPI_SUCCESS
     || MPI_Comm_size (comm,  &((*dd)->nproc))   != MPI_SUCCESS
     || MPI_Comm_rank (comm,  &((*dd)->my_proc)) != MPI_SUCCESS)
+         {
+         ZOLTAN_PRINT_ERROR (0, yo, "MPI Problem, Unable to continue") ;
          return ZOLTAN_DD_MPI_ERROR ;
+         }
 
    if (debug_level > 0)
-      printf ("ZOLTAN_DD_CREATE(%d): Successful\n", (*dd)->my_proc) ;
+      ZOLTAN_PRINT_INFO ((*dd)->my_proc, "Zoltan_DD_Create", "Successful") ;
+
    return ZOLTAN_DD_NORMAL_RETURN ;
    }

@@ -36,10 +36,14 @@ void Zoltan_DD_Destroy (Zoltan_DD_Directory *dd)
 
    int my_proc ;
    int debug_level ;
+   char *yo = "Zoltan_DD_Destroy" ;
 
    /* input sanity check */
    if (dd == NULL)
+      {
+      ZOLTAN_PRINT_ERROR (0, yo, "input argument dd is NULL") ;
       return ;
+      }
 
    /* for each linked list head, walk its list freeing memory */
    for (i = 0 ; i < dd->table_length ; i++)
@@ -48,15 +52,17 @@ void Zoltan_DD_Destroy (Zoltan_DD_Directory *dd)
          next = ptr->next ;         /* save before deletion         */
          LB_FREE (&ptr) ;           /* destroy node                 */
          }
-   debug_level = dd->debug_level ;  /* to control final debug print */
-   my_proc     = dd->my_proc ;
 
-   if (dd->cleanup != NULL)       
-      dd->cleanup() ;    /* execute user registered cleanup function */
+   /* execute user registered cleanup function, if needed */
+   if (dd->cleanup != NULL)
+      dd->cleanup() ;
 
    MPI_Comm_free (&(dd->comm)) ;    /* free MPI Comm, ignore errors */
-   LB_FREE (&dd) ;                  /* free directory structure     */
 
+   debug_level = dd->debug_level ;  /* to control final debug print */
+   my_proc     = dd->my_proc ;      /* save for final debug print   */
+
+   LB_FREE (&dd) ;                  /* free directory structure     */
    if (debug_level> 0)
-      printf ("ZOLTAN_DD_DESTROY(%d): Successful\n", my_proc) ;
+      ZOLTAN_PRINT_INFO (my_proc, yo, "successful") ;
    }
