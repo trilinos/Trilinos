@@ -89,13 +89,15 @@ int migrate_elements(
   int Proc,
   MESH_INFO_PTR mesh,
   struct LB_Struct *lb,
+  int num_gid_entries, 
+  int num_lid_entries,
   int num_imp,
-  LB_GID *imp_gids,
-  LB_LID *imp_lids,
+  LB_ID_PTR imp_gids,
+  LB_ID_PTR imp_lids,
   int *imp_procs,
   int num_exp,
-  LB_GID *exp_gids,
-  LB_LID *exp_lids,
+  LB_ID_PTR exp_gids,
+  LB_ID_PTR exp_lids,
   int *exp_procs)
 {
 /* Local declarations. */
@@ -137,7 +139,8 @@ char *yo = "migrate_elements";
     return 0;
   }
 
-  if (LB_Help_Migrate(lb, num_imp, imp_gids, imp_lids, imp_procs,
+  if (LB_Help_Migrate(lb, num_gid_entries, num_lid_entries,
+                      num_imp, imp_gids, imp_lids, imp_procs,
                       num_exp, exp_gids, exp_lids, exp_procs) == LB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Help_Migrate()\n");
     return 0;
@@ -151,11 +154,12 @@ char *yo = "migrate_elements";
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void migrate_pre_process(void *data, int num_import, 
-                               LB_GID *import_global_ids,
-                               LB_LID *import_local_ids, int *import_procs,
-                               int num_export, LB_GID *export_global_ids,
-                               LB_LID *export_local_ids, int *export_procs,
+void migrate_pre_process(void *data, int num_gid_entries, int num_lid_entries, 
+                               int num_import, 
+                               LB_ID_PTR import_global_ids,
+                               LB_ID_PTR import_local_ids, int *import_procs,
+                               int num_export, LB_ID_PTR export_global_ids,
+                               LB_ID_PTR export_local_ids, int *export_procs,
                                int *ierr)
 {
 int i, j, k, idx, maxlen, proc, offset;
@@ -230,7 +234,7 @@ ELEM_INFO_PTR elements;
   }
 
   for (i = 0; i < num_export; i++) {
-    exp_elem = export_local_ids[i];
+    exp_elem = export_local_ids[i*num_lid_entries];
     New_Elem_Index[exp_elem] = -1;
     proc_ids[exp_elem] = export_procs[i];
   }
@@ -240,7 +244,7 @@ ELEM_INFO_PTR elements;
     for (j = 0; j < New_Elem_Index_Size; j++) 
       if (New_Elem_Index[j] == -1) break;
 
-    New_Elem_Index[j] = import_global_ids[i];
+    New_Elem_Index[j] = import_global_ids[i*num_gid_entries];
   }
 
   /* 
@@ -250,7 +254,7 @@ ELEM_INFO_PTR elements;
   /* Set change flag for elements whose adjacent elements are being exported */
 
   for (i = 0; i < num_export; i++) {
-    exp_elem = export_local_ids[i];
+    exp_elem = export_local_ids[i*num_lid_entries];
     for (j = 0; j < elements[exp_elem].adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
@@ -378,11 +382,12 @@ ELEM_INFO_PTR elements;
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void migrate_post_process(void *data, int num_import, 
-                               LB_GID *import_global_ids,
-                               LB_LID *import_local_ids, int *import_procs,
-                               int num_export, LB_GID *export_global_ids,
-                               LB_LID *export_local_ids, int *export_procs,
+void migrate_post_process(void *data, int num_gid_entries, int num_lid_entries,
+                               int num_import, 
+                               LB_ID_PTR import_global_ids,
+                               LB_ID_PTR import_local_ids, int *import_procs,
+                               int num_export, LB_ID_PTR export_global_ids,
+                               LB_ID_PTR export_local_ids, int *export_procs,
                                int *ierr)
 {
 MESH_INFO_PTR mesh;
@@ -553,7 +558,8 @@ ELEM_INFO *elements;
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
+void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
+                       LB_ID_PTR elem_gid, LB_ID_PTR elem_lid,
                        int mig_proc, int elem_data_size, char *buf, int *ierr)
 {
   MESH_INFO_PTR mesh;
@@ -575,7 +581,7 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
 
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
-  current_elem = &(elem[elem_lid]);
+  current_elem = &(elem[elem_lid[0]]);
   num_nodes = mesh->eb_nnodes[current_elem->elem_blk];
 
   elem_mig = (ELEM_INFO *) buf; /* this is the element struct to be migrated */
@@ -677,8 +683,8 @@ void migrate_pack_elem(void *data, LB_GID elem_gid, LB_LID elem_lid,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
-                         char *buf, int *ierr)
+void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid, 
+                         int elem_data_size, char *buf, int *ierr)
 {
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem, *elem_mig;
@@ -699,7 +705,7 @@ void migrate_unpack_elem(void *data, LB_GID elem_gid, int elem_data_size,
 
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
-  if ((idx = in_list(elem_gid, New_Elem_Index_Size, New_Elem_Index)) == -1) {
+  if ((idx = in_list(elem_gid[0], New_Elem_Index_Size, New_Elem_Index)) == -1) {
     Gen_Error(0, "fatal: Unable to locate position for element");
     *ierr = LB_FATAL;
     return;
