@@ -444,6 +444,7 @@ protected:
   */
   virtual bool createIfpackPreconditioner(NOX::Parameter::List& p) const;
 
+#ifdef HAVE_NOX_ANY
   /*! 
     \brief 
     Allocates the objects required for using the new version of ifpack preconditioners via the Ifpack Create factory.
@@ -457,6 +458,7 @@ protected:
     Allocates the objects required for using ML preconditioners
   */
   virtual bool createMLPreconditioner(NOX::Parameter::List& p) const;
+#endif
 #endif
 
   /*! 

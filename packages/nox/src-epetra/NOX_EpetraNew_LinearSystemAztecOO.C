@@ -60,6 +60,10 @@
 #include "Ifpack_IlukGraph.h"
 #include "Ifpack_CrsRiluk.h"
 
+#ifdef HAVE_NOX_ANY
+#include "Teuchos_ParameterList.hpp"
+#endif
+
 #ifdef HAVE_NOX_ML_EPETRA
 #include "Teuchos_ParameterList.hpp"
 #endif
@@ -90,10 +94,12 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams_,
   precMatrixSource(UseJacobian),
   aztecSolverPtr(new AztecOO()),
   ifpackGraphPtr(0),
+#ifdef HAVE_NOX_ANY
   ifpackPreconditionerPtr(0),
   newIfpackPreconditionerPtr(0),
 #ifdef HAVE_NOX_ML_EPETRA
   MLPreconditionerPtr(0),
+#endif
 #endif
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
@@ -134,10 +140,12 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams_,
   precMatrixSource(UseJacobian),
   aztecSolverPtr(new AztecOO()),
   ifpackGraphPtr(0),
+#ifdef HAVE_NOX_ANY
   ifpackPreconditionerPtr(0),
   newIfpackPreconditionerPtr(0),
 #ifdef HAVE_NOX_ML_EPETRA
   MLPreconditionerPtr(0),
+#endif
 #endif
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
@@ -179,10 +187,12 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams_,
   precMatrixSource(SeparateMatrix),
   aztecSolverPtr(new AztecOO()),
   ifpackGraphPtr(0),
+#ifdef HAVE_NOX_ANY
   ifpackPreconditionerPtr(0),
   newIfpackPreconditionerPtr(0),
 #ifdef HAVE_NOX_ML_EPETRA
   MLPreconditionerPtr(0),
+#endif
 #endif
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
@@ -225,10 +235,12 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams_,
   precMatrixSource(SeparateMatrix),
   aztecSolverPtr(new AztecOO()),
   ifpackGraphPtr(0),
+#ifdef HAVE_NOX_ANY
   ifpackPreconditionerPtr(0),
   newIfpackPreconditionerPtr(0),
 #ifdef HAVE_NOX_ML_EPETRA
   MLPreconditionerPtr(0),
+#endif
 #endif
   scaling(s),
   tmpVectorPtr(new Epetra_Vector(cloneVector)),
@@ -276,11 +288,13 @@ reset(NOX::Parameter::List& linearSolverParams)
     precAlgorithm = AztecOO_;
   else if (prec == "Ifpack")
     precAlgorithm = Ifpack_;
+#ifdef HAVE_NOX_ANY
   else if (prec == "New Ifpack")
     precAlgorithm = NewIfpack_;
 #ifdef HAVE_NOX_ML_EPETRA
   else if (prec == "ML")
     precAlgorithm = ML_;
+#endif
 #endif
   else if (prec == "User Defined")
     precAlgorithm = UserDefined_;
@@ -835,6 +849,7 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
     }
 
   }
+#ifdef HAVE_NOX_ANY
   else if (precAlgorithm == NewIfpack_) {
     
     if (precMatrixSource == UseJacobian) {
@@ -864,6 +879,7 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
     }
 
   }
+#endif
 #endif
   else if (precAlgorithm == UserDefined_) {
 
@@ -987,6 +1003,7 @@ createIfpackPreconditioner(Parameter::List& p) const
   return false;
 }
 
+#ifdef HAVE_NOX_ANY
 //***********************************************************************
 bool NOX::EpetraNew::LinearSystemAztecOO::
 createNewIfpackPreconditioner(Parameter::List& p) const
@@ -1178,6 +1195,7 @@ createMLPreconditioner(Parameter::List& p) const
   return false;
 }
 #endif
+#endif
 
 //***********************************************************************
 bool NOX::EpetraNew::LinearSystemAztecOO::destroyPreconditioner() const
@@ -1194,6 +1212,7 @@ bool NOX::EpetraNew::LinearSystemAztecOO::destroyPreconditioner() const
       delete ifpackGraphPtr;
       ifpackGraphPtr = 0;
     }
+#ifdef HAVE_NOX_ANY
     else if (precAlgorithm == NewIfpack_) {
       delete newIfpackPreconditionerPtr;
       newIfpackPreconditionerPtr = 0;
@@ -1203,6 +1222,7 @@ bool NOX::EpetraNew::LinearSystemAztecOO::destroyPreconditioner() const
       delete MLPreconditionerPtr;
       MLPreconditionerPtr = 0;
     }
+#endif
 #endif
     if (utils.isPrintProcessAndType(Utils::LinearSolverDetails)) {
       cout << "\n       Destroying preconditioner" << endl;
