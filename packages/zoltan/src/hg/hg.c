@@ -78,6 +78,7 @@ int nVtx;                       /* Temporary variable for base graph. */
 HGPartParams hgp;               /* Hypergraph parameters. */
 Partition output_parts = NULL;  /* Output partition from HG partitioner. */
 int ierr = ZOLTAN_OK;
+int i;
 char *yo = "Zoltan_HG";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -111,13 +112,23 @@ char *yo = "Zoltan_HG";
     goto End;
   }
 
-  /* Call partitioning routine. */
-  ierr = Zoltan_HG_HPart_Lib(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
-                             output_parts, &hgp, 0);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
-    goto End;
-  }
+  /* vmap associates original vertices to sub hypergraphs */
+  zoltan_hg->HG.vmap = (int*) ZOLTAN_MALLOC (zoltan_hg->HG.nVtx * sizeof (int));
+  if (zoltan_hg->HG.vmap == NULL)  {
+     ierr = ZOLTAN_MEMERR;
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+     goto End;
+     }
+  for (i = 0; i < zoltan_hg->HG.nVtx; i++)
+     zoltan_hg->HG.vmap[i] = i;
+
+  /* partition hypergraph */
+  ierr = Zoltan_HG_rdivide (1, zz->LB.Num_Global_Parts, output_parts, zz, &zoltan_hg->HG, &hgp, 0);
+  if (ierr != ZOLTAN_OK)  {
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
+     goto End;
+     }
+  ZOLTAN_FREE (&zoltan_hg->HG.vmap);
 
   /* Build Zoltan's return arguments. */
   Zoltan_HG_Return_Lists(zz, zoltan_hg, output_parts, num_exp, exp_gids,
