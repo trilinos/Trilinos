@@ -2,6 +2,7 @@
 srcdir = .
 top_srcdir = ..
 top_srcdir = /home/dpdiach/Trilinos/packages/nox
+top_srcdir = ../../../
 
 INCLUDE = -I$(top_srcdir)/src -I$(top_srcdir)/src-lapack -I/. \
 	  -I../../../test/utils
