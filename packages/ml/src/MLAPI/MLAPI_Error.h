@@ -11,8 +11,13 @@ typedef struct StackEntry {
   std::string FuncName;
 } Entry;
 
+#ifdef HAVE_ML_CFUNC
 #define StackPush() \
   StackPush_(__PRETTY_FUNCTION__, __FILE__, __LINE__)
+#else
+#define StackPush() \
+  StackPush_("function not available", __FILE__, __LINE__)
+#endif
 
 void StackPush_(std::string FuncName, std::string FileName, int line);
 
