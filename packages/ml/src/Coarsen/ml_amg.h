@@ -58,6 +58,7 @@ typedef struct ML_AMG_Struct
    double curr_threshold;              /* adjusted for levels           */
    int    coarsen_scheme;              /* Uncoupled, Coupled, MIS       */
    int    num_PDE_eqns;                /* block size                    */
+   int    blk_info;                    /* store dof information         */
    int    max_levels;                  /* maximum number of levels      */
    int    begin_level;                 /* finest grid level             */
    int    cur_level;                   /* temporary variable            */

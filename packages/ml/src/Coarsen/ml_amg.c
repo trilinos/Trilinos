@@ -49,6 +49,7 @@ int ML_AMG_Create( ML_AMG **amg )
    (*amg)->curr_threshold             = 0.2;
    (*amg)->coarsen_scheme             = ML_AMG_MIS;
    (*amg)->num_PDE_eqns               = 1;
+   (*amg)->blk_info                   = NULL;
    (*amg)->max_levels                 = 25;
    (*amg)->begin_level                = 25;
    (*amg)->cur_level                  = 25;
@@ -90,6 +91,7 @@ int ML_AMG_Destroy( ML_AMG **amg )
       printf("ML_AMG_Destroy : wrong object. \n");
       exit(-1);
    }
+   if ( (*amg)->blk_info != NULL ) ML_memory_free((*amg)->blk_info);
    ML_memory_free( (void **) amg );
    (*amg) = NULL;
    return 0;
