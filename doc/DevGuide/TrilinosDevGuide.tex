@@ -476,11 +476,11 @@ test environment.  ({\bf NOTE: Black box testing via TSF is not in
 place at this time}
 	\subsection{Periodic Testing}
 Trilinos Packages that configure and build using Autotools can easily 
-utilize the the Trilinos testharness.  The testharness performs a CVS update
+utilize the the Trilinos test harness.  The test harness performs a CVS update
 (gets the most recent source code) every night and then builds the libraries
 and runs any tests that have been integrated into the testharness.  
-Currently the testharness only runs on a Linux platform, but it will 
-eventually run on 5-8 platforms.  Packages that have not ported to a 
+Currently the testharness only runs on Linux, IRIX64, and DEC/OSF1, but it 
+will eventually run on 5-8 platforms.  Packages that have not ported to a 
 particular platform can be excluded from the testing process on that 
 platform.  Packages that do not have any tests integrated into the 
 testharness can still benefit by ensuring that libraries build without 
