@@ -18,12 +18,18 @@ Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph & Graph, int LevelFill,
     IndexBase_(Graph.IndexBase()),
     NumGlobalRows_(Graph.NumGlobalRows()),
     NumGlobalCols_(Graph.NumGlobalCols()),
-    NumGlobalDiagonals_(0),
+    NumGlobalBlockRows_(Graph.NumGlobalBlockRows()),
+    NumGlobalBlockCols_(Graph.NumGlobalBlockCols()),
+    NumGlobalBlockDiagonals_(0),
     NumGlobalNonzeros_(0),
+    NumGlobalEntries_(0),
+    NumMyBlockRows_(Graph.NumMyBlockRows()),
+    NumMyBlockCols_(Graph.NumMyBlockCols()),
     NumMyRows_(Graph.NumMyRows()),
     NumMyCols_(Graph.NumMyCols()),
-    NumMyDiagonals_(0),
-    NumMyNonzeros_(0)
+    NumMyBlockDiagonals_(0),
+    NumMyNonzeros_(0),
+    NumMyEntries_(0)
 {
 }
 
@@ -43,12 +49,18 @@ Ifpack_IlukGraph::Ifpack_IlukGraph(const Ifpack_IlukGraph & Graph)
     IndexBase_(Graph.IndexBase_),
     NumGlobalRows_(Graph.NumGlobalRows_),
     NumGlobalCols_(Graph.NumGlobalCols_),
-    NumGlobalDiagonals_(Graph.NumGlobalDiagonals_),
+    NumGlobalBlockRows_(Graph.NumGlobalBlockRows_),
+    NumGlobalBlockCols_(Graph.NumGlobalBlockCols_),
+    NumGlobalBlockDiagonals_(Graph.NumGlobalBlockDiagonals_),
     NumGlobalNonzeros_(Graph.NumGlobalNonzeros_),
+    NumGlobalEntries_(Graph.NumGlobalEntries_),
+    NumMyBlockRows_(Graph.NumMyBlockRows_),
+    NumMyBlockCols_(Graph.NumMyBlockCols_),
     NumMyRows_(Graph.NumMyRows_),
     NumMyCols_(Graph.NumMyCols_),
-    NumMyDiagonals_(Graph.NumMyDiagonals_),
-    NumMyNonzeros_(Graph.NumMyNonzeros_)
+    NumMyBlockDiagonals_(Graph.NumMyBlockDiagonals_),
+    NumMyNonzeros_(Graph.NumMyNonzeros_),
+    NumMyEntries_(Graph.NumMyEntries_)
 {
   Epetra_CrsGraph & L_Graph_In = Graph.L_Graph();
   Epetra_CrsGraph & U_Graph_In = Graph.U_Graph();
@@ -85,19 +97,22 @@ int Ifpack_IlukGraph::ConstructOverlapGraph() {
     OverlapRowMap_ = new Epetra_BlockMap(OverlapImporter_->TargetMap());
 
     OverlapGraph_ = new Epetra_CrsGraph(Copy, *OverlapRowMap_, 0);
-    assert(OverlapGraph_->Import( Graph_, *OverlapImporter_, Insert)==0);
-    if (level<LevelOverlap_) 
-      assert(OverlapGraph_->TransformToLocal(DomainMap, OverlapRowMap_)==0);
+    EPETRA_CHK_ERR(OverlapGraph_->Import( Graph_, *OverlapImporter_, Insert));
+    if (level<LevelOverlap_) {
+      EPETRA_CHK_ERR(OverlapGraph_->TransformToLocal(DomainMap, OverlapRowMap_));
+    }
     else {
       // Copy last OverlapImporter because we will use it later
       OverlapImporter_ = new Epetra_Import(*OverlapRowMap_, *DomainMap);
-      assert(OverlapGraph_->TransformToLocal()==0);
+      EPETRA_CHK_ERR(OverlapGraph_->TransformToLocal());
     }
 
     if (OldGraph!=&Graph_) delete OldGraph;
     if (OldRowMap!=&Graph_.RowMap()) delete OldRowMap;
   }
 
+    NumMyBlockRows_ = OverlapGraph_->NumMyBlockRows();
+    NumMyBlockCols_ = OverlapGraph_->NumMyBlockCols();
     NumMyRows_ = OverlapGraph_->NumMyRows();
     NumMyCols_ = OverlapGraph_->NumMyCols();
 
@@ -113,7 +128,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
   bool DiagFound;
 
   
-  assert(ConstructOverlapGraph()==0);
+  EPETRA_CHK_ERR(ConstructOverlapGraph());
 
   L_Graph_ = new Epetra_CrsGraph(Copy, OverlapGraph_->RowMap(), 0);
   U_Graph_ = new Epetra_CrsGraph(Copy, OverlapGraph_->RowMap(), 0);
@@ -128,7 +143,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 
   // First we copy the user's graph into L and U, regardless of fill level
 
-  for (i=0; i< NumMyRows_; i++) {
+  for (i=0; i< NumMyBlockRows_; i++) {
 
 
     OverlapGraph_->ExtractMyRowView(i, NumIn, In); // Get Indices
@@ -143,7 +158,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
     for (j=0; j< NumIn; j++) {
       int k = In[j];
 
-      if (k<NumMyRows_) { // Ignore column elements that are not in the square matrix
+      if (k<NumMyBlockRows_) { // Ignore column elements that are not in the square matrix
 
 	if (k==i) DiagFound = true;
 
@@ -160,7 +175,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
     
     // Check in things for this row of L and U
 
-    if (DiagFound) NumMyDiagonals_++;
+    if (DiagFound) NumMyBlockDiagonals_++;
     if (NumL) L_Graph_->InsertMyIndices(i, NumL, L);
     if (NumU) U_Graph_->InsertMyIndices(i, NumU, U);
     
@@ -172,23 +187,23 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
   if (LevelFill_ > 0) {
 
     // Complete Fill steps
-    L_Graph_->TransformToLocal();
-    U_Graph_->TransformToLocal();
+    EPETRA_CHK_ERR(L_Graph_->TransformToLocal());
+    EPETRA_CHK_ERR(U_Graph_->TransformToLocal());
 
     // At this point L_Graph and U_Graph are filled with the pattern of input graph, 
     // sorted and have redundant indices (if any) removed.  Indices are zero based.
     // LevelFill is greater than zero, so continue...
 
-    int MaxRC = NumMyRows_;
+    int MaxRC = NumMyBlockRows_;
     int *LinkList = new int[MaxRC];
     int *CurrentLevel = new int[MaxRC];
     int **Levels = new int*[MaxRC];
     int *CurrentRow = new int[MaxRC];
     int *LevelsRowU = new int[MaxRC];
 
-    for (i=0; i<NumMyRows_; i++) Levels[i] = 0; // Initialize Levels
+    for (i=0; i<NumMyBlockRows_; i++) Levels[i] = 0; // Initialize Levels
 
-    for (i=0; i<NumMyRows_; i++)
+    for (i=0; i<NumMyBlockRows_; i++)
     {
       int First, Next, j;
       
@@ -198,14 +213,14 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
       int LenU = U_Graph_->NumMyIndices(i);
       int Len = LenL + LenU + 1;
       
-      assert(L_Graph_->ExtractMyRowCopy(i, LenL, LenL, CurrentRow)==0);      // Get L Indices
+      EPETRA_CHK_ERR(L_Graph_->ExtractMyRowCopy(i, LenL, LenL, CurrentRow));      // Get L Indices
       CurrentRow[LenL] = i;                                     // Put in Diagonal
-      //assert(U_Graph_->ExtractMyRowCopy(i, LenU, LenU, CurrentRow+LenL+1)==0); // Get U Indices
+      //EPETRA_CHK_ERR(U_Graph_->ExtractMyRowCopy(i, LenU, LenU, CurrentRow+LenL+1)); // Get U Indices
       int ierr1 = U_Graph_->ExtractMyRowCopy(i, LenU, LenU, CurrentRow+LenL+1); // Get U Indices
       if (ierr1!=0) {
 	cout << "ierr1 = "<< ierr1 << endl;
 	cout << "i = " << i << endl;
-	cout << "NumMyRows_ = " << U_Graph_->NumMyRows() << endl;
+	cout << "NumMyBlockRows_ = " << U_Graph_->NumMyBlockRows() << endl;
       }
       
       // Construct linked list for current row
@@ -215,7 +230,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 	CurrentLevel[CurrentRow[j]] = 0;
       }
       
-      LinkList[CurrentRow[Len-1]] = NumMyRows_;
+      LinkList[CurrentRow[Len-1]] = NumMyBlockRows_;
       CurrentLevel[CurrentRow[Len-1]] = 0;
       
       // Merge List with rows in U
@@ -230,7 +245,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 	  int LengthRowU;
 	  int * IndicesU;
 	  // Get Indices for this row of U
-	  assert(U_Graph_->ExtractMyRowView(RowU, LengthRowU, IndicesU)==0);
+	  EPETRA_CHK_ERR(U_Graph_->ExtractMyRowView(RowU, LengthRowU, IndicesU));
 
 	  int ii;
 	  
@@ -282,8 +297,9 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 	Next = LinkList[Next];
       }
 
-      assert(L_Graph_->RemoveMyIndices(i)==0); // Delete current set of Indices
-      assert(L_Graph_->InsertMyIndices(i, LenL, CurrentRow)>=0);
+      EPETRA_CHK_ERR(L_Graph_->RemoveMyIndices(i)); // Delete current set of Indices
+      int ierr11 = L_Graph_->InsertMyIndices(i, LenL, CurrentRow);
+      if (ierr11 < 0) EPETRA_CHK_ERR(ierr1);
 
       // Diagonal
 
@@ -298,15 +314,16 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 
       LenU = 0;
 
-      while (Next < NumMyRows_) // Should be "Next < NumMyRows_"?
+      while (Next < NumMyBlockRows_) // Should be "Next < NumMyBlockRows_"?
         {
 	  LevelsRowU[LenU+1] = CurrentLevel[Next];
 	  CurrentRow[LenU++] = Next;
 	  Next = LinkList[Next];
         }
 
-      assert(U_Graph_->RemoveMyIndices(i)==0); // Delete current set of Indices
-      assert(U_Graph_->InsertMyIndices(i, LenU, CurrentRow)>=0);
+      EPETRA_CHK_ERR(U_Graph_->RemoveMyIndices(i)); // Delete current set of Indices
+      int ierr2 = U_Graph_->InsertMyIndices(i, LenU, CurrentRow);
+      if (ierr2<0) EPETRA_CHK_ERR(ierr2);
 
       // Allocate and fill Level info for this row
       Levels[i] = new int[LenU+1];
@@ -317,7 +334,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
     delete [] LinkList;
     delete [] CurrentLevel;
 
-    for (i=0; i<NumMyRows_; i++) if (Levels[i]!=0) delete [] Levels[i];
+    for (i=0; i<NumMyBlockRows_; i++) if (Levels[i]!=0) delete [] Levels[i];
     delete [] Levels;
     delete [] CurrentRow;
     delete [] LevelsRowU;
@@ -325,22 +342,24 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
   }
 
   // Complete Fill steps
-  assert(L_Graph_->TransformToLocal()==0);
-  assert(U_Graph_->TransformToLocal()==0);
+  EPETRA_CHK_ERR(L_Graph_->TransformToLocal());
+  EPETRA_CHK_ERR(U_Graph_->TransformToLocal());
     
   // Optimize graph storage
   
-  assert(L_Graph_->OptimizeStorage()==0);
-  assert(U_Graph_->OptimizeStorage()==0);
+  EPETRA_CHK_ERR(L_Graph_->OptimizeStorage());
+  EPETRA_CHK_ERR(U_Graph_->OptimizeStorage());
 
   // Compute global quantities
 
-  NumGlobalDiagonals_ = 0;
+  NumGlobalBlockDiagonals_ = 0;
 
-  assert(L_Graph_->Comm().SumAll(&NumMyDiagonals_, &NumGlobalDiagonals_, 1)==0);
+  EPETRA_CHK_ERR(L_Graph_->Comm().SumAll(&NumMyBlockDiagonals_, &NumGlobalBlockDiagonals_, 1));
 
   NumGlobalNonzeros_ = L_Graph_->NumGlobalNonzeros()+U_Graph_->NumGlobalNonzeros();
   NumMyNonzeros_ = L_Graph_->NumMyNonzeros()+U_Graph_->NumMyNonzeros();
+  NumGlobalEntries_ = L_Graph_->NumGlobalEntries()+U_Graph_->NumGlobalEntries();
+  NumMyEntries_ = L_Graph_->NumMyEntries()+U_Graph_->NumMyEntries();
   return(ierr);
 }
 //==========================================================================

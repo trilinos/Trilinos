@@ -18,6 +18,7 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph)
     IlukRowMap_(0),
     Comm_(Graph.Comm()),
     UseTranspose_(false),
+    NumMyDiagonals_(0),
     Allocated_(false),
     ValuesInitialized_(false),
     Factored_(false),
@@ -44,6 +45,7 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix)
     IlukRowMap_(FactoredMatrix.IlukRowMap_),
     Comm_(FactoredMatrix.Comm_),
     UseTranspose_(FactoredMatrix.UseTranspose_),
+    NumMyDiagonals_(FactoredMatrix.NumMyDiagonals_),
     Allocated_(FactoredMatrix.Allocated_),
     ValuesInitialized_(FactoredMatrix.ValuesInitialized_),
     Factored_(FactoredMatrix.Factored_),
@@ -279,10 +281,8 @@ int Ifpack_CrsRiluk::InitAllValues(const Epetra_RowMatrix & OverlapA, int MaxNum
 
   int TotalNonzeroDiags = 0;
   EPETRA_CHK_ERR(Graph_.L_Graph().RowMap().Comm().SumAll(&NumNonzeroDiags, &TotalNonzeroDiags, 1));
-  if (Graph_.LevelOverlap()==0 &&
-      ((TotalNonzeroDiags!=NumGlobalRows()) || 
-       (TotalNonzeroDiags!=NumGlobalDiagonals()))) ierr = 1;
-  if (NumNonzeroDiags != NumMyDiagonals()) ierr = 1; // Diagonals are not right, warn user
+  NumMyDiagonals_ = NumNonzeroDiags;
+  if (NumNonzeroDiags != NumMyRows()) ierr = 1; // Diagonals are not right, warn user
 
   return(ierr);
 }

@@ -289,10 +289,10 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   int NumGlobalCols() const {return(Graph().NumGlobalCols());};
   
   //! Returns the number of nonzero entries in the global graph.
-  int NumGlobalNonzeros() const {return(Graph().NumGlobalNonzeros());};
+  int NumGlobalNonzeros() const {return(L().NumGlobalNonzeros()+U().NumGlobalNonzeros());};
   
   //! Returns the number of diagonal entries found in the global input graph.
-  virtual int NumGlobalDiagonals() const {return(Graph().NumGlobalDiagonals());};
+  virtual int NumGlobalBlockDiagonals() const {return(Graph().NumGlobalBlockDiagonals());};
   
   //! Returns the number of local matrix rows.
   int NumMyRows() const {return(Graph().NumMyRows());};
@@ -301,10 +301,13 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   int NumMyCols() const {return(Graph().NumMyCols());};
   
   //! Returns the number of nonzero entries in the local graph.
-  int NumMyNonzeros() const {return(Graph().NumMyNonzeros());};
+  int NumMyNonzeros() const {return(L().NumMyNonzeros()+U().NumMyNonzeros());};
   
   //! Returns the number of diagonal entries found in the local input graph.
-  virtual int NumMyDiagonals() const {return(Graph().NumMyDiagonals());};
+  virtual int NumMyBlockDiagonals() const {return(Graph().NumMyBlockDiagonals());};
+  
+  //! Returns the number of nonzero diagonal values found in matrix.
+  virtual int NumMyDiagonals() const {return(NumMyDiagonals_);};
   
   //! Returns the index base for row and column indices for this graph.
   int IndexBase() const {return(Graph().IndexBase());};
@@ -414,7 +417,7 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   Epetra_Vector * D_;
   bool UseTranspose_;
 
-  
+  int NumMyDiagonals_;
   bool Allocated_;
   bool ValuesInitialized_;
   bool Factored_;

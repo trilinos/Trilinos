@@ -76,16 +76,29 @@ class Ifpack_IlukGraph {
   virtual int LevelOverlap() const {return(LevelOverlap_);};
     
   //! Returns the number of global matrix rows.
+  int NumGlobalBlockRows() const {return(NumGlobalBlockRows_);};
+  
+  //! Returns the number of global matrix columns.
+  int NumGlobalBlockCols() const {return(NumGlobalBlockCols_);};
+  
+    
+  //! Returns the number of global matrix rows.
   int NumGlobalRows() const {return(NumGlobalRows_);};
   
   //! Returns the number of global matrix columns.
   int NumGlobalCols() const {return(NumGlobalCols_);};
-  
   //! Returns the number of nonzero entries in the global graph.
   int NumGlobalNonzeros() const {return(NumGlobalNonzeros_);};
   
   //! Returns the number of diagonal entries found in the global input graph.
-  virtual int NumGlobalDiagonals() const {return(NumGlobalDiagonals_);};
+  virtual int NumGlobalBlockDiagonals() const {return(NumGlobalBlockDiagonals_);};
+  
+  //! Returns the number of local matrix rows.
+  int NumMyBlockRows() const {return(NumMyBlockRows_);};
+  
+  //! Returns the number of local matrix columns.
+  int NumMyBlockCols() const {return(NumMyBlockCols_);};
+  
   
   //! Returns the number of local matrix rows.
   int NumMyRows() const {return(NumMyRows_);};
@@ -97,7 +110,7 @@ class Ifpack_IlukGraph {
   int NumMyNonzeros() const {return(NumMyNonzeros_);};
   
   //! Returns the number of diagonal entries found in the local input graph.
-  virtual int NumMyDiagonals() const {return(NumMyDiagonals_);};
+  virtual int NumMyBlockDiagonals() const {return(NumMyBlockDiagonals_);};
   
   //! Returns the index base for row and column indices for this graph.
   int IndexBase() const {return(IndexBase_);};
@@ -146,12 +159,18 @@ class Ifpack_IlukGraph {
   int IndexBase_;
   int NumGlobalRows_;
   int NumGlobalCols_;
-  int NumGlobalDiagonals_;
+  int NumGlobalBlockRows_;
+  int NumGlobalBlockCols_;
+  int NumGlobalBlockDiagonals_;
   int NumGlobalNonzeros_;
+  int NumGlobalEntries_;
+  int NumMyBlockRows_;
+  int NumMyBlockCols_;
   int NumMyRows_;
   int NumMyCols_;
-  int NumMyDiagonals_;
+  int NumMyBlockDiagonals_;
   int NumMyNonzeros_;
+  int NumMyEntries_;
   
 
  };
