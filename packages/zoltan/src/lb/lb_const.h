@@ -43,7 +43,7 @@ static char *cvs_lbconsth_id = "$Id$";
  * has.
  */
 #define UTIL_NAME "zoltan"
-#define DLB_VER   1.01
+#define DLB_VER   1.02
 
 
 /*

@@ -74,6 +74,20 @@ struct LB_Struct;
 
 #define LB_PARAMS_MAX_SIZE 5
 
+/*
+ * Error codes for DLB library
+ *   DLB_OK     - no errors
+ *   DLB_WARN   - some warning occurred in DLB library; application should be
+ *                able to continue running
+ *   DLB_FATAL  - a fatal error occurred
+ *   DLB_MEMERR - memory allocation failed; with this error, it could be
+ *                possible to try a different, more memory-friendly, algorithm
+ */
+#define DLB_OK     0
+#define DLB_WARN   1
+#define DLB_FATAL  -1
+#define DLB_MEMERR -2
+
 /*****************************************************************************/
 /*****************************************************************************/
 /**********************  Functions to query application  *********************/
@@ -426,9 +440,16 @@ typedef void LB_UNPACK_OBJ_FN(void *data, LB_GID global_id, int size,
  *  application does not use MPI, this function calls MPI_Init for
  *  use by the load balancer. This function returns the version of
  *  the DLB library.
+ *  Input:
+ *    int argc                   --  Argument count from main()
+ *    char **argv                --  Argument list from main()
+ *  Output:
+ *    float *ver                 --  Version of DLB library
+ *  Returned value:
+ *    int                        --  Error code
  */
 
-extern void LB_Initialize(int argc, char **argv, float *ver);
+extern int LB_Initialize(int argc, char **argv, float *ver);
 
 /*****************************************************************************/
 /*
@@ -443,6 +464,9 @@ extern void LB_Initialize(int argc, char **argv, float *ver);
  *    KDD_DLB  --  But I wanted to get it into the interface now!
  *  Returned value:
  *    struct LB_Struct *         --  Pointer to a LB object.
+ *                                   If there is an error, NULL is returned.
+ *                                   Any error in this function should be
+ *                                   considered fatal.
  */
 
 extern struct LB_Struct *LB_Create_Object(MPI_Comm communicator);
@@ -460,9 +484,11 @@ extern struct LB_Struct *LB_Create_Object(MPI_Comm communicator);
  *                                   pass as an argument to fn(). May be NULL.
  *  Output:
  *    struct LB_Struct *lb       --  Appropriate field set to value in fn_ptr.
+ *  Returned value:
+ *    int                        --  Error code
  */
-extern void LB_Set_Fn(struct LB_Struct *lb, LB_FN_TYPE fn_type,
-                      void *fn_ptr(), void *data_ptr);
+extern int LB_Set_Fn(struct LB_Struct *lb, LB_FN_TYPE fn_type,
+                     void *fn_ptr(), void *data_ptr);
 
 /*****************************************************************************/
 /*
@@ -477,9 +503,11 @@ extern void LB_Set_Fn(struct LB_Struct *lb, LB_FN_TYPE fn_type,
  *  Output:
  *    struct LB_Struct *lb       --  Appropriate fields set to designated
  *                                   values.
+ *  Returned value:
+ *    int                        --  Error code
  */
 
-extern void LB_Set_Method(struct LB_Struct *lb, char *string, double *params);
+extern int LB_Set_Method(struct LB_Struct *lb, char *string, double *params);
 
 /*****************************************************************************/
 /*
@@ -493,9 +521,11 @@ extern void LB_Set_Method(struct LB_Struct *lb, char *string, double *params);
  *    double tolerance           --  The tolerance desired.
  *  Output:
  *    struct LB_Struct *lb       --  Appropriate fields set to designated value.
+ *  Returned value:
+ *    int                        --  Error code
  */
 
-extern void LB_Set_Tolerance(struct LB_Struct *lb, double tolerance);
+extern int LB_Set_Tolerance(struct LB_Struct *lb, double tolerance);
 
 /*****************************************************************************/
 /*
@@ -512,9 +542,11 @@ extern void LB_Set_Tolerance(struct LB_Struct *lb, double tolerance);
  *                                   Default is FALSE.
  *  Output:
  *    struct LB_Struct *lb       --  Appropriate fields set to designated type.
+ *  Returned value:
+ *    int                        --  Error code
  */
 
-extern void LB_Set_Migration(struct LB_Struct *lb, int auto_migrate_flag);
+extern int LB_Set_Migration(struct LB_Struct *lb, int auto_migrate_flag);
 
 /*****************************************************************************/
 /*
@@ -529,9 +561,11 @@ extern void LB_Set_Migration(struct LB_Struct *lb, int auto_migrate_flag);
  *                                   Upon return, the values in this array are
  *                                   initialized to an initial value determined
  *                                   by the load-balancer.
+ *  Returned value:
+ *    int                        --  Error code
  */
 
-extern void LB_Initialize_Params_Array(double *params);
+extern int LB_Initialize_Params_Array(double *params);
 
 /*****************************************************************************/
 /*
@@ -541,6 +575,16 @@ extern void LB_Initialize_Params_Array(double *params);
  *    struct LB_Struct *lb       --  The load balancing object containing info 
  *                                   about this load-balancing invocation.
  *  Output:
+ *    int *changes               --  This value tells if the load balancer
+ *                                   came up with a new decomposition or
+ *                                   not. It can be either a one or a zero:
+ *                                   zero - No changes to the decomposition
+ *                                          were made by the load-balancing
+ *                                          algorithm; migration is not needed.
+ *                                   one  - A new decomposition is suggested
+ *                                          by the load-balancer; migration
+ *                                          is needed to establish the new
+ *                                          decomposition.
  *    int *num_import            --  The number of non-local objects in the 
  *                                   processor's new decomposition (i.e.,
  *                                   number of objects to be imported).
@@ -564,17 +608,11 @@ extern void LB_Initialize_Params_Array(double *params);
  *    int **export_procs         --  Pointer to array of Processor IDs for the
  *                                   objects to be exported (processor IDs of
  *                                   destination processors).
- *  
  *  Returned value:
- *     zero                      --  No changes to the decomposition were made
- *                                   by the load-balancing algorithm;
- *                                   migration is not needed.
- *     one                       --  A new decomposition is suggested by the
- *                                   load-balancer; migration is needed to 
- *                                   establish the new decomposition.
+ *    int                        --  Error code
  */
 
-extern int LB_Balance(struct LB_Struct *lb, 
+extern int LB_Balance(struct LB_Struct *lb, int *changes,
                       int *num_import, LB_GID **import_global_ids,
                       LB_LID **import_local_ids, int **import_procs,
                       int *num_export, LB_GID **export_global_ids,
@@ -613,14 +651,17 @@ extern int LB_Balance(struct LB_Struct *lb,
  *    int **export_procs         --  Pointer to array of Processor IDs for the
  *                                   objects to be exported (processor IDs of
  *                                   destination processors).
+ *  Returned value:
+ *    int                        --  Error code
  */
 
 
-extern void LB_Compute_Destinations(struct LB_Struct *lb,
-                                 int num_import, LB_GID *import_global_ids,
-                                 LB_LID *import_local_ids, int *import_procs, 
-                                 int *num_export, LB_GID **export_global_ids,
-                                 LB_LID **export_local_ids, int **export_procs);
+extern int LB_Compute_Destinations(struct LB_Struct *lb,
+                                   int num_import, LB_GID *import_global_ids,
+                                   LB_LID *import_local_ids, int *import_procs, 
+                                   int *num_export, LB_GID **export_global_ids,
+                                   LB_LID **export_local_ids,
+                                   int **export_procs);
 
 /*****************************************************************************/
 /*
@@ -661,13 +702,15 @@ extern void LB_Compute_Destinations(struct LB_Struct *lb,
  *    none                       --  The objects are migrated to their new
  *                                   processor locations.  The input arrays
  *                                   are unchanged.
+ *  Returned value:
+ *    int                        --  Error code
  */
 
-extern void LB_Help_Migrate(struct LB_Struct *lb,
-                            int num_import, LB_GID *import_global_ids,
-                            LB_LID *import_local_ids, int *import_procs,
-                            int num_export, LB_GID *export_global_ids,
-                            LB_LID *export_local_ids, int *export_procs);
+extern int LB_Help_Migrate(struct LB_Struct *lb,
+                           int num_import, LB_GID *import_global_ids,
+                           LB_LID *import_local_ids, int *import_procs,
+                           int num_export, LB_GID *export_global_ids,
+                           LB_LID *export_local_ids, int *export_procs);
 
 /*****************************************************************************/
 /*
@@ -687,11 +730,13 @@ extern void LB_Help_Migrate(struct LB_Struct *lb,
  *                                   objects.
  *    int **export_procs         --  Pointer to array of destination processor
  *                                   IDs of exported objects.
+ *  Returned value:
+ *    int                        --  Error code
  */
-extern void LB_Free_Data(LB_GID **import_global_ids, LB_LID **import_local_ids,
-                         int **import_procs,
-                         LB_GID **export_global_ids, LB_LID **export_local_ids,
-                         int **export_procs);
+extern int LB_Free_Data(LB_GID **import_global_ids, LB_LID **import_local_ids,
+                        int **import_procs,
+                        LB_GID **export_global_ids, LB_LID **export_local_ids,
+                        int **export_procs);
 
 /*****************************************************************************/
 #endif

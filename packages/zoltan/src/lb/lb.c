@@ -34,7 +34,7 @@ static char *cvs_lbc_id = "$Id$";
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Initialize(int argc, char **argv, float *ver)
+int LB_Initialize(int argc, char **argv, float *ver)
 {
 /*
  *  Function to initialize values needed in load balancing tools.
@@ -60,6 +60,8 @@ int mpi_flag;
    * code.
    */
   *ver = DLB_VER;
+
+  return (DLB_OK);
 }
 
 
@@ -87,6 +89,10 @@ int flag;
    */
 
   lb = (LB *) LB_SMALLOC(sizeof(LB));
+  if (!lb) {
+    fprintf(stderr, "Error from %s: Insufficient memory\n", yo);
+    return NULL;
+  }
 
   /*
    *  Set MPI values for of lb:
@@ -150,7 +156,7 @@ int flag;
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn(), void *data)
+int LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn(), void *data)
 {
 /*
  *  Function to initialize a given LB interface function.
@@ -239,15 +245,17 @@ char *yo = "LB_Set_Fn";
   default:
     fprintf(stderr, "Error from %s:  LB_FN_TYPE %d is invalid.\n", yo, fn_type);
     fprintf(stderr, "Value must be in range 0 to %d\n", LB_MAX_FN_TYPES);
-    exit(-1);
+    return (DLB_WARN);
   }
+
+  return (DLB_OK);
 }
 
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Set_Method(LB *lb, char *method_name, double *params)
+int LB_Set_Method(LB *lb, char *method_name, double *params)
 {
 /*
  *  Function to set the load balancing method to be used.
@@ -293,7 +301,7 @@ int i;
   else {  
     fprintf(stderr, "Error from %s:  Invalid LB method specified:  %s\n", 
             yo, method_name);
-    exit(-1);
+    return (DLB_FATAL);
   }
 
   if (lb->Proc == 0) {
@@ -307,16 +315,23 @@ int i;
   if (params != NULL) {
     lb->Params = (double *) LB_array_alloc(__FILE__, __LINE__, 1,
                                            LB_PARAMS_MAX_SIZE, sizeof(double));
+    if (!lb->Params) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      return (DLB_MEMERR);
+    }
     for (i = 0; i < LB_PARAMS_MAX_SIZE; i++) 
       lb->Params[i] = params[i];
   }
+
+  return (DLB_OK);
 }
 
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Set_Tolerance(LB *lb, double tolerance)
+int LB_Set_Tolerance(LB *lb, double tolerance)
 {
 /*
  *  Function to set the tolerance to which the system must be load balanced.
@@ -341,7 +356,7 @@ char *yo = "LB_Set_Tolerance";
     fprintf(stderr, "Error from %s:  LB Tolerance is invalid:  %f\n", 
             yo, tolerance);
     fprintf(stderr, "Tolerance must be between 0 and 1.\n");
-    exit(-1);
+    return (DLB_FATAL);
   }
 
   /*
@@ -353,13 +368,15 @@ char *yo = "LB_Set_Tolerance";
   if (lb->Proc == 0) {
     printf("LB:  Load balancing tolerance = %f\n", tolerance);
   }
+
+  return (DLB_OK);
 }
 
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Set_Migration(struct LB_Struct *lb, int help)
+int LB_Set_Migration(struct LB_Struct *lb, int help)
 {
 /*
  *  Function to set a flag indicating whether the application wants the
@@ -381,20 +398,22 @@ char *yo = "LB_Set_Migration";
     fprintf(stderr, "Error from %s:  Invalid value for Help_Migration:  %d\n", 
             yo, help);
     fprintf(stderr, "Value must be between %d or %d.\n", TRUE, FALSE);
-    exit(-1);
+    return (DLB_FATAL);
   }
 
   lb->Migrate.Help_Migrate = help;
   if (lb->Proc == 0) {
     printf("LB:  Load balancing Migration flag = %d\n", help);
   }
+
+  return (DLB_OK);
 }
 
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Initialize_Params_Array(double *params)
+int LB_Initialize_Params_Array(double *params)
 {
 /*
  *  Function to initialize an array to pass parameters to the load-balancing
@@ -414,6 +433,8 @@ int i;
 
   for (i = 0; i < LB_PARAMS_MAX_SIZE; i++)
     params[i] = LB_PARAMS_INIT_VALUE;
+
+  return (DLB_OK);
 }
 
 /****************************************************************************/
@@ -422,6 +443,16 @@ int i;
 
 int LB_Balance(
   LB *lb, 
+  int *changes,               /* Set to zero or one depending on if the
+                                 load balancer determines a new
+                                 decomposition or not:
+                                 zero - No changes to the decomposition
+                                        were made by the load-balancing
+                                        algorithm; migration is not needed.
+                                 one  - A new decomposition is suggested
+                                        by the load-balancer; migration is
+                                        needed to establish the new
+                                        decomposition.                     */
   int *num_import_objs,       /* The number of non-local objects in the
                                  processor's new decomposition.            */
   LB_GID **import_global_ids, /* Array of global IDs for non-local objects
@@ -475,6 +506,9 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
 
   LB_start_time = MPI_Wtime();
 
+  /* assume no changes */
+  *changes = 0;
+
   *num_import_objs = *num_export_objs = 0;
   *import_global_ids = NULL;
   *import_local_ids = NULL;
@@ -489,14 +523,14 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
    */
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
-    return 0;
+    return (DLB_OK);
 
   if (lb->Method == NONE) {
     if (lb->Proc == 0)
       printf("%s Balancing method selected == NONE; no balancing performed\n",
               yo);
 
-    return 0;
+    return (DLB_WARN);
   }
 
   /*
@@ -522,7 +556,7 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
       printf("%s No changes to the decomposition due to load-balancing; "
              "no migration is needed.\n", yo);
 
-    return 0;
+    return (DLB_OK);
   }
 
   /*
@@ -572,14 +606,15 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
     printf("DLBLIB     HelpMigrate:    %f\n", LB_max_time[1]);
   }
 
-  return 1;
+  *changes = 1;
+  return (DLB_OK);
 }
 
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Compute_Destinations(
+int LB_Compute_Destinations(
   LB *lb,                    /* Load balancing object for current balance.   */
   int num_import,            /* Number of non-local objects assigned to the 
                                 processor in the new decomposition.          */
@@ -639,8 +674,19 @@ int i;
   if (num_import > 0) {
     proc_list = (int *) LB_array_alloc(__FILE__, __LINE__, 1,
                                        num_import, sizeof(int));
+    if (!proc_list) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      return (DLB_MEMERR);
+    }
     import_objs = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1,
                                             num_import, sizeof(LB_TAG));
+    if (!import_objs) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      LB_safe_free((void **) &proc_list);
+      return (DLB_MEMERR);
+    }
 
     for (i = 0; i < num_import; i++) {
       proc_list[i] = import_procs[i];
@@ -656,7 +702,8 @@ int i;
    *  processor has to export to establish the new decomposition.
    */
 
-  comm_plan = LB_comm_create(num_import, proc_list, lb->Communicator, num_export);
+  comm_plan = LB_comm_create(num_import, proc_list, lb->Communicator,
+                             num_export);
 
   /*
    *  Allocate space for the object tags that need to be exported.  Communicate
@@ -666,12 +713,47 @@ int i;
   if (*num_export > 0) {
     export_objs         = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1, 
                                                    *num_export, sizeof(LB_TAG));
+    if (!export_objs) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      LB_safe_free((void **) &proc_list);
+      LB_safe_free((void **) &import_objs);
+      return (DLB_MEMERR);
+    }
     *export_global_ids  = (LB_GID *) LB_array_alloc(__FILE__, __LINE__, 1,
                                                    *num_export, sizeof(LB_GID));
+    if (!(*export_global_ids)) { 
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      LB_safe_free((void **) &proc_list);
+      LB_safe_free((void **) &import_objs);
+      LB_safe_free((void **) &export_objs);
+      return (DLB_MEMERR);
+    }
     *export_local_ids   = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1,
                                                    *num_export, sizeof(LB_LID));
+    if (!(*export_local_ids)) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      LB_safe_free((void **) &proc_list);
+      LB_safe_free((void **) &import_objs);
+      LB_safe_free((void **) &export_objs);
+      LB_safe_free((void **) export_local_ids);
+      return (DLB_MEMERR);
+    }
     *export_procs       = (int *)    LB_array_alloc(__FILE__, __LINE__, 1,
                                                    *num_export, sizeof(int));
+    if (!(*export_procs)) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      LB_safe_free((void **) &proc_list);
+      LB_safe_free((void **) &import_objs);
+      LB_safe_free((void **) &export_objs);
+      LB_safe_free((void **) export_local_ids);
+      LB_safe_free((void **) export_procs);
+      return (DLB_MEMERR);
+    }
+
   }
   else {
     export_objs = NULL;
@@ -698,13 +780,15 @@ int i;
   LB_safe_free((void **) &export_objs);
   
   LB_comm_destroy(&comm_plan);
+
+  return (DLB_OK);
 }
 
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Help_Migrate(
+int LB_Help_Migrate(
   LB *lb,                    /* Load balancing object for current balance.   */
   int num_import,            /* Number of non-local objects assigned to the 
                                 processor in the new decomposition.          */
@@ -766,7 +850,7 @@ int ierr = 0;
    */
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
-    return;
+    return (DLB_OK);
 
   if (lb->Debug > 4)
     printf("DLBLIB %d %s Entering HELP_MIGRATE %d %d\n",
@@ -776,21 +860,21 @@ int ierr = 0;
     fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
            "LB_OBJ_SIZE_FN_TYPE function to use the migration-help tools.\n",
            lb->Proc, yo);
-    exit(-1);
+    return (DLB_FATAL);
   }
 
   if (lb->Migrate.Pack_Obj == NULL) {
     fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
            "LB_PACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
            lb->Proc, yo);
-    exit(-1);
+    return (DLB_FATAL);
   }
 
   if (lb->Migrate.Unpack_Obj == NULL) {
     fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
          "LB_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
          lb->Proc, yo);
-    exit(-1);
+    return (DLB_FATAL);
   }
 
   if (lb->Migrate.Pre_Process != NULL) {
@@ -802,7 +886,7 @@ int ierr = 0;
     if (ierr) {
       fprintf(stderr, "[%d] %s: Error returned from user defined "
                       "Migrate.Pre_Process function.\n", lb->Proc, yo);
-      exit (-1);
+      return (DLB_FATAL);
     }
 
     if (lb->Debug > 5)
@@ -813,16 +897,28 @@ int ierr = 0;
   if (ierr) {
     fprintf(stderr, "[%d] %s: Error returned from user defined "
                     "Migrate.Get_Obj_Size function.\n", lb->Proc, yo);
-    exit (-1);
+    return (DLB_FATAL);
   }
 
 
   if (num_export > 0) {
     export_buf = (char *) LB_array_alloc(__FILE__, __LINE__, 1, num_export,
                                          size);
+    if (!export_buf) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      return (DLB_FATAL);
+    }
 
     proc_list = (int *) LB_array_alloc(__FILE__, __LINE__, 1, num_export,
                                        sizeof(int));
+    if (!proc_list) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      LB_safe_free ((void **) &export_buf);
+      return (DLB_FATAL);
+    }
+
 
     /*
      *  Pack the proc_list (to create the map) and the objects for export.
@@ -837,7 +933,7 @@ int ierr = 0;
       if (ierr) {
         fprintf(stderr, "[%d] %s: Error returned from user defined "
                         "Migrate.Pack_Obj function.\n", lb->Proc, yo);
-        exit (-1);
+        return (DLB_FATAL);
       }
       tmp += size;
     }
@@ -848,15 +944,25 @@ int ierr = 0;
    *  processor has to import to establish the new decomposition.
    */
 
-  comm_plan = LB_comm_create(num_export, proc_list, lb->Communicator, &tmp_import);
+  comm_plan = LB_comm_create(num_export, proc_list, lb->Communicator,
+                             &tmp_import);
   if (tmp_import != num_import) {
     fprintf(stderr, "%d  Error in %s:  tmp_import %d != num_import %d\n", 
             lb->Proc, yo, tmp_import, num_import);
   }
 
-  if (num_import > 0)
+  if (num_import > 0) {
     import_buf = (char *) LB_array_alloc(__FILE__, __LINE__, 1, num_import,
                                          size);
+    if (!import_buf) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc, yo);
+      LB_safe_free ((void **) &export_buf);
+      LB_safe_free ((void **) &proc_list);
+      return (DLB_FATAL);
+    }
+
+  }
 
   /*
    *  Send the export data using the communication plan.
@@ -885,7 +991,7 @@ int ierr = 0;
     if (ierr) {
       fprintf(stderr, "[%d] %s: Error returned from user defined "
                       "Migrate.Unpack_Obj function.\n", lb->Proc, yo);
-      exit (-1);
+      return (DLB_FATAL);
     }
     tmp += size;
   }
@@ -894,13 +1000,15 @@ int ierr = 0;
   if (lb->Debug > 4)
     printf("DLBLIB %d %s Leaving HELP_MIGRATE %d %d\n",
             lb->Proc, yo, num_import, num_export);
+
+  return (DLB_OK);
 }
 
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Free_Data(
+int LB_Free_Data(
   LB_GID **import_global_ids, /* Array of global IDs for non-local objects 
                                 assigned to this processor in the new
                                 decomposition.                               */
@@ -931,5 +1039,7 @@ void LB_Free_Data(
   LB_safe_free((void **) export_global_ids);
   LB_safe_free((void **) export_local_ids);
   LB_safe_free((void **) export_procs);
+
+  return (DLB_OK);
 
 }
