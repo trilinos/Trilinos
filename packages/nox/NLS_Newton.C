@@ -8,22 +8,37 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
-#include "NLS_MethodManager.H"
-#include "NLS_Newton.H"
+#include "NLS_Newton.H"		// class definition
+#include "NLS_Utilities.H"	// for static doPrint function
+#include "NLS_AdaptiveTolerance.H" // adaptive convergence tolerance
+#include <iomanip>		// for setw
 
-const string stars("***********************************************************************\n");
+const string stars = NLS_Utilities::stars;
 
 NLS_Newton::NLS_Newton(NLS_Group& initialguess, NLS_Group& workspace, NLS_ParameterList& p) :
   oldsoln(workspace),
   soln(initialguess),
   params(p),
-  niter(0)
+  niter(0),
+  linesearch(p.sublist("Line Search Parameters"))
 {
   NLS_Utilities::setUtilities(params);
+
+  if (NLS_Utilities::doPrint(4))
+    cout << "Output Level " << NLS_Utilities::outputLevel << "." << endl; 
+
+  if (NLS_Utilities::doPrint(5)) 
+    cout << "NLS_Utilities: Processor " << NLS_Utilities::myPID 
+	 << " is online." << endl;  
+
   maxiter = params.getParameter("Max Iterations", 15);
   abstol = params.getParameter("Absolute Tolerance", 1.0e-9);
   reltol = params.getParameter("Relative Tolerance", 1.0e-4);
   soln.computeRHS();
+  step = 0;
+  //NLS_ParameterList& tmp = params.sublist("Line Search Parameters");
+  //defaultstep = tmp.getParameter("Default Step", 1.0);
+  defaultstep = (params.sublist("Line Search Parameters")).getParameter("Default Step", 1.0);
 }
 
 NLS_Newton::~NLS_Newton() 
@@ -37,16 +52,18 @@ void NLS_Newton::resetParameters(NLS_ParameterList& p)
 NLS_Method::STATUS NLS_Newton::getStatus() 
 {
   // Compute norm of Newton step 
-  /* NOTE FROM TAMMY: This only works when we take full Newton
-     steps. Need to change it if we do a linesearch. */
-  double normupdate = soln.getNewton().norm();
+  double normupdate = step * soln.getNewton().norm();
 
   if (NLS_Utilities::doPrint(1)) {
-    cout << "\n" << stars;
+   cout.setf(ios::scientific);
+    cout.precision(NLS_Utilities::precision);
+     cout << "\n" << stars;
     cout << "Newton Step " << niter 
-	 << " : Residual Norm = " << soln.getNormRHS()
-	 << "  Update Norm = " << normupdate;
+	 << " : Residual Norm = " << setw(NLS_Utilities::precision + 6) << soln.getNormRHS()
+	 << "  Step = " << setw(NLS_Utilities::precision + 6) << step
+	 << "  Update Norm = " << setw(NLS_Utilities::precision + 6) << normupdate;
     cout << "\n" << stars << endl;
+    cout.unsetf(ios::scientific);
   }
 
   NLS_Method::STATUS status = NLS_Method::NotConverged;
@@ -76,15 +93,16 @@ NLS_Method::STATUS NLS_Newton::iterate()
   // compute the linear solver convergence criteria
   if ((niter > 0) && (params.isParameterEqual("Forcing Term Method", "None"))) {
 
-    double tol;			// linear solver tolerance
+    NLS_AdaptiveTolerance adapttol;  
+    double tol;	 
     
     // Only compute the norm of the predicted RHS from the last iteration if necessary
     if (params.isParameterEqual("Forcing Term Method", "Type 1")) {
       double normPredRHS = oldsoln.computeNormPredictedRHS(oldsoln.getNewton());
-      tol = forcingTerm(params, soln.getNormRHS(), oldsoln.getNormRHS(), normPredRHS);
+      tol = adapttol(params, soln.getNormRHS(), oldsoln.getNormRHS(), normPredRHS);
     }
     else
-      tol = forcingTerm(params, soln.getNormRHS(), oldsoln.getNormRHS());
+      tol = adapttol(params, soln.getNormRHS(), oldsoln.getNormRHS());
 
     // Reset linear solver tolerance
     params.setParameter("Linear Solver Tolerance", tol);
@@ -99,8 +117,11 @@ NLS_Method::STATUS NLS_Newton::iterate()
   // copy current soln to the old soln
   oldsoln = soln;
 
-  // compute new solution
-  soln.computeX(oldsoln, oldsoln.getNewton(), 1.0);
+  // Step default step
+  step = defaultstep;
+
+  // Do line search
+  linesearch(soln, step, oldsoln, oldsoln.getNewton());
 
   // compute RHS for new current solution
   soln.computeRHS();

@@ -11,9 +11,8 @@
 #ifndef _NLS_NEWTON_H
 #define _NLS_NEWTON_H
 
-#include <string>
-#include "NLS_ForcingTerm.H"
-#include "NLS_Method.H"
+#include "NLS_Method.H"		// base class
+#include "NLS_LineSearchManager.H" // line search
 
 //! Implementation of plain Newton solver
 class NLS_Newton : public NLS_Method {
@@ -40,7 +39,9 @@ protected:
   NLS_Group& soln;		//!< Solution
   NLS_Group& oldsoln;		//!< Old solution
   NLS_ParameterList& params;    //!< Parameter List
-  NLS_ForcingTerm forcingTerm;  //!< Forcing Term function
+  NLS_LineSearchManager linesearch; //!< Line search manager
+  double step;			//!< Step length for last iteration
+  double defaultstep;		//!< Default step length
 
   // Statistics
   int niter;                    //!< Number of nonlinear iterations
