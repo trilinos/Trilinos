@@ -285,21 +285,10 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
     OutputList_.set("number of destruction phases", ++NumDestroy);
   }
   
-  if( agg_ != 0 ) {
-    ML_Aggregate_Destroy(&agg_); agg_ = 0;
-  }
-  if( ml_ != 0 ) {
-    ML_Destroy(&ml_);
-    ml_ = 0;
-  }
-  if( ml_nodes_ != 0 ) {
-    ML_Destroy(&ml_nodes_);
-    ml_nodes_ = 0;
-  }
-  if( ml_edges_ != 0 ) {
-    ML_Destroy(&ml_edges_);
-    ml_edges_ = 0;
-  }
+  if( agg_ != 0 ) { ML_Aggregate_Destroy(&agg_); agg_ = 0; }
+  if( ml_ != 0 ) { ML_Destroy(&ml_); ml_ = 0; }
+  if( ml_nodes_ != 0 ) { ML_Destroy(&ml_nodes_); ml_nodes_ = 0; }
+  if( ml_edges_ != 0 ) { ML_Destroy(&ml_edges_); ml_edges_ = 0; }
 
   if( TMatrixML_ != 0 ) {
     // FIXME: do something
@@ -309,20 +298,12 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
     // FIXME: do something
   }
 
-  if( ggb_R_ ) delete ggb_R_;
-  
   // FIXME: how to deal with Tmat_array and Tmat_trans_array ???
   // are they useful ???
   
-  if( Label_ ) {
-    delete [] Label_;
-    Label_ = 0;
-  }
+  if( Label_ ) { delete [] Label_; Label_ = 0; }
   
-  if( LevelID_ ) {
-    delete [] LevelID_;
-    LevelID_ = 0;
-  }
+  if( LevelID_ ) { delete [] LevelID_; LevelID_ = 0; }
   
   // stick data in OutputList
 
@@ -413,9 +394,17 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
 
   if( verbose_ && NumApplications_ ) PrintLine();
     
-  if( NullSpaceToFree_ != 0 ) delete [] NullSpaceToFree_;
+  if( NullSpaceToFree_ != 0 ) { delete [] NullSpaceToFree_;  NullSpaceToFree_ = 0; }
+  if( RowMatrixAllocated_ ) { delete RowMatrixAllocated_; RowMatrixAllocated_ = 0; }
 
-  if( RowMatrixAllocated_ ) delete RowMatrixAllocated_;
+  // adaptive stuff
+
+  if( adp_R_ ) { delete adp_R_; adp_R_ = 0; }
+  if( adp_NullSpace_ ) { delete [] adp_NullSpace_; adp_NullSpace_ = 0; }
+  
+  if( adp_MatrixData_ ) { delete adp_MatrixData_; adp_MatrixData_ = 0; }
+  if( adp_ml_ ) { ML_Destroy(&adp_ml_); adp_ml_ = 0; }
+  if( adp_agg_ ) { ML_Aggregate_Destroy(&adp_agg_); adp_agg_ = 0; }
   
   IsComputePreconditionerOK_ = false;
 
@@ -774,11 +763,69 @@ void MultiLevelPreconditioner::Initialize()
 
   for( int i=0 ; i<ML_MEM_SIZE ; ++i ) memory_[i] = 0;
 
-  // GGB vectors
-  ggb_R_ = 0;
-  
+  // Adaptive vectors
+  adp_R_ = 0;
+  adp_NullSpace_ = 0;
+  adp_MatrixData_ = 0;
+  adp_ml_ = 0;
+  adp_agg_ = 0;
+
 }
 
+
+// ================================================ ====== ==== ==== == =
+
+int MultiLevelPreconditioner::ComputeAdaptivePreconditioner()
+{
+
+  char parameter[80];
+  
+  if( IsComputePreconditionerOK_ == true ) {
+    Destroy_ML_Preconditioner();
+  }
+
+  // 1.- disable adaptive/GGB in ComputePreconditioner()
+  sprintf(parameter,"%sadaptive: enable", Prefix_);
+  List_.set(parameter, false);
+
+  ComputePreconditioner();
+
+  // 2.- now enable, and call the function to compute the "bad-modes"
+  //     (that is, the bad boys. Go Detroit !!!! Beat LA !!!)
+
+  sprintf(parameter,"%sadaptive: enable", Prefix_);
+  List_.set(parameter, true);
+  
+  sprintf(parameter,"%sadaptive: type", Prefix_);
+  List_.set(parameter, "let ML be my master");
+
+  if( NullSpaceToFree_ ) delete [] NullSpaceToFree_; NullSpaceToFree_ = 0;
+  int NullSpaceDim = SetAdaptive();
+  assert( NullSpaceDim > 0 );
+  
+  sprintf(parameter,"%snull space: type", Prefix_);
+  List_.set(parameter, "pre-computed");
+
+  sprintf(parameter,"%snull space: dimension", Prefix_);
+  List_.set(parameter, NullSpaceDim);
+  
+  sprintf(parameter,"%snull space: vectors", Prefix_);
+  List_.set(parameter, NullSpaceToFree_);
+
+  NullSpaceToFree_ = 0;
+  
+  Destroy_ML_Preconditioner();
+
+  // 4.- recompute preconditioner with new options
+  sprintf(parameter,"%sadaptive: enable", Prefix_);
+  List_.set(parameter, false);
+
+  ComputePreconditioner();
+
+  return 0;
+  
+}
+  
 // ================================================ ====== ==== ==== == =
 
 int MultiLevelPreconditioner::ComputePreconditioner()
@@ -957,13 +1004,6 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   ML_Aggregate_Create(&agg_);
   
   /* ********************************************************************** */
-  /* set null space                                                         */
-  /* ********************************************************************** */
-
-  if( SolvingMaxwell_ == false ) SetNullSpace();
-  else                           SetNullSpaceMaxwell();
-  
-  /* ********************************************************************** */
   /* pick up coarsening strategy. METIS and ParMETIS requires additional    */
   /* lines, as we have to set the number of aggregates                      */
   /* ********************************************************************** */
@@ -1028,6 +1068,13 @@ int MultiLevelPreconditioner::ComputePreconditioner()
 
   if( SolvingMaxwell_ == false ) SetSmoothingDamping();
 
+  /* ********************************************************************** */
+  /* set null space                                                         */
+  /* ********************************************************************** */
+
+  if( SolvingMaxwell_ == false ) SetNullSpace();
+  else                           SetNullSpaceMaxwell();
+  
   /************************************************************************/
   /* Build hierarchy using smoothed aggregation.                          */
   /* Then, retrive parameters for each level. Default values are given by */
@@ -1128,7 +1175,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   }
 
   /* ********************************************************************** */
-  /* Use of GGB functions, here called `enable ggb'.                        */
+  /* Use of adaptive functions, here called `adaptive: enable'.             */
   /* If this option is true, the code detects the non-converging modes of   */
   /* I - ML^{-1}A (where ML is the preconditioner we have just built), and  */
   /* creates a new V cycle to be added to the preconditioner. This part is  */
@@ -1136,7 +1183,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   /* ml_ggb.c, in the Main subdirectory).                                   */
   /* ********************************************************************** */
 
-  SetGGB();
+  SetAdaptive();
   
   /* ********************************************************************** */
   /* Other minor settings                                                   */
@@ -1324,15 +1371,15 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
   }
 
   /* ********************************************************************** */
-  /* GGB stuff if required                                                  */
+  /* adaptive stuff if required                                             */
   /* ********************************************************************** */
 
-  if( ggb_R_ ) {
+  if( adp_R_ ) {
     
     // apply matvec
     if( Y.NumVectors() != 1 ) {
       if( verbose_ ) 
-	cerr << ErrorMsg_ << "My dear user, GGB currently works only with one vector," << endl
+	cerr << ErrorMsg_ << "My dear user, adaptive currently works only with one vector," << endl
 	     << ErrorMsg_ << "I am very sorry for this, now I give up..." << endl;
       exit( EXIT_FAILURE );
     }
@@ -1347,25 +1394,25 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
     xtmp2.PutScalar(0.0);
     RowMatrix_->Multiply(false,xtmp,xtmp2);
     */
-    int size = ggb_A_.N();
+    int size = adp_A_.N();
 
     for( int i=0 ; i<size ; ++i ) {
       double val = 0.0;
-      (*ggb_R_)(i)->Dot(*(xtmp(0)),&val);
-      ggb_rhs_(i) = val;
+      (*adp_R_)(i)->Dot(*(xtmp(0)),&val);
+      adp_rhs_(i) = val;
     }
     
-    ggb_lhs_.Multiply('N','N',1.0, ggb_A_, ggb_rhs_, 0.0);
+    adp_lhs_.Multiply('N','N',1.0, adp_A_, adp_rhs_, 0.0);
     /*
-      ggb_solver_.SetVectors(ggb_lhs_, ggb_rhs_);
-      ggb_solver_.SolveToRefinedSolution(true);
-      ggb_solver_.Solve();
+      adp_solver_.SetVectors(adp_lhs_, adp_rhs_);
+      adp_solver_.SolveToRefinedSolution(true);
+      adp_solver_.Solve();
     */
     
     xtmp.PutScalar(0.0);
     for( int i=0 ; i<size ; ++i ) {
-      double val = ggb_lhs_(i);
-      xtmp(0)->Update(val,*(*ggb_R_)(i),1.0); 
+      double val = adp_lhs_(i);
+      xtmp(0)->Update(val,*(*adp_R_)(i),1.0); 
     }
     
     Y.Update(1.0,xtmp,1.0);
@@ -3030,184 +3077,407 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
 
 // ============================================================================
 
-void ML_Epetra::MultiLevelPreconditioner::SetGGB() 
+int ML_Epetra::MultiLevelPreconditioner::SetAdaptive() 
 {
 
+  int ReturnValue = 0;
+  
   char parameter[80];
   Epetra_Time Time(Comm());
+
+  string Pre(Prefix_);
   
-  sprintf(parameter,"%senable ggb", Prefix_);
-  if( List_.get(parameter,false) ) {
+  sprintf(parameter,"%sadaptive: enable", Prefix_);
+  if( ! List_.get(parameter,false) ) return -1;
+  
     
-    sprintf(parameter,"%sggb: use symmetric cycle", Prefix_);
-    bool GGBUseSym = List_.get(parameter,false);
-    if( GGBUseSym == true ) ML_ggb_Set_SymmetricCycle(1);
-    else                    ML_ggb_Set_SymmetricCycle(0);
+  sprintf(parameter,"%sadaptive: use symmetric cycle", Prefix_);
+  bool AdpUseSym = List_.get(parameter,false);
+  if( AdpUseSym == true ) ML_ggb_Set_SymmetricCycle(1);
+  else                    ML_ggb_Set_SymmetricCycle(0);
 
-    int restarts = List_.get("eigen-analysis: restart", 50);
-    int NumEigenvalues = List_.get("ggb: size", 5);
-    int BlockSize = List_.get("eigen-analysis: block-size", NumEigenvalues*2);
-    double tol = List_.get("eigen-analysis: tolerance", 1e-5);
+  int restarts = List_.get(Pre+"eigen-analysis: restart", 50);
+  int NumEigenvalues = List_.get(Pre+"adaptive: eigenvalues to compute", 5);
+  int BlockSize = List_.get(Pre+"eigen-analysis: block-size", NumEigenvalues);
+  double tol = List_.get(Pre+"eigen-analysis: tolerance", 1e-5);
 
-    string Eigensolver = List_.get("ggb: eigensolver", "Anasazi");
+  string Eigensolver = List_.get(Pre+"adaptive: eigensolver", "Anasazi");
 
+  if( verbose_ ) {
+    cout << endl;
+    cout << PrintMsg_ << "\tAdaptive preconditioner: computing low-convergent modes..." << endl;
+    cout << PrintMsg_ << "\t- scheme = " << Eigensolver << endl;
+    cout << PrintMsg_ << "\t- number of eigenvectors to compute = " << NumEigenvalues << endl;
+    cout << PrintMsg_ << "\t- tolerance = " << tol << endl;
+    cout << PrintMsg_ << "\t- block size = " << BlockSize << endl;
+    if( AdpUseSym ) cout << PrintMsg_ << "\t- using symmetric preconditioner" << endl;
+    else            cout << PrintMsg_ << "\t- using a non-symmetric preconditioner" << endl;
+      
+  }    
+    
+  if( Eigensolver =="ARPACK" ) {
+
+    // check, only 1 proc is supported
+    if( Comm().NumProc() != 1 ) {
+      if( Comm().MyPID() == 0 )
+	cerr << ErrorMsg_ << "ARPACK can be used only for serial run" << endl;
+      exit( EXIT_FAILURE );
+    }
+
+    ML_ggb_Set_CoarseSolver(2); // set Amesos KLU as solver
+
+    adp_MatrixData_ = new(struct ML_CSR_MSRdata);
+      
+    // stick values in Haim's format
+    struct ML_Eigenvalue_Struct ml_eig_struct;
+    ml_eig_struct.Max_Iter = restarts;
+    ml_eig_struct.Num_Eigenvalues = NumEigenvalues;
+    ml_eig_struct.Arnoldi = BlockSize;
+    ml_eig_struct.Residual_Tol = tol;
+
+    ML_ARPACK_GGB(&ml_eig_struct, ml_, adp_MatrixData_, 0, 0);
+
+    // now build the correction to be added to the ML cycle
+      
+    ML_build_ggb(ml_, adp_MatrixData_);
+      
+  } else if( Eigensolver == "Anasazi" ) {
+      
+    // 1.- set parameters for Anasazi
+    Teuchos::ParameterList AnasaziList;
+    AnasaziList.set("eigen-analysis: matrix operation", "I-ML^{-1}A");
+    AnasaziList.set("eigen-analysis: use diagonal scaling", false);
+    AnasaziList.set("eigen-analysis: symmetric problem", false);
+    AnasaziList.set("eigen-analysis: length", BlockSize);
+    AnasaziList.set("eigen-analysis: tolerance", tol);
+    AnasaziList.set("eigen-analysis: action", "LM");
+    AnasaziList.set("eigen-analysis: restart", restarts);
+    AnasaziList.set("eigen-analysis: output", 0);
+
+    // data to hold real and imag for eigenvalues and eigenvectors
+    double * RealEigenvalues = new double[NumEigenvalues];
+    double * ImagEigenvalues = new double[NumEigenvalues];
+
+    double * RealEigenvectors = new double[NumEigenvalues*NumMyRows()];
+    double * ImagEigenvectors = new double[NumEigenvalues*NumMyRows()];
+
+    if( RealEigenvectors == 0 || ImagEigenvectors == 0 ) {
+      cerr << ErrorMsg_ << "Not enough space to allocate "
+	   << NumEigenvalues*NumMyRows()*8 << " bytes for Adaptive/Anasazi" << endl;
+      exit( EXIT_FAILURE );
+    }
+      
+    // this is the starting value -- random
+    Epetra_MultiVector EigenVectors(OperatorDomainMap(),NumEigenvalues);
+    EigenVectors.Random();
+
+    int NumRealEigenvectors, NumImagEigenvectors;
+
+#ifdef HAVE_ML_ANASAZI
+    // 2.- call Anasazi and store the results in eigenvectors      
+    ML_Anasazi::Interface(RowMatrix_,EigenVectors,RealEigenvalues,
+			  ImagEigenvalues, AnasaziList, RealEigenvectors,
+			  ImagEigenvectors,
+			  &NumRealEigenvectors, &NumImagEigenvectors, ml_);
+#else
+    if( Comm().MyPID() == 0 ) {
+      cerr << ErrorMsg_ << "ML has been configure without the Anasazi interface" << endl
+	   << ErrorMsg_ << "You must add the option --enable-anasazi to use" << endl
+	   << ErrorMsg_ << "adaptive and Anasazi" << endl;
+    }
+    exit( EXIT_FAILURE );
+#endif
+
+    // small matrices may turn out crazy. Warn the user that his code is
+    // essentially broken, consider re-employment or pre-retirement.
+    // Stop coding is also highly suggested.
+
+    if( NumRealEigenvectors+NumImagEigenvectors == 0 ) {
+      cerr << ErrorMsg_ << "Anasazi has computed no nonzero eigenvalues" << endl
+	   << ErrorMsg_ << "This sometimes happen because your fine grid matrix" << endl
+	   << ErrorMsg_ << "is too small. In this case, try to change the Anasazi input" << endl
+	   << ErrorMsg_ << "parameters, or drop the adaptive correction." << endl;
+      exit( EXIT_FAILURE );
+    }
+      
+    // 3.- some output, to print out how many vectors we are actually using
     if( verbose_ ) {
-      cout << endl;
-      cout << PrintMsg_ << "\tBuilding Generalized Global Basis Functions..." << endl;
-      cout << PrintMsg_ << "\t- scheme = " << Eigensolver << endl;
-      cout << PrintMsg_ << "\t- number of eigenvectors to compute = " << NumEigenvalues << endl;
-      cout << PrintMsg_ << "\t- tolerance = " << tol << endl;
-      cout << PrintMsg_ << "\t- block size = " << BlockSize << endl;
-      if( GGBUseSym ) cout << PrintMsg_ << "\t- using symmetric preconditioner" << endl;
-      else            cout << PrintMsg_ << "\t- using a non-symmetric preconditioner" << endl;
-      
-    }    
-    
-    if( Eigensolver =="ARPACK" ) {
-
-      // check, only 1 proc is supported
-      if( Comm().NumProc() != 1 ) {
-	if( Comm().MyPID() == 0 )
-	  cerr << ErrorMsg_ << "ARPACK can be used only for serial run" << endl;
-	exit( EXIT_FAILURE );
-      }
-
-      ML_ggb_Set_CoarseSolver(2); // set Amesos KLU as solver
-
-      // FIXME: this memory will be lost !!!!! LEAK - LEAK - LEAKI N G G GG GGG
-      struct ML_CSR_MSRdata        *mydata;     // Pointer to the GGB method 
-      
-      mydata        = new(struct ML_CSR_MSRdata);
-      
-      // stick values in Haim's format
-      struct ML_Eigenvalue_Struct ml_eig_struct;
-      ml_eig_struct.Max_Iter = restarts;
-      ml_eig_struct.Num_Eigenvalues = NumEigenvalues;
-      ml_eig_struct.Arnoldi = BlockSize;
-      ml_eig_struct.Residual_Tol = tol;
-
-      ML_ARPACK_GGB(&ml_eig_struct, ml_, mydata, 0, 0);
-
-      // now build the correction to be added to the ML cycle
-      
-      ML_build_ggb(ml_, mydata);
-      
-    } else if( Eigensolver == "Anasazi" ) {
-      
-      // 1.- set parameters for Anasazi
-      Teuchos::ParameterList AnasaziList;
-      AnasaziList.set("eigen-analysis: matrix operation", "I-ML^{-1}A");
-      AnasaziList.set("eigen-analysis: use diagonal scaling", false);
-      AnasaziList.set("eigen-analysis: symmetric problem", false);
-      AnasaziList.set("eigen-analysis: length", BlockSize);
-      AnasaziList.set("eigen-analysis: tolerance", tol);
-      AnasaziList.set("eigen-analysis: action", "LM");
-      AnasaziList.set("eigen-analysis: restart", restarts);
-      AnasaziList.set("eigen-analysis: output", 0);
-
-      // data to hold real and imag for eigenvalues and eigenvectors
-      double * RealEigenvalues = new double[NumEigenvalues];
-      double * ImagEigenvalues = new double[NumEigenvalues];
-
-      double * RealEigenvectors = new double[NumEigenvalues*NumMyRows()];
-      double * ImagEigenvectors = new double[NumEigenvalues*NumMyRows()];
-
-      if( RealEigenvectors == 0 || ImagEigenvectors == 0 ) {
-	cerr << ErrorMsg_ << "Not enough space to allocate "
-	     << NumEigenvalues*NumMyRows()*8 << " bytes for GGB/Anasazi" << endl;
-	exit( EXIT_FAILURE );
-      }
-      
-      // this is the starting value -- random
-      Epetra_MultiVector EigenVectors(OperatorDomainMap(),NumEigenvalues);
-      EigenVectors.Random();
-
-      int NumRealEigenvectors, NumImagEigenvectors;
-
-      // 2.- call Anasazi and store the results in eigenvectors      
-      ML_Anasazi::Interface(RowMatrix_,EigenVectors,RealEigenvalues,
-			    ImagEigenvalues, AnasaziList, RealEigenvectors,
-			    ImagEigenvectors,
-			    &NumRealEigenvectors, &NumImagEigenvectors, ml_);
-
-      // 3.- some output, to print out how many vectors we are actually using
-      if( verbose_ ) {
-	cout << PrintMsg_ << "\t- Computed eigenvalues of I - ML^{-1}A:" << endl;
-	for( int i=0 ; i<NumEigenvalues ; ++i ) {
-	  cout << PrintMsg_ << "\t  z = " << std::setw(10) << RealEigenvalues[i]
+      cout << PrintMsg_ << "\t- Computed eigenvalues of I - ML^{-1}A:" << endl;
+      for( int i=0 ; i<NumEigenvalues ; ++i ) {
+	cout << PrintMsg_ << "\t  z = " << std::setw(10) << RealEigenvalues[i]
 	     << " + i(" << std::setw(10) << ImagEigenvalues[i] << " ),  |z| = "
-	       << sqrt(pow(RealEigenvalues[i],2.0) + pow(ImagEigenvalues[i],2)) << endl;
-	}
-	cout << PrintMsg_ << "\t- Using " << NumRealEigenvectors << " real and "
-	     << NumImagEigenvectors << " imaginary eigenvector(s)" << endl;
+	     << sqrt(pow(RealEigenvalues[i],2.0) + pow(ImagEigenvalues[i],2)) << endl;
       }
+      cout << PrintMsg_ << "\t- Using " << NumRealEigenvectors << " real and "
+	   << NumImagEigenvectors << " imaginary eigenvector(s)" << endl;
+    }
 
-      int size = NumRealEigenvectors+NumImagEigenvectors;
+    int size = NumRealEigenvectors+NumImagEigenvectors;
       
-      assert( size<2*NumEigenvalues+1 );
+    assert( size<2*NumEigenvalues+1 );
 
+    string PrecType = List_.get(Pre+"adaptive: type", "enhanced");
+      
+    if( PrecType == "projection" ) {
+	
       // 4.- build the restriction operator as a collection of vectors
-      ggb_R_ = new Epetra_MultiVector(Map(),size);
-      assert( ggb_R_ != 0 );
-      
+      adp_R_ = new Epetra_MultiVector(Map(),size);
+      assert( adp_R_ != 0 );
+	
       for( int i=0 ; i<NumRealEigenvectors ; ++i ) {
 	for( int j=0 ; j<NumMyRows() ; ++j ) 
-	  (*ggb_R_)[i][j] = RealEigenvectors[j+i*NumMyRows()];
+	  (*adp_R_)[i][j] = RealEigenvectors[j+i*NumMyRows()];
       }
-      
+	
       for( int i=0 ; i<NumImagEigenvectors ; ++i ) {
 	for( int j=0 ; j<NumMyRows() ; ++j ) 
-	  (*ggb_R_)[NumRealEigenvectors+i][j] = ImagEigenvectors[j+i*NumMyRows()];
+	  (*adp_R_)[NumRealEigenvectors+i][j] = ImagEigenvectors[j+i*NumMyRows()];
       }
-
+	
       //FIXME      Epetra_MultiVector AQ(Map(),size);
       //FIXME AQ.PutScalar(0.0);
-      
-      //FIXME      RowMatrix_->Multiply(false,*ggb_R_, AQ);
-
+	
+      //FIXME      RowMatrix_->Multiply(false,*adp_R_, AQ);
+	
       // 5.- epetra linear problem for dense matrices
-      ggb_rhs_.Reshape(size,1);
-      ggb_lhs_.Reshape(size,1);
-      ggb_A_.Reshape(size,size);
-      ggb_solver_.SetVectors(ggb_lhs_, ggb_rhs_);
-      ggb_solver_.SetMatrix(ggb_A_);
-      
+      adp_rhs_.Reshape(size,1);
+      adp_lhs_.Reshape(size,1);
+      adp_A_.Reshape(size,size);
+      adp_solver_.SetVectors(adp_lhs_, adp_rhs_);
+      adp_solver_.SetMatrix(adp_A_);
+	
       // 6.- build the "coarse" matrix as a serial matrix, replicated
       //     over all processes. LAPACK will be used for its solution
       for( int i=0 ; i<size ; ++i ) {
 	for( int j=0 ; j<size ; ++j ) {
 	  double value;
-	  (*ggb_R_)(i)->Dot(*((*ggb_R_)(j)), &value); // FIXME : it was AQ(j)
-	  ggb_A_(i,j) = value;
+	  (*adp_R_)(i)->Dot(*((*adp_R_)(j)), &value); // FIXME : it was AQ(j)
+	  adp_A_(i,j) = value;
 	}
       }
-
-      // compute the inverse, overwrite the old values of A
-      ggb_solver_.Invert();
-      
-      // 7.- free some junk
-      delete [] RealEigenvalues;
-      delete [] ImagEigenvalues;
-      delete [] RealEigenvectors;
-      delete [] ImagEigenvectors;
 	
+      // compute the inverse, overwrite the old values of A
+      adp_solver_.Invert();
+	
+    } else if( PrecType == "ml-cycle" ) {
+
+      if( Comm().NumProc() != 1 ) {
+	cerr << ErrorMsg_ << "Option `adaptive: type' == `ml-cycle' can be used only with 1 process." << endl
+	     << ErrorMsg_ << "You can select `projection' or `enhanced' for multi-process runs" << endl;
+	exit( EXIT_FAILURE );
+      }
+
+      ML_ggb_Set_CoarseSolver(2); // set Amesos KLU as solver
+	
+      // Here I use the Haim's code. Note that is works with one process only,
+      // but it allows comparisons between ARPACK and Anasazi
+
+      // a.- copy the null space in a double vector, as now I have real
+      //     and imag null space in two different vectors (that may be only
+      //     partially populated)
+
+      adp_NullSpace_ = new double[(NumRealEigenvectors+NumImagEigenvectors)*NumMyRows()];
+      if( adp_NullSpace_ == 0 ) {
+	cerr << ErrorMsg_ << "Not enough space to allocate "
+	     << (NumRealEigenvectors+NumImagEigenvectors)*NumMyRows()*8 << " bytes" << endl;
+	exit( EXIT_FAILURE );
+      }
+
+      int count = 0;
+      for( int i=0 ; i<NumRealEigenvectors ; ++i )
+	for( int j=0 ; j<NumMyRows() ; ++j ) 
+	  adp_NullSpace_[count++] = RealEigenvectors[j+i*NumMyRows()];
+
+      for( int i=0 ; i<NumImagEigenvectors ; ++i )
+	for( int j=0 ; j<NumMyRows() ; ++j ) 
+	  adp_NullSpace_[count++] = ImagEigenvectors[j+i*NumMyRows()];
+
+      adp_MatrixData_ = new(struct ML_CSR_MSRdata);
+
+      ML_GGB2CSR(adp_NullSpace_,NumRealEigenvectors+NumImagEigenvectors,
+		 NumMyRows(), adp_MatrixData_, 0);
+	
+      // now build the correction to be added to the ML cycle
+	
+      ML_build_ggb(ml_, adp_MatrixData_);
+	
+    } else if( PrecType == "enhanced" ) {
+
+      // this is equivalent to the "fattening" of Haim. I build a new ML
+      // hierarchy, using the null space just computed. I have at least one
+      // aggregate per subdomain, using METIS.
+
+      // a.- copy the null space in a double vector, as now I have real
+      //     and imag null space in two different vectors (that may be only
+      //     partially populated)
+
+      adp_NullSpace_ = new double[(NumRealEigenvectors+NumImagEigenvectors)*NumMyRows()];
+      if( adp_NullSpace_ == 0 ) {
+	cerr << ErrorMsg_ << "Not enough space to allocate "
+	     << (NumRealEigenvectors+NumImagEigenvectors)*NumMyRows()*8 << " bytes" << endl;
+	exit( EXIT_FAILURE );
+      }
+
+      int count = 0;
+      for( int i=0 ; i<NumRealEigenvectors ; ++i )
+	for( int j=0 ; j<NumMyRows() ; ++j ) 
+	  adp_NullSpace_[count++] = RealEigenvectors[j+i*NumMyRows()];
+
+      for( int i=0 ; i<NumImagEigenvectors ; ++i )
+	for( int j=0 ; j<NumMyRows() ; ++j ) 
+	  adp_NullSpace_[count++] = ImagEigenvectors[j+i*NumMyRows()];
+	
+      int NumAggr = List_.get(Pre+"adaptive: local aggregates",1);
+
+      // b.- create a new ML hierarchy, whose null space has been computed
+      //     with the iteration matrix modes
+	
+      ML_Create(&adp_ml_,2); // now only 2-level methods
+      ML_Operator_halfClone_Init( &(adp_ml_->Amat[1]),
+				  &(ml_->Amat[ml_->ML_finest_level]));
+			      
+      ML_Aggregate_Create(&adp_agg_);
+      ML_Aggregate_Set_CoarsenScheme_METIS(adp_agg_);
+      ML_Aggregate_Set_LocalNumber(adp_ml_,adp_agg_,-1,NumAggr);
+      ML_Aggregate_Set_DampingFactor(adp_agg_,0.0);
+      ML_Aggregate_Set_Threshold(adp_agg_, 0.0);
+      ML_Aggregate_Set_MaxCoarseSize(adp_agg_, 1);
+      ML_Aggregate_Set_NullSpace(adp_agg_, NumPDEEqns_,NumRealEigenvectors+NumImagEigenvectors,
+				 adp_NullSpace_, NumMyRows());
+      int CoarsestLevel = ML_Gen_MultiLevelHierarchy_UsingAggregation(adp_ml_,1, ML_DECREASING, adp_agg_);
+
+      ML_Gen_Smoother_Amesos(adp_ml_, 0, ML_AMESOS_KLU, -1);
+      ML_Gen_Solver(adp_ml_, ML_MGV, 1, 0);
+   
+      ml_->void_options = (void *) adp_ml_;
+
+    } else if( PrecType == "let ML be my master" ) {
+
+      int dim = NumPDEEqns_+NumRealEigenvectors+NumImagEigenvectors;
+      NullSpaceToFree_ = new double[dim*NumMyRows()];
+      if( NullSpaceToFree_ == 0 ) {
+	cerr << ErrorMsg_ << "Not enough space to allocate "
+	     << dim*NumMyRows()*8 << " bytes" << endl;
+	exit( EXIT_FAILURE );
+      }
+
+      // default null-space
+      for( int i=0 ; i<NumPDEEqns_ ; ++i )
+	for( int j=0 ; j<NumMyRows() ; ++j )
+	  if( j%NumPDEEqns_ == i ) NullSpaceToFree_[j+i*NumMyRows()] = 1.0;
+	  else                     NullSpaceToFree_[j+i*NumMyRows()] = 0.0;
+
+      int count = NumPDEEqns_*NumMyRows();
+
+      for( int i=0 ; i<NumRealEigenvectors ; ++i )
+	for( int j=0 ; j<NumMyRows() ; ++j ) 
+	  NullSpaceToFree_[count++] = RealEigenvectors[j+i*NumMyRows()];
+
+      ReturnValue = dim;
+      
     } else {
 
-      if(  Comm().MyPID() == 0 )
-	cerr << ErrorMsg_ << "Value of option `ggb:eigensolver' not correct" << endl
-	     << ErrorMsg_ << "(" << Eigensolver << "). It should be:" << endl
-	     << ErrorMsg_ << "<ARPACK> / <Anasazi>" << endl;
-
+      if( Comm().MyPID() == 0 ) {
+	cerr << ErrorMsg_ << "Value of option `adaptive: type' not correct" << endl
+	     << ErrorMsg_ << "(" << PrecType << ") It should be: " << endl
+	     << ErrorMsg_ << "<projection> / <ml-cycle> / <enhanced>" << endl;
+      }
       exit( EXIT_FAILURE );
     }
+      
+    // 7.- free some junk
+    delete [] RealEigenvalues;
+    delete [] ImagEigenvalues;
+    delete [] RealEigenvectors;
+    delete [] ImagEigenvectors;
+	
+  } else {
 
+    if(  Comm().MyPID() == 0 )
+      cerr << ErrorMsg_ << "Value of option `adaptive:eigensolver' not correct" << endl
+	   << ErrorMsg_ << "(" << Eigensolver << "). It should be:" << endl
+	   << ErrorMsg_ << "<ARPACK> / <Anasazi>" << endl;
+
+    exit( EXIT_FAILURE );
   }
 
   if( verbose_ ) 
-    cout << PrintMsg_ << "\t- Time = " << Time.ElapsedTime() << " (s)" << endl;
+    cout << PrintMsg_ << "\t- Total Time for adaptive-ml setup = " << Time.ElapsedTime() << " (s)" << endl;
     
-  return;
+  return( ReturnValue );
   
 }
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
+
+
+#ifdef ERASEME
+
+else if( PrecType == "in ML I trust" ) {
+ 
+      int dim = NumPDEEqns_+NumRealEigenvectors+NumImagEigenvectors;
+      NullSpaceToFree_ = new double[dim*NumMyRows()];
+      if( NullSpaceToFree_ == 0 ) {
+	cerr << ErrorMsg_ << "Not enough space to allocate "
+	     << dim*NumMyRows()*8 << " bytes" << endl;
+	exit( EXIT_FAILURE );
+      }
+      
+      // default null-space
+      for( int i=0 ; i<NumPDEEqns_ ; ++i )
+	for( int j=0 ; j<NumMyRows() ; ++j )
+	  if( j%NumPDEEqns_ == i ) NullSpaceToFree_[j+i*NumMyRows()] = 1.0;
+	  else                     NullSpaceToFree_[j+i*NumMyRows()] = 0.0;
+      
+      int count = NumPDEEqns_*NumMyRows();
+
+      for( int i=0 ; i<NumRealEigenvectors ; ++i )
+	for( int j=0 ; j<NumMyRows() ; ++j ) 
+	  NullSpaceToFree_[count++] = RealEigenvectors[j+i*NumMyRows()];
+      
+      for( int i=0 ; i<NumImagEigenvectors ; ++i )
+	for( int j=0 ; j<NumMyRows() ; ++j ) 
+	  NullSpaceToFree_[count++] = ImagEigenvectors[j+i*NumMyRows()];
+      
+      ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,dim,NullSpaceToFree_,
+				 RowMatrix_->NumMyRows());
+
+      // C R A P -- C R A P -- C R A P -- said the crew
+      
+      sprintf(parameter,"%sincreasing or decreasing", Prefix_);
+      string IsIncreasing = List_.get(parameter,"increasing");
+
+      int Direction;
+      if( IsIncreasing == "increasing" ) Direction = ML_INCREASING;
+      else                               Direction = ML_DECREASING;
+
+      int FinestLevel;
+
+      if( IsIncreasing == "increasing" ) FinestLevel = 0;
+      else                               FinestLevel = NumLevels_-1;
+
+      int MaxCreationLevels = NumLevels_;
+      if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;
+      
+      ML_Destroy( &ml_ );
+      ML_Create(&ml_,MaxCreationLevels);
+      int NumMyRows;
+      
+      NumMyRows = RowMatrix_->NumMyRows();
+      int N_ghost = RowMatrix_->NumMyCols() - NumMyRows;
+      
+      if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
+      
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) RowMatrix_);
+      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
+			    Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
+      
+      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
+      
+      NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
+      SetSmoothers();
+      if( NumLevels_ > 1 ) SetCoarse();
+      ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);	
+      
+
+#endif
