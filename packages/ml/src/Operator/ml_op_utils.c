@@ -8,6 +8,7 @@
 #include "ml_op_utils.h"
 #include "ml_agg_genP.h"
 #include "ml_memory.h"
+#include "ml_agg_Zoltan.h"
 
 /* ******************************************************************** */
 /* Blow away any inter-mixing between boundary and interior points in   */
@@ -417,8 +418,15 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
  *
  */
 #ifdef HAVE_ML_METIS
-#include "metis.h"
+#ifdef __cplusplus
+extern "C" {
 #endif
+#include "metis.h"
+#ifdef __cplusplus
+}
+#endif
+#endif
+
 #ifdef HAVE_ML_JOSTLE
 #include "jostle.h"
 #endif
@@ -3146,6 +3154,8 @@ int ML_Operator_Get_Nnz(ML_Operator *A)
       ML_get_matrix_row(A, 1, &i, &space, &columns, &values, &row_lengths, 0);
       A->N_nonzeros += row_lengths;
     }
+    if (columns != NULL) ML_free(columns);
+    if (values != NULL) ML_free(values);
   }
   return A->N_nonzeros; 
 }
