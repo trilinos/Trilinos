@@ -987,9 +987,12 @@ Optional Packages:
                           ${tac_with_amesos_blacsdir}/libblacs.a, )
   --with-amesos-cblacslib Set CBLACS library (default is
                           ${tac_with_amesos_blacsdir}/libcblacs.a, )
+  --with-amesos-scalapackdir
+                          Set SCALAPACK directory (default is
+                          ${tac_with_trilinos3pldir}/SCALAPACK, )
   --with-amesos-scalapacklib
                           Set SCALAPACK library (default is
-                          ${tac_with_amesos_blacsdir}/libscalapack.a, )
+                          ${tac_with_amesos_scalapackdir}/libscalapack.a, )
   --with-amesos-mumpsdir  Set MUMPS directory (default is
                           ${tac_with_trilinos3pldir}/MUMPS_4.2_beta/, )
   --with-amesos-mumpslib  Set MUMPS library (default is
@@ -3836,7 +3839,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3839:" \
+echo "$as_me:3842:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6464,7 +6467,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6467: \"$ac_link\") >&5
+(eval echo $as_me:6470: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6542,7 +6545,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6545: \"$ac_link\") >&5
+(eval echo $as_me:6548: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11954,6 +11957,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 
   SAVE_LIBS="${LIBS}"
   LIBS="${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+  BASELIBS="${LIBS}"
+  BLACSLIB=""
   ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -12041,8 +12046,7 @@ echo "${ECHO_T}checkpoint blacs  A " >&6
   echo "$as_me:$LINENO: result: checkpoint blacs  A " >&5
 echo "${ECHO_T}checkpoint blacs  A " >&6
   if test "X$blacs_lib_ok" != "Xyes"; then
-     SCALIBS ="${LIBS}"
-     LIBS=" -lblacs ${LIBS}"
+     LIBS=" -lblacs ${BASELIBS}"
 
      echo "$as_me:$LINENO: result: checkpoint blacs  B " >&5
 echo "${ECHO_T}checkpoint blacs  B " >&6
@@ -12111,8 +12115,7 @@ rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 
      if test "X$blacs_with_lib" == "Xyes"; then
-       SCALIBS ="${LIBS}"
-       amesos_libs="${amesos_libs} -lblacs"
+       BLACSLIB=" -lblacs "
        echo "$as_me:$LINENO: result: checkpoint blacs  C " >&5
 echo "${ECHO_T}checkpoint blacs  C " >&6
        echo "$as_me:$LINENO: result: checkpoint blacs  C " >&5
@@ -12161,12 +12164,20 @@ fi
   fi
 
        if test "X$blacs_from_t3pl" == "Xyes"; then
+       echo "$as_me:$LINENO: result: \"checkpoint blacs  E\" " >&5
+echo "${ECHO_T}\"checkpoint blacs  E\" " >&6
           amesos_libs="${amesos_libs} ${tac_with_amesos_blacslib}"
-          SCALIBS =" ${tac_with_amesos_blacslib} ${LIBS}"
+          BLACSLIB=" ${tac_with_amesos_blacslib} "
        fi
      fi
   fi
 
+       echo "$as_me:$LINENO: result: \"checkpoint yo amesos_libs = ${amesos_libs}\" " >&5
+echo "${ECHO_T}\"checkpoint yo amesos_libs = ${amesos_libs}\" " >&6
+       echo "$as_me:$LINENO: result: \"checkpoint yo BLACSLIB = ${BLACSLIB}\" " >&5
+echo "${ECHO_T}\"checkpoint yo BLACSLIB = ${BLACSLIB}\" " >&6
+
+  LIBS="${BLACSLIB} ${BASELIBS}"
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -12238,7 +12249,6 @@ rm -f conftest.err conftest.$ac_objext \
 #  the cblacs library.  Other implementations do not.  If we find the cblacs, we include it
 #  in the search path, if we don't, we hope for the best.
 #
-  LIBS="${SCALIBS}"
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -12305,7 +12315,7 @@ echo "${ECHO_T}checkpoint cblacs  A " >&6
   echo "$as_me:$LINENO: result: checkpoint cblacs  A " >&5
 echo "${ECHO_T}checkpoint cblacs  A " >&6
   if test "X$cblacs_lib_ok" != "Xyes"; then
-     LIBS=" -lcblacs ${LIBS}"
+     LIBS=" -lcblacs ${BLACSLIB} ${BASELIBS}"
 
      echo "$as_me:$LINENO: result: checkpoint cblacs  B " >&5
 echo "${ECHO_T}checkpoint cblacs  B " >&6
@@ -12374,8 +12384,9 @@ rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 
      if test "X$cblacs_with_lib" == "Xyes"; then
-       SCALIBS ="-lcblacs ${SCALIBS}"
-       amesos_libs="${amesos_libs} -lcblacs"
+       CBLACSLIB=" -lcblacs ${BLACSLIB} "
+       echo "$as_me:$LINENO: result: \"checkpoint yy CBLACSLIB = ${CBLACSLIB}\" " >&5
+echo "${ECHO_T}\"checkpoint yy CBLACSLIB = ${CBLACSLIB}\" " >&6
        echo "$as_me:$LINENO: result: checkpoint cblacs  C " >&5
 echo "${ECHO_T}checkpoint cblacs  C " >&6
        echo "$as_me:$LINENO: result: checkpoint cblacs  C " >&5
@@ -12424,8 +12435,7 @@ fi
   fi
 
        if test "X$cblacs_from_t3pl" == "Xyes"; then
-          SCALIBS =" ${tac_with_amesos_cblacslib} ${SCALIBS}"
-          amesos_libs="${amesos_libs} ${tac_with_amesos_cblacslib}"
+          CBLACSLIB=" ${tac_with_amesos_cblacslib} ${BLACSLIB} "
        fi
      fi
   fi
@@ -12434,9 +12444,21 @@ fi
 #  No check here because not all implementations require the cblacs library
 #
 
+       echo "$as_me:$LINENO: result: \"checkpoint yoyo CBLACSLIB = ${CBLACSLIB}\" " >&5
+echo "${ECHO_T}\"checkpoint yoyo CBLACSLIB = ${CBLACSLIB}\" " >&6
 #
 #    SCALAPACK library
 #
+
+
+# Check whether --with-amesos-scalapackdir or --without-amesos-scalapackdir was given.
+if test "${with_amesos_scalapackdir+set}" = set; then
+  withval="$with_amesos_scalapackdir"
+  tac_with_amesos_scalapackdir=$withval
+else
+  tac_with_amesos_scalapackdir=${tac_with_trilinos3pldir}/SCALAPACK
+fi;
+
 if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
 
   ac_ext=f
@@ -12458,7 +12480,8 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-  LIBS="${SCALIBS}"
+  LIBS=" ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
+  SCALAPACKLIB=""
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -12525,7 +12548,7 @@ echo "${ECHO_T}checkpoint scalapack  A " >&6
   echo "$as_me:$LINENO: result: checkpoint scalapack  A " >&5
 echo "${ECHO_T}checkpoint scalapack  A " >&6
   if test "X$scalapack_lib_ok" != "Xyes"; then
-     LIBS=" -lscalapack ${LIBS}"
+     LIBS=" -lscalapack ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
 
      echo "$as_me:$LINENO: result: checkpoint scalapack  B " >&5
 echo "${ECHO_T}checkpoint scalapack  B " >&6
@@ -12592,9 +12615,8 @@ scalapack_with_lib="no"
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
-
      if test "X$scalapack_with_lib" == "Xyes"; then
-       amesos_libs=" -lscalapack ${amesos_libs}"
+       SCALAPACKLIB=" -lscalapack "
        echo "$as_me:$LINENO: result: checkpoint scalapack  C " >&5
 echo "${ECHO_T}checkpoint scalapack  C " >&6
        echo "$as_me:$LINENO: result: checkpoint scalapack  C " >&5
@@ -12611,7 +12633,7 @@ if test "${with_amesos_scalapacklib+set}" = set; then
   withval="$with_amesos_scalapacklib"
   tac_with_amesos_scalapacklib=$withval
 else
-  tac_with_amesos_scalapacklib=${tac_with_amesos_blacsdir}/libscalapack.a
+  tac_with_amesos_scalapacklib=${tac_with_amesos_scalapackdir}/libscalapack.a
 fi;
 
 
@@ -12643,12 +12665,18 @@ fi
   fi
 
        if test "X$scalapack_from_t3pl" == "Xyes"; then
-          LIBS =" ${tac_with_amesos_scalapacklib} ${SCALIBS}"
-          amesos_libs="${tac_with_amesos_scalapacklib} ${amesos_libs}"
+          SCALAPACKLIB="  ${tac_with_amesos_scalapacklib} "
        fi
      fi
   fi
-  SCALIBS = ${LIBS}
+
+  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
+  echo "$as_me:$LINENO: result: \"checkpoint yoyoyo CBLACSLIB = ${CBLACSLIB}\" " >&5
+echo "${ECHO_T}\"checkpoint yoyoyo CBLACSLIB = ${CBLACSLIB}\" " >&6
+  amesos_libs=" ${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${amesos_libs} "
+  echo "$as_me:$LINENO: result: \"LIBS = ${LIBS}\" " >&5
+echo "${ECHO_T}\"LIBS = ${LIBS}\" " >&6
+
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -12765,7 +12793,7 @@ fi
 #
 if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
-   ${LIBS} = ${SCALIBS}
+  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
 
 #
 #  We don't check do as thorough a check for Mumps at this point.  In fact, we don't do much of a check
@@ -13564,7 +13592,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:13567: \"$ac_link\") >&5
+(eval echo $as_me:13595: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13642,7 +13670,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:13645: \"$ac_link\") >&5
+(eval echo $as_me:13673: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

@@ -37,5 +37,5 @@ TestOptions_LDADD = $(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(AMESOS_LIBS) \
         $(LAPACK_LIBS) \
-	$(BLAS_LIBS) $(FLIBS) 
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 

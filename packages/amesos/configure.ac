@@ -719,6 +719,8 @@ if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
 
   SAVE_LIBS="${LIBS}"
   LIBS="${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+  BASELIBS="${LIBS}"
+  BLACSLIB=""
   AC_F77_FUNC(dgebs2d)
 
   AC_TRY_LINK_FUNC($dgebs2d,blacs_lib_ok="yes",blacs_lib_ok="no")
@@ -726,16 +728,14 @@ if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
   AC_MSG_RESULT( checkpoint blacs  A ) 
   AC_MSG_RESULT( checkpoint blacs  A ) 
   if test "X$blacs_lib_ok" != "Xyes"; then
-     SCALIBS ="${LIBS}" 
-     LIBS=" -lblacs ${LIBS}"
+     LIBS=" -lblacs ${BASELIBS}"
 
      AC_MSG_RESULT( checkpoint blacs  B ) 
      AC_MSG_RESULT( checkpoint blacs  B ) 
      AC_TRY_LINK_FUNC($dgebs2d,blacs_with_lib="yes",blacs_with_lib="no")
 
      if test "X$blacs_with_lib" == "Xyes"; then
-       SCALIBS ="${LIBS}" 
-       amesos_libs="${amesos_libs} -lblacs"
+       BLACSLIB=" -lblacs "
        AC_MSG_RESULT( checkpoint blacs  C ) 
        AC_MSG_RESULT( checkpoint blacs  C ) 
      else
@@ -745,12 +745,17 @@ if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
                          ${tac_with_amesos_blacsdir}/libblacs.a )
        TAC_CHECK_FILE(${tac_with_amesos_blacslib},blacs_from_t3pl="yes",blacs_from_t3pl="no")
        if test "X$blacs_from_t3pl" == "Xyes"; then
+       AC_MSG_RESULT( "checkpoint blacs  E" ) 
           amesos_libs="${amesos_libs} ${tac_with_amesos_blacslib}"
-          SCALIBS =" ${tac_with_amesos_blacslib} ${LIBS}" 
+          BLACSLIB=" ${tac_with_amesos_blacslib} " 
        fi
      fi
   fi
 
+       AC_MSG_RESULT( "checkpoint yo amesos_libs = ${amesos_libs}" ) 
+       AC_MSG_RESULT( "checkpoint yo BLACSLIB = ${BLACSLIB}" ) 
+
+  LIBS="${BLACSLIB} ${BASELIBS}"
   AC_TRY_LINK_FUNC($dgebs2d,,
   AC_MSG_ERROR([[Cannot find the BLACS library, specify a location using --with-amesos-blacslib, (ex. --with-amesos-blacslib=/home/username/Trilinos3PL/BLACS/LIB/libblacs.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
 
@@ -761,20 +766,19 @@ if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
 #  the cblacs library.  Other implementations do not.  If we find the cblacs, we include it 
 #  in the search path, if we don't, we hope for the best.
 #
-  LIBS="${SCALIBS}"
   AC_TRY_LINK_FUNC(Cblacs_pinfo,cblacs_lib_ok="yes",cblacs_lib_ok="no")
   AC_MSG_RESULT( checkpoint cblacs  A ) 
   AC_MSG_RESULT( checkpoint cblacs  A ) 
   if test "X$cblacs_lib_ok" != "Xyes"; then
-     LIBS=" -lcblacs ${LIBS}"
+     LIBS=" -lcblacs ${BLACSLIB} ${BASELIBS}"
 
      AC_MSG_RESULT( checkpoint cblacs  B ) 
      AC_MSG_RESULT( checkpoint cblacs  B ) 
      AC_TRY_LINK_FUNC(Cblacs_pinfo,cblacs_with_lib="yes",cblacs_with_lib="no")
 
      if test "X$cblacs_with_lib" == "Xyes"; then
-       SCALIBS ="-lcblacs ${SCALIBS}" 
-       amesos_libs="${amesos_libs} -lcblacs"
+       CBLACSLIB=" -lcblacs ${BLACSLIB} " 
+       AC_MSG_RESULT( "checkpoint yy CBLACSLIB = ${CBLACSLIB}" ) 
        AC_MSG_RESULT( checkpoint cblacs  C ) 
        AC_MSG_RESULT( checkpoint cblacs  C ) 
      else
@@ -784,8 +788,7 @@ if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
                          ${tac_with_amesos_blacsdir}/libcblacs.a )
        TAC_CHECK_FILE(${tac_with_amesos_cblacslib},cblacs_from_t3pl="yes",cblacs_from_t3pl="no")
        if test "X$cblacs_from_t3pl" == "Xyes"; then
-          SCALIBS =" ${tac_with_amesos_cblacslib} ${SCALIBS}" 
-          amesos_libs="${amesos_libs} ${tac_with_amesos_cblacslib}"
+          CBLACSLIB=" ${tac_with_amesos_cblacslib} ${BLACSLIB} " 
        fi
      fi
   fi
@@ -794,40 +797,46 @@ fi
 #  No check here because not all implementations require the cblacs library
 #
 
+       AC_MSG_RESULT( "checkpoint yoyo CBLACSLIB = ${CBLACSLIB}" ) 
 #
 #    SCALAPACK library
 #
+TAC_ARG_WITH_SUB( amesos, scalapackdir, [Set SCALAPACK directory],  ${tac_with_trilinos3pldir}/SCALAPACK )
 if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
 
   AC_F77_FUNC(pdgetrf)
-  LIBS="${SCALIBS}"
+  LIBS=" ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
+  SCALAPACKLIB=""
   AC_TRY_LINK_FUNC($pdgetrf,scalapack_lib_ok="yes",scalapack_lib_ok="no")
   AC_MSG_RESULT( checkpoint scalapack  A ) 
   AC_MSG_RESULT( checkpoint scalapack  A ) 
   if test "X$scalapack_lib_ok" != "Xyes"; then
-     LIBS=" -lscalapack ${LIBS}"
+     LIBS=" -lscalapack ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
 
      AC_MSG_RESULT( checkpoint scalapack  B ) 
      AC_MSG_RESULT( checkpoint scalapack  B ) 
      AC_TRY_LINK_FUNC($pdgetrf,scalapack_with_lib="yes",scalapack_with_lib="no")
-
      if test "X$scalapack_with_lib" == "Xyes"; then
-       amesos_libs=" -lscalapack ${amesos_libs}"
+       SCALAPACKLIB=" -lscalapack "
        AC_MSG_RESULT( checkpoint scalapack  C ) 
        AC_MSG_RESULT( checkpoint scalapack  C ) 
      else
        AC_MSG_RESULT( checkpoint scalapack  D ) 
        AC_MSG_RESULT( checkpoint scalapack  D ) 
        TAC_ARG_WITH_SUB( amesos, scalapacklib, [Set SCALAPACK library],  
-                         ${tac_with_amesos_blacsdir}/libscalapack.a )
+                         ${tac_with_amesos_scalapackdir}/libscalapack.a )
        TAC_CHECK_FILE(${tac_with_amesos_scalapacklib},scalapack_from_t3pl="yes",scalapack_from_t3pl="no")
        if test "X$scalapack_from_t3pl" == "Xyes"; then
-          LIBS =" ${tac_with_amesos_scalapacklib} ${SCALIBS}" 
-          amesos_libs="${tac_with_amesos_scalapacklib} ${amesos_libs}"
+          SCALAPACKLIB="  ${tac_with_amesos_scalapacklib} "
        fi
      fi
   fi
-  SCALIBS = ${LIBS}
+
+  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
+  AC_MSG_RESULT( "checkpoint yoyoyo CBLACSLIB = ${CBLACSLIB}" ) 
+  amesos_libs=" ${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${amesos_libs} "
+  AC_MSG_RESULT( "LIBS = ${LIBS}" ) 
+
   AC_TRY_LINK_FUNC($pdgetrf,,
   AC_MSG_ERROR([[Cannot find scalapack library, specify a location using --with-amesos-scalapacklib, (ex. --with-amesos-scalapacklib=/home/username/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
 
@@ -856,7 +865,7 @@ fi
 #
 if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
-   ${LIBS} = ${SCALIBS}
+  LIBS="${SCALAPACKLIB} ${BLACSLIB} ${CBLACSLIB} ${BASELIBS}"
 
 #
 #  We don't check do as thorough a check for Mumps at this point.  In fact, we don't do much of a check 
