@@ -111,6 +111,19 @@ bool Options::setOptions(NOX::Parameter::List& nlParams)
       else
         testCombo->addStatusTest(*testNormUpdate);
     }
+
+    // Finally, provide a default test if none specified
+    if(!testCombo) // No tests specified by the uesr
+    {
+      assert( testMaxIters == 0);
+      testMaxIters = new NOX::StatusTest::MaxIters(20);
+      assert( testNormF == 0);
+      testNormF = new NOX::StatusTest::NormF(1.e-12);
+      testCombo = new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
+                                             *testMaxIters, *testNormF);
+    }
+    
+
   } // End of StatusTest construction
 
 
@@ -131,7 +144,6 @@ bool Options::setOptions(NOX::Parameter::List& nlParams)
                optionString, maxStringLength, &flg);CHKERRQ(ierr);
   if(flg)
   {
-    cout << "linesearch optionString --> " << optionString << endl;
     if( !strcmp(optionString, "full_step") )
       searchParams.setParameter("Method", "Full Step");
     if( !strcmp(optionString, "polynomial") )
