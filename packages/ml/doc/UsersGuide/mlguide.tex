@@ -716,7 +716,7 @@ to exactly one process.} and a \teuchos~parameter list\footnote{In order to use 
 We now give a very simple fragment of code that uses the
 MultiLevelPreconditioner.
 For the complete code, see
-\verb!$ML_HOME/examples/ml_example_MultiLevelPreconditioner.cpp!.
+\verb!$ML_HOME/examples/ml_preconditioner.cpp!.
 (In order to be effectively compiled, this example
 requires \ML\ to be configured with option \verb!--enable-triutils!; see
 Section~\ref{configure}.)  The linear operator \verb!A! is derived from an
@@ -1464,9 +1464,9 @@ matrix.
 
 Two examples are included in the \ML~distribution:
 \begin{itemize}
-\item File \verb!ml_example_MultiLevelPreconditioner_viz.cpp! shows how to
+\item File \verb!ml_viz.cpp! shows how to
 visualize the effect of the \ML~cycle and each level's smoother on a random vector;
-\item File \verb!ml_example_MultiLevelPreconditioner_analyze.cpp! shows who to
+\item File \verb!ml_analyze.cpp! shows who to
 get some quantitative information about each level's matrix, and multilevel preconditioner.
 \end{itemize}
 
@@ -1892,7 +1892,7 @@ MLPrec->VisualizeCycle(10);
 // and 1 step of postsmoother
 MLPrec->VisualizeSmoothers(5,1);
 \end{verbatim}
-(File \verb!ml_example_MultiLevelPreconditioner_viz.cpp! contains the compilable
+(File \verb!ml_viz.cpp! contains the compilable
  code.) We note that the parameters must be set {\sl before} calling
 {\tt ComputePreconditioner()}. See also Section~\ref{sec:MLP:auxiliary} for
 the requirements on the coordinates vectors.

@@ -373,7 +373,7 @@ USA
 
 We now report and comment and example of usage of
 ML_Epetra::MultiLevelPreconditioner. The source code can be found in
-ml_example_epetra_preconditioner.cpp. 
+ml_preconditioner.cpp. 
 
 First, we need to include several header files. Note that the example works for
 MPI and non-MPI configurations. However, some coarse solver requires MPI (like for
@@ -408,7 +408,7 @@ We can now start with the \c main() function.  We create the linear problem usin
 \c Trilinos_Util::CrsMatrixGallery.  Several matrix examples are supported; please refer to the
 Trilinos tutorial for more details.  Most of the examples using the \c ML_Epetra::MultiLevelPreconditioner
 class are based on Epetra_CrsMatrix. Example
-\c ml_example_epetra_preconditioner_vbr.cpp shows how to define a Epetra_VbrMatrix.
+\c ml_EpetraVbr.cpp shows how to define a Epetra_VbrMatrix.
 
 \c laplace_2d is a symmetric matrix; an example of non-symmetric
 matrices is \c recirc_2d' (advection-diffusion in a box, with
@@ -445,7 +445,7 @@ This is the beginning of the ML part. We proceed as follows:
 - set default values for classical smoothed aggregation;
 - overwrite some parameters.  Please refer to the user's guide for more
   information some of the parameters do not differ from their default value,
-  Here the smoother is symmetric Gauss-Seidel.  Example file ml_example_epetra_preconditioner_2level.cpp
+  Here the smoother is symmetric Gauss-Seidel.  Example file ml_2level_DD.cpp
   shows how to use AZTEC's preconditioners as smoothers
   and they are here reported for the sake of clarity maximum number of levels. 
   We solve the coarse problem with serial direct solver KLU.
@@ -515,7 +515,7 @@ At this point, we can compute the true residual, and quit.
 
 We now report and comment and example of usage of
 ML_Epetra::MultiLevelPreconditioner. The source code can be found in
-ml_example_epetra_preconditioner.cpp. 
+ml_preconditioner.cpp. 
 
 Trilinos (and hence ML) requires the variable \c HAVE_CONFIG_H to be defined,
 either in the Makefile, or in the file itself. We suggest the following:
@@ -679,7 +679,7 @@ existence of \c MLPrec.
 
 To execute this example,/from the command line, you may try something like that:
 \code
-$ mpirun -np 4 ./ml_example_epetra_operator.exe -problem_type=laplace_3d 
+$ mpirun -np 4 ./ml_operator.exe -problem_type=laplace_3d 
           -problem_size=1000
 \endcode
 For more options for Trilinos_Util::CrsMatrixGallery, consult the
@@ -703,16 +703,16 @@ Trilinos 4.0 tutorial.
 */
 
 /*!
-\page ex_MLO ml_example_MultiLevelOperator.cpp
-\include ml_example_MultiLevelOperator.cpp
+\page ex_MLO ml_operator.cpp
+\include ml_operator.cpp
 */
 
 /*!
-\page ex_MLP ml_example_MultiLevelPreconditioner.cpp
-\include ml_example_MultiLevelPreconditioner.cpp
+\page ex_MLP ml_preconditioner.cpp
+\include ml_preconditioner.cpp
 */
 
 /*!
-\page ex_MLP_DD ml_example_MultiLevelPreconditioner_2level.cpp
-\include ml_example_MultiLevelPreconditioner_2level.cpp
+\page ex_MLP_DD ml_2level_DD.cpp
+\include ml_2level_DD.cpp
 */
