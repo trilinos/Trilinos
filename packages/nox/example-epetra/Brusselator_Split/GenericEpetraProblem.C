@@ -45,54 +45,57 @@ GenericEpetraProblem::GenericEpetraProblem(Epetra_Comm& comm,
 void GenericEpetraProblem::createMaps()
 {
 
-  // Construct a Source Map that puts approximately the same 
-  // number of equations on each processor 
+  if (NumGlobalNodes > 0)
+  { 
+    // Construct a Source Map that puts approximately the same 
+    // number of equations on each processor 
+    
+    // Begin by distributing nodes fairly equally
+    StandardMap = new Epetra_Map(NumGlobalNodes, 0, *Comm);
   
-  // Begin by distributing nodes fairly equally
-  StandardMap = new Epetra_Map(NumGlobalNodes, 0, *Comm);
-
-  // Get the number of nodes owned by this processor
-  NumMyNodes = StandardMap->NumMyElements();
-
-  // Construct an overlap node map for the finite element fill
-  // For single processor jobs, the overlap and standard maps are the same
-  if (NumProc == 1) { 
-    OverlapMap = new Epetra_Map(*StandardMap);
-  } else {
-    
-    int OverlapNumMyNodes;
-    int OverlapMinMyNodeGID;
-    OverlapNumMyNodes = NumMyNodes + 2;
-    if ((MyPID == 0) || (MyPID == NumProc - 1))
-      OverlapNumMyNodes --;
-
-    if (MyPID==0)
-      OverlapMinMyNodeGID = StandardMap->MinMyGID();
-    else
-      OverlapMinMyNodeGID = StandardMap->MinMyGID() - 1;
-    
-    int* OverlapMyGlobalNodes = new int[OverlapNumMyNodes];
-    
-    for (int i = 0; i < OverlapNumMyNodes; i ++)
-      OverlapMyGlobalNodes[i] = OverlapMinMyNodeGID + i;
-    
-    OverlapMap = new Epetra_Map(-1, OverlapNumMyNodes,
-                            OverlapMyGlobalNodes, 0, *Comm);
-
-    delete [] OverlapMyGlobalNodes;
-
-  } // End Overlap node map construction ********************************
-
-  Importer = new Epetra_Import(*OverlapMap, *StandardMap);
+    // Get the number of nodes owned by this processor
+    NumMyNodes = StandardMap->NumMyElements();
+  
+    // Construct an overlap node map for the finite element fill
+    // For single processor jobs, the overlap and standard maps are the same
+    if (NumProc == 1) { 
+      OverlapMap = new Epetra_Map(*StandardMap);
+    } else {
+      
+      int OverlapNumMyNodes;
+      int OverlapMinMyNodeGID;
+      OverlapNumMyNodes = NumMyNodes + 2;
+      if ((MyPID == 0) || (MyPID == NumProc - 1))
+        OverlapNumMyNodes --;
+  
+      if (MyPID==0)
+        OverlapMinMyNodeGID = StandardMap->MinMyGID();
+      else
+        OverlapMinMyNodeGID = StandardMap->MinMyGID() - 1;
+      
+      int* OverlapMyGlobalNodes = new int[OverlapNumMyNodes];
+      
+      for (int i = 0; i < OverlapNumMyNodes; i ++)
+        OverlapMyGlobalNodes[i] = OverlapMinMyNodeGID + i;
+      
+      OverlapMap = new Epetra_Map(-1, OverlapNumMyNodes,
+                              OverlapMyGlobalNodes, 0, *Comm);
+  
+      delete [] OverlapMyGlobalNodes;
+  
+    } // End Overlap node map construction ********************************
+  
+    Importer = new Epetra_Import(*OverlapMap, *StandardMap);
 
 #ifdef DEBUG
-  // Output to check progress so far
-  printf("NumMyNodes, NumGlobalNodes --> %d\t%d\n",NumMyNodes, NumGlobalNodes);
-
-  cout << *StandardMap << endl;
-  cout << *OverlapMap << endl;
-  Importer->Print(cout);
+    // Output to check progress so far
+    printf("NumMyNodes, NumGlobalNodes --> %d\t%d\n",NumMyNodes, NumGlobalNodes);
+  
+    cout << *StandardMap << endl;
+    cout << *OverlapMap << endl;
+    Importer->Print(cout);
 #endif
+  }
 
   return;
 }

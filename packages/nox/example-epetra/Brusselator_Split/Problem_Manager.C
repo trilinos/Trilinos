@@ -292,7 +292,7 @@ bool Problem_Manager::evaluate(FillType f, const Epetra_Vector *solnVector,
   for (int i=0; i<solnA.MyLength(); i++)
     solnA[i] = (*solnVector)[i];
   for (int i=0; i<solnB.MyLength(); i++)
-    solnB[i] = (*solnVector)[i+problemA.StandardMap->MaxAllGID()+1];
+    solnB[i] = (*solnVector)[i+solnA.MyLength()];
 
   // Pass solutions and compute residuals
   problemA.setAuxillarySolution(solnB);
@@ -306,7 +306,7 @@ bool Problem_Manager::evaluate(FillType f, const Epetra_Vector *solnVector,
     (*rhsVector)[i] = dynamic_cast<const NOX::Epetra::Vector&>(grpA.getF()).
                       getEpetraVector()[i];
   for (int i=0; i<solnB.MyLength(); i++)
-    (*rhsVector)[i+problemA.StandardMap->MaxAllGID()+1] = 
+    (*rhsVector)[i+solnA.MyLength()] = 
                       dynamic_cast<const NOX::Epetra::Vector&>(grpB.getF()).
                       getEpetraVector()[i];
 
