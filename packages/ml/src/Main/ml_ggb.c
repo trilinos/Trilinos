@@ -32,7 +32,7 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 {
   /* Eigenvalue definitions */
   int      iparam[11];
-  int      nev, ncv, info, mode, nconv, Fattening;
+  int      nev, ncv, info, mode=0, nconv, Fattening=0;
   double   tol, tm, tmp_tol;
   char     bmat[2], which[3];
 
@@ -55,7 +55,7 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
   nev              = eigen_struct->Num_Eigenvalues;
   ncv              = eigen_struct->Arnoldi;
   tol              = eigen_struct->Residual_Tol;
-
+  
   /* Set parameters for ARPACK: (2)then those that are fixed for MPSalsa */
   /* Setting ARPACK to: simple,nonsymetric, and finding Large Magnitude spectrum */ 
     
@@ -161,6 +161,7 @@ void  ML_ARPACK_driver(char which[],
    *
    ******************************************************/
   Amat = &(ml->Amat[ml->ML_finest_level]);
+
   nloc       = Amat->outvec_leng;
   ldv        = nloc;
 
