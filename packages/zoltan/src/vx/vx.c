@@ -118,5 +118,5 @@ char *tmp;
 
 void LB_free_vertex(VERTEX **vertex)
 {
-  LB_Free((void **) vertex);
+  LB_FREE(vertex);
 }

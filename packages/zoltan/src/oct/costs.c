@@ -167,7 +167,7 @@ float LB_costs_global_compute() {
        */
     }
   }
-  LB_Free((void **) &root);
+  LB_FREE(&root);
 #else
   lroots = POC_localroots();
   while(lroots != NULL) {

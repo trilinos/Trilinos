@@ -154,5 +154,5 @@ LIST_ENTRY *prev, *next;
     next->Prev = prev;
   }
 
-  LB_Free((void **) ptr);
+  LB_FREE(ptr);
 }

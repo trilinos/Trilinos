@@ -87,7 +87,7 @@ void LB_comm_do(struct Comm_Obj *plan,          /* plan from create_comm */
 
 /* free temporary send buffer */
 
-  LB_Free((void **) &buf);
+  LB_FREE(&buf);
 
 /* wait on all incoming messages */
 
@@ -283,8 +283,8 @@ struct Comm_Obj *LB_comm_create(
 
 /* free work vectors */
 
-  LB_Free((void **) &counts);
-  LB_Free((void **) &list);
+  LB_FREE(&counts);
+  LB_FREE(&list);
     
 /* initialize plan and return it */
 
@@ -319,17 +319,17 @@ void LB_comm_destroy(struct Comm_Obj **plan)
 
 /* free internal arrays */
 
-  LB_Free((void **) &((*plan)->procs_to));
-  LB_Free((void **) &((*plan)->procs_from));
-  LB_Free((void **) &((*plan)->lengths_to));
-  LB_Free((void **) &((*plan)->lengths_from));
-  LB_Free((void **) &((*plan)->indices_to));
-  LB_Free((void **) &((*plan)->request));
-  LB_Free((void **) &((*plan)->status));
+  LB_FREE(&((*plan)->procs_to));
+  LB_FREE(&((*plan)->procs_from));
+  LB_FREE(&((*plan)->lengths_to));
+  LB_FREE(&((*plan)->lengths_from));
+  LB_FREE(&((*plan)->indices_to));
+  LB_FREE(&((*plan)->request));
+  LB_FREE(&((*plan)->status));
 
 /* free plan itself */
 
-  LB_Free((void **) plan);
+  LB_FREE(plan);
 }
 
 

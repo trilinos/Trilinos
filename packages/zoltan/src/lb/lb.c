@@ -172,7 +172,7 @@ char *yo = "LB_Destroy_Object";
 
   MPI_Comm_free(&((*lb)->Communicator));
 
-  LB_Free((void **) lb);
+  LB_FREE(lb);
 }
 
 /****************************************************************************/
@@ -620,7 +620,7 @@ int i;
     if (!import_objs) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_Free((void **) &proc_list);
+      LB_FREE(&proc_list);
       return (LB_MEMERR);
     }
 
@@ -652,8 +652,8 @@ int i;
     if (!export_objs) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_Free((void **) &proc_list);
-      LB_Free((void **) &import_objs);
+      LB_FREE(&proc_list);
+      LB_FREE(&import_objs);
       return (LB_MEMERR);
     }
     *export_global_ids  = (LB_GID *) LB_Malloc((*num_export)*sizeof(LB_GID),
@@ -661,9 +661,9 @@ int i;
     if (!(*export_global_ids)) { 
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_Free((void **) &proc_list);
-      LB_Free((void **) &import_objs);
-      LB_Free((void **) &export_objs);
+      LB_FREE(&proc_list);
+      LB_FREE(&import_objs);
+      LB_FREE(&export_objs);
       return (LB_MEMERR);
     }
     *export_local_ids   = (LB_LID *) LB_Malloc((*num_export)*sizeof(LB_LID),
@@ -671,10 +671,10 @@ int i;
     if (!(*export_local_ids)) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_Free((void **) &proc_list);
-      LB_Free((void **) &import_objs);
-      LB_Free((void **) &export_objs);
-      LB_Free((void **) export_local_ids);
+      LB_FREE(&proc_list);
+      LB_FREE(&import_objs);
+      LB_FREE(&export_objs);
+      LB_FREE(export_local_ids);
       return (LB_MEMERR);
     }
     *export_procs = (int *) LB_Malloc((*num_export)*sizeof(int),
@@ -682,11 +682,11 @@ int i;
     if (!(*export_procs)) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_Free((void **) &proc_list);
-      LB_Free((void **) &import_objs);
-      LB_Free((void **) &export_objs);
-      LB_Free((void **) export_local_ids);
-      LB_Free((void **) export_procs);
+      LB_FREE(&proc_list);
+      LB_FREE(&import_objs);
+      LB_FREE(&export_objs);
+      LB_FREE(export_local_ids);
+      LB_FREE(export_procs);
       return (LB_MEMERR);
     }
 
@@ -711,9 +711,9 @@ int i;
     (*export_procs)[i]      = export_objs[i].Proc;
   }
 
-  LB_Free((void **) &proc_list);
-  LB_Free((void **) &import_objs);
-  LB_Free((void **) &export_objs);
+  LB_FREE(&proc_list);
+  LB_FREE(&import_objs);
+  LB_FREE(&export_objs);
   
   LB_comm_destroy(&comm_plan);
 
@@ -849,7 +849,7 @@ int ierr = 0;
     if (!proc_list) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_Free ((void **) &export_buf);
+      LB_FREE(&export_buf);
       return (LB_FATAL);
     }
 
@@ -890,8 +890,8 @@ int ierr = 0;
     if (!import_buf) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_Free ((void **) &export_buf);
-      LB_Free ((void **) &proc_list);
+      LB_FREE(&export_buf);
+      LB_FREE(&proc_list);
       return (LB_FATAL);
     }
 
@@ -908,8 +908,8 @@ int ierr = 0;
    */
 
   LB_comm_destroy(&comm_plan);
-  LB_Free((void **) &proc_list);
-  LB_Free((void **) &export_buf);
+  LB_FREE(&proc_list);
+  LB_FREE(&export_buf);
 
   /*
    *  Unpack the object data.
@@ -929,7 +929,7 @@ int ierr = 0;
     tmp += size;
   }
 
-  LB_Free((void **) &import_buf);
+  LB_FREE(&import_buf);
   if (lb->Debug > 4)
     printf("LBLIB %d %s Leaving HELP_MIGRATE %d %d\n",
             lb->Proc, yo, num_import, num_export);
@@ -966,12 +966,12 @@ int LB_Free_Data(
  *  Routine to free the arrays returning the results of the load balancing.
  */
 
-  LB_Free((void **) import_global_ids);
-  LB_Free((void **) import_local_ids);
-  LB_Free((void **) import_procs);
-  LB_Free((void **) export_global_ids);
-  LB_Free((void **) export_local_ids);
-  LB_Free((void **) export_procs);
+  LB_FREE(import_global_ids);
+  LB_FREE(import_local_ids);
+  LB_FREE(import_procs);
+  LB_FREE(export_global_ids);
+  LB_FREE(export_local_ids);
+  LB_FREE(export_procs);
 
   return (LB_OK);
 
@@ -1040,10 +1040,10 @@ void LB_Eval (LB *lb, int mode,
     
   if ((!sum_wgt) || (!global_ids) || (!local_ids) || (vwgt_dim && (!vwgts))){
     *ierr = LB_MEMERR;
-    LB_Free((void **) &sum_wgt);
-    LB_Free((void **) &global_ids);
-    LB_Free((void **) &local_ids);
-    LB_Free((void **) &vwgts);
+    LB_FREE(&sum_wgt);
+    LB_FREE(&global_ids);
+    LB_FREE(&local_ids);
+    LB_FREE(&vwgts);
     return;
   }
 
@@ -1055,10 +1055,10 @@ void LB_Eval (LB *lb, int mode,
 
   LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, vwgts, ierr);
   if (*ierr == LB_FATAL){
-    LB_Free((void **) &sum_wgt);
-    LB_Free((void **) &global_ids);
-    LB_Free((void **) &local_ids);
-    LB_Free((void **) &vwgts);
+    LB_FREE(&sum_wgt);
+    LB_FREE(&global_ids);
+    LB_FREE(&local_ids);
+    LB_FREE(&vwgts);
     return;
   }
 
@@ -1104,14 +1104,14 @@ void LB_Eval (LB *lb, int mode,
 
     if ((!nbors_global) || (!nbors_proc) || (ewgt_dim && (!ewgts)) || (!proc)){
       *ierr = LB_MEMERR;
-      LB_Free((void **) &sum_wgt);
-      LB_Free((void **) &global_ids);
-      LB_Free((void **) &local_ids);
-      LB_Free((void **) &vwgts);
-      LB_Free((void **) &nbors_global);
-      LB_Free((void **) &nbors_proc);
-      LB_Free((void **) &ewgts);
-      LB_Free((void **) &proc);
+      LB_FREE(&sum_wgt);
+      LB_FREE(&global_ids);
+      LB_FREE(&local_ids);
+      LB_FREE(&vwgts);
+      LB_FREE(&nbors_global);
+      LB_FREE(&nbors_proc);
+      LB_FREE(&ewgts);
+      LB_FREE(&proc);
       return;
     }
 
@@ -1133,6 +1133,8 @@ void LB_Eval (LB *lb, int mode,
       /* Check for cut edges */
       for (j=0; j<nedges; j++){
         if (nbors_proc[j] != lb->Proc){
+/* printf("[%1d] Debug: Found cut edge (%d,%d) to proc %d\n", lb->Proc, 
+   global_ids[i], nbors_global[j], nbors_proc[j]);  */
           if (ewgt_dim == 0)
             cut_wgt++;
           else if (ewgt_dim == 1)
@@ -1192,15 +1194,15 @@ void LB_Eval (LB *lb, int mode,
   }
 
   /* Free data */
-  LB_Free((void **) &sum_wgt);
-  LB_Free((void **) &global_ids);
-  LB_Free((void **) &local_ids);
-  LB_Free((void **) &vwgts);
-  LB_Free((void **) &ewgts);
-  LB_Free((void **) &nbors_global);
-  LB_Free((void **) &nbors_proc);
-  LB_Free((void **) &proc);
+  LB_FREE(&sum_wgt);
+  LB_FREE(&global_ids);
+  LB_FREE(&local_ids);
+  LB_FREE(&vwgts);
+  LB_FREE(&ewgts);
+  LB_FREE(&nbors_global);
+  LB_FREE(&nbors_proc);
+  LB_FREE(&proc);
   if (!(mode&1)){
-    LB_Free((void **) &obj_wgt);
+    LB_FREE(&obj_wgt);
   }
 }

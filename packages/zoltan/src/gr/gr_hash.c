@@ -103,7 +103,7 @@ int num_buckets = (*table)->Num_Buckets;
   for (i = 0; i < num_buckets; i++) 
     LB_free_bucket(&((*table)->Bucket[i]));
 
-  LB_Free((void **) table);
+  LB_FREE(table);
 }
 
 /*****************************************************************************/
@@ -171,7 +171,7 @@ static void free_hash_graph(GRAPH **graph)
  */
 
   free_hash_table((HASH_TABLE **) (&(*graph)->Graph_Data));
-  LB_Free((void **) graph);
+  LB_FREE(graph);
 }
 
 /*****************************************************************************/
@@ -243,7 +243,7 @@ int i;
        */
 
       vertex = NULL;
-      LB_Free((void **) loop_control);
+      LB_FREE(loop_control);
     }
   }
 

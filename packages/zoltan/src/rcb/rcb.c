@@ -296,13 +296,13 @@ static int rcb(
       RCB_error(lb, dotmax*sizeof(int));
     coord = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
     if (coord == NULL) {
-      LB_Free((void **) &dotmark);
+      LB_FREE(&dotmark);
       RCB_error(lb, dotmax*sizeof(int));
     }
     wgts = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
     if (wgts == NULL) {
-      LB_Free((void **) &dotmark);
-      LB_Free((void **) &coord);
+      LB_FREE(&dotmark);
+      LB_FREE(&coord);
       RCB_error(lb, dotmax*sizeof(int));
     }
   }
@@ -414,21 +414,21 @@ static int rcb(
 
     if (allocflag) {
       allocflag = 0;
-      LB_Free((void **) &dotmark);
-      LB_Free((void **) &coord);
-      LB_Free((void **) &wgts);
+      LB_FREE(&dotmark);
+      LB_FREE(&coord);
+      LB_FREE(&wgts);
       dotmark = (int *) LB_Malloc(dotmax*sizeof(int), __FILE__, __LINE__);
       if (dotmark == NULL)
         RCB_error(lb, dotmax*sizeof(int));
       coord = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
       if (coord == NULL) {
-        LB_Free((void **) &dotmark);
+        LB_FREE(&dotmark);
         RCB_error(lb, dotmax*sizeof(int));
       }
       wgts = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
       if (wgts == NULL) {
-        LB_Free((void **) &dotmark);
-        LB_Free((void **) &coord);
+        LB_FREE(&dotmark);
+        LB_FREE(&coord);
         RCB_error(lb, dotmax*sizeof(int));
       }
     }
@@ -568,7 +568,7 @@ static int rcb(
 
     length = outgoing * sizeof(struct rcb_dot);
     MPI_Rsend(dotbuf,length,MPI_CHAR,procpartner,1,lb->Communicator);
-    LB_Free((void **) &dotbuf);
+    LB_FREE(&dotbuf);
     
     dotnum = dotnew;
 
@@ -611,9 +611,9 @@ static int rcb(
   MPI_Type_free(&box_type);
   MPI_Op_free(&box_op);
 
-  LB_Free((void **) &coord);
-  LB_Free((void **) &wgts);
-  LB_Free((void **) &dotmark);
+  LB_FREE(&coord);
+  LB_FREE(&wgts);
+  LB_FREE(&dotmark);
 
   LB_end_time = MPI_Wtime();
   LB_time[1] = LB_end_time - LB_start_time;
@@ -647,14 +647,14 @@ static int rcb(
     *import_local_ids  = (LB_LID *) LB_Malloc((*num_import)*sizeof(LB_LID),
         __FILE__, __LINE__);
     if (!(*import_local_ids)) {
-      LB_Free((void **) import_global_ids);
+      LB_FREE(import_global_ids);
       RCB_error(lb, *num_import*sizeof(LB_LID));
     }
     *import_procs      = (int *) LB_Malloc((*num_import)*sizeof(int),
         __FILE__, __LINE__);
     if (!(*import_procs)) {
-      LB_Free((void **) import_global_ids);
-      LB_Free((void **) import_local_ids);
+      LB_FREE(import_global_ids);
+      LB_FREE(import_local_ids);
       RCB_error(lb, *num_import*sizeof(int));
     }
 

@@ -108,7 +108,7 @@ ID *buf_edges;
       } /* end CONCERNED */
       edge_cnt += recv_vertex->num_edges;
     } /* end loop over vertices received */
-    LB_Free((void **) &buf);
+    LB_FREE(&buf);
   } /* end loop over messages */
 }
 

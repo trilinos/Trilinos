@@ -86,7 +86,7 @@ int i, ierr = 0;
   }
   else {
     rcb = (RCB_STRUCT *) lb->Data_Structure;
-    LB_Free((void **) &(rcb->Dots));
+    LB_FREE(&(rcb->Dots));
   }
 
   /*
@@ -151,9 +151,9 @@ int i, ierr = 0;
     if (objs_global == NULL || objs_local == NULL || objs_wgt == NULL) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
-      LB_Free((void **) &objs_global);
-      LB_Free((void **) &objs_local);
-      LB_Free((void **) &objs_wgt);
+      LB_FREE(&objs_global);
+      LB_FREE(&objs_local);
+      LB_FREE(&objs_wgt);
       LB_RCB_Free_Structure(lb);
       return(LB_MEMERR);
     }
@@ -163,9 +163,9 @@ int i, ierr = 0;
     if (ierr == LB_FATAL || ierr == LB_MEMERR) {
       fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
                       "Get_Obj_List.\n", lb->Proc, yo);
-      LB_Free((void **) &objs_global);
-      LB_Free((void **) &objs_local);
-      LB_Free((void **) &objs_wgt);
+      LB_FREE(&objs_global);
+      LB_FREE(&objs_local);
+      LB_FREE(&objs_wgt);
       LB_RCB_Free_Structure(lb);
       return(ierr);
     }
@@ -176,9 +176,9 @@ int i, ierr = 0;
       if (ierr == LB_FATAL || ierr == LB_MEMERR) 
         break;
     }
-    LB_Free((void **) &objs_global);
-    LB_Free((void **) &objs_local);
-    LB_Free((void **) &objs_wgt);
+    LB_FREE(&objs_global);
+    LB_FREE(&objs_local);
+    LB_FREE(&objs_wgt);
     if (ierr == LB_FATAL || ierr == LB_MEMERR) {
       fprintf(stderr, "[%d] Error in %s: Error returned from "
                       "initialize_dot.\n", lb->Proc, yo);
@@ -260,10 +260,10 @@ RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
   rcb = (RCB_STRUCT *) lb->Data_Structure;
 
   if (rcb != NULL) {
-    LB_Free((void **) &(rcb->Tree_Ptr));
-    LB_Free((void **) &(rcb->Box));
-    LB_Free((void **) &(rcb->Dots));
-    LB_Free((void **) &(lb->Data_Structure));
+    LB_FREE(&(rcb->Tree_Ptr));
+    LB_FREE(&(rcb->Box));
+    LB_FREE(&(rcb->Dots));
+    LB_FREE(&(lb->Data_Structure));
   }
 }
 

@@ -61,7 +61,7 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
     LB_insert_orphan(lb, import_objs[i]);
   }
 
-  LB_Free((void **) &import_objs);
+  LB_FREE(&import_objs);
   LB_comm_destroy(&comm_plan);
 }
 
@@ -246,10 +246,10 @@ void LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
   /* migrate the orphan regions according to the message array */
   LB_migreg_migrate_regions(lb, regions2, npids2, n, c2);
   
-  LB_Free((void **) &regions);
-  LB_Free((void **) &npids);
-  LB_Free((void **) &regions2);
-  LB_Free((void **) &npids2);
+  LB_FREE(&regions);
+  LB_FREE(&npids);
+  LB_FREE(&regions2);
+  LB_FREE(&npids2);
 }
 
 /*

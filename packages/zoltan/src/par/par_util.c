@@ -123,7 +123,7 @@ int LB_find_median(
       if (!wgts) {
         fprintf(stderr, "[%d] %s: Error, Insufficient memory\n",
                 proc, yo);
-        LB_Free((void **) &dotlist);
+        LB_FREE(&dotlist);
         return 0;
       }
     }
@@ -364,8 +364,8 @@ int LB_find_median(
   *valuehalf = tmp_half;
 
   /* free all memory */
-  LB_Free ((void **) &dotlist);
-  if (wtflag) LB_Free ((void **) &wgts);
+  LB_FREE(&dotlist);
+  if (wtflag) LB_FREE(&wgts);
 
   MPI_Type_free(&med_type);
   MPI_Op_free(&med_op);

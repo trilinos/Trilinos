@@ -125,7 +125,7 @@ void POC_free(pOctant oct) {
 	else
 	  prev->next = ptr->next;
 	ptr->oct = NULL;
-	LB_Free((void **) &ptr);
+	LB_FREE(&ptr);
       }
       else {
 	prev = ptr;
@@ -137,7 +137,7 @@ void POC_free(pOctant oct) {
   c = oct->list;
   while(c != NULL) {
     oct->list = c->next;
-    LB_Free((void **) &c);
+    LB_FREE(&c);
     c = oct->list;
   }
 ********/
@@ -145,7 +145,7 @@ void POC_free(pOctant oct) {
   /* free up space in memory */
   oct->list = NULL;
   OCT_count--;
-  LB_Free((void **) &oct);
+  LB_FREE(&oct);
 }
 
 /*****************************************************************************/
@@ -220,7 +220,7 @@ void POC_setparent(pOctant oct, pOctant parent, int ppid) {
 	  else
 	    prev->next = tmp->next;
 	  tmp->oct = NULL;
-	  LB_Free((void **) &tmp);
+	  LB_FREE(&tmp);
 	}
 	else {
 	  prev = tmp;
@@ -407,7 +407,7 @@ void POC_remRegion(pOctant oct, pRegion region) {
 	oct->list = tmp->next;
       else
 	prev->next = tmp->next;
-      LB_Free((void **) &tmp);
+      LB_FREE(&tmp);
     }
     else {
       prev = tmp;
@@ -427,7 +427,7 @@ void POC_clearRegions(pOctant oct) {
   ptr = oct->list;
   while(ptr != NULL) {
     oct->list = ptr->next;
-    LB_Free((void **) &ptr);
+    LB_FREE(&ptr);
     ptr = oct->list;
   }
   oct->list=NULL;

@@ -270,9 +270,9 @@ static int lb_oct_init(
 
   LB_print_stats(lb, timestop-timestart, timers, counters, c, oct_output_level);
 
-  LB_Free((void **) &export_regs);
-  LB_Free((void **) &import_regs);
-  LB_Free((void **) &export_tags);
+  LB_FREE(&export_regs);
+  LB_FREE(&import_regs);
+  LB_FREE(&export_tags);
   root = POC_localroots();
   while(root != NULL) {
     root2 = root->next;
@@ -491,10 +491,10 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1, int *c2,
  */
   LB_migreg_migrate_orphans(lb, ptr1, num_extra, level, array, c1, c2);
   
-  LB_Free((void **) &array);
+  LB_FREE(&array);
   while(ptr1 != NULL) {
     ptr = ptr1->next;
-    LB_Free((void **) &ptr1);
+    LB_FREE(&ptr1);
     ptr1 = ptr;
   }
 }
@@ -609,9 +609,9 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
 
     ptr = NULL;
   }
-  LB_Free((void **) &obj_global_ids);
-  LB_Free((void **) &obj_local_ids);
-  LB_Free((void **) &obj_wgts);
+  LB_FREE(&obj_global_ids);
+  LB_FREE(&obj_local_ids);
+  LB_FREE(&obj_wgts);
   
   MPI_Allreduce(&(min[0]), &(global_min[0]), 3, 
 		MPI_DOUBLE, MPI_MIN, lb->Communicator);
@@ -1004,7 +1004,7 @@ void LB_oct_terminal_refine(LB *lb, pOctant oct,int count)
     cnum=LB_child_which_wrapper(oct, region->Coord);
     /* add region to octant's regionlist */
     POC_addRegion(child[cnum], region);
-    LB_Free((void **) &region);
+    LB_FREE(&region);
     region = entry;
   }
 
@@ -1259,7 +1259,7 @@ void LB_oct_roots_in_order(pOctant **roots_ret, int *nroots_ret)
   for (i=0; i<nroots; i++)
     roots[i]=rootid[i].ptr;
 
-  LB_Free((void **) &rootid);
+  LB_FREE(&rootid);
 }
 
 /*****************************************************************************/

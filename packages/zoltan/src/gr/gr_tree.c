@@ -164,7 +164,7 @@ static void free_tree_graph(GRAPH **graph)
  */
 
   free_tree((TREE **) (&((*graph)->Graph_Data)));
-  LB_Free((void **) graph);
+  LB_FREE(graph);
 }
 
 /****************************************************************************/
@@ -177,7 +177,7 @@ static void free_tree(TREE **p_root)
     free_tree(&((*p_root)->Left));
     free_tree(&((*p_root)->Right));
     LB_free_vertex(&((*p_root)->Vertex));
-    LB_Free((void **) p_root);
+    LB_FREE(p_root);
   }
 }
 
@@ -244,7 +244,7 @@ TREE *node = loop->Current_Node;
     /*
      *  Function has been called with a NULL tree.  Return NULL.
      */
-    LB_Free((void **) loop_control);
+    LB_FREE(loop_control);
     return(NULL);
   }
 
@@ -277,7 +277,7 @@ TREE *node = loop->Current_Node;
       if (node != NULL)
         return(node->Vertex);
       else {
-        LB_Free((void **) loop_control);
+        LB_FREE(loop_control);
         return(NULL);
       }
     }
@@ -661,7 +661,7 @@ TREE *x;
     *p_root = x->Left;
     if (*p_root != NULL)
       (*p_root)->Parent = q;
-    LB_Free((void **) &x);
+    LB_FREE(&x);
   }
 }
 
@@ -695,13 +695,13 @@ int comparison;
         if (*p_root != NULL)
           (*p_root)->Parent = q->Parent;
         *h = TRUE;
-        LB_Free((void **) &q);
+        LB_FREE(&q);
       } else if (q->Left == NULL) {
         *p_root = q->Right;
         if (*p_root != NULL)
           (*p_root)->Parent = q->Parent;
         *h = TRUE;
-        LB_Free((void **) &q);
+        LB_FREE(&q);
       } else {
         avl_del(&((*p_root)->Left), h);
         if (*h) {

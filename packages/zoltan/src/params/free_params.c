@@ -17,9 +17,9 @@ LB *lb)				/* load balance object */
     ptr = lb->Params;
     while (ptr != NULL) {
 	ptr2 = ptr->next;
-	LB_Free((void **) &(ptr->name));
-	LB_Free((void **) &(ptr->new_val));
-	LB_Free((void **) &ptr);
+	LB_FREE(&(ptr->name));
+	LB_FREE(&(ptr->new_val));
+	LB_FREE(&ptr);
 	ptr = ptr2;
     }
 

@@ -44,7 +44,7 @@ char *val1)			/* value to set this parameter to */
 	return (flag);
     flag = clean_string(val1, &val);
     if (flag) {
-	LB_Free((void **) &name);
+	LB_FREE(&name);
 	return (flag);
     }
 
@@ -74,8 +74,8 @@ char *val1)			/* value to set this parameter to */
     if (status == 0)		/* Parameter OK, add it to list */
 	add_param(lb, name, val);
     else {
-	LB_Free((void **) &name);
-	LB_Free((void **) &val);
+	LB_FREE(&name);
+	LB_FREE(&val);
     }
 
     if (status == 1)		/* Parameter name never found */
@@ -145,7 +145,7 @@ char *val)			/* value to set this parameter to */
     while (*pptr != NULL) {
 	ptr = *pptr;
 	if (!strcmp(name, ptr->name)) {	/* string match */
-	    LB_Free((void **) &(ptr->new_val));
+	    LB_FREE(&(ptr->new_val));
 	    ptr->new_val = val;
 	    return (LB_OK);
 	}
@@ -155,8 +155,8 @@ char *val)			/* value to set this parameter to */
     /* This is a new parameter, add it to list. */
     param = (LB_PARAM *) LB_Malloc(sizeof(LB_PARAM), __FILE__, __LINE__);
     if (param == NULL) {
-	LB_Free((void **) &name);
-	LB_Free((void **) &val);
+	LB_FREE(&name);
+	LB_FREE(&val);
 	return (LB_MEMERR);
     }
     *pptr = param;

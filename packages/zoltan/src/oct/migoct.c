@@ -76,7 +76,7 @@ void LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
 		     import_regions, pimreg, npimregs, c3);
 
   if(npimregs > 0)
-    LB_Free((void **) &pimreg);
+    LB_FREE(&pimreg);
 
   if(max_objs > (*counter3))
    (*counter3) = max_objs;
@@ -309,7 +309,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   }
   *nrectags = j;
 
-  LB_Free((void **) &tmp);
+  LB_FREE(&tmp);
 
   /*
    * fprintf(stderr,
