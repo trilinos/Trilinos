@@ -827,6 +827,7 @@ void MultiLevelPreconditioner::Initialize()
 
   // CheckPreconditioner stuff
   SchurDecomposition_ = 0;
+  RateOfConvergence_ = -1.0;
 }
 
 
@@ -885,7 +886,7 @@ int MultiLevelPreconditioner::ComputeFilteringPreconditioner()
 
 // ================================================ ====== ==== ==== == =
 
-int MultiLevelPreconditioner::ComputePreconditioner(const bool Check)
+int MultiLevelPreconditioner::ComputePreconditioner(const bool CheckPreconditioner)
 {
 
   BreakForDebugger();
@@ -894,22 +895,28 @@ int MultiLevelPreconditioner::ComputePreconditioner(const bool Check)
   // check whether the old filtering is still ok for the new matrix //
   // ============================================================== //
 
-  if( Check == true && SchurDecomposition_ == 0 ) {
+  if( CheckPreconditioner == true && RateOfConvergence_ != -1.0 ) {
 
-    // do nothing in this case
+    // If the previous preconditioner was computed with option
+    // "adaptive: enable" == true, we know the rate of convergence
+    // with the previous matrix (and this preconditioner. Now, 
+    // we recompute this ratio, and compare it with the previous one.
+    // This requires an AztecOO object
 
-  } else if( Check == true && SchurDecomposition_ ) {
+    if( CheckPreconditionerKrylov() == false ) Destroy_ML_Preconditioner();
+    else                                       return 0;
+    
+  } else if( CheckPreconditioner == true && SchurDecomposition_ ) {
  
+    // If the previous preconditioner was computed with option
+    // "filtering: enable" == true, we have some eigen-information to use.
+    // In this case, we
     // check whether the old preconditioner is still ok for the new matrix
-    // CheckPreconditioner() will return false is the computed preconditioner
-    // is still quite ok for the new matrix. This requires "enable: filtering" to
-    // be set to true in the previous call to ComputePreconditioner().
-    // If CheckPreconditioner() is true, we have already finished out job.
     
-    if( CheckPreconditioner() == false ) Destroy_ML_Preconditioner();
-    else                                 return 0;
+    if( CheckPreconditionerFiltering() == false ) Destroy_ML_Preconditioner();
+    else                                          return 0;
     
-  } else if( Check == false && IsComputePreconditionerOK_ == true ) {
+  } else if( CheckPreconditioner == false && IsComputePreconditionerOK_ == true ) {
   
     // get rid of what done before 
     Destroy_ML_Preconditioner();
@@ -1563,13 +1570,23 @@ int MultiLevelPreconditioner::ComputePreconditioner(const bool Check)
   /* ********************************************************************** */
   /* Other minor settings                                                   */
   /* ********************************************************************** */
-
   
   CreateLabel();
   
   if( SolvingMaxwell_ == false ) SetPreconditioner();
 
+  IsComputePreconditionerOK_ = true;
+  
+  // ====================================================================== //
+  // Compute the rate of convergence (for adaptive preconditioners)         //
+  // ====================================================================== //
+
+  sprintf(parameter,"%sadaptive: enable", Prefix_);
+  if( List_.get(parameter, false) == true ) CheckPreconditionerKrylov();
+  
   if( verbose_ ) PrintLine();
+
+  // set label
 
   sprintf(parameter,"%sprint unused", Prefix_);
   if( List_.isParameter(parameter) ) {
@@ -1630,8 +1647,6 @@ int MultiLevelPreconditioner::ComputePreconditioner(const bool Check)
   }
 
   /* ------------------- that's all folks --------------------------------- */
-  
-  IsComputePreconditionerOK_ = true;
 
   ConstructionTime_ += Time.ElapsedTime();
   
@@ -1691,14 +1706,16 @@ int MultiLevelPreconditioner::CreateLabel()
      
   if (ml_ptr->pre_smoother[i].smoother->func_ptr != NULL) {
     label = ml_ptr->pre_smoother[i].label;
-    if( strncmp(label,"PreS_",4) == 0 ) sprintf(finest, "%s", "~");
+    if( strncmp(label,"PreS_",4) == 0 ) sprintf(finest, "~");
     else                                sprintf(finest, "%s", label);
-  }
+  } else                                sprintf(finest, "~"); 
+
   if (ml_ptr->post_smoother[i].smoother->func_ptr != NULL) {
     label = ml_ptr->pre_smoother[i].label;
     if( strncmp(label,"PostS_", 5) == 0 ) sprintf(finest, "%s/~", finest);
     else                                  sprintf(finest, "%s/%s", finest, label);
-  } 
+  } else                                  sprintf(finest, "%s/~", finest);  
+
   if (i != ml_ptr->ML_coarsest_level) {
     i = ml_ptr->ML_coarsest_level;
     if ( ML_CSolve_Check( &(ml_ptr->csolve[i]) ) == 1 ) {
@@ -1710,12 +1727,12 @@ int MultiLevelPreconditioner::CreateLabel()
 	label = ml_ptr->pre_smoother[i].label;
 	if( strncmp(label,"PreS_",4) == 0 ) sprintf(coarsest, "~");
 	else                                sprintf(coarsest, "%s", label);
-      }
+      } else                                sprintf(coarsest, "~"); 
       if (ml_ptr->post_smoother[i].smoother->func_ptr != NULL) {
 	label = ml_ptr->post_smoother[i].label;
 	if( strncmp(label,"PostS_", 5) == 0 ) sprintf(coarsest, "%s/~", coarsest); 
 	else                                  sprintf(coarsest, "%s/%s",coarsest, label);
-      }
+      } else                                  sprintf(coarsest, "%s/~", coarsest); 
     }
   }
 

@@ -56,6 +56,10 @@ extern "C" {
 }
 #endif
 
+#ifdef HAVE_ML_AZTECOO
+#include "AztecOO.h"
+#endif
+
 // ============================================================================
 
 int ML_Epetra::MultiLevelPreconditioner::SetFiltering() 
@@ -476,7 +480,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 
 // ============================================================================
 
-bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditioner() 
+bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerFiltering() 
 {
 
   assert( SchurDecomposition_ ); // must have something
@@ -534,5 +538,107 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditioner()
 
 }
 
+// ============================================================================
+
+bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov() 
+{
+#ifdef HAVE_ML_AZTECOO
+
+  Epetra_Time Time(Comm());
+
+  if( verbose_ ) cout << PrintMsg_ << endl << "\tComputing the rate of convergence..." << endl;
+
+  char parameter[80];
+  sprintf(parameter,"%sadaptive: max iters", Prefix_);
+  int MaxIters = List_.get(parameter,(int)5);
+
+  sprintf(parameter,"%sadaptive: ratio", Prefix_);
+  double Ratio = List_.get(parameter,(double)0.5);
+ 
+  sprintf(parameter,"%sadaptive: output", Prefix_);
+  int Output = List_.get(parameter,-1);
   
+  Epetra_Vector LHS(Map());
+  Epetra_Vector RHS(Map());
+
+  LHS.PutScalar(0.0);
+  RHS.Random();
+
+  Epetra_LinearProblem Problem(const_cast<Epetra_RowMatrix*>(RowMatrix_),&LHS, &RHS);
+  
+  AztecOO solver(Problem);
+
+  solver.SetAztecOption(AZ_solver, AZ_gmres);
+  solver.SetAztecOption(AZ_kspace, MaxIters);
+  solver.SetAztecOption(AZ_conv, AZ_r0);
+  if( Output == -1 ) solver.SetAztecOption(AZ_output, AZ_none);
+  else               solver.SetAztecOption(AZ_none, Output);
+
+  // tell AztecOO to use this preconditioner, then solve
+  solver.SetPrecOperator(this);
+
+  solver.Iterate(MaxIters, 1e-15);
+  
+  double status[AZ_STATUS_SIZE];
+  solver.GetAllAztecStatus(status);
+
+  double NewRateOfConvergence = status[AZ_scaled_r];
+#ifdef LATER
+  if( (status[AZ_why] != AZ_normal ||
+       status[AZ_why] != AZ_maxits ) && verbose_ ) {
+    cerr << endl;
+    cerr << ErrorMsg_ << "\tConvergence tests did not converge normally:" << endl;
+         << ErrorMsg_ << "\tstatus[AZ_why] = " << status[AZ_why] << endl;
+    cerr << endl;
+  }
+#endif 
+
+  // print out the computed rate of convergence.
+  if( RateOfConvergence_ == -1.0 ) {
+    // This is the first time we are computing this
+    RateOfConvergence_ = NewRateOfConvergence;
+    if( verbose_ ) {
+      cout << PrintMsg_ << "\tRate of convergence : current = " 
+	   << RateOfConvergence_ << endl;
+      cout << PrintMsg_ << "\tTime to check convergence rate = " 
+	   << Time.ElapsedTime() << " (s)" << endl;
+    }
+    return true;
+  } else {
+    // this is NOT the first time this function is called; we have to compare the
+    // current rate of convergence with the previous one
+    if( verbose_ ) {
+      cout << PrintMsg_ << "\tRate of convergence : previous = " << RateOfConvergence_ << endl;
+      cout << PrintMsg_ << "\tRate of convergence : current  = " << NewRateOfConvergence << endl;
+    }
+    // if the current rate of convergence is not too different from the previous
+    // one, the already computed preconditioner is good enough, and we return true
+    // (that is, keep what we have). Otherwise, return false (that is, recompute
+    // all the stuff).
+    
+    bool rv;
+    if( Ratio * NewRateOfConvergence >= RateOfConvergence_ ) rv = false;
+    else                                                     rv = true;
+
+    if( rv == true && verbose_  ) 
+      cout << PrintMsg_ << endl << "\tTest passed: keep old preconditioner" << endl;
+    if( rv == false && verbose_ ) 
+      cout << PrintMsg_ << endl << "\tTest failed: now recompute the preconditioner" << endl;
+    cout << PrintMsg_ << "\tTime to check convergence rate = " 
+      << Time.ElapsedTime() << " (s)" << endl;
+
+    RateOfConvergence_ = NewRateOfConvergence;
+    return rv;
+
+  }
+  
+#else
+  cerr << ErrorMsg_ << "Adaptive preconditioner requires ML to be configured with" << endl
+       << ErrorMsg_ << "--enable-aztecoo." << endl;
+  exit( EXIT_FAILURE );
+  return false;
+#endif
+  
+}
+
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/

@@ -445,7 +445,9 @@ private:
 
   int SetFiltering();
 
-  bool CheckPreconditioner();
+  bool CheckPreconditionerFiltering();
+  
+  bool CheckPreconditionerKrylov();
   //@}
 
   //@{ \name Internal data
@@ -561,6 +563,7 @@ private:
   Epetra_MultiVector       * SchurDecomposition_;
   Epetra_SerialDenseMatrix SchurMatrix_;
   Epetra_SerialDenseSolver SchurSolver_;
+  double RateOfConvergence_;
 
 }; // class MultiLevelPreconditioner
  
