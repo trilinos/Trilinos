@@ -319,51 +319,51 @@ static int rcb_fn(
   /* if reuse is turned on, turn on gen_tree since it is needed. */
   /* Also, if this is not first time through, send dots to previous proc. */
   if (reuse) {
-     gen_tree = 1;
+    gen_tree = 1;
 
-     if (treept[0].dim != -1) {
-        /* find previous location of dots */
-        for (outgoing = i = 0; i < dotnum; i++) {
-           ierr = LB_Point_Assign(lb, dotpt[i].X, &dotmark[i]);
-           if (dotmark[i] != proc) outgoing++;
+    if (treept[0].dim != -1) {
+      /* find previous location of dots */
+      for (outgoing = i = 0; i < dotnum; i++) {
+        ierr = LB_Point_Assign(lb, dotpt[i].X, &dotmark[i]);
+        if (dotmark[i] != proc) outgoing++;
+      }
+
+      if (outgoing)
+        if ((proc_list = (int *) LB_MALLOC(outgoing*sizeof(int))) == NULL) {
+          LB_FREE(&dotmark);
+          LB_FREE(&coord);
+          LB_FREE(&wgts);
+          LB_TRACE_EXIT(lb, yo);
+          return LB_MEMERR;
         }
 
-        if (outgoing)
-           if ((proc_list = (int *) LB_MALLOC(outgoing*sizeof(int))) == NULL) {
-              LB_FREE(&dotmark);
-              LB_FREE(&coord);
-              LB_FREE(&wgts);
-              LB_TRACE_EXIT(lb, yo);
-              return LB_MEMERR;
-           }
+      for (dottop = j = i = 0; i < dotnum; i++)
+        if (dotmark[i] != proc)
+          proc_list[j++] = dotmark[i];
+        else
+          dottop++;
 
-        for (dottop = j = i = 0; i < dotnum; i++)
-           if (dotmark[i] != proc)
-              proc_list[j++] = dotmark[i];
-           else
-              dottop++;
+      /* move dots */
+      ierr = LB_RB_Send_Dots(lb, &gidpt, &lidpt, &dotpt, dotmark, proc_list,
+                             outgoing, &dotnum, &dotmax, proc, &allocflag,
+                             overalloc, stats, reuse_count, lb->Communicator);
+      if (ierr) {
+        LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Dots.");
+        LB_FREE(&proc_list);
+        LB_FREE(&dotmark);
+        LB_FREE(&coord);
+        LB_FREE(&wgts);
+        LB_TRACE_EXIT(lb, yo);
+        return (ierr);
+      }
 
-        /* move dots */
-        ierr = LB_RB_Send_Dots(lb, &gidpt, &lidpt, &dotpt, dotmark, proc_list,
-                               outgoing, &dotnum, &dotmax, proc, &allocflag,
-                               overalloc, stats, reuse_count, lb->Communicator);
-        if (ierr) {
-           LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Dots.");
-           LB_FREE(&proc_list);
-           LB_FREE(&dotmark);
-           LB_FREE(&coord);
-           LB_FREE(&wgts);
-           LB_TRACE_EXIT(lb, yo);
-           return (ierr);
-        }
+      /* update counters */
+      if (dotnum > counters[3]) counters[3] = dotnum;
+      if (dotmax > counters[4]) counters[4] = dotmax;
+      counters[6] += reuse_count[6];
 
-        /* update counters */
-        if (dotnum > counters[3]) counters[3] = dotnum;
-        if (dotmax > counters[4]) counters[4] = dotmax;
-        counters[6] += reuse_count[6];
-
-        if (outgoing) LB_FREE(&proc_list);
-     }
+      if (outgoing) LB_FREE(&proc_list);
+    }
   }
 
   /* create MPI data and function types for box and median */
