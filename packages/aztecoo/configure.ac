@@ -327,6 +327,7 @@ AC_CONFIG_FILES([
 		Makefile
                 src/Makefile
 		example/Makefile
+                example/UG_Ex1/Makefile
                 example/simple_epetra_aztecoo/Makefile
                 example/AztecOO_UserOpUserMat/Makefile
                 example/AztecOO/Makefile
