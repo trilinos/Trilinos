@@ -5527,7 +5527,7 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
       flag = 1;
       for (i = 0; i < osize; i++)
       {
-	flag = op->getrow->func_ptr((void*)op, 1, &i, space-nz_ptr,
+	flag = op->getrow->func_ptr(op, 1, &i, space-nz_ptr,
                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
 
          if (flag == 0) break;

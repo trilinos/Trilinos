@@ -2766,7 +2766,7 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    for ( i = 0; i < Nrows; i++ )
    {
       diagonal[i]     = 0.0;
-      while (getrowfunc(getrowdata,1,&i,maxnnz_per_row,col_ind,
+      while (getrowfunc((ML_Operator *) getrowdata,1,&i,maxnnz_per_row,col_ind,
                         col_val, &m) == 0 )
       {
          ML_free( col_ind );
@@ -2849,7 +2849,7 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    mat_indx[0] = nz_cnt;
    for ( i = 0; i < Nrows; i++ )
    {
-      getrowfunc(getrowdata,1,&i,maxnnz_per_row,col_ind,col_val,&m);
+      getrowfunc((ML_Operator *) getrowdata,1,&i,maxnnz_per_row,col_ind,col_val,&m);
       length = 0;
       for (j = 0; j < m; j++)
       {

@@ -23,23 +23,23 @@ int ML_Operator_blockmat_matvec(ML_Operator *data, int inlen, double invec[],
   z = (double *) ML_allocate (outlen * sizeof(double) );
 
   /* multiply by (1,1) block (stiffness)*/
-  ML_Operator_blockmat_data->Ke_matvec(ML_Operator_blockmat_data->Ke_matvec_data, inlen/2,
+  ML_Operator_blockmat_data->Ke_matvec((ML_Operator *) ML_Operator_blockmat_data->Ke_matvec_data, inlen/2,
 				     invec, outlen/2, outvec);
 
   /* multiply by (1,2) block (-mass)*/
   if (ML_Operator_blockmat_data->M_matvec != NULL) {
-    ML_Operator_blockmat_data->M_matvec(ML_Operator_blockmat_data->M_matvec_data, inlen/2,
+    ML_Operator_blockmat_data->M_matvec((ML_Operator *) ML_Operator_blockmat_data->M_matvec_data, inlen/2,
 				     &(invec[inlen/2]), outlen/2, z);
     for (i=0; i< outlen/2; i++) outvec[i] -= z[i];
   }
   /***********/
   /* multiply by (2,2) block (stiffness)*/
-  ML_Operator_blockmat_data->Ke_matvec(ML_Operator_blockmat_data->Ke_matvec_data, inlen/2,
+  ML_Operator_blockmat_data->Ke_matvec((ML_Operator *) ML_Operator_blockmat_data->Ke_matvec_data, inlen/2,
 				     &(invec[inlen/2]), outlen/2, 
 				     &(outvec[outlen/2]));
   /* multiply by (2,1) block (mass)*/
   if (ML_Operator_blockmat_data->M_matvec != NULL) {
-    ML_Operator_blockmat_data->M_matvec(ML_Operator_blockmat_data->M_matvec_data, inlen/2,
+    ML_Operator_blockmat_data->M_matvec((ML_Operator *) ML_Operator_blockmat_data->M_matvec_data, inlen/2,
 				     invec, outlen/2, z);
     for (i=0; i < outlen/2; i++) outvec[i+outlen/2] += z[i];
   }
@@ -144,7 +144,7 @@ int ML_Operator_blockmat_getrow(ML_Operator *data, int N_requested,
   if (requested_rows[0] < mat->outvec_leng/2)
   {
     /* (1,1) block */
-    status = ML_Operator_blockmat_data->Ke_getrow(ML_Operator_blockmat_data->Ke_getrow_data,
+    status = ML_Operator_blockmat_data->Ke_getrow((ML_Operator *) ML_Operator_blockmat_data->Ke_getrow_data,
 				      N_requested, requested_rows, allocated, 
 				      columns, values, row_lengths);
 
@@ -161,7 +161,7 @@ int ML_Operator_blockmat_getrow(ML_Operator *data, int N_requested,
       workcol = &(columns[ row_lengths[0] ]);
 
       /* (1,2) block */
-      status = ML_Operator_blockmat_data->M_getrow(ML_Operator_blockmat_data->M_getrow_data,
+      status = ML_Operator_blockmat_data->M_getrow((ML_Operator *) ML_Operator_blockmat_data->M_getrow_data,
 				      N_requested, requested_rows, allocated -
 				      row_lengths[0], 
 				      workcol, workval, work_lengths);
@@ -184,7 +184,7 @@ int ML_Operator_blockmat_getrow(ML_Operator *data, int N_requested,
 
     /* (2,1) block */
     if (ML_Operator_blockmat_data->M_getrow != NULL) {
-      status = ML_Operator_blockmat_data->M_getrow(
+      status = ML_Operator_blockmat_data->M_getrow((ML_Operator *) 
 		                      ML_Operator_blockmat_data->M_getrow_data,
 				      N_requested, &newrow, allocated, 
 				      columns, values, row_lengths);
@@ -200,7 +200,7 @@ int ML_Operator_blockmat_getrow(ML_Operator *data, int N_requested,
     workcol = &(columns[ row_lengths[0] ]);
 
     /* (2,2) block */
-    status = ML_Operator_blockmat_data->Ke_getrow(ML_Operator_blockmat_data->Ke_getrow_data,
+    status = ML_Operator_blockmat_data->Ke_getrow((ML_Operator *) ML_Operator_blockmat_data->Ke_getrow_data,
 					N_requested, &newrow, allocated-
 					row_lengths[0], 
 					workcol, workval, work_lengths);

@@ -772,13 +772,13 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   if (incr_or_decr == ML_DECREASING) {
     for( i=finest_level; i>=coarsest_level; i--) {
       info[i].Amatrix = &(ml->Amat[i]); 
-      ML_Operator_AmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+      ML_Operator_AmalgamateAndDropWeak((ML_Operator *) info[i].Amatrix, num_PDE_eqns, 0.0);
     }
   }
   else {
     for( i=finest_level; i<coarsest_level; i++) {
       info[i].Amatrix = &(ml->Amat[i]); 
-      ML_Operator_AmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+      ML_Operator_AmalgamateAndDropWeak((ML_Operator *) info[i].Amatrix, num_PDE_eqns, 0.0);
     }
   }
 
@@ -1182,7 +1182,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   if (incr_or_decr == ML_DECREASING) {
     for( i=finest_level; i>=coarsest_level; i--) {
       info[i].Amatrix = &(ml->Amat[i]); 
-      ML_Operator_UnAmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+      ML_Operator_UnAmalgamateAndDropWeak((ML_Operator *) info[i].Amatrix, num_PDE_eqns, 0.0);
       
       if( i!= finest_level ) {
 	if( info[i].x != NULL ) ML_free( info[i].x );
@@ -1195,7 +1195,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   else {
     for( i=finest_level; i<coarsest_level; i++) {
       info[i].Amatrix = &(ml->Amat[i]); 
-      ML_Operator_UnAmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+      ML_Operator_UnAmalgamateAndDropWeak((ML_Operator *) info[i].Amatrix, num_PDE_eqns, 0.0);
 
       if( i!=finest_level ) {
 	if( info[i].x != NULL ) ML_free( info[i].x );
@@ -1935,13 +1935,13 @@ int ML_Aggregate_Viz_UnAmalgamate( ML *ml, ML_Aggregate *ag)
 
   if (incr_or_decr == ML_DECREASING) {
     for( i=finest_level; i>=coarsest_level; i--) {
-      ML_Operator_UnAmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+      ML_Operator_UnAmalgamateAndDropWeak((ML_Operator *) info[i].Amatrix, num_PDE_eqns, 0.0);
       
     }
   }
   else {
     for( i=finest_level; i<coarsest_level; i++) {
-      ML_Operator_UnAmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+      ML_Operator_UnAmalgamateAndDropWeak((ML_Operator *) info[i].Amatrix, num_PDE_eqns, 0.0);
 
     }
   }
@@ -1970,13 +1970,13 @@ int ML_Aggregate_Viz_Amalgamate( ML *ml, ML_Aggregate *ag)
   if (incr_or_decr == ML_DECREASING) {
     for( i=finest_level; i>=coarsest_level; i--) {
       info[i].Amatrix = &(ml->Amat[i]); 
-      ML_Operator_AmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+      ML_Operator_AmalgamateAndDropWeak((ML_Operator *) info[i].Amatrix, num_PDE_eqns, 0.0);
     }
   }
   else {
     for( i=finest_level; i<coarsest_level; i++) {
       info[i].Amatrix = &(ml->Amat[i]); 
-      ML_Operator_AmalgamateAndDropWeak(info[i].Amatrix, num_PDE_eqns, 0.0);
+      ML_Operator_AmalgamateAndDropWeak((ML_Operator *) info[i].Amatrix, num_PDE_eqns, 0.0);
     }
   }
 

@@ -9,6 +9,8 @@
 
 #ifndef __MLAGGPARMETIS__
 #define __MLAGGPARMETIS__
+
+#include "ml_comm.h"
 					 
 #ifndef ML_CPP
 #ifdef __cplusplus
@@ -16,7 +18,6 @@ extern "C" {
 #endif
 #endif
 
-#include "ml_comm.h"
 
   extern int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag, 
 	 				 int level,

@@ -193,7 +193,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    for ( i = 0; i < Nrows; i++ ) 
      {
        diagonal[i] = 0.0;
-       while (getrowfunc(getrowdata,1,&i,maxnnz_per_row,col_ind, 
+       while (getrowfunc((ML_Operator *) getrowdata,1,&i,maxnnz_per_row,col_ind, 
 			 col_val,&m) == 0 ) 
 	 {
 	   ML_free(col_ind);
@@ -257,7 +257,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    for ( i = 0; i < Nrows; i++ ) 
    {
-     getrowfunc(getrowdata,1,&i,maxnnz_per_row,col_ind,col_val, &m);
+     getrowfunc((ML_Operator *) getrowdata,1,&i,maxnnz_per_row,col_ind,col_val, &m);
      if ( m > maxnnz_per_row ) printf("Aggregation WARNING (1)\n");
 #ifdef ML_NEWDROPSCHEME /* new dropping scheme */
      totalnnz += m;

@@ -2545,7 +2545,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    oper->invec_leng = fnvert;
    oper->outvec_leng = cnvert;
    xsfer_op->AGX_stride = 1;
-   ML_OperatorAGX_Restrict( (void*) oper, fnvert, ext_a, cnvert, ext2_a);
+   ML_OperatorAGX_Restrict( oper, fnvert, ext_a, cnvert, ext2_a);
    ML_free( oper );
 
    /* ------------------------------------------------------------*/

@@ -5492,7 +5492,7 @@ int ML_Smoother_MSR_SGSdamping(void *sm,int inlen,double x[],int outlen,
    else AZ_get_MSR_arrays(Amat, &bindx, &val);
 #endif
    if (val == NULL) {
-     ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+     ML_Smoother_SGS((ML_Smoother *) sm, inlen, x, outlen, rhs);
      return 0;
    }
 
@@ -7348,7 +7348,7 @@ int ML_Smoother_MSR_GSforwardnodamping(void *sm,int inlen,double x[],
    else AZ_get_MSR_arrays(Amat, &bindx, &val);
 #endif
    if (val == NULL) {
-     ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+     ML_Smoother_SGS((ML_Smoother *) sm, inlen, x, outlen, rhs);
      return 0;
    }
 
@@ -7484,7 +7484,7 @@ int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
    else AZ_get_MSR_arrays(Amat, &bindx, &val);
 #endif
    if (val == NULL) {
-     ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+     ML_Smoother_SGS((ML_Smoother *) sm, inlen, x, outlen, rhs);
      return 0;
    }
 
@@ -7625,7 +7625,7 @@ if (Amat->comm->ML_mypid == 0) {
     vals = (double *) ML_allocate(allocated_space*sizeof(double));
     tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
     for (i = 0; i < n; i++) {
-      status = blockmat->Ke_getrow(blockmat->Ke_getrow_data,1,&i,
+      status = blockmat->Ke_getrow((ML_Operator *) blockmat->Ke_getrow_data,1,&i,
 				   allocated_space, cols, vals, &nn);
       if (status == 0) {
 	printf("ML_complex_Cheby: not enough space for getrow\n");
@@ -7646,7 +7646,7 @@ if (Amat->comm->ML_mypid == 0) {
     vals = (double *) ML_allocate(allocated_space*sizeof(double));
     tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
     for (i = 0; i < n; i++) {
-      status = blockmat->M_getrow(blockmat->M_getrow_data,1,&i,
+      status = blockmat->M_getrow((ML_Operator *) blockmat->M_getrow_data,1,&i,
 				   allocated_space, cols, vals, &nn);
       if (status == 0) {
 	printf("ML_complex_Cheby: not enough space for getrow\n");
@@ -7790,7 +7790,7 @@ int ML_DiagScaled_1stepKrylov(ML_Smoother *sm, int inlen, double x[], int outlen
     vals = (double *) ML_allocate(allocated_space*sizeof(double));
     tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
     for (i = 0; i < n; i++) {
-      status = blockmat->Ke_getrow(blockmat->Ke_getrow_data,1,&i,
+      status = blockmat->Ke_getrow((ML_Operator *) blockmat->Ke_getrow_data,1,&i,
 				   allocated_space, cols, vals, &nn);
       if (status == 0) {
 	printf("ML_complex_Cheby: not enough space for getrow\n");
@@ -7811,7 +7811,7 @@ int ML_DiagScaled_1stepKrylov(ML_Smoother *sm, int inlen, double x[], int outlen
     vals = (double *) ML_allocate(allocated_space*sizeof(double));
     tdiag = (double *) ML_allocate(Amat->outvec_leng*sizeof(double));
     for (i = 0; i < n; i++) {
-      status = blockmat->M_getrow(blockmat->M_getrow_data,1,&i,
+      status = blockmat->M_getrow((ML_Operator *) blockmat->M_getrow_data,1,&i,
 				  allocated_space, cols, vals, &nn);
       if (status == 0) {
 	printf("ML_complex_Cheby: not enough space for getrow\n");
@@ -7982,7 +7982,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, Epetra_MultiVector &ep_sol,
    else {
 
      if ( (void *)pre->smoother->func_ptr == (void *)ML_Cheby )
-       ML_Cheby_WKC ( pre , inlen , (double *)&ep_sol , outlen , 
+       ML_Cheby_WKC ( (void*) pre , inlen , (double *)&ep_sol , outlen , 
 		      (double *) &ep_rhs );
 
      else {

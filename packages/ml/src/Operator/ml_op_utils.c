@@ -351,7 +351,7 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
 
    N_nzs = 0;
    for (i = 0; i < isize; i++) {
-      flag = getrow(data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
+      flag = getrow((ML_Operator *) data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
       if (flag == 0) pr_error("ML_Transpose_Prolongator: sizes don't work\n");
       N_nzs += length;
       for (j = 0; j < length; j++)
@@ -376,7 +376,7 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
    /* read in the prolongator matrix and store transpose in Rmat */
 
    for (i = 0; i < isize; i++) {
-      getrow(data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
+      getrow((ML_Operator *) data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
       for (j = 0; j < length; j++) {
          cols[ row_ptr[ colbuf[j] ]   ] = i;
          vals[ row_ptr[ colbuf[j] ]++ ] = valbuf[j];
@@ -699,7 +699,7 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
 
    N_nzs = 0;
    for (i = 0; i < isize; i++) {
-      flag = getrow(data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
+      flag = getrow((ML_Operator *) data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
       if (flag == 0) perror("ML_Transpose_Prolongator: sizes don't work\n");
       N_nzs += length;
       for (j = 0; j < length; j++)
@@ -724,7 +724,7 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
    /* read in the prolongator matrix and store transpose in Amat_trans */
 
    for (i = 0; i < isize; i++) {
-      getrow(data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
+      getrow((ML_Operator *) data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
       for (j = 0; j < length; j++) {
          cols[ row_ptr[ colbuf[j] ]   ] = i;
          vals[ row_ptr[ colbuf[j] ]++ ] = valbuf[j];

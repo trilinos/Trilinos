@@ -620,7 +620,7 @@ int ML_CSolve_Clean_SuperLU( void *vsolver, ML_CSolveFunc *func)
 #else
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->func_ptr( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr((ML_Solver *) vsolver, 0, NULL, 0, NULL);
 #endif
 #endif
    ML_Solver_Destroy( &solver );
@@ -740,7 +740,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 #else
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->func_ptr( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr((ML_Solver *) vsolver, 0, NULL, 0, NULL);
 #endif
 #endif
    ML_Solver_Destroy( &solver );

@@ -639,7 +639,7 @@ int ML_OperatorAGX_Getrows(ML_Operator *data, int N_requested_rows,
          ncnt++;
       }
 
-      ML_OperatorAGX_Prolongate( (void *) coarse->Pmat,
+      ML_OperatorAGX_Prolongate( coarse->Pmat,
 /* (void *) local_op, */ Nlocal*step, invec, 
                            Nremote*step, outvec);
       ML_BdryPts_Get_Dirichlet_Grid_Info(coarse->BCs, &j, &dlist);

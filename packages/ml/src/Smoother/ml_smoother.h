@@ -243,7 +243,8 @@ extern int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double r
 
 #ifdef WKC
 /* WKC -- double * are actually Epetra_MultiVectors */
-extern int ML_Cheby_WKC(ML_Smoother *sm, int inlen, double *x, int outlen, double *rhs);
+//extern int ML_Cheby_WKC(ML_Smoother *sm, int inlen, double *x, int outlen, double *rhs);
+extern int ML_Cheby_WKC(void *sm, int inlen, double *x, int outlen, double *rhs);
 #endif
 
 extern int ML_complex_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, 

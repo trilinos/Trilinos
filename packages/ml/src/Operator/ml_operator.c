@@ -515,7 +515,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
 
    /* apply grid transfer */
 
-   Op->matvec->func_ptr((void*)Op,       inlen, din, olen, dout);
+   Op->matvec->func_ptr(Op,       inlen, din, olen, dout);
 
    /* apply boundary condition */
 
@@ -1584,7 +1584,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
 
    /* apply grid transfer */
 
-   Op->matvec->func_ptr((void*)Op,       inlen, din, olen, dout);
+   Op->matvec->func_ptr(Op,       inlen, din, olen, dout);
 
    /* apply boundary condition */
 
@@ -1626,7 +1626,7 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
 
    if ( (void *)Op->matvec->func_ptr == (void *)Epetra_ML_matvec )
      /* WKC  Call the new blocked function!! */
-     Epetra_ML_matvec_WKC ( Op->data, inlen, (double *)&ep_din, olen,
+     Epetra_ML_matvec_WKC ((ML_Operator *)  Op->data, inlen, (double *)&ep_din, olen,
 			    (double *)&ep_dout );
 
    else if ( (void *)Op->matvec->func_ptr == (void *) MSR_matvec )

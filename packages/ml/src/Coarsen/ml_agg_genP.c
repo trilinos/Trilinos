@@ -26,6 +26,13 @@ extern int mls_or_gs, mls_order;
 #include "ml_memory.h"
 #include "ml_lapack.h"
 
+
+#ifndef ML_CPP
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
+#endif
 extern int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 						     struct ML_Field_Of_Values * fov );
 extern int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
@@ -35,6 +42,11 @@ extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 					       int IsProblemSymmetric,
 					       int UseDiagonalScaling,
 					       double * LambdaMax );
+#ifndef ML_CPP
+#ifdef __cplusplus
+}
+#endif
+#endif
 
 /* ************************************************************************* */
 /* wrapper function as smoother                                              */
@@ -1178,7 +1190,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
    nnz = 0;
    for ( i = 0; i < Nfine; i++ )
    {
-      while (getrowfunc(getrowdata,1,&i,max_nz_per_row,col_ind,col_val,&k)== 0)
+      while (getrowfunc((ML_Operator *) getrowdata,1,&i,max_nz_per_row,col_ind,col_val,&k)== 0)
       {
          ML_free( col_ind );
          ML_free( col_val );
@@ -1532,7 +1544,7 @@ int ML_AGG_DD_Matvec(ML_Operator *obj,int leng1,double p[],int leng2,double ap[]
 
    for ( i = 0; i < nRows; i++ )
    {
-      while (getrowfunc(getrowdata,1,&i,max_row_nnz,col_ind,col_val,&m)== 0)
+      while (getrowfunc((ML_Operator *) getrowdata,1,&i,max_row_nnz,col_ind,col_val,&m)== 0)
       {
          ML_free( col_ind );
          ML_free( col_val );
@@ -1594,7 +1606,7 @@ int ML_AGG_DD_Getrow(ML_Operator *obj,int inNrows, int *rowlist,int alloc_space,
       local_ind = (int *)    ML_allocate( alloc_space * sizeof(int));
       local_val = (double *) ML_allocate( alloc_space * sizeof(double));
    }
-   status = getrowfunc(getrowdata, 1, rowlist, alloc_space, local_ind,
+   status = getrowfunc((ML_Operator *) getrowdata, 1, rowlist, alloc_space, local_ind,
                        local_val, rowcnt);
    if ( status == 0 ) 
    {
@@ -1644,7 +1656,7 @@ int ML_AGG_Extract_Diag(ML_Operator *Amat, double *diagonal)
 
    for ( i = 0; i < nRows; i++ )
    {
-      while (getrowfunc(getrowdata,1,&i,max_row_nnz,col_ind,col_val,&m)== 0)
+      while (getrowfunc((ML_Operator *) getrowdata,1,&i,max_row_nnz,col_ind,col_val,&m)== 0)
       {
          ML_free( col_ind );
          ML_free( col_val );
@@ -1715,7 +1727,7 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
    nnz = 0;
    for ( i = 0; i < local_nrows; i++ )
    {
-      while (getrowfunc(getrowdata,1,&i,max_size,col_ind,col_val,&row_size)==0)
+      while (getrowfunc((ML_Operator *) getrowdata,1,&i,max_size,col_ind,col_val,&row_size)==0)
       {
          ML_free( col_ind );
          ML_free( col_val );
@@ -1738,7 +1750,7 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
    nnz = 0;
    for ( i = 0; i < local_nrows; i++ )
    {
-      getrowfunc(getrowdata,1,&i,max_size,&col_ind[nnz],&col_val[nnz],&row_size);
+      getrowfunc((ML_Operator *) getrowdata,1,&i,max_size,&col_ind[nnz],&col_val[nnz],&row_size);
       nnz += row_size;
    }
 
@@ -1774,7 +1786,7 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
    col_val = (double *) ML_allocate( max_size * sizeof(double));
    for ( i = 0; i < local_nrows; i++ )
    {
-      getrowfunc(getrowdata,1,&i,max_size,col_ind,col_val,&row_size);
+      getrowfunc((ML_Operator *) getrowdata,1,&i,max_size,col_ind,col_val,&row_size);
       for ( j = 0; j < row_size; j++ )
       {
          index = ML_sorted_search( col_ind[j], local_ncols, local_cols);

@@ -42,6 +42,13 @@
 #include "ml_viz_stats.h"
 #include "ml_agg_ParMETIS.h"
 
+#ifndef ML_CPP
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
+#endif
+
 static int ML_BuildReorderedDecomposition( int starting_decomposition[],
 					   int reordered_decomposition[],
 					   int Nrows, int Naggregates,
@@ -66,6 +73,12 @@ extern ML_Operator * ML_BuildQ( int StartingNumElements,
 				USR_COMM mpi_communicator,
 				ML_Comm *ml_communicator );
 extern void ML_DestroyQ(void);
+  
+#ifndef ML_CPP
+#ifdef __cplusplus
+}
+#endif
+#endif
 
 /* ********************************************************************** */
 /* parmetis.h is required to properly define idxtype, and to declare the  */

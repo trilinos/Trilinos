@@ -949,7 +949,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
          row_ptr[0] = nz_ptr;
          flag = 1;
          for (i = 0; i < osize; i++) {
-	   flag = op->getrow->func_ptr((void*)op, 1, &i, space-nz_ptr,
+	   flag = op->getrow->func_ptr(op, 1, &i, space-nz_ptr,
 			       &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
    
             if (flag == 0) break;
