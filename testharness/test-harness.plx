@@ -802,9 +802,9 @@ report($SUMMARY);
             if (defined $1) { $brokenPackage = $1; }
         } elsif ($log =~ m/build/) {
             my $prefix = "";            
-            if ($comm == "serial") { 
+            if ($comm eq "serial") { 
                 $prefix = "$options{'TRILINOS_DIR'}[0]/$options{'SERIAL_DIR'}[0]";
-            } elsif ($comm == "mpi") {
+            } elsif ($comm eq "mpi") {
                 $prefix = "$options{'TRILINOS_DIR'}[0]/$options{'MPI_DIR'}[0]"
             }                
             $file =~ m/.*$prefix\/packages\/(\w*)\W/ms;            
