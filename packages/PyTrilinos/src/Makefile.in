@@ -583,7 +583,7 @@ NOX_Wrappers:
 
 # Generate a C++ wrapper and proxy file from a SWIG interface
 %_wrap.cxx %.py: %.i
-	$(SWIG) $(TRILINOS_INCLUDE) $(SWIG_FLAGS) $(srcdir)$<
+	$(SWIG) $(TRILINOS_INCLUDE) $(SWIG_FLAGS) $(srcdir)/$<
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
