@@ -75,4 +75,20 @@ int Ifpack_Graph_Epetra_RowMatrix::NumMyNonzeros() const
   return(RowMatrix_->NumMyNonzeros());
 }
 
+// ======================================================================
+ostream& Ifpack_Graph_Epetra_RowMatrix::Print(std::ostream& os) const
+{
+
+  if (Comm().MyPID())
+    return(os);
+
+  os << "================================================================================" << endl;
+  os << "Ifpack_Graph_Epetra_RowMatrix" << endl;
+  os << "Number of local rows  = " << NumMyRows_ << endl;
+  os << "Number of global rows = " << NumGlobalRows_ << endl;
+  os << "================================================================================" << endl;
+
+  return(os);
+
+}
 

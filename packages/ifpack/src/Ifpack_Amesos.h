@@ -221,13 +221,13 @@ public:
   }
 
   //! Returns the total number of flops to computate the preconditioner.
-  virtual long int ComputeFlops() const
+  virtual double ComputeFlops() const
   {
     return(ComputeFlops_);
   }
 
   //! Returns the total number of flops to apply the preconditioner.
-  virtual long int ApplyInverseFlops() const
+  virtual double ApplyInverseFlops() const
   {
     return(ApplyInverseFlops_);
   }
@@ -302,13 +302,13 @@ protected:
   }
 
   //! Sets \c ComputeFlops_.
-  inline void SetComputeFlops(const long int ComputeFlops)
+  inline void SetComputeFlops(const double ComputeFlops)
   {
     ComputeFlops_ = ComputeFlops;
   }
 
   //! Sets \c ComputeFlops_.
-  inline void SetApplyInverseFlops(const long int ApplyInverseFlops)
+  inline void SetApplyInverseFlops(const double ApplyInverseFlops)
   {
     ApplyInverseFlops_ = ApplyInverseFlops;
   }
@@ -356,9 +356,9 @@ private:
   Epetra_Time* Time_;
 
   //! Contains the number of flops for Compute().
-  long int ComputeFlops_;
+  double ComputeFlops_;
   //! Contain sthe number of flops for ApplyInverse().
-  long int ApplyInverseFlops_;
+  double ApplyInverseFlops_;
 
   //! Contains the estimated condition number.
   double Condest_;

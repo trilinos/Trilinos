@@ -82,6 +82,9 @@ public:
   //! Returns the communicator object of the graph.
   const Epetra_Comm& Comm() const;  
   
+  //! Prints basic information abobut the graph object.
+  ostream& Print(std::ostream& os) const;
+
 private:
 
   //! Number of local rows.

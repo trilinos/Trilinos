@@ -20,7 +20,7 @@ and compute all it is necessary to solve a linear system in B.
 Then, set starting solution (if necessary) and right-hand side for B,
 and solve the linear system in B.
 
-A container should be used in the following manner:
+<P>A container should be used in the following manner:
 - Create an container object, specifying the number of rows of B.
 - If necessary, set parameters for the solution using
   SetParameters().
@@ -35,15 +35,17 @@ A container should be used in the following manner:
 The number of vectors can be set using SetNumVectors(), and it
 is defaulted to 1.
 
-Containers are used in block preconditioners (Ifpack_BlockJacobi,
-Ifpack_BlockGaussSeidel and Ifpack_SymGaussSeidel). 
+<P>Containers are currently used by class Ifpack_BlockRelaxation.
 
-Ifpack_Container is a pure virtual class.
+<P>Ifpack_Container is a pure virtual class.
 Two concrete implementations are provided in classes
 Ifpack_SparseContainer (that stores matrices in sparse the format
 Epetra_CrsMatrix) and Ifpack_DenseContainer
 (for relatively small matrices, as matrices are stored as
 Epetra_SerialDenseMatrix's).
+
+\note Still to do:
+- Flops count has to be tested.
 
 \author Marzio Sala, SNL 9214.
 
@@ -113,7 +115,22 @@ public:
   //! Returns the label of \e this container.
   virtual const char* Label() const = 0;
 
+  //! Returns the flops in Compute().
+  virtual double ComputeFlops() const = 0;
+
+  //! Returns the flops in Apply().
+  virtual double ApplyFlops() const = 0;
+
+  //! Returns the flops in ApplyInverse().
+  virtual double ApplyInverseFlops() const = 0;
+
+  //! Prints out basic information about the container.
+  virtual ostream& Print(std::ostream& os) const = 0;
 };
 
+inline ostream& operator<<(ostream& os, const Ifpack_Container& obj)
+{
+  return(obj.Print(os));
+}
 
 #endif // IFPACK_CONTAINER_H

@@ -72,3 +72,19 @@ int Ifpack_Graph_Epetra_CrsGraph::NumMyNonzeros() const
   return(CrsGraph_->NumMyEntries());
 }
 
+// ======================================================================
+ostream& Ifpack_Graph_Epetra_CrsGraph::Print(std::ostream& os) const
+{
+
+  if (Comm().MyPID())
+    return(os);
+
+  os << "================================================================================" << endl;
+  os << "Ifpack_Graph_Epetra_CrsGraph" << endl;
+  os << "Number of local rows  = " << NumMyRows_ << endl;
+  os << "Number of global rows = " << NumGlobalRows_ << endl;
+  os << "================================================================================" << endl;
+
+  return(os);
+
+}

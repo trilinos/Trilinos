@@ -1,3 +1,6 @@
+#include "Ifpack_ConfigDefs.h"
+#ifdef HAVE_IFPACK_TEUCHOS
+#include <iomanip>
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Comm.h"
@@ -5,7 +8,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Time.h"
-#include "Ifpack_ConfigDefs.h"
+#include "Epetra_Import.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_Utils.h"
@@ -20,58 +23,35 @@ static const int IFPACK_SSOR = 4;
 //==============================================================================
 Ifpack_PointRelaxation::
 Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix) :
-  Diagonal_(0),
-  ZeroStartingSolution_(true),
   IsInitialized_(false),
   IsComputed_(false),
-  NumSweeps_(1),
-  DampingFactor_(1.0),
-  NumMyRows_(0),
-  Matrix_(Matrix),
-  UseTranspose_(false),
-  PrintFrequency_(0),
-  Condest_(-1.0),
   NumInitialize_(0),
   NumCompute_(0),
   NumApplyInverse_(0),
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
-  Time_(0),
   ComputeFlops_(0),
   ApplyInverseFlops_(0),
+  NumSweeps_(1),
+  DampingFactor_(1.0),
+  UseTranspose_(false),
+  Condest_(-1.0),
+  ComputeCondest_(false),
   PrecType_(IFPACK_JACOBI),
-  MinDiagonalValue_(0.0)
-{
-}
-
-//==============================================================================
-Ifpack_PointRelaxation::
-Ifpack_PointRelaxation(const Ifpack_PointRelaxation& rhs) :
+  MinDiagonalValue_(0.0),
+  NumMyRows_(0),
+  NumMyNonzeros_(0),
+  NumGlobalRows_(0),
+  NumGlobalNonzeros_(0),
+  Matrix_(Matrix),
+  Importer_(0),
   Diagonal_(0),
-  ZeroStartingSolution_(rhs.ZeroStartingSolution()),
-  IsInitialized_(rhs.IsInitialized()),
-  IsComputed_(rhs.IsComputed()),
-  NumSweeps_(rhs.NumSweeps()),
-  DampingFactor_(rhs.DampingFactor()),
-  NumMyRows_(Matrix_->NumMyRows()),
-  Matrix_(&rhs.Matrix()),
-  UseTranspose_(rhs.UseTranspose()),
-  PrintFrequency_(rhs.PrintFrequency()),
-  Condest_(rhs.Condest()),
-  NumInitialize_(rhs.NumInitialize()),
-  NumCompute_(rhs.NumCompute()),
-  NumApplyInverse_(rhs.NumApplyInverse()),
-  InitializeTime_(rhs.InitializeTime()),
-  ComputeTime_(rhs.ComputeTime()),
-  ApplyInverseTime_(rhs.ApplyInverseTime()),
   Time_(0),
-  ComputeFlops_(rhs.ComputeFlops()),
-  ApplyInverseFlops_(rhs.ApplyInverseFlops()),
-  PrecType_(rhs.PrecType()),
-  MinDiagonalValue_(rhs.MinDiagonalValue())
+  IsParallel_(false),
+  ZeroStartingSolution_(true),
+  UseWithAztecOO_(true)
 {
-  Diagonal_ = new Epetra_Vector((*rhs.Diagonal()));
 }
 
 //==============================================================================
@@ -81,46 +61,11 @@ Ifpack_PointRelaxation::~Ifpack_PointRelaxation()
     delete Diagonal_;
   if (Time_)
     delete Time_;
+  if (Importer_)
+    delete Importer_;
 }
 
 //==============================================================================
-Ifpack_PointRelaxation& 
-Ifpack_PointRelaxation::operator=(const Ifpack_PointRelaxation& rhs)
-{
-  if (this == &rhs)
-    return(*this);
-
-  if (Diagonal_)
-    delete Diagonal_;
-
-  Matrix_ = &rhs.Matrix();
-  UseTranspose_ = rhs.UseTranspose();
-  NumSweeps_ = rhs.NumSweeps();
-  DampingFactor_ = rhs.DampingFactor();
-  PrintFrequency_ = rhs.PrintFrequency();
-  IsInitialized_ = rhs.IsInitialized();
-  IsComputed_ = rhs.IsComputed();
-  Condest_ = rhs.Condest();
-  ZeroStartingSolution_ = rhs.ZeroStartingSolution();
-  PrecType_ = rhs.PrecType();
-  NumMyRows_ = Matrix_->NumMyRows();
-  MinDiagonalValue_ = rhs.MinDiagonalValue();
-  Diagonal_ = new Epetra_Vector((*rhs.Diagonal()));
-
-  NumInitialize_ = rhs.NumInitialize();
-  NumCompute_ = rhs.NumCompute();
-  NumApplyInverse_ = rhs.NumApplyInverse();
-  InitializeTime_ = rhs.InitializeTime();
-  ComputeTime_ = rhs.ComputeTime();
-  ApplyInverseTime_ = rhs.ApplyInverseTime();
-  ComputeFlops_ = rhs.ComputeFlops();
-  ApplyInverseFlops_ = rhs.ApplyInverseFlops();
-
-  return(*this);
-}
-
-//==============================================================================
-#ifdef HAVE_IFPACK_TEUCHOS
 int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
 {
 
@@ -136,7 +81,7 @@ int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
   else if (PrecType_ == IFPACK_SSOR)
     PT = "SSOR";
 
-  PT = List.get("point: type", PT);
+  PT = List.get("relaxation: type", PT);
 
   if (PT == "Jacobi")
     PrecType_ = IFPACK_JACOBI;
@@ -149,18 +94,15 @@ int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
   else if (PT == "SSOR")
     PrecType_ = IFPACK_SSOR;
   
-  NumSweeps_ = List.get("point: sweeps",NumSweeps_);
-  DampingFactor_ = List.get("point: damping factor", DampingFactor_);
-  PrintFrequency_ = List.get("point: print frequency", PrintFrequency_);
-  ZeroStartingSolution_ = List.get("point: zero starting solution", 
-				   ZeroStartingSolution_);
-  MinDiagonalValue_ = List.get("point: min diagonal value", MinDiagonalValue_);
+  NumSweeps_ = List.get("relaxation: sweeps",NumSweeps_);
+  DampingFactor_ = List.get("relaxation: damping factor", DampingFactor_);
+  MinDiagonalValue_ = List.get("relaxation: min diagonal value", MinDiagonalValue_);
+  ZeroStartingSolution_ = List.get("relaxation: zero starting solution", ZeroStartingSolution_);
 
   SetLabel();
 
   return(0);
 }
-#endif
 
 //==============================================================================
 const Epetra_Comm& Ifpack_PointRelaxation::Comm() const
@@ -206,17 +148,18 @@ int Ifpack_PointRelaxation::Initialize()
   if (Time_ == 0)
     Time_ = new Epetra_Time(Comm());
 
-  if (Comm().NumProc() != 1) {
-    cerr << "This class must be used with communicators containing" << endl;
-    cerr << "only one process. More general uses are allowed through" << endl;
-    cerr << "class Ifpack_AdditiveSchwarz" << endl;
-    exit(EXIT_FAILURE);
-  }
-
   if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
     IFPACK_CHK_ERR(-3); // only square matrices
 
   NumMyRows_ = Matrix_->NumMyRows();
+  NumMyNonzeros_ = Matrix_->NumMyNonzeros();
+  NumGlobalRows_ = Matrix_->NumGlobalRows();
+  NumGlobalNonzeros_ = Matrix_->NumGlobalNonzeros();
+
+  if (Comm().NumProc() != 1)
+    IsParallel_ = true;
+  else
+    IsParallel_ = false;
 
   ++NumInitialize_;
   InitializeTime_ += Time_->ElapsedTime();
@@ -236,7 +179,7 @@ int Ifpack_PointRelaxation::Compute()
   IsComputed_ = false;
   Condest_ = -1.0;
 
-  if (NumSweeps() <= 0)
+  if (NumSweeps_ <= 0)
     IFPACK_CHK_ERR(-3); // at least one application
   
   if (Diagonal_)
@@ -258,8 +201,17 @@ int Ifpack_PointRelaxation::Compute()
   // some methods require the inverse of the diagonal, compute it
   // now
   if ((PrecType_ == IFPACK_JACOBI) || (PrecType_ == IFPACK_GS) 
-      || (PrecType_ == IFPACK_SOR)) {
+      || (PrecType_ == IFPACK_SOR) || (PrecType_ == IFPACK_SSOR)) {
     Diagonal_->Reciprocal(*Diagonal_);
+    // update flops
+    ComputeFlops_ += NumMyRows_;
+  }
+
+  // FIXME for SOR and SSOR
+  if (IsParallel_ && ((PrecType_ == IFPACK_GS) || (PrecType_ == IFPACK_SGS))) {
+    Importer_ = new Epetra_Import(Matrix().RowMatrixColMap(),
+                                  Matrix().RowMatrixRowMap());
+    assert (Importer_ != 0);
   }
 
   ++NumCompute_;
@@ -273,28 +225,48 @@ int Ifpack_PointRelaxation::Compute()
 ostream& Ifpack_PointRelaxation::Print(ostream & os) const
 {
 
-  double MinVal, MeanVal, MaxVal;
+  double MyMinVal, MyMaxVal;
+  double MinVal, MaxVal;
 
   if (IsComputed_) {
-    Diagonal_->MinValue(&MinVal);
-    Diagonal_->MeanValue(&MeanVal);
-    Diagonal_->MaxValue(&MaxVal);
+    Diagonal_->MinValue(&MyMinVal);
+    Diagonal_->MaxValue(&MyMaxVal);
+    Comm().MinAll(&MyMinVal,&MinVal,1);
+    Comm().MinAll(&MyMaxVal,&MaxVal,1);
   }
 
-  os << endl;
-  os << "*** " << Label() << endl << endl;
-  os << "Number of rows    = " << NumMyRows_ << endl;
-  os << "Number of sweeps  = " << NumSweeps_ << endl;
-  os << "Damping Factor    = " << DampingFactor_ << endl;
-  os << "Print frequency   = " << PrintFrequency_ << endl;
-  os << "IsInitialized()   = " << IsInitialized_ << endl;
-  os << "IsComputed()      = " << IsComputed_ << endl;
-  if (IsComputed_) {
-    os << "Minimum value on stored diagonal = " << MinVal << endl;
-    os << "Maximum value on stored diagonal = " << MaxVal << endl;
-    os << "Average value on stored diagonal = " << MeanVal << endl;
+  if (!Comm().MyPID()) {
+    os << endl;
+    os << "================================================================================" << endl;
+    os << "Ifpack_PointRelaxation, Sweeps = " << NumSweeps_ << endl;
+    os << "damping factor = " << DampingFactor_;
+    if (ZeroStartingSolution_) 
+      cout << ", using zero starting solution" << endl;
+    else
+      cout << ", using input starting solution" << endl;
+    os << "Condition number estimate = " << Condest_ << endl;
+    os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
+    if (IsComputed_) {
+      os << "Minimum value on stored diagonal = " << MinVal << endl;
+      os << "Average value on stored diagonal = " << MaxVal << endl;
+    }
+    os << endl;
+    os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
+    os << "-----           -------   --------------       ------------     --------" << endl;
+    os << "Initialize()    "   << std::setw(5) << NumInitialize_ 
+       << "  " << std::setw(15) << InitializeTime_ 
+       << "                -              -" << endl;
+    os << "Compute()       "   << std::setw(5) << NumCompute_ 
+       << "  " << std::setw(15) << ComputeTime_
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ 
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_ 
+       << "  " << std::setw(15) << ApplyInverseTime_
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ 
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
+    os << "================================================================================" << endl;
+    os << endl;
   }
-  os << endl;
 
   return(os);
 }
@@ -321,19 +293,31 @@ void Ifpack_PointRelaxation::SetLabel()
   if (PrecType_ == IFPACK_JACOBI)
     PT = "Jacobi";
   else if (PrecType_ == IFPACK_GS)
-    PT = "Gauss-Seidel";
+    PT = "GS";
   else if (PrecType_ == IFPACK_SGS)
-    PT = "sym Gauss-Seidel";
+    PT = "SGS";
   else if (PrecType_ == IFPACK_SOR)
     PT = "SOR";
   else if (PrecType_ == IFPACK_SSOR)
     PT = "SSOR";
 
-  sprintf(Label_, "IFPACK %s (sweeps=%d, damping=%f)",
-          PT.c_str(), NumSweeps(), DampingFactor());
+  Label_ = "IFPACK (" + PT + ", sweeps=" + Ifpack_toString(NumSweeps_)
+    + ", damping=" + Ifpack_toString(DampingFactor_) + ")";
 }
 
 //==============================================================================
+// Recall that this method is NOT supposed to be AztecOO compatible
+// (AztecOO users should call Ifpack_AdditiveSchwarz, while ML users
+// will not require any AztecOO compatibiliness). 
+// Note that Ifpack_PointRelaxation and Jacobi is much faster than
+// Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation> (because of the
+// way the matrix-vector produce is performed).
+//
+// Another ML-related observation is that the starting solution (in Y)
+// is NOT supposed to be zero. This may slow down the application of just
+// one sweep of Jacobi, but anyway who really cares for just one step
+// of Jacobi as preconditioner?
+//
 int Ifpack_PointRelaxation::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
@@ -345,23 +329,40 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   Time_->ResetStartTime();
 
+  const Epetra_MultiVector* Xcopy;
+  if (UseWithAztecOO_)
+    Xcopy = new Epetra_MultiVector(X);
+  else
+    Xcopy = &X;
+    
+  if (ZeroStartingSolution_)
+    Y.PutScalar(0.0);
+
+  // Flops are updated in each of the following. SOR and SSOR do not work.
   switch (PrecType_) {
   case IFPACK_JACOBI:
-    IFPACK_CHK_ERR(ApplyInverseJacobi(X,Y));
+    IFPACK_CHK_ERR(ApplyInverseJacobi(*Xcopy,Y));
     break;
   case IFPACK_GS:
-    IFPACK_CHK_ERR(ApplyInverseGS(X,Y));
+    IFPACK_CHK_ERR(ApplyInverseGS(*Xcopy,Y));
     break;
   case IFPACK_SGS:
-    IFPACK_CHK_ERR(ApplyInverseSGS(X,Y));
+    IFPACK_CHK_ERR(ApplyInverseSGS(*Xcopy,Y));
     break;
+#ifdef FIXME
   case IFPACK_SOR:
-    IFPACK_CHK_ERR(ApplyInverseSOR(X,Y));
+    IFPACK_CHK_ERR(ApplyInverseSOR(*Xcopy,Y));
     break;
   case IFPACK_SSOR:
-    IFPACK_CHK_ERR(ApplyInverseSSOR(X,Y));
+    IFPACK_CHK_ERR(ApplyInverseSSOR(*Xcopy,Y));
     break;
+#endif
+  default:
+    IFPACK_CHK_ERR(-1); // something wrong
   }
+
+  if (UseWithAztecOO_)
+    delete Xcopy;
 
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();
@@ -369,290 +370,234 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 }
 
 //==============================================================================
+// This preconditioner can be much slower than AztecOO and ML versions
+// if the matrix-vector product requires all ExtractMyRowCopy() 
+// (as done through Ifpack_AdditiveSchwarz).
 int Ifpack_PointRelaxation::
-ApplyInverseJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+ApplyInverseJacobi(const Epetra_MultiVector& RHS, Epetra_MultiVector& LHS) const
 {
-  // ------------ //
-  // single sweep //
-  // ------------ //
 
-  if (NumSweeps_ == 1 && ZeroStartingSolution_
-      && (PrintFrequency() == 0)) {
-    IFPACK_CHK_ERR(Y.Multiply(DampingFactor_,X,*Diagonal_,0.0));
-    return(0);
-  }
-
-  // --------------------- //
-  // general case (solver) //
-  // --------------------- //
-  // NOTE: I suppose that X and Y do NOT point to the same
-  // memory. This means that this method will not work
-  // directly with AztecOO. Users are not supposed to use
-  // this class directly, but only through Ifpack_AdditiveSchwarz
-  // (which handles the case of X and Y pointing to the same
-  // memory space).
-
-  Epetra_MultiVector AX(X);
-
-  if (ZeroStartingSolution_)
-    Y.PutScalar(0.0);
-
-  if (PrintFrequency())
-    Ifpack_PrintResidual(Label(),Matrix(),Y,X);
+  int NumVectors = LHS.NumVectors();
+  Epetra_MultiVector* A_times_LHS;
+  A_times_LHS = new Epetra_MultiVector(LHS.Map(),NumVectors);
+  assert (A_times_LHS != 0);
 
   for (int j = 0; j < NumSweeps_ ; j++) {
 
-    // compute the residual
-    if (j) {
-      IFPACK_CHK_ERR(Apply(Y,AX));
-      AX.Update(1.0,X,-1.0);
-    }
-    else {
-      AX = X;
-    }
-
-    // apply the inverse of the diagonal
-    AX.Multiply(1.0, AX, *Diagonal_, 0.0);
-
-    // update the solution at step `j'
-    Y.Update(DampingFactor_, AX, 1.0);
-
-    if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
-      Ifpack_PrintResidual(j,Matrix(),Y,X);
+    IFPACK_CHK_ERR(Apply(LHS,*A_times_LHS));
+    IFPACK_CHK_ERR(A_times_LHS->Update(1.0,RHS,-1.0));
+    IFPACK_CHK_ERR(LHS.Multiply(DampingFactor_, *A_times_LHS, *Diagonal_, 1.0));
 
   }
+  delete A_times_LHS;
 
-  if (PrintFrequency())
-    Ifpack_PrintResidual(NumSweeps_,*Matrix_,Y,X);
+  // Flops:
+  // - matrix vector              (2 * NumGlobalNonzeros_)
+  // - update                     (2 * NumGlobalRows_)
+  // - Multiply:
+  //   - DampingFactor            (NumGlobalRows_)
+  //   - Diagonal                 (NumGlobalRows_)
+  //   - A + B                    (NumGlobalRows_)
+  ApplyInverseFlops_ += NumVectors * (5 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
 
   return(0);
 
 }
 
 //==============================================================================
+// We need to import data from external processors. Here I create an
+// Epetra_Import object because I cannot assume that Matrix_ has one.
+// This is a bit of waste of resources (but the code is more robust).
+// Note that I am doing some strange stuff to set the components of Y
+// from Y2 (to save some time).
+//
 int Ifpack_PointRelaxation::
 ApplyInverseGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   int NumVectors = X.NumVectors();
 
   int Length = Matrix().MaxNumEntries();
-  vector<int> Indices;
-  vector<double> Values;
-  Indices.resize(Length);
-  Values.resize(Length);
+  vector<int> Indices(Length);
+  vector<double> Values(Length);
 
-  // ============ //
-  // single sweep //
-  // ------------ //
+  Epetra_MultiVector* Y2;
+  if (IsParallel_)
+    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+  else
+    Y2 = &Y;
+                        
+  // extract views (for nicer and faster code)
+  double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
+  X.ExtractView(&x_ptr);
+  Y.ExtractView(&y_ptr);
+  Y2->ExtractView(&y2_ptr);
+  Diagonal_->ExtractView(&d_ptr);
 
-  if ((NumSweeps() == 1)&& ZeroStartingSolution_
-      && (PrintFrequency() != 0)) {
+  for (int j = 0; j < NumSweeps_ ; j++) {
 
-    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+    // data exchange is here, once per sweep
+    if (IsParallel_)
+      IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
 
-      int NumEntries;
-      int col;
-      IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
-						&Values[0], &Indices[0]));
+    // do I really need this code below?
+    if (NumVectors == 1) {
 
-      for (int m = 0 ; m < NumVectors ; ++m) {
+      double* y0_ptr = y_ptr[0];
+      double* y20_ptr = y2_ptr[0];
+      double* x0_ptr = x_ptr[0];
 
-	double dtemp = 0.0;
-	for (int k = 0 ; k < NumEntries ; ++k) {
+      for (int i = 0 ; i < NumMyRows_ ; ++i) {
 
-	  col = Indices[k];
-	  if (col >= i || (col >= NumMyRows_)) continue;
+        int NumEntries;
+        int col;
+        IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
+                                                 &Values[0], &Indices[0]));
 
-	  dtemp += Values[k] * Y[m][col];
-	}
+        double dtemp = 0.0;
+        for (int k = 0 ; k < NumEntries ; ++k) {
 
-	Y[m][i] = DampingFactor() * ((*Diagonal_)[i])
-	  * (Y[m][i] - dtemp);
+          col = Indices[k];
+          dtemp += Values[k] * y20_ptr[col];
+        }
+
+        y20_ptr[i] += DampingFactor_ * d_ptr[i] * (x0_ptr[i] - dtemp);
       }
-    }
+      // using Export() sounded quite expensive
+      if (IsParallel_)
+        for (int i = 0 ; i < NumMyRows_ ; ++i)
+          y0_ptr[i] = y20_ptr[i];
 
-    return(0);
+    }
+    else {
+
+      for (int i = 0 ; i < NumMyRows_ ; ++i) {
+
+        int NumEntries;
+        int col;
+        IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
+                                                 &Values[0], &Indices[0]));
+
+        for (int m = 0 ; m < NumVectors ; ++m) {
+
+          double dtemp = 0.0;
+          for (int k = 0 ; k < NumEntries ; ++k) {
+
+            col = Indices[k];
+            dtemp += Values[k] * y2_ptr[m][col];
+          }
+
+          y2_ptr[m][i] += DampingFactor_ * d_ptr[i] * (x_ptr[m][i] - dtemp);
+        }
+        // using Export() sounded quite expensive
+      }
+
+      if (IsParallel_)
+        for (int m = 0 ; m < NumVectors ; ++m) 
+          for (int i = 0 ; i < NumMyRows_ ; ++i)
+            y_ptr[m][i] = y2_ptr[m][i];
+
+    }
   }
 
-  // --------------------- //
-  // general case (solver) //
-  // --------------------- //
+  if (IsParallel_)
+    delete Y2;
 
-  // need an additional vector for AztecOO preconditioning
-  // (as X and Y both point to the same memory space)
-  Epetra_MultiVector Xtmp(X);
-
-  if (ZeroStartingSolution_)
-    Y.PutScalar(0.0);
-  
-  if (PrintFrequency())
-    Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
-
-  for (int j = 0; j < NumSweeps() ; j++) {
-
-    for (int i = 0 ; i < NumMyRows_ ; ++i) {
-
-      int NumEntries;
-      int col;
-      IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
-						&Values[0], &Indices[0]));
-
-      for (int m = 0 ; m < NumVectors ; ++m) {
-
-	double dtemp = 0.0;
-	for (int k = 0 ; k < NumEntries ; ++k) {
-
-	  col = Indices[k];
-
-	  if ((col == i) || (col >= NumMyRows_)) continue;
-
-	  dtemp += Values[k] * Y[m][col];
-	}
-
-	Y[m][i] = DampingFactor() * ((*Diagonal_)[i])
-	  * (Xtmp[m][i] - dtemp);
-      }
-    }
-
-    if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
-      Ifpack_PrintResidual(j,Matrix(),Y,Xtmp);
-  }
-
-  if (PrintFrequency())
-    Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,Xtmp);
+  ApplyInverseFlops_ += NumVectors * (4 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
 
   return(0);
 }
 
 //==============================================================================
+// Same comments as for ApplyInverseGS()
+//
 int Ifpack_PointRelaxation::
 ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
 
-  // ------------ //
-  // single sweep //
-  // ------------ //
- 
-  if ((NumSweeps() == 1) && ZeroStartingSolution_
-      && (PrintFrequency() != 0)) {
-    IFPACK_CHK_ERR(ApplyInverseSGS2(Y));
-    return(0);
-  }
-  
-  // --------------------- //
-  // general case (solver) //
-  // --------------------- //
-  
-  Epetra_MultiVector Xtmp(X);
-  Epetra_MultiVector AX(X);
-
-  if (ZeroStartingSolution_)
-    Y.PutScalar(0.0);
-
-  if (PrintFrequency())
-    Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
-  
-  for (int j = 0; j < NumSweeps() ; j++) {
-
-    // compute the residual
-    IFPACK_CHK_ERR(Apply(Y,AX));
-    AX.Update(1.0,Xtmp,-1.0);
-
-    // apply the lower triangular part of A
-    IFPACK_CHK_ERR(ApplyInverseSGS2(AX));
-
-    // update the residual
-    Y.Update(DampingFactor(), AX, 1.0);
-
-    if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
-      Ifpack_PrintResidual(j,Matrix(),Y,Xtmp);
-    
-  }
-
-  if (PrintFrequency())
-    Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,Xtmp);
-
-  return(0);
-
-}
-
-//==============================================================================
-int Ifpack_PointRelaxation::
-ApplyInverseSGS2(Epetra_MultiVector& X) const
-{
   int NumVectors = X.NumVectors();
   int Length = Matrix().MaxNumEntries();
-  vector<int> Indices;
-  vector<double> Values;
-  Indices.resize(Length);
-  Values.resize(Length);
+  vector<int> Indices(Length);
+  vector<double> Values(Length);
 
-  // Apply (D - \omega E)^{-1}
+  Epetra_MultiVector* Y2;
+  if (IsParallel_) {
+    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+  }
+  else
+    Y2 = &Y;
 
-  for (int i = 0 ; i < NumMyRows_ ; ++i) {
+  double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
+  X.ExtractView(&x_ptr);
+  Y.ExtractView(&y_ptr);
+  Y2->ExtractView(&y2_ptr);
+  Diagonal_->ExtractView(&d_ptr);
+  
+  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
+    
+    // only one data exchange per sweep
+    if (IsParallel_)
+      IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
 
-    int NumEntries;
-    int col;
-    double diag = 1.0;
-    double dtemp = 0.0;
+    for (int i = 0 ; i < NumMyRows_ ; ++i) {
 
-    IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
-					     &Values[0], &Indices[0]));
+      int NumEntries;
+      int col;
+      double diag = d_ptr[i];
+      double dtemp = 0.0;
 
-    for (int m = 0 ; m < NumVectors ; ++m) {
+      IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
+                                               &Values[0], &Indices[0]));
 
-      for (int k = 0 ; k < NumEntries ; ++k) {
+      for (int m = 0 ; m < NumVectors ; ++m) {
 
-	col = Indices[k];
-	if (col > i) 
-	  continue;
+        for (int k = 0 ; k < NumEntries ; ++k) {
 
-	if (col == i) 
-	  diag = Values[k];
-	else
-	  dtemp += Values[k] * X[m][col];
+          col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
       }
-
-      X[m][i] = (X[m][i] - dtemp) / diag;
-
     }
+
+    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+
+      int NumEntries;
+      int col;
+      double diag = d_ptr[i];
+      double dtemp = 0.0;
+
+      IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
+                                               &Values[0], &Indices[0]));
+
+      for (int m = 0 ; m < NumVectors ; ++m) {
+
+        for (int k = 0 ; k < NumEntries ; ++k) {
+
+          col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
+
+      }
+    }
+
+    if (IsParallel_)
+      for (int m = 0 ; m < NumVectors ; ++m) 
+        for (int i = 0 ; i < NumMyRows_ ; ++i)
+          y_ptr[m][i] = y2_ptr[m][i];
   }
 
-  // Apply D
+  if (IsParallel_)
+    delete Y2;
 
-  X.Multiply(1.0,X,*Diagonal_,0.0);
-
-  // Apply (D - \omega F)^{-1}
-
-  for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
-
-    int NumEntries;
-    int col;
-    double dtemp = 0.0;
-
-    IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
-					     &Values[0], &Indices[0]));
-
-    for (int m = 0 ; m < NumVectors ; ++m) {
-
-      for (int k = 0 ; k < NumEntries ; ++k) {
-
-	col = Indices[k];
-	
-	if (col <= i) 
-	  continue;
-
-	dtemp += Values[k] * X[m][col];
-      }
-
-      X[m][i] = (X[m][i] - dtemp) / ((*Diagonal_)[i]);
-
-    }
-  }
+  ApplyInverseFlops_ += NumVectors * (4 * NumGlobalNonzeros_ + 8 * NumGlobalRows_);
   return(0);
-
 }
 
+// SOR and SSOR will be fixed later
+#ifdef FIXME
 //==============================================================================
 int Ifpack_PointRelaxation::
 ApplyInverseSOR(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
@@ -660,29 +605,21 @@ ApplyInverseSOR(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   int NumVectors = X.NumVectors();
 
   int Length = Matrix().MaxNumEntries();
-  vector<int> Indices;
-  vector<double> Values;
-  Indices.resize(Length);
-  Values.resize(Length);
+  vector<int> Indices(Length);
+  vector<double> Values(Length);
 
   // one iteration of SOR is as damped Gauss-Seidel.
   // Here I consider the general case only.
 
   Epetra_MultiVector Xtmp(X);
 
-  if (ZeroStartingSolution_)  
-    Y.PutScalar(0.0);
-
-  if (PrintFrequency())
-    Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
-
-  for (int j = 0; j < NumSweeps() ; j++) {
+  for (int j = 0; j < NumSweeps_ ; j++) {
 
     for (int i = 0 ; i < NumMyRows_ ; ++i) {
 
       int NumEntries;
       int col;
-      IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
+      IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
 						&Values[0], &Indices[0]));
 
       for (int m = 0 ; m < NumVectors ; ++m) {
@@ -701,14 +638,7 @@ ApplyInverseSOR(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 	  DampingFactor() * ((*Diagonal_)[i]) * (Xtmp[m][i] - dtemp);
       }
     }
-
-    if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
-      Ifpack_PrintResidual(j,Matrix(),Y,Xtmp);
-
   }
-
-  if (PrintFrequency())
-    Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,Xtmp);
 
   return(0);
 }
@@ -718,122 +648,60 @@ int Ifpack_PointRelaxation::
 ApplyInverseSSOR(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
 
-  // ---------------- //
-  // single sweep can //
-  // ---------------- //
- 
-  if ((NumSweeps() == 1) && ZeroStartingSolution_
-      && (PrintFrequency() != 0)) {
-    IFPACK_CHK_ERR(ApplyInverseSSOR2(Y));
-    return(0);
-  }
-  
-  // --------------------- //
-  // general case (solver) //
-  // --------------------- //
-  
-  Epetra_MultiVector Xtmp(X);
-  Epetra_MultiVector AX(X);
-
-  if (ZeroStartingSolution_)
-    Y.PutScalar(0.0);
-
-  if (PrintFrequency())
-    Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
-  
-  for (int j = 0; j < NumSweeps() ; j++) {
-
-    // compute the residual
-    IFPACK_CHK_ERR(Apply(Y,AX));
-    AX.Update(1.0,Xtmp,-1.0);
-
-    // apply the lower triangular part of A
-    IFPACK_CHK_ERR(ApplyInverseSSOR2(AX));
-
-    // update the residual
-    Y.Update(DampingFactor(), AX, 1.0);
-
-    if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
-      Ifpack_PrintResidual(j,Matrix(),Y,Xtmp);
-    
-  }
-
-  if (PrintFrequency())
-    Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,Xtmp);
-
-  return(0);
-
-}
-
-//==============================================================================
-int Ifpack_PointRelaxation::
-ApplyInverseSSOR2(Epetra_MultiVector& X) const
-{
-
   int NumVectors = X.NumVectors();
   int Length = Matrix().MaxNumEntries();
-  vector<int> Indices;
-  vector<double> Values;
-  Indices.resize(Length);
-  Values.resize(Length);
+  vector<int> Indices(Length);
+  vector<double> Values(Length);
+  double w = DampingFactor_;
 
-  // Apply (D - \omega E)^{-1}
+  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
+    
+    for (int i = 0 ; i < NumMyRows_ ; ++i) {
 
-  for (int i = 0 ; i < NumMyRows_ ; ++i) {
+      int NumEntries;
+      int col;
+      double diag = (*Diagonal_)[i];
+      double dtemp = 0.0;
 
-    int NumEntries;
-    int col;
-    double dtemp = 0.0;
+      IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
+                                               &Values[0], &Indices[0]));
 
-    IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
-					     &Values[0], &Indices[0]));
+      for (int m = 0 ; m < NumVectors ; ++m) {
 
-    for (int m = 0 ; m < NumVectors ; ++m) {
+        for (int k = 0 ; k < NumEntries ; ++k) {
 
-      for (int k = 0 ; k < NumEntries ; ++k) {
+          col = Indices[k];
+          dtemp += w * Values[k] * Y[m][col];
+        }
 
-	col = Indices[k];
-	if (col >= i) 
-	  continue;
-
-        dtemp += Values[k] * X[m][col];
+        Y[m][i] += (w * X[m][i] - dtemp) * diag;
       }
-
-      X[m][i] = (X[m][i] - DampingFactor() * dtemp) / (*Diagonal_)[i];
-
     }
-  }
 
-  // Apply D
+    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
 
-  X.Multiply(1.0,X,*Diagonal_,0.0);
+      int NumEntries;
+      int col;
+      double diag = (*Diagonal_)[i];
+      double dtemp = 0.0;
 
-  // Apply (D - \omega F)^{-1}
+      IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
+                                               &Values[0], &Indices[0]));
 
-  for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+      for (int m = 0 ; m < NumVectors ; ++m) {
 
-    int NumEntries;
-    int col;
-    double dtemp = 0.0;
+        for (int k = 0 ; k < NumEntries ; ++k) {
 
-    IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
-					     &Values[0], &Indices[0]));
+          col = Indices[k];
+          dtemp += w * Values[k] * Y[m][col];
+        }
 
-    for (int m = 0 ; m < NumVectors ; ++m) {
+        Y[m][i] += (w * X[m][i] - dtemp) * diag;
 
-      for (int k = 0 ; k < NumEntries ; ++k) {
-
-	col = Indices[k];
-	
-	if (col <= i) 
-	  continue;
-
-	dtemp += Values[k] * X[m][col];
       }
-
-      X[m][i] = (X[m][i] - DampingFactor() * dtemp) / ((*Diagonal_)[i]);
-
     }
   }
   return(0);
 }
+#endif
+#endif

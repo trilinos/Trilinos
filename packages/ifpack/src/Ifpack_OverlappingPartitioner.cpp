@@ -35,6 +35,18 @@ int Ifpack_OverlappingPartitioner::SetParameters(Teuchos::ParameterList& List)
   OverlappingLevel_ = List.get("partitioner: overlap", OverlappingLevel_);
   verbose_ = List.get("partitioner: print level", verbose_);
 
+  if (NumLocalParts_ < 0)
+    NumLocalParts_ = Graph_->NumMyRows() / (-NumLocalParts_);
+  if (NumLocalParts_ == 0)
+    NumLocalParts_ = 1;
+  if (NumLocalParts_ < 0)
+    IFPACK_CHK_ERR(-1);
+  if (NumLocalParts_ > Graph_->NumMyRows())
+    IFPACK_CHK_ERR(-1);
+
+  if (OverlappingLevel_ < 0)
+    IFPACK_CHK_ERR(-1);
+
   SetPartitionParameters(List);
 
   return(0);
@@ -56,8 +68,9 @@ int Ifpack_OverlappingPartitioner::Compute()
     cout << PrintMsg_ << "Number of local parts  = " << NumLocalParts_ << endl;
     cout << PrintMsg_ << "Number of global parts = " 
          << NumLocalParts_ * Comm().NumProc() << endl;
-    cout << PrintMsg_ << "Amoung of overlap      = " << OverlappingLevel_ << endl;
+    cout << PrintMsg_ << "Amount of overlap      = " << OverlappingLevel_ << endl;
   }
+
   // 1.- allocate memory 
 
   Partition_.resize(NumMyRows());
@@ -89,6 +102,7 @@ int Ifpack_OverlappingPartitioner::Compute()
   return(0);
 }
 
+// ======================================================================
 int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 {
 
@@ -215,4 +229,24 @@ const Epetra_Comm& Ifpack_OverlappingPartitioner::Comm() const
 {
   return(Graph_->Comm());
 }
+
+// ======================================================================
+ostream& Ifpack_OverlappingPartitioner::Print(ostream & os) const
+{
+
+  if (Comm().MyPID()) 
+    return(os);
+
+  os << "================================================================================" << endl;
+  os << "Ifpack_OverlappingPartitioner" << endl;
+  os << "Number of local rows  = " << Graph_->NumMyRows() << endl;
+  os << "Number of global rows = " << Graph_->NumGlobalRows() << endl;
+  os << "Number of local parts = " << NumLocalParts_ << endl;
+  os << "Overlapping level     = " << OverlappingLevel_ << endl;
+  os << "Is computed           = " << IsComputed_ << endl;
+  os << "================================================================================" << endl;
+
+  return(os);
+}
+
 #endif // HAVE_IFPACK_TEUCHOS

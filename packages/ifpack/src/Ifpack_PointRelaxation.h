@@ -2,6 +2,7 @@
 #define IFPACK_POINTRELAXATION_H
 
 #include "Ifpack_ConfigDefs.h"
+#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Preconditioner.h"
 namespace Teuchos {
   class ParameterList;
@@ -13,6 +14,7 @@ class Epetra_Comm;
 class Epetra_Time;
 class Epetra_Vector;
 class Epetra_RowMatrix;
+class Epetra_Import;
 
 //! Ifpack_PointRelaxation: a class to define point relaxation preconditioners of Ifpack_Preconditioner's.
 
@@ -98,27 +100,18 @@ public:
    */
   Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix);
 
-  //! Copy constructor
-  Ifpack_PointRelaxation(const Ifpack_PointRelaxation& rhs);
-  
   //! Destructor.
   virtual ~Ifpack_PointRelaxation();
 
-  // operator =
-  Ifpack_PointRelaxation& operator=(const Ifpack_PointRelaxation& rhs);
-
   //@}
 
-  //@{ \name Atribute set methods.
-
-  //! If set true, applies the preconditioner to the transpose of the input operator.
   /*! This flag can be used to apply the preconditioner to the transpose of
    * the input operator. 
    * 
    * \return Integer error code, set to 0 if successful.  
    * Set to -1 if this implementation does not support transpose.
     */
-  virtual int SetUseTranspose(bool UseTranspose)
+  virtual inline int SetUseTranspose(bool UseTranspose)
   {
     UseTranspose_ = UseTranspose;
     return(0);
@@ -137,7 +130,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  virtual inline int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Applies the preconditioner to X, returns the result in Y.
   /*! 
@@ -148,8 +141,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
 
-    \warning In order to work with AztecOO, any implementation of this method 
-    must support the case where X and Y are the same object.
+    \warning This routine is NOT AztecOO complaint.
     */
   virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
@@ -164,7 +156,7 @@ public:
 
   virtual char * Label() const
   {
-    return((char*)Label_);
+    return((char*)Label_.c_str());
   }
 
   //! Returns the current UseTranspose setting.
@@ -196,7 +188,7 @@ public:
   }
 
   //! Returns \c true if the preconditioner has been successfully computed.
-  virtual bool IsComputed() const
+  virtual inline bool IsComputed() const
   {
     return(IsComputed_);
   }
@@ -204,15 +196,14 @@ public:
   //! Computes the preconditioners.
   virtual int Compute();
 
-  //! Returns a pointer to the matrix.
-  virtual const Epetra_RowMatrix& Matrix() const
+  //@}
+ 
+  //@{ \name Miscellaneous
+
+  virtual const Epetra_RowMatrix& Matrix() const 
   {
     return(*Matrix_);
   }
-
-  //@}
-
-  //@{ \name Miscellaneous
 
   //! Returns the condition number estimate.
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
@@ -225,19 +216,16 @@ public:
     return(Condest_);
   }
 
-#ifdef HAVE_IFPACK_TEUCHOS
   //! Sets all the parameters for the preconditioner
   virtual int SetParameters(Teuchos::ParameterList& List);
-#endif
-
-  //! Sets the label.
-  virtual void SetLabel();
 
   //! Print object to an output stream
   //! Print method
   virtual ostream& Print(ostream & os) const;
 
   //@}
+
+  //@{ \name Timing and flop count
 
   //! Returns the number of calls to Initialize().
   virtual int NumInitialize() const
@@ -275,38 +263,24 @@ public:
     return(ApplyInverseTime_);
   }
 
-  virtual long int ComputeFlops() const
+  //! Returns the number of flops in the computation phase.
+  virtual double ComputeFlops() const
   {
     return(ComputeFlops_);
   }
 
-  virtual long int ApplyInverseFlops() const
+  //! Returns the number of flops for the application of the preconditioner.
+  virtual double ApplyInverseFlops() const
   {
     return(ApplyInverseFlops_);
   }
 
-  virtual const Epetra_Vector* Diagonal() const
-  {
-    return(Diagonal_);
-  }
-  
-  virtual bool ZeroStartingSolution() const
-  {
-    return(ZeroStartingSolution_);
-  }
+  // @}
 
-  virtual double MinDiagonalValue() const
-  {
-    return(MinDiagonalValue_);
-  }
-
-  virtual int PrecType() const
-  {
-    return(PrecType_);
-  }
-
-protected:
+private:
  
+  // @{ Application of the preconditioner
+  
   //! Applies the Jacobi preconditioner to X, returns the result in Y.
   virtual int ApplyInverseJacobi(const Epetra_MultiVector& X, 
                                  Epetra_MultiVector& Y) const;
@@ -319,9 +293,7 @@ protected:
   virtual int ApplyInverseSGS(const Epetra_MultiVector& X, 
                               Epetra_MultiVector& Y) const;
 
-  //! Utility function for SGS
-  virtual int ApplyInverseSGS2(Epetra_MultiVector& Y) const;
-
+#ifdef FIXME
   //! Applies the Jacobi preconditioner to X, returns the result in Y.
   virtual int ApplyInverseSOR(const Epetra_MultiVector& X, 
                               Epetra_MultiVector& Y) const;
@@ -329,107 +301,87 @@ protected:
   //! Applies the Jacobi preconditioner to X, returns the result in Y.
   virtual int ApplyInverseSSOR(const Epetra_MultiVector& X, 
                                Epetra_MultiVector& Y) const;
-
-  //! Utility function for SSOR
-  virtual int ApplyInverseSSOR2(Epetra_MultiVector& Y) const;
-
-  //@{ \name Setting functions
-
-  //! Sets the number of sweeps.
-  inline int SetNumSweeps(const int NumSweeps)
-  {
-    NumSweeps_ = NumSweeps;
-    return(0);
-  }
-
-  //! Gets the number of sweeps.
-  inline int NumSweeps() const
-  {
-    return(NumSweeps_);
-  }
- 
-  //! Sets the damping factor
-  inline int SetDampingFactor(const double DampingFactor)
-  {
-    DampingFactor_ = DampingFactor;
-    return(0);
-  }
-
-  //! Gets the damping factor.
-  inline double DampingFactor() const
-  {
-    return(DampingFactor_);
-  }
-
-  inline int SetPrintFrequency(const int PrintFrequency)
-  {
-    PrintFrequency_ = PrintFrequency;
-    return(0);
-  }
-
-  inline int PrintFrequency() const
-  {
-    return(PrintFrequency_);
-  }
-
+#endif
   //@}
 
-  //! Contains the diagonal elements of \c Matrix.
-  mutable Epetra_Vector* Diagonal_;
-  //! Contains the label of this object.
-  char Label_[80];
-  //! If true, use zero vector as starting solution.
-  bool ZeroStartingSolution_;
-  
 private:
+  
+  //! Sets the label.
+  virtual void SetLabel();
 
-  //! Extracts a copy of the diagonal, stores the elements in \c Diagonal_.
-  int ExtractDiagonal();
+  //! Copy constructor (PRIVATE, should not be used)
+  Ifpack_PointRelaxation(const Ifpack_PointRelaxation& rhs)
+  {}
+  
+  //! operator = (PRIVATE, should not be used)
+  Ifpack_PointRelaxation& operator=(const Ifpack_PointRelaxation& rhs)
+  {
+    return(*this);
+  }
 
-  //! Returns the i-th element stored in Diagonal_.
-  double Diagonal(const int i);
+  // @{ Initializations, timing and flops
   //! If \c true, the preconditioner has been computed successfully.
   bool IsInitialized_;
   //! If \c true, the preconditioner has been computed successfully.
   bool IsComputed_;
-  //! Number of application of the preconditioner (should be greater than 0).
-  int NumSweeps_;
-  //! Damping factor.
-  double DampingFactor_;
-  //! Number of local rows.
-  int NumMyRows_;
-  //! Pointers to the matrix to be preconditioned.
-  const Epetra_RowMatrix* Matrix_;
-  //! If true, use the tranpose of \c Matrix_.
-  bool UseTranspose_;
-  //! Toggles the frequency, 0 means no output.
-  int PrintFrequency_;
-  //! Contains the estimated condition number
-  double Condest_;
-  //! If true, Compute() also computed the condition number estimate.
-  bool ComputeCondest_;
-
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;
   //! Contains the number of successful call to Compute().
   int NumCompute_;
   //! Contains the number of successful call to ApplyInverse().
   mutable int NumApplyInverse_;
-
   //! Contains the time for all successful calls to Initialize().
   double InitializeTime_;
   //! Contains the time for all successful calls to Compute().
   double ComputeTime_;
   //! Contains the time for all successful calls to ApplyInverse().
   mutable double ApplyInverseTime_;
-  Epetra_Time* Time_;
-
   //! Contains the number of flops for Compute().
-  long int ComputeFlops_;
+  double ComputeFlops_;
   //! Contain sthe number of flops for ApplyInverse().
-  long int ApplyInverseFlops_;
+  mutable double ApplyInverseFlops_;
+  // @}
+
+  // @{ Settings
+  //! Number of application of the preconditioner (should be greater than 0).
+  int NumSweeps_;
+  //! Damping factor.
+  double DampingFactor_;
+  //! If true, use the tranpose of \c Matrix_.
+  bool UseTranspose_;
+  //! Contains the estimated condition number
+  double Condest_;
+  //! If true, Compute() also computes the condition number estimate.
+  bool ComputeCondest_;
+  //! Contains the label of this object.
+  string Label_;
   int PrecType_;
   double MinDiagonalValue_;
+  // @}
+
+  // @{ Other data
+  //! Number of local rows.
+  int NumMyRows_;
+  //! Number of local nonzeros.
+  int NumMyNonzeros_;
+  //! Number of global rows.
+  int NumGlobalRows_;
+  //! Number of global nonzeros.
+  int NumGlobalNonzeros_;
+  //! Pointers to the matrix to be preconditioned.
+  const Epetra_RowMatrix* Matrix_;
+  //! Importer for parallel GS and SGS
+  Epetra_Import* Importer_;
+  //! Contains the diagonal elements of \c Matrix.
+  mutable Epetra_Vector* Diagonal_;
+  //! Time object to track timing.
+  Epetra_Time* Time_;
+  bool IsParallel_;
+  bool ZeroStartingSolution_;
+  bool UseWithAztecOO_;
+  // @}
+
 };
 
+#endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_POINTRELAXATION_H

@@ -148,9 +148,11 @@ public:
   //! Returns the time spent in ApplyInverse().
   virtual double ApplyInverseTime() const = 0;
 
-  virtual long int ComputeFlops() const = 0;
+  //! Returns the number of flops in the computation phase.
+  virtual double ComputeFlops() const = 0;
 
-  virtual long int ApplyInverseFlops() const = 0;
+  //! Returns the number of flops in the application of the preconditioner.
+  virtual double ApplyInverseFlops() const = 0;
 
   //! Prints basic information on iostream. This function is used by operator<<.
   virtual ostream& Print(std::ostream& os) const = 0;

@@ -275,12 +275,12 @@ public:
     return(ApplyInverseTime_);
   }
 
-  virtual long int ComputeFlops() const
+  virtual double ComputeFlops() const
   {
     return(ComputeFlops_);
   }
 
-  virtual long int ApplyInverseFlops() const
+  virtual double ApplyInverseFlops() const
   {
     return(ApplyInverseFlops_);
   }
@@ -351,9 +351,9 @@ protected:
   mutable double ApplyInverseTime_;
 
   //! Contains the number of flops for Compute().
-  long int ComputeFlops_;
+  double ComputeFlops_;
   //! Contain sthe number of flops for ApplyInverse().
-  mutable long int ApplyInverseFlops_;
+  mutable double ApplyInverseFlops_;
 
   Epetra_Time* Time_;
 };
@@ -659,6 +659,9 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
     + "\n\t\t***** " + R + "Condition number estimate = "
     + Ifpack_toString(Condest());
 
+  // sum up flops for Inverse_
+  ComputeFlops_ += Inverse_->ComputeFlops();
+
   IsComputed_ = true;
   ++NumCompute_;
   ComputeTime_ += Time_->ElapsedTime();
@@ -821,6 +824,8 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();
 
+  // FIXME: flops in the overlapping region are now ignored
+  ApplyInverseFlops_ += Inverse_->ApplyInverseFlops();
   return(0);
  
 }
@@ -833,35 +838,44 @@ Print(std::ostream& os) const
   if( Matrix().Comm().MyPID())
     return(os);
 
-  os << "*** Ifpack_AdditiveSchwarz" << endl << endl;
-  os << "Cond number estimate = " << Condest_ << endl;
-  os << "Overlap level        = " << OverlapLevel_ << endl;
-  if (CombineMode_ == Insert)
-    os << "Combine mode         = Insert" << endl;
-  else if (CombineMode_ == Add)
-    os << "Combine mode         = Add" << endl;
-  else if (CombineMode_ == Zero)
-    os << "Combine mode         = Zero" << endl;
-  else if (CombineMode_ == Average)
-    os << "Combine mode         = Average" << endl;
-  else if (CombineMode_ == AbsMax)
-    os << "Combine mode         = AbsMax" << endl;
+    os << endl;
+    os << "================================================================================" << endl;
+    os << "Ifpack_AdditiveSchwarz, overlap level = " << OverlapLevel_ << endl;
+    if (CombineMode_ == Insert)
+      os << "Combine mode              = Insert" << endl;
+    else if (CombineMode_ == Add)
+      os << "Combine mode              = Add" << endl;
+    else if (CombineMode_ == Zero)
+      os << "Combine mode              = Zero" << endl;
+    else if (CombineMode_ == Average)
+      os << "Combine mode              = Average" << endl;
+    else if (CombineMode_ == AbsMax)
+      os << "Combine mode              = AbsMax" << endl;
+    /*
+    if (ZeroStartingSolution_) 
+      cout << ", using zero starting solution" << endl;
+    else
+      cout << ", using input starting solution" << endl;
+      */
+    os << "Condition number estimate = " << Condest_ << endl;
+    os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
 
-  os << endl;
-  os << "Number of initialization phases = " << NumInitialize_ << endl;
-  os << "Number of computation phases    = " << NumCompute_ << endl;
-  os << "Number of applications          = " << NumApplyInverse_ << endl;
-  os << endl;
-  os << "Total time for Initialize()     = " << InitializeTime_ << " (s)\n";
-  os << "Total time for Compute()        = " << ComputeTime_ << " (s)\n";
-  os << "Total time for ApplyInverse()   = " << ApplyInverseTime_ << " (s)\n";
-  os << endl;
-
-  if (Comm().MyPID() == 0) {
-    os << endl << "Printing Inverse() on process 0..." << endl;
-    os << *Inverse_;
-  }
-  os << endl;
+    os << endl;
+    os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
+    os << "-----           -------   --------------       ------------     --------" << endl;
+    os << "Initialize()    "   << std::setw(5) << NumInitialize_ 
+       << "  " << std::setw(15) << InitializeTime_ 
+       << "                -              -" << endl;
+    os << "Compute()       "   << std::setw(5) << NumCompute_ 
+       << "  " << std::setw(15) << ComputeTime_
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ 
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_ 
+       << "  " << std::setw(15) << ApplyInverseTime_
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ 
+       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
+    os << "================================================================================" << endl;
+    os << endl;
 
   return(os);
 }

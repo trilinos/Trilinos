@@ -19,20 +19,32 @@
 #endif
 
 /*! 
-  \brief Ifpack_SparseContainer: a class for storing and solving linear systems
-  using sparse matrices.
+\brief Ifpack_SparseContainer: a class for storing and solving linear systems
+using sparse matrices.
 
-  A sparse container object contains all is necessary to allocate,
-  define and solve a (local) linear system, by storing the matrix
-  is sparse format (as Epetra_CrsMatrix).
+<P>To understand what an IFPACK container is, please refer to the documentation 
+of the pure virtual class Ifpack_Container. Currently, containers are
+used by class Ifpack_BlockRelaxation.
 
-  Sparse containers are templated with a type T, which represent the 
-  class to use in the application of the inverse. (T is not
-  used in Ifpack_DenseContainer). In SparseContainer, T must be
-  an Ifpack_Preconditioner derived class. The container will allocate
-  a \c T object, use SetParameters() and Compute(), then
-  use \c T every time the linear system as to be solved (using the
-  ApplyInverse() method of \c T).
+<P>Using block methods, one needs to store all diagonal blocks and
+to be also to apply the inverse of each diagonal block. Using
+class Ifpack_DenseContainer, one can store the blocks as sparse
+matrices (Epetra_CrsMatrix), which can be advantageous when the 
+blocks are large. Otherwise,
+class Ifpack_DenseContainer is probably more appropriate.
+
+<P>Sparse containers are templated with a type T, which represent the 
+class to use in the application of the inverse. (T is not
+used in Ifpack_DenseContainer). In SparseContainer, T must be
+an Ifpack_Preconditioner derived class. The container will allocate
+a \c T object, use SetParameters() and Compute(), then
+use \c T every time the linear system as to be solved (using the
+ApplyInverse() method of \c T).
+
+\author Marzio Sala, SNL 9214.
+
+\date Last modified on Nov-04.
+
 */
 
 template<typename T>
@@ -72,7 +84,7 @@ public:
   {
     if (NumVectors_ == NumVectors)
       return(0);
-    IFPACK_CHK_ERR(-1); // STILL TO DO
+    IFPACK_CHK_ERR(-99); // STILL TO DO
   }
 
   //! Returns the i-th component of the vector Vector of LHS.
@@ -180,6 +192,27 @@ public:
   virtual int Destroy();
   //@}
 
+  //! Returns the flops in Compute().
+  virtual double ComputeFlops() const
+  {
+    return(ComputeFlops_);
+  }
+
+  //! Returns the flops in Apply().
+  virtual double ApplyFlops() const
+  {
+    return(ApplyFlops_);
+  }
+
+  //! Returns the flops in ApplyInverse().
+  virtual double ApplyInverseFlops() const
+  {
+    return(ApplyInverseFlops_);
+  }
+  
+  //! Prints basic information on iostream. This function is used by operator<<.
+  virtual ostream& Print(std::ostream& os) const;
+
 private:
   
   //! Extract the submatrices identified by the ID set int ID().
@@ -210,6 +243,9 @@ private:
   //! Label for \c this object
   string Label_;
   Teuchos::ParameterList List_;
+  double ComputeFlops_;
+  double ApplyFlops_;
+  double ApplyInverseFlops_;
 
 };
 
@@ -226,7 +262,10 @@ Ifpack_SparseContainer(const int NumRows, const int NumVectors) :
   IsInitialized_(false),
   IsComputed_(false),
   SerialComm_(0),
-  Inverse_(0)
+  Inverse_(0),
+  ComputeFlops_(0),
+  ApplyFlops_(0),
+  ApplyInverseFlops_(0)
 {
 
 #ifdef HAVE_MPI
@@ -312,7 +351,7 @@ int Ifpack_SparseContainer<T>::Initialize()
   Inverse_ = new T(Matrix_);
 
   if (Inverse_ == 0)
-    IFPACK_CHK_ERR(-10);
+    IFPACK_CHK_ERR(-5);
 
   IFPACK_CHK_ERR(Inverse_->SetParameters(List_));
 
@@ -343,7 +382,7 @@ int Ifpack_SparseContainer<T>::
 SetMatrixElement(const int row, const int col, const double value)
 {
   if (IsInitialized() == false)
-    IFPACK_CHK_ERR(-5); // problem not shaped yet
+    IFPACK_CHK_ERR(-3); // problem not shaped yet
 
   if ((row < 0) || (row >= NumRows())) {
     IFPACK_CHK_ERR(-2); // not in range
@@ -386,6 +425,7 @@ int Ifpack_SparseContainer<T>::Compute(const Epetra_RowMatrix& Matrix)
   Label_ = "Ifpack_SparseContainer";
   
   IsComputed_ = true;
+  ComputeFlops_ += Inverse_->ComputeFlops();
 
   return(0);
 }
@@ -395,11 +435,12 @@ template<typename T>
 int Ifpack_SparseContainer<T>::Apply()
 {
   if (IsComputed() == false) {
-    IFPACK_CHK_ERR(-6); // not yet computed
+    IFPACK_CHK_ERR(-3); // not yet computed
   }
   
   IFPACK_CHK_ERR(Matrix_->Apply(*RHS_, *LHS_));
 
+  ApplyFlops_ += 2 * Matrix_->NumGlobalNonzeros();
   return(0);
 }
 
@@ -408,15 +449,16 @@ template<typename T>
 int Ifpack_SparseContainer<T>::ApplyInverse()
 {
   if (IsComputed() == false) {
-    IFPACK_CHK_ERR(-6); // not yet computed
+    IFPACK_CHK_ERR(-3); // not yet computed
   }
   
   if (Inverse_ == 0) {
-    IFPACK_CHK_ERR(-7);
+    IFPACK_CHK_ERR(-6);
   }
 
   IFPACK_CHK_ERR(Inverse_->ApplyInverse(*RHS_, *LHS_));
 
+  ApplyInverseFlops_ += Inverse_->ApplyInverseFlops();
   return(0);
 }
  
@@ -479,7 +521,7 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix)
       IFPACK_CHK_ERR(-1);
     // be sure that all are local indices
     if (ID(j) > Matrix.NumMyRows())
-      IFPACK_CHK_ERR(-2);
+      IFPACK_CHK_ERR(-1);
   }
 
   int Length = Matrix.MaxNumEntries();
@@ -524,6 +566,24 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix)
   IFPACK_CHK_ERR(Matrix_->FillComplete());
 
   return(0);
+}
+
+//==============================================================================
+template<typename T>
+ostream& Ifpack_SparseContainer<T>::Print(ostream & os) const
+{
+  os << "================================================================================" << endl;
+  os << "Ifpack_SparseContainer" << endl;
+  os << "Number of rows          = " << NumRows_ << endl;
+  os << "Number of vectors       = " << NumVectors_ << endl;
+  os << "IsInitialized()         = " << IsInitialized_ << endl;
+  os << "IsComputed()            = " << IsComputed_ << endl;
+  os << "Flops in Compute()      = " << ComputeFlops_ << endl; 
+  os << "Flops in ApplyInverse() = " << ApplyInverseFlops_ << endl; 
+  os << "================================================================================" << endl;
+  os << endl;
+
+  return(os);
 }
 #endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_SPARSECONTAINER_H

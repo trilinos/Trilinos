@@ -8,7 +8,9 @@ Class Ifpack_Graph defines the abstract interface to use graphs in
 IFPACK. This class contains all the functions that are required by
 IFPACK classes.
 
-\date Sep-04.
+\author Marzio Sala, SNL 9214.
+
+\date Last modified on Nov-04.
 
 */
 
@@ -58,6 +60,15 @@ public:
 
   //! Returns the communicator object of the graph.
   virtual const Epetra_Comm& Comm() const = 0;
+
+  //! Prints basic information about the graph object.
+  virtual ostream& Print(std::ostream& os) const = 0;
+
 };
+
+inline ostream& operator<<(ostream& os, const Ifpack_Graph& obj)
+{
+  return(obj.Print(os));
+}
 
 #endif // iFPACK_GRAPH_H

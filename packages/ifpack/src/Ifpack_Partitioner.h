@@ -114,7 +114,8 @@ Ifpack_BlockSymGaussSeidel.
 
 \author Marzio Sala, SNL 9214.
 
-\date Last update: Oct-04.
+\date Last modified on Nov-04.
+
 */  
 class Ifpack_Partitioner {
 
@@ -160,7 +161,15 @@ public:
   //! Returns true if partitions have been computed successfully.
   virtual bool IsComputed() = 0;
 
+  //! Prints basic information about the partitioning object.
+  virtual ostream& Print(std::ostream& os) const = 0;
+
 }; // class Ifpack_Partitioner
+
+inline ostream& operator<<(ostream& os, const Ifpack_Partitioner& obj)
+{
+  return(obj.Print(os));
+}
 
 #endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_PARTITIONER_H

@@ -136,6 +136,9 @@ public:
     return(IsComputed_);
   }
 
+  //! Prints basic information on iostream. This function is used by operator<<.
+  virtual ostream& Print(std::ostream& os) const;
+
 protected:
    
   //! Returns the number of local rows.

@@ -11,14 +11,20 @@
 
 //! Ifpack_DenseContainer: a class to define containers for dense matrices.
 /*!
-Class Ifpack_DenseContainer enables the use of containers based on dense
-matrices. In block methods like Ifpack_BlockJacobi and Ifpack_GaussSeidel,
-if the blocks are small, it can be convenient to store them as dense
-matrices, as efficient solvers are available through LAPACK.
 
-A typical use of a container is as follows:
+<P>To understand what an IFPACK container is, please refer to the documentation 
+of the pure virtual class Ifpack_Container. Currently, containers are
+used by class Ifpack_BlockRelaxation.
+
+<P>Using block methods, one needs to store all diagonal blocks and
+to be also to apply the inverse of each diagonal block. Using
+class Ifpack_DenseContainer, one can store the blocks as dense
+matrices, which can be advantageous when the 
+blocks are small. Otherwise,
+class Ifpack_SparseContainer is probably more appropriate.
+
+<P>A typical use of a container is as follows:
 \code
-#include "Ifpack_Container.h"
 #include "Ifpack_DenseContainer.h"
 ...
 
@@ -53,7 +59,9 @@ Container.ApplyInverse().
 \endcode
 
 A call to Compute() computes the LU factorization of the
-linear system matrix, using LAPACK. The default behavior is 
+linear system matrix, using LAPACK (more precisely, by calling
+the corresponding routines in Epetra_SerialDenseSolver). 
+The default behavior is 
 to store the matrix factors by overwriting the linear system matrix
 itself. This way, method Apply() fails, as the original matrix
 does no longer exists. An alternative is to call
@@ -62,7 +70,7 @@ maintain in memory a copy of the non-factored matrix.
 
 \author Marzio Sala, SNL 9214.
 
-\date Last update Oct-04.
+\date Last update Nov-04.
 */
 
 class Ifpack_DenseContainer : public Ifpack_Container {
@@ -77,7 +85,10 @@ public:
     NumVectors_(NumVectors),
     KeepNonFactoredMatrix_(false),
     IsInitialized_(false),
-    IsComputed_(false)
+    IsComputed_(false),
+    ComputeFlops_(0),
+    ApplyFlops_(0),
+    ApplyInverseFlops_(0)
   {}
 
   //! Copy constructor
@@ -261,6 +272,24 @@ public:
 
   //@}
 
+  virtual double ComputeFlops() const
+  {
+    return(ComputeFlops_);
+  }
+
+  virtual double ApplyFlops() const
+  {
+    return(ApplyFlops_);
+  }
+
+  virtual double ApplyInverseFlops() const
+  {
+    return(ApplyInverseFlops_);
+  }
+
+  //! Prints basic information on iostream. This function is used by operator<<.
+  virtual ostream& Print(std::ostream& os) const;
+
 private:
   
   //! Extract the submatrices identified by the ID set int ID().
@@ -291,6 +320,12 @@ private:
   //! Label for \c this object
   string Label_;
 
+  //! Flops in Compute().
+  double ComputeFlops_;
+  //! Flops in Apply().
+  double ApplyFlops_;
+  //! Flops in ApplyInverse().
+  double ApplyInverseFlops_;
 };
 
 //==============================================================================
@@ -380,11 +415,12 @@ int Ifpack_DenseContainer::ApplyInverse()
 {
 
   if (IsComputed() == false) {
-    IFPACK_CHK_ERR(-6); // not yet computed
+    IFPACK_CHK_ERR(-3); // not yet computed
   }
   
   IFPACK_CHK_ERR(Solver_.Solve());
 
+  ApplyInverseFlops_ += 2.0 * NumVectors_ * NumRows_ * NumRows_;
   return(0);
 }
 
@@ -402,7 +438,7 @@ int Ifpack_DenseContainer::Extract(const Epetra_RowMatrix& Matrix)
   for (int j = 0 ; j < NumRows_ ; ++j) {
     // be sure that the user has set all the ID's
     if (ID(j) == -1)
-      IFPACK_CHK_ERR(-1);
+      IFPACK_CHK_ERR(-2);
     // be sure that all are local indices
     if (ID(j) > Matrix.NumMyRows())
       IFPACK_CHK_ERR(-2);
@@ -472,7 +508,11 @@ int Ifpack_DenseContainer::Compute(const Epetra_RowMatrix& Matrix)
   IFPACK_CHK_ERR(Solver_.Factor());
 
   Label_ = "Ifpack_DenseContainer";
+
+  // not sure of count
+  ComputeFlops_ += 2.0 * NumRows_ * NumRows_ * NumRows_ / 3;
   IsComputed_ = true;
+
   return(0);
 }
 
@@ -480,7 +520,7 @@ int Ifpack_DenseContainer::Compute(const Epetra_RowMatrix& Matrix)
 int Ifpack_DenseContainer::Apply()
 {
   if (IsComputed() == false)
-    IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(-3);
 
   if (KeepNonFactoredMatrix_) {
     IFPACK_CHK_ERR(RHS_.Multiply('N','N', 1.0,NonFactoredMatrix_,LHS_,0.0));
@@ -488,7 +528,24 @@ int Ifpack_DenseContainer::Apply()
   else
     IFPACK_CHK_ERR(RHS_.Multiply('N','N', 1.0,Matrix_,LHS_,0.0));
 
+  ApplyFlops_ += 2 * NumRows_ * NumRows_;
   return(0);
 }
 
+//==============================================================================
+ostream& Ifpack_DenseContainer::Print(ostream & os) const
+{
+    os << "================================================================================" << endl;
+  os << "Ifpack_DenseContainer" << endl;
+  os << "Number of rows          = " << NumRows_ << endl;
+  os << "Number of vectors       = " << NumVectors_ << endl;
+  os << "IsInitialized()         = " << IsInitialized_ << endl;
+  os << "IsComputed()            = " << IsComputed_ << endl;
+  os << "Flops in Compute()      = " << ComputeFlops_ << endl; 
+  os << "Flops in ApplyInverse() = " << ApplyInverseFlops_ << endl; 
+  os << "================================================================================" << endl;
+  os << endl;
+
+  return(os);
+}
 #endif
