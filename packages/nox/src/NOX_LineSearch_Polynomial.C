@@ -140,9 +140,11 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
     counter.incrementNumLineSearches();
 
   // Get the linear solve tolerance if doing ared/pred for conv criteria
+  string direction = s.getParameterList().sublist("Direction")
+    .getParameter("Method", "Newton");
   double eta = (suffDecrCond == AredPred) ? 
-    s.getParameterList().sublist("Direction").sublist("Newton").
-    sublist("Linear Solver").getParameter("Tolerance", -1.0) : 0.0;
+    s.getParameterList().sublist("Direction").sublist(direction)
+    .sublist("Linear Solver").getParameter("Tolerance", -1.0) : 0.0;
 
   // Computations with old group
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
