@@ -119,6 +119,35 @@ Developer's Guide</a></font></b></td>
 </tr>
 
 <tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan_phil.html">Zoltan
+Project Description</a></font></b></td>
+</tr>
+
+<tr VALIGN=BOTTOM BGCOLOR="#006699">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="114"><!----------- 4th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<tr VALIGN=TOP BGCOLOR="#99FFFF">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+
+<tr ALIGN=CENTER VALIGN=CENTER>
 <td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan_pubs.html">Papers
 and Presentations</a></font></b></td>
 </tr>
@@ -139,7 +168,7 @@ and Presentations</a></font></b></td>
 </tr>
 
 <tr ALIGN=LEFT VALIGN=TOP>
-<td VALIGN=TOP WIDTH="114"><!----------- 4th little turquoise bevel button ------------>
+<td VALIGN=TOP WIDTH="114"><!----------- 5th little turquoise bevel button ------------>
 <table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
 <tr VALIGN=TOP BGCOLOR="#99FFFF">
 <td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
@@ -186,6 +215,7 @@ Computing Sciences Department
 (<a href="mailto:william.mitchell@nist.gov">william.mitchell@nist.gov</a>)
 <br>Matthew St. John
 <br>Courtenay Vaughan</ul>
+<hr>
 The <b>Zoltan Dynamic Load-Balancing Library</b> provides critical capability
 to a number of parallel applications.&nbsp; Zoltan includes a suite of
 algorithms for dynamically computing&nbsp; partitions of problems over
@@ -232,46 +262,41 @@ Adaptive physics models</li>
 For such applications, dynamic redistribution of data is needed to maintain
 high performance.&nbsp;</li>
 </ul>
-<b>Why dynamic load balancing is harder than static partitioning:</b>
-<ul>
-<li>
-Algorithms must be implemented in parallel, run quickly and use little
-memory.</li>
-
-<li>
-Function-call interfaces must be used (instead of file-based interfaces).</li>
-
-<li>
-Algorithms should not depend on a particular application data structure.</li>
-
-<li>
-New partitions should be similar to old ones to reduce data movement.</li>
-</ul>
 <b>Zoltan's features:</b>
 <ul>
 <li>
-Zoltan's design is data-structure neutral, allowing it to be used by many
-applications.</li>
+Zoltan's design is <a href="Zoltan_phil.html#ZDesign">data-structure neutral</a>,
+allowing it to be used by many applications.</li>
 
 <li>
-Zoltan's object-oriented interface is clean and easy to use in applications.</li>
+Zoltan's <a href="ug_html/ug_interface.html">object-oriented interface</a>
+is clean and easy to use in applications.</li>
 
 <li>
-A suite of load-balancing algorithms is included in Zoltan; try them all
-to see what works best in your application.</li>
+A <a href="ug_html/ug_alg.html">suite of load-balancing algorithms</a>
+is included in Zoltan; try them all to see what works best in your application.</li>
 
 <li>
-New algorithms can be added to Zoltan in a straightforward manner.</li>
+<a href="dev_html/dev_add.html">New algorithms can be added</a> to Zoltan
+in a straightforward manner.</li>
 
-<br>Data migration tools are provided to simplify data movement during
-re-balancing.</ul>
+<li>
+<a href="ug_html/ug_alg_parmetis.html">Interfaces</a> to the popular
+<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/main.shtml">ParMETIS</a>
+and <a href="http://www.gre.ac.uk/~jjg01/">Jostle</a> packages are included.</li>
+
+<li>
+<a href="ug_html/ug_intro.html#Migration-Help Tools">Data migration tools</a>
+are provided to simplify data movement during re-balancing.</li>
+</ul>
 <b>Advantages of using Zoltan</b>:&nbsp;
 <ul>
 <li>
 As a general-purpose library, Zoltan can be used by many different applications.</li>
 
 <li>
-Zoltan contains several different classses of load-balancing algorithms.</li>
+Zoltan contains several different classes of load-balancing algorithms
+(geometric, graph-based, refinement-tree).</li>
 
 <li>
 Application developers can experiment to find the best algorithm for their
@@ -285,27 +310,28 @@ implementations of existing algorithms.</li>
 Algorithms can be reused easily in new applications.</li>
 
 <li>
-Support for data migration can be provided.</li>
+Support for data migration is provided.</li>
 </ul>
-<b>Zoltan project description:</b>
+<b><a href="Zoltan_phil.html">Zoltan philosophy and project description</a>:</b>
 <ul>
 <li>
-Typical Approaches to Dynamic Load Balancing</li>
+<a href="Zoltan_phil.html#Typical">Typical Approach to Dynamic Load Balancing</a></li>
 
 <li>
-Why Dynamic Load Balancing is Harder than Static Partitioning</li>
+<a href="Zoltan_phil.html#Harder">Why Dynamic Load Balancing is Harder
+than Static Partitioning</a></li>
 
 <li>
-Design of Dynamic Load-Balancing Libraries</li>
+<a href="Zoltan_phil.html#Design">Design of Dynamic Load-Balancing Libraries</a></li>
 
 <li>
-Zoltan's Design</li>
+<a href="Zoltan_phil.html#ZDesign">Zoltan's Design</a></li>
 
 <li>
-Zoltan Examples</li>
+<a href="Zoltan_phil.html#ZExamples">Zoltan Examples</a></li>
 
 <li>
-Future Work</li>
+<a href="Zoltan_phil.html#Future">Future Work</a></li>
 </ul>
 <b>Documentation:</b>
 <ul>
@@ -341,7 +367,7 @@ Parallel and dynamic partitioners</li>
 (University of Minnesota)</li>
 
 <li>
-<a href="http://www.gre.ac.uk/~jjg01/">JOSTLE </a>(University of Greenwich)</li>
+<a href="http://www.gre.ac.uk/~jjg01/">Jostle </a>(University of Greenwich)</li>
 
 <li>
 <a href="http://www.ccrl-nece.technopark.gmd.de/DRAMA/">DRAMA</a> (ESPRIT

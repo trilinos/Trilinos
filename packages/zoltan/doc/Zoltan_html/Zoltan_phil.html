@@ -1,0 +1,494 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="filename" content="Zoltan.html">
+   <meta name="review" content="28 May, 1999">
+   <meta name="subject" content="Zoltan Project">
+   <meta name="sandia.approval_type" content="formal">
+   <meta name="sandia.approved" content="SAND99-1375">
+   <meta name="sandia.create_date" content="05/28/99">
+   <meta name="keywords" content="Zoltan, dynamic load balancing, parallel computing">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title>Sandia National Laboratories - Zoltan Project</title>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+<!----CHANGE INFORMATION IN AREAS WITH THIS HEADER---->
+<!----SCROLL DOWN TO FIND OTHER AREAS TO BE CHANGED---->
+<!--------CHANGE THE NAME AFTER THE DASH-------->
+<!--------CHANGE THE FILENAME-------->
+<!--------CHANGE THE REVIEW DATE-------->
+<!--------CHANGE THE SUBJECT-------->
+<link rel="schema.sandia" href="http://www.sandia.gov/html_schema.htm">
+<!--------CHANGE THE SAND NUMBER INFO-------->
+<!--------INSERT THE DATE DOCUMENT CREATED-------->
+<link rev="owns" title="name of contact" href="mailto:kddevin@cs.sandia.gov">
+<!--------CHANGE THE PAGE OWNER AND EMAIL ADDRESS-------->
+<link rev="made" title="name of contact" href="mailto:kddevin@cs.sandia.gov">
+<!--------CHANGE THE PAGE MAKER AND EMAIL ADDRESS-------->
+<!--------PLACE FIVE KEY WORDS WITHIN THE QUOTES-------->
+<!---------------END OF THIS CHANGE AREA--------------->
+</head>
+<body text="#000000" background="http://www.sandia.gov/images/bkgrnd.gif">
+<! KDD Turned off alternative link colors in template; the ><! following line was part of the above body command. ><! link="#003366" vlink="#cc0033" alink="#000000"><a NAME="TOP"></a><!---TOP BANNER AREA STARTS HERE--->
+<table BORDER=0 valign="top" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="140" >
+<table BORDER=0 WIDTH="130" valign="top" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="128"><!--SANDIA LOGO AT TOP LEFT--><a href="http://www.sandia.gov/Main.html"><img SRC="http://www.sandia.gov/images/snlstkdc.gif" ALT="[Sandia National Laboratories]" BORDER=0 valign="top" height=49 width=126></a>
+<p><img ISMAP SRC="http://www.sandia.gov/images/labelNEW.gif" ALT="[navigation panel]" HSPACE=2 BORDER=0 usemap="#shortMap" height=119 width=111></td>
+
+<td><img SRC="http://www.sandia.gov/images/1pixel.gif" BORDER=0 height=1 width=10></td>
+</tr>
+</table>
+
+<table BORDER=0 WIDTH="140" valign="top" >
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="114"><!----------- 1st little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<tr VALIGN=TOP BGCOLOR="#99FFFF">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan.html">Zoltan
+Home Page</a></font></b></td>
+</tr>
+
+<tr VALIGN=BOTTOM BGCOLOR="#006699">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="114"><!----------- 2nd little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<tr VALIGN=TOP BGCOLOR="#99FFFF">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="ug_html/ug.html">Zoltan
+User's Guide</a></font></b></td>
+</tr>
+
+<tr VALIGN=BOTTOM BGCOLOR="#006699">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="114"><!----------- 3rd little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<tr VALIGN=TOP BGCOLOR="#99FFFF">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="dev_html/dev.html">Zoltan
+Developer's Guide</a></font></b></td>
+</tr>
+
+<tr VALIGN=BOTTOM BGCOLOR="#006699">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="114"><!----------- 4th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<tr VALIGN=TOP BGCOLOR="#99FFFF">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan_pubs.html">Papers and Presentations</a></font></b></td>
+</tr>
+
+<tr VALIGN=BOTTOM BGCOLOR="#006699">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="114"><!----------- 5th little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<tr VALIGN=TOP BGCOLOR="#99FFFF">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="Zoltan_download.html">Download
+Zoltan (available May, 2000)</a></font></b></td>
+</tr>
+
+<tr VALIGN=BOTTOM BGCOLOR="#006699">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP><!--MAIN CONTENT AREA STARTS HERE--><!----------------THIS IS A CHANGE AREA----------------><!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------><b><font face="Verdana, Arial, Helvetica"><font size=+2>Zoltan:&nbsp;</font></font></b>
+<br><b><font face="Verdana, Arial, Helvetica"><font size=+2>A Dynamic Load-Balancing
+Library for Parallel Applications</font></font></b>
+<p><!---------------END OF THIS CHANGE AREA---------------><!----------------THIS IS A CHANGE AREA----------------><!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
+<b><font face="Verdana, Arial, Helvetica"><font size=+2>Philosophy and Project 
+Description</font></font></b><br>
+<hr>
+<ul>
+<li>
+<a href="Zoltan_phil.html#Typical">Typical Approach to Dynamic Load Balancing</a
+></li>
+
+<li>
+<a href="Zoltan_phil.html#Harder">Why Dynamic Load Balancing is Harder
+than Static Partitioning</a></li>
+
+<li>
+<a href="Zoltan_phil.html#Design">Design of Dynamic Load-Balancing Libraries</a>
+</li>
+
+<li>
+<a href="Zoltan_phil.html#ZDesign">Zoltan's Design</a></li>
+
+<li>
+<a href="Zoltan_phil.html#ZExamples">Zoltan Examples</a></li>
+
+<li>
+<a href="Zoltan_phil.html#Future">Future Work</a></li>
+</ul>
+<hr>
+<a name="Typical"><b> Typical Approach to Dynamic Load Balancing</b><p>
+Dynamic load balancing has been used in many applications, ranging from
+adaptive mesh refinement to particle methods to contact detection algorithms.
+In most applications using dynamic load balancing, the load-balancing
+algorithm is implemented directly in the application, with close coupling
+between the application's and load-balancing algorithm's data structures.
+This typical approach has two disadvantages.
+<ul>
+<li> It is possible that the application developer did not select the
+best algorithm for the application, but the developer is unable to compare the
+algorithm with others without taking time to implement many algorithms in the
+application.
+</li>
+<li> The close coupling of the algorithm's and application's 
+data structures limits the algorithm's use to a single application.
+Developers wanting to use the algorithm in new applications have to re-write
+the algorithm using the new applications' data structures.
+</li>
+</ul> 
+As a result, research into and use of dynamic load-balancing algorithms are
+severely impaired.
+<p>
+
+
+<hr>
+<a name="Harder"><b> Why Dynamic Load Balancing is Harder than Static Partitioning</b><p>
+Many high-quality static partitioning tools exist; examples include
+<a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>,
+<a href="http://www-users.cs.umn.edu/~karypis/metis">METIS</a>,
+<a href="http://www.uni-paderborn.de/fachbereich/AG/monien/RESEARCH/PART/party.html">Party</a>, and 
+<a href="http://www.labri.u-bordeaux.fr/Equipe/ALiENor/membre/pelegrin/scotch/">SCOTCH</a>.
+General-purpose dynamic load-balancing tools are less common, however,
+since they are more difficult to implement.  The difficulty arises from
+fundamental algorithmic and software-engineering 
+differences between static and dynamic partitioning.  These differences are
+summarized in the following table.
+<p>
+
+<table border=1>
+<tr>
+<td valign=top><b>Static Partitioning...</b></td>
+<td valign=top><b>Dynamic Load Balancing...</b></td>
+</tr>
+<tr>
+<td valign=top>Generally used as a pre-processor to an application.</td>
+<td valign=top>Runs side-by-side with an application.</td>
+</tr>
+<tr>
+<td valign=top>Can be (and usually is) implemented serially.</td>
+<td valign=top>Must be implemented in parallel.</td>
+</tr>
+<tr>
+<td valign=top>Has only modest concern for execution time.</td>
+<td valign=top>Must run quickly (time to load balance should not exceed time to run in
+    an unbalanced state).</td>
+</tr>
+<tr>
+<td valign=top>Has only modest concern for memory usage.</td>
+<td valign=top>Must use little memory (should not affect scalability of
+    application).</td>
+</tr>
+<tr>
+<td valign=top>Can use file-based interfaces (read geometry from a file; write partition
+info to a file).</td>
+<td valign=top>Must use function-call interfaces.</td>
+</tr>
+<tr>
+<td valign=top>Has no dependence on applications' data structures.</td>
+<td valign=top>Needs information stored in applications' data structures.</td>
+</tr>
+<tr>
+<td valign=top>Accounts for partition sizes and communication costs.</td>
+<td valign=top>Accounts for partition sizes, communication costs, and data movement
+costs.</td>
+</tr>
+</table>
+<p>
+<hr>
+<a name="Design"><b> Design of Dynamic Load-Balancing Libraries</b><p>
+While the typical approach to dynamic load balancing limits code reuse and 
+the ability to compare algorithms, using a general-purpose library allows
+algorithms to be shared among and compare within many applications.  The
+close dependence of dynamic load balancing on application data, however,
+requires careful design of libraries to maintain separation between the
+load balancing and application data structures.
+<p>
+
+One way to provide this separation is to use object-oriented software design.
+Instead of requiring the application to build data structures
+required by the load-balancing algorithm (e.g., graph or geometry
+descriptions), the load-balancing tool could be passed functions that access
+the application data structure to obtain data needed for load balancing.
+For example, rather than require an application to build a complicated graph
+description, the load-balancing library can require an application to provide a
+function returning graph vertices and a function returning edge 
+connectivity for a given vertex.  
+Using these functions, the load-balancing
+library can build the data structures it needs to compute new partitions.
+<p>
+
+This object-oriented design has a number of advantages.
+<ul>
+<li>
+Changes in the load-balancing library's data structures need not
+propagate back to the application.  As long as the set of required functions
+does not change, the application does not need to change to use new versions
+of the library.
+</li>
+<li>
+Once the set of required functions is implemented, the application can use all
+the load-balancing algorithms in the library.
+</li>
+
+<li>
+The required functions are generally easy for
+an application to implement, as most applications need to
+access their objects to be balanced (vertices) 
+and the interactions between objects (edges)
+for their own computations.  
+</li>
+</ul>
+<p>
+There are a few disadvantages to this object-oriented approach as well.
+<ul>
+<li>
+Additional overhead is incurred as the library calls the functions to 
+build its data structures.
+In experiments, however, this cost has been very low
+relative to the cost of actually computing new partitions.  
+</li>
+<li>
+Load-balancing algorithms that focus on specific applications can provide
+greater levels of support for data movement.  A general-purpose tool can
+provide only limited support for data movement.
+</li>
+</ul>
+<p>
+For more detailed information, see 
+[<a href="ftp://ftp.cs.sandia.gov/pub/papers/kddevin/cmame.ps.gz">Hendrickson
+and Devine</a>].
+<p>
+
+<hr>
+<a name="ZDesign"><b> Zoltan's Design</b><p>
+We have chosen an object-oriented, callback function design.  An application
+provides a number of simple callback functions that access the application
+data structures.  Zoltan then calls these functions to obtain data it needs
+for load balancing.  Geometric algorithms (such as Recursive Coordinate
+Bisection, Recursive Inertial Bisection, and Space-Filling Curves) are
+supported via callback functions returning objects to be balanced and the
+weights and coordinates of those objects.  
+Graph-based algorithms are
+provided through interfaces to the 
+<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/main.shtml">ParMETIS</a>
+and
+<a href="http://www.gre.ac.uk/~jjg01/">Jostle</a>
+packages; these
+algorithms are supported by callback functions returning objects to be
+balanced, edges between objects, and object and edge weights.
+For refinement-tree algorithms, additional callback functions return
+parent-child relationship.
+<p>
+Support for data migration (the movement of data to establish a new
+decomposition) is also provided through a similar callback
+function interface.  Because Zoltan does not directly access an application's
+data structures, it cannot perform insertions and deletions of data required
+for data migration.  It can, however, perform the communication necessary 
+for data migration, as it knows the objects to be moved and their
+destinations.  Thus, an application can provide callback functions that pack
+object data into and unpack data from communication buffers provided by 
+Zoltan.  Zoltan can call the packing function to load communication buffers,
+perform the communication necessary to move the data, and call the unpacking
+function to unload the communication buffers.  This support frees the
+application developer from writing complicated communication routines to
+perform the data migration.
+<hr>
+<a name="ZExamples"><b> Zoltan Examples</b><p>
+Several examples of Zoltan's use can be found in the 
+<a href="ug_html/ug.html">Zoltan User's Guide</a>.
+<ul>
+<li>
+<a href="ug_html/ug_intro.html#Load-Balancing Tools">General 
+examples of library usage</a>.
+</li>
+<li>
+<a href="ug_html/ug_examples.html">Specific examples</a>
+for each phase of balancing 
+(<a href="ug_html/ug_examples_init.html">initialization</a>, 
+<a href="ug_html/ug_examples_lb.html">load balancing</a>, and 
+<a href="ug_html/ug_examples_mig.html">data migration</a>).
+</li>
+<li>
+<a href="ug_html/ug_examples_query.html">Examples of callback function 
+implementations</a>.
+</li>
+</ul>
+<p>
+<hr>
+<a name="Future"><b> Future Work</b><p>
+<p>
+
+Static partitioning algorithms are compared based on their execution times and
+partition quality. Comparisons of dynamic load-balancing algorithms, however, 
+must also account for the data movement costs of a new decomposition.
+We will investigate the relative importance of partition quality, time to
+compute new partitions, and data movement costs
+in a number of applications. For some applications, lower-quality
+partitions may be acceptable if data movement can be
+minimized. Other applications may perform better with high-quality
+partitions, regardless of their cost. 
+In the past, characterizations of this nature
+were difficult to perform because of the 
+<a href="#Typical">typical way dynamic load balancing was implemented</a>.
+With Zoltan, comparisons of algorithms within applications are easy to
+perform, as an application has access to all algorithms in Zoltan once its
+callback functions are implemented.  
+<p>
+Heterogeneous computing systems present a new challenge to dynamic
+load-balancing software.
+On heterogeneous computing architectures, partitioning algorithms must
+account for widely varying processor powers,
+memory capacities, and network connections to correctly balance load,
+prevent memory overflows, and reduce
+communication over slow network links. To address these needs, we are
+designing and implementing a hierarchical
+heterogeneous computing model in Zoltan (work with 
+<a href="http://www-users.cs.umn.edu/~karypis">Karypis</a> and 
+<a href="http://www-users.cs.umn.edu/~kumar">Kumar</a>). 
+Using this model, we will
+partition both the machine and the application data
+in an attempt to balance work loads and reduce communication over slow
+networks. 
+
+
+<hr>
+<b>For more information, contact:</b>
+<ul>
+<li>
+<a href="mailto: kddevin@cs.sandia.gov">Karen Devine</a></li>
+
+<li>
+<a href="mailto: bahendr@cs.sandia.gov">Bruce Hendrickson</a></li>
+</ul>
+<!---------MAIN CONTENT AREA ENDS HERE---------><!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE --></td>
+</tr>
+</table>
+
+<hr width="100%">
+<table BORDER=0 WIDTH="100%" >
+<tr ALIGN=CENTER>
+<td VALIGN=TOP WIDTH="140">
+<table BORDER=0 WIDTH="140" >
+<tr>
+<td ALIGN=CENTER VALIGN=TOP WIDTH="120"></td>
+
+<td WIDTH="20"></td>
+</tr>
+</table>
+</td>
+
+<td ALIGN=CENTER VALIGN=TOP WIDTH="100%"></td>
+</tr>
+</table>
+<!--Image maps below--><map name="shortMap"><area shape="rect" coords="2,2,108,14"href="http://www.sandia.gov/About.htm"></area><area shape="rect" coords="2,19,108,31"href="http://www.sandia.gov/Solution.htm"></area><area shape="rect" coords="2,36,108,48"href="http://www.sandia.gov/Working.htm"></area><area shape="rect" coords="2,53,108,65"href="http://www.sandia.gov/Contacting.htm"></area><area shape="rect" coords="2,70,108,82"href="http://www.sandia.gov/News.htm"></area><area shape="rect" coords="2,87,108,99"href="http://www.sandia.gov/search.html"></area><area shape="rect" coords="2,104,108,116"href="http://www.sandia.gov/Main.html"></area></map><!----------------THIS IS A CHANGE AREA----------------><!----NAME AND DATE OF LAST REVISION SHOULD BE HERE----><!---------------END OF THIS CHANGE AREA--------------->
+</body>
+</html>
