@@ -202,13 +202,13 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
 	   << " is invalid." << endl;
     throw "NOX Error";
   }
-  // Make a reference to the sublist holding the global strategy parameters
-  NOX::Parameter::List& gsParams = lsParams.sublist(choice);
-
   //  Copy Method into "Submethod" (temporary hack for data scripts)
   lsParams.setParameter("Submethod", choice);
 
-  // Decide what to step to use in case of linesearch failure
+  // Make a reference to the sublist holding the global strategy parameters
+  NOX::Parameter::List& gsParams = lsParams.sublist(choice);
+
+  // Decide what step to use in case of linesearch failure
   choice = gsParams.getParameter("Recovery Step Type", "Constant");
   if (choice == "Constant")
     recoveryStepType = Constant;          // Use value in "Recovery Step"
