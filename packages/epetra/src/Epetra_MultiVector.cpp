@@ -40,7 +40,7 @@
 
 // Epetra_BlockMap Constructor
 
-Epetra_MultiVector::Epetra_MultiVector(const Epetra_BlockMap& Map, int NumVectors)
+Epetra_MultiVector::Epetra_MultiVector(const Epetra_BlockMap& Map, int NumVectors, bool zeroOut)
   : Epetra_DistObject(Map, "Epetra::MultiVector"),
     Epetra_CompObject(),
     IndexBase_(Map.IndexBase()),
@@ -60,7 +60,7 @@ Epetra_MultiVector::Epetra_MultiVector(const Epetra_BlockMap& Map, int NumVector
     
     for (int i = 0; i< NumVectors_; i++) Pointers_[i] = Values_+i*Stride_;
 
-  PutScalar(0.0); // Fill all vectors with zero.
+	if(zeroOut) PutScalar(0.0); // Fill all vectors with zero.
 }
 //==========================================================================
 

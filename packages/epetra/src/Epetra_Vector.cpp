@@ -31,8 +31,8 @@
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 //=============================================================================
-Epetra_Vector::Epetra_Vector(const Epetra_BlockMap& Map)
-  : Epetra_MultiVector(Map,1) // Vector is just special case of MultiVector
+Epetra_Vector::Epetra_Vector(const Epetra_BlockMap& Map, bool zeroOut)
+  : Epetra_MultiVector(Map,1,zeroOut) // Vector is just special case of MultiVector
 {
   SetLabel("Epetra::Vector");
 }

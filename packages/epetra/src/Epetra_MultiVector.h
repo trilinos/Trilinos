@@ -182,11 +182,14 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   for all three types of Epetra map classes.
   \param In 
   NumVectors - Number of vectors in multi-vector.
-
+  \param In
+  zeroOut - If <tt>true</tt> then the allocated memory will be zeroed
+            out initialy.  If <tt>false</tt> then this memory will not
+            be touched which can be significantly faster.
   \return Pointer to a Epetra_MultiVector.
 
   */
-  Epetra_MultiVector(const Epetra_BlockMap& Map, int NumVectors);
+  Epetra_MultiVector(const Epetra_BlockMap& Map, int NumVectors, bool zeroOut = true);
 
   //! Epetra_MultiVector copy constructor.
   

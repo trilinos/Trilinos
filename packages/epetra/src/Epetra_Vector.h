@@ -134,6 +134,10 @@ class Epetra_Vector : public Epetra_MultiVector {
 
     \param In 
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
+    \param In 
+           zeroOut - If <tt>true</tt> then the allocated memory will be zeroed
+                     out initialy.  If <tt>false</tt> then this memory will not
+                     be touched which can be significantly faster.
 
 	   \warning Note that, because Epetra_LocalMap
 	   derives from Epetra_Map and Epetra_Map derives from Epetra_BlockMap, this constructor works
@@ -142,7 +146,7 @@ class Epetra_Vector : public Epetra_MultiVector {
     \return Pointer to a Epetra_Vector.
 
   */
-  Epetra_Vector(const Epetra_BlockMap& Map);
+  Epetra_Vector(const Epetra_BlockMap& Map, bool zeroOut = true);
 
   //! Epetra_Vector copy constructor.
   
