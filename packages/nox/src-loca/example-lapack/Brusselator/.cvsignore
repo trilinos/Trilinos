@@ -1,2 +1,5 @@
 .deps
 Makefile
+brusselatorContinuation
+brusselatorHopf
+brusselatorHopfContinuation

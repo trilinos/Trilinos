@@ -1,2 +1,6 @@
 .deps
 Makefile
+chanContinuation
+chanHomotopy
+chanTP
+chanTPContinuation
