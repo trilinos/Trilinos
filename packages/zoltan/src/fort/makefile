@@ -10,7 +10,33 @@ $(ZOD)/fwrap.o: 	$(ZOD)/fwrap.f90 \
 	$(F90) -c $(ZOM) $(ZOD)/fwrap.f90
 	/bin/mv *.o *.mod $(ZOD)
 
-$(ZOD)/fwrap.f90: 	fwrap.fpp $(ZOD)/sppr $(ZOD)/sppr_header
+$(ZOD)/fwrap.f90: 	fwrap.fpp \
+			set_numgeom.if		set_numgeom.fn \
+			set_geom.if		set_geom.fn \
+			set_numedges.if 	set_numedges.fn \
+			set_edgelist.if		set_edgelist.fn \
+			set_numobj.if 		set_numobj.fn \
+			set_objlist.if		set_objlist.fn \
+			set_firstobj.if		set_firstobj.fn \
+			set_nextobj.if		set_nextobj.fn \
+			set_numborderobj.if	set_numborderobj.fn \
+			set_borderobjlist.if	set_borderobjlist.fn \
+			set_firstborderobj.if	set_firstborderobj.fn \
+			set_nextborderobj.if	set_nextborderobj.fn \
+			set_premigrate.if	set_premigrate.fn \
+			set_midmigrate.if	set_midmigrate.fn \
+			set_postmigrate.if	set_postmigrate.fn \
+			set_objsize.if		set_objsize.fn \
+			set_packobj.if		set_packobj.fn \
+			set_unpackobj.if	set_unpackobj.fn \
+			set_numchild.if 	set_numchild.fn \
+			set_childweight.if 	set_childweight.fn \
+			set_childlist.if 	set_childlist.fn \
+			set_numcoarseobj.if 	set_numcoarseobj.fn \
+			set_coarseobjlist.if 	set_coarseobjlist.fn \
+			set_firstcoarseobj.if	set_firstcoarseobj.fn \
+			set_nextcoarseobj.if	set_nextcoarseobj.fn \
+			$(ZOD)/sppr $(ZOD)/sppr_header
 	$(ZOD)/sppr < fwrap.fpp > $(ZOD)/fwrap.f90
 
 $(ZOD)/lb_user_const.o:	lb_user_const.f90 \

@@ -106,6 +106,20 @@ public :: &
    LB_Compute_Destinations, &
    LB_Help_Migrate
 
+! Registration functions with strict type checking.
+public :: &
+   LB_Set_Num_Obj_Fn, LB_Set_Obj_List_Fn, &
+   LB_Set_First_Obj_Fn, LB_Set_Next_Obj_Fn, &
+   LB_Set_Num_Border_Obj_Fn, LB_Set_Border_Obj_List_Fn, &
+   LB_Set_First_Border_Obj_Fn, LB_Set_Next_Border_Obj_Fn, &
+   LB_Set_Num_Geom_Fn, LB_Set_Geom_Fn, &
+   LB_Set_Num_Edges_Fn, LB_Set_Edge_List_Fn, &
+   LB_Set_Num_Coarse_Obj_Fn, LB_Set_Coarse_Obj_List_Fn, &
+   LB_Set_First_Coarse_Obj_Fn, LB_Set_Next_Coarse_Obj_Fn, &
+   LB_Set_Num_Child_Fn, LB_Set_Child_List_Fn, LB_Set_Child_Weight_Fn, &
+   LB_Set_Pre_Migrate_Fn, LB_Set_Mid_Migrate_Fn, LB_Set_Post_Migrate_Fn, &
+   LB_Set_Obj_Size_Fn, LB_Set_Pack_Obj_Fn, LB_Set_Unpack_Obj_Fn 
+
 public :: &
    LB_Get_Child_Order ! TEMP child_order
 
@@ -878,6 +892,32 @@ interface LB_Get_Child_Order
    module procedure f90LB_Get_Child_Order
 end interface
 
+#include "set_numgeom.if"
+#include "set_geom.if"
+#include "set_numedges.if"
+#include "set_edgelist.if"
+#include "set_numobj.if"
+#include "set_objlist.if"
+#include "set_firstobj.if"
+#include "set_nextobj.if"
+#include "set_numborderobj.if"
+#include "set_borderobjlist.if"
+#include "set_firstborderobj.if"
+#include "set_nextborderobj.if"
+#include "set_premigrate.if"
+#include "set_midmigrate.if"
+#include "set_postmigrate.if"
+#include "set_objsize.if"
+#include "set_packobj.if"
+#include "set_unpackobj.if"
+#include "set_numcoarseobj.if"
+#include "set_coarseobjlist.if"
+#include "set_firstcoarseobj.if"
+#include "set_nextcoarseobj.if"
+#include "set_numchild.if"
+#include "set_childlist.if"
+#include "set_childweight.if"
+
 contains
 
 !--------------------------------------------------------------------------
@@ -1622,5 +1662,31 @@ call LB_fw_Get_Child_Order(lb_addr,nbytes,order,ierr)
 end subroutine f90LB_Get_Child_Order
 ! end TEMP child_order
 
+
+#include "set_numgeom.fn"
+#include "set_geom.fn"
+#include "set_numedges.fn"
+#include "set_edgelist.fn"
+#include "set_numobj.fn"
+#include "set_objlist.fn"
+#include "set_firstobj.fn"
+#include "set_nextobj.fn"
+#include "set_numborderobj.fn"
+#include "set_borderobjlist.fn"
+#include "set_firstborderobj.fn"
+#include "set_nextborderobj.fn"
+#include "set_premigrate.fn"
+#include "set_midmigrate.fn"
+#include "set_postmigrate.fn"
+#include "set_objsize.fn"
+#include "set_packobj.fn"
+#include "set_unpackobj.fn"
+#include "set_numcoarseobj.fn"
+#include "set_coarseobjlist.fn"
+#include "set_firstcoarseobj.fn"
+#include "set_nextcoarseobj.fn"
+#include "set_numchild.fn"
+#include "set_childlist.fn"
+#include "set_childweight.fn"
 
 end module zoltan

@@ -483,13 +483,17 @@ int LB_First_Coarse_Obj_Fort_Wrapper(void *data,
 
 int LB_Next_Coarse_Obj_Fort_Wrapper(void *data, int num_gid_entries, 
                                     int num_lid_entries, LB_ID_PTR global_id,
-                                    LB_ID_PTR local_id, int *assigned,
+                                    LB_ID_PTR local_id, 
+                                    LB_ID_PTR next_global_id, 
+                                    LB_ID_PTR next_local_id,
+                                    int *assigned,
                                     int *num_vert, int *vertices,
                                     int *in_vertex, int *out_vertex, int *ierr)
 {
    return LB_Current_lb->Get_Next_Coarse_Obj_Fort(data, &num_gid_entries,
                                                   &num_lid_entries,
                                                   global_id, local_id,
+                                                  next_global_id, next_local_id,
                                                   assigned, num_vert, vertices,
                                                   in_vertex, out_vertex, ierr);
 }
