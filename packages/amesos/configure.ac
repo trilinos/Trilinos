@@ -330,11 +330,11 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, superludist, [Enable Amesos interface suppor
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, dscpack, [Enable Amesos interface support for DSCPACK], 
 		AMESOS_DSCPACK, no)
 
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, scalapack, [Enable Amesos interface support for SCALAPACK], 
-		AMESOS_SCALAPACK, no)
+#TAC_ARG_ENABLE_FEATURE_SUB( amesos, scalapack, [Enable Amesos interface support for SCALAPACK], 
+#		AMESOS_SCALAPACK, no)
 
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, merikos, [Enable Amesos interface support for MERIKOS], 
-		AMESOS_MERIKOS, no)
+#TAC_ARG_ENABLE_FEATURE_SUB( amesos, merikos, [Enable Amesos interface support for MERIKOS], 
+#		AMESOS_MERIKOS, no)
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, umfpack, [Enable Amesos interface support for UMFPACK], 
 		AMESOS_UMFPACK, no)
@@ -354,8 +354,8 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, smumps, [Enable Amesos interface support for
 
 TAC_ARG_ENABLE_FEATURE_SUB(amesos, mumps_mpi_c2f, [Enable conversion from C++ MPI commnicator to FORTRAN MPI communicator.], AMESOS_MPI_C2F, yes) 
 
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, kundert, [Enable Amesos interface support for Kundert], 
-		AMESOS_KUNDERT, no)
+#TAC_ARG_ENABLE_FEATURE_SUB( amesos, kundert, [Enable Amesos interface support for Kundert], 
+#		AMESOS_KUNDERT, no)
 
 AM_CONDITIONAL(NEED_PARAMETER_LIST, false ) 
 
