@@ -44,6 +44,7 @@
 #include "createEpetraProblem.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
@@ -52,6 +53,7 @@ int main(int argc, char *argv[]) {
   Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
 #endif	
   //
+  using Teuchos::ParameterList;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
   Teuchos::Time timer("Belos");	
@@ -84,6 +86,9 @@ int main(int argc, char *argv[]) {
   int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
   double tol = 1.0e-6;  // relative residual tolerance
   //
+  ParameterList My_PL;
+  My_PL.set( "Length", maxits );  // Maximum number of blocks in Krylov factorization
+  //
   // Construct the right-hand side and solution multivectors.
   //
   Belos::PetraVec<double> rhs(*B);
@@ -112,7 +117,7 @@ int main(int argc, char *argv[]) {
 	My_OM.SetVerbosity( 2 );
   
   Belos::BlockGmres<double,OP,MV>
-	MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), maxits);
+	MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false));
   
   //
   // **********Print out information about problem*******************

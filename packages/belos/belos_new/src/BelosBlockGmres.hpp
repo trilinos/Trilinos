@@ -55,6 +55,7 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "BelosConfigDefs.hpp"
 #include "BelosIterativeSolver.hpp"
@@ -62,6 +63,8 @@
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosMultiVecTraits.hpp"
+
+using Teuchos::ParameterList;
 
 /*!	
   \class Belos::BlockGmres
@@ -84,7 +87,8 @@ namespace Belos {
     BlockGmres(const RefCountPtr<LinearProblemManager<TYPE,OP,MV> > &lp, 
 	       const RefCountPtr<StatusTest<TYPE,OP,MV> > &stest,
                const RefCountPtr<OutputManager<TYPE> > &om,
-	       const int length=25);
+	       const RefCountPtr<ParameterList> &pl
+	       );
     
     //! %Belos::BlockGmres destructor.
     virtual ~BlockGmres();
@@ -160,9 +164,15 @@ namespace Belos {
 
     //! Reference to the output manager for this linear solver. [passed in by user]
     RefCountPtr<OutputManager<TYPE> > _om;
+    
+    //! Parameter list containing information for configuring the linear solver. [passed in by user]
+    RefCountPtr<ParameterList> _pl;
 
     //! Pointers to the Krylov basis constructed by the solver.
     RefCountPtr<MV> _basisvecs;
+
+    //! Pointers to the preconditioned Krylov basis constructed by the solver. [ used in Flexible GMRES ]
+    RefCountPtr<MV> _z_basisvecs;
 
     //! Pointers to the current right-hand side and solution multivecs being solved for.
     RefCountPtr<MV> _cur_block_rhs, _cur_block_sol;
@@ -179,6 +189,7 @@ namespace Belos {
     const int _length;
     int _blocksize;
     int _restartiter, _totaliter, _iter;
+    bool _flexible;
     TYPE _dep_tol, _blk_tol, _sing_tol;
 
     typedef MultiVecTraits<TYPE,MV>  MVT;
@@ -192,16 +203,18 @@ namespace Belos {
   BlockGmres<TYPE,OP,MV>::BlockGmres(const RefCountPtr<LinearProblemManager<TYPE,OP,MV> > &lp, 
 			       const RefCountPtr<StatusTest<TYPE,OP,MV> > &stest,
 			       const RefCountPtr<OutputManager<TYPE> >&om,
-			       const int length) : 
+			       const RefCountPtr<ParameterList> &pl) : 
     _lp(lp),
     _stest(stest),
     _om(om),
+    _pl(pl),
     _os(&om->GetOStream()),
-    _length(length), 
+    _length(_pl->get("Length", 25 )), 
     _blocksize(0), 
     _restartiter(0), 
     _totaliter(0),
-    _iter(0)
+    _iter(0),
+    _flexible( (_pl->isParameter("Variant"))&&(Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible") )
   {
     //
     // Set up the block orthogonality tolerances
@@ -261,11 +274,6 @@ namespace Belos {
       const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
       int i, m = _iter*_blocksize;
       Teuchos::BLAS<int,TYPE> blas;
-      int *index = new int[m]; assert(index!=NULL);
-      for ( i=0; i<m; i++ ) {   
-        index[i] = i;
-      }
-      RefCountPtr<const MV> Vjp1 = MVT::CloneView( MVT::c(*_basisvecs), index, m );
       //
       //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
       //
@@ -277,8 +285,18 @@ namespace Belos {
 	       Teuchos::NON_UNIT_DIAG, m, _blocksize, one,  
 	       _hessmatrix.values(), _hessmatrix.stride(), y.values(), y.stride() );
     
-      MVT::MvTimesMatAddMv( one, *Vjp1, y, one, *cur_sol_copy );
-    
+      int *index = new int[m]; assert(index!=NULL);
+      for ( i=0; i<m; i++ ) {   
+        index[i] = i;
+      }
+      if (_flexible) {
+	RefCountPtr<const MV> Zjp1 = MVT::CloneView( MVT::c(*_z_basisvecs), index, m );
+	MVT::MvTimesMatAddMv( one, *Zjp1, y, one, *cur_sol_copy );
+      }
+      else {
+	RefCountPtr<const MV> Vjp1 = MVT::CloneView( MVT::c(*_basisvecs), index, m );
+	MVT::MvTimesMatAddMv( one, *Vjp1, y, one, *cur_sol_copy );
+      }    
       if (index) delete [] index;
     }
     return cur_sol_copy;
@@ -322,6 +340,8 @@ namespace Belos {
       // Make room for the Arnoldi vectors and F.
       //
       _basisvecs = MVT::Clone(*_cur_block_rhs,(_length+1)*_blocksize);
+      if (_flexible)
+	_z_basisvecs = MVT::Clone(*_cur_block_rhs,(_length+1)*_blocksize);
       //
       // Create the rectangular Hessenberg matrix and right-hand side of least squares problem.
       //
@@ -435,19 +455,30 @@ namespace Belos {
 	// Update the solutions by solving the triangular system to get the Krylov weights.
 	//
         if (_iter) {
+	  //
+	  // Solve Least-Squares System.
 	  // Make a copy of _z since it may be used in the convergence test to compute native residuals.
+	  //
 	  Teuchos::SerialDenseMatrix<int,TYPE> _z_copy( Teuchos::Copy,_z, _iter*_blocksize, _blocksize );	
 	  blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		   Teuchos::NON_UNIT_DIAG, _iter*_blocksize, _blocksize, one,
 		   _hessmatrix.values(), _hessmatrix.stride(), _z_copy.values(), _z_copy.stride() ); 
-	  // Create view into current basis vectors.
-	  RefCountPtr<const MV> Vjp1 = MVT::CloneView(*_basisvecs, index, _iter*_blocksize);
-          RefCountPtr<MV> solnUpdate = MVT::Clone(*_cur_block_sol,_blocksize );
-	  MVT::MvTimesMatAddMv( one, *Vjp1, _z_copy, zero, *solnUpdate );
 	  //
-	  // Update the solution held by the linear problem.
-	  //	  
-	  _lp->SolutionUpdated( &*solnUpdate );
+	  // Update Solution.
+	  // 1)  For the flexible variant the solution will be updated directly,
+	  // otherwise the updated residual will be passed back to the linear problem.
+	  // 2)  Inform the linear problem that the solution was updated, pass updated residual if necessary.
+	  //
+	  if (_flexible) {
+	    RefCountPtr<const MV> Zjp1 = MVT::CloneView(*_z_basisvecs, index, _iter*_blocksize);
+	    MVT::MvTimesMatAddMv( one, *Zjp1, _z_copy, one, *_cur_block_sol );
+	    _lp->SolutionUpdated();
+	  } else {
+	    RefCountPtr<const MV> Vjp1 = MVT::CloneView(*_basisvecs, index, _iter*_blocksize);
+	    RefCountPtr<MV> solnUpdate = MVT::Clone(*_cur_block_sol,_blocksize );
+	    MVT::MvTimesMatAddMv( one, *Vjp1, _z_copy, zero, *solnUpdate );
+	    _lp->SolutionUpdated( &*solnUpdate );
+	  }
         }
 	if (_om->doOutput( 0 )) {
 	  if (exit_flg) {
@@ -507,7 +538,20 @@ namespace Belos {
     }
     RefCountPtr<MV> U_vec = MVT::CloneView(*_basisvecs, index, _blocksize);
     //
-    _lp->Apply( *U_vec, *AU_vec ); 
+    // If this is the flexible variant apply operator separately, else apply composite operator.
+    // 
+    if (_flexible) {
+      RefCountPtr<MV> Z_vec = MVT::CloneView(*_z_basisvecs, index, _blocksize);
+      //
+      //  Apply right preconditioning and store it in _z_basisvecs.
+      //
+      _lp->ApplyRightPrec( *U_vec, *Z_vec );
+      //
+      //  Apply operator and store it in AU_vec.
+      //
+      _lp->ApplyOp( *Z_vec, *AU_vec );
+    } else
+      _lp->Apply( *U_vec, *AU_vec ); 
     //
     bool dep = false;
     if (!dep_flg){

@@ -3,42 +3,36 @@
 # ------------------------------------------------------------------------
 
 # @HEADER
-# ************************************************************************
-# 
-#            Trilinos: An Object-Oriented Solver Framework
-#                 Copyright (2002,2003) Sandia Corporation
-# 
+# ***********************************************************************
 #
-# Copyright (2001,2002,2003) Sandia Corportation. Under the terms of Contract 
-# DE-AC04-94AL85000, there is a non-exclusive license for use of this 
-# work by or on behalf of the U.S. Government.  Export of this program
-# may require a license from the United States Government.
-# 
-# NOTICE:  The United States Government is granted for itself and others
-# acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
-# license in ths data to reproduce, prepare derivative works, and
-# perform publicly and display publicly.  Beginning five (5) years from
-# July 25, 2001, the United States Government is granted for itself and
-# others acting on its behalf a paid-up, nonexclusive, irrevocable
-# worldwide license in this data to reproduce, prepare derivative works,
-# distribute copies to the public, perform publicly and display
-# publicly, and to permit others to do so.
-# 
-# NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
-# OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
-# ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
-# RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
-# INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
-# THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
-# 
-# ************************************************************************
+#                 Belos: Block Linear Solvers Package
+#                 Copyright (2004) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+#
+# ***********************************************************************
 # @HEADER
 
 # ------------------------------------------------------------------------
 # Initialization 
 # ------------------------------------------------------------------------
-
-
 
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
@@ -77,8 +71,7 @@ AC_ARG_WITH(install,
    INSTALL_DATA="$withval -m 644"
  ],)
 
-# AM_MAINTAINER_MODE turns off maintainer-only makefile 
-targets by
+# AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
 # default, and changes configure to understand a
 # --enable-maintainer-mode option. --enable-maintainer-mode turns the
 # maintainer-only targets back on. The maintainer-only makefile
@@ -102,6 +95,12 @@ AM_INIT_AUTOMAKE(1.8.2)
 AC_PREREQ(2.59)
 
 # ------------------------------------------------------------------------
+# Check to see if MPI enabled and if any special configuration done
+# ------------------------------------------------------------------------
+
+TAC_ARG_CONFIG_MPI
+
+# ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
 
@@ -109,12 +108,6 @@ AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ gcc c++ cxx)
 AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
-
-# ------------------------------------------------------------------------
-# Check to see if MPI enabled and if any special configuration done
-# ------------------------------------------------------------------------
-
-TAC_ARG_CONFIG_MPI
 
 # ------------------------------------------------------------------------
 # Checks for extra flags
@@ -196,24 +189,27 @@ AC_CXX_STD_SPRINTF
 # Checks if tests should be built and which ones should be built
 # ------------------------------------------------------------------------
 
-TAC_ARG_CHECK_DEFAULT_FEATURE(epetra, EPETRA)
-AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno")
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( belos, tests, [Build Belos tests], BELOS_TESTS)
+AM_CONDITIONAL(BUILD_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno" ])
+
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+
 TAC_ARG_CHECK_DEFAULT_FEATURE(ifpack, IFPACK)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
-TAC_ARG_CHECK_DEFAULT_FEATURE(triutils, TRIUTILS)
-AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+
+#TAC_ARG_CHECK_DEFAULT_FEATURE(triutils, TRIUTILS)
+#TAC_ARG_ENABLE_FEATURE(triutils, [Build examples which use triutils], TRIUTILS, no)
+#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
 TAC_ARG_CHECK_FEATURE(tsfcore, TSFCORE)
 TAC_ARG_CHECK_FEATURE_SUB(tsfcore, epetra, TSFCORE_EPETRA)
-AM_CONDITIONAL(BUILD_TSFCORE_EPETRA, test "X$ac_cv_use_epetra" != "Xno" && 
-					test "X$ac_cv_use_tsfcore" != "Xno" &&
+AM_CONDITIONAL(BUILD_TSFCORE_EPETRA, test "X$ac_cv_use_tsfcore" != "Xno" &&
 					test "X$ac_cv_use_tsfcore_epetra" != "Xno")
 				
-#TAC_ARG_ENABLE_FEATURE_SUB( belos, tests, [Build belos tests], BELOS_TESTS, yes)
-#AM_CONDITIONAL(BUILD_BELOS_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno"])
-
-TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages], TESTS, yes)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( belos, tests, [Build Belos tests], BELOS_TESTS)
+AM_CONDITIONAL(BUILD_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno" ])
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -228,6 +224,10 @@ TAC_ARG_WITH_INCDIRS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+if test "X$ac_cv_use_belos_tests" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
@@ -236,6 +236,10 @@ AC_F77_WRAPPERS
 ### Belos requires both BLAS and LAPACK
 ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -301,6 +305,9 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile
+		test/scripts/Makefile
+		test/scripts/daily/Makefile
+		test/scripts/daily/serial/Makefile
 		])
 
 AC_OUTPUT()

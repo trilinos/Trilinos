@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
   //
   ParameterList My_PL;
   My_PL.set( "Length", length );
+  My_PL.set( "Variant", "Flexible" );
   //
   // *****Construct solution vector and random right-hand-sides *****
   //

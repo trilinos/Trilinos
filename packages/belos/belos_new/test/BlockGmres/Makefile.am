@@ -5,15 +5,15 @@ EXEEXT = .exe
 
 #if BUILD_TRIUTILS
 if BUILD_IFPACK
-BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb
+BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
 endif
 if BUILD_TSFCORE_EPETRA
 BELOS_BGMRES_TSFCORE_EX = bl_gmres_tsfcore 
 if BUILD_IFPACK
-BELOS_BGMRES_TSFCORE_IFPACK_EX = bl_pgmres_tsfcore
+BELOS_BGMRES_TSFCORE_IFPACK_EX = bl_pgmres_tsfcore bl_fgmres_tsfcore
 endif
 endif
-BELOS_BGMRES_HB_EX = bl_gmres_hb 
+BELOS_BGMRES_HB_EX = bl_gmres_hb
 #endif
 
 noinst_PROGRAMS = $(BELOS_BGMRES_HB_EX) $(BELOS_BGMRES_IFPACK_EX) $(BELOS_BGMRES_TSFCORE_IFPACK_EX) $(BELOS_BGMRES_TSFCORE_EX) Dummy
@@ -26,15 +26,24 @@ Dummy_SOURCES = Dummy
 
 bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
+bl_fgmres_hb_SOURCES = $(srcdir)/test_bl_fgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
+
 bl_gmres_hb_SOURCES = $(srcdir)/test_bl_gmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
 bl_gmres_tsfcore_SOURCES = $(srcdir)/test_bl_gmres_tsfcore.cpp $(srcdir)/createEpetraProblem.cpp
 
 bl_pgmres_tsfcore_SOURCES = $(srcdir)/test_bl_pgmres_tsfcore.cpp $(srcdir)/createEpetraProblem.cpp
 
+bl_fgmres_tsfcore_SOURCES = $(srcdir)/test_bl_fgmres_tsfcore.cpp $(srcdir)/createEpetraProblem.cpp
+
 # Dependancies
 
 bl_pgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../ifpack/src/libifpack.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a			
+
+bl_fgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../ifpack/src/libifpack.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a			
@@ -50,6 +59,13 @@ bl_gmres_tsfcore_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 bl_pgmres_tsfcore_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a \
+			$(top_builddir)/../TSFCore/src/libTSFCore.a \
+			$(top_builddir)/../ifpack/src/libifpack.a \
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
+
+bl_fgmres_tsfcore_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a \
 			$(top_builddir)/../TSFCore/src/libTSFCore.a \
 			$(top_builddir)/../ifpack/src/libifpack.a \
@@ -84,11 +100,15 @@ endif
 
 bl_pgmres_hb_CXXFLAGS = $(common_include_paths)
 
+bl_fgmres_hb_CXXFLAGS = $(common_include_paths)
+
 bl_gmres_hb_CXXFLAGS = $(common_include_paths)
 
 bl_gmres_tsfcore_CXXFLAGS = $(common_include_paths)
 
 bl_pgmres_tsfcore_CXXFLAGS = $(common_include_paths)
+
+bl_fgmres_tsfcore_CXXFLAGS = $(common_include_paths)
 
 # Libraries
 
@@ -109,10 +129,14 @@ common_libraries += $(top_builddir)/../epetra/src/libepetra.a \
 
 bl_pgmres_hb_LDADD = $(common_libraries)
 
+bl_fgmres_hb_LDADD = $(common_libraries)
+
 bl_gmres_hb_LDADD = $(common_libraries)
 
 bl_gmres_tsfcore_LDADD = $(common_libraries)
 
 bl_pgmres_tsfcore_LDADD = $(common_libraries)
+
+bl_fgmres_tsfcore_LDADD = $(common_libraries)
 
 #
