@@ -434,9 +434,9 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 	   Bval_ptr = &(Bvals[jj]);
 	   Bcol_ptr = &(Bcols[jj]);
 	   while (jj++ < Bptr[*A_i_cols+1]) {
-	     *acc_col_ptr++ =  *Bcol_ptr;
-	     *acc_val_ptr++ = multiplier*(*Bval_ptr++);
-	     accum_index[*Bcol_ptr++] = Ncols++;
+	     *acc_col_ptr =  *Bcol_ptr; acc_col_ptr++;
+	     *acc_val_ptr = multiplier*(*Bval_ptr); acc_val_ptr++; Bval_ptr++;
+	     accum_index[*Bcol_ptr] = Ncols++; Bcol_ptr++;
 	   }
 	 }
       }
@@ -448,11 +448,14 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 	  Bcol_ptr = &(Bcols[jj]);
 	  while (jj++ < Bptr[A_i_cols[k]+1]) {
 	    if (accum_index[*Bcol_ptr] < 0) {
-	      *acc_col_ptr++ = *Bcol_ptr;
-	      *acc_val_ptr++ = multiplier*(*Bval_ptr++);
-	      accum_index[*Bcol_ptr++] = Ncols++;
+	      *acc_col_ptr = *Bcol_ptr; acc_col_ptr++;
+	      *acc_val_ptr = multiplier*(*Bval_ptr); acc_val_ptr++; Bval_ptr++;
+	      accum_index[*Bcol_ptr] = Ncols++; Bcol_ptr++;
 	    }
-	    else accum_val[accum_index[*Bcol_ptr++]] += multiplier*(*Bval_ptr++);
+	    else {
+	      accum_val[accum_index[*Bcol_ptr]] += multiplier*(*Bval_ptr);
+	      Bcol_ptr++; Bval_ptr++;
+	    }
 	  }
 	}
       }
@@ -461,7 +464,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 	jj = Bptr[A_i_cols[k]];
 	Bcol_ptr = &(Bcols[jj]);
 	while (jj++ < Bptr[A_i_cols[k]+1]) {
-	    *acc_col_ptr++ = *Bcol_ptr;
+	  *acc_col_ptr = *Bcol_ptr;  acc_col_ptr++;
 	     accum_index[*Bcol_ptr++] = Ncols++;
 	}
       }
@@ -493,7 +496,8 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
       acc_col_ptr = accum_col;
       for (jj = 0; jj < Ncols; jj++ ) {
 	accum_index[*acc_col_ptr] = -1;
-	*acc_col_ptr++ = col_inds[*acc_col_ptr];
+	*acc_col_ptr = col_inds[*acc_col_ptr];
+	*acc_col_ptr++;
       }
 
       /* empty row. Let's just put a zero in the first column */
