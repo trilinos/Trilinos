@@ -117,8 +117,8 @@ extern "C" {
 #endif
 extern int ML_Create(ML **ml, int Nlevels);
 extern int ML_Set_OutputLevel(ML *ml, int output_level);
-extern int ML_Set_PrintLevel();
-extern int ML_Get_PrintLevel();
+extern int ML_Set_PrintLevel(int);
+extern int ML_Get_PrintLevel(void);
 extern int ML_Set_ResidualOutputFrequency(ML *ml, int output_freq);
 extern int ML_Set_Tolerance(ML *ml, double tolerance);
 extern int ML_Set_MaxIterations(ML *ml, int iterations);
@@ -205,7 +205,9 @@ extern int ML_Gen_Smoother_Jacobi( ML *, int nl, int pre_or_post,
                      int ntimes, double omega );
 extern int ML_Gen_Smoother_GaussSeidel(ML*,int nl,int pre_post,int ntimes,double);
 extern int ML_Gen_Smoother_Hiptmair(ML*,int nl,int pre_post,int ntimes,
-                     double, ML_Operator**, ML_Operator**, ML_Operator*); 
+                     ML_Operator**, ML_Operator**, ML_Operator*,
+				    void *, void **,
+				    void *, void **);
 extern int ML_Gen_Smoother_SymGaussSeidel(ML*,int nl,int pre_post,int ntimes, 
 		     double omega);
 extern int ML_Gen_Smoother_SymGaussSeidelSequential(ML*,int nl,int pre_post,

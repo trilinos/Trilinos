@@ -216,7 +216,7 @@ int ML_Set_OutputLevel(ML *ml, int output_level)
 /* Get print output level.                                                   */
 /* ------------------------------------------------------------------------- */
 
-int ML_Get_PrintLevel()
+int ML_Get_PrintLevel(void)
 {
   return(ML_PrintLevel.output_level);
 }
@@ -1763,14 +1763,16 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    * Returns: 0 on success.
    */
    const int    nSample=20000;
-   double       sample[20000], gridStep, rho, rho2, ddeg, aux0, aux1; 
-   double       aux_om, om_loc[MLS_MAX_DEG], coord;
+   double       gridStep, rho, rho2, ddeg, aux0, aux1; 
+   double       aux_om, om_loc[MLS_MAX_DEG], coord, samplej;
    const double pi=4.e0 * atan(1.e0); /* 3.141592653589793115998e0; */
    int          i, j, nGrid;
    int          j_max;
    double       x_max;
    ML_Krylov   *kdata;
+#ifdef SYMMETRIZE
    ML_Operator *t3;
+#endif
 
    ML_Smoother *smooth_ptr = (ML_Smoother *) sm;
    ML_Operator *Amat = smooth_ptr->my_level->Amat;
@@ -1833,19 +1835,19 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    gridStep = rho/(double)nSample;
    nGrid    = ML_min((int)rint(rho/gridStep)+1, nSample);
 
-   for (j=0; j<nGrid; j++)  {
-	   coord   = (double)(j+1) * gridStep;
-           sample[j] = 1.e0 - om_loc[0] * coord;
-	   for(i=1; i<deg; i++) { 
-		   sample[j] *= sample[j] * coord;
-	   }
-	   sample[j] *= sample[j] * coord; 
-   }
    rho2  = 0.e0;
    j_max = 0;
    x_max = 0.e0;
+   for (j=0; j<nGrid; j++)  {
+	   coord   = (double)(j+1) * gridStep;
+           samplej = 1.e0 - om_loc[0] * coord;
+	   for(i=1; i<deg; i++) { 
+		   samplej *= samplej * coord;
+	   }
+	   samplej *= samplej * coord; 
+if (samplej > rho2) {rho2 = samplej; j_max = j;}
+   }
 
-   for (j=0; j<nGrid; j++) if (sample[j] > rho2) {rho2 = sample[j]; j_max = j;}
    
    x_max = (double)j_max * gridStep;
 
@@ -4699,8 +4701,16 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 /* ------------------------------------------------------------------------- */
 
 int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
-			      double omega, ML_Operator **Tmat_array, ML_Operator
-				  **Tmat_trans_array, ML_Operator *Tmat_bc)
+			      ML_Operator **Tmat_array, 
+			      ML_Operator **Tmat_trans_array, 
+			      ML_Operator *Tmat_bc, 
+			      void *edge_smoother, void *edge_args[],
+			      void *nodal_smoother, void *nodal_args[])
+     /*
+			      int (*edge_smoother )(void), void *edge_args[],
+			      int (*nodal_smoother)(void), void *nodal_args[])
+     */
+
 {
    ML_Sm_Hiptmair_Data *data;
    int (*fun)(void *, int, double *, int, double *);
@@ -4738,11 +4748,12 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          ML_Smoother_Create_Hiptmair_Data(&data);
 	     ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-                      BClength, BClist, omega);
+                      BClength, BClist, 
+edge_smoother, edge_args, nodal_smoother, nodal_args );
 	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
-				      (void *) data, fun, NULL, ntimes, omega, str);
+				      (void *) data, fun, NULL, ntimes, 1.0, str);
          BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
@@ -4757,7 +4768,7 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 	  {
              sprintf(str,"Hiptmair_post%d",i);
              status = ML_Smoother_Set(&(ml->post_smoother[i]),ML_INTERNAL,
-				      (void *) data, fun, NULL, ntimes, omega, str);
+				      (void *) data, fun, NULL, ntimes, 1.0, str);
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->post_smoother[i].build_time;
@@ -4777,15 +4788,16 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          ML_Smoother_Create_Hiptmair_Data(&data);
 	     ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-                      BClength, BClist, omega);
+					   BClength, BClist, 
+edge_smoother, edge_args, nodal_smoother, nodal_args );
 	     ml->post_smoother[i].data_destroy =
 			                            ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
-				      (void *) data, fun, NULL, ntimes, omega, str);
+				      (void *) data, fun, NULL, ntimes, 1.0, str);
          sprintf(str,"Hiptmair_post%d",i);
          status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
-				      (void *) data, fun, NULL, ntimes, omega, str);
+				      (void *) data, fun, NULL, ntimes, 1.0, str);
          BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
