@@ -58,10 +58,15 @@ Repart* - Incremental algorithms with small migration cost</LI>
 Refine* - Refines a given partitioning (balance).&nbsp; Can be applied
 multiple times to reduce the communication cost (cut weight) if desired.</LI>
 </OL>
-&nbsp;As a general rule, use one of the Part* methods if you have a poor
-initial balance and you are willing to spend some time doing migration.
-Use the Repart* methods when you have a reasonably good load balance that
-you wish to update incrementally (for example, in adaptive mesh refinement).
+As a rule of thumb, use one of the Part* methods if you have a poor initial
+balance and you are willing to spend some time doing migration. Use the
+Repart* methods when you have a reasonably good load balance that you wish
+to update incrementally (for example, in adaptive mesh refinement).
+<BR>&nbsp;
+<BR>The current version ignores the tolerance parameter. We expect that
+future versions of ParMETIS will allow the user to select the tolerance
+for load imbalance. When this feature&nbsp;&nbsp; becomes available in
+ParMETIS, it will also be supported through Zoltan.
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >
 <TR>
@@ -79,7 +84,7 @@ you wish to update incrementally (for example, in adaptive mesh refinement).
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; PARMETIS_METHOD</I></TD>
 
-<TD>The ParMETIS method to be used.; currently 8 are available.&nbsp;
+<TD>The ParMETIS method to be used.; currently eight are available.&nbsp;
 <BR><I>PartKway</I> - multilevel Kernighan-Lin partitioning&nbsp;
 <BR><I>PartGeom</I> - space filling curves (coordinate based)&nbsp;
 <BR><I>PartGeomKway</I> - hybrid method based on PartKway and PartGeom
@@ -98,7 +103,7 @@ refinement&nbsp;
 
 <TD>Amount of output the load-balancing algorithm should produce.&nbsp;
 <BR>0 = no output, 1 = print timing info. Turning on more bits displays
-more information (for example, 3 = 1&amp;2, 5=1&amp;4, 7=1&amp;2&amp;4).</TD>
+more information (for example, 3=1+2, 5=1+4, 6=2+4).</TD>
 </TR>
 
 <TR NOSAVE>
@@ -126,7 +131,7 @@ multidimensional weights (not yet supported by ParMetis)</TD>
 <TR>
 <TD>&nbsp;&nbsp;&nbsp; <I>PARMETIS_FOLD</I></TD>
 
-<TD>Folding parameter for PartKway, for expert users only.</TD>
+<TD>Folding parameter for PartKway (for expert ParMETIS users only).</TD>
 </TR>
 
 <TR>
@@ -192,7 +197,7 @@ pair</TD>
 </TR>
 
 <TR>
-<TD>Only PartGeom/PartGeomKway:</TD>
+<TD>Only PartGeom &amp; PartGeomKway:</TD>
 
 <TD><B><A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</A></B></TD>
 </TR>
