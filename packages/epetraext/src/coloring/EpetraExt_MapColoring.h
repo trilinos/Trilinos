@@ -48,7 +48,7 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
 
  public:
 
-  enum ColoringAlgorithm{ ALGO_GREEDY, ALGO_LUBI };
+  enum ColoringAlgorithm{ GREEDY, LUBY, JONES_PLASSMAN, PSEUDO_PARALLEL  };
 
   ///
   /** Destructor
@@ -58,20 +58,14 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
   ///
   /** Constructor
    */
-  CrsGraph_MapColoring( ColoringAlgorithm algo = ALGO_GREEDY,
-                        bool verbose = false,
+  CrsGraph_MapColoring( ColoringAlgorithm algo = GREEDY,
                         int reordering = 0,
-		        bool colorParallel = false,
-                        bool serialBoundaryColoring = true,
-                        int verbosityLevel = 0,
-                        bool distance1 = false )
-  : verbose_(verbose),
-    algo_(algo),
+                        bool distance1 = false,
+                        int verbosity = 0 )
+  : algo_(algo),
     reordering_(reordering),
-    colorParallel_(colorParallel),
-    SerialBoundaryColoring_(serialBoundaryColoring),
-    verbosityLevel_(verbosityLevel),
-    distance1_(distance1)
+    distance1_(distance1),
+    verbosity_(verbosity)
   {}
 
   ///
@@ -81,18 +75,13 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
 
  private:
 
-  const bool verbose_;
 
   const ColoringAlgorithm algo_;
 
   const int reordering_;
-  const bool colorParallel_;
-
-  const bool SerialBoundaryColoring_;
-
-  const int verbosityLevel_;
-
   const bool distance1_;
+
+  const int verbosity_;
 
 };
 
