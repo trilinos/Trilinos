@@ -99,22 +99,25 @@ foreach f ( Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwel
          echo "[TestExamples]" >>& ../$file
          echo "[TestExamples] Testing file >>" $g "<<" >>& ../$file
          if( "$2" == "True" ) then
-           # forget the output now. run with 2 processors
-           mpirun -np 2 ./$g >>& /dev/null
+           # forget the output now. run with 1 processor
+#           mpirun -np 2 ./$g >>& /dev/null
+           ./$g >>& /dev/null
            if( $status != 0 ) then
              # A test failed.
              set AnError = True
-             echo "[TestExamples] ERROR: Test w/ 2 proc failed!!" >>& ../$file
+             echo "[TestExamples] ERROR: Test w/ 1 proc failed!!" >>& ../$file
              echo "[TestExamples] ERROR: now re-running with output" >>& ../$file
-             mpirun -np 2 ./$g >>& ../$file
+#             mpirun -np 2 ./$g >>& ../$file
+             ./$g >>& ../$file
              echo "[TestExamples] Errors for script " $g " are listed above." >>& ../$file2
            else
              # Tests passed
-             echo "[TestExamples] Test w/ 2 proc passed" >>& ../$file
+             echo "[TestExamples] Test w/ 1 proc passed" >>& ../$file
            endif
         else
            # This is not an automated test.
-           mpirun -np 2 ./$g >>& ../$file
+#           mpirun -np 2 ./$g >>& ../$file
+           ./$g >>& ../$file
         endif
       endif
     end
