@@ -70,7 +70,7 @@ ostream& MaxIters::print(ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
-  stream << "Number of Iterations: " << niters << " < " << maxiters;
+  stream << "Number of Iterations = " << niters << " < " << maxiters;
   stream << endl;
  return stream;
 }
