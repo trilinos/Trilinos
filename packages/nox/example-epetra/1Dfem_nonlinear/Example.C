@@ -139,8 +139,6 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Output Frequency", 50);    
-  lsParams.setParameter("Scaling", "None");             
-  //lsParams.setParameter("Scaling", "Row Sum");          
   //lsParams.setParameter("Preconditioning", "None");   
   lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
@@ -157,7 +155,7 @@ int main(int argc, char *argv[])
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
-  // NLS_PetraGroupInterface
+  // NOX_Epetra_Interface
   Problem_Interface interface(Problem);
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
@@ -175,6 +173,12 @@ int main(int argc, char *argv[])
   NOX::Epetra::Group grp(printParams, lsParams, interface, soln, A); 
   //NOX::Epetra::Group grp(lsParams, interface, soln, A, Prec); 
   grp.computeF();
+
+  // Use an Epetra Scaling object if desired
+  Epetra_Vector scaleVec(soln);
+  NOX::Epetra::Scaling scaling;
+  scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
+  //grp.setLinearSolveScaling(scaling);
 
   // Create the convergence tests
   NOX::StatusTest::NormF absresid(1.0e-8);
