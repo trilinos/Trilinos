@@ -78,19 +78,8 @@ AztecOO::AztecOO(const Epetra_LinearProblem& prob) {
   inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   AllocAzArrays();
   SetAztecDefaults();
+  SetProblem(prob);
 
-  Problem_ = (Epetra_LinearProblem *) &prob; // Record this object for later access if needed
-  // Try to cast operator to matrix 
-  Epetra_RowMatrix * UserMatrix = dynamic_cast<Epetra_RowMatrix *>(prob.GetOperator());
-  if (UserMatrix!=0) 
-    SetUserMatrix(UserMatrix);
-  else
-    SetUserOperator(prob.GetOperator());
-  
-  SetLHS(prob.GetLHS());
-  SetRHS(prob.GetRHS());
-
-  SetProblemOptions(prob.GetPDL(), prob.IsOperatorSymmetric());
   inConstructor_ = false;
 }
 
@@ -203,6 +192,9 @@ int AztecOO::SetProblem(const Epetra_LinearProblem& prob) {
 
   inConstructor_ = true;  // Shut down complaints about zero pointers for a while
                           //  Although this routine is not a constructor, we treat it like one
+  
+  // Retain old problem (if any)
+  Epetra_LinearProblem * OldProblem = Problem_;
 
   Problem_ = (Epetra_LinearProblem *) &prob; // Record this object for later access if needed
 
@@ -216,8 +208,15 @@ int AztecOO::SetProblem(const Epetra_LinearProblem& prob) {
   SetLHS(prob.GetLHS());
   SetRHS(prob.GetRHS());
 
-  SetProblemOptions(prob.GetPDL(), prob.IsOperatorSymmetric());
-
+  // Set PDL and symmetry the first time the problem is set
+  if (OldProblem==0) SetProblemOptions(prob.GetPDL(), prob.IsOperatorSymmetric());
+  else if (OldProblem!=Problem_) {
+    if (OldProblem->GetPDL()!=Problem_->GetPDL() || 
+	OldProblem->IsOperatorSymmetric()!=Problem_->IsOperatorSymmetric()) {
+      EPETRA_CHK_ERR(1); // Warn that the PDL and Symmetry will not be reset
+    }
+  }
+    
   inConstructor_ = false;  // Turn back on
 
   return(0);
