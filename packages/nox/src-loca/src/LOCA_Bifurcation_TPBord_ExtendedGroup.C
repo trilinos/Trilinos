@@ -74,7 +74,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
 
   if (!bifParamList.isParameter("Initial Null Vector")) {
     LOCA::ErrorCheck::throwError(func,
-			   "\"Initial Null Vector\" is not set!");
+				 "\"Initial Null Vector\" is not set!");
   }
   const NOX::Abstract::Vector* nullVecPtr = 
     bifParamList.getAnyConstPtrParameter<NOX::Abstract::Vector>("Initial Null Vector");
