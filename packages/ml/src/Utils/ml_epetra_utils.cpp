@@ -21,9 +21,9 @@ int Epetra_ML_matvec(void *data, int in, double *p, int out, double *ap)
 {
   /* ML matvec wrapper for Epetra matrices. */
 
-  Epetra_CrsMatrix *A = (Epetra_CrsMatrix *) data;
-  Epetra_Vector X(View, A->DomainMap(), p);
-  Epetra_Vector Y(View, A->RangeMap(), ap);
+  Epetra_RowMatrix *A = (Epetra_RowMatrix *) data;
+  Epetra_Vector X(View, A->RowMatrixRowMap(), p);
+  Epetra_Vector Y(View, A->RowMatrixColMap(), ap);
   
   A->Multiply(false, X, Y);
   
@@ -37,7 +37,7 @@ int Epetra_ML_getrow(void *data, int N_requested_rows, int requested_rows[],
 		    int row_lengths[])
 {
 /*
- * GetRow function for matrix of type Epetra_CrsMatrix.
+ * GetRow function for matrix of type Epetra_RowMatrix.
  * Supply local matrix (without ghost node columns) for rows given by
  * requested_rows[0 ... N_requested_rows-1].  Return this information in
  * 'row_lengths, columns, values'.  If there is not enough space to complete
@@ -61,17 +61,22 @@ int Epetra_ML_getrow(void *data, int N_requested_rows, int requested_rows[],
  *                  'values' for storing nonzeros. If more space is needed,
  *                  return 0.
  */
-  Epetra_CrsMatrix  *A = (Epetra_CrsMatrix *) data;
+  Epetra_RowMatrix  *A = (Epetra_RowMatrix *) data;
   int nz_ptr = 0;
   int NumRows = A->NumMyRows();
   int NumEntries;
   double *Values;
   int *Indices;
 
+  // An estimate of max number of nonzero's per row is needed
+  // this is a temporary fix
+  Values = new double [100]; 
+  Indices = new int [100]; 
+
   for (int i = 0; i < N_requested_rows; i++)
   {
     int LocalRow = requested_rows[i];
-    int ierr = A->ExtractMyRowView(LocalRow, NumEntries, Values, Indices);
+    int ierr = A->ExtractMyRowCopy(LocalRow, 100, NumEntries, Values, Indices);
     if (ierr) return(1);
     row_lengths[i] = NumEntries;
     if (nz_ptr + NumEntries > allocated_space) return(0);
@@ -105,21 +110,21 @@ int Epetra_ML_comm_wrapper(double vec[], void *data)
  */
 
 
-  Epetra_CrsMatrix *A = (Epetra_CrsMatrix *) data;
+  Epetra_RowMatrix *A = (Epetra_RowMatrix *) data;
 
   if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode.
 
-  Epetra_Vector X_target(View, A->Importer()->TargetMap(), vec); //ghosted
-  Epetra_Vector X_source(View, A->Importer()->SourceMap(), vec); //loc only
+  Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(), vec); //ghosted
+  Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(), vec); //loc only
 
-  assert(X_target.Import(X_source, *(A->Importer()),Insert)==0);
+  assert(X_target.Import(X_source, *(A->RowMatrixImporter()),Insert)==0);
 
   return(1);
 }
 /******************************************************************************/
 
 int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
-                         Epetra_CrsMatrix * A)
+                         Epetra_RowMatrix * A)
 {
   int isize, osize;
 

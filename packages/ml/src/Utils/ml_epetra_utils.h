@@ -33,6 +33,6 @@ extern "C" int Epetra_ML_getrow(void *data, int N_requested_rows,
 extern "C" int Epetra_ML_comm_wrapper(double vec[], void *data);
 
 extern "C" int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
-                                Epetra_CrsMatrix * Amat);
+                                Epetra_RowMatrix * Amat);
 
 #endif /* _ML_EPETRA_UTILS_H_ */
