@@ -1,4 +1,4 @@
-#!/bin/csh 
+#!/bin/csh
 ##############################################################################
 # Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
 # Copyright (c) 2000, Sandia National Laboratories.                          #
@@ -80,10 +80,10 @@ while ( $#argv )
      @ yes_fortran = 1
      @ no_nemesis = 1
      set out_tag = fout
-  else if ( "$1" == "-logfile" ) then
+  else if ( "$1" == "-logfile" || "$1" == "-log" ) then
   
     if ( $#argv < 2 ) then
-      echo "Error: No argument for -logfile"
+      echo "Error: No argument for $1"
       goto usage
     endif
     
@@ -109,6 +109,15 @@ while ( $#argv )
     shift argv
     set run = "$1"
   
+  else if ( "$1" == "-exe" ) then
+    if ( $#argv < 2 ) then
+      echo "Error: No argument for -exe"
+      goto usage
+    endif
+    
+    shift argv
+    set zdrive = "$1"
+  
   endif
   
   shift argv
@@ -127,14 +136,16 @@ if (! $?run ) then
       breaksw
     case smos:
     case tflop:
-    case cplant:
       set run = "yod -proc 3 -sz"
+      breaksw
+    case cplant:
+      set run = "yod -sz"
       breaksw
     case dec:
       set run = "dmpirun -np"
       breaksw
     default:
-      echo "Unknown arch-type. Please use -cmd to specify the run command."
+      echo "Unknown arch type. Please use -cmd to specify the run command."
       exit -2
       breaksw
     endsw
@@ -145,35 +156,47 @@ if (! $?run ) then
 endif
   
 
-# Check if we have zdrive
+# Find the right zdrive to run
+@ found = 0
 if ( $yes_fortran ) then
 # Using F90 
-  if ( $?arch ) then
-    set zdrive = zfdrive.$arch
-  else
+  if (! $?zdrive ) then
     set zdrive = zfdrive
   endif
-  if (! -x $zdrive ) then
-    echo " No executable $zdrive in current directory;"
-    echo " Will try using ../Obj_"$arch"/zfdrive"
-    set zdrive = ../Obj_$arch/zfdrive
+  if ( $?arch ) then
+    set zdrives = ( $zdrive ../Obj_${arch}/zfdrive )
+  else
+    set zdrives = $zdrive
   endif
+  foreach zdrive ($zdrives)
+    if ( -x $zdrive ) then
+      echo "Found zdrive = $zdrive "
+      @ found = 1
+      break
+    endif
+  end
 else
 # Using C
-  if ( $?arch ) then
-    set zdrive = zdrive.$arch
-  else
+  if (! $?zdrive ) then
     set zdrive = zdrive
   endif
-  if (! -x $zdrive ) then
-    echo " No executable $zdrive in current directory;"
-    echo " Will try using ../Obj_"$arch"/zdrive"
-    set zdrive = ../Obj_$arch/zdrive
+  if ( $?arch ) then
+    set zdrives = ( $zdrive ../Obj_${arch}/zdrive )
+  else
+    set zdrives = $zdrive
   endif
+  foreach zdrive ($zdrives)
+    if ( -x $zdrive ) then
+      echo "Found zdrive = $zdrive "
+      @ found = 1
+      break
+    endif
+  end
 endif
-if (! -x $zdrive ) then
-  echo "Error Cannot find executable $zdrive"
-  exit 3
+
+if (! $found) then
+  echo "Error: Could not find zdrive executable"
+  exit -3
 endif
 
 # Methods to try
@@ -410,6 +433,7 @@ usage:
   echo "program with the -cmd option."
   echo "Other options:"
   echo "   -logfile filename"
+  echo "   -exe filename"
   echo "   -no_parmetis"
   echo "   -no_nemesis"
   echo "   -no_chaco"
