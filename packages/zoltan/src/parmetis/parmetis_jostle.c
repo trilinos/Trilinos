@@ -21,7 +21,6 @@
 #include "params_const.h"
 #include "timer_const.h"
 
-/* #define LB_DEBUG      Turn on debug print statements? */
 
 /**********  parameters structure for parmetis methods **********/
 static PARAM_VARS Parmetis_params[] = {
@@ -223,6 +222,8 @@ int LB_Jostle(
 /* Macro to free all allocated memory */
 #define FREE_MY_MEMORY \
   { \
+  fprintf(stderr, "[%1d] Error on line %d in %s\n", \
+          lb->Proc, __LINE__, __FILE__); \
   LB_FREE(&vtxdist); LB_FREE(&xadj); LB_FREE(&adjncy); \
   LB_FREE(&vwgt); LB_FREE(&adjwgt); LB_FREE(&part); \
   LB_FREE(&float_vwgt); LB_FREE(&xyz); \
@@ -268,11 +269,9 @@ static int LB_ParMetis_Jostle(
   int proc = lb->Proc;             /* passed to Jostle and ParMETIS.  Don't   */
   MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
                                    /* change our lb struct.                   */
+  int i99, *p99;                   /* Variables used for debugging.           */
 
-#ifdef LB_DEBUG
-  int i99, *p99;
-  printf("[%1d] Debug: Entering %s\n", lb->Proc, yo);
-#endif
+  LB_TRACE_ENTER(lb, yo);
 
   /* Set default return values (in case of early exit) */
   *num_exp = 0;
@@ -290,12 +289,12 @@ static int LB_ParMetis_Jostle(
   sendbuf = recvbuf = NULL;
   plist = NULL;
 
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: alg=%s, Obj_Weight_Dim=%d, Comm_Weight_Dim=%d\n", lb->Proc, 
-      alg, lb->Obj_Weight_Dim, lb->Comm_Weight_Dim);
+  if (lb->Debug_Level >= LB_DEBUG_ALL) {
+    printf("[%1d] Debug: alg=%s, Obj_Weight_Dim=%d, Comm_Weight_Dim=%d\n", 
+      lb->Proc, alg, lb->Obj_Weight_Dim, lb->Comm_Weight_Dim);
     printf("[%1d] Debug: ParMetis options = %d, %d, %d, %d\n", lb->Proc,
       options[0], options[1], options[2], options[3]);
-#endif
+  }
 
   /* Start timer */
   get_times = (options[OPTION_DBGLVL]>0);
@@ -322,14 +321,13 @@ static int LB_ParMetis_Jostle(
   num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   if (ierr){
     /* Return error code */
-    printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
     FREE_MY_MEMORY;
+    LB_TRACE_EXIT(lb, yo);
     return (ierr);
   }
   
-#ifdef LB_DEBUG
+  if (lb->Debug_Level >= LB_DEBUG_ALL)
     printf("[%1d] Debug: num_obj =%d\n", lb->Proc, num_obj);
-#endif
   
   vtxdist = (idxtype *)LB_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
   if (num_obj>0){
@@ -343,23 +341,23 @@ static int LB_ParMetis_Jostle(
     }
     if (!vtxdist || !global_ids || !local_ids || (lb->Obj_Weight_Dim && !float_vwgt)){
       /* Not enough memory */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
     LB_Get_Obj_List(lb, global_ids, local_ids, lb->Obj_Weight_Dim, float_vwgt, &ierr);
     if (ierr){
       /* Return error */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_FATAL;
     }
   
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: Global ids = ", lb->Proc);
-    for (i99=0; i99<num_obj; i99++) printf("%d ", global_ids[i99]);
-    printf("\n");
-#endif
+    if (lb->Debug_Level >= LB_DEBUG_ALL) {
+      printf("[%1d] Debug: Global ids = ", lb->Proc);
+      for (i99=0; i99<num_obj; i99++) printf("%d ", global_ids[i99]);
+      printf("\n");
+    }
   }
   
   /* Construct vtxdist[i] = the number of objects on all procs < i. */
@@ -370,12 +368,12 @@ static int LB_ParMetis_Jostle(
                  &vtxdist[1], 1, IDX_DATATYPE, lb->Communicator);
   vtxdist[0] = 0;
   
-#ifdef LB_DEBUG
-  printf("[%1d] Debug: vtxdist = ", lb->Proc);
-  for (i99=0; i99<=lb->Num_Proc; i99++)
-    printf("%d ", vtxdist[i99]);
-  printf("\n");
-#endif
+  if (lb->Debug_Level >= LB_DEBUG_ALL) {
+    printf("[%1d] Debug: vtxdist = ", lb->Proc);
+    for (i99=0; i99<=lb->Num_Proc; i99++)
+      printf("%d ", vtxdist[i99]);
+    printf("\n");
+  }
   
   if (get_graph_data){
 
@@ -386,16 +384,15 @@ static int LB_ParMetis_Jostle(
                local_ids[i], &ierr);
       if (ierr){
         /* Return error */
-        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
         FREE_MY_MEMORY;
+        LB_TRACE_EXIT(lb, yo);
         return (ierr);
       }
       num_edges += nedges;
       if (nedges>max_edges) max_edges = nedges;
     }
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: num_edges = %d\n", lb->Proc, num_edges);
-#endif
+    if (lb->Debug_Level >= LB_DEBUG_ALL)
+      printf("[%1d] Debug: num_edges = %d\n", lb->Proc, num_edges);
   
     /* Allocate space for ParMETIS data structs */
     xadj   = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
@@ -406,13 +403,12 @@ static int LB_ParMetis_Jostle(
   
     if (!xadj || !adjncy || (num_edges && lb->Comm_Weight_Dim && !adjwgt)){
       /* Not enough memory */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: Successfully allocated ParMetis space\n", lb->Proc);
-#endif
+    if (lb->Debug_Level >= LB_DEBUG_ALL)
+      printf("[%1d] Debug: Successfully allocated ParMetis space\n", lb->Proc);
   
     /* Construct ParMETIS graph */
     /* First compute a global dense numbering of the objects/vertices */
@@ -424,8 +420,8 @@ static int LB_ParMetis_Jostle(
       sizeof(struct LB_hash_node *) );
     if (num_obj && ((!hash_nodes) || (!hashtab))){
       /* Not enough memory */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
     
@@ -463,8 +459,8 @@ static int LB_ParMetis_Jostle(
     if ((max_edges && ((!nbors_global) || (!nbors_proc))) || 
         (!proc_list) || (!plist)){
       /* Not enough memory */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
     for (i=0; i<lb->Num_Proc; i++)
@@ -498,15 +494,16 @@ static int LB_ParMetis_Jostle(
           nbors_global, nbors_proc, lb->Comm_Weight_Dim, adjwgt, &ierr);
       if (ierr){
         /* Return error */
-        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
         FREE_MY_MEMORY;
+        LB_TRACE_EXIT(lb, yo);
         return (ierr);
       }
   
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: i=%d, gid=%d, lid=%d, nedges=%d\n", lb->Proc, i, 
-      global_ids[i], local_ids[i], nedges);
-#endif
+      if (lb->Debug_Level >= LB_DEBUG_ALL) {
+        printf("[%1d] Debug: i=%d, gid=%d, lid=%d, nedges=%d\n", lb->Proc, i, 
+          global_ids[i], local_ids[i], nedges);
+      }
+
       /* Separate inter-processor edges from the local ones */
       for (j=0; j<nedges; j++){
         if (nbors_proc[j] == lb->Proc){
@@ -526,16 +523,18 @@ static int LB_ParMetis_Jostle(
 
           /* Check if we need to allocate more space for proc_list.*/
           if (offset == max_proc_list_len){
-#ifdef LB_DEBUG
-            printf("[%1d] Debug: Allocating more list space, max_proc_list_len = %d, increasing by %d\n", lb->Proc, max_proc_list_len, CHUNKSIZE);
-#endif
+            if (lb->Debug_Level >= LB_DEBUG_ALL)
+              printf("[%1d] Debug: Allocating more list space, "
+                     "max_proc_list_len = %d, increasing by %d\n", 
+                     lb->Proc, max_proc_list_len, CHUNKSIZE);
+
             max_proc_list_len += CHUNKSIZE;
             proc_list = (struct LB_edge_info *) LB_REALLOC(proc_list,
                          max_proc_list_len*sizeof(struct LB_edge_info));
             if (!proc_list){
               /* Not enough memory */
-              printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
               FREE_MY_MEMORY;
+              LB_TRACE_EXIT(lb, yo);
               return LB_MEMERR;
             }
           }
@@ -548,10 +547,12 @@ static int LB_ParMetis_Jostle(
           else
             ptr->nbor_proc = -1;
           ptr->adj = adjptr;
-#ifdef LB_DEBUG
-          printf("[%1d] Debug: proc_list[%1d] my_gid=%d, my_gno=%d, nbor_proc=%d\n",
-              lb->Proc, offset, ptr->my_gid, ptr->my_gno, ptr->nbor_proc);
-#endif
+
+          if (lb->Debug_Level >= LB_DEBUG_ALL)
+            printf("[%1d] Debug: proc_list[%1d] my_gid=%d, my_gno=%d, "
+                   "nbor_proc=%d\n",
+                   lb->Proc, offset, ptr->my_gid, ptr->my_gno, ptr->nbor_proc);
+
           *adjptr++ = -1; /* We need to come back here later */
           offset++;
         }
@@ -565,10 +566,12 @@ static int LB_ParMetis_Jostle(
 
     /* Sanity check */
     if (((int)adjptr - (int)adjncy)/sizeof(int) != xadj[num_obj]){
-      printf("[%1d] ERROR: Internal error in %s, incorrect pointer.\n",
-             lb->Proc, yo);
-      printf("adjptr-adjncy =%d, #edges =%d\n", ((int)adjptr - (int)adjncy)/sizeof(int), xadj[num_obj]);
+      fprintf(stderr, "[%1d] ZOLTAN ERROR: Internal error in %s, "
+              "incorrect pointer.\n", lb->Proc, yo);
+      fprintf(stderr, "ZOLTAN adjptr-adjncy =%d, #edges =%d\n", 
+              ((int)adjptr - (int)adjncy)/sizeof(int), xadj[num_obj]);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_FATAL;
     }
   
@@ -583,23 +586,22 @@ static int LB_ParMetis_Jostle(
 
     if (nsend && (!sendbuf || !plist) ){
       /* Not enough space */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
 
     /* Pack the data to send */
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: %d messages to send.\n", lb->Proc, nsend);
-#endif
+    if (lb->Debug_Level >= LB_DEBUG_ALL)
+      printf("[%1d] Debug: %d messages to send.\n", lb->Proc, nsend);
+
     offset = 0;
     j = 0;
     for (i=0, ptr=proc_list; i<cross_edges; i++, ptr++){
       if (ptr->nbor_proc >= 0){
-#ifdef LB_DEBUG
-        printf("[%1d] Debug: Sending (%d,%d) to proc %d\n", lb->Proc, 
-          ptr->my_gid, ptr->my_gno, ptr->nbor_proc);
-#endif
+        if (lb->Debug_Level >= LB_DEBUG_ALL)
+          printf("[%1d] Debug: Sending (%d,%d) to proc %d\n", lb->Proc, 
+            ptr->my_gid, ptr->my_gno, ptr->nbor_proc);
         memcpy(&sendbuf[offset], (char *) &(ptr->my_gid), sizeof(LB_GID)); 
         offset += sizeof(LB_GID);
         memcpy(&sendbuf[offset], (char *) &(ptr->my_gno), sizeof(int)); 
@@ -609,16 +611,16 @@ static int LB_ParMetis_Jostle(
     }
 
     /* Create the communication plan */
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: Calling LB_Comm_Create with %d packets to send.\n",
-      lb->Proc, nsend);
-#endif
+    if (lb->Debug_Level >= LB_DEBUG_ALL)
+      printf("[%1d] Debug: Calling LB_Comm_Create with %d packets to send.\n",
+             lb->Proc, nsend);
+
     ierr = LB_Comm_Create( &comm_plan, nsend, plist, comm, TAG1, 
                            lb->Deterministic, &nrecv);
     if (ierr){
       /* Return error code */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return (ierr);
     }
 
@@ -626,21 +628,20 @@ static int LB_ParMetis_Jostle(
     recvbuf = (char *) LB_MALLOC(nrecv * packet_size);
     if (nrecv && (!sendbuf || !plist) ){
       /* Not enough space */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: Ready to receive %d packets.\n", 
-      lb->Proc, nrecv);
-#endif
+    if (lb->Debug_Level >= LB_DEBUG_ALL)
+      printf("[%1d] Debug: Ready to receive %d packets.\n", 
+        lb->Proc, nrecv);
 
     /* Do the communication */
     ierr = LB_Comm_Do( comm_plan, TAG2, sendbuf, packet_size, recvbuf);
     if (ierr){
       /* Return error code */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return (ierr);
     }
 
@@ -662,8 +663,8 @@ static int LB_ParMetis_Jostle(
       nrecv * sizeof(struct LB_hash_node *) );
     if (nrecv && ((!hash_nodes) || (!hashtab))){
       /* Not enough memory */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
     
@@ -680,29 +681,28 @@ static int LB_ParMetis_Jostle(
       j = LB_hashf(hash_nodes[i].gid, nrecv);
       hash_nodes[i].next = hashtab[j];
       hashtab[j] = &hash_nodes[i];
-#ifdef LB_DEBUG
-      printf("[%1d] Debug: Hashed GID %d to %d, gno = %d\n",
-        lb->Proc, hash_nodes[i].gid, j, hash_nodes[i].gno);
-#endif
+      if (lb->Debug_Level >= LB_DEBUG_ALL)
+        printf("[%1d] Debug: Hashed GID %d to %d, gno = %d\n",
+               lb->Proc, hash_nodes[i].gid, j, hash_nodes[i].gno);
     }
 
     for (i=0; i<cross_edges; i++){
       /* Look up unresolved global_ids */
       if ((tmp=hash_lookup(hashtab, proc_list[i].nbor_gid, nrecv)) <0){
         /* Error. This should never happen! */
-        printf("[%1d] ERROR: Internal error in %s. "
+        fprintf(stderr, "[%1d] ZOLTAN ERROR: Internal error in %s. "
                "Off-proc global ID %d is not in hash table.\n", 
                lb->Proc, yo, proc_list[i].nbor_gid);
         FREE_MY_MEMORY;
+        LB_TRACE_EXIT(lb, yo);
         return LB_FATAL;
       }
       else{
         /* Insert the global number into adjncy vector */
         *(proc_list[i].adj) = tmp;
-#ifdef LB_DEBUG
-        printf("[%1d] Debug: GID %d has global number %d\n",
-          lb->Proc, proc_list[i].nbor_gid, tmp);
-#endif
+        if (lb->Debug_Level >= LB_DEBUG_ALL)
+          printf("[%1d] Debug: GID %d has global number %d\n",
+            lb->Proc, proc_list[i].nbor_gid, tmp);
       }
       
     }
@@ -717,9 +717,8 @@ static int LB_ParMetis_Jostle(
   
     /* Get vertex weights if needed */
     if (lb->Obj_Weight_Dim){
-#ifdef LB_DEBUG
-      printf("[%1d] Debug: Converting vertex weights...\n", lb->Proc);
-#endif
+      if (lb->Debug_Level >= LB_DEBUG_ALL)
+        printf("[%1d] Debug: Converting vertex weights...\n", lb->Proc);
       vwgt = (idxtype *)LB_MALLOC((lb->Obj_Weight_Dim*num_obj)
                           * sizeof(idxtype));
       max_wgt = 0;
@@ -740,16 +739,16 @@ static int LB_ParMetis_Jostle(
     ndims = lb->Get_Num_Geom(lb->Get_Num_Geom_Data, &ierr);
     if (ierr){
       /* Return error */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return (ierr);
     }
     /* Allocate space for the geometry data */
     xyz = (float *) LB_MALLOC(ndims*num_obj * sizeof(float));
     if (!xyz){
       /* Not enough space */
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
     /* Get the geometry data */
@@ -758,8 +757,8 @@ static int LB_ParMetis_Jostle(
         geom_vec, &ierr);
       if (ierr) {
         /* Return error code */
-        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
         FREE_MY_MEMORY;
+        LB_TRACE_EXIT(lb, yo);
         return (ierr);
       }
       for (j=0; j<ndims; j++)
@@ -773,8 +772,8 @@ static int LB_ParMetis_Jostle(
   part = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
   if (!part){
     /* Not enough memory */
-    printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
     FREE_MY_MEMORY;
+    LB_TRACE_EXIT(lb, yo);
     return LB_MEMERR;
   }
   
@@ -782,11 +781,12 @@ static int LB_ParMetis_Jostle(
   if (get_times) times[1] = MPI_Wtime();
 
   /* Select the desired ParMetis function */
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: Calling ParMETIS partitioner ...\n", lb->Proc);
-    printf("[%1d] Debug: vtxdist, xadj, adjncy, part = 0x%x, 0x%x, 0x%x, 0x%x\n", 
-           lb->Proc, vtxdist, xadj, adjncy, part);
-#endif
+    if (lb->Debug_Level >= LB_DEBUG_ALL) {
+      printf("[%1d] Debug: Calling ParMETIS partitioner ...\n", lb->Proc);
+      printf("[%1d] Debug: vtxdist, xadj, adjncy, part = 0x%x, 0x%x, 0x%x, "
+             "0x%x\n", 
+             lb->Proc, vtxdist, xadj, adjncy, part);
+    }
 
   if (strcmp(alg, "JOSTLE") == 0){
     offset = 0;            /* Index of the first object/node. */
@@ -806,8 +806,9 @@ static int LB_ParMetis_Jostle(
        NULL, &(options[0]), &ndims, NULL); 
 #else
     /* We don't have Jostle */
-    printf("Sorry, Jostle is not available on this system.\n");
+    fprintf(stderr, "Sorry, Jostle is not available on this system.\n");
     FREE_MY_MEMORY;
+    LB_TRACE_EXIT(lb, yo);
     return LB_FATAL;
 #endif
   }
@@ -845,18 +846,18 @@ static int LB_ParMetis_Jostle(
   }
   else {
     /* This should never happen! */
-    printf("Error: Unknown ParMetis algorithm %s\n", alg);
-    printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+    fprintf(stderr, "ZOLTAN Error: Unknown ParMetis algorithm %s\n", alg);
     FREE_MY_MEMORY;
+    LB_TRACE_EXIT(lb, yo);
     return LB_FATAL;
   }
 
   /* Get a time here */
   if (get_times) times[2] = MPI_Wtime();
 
-#ifdef LB_DEBUG 
-    printf("[%1d] Debug: Returned from ParMETIS partitioner with edgecut= %d\n", lb->Proc, edgecut);
-#endif
+  if (lb->Debug_Level >= LB_DEBUG_ALL)
+    printf("[%1d] Debug: Returned from ParMETIS partitioner with "
+           "edgecut= %d\n", lb->Proc, edgecut);
 
   /* Free weights; they are no longer needed */
   if (lb->Obj_Weight_Dim) LB_FREE(&vwgt);
@@ -871,21 +872,21 @@ static int LB_ParMetis_Jostle(
   /* Create export lists */
   if (nsend>0){
     if (!LB_Special_Malloc(lb,(void **)exp_gids,nsend,LB_SPECIAL_MALLOC_GID)) {
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
     if (!LB_Special_Malloc(lb,(void **)exp_lids,nsend,LB_SPECIAL_MALLOC_LID)) {
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
     if (!LB_Special_Malloc(lb,(void **)exp_procs,nsend,LB_SPECIAL_MALLOC_INT)) {
-      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       LB_Special_Free(lb,(void **)exp_lids,LB_SPECIAL_MALLOC_LID);
       LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
       FREE_MY_MEMORY;
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
     j = 0;
@@ -921,9 +922,7 @@ static int LB_ParMetis_Jostle(
     if (lb->Proc==0) printf("\n");
   }
 
-#ifdef LB_DEBUG
-  printf("[%1d] Debug: exiting ParMetis_Part\n", lb->Proc);
-#endif
+  LB_TRACE_EXIT(lb, yo);
   return LB_OK;
 }
 #endif /* defined (LB_JOSTLE) || !defined (LB_NO_PARMETIS) */

@@ -138,12 +138,9 @@ int i, ierr = 0;
        *  dot for each object.
        */
 
-      objs_global = (LB_GID *) LB_Malloc((*num_obj)*sizeof(LB_GID),
-          __FILE__, __LINE__);
-      objs_local  = (LB_LID *) LB_Malloc((*num_obj)*sizeof(LB_LID),
-          __FILE__, __LINE__);
-      objs_wgt    = (float  *) LB_Malloc((*num_obj)*sizeof(float),
-          __FILE__, __LINE__);
+      objs_global = (LB_GID *) LB_MALLOC((*num_obj)*sizeof(LB_GID));
+      objs_local  = (LB_LID *) LB_MALLOC((*num_obj)*sizeof(LB_LID));
+      objs_wgt    = (float  *) LB_MALLOC((*num_obj)*sizeof(float));
       if (objs_global == NULL || objs_local == NULL || objs_wgt == NULL) {
         fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
                 lb->Proc, yo);

@@ -251,6 +251,7 @@ static int rcb(
   MPI_Datatype box_type;
   MPI_User_function LB_rcb_box_merge;
 
+  LB_TRACE_ENTER(lb, yo);
   if (stats) {
     MPI_Barrier(lb->Communicator);
     timestart = time1 = LB_Time();
@@ -269,8 +270,9 @@ static int rcb(
   start_time = LB_Time();
   ierr = LB_RCB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
   if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-    fprintf(stderr, "[%d] Error in %s:  Error returned from "
+    fprintf(stderr, "[%d] RCB ERROR in %s:  Error returned from "
                     "LB_RCB_Build_Structure\n", proc, yo);
+    LB_TRACE_EXIT(lb, yo);
     return(ierr);
   }
 
@@ -307,17 +309,21 @@ static int rcb(
   allocflag = 0;
   if (dotmax > 0) {
     dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
-    if (dotmark == NULL)
+    if (dotmark == NULL) {
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
+    }
     coord = (double *) LB_MALLOC(dotmax*sizeof(double));
     if (coord == NULL) {
       LB_FREE(&dotmark);
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
     wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
     if (wgts == NULL) {
       LB_FREE(&dotmark);
       LB_FREE(&coord);
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
   }
@@ -346,7 +352,8 @@ static int rcb(
     for (i = 0; i < dotnum; i++) if (dotpt[i].Weight <= 0.0) j++;
     MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
     if (k > 0) {
-      if (proc == 0) printf("RCB ERROR: %d dot weights are <= 0\n",k);
+      if (proc == 0) fprintf(stderr, "RCB ERROR: %d dot weights are <= 0\n",k);
+      LB_TRACE_EXIT(lb, yo);
       return LB_FATAL;
     }
   }
@@ -391,10 +398,11 @@ static int rcb(
     ierr = LB_divide_machine(lb, proc, local_comm, &set, &proclower,
                              &procmid, &num_procs, &fractionlo);
     if (ierr != LB_OK && ierr != LB_WARN) {
-       LB_FREE(&dotmark);
-       LB_FREE(&coord);
-       LB_FREE(&wgts);
-       return (ierr);
+      LB_FREE(&dotmark);
+      LB_FREE(&coord);
+      LB_FREE(&wgts);
+      LB_TRACE_EXIT(lb, yo);
+      return (ierr);
     }
     
     /* dim = dimension (xyz = 012) to bisect on */
@@ -418,17 +426,21 @@ static int rcb(
       LB_FREE(&coord);
       LB_FREE(&wgts);
       dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
-      if (dotmark == NULL)
+      if (dotmark == NULL) {
+        LB_TRACE_EXIT(lb, yo);
         return LB_MEMERR;
+      }
       coord = (double *) LB_MALLOC(dotmax*sizeof(double));
       if (coord == NULL) {
         LB_FREE(&dotmark);
+        LB_TRACE_EXIT(lb, yo);
         return LB_MEMERR;
       }
       wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
       if (wgts == NULL) {
         LB_FREE(&dotmark);
         LB_FREE(&coord);
+        LB_TRACE_EXIT(lb, yo);
         return LB_MEMERR;
       }
     }
@@ -451,10 +463,12 @@ static int rcb(
 
     if (!LB_find_median(coord, wgts, dotmark, dotnum, proc, fractionlo,
                         local_comm, &valuehalf, first_guess, &(counters[0]))) {
-      fprintf(stderr, "[%d] %s: Error returned from find_median\n", proc, yo);
+      fprintf(stderr, "[%d] %s: RCB ERROR returned from find_median\n", 
+              proc, yo);
       LB_FREE(&dotmark);
       LB_FREE(&coord);
       LB_FREE(&wgts);
+      LB_TRACE_EXIT(lb, yo);
       return LB_FATAL;
     }
 
@@ -492,20 +506,22 @@ static int rcb(
     dottop = keep;
 
     if (outgoing)
-       if ((proc_list = (int *) LB_MALLOC(outgoing*sizeof(int))) == NULL) {
-          LB_FREE(&dotmark);
-          LB_FREE(&coord);
-          LB_FREE(&wgts);
-          return LB_MEMERR;
-       }
+      if ((proc_list = (int *) LB_MALLOC(outgoing*sizeof(int))) == NULL) {
+        LB_FREE(&dotmark);
+        LB_FREE(&coord);
+        LB_FREE(&wgts);
+        LB_TRACE_EXIT(lb, yo);
+        return LB_MEMERR;
+      }
 
     ierr = LB_Create_Proc_List(set, dotnum, outgoing, proc_list, local_comm);
     if (ierr != LB_OK && ierr != LB_WARN) {
-       LB_FREE(&proc_list);
-       LB_FREE(&dotmark);
-       LB_FREE(&coord);
-       LB_FREE(&wgts);
-       return (ierr);
+      LB_FREE(&proc_list);
+      LB_FREE(&dotmark);
+      LB_FREE(&coord);
+      LB_FREE(&wgts);
+      LB_TRACE_EXIT(lb, yo);
+      return (ierr);
     }
 
     incoming = 0;
@@ -513,11 +529,12 @@ static int rcb(
     ierr = LB_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag,
                           lb->Deterministic, &incoming);
     if (ierr != LB_OK && ierr != LB_WARN) {
-       LB_FREE(&proc_list);
-       LB_FREE(&dotmark);
-       LB_FREE(&coord);
-       LB_FREE(&wgts);
-       return (ierr);
+      LB_FREE(&proc_list);
+      LB_FREE(&dotmark);
+      LB_FREE(&coord);
+      LB_FREE(&wgts);
+      LB_TRACE_EXIT(lb, yo);
+      return (ierr);
     }
 
     if (outgoing) LB_FREE(&proc_list);
@@ -536,6 +553,7 @@ static int rcb(
         LB_FREE(&dotmark);
         LB_FREE(&coord);
         LB_FREE(&wgts);
+        LB_TRACE_EXIT(lb, yo);
         return LB_MEMERR;
       }
       rcb->Dots = dotpt;
@@ -557,6 +575,7 @@ static int rcb(
         LB_FREE(&dotmark);
         LB_FREE(&coord);
         LB_FREE(&wgts);
+        LB_TRACE_EXIT(lb, yo);
         return LB_MEMERR;
       }
     }
@@ -579,10 +598,11 @@ static int rcb(
     ierr = LB_Comm_Do(cobj, message_tag, (char *) dotbuf, 
                       sizeof(struct rcb_dot), (char *) (&dotpt[keep]));
     if (ierr != LB_OK && ierr != LB_WARN) {
-       LB_FREE(&dotmark);
-       LB_FREE(&coord);
-       LB_FREE(&wgts);
-       return (ierr);
+      LB_FREE(&dotmark);
+      LB_FREE(&coord);
+      LB_FREE(&wgts);
+      LB_TRACE_EXIT(lb, yo);
+      return (ierr);
     }
 
     ierr = LB_Comm_Destroy(&cobj);
@@ -644,17 +664,21 @@ static int rcb(
   *num_import = dotnum - dottop;
   if (*num_import > 0) {
     if (!LB_Special_Malloc(lb,(void **)import_global_ids,*num_import,
-                           LB_SPECIAL_MALLOC_GID))
+                           LB_SPECIAL_MALLOC_GID)) {
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
+    }
     if (!LB_Special_Malloc(lb,(void **)import_local_ids,*num_import,
                            LB_SPECIAL_MALLOC_LID)) {
       LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
     if (!LB_Special_Malloc(lb,(void **)import_procs,*num_import,
                            LB_SPECIAL_MALLOC_INT)) {
       LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
       LB_Special_Free(lb,(void **)import_local_ids,LB_SPECIAL_MALLOC_LID);
+      LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
 
@@ -684,13 +708,15 @@ static int rcb(
   end_time = LB_Time();
   lb_time[0] += (end_time - start_time);
 
-  if (lb->Proc == 0) {
-    printf("ZOLTAN RCB Times:  \n");
+  if (lb->Debug_Level >= LB_DEBUG_ATIME) {
+    if (lb->Proc == 0) {
+      printf("ZOLTAN RCB Times:  \n");
+    }
+    LB_Print_Stats(lb, lb_time[0], "ZOLTAN     Build:       ");
+    LB_Print_Stats(lb, lb_time[1], "ZOLTAN     RCB:         ");
   }
-  LB_Print_Stats(lb, lb_time[0], "ZOLTAN     Build:       ");
-  LB_Print_Stats(lb, lb_time[1], "ZOLTAN     RCB:         ");
 
-  if (lb->Debug_Level > 6) {
+  if (lb->Debug_Level >= LB_DEBUG_ALL) {
     int i;
     LB_Print_Sync_Start(lb, TRUE);
     printf("ZOLTAN RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
@@ -708,6 +734,7 @@ static int rcb(
     LB_Print_Sync_End(lb, TRUE);
   }
 
+  LB_TRACE_EXIT(lb, yo);
   /* Temporary return value until error codes are fully implemented */
   return(LB_OK);  
 }
@@ -755,7 +782,7 @@ static void RCB_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
   MPI_Allreduce(&dotnum,&total2,1,MPI_INT,MPI_SUM,lb->Communicator);
   if (total1 != total2) {
     if (proc == 0) 
-      printf("ERROR: Points before RCB = %d, Points after RCB = %d\n",
+      fprintf(stderr, "ERROR: Points before RCB = %d, Points after RCB = %d\n",
 	     total1,total2);
   }
   
@@ -779,10 +806,13 @@ static void RCB_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
 
   if (wtmax - wtmin > tolerance) {
     if (proc == 0) 
-      printf("ERROR: Load-imbalance > tolerance of %g\n",tolerance);
+      fprintf(stderr, "RCB ERROR: Load-imbalance > tolerance of %g\n",
+              tolerance);
     MPI_Barrier(lb->Communicator);
-    if (weight == wtmin) printf("  Proc %d has weight = %g\n",proc,weight);
-    if (weight == wtmax) printf("  Proc %d has weight = %g\n",proc,weight);
+    if (weight == wtmin) 
+      fprintf(stderr, "  Proc %d has weight = %g\n",proc,weight);
+    if (weight == wtmax) 
+      fprintf(stderr, "  Proc %d has weight = %g\n",proc,weight);
   }
   
   MPI_Barrier(lb->Communicator);
@@ -797,7 +827,8 @@ static void RCB_check(LB *lb, struct rcb_dot *dotpt, int dotnum, int dotorig,
       iflag++;
   }
   if (iflag > 0) 
-    printf("ERROR: %d points are out-of-box on proc %d\n",iflag,proc);
+    fprintf(stderr, "RCB ERROR: %d points are out-of-box on proc %d\n",
+            iflag,proc);
   
   MPI_Barrier(lb->Communicator);
     
