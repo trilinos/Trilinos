@@ -24,7 +24,13 @@
 #include <math.h>
 #include "ml_include.h"
 
-#if defined(HAVE_ML_AZTEC) || defined(HAVE_ML_AZTECOO) || defined(HAVE_ML_AZTEC2_1)
+#ifdef ML_BENCHMARK
+#if !defined(HAVE_ML_SUPERLU) && !defined(HAVE_ML_AMESOS)
+#define ML_NO_DIRECT_SOLVER
+#endif
+#endif
+
+#if (defined(HAVE_ML_AZTEC) || defined(HAVE_ML_AZTECOO) || defined(HAVE_ML_AZTEC2_1)) && !defined(ML_NO_DIRECT_SOLVER)
 
 #include "az_aztec.h"
 #include "ml_read_utils.h"
@@ -1716,7 +1722,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  puts("This test requires Aztec");
+  puts("This test requires Aztec and either SuperLU or Amesos.");
 
 #ifdef ML_MPI
   MPI_Finalize();
