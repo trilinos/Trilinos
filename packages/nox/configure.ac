@@ -457,6 +457,15 @@ else
   LDFLAGS="${LDFLAGS} ${EXTRA_LDFLAGS}"
 fi
 
+# STL bug on solaris.
+# Solaris requires a const argument in constructing maps. This is wrong
+# according to the standard!  DEC on the other hand fails if it is const
+# so we have to wrap multimap construction with: 
+###      ifdef MUST_CONST_STL_MAP_KEY
+# for compiling on both solaris and DEC platforms.
+# The following call will set this flag if needed.
+AC_CXX_STL_MAP_KEY_CONST
+
 # ------------------------------------------------------------------------
 # Set up alternate archiver (option -with-ar above)
 # ------------------------------------------------------------------------
