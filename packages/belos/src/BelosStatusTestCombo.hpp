@@ -294,6 +294,9 @@ void StatusTestCombo<TYPE>::Reset( )
     {
       (*i)->Reset();
     }
+  // Reset my status.
+  status_ = Unchecked;
+  //
   return;
 }
 
