@@ -106,11 +106,15 @@ class Epetra_MultiVector;
 #include <string.h>
 #endif
 
+#ifndef JANUS_STLPORT
 #ifdef HAVE_CMATH
 #include <cmath>
 #else
 #include <math.h>
 #endif
+#else /* JANUS_STLPORT */
+#include <math.h>
+#endif /* JANUS_STLPORT */
 
 #ifdef HAVE_MATH_H
 #include <math.h>
