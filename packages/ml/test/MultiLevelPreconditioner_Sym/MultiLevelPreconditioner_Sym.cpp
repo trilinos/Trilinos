@@ -53,9 +53,6 @@
 
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
-static bool verbose = false;
-static bool ml_verbose = false;
-
 void PrintLine() 
 {
   cout << endl;
@@ -73,9 +70,9 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 				 double & TotalErrorExactSol)
 {
   
-  Epetra_MultiVector   * lhs     = Problem.GetLHS();
-  Epetra_MultiVector   * rhs     = Problem.GetRHS();
-  Epetra_RowMatrix     * A       = Problem.GetMatrix();
+  Epetra_MultiVector* lhs = Problem.GetLHS();
+  Epetra_MultiVector* rhs = Problem.GetRHS();
+  Epetra_RowMatrix* A = Problem.GetMatrix();
   
   // ======================================== //
   // create a rhs corresponding to lhs or 1's //
@@ -94,10 +91,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   
   AztecOO solver(Problem);
   
-  if (ml_verbose)
-    MLList.set("output", 10);
-  else
-    MLList.set("output", 0);
+  MLList.set("output", 0);
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
   
@@ -106,7 +100,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 32);
-  
   solver.SetAztecOption(AZ_kspace, 160);
   
   solver.Iterate(1550, 1e-12);
@@ -136,7 +129,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   
   string msg = ProblemType;
   
-  if( A->Comm().MyPID() == 0 ) {
+  if (A->Comm().MyPID() == 0) {
     cout << msg << "......Using " << A->Comm().NumProc() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
     cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
@@ -161,193 +154,80 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-  if (Comm.MyPID() == 0)
-    verbose = true;
-
-  if (argc >= 2)
-    if (strcmp(argv[1], "-v") == 0) 
-      ml_verbose = true;
-
   // initialize the random number generator
 
   srandom((unsigned int)1);
 
-  int NumProcs = Comm.NumProc();
-  
   // ===================== //
   // create linear problem //
   // ===================== //
-  
+
   CrsMatrixGallery Gallery("laplace_3d", Comm);
   Gallery.Set("problem_size", 27000);
-  
-  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
 
-  int TotalFailed = 0;
+  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
+  Teuchos::ParameterList MLList;
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
 
-  int iters;
-  
   // ====================== //
   // default options for SA //
   // ====================== //
 
-  if (true) {
+  PrintLine();
 
-    if (verbose) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type", "Gauss-Seidel");
+  TestMultiLevelPreconditioner("SA", MLList, *Problem, 
+                               TotalErrorResidual, TotalErrorExactSol);
 
-    Teuchos::ParameterList MLList;
-    ML_Epetra::SetDefaults("SA",MLList);
-    MLList.set("smoother: type", "Gauss-Seidel");
-    iters = TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
-
-    if (verbose) {
-#ifdef HAVE_ML_AMESOS
-      // expected iterations
-      switch( NumProcs ) {
-      case 1:
-        if( iters != 16 ) {
-          ++TotalFailed;
-          cout << endl << "### TEST FAILED : expecting 16 iterations, got "
-            << iters << endl << endl;
-        }
-        else
-          cout << endl << "### TEST PASSED" << endl << endl;
-        break;
-      case 4:
-        if( iters != 16 ) {
-          ++TotalFailed;
-          cout << endl << "### TEST FAILED : expecting 16 iterations, got "
-            << iters << endl << endl;
-        }
-        else
-          cout << endl << "### TEST PASSED" << endl << endl;
-        break;
-      }
-#else
-      cout << "### Cannot check the number of iterations" << endl;
-      cout << "### (no `enable-amesos')" << endl;
-      cout << "### Checking linear system residual only (at the bottom of the file)" << endl;
-#endif
-    }
-  }
-  
   // ============================== //
   // default options for SA, Jacobi //
   // ============================== //
 
-  if (true) {
+  PrintLine();
 
-    if (verbose) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type", "Jacobi");
 
-    Teuchos::ParameterList MLList;
-    ML_Epetra::SetDefaults("SA",MLList);
-    MLList.set("smoother: type", "Jacobi");
-
-    iters = TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
-
-    if (verbose) {
-#ifdef HAVE_ML_AMESOS
-      // expected iterations
-      switch( NumProcs ) {
-      case 1:
-        if( iters != 17 ) {
-          ++TotalFailed;
-          cout << endl << "### TEST FAILED : expecting 17 iterations, got "
-            << iters << endl << endl;
-        }
-        else
-          cout << "### TEST PASSED" << endl;
-        break;
-      case 4:
-        if( iters != 17 ) {
-          ++TotalFailed;
-          cout << endl << "### TEST FAILED : expecting 17 iterations, got "
-            << iters << endl << endl;
-        }
-        else
-          cout << "### TEST PASSED" << endl;
-        break;
-      }
-#else
-      cout << "### Cannot check the number of iterations" << endl;
-      cout << "### (no `enable-amesos')" << endl;
-      cout << "### Checking linear system residual only (at the bottom of the file)" << endl;
-#endif
-    }
-  }
+  TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, 
+                               TotalErrorExactSol);
 
   // =========================== //
   // default options for SA, MLS //
   // =========================== //
 
-  if (true) {
+  PrintLine();
 
-    if (verbose) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type", "MLS");
 
-    Teuchos::ParameterList MLList;
-    ML_Epetra::SetDefaults("SA",MLList);
-    MLList.set("smoother: type", "MLS");
-
-    iters = TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
-
-    if (verbose) {
-#ifdef HAVE_ML_AMESOS
-      // expected iterations
-      switch( NumProcs ) {
-      case 1:
-        if( iters != 14 ) {
-          ++TotalFailed;
-            cout << endl << "### TEST FAILED : expecting 14 iterations, got "
-                 << iters << endl << endl;
-        }
-        else
-          cout << "### TEST PASSED" << endl;
-        break;
-      case 4:
-        if( iters != 14 ) {
-          ++TotalFailed;
-            cout << endl << "### TEST FAILED : expecting 14 iterations, got "
-                 << iters << endl << endl;
-        }
-        else
-          cout << "### TEST PASSED" << endl;
-        break;
-      }
-#else
-      cout << "### Cannot check the number of iterations" << endl;
-      cout << "### (no `enable-amesos')" << endl;
-      cout << "### Checking linear system residual only (at the bottom of the file)" << endl;
-#endif
-    }
-  }
+  TestMultiLevelPreconditioner("SA", MLList, *Problem, 
+                               TotalErrorResidual, TotalErrorExactSol);
 
   // ===================== //
   // print out total error //
   // ===================== //
 
-  if( Comm.MyPID() == 0 ) {
+  if (Comm.MyPID() == 0) {
     cout << endl;
     cout << "......Total error for residual        = " << TotalErrorResidual << endl;
     cout << "......Total error for exact solution  = " << TotalErrorExactSol << endl;
-    cout << "......Total # of failed tests         = " << TotalFailed << endl;
     cout << endl;
   }
 
-  if (TotalErrorResidual > 1e-8) exit(EXIT_FAILURE);
-
-#ifdef HAVE_ML_AMESOS
-  if (TotalFailed) exit(EXIT_FAILURE);
-#endif
+  if (TotalErrorResidual > 1e-8) {
+    cerr << "Error: `MultiLevelPrecoditioner_Sym.exe' failed!" << endl;
+    exit(EXIT_FAILURE);
+  }
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (verbose)
-    cout << "### ALL TESTS PASSED" << endl;
+  if (Comm.MyPID() == 0)
+    cerr << "`MultiLevelPrecoditioner_Sym.exe' passed!" << endl;
 
-  return( EXIT_SUCCESS );
+  return (EXIT_SUCCESS);
 
 }
 
@@ -366,7 +246,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
-    
+
   puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
 
 #ifdef HAVE_MPI

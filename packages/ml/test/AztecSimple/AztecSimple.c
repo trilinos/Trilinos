@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
   AZ_PRECOND   *Pmat = NULL;
   int          proc_config[AZ_PROC_SIZE], options[AZ_OPTIONS_SIZE];
   double       params[AZ_PARAMS_SIZE], status[AZ_STATUS_SIZE];
+  int verbose = 0;
 
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);
@@ -61,7 +62,7 @@ int main(int argc, char *argv[])
   ML_Set_PrintLevel(0);
   if (argc >=2)
     if (strcmp(argv[1], "-v") == 0)
-      ML_Set_PrintLevel(10);
+      verbose = 1;
 
   Partition.Nglobal = Nnodes;
   user_partition(&Partition);
@@ -97,6 +98,10 @@ int main(int argc, char *argv[])
   AZ_defaults(options, params);
   options[AZ_solver]   = AZ_cg;
   params[AZ_tol]       = tolerance;
+  if (verbose)
+    options[AZ_output]   = 16;
+  else
+    options[AZ_output]   = AZ_none;
   options[AZ_conv]     = AZ_noscaled;
   AZ_set_ML_preconditioner(&Pmat, Kn_mat, ml, options); 
   AZ_iterate(xxx, rhs, options, params, status, proc_config, Kn_mat, Pmat, NULL);
@@ -121,14 +126,15 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
   /* compare iteration number */
-  if( proc_config[AZ_node] == 0 ) 
+  if (proc_config[AZ_node] == 0 && verbose)
     printf("iterations = %d (expected 13)\n", (int)(status[AZ_its]));
   if( (int)(status[AZ_its]) != 13 ) {
-    printf("### TEST FAILED\n");
+    printf("Test `AztecSimple.exe' failed!\n");
     return 1;
   }
   else {
-    printf("### TEST PASSED\n");
+    if (proc_config[AZ_node] == 0 && verbose)
+      printf("Test `AztecSimple.exe' passed!\n");
     return 0;
   }
 }

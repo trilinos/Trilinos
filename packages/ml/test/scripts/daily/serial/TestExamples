@@ -85,44 +85,46 @@ echo `uname -a` >>& $file
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
 cd ../examples
-touch fakefile.exe
-set tt = (*.exe)
-# get rid of spaces
-set exefiles = `echo ${tt} | sed "s/ //g"`
-# avoids problem of no executables in subdirectory
-if ( ${exefiles} != 'fakefile.exe' ) then
-      /bin/rm -f fakefile.exe
-	  foreach g(*.exe)
-             if ($g != "ml_example2d.exe" & $g != "ml_example3d.exe" & $g != "mlguide_par.exe" & $g != "ml_read_elas.exe" & $g != "ml_readfile.exe" & $g != "ml_recirc.exe" & $g != "ml_aztecoo.exe"& $g != "ml_read_matrix_AIJ.exe" & $g != "ml_read_salsa.exe" & $g != "ml_filtering.exe" & $g != "ml_example_elasticity.exe" & $g != "ml_operator.exe" ) then
-                  echo "[TEST]" >>& $file
-		  echo "[TEST] ############" $g "##############" >>& $file
-                  echo "[TEST]" >>& $file
-		  if( "$2" == "True" ) then
-                    # forget the output now
-		    ./$g >>& /dev/null
-                    # run with 1 process		    
-		      if( $status != 0 ) then
-		        # A test failed.
-			    set AnError = True
-			    echo "[TEST] ******** Test w/ 1 proc failed ********" >>& $file
-                            echo "[TEST] ******** now re-running with output" >>& $file
-                            ./$g >>& $file
-			    echo "[TEST] Errors for script " $g " are listed above." >>& $file2
-		      else
-		        # Tests passed
-			    echo "[TEST] ******** Test w/ 1 proc passed ********" >>& $file
-		      endif
-		  else
-		    # This is not an automated test.
-		    ./$g >>& $file
-		  endif
-              endif
-	  end
-else
-  echo "[TEST] *** no examples found ***" >>& $file
-  echo "[TEST] *** Perhaps a package the test depends on didn't build? ****" >>& $file
-endif
-/bin/rm -f fakefile.exe
+foreach f ( Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwell MultipleRHS Other StandAlone TwoLevelDD Visualization )
+  cd $f
+  touch fakefile.exe
+  set tt = (*.exe)
+  # get rid of spaces
+  set exefiles = `echo ${tt} | sed "s/ //g"`
+  # avoids problem of no executables in subdirectory
+  if ( ${exefiles} != 'fakefile.exe' ) then
+     /bin/rm -f fakefile.exe
+     foreach g(*.exe)
+       if ($g != "ml_example2d.exe" & $g != "ml_example3d.exe" & $g != "mlguide.exe" & $g != "ml_read_elas.exe" & $g != "ml_readfile.exe" & $g != "ml_recirc.exe" & $g != "ml_read_matrix_AIJ.exe" & $g != "ml_read_salsa.exe" & $g != "ml_example_elasticity.exe" ) then
+         echo "[TestExamples]" >>& ../$file
+         echo "[TestExamples] Testing file >>" $g "<<" >>& ../$file
+         if( "$2" == "True" ) then
+           # forget the output now. run with 2 processors
+           mpirun -np 2 ./$g >>& /dev/null
+           if( $status != 0 ) then
+             # A test failed.
+             set AnError = True
+             echo "[TestExamples] ERROR: Test w/ 2 proc failed!!" >>& ../$file
+             echo "[TestExamples] ERROR: now re-running with output" >>& ../$file
+             mpirun -np 2 ./$g >>& ../$file
+             echo "[TestExamples] Errors for script " $g " are listed above." >>& ../$file2
+           else
+             # Tests passed
+             echo "[TestExamples] Test w/ 2 proc passed" >>& ../$file
+           endif
+        else
+           # This is not an automated test.
+           mpirun -np 2 ./$g >>& ../$file
+        endif
+      endif
+    end
+  else
+    echo "[TestExamples] ERROR: no examples found" >>& ../$file
+    echo "[TestExamples] ERROR: Perhaps a package the test depends on didn't build?" >>& ../$file
+  endif
+  /bin/rm -f fakefile.exe
+  cd ..
+end #foreach f
 
 ## At this point, it is assumed that the current directory is
 ## 'package_name/test'

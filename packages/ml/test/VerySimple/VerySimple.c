@@ -58,7 +58,8 @@ int main(int argc, char *argv[]){
    ML_Gen_Solver    (ml_object, ML_MGV, 0, N_levels-1);
 
    kdata = ML_Krylov_Create(ml_object->comm);
-   ML_Krylov_Set_PrintFreq( kdata, 1 );
+   ML_Krylov_Set_PrintFreq(kdata, 1);
+
    ML_Krylov_Set_Method(kdata, ML_CG);
    ML_Krylov_Set_Amatrix(kdata, &(ml_object->Amat[0]));
    ML_Krylov_Set_PreconFunc(kdata, ML_MGVSolve_Wrapper);
@@ -82,7 +83,7 @@ int main(int argc, char *argv[]){
    for( i=0 ; i<5 ; ++i ) norm_comp+=sol[i]*sol[i];
    
    if (abs(norm_comp-1.0) > 1e-8) {
-     puts("### TEST FAILED");
+     puts("Test `VerySimple.exe' failed!");
      exit(EXIT_FAILURE);
    }
 
@@ -90,8 +91,8 @@ int main(int argc, char *argv[]){
   MPI_Finalize();
 #endif
 
-  puts("### TEST PASSED");
-  exit( EXIT_SUCCESS );
+  puts("Test `VerySimple.exe' passed!");
+  exit(EXIT_SUCCESS);
 }
 
 int Poisson_getrow(ML_Operator *A_data, int N_requested_rows, int requested_rows[],

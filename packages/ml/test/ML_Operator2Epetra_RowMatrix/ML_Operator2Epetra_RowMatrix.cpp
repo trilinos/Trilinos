@@ -149,17 +149,17 @@ int main(int argc, char *argv[])
   for (int i = 0 ; i < NumVectors ; ++i) {
     TotalNorm += Norm2[i];
     if (Norm2[i] > 1e-13) {
-      cout << "### Norm2[" << i << "] = " << Norm2[i] << endl;
-      cout << "### TEST FAILED" << endl;
-      ML_EXIT(-2); 
+      cout << "Norm2[" << i << "] = " << Norm2[i] << endl;
+      cout << "Test `ML_Operator2Epetra_RowMatrix.exe' failed!" << endl;
+      ML_EXIT(EXIT_FAILURE); 
     }
   }
     
   // at this point the test is passed. Some fancy (??) output,
   // and I give up.
-  if (Comm.MyPID() == 0) {
+  if (proc_config[AZ_node] == 0) {
     cout << "Total norm = " << TotalNorm << endl;
-    cout << "### TEST PASSED" << endl;
+    cout << "Test `ML_Operator2Epetra_RowMatrix.exe' passed!" << endl;
   }
     
   // free memory

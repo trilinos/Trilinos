@@ -23,6 +23,7 @@
 #ifdef HAVE_MPI
 #include "mpi.h"
 #endif
+#include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
@@ -73,15 +74,9 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  bool ml_verbose = false;
-
-  if (argc >= 2)
-    if (strcmp(argv[1], "-v") == 0) 
-      ml_verbose = true;
-
   AZ_set_proc_config(proc_config, COMMUNICATOR);
-  ML_Comm * comm;
-  ML_Comm_Create( &comm );
+  ML_Comm* comm;
+  ML_Comm_Create(&comm);
 
   Node_Partition.Nglobal = Nnodes;
   Edge_Partition.Nglobal = Node_Partition.Nglobal*2;
@@ -124,10 +119,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList MLList;
   ML_Epetra::SetDefaults("maxwell", MLList);
   
-  if (ml_verbose)
-    MLList.set("output", 10);
-  else
-    MLList.set("output", 0);
+  MLList.set("output", 0);
 
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("coarse: max size", 30);
@@ -148,7 +140,6 @@ int main(int argc, char *argv[])
 
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, 32);
-
   solver.Iterate(500, 1e-8);
 
   // ========================= //
@@ -164,7 +155,7 @@ int main(int argc, char *argv[])
 
   double residual;
   assert(resid.Norm2(&residual)==0);
-  if (proc_config[AZ_node]==0) {
+  if (proc_config[AZ_node] == 0) {
     cout << endl;
     cout << "==> Residual = " << residual << endl;
     cout << endl;
@@ -208,7 +199,7 @@ int main(int argc, char *argv[])
   ML_Operator_Destroy(&ML_Tmat);
 
   if (residual > 1e-5) {
-    cout << "### TEST FAILED" << endl;
+    cout << "`MultiLevelPreconditioner_Maxwell.exe' failed!" << endl;
     exit(EXIT_FAILURE);
   }
 
@@ -216,8 +207,8 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 		
-  // check convergence
-  cout << "### TEST PASSED" << endl;
+  if (proc_config[AZ_node] == 0)
+    cout << "`MultiLevelPreconditioner_Maxwell.exe' passed!" << endl;
   exit(EXIT_SUCCESS);
 		
 }

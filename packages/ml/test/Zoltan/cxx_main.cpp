@@ -54,7 +54,6 @@
 
 using namespace Teuchos;
 using namespace Trilinos_Util;
-static bool verbose = false;
 
 // *) inspired from ml_example_MultiLevelPreconditioner_viz.cpp (in the
 //    examples subdirectory)
@@ -73,22 +72,12 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  // get the -v for output
-  for (int i = 1 ; i < argc ; ++i) {
-    if (strcmp(argv[i],"-v") == 0) {
-      verbose = true;
-    }
-  }
-
   int NumNodes = 65536;
   int NumPDEEqns = 1;
 
   VbrMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", NumNodes);
-  if (verbose)
-    Gallery.Set("output",1);
-  else
-    Gallery.Set("output",0);
+  Gallery.Set("output",0);
 
   // retrive pointers for linear system matrix and linear problem
   Epetra_RowMatrix * A = Gallery.GetVbrMatrix(NumPDEEqns);
@@ -104,10 +93,7 @@ int main(int argc, char *argv[])
   Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
 
   ParameterList MLList;
-  if (verbose)
-    MLList.set("output",8);
-  else
-    MLList.set("output",0);
+  MLList.set("output",8);
 
   MLList.set("max levels",10);
   MLList.set("increasing or decreasing","increasing");
@@ -159,10 +145,7 @@ int main(int argc, char *argv[])
 
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
-  if (verbose)
-    solver.SetAztecOption(AZ_output, 32);
-  else
-    solver.SetAztecOption(AZ_output, 0);
+  solver.SetAztecOption(AZ_output, 32);
 
   // solve with 500 iterations and 1e-12 tolerance  
   solver.Iterate(500, 1e-12);
@@ -175,7 +158,7 @@ int main(int argc, char *argv[])
   Gallery.ComputeResidualVbr(&residual);
   Gallery.ComputeDiffBetweenStartingAndExactSolutionsVbr(&diff);
   
-  if (verbose && (Comm.MyPID() == 0 )) {
+  if (Comm.MyPID() == 0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
     cout << "||x_exact - x||_2 = " << diff << endl;
   }

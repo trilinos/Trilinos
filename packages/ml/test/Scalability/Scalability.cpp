@@ -122,6 +122,7 @@ int main(int argc, char *argv[])
 #endif
 
   Epetra_Time Time(Comm);
+
   double ConstructionTime, ApplicationTime, SolutionTime;
 
   // process the command line
@@ -154,7 +155,7 @@ int main(int argc, char *argv[])
 
   // create the preconditioning object. 
   Time.ResetStartTime();
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
+  ML_Epetra::MultiLevelPreconditioner* MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
   ConstructionTime = Time.ElapsedTime();
 
   // tell AztecOO to use this preconditioner, then solve
@@ -187,7 +188,7 @@ int main(int argc, char *argv[])
   Gallery.ComputeResidual(&residual);
   Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
   
-  if( Comm.MyPID()==0 ) {
+  if (Comm.MyPID() == 0) {
     string Prefix = "[ML test] ";
     cout << Prefix << "# of processors  = " << Comm.NumProc() << endl;
     cout << Prefix << "# of global rows = " << GlobalSize << endl;

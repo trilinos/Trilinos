@@ -49,9 +49,6 @@
 
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
-static bool verbose = false;
-static bool ml_verbose = false;
-
 void PrintLine() 
 {
   cout << endl;
@@ -75,13 +72,6 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
-
-  if (Comm.MyPID() == 0)
-    verbose = true;
-
-  if (argc >= 2)
-    if (strcmp(argv[1], "-v") == 0) 
-      ml_verbose = true;
 
   // ===================== //
   // create linear problem //
@@ -110,14 +100,12 @@ int main(int argc, char *argv[]) {
 
     for (unsigned int i = 0 ; i < TestList.size() ; ++i) {
 
-      if (verbose) {
-        PrintLine();
-        cout << "### Testing " << TestList[i] << endl;
-        cout << "### sweeps = " << sweeps << endl;
-        cout << "### damping = " << Damping << endl;
-        PrintLine();
-      }
-         
+      PrintLine();
+      cout << "### Testing " << TestList[i] << endl;
+      cout << "### sweeps = " << sweeps << endl;
+      cout << "### damping = " << Damping << endl;
+      PrintLine();
+
       // ========================= //
       // build ML with ML smoother //
       // ========================= //
@@ -130,10 +118,7 @@ int main(int argc, char *argv[]) {
       MLList.set("smoother: sweeps", sweeps);
       MLList.set("smoother: damping factor", Damping);
 
-      if (ml_verbose)
-        MLList.set("output", 10);
-      else
-        MLList.set("output", 0);
+      MLList.set("output", 0);
 
       Epetra_Time Time(Comm);
 
@@ -166,7 +151,7 @@ int main(int argc, char *argv[]) {
       SetDefaults("SA",MLList);
       MLList.set("smoother: pre or post", "both");
       MLList.set("smoother: type", "IFPACK");
-      MLList.set("smoother: ifpack type", "block relaxation (no AS)");
+      MLList.set("smoother: ifpack type", "point relaxation (no AS)");
       ParameterList& IFPACKList = MLList.sublist("smoother: ifpack list");;
       IFPACKList.set("relaxation: type", TestList[i]);
       IFPACKList.set("relaxation: sweeps", sweeps);
@@ -175,10 +160,7 @@ int main(int argc, char *argv[]) {
       IFPACKList.set("partitioner: type", "metis");
       IFPACKList.set("partitioner: local parts", -1);
 
-      if (ml_verbose)
-        MLList.set("output", 10);
-      else
-        MLList.set("output", 0);
+      MLList.set("output", 0);
       Time.ResetStartTime();
 
       MLPrec = new MultiLevelPreconditioner(*A, MLList);
@@ -215,8 +197,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (!TestPassed) {
-    cout << "### AT LEAST ONE TEST FAILED!" << endl;
+  if (!TestPassed && Comm.MyPID() == 0) {
+    cerr << "Test `IFPACKSmoothers.exe' failed!" << endl;
     exit(EXIT_FAILURE);
   }
 
@@ -224,8 +206,9 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
 
-  cout << "### ALL TESTS PASSED" << endl;
-  return( EXIT_SUCCESS );
+  if (Comm.MyPID() == 0) 
+    cout << "Test `IFPACKSmoothers.exe' passed!" << endl;
+  return (EXIT_SUCCESS);
 }
 
 #else
