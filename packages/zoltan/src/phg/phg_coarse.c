@@ -294,7 +294,9 @@ int Zoltan_PHG_Coarsening
     c_hg->vedge   = c_vedge;
   }
 
-  c_hg->vmap    = hg->vmap;
+  c_hg->vmap    = (int *) ZOLTAN_MALLOC(hg->nVtx * sizeof(int));
+  for (i = 0; i < hg->nVtx; i++) c_hg->vmap[i] = hg->vmap[i];
+
   c_hg->hindex  = NULL;
   c_hg->hvertex = NULL;
   c_hg->coor    = hg->coor;     /* ??? needs to be fixed -- YES!! size of 
