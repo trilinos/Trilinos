@@ -1,32 +1,32 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
+// USA
 // Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
 // (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
+//
 // ************************************************************************
 //@HEADER
 
@@ -52,13 +52,13 @@ namespace LOCA {
 
 namespace LOCA {
 
-  /*! 
+  /*!
     \brief Implementation of LOCA::Abstract::Iterator for computing points
     along a continuation curve.
   */
   /*!
-    The %Stepper class implements the pure virtual methods of the 
-    LOCA::Abstract::Iterator for iteratively computing points along a 
+    The %Stepper class implements the pure virtual methods of the
+    LOCA::Abstract::Iterator for iteratively computing points along a
     continuation curve.
   */
 
@@ -66,7 +66,7 @@ namespace LOCA {
 
   public:
 
-    //! Constructor 
+    //! Constructor
     NewStepper(LOCA::MultiContinuation::AbstractGroup& initialGuess,
 	       NOX::StatusTest::Generic& t,
 	       NOX::Parameter::List& p);
@@ -82,8 +82,14 @@ namespace LOCA {
     //! Return the current solution group.
     virtual LOCA::MultiContinuation::AbstractGroup& getSolutionGroup();
 
-    //! Return the output parameters from the stepper algorithm. 
+    //! Return the output parameters from the stepper algorithm.
     virtual const NOX::Parameter::List& getParameterList() const;
+
+    /*! @brief Return the current nonlinear solver pointer.
+     *
+     * Will throw an error if the solver does not exist yet.
+     */
+    virtual const NOX::Solver::Generic& getSolver() const;
 
   protected:
 
@@ -94,34 +100,34 @@ namespace LOCA {
     virtual LOCA::Abstract::Iterator::IteratorStatus start();
 
     //! Finalize iterator
-    virtual LOCA::Abstract::Iterator::IteratorStatus 
+    virtual LOCA::Abstract::Iterator::IteratorStatus
     finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus);
 
     //! Preprocess step
-    virtual LOCA::Abstract::Iterator::StepStatus 
+    virtual LOCA::Abstract::Iterator::StepStatus
     preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
     //! Compute step
-    virtual LOCA::Abstract::Iterator::StepStatus 
+    virtual LOCA::Abstract::Iterator::StepStatus
     compute(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
     //! Postprocess step
-    virtual LOCA::Abstract::Iterator::StepStatus 
+    virtual LOCA::Abstract::Iterator::StepStatus
     postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
     //! Check stopping criteria
-    virtual LOCA::Abstract::Iterator::IteratorStatus 
+    virtual LOCA::Abstract::Iterator::IteratorStatus
     stop(LOCA::Abstract::Iterator::StepStatus stepStatus);
 
     //! Compute a new step size based on results from the previous step
     LOCA::Abstract::Iterator::StepStatus
-    computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus, 
+    computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
 		    double& stepSize);
 
     //! Print to the screen the initialization information
     virtual void printInitializationInfo();
 
-    //! Print to the screen information for the beginning of a new continuation step 
+    //! Print to the screen information for the beginning of a new continuation step
     virtual void printStartStep();
 
     //! Print to the screen information for the end of a successful continuation step
@@ -150,7 +156,7 @@ namespace LOCA {
     //! Pointer to the a Group with the solution for the previous continuation step.  This is used for resetting the nonlinear solver in between failed steps.
     LOCA::MultiContinuation::ExtendedGroup* prevGroupPtr;
 
-    //! Pointer to the status test.  
+    //! Pointer to the status test.
     NOX::StatusTest::Generic* statusTestPtr;
 
     //! Pointer to parameter list passed in constructor/reset method
@@ -179,7 +185,7 @@ namespace LOCA {
 
     //! Current step size (change in the continuation parameter), \f$\Delta \lambda_i \f$.
     double stepSize;
-  
+
     //! Maximum number of newton iterations per continuation step,\f$ N_{max} \f$. Defaults to 15.
     int maxNonlinearSteps;
 
