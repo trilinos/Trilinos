@@ -252,9 +252,9 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   int *displs, *each_size;
   PHGComm *hgc = hg->comm;  
   char  *yo = "matching_ipm";
-  
+    
   /* compute NLOOP as 1/2 * total vertices/total columns */
-  NDO   = MIN (100, 1 + (int) 0.2 * hg->dist_x[hgc->nProc_x]);
+  NDO   = MIN (100, 1 + (int)  hg->dist_x[hgc->nProc_x]/hgc->nProc_x); 
   NLOOP = 0.98 * hg->dist_x[hgc->nProc_x] / (2 * hgc->nProc_x * NDO);
        
   /* local slice of global matching array.  It uses local numbering (zero-based)
@@ -412,7 +412,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
            m_bestsum [vertex] = tsums[i];
            m_bestv   [vertex] = i;
          }    
-       cmatch [m_bestv[vertex]] = -1;      /* pending match */  
+       cmatch [m_bestv[vertex]] = -1;      /* pending match */       
      }
         
      /************************ PHASE 3: **************************************/
@@ -444,16 +444,16 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        vertex  = *ip++;
        bestv   = *ip++;
        bestsum = *ip++;
-                
-       if (VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x)    {
-         lno =  VTX_GNO_TO_LNO (hg, vertex);  
-         if ((bestsum > b_bestsum [lno]) || (bestsum == b_bestsum[lno]
-          && VTX_TO_PROC_X (hg, b_gno[lno]) != hgc->myProc_x
-          && VTX_TO_PROC_X (hg, bestv)      == hgc->myProc_x))    {        
-              b_gno     [lno] = bestv;
-              b_bestsum [lno] = bestsum;
-         }                   
-       }
+       
+       if (VTX_TO_PROC_X (hg, vertex) != hgc->myProc_x)
+          continue;    
+       lno =  VTX_GNO_TO_LNO (hg, vertex);  
+       if ((bestsum > b_bestsum [lno]) || (bestsum == b_bestsum[lno]
+        && VTX_TO_PROC_X (hg, b_gno[lno]) != hgc->myProc_x
+        && VTX_TO_PROC_X (hg, bestv)      == hgc->myProc_x))    {        
+           b_gno     [lno] = bestv;
+           b_bestsum [lno] = bestsum;
+       }                   
      }   
                                
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);

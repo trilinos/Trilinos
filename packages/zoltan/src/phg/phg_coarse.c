@@ -37,7 +37,7 @@ int Zoltan_PHG_Coarsening
   int    *LevelCnt,
   int   **LevelData)   /* information to reverse coarsenings later */
 {
-  int i, j, vertex, edge, *ip, me, size, count;
+  int i, j, vertex, edge, *ip, me, size, count, pincnt=hg->nPins;
   int *cmatch=NULL, *used_edges=NULL, *c_vindex=NULL, *c_vedge=NULL;
   int *listgno=NULL, *listlno=NULL, *displs=NULL, *each_size=NULL;
   float *pwgt;
@@ -175,7 +175,7 @@ int Zoltan_PHG_Coarsening
       ZOLTAN_TRACE_EXIT (zz, yo);
       return ZOLTAN_MEMERR;
   }
-  if (hg->nPins>0 && !(c_vedge = (int*)ZOLTAN_MALLOC (3*hg->nPins*sizeof(int)))){
+  if (hg->nPins>0 && !(c_vedge = (int*)ZOLTAN_MALLOC (hg->nPins*sizeof(int)))){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT (zz, yo);
       return ZOLTAN_MEMERR;
@@ -212,7 +212,11 @@ int Zoltan_PHG_Coarsening
        count = *ip++;           /* extract edge count, advance to first edge */
        while (count--)  {
           edge = *ip++;           
-          used_edges [edge]      = i+1;
+          used_edges [edge] = i+1;
+          if (c_hg->nPins >= pincnt)  {
+             pincnt = 1 + 1.2 * pincnt;
+             c_vedge = (int*) ZOLTAN_REALLOC (c_vedge, pincnt * sizeof(int));
+          }
           c_vedge[c_hg->nPins++] = edge;
        }
   
@@ -222,7 +226,11 @@ int Zoltan_PHG_Coarsening
             
       for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)  {
         if (used_edges [hg->vedge[j]] <= i)   {
-          used_edges [hg->vedge[j]]     = i+1;          
+          used_edges [hg->vedge[j]] = i+1;  
+          if (c_hg->nPins >= pincnt)  {
+             pincnt = 1 + 1.2 * pincnt;          
+             c_vedge = (int*) ZOLTAN_REALLOC (c_vedge, pincnt * sizeof(int));
+          }                  
           c_vedge[c_hg->nPins++] = hg->vedge[j];
         }      
       }        
@@ -240,7 +248,11 @@ int Zoltan_PHG_Coarsening
            
         for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++)  {
           if (used_edges [hg->vedge[j]] <= i)  {
-            used_edges [hg->vedge[j]] = i+1;                  
+            used_edges [hg->vedge[j]] = i+1; 
+            if (c_hg->nPins >= pincnt)  {
+               pincnt = 1 + 1.2 * pincnt;            
+               c_vedge = (int*) ZOLTAN_REALLOC (c_vedge, pincnt * sizeof(int));
+            }                             
             c_vedge[c_hg->nPins++] = hg->vedge[j];
           }              
         }                       
