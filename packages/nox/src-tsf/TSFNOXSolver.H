@@ -60,6 +60,8 @@ namespace TSFExtended
 
 
   private:
+    void reset() const ;
+
     mutable NonlinearOperator<double> F_;
     LinearSolver<double> linSolver_;
     mutable Vector<double> x0_;

@@ -235,12 +235,26 @@ void NOX::TSF::Group::computeX(const Group& grp, const Vector& d, double step)
 
 NOX::Abstract::Group::ReturnType NOX::TSF::Group::computeF() 
 {
+ 
+  if (verbosity() > TSFExtended::VerbMedium)
+    {
+      cerr << "calling computeF()" << endl;
+    }
+
   if (isValidF)
     {
+      if (verbosity() > TSFExtended::VerbMedium)
+        {
+          cerr << "reusing F" << endl;
+        }
       return NOX::Abstract::Group::Ok;
     }
   else
     {
+      if (verbosity() > TSFExtended::VerbMedium)
+        {
+          cerr << "computing new F" << endl;
+        }
       nonlinearOp.setEvalPt(xVector.getTSFVector());
       fVector = nonlinearOp.getFunctionValue();
       isValidF = true;
@@ -252,6 +266,11 @@ NOX::Abstract::Group::ReturnType NOX::TSF::Group::computeF()
 
 NOX::Abstract::Group::ReturnType NOX::TSF::Group::computeJacobian() 
 {
+  if (verbosity() > TSFExtended::VerbMedium)
+    {
+      cerr << "calling computeJ()" << endl;
+    }
+
   // Skip if the Jacobian is already valid
   if (isValidJacobian)
     {
@@ -268,6 +287,10 @@ NOX::Abstract::Group::ReturnType NOX::TSF::Group::computeJacobian()
 
 NOX::Abstract::Group::ReturnType NOX::TSF::Group::computeGradient() 
 {
+  if (verbosity() > TSFExtended::VerbMedium)
+    {
+      cerr << "calling computeGrad()" << endl;
+    }
   if (isValidGradient)
     {
       return NOX::Abstract::Group::Ok;
@@ -469,11 +492,23 @@ const NOX::Abstract::Vector& NOX::TSF::Group::getX() const
 
 const NOX::Abstract::Vector& NOX::TSF::Group::getF() const 
 {  
+  if (verbosity() > TSFExtended::VerbMedium)
+    {
+      cerr << "calling getF()" << endl;
+    }
+  TEST_FOR_EXCEPTION(!isF(), runtime_error, 
+                     "calling getF() with invalid function value");
   return fVector;
 }
 
 double NOX::TSF::Group::getNormF() const
 {
+  if (verbosity() > TSFExtended::VerbMedium)
+    {
+      cerr << "normF = " << normF << endl;
+    }
+  TEST_FOR_EXCEPTION(!isF(), runtime_error, 
+                     "calling normF() with invalid function value");
   return normF;
 }
 

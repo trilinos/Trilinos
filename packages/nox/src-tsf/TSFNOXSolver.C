@@ -82,6 +82,10 @@ NOXSolver::NOXSolver(const ParameterList& params,
       
     }
 
+}
+
+void NOXSolver::reset() const 
+{
   grp_ = rcp(new NOX::TSF::Group(x0_, F_, linSolver_));
 
   NOX::Parameter::Teuchos2NOX converter;
@@ -93,6 +97,8 @@ NOXSolver::NOXSolver(const ParameterList& params,
 
 NOX::StatusTest::StatusType NOXSolver::solve() const 
 {
+  reset();
+
   NOX::StatusTest::StatusType rtn = solver_->solve();
 
   const NOX::TSF::Group* solnGrp 
@@ -111,14 +117,6 @@ NOX::StatusTest::StatusType NOXSolver::solve() const
 
   x0_ = soln_;
   F_.setEvalPt(soln_);
-
-  grp_ = rcp(new NOX::TSF::Group(soln_, F_, linSolver_));
-
-
-  NOX::Parameter::Teuchos2NOX converter;
-  noxParams_ = converter.toNOX(params_);
-
-  solver_ = rcp(new NOX::Solver::Manager(*grp_, *statusTest_, noxParams_));
 
   return rtn;
 }
