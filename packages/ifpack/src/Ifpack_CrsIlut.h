@@ -81,17 +81,17 @@ class Ifpack_CrsIlut: public Epetra_Object, public Epetra_CompObject, public Ifp
   //@{ \name Attribute access methods.
 
   //! Set Drop tolerance value as defined by the ILUT algorithm.
-  double DropTol() {return(DropTol_);};
+  double DropTol() const {return(DropTol_);};
 
   //! Set fill tolerance value as defined by the ILUT algorithm.
-  double FillTol() {return(FillTol_);};
+  double FillTol() const {return(FillTol_);};
   //@}
   
  protected:
   //@{ \name Methods needed to implement OverlapFactorObject.
 
   //! Processes the overlapped user matrix for computing the ILUT preconditioner.
-  int ProcessOverlapMatrix (const Epetra_RowMatrix &A)
+  int ProcessOverlapMatrix(const Epetra_RowMatrix &A);
   //! Compute ILUT factors L and U: WARNING: THIS ROUTINE IS NOT USER CALLABLE, CALL Factor().
   int DerivedFactor();
   //@}

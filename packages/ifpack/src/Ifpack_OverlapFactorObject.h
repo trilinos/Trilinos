@@ -40,7 +40,7 @@ class Ifpack_OverlapFactorObject {
   Ifpack_OverlapFactorObject(const Epetra_RowMatrix * UserMatrix);
   
   //! Copy constructor.
-  Ifpack_OverlapFactorObject(const Ifpack_CrsIlut & Source);
+  Ifpack_OverlapFactorObject(const Ifpack_OverlapFactorObject & Source);
 
   //! Ifpack_OverlapFactorObject Destructor
   virtual ~Ifpack_OverlapFactorObject();
@@ -80,8 +80,7 @@ class Ifpack_OverlapFactorObject {
  
  protected:
 
-  //@{ \name Methods that must be implemented by derived classes
-.
+  //@{ \name Methods that must be implemented by derived classes.
   //! Virtual method that processes the overlap matrix as needed by the derived class.
   /*! This method is called by InitValues() afer the user matrix has been distributed 
       to support overlap (if any overlap is requested).  ProcessOverlapMatrix must
@@ -98,8 +97,6 @@ class Ifpack_OverlapFactorObject {
   void SetAllocated(bool Flag) {Allocated_ = Flag;};
   void SetFactored(bool Flag) {Factored_ = Flag;};
   void SetValuesInitialized(bool Flag) {ValuesInitialized_ = Flag;};
-
-  bool Allocated() const {return(Allocated_);};
 
   bool Factored_;
   bool Allocated_;

@@ -46,13 +46,13 @@ class Ifpack_OverlapSolveObject: public virtual Epetra_Operator {
   void SetOverlapMode( Epetra_CombineMode OverlapMode) {OverlapMode_ = OverlapMode; return;}
 
   //! Define the operator to be used for the lower triangle
-  int SetLowerOperator (Epetra_CrsMatrix * L, bool UseLtrans) {L_ = L; return(0);};
+  int SetLowerOperator (Epetra_CrsMatrix * L, bool UseLTrans) {L_ = L; UseLTrans_ = UseLTrans; return(0);};
 
   //! Define the vector to be used for the diagonal
-  int SetDiagonal (Epetra_Vector * D) {D_ = D; return(0);};
+  int SetDiagonal (Epetra_Vector * D, bool UseDInv) {D_ = D; UseDInv_ = UseDInv; return(0);};
 
   //! Define the operator to be used for the upper triangle
-  int SetUpperOperator (Epetra_CrsMatrix * U, bool UseUtrans) {U_ = U; return(0);};
+  int SetUpperOperator (Epetra_CrsMatrix * U, bool UseUTrans) {U_ = U; UseUTrans_ = UseUTrans; return(0);};
   //@}
 
   //@{ \name Mathematical functions.
@@ -199,6 +199,7 @@ class Ifpack_OverlapSolveObject: public virtual Epetra_Operator {
   Epetra_CrsMatrix * L_;
   bool UseLTrans_;
   Epetra_Vector * D_;
+  bool UseDInv_;
   Epetra_CrsMatrix * U_;
   bool UseUTrans_;
   bool UseTranspose_;

@@ -93,7 +93,7 @@ int Ifpack_OverlapGraph::ConstructOverlapGraph(const Epetra_CrsGraph * UserMatri
     OverlapImporter_ = (Epetra_Import *) OldGraph->Importer();
     OverlapRowMap_ = new Epetra_BlockMap(OverlapImporter_->TargetMap());
 
-    if (level<LevelOverlap_)
+    if (level<OverlapLevel_)
       OverlapGraph_ = new Epetra_CrsGraph(Copy, *OverlapRowMap_, 0);
     else
       // On last iteration, we want to filter out all columns except those that correspond

@@ -15,7 +15,7 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#include "Ifpack_CrsIlut.h"
+#include "Ifpack_Jacobi.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
@@ -26,45 +26,56 @@
 #include "Epetra_MultiVector.h"
 
 //==============================================================================
-Ifpack_CrsIlut::Ifpack_CrsIlut(const Ifpack_OverlapGraph * OverlapGraph, double DropTol, 
-			       double FillTol) 
-  : Epetra_Object("Ifpack::CrsIlut"),
+Ifpack_Jacobi::Ifpack_Jacobi(const Ifpack_OverlapGraph * OverlapGraph, bool UseReciprocal, 
+			       int NumSteps) 
+  : Epetra_Object("Ifpack::Jacobi"),
     Epetra_CompObject(),
     Ifpack_OverlapFactorObject(OverlapGraph),
     Ifpack_OverlapSolveObject(Epetra_Object::Label(), OverlapGraph->OverlapGraph().Comm()),
-    DropTol_(DropTol),
-    FillTol_(FillTol)
+    UseReciprocal_(UseReciprocal),
+    NumSteps_(NumSteps),
+    DiagValues_(0)
 {
 }
 //==============================================================================
-Ifpack_CrsIlut::Ifpack_CrsIlut(const Epetra_RowMatrix * UserMatrix, double DropTol, 
-			       double FillTol) 
-  : Epetra_Object("Ifpack::CrsIlut"),
+Ifpack_Jacobi::Ifpack_Jacobi(const Epetra_RowMatrix * UserMatrix, bool UseReciprocal, 
+			       int NumSteps) 
+  : Epetra_Object("Ifpack::Jacobi"),
     Epetra_CompObject(),
     Ifpack_OverlapFactorObject(UserMatrix),
     Ifpack_OverlapSolveObject(Epetra_Object::Label(), UserMatrix->Comm()),
-    DropTol_(DropTol),
-    FillTol_(FillTol)
+    UseReciprocal_(UseReciprocal),
+    NumSteps_(NumSteps),
+    DiagValues_(0)
 {
 }
 //==============================================================================
-Ifpack_CrsIlut::Ifpack_CrsIlut(const Ifpack_CrsIlut & Source) 
+Ifpack_Jacobi::Ifpack_Jacobi(const Ifpack_Jacobi & Source) 
   : Epetra_Object(Source),
     Epetra_CompObject(Source),
     Ifpack_OverlapFactorObject(Source),
     Ifpack_OverlapSolveObject(Source),
-    DropTol_(Source.DropTol_),
-    FillTol_(Source.FillTol_)
+    UseReciprocal_(Source.UseReciprocal_),
+    NumSteps_(Source.NumSteps_),
+    DiagValues_(Source.DiagValues_)
 {
+  if (DiagValues_!=0) DiagValues_ = new Epetra_Vector(*DiagValues_);
 }
 //==============================================================================
-int Ifpack_CrsIlut::ProcessOverlapMatrix(const Epetra_RowMatrix &A)
+int Ifpack_Jacobi::ProcessOverlapMatrix(const Epetra_RowMatrix &A)
 {
 
+  if (DiagValues_=0) DiagValues_ = new Epetra_Vector(A.RowMap()); // Allocate if necessary
+  EPETRA_CHK_ERR(A.ExtraMyDiagonalCopy(*DiagValues_)); // Get Diagonal Values of A
+
+  // Compute inverse of diagonal if specified
+  if (UseReciprocal()) {EPETRA_CHK_ERR(DiagValues().Reciprocal(DiagValues()));}
+
+  if (NumSteps!=1) EPETRA_CHK_ERR(-1); // NumSteps != 1 not supported yet.
   return(0);
 }
 //==============================================================================
-int Ifpack_CrsIlut::DerivedFactor()
+int Ifpack_Jacobi::DerivedFactor()
 {
 
   return(0);
