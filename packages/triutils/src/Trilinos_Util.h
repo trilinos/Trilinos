@@ -82,6 +82,7 @@ class Epetra_MultiVector;
 #endif
 #endif
 
+#ifndef JANUS_STLPORT
 #ifdef HAVE_CSTDLIB
 #include <cstdlib>
 using std::calloc;
@@ -91,6 +92,9 @@ using std::rand;
 #else
 #include <stdlib.h>
 #endif
+#else /* JANUS_STLPORT */
+#include <stdlib.h>
+#endif /* JANUS_STLPORT */
 
 #ifdef HAVE_CSTDIO
 #include <cstdio>
@@ -113,8 +117,8 @@ using std::rand;
 #ifndef JANUS_STLPORT
 #ifdef HAVE_CMATH
 #include <cmath>
-using std::sqrt;
 using std::fabs;
+using std::sqrt;
 #else
 #include <math.h>
 #endif
