@@ -121,14 +121,13 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   }
   AmesosList.set("MaxProcs",MaxProcs);
 
+  // don't use iterative refinement for Superludist only
+  Teuchos::ParameterList & SuperludistList = AmesosList.sublist("Superludist");
+  SuperludistList.set("IterRefine","NO");
+
   Amesos_BaseSolver* A_Base;
   Amesos A_Factory;
 
-  // I got the impression that small problems are "safer"
-  // in other hands than superludist ones.
-
-  if( NumGlobalRows < 128 ) choice = ML_AMESOS_KLU;
-  
   switch( choice ) {
 
   case ML_AMESOS_UMFPACK:
@@ -203,6 +202,8 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
       printf("Amesos (level %d) : Now re-building with KLU\n",curr_level);
 #else
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      cout << "Amesos (level " << curr_level
+	   << ") : This coarse solver is not available." << endl;
       cout << "Amesos (level " << curr_level
 	   << ") : Now re-building with KLU\n";
 #endif
