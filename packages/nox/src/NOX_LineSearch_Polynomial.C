@@ -145,7 +145,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     isConverged = false;
   else 
   {
-    isConverged = isSufficientDecrease(newf, oldf, step, slope, eta);
+    isConverged = isSufficientDecrease(newf, oldf, step, slope, eta, oldGrp, newGrp);
     if(allowIncrease) 
     {
       isConverged = ( isConverged || 
@@ -242,7 +242,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     newf = 0.5 * newGrp.getNormF() * newGrp.getNormF(); 
     
     eta = 1.0 - step * (1.0 - eta_original);
-    isConverged = isSufficientDecrease(newf, oldf, step, slope, eta);
+    isConverged = isSufficientDecrease(newf, oldf, step, slope, eta, oldGrp, newGrp);
     if(allowIncrease)
       isConverged = (isConverged || 
                      isIncreaseAllowed(newf, oldf, counter.getNumLineSearches()) );
@@ -271,8 +271,11 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
   return (!isFailed);
 }
 
-bool NOX::LineSearch::Polynomial::isSufficientDecrease(double newf, double oldf, double step, 
-						       double slope, double eta) const
+bool NOX::LineSearch::Polynomial::isSufficientDecrease(double newf, 
+			      double oldf, double step, double slope, 
+			      double eta, 
+                              const NOX::Abstract::Group& oldGrp, 
+			      const NOX::Abstract::Group& newGrp) const
 {
   double rhs = 0.0;
   if (convCriteria == ArmijoGoldstein) 
@@ -282,8 +285,8 @@ bool NOX::LineSearch::Polynomial::isSufficientDecrease(double newf, double oldf,
   }
   else if (convCriteria == AredPred) 
   {
-    rhs = oldf * (1.0 - alpha * (1.0 - eta));
-    return (newf <= rhs);
+    rhs = oldGrp.getNormF() * (1.0 - alpha * (1.0 - eta));
+    return (newGrp.getNormF() <= rhs);
   }
   else if (convCriteria == None)
   {

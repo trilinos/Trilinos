@@ -64,7 +64,7 @@ namespace LineSearch {
   -# Old solution group: \f$ x_{\rm old} \f$ 
   -# Direction vector: \f$ s \f$ 
 
-  The line search attempts to minimize the function:  
+  The line search attempts to minimize the merit function:  
   \f[ 
   \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||_2^2 
   \f]
@@ -125,8 +125,8 @@ namespace LineSearch {
 - The "Sufficient Decrease Condition" is met (the user has two choices): 
   -# "Armijo-Goldstein" conditions: \f$ \phi (x_{n-1}+ \lambda s) \le
      \phi (x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
-  -# "Ared/Pred" conditions: \f$ \| \phi (x_{\rm old}+ \lambda s) \| \le
-     \| \phi (x_{\rm old}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear
+  -# "Ared/Pred" conditions: \f$ \| F(x_{\rm old}+ \lambda s) \| \le
+     \| F(x_{\rm old}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear
      solve tolerance in the inexact Newton method. 
   -# "None" - If "Force Interpolation" is true, accept the result of
      the first interpolation. Otherwise, accept the default step.
@@ -258,10 +258,10 @@ protected:
 
     In the case of "Ared/Pred", we return true if
     \f[
-    f_{\rm new} \leq f_{\rm old} + (1 - \alpha (1 - \eta))
+    F_{\rm new} \leq F_{\rm old} + (1 - \alpha (1 - \eta))
     \f]
   */
-  bool isSufficientDecrease(double newf, double oldf, double step, double slope, double eta) const;
+  bool isSufficientDecrease(double newf, double oldf, double step, double slope, double eta, const NOX::Abstract::Group& oldGrp, const NOX::Abstract::Group& newGrp) const;
 
   //! Provides a check to see if a step leading to an increase in the residual is allowed
   bool isIncreaseAllowed(double newf, double oldf, int nOuterIters) const;
