@@ -179,7 +179,6 @@ Epetra_FECrsMatrix& Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix& src)
   }
 
   DeleteMemory();
-  Epetra_CrsMatrix::DeleteMemory();
 
   Epetra_CrsMatrix::operator=(src);
 
@@ -188,14 +187,18 @@ Epetra_FECrsMatrix& Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix& src)
   ignoreNonLocalEntries_ = src.ignoreNonLocalEntries_;
   numNonlocalRows_ = src.numNonlocalRows_;
 
+  workDataLength_ = 128;
+  workData_ = new double[workDataLength_];
+
+  if (numNonlocalRows_ < 1) {
+    return( *this );
+  }
+
   nonlocalRows_ = new int[numNonlocalRows_];
   nonlocalRowLengths_ = new int[numNonlocalRows_];
   nonlocalRowAllocLengths_ = new int[numNonlocalRows_];
   nonlocalCols_ = new int*[numNonlocalRows_];
   nonlocalCoefs_= new double*[numNonlocalRows_];
-
-  workDataLength_ = 128;
-  workData_ = new double[workDataLength_];
 
   for(int i=0; i<numNonlocalRows_; ++i) {
     nonlocalRows_[i] = src.nonlocalRows_[i];
