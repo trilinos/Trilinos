@@ -12,78 +12,84 @@
 #include <vector>
 
 //==============================================================================
-int Ifpack_SSOR::SetLabel()
+void Ifpack_SSOR::SetLabel()
 {
-
   sprintf(Label_,"Ifpack SSOR, sweeps = %d, damping = %e",
 	  NumSweeps(), DampingFactor());
-
-  return(0);
 }
 
 //==============================================================================
 int Ifpack_SSOR::
-ApplyInverse(const Epetra_MultiVector& RHS, Epetra_MultiVector& LHS) const
+ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
 
   // sanity checks
 
-  if (Matrix()->Filled() == false)
+  if (Matrix().Filled() == false)
     IFPACK_CHK_ERR(-4);
 
   if (IsComputed() == false)
     IFPACK_CHK_ERR(-4);
 
-  if (RHS.NumVectors() != LHS.NumVectors())
+  if (X.NumVectors() != Y.NumVectors())
     IFPACK_CHK_ERR(-3);
 
-  int NumVectors = RHS.NumVectors();
+  int NumVectors = X.NumVectors();
+  int NumMyRows = Matrix().NumMyRows();
 
   // first time this method is called, replace zero diagonal
   // elements with 1.0
   if (FirstTime_) {
-    for (int i = 0 ; i < Matrix()->NumMyRows() ; ++i) {
+    for (int i = 0 ; i < NumMyRows ; ++i) {
       double diag = (*Diagonal_)[i];
       if (diag == 0.0)
         (*Diagonal_)[i] = 1.0;
     }
     FirstTime_ = false;
   }
-  
-  if (PrintLevel() > 5)
-    Ifpack_PrintResidual(Label(),*Matrix(),RHS,LHS);
 
-  // the case NumSweeps_ == 1 can be coded more
-  // efficiently 
-  if (NumSweeps() == 1) {
-
-    IFPACK_CHK_ERR(ApplySSOR(LHS));
-
-    if (PrintLevel() > 5)
-      Ifpack_PrintResidual(1,*Matrix(),RHS,LHS);
-
+  // ---------------- //
+  // single sweep can //
+  // ---------------- //
+ 
+  if ((NumSweeps() == 1) && ZeroStartingSolution_
+      && (PrintFrequency() != 0)) {
+    IFPACK_CHK_ERR(ApplySSOR(Y));
     return(0);
   }
   
-  // now the more general case
-  Epetra_MultiVector RHStmp(RHS);
-  Epetra_MultiVector AX(RHS);
+  // --------------------- //
+  // general case (solver) //
+  // --------------------- //
+  
+  Epetra_MultiVector Xtmp(X);
+  Epetra_MultiVector AX(X);
 
+  if (ZeroStartingSolution_)
+    Y.PutScalar(0.0);
+
+  if (PrintFrequency())
+    Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
+  
   for (int j = 0; j < NumSweeps() ; j++) {
 
     // compute the residual
-    IFPACK_CHK_ERR(Apply(LHS,AX));
-    AX.Update(1.0,RHStmp,-1.0);
+    IFPACK_CHK_ERR(Apply(Y,AX));
+    AX.Update(1.0,Xtmp,-1.0);
 
     // apply the lower triangular part of A
     IFPACK_CHK_ERR(ApplySSOR(AX));
 
     // update the residual
-    LHS.Update(DampingFactor(), AX, 1.0);
+    Y.Update(DampingFactor(), AX, 1.0);
 
-    if (PrintLevel() > 5)
-      Ifpack_PrintResidual(j + 1,*Matrix(),RHS,LHS);
+    if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
+      Ifpack_PrintResidual(j,Matrix(),Y,Xtmp);
+    
   }
+
+  if (PrintFrequency())
+    Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,Xtmp);
 
   return(0);
 
@@ -95,22 +101,23 @@ ApplySSOR(Epetra_MultiVector& X) const
 {
 
   int NumVectors = X.NumVectors();
-  int Length = Matrix()->MaxNumEntries();
+  int Length = Matrix().MaxNumEntries();
   vector<int> Indices;
   vector<double> Values;
   Indices.resize(Length);
   Values.resize(Length);
+  int NumMyRows = Matrix().NumMyRows();
 
   // Apply (D - \omega E)^{-1}
 
-  for (int i = 0 ; i < Matrix()->NumMyRows() ; ++i) {
+  for (int i = 0 ; i < NumMyRows ; ++i) {
 
     int NumEntries;
     int col;
     double diag;
     double dtemp = 0.0;
 
-    IFPACK_CHK_ERR(Matrix()->ExtractMyRowCopy(i, Length,NumEntries,
+    IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
 					     &Values[0], &Indices[0]));
 
     for (int m = 0 ; m < NumVectors ; ++m) {
@@ -138,14 +145,14 @@ ApplySSOR(Epetra_MultiVector& X) const
 
   // Apply (D - \omega F)^{-1}
 
-  for (int i = Matrix()->NumMyRows()  - 1 ; i > -1 ; --i) {
+  for (int i = NumMyRows  - 1 ; i > -1 ; --i) {
 
     int NumEntries;
     int col;
     double diag;
     double dtemp = 0.0;
 
-    IFPACK_CHK_ERR(Matrix()->ExtractMyRowCopy(i, Length,NumEntries,
+    IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, Length,NumEntries,
 					     &Values[0], &Indices[0]));
 
     for (int m = 0 ; m < NumVectors ; ++m) {
@@ -154,7 +161,7 @@ ApplySSOR(Epetra_MultiVector& X) const
 
 	col = Indices[k];
 	
-	if (col >= Matrix()->NumMyRows())
+	if (col >= NumMyRows)
 	  continue;
 
 	if (col <= i) 

@@ -61,9 +61,10 @@ class Epetra_RowMatrix;
  ...                                  // fill the elements of A, X, Y
 
  Teuchos::ParameterList List;
- List.set("sweeps", 1555);            // maximum number of GaussSeidel sweeps
- List.set("omega", 0.67);             // damping parameter
- List.set("print convergence", true); // prints out convergence info
+ List.set("point: sweeps", 1555);     // maximum number of GaussSeidel sweeps
+ List.set("point: omega", 0.67);      // damping parameter
+ List.set("point: print frequency", true); // prints out convergence info
+                                           // every 5 sweeps
 
  Ifpack_GaussSeidel APrec(A);         // create an object
 
@@ -102,7 +103,7 @@ public:
 
   virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-  virtual int SetLabel();
+  virtual void SetLabel();
 
 private:
 

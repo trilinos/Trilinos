@@ -31,7 +31,7 @@ public:
 
   virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-  virtual int SetLabel();
+  virtual void SetLabel();
 
 private:
 

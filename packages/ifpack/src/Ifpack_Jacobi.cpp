@@ -11,16 +11,9 @@
 #include "Epetra_Vector.h"
 
 //==============================================================================
-int Ifpack_Jacobi::SetLabel()
-{
-
-  sprintf(Label_,"Ifpack Jacobi, sweeps = %d, damping = %e",
-	  NumSweeps(), DampingFactor());
-
-  return(0);
-}
-
-//==============================================================================
+// If ZeroStartingSolution_ == true, the starting solution
+// is the zero vector.
+//
 int Ifpack_Jacobi::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
@@ -34,7 +27,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // first time this method is called, compute the inverse of 
   // each diagonal element
   if (FirstTime_) {
-    for (int i = 0 ; i < Matrix()->NumMyRows() ; ++i) {
+    for (int i = 0 ; i < Matrix().NumMyRows() ; ++i) {
       double diag = (*Diagonal_)[i];
       if (diag != 0.0)
 	(*Diagonal_)[i] = 1.0 / diag;
@@ -44,26 +37,30 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     FirstTime_ = false;
   }
 
-  // single sweep, easy to do. No output,
-  // as I wanne be efficient and clean
+  // ---------------- //
+  // single sweep can //
+  // ---------------- //
 
-  if (NumSweeps() == 1) {
-    
+  if (NumSweeps() == 1 && ZeroStartingSolution_
+      && (PrintFrequency() != 0)) {
     IFPACK_CHK_ERR(Y.Multiply(DampingFactor(),Y,*Diagonal_,0.0));
     return(0);
   }
 
-  Epetra_MultiVector Xtmp(X);
+  // --------------------- //
+  // general case (solver) //
+  // --------------------- //
 
-  // general case (solver)
   // need an additional vector for AztecOO preconditioning
   // (as X and Y both point to the same memory space)
-
+  Epetra_MultiVector Xtmp(X);
   Epetra_MultiVector AX(X);
-  Y.PutScalar(0.0);
+
+  if (ZeroStartingSolution_)
+    Y.PutScalar(0.0);
   
-  if (PrintLevel() > 5)
-    Ifpack_PrintResidual(Label(),*Matrix(),Y,Xtmp);
+  if (PrintFrequency())
+    Ifpack_PrintResidual(Label(),Matrix(),Y,Xtmp);
 
   for (int j = 0; j < NumSweeps() ; j++) {
 
@@ -77,10 +74,13 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     // update the solution at step `j'
     Y.Update(DampingFactor(), AX, 1.0);
 
-    if (PrintLevel() > 5)
-      Ifpack_PrintResidual(j + 1,*Matrix(),Y,Xtmp);
+    if (PrintFrequency() && (j != 0) && (j % PrintFrequency() == 0))
+      Ifpack_PrintResidual(j,Matrix(),Y,Xtmp);
 
   }
+
+  if (PrintFrequency())
+    Ifpack_PrintResidual(NumSweeps(),Matrix(),Y,Xtmp);
 
   return(0);
 

@@ -54,9 +54,10 @@ class Epetra_RowMatrix;
  ...                                  // fill the elements of A, X, Y
 
  Teuchos::ParameterList List;
- List.set("sweeps", 1555);            // maximum number of Jacobi sweeps
- List.set("omega", 0.67);             // damping parameter
- List.set("print convergence", true); // prints out convergence info
+ List.set("point: sweeps", 1555);            // maximum number of Jacobi sweeps
+ List.set("point: omega", 0.67);             // damping parameter
+ List.set("point: print frequency", 5);      // prints out convergence info
+                                             // every 5 sweeps
 
  Ifpack_Jacobi APrec(A);              // create an object
 
@@ -107,18 +108,27 @@ public:
   Ifpack_Jacobi(const Epetra_RowMatrix* Matrix) :
     Ifpack_PointPreconditioner(Matrix),
     FirstTime_(true)
-  {}
-
+  {
+    SetLabel();
+  }
 
   //! Destructor.
   ~Ifpack_Jacobi()
   {}
 
-  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-
-  virtual int SetLabel();
+  //! Applies the Jacobi preconditioner to X, returns the result in Y.
+  virtual int ApplyInverse(const Epetra_MultiVector& X, 
+			   Epetra_MultiVector& Y) const;
 
 private:
+
+  virtual void SetLabel()
+  {
+    sprintf(Label_, "Ifpack_Jacobi, sweeps = %d, damping = %e",
+	    NumSweeps(), DampingFactor());
+  }
+
+
   mutable bool FirstTime_;
 };
 
