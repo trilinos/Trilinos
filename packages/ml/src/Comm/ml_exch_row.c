@@ -351,8 +351,6 @@ example (with nonutilized ghost variables still works
   else
     (*Pappended)->N_total_cols_est = Pmatrix->invec_leng;
 
-  printf("count is %d\n",count);
-
   (*Pappended)->N_total_cols_est += count/4;
 
   ML_Operator_Set_1Levels(*Pappended, Pmatrix->from, Pmatrix->to);
