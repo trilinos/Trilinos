@@ -115,6 +115,24 @@
 #include <map.h>
 #endif // ifdef HAVE_MAP
 
+#ifdef HAVE_VECTOR
+#include <vector>
+#else
+#include <vector.h>
+#endif // ifdef HAVE_VECTOR
+
+#ifdef HAVE_ALGORITHM
+#include <algorithm>
+#else
+#include <algo.h>
+#endif // ifdef HAVE_ALGORITHM
+
+#ifdef HAVE_NUMERIC
+#include <numeric>
+#else
+#include <algo.h>
+#endif // ifdef HAVE_NUMERIC
+
 /* 
 this "using namespace" is a bad thing. (Not a Bad Thing, mind you, just a bad thing.) 
 replace real soon now.
@@ -128,8 +146,5 @@ using namespace std;
 #define TPETRA_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)    /* sign function */
 
 const int Tpetra_DefaultTracebackMode = 1; // Default value for traceback behavior
-
-//#define ORDINAL_ZERO Teuchos::OrdinalTraits<OrdinalType>::zero()
-//#define ORDINAL_ONE Teuchos::OrdinalTraits<OrdinalType>::one()
 
 #endif // _TPETRA_CONFIGDEFS_HPP_

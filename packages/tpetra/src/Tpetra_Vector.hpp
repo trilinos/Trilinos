@@ -30,13 +30,12 @@
 #define _TPETRA_VECTOR_HPP_
 
 #include "Tpetra_Object.hpp"
+#include "Tpetra_ConfigDefs.hpp" // for STL vector, algorithm, numeric
 #include "Tpetra_VectorSpace.hpp"
 #include <Teuchos_CompObject.hpp>
 #include <Teuchos_BLAS.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include <vector>
-#include <numeric>
 
 namespace Tpetra {
 
