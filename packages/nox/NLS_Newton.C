@@ -13,6 +13,7 @@
 NLS_Newton::NLS_Newton(NLS_Group& i, NLS_Group& s, NLS_ParameterList& p) :
   oldsoln(i),
   soln(s),
+  params(p),
   niter(0)
 {
   // Get initial guess for x and corresponding rhs
@@ -30,7 +31,14 @@ void NLS_Newton::resetParameters(NLS_ParameterList& p)
 
 bool NLS_Newton::isConverged() 
 {
-
+  double normupdate = soln.getNewton().norm();
+  cout << "RHS Norm = " << normrhs << "  Update Norm = " << normupdate << endl;
+  if ((normrhs < params.getParameter("Absolute Tolerance",1.0e-10))
+      &&(normupdate < params.getParameter("Relative Tolerance",1.0e-6))) {
+    cout << "Solution is CONVERGED!" << endl;
+    return true;
+  }
+  return false;
 }
 
 int NLS_Newton::iterate()
@@ -39,13 +47,13 @@ int NLS_Newton::iterate()
   soln.computeJacobian();
 
   // compute Newton direction for current solution
-  soln.computeNewton();
+  soln.computeNewton(params);
 
   // copy current group to the old group
   oldsoln.copy(soln);
 
   // update current solution
-  soln.computeX(oldsoln, oldsoln.getNewton(), static_cast<double>(1.0));
+  soln.computeX(oldsoln, oldsoln.getNewton(), static_cast<double>(-1.0));
 
   // compute RHS for new current solution
   soln.computeRHS();
@@ -62,7 +70,13 @@ int NLS_Newton::iterate()
 
 int NLS_Newton::solve()
 {
-
+  // Get Parameters
+  int maxit = params.getParameter("Max Nonlinear Iterations", 15);
+  cout << "Beginning nonlinear solve with Newtons method" << endl;
+  for (int i=0; i<maxit; i++) {
+    iterate();
+    if (isConverged()) break;
+  }
 }
 
 NLS_Group& NLS_Newton::getSolutionGroup() const

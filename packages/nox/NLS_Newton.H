@@ -22,7 +22,7 @@ public:
   //! Newton-method constructor
   NLS_Newton(NLS_Group& initialGuess, 
 	     NLS_Group& solutionSpace, 
-	     NLS_ParameterList& params);
+	     NLS_ParameterList& parameters);
   ~NLS_Newton();
 
   void resetParameters(NLS_ParameterList& p);
@@ -37,6 +37,7 @@ private:
   
   NLS_Group& soln;		//!< Solution
   NLS_Group& oldsoln;		//!< Old solution
+  NLS_ParameterList& params;    //!< Parameter list
   double normrhs;		//!< Norm of RHS
 
   // Statistics

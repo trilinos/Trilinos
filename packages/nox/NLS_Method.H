@@ -22,7 +22,7 @@ class NLS_Method
 
 protected: 
   //! Constructor 
-  NLS_Method();
+  NLS_Method() {};
 
   //! This is what the basic constructor for a derived class should look like
   // NLS_Method(NLS_Function& f, NLS_ParameterList& p) {};
@@ -30,7 +30,7 @@ protected:
 public:
 
   //! Deconstructor
-  virtual ~NLS_Method();
+  virtual ~NLS_Method() {};
 
   //! Change parameters for the nonlinear method.
   virtual void resetParameters(NLS_ParameterList& p) = 0;

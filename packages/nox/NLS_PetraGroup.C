@@ -8,6 +8,7 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
+#include "AztecOO.h"
 #include "NLS_PetraGroup.H"
 
 NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J, NLS_PetraGroupInterface& I) :
@@ -64,8 +65,7 @@ NLS_Group* NLS_PetraGroup::newCopy(bool isJacobianEnabled) const
 
 NLS_Group& NLS_PetraGroup::copy(const NLS_Group& source)
 {
-  cout << "ERROR: NLS_PetraGroup::copy() - requires a PetraGroup object be passed in!" << endl;
-  throw;
+  copy(dynamic_cast<const NLS_PetraGroup&> (source));
 }
 
 NLS_Group& NLS_PetraGroup::copy(const NLS_PetraGroup& copyFrom)
@@ -93,14 +93,18 @@ NLS_Group& NLS_PetraGroup::copy(const NLS_PetraGroup& copyFrom)
 
 const NLS_Vector& NLS_PetraGroup::computeX(const NLS_Group& grp, const NLS_Vector& d, double step) 
 {
-  cout << "ERROR: NLS_PetraGroup::computeX() - Pass Petra objects in call!" << endl;
-  throw;
+ computeX(dynamic_cast<const NLS_PetraGroup&> (grp),
+	  dynamic_cast<const NLS_PetraVector&> (d),
+	  step); 
+
 }
 
-const NLS_Vector& NLS_PetraGroup::computeX(const NLS_PetraGroup& grp, const NLS_PetraVector& d, 
+//! Compute and return solution vector
+const NLS_Vector& NLS_PetraGroup::computeX(const NLS_PetraGroup& grp, 
+					   const NLS_PetraVector& d, 
 					   double step) 
 {
-  xVector.update(grp.getX(),  d, step);
+  xVector.update(dynamic_cast<const NLS_PetraVector&> (grp.getX()),  d, step);
   reset();
   return xVector;
 }
@@ -108,6 +112,7 @@ const NLS_Vector& NLS_PetraGroup::computeX(const NLS_PetraGroup& grp, const NLS_
 const NLS_Vector& NLS_PetraGroup::computeRHS() 
 {
   Interface.computeRHS(xVector.getPetraVector(), RHSVector.getPetraVector());
+  isValidRHS = true;
   return RHSVector;
 }
 
@@ -115,8 +120,8 @@ void NLS_PetraGroup::computeJacobian()
 {
   if (!isJacobianEnabled())
     throw;
-
   Interface.computeJacobian(xVector.getPetraVector(), *Jac);
+  isValidJacobian = true;
 }
 
 const NLS_Vector& NLS_PetraGroup::computeGrad() 
@@ -143,7 +148,10 @@ const NLS_Vector& NLS_PetraGroup::computeNewton()
   throw;
 }
 
-const NLS_Vector& NLS_PetraGroup::computeNewton(NLS_ParameterList& parameter) 
+//! Compute and return Newton direction, using desired accuracy for nonlinear solve
+/*! Throws an error if RHS and Jacobian have not been computed */
+const NLS_Vector& NLS_PetraGroup::computeNewton(NLS_ParameterList& p) 
+
 {
   if (!isValidRHS) {
     cout << "ERROR: computeNewton() - RHS is out of date wrt X!" << endl;
@@ -153,15 +161,14 @@ const NLS_Vector& NLS_PetraGroup::computeNewton(NLS_ParameterList& parameter)
     cout << "ERROR: computeNewton() - Jacobian is out of date wrt X!" << endl;
     throw;
   }
-
+  
   Epetra_LinearProblem Problem(Jac, &(xVector.getPetraVector()), &(RHSVector.getPetraVector()));
 
   // For now, set problem level to hard, moderate, or easy
   Problem.SetPDL(hard);
-
-  //AztecOO aztec(Problem);
-  //aztec.Iterate(nlParamsPtr->getMaxLinearStep(), eta_k);
-
+  AztecOO aztec(Problem);
+  aztec.Iterate(p.getParameter("Max Linear Iterations", 400), 
+		p.getParameter("Linear Solver Tolerance", 1.0e-4));  
   return NewtonVector;
 }
 

@@ -105,6 +105,7 @@ NLS_Vector& NLS_PetraVector::update(const NLS_Vector& x, double alpha,
 				    const NLS_Vector& y, double beta,
 				    double gamma)
 {
+  cout << "ERROR: NLS_PetraVector::update - must pass specific NLS_Vector class!" << endl;
   throw;
 }
 
