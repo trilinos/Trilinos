@@ -28,7 +28,7 @@
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
 
-#define abs(x) (((x) > 0) ? x : (-(x)))
+#define dabs(x) (((x) > 0) ? x : (-(x)))
 
 /* ******************************************************************** */
 /* internal function defined later on in this file                      */
@@ -286,7 +286,7 @@ int ML_Aggregate_CoarsenCoupledVBlock( ML_Aggregate *ml_ag,
             dcompare1 = col_val[j] * col_val[j];
             if ( dcompare1 > 0.0 )
             {
-               dcompare2 = abs((diagonal[i] * diagonal[jnode]));
+               dcompare2 = dabs((diagonal[i] * diagonal[jnode]));
                if ( dcompare1 >= epsilon * dcompare2 )
                   mat_indx[nz_cnt++] = col_ind[j];
             }
@@ -923,9 +923,9 @@ for (i=0; i<exp_Nrows; i++)
       for (j = 0; j < aggr_cnt_array[i]; j++)
       {
          index = rows_in_aggs[i][j];
-         if ( fabs(qr_tmp[ k*aggr_cnt_array[i]+j]) > largest )
+         if ( dabs(qr_tmp[ k*aggr_cnt_array[i]+j]) > largest )
          {
-            largest = fabs(qr_tmp[ k*aggr_cnt_array[i] + j ]);
+            largest = dabs(qr_tmp[ k*aggr_cnt_array[i] + j ]);
             if ( qr_tmp[ k*aggr_cnt_array[i] + j ] < 0.0) thesign = -1.;
             else thesign = 1.;
          }

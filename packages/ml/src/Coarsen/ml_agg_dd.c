@@ -15,7 +15,7 @@
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
 
-#define abs(x) (((x) > 0) ? x : (-(x)))
+#define dabs(x) (((x) > 0) ? x : (-(x)))
 
 /* ******************************************************************** */
 /* external functions called from this file                             */
@@ -186,7 +186,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
             dcompare1 = col_val[j] * col_val[j];
             if ( dcompare1 > 0.0 )
             {
-               dcompare2 = abs((diagonal[i] * diagonal[jnode]));
+               dcompare2 = dabs((diagonal[i] * diagonal[jnode]));
                if ( dcompare1 >= epsilon * dcompare2 )
                   mat_indx[nz_cnt++] = col_ind[j];
             }

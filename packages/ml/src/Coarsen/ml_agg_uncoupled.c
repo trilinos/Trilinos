@@ -22,7 +22,7 @@
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
 
-#define abs(x) (((x) > 0) ? x : (-(x)))
+#define dabs(x) (((x) > 0) ? x : (-(x)))
 
 /* ******************************************************************** */
 /* internal function defined later on in this file                      */
@@ -233,8 +233,8 @@ int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
             if ( dcompare1 > 0.0 )
             {
 	       dcompare2 = diagonal[i] * diagonal[jnode];
-               dcompare1 = abs( dcompare1 );
-               dcompare2 = abs( dcompare2 );
+               dcompare1 = dabs( dcompare1 );
+               dcompare2 = dabs( dcompare2 );
 	       if ( dcompare1 >= epsilon * dcompare2 ) 
 	          mat_indx[nz_cnt++] = col_ind[j];
             }
@@ -580,9 +580,9 @@ int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
          largest = 0.0; thesign = 1.;
          for (k = 0; k < nullspace_dim; k++) 
          {
-            if ( fabs(qr_tmp[k*agg_sizes[i]+j]) > largest )
+            if ( dabs(qr_tmp[k*agg_sizes[i]+j]) > largest )
             {
-               largest = fabs(qr_tmp[ k*agg_sizes[i] + j ]);
+               largest = dabs(qr_tmp[ k*agg_sizes[i] + j ]);
                if ( qr_tmp[ k*agg_sizes[i] + j ] < 0.0) thesign = -1.;
                else thesign = 1.;
             }

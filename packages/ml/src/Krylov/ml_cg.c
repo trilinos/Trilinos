@@ -14,7 +14,7 @@
 #include <math.h>
 #include "ml_cg.h"
 
-#define abs(x) ((x > 0) ?(x) : (-(x)))
+#define dabs(x) ((x > 0) ?(x) : (-(x)))
 
 /* ******************************************************************** */
 /* ML_CG_Solve                                                          */
@@ -264,7 +264,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length)
       for ( j = 0; j < ncnt; j++ )
       {
          if ( colInd[j] == i ) diag[i] = colVal[j];
-         else sum += fabs(colVal[j]);
+         else sum += dabs(colVal[j]);
 #ifdef PRINTMAT
          fprintf(fp,"A(%d,%d) = %e;\n",myoffset+i+1,index_array[colInd[j]]+1,
             colVal[j]);
@@ -284,7 +284,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length)
             printf("%d : diagonal[%d] = %e < 0.0.\n", comm->ML_mypid, i, diag[i]);
          }
  
-         diag[i] = 1.0 / sqrt(abs(diag[i]));
+         diag[i] = 1.0 / sqrt(dabs(diag[i]));
          /*diag[i] = 1.0 / diag[i];*/
       }
    }

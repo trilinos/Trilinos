@@ -21,7 +21,7 @@
 
 extern ML_GridFunc *gridfcns_basis;
 
-#define  abs(x)  (((x) > 0) ? x : -(x))
+#define  dabs(x)  (((x) > 0) ? x : -(x))
 
 int ML_compute_basis_coefficients3D(void *grid, int index, double *coord,
                                    int ncoord, double *coefs, int *coef_ptr)
@@ -105,9 +105,9 @@ int ML_compute_basis_coefficients3D(void *grid, int index, double *coord,
             coarse_x = (double) xyz[0];
             coarse_y = (double) xyz[1];
             coarse_z = (double) xyz[2];
-            xdist    = 1.0 - abs((x - coarse_x)) * xwidth;
-            ydist    = 1.0 - abs((y - coarse_y)) * ywidth;
-            zdist    = 1.0 - abs((z - coarse_z)) * zwidth;
+            xdist    = 1.0 - dabs((x - coarse_x)) * xwidth;
+            ydist    = 1.0 - dabs((y - coarse_y)) * ywidth;
+            zdist    = 1.0 - dabs((z - coarse_z)) * zwidth;
             if (xdist > 0.0 && ydist > 0.0 && zdist > 0.0)
             { 
                local_coef[j] = xdist * ydist * zdist;
@@ -210,8 +210,8 @@ int ML_compute_basis_coefficients2D(void *grid, int index, double *coord,
             gridfcns_basis->USR_grid_get_vertex_coordinate(grid, ind, xy);
             coarse_x = (double) xy[0];
             coarse_y = (double) xy[1];
-            xdist    = 1.0 - abs((x - coarse_x)) * xwidth;
-            ydist    = 1.0 - abs((y - coarse_y)) * ywidth;
+            xdist    = 1.0 - dabs((x - coarse_x)) * xwidth;
+            ydist    = 1.0 - dabs((y - coarse_y)) * ywidth;
             if (xdist > 0.0 && ydist > 0.0 )
             { 
                local_coef[j] = xdist * ydist;
