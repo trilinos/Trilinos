@@ -63,7 +63,7 @@ public:
 
   //=============================================================================
   Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob, 
-				 const AMESOS::Parameter::List &ParameterList ) :  
+				 const Teuchos::ParameterList &ParameterList ) :  
     PrivateSuperluData_( new Amesos_Superlu_Pimpl() ),
     SerialCrsMatrixA_(0), 
     SerialMap_(0), 
@@ -233,7 +233,7 @@ int Amesos_Superlu::ConvertToSuperluCRS(bool firsttime){
 
 int Amesos_Superlu::ReadParameterList() {
   if (ParameterList_->isParameterSublist("Superlu") ) {
-    AMESOS::Parameter::List SuperluParams = ParameterList_->sublist("Superlu") ;
+    Teuchos::ParameterList SuperluParams = ParameterList_->sublist("Superlu") ;
   }  
   return 0;
 }

@@ -69,7 +69,7 @@ public:
       Epetra_RowMatrix.
 
   */
-  Amesos_Scalapack(const Epetra_LinearProblem& LinearProblem, const AMESOS::Parameter::List &ParameterList );
+  Amesos_Scalapack(const Epetra_LinearProblem& LinearProblem, const Teuchos::ParameterList &ParameterList );
 
   //! Amesos_Scalapack Destructor.
   /*! Completely deletes an Amesos_Scalapack object.  
@@ -151,7 +151,7 @@ public:
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
   //! Get a pointer to the ParameterList.
-  const AMESOS::Parameter::List *GetParameterList() const { return(ParameterList_); };
+  const Teuchos::ParameterList *GetParameterList() const { return(ParameterList_); };
 
   //! Returns true if SCALAPACK can handle this matrix shape 
   /*! Returns true if the matrix shape is one that SCALAPACK can
@@ -257,7 +257,7 @@ public:
 
   bool UseTranspose_;     
   const Epetra_LinearProblem * Problem_;
-  const AMESOS::Parameter::List * ParameterList_ ; 
+  const Teuchos::ParameterList * ParameterList_ ; 
 
 };  // End of  class Amesos_Scalapack  
 #endif /* _AMESOS_SCALAPACK_H_ */

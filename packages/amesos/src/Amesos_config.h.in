@@ -1,6 +1,6 @@
 /* src/Amesos_config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to dummy `main' function (if any) required to link to the Fortran
+/* Define to dummy `main' function (if any) required to link to the Fortran 77
    libraries. */
 #undef F77_DUMMY_MAIN
 
@@ -10,9 +10,6 @@
 
 /* As F77_FUNC, but for C identifiers containing underscores. */
 #undef F77_FUNC_
-
-/* Define if F77 and FC dummy `main' functions are identical. */
-#undef FC_DUMMY_MAIN_EQ_F77
 
 /* Define if want to build amesos-dscpack */
 #undef HAVE_AMESOS_DSCPACK
@@ -26,9 +23,6 @@
 /* Define if want to build amesos-mumps */
 #undef HAVE_AMESOS_MUMPS
 
-/* Define if want to build amesos-scalapack */
-#undef HAVE_AMESOS_SCALAPACK
-
 /* Define if want to build amesos-slud */
 #undef HAVE_AMESOS_SLUD
 
@@ -37,9 +31,6 @@
 
 /* Define if want to build amesos-slus */
 #undef HAVE_AMESOS_SLUS
-
-/* Define if want to build amesos-superlu */
-#undef HAVE_AMESOS_SUPERLU
 
 /* Define if want to build amesos-superludist */
 #undef HAVE_AMESOS_SUPERLUDIST
@@ -188,8 +179,6 @@
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
 
-/* Define to `__inline__' or `__inline' if that's what the C compiler
-   calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
+/* Define as `__inline' if that's what the C compiler calls it, or to nothing
+   if it is not supported. */
 #undef inline
-#endif

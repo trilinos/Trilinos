@@ -38,7 +38,7 @@
 
   //=============================================================================
   Amesos_Scalapack::Amesos_Scalapack(const Epetra_LinearProblem &prob, 
-				 const AMESOS::Parameter::List &ParameterList ) :  
+				 const Teuchos::ParameterList &ParameterList ) :  
     ScaLAPACK1DMap_(0), 
     ScaLAPACK1DMatrix_(0), 
     ictxt_(-1313),
@@ -357,7 +357,7 @@ int Amesos_Scalapack::ReadParameterList() {
   MaxProcesses_ = - 1; 
 
   if (ParameterList_->isParameterSublist("Scalapack") ) {
-    AMESOS::Parameter::List ScalapackParams = ParameterList_->sublist("Scalapack") ;
+    Teuchos::ParameterList ScalapackParams = ParameterList_->sublist("Scalapack") ;
     MaxProcesses_ = ScalapackParams.getParameter("MaxProcesses",MaxProcesses_);
 
   }  

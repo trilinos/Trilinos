@@ -102,7 +102,7 @@ class Epetra_Comm;
 
     <H2>Constructor requirements</H2>
     Every Amesos_SolverName class should accept an
-    Epetra_LinearProblem and an AMESOS::Parameter::List in the primary
+    Epetra_LinearProblem and an Teuchos::ParameterList in the primary
     constructor.
 
     <H2>Mathematical methods</H2> Three mathematical methods are

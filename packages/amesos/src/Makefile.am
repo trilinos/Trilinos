@@ -238,6 +238,7 @@ FACTORY = \
 #
 #Specify locations of include files within Trilinos, but outside Amesos
 # AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+#		-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
 #	       -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
 
 # if BUILD_SLUSERIAL
@@ -253,6 +254,7 @@ KUNDERT_CPPFLAGS =
 endif
 
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src  -I$(top_srcdir)/../amd/src \
+		-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
 		-I$(top_builddir)/../epetra/src \
 	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
 
