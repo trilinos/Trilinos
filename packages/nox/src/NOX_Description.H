@@ -61,9 +61,17 @@
 
   \section download Downloads
 
-  Downloadable versions of NOX will be posted shortly. Until then,
-  please contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-  (rppawlo@sandia.gov) for a copy.
+  Since our code has not yet been approved for general release, \b Do
+  \b Not \b Distribute \b Outside \b of \b Sandia \b Without \b
+  Express \b Permission \b from \b Tammy \b Kolda \b or \b Roger \b
+  Pawlowski.
+
+
+  <ul>
+  <li> 
+  <a href="http://software.sandia.gov/downloads/nox-1.0a-dev.tar.gz">Latest Development Version</a>, updated nightly
+  </ul>
+
 
   \section bugs Reporting Bugs and Making Enhancement Requests
 
@@ -114,6 +122,41 @@ The following people have contributed code to APPSPACK:
 Please contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski (rppawlo@sandia.gov).
 
 */
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page confoptions NOX Configuration Options 
+
+Here is a detailed list and explanation of the NOX configuration options.
+
+\section Enable Options
+
+<ul>
+  <li> \c --enable-debug          compile with debugging
+  <li> \c --enable-opt            compile with optimization
+  <li> \c --enable-epetra         compile noxepetra library
+  <li> \c --enable-petsc          compile noxpetsc library
+  <li> \c --enable-loca           compile the loca library
+  <li> \c --enable-loca-epetra    compile the locaepetra library
+  <li> \c --enable-examples       compile simple examples
+  <li> \c --enable-epetra-examples
+                          compile epetra examples
+  <li> \c --enable-petsc-examples compile petsc examples
+  <li> \c --enable-loca-epetra-examples
+                          compile loca epetra examples
+
+</ul>
+
+\section With Options
+
+<ul>
+<li>
+</ul>
+
+*/
+
 
 /*! \page configuration NOX Configuration and Compliation Instructions
 
@@ -334,6 +377,10 @@ setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}
 
 
 */
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
 
 /*! \page devinfo NOX Developer's Information
 
@@ -865,6 +912,10 @@ immediately before the word that is causing the link. For example,
 
 */
 
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
 /*! \page overview NOX Class Overview
 
   %NOX's flexibility is based on the fact that it does not depend on
@@ -925,6 +976,10 @@ immediately before the word that is causing the link. For example,
     
     */
  
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
 /*! \page parameters NOX Parameter Reference Page
 
   All parameters are specified via parameter lists as defined by the
