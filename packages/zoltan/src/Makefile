@@ -33,6 +33,8 @@
 #                    without Nemesis (i.e., reads only Chaco files).
 #    YES_FORTRAN=1   Use to compile and link a version of Zoltan that can
 #                    be called from Fortran.
+#    YES_JOSTLE=1    Use to compile and link a version of Zoltan that runs
+#                    with the JOSTLE library.
 #
 # Example:
 # To compile a version of zdrive for SunOS 4 that doesn't use PARMETIS or
@@ -42,12 +44,12 @@
 
 GDEFINES	= -DDEBUG
 
-# If NO_PARMETIS, don't compile ParMetis into the library.
+# If NO_PARMETIS, compile the ParMETIS interface and link ParMETIS into zdrive.
 ifdef NO_PARMETIS
 GDEFINES       += -DLB_NO_PARMETIS
 endif
 
-# If NO_NEMESIS, don't compile Nemesis, Exodus and Netcdf into the library.
+# If NO_NEMESIS, don't compile or link Nemesis, Exodus and Netcdf into zdrive.
 ifdef NO_NEMESIS
 GDEFINES       += -DLB_NO_NEMESIS
 endif
@@ -57,17 +59,29 @@ ifdef YES_FORTRAN
 INC_FORTRAN	= inc_fortran
 endif
 
+# If YES_JOSTLE, compile the JOSTLE interface and link JOSTLE into zdrive.
+ifdef YES_JOSTLE
+GDEFINES       += -DLB_JOSTLE
+endif
+
 TARGET		= zdrive
 LIB_TARGET	= zoltan
 LIB_NAME	= libzoltan.a
 
-# Paths to third party libraries (not really part of Zoltan)
-# 
+##### Paths to third party libraries (not really part of Zoltan)  #####
+  
 # If you already have ParMetis on your machine, give the path here.
 # Otherwise you first need to make ParMetis from the source in
 # the directory parmetis/ParMetis (type "make" over there),
 # and then move those libraries to the appropriate Obj_* directory. 
 PARMETISLIB_PATH = .
+
+# If you already have Jostle on your machine, give the path here.
+# Otherwise, you first need to get Jostle from Chris Walshaw and 
+# install it on your system.
+JOSTLELIB_PATH = .
+
+THIRD_PARTY_LIB_PATH = $(PARMETISLIB_PATH) $(JOSTLIB_PATH)
 
 # Makefile for load-balancing library.
 ############################################################################
@@ -156,6 +170,12 @@ ifndef NO_PARMETIS
 PARMETIS_LIBS   = -lparmetis -lmetis
 endif
 
+ifdef YES_JOSTLE
+JOSTLE_LIBS     = -ljostle
+endif
+
+THIRD_PARTY_LIBS = $(PARMETIS_LIBS) $(JOSTLE_LIBS)
+
 # machine independent routines
 INC		= $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) \
 		  $(RCB_INC) $(COMM_INC) $(OCT_INC) $(PARAMS_INC) \
@@ -211,9 +231,9 @@ SMOS_DR_OBJ	= $(SMOS_DR_CSRC:.c=.o)
 SMOS_DR_IPATH	= -I$(SMOS_ARCHD)/include
 #SMOS_MPI_LIB	= -L/Net/local/mpi/lib/paragon/sunmos -lmpi
 SMOS_MPI_LIB	= -L/Net/mp/mpi/lib/paragon/ch_nx -lmpi
-SMOS_PAR_LPATH  = -L$(PARMETISLIB_PATH)
+SMOS_TP_LPATH  = -L$(THIRD_PARTY_LIB_PATH) 
 SMOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SMOS_ARCHD)/lib $(NEM_LIBS) \
-		   $(SMOS_PAR_LPATH) $(PARMETIS_LIBS) $(SMOS_MPI_LIB)
+		   $(SMOS_TP_LPATH) $(THIRD_PARTY_LIBS) $(SMOS_MPI_LIB)
 
 ##############################################################################
 # Intel P6 defines
@@ -241,9 +261,9 @@ TFLOP_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
 TFLOP_DR_OBJ	= $(TFLOP_DR_CSRC:.c=.o)
 TFLOP_DR_IPATH	= -I$(TFLOP_ARCHD)/include
 TFLOP_MPI_LIB	= -lmpi
-TFLOP_PAR_LPATH = -L$(PARMETISLIB_PATH)
+TFLOP_TP_LPATH = -L$(THIRD_PARTY_LIB_PATH)
 TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) \
-	          $(TFLOP_PAR_LPATH) $(PARMETIS_LIBS) $(TFLOP_MPI_LIB)
+	          $(TFLOP_TP_LPATH) $(THIRD_PARTY_LIBS) $(TFLOP_MPI_LIB)
 
 #
 ##############################################################################
@@ -271,7 +291,7 @@ SUN_INC_PATH	= -I/Net/local/lang/SC3.0.1/include \
 
 SUN_CCOMP	= $(SUN_CC) $(SUN_INC_PATH) $(SUN_DBG_FLAGS)
 
-SUN_PAR_LPATH   = -L$(PARMETISLIB_PATH)
+SUN_TP_LPATH   = -L$(THIRD_PARTY_LIB_PATH)
 
 SUN_DEFS	= $(GDEFINES)
 # driver stuff
@@ -285,7 +305,7 @@ SUN_DR_OBJ	= $(SUN_DR_CSRC:.c=.o)
 SUN_DR_IPATH	= -I$(SUN_ARCHD)/include
 
 SUN_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUN_ARCHD)/lib $(NEM_LIBS) \
-	          $(SUN_PAR_LPATH) $(PARMETIS_LIBS) $(SUN_MPI_LIBS) -lm 
+	          $(SUN_TP_LPATH) $(THIRD_PARTY_LIBS) $(SUN_MPI_LIBS) -lm 
 		  
 ##############################################################################
 # SUNOS Definitions
@@ -311,7 +331,7 @@ SUNOS_INC_PATH	= -I/Net/local/lang/SC2.0.1/include \
 		  -I/Net/local/mpi/mpich/include \
                   -I/Net/local/mpi/mpich/lib/sun4/ch_p4 \
 		  $(SUBINCPATH)
-SUNOS_PAR_LPATH   = -L$(PARMETISLIB_PATH)
+SUNOS_TP_LPATH   = -L$(THIRD_PARTY_LIB_PATH)
 SUNOS_DEFS	= $(GDEFINES)
 
 SUNOS_CCOMP	= $(SUNOS_CC) $(SUNOS_INC_PATH) $(SUNOS_DBG_FLAGS)
@@ -327,7 +347,7 @@ SUNOS_DR_OBJ	= $(SUNOS_DR_CSRC:.c=.o)
 SUNOS_DR_IPATH	= -I$(SUNOS_ARCHD)/include
 
 SUNOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUNOS_ARCHD)/lib $(NEM_LIBS) \
-	          $(SUNOS_PAR_LPATH) $(PARMETIS_LIBS) $(SUNOS_MPI_LIBS) -lm 
+	          $(SUNOS_TP_LPATH) $(THIRD_PARTY_LIBS) $(SUNOS_MPI_LIBS) -lm 
 
 ##############################################################################
 # CPlant Definitions
@@ -343,7 +363,7 @@ CPLANT_INC         = $(INC)
 CPLANT_OBJ         = $(CPLANT_CSRC:.c=.o)
 CPLANT_INC_PATH	= -I/Net/mp/cplant/current/include \
 		  $(SUBINCPATH)
-CPLANT_PAR_LPATH   = -L$(PARMETISLIB_PATH)
+CPLANT_TP_LPATH   = -L$(THIRD_PARTY_LIB_PATH)
 CPLANT_DEFS	= $(GDEFINES)
 
 CPLANT_CCOMP	= $(CPLANT_CC) $(CPLANT_INC_PATH) $(CPLANT_DBG_FLAGS)
@@ -357,7 +377,7 @@ CPLANT_DR_OBJ	= $(CPLANT_DR_CSRC:.c=.o)
 CPLANT_DR_IPATH	= -I$(CPLANT_ARCHD)/include
 
 CPLANT_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(CPLANT_ARCHD)/lib $(NEM_LIBS) \
-	          $(CPLANT_PAR_LPATH) $(PARMETIS_LIBS) $(CPLANT_MPI_LIBS) -lm
+	          $(CPLANT_TP_LPATH) $(THIRD_PARTY_LIBS) $(CPLANT_MPI_LIBS) -lm
 
 ##############################################################################
 #
@@ -424,7 +444,7 @@ endif
 NISTSUN_CCOMP		= $(NISTSUN_CC) $(NISTSUN_INC_PATH) \
 			$(NISTSUN_DBG_FLAGS) $(NISTSUN_F90CFLAGS)
 
-NISTSUN_PAR_LPATH   	= -L$(PARMETISLIB_PATH)
+NISTSUN_TP_LPATH   	= -L$(THIRD_PARTY_LIB_PATH)
 
 NISTSUN_DEFS		= $(GDEFINES) 
 
@@ -436,7 +456,7 @@ NISTSUN_DR_OBJ		= $(NISTSUN_DR_CSRC:.c=.o)
 NISTSUN_DR_IPATH	= -I$(NISTSUN_ARCHD)/include
 
 NISTSUN_DR_LIBS		= -L. -l$(LIB_TARGET) -L$(NISTSUN_ARCHD)/lib \
-			 $(NEM_LIBS) $(NISTSUN_PAR_LPATH) $(PARMETIS_LIBS) \
+			 $(NEM_LIBS) $(NISTSUN_TP_LPATH) $(THIRD_PARTY_LIBS) \
 			 $(NISTSUN_MPI_LIBS) -lm 
 
 ##############################################################################
@@ -544,7 +564,7 @@ endif
 NISTLINUX_CCOMP		= $(NISTLINUX_CC) $(NISTLINUX_INC_PATH) \
 			$(NISTLINUX_DBG_FLAGS) $(NISTLINUX_F90CFLAGS)
 
-NISTLINUX_PAR_LPATH   	= -L$(PARMETISLIB_PATH)
+NISTLINUX_TP_LPATH   	= -L$(THIRD_PARTY_LIB_PATH)
 
 NISTLINUX_DEFS		= $(GDEFINES)
 
@@ -556,7 +576,7 @@ NISTLINUX_DR_OBJ	= $(NISTLINUX_DR_CSRC:.c=.o)
 NISTLINUX_DR_IPATH	= -I$(NISTLINUX_ARCHD)/include
 
 NISTLINUX_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(NISTLINUX_ARCHD)/lib \
-			 $(NEM_LIBS) $(NISTLINUX_PAR_LPATH) $(PARMETIS_LIBS) \
+			 $(NEM_LIBS) $(NISTLINUX_TP_LPATH) $(THIRD_PARTY_LIBS) \
 			 $(NISTLINUX_MPI_LIBS) -lm 
 
 ###########################################################################
@@ -578,6 +598,8 @@ help:
 	@echo 'Accepted compilation flags are'
 	@echo '      NO_PARMETIS=1  (to exclude ParMetis from library)'
 	@echo '      NO_NEMESIS=1   (to exclude Nemesis from driver)'
+	@echo '      YES_FORTRAN=1  (to compile fortran interface)'
+	@echo '      YES_JOSTLE=1   (to include Jostle in the library)'
 	@echo ' '
 
 ###########################################################################
