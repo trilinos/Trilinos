@@ -7270,6 +7270,7 @@ doublereal MLFORTRAN(dlapy2)(doublereal *x, doublereal *y)
 } /* dlapy2_ */
 #endif
 
+#ifndef ML_FORTRAN_SUPPORT
 /* compare two strings */
 
 integer ml_s_cmp(char *a0, char *b0, ftnlen la, ftnlen lb)
@@ -7389,7 +7390,7 @@ if(n != 0)
 	}
 return(pow);
 }
-
+#endif
 
 #ifndef ML_DORGQR_FUNC
 
