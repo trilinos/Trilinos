@@ -29,6 +29,12 @@
 class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_Map;
+  /*! \namespace EpetraExt
+     \brief The EpetraExt namespace contains a variety of useful functions and class that extend Epetra capabilities.
+
+     All EpetraExt capabilities are available from the EpetraExt package in Trilinos.  
+  */
+
 namespace EpetraExt {
  
   //! Constructs an Epetra_BlockMap object from a Matrix Market format file
