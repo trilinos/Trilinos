@@ -12,9 +12,9 @@
 #include "NOX_Utils.H"		// for static function doPrint
 
 // Header files for different solvers
-#include "NOX_Solver_LineSearch.H"	// LineSearch method
-#include "NOX_Solver_NonlinearCG.H"	// Nonlinear Conjugate Gradient method
-#include "NOX_Solver_TrustRegion.H"     // Trust region method
+#include "NOX_Solver_LineSearchBased.H"	 // LineSearch method
+#include "NOX_Solver_TrustRegionBased.H" // Trust region method
+#include "NOX_Solver_NonlinearCG.H"      // Nonlinear Conjugate Gradient method
 
 using namespace NOX;
 using namespace NOX::Solver;
@@ -43,16 +43,16 @@ bool Manager::reset(Abstract::Group& grp, Status::Test& tests, const Parameter::
     ptr = NULL;
     
     if (method == "Newton") {
-      ptr = new LineSearch(grp, tests, params);
+      ptr = new LineSearchBased(grp, tests, params);
     } 
     else if (method == "Line Search") {
-      ptr = new LineSearch(grp, tests, params);
+      ptr = new LineSearchBased(grp, tests, params);
     } 
     else if (method == "NonlinearCG") {
       ptr = new NonlinearCG(grp, tests, params);
     } 
     else if (method == "Trust Region") {
-      ptr = new TrustRegion(grp, tests, params);
+      ptr = new TrustRegionBased(grp, tests, params);
     } 
     else {
       cout << "ERROR: NOX::Solver::Manager - Invalid solver choice" << endl;
