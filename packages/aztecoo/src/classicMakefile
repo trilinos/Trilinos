@@ -89,8 +89,8 @@ az_matrix_util.c    az_matvec_mult.c  az_old_matvec_mult.c \
 az_pad_utils.c	     az_poly.c	        az_precond.c \
 az_qmrcgs.c	     az_rilu.c	        az_scaling.c \
 az_solve.c	     az_sort.c	        az_subdomain_solver.c \
-az_tools.c	     az_util.c 
-#az_gmresr.c
+az_tools.c	     az_util.c \
+az_gmresr.c
 
 
 AZTEC_F = az_reorder.f az_f_util.f
