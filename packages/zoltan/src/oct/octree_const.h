@@ -82,6 +82,8 @@ extern int     Zoltan_Oct_POct_delTree(OCT_Global_Info *OCT_info,pOctant *root);
 extern void    Zoltan_Oct_free(OCT_Global_Info *OCT_info, pOctant *oct);
 extern int     RL_delRootOctant(OCT_Global_Info *OCT_info, pRList *rootlist, pOctant oct);
 
+extern void Zoltan_Oct_Plots(ZZ *);
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

@@ -40,8 +40,7 @@ about a parallel variable.</BLOCKQUOTE>
 <hr>
 <A NAME="Zoltan_Print_Sync_Start"></A>
 <HR>
-void <B>Zoltan_Print_Sync_Start</B>(struct
-<B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B> *<I>zz</I>,
+void <B>Zoltan_Print_Sync_Start</B>(MPI_Comm <i>communicator</i>,
 int <I>do_print_line</I>);&nbsp;
 <HR>
 
@@ -68,9 +67,10 @@ See the <A HREF="#print_sync_example">example</A> below for usage of <B>Zoltan_P
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>zz</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>communicator</I></TD>
 
-<TD>The Zoltan data structure.
+<TD>The MPI communicator containing all processors to participate in the
+synchronization.
 </TD>
 </TR>
 
@@ -90,8 +90,7 @@ line is printed; no line is printed otherwise.</TD>
 <hr>
 <A NAME="Zoltan_Print_Sync_End"></A>
 <HR>
-void <B>Zoltan_Print_Sync_End</B>(struct
-<B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B> *<I>zz</I>,
+void <B>Zoltan_Print_Sync_End</B>(MPI_Comm <i>communicator</i>,
 int <I>do_print_line</I>);&nbsp;
 <HR>
 
@@ -119,9 +118,10 @@ See the <A HREF="#print_sync_example">example</A> below for usage of <B>Zoltan_P
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>zz</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>communicator</I></TD>
 
-<TD>The Zoltan data structure.
+<TD>The MPI communicator containing all processors to participate in the 
+synchronization.
 </TD>
 </TR>
 
@@ -143,8 +143,9 @@ double <i>x</i>, char <i>*msg</i>);
 <BR>
 <HR WIDTH="100%">
 <BR>Zoltan_Print_Stats is a very simple routine that computes the maximum and
-sum of the variable <I>x</I> over all processors associated with the Zoltan
-structure <I>zz</I>. It also computes and prints the imbalance
+sum of the variable <I>x</I> over all processors associated with the MPI
+communicator <i>comm</i>.
+It also computes and prints the imbalance
 of <I>x</I>, that is, the maximum value divided by the average minus one.
 If <I>x </I>has the same value on all processors, the imbalance is zero.
 <p>
@@ -192,7 +193,7 @@ If <I>x </I>has the same value on all processors, the imbalance is zero.
 <TD><TT>...</TT>&nbsp;
 <BR><TT>if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; int i;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; Zoltan_Print_Sync_Start(zz, TRUE);</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Zoltan_Print_Sync_Start(zz->Communicator, TRUE);</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; printf("Zoltan: Objects to be exported from Proc
 %d\n", zz->Proc);</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; *num_export_objs; i++) {</TT>&nbsp;
@@ -203,7 +204,7 @@ Obj: ");</tt>
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (*export_procs)[i]);</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; }</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; Zoltan_Print_Sync_End(zz, TRUE);</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Zoltan_Print_Sync_End(zz->Communicator, TRUE);</TT>&nbsp;
 <BR><TT>}</TT></TD>
 </TR>
 

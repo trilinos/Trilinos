@@ -152,8 +152,8 @@ int error = FALSE;            /* error flag                                  */
                     "must be greater than 0\n");
     error = TRUE;
   }
-  if (oct_output_level < 0 || oct_output_level > 2) {
-    fprintf(stderr, "OCT Error in OCTPART: OCT_OUTPUT_LEVEL must be 0, 1, or 2\n");
+  if (oct_output_level < 0 || oct_output_level > 3) {
+    fprintf(stderr, "OCT Error in OCTPART: OCT_OUTPUT_LEVEL must be 0, 1, 2, or 3\n");
     error = TRUE;
   }
 
@@ -199,8 +199,6 @@ static int lb_oct_init(
 {
   char *yo = "lb_oct_init";
   OCT_Global_Info *OCT_info;
-  pRList  RootList;               /* list of all local roots */
-  pOctant RootOct;                /* root octree octant */
   int nsentags;                    /* number of tags being sent */
   pRegion import_regs;             /* */
   int nrectags;                    /* number of tags received */               
@@ -272,9 +270,17 @@ static int lb_oct_init(
   time2 = MPI_Wtime();
   timers[1] = time2 - time1;              /* time took to partition octree */
 
+  if (oct_output_level > 2) {
+    Zoltan_Oct_Plots(zz);
+  }
+
   /* set up tags for migrations */
   time1 = MPI_Wtime();
 
+#if 0  /* KDDKDD -- Count is never used; why is it computed? */
+  {
+  pRList  RootList;               /* list of all local roots */
+  pOctant RootOct;                /* root octree octant */
   count = 0; 
   RootList = Zoltan_Oct_POct_localroots(OCT_info);
   while((RootOct = RL_nextRootOctant(&RootList))) {
@@ -285,6 +291,8 @@ static int lb_oct_init(
       RootOct = Zoltan_Oct_POct_nextDfs(OCT_info, RootOct);
     }
   }
+  }
+#endif
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Calling Zoltan_Oct_dfs_migrate");
   Zoltan_Oct_dfs_migrate(zz, &nsentags, &import_regs, &nrectags, 
@@ -303,7 +311,11 @@ static int lb_oct_init(
   timers[2] = time2 - time1;               /* time took to setup migration */
 
 
+#if 0  /* KDDKDD -- Count is never used; why is it computed? */
+  {
   /* count the number of objects on this processor */
+  pRList  RootList;               /* list of all local roots */
+  pOctant RootOct;                /* root octree octant */
   count = 0; 
   RootList = Zoltan_Oct_POct_localroots(OCT_info);
   while((RootOct = RL_nextRootOctant(&RootList))) {
@@ -314,6 +326,8 @@ static int lb_oct_init(
       RootOct = Zoltan_Oct_POct_nextDfs(OCT_info, RootOct);
     }
   }
+  }
+#endif
 
   counters[4] = nsentags;
   MPI_Barrier(zz->Communicator);

@@ -194,6 +194,8 @@ int output_gnu(char *cmd_file,
         sum[0] += current_elem->coord[j][0];
         sum[1] += current_elem->coord[j][1];
       }
+      fprintf(fp, "%e %e\n", current_elem->coord[0][0], 
+                             current_elem->coord[0][1]);
       fprintf(fp, "\n");
       /* Print small + in center of element */
       sum[0] /= num_nodes;
