@@ -24,8 +24,8 @@
 %
 
 \title{\center
-{\Huge\bf Teuchos::RefCountPtr 101}\\[1.5ex]
-A Beginner's Guide to the Trilinos Smart Reference-Counted Pointer
+{\Huge\bf Teuchos::RefCountPtr Beginner's Guide}\\[1.5ex]
+An Introduction to the Trilinos Smart Reference-Counted Pointer
 Class for (Almost) Automatic Dynamic Memory Management in C++
 }
 \author{
@@ -40,7 +40,7 @@ under Contract DE-AC04-94AL85000.}, Albuquerque NM 87185 USA, \\
 % ---------------------------------------------------------------------------- %
 % Set some things we need for SAND reports. These are mandatory
 %
-\SANDnum{SAND2003-xxx}
+\SANDnum{SAND2004-3268}
 \SANDprintDate{June 2004}
 \SANDauthor{
 Roscoe A. Bartlett \\ Optimization and Uncertainty Estimation
@@ -88,14 +88,17 @@ the use of raw pointers for memory management, managed through
 explicit calls to operator {}\texttt{new} and operator
 {}\texttt{delete}, is so difficult to accomplish without making
 mistakes and how programs that use raw pointers for memory management
-can easily be modified to use {}\texttt{Ref\-Count\-Ptr<>}.  In its
+can easily be modified to use {}\texttt{Ref\-Count\-Ptr<>}.  In
+addition, explicit calls to operator {}\texttt{delete} is fragile and
+results in memory leaks in the presents of C++ exceptions.  In its
 most basic usage, {}\texttt{Ref\-Count\-Ptr<>} automatically
 determines when operator {}\texttt{delete} should be called to free an
-object allocated with operator {}\texttt{new}.  However, the class
-also supports more sophisticated use cases as well.  This document
-describes just the most basic usage of {}\texttt{Ref\-Count\-Ptr<>} to
-allow developers to get started using it right away.  However, more
-detailed information on the design and advanced features of
+object allocated with operator {}\texttt{new} and is not fragile in
+the presents of exceptions.  The class also supports more
+sophisticated use cases as well.  This document describes just the
+most basic usage of {}\texttt{Ref\-Count\-Ptr<>} to allow developers
+to get started using it right away.  However, more detailed
+information on the design and advanced features of
 {}\texttt{Ref\-Count\-Ptr<>} is provided by the companion document
 ``Teuchos::RefCountPtr : The Trilinos Smart Reference-Counted Pointer
 Class for (Almost) Automatic Dynamic Memory Management in C++''
@@ -110,9 +113,10 @@ Class for (Almost) Automatic Dynamic Memory Management in C++''
 % Use \section* since we don't want it in the table of context
 %
 \clearpage
-\section*{Acknowledgment}
+\section*{Acknowledgments}
+
 The author would like to thank Carl Laird, Heidi Thornquist, Mike
-Heroux and Mazrio Sala for comments on earlier drafts of this
+Heroux and Marzio Sala for comments on earlier drafts of this
 document.
 
 The format of this report is based on information found
@@ -145,25 +149,63 @@ included in the Trilinos {}\cite{ref:Trilinos-Overview} tools package
 {}\texttt{Teuchos}.  The design of
 {}\texttt{Teuchos\-::Ref\-Count\-Ptr<>} is based partly on the
 interface for {}\texttt{std\-::auto\-\_ptr<>} and Items 28 and 29 in
-"More Effective C++" {}\cite{ref:meyers_1996}.  In short, using this
-class allows one client to dynamically create an object (using
-operator {}\texttt{new} for instance), pass the object around to other
-clients that need to access the object and never require any client to
-explicitly call operator {}\texttt{delete}.  The object will (almost
-magically) be deleted when all of the clients remove their references
-to the object.  In principle, this is very similar to the type of
-garbage collection that is in languages like Perl and Java.  There are
-some pathological cases (such as the classic problem of circular
-references, see {}\cite[Item 29, page 212]{ref:meyers_1996}) where
-{}\texttt{Ref\-Count\-Ptr<>} will result in a memory leak, but these
-situations can be avoided through careful designs.  However, realizing
-the potential of hands-off garbage collection with
+"More Effective C++" {}\cite{ref:meyers_1996}.  In short,
+{}\texttt{Ref\-Count\-Ptr<>} allows one client to dynamically create
+an object (using operator {}\texttt{new} for instance), pass the
+object around to other clients that need to access the object and
+never require any client to explicitly call operator
+{}\texttt{delete}.  The object will (almost magically) be deleted when
+all of the clients remove their references to the object.  In
+principle, this is very similar to the type of garbage collection that
+is in languages like Perl and Java.  There are some pathological cases
+(such as the classic problem of circular references, see {}\cite[Item
+29, page 212]{ref:meyers_1996}) where {}\texttt{Ref\-Count\-Ptr<>}
+will result in a memory leak, but these situations can be avoided
+through the careful use of {}\texttt{Ref\-Count\-Ptr<>}.  However,
+realizing the potential of hands-off garbage collection with
 {}\texttt{Ref\-Count\-Ptr<>} requires following some rules.  These
 rules are partially spelled out in the form of commandments in
 Appendix {}\ref{rcpqs:apdx:commandments}.
 
+Note that direct calls to operator {}\texttt{delete} are discouraged
+in modern C++ programs that are designed to be robust in the presence
+of C++ exception handing.  This is because the raw use of operator
+{}\texttt{delete} often results in memory leaks when exceptions are
+thrown.  For example, in the code fragment:
+
+{\small\begin{verbatim}
+void someFunction() {
+  A *a = new A;
+  a->f();
+  delete a;
+}
+\end{verbatim}}
+
+{}\noindent{}if an exception is thrown in the function call
+{}\texttt{a->f()} then the statement {}\texttt{delete a} will never be
+executed and a memory leak will have been created.  The class
+{}\texttt{std::auto\_\-ptr<>} was added to the standard C++ library
+(see {}\cite[Items 9 and 10]{ref:meyers_1996}) to protect against
+these types of memory leaks.  For example, the rewritten function:
+
+{\small\begin{verbatim}
+void someFunction() {
+  std::auto_ptr<A> a(new A);
+  a->f();
+}
+\end{verbatim}}
+
+{}\noindent{}is robust in the event of exceptions and no memory leak
+will occur.  However, {}\texttt{std::auto\_\-ptr<>} can not be used to
+share a resource between two or more clients and therefore is not an
+answer to the issue of general garbage collection.  The class
+{}\texttt{Ref\-Count\-Ptr<>} not only is robust in the event of
+exceptions but also implements reference counting and is therefore
+more general (but admittedly more complex and expensive) than
+{}\texttt{std::auto\_\-ptr<>}.
+
 The use of {}\texttt{Ref\-Count\-Ptr<>} is critically important in the
-development and maintenance of complex object-oriented programs
+development and maintenance of large complex object-oriented programs
 composed of many separately-developed pieces (such as Trilinos).  This
 discussion assumes that the reader has a basic familiarity and some
 programming experience with C++ and has at least been exposed to the
@@ -215,11 +257,14 @@ correctly in even moderately complex C++ programs.  We then discuss
 the different ways C++ pointers are used in such programs and describe
 how to refactor these programs to replace some of the raw C++ pointers
 and raw calls to operator {}\texttt{delete} with
-{}\texttt{Ref\-Count\-Ptr<>}.  In the following discussion a
-distinction will be made between {}\textit{transitive} and
-{}\textit{non-transitive} associations.  {}\texttt{Ref\-Count\-Ptr<>}
-is recommended for use only with {}\textit{non-transitive}
-associations.  In addition, {}\texttt{Ref\-Count\-Ptr<>} is designed
+{}\texttt{Ref\-Count\-Ptr<>}.  In the following discussion we will
+define {}\textit{persisting} and {}\textit{non-persisting}
+associations and will make a distinction between them (see page
+{}\pageref{rcp:non-persisting-defined}).  {}\texttt{Ref\-Count\-Ptr<>}
+is recommended for use only with {}\textit{persisting} associations.
+The consistent use of {}\texttt{Ref\-Count\-Ptr<>} extends the
+vocabulary of C++ in helping to distinguish between these two types of
+relationships.  In addition, {}\texttt{Ref\-Count\-Ptr<>} is designed
 for the memory management of individual objects, not raw C++ arrays of
 objects.  Array allocation and deallocation should be performed using
 standard C++ containers such as {}\texttt{std\-::vector<>},
@@ -282,9 +327,8 @@ public:
 };
 \end{verbatim}}
 
-{}\noindent{}In this toy example program the above implementation
-functions just print to standard out but in a real program would do
-something useful.
+{}\noindent{}In this example program the above implementation
+functions just print to standard out.
 
 Some of the clients in this program have to create
 {}\texttt{Utility\-Base} objects without knowing exactly what concrete
@@ -318,11 +362,13 @@ Now let's assume that our example program has the following client
 classes.
 
 {\small\begin{verbatim}
+// Simple client with no state
 class ClientA {
 public:
   void f( const UtilityBase &utility ) const { utility.f(); }
 };
 
+// Client that maintains a pointer to a Utility object 
 class ClientB {
   UtilityBase *utility_;
 public:
@@ -332,6 +378,7 @@ public:
   void g( const ClientA &a ) { a.f(*utility_); }
 };
 
+// Client that maintains pointers to UtilityFactory and Utility objects
 class ClientC {
   const UtilityBaseFactory *utilityFactory_;
   UtilityBase              *utility_;
@@ -351,39 +398,40 @@ public:
 
 The type of logic used in {}\texttt{ClientC} for determining when new
 objects should be created or when objects should be reused and passed
-around is common in complex OO programs.
+around is common in larger more complicated OO programs.
 
 The above client classes demonstrate two different types of
-associations between objects: {}\textit{transitive} and
-{}\textit{non-transitive}.
+associations between objects: {}\textit{non-persisting} and
+{}\textit{persisting}.
 
-{}\textit{Transitive} associations exist only within a single function
-call and do not persist after the function has finished executing.
-For example, objects of type {}\texttt{Client\-A} and
-{}\texttt{Utility\-Base} have a transitive relationship through the
-function {}\texttt{ClientA\-::f(const UtilityBase \&utility)}.
-Likewise, objects of type {}\texttt{Client\-B} and
-{}\texttt{Client\-A} have a transitive association through the
-function {}\texttt{ClientB\-::g( const ClientA
+{}\textit{Non-Persisting}\label{rcp:non-persisting-defined}
+associations exist only within a single function call and do not
+extend after the function has finished executing.  For example,
+objects of type {}\texttt{Client\-A} and {}\texttt{Utility\-Base} have
+a non-persisting relationship through the function
+{}\texttt{ClientA\-::f(const UtilityBase \&utility)}.  Likewise,
+objects of type {}\texttt{Client\-B} and {}\texttt{Client\-A} have a
+non-persisting association through the function
+{}\texttt{ClientB\-::g( const ClientA
 \&a )}.
 
-{}\textit{Non-transitive} associations are where a relationship
-between two objects exists past a single function call.  The most
-typical kind of non-transitive association in an OO C++ program is
-where one object maintains a private pointer data member to another
-object.  For example, non-transitive associations exist between a
+{}\textit{Persisting}\label{rcp:persisting-defined} associations are
+where a relationship between two objects exists past a single function
+call.  The most typical kind of persisting association in an OO C++
+program is where one object maintains a private pointer data member to
+another object.  For example, persisting associations exist between a
 {}\texttt{ClientC} object, a {}\texttt{Utility\-Base\-Factory} and a
 {}\texttt{Utility\-Base} object through the the private C++ pointer
 data members {}\texttt{ClientC\-::utility\-Factory\_} and
-{}\texttt{ClientC\-::utility\_} respectively.  Likewise, a
-non-transitive association exists between a {}\texttt{ClientB} object
-and a {}\texttt{Utility\-Base} object through the private pointer data
+{}\texttt{ClientC\-::utility\_} respectively.  Likewise, a persisting
+association exists between a {}\texttt{ClientB} object and a
+{}\texttt{Utility\-Base} object through the private pointer data
 member {}\texttt{ClientB\-::utility\_}.
 
-Non-transitive relationships are significantly more complex than
-transitive relationships since a non-transitive relationship usually
+Persisting relationships are significantly more complex than
+non-persisting relationships since a persisting relationship usually
 implies that some objects must be responsible for the lifetime of
-other objects.  This is never the case in a transitive relationship as
+other objects.  This is never the case in a non-persisting relationship as
 defined above.
 
 Appendix {}\ref{rcpqs:apdx:ex-prg} shows an example program that uses
@@ -430,13 +478,13 @@ Now we describe how {}\texttt{Ref\-Count\-Ptr<>} can be used to
 greatly simplify dynamic memory management in these types of OO
 programs.  Appendix {}\ref{rcpqs:apdx:ex-prg-refactored} shows the
 refactoring of the program in Appendix {}\ref{rcpqs:apdx:ex-prg} to
-use {}\texttt{Ref\-Count\-Ptr<>} for all non-transitive relationships.
+use {}\texttt{Ref\-Count\-Ptr<>} for all persisting relationships.
 In general, refactoring software that uses raw C++ pointers to use
 {}\texttt{Ref\-Count\-Ptr<>} is as simple as replacing the type
 {}\texttt{T*} with {}\texttt{Ref\-Count\-Ptr<T>}, where {}\texttt{T}
 is nearly any class or built-in data type.
 
-The first non-transitive relationship for which
+The first persisting relationship for which
 {}\texttt{Ref\-Count\-Ptr<>} is used is the relationship between a
 {}\texttt{Utility\-Base\-Factory} object and a client that uses it.
 The refactoring changes the return type of
@@ -466,13 +514,11 @@ public:
 
 In addition to the change of the return type, the refactoring also
 requires that calls to operator {}\texttt{new} be wrapped in calls to
-the templated function {}\texttt{Teuchos\-::rcp(...)} (see
-{}\cite[Appendix C]{ref:RefCountPtr} for a discussion of why this is
-the case).
+the templated function {}\texttt{Teuchos\-::rcp(...)}.
 
 The refactoring shown in Appendix {}\ref{rcpqs:apdx:ex-prg-refactored}
 does not impact the definition of the class {}\texttt{ClientA} since
-this class does not have any non-transitive relationships with any
+this class does not have any persisting relationships with any
 other objects.  However, the definitions of the classes
 {}\texttt{ClientB} and {}\texttt{ClientC} do change and become
 
@@ -507,7 +553,7 @@ destructors do exactly the correct thing (i.e.~call the destructor on
 the {}\texttt{Ref\-Count\-Ptr<>} data members which in turns calls
 operator {}\texttt{delete} on the underlying reference-counted object
 when the reference count goes to zero).  The second thing that one
-should notice that the old default constructor
+should notice is that the old default constructor
 {}\texttt{ClientB::ClientB()} which initialized the raw C++ pointer
 {}\texttt{utility\_} to null is no longer needed since
 {}\texttt{Ref\-Count\-Ptr<>} has a default constructor that does that.
@@ -517,43 +563,86 @@ the {}\texttt{Ref\-Count\-Ptr<>} objects are passed by
 {}\ref{rcpqs:apdx:passing-args}) and not by value as the corresponding
 raw pointers where in the original unfactored classes.  Passing
 {}\texttt{Ref\-Count\-Ptr<>} objects by {}\texttt{const} reference
-yeilds slightly more efficient code and simplifies stepping through
-the code in a debugger.
+yields slightly more efficient code and simplifies stepping through
+the code in a debugger.  For example, a function declared as
 
-As an aside, note that all of the function prototypes in the
-refactored classes in Appendix {}\ref{rcpqs:apdx:ex-prg-refactored}
-follow the recommended idioms given in Appendix
-{}\ref{rcpqs:apdx:passing-args}.  By using these closely idioms the
-use of {}\texttt{Ref\-Count\-Ptr<>} not only eases dynamic memory
-management but it also enhances the vocabulary of the C++ language.
-For example, when a one sees a function prototype where an object is
-passed through a {}\texttt{Ref\-Count\-Ptr<>} smart pointer, one can
-automatically deduce that a ``memory'' of that object will be retained
-(through a private {}\texttt{Ref\-Count\-Ptr<>} data member in the
-server) and that automatically should alter how the developer plans on
-calling that function an passing that argument.
+{\small\begin{verbatim}
+void someFunction( RefCountPtr<A> a );
+\end{verbatim}}
+
+{}\noindent{}will always result in the copy constructor for
+{}\texttt{Ref\-Count\-Ptr<>} being called (and therefore stepped into
+in a debugger) while this same function declared as:
+
+{\small\begin{verbatim}
+void someFunction( const RefCountPtr<A> &a );
+\end{verbatim}}
+
+{}\noindent{}will often not require the copy constructor be called
+(except in cases where an implicit conversion is being performed as
+described in Appendix {}\ref{rcpqs:apdx:quickstart}) and thereby
+easing debugging.
+
+As an aside, note that Appendix {}\ref{rcpqs:apdx:passing-args} gives
+recommended idioms for how to pass raw C++ objects and
+{}\texttt{Ref\-Count\-Ptr<>}-wrapped objects to and from functions in
+a way that result in function prototypes becoming as self documenting
+as possible, help to avoid coding errors and increase the readability
+of C++ code.  Also, in addition to the benefit that
+{}\texttt{Ref\-Count\-Ptr<>} eases dynamic memory management, the
+selective use of {}\texttt{Ref\-Count\-Ptr<>} and raw C++ object
+references extends the vocabulary of the C++ language by helping to
+distinguish between persisting and non-persisting associations.  For
+example, when a one sees a function prototype where an object is
+passed through a {}\texttt{Ref\-Count\-Ptr<>} such as
+
+{\small\begin{verbatim}
+class SomeClass {
+public:
+  void someFunction( const RefCountPtr<A> &a );
+}
+\end{verbatim}}
+
+{}\noindent{}one can automatically deduce that ``memory'' of the
+{}\texttt{A} object will be retained (through a private
+{}\texttt{Ref\-Count\-Ptr<A>} data member in {}\texttt{Some\-Class} no
+doubt) and that should automatically alter how the developer plans on
+calling that function and passing the {}\texttt{A} object.  The
+refactored C++ program in Appendix
+{}\ref{rcpqs:apdx:ex-prg-refactored} provides an example of how the
+idioms presented in Appendix {}\ref{rcpqs:apdx:passing-args} are put
+to use.
 
 %
-\section{Advanced features of {}\texttt{Ref\-Count\-Ptr<>}}
+\section{Additional and advanced features of {}\texttt{Ref\-Count\-Ptr<>}}
 %
 
-While the use cases for {}\texttt{Ref\-Count\-Ptr<>} described above
-typically comprise 95\% or more of the relavent use cases in most
-programs, there are some more challenging use cases that require more
-advanced features.  Some of these advanced features (the C++
+The use cases for {}\texttt{Ref\-Count\-Ptr<>} described above
+comprise a large majority of the relavent use cases in most programs,
+but there there are some other use cases that require additional and
+more advanced features.  Some of these additional features (the C++
 declarations for which are shown in Appendix
-{}\ref{rcpqs:apdx:c++decl}) are discussed in the design document
-{}\cite{ref:RefCountPtr} and are mentioned below:
+{}\ref{rcpqs:apdx:c++decl}) are mentioned below:
 
 \begin{enumerate}
+
+\item \textbf{Casting}
+
+{}\texttt{Ref\-Count\-Ptr<>} objects can be casted in a manner similar
+to casting raw C++ pointers and the same types of conversion rules
+apply.  Analogs of the built-in casts {}\texttt{static\_\-cast<>},
+{}\texttt{const\_\-cast<>} and {}\texttt{dynamic\_\-cast<>} are
+supported by the non-member templated functions
+{}\texttt{rcp\_\-static\_\-cast<>}, {}\texttt{rcp\_\-const\_\-cast<>}
+and {}\texttt{rcp\_\-dynamic\_\-cast<>} respectively.  See Appendix
+{}\ref{rcpqs:apdx:quickstart} for examples of how they are used.
 
 \item \textbf{Reference-count information}
 
 The function {}\texttt{Ref\-Count\-Ptr<>\-::count()} returns the
 number of {}\texttt{Ref\-Count\-Ptr<>} objects that point to the
-underlying reference-counted object.  If used with caution, this
-reference-count can be used to simplify the logic in some types of use
-cases.
+underlying reference-counted object.  This information can be useful
+in some cases.
 
 \item \textbf{Associating extra data with a reference-counted object}
 
@@ -579,20 +668,23 @@ reference-counted object is deallocated when required.
 
 \end{enumerate}
 
+These features are discussed in detail in the design document
+{}\cite{ref:RefCountPtr}.
+
 %
 \section{Summary}
 %
-
 
 The templated C++ class {}\texttt{Ref\-Count\-Ptr<>} provides a
 low-overhead option for (almost) automatic memory management in C++.
 This class has been developed and refined over many years and has been
 instrumental in improving the quality of software projects that use it
-consistently.  Careful use of {}\texttt{Ref\-Count\-Ptr<>} eliminates
-the need to manually call operator {}\texttt{delete} when dynamically
-allocated objects are no longer needed.  Furthermore, it helps to
-reduce the amount of code that developers have to write.  For example,
-most classes that use {}\texttt{Ref\-Count\-Ptr<>} for dynamically
+consistently (for example see MOOCHO {}\cite{ref:moochouserguide}).
+Careful use of {}\texttt{Ref\-Count\-Ptr<>} eliminates the need to
+manually call operator {}\texttt{delete} when dynamically allocated
+objects are no longer needed.  Furthermore, it helps to reduce the
+amount of code that developers have to write.  For example, most
+classes that use {}\texttt{Ref\-Count\-Ptr<>} for dynamically
 allocated memory do not need developer-supplied destructors.  This
 because the compiler-generated destructors do the exactly correct
 thing which is to call destructors on an object's constituent data
@@ -684,7 +776,7 @@ template<class Dealloc_T
 
 This appendix presents a short, but fairly comprehensive, quick-start
 for the use of {}\texttt{Ref\-Count\-Ptr<>}.  The use cases described
-here should cover 99\% or more of the use instances of
+here should cover the overwhelming majority of the use instances of
 {}\texttt{Ref\-Count\-Ptr<>} in a typical program.
 
 The following class hierarchy will be used in the C++ examples given
@@ -782,7 +874,9 @@ RefCountPtr<const A> ca_ptr = a_ptr;      // Cast from non-const to const
 %
 \item {\bf Resetting from a raw pointer}
 %
-{\small\begin{verbatim} RefCountPtr<A> a_ptr; a_ptr = rcp(new C());
+{\small\begin{verbatim}
+RefCountPtr<A> a_ptr;
+a_ptr = rcp(new C());
 \end{verbatim}}
 %
 \item {\bf Resetting to null}
@@ -1036,8 +1130,8 @@ generally be passed by reference for several reasons (see
 \begin{tabular}{|c|c|c|}
 \hline
 Argument purpose
-& Transitive
-& Non-transitive \\
+& Non-Persisting
+& Persisting \\
 \hline
 \hline
 non-mutable object (required$^1$)
@@ -1088,8 +1182,8 @@ holder for an actual built-in or user-defined data type.
 \begin{tabular}{|c|c|c|}
 \hline
 Argument purpose
-& Transitive
-& Ton-transitive \\
+& Non-Persisting
+& Persisting \\
 \hline
 \hline
 non-mutable object (required$^1$)
@@ -1305,10 +1399,10 @@ int main( int argc, char* argv[] )
 %
 
 %\begin{theglossary}
-%\entry{transitive relationship}
+%\entry{non-persisting relationship}
 %A relationship that exits between two objects only during the
 %execution of a function.
-%\entry{non-transitive relationship}
+%\entry{persisting relationship}
 %A relationship that exits between two objects that spans
 %two or more function calls and may linger until the destruction
 %of one or more of the related objects.
