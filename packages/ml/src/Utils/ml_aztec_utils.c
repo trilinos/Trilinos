@@ -852,7 +852,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
          }
       }
 	 else { /* Assume it is a petra matrix */
-	   ML_free(data_org);
+	   AZ_free(data_org);
 
 	   AZ_set_MATFREE(AZ_Amat, ML_Amat, az_wrap_ml_matvec);
 
@@ -1090,7 +1090,7 @@ void AZ_ML_SmootherClean(void *data)
 #ifdef AZ_ver2_1_0_5
    AZ_scaling_destroy(&(context->scaling));
 #endif
-   AZ_free(context);
+   ML_free(context);
 }
 #endif
 
@@ -1274,7 +1274,7 @@ void AZ_mlcomm2data_org(ML_CommInfoOP *comm_info, int *data_org[])
       ML_free(start_rcv);
    }
 
-   *data_org = (int *) ML_allocate(((unsigned) total_send + AZ_send_list)
+   *data_org = (int *) AZ_allocate(((unsigned) total_send + AZ_send_list)
                                    *sizeof(int));
    if (*data_org == NULL) {
       (void) fprintf(stderr, "ERROR: Not enough dynamic space.\n");

@@ -14,7 +14,7 @@
 #define __MLMEM__
 
 #include <stdio.h>
-#include <stdlib.h>
+/* #include <stdlib.h> */
 /*
 #include <malloc.h>
 */
@@ -23,7 +23,7 @@
 
 #ifndef ML_MEM_CHECK
 #define ML_allocate(i)    malloc((i + sizeof(double) ))
-#define ML_free(i)        { free(i); i = NULL; }
+#define ML_free(i)        { if (i != NULL) {free(i); i = NULL;} }
 #else
 #define ML_free(i)        { ML_myfree(i); i = NULL; }
 #endif

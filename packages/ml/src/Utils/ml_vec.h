@@ -14,7 +14,7 @@
 #define __MLVEC__
 
 #include <stdio.h>
-#include <stdlib.h>
+/* #include <stdlib.h> */
 #include "ml_memory.h"
 #include "ml_comm.h"
 #include "ml_defs.h"
