@@ -3,8 +3,11 @@
 #include "TestAllClasses.h"
 #include "TestOtherClasses.h"
 #include "TestSuperludist.h"
+#include "TestScalapack.h"
  
-int TestAllClasses(Epetra_CrsMatrix *& Amat, 
+int TestAllClasses(vector<string> AmesosClasses,
+		   vector<bool> AmesosClassesInstalled,
+		   Epetra_CrsMatrix *& Amat, 
 		   bool transpose, 
 		   bool verbose, 
 		   bool symmetric, 
@@ -14,110 +17,121 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
 		   double &maxrelresidual,
 		   int &NumTests) {
 
+  const int NumAmesosClasses = AmesosClasses.size();
   int errors = 0 ;
 
-  if ( transpose ) { 
-    if ( verbose ) cout << "Superludist not test with transpose enabled " << endl ; 
-  } else {
-    if ( verbose) cout << " Testing Superludist " << endl ; 
+  for (int i=0; i < NumAmesosClasses; i++ ) {
+    if ( AmesosClassesInstalled[i] ) { 
+      if ( AmesosClasses[i] == "Amesos_Scalapack") { 
+	if ( verbose) cout << " Testing SCALAPACK " << endl ; 
+	
+	  errors += TestScalapack( Amat, 
+				   transpose, 
+				   verbose, 
+				   Levels, 
+				   Rcond, 
+				   maxrelerror, 
+				   maxrelresidual, 
+				   NumTests ) ;
+
+      } else if ( AmesosClasses[i] == "Amesos_Umfpack" ) {
+	if ( verbose) cout << " Testing UMFPACK " << endl ; 
+	
+	errors += TestOtherClasses("Amesos_Umfpack",
+				   Amat, 
+				   transpose, 
+				   verbose, 
+				   Levels, 
+				   Rcond, 
+				   maxrelerror, 
+				   maxrelresidual, 
+				   NumTests ) ;
+
+      } else if ( AmesosClasses[i] == "Amesos_Mumps" ) {
+	if ( verbose) cout << " Testing MUMPS " << endl ; 
+
+	errors += TestOtherClasses("Amesos_Mumps",
+				   Amat, 
+				   transpose, 
+				   verbose, 
+				   Levels, 
+				   Rcond, 
+				   maxrelerror, 
+				   maxrelresidual, 
+				   NumTests ) ;
+
+      } else if ( AmesosClasses[i] == "Amesos_Klu" ) {
+	if ( verbose) cout << " Testing KLU " << endl ; 
+
+	errors += TestOtherClasses("Amesos_Klu",
+				   Amat, 
+				   transpose, 
+				   verbose, 
+				   Levels, 
+				   Rcond, 
+				   maxrelerror, 
+				   maxrelresidual, 
+				   NumTests ) ;
   
-    errors += TestSuperludist(Amat, 
-			      transpose, 
-			      verbose, 
-			      Levels, 
-			      Rcond, 
-			      maxrelerror, 
-			      maxrelresidual, 
-			      NumTests ) ;
-  }
-  
-  if ( verbose) cout << " Testing UMFPACK " << endl ; 
+      } else if ( AmesosClasses[i] == "Amesos_Superlu" ) {
+	if ( verbose) cout << " Testing SUPERLU " << endl ; 
 
-  errors += TestOtherClasses("Amesos_Umfpack",
-			     Amat, 
-			     transpose, 
-			     verbose, 
-			     Levels, 
-			     Rcond, 
-			     maxrelerror, 
-			     maxrelresidual, 
-			     NumTests ) ;
+	errors += TestOtherClasses("Amesos_Superlu",
+				   Amat, 
+				   transpose, 
+				   verbose, 
+				   Levels, 
+				   Rcond, 
 
-  //
-  //  A quick sanity check - make you symmetric is the same on all processes
-  //
-  const int sym_int = symmetric?0:1 ; 
-  int sym_int_out = sym_int; 
-  Amat->Comm().Broadcast( &sym_int_out, 1, 0 ) ; 
-  assert( sym_int == sym_int_out ) ; 
+				   maxrelerror, 
+				   maxrelresidual, 
+				   NumTests ) ;
 
-  if ( symmetric ) { 
-    if ( verbose) cout << " Testing DSCPACK " << endl ; 
+      } else if ( AmesosClasses[i] == "Amesos_Dscpack" ) {
+	//
+	//  A quick sanity check - make you symmetric is the same on all processes
+	//
+	const int sym_int = symmetric?0:1 ; 
+	int sym_int_out = sym_int; 
+	Amat->Comm().Broadcast( &sym_int_out, 1, 0 ) ; 
+	assert( sym_int == sym_int_out ) ; 
+
+	if ( symmetric ) { 
+	  if ( verbose) cout << " Testing DSCPACK " << endl ; 
     
-    errors += TestOtherClasses("Amesos_Dscpack",
-			       Amat, 
-			       transpose, 
-			       verbose, 
-			       Levels, 
-			       Rcond, 
-			       maxrelerror, 
-			       maxrelresidual, 
-			       NumTests ) ;
-  } else {
-    if ( verbose ) cout << " DSCPACK not tested on unsymmetric matrices " 
-			<< endl ; 
-  }
+	  errors += TestOtherClasses("Amesos_Dscpack",
+				     Amat, 
+				     transpose, 
+				     verbose, 
+				     Levels, 
+				     Rcond, 
+				     maxrelerror, 
+				     maxrelresidual, 
+				     NumTests ) ;
+	} else {
+	  if ( verbose ) cout << " DSCPACK not tested on unsymmetric matrices " 
+			      << endl ; 
+	}
     
-  if ( verbose) cout << " Testing SCALAPACK " << endl ; 
-
-  errors += TestOtherClasses("Amesos_Scalapack",
-			     Amat, 
-			     transpose, 
-			     verbose, 
-			     Levels, 
-			     Rcond, 
-			     maxrelerror, 
-			     maxrelresidual, 
-			     NumTests ) ;
+      } else if ( AmesosClasses[i] == "Amesos_Superludist" ) {
+	if ( transpose ) { 
+	  if ( verbose ) cout << "Superludist does not support transpose " << endl ; 
+	} else {
+	  if ( verbose) cout << " Testing Superludist " << endl ; 
   
-
-  if ( verbose) cout << " Testing KLU " << endl ; 
-
-  errors += TestOtherClasses("Amesos_Klu",
-			     Amat, 
-			     transpose, 
-			     verbose, 
-			     Levels, 
-			     Rcond, 
-			     maxrelerror, 
-			     maxrelresidual, 
-			     NumTests ) ;
-  
-  if ( verbose) cout << " Testing MUMPS " << endl ; 
-
-  errors += TestOtherClasses("Amesos_Mumps",
-			     Amat, 
-			     transpose, 
-			     verbose, 
-			     Levels, 
-			     Rcond, 
-			     maxrelerror, 
-			     maxrelresidual, 
-			     NumTests ) ;
-
-  if ( verbose) cout << " Testing SUPERLU " << endl ; 
-
-  errors += TestOtherClasses("Amesos_Superlu",
-			     Amat, 
-			     transpose, 
-			     verbose, 
-			     Levels, 
-			     Rcond, 
-
-			     maxrelerror, 
-			     maxrelresidual, 
-			     NumTests ) ;
-
+	  errors += TestSuperludist(Amat, 
+				    transpose, 
+				    verbose, 
+				    Levels, 
+				    Rcond, 
+				    maxrelerror, 
+				    maxrelresidual, 
+				    NumTests ) ;
+	}
+      }
+    }
+  }
+	  
   if ( verbose) cout << " TestAllClasses errors = " << errors << endl ; 
 
   return errors;

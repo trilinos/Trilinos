@@ -1,5 +1,7 @@
 /*
   TODO:
+  1)  Eliminate mb_ and grid_mb_  DONE 
+
   1)  Allow user level control over whether to use a 1D or 2D data 
       distribution.
   2)  Figure out how to redistribute the vectors.  (Allow no more than 
@@ -40,8 +42,6 @@
 #ifndef _AMESOS_SCALAPACK_H_
 #define _AMESOS_SCALAPACK_H_
 
-#include "Amesos_SCALAPACK_wrappers.h"
-
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Epetra_LinearProblem.h"
@@ -53,35 +53,88 @@
 #endif
 #include "Epetra_CrsGraph.h"
 
-//! Amesos_Scalapck:  A parallel dense solver.  For now, we implement only the unsymmetric ScaLAPACK solver.
-/*!  Amesos_ScaLAPACK, an object-oriented wrapper for ScaLAPACK, will solve a linear systems of equations: <TT>A X = B</TT>
+//! Amesos_Scalapack:  A serial and parallel dense solver.  For now, we implement only the unsymmetric ScaLAPACK solver.
+/*!  Amesos_Scalapack, an object-oriented wrapper for LAPACK and ScaLAPACK, 
+   will solve a linear systems of equations: <TT>A X = B</TT>
    using Epetra objects and the ScaLAPACK library, where
   <TT>A</TT> is an Epetra_RowMatrix and <TT>X</TT> and <TT>B</TT> are 
   Epetra_MultiVector objects.
 
-<br /><br /><p>AmesosScaLAPACK can be competitive for matrices 
+<br /><br /><p>Amesos_Scalapack can be competitive for matrices 
 that are not particularly sparse.  ScaLAPACK solves matrices
 for which the fill-in is roughly 10% to 20% of the matrix size 
-in time comparable to that achieve by other Amesos classes.
+in time comparable to that achieve by other Amesos classes.  Amesos_Scalapack 
+scales well and hence its performance advantage will be largest 
+when large number of processes are involved.  
 
+<br /><br /><p>Amesos_Scalapack uses the ScaLAPACK functions PDGETRF and PDGETRS 
+if more than one process is used.  If only one process is used, Amesos_ScaLAPACK uses 
+the LAPACK function PDGETRF and PDGETRS.
+
+<br /><br /><p>AmesosScaLAPACK uses full partial pivoting and will
+therefore provide answers that are at least as accurate as any 
+direct sparse solver.
+
+<br /><br /><p>AmesosScalapack makes sense under the following circumstances:
+<ul>
+<li>There is sufficient memory to store the entrie dense matrix.  8*n^2/p bytes 
+will be required on each process.  -AND- one of the following
+<ul>
+<li>The matrix is relatively small and dense.  Amesos_Scalapack will solve 
+matrices less than 100 by 100 faster than other Amesos classes unless the matrices are
+very sparse.  
+
+<li>The matrix is relatively dense and many processes are available.  If a thousand 
+processes are available, Amesos_Scalapack should be competetive with other sparse direct 
+solvers even for matrices whose L and U factors contain only 5% non-zeros.  
+
+<li>The matrix is quite dense.  Amesos_Scalapack will be well on any
+matrix whose L and U factors contain 20% or more non-zeros.
+
+<li>Execution time is less important than robustness.  Amesos_Scalapack is among the most robust 
+parallel direct solvers.
+
+</ul> 
+
+</ul> 
+
+<h1>Common control parameters :</h1>
+Amesos_Scalapack supports the following parameters which are common to accross multiple Amesos solvers:
+<ul>
+<li>ParamList.set("MaxProcs", int MaximumProcessesToUse );  <br>By default, this is set to -1, which causes Amesos_Scalapack to use a heuristic to determine how many processes to use.  If set to a postive value, MaximumProcessesToUse, Amesos_Scalapack will use MaximumProcessesToUse provided that there are that many processes available.  Testing should be performed with MaximumProcessesToUse set to some value larger than one to force parallel execution.   
+<li><li>ParamList.set("PrintTiming", bool  );  <br>
+<li><li>ParamList.set("PrintStatus", bool );  <br>
+<li><li>ParamList.set("ComputeVectorNorms", bool ); <br> 
+<li><li>ParamList.set("ComputeTrueResidual", bool ); <br> 
+<li><li>ParamList.set("OutputLevel", int ); <br> 
+<li><li>ParamList.set("DebugLevel", int ); <br> 
+<li><li>ParamList.set("ComputeTrueResidual", bool ); <br> 
+</ul> 
+Amesos_Scalapack supports the following parameters specific to Amesos_Scalapack.
+<br>
+    Teuchos::ParameterList ScalapackParams = ParameterList.sublist("Scalapack") ;
+<ul>
+<li>ScalapackParams.set("2D distribution", bool );  <br>By default this is set "true".  In general, 
+because a two dimensional data distribution generally produces faster results.  
+However, in some cases, a one dimensional data distribution may provide faster 
+execution time.  The code for the one dimensional data distribution uses a different data 
+redistribution algorithm and uses the transpose of the matrix internally (all of which is transparent to the user).
+<li>ScalapackParams.set("grid_nb", bool );  <br>By default this is set to 32.  On some 
+machines, it may be possible to improve performance by up to 10% by changing the value 
+of grid_nb.  (16,24,48,64 or 128) are reasonable values to try.  For testing on small 
+matrices, small values of grid_nb will (if "MaxProcs" is set to a value greater than 1) 
+force the code to execute in parallel.  
+</ul>
 <h1>Limitations:</h1>
 
 <p>None of the following limitations would be particularly difficult to remove.
 
-<br /><br /><p>The present implementation will only be efficient for matrices 
-in the range of n=400 to n=4000. 
-
 <br /><br /><p>The present implementation limits the number of right hand sides 
-to the number of rows assigned to each process.  i.e. nrhs < n/p.  This limitation
-would be easy to remove.  
+to the number of rows assigned to each process.  i.e. nrhs < n/p. 
 
 <br /><br /><p>The present implementation does not take advantage of
 symmetric or symmetric positive definite matrices, although ScaLAPACK has 
 separate routines to  take advantages of such matrices.
-
-<br /><br /><p>The present implementation does not call LAPACK codes
-for matrices which are small enough to be handled more efficiently on
-a single processor.
 
 */
 
@@ -333,8 +386,7 @@ revert to their default values.
   //  Control of the data distribution
   //
   bool TwoD_distribution_;  // True if 2D data distribution is used
-  int grid_mb_;             // Row blocking factor (only used in 2D distribution)  
-  int grid_nb_;             // Column blocking factor (only used in 2D distribution)  
+  int grid_nb_;             // Row and Column blocking factor (only used in 2D distribution)  
   int mypcol_;              // Process column in the ScaLAPACK2D grid
   int myprow_;              // Process row in the ScaLAPACK2D grid
   Epetra_CrsMatrix* FatOut_;//
@@ -342,7 +394,6 @@ revert to their default values.
   //
   //  Blocking factors (For both 1D and 2D data distributions)
   //
-  int mb_;
   int nb_;
   int lda_;
 

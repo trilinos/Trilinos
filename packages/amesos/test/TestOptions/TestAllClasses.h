@@ -1,6 +1,9 @@
 #include "Epetra_CrsMatrix.h"
- 
-int TestAllClasses(Epetra_CrsMatrix *& Amat, 
+#include <vector>
+
+int TestAllClasses(vector<string> AmesosClasses,
+		   vector<bool> AmesosClassesInstalled,
+		   Epetra_CrsMatrix *& Amat, 
 		   bool transpose, 
 		   bool verbose, 
 		   bool symmetric, 

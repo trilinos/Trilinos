@@ -1,3 +1,13 @@
+//
+//  OUR_CHK_ERR always returns 1 on error.
+//
+
+#define OUR_CHK_ERR(a) { { int epetra_err = a; \
+                      if (epetra_err != 0) { cerr << "Epetra ERROR " << epetra_err << ", " \
+                           << __FILE__ << ", line " << __LINE__ << endl; \
+relerror = 1.3e15; relresidual=1e15; return(1);}  }\
+                   }
+
 #include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Amesos.h"
@@ -93,7 +103,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
   relresidual = 0 ; 
 
   if ( Abase == 0 ) 
-    return - 1; 
+    assert( false ) ; 
   else {
 
     //
@@ -105,9 +115,17 @@ int PerformOneSolveAndTest(char* AmesosClass,
     //  We only set transpose if we have to - this allows valgrind to check
     //  that transpose is set to a default value before it is used.
     //
-    if ( transpose ) EPETRA_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
-    EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
-    EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
+    if (verbose) cout << "PerformOneSolveAndTest.cpp:120" << endl; 
+    if ( transpose ) OUR_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
+    if (verbose) cout << "PerformOneSolveAndTest.cpp:122" << endl; 
+    if (verbose) ParamList.set( "DebugLevel", 1 );
+    if (verbose) cout << "PerformOneSolveAndTest.cpp:old179" << endl; 
+    OUR_CHK_ERR( Abase->SetParameters( ParamList ) ); 
+    if (verbose) cout << "PerformOneSolveAndTest.cpp:old181" << endl; 
+    OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
+    if (verbose) cout << "PerformOneSolveAndTest.cpp:124" << endl; 
+    OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
+    if (verbose) cout << "PerformOneSolveAndTest.cpp:126" << endl; 
 
     int ind[1];
     double val[1];
@@ -162,30 +180,30 @@ int PerformOneSolveAndTest(char* AmesosClass,
     //
     Problem.SetLHS( &sAAx );
     Problem.SetRHS( &b );
-    Teuchos::ParameterList ParamList ;
-    ParamList.set( "DebugLevel", 1 );
-    EPETRA_CHK_ERR( Abase->SetParameters( ParamList ) ); 
-    EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
-    EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
-    EPETRA_CHK_ERR( Abase->Solve(  ) ); 
+    if (verbose) cout << "PerformOneSolveAndTest.cpp:181" << endl; 
+    OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
+    if (verbose) cout << "PerformOneSolveAndTest.cpp:183" << endl; 
+    OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
+    if (verbose) cout << "PerformOneSolveAndTest.cpp:185" << endl; 
+    OUR_CHK_ERR( Abase->Solve(  ) ); 
 
     //    if (verbose) cout << " x = " << x << endl ; 
     //
 
     if ( Levels >= 2 ) 
       {
-        EPETRA_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
+        OUR_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
 	Problem.SetLHS( &sAx );
 	Problem.SetRHS( &sAAx );
 	val[0] =  Value ; 
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
-	EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
+	OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
 	
 	Teuchos::ParameterList* NullList = (Teuchos::ParameterList*) 0 ;  
 	//      We do not presently handle null lists.
-	//	EPETRA_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
-	EPETRA_CHK_ERR( Abase->Solve(  ) ); 
+	//	OUR_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
+	OUR_CHK_ERR( Abase->Solve(  ) ); 
 	
       }
     else
@@ -197,7 +215,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
       {
 	Problem.SetLHS( &x );
 	Problem.SetRHS( &sAx );
-	EPETRA_CHK_ERR( Abase->Solve(  ) ); 
+	OUR_CHK_ERR( Abase->Solve(  ) ); 
       }
     else
       {
@@ -304,9 +322,9 @@ int PerformOneSolveAndTest(char* AmesosClass,
 
     if (iam == 0 ) {
       if ( relresidual * Rcond < 1e-16 ) {
-	if (verbose) cout << " Test Passed " << endl ;
+	if (verbose) cout << " Test 1 Passed " << endl ;
       } else {
-	if (verbose) cout << " TEST FAILED " << endl ;
+	if (verbose) cout << " TEST 1 FAILED " << endl ;
 	errors += 1 ; 
       }
     }
@@ -314,8 +332,12 @@ int PerformOneSolveAndTest(char* AmesosClass,
 
 
 
-#define FACTOR_B
+    //  #define FACTOR_B
 #ifdef FACTOR_B
+
+
+    garbage;
+
     //
     //  Now we check to make sure that we can change the problem and 
     //  re-factorize.  
@@ -359,8 +381,8 @@ int PerformOneSolveAndTest(char* AmesosClass,
     //  Factor B
     //
     Problem.SetOperator( &B );
-    EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
-    EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
+    OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
+    OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
     Bb.Random();
     Bb.PutScalar(1.0);
@@ -369,7 +391,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
     //
     Problem.SetLHS( &Bx );
     Problem.SetRHS( &Bb );
-    EPETRA_CHK_ERR( Abase->Solve(  ) ); 
+    OUR_CHK_ERR( Abase->Solve(  ) ); 
 
 
     ind[0] = 0;
@@ -378,14 +400,14 @@ int PerformOneSolveAndTest(char* AmesosClass,
       B.SumIntoMyValues( 0, 1, val, ind ) ; 
 
     //  if (verbose) cout << " B' = " << B << endl ; 
-    EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
+    OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
     //
     //  Solve B' x1 = x 
     //
     Problem.SetLHS( &Bx1 );
     Problem.SetRHS( &Bx );
-    EPETRA_CHK_ERR( Abase->Solve(  ) ); 
+    OUR_CHK_ERR( Abase->Solve(  ) ); 
 
     //  if (verbose) cout << " x1 = " << x1 << endl ; 
 
@@ -393,14 +415,14 @@ int PerformOneSolveAndTest(char* AmesosClass,
       B.SumIntoMyValues( 0, 1, val, ind ) ; 
 
     //  if (verbose) cout << " B'' = " << B << endl ; 
-    EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
+    OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
     //
     //  Solve B" x2 = x1
     //
     Problem.SetLHS( &Bx2 );
     Problem.SetRHS( &Bx1 );
-    EPETRA_CHK_ERR( Abase->Solve(  ) ); 
+    OUR_CHK_ERR( Abase->Solve(  ) ); 
 
     //  if (verbose) cout << " x2 = " << x2 << endl ; 
 
@@ -446,9 +468,9 @@ int PerformOneSolveAndTest(char* AmesosClass,
       //
       if ( norm_residual < (1e-15)*(1.0*BNumPoints*BNumPoints*BNumPoints*
 				    BNumPoints*BNumPoints*BNumPoints) ) {
-	if (verbose) cout << " Test Passed " << endl ;
+	if (verbose) cout << " Test 2 Passed " << endl ;
       } else {
-	if (verbose) cout << " TEST FAILED " << endl ;
+	if (verbose) cout << " TEST 2 FAILED " << endl ;
 	errors += 1 ; 
       }
     }

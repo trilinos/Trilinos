@@ -597,7 +597,7 @@ if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
      AC_TRY_LINK_FUNC(umfdi_local_search,umfpack_with_lib="yes",umfpack_with_lib="no")
 
      if test "X$umfpack_with_lib" == "Xyes"; then
-       amesos_libs="${amesos_libs} -lumfpack"
+       amesos_libs="-lumfpack  ${amesos_libs} "
        AC_MSG_RESULT( checkpoint umfpack  C ) 
        AC_MSG_RESULT( checkpoint umfpack  C ) 
      else
@@ -609,7 +609,7 @@ if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
                          ${tac_with_amesos_umfpackdir}/UMFPACK/Lib/libumfpack.a )
        TAC_CHECK_FILE(${tac_with_amesos_umfpacklib})
        LIBS="${tac_with_amesos_umfpacklib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
-       amesos_libs="${amesos_libs} ${tac_with_amesos_umfpacklib}"
+       amesos_libs="${tac_with_amesos_umfpacklib} ${amesos_libs} "
      fi
   fi
 

@@ -45,9 +45,12 @@ int TestOtherClasses(char* AmesosClass,
 					relerror, 
 					relresidual ) ; 
 
-    if (Errors < 0 ) {
-      if (verbose ) cout << AmesosClass << " not built in this executable " << endl ; 
-      return 0 ; 
+    if ( Errors < 0 ) {
+      NumErrors++;
+      NumTests++ ; 
+      if ( verbose ) {
+	cout << AmesosClass << " failed with error code " << Errors<< endl ; 
+      }
     } else { 
       NumErrors += Errors ; 
 

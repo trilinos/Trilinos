@@ -11364,7 +11364,7 @@ rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
 
      if test "X$umfpack_with_lib" == "Xyes"; then
-       amesos_libs="${amesos_libs} -lumfpack"
+       amesos_libs="-lumfpack  ${amesos_libs} "
        echo "$as_me:$LINENO: result: checkpoint umfpack  C " >&5
 echo "${ECHO_T}checkpoint umfpack  C " >&6
        echo "$as_me:$LINENO: result: checkpoint umfpack  C " >&5
@@ -11410,7 +11410,7 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
   fi
 
        LIBS="${tac_with_amesos_umfpacklib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
-       amesos_libs="${amesos_libs} ${tac_with_amesos_umfpacklib}"
+       amesos_libs="${tac_with_amesos_umfpacklib} ${amesos_libs} "
      fi
   fi
 

@@ -10,6 +10,7 @@
 //        - Calls TestOtherClasses (one for each Amesos class) and TestSuperludist 
 //        TestOtherClasses
 //        TestSuperludist
+//        TestScalapack
 //
 //
 //  Todo:
@@ -52,28 +53,9 @@
 #endif 
 #endif 
 
-string AS = "Amesos_Scalapack" ;
-string AU = "Amesos_Umfpack" ;
+vector<string> AmesosClasses;
 
-vector<string> FactorySet( 7, ("Amesos_Scalapack",
-				     "Amesos_Umfpack",
-				     "Amesos_Mumps",
-				     "Amesos_Superludist",
-				     "Amesos_Klu",
-				     "Amesos_Superlu",
-				     "Amesos_Dscpack")   );
-#if 0
-  char* FactorySet[] = { "Amesos_Scalapack",
-			 "Amesos_Umfpack",
-			 "Amesos_Mumps",
-			 "Amesos_Superludist",
-			 "Amesos_Klu",
-			 "Amesos_Superlu",
-			 "Amesos_Dscpack" };
-#endif
-
-
-const int NumAmesosClasses = FactorySet.size();
+int NumAmesosClasses;
 
 int CreateCrsMatrix( char *filename, Epetra_Comm &Comm, 
 		     bool transpose, bool distribute, 
@@ -85,8 +67,6 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
 
-  assert( NumAmesosClasses == 7 ) ;
-   
   symmetric = false ; 
   string FileName = filename ;
   int FN_Size = FileName.size() ; 
@@ -171,13 +151,13 @@ int CreateCrsMatrix( char *filename, Epetra_Comm &Comm,
   return 0;
 }
 
-int TestOneMatrix( 
-		  char *filename, 
-		  Epetra_Comm &Comm, 
-		  bool verbose, 
-		  bool symmetric, 
-		  double Rcond,
-		  int &NumTests  ) {
+int TestOneMatrix( vector<bool> AmesosClassesInstalled, 
+		   char *filename, 
+		   Epetra_Comm &Comm, 
+		   bool verbose, 
+		   bool symmetric, 
+		   double Rcond,
+		   int &NumTests  ) {
 
   if ( verbose ) cout << endl << endl << " Matrix = " << filename << endl ;
 
@@ -246,12 +226,13 @@ int TestOneMatrix(
   double Rcond2 = Rcond ;
 #endif
   for ( int iterTrans =0 ; iterTrans < 2; iterTrans++ ) {
-    //  for ( int iterTrans =0 ; iterTrans < 1; iterTrans++ ) {
     bool transpose = iterTrans == 1 ; 
     
     for ( int iterDist =0 ; iterDist < 2; iterDist++ ) {
-      //    for ( int iterDist =0 ; iterDist < 1; iterDist++ ) {
       bool distribute = ( iterDist == 1 ); 
+
+      if ( verbose ) cout << "TestOptions.cpp:236 distribute = " << distribute <<
+	" transpose = "  << transpose << " iterDist = " << iterDist << endl ; 
 
       Epetra_CrsMatrix *Amat ;
       CreateCrsMatrix( filename, Comm, transpose, distribute, symmetric, Amat ) ;
@@ -259,7 +240,9 @@ int TestOneMatrix(
 
       if ( Rcond*Rcond1*Rcond2 > 1e-16 ) 
 	{ 
-	  NumErrors += TestAllClasses( Amat, 
+	  NumErrors += TestAllClasses( AmesosClasses, 
+				       AmesosClassesInstalled, 
+				       Amat, 
 					transpose, 
 					verbose, 
 					symmetric, 
@@ -271,9 +254,11 @@ int TestOneMatrix(
 	}
       else if ( Rcond*Rcond1 > 1e-16 ) 
 	{
-	  NumErrors += TestAllClasses( Amat, 
-					transpose, 
-					verbose, 
+	  NumErrors += TestAllClasses( AmesosClasses, 
+				       AmesosClassesInstalled, 
+				       Amat, 
+				       transpose, 
+				       verbose, 
 					symmetric, 
 					2, 
 					Rcond*Rcond1, 
@@ -283,18 +268,20 @@ int TestOneMatrix(
 	}
       else
 	{
-	  NumErrors += TestAllClasses( Amat, 
-					transpose, 
-					verbose, 
-					symmetric, 
-					1, 
-					Rcond, 
-					error, 
-					residual, 
-					NumTests ) ;
+	  NumErrors += TestAllClasses( AmesosClasses, 
+				       AmesosClassesInstalled, 
+				       Amat, 
+				       transpose, 
+				       verbose, 
+				       symmetric, 
+				       1, 
+				       Rcond, 
+				       error, 
+				       residual, 
+				       NumTests ) ;
 	}
       if ( verbose ) {
-	cout << " Amesos_Superludist " << filename 
+	cout << " Testing  " << filename 
 	<< (transpose?" transpose":"" ) 
 	<< (distribute?" distribute":"" ) << " error = " 
 	<< error 
@@ -317,11 +304,31 @@ int TestOneMatrix(
   return NumErrors;
 } 
 
+//
+//  Usage:  
+//
 
 int main( int argc, char *argv[] ) {
 
+  AmesosClasses.push_back( "Amesos_Scalapack" ) ;
+#if 0
+  AmesosClasses.push_back( "Amesos_Umfpack" );
+  AmesosClasses.push_back( "Amesos_Mumps" );
+  AmesosClasses.push_back( "Amesos_Superludist" );
+  AmesosClasses.push_back( "Amesos_Klu" );
+#endif
+#if 0
+  AmesosClasses.push_back( "Amesos_Superlu" );
+  AmesosClasses.push_back( "Amesos_Dscpack" );
+#endif
+
+  NumAmesosClasses = AmesosClasses.size();
+
+
   bool verbose = false; 
   if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 'v') ) 
+    verbose = true ; 
+  if ( argc >= 3 && (argv[2][0] == '-') &&  (argv[2][1] == 'v') ) 
     verbose = true ; 
 
   bool Short = false; 
@@ -329,6 +336,15 @@ int main( int argc, char *argv[] ) {
     Short = true ; 
   if ( argc >= 3 && (argv[2][0] == '-') &&  (argv[2][1] == 's') ) 
     Short = true ; 
+
+  if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 'h') ) {
+    cerr << "Usage TestOptions [-s] [-v] " << endl ; 
+    cerr << "-s:  short - test only one matrix  " << endl ; 
+    cerr << "-v:  verbose  " << endl ; 
+    exit(-1);
+  }
+
+  vector<bool> AmesosClassesInstalled( NumAmesosClasses );
 
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
@@ -338,6 +354,12 @@ int main( int argc, char *argv[] ) {
 #endif
 
   if ( Comm.MyPID() != 0 ) verbose = false ; 
+  if ( Comm.MyPID() == 0 ) {
+    char what; 
+    //    cin >> what ; 
+  }
+
+
 
   Teuchos::ParameterList ParamList ;
     ParamList.set( "DebugLevel", 1 );
@@ -345,19 +367,19 @@ int main( int argc, char *argv[] ) {
   Amesos_BaseSolver* Abase ; 
   Amesos Afactory;
 
-  //  for (int i=0; i < NumAmesosClasses; i++ ) {
-  for (int i=0; i < 0; i++ ) {
-    Abase = Afactory.Create( &FactorySet[i][0], Problem ) ; 
+  //  for (int i=0; i < 0; i++ ) {
+  for (int i=0; i < NumAmesosClasses; i++ ) {
+
+    Abase = Afactory.Create( &AmesosClasses[i][0], Problem ) ; 
     if ( Abase == 0 ) {
-      if ( verbose ) cout << FactorySet[i] << " not built in this configuration"  << endl ;
+      if ( verbose ) cout << AmesosClasses[i] << " not built in this configuration"  << endl ;
+      AmesosClassesInstalled[i] = false;
     } else {
-      if ( verbose ) cout << " Testing " << FactorySet[i] << endl ;
+      if ( verbose ) cout << " Testing " << AmesosClasses[i] << endl ;
+      AmesosClassesInstalled[i] = true;
     }
     delete Abase ; 
     }
-
-
-
 
   int result = 0 ; 
   int numtests = 0 ;
@@ -367,7 +389,8 @@ int main( int argc, char *argv[] ) {
   //  result += TestOneMatrix("Tri.triS", Comm, verbose, symmetric, 1e-1 , numtests ) ;
   //  result += TestOneMatrix("Tri2.triS", Comm, verbose, symmetric, 1e-5 , numtests ) ;
   //  result += TestOneMatrix("../bcsstk01.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-  result += TestOneMatrix("../ImpcolB.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+  //  result += TestOneMatrix( AmesosClassesInstalled, "../ImpcolB.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 
   //
   //  This is really slow when run on valgrind, so we don't want to run 
@@ -380,10 +403,10 @@ int main( int argc, char *argv[] ) {
 #endif
 
     if ( ! Short) { 
-      result += TestOneMatrix("../bcsstk13.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-      //  result += TestOneMatrix("../bcsstk02.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-      result += TestOneMatrix("../bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-      result += TestOneMatrix("../bcsstk08.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk13.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      //  result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk02.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../bcsstk08.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 
     }
 #ifdef HAVE_VALGRIND 

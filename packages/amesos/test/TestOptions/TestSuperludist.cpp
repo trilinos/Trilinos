@@ -88,10 +88,11 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					relerror, 
 					relresidual ) ; 
 
-    if ( Errors == -1 ) {
+    if ( Errors < 0 ) {
+      NumErrors++;
+      NumTests++ ; 
       if ( verbose ) {
-	cout << "Amesos_Superludist not built in this executable" << endl ; 
-	return 0 ; 
+	cout << "Amesos_Superludist failed with error code " << Errors<< endl ; 
       }
     } else { 
 

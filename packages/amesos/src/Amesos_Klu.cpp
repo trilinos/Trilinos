@@ -546,6 +546,16 @@ int Amesos_Klu::Solve() {
     Epetra_MultiVector *SerialXextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ;
     Epetra_MultiVector *SerialBextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ;
 
+    //
+    //  KS //  This solves the bug described below, though at a 
+    //  performance cost.  
+    //  Removing this test/TestOptions/TestOptions.exe to crash
+    if( ImportToSerial_ != 0 ) {
+      delete ImportToSerial_ ; 
+      ImportToSerial_ = 0 ; 
+    }
+
+
     if( ImportToSerial_ == 0 ) {
       // MS // create importer from distributed to proc 0.
       // FIXME: I don't work if matrix and/or vectors are changed!
