@@ -13,16 +13,12 @@
  *
  *====================================================================*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 #include "lb_const.h"
 #include "lbi_const.h"
 #include "params_const.h"
 
 
-void      LB_Assign_Param_Vals(
+int      LB_Assign_Param_Vals(
 LB_PARAM * change_list,		/* list of parameter values being changed */
 PARAM_VARS * params,		/* structure describing parameters */
 int debug_level,                /* level for output of debugging info */
@@ -32,7 +28,10 @@ int proc                        /* processor # (controls debug printing) */
     char     *name;		/* name of parameter being reset */
     char     *val;		/* new value for parameter */
     int       found;		/* is name found? */
+    int       ierr;		/* error code */
     PARAM_VARS *param_ptr;       /* pointer to current param */
+
+    ierr = LB_OK;
 
     while (change_list != NULL) {
         param_ptr = params;
@@ -49,6 +48,17 @@ int proc                        /* processor # (controls debug printing) */
 	}
 
 	if (found) {		/* name found */
+
+          /* Check that param_ptr->ptr isn't NULL */
+          if (param_ptr->ptr == NULL) {
+             ierr = LB_WARN;
+             if (debug_level > 0 && proc == 0) {
+                fprintf(stderr, "Zoltan Warning: Parameter %s is not bound to any variable. "
+                       "Parameter ignored.\n", param_ptr->name);
+             }
+          }
+          else {
+
 	    /* Figure out what type it is and read value. */
 	    if (!strcmp(param_ptr->type, "INT") || 
                 !strcmp(param_ptr->type, "INTEGER")) {
@@ -110,7 +120,10 @@ int proc                        /* processor # (controls debug printing) */
                 }
 	    }
 	}
+      }
 
-	change_list = change_list->next;
+      change_list = change_list->next;
     }
+
+    return ierr;
 }

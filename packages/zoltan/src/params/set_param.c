@@ -13,11 +13,9 @@
  *
  *====================================================================*/
 
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
 #include "lbi_const.h"
 #include "lb_const.h"
+#include "lb_util_const.h"
 #include "params_const.h"
 #include "all_allo_const.h"
 #include "rcb_const.h"
@@ -28,7 +26,6 @@
 #include "ha_const.h"
 
 static int add_param(LB *, char *, char *);
-static int clean_string(char *, char **);
 
 
 int       LB_Set_Param(
@@ -57,10 +54,10 @@ char *val1)			/* value to set this parameter to */
      *  other -> more serious error (LB return codes) */
 
     /* First convert to upper case & remove leading white space. */
-    flag = clean_string(name1, &name);
+    flag = LB_clean_string(name1, &name);
     if (flag)
 	return (flag);
-    flag = clean_string(val1, &val);
+    flag = LB_clean_string(val1, &val);
     if (flag) {
 	LB_FREE(&name);
 	return (flag);
@@ -116,40 +113,6 @@ char *val1)			/* value to set this parameter to */
     else
 	flag = status;
     return (flag);
-}
-
-
-static int clean_string(
-char *string1,			/* original string */
-char **pstring2) 		/* cleaned string to return */
-{
-/* Remove leading & trailing white space and convert to upper case. */
-
-    char     *string2;		/* cleaned up string */
-    int       start, end;	/* indices bounding true string */
-    int       length1;		/* length of string 1 */
-    int       i;		/* loop counter */
-
-    length1 = strlen(string1);
-    start = 0;
-    end = length1;
-    while (start < length1 && isspace(string1[start]))
-	start++;
-    while (end > start && isspace(string1[end]))
-	end--;
-
-    string2 = (char *) LB_MALLOC((end - start + 1) * sizeof(char));
-    *pstring2 = string2;
-
-    if (string2 == NULL)
-	return (LB_MEMERR);
-
-    for (i = start; i < end; i++) {
-	*string2++ = toupper(string1[i]);
-    }
-    *string2 = '\0';
-
-    return (LB_OK);
 }
 
 

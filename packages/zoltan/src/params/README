@@ -10,6 +10,9 @@ assign_param_vals.c -- Contains LB_Assign_Param_Vals which loops over the set
 		       of new parameters/values associated with an LB object
 		       and sets those which are appropriate.
 
+bind_param.c        -- Routine to bind a parameter name to a variable.
+                       This function must be called before LB_Assign_Param_Vals.
+
 check_param.c       -- Routine LB_Check_Param compares a string against a list
 		       of valid parameter names & checks the type for correctness.
 

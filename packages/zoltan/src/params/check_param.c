@@ -13,10 +13,6 @@
  *
  *====================================================================*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
 #include "lb_const.h"
 #include "lbi_const.h"
 #include "params_const.h"

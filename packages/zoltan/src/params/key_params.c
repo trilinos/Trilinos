@@ -13,7 +13,6 @@
  *
  *====================================================================*/
 
-#include <stdio.h>
 #include "lb_const.h"
 #include "params_const.h"
 

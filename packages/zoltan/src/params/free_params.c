@@ -13,9 +13,6 @@
  *
  *====================================================================*/
 
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
 #include "lb_const.h"
 #include "all_allo_const.h"
 
