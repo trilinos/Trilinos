@@ -25,12 +25,7 @@
 #define ML_allocate(i)    malloc((i + sizeof(double) ))
 #define ML_free(i)        { free(i); i = NULL; }
 #else
-extern void  ML_print_it();
-extern char *ML_allocate(unsigned int isize);
 #define ML_free(i)        { ML_myfree(i); i = NULL; }
-extern void  ML_myfree(void *vptr);
-extern char *ML_realloc(void *vptr, unsigned int new_size);
-extern void ML_spit_it_out();
 #endif
 #define ML_allocate_check(ptr_to_check) \
                          {if ((ptr_to_check) == NULL) {\
@@ -50,6 +45,14 @@ extern  int  ML_memory_check_var(void *);
 extern  int  ML_memory_inquire(void);
 extern  int  ML_memory_inquire_short( int );
 extern  int  ML_memory_clean( char *, int );
+#ifdef ML_MEM_CHECK
+extern void  ML_print_it();
+extern char *ML_allocate(unsigned int isize);
+extern void  ML_myfree(void *vptr);
+extern char *ML_realloc(void *vptr, unsigned int new_size);
+extern void ML_spit_it_out();
+#endif
+
 
 #ifdef __cplusplus
 }
