@@ -1092,7 +1092,7 @@ for (i=0; i<exp_Nrows; i++)
       ML_memory_free((void**) &new_send_list);
       ML_memory_free((void**) &new_send_neighbors);
    }
-   if ( N_neighbors > 0 )
+   if ( new_N_recv > 0 )
    {
       ML_memory_free((void**) &new_recv_leng);
       ML_memory_free((void**) &new_recv_neighbors);
