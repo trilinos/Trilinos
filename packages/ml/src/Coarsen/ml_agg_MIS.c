@@ -75,7 +75,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int     *new_recv_neighbors=NULL, *aggr_cnt_array = NULL;
    int     level, index3, count3, *recv_list = NULL, max_agg_size;
    int     **rows_in_aggs = NULL, lwork, info;
-   double  dcompare1, *new_val = NULL, epsilon, average_agg_size;
+   double  dcompare1, *new_val = NULL, epsilon;
    double  *dble_buf = NULL, *nullspace_vect = NULL, *qr_tmp = NULL;
    double  *tmp_vect = NULL, *work = NULL, *new_null = NULL, *comm_val = NULL;
    double  *dble_buf2;
@@ -98,11 +98,10 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   *temp_leng, *tem2_index, *tempaggr_index = NULL;
    int                   *send_leng = NULL, *recv_leng = NULL;
    int                   send_count = 0, recv_count = 0, total_nz = 0;
-   int                   total_aggs, phase_one_aggregated, count2;
+   int                   count2;
    /*   int kk, old_upper, nnzs, count2, newptr; */
-   int        max_allowed, old_agg_count, flag;
-   int best, best_size, current_agg;
-   int nonaggd_neighbors, aggd_neighbors;
+
+
 #ifdef DDEBUG
    int curagg,myagg,*good,*bad, kk;
 #endif
@@ -509,126 +508,9 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
          count++;
       }
    }
+   ML_Aggregate_Phase2_3_Cleanup(ml_ag, Amatrix, &aggr_count, nvertices, aggr_index,
+				 exp_Nrows, comm, bdry, "MIS");
 
-   /* count the size of each aggregate */
-
-   aggr_cnt_array = (int *) ML_allocate(sizeof(int)*(aggr_count+1));
-   for (i = 0; i <= aggr_count; i++) aggr_cnt_array[i] = 0;
-   for (i = 0; i < exp_Nrows; i++) {
-     if (aggr_index[i] >= 0)
-       aggr_cnt_array[aggr_index[i]]++;
-   }
-
-   /* determine average aggregate size */
-
-   max_allowed = 0;
-   for (i = 0; i < aggr_count ; i++) max_allowed += aggr_cnt_array[i];
-   max_allowed = ML_Comm_GsumInt( comm, max_allowed);
-   i = ML_Comm_GsumInt( comm, aggr_count);
-   if (i != 0) average_agg_size = ((double) max_allowed)/((double) i);
-   else        average_agg_size = 10;
-
-   /* make maximum aggregate size a function of average aggregate size */
-
-   i = (int) ceil(average_agg_size +.01);
-   if (i < max_allowed+4) i = max_allowed+4;
-   max_allowed = i;
-
-   old_agg_count = aggr_count;
-   total_aggs    = ML_Comm_GsumInt( comm, aggr_count);
-
-   /* Among unaggregated points, see if we can make a reasonable size    */
-   /* aggregate out of it. We do this by looking at neighbors and seeing */
-   /* how many are unaggregated and on my processor.                     */
-   /*      NOTE: these aggregates must lie entirely on a processor.      */
-   /*            The code/coordination between processors is just too    */
-   /*            hard to work out the details.                           */
-
-   phase_one_aggregated = 0;
-   for (i = 0; i < nvertices; i++) {
-     if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
-       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val, &rowi_N, 0);
-       aggd_neighbors = 0;
-       nonaggd_neighbors = 1;
-       for (j = 0; j < rowi_N; j++) {
-	 current_agg = aggr_index[rowi_col[j]];
-	 if (current_agg != -1) aggd_neighbors++;
-	 else if (rowi_col[j] < nvertices) nonaggd_neighbors++;
-       }
-       if ((rowi_N > 3) &&
-	   (nonaggd_neighbors > ((int) ceil(average_agg_size/2.)))) {
-	 aggr_index[i] = aggr_count++;
-	 for (j = 0; j < rowi_N; j++) {
-	   if ( (aggr_index[ rowi_col[j]] == -1) && (rowi_col[j] < nvertices))
-	     aggr_index[rowi_col[j]] = aggr_index[i];
-	 }
-       }
-     }
-     else if (bdry[i] == 'F') phase_one_aggregated++;
-   }
-
-   phase_one_aggregated = ML_Comm_GsumInt( comm, phase_one_aggregated);
-   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
-   {
-      printf("Aggregation(MIS) : Phase 1 - nodes aggregated = %d \n",
-             phase_one_aggregated);
-      printf("Aggregation(MIS) : Phase 1 - total aggregates = %d\n",total_aggs);
-   }
-   if ( printflag < ML_Get_PrintLevel()) {
-      i = aggr_count - old_agg_count;
-      i = ML_Comm_GsumInt( comm, i);
-      if ( mypid == 0 ) {
-         printf("Aggregation(MIS) : Phase 2a- additional aggregates = %d\n",i);
-      }
-   }
-
-   /* Try to stick unaggregated nodes into a neighboring aggegrate (the */
-   /* smallest on processor) if they are not already too big. Otherwise */
-   /* make a new aggregate.                                             */
-
-   for (i = 0; i < nvertices; i++) {
-     if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
-       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-			 &rowi_N, 0);
-       best_size = 1000000;
-       best = -1;
-       for (j = 0; j < rowi_N; j++) {
-	 flag = 0;
-	 current_agg = aggr_index[rowi_col[j]];
-	 if ((current_agg >= 0) && (rowi_col[j] < nvertices)){
-	   if (current_agg >= old_agg_count) {flag = 1;
-	   best = current_agg; }
-	   else {
-	     if (aggr_cnt_array[current_agg] < max_allowed) {
-	       if (aggr_cnt_array[current_agg] < best_size){
-		 best = current_agg;
-		 best_size = aggr_cnt_array[current_agg];
-	       }
-	     }
-	   }
-	 }
-	 if (flag == 1) break;
-       }
-       if (best == -1) { aggr_index[i] = aggr_count++; }
-       else {
-	 aggr_index[i] = best;
-	 if ( best < old_agg_count) aggr_cnt_array[ best]++;
-       }
-     }
-   }
-   free(aggr_cnt_array);
-
-   if (printflag < ML_Get_PrintLevel()) {
-     total_aggs = ML_Comm_GsumInt( comm, aggr_count);
-     j = 0;
-     for (i = 0; i < nvertices; i++) if (bdry[i] == 'T') j++;
-     j = ML_Comm_GsumInt( comm, j);
-
-     if ( mypid == 0 ) {
-       printf("Aggregation(MIS) : Phase 2 - total aggregates = %d\n",total_aggs);
-       printf("Aggregation(MIS) : Phase 2 - boundary nodes   = %d\n",j);
-     }
-   }
 
    /* make sure that boundary nodes are not in any aggregate */
    /* Also, make sure that everyone else is aggregated.      */
@@ -1711,6 +1593,7 @@ aggr_cnt_array[i],i);
                            ML_Aggregate_ExchangeBdry, aggr_comm, 
                            comm, Ncoarse*nullspace_dim, m*nullspace_dim);
    ML_Operator_Set_Getrow((*Pmatrix), ML_EXTERNAL, Nrows, CSR_getrows);
+
    ML_Operator_Set_ApplyFunc((*Pmatrix), ML_INTERNAL, CSR_matvec);
    (*Pmatrix)->max_nz_per_row = 1;
 
@@ -2321,3 +2204,153 @@ printf("the new NremainingRcvProcs is %d\n",*NremainingRcvProcs); fflush(stdout)
       }
       return 0;
 }
+
+
+int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
+				  int *aggr_count, int nvertices, 
+				  int *aggr_index, int exp_Nrows, 
+				  ML_Comm *comm, char *input_bdry, char *label)
+{
+  int Nphase1_agg, phase_one_aggregated, i, j, aggd_neighbors, nonaggd_neighbors;
+  int current_agg, total_aggs, *agg_incremented = NULL, *connect_type = NULL, 
+    *number_connections = NULL;
+  int best_score, score, best_agg, best_connect, mypid;
+  double printflag;
+  int                   allocated = 0, *rowi_col = NULL, rowi_N;
+  double                *rowi_val = NULL;
+  char *bdry = NULL;
+
+
+  if (input_bdry == NULL) {
+   bdry = (char *) ML_allocate(sizeof(char)*(exp_Nrows + 1));
+   for (i = nvertices ; i < exp_Nrows; i++) input_bdry[i] = 'F';
+   for (i = 0; i < nvertices; i++) {
+      bdry[i] = 'T';
+      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+                        &rowi_N, 0);
+      if (rowi_N > 1) bdry[i] = 'F';
+   }
+  }
+  else bdry = input_bdry;
+
+    
+   mypid       = comm->ML_mypid;
+   printflag   = ml_ag->print_flag;
+   Nphase1_agg = *aggr_count;
+
+   /* Among unaggregated points, see if we can make a reasonable size    */
+   /* aggregate out of it. We do this by looking at neighbors and seeing */
+   /* how many are unaggregated and on my processor.                     */
+   /*      NOTE: these aggregates must lie entirely on a processor.      */
+   /*            The code/coordination between processors is just too    */
+   /*            hard to work out the details.                           */
+
+   phase_one_aggregated = 0;
+   for (i = 0; i < nvertices; i++) {
+     if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
+       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val, &rowi_N, 0);
+       aggd_neighbors = 0;
+       nonaggd_neighbors = 1;
+       for (j = 0; j < rowi_N; j++) {
+	 current_agg = aggr_index[rowi_col[j]];
+	 if (current_agg != -1) aggd_neighbors++;
+	 else if (rowi_col[j] < nvertices) nonaggd_neighbors++;
+       }
+       if ((rowi_N > 3) && 
+	   (((double) nonaggd_neighbors)/((double) rowi_N) > .86)) {
+	 aggr_index[i] = (*aggr_count)++;
+	 for (j = 0; j < rowi_N; j++) {
+	   if ( (aggr_index[ rowi_col[j]] == -1) && (rowi_col[j] < nvertices))
+	     aggr_index[rowi_col[j]] = aggr_index[i];
+	 }
+       }
+     }
+     else if (bdry[i] == 'F') phase_one_aggregated++;
+   }
+
+   //   printf("hmmmmmmm %d \n",Nphase1_agg);
+   phase_one_aggregated = ML_Comm_GsumInt( comm, phase_one_aggregated);
+
+   if ( printflag < ML_Get_PrintLevel()) {
+
+     total_aggs    = ML_Comm_GsumInt( comm, Nphase1_agg);
+     if (mypid == 0) {
+       printf("Aggregation(%s) : Phase 1 - nodes aggregated = %d \n",label,
+             phase_one_aggregated);
+       printf("Aggregation(%s) : Phase 1 - total aggregates = %d\n",label, total_aggs);
+     }
+     i = *aggr_count - Nphase1_agg;
+     i = ML_Comm_GsumInt( comm, i);
+     if ( mypid == 0 ) {
+       printf("Aggregation(%s) : Phase 2a- additional aggregates = %d\n",label, i);
+     }
+   }
+
+   agg_incremented = (int *) ML_allocate(sizeof(int)*(*aggr_count+1));
+   for (i = 0; i < *aggr_count; i++) agg_incremented[i] = 0;
+   connect_type = (int *) ML_allocate(sizeof(int)* (exp_Nrows+1));
+   for (i = 0; i < exp_Nrows; i++) connect_type[i] = 100;
+   number_connections = (int *) ML_allocate(sizeof(int)*(*aggr_count+1));
+   for (i = 0; i <= *aggr_count; i++) number_connections[i] = 0;
+
+
+   /* Try to stick unaggregated nodes into a neighboring aggegrate (the */
+   /* smallest on processor) if they are not already too big. Otherwise */
+   /* make a new aggregate.                                             */
+
+   for (i = 0; i < nvertices; i++) {
+     if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
+       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+			 &rowi_N, 0);
+       for (j = 0; j < rowi_N; j++) {
+	 current_agg = aggr_index[rowi_col[j]];
+	 if ((current_agg >= 0) && (current_agg < Nphase1_agg) &&(rowi_col[j] < nvertices)) {
+	   number_connections[current_agg] += connect_type[rowi_col[j]];
+	 }
+       }
+       best_score = -1000000;
+       for (j = 0; j < rowi_N; j++) {
+	 current_agg = aggr_index[rowi_col[j]];
+	 if (( current_agg >= 0) && (current_agg < Nphase1_agg) && 
+	     (number_connections[current_agg] != 0) ) {
+	   score = number_connections[current_agg]-agg_incremented[current_agg];
+	   if (score > best_score) {
+	     best_agg = current_agg; 
+	     best_score = score;
+	     best_connect = connect_type[rowi_col[j]];
+	   }
+	   else if ((best_agg == current_agg) && (connect_type[rowi_col[j]] > best_connect))
+	     best_connect = connect_type[rowi_col[j]];
+
+	   number_connections[current_agg] = 0;
+	 }
+       }
+       if (best_score < 0) aggr_index[i] = *aggr_count++;
+       else {
+	 aggr_index[i] = best_agg;
+	 agg_incremented[best_agg]++;
+	 connect_type[i] = best_connect - 10;
+       }
+     }
+   }
+
+   if (printflag < ML_Get_PrintLevel()) {
+     total_aggs = ML_Comm_GsumInt( comm, *aggr_count);
+     j = 0;
+     for (i = 0; i < nvertices; i++) if (bdry[i] == 'T') j++;
+     j = ML_Comm_GsumInt( comm, j);
+
+     if ( mypid == 0 ) {
+       printf("Aggregation(%s) : Phase 2 - total aggregates = %d\n",label, total_aggs);
+       printf("Aggregation(%s) : Phase 2 - boundary nodes   = %d\n",label, j);
+     }
+   }
+  if (input_bdry == NULL) ML_free(bdry);
+  if (rowi_col != NULL) ML_free(rowi_col);
+  if (rowi_val != NULL) ML_free(rowi_val);
+  if (agg_incremented != NULL) ML_free(agg_incremented);
+  if (connect_type != NULL) ML_free(connect_type);
+  if (number_connections != NULL) ML_free(number_connections);
+  return 0;
+}
+
