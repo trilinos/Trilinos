@@ -538,18 +538,12 @@ else
   AM_CONDITIONAL(HAVE_AMESOS_DSCPACK, false ) 
 fi
 
+#
+# MPI communicator C to FORTRAN conversion (required by MUMPS)
+#
 
-
-
-
-
-
-
-
-
-
-
-
+TAC_ARG_WITH_PACKAGE(amesos-mpi-c2f, [Enable conversion from C MPI communicator to FORTRAN MPI communicator. If enabled, the MUMPS interface can create sub-communicators.],  AMESOS_MPI_C2F, yes )
+AM_CONDITIONAL(HAVE_AMESOS_MPI_C2F, true )
 
 
 
