@@ -46,4 +46,4 @@ done
 ln -s ../src/Include/ml_include.h ml_include.h
 ln -s ../src/Include/ml_defs.h ml_defs.h
 ln -s ../src/Include/ml_common.h ml_common.h
-ln -s ../etc/flat_Makefile Makefile
+ln -s ../etc/flat_Makefile classicMakefile
