@@ -22,10 +22,10 @@
 /* ******************************************************************** */
 
 /* Generic timer ... I hope it works on lots of different machines */
-double GetClock()
+double GetClock(void)
 {
 #ifdef AZTEC
-extern double second();
+extern double second(void);
 return( second());
 #else
 #ifdef SMOS
@@ -352,7 +352,7 @@ int ML_selection_dsort(double *vals, int length, int *cols, int limit)
 
    /* set up data structure */
 
-   expLeng    = pow(2,level+1);
+   expLeng    = pow(2., (float) (level+1));
    iarray     = (int    *)  malloc(expLeng   * sizeof(int));
    darray     = (double *)  malloc(expLeng   * sizeof(double));
    treeLengs  = (int *)     malloc((level+1) * sizeof(int));
@@ -485,7 +485,7 @@ int ML_randomize(int nlist, int *list)
    stime  = GetClock();
    stime  = (stime - (long) stime) * 1.0E6;
    sparam = (long) stime;
-   srand( sparam );
+   srand( (unsigned long) sparam );
    for ( i = 0; i < 3*nlist; i++ )
    {
       iran1 = (int) ( nm1 * drand48() );

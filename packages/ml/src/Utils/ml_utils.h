@@ -58,10 +58,10 @@ extern "C" {
 #endif
 
    int    pr_error(char *fmt,  ... );
-   double GetClock();
-   void   StartTimer();
-   void   StopTimer();
-   double GetElapsedTime();
+   double GetClock(void);
+   void   StartTimer(void);
+   void   StopTimer(void);
+   double GetElapsedTime(void);
 
    int    ML_crude_search( int, int, int * ); 
    int    ML_sorted_search( int, int, int * ); 
@@ -74,7 +74,7 @@ extern "C" {
 
    int    ML_Check_Context( void * );
    int    ML_randomize( int , int * ); 
-   int    ML_random_init();
+   int    ML_random_init(void);
    void   ML_random_vec(double u[], int N, ML_Comm *comm);
    double ML_srandom1(int *seed);
 

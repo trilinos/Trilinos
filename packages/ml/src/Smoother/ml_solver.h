@@ -32,7 +32,7 @@ typedef struct ML_Solver_Struct
 {
    int          ML_id;               /* ID for the Solver structure     */
    int          reuse_flag;          /* flag for internal use           */
-   void         (*func)();           /* function to perform the solve   */
+   void         (*func)(void);       /* function to perform the solve   */
    void         *Mat1;               /* primary matrix for the solver   */
    void         *Mat2;               /* L matrix (for direct solver)    */
    void         *Mat3;               /* U matrix (for direct solver)    */

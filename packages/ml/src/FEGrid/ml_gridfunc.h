@@ -57,19 +57,21 @@ extern int ML_GridFunc_Create( ML_GridFunc ** );
 extern int ML_GridFunc_Destroy( ML_GridFunc ** );
 extern int ML_GridFunc_Check( ML_GridFunc * );
 extern int ML_GridFunc_Set_MaxVertPerElmnt(ML_GridFunc *, int);
+#ifdef NOTSTRICT_PROTO
 extern int ML_GridFunc_Set_Function(ML_GridFunc *, int, int (*func)());
-extern int ML_GridFunc_Set_GetDimension(ML_GridFunc *, int (*func)());
-extern int ML_GridFunc_Set_GetNVert(ML_GridFunc *, int (*func)());
-extern int ML_GridFunc_Set_GetNElmnts(ML_GridFunc *, int (*func)());
-extern int ML_GridFunc_Set_GetElmntGlobalNum(ML_GridFunc*,int(*func)());
-extern int ML_GridFunc_Set_GetElmntNVert(ML_GridFunc*,int(*func)());
-extern int ML_GridFunc_Set_GetElmntVertList(ML_GridFunc *, int (*func)());
-extern int ML_GridFunc_Set_GetVertGlobalNum(ML_GridFunc*,int (*func)());
-extern int ML_GridFunc_Set_GetVertCoordinate(ML_GridFunc*,int (*func)());
-extern int ML_GridFunc_Set_ComputeBasisCoef(ML_GridFunc *, int (*func)());
-extern int ML_GridFunc_Set_GetElmntVolumes(ML_GridFunc *, int (*func)());
-extern int ML_GridFunc_Set_GetElmntMatrix(ML_GridFunc *, int (*func)());
-extern int ML_GridFunc_Set_GetElmntNullSpace(ML_GridFunc*,int (*func)());
+#endif
+extern int ML_GridFunc_Set_GetDimension(ML_GridFunc *, int (*func)(void *));
+extern int ML_GridFunc_Set_GetNVert(ML_GridFunc *, int (*func)(void *));
+extern int ML_GridFunc_Set_GetNElmnts(ML_GridFunc *, int (*func)(void *));
+extern int ML_GridFunc_Set_GetElmntGlobalNum(ML_GridFunc*,int(*func)(void *, int));
+extern int ML_GridFunc_Set_GetElmntNVert(ML_GridFunc*,int(*func)(void *, int));
+extern int ML_GridFunc_Set_GetElmntVertList(ML_GridFunc *, int (*func)(void *, int, int *));
+extern int ML_GridFunc_Set_GetVertGlobalNum(ML_GridFunc*,int (*func)(void *, int));
+extern int ML_GridFunc_Set_GetVertCoordinate(ML_GridFunc*,int (*func)(void *, int, double *));
+extern int ML_GridFunc_Set_ComputeBasisCoef(ML_GridFunc *, int (*func)(void*,int,double*,int,double*,int*));
+extern int ML_GridFunc_Set_GetElmntVolumes(ML_GridFunc *, int (*func)(void*,int,int*,double*));
+extern int ML_GridFunc_Set_GetElmntMatrix(ML_GridFunc *, int (*func)(void*,int,double**));
+extern int ML_GridFunc_Set_GetElmntNullSpace(ML_GridFunc*,int (*func)(void*,int,double*));
 
 #ifdef __cplusplus
 }

@@ -75,7 +75,8 @@ extern int ML_randomize(int nlist, int *list);
 int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix, 
                                  ML_Operator **Pmatrix, ML_Comm *comm)
 {
-   int     i, j, jj, k, m, nbytes, length, Nrows, exp_Nrows;
+  unsigned int nbytes, length;
+   int     i, j, jj, k, m, Nrows, exp_Nrows;
    int     N_neighbors, *neighbors = NULL, printflag, diff_level;
    int     *Asqrd_rcvleng= NULL, *Asqrd_sndleng= NULL, *send_list = NULL;
    int     total_recv_leng = 0, total_send_leng = 0, offset, msgtype;
@@ -1421,7 +1422,8 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
       msgtype = 12093;
       length = sizeof(double) * nullspace_dim;
       ML_Aggregate_ExchangeData((char*)dble_buf2,(char*) dble_buf,
-            N_neighbors, neighbors, recv_leng, send_leng,msgtype,length,comm);
+            N_neighbors, neighbors, recv_leng, send_leng,msgtype,
+				(int) length,comm);
       ML_memory_free((void**) &dble_buf);
    } 
 
@@ -1572,7 +1574,7 @@ aggr_cnt_array[i],i);
    msgtype = 24945;
    length = sizeof(double) * nullspace_dim;
    ML_Aggregate_ExchangeData((char*)dble_buf,(char*) comm_val,
-         N_neighbors, neighbors, send_leng, recv_leng,msgtype,length,comm);
+         N_neighbors, neighbors, send_leng, recv_leng,msgtype,(int)length,comm);
    for ( i = 0; i < total_send_leng; i++ )
    {
       index = send_list[i];
@@ -1819,11 +1821,12 @@ int ML_Aggregate_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
 {
    int     i, j, k, m, N_remaining_vertices, index, select_flag, fproc, col;
    int     NremainingRcvProcs, change_flag, *proc_flag, send_flag,nselected;
-   int     *pref_list, col2, loop_cnt, nbytes, *tlist, pref_cnt;
+   int     *pref_list, col2, loop_cnt, *tlist, pref_cnt;
    int     pref_flag, pref_index;
    char    *in_preflist;
    USR_REQ *Request;
    int msg_type = 1041;
+   unsigned int nbytes;
 
    N_remaining_vertices = vlist_cnt;
    NremainingRcvProcs   = recv_cnt;
@@ -2244,7 +2247,8 @@ int ML_Aggregate_UpdateVertexStates(int N_remaining_vertices,
         int **send_buf, int *send_flag, USR_REQ *Request, ML_Comm *comm, 
         int msgtype) 
 {
-   int    j, k, kkk, nbytes, fproc;
+   int    j, k, kkk, fproc;
+   unsigned int nbytes;
 
       /* update the states to/from other processors */
 

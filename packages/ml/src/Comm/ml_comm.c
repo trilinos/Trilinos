@@ -127,7 +127,7 @@ int ML_Comm_Set_Nprocs( ML_Comm *com_ptr, int nprocs )
 
 /* -------------------------------------------------------------------- */
 
-int ML_Comm_Set_SendFcn( ML_Comm *com_ptr, int (*func)())
+int ML_Comm_Set_SendFcn( ML_Comm *com_ptr, int (*func)(void*,unsigned int,int,int,USR_COMM))
 {
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
@@ -140,7 +140,7 @@ int ML_Comm_Set_SendFcn( ML_Comm *com_ptr, int (*func)())
 
 /* -------------------------------------------------------------------- */
 
-int ML_Comm_Set_RecvFcn( ML_Comm *com_ptr, int (*func)())
+int ML_Comm_Set_RecvFcn( ML_Comm *com_ptr, int (*func)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*))
 {
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
@@ -153,7 +153,7 @@ int ML_Comm_Set_RecvFcn( ML_Comm *com_ptr, int (*func)())
 
 /* -------------------------------------------------------------------- */
 
-int ML_Comm_Set_WaitFcn( ML_Comm *com_ptr, int (*func)())
+int ML_Comm_Set_WaitFcn( ML_Comm *com_ptr, int (*func)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*))
 {
    if ( com_ptr->ML_id != ML_ID_COMM )
    {

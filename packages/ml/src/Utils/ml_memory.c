@@ -22,7 +22,7 @@ static char malloc_name_log[MAX_MALLOC_LOG][3];
 /* memory allocation function                                           */
 /* -------------------------------------------------------------------- */
 
-int ML_memory_alloc( void **memptr, int leng, char *name )
+int ML_memory_alloc( void **memptr, unsigned int leng, char *name )
 {
    int  i, *int_ptr, nchunks, ndouble=sizeof(double);
    char *var_ptr;

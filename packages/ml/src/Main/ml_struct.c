@@ -269,21 +269,21 @@ int ML_Set_Comm_Communicator(ML *ml, USR_COMM com)
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Comm_Send(ML *ml, int (*send)())
+int ML_Set_Comm_Send(ML *ml, int (*send)(void*,unsigned int,int,int,USR_COMM))
 {
    return ( ML_Comm_Set_SendFcn (ml->comm, send ) );
 }
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Comm_Recv(ML *ml, int (*recv)())
+int ML_Set_Comm_Recv(ML *ml, int (*recv)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*))
 {
    return ( ML_Comm_Set_RecvFcn (ml->comm, recv ) );
 }
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Comm_Wait(ML *ml, int (*wait)())
+int ML_Set_Comm_Wait(ML *ml, int (*wait)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*))
 {
    return ( ML_Comm_Set_WaitFcn (ml->comm, wait ) );
 }
@@ -349,7 +349,7 @@ int ML_Set_Grid_MaxVertPerElmnt(ML *ml, int nl, int nvert)
    
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetDimension(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_GetDimension(ML *ml, int nl, int (*func)(void *))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -359,7 +359,7 @@ int ML_Set_Grid_GetDimension(ML *ml, int nl, int (*func)())
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetNVert(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_GetNVert(ML *ml, int nl, int (*func)(void *))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -369,7 +369,7 @@ int ML_Set_Grid_GetNVert(ML *ml, int nl, int (*func)())
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetNElmnt(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_GetNElmnt(ML *ml, int nl, int (*func)(void *))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -379,7 +379,7 @@ int ML_Set_Grid_GetNElmnt(ML *ml, int nl, int (*func)())
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetElmntNVert(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_GetElmntNVert(ML *ml, int nl, int (*func)(void *, int))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -389,7 +389,7 @@ int ML_Set_Grid_GetElmntNVert(ML *ml, int nl, int (*func)())
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetElmntVertList(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_GetElmntVertList(ML *ml, int nl, int (*func)(void *, int, int *))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -399,7 +399,7 @@ int ML_Set_Grid_GetElmntVertList(ML *ml, int nl, int (*func)())
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetElmntGlobalNum(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_GetElmntGlobalNum(ML *ml, int nl, int (*func)(void *, int))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -409,7 +409,7 @@ int ML_Set_Grid_GetElmntGlobalNum(ML *ml, int nl, int (*func)())
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetVertGlobalNum(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_GetVertGlobalNum(ML *ml, int nl, int (*func)(void *, int))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -419,7 +419,7 @@ int ML_Set_Grid_GetVertGlobalNum(ML *ml, int nl, int (*func)())
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetVertCoordinate(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_GetVertCoordinate(ML *ml, int nl, int (*func)(void *, int, double *))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -429,7 +429,7 @@ int ML_Set_Grid_GetVertCoordinate(ML *ml, int nl, int (*func)())
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_ComputeBasisCoef(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_ComputeBasisCoef(ML *ml, int nl, int (*func)(void*,int,double*,int,double*,int*))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -439,7 +439,7 @@ int ML_Set_Grid_ComputeBasisCoef(ML *ml, int nl, int (*func)())
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetElmntVolume(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_GetElmntVolume(ML *ml, int nl, int (*func)(void*,int,int*,double*))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -449,7 +449,7 @@ int ML_Set_Grid_GetElmntVolume(ML *ml, int nl, int (*func)())
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetElmntMatrix(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_GetElmntMatrix(ML *ml, int nl, int (*func)(void*,int,double**))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -459,7 +459,7 @@ int ML_Set_Grid_GetElmntMatrix(ML *ml, int nl, int (*func)())
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetElmntNullSpace(ML *ml, int nl, int (*func)())
+int ML_Set_Grid_GetElmntNullSpace(ML *ml, int nl, int (*func)(void*,int,double*))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;

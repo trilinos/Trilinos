@@ -62,7 +62,8 @@ int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
 int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix, 
                        ML_Operator **Pmatrix, ML_Comm *comm)
 {
-   int     i, j, k, m, nbytes, offset, count, index, ind2, col, *vlist;
+  unsigned int nbytes;
+   int     i, j, k, m, offset, count, index, ind2, col, *vlist;
    int     num_PDE_eqns, Nrows, exp_Nrows, Ncoarse, exp_Ncoarse, total_nnz;
    int     *rowptr, *column, *new_ia=NULL, *new_ja=NULL, *short_list;
    int     *CF_array, *sort_array, sortleng, bitindex,intindex, short_leng;
@@ -1521,7 +1522,8 @@ int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
 {
    int     i, j, k, m, N_remaining_vertices, index, select_flag, fproc, col;
    int     NremainingRcvProcs, change_flag, *proc_flag, send_flag,nselected;
-   int     *pref_list=NULL, col2, loop_cnt, nbytes, pref_cnt;
+   int     *pref_list=NULL, col2, loop_cnt, pref_cnt;
+   unsigned int nbytes;
    int     pref_index, *vlist, vlist_cnt;
    int     *pref_rank, vlist_ind;
    char    *in_preflist=NULL;
@@ -1902,7 +1904,8 @@ int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[],
                  int send_leng[], int **send_buf, int *send_flag, 
                  USR_REQ *Request, ML_Comm *comm, int msgtype) 
 {
-   int j, k, kkk, nbytes, fproc;
+   int j, k, kkk, fproc;
+   unsigned int nbytes;
 
    /* update the states to/from other processors */
 

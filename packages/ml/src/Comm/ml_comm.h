@@ -64,9 +64,9 @@ extern int    ML_Comm_Check( ML_Comm *comm );
 extern int    ML_Comm_Set_UsrComm( ML_Comm *comm, USR_COMM com );
 extern int    ML_Comm_Set_Mypid( ML_Comm *comm, int mypid );
 extern int    ML_Comm_Set_Nprocs( ML_Comm *comm, int nprocs);
-extern int    ML_Comm_Set_SendFcn( ML_Comm *comm, int (*SendFcn)());
-extern int    ML_Comm_Set_RecvFcn( ML_Comm *comm, int (*RecvFcn)());
-extern int    ML_Comm_Set_WaitFcn( ML_Comm *comm, int (*WaitFcn)());
+extern int    ML_Comm_Set_SendFcn( ML_Comm *comm, int (*SendFcn)(void*,unsigned int,int,int,USR_COMM));
+extern int    ML_Comm_Set_RecvFcn( ML_Comm *comm, int (*RecvFcn)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*));
+extern int    ML_Comm_Set_WaitFcn( ML_Comm *comm, int (*WaitFcn)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*));
 
 extern int    ML_Comm_GmaxInt( ML_Comm *comm, int intdata );
 extern double ML_Comm_GmaxDouble(ML_Comm *comm, double ddata );

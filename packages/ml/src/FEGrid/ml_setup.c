@@ -527,12 +527,13 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
    int    i, j, k, m, index, ggelenum, gcelenum, icnt, icnt2, ibegin, iend;
    int    mbegin, mend, ncnt, *fine2coarsecnts, ncand, cele_num;
    int    *coef_ptr2, cur_ptr_leng, *node_proc_map, *fnode_flag;
-   int    extern_node_cnt, ext_cnt, cnodenum, cgnodenum, fnodenum, nbytes;
+   int    extern_node_cnt, ext_cnt, cnodenum, cgnodenum, fnodenum;
    int    MAX_VERT_PER_ELE;
    double *coord, *coord_short, *coefs, *coefs2;
    ML_IntList     *lfv_list;
    ML_ElementAGX  *element;
    ML_OperatorAGX *xsfer_op;
+   unsigned int nbytes;
 
    /* ----------------------------------------------------------------- */
    /* initialize the grid transfer operator (and allocate memory)       */

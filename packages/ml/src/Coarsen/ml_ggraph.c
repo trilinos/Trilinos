@@ -183,11 +183,12 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
    int         vlength, *vlist, *proc_array, *inttmp, *adjacency_cnt;
    int         *templist, *remote_list, *global_list, *node_ia, *node_ja;
    int         send_cnt, *send_leng, *send_proc, **send_list, msgtype;
-   int         nbytes, recv_cnt, *recv_leng, *recv_proc, tot_recv_leng;
+   int         recv_cnt, *recv_leng, *recv_proc, tot_recv_leng;
    int         fromproc, *intarray, vlengmax, **recv_list, **send_list2;
    int         max_remote_index;
    ML_GridFunc *grid_fcns;
    USR_REQ     *Request;
+   unsigned int nbytes;
 
    /* ------------------------------------------------------------- */
    /* initial error checking (for proper ML_GGraph structure)       */
@@ -662,10 +663,11 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg,void *grid,void (*gf),ML_Comm *comm)
    int   short_cnt, *templist, **proclist, *rptr, *cptr, ext_nvertices;
    int   send_cnt, *send_leng, **send_list, *send_proc;
    int   recv_cnt, *recv_leng, **recv_list, *recv_proc, msgtype;
-   int   char_leng, fproc, nbytes, offset, nselected;
+   int   char_leng, fproc, offset, nselected;
    int   **send_buf, **recv_buf;
    char  *vertex_state, *btypes, *vertex_type, *send_carray, *recv_carray;
    USR_REQ *Request;
+   unsigned int nbytes;
 
    /* ------------------------------------------------------------- */
    /* error checking (for proper ML_GGraph structure)               */
@@ -1018,11 +1020,12 @@ int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
                            int *recv_leng, int **recv_list, int msgtype, 
                            ML_Comm *comm)
 {
-   int     i, j, k, m, temp_cnt, index, select_flag, fproc, col, nbytes;
+  int     i, j, k, m, temp_cnt, index, select_flag, fproc, col;
    int     loop_flag, change_flag, *proc_flag, nselected, *tlist, pref_cnt;
    int     *pref_list, col2, loop_cnt;
    int     pref_flag, pref_index, delete_flag;
    USR_REQ *Request;
+   unsigned int nbytes;
 
    /* ---------------------------------------------------------- */
    /* give the vertices adjacent to deleted vertices preferences */
@@ -1328,9 +1331,10 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
    int  myrank, *cptr, *rptr, send_cnt, recv_cnt, ext_nvertices;
    int  *send_leng, *send_proc, **send_list, nvertices, index; 
    int  *recv_leng, *recv_proc, **recv_list, msgtype, num_faults;
-   int  i, j, nbytes, char_leng, offset, fproc, nselected, fault_flag;
+   int  i, j, char_leng, offset, fproc, nselected, fault_flag;
    char *vertex_state_here, *recv_carray, *send_carray;
    USR_REQ *Request;
+   unsigned int nbytes;
 
    /* ------------------------------------------------------------- */
    /* error checking (for proper ML_GGraph structure)               */

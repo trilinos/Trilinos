@@ -24,10 +24,10 @@ extern "C"
 {
 #endif
 
-extern  int  ML_memory_alloc( void **, int, char * );
+extern  int  ML_memory_alloc( void **, unsigned int, char * );
 extern  int  ML_memory_free( void ** );
 extern  int  ML_memory_check_var(void *);
-extern  int  ML_memory_inquire();
+extern  int  ML_memory_inquire(void);
 extern  int  ML_memory_inquire_short( int );
 extern  int  ML_memory_clean( char *, int );
 

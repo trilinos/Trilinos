@@ -108,7 +108,7 @@ int ML_GridFunc_Set_MaxVertPerElmnt(ML_GridFunc *gf, int leng)
 /* ******************************************************************** */
 /* Set grid access functions                                            */
 /* -------------------------------------------------------------------- */
-
+#ifdef NOTSTRICT_PROTO
 int ML_GridFunc_Set_Function( ML_GridFunc *gf_ptr, int ind, int (*func)())
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
@@ -161,12 +161,12 @@ int ML_GridFunc_Set_Function( ML_GridFunc *gf_ptr, int ind, int (*func)())
    }
    return 0;
 }
-
+#endif
 /* ******************************************************************** */
 /* Set grid access functions INDIVIDUALLY                               */
 /* -------------------------------------------------------------------- */
 
-int ML_GridFunc_Set_GetDimension( ML_GridFunc *gf_ptr, int (*func)())
+int ML_GridFunc_Set_GetDimension( ML_GridFunc *gf_ptr, int (*func)(void *))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {
@@ -177,7 +177,7 @@ int ML_GridFunc_Set_GetDimension( ML_GridFunc *gf_ptr, int (*func)())
    return 0;
 }
 
-int ML_GridFunc_Set_GetNVert( ML_GridFunc *gf_ptr, int (*func)())
+int ML_GridFunc_Set_GetNVert( ML_GridFunc *gf_ptr, int (*func)(void *))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {
@@ -188,7 +188,7 @@ int ML_GridFunc_Set_GetNVert( ML_GridFunc *gf_ptr, int (*func)())
    return 0;
 }
 
-int ML_GridFunc_Set_GetNElmnts( ML_GridFunc *gf_ptr, int (*func)())
+int ML_GridFunc_Set_GetNElmnts( ML_GridFunc *gf_ptr, int (*func)(void *))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {
@@ -199,7 +199,7 @@ int ML_GridFunc_Set_GetNElmnts( ML_GridFunc *gf_ptr, int (*func)())
    return 0;
 }
 
-int ML_GridFunc_Set_GetElmntGlobalNum(ML_GridFunc *gf_ptr, int (*func)())
+int ML_GridFunc_Set_GetElmntGlobalNum(ML_GridFunc *gf_ptr, int (*func)(void *, int))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {
@@ -210,7 +210,7 @@ int ML_GridFunc_Set_GetElmntGlobalNum(ML_GridFunc *gf_ptr, int (*func)())
    return 0;
 }
 
-int ML_GridFunc_Set_GetElmntNVert(ML_GridFunc * gf_ptr, int (*func)())
+int ML_GridFunc_Set_GetElmntNVert(ML_GridFunc * gf_ptr, int (*func)(void *, int))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {
@@ -221,7 +221,7 @@ int ML_GridFunc_Set_GetElmntNVert(ML_GridFunc * gf_ptr, int (*func)())
    return 0;
 }
 
-int ML_GridFunc_Set_GetElmntVertList( ML_GridFunc *gf_ptr, int (*func)())
+int ML_GridFunc_Set_GetElmntVertList( ML_GridFunc *gf_ptr, int (*func)(void *, int, int *))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {
@@ -232,7 +232,7 @@ int ML_GridFunc_Set_GetElmntVertList( ML_GridFunc *gf_ptr, int (*func)())
    return 0;
 }
 
-int ML_GridFunc_Set_GetVertGlobalNum(ML_GridFunc *gf_ptr, int (*func)())
+int ML_GridFunc_Set_GetVertGlobalNum(ML_GridFunc *gf_ptr, int (*func)(void *, int))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {
@@ -243,7 +243,7 @@ int ML_GridFunc_Set_GetVertGlobalNum(ML_GridFunc *gf_ptr, int (*func)())
    return 0;
 }
 
-int ML_GridFunc_Set_GetVertCoordinate(ML_GridFunc *gf_ptr, int (*func)())
+int ML_GridFunc_Set_GetVertCoordinate(ML_GridFunc *gf_ptr, int (*func)(void *, int, double *))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {
@@ -254,7 +254,7 @@ int ML_GridFunc_Set_GetVertCoordinate(ML_GridFunc *gf_ptr, int (*func)())
    return 0;
 }
 
-int ML_GridFunc_Set_ComputeBasisCoef( ML_GridFunc *gf_ptr, int (*func)())
+int ML_GridFunc_Set_ComputeBasisCoef( ML_GridFunc *gf_ptr, int (*func)(void*,int,double*,int,double*,int*))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {
@@ -265,7 +265,7 @@ int ML_GridFunc_Set_ComputeBasisCoef( ML_GridFunc *gf_ptr, int (*func)())
    return 0;
 }
 
-int ML_GridFunc_Set_GetElmntVolumes( ML_GridFunc *gf_ptr, int (*func)())
+int ML_GridFunc_Set_GetElmntVolumes( ML_GridFunc *gf_ptr, int (*func)(void*,int,int*,double*))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {
@@ -276,7 +276,7 @@ int ML_GridFunc_Set_GetElmntVolumes( ML_GridFunc *gf_ptr, int (*func)())
    return 0;
 }
 
-int ML_GridFunc_Set_GetElmntMatrix( ML_GridFunc *gf_ptr, int (*func)())
+int ML_GridFunc_Set_GetElmntMatrix( ML_GridFunc *gf_ptr, int (*func)(void*,int,double**))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {
@@ -287,7 +287,7 @@ int ML_GridFunc_Set_GetElmntMatrix( ML_GridFunc *gf_ptr, int (*func)())
    return 0;
 }
 
-int ML_GridFunc_Set_GetElmntNullSpace(ML_GridFunc *gf_ptr, int (*func)())
+int ML_GridFunc_Set_GetElmntNullSpace(ML_GridFunc *gf_ptr, int (*func)(void*,int,double*))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {

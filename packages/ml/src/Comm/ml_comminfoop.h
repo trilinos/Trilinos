@@ -84,7 +84,7 @@ extern int  ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
                    ML_Comm *ml_comm, int N_cols, int Nghost );
 extern int  ML_CommInfoOP_Clone(ML_CommInfoOP **newone, ML_CommInfoOP *oldone);
 
-extern ML_CommInfoOP *ML_CommInfoOP_Create();
+extern ML_CommInfoOP *ML_CommInfoOP_Create(void);
 extern void ML_CommInfoOP_Destroy(ML_CommInfoOP **comm_info);
 
 extern int  ML_CommInfoOP_Get_Nneighbors(ML_CommInfoOP *c_info);

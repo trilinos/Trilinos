@@ -86,7 +86,7 @@ struct ML_Struct {
    int            *int_options;  /* optional integer parameters     */
    double         *dble_options; /* optional double parameters      */
    void           *void_options; /* optional other parameters       */
-   int            (*func)();     /* optional function               */
+   int            (*func)(void);     /* optional function               */
 
 };
 struct ML_Timing {
@@ -117,27 +117,27 @@ extern int ML_Init_Comm(ML *ml);
 extern int ML_Set_Comm_MyRank(ML *ml, int myrank);
 extern int ML_Set_Comm_Nprocs(ML *ml, int nprocs);
 extern int ML_Set_Comm_Communicator(ML *ml, USR_COMM com);
-extern int ML_Set_Comm_Send(ML *ml, int (*send)());
-extern int ML_Set_Comm_Recv(ML *ml, int (*recv)());
-extern int ML_Set_Comm_Wait(ML *ml, int (*wait)());
+extern int ML_Set_Comm_Send(ML *ml, int (*send)(void*,unsigned int,int,int,USR_COMM));
+extern int ML_Set_Comm_Recv(ML *ml, int (*recv)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*));
+extern int ML_Set_Comm_Wait(ML *ml, int (*wait)(void*,unsigned int,int*,int*,USR_COMM,USR_REQ*));
 
 extern int ML_Set_Comm(ML *ml, ML_Comm *comm);
 
 extern int ML_Init_Grid(ML *, int nl, void *grid);
 extern int ML_Set_Grid_GridFunc(ML *, int nl, ML_GridFunc *);
 extern int ML_Set_Grid_MaxVertPerElmnt(ML *, int, int nvert);
-extern int ML_Set_Grid_GetDimension(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_GetNVert(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_GetNElmnt(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_GetElmntNVert(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_GetElmntVertList(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_GetVertGlobalNum(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_GetElmntGlobalNum(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_GetVertCoordinate(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_ComputeBasisCoef(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_GetElmntVolume(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_GetElmntMatrix(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_GetElmntNullSpace(ML *, int, int (*func)());
+extern int ML_Set_Grid_GetDimension(ML *, int nl, int (*func)(void *));
+extern int ML_Set_Grid_GetNVert(ML *, int nl, int (*func)(void *));
+extern int ML_Set_Grid_GetNElmnt(ML *, int nl, int (*func)(void *));
+extern int ML_Set_Grid_GetElmntNVert(ML *, int nl, int (*func)(void *, int));
+extern int ML_Set_Grid_GetElmntVertList(ML *, int nl, int (*func)(void *, int, int *));
+extern int ML_Set_Grid_GetVertGlobalNum(ML *, int nl, int (*func)(void *, int));
+extern int ML_Set_Grid_GetElmntGlobalNum(ML *, int nl, int (*func)(void *, int));
+extern int ML_Set_Grid_GetVertCoordinate(ML *, int nl, int (*func)(void *, int, double *));
+extern int ML_Set_Grid_ComputeBasisCoef(ML *, int nl, int (*func)(void*,int,double*,int,double*,int*));
+extern int ML_Set_Grid_GetElmntVolume(ML *, int nl, int (*func)(void*,int,int*,double*));
+extern int ML_Set_Grid_GetElmntMatrix(ML *, int nl, int (*func)(void*,int,double**));
+extern int ML_Set_Grid_GetElmntNullSpace(ML *, int, int (*func)(void*,int,double*));
 
 
 extern int ML_Gen_GridXsferUsingFEBasis(ML *, int L1, int L2, int stride);
@@ -231,8 +231,6 @@ extern int ML_Set_Smoother(ML *, int nl , int pre_post, void *obj,
 extern int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level);
 extern int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level,
                                           ML_Aggregate *ag);
-extern int ML_Set_CoarseSolver(ML *ml, int level, int leng,
-                               void *sol_obj, void (*solve)());
 
 extern int ML_Gen_AmatrixRAP(ML *ml, int to_level, int from_level);
 extern int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, 
