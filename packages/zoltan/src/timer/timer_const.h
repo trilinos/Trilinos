@@ -22,6 +22,10 @@ static char *cvs_timerconsth_id = "$Id$";
 
 #include <time.h> /* ANSI C; defines clock_t and clock() */
 
+/* Skip advanced timers for now. They give more trouble than
+   they are useful.  */
+#ifdef USE_ADVANCED_TIMERS 
+
 /* POSIX compliant systems should use times() for user+system timing */
 #if (defined(_POSIX_) || defined(POSIX) || \
      defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE))
@@ -32,6 +36,8 @@ static char *cvs_timerconsth_id = "$Id$";
 #if (defined(BSD) || defined(BSD43) || defined(sun))
 #define HAVE_RUSAGE
 #endif
+
+#endif /* USE_ADVANCED_TIMERS */
 
 /* Include more header files depending on HAVE_* */
 #if defined(HAVE_TIMES)
