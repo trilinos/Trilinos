@@ -50,7 +50,9 @@ class MatrixMatrix {
 	but C needs to have the same row-map as A.
 
     @param A Input, must already have had 'FillComplete()' called.
+    @param transposeA Input, whether to use transpose of matrix A.
     @param B Input, must already have had 'FillComplete()' called.
+    @param transposeB Input, whether to use transpose of matrix B.
     @param C Result. On entry to this method, it doesn't matter whether
              FillComplete() has already been called on C or not. If it has,
 	     then C's graph must already contain all nonzero locations that
@@ -70,10 +72,13 @@ class MatrixMatrix {
     /** Given Epetra_CrsMatrix objects A and B, form the sum B = a*A + b*B
 
     @param A Input, must already have had 'FillComplete()' called.
+    @param transposeA Input, whether to use transpose of matrix A.
+    @param scalarA Input, scalar multiplier for matrix A.
     @param B Result. On entry to this method, it doesn't matter whether
              FillComplete() has already been called on B or not. If it has,
 	     then B's graph must already contain all nonzero locations that
 	     will be produced when forming the sum.
+    @param scalarB Input, scalar multiplier for matrix B.
 
     @return error-code, 0 if successful. non-zero returns may result if A is
              not already Filled, or if errors occur in putting values

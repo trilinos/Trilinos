@@ -47,7 +47,8 @@
 #include "EpetraExt_Transform_Composite.h"
 #include "EpetraExt_LPTrans_From_GraphTrans.h"
 #include "EpetraExt_SymmRCM_CrsGraph.h"
-#include "EpetraExt_CrsSingletonFilter_LinearProblem.h"
+#include "EpetraExt_Reindex_LinearProblem.h"
+//#include "EpetraExt_CrsSingletonFilter_LinearProblem.h"
 
 #ifdef EPETRA_MPI
 #include "EpetraExt_Overlap_CrsGraph.h"
@@ -92,40 +93,42 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
-  if (verbose) cout << Comm << endl << flush;
+  bool verbose1 = verbose;
+  if( verbose ) verbose = (MyPID==0);
 
   Comm.Barrier();
-  bool verbose1 = verbose;
 
-  if (verbose) verbose = (MyPID==0);
+  if( verbose1 ) cout << Comm << endl << flush;
 
   int NumMyElements = 3;
-  int NumGlobalElements = NumMyElements;
+  int NumGlobalElements = NumProc*NumMyElements;
   int IndexBase = 0;
   
-  Epetra_Map Map( NumMyElements, 0, Comm );
-  cout << Map << endl;
+  Epetra_Map Map( NumGlobalElements, NumMyElements, 0, Comm );
+  if( verbose1 ) cout << Map << endl << flush;
 
-  Epetra_Map ViewMap( NumMyElements-2, 0, Comm );
-  cout << ViewMap << endl;
-  
   Epetra_CrsGraph Graph( Copy, Map, 1 );
 
-  int index = 2;
-  Graph.InsertGlobalIndices( 0, 1, &index );
-  index = 0;
-  Graph.InsertGlobalIndices( 1, 1, &index );
-  index = 1;
-  Graph.InsertGlobalIndices( 2, 1, &index );
+  int PIDFac = 10*MyPID;
+  int index = PIDFac+2;
+  Graph.InsertGlobalIndices( PIDFac+0, 1, &index );
+  index = PIDFac+0;
+  Graph.InsertGlobalIndices( PIDFac+1, 1, &index );
+  index = PIDFac+1;
+  Graph.InsertGlobalIndices( PIDFac+2, 1, &index );
 
   Graph.TransformToLocal();
-  cout << Graph << endl;
+  if( verbose1 ) cout << Graph << endl << flush;
 
   EpetraExt::Transform_Composite<Epetra_LinearProblem> CompTrans;
 
-  EpetraExt::LinearProblem_CrsSingletonFilter CSF_LPTrans;
-  EpetraExt::SameTypeTransform<Epetra_LinearProblem> * CSF_LPTransPtr = &CSF_LPTrans;
-  CompTrans.addTransform( CSF_LPTransPtr );
+//  EpetraExt::LinearProblem_CrsSingletonFilter CSF_LPTrans;
+//  EpetraExt::SameTypeTransform<Epetra_LinearProblem> * CSF_LPTransPtr = &CSF_LPTrans;
+//  CompTrans.addTransform( CSF_LPTransPtr );
+
+  EpetraExt::LinearProblem_Reindex * RI_Trans = new EpetraExt::LinearProblem_Reindex(0);
+  EpetraExt::SameTypeTransform<Epetra_LinearProblem> * RI_LPTrans = RI_Trans;
+  CompTrans.addTransform( RI_LPTrans );
 
   EpetraExt::CrsGraph_SymmRCM RCM_Trans;
   EpetraExt::SameTypeTransform<Epetra_LinearProblem> *
@@ -140,18 +143,18 @@ int main(int argc, char *argv[]) {
 #endif
 
   Epetra_CrsMatrix Matrix( Copy, Graph );
-  index = 2;
+  index = PIDFac+2;
   double val = 2;
-  Matrix.InsertGlobalValues( 0, 1, &val, &index );
-  index = 0;
+  Matrix.InsertGlobalValues( PIDFac+0, 1, &val, &index );
+  index = PIDFac+0;
   val = 0;
-  Matrix.InsertGlobalValues( 1, 1, &val, &index );
-  index = 1;
+  Matrix.InsertGlobalValues( PIDFac+1, 1, &val, &index );
+  index = PIDFac+1;
   val = 1;
-  Matrix.InsertGlobalValues( 2, 1, &val, &index);
+  Matrix.InsertGlobalValues( PIDFac+2, 1, &val, &index);
 
   vector<double> valA(3);
-  valA[0]=0; valA[1]=1; valA[2]=2;
+  valA[PIDFac+0]=0; valA[PIDFac+1]=1; valA[PIDFac+2]=2;
   Epetra_BlockMap & MapRef = Map;
   Epetra_Vector LHS( Copy, MapRef, &valA[0] );
   Epetra_Vector RHS( Copy, MapRef, &valA[0] );

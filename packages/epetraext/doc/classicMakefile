@@ -2,7 +2,7 @@
 # html page as the target.
 TARGET=html/index.html
 
-$(TARGET): ../src/transform/*.h Doxyfile footer.html
+$(TARGET): ../src/*.h ../src/transform/*.h ../src/inout/*.h ../src/zoltan/*.h ../src/coloring/*.h Doxyfile Epetra.* footer.html index.doc
 	doxygen
 
 clean:

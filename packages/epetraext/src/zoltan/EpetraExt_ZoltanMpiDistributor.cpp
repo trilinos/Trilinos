@@ -138,11 +138,12 @@ int EpetraExt::ZoltanMpiDistributor::CreateFromRecvs (
 // Do method
 int EpetraExt::ZoltanMpiDistributor::Do (
  char      *exports,
- const int &size,
+ int       size,
+ int       &len_imports,
  char      *imports)
 {
-    EPETRA_CHK_ERR (Zoltan_Comm_Do_Post (plan_,tag_,exports,(int) size,imports));
-    EPETRA_CHK_ERR (Zoltan_Comm_Do_Wait (plan_,tag_,exports,(int) size,imports));
+    EPETRA_CHK_ERR (Zoltan_Comm_Do_Post (plan_,tag_,exports,size,imports));
+    EPETRA_CHK_ERR (Zoltan_Comm_Do_Wait (plan_,tag_,exports,size,imports));
     return 0;
 }
 
@@ -150,13 +151,14 @@ int EpetraExt::ZoltanMpiDistributor::Do (
 // DoReverse method
 int EpetraExt::ZoltanMpiDistributor::DoReverse (
  char      *exports,
- const int &size,
+ int       size,
+ int       &len_imports,
  char      *imports)
 {
     EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Post (plan_, tag_, exports,
-     (int) size, 0, imports));
+     size, 0, imports));
     EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Wait (plan_, tag_, exports,
-     (int) size, 0, imports));
+     size, 0, imports));
     return 0;
 }
     
@@ -164,23 +166,19 @@ int EpetraExt::ZoltanMpiDistributor::DoReverse (
 // Do_Posts Method
 int EpetraExt::ZoltanMpiDistributor::DoPosts (
  char      *exports,
- const int &size,
+ int       size,
+ int       &len_imports,
  char      *imports)
 {
-    EPETRA_CHK_ERR (Zoltan_Comm_Do_Post (plan_, tag_, exports, (int) size,
-     imports));   
+    EPETRA_CHK_ERR (Zoltan_Comm_Do_Post (plan_, tag_, exports, size, imports));   
     return 0;               
 }
     
 //==============================================================================
 // Do_Waits Method
-int EpetraExt::ZoltanMpiDistributor::DoWaits (
- char      *exports,
- const int &size,
- char      *imports)
+int EpetraExt::ZoltanMpiDistributor::DoWaits ()
 {
-    EPETRA_CHK_ERR (Zoltan_Comm_Do_Wait (plan_, tag_, exports, (int) size,
-     imports));
+    EPETRA_CHK_ERR (Zoltan_Comm_Do_Wait (plan_, tag_, 0, 0, imports));
     return 0;
 }
 
@@ -188,32 +186,28 @@ int EpetraExt::ZoltanMpiDistributor::DoWaits (
 // DoReverse_Posts Method
 int EpetraExt::ZoltanMpiDistributor::DoReversePosts (
  char      *exports,
- const int &size,
+ int       size,
+ int       &len_imports,
  char      *imports)
 {
-    EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Post (plan_, tag_, exports,
-     (int) size, 0, imports));
+    EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Post (plan_, tag_, exports, size, 0, imports));
     return 0;
 }
 
 //==============================================================================
 // DoReverse_Waits Method
-int EpetraExt::ZoltanMpiDistributor::DoReverseWaits (
- char      *exports,
- const int &size,
- char      *imports)
+int EpetraExt::ZoltanMpiDistributor::DoReverseWaits ()
 {
-    EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Wait (plan_, tag_, exports,
-     (int) size, 0, imports));
+    EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Wait (plan_, tag_, 0, 0, 0, 0));
     return 0; 
 }
 
 //==============================================================================
 // Resize Method 
 int EpetraExt::ZoltanMpiDistributor::Resize (
- int *sizes,
- int *sum_recv_sizes)
+ int *sizes)
 {
+    int * sum_recv_sizes = 0;
     EPETRA_CHK_ERR (Zoltan_Comm_Resize (plan_, sizes, tag_, sum_recv_sizes));
     return 0;
 }
@@ -222,11 +216,13 @@ int EpetraExt::ZoltanMpiDistributor::Resize (
 // Do method with variable size objects
 int EpetraExt::ZoltanMpiDistributor::Do (
  char       *exports,
- const int *&size,
+ int        obj_size,
+ int       *&sizes,
+ int        &len_imports,
  char       *imports)
 {
     int junk;
-    EPETRA_CHK_ERR (Zoltan_Comm_Resize  (plan_, (int*) size, tag_, &junk));
+    EPETRA_CHK_ERR (Zoltan_Comm_Resize  (plan_, (int*) sizes, tag_, &junk));
     EPETRA_CHK_ERR (Zoltan_Comm_Do_Post (plan_, tag_, exports, 1, imports));
     EPETRA_CHK_ERR (Zoltan_Comm_Do_Wait (plan_, tag_, exports, 1, imports));
     return 0;      
@@ -236,13 +232,13 @@ int EpetraExt::ZoltanMpiDistributor::Do (
 // DoReverse method with variable size objects
 int EpetraExt::ZoltanMpiDistributor::DoReverse (
  char       *exports,
- const int *&size,
+ int        obj_size,
+ int       *&sizes,
+ int        &len_imports,
  char       *imports)
 {
-   EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Post (plan_, tag_, exports, 1,
-    (int*) size, imports));
-   EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Wait (plan_, tag_, exports, 1,
-    (int*) size, imports));
+   EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Post (plan_, tag_, exports, 1, sizes, imports));
+   EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Wait (plan_, tag_, exports, 1, sizes, imports));
    return 0;      
 }
    
@@ -250,23 +246,14 @@ int EpetraExt::ZoltanMpiDistributor::DoReverse (
 // Do_Posts Method with variable size objects
 int EpetraExt::ZoltanMpiDistributor::DoPosts (
  char       *exports,
- const int *&size,
+ int        obj_size,
+ int       *&sizes,
+ int        &len_imports,
  char       *imports)
 {
     int junk;
-    EPETRA_CHK_ERR (Zoltan_Comm_Resize  (plan_, (int*) size, tag_, &junk));
+    EPETRA_CHK_ERR (Zoltan_Comm_Resize  (plan_, (int*) sizes, tag_, &junk));
     EPETRA_CHK_ERR (Zoltan_Comm_Do_Post (plan_, tag_, exports, 1, imports));
-    return 0;      
-}
-
-//==============================================================================
-// Do_Waits Method with variable size objects
-int EpetraExt::ZoltanMpiDistributor::DoWaits (
- char       *exports,
- const int *&size,
- char       *imports)
-{
-    EPETRA_CHK_ERR (Zoltan_Comm_Do_Wait (plan_, tag_, exports, 1, imports));
     return 0;      
 }
 
@@ -274,23 +261,12 @@ int EpetraExt::ZoltanMpiDistributor::DoWaits (
 // DoReverse_Posts Method with variable size objects
 int EpetraExt::ZoltanMpiDistributor::DoReversePosts (
  char       *exports,
- const int *&size,
+ int        obj_size,
+ int       *&sizes,
+ int        &len_imports,
  char       *imports)
 {
-    EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Post (plan_, tag_, exports, 1,
-     (int*) size, imports));
-    return 0;      
-}
-
-//==============================================================================
-// DoReverse_Waits Method with variable size objects
-int EpetraExt::ZoltanMpiDistributor::DoReverseWaits (
- char       *exports,
- const int *&size,
- char       *imports)
-{
-    EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Wait (plan_, tag_, exports, 1,
-     (int*) size, imports));
+    EPETRA_CHK_ERR (Zoltan_Comm_Do_Reverse_Post (plan_, tag_, exports, 1, sizes, imports));
     return 0;      
 }
 

@@ -33,17 +33,20 @@
 #include "Epetra_Data.h"
 #include <mpi.h>
 
+namespace EpetraExt {
+
 //! EpetraExt::ZoltanMpiCommData:  The Epetra Mpi Communication Data Class.
 /*! The ZoltanMpiCommData class is an implementation detail of ZoltanMpiComm.
     It is reference-counted, and can be shared by multiple Epetra_MpiComm instances. 
 		It derives from Epetra_Data, and inherits reference-counting from it.
 */
 
-namespace EpetraExt {
-
 class ZoltanMpiCommData : public Epetra_Data {
-	friend class ZoltanMpiComm;
+
+  friend class ZoltanMpiComm;
+
  private:
+
   //@{ \name Constructor/Destructor Methods
 
   //! ZoltanMpiCommData Default Constructor.
@@ -54,19 +57,21 @@ class ZoltanMpiCommData : public Epetra_Data {
 
   //@}
 
-	MPI_Comm Comm_; //!< \internal MPI_Comm variable.
+  MPI_Comm Comm_; //!< \internal MPI_Comm variable.
+
   int rank_;
   int size_;
   enum {minTag_= 24050};
   enum {maxTag_= 24099};
+
   // Some day, when the Microsoft 6.0 C++ compiler disappears, we can use ANSI/ISO standard
   // declarations for minTag_ and maxTag_
   //static const int minTag_= 24050;
   //static const int maxTag_= 24099;
 
-	mutable int curTag_;
+  mutable int curTag_;
 
-	// these are intentionally declared but not defined. See Epetra Developer's Guide for details.
+  // these are intentionally declared but not defined. See Epetra Developer's Guide for details.
   ZoltanMpiCommData(const ZoltanMpiCommData & CommData);
   ZoltanMpiCommData& operator=(const ZoltanMpiCommData & CommData);
   

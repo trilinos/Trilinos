@@ -44,16 +44,16 @@ class Epetra_BlockMap;
 
 #include "EpetraExt_ZoltanMpiCommData.h"
 
+namespace EpetraExt {
+
 //! EpetraExt::ZoltanMpiComm:  The Epetra MPI Communication Class.
 /*! The ZoltanMpiComm class is an implementation of Epetra_Comm that encapsulates the general
   information and services needed for other Epetra classes to run on a parallel computer using MPI and using Zoltan comm library.
 */
 
-namespace EpetraExt {
-
 class ZoltanMpiComm: public Epetra_Object, public virtual Epetra_Comm {
     
-  public:
+ public:
 
   //@{ \name Constructor/Destructor Methods
   //! ZoltanMpiComm MPI Constructor.

@@ -218,15 +218,16 @@ EXTRA_ZOLTAN = \
      $(srcdir)/zoltan/Zoltan_QueryFunctions.cpp \
      $(srcdir)/zoltan/Zoltan_QueryObject.cpp
 
-EXTRA_ZOLTAN_EXPERIMENTAL_H = \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.h \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.h \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.h
-
-EXTRA_ZOLTAN_EXPERIMENTAL = \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
+#EXTRA_ZOLTAN_EXPERIMENTAL_H = \
+#     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.h \
+#     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.h \
+#     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.h
+EXTRA_ZOLTAN_EXPERIMENTAL_H = 
+#EXTRA_ZOLTAN_EXPERIMENTAL = \
+#     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp \
+#     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp \
+#     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
+EXTRA_ZOLTAN_EXPERIMENTAL = 
 
 if BUILD_ZOLTAN
 

@@ -43,6 +43,8 @@ class Epetra_Import;
 class Epetra_Export;
 class Epetra_IntVector;
 
+namespace EpetraExt {
+
 //! Epetra_CrsSingletonFilter: A class for explicitly eliminating matrix rows and columns.
 
 /*! The Epetra_CrsSingletonFilter class takes an existing Epetra_LinearProblem object, analyzes
@@ -99,8 +101,6 @@ class Epetra_IntVector;
      by ReducedProblem() will not change when UpdateReducedProblem() is called.
 </ol>
 */    
-
-namespace EpetraExt {
 
 class LinearProblem_CrsSingletonFilter : public SameTypeTransform<Epetra_LinearProblem> {
       

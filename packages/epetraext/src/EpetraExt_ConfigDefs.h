@@ -73,53 +73,65 @@
 
 #ifdef HAVE_CSTDLIB
 #include <cstdlib>
-#else
+#elif defined(HAVE_STDLIB_H)
 #include <stdlib.h>
 #endif
 
 #ifdef HAVE_CSTDIO
 #include <cstdio>
-#else
+#elif defined(HAVE_STDIO_H)
 #include <stdio.h>
 #endif
 
 #ifdef HAVE_CASSERT
 #include <cassert>
-#else
+#elif defined(HAVE_ASSERT_H)
 #include <assert.h>
 #endif
 
 #ifdef HAVE_STRING
 #include <string>
-#else
+#elif defined(HAVE_STRING_H)
 #include <string.h>
 #endif
 
 #ifdef HAVE_IOSTREAM
 #include <iostream>
-#else
+#elif defined(HAVE_IOSTREAM_H)
 #include <iostream.h>
+#endif
+
+#ifdef HAVE_ALGORITHM
+#include <algorithm>
+#elif defined(HAVE_ALGORITHM_H)
+#include <algorithm.h>
 #endif
 
 /* Every line that begins with 'using' should eventually be dependent
    on some check within the configure script */
 
 #ifndef TFLOP
+
 #ifdef HAVE_CMATH
 #include <cmath>
 #else
 #include <math.h>
 #endif
+
 using namespace std;
+
 #else /* TFLOP defined */
+
 #ifdef HAVE_IOMANIP
 #include <iomanip>
 #else
 #include <iomanip.h>
 #endif
+
 #ifdef HAVE_STRING
 using std::string;
 #endif
+
 #ifdef HAVE_IOSTREAM
 using std::istream;
 using std::ostream;
@@ -127,6 +139,7 @@ using std::cerr;
 using std::cout;
 using std::endl;
 #endif
+
 #endif
 
 /*-----------------------------------------------------------------------

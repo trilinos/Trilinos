@@ -69,21 +69,25 @@ int main(int argc, char *argv[]) {
 
   bool verbose = false;
 
-  if( argc < 2 || argc > 4 )
-  {
-    cout << "Usage: " << argv[0] << " [-v] nx [ny]" << endl;
-    exit(1);
-  }
-
-  int loc = 1;
-  // Check if we should print results to standard out
-  if(argv[loc][0]=='-' && argv[loc][1]=='v')
-  { verbose = true; ++loc; }
-
   int nx = 5;
-  if (loc < argc) nx = atoi( argv[loc++] );
-  int ny = 1;
-  if( loc < argc) ny = atoi( argv[loc] );
+  int ny = 5;
+
+  if( argc > 1 )
+  {
+    if( argc > 4 )
+    {
+      cout << "Usage: " << argv[0] << " [-v [nx [ny]]]" << endl;
+      exit(1);
+    }
+
+    int loc = 1;
+    // Check if we should print results to standard out
+    if(argv[loc][0]=='-' && argv[loc][1]=='v')
+    { verbose = true; ++loc; }
+
+    if (loc < argc) nx = atoi( argv[loc++] );
+    if( loc < argc) ny = atoi( argv[loc] );
+  }
 
 #ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);

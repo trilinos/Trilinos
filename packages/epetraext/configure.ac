@@ -88,11 +88,11 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-AM_INIT_AUTOMAKE(EpetraExt, 1.8.2)
+AM_INIT_AUTOMAKE(1.6.3)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.59)
+AC_PREREQ(2.57)
 
 # Specify revision number of configure.ac that was used to generate
 # configure.
@@ -218,36 +218,40 @@ fi
 
 AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
 AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
-AC_CHECK_HEADERS([string string.h],,,)
+AC_CHECK_HEADERS([string string.h algorithm algorithm.h],,,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Epetra requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  EpetraExt requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  Epetra requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  EpetraExt requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cassert or assert.h.  Epetra requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find cassert or assert.h.  EpetraExt requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find string or string.h.  Epetra requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find string or string.h.  EpetraExt requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Epetra requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  EpetraExt requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find algorithm or algorithm.h.  EpetraExt requires at least one or the other.]])
 fi
 
 if test "X${host}" != "Xtflop"; then
   if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find cmath or math.h.  Epetra requires at least one or the other.]])
+    AC_MSG_ERROR([[Cannot find cmath or math.h.  EpetraExt requires at least one or the other.]])
   fi
 else
   # TFLOP
   if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Epetra requires at least one or the other.]])
+    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  EpetraExt requires at least one or the other.]])
   fi
 fi  
 
