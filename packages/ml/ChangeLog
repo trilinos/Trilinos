@@ -34,7 +34,7 @@ report bugs to jhu@sandia.gov.
 Overview of main ML changes from ml-2.0 to ml-3.0
 -------------------------------------------------
 	
-The ML version conatins in Trilinos 4.0 has been enhanced with respect
+The ML version contains in Trilinos 4.0 has been enhanced with respect
 to the one included in the Trilinos 3.1 distribution as follows:
 
 - ML presents an improved interface to C++. Two new classes have been
@@ -73,7 +73,7 @@ aggregates. (ParMETIS requires Epetra support).
 - ML can use a simple power method to estimate lambda max for
 non-symmetric problems.
 
-- The set of examples has been extended. Now about 30 examples are avaiable.
+- The set of examples has been extended. Now about 30 examples are available.
 
 - Improved the MLS preconditioner for block systems.
 
@@ -84,7 +84,7 @@ package has been enabled, and compiles all functions sing this package (if any).
 
 - (Limited) doxygen documentation is available. Type doxygen in the doc
 subdirectory. Almost all C++ code, and part of the C code, has been
-modified with doxugen-compatible comments.
+modified with doxygen-compatible comments.
 
 ==============================================================================
 	
