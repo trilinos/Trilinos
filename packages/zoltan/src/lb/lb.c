@@ -281,7 +281,7 @@ int i;
   }
   else if (strcasecmp(method_name, "OCTPART") == 0) {
     lb->Method = OCTPART;
-    lb->LB_Fn = lb_oct_init;
+    lb->LB_Fn = LB_octpart;
   }
   else if (strcasecmp(method_name, "PARMETIS_PART") == 0) {
     lb->Method = PARMETIS_PART;

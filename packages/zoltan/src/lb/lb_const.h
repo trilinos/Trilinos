@@ -270,7 +270,7 @@ struct LB_Struct {
 
 extern LB_FN LB_rcb;
 extern LB_FN lb_wheat;
-extern LB_FN lb_oct_init;
+extern LB_FN LB_octpart;
 extern LB_FN LB_ParMetis_Part;
 
 #include "par_const.h"

@@ -27,7 +27,7 @@ static int compare( unsigned * x, unsigned * y);
 static int hilbert_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[]);
 static int hilbert2d_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[]);
 
-void LB_set_method(double method_number) {
+void LB_set_method(int method_number) {
   
   GRAY = HILBERT = 0;
   if(method_number == 1)
@@ -116,7 +116,7 @@ void LB_child_bounds_wrapper(pOctant oct, COORD cmin[], COORD cmax[]) {
   LB_bounds_to_origin(min,max,origin);
 
   if(HILBERT) {
-    /* fprintf(stderr,"Using Hilbert\n"); */
+    /* fprintf(stderr,"Using Hilbert\n"); */ 
     if(OCT_dimension == 3)
       hilbert_bounds(min, max, cmin, cmax);
     else {

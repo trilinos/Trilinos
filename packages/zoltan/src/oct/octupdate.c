@@ -26,9 +26,13 @@ static char *cvs_octupdatec_id = "$Id$";
 #include "migreg_const.h"
 #include "migoct_const.h"
 #include "all_allo_const.h"
+#include "params_const.h"
 
 /***************************  PROTOTYPES *************************************/
 static void initialize_region(LB *, pRegion *, LB_GID, LB_LID, int, float);
+static int lb_oct_init(LB *lb, int *num_import, LB_GID **import_global_ids,
+  LB_LID **import_local_ids, int **import_procs, int oct_dim, int oct_method,
+  int oct_granularity, int oct_output_level, int oct_wgtflag); 
 
 /*****************************************************************************/
 /* NOTE: be careful later about region lists for nonterminal octants */
@@ -38,16 +42,29 @@ static int oct_ncoarse=0;                           /* number of coarsenings */
 static int IDcount = 0;                            /* renumbering of octants */
 static int MAXOCTREGIONS = 1;
 
+/*****************************************************************************/
+int LB_Set_Octpart_Param(
+  char *name,                 /* name of variable */
+  char *val                   /* value of variable */
+)
+{
+int status;
+PARAM_UTYPE result;           /* value returned from LB_Check_Param */
+int index;                    /* index returned from LB_Check_Param */
+PARAM_VARS oct_params[] = {
+  { "OCT_DIM",          NULL, "INT" },
+  { "OCT_METHOD",       NULL, "INT" },
+  { "OCT_GRANULARITY",  NULL, "INT" },
+  { "OCT_OUTPUT_LEVEL", NULL, "INT" },
+  { "OCT_WGTFLAG",      NULL, "INT" },
+  {  NULL,              NULL,  NULL }};
+
+  status = LB_Check_Param(name, val, oct_params, &result, &index);
+  return(status);
+}
 
 /*****************************************************************************/
-/*
- * void oct_init(LB *load_balancing_structure, int *number_of_objects,
- *               int *numer_of_old_objects, int *number_of_non_local_objects,
- *               LB_TAG **non_local_objects)
- *
- * initialize the calls needed to start the octree load balancing rounties
- */
-int lb_oct_init(
+int LB_octpart(
   LB *lb,                     /* The load-balancing structure with info for
                                  the OCTPART balancer.                       */
   int *num_import,            /* Number of non-local objects assigned to this
@@ -61,6 +78,90 @@ int lb_oct_init(
   int **import_procs          /* Returned value:  array of processor IDs for
                                  processors owning the non-local objects in
                                  this processor's new decomposition.         */
+) 
+{
+int oct_dim = 3;              /* Dimension of method to be used (2D or 3D)   */
+int oct_method = 0;           /* Flag specifying curve to be used.           */
+int oct_granularity = 1;      /* # of objects in leaves of octree.           */
+int oct_output_level = 1;     /* Flag specifying amount of output.           */
+int oct_wgtflag = 0;          /* Flag specifying use of object weights.      */
+int error = FALSE;            /* error flag                                  */
+
+PARAM_VARS oct_params[] = {
+    { "OCT_DIM",          NULL, "INT" },
+    { "OCT_METHOD",       NULL, "INT" },
+    { "OCT_GRANULARITY ", NULL, "INT" },
+    { "OCT_OUTPUT_LEVEL", NULL, "INT" },
+    { "OCT_WGTFLAG",      NULL, "INT" },
+    {  NULL,              NULL,  NULL }};
+
+  oct_params[0].ptr = (void *) &oct_dim;
+  oct_params[1].ptr = (void *) &oct_method;
+  oct_params[2].ptr = (void *) &oct_granularity;
+  oct_params[3].ptr = (void *) &oct_output_level;
+  oct_params[4].ptr = (void *) &oct_wgtflag;
+
+  LB_Assign_Param_Vals(lb->Params, oct_params);
+
+  /* Error checking for parameters */
+  if (oct_dim < 2 || oct_dim > 3) {
+    fprintf(stderr, "Error in OCTPART: OCT_DIM must be 2 or 3\n");
+    error = TRUE;
+  }
+  if (oct_method < 0 || oct_method > 2) {
+    fprintf(stderr, "Error in OCTPART: OCT_METHOD must be 0, 1, or 2\n");
+    error = TRUE;
+  }
+  if (oct_granularity < 1) {
+    fprintf(stderr, "Error in OCTPART: OCT_GRANULARITY "
+                    "must be greater than 0\n");
+    error = TRUE;
+  }
+  if (oct_output_level < 1 || oct_output_level > 3) {
+    fprintf(stderr, "Error in OCTPART: OCT_OUTPUT_LEVEL must be 1, 2, or 3\n");
+    error = TRUE;
+  }
+  if (oct_wgtflag < 0 || oct_wgtflag > 1) {
+    fprintf(stderr, "Error in OCTPART: OCT_WGTFLAG must be 0 or 1\n");
+    error = TRUE;
+  }
+
+  if (error)
+    return(LB_FATAL);
+  else
+    return(lb_oct_init(lb, num_import, import_global_ids, import_local_ids, 
+                       import_procs, oct_dim, oct_method, oct_granularity, 
+                       oct_output_level, oct_wgtflag));
+}
+
+/*****************************************************************************/
+/*
+ * void oct_init(LB *load_balancing_structure, int *number_of_objects,
+ *               int *numer_of_old_objects, int *number_of_non_local_objects,
+ *               LB_TAG **non_local_objects)
+ *
+ * initialize the calls needed to start the octree load balancing rounties
+ */
+static int lb_oct_init(
+  LB *lb,                     /* The load-balancing structure with info for
+                                 the OCTPART balancer.                       */
+  int *num_import,            /* Number of non-local objects assigned to this
+                                 processor in the new decomposition.         */
+  LB_GID **import_global_ids, /* Returned value:  array of global IDs for
+                                 non-local objects in this processor's new
+                                 decomposition.                              */
+  LB_LID **import_local_ids,  /* Returned value:  array of local IDs for
+                                 non-local objects in this processor's new
+                                 decomposition.                              */
+  int **import_procs,         /* Returned value:  array of processor IDs for
+                                 processors owning the non-local objects in
+                                 this processor's new decomposition.         */
+
+  int oct_dim,                /* Dimension of method to be used (2D or 3D)   */
+  int oct_method,             /* Flag specifying curve to be used.           */
+  int oct_granularity,        /* # of objects in leaves of octree.           */
+  int oct_output_level,       /* Flag specifying amount of output.           */
+  int oct_wgtflag             /* Flag specifying use of object weights.      */
 ) 
 {
   LB_TAG *export_tags;             /* array of LB_TAGS being exported */
@@ -110,35 +211,14 @@ int lb_oct_init(
   import_tags = NULL;
   count = nsentags = nrectags = 0;
 
-  if(lb->Params != NULL) {
-/* BAH: need to put new params stuff into octupdate */
-/*
-    if(lb->Params[0] == LB_PARAMS_INIT_VALUE)
-      POC_init(lb->Proc, 3);
-    else
-      POC_init(lb->Proc, lb->Params[0]);
-
-    if(lb->Params[1] == LB_PARAMS_INIT_VALUE)
-      LB_set_method(0);
-    else
-      LB_set_method(lb->Params[1]);
-
-    if(lb->Params[2] == LB_PARAMS_INIT_VALUE)
-      LB_oct_set_maxregions(1);
-    else
-      LB_oct_set_maxregions(lb->Params[2]);
-*/
-  }
-  else {
-    POC_init(lb->Proc, 3);
-    LB_set_method(0);
-    LB_oct_set_maxregions(1);
-  }
+  POC_init(lb->Proc, oct_dim);
+  LB_set_method(oct_method);
+  LB_oct_set_maxregions(oct_granularity);
 
   /* create the octree structure */
   time1 = MPI_Wtime();
 
-  LB_oct_gen_tree_from_input_data(lb, &counters[1], &counters[2], 
+  LB_oct_gen_tree_from_input_data(lb, oct_wgtflag, &counters[1], &counters[2], 
 			          &counters[3], &c[0]);
   time2 = MPI_Wtime();
   timers[0] = time2 - time1;                 /* time took to create octree */
@@ -149,10 +229,7 @@ int lb_oct_init(
   time2 = MPI_Wtime();
   timers[1] = time2 - time1;              /* time took to partition octree */
 
-  /* intermediate result print out */
-/* BAH: need to put new params stuff into octupdate */
-/*if(lb->Params[4] != LB_PARAMS_INIT_VALUE)*/          /* WARNING BIG OUTPUT!! */
-  if (0) {
+  if (oct_output_level == 3) {
     for(i=0; i<lb->Num_Proc; i++) {
       if(lb->Proc == i) {
 	POC_printResults();
@@ -191,19 +268,7 @@ int lb_oct_init(
   MPI_Barrier(lb->Communicator);
   timestop = MPI_Wtime();
 
-  if(lb->Params != NULL) {
-/* BAH: need to put new params stuff into octupdate */
-/*
-    if(lb->Params[3] == LB_PARAMS_INIT_VALUE)
-      LB_print_stats(lb, timestop - timestart, timers, counters, c, 1);
-    else
-      if(lb->Params[3] != 0)
-	LB_print_stats(lb, timestop-timestart, timers, counters, c,
-                       lb->Params[3]);
-*/
-  }
-  else
-    LB_print_stats(lb, timestop - timestart, timers, counters, c, 1);
+  LB_print_stats(lb, timestop-timestart, timers, counters, c, oct_output_level);
 
   LB_Free((void **) &export_regs);
   LB_Free((void **) &import_regs);
@@ -228,7 +293,7 @@ int lb_oct_init(
  * tree will then be balanced and the output used to balance "mesh regions"
  * on several processors.
  */
-void LB_oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2, 
+void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1, int *c2, 
 				     int *c3, float *c0) 
 {
   char *yo = "LB_oct_gen_tree_from_input_data";
@@ -274,7 +339,7 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
   ptr1 = NULL;
   if(num_objs > 0) {
     /* Need A Function To Get The Bounds Of The Local Objects */
-    LB_get_bounds(lb, &ptr1, &num_objs, min, max, c0);
+    LB_get_bounds(lb, &ptr1, &num_objs, min, max, oct_wgtflag, c0);
 
     vector_set(OCT_gmin, min);
     vector_set(OCT_gmax, max);
@@ -437,31 +502,19 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
 /*****************************************************************************/
 
 void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs, 
-		   COORD min, COORD max, float *c0) 
+		   COORD min, COORD max, int wgtflag, float *c0) 
 {
   char *yo = "LB_get_bounds";
   int max_num_objs;
   LB_GID *obj_global_ids; 
   LB_LID *obj_local_ids;
   float *obj_wgts;
-  int i, found, wgtflag = 0;
+  int i, found;
   pRegion tmp, ptr;
   COORD global_min, global_max;
   double x;
   double PADDING = 0.0000001;
   int ierr = 0;
-
-  /* ATTN: wgtflag should be determined by a user-defined option,
-     probably set by LB_Set_Param. For now, read as input parameter. */
-  if (lb->Params != NULL) {
-/* BAH: need to put new params stuff into octupdate */
-/*
-    if (lb->Params[LB_PARAMS_MAX_SIZE-1] == LB_PARAMS_INIT_VALUE)
-      wgtflag = 0;
-    else
-      wgtflag = lb->Params[LB_PARAMS_MAX_SIZE-1];
-*/
-  }
 
   *num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   if (ierr) {
@@ -1106,7 +1159,7 @@ void LB_oct_set_maxregions(int max)
 { 
   if (max < 1) {
     fprintf(stderr, "Warning LB_oct_set_maxregions(): %s\n",
-	    "illeage input, using default.");
+	    "illegal input, using default.");
     MAXOCTREGIONS = 1;
   }
   else

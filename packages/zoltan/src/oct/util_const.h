@@ -20,7 +20,7 @@
 static char *cvs_utilconsth_id = "$Id$";
 #endif
 
-extern void   LB_set_method(double method_number);
+extern void   LB_set_method(int method_number);
 extern int    LB_in_box(COORD pt, COORD lower, COORD upper);
 extern void   LB_bounds_to_origin_size(COORD min, COORD max,
 				       COORD origin, double size[3]);
