@@ -88,6 +88,7 @@ InexactTrustRegionBased(Abstract::Group& grp,
   radius(0.0),
   userNormPtr(0),
   userMeritFuncPtr(0),
+  useCauchyInNewtonDirection(true),
   writeOutputParamsToList(true),
   useCounters(true),
   numCauchySteps(0),
@@ -185,18 +186,21 @@ void NOX::Solver::InexactTrustRegionBased::init()
 
   contractFactor = paramsPtr->sublist("Trust Region")
     .getParameter("Contraction Factor", 0.25);
-  if ((contractFactor <= 0) || (contractFactor >= 1)) 
+  if ((contractFactor <= 0.0) || (contractFactor >= 1)) 
     invalid("Contraction Factor", contractFactor);
 
   expandFactor = paramsPtr->sublist("Trust Region")
     .getParameter("Expansion Factor", 4.0);
-  if (expandFactor <= 1) 
+  if (expandFactor <= 1.0) 
     invalid("Expansion Factor", expandFactor);
 
   recoveryStep = paramsPtr->sublist("Trust Region")
     .getParameter("Recovery Step", 1.0);
-  if (recoveryStep < 0) 
+  if (recoveryStep < 0.0) 
     invalid("Recovery Step", recoveryStep);
+
+  useCauchyInNewtonDirection = paramsPtr->sublist("Trust Region")
+    .getParameter("Use Cauchy in Newton Direction", true);
 
   // Check for a user defined Norm
   if (paramsPtr->sublist("Trust Region").
@@ -743,7 +747,10 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
 	  NOX::Parameter::List& lsParams = paramsPtr->sublist("Direction").
 	    sublist(directionMethod).sublist("Linear Solver");
 	  lsParams.setParameter("Tolerance", eta);
-	  newtonVec.update(1.0, cauchyVec, 0.0);
+	  if (useCauchyInNewtonDirection)
+	    newtonVec.update(1.0, cauchyVec, 0.0);
+	  else
+	    newtonVec.init(0.0);
 	  if (!(oldSoln.isJacobian()))
 	    oldSoln.computeJacobian();
 	  oldSoln.applyJacobianInverse(lsParams, oldSoln.getF(), newtonVec);
@@ -957,8 +964,9 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::solve()
       trOutputParams.setParameter("Number of Dogleg Steps", numDoglegSteps);
       trOutputParams.setParameter("Number of Trust Region Inner Iterations", 
 				  numTrustRegionInnerIterations);
-      trOutputParams.setParameter("Average Fraction for Dogleg Steps", 
-				  (sumDoglegFractions/((double)numDoglegSteps)));
+      if (numDoglegSteps != 0)
+	trOutputParams.setParameter("Average Fraction for Dogleg Steps", 
+			     (sumDoglegFractions/((double)numDoglegSteps)));
     }
   }
 

@@ -211,6 +211,10 @@ sublist based to the solver.
 
 - "Use Counters" - Boolean.  If set to true, solver statistics will be stored.
 
+- "Use Cauchy in Newton Direction" - Boolean.  If set to true, the initial 
+  guess for the Newton direction computation will use the Cauchy direction 
+  as the initial guess. 
+
 - "Write Output Parameters" - Boolean.  If set to true, the solver statistics will be written to the solver parameter list (see Output Parameters).
 
 <B>Output Paramters</B>
@@ -453,6 +457,9 @@ protected:
   
   //! Stores a user supplied merit function if supplied in the parameter list.
   NOX::Parameter::MeritFunction* userMeritFuncPtr;
+
+  //! If set to true, the initial guess for the Newton direction computation will use the Cauchy direction as the initial guess. 
+  bool useCauchyInNewtonDirection;
 
   //! If set to true, statistics/counters will be output to the output list
   bool writeOutputParamsToList;
