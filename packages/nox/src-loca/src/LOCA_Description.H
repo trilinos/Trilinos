@@ -32,7 +32,7 @@
 
 \section loca_intro Introduction
   
-%LOCA is generic continuation and bifurcation analysis package that is designed for large-scale applications. The algorithms are designed with minimal additional interface requirements over that needed for a Newton method to reach an equilibrium solution. %LOCA is built upon the <a href="../../doc/html/index.html">NOX</a> nonlinear solver package.  The algorithms in %NOX are generic and written to the NOX::Abstract::Group and NOX::Abstract::Vector, which provide abstract interfaces to the linear algebra, data structures, and nonlinear equations to be solved. %LOCA uses the %NOX interface and extends it via additional abstract groups that provide the interface needed for continuation and bifurcation tracking, such as setting parameters and computing derivatives with respect to parameters. 
+%LOCA is generic continuation and bifurcation analysis package that is designed for large-scale applications. The algorithms are designed with minimal additional interface requirements over that needed for a Newton method to reach an equilibrium solution. %LOCA is built upon the <a href="./index.html">NOX</a> nonlinear solver package.  The algorithms in %NOX are generic and written to the NOX::Abstract::Group and NOX::Abstract::Vector, which provide abstract interfaces to the linear algebra, data structures, and nonlinear equations to be solved. %LOCA uses the %NOX interface and extends it via additional abstract groups that provide the interface needed for continuation and bifurcation tracking, such as setting parameters and computing derivatives with respect to parameters. 
 
 %LOCA provides several generic groups that take the %NOX group representing the equilibrium equations and implement the extended sets of nonlinear equations representing various forms of continuation and bifurcations (such as the additional equation for arc-length continuation). These extended groups also include generic algorithms for computing the Newton step for the extended system based on the Newton step for the equilibrium equations (e.g. Sherman-Morrison-Woodbury formula for arclength continuation). They are then sent to %NOX for nonlinear solution.  
 
@@ -110,10 +110,10 @@ As in %NOX, all parameters are passed to %LOCA through parameter lists defined b
 
 \section stepper_params Stepper Parameters
 
-The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  The "LOCA" sublist contains parameters and sublists for the Stepper and various %LOCA support classes, while the "NOX" sublist contains parameters and sublists specific to %NOX solvers.  The %NOX sublist is passed directly to an instance of the NOX::Solver::Manager class in the Stepper and therefore has the same structure as any %NOX solver parameter list hierarchy.  Please see the <a href="../../doc/html/parameters.html">%NOX Parameter Reference</a> page for more details on the structure of this list.  
+The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  The "LOCA" sublist contains parameters and sublists for the Stepper and various %LOCA support classes, while the "NOX" sublist contains parameters and sublists specific to %NOX solvers.  The %NOX sublist is passed directly to an instance of the NOX::Solver::Manager class in the Stepper and therefore has the same structure as any %NOX solver parameter list hierarchy.  Please see the <a href="./parameters.html">%NOX Parameter Reference</a> page for more details on the structure of this list.  
 
 <ul> 
-<li> "NOX" sublist -- See <a href="../../doc/html/parameters.html">%NOX Parameter Reference</a> for more details
+<li> "NOX" sublist -- See <a href="./parameters.html">%NOX Parameter Reference</a> for more details
 <li> "LOCA: sublist
      <ul>
      <li> "Stepper" sublist -- used by LOCA::Stepper to set parameters relevant for continuation run
