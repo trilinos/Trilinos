@@ -28,7 +28,7 @@ RANLIB			= ranlib
 AR			= ar r
 
 # use CFLAGS = $(DBG_FLAGS) with purify.
-CC			= cc
+CC			= /Net/local/bin/cc
 PURE_CC			= purify -best-effort -follow-child-processes=yes \
 			  -cache-dir=/Net/local/proj/zoltan/tmp/purify \
 			  -chain-length=12
