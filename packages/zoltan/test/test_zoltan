@@ -265,7 +265,6 @@ if ( $yes_fortran ) then
     set ch_methods = ( $ch_methods hsfc hsfc-partless hsfc-partmore )
     set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
     set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
-    set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
   endif
   if (! $no_oct) then
     set ch_methods = ( $ch_methods oct0 oct1 oct2 )
