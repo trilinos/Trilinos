@@ -24,7 +24,17 @@ std::auto_ptr<Epetra_CrsMatrix> CrsMatrix_View::operator()( const Epetra_CrsMatr
   for( int i = 0; i < numMyRows; ++i )
   {
     original.ExtractMyRowView( i, indicesCnt, myValues, myIndices );
-    newMatrix->InsertMyValues( i, indicesCnt, myValues, myIndices );
+
+    int newIndicesCnt = indicesCnt;
+    bool done = false;
+    for( int j = 0; j < indicesCnt; ++j )
+      if( !done && NewGraph_.GCID( myIndices[j] ) == -1 )
+      {
+        newIndicesCnt = j;
+        done = true;
+      }
+
+    newMatrix->InsertMyValues( i, newIndicesCnt, myValues, myIndices );
   }
 
   newMatrix->TransformToLocal();
