@@ -64,8 +64,11 @@ endif
 #
 #   Paths to submodules
 #
-SUB_VPATH	= ../shared ../Memory ../Communication ../DDirectory
-SUBINCPATH	= -I../shared -I../Memory -I../Communication -I../DDirectory -I../../lb
+
+SUB_VPATH	= ../shared ../Memory ../Communication ../DDirectory \
+		  ../../lb #ERASE THIS LINE
+SUBINCPATH	= -I../shared -I../Memory -I../Communication -I../DDirectory \
+		  -I../../lb -I../../par -I../../timer  #ERASE THIS LINE!!!
 SUBDIRS		= Memory Communication DDirectory
 
 ############################################################################
@@ -100,14 +103,14 @@ COMM_DRIVER_DEP = $(COMM_LIB) $(MEM_LIB)
 # DISTRIBUTED DIRECTORY PACKAGE
 
 DD_CSRC		= DD_Create.c DD_Destroy.c DD_Find.c DD_Remove.c DD_Update.c \
-                  DD_Set_Hash_Fn.c DD_Hash2.c DD_Stats.c \
+                  DD_Set_Hash_Fn.c DD_Hash2.c DD_Stats.c DD_Print.c\
                   DD_Set_Neighbor_Hash_Fn1.c DD_Set_Neighbor_Hash_Fn2.c
 DD_INC		= DD_Const.h
 DD_LIB		= libzoltan_dd.a
 DD_TARGET	= zoltan_dd
 
 DD_DRIVER	= zdrive_dd
-DD_DRIVER_CSRC	= dd_main.c
+DD_DRIVER_CSRC	= DD_Main.c lb_id.c
 DD_DRIVER_LIBS 	= -L. -l$(DD_TARGET) -l$(COMM_TARGET) -l$(MEM_TARGET) \
                   $(MPI_LIBPATH) $(MPI_LIB)
 DD_DRIVER_DEP  	= $(DD_LIB) $(COMM_LIB) $(MEM_LIB)

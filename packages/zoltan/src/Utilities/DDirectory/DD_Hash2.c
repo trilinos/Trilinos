@@ -49,7 +49,7 @@
  *   to new constant. Changed name to DD_Hash2.  RTH
  */
 
-#define ZOLTAN_DD_HASH_CONSTANT 2654435761U  /* consider 516595003U */
+#define ZOLTAN_DD_HASH_CONSTANT 2654435761U   /* consider 516595003U */
 
 unsigned int DD_Hash2(LB_ID_PTR key, int num_id_entries, unsigned int n)
 {

@@ -28,49 +28,56 @@
 
 /*******************  Zoltan_DD_Stats()  ***************************/
 
-void Zoltan_DD_Stats (Zoltan_DD_Directory *dd)
+void Zoltan_DD_Stats (
+ Zoltan_DD_Directory *dd)   /* directory state information */
    {
-   int total  = 0 ;
-   int maxlen = 0;
-   int chains = 0 ;
+   int node_count = 0 ;     /* counts Nodes in local directory      */
+   int maxlength  = 0;      /* length of longest linked list        */
+   int list_count = 0 ;     /* number of linked lints in hash table */
 
-   int len ;
-   int i ;
+   int      length ;
+   int      i ;
    DD_Node *ptr ;
-   char str[100] ;  /* used to build message string */
-   char *yo = "Zoltan_DD_Stats" ;
+   char     str[100] ;      /* used to build message string */
+   char    *yo = "Zoltan_DD_Stats" ;
 
 
    /* Input sanity check */
    if (dd == NULL)
       {
-      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
+      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument.") ;
       return ;
       }
 
+   if (dd->debug_level > 1)
+      ZOLTAN_TRACE_ENTER (dd->my_proc, yo, NULL) ;
+
+   /* walk down each list in hash table to find every Node */
    for (i = 0 ; i < dd->table_length ; i++)
       {
-      len = 0 ;
+      length = 0 ;                    /* reset length for next count */
       if (dd->table[i] != NULL)
-         chains++ ;
+         list_count++ ;               /* count of distict linked lists */
 
       for (ptr = dd->table[i] ; ptr != NULL ; ptr = ptr->next)
          {
-         sprintf (str, "GID %4u, Owner %d, Table Index %d\n",
-          *ptr->gid, ptr->owner, i) ;
-         ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
-
-         len++ ;
-         total++ ;
+         if (dd->debug_level > 1)
+            {
+            sprintf (str, "GID %4u, Owner %d, Table Index %d.", *ptr->gid,
+             ptr->owner, i) ;
+            ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
+            }
+         length++ ;                  /* linked list length */
+         node_count++ ;              /* count of Nodes */
          }
-      if (len > maxlen)
-         maxlen = len ;
+      if (length > maxlength)
+         maxlength = length ;        /* save length of longest linked list */
       }
 
-   if (dd->debug_level >= 0)
-      {
-      sprintf (str, "Hash table size %d, %d nodes with %d chains, max chain %d",
-       dd->table_length, total, chains, maxlen) ;
-      ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
-      }
+   sprintf (str, "Hash table size %d, %d nodes on %d lists, max list length %d.",
+    dd->table_length, node_count, list_count, maxlength) ;
+   ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
+
+   if (dd->debug_level > 1)
+      ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
    }

@@ -21,20 +21,23 @@
 #include "lb_id_const.h"
 #include "zoltan_util.h"
 
-
+#ifndef ZOLTAN_ALIGN    /* Plauger alignment algorithm, The Standard C Library*/
+#define ZOLTAN_ALIGN 7U /* to force malloc'ed variable size struct alignment  */
+#endif                  /* values are 0,1,3,7U depending upon machine         */
 
 #define ZOLTAN_DD_HASH_TABLE_COUNT  503   /* default # of linked list heads */
 #define ZOLTAN_DD_NO_PROC           -1    /* not a possible processor #     */
 
-/* The following are used as return values for error codes */
+/* The following are used as return value error codes */
 #define ZOLTAN_DD_NORMAL_RETURN         0
-#define ZOLTAN_DD_MEMORY_ERROR          137  /* arbitrary, but distinct */
-#define ZOLTAN_DD_GID_NOT_FOUND_ERROR   138
+#define ZOLTAN_DD_INPUT_ERROR           137   /* arbitrary, but distinct */
+#define ZOLTAN_DD_MEMORY_ERROR          138
 #define ZOLTAN_DD_MPI_ERROR             139
 #define ZOLTAN_DD_COMM_ERROR            140
 #define ZOLTAN_DD_GID_ADDED             141
-#define ZOLTAN_DD_GID_REDEFINED_ERROR   142
-#define ZOLTAN_DD_INPUT_ERROR           143
+#define ZOLTAN_DD_GID_NOT_FOUND_ERROR   142
+#define ZOLTAN_DD_GID_REDEFINED_ERROR   143
+
 
 
 /* Tags for MPI communications.  These need unique values. Arbitrary */
@@ -61,7 +64,7 @@ typedef struct DD_Node
    {
    int              owner ;      /* processor hosting global ID object    */
    int              partition ;  /* Optional data                         */
-   int              errcheck ;   /* Error checking (inconsistant updates) */
+   int              errcheck ;   /* Error checking (inconsistent updates) */
    struct DD_Node  *next ;       /* Next DD_Node in linked list or NULL   */
    LB_ID_TYPE       gid[1] ;     /* gid used as key for update & lookup   */
                                  /* lid starts at gid + dd->gid_length    */
@@ -73,7 +76,7 @@ typedef struct DD_Node
 /* The directory structure, Zoltan_DD_Directory, is created by the call
 // to Zoltan_DD_Create(). It maintains the state information and storage
 // allocation for the distributed directory. Other state information may
-// be added in the future. This stucture must be passed back to all other
+// be added in the future. This structure must be passed back to all other
 // distributed directory calls: Zoltan_DD_Update(), Zoltan_DD_Find(),
 // Zoltan_DD_Destroy(), Zoltan_DD_Set_Hash_Fn(), DD_Update_Local(),
 // DD_Find_Local(), DD_Remove_Local().  NOTE: Zoltan_DD_Directory is
@@ -165,12 +168,11 @@ typedef struct           /* Only used by Zoltan_DD_Remove()      */
 
 /***********  Distributed Directory Function Prototypes ************/
 
-int Zoltan_DD_Create (Zoltan_DD_Directory **dd, MPI_Comm comm,
- int num_gid, int num_lid, int user_length,  int table_length,
- int debug_level) ;
+int Zoltan_DD_Create (Zoltan_DD_Directory **dd, MPI_Comm comm, int num_gid,
+ int num_lid, int user_length,  int table_length, int debug_level) ;
 
 
-void Zoltan_DD_Destroy (Zoltan_DD_Directory *dd) ;
+void Zoltan_DD_Destroy (Zoltan_DD_Directory **dd) ;
 
 
 int Zoltan_DD_Update (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
@@ -178,24 +180,28 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
 
 
 int Zoltan_DD_Find (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
- LB_ID_PTR lid, LB_ID_PTR data, int *partition, int count,
- int *owner) ;
+ LB_ID_PTR lid, LB_ID_PTR data, int *partition, int count, int *owner) ;
 
 
-int Zoltan_DD_Remove (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
- int count) ;
+int Zoltan_DD_Remove (Zoltan_DD_Directory *dd, LB_ID_PTR gid, int count) ;
 
 
 int Zoltan_DD_Set_Hash_Fn (Zoltan_DD_Directory *dd,
  unsigned int (*hash) (LB_ID_PTR, int, unsigned int)) ;
 
 
-unsigned int DD_Hash2(LB_ID_PTR key, int num_id_entries,
- unsigned int n) ;
+unsigned int DD_Hash2(LB_ID_PTR key, int num_id_entries, unsigned int n) ;
 
 
 void Zoltan_DD_Stats (Zoltan_DD_Directory *dd) ;
 
 
+int Zoltan_DD_Set_Neighbor_Hash_Fn1 (Zoltan_DD_Directory *dd, int size) ;
+
+
+int Zoltan_DD_Set_Neighbor_Hash_Fn2 (Zoltan_DD_Directory *dd, int *proc,
+ int *low, int *high, int count) ;
+
+int Zoltan_DD_Print (Zoltan_DD_Directory *dd) ;
 
 #endif

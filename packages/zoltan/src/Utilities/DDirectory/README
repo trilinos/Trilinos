@@ -1,4 +1,3 @@
-
 ZOLTAN Distributed Directory (DD) Software Documentation
 
 
@@ -39,7 +38,18 @@ Zoltan_DD_Hash() for more information.  If no user hash function is
 registered, Zoltan's LB_Hash() will be used for the first hash. This
 module's design was strongly influenced by the paper  "Communication
 Support for Adaptive Computation" by Pinar and Hendrickson.
-
+
+The files DD_Set_Neighbor_Hash_Fn1 and DD_Set_Neighbor_Hash_Fn1 provide
+examples of how a user can create their own hash functions taking advantage
+of their knowledge of how the GID naming scheme might correlate to a
+reasonable location for its directory information.  These are also fully
+tested and useful functions.
+
+
+
+
+
+
 -----------------------------------
 -----------------------------------
 
@@ -57,6 +67,8 @@ Other header files used by this library
    comm_const.h
    lbi_const.h
    lb_id_const.h
+   zoltan_util.h
+
 
 Data Stuctures:
    Zoltan_DD_Directory: state & storage used by all DD routines.
@@ -64,11 +76,17 @@ Data Stuctures:
 Routines:
    Zoltan_DD_Create: Allocates memory and initializes the directory.
    Zoltan_DD_Destroy: Terminate the directory and frees its memory.
+
    Zoltan_DD_Update: Adds or updates global IDs' directory information.
    Zoltan_DD_Find: Returns global IDs' information (owner, local ID, etc.)
    Zoltan_DD_Remove: Eliminates selected global IDs from the directory.
-   Zoltan_DD_Set_Hash_Fn: Registers a user's optional hash function.
+
    Zoltan_DD_Stats: Provides statistics about hash table & linked lists.
+   Zoltan_DD_Print: Displays the contents (GIDs, etc) of each directory.
+
+   Zoltan_DD_Set_Hash_Fn: Registers a user's optional hash function.
+   Zoltan_DD_Set_Hash_Fn1: Model for user's to create their own hash function.
+   Zoltan_DD_Set_Hash_Fn2: Model for user's to create their own hash function.
 
 Internal Data Structures:  (not user accessable)
    DD_Node: linked list element storing information about a global ID
@@ -80,7 +98,7 @@ Internal Routines: (not user callable)
    DD_Update_Local:
    DD_Find_local:
    DD_Remove_Local:
-   DD_Hash2:            // renamed LB_Hash
+   DD_Hash2:            // renamed copy of LB_Hash
 
 Files in DDirectory:
   DD_Const.h            // return error codes, prototypes, structures
@@ -94,8 +112,13 @@ Files in DDirectory:
   DD_Set_Neighbor_Hash_Fn.c
   DD_Stats.c
   DD_Update.c
+  DD_Set_Hash_Fn1.c
+  DD_Set_Hash_Fn2.c
 
   README                // this file
+
+
+
 
 
 
@@ -133,9 +156,9 @@ if the updates represent the same owner for a global ID.
 
 Arguments: (all are in)
    dd            Structure maintains directory state and hash table. (in/out)
-   comm          MPI comm dup'ed & stored specifing directory processors.
-   num_gid       Length of global ID. 
-   num_lid       Length of local ID or zero to ignore local IDs. 
+   comm          MPI comm dup'ed & stored specifying directory processors.
+   num_gid       Length of global ID.
+   num_lid       Length of local ID or zero to ignore local IDs.
    user_length   Length of user defined data field (optional, may be zero).
    table_length  Length of hash table (zero forces default value).
    debug_level   Legal values range in [0,3]. Sets response to various error
@@ -157,7 +180,7 @@ to free the previously saved MPI comm.
 
 
 Arguments:
-   dd    Directory structure to be deallocated 
+   dd    Directory structure to be deallocated
 
 Returned Value:
    NONE
@@ -204,9 +227,9 @@ Returned Value:
 
 ------------------------------------
 ------------------------------------
-int Zoltan_DD_Find (Zoltan_DD_DDirectory *dd, LB_ID_PTR gid, 
- LB_ID_PTR lid, LB_ID_PTR data, int *partition, int  count,  
- int *owner)         
+int Zoltan_DD_Find (Zoltan_DD_DDirectory *dd, LB_ID_PTR gid,
+ LB_ID_PTR lid, LB_ID_PTR data, int *partition, int  count,
+ int *owner)
 ------------------------------------
 
 
@@ -300,8 +323,67 @@ Returned Value:
    NONE
 
 ----------------------------------------
+----------------------------------------
+int Zoltan_DD_Set_Neighbor_Hash_Fn1 (Zoltan_DD_Directory *dd, int size)
+----------------------------------------
 
-
+This routine associates the first size GIDs to proc 0, the next size to
+proc 1, etc.  It assumes the GIDs are consecutive numbers.  It assumes
+that GIDs primarily stay near their original owner. The GID length is
+assumed to be 1. GIDs outside of the range are evenly distributed among
+the processors via modulo(nproc). This is a model for the user to develop
+their own similar routine.
+
+Arguments: (all are in)
+   dd    Structure maintains directory state and hash table.
+   size  Number of consecutive GIDs associated with a processor.
+
+Return Value:
+   int   Error Code.
+
+----------------------------------------
+----------------------------------------
+int Zoltan_DD_Set_Neighbor_Hash_Fn2 (Zoltan_DD_Directory *dd, int *proc,
+ int *low, int *high, int n)
+----------------------------------------
+
+This routine allows the user to specify a beginning and ending GID
+"numbers" per directory processor. It assumes that GIDs primarily stay
+near their original owner. It requires that the numbers of high, low, &
+proc entries are all n. It assumes the GID length is 1. It is a model for
+the user to develop their own similar routine. Users should note the
+registration of a cleanup routine to free local static memory when the
+distributed directory is destroyed. GIDs outside the range specified by
+high and low lists are evenly distributed among the processors via modulo
+(nproc).
+
+Arguments: (all are in)
+   dd    Structure maintains directory state and hash table.
+   proc  List of processor ids labeling for corresponding high, low value.
+   low   List of low GID limits corresponding to proc list.
+   high  List of high GID limits corresponding to proc list.
+   n     Number of elements in the above lists. Should be nproc!
+
+Return Value:
+   int   Error Code.
+
+----------------------------------------
+----------------------------------------
+int Zoltan_DD_Print (Zoltan_DD_Directory *dd)
+
+----------------------------------------
+
+This utility displays (to stdout) the entire contents of the distributed
+directory at one line per GID.
+
+Arguments:
+   dd    Structure maintains directory state and hash table.
+
+Return Value:
+   int   Error Code.
+
+----------------------------------------
+
 /***************** Developer's Notes *****************************/
 
 
@@ -320,7 +402,7 @@ will automatically benefit the distributed directory.
 
 
 
-Global BUG:  The distributed directory should be implimented via
+Global BUG:  The distributed directory should be implemented via
              client-server processes or threads.  However, MPI is
              not fully thread aware, yet.
 

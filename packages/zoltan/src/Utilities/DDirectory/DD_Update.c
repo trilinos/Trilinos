@@ -35,14 +35,15 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd, LB_ID_PTR gid,
 
 /******************   Zoltan_DD_Update()  *************************/
 
-int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
- LB_ID_PTR gid,          /* Incoming list of GIDs to update          */
- LB_ID_PTR lid,          /* Incoming corresponding LIDs (optional)   */
- LB_ID_PTR user,         /* Incoming list of user data (optional)    */
- int *partition,         /* Optional, grouping of GIDs to partitions */
- int count)              /* Number of GIDs in update list            */
+int Zoltan_DD_Update (
+ Zoltan_DD_Directory *dd,  /* directory state information               */
+ LB_ID_PTR gid,            /* Incoming list of GIDs to update           */
+ LB_ID_PTR lid,            /* Incoming corresponding LIDs (optional)    */
+ LB_ID_PTR user,           /* Incoming list of user data (optional)     */
+ int *partition,           /* Optional, grouping of GIDs to partitions  */
+ int count)                /* Number of GIDs in update list             */
    {
-   int             *procs = NULL ;   /* list of processors to contact */
+   int             *procs = NULL ;   /* list of processors to contact   */
    DD_Update_Msg   *ptr   = NULL ;
    struct Comm_Obj *plan  = NULL ;   /* for efficient MPI communication */
    char            *sbuff = NULL ;   /* send buffer                     */
@@ -51,7 +52,7 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
    int              nrec ;           /* number of receives to expect    */
    int              i ;
    int              err ;
-   int              errcount ;
+   int              errcount ;       /* count of GIDs not found, added  */
    char             str[100] ;       /* build error message string      */
    char            *yo = "Zoltan_DD_Update" ;
 
@@ -61,10 +62,11 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
    /* input sanity checking */
    if (dd == NULL || count < 0 || (gid == NULL && count > 0))
       {
-      ZOLTAN_PRINT_ERROR ((dd == NULL ? -1 : dd->my_proc), yo, 
-                          "Invalid input argument") ;
+      ZOLTAN_PRINT_ERROR ((dd == NULL ? ZOLTAN_DD_NO_PROC : dd->my_proc), yo,
+       "Invalid input argument.") ;
       if (dd != NULL && dd->debug_level > 1)
-        ZOLTAN_TRACE_EXIT((dd == NULL ? -1 : dd->my_proc), yo, NULL);
+        ZOLTAN_TRACE_EXIT((dd == NULL ? ZOLTAN_DD_NO_PROC : dd->my_proc), yo,
+         NULL);
       return ZOLTAN_DD_INPUT_ERROR ;
       }
 
@@ -78,22 +80,28 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After reset errcheck.");
 
    /* allocate memory for list of processors to contact */
-   procs = (int *) LB_MALLOC (sizeof (int) * ((count == 0) ? 1 : count) ) ;
-   if (procs == NULL)
+   if (count > 0)
       {
-      ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc proc list") ;
-      if (dd->debug_level > 1)
-        ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
-      return ZOLTAN_DD_MEMORY_ERROR ;
+      procs = (int *) LB_MALLOC (sizeof (int) * count) ;
+      if (procs == NULL)
+         {
+         ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc proc list.") ;
+         if (dd->debug_level > 1)
+            ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
+         return ZOLTAN_DD_MEMORY_ERROR ;
+         }
       }
 
    /* allocate memory for DD_Update_Msg send buffer */
-   sbuff = (char *) LB_MALLOC (dd->update_msg_size * ((count==0) ? 1 : count)) ;
-   if (sbuff == NULL)
+   if (count > 0)
       {
-      ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc send buffer") ;
-      err = ZOLTAN_DD_MEMORY_ERROR ;
-      goto fini ;
+      sbuff = (char *) LB_MALLOC (dd->update_msg_size * count) ;
+      if (sbuff == NULL)
+         {
+         ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc send buffer.") ;
+         err = ZOLTAN_DD_MEMORY_ERROR ;
+         goto fini ;
+         }
       }
 
    if (dd->debug_level > 2)
@@ -102,34 +110,24 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
    /* for each GID given, fill in contact list and then message structure */
    for (i = 0 ; i < count ; i++)
       {
-      procs[i]= dd->hash(gid + i*dd->gid_length, dd->gid_length, dd->nproc);
-
-      ptr = (DD_Update_Msg *) (sbuff + i * dd->update_msg_size) ;
+      procs[i] = dd->hash(gid + i*dd->gid_length, dd->gid_length, dd->nproc);
+      ptr      = (DD_Update_Msg *) (sbuff + i * dd->update_msg_size) ;
 
       ptr->owner     = dd->my_proc ;
       ptr->partition = (partition == NULL) ? 0 : *(partition + i) ;
 
       LB_SET_ID (dd->gid_length, ptr->gid, gid + i * dd->gid_length) ;
-      LB_SET_ID (dd->lid_length, ptr->gid + dd->gid_length,
-       lid + i * dd->lid_length) ;
-      LB_SET_ID (dd->user_data_length, ptr->gid +( dd->gid_length
-       + dd->lid_length), user + i * dd->user_data_length) ;
+
+      if (lid)
+         LB_SET_ID (dd->lid_length, ptr->gid + dd->gid_length, lid
+          + i * dd->lid_length) ;
+      if (user)
+         LB_SET_ID (dd->user_data_length, ptr->gid + (dd->gid_length
+          + dd->lid_length), user + i * dd->user_data_length) ;
       }
 
    if (dd->debug_level > 2)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill contact list.");
-
-   /* create dummy message to force myproc to participate if needed */
-   if (count == 0)
-      {
-      procs[0] = dd->my_proc ;  /* send to self */
-      ptr = (DD_Update_Msg *) sbuff ;
-      ptr->owner = ZOLTAN_DD_NO_PROC ;
-      count = 1 ;
-      }
-
-   if (dd->debug_level > 2)
-      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After dummy message.");
 
    /* now create efficient communication plan */
    err = LB_Comm_Create (&plan, count, procs, dd->comm,
@@ -144,12 +142,15 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After Comm_Create.");
 
    /* allocate receive buffer for nrec DD_Update_Msg structures */
-   rbuff = (char *) LB_MALLOC (nrec * dd->update_msg_size) ;
-   if (nrec > 0 && rbuff == NULL)
+   if (nrec > 0)
       {
-      ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc receive buffer") ;
-      err = ZOLTAN_DD_MEMORY_ERROR ;
-      goto fini ;
+      rbuff = (char *) LB_MALLOC (nrec * dd->update_msg_size) ;
+      if (rbuff == NULL)
+         {
+         ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Receive buffer malloc failed.") ;
+         err = ZOLTAN_DD_MEMORY_ERROR ;
+         goto fini ;
+         }
       }
 
    /* send my update messages & receive updates directed to me */
@@ -157,7 +158,7 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
     dd->update_msg_size, rbuff) ;
    if (err != COMM_OK)
       {
-      ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "COMM Do error") ;
+      ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "COMM Do error.") ;
       goto fini ;
       }
 
@@ -170,11 +171,10 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
       {
       ptr = (DD_Update_Msg *) (rbuff + i * dd->update_msg_size) ;
 
-      if (ptr->owner == ZOLTAN_DD_NO_PROC)
-         continue ;                     /* ignore possible dummy message */
-
-      err = DD_Update_Local (dd, ptr->gid, ptr->gid + dd->gid_length,
-       ptr->gid + (dd->gid_length + dd->lid_length), ptr->partition,
+      err = DD_Update_Local (dd, ptr->gid,
+       (lid)   ? (ptr->gid + dd->gid_length)                    : NULL,
+       (user)  ? (ptr->gid + (dd->gid_length + dd->lid_length)) : NULL,
+       (partition) ? (ptr->partition) : 0,
        ptr->owner) ;
 
       if (err != ZOLTAN_DD_NORMAL_RETURN && err != ZOLTAN_DD_GID_ADDED)
@@ -196,14 +196,14 @@ fini:
 
    if (dd->debug_level > 0)
       {
-      sprintf (str, "processed %d GIDs (%d local), %d GID errors",
+      sprintf (str, "Processed %d GIDs (%d local), %d GID errors.",
        count, nrec, errcount) ;
-      printf ("ZOLTAN_DD_UPDATE(%d): processed %d updates, %d local, err cnt %d\n",
-       dd->my_proc, count, nrec, errcount) ;
+      ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
       }
 
    if (dd->debug_level > 1)
       ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
+
    return err ;
    }
 
@@ -226,16 +226,23 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
  int partition,          /* gid's partition (in), 0 if not used       */
  int owner)              /* gid's current owner (proc number) (in)    */
    {
-   DD_Node *ptr, *old ;
+   DD_Node **ptr ;
    int index ;
-   int head = TRUE ;     /* used to detect head of link list          */
    char *yo = "DD_Update_Local" ;
 
+
+   if (dd != NULL && dd->debug_level > 2)
+      ZOLTAN_TRACE_ENTER (dd->my_proc, yo, NULL) ;
 
    /* input sanity checking */
    if (dd == NULL || owner  < 0 || owner >= dd->nproc || gid == NULL)
       {
-      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input parameter") ;
+      ZOLTAN_PRINT_ERROR ((dd == NULL) ? ZOLTAN_DD_NO_PROC : dd->my_proc,
+       yo, "Invalid input parameter.") ;
+
+      if (dd != NULL && dd->debug_level > 2)
+         ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+
       return ZOLTAN_DD_INPUT_ERROR ;
       }
 
@@ -243,68 +250,71 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
    index = DD_Hash2 (gid, dd->gid_length, dd->table_length) ;
 
    /* walk linked list until end looking for matching gid */
-   for (ptr = dd->table[index] ; ptr != NULL ; ptr = ptr->next)
+   for (ptr = dd->table+index ; *ptr != NULL ; ptr = &((*ptr)->next))
        {
-       if (LB_EQ_ID (dd->gid_length, gid, ptr->gid) == TRUE)
+       if (LB_EQ_ID (dd->gid_length, gid, (*ptr)->gid) == TRUE)
           {
-          /* found match, unconditionally update directory information */
-          LB_SET_ID (dd->lid_length,        ptr->gid +  dd->gid_length,
-           lid) ;
-          LB_SET_ID  (dd->user_data_length, ptr->gid + (dd->gid_length
-           + dd->lid_length), user) ;
+          /* found match, update directory information */
+          if (lid)
+             LB_SET_ID (dd->lid_length,(*ptr)->gid + dd->gid_length, lid) ;
+          if (user)
+             LB_SET_ID (dd->user_data_length, (*ptr)->gid + (dd->gid_length
+              + dd->lid_length), user) ;
 
-          ptr->owner     = owner ;
-          ptr->partition = partition ;
+          (*ptr)->owner     = owner ;
+          (*ptr)->partition = partition ;
 
           /* Response to multiple updates to a gid in 1 update cycle */
-          if (dd->debug_level == 0 || ptr->errcheck == ZOLTAN_DD_NO_PROC)
+          if (dd->debug_level == 0 || (*ptr)->errcheck == ZOLTAN_DD_NO_PROC)
              {
-             ptr->errcheck = owner ;
+             (*ptr)->errcheck = owner ;
+             if (dd->debug_level > 2)
+                ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
              return ZOLTAN_DD_NORMAL_RETURN ;  /* ignore all errors */
              }
 
-          if (dd->debug_level == 1 && ptr->errcheck != owner)
+          if (dd->debug_level == 1 && (*ptr)->errcheck != owner)
              return ZOLTAN_DD_GID_REDEFINED_ERROR ; /* err return only */
 
-          if (dd->debug_level == 2 && ptr->errcheck != owner)
+          if (dd->debug_level == 2 && (*ptr)->errcheck != owner)
              {
-             ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Multiply defined GID") ;
-             LB_PRINT_ID (dd->gid_length, ptr->gid) ;
-             LB_PRINT_ID (dd->gid_length, gid) ;
+             ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Multiply defined GID.") ;
              return ZOLTAN_DD_GID_REDEFINED_ERROR ;
              }
 
-          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Multiply defined GID") ;
-          LB_PRINT_ID (dd->gid_length, ptr->gid) ;
-          LB_PRINT_ID (dd->gid_length, gid) ;
+          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Multiply defined GID.") ;
+          if (dd->debug_level > 2)
+             ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
+
           return ZOLTAN_DD_GID_REDEFINED_ERROR ;
           }
-       head = FALSE ;     /* no longer at head of list                */
-       old  = ptr ;       /* save previous in case we go one to far   */
        }
 
    /* gid not found. Create new DD_Node and fill it in */
-   ptr = (DD_Node *) LB_MALLOC (dd->node_size)  ;
-   if (ptr == NULL)
+   *ptr = (DD_Node *) LB_MALLOC (dd->node_size)  ;
+   if (*ptr == NULL)
       {
-      ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc new Node") ;
+      ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc new Node.") ;
+      if (dd->debug_level > 2)
+         ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
       return ZOLTAN_DD_MEMORY_ERROR ;
       }
 
-   if (head == TRUE)
-      dd->table [index] = ptr ;  /* set pointer at head of linked list */
-   else
-      old->next         = ptr ;  /* set pointer in previous ptr->next  */
+   LB_SET_ID (dd->gid_length, (*ptr)->gid, gid) ;
 
-   LB_SET_ID (dd->gid_length,       ptr->gid,                   gid) ;
-   LB_SET_ID (dd->lid_length,       ptr->gid +  dd->gid_length, lid) ;
-   LB_SET_ID (dd->user_data_length, ptr->gid + (dd->gid_length
-                                             + dd->lid_length), user) ;
+   if (lid)
+      LB_SET_ID (dd->lid_length,       (*ptr)->gid + dd->gid_length, lid) ;
+   if (user)
+      LB_SET_ID (dd->user_data_length, (*ptr)->gid + (dd->gid_length
+       + dd->lid_length), user) ;
 
-   ptr->next      = NULL ;
-   ptr->owner     = owner ;
-   ptr->partition = partition ;
-   ptr->errcheck  = owner ;
+   (*ptr)->next      = NULL ;
+   (*ptr)->owner     = owner ;
+   (*ptr)->partition = partition ;
+   (*ptr)->errcheck  = owner ;
+
+   if (dd->debug_level > 2)
+      ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;
 
    return ZOLTAN_DD_GID_ADDED ;
    }

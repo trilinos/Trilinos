@@ -38,22 +38,32 @@ static int compare_search (const void *a, const void *b) ;
 
 static void dd_nh2_cleanup (void) ;
 
-
+static Range_Info *ptr ;
+static int         nproc ;
+static int         low_limit ;
+static int         high_limit ;
+static int         debug_level ;
+static int         count ;
 
 
 /*************  Zoltan_DD_Set_Hash_Fn2()  ***********************/
 /*
-**  These routines allow the user to specify a beginning and ending
-**  number per processor to associate an arbitrary GID to its orginal
+**  These routines allow the user to specify a beginning and ending GID
+**  (number) per processor to associate an arbitrary GID to its orginal
 **  owner processor.  It assumes the GIDs are consecutive numbers.
-**  It assumes that GIDs primarily stay near their original owner.
+**  It assumes that GIDs primarily stay near their original owner. It
+**  requires that the number of high, low, & proc entries is 'n'. It
+**  assumes the GID length is 1.
 */
 
-static Range_Info *ptr ;
-static int nproc ;
 
-int Zoltan_DD_Set_Neighbor_Hash2_Fn (Zoltan_DD_Directory *dd, int *proc,
- int *low, int *high)
+
+int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
+ Zoltan_DD_Directory *dd,     /* directory state information */
+ int *proc,                   /* list of processors for following info */
+ int *low,                    /* lowest GID for corresponding processor */
+ int *high,                   /* highest GID for corresponding processor */
+ int n)                       /* number of processors in above lists */
    {
    int i ;
    char *yo = "Zoltan_DD_Set_Hash_Fn2" ;
@@ -64,26 +74,32 @@ int Zoltan_DD_Set_Neighbor_Hash2_Fn (Zoltan_DD_Directory *dd, int *proc,
       return ZOLTAN_DD_INPUT_ERROR ;
       }
 
-   dd->hash = dd_nh2 ;
+   /* register functions for automatic invocation */
+   dd->hash    = dd_nh2 ;
    dd->cleanup = dd_nh2_cleanup ;
 
-   nproc = dd->nproc ;
-
-   ptr = (Range_Info *)  LB_MALLOC (dd->nproc * sizeof (Range_Info)) ;
+   /* malloc and initialize storage for range information structures */
+   ptr = (Range_Info *)  LB_MALLOC (n * sizeof (Range_Info)) ;
    if (ptr == NULL)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to Malloc range info") ;
       return ZOLTAN_DD_MEMORY_ERROR ;
       }
+   for (i = 0 ;  i < n ; i++)
+      {
+      ptr[i].high = high[i] ;
+      ptr[i].low  = low [i] ;
+      ptr[i].proc = (proc[i] < n) ? proc[i] : 0 ;
+      }
 
-   for (i = 0 ;  i < dd->nproc ; i++)
-       {
-       ptr[i].high = high[i] ;
-       ptr[i].low  = low [i] ;
-       ptr[i].proc = proc[i] ;
-       }
+   /* do not assume user lists were ordered */
+   qsort (ptr, n, sizeof (Range_Info), compare_sort) ;
 
-   qsort (ptr, dd->nproc, sizeof (Range_Info), compare_sort) ;
+   low_limit   = ptr[0].low ;
+   high_limit  = ptr[n-1].high ;
+   debug_level = dd->debug_level ;
+   count       = n ;
+   nproc       = dd->nproc ;
 
    return ZOLTAN_DD_NORMAL_RETURN ;
    }
@@ -97,26 +113,26 @@ int Zoltan_DD_Set_Neighbor_Hash2_Fn (Zoltan_DD_Directory *dd, int *proc,
 static unsigned int dd_nh2 (LB_ID_PTR gid, int gid_length,
  unsigned int junk)
    {
-   Range_Info *temp ;
+   Range_Info *p ;
    char *yo = "dd_ny2" ;
 
    /* check if gid is out of range */
-   if (*gid > ptr[nproc-1].high || *gid < ptr[0].low)
+   if (*gid > high_limit || *gid < low_limit)
       {
-      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
-      return nproc-1 ;
+      return *gid % nproc ;
       }
 
-   temp = (Range_Info *) bsearch (gid, ptr, nproc,
-    sizeof (Range_Info), compare_search) ;
+   p = (Range_Info *) bsearch (gid, ptr, count, sizeof (Range_Info),
+    compare_search) ;
 
-   if (temp == NULL)              /* shouldn't happen */
+   if (p == NULL)              /* shouldn't happen */
       {
-      ZOLTAN_PRINT_ERROR (0, yo, "C function bsearch returned NULL") ;
-      return nproc-1 ;
+      if (debug_level > 1)
+         ZOLTAN_PRINT_ERROR (0, yo, "C function bsearch returned NULL.") ;
+      return *gid % nproc ;
       }
 
-   return temp->proc ;
+   return p->proc ;
    }
 
 
@@ -146,5 +162,5 @@ static int compare_search (const void *a, const void *b)
 
 static void dd_nh2_cleanup (void)
    {
-   LB_FREE (ptr) ;
+   LB_FREE (&ptr) ;
    }

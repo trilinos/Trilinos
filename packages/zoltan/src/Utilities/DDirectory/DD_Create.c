@@ -27,9 +27,9 @@
 /*******************  Zoltan_DD_Create()  ***************************/
 
 int Zoltan_DD_Create (
- Zoltan_DD_Directory **dd,
+ Zoltan_DD_Directory **dd,    /* contains directory state and pointers */
  MPI_Comm comm,               /* Dup'ed and saved for future use       */
- int num_gid,                 /* Eliminate dependance on LB struct     */
+ int num_gid,                 /* Eliminate dependence on LB struct     */
  int num_lid,                 /* Ditto. If zero, ignore LIDs           */
  int user_length,             /* Optional user data length, 0 ignore   */
  int table_length,            /* sizeof hash table, use default if 0   */
@@ -42,29 +42,29 @@ int Zoltan_DD_Create (
 
    if (MPI_Comm_rank(comm, &my_proc) != MPI_SUCCESS) 
       {
-      ZOLTAN_PRINT_ERROR(-1, yo, "MPI_Comm_rank failed.");
+      ZOLTAN_PRINT_ERROR (-1, yo, "MPI_Comm_rank failed.");
       return ZOLTAN_DD_MPI_ERROR;
       }
 
    if (debug_level > 1)
-      ZOLTAN_TRACE_ENTER(my_proc, yo, NULL);
+      ZOLTAN_TRACE_ENTER (my_proc, yo, NULL);
 
    /* input sanity check */
    if (dd == NULL || num_gid < 1 || table_length < 0 || num_lid < 0)
       {
-      ZOLTAN_PRINT_ERROR (my_proc, yo, "invalid input argument") ; 
+      ZOLTAN_PRINT_ERROR (my_proc, yo, "Invalid input argument.") ;
       if (debug_level > 1)
-        ZOLTAN_TRACE_EXIT(my_proc, yo, NULL);
+         ZOLTAN_TRACE_EXIT (my_proc, yo, NULL);
       return ZOLTAN_DD_INPUT_ERROR ;
       }
 
    /* malloc memory for the directory structure + hash table */
    size = (table_length == 0) ? ZOLTAN_DD_HASH_TABLE_COUNT : table_length ;
-   *dd = (Zoltan_DD_Directory *) LB_MALLOC (sizeof (Zoltan_DD_Directory)
-       + size * sizeof (DD_Node*)) ;
+   *dd  = (Zoltan_DD_Directory *) LB_MALLOC (sizeof (Zoltan_DD_Directory)
+        + size * sizeof (DD_Node*)) ;
    if (*dd == NULL)
       {
-      ZOLTAN_PRINT_ERROR (my_proc, yo, "can not malloc hash table") ;
+      ZOLTAN_PRINT_ERROR (my_proc, yo, "Can not malloc hash table.") ;
       if (debug_level > 1)
         ZOLTAN_TRACE_EXIT(my_proc, yo, NULL);
       return ZOLTAN_DD_MEMORY_ERROR ;
@@ -95,7 +95,7 @@ int Zoltan_DD_Create (
    (*dd)->find_msg_size   = size + sizeof (DD_Find_Msg) ;
 
    /* force alignment, algorithm from Plauger, The Standard C Library    */
-   align = 7U ;  /* from 0,1,3,7 depending upon machine, set worst case  */
+   align = ZOLTAN_ALIGN ;
    (*dd)->update_msg_size = (align + (*dd)->update_msg_size) & ~align ;
    (*dd)->remove_msg_size = (align + (*dd)->remove_msg_size) & ~align ;
    (*dd)->find_msg_size   = (align + (*dd)->find_msg_size)   & ~align ;
@@ -106,17 +106,14 @@ int Zoltan_DD_Create (
     || MPI_Comm_size (comm,  &((*dd)->nproc))   != MPI_SUCCESS
     || MPI_Comm_rank (comm,  &((*dd)->my_proc)) != MPI_SUCCESS)
          {
-         ZOLTAN_PRINT_ERROR (my_proc, yo, "MPI Problem, Unable to continue") ;
+         ZOLTAN_PRINT_ERROR (my_proc, yo, "MPI Problem, unable to continue.") ;
          if (debug_level > 1)
            ZOLTAN_TRACE_EXIT(my_proc, yo, NULL);
          return ZOLTAN_DD_MPI_ERROR ;
          }
 
    if (debug_level > 1)
-      ZOLTAN_TRACE_EXIT(my_proc, yo, NULL);
-
-   if (debug_level > 0)
-      ZOLTAN_PRINT_INFO ((*dd)->my_proc, yo, "Successful") ;
+      ZOLTAN_TRACE_EXIT (my_proc, yo, NULL);
 
    return ZOLTAN_DD_NORMAL_RETURN ;
    }
