@@ -115,6 +115,19 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
        b = 1.0/(step-previousStep)*( -term1*previousStep/step/step +
                                     term2*step/previousStep/previousStep) ;
        disc = b*b - 3.0*a*oldfprime ;
+       if(disc < 0) {
+         step = recoverystep;
+         newgrp.computeX(oldgrp, dir, step);
+         newgrp.computeRHS();    
+         newf = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();  
+         cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
+         cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
+         cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
+         cout << " (USING RECOVERY STEP!)" << endl;
+         cout << Utils::fill(72) << "\n" << endl;
+         isfailed = true;
+         return(!isfailed);
+       }
        if( fabs(a) < 1.e-12)
           tempStep = -oldfprime/2.0/b ;
        else
