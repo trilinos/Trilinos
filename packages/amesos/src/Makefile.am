@@ -86,7 +86,8 @@ COMP_H = \
 COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 
-
+#Specify locations of include files within Trilinos, but outside Amesos
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src
 # ------------------------------------------------------------------------
 # Amesos library specifications
 # ------------------------------------------------------------------------
