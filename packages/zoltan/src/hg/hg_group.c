@@ -54,7 +54,7 @@ int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
 /****************************************************************************/
 
 int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp, int *limit)
-{ int   ierr = ZOLTAN_OK;
+{ int   i, ierr = ZOLTAN_OK;
   float *old_ewgt=NULL, *new_ewgt;
   char  *yo = "Zoltan_HG_Grouping";
 
@@ -70,6 +70,9 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp, int
     old_ewgt = hg->ewgt;
     hg->ewgt = new_ewgt;
   }
+
+  for (i=0 ; i<hg->nVtx; i++)
+    pack[i] = i;
 
   ierr = hgp->grouping(zz,hg,pack,limit);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -94,9 +97,6 @@ End:
 static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    {
    int i, j, vertex, first_vertex ;
-
-   for (i = 0 ; i < hg->nVtx ; i++)
-      pack[i] = i ;
 
    for (i = 0 ; i < hg->nEdge && (*limit)>0 ; i++)
       for (j = hg->hindex[i] ; j < hg->hindex[i+1] ; j++)
@@ -129,8 +129,6 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
       }
    for (i = 0 ; i < hg->nEdge ; i++)
       edges[i] = i ;
-   for (i = 0 ; i < hg->nVtx ;  i++)
-      pack[i]  = i ;
 
    for (i = hg->nEdge ; i > 0 && (*limit)>0 ; i--)
       {
@@ -220,7 +218,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
       return ZOLTAN_MEMERR;
       }
    for (i = 0 ; i < hg->nVtx ; i++)
-      pack[i] = vertices[i] = i ;
+      vertices[i] = i ;
 
    for (i = hg->nVtx ; i > 0 && (*limit)>0 ; i--)
       {
@@ -300,9 +298,6 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
   int   i, j, *size=NULL, *sorted=NULL, first_vertex, vertex ;
   char *yo = "grouping_grg" ;
 
-  for (i=0; i<hg->nVtx; i++)
-    pack[i] = i;
-
 /* Sort the hyperedges according to their weight and size */
   if (!(size   = (int *) ZOLTAN_MALLOC (hg->nEdge*sizeof(int)))  ||
       !(sorted = (int *) ZOLTAN_MALLOC (hg->nEdge*sizeof(int)))   )
@@ -339,8 +334,7 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
 static int grouping_aug1 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
-/* Placeholder for grouping_aug1. */
-  return ZOLTAN_OK;
+  return grouping_mxg (zz,hg,pack,limit);
 }
 
 /****************************************************************************/
@@ -348,6 +342,7 @@ static int grouping_aug1 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 static int grouping_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
 /* Placeholder for grouping_aug2. */
+  grouping_aug1 (zz,hg,pack,limit);
   return ZOLTAN_OK;
 }
 
@@ -356,6 +351,7 @@ static int grouping_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 static int grouping_aug3 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
 /* Placeholder for grouping_aug3. */
+  grouping_aug1 (zz,hg,pack,limit);
   return ZOLTAN_OK;
 }
 

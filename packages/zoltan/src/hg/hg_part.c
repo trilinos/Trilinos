@@ -123,21 +123,11 @@ int Zoltan_HG_HPart_Lib (
     /* Calculate Packing, Grouping or Matching */
     limit = hg->nVtx-hgp->redl;
     if (hgp->packing)
-      ierr = Zoltan_HG_Packing (zz,hg,pack,hgp,&limit);
+      ierr = Zoltan_HG_Packing  (zz,hg,pack,hgp,&limit);
     else if (hgp->grouping)
-      ierr = Zoltan_HG_Grouping (zz,hg,pack,hgp,&limit) ;
-    else
-    { Graph g;
-      Zoltan_HG_Graph_Init(&g);
-      ierr = Zoltan_HG_HGraph_to_Graph (zz, hg, &g) ;
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-      { ZOLTAN_FREE((void **) &pack);
-        Zoltan_HG_Graph_Free(&g);
-        return ierr ;
-      }
-      ierr = Zoltan_HG_Matching(zz,hg,&g,pack,hgp,&limit) ;
-      Zoltan_HG_Graph_Free(&g);
-    }
+      ierr = Zoltan_HG_Grouping (zz,hg,pack,hgp,&limit);
+    else if (hgp->matching)
+      ierr = Zoltan_HG_Matching (zz,hg,pack,hgp,&limit);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     { ZOLTAN_FREE((void **) &pack);
       return ierr ;
