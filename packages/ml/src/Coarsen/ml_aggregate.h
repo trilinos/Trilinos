@@ -55,7 +55,12 @@ typedef struct ML_Aggregate_Struct
    int    smooth_existing_P_tentative; /* already have P tent, don't create it*/
   int use_transpose;                   /* Used to build restriction by doing */
   int Restriction_smoothagg_transpose; /* smoothed aggregation on A^T */
-
+/*MS*/
+  void *aggr_options;                  /* option about METIS and ParMETIS    */
+  void *aggr_viz_and_stats;            /* information about the aggregates   */
+                                       /* only if the user explicitely       */
+                                       /* requires them                      */
+/*ms*/
 } ML_Aggregate;
 
 /* ************************************************************************* */
