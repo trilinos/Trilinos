@@ -99,13 +99,17 @@ int BelosEpetraOperator<TYPE>::Apply( const Epetra_MultiVector &X, Epetra_MultiV
 	//
 	if (strcmp(Solver,"BlockGMRES")==0) {
 		Belos::BlockGmres<TYPE> MyBlockGmres( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
+		MyBlockGmres.SetDebugLevel(DbgLvl);
 		MyBlockGmres.Solve(Vb);
 		MyBlockGmres.GetSolutions( vec_Y );
+		MyBlockGmres.PrintResids(Vb);
 	}
 	if (strcmp(Solver,"BlockCG")==0) {
 		Belos::BlockCG<TYPE> MyBlockCG( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
+		MyBlockCG.SetDebugLevel(DbgLvl);
 		MyBlockCG.Solve(Vb);
 		MyBlockCG.GetSolutions( vec_Y );
+		MyBlockCG.PrintResids(Vb);
 	}
 	// Copy solution into output vector Y.
      	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&vec_Y); assert(vec_y);
@@ -130,13 +134,17 @@ int BelosEpetraOperator<TYPE>::ApplyInverse( const Epetra_MultiVector &X, Epetra
 	//
 	if (strcmp(Solver,"BlockGMRES")==0) {
 		Belos::BlockGmres<TYPE> MyBlockGmres( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
+		MyBlockGmres.SetDebugLevel(DbgLvl);
 		MyBlockGmres.Solve(Vb);
 		MyBlockGmres.GetSolutions( vec_Y );
+		MyBlockGmres.PrintResids(Vb);
 	}
 	if (strcmp(Solver,"BlockCG")==0) {
 		Belos::BlockCG<TYPE> MyBlockCG( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
+		MyBlockCG.SetDebugLevel(DbgLvl);
 		MyBlockCG.Solve(Vb);
 		MyBlockCG.GetSolutions( vec_Y );
+		MyBlockCG.PrintResids(Vb);
 	}
 	// Copy solution into output vector Y.
      	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&vec_Y); assert(vec_y);
