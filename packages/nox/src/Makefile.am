@@ -36,6 +36,9 @@
 # might someday be needed by some other code outside NOX. The first is
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
+ABSTRACT = \
+	$(srcdir)/NOX_Abstract_Group.C
+
 ABSTRACT_H = \
 	$(srcdir)/NOX_Abstract_Vector.H  \
 	$(srcdir)/NOX_Abstract_Group.H
@@ -131,6 +134,7 @@ NOX_H = \
 
 
 libnox_a_SOURCES = \
+	$(ABSTRACT) \
 	$(LINESEARCH) \
 	$(DIRECTION) \
 	$(PARAMETER) \
