@@ -267,7 +267,18 @@ void&nbsp;*<i>data</i>);</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>Not yet available.</td>
+<td>FUNCTION <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>(<i>lb, fn_ptr, data</i>)&nbsp;
+<br>INTEGER(LB_INT) :: LB_Set_&lt;<i><a href="ug_query.html">lb_fn_type</a></i>>_Fn&nbsp;
+<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<br>EXTERNAL :: fn_ptr&nbsp;
+<br>&lt;<i>type-data</i>>, OPTIONAL :: data&nbsp;
+<p> An interface block for <i>fn_ptr</i> is included in the FUNCTION definition 
+so that strict type-checking of the registered query function can be done.
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
