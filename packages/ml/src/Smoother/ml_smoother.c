@@ -3911,7 +3911,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 	  }
 	}
       }
-      ML_Operator_ChangeToSinglePrecision(tmpmat);
+      ML_Operator_ChangeToChar(tmpmat);
       ML_Operator_ImplicitTranspose(Tmat_trans,
       			    Tmat, ML_FALSE);
       ML_memory_check("after TAT");
