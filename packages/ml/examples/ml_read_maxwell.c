@@ -2341,8 +2341,8 @@ nx = nx--; /* rst dirichlet */
   if (garbage != NULL) free(garbage);
   free(Kn_val);
   free(Kn_bindx);
-  ML_Operator_Destroy(Tmat);
-  ML_Operator_Destroy(Tmat_trans);
+  ML_Operator_Destroy(&Tmat);
+  ML_Operator_Destroy(&Tmat_trans);
   ML_MGHierarchy_ReitzingerDestroy(N_levels-2, coarsest_level, &Tmat_array, &Tmat_trans_array);
 
 
