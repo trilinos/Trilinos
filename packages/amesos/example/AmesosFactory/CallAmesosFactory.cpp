@@ -22,12 +22,16 @@
 int main(int argc, char *argv[])
 {
 
+
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
   Epetra_SerialComm Comm;
 #endif
+
+
+
   int iam = Comm.MyPID() ; 
 
   const int NumPoints = 10;  // Must be between 2 and 100 (on large matrices,
@@ -57,7 +61,7 @@ int main(int argc, char *argv[])
   //
   //  Note that Abase is created with an empty Problem, none of A, x or b
   //  have been specified at this point.  
-  Abase = Afactory.Create( AMESOS_KLU, Problem, ParamList ) ; 
+  Abase = Afactory.Create( AMESOS_MUMPS, Problem, ParamList ) ; 
   if ( Abase == 0 ) {
     cout << " AMESOS_KLU not implemented " << endl ; 
     exit(13);
