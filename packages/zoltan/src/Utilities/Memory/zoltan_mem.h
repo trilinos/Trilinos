@@ -58,6 +58,7 @@ extern double *Zoltan_Array_Alloc();
 
 extern void Zoltan_Memory_Debug(int);
 extern void Zoltan_Free(void **ptr, char *file, int lineno);
+extern double *Zoltan_Calloc (int num, int size, char *filename, int lineno);
 extern double *Zoltan_Malloc(int n, char *file, int lineno);
 extern double *Zoltan_Realloc(void *ptr, int n, char *filename, int lineno);
 extern void Zoltan_Memory_Stats();
