@@ -72,13 +72,20 @@ double Zoltan_HSFC_InvHilbert2d (ZZ *zz, double *coord)
 double Zoltan_HSFC_InvHilbert3d (ZZ *zz, double *coord)
    {
    static const int *d[] =
-     {data3d,     data3d +8,  data3d +16, data3d +24,
-      data3d +32, data3d +40, data3d +48, data3d +56,
-      data3d +64, data3d +72, data3d +80, data3d +88};
+     {data3d,      data3d +8,   data3d +16,  data3d +24,
+      data3d +32,  data3d +40,  data3d +48,  data3d +56,
+      data3d +64,  data3d +72,  data3d +80,  data3d +88,
+      data3d +96,  data3d +104, data3d +112, data3d +120,
+      data3d +128, data3d +136, data3d +144, data3d +152,
+      data3d +160, data3d +168, data3d +176, data3d +184};
+
    static const int *s[] =
-     {state3d,     state3d +8,  state3d +16, state3d +24,
-      state3d +32, state3d +40, state3d +48, state3d +56,
-      state3d +64, state3d +72, state3d +80, state3d +88};
+     {state3d,      state3d +8,   state3d +16,  state3d +24,
+      state3d +32,  state3d +40,  state3d +48,  state3d +56,
+      state3d +64,  state3d +72,  state3d +80,  state3d +88,
+      state3d +96,  state3d +104, state3d +112, state3d +120,
+      state3d +128, state3d +136, state3d +144, state3d +152,
+      state3d +160, state3d +168, state3d +176, state3d +184};
 
    int level, err;
    unsigned int key[2], c[3], temp, state;
@@ -170,14 +177,21 @@ void Zoltan_HSFC_Hilbert3d (ZZ *zz, double *coord, double key)
    static const int *d[] =
      {idata3d,      idata3d +8,   idata3d +16,  idata3d +24,
       idata3d +32,  idata3d +40,  idata3d +48,  idata3d +56,
-      idata3d +64,  idata3d +72,  idata3d +80,  idata3d +88};
+      idata3d +64,  idata3d +72,  idata3d +80,  idata3d +88,
+      idata3d +96,  idata3d +104, idata3d +112, idata3d +120,
+      idata3d +128, idata3d +136, idata3d +144, idata3d +152,
+      idata3d +160, idata3d +168, idata3d +176, idata3d +184};
+
    static const int *s[] =
-     {istate3d,     istate3d +8,  istate3d +16, istate3d +24,
-      istate3d +32, istate3d +40, istate3d +48, istate3d +56,
-      istate3d +64, istate3d +72, istate3d +80, istate3d +88};
+     {istate3d,      istate3d +8,   istate3d +16,  istate3d +24,
+      istate3d +32,  istate3d +40,  istate3d +48,  istate3d +56,
+      istate3d +64,  istate3d +72,  istate3d +80,  istate3d +88,
+      istate3d +96,  istate3d +104, istate3d +112, istate3d +120,
+      istate3d +128, istate3d +136, istate3d +144, istate3d +152,
+      istate3d +160, istate3d +168, istate3d +176, istate3d +184};
 
    int level, state, err;
-   unsigned int c[3], ikey[3], temp;
+   unsigned int c[3], ikey[2], temp;
    double t;
    static const MAXLEVEL = 19;   /* 56 significant bits, 18+ per dimension */
    char *yo = "Zoltan_HSFC_Hilbert3d";

@@ -119,6 +119,24 @@ for (i = 0; i <= 4; i++)
 }
 #endif
 
+#ifdef RTHRRTH
+if (zz->Proc == 0)
+{
+double x[3], f;
+int i, j, k;
+for (i = 0; i <= 4; i++)
+   for (j = 0; j <= 4; j++)
+      for (k = 0; k <= 4; k++)
+         {
+         x[0] = i * 0.25;
+         x[1] = j * 0.25;
+         x[2] = k * 0.25;
+         f = Zoltan_HSFC_InvHilbert3d(zz, x);
+         printf ("RTHRTH: z %.6f,  x (%.6f, %.6f, %.6f)\n", f, x[0], x[1], x[2]);
+         }
+}
+#endif
+
 #ifdef RTHRTH
 for (i = 0; i < 21; i++)
   {
@@ -139,7 +157,10 @@ for (i = 0; i < 21; i++)
   if (zz->Proc == 0)
      printf ("RTHRTH: 2dTEST: %.6f   %.6f  %9.6f\n", fsfc, xdelta, fsfc-xdelta);
   }
+
 #endif
+
+if (zz->Proc == 0)  {printf ("starting hsfc\n"); fflush (NULL);}
 
 
   /* Check for needed query functions. */
@@ -259,6 +280,8 @@ for (i = 0; i < 21; i++)
       dots[i].fsfc = d->fhsfc (zz, out);      /* Note, this is a function call */
       }
 
+if (zz->Proc == 0) {printf ("just after dots[i].fsfc\n"); fflush(NULL);}
+
    /* Initialize grand partition to equally spaced intervals on [0,1] */
    for (i = 0; i < pcount; i++) {
       grand_partition[i].index =  i;
@@ -267,6 +290,7 @@ for (i = 0; i < 21; i++)
       }
    ZOLTAN_TRACE_DETAIL (zz, yo, "About to enter main loop\n");
 
+if (zz->Proc == 0) {printf ("about to start main loop\n"); fflush (NULL);}
 
    /* This loop is the real guts of the partitioning algorithm */
    for (loop = 0; loop < MAX_LOOPS; loop++) {
@@ -364,6 +388,9 @@ for (i = 0; i < 21; i++)
       grand_partition[0].l        = 0.0;
       grand_partition[pcount-1].r = 1.0;
       } /* end of loop */
+
+if (zz->Proc == 0) {printf ("exiting main loop\n"); fflush(NULL);}
+
 
    ZOLTAN_TRACE_DETAIL (zz, yo, "Exited main loop");
    Zoltan_Multifree (__FILE__, __LINE__, 3, &grand_weight, &partition, &delta);
@@ -508,11 +535,25 @@ for (i = 0; i < 21; i++)
       printf ("<%d> export count %d, ndots %d\n", zz->Proc, *num_export, ndots);
    if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
       for (i = 0; i < ndots; i++) {
-         printf ("<%d> GID: %u  LID: %u  Part: %d  Weight %.1f  HSFC  %.4f\n",
+         printf ("<%d> GID: %u  LID: %u  Part: %d  Weight %.1f  HSFC  %.6f\n",
           zz->Proc, gids[i*zz->Num_GID], lids[i*zz->Num_LID], dots[i].part,
           dots[i].weight, dots[i].fsfc);
          printf ("PROC %d DOT %03u\n", p->index, gids[i]);
          }
+
+
+printf ("<%d> Number of loops = %d\n", zz->Proc, loop + 1);
+printf ("<%d> export count %d, ndots %d\n", zz->Proc, *num_export, ndots);
+for (i = 0; i < ndots; i++) {
+  printf ("<%d> GID: %u  LID: %u  Part: %d  Weight %.1f  HSFC  %.6f\n",
+   zz->Proc, gids[i*zz->Num_GID], lids[i*zz->Num_LID], dots[i].part,
+   dots[i].weight, dots[i].fsfc);
+  printf ("PROC %d DOT %03u\n", p->index, gids[i]);
+  fflush(NULL);
+  }
+
+
+
 
    /* done, do we keep data structure for box drop and point drop? */
    Zoltan_Bind_Param (HSFC_params, "KEEP_CUTS", (void*) &param);
@@ -538,6 +579,8 @@ free:
 
    if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME  &&  zz->Proc == 0)
       printf ("HSFC Processing Time is %.6f seconds\n", end_time - start_time);
+
+ {printf ("<%d> Exiting hsfc\n", zz->Proc); fflush(NULL);}
 
    ZOLTAN_TRACE_EXIT (zz, yo);
    return err;
