@@ -17,12 +17,13 @@
       or   a.out matrix.hb hmetis_partition_file 1 */
 
 main (int argc, char *argv[]) {
-  int nRow, nCol, nz, nEdge, nPin;
+  int nRow, nCol, nz, nEdge, nPin, njunk;
   int *counts = NULL, max_count, min_count; 
   float avg_count;
   int *rowindex = NULL, *colstart = NULL;
   double *val = NULL;
   int i, j;
+  char ch;
   FILE *fp;
   int nobj;
   int id, junk1, junk2;
@@ -41,24 +42,43 @@ main (int argc, char *argv[]) {
 
   /* Read in partition information */
   /* Assume zdrive partition information is pre-processed as follows:
-     -  Cat all partition output files together.
-     -  remove text (parameters, etc.), leaving only object and part info
-        (order info values -1 may be kept in file; they will be read and 
-        ignored here).
-     -  "sort -n" the files by object IDs.
-     -  put number of objects on first line.
-     Assume hmetis partition information is pre-processed as follows:
-     -  put number of objects on first line.
+     -  If zdrive was run on one processor, no pre-processing is needed.
+     -  If zdrive was run on multiple processors,
+        +  Cat all partition output files together.
+        +  remove text (parameters, etc.), leaving only object and part info
+           (order info values -1 may be kept in file; they will be read and 
+           ignored here).
+        +  "sort -n" the files by object IDs.
+     No pre-processing of hmetis partition information is needed.
    */
 
   if (argc == 4) 
     hmetis_partition_file = atoi(argv[3]);
   
   printf("Reading %s\n", argv[2]);
+
+  /* First count vertices and junk lines */
+
+  nobj = 0;  njunk = 0;
   fp = fopen(argv[2], "r");
-  fscanf(fp, "%d", &nobj);
+  while ((ch = fgetc(fp)) != EOF) {
+    if (ch >= '0' && ch <= '9')
+      nobj++;
+    else
+      njunk++;
+    while ((ch = fgetc(fp)) != '\n');
+  }
+  fclose(fp);
+
+printf ("KDD %d %d\n", njunk, nobj);
+
+  /* Next, re-read file to get data */
+
+  fp = fopen(argv[2], "r");
   parts = (int *) malloc(sizeof(int) * nobj);
   maxpart = -1;
+  for (i = 0; i < njunk; i++)  /* Skip leading text lines */
+    while ((ch = fgetc(fp)) != '\n');
   for (i = 0; i < nobj; i++) {
     if (hmetis_partition_file)
       fscanf(fp, "%d", &(parts[i]));
