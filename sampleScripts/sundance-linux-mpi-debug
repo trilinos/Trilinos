@@ -18,6 +18,7 @@ CXXFLAGS="-g" \
 --enable-tsfcore-mpi \
 --enable-tsfcore-aztecoo \
 --enable-teuchos \
+--enable-teuchos-abc \
 --enable-ml \
 --enable-teuchos-extended \
 --disable-new-package \
