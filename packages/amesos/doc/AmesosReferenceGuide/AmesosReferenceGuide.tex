@@ -43,12 +43,12 @@
 
 
 \title{Amesos 2.0 Reference Guide}
-\SANDnum{SAND2004-XXXX}
+\SANDnum{SAND2004-4820}
 \SANDauthor{
 Marzio Sala
 }
 
-\SANDprintDate{October 2004}
+\SANDprintDate{September 2004}
 \SANDreleaseType{Unlimited Release}
 
 \newcommand{\epetra}{{\sc Epetra}}
@@ -878,27 +878,27 @@ integer array ICNTL and the double array CNTL to the parameters list,
 or by using the functions reported at the end of this section.
 
 \vskip .1in
-\choicebox{\tt ICTNL}{({\tt int[40])} Pointer to an integer array, containing
+\choicebox{\tt ICTNL}{({\tt int[40]}) Pointer to an integer array, containing
   the integer parameters (see~\cite[pages 13--17]{mumps-manual}).}
 
-\choicebox{\tt CTNL}{({\tt double[5])} Pointer to an double array, containing
+\choicebox{\tt CTNL}{({\tt double[5]}) Pointer to an double array, containing
   the double parameters (see~\cite[page 17]{mumps-manual}).}
 
-\choicebox{\tt PermIn}{({\tt int *)} Use integer vectors of size
+\choicebox{\tt PermIn}{({\tt int *}) Use integer vectors of size
   NumGlobalElements (global dimension of the matrix) as given ordering.
   {\tt PermIn} must be defined on the host only, and allocated by the
   user, if the user sets ICNTL(7) = 1.}
   
-\choicebox{\tt Maxis}{({\tt int)} Set Maxis value.}
+\choicebox{\tt Maxis}{({\tt int}) Set Maxis value.}
 
 \choicebox{\tt Maxs}{({\tt int}) Set Maxis value.}
 
-\choicebox{\tt ColPrecScaling}{({\tt double *)} Use double precision vectors
+\choicebox{\tt ColPrecScaling}{({\tt double *}) Use double precision vectors
   of size NumGlobalElements (global dimension of the matrix) as scaling
   for columns and rows. The double vector must be defined on the host
   only, and allocated by the user, if the user sets ICNTL(8) = -1.}
 
-\choicebox{\tt RowPrecScaling}{({\tt double *)} Use double precision vectors
+\choicebox{\tt RowPrecScaling}{({\tt double *}) Use double precision vectors
   of size NumGlobalElements (global dimension of the matrix) as scaling
   for columns and rows. The double vector must be defined on the host
   only, and allocated by the user, if the user sets ICNTL(8) = -1.}
