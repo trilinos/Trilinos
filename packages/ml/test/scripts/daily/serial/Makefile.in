@@ -65,8 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@HAVE_MPI_TRUE@noinst_PROGRAMS =  \
-@HAVE_MPI_TRUE@	TestMultiLevelPreconditioner$(EXEEXT)
+noinst_PROGRAMS = TestMultiLevelPreconditioner$(EXEEXT)
 subdir = test/scripts/daily/serial
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -99,8 +98,6 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__TestMultiLevelPreconditioner_SOURCES_DIST =  \
-	$(srcdir)/TestMultiLevelPreconditioner
 am_TestMultiLevelPreconditioner_OBJECTS =
 TestMultiLevelPreconditioner_OBJECTS =  \
 	$(am_TestMultiLevelPreconditioner_OBJECTS)
@@ -111,7 +108,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(TestMultiLevelPreconditioner_SOURCES)
-DIST_SOURCES = $(am__TestMultiLevelPreconditioner_SOURCES_DIST)
+DIST_SOURCES = $(TestMultiLevelPreconditioner_SOURCES)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -245,8 +242,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@HAVE_MPI_TRUE@TestMultiLevelPreconditioner_SOURCES = $(srcdir)/TestMultiLevelPreconditioner
-@HAVE_MPI_FALSE@EXTRA_DIST = TestMultiLevelPreconditioner
+TestMultiLevelPreconditioner_SOURCES = $(srcdir)/TestMultiLevelPreconditioner
 all: all-am
 
 .SUFFIXES:
@@ -282,9 +278,6 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-@HAVE_MPI_FALSE@TestMultiLevelPreconditioner$(EXEEXT): $(TestMultiLevelPreconditioner_OBJECTS) $(TestMultiLevelPreconditioner_DEPENDENCIES) 
-@HAVE_MPI_FALSE@	@rm -f TestMultiLevelPreconditioner$(EXEEXT)
-@HAVE_MPI_FALSE@	$(LINK) $(TestMultiLevelPreconditioner_LDFLAGS) $(TestMultiLevelPreconditioner_OBJECTS) $(TestMultiLevelPreconditioner_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -411,8 +404,8 @@ uninstall-am: uninstall-info-am
 	uninstall uninstall-am uninstall-info-am
 
 
-@HAVE_MPI_TRUE@TestMultiLevelPreconditioner$(EXEEXT): $(srcdir)/TestMultiLevelPreconditioner
-@HAVE_MPI_TRUE@	cp $(srcdir)/TestMultiLevelPreconditioner TestMultiLevelPreconditioner$(EXEEXT) 
+TestMultiLevelPreconditioner$(EXEEXT): $(srcdir)/TestMultiLevelPreconditioner
+	cp $(srcdir)/TestMultiLevelPreconditioner TestMultiLevelPreconditioner$(EXEEXT) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -27,8 +27,6 @@
 #@HEADER
 
 EXEEXT = .exe
-# Nothing should be done for a serial build
-if  HAVE_MPI
 
 noinst_PROGRAMS = TestMultiLevelPreconditioner
 
@@ -36,9 +34,3 @@ TestMultiLevelPreconditioner_SOURCES = $(srcdir)/TestMultiLevelPreconditioner
 
 TestMultiLevelPreconditioner$(EXEEXT): $(srcdir)/TestMultiLevelPreconditioner
 	cp $(srcdir)/TestMultiLevelPreconditioner TestMultiLevelPreconditioner$(EXEEXT) 
-
-else
-
-EXTRA_DIST=TestMultiLevelPreconditioner
-
-endif
