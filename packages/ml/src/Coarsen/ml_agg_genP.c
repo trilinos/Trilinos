@@ -208,8 +208,6 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    struct ML_Field_Of_Values * fov;
 #endif
 
-   ML_avoid_unused_param(data);
-
    if (ag->nullspace_corrupted == ML_YES) {
      printf("Can not reuse aggregate object when the fine grid operator\n");
      printf("has a nontrivial null space. It is possible to keep \n");
@@ -253,7 +251,11 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       }
 #endif
 
-      flag = (*user_gen_prolongator)(ml, level, next,(void *)ag);
+      /* This if-else supports an ALEGRA capability. */
+      if (data == NULL)
+        flag = (*user_gen_prolongator)(ml, level, next,(void *)ag);
+      else
+        flag = (*user_gen_prolongator)(ml, level, next,(void *)data);
 
       if (flag < 0) break;
       ML_memory_check("L%d: prolongator end",level);
