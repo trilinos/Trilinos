@@ -175,8 +175,8 @@ int main(int argc, char *argv[]) {
   for (int i=0; i<count; i++)
     forierr += !(iVals[i] == iBVals[i]); // otherwise Broadcast didn't occur properly
   EPETRA_TEST_ERR(forierr,ierr);
-  delete iVals;
-  delete iBVals;
+  delete [] iVals;
+  delete [] iBVals;
   petracomm.Barrier();
   if (verbose) cout << endl << "Broadcast (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
@@ -195,8 +195,8 @@ int main(int argc, char *argv[]) {
   for (int i=0; i<count; i++)
     forierr += !(dVals[i] == dBVals[i]); // otherwise Broadcast didn't occur properly
   EPETRA_TEST_ERR(forierr,ierr);
-  delete dVals;
-  delete dBVals;
+  delete [] dVals;
+  delete [] dBVals;
   petracomm.Barrier();
   if (verbose) cout << endl << "Broadcast (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
@@ -223,8 +223,8 @@ int main(int argc, char *argv[]) {
     forierr += !(iMyGlobalMaxs[i] == iGlobalMaxs[i]);
   EPETRA_TEST_ERR(forierr,ierr);
 
-  delete iGlobalMaxs;
-  delete iMyGlobalMaxs;
+  delete [] iGlobalMaxs;
+  delete [] iMyGlobalMaxs;
   petracomm.Barrier();
   if (verbose) cout << endl << "MaxAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
@@ -249,8 +249,8 @@ int main(int argc, char *argv[]) {
   for (int i=0; i<count; i++)
     forierr += !(Epetra_Util::Chop(dMyGlobalMaxs[i] - dGlobalMaxs[i]) == 0);
   EPETRA_TEST_ERR(forierr,ierr);
-  delete dGlobalMaxs;
-  delete dMyGlobalMaxs;
+  delete [] dGlobalMaxs;
+  delete [] dMyGlobalMaxs;
   petracomm.Barrier();
   if (verbose) cout << endl << "MaxAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
@@ -276,8 +276,8 @@ int main(int argc, char *argv[]) {
   for (int i=0; i<count; i++) 
     forierr += !(iMyGlobalMins[i] == iGlobalMins[i]); // otherwise calculated min is wrong
   EPETRA_TEST_ERR(forierr,ierr);
-  delete iGlobalMins;
-  delete iMyGlobalMins;
+  delete [] iGlobalMins;
+  delete [] iMyGlobalMins;
   petracomm.Barrier();
   if (verbose) cout << endl << "MinAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
@@ -302,8 +302,8 @@ int main(int argc, char *argv[]) {
   for (int i=0; i<count; i++)
     forierr += !(Epetra_Util::Chop(dMyGlobalMins[i] - dGlobalMins[i]) == 0); // otherwise calculated min is wrong
   EPETRA_TEST_ERR(forierr,ierr);
-  delete dGlobalMins;
-  delete dMyGlobalMins;
+  delete [] dGlobalMins;
+  delete [] dMyGlobalMins;
   petracomm.Barrier();
   if (verbose) cout << endl << "MinAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
@@ -329,8 +329,8 @@ int main(int argc, char *argv[]) {
   for (int i=0; i<count; i++)
     forierr += !(iMyGlobalSums[i] == iGlobalSums[i]); // otherwise calculated sum is wrong
   EPETRA_TEST_ERR(forierr,ierr);
-  delete iGlobalSums;
-  delete iMyGlobalSums;
+  delete [] iGlobalSums;
+  delete [] iMyGlobalSums;
   petracomm.Barrier();
   if (verbose) cout << endl << "SumAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
@@ -356,8 +356,8 @@ int main(int argc, char *argv[]) {
     forierr += !(Epetra_Util::Chop(dMyGlobalSums[i] - dGlobalSums[i]) == 0); // otherwise calculated sum is wrong
   EPETRA_TEST_ERR(forierr,ierr);
 
-  delete dGlobalSums;
-  delete dMyGlobalSums;
+  delete [] dGlobalSums;
+  delete [] dMyGlobalSums;
   petracomm.Barrier();
   if (verbose) cout << endl << "SumAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
@@ -385,8 +385,8 @@ int main(int argc, char *argv[]) {
   for (int i=0; i<count; i++)
     forierr += !(iMyScanSums[i] == iScanSums[i]);
   EPETRA_TEST_ERR(forierr,ierr);
-  delete iScanSums;
-  delete iMyScanSums;
+  delete [] iScanSums;
+  delete [] iMyScanSums;
   petracomm.Barrier();
   if (verbose) cout << endl << "ScanSum (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
@@ -413,8 +413,8 @@ int main(int argc, char *argv[]) {
   for (int i=0; i<count; i++)
     forierr += !(Epetra_Util::Chop(dMyScanSums[i] - dScanSums[i])== 0);
   EPETRA_TEST_ERR(forierr,ierr);
-  delete dScanSums;
-  delete dMyScanSums;
+  delete [] dScanSums;
+  delete [] dMyScanSums;
   petracomm.Barrier();
   if (verbose) cout << endl << "ScanSum (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
@@ -442,8 +442,8 @@ int main(int argc, char *argv[]) {
   for (int i=0; i<totalVals; i++)
     forierr += !(iMyOrderedVals[i] == iOrderedVals[i]);
   EPETRA_TEST_ERR(forierr,ierr);
-  delete iOrderedVals;
-  delete iMyOrderedVals;
+  delete [] iOrderedVals;
+  delete [] iMyOrderedVals;
   petracomm.Barrier();
   if (verbose) cout << endl << "GatherAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
@@ -470,8 +470,8 @@ int main(int argc, char *argv[]) {
   for (int i=0; i<totalVals; i++)
     forierr += !(Epetra_Util::Chop(dMyOrderedVals[i] - dOrderedVals[i]) == 0);
   EPETRA_TEST_ERR(forierr,ierr);
-  delete dOrderedVals;
-  delete dMyOrderedVals;
+  delete [] dOrderedVals;
+  delete [] dMyOrderedVals;
   petracomm.Barrier();
   if (verbose) cout << endl << "GatherAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
