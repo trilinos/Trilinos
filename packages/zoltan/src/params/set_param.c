@@ -22,7 +22,7 @@
 #include "all_allo_const.h"
 #include "rcb_const.h"
 #include "octupdate_const.h"
-#include "parmetis_const.h"
+#include "parmetis_jostle_const.h"
 #include "timer_const.h"
 
 static int add_param(LB *, char *, char *);
