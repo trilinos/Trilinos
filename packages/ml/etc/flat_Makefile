@@ -14,7 +14,7 @@ LIB_PATHS=$(LIBRARIES)
 
 CFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES) $(TESTING) $(TESTING2)
 #c++ compiler flags
-CXXFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES) $(TESTING) $(TESTING2)
+CXXFLAGS=$(CFLAGS)
 #VPATH=../examples:../src
 #=======================================================================
 # ML source files
