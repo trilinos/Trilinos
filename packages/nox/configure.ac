@@ -437,7 +437,10 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
   AC_LANG_CPLUSPLUS 
   AC_MSG_CHECKING(for mpi.h)
   AC_TRY_CPP([#include "mpi.h"],
-    [AC_MSG_RESULT(yes)], 
+    [
+     AC_MSG_RESULT(yes)
+     AC_DEFINE(HAVE_MPI,,[define that mpi is being used])
+    ], 
     [AC_MSG_RESULT(no)  
      echo "---"
      echo "Cannot find header file mpi.h."
@@ -549,6 +552,19 @@ AC_TRY_COMPILE(
   AC_DEFINE(NO_USING_STD_OSTREAM,,[define if "using std::ostream" is okay])
 ]
 )
+
+# ------------------------------------------------------------------------
+# LAPACK library?
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(lapack,
+[AC_HELP_STRING([--enable-lapack],[compile noxlapack library])],
+[BUILD_LIBNOXLAPACK=$enableval],
+[BUILD_LIBNOXLAPACK=no]
+)
+
+AC_MSG_CHECKING(whether we should build the noxlapack library)
+AC_MSG_RESULT(${BUILD_LIBNOXLAPACK})
 
 # ------------------------------------------------------------------------
 # Epetra library?
@@ -806,6 +822,20 @@ AC_MSG_RESULT(${BUILD_EXAMPLES})
 AM_CONDITIONAL(BUILD_EXAMPLES, test X${BUILD_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
+# Checks for building lapack examples
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(lapack-examples,
+[AC_HELP_STRING([--enable-lapack-examples],[compile lapack examples])],
+[BUILD_LAPACK_EXAMPLES=${enableval}],
+[BUILD_LAPACK_EXAMPLES=no]
+)
+
+AC_MSG_CHECKING(whether we should build the lapack examples)
+AC_MSG_RESULT(${BUILD_LAPACK_EXAMPLES})
+AM_CONDITIONAL(BUILD_LAPACK_EXAMPLES, test X${BUILD_LAPACK_EXAMPLES} = Xyes)
+
+# ------------------------------------------------------------------------
 # Checks for building epetra examples
 # ------------------------------------------------------------------------
 
@@ -881,12 +911,15 @@ AC_MSG_CHECKING(whether we should build the locablas examples)
 AC_MSG_RESULT(${BUILD_LOCA_BLAS_EXAMPLES})
 
 # ------------------------------------------------------------------------
-# Checks for basic libraries for examples
+# Checks for basic libraries for examples and/or lapack support
 # ------------------------------------------------------------------------
 
-if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes || 
+if test ${BUILD_EXAMPLES} = yes || 
+   test ${BUILD_LAPACK_EXAMPLES} = yes ||
+   test ${BUILD_EPETRA_EXAMPLES} = yes || 
    test ${BUILD_LOCA_EPETRA_EXAMPLES} = yes || 
-   test ${BUILD_LOCA_BLAS_EXAMPLES} = yes; then
+   test ${BUILD_LOCA_BLAS_EXAMPLES} = yes ||
+   test ${BUILD_LIBNOXLAPACK} = yes; then
 
   AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
   AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -905,6 +938,13 @@ if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes ||
   ACX_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
 
 fi
+
+# ------------------------------------------------------------------------
+# Checks for LAPACK status 
+# ------------------------------------------------------------------------
+
+AM_CONDITIONAL(BUILD_LIBNOXLAPACK, test X${BUILD_LIBNOXLAPACK} = Xyes)
+AM_CONDITIONAL(BUILD_LAPACK_EXAMPLES, test X${BUILD_LAPACK_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
 # Check for MPI library
@@ -1185,8 +1225,9 @@ AC_CONFIG_FILES([
 		doc/Makefile
 		doc/Doxyfile
 		src/Makefile
-		src-epetra/Makefile 
 		example/Makefile
+                src-lapack/Makefile
+		src-epetra/Makefile 
 		example-epetra/Makefile 
 		example-epetra/DS6.5.1/Makefile
 		example-epetra/1Dfem_linear/Makefile

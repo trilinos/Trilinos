@@ -35,6 +35,9 @@
 /* define if we can include <math.h> */
 #undef HAVE_MATH_H
 
+/* define that mpi is being used */
+#undef HAVE_MPI
+
 /* define if "using std::ostream" is okay */
 #undef NO_USING_STD_OSTREAM
 
