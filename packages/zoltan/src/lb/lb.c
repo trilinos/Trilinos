@@ -1097,6 +1097,7 @@ void LB_Eval (LB *lb, int mode,
  */
 
 {
+  char *yo = "LB_EVAL:";
   int i, j, num_obj, max_edges, flag, cut_wgt, nboundary, nadj, nedges;
   int stats[4*NUM_GSTATS], *ewgts;
   int *proc, *nbors_proc;
@@ -1224,7 +1225,7 @@ void LB_Eval (LB *lb, int mode,
       for (j=0; j<nedges; j++){
         if (nbors_proc[j] != lb->Proc){
 /* printf("[%1d] Debug: Found cut edge (%d,%d) to proc %d\n", lb->Proc, 
-   global_ids[i], nbors_global[j], nbors_proc[j]);  */
+   global_ids[i], nbors_global[j], nbors_proc[j]); */
           if (ewgt_dim == 0)
             cut_wgt++;
           else if (ewgt_dim == 1)
@@ -1269,22 +1270,24 @@ void LB_Eval (LB *lb, int mode,
   if (mode>1){
     nproc = lb->Num_Proc; /* float */
     if (lb->Proc == 0){
-      printf("\nStatistics for current partitioning/balance:\n");
+      printf("\n%s  Statistics for current partitioning/balance:\n", yo);
       for (i=0; i<vwgt_dim; i++)
-        printf("  Object weight %1d  :  Max = %6.1f, Sum = %7.1f, Imbal. = %5.3f\n",
-          i+1, obj_wgt[i], obj_wgt[vwgt_dim+i], obj_wgt[i]*nproc/obj_wgt[vwgt_dim+i]-1.);
-      printf("  No. of objects   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-        graph_stats[0], graph_stats[NUM_GSTATS], 
+        printf("%s  Object weight %1d  :  Max = %6.1f, Sum = %7.1f, "
+          "Imbal. = %5.3f\n",
+          yo, i+1, obj_wgt[i], obj_wgt[vwgt_dim+i], 
+          obj_wgt[i]*nproc/obj_wgt[vwgt_dim+i]-1.);
+      printf("%s  No. of objects   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
+        yo, graph_stats[0], graph_stats[NUM_GSTATS], 
         graph_stats[0]*nproc/graph_stats[NUM_GSTATS]-1.);
       if (lb->Get_Num_Edges != NULL){
-        printf("  Cut weight       :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-          graph_stats[1], graph_stats[NUM_GSTATS+1], 
+        printf("%s  Cut weight       :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
+          yo, graph_stats[1], graph_stats[NUM_GSTATS+1], 
           graph_stats[1]*nproc/graph_stats[NUM_GSTATS+1]-1.);
-        printf("  Boundary objects :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-          graph_stats[2], graph_stats[NUM_GSTATS+2], 
+        printf("%s  Boundary objects :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
+          yo, graph_stats[2], graph_stats[NUM_GSTATS+2], 
           graph_stats[2]*nproc/graph_stats[NUM_GSTATS+2]-1.);
-        printf("  Adjacent procs   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-          graph_stats[3], graph_stats[NUM_GSTATS+3], 
+        printf("%s  Adjacent procs   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
+          yo, graph_stats[3], graph_stats[NUM_GSTATS+3], 
           graph_stats[3]*nproc/graph_stats[NUM_GSTATS+3]-1.);
       }
       printf("\n");
