@@ -1957,9 +1957,9 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
 
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
-      long olda = os.setf(ios::right,ios::adjustfield);
-      long oldf = os.setf(ios::scientific,ios::floatfield);
-      int oldp = os.precision(12);
+      const Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
+      const Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
+      const int             oldp = os.precision(12);
       if (MyPID==0) {
 	os <<  "\nNumber of Global Block Rows  = "; os << NumGlobalBlockRows(); os << endl;
 	os <<    "Number of Global Block Cols  = "; os << NumGlobalBlockCols(); os << endl;
