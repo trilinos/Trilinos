@@ -50,6 +50,7 @@ double Epetra_Time::WallTime(void) const
 
 #else
 
+#ifndef MINGW
    struct timeval tp;
    static long start=0, startu;
    if (!start)
@@ -61,6 +62,9 @@ double Epetra_Time::WallTime(void) const
    }
    gettimeofday(&tp, NULL);
    return( ((double) (tp.tv_sec - start)) + (tp.tv_usec-startu)/1000000.0 );
+#else
+   return( (double) clock() / CLOCKS_PER_SEC );
+#endif
 
 #endif
 

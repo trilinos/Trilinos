@@ -42,7 +42,11 @@
 #include "mpi.h"
 #else
 #include <sys/time.h>
+#ifndef MINGW
 #include <sys/resource.h>
+#else
+#include <winsock.h>
+#endif
 #endif
 
 class Epetra_Time: public Epetra_Object {
