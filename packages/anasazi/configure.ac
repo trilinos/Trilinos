@@ -91,12 +91,12 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-#  #np# - Package name and version below
-AM_INIT_AUTOMAKE(anasazi, 0.0)
+# Specify required version of automake. 
+AM_INIT_AUTOMAKE(1.8.2)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.52)
+AC_PREREQ(2.59)
 
 #  #np# - can eliminate compiler checks below if your package does not use the
 #         language corresponding to the check

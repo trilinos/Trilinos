@@ -82,13 +82,13 @@ AM_MAINTAINER_MODE
 
 AC_CANONICAL_TARGET
 
-# Use automake
+# Specify required version of automake. 
 
-AM_INIT_AUTOMAKE(belos, 0.0)
+AM_INIT_AUTOMAKE(1.8.2)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.52)
+AC_PREREQ(2.59)
 
 # ------------------------------------------------------------------------
 # Checks for programs
