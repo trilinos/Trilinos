@@ -31,11 +31,28 @@ static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr2;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr3;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr4;
 
+static int local_coarse_partitioner(ZZ *, HGraph *, int, Partition,
+  PHGPartParams *, ZOLTAN_PHG_COARSEPARTITION_FN *);
+
 
 /****************************************************************************/
 
-ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn (char *str)
+ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(
+  PHGPartParams *hgp
+)
 {
+char *str, *str2;
+
+  str2 = hgp->coarsepartition_str;
+  if (!strncasecmp(str2, "l-", 2)) {
+    str = str2+2;
+    hgp->LocalCoarsePartition = 1;
+  }  
+  else {
+    str = str2;
+    hgp->LocalCoarsePartition = 0;
+  }
+
   if      (!strcasecmp(str, "ran"))   return coarse_part_ran;
   else if (!strcasecmp(str, "lin"))   return coarse_part_lin;
   else if (!strcasecmp(str, "bfs"))   return coarse_part_bfs;
@@ -77,6 +94,7 @@ int *spart = NULL;             /* Partition vector for shg. */
 int i, si;
 static PHGComm scomm;          /* Serial communicator info */
 static int first_time = 1;
+ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition;
 
 /* take care of all special cases first */
   if (numPart == 1) {            /* everything goes in the one partition */
@@ -88,82 +106,126 @@ static int first_time = 1;
     for (i = 0; i < phg->nVtx; i++)
       part[i] = phg->dist_x[phg->comm->myProc_x]+i;
   }
-  else if (phg->comm->nProc == 1) {
-    /* Only one processor; no gather needed. */
-    ierr = hgp->CoarsePartition(zz, phg, numPart, part, hgp);
-    if (ierr < 0) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                         "Error returned from CoarsePartition.");
-      goto End;
-    }
-  }
   else {
-#ifdef KDDKDD_NOT_READY_YET
-    ierr = hgp->CoarsePartition(zz, phg, numPart, part, hgp);
-#else
 
-    if (first_time) {
-      scomm.nProc_x = scomm.nProc_y = 1;
-      scomm.myProc_x = scomm.myProc_y = 0;
-      scomm.Communicator = MPI_COMM_SELF;
-      scomm.row_comm = MPI_COMM_SELF;
-      scomm.col_comm = MPI_COMM_SELF;
-      scomm.myProc = 0;
-      scomm.nProc = 1;
-      first_time = 0;
-    }
+    /* KDDKDD Select different coarse partitioners for processors here. */
 
-    /* 
-     * Gather parallel hypergraph phg to each processor, creating
-     * serial hypergraph shg.
-     */
-    ierr = Zoltan_PHG_Gather_To_All_Procs(zz, phg, &scomm, &shg);
-    if (ierr < 0) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from gather.");
-      goto End;
-    }
+    CoarsePartition = hgp->CoarsePartition;
 
-    /* 
-     * Allocate partition array spart for the serial hypergraph shg
-     * and partition shg.
-     * KDDKDD Add logic here to compute different coarse partitions on
-     * KDDKDD different processors.
-     */
-    if (shg->nVtx) {
-      spart = (int *) ZOLTAN_MALLOC(shg->nVtx * sizeof(int));
-      if (!spart) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-        ierr = ZOLTAN_MEMERR;
-        goto End;
-      }
-    
-      /* KDDKDD For now, want all processors to give same partition, so
-       * KDDKDD initialize the seed identically on all.
-       */
-      Zoltan_HG_Srand(shg->nVtx);
-      ierr = hgp->CoarsePartition(zz, shg, numPart, spart, hgp);
+
+    if (phg->comm->nProc == 1) {
+      /* Only one processor; no gather needed. */
+      ierr = CoarsePartition(zz, phg, numPart, part, hgp);
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                            "Error returned from CoarsePartition.");
         goto End;
       }
-  
-      for (i = 0; i < phg->nVtx; i++) {
-        /* KDDKDD  Assume vertices in serial HG are ordered by GNO of phg */
-        si = VTX_LNO_TO_GNO(phg, i);
-        part[i] = spart[si];
+    }
+    else if (hgp->LocalCoarsePartition) {
+      ierr = local_coarse_partitioner(zz, phg, numPart, part, hgp,
+                                      CoarsePartition);
+    }
+    else {
+      /* Gather distributed HG to each processor; apply coarse partitioner */
+      if (first_time) {
+        scomm.nProc_x = scomm.nProc_y = 1;
+        scomm.myProc_x = scomm.myProc_y = 0;
+        scomm.Communicator = MPI_COMM_SELF;
+        scomm.row_comm = MPI_COMM_SELF;
+        scomm.col_comm = MPI_COMM_SELF;
+        scomm.myProc = 0;
+        scomm.nProc = 1;
+        first_time = 0;
       }
-    } 
-    Zoltan_HG_HGraph_Free(shg);
-    ZOLTAN_FREE(&shg);
-    ZOLTAN_FREE(&spart);
-#endif  /* KDDKDD_NOT_READY_YET */
+
+      /* 
+       * Gather parallel hypergraph phg to each processor, creating
+       * serial hypergraph shg.
+       */
+      ierr = Zoltan_PHG_Gather_To_All_Procs(zz, phg, &scomm, &shg);
+      if (ierr < 0) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from gather.");
+        goto End;
+      }
+  
+      /* 
+       * Allocate partition array spart for the serial hypergraph shg
+       * and partition shg.
+       * KDDKDD Add logic here to compute different coarse partitions on
+       * KDDKDD different processors.
+       */
+      if (shg->nVtx) {
+        spart = (int *) ZOLTAN_MALLOC(shg->nVtx * sizeof(int));
+        if (!spart) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+          ierr = ZOLTAN_MEMERR;
+          goto End;
+        }
+      
+        /* KDDKDD Set RNG so different procs compute different parts. */
+        /* KDDKDD For now, want all processors to give same partition, so
+         * KDDKDD initialize the seed identically on all.
+         */
+        Zoltan_HG_Srand(shg->nVtx);
+        ierr = CoarsePartition(zz, shg, numPart, spart, hgp);
+        if (ierr < 0) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                             "Error returned from CoarsePartition.");
+          goto End;
+        }
+
+        /* KDDKDD Evaluate and select the best */
+    
+        /* Map gathered partition back to 2D distribution */
+        for (i = 0; i < phg->nVtx; i++) {
+          /* KDDKDD  Assume vertices in serial HG are ordered by GNO of phg */
+          si = VTX_LNO_TO_GNO(phg, i);
+          part[i] = spart[si];
+        }
+      } 
+      Zoltan_HG_HGraph_Free(shg);
+      ZOLTAN_FREE(&shg);
+      ZOLTAN_FREE(&spart);
+    }
   }
   
 End:
 
   return ierr;
 }
+
+/****************************************************************************/
+
+static int local_coarse_partitioner(
+  ZZ *zz,
+  HGraph *hg,
+  int p,
+  Partition part,
+  PHGPartParams *hgp,
+  ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition
+)
+{
+/* 
+ * Function that allows any of the coarse partitioning strategies to be applied
+ * locally, without a gather operation.
+ * Each column group does independent partitioning; each tries to balance
+ * local vertex weights; our hope is that this will give somewhat balanced 
+ * result.
+ */
+PHGComm *hgc = hg->comm;
+int err=0;
+
+  if (!hgc->myProc_y)  /* only first row */
+    err = CoarsePartition(zz, hg, p, part, hgp); 
+
+  MPI_Bcast(&err, 1, MPI_INT, 0, hgc->col_comm);
+  if (!err)
+    MPI_Bcast(part, hg->nVtx, MPI_INT, 0, hgc->col_comm);
+    
+  return err;
+}
+
 
 /****************************************************************************/
 
@@ -229,16 +291,9 @@ static int seq_part (
   return ZOLTAN_OK;
 }
 
-
-
 /****************************************************************************/
 /* Linear partitioning. Sequence partitioning with vertices in linear order. */
 
-/* UVC: each column group does independent partitioning; each tries to balance
-   local vertex weights; our hope is that this will give somewhat balanced result.
-   Once the hypergraph-gather operation is implemented one can use the original
-   serial version to partition the coarse hypergraph sequentially.
-*/
 static int coarse_part_lin (
   ZZ *zz, 
   HGraph *hg, 
@@ -247,17 +302,8 @@ static int coarse_part_lin (
   PHGPartParams *hgp
 )
 {
-    PHGComm *hgc = hg->comm;
-    int err=0;
-
-    if (!hgc->myProc_y)  /* only first row */
-        err = seq_part( zz, hg, NULL, p, part, hgp);     /* Call sequence partitioning with no order array. */
-
-    MPI_Bcast(&err, 1, MPI_INT, 0, hgc->col_comm);
-    if (!err)
-        MPI_Bcast(part, hg->nVtx, MPI_INT, 0, hgc->col_comm);
-    
-    return err;
+    return seq_part(zz, hg, NULL, p, part, hgp);  /* Call sequence partitioning 
+                                                     with no order array. */
 }
 
 
@@ -272,32 +318,24 @@ static int coarse_part_ran (
   PHGPartParams *hgp
 )
 {
-    PHGComm *hgc = hg->comm;    
     int i, err=0, *order=NULL;
     char *yo = "coarse_part_ran";
 
-    if (!hgc->myProc_y) { /* only first row */
-        if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
-            ZOLTAN_FREE ((void**) &order);
-            ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-            return ZOLTAN_MEMERR;
-        }
-        for (i=0; i<hg->nVtx; i++)
-            order[i] = i;
-
-        /* Randomly permute order array */
-        Zoltan_HG_Rand_Perm_Int (order, hg->nVtx);
-        
-        /* Call sequence partitioning with random order array. */
-        err = seq_part (zz, hg, order, p, part, hgp);
-    }
-
-    MPI_Bcast(&err, 1, MPI_INT, 0, hgc->col_comm);
-    if (!err)
-        MPI_Bcast(part, hg->nVtx, MPI_INT, 0, hgc->col_comm);
-
-    if (!hgc->myProc_y)  /* only first row */
+    if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
         ZOLTAN_FREE ((void**) &order);
+        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+    for (i=0; i<hg->nVtx; i++)
+        order[i] = i;
+
+    /* Randomly permute order array */
+    Zoltan_HG_Rand_Perm_Int (order, hg->nVtx);
+        
+    /* Call sequence partitioning with random order array. */
+    err = seq_part (zz, hg, order, p, part, hgp);
+
+    ZOLTAN_FREE ((void**) &order);
     return err;
 }
 
@@ -309,13 +347,13 @@ static int coarse_part_ran (
  * If p>1, restart the bfs after each new partition. */
 static int bfs_order (
   ZZ *zz,
-  HGraph *hg,		    /* Hypergraph. */
-  int *order,		    /* Order array. On exit, order[i] is the i'th vertex. */
-  int start_vtx,	    /* Start the BFS from this vertex. */
-  int visit_mode,	    /* Visit random (0) or heavy (1) hyperedges first? */
-  int p,		        /* Optional (input):  Number of partitions. */
-  Partition part,	    /* Optional (output): Partition array. */
-  PHGPartParams *hgp    /* Partitioning parameters. */
+  HGraph *hg,	     /* Hypergraph. */
+  int *order,	     /* Order array. On exit, order[i] is the i'th vertex. */
+  int start_vtx,     /* Start the BFS from this vertex. */
+  int visit_mode,    /* Visit random (0) or heavy (1) hyperedges first? */
+  int p,	     /* Optional (input):  Number of partitions. */
+  Partition part,    /* Optional (output): Partition array. */
+  PHGPartParams *hgp /* Partitioning parameters. */
 )
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, next_vtx, *rank = NULL;
@@ -1039,7 +1077,6 @@ error:
 static int coarse_part_gr0 (ZZ *zz, HGraph *hg, int p, Partition part,
   PHGPartParams *hgp)
 {
-uprintf(hg->comm, "%d KDDKDD GR0!  v=%d e=%d p=%d\n", zz->Proc, hg->nVtx, hg->nEdge, hg->nPins);
   return coarse_part_greedy(zz, hg, p, part, 0, hgp);
 }
 

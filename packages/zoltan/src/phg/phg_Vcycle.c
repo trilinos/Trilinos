@@ -40,7 +40,7 @@ int Zoltan_PHG_Set_Part_Options (ZZ *zz, PHGPartParams *hgp)
   /* Set (serial) coarse partitioning method */
   /* May need parallel partitioning method later if reduction to 1 proc fails */
   if (!(hgp->CoarsePartition 
-   = Zoltan_PHG_Set_CoarsePartition_Fn(hgp->coarsepartition_str))) {
+   = Zoltan_PHG_Set_CoarsePartition_Fn(hgp))) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_COARSE_PARTITIONING.");
       return ZOLTAN_FATAL;
   }

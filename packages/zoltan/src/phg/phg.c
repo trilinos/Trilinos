@@ -242,6 +242,7 @@ static int Zoltan_PHG_Initialize_Params(
   strncpy(hgp->coarsepartition_str, "gr0", MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2", MAX_PARAM_STRING_LEN);
   
+  hgp->LocalCoarsePartition = 0;
   hgp->locmatching = NULL;
   hgp->ews = 1;
   hgp->check_graph = 1;

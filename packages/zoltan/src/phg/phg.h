@@ -104,11 +104,13 @@ struct PHGPartParamsStruct {
   float bal_tol;                 /* Balance tolerance in % of average */
   int kway;                      /* 1 -> direct kway, 0->recursive bisection */
   int redl;                      /* Reduction limit (constant). */
-  char redm_str[MAX_PARAM_STRING_LEN];   /* Reduction method string. */
-  ZOLTAN_PHG_MATCHING_FN *matching;      /* Pointers to Matching function */
-  ZOLTAN_HG_MATCHING_FN  *locmatching;   /* Pointer to local Matching function */    
-    
-  int ews;                               /* type of hyperedge weight scaling */
+  char redm_str[MAX_PARAM_STRING_LEN]; /* Reduction method string. */
+  ZOLTAN_PHG_MATCHING_FN *matching;    /* Pointers to Matching function */
+  ZOLTAN_HG_MATCHING_FN  *locmatching; /* Pointer to local Matching function */
+  int ews;                             /* type of hyperedge weight scaling */
+  int LocalCoarsePartition;            /* 1 -> apply coarse partitioner locally;
+                                          0 -> gather entire HG to each proc
+                                          and apply coarse partitioner. */
   char coarsepartition_str[MAX_PARAM_STRING_LEN]; 
                                          /* Coarse partitioning string */
   ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition;
@@ -163,7 +165,7 @@ int Zoltan_PHG_Coarsening(ZZ*, HGraph*, Matching, HGraph*, int*, int*, int**);
 extern int Zoltan_PHG_Gather_To_All_Procs(ZZ*, HGraph*, PHGComm*, HGraph**);
 extern int Zoltan_PHG_CoarsePartition(ZZ*, HGraph*, int, Partition, 
                                       PHGPartParams*);
-ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(char*);
+ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(PHGPartParams*);
 
 /************************/
 /* Refinement functions */ 
