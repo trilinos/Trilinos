@@ -125,7 +125,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       sum = 0;
       for (k=0; k<ewgt_dim; k++){
         if (adjwgt[j*ewgt_dim+k] < 0) {
-          sprintf(msg, "Negative communication weight of %d in edge %d.", 
+          sprintf(msg, "Negative edge weight of %d in edge %d.", 
                   adjwgt[j*ewgt_dim+k], j);
           ZOLTAN_PRINT_ERROR(proc, yo, msg);
           ierr = ZOLTAN_FATAL;

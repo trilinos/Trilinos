@@ -90,12 +90,41 @@ typedef int idxtype;
 #define MAX_WGT_SUM (INT_MAX/8)
 #endif
 
+
+/* Data structures used in ParMetis interface routines */
+/* An array of this data structure works with a parallel array of
+ * ZOLTAN_ID_PTR called proc_list_nbor containing the global IDs of the
+ * neighboring object.
+ * This separate array is needed to prevent individual mallocs of
+ * neighboring global IDs.
+ */
+struct Edge_Info {
+  ZOLTAN_ID_PTR my_gid;  /* Pointer to the Global id of local vtx */
+  int my_gno;        /* Global number of local vtx */
+  int nbor_proc;     /* Proc id for the neighboring proc */
+  int *adj;          /* Pointer to adjcny array */
+};
+
+struct Hash_Node {
+  ZOLTAN_ID_PTR gid;     /* Pointer to a Global id */
+  int gno;           /* Global number */
+  struct Hash_Node * next;
+};
+
+
+/* Extern function prototypes. Should be in a separate header file? */
 extern int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
-              idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, 
-              int vwgt_dim, int ewgt_dim, int check_graph, int debug_level);
-extern int Zoltan_Scatter_Graph(idxtype **vtxdist, idxtype **xadj, idxtype **adjncy,
-              idxtype **vwgt, idxtype **vsize, idxtype **adjwgt, float **xyz, int ndims,
-              ZZ *zz, ZOLTAN_COMM_OBJ **plan);
+       idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, 
+       int vwgt_dim, int ewgt_dim, int check_graph, int debug_level);
+extern int Zoltan_Scatter_Graph(idxtype **vtxdist, idxtype **xadj, 
+       idxtype **adjncy, idxtype **vwgt, idxtype **vsize, idxtype **adjwgt, 
+       float **xyz, int ndims, ZZ *zz, ZOLTAN_COMM_OBJ **plan);
+extern int Zoltan_Build_Graph( ZZ *zz, int get_graph, int check_graph,
+       ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
+       int obj_wgt_dim, int edge_wgt_dim,
+       idxtype **vtxdist, idxtype **xadj, idxtype **adjncy, 
+       float **ewgts);
+
 
 
 #endif
