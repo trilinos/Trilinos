@@ -57,6 +57,13 @@ typedef int LB_ID;
 
 struct LB_Struct;
 
+/*
+ *  Maximum number of parameters to be passed to any load-balancing
+ *  method.
+ */
+
+#define LB_PARAMS_MAX_SIZE 5
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -424,4 +431,21 @@ extern void LB_Set_Help_Migrate(struct LB_Struct *, int);
  */
 
 extern int LB_Balance(struct LB_Struct *, int *, LB_TAG **, int *, LB_TAG **);
+
+/*****************************************************************************/
+/*
+ *  Function to initialize an array to pass parameters to the load-balancing
+ *  methods.  This function is provided so that the load-balancer 
+ *  look for array entries not set by the application and use default values
+ *  for those entries.
+ *
+ *  Input/Output:
+ *    double *           --  Pointer to the array to be used to pass
+ *                           parameters to the load-balancing methods.
+ *                           Upon return, the values in this array are
+ *                           initialized to an initial value determined
+ *                           by the load-balancer.
+ */
+
+extern void LB_Initialize_Params_Array(double *);
 

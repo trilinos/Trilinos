@@ -246,7 +246,10 @@ int i;
    */
 
   if (params != NULL) {
-    lb->Params = params;
+    lb->Params = (double *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                           LB_PARAMS_MAX_SIZE, sizeof(double));
+    for (i = 0; i < LB_PARAMS_MAX_SIZE; i++) 
+      lb->Params[i] = params[i];
   }
 }
 

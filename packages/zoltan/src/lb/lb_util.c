@@ -220,3 +220,28 @@ void clean_up(LB *lb)
 
 
 }
+
+/****************************************************************************/
+
+void LB_Initialize_Params_Array(double *params)
+{
+/*
+ *  Function to initialize an array to pass parameters to the load-balancing
+ *  methods.  This function is provided so that the load-balancer
+ *  look for array entries not set by the application and use default values
+ *  for those entries.
+ *
+ *  Input/Output:
+ *    double *           --  Pointer to the array to be used to pass
+ *                           parameters to the load-balancing methods.
+ *                           Upon return, the values in this array are
+ *                           initialized to an initial value determined
+ *                           by the load-balancer.
+ */
+
+int i;
+
+  for (i = 0; i < LB_PARAMS_MAX_SIZE; i++)
+    params[i] = LB_PARAMS_INIT_VALUE;
+}
+

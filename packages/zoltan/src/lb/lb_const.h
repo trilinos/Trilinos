@@ -31,6 +31,13 @@ static char *cvs_lbconsth_id = "$Id$";
  *  Type definitions.
  */
 
+/*
+ *  Value used to initialize the parameters when the
+ *  load-balancer allocates the parameters array.
+ */
+
+#define LB_PARAMS_INIT_VALUE -1.
+
 #ifndef TRUE
 #define FALSE (0)
 #define TRUE  (1)
