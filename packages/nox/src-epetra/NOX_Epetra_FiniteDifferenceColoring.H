@@ -135,6 +135,15 @@ protected:
   //! Color vector based on unColorred Map containing perturbations
   Epetra_Vector mappedColorVect;
 
+  //! Perturbed solution vector based on column map
+  Epetra_Vector* xCol_perturb;
+
+  //! Overlap Map (Column Map of Matrix Graph) needed for parallel
+  const Epetra_BlockMap* columnMap;
+
+  //! An Import object needed in parallel to map from row-space to column-space 
+  Epetra_Import* rowColImporter;
+
 };
 }  // namespace Epetra
 }  // namespace NOX
