@@ -151,7 +151,7 @@ typedef int LB_NUM_EDGES_FORT_FN(void *data, LB_GID *global_id,
 
 typedef void LB_EDGE_LIST_FN(void *data, LB_GID global_id, LB_LID local_id,
                              LB_GID *nbor_global_id, int *nbor_procs,
-                             int wdim, int *nbor_ewgts, int *ierr);
+                             int wdim, float *nbor_ewgts, int *ierr);
 
 typedef void LB_EDGE_LIST_FORT_FN(void *data, LB_GID *global_id,
                                   LB_LID *local_id, LB_GID *nbor_global_id,
@@ -1325,9 +1325,8 @@ extern int LB_Box_Assign(struct LB_Struct *lb, double xmin, double ymin,
  */
 
 extern void LB_Eval (struct LB_Struct *lb, int print_stats, 
-     int *nobj, float *obj_wgt, 
-     int *cut_wgt, int *nboundary,
-     int *nadj, int *ierr);
+     int *nobj, float *obj_wgt, int *ncuts, float *cut_wgt, 
+     int *nboundary, int *nadj, int *ierr);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
