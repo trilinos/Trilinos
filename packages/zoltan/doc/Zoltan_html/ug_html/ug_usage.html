@@ -29,7 +29,7 @@
 This section contains information needed to use the Zoltan library with
 applications:
 <blockquote><a href="#System Requirements">System requirements.</a>
-<br><a href="#Data Types for Object IDs">Data type</a>s for global and
+<br><a href="#Data Types for Object IDs">Data types</a> for global and
 local IDs.
 <br>Instructions for <a href="#Building the Library">building the Zoltan
 library.</a>
@@ -45,19 +45,22 @@ In order to build and use Zoltan, you will need:
 ANSI C compiler.</li>
 
 <li>
-Unix-like operating system, such as Linux or Solaris.</li>
-
-<li>
 <a href="http://www-unix.mcs.anl.gov/mpi/">MPI</a> library for message
 passing (version 1.1 or higher), such as MPICH or LAM.</li>
 
 <li>
-<i>gmake</i> (GNU Make) is recommended to build the library.</li>
+A Unix-like operating system (e.g., Linux or Solaris) and
+<i>gmake</i> (GNU Make) are recommended to build the library.</li>
 
 <li>
-A Fortran90 compatible compiler is required if you wish to call Zoltan
-from Fortran applications.</li>
+A Fortran90 compatible compiler is required if you wish to use Zoltan
+with Fortran applications.</li>
 </ul>
+
+Zoltan has been tested on a variety of platforms, including Linux, Solaris, Irix,
+and the <a href="http://www.sandia.gov/ASCI/Red/">ASCI Red</a> Teraflop machine.
+If you wish to use Zoltan on a non-Unix operating system, for example Windows NT or 2000,
+you will have to port Zoltan yourself.
 
 <h3>
 <a NAME="Data Types for Object IDs"></a>Data Types for Object IDs</h3>

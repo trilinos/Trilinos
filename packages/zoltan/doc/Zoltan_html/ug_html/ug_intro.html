@@ -90,6 +90,7 @@ object-oriented library interface separates the data structures of the
 load-balancing routines from those of the application. The library's routines
 gather information (such as lists of objects to be balanced, their weights,
 and their coordinates) from the application through a series of query functions.
+(Note that "objects" in Zoltan are the entities that should be load-balanced or migrated). 
 These simple query functions must be provided by the application and "registered"
 with the library. In this manner, the library never directly accesses the
 application's data structures. Use of the library in a different application
@@ -156,8 +157,8 @@ the objects must be provided to Zoltan.  In this example, the application may
 consider elements connected if they share a face.  The connections between
 elements, or <i>edges</i> of the connectivity graph, are shown in red.
 Connectivity information is passed to Zoltan by specifying a neighbor list for
-an object.  The neighbor list consists of the global ID of neighboring objects
-and the processor currently owning those objects.
+an object.  The neighbor list consists of the global IDs of neighboring objects
+and the processor(s) currently owning those objects.
 <p>
 The table below summarizes the information provided to Zoltan by an
 application for this finite element mesh.  Information about the objects
@@ -477,7 +478,7 @@ Zoltan is built upon several lower level libraries.  First among these
 is MPI.  Although our development efforts have primarily used MPICH,
 we have tested the code with other MPI implementations on a variety
 of platforms.  We have every expectation that Zoltan will work fine
-with any MPI library.
+with any MPI library (version 1.1 or later).
 <p>
 Zoltan also uses two other low level 
 <a href="../dev_html/dev_util.html">utility libraries</a>.
