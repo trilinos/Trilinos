@@ -528,12 +528,19 @@ void BlockArnoldi<TYPE>::iterate(const int steps) {
 			if (exit_flg) { break; } // We need to leave before we move the pointer
 			_jstart = _length; // Move the pointer
 			//
-			//  Compute the Schur factorization and prepare for a restart.
+			//  Compute the Schur factorization and prepare for a restart.  Don't
+			//  compute restart if at end of iterations.
 			//
-			ComputeResiduals( true );  
-			Restart();  
-			_isdecompcurrent = true;
-			_restartiter++;
+			if (_restartiter < _restarts) {
+				ComputeResiduals( true );  
+				Restart();  
+				_isdecompcurrent = true;
+				_restartiter++;
+			} else {
+				ComputeResiduals( false );
+				_restartiter++;
+				_isdecompcurrent = false;
+			}
 		}
 	}
 	//
@@ -994,7 +1001,7 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
 			Qj = VecIn.CloneView(index, j);
 			AnasaziDenseMatrix<TYPE> rj(j,1);
 			TYPE * result = rj.getarray();
-			qj->MvNorm(norm1);
+			_problem.BMvNorm( *qj, norm1 );
 			//
 			// Do one step of classical Gram-Schmidt orthogonalization
 			// with a second correction step if needed
@@ -1015,7 +1022,7 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
 			//
 			qj->MvTimesMatAddMv(-one, *Qj, rj, one);
 			//
-			qj->MvNorm(norm2);			
+			_problem.BMvNorm( *qj, norm2 );			
 			//
 			if (norm2[0] < norm1[0] * _dep_tol){
         			//
@@ -1026,14 +1033,14 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
     				// Sum results[0:j-1] into column j of R.
     				//
     				for ( k=0; k<j; k++ ) {
-            			R[j*ldR+k] += result[k];
+            				R[j*ldR+k] += result[k];
         			}
 				//
 				// Compute qj <- qj - Qj * rj.
 				//
 				qj->MvTimesMatAddMv(-one, *Qj, rj, one);
 				//
-				qj->MvNorm(norm2);
+				_problem.BMvNorm( *qj, norm2 );
 			}
 			//
 			// Check for dependencies
@@ -1073,13 +1080,13 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
                                  	AnasaziDenseMatrix<TYPE> tj(j,1);
                                  	//
                                  	tptr->MvRandom();
-                                 	tptr->MvNorm(norm1);
+                                 	_problem.BMvNorm( *tptr, norm1 );
                                      	//
                                  	for (int num_orth=0; num_orth<2; num_orth++){
 						ret = _problem.BInProd( one, *Qj, *tptr, tj );
                                          	tptr->MvTimesMatAddMv(-one, *Qj, tj, one);
                                      	}
-                                 	tptr->MvNorm(norm2);
+                                 	_problem.BMvNorm( *tptr, norm2 );
                                  	//
                                  	if (norm2[0] > norm1[0] * _sing_tol){
                                          	// Copy vector into current column of _basisvecs
@@ -1099,7 +1106,7 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
                 // VecIn (qj), then normalize qj to make it into a unit vector
                 //
                 TYPE normq[IntOne];
-                qj->MvNorm(normq);
+                _problem.BMvNorm( *qj, normq );
                 //
                 TYPE rjj = one / normq[0];
                 qj->MvAddMv ( rjj, *qj, zero, *qj );
@@ -1609,6 +1616,8 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
         TYPE* ptr=VTV.getarray();
         TYPE column_sum;
         
+	//cout<<"VTV : "<<endl;
+	//VTV.print();
         for (k=0; k<m; k++) {
                 column_sum=zero;
                 for (i=0; i<m; i++) {
@@ -1628,6 +1637,8 @@ void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
 	if (ret != Ok) { }
         TYPE* ptr_Ej=E.getarray();
                         
+	//cout<<"VTF : "<<endl;
+	//E.print();
         for (k=0;k<_block;k++) {
                 column_sum=zero;
                 for (i=0; i<m; i++) {

@@ -120,7 +120,7 @@ class AnasaziEigenproblem {
 						AnasaziMultiVec<TYPE>& Y);
 
 	//@}
-	//@{ \name Inner Product Method.
+	//@{ \name Inner Product Methods.
 
 	/*! \brief Computes A inner product using definition of ApplyMatrixA.  
 
@@ -138,6 +138,13 @@ class AnasaziEigenproblem {
 						const AnasaziMultiVec<TYPE>& Y,
 						AnasaziDenseMatrix<TYPE>& Z );
 	//@}
+
+	//@{ \name Norm Methods.
+	/*! \brief Computes the B norm of AnasaziMultiVecs.
+	*/
+	Anasazi_ReturnType BMvNorm( AnasaziMultiVec<TYPE>& X, TYPE* normvec );
+
+	//@}	
 
     protected:
 
@@ -337,6 +344,33 @@ Anasazi_ReturnType AnasaziEigenproblem<TYPE>::BInProd( TYPE alpha, const Anasazi
 		tempY.MvTransMv ( alpha, tempX, Z );
 		return Ok;				
 	}
+}
+
+//=============================================================================
+//	Implementations (Norm Methods)
+//=============================================================================
+
+template<class TYPE>
+Anasazi_ReturnType AnasaziEigenproblem<TYPE>::BMvNorm( AnasaziMultiVec<TYPE>& X, TYPE* normvec )
+{
+	int IntOne = 1;
+	int numvecs = X.GetNumberVecs();
+	AnasaziDenseMatrix<TYPE> DenseOne(IntOne,IntOne);
+	AnasaziMultiVec<TYPE>* Xj = 0;
+	int *index = new int[IntOne];	
+	TYPE* DOptr = DenseOne.getarray();
+	
+	for (int i=0; i<numvecs; i++) {
+		index[0] = i;
+		Xj = X.CloneView( index, IntOne );
+		BInProd( 1.0, *Xj, *Xj, DenseOne );
+		normvec[i] = sqrt(DOptr[0]);
+	}
+
+	delete Xj;
+	delete [] index;
+
+	return Ok;
 }
 
 #endif
