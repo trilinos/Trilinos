@@ -1,13 +1,16 @@
 0)  ML can be built with automake and autoconfig.   For ML-specific flags, at
-the ml directory level, type "./configure --help".  The following things are
-enabled by default:
+the ml directory level, type "./configure --help".
 
-        vendor blas & lapack
+The following items are enabled by default:
+
+        vendor blas & lapack (i.e., not ml's internal versions)
         epetra & aztec support
-        superlu support
         the latest Maxwell prolongator improvements
 
-Note that MPI is *not* enabled by default.
+The following items are NOT enabled by default:
+
+        MPI
+        SuperLU
 
 1) If you prefer to build with the old makefile system, look at the INSTALL
 file for general hints on compiling ML.
