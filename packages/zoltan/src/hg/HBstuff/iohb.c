@@ -219,7 +219,6 @@ Fri Aug 15 16:29:47 EDT 1997
 #include<stdlib.h>
 #include<string.h>
 #include<math.h>
-#include<malloc.h>
 
 char* substr(const char* S, const int pos, const int len);
 void upcase(char* S);

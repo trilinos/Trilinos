@@ -14,38 +14,44 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "iohb.h"
+#include "mmio.h"
 
-/* Karen Devine  May 21, 2003 */
+/* Karen Devine  Feb 28, 2005 */
 /* Program to compute total communication volume for 
- * matrix-vector multiplication given an HB-formatted matrix and 
+ * matrix-vector multiplication given a MatrixMarket-formatted matrix and 
  * partition information for the rows of that matrix.
- * Matrix is in straight HB-format.  Partition information is in
+ * Matrix is in straight MM-format.  Partition information is in
  * a file that is developed from the partition output files of
  * Zoltan's zdrive file.  Details for generating the partition
  * information file are listed below (near the file read). */
 
-/* to compile:  gcc metric.c iohb.c */
+/* This program is based as much as possible on metric.c, tool for 
+ * evaluating communication volume of Harwell-Boeing formatted matrices.
+ * Thus, this implementation for MM-formatted matrices may not be 
+ * optimal (but the implementation time was small.)
+ */
 
-/* usage:  a.out matrix.hb zdrive_partition_file 
-      or   a.out matrix.hb hmetis_partition_file 1 */
+/* to compile:  gcc metric_mm.c mmio.c */
 
-/* Jan 22, 2004:  Added plotting capability with sorting by partition # */
+/* usage:  a.out matrix.mtx zdrive_partition_file 
+      or   a.out matrix.mtx hmetis_partition_file 1 */
 
-int Plot = 1;
+/* No plotting capability in this version. */
+
 static void Zoltan_quicksort_pointer_inc_int_int(int *, int *, int *, int, int);
 
 
 int main (int argc, char *argv[]) {
-  int nRow, nCol, nz, njunk;
+  MM_typecode mmtype;
+  int nz, njunk;
   int *counts = NULL, max_count, min_count; 
   float avg_count;
-  int *rowindex = NULL, *colstart = NULL;
-  double *val = NULL;
-  int i, j, k;
+  int i, j, kk;
+  int *I = NULL, *J = NULL, *idx = NULL;
+  int M, N, prevcol;
+  double junkval;
   char ch;
   FILE *fp;
-  char filename[80];
   int nobj;
   int *ids = NULL;
   int junk1, junk2;
@@ -60,7 +66,6 @@ int main (int argc, char *argv[]) {
   int minnbor, maxnbor, totalnbor;  /* min, max, and total partition nbors*/
   int numnbor;
   int column;
-  int *idx = NULL, *invidx = NULL;
   int hmetis_partition_file = 0;   /* Assume zdrive-formatted partition file. */
 
   /* Read in partition information */
@@ -138,10 +143,32 @@ int main (int argc, char *argv[]) {
   
   /* Read matrix information */
 
-  printf("Reading HB matrix %s\n", argv[1]);
-  readHB_newmat_double(argv[1], &nRow, &nCol, &nz, &colstart, &rowindex, &val);
-  if (val) free (val);
+  printf("Reading MM matrix %s\n", argv[1]);
 
+  fp = fopen(argv[1], "r");
+  mm_read_banner(fp, &mmtype);
+  mm_read_mtx_crd_size(fp, &M, &N, &nz);
+
+  /* Need to identify whether MM file contains values or only structure */
+
+  I = (int *) malloc(3 * nz * sizeof(int));
+  J = I + nz;
+  idx = J + nz;
+
+  for (kk = 0; kk < nz; kk++) {
+    if (mm_is_pattern(mmtype))
+      fscanf(fp, "%d %d", &I[kk], &J[kk]);
+    else 
+      fscanf(fp, "%d %d %lf", &I[kk], &J[kk], &junkval);
+    /* MM is one-based, but I and J as indices into zero-based part array. */
+    I[kk]--;
+    J[kk]--;
+    idx[kk] = kk;
+  }
+  fclose(fp);
+
+  /* Sort based on column so can re-use HB code as much as possible */
+  Zoltan_quicksort_pointer_inc_int_int(idx, J, I, 0, nz-1);
 
   printf("Computing communication volume\n");
 
@@ -151,35 +178,52 @@ int main (int argc, char *argv[]) {
 
   usedpart = (int *) malloc(sizeof(int) * numpart);
   mincut = maxcut = totalcut = 0;
-  for (column = 0; column < nCol; column++) {
-    colpart = parts[column];
-    for (i = 0; i < numpart; i++) usedpart[i] = 0;
+  prevcol = -1;
+  for (kk = 0; kk < nz; kk++) {
+    column = J[idx[kk]];
+    if (column != prevcol) {
+      if (prevcol != -1) {
+        /* Process data from previous column */
+        numcut = 0;
+        for (i = 0; i < numpart; i++) 
+          if (usedpart[i] != 0) numcut++;
+        totalcut += numcut;
+        /* KDD  Printing column information for hand-checking small problems.
+        printf("*****Column %d  numcut %d  totalcut %d\n", 
+               prevcol, numcut, totalcut);
+        */
+      }
 
-    for (i = colstart[column]; i < colstart[column+1]; i++) {/* i is vertex */
-      nborpart = parts[rowindex[i]];  
-      /* KDD  Printing column information for hand-checking small problems.
-      printf("col %d on %d nbor %d on %d\n", 
-              column, colpart, rowindex[i], nborpart);
-      */
-      if (nborpart != colpart) {
-        if (usedpart[nborpart] == 0) {
-          usedpart[nborpart]++;
-          partinfo[colpart][nborpart]++;
-        }
+      colpart = parts[column];
+      for (i = 0; i < numpart; i++) usedpart[i] = 0;
+      prevcol = column;
+    }
+
+    nborpart = parts[I[idx[kk]]];  
+    /* KDD  Printing column information for hand-checking small problems.
+    printf("col %d on %d nbor %d on %d\n", 
+            column, colpart, I[idx[kk]], nborpart);
+    */
+
+    if (nborpart != colpart) {
+      if (usedpart[nborpart] == 0) {
+        usedpart[nborpart]++;
+        partinfo[colpart][nborpart]++;
       }
     }
-    
-    numcut = 0;
-    for (i = 0; i < numpart; i++) 
-      if (usedpart[i] != 0) numcut++;
-    
-    totalcut += numcut;
-    /* KDD  Printing column information for hand-checking small problems. 
-    printf("*****Column %d  numcut %d  totalcut %d\n", 
-           column, numcut, totalcut); 
-    */
   }
 
+  /* Process data from final column */
+  numcut = 0;
+  for (i = 0; i < numpart; i++) 
+    if (usedpart[i] != 0) numcut++;
+  totalcut += numcut;
+  /* KDD  Printing column information for hand-checking small problems.
+  printf("*****Column %d  numcut %d  totalcut %d\n", 
+         prevcol, numcut, totalcut);
+  */
+
+  /* Compute number of neighboring processors */
   maxnbor = 0;
   minnbor = numpart+1;
   totalnbor = 0;
@@ -207,62 +251,12 @@ int main (int argc, char *argv[]) {
          "         Min %d  Max %d  Sum %d  Avg %.3f\n",
          mincut, maxcut, totalcut, (double) totalcut / (double) numpart);
 
-  /* Generate gnuplot files */
-  /* Generates one file per partition */
-  if (Plot) {
-
-    printf("\nPlotting now...\n");
-
-    idx = (int *) malloc(2 * nRow * sizeof(int));
-    invidx = idx + nRow;
-    for (i = 0; i < nRow; i++) idx[i] = i;
-
-    Zoltan_quicksort_pointer_inc_int_int(idx, parts, ids, 0, nRow-1);
-    for (i = 0; i < nRow; i++) invidx[idx[i]] = i;
-
-    for (i = 0; i < numpart; i++) {
-      sprintf(filename, "mplot.%02d", i);
-      fp = fopen(filename, "w");
-
-      for (j = 0; j < nCol; j++) {
-        for (k = colstart[j]; k < colstart[j+1]; k++) {
-          if (parts[rowindex[k]] == i) {
-/*
-            fprintf(fp, "%d  %d  %d\n", j, -invidx[rowindex[k]], -rowindex[k]);
-*/
-            fprintf(fp, "%d  %d\n", invidx[j], -invidx[rowindex[k]]);
-          }
-        }
-      }
-      fclose(fp);
-    }
-    free(idx);
-
-    sprintf(filename, "mplot.gnuload");
-    fp = fopen(filename, "w");
-    fprintf(fp, "set data style dots\n");
-    fprintf(fp, "set nokey\n");
-    fprintf(fp, "set noxtics\n");
-    fprintf(fp, "set noytics\n");
-    fprintf(fp, "plot ");
-    for (i = 0; i < numpart; i++) {
-      fprintf(fp, "\"mplot.%02d\"", i);
-      if (i != numpart-1)
-        fprintf(fp, ", ");
-      else
-        fprintf(fp, "\n");
-    }
-    fclose(fp);
-
-  }
-
   free(parts);
   free(usedpart);
   for (i = 0; i < numpart; i++) free(partinfo[i]);
   free(partinfo);
 
-  free(colstart);
-  free(rowindex);
+  free(I);
   return 0;
 }
 
