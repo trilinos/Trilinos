@@ -539,24 +539,26 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
       /* set up smoothers */
 
       for (level = N_levels-1; level > coarsest_level; level--) {
-         ML_Gen_Smoother_OverlappedDomainDecomp(ml,level,ML_PRESMOOTHER);
-         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1.);
-/*
-         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
-         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1.);
-*/
 /*
          ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, .67);
-         ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth, .67 );
+         ML_Gen_Smoother_GaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
+         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
+         ML_Gen_Smoother_DDILUT(ml,level,ML_PRESMOOTHER);
+         ML_Gen_Smoother_VBlockAdditiveSchwarz(ml,level,ML_PRESMOOTHER,nsmooth,
+                                               0,NULL);
 */
+         ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ml,level,ML_PRESMOOTHER,
+                                                     nsmooth,0,NULL);
 /*
          options[AZ_precond]=AZ_dom_decomp; options[AZ_subdomain_solve]=AZ_ilut;
-         ML_Gen_SmootherAztec(ml, level, options, params, proc_config, status, 
-			      AZ_ONLY_PRECONDITIONER, ML_PRESMOOTHER,NULL);
+         ML_Gen_SmootherAztec(ml, level, options, params, proc_config, status,
+                              AZ_ONLY_PRECONDITIONER, ML_PRESMOOTHER,NULL);
 */
 /*
-         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1.);
+         ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth, .67 );
+         ML_Gen_Smoother_GaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth, 1.);
 */
+         ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1.);
       }
 
       if (coarse_iterations == 0) 
