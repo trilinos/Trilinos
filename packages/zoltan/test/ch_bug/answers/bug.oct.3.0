@@ -1,7 +1,7 @@
-Decomposition Method	= rcb
+Decomposition Method	= octpart
 Zoltan Parameters	= obj_weight_dim=1
 Zoltan Parameters	= comm_weight_dim=1
-File Type		= Chaco, initial procs = 1
+File Type		= Chaco
 File Name		= bug
 Parallel Disk Info	= number=0
 Global element ids assigned to processor 0
@@ -26,4 +26,6 @@ Global element ids assigned to processor 0
 19
 20
 21
+22
+23
 60
