@@ -16,14 +16,14 @@
 
 #undef NDEBUG             // make sure asserts are enabled
 
-#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(SOLARIS) || defined(TFLOP)
+#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(SOLARIS) || defined(TFLOP) || defined (CPLANT)
+
 #include <stdlib.h>
 #include <assert.h>
-#include <iostream.h>
-#include <strstream.h>
-#include <string.h>
+#include <iostream>
+#include <string>
 #include <math.h>
-#include <iomanip.h>
+using namespace std;
 
 #else
 
