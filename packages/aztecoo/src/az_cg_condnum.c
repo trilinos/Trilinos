@@ -129,14 +129,14 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
   double *block;
 
   /* condition number estimate from Lanczos matrix */
- double beta_old, p_ap_dot_old;
- int N_lanczos_max = options[AZ_max_iter];
- double * diag_T;
- double * offdiag_T;
- int N_lanczos=0;
- double r_z_dot_old2;
- double smallest, largest;
- double ConditionNumber;
+  double beta_old, p_ap_dot_old;
+  int N_lanczos_max = options[AZ_max_iter];
+  double * diag_T = NULL;
+  double * offdiag_T = NULL;
+  int N_lanczos=0;
+  double r_z_dot_old2;
+  double smallest, largest;
+  double ConditionNumber;
 
   /**************************** execution begins ******************************/
 
@@ -294,8 +294,8 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
 	compute_condnum_tridiag_sym( N_lanczos-2, diag_T, offdiag_T, prefix,
 				     options, proc_config, &ConditionNumber);
 	status[AZ_condnum] = ConditionNumber;
-        free((void*)diag_T);
-        free((void*)offdiag_T);
+        free((void*)diag_T);     diag_T = NULL;
+        free((void*)offdiag_T);  offdiag_T = NULL;
         return;
       }
       else brkdown_tol = 0.1 * fabs(p_ap_dot);
@@ -351,8 +351,8 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
       compute_condnum_tridiag_sym( N_lanczos-2, diag_T, offdiag_T, prefix,
 				   options, proc_config, &ConditionNumber);
       status[AZ_condnum] = ConditionNumber;
-      free((void*)diag_T);
-      free((void*)offdiag_T);
+      free((void*)diag_T);    diag_T = NULL;
+      free((void*)offdiag_T); offdiag_T = NULL;
 
       return;
     }
@@ -414,8 +414,8 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
 	  compute_condnum_tridiag_sym( N_lanczos-2, diag_T, offdiag_T, prefix,
 				       options, proc_config, &ConditionNumber);
 	  status[AZ_condnum] = ConditionNumber;
-	  free((void*)diag_T);
-	  free((void*)offdiag_T);
+	  free((void*)diag_T);     diag_T = NULL;
+	  free((void*)offdiag_T);  offdiag_T = NULL;
 	
 	  return;
 	}
@@ -475,6 +475,12 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
 			       options, proc_config, &ConditionNumber);
   status[AZ_condnum] = ConditionNumber;
 	  
+  if( diag_T != NULL ) {
+    free((void *)diag_T); diag_T = NULL;
+  }
+  if( offdiag_T != NULL ) {
+    free((void *)offdiag_T); offdiag_T = NULL;
+  }
 } /* AZ_pcg_condnum */
 
 /******************************************************************************/
