@@ -232,7 +232,6 @@ float bal, worst_cut;
       bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, new_part); 
       bestvals[new_cand] = Zoltan_PHG_hcut_size_links(shg->comm, 
              shg, new_part, numPart);
-      uprintf(phg->comm, " **** UMIT bal = %.3lf Cut =%.2lf \n", bal, bestvals[new_cand]);
       if (i<NUM_PART_KEEP)
         new_cand = i+1;
       else {

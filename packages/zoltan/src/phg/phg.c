@@ -146,7 +146,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       goto End;
     }
-    for (i = 0; i < hg->nVtx; i++)
+    for (i = 0; i < hg->nVtx; ++i)
       hg->vmap[i] = i;
 
 #if 0

@@ -31,7 +31,7 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   
   /* only one part remaining, record results and exit */
   if (lo == hi) {
-    for (i = 0; i < hg->nVtx; i++)      
+    for (i = 0; i < hg->nVtx; ++i)
       final [hg->vmap[i]] = lo;
     return ZOLTAN_OK;
   }
@@ -60,7 +60,7 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
     
   /* if only two parts total, record results and exit */
   if (lo + 1 == hi)  {
-    for (i = 0; i < hg->nVtx; i++)
+    for (i = 0; i < hg->nVtx; ++i)
       final [hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
     ZOLTAN_FREE (&part);
     return ZOLTAN_OK;
@@ -94,33 +94,44 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   Zoltan_HG_HGraph_Init (new);
     
   /* recursively divide in two parts and repartition hypergraph */
-  err = split_hypergraph (pins, hg, new, part, 0, zz);
-  if (err != ZOLTAN_OK) {
-    Zoltan_Multifree (__FILE__, __LINE__, 3, &pins[0], &part, &new);
-    return err;
-  }
-  err = Zoltan_PHG_rdivide (lo, mid, final, zz, new, hgp, level+1);
-  Zoltan_HG_HGraph_Free (new);
-  if (err != ZOLTAN_OK) {
-    Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
-    return err;
+  if (mid>lo) { /* only split if we really need it */
+      err = split_hypergraph (pins, hg, new, part, 0, zz);
+      if (err != ZOLTAN_OK) {
+          Zoltan_Multifree (__FILE__, __LINE__, 3, &pins[0], &part, &new);
+          return err;
+      }
+      err = Zoltan_PHG_rdivide (lo, mid, final, zz, new, hgp, level+1);
+      Zoltan_HG_HGraph_Free (new);
+      if (err != ZOLTAN_OK) {
+          Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
+          return err;
+      }
+  } else {
+      for (i = 0; i < hg->nVtx; ++i)
+          if (part[i]==0)
+              final [hg->vmap[i]] = lo;
   }
 
-  err = split_hypergraph (pins, hg, new, part, 1, zz);
+  if (hi>mid+1) { /* only split if we need it */
+      err = split_hypergraph (pins, hg, new, part, 1, zz);
   
-  ZOLTAN_FREE (&pins[0]); /* we don't need pins */
-  
-  if (err != ZOLTAN_OK) {
-    Zoltan_Multifree (__FILE__, __LINE__, 2, &part, &new);
-    return err;
+      ZOLTAN_FREE (&pins[0]); /* we don't need pins */
+      
+      if (err != ZOLTAN_OK) {
+          Zoltan_Multifree (__FILE__, __LINE__, 2, &part, &new);
+          return err;
+      }
+      err = Zoltan_PHG_rdivide (mid+1, hi, final, zz, new, hgp, level+1);
+      Zoltan_HG_HGraph_Free (new);
+  } else {
+      ZOLTAN_FREE (&pins[0]); /* we don't need pins */
+      for (i = 0; i < hg->nVtx; ++i)
+          if (part[i]==1)
+              final [hg->vmap[i]] = hi;
   }
-  err = Zoltan_PHG_rdivide (mid+1, hi, final, zz, new, hgp, level+1);
-  Zoltan_HG_HGraph_Free (new);
-    
-  /* remove alloc'ed structs */
+      /* remove alloc'ed structs */
   ZOLTAN_FREE (&part);
-  ZOLTAN_FREE (&new);
-    
+  ZOLTAN_FREE (&new); 
   return err;
 }
 
