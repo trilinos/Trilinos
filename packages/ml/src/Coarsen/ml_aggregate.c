@@ -1146,7 +1146,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    if (ag->keep_agg_information != 1) {
       if ((ag)->aggr_info != NULL) {
 	  if ((ag)->aggr_info[ag->cur_level] != NULL) 
-	    ML_memory_free((void **)&((ag)->aggr_info[i]));
+	    ML_memory_free((void **)&((ag)->aggr_info[ag->cur_level]));
       } 
    }
    if (i != 1) ML_memory_check("L%d: agg end",i);
