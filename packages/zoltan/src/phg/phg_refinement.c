@@ -25,6 +25,8 @@ extern "C" {
 
 
     /*
+
+
 #define _DEBUG
 #define _DEBUG2
 #define _DEBUG3
@@ -451,9 +453,6 @@ static int refine_fm2 (
             Zoltan_heap_make(&heap[from]);
             
             while ((v>=0) && (neggaincnt < maxneggain) && ((lweights[to]+minvw) <= max_weight[to]) ) {
-
-                if ((hg->nVtx<6000) && (movecnt>0)) /* UVC: for debugging in the second recursive exit after one move */
-                    break;
                 if (Zoltan_heap_empty(&heap[from])) /* too bad it is empty */
                     break;
                 v = Zoltan_heap_extract_max(&heap[from]);    
@@ -504,6 +503,12 @@ static int refine_fm2 (
                 ++movecnt;
             }
 
+	    if (v<0)
+	      uprintf(hgc, "EOLB @ %d there was no vertex to select: v=%d\n", movecnt, v);
+	    else if (neggaincnt >= maxneggain) 
+	      uprintf(hgc, "EOLB @ %d max neg move reached neggaincnt(%d) >= maxneggain\n", movecnt, neggaincnt, maxneggain);
+	    else 
+	      uprintf(hgc, "EOLB @ %d balance constraint LW[%.1lf, %.1lf] and MAXW[%.1lf, %.1lf]\n", movecnt, lweights[0], lweights[1], max_weight[0], max_weight[1]);
             /* roll back the moves without any improvement */
             for (i=movecnt-1; i>=best_cutsizeat; --i) {
                 int v = moves[i];
